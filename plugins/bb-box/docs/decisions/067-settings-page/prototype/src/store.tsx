@@ -63,15 +63,15 @@ function liveFor(backend: BackendConfig, scenario: Scenario, revision: number, m
   const offline = problem && backend.id === "docker:pc-1";
   const healthy = healthyChecks(backend);
   const health: Health | null = !backend.enabled ? (backend.id === "namespace" ? { ...healthyChecks(backend), checkedAt: Date.now() - 30 * 3_600_000 } : null) : tartDown ? TART_PROBLEM : healthy;
-  const machine = String(backend.fields.host ?? "").startsWith("bb:") ? DOCKER_MACHINES.find((each) => `bb:${each.id}` === backend.fields.host) : undefined;
+  const machine = String(backend.fields.host ?? "").startsWith("alia:") ? DOCKER_MACHINES.find((each) => `alia:${each.id}` === backend.fields.host) : undefined;
   return {
     boxes: BOX_COUNTS[backend.id] ?? 0,
     offers: !backend.enabled || tartDown || offline ? [] : offersOf(backend),
-    health: offline && health ? { ...health, summary: "pc-1 is offline in BB", checks: [{ id: "relay", name: "BB machine pc-1", status: "warn", detail: "Offline in BB since 08:12. Its boxes wait for it.", fix: "Start pc-1, or turn this backend off so new boxes go elsewhere." }] } : health ? { ...health, checkedRevision: revision } : null,
+    health: offline && health ? { ...health, summary: "pc-1 is offline in VesnALIA", checks: [{ id: "relay", name: "VesnALIA machine pc-1", status: "warn", detail: "Offline in VesnALIA since 08:12. Its boxes wait for it.", fix: "Start pc-1, or turn this backend off so new boxes go elsewhere." }] } : health ? { ...health, checkedRevision: revision } : null,
     checking: false,
     changedRevision: revision,
     warmShort: problem && backend.id === "proxmox-qemu" ? [{ kind: "windows-desktop", ready: 0, wanted: 1, reason: "pve-1 has 3 GiB free and keeps 4 GiB free, so no Windows desktop fits." }] : undefined,
-    bbMachine: machine ? { name: machine.name, connected: !offline, facts: `Docker ${machine.docker} · ${machine.facts}` } : undefined,
+    aliaMachine: machine ? { name: machine.name, connected: !offline, facts: `Docker ${machine.docker} · ${machine.facts}` } : undefined,
   };
 }
 
@@ -143,7 +143,7 @@ export function problemsOf(doc: Document, parts: ReadonlySet<string>): Problem[]
         const value = host.fields[key];
         if (value === undefined || value === "") continue;
         const whole = Number(value);
-        if (!Number.isInteger(whole) || whole < limit.least || whole > limit.most) add(`backends/${backend.id}/hosts/${host.name}/fields/${key}`, `Mac ${host.name}: ${limit.words} must be a whole number from ${limit.least} to ${limit.most}, or empty for bb-box's estimate.`);
+        if (!Number.isInteger(whole) || whole < limit.least || whole > limit.most) add(`backends/${backend.id}/hosts/${host.name}/fields/${key}`, `Mac ${host.name}: ${limit.words} must be a whole number from ${limit.least} to ${limit.most}, or empty for alia-box's estimate.`);
       }
       if (!host.fields.address) add(`backends/${backend.id}/hosts/${host.name}/fields/address`, `Mac ${host.name || "new"}: give its address.`);
     }
@@ -284,7 +284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       if (before.nextSave === "refused") {
         update((state) => ({ ...state, nextSave: "ok" }));
-        return { ok: false, reason: "error", message: "BB Box refused the save: its configuration file is busy." };
+        return { ok: false, reason: "error", message: "VesnALIA Box refused the save: its configuration file is busy." };
       }
       if (revision !== before.doc.revision) return { ok: false, reason: "revision", revision: before.doc.revision };
       const next = revision + 1;
@@ -377,7 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           doc,
           firstRun: { state: "built", step: BUILD_STEPS },
           setupDone: true,
-          live: { ...state.live, docker: { boxes: 0, offers: ["linux"], checking: false, changedRevision: revision, health: { summary: "Docker 29.8 on bb-1", checkedAt: Date.now(), checkedRevision: revision, checks: [{ id: "daemon", name: "Docker", status: "ok", detail: "29.8.2 on bb-1, BB's server." }, { id: "images", name: "Images", status: "ok", detail: "bbbox/linux:1 built just now." }] } } },
+          live: { ...state.live, docker: { boxes: 0, offers: ["linux"], checking: false, changedRevision: revision, health: { summary: "Docker 29.8 on alia-1", checkedAt: Date.now(), checkedRevision: revision, checks: [{ id: "daemon", name: "Docker", status: "ok", detail: "29.8.2 on alia-1, VesnALIA's server." }, { id: "images", name: "Images", status: "ok", detail: "bbbox/linux:1 built just now." }] } } },
         };
       });
     }, 600);
@@ -386,13 +386,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const useMachine = useCallback(
     async (machineId: string): Promise<ApplyResult> => {
       const machine = DOCKER_MACHINES.find((each) => each.id === machineId)!;
-      const backend: BackendConfig = { id: `docker:${machine.name}`, type: "docker", enabled: true, fields: { host: `bb:${machine.id}` } };
+      const backend: BackendConfig = { id: `docker:${machine.name}`, type: "docker", enabled: true, fields: { host: `alia:${machine.id}` } };
       const doc = current.current.doc;
       const result = await apply({ ...doc, backends: [...doc.backends, backend] }, doc.revision);
       if (result.ok) {
-        update((state) => ({ ...state, live: { ...state.live, [backend.id]: { boxes: 0, offers: [], checking: false, changedRevision: result.revision, health: null, building: "Building its Linux image · step 2 of 9", bbMachine: { name: machine.name, connected: true, facts: `Docker ${machine.docker} · ${machine.facts}` } } } }));
+        update((state) => ({ ...state, live: { ...state.live, [backend.id]: { boxes: 0, offers: [], checking: false, changedRevision: result.revision, health: null, building: "Building its Linux image · step 2 of 9", aliaMachine: { name: machine.name, connected: true, facts: `Docker ${machine.docker} · ${machine.facts}` } } } }));
         setTimeout(() => {
-          update((state) => (state.live[backend.id] ? { ...state, live: { ...state.live, [backend.id]: { ...state.live[backend.id]!, building: undefined, offers: ["linux", "linux-desktop-cpu"], health: { summary: `Docker ${machine.docker} on ${machine.name}`, checkedAt: Date.now(), checkedRevision: result.revision, checks: [{ id: "relay", name: `BB machine ${machine.name}`, status: "ok", detail: "Connected; Docker answers through BB." }, { id: "images", name: "Images", status: "ok", detail: "bbbox/linux:1 built just now." }] } } } } : state));
+          update((state) => (state.live[backend.id] ? { ...state, live: { ...state.live, [backend.id]: { ...state.live[backend.id]!, building: undefined, offers: ["linux", "linux-desktop-cpu"], health: { summary: `Docker ${machine.docker} on ${machine.name}`, checkedAt: Date.now(), checkedRevision: result.revision, checks: [{ id: "relay", name: `VesnALIA machine ${machine.name}`, status: "ok", detail: "Connected; Docker answers through VesnALIA." }, { id: "images", name: "Images", status: "ok", detail: "bbbox/linux:1 built just now." }] } } } } : state));
         }, 4000);
       }
       return result;

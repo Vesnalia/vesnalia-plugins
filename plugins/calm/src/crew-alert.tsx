@@ -1,11 +1,11 @@
 // The helper alert: shown in place of the scene while this thread's main
 // agent is idle and one of its helpers (child threads) needs you. Helpers
-// that are simply working show nothing here; bb's own child thread bar
+// that are simply working show nothing here; VesnALIA's own child thread bar
 // covers them. It is a half-height mini scene in the current scene's style,
 // with the words beside it, small and quiet, for screen readers and for
 // themes that fold the cards into pills.
 import { useEffect, useRef, type MouseEvent, type PointerEvent } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { runOnClock } from "./clock";
 import type { CrewMember, HelperAlert } from "./crew";
 import { AlertScene, MAX_FIGURES, VIGNETTE_ROWS, VIGNETTE_SCALE } from "./kit/alert";
@@ -17,7 +17,7 @@ export const ALERT_HEIGHT = VIGNETTE_ROWS * VIGNETTE_SCALE;
 export function HelperAlertRow({ alert, sceneId, theme, reduced, onOpen }: {
   alert: HelperAlert; sceneId: string; theme: ThemeMode; reduced: boolean; onOpen: (m: CrewMember) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const vignette = useRef<AlertScene | null>(null);
   if (!vignette.current || vignette.current.sceneId !== sceneId) vignette.current = new AlertScene(sceneId, sceneFor("", sceneId).alert);

@@ -1,4 +1,4 @@
-## Measured (0.5.10 injected into BB web UI at 1440px, browser QA @thr_ta7et49en6)
+## Measured (0.5.10 injected into VesnALIA web UI at 1440px, browser QA @thr_ta7et49en6)
 Desktop footer tool card `[data-sidebar="footer"] > ul[data-sidebar="menu"]` spans x 20..312 (8px insets, correct). With more footer tools present, its last item `li.usage-tracker-sidebar` is squeezed to 15px (clientWidth 15, scrollWidth 61): `span.usage-tracker-sidebar__reading` («100%») spans 306..338 and `span.usage-tracker-sidebar__summary-count` («+5») 342..355, past the card's right edge (312) and clipped under the content panel. Only the `max-width: 767px` rule in base.css (footer `gap: 0; flex-wrap: nowrap`, 32px square tool buttons, `li.usage-tracker-sidebar { flex-shrink: 1; min-width: 0; margin-left: auto }`) handles crowding; desktop has none.
 
 ## Fix (desktop media block, src/theme/base.css)

@@ -17,7 +17,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
 </p>
 
-Treelanes is a plugin for [bb](https://github.com/get-bb/bb), an app that runs
+Treelanes is a plugin for [VesnALIA](https://github.com/get-bb/bb), an app that runs
 coding agents. It adds a board, a sidebar, and a delivery workflow for Git
 worktrees.
 
@@ -36,7 +36,7 @@ worktrees.
 - **A sidebar for worktrees.** Each worktree shows as one main thread, with its
   other threads below it.
 - **Recovery after failures.** The board saves each step, retries a failed turn
-  at most twice, and continues after bb restarts.
+  at most twice, and continues after VesnALIA restarts.
 
 ## How it works
 
@@ -58,7 +58,7 @@ flowchart LR
 | Quality Loop | A strict review finds problems and fixes them. It ends when the review has no findings. |
 | Simplify | An agent removes needless code and keeps the behavior. |
 | PR Watch | An agent pushes the branch, opens the pull request with screenshots for UI changes, fixes failed checks, and answers reviews until the pull request is ready to merge. You merge. |
-| Done | bb confirms that the pull request merged. |
+| Done | VesnALIA confirms that the pull request merged. |
 | Code Review | A separate lane for a `/code-review` of other changes. It reports findings and changes no code. |
 
 - **Move rules** for cards and receipts: [Board](#board).
@@ -67,25 +67,25 @@ flowchart LR
 
 ## Requirements
 
-- bb 0.43 or later.
+- VesnALIA 0.43 or later.
 - Git.
-- At least one agent harness that bb supports, such as Claude Code or Codex.
+- At least one agent harness that VesnALIA supports, such as Claude Code or Codex.
 - [GitHub CLI](https://cli.github.com) (`gh`), signed in, for PR Watch.
 
 ## Install
 
-Add the Treelanes marketplace, then install from it. bb installs the latest
+Add the Treelanes marketplace, then install from it. VesnALIA installs the latest
 release and shows the full listing, with screenshots, under Plugins:
 
 ```sh
-bb marketplace add git:github.com/ahmedhesham6/bb-plugin-treelanes@main
-bb plugin install treelanes@treelanes
+alia marketplace add git:github.com/ahmedhesham6/bb-plugin-treelanes@main
+alia plugin install treelanes@treelanes
 ```
 
 Or install straight from Git:
 
 ```sh
-bb plugin install git:https://github.com/ahmedhesham6/bb-plugin-treelanes
+alia plugin install git:https://github.com/ahmedhesham6/bb-plugin-treelanes
 ```
 
 To build from a checkout, read [CONTRIBUTING.md](CONTRIBUTING.md). The store
@@ -94,7 +94,7 @@ in step with `package.json`.
 
 ## Quick start
 
-1. Open **Treelanes** in the bb navigation. The board opens; a new install
+1. Open **Treelanes** in the VesnALIA navigation. The board opens; a new install
    starts empty.
 2. Optional: choose **Treelanes** under Settings → Appearance → Sidebar. The
    sidebar groups threads by worktree in this client.
@@ -116,7 +116,7 @@ The board shows one card per Git worktree, with the worktree's Unsettled
 Threads. All threads in a worktree share its stage. A card leaves the board
 when all its threads are settled; new work or attention brings a thread back.
 
-A hand move comes from a drag or `bb treelanes move`:
+A hand move comes from a drag or `alia treelanes move`:
 
 ```text
 move card to stage
@@ -179,7 +179,7 @@ main thread for a worktree
 Pinned children raise their worktree into Pinned. Snoozed and Settled state
 stays per thread. A group stays in Inbox while any member has active work.
 
-The thread header shows parent and child chips. PR badges use bb's branch
+The thread header shows parent and child chips. PR badges use VesnALIA's branch
 lookup; a branch without a PR has no badge.
 
 ## Settings
@@ -196,7 +196,7 @@ Open Settings → Plugins → Treelanes.
   plan a template step
     saved harness, model, effort  → the plan must use them; a plan that differs is rejected
     "Orchestrator chooses"        → the orchestrator picks from the live catalog
-    saved choice not in catalog   → Settings and `bb treelanes health` report it
+    saved choice not in catalog   → Settings and `alia treelanes health` report it
   ```
 
   A saved orchestrator harness that differs from the initiating thread starts a
@@ -208,14 +208,14 @@ Open Settings → Plugins → Treelanes.
 
 ## CLI
 
-`bb treelanes help` lists every command. The ones you use most:
+`alia treelanes help` lists every command. The ones you use most:
 
 ```sh
-bb treelanes show [project-id]               # board state
-bb treelanes move <stage> [thread-id] [note] # move a card
-bb treelanes health [project-id]             # stuck starts, blockers, stale evidence
-bb treelanes pause [environment-id]          # stop automatic work for a worktree
-bb treelanes resume [environment-id]
+alia treelanes show [project-id]               # board state
+alia treelanes move <stage> [thread-id] [note] # move a card
+alia treelanes health [project-id]             # stuck starts, blockers, stale evidence
+alia treelanes pause [environment-id]          # stop automatic work for a worktree
+alia treelanes resume [environment-id]
 ```
 
 Agents use the delivery commands that [docs/delivery.md](docs/delivery.md)
@@ -240,7 +240,7 @@ report a security problem, read [SECURITY.md](SECURITY.md).
   ([mattpocock/skills](https://github.com/mattpocock/skills)), HumanLayer
   ([humanlayer/skills](https://github.com/humanlayer/skills)), Cursor
   ([cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit)),
-  Michael Yong ([bb](https://github.com/get-bb/bb)), and backnotprop
+  Michael Yong ([VesnALIA](https://github.com/get-bb/bb)), and backnotprop
   ([pstack](https://github.com/backnotprop/pstack)), all under the MIT license.
   [skills/SOURCES.md](skills/SOURCES.md) maps each skill to its source and
   license notice.

@@ -1,25 +1,27 @@
 {
-  "name": "bb-plugin-e-corp",
+  "name": "alia-plugin-e-corp",
   "version": "0.1.1",
   "type": "module",
-  "description": "A cold corporate workstation theme for bb.",
+  "description": "A cold corporate workstation theme for VesnALIA.",
   "license": "MIT",
-  "keywords": ["bb-plugin", "bb-theme", "theme", "dark-theme", "light-theme"],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/xcke/bb-plugin-e-corp.git"
-  },
+  "keywords": [
+    "alia-plugin",
+    "alia-theme",
+    "theme",
+    "dark-theme",
+    "light-theme"
+  ],
   "scripts": {
     "build:theme": "./source/build.sh",
     "typecheck": "tsc --noEmit",
-    "build": "npm run build:theme && bb plugin build",
-    "check": "npm run build:theme && bb plugin types --check && npm run typecheck && bb plugin build"
+    "build": "npm run build:theme && alia plugin build",
+    "check": "npm run build:theme && alia plugin types --check && npm run typecheck && alia plugin build"
   },
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
-  "bb": {
+  "alia": {
     "name": "E Corp",
     "description": "Adds a cold corporate workstation palette with matching code, diff, file-tree, and terminal colors.",
     "branding": {
@@ -41,7 +43,6 @@
     ]
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -49,5 +50,22 @@
     "hono": "^4.11.9",
     "typescript": "^5.7.0",
     "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/e-corp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/e-corp"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

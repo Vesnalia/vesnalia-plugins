@@ -1,12 +1,12 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { experimental_acpLaunchSpecSchema as acpLaunchSpecSchema } from "@get-bb/plugin-sdk/provider-bridge/acp";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { experimental_acpLaunchSpecSchema as acpLaunchSpecSchema } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 import { describe, expect, it } from "vitest";
 
 import kimiPlugin, { KIMI_PROVIDER_ID } from "./server.js";
 
 function registeredDeclaration() {
   const host = createFakePluginHost({ pluginId: "kimi-code" });
-  kimiPlugin(host.bb);
+  kimiPlugin(host.alia);
   const declaration = host.harness.registrations.providerRegistrations.find(
     (entry) => entry.id === KIMI_PROVIDER_ID,
   );
@@ -38,21 +38,21 @@ describe("the kimi-code provider declaration", () => {
 
   it("narrows fork to none because kimi locks live sessions to their process", () => {
     // kimi >= 2.3.0 holds an exclusive per-session lock for as long as the
-    // owning kimi process lives, and bb forks by asking a NEW kimi process
+    // owning kimi process lives, and VesnALIA forks by asking a NEW kimi process
     // to fork the still-live source session — kimi rejects that with "This
     // session is in use by another Kimi Code process". Tip-forks only work
-    // after the owner process exits, which bb's fork flow never guarantees,
+    // after the owner process exits, which VesnALIA's fork flow never guarantees,
     // so the declaration must not offer fork.
     expect(registeredDeclaration().capabilities.fork).toBe("none");
   });
 
   it("declares only the permission modes the ACP bridge can enforce", () => {
-    // The SDK ACP bridge throws on bb's "auto" mode ("Provider ... does not
+    // The SDK ACP bridge throws on VesnALIA's "auto" mode ("Provider ... does not
     // support permission mode \"auto\"" in buildAcpSessionParams, and again
-    // in reconcileExecutionSettings): ACP has no equivalent for bb's
+    // in reconcileExecutionSettings): ACP has no equivalent for VesnALIA's
     // auto-reviewer, and the bridge enforces only accept-edits (workspace
-    // write roots) and full (approve everything) itself. bb's own builtin
-    // ACP provider plugins declare the same pair. Declaring "auto" let bb
+    // write roots) and full (approve everything) itself. VesnALIA's own builtin
+    // ACP provider plugins declare the same pair. Declaring "auto" let VesnALIA
     // dispatch threads straight into that throw (thread thr_v5fvsnn7m6,
     // 2026-10-23), so the declaration must not offer it.
     expect(registeredDeclaration().capabilities.permissionModes).toEqual([
@@ -61,8 +61,8 @@ describe("the kimi-code provider declaration", () => {
     ]);
   });
 
-  it("declares the reasoning ladder with bb's default medium level", () => {
-    // bb starts new threads at "medium" by default and validates the level
+  it("declares the reasoning ladder with VesnALIA's default medium level", () => {
+    // VesnALIA starts new threads at "medium" by default and validates the level
     // against this ladder; kimi itself only knows low/high/max, so "medium"
     // falls back to kimi's current thinking level (its default: high).
     expect(registeredDeclaration().capabilities.reasoningLevels).toEqual([

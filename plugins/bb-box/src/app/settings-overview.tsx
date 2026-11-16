@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Activity01Icon, Camera01Icon, ComputerIcon, Globe02Icon, Image01Icon, Settings01Icon, SmartPhone01Icon } from "@hugeicons/core-free-icons";
 import { useState, type ReactNode } from "react";
@@ -57,7 +57,7 @@ export function Overview() {
   return (
     <div className="space-y-7">
       <h2 tabIndex={-1} data-page-heading className="sr-only">
-        BB Box settings
+        VesnALIA Box settings
       </h2>
       {setUp ? (
         <>
@@ -238,7 +238,7 @@ function Backends({ machines }: { machines: Machines }) {
           </Rows>
         </Card>
       ) : (
-        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-xs text-subtle-foreground">No backend yet. Add backend lists every kind of place boxes can run, and Docker on your BB machines.</p>
+        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-xs text-subtle-foreground">No backend yet. Add backend lists every kind of place boxes can run, and Docker on your VesnALIA machines.</p>
       )}
       <MachinesLine machines={machines} />
     </Group>
@@ -339,7 +339,7 @@ export function iosEncoderWords(value: string): string {
 
 function Options() {
   const { state, nav, instant, writes } = useSettings();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const draftChip = useDraftChip();
   const unsavedChip = (option: string) => draftChip(OPTION_PARTS[option] ?? []);
   const general = { ...state.defaults.general, ...state.document.general };
@@ -378,7 +378,7 @@ function Options() {
               saved={<SavedTick show={instant.isSaved(monitorKey)} />}
               control={
                 <Switch
-                  aria-label="Monitor: machine status in BB's sidebar"
+                  aria-label="Monitor: machine status in VesnALIA's sidebar"
                   aria-describedby="settings-option-monitor"
                   checked={monitorOn}
                   aria-disabled={instant.pending !== null || undefined}
@@ -414,9 +414,9 @@ function useDraftChip(): (parts: readonly string[]) => ReactNode {
 export function ReloadNote() {
   return (
     <p role="status" className="flex flex-wrap items-center gap-2 px-1 text-xs text-muted-foreground">
-      The sidebar's machine status changes when BB next loads.
+      The sidebar's machine status changes when VesnALIA next loads.
       <button type="button" className="cursor-pointer rounded-sm text-foreground underline underline-offset-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" onClick={() => window.location.reload()}>
-        Reload BB now
+        Reload VesnALIA now
       </button>
     </p>
   );

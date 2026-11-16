@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export interface RepositoryTarget {
   environmentId: string;
@@ -16,13 +16,13 @@ export class RepositoryUnavailableError extends Error {
 
 /**
  * Resolves the thread's environment to the machine and absolute worktree path
- * git must run against. `repoPath` only ever comes from bb's own record.
+ * git must run against. `repoPath` only ever comes from VesnALIA's own record.
  */
 export async function repositoryForThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<RepositoryTarget> {
-  const thread = await bb.sdk.threads.get({ threadId, include: "environment" });
+  const thread = await alia.sdk.threads.get({ threadId, include: "environment" });
   if (!("environment" in thread) || !thread.environment) {
     throw new RepositoryUnavailableError("This thread has no project environment.");
   }

@@ -284,7 +284,7 @@ class FakeEmulator implements EmulatorControl {
   async shell(command: string): Promise<string> {
     if (command === "date +%s") return `${Math.round(Date.now() / 1000)}\n`;
     if (command === readScript())
-      return [`Night mode: ${this.night}`, this.fontScale, `  mWakefulness=${this.wakefulness}`, this.airplane, this.wifi, this.shaped ? "qdisc netem 8001: root" : "qdisc noqueue 0: root", this.deviceState, this.connectivity()].join("\n@@bb-box@@\n");
+      return [`Night mode: ${this.night}`, this.fontScale, `  mWakefulness=${this.wakefulness}`, this.airplane, this.wifi, this.shaped ? "qdisc netem 8001: root" : "qdisc noqueue 0: root", this.deviceState, this.connectivity()].join("\n@@alia-box@@\n");
     if (command === WIFI_NETWORKS) return this.wifiSaved ? "Network Id      SSID                         Security type\n0            AndroidWifi                      open\n" : "No networks\n";
     if (command === WIFI_WRITTEN) {
       this.order.push("written?");
@@ -395,7 +395,7 @@ async function rig(options: { readonly watchMs?: number; readonly adbKey?: strin
 }
 
 describe("the Android driver", () => {
-  test("boots the device from its snapshot through the emulator's service, streams it through bb-box-h264 by shared memory, and reads its geometry", async () => {
+  test("boots the device from its snapshot through the emulator's service, streams it through alia-box-h264 by shared memory, and reads its geometry", async () => {
     const { grpc, emulator, driver, frames, paths } = await rig();
     assert.equal(await driver.attach(PIXEL_8, AbortSignal.timeout(5000)), "booted");
     assert.deepEqual(emulator.calls, ["start pixel_8"]);
@@ -625,11 +625,11 @@ describe("the Android driver", () => {
     assert.equal(state.platform, "android");
     if (state.platform !== "android") return;
     const value = <T,>(observed: { readonly known: boolean; readonly value?: T; readonly by?: string }) => (observed.known ? [observed.value, observed.by] : null);
-    assert.deepEqual(value(state.settings.appearance), ["dark", "bb-box"]);
-    assert.deepEqual(value(state.settings.fontScale), [1.5, "bb-box"]);
-    assert.deepEqual(value(state.settings.location), [{ latitude: 51.5007, longitude: -0.1246 }, "bb-box"]);
-    assert.deepEqual(value(state.settings.battery), [{ level: 42, charging: false }, "bb-box"]);
-    assert.deepEqual(value(state.settings.network), ["slow", "bb-box"]);
+    assert.deepEqual(value(state.settings.appearance), ["dark", "alia-box"]);
+    assert.deepEqual(value(state.settings.fontScale), [1.5, "alia-box"]);
+    assert.deepEqual(value(state.settings.location), [{ latitude: 51.5007, longitude: -0.1246 }, "alia-box"]);
+    assert.deepEqual(value(state.settings.battery), [{ level: 42, charging: false }, "alia-box"]);
+    assert.deepEqual(value(state.settings.network), ["slow", "alia-box"]);
     assert.ok(emulator.shells.includes(networkScript("slow")));
     emulator.night = "no";
     await driver.readSettings(AbortSignal.timeout(5000));
@@ -641,7 +641,7 @@ describe("the Android driver", () => {
     assert.deepEqual(grpc.battery, { charger: 1, chargeLevel: 100 });
   });
 
-  test("a clean status bar is SystemUI's demo mode, showing the battery BB Box set, set again when the device starts, and live leaves it", async () => {
+  test("a clean status bar is SystemUI's demo mode, showing the battery VesnALIA Box set, set again when the device starts, and live leaves it", async () => {
     const { emulator, driver, paths, port, dir } = await rig();
     await driver.attach(PIXEL_8, AbortSignal.timeout(5000));
     const none = { personHasControl: false };
@@ -766,8 +766,8 @@ describe("the Android driver", () => {
     await keeper.use("Pixel 8", AbortSignal.timeout(5000));
     emulator.reachable = false;
     await keeper.read(AbortSignal.timeout(5000));
-    assert.deepEqual(keeper.settings().network, { known: false, why: "The network is none of BB Box's presets: airplane mode disabled, Wi-Fi on, not slowed, a default network Android has not validated." });
-    await assert.rejects(keeper.waitNetworkAfterBoot(AbortSignal.timeout(5000)), /BB Box set the network online, and restarted Wi-Fi as the device had no validated network 0\.3 s after the boot, but 0\.3 s later it reads airplane mode disabled, Wi-Fi on, not slowed, a default network Android has not validated\./);
+    assert.deepEqual(keeper.settings().network, { known: false, why: "The network is none of VesnALIA Box's presets: airplane mode disabled, Wi-Fi on, not slowed, a default network Android has not validated." });
+    await assert.rejects(keeper.waitNetworkAfterBoot(AbortSignal.timeout(5000)), /ALIA Box set the network online, and restarted Wi-Fi as the device had no validated network 0\.3 s after the boot, but 0\.3 s later it reads airplane mode disabled, Wi-Fi on, not slowed, a default network Android has not validated\./);
     emulator.wifiSaved = false;
     await assert.rejects(keeper.setNetwork("online", AbortSignal.timeout(5000)), /The network was set to online, but 0\.3 s later the device reads airplane mode disabled, Wi-Fi on, not slowed, no default network\./);
     await assert.rejects(keeper.waitEmulatorWifiWritten(AbortSignal.timeout(5000)), /had not written AndroidWifi to its Wi-Fi store 0\.3 s later/);
@@ -812,12 +812,12 @@ describe("the Android driver", () => {
 
   test("the read-back reads every setting in one shell command", () => {
     const validated = new FakeEmulator().connectivity();
-    const read = parseReading(["Night mode: yes", "1.15", "  mWakefulness=Dozing", "enabled", "0", "qdisc noqueue 0: root", "1", "Active default network: none"].join("\n@@bb-box@@\n"));
+    const read = parseReading(["Night mode: yes", "1.15", "  mWakefulness=Dozing", "enabled", "0", "qdisc noqueue 0: root", "1", "Active default network: none"].join("\n@@alia-box@@\n"));
     assert.deepEqual(read, { appearance: "dark", fontScale: 1.15, awake: false, network: "offline", radiosOn: false, networkWords: "airplane mode enabled, Wi-Fi off, not slowed, no default network", posture: "half-open" });
-    assert.equal(parseReading(["Night mode: no", "null", "", "disabled", "1", "qdisc netem 8001: root", "", validated].join("\n@@bb-box@@\n")).network, "slow");
-    assert.equal(parseReading(["Night mode: no", "null", "", "disabled", "1", "qdisc noqueue 0: root", "", validated].join("\n@@bb-box@@\n")).network, "online");
-    assert.equal(parseReading(["Night mode: no", "null", "", "disabled", "1", "qdisc noqueue 0: root", "", "Active default network: none"].join("\n@@bb-box@@\n")).network, null);
-    assert.equal(parseReading(["Night mode: no", "1.0", "", "enabled", "1", "", "", validated].join("\n@@bb-box@@\n")).network, null);
+    assert.equal(parseReading(["Night mode: no", "null", "", "disabled", "1", "qdisc netem 8001: root", "", validated].join("\n@@alia-box@@\n")).network, "slow");
+    assert.equal(parseReading(["Night mode: no", "null", "", "disabled", "1", "qdisc noqueue 0: root", "", validated].join("\n@@alia-box@@\n")).network, "online");
+    assert.equal(parseReading(["Night mode: no", "null", "", "disabled", "1", "qdisc noqueue 0: root", "", "Active default network: none"].join("\n@@alia-box@@\n")).network, null);
+    assert.equal(parseReading(["Night mode: no", "1.0", "", "enabled", "1", "", "", validated].join("\n@@alia-box@@\n")).network, null);
     assert.deepEqual(parseDefaultNetwork(validated), { id: "100", validated: true });
     assert.deepEqual(parseDefaultNetwork(validated.replace("&VALIDATED", "")), { id: "100", validated: false });
     assert.deepEqual(parseDefaultNetwork(validated.replace("network{100}", "network{101}")), { id: "100", validated: false });
@@ -873,7 +873,7 @@ describe("the Android video", () => {
       await until("the encoder started again", () => video.encoderRestarts === 1);
       await until("a key frame from the new encoder", () => frames.at(-1) === true && frames.length >= 3);
       assert.deepEqual(frames.slice(0, 2), [true, false]);
-      assert.ok(lines.some((line) => /bb-box-h264 stopped \(bb-box-h264: x264 failed to encode a frame\); starting it again/.test(line)));
+      assert.ok(lines.some((line) => /alia-box-h264 stopped \(alia-box-h264: x264 failed to encode a frame\); starting it again/.test(line)));
     } finally {
       delete process.env.FAKE_H264_FAIL_AFTER;
       reading.abort();
@@ -948,15 +948,15 @@ function runner(answers: Record<string, Partial<Ran>>, seen: string[]): Runner {
 
 describe("the emulator's service", () => {
   test("its unit checks the firewall before each start, runs the emulator with a token and no window, and marks a stop saved only when the emulator answered it", () => {
-    const unit = emulatorUnit("/opt/android-sdk", "/usr/local/bin/bb-box-device-firewall");
-    assert.match(unit, /^ExecStartPre=\/usr\/local\/bin\/bb-box-device-firewall check$/m);
-    assert.match(unit, /^ExecStart=\/opt\/android-sdk\/emulator\/emulator -avd %i -port 5554 -grpc 8554 -grpc-use-token -gpu swiftshader_indirect -no-window -no-audio -no-boot-anim \$BB_BOX_EMULATOR_BOOT$/m);
-    assert.match(unit, /^ExecStop=\/bin\/sh -c 'if \/opt\/android-sdk\/platform-tools\/adb -s emulator-5554 emu kill >\/dev\/null 2>&1; then .*rm -f %h\/\.bb-box\/device\/emulator-unsaved-%i; fi; /m);
+    const unit = emulatorUnit("/opt/android-sdk", "/usr/local/bin/alia-box-device-firewall");
+    assert.match(unit, /^ExecStartPre=\/usr\/local\/bin\/alia-box-device-firewall check$/m);
+    assert.match(unit, /^ExecStart=\/opt\/android-sdk\/emulator\/emulator -avd %i -port 5554 -grpc 8554 -grpc-use-token -gpu swiftshader_indirect -no-window -no-audio -no-boot-anim \$ALIA_BOX_EMULATOR_BOOT$/m);
+    assert.match(unit, /^ExecStop=\/bin\/sh -c 'if \/opt\/android-sdk\/platform-tools\/adb -s emulator-5554 emu kill >\/dev\/null 2>&1; then .*rm -f %h\/\.alia-box\/device\/emulator-unsaved-%i; fi; /m);
     assert.match(unit, /^Restart=no$/m);
   });
 
   test("the emulator has 180 s to save its snapshot as it stops, and systemd waits 210 s for it, as the emulator's launcher kills it 20 s after asking it to shut down unless told otherwise, and a busy machine took up to 97 s", () => {
-    const unit = emulatorUnit("/opt/android-sdk", "/usr/local/bin/bb-box-device-firewall");
+    const unit = emulatorUnit("/opt/android-sdk", "/usr/local/bin/alia-box-device-firewall");
     assert.match(unit, /^Environment=ANDROID_HOME=\/opt\/android-sdk ANDROID_SDK_ROOT=\/opt\/android-sdk ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL=180$/m);
     assert.match(unit, /^TimeoutStopSec=210$/m);
   });
@@ -967,13 +967,13 @@ describe("the emulator's service", () => {
     mkdirSync(running, { recursive: true });
     writeFileSync(join(running, "pid_41.ini"), "avd.name=pixel_8\ngrpc.port=8554\ngrpc.token=abc=\nport.serial=5554\n");
     writeFileSync(join(running, "pid_42.ini"), "avd.name=pixel_fold\ngrpc.token=old\n");
-    const emulator = new Emulator({ dir: join(home, ".bb-box", "device"), home, alive: (pid) => pid === 41, log: () => {}, run: runner({}, []) });
+    const emulator = new Emulator({ dir: join(home, ".alia-box", "device"), home, alive: (pid) => pid === 41, log: () => {}, run: runner({}, []) });
     assert.deepEqual(await emulator.running(), { pid: 41, avd: "pixel_8", grpcPort: 8554, token: "abc=", discovery: join(running, "pid_41.ini") });
     assert.ok(!existsSync(join(running, "pid_42.ini")));
     assert.equal(discoveryValues("a=b=c\nnone\n").get("a"), "b=c");
   });
 
-  test("finds an emulator whose discovery file has gone by BB Box's own copy of it, or by its console port without a token, and waits only for one it can reach (F-4)", async () => {
+  test("finds an emulator whose discovery file has gone by VesnALIA Box's own copy of it, or by its console port without a token, and waits only for one it can reach (F-4)", async () => {
     const home = tempDir("android-home");
     const running = join(home, ".android", "avd", "running");
     mkdirSync(running, { recursive: true });
@@ -981,11 +981,11 @@ describe("the emulator's service", () => {
     const qemu = { pid: 41, argv: ["/opt/android-sdk/emulator/qemu/linux-x86_64/qemu-system-x86_64-headless", "-avd", "pixel_8", "-port", "5554", "-grpc", "8554"] };
     let processes = [{ pid: 7, argv: ["/usr/bin/node", "-avd", "pixel_8", "-port", "5554"] }, qemu];
     const lines: string[] = [];
-    const emulator = new Emulator({ dir: join(home, ".bb-box", "device"), home, alive: (pid) => pid === 41, manager: async () => "detached", processes: async () => processes, log: (line) => lines.push(line), run: runner({}, []) });
+    const emulator = new Emulator({ dir: join(home, ".alia-box", "device"), home, alive: (pid) => pid === 41, manager: async () => "detached", processes: async () => processes, log: (line) => lines.push(line), run: runner({}, []) });
     assert.equal((await emulator.running())?.token, "abc=");
     rmSync(join(running, "pid_41.ini"));
     assert.deepEqual(await emulator.running(), { pid: 41, avd: "pixel_8", grpcPort: 8554, token: "abc=", discovery: null });
-    assert.ok(lines.some((line) => /process 41 without its discovery file; bb-box reaches it by its own copy/.test(line)));
+    assert.ok(lines.some((line) => /process 41 without its discovery file; alia-box reaches it by its own copy/.test(line)));
     rmSync(emulator.keptDiscovery);
     assert.deepEqual(await emulator.running(), { pid: 41, avd: "pixel_8", grpcPort: 8554, token: null, discovery: null });
     const said = lines.length;
@@ -998,16 +998,16 @@ describe("the emulator's service", () => {
 
   test("refuses to start without the firewall, and boots cold after an end that saved no snapshot", async () => {
     const home = tempDir("android-home");
-    const dir = join(home, ".bb-box", "device");
+    const dir = join(home, ".alia-box", "device");
     const seen: string[] = [];
-    let firewall: Partial<Ran> = { code: 1, stderr: "bb-box-device-firewall: the table inet bb_box_device is not loaded" };
+    let firewall: Partial<Ran> = { code: 1, stderr: "alia-box-device-firewall: the table inet alia_box_device is not loaded" };
     const emulator = new Emulator({ dir, home, alive: () => true, log: () => {}, manager: async () => "systemd", run: async (program, args, options) => (program.endsWith("firewall") ? { code: 0, stdout: "", stderr: "", ...firewall } : runner({}, seen)(program, args, options)) });
     await assert.rejects(emulator.start("pixel_8", { cold: false, signal: AbortSignal.timeout(1000) }), (error: unknown) => error instanceof EmulatorRefused && error.failure === "firewall-missing" && /not loaded/.test(error.message));
     firewall = { code: 0 };
     assert.deepEqual(await emulator.start("pixel_8", { cold: false, signal: AbortSignal.timeout(1000) }), { cold: false, unsaved: false });
     assert.ok(existsSync(join(dir, "emulator-unsaved-pixel_8")));
-    assert.ok(seen.includes("systemctl --user start bb-box-emulator@pixel_8.service"));
-    assert.match(readFileSync(join(home, ".config", "systemd", "user", "bb-box-emulator@.service"), "utf8"), /emulator-unsaved-%i/);
+    assert.ok(seen.includes("systemctl --user start alia-box-emulator@pixel_8.service"));
+    assert.match(readFileSync(join(home, ".config", "systemd", "user", "alia-box-emulator@.service"), "utf8"), /emulator-unsaved-%i/);
     assert.equal(statSync(join(home, ".emulator_console_auth_token")).mode & 0o777, 0o600);
     assert.deepEqual(await emulator.start("pixel_8", { cold: false, signal: AbortSignal.timeout(1000) }), { cold: true, unsaved: true });
 
@@ -1017,7 +1017,7 @@ describe("the emulator's service", () => {
 
   test("without systemd, a stop the emulator answered marks its snapshot saved, and one it did not leaves the mark", async () => {
     const home = tempDir("android-home");
-    const dir = join(home, ".bb-box", "device");
+    const dir = join(home, ".alia-box", "device");
     mkdirSync(dir, { recursive: true });
     let answers = 0;
     const emulator = new Emulator({ dir, home, alive: () => false, log: () => {}, manager: async () => "detached", run: async (program, args) => ({ code: args.includes("kill") ? answers : 0, stdout: "", stderr: "" }) });

@@ -16,7 +16,7 @@ function measured(kind: string, measure: Omit<ClipFfmpegMeasure, "at">): Readonl
 }
 
 test("the doctor's fix for a Mac kind asks for ffmpeg with libx264, not drawtext, as AppKit draws a Mac's captions (063)", () => {
-  const refusal = clipFfmpegRefusal("box-1", MAC_DESKTOP.capabilities, CLIP_FFMPEG_EXITS.fetchFailed, "BB Box could not fetch https://example.com/ffmpeg.zip: curl: (6) Could not resolve host");
+  const refusal = clipFfmpegRefusal("box-1", MAC_DESKTOP.capabilities, CLIP_FFMPEG_EXITS.fetchFailed, "VesnALIA Box could not fetch https://example.com/ffmpeg.zip: curl: (6) Could not resolve host");
 
   const [mac] = recordingChecks([MAC_DESKTOP], measured("macos-desktop", { box: "box-1", said: null, refusal, image: false }));
 
@@ -29,7 +29,7 @@ test("the doctor's fix for a Mac kind asks for ffmpeg with libx264, not drawtext
 test("a Windows desktop's recording start is the kind's last word in the doctor, with the image's own ffmpeg (063)", () => {
   const before = recordingChecks([WINDOWS_DESKTOP], new Map());
 
-  assert.match(before[0]!.detail, /No box of this kind has started a recording since BB Box started\./);
+  assert.match(before[0]!.detail, /No box of this kind has started a recording since ALIA Box started\./);
 
   const [after] = recordingChecks([WINDOWS_DESKTOP], measured("windows-desktop", { box: "win-1", said: null, refusal: null, image: true }));
 

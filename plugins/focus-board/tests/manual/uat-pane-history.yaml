@@ -1,5 +1,5 @@
 # Operator-assisted E2E: the open pane's thread lives in the panel's URL
-# subPath, so bb's back arrow reopens the pane state the user left — including
+# subPath, so alia's back arrow reopens the pane state the user left — including
 # the trail of cards they lost track of.
 #
 # Rendered and driven for real: the harness mounts the actual app.tsx against
@@ -63,10 +63,10 @@ steps:
       - url: { suffix: "?groupBy=status" }
 
   - id: back-from-a-foreign-surface-restores-the-pane
-    title: The bb back-arrow case — out to another surface, back, pane restored
+    title: The alia back-arrow case — out to another surface, back, pane restored
     click: { card: thr_uat_queue }
     # A push to a surface the mock router does not own — the shape of a
-    # link-out to main bb. The app's own state is untouched by it.
+    # link-out to main alia. The app's own state is untouched by it.
     push_url: "/projects/web/threads/thr_review_pr"
     back: true
     assert:

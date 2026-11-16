@@ -1,7 +1,7 @@
 /**
- * Output formatting for bb's timeline body.
+ * Output formatting for VesnALIA's timeline body.
  *
- * bb draws a plugin tool's output inside a monospace `<pre>` block, so the
+ * VesnALIA draws a plugin tool's output inside a monospace `<pre>` block, so the
  * search results are written as aligned plain text rather than the markdown
  * the pi extension returns to the terminal. Fetched page content keeps its
  * markdown, because the model needs the headings, links and code structure.
@@ -11,7 +11,7 @@ import { type FetchedContent, type FetchMode, findPassages, type Passage, sliceC
 import type { SearchResult } from "./web/search.ts";
 
 /**
- * bb keeps 32,000 characters of a tool row inline before it stores only a
+ * VesnALIA keeps 32,000 characters of a tool row inline before it stores only a
  * head/tail preview, so that is the ceiling for one call's output.
  */
 export const OUTPUT_BUDGET = 32_000;

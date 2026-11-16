@@ -1,4 +1,4 @@
-// bb-kilocode — checkpoint rewind: rebuild a Kilo Code session cut back to
+// alia-kilocode — checkpoint rewind: rebuild a Kilo Code session cut back to
 // the turn before an edit.
 //
 // Kilo's ACP `session/fork` clones only at the tip (there is no head
@@ -196,7 +196,7 @@ export async function cloneSession({ kiloBin, sourceSessionId, truncateTo, cwd, 
   const target = typeof cwd === "string" && cwd.length > 0 ? cwd : null;
   const rewritten = rewriteExport(exported, { truncateTo, directory: target ?? undefined });
 
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bb-kilo-clone-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "alia-kilo-clone-"));
   const file = path.join(dir, "fork.json");
   try {
     fs.writeFileSync(file, JSON.stringify(rewritten));

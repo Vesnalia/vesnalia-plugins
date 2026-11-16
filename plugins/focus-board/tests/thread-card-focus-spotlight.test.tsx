@@ -15,7 +15,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { CARD_SURFACE_SOLID, ThreadCard } from "../components/thread-card";
 import { CARD_SPOTLIGHT_RULE } from "../components/card-spotlight";
 import { ParentLaneBoard } from "../components/parent-lane-board";

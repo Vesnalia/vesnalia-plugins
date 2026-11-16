@@ -1,4 +1,4 @@
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { BoxPageState, Contract, PanelState } from "../plugin/contract.ts";
@@ -23,7 +23,7 @@ export function FilesPanel({ threadId, params }: { threadId: string; params: unk
 
 function FilesChooser({ threadId }: { threadId: string }) {
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const open = useOpenFiles();
   const { value: state, error } = useLive<PanelState>(threadId, () => rpc.call("state", { threadId }), forThread(threadId));
   const runsOn = state?.runsOn && canOpenFiles(state.runsOn.box) ? state.runsOn.box : null;

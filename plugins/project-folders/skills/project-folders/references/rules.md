@@ -14,7 +14,7 @@ edit made behind its back leaves that record on **Default**:
   text is gone;
 - a new subsection inherits the shared template, not the one just written.
 
-Set the rules through `bb project-folders rules set`. It writes the same record
+Set the rules through `alia project-folders rules set`. It writes the same record
 the card writes, and it writes the file too.
 
 ## The three modes
@@ -32,13 +32,13 @@ templates.
 ## What is written where
 
 - The managed block sits at the **end** of `AGENTS.md` between
-  `<!-- bb-project-folders:agents:start -->` and `:end`. Everything above the
+  `<!-- alia-project-folders:agents:start -->` and `:end`. Everything above the
   markers belongs to the user and is never touched.
 - `CLAUDE.md` of a project root becomes a one-line bridge (`@AGENTS.md`), so
   Claude Code reads the same rules.
 - Custom rules have a target: `file` writes them into `AGENTS.md`/`CLAUDE.md`
   (terminal agents read them too), `session` passes them only to agents started
-  from BB and writes nothing to disk, `both` does both. Choose `session` for
+  from VesnALIA and writes nothing to disk, `both` does both. Choose `session` for
   routing and delegation talk that has no business in a repository.
 - The startup instruction is a one-shot line added to the first message of
   every new chat in that place. It never lands in a file and never repeats.
@@ -53,23 +53,23 @@ instruction still takes its template from the project.
 
 ```sh
 # Read what a place has now. A dash is the project root.
-bb project-folders rules show <project-id> <folder-id-or-dash> --json
+alia project-folders rules show <project-id> <folder-id-or-dash> --json
 
 # Give a section its own template.
-bb project-folders rules set <project-id> <folder-id> \
+alia project-folders rules set <project-id> <folder-id> \
   --mode custom --template "<markdown>" --json
 
 # Long text is easier from a file the agent just wrote.
-bb project-folders rules set <project-id> <folder-id> \
+alia project-folders rules set <project-id> <folder-id> \
   --mode custom --template-file /abs/path/rules.md --host <host-id> --json
 
 # A project: --template is the project's own, --sections-template is what its
 # new sections start from.
-bb project-folders rules set <project-id> - \
+alia project-folders rules set <project-id> - \
   --mode custom --template "<markdown>" --sections-template "<markdown>" --json
 
-# Rules for BB sessions only, plus a startup instruction.
-bb project-folders rules set <project-id> <folder-id> \
+# Rules for ALIA sessions only, plus a startup instruction.
+alia project-folders rules set <project-id> <folder-id> \
   --custom "Ask the owner before deploying." --target session \
   --startup "Report the service status first." --json
 ```
@@ -78,7 +78,7 @@ Flags that are not passed keep their current value, so a second call can add a
 startup instruction without repeating the template. `rules show` after a `set`
 returns the stored record — read it back instead of assuming.
 
-Resolve ids with `bb project-folders list --json`. `--host` selects which copy
+Resolve ids with `alia project-folders list --json`. `--host` selects which copy
 of a multi-device project the file paths are read from.
 
 ## Writing the text

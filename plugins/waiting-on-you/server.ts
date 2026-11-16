@@ -1,7 +1,7 @@
-// bb-plugin-waiting-on-you — backend entry. The block reads threads from the sidebar's
+// alia-plugin-waiting-on-you — backend entry. The block reads threads from the sidebar's
 // live view in app.tsx. The server only keeps the plugin's settings.
 //
-// Settings live in plugin storage rather than bb.settings: bb renders its
+// Settings live in plugin storage rather than alia.settings: VesnALIA renders its
 // declarative form above every plugin section, and the settings page needs
 // the live preview on top. A realtime signal keeps every open window current.
 import {
@@ -9,8 +9,8 @@ import {
   defineCli,
   defineRpcContract,
   PluginCliError,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   ALIGNS,
@@ -213,9 +213,9 @@ function importPatch(raw: unknown): {
 
 const SETTINGS_KEY = "settings";
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function readSettings(): Promise<InboxSettings> {
-    const stored = await bb.storage.kv.get<unknown>(SETTINGS_KEY);
+    const stored = await alia.storage.kv.get<unknown>(SETTINGS_KEY);
     // parseSettings falls back field by field, so a value from an older
     // version, or one that no longer validates, resets alone.
     const current =
@@ -227,8 +227,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function writeSettings(next: InboxSettings): Promise<InboxSettings> {
     const valid = settingsSchema.parse(next);
-    await bb.storage.kv.set(SETTINGS_KEY, valid);
-    bb.realtime.publish(SETTINGS_CHANGED, valid);
+    await alia.storage.kv.set(SETTINGS_KEY, valid);
+    alia.realtime.publish(SETTINGS_CHANGED, valid);
     return valid;
   }
 
@@ -251,7 +251,7 @@ export default async function plugin(bb: BbPluginApi) {
     return run;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     settings_get: () => readSettings(),
     settings_update: (patch) =>
       serially(async () => writeSettings(applyPatch(await readSettings(), patch))),
@@ -259,9 +259,9 @@ export default async function plugin(bb: BbPluginApi) {
     settings_import: (raw) => serially(() => importSettings(raw)),
   });
 
-  // `bb waiting-on-you …`: the same import and export from a terminal. run executes on
-  // the bb server, so JSON travels as text, never as a path on some disk.
-  bb.cli.register(
+  // `alia waiting-on-you …`: the same import and export from a terminal. run executes on
+  // the VesnALIA server, so JSON travels as text, never as a path on some disk.
+  alia.cli.register(
     defineCli({
       name: "waiting-on-you",
       summary: "Export, import, or reset the Waiting On You plugin's settings",
@@ -276,7 +276,7 @@ export default async function plugin(bb: BbPluginApi) {
         }),
         import: cliCommand({
           summary:
-            'Apply settings from JSON, whole or partial: bb waiting-on-you import --json "$(cat waiting-on-you.json)"',
+            'Apply settings from JSON, whole or partial: VesnALIA waiting-on-you import --json "$(cat waiting-on-you.json)"',
           options: {
             json: {
               type: "string",
@@ -294,7 +294,7 @@ export default async function plugin(bb: BbPluginApi) {
                 `not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`,
                 {
                   code: "invalid_json",
-                  hint: 'Pass the file contents: bb waiting-on-you import --json "$(cat waiting-on-you.json)"',
+                  hint: 'Pass the file contents: VesnALIA waiting-on-you import --json "$(cat waiting-on-you.json)"',
                 },
               );
             }
@@ -327,5 +327,5 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

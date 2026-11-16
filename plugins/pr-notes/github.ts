@@ -213,7 +213,7 @@ export function githubClient(lifecycle: AbortSignal) {
       const error = cause instanceof Error ? cause : new Error(String(cause));
       if ("code" in error && error.code === "ENOENT")
         throw new Error(
-          "GitHub CLI is missing. Install gh and run gh auth login on the BB server.",
+          "GitHub CLI is missing. Install gh and run gh auth login on the VesnALIA server.",
         );
       if ("killed" in error && error.killed)
         throw new Error(
@@ -224,7 +224,7 @@ export function githubClient(lifecycle: AbortSignal) {
           ? error.stderr.trim().slice(0, 500)
           : error.message.slice(0, 500);
       throw new Error(
-        `GitHub request failed. Check the connection and GitHub access on the BB server, then try again. ${message}`,
+        `GitHub request failed. Check the connection and GitHub access on the VesnALIA server, then try again. ${message}`,
       );
     }
   }

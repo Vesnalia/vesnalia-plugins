@@ -24,14 +24,14 @@ afterEach(() => {
 describe("resolveMonoFont", () => {
   it("puts the bundled symbol font last, behind every installed option", () => {
     const stack = resolveMonoFont(stubFontMono('"Fira Code", monospace'));
-    expect(stack.endsWith('"BB FT Nerd Symbols"')).toBe(true);
+    expect(stack.endsWith('"VesnALIA FT Nerd Symbols"')).toBe(true);
   });
 
   it("asks for an installed Nerd Font before anything else", () => {
     const stack = resolveMonoFont(stubFontMono('"Fira Code", monospace'));
     expect(stack.startsWith('"JetBrainsMono Nerd Font Mono"')).toBe(true);
     expect(stack.indexOf("JetBrainsMono Nerd Font Mono")).toBeLessThan(
-      stack.indexOf("BB FT Nerd Symbols"),
+      stack.indexOf("VesnALIA FT Nerd Symbols"),
     );
   });
 
@@ -46,12 +46,12 @@ describe("resolveMonoFont", () => {
     // A literal var() reaches xterm as text and invalidates the declaration.
     const stack = resolveMonoFont(stubFontMono("var(--something-else)"));
     expect(stack).not.toContain("var(");
-    expect(stack.endsWith('"BB FT Nerd Symbols"')).toBe(true);
+    expect(stack.endsWith('"VesnALIA FT Nerd Symbols"')).toBe(true);
   });
 
   it("still yields a usable stack when the host declares no mono token", () => {
     const stack = resolveMonoFont(stubFontMono(""));
     expect(stack).toContain("ui-monospace");
-    expect(stack.endsWith('"BB FT Nerd Symbols"')).toBe(true);
+    expect(stack.endsWith('"VesnALIA FT Nerd Symbols"')).toBe(true);
   });
 });

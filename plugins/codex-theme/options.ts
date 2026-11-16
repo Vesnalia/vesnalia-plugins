@@ -1,13 +1,13 @@
-// Optional changes, from Jaryd Diamond's bb-codex. Each one is a boolean plugin
+// Optional changes, from Jaryd Diamond's alia-codex. Each one is a boolean plugin
 // setting; when it is on, the app adds `attribute` to <html> and theme.css /
-// theme-bb.css apply the matching block. All default to off, which keeps the
+// theme-alia.css apply the matching block. All default to off, which keeps the
 // original Codex Theme look.
 export const OPTIONS = {
   welcome: {
     attribute: "data-codex-welcome",
     label: "Centered welcome on new threads",
     description:
-      "A BB logo and \"What should we build in <project>?\" above a composer near the bottom of the new-thread screen. Wide windows only.",
+      "A VesnALIA logo and \"What should we build in <project>?\" above a composer near the bottom of the new-thread screen. Wide windows only.",
   },
   composerFooter: {
     attribute: "data-codex-composer-footer",

@@ -86,7 +86,7 @@ describe("pick", () => {
     });
   });
 
-  it("uses what it learned before BB unmounted the message", () => {
+  it("uses what it learned before VesnALIA unmounted the message", () => {
     const owners = new Map<string, string | null>();
     const outline = ["u0", "u1"];
     run([row("u1", 0), row("a1", 100), row("t1", 200)], outline, all, owners);
@@ -163,7 +163,7 @@ describe("pick", () => {
     expect(run([spacer, row("x", -20, 300), unlisted(280)], outline)).toEqual({ kind: "none" });
   });
 
-  it("remembers rows under an unlisted message after BB unloads it", () => {
+  it("remembers rows under an unlisted message after VesnALIA unloads it", () => {
     const owners = new Map<string, string | null>();
     const outline = ["u0", "u1"];
     run([row("u1", -900, 60), row("a1", -840, 600), unlisted(-240), row("a2", -180, 600)], outline, all, owners);

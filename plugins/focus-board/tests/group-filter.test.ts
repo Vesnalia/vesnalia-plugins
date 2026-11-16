@@ -7,7 +7,7 @@
 // helper over the same restrict set. Persistence mirrors the other filters
 // (garbage ids simply restrict to nothing; the menu or Clear recovers).
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   NO_GROUP_BUCKET,
   filterBucketsWithoutLane,

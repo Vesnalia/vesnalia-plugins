@@ -7,7 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-vi.mock("@get-bb/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
+vi.mock("@vesnalia/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
 
 import "../app";
 import { LANE_ORDER_DIRECTIONS_KEY } from "../components/preferences";

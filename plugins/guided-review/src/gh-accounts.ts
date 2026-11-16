@@ -50,7 +50,7 @@ export async function switchGhAccount(
     const actual = await runGh(["api", "user", "--jq", ".login"]);
     const active = actual.code === 0 ? actual.stdout.trim() || null : null;
     if (active?.toLowerCase() === login.toLowerCase()) return { ok: true, active };
-    return { ok: false, active, error: "The active GitHub account did not change. Check whether GH_TOKEN or GITHUB_TOKEN overrides the saved account on the BB server." };
+    return { ok: false, active, error: "The active GitHub account did not change. Check whether GH_TOKEN or GITHUB_TOKEN overrides the saved account on the VesnALIA server." };
   }
   return { ok: false, active: null, error: r.stderr || "switch failed" };
 }

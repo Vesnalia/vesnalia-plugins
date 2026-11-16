@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../contract";
 import { Pill } from "./common";
 import { age, clock, plural } from "./format";
@@ -7,7 +7,7 @@ export const isLive = (pr: Pick<PrView, "state">) => pr.state === "open" || pr.s
 
 const DAY = 24 * 60 * 60_000;
 
-/** Each state's icon, word and colour; the colour goes on the icon only, as on bb's own PR chips. */
+/** Each state's icon, word and colour; the colour goes on the icon only, as on VesnALIA's own PR chips. */
 export const STATE_LOOKS: Record<PrView["state"], { icon: string; label: string; className: string }> = {
   open: { icon: "GitPullRequest", label: "Open", className: "text-success" },
   draft: { icon: "GitPullRequestDraft", label: "Draft", className: "text-muted-foreground" },

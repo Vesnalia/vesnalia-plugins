@@ -10,7 +10,7 @@ You can open a box's desktop from:
 - the thread's Desktop tab: it opens the thread's desktop straight away, lists them when there are several, or offers the Box panel when there is none
 - a browser tab of its own: select **Open in browser** in the box's menu
 - the Boxes page: the desktop shows on the page, with a back arrow to where you opened it: the list or the box's page
-- the Monitor's machine status in BB's sidebar: when it shows a box, select **Open** beside the box's name, then **Open desktop**. The desktop shows on the Boxes page
+- the Monitor's machine status in VesnALIA's sidebar: when it shows a box, select **Open** beside the box's name, then **Open desktop**. The desktop shows on the Boxes page
 
 The thread's Desktop tab counts the machine the thread runs on, if it is a desktop.
 
@@ -46,13 +46,13 @@ To write in another language with an input method, such as Japanese or Chinese, 
 
 ## Copying and pasting
 
-Copying and pasting between your computer and the box works while you have control. After you paste, or select Copy to this computer, a BB notification says 'Pasted' or 'Copied' for a few seconds. Notes like these come as notifications, not in the toolbar, and you can close one early.
+Copying and pasting between your computer and the box works while you have control. After you paste, or select Copy to this computer, a VesnALIA notification says 'Pasted' or 'Copied' for a few seconds. Notes like these come as notifications, not in the toolbar, and you can close one early.
 
-To paste text from your computer into the box, click where it should go and press Cmd+V on a Mac, or Ctrl+V elsewhere, into a macOS box too. In a Linux or Windows box, Ctrl+Shift+V (Cmd+Shift+V on a Mac) pastes your text too, as a terminal expects. In a macOS box, Cmd+Shift+V goes to the box as you typed it, to paste and match style. You can also select **Paste from this computer** in the toolbar's menu. BB Box reads your clipboard only when you paste, not when you take control, so a paste from the box's own menu, or a middle click, uses the box's own clipboard. Keys you type straight after a paste wait for it, so they land after the pasted text, in the order you typed them. If your browser does not let BB Box read your clipboard, a field opens: paste your text there and select **Paste into the box**.
+To paste text from your computer into the box, click where it should go and press Cmd+V on a Mac, or Ctrl+V elsewhere, into a macOS box too. In a Linux or Windows box, Ctrl+Shift+V (Cmd+Shift+V on a Mac) pastes your text too, as a terminal expects. In a macOS box, Cmd+Shift+V goes to the box as you typed it, to paste and match style. You can also select **Paste from this computer** in the toolbar's menu. VesnALIA Box reads your clipboard only when you paste, not when you take control, so a paste from the box's own menu, or a middle click, uses the box's own clipboard. Keys you type straight after a paste wait for it, so they land after the pasted text, in the order you typed them. If your browser does not let VesnALIA Box read your clipboard, a field opens: paste your text there and select **Paste into the box**.
 
-When you copy text in the box, it comes to your computer's clipboard. You can also select **Copy to this computer** in the menu. If your browser does not let BB Box write to your clipboard, a field shows the text so you can copy it yourself.
+When you copy text in the box, it comes to your computer's clipboard. You can also select **Copy to this computer** in the menu. If your browser does not let VesnALIA Box write to your clipboard, a field shows the text so you can copy it yourself.
 
-On Linux, and on any desktop shown as video, the text moves at once. Over VNC on a macOS desktop on a Mac, and on Windows, BB Box moves it with commands in the box, so it can take a moment: on Windows a few seconds, and up to about 8 seconds on Windows on a Mac.
+On Linux, and on any desktop shown as video, the text moves at once. Over VNC on a macOS desktop on a Mac, and on Windows, VesnALIA Box moves it with commands in the box, so it can take a moment: on Windows a few seconds, and up to about 8 seconds on Windows on a Mac.
 
 If nothing has come from the box, the menu's Copy says why: take control first, or copy something in the box first.
 
@@ -62,11 +62,11 @@ A box's clipboard is its own. A Mac that runs boxes as virtual machines does not
 
 Without control, your own pointer shows over the desktop. With control, the pointer takes the box's shape. If the box hides its pointer, yours shows instead, so it never disappears.
 
-People watching a desktop see where the agent works. On macOS and Windows, the box draws the agent's pointer itself. On a Linux desktop, BB Box draws it over the picture where the agent last clicked or scrolled at a place on the screen, with a ring that grows and fades at each click. It shows over VNC and over video, on X11 and Wayland, and stays where the agent last acted. While you hold control, it does not show for you. While the agent pointer shows, BB Box hides the box pointer where the display can remove it. Taking control, stopping or restarting the box clears the agent pointer; after you hand back, only the box pointer returns until the agent next acts. X11 VNC pictures with a baked pointer and no removal switch keep that pointer.
+People watching a desktop see where the agent works. On macOS and Windows, the box draws the agent's pointer itself. On a Linux desktop, VesnALIA Box draws it over the picture where the agent last clicked or scrolled at a place on the screen, with a ring that grows and fades at each click. It shows over VNC and over video, on X11 and Wayland, and stays where the agent last acted. While you hold control, it does not show for you. While the agent pointer shows, VesnALIA Box hides the box pointer where the display can remove it. Taking control, stopping or restarting the box clears the agent pointer; after you hand back, only the box pointer returns until the agent next acts. X11 VNC pictures with a baked pointer and no removal switch keep that pointer.
 
-The pointer changes shape as it does in a recording. It is a hand for 0.3 seconds after the agent clicks a link or button, and a text cursor after it clicks a text field, until it acts somewhere else. While the agent types into a text field, it is a text cursor, and stays one for 1 second after. Otherwise it is an arrow. BB Box tells what the agent clicked only from the window's elements it read for that click. Where it read none, as for a window too large to read quickly, such as a long web page, or a window clicked by its own pixels right after a screenshot of it, the pointer stays an arrow. If you open the desktop while the pointer has a shape, you see that shape for what is left of it.
+The pointer changes shape as it does in a recording. It is a hand for 0.3 seconds after the agent clicks a link or button, and a text cursor after it clicks a text field, until it acts somewhere else. While the agent types into a text field, it is a text cursor, and stays one for 1 second after. Otherwise it is an arrow. VesnALIA Box tells what the agent clicked only from the window's elements it read for that click. Where it read none, as for a window too large to read quickly, such as a long web page, or a window clicked by its own pixels right after a screenshot of it, the pointer stays an arrow. If you open the desktop while the pointer has a shape, you see that shape for what is left of it.
 
-On Linux, the pointer shows only for actions at a place on the screen. When the agent acts on an element by its reference, BB Box cannot be sure where that element is on the screen, so the pointer does not move, and a recording shows no ring or zoom for it. Typing by reference keeps its Typing pill, and a recording zooms to it only where the screen changed as it typed.
+On Linux, the pointer shows only for actions at a place on the screen. When the agent acts on an element by its reference, VesnALIA Box cannot be sure where that element is on the screen, so the pointer does not move, and a recording shows no ring or zoom for it. Typing by reference keeps its Typing pill, and a recording zooms to it only where the screen changed as it typed.
 
 ## Video
 
@@ -78,13 +78,13 @@ A macOS desktop on a Mac of the SSH host pool opens as video. One on a Tart Mac 
 
 A Linux desktop on a GPU opens over VNC, with **Show as VNC** ticked. Select it to see the desktop as video, encoded on the box's GPU (NVENC). This needs a GPU box made from a recent image; an older one shows over VNC only.
 
-A Windows desktop on a Mac opens as video, as one on Proxmox does. The Mac makes the video from QEMU's own display of the desktop, rather than Windows capturing it, so it never tears and uses far less bandwidth than VNC. Where the box's QEMU does not offer that display, the Mac makes the video from QEMU's VNC picture instead. People watching see the agent's pointer, over video and over VNC. This needs a box made from a recent image, and Xcode's Command Line Tools on the Mac; `bb box doctor` says when a Mac lacks them.
+A Windows desktop on a Mac opens as video, as one on Proxmox does. The Mac makes the video from QEMU's own display of the desktop, rather than Windows capturing it, so it never tears and uses far less bandwidth than VNC. Where the box's QEMU does not offer that display, the Mac makes the video from QEMU's VNC picture instead. People watching see the agent's pointer, over video and over VNC. This needs a box made from a recent image, and Xcode's Command Line Tools on the Mac; `alia box doctor` says when a Mac lacks them.
 
 A Linux desktop on Wayland, which runs Ubuntu 26.04, also opens as video, which follows a drag more closely than VNC, does not tear while you scroll, and uses about a sixth of the bandwidth, though a key on its own shows a little later. This needs a Wayland box made from a recent image; an older one shows over VNC. High resolution is not offered on Wayland.
 
-If the video cannot start, the desktop shows over VNC, and a notification says 'Video did not start, so this shows VNC.', with why under it: for example, the box was made before video came, or your browser cannot decode video, which needs a secure connection to BB. On a page that is not secure, such as BB at a plain http address on your network, a desktop opens over VNC, and the viewer says so once.
+If the video cannot start, the desktop shows over VNC, and a notification says 'Video did not start, so this shows VNC.', with why under it: for example, the box was made before video came, or your browser cannot decode video, which needs a secure connection to VesnALIA. On a page that is not secure, such as VesnALIA at a plain http address on your network, a desktop opens over VNC, and the viewer says so once.
 
-Everything else works the same with video: taking control, copying and pasting, your keyboard, the pointer and the desktop's size. Copying and pasting carry images too, both ways: paste an image into the box, or copy one there and it comes to your computer. If your browser does not let BB Box write an image to your clipboard, the image shows so you can right-click it and copy it. On Windows, a pasted image reaches the box's clipboard as the very file you pasted, not compressed again, which browsers and Office paste, and as a picture for apps that take only that; this needs a box made from a recent image. On a Mac it is the same; this needs a Tart Mac made from a recent image, or a pool Mac whose owner has run setup-mac.sh again since.
+Everything else works the same with video: taking control, copying and pasting, your keyboard, the pointer and the desktop's size. Copying and pasting carry images too, both ways: paste an image into the box, or copy one there and it comes to your computer. If your browser does not let VesnALIA Box write an image to your clipboard, the image shows so you can right-click it and copy it. On Windows, a pasted image reaches the box's clipboard as the very file you pasted, not compressed again, which browsers and Office paste, and as a picture for apps that take only that; this needs a box made from a recent image. On a Mac it is the same; this needs a Tart Mac made from a recent image, or a pool Mac whose owner has run setup-mac.sh again since.
 
 ### The pointer over video
 
@@ -124,7 +124,7 @@ The screen tells you why, and what you can do. It uses the box's name, here calm
 | The connection to the desktop ended. Trying again in 4 s | wait, or select **Reconnect now** |
 | calm-otter is stopped. | select **Start**, where the box can start again |
 | calm-otter is starting… | wait: the desktop shows once the box is ready |
-| This box has been released. | close the tab, or, on the Boxes page, select **Back to boxes** or **Back to BB Box settings** |
+| This box has been released. | close the tab, or, on the Boxes page, select **Back to boxes** or **Back to VesnALIA Box settings** |
 
 After a lost connection, the viewer tries again by itself, waiting a little longer each time, up to 15 seconds. **Reconnect** in the toolbar or its menu tries at once.
 
@@ -144,5 +144,5 @@ Where the platform marks a field as a password field, the agent never reads what
 | --- | --- |
 | Android and iOS | `secure text field "Password" = "(hidden)"` |
 | Linux, on X11 and Wayland | `password text "Password"`, with no value. A field with no name, whose dots would stand in for one, reads as `password text "(hidden)"` |
-| macOS | an ordinary text field, `AXTextField`: nothing marks it as a password field, so BB Box cannot hide its value |
+| macOS | an ordinary text field, `AXTextField`: nothing marks it as a password field, so VesnALIA Box cannot hide its value |
 | Windows | an ordinary text field, `Edit`: nothing marks it as a password field, so its value shows as the app gives it. Edge gives a dot for each character, so the length shows |

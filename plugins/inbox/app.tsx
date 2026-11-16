@@ -1,4 +1,4 @@
-// bb-plugin-inbox — frontend entry.
+// alia-plugin-inbox — frontend entry.
 //
 // A "Needs You" inbox: nav panel + homepage section + sidebar count badge.
 // Lists threads that need you, ranked error > blocked > finished, each a
@@ -6,12 +6,12 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { BbNavigate } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { AliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -41,7 +41,7 @@ interface Item {
 }
 
 function itemKey(item: { id?: string; threadId?: string }): string { return item.id ?? item.threadId ?? ""; }
-function openItem(nav: BbNavigate, item: { href?: string; threadId?: string }) {
+function openItem(nav: AliaNavigate, item: { href?: string; threadId?: string }) {
   if (isActivityHref(item.href)) window.location.assign(item.href);
   else if (item.threadId) openThread(nav, item.threadId);
 }
@@ -76,10 +76,10 @@ function relativeTime(ms: number): string {
   return `${Math.round(hr / 24)}d`;
 }
 
-// Bring the opened thread's sidebar row into view. bb's sidebar has two thread
+// Bring the opened thread's sidebar row into view. VesnALIA's sidebar has two thread
 // lists and only one self-scrolls:
 //   1. The search list renders each row as a listbox option with a per-thread id
-//      (`bb-sidebar-thread-search-results-option-<threadId>`) and scrolls the
+//      (`alia-sidebar-thread-search-results-option-<threadId>`) and scrolls the
 //      active one into view itself.
 //   2. The default list is a shadcn sidebar: rows are
 //      `<button data-sidebar="menu-button" aria-current="page">` when active,
@@ -90,7 +90,7 @@ function relativeTime(ms: number): string {
 // beat after we navigate, and we skip the row that was active *before* the jump
 // so we don't scroll to the thread we're leaving. scrollIntoView({block:"nearest"})
 // is a no-op when the row is already visible, so this never fights the host.
-const SIDEBAR_THREAD_LISTBOX_ID = "bb-sidebar-thread-search-results";
+const SIDEBAR_THREAD_LISTBOX_ID = "alia-sidebar-thread-search-results";
 const ACTIVE_SIDEBAR_ROW_SELECTOR =
   '[data-sidebar="menu-button"][aria-current="page"]';
 
@@ -125,7 +125,7 @@ function revealThreadInSidebar(threadId: string): void {
 }
 
 // Open a thread from the inbox, then bring its sidebar row into view.
-function openThread(nav: BbNavigate, threadId: string): void {
+function openThread(nav: AliaNavigate, threadId: string): void {
   nav.toThread(threadId);
   revealThreadInSidebar(threadId);
 }
@@ -217,7 +217,7 @@ function ItemRow({ item, onOpen, onDismiss, dismissing }: {
 type InboxActions = Pick<ReturnType<typeof useInbox>, "dismiss" | "dismissing">;
 
 function ItemList({ items, dismiss, dismissing }: { items: Item[] } & InboxActions) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   return (
     <ul className="ny-rows">
       {items.map(item => <ItemRow key={itemKey(item)} item={item}
@@ -261,7 +261,7 @@ function EmptyInbox() {
 
 function InboxPanel({ subPath = "" }: { subPath?: string }) {
   const setup = useSetup();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [view, setCurrentView] = useState<"inbox" | "cleaner" | "settings">(subPath === "settings" ? "settings" : subPath === "cleaner" ? "cleaner" : "inbox");
   useEffect(() => setCurrentView(subPath === "settings" ? "settings" : subPath === "cleaner" ? "cleaner" : "inbox"), [subPath]);
   const setView = (next: "inbox" | "cleaner" | "settings") => {
@@ -327,7 +327,7 @@ function InboxPanel({ subPath = "" }: { subPath?: string }) {
 // A smaller version of the same inbox on the new-thread screen.
 function HomepageInbox() {
   const inbox = useInbox(false);
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const items = (inbox.data?.items ?? []).slice(0, 5);
   const actions = { dismiss: inbox.dismiss, dismissing: inbox.dismissing };
   if (!inbox.error && (inbox.loading && !inbox.data || items.length === 0)) return null;
@@ -407,10 +407,10 @@ function ToastContent({ event }: { event: ToastEvent }) {
   </>;
 }
 
-// Uses BB's existing Sonner host and lifecycle, with plugin-scoped presentation.
+// Uses VesnALIA's existing Sonner host and lifecycle, with plugin-scoped presentation.
 function NeedsYouToaster() {
-  const nav = useBbNavigate();
-  const { threadId: activeThreadId } = useBbContext();
+  const nav = useAliaNavigate();
+  const { threadId: activeThreadId } = useAliaContext();
   const navRef = useRef(nav);
   const activeThreadRef = useRef(activeThreadId);
   const visibleToasts = useRef(new Map<string, ToastEvent>());

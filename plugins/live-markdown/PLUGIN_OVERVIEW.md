@@ -17,8 +17,8 @@ Changes save about one second after you stop typing, and Ctrl/Cmd+S saves at onc
 
 ## Default opener
 
-On install, Live Markdown becomes the opener for `.md`, `.mdx`, and `.markdown` files in each browser, the first time bb loads there, for any of those types you have not already assigned. It never replaces a choice you made. Change it any time under Settings → File openers, or right-click a file link and pick Open with.
+On install, Live Markdown becomes the opener for `.md`, `.mdx`, and `.markdown` files in each browser, the first time VesnALIA loads there, for any of those types you have not already assigned. It never replaces a choice you made. Change it any time under Settings → File openers, or right-click a file link and pick Open with.
 
 ## Requirements
 
-bb 0.43 or later. No account or external service. Files over 4 MB, or not UTF-8, open in bb's own preview.
+VesnALIA 0.43 or later. No account or external service. Files over 4 MB, or not UTF-8, open in VesnALIA's own preview.

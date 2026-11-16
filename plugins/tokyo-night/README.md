@@ -1,37 +1,37 @@
-# Tokyo Night for bb
+# Tokyo Night for VesnALIA
 
-Two Tokyo Night palettes for the [bb](https://getbb.app) interface:
+Two Tokyo Night palettes for the [VesnALIA](https://getbb.app) interface:
 
 | Theme | Dark base | Notes |
 | --- | --- | --- |
 | **Tokyo Night** | `#1a1b26` | The original — deep indigo. |
 | **Tokyo Night Storm** | `#24283b` | Lighter, bluer base; identical accents. |
 
-bb folds both modes into a single palette, so every variant ships the upstream
+VesnALIA folds both modes into a single palette, so every variant ships the upstream
 **Tokyo Night Light** (`#d5d6db` / `#343b58`) for light mode. Switching light/dark
-is a per-client bb setting, independent of which palette is active.
+is a per-client VesnALIA setting, independent of which palette is active.
 
 ## Install
 
 ```sh
-bb plugin install tokyo-night
+alia plugin install tokyo-night
 ```
 
 Then pick a palette in **Settings → Appearance**, or:
 
 ```sh
-bb theme set plugin:tokyo-night:tokyo-night-storm
+alia theme set plugin:tokyo-night:tokyo-night-storm
 ```
 
 ## Development
 
 ```sh
-bb plugin build .
-bb plugin install .
-bb plugin reload tokyo-night   # after editing themes/*.css
+alia plugin build .
+alia plugin install .
+alia plugin reload tokyo-night   # after editing themes/*.css
 ```
 
-Each palette is a plain stylesheet in `themes/` that overrides bb's design
+Each palette is a plain stylesheet in `themes/` that overrides VesnALIA's design
 tokens — the two anchors (`--canvas`, `--ink`), the accent, the text tiers, and
 the semantic colors. Every neutral surface and border derives from the anchors.
 

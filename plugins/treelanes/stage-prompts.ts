@@ -1,6 +1,6 @@
 import type { StageId } from "./workflow";
 
-export const DELIVERY_SKILL_INSTRUCTION = "Use /delivery. Read its current files with `bb skill list` and `bb skill show <id> [--path <relative-file>]`; cached copies may be old.";
+export const DELIVERY_SKILL_INSTRUCTION = "Use /delivery. Read its current files with `alia skill list` and `alia skill show <id> [--path <relative-file>]`; cached copies may be old.";
 
 export const IMPLEMENTATION_GUIDE = "Use /ponytail with the stage skill (full unless changed or stopped). Read what this task needs; deliver the smallest correct change through its required checks.";
 

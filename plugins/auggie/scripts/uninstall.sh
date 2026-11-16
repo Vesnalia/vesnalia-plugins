@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Remove the auggie customAcpAgents entry from ~/.bb/config.json.
+# Remove the auggie customAcpAgents entry from ~/.vesnalia/config.json.
 set -euo pipefail
 
-BB_DATA_DIR="${BB_DATA_DIR:-$HOME/.bb}"
-CONFIG_PATH="$BB_DATA_DIR/config.json"
+ALIA_DATA_DIR="${ALIA_DATA_DIR:-$HOME/.alia}"
+CONFIG_PATH="$ALIA_DATA_DIR/config.json"
 AGENT_ID="${1:-auggie}"
-LOGO_DST="$BB_DATA_DIR/auggie-logo.svg"
+LOGO_DST="$ALIA_DATA_DIR/auggie-logo.svg"
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "error: jq is required (brew install jq)" >&2
@@ -29,7 +29,7 @@ else
       | if (.customAcpAgents | length) == 0 then del(.customAcpAgents) else . end
     ' <<<"$CURRENT"
   )"
-  TMP="$(mktemp "${BB_DATA_DIR}/.config.json.XXXXXX")"
+  TMP="$(mktemp "${ALIA_DATA_DIR}/.config.json.XXXXXX")"
   umask 077
   printf '%s\n' "$(jq '.' <<<"$NEXT")" >"$TMP"
   mv "$TMP" "$CONFIG_PATH"
@@ -42,4 +42,4 @@ if [[ -f "$LOGO_DST" ]]; then
   echo "removed $LOGO_DST"
 fi
 
-echo "restart bb (or bb-app config refresh) so the provider disappears from the list"
+echo "restart alia (or alia-app config refresh) so the provider disappears from the list"

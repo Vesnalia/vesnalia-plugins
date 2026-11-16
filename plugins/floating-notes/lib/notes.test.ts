@@ -166,10 +166,10 @@ describe("alignColumns", () => {
   it("pads every column but the last to the widest cell", () => {
     expect(
       alignColumns([
-        ["a", "bb", "c"],
+        ["a", "alia", "c"],
         ["dd", "e", "f"],
       ]),
-    ).toBe("a   bb  c\ndd  e   f");
+    ).toBe("a   VesnALIA  c\ndd  e   f");
   });
   it("trims trailing whitespace when the last cell is empty", () => {
     expect(alignColumns([["id", ""]])).toBe("id");

@@ -1,4 +1,4 @@
-// bb-plugin-polza — frontend entry (interpreted by the bb app).
+// alia-plugin-polza — frontend entry (interpreted by the VesnALIA app).
 //
 // Three surfaces: the settings page (sign in, account, picker models), a
 // sidebar footer disclosure with the balance, and a card above a Polza
@@ -9,10 +9,10 @@ import {
   definePluginApp,
   experimental_useThreadExtensionState as useThreadExtensionState,
   type ExperimentalThreadContextSegmentProps,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { polzaRpcContract } from "./server";
 import type { PolzaStatus } from "./src/polza/rpc";
 import {
@@ -73,7 +73,7 @@ function SignInBlock({
   rpc: Rpc;
   onChanged: (next: PolzaStatus) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pasted, setPasted] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +119,7 @@ function SignInBlock({
       <p className="mt-1 text-sm text-muted-foreground">
         A browser tab opens the Polza consent page. Pick the organisation that
         pays and a spend limit for the key (Polza suggests 100 ₽ per day; raise
-        it for agent work). The key is stored on the bb server only.
+        it for agent work). The key is stored on the VesnALIA server only.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button onClick={start} disabled={busy}>
@@ -135,7 +135,7 @@ function SignInBlock({
       {pending ? (
         <form onSubmit={complete} className="mt-4 space-y-2">
           <p className="text-xs text-muted-foreground">
-            If the browser could not reach this bb server after consent, copy the
+            If the browser could not reach this VesnALIA server after consent, copy the
             address it tried to open (or just the <code>code</code> value) and
             paste it here.
           </p>
@@ -198,7 +198,7 @@ function AccountBlock({
   onChanged: (next: PolzaStatus) => void;
   onRefresh: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState(false);
   const { account } = status;
   const who = account.user?.email ?? account.user?.name ?? "Polza account";
@@ -514,7 +514,7 @@ function PolzaSettings() {
 
 function BalanceDisclosure({ dismiss }: { dismiss(): void }) {
   const { status, error, refetch } = useStatus();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const account = status?.account;
   return (
     <div className="w-72 max-w-full space-y-3 p-3 text-sm">

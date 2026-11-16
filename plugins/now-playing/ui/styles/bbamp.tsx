@@ -1,4 +1,4 @@
-// bb-amp: a skin after the desktop MP3 players of around 2000. A skin keeps
+// alia-amp: a skin after the desktop MP3 players of around 2000. A skin keeps
 // its own colors in every theme; the accent sets the color of the screen text.
 import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
@@ -58,7 +58,7 @@ export function BbampStyle({ player, actions, accent }: StyleProps) {
       : formatTime(positionSec);
   const title =
     track === null
-      ? `BB-AMP - ${appName.toUpperCase()}`
+      ? `ALIA-AMP - ${appName.toUpperCase()}`
       : `1. ${track.artist} - ${track.name} (${formatTime(track.durationSec)})`.toUpperCase();
   const vars = { "--wa-lcd": lcd.hi, "--wa-lcd-dim": lcd.dim } as CSSProperties;
 
@@ -67,7 +67,7 @@ export function BbampStyle({ player, actions, accent }: StyleProps) {
       <div aria-hidden="true" className="flex h-3 items-center gap-[5px]">
         <span className="np-wa-chip size-2 shrink-0" />
         <span className="np-wa-stripes h-[7px] flex-1" />
-        <span className="np-silk text-[8px] leading-[10px] tracking-[0.12em] text-[#e6e6f2]">BB-AMP</span>
+        <span className="np-silk text-[8px] leading-[10px] tracking-[0.12em] text-[#e6e6f2]">ALIA-AMP</span>
         <span className="np-wa-stripes h-[7px] flex-1" />
         <span className="flex shrink-0 gap-[2px]">
           <span className="np-wa-tiny size-2" />

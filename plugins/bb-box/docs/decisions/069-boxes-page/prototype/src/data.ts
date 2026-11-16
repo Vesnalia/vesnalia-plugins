@@ -31,7 +31,7 @@ export interface Load {
   readonly busyFrom?: number;
 }
 
-export type Actor = { readonly kind: "you" } | { readonly kind: "agent"; readonly threadId: string } | { readonly kind: "command" } | { readonly kind: "bb-box"; readonly why: string } | { readonly kind: "outside" } | null;
+export type Actor = { readonly kind: "you" } | { readonly kind: "agent"; readonly threadId: string } | { readonly kind: "command" } | { readonly kind: "alia-box"; readonly why: string } | { readonly kind: "outside" } | null;
 
 export interface Stop {
   readonly from: number;
@@ -146,7 +146,7 @@ function baseBoxes(now: number): FakeBox[] {
         { pid: 1890, name: "Xvnc", cpu: 6.1, memoryMiB: 210 },
         { pid: 2650, name: "node", cpu: 4.4, memoryMiB: 512 },
         { pid: 2219, name: "chromium-renderer", cpu: 2.0, memoryMiB: 690 },
-        { pid: 1402, name: "bb-daemon", cpu: 0.6, memoryMiB: 96 },
+        { pid: 1402, name: "alia-daemon", cpu: 0.6, memoryMiB: 96 },
         { pid: 1, name: "systemd", cpu: 0.1, memoryMiB: 14 },
       ],
       view: view({
@@ -173,7 +173,7 @@ function baseBoxes(now: number): FakeBox[] {
         { pid: 4410, name: "cargo", cpu: 388.0, memoryMiB: 2_900 },
         { pid: 4471, name: "rustc", cpu: 297.5, memoryMiB: 3_400 },
         { pid: 4472, name: "rustc", cpu: 96.1, memoryMiB: 1_100 },
-        { pid: 1402, name: "bb-daemon", cpu: 0.8, memoryMiB: 101 },
+        { pid: 1402, name: "alia-daemon", cpu: 0.8, memoryMiB: 101 },
         { pid: 980, name: "dockerd", cpu: 0.3, memoryMiB: 88 },
         { pid: 1, name: "systemd", cpu: 0.1, memoryMiB: 14 },
       ],
@@ -201,7 +201,7 @@ function baseBoxes(now: number): FakeBox[] {
         { pid: 51110, name: "CheckoutApp", cpu: 5.2, memoryMiB: 340 },
         { pid: 51031, name: "SpringBoard", cpu: 1.8, memoryMiB: 210 },
         { pid: 50990, name: "device-server", cpu: 1.1, memoryMiB: 64 },
-        { pid: 50970, name: "bb-daemon", cpu: 0.4, memoryMiB: 92 },
+        { pid: 50970, name: "alia-daemon", cpu: 0.4, memoryMiB: 92 },
         { pid: 51040, name: "backboardd", cpu: 0.3, memoryMiB: 48 },
       ],
       view: view({
@@ -321,7 +321,7 @@ function baseBoxes(now: number): FakeBox[] {
         { pid: 3011, name: "node", cpu: 6.3, memoryMiB: 820 },
         { pid: 2950, name: "Xvnc", cpu: 2.2, memoryMiB: 180 },
         { pid: 3122, name: "python3", cpu: 1.9, memoryMiB: 410 },
-        { pid: 1402, name: "bb-daemon", cpu: 0.9, memoryMiB: 120 },
+        { pid: 1402, name: "alia-daemon", cpu: 0.9, memoryMiB: 120 },
         { pid: 980, name: "dockerd", cpu: 0.4, memoryMiB: 90 },
         { pid: 1, name: "systemd", cpu: 0.1, memoryMiB: 14 },
       ],
@@ -345,7 +345,7 @@ function baseBoxes(now: number): FakeBox[] {
       threadId: OPERATOR,
       owner: "yours",
       onMachine: [],
-      readingNote: "bb-box reads a Windows box only when it is a BB machine, and this one's enrolment is off.",
+      readingNote: "alia-box reads a Windows box only when it is a VesnALIA machine, and this one's enrolment is off.",
       load: { cpu: 0, memory: 0, diskUsedGiB: 0, diskGiB: 80, memoryGiB: 8, cores: 4, rxKiB: 0, txKiB: 0 },
       processes: [],
       view: view({

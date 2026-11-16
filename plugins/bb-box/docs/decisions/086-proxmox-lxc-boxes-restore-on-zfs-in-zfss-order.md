@@ -28,7 +28,7 @@ reboot is not: the node runs everything else.
   not by the live-check switch. The switch stays, for checks on LVM-thin.
 - A restore to a snapshot with a newer one is refused before the box
   stops, with the count, and says to fork it or delete the newer ones
-  first. bb-box never deletes newer snapshots to make a restore possible.
+  first. alia-box never deletes newer snapshots to make a restore possible.
 - A snapshot is newer if Proxmox took it in a later second. Proxmox
   records the time in whole seconds, so two snapshots can share one. Then
   the snapshot's parent chain, which Proxmox keeps in each snapshot's

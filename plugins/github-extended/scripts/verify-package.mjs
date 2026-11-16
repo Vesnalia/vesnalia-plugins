@@ -19,14 +19,14 @@ const commandText = (result) =>
   [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
 
 const manifest = JSON.parse(read("package.json"));
-if (manifest.bb?.app !== "./src/app.tsx" || manifest.bb?.server !== "./src/server.ts") {
-  fail("bb.app and bb.server must point to canonical TypeScript sources");
+if (manifest.alia?.app !== "./src/app.tsx" || manifest.alia?.server !== "./src/server.ts") {
+  fail("alia.app and alia.server must point to canonical TypeScript sources");
 }
 if (!manifest.files.includes("src") || manifest.files.some((entry) => entry.includes("recovery"))) {
   fail("package files must include src and exclude recovery references");
 }
-if (!manifest.files.includes("skills") || !Array.isArray(manifest.bb?.skills) || !manifest.bb.skills.includes("skills")) {
-  fail("package must ship the skills directory and declare it under bb.skills");
+if (!manifest.files.includes("skills") || !Array.isArray(manifest.alia?.skills) || !manifest.alia.skills.includes("skills")) {
+  fail("package must ship the skills directory and declare it under alia.skills");
 }
 if (!existsSync(resolve(root, "skills/github-automation/SKILL.md"))) {
   fail("skills/github-automation/SKILL.md is missing");

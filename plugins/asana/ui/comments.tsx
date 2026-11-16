@@ -1,7 +1,7 @@
 // Comments: the timeline and the composer.
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
-import { Markdown, useRpc } from "@get-bb/plugin-sdk/app";
+import { Markdown, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Attachment, rpcContract, TaskDetail, LinkedThread } from "../server";
 import { formatAgo } from "../due";
 import { draftFromSummary, joinHints, oversharingHints } from "../drafts";

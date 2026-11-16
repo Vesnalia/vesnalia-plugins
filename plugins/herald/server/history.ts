@@ -14,7 +14,7 @@ import type { Log } from "./ports";
 
 export const HISTORY_PREFIX = "history:";
 
-/** The part of `bb.storage.kv` the history uses. */
+/** The part of `alia.storage.kv` the history uses. */
 export interface HistoryKv {
   get<T>(key: string): Promise<T | undefined>;
   set(key: string, value: unknown): Promise<void>;

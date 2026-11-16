@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { cowHostContract, cowHostSignals, type CowProgress } from "./contract.js";

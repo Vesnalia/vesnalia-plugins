@@ -7,7 +7,7 @@ import { gitBinSearchDirs } from "./i18n.ts";
 
 /**
  * execFile as a promise of `{ stdout, stderr }`, built on the plain callback.
- * `promisify(execFile)` depends on execFile's custom promisify hook; in the BB
+ * `promisify(execFile)` depends on execFile's custom promisify hook; in the VesnALIA
  * host worker on Windows it resolved without `stdout`, so every git read came
  * back undefined. A failure carries `stdout`/`stderr` like promisify's does.
  */
@@ -52,7 +52,7 @@ export async function runGit(
   });
 }
 
-/** git для host-процесса и для раскладки на сервер BB: PATH launchd часто пуст. */
+/** git для host-процесса и для раскладки на сервер VesnALIA: PATH launchd часто пуст. */
 export async function resolveGitBin(home = os.homedir()): Promise<string | null> {
   for (const dir of gitBinSearchDirs(process.env.PATH ?? "", home, path.delimiter)) {
     for (const name of binCandidates("git")) {

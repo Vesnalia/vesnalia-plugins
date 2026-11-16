@@ -1,6 +1,6 @@
 import type { Ref } from "react";
 import type { ListFilter } from "./filter";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Hint } from "./hint";
 import { STATE_LABEL, type RowState, type StateCounts } from "./status";
 import { StatusGlyph } from "./status-glyph";

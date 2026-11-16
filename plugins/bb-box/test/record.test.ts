@@ -285,7 +285,7 @@ test("a result stays until the next step, and captions fade in and out over 0.2 
 
 test("on Windows box_record runs ffmpeg's gdigrab hidden, and stop closes its console before it would force it, then captions and makes the clip as elsewhere (059)", () => {
   const start = recordStartScript("windows", "bottom");
-  assert.match(start, /Join-Path \$HOME '\.local\\state\\bb-box\\recording'/);
+  assert.match(start, /Join-Path \$HOME '\.local\\state\\alia-box\\recording'/);
   assert.match(start, /Start-Process \$ffmpeg -WindowStyle Hidden -PassThru -RedirectStandardError "\$d\\log"/);
   assert.match(start, /-f gdigrab -framerate 15 -draw_mouse ' \+ \$draw \+ ' -i desktop -t 300 -c:v libx264 -preset ultrafast -crf 0 /);
   assert.match(start, /\$draw = if \(\$mode -eq 'drawn'\) \{ 0 \} else \{ 1 \}/, "the screen's own pointer left out only where the sampler runs");

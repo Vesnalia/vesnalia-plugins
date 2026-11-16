@@ -44,13 +44,13 @@ describe("theme conformance", () => {
     expect(body).toBeDefined();
     expect(body).not.toMatch(/line-clamp|overflow: hidden|text-overflow|white-space: nowrap/);
     expect(body).toMatch(/overflow-wrap: anywhere/);
-    // bb's ThreadTitle puts each run of text in a `truncate whitespace-pre` span, which never wraps on its own.
+    // VesnALIA's ThreadTitle puts each run of text in a `truncate whitespace-pre` span, which never wraps on its own.
     expect(css).toMatch(/^\.sb-info-title > span \{[^}]*white-space: pre-wrap/m);
     expect(css).toMatch(/^\.sb-info-title > \* \{[^}]*max-width: 100%/m);
   });
 
-  it("adds no gap after the title when bb's row metadata line has no items", () => {
-    // bb hides an empty line with display: none, which drops its margin and leaves the wrapper's negative one.
+  it("adds no gap after the title when VesnALIA's row metadata line has no items", () => {
+    // VesnALIA hides an empty line with display: none, which drops its margin and leaves the wrapper's negative one.
     expect(css).toMatch(/^\.sb-row-meta \{[^}]*margin-left: calc\(-1 \* var\(--sb-gap\)\)/m);
     expect(css).toMatch(/^\.sb-row-meta > \[data-thread-row-metadata\] \{[^}]*margin-left: var\(--sb-gap\)/m);
   });

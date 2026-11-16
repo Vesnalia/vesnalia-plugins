@@ -21,7 +21,7 @@ describe("threadRoutePath", () => {
 });
 
 describe("threadPermalink", () => {
-  it("hangs the route off the origin the user is viewing bb at", () => {
+  it("hangs the route off the origin the user is viewing VesnALIA at", () => {
     expect(
       threadPermalink("https://sawyer.getbb.app", {
         threadId: "thr_abc",

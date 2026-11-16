@@ -1,5 +1,5 @@
-// BB has no UI language setting for plugins, so follow the browser: Chinese for zh locales, English otherwise.
-// Messages from the BB server (Magpie errors, sync failures) stay in English.
+// VesnALIA has no UI language setting for plugins, so follow the browser: Chinese for zh locales, English otherwise.
+// Messages from the VesnALIA server (Magpie errors, sync failures) stay in English.
 const zh = /^zh\b/i.test(navigator.language);
 
 type Bucket = "hour" | "day";
@@ -9,9 +9,9 @@ const en = {
   windowUnits: { hour: "h", day: "d", week: "w", month: "mo" } as Record<string, string>,
   piUpdated: (machines: number, refreshed: boolean) =>
     `Pi: ${machines} machines updated${refreshed ? ", provider refreshed" : ""}.`,
-  pickers: "BB pickers",
+  pickers: "VesnALIA pickers",
   pickersUpdated: (total: number, added: number, removed: number) =>
-    `BB pickers: ${total} models, ${added} added, ${removed} removed.`,
+    `VesnALIA pickers: ${total} models, ${added} added, ${removed} removed.`,
   resetsIn: (left: string, at: string) => `Resets in ${left} · ${at}`,
   used: (percent: number) => `${percent}% used`,
   noAllowance: "No allowance data",
@@ -82,8 +82,8 @@ const zhMessages: typeof en = {
   units: { d: "天", h: "小时", m: "分钟" },
   windowUnits: { hour: "小时", day: "天", week: "周", month: "个月" },
   piUpdated: (machines, refreshed) => `Pi：已更新 ${machines} 台机器${refreshed ? "，已刷新 provider" : ""}。`,
-  pickers: "BB 模型列表",
-  pickersUpdated: (total, added, removed) => `BB 模型列表：共 ${total} 个模型，新增 ${added} 个，移除 ${removed} 个。`,
+  pickers: "ALIA 模型列表",
+  pickersUpdated: (total, added, removed) => `ALIA 模型列表：共 ${total} 个模型，新增 ${added} 个，移除 ${removed} 个。`,
   resetsIn: (left, at) => `${left}后重置 · ${at}`,
   used: (percent) => `已用 ${percent}%`,
   noAllowance: "暂无额度数据",

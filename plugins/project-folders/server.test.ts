@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { resolveFolderPath, rpcContract } from "./server";
 const root = {
   id: "p1",
@@ -40,7 +40,7 @@ async function setup(settings?: Record<string, string | boolean>) {
       environments: { list: async () => [] },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return { ...h, writes };
 }
 const agentsFields = {
@@ -72,7 +72,7 @@ describe("project folder boundaries", () => {
       "/tmp",
       "a/../../x",
       ".",
-      ".bb/chats",
+      ".vesnalia/chats",
       ".git/config",
       "a/../b",
       "a\u0000b",
@@ -170,7 +170,7 @@ describe("project folder boundaries", () => {
         h.writes.every(
           (w) =>
             w.hostId === "h1" &&
-            String(w.path).startsWith("/work/.bb/chats/t1/"),
+            String(w.path).startsWith("/work/.vesnalia/chats/t1/"),
         ),
       ).toBe(true);
     } finally {
@@ -628,9 +628,9 @@ describe("AGENTS.md template", () => {
       const agents = agentsWrites(h);
       expect(agents).toHaveLength(1);
       const content = String((agents[0] as { content: string }).content);
-      expect(content).toContain("<!-- bb-project-folders:agents:start -->");
+      expect(content).toContain("<!-- alia-project-folders:agents:start -->");
       expect(content).toContain("Тише едешь.");
-      expect(content).toContain("<!-- bb-project-folders:agents:end -->");
+      expect(content).toContain("<!-- alia-project-folders:agents:end -->");
     } finally {
       await h.harness.lifecycle.dispose();
     }
@@ -658,7 +658,7 @@ describe("AGENTS.md template", () => {
     try {
       await setAgents(h, { agents_template: "Одна строка" });
       const block =
-        "<!-- bb-project-folders:agents:start -->\nОдна строка\n<!-- bb-project-folders:agents:end -->\n";
+        "<!-- alia-project-folders:agents:start -->\nОдна строка\n<!-- alia-project-folders:agents:end -->\n";
       h.harness.inspection.sdk.stub("files.read", async () => ({
         content: block,
         sha256: "same",
@@ -680,7 +680,7 @@ describe("AGENTS.md template", () => {
       await setAgents(h, { agents_template: "Шаблон v2" });
       h.harness.inspection.sdk.stub("files.read", async () => ({
         content:
-          "# Свои правила\n\n<!-- bb-project-folders:agents:start -->\nШаблон v1\n<!-- bb-project-folders:agents:end -->\n",
+          "# Свои правила\n\n<!-- alia-project-folders:agents:start -->\nШаблон v1\n<!-- alia-project-folders:agents:end -->\n",
         sha256: "old",
       }));
       await createSection(h, "Epsilon");
@@ -972,7 +972,7 @@ describe("AGENTS.md template", () => {
         (w) => String(w.path) === "/work/l1/l2/l3/AGENTS.md",
       );
       expect(String((l3Write as { content: string }).content)).toContain(
-        "<!-- bb-project-folders:agents:start -->",
+        "<!-- alia-project-folders:agents:start -->",
       );
       expect(String((l3Write as { content: string }).content)).toContain(
         "Правила ветки L1",
@@ -1057,7 +1057,7 @@ describe("AGENTS.md template", () => {
             ) as { content: string }
           ).content,
         ),
-      ).toContain("<!-- bb-project-folders:agents:start -->");
+      ).toContain("<!-- alia-project-folders:agents:start -->");
       void missing;
       void manual;
     } finally {
@@ -1150,7 +1150,7 @@ describe("AGENTS.md template", () => {
       );
       expect(nestedWrite).toBeTruthy();
       expect(String((nestedWrite as { content: string }).content)).toContain(
-        "<!-- bb-project-folders:agents:start -->",
+        "<!-- alia-project-folders:agents:start -->",
       );
       expect(String((nestedWrite as { content: string }).content)).toContain(
         "Шаблон разделов",
@@ -1165,7 +1165,7 @@ describe("AGENTS.md template", () => {
     try {
       h.harness.inspection.sdk.stub("threads.get", async () => {
         throw Object.assign(new Error("HTTP 404: Thread not found"), {
-          name: "BbHttpError",
+          name: "AliaHttpError",
         });
       });
       await expect(
@@ -1455,7 +1455,7 @@ describe("AGENTS.md template", () => {
       ) as { content?: string } | undefined;
       expect(write?.content).toContain("Общий шаблон");
       expect(write?.content).toContain(
-        "<!-- bb-project-folders:custom:start -->",
+        "<!-- alia-project-folders:custom:start -->",
       );
       expect(write?.content).toContain("Делегируй реализацию через Агентство.");
     } finally {
@@ -1464,7 +1464,7 @@ describe("AGENTS.md template", () => {
   });
 });
 describe("project folder boundaries", () => {
-  it("creates a native BB project with an explicit machine and folder", async () => {
+  it("creates a native VesnALIA project with an explicit machine and folder", async () => {
     const h = await setup();
     try {
       h.harness.inspection.sdk.stub("hosts.list", async () => [
@@ -1921,7 +1921,7 @@ describe("repointing a copy to a new path", () => {
       }));
       await expect(
         h.harness.behavior.callRpc("sync", { threadId: "t9" }),
-      ).resolves.toMatchObject({ path: "/srv/new/.bb/chats/t9" });
+      ).resolves.toMatchObject({ path: "/srv/new/.vesnalia/chats/t9" });
       await expect(
         h.harness.behavior.callRpc("copy_edit", {
           projectId: "p1",
@@ -2125,7 +2125,7 @@ describe("sections on another device inside a group", () => {
         existence: Object.fromEntries(
           (args as { paths: string[] }).paths.map((p) => [
             p,
-            !p.includes(".bb/archive"),
+            !p.includes(".vesnalia/archive"),
           ]),
         ),
       }));
@@ -2518,7 +2518,7 @@ describe("githubUrl on list", () => {
         environments: { list: async () => [] },
       },
     });
-    await plugin(h.bb);
+    await plugin(h.alia);
     const call = h.harness.behavior.callRpc;
     try {
       await call("create", {
@@ -2585,7 +2585,7 @@ describe("githubUrl on list", () => {
         environments: { list: async () => [] },
       },
     });
-    await plugin(h.bb);
+    await plugin(h.alia);
     try {
       const list = (await h.harness.behavior.callRpc("list", null)) as Listed;
       await new Promise((resolve) => setTimeout(resolve, 40));
@@ -2687,7 +2687,7 @@ describe("background history export", () => {
     const h = await history();
     try {
       await h.harness.behavior.callRpc("sync", { threadId: "t1" });
-      const indexPath = "/work/.bb/chats/t1/history/index.json";
+      const indexPath = "/work/.vesnalia/chats/t1/history/index.json";
       const previous = h.files.get(indexPath);
       h.harness.inspection.sdk.stub("files.write", async (args) => {
         if (args.path.includes("page-00001")) throw new Error("offline");

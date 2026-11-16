@@ -73,12 +73,12 @@ function scrub(value) {
   return value;
 }
 
-const raw = execFileSync("bb", ["thread", "log", threadId, "--json", "--all"], {
+const raw = execFileSync("alia", ["thread", "log", threadId, "--json", "--all"], {
   encoding: "utf8",
   maxBuffer: 1024 * 1024 * 1024,
 });
 const all = JSON.parse(raw);
-const show = JSON.parse(execFileSync("bb", ["thread", "show", threadId, "--json"], { encoding: "utf8" }));
+const show = JSON.parse(execFileSync("alia", ["thread", "show", threadId, "--json"], { encoding: "utf8" }));
 let deltaCount = 0;
 const events = [];
 for (const event of all) {

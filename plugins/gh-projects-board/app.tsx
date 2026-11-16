@@ -1,11 +1,11 @@
-// bb-plugin-gh-projects-board — frontend entry.
+// alia-plugin-gh-projects-board — frontend entry.
 //
 // A column-per-status board, laid out like GitHub's own: each column carries
 // its option name, item count and the option's description, and each card shows
 // the `repo #number` reference, title, labels and assignees.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { UrlLink, definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { BoardColumnView, BoardItemView, BoardState, rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -154,7 +154,7 @@ function Card({ item }: { item: BoardItemView }) {
     item.url !== null &&
       "cursor-pointer no-underline hover:border-muted-foreground/40",
   );
-  // UrlLink hands ordinary activation to the host, so a card opens in BB's
+  // UrlLink hands ordinary activation to the host, so a card opens in VesnALIA's
   // own browser; it stays a real anchor, so cmd-click, middle-click and
   // "copy link" keep working.
   return (
@@ -387,7 +387,7 @@ function BoardPage() {
             {!state.configured ? (
               <p className="mt-2 text-xs">
                 Settings → Plugins → GitHub Projects Board, or{" "}
-                <code>bb plugin config gh-projects-board set owner my-org</code>.
+                <code>alia plugin config gh-projects-board set owner my-org</code>.
               </p>
             ) : null}
           </Notice>

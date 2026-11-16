@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 
 registerHooks({
   resolve(specifier, context, next) {
@@ -20,7 +20,7 @@ test('registers independent default-on thread header visibility settings', async
   const fake = createFakePluginHost({ pluginId: 'taskboard' });
   t.after(() => fake.harness.lifecycle.dispose());
 
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   assert.deepEqual(
     fake.harness.inspection.registrations.settingsDescriptors,

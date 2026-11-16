@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { Forge, ForgePr } from "../contract";
 import {
@@ -82,8 +82,8 @@ function configuredSearches(values: Values, now: number) {
   return { searches, invalid, lists };
 }
 
-export function createWorkLists(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export function createWorkLists(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     outgoingSearches: {
       type: "string",
       label: "Out: your open pull requests",
@@ -113,9 +113,9 @@ export function createWorkLists(bb: BbPluginApi) {
       experimental_multiline: true,
     },
   });
-  const host = hostClient(bb);
-  const store = marksStore(bb, MARKS_KEY, marksSchema);
-  const changed = coalesced(() => bb.realtime.publish("work-changed", { at: Date.now() }), 300);
+  const host = hostClient(alia);
+  const store = marksStore(alia, MARKS_KEY, marksSchema);
+  const changed = coalesced(() => alia.realtime.publish("work-changed", { at: Date.now() }), 300);
   let entries: Entry[] = [];
   let sources: WorkSource[] = [];
   let hostId: string | null = null;
@@ -128,7 +128,7 @@ export function createWorkLists(bb: BbPluginApi) {
       sources = invalid;
       return false;
     }
-    hostId = await indexHostId(bb, hostId);
+    hostId = await indexHostId(alia, hostId);
     const target = hostId;
     if (!target) {
       // Quiet like a missing CLI; the last lists stay up until a host connects again.

@@ -1,4 +1,4 @@
-Keep what your agents learn in Lobu memory, without leaving bb.
+Keep what your agents learn in Lobu memory, without leaving VesnALIA.
 
 ## What you get
 
@@ -8,28 +8,28 @@ Keep what your agents learn in Lobu memory, without leaving bb.
   thread's Lobu memory panel.
 - Agents can supersede outdated memories in place, and edits or deletes made in
   Lobu sync back into your project brief.
-- Works across every agent provider in bb: native `lobu_search` and
-  `lobu_remember` tools plus `bb lobu search` and `bb lobu remember` CLI
+- Works across every agent provider in VesnALIA: native `lobu_search` and
+  `lobu_remember` tools plus `alia lobu search` and `alia lobu remember` CLI
   commands for ACP providers.
 - **Save to Lobu** on any message, and **Save learnings to Lobu** for a whole
   thread, through a review form.
-- **Open what bb saved in Lobu** opens Lobu's own page of those memories.
-- A **Lobu** page in bb's sidebar: what agents saved in bb threads (with the
+- **Open what VesnALIA saved in Lobu** opens Lobu's own page of those memories.
+- A **Lobu** page in VesnALIA's sidebar: what agents saved in VesnALIA threads (with the
   project, reuse count, and source thread), search across all of Lobu, the
   inbox, and the devices and connections that need attention.
 - Type `@` in any composer to reference a memory, entity, feed, automation, paired
   device or connection, or open browser tab; it resolves into fresh context
   when the message is sent.
-- Your Lobu **Inbox** sits on the New thread screen when bb is connected, and
+- Your Lobu **Inbox** sits on the New thread screen when VesnALIA is connected, and
   `lobu` CLI logins you already have are reused, not duplicated.
 
 ## Getting started
 
 A card on the New thread screen installs the Lobu CLI with bun or npm, then,
 as in the Lobu Mac app, signs you in to Lobu Cloud or runs Lobu on this
-machine. Settings → Plugins → Lobu shows which Lobu bb uses and what it
+machine. Settings → Plugins → Lobu shows which Lobu VesnALIA uses and what it
 saved there, and switches between them.
 
 ## How it works
 
-The plugin uses your `lobu` CLI login. Tokens stay in the bb server.
+The plugin uses your `lobu` CLI login. Tokens stay in the VesnALIA server.

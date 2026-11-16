@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createTokenRangeStore, dayKey, emptyBucket } from "../lib/tokens.ts";
 
-test("all date ranges project the complete ledger including BB-only providers", () => {
+test("all date ranges project the complete ledger including ALIA-only providers", () => {
   const store = createTokenRangeStore();
   assert.equal(store.get(7), null);
   const old = new Date(); old.setDate(old.getDate() - 20);

@@ -1,6 +1,6 @@
 # Prototype inspector: native Axure-like Style panel
 
-Owner: in our right pane Fill, colour, radius, font size, alignment are plain text fields (raw «left/center/right», hex typed as text) — unclear. In Axure (owner screenshots; also `.bb/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` §4 and screenshots there) the Style tab is a set of compact, collapsible sections with icons and real pickers.
+Owner: in our right pane Fill, colour, radius, font size, alignment are plain text fields (raw «left/center/right», hex typed as text) — unclear. In Axure (owner screenshots; also `.vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` §4 and screenshots there) the Style tab is a set of compact, collapsible sections with icons and real pickers.
 
 Rebuild the Style tab (inspector.tsx and helpers) as:
 1. **Header**: element name (editable inline) + visibility eye.

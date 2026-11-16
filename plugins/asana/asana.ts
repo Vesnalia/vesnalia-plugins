@@ -803,7 +803,7 @@ export type TimeEntry = z.infer<typeof timeEntrySchema>;
 export const taskTimeSchema = z.object({
   /**
    * Where logged time lives: an "Actual Time" custom field (older projects;
-   * bb can add to it), Asana's built-in Actual time (shown beside Estimated
+   * VesnALIA can add to it), Asana's built-in Actual time (shown beside Estimated
    * time in Asana; read-only here, as its write API needs the Timesheets and
    * Budgets add-on), or nowhere (the project doesn't track time).
    */
@@ -893,7 +893,7 @@ export async function logTime(
   if (before.actualField === null) {
     throw new FieldValueError(
       before.source === "builtin"
-        ? "This task uses Asana's built-in Actual time, which bb can't add to. Log the time in Asana."
+        ? "This task uses Asana's built-in Actual time, which VesnALIA can't add to. Log the time in Asana."
         : `This task has no "${actualTimeName}" field, so its project doesn't track time.`,
     );
   }

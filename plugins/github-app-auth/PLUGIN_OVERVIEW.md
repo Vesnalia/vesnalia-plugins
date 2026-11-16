@@ -2,7 +2,7 @@ Are you sick of every pull request landing under YOUR name? Sick of not being
 able to review them, because GitHub won't let you approve your own work? Does
 your software factory feel more like an echo chamber?
 
-With bb GitHub App Auth, your agents get a GitHub identity of their own. Make
+With VesnALIA GitHub App Auth, your agents get a GitHub identity of their own. Make
 a GitHub App for free with only the scopes you choose, install this plugin,
 and every agent turn in the projects you pick runs as the app. Pull requests
 open under the app's name. You review them. You stay in charge.
@@ -20,9 +20,9 @@ open under the app's name. You review them. You stay in charge.
 
 ## How it works
 
-Store a project's app with `bb github-app-auth set-app`, or set a default app
-in plugin settings or the bb server environment. The plugin keeps every
-credential on the bb server and never sends it to an agent. It mints a token on
+Store a project's app with `alia github-app-auth set-app`, or set a default app
+in plugin settings or the VesnALIA server environment. The plugin keeps every
+credential on the VesnALIA server and never sends it to an agent. It mints a token on
 the server and sends only the token to the machine that runs the thread. It
 mints a new token before the one-hour expiry and keeps a recently used token
 fresh in the background.
@@ -30,14 +30,14 @@ fresh in the background.
 ## Requirements
 
 - A GitHub App you create and install, with the scopes you choose.
-- The app's private key file on the bb server machine.
+- The app's private key file on the VesnALIA server machine.
 - `gh` on the machines that run threads.
 
 The plugin never writes a token or the private key to its logs.
 
 ## Commands
 
-`bb github-app-auth set-app`, `unset-app`, `status`, `env`, `token` and
+`alia github-app-auth set-app`, `unset-app`, `status`, `env`, `token` and
 `refresh`.
 
-Try bb GitHub App Auth today!
+Try VesnALIA GitHub App Auth today!

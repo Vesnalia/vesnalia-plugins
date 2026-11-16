@@ -1,6 +1,6 @@
 // The secondary side bar (VS Code's right-hand panel): chat with an agent on this
 // workspace, the project's threads, and its workflow runs. Chat and the composer
-// are BB's own components; nothing about threads is proxied through the plugin.
+// are VesnALIA's own components; nothing about threads is proxied through the plugin.
 import { useEffect, useMemo, useState } from "react";
 import {
   ThreadChat,
@@ -10,7 +10,7 @@ import {
   experimental_useSidebarThreads,
   useRpc,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { ResolvedScope, rpcContract, Scope } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { useHues } from "./colors";
@@ -47,7 +47,7 @@ export function SidePanel({
   setTab(tab: SideTab): void;
   chatThreadId: string | null;
   setChatThreadId(id: string | null): void;
-  /** Named workflows found under .bb/workflows/. */
+  /** Named workflows found under .vesnalia/workflows/. */
   workflowFiles: string[];
   /** The run whose agent graph is open; owned by the workbench so the Agent Network can open one. */
   openRun: string | null;
@@ -307,7 +307,7 @@ function WorkflowsTab({
         <h2 className="text-xs font-semibold">Run a workflow</h2>
         {files.length === 0 ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Save a workflow as <code className="font-mono">.bb/workflows/&lt;name&gt;.js</code> in this workspace to run it from here.
+            Save a workflow as <code className="font-mono">.vesnalia/workflows/&lt;name&gt;.js</code> in this workspace to run it from here.
           </p>
         ) : (
           <div className="mt-1.5 flex flex-wrap gap-1">

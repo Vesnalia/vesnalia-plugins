@@ -1,6 +1,6 @@
-// bb-plugin-agent-board — one board card (thread, workflow agent, delegation,
+// alia-plugin-agent-board — one board card (thread, workflow agent, delegation,
 // plan step, or queued message) with expandable details.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { BoardCard } from "@/contract/rpc";
 import { cardElapsedMs, formatElapsed } from "@/lib/board-model";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ export function BoardCardView({
   /** Preserve a static status cue when the user requests reduced motion. */
   reducedMotion?: boolean;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const timelineTarget = timelineTargetForCard(card);
 
   const elapsedMs = cardElapsedMs(card, now);

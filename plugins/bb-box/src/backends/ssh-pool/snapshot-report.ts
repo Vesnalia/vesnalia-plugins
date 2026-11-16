@@ -6,7 +6,7 @@ import type { SshPoolMachine } from "./config.ts";
 
 export const SNAPSHOT_PROBE_VERSION = 1;
 export const SNAPSHOT_REPORT_KEY_PREFIX = "pool-snapshots/";
-export const SNAPSHOT_HOOK_PATH = "/usr/local/libexec/bb-box/snapshot-machine";
+export const SNAPSHOT_HOOK_PATH = "/usr/local/libexec/alia-box/snapshot-machine";
 export const SNAPSHOT_HOOK_CONTRACT = 1;
 export const POOL_TAKES_NO_SNAPSHOTS_YET = `${PRODUCT} takes no snapshots on the SSH host pool yet`;
 

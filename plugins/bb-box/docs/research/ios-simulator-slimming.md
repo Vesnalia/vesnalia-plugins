@@ -1,8 +1,8 @@
 # Slimming an iOS Simulator
 
-Whether bb-box's ios boxes should turn off the background launchd services
+Whether alia-box's ios boxes should turn off the background launchd services
 an iOS Simulator starts but a device box does not need, as simslim does;
-what it saves, what it breaks, and what bb-box's own version would need.
+what it saves, what it breaks, and what alia-box's own version would need.
 
 Research, 26 October 2026: a note of what was known and measured then, not
 the current design, which is in [the architecture](../architecture.md).
@@ -20,7 +20,7 @@ Adopt it, on by default, in unit 3.2's image.
 1. **What:** disable the 112 launchd labels in
    [list-full.txt](ios-simulator-slimming/list-full.txt), with
    `launchctl disable system/<label>` run in the device through
-   `xcrun simctl spawn`. The list is bb-box's own: every label we saw
+   `xcrun simctl spawn`. The list is alia-box's own: every label we saw
    running in a stock iPhone 18 Pro after it settled, less the 55 in
    [lists.py](ios-simulator-slimming/lists.py)'s `KEEP`, each kept for a
    stated reason.
@@ -294,7 +294,7 @@ apps, not for 063.
 
 Six watch-companion labels ship with an "enabled" override in the runtime
 and stayed enabled after the first `disable`; a second `disable` after a
-reboot held. bb-box should apply the list, reboot, and check the count.
+reboot held. alia-box should apply the list, reboot, and check the count.
 
 ## 4. Applying it
 
@@ -324,7 +324,7 @@ and were lost by `simctl clone`, which copies it. So launchd_sim keeps them
 outside the device's folder, apparently by UDID. We did not find where;
 they are not in the device's `data` folder as a file named for them. A Tart
 clone of the image copies the whole VM, UDIDs and all, so it keeps them.
-Since bb-box cannot rely on what it cannot see, the server's boot check is
+Since alia-box cannot rely on what it cannot see, the server's boot check is
 the guard.
 
 Applying the list to a clone, then rebooting, left 106 of 112 disabled:
@@ -370,7 +370,7 @@ swap; neither was reached.
 
 ## What went wrong, and what it teaches
 
-Four of this note's own mistakes are worth bb-box's image check:
+Four of this note's own mistakes are worth alia-box's image check:
 
 1. **A list made from `launchctl list` can catch launchd's one-shot
    labels.** The first list held `com.apple.xpc.launchd.oneshot.0x10000004.launchctl`,

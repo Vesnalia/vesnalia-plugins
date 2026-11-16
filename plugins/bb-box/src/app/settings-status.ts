@@ -27,8 +27,8 @@ export function plural(count: number, one: string, many = `${one}s`): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-export function onBbMachine(config: BackendConfig): boolean {
-  return (config.type === "docker" || config.type === "microsandbox") && typeof config.fields.host === "string" && config.fields.host.startsWith("bb:");
+export function onAliaMachine(config: BackendConfig): boolean {
+  return (config.type === "docker" || config.type === "microsandbox") && typeof config.fields.host === "string" && config.fields.host.startsWith("alia:");
 }
 
 export function warningsIn(report: DoctorReport): number {
@@ -40,11 +40,11 @@ export function withWarnings(words: string, warnings: number): string {
 }
 
 export function isMachineDocker(config: BackendConfig): boolean {
-  return config.type === "docker" && typeof config.fields.host === "string" && config.fields.host.startsWith("bb:");
+  return config.type === "docker" && typeof config.fields.host === "string" && config.fields.host.startsWith("alia:");
 }
 
 export function machineHostId(config: BackendConfig): string | null {
-  return isMachineDocker(config) ? (config.fields.host as string).slice("bb:".length) : null;
+  return isMachineDocker(config) ? (config.fields.host as string).slice("alia:".length) : null;
 }
 
 function fieldText(config: BackendConfig, key: string): string {
@@ -62,7 +62,7 @@ function urlHost(url: string): string | null {
 
 function daemonHost(host: string): string | null {
   if (!host || host.startsWith("unix://")) return "this machine";
-  if (host.startsWith("bb:")) return null;
+  if (host.startsWith("alia:")) return null;
   const ssh = /^ssh:\/\/(?:[^@/]+@)?(\[[^\]]+\]|[^:/]+)/.exec(host);
   return ssh ? ssh[1]!.replace(/^\[|\]$/g, "") : urlHost(host);
 }
@@ -195,7 +195,7 @@ export function statusLine(state: ConfigState, now: number, checking: number, ma
         : on.length === 1 && changed === 1
           ? `${statusName(state, on[0]!, here)} is not checked since it changed`
         : on.length === 1
-          ? `${statusName(state, on[0]!, here)} ${offline ? "is offline in BB" : "is not working"}`
+          ? `${statusName(state, on[0]!, here)} ${offline ? "is offline in VesnALIA" : "is not working"}`
           : passed === on.length
         ? `All ${plural(on.length, "backend")} ${words}`
         : `${passed} of ${plural(on.length, "backend")} ${words}`;
@@ -204,7 +204,7 @@ export function statusLine(state: ConfigState, now: number, checking: number, ma
   const details = [
     ...(never && on.length > 1 ? [`${never} not checked yet`] : []),
     ...(changed && on.length > 1 ? [`${changed} not checked since ${changed === 1 ? "it" : "they"} changed`] : []),
-    ...(offline && on.length > 1 ? [`${offline} offline in BB`] : []),
+    ...(offline && on.length > 1 ? [`${offline} offline in VesnALIA`] : []),
     ...(off ? [`${off} off`] : []),
     `${plural(offered, "kind")} on offer`,
     ...(age ? [age] : []),
@@ -286,7 +286,7 @@ export function statusItems(state: ConfigState, now: number, machines: MachineHo
     if (health.status === "failing") items.push({ key: `backend-${backend.id}`, tone: health.tone, title: label, detail: health.detail ?? "", fix: health.fix, open });
     if (health.status === "unfinished") items.push({ key: `unfinished-${backend.id}`, tone: "warn", title: `${label} is not finished`, detail: health.detail ?? "", fix: health.fix, open });
     const machine = backend.enabled ? machineOf(machines, backend) : null;
-    if (machine?.images?.state === "failed") items.push({ key: `images-${backend.id}`, tone: "bad", title: `The images on ${label} did not build`, detail: buildWords(machine)?.text ?? "", fix: `Run bb box docker-build ${machine.name}, or turn ${label} off and on.`, open });
+    if (machine?.images?.state === "failed") items.push({ key: `images-${backend.id}`, tone: "bad", title: `The images on ${label} did not build`, detail: buildWords(machine)?.text ?? "", fix: `Run alia box docker-build ${machine.name}, or turn ${label} off and on.`, open });
     for (const short of state.backends.find((live) => live.id === backend.id)?.warmShort ?? []) {
       const kinds = short.kinds.map((kind) => state.kinds.find((info) => info.id === kind)).filter((info): info is KindInfoView => !!info);
       items.push({

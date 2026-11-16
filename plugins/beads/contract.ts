@@ -1,7 +1,7 @@
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-// The server entry and the bb.host entry share this contract.
+// The server entry and the alia.host entry share this contract.
 export const hostContract = defineRpcContract({
   bd_check: {
     input: z.object({ bdPath: z.string().min(1) }).strict(),

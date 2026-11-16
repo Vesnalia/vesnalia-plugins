@@ -47,7 +47,7 @@ steps:
       - aria_absent: "New group name"
       - rpc_last: { method: "group_create", args: { name: "Alpha" } }
       - text_count: { text: "Alpha", count: 1 }
-      - text_visible: "Research: bb plugin RPC auth tokens"
+      - text_visible: "Research: alia plugin RPC auth tokens"
       - text_visible: "Review PR #14"
 
   - id: renaming-onto-an-existing-name-is-refused-inline

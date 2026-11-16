@@ -1,6 +1,6 @@
 /**
  * What the relay (relay.ts) talks to on the Mac's side of a session: a TCP
- * connection on the server's own loopback (loopback-link.ts) or bb's host
+ * connection on the server's own loopback (loopback-link.ts) or VesnALIA's host
  * link to another Mac (host-link.ts). The relay owns the WebSocket, the
  * session and the byte counts; a link owns the way to Screen Sharing.
  */

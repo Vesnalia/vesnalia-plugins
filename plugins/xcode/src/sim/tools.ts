@@ -19,10 +19,10 @@
  * ## The network boundary
  *
  * The capture host listens only on loopback. Remote viewing stays inside the
- * main bb panel; tools never create or return a simulator share.
+ * main VesnALIA panel; tools never create or return a simulator share.
  */
 import { z } from "zod";
-import type { PluginAgentToolContext } from "@get-bb/plugin-sdk";
+import type { PluginAgentToolContext } from "@vesnalia/plugin-sdk";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -250,7 +250,7 @@ export const GLOBAL_INSTRUCTIONS = [
   "When you have changed SwiftUI and want to show the result, call simulator_capture or simulator_drive instead of describing the screen in prose; never claim a screen \"looks correct\" without a frame.",
   "Preview renders report themselves in the panel and in the prompt stack above the composer, so never paste a list of changed previews into chat — the user is already looking at it.",
   "The simulator is shared: if a call reports another thread is driving it, wait rather than retrying.",
-  "The simulator capture port is loopback-only. Never share or tunnel it; remote viewing belongs inside the main bb panel.",
+  "The simulator capture port is loopback-only. Never share or tunnel it; remote viewing belongs inside the main VesnALIA panel.",
 ].join(" ");
 
 export const driveParameters = z.object({
@@ -419,7 +419,7 @@ export function makeStillsTool(ctx: Ctx) {
         summary = await ctx.stills.run(scope, args.device ?? null);
       } catch (error) {
         // On an un-onboarded project this is a tool **error** whose message is
-        // the onboarding text, so the model can offer to run `bb xcode sim onboard`
+        // the onboarding text, so the model can offer to run `alia xcode sim onboard`
         // instead of inventing a reason.
         return textError(error instanceof Error ? error.message : String(error));
       }

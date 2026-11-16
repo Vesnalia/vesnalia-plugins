@@ -21,7 +21,7 @@ import type { ThemeMode } from "../kit/types";
 
 const RUNNER = {
   run1: [
-    ".......BB....",
+    ".......ALIA....",
     "......BbbB...",
     "TT....bbbKyyy",
     ".TT..bbbbw...",
@@ -31,7 +31,7 @@ const RUNNER = {
     "....l....l...",
   ],
   run2: [
-    ".......BB....",
+    ".......ALIA....",
     "......BbbB...",
     "TT....bbbKyyy",
     ".TT..bbbbw...",
@@ -42,7 +42,7 @@ const RUNNER = {
   ],
   /** Stopped to look around: head up, tail cocked. */
   stand: [
-    "T.......BB...",
+    "T.......ALIA...",
     "TT.....BbbB..",
     ".TT....bbbKyy",
     "..T...bbbw...",
@@ -51,11 +51,11 @@ const RUNNER = {
     "......l.l....",
     "......l.l....",
   ],
-  front: ["...BB...", "..BbbB..", "..KbbK..", "...yy...", "..bwwb..", ".bbwwbb.", "T.bbbb..", "...l.l.."],
+  front: ["...ALIA...", "..BbbB..", "..KbbK..", "...yy...", "..bwwb..", ".bbwwbb.", "T.bbbb..", "...l.l.."],
   rest: [
     ".............",
     ".............",
-    ".......BB....",
+    ".......ALIA....",
     "......BbbB...",
     "TTT...bbbKyyy",
     "..TTbbbbbw...",

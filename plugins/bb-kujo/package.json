@@ -1,23 +1,23 @@
 {
-  "name": "bb-kujo",
+  "name": "alia-plugin-bb-kujo",
   "version": "0.2.2",
   "type": "module",
   "license": "MIT",
-  "description": "A Kujo / SiteKit design-system adapter for bb.",
+  "description": "A Kujo / SiteKit design-system adapter for VesnALIA.",
   "author": "Robert DeVore",
   "keywords": [
-    "bb-plugin",
-    "bb",
+    "alia-plugin",
+    "alia",
     "theme",
     "kujo",
     "sitekit"
   ],
   "engines": {
     "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1",
-    "bb": ">=0.43.0 <0.44.0",
-    "bbPluginSdk": ">=0.4.84 <0.5.0"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Kujo",
     "description": "Mechanical workspace skin based on Kujo and SiteKit. Paper and ink, hard edges, quiet signal.",
     "branding": {
@@ -63,24 +63,32 @@
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "check": "npm run check:generated && npm run typecheck && npm test",
-    "build": "npm run generate && npm run check && bb plugin build .",
+    "build": "npm run generate && npm run check && alia plugin build .",
     "dev": "node scripts/dev.mjs",
     "qa": "node scripts/browser-qa.mjs"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.84",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "playwright": "1.62.1",
     "react": "^19.2.0",
     "typescript": "^5.9.3"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.84"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-kujo#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kujolang/bb-kujo.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-kujo"
   },
-  "homepage": "https://github.com/kujolang/bb-kujo#readme",
   "bugs": {
-    "url": "https://github.com/kujolang/bb-kujo/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

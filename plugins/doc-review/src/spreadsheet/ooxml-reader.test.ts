@@ -55,7 +55,7 @@ function styleOf(sheet: SheetData, cell: SheetCell | undefined) {
   return cell?.style === undefined ? undefined : sheet.styles[cell.style];
 }
 
-/** Everything the bb RPC layer rejects: undefined values and non-finite numbers. */
+/** Everything the VesnALIA RPC layer rejects: undefined values and non-finite numbers. */
 function strictJsonProblems(value: unknown, path = "$"): string[] {
   if (value === undefined) return [`${path} is undefined`];
   if (typeof value === "number") return Number.isFinite(value) ? [] : [`${path} is ${value}`];

@@ -233,7 +233,7 @@ describe("runCli", () => {
     const result = await runCli(["nope"], "t1", reader());
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain('Unknown command "nope".');
-    expect(result.stderr).toContain("bb vcs-widget status");
+    expect(result.stderr).toContain("alia vcs-widget status");
   });
 
   it("exits 1 with the reason when the thread has no repository", async () => {

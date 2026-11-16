@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 function checkoutAbove(directory: string): string {
   if (existsSync(join(directory, "site", "astro.config.ts"))) return join(directory, sep);
   const parent = dirname(directory);
-  if (parent === directory) throw new Error("The site reads bb-box's Markdown from the checkout it is built in, and found no checkout above its code");
+  if (parent === directory) throw new Error("The site reads alia-box's Markdown from the checkout it is built in, and found no checkout above its code");
   return checkoutAbove(parent);
 }
 
@@ -61,8 +61,8 @@ function sources(): Source[] {
     ...markdownFilesIn("docs/guide", { deep: true }).map((file) => ({ id: idForFile(file), file })),
     ...markdownFilesIn("docs/reference", { deep: true }).map((file) => ({ id: idForFile(file), file })),
     ...setupGuides().map((file) => ({ id: idForFile(file), file })),
-    { id: "agent-skill", file: "skills/bb-box/SKILL.md" },
-    ...["docs/architecture.md", "docs/development.md", "docs/bb-requests.md"].map((file) => ({ id: idForFile(file), file })),
+    { id: "agent-skill", file: "skills/alia-box/SKILL.md" },
+    ...["docs/architecture.md", "docs/development.md", "docs/alia-requests.md"].map((file) => ({ id: idForFile(file), file })),
     ...markdownFilesIn("docs/decisions", { deep: false }).map((file) => ({ id: idForFile(file), file })),
   ].filter((source) => existsSync(join(repoRoot, source.file)));
 }

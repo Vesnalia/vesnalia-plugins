@@ -1,12 +1,12 @@
 import { assertHostNode } from './node-version.ts';
-import { experimental_defineHostEntry } from '@get-bb/plugin-sdk/host';
+import { experimental_defineHostEntry } from '@vesnalia/plugin-sdk/host';
 import { resolveNativeRootsCached } from './native-roots.ts';
-import { experimental_defineProviderBridge, createBridgeIo } from '@get-bb/plugin-sdk/provider-bridge';
+import { experimental_defineProviderBridge, createBridgeIo } from '@vesnalia/plugin-sdk/provider-bridge';
 import { createZCodeBridge } from './bridge.ts';
 import { createNativeServices } from './runtime.ts';
 import { join, dirname, basename } from 'node:path';
-import { experimental_nativeRootsHostContract } from '@get-bb/plugin-sdk/host';
-import type { PluginRpcContract } from '@get-bb/plugin-sdk';
+import { experimental_nativeRootsHostContract } from '@vesnalia/plugin-sdk/host';
+import type { PluginRpcContract } from '@vesnalia/plugin-sdk';
 import { configureZCodeLocation } from './applications.ts';
 import { codingHostContract, usageMeasurement } from './usage-source.ts';
 import { collectCodingUsage } from './coding-usage.ts';
@@ -55,7 +55,7 @@ const close = () => {
     process.exit(1);
   }, 20_000);
   closing = bridge.close().finally(() => runtime.close()).then(() => new Promise<void>((done, reject) => {
-    // A callback on the final write drains queued protocol bytes while BB reads.
+    // A callback on the final write drains queued protocol bytes while VesnALIA reads.
     const timer = setTimeout(() => reject(new Error('Shutdown output flush timed out')), 1000);
     process.stdout.write('', error => { clearTimeout(timer); if (error) reject(error); else done(); });
   }));

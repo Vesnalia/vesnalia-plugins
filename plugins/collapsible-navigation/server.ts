@@ -1,11 +1,11 @@
-// bb-plugin-collapsible-navigation — Collapsible Sidebar Navigation backend
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+// alia-plugin-collapsible-navigation — Collapsible Sidebar Navigation backend
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("Collapsible Navigation loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("Collapsible Navigation loaded");
 
-  // Declarative settings — editable in Settings → Plugins and via `bb plugin config`
-  bb.settings.define({
+  // Declarative settings — editable in Settings → Plugins and via `alia plugin config`
+  alia.settings.define({
     defaultCollapsed: {
       type: "boolean",
       label: "Start collapsed",
@@ -19,24 +19,24 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // When installed, automatically activate our collapsible navigation provider
-  bb.onInstall(async () => {
+  alia.onInstall(async () => {
     try {
-      const { preferences } = await bb.sdk.system.uiPreferences.list();
+      const { preferences } = await alia.sdk.system.uiPreferences.list();
       const currentNavProvider = preferences["sidebar.navigationProvider"]?.value;
       if (
         currentNavProvider === "__automatic__" ||
         currentNavProvider === "navigation/navigation" ||
         !currentNavProvider
       ) {
-        await bb.sdk.system.uiPreferences.set({
+        await alia.sdk.system.uiPreferences.set({
           key: "sidebar.navigationProvider",
           value: "collapsible-navigation/collapsible",
           expectedRevision: preferences["sidebar.navigationProvider"]?.revision,
         });
-        bb.log.info("Set sidebar.navigationProvider to collapsible-navigation/collapsible");
+        alia.log.info("Set sidebar.navigationProvider to collapsible-navigation/collapsible");
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Failed to set default navigation provider on install: ${String(error)}`,
       );
     }

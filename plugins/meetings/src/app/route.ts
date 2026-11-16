@@ -4,7 +4,7 @@
 //   "<meetingId>"               → meeting detail
 //   "<meetingId>/t/<segmentId>" → meeting detail scrolled to a segment
 import { useMemo } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { MEETING_ID_PATTERN, PANEL_PATH } from "./constants";
 
 export type Route =
@@ -51,7 +51,7 @@ export interface MeetingsNav {
 }
 
 export function useMeetingsNav(): MeetingsNav {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useMemo(
     () => ({
       toList: (options) => navigate.toPluginPanel(PANEL_PATH, { subPath: "", replace: options?.replace ?? false }),

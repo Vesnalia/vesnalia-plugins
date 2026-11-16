@@ -41,7 +41,7 @@ The task detail modal repeats the context heading even though the same informati
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Validation passed: TaskModal now retains Task details without the redundant Additional context label. Sort options include Date created and Date updated. Date comparator tests cover ascending values, missing dates last, and deterministic tie-breaks. mise run test: 69 passed; mise run typecheck: passed; mise run build: passed; plugin reloaded from /Users/vulture/Projects/bb-plugin-backlog.
+Validation passed: TaskModal now retains Task details without the redundant Additional context label. Sort options include Date created and Date updated. Date comparator tests cover ascending values, missing dates last, and deterministic tie-breaks. mise run test: 69 passed; mise run typecheck: passed; mise run build: passed; plugin reloaded from /Users/vulture/Projects/alia-plugin-backlog.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -18,9 +18,9 @@ for (const [index, colors] of modes.entries()) {
 }
 test('the distributable exposes one paired palette with local readable syntax assets', () => {
   assert.equal(modes.length,2);
-  assert.equal(manifest.bb.themes.length,1);
-  const theme=manifest.bb.themes[0];
-  for(const path of [theme.css,theme.codeTheme.light,theme.codeTheme.dark,manifest.bb.branding.icon,manifest.bb.server]) {
+  assert.equal(manifest.alia.themes.length,1);
+  const theme=manifest.alia.themes[0];
+  for(const path of [theme.css,theme.codeTheme.light,theme.codeTheme.dark,manifest.alia.branding.icon,manifest.alia.server]) {
     const rel=relative(root,resolve(root,path)); assert.ok(!rel.startsWith('..')&&!isAbsolute(rel)); assert.ok(existsSync(resolve(root,path)));
   }
   for(const [index,mode] of ['light','dark'].entries()) {

@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { InspectorFooter, InspectorHeader, InspectorRows, InspectorSection } from "../components/inspector";
 
 // Crew's Icon is the SDK's runtime icon, which needs the plugin runtime.
@@ -16,8 +16,8 @@ afterEach(cleanup);
 
 const OWN = resolve(__dirname, "../components/inspector.tsx");
 const TWINS = [
-  resolve(__dirname, "../../bb-plugin-graph-studio/components/inspector.tsx"),
-  resolve(__dirname, "../../bb-plugin-crew/components/inspector.tsx"),
+  resolve(__dirname, "../../alia-plugin-graph-studio/components/inspector.tsx"),
+  resolve(__dirname, "../../alia-plugin-crew/components/inspector.tsx"),
 ];
 
 describe("inspector", () => {

@@ -1,6 +1,6 @@
-microsandbox snapshots, 30 October 2026, with msb 0.7.7 (the release bb-box
+microsandbox snapshots, 30 October 2026, with msb 0.7.7 (the release alia-box
 pins, checked by its SHA-256) run by the box user in a Proxmox QEMU linux box
-(4 cores, 8 GiB, KVM): nested, so a microVM inside a VM, not bb-box's own
+(4 cores, 8 GiB, KVM): nested, so a microVM inside a VM, not alia-box's own
 microsandbox host. The sandbox: ubuntu:24.04, 2 GiB, 512 MiB of random data
 in /dev/shm and 512 MiB on its disk, and a counter written each second.
 

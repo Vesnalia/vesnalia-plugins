@@ -34,7 +34,7 @@ sources:
 
 # Office Viewer data model
 
-TL;DR: The plugin has no application database; durable state lives in BB-hosted source files, thread-scoped Studio documents and PDF reading-position KV rows, while parsers and editor state are held in browser memory or local storage (`server.ts:480-569`; `server.ts:571-611`; `src/studio/session.ts:7-38`).
+TL;DR: The plugin has no application database; durable state lives in ALIA-hosted source files, thread-scoped Studio documents and PDF reading-position KV rows, while parsers and editor state are held in browser memory or local storage (`server.ts:480-569`; `server.ts:571-611`; `src/studio/session.ts:7-38`).
 
 ## PDF reading state
 
@@ -100,28 +100,28 @@ erDiagram
   }
 ```
 
-These are conceptual request and file records, not database tables. The source schema and edit shape are defined by RPC validation; storage is provided by BB file APIs. Studio documents, snapshots and publish bundles are files in thread storage, and editor session state is stored per thread in browser local storage (`server.ts:48-67`; `src/server/locate.ts:14-20`; `src/server/wireframe-history.ts:31-40`; `src/server/wireframe-publish.ts:17-30`; `src/studio/session.ts:7-38`).
+These are conceptual request and file records, not database tables. The source schema and edit shape are defined by RPC validation; storage is provided by VesnALIA file APIs. Studio documents, snapshots and publish bundles are files in thread storage, and editor session state is stored per thread in browser local storage (`server.ts:48-67`; `src/server/locate.ts:14-20`; `src/server/wireframe-history.ts:31-40`; `src/server/wireframe-publish.ts:17-30`; `src/studio/session.ts:7-38`).
 
 The tool workflows and editor behavior are described in [Studio tools](features/studio.md).
 
 ## Stored data
 
-### BB-hosted source files
+### ALIA-hosted source files
 
-**Purpose:** Original files opened in the plugin. BB owns persistent bytes; the plugin requests previews or reads bytes via `bb.sdk.files` (`server.ts:480-516`; `server.ts:548-569`).
+**Purpose:** Original files opened in the plugin. VesnALIA owns persistent bytes; the plugin requests previews or reads bytes via `alia.sdk.files` (`server.ts:480-516`; `server.ts:548-569`).
 
 | Field | Meaning | Key / source |
 |---|---|---|
 | `kind` | Source resolution mode: `host`, `thread-storage` or `workspace` | Enum supplied in RPC source (`server.ts:18-27`). |
-| `threadId` | Thread context for environment or thread storage resolution | BB opener source (`src/server/locate.ts:6-12`; `src/server/locate.ts:91-108`). |
-| `environmentId` | Environment whose host and root own the workspace file | BB environment lookup (`src/server/locate.ts:58-68`; `src/server/locate.ts:99-103`). |
-| `projectId` | Project used to select a configured source path | BB project lookup (`src/server/locate.ts:103-110`). |
+| `threadId` | Thread context for environment or thread storage resolution | VesnALIA opener source (`src/server/locate.ts:6-12`; `src/server/locate.ts:91-108`). |
+| `environmentId` | Environment whose host and root own the workspace file | VesnALIA environment lookup (`src/server/locate.ts:58-68`; `src/server/locate.ts:99-103`). |
+| `projectId` | Project used to select a configured source path | VesnALIA project lookup (`src/server/locate.ts:103-110`). |
 | `hostId` | Host identifier that stores the file | Explicit source or resolved host (`src/server/locate.ts:111-132`). |
 | `path` / `absPath` | Caller path and resolved absolute path on `hostId` | Path schema and resolver (`server.ts:28`; `src/server/locate.ts:14-20`; `src/server/locate.ts:91-133`). |
 | `sha256` | Version token used to prevent overwriting concurrent file changes | Returned by file read and passed as `expectedSha256` to write (`server.ts:548-569`). |
-| `content` | File bytes in UTF-8 or base64, depending on BB file response | Read and decoded by handlers (`server.ts:483-488`; `server.ts:551-556`). |
+| `content` | File bytes in UTF-8 or base64, depending on VesnALIA file response | Read and decoded by handlers (`server.ts:483-488`; `server.ts:551-556`). |
 
-**Writers and readers:** BB file services own original files. This plugin reads to preview, extract Word text or patch spreadsheet content; it writes spreadsheets in editable formats and edited image outputs (`server.ts:480-569`; `server.ts:527-547`). There is no plugin-defined retention or cleanup job.
+**Writers and readers:** VesnALIA file services own original files. This plugin reads to preview, extract Word text or patch spreadsheet content; it writes spreadsheets in editable formats and edited image outputs (`server.ts:480-569`; `server.ts:527-547`). There is no plugin-defined retention or cleanup job.
 
 ### Spreadsheet edit payload
 
@@ -144,15 +144,15 @@ The tool workflows and editor behavior are described in [Studio tools](features/
 
 | Field | Meaning | Key / allowed values |
 |---|---|---|
-| `threadId` | BB thread whose storage owns the document | Required RPC identifier, max 256 characters (`server.ts:120-128`; `server.ts:300-309`). |
-| `toolFormat` | Document parser discriminator | Wireframe schema for prototype; `bb-slides` version 1; `bb-paint` version 1 (`src/studio/prototype/model.ts:1-20`; `src/studio/slides/model.ts:13-16`; `src/studio/paint/paint-model.ts:5-6`). |
+| `threadId` | VesnALIA thread whose storage owns the document | Required RPC identifier, max 256 characters (`server.ts:120-128`; `server.ts:300-309`). |
+| `toolFormat` | Document parser discriminator | Wireframe schema for prototype; `alia-slides` version 1; `alia-paint` version 1 (`src/studio/prototype/model.ts:1-20`; `src/studio/slides/model.ts:13-16`; `src/studio/paint/paint-model.ts:5-6`). |
 | `name` | Sanitized document stem used for paired JSON/PNG paths | Each tool strips recognized suffixes and rejects path separators, leading dot and `..`; maximum stem length is 200 characters (`src/server/wireframes.ts:10-20`; `src/server/slides.ts:9-18`; `src/server/paint.ts:9-19`). |
 | `json` | Parsed editable document bytes | Wireframe save input max 8 MiB; slides and paint parsing validate tool-specific shape (`server.ts:120-131`; `src/studio/slides/model.ts:42-80`; `src/studio/paint/paint-model.ts:65-79`). |
 | `previewPng` | Optional generated image paired with editable JSON | Base64 input max 60 MiB for prototype, slides and paint save routes (`server.ts:125-127`; `server.ts:300-308`; `server.ts:278-286`). |
 
 **Lifecycle:** Studio lists files for a thread, loads and parses a JSON document, edits it in the browser, then writes JSON and optional PNG. With `overwrite: false`, the requested stem or a `-2` through `-99` free name is selected (`src/studio/prototype/builder.tsx:1264-1303`; `src/studio/slides/editor.tsx:96-125`; `src/studio/paint/paint.tsx:98-118`; `src/server/slides.ts:39-44`; `src/server/paint.ts:40-45`). Validation or file errors reject the RPC; the plugin stores no database row (`server.ts:571-611`; `server.ts:831-884`; `server.ts:885-933`).
 
-**Writers and readers:** Studio editors write documents and previews through save RPCs; list/load RPCs read them back. Published preview routes read a separate HTML/JSON bundle. BB owns thread-storage bytes; this repository defines no Studio file cleanup job or retention period (`src/studio/prototype/builder.tsx:1264-1303`; `src/studio/slides/editor.tsx:76-125`; `src/studio/paint/paint.tsx:98-123`; `server.ts:418-460`; `server.ts:718-765`).
+**Writers and readers:** Studio editors write documents and previews through save RPCs; list/load RPCs read them back. Published preview routes read a separate HTML/JSON bundle. VesnALIA owns thread-storage bytes; this repository defines no Studio file cleanup job or retention period (`src/studio/prototype/builder.tsx:1264-1303`; `src/studio/slides/editor.tsx:76-125`; `src/studio/paint/paint.tsx:98-123`; `server.ts:418-460`; `server.ts:718-765`).
 
 ### Prototype history and published preview
 
@@ -197,11 +197,11 @@ The tool workflows and editor behavior are described in [Studio tools](features/
 - XLSX sheet index and name must still identify the same sheet at patch time (`src/spreadsheet/xlsx-patch.ts:258-261`).
 - CSV and TSV source formatting details are held in a parsed in-memory representation and used by serialization (`src/spreadsheet/csv.ts:4-19`; `src/spreadsheet/csv.ts:97-131`).
 - Media editor canvas, annotation history and Word viewer state are runtime UI state, not durable plugin records (`src/media/image-editor.tsx:52-68`; `src/media/image-editor.tsx:433-442`).
-- Studio copies in browser local storage are restoration state; BB thread-storage files remain the durable saved documents (`src/studio/session.ts:109-129`; `server.ts:571-611`).
+- Studio copies in browser local storage are restoration state; VesnALIA thread-storage files remain the durable saved documents (`src/studio/session.ts:109-129`; `server.ts:571-611`).
 
 ## Lifecycle, retention and cleanup
 
-The source file remains in BB storage after viewing. Object URLs for media blobs are revoked on replacement/unmount; spreadsheet engine models and parsed documents live with their viewer; the server caches the IronCalc WASM base64 promise in process memory and clears it after a failed load (`src/media/media.tsx:131-135`; `src/spreadsheet/opener.tsx:103-162`; `server.ts:471-478`). Wireframe history indexes keep at most 50 entries, but the code does not delete pruned snapshot files; this repository defines no database migrations, general retention period or background cleanup job (`src/server/wireframe-history.ts:47-57`; `src/server/wireframe-history-store.ts:41-57`).
+The source file remains in VesnALIA storage after viewing. Object URLs for media blobs are revoked on replacement/unmount; spreadsheet engine models and parsed documents live with their viewer; the server caches the IronCalc WASM base64 promise in process memory and clears it after a failed load (`src/media/media.tsx:131-135`; `src/spreadsheet/opener.tsx:103-162`; `server.ts:471-478`). Wireframe history indexes keep at most 50 entries, but the code does not delete pruned snapshot files; this repository defines no database migrations, general retention period or background cleanup job (`src/server/wireframe-history.ts:47-57`; `src/server/wireframe-history-store.ts:41-57`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

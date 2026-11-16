@@ -4,8 +4,8 @@ import {
   ThreadChat,
   useRpc,
   experimental_useSidebarThreadActions,
-} from "@get-bb/plugin-sdk/app";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { sessionResultSchema, type SessionResult } from "./session-contract";
 import { Button } from "./components/ui/button";

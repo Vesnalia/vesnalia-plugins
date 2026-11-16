@@ -5,11 +5,11 @@ description: "How to write links to local files and folders in chat replies so t
 
 # Clickable links to local files and folders
 
-With the Clickable Local Link plugin, in the BB desktop app on macOS:
+With the Clickable Local Link plugin, in the VesnALIA desktop app on macOS:
 
 - a document (docx, xlsx, pptx, pdf, csv, images, audio, video, zip) opens in its default app;
 - a folder opens in Finder;
-- text and code files (md, py, json, ...) open in BB's preview panel;
+- text and code files (md, py, json, ...) open in VesnALIA's preview panel;
 - Option-click on any of them selects the item in Finder;
 - scripts, apps and unknown file types are never opened, only selected in Finder.
 
@@ -29,4 +29,4 @@ Rules:
 - Do not end a folder link with `/`.
 - Use `/Users/...`, `/Volumes/...` or `file:///...`. Relative paths and `~` do not work.
 - A line reference stays as usual: `[server.py:120](/abs/path/server.py:120)`.
-- On Windows, Linux and remote clients the plugin does nothing; links behave as in plain BB.
+- On Windows, Linux and remote clients the plugin does nothing; links behave as in plain VesnALIA.

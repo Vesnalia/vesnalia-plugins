@@ -1,9 +1,9 @@
 # Design: the Box panel and the desktop
 
-How bb-box looks and reads in BB: the Box panel in a thread, the desktop
+How alia-box looks and reads in VesnALIA: the Box panel in a thread, the desktop
 tab, and the Boxes page. The settings page is in
 [settings.md](settings.md). Mockups are in [mockups](mockups/): the HTML
-renders every screen in BB's dark and light themes, and the PNGs beside it
+renders every screen in VesnALIA's dark and light themes, and the PNGs beside it
 are its output.
 
 ## Why
@@ -12,15 +12,15 @@ The first panel worked but read like a settings form: a native select
 ("Linux headless (2 cores, 4 GiB memory, 16 GiB disk)"), a "New box" button,
 a line of description, and "This thread has no boxes. Make one here, or ask
 the agent to use box_acquire." The operator asked for a panel that feels
-part of BB (1 October 2026), and for people and agents to choose a box's
+part of VesnALIA (1 October 2026), and for people and agents to choose a box's
 size ([#58](https://github.com/ahkohd/bb-box/issues/58), decision 028).
 
 ## Rules
 
-- **Match BB; invent nothing.** Every surface uses BB's own components,
+- **Match VesnALIA; invent nothing.** Every surface uses VesnALIA's own components,
   vendored from its registry at the installed version: rows, menus,
   popovers, dialogs, switches, status dots, empty states. Colours come from
-  BB's theme tokens, never literals, so custom palettes and both themes work.
+  VesnALIA's theme tokens, never literals, so custom palettes and both themes work.
 - **Calm by default.** A row says what matters now: the box's name, kind
   and state. The rest is one click away. Nothing pulses or flashes; a
   spinner shows only while something is happening.
@@ -30,7 +30,7 @@ size ([#58](https://github.com/ahkohd/bb-box/issues/58), decision 028).
 - **One place per action.** New boxes come from one button. A box's actions
   are on its row. Confirmation only for release, the one thing that deletes.
 - **Works narrow.** The thread panel is often 360 px wide. Rows wrap their
-  status line and never clip the name. On compact viewports BB's menus and
+  status line and never clip the name. On compact viewports VesnALIA's menus and
   popovers become bottom drawers; the vendored components do that.
 
 ## Names
@@ -63,7 +63,7 @@ the badges; the IDs appear nowhere.
 
 ### Badges
 
-BB's chip (its machine picker's and settings sections' small bordered word)
+VesnALIA's chip (its machine picker's and settings sections' small bordered word)
 sits after a kind's or a box's label, in the Kinds rows, the box rows, the
 New box options and the desktop lists:
 
@@ -96,13 +96,13 @@ under the name before the name would truncate. The New box form carries
 no badges: what a card or a row has sits in words on a line of its own
 under its name (the operator's annotation of 1 October 2026: Linux's four
 badges had once left one letter of its name).
-bb-box's own icon is a cube; BB has no cube, monitor, server or terminal glyph, so the
-plugin declares its four as SVGs (`bb.branding.experimental_icons`), drawn
-in the weight of BB's set.
+alia-box's own icon is a cube; VesnALIA has no cube, monitor, server or terminal glyph, so the
+plugin declares its four as SVGs (`alia.branding.experimental_icons`), drawn
+in the weight of VesnALIA's set.
 
 ## The Box panel
 
-A thread panel tab titled "Box" (`layout: "padded"`, so BB gives it its
+A thread panel tab titled "Box" (`layout: "padded"`, so VesnALIA gives it its
 usual padding and scrolling). The operator asked for the singular on the
 tab (1 October 2026): one tab, one place for the thread's boxes.
 
@@ -116,7 +116,7 @@ tab (1 October 2026): one tab, one place for the thread's boxes.
 |     (spinner) Starting · 1.4 s · 2 cores · 4 GiB · 16 GiB   |
 |------------------------------------------------------------|
 | [o] bold-heron  Linux desktop [GPU] [LXC]        [#] [>_] ... |
-|     (green) Ready in 2.2 s · BB machine in 5.3 s ·          |
+|     (green) Ready in 2.2 s · ALIA machine in 5.3 s ·          |
 |     4 cores · 8 GiB · 32 GiB · You have control             |
 |     Address     10.200.0.14                                 |   details, when open
 |     Backend     Proxmox LXC on pve                          |
@@ -127,14 +127,14 @@ tab (1 October 2026): one tab, one place for the thread's boxes.
 +------------------------------------------------------------+
 ```
 
-- **Toolbar**: the plus on the right, alone: BB's ghost icon button, with
+- **Toolbar**: the plus on the right, alone: VesnALIA's ghost icon button, with
   the tooltip and accessible name "New box" (the operator asked for the
   button without a label or border, 1 October 2026, and for the box count
   that stood on the left to go, 4 October 2026).
-- **List**: BB's list panel (`rounded-lg border bg-card px-4`), one row per
+- **List**: VesnALIA's list panel (`rounded-lg border bg-card px-4`), one row per
   box, divided by hairlines, newest last so a new box appears where the eye
   is after pressing the button.
-- **Row**: BB's resource row. The box glyph, the cube, on every row, the name
+- **Row**: VesnALIA's resource row. The box glyph, the cube, on every row, the name
   in `text-sm font-medium`, the kind label beside it in muted `text-xs`, its
   badges (wrapping under the name when the row is narrow), and a status line
   below in muted `text-xs`. Trailing: the row's quick actions
@@ -145,23 +145,23 @@ tab (1 October 2026): one tab, one place for the thread's boxes.
 
 ### The status line
 
-One line, items separated by BB's middle dot. The first item is the state
-with a status dot in BB's tones (success, warning, destructive, and the
-hollow ring BB uses for offline), or a spinner while something is in
+One line, items separated by VesnALIA's middle dot. The first item is the state
+with a status dot in VesnALIA's tones (success, warning, destructive, and the
+hollow ring VesnALIA uses for offline), or a spinner while something is in
 progress.
 
 | State | Line |
 | --- | --- |
 | acquiring, starting | (spinner) Starting · 1.4 s, the time ticking from the request |
-| ready, joining BB | (green) Ready in 2.2 s · Joining BB… |
-| ready, BB machine | (green) Ready in 2.2 s · BB machine in 5.3 s |
+| ready, joining VesnALIA | (green) Ready in 2.2 s · Joining VesnALIA… |
+| ready, VesnALIA machine | (green) Ready in 2.2 s · VesnALIA machine in 5.3 s |
 | ready, enrolment off | (green) Ready in 2.2 s |
-| ready, enrolment failed | (green) Ready in 2.2 s · Could not join BB (warning text; the reason is in the details) |
+| ready, enrolment failed | (green) Ready in 2.2 s · Could not join VesnALIA (warning text; the reason is in the details) |
 | ready, after a restart | (green) Ready |
 | stopping, releasing | (spinner) Stopping… / Releasing… |
 | stopped | (ring) Stopped |
 | failed | (red) Failed, with the backend's reason on a line below, in destructive text |
-| gone | (red) Gone · deleted outside bb-box |
+| gone | (red) Gone · deleted outside alia-box |
 
 After the state come the size ("4 cores · 8 GiB · 32 GiB"; the disk is left
 out when it is the base disk), "GPU" or "CPU" for a desktop, and for a
@@ -181,17 +181,17 @@ A two-column grid in `text-xs`, labels muted:
 | Backend | Proxmox LXC on pve |
 | System | Linux x86_64, with docker |
 | each guest fact | GPU, Display, Reason, Template, as the backend gives them |
-| BB machine | its name and whether it is connected; "off" when enrolment is off; "not for this kind" when its kind cannot enrol, as a Windows kind with its backend's switch off; the error when it failed |
-| Timings | clone 0.75 s · start 1.0 s · ssh 0.45 s · total 2.2 s · BB enrolment 5.3 s |
+| VesnALIA machine | its name and whether it is connected; "off" when enrolment is off; "not for this kind" when its kind cannot enrol, as a Windows kind with its backend's switch off; the error when it failed |
+| Timings | clone 0.75 s · start 1.0 s · ssh 0.45 s · total 2.2 s · VesnALIA enrolment 5.3 s |
 | Made | 12 minutes ago |
 
 ### Quick actions and the menu
 
-Quick actions are BB's ghost icon buttons with tooltips: "Open desktop"
+Quick actions are VesnALIA's ghost icon buttons with tooltips: "Open desktop"
 (desktop boxes, when ready), "Open terminal" (once
 [#51](https://github.com/ahkohd/bb-box/issues/51) exists, for boxes that
-are BB machines), "Start" on a stopped box, "Stop" on a running one that can
-stop. The menu (BB's overflow menu, three dots) repeats them and adds the
+are VesnALIA machines), "Start" on a stopped box, "Stop" on a running one that can
+stop. The menu (VesnALIA's overflow menu, three dots) repeats them and adds the
 rest:
 
 1. Open desktop
@@ -203,13 +203,13 @@ rest:
 7. Check now (asks the backend for the box's state; disabled while a change
    is in progress)
 8. separator
-9. Release…, in BB's destructive menu style
+9. Release…, in VesnALIA's destructive menu style
 
 Items that do not apply are left out, not disabled, except "Check now".
 
 ### Release
 
-"Release…" opens BB's alert dialog:
+"Release…" opens VesnALIA's alert dialog:
 
 > **Release bold-heron?**
 > Its disk and everything on it will be deleted. Copy out anything you want
@@ -219,8 +219,8 @@ Items that do not apply are left out, not disabled, except "Check now".
 For a real machine: "The machine will be reset and returned to its pool.
 Anything in the box user's home will be deleted."
 
-Every alert dialog in bb-box (this one, "Stop anyway?", "Remove machine?"
-in settings) moves as BB's own dialogs do: a fade with a slight scale from
+Every alert dialog in alia-box (this one, "Stop anyway?", "Remove machine?"
+in settings) moves as VesnALIA's own dialogs do: a fade with a slight scale from
 the centre over 200 ms, the same on close, and no motion at all under
 prefers-reduced-motion. shadcn's extra slide (from the left half and the
 top 48%) is left out of `components/ui/alert-dialog.tsx`: it was a
@@ -281,7 +281,7 @@ words are never cut off.
 | [ docker-host                                                  ]  |
 | [ Container · usually ~1.8 s                                   ]  |
 | Name                                                              |
-| [ Optional: bb-box picks a name like calm-tundra               ]  |
+| [ Optional: alia-box picks a name like calm-tundra               ]  |
 |------------------------------------------------------------------|
 | No provider matches these filters.              [ Create box ]    |
 +------------------------------------------------------------------+
@@ -309,7 +309,7 @@ bottom sheet still carries the title "New box".
   not a type (the operator's note), so it reads under Desktop, not as a
   card of its own. A type the system and architecture lack greys out the
   same way. These are the only glyphs in the form, the server and the
-  monitor (`src/app/glyphs.tsx`), drawn in the weight of BB's set.
+  monitor (`src/app/glyphs.tsx`), drawn in the weight of VesnALIA's set.
 - **Display** is a detail of a desktop, as a GPU is of its resources, not
   a section of its own, so its title is never bold (the operator's notes
   of 3 October 2026). Where a desktop's system offers both windowings
@@ -328,14 +328,14 @@ bottom sheet still carries the title "New box".
   names, no description, and not remembered across forms. The build state (built ahead, or its
   script running as the box starts) stays off the form; the box's row
   and details carry it. Create sends the choice as the acquire RPC's
-  `image`, a name or "standard". BB's new-thread inputs offer the same
+  `image`, a name or "standard". VesnALIA's new-thread inputs offer the same
   list as an Image group after Size, with check marks; outside a
   project nothing is chosen and nothing is sent until the person picks,
   so the provider's own default, the new thread's project's image, still
   applies.
 - **No box image** (049): for a Linux box in a project that has no box
   image, the footer's free slot, left of Create box, holds one dim
-  link-styled line, "Make a box image for this project", which opens BB's
+  link-styled line, "Make a box image for this project", which opens VesnALIA's
   new-thread composer with the request filled in. No sentence explains
   it (the operator's note of 3 October 2026); the standing text takes the
   slot when there is one.
@@ -391,7 +391,7 @@ bottom sheet still carries the title "New box".
   operator's note of 2 October 2026; #292's colours stay out of the form).
   A row's name is its host ("pve1"), "2 Macs" or "3 hosts" for several,
   the backend's label for a pool, and "an unnamed machine" for a Docker
-  machine BB has not named: a row never shows a host ID (the operator's
+  machine VesnALIA has not named: a row never shows a host ID (the operator's
   rule). A row is one card: its hover and
   chosen backgrounds span the whole card, and a small (i), the size of
   the row's dim line on a 24 px hit area, sits inside it at the right,
@@ -453,9 +453,9 @@ bottom sheet still carries the title "New box".
 
 ### The box this thread runs on
 
-A thread that runs on a box's BB machine, one of your machines (036) or
+A thread that runs on a box's VesnALIA machine, one of your machines (036) or
 another thread's, lists that box first in the one list, with a small dim
-"BB machine" badge last among its kind badges, one of that group so its
+"VesnALIA machine" badge last among its kind badges, one of that group so its
 gap is the others' (the operator, 4 October 2026: "This thread" did not
 make sense, and sat too far from the badges before it). There is no
 heading and no card of its own (the operator, the same day: "This thread
@@ -471,16 +471,16 @@ with a terminal, the bare tab opens it straight away.
 
 ### Empty states
 
-- **No boxes**: BB's dashed empty panel: "No boxes yet", then "A computer
+- **No boxes**: VesnALIA's dashed empty panel: "No boxes yet", then "A computer
   for this thread." The operator asked for that line to stay this simple
   (1 October 2026). The toolbar's plus is the action; the panel does not
   repeat it. It shows only when there is nothing at all to list: a thread
   on one of your machines with no boxes of its own sees that machine's
   row, not this.
-- **No backend on**: "BB Box is not set up yet. Set a backend up in its
-  settings and turn it on." with an "Open BB Box settings" button that goes
+- **No backend on**: "VesnALIA Box is not set up yet. Set a backend up in its
+  settings and turn it on." with an "Open VesnALIA Box settings" button that goes
   to the plugin's settings page. No "New box" button.
-- **Loading**: BB's skeleton rows, shown only after 150 ms so a fast load
+- **Loading**: VesnALIA's skeleton rows, shown only after 150 ms so a fast load
   does not flash (the owner, 7 November 2026). They have the real rows'
   height and shape: the icon, the name line, the status line and the
   action icons' space, so the list does not jump when the rows come. They
@@ -488,12 +488,12 @@ with a terminal, the bare tab opens it straight away.
   tabs, a box's page, the settings pages and the Images page show the
   same while they load, each in its own shape.
 - **Could not load**: a line saying what did not load, such as "The boxes
-  did not load.", the error under it, and "Try again", in BB's empty
+  did not load.", the error under it, and "Try again", in VesnALIA's empty
   panel. Never an empty list, and never a skeleton that stays.
 
 ### Live updates
 
-The panel refetches on bb-box's change signal for its thread and after a
+The panel refetches on alia-box's change signal for its thread and after a
 reconnect, as before. While a box starts, the row's time ticks every 100 ms
 from the record's `createdAt`, so the panel feels alive without polling.
 When the box is ready, the ticking stops and the row shows the real timings
@@ -514,7 +514,7 @@ titled after the box.
 +------------------------------------------------------------------+
 ```
 
-- **Toolbar**: BB's recessed bar (`border-b bg-surface-recessed px-3 py-2
+- **Toolbar**: VesnALIA's recessed bar (`border-b bg-surface-recessed px-3 py-2
   text-xs`): the monitor glyph, the box's name, then the state in muted
   text with a status dot. On the right the one action that matters now,
   and a menu with the rest ("Open in browser", "Reconnect", "Open
@@ -536,8 +536,8 @@ titled after the box.
   box shows, greyed until the connection is up, and Paste until this tab has
   control, so a person sees there is a paste to take. Paste's icon is the
   plugin's own clipboard glyph with an arrow into it (`src/app/glyphs.tsx`),
-  since BB's set has no clipboard icon and a missing name falls back to a
-  lightning bolt (the operator's note of 4 October 2026); it pairs with BB's
+  since VesnALIA's set has no clipboard icon and a missing name falls back to a
+  lightning bolt (the operator's note of 4 October 2026); it pairs with VesnALIA's
   Copy. After the person's own paste or copy, by Cmd+V or the menu, the
   toolbar says how it went in a muted note that goes after about three
   seconds, a little longer for a sentence: "Pasted", "Copied", "This
@@ -548,14 +548,14 @@ titled after the box.
   of 4 October 2026). Where nothing has come from the box, the note says why:
   take control first, or copy in the box first. wayvnc and TigerVNC move it
   both ways, measured 4 October 2026. Tart's VNC server moves it in neither
-  direction, measured the same day, so on a macOS VM on Tart bb-box moves it
+  direction, measured the same day, so on a macOS VM on Tart alia-box moves it
   with `pbcopy` and `pbpaste` in the box's desktop session, and the viewer's
   text goes over RPC as UTF-8 (#464). QEMU's console, which shows both
   Windows desktops, moves it only with the SPICE guest agent, which the
-  templates lack, so there bb-box moves it the same way with PowerShell's
+  templates lack, so there alia-box moves it the same way with PowerShell's
   `Set-Clipboard` and `Get-Clipboard` in the desktop session, and the viewer
   presses Ctrl+V (#461). A Windows box from before #461 says the desktop
-  moves no clipboard until bb-box's next start gives it the commands.
+  moves no clipboard until alia-box's next start gives it the commands.
 - **Control** (decisions 008 and 020):
 
   | Who | Text | Action |
@@ -601,7 +601,7 @@ that request's round trip (#353).
 - **The box is not running**: the screen area shows a notice with the one
   useful action: "bold-heron is stopped." and a Start button; "bold-heron
   is starting…" with a spinner; "This box has been released." with none.
-- Notices are BB's card style, centred on the muted screen area: a line of
+- Notices are VesnALIA's card style, centred on the muted screen area: a line of
   `text-sm`, a muted second line, and at most one button.
 
 ## The terminal tab
@@ -620,17 +620,17 @@ box runs. Issue [#51](https://github.com/ahkohd/bb-box/issues/51).
 +------------------------------------------------------------------+
 ```
 
-- **What it shows**: xterm.js, with BB's canvas and foreground colours
+- **What it shows**: xterm.js, with VesnALIA's canvas and foreground colours
   and its monospace font, over the plugin's own WebSocket (`/terminal`)
-  to a shell in the box. The shell's PTY is on BB's server, made by the
+  to a shell in the box. The shell's PTY is on VesnALIA's server, made by the
   box's transport (`ssh -tt`, `docker exec -it`) under `script`, so
   nothing runs in the box and every box with a command transport has a
   terminal ([src/plugin/terminal.ts](../../src/plugin/terminal.ts),
   [src/transports/terminal.ts](../../src/transports/terminal.ts)).
-- **Toolbar**: BB's recessed bar: the terminal glyph, the box's name, the
+- **Toolbar**: VesnALIA's recessed bar: the terminal glyph, the box's name, the
   state with a status dot: "Connecting…", "Connected", "Ended", or the
   box's state. Nothing else while it works.
-- **The shell outlives the tab**. BB remounts a panel tab when a person
+- **The shell outlives the tab**. VesnALIA remounts a panel tab when a person
   switches tabs. The panel keeps the terminal itself across the switch
   (see "Kept across tab switches" below), and the plugin keeps the shell
   behind it: the tab keeps a session ID per box for the browser tab, as
@@ -651,13 +651,13 @@ box runs. Issue [#51](https://github.com/ahkohd/bb-box/issues/51).
   stopped." with Start; "calm-otter is starting…"; "This box has been
   released." A box whose transport has no shell says "calm-otter has no
   terminal."
-- BB's own terminal tab would be better still, with its history and its
-  place in BB's terminal list; that is BB request 9 in
-  [bb-requests.md](../bb-requests.md).
+- VesnALIA's own terminal tab would be better still, with its history and its
+  place in VesnALIA's terminal list; that is VesnALIA request 9 in
+  [alia-requests.md](../alia-requests.md).
 
 ## Kept across tab switches
 
-BB remounts a panel tab whenever a person switches tabs, and the SDK has
+VesnALIA remounts a panel tab whenever a person switches tabs, and the SDK has
 no way to keep one mounted, so a desktop and a terminal used to reconnect
 on every switch: a handshake, a blank frame, a shell that had to be
 re-attached. The operator asked for them to be kept in memory so switching
@@ -697,8 +697,8 @@ back is instant (1 October 2026). The app bundle keeps them
 The sidebar entry, "Boxes", lists every box across threads, servers as well as
 desktops, as rows: the box glyph (the cube, on every row), name, the OS and
 badges, then the state, who has control for a desktop, and the thread's title.
-Its icon is bb-box's cube, `bb-box/box`, which suits a page of boxes; the
-plugin declares it in `bb.branding.experimental_icons`, as BB resolves a
+Its icon is alia-box's cube, `alia-box/box`, which suits a page of boxes; the
+plugin declares it in `alia.branding.experimental_icons`, as VesnALIA resolves a
 plugin's icons by name (the operator's note of 5 October 2026, when an
 undeclared name had shown the monitor).
 
@@ -713,7 +713,7 @@ with who has control of a desktop and the thread's title. Your machines
 (036) come first, under "Machines" (the operator, 4 October 2026), as
 settings' rows (`MachineRow`): the threads working on each, Stop or Start,
 and "Remove…" with settings' warnings, plus "Open desktop in a browser
-tab"; there is no "Open thread" or "BB machine" badge, since every row
+tab"; there is no "Open thread" or "VesnALIA machine" badge, since every row
 there is one. The threads' boxes follow under "Threads". A refusal is a red
 line with Dismiss. Opening a desktop shows the same viewer with
 a back arrow in the toolbar, at `<thread>/<box>`; a box's terminal shows
@@ -726,14 +726,14 @@ able to add a new box there too, not have to go to settings"); the new
 machine shows under Machines as it starts and once it is ready. Nothing
 stands on the left: the box count went with the Box panel's. Settings' Add
 machine stays as it is.
-The settings gear, "BB Box settings" in its tooltip and accessible name,
-links to Settings > BB Box. It sits in the page's top row, then the plus at
-the far right, where the Box panel's plus sits, the two a pair with BB's
+The settings gear, "VesnALIA Box settings" in its tooltip and accessible name,
+links to Settings > VesnALIA Box. It sits in the page's top row, then the plus at
+the far right, where the Box panel's plus sits, the two a pair with VesnALIA's
 gap between icon buttons in a group, `gap-1` as in its sidebar header (the
 operator, 5 October 2026, for whom 12 px read as two things, after trying it under
-the lists and in BB's title bar; BB offers a nav page a place in that bar
-only on its right, and none beside the title, docs/bb-requests.md #18). It is a link,
-not a button calling `openUrl`: BB's `openUrl` opens only http(s) URLs, by
+the lists and in VesnALIA's title bar; VesnALIA offers a nav page a place in that bar
+only on its right, and none beside the title, docs/alia-requests.md #18). It is a link,
+not a button calling `openUrl`: VesnALIA's `openUrl` opens only http(s) URLs, by
 the person's browser preference, and returns false for an app path, so the
 first version did nothing; `UrlLink` routes an app path in the app. The
 viewer's "Back to settings" is a link for the same reason, and "Open in
@@ -753,15 +753,15 @@ that starts with "Open details", with an info icon, which opens the box's
 page (the owner, 30 October 2026: it read "Page" before, unlike the
 items under it). Then come the box's views, each with the Boxes row's
 icon and words: "Open simulator" or "Open emulator", "Open desktop",
-"Open terminal". BB's server and BB machines that are not
+"Open terminal". VesnALIA's server and VesnALIA machines that are not
 boxes have the button only while threads are on them (see below). The owner chose one
-button over a button for each view: in BB's sidebar, 253 px wide, the
+button over a button for each view: in VesnALIA's sidebar, 253 px wide, the
 header had 23 px to spare, and three buttons left the name about 19 px. The
 machine picker lists names only, as before; a button on each row was
 noise.
 
 The header has no settings gear (the owner, 29 October 2026): the
-Monitor's settings are on BB Box's settings page, under Monitor. It holds
+Monitor's settings are on VesnALIA Box's settings page, under Monitor. It holds
 the name, Open for a box or for a machine with threads on it, Reload and
 Hide.
 
@@ -778,11 +778,11 @@ After the views come the threads on the box (the owner, 29 October 2026:
 "list of threads that this machine is working"): a divider, a "Threads"
 label, then one item for each thread, with its title and, while it works,
 the spinning mark the Boxes row's thread chips have, at the item's right end
-as BB's sidebar shows it, with no space kept for it when the thread is idle. A thread's box lists
-the thread that holds it first, then the threads running on it as a BB
+as VesnALIA's sidebar shows it, with no space kept for it when the thread is idle. A thread's box lists
+the thread that holds it first, then the threads running on it as a VesnALIA
 machine. A kept machine lists the threads running on it, the ones its
 Boxes row shows as chips. Both are in the chips' order: working first,
-then the most recently active. An item opens its thread through BB's
+then the most recently active. An item opens its thread through VesnALIA's
 navigation, as a chip does. The menu shows at most 5; after them, "2 more
 on the Boxes page" opens the Boxes page's Machines tab for a kept machine,
 where its row has every chip, and its Threads tab for a thread's box. A
@@ -790,13 +790,13 @@ box with no threads has no divider and no section. Screen readers hear
 each item as its title and "working" or "idle", in the menu's group named
 Threads; the arrows move from the views to the threads in order.
 
-The threads come from BB's own live thread list
-(`experimental_useSidebarThreads`): those whose machine is the box's BB
+The threads come from VesnALIA's own live thread list
+(`experimental_useSidebarThreads`): those whose machine is the box's VesnALIA
 machine, and the holder by its ID, not archived and not hidden. A hidden
-thread, such as a helper a plugin starts, is one BB's own sidebar keeps out
-of its list, so the Monitor shows what BB's sidebar shows (the lead, 30
+thread, such as a helper a plugin starts, is one VesnALIA's own sidebar keeps out
+of its list, so the Monitor shows what VesnALIA's sidebar shows (the lead, 30
 October 2026). That list costs no
-request and changes when BB's sidebar does; the chips' list,
+request and changes when VesnALIA's sidebar does; the chips' list,
 `machines.list`, refreshes only on a box's events. "Working" is the
 chips' rule, `threadOnBox` (`src/plugin/thread-on-box.ts`): starting,
 active, pending or stopping, or waiting on a question. That hook is
@@ -804,52 +804,52 @@ experimental, so when it is missing or throws, a kept machine lists the
 threads from `machines.list`, as its chips do, and a thread's box lists
 none (`src/app/monitor/box-threads.tsx`).
 
-BB's server and every other BB machine that is not a box list their
-threads too (the owner, 30 October 2026: "Should BB machines also list the
+VesnALIA's server and every other VesnALIA machine that is not a box list their
+threads too (the owner, 30 October 2026: "Should VesnALIA machines also list the
 threads they are working on? ... the ones that are currently active, that
 are not archived"). The same button sits beside the machine's name, with
 the same icon, but only while the machine has threads that are not
 archived or hidden and that are working or were last active in the past
 24 hours (the lead, 30 October 2026); with none, the header is unchanged.
-On BB's server, every idle thread would otherwise count, and the list
+On VesnALIA's server, every idle thread would otherwise count, and the list
 would run to hundreds. A box keeps every such thread, however long ago it
 was active: its threads are few, and all of them hold or use it. A
 machine's button has no views to open, so its name for screen readers and its tooltip say "Threads on" and the
 machine's name, as in "Threads on build-server", and its menu is the
 "Threads" group alone, with no Open details, no views and no divider. The threads
-are BB's live list's, matched by the machine's ID, which is its BB host's,
+are VesnALIA's live list's, matched by the machine's ID, which is its VesnALIA host's,
 in the same order and with the same 5 at most. "Last active" is the
-thread's `updatedAt` in that list. After them, "2 more in BB's sidebar"
+thread's `updatedAt` in that list. After them, "2 more in VesnALIA's sidebar"
 counts only the threads that qualify, and is a note, not an item: there
 is no page that lists a machine's threads to open, and a count tells the
 reader the list is cut.
 A machine counts as one that is not a box when the machine list gives it
 no `boxId`; a box whose entry the Boxes page's list does not have yet
 shows no button until it does, so a box's menu never starts as threads
-alone. When BB's live list is missing or throws, these machines list none,
+alone. When VesnALIA's live list is missing or throws, these machines list none,
 so they have no button.
 
 A box that is not ready keeps its items, disabled, each with the reason
 under its words, as in "brisk-wren is stopped". The Box panel's row hides
 its buttons instead, as before. The menu is the Monitor's own, styled as
-its picker's popover (`src/app/monitor/menu.tsx`), not BB's, which becomes
+its picker's popover (`src/app/monitor/menu.tsx`), not VesnALIA's, which becomes
 a drawer on a narrow screen. Enter, Space or Down opens it, the arrows
 move, Escape closes it and focus returns to the button. The menu and the picker
-keep Escape to themselves: BB's sidebar footer closes the whole Monitor on
+keep Escape to themselves: VesnALIA's sidebar footer closes the whole Monitor on
 Escape.
 
 ## Copy
 
 | Where | Text |
 | --- | --- |
-| plugin description | Computers for BB threads. The plugin shows as "BB Box"; its ID stays bb-box. |
+| plugin description | Computers for VesnALIA threads. The plugin shows as "VesnALIA Box"; its ID stays alia-box. |
 | tab titles | Box; the box's name for its desktop |
 | toolbar | New box |
 | chooser | System · Architecture · Type · Server · Desktop · Not available · Provider · Filter · Kind · All · Container · VM · Physical · Runs on · Any machine · First with room · Resources · Small · Medium · Large · Custom · GPU · None · 1 GPU · Create box · Add machine · No provider matches these filters. |
 | provider profile | About <provider> · Runs on · Makes · Room · Usually · Status · Looking… · Not known: the provider did not answer. |
 | empty | No boxes yet · A computer for this thread. |
-| not set up | BB Box is not set up yet. Set a backend up in its settings and turn it on. · Open BB Box settings |
-| states | Starting · Ready in 2.2 s · Joining BB… · BB machine in 5.3 s · Could not join BB · Stopping… · Stopped · Releasing… · Failed · Gone |
+| not set up | VesnALIA Box is not set up yet. Set a backend up in its settings and turn it on. · Open VesnALIA Box settings |
+| states | Starting · Ready in 2.2 s · Joining VesnALIA… · VesnALIA machine in 5.3 s · Could not join VesnALIA · Stopping… · Stopped · Releasing… · Failed · Gone |
 | actions | Open desktop · Open in browser · Open terminal · Copy address · Start · Stop · Check now · Release… |
 | release | Release bold-heron? · Its disk and everything on it will be deleted. Copy out anything you want to keep first. · Cancel · Release |
 | control | The agent has control · You have control. The desktop follows this tab's size. · Another viewer has control · Control is changing hands… · The agent took control · Take control · Take control again · Hand back to the agent |
@@ -860,7 +860,7 @@ Agent-facing text is unchanged by the panel; the tools keep saying
 
 ## Seeing it
 
-`scripts/preview/` renders the built panels outside BB with BB's theme and
+`scripts/preview/` renders the built panels outside VesnALIA with VesnALIA's theme and
 the fixtures of each state, and `scripts/preview/shoot.mjs` screenshots
 every scene with headless Chrome. The screenshots in
 [mockups/built](mockups/built/) come from it.
@@ -871,7 +871,7 @@ every scene with headless Chrome. The screenshots in
   `KindView` as they are.
 - Sizes (028) are in: `KindView.presets`, `defaultPreset` and `largest`;
   `BoxView.size`; `size` on the `acquire` RPC.
-- For "Open terminal" (#51): a way to open a BB terminal on the box's
+- For "Open terminal" (#51): a way to open a VesnALIA terminal on the box's
   machine from the panel.
-- For "Open bb-box settings": the plugin's settings route, which the panel
-  links with BB's `UrlLink`.
+- For "Open alia-box settings": the plugin's settings route, which the panel
+  links with VesnALIA's `UrlLink`.

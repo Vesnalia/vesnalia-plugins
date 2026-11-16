@@ -27,7 +27,7 @@ const record = (build: string, changes: Partial<ImageRecord> = {}): ImageRecord 
   os: "Ubuntu 24.04.5 LTS",
   aptSnapshot: "20260930T000000Z",
   pins: "p".repeat(64),
-  bbApp: "a".repeat(64),
+  aliaApp: "a".repeat(64),
   tools: { node: "24.21.0" },
   nvidia: null,
   layer: null,
@@ -58,9 +58,9 @@ function backend(id = "proxmox-lxc", options: { startsFrom?: boolean; fail?: (sc
             ran.push({ box: ref, script });
             const failed = options.fail?.(script);
             if (failed) return failed;
-            if (script.includes("bb-box-check-headless")) return ok("node              ok   24.21.0\ndocker            ok   on first use\n");
-            if (script === "cat /usr/share/bb-box/image.json") return ok(JSON.stringify(record("build.finalized", { sizeGiB: 3.4, kind: "linux-desktop" })));
-            const json = /^printf '%s\\n' '(.*)' \| sudo -n tee \/usr\/share\/bb-box\/image\.json/.exec(script)?.[1];
+            if (script.includes("alia-box-check-headless")) return ok("node              ok   24.21.0\ndocker            ok   on first use\n");
+            if (script === "cat /usr/share/alia-box/image.json") return ok(JSON.stringify(record("build.finalized", { sizeGiB: 3.4, kind: "linux-desktop" })));
+            const json = /^printf '%s\\n' '(.*)' \| sudo -n tee \/usr\/share\/alia-box\/image\.json/.exec(script)?.[1];
             if (json) written = JSON.parse(json);
             return ok();
           },
@@ -144,13 +144,13 @@ test("an image is baked on a backend once two of its boxes ran its script there 
   // The bake: a box of the standard build, the script and check, the record, a capture and a trial box.
   const scripts = lxc.ran.map((one) => `${one.box}: ${one.script.split("\n")[0]!.slice(0, 40)}`);
   assert.deepEqual(scripts, [
-    "7000: write bb-box-setup.tgz",
-    "7000: write .bb-box-image/setup.sh",
-    "7000: write .bb-box-image/check.sh",
+    "7000: write alia-box-setup.tgz",
+    "7000: write .alia-box-image/setup.sh",
+    "7000: write .alia-box-image/check.sh",
     "7000: set -euo pipefail",
-    "7000: cat /usr/share/bb-box/image.json",
+    "7000: cat /usr/share/alia-box/image.json",
     "7000: printf '%s\\n' '{\"contract\":1,\"image\":\"ru",
-    "7001: write .bb-box-image/check.sh",
+    "7001: write .alia-box-image/check.sh",
     "7001: set -a; [ ! -r /etc/environment ] || . /",
   ]);
   const built = lxc.builds.find((build) => build.image === "rust")!;
@@ -291,13 +291,13 @@ test("removing an image removes its builds at once (049)", async () => {
 test("the bake's script runs the image's script as root and its check as the box user, then finalizes, keeping the standard build's release notes (049)", () => {
   const script = bakeScript("rust", "linux-desktop-cpu", "docker", "build.20261003-100000-abcd", true);
   const lines = script.split("\n");
-  assert.ok(lines.includes(`sudo -n env BB_BOX_IMAGE='rust' BB_BOX_KIND='linux-desktop-cpu' BB_BOX_BACKEND='docker' BB_BOX_ARCH="$(uname -m | sed s/aarch64/arm64/)" bash "$HOME/.bb-box-image/setup.sh"`));
-  assert.ok(lines.includes(`(set -a; [ ! -r /etc/environment ] || . /etc/environment; set +a; env BB_BOX_IMAGE='rust' BB_BOX_KIND='linux-desktop-cpu' BB_BOX_BACKEND='docker' BB_BOX_ARCH="$(uname -m | sed s/aarch64/arm64/)" bash "$HOME/.bb-box-image/check.sh")`), "the check reads the PATH the script set");
-  assert.ok(lines.includes("sudo -n bash /var/tmp/bb-box-build/proxmox-lxc/template/guest/finalize.sh /var/tmp/bb-box-build/proxmox-lxc/template desktop"));
-  assert.ok(lines.indexOf(lines.find((line) => line.includes("finalize.sh"))!) < lines.indexOf(lines.find((line) => line.startsWith("sudo -n sh -c 'cp -p /usr/share/bb-box/.bake-keep/*"))!));
+  assert.ok(lines.includes(`sudo -n env ALIA_BOX_IMAGE='rust' ALIA_BOX_KIND='linux-desktop-cpu' ALIA_BOX_BACKEND='docker' ALIA_BOX_ARCH="$(uname -m | sed s/aarch64/arm64/)" bash "$HOME/.alia-box-image/setup.sh"`));
+  assert.ok(lines.includes(`(set -a; [ ! -r /etc/environment ] || . /etc/environment; set +a; env ALIA_BOX_IMAGE='rust' ALIA_BOX_KIND='linux-desktop-cpu' ALIA_BOX_BACKEND='docker' ALIA_BOX_ARCH="$(uname -m | sed s/aarch64/arm64/)" bash "$HOME/.alia-box-image/check.sh")`), "the check reads the PATH the script set");
+  assert.ok(lines.includes("sudo -n bash /var/tmp/alia-box-build/proxmox-lxc/template/guest/finalize.sh /var/tmp/alia-box-build/proxmox-lxc/template desktop"));
+  assert.ok(lines.indexOf(lines.find((line) => line.includes("finalize.sh"))!) < lines.indexOf(lines.find((line) => line.startsWith("sudo -n sh -c 'cp -p /usr/share/alia-box/.bake-keep/*"))!));
   assert.ok(script.includes("BUILD_ID=%s\\n' 'build.20261003-100000-abcd'"));
   assert.ok(!bakeScript("rust", "linux", "proxmox-lxc", "build.x", false).includes("check.sh"));
-  assert.ok(lines.indexOf("sudo -n install -m 0755 /var/tmp/bb-box-build/proxmox-lxc/template/guest/bb-box-feature.sh /usr/local/bin/bb-box-feature") < lines.findIndex((line) => line.includes(".bb-box-image/setup.sh")), "bb-box-feature is there before the script");
+  assert.ok(lines.indexOf("sudo -n install -m 0755 /var/tmp/alia-box-build/proxmox-lxc/template/guest/alia-box-feature.sh /usr/local/bin/alia-box-feature") < lines.findIndex((line) => line.includes(".alia-box-image/setup.sh")), "alia-box-feature is there before the script");
   const syntax = spawnSync("bash", ["-n"], { input: script });
   assert.equal(syntax.status, 0, syntax.stderr.toString());
 });
@@ -312,7 +312,7 @@ test("a try runs the script as a build does, then the check and the kind's check
     [
       ["the script and the check, in the build box", true],
       ["the check, on a box of the build", true],
-      ["the kind's check (bb-box-check-headless)", true],
+      ["the kind's check (alia-box-check-headless)", true],
     ],
   );
   assert.equal(result.checks[2]!.detail, "2 checks passed");
@@ -320,7 +320,7 @@ test("a try runs the script as a build does, then the check and the kind's check
   assert.deepEqual(lxc.removed, ["7001", "7000"], "the trial box, then the build");
   assert.deepEqual(await storage.list("images/"), [], "a try keeps nothing");
   assert.match(tryText(result), /^The script passed on proxmox-lxc \(linux\), in \d+ s, as a build runs it\.\n- the script and the check, in the build box: ok, \d+ s, with finalizing\n/);
-  assert.ok(lxc.ran.some((one) => one.script.includes(`BB_BOX_IMAGE='rust' BB_BOX_KIND='linux' BB_BOX_BACKEND='proxmox-lxc'`)));
+  assert.ok(lxc.ran.some((one) => one.script.includes(`ALIA_BOX_IMAGE='rust' ALIA_BOX_KIND='linux' ALIA_BOX_BACKEND='proxmox-lxc'`)));
 });
 
 test("a try whose script passed but a later check failed says which check failed first, so the agent fixes the right thing", () => {
@@ -328,8 +328,8 @@ test("a try whose script passed but a later check failed says which check failed
   const script = { name: "the script and the check, in the build box", ok: true, detail: "6 s, with finalizing" };
   const onBuild = { name: "the check, on a box of the build", ok: false, detail: "exit code 3: no /tmp/marker" };
   assert.match(tryText({ ...base, checks: [script, onBuild] } as never), /^The script passed on proxmox-lxc \(linux\), in 25 s, as a build runs it, but this failed: the check, on a box of the build\.\n/);
-  const kinds = { name: "the kind's check (bb-box-check-headless)", ok: false, detail: "ssh: FAIL" };
-  assert.match(tryText({ ...base, checks: [script, { ...onBuild, ok: true }, kinds] } as never), /, but this failed: the kind's check \(bb-box-check-headless\)\.\n/);
+  const kinds = { name: "the kind's check (alia-box-check-headless)", ok: false, detail: "ssh: FAIL" };
+  assert.match(tryText({ ...base, checks: [script, { ...onBuild, ok: true }, kinds] } as never), /, but this failed: the kind's check \(alia-box-check-headless\)\.\n/);
   assert.match(tryText({ ...base, checks: [{ ...script, ok: false }] } as never), /^The script failed on proxmox-lxc \(linux\), in 25 s, as a build runs it\.\n/);
 });
 

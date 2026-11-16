@@ -1,4 +1,4 @@
-import type { BbPluginApi, StandardSchemaV1 } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, StandardSchemaV1 } from "@vesnalia/plugin-sdk";
 import { LIMITS, familyList, featureSettings, inRange } from "./css.ts";
 
 function schema(check: (value: string) => boolean, message: string): StandardSchemaV1<string, string> {
@@ -22,8 +22,8 @@ const features = schema((value) => featureSettings(value) !== undefined, 'Use 4-
 const FEATURES_HINT = 'OpenType features, e.g. ss01 cv11 or "liga" 0. Empty keeps the font defaults.';
 const BOLD_HINT = "100 to 900. Empty keeps the theme weight.";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     uiFont: { type: "string", label: "Interface font", description: "Font family name. Empty uses the theme font.", default: "", experimental_schema: family },
     uiSize: { type: "string", label: "Interface font size", description: "Base text size in px. Empty uses the theme size (13). Other text sizes scale with it.", default: "", experimental_schema: number("size", " px") },
     uiLineHeight: { type: "string", label: "Interface line height", description: "Line height of chat and body text, e.g. 1.6. Empty uses the theme (1.625). Other line heights scale with it.", default: "", experimental_schema: number("lineHeight") },

@@ -38,7 +38,7 @@ Fine-grained notes that don't belong in the README's feature list.
 - A snoozed card stays in its column, dimmed, with a "Snoozed · wakes …" chip (the open thread pane's header carries the same chip). One "Snooze…" menu entry (cards and the thread pane's actions menu) opens a single picker with the presets (1 hour, 4 hours, tomorrow 9am, 1 week) and a date-time field; a snoozed thread's menu shows "Edit snooze…", whose picker confirms a changed wake time or removes the wake-up call.
 - The snooze beats the sweep: snoozed cards are not sweep candidates on the board and are skipped by the server-side sweep while their sleep lasts. A snoozed card also refuses drag, so it cannot be dropped into a lane move its sleep is meant to skip.
 - Any state-changing gesture lifts the snooze first — pin, read toggle, done toggle, archive, or removing the wake-up from the edit picker. If the thread is genuinely read by hand while snoozed, the wake consumes the snooze without re-alerting.
-- Wake timers live server-side: they are re-armed on plugin load (a past-due snooze wakes immediately) and cleared on dispose. Full CLI parity: `bb focus-board snooze list|set|clear`.
+- Wake timers live server-side: they are re-armed on plugin load (a past-due snooze wakes immediately) and cleared on dispose. Full CLI parity: `alia focus-board snooze list|set|clear`.
 
 ## Escape
 
@@ -47,8 +47,8 @@ Fine-grained notes that don't belong in the README's feature list.
 
 ## Thread pane and history
 
-- The open pane is part of the panel's URL (`…/board/t/<threadId>`), so bb's back arrow returns you to the pane you left after following a link out to a full thread in main bb — and walks back through cards you lost track of, one pane per step. A deep link opens the board with that pane directly.
-- Agent-written reference tokens in the pane's chat paint as labeled chips: `@thread:thr_…` opens that thread in the pane (or bb's main thread view when the board does not list it), `@project:proj_…` opens that project. Labels resolve from the board's own thread and project rows; an unknown target shows the raw id. Chips are reachable by keyboard (Tab, then Enter/Space) and clicking claims them — an agent reference never lands on an error page or stays dead text.
+- The open pane is part of the panel's URL (`…/board/t/<threadId>`), so VesnALIA's back arrow returns you to the pane you left after following a link out to a full thread in main VesnALIA — and walks back through cards you lost track of, one pane per step. A deep link opens the board with that pane directly.
+- Agent-written reference tokens in the pane's chat paint as labeled chips: `@thread:thr_…` opens that thread in the pane (or VesnALIA's main thread view when the board does not list it), `@project:proj_…` opens that project. Labels resolve from the board's own thread and project rows; an unknown target shows the raw id. Chips are reachable by keyboard (Tab, then Enter/Space) and clicking claims them — an agent reference never lands on an error page or stays dead text.
 - Grouping, filters, and search are preferences, not history: they persist across sessions in localStorage and are deliberately not replayed by the back arrow (see [ADR 0001](adr/0001-pane-history-in-url-preferences-in-localstorage.md)).
 - The board keeps the active card in view when its lane changes (pin, done, grouping) and when a pane is restored from history.
 - The pane's more-actions menu (beside Mark Done) pins and unpins with the card menu's semantics: the gesture lifts a snooze and clears a parked pin, and the board reveals the card's lane move after the pin lands. An archived row's menu keeps just its Unarchive.

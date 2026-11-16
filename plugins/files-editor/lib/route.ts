@@ -3,11 +3,11 @@
  * `<scopeKind>/<scopeId>[/<relative path>]`, so a workspace and the file open in
  * it are both linkable and survive back/forward.
  *
- * Segments go in RAW and come back percent-encoded: BB builds the URL from the
+ * Segments go in RAW and come back percent-encoded: VesnALIA builds the URL from the
  * subPath and hands back the encoded remainder, so pre-encoding here would
  * double-encode (`config/auth.php` arriving as `config%2Fauth.php`). Write with
  * `/` separators, read by splitting on `/` and decoding each segment — the same
- * convention BB's own Docs plugin uses.
+ * convention VesnALIA's own Docs plugin uses.
  */
 
 export type ScopeKind = "thread" | "environment" | "project";

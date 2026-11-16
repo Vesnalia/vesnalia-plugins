@@ -11,7 +11,7 @@ Simplify the plugin to one Standard/manual engine plus custom Harness definition
 - Existing Standard behavior remains the default: Explore/Plan parent; Worker/Critic/Promote visible children; one active DAG node.
 - Active plans use a frozen Harness snapshot.
 - Critic -> Worker rework stops the live Critic child before any state mutation.
-- Provider/model selection remains BB-native and provider-neutral.
+- Provider/model selection remains ALIA-native and provider-neutral.
 - Existing SQLite migrations are append-only; historical Milestone tables/data are retained but no longer active product authority.
 - Plugin remains independently enableable/disableable.
 
@@ -34,7 +34,7 @@ Extend definitions additively:
 - Custom editor exposes these options concisely under Advanced; no arbitrary scripts/tools/DAG builder.
 - Plan snapshot stores the fully resolved v2 definition.
 - Seeded plan nodes persist resolved execution mode and skills. `promoteMode: off` seeds Promote as skipped; `ask` leaves it optional/manual.
-- Spawn behavior uses node execution mode rather than phase-only rules. Skills are passed through BB agent configuration for child nodes and recorded in the snapshot; unresolved behavior must fail visibly or warn, never silently rewrite the definition.
+- Spawn behavior uses node execution mode rather than phase-only rules. Skills are passed through VesnALIA agent configuration for child nodes and recorded in the snapshot; unresolved behavior must fail visibly or warn, never silently rewrite the definition.
 
 ## Step 3 - Critic outcome and lightweight artifact audit
 
@@ -60,7 +60,7 @@ Extend definitions additively:
 
 - Update backend, pure definition, and frontend tests. Remove Milestone-specific tests and replace them with regression coverage for removal/compatibility.
 - Test old custom definition parsing, frozen v2 snapshots, parent/child execution, skill injection, optional Promote, correction limits, Critic atomicity, advisory/required artifact modes, manifest paths, token event parsing, totals, ordinary-chat inactivity, project identity, unique node ids, and enable/disable-safe disposal.
-- Run `npm test`, `npm run typecheck`, `bb plugin types --check .`, `bb plugin build .`, `git diff --check`.
+- Run `npm test`, `npm run typecheck`, `alia plugin types --check .`, `alia plugin build .`, `git diff --check`.
 - Reload the installed path plugin and run live CLI/UI-oriented smoke checks; confirm zero handler errors.
 - Independent Critic review; one bounded correction if needed.
 - Commit coherent changes. Do not tag, release, publish, open a PR, or merge without later authorization.

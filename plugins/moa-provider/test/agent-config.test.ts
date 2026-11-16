@@ -54,10 +54,10 @@ describe("interaction helpers", () => {
       subject,
       availableDecisions,
     });
-    expect(consultApprovalDecision(approval({ kind: "tool_use", tool: "mcp__bb-bridge__moa_consult" }))).toBe("allow_once");
+    expect(consultApprovalDecision(approval({ kind: "tool_use", tool: "mcp__alia-bridge__moa_consult" }))).toBe("allow_once");
     expect(
       consultApprovalDecision(
-        approval({ kind: "tool_use", tool: "other", presentation: { title: "bb-bridge-moa_consult: moa_consult" } }, [
+        approval({ kind: "tool_use", tool: "other", presentation: { title: "alia-bridge-moa_consult: moa_consult" } }, [
           "allow_once",
           "allow_for_session",
         ]),

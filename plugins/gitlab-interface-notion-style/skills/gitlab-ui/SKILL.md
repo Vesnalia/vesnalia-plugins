@@ -1,23 +1,23 @@
 ---
 name: gitlab-ui
-description: Read and act on GitLab issues, merge requests, pipelines, and notes with the glab CLI and the `bb gitlab-ui` command. Use when a task references a GitLab issue (#123), a merge request (!456), a GitLab project path, a pipeline failure, or when opening/updating a merge request.
+description: Read and act on GitLab issues, merge requests, pipelines, and notes with the glab CLI and the `alia gitlab-ui` command. Use when a task references a GitLab issue (#123), a merge request (!456), a GitLab project path, a pipeline failure, or when opening/updating a merge request.
 ---
 
 # Working with GitLab
 
 Two tools, different jobs:
 
-- `bb gitlab-ui …` — the plugin's cached view across every tracked project. Fast,
+- `alia gitlab-ui …` — the plugin's cached view across every tracked project. Fast,
   no network, no host flags. Use it to find things.
 - `glab …` — the GitLab CLI, live. Use it to read details and to write.
 
 ## Find work
 
 ```sh
-bb gitlab-ui projects [--json]              # tracked projects, host-qualified
-bb gitlab-ui issues [host/group/project]    # cached open issues
-bb gitlab-ui mrs [host/group/project]       # cached open merge requests
-bb gitlab-ui sync                           # refresh the cache now
+alia gitlab-ui projects [--json]              # tracked projects, host-qualified
+alia gitlab-ui issues [host/group/project]    # cached open issues
+alia gitlab-ui mrs [host/group/project]       # cached open merge requests
+alia gitlab-ui sync                           # refresh the cache now
 ```
 
 Lists take filters: `--state open|closed|merged|all`, `--mine`,
@@ -34,15 +34,15 @@ on two instances. Issues print as `<project>#<iid>`, merge requests as
 ## Read details and CI
 
 ```sh
-bb gitlab-ui show <project>!12 [--json]           # MR: branches, merge status, approvals, pipeline, comments
-bb gitlab-ui show <project>#7                     # issue with comments
-bb gitlab-ui pipeline <project>!12                # head pipeline: jobs + last 30 lines of each failed job
-bb gitlab-ui pipeline <project> --ref main        # latest pipeline on a branch (default: default branch)
-bb gitlab-ui pipeline <job or pipeline URL> --logs 200
+alia gitlab-ui show <project>!12 [--json]           # MR: branches, merge status, approvals, pipeline, comments
+alia gitlab-ui show <project>#7                     # issue with comments
+alia gitlab-ui pipeline <project>!12                # head pipeline: jobs + last 30 lines of each failed job
+alia gitlab-ui pipeline <project> --ref main        # latest pipeline on a branch (default: default branch)
+alia gitlab-ui pipeline <job or pipeline URL> --logs 200
 ```
 
 With no target, `pipeline`, `retry`, and `run` use the GitLab project of the
-BB project the command runs in.
+VesnALIA project the command runs in.
 
 For diffs and anything else, use glab:
 
@@ -53,7 +53,7 @@ glab mr diff <iid> -R <project>
 glab ci status -R <project>              # pipeline for the current branch
 ```
 
-`-R` accepts the same host-qualified ref `bb gitlab-ui` prints.
+`-R` accepts the same host-qualified ref `alia gitlab-ui` prints.
 
 For anything the subcommands do not cover, call the REST API directly. The
 project path is one URL-encoded id segment, and `--hostname` takes the bare
@@ -83,11 +83,11 @@ shell, ` #` starts a comment, `!` expands history, and `$` and backticks
 expand, so unquoted text reaches GitLab cut or changed.
 
 ```sh
-bb gitlab-ui comment '<project>!12' 'Looks good, one nit: see #3'
-bb gitlab-ui retry <project>!12               # retry the head pipeline's failed/canceled jobs
-bb gitlab-ui retry <project>!12 --job lint    # retry one job, by name or id
-bb gitlab-ui run <project>!12                 # new merge-request pipeline
-bb gitlab-ui run <project> --ref main         # new pipeline on a branch
+alia gitlab-ui comment '<project>!12' 'Looks good, one nit: see #3'
+alia gitlab-ui retry <project>!12               # retry the head pipeline's failed/canceled jobs
+alia gitlab-ui retry <project>!12 --job lint    # retry one job, by name or id
+alia gitlab-ui run <project>!12                 # new merge-request pipeline
+alia gitlab-ui run <project> --ref main         # new pipeline on a branch
 ```
 
 For other writes, prefer `glab` subcommands; they set the right defaults.

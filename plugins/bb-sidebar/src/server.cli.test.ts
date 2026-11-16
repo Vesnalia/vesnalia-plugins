@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { createFakePluginHost, disposers, loadPlugin, projectThread, projectsWith } from "./test-server";
 
 const HOUR_MS = 60 * 60_000;
 
-describe("bb sidebar CLI", () => {
+describe("alia sidebar CLI", () => {
   it("snoozes the calling thread by default", async () => {
     const harness = await loadPlugin();
     const before = Date.now();
@@ -67,8 +67,8 @@ describe("bb sidebar CLI", () => {
     const threads = ["thr_a", "thr_b", "thr_c", "thr_d", "thr_e"].map((id, index) =>
       projectThread({ id, title: id, latestAttentionAt: 100 - index, projectId: index < 4 ? "proj_1" : "proj_2" }),
     );
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith(threads) },
         threads: {
@@ -77,7 +77,7 @@ describe("bb sidebar CLI", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     const page = async (args: string[]) =>
       JSON.parse((await harness.behavior.runCli(["list", ...args, "--json"], { projectId: "proj_1" })).stdout) as {

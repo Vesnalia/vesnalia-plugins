@@ -42,8 +42,8 @@ type CollectorDependencies = {
   zlib: typeof import("node:zlib");
 };
 
-const SCAN_BEGIN = "__BB_USAGE_SCAN_BEGIN__";
-const SCAN_END = "__BB_USAGE_SCAN_END__";
+const SCAN_BEGIN = "__ALIA_USAGE_SCAN_BEGIN__";
+const SCAN_END = "__ALIA_USAGE_SCAN_END__";
 const aggregateSchema = z.object({
   day: z.string(),
   modelProviderId: z.string(),
@@ -78,8 +78,8 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
   // version MUST rise or upgraded hosts keep serving UTC buckets forever,
   // silently mixed with newly parsed local ones.
   // v5: keep recorded and unpriced Pi/Prime usage in separate buckets.
-  const scanBegin = "__BB_USAGE_SCAN_BEGIN__";
-  const scanEnd = "__BB_USAGE_SCAN_END__";
+  const scanBegin = "__ALIA_USAGE_SCAN_BEGIN__";
+  const scanEnd = "__ALIA_USAGE_SCAN_END__";
   const input = JSON.parse(buffer.from(encodedInput, "base64").toString("utf8")) as HostJsonScanInput;
   // v6 (dsh): replace repeated attempt samples and reject missing fork cuts.
   // v6 (codex): retain hashed session/bucket identities across archive moves and copies.
@@ -514,7 +514,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
       }
 
       if (input.agentId === "antigravity") {
-        // Written by bb-plugin-antigravity-acp's provider bridge, one line
+        // Written by alia-plugin-antigravity-acp's provider bridge, one line
         // per turn it forwards to the local `agy` CLI (agy has no session
         // log of its own in this shape — the bridge is the source of truth).
         if (value.kind !== "generation") continue;
@@ -791,7 +791,7 @@ async function hostJsonCollector(encodedInput: string, dependencies: CollectorDe
 export function hostJsonCollectorScript(input: HostJsonScanInput) {
   const encodedInput = Buffer.from(JSON.stringify(input)).toString("base64");
   const dependencies = "{buffer:require('node:buffer').Buffer,fs:require('node:fs'),path:require('node:path'),crypto:require('node:crypto'),readline:require('node:readline'),zlib:require('node:zlib')}";
-  return `(${hostJsonCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__BB_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
+  return `(${hostJsonCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__ALIA_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
 }
 
 export function compressedHostJsonCollectorScript(input: HostJsonScanInput) {

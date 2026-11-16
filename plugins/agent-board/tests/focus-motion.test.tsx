@@ -4,7 +4,7 @@
 // every animation. Kept in its own file because the media-query cache is
 // module state: a poisoned entry from an earlier test would mask the stub.
 import { describe, expect, it } from "vitest";
-import { loadPluginApp, renderSlot, type CapturedPluginApp, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type CapturedPluginApp, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { BoardCard, BoardSnapshot } from "@/contract/rpc";
 
 let app: CapturedPluginApp;

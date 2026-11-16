@@ -11,7 +11,7 @@ describe("0.1.1 database upgrade", () => {
         job_id, marker, source, schema_version, owner_thread_id, delivery_mode,
         title, scope_kind, scope_json, host_id, argv_json, created_at,
         artifact_root, job_directory, launch_path, log_path, outcome_path,
-        terminal_id, terminal_state, last_bb_status, exit_code, close_reason,
+        terminal_id, terminal_state, last_alia_status, exit_code, close_reason,
         observed_at, exited_at, outcome_state, outcome_json, outcome_checked_at,
         delivery_state, delivery_attempt_count, accepted_delivery_kind,
         delivered_at, ambiguous_attempt_count, updated_at

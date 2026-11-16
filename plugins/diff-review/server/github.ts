@@ -1,5 +1,5 @@
 /**
- * GitHub, through the GitHub CLI's own login on the bb server's Mac (decision 5 of the plan: posting
+ * GitHub, through the GitHub CLI's own login on the VesnALIA server's Mac (decision 5 of the plan: posting
  * as the owner with `gh`, never from an agent run). `gh` is found on PATH or where Homebrew puts it,
  * as `github-board` finds it. The GraphQL queries and mutations are diffity's
  * (`src-tauri/src/github/graphql.rs`, https://github.com/nilbuild/diffity, MIT).
@@ -18,8 +18,8 @@ export type GhRunner = (args: readonly string[], stdin?: string, signal?: AbortS
 export class GitHubError extends Error {}
 
 function describeFailure(error: unknown, stderr: string): string {
-  if ((error as { code?: unknown } | null)?.code === "ENOENT") return "The GitHub CLI (gh) is not installed on the bb server's machine.";
-  if (stderr.includes("gh auth login") || stderr.toLowerCase().includes("authentication")) return "The GitHub CLI is not signed in. Run `gh auth login` on the machine running bb.";
+  if ((error as { code?: unknown } | null)?.code === "ENOENT") return "The GitHub CLI (gh) is not installed on the VesnALIA server's machine.";
+  if (stderr.includes("gh auth login") || stderr.toLowerCase().includes("authentication")) return "The GitHub CLI is not signed in. Run `gh auth login` on the machine running VesnALIA.";
   return stderr.trim().split("\n").at(-1) || (error instanceof Error ? error.message : String(error));
 }
 

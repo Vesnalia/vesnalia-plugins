@@ -21,9 +21,9 @@ test("parseRef: bare, qualified, ULID", () => {
   assert.deepEqual(parseRef("abc4"), { kind: "short", ref: "abc4" });
   assert.deepEqual(parseRef(" ABC4 "), { kind: "short", ref: "abc4" });
   assert.deepEqual(parseRef("grippify#06fh"), { kind: "qualified", project: "grippify", ref: "06fh" });
-  assert.deepEqual(parseRef("bb-plugin-kata-scratch#tcz4"), {
+  assert.deepEqual(parseRef("alia-plugin-kata-scratch#tcz4"), {
     kind: "qualified",
-    project: "bb-plugin-kata-scratch",
+    project: "alia-plugin-kata-scratch",
     ref: "tcz4",
   });
   assert.deepEqual(parseRef("01m348tf0gjtpax1xgrc60tcz4"), { kind: "uid", ref: "01M348TF0GJTPAX1XGRC60TCZ4" });
@@ -34,7 +34,7 @@ test("parseRef: bare, qualified, ULID", () => {
 
 const projects = [
   { id: 5, uid: "01KGRIPPIFY000000000000000", name: "grippify" },
-  { id: 12, uid: "01M3475DE16AW4481B4VA2RFHX", name: "bb-plugin-kata-scratch" },
+  { id: 12, uid: "01M3475DE16AW4481B4VA2RFHX", name: "alia-plugin-kata-scratch" },
 ];
 
 function deps(bound: { thread?: string; project?: string } = {}): ProjectResolverDeps & { calls: string[] } {
@@ -50,7 +50,7 @@ function deps(bound: { thread?: string; project?: string } = {}): ProjectResolve
 
 test("resolveProject: --project beats thread and project bindings", async () => {
   const d = deps({ thread: "grippify", project: "grippify" });
-  const r = await resolveProject({ explicit: "bb-plugin-kata-scratch", threadId: "thr_a", projectId: "proj_a" }, d, "bb kata list");
+  const r = await resolveProject({ explicit: "alia-plugin-kata-scratch", threadId: "thr_a", projectId: "proj_a" }, d, "alia kata list");
   assert.equal(r.project.id, 12);
   assert.equal(r.source, "flag");
   assert.deepEqual(d.calls, []);
@@ -59,36 +59,36 @@ test("resolveProject: --project beats thread and project bindings", async () => 
   assert.equal((await resolveProject({ explicit: "5" }, d, "")).project.name, "grippify");
 });
 
-test("resolveProject: thread binding, then bb project binding", async () => {
-  const d = deps({ thread: "grippify", project: "bb-plugin-kata-scratch" });
-  const r = await resolveProject({ threadId: "thr_a", projectId: "proj_a" }, d, "bb kata list");
+test("resolveProject: thread binding, then VesnALIA project binding", async () => {
+  const d = deps({ thread: "grippify", project: "alia-plugin-kata-scratch" });
+  const r = await resolveProject({ threadId: "thr_a", projectId: "proj_a" }, d, "alia kata list");
   assert.equal(r.project.name, "grippify");
   assert.equal(r.source, "thread");
-  const unboundThread = deps({ project: "bb-plugin-kata-scratch" });
-  const r2 = await resolveProject({ threadId: "thr_a", projectId: "proj_a" }, unboundThread, "bb kata list");
+  const unboundThread = deps({ project: "alia-plugin-kata-scratch" });
+  const r2 = await resolveProject({ threadId: "thr_a", projectId: "proj_a" }, unboundThread, "alia kata list");
   assert.equal(r2.source, "project");
   assert.deepEqual(unboundThread.calls, ["thread:thr_a", "project:proj_a"]);
 });
 
 test("resolveProject: a qualified ref overrides the context, conflicts with --project", async () => {
   const d = deps({ thread: "grippify" });
-  const r = await resolveProject({ fromRef: { name: "bb-plugin-kata-scratch" }, threadId: "thr_a" }, d, "");
+  const r = await resolveProject({ fromRef: { name: "alia-plugin-kata-scratch" }, threadId: "thr_a" }, d, "");
   assert.equal(r.project.id, 12);
   assert.equal(r.source, "ref");
   const byId = await resolveProject({ fromRef: { id: 5 }, threadId: "thr_a" }, d, "");
   assert.equal(byId.project.name, "grippify");
   await assert.rejects(
-    resolveProject({ explicit: "grippify", fromRef: { name: "bb-plugin-kata-scratch" } }, d, ""),
+    resolveProject({ explicit: "grippify", fromRef: { name: "alia-plugin-kata-scratch" } }, d, ""),
     (e: KataUsageError) => e.code === "project_conflict",
   );
   await assert.rejects(resolveProject({ fromRef: { name: "ghost" } }, d, ""), (e: KataUsageError) => e.code === "project_not_found");
 });
 
 test("resolveProject: unresolvable → hint names the --project flag and the projects", async () => {
-  await assert.rejects(resolveProject({ threadId: "thr_a", projectId: "proj_a" }, deps(), "bb kata list"), (e: KataUsageError) => {
+  await assert.rejects(resolveProject({ threadId: "thr_a", projectId: "proj_a" }, deps(), "alia kata list"), (e: KataUsageError) => {
     assert.equal(e.code, "project_required");
-    assert.match(e.hint ?? "", /`bb kata list --project grippify`/);
-    assert.match(e.hint ?? "", /grippify, bb-plugin-kata-scratch/);
+    assert.match(e.hint ?? "", /`alia kata list --project grippify`/);
+    assert.match(e.hint ?? "", /grippify, alia-plugin-kata-scratch/);
     return true;
   });
   await assert.rejects(resolveProject({ explicit: "nope" }, deps(), ""), (e: KataUsageError) => /grippify/.test(e.hint ?? ""));
@@ -223,10 +223,10 @@ test("boundText cuts on bytes with a note", () => {
 test("formatDetail / detailJson carry a ready-to-paste directive", () => {
   const issue = {
     id: 1, uid: "01M348TF0GJTPAX1XGRC60TCZ4", project_id: 12, short_id: "tcz4",
-    qualified_id: "bb-plugin-kata-scratch#tcz4", title: "t", body: "", status: "open",
+    qualified_id: "alia-plugin-kata-scratch#tcz4", title: "t", body: "", status: "open",
     author: "me", revision: 1, created_at: "2026-09-22", updated_at: "2026-09-22",
   };
   const detail = { issue, children: [], comments: [] };
-  assert.match(formatDetail(detail), /^mention in chat as: ::kata-issue\{ref="bb-plugin-kata-scratch#tcz4"\}$/mu);
-  assert.equal(detailJson(detail).directive, '::kata-issue{ref="bb-plugin-kata-scratch#tcz4"}');
+  assert.match(formatDetail(detail), /^mention in chat as: ::kata-issue\{ref="alia-plugin-kata-scratch#tcz4"\}$/mu);
+  assert.equal(detailJson(detail).directive, '::kata-issue{ref="alia-plugin-kata-scratch#tcz4"}');
 });

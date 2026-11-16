@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { definePluginApp, useBbNavigate, useRealtime, useRpc, type PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRealtime, useRpc, type PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { expansionApprovalPayloadSchema, expansionApprovalResponseSchema, uniqueAlias, DEFAULT_BASE_REF, MAX_WORKSPACE_REPOSITORIES, type SessionSnapshot, type Workspace, type WorkspaceDraft } from "./src/contracts";
 import { Button } from "@/components/ui/button";
@@ -160,7 +160,7 @@ function WorkspaceForm({ projects, initial, onCancel, onSave }: {
 
 function rememberedSelection(workspaceId: string, projectIds: string[]): Set<string> {
   try {
-    const stored = globalThis.localStorage.getItem(`bb-workspaces:selection:${workspaceId}`);
+    const stored = globalThis.localStorage.getItem(`alia-workspaces:selection:${workspaceId}`);
     if (stored !== null) {
       const parsed: unknown = JSON.parse(stored);
       if (Array.isArray(parsed)) {
@@ -175,7 +175,7 @@ function rememberedSelection(workspaceId: string, projectIds: string[]): Set<str
 }
 
 function SessionLauncher({ workspace, projects, rpc, onError }: { workspace: Workspace; projects: Project[]; rpc: ReturnType<typeof useRpc<typeof rpcContract>>; onError: (message: string) => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const memberProjects = workspace.repositories.map((member) => projects.find((project) => project.id === member.projectId)).filter((project): project is Project => Boolean(project));
   const [selected, setSelected] = useState(() => rememberedSelection(workspace.id, memberProjects.map((project) => project.id)));
   const [name, setName] = useState("");
@@ -189,7 +189,7 @@ function SessionLauncher({ workspace, projects, rpc, onError }: { workspace: Wor
   }, [memberProjects, selected]);
   const [hostId, setHostId] = useState(eligibleHosts[0] ?? "");
   useEffect(() => {
-    try { globalThis.localStorage.setItem(`bb-workspaces:selection:${workspace.id}`, JSON.stringify([...selected])); }
+    try { globalThis.localStorage.setItem(`alia-workspaces:selection:${workspace.id}`, JSON.stringify([...selected])); }
     catch { /* Keep the in-memory selection when storage is unavailable. */ }
   }, [selected, workspace.id]);
   useEffect(() => { if (!eligibleHosts.includes(hostId)) setHostId(eligibleHosts[0] ?? ""); }, [eligibleHosts, hostId]);
@@ -251,7 +251,7 @@ function SessionRow({ session, rpc, onChanged, onError }: {
   onChanged: () => void;
   onError: (message: string) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pending, setPending] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(session.name ?? "");
@@ -275,7 +275,7 @@ function SessionRow({ session, rpc, onChanged, onError }: {
     try {
       const result = await rpc.call("session_rename", { id: session.id, name: name.trim() });
       setName(result.session.name ?? ""); setRenaming(false); onChanged();
-      if (!result.threadTitleUpdated && result.session.threadId) onError("Session renamed, but its BB thread title could not be updated.");
+      if (!result.threadTitleUpdated && result.session.threadId) onError("Session renamed, but its VesnALIA thread title could not be updated.");
     } catch (cause) { onError(cause instanceof Error ? cause.message : String(cause)); }
     finally { setPending(false); }
   };
@@ -364,7 +364,7 @@ function WorkspacesPage() {
   return <div className="h-full min-h-0 flex-1 overflow-y-auto"><div className="mx-auto w-full max-w-5xl space-y-4 px-4 pb-8 pt-4">
     <div className="flex items-start justify-between gap-3"><div><h1 className="text-xl font-semibold">Workspaces</h1><p className="text-sm text-muted-foreground">Group related repositories and run one isolated task across the ones you choose.</p></div><Button onClick={() => setEditing("new")}><Icon name="Plus" className="size-4" />New workspace</Button></div>
     {error ? <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
-    <Dialog open={editing !== null} onOpenChange={(open) => { if (!open) setEditing(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:grid-rows-[auto_minmax(0,1fr)] sm:overflow-hidden sm:max-w-2xl">{editing ? <><DialogHeader><DialogTitle>{editing === "new" ? "Create workspace" : "Edit workspace"}</DialogTitle><DialogDescription>Choose the BB projects that should be available together.</DialogDescription></DialogHeader><WorkspaceForm projects={dashboard?.projects ?? []} initial={editing === "new" ? undefined : editing} onCancel={() => setEditing(null)} onSave={async (draft) => { try { editing === "new" ? await rpc.call("workspace_create", draft) : await rpc.call("workspace_update", { id: editing.id, expectedRevision: editing.revision, draft }); setEditing(null); load(); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); } }} /></> : null}</DialogContent></Dialog>
+    <Dialog open={editing !== null} onOpenChange={(open) => { if (!open) setEditing(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:grid-rows-[auto_minmax(0,1fr)] sm:overflow-hidden sm:max-w-2xl">{editing ? <><DialogHeader><DialogTitle>{editing === "new" ? "Create workspace" : "Edit workspace"}</DialogTitle><DialogDescription>Choose the VesnALIA projects that should be available together.</DialogDescription></DialogHeader><WorkspaceForm projects={dashboard?.projects ?? []} initial={editing === "new" ? undefined : editing} onCancel={() => setEditing(null)} onSave={async (draft) => { try { editing === "new" ? await rpc.call("workspace_create", draft) : await rpc.call("workspace_update", { id: editing.id, expectedRevision: editing.revision, draft }); setEditing(null); load(); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); } }} /></> : null}</DialogContent></Dialog>
     {dashboard === null ? <Empty>Loading workspaces…</Empty> : workspaces.length === 0 && !editing ? <Empty>No workspaces yet. Create one to group repositories.</Empty> : <div className="grid gap-4 md:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.6fr)]">
       <aside className="self-start md:sticky md:top-4"><div className="space-y-2 rounded-lg border border-border bg-card p-2"><Input type="search" aria-label="Search workspaces" placeholder="Search workspaces…" value={workspaceQuery} onChange={(event) => setWorkspaceQuery(event.target.value)} /><div className="grid grid-cols-3 gap-1" aria-label="Workspace filters"><Button type="button" size="sm" variant={workspaceFilter === "active" ? "secondary" : "ghost"} onClick={() => setWorkspaceFilter("active")}>Active {activeCount}</Button><Button type="button" size="sm" variant={workspaceFilter === "pinned" ? "secondary" : "ghost"} onClick={() => setWorkspaceFilter("pinned")}>Pinned {pinnedCount}</Button><Button type="button" size="sm" variant={workspaceFilter === "archived" ? "secondary" : "ghost"} onClick={() => setWorkspaceFilter("archived")}>Archived {archivedCount}</Button></div><div className="max-h-[calc(100vh-14rem)] space-y-2 overflow-y-auto pr-1">{visibleWorkspaces.map((workspace) => <button data-testid="workspace-navigation-item" key={workspace.id} onClick={() => setSelectedId(workspace.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === workspace.id ? "border-foreground bg-muted" : "border-border bg-card hover:bg-muted/60"}`}><span className="flex items-center justify-between gap-2"><span className="truncate font-medium">{workspace.name}</span>{workspace.pinned ? <Icon name="Pin" className="size-3.5 shrink-0 text-muted-foreground" /> : null}</span><span className="mt-1 block text-xs text-muted-foreground">{workspace.repositories.length} repositories</span></button>)}{visibleWorkspaces.length === 0 ? <div className="px-2 py-6 text-center text-sm text-muted-foreground">{workspaceQuery.trim() ? "No matching workspaces." : `No ${workspaceFilter} workspaces.`}</div> : null}{filteredWorkspaces.length > visibleWorkspaces.length ? <Button type="button" variant="ghost" className="w-full" onClick={() => setVisibleWorkspaceCount((count) => count + 50)}>Show 50 more workspaces</Button> : null}</div></div></aside>
       {selected ? <main className="space-y-4"><div className="rounded-lg border border-border bg-card p-4"><div className="flex items-start justify-between gap-2"><div><h2 className="text-lg font-semibold">{selected.name}</h2><p className="text-sm text-muted-foreground">{selected.description || "No description"}</p></div><div className="flex gap-1">{selected.archivedAt === null ? <><Button variant="ghost" size="sm" onClick={() => setEditing(selected)}>Edit</Button><Button variant="ghost" size="sm" onClick={() => mutateWorkspace(() => rpc.call("workspace_set_pinned", { id: selected.id, expectedRevision: selected.revision, pinned: !selected.pinned }))}>{selected.pinned ? "Unpin" : "Pin"}</Button><Button variant="ghost" size="sm" onClick={async () => { await mutateWorkspace(() => rpc.call("workspace_set_archived", { id: selected.id, expectedRevision: selected.revision, archived: true })); setSelectedId(null); }}>Archive</Button></> : <><Button variant="outline" size="sm" onClick={() => mutateWorkspace(() => rpc.call("workspace_set_archived", { id: selected.id, expectedRevision: selected.revision, archived: false }))}>Restore</Button><Button variant="ghost" size="sm" onClick={() => { if (globalThis.confirm(`Delete workspace “${selected.name}”? Its session history will remain.`)) void mutateWorkspace(() => rpc.call("workspace_remove", { id: selected.id, expectedRevision: selected.revision })); }}>Delete</Button></>}</div></div><div className="mt-3 flex flex-wrap gap-2">{selected.repositories.map((repository) => <span key={repository.projectId} className="rounded-full bg-muted px-2.5 py-1 text-xs">{repository.alias}</span>)}</div></div>

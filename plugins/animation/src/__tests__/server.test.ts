@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../../server";
 import { DEFAULT_ANIMATION_JSON } from "../template";
 import { parseDocument } from "../core/parse";
@@ -94,11 +94,11 @@ function fileStore(initial: Record<string, string> = {}) {
 describe("animation plugin server", () => {
   it("creates, validates, and exports an animation over CLI", async () => {
     const store = fileStore();
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "animation",
       sdk: store.sdk,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const created = await harness.behavior.runCli(["new", "docs/cache.scene.json"], {
       cwd: "/work",
@@ -130,11 +130,11 @@ describe("animation plugin server", () => {
     const store = fileStore({
       "/work/flow.scene.json": DEFAULT_ANIMATION_JSON,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "animation",
       sdk: store.sdk,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callAgentTool(
       "animation_export_html",
@@ -149,11 +149,11 @@ describe("animation plugin server", () => {
     const store = fileStore({
       "/work/bad.scene.json": "{",
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "animation",
       sdk: store.sdk,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callAgentTool(
       "animation_validate",
@@ -163,13 +163,13 @@ describe("animation plugin server", () => {
     expect(typeof result === "object" && result.isError).toBe(true);
   });
 
-  it("rewrites bb animation new onto .scene.json", async () => {
+  it("rewrites VesnALIA animation new onto .scene.json", async () => {
     const store = fileStore();
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "animation",
       sdk: store.sdk,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const created = await harness.behavior.runCli(["new", "docs/cache.anim.json"], {
       cwd: "/work",
@@ -184,11 +184,11 @@ describe("animation plugin server", () => {
     const store = fileStore({
       "/work/legacy.anim.json": DEFAULT_ANIMATION_JSON,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "animation",
       sdk: store.sdk,
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const validated = await harness.behavior.runCli(
       ["validate", "legacy.anim.json", "--json"],
@@ -223,11 +223,11 @@ const WORKSPACE = {
 
 async function loadPlugin(files: Record<string, string> = {}) {
   const store = fileStore(files);
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "animation",
     sdk: store.sdk,
   });
-  await plugin(bb);
+  await plugin(alia);
   return { store, behavior: harness.behavior };
 }
 
@@ -403,7 +403,7 @@ describe("export destinations", () => {
     const ctx = { cwd: "/work", threadId: "thr_1" };
     expect((await behavior.runCli(["export", "flow.scene.json"], ctx)).exitCode).toBe(0);
     expect(store.files.get("/work/flow.html")?.content).toContain(
-      '<meta name="generator" content="bb-plugin-animation">',
+      '<meta name="generator" content="alia-plugin-animation">',
     );
     expect((await behavior.runCli(["export", "flow.scene.json"], ctx)).exitCode).toBe(0);
   });

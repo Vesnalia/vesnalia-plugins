@@ -3,8 +3,8 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./server";
+} from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./server";
 import {
   LAYOUT_CHANNEL,
   LAYOUT_SET_NAMES,
@@ -45,7 +45,7 @@ function writeLocalCache(set: LayoutSetName, items: ReadonlySet<string>) {
 export function useSyncedLayout(
   defaults: Record<LayoutSetName, readonly string[]>,
 ) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const defaultsRef = useRef(defaults);
   const [sets, setSets] = useState<LayoutSets>(() => ({
     collapsedShelves: new Set(

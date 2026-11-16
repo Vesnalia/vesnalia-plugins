@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { toast } from "sonner";
 import { isPeekSpeed, mountSidebarPeek, peekSupported, setSidebarCollapsed } from "./sidebarPeek";
@@ -8,7 +8,7 @@ import { useStrings } from "./i18n";
 /** Fired by the ⌘⇧S command; the controller owns the RPC call. */
 export const TOGGLE_PEEK_EVENT = "threadspace:toggle-sidebar-peek";
 
-// App-wide, renders nothing: applies the hover-mode settings to bb's sidebar.
+// App-wide, renders nothing: applies the hover-mode settings to VesnALIA's sidebar.
 export function SidebarPeekController() {
   const { values } = useSettings();
   const rpc = useRpc<typeof rpcContract>();
@@ -19,8 +19,8 @@ export function SidebarPeekController() {
 
   useEffect(() => {
     if (!enabled) return;
-    // Hover mode uses BB's sidebar markup, not a public API; stay inert if it changed.
-    // Phones and touch screens use BB's drawer; hover mode simply stays inactive there.
+    // Hover mode uses VesnALIA's sidebar markup, not a public API; stay inert if it changed.
+    // Phones and touch screens use VesnALIA's drawer; hover mode simply stays inactive there.
     if (window.matchMedia?.("(hover: none), (pointer: coarse)").matches || window.innerWidth < 768) return;
     if (!peekSupported()) { toast.error(t.peekUnsupported, { id: "threadspace-peek-unsupported" }); return; }
     const abort = new AbortController();

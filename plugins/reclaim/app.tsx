@@ -5,7 +5,7 @@
 // `min-h-0 flex-1 overflow-y-auto` region, so the page itself never scrolls and
 // the capacity band stays pinned while you read a 500-row tree under it.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";

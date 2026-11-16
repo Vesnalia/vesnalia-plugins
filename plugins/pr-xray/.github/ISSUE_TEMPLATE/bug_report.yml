@@ -33,7 +33,7 @@ body:
     attributes:
       label: OS
   - type: input
-    id: bb-version
+    id: alia-version
     attributes:
-      label: bb version
-      description: Find it in bb's About or Settings.
+      label: alia version
+      description: Find it in alia's About or Settings.

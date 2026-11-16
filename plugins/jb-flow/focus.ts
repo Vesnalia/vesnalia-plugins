@@ -1,9 +1,9 @@
 // Tracks which thread the user is looking at, so external controllers (a
 // Stream Deck, scripts) can act on "the focused thread" through the CLI
-// instead of synthesizing keystrokes. Every BB window reports its focused pane
+// instead of synthesizing keystrokes. Every VesnALIA window reports its focused pane
 // over RPC. The window you last physically used (click, key, pointer) wins: with
-// BB open on two Macs, both windows can have OS focus on their own machine.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// VesnALIA open on two Macs, both windows can have OS focus on their own machine.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { listLiveThreads } from "./thread-list";
 import { replyQueued } from "./needs-me";
@@ -14,7 +14,7 @@ export const focusReportSchema = z.object({
   windowFocused: z.boolean(),
   /** Last click, key press or pointer movement in that window (ms). */
   interactedAt: z.number().optional(),
-  /** Where the window runs, for `bb jb-flow focus-clients`. */
+  /** Where the window runs, for `alia jb-flow focus-clients`. */
   origin: z.string().max(200).optional(),
   userAgent: z.string().max(300).optional(),
 });
@@ -23,7 +23,7 @@ type FocusReport = z.infer<typeof focusReportSchema> & { at: number };
 /** Reports older than this are ignored (a closed window stops reporting). */
 const STALE_MS = 15 * 60_000;
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
 
 /**
  * Failed, blocked on a prompt, or finished unread with a last message that asks
@@ -42,7 +42,7 @@ export function needsAttention(thread: Thread, awaiting: Record<string, number>)
 }
 
 export function createFocus(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   getAwaiting: () => Promise<Record<string, number>>,
   getSnoozedSectionId: () => Promise<string | null>,
 ) {
@@ -51,7 +51,7 @@ export function createFocus(
   // Last known focus survives plugin reloads and quiet windows, so a deck key
   // pressed while another app is in front still reaches the thread you left.
   let lastFocused: string | null = null;
-  void bb.storage.kv.get<string>("lastFocused").then((value) => {
+  void alia.storage.kv.get<string>("lastFocused").then((value) => {
     lastFocused ??= value ?? null;
   });
 
@@ -60,7 +60,7 @@ export function createFocus(
     const current = focusedThreadId();
     if (current !== null && current !== lastFocused) {
       lastFocused = current;
-      void bb.storage.kv.set("lastFocused", current);
+      void alia.storage.kv.set("lastFocused", current);
     }
   }
 
@@ -87,14 +87,14 @@ export function createFocus(
   async function requireFocused(): Promise<string> {
     const threadId = focusedThreadId();
     if (threadId === null) {
-      throw new Error("No focused thread. Open a thread in BB (the window must have reported focus).");
+      throw new Error("No focused thread. Open a thread in VesnALIA (the window must have reported focus).");
     }
     return threadId;
   }
 
   /** Threads that need the user, oldest attention first (inbox order). */
   async function needsMe() {
-    const threads = await listLiveThreads(bb);
+    const threads = await listLiveThreads(alia);
     const awaiting = await getAwaiting();
     // Snoozed threads stay hidden until they wake, as in the sidebar.
     const snoozedSectionId = await getSnoozedSectionId();

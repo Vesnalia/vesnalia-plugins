@@ -5,7 +5,7 @@ import {
   makeThreadResponse,
   type CreateFakePluginHostOptions,
   type FakePluginHost,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { createFindingStore } from "./findings.ts";
 import { createItemStore } from "./items.ts";
@@ -97,9 +97,9 @@ function registeredHost(
   });
   hosts.push(host);
   // Keep this registration test isolated from the developer machine's
-  // optional ~/.bb/plugins/goal legacy database import. A sentinel row makes
+  // optional ~/.vesnalia/plugins/goal legacy database import. A sentinel row makes
   // createGoalStore skip that one-time import while still running migrations.
-  host.bb.storage.database().exec(`
+  host.alia.storage.database().exec(`
     CREATE TABLE goals (
       thread_id TEXT PRIMARY KEY,
       objective TEXT NOT NULL,
@@ -116,7 +116,7 @@ function registeredHost(
     );
     INSERT INTO goals VALUES ('thr_sentinel', 'test', 'complete', NULL, 1, 1, 1, 0, 0, 0, NULL, NULL);
   `);
-  plugin(host.bb);
+  plugin(host.alia);
   return host;
 }
 
@@ -185,7 +185,7 @@ describe("large-plan agent tool contracts", () => {
     }) as { goal?: { standingBrief?: { provenance?: string; text?: string } | null } | null };
     assert.equal(result.goal?.standingBrief?.provenance, "user-pane");
     assert.match(result.goal?.standingBrief?.text ?? "", /shared database/);
-    const row = host.bb.storage.database().prepare(
+    const row = host.alia.storage.database().prepare(
       "SELECT provenance, updated_at FROM goal_worker_briefs WHERE thread_id = 'thr_rules'",
     ).get() as { provenance: string; updated_at: number };
     assert.equal(row.provenance, "user-pane");
@@ -248,7 +248,7 @@ describe("large-plan agent tool contracts", () => {
     const codex = configured.get("codex")!;
     assert.equal(codex.instructions, null);
     assert.equal(
-      (host.bb.storage.database().prepare(
+      (host.alia.storage.database().prepare(
         "SELECT COUNT(*) AS n FROM goals WHERE thread_id = 'thr_codex'",
       ).get() as { n: number }).n,
       0,
@@ -264,7 +264,7 @@ describe("large-plan agent tool contracts", () => {
       { threadId: "thr_codex" },
     );
     assert.equal(isToolError(started), false);
-    const stored = host.bb.storage.database().prepare(
+    const stored = host.alia.storage.database().prepare(
       "SELECT objective, status FROM goals WHERE thread_id = 'thr_codex'",
     ).get() as { objective: string; status: string };
     assert.equal(stored.objective, "Prove canonical UltraGoal controls mutate only plugin state");
@@ -286,7 +286,7 @@ describe("large-plan agent tool contracts", () => {
       { threadId: "thr_codex" },
     );
     assert.equal(isToolError(patched), false);
-    const itemCount = host.bb.storage.database()
+    const itemCount = host.alia.storage.database()
       .prepare("SELECT COUNT(*) AS n FROM goal_items WHERE thread_id = 'thr_codex'")
       .get() as { n: number };
     assert.equal(itemCount.n, 1);
@@ -307,7 +307,7 @@ describe("large-plan agent tool contracts", () => {
       { threadId: "thr_codex" },
     );
     assert.equal(isToolError(premature), true);
-    const item = host.bb.storage.database()
+    const item = host.alia.storage.database()
       .prepare("SELECT id FROM goal_items WHERE thread_id = 'thr_codex'")
       .get() as { id: string };
     const completed = await host.harness.behavior.callAgentTool(
@@ -327,7 +327,7 @@ describe("large-plan agent tool contracts", () => {
     );
     assert.equal(isToolError(finished), false);
     assert.equal(
-      (host.bb.storage.database().prepare(
+      (host.alia.storage.database().prepare(
         "SELECT status FROM goals WHERE thread_id = 'thr_codex'",
       ).get() as { status: string }).status,
       "complete",
@@ -355,7 +355,7 @@ describe("large-plan agent tool contracts", () => {
       { threadId: "thr_atomic_start" },
     );
     assert.equal(isToolError(started), false);
-    const row = host.bb.storage.database().prepare(`
+    const row = host.alia.storage.database().prepare(`
       SELECT max_workers, verify_enabled, worker_provider, worker_model,
         worker_reasoning, worker_service_tier, worker_permission_mode,
         verify_provider, verify_model, verify_reasoning, verify_service_tier,
@@ -388,14 +388,14 @@ describe("large-plan agent tool contracts", () => {
     );
     assert.equal(isToolError(rejected), true);
     assert.equal(
-      host.bb.storage.database().prepare("SELECT 1 FROM goals WHERE thread_id='thr_invalid_start'").get(),
+      host.alia.storage.database().prepare("SELECT 1 FROM goals WHERE thread_id='thr_invalid_start'").get(),
       undefined,
     );
   });
 
   it("reconstructs a transferred Codex root with canonical tools and live instructions", async () => {
     const host = registeredHost();
-    host.bb.storage.database().prepare(
+    host.alia.storage.database().prepare(
       "UPDATE goals SET thread_id = 'thr_target', status = 'active' WHERE thread_id = 'thr_sentinel'",
     ).run();
     const configured = await host.harness.behavior.resolveAgentConfiguration(
@@ -416,12 +416,12 @@ describe("large-plan agent tool contracts", () => {
 
   it("audits stale finding links on the first startup pulse", async () => {
     const host = registeredHost();
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id = 'thr_startup', status = 'paused' WHERE thread_id = 'thr_sentinel'",
     ).run();
-    const items = createItemStore(host.bb);
-    const findings = createFindingStore(host.bb);
+    const items = createItemStore(host.alia);
+    const findings = createFindingStore(host.alia);
     const item = items.add(
       "thr_startup",
       "Repair segment ownership in schema/src/segments.ts",
@@ -477,11 +477,11 @@ describe("large-plan agent tool contracts", () => {
         send: () => ({ ok: true }),
       },
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id = 'thr_reload', status = 'active', max_workers = 1 WHERE thread_id = 'thr_sentinel'",
     ).run();
-    const items = createItemStore(host.bb);
+    const items = createItemStore(host.alia);
     const held = items.add(
       "thr_reload",
       "Repair the already-running reload-safe slice",
@@ -515,7 +515,7 @@ describe("large-plan agent tool contracts", () => {
       await new Promise<void>((resolve) => setImmediate(resolve));
     }
 
-    const liveDb = reloaded.bb.storage.database();
+    const liveDb = reloaded.alia.storage.database();
     assert.equal(spawnCalls, 0, "cold-cache scheduling must not spawn over a live owner");
     assert.equal(
       (liveDb.prepare("SELECT COUNT(*) AS n FROM goal_items WHERE thread_id = 'thr_reload'").get() as { n: number }).n,
@@ -558,7 +558,7 @@ describe("large-plan agent tool contracts", () => {
         update: ({ threadId }) => makeThreadResponse({ id: threadId }),
       },
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id='thr_spawn_fail', status='active', max_workers=1 WHERE thread_id='thr_sentinel'",
     ).run();
@@ -628,11 +628,11 @@ describe("large-plan agent tool contracts", () => {
         update: ({ threadId }) => makeThreadResponse({ id: threadId }),
       },
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id='thr_converge', status='active', max_workers=1 WHERE thread_id='thr_sentinel'",
     ).run();
-    const item = createItemStore(host.bb).add("thr_converge", "Restaff a failed slice", "in_progress", {
+    const item = createItemStore(host.alia).add("thr_converge", "Restaff a failed slice", "in_progress", {
       files: ["src/converge.ts"],
     })!;
     db.prepare(`
@@ -696,7 +696,7 @@ describe("large-plan agent tool contracts", () => {
     }, () => valid
       ? { status: "valid", repository: "/srv/project", commit }
       : { status: "invalid", repository: "/srv/project" });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id='thr_invalid', status='active', max_workers=1 WHERE thread_id='thr_sentinel'",
     ).run();
@@ -788,7 +788,7 @@ describe("large-plan agent tool contracts", () => {
         ? { status: "valid" as const, repository: "/srv/root", commit: "b".repeat(40) }
         : { clean: true, summary: "clean" };
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(`
       UPDATE goals SET thread_id='thr_roll', status='active', max_workers=1,
         worker_provider='acp-opencode', worker_model='openrouter/stealth/ox-alpha',
@@ -796,7 +796,7 @@ describe("large-plan agent tool contracts", () => {
         worker_permission_mode='accept-edits', execution_revision=4
       WHERE thread_id='thr_sentinel'
     `).run();
-    const item = createItemStore(host.bb).add("thr_roll", "Roll this worker", "in_progress", {
+    const item = createItemStore(host.alia).add("thr_roll", "Roll this worker", "in_progress", {
       files: ["src/rolling.ts"],
     })!;
     db.prepare(`
@@ -875,11 +875,11 @@ describe("large-plan agent tool contracts", () => {
         interactions: { list: async () => [] },
       },
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id='thr_capacity_root', status='active', max_workers=1 WHERE thread_id='thr_sentinel'",
     ).run();
-    const items = createItemStore(host.bb);
+    const items = createItemStore(host.alia);
     const itemA = items.add(
       "thr_capacity_root",
       "Current generation item A",
@@ -947,12 +947,12 @@ describe("large-plan agent tool contracts", () => {
 
   it("repairs stale generated-migration links before ultragoal_patch completion checks", async () => {
     const host = registeredHost();
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id='thr_patch_repair', status='active', max_workers=0 WHERE thread_id='thr_sentinel'",
     ).run();
-    const items = createItemStore(host.bb);
-    const findings = createFindingStore(host.bb);
+    const items = createItemStore(host.alia);
+    const findings = createFindingStore(host.alia);
     const item = items.add(
       "thr_patch_repair",
       "Repair tax-rate domain behavior in schema/src/tax-rates.ts",
@@ -1025,12 +1025,12 @@ describe("large-plan agent tool contracts", () => {
         interactions: { list: async () => [] },
       },
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id = 'thr_brief', status = 'active', max_workers = 1, verify_enabled = 1 WHERE thread_id = 'thr_sentinel'",
     ).run();
-    const items = createItemStore(host.bb);
-    const findings = createFindingStore(host.bb);
+    const items = createItemStore(host.alia);
+    const findings = createFindingStore(host.alia);
     const item = items.add(
       "thr_brief",
       "Repair downgrade and actor provenance together",
@@ -1255,11 +1255,11 @@ describe("large-plan agent tool contracts", () => {
         interactions: { list: async () => [] },
       },
     });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.prepare(
       "UPDATE goals SET thread_id='thr_protocol_root', status='active', max_workers=1, verify_enabled=1, auto_continue=1 WHERE thread_id='thr_sentinel'",
     ).run();
-    const item = createItemStore(host.bb).add(
+    const item = createItemStore(host.alia).add(
       "thr_protocol_root",
       "Keep malformed verifier output from stranding this work",
       "in_progress",
@@ -1295,7 +1295,7 @@ describe("large-plan agent tool contracts", () => {
     }
 
     assert.equal(
-      createItemStore(host.bb).list("thr_protocol_root").find((entry) => entry.id === item.id)!.status,
+      createItemStore(host.alia).list("thr_protocol_root").find((entry) => entry.id === item.id)!.status,
       "in_progress",
     );
     const workerState = db.prepare(
@@ -1323,7 +1323,7 @@ describe("large-plan agent tool contracts", () => {
 });
 
 describe("resolve_finding end to end", () => {
-  const PLUGIN_REPO = "/Users/braedonsaunders/Documents/bb-plugin-ultragoal";
+  const PLUGIN_REPO = "/Users/braedonsaunders/Documents/alia-plugin-ultragoal";
 
   function e2eHost() {
     // Stub the world the tool actually consults: a thread with an environment,
@@ -1343,7 +1343,7 @@ describe("resolve_finding end to end", () => {
       }),
     } as never);
     hosts.push(host);
-    host.bb.storage.database().exec(`
+    host.alia.storage.database().exec(`
       CREATE TABLE goals (
         thread_id TEXT PRIMARY KEY, objective TEXT NOT NULL, status TEXT NOT NULL, reason TEXT,
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, started_at INTEGER NOT NULL,
@@ -1352,8 +1352,8 @@ describe("resolve_finding end to end", () => {
       );
       INSERT INTO goals VALUES ('thr_sentinel', 'test', 'complete', NULL, 1, 1, 1, 0, 0, 0, NULL, NULL);
     `);
-    plugin(host.bb);
-    const findings = createFindingStore(host.bb);
+    plugin(host.alia);
+    const findings = createFindingStore(host.alia);
     return { host, findings };
   }
 
@@ -1427,7 +1427,7 @@ describe("resolve_finding end to end", () => {
       },
     } as never);
     hosts.push(host);
-    host.bb.storage.database().exec(`
+    host.alia.storage.database().exec(`
       CREATE TABLE goals (
         thread_id TEXT PRIMARY KEY, objective TEXT NOT NULL, status TEXT NOT NULL, reason TEXT,
         created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, started_at INTEGER NOT NULL,
@@ -1436,8 +1436,8 @@ describe("resolve_finding end to end", () => {
       );
       INSERT INTO goals VALUES ('thr_sentinel', 'test', 'complete', NULL, 1, 1, 1, 0, 0, 0, NULL, NULL);
     `);
-    plugin(host.bb);
-    const findings = createFindingStore(host.bb);
+    plugin(host.alia);
+    const findings = createFindingStore(host.alia);
     const rec = findings.report("thr_root", { title: "t", file: "d.ts:1", evidence: "e" });
 
     const result = await host.harness.behavior.callAgentTool(

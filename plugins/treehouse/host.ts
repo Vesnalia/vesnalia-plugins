@@ -2,7 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { experimental_defineHostEntry, type ExperimentalHostRpcContext } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry, type ExperimentalHostRpcContext } from "@vesnalia/plugin-sdk/host";
 import {
   MAX_DIR_ENTRIES,
   MAX_DOWNLOAD_BYTES,

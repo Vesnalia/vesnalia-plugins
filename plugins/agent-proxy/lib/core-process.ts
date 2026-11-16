@@ -210,7 +210,7 @@ function tailLines(path: string, limit: number): string[] {
   }
 }
 /**
- * Manages the CLIProxyAPI core as a persistent per-user launchd job. The bb
+ * Manages the CLIProxyAPI core as a persistent per-user launchd job. The VesnALIA
  * plugin owns the definition and controls it, but does not own the process.
  * Aborting the monitor therefore never stops the core.
  */

@@ -3,8 +3,8 @@ import {
   useRealtime,
   useRpc,
   type PluginSidebarProject,
-} from "@bb/plugin-sdk/app";
-// Type-only, so the backend and @bb/plugin-sdk never reach the app bundle.
+} from "@vesnalia/plugin-sdk/app";
+// Type-only, so the backend and @vesnalia/plugin-sdk never reach the app bundle.
 import type { treeSidebarRpcContract } from "./server";
 import { PROJECTS_CHANNEL } from "./channels";
 import type { ProjectLocation } from "./tree";

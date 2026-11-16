@@ -1,17 +1,17 @@
 import { createContext, useContext, type ComponentType, type ReactNode } from "react";
-import { useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
-import type { PluginSdkApp, PluginThreadActionEntry } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
+import type { PluginSdkApp, PluginThreadActionEntry } from "@vesnalia/plugin-sdk/app";
 import {
   installTestPluginRuntime,
   renderSlot as sdkRenderSlot,
   type RenderSlotOptions,
-} from "@get-bb/plugin-sdk/testing/app";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing/app";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 
 const SplitSources = createContext<Array<{ threadId: string }> | null>(null);
 installTestPluginRuntime();
-const runtime = (globalThis as typeof globalThis & { __bbPluginRuntime: { pluginSdkApp: PluginSdkApp } })
-  .__bbPluginRuntime.pluginSdkApp;
+const runtime = (globalThis as typeof globalThis & { __aliaPluginRuntime: { pluginSdkApp: PluginSdkApp } })
+  .__aliaPluginRuntime.pluginSdkApp;
 const useSdkSplit = runtime.experimental_useSidebarThreadSplit;
 // The SDK 0.6.37 fake still records pointer bindings in its now-private legacy
 // log. Observe the same source event without conflating it with navigation.
@@ -30,7 +30,7 @@ runtime.experimental_useSidebarThreadSplit = (threadId) => {
   };
 };
 
-/** A link click bb's slot wrapper would route: a plain open, or a split. */
+/** A link click VesnALIA's slot wrapper would route: a plain open, or a split. */
 type LinkCall = { href: string; split: boolean };
 let linkCalls: LinkCall[] | null = null;
 // The official fake leaves anchors to jsdom, which cannot navigate. Mirror the
@@ -74,21 +74,21 @@ export function renderSlot<Props extends object>(
   };
   const threadActions: NonNullable<RenderSlotOptions["threadActions"]> = (thread, { requestRename }) => {
     const client = useSdk();
-    const navigate = useBbNavigate();
+    const navigate = useAliaNavigate();
     const entry = (id: string, label: string, run: () => void | Promise<unknown>): PluginThreadActionEntry => ({
-      key: `bb--core/${id}`,
-      pluginId: "bb--core",
+      key: `alia--core/${id}`,
+      pluginId: "alia--core",
       group: "organize",
       action: {
         label,
         icon: "Pin",
         async run() {
-          threadActionCalls.push({ key: `bb--core/${id}`, threadId: thread.id });
+          threadActionCalls.push({ key: `alia--core/${id}`, threadId: thread.id });
           try {
             await run();
           } catch (error) {
             // Host-bound actions log failures and always resolve.
-            console.error(`thread action "bb--core/${id}" failed`, error);
+            console.error(`thread action "alia--core/${id}" failed`, error);
           }
         },
       },

@@ -54,7 +54,7 @@ export const NOT_MEASURED: MacCapabilities = {
   softwareEncoder: { is: "unknown", why: "not measured yet" },
 };
 
-export const SOFTWARE_ENCODER_PATH = "/usr/local/bin/bb-box-h264";
+export const SOFTWARE_ENCODER_PATH = "/usr/local/bin/alia-box-h264";
 export const PROBE_FRAMES = 12;
 export const CAPABILITIES_STALE_MS = 24 * 60 * 60_000;
 export const PROBE_TIMEOUT_MS = 120_000;
@@ -118,7 +118,7 @@ function shellQuoted(text: string): string {
 }
 
 export function macProbeScript(softwareEncoder: string = SOFTWARE_ENCODER_PATH, waits: ProbeWaits = PROBE_WAITS): string {
-  const check = `$HOME/.bb-box/probe/hardware-${hardwareCheckHash()}`;
+  const check = `$HOME/.alia-box/probe/hardware-${hardwareCheckHash()}`;
   const tries = Math.max(1, Math.floor(waits.tries));
   const pause = Math.max(0, waits.pauseSeconds);
   return `export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
@@ -176,7 +176,7 @@ if [ -x "$software" ]; then
   said=$("$software" --version 2>&1 | head -n 1)
   [ -n "$said" ] && echo "software=yes encoder=$said" || echo "software=no why=$software did not say its encoder"
 else
-  echo "software=no why=bb-box-h264 is not installed"
+  echo "software=no why=alia-box-h264 is not installed"
 fi
 echo "${PROBE_FINISHED}"
 exit 0
@@ -398,13 +398,13 @@ export function capabilityCheck(id: string, label: string, report: MacReport | n
 }
 
 function unknownFix(capabilities: MacCapabilities): string {
-  if (capabilities.hardwareEncoder.is === "unknown" && /Swift compiler/.test(capabilities.hardwareEncoder.why)) return `Install Xcode, or its command line tools, on the Mac, so ${PRODUCT} can build its encoder check, then run bb box doctor again.`;
-  return `Run bb box doctor again once the Mac answers; ${PRODUCT} measures it then.`;
+  if (capabilities.hardwareEncoder.is === "unknown" && /Swift compiler/.test(capabilities.hardwareEncoder.why)) return `Install Xcode, or its command line tools, on the Mac, so ${PRODUCT} can build its encoder check, then run alia box doctor again.`;
+  return `Run alia box doctor again once the Mac answers; ${PRODUCT} measures it then.`;
 }
 
 function noRoomFix(capabilities: MacCapabilities): string {
-  if (capabilities.simulator.is === "no") return "Install Xcode and its iOS platform on the Mac, then run bb box doctor again.";
-  return "Build bb-box-h264 on the Mac with setup/android/build-h264.sh /usr/local, so it streams in software, then run bb box doctor again.";
+  if (capabilities.simulator.is === "no") return "Install Xcode and its iOS platform on the Mac, then run alia box doctor again.";
+  return "Build alia-box-h264 on the Mac with setup/android/build-h264.sh /usr/local, so it streams in software, then run alia box doctor again.";
 }
 
 function capitalised(text: string): string {
@@ -477,7 +477,7 @@ export function imageCapabilities(mac: string, image: IosImageFacts | null, meas
     ? { is: "no", why: "the Mac has no iOS image" }
     : image.softwareEncoder
       ? { is: "yes", what: { encoder: image.softwareEncoder } }
-      : { is: "no", why: `the iOS image's build ${image.build} has no bb-box-h264` };
+      : { is: "no", why: `the iOS image's build ${image.build} has no alia-box-h264` };
   const fromImage = image?.hardwareEncoder ?? null;
   const hardwareEncoder: Measured<HardwareEncoderOffer> =
     fromImage === true ? { is: "yes", what: { fullSizeFps: null } } : fromImage === false ? { is: "no", why: `the iOS image's check found no hardware H.264 encoder in its VM` } : (measured?.capabilities.hardwareEncoder ?? NOT_MEASURED.hardwareEncoder);

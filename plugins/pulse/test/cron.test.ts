@@ -26,7 +26,7 @@ test("zero, negative and junk steps return no run instead of hanging", () => {
     const started = Date.now();
     const next = nextCronRun(expr, from);
     assert.ok(Date.now() - started < 1000, expr);
-    // An out-of-range minute is an error for bb's scheduler too, so no next run (0.1.13 clamped it).
+    // An out-of-range minute is an error for VesnALIA's scheduler too, so no next run (0.1.13 clamped it).
     assert.equal(next, null, expr);
   }
 });

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
-import { createFakePluginHost, makeThreadResponse, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 const T = "thr_1";
@@ -100,7 +100,7 @@ async function lastOutcome(current: FakePluginHost): Promise<string | undefined>
 
 test("keeps up to three suggestions, best first", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	replies.push('{"suggestions": ["run the tests", "show me the diff first", "no, leave it", "commit this"]}');
 	await idle(current);
 	assert.deepEqual(await suggestionTexts(current), ["run the tests", "show me the diff first", "no, leave it"]);
@@ -109,7 +109,7 @@ test("keeps up to three suggestions, best first", async () => {
 
 test("show and suggest print one suggestion per line and the list as JSON", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	replies.push('{"suggestions": ["run the tests", "no, leave it"]}');
 	const suggested = await current.harness.runCli(["suggest", T]);
 	assert.equal(suggested.stdout, "run the tests\nno, leave it");
@@ -123,7 +123,7 @@ test("show and suggest print one suggestion per line and the list as JSON", asyn
 
 test("a reply that is not JSON shows nothing and says so", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	replies.push("run the tests");
 	await idle(current);
 	assert.equal(await shown(current), null);
@@ -132,7 +132,7 @@ test("a reply that is not JSON shows nothing and says so", async () => {
 
 test("the model's silence is told apart from a rejected reply", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	replies.push('{"suggestions": []}');
 	await idle(current);
 	assert.equal(await lastOutcome(current), "none: the model had nothing to suggest");
@@ -141,7 +141,7 @@ test("the model's silence is told apart from a rejected reply", async () => {
 test("a short answer asks nothing, but a suggestion by command does", async () => {
 	rows = conversation("Done.");
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	await idle(current);
 	assert.equal(requests, 0);
 	assert.equal(await lastOutcome(current), "skipped: short answer");
@@ -157,7 +157,7 @@ test("the API request leaves room for three suggestions", async () => {
 		return new Response(JSON.stringify({ content: [{ type: "text", text: '{"suggestions": []}' }] }));
 	}) as typeof fetch;
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	await idle(current);
 	assert.equal(bodies[0]?.max_tokens, 400);
 });
@@ -185,7 +185,7 @@ test("a worker thread is told to answer with the JSON the library reads", async 
 			},
 		},
 	} as Parameters<typeof createFakePluginHost>[0]);
-	await plugin(current.bb);
+	await plugin(current.alia);
 	await current.harness.callRpc("model_set", { providerId: "pi", model: "any", reasoningLevel: "low" });
 	await idle(current);
 	assert.match(prompt, /Reply with ONLY JSON/);
@@ -199,19 +199,19 @@ test("a saved display of banner becomes cards", async () => {
 		pluginId: "next-prompt",
 		settings: { display: "banner", apiFormat: "anthropic", apiModel: "test-model" },
 	});
-	await plugin(current.bb);
+	await plugin(current.alia);
 	const status = JSON.parse((await current.harness.runCli(["status", "--json"])).stdout) as { display: string };
 	assert.equal(status.display, "cards");
 });
 
 test("a record in the old one-text format is dropped and the thread asks again", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestions": ["commit this"]}');
 	await idle(first);
 	const key = `suggestion:${T}`;
-	const { fingerprint } = (await first.bb.storage.kv.get(key)) as { fingerprint: string };
-	await first.bb.storage.kv.set(key, { fingerprint, status: "ready", text: "old suggestion", createdAt: new Date().toISOString() });
+	const { fingerprint } = (await first.alia.storage.kv.get(key)) as { fingerprint: string };
+	await first.alia.storage.kv.set(key, { fingerprint, status: "ready", text: "old suggestion", createdAt: new Date().toISOString() });
 	const second = await first.harness.reload(plugin);
 	assert.equal(await shown(second), null);
 	replies.push('{"suggestions": ["run the tests"]}');
@@ -222,7 +222,7 @@ test("a record in the old one-text format is dropped and the thread asks again",
 
 test("skips a parent whose child threads are still running", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	for (const status of ["active", "starting", "pending"]) {
 		children = { [status]: 1 };
 		await idle(current);
@@ -237,7 +237,7 @@ test("skips a parent whose child threads are still running", async () => {
 
 test("a turn that starts while children are counted makes no request", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	const release = hold();
 	const event = current.harness.emitThreadEvent("thread.idle", {
 		thread: makeThreadResponse({ id: T, status: "idle", queuedMessageCount: 0 }),
@@ -253,7 +253,7 @@ test("a turn that starts while children are counted makes no request", async () 
 
 test("two clients asking at once after a reload both get the suggestion", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	const second = await first.harness.reload(plugin);
@@ -263,7 +263,7 @@ test("two clients asking at once after a reload both get the suggestion", async 
 
 test("a turn that starts during the restore check gets no stale suggestion", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	const second = await first.harness.reload(plugin);
@@ -278,7 +278,7 @@ test("a turn that starts during the restore check gets no stale suggestion", asy
 
 test("a restore that fails is tried again", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	const second = await first.harness.reload(plugin);
@@ -292,7 +292,7 @@ test("a restore that fails is tried again", async () => {
 
 test("a suggestion survives a reload without a new request", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	assert.equal(await shown(first), "run the tests");
@@ -305,7 +305,7 @@ test("a suggestion survives a reload without a new request", async () => {
 
 test("the whole list survives a reload, in order", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestions": ["run the tests", "no, leave it"]}');
 	await idle(first);
 	const second = await first.harness.reload(plugin);
@@ -324,7 +324,7 @@ test("a restored suggestion keeps its timestamp, which the app uses as its ident
 	};
 	try {
 		const first = host();
-		await plugin(first.bb);
+		await plugin(first.alia);
 		replies.push('{"suggestions": ["run the tests"]}');
 		await idle(first);
 		const before = await createdAt(first);
@@ -337,7 +337,7 @@ test("a restored suggestion keeps its timestamp, which the app uses as its ident
 
 test("a stored suggestion is not shown once the conversation changed", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	const second = await first.harness.reload(plugin);
@@ -351,7 +351,7 @@ test("a stored suggestion is not shown once the conversation changed", async () 
 
 test("a dismissal is remembered for the same conversation", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	await first.harness.callRpc("suggestion_dismiss", { threadId: T });
@@ -364,7 +364,7 @@ test("a dismissal is remembered for the same conversation", async () => {
 
 test("silence is remembered for the same conversation", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	replies.push('{"suggestion": null}');
 	await idle(current);
 	await idle(current);
@@ -374,7 +374,7 @@ test("silence is remembered for the same conversation", async () => {
 
 test("a thread that runs again forgets its stored suggestion", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	replies.push('{"suggestion": "run the tests"}');
 	await idle(first);
 	await first.harness.emitThreadEvent("thread.active", { thread: makeThreadResponse({ id: T, status: "active" }) });
@@ -384,19 +384,19 @@ test("a thread that runs again forgets its stored suggestion", async () => {
 
 test("loading drops records older than 30 days and keeps recent ones", async () => {
 	const first = host();
-	await plugin(first.bb);
+	await plugin(first.alia);
 	const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
-	await first.bb.storage.kv.set("suggestion:thr_old", { fingerprint: "x", status: "silent", createdAt: old });
-	await first.bb.storage.kv.set("suggestion:thr_new", { fingerprint: "x", status: "silent", createdAt: new Date().toISOString() });
-	await first.bb.storage.kv.set("suggestion:thr_bad", { status: "unknown" });
+	await first.alia.storage.kv.set("suggestion:thr_old", { fingerprint: "x", status: "silent", createdAt: old });
+	await first.alia.storage.kv.set("suggestion:thr_new", { fingerprint: "x", status: "silent", createdAt: new Date().toISOString() });
+	await first.alia.storage.kv.set("suggestion:thr_bad", { status: "unknown" });
 	const second = await first.harness.reload(plugin);
 	await new Promise((resolve) => setTimeout(resolve, 20));
-	assert.deepEqual(await second.bb.storage.kv.list("suggestion:"), ["suggestion:thr_new"]);
+	assert.deepEqual(await second.alia.storage.kv.list("suggestion:"), ["suggestion:thr_new"]);
 });
 
 test("suggest regenerates even when the conversation is unchanged", async () => {
 	const current = host();
-	await plugin(current.bb);
+	await plugin(current.alia);
 	replies.push('{"suggestion": null}');
 	await idle(current);
 	replies.push('{"suggestion": "run the tests"}');

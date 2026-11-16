@@ -1,6 +1,6 @@
-// bb-plugin-thread-tags — frontend entry.
+// alia-plugin-thread-tags — frontend entry.
 //
-// bb's sidebar rows are owned by the thread-list plugin, so this plugin
+// VesnALIA's sidebar rows are owned by the thread-list plugin, so this plugin
 // decorates them from an always-mounted app overlay:
 //   - a tag badge just left of each tagged thread's title, and
 //   - a tag button in each row's hover controls (beside Archive and ⋯) that
@@ -11,7 +11,7 @@
 // removed on unmount.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Tag, TagState } from "./server";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -158,7 +158,7 @@ function syncSidebar(
     if (threadId === undefined || row === null) continue;
 
     // Badge, left of the title text.
-    const title = row.querySelector<HTMLElement>(".bb-thread-title");
+    const title = row.querySelector<HTMLElement>(".alia-thread-title");
     const titleParent = title?.parentElement ?? null;
     const tagId = assignments[threadId];
     const tag = tagId === undefined ? undefined : tagsById.get(tagId);
@@ -202,12 +202,12 @@ function syncSidebar(
 const STYLE_ATTR = "data-thread-tags-style";
 const OPEN_ATTR = "data-thread-tags-open";
 
-// bb pads the title on hover by exactly the width of its own two controls
+// VesnALIA pads the title on hover by exactly the width of its own two controls
 // (Archive, ⋯). The tag button adds a third, so widen that padding by one
 // button plus the controls' gap, and keep it while the picker is open.
 const INSET_CSS = `
 @media not ((width <= 767px) and (pointer: coarse)) {
-  .bb-sidebar-hover-actions-row:has([${BUTTON_ATTR}]):is(:hover, :has(:focus-visible), :has([data-sidebar-hover-actions-open="true"]), [${OPEN_ATTR}])
+  .alia-sidebar-hover-actions-row:has([${BUTTON_ATTR}]):is(:hover, :has(:focus-visible), :has([data-sidebar-hover-actions-open="true"]), [${OPEN_ATTR}])
     :has(> ${ROW_ANCHOR}) {
     padding-right: calc(var(--spacing, 0.25rem) * 15) !important;
   }
@@ -225,7 +225,7 @@ function markOpenRow(threadId: string | null) {
   for (const row of document.querySelectorAll(`[${OPEN_ATTR}]`)) row.removeAttribute(OPEN_ATTR);
   if (threadId === null) return;
   const anchor = document.querySelector(`${ROW_ANCHOR}[data-sidebar-thread-id="${CSS.escape(threadId)}"]`);
-  anchor?.closest(".bb-sidebar-hover-actions-row")?.setAttribute(OPEN_ATTR, "");
+  anchor?.closest(".alia-sidebar-hover-actions-row")?.setAttribute(OPEN_ATTR, "");
 }
 
 function removeDecorations() {

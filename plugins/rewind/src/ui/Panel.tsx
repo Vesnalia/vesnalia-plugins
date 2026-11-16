@@ -3,7 +3,7 @@
 // restore history with Undo.
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { JsonValue, PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import type { JsonValue, PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { turnEffectsSentence } from "../effect-text";
@@ -243,7 +243,7 @@ function RestoreHistory({ threadId, restores, undoRestoreId }: { threadId: strin
   const [busy, setBusy] = useState<string | null>(null);
   if (restores.length === 0) return null;
   const newestFirst = [...restores].reverse();
-  // Like `bb rewind undo`: the newest restore that changed files, including
+  // Like `alia rewind undo`: the newest restore that changed files, including
   // one that stopped part way (a failure with an undo point).
   const undoable = newestFirst.find((restore) => restore.undoneBy === null && restore.preRestoreCheckpointId !== null && (undoRestoreId === undefined || restore.id === undoRestoreId)) ?? null;
   const undo = async (restore: RestoreDto) => {

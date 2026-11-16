@@ -3,7 +3,7 @@
  * (a) every function that calls the store, directly, through a synchronous helper that does, or through an async function whose synchronous start does;
  * (b) stretches of async functions between awaits that call the store twice or more (rule R2's candidates);
  * (c) store calls in array-method callbacks and in positions that can't await (default parameters, constructors, accessors, field initializers, module scope);
- * (d) BB's callbacks that call the store, synchronous ones first.
+ * (d) VesnALIA's callbacks that call the store, synchronous ones first.
  *
  * Run from the repo root: `node scripts/async-audit.ts [tsconfig.json]`. It prints the report and changes nothing.
  *
@@ -27,7 +27,7 @@ export interface AuditOptions {
   root: string;
   /** The interfaces whose methods are store calls, by the file (relative to root) that declares each. */
   storeInterfaces: ReadonlyArray<{ file: string; name: string }>;
-  /** Whether a source file is BB's (the plugin SDK's types), whose callbacks section (d) lists. */
+  /** Whether a source file is VesnALIA's (the plugin SDK's types), whose callbacks section (d) lists. */
   isHostFile: (filePath: string) => boolean;
   /** Whether to audit a source file. */
   include: (filePath: string) => boolean;
@@ -69,12 +69,12 @@ export interface CallbackEntry extends Site {
   uses: StoreUse[];
 }
 
-/** What a BB callback's type says it returns. */
+/** What a VesnALIA callback's type says it returns. */
 export type HostReturn = "value" | "void" | "promise" | "any";
 
 export interface HostCallback extends Site {
   name: string;
-  /** The call that hands it to BB, with the property it's passed as. */
+  /** The call that hands it to VesnALIA, with the property it's passed as. */
   registeredBy: string;
   returns: HostReturn;
   async: boolean;
@@ -458,7 +458,7 @@ export function auditProject(project: Project, options: AuditOptions): AuditRepo
     callbacks.push({ ...site(node), position: "method used as a value", name: nameOf(ownerOf(node)), async: false, uses: [{ ...site(node), label, helper: false, asyncStart: false }] });
   }
 
-  // (d) Callbacks handed to BB.
+  // (d) Callbacks handed to VesnALIA.
   const hostCallbacks: HostCallback[] = [];
   const considerHost = (position: Node, fn: Fn, type: Type | undefined) => {
     if (!usesStore.has(fn) || !type) return;
@@ -529,7 +529,7 @@ function ownName(fn: Fn): string {
 
 const shorten = (text: string, length = 60) => { const flat = text.replace(/\s+/g, " "); return flat.length > length ? `${flat.slice(0, length - 1)}…` : flat; };
 
-/** A call's callee, with its first argument when that's a string: `bb.events.on("thread.idle")`. */
+/** A call's callee, with its first argument when that's a string: `alia.events.on("thread.idle")`. */
 function callLabel(call: CallExpression): string {
   const first = call.getArguments()[0];
   const name = Node.isStringLiteral(first) || Node.isNoSubstitutionTemplateLiteral(first) ? first.getText() : "";
@@ -543,7 +543,7 @@ function registration(position: Node): string {
   for (let parent = node.getParent(); parent; node = parent, parent = parent.getParent()) {
     if (Node.isCallExpression(parent) && parent.getArguments().includes(node)) return `${callLabel(parent)}${names.map((n) => `.${n}`).join("")}`;
     if (Node.isMethodDeclaration(node) || Node.isPropertyAssignment(node) || Node.isShorthandPropertyAssignment(node)) names.unshift(node.getName());
-    // An object of callbacks kept in a variable, typed as BB's, before it's handed over.
+    // An object of callbacks kept in a variable, typed as VesnALIA's, before it's handed over.
     if (Node.isVariableDeclaration(parent)) names.unshift(parent.getName());
     if (isFn(parent) || Node.isStatement(parent)) break;
   }
@@ -583,7 +583,7 @@ export function formatAudit(report: AuditReport): string {
   out.push(`(a) Functions that use the store: ${report.functions.length} (${sync.length} sync, ${report.functions.length - sync.length} async); ${report.functions.filter((f) => f.uses.some((u) => !u.helper)).length} call it directly; ${report.functions.filter((f) => f.uses.length && f.uses.every((u) => u.asyncStart)).length} only through an async function's start`);
   out.push(`(b) R2 candidates: ${report.stretches.length} stretches in ${r2Functions.size} async functions; ${fromStart.length} run from the function's start; ${report.stretches.filter((s) => s.uses.some((u) => u.repeated)).length} repeat a call in a loop or callback`);
   out.push(`(c) Callbacks and positions that can't await: ${report.callbacks.length} (${arrayCallbacks.length} array-method callbacks, ${arrayCallbacks.filter((c) => /^\.(filter|some|every|find|findIndex|findLast|findLastIndex) /.test(c.position)).length} of them predicates)`);
-  out.push(`(d) BB callbacks that use the store: ${report.hostCallbacks.length}; ${mustBeSync.length} must return synchronously`);
+  out.push(`(d) VesnALIA callbacks that use the store: ${report.hostCallbacks.length}; ${mustBeSync.length} must return synchronously`);
   for (const kind of HOST_RETURN_ORDER) {
     const count = report.hostCallbacks.filter((h) => h.returns === kind).length;
     if (count) out.push(`    ${kind}: ${count} (${RETURN_TEXT[kind]})`);
@@ -603,7 +603,7 @@ export function formatAudit(report: AuditReport): string {
   out.push("", "(c) Store use in array-method callbacks and positions that can't await");
   for (const c of report.callbacks) out.push(`  ${at(c)}  ${c.position}${c.async ? " (async)" : ""}  in ${c.name}`, `      ${uses(c.uses)}`);
 
-  out.push("", "(d) BB callbacks that use the store");
+  out.push("", "(d) VesnALIA callbacks that use the store");
   for (const h of report.hostCallbacks) out.push(`  ${at(h)}  ${h.returns.padEnd(7)} ${h.async ? "async" : "sync "}  ${h.registeredBy}  (${h.name})`, `      ${uses(h.uses)}`);
   return out.join("\n") + "\n";
 }
@@ -613,7 +613,7 @@ export function repoOptions(root: string): AuditOptions {
   return {
     root,
     storeInterfaces: [{ file: "src/store.ts", name: "Store" }, { file: "src/learning.ts", name: "AgentCommentStore" }],
-    isHostFile: (filePath) => filePath.includes("/node_modules/@get-bb/plugin-sdk/"),
+    isHostFile: (filePath) => filePath.includes("/node_modules/@vesnalia/plugin-sdk/"),
     include: (filePath) => !filePath.includes("/node_modules/") && !filePath.endsWith(".d.ts") && !/\.test(-support)?\.tsx?$/.test(filePath) && !filePath.startsWith(path.join(root, "e2e") + path.sep),
   };
 }

@@ -5,8 +5,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { isPluginSource, loadPluginData } from "../core/plugin-data";
 import type { Parsed } from "../core/data";
-import { isBbSource } from "../core/bb-data";
-import { experimental_copyToClipboard, experimental_saveFile, experimental_useAppPanel, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { isAliaSource } from "../core/alia-data";
+import { experimental_copyToClipboard, experimental_saveFile, experimental_useAppPanel, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ElementNode } from "../core/ast";
 import { findComponent } from "../core/catalog";
@@ -42,7 +42,7 @@ const LIVE_INTERVAL_MS = 2000;
 
 /**
  * One plugin read at a time per source, shared by every card on the page that asks within a
- * moment of it: a pinned card and the same card in the chat cost bb one request, not two.
+ * moment of it: a pinned card and the same card in the chat cost VesnALIA one request, not two.
  */
 const pluginReads = new Map<string, { at: number; result: Promise<Parsed> }>();
 const SHARED_READ_MS = 1_500;
@@ -71,13 +71,13 @@ export function IrisBlock(props: BlockProps) {
 
   const loader = useCallback(
     async (path: string, raw: boolean, tail?: boolean): Promise<LoadResult> => {
-      // bb's own live data, read by Iris's server for this card's thread.
-      if (isBbSource(path)) {
-        const r = await rpc.call("bb_data", { threadId, spec: path });
+      // VesnALIA's own live data, read by Iris's server for this card's thread.
+      if (isAliaSource(path)) {
+        const r = await rpc.call("alia_data", { threadId, spec: path });
         if (!r.ok || !tail) return r;
         return { ok: true, value: { text: JSON.stringify(r.value, null, 2), size: 0, truncated: false } };
       }
-      // A plugin's own Iris data (the public plugin data contract) reads from bb's page, in or out of a thread.
+      // A plugin's own Iris data (the public plugin data contract) reads from VesnALIA's page, in or out of a thread.
       if (isPluginSource(path)) {
         const r = await sharedPluginRead(path, threadId, raw || tail === true);
         if (!r.ok || !tail) return r;
@@ -195,7 +195,7 @@ export function IrisBlock(props: BlockProps) {
   );
 
   // Drag surfaces (dividers, maps, drawing, boards) mark themselves data-iris-drag. Their touches
-  // stop here: bb's phone layout swipes between the thread and the thread list on a sideways drag,
+  // stop here: VesnALIA's phone layout swipes between the thread and the thread list on a sideways drag,
   // and would otherwise slide the whole view away under the person's finger.
   useEffect(() => {
     const el = frame.current;
@@ -284,7 +284,7 @@ const ON_PLAYGROUND = typeof location !== "undefined" && PLAYGROUND_URL.startsWi
 function Toolbar(p: { source: string; language: string; showSource: boolean; onToggleSource: () => void; canReset: boolean; onReset: () => void; threadId: string | null; streaming: boolean }) {
   const panel = experimental_useAppPanel();
   const rpc = useRpc<RpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pinsRpc = useRpc<PinsContract>();
   const pins = usePins(p.threadId);
   const pinnable = p.threadId !== null && !p.streaming && !/-(app|react)$/.test(p.language);
@@ -311,15 +311,15 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
     setDrawing(true);
     void copyCardImage(root, titleOf(p.source)).finally(() => setDrawing(false));
   };
-  // The playground runs ```iris cards only; pages and apps need bb's sandbox bridge.
+  // The playground runs ```iris cards only; pages and apps need VesnALIA's sandbox bridge.
   const shareable = !ON_PLAYGROUND && !p.streaming && p.language === "iris" && p.source.trim().length > 0 && p.source.length <= MAX_LINK_SOURCE;
   const openInPlayground = () => {
     if (!navigate.openUrl(PLAYGROUND_URL + playLink(p.source.trim()))) {
-      toast.error("bb couldn't open the playground link here");
+      toast.error("alia couldn't open the playground link here");
       return;
     }
-    // A card's files and bb data stay on this machine; the playground draws it without them.
-    if (/\bload\(/.test(p.source)) toast("Opened in the playground. Files and bb data this card loads stay here, so it shows them as pending.");
+    // A card's files and VesnALIA data stay on this machine; the playground draws it without them.
+    if (/\bload\(/.test(p.source)) toast("Opened in the playground. Files and VesnALIA data this card loads stay here, so it shows them as pending.");
   };
   const btn = "iris-hit grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground";
   return (

@@ -12,7 +12,7 @@ import {
 } from "../src/bench-provider/contract.ts";
 import { createLocalBenchProvider, type LocalBenchProvider, type LocalBenchProviderOptions } from "../examples/bench-provider-local/provider.ts";
 
-const CALLER = { experimental_caller: { kind: "plugin", pluginId: "bb-autoresearch" } } as const;
+const CALLER = { experimental_caller: { kind: "plugin", pluginId: "alia-autoresearch" } } as const;
 
 const roots: string[] = [];
 const providers: LocalBenchProvider[] = [];
@@ -34,7 +34,7 @@ afterEach(() => {
   for (const r of roots.splice(0)) fs.rmSync(r, { recursive: true, force: true });
 });
 
-/** Call a handler as bb-autoresearch would, and check the output against the contract. */
+/** Call a handler as alia-autoresearch would, and check the output against the contract. */
 async function call<M extends BenchProviderMethod>(p: LocalBenchProvider, method: M, input: MethodInput<M>): Promise<MethodOutput<M>> {
   const handler = p.handlers[method] as (i: unknown, c: typeof CALLER) => Promise<unknown>;
   const out = await handler(input, CALLER);

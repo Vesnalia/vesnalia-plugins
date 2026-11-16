@@ -15,7 +15,7 @@ import {
   useSdk,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import {
   Tooltip,
@@ -46,7 +46,7 @@ import {
 import { muteThread, PushLevelError, unmuteThread } from "./muting";
 import { forEachLimited } from "./forEachLimited";
 import { ShelfMenu, type ShelfMenuItem } from "./ShelfMenu";
-import type { bbSidebarRpcContract } from "./server";
+import type { aliaSidebarRpcContract } from "./server";
 import {
   usePinnedReorder,
   type PinnedReorderRequest,
@@ -70,7 +70,7 @@ import {
 
 const ALL_PROJECTS = "__all__";
 
-const ARCHIVE_QUICK_ACTION_KEYS = ["bb--core/archive"] as const;
+const ARCHIVE_QUICK_ACTION_KEYS = ["alia--core/archive"] as const;
 
 type ShelfId = "pinned" | "inbox" | "snoozed" | "settled" | "muted";
 
@@ -212,7 +212,7 @@ export function ThreadInbox({
     toggleShelf(shelf === "muted" ? MUTED_SHELF_OPEN_ITEM : shelf);
 
   const sdk = useSdk();
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const restoreParked = (shelf: ParkedShelfId, threadId: string) => {
     if (shelf === "snoozed") lifecycle.unsnooze(threadId);
     else if (shelf === "settled") lifecycle.unsettle(threadId);
@@ -535,7 +535,7 @@ export function ThreadInbox({
         <TooltipProvider delayDuration={350}>
           <div className="flex min-h-0 flex-1 flex-col">
             {/* The one control the host has no equivalent for. Everything else in
-          the chrome above — New thread, search — is bb's and stays bb's. */}
+          the chrome above — New thread, search — is VesnALIA's and stays VesnALIA's. */}
             <div className="flex shrink-0 items-center gap-1 px-2 pb-1">
               <ProjectPicker
                 value={scope}
@@ -751,7 +751,7 @@ function QuietNewsDot({ count }: { count: number }) {
 }
 
 const SHELF_LABEL_CLASS =
-  "bb-sidebar-hover-actions-row flex h-6 shrink-0 items-center rounded-md pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground";
+  "alia-sidebar-hover-actions-row flex h-6 shrink-0 items-center rounded-md pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground";
 
 const SHELF_TOGGLE_CLASS =
   "relative z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring transition-none hover:bg-state-hover hover:text-muted-foreground focus-visible:ring-2 active:bg-state-active";
@@ -789,7 +789,7 @@ function Shelf({
             data-sidebar-hover-actions-mobile="always"
             onClick={onToggle}
             className={cn(
-              !collapsed && "bb-sidebar-hover-actions",
+              !collapsed && "alia-sidebar-hover-actions",
               SHELF_TOGGLE_CLASS,
             )}
           >
@@ -808,7 +808,7 @@ function Shelf({
             <span
               data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
               className={cn(
-                "bb-sidebar-hover-actions z-10 flex shrink-0 items-center [@media(hover:none)]:opacity-100",
+                "alia-sidebar-hover-actions z-10 flex shrink-0 items-center [@media(hover:none)]:opacity-100",
                 trailing &&
                   "absolute inset-y-0 right-0 [@media(hover:none)]:static",
               )}
@@ -823,7 +823,7 @@ function Shelf({
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center",
                 actions &&
-                  "bb-sidebar-hover-actions-fade [@media(hover:none)]:opacity-100",
+                  "alia-sidebar-hover-actions-fade [@media(hover:none)]:opacity-100",
               )}
             >
               {trailing}

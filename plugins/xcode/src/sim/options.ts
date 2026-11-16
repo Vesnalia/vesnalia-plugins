@@ -2,10 +2,10 @@
  * The panel's quick toggles: which settings the gear menu may read and write.
  *
  * This is an allowlist, and being *out* of it is load-bearing. Plugin RPC
- * rides bb's `auth: "local"` boundary, which any same-user process can cross
+ * rides VesnALIA's `auth: "local"` boundary, which any same-user process can cross
  * (see SECURITY.md) — so nothing reachable from here may change what an agent
  * is allowed to do. `allowAgentCapture` is a trust decision and lives only in
- * bb's own settings screen; a menu that could flip it would let an agent flip
+ * VesnALIA's own settings screen; a menu that could flip it would let an agent flip
  * it for itself. Everything below is presentation: the worst a hostile caller
  * can do is hide a banner.
  */

@@ -131,10 +131,10 @@ describe("redact", () => {
 
 const KEY = "TEST-12";
 const REF = `refs/workshop/${KEY}/canceled`;
-const w = { id: "w1", task_key: KEY, environment_id: "env_1", worktreeDir: "/wt/bb120", pluginDir: "/plugins/bb-plugin-hello" };
+const w = { id: "w1", task_key: KEY, environment_id: "env_1", worktreeDir: "/wt/bb120", pluginDir: "/plugins/alia-plugin-hello" };
 let ports: FakePorts;
 
-/** The work's working tree: git files and their content in the bb worktree. */
+/** The work's working tree: git files and their content in the VesnALIA worktree. */
 function tree(files: Record<string, string>, staged = "") {
   ports.git.setRepo(w.worktreeDir, { files: Object.keys(files), stagedDiff: staged });
   for (const [rel, text] of Object.entries(files)) ports.files.set(`${w.environment_id}:${rel}`, text);

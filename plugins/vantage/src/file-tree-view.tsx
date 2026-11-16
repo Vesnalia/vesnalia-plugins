@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { ReviewMarks } from "./contract";
 import { Counts, ICON_BUTTON, StatusLetter } from "./file-card";
 import { buildFileTree, dirNodes, filesBelow, type DirNode, type TreeNode } from "./file-tree";

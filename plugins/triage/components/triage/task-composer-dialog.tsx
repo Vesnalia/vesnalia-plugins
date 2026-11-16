@@ -2,7 +2,7 @@ import * as React from "react";
 import {
   experimental_NewThreadComposer as NewThreadComposer,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

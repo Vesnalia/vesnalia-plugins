@@ -9,7 +9,7 @@ reproduce. The strategy memo follows it as a separate doc
 ## What measures load
 
 `scripts/perf/load-bench.mjs` (`npm run perf:load`) boots the REAL app in the
-screenshot harness (mock SDK, no bb account, no network) at several board
+screenshot harness (mock SDK, no VesnALIA account, no network) at several board
 sizes and reads the load path stage by stage from page navigation to the
 settled board:
 
@@ -55,7 +55,7 @@ the same way.
 
 The modeled numbers are synthetic by construction: what a run proves about
 another run is the DELTA on this harness, never an absolute claim about a
-real bb.
+real VesnALIA.
 
 ### The suite's gates (run with `--assert`)
 

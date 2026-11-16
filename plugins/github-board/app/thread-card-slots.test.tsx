@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 /**
  * The card on a thread's Info tab and sidebar row, through the SDK's app
- * harness, and how the app registers both on bb 0.48 and on bb 0.47, whose
+ * harness, and how the app registers both on VesnALIA 0.48 and on VesnALIA 0.47, whose
  * slots have no sidebar row item.
  */
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import type { PluginAppSlots, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginAppSlots, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { boardPageTitle } from "./board-panel";
@@ -86,7 +86,7 @@ function sidebarThread(id: string, originPluginId: string | null): PluginSidebar
   return { id, projectId: "proj_w", originPluginId } as PluginSidebarThread;
 }
 
-/** bb calls `useData` once for the app and hands its answer to every row; this does both. */
+/** VesnALIA calls `useData` once for the app and hands its answer to every row; this does both. */
 function Rows({ threads }: { threads: PluginSidebarThread[] }) {
   const data = useThreadCards({ threads });
   return (
@@ -167,14 +167,14 @@ describe("the sidebar row item", () => {
 });
 
 describe("registerThreadCard", () => {
-  it("registers the Info tab row and the sidebar row item on bb 0.48", async () => {
+  it("registers the Info tab row and the sidebar row item on VesnALIA 0.48", async () => {
     const app = await loadPluginApp(() => import("../app"));
     expect(app.threadInfoRows.map((row) => [row.id, row.group])).toEqual([["card", "1_thread"]]);
     expect(app.threadRowMetadata.map((item) => item.id)).toEqual(["card"]);
     expect(app.threadRowMetadata[0]!.useData).toBe(useThreadCards);
   });
 
-  it("registers only the Info tab row on bb 0.47, whose slots have no row item", () => {
+  it("registers only the Info tab row on VesnALIA 0.47, whose slots have no row item", () => {
     const threadInfoRow = vi.fn();
     const slots = { experimental_threadInfoRow: threadInfoRow } as unknown as PluginAppSlots;
     expect(() => registerThreadCard(slots)).not.toThrow();

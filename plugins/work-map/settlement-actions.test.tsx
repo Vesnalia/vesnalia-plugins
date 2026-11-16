@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import type { Settlement } from "./settlement-contract";
 import { SettledToday } from "./settlement-actions";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   useRpc: () => ({ call: vi.fn() }),
   UrlLink: ({
     href,

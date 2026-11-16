@@ -2,15 +2,15 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const run = process.env.LIVE_RUN ?? "1";
-const machine = process.env.LIVE_MACHINE ?? "bb-1";
+const machine = process.env.LIVE_MACHINE ?? "alia-1";
 const phase = process.argv[2];
 mkdirSync(out, { recursive: true });
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -35,13 +35,13 @@ async function shot(name) {
 }
 
 async function open(hash) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   await page.locator("[data-settings-view]").waitFor();
   await pause(800);
@@ -107,7 +107,7 @@ try {
     await shot("card");
   } else if (phase === "access") {
     await open("");
-    const card = await waitFor("the first-run card", () => text(firstRun()), (value) => value.includes(`BB cannot use Docker on ${machine}`), 60);
+    const card = await waitFor("the first-run card", () => text(firstRun()), (value) => value.includes(`VesnALIA cannot use Docker on ${machine}`), 60);
     check(/sudo usermod -aG docker box/.test(card), "no usermod line");
     check((await page.getByRole("button", { name: `Check Docker on ${machine} again` }).count()) === 1, "no Check again");
     await noFirstRunKinds();

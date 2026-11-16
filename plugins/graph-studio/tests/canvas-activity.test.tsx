@@ -164,7 +164,7 @@ describe("the canvas as an editor", () => {
 
 /**
  * React Flow paints its chrome light unless told otherwise, which is what put
- * white surfaces into a dark BB. The mode is read from the theme's resolved
+ * white surfaces into a dark VesnALIA. The mode is read from the theme's resolved
  * background, in whichever colour syntax the host resolves it to.
  */
 describe("colorLightness", () => {

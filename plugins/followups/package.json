@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-followups",
+  "name": "alia-plugin-followups",
   "version": "0.6.6",
   "description": "Suggest clickable follow-up prompts above the composer when a thread finishes.",
   "license": "MIT",
@@ -9,14 +9,14 @@
     "test": "node --test \"tests/*.test.mjs\"",
     "test:worker-prompts": "node --test --test-name-pattern=\"worker sessions are told|worker session rules|pipeline returns literal worker text|drafting-only rules|detailed prompt asks\" tests/robustness.test.mjs",
     "eval:followups": "node scripts/eval-followups.mjs",
-    "build": "bb plugin build",
-    "dev": "bb plugin dev"
+    "build": "alia plugin build",
+    "dev": "alia plugin dev"
   },
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Followups",
     "description": "Suggest clickable follow-up prompts above the composer when a thread finishes.",
     "branding": {
@@ -31,7 +31,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -43,5 +42,22 @@
     "hono": "^4.11.9",
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/followups#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/followups"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

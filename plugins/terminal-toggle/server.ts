@@ -1,3 +1,3 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default function terminalToggle(_bb: BbPluginApi): void {}
+export default function terminalToggle(_alia: AliaPluginApi): void {}

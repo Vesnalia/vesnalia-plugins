@@ -1,7 +1,7 @@
 // A sent comment's fix, on its card in the code and in the list: which thread reported it and what it said, what the
 // review agent's check found against the Send that carried it, and Resolve, Dismiss and Reopen, which only your click does.
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
-import { experimental_useSidebarThreads, Markdown, ThreadTitle, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, Markdown, ThreadTitle, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { DraftComment } from "../../src/draft";
 import { sentCheck, type CommentChecks } from "../../lib/comments";
 import { linkImages } from "../../lib/link-images";
@@ -16,11 +16,11 @@ import { InlineCode } from "../ui/inline-code";
 import { CheckBadge } from "./look";
 
 /**
- * A thread that reported, other than the main thread, by its title as BB's thread list has it ("a thread not in your
+ * A thread that reported, other than the main thread, by its title as VesnALIA's thread list has it ("a thread not in your
  * list" where the list doesn't have it), which opens it.
  */
 function Reporter({ threadId }: { threadId: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const listed = experimental_useSidebarThreads?.()?.threads.some((thread) => thread.id === threadId);
   return <button type="button" className={cn("relative min-w-0 max-w-full text-primary hover:underline", TOUCH_TARGET)} onClick={() => navigate.toThread(threadId)}>
     {listed ? <ThreadTitle threadId={threadId} /> : "a thread not in your list"}<span aria-hidden> ↗</span>

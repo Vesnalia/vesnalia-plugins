@@ -37,14 +37,14 @@ export const english = {
   "Архивировать раздел": "Archive section",
   "Удалить раздел": "Delete section",
   "Убрать из дерева": "Remove from the tree",
-  "Папка на диске останется. Раздел пропадёт из дерева вместе с чатами, которые в нём открывались. Эти чаты уйдут в архив чатов BB.":
-    "The folder stays on disk. The section leaves the tree together with chats opened in it. Those chats go to BB’s chat archive.",
+  "Папка на диске останется. Раздел пропадёт из дерева вместе с чатами, которые в нём открывались. Эти чаты уйдут в архив чатов ALIA.":
+    "The folder stays on disk. The section leaves the tree together with chats opened in it. Those chats go to VesnALIA’s chat archive.",
   "В архив проекта": "Project archive",
   "Папка, вложенные разделы и история переедут в скрытый архив. Чаты тоже архивируются. Потом можно восстановить.":
     "The folder, nested sections and history move to the hidden archive. Chats are archived too. You can restore them later.",
   "Удалить полностью": "Delete completely",
-  "Раздел и его чаты исчезнут безвозвратно. Папка на диске удалится, если её не делит другой раздел и внутри нет другого проекта BB.":
-    "The section and its chats are gone for good. The folder is deleted unless another section shares it or another BB project lives inside.",
+  "Раздел и его чаты исчезнут безвозвратно. Папка на диске удалится, если её не делит другой раздел и внутри нет другого проекта ALIA.":
+    "The section and its chats are gone for good. The folder is deleted unless another section shares it or another VesnALIA project lives inside.",
   Устройство: "Device",
   "Загрузка устройств…": "Loading devices…",
   "Выберите устройство": "Choose device",
@@ -78,8 +78,8 @@ export const english = {
     "If the section folder is outside the project folder, its files stay in place: only the chats and the section record are archived.",
   "Создать новую папку по названию": "Create a new folder using this name",
   "Правила AGENTS.md": "AGENTS.md rules",
-  "Папка вместе с вложенными разделами, правилами и историей переместится в скрытый архив проекта .bb/archive/sections/. Чаты будут архивированы. Всё можно восстановить на странице «Проекты и разделы».":
-    "The folder, nested sections, rules and history will move to the hidden project archive .bb/archive/sections/. Chats will be archived. You can restore everything from Projects & Sections.",
+  "Папка вместе с вложенными разделами, правилами и историей переместится в скрытый архив проекта .vesnalia/archive/sections/. Чаты будут архивированы. Всё можно восстановить на странице «Проекты и разделы».":
+    "The folder, nested sections, rules and history will move to the hidden project archive .vesnalia/archive/sections/. Chats will be archived. You can restore everything from Projects & Sections.",
   Отмена: "Cancel",
   "Сохраняю…": "Saving…",
   "Создать новый, не восстанавливая": "Create new without restoring",
@@ -196,12 +196,12 @@ export const english = {
   "Свои правила": "Custom rules",
   "Куда применять": "Where it applies",
   "В файл": "Into the file",
-  "В сессии BB": "Into BB sessions",
+  "В сессии ALIA": "Into VesnALIA sessions",
   "И туда и туда": "Both",
-  "В файл и в сессию BB": "Into file and BB sessions",
+  "В файл и в сессию ALIA": "Into file and VesnALIA sessions",
   "Стартовое поручение": "Startup instruction",
-  "Постоянные правила этого места: роутинг моделей, делегирование, порядок работы. «В файл» дописывает их в конец AGENTS.md и CLAUDE.md — они действуют и в консоли на машине. «В сессии BB» ничего не пишет на диск: текст попадает в инструкции агента, запущенного из BB, и действует весь разговор.":
-    "Standing rules for this place: model routing, delegation, how work is done. “Into the file” appends them to the end of AGENTS.md and CLAUDE.md, so they also apply in a terminal on that machine. “Into BB sessions” writes nothing to disk: the text goes into the instructions of an agent started from BB and holds for the whole conversation.",
+  "Постоянные правила этого места: роутинг моделей, делегирование, порядок работы. «В файл» дописывает их в конец AGENTS.md и CLAUDE.md — они действуют и в консоли на машине. «В сессии ALIA» ничего не пишет на диск: текст попадает в инструкции агента, запущенного из ALIA, и действует весь разговор.":
+    "Standing rules for this place: model routing, delegation, how work is done. “Into the file” appends them to the end of AGENTS.md and CLAUDE.md, so they also apply in a terminal on that machine. “Into VesnALIA sessions” writes nothing to disk: the text goes into the instructions of an agent started from VesnALIA and holds for the whole conversation.",
   "Одноразовый текст: дописывается к первому сообщению нового чата в этой папке — например «запусти скилл и пришли текущие задачи». В файлы не пишется, в следующих ходах не участвует и в инструкциях сессии не висит.":
     "A one-shot text appended to the first message of a new chat here — “run the skill and send the current tasks”, say. It is never written to the files, never repeated on later turns and never sits in the session instructions.",
   "Вкладка решает, кто ведёт AGENTS.md этой папки: шаблон из настроек плагина, свой шаблон для этого места или ваш файл, в который плагин не пишет ничего.":
@@ -215,8 +215,8 @@ export const english = {
   Перенести: "Move",
   "Перенести проект": "Move project",
   "Новый путь проекта": "New project path",
-  "Вся папка переедет вместе со скрытыми файлами и архивом. Старый путь останется ссылкой для существующих чатов. История в базе BB остаётся в BB.":
-    "The entire folder moves, including hidden files and archives. The old path remains a link for existing chats. History in the BB database stays in BB.",
+  "Вся папка переедет вместе со скрытыми файлами и архивом. Старый путь останется ссылкой для существующих чатов. История в базе ALIA остаётся в ALIA.":
+    "The entire folder moves, including hidden files and archives. The old path remains a link for existing chats. History in the VesnALIA database stays in VesnALIA.",
   "Выберите новый, ещё не существующий путь на том же диске. Работающие чаты нужно завершить.":
     "Choose a new, nonexistent path on the same disk volume. Finish running chats first.",
   "Незавершённые переносы": "Unfinished moves",
@@ -239,14 +239,14 @@ export const english = {
   "Дождитесь завершения ответа и сообщений в очереди, затем повторите перенос.":
     "Wait for the reply and queued messages to finish, then try moving again.",
   "Удалить проект": "Delete project",
-  "Проект пропадёт из дерева BB. Его чаты будут удалены из BB. Это нельзя отменить из плагина.":
-    "The project will leave the BB tree. Its chats will be deleted from BB. The plugin cannot undo this.",
+  "Проект пропадёт из дерева ALIA. Его чаты будут удалены из ALIA. Это нельзя отменить из плагина.":
+    "The project will leave the VesnALIA tree. Its chats will be deleted from VesnALIA. The plugin cannot undo this.",
   "Не трогать файлы": "Leave files in place",
   "Папки проекта на всех устройствах останутся на месте.":
     "The project folders on every device will stay where they are.",
   "Перенести файлы в архив": "Move files to the archive",
-  "Каждая копия папки переедет в скрытый архив рядом с ней, в .bb/archive/projects/.":
-    "Each copy moves to a hidden archive next to it, in .bb/archive/projects/.",
+  "Каждая копия папки переедет в скрытый архив рядом с ней, в .vesnalia/archive/projects/.":
+    "Each copy moves to a hidden archive next to it, in .vesnalia/archive/projects/.",
   "Рабочие копии": "Working copies",
   "У проекта может быть своя рабочая папка на каждом устройстве.":
     "Each device can hold its own working copy of the project.",
@@ -427,26 +427,26 @@ export const english = {
   "Провайдер, модель и агент": "Provider, model and agent",
   Провайдер: "Provider",
   "Настройки места": "Place settings",
-  "Новый чат, созданный здесь, начинается с этих настроек. Выключенная группа наследуется: ближайший раздел выше, затем проект, затем настройки плагина, затем обычный выбор BB.":
-    "A new chat created here starts with these settings. A group left off is inherited: the nearest section above, then the project, then the plugin settings, then BB's usual choice.",
+  "Новый чат, созданный здесь, начинается с этих настроек. Выключенная группа наследуется: ближайший раздел выше, затем проект, затем настройки плагина, затем обычный выбор ALIA.":
+    "A new chat created here starts with these settings. A group left off is inherited: the nearest section above, then the project, then the plugin settings, then VesnALIA's usual choice.",
   "Свой провайдер и модель": "Own provider and model",
   "Свой режим доступа": "Own permission mode",
-  "Записано в BB: треды без явного провайдера пойдут сюда.":
-    "Saved to BB: chats started without an explicit provider will go here.",
-  "Не записано в BB: у выбранного провайдера нет моста на машине проекта.":
-    "Not saved to BB: the chosen provider has no bridge on the project's machine.",
-  "Не удалось записать в BB:":
-    "Could not save to BB:",
-  "Запомнено в BB:":
-    "Remembered in BB:",
-  "BB ничего не запомнил для проекта.":
-    "BB has nothing remembered for this project.",
+  "Записано в ALIA: треды без явного провайдера пойдут сюда.":
+    "Saved to VesnALIA: chats started without an explicit provider will go here.",
+  "Не записано в ALIA: у выбранного провайдера нет моста на машине проекта.":
+    "Not saved to VesnALIA: the chosen provider has no bridge on the project's machine.",
+  "Не удалось записать в ALIA:":
+    "Could not save to VesnALIA:",
+  "Запомнено в ALIA:":
+    "Remembered in VesnALIA:",
+  "ALIA ничего не запомнил для проекта.":
+    "VesnALIA has nothing remembered for this project.",
   "У этого провайдера нет моста на машине проекта: треды без явного провайдера упадут.":
     "This provider has no bridge on the project's machine: chats started without an explicit provider will fail.",
-  "Расходится с настройкой здесь: треды без явного провайдера (bb thread spawn, новый чат вне раздела) пойдут туда.":
-    "Differs from the setting here: chats started without an explicit provider (bb thread spawn, a new chat outside a section) will go there.",
-  "Записать в BB":
-    "Save to BB",
+  "Расходится с настройкой здесь: треды без явного провайдера (VesnALIA thread spawn, новый чат вне раздела) пойдут туда.":
+    "Differs from the setting here: chats started without an explicit provider (VesnALIA thread spawn, a new chat outside a section) will go there.",
+  "Записать в ALIA":
+    "Save to VesnALIA",
   "Своя среда": "Own environment",
   "Своя машина": "Own machine",
   "неизвестная машина": "unknown machine",
@@ -455,7 +455,7 @@ export const english = {
   Агент: "Agent",
   Наследовать: "Inherit",
   "Без агента": "No agent",
-  "как в BB": "as in BB",
+  "как в ALIA": "as in VesnALIA",
   "из настроек плагина": "from plugin settings",
   "из проекта": "from the project",
   отсюда: "set here",
@@ -468,15 +468,15 @@ export const english = {
   "С чего начинается новый чат, если проект и раздел молчат.":
     "What a new chat starts with when the project and the section say nothing.",
   "По умолчанию для новых чатов": "Defaults for new chats",
-  "Действует, пока проект или раздел не задал своё. Выключенная группа оставляет обычный выбор BB.":
-    "Applies until a project or a section sets its own. A group left off keeps BB's usual choice.",
+  "Действует, пока проект или раздел не задал своё. Выключенная группа оставляет обычный выбор ALIA.":
+    "Applies until a project or a section sets its own. A group left off keeps VesnALIA's usual choice.",
   "Агенты для чатов": "Agents for chats",
   "Плагин CLI Agents установлен. Агент выбирается у проекта или раздела: откройте его карточку и задайте агента рядом с моделью.":
     "The CLI Agents plugin is installed. The agent is chosen on a project or a section: open its card and set the agent next to the model.",
   "Чтобы новый чат сразу начинался нужным агентом Claude Code, Codex или OpenCode, поставьте плагин CLI Agents.":
     "To have a new chat start with the right Claude Code, Codex or OpenCode agent, install the CLI Agents plugin.",
-  "Он же есть в каталоге плагинов BB под именем":
-    "It is also in the BB plugin catalog as",
+  "Он же есть в каталоге плагинов ALIA под именем":
+    "It is also in the VesnALIA plugin catalog as",
   "Открыть страницу плагина": "Open the plugin page",
 
   "Чат сам переключает рабочую папку:":
@@ -497,13 +497,13 @@ export const english = {
   "Сначала выберите проект": "Choose a project first",
   "У проекта нет разделов": "This project has no sections",
 
-  // Session context rules (experimental BB core).
-  "Плагины BB": "BB plugins",
-  "Инструкции, инструменты и навыки плагинов BB. Исключённый плагин здесь не показывает свои кнопки в поле ввода и не перехватывает сообщения.":
-    "Instructions, tools and skills of BB plugins. An excluded plugin shows no composer controls here and does not intercept messages.",
+  // Session context rules (experimental VesnALIA core).
+  "Плагины ALIA": "VesnALIA plugins",
+  "Инструкции, инструменты и навыки плагинов ALIA. Исключённый плагин здесь не показывает свои кнопки в поле ввода и не перехватывает сообщения.":
+    "Instructions, tools and skills of VesnALIA plugins. An excluded plugin shows no composer controls here and does not intercept messages.",
   Навыки: "Skills",
-  "Навыки BB и собственные навыки CLI по имени.":
-    "BB skills and the CLI's own skills, by name.",
+  "Навыки ALIA и собственные навыки CLI по имени.":
+    "VesnALIA skills and the CLI's own skills, by name.",
   "MCP-серверы": "MCP servers",
   "Серверы из настроек CLI на машине.":
     "Servers from the CLI settings on the machine.",
@@ -514,8 +514,8 @@ export const english = {
   "Все, кроме: {n}": "All except: {n}",
   Подключать: "Include",
   "Не подключать": "Leave out",
-  "Действует для новых сессий. Claude Code и Codex соблюдают все группы, OpenCode — всё, кроме плагинов CLI, Cursor — плагины BB и MCP-серверы.":
-    "Applies to new sessions. Claude Code and Codex honor every group, OpenCode everything except CLI plugins, Cursor BB plugins and MCP servers.",
+  "Действует для новых сессий. Claude Code и Codex соблюдают все группы, OpenCode — всё, кроме плагинов CLI, Cursor — плагины VesnALIA и MCP-серверы.":
+    "Applies to new sessions. Claude Code and Codex honor every group, OpenCode everything except CLI plugins, Cursor VesnALIA plugins and MCP servers.",
   "Только выбранные": "Only selected",
   "Все, кроме выбранных": "All except selected",
   Поиск: "Search",
@@ -526,19 +526,19 @@ export const english = {
   "Какие плагины, навыки и MCP получает сессия агента.":
     "Which plugins, skills and MCP servers an agent session gets.",
   "По умолчанию для всех проектов": "Default for all projects",
-  "Действует, пока проект или раздел не задал своё. Группа «Наследовать» оставляет обычную загрузку BB.":
-    "Applies until a project or section sets its own. An “Inherit” group keeps BB's usual loading.",
-  "Что загружается в сессию агента, начатую здесь: плагины BB, навыки, MCP-серверы и плагины CLI. Группа без своего значения наследуется: ближайший раздел выше, затем проект, затем настройки плагина.":
-    "What an agent session started here loads: BB plugins, skills, MCP servers and CLI plugins. A group without its own value is inherited: the nearest section above, then the project, then the plugin settings.",
-  "Общие инструкции BB": "BB-wide instructions",
-  "Файл {path}: BB добавляет его текст в каждую сессию.":
-    "File {path}: BB adds its text to every session.",
+  "Действует, пока проект или раздел не задал своё. Группа «Наследовать» оставляет обычную загрузку ALIA.":
+    "Applies until a project or section sets its own. An “Inherit” group keeps VesnALIA's usual loading.",
+  "Что загружается в сессию агента, начатую здесь: плагины ALIA, навыки, MCP-серверы и плагины CLI. Группа без своего значения наследуется: ближайший раздел выше, затем проект, затем настройки плагина.":
+    "What an agent session started here loads: VesnALIA plugins, skills, MCP servers and CLI plugins. A group without its own value is inherited: the nearest section above, then the project, then the plugin settings.",
+  "Общие инструкции ALIA": "ALIA-wide instructions",
+  "Файл {path}: ALIA добавляет его текст в каждую сессию.":
+    "File {path}: VesnALIA adds its text to every session.",
   "Сейчас этого файла нет, выключать нечего.":
     "The file does not exist right now, so there is nothing to turn off.",
-  "по умолчанию BB": "BB default",
+  "по умолчанию ALIA": "VesnALIA default",
   "Инструкции проекта": "Project instructions",
-  "AGENTS.md и CLAUDE.md в папке раздела и выше, а также .bb/AGENTS.md. Claude Code и Codex отключают их полностью, OpenCode — вместе со своими настройками проекта, Cursor не отключает.":
-    "AGENTS.md and CLAUDE.md in the section folder and above, plus .bb/AGENTS.md. Claude Code and Codex drop them completely, OpenCode together with its project settings, Cursor does not.",
+  "AGENTS.md и CLAUDE.md в папке раздела и выше, а также .vesnalia/AGENTS.md. Claude Code и Codex отключают их полностью, OpenCode — вместе со своими настройками проекта, Cursor не отключает.":
+    "AGENTS.md and CLAUDE.md in the section folder and above, plus .vesnalia/AGENTS.md. Claude Code and Codex drop them completely, OpenCode together with its project settings, Cursor does not.",
   "Навыки и плагины из claude.ai": "Skills and plugins from claude.ai",
   "То, что Claude Code подтягивает из аккаунта claude.ai (anthropic-skills:…). Действует только в Claude Code.":
     "What Claude Code pulls in from the claude.ai account (anthropic-skills:…). Claude Code only.",
@@ -547,7 +547,7 @@ export const english = {
   "навыки: {n}": "skills: {n}",
   "выбирает по треду": "picks per thread",
   "в сессию ничего не добавляет": "adds nothing to sessions",
-  "нужен BB, всегда подключён": "required by BB, always loaded",
+  "нужен ALIA, всегда подключён": "required by VesnALIA, always loaded",
   "Экспорт всего": "Export everything",
   "Импорт всего": "Import everything",
   "Экспортировать всё": "Export everything",
@@ -579,23 +579,23 @@ export const english = {
   "Действия": "Actions",
   "Развернуть": "Expand",
   "Свернуть": "Collapse",
-  "только в сессии BB": "BB sessions only",
-  "В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из BB.":
-    "In Own file mode the plugin does not write to files, so custom rules only apply in sessions started from BB.",
+  "только в сессии ALIA": "VesnALIA sessions only",
+  "В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из ALIA.":
+    "In Own file mode the plugin does not write to files, so custom rules only apply in sessions started from VesnALIA.",
   "Например: отвечай по-русски, коммиты — по Conventional Commits":
     "For example: reply in English, use Conventional Commits",
   "Например: запусти скилл и пришли текущие задачи":
     "For example: run the skill and send the current tasks",
   "Автоархив чатов":
     "Chat auto-archive",
-  "Убирать в архив BB чаты, в которых давно ничего не происходит.":
-    "Move chats with no recent activity to the BB archive.",
+  "Убирать в архив ALIA чаты, в которых давно ничего не происходит.":
+    "Move chats with no recent activity to the VesnALIA archive.",
   "Отправлено в архив: {n}":
     "Archived: {n}",
   "Старых чатов нет.":
     "No old chats.",
-  "Закреплённые, работающие, ждущие ответа и вложенные чаты не трогаются. Проверка раз в час; чат можно вернуть из архива BB.":
-    "Pinned, running, waiting and nested chats are left alone. Checked hourly; a chat can be restored from the BB archive.",
+  "Закреплённые, работающие, ждущие ответа и вложенные чаты не трогаются. Проверка раз в час; чат можно вернуть из архива ALIA.":
+    "Pinned, running, waiting and nested chats are left alone. Checked hourly; a chat can be restored from the VesnALIA archive.",
   "Архивировать старые чаты":
     "Archive old chats",
   "Чат уходит в архив, если в нём не было активности N дней.":

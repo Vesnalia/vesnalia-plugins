@@ -1,7 +1,7 @@
 // Overview: what needs you, best vs base, what's running now, then the
 // trajectory, secondary metrics and guardrails, controls, bench hosts,
 // notices (each with the action it asks for) and the raw event log.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { EmptyState, GuardrailBadge, Mono, Section, Stat } from "./ui.tsx";
 import type { Tab } from "./StudiesPage.tsx";
 
 export function OverviewTab({ o, rpc, onChanged, onOpenCandidate, go }: { o: OverviewResult; rpc: Rpc; onChanged: () => void; onOpenCandidate: (n: number) => void; go: (t: Tab) => void }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [busy, setBusy] = useState(false);
   const [workers, setWorkers] = useState<string>("");
   const [dialog, setDialog] = useState<null | "harvest" | "archive">(null);

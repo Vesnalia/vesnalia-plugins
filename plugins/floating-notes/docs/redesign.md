@@ -1,16 +1,16 @@
 # Notes — full redesign: the floating notes plugin
 
-A ground-up rewrite of bb-plugin-notes. The nav-panel notes app becomes a
-floating notes system in the spirit of bb-plugin-floating-terminal: a
-draggable window over bb, pop-out stickies, a quick-capture bar, and
+A ground-up rewrite of alia-plugin-notes. The nav-panel notes app becomes a
+floating notes system in the spirit of alia-plugin-floating-terminal: a
+draggable window over VesnALIA, pop-out stickies, a quick-capture bar, and
 thread-aware scratchpads — on top of the same SQLite store, which is
 preserved and migrated in place. Plugin id stays `notes`; existing notes,
-@note mentions, `bb notes` CLI, and agent tools all survive (rewritten).
+@note mentions, `alia notes` CLI, and agent tools all survive (rewritten).
 
 ## Surfaces
 
 1. **Main floating window** — content script mounts a React root into
-   `document.body` (no bb React context; RPC via fetch twin). Draggable,
+   `document.body` (no VesnALIA React context; RPC via fetch twin). Draggable,
    resizable from any edge, geometry persisted client-side; below the compact
    breakpoint it becomes a full sheet driven by `visualViewport` (both ported
    from floating-terminal). Opened from a sidebar-footer button or `Ctrl+'`.
@@ -39,7 +39,7 @@ preserved and migrated in place. Plugin id stays `notes`; existing notes,
 8. **Composer `+` menu** — "Insert note" opens a picker; inserts the note's
    markdown into the draft via `PluginComposerApi.insertText`.
 9. **@note mentions** (kept) — FTS-backed search.
-10. **CLI** (rewritten) — `bb notes list|search|show|add|append|tag|pin|trash|
+10. **CLI** (rewritten) — `alia notes list|search|show|add|append|tag|pin|trash|
     restore|purge|daily|scratchpad`.
 11. **Agent tools** (rewritten) — `notes_search` (FTS), `notes_read`,
     `notes_write` (create/update/append), `notes_trash`,
@@ -47,7 +47,7 @@ preserved and migrated in place. Plugin id stays `notes`; existing notes,
 
 ## Data model
 
-SQLite via `bb.storage.database()` + `bb.storage.migrate` (append-only).
+SQLite via `alia.storage.database()` + `alia.storage.migrate` (append-only).
 Existing `notes` table is migrated, never dropped.
 
 - `notes` — existing columns plus:
@@ -74,7 +74,7 @@ Single source of truth, shared by server, panels, and the fetch twin.
 FTS query matched. Mutations: `createNote`, `updateNote` (body/tags/pinned/
 color/stickyOpen/collapsed/pinnedThreadId), `appendToNote`, `scratchpad`,
 `dailyNote`, `inboxNote`, trash lifecycle, `uploadAttachment`/`getAttachment`
-(base64 over JSON, ≤4MB). Server publishes `bb.realtime.publish("notes",
+(base64 over JSON, ≤4MB). Server publishes `alia.realtime.publish("notes",
 {kind:"changed"})` on every mutation (available to future subscribers); the
 client currently syncs by polling — every surface shares one store that
 re-fetches on focus/visibility, every 20 s while visible, and after its own
@@ -90,8 +90,8 @@ bullets and blockquote bars drawn; fenced code gets a quiet block background
 render inline (`bbnote://attachment/<id>` resolved through a callback).
 Autosave debounced 500 ms, flushed on blur/unmount. The component is
 self-contained and RPC-free: callbacks only (`onDocChange`, `onPasteImage`,
-`resolveAttachment`). Theme from bb CSS variables; `light-dark()` for
-anything theme-dependent (bb plugin CSS rule).
+`resolveAttachment`). Theme from VesnALIA CSS variables; `light-dark()` for
+anything theme-dependent (VesnALIA plugin CSS rule).
 
 ## Delights
 
@@ -101,7 +101,7 @@ anything theme-dependent (bb plugin CSS rule).
 - Copy-as-markdown everywhere; word/task count in the editor footer.
 - Empty states that teach the shortcuts.
 
-## Settings (`bb.settings.define`)
+## Settings (`alia.settings.define`)
 
 `shortcutEnabled`, `captureShortcutEnabled`, `fontSize`, `defaultColor`,
 `captureTarget` (inbox | scratchpad).
@@ -111,7 +111,7 @@ anything theme-dependent (bb plugin CSS rule).
 - Ported from floating-terminal: `lib/frame.ts` (+tests), `lib/viewport.ts`,
   `lib/rpc.ts` (fetch twin typed off the contract), the external-controller
   pattern (`lib/controller.ts`) so the sidebar button, shortcuts, header
-  bridge, and content script cooperate without bb context.
+  bridge, and content script cooperate without VesnALIA context.
 - The thread-header slot mounts once per visible thread (`threadId` prop) and
   reports mount/unmount to the controller — that set drives pinned-sticky
   visibility and the scratchpad target. Split panes mean N mounts; the

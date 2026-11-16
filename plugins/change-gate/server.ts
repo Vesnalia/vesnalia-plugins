@@ -1,6 +1,6 @@
 // Change Gate: a one-click decision before an agent touches production, kept in a journal.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { appendEntry, replyToAgent, type GateEntry, type GateRequest } from "./lib/journal";
 
@@ -20,17 +20,17 @@ export const rpcContract = defineRpcContract({
   journal: { input: z.null(), output: z.object({ entries: z.array(entrySchema) }) },
 });
 
-// BB rejects a longer submission detail. Approvals often wait for someone to come
+// VesnALIA rejects a longer submission detail. Approvals often wait for someone to come
 // back, well past the 10-minute default.
 const clip = (text: string) => (text.length <= 280 ? text : `${text.slice(0, 279)}…`);
 const WAIT_MS = 24 * 60 * 60 * 1000;
 
 const answerSchema = z.object({ approved: z.boolean(), comment: z.string() });
 
-export default async function plugin(bb: BbPluginApi) {
-  const readJournal = async () => (await bb.storage.kv.get<GateEntry[]>("journal")) ?? [];
+export default async function plugin(alia: AliaPluginApi) {
+  const readJournal = async () => (await alia.storage.kv.get<GateEntry[]>("journal")) ?? [];
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "change_gate",
     description:
       "Ask the person to approve a change to production or shared data before making it: a migration, a deploy, a server config change, a data deletion. Waits for their answer and records it.",
@@ -45,7 +45,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
     async execute(input, { threadId, signal }) {
       const request: GateRequest = input;
-      const answer = await bb.ui.requestInput(
+      const answer = await alia.ui.requestInput(
         {
           threadId,
           rendererId: "change-gate",
@@ -69,18 +69,18 @@ export default async function plugin(bb: BbPluginApi) {
         decision: parsed === null ? "dismissed" : parsed.approved ? "approved" : "declined",
         comment: parsed?.comment ?? "",
       };
-      await bb.storage.kv.set("journal", appendEntry(await readJournal(), entry));
-      bb.realtime.publish("journal-changed", {});
+      await alia.storage.kv.set("journal", appendEntry(await readJournal(), entry));
+      alia.realtime.publish("journal-changed", {});
       return replyToAgent(entry);
     },
   });
 
-  bb.rpc.register(rpcContract, { journal: async () => ({ entries: await readJournal() }) });
+  alia.rpc.register(rpcContract, { journal: async () => ({ entries: await readJournal() }) });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "change-gate",
     summary: "Read the journal of approved and declined changes",
-    commands: [{ name: "log", summary: "Show the journal", usage: "bb change-gate log [--json]" }],
+    commands: [{ name: "log", summary: "Show the journal", usage: "alia change-gate log [--json]" }],
     async run(argv) {
       const entries = await readJournal();
       if (argv.includes("--json")) return { exitCode: 0, stdout: JSON.stringify(entries) };

@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { documentSchema, scopeSchema } from "./contracts.js";
 import { languages } from "./i18n.js";

@@ -73,7 +73,7 @@ services:
   millivolt:
     # Self-hosted inference proxy: one OpenAI-compatible listener, one SQLite
     # history, one embedded dashboard. Pinned to the published tag so
-    # \`bb millivolt update\` (or auto-update) can move it forward.
+    # \`alia millivolt update\` (or auto-update) can move it forward.
     image: ghcr.io/llm-4-people/millivolt:main
     container_name: ${containerName}
     ports:
@@ -392,12 +392,12 @@ export async function install(options: {
     if (marker === null) {
       await fs.writeFile(
         markerPath,
-        `${JSON.stringify({ by: "bb-plugin-millivolt", at: new Date().toISOString() })}\n`,
+        `${JSON.stringify({ by: "alia-plugin-millivolt", at: new Date().toISOString() })}\n`,
         "utf8",
       );
     }
     const env = [
-      "# Written by the bb millivolt plugin. The operator credential gates the",
+      "# Written by the VesnALIA millivolt plugin. The operator credential gates the",
       "# dashboard and the inference listener's operator plane.",
       `MILLIVOLT_OPERATOR_TOKEN=${token}`,
       `MILLIVOLT_PORT=${port}`,
@@ -534,7 +534,7 @@ export async function freeProjectName(preferred: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 /** Local-only tag used while a deployment is pinned to an older image. */
-export const ROLLBACK_IMAGE = "ghcr.io/llm-4-people/millivolt:bb-rollback";
+export const ROLLBACK_IMAGE = "ghcr.io/llm-4-people/millivolt:alia-rollback";
 
 /** Compose override that pins the service to the rollback tag. */
 export const ROLLBACK_OVERRIDE = "rollback.yaml";
@@ -558,8 +558,8 @@ export async function tagImage(id: string, ref: string): Promise<boolean> {
 export async function writeRollbackOverride(dir: string): Promise<void> {
   await fs.writeFile(
     path.join(dir, ROLLBACK_OVERRIDE),
-    `# Written by the bb millivolt plugin while a rolled-back image is pinned.
-# Delete this file (or run "bb millivolt resume") to track the published tag again.
+    `# Written by the VesnALIA millivolt plugin while a rolled-back image is pinned.
+# Delete this file (or run "alia millivolt resume") to track the published tag again.
 services:
   millivolt:
     image: ${ROLLBACK_IMAGE}
@@ -611,7 +611,7 @@ export async function readContainerFile(
   container: string,
   containerPath: string,
 ): Promise<string | null> {
-  const tmp = path.join(os.tmpdir(), `bb-millivolt-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const tmp = path.join(os.tmpdir(), `alia-millivolt-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   try {
     const copied = await runProcess("docker", ["cp", `${container}:${containerPath}`, tmp], {
       timeoutMs: 20_000,
@@ -631,7 +631,7 @@ export async function writeContainerFile(
   containerPath: string,
   content: string,
 ): Promise<boolean> {
-  const tmp = path.join(os.tmpdir(), `bb-millivolt-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const tmp = path.join(os.tmpdir(), `alia-millivolt-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   try {
     await fs.writeFile(tmp, content, "utf8");
     const copied = await runProcess("docker", ["cp", tmp, `${container}:${containerPath}`], {

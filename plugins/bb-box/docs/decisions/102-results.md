@@ -12,7 +12,7 @@ Measured on 14 November 2026 on a linux-desktop-cpu box on Proxmox QEMU, Ubuntu 
 
 ## Where the agent's click lands
 
-| Screen | Click | Where Cua clicked, in X's pixels | What BB Box noted |
+| Screen | Click | Where Cua clicked, in X's pixels | What VesnALIA Box noted |
 | --- | --- | --- | --- |
 | 1920 by 1080, scale 1 | Edit menu, by reference | Edit is 675 to 716 across, 116 to 141 down | 696, 129 by the first form; nothing now |
 | 1920 by 1080, scale 1 | the text, by pixels | 1024, 432 | 1024, 432 |
@@ -38,7 +38,7 @@ Cua Driver's `get_screen_size` said a scale of 1.0, and its `window_bounds` were
 
 The second form read in the box whether the desktop was scaled, and placed an action by reference only where it was not. With the same GTK test window, a button at 300, 200 and 180 by 60 in its own points, it gave:
 
-| Scale | Click | The button's centre, in X's pixels | What BB Box noted |
+| Scale | Click | The button's centre, in X's pixels | What VesnALIA Box noted |
 | --- | --- | --- | --- |
 | 2 | by reference | 784, 542 | nothing: the check said scaled |
 | 2 | by pixels | 784, 542 | 784, 541 |
@@ -47,7 +47,7 @@ The second form read in the box whether the desktop was scaled, and placed an ac
 
 ## The pointer over the picture
 
-A page with noVNC 1.7.0, in headless Chrome at 960 by 600, showed the box's screen over VNC, with this decision's pointer drawn from the event BB Box's own computer code gave for each click, driving the real Cua Driver. In each frame 0.2 to 0.3 s after a click, the pointer and its ring were on the place clicked, at both screen sizes. The relay from the plugin to the panel was not part of this run: the plugin's tests check it.
+A page with noVNC 1.7.0, in headless Chrome at 960 by 600, showed the box's screen over VNC, with this decision's pointer drawn from the event VesnALIA Box's own computer code gave for each click, driving the real Cua Driver. In each frame 0.2 to 0.3 s after a click, the pointer and its ring were on the place clicked, at both screen sizes. The relay from the plugin to the panel was not part of this run: the plugin's tests check it.
 
 A second review found the check cannot be trusted:
 

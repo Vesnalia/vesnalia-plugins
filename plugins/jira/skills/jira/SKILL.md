@@ -10,7 +10,7 @@ description: Read and change Jira Cloud issues with the jira_* agent tools — s
 - `jira_search_issues` — JQL in, one row per issue out (key, type, status,
   priority, assignee, summary). Example:
   `assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC`.
-  **In a BB project linked to Jira projects, results are limited to those
+  **In a VesnALIA project linked to Jira projects, results are limited to those
   projects** (the first output line names the scope); leave `project = …` out.
 - `jira_search_all_issues` — the same, across every Jira project. Use it only
   when the user asks about issues outside the linked projects.

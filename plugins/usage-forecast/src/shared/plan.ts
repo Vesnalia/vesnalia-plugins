@@ -1,6 +1,6 @@
 // A provider's plan as the band, the sidebar card and the CLI show it: the
 // host's `planLabel` plus the multiplier of its undocumented
-// `plan: {id, multiplier}` ("Max 5×"). On bb 0.49 the host sent
+// `plan: {id, multiplier}` ("Max 5×"). On VesnALIA 0.49 the host sent
 // `multiplier: null` for every provider (AGENTS.md, Host facts), so nothing is
 // guessed: only a finite number above 1 is shown. Of `plan` only the
 // multiplier is ever kept.

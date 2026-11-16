@@ -5,7 +5,7 @@ import { BreatheWave } from './breathe-wave';
 import { DEFAULT_TIMING } from '../lib/breath';
 import * as breath from '../lib/breath';
 const theme = vi.hoisted(() => ({ mode: 'dark' }));
-vi.mock('@get-bb/plugin-sdk/app', () => ({ experimental_useCodeTheme: () => theme }));
+vi.mock('@vesnalia/plugin-sdk/app', () => ({ experimental_useCodeTheme: () => theme }));
 let onIntersection: (entries: { isIntersecting: boolean }[]) => void;
 let disconnect: ReturnType<typeof vi.fn>;
 beforeEach(() => {

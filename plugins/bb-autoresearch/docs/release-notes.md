@@ -5,10 +5,10 @@ How each version was built: what it added, the decisions taken on the way, every
 | Version | What it added |
 |---|---|
 | [1.0.2](#102) | Clearer decisions, verdicts and recovery instructions; action-first agent briefs, staged skills and more readable detail. No measurement or stable-contract changes. |
-| [1.0.1](#101) | Fix: `bb study harvest` on a study already frozen for harvest shows the freeze instead of starting a new one; `--refreeze` freezes again on purpose. |
-| [1.0.0](#100) | The plugin owns every measurement and verdict; agents own commit messages and harvest. Each bench host decides with its own win threshold, candidates go to the quietest host, and a much noisier host is left out; a guardrail that can't be judged fails calibration. Workers write their commit messages; harvest freezes best, and an agent turns it into PRs with `bb study evidence`, `measure` and `gate`. A study chooses its remote machines (`machine` options passed to the provider). Remote machines survive a plugin reload; unused seeds and base bundles are deleted; CI on every pull request; docs split into design, guide and release notes, with a stability policy. |
-| [v0.3.1](#v031-large-uploads-in-parts) | Large uploads to remote machines travel in 32 MiB parts (BB's 75-second RPC limit). |
-| [v0.3.0](#v030-remote-bench-hosts) | Remote bench hosts lent by bench provider plugins: short-lived machines that can't be BB machines, driven by the server over a small RPC contract, each calibrated on arrival and rotated before its lifetime ends. |
+| [1.0.1](#101) | Fix: `alia study harvest` on a study already frozen for harvest shows the freeze instead of starting a new one; `--refreeze` freezes again on purpose. |
+| [1.0.0](#100) | The plugin owns every measurement and verdict; agents own commit messages and harvest. Each bench host decides with its own win threshold, candidates go to the quietest host, and a much noisier host is left out; a guardrail that can't be judged fails calibration. Workers write their commit messages; harvest freezes best, and an agent turns it into PRs with `alia study evidence`, `measure` and `gate`. A study chooses its remote machines (`machine` options passed to the provider). Remote machines survive a plugin reload; unused seeds and base bundles are deleted; CI on every pull request; docs split into design, guide and release notes, with a stability policy. |
+| [v0.3.1](#v031-large-uploads-in-parts) | Large uploads to remote machines travel in 32 MiB parts (VesnALIA's 75-second RPC limit). |
+| [v0.3.0](#v030-remote-bench-hosts) | Remote bench hosts lent by bench provider plugins: short-lived machines that can't be VesnALIA machines, driven by the server over a small RPC contract, each calibrated on arrival and rotated before its lifetime ends. |
 | [v0.2.4](#v024) | Fixes from a 5.6-hour blind study on a large repository: bench time spent on candidates that could no longer win, on clear losses and on confirming big wins; drift pauses that were really shorter runs; measurements and promotions after a drift pause; harvest stacks whose layers didn't apply. And the UI issues found while capturing the store screenshots. |
 | [v0.2.3](#v023) | UI fixes found while capturing the marketplace screenshots; the strategist is told where best's code is; archiving no longer spawns replacement workers. |
 | [v0.2.2](#v022-single-machine-mode) | Single-machine mode (gates take turns with measurements on a machine that is both edit and bench host, and an optional quiet bench), and commits as the repository's own git identity. |
@@ -18,7 +18,7 @@ How each version was built: what it added, the decisions taken on the way, every
 
 ## 1.0.2
 
-Text and readability fixes. Same minimum BB and SDK versions; no migration, oracle-hash change, new CLI mode or measurement-rule change.
+Text and readability fixes. Same minimum VesnALIA and SDK versions; no migration, oracle-hash change, new CLI mode or measurement-rule change.
 
 - **Decisions first.** Draft and approval messages distinguish reviewing the spec, running calibration and starting workers. Harvest asks an agent to prepare PRs rather than claiming that work has already started.
 - **Outcome, then measurement.** Worker verdicts lead with the result and deciding cause, followed by the estimate, reference and interval when measured. A missing guardrail, failed holdout or failed confirmation stays distinct. Inconclusive no longer automatically means “within the noise”; reports identify the deciding loss cause instead of leading with an improved primary metric.
@@ -31,11 +31,11 @@ Text and readability fixes. Same minimum BB and SDK versions; no migration, orac
 
 ## 1.0.1
 
-A bug fix in a CLI command 1.0 keeps stable ([stability.md](stability.md#cli-commands-and---json)). Same platform pins (BB 0.45.x, SDK 0.6.14); nothing to migrate.
+A bug fix in a CLI command 1.0 keeps stable ([stability.md](stability.md#cli-commands-and---json)). Same platform pins (VesnALIA 0.45.x, SDK 0.6.14); nothing to migrate.
 
-### `bb study harvest` on a frozen study froze it again
+### `alia study harvest` on a frozen study froze it again
 
-- **Bug.** `bb study harvest <slug>` on a study already frozen for harvest is meant to show the freeze. 1.0.0 did that only when the latest harvest was a v1 one (`waiting` or `frozen`). When it was a `ready` harvest the plugin had drafted before 1.0, it started a new freeze (h2 → h3), and an agent following the study-harvest skill could do it without the human. The Harvest tab offered *Freeze best for a new harvest…* in the same case, and its RPC (`study.harvest.start`) did the same.
+- **Bug.** `alia study harvest <slug>` on a study already frozen for harvest is meant to show the freeze. 1.0.0 did that only when the latest harvest was a v1 one (`waiting` or `frozen`). When it was a `ready` harvest the plugin had drafted before 1.0, it started a new freeze (h2 → h3), and an agent following the study-harvest skill could do it without the human. The Harvest tab offered *Freeze best for a new harvest…* in the same case, and its RPC (`study.harvest.start`) did the same.
 - **Fix.** One rule for the CLI, the Harvest tab and the RPC (`currentHarvest`): a Harvesting study whose latest harvest is `waiting`, `frozen` or `ready` (before 1.0) is frozen. Asking to harvest it shows that harvest (the same output as a status view, no `message` in `--json`) and changes nothing: no new harvest number, no audit entry, no notice. The Harvest tab no longer offers a new harvest there ("Best is frozen for harvest h<N>"), and the RPC returns the freeze's text. A Harvesting study whose latest harvest **failed** still starts a new freeze, as before: that is the retry.
 - **`--refreeze`** (human control) is now the only way to bump the number on a frozen study, and only when it pins something new: best moved since the freeze, or the freeze is a pre-1.0 harvest, which no `refs/studies/<slug>/harvest/h<N>` ref pins. Otherwise it fails with `study_error` ("best hasn't moved since harvest h<N> froze it") and the command that shows the freeze; on a harvest still `waiting` it fails too. The Harvest tab offers the same as *Freeze best again as a new harvest…*, only when it is allowed (the harvest view's new `canRefreeze` and `refreezeCommand`; the RPC takes `refreeze: true`). The audit entry of a refreeze names the harvest it replaced.
 - **Docs.** The guide, README, `autoresearch` and `study-harvest` skills, and stability.md's CLI table say what `harvest` does on a frozen study. The skill tells an agent that a pre-1.0 harvest has no frozen ref (use its `bestSha`, or ask the human for `--refreeze`).
@@ -43,7 +43,7 @@ A bug fix in a CLI command 1.0 keeps stable ([stability.md](stability.md#cli-com
 
 ## 1.0.0
 
-1.0 draws one line through the plugin. The plugin owns the **trust boundary**: every measurement and gate, verdicts and promotion to best, budgets, the bench machines (calibration, locks, remote hosts) and the evidence record; an agent asking "is X better than Y?" always gets the plugin's answer. **Agents** own judgment and prose: commit messages, and harvest (grouping, splitting, stacking, PR descriptions, publishing) with the repository's own tools. **The user owns the benchmark**: a study optimizes the benchmark it is given, and whether that benchmark represents production is the user's call; the plugin adds no consensus modes or platform warnings, and the holdout stays optional. Same platform pins (BB 0.45.x, SDK 0.6.14).
+1.0 draws one line through the plugin. The plugin owns the **trust boundary**: every measurement and gate, verdicts and promotion to best, budgets, the bench machines (calibration, locks, remote hosts) and the evidence record; an agent asking "is X better than Y?" always gets the plugin's answer. **Agents** own judgment and prose: commit messages, and harvest (grouping, splitting, stacking, PR descriptions, publishing) with the repository's own tools. **The user owns the benchmark**: a study optimizes the benchmark it is given, and whether that benchmark represents production is the user's call; the plugin adds no consensus modes or platform warnings, and the holdout stays optional. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 Upgrading from v0.3: running studies keep their segments and oracle hashes (the new spec keys are not hashed); a study calibrated before 1.0 uses per-host thresholds from its next measurement; a harvest the plugin was still running stops where it was and becomes frozen (read only, an agent takes over); candidates in flight keep their old commit messages.
 
@@ -63,7 +63,7 @@ A study on two cloud machines: one host had a noise floor of 5.44% per pair (win
   - the calibration report's headline ("2 bench hosts, each deciding with its own win threshold: 1.42% on b, 3.33% on a (noise floor per pair: …); a candidate goes to the quietest free host. b: Detects changes …");
   - the Overview's threshold line;
   - the Oracle tab (sentence, host table, segments table);
-  - the bench host list and `bb study bench` / `show` ("win threshold 1.42%, noise 2.42%");
+  - the bench host list and `alia study bench` / `show` ("win threshold 1.42%, noise 2.42%");
   - the CLI's MDE row ("… (each host decides with its own)");
   - the report's segment lines;
   - the worker brief ("A win must clear the win threshold of the bench host that measures it …");
@@ -73,7 +73,7 @@ A study on two cloud machines: one host had a noise floor of 5.44% per pair (win
 #### 2. The quietest free host first
 
 - **Before.** A queued candidate went to the first free host in spec order. Remote machines come after local hosts, so with one candidate at a time the local host took everything.
-- **After.** `Pipeline.dispatchHosts` orders hosts by effective win threshold, then noise floor, then spec order (hosts without a calibration go last). Measurements, drift checks, `study_request_profile` and requested measurements (`bb study measure`) use this order. Gates keep theirs.
+- **After.** `Pipeline.dispatchHosts` orders hosts by effective win threshold, then noise floor, then spec order (hosts without a calibration go last). Measurements, drift checks, `study_request_profile` and requested measurements (`alia study measure`) use this order. Gates keep theirs.
 
 #### 3. Hosts much noisier than their peers
 
@@ -93,7 +93,7 @@ A study on two cloud machines: one host had a noise floor of 5.44% per pair (win
 
   A host above the limit but within chance keeps measuring with its own win threshold (item 1), and calibration warns: "a's noise floor … is 2.5× …, above max_host_noise_ratio 2, but with 12 calibration pairs two equal hosts differ that much by chance (it would take more than 3.4×) … More calibration pairs would tell them apart". The real study's 2.25× would get that warning at 12 pairs and be dropped at 40.
 - **What happens to a noisy host.**
-  - **BB machine or edit host.** It leaves the dispatch set (`bench_hosts.excluded_json`: reason, noise, peers' median, segment). It gets no measurements, no drift checks, no profiles and no requested measurements until the next calibration (human or automatic), which measures it again and clears the flag when it is quiet.
+  - **VesnALIA machine or edit host.** It leaves the dispatch set (`bench_hosts.excluded_json`: reason, noise, peers' median, segment). It gets no measurements, no drift checks, no profiles and no requested measurements until the next calibration (human or automatic), which measures it again and clears the flag when it is quiet.
   - **Remote machine, during the study's calibration.** It isn't marked calibrated and leaves when the calibration ends (`markNoisy`, then `endCalibration`). Leaving earlier would start a replacement that joins while the calibration finishes and is then left behind. The slot refills once the study runs, and the replacement calibrates on arrival.
   - **Remote machine, on arrival.** It is compared with the study's measuring hosts (`noisyOnArrival`). At most `NOISY_REPLACEMENTS` (2) machines of an entry are replaced in a row. The next one is kept, with one notice ("… after 2 replacement(s) in a row that were too: it is kept and measures with its own win threshold; candidates go to quieter hosts first"). From then on the entry's machines are kept as they come (`acceptsNoisy`, also respected by calibrations), so a provider whose machines are all noisier than the edit host doesn't churn. The count is in memory and starts over after a reload.
   - **Remote machine, in an automatic recalibration.** It leaves at once and is replaced (or kept, as above).
@@ -103,7 +103,7 @@ A study on two cloud machines: one host had a noise floor of 5.44% per pair (win
   - The `segment.recalibrated` notice.
   - `bench.noisy_host` events and feed lines.
   - The bench host list ("not used: much noisier than the other hosts", with the reason).
-  - `bb study bench` ("NOT USED until the next calibration (…)").
+  - `alia study bench` ("NOT USED until the next calibration (…)").
   - The Oracle tab's host tables.
   - A `bench.noisy_host` notice when a remote machine is kept (informational, opens the Bench tab).
 
@@ -167,9 +167,9 @@ Both are left out of the oracle hash, so existing segments keep their hash (test
 - `test/guardrails.test.ts`: an unjudgeable guardrail fails calibration end to end with both fixes; the fixes it names work (the loosened limit is above the half-width, and the half-width at the named `n_max` is below the limit); several hosts name the worst; and each noise class names its own fixes.
 - `test/v1-sim.test.ts`: the simulation above.
 
-#### Live check (BB 0.45, one laptop, a second BB instance with its own data directory, the example provider, a toy repository under /tmp)
+#### Live check (VesnALIA 0.45, one laptop, a second VesnALIA instance with its own data directory, the example provider, a toy repository under /tmp)
 
-The installed plugin and its studies were not touched: a second BB instance (own data directory and ports) ran a path install of this branch plus the example bench provider. The installed plugin's database was backed up first, and its studies and their states matched the backup afterwards.
+The installed plugin and its studies were not touched: a second VesnALIA instance (own data directory and ports) ran a path install of this branch plus the example bench provider. The installed plugin's database was backed up first, and its studies and their states matched the backup afterwards.
 
 - **Toy.** `src/cost.txt` holds a number. The protected measure sleeps in proportion to it and prints it with noise, plus a `mem` guardrail with ±3% noise. Remote commands get `AUTORESEARCH_REMOTE`, which the measure uses to pick each host's noise. Noisy class, `n_min` 3, `n_max` 6, 12 calibration pairs, `min_effect` 0.5%, one remote machine (example provider) plus the edit host, one claude-code worker, pinned ideas.
 - **Study 1 (edit host ±0.2%, remote ±5%).**
@@ -256,12 +256,12 @@ publishing belong to agents, with skills and the repository's own tools.
 - Candidate pages show the worker's commit message (`candidateDetail().commit`,
   `candidateRow().title`); the evidence carries it.
 
-#### 2. Primitives: `bb study measure`, `gate`, `results`, `evidence`
+#### 2. Primitives: `alia study measure`, `gate`, `results`, `evidence`
 
 All in `src/primitives.ts` and `src/evidence.ts`, wired through the engine
 (`requestMeasure`, `requestGate`, `adhocRun`) and the CLI.
 
-##### `bb study measure <slug> <A> <B> [--pairs N] [--host H] [--detach] [--timeout D] [--json]`
+##### `alia study measure <slug> <A> <B> [--pairs N] [--host H] [--detach] [--timeout D] [--json]`
 
 - Measures B against A (A is the reference: "best" side; better is positive)
   with the study's noise-class strategy, guardrails and calibrated side runs,
@@ -290,7 +290,7 @@ All in `src/primitives.ts` and `src/evidence.ts`, wired through the engine
 - Waits for the result (up to `--timeout`, default 25 min, max 30) unless
   `--detach`; the run continues past the timeout either way.
 
-##### `bb study gate <slug> <ref> [--detach] [--timeout D] [--json]`
+##### `alia study gate <slug> <ref> [--detach] [--timeout D] [--json]`
 
 The study's gates on any commit, on the edit host, in a checkout keyed
 `<slug>-adhoc-gate`. A failing command is retried once (`flaky` when the retry
@@ -298,7 +298,7 @@ passes, as for candidates). In single-machine mode the gates take the edit
 host's bench lock and their time counts as bench time; otherwise they don't
 (as for candidates). Remote gate machines (`gates = true`) are not used here.
 
-##### `bb study results <slug> [r<N>] [--wait] [--json]`
+##### `alia study results <slug> [r<N>] [--wait] [--json]`
 
 The runs asked for, newest first, or one in full. Runs are numbered per study
 (`r<seq>`).
@@ -333,7 +333,7 @@ The runs asked for, newest first, or one in full. Runs are numbered per study
   idle bench a request is taken even while workers run: it holds the bench
   lock, so a candidate arriving meanwhile waits for it, and verdicts are never
   mixed with it. Paused and Harvesting studies without live workers always
-  take requests. The refusal names the fix (`bb study pause`, `bb study harvest`).
+  take requests. The refusal names the fix (`alia study pause`, `alia study harvest`).
 - Paused studies release their remote machines, so a remote-only bench has
   no host while paused; the refusal says so and names the fix: freezing the
   study for harvest brings the machines up again and keeps them, and a request
@@ -350,7 +350,7 @@ instance's reconcile marks queued or running rows `failed` with "interrupted by
 a plugin reload; run it again" (`Primitives.reconcile`). Archive cancels a
 study's runs.
 
-#### The evidence document (`bb study evidence <slug> --json`)
+#### The evidence document (`alia study evidence <slug> --json`)
 
 Stable within a version: fields are only added; a field that changes meaning
 or goes away bumps `version`. Options: `--samples` adds each candidate's raw
@@ -366,7 +366,7 @@ The fields, and what 1.x keeps of them, are in [stability.md](stability.md#the-e
 
 #### 3. Harvest is a freeze
 
-- `bb study harvest <slug>` (or the Harvest tab, or Needs you after the budget
+- `alia study harvest <slug>` (or the Harvest tab, or Needs you after the budget
   runs out) moves Running or Paused to Harvesting as before: no new workers,
   submissions refused, in-flight candidates finish (`waiting`). Then the
   harvest is `frozen`: base, best, segment and the promotions (first-parent
@@ -383,20 +383,20 @@ The fields, and what 1.x keeps of them, are in [stability.md](stability.md#the-e
   `study.harvest.choice`. `study.harvest.start` takes `{ slug }` only.
   `src/harvest-math.ts` became `src/harvest-legacy.ts`: only the display
   helpers old records still need.
-- `bb study harvest` while a harvest is waiting or frozen shows it (a read:
+- `alia study harvest` while a harvest is waiting or frozen shows it (a read:
   the study thread may ask). Starting one is a human control as before. When
   the latest harvest is an old one (ready, failed, cancelled), it starts a new
   freeze; no `--restart`. *(Fixed in 1.0.1: a ready harvest from before 1.0 counts
   as frozen and is shown; `--refreeze` freezes again on purpose.)* `--harvest N` shows an older harvest.
-- `bb study resume` cancels a harvest still waiting; a frozen one keeps its
-  ref. `bb study archive` as before.
+- `alia study resume` cancels a harvest still waiting; a frozen one keeps its
+  ref. `alia study archive` as before.
 - `[harvest]` spec keys (`measure_standalone`, `group_timeout_minutes`,
   `remote`) are still accepted, so stored specs keep parsing, and have no
   effect. They were never part of the oracle hash.
 - **Harvests from before 1.0 stay readable**, read only: changesets,
   contributions and accounting, stacks, folds, PR previews, branches, export
   directory and publish results, on the Harvest tab (selectable from the
-  history), in `bb study harvest --harvest N`, the report, and the evidence's
+  history), in `alia study harvest --harvest N`, the report, and the evidence's
   `harvests` (`legacy: true`).
 - **A harvest the plugin was still running at the upgrade** (grouping,
   ablating, checking or drafting) can't continue. On load it becomes `frozen`
@@ -407,7 +407,7 @@ The fields, and what 1.x keeps of them, are in [stability.md](stability.md#the-e
   lose the remaining automatic phases: finish them with an agent.
 - Needs you: a frozen harvest (or an old `ready` one) is one item, "Best is
   frozen (harvest hN): ask an agent to harvest it", opening the Harvest tab,
-  CLI `bb study evidence <slug>`. Kinds `harvest_ready` and `publish_failed`
+  CLI `alia study evidence <slug>`. Kinds `harvest_ready` and `publish_failed`
   are gone; `harvest_frozen` is new.
 
 #### 4. The `study-harvest` skill
@@ -419,8 +419,8 @@ repository's conventions (target branch, commit and PR style, templates, the
 review tool), plan PRs (group, keep apart, split by file or hunk, stack, drop
 nothing alone) and show the plan, build branches in its own worktree and
 check nothing was lost against the frozen tree, measure each PR on its base
-and contributions at the top with `bb study measure`, gate with
-`bb study gate`, write descriptions that cite the plugin runs, and publish
+and contributions at the top with `alia study measure`, gate with
+`alia study gate`, write descriptions that cite the plugin runs, and publish
 with the repository's own tool (gh, Graphite, Sapling, Gerrit, Phabricator, …)
 only when asked. It also covers consolidating several studies on one
 repository into one stack, and a short "don't" list (no self-measured numbers,
@@ -433,8 +433,8 @@ Not run on real studies; this is how an agent following the skill does it.
 Say `svc-latency` (p99, noisy) and `svc-memory` (RSS, noisy) both ran on
 `acme/svc`, from bases `a1` and `b2`, and the human asks for one stack.
 
-1. The human freezes both (`bb study harvest svc-latency`, `bb study harvest svc-memory`).
-   The agent reads `bb study evidence svc-latency --json` and `… svc-memory --json`.
+1. The human freezes both (`alia study harvest svc-latency`, `alia study harvest svc-memory`).
+   The agent reads `alia study evidence svc-latency --json` and `… svc-memory --json`.
    Their promotions are told apart by `Autoresearch-Study`; both repositories
    are the same, so `refs/studies/svc-latency/harvest/h1` and
    `refs/studies/svc-memory/harvest/h1` resolve in either.
@@ -451,13 +451,13 @@ Say `svc-latency` (p99, noisy) and `svc-memory` (RSS, noisy) both ran on
    `git checkout -p`), resolves conflicts, and checks the union against each
    frozen best with `git diff` per study.
 5. Measurements, each by the study whose metric the layer targets, plus the
-   cross-check: `bb study measure svc-memory <layer-1 base> <layer-1>` (the
-   struct, memory's metric), `bb study measure svc-latency <layer-1> <layer-2>`
+   cross-check: `alia study measure svc-memory <layer-1 base> <layer-1>` (the
+   struct, memory's metric), `alia study measure svc-latency <layer-1> <layer-2>`
    (the cache, latency's metric), … and at the end
-   `bb study measure svc-latency c3 <top>` and `bb study measure svc-memory c3 <top>`
+   `alia study measure svc-latency c3 <top>` and `alia study measure svc-memory c3 <top>`
    so each study's oracle sees the whole stack; any layer the cross-check
    flags (`guardrails` or `classification: lose` on the other metric) gets
-   its own measurement with the other study too. `bb study gate` with each
+   its own measurement with the other study too. `alia study gate` with each
    study on each layer. Both studies are frozen, so neither has live workers
    and both take the requests; each runs on its own bench hosts with its own
    protocol.
@@ -474,7 +474,7 @@ Say `svc-latency` (p99, noisy) and `svc-memory` (RSS, noisy) both ran on
   ref, the promotions (candidate link, the worker's commit title, its effect
   when promoted, files, the full commit message on demand), and while
   Harvesting an **Ask an agent to harvest it** box: the prompt (copyable),
-  *Ask in a new thread…* (BB's composer, prefilled, in the study's project),
+  *Ask in a new thread…* (VesnALIA's composer, prefilled, in the study's project),
   *Open the study thread*, and the four commands. Every page shows
   **Measurements and gates agents asked for** (newest 20: run, state, what
   was asked, the result line or error, bench time). The history lists every
@@ -533,9 +533,9 @@ App tests: the freeze from the empty Harvest tab through promotions and the
 agent guide, the runs list, the read-only old harvest, the candidate's commit
 message.
 
-#### Live check (a second BB instance, a toy repository under /tmp, a temporary project)
+#### Live check (a second VesnALIA instance, a toy repository under /tmp, a temporary project)
 
-A second BB server with its own
+A second VesnALIA server with its own
 data directory (the installed plugin and its studies untouched), the plugin
 installed there from this branch, a deterministic toy study (output bytes of a
 status report, a `lines` guardrail) with Claude workers. Workers wrote their
@@ -550,7 +550,7 @@ plugin, and wrote PR descriptions citing the runs, without pushing.
 - The Live view's bench strip and the Bench tab's host lines don't say a host
   is busy with a requested measurement (the interval is recorded with kind
   `adhoc` and shows in the Bench tab's interval list).
-- `bb study measure` doesn't reuse a host's cached best build unless A is
+- `alia study measure` doesn't reuse a host's cached best build unless A is
   best; B is always built fresh.
 - No RPC or app button starts a measurement or gate: agents do, with the CLI.
 
@@ -562,33 +562,33 @@ plugin, and wrote PR descriptions citing the runs, without pushing.
 - **Why.** Unloading destroyed every remote machine, so a plugin update in the middle of a study (or of a harvest measuring on remote machines) cost one join and one calibration per slot, and cancelled whatever the machines were measuring for good.
 - **Unload keeps calibrated machines.** Their `remote_hosts` rows stay `ready` (nothing new is persisted: the rows already hold the provider id, home, seed, expiry and calibration, and the bench host row its noise floor and threshold). The old instance stops using them at once: its runners are marked lost, so a command in flight is cancelled on the machine before the next instance measures there. Machines that were creating, joining, calibrating or retiring are still destroyed (best effort, bounded), since they hold no calibration worth keeping.
 - **Load re-adopts them (decision: verify before use).** Each kept machine starts inactive with the phase "re-adopting after a plugin reload". It is re-adopted when its provider's `status` says `ready` and a probe on the machine finds the bench repository and the seed the row recorded; its bench host row is then active again (`remote.readopted`). A machine the provider no longer knows, one that isn't ready, or one whose repository or seed is gone leaves and is destroyed; its slot fills as usual. Rows in any other state end ("plugin restarted"), and the orphan sweep destroys every listed machine no live row uses.
-- **A provider that isn't loaded yet.** On a BB restart the provider plugin may load after this one. A call that never reached a provider (`ProviderMissingError` in the client, still code `not_found` for everything else) doesn't count as a lost machine during adoption: the machine waits, is asked again every 15 s, and leaves after 10 minutes. Status polls skip machines that are still being adopted. A study's restarted calibration waits for them too.
+- **A provider that isn't loaded yet.** On a VesnALIA restart the provider plugin may load after this one. A call that never reached a provider (`ProviderMissingError` in the client, still code `not_found` for everything else) doesn't count as a lost machine during adoption: the machine waits, is asked again every 15 s, and leaves after 10 minutes. Status polls skip machines that are still being adopted. A study's restarted calibration waits for them too.
 - **What still destroys machines.** Pause (once idle), archive, a lifetime that ends, a provider that reports the machine gone. A disabled plugin's machines are not destroyed: the provider ends them with their lifetime, or the next load re-adopts or destroys them.
 - **Measurements in flight** at unload restart from scratch, as before (the pipeline's reconcile); best is built again on each machine (in-memory build caches don't survive a reload).
 
 #### Seeds and base bundles
 
 - **Garbage collection.** A new host op, `artifacts`, lists the packed seeds (`<dataDir>/seeds`) and shallow base bundles (`<dataDir>/bundles`) on the edit host and, with `gc`, deletes the ones the server didn't ask to keep. The server keeps, for every non-archived study on that host, the seed of each spec entry for its current baseline and inputs (and the newest one built), and the base bundle of its base. It runs at load (in the background) and when a study is archived, and records `remote.artifacts_deleted`. Files younger than 10 minutes are kept (a seed being packed has no row yet); leftover temporary files older than a day are removed. Deleting a file that was still wanted costs a rebuild, not a wrong result: a seed is checked on disk before reuse, and a missing base bundle is built again.
-- **Size report.** `bb study bench` (and its `--json`, as `artifacts`) reports the seeds and base bundles on the edit host, what this study uses, and what the last cleanup deleted.
+- **Size report.** `alia study bench` (and its `--json`, as `artifacts`) reports the seeds and base bundles on the edit host, what this study uses, and what the last cleanup deleted.
 - **No rebuild for an unchanged seed.** A seed was keyed by its baseline and the spec version, so any approved spec change (a budget, say) built and uploaded it again for the next machine. It is now keyed by its baseline and its inputs: the seed command, `seed_allow` and the cores it is told about. A refused seed stays blocked until one of those (or the baseline) changes.
 
 #### CI
 
-`.github/workflows/ci.yml` runs on pull requests and on `main`: `pnpm install --frozen-lockfile`, `tsc --noEmit`, the test suite, and `bb plugin build` with the bb CLI from npm (`bb-app`, pinned to 0.45.0, the oldest BB the plugin supports; the build needs no running BB server).
+`.github/workflows/ci.yml` runs on pull requests and on `main`: `pnpm install --frozen-lockfile`, `tsc --noEmit`, the test suite, and `alia plugin build` with the VesnALIA CLI from npm (`alia-app`, pinned to 0.45.0, the oldest VesnALIA the plugin supports; the build needs no running VesnALIA server).
 
 #### Docs
 
 `docs/design.md` is the design alone. The implementation notes of every version moved here, newest first (the v0.3.1 notes had landed after "Credits"), and 1.0's measurement and harvest notes are folded in above. `docs/guide.md` is a short user guide, the README points at the three, and `docs/stability.md` says what 1.0 keeps stable and how versions change.
 
-#### Live check (BB 0.45, one MacBook, a second BB instance with its own data dir, the example provider, a toy repo under /tmp)
+#### Live check (VesnALIA 0.45, one MacBook, a second VesnALIA instance with its own data dir, the example provider, a toy repo under /tmp)
 
-The installed plugin was left alone: a second BB server and host daemon (`bb-app --data-dir …` on other ports) ran this branch and the example provider. Toy: `src/cost.txt` holds a number, a protected measure prints it, a seed of 2 MB, `setup` runs a tool from it; remote only, 2 machines, noisy, `n_min` 3.
+The installed plugin was left alone: a second VesnALIA server and host daemon (`alia-app --data-dir …` on other ports) ran this branch and the example provider. Toy: `src/cost.txt` holds a number, a protected measure prints it, a seed of 2 MB, `setup` runs a tool from it; remote only, 2 machines, noisy, `n_min` 3.
 
 - **Calibration and a first run.** Both machines joined and calibrated in seconds; two candidates (one win, one loss) used the budget, and the pause destroyed both machines.
 - **Seed reuse.** Spec v2 raised the budget only (approved without recalibration). On resume, two new machines joined with the seed built for v1: no `remote.seed_building` event.
-- **Reload.** `bb plugin reload bb-autoresearch` with both machines ready: one second later both were `remote.readopted` with the same provider ids, no machine was created or destroyed, and nine seconds later the next candidate was measured on one of them. A second reload re-adopted them again.
-- **Cleanup.** A stale 3 MB seed file aged past the grace period was deleted at that reload (`remote.artifacts_deleted`, `bb study bench` showed "last cleanup (plugin loaded) deleted 1 file(s), 2.9 MiB"). Archiving destroyed both machines and, with the study's own seed and base bundle aged past the grace period, deleted them too: nothing was left under the data dir's `seeds/` and `bundles/`.
-- **Found.** The example provider keeps its registry at one default root under the OS temp dir, shared by every BB instance on the machine; two instances smoke-testing at once overwrite each other's `state.json` (each keeps its own machines in memory, so nothing was destroyed). Start a second instance with its own `TMPDIR` to keep them apart.
+- **Reload.** `alia plugin reload alia-autoresearch` with both machines ready: one second later both were `remote.readopted` with the same provider ids, no machine was created or destroyed, and nine seconds later the next candidate was measured on one of them. A second reload re-adopted them again.
+- **Cleanup.** A stale 3 MB seed file aged past the grace period was deleted at that reload (`remote.artifacts_deleted`, `alia study bench` showed "last cleanup (plugin loaded) deleted 1 file(s), 2.9 MiB"). Archiving destroyed both machines and, with the study's own seed and base bundle aged past the grace period, deleted them too: nothing was left under the data dir's `seeds/` and `bundles/`.
+- **Found.** The example provider keeps its registry at one default root under the OS temp dir, shared by every VesnALIA instance on the machine; two instances smoke-testing at once overwrite each other's `state.json` (each keeps its own machines in memory, so nothing was destroyed). Start a second instance with its own `TMPDIR` to keep them apart.
 
 #### Known issues
 
@@ -598,18 +598,18 @@ The installed plugin was left alone: a second BB server and host daemon (`bb-app
 ### The machine is the study's choice
 
 - **Why.** A provider-wide setting can't express "bench this study on the node shape its workload runs on": the machine type, SMT off, the CPU platform, the image differ per study. They are now a per-entry creation setting chosen by the study.
-- **Contract v1, additive.** `benchProvider.create` takes an optional `machine`: at most 32 keys matching `^[a-zA-Z][a-zA-Z0-9_]{0,63}$`, each a string (at most 256 characters), number or boolean. `benchProvider.describe` may list the keys it takes in `machineOptions` (`[{ name, description }]`). The contract stays version 1: the caller sends `machine` only when the spec sets options (an empty table is not sent), so providers written before it keep working for studies that don't use it; a provider that returns `machineOptions` needs bb-autoresearch 1.0 (v0.3's strict schema refuses the field). The rule for providers ([bench-providers.md](bench-providers.md)): reject a key you don't understand with `[invalid] unknown machine option <key>` so typos fail loudly, apply the options at creation, and report what the machine actually is in `info`.
+- **Contract v1, additive.** `benchProvider.create` takes an optional `machine`: at most 32 keys matching `^[a-zA-Z][a-zA-Z0-9_]{0,63}$`, each a string (at most 256 characters), number or boolean. `benchProvider.describe` may list the keys it takes in `machineOptions` (`[{ name, description }]`). The contract stays version 1: the caller sends `machine` only when the spec sets options (an empty table is not sent), so providers written before it keep working for studies that don't use it; a provider that returns `machineOptions` needs alia-autoresearch 1.0 (v0.3's strict schema refuses the field). The rule for providers ([bench-providers.md](bench-providers.md)): reject a key you don't understand with `[invalid] unknown machine option <key>` so typos fail loudly, apply the options at creation, and report what the machine actually is in `info`.
 - **Spec.** `[[oracle.remote_bench]] machine = { … }` (an inline table) is passed verbatim to `create` for every machine of the entry. `cores` stays required: it is what the plugin plans threads for and checks against `info`. At calibration the keys are checked against `describe().machineOptions` when the provider lists them ("unknown machine option machine_typ; … accepts machine_type, smt"); a provider that lists none checks them itself at `create`, where a refusal is a failed join with a notice. `machine` is part of the oracle hash (it changes what is measured); absent or empty, it is left out, so specs without it keep their hash (tested against the hash v0.3 computed).
-- **Where it shows.** Each machine row records the options it was created with (`remote_hosts.machine_json`) next to `info`'s answer. The Bench tab and `bb study bench` show the entry's options and, per machine, what was asked for and what it reports; the evidence has `study.remoteBench[].machine` and, for remote bench hosts, `benchHosts[].remote` (`provider`, `cores`, `machine`, `reported`).
+- **Where it shows.** Each machine row records the options it was created with (`remote_hosts.machine_json`) next to `info`'s answer. The Bench tab and `alia study bench` show the entry's options and, per machine, what was asked for and what it reports; the evidence has `study.remoteBench[].machine` and, for remote bench hosts, `benchHosts[].remote` (`provider`, `cores`, `machine`, `reported`).
 - **The example provider** lists no machine options, accepts an empty `machine` and rejects any key; its copy of the contract is kept identical by a test.
-- **Tests.** Contract bounds (keys, values, count, `machineOptions`); the example provider's answers; the spec's parsing, bounds and hash (unchanged without it or with `{}`, different with it, different per value); and, with the example provider wrapped to list two options and report them in `info`, a typo failing calibration with the valid keys and no machine created, then both machines created with exactly the options, recorded with what they report, and shown in `bb study bench` and the evidence.
+- **Tests.** Contract bounds (keys, values, count, `machineOptions`); the example provider's answers; the spec's parsing, bounds and hash (unchanged without it or with `{}`, different with it, different per value); and, with the example provider wrapped to list two options and report them in `info`, a typo failing calibration with the valid keys and no machine created, then both machines created with exactly the options, recorded with what they report, and shown in `alia study bench` and the evidence.
 
 ### Where the parts meet
 
 The measurement, harvest and operations changes were built side by side; these are the places they touch.
 
-- **`bb study measure` measures like a candidate.** Its host is chosen when the run starts, in the pipeline's dispatch order: the quietest free host first (each host's own win threshold, then its noise floor), and never a host left out for being much noisier than its peers (`--host` naming one is refused with the reason). The classification uses that host's own threshold and its guardrails that host's own calibrated noise, as a candidate measured there would.
-- **Remote-only studies wait for their machines.** A study paused at the end of its budget destroys its remote machines. Freezing it for harvest brings them up again, and a `bb study measure` asked before any is ready waits for them ("waiting for a bench host: remote machines on their way (2 joining)") instead of failing with no bench host. The same holds while a reload re-adopts machines. A machine that leaves mid-run (its lifetime, the provider) starts the run again on another host, up to three times, unless `--host` named it. A paused remote-only study still refuses, and says that freezing brings the machines back.
+- **`alia study measure` measures like a candidate.** Its host is chosen when the run starts, in the pipeline's dispatch order: the quietest free host first (each host's own win threshold, then its noise floor), and never a host left out for being much noisier than its peers (`--host` naming one is refused with the reason). The classification uses that host's own threshold and its guardrails that host's own calibrated noise, as a candidate measured there would.
+- **Remote-only studies wait for their machines.** A study paused at the end of its budget destroys its remote machines. Freezing it for harvest brings them up again, and a `alia study measure` asked before any is ready waits for them ("waiting for a bench host: remote machines on their way (2 joining)") instead of failing with no bench host. The same holds while a reload re-adopts machines. A machine that leaves mid-run (its lifetime, the provider) starts the run again on another host, up to three times, unless `--host` named it. A paused remote-only study still refuses, and says that freezing brings the machines back.
 - **Frozen studies don't keep idle machines.** A study whose harvest was done kept two machines up, idle, and replaced them every lifetime (about two hours), for as long as it stayed frozen. Frozen for harvest, an entry's machines are now wanted only while best is still freezing, while a requested measurement or gate is queued or running, and for `[[oracle.remote_bench]] idle_release_minutes` (default 10, not part of the oracle hash) after the last one or after the freeze; then they are released (`remote.left`, "idle while frozen for harvest"). The next request brings them up and waits for them, as above. Running studies are unchanged. Tested with the example provider: machines stay within the grace, leave after it, nothing is created while nothing is asked for an hour, and the next measurement brings new machines and finishes.
 - **Reload, thresholds and noisy hosts.** A re-adopted machine keeps its own threshold (its bench host row is untouched), a local host left out for its noise stays out (`bench_hosts.excluded_json`), and the count of noisy replacements in a row is kept on the study (`studies.remote_noisy_json`), so a reload doesn't restart it and an entry that already hit the bound keeps its machines.
 - **Seeds, base bundles and the freeze.** A paused or harvesting study isn't archived, so cleanup at load keeps its seed and base bundle however old they are; the machines that join after the freeze reuse the seed (no new build), and an agent's own branches (a split of best built on the study base) reach them as delta bundles like any candidate.
@@ -618,37 +618,37 @@ The measurement, harvest and operations changes were built side by side; these a
 
 Tests: `test/v1-measurement.test.ts` (measure goes to the quiet host with its own threshold, refuses the excluded one by name, and the evidence shows both); `test/remote-fleet.test.ts` (the example provider, real processes: a remote-only study paused with no machines, a reload while paused keeps its aged seed and base bundle, the freeze brings machines up and a measure asked before they are ready waits, then measures with the machine's own threshold, an agent's split branch measures there too, no seed rebuild; a reload during a requested measurement fails that run, re-adopts both machines with their thresholds, and the next request measures on one of them; a machine killed mid-run restarts the run elsewhere, and fails a run pinned to it with `--host`; the noisy-replacement count survives a reload).
 
-#### Live check of 1.0 (BB 0.45, one laptop, a second BB instance with its own data directory, ports and `TMPDIR`, the example provider, a toy repository under /tmp)
+#### Live check of 1.0 (VesnALIA 0.45, one laptop, a second VesnALIA instance with its own data directory, ports and `TMPDIR`, the example provider, a toy repository under /tmp)
 
 The installed plugin and its studies were not touched. Toy: `src/cost.txt` holds a base cost and every `=yes` line in `src/config.txt` adds 20; the protected measure prints the cost with noise set per host by `TOY_NOISE`. Noisy class, `n_min` 3, `n_max` 6, 12 calibration pairs, `min_effect` 0.5%, Claude workers, a small candidate budget.
 
 - **Local plus two remote entries, one of them 10× noisier (±3% against ±0.3%).** Calibration took both hosts' numbers and left the noisy machine out ("Not used: … 11.8× the 0.12% median of the other bench hosts"). Once running, its next two replacements calibrated on arrival and left; the third was kept with its own threshold (1.23%, against 0.50% on the quiet hosts), with one notice, and the count (`{"1":3}`) was on the study row.
 - **Commit messages.** Each worker's `title` and `body`, as passed to `study_submit_candidate`, were the commit message on `studies/<slug>/best`, byte for byte, followed by the two trailers.
-- **Remote only, two quiet machines, budget end.** The study paused at its budget and destroyed both machines. `bb study measure` then refused, naming the freeze. After `bb study harvest`, a measure asked at once waited ("remote machines being requested", then "2 joining", "2 calibrating on arrival") and finished on the quietest new machine about 40 s later, against that machine's threshold. `bb study gate` passed on the frozen best.
-- **Reload mid-measurement.** `bb plugin reload bb-autoresearch` during a 60-pair requested measurement: in the same second both machines were `remote.readopted` with their provider ids and thresholds, the run was marked "interrupted by a plugin reload; run it again", and the next request measured on the re-adopted quiet machine. No machine was created or destroyed.
+- **Remote only, two quiet machines, budget end.** The study paused at its budget and destroyed both machines. `alia study measure` then refused, naming the freeze. After `alia study harvest`, a measure asked at once waited ("remote machines being requested", then "2 joining", "2 calibrating on arrival") and finished on the quietest new machine about 40 s later, against that machine's threshold. `alia study gate` passed on the frozen best.
+- **Reload mid-measurement.** `alia plugin reload alia-autoresearch` during a 60-pair requested measurement: in the same second both machines were `remote.readopted` with their provider ids and thresholds, the run was marked "interrupted by a plugin reload; run it again", and the next request measured on the re-adopted quiet machine. No machine was created or destroyed.
 - **An agent's harvest.** A thread given the Harvest tab's prompt (and told not to publish) followed the study-harvest skill: it read the evidence, split a candidate that bundled a cost change with a comment rewording by file, merged the cost part with the later win on the same line, built two branches in its own worktree whose union was the frozen tree, measured each on its base (both hosts at once, the quiet one first) and gated it, and wrote two PR descriptions citing the runs (r6, r8; r7, r9) and the whole study's gain (r4), saying the comment PR has no measured effect. Nothing was pushed (the toy repository has no remote).
 - **Archive and cleanup.** Archiving the first study left the seed it shared with the second; archiving the second destroyed its machines and deleted the seed and both base bundles (`remote.artifacts_deleted`, 3 files). The provider's registry, under the instance's own `TMPDIR`, listed 9 machines, all gone.
-- **Seen and fixed.** `bb study bench` said "deleted 0 file(s), 1 KiB" after a cleanup that deleted nothing, and "1 KiB" for no files at all.
+- **Seen and fixed.** `alia study bench` said "deleted 0 file(s), 1 KiB" after a cleanup that deleted nothing, and "1 KiB" for no files at all.
 
 
 ## v0.3.1: large uploads in parts
 
-- **Large uploads travel in parts.** BB gives a plugin RPC 75 seconds, and a provider's `putFile` is one RPC: a 551 MB seed on a 7 MB/s link timed out on the first real study, so calibration failed on every remote machine. Files above `PUT_CHUNK_BYTES` (32 MiB; `RemoteRunnerOptions.chunkBytes` in tests) are copied part by part to the staging directory, each part is uploaded and its sha256 checked, then the parts are joined on the machine and the whole file's sha256 is compared with the local one. Smaller files still go in one call. The contract is unchanged.
+- **Large uploads travel in parts.** VesnALIA gives a plugin RPC 75 seconds, and a provider's `putFile` is one RPC: a 551 MB seed on a 7 MB/s link timed out on the first real study, so calibration failed on every remote machine. Files above `PUT_CHUNK_BYTES` (32 MiB; `RemoteRunnerOptions.chunkBytes` in tests) are copied part by part to the staging directory, each part is uploaded and its sha256 checked, then the parts are joined on the machine and the whole file's sha256 is compared with the local one. Smaller files still go in one call. The contract is unchanged.
 
 ## v0.3.0: remote bench hosts
 
-Remote bench hosts through provider plugins. Same platform pins (BB 0.45.x, SDK 0.6.14).
+Remote bench hosts through provider plugins. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 ### Why
 
-Studies are bench-bound on one laptop: one machine measures one candidate at a time, and it is also where the agents and gates run. Cloud machines can run a real benchmark unchanged, and as quietly as a laptop or more, but the ones that are cheap to lend often can't be BB machines: they only allow outbound connections, so the laptop has to drive them. A **bench provider** is a separate BB plugin that lends such machines through a small RPC contract. This release is the generic side: any provider, nothing specific to one in this repository.
+Studies are bench-bound on one laptop: one machine measures one candidate at a time, and it is also where the agents and gates run. Cloud machines can run a real benchmark unchanged, and as quietly as a laptop or more, but the ones that are cheap to lend often can't be VesnALIA machines: they only allow outbound connections, so the laptop has to drive them. A **bench provider** is a separate VesnALIA plugin that lends such machines through a small RPC contract. This release is the generic side: any provider, nothing specific to one in this repository.
 
 ### The contract
 
-- **Shape.** `src/bench-provider/contract.ts` (zod) and [bench-providers.md](bench-providers.md): eleven `benchProvider.*` methods (describe, create, status, list, destroy, info, putFile, getFile, execStart, execPoll, execCancel), called with `bb.sdk.plugins.callRpc`. The provider is a thin transport; git, seeding, calibration and scheduling stay here and run as ordinary shell commands on the machine.
-- **Errors.** A bracketed code in the message (`[not_found]`, `[capacity]`, `[auth]`, `[invalid]`, `[transient]`, `[internal]`). BB prefixes what a provider throws (`HTTP 500: [invalid] …`), so the client reads the first known code anywhere in the message; none is `[internal]`; a provider plugin that isn't installed is `[not_found]`. `[capacity]` and `[transient]` are retried a few times with backoff (`BenchProviderClient`), and a transient `execPoll` failure is retried while the process keeps running.
+- **Shape.** `src/bench-provider/contract.ts` (zod) and [bench-providers.md](bench-providers.md): eleven `benchProvider.*` methods (describe, create, status, list, destroy, info, putFile, getFile, execStart, execPoll, execCancel), called with `alia.sdk.plugins.callRpc`. The provider is a thin transport; git, seeding, calibration and scheduling stay here and run as ordinary shell commands on the machine.
+- **Errors.** A bracketed code in the message (`[not_found]`, `[capacity]`, `[auth]`, `[invalid]`, `[transient]`, `[internal]`). VesnALIA prefixes what a provider throws (`HTTP 500: [invalid] …`), so the client reads the first known code anywhere in the message; none is `[internal]`; a provider plugin that isn't installed is `[not_found]`. `[capacity]` and `[transient]` are retried a few times with backoff (`BenchProviderClient`), and a transient `execPoll` failure is retried while the process keeps running.
 - **Lost processes.** `execPoll` may end a process with `signal: "LOST"` (it died without an exit record, after a suspend say): the runner treats it like a lost machine.
-- **The example.** `examples/bench-provider-local/` implements the contract against local temp directories and child processes (detached, output in files, a registry that survives a reload). A BB plugin can't import outside its directory, so it carries a copy of the schemas; a test keeps the copy identical.
+- **The example.** `examples/bench-provider-local/` implements the contract against local temp directories and child processes (detached, output in files, a registry that survives a reload). A VesnALIA plugin can't import outside its directory, so it carries a copy of the schemas; a test keeps the copy identical.
 
 ### Spec
 
@@ -659,11 +659,11 @@ Studies are bench-bound on one laptop: one machine measures one candidate at a t
 
 ### The runner
 
-`RemoteBenchRunner` (`src/bench-provider/runner.ts`) implements what measurement needs from `HostRunner`; edit-host operations throw. Layout on the machine: `~/bb-autoresearch/repo.git` (bare, shallow), `checkouts/<key>` (worktrees, reused: `checkout --detach --force` then `clean -fdq`, so ignored build outputs survive like on BB hosts), `seed/<sha256>`, `incoming/`.
+`RemoteBenchRunner` (`src/bench-provider/runner.ts`) implements what measurement needs from `HostRunner`; edit-host operations throw. Layout on the machine: `~/alia-autoresearch/repo.git` (bare, shallow), `checkouts/<key>` (worktrees, reused: `checkout --detach --force` then `clean -fdq`, so ignored build outputs survive like on VesnALIA hosts), `seed/<sha256>`, `incoming/`.
 
 - **Processes.** `exec` and `run` are one `execStart` with `bash -lc`, then `execPoll` from 50 ms up to `execPollMs` (1 s), keeping output tails like a host job; progress is the last complete line; an abort is `execCancel`. Every command gets the entry's `env` plus `AUTORESEARCH_REMOTE`, `AUTORESEARCH_CORES` and `AUTORESEARCH_SEED`.
 - **Repository (decision).** A shallow bundle of the **study base** alone (`host/base.ts`: a depth-1 fetch into a scratch repository, then `git bundle create`), built once on the edit host and cached by commit, is `putFile`d and fetched after writing the base into `shallow`. Best and every candidate then reach the machine through the existing `ensureCommit` relay as delta bundles whose prerequisite is the base (the runner stages the chunks in a local file and uploads it with `putFile`). The study base, not the segment baseline, is the shallow root: harvest measures the study base itself, which a later segment's shallow clone wouldn't have. Rejected: a full-history bootstrap (gigabytes for a large repository, sent again for every replacement).
-- **Files.** `putFile` paths are on the BB server's machine. The edit host is always the server's own machine, so the host bundle's files (bundles, seeds) are passed to the provider by path.
+- **Files.** `putFile` paths are on the VesnALIA server's machine. The edit host is always the server's own machine, so the host bundle's files (bundles, seeds) are passed to the provider by path.
 - **Health** is a portable shell probe (procfs or sysctl, `ps`, cgroup `cpu.max`). Inside a container the load average and the visible CPU count usually describe the whole physical host; `[oracle.health]` applies as written, so a shared host may need looser limits.
 
 ### Lifecycle (`src/remote/fleet.ts`)
@@ -674,7 +674,7 @@ One row per machine in `remote_hosts`: `creating → joining → calibrating →
 - **Calibration on arrival (decision).** During the study's calibration, it waits for every slot to join and calibrates the machines with every other bench host (the segment takes the worst, as before). A machine that joins later runs `calibrateHost` (A/A on best) alone under its own lock; it then measures with `max(segment MDE, its own)`: its own noise floor, drift checks and win threshold, never a lower threshold than the segment's, so a win means the same everywhere. A machine whose own MDE exceeds `max_mde` leaves and is replaced. Calibrated machines wait up to 30 minutes for the human to approve a finished calibration, then go.
 - **Rotation.** A replacement starts `rotate_before_minutes` before a machine's end (default `max(lifetime / 5, 1.5 × (last join + one evaluation))`, at most half the lifetime). Once it has calibrated, the old machine becomes `retiring` (its bench row inactive: no new measurement, gate or drift check) and is destroyed when nothing runs or waits on its bench lock. Cost guard: one machine per slot, plus one replacement.
 - **Leaving.** Lifetime over, a provider status of `suspended`, `gone` or `failed` (polled every 15 s), `[not_found]` or `LOST` from an exec, or a failed join. The machine is never reused (a suspended one may come back on other hardware), its bench row goes inactive, and in-flight measurements on it are cancelled with a reason, so they restart from scratch on another host (the pipeline's existing restart path, plus `RemoteHostLostError`). A gate on it is retried elsewhere without counting as a failure. Joins that keep failing back off (30 s × failures, then 10 minutes after 3) with one notice per streak.
-- **Paused, archived, unloaded.** Pausing retires the machines (measurements in flight finish; queued candidates wait for resume, unless a local host takes them). Archiving destroys them. Unload (reload, disable, shutdown) destroys every machine (decision: BB doesn't say whether an unload is a reload, and after it nothing uses them; a reload then pays one join per slot). On load, live rows of the previous instance are ended, and each provider is asked to `list` this plugin's machines: anything no live row uses is destroyed. The same sweep runs every 10 minutes (a provider that wasn't loaded yet at startup), on pause and on archive; it spares a create still in flight and doesn't count machines of rows that already left as orphans.
+- **Paused, archived, unloaded.** Pausing retires the machines (measurements in flight finish; queued candidates wait for resume, unless a local host takes them). Archiving destroys them. Unload (reload, disable, shutdown) destroys every machine (decision: VesnALIA doesn't say whether an unload is a reload, and after it nothing uses them; a reload then pays one join per slot). On load, live rows of the previous instance are ended, and each provider is asked to `list` this plugin's machines: anything no live row uses is destroyed. The same sweep runs every 10 minutes (a provider that wasn't loaded yet at startup), on pause and on archive; it spares a create still in flight and doesn't count machines of rows that already left as orphans.
 - **Gates on remote hosts (`gates = true`).** Gating candidates join the bench queue and take a ready machine of such an entry under its bench lock: prepare on the edit host, the prepared commit as a delta bundle into the machine's `gate` checkout, the gates there. Single-machine mode is then off under `auto` (no gates on the edit machine), and T_eval counts gate plus measurement time. Calibration runs the baseline gates on a joined machine. Harvest gates stay on the edit host.
 
 ### Seeds
@@ -686,27 +686,27 @@ One row per machine in `remote_hosts`: `creating → joining → calibrating →
 
 ### Surfaces
 
-The Bench tab's *Remote bench hosts* section (each entry with its shape, lifetime and rotation lead, the seed's state or what refused it, the repository bundle; each machine with its state in words, expiry, rotation, its own calibration, what it measures, how many it measured, and a warning when the visible CPU count differs from the cores asked for; recently gone machines and why), the bench host lists, the Live bench strip (joining and retiring machines included; "testing (gates on this machine)") and its feed (`remote.requested`, `remote.ready`, `remote.retiring`, `remote.left`), notices (`remote.failed`, `remote.seed_refused`; `remote.lost` informational), and `bb study bench` / `bb study show`.
+The Bench tab's *Remote bench hosts* section (each entry with its shape, lifetime and rotation lead, the seed's state or what refused it, the repository bundle; each machine with its state in words, expiry, rotation, its own calibration, what it measures, how many it measured, and a warning when the visible CPU count differs from the cores asked for; recently gone machines and why), the bench host lists, the Live bench strip (joining and retiring machines included; "testing (gates on this machine)") and its feed (`remote.requested`, `remote.ready`, `remote.retiring`, `remote.left`), notices (`remote.failed`, `remote.seed_refused`; `remote.lost` informational), and `alia study bench` / `alia study show`.
 
 ### Data model
 
 Append-only migrations: new tables `remote_hosts` and `remote_artifacts` (base bundles and seeds: path, sha256, size, state, detail). `bench_hosts.mode` gains `remote`; `syncBenchHosts` leaves remote rows alone. New events: `remote.requested`, `.created`, `.joined`, `.ready`, `.retiring`, `.left`, `.failed`, `.shape`, `.seed_building`, `.seed_built`, `.seed_refused`, `.orphan_destroyed`, `gate.restarted`. New host ops: `baseBundle`, `seedPack`. New port method: `callPlugin`.
 
-### Live check (BB 0.45, one MacBook, the example provider, a toy repo under /tmp, a temporary project)
+### Live check (VesnALIA 0.45, one MacBook, the example provider, a toy repo under /tmp, a temporary project)
 
 - **Toy.** `src/cost.txt` holds a number; the protected measure prints it after sleeping (1 s, or 3 s on the remote machines through `env`); a gate checks it is a positive integer; the seed is a directory with a stand-in tool; `setup` runs that tool on the machine. Noisy, `n_min` 3, `n_max` 5, 4 calibration pairs, health checks off, two workers on the default provider.
 - **Study 1: local plus 2 remote machines, 5-minute lifetime.** Calibration took 16 s: both machines joined, and the report covered 3 bench hosts, each with its own noise floor and MDE. All six candidates went to the local host (first free in spec order, one candidate at a time), the budget ran out after 3 minutes, and the pause retired both machines and ended their replacements, which were joining: every machine was destroyed. Seen and fixed: the replacement rebuilt the seed (it was keyed by best, not the segment baseline), and the sweep counted machines whose destroy was in flight as orphans.
 - **Study 2: remote only, gates on remote, 4-minute lifetime, rotation 2 minutes before the end.** Calibration took 32 s, with the baseline gates run on a machine. Ten candidates in 6.7 minutes of Running, all gated and measured on remote machines; eight machines (each slot rotated three times), never more than two per slot; the seed built once. Each replacement joined in 1.2-1.9 s and calibrated on the best of its time before the old machine retired. In the last rotation both old machines were measuring (c/9 and c/10) when their replacements became ready: they retired, finished those measurements on the old machines 4 and 15 s later, and only then left; no measurement restarted in the study. Delta bundles: 0.6-2.2 KB per candidate, best 1.2-4.3 KB, the shallow base 1.4 KB.
 - **Cleanup.** Both studies archived with their threads; the provider's registry listed 12 machines, all gone, and no machine directory remained. The temporary project, `/tmp` files and the example provider were removed, and the released plugin reinstalled from GitHub; every other study's rows and event counts matched the backup taken first.
 
-### Live check with a cloud sandbox provider (BB 0.45, one MacBook, a provider plugin kept outside this repository)
+### Live check with a cloud sandbox provider (VesnALIA 0.45, one MacBook, a provider plugin kept outside this repository)
 
 The same textkit-style toy as earlier releases (a Python pipeline, `METRIC wall_ms`, a peak-memory guardrail, unit tests as the gate), with a seed command that packs a 6 MB tarball and a `setup` that unpacks a toolchain from it and runs it. The provider lends 4-core sandboxes that only allow outbound calls; their CPU is a weighted share of a 32-CPU host, so every machine showed the "32 CPUs visible for 4 cores" note.
 
 - **Joining.** Request to joined: 6.6-10.9 s over 13 machines (the provider answers `create` with a ready machine in about 1-2 s; the seed uploads at 6.9-7.9 MB/s, 0.8-0.9 s; the shallow base bundle is 9 KB, best 1-8 KB, each candidate 0.7-1.6 KB).
 - **Calibration per host.** The remote machines calibrated at MDE 1.0-1.9% (noise floor 0.4-3.1% per pair; sandboxes on the same kind of host differed by 3×); the laptop, busy with other work, at 2.2%, and the segment took it. An arrival calibration (A/A on best on a machine alone) took 1.8-2.1 minutes.
 - **Study 1: local plus 1 remote machine, 20-minute lifetime.** 12 candidates, measured on both (the laptop took most: it comes first in spec order). Rotation: the replacement joined in 11 s and calibrated in 2 minutes, then the old machine retired and was destroyed at once; never more than 2 machines per slot. With `rotate_before_minutes = 17` the next rotation was due a minute after each replacement became ready (now a spec warning).
-- **Study 2: remote only, 2 machines, `gates = true`, 15-minute lifetime.** Every gate and measurement ran on the machines, an automatic recalibration ran on both, and one slot rotated while the provider was at its 3-machine cap. A machine destroyed through the provider's API mid-measurement (a host drain, as far as bb-autoresearch can tell) restarted its measurement on the other machine and its slot refilled at once; but until the next status poll (15 s) the scheduler kept sending the dead machine a gate (about 70 attempts in 12 s) and counted a pipeline error on the requeued candidate. Fixed: a `[not_found]` or `LOST` from any call ends the machine immediately. Rerun: it left within a second, the measurement restarted once elsewhere, no error was counted, and the replacement joined in 6.6 s.
+- **Study 2: remote only, 2 machines, `gates = true`, 15-minute lifetime.** Every gate and measurement ran on the machines, an automatic recalibration ran on both, and one slot rotated while the provider was at its 3-machine cap. A machine destroyed through the provider's API mid-measurement (a host drain, as far as alia-autoresearch can tell) restarted its measurement on the other machine and its slot refilled at once; but until the next status poll (15 s) the scheduler kept sending the dead machine a gate (about 70 attempts in 12 s) and counted a pipeline error on the requeued candidate. Fixed: a `[not_found]` or `LOST` from any call ends the machine immediately. Rerun: it left within a second, the measurement restarted once elsewhere, no error was counted, and the replacement joined in 6.6 s.
 - **Cleanup.** Pause, budget end and archive retired and destroyed every machine; the provider's records were empty afterwards and a direct status query showed each of the 13 sandboxes destroyed.
 - **Also fixed.** With several bench hosts the calibration report quoted the first host's threshold, not the segment's (the worst host's); `remote.joined` reported 0 s.
 
@@ -723,7 +723,7 @@ The same textkit-style toy as earlier releases (a Python pipeline, `METRIC wall_
 
 ## v0.2.4
 
-Fixes from a real study and from capturing the store screenshots. Same platform pins (BB 0.45.x, SDK 0.6.14).
+Fixes from a real study and from capturing the store screenshots. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 The study: 5.6 hours, blind, on a large repository, bench-bound (35 candidates, a median of 426 s of bench per candidate). A median candidate used 7 pairs; 15 of 35 stopped at `n_min` = 6 and 9 ran the full 20 pairs, mostly to an inconclusive. Every win also ran a confirmation (183 pairs over 23 candidates) and a 3-run holdout, and gates took 30 s under the bench lock. Two drift pauses came from the code getting about 5× faster: with single runs, per-pair relative noise rose from 2.0% to 8.8% on the same quiet machine, and a human switched the oracle to 3 rounds per side (noise 0.49%).
 
@@ -764,7 +764,7 @@ The study: 5.6 hours, blind, on a large repository, bench-bound (35 candidates, 
 
 ### Side runs and automatic recalibration
 
-- **Side runs (`side_runs = "auto" | N`, `min_side_seconds = 5`).** Noisy oracles only: each side of a pair is N runs of `measure`, combined by `combineRuns` into each metric's best value in its own direction (the minimum for the primary metric and guardrails when lower is better, the maximum when higher is better, the minimum for informational metrics; the usual best-of-N for timings). "auto" times one warm run of each side at calibration, after the warmup, and picks N = ⌈min_side_seconds / run⌉, at most 30 (`AUTO_SIDE_RUNS_MAX`; a faster benchmark should loop itself). The count and one run's median seconds are stored per bench host (`bench_hosts.side_runs`, `run_seconds`), in the calibration report ("Each side of a pair is 5 runs of the measure command (best of 5 per metric; one run takes about 1.0 s, so 5 make a side of at least 5.0 s)"), on the Oracle tab's segments and in `bb study bench`. Measurements, drift checks and harvest measurements use the host's count (`BenchSite.bench`); a segment calibrated before v0.2.4 has none, so it keeps single runs until it recalibrates. Expensive and deterministic oracles always run once.
+- **Side runs (`side_runs = "auto" | N`, `min_side_seconds = 5`).** Noisy oracles only: each side of a pair is N runs of `measure`, combined by `combineRuns` into each metric's best value in its own direction (the minimum for the primary metric and guardrails when lower is better, the maximum when higher is better, the minimum for informational metrics; the usual best-of-N for timings). "auto" times one warm run of each side at calibration, after the warmup, and picks N = ⌈min_side_seconds / run⌉, at most 30 (`AUTO_SIDE_RUNS_MAX`; a faster benchmark should loop itself). The count and one run's median seconds are stored per bench host (`bench_hosts.side_runs`, `run_seconds`), in the calibration report ("Each side of a pair is 5 runs of the measure command (best of 5 per metric; one run takes about 1.0 s, so 5 make a side of at least 5.0 s)"), on the Oracle tab's segments and in `alia study bench`. Measurements, drift checks and harvest measurements use the host's count (`BenchSite.bench`); a segment calibrated before v0.2.4 has none, so it keeps single runs until it recalibrates. Expensive and deterministic oracles always run once.
 - **When best's runs get much shorter (`[oracle.drift] recalibrate_below = 0.6`).** Three triggers compare one run's median time with the host's calibration, and schedule an automatic recalibration below 60% (`recalibrationTrigger`): a promotion (the winner's candidate-side runs are the new best's), any measurement (its best side), and a drift check over its limit (its best runs). The drift check's case is the one the study hit: noise up because runs got shorter is recorded as `drift.explained` and recalibrates instead of pausing; noise up at the same run time still pauses. `0` turns it off. It is a bench setting, not part of the oracle hash.
 - **The recalibration (`runAutoRecalibration`, calibration.ts).** `studies.recalibrate_due` holds why. While it is due, the study starts no measurement or drift check; once none of its measurements is on the bench (in-flight ones finish), the pipeline's `recal:<study>` job calibrates best on every bench host, each under its own lock (side runs chosen again when "auto"), and opens segment k+1 with the same oracle hash and spec version, `details_json.auto = true`, without gates (best passed them), approval or a state change. An A/A median that excludes zero is a warning here (both checkouts are best), not a failure. If the new win threshold exceeds `max_mde`, the hosts keep their old calibration and the study pauses ("automatic recalibration failed (…): …"; a needs-you item "recalibrating on best's shorter runs failed"). A `segment.recalibrated` notice (informational) gives per host the side runs, one run's time, the noise floor and the win threshold before and after. Replay labels the milestone "Segment 2: recalibrated (same oracle)".
 - **Guardrails across automatic segments (decision).** A new segment used to restart the guardrails' total limit at its baseline. An automatic one doesn't change the oracle, so `guardrailChainBase` counts from the first segment of the current run of segments with the same oracle hash; otherwise every recalibration would give the total limit its full room back. An oracle change still resets it.
@@ -776,7 +776,7 @@ A drift pause left the study `paused`, and the pipeline still measured paused st
 
 ### Best vs base across segments
 
-The headline compounds every promotion, whatever its segment, but the raw values shown were the current segment's baseline ("3.619 → 2.039 s" next to "81.8% lower"). With more than one segment the headline now says "81.8% lower time (5.5×) across 3 segments" and the raw values "this segment 3.62 → 2.04 s" ("this segment: 2.04 s, no promotion yet" right after a recalibration): `bestHeadlineText` and `segmentRawText` (present.ts), used by the Overview, the Studies list, `bb study show`, the Live header (which now shows the raw line too) and the report. Replay counts segments from `segment.started` events. The raw values come from `metricSnapshotOf` (new `src/snapshot.ts`, shared by the views and the report).
+The headline compounds every promotion, whatever its segment, but the raw values shown were the current segment's baseline ("3.619 → 2.039 s" next to "81.8% lower"). With more than one segment the headline now says "81.8% lower time (5.5×) across 3 segments" and the raw values "this segment 3.62 → 2.04 s" ("this segment: 2.04 s, no promotion yet" right after a recalibration): `bestHeadlineText` and `segmentRawText` (present.ts), used by the Overview, the Studies list, `alia study show`, the Live header (which now shows the raw line too) and the report. Replay counts segments from `segment.started` events. The raw values come from `metricSnapshotOf` (new `src/snapshot.ts`, shared by the views and the report).
 
 ### Live view and pages
 
@@ -794,7 +794,7 @@ The headline compounds every promotion, whatever its segment, but the raw values
 - **Stacks in dependency order (A6).** Stack layers used to follow `k` (earliest commit), so a strategist group {c/3, c/20} came before {c/10} even when c/20 builds on c/10, and its PR didn't apply on its base. Layers are now ordered topologically (`planStacks`) from the detected dependency edges plus commit-level file overlap: X needs Y when a commit of X and an earlier commit of Y (first-parent order on best) touch the same path. Overlap only orders inside a stack; it never makes one. A cycle (commits interleaved on the same files, or dependencies both ways) is one coupled group, folded up front into one PR hosted by its smallest k ("#1 and #4 need each other: their commits interleave on src/c.txt, so neither applies without the other"). Ties go by k.
 - **Attribution by commit order.** Reverting S from best can be blocked by any changeset with a commit after one of S's, and a changeset can need any other with a commit before one of its own, whatever their k (`laterDependents`, `earlierDependencies`).
 - **Every PR applies (decision).** Each layer is composed onto its PR base (the previous layer's commit; the first layer and independent changesets: the study base) and gated. A layer that conflicts or fails its gates is merged with the next layer(s) in order ("#6 needs src/x.py, which #7 adds or changes, so it doesn't apply on #5 alone"). If no later layer fixes it, it folds into the previous layer and the check resumes there (`fitLayers`). Before any fold the whole stack is squashed onto the base. If even that fails, the stack needs something outside it: the other changesets are probed on the base (with gates for a gate failure), then shrunk newest first to a minimal set that still works, so of two interchangeable helpers the earlier is kept. The edges are added and the stacks recomputed. Each fold removes a layer and each probe merges groups, so this terminates. A branch is drafted only for a layer that applies and passes its gates on a drafted PR base; otherwise it is reported. Compose and gate results are cached per run, so re-checks after a fold cost nothing. Standalone effects are measured once the layers are final.
-- **Folds keep the accounting.** A folded changeset keeps its row and its ablation result, and the sum of contributions is unchanged. Its host's PR includes the folded commits in best order, its candidates, rationale and findings, and "Also includes #4 …: why". The Harvest tab, PR body, report (table in PR order, a "Folded" list, stacks as `#3 → #2 (with #5)`), `bb study harvest` and the harvest-ready notice all say which PR ships it and why. The publish plan lists it as "ships inside #1's PR", and it can't be dropped on its own.
+- **Folds keep the accounting.** A folded changeset keeps its row and its ablation result, and the sum of contributions is unchanged. Its host's PR includes the folded commits in best order, its candidates, rationale and findings, and "Also includes #4 …: why". The Harvest tab, PR body, report (table in PR order, a "Folded" list, stacks as `#3 → #2 (with #5)`), `alia study harvest` and the harvest-ready notice all say which PR ships it and why. The publish plan lists it as "ships inside #1's PR", and it can't be dropped on its own.
 - **PR preview (B8).** Long PR bodies start collapsed behind a fade with "Show more" / "Show less" (no inner scroll). "Depends on" is one line per dependency with its own reason ("Depends on #3 Shrink c: reverting #3 from best conflicts in src/c.txt…"), parsed from the stored `depends on #k: …` list; older rows show the whole text on each dependency.
 - **Numbers per study (B9).** A study's first harvest showed as "h5" (the global id). Harvests are numbered per study (`h<seq>`) everywhere a person or agent sees them: tab, dialogs, notices, CLI, grouping round, audit texts, PR bodies, commit trailers (`Autoresearch-Changeset: h<seq>/#k`), branches `studies/<slug>/harvest/h<seq>/…`, export directory `<slug>-harvest-h<seq>`. The RPC's `harvestId` and DB keys stay the global id.
 - **Data model.**
@@ -810,13 +810,13 @@ The headline compounds every promotion, whatever its segment, but the raw values
 
 Append-only migrations: `bench_hosts.side_runs`, `bench_hosts.run_seconds`, `studies.recalibrate_due`. New events: `recalibration.due`, `recalibration.started`, `recalibration.failed`, `drift.explained`, `confirm.skipped`; `segment.started` and `calibration.ready` gain `auto`; `measure.finished` gains `stop` and `confirm_skipped`; `measure.progress` is also recorded at 0 pairs when a confirmation starts. A measured candidate's `metrics_json` gains `stop`, `confirmSkipped`, `runSeconds` (median seconds of one run per side) and `sideRuns`; calibration reports and segment details gain `sideRuns` and `runSeconds` per host. New notice kind `segment.recalibrated`. New spec keys: `[oracle.protocol] futility`, `early_lose_from`, `early_lose_confidence`, `skip_confirm_factor`, `side_runs`, `min_side_seconds` (part of the oracle hash, left out of it at their defaults so stored segments keep their hash), `[oracle.drift] recalibrate_below` (not hashed). Stored specs are read with the defaults filled in (`normalizeSpec`).
 
-### Live check (BB 0.45, one MacBook, a toy repo under /tmp, a temporary project)
+### Live check (VesnALIA 0.45, one MacBook, a toy repo under /tmp, a temporary project)
 
 - **Toy.** `src/toy.py` runs three stages that wait for fixed times (parse 1.2 s, sort 1.0 s, render 0.8 s); the metric is the wall time of one `run()` in ms with 2% synthetic noise (protected `bench/measure.py`), the gate a correctness test. Noisy, `n_min` 4, `n_max` 10, `calibration_pairs` 6, `min_side_seconds` 2.5, local bench (single-machine mode on), health checks off, `max_workers` 1, `max_candidates` 6, the default provider; five pinned ideas: move the stages into a new `src/steps.py` and halve parse, two deliberately tiny changes, and two big cuts.
 - **Calibration.** One run takes 3.1 s, so `side_runs = "auto"` kept one run per side ("One run per side (a run takes about 3.1 s, at least the 2.5 s a side needs)"); noise floor 2.23% per pair, win threshold 1.55%.
 - **Verdicts.** c/1 (new module, parse halved) won 18.5% after 4 pairs and skipped its confirmation ("the CI's lower bound +17.0% is 11.0× the 1.6% win threshold"). c/2 (render 0.8 → 0.79 s) looked like a win at 4 pairs (CI +1.9% to +5.1%) and failed its confirmation after 7 fresh pairs: a lose. c/3 (sort 1.0 → 0.1 s) won 38.4%, skipped its confirmation, and made best's runs 51% as long as at calibration. c/4 (render 0.8 → 0.2 s) won 39.6%. c/5 (parse 0.6 → 0.597 s) stopped after 7 of 10 pairs: "effect −1.1% (CI −3.1% to +2.0%, 7 pairs) can no longer clear the 2.6% win threshold: stopped early (futility…)". c/6 (parse → 0.1 s) won 54.1%, again without a confirmation. Best vs base: 86.1% lower (7.2×) in about 6 minutes of Running; the feed said "c/5 measured: 7 pairs in 27 s (stopped: it could no longer win)" and "c/6 measured: 4 pairs in 12 s (confirmation skipped: far beyond the win threshold)".
 - **Automatic recalibration, twice, no pause.** After c/3's promotion `recalibration.due` (source: promotion), then segment 2 41 s later, same oracle hash, side runs 1 → 2 (one run 3.06 → 1.56 s, noise 2.23% → 1.92%, threshold 1.55% → 2.65%), and c/4 measured in it. After c/6, segment 3: side runs 6 (one run 0.46 s). The study never paused for drift; the notice read "recalibrated itself on best (c/3 made best's runs 51% as long as at calibration …): segment 2 started, same oracle … Nothing to do." with the per-host before and after. c/4's own runs took 61% of segment 2's calibration, just above the 60% trigger, so it didn't recalibrate there.
-- **Across segments.** `bb study show`, the Live view's `best` and the report read "86.1% lower t_ms (7.2×) across 3 segments · this segment: 414.9 ms, no promotion yet". The harvest's line read "414.9 → 414.9 ms" (the segment's baseline, not the study base); fixed during the check to "≈ 3,053 → 414.9 ms" from the harvest's own base-vs-best measurement.
+- **Across segments.** `alia study show`, the Live view's `best` and the report read "86.1% lower t_ms (7.2×) across 3 segments · this segment: 414.9 ms, no promotion yet". The harvest's line read "414.9 → 414.9 ms" (the segment's baseline, not the study base); fixed during the check to "≈ 3,053 → 414.9 ms" from the harvest's own base-vs-best measurement.
 - **Notices.** Strategist round 2 (2 wins, a recalibration) said no "notices for you"; round 1 said 1 (calibration ready), round 4 1 (budget used up).
 - **Harvest h1 (the strategist's grouping, as asked: {c/1, c/4} and {c/3, c/6}).** The two groups' commits interleave on `src/steps.py`, so they were folded into one PR: "#1 and #2 need each other: their commits interleave on src/steps.py, so neither applies without the other"; #2 "ships inside #1's PR". One branch, its parent `main`, the gate passing in a checkout of it. The study's first harvest was numbered h1.
 - **Harvest h2 (one changeset per promotion).** A stack #1 → #2 → #3 → #4 in dependency order; four branches, each one's parent the branch below it (the first's `main`), the gate passing on every tip; contributions 23.3% and 18.8% of the gain for the two that could be ablated alone, the stack together 100.0% (CI 90.8% to 108.8%).
@@ -834,7 +834,7 @@ Append-only migrations: `bench_hosts.side_runs`, `bench_hosts.run_seconds`, `stu
 
 ## v0.2.3
 
-Fixes from capturing the marketplace screenshots, plus two found right after: the strategist didn't know where best's code was, and archiving a running study could spawn replacement workers. Same platform pins (BB 0.45.x, SDK 0.6.14). UI, wording and view models, except the two engine fixes at the end; no statistics change.
+Fixes from capturing the marketplace screenshots, plus two found right after: the strategist didn't know where best's code was, and archiving a running study could spawn replacement workers. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14). UI, wording and view models, except the two engine fixes at the end; no statistics change.
 
 ### Live view
 
@@ -879,11 +879,11 @@ Replay showed every bench host as "not checked yet": only unhealthy streaks were
 ### Archiving a running study spawned replacement workers
 
 - **Seen live.** `control.archive` at t, the two live workers marked abandoned 0.2 ms later, then `worker.spawned` twice at t + 0.3-0.7 s (new ideas, new threads), and `study.state running → archived` only at t + 43 s, after the bench checkouts were removed. Each ended worker kicks the control loop, and the loop still saw a Running study with free slots and queued ideas. The two new workers kept running until stopped by hand.
-- **Fix.** `archiveStudy` changes the state first, in one transaction with finishing the strategist row, before cancelling the harvest, stopping workers or removing checkouts. The control loop re-reads the study after its awaits before deciding to spawn (it used the row read at the start of the pass). `spawnWorker` re-checks the state after its own awaits and before asking BB for a thread (the row is marked failed and its idea re-queued), and again when the spawn resolves: if the study left Running meanwhile (paused, harvesting, archived), the new thread is stopped and archived at once (`worker.spawn_discarded`; the idea goes back to the queue unless the study is archived), and if the row was ended while the spawn was in flight (the archive ends spawning rows too) its late thread is stopped and archived the same way. Reconciliation finishes stopping live workers of an archived study (an archive interrupted mid-cleanup).
+- **Fix.** `archiveStudy` changes the state first, in one transaction with finishing the strategist row, before cancelling the harvest, stopping workers or removing checkouts. The control loop re-reads the study after its awaits before deciding to spawn (it used the row read at the start of the pass). `spawnWorker` re-checks the state after its own awaits and before asking VesnALIA for a thread (the row is marked failed and its idea re-queued), and again when the spawn resolves: if the study left Running meanwhile (paused, harvesting, archived), the new thread is stopped and archived at once (`worker.spawn_discarded`; the idea goes back to the queue unless the study is archived), and if the row was ended while the spawn was in flight (the archive ends spawning rows too) its late thread is stopped and archived the same way. Reconciliation finishes stopping live workers of an archived study (an archive interrupted mid-cleanup).
 - **Pause and harvest** already changed the state synchronously before anything else; they shared only the late-spawn race, which the same check covers. A pause still lets running workers finish.
 - **Tests.** Archiving with free slots and five queued ideas records no `worker.spawned` after it starts, and its `study.state` event comes before the first `worker.abandoned`; a spawn held until after the archive (and one held until after a pause) ends with its thread stopped and archived and no second `worker.spawned`. All three fail on v0.2.2.
 
-### Live check (BB 0.45, one MacBook, a toy repo under /tmp, a temporary project)
+### Live check (VesnALIA 0.45, one MacBook, a toy repo under /tmp, a temporary project)
 
 - **Toy.** `src/toy.py` (a loop sum, a recursive fib, a quadratic dedupe, a bubble sort); the metric is opcodes of `toy.run()` counted with `sys.settrace` and 1% synthetic noise, guardrail `src_lines`; noisy, `n_min` 4, `n_max` 10; single-machine mode on (auto). Study 1: `max_workers` 3, `max_candidates` 6, four ideas added from the CLI. Study 2: `max_workers` 2, `max_candidates` 20, six ideas, archived as soon as two workers were live.
 - **Status line.** Read every few seconds: "Running: 3 workers: 1 reading the code, 1 being measured, 1 reading a verdict; measuring c/3.", "… 1 refining, 1 waiting for the bench, 1 being measured; measuring c/4, 1 in tests.", "Running: 1 worker finishing." The view's counts carried `finishing` (2 of 3 at one point).
@@ -903,7 +903,7 @@ No migrations. New events: `bench.health` (every health check), `worker.spawn_di
 
 ## v0.2.2: single-machine mode
 
-v0.2.2. Same platform pins (BB 0.45.x, SDK 0.6.14).
+v0.2.2. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 ### Why
 
@@ -920,15 +920,15 @@ On a laptop the edit host is also the bench host. Gates (tests, type checks, ren
 
 ### Quiet bench
 
-- **What it does.** `[oracle] quiet_bench = true`: while a measurement (or calibration, drift, harvest or profile run) of such a study holds a machine's bench lock, the `message.dispatch` hook answers `wait` for a new turn (`attempt: "start-turn"`) of an autoresearch worker whose environment is on that machine, with a reason naming the candidate, the host and the study, and a 10-minute `sendAt` as a safety net. `withBench` calls `bb.experimental_hooks.recheck("message.dispatch")` when the measurement ends; reconciliation calls it once on load.
+- **What it does.** `[oracle] quiet_bench = true`: while a measurement (or calibration, drift, harvest or profile run) of such a study holds a machine's bench lock, the `message.dispatch` hook answers `wait` for a new turn (`attempt: "start-turn"`) of an autoresearch worker whose environment is on that machine, with a reason naming the candidate, the host and the study, and a 10-minute `sendAt` as a safety net. `withBench` calls `alia.experimental_hooks.recheck("message.dispatch")` when the measurement ends; reconciliation calls it once on load.
 - **What it doesn't.** Running turns (`join-turn`) are never held, and nothing else is: the study thread, human threads, other plugins' threads. It holds turn starts only; a turn already running keeps running its tools.
 - **Bounded wait (decision).** A held turn starts once any measurement on that machine has ended since it was first held, even if the next one already began. Without that, a saturated bench would hold workers until the queue drained (no submissions, so it would, but only then). Each held thread's first hold time is kept in memory; a plugin reload forgets it, which at worst holds a turn for one more measurement.
 - **Spawns (found in the smoke test).** A worker's first turn is dispatched while `threads.spawn` is still in flight, before the worker row knows its thread id, so the first version proceeded for every spawn. The hook now also holds a thread whose `originPluginId` is this plugin (only workers are spawned by the plugin). `quiet.held` and `quiet.released` events record each hold.
-- Neither setting is part of the oracle hash: toggling them applies with `bb study approve`, without recalibration.
+- Neither setting is part of the oracle hash: toggling them applies with `alia study approve`, without recalibration.
 
 ### Surfaces
 
-The Oracle tab has a "Single-machine mode: on/off" section with the reason and what it does; the calibration report, `bb study show` ("Single machine" and the scheduler line's "tests + measurement") and the Overview say the same. Bench hosts on the Overview and Bench tab read "testing c/N (single-machine mode: tests hold the bench)" while a gate holds them; the status line says "testing c/N on the bench"; the Live bench strip shows the gate as the host's current work, marks queued candidates waiting to test ("c/4 tests"), and its feed says "c/4 waits to run its tests on the bench", then "tests started on <host>, holding the bench".
+The Oracle tab has a "Single-machine mode: on/off" section with the reason and what it does; the calibration report, `alia study show` ("Single machine" and the scheduler line's "tests + measurement") and the Overview say the same. Bench hosts on the Overview and Bench tab read "testing c/N (single-machine mode: tests hold the bench)" while a gate holds them; the status line says "testing c/N on the bench"; the Live bench strip shows the gate as the host's current work, marks queued candidates waiting to test ("c/4 tests"), and its feed says "c/4 waits to run its tests on the bench", then "tests started on <host>, holding the bench".
 
 ### Commit identity
 
@@ -944,11 +944,11 @@ A new host op, `protectedHash`, now lists the whole tree at the baseline (`git l
 
 Append-only migrations: `candidates.gate_seconds`, and an index on `bench_intervals (host_id, ended_at)` for the hook's open-interval lookup. New events: `gate.started`, `gate.finished`, `quiet.held`, `quiet.released`, `git.identity`. New bench interval kind: `gate`.
 
-### Smoke test (BB 0.45, one MacBook, a toy repo under /tmp, a temporary project)
+### Smoke test (VesnALIA 0.45, one MacBook, a toy repo under /tmp, a temporary project)
 
 - **Toy.** A Python `toy.run()` (a bubble sort, a list-based unique count, a recursive fib). Metric: wall-clock ms, the best of as many runs as fit in about 1 s (about 16 s per evaluation, noise floor 1.6-3.8% per pair). Gate: the unit tests, then every core burning CPU for 3 s (about 3.2 s). Noisy, `n_min` 4, `n_max` 8; `max_workers = 2`; `max_candidates` 4-5; `single_machine` left at `auto`, `quiet_bench = true`. A repo-local git identity was set in the toy repo.
 - **Three studies.** `toy-sm` (0.25 s measurements, to check the path quickly), `toy-sm2` and `toy-sm3` (16 s measurements). 14 candidates: 12 wins, 2 conflicts.
-- **No overlaps.** Across the three studies, 34 bench intervals on one lock key (3 calibration gates, 3 calibrations, 15 candidate gates, 13 measurements; a re-gate after best moved, the measurement it cut short, and two conflicted candidates' sub-second gates included): a self-join on the lock key finds 0 overlapping pairs, and `bb study show` reports 0 overlapping bench intervals.
+- **No overlaps.** Across the three studies, 34 bench intervals on one lock key (3 calibration gates, 3 calibrations, 15 candidate gates, 13 measurements; a re-gate after best moved, the measurement it cut short, and two conflicted candidates' sub-second gates included): a self-join on the lock key finds 0 overlapping pairs, and `alia study show` reports 0 overlapping bench intervals.
 - **FIFO, live.** In `toy-sm`, c/2 was submitted while c/1 was being measured; its gate started 2 ms after the measurement ended. In `toy-sm2`, c/2 arrived during c/1's gate and gated right after it, before c/1's measurement (queued later); after c/1 won, c/2 was re-gated against the new best. In `toy-sm3`, c/2 arrived 0.5 s after c/1 was queued, so c/1's measurement went first and c/2's gate waited 21 s.
 - **Utilization.** `toy-sm`: busy 26.5% of Running time (44.4% since the first submission), 13 s of the 21 s busy were gates. `toy-sm2`: 67.2% (85.0% since the first submission), 16 s of 101 s gates. `toy-sm3`: 60.1% (75.6%), 13 s of 97 s gates. The scheduler line read "eval ≈ 24 s (tests 3.2 s + measurement 21 s, single-machine mode)".
 - **Quiet bench.** `toy-sm2` ran on the first build and held nothing: two workers spawned during measurements started at once (the spawn case above). After the fix, in `toy-sm3` both workers spawned during a measurement were held (17.4 s and 19.0 s) and started within 50 ms of the measurement's end.
@@ -960,21 +960,21 @@ Append-only migrations: `candidates.gate_seconds`, and an index on `bench_interv
 - **Gates run one at a time** in single-machine mode, even though gates don't disturb each other's results. A readers-writer lock (gates share, measurements exclusive) would let several gates run between measurements; one queue is simpler and is what the measurements need.
 - **Quiet bench holds turn starts only.** A worker whose turn is already running (and runs its own tests) keeps competing with the measurement; the health check before each measurement is still the guard for that.
 - **Replay shows today's setting.** The replay bundle carries the current single-machine setting, not the one in force at each moment (gate events are only recorded when it was on, so the bench strip is still right).
-- **A held spawn is attributed by origin.** BB's hook context doesn't carry plugin metadata, so a thread is recognized as a spawning worker by `originPluginId` alone.
+- **A held spawn is attributed by origin.** VesnALIA's hook context doesn't carry plugin metadata, so a thread is recognized as a spawning worker by `originPluginId` alone.
 
 ## v0.2.1: fixes
 
-Small fixes before the marketplace submission; no new features. Same platform pins (BB 0.45.x, SDK 0.6.14).
+Small fixes before the marketplace submission; no new features. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 - **Noise per class (Oracle tab).** `noiseFloorText` (`src/present.ts`) says the calibrated noise for the oracle's class: per pair (noisy), the σ of one run (expensive), or none (deterministic: single runs judged against the tolerance, so no MDE sentence). Without a noise floor (an imported study has no A/A calibration) it says "not measured"; the old sentence took `Math.max` over a null floor and printed "0.00% per pair". The view's host and segment floors are null when missing or not finite.
 - **Why a verdict isn't the primary metric's.** `verdictCause` reads the verdict's own reasons: a primary-metric win that broke a guardrail is "lost on guardrail mem_kb (27.6% worse)" (or "… than the segment base" when only the total limit broke), a holdout failure "lost on the holdout check", and failed gates, conflicts and scope rejections their reason. Pipeline cards, the Candidates list and detail, Findings, the feed ("c/3 lost on guardrail mem_kb (27.6% worse), despite 43.3% fewer ops"), the CLI and replay show it instead of, or next to, the primary number. The `verdict` delta carries it; replay bundles carry it precomputed (their reasons are trimmed to the first one).
 - **Single runs.** A point CI (deterministic) reads "single run, no CI" and "+20.0% (single run)" in tables, never "+20.0% to +20.0%". Measurement progress is per class (`progressText`): pairs for noisy, "running best" / "running the candidate" / "run 1 of 1" for deterministic, "run 2 of ≤4" for expensive; the live view carries the noise class (`LiveView.noise`, the replay bundle's `spec.noise`). The deterministic band reads "Single run: +2.00% vs best, better by more than the 0.50% tolerance: win", and the feed says "measured: one run each".
 - **Status line and Overview.** A candidate on the bench is counted as measured, not queued: "Running: 2 workers editing, measuring c/1, 1 queued for the bench, 1 in tests." (`runningStatusText`, shared by the live status line and replay). The Overview's "Now" hint depends on the state: "no workers before the study starts" only for draft and calibrating; paused, harvesting and archived say what they mean.
-- **Lanes link through the worker row.** `candidates.worker_id` (append-only migration) records the `threads` row that submitted a candidate; the live view, the recorder's phases, the Overview's workers and replay link lanes to candidates through it, with the BB thread id as the fallback. The migration backfills existing rows from the BB thread id, then from `worker.phase` events (which record each worker's latest candidate). A worker row without a BB thread id now shows its submissions and "c/N measuring" (it showed "submission 0 of 1" and never its candidate). The submit event carries `worker_row`.
+- **Lanes link through the worker row.** `candidates.worker_id` (append-only migration) records the `threads` row that submitted a candidate; the live view, the recorder's phases, the Overview's workers and replay link lanes to candidates through it, with the VesnALIA thread id as the fallback. The migration backfills existing rows from the VesnALIA thread id, then from `worker.phase` events (which record each worker's latest candidate). A worker row without a VesnALIA thread id now shows its submissions and "c/N measuring" (it showed "submission 0 of 1" and never its candidate). The submit event carries `worker_row`.
 
 ## v0.2.0: live view, part 2
 
-Part 2 of the Live view: a CI band per measurement, a "last action" per worker, a visible "best moved" moment, replay of any study, and two fixes from part 1's list. Same platform pins (BB 0.45.x, SDK 0.6.14). The view stays read only.
+Part 2 of the Live view: a CI band per measurement, a "last action" per worker, a visible "best moved" moment, replay of any study, and two fixes from part 1's list. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14). The view stays read only.
 
 ### The CI band
 
@@ -1010,19 +1010,19 @@ Part 2 of the Live view: a CI band per measurement, a "last action" per worker, 
 ### Fixes from part 1's list
 
 - **Up next follows the scheduler.** `scheduler.upNext` applies `pickIdea` repeatedly, each pick counted as running for the next, so the theme cap and the no-repeat rule order the list as spawns will; ideas the policy skips follow in board order with the reason ("waits: 1 running on algo", "repeats an idea that lost"). Tested against successive real picks.
-- **No database access after dispose.** On reload, BB disposes the old instance, then closes its database; the old instance's measurement jobs were still awaiting bench runs and logged "The database connection is not open" when they resumed. `Engine.dispose` (a `bb.onDispose` hook) now marks the context disposed, aborts in-flight measurements and harvests, stops the live recorder, and closes the store: any later access throws a quiet `StoreClosedError`, the pipeline's catch paths return without writing, and the old instance's log is dropped. Tested with the SDK harness (`lifecycle.reload` during a blocked measurement: no log, no write, the new instance restarts the measurement) and live (a reload mid-measurement logged only the new instance's reconcile).
+- **No database access after dispose.** On reload, VesnALIA disposes the old instance, then closes its database; the old instance's measurement jobs were still awaiting bench runs and logged "The database connection is not open" when they resumed. `Engine.dispose` (a `alia.onDispose` hook) now marks the context disposed, aborts in-flight measurements and harvests, stops the live recorder, and closes the store: any later access throws a quiet `StoreClosedError`, the pipeline's catch paths return without writing, and the old instance's log is dropped. Tested with the SDK harness (`lifecycle.reload` during a blocked measurement: no log, no write, the new instance restarts the measurement) and live (a reload mid-measurement logged only the new instance's reconcile).
 - **Pair progress** moves pair by pair (the band deltas above), though `measure.progress` events stay coarse.
 
 ### Motion, found in the smoke test
 
-- **Frozen glides.** A BB browser tab that isn't composited still runs an animation frame about once a second, which fooled part 1's heartbeat; animations started there stayed at their first keyframe (cards invisible or far away). The heartbeat now requires two frames within 100 ms, and every animation is finished by a timer shortly after it should have ended.
+- **Frozen glides.** A VesnALIA browser tab that isn't composited still runs an animation frame about once a second, which fooled part 1's heartbeat; animations started there stayed at their first keyframe (cards invisible or far away). The heartbeat now requires two frames within 100 ms, and every animation is finished by a timer shortly after it should have ended.
 - **Runaway glides.** A glide measured an element's position through a glide still in flight, so at 8 renders a second each new offset included the previous one (6.7e7 px after a few seconds of replay). Positions are now measured without the in-flight translation, a move restarts from where the element is seen, and an element that didn't move keeps its glide.
 
 ### Data model
 
 Append-only migrations: `threads.last_action`, `last_action_at`, `action_recorded`, `action_recorded_at`; `candidates.band_json`. New events: `worker.action` (worker, thread, label, item time), `submission.refunded`; `measure.finished` gains `effect`. New RPC `study.replay`. New realtime deltas `action` and `band`. The noisy strategy takes `ciRng`.
 
-### Smoke test (BB 0.45, one MacBook, a toy repo under /tmp, a temporary project)
+### Smoke test (VesnALIA 0.45, one MacBook, a toy repo under /tmp, a temporary project)
 
 - **Toy.** A program whose cost is spread over parts of 0.4% to 42% of the opcodes (a bubble sort, a linear `contains`, a loop sum, a recursive fib, a character-by-character parser, a string join), so ideas have small and large effects. Metric: opcodes of `toy.run()` with 4% synthetic noise per run (3.6% per pair after pairing; MDE 2.0-2.4% at 20 pairs); guardrail `mem_kb` (tracemalloc peak, 1% noise; limits 10% per step, 15% total). Noisy, `n_min` 6, `n_max` 20, about 1 s per run. `max_workers` 3; `max_candidates` 8 and 7.
 - **Runs.** `toy-live4`: 8 candidates, 5 wins, 2 losses on the guardrail (set-based dedupe and `sorted()` at +24-51% memory), 1 inconclusive after 20 pairs; 95.8% fewer ops (24×). `toy-live5` (only moderate ideas): 2 wins at 5.5% and 4.4% (decided after 11 and 18 pairs, then confirmed with 9 and 7 fresh pairs), 4 inconclusive after 20 pairs, 1 guardrail loss; 9.7% fewer ops.
@@ -1036,12 +1036,12 @@ Append-only migrations: `threads.last_action`, `last_action_at`, `action_recorde
 - **Replay of restarted measurements** has no band for the interrupted attempt (its samples are gone).
 - **Huge effects flatten the band.** A 90% win makes the scale span 0 to 98%, so its (tiny) CI is a line; the words carry the numbers.
 - **Event density only, no zoom.** A study of many hours puts minutes into one scrubber pixel; seeking by keyboard steps 1% or 10%.
-- **Last action is per batch of items.** BB announces thread events about once a second; a worker that does three things in that second shows the last one.
+- **Last action is per batch of items.** VesnALIA announces thread events about once a second; a worker that does three things in that second shows the last one.
 - **Workers write outside their worktree.** Agents in the smoke test left scratch files in `/tmp`; the plugin doesn't sandbox them.
 
 ## v0.2.0: live view, part 1
 
-A Live view for watching a running study: workers picking up ideas, editing and pushing candidates through tests and the bench, with verdicts arriving. Part 1 is the live surfaces and the event log they stand on; part 2 adds a CI band per measurement, a "last action" line per worker, a visible "best moved" moment, and a replay of finished studies. Same platform pins (BB 0.45.x, SDK 0.6.14).
+A Live view for watching a running study: workers picking up ideas, editing and pushing candidates through tests and the bench, with verdicts arriving. Part 1 is the live surfaces and the event log they stand on; part 2 adds a CI band per measurement, a "last action" line per worker, a visible "best moved" moment, and a replay of finished studies. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 ### Decisions taken before building
 
@@ -1053,7 +1053,7 @@ A Live view for watching a running study: workers picking up ideas, editing and 
 - **Question.** Does `ThreadChat` with `variant="timeline"` (a transcript without a composer) render a hidden, plugin-spawned thread live, and do agent-only blocks stay hidden?
 - **Setup.** A scratch plugin spawned a hidden thread in a managed worktree with a slow, multi-step prompt, rendered it with `ThreadChat variant="timeline"` in a nav panel and in a `threadPanelAction` tab, and sent it a message with a one-line summary and an agent-only block holding a secret word.
 - **Result: it works.** The timeline streamed as the agent ran (commands appearing as they ran, "Working…" while busy). The human view showed only the summary line; the agent's reply quoted the secret word, so the agent-only block reached the agent and stayed out of the human view. The worker's brief (its first user message) is shown in full, as in the worker thread itself.
-- **Also found.** `useBbNavigate().openThreadPanel` returns false on a plugin page, even right after `toThread` (the hook belongs to the page, not the thread). From a component mounted on the thread surface (the header badge) it opens the panel on the first try. That decided how "Open beside the study thread" works (below).
+- **Also found.** `useAliaNavigate().openThreadPanel` returns false on a plugin page, even right after `toThread` (the hook belongs to the page, not the thread). From a component mounted on the thread surface (the header badge) it opens the panel on the first try. That decided how "Open beside the study thread" works (below).
 
 ### Every visible change is an event
 
@@ -1076,7 +1076,7 @@ The Live view shows nothing that isn't in `events`, so a replay can rebuild it a
 ### Worker phases
 
 - **From plugin state, not transcripts.** `deriveWorkerPhase` reads the thread row, the worker's latest candidate, and its activity: starting (spawning) → reading, editing or testing (before the first submission, by activity) → waiting for the bench (submitted, gating, queued) → being measured (measuring, confirming, promoting) → verdict received (decided) → refining (activity after the verdict was delivered) → finishing → done.
-- **Activity.** BB announces new thread events at most once a second per thread (`experimental_thread.events`). For a live worker, the engine reads the `item/started` rows after the last one it read (`bb.sdk.threads.events.list`, at most 100 per page, which is BB's cap) and keeps only each item's kind, command and tool name, never message text. `classifyItem` maps them: file reads and searches are reading; file changes and shell edits (`sed -i`, scripts that write files, redirects into files, `apply_patch`) are editing; other commands are testing, unless every part of a compound command only reads. `threads.activity`, `activity_at` and `activity_seq` hold the result.
+- **Activity.** VesnALIA announces new thread events at most once a second per thread (`experimental_thread.events`). For a live worker, the engine reads the `item/started` rows after the last one it read (`alia.sdk.threads.events.list`, at most 100 per page, which is VesnALIA's cap) and keeps only each item's kind, command and tool name, never message text. `classifyItem` maps them: file reads and searches are reading; file changes and shell edits (`sed -i`, scripts that write files, redirects into files, `apply_patch`) are editing; other commands are testing, unless every part of a compound command only reads. `threads.activity`, `activity_at` and `activity_seq` hold the result.
 - **Recording.** The `LiveRecorder` (`src/live.ts`) listens to every appended event (`Store.onEvent`) and, on a microtask after the transaction, syncs the study's workers: a changed phase updates `threads.phase` and `phase_at` and appends `worker.phase`. A flip between reading, editing and testing is recorded at most every 3 s per worker (`liveDwellMs`); the latest activity wins. The control loop also syncs every tick as a safety net.
 
 ### Realtime deltas
@@ -1118,7 +1118,7 @@ Append-only migrations: `threads.phase`, `phase_at`, `activity`, `activity_at`, 
 - **Last action per worker.** The port already reads each item's kind, command (first 300 characters) and tool name; only the class is stored. Persisting a short label (for example `threads.last_item` plus an event when it changes, rate-limited like phases) gives part 2 its line.
 - **Best moved.** The `best` delta and the header highlight exist; a bigger moment can hang off the same delta.
 
-### Smoke test (BB 0.45, one MacBook, toy repos under /tmp, a temporary project)
+### Smoke test (VesnALIA 0.45, one MacBook, toy repos under /tmp, a temporary project)
 
 - **Toy.** The M3 toy: `src/toy.py` with a naive sum, a recursive fib and a quadratic dedupe; the metric is opcodes of `toy.run()` counted by a protected `bench/measure.py` with 1% synthetic noise; the gate is a protected test. Noisy class, `n_min` 5, `n_max` 12, `max_workers` 3, local bench, health checks off (a busy laptop), default provider. Studies 2 and 3 added a 6 s gate and 1 s per run so every stage stays on screen for a while.
 - **Runs.**
@@ -1131,7 +1131,7 @@ Append-only migrations: `threads.phase`, `phase_at`, `activity`, `activity_at`, 
 
 - **Replay parity on the live database.** For all three studies, `replaySkeleton` over the recorded events equaled `skeletonFromDb` on a copy of the plugin database, including the measurement that a plugin reload restarted.
 - **Seen in the app.** The Live tab opened by default once the study ran (and Overview while calibrating or paused); lanes went starting → reading → testing → editing → waiting → being measured → verdict → refining → finishing; cards moved Tests → Queue → Bench → Promoted or Verdict, with queue positions and pair counts; the bench strip showed pair i of ≤12 and utilization; "Open beside the study thread" opened the panel beside the study thread, which survived a reload; "Study live view" appeared in the thread's right-panel launcher; selecting a lane showed the hidden worker's transcript live.
-- **Found and fixed during the run.** BB caps a thread events page at 100 rows (the first build asked for 200 and got HTTP 400, so no activity was recorded); workers edit through shell heredocs, which the first classifier read as reading; animations started in the hidden automation tab froze cards at their first keyframe (now skipped without rendered frames); the Live tab's six columns overflowed beside an open side panel (now compact under 760 px); the feed said "Best moved" before "won" (promotion is recorded first; the feed now tells the win first).
+- **Found and fixed during the run.** VesnALIA caps a thread events page at 100 rows (the first build asked for 200 and got HTTP 400, so no activity was recorded); workers edit through shell heredocs, which the first classifier read as reading; animations started in the hidden automation tab froze cards at their first keyframe (now skipped without rendered frames); the Live tab's six columns overflowed beside an open side panel (now compact under 760 px); the feed said "Best moved" before "won" (promotion is recorded first; the feed now tells the win first).
 - **Evidence.** Screenshots, timelapses built from timed screenshots, and contact sheets are in the building thread's storage (`shots/`). They were captured from a hidden automation tab, which doesn't repaint animated layers, so they were taken with `prefers-reduced-motion` emulated; the motion itself is covered by tests.
 - **Cleanup.** All three studies and their threads were archived, the temporary project and `/tmp` files deleted, and the released plugin reinstalled from GitHub.
 
@@ -1147,7 +1147,7 @@ Append-only migrations: `threads.phase`, `phase_at`, `activity`, `activity_at`, 
 
 ## v0.1.0: guardrails and pre-release fixes
 
-The last pass before release. It fixes two guardrail correctness gaps and three usability issues the earlier smoke tests found. Same platform pins (BB 0.45.x, SDK 0.6.14).
+The last pass before release. It fixes two guardrail correctness gaps and three usability issues the earlier smoke tests found. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 ### Guardrails: a cumulative limit
 
@@ -1186,14 +1186,14 @@ The last pass before release. It fixes two guardrail correctness gaps and three 
 ### Pre-release fixes
 
 - **Snapshots and build outputs.** `[scope] ignore` lists untracked build outputs and caches the worker snapshot never commits, gitignore-style: a pattern without a slash matches at any depth, a leading or inner slash anchors it at the root, a trailing slash means a directory. Defaults: `__pycache__/`, `*.pyc`, `*.pyo`, `.pytest_cache/`, `node_modules/`, `dist/`, `build/`, `target/`, `.DS_Store`, `coverage/`, `.coverage`, `.nyc_output/`, `htmlcov/`; setting the key replaces them, `[]` turns it off. The snapshot stages tracked changes with `git add -u`, then untracked files with exclude pathspecs, and reports what it left out (the submission ticket says so). Changes to tracked files under a pattern always commit. A candidate that still adds a matching file (the worker committed it itself) is `rejected` with what to do (`git rm -r --cached`, or ask the human to change the list). Calibration warns when the base tracks files that match (a `build/` of sources, say), because new files next to them would be left out. Not part of the oracle hash.
-- **New study.** The Studies page opens bb's own new-thread composer (`experimental_NewThreadComposer`) in a dialog, seeded with the study-create prompt and a project: the route's project, else the project of the most recently updated active study (only if it still exists), else none. The plugin spawns the thread from the composer's request and opens it. Before, `toCompose` took no project and opened with "No project".
+- **New study.** The Studies page opens VesnALIA's own new-thread composer (`experimental_NewThreadComposer`) in a dialog, seeded with the study-create prompt and a project: the route's project, else the project of the most recently updated active study (only if it still exists), else none. The plugin spawns the thread from the composer's request and opens it. Before, `toCompose` took no project and opened with "No project".
 - **Archive with the thread.** The archive dialog has "Also archive the study thread" (on by default); `study.archive` takes `archiveThread`, the CLI `--archive-thread`. The study thread is archived and stopped after the study, recorded as `study_thread.archived`; asking again on an archived study archives just the thread. Worker threads were already archived.
 
 ### Data model
 
 Append-only migrations: `harvests.total_guardrails_json`, `changesets.guardrails_json`. A decided candidate's `metrics_json` gains `guardrailCi` (per guardrail: lo, hi, n) and `guardrailJudgement` (the step and total checks, best's prior position, the text). The calibration report and segment details gain `guardrails` and `warnings`. New event: `study_thread.archived`; `control.archive` records `archiveThread`; `candidate.submitted` records how many files the snapshot left out.
 
-### Smoke test (BB 0.45, one MacBook, toy repo under /tmp without a `.gitignore`)
+### Smoke test (VesnALIA 0.45, one MacBook, toy repo under /tmp without a `.gitignore`)
 
 - **Toy.** `src/toy.py` with a naive `slow_sum`, recursive `fib`, and a `dedupe` built on a linear `contains()` and a `bubble_sort`; a gate test; the primary metric `ops` (opcodes of `toy.run()` counted with `sys.settrace`, 0.5% synthetic noise). The guardrail `mem_kb` is a synthetic memory model that creeps with every win: it grows by about 7% per halving of ops, plus 1.2% per-run noise. Limits: 9% per step, 12% in total. Noisy class, `max_workers = 2`, `max_candidates = 6`, local bench, default provider (pi).
 - **Calibration** (after one A/A attempt failed the existing equivalence check by chance: median 0.48%, CI 0.42% to 0.87%): ops noise floor 0.83% per pair, MDE 1.00%; "mem_kb: noise 1.99% per pair (A/A), CI half-width 0.76%: rejected beyond about 9.8% worse, ok below about 8.2% worse, inconclusive in between".
@@ -1224,7 +1224,7 @@ Append-only migrations: `harvests.total_guardrails_json`, `changesets.guardrails
 
 ## v0.1.0: human interface
 
-A pass after M3 over every human step, with no new engine features. Same platform pins (BB 0.45.x, SDK 0.6.14). It started with a walk through the whole journey in the BB app on the M3 code, logging every confusing moment, dead end and forced trip to the CLI (18 of them, from "three different signs for the same number" to "approval needs a terminal"), and ended with the same journey on the new code.
+A pass after M3 over every human step, with no new engine features. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14). It started with a walk through the whole journey in the VesnALIA app on the M3 code, logging every confusing moment, dead end and forced trip to the CLI (18 of them, from "three different signs for the same number" to "approval needs a terminal"), and ended with the same journey on the new code.
 
 ### One way to express improvement
 
@@ -1273,21 +1273,21 @@ A pass after M3 over every human step, with no new engine features. Same platfor
 ### CLI
 
 - `--json` on every command, one JSON document from the same view models as the page; errors use the SDK envelope with a `hint` that names the command to run next.
-- New `bb study needs [slug]`.
+- New `alia study needs [slug]`.
 - `list` is a table with a NEEDS YOU column (active studies first), `show` gains a Needs you section, `harvest` prints shares, explanations and PR bases in the page's words. Same numbers and wording as the UI.
 
 ### Accessibility and theming
 
 - The tabs are a WAI-ARIA tablist with roving focus (arrow keys, Home, End). Every control has a visible focus ring and an accessible name; chart marks are focusable and open their candidate.
 - Color never carries meaning alone: verdicts carry a glyph and a word, chart marks differ by shape (● win, × lose, ○ other), guardrails and health checks carry words.
-- **Theme tokens only.** Tailwind `dark:` variants in a plugin bundle compile to `prefers-color-scheme`, so they follow the OS, not BB's theme (a light BB theme on a dark OS rendered light-on-light text). All `dark:` variants were removed in favor of host tokens (`text-success`, `text-warning-text`, `bg-warning/10`, `text-destructive`, `bg-muted`). Light theme was checked by switching the tab's root class to `light` (screenshots), not through BB's settings.
-- New vendored components from the BB registry (desktop-v0.45.0): `dialog`, `popover` and their support files; `@radix-ui/react-dialog` and `-popover` are type-only dev dependencies at the host's range.
+- **Theme tokens only.** Tailwind `dark:` variants in a plugin bundle compile to `prefers-color-scheme`, so they follow the OS, not VesnALIA's theme (a light VesnALIA theme on a dark OS rendered light-on-light text). All `dark:` variants were removed in favor of host tokens (`text-success`, `text-warning-text`, `bg-warning/10`, `text-destructive`, `bg-muted`). Light theme was checked by switching the tab's root class to `light` (screenshots), not through VesnALIA's settings.
+- New vendored components from the VesnALIA registry (desktop-v0.45.0): `dialog`, `popover` and their support files; `@radix-ui/react-dialog` and `-popover` are type-only dev dependencies at the host's range.
 
 ### Data model
 
 Append-only migrations: `changesets.human_choice`, `studies.notices_seen_at`. New events: `harvest.choice`, `harvest.publish_refused`; new control kinds `control.harvest_choice` and the in-app `control.calibrate|approve|start|publish|archive`; new notice kind `harvest.published`.
 
-### Usability check (BB 0.45, one MacBook, toy repo under /tmp)
+### Usability check (VesnALIA 0.45, one MacBook, toy repo under /tmp)
 
 The same toy as M3 (`src/toy.py`, opcodes counted by the protected `bench/measure.py` with 0.5% noise), with a guardrail `src_lines` (≤ 30% worse per promotion) and an informational `wall_ms`; `max_workers = 2`, `max_candidates = 5`, local bench. Clicks were driven through the in-app browser; times are wall time from the action to the next state.
 
@@ -1295,10 +1295,10 @@ The same toy as M3 (`src/toy.py`, opcodes counted by the protected `bench/measur
 |---|---|---|
 | Create (study-create conversation) | no entry point; a typed request; 87 s to a draft | New study (1 click, prompt prefilled) + project (2) + send (1); 23 s to a draft |
 | Find the study | sidebar → Studies → row | the thread's header badge ("needs you: approve spec"): 1 click |
-| Approve the spec and calibrate | CLI `bb study calibrate` (twice: the first calibration failed on laptop load, visible only below the fold) | Needs you → Approve and calibrate… → confirm: 2 clicks; 3 s to ready |
+| Approve the spec and calibrate | CLI `alia study calibrate` (twice: the first calibration failed on laptop load, visible only below the fold) | Needs you → Approve and calibrate… → confirm: 2 clicks; 3 s to ready |
 | Seed ideas | Ideas tab, 2 ideas | Ideas tab + 3 adds: 4 clicks, 7 s |
 | Steer (reorder, veto with reason, unpin, concurrency and back, pause, resume) | veto used `window.prompt`, absent in the desktop app | 8 clicks plus typing, all in-app |
-| Approve calibration and start | CLI `bb study start` | Approve and start… → confirm: 2 clicks (+1 for the tab) |
+| Approve calibration and start | CLI `alia study start` | Approve and start… → confirm: 2 clicks (+1 for the tab) |
 | Run to the budget | 140 s | 122 s |
 | Harvest (dry run) | Harvest tab button; 33 s | Needs you → Start harvest… → confirm: 2 clicks; 27 s |
 | Review changesets | "+128,672%" next to "−99.9%", "base base" | shares, points, units, dependency text; Review harvest: 1 click |
@@ -1314,16 +1314,16 @@ Main path after: 21 clicks and no trip to the CLI (before: five forced CLI trips
 - **Old notices keep their old text.** Texts are stored; only notices raised after this pass follow the new wording.
 - **Archiving a study leaves its study thread** (the conversation) unarchived; the human archives it like any thread. *(Fixed in the guardrails pass: an option, on by default in the app.)*
 - **Interaction warnings** still rest on bootstrap CIs that undercover at small n; the info callout only softens the wording.
-- **Light theme** was checked by switching the root class in the browser tab, not by changing BB's theme setting; real light-theme contrast with a custom palette is untested.
+- **Light theme** was checked by switching the root class in the browser tab, not by changing VesnALIA's theme setting; real light-theme contrast with a custom palette is untested.
 - **The creating agent** in the live run still listed CLI next steps (from the old `study_propose` result text, fixed after the run) and the updated skill wasn't re-run live.
 
 ## v0.1.0: M3, harvest and operations
 
-What M3 added, and every place it differs from the design or from M2. Same platform pins (BB 0.45.x, SDK 0.6.14).
+What M3 added, and every place it differs from the design or from M2. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 ### Harvest
 
-- **Lifecycle.** `bb study harvest <slug>` (or the Harvest tab's dry-run button) moves Running or Paused to **Harvesting**. `bb study resume` is "keep exploring" (back to Running; a harvest still in progress is cancelled, a ready one stays for review). `bb study archive` ends the study and cancels a running harvest. A new harvest after a ready, failed or cancelled one needs `--restart`.
+- **Lifecycle.** `alia study harvest <slug>` (or the Harvest tab's dry-run button) moves Running or Paused to **Harvesting**. `alia study resume` is "keep exploring" (back to Running; a harvest still in progress is cancelled, a ready one stays for review). `alia study archive` ends the study and cancels a running harvest. A new harvest after a ready, failed or cancelled one needs `--restart`.
 - **Waiting (decision).** Harvest doesn't cancel anything. While Harvesting no worker spawns, submissions are refused with "record a finding, then finish", and the pipeline still finishes candidates already in flight. Only then is best frozen (`base_sha`, `best_sha`, and the promotion list from `git rev-list --first-parent base..best`, mapped to candidates by the `Autoresearch-Candidate` trailer).
 - **Grouping.** The plugin sends one strategist turn, `[autoresearch] Harvest h<N>`, listing the promotions (candidate, idea, effect, files). `study_propose_harvest` now validates against that list: every promoted candidate in exactly one group, unknown or duplicated numbers rejected with the reason so the strategist can retry; promotions it leaves out get a changeset of their own. Fallback, one changeset per promotion: when the study thread is missing, when its turn ends without a valid proposal (after `harvestGroupGraceMs`, 60 s), after `[harvest].group_timeout_minutes` (10), for a single promotion, or on request with `--one-per-promotion` (deterministic, no strategist turn). Changesets are ordered by their earliest commit on best.
 - **Git without checkouts.** A new host op `composeCommits` replays or reverts a list of commits onto a commit with one `git merge-tree` per step and returns one commit (or the conflicting step and paths). `commitLog` lists first-parent commits with their paths. Ablation commits, standalone commits and probes are dangling commits in the project repo; only the PR branches get refs.
@@ -1340,30 +1340,30 @@ What M3 added, and every place it differs from the design or from M2. Same platf
   - the standalone effect on its PR base;
   - depends-on and needed-by;
   - linked findings;
-  - a study link (`bb.server.experimental_appUrl` when configured, otherwise the page path).
+  - a study link (`alia.server.experimental_appUrl` when configured, otherwise the page path).
 - **Publishers (`src/publisher.ts`, behind `PrPublisher`).**
   - `dry-run` is the only mode harvest itself runs. It writes `report.md`, `prs/<kk>-<title>.md`, and `manifest.json` through a new `writeExport` host op under `<dataDir>/exports/<slug>-harvest-h<N>/` on the edit host. Nothing is pushed.
-  - `github` runs only through `bb study harvest <slug> --publish` on a **ready** harvest (decision: always review a dry run first). It is CLI-only, like approval: the RPC can start dry runs but cannot publish. *(Superseded by the human interface pass: the Harvest tab publishes behind a confirmation that lists every branch, remote and draft PR.)*
+  - `github` runs only through `alia study harvest <slug> --publish` on a **ready** harvest (decision: always review a dry run first). It is CLI-only, like approval: the RPC can start dry runs but cannot publish. *(Superseded by the human interface pass: the Harvest tab publishes behind a confirmation that lists every branch, remote and draft PR.)*
   - The `github` publisher refuses when the flag is missing, when the repo has no remote named `[harvest].remote` (default `origin`), when that remote isn't GitHub, or when `gh` is missing. Otherwise it pushes each branch and runs `gh pr create --draft`, with stacked PRs based on the branch below. A failed push skips the PRs stacked on it.
   - It was tested against a mock `gh` only; no PR was ever opened.
-- **Report (`src/report.ts`, `bb study report`, `study.report`).** Trajectory table, wins, notable losses with their reasons and findings, the dossier, calibration and segments, drift checks, and the latest harvest (changesets, stacks, droppable, the sum-vs-total section). It never reads holdout data: a test checks the report and the new views for the holdout command and numbers.
+- **Report (`src/report.ts`, `alia study report`, `study.report`).** Trajectory table, wins, notable losses with their reasons and findings, the dossier, calibration and segments, drift checks, and the latest harvest (changesets, stacks, droppable, the sum-vs-total section). It never reads holdout data: a test checks the report and the new views for the holdout command and numbers.
 - **Reconciliation.** Every phase persists per-changeset results; a plugin restart resumes a harvesting study's harvest where it stopped.
 
 ### Budgets and provider usage
 
 - **What the SDK exposes (investigated).**
   - `turn.failed` carries `errorInfo.category` and the provider's `rateLimits` (windows with `resetsAtMs` and status).
-  - `bb.sdk.threads.retry({ sendAt })` queues a retry on the clock.
-  - `bb.sdk.system.usageLimits()` returns each provider's subscription windows (`usedPercent`, `resetsAt`).
-  - **Per-thread tokens are readable:** the latest `thread/tokenUsage/updated` event (`bb.sdk.threads.events.list`) has cumulative `totalTokens`. Dollar cost per thread is not exposed.
+  - `alia.sdk.threads.retry({ sendAt })` queues a retry on the clock.
+  - `alia.sdk.system.usageLimits()` returns each provider's subscription windows (`usedPercent`, `resetsAt`).
+  - **Per-thread tokens are readable:** the latest `thread/tokenUsage/updated` event (`alia.sdk.threads.events.list`) has cumulative `totalTokens`. Dollar cost per thread is not exposed.
 - **Rate limits.** A rate-limited turn of a worker or of the study thread is retried at the latest blocked window's reset plus 15 s (or now + 1 min × attempt when no reset is known), at most `agents.max_rate_limit_retries` (3) times per thread. Then the plugin gives up with a notice, and an idle worker is later abandoned. The study records `rate_limited_until`; until then no new worker spawns (W shown as 1).
 - **Usage windows.** Usage windows are read every 2 min for the providers the study's threads use. A window at or above `agents.usage_tight_percent` (90) halves W, recorded in the `scheduler.target` event. On the smoke-test machine `usageLimits` returned no providers (the default provider, pi, reports no windows), so this path is unit-tested only.
-- **Tokens.** Each live thread's total is read at most once a minute and once more when a worker ends. Study tokens are the workers' totals plus the study thread's growth since its first reading after start. `budget.max_tokens` (optional) is enforced like the other limits, and tokens per win show on the Overview, in `bb study show`, and in the report.
+- **Tokens.** Each live thread's total is read at most once a minute and once more when a worker ends. Study tokens are the workers' totals plus the study thread's growth since its first reading after start. `budget.max_tokens` (optional) is enforced like the other limits, and tokens per win show on the Overview, in `alia study show`, and in the report.
 - **All limits.** `max_candidates`, `max_bench_hours`, `deadline`, and `max_tokens` pause the study when reached and propose a harvest (decision: the design's lifecycle allows "budget exhausted → Harvesting"; the plugin pauses and asks, because harvest spends bench time). `budget.notify_at` (50 and 80 by default) raises one notice per dimension per threshold, the deadline counting time from the first start. The Overview projects the bench time the remaining candidate budget would take at the calibrated cost per evaluation. Harvest bench time counts toward the bench budget but is never blocked by it.
 
 ### Notifications
 
-- **One mechanism.** M1's notices: a row in `notices`, the study page and `bb study show`, `markUnread` on the study thread (unless quiet), and the text in the next strategist round. Kinds:
+- **One mechanism.** M1's notices: a row in `notices`, the study page and `alia study show`, `markUnread` on the study thread (unless quiet), and the text in the next strategist round. Kinds:
   - `best.new`;
   - `stall` (quiet; the stall round itself follows);
   - `budget.threshold` and `budget.exhausted`;
@@ -1371,7 +1371,7 @@ What M3 added, and every place it differs from the design or from M2. Same platf
   - `rate_limit` and `usage.tight` (quiet);
   - `harvest.ready` and `harvest.failed`;
   - plus M1/M2's calibration, bench health, offline, spec and `control.*` notices.
-- **No push.** The SDK has no notification, push, or Slack API for plugins. `bb.sdk.system.attention()` only reads the global flag, and `threads.send` always starts or steers a turn. The unread study thread is what reaches the human, plus the Studies list's "new" count.
+- **No push.** The SDK has no notification, push, or Slack API for plugins. `alia.sdk.system.attention()` only reads the global flag, and `threads.send` always starts or steers a turn. The unread study thread is what reaches the human, plus the Studies list's "new" count.
 
 ### Human surface
 
@@ -1382,7 +1382,7 @@ What M3 added, and every place it differs from the design or from M2. Same platf
   - **Harvest:** state, total, sum, gap and the interaction warning, changesets with ablation, standalone, dependencies, stack, PR branch and expandable PR body, stacks, the export dir, the publish command (no button), history, an on-demand report, and a dry-run start/restart button.
   - **Overview:** a provider-usage line and a Harvest link.
 - **New RPC.** `study.findings`, `study.oracle`, `study.bench`, `study.harvest`, `study.report`, and the audited control `study.harvest.start` (dry run only).
-- **CLI.** `bb study harvest [--wait] [--restart] [--one-per-promotion] [--no-measure-standalone] [--publish]` and `bb study report`. `show` gains a Usage line (tokens, tokens per win, rate limit, usage window, projected bench time) and the harvest line.
+- **CLI.** `alia study harvest [--wait] [--restart] [--one-per-promotion] [--no-measure-standalone] [--publish]` and `alia study report`. `show` gains a Usage line (tokens, tokens per win, rate limit, usage window, projected bench time) and the harvest line.
 - **Skills.** `skills/study-harvest` from the integration map wasn't added: the grouping round's prompt carries the instructions, and the `autoresearch` skill documents harvest, budgets and limits.
 
 ### Spec additions
@@ -1410,14 +1410,14 @@ New events:
 
 The M2 end-to-end test failed on a loaded laptop because `LocalHostRunner` probed the real machine: at load 6 the health policy deferred the measurement. `LocalHostRunner` now takes an injected health probe, and every test uses `localRunner()` from `test/helpers.ts`, which returns fixed healthy readings and counts probes. Fixed sleeps and short polling loops in tests were replaced with bounded condition polling (`waitFor`, 10 s), including one test that relied on an 80 ms timing window. The full suite (17 files, 169 tests) passed three times in a row at load average 4.5–6.
 
-### Smoke test (BB 0.45, one MacBook, toy repo under /tmp)
+### Smoke test (VesnALIA 0.45, one MacBook, toy repo under /tmp)
 
 - **Toy.** `src/toy.py` has `slow_sum`, a naive `fib`, and a `dedupe` built on a linear `contains()` scan and a `bubble_sort`. The metric is the Python opcodes executed by `toy.run()` plus a fixed workload, counted with `sys.settrace` in the protected `bench/measure.py`, with 0.5% synthetic Gaussian noise, so the `noisy` protocol (real CIs) runs on a deterministic count. The gate is `bench/test_toy.py`. Calibration: noise floor 0.96%, MDE 1.00%, 0.9 s per evaluation, local bench.
 - **First attempt (`toy-m3`, discarded).** The repo had no `.gitignore`. Workers ran the tests, the snapshot's `git add -A` committed `src/__pycache__/*.pyc`, and two candidates got `conflict` verdicts on the binary. That is a real usability issue (below). The study was archived and the toy got a `.gitignore`.
 - **Study `toy-m3b`.** Settings: `max_workers = 2`, `max_candidates = 6`, default provider pi. Study thread `<thread>`; workers `<thread>`, `<thread>`, `<thread>`, `<thread>`, `<thread>`, `<thread>`.
   - All 6 candidates won: 4 human-seeded ideas (set membership, iterative fib, `sorted()`, closed-form sum) and 2 strategist ideas (items via `map`, `sorted(set(items))`).
   - Best vs base −74.4% (measured) after about 3 minutes of Running.
-  - The candidate budget ran out: the study paused itself with "harvest them with `bb study harvest`".
+  - The candidate budget ran out: the study paused itself with "harvest them with `alia study harvest`".
   - Tokens: 295,901 in total (about 24k per worker, 149,883 for the study thread since start), so 49,317 per win.
   - Notices: `best.new` ×6, `budget.threshold` ×2 (50% and 80% of candidates), `budget.exhausted`, `harvest.ready` per harvest, `control.*`.
 - **Harvest h1 (strategist grouping).**
@@ -1449,7 +1449,7 @@ The M2 end-to-end test failed on a loaded laptop because `LocalHostRunner` probe
 
   - Harvest bench time: 11 s.
   - Six local branches; the stacked ones are chained (`06 → 03 → 01 → base`). The PR bodies and `report.md` were exported, and `--publish` was refused: "the repository has no remote named origin".
-- **UI.** All seven tabs rendered in the BB app; there are in-app browser screenshots of Overview, Findings, Oracle, Bench and Harvest.
+- **UI.** All seven tabs rendered in the VesnALIA app; there are in-app browser screenshots of Overview, Findings, Oracle, Bench and Harvest.
 - **Cleanup.** Both studies and their threads were archived, and the temporary project, `/tmp` files, and toy exports were deleted. The plugin is left installed from the M3 worktree, disabled.
 
 ### Not in M3, and known issues
@@ -1461,20 +1461,20 @@ The M2 end-to-end test failed on a loaded laptop because `LocalHostRunner` probe
 - **Attribution limits.** Dependency attribution is pairwise. A failure that needs two later changesets together to explain it falls back to "all later", and a stack is linearized in best order, so a member can be stacked under another it doesn't depend on (#3 under #1 on the toy).
 - **Gate dependencies only.** A changeset that is semantically needed but doesn't break the gates when reverted (no test covers it) is not detected as a dependency.
 - **Interaction warnings.** They rely on bootstrap CIs that undercover at small n.
-- **Dollar budgets.** Dollar cost per thread isn't exposed by BB, so there are no dollar budgets.
+- **Dollar budgets.** Dollar cost per thread isn't exposed by VesnALIA, so there are no dollar budgets.
 
 ## v0.1.0: M2, remote bench and trust
 
-What M2 added, and every place it differs from the design or from M1. Same platform pins (BB 0.45.x, SDK 0.6.14). Only one BB machine existed while building it, so remote bench hosts are exercised for real against the local machine in clone mode (below), and with fake hosts in unit tests.
+What M2 added, and every place it differs from the design or from M1. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14). Only one VesnALIA machine existed while building it, so remote bench hosts are exercised for real against the local machine in clone mode (below), and with fake hosts in unit tests.
 
 ### Bench hosts
 
 - **Two modes, chosen by the spec entry.**
   - `"local"` (or an empty list) is the M1 path: plugin checkouts of the project repo on the edit host, no transfer.
-  - Any other entry is a BB machine name or host id, resolved against `bb.sdk.hosts.list()` when `study_propose` runs. Unknown or ambiguous names are spec errors that list the known machines. That machine gets **clone mode**, even when it is the server's own machine: this is how the live smoke test took the full remote path.
+  - Any other entry is a VesnALIA machine name or host id, resolved against `alia.sdk.hosts.list()` when `study_propose` runs. Unknown or ambiguous names are spec errors that list the known machines. That machine gets **clone mode**, even when it is the server's own machine: this is how the live smoke test took the full remote path.
   - The resolved list is stored per spec version (`spec_versions.bench_json`) and becomes the study's `bench_hosts` rows when that version is approved.
 - **Edit host.** Workers, snapshots, gates, and promotion refs stay on the server's machine. Remote edit hosts aren't built.
-- **Bench clone.** Each clone-mode host keeps a bare clone per study at `<dataDir>/bench/<slug>/repo.git`, where `dataDir` is the host entry's `experimental_paths.dataDir` (on the test machine, `~/.bb/plugins/bb-autoresearch/host-data/`). Measurement checkouts are worktrees of that clone, `<dataDir>/checkouts/<slug>-bench-{best,cand,drift,profile}`. Every received commit is pinned as `refs/bench/s/<sha>`, and `gc.auto` is off. `bb study archive` cancels the study's jobs, removes the checkouts, and deletes the clone.
+- **Bench clone.** Each clone-mode host keeps a bare clone per study at `<dataDir>/bench/<slug>/repo.git`, where `dataDir` is the host entry's `experimental_paths.dataDir` (on the test machine, `~/.vesnalia/plugins/alia-autoresearch/host-data/`). Measurement checkouts are worktrees of that clone, `<dataDir>/checkouts/<slug>-bench-{best,cand,drift,profile}`. Every received commit is pinned as `refs/bench/s/<sha>`, and `gc.auto` is off. `alia study archive` cancels the study's jobs, removes the checkouts, and deletes the clone.
 - **Per-study clone (decision).** A clone per project would save bootstrap transfers across studies, but a per-study clone can be deleted safely when the study is archived.
 
 ### Transfer
@@ -1483,7 +1483,7 @@ What M2 added, and every place it differs from the design or from M1. Same platf
 - **Size limit.** A bundle above `oracle.max_bundle_mib` (default 256) fails before any chunk moves. For a candidate that's verdict `rejected`, with the size and limit in the reason. For best or the baseline it's a system pause. Failed transfers are recorded too.
 - **Bootstrap by bundle (decision).** The first transfer carries the baseline's full history, instead of a `git clone` from origin. That works for repos without a remote and keeps "nothing leaves the machine". A very large repo needs a larger `max_bundle_mib` (open issue below).
 - **Promotion.** The promoted commit has the same tree as the measured candidate, so refreshing best on a bench host is a one-commit bundle.
-- **Audit.** Every transfer is a row in `transfers` (bytes, chunks, ms) and a `bench.transfer` event. `bb study bench` lists them.
+- **Audit.** Every transfer is a row in `transfers` (bytes, chunks, ms) and a `bench.transfer` event. `alia study bench` lists them.
 
 ### Long commands, progress, cancellation
 
@@ -1519,16 +1519,16 @@ What M2 added, and every place it differs from the design or from M1. Same platf
   - What the platform can't report is listed as not detectable (on macOS: governor, turbo, and on Apple Silicon the speed limit), not guessed.
 - **Policy.** `[oracle.health]` sets per-CPU load, competing-process CPU, an optional required governor, turbo off, AC power, and the CPU speed limit.
 - **Deferral.** A failing check leaves the candidate queued in its place. The host waits `retry_seconds` (60). A notice goes out once per unhealthy streak, after `notify_after_minutes` (15).
-- **Where it shows.** `bb study show` and `bb study bench` show the last report per host, and `health_checks` keeps the history.
+- **Where it shows.** `alia study show` and `alia study bench` show the last report per host, and `health_checks` keeps the history.
 
 ### Drift checks
 
-- **Engine-timed, not a cron schedule (decision).** The design asks for a check every N evaluations, and a `bb.background.schedule` cron can't count evaluations.
+- **Engine-timed, not a cron schedule (decision).** The design asks for a check every N evaluations, and a `alia.background.schedule` cron can't count evaluations.
 - **When.** Every `oracle.drift.every` evaluations per host (default 10, 0 turns it off), the host's next free slot runs an A/A check on best. A drift check takes priority over queued candidates.
 - **noisy.** `pairs` pairs of best against a second built checkout of best. The statistic is the robust SD of the paired differences, the same statistic as the calibrated noise floor.
 - **expensive.** `pairs` runs of best, compared with the host's baseline as the RMS relative deviation.
 - **deterministic.** No drift checks.
-- **Result.** Above `max_ratio` (2) × the calibrated level, the study pauses with the numbers in the reason. `bb study drift` requests a check now. Drift runs are kept in `drift_checks`, not as samples.
+- **Result.** Above `max_ratio` (2) × the calibrated level, the study pauses with the numbers in the reason. `alia study drift` requests a check now. Drift runs are kept in `drift_checks`, not as samples.
 - **Finding from the smoke test.** Relative noise grows when runs get much shorter. After a 99% speedup, the 6 ms best was 4.9× noisier relative to itself than the calibrated 600 ms baseline. The drift check paused the study, and the fix was an oracle change (more pairs) with recalibration on best: exactly the path the design intends.
 
 ### Holdout
@@ -1541,7 +1541,7 @@ What M2 added, and every place it differs from the design or from M1. Same platf
   - The numbers go only to the private `holdout_results` table.
   - The holdout's output is never stored: no samples, DIAG lines, gate output, or progress lines.
   - Verdicts, events, notices, views, and RPC carry only pass or fail.
-  - `bb study show` prints "holdout: configured (hidden from agents)", and no view exposes the spec TOML.
+  - `alia study show` prints "holdout: configured (hidden from agents)", and no view exposes the spec TOML.
   - A test checks every agent-reachable surface for the holdout's numbers, command, and DIAG text.
 - **Limits.** The creating agent drafts the spec, so it knows the command. A `local` bench host's holdout files are readable by agents on that machine (see the threat model).
 
@@ -1573,13 +1573,13 @@ What M2 added, and every place it differs from the design or from M1. Same platf
 - **The oracle hash** covers the metric, the guardrails, the oracle (commands, protocol, noise class, bench hosts, holdout, timeout) and the protected globs, plus the content hash of the protected paths at the segment baseline.
 - **Bench operations aren't part of it (decision).** `[oracle.health]`, `[oracle.drift]`, `max_bundle_mib`, and `offline_grace_minutes` don't change how a commit is judged, so tuning them is not a new segment.
 - **A spec revised after the study has run** (`study_propose` from the study thread) is **pending**. The study keeps running on the active spec, and a notice says which approval applies:
-  - **Oracle unchanged:** `bb study approve <slug>` applies it in place.
-  - **Oracle changed:** `bb study calibrate <slug>` (lifecycle Running → Calibrating) does the following:
+  - **Oracle unchanged:** `alia study approve <slug>` applies it in place.
+  - **Oracle changed:** `alia study calibrate <slug>` (lifecycle Running → Calibrating) does the following:
     - cancels in-flight measurements;
     - sends queued candidates back to the gate, keeping their queue position;
     - activates the spec;
     - calibrates on the current best on every bench host.
-  - `bb study start` then opens segment k+1, with `segments.spec_version` set and `refs/studies/<slug>/segment/<k+1>` pointing at best.
+  - `alia study start` then opens segment k+1, with `segments.spec_version` set and `refs/studies/<slug>/segment/<k+1>` pointing at best.
   - Workers keep editing during recalibration. Their submissions are accepted and wait at the gate.
   - If the new oracle fails calibration, the study goes back to the previous spec and segment and pauses, instead of dropping to Draft.
 - **"Has run"** is decided from the append-only state log, not from `running_seconds`, which a fast test clock leaves at 0.
@@ -1587,7 +1587,7 @@ What M2 added, and every place it differs from the design or from M1. Same platf
 ### Failure handling, as in the design's table
 
 - **Bench host offline.**
-  - BB's host status (`bb.sdk.hosts.get`, cached 15 s) is refreshed every control-loop pass, and offline hosts get no new measurements.
+  - VesnALIA's host status (`alia.sdk.hosts.get`, cached 15 s) is refreshed every control-loop pass, and offline hosts get no new measurements.
   - A measurement that fails while its host is disconnected restarts from scratch and isn't counted as a pipeline error.
   - The human is notified after `offline_grace_minutes` (10). The study isn't paused: workers keep editing until backpressure stops new spawns.
 - **Host worker restart mid-measurement.**
@@ -1601,8 +1601,8 @@ What M2 added, and every place it differs from the design or from M1. Same platf
 - **Threat model.** The threat model in the [design](design.md#threat-model) is new.
 - **Controls are clamped.** `study.concurrency` (RPC and CLI) can only lower `max_workers` below the approved spec; asking for more is clamped, with a message saying so. Idea priorities were already clamped to ±100, and reorders to 200 ids.
 - **Controls are audited.** Every control is audited: pause, resume (with the pause reason it cleared), concurrency, the idea board, calibrate, approve, start, drift, and archive. Each is a `control.<kind>` event whose actor is `rpc:client`, `rpc:plugin:<id>`, `cli:human`, or `cli:thread:<id>`, with the study agent turns that were running at that moment. Each also raises a notice. The study thread is marked unread only when an agent turn was running.
-- **Approval is CLI-only.** *(Superseded by the human interface pass: approval is also in the app, with the same audit; see the threat model.)* Oracle and spec approval (calibrate, approve, start) exist only in the CLI, and the CLI refuses a study's own worker and strategist threads. The SDK gives no reliable way to tell an agent from a human: RPC callers are all `client`, the CLI thread id comes from the shell environment, and plugin forms can be answered with `bb thread interactions respond`. So approval can't be made impossible from an agent shell, only refused for the cooperative case and audited.
-- **Smoke-test evidence.** The audit recorded `cli:thread:<id>` for CLI calls made from the building agent's own thread, and `rpc:client` for a `bb plugin rpc call`.
+- **Approval is CLI-only.** *(Superseded by the human interface pass: approval is also in the app, with the same audit; see the threat model.)* Oracle and spec approval (calibrate, approve, start) exist only in the CLI, and the CLI refuses a study's own worker and strategist threads. The SDK gives no reliable way to tell an agent from a human: RPC callers are all `client`, the CLI thread id comes from the shell environment, and plugin forms can be answered with `alia thread interactions respond`. So approval can't be made impossible from an agent shell, only refused for the cooperative case and audited.
+- **Smoke-test evidence.** The audit recorded `cli:thread:<id>` for CLI calls made from the building agent's own thread, and `rpc:client` for a `alia plugin rpc call`.
 
 ### Profiles
 
@@ -1615,7 +1615,7 @@ What M2 added, and every place it differs from the design or from M1. Same platf
 
 - **Overview.** It gains a Bench hosts section. Each host shows its mode, online status, health with problems and summary, what it's measuring with live progress, the shared queue depth, drift status with evaluations since the last check, the cached best build, and bundles sent. It also shows the current segment and oracle hash, and a banner for a pending spec that says which command applies it.
 - **The full Bench/Oracle tabs are M3.**
-- **CLI.** New: `bb study approve`, `bb study bench` (transfers, health history, drift checks, segments), and `bb study drift`. `show` gains segment, pending-spec, and bench host lines, and marks the holdout as hidden.
+- **CLI.** New: `alia study approve`, `alia study bench` (transfers, health history, drift checks, segments), and `alia study drift`. `show` gains segment, pending-spec, and bench host lines, and marks the holdout as hidden.
 - **Candidates.** Rows carry the bench host and holdout pass or fail.
 
 ### Data model
@@ -1631,15 +1631,15 @@ M2's migrations are append-only:
 
 New events: `bench.transfer`, `bench.unhealthy`, `bench.healthy`, `bench.offline`, `bench.online`, `bench.worker_exit`, `bench.cache_invalidated`, `measure.deferred`, `measure.restarted`, `drift.checked`, `drift.requested`, `holdout.checked`, `spec.applied`, `segment.recalibrating`, `segment.started`, and `control.*`.
 
-### Smoke test (BB 0.45, one MacBook, toy repo under /tmp)
+### Smoke test (VesnALIA 0.45, one MacBook, toy repo under /tmp)
 
 - **Setup.**
   - A Python midpoint-rule integration (about 600 ms per run at the start), on a temporary project.
   - Bench host `<host>`, named by its host id, so clone mode on the server's own machine.
   - A holdout script outside the repo (a different interval), and the guardrail `precision_digits` (higher is better, 5%).
   - `max_workers = 2`, `max_candidates = 5`, `drift.every = 2`.
-- **Spec v2, no oracle change.** Spec v1 asked for worker permission mode `auto`, which the default provider (pi) refuses. The study thread proposed spec v2 without it, `bb study approve` applied it without recalibration, and `bb study resume` continued.
-- **Bundles.** All bundles went to the bench-owned clone `~/.bb/plugins/bb-autoresearch/host-data/bench/toy-m2/repo.git`, a bare repository with no alternates, outside `/tmp/ar-m2-toy`, with checkouts as its own worktrees. Each bundle was one chunk and took about 0.4–0.5 s.
+- **Spec v2, no oracle change.** Spec v1 asked for worker permission mode `auto`, which the default provider (pi) refuses. The study thread proposed spec v2 without it, `alia study approve` applied it without recalibration, and `alia study resume` continued.
+- **Bundles.** All bundles went to the bench-owned clone `~/.vesnalia/plugins/alia-autoresearch/host-data/bench/toy-m2/repo.git`, a bare repository with no alternates, outside `/tmp/ar-m2-toy`, with checkouts as its own worktrees. Each bundle was one chunk and took about 0.4–0.5 s.
 
   | Bundle | Size |
   |---|---|
@@ -1650,26 +1650,26 @@ New events: `bench.transfer`, `bench.unhealthy`, `bench.healthy`, `bench.offline
 
 - **Health.** 7 health checks were recorded, all passing: calibration ×2, measurement ×4, drift ×1. The reports said governor and turbo are not detectable on macOS.
 - **Drift.** 1 drift check ran after 2 evaluations. It measured A/A noise 7.96% per pair against the calibrated 1.64% (4.85×, over 6 pairs), and the study paused itself.
-- **Oracle change.** The study thread proposed spec v3 (calibration_pairs and n_max 10 → 16), and it went pending. `bb study calibrate` recalibrated on best `8e90d2e` and created segment 2 (oracle `d4aa483b…`, noise floor 3.66%, MDE 2.86%), with `refs/studies/toy-m2/segment/1` and `segment/2` in the repo. `bb study start` resumed in segment 2.
+- **Oracle change.** The study thread proposed spec v3 (calibration_pairs and n_max 10 → 16), and it went pending. `alia study calibrate` recalibrated on best `8e90d2e` and created segment 2 (oracle `d4aa483b…`, noise floor 3.66%, MDE 2.86%), with `refs/studies/toy-m2/segment/1` and `segment/2` in the repo. `alia study start` resumed in segment 2.
 - **Holdout.** It passed on all 4 promotions (c/1, c/2, c/3, c/5; only the private table holds the numbers).
 - **Results.** Verdicts were 4 wins and 1 conflict. Best vs base was +99.6% (616 ms → about 2.7 ms).
 - **No guardrail-driven `lose`.** Two human ideas meant to trade precision for speed, "10x fewer steps" and "3,000 steps, no extrapolation", were handled by the workers anticipating the guardrail. One used Richardson extrapolation instead and won. The other recorded a `not_attempted` finding ("certain to break the precision guardrail"). Guardrail rejection is covered by unit tests.
-- **Audit.** A `bb plugin rpc call autoresearch study.concurrency {maxWorkers: 10}` was clamped to 2 and audited as `control.concurrency` by `rpc:client`.
+- **Audit.** A `alia plugin rpc call autoresearch study.concurrency {maxWorkers: 10}` was clamped to 2 and audited as `control.concurrency` by `rpc:client`.
 - **Code version.** The smoke test ran on commit `ed044fe`. The later changes (the expensive class switched to t thresholds, bench tuning moved out of the oracle hash, and a transfer label) don't touch the noisy path it exercised.
 - **Cleanup.** The study and every thread were archived, and archive deleted the bench clone. The temporary project and worktree, the `/tmp` files, and the empty bench directory were deleted. The plugin is left installed from the M2 worktree, disabled.
 
 ### Not in M2
 
-- **Exit criterion.** "A full day on a remote x86 bench host" wasn't run: only one BB machine exists, and enrolling machines was out of bounds. Multi-host behavior (parallel hosts, per-host dispatch, offline, worker exit) is covered by fake-host unit tests only.
+- **Exit criterion.** "A full day on a remote x86 bench host" wasn't run: only one VesnALIA machine exists, and enrolling machines was out of bounds. Multi-host behavior (parallel hosts, per-host dispatch, offline, worker exit) is covered by fake-host unit tests only.
 - **Remote edit hosts.** Workers and gates run on the server's machine.
 - **Bootstrap without a big bundle.** A very large repo would need a large `max_bundle_mib` or a bench clone from origin.
 - **Health tuning.** Health thresholds aren't calibrated per machine: the defaults suit a quiet dedicated host, and a busy laptop needs looser `[oracle.health]` limits.
-- **Caller identity.** Approval from an agent shell can't be prevented without caller identity from BB (see the threat model).
+- **Caller identity.** Approval from an agent shell can't be prevented without caller identity from VesnALIA (see the threat model).
 - **M3 tabs.** The Findings, Oracle, Bench, and Harvest tabs.
 
 ## v0.1.0: M1, parallel
 
-What M1 added, and every place it differs from the design or from M0. Same platform pins (BB 0.45.x, SDK 0.6.14).
+What M1 added, and every place it differs from the design or from M0. Same platform pins (VesnALIA 0.45.x, SDK 0.6.14).
 
 ### Concurrency
 
@@ -1689,7 +1689,7 @@ What M1 added, and every place it differs from the design or from M0. Same platf
   - `T_eval` is the mean bench seconds of the last 20 measured candidates. Until one exists, it's the calibration estimate.
   - With no submissions yet, `W = max_workers`.
   - Each change of W is a `scheduler.target` event, and the value is stored on the study.
-  - The human can override `max_workers` with `bb study concurrency <slug> <n|auto>` or the page's concurrency control.
+  - The human can override `max_workers` with `alia study concurrency <slug> <n|auto>` or the page's concurrency control.
   - Lowering W during provider rate limits isn't built.
 - **Backpressure.** The bench queue depth counts candidates in `gating`, `queued`, `measuring`, or `confirming`. No worker spawns while that depth is at least W.
 - **Budget reservation.** Each live worker reserves one submission against `max_candidates`, so the study never spawns a worker that has no budget left to submit. A submission past the budget is refused.
@@ -1720,7 +1720,7 @@ What M1 added, and every place it differs from the design or from M0. Same platf
 
 - **No push without a turn.** The SDK can't post a message into a thread without starting or steering a turn: `threads.send` modes are `start`, `steer`, `auto`, and the queue variants.
 - **Notices instead.** Milestones (calibration ready or failed, system pauses including budget exhaustion) are rows in `notices`:
-  - shown on the study page and in `bb study show`, and counted on the Studies list;
+  - shown on the study page and in `alia study show`, and counted on the Studies list;
   - the study thread is marked unread with `threads.markUnread`;
   - the text rides along in the next strategist round under "Notices for the human".
 - **Before Running.** There are no rounds yet, so undelivered notices are steered into the human's own next turn in the study thread. This is how the creating agent hears about calibration results.
@@ -1744,10 +1744,10 @@ What M1 added, and every place it differs from the design or from M0. Same platf
   - **Candidates:** a table filterable by verdict, stage, and text. A row opens the verdict and reasons, the summary, samples per pair, gate output, diagnostics, and a diff summary. The diff comes from the new `diffSummary` host op, rendered per file with `experimental_Diff`. There's a link to the worker thread.
   - The Findings, Oracle, Bench, and Harvest tabs are still M3.
 - **Thread header badge** (`experimental_threadHeaderAction`). On the study thread it reads `run N · best −x% ±y · W workers · queue Q`, prefixed with the state when not running. On a worker thread it reads `<slug> · idea #N · submission k/max · <phase>`, where the phase is working, gating, queued Nth, measuring, or confirming. Clicking it opens the study page. Other threads render nothing.
-- **Data plane.** The page reads everything through `bb.rpc`: `studies.list`, `study.overview`, `study.ideas`, `study.candidates`, `study.candidate`, and `thread.badge`. It writes through `study.pause`, `study.resume`, `study.concurrency`, `ideas.add`, `ideas.update`, `ideas.reorder`, and `ideas.veto`. It refetches on the `study-changed` realtime signal (debounced), on reconnect, and on a 5 s poll. The plugin publishes that signal at every stage change.
+- **Data plane.** The page reads everything through `alia.rpc`: `studies.list`, `study.overview`, `study.ideas`, `study.candidates`, `study.candidate`, and `thread.badge`. It writes through `study.pause`, `study.resume`, `study.concurrency`, `ideas.add`, `ideas.update`, `ideas.reorder`, and `ideas.veto`. It refetches on the `study-changed` realtime signal (debounced), on reconnect, and on a 5 s poll. The plugin publishes that signal at every stage change.
 - **Branding.** The plugin ships its flask glyph (`assets/flask.svg`), registered as the app icon `autoresearch-flask`.
-- **Security gap.** RPC writes refuse other plugins as callers (`experimental_caller.kind === "plugin"`). The RPC context doesn't say which thread called, though, so an agent could still call them through `bb plugin rpc call`. They're bounded human controls (pause, resume, concurrency, the idea board), not verdicts or promotion. Closing this gap needs caller-thread identity from BB.
-- **CLI.** New: `bb study concurrency`, and `ideas add --start-ref --variation-of`. `show` adds a Scheduler line (W, queue, think, eval), a Bench line (utilization and overlaps), and notices.
+- **Security gap.** RPC writes refuse other plugins as callers (`experimental_caller.kind === "plugin"`). The RPC context doesn't say which thread called, though, so an agent could still call them through `alia plugin rpc call`. They're bounded human controls (pause, resume, concurrency, the idea board), not verdicts or promotion. Closing this gap needs caller-thread identity from VesnALIA.
+- **CLI.** New: `alia study concurrency`, and `ideas add --start-ref --variation-of`. `show` adds a Scheduler line (W, queue, think, eval), a Bench line (utilization and overlaps), and notices.
 
 ### Data model
 
@@ -1761,7 +1761,7 @@ M1's migrations are append-only:
 
 New events: `measure.started` and `measure.finished`, `candidate.rebased`, `scheduler.target`, `worker.notified`, `study.concurrency`, `notice.added`, and `idea.pinned`.
 
-### Smoke test (BB 0.45, local host, toy repo under /tmp)
+### Smoke test (VesnALIA 0.45, local host, toy repo under /tmp)
 
 Three studies ran on one toy Python pipeline with a `noisy` metric. All had `max_workers = 3`, `max_candidates = 6`, and 2 submissions per worker, and all used the default agent provider.
 
@@ -1773,7 +1773,7 @@ Three studies ran on one toy Python pipeline with a `noisy` metric. All had `max
 
 - **No overlaps.** Measurements never overlapped (`bench_intervals` self-join). Every sample's timestamp fell inside its own candidate's measurement interval.
 - **No notification turns.** No notification started a turn: the study threads went unread, and the notices arrived in the next round.
-- **Live in the app.** The study page and the badge rendered in the BB app (checked with in-app browser screenshots).
+- **Live in the app.** The study page and the badge rendered in the VesnALIA app (checked with in-app browser screenshots).
 - **What the numbers say.** Utilization follows the formula. When eval takes longer than think, the bench saturates (85% in steady state). When think takes longer than eval, W wants `ceil(18/5) + 1 = 5`, the cap of 3 starves the bench, and utilization drops to 21%. Short studies also pay for the first think period while the bench sits idle. Meeting the > 80% exit criterion on a real workload needs `max_workers` at least `T_think / T_eval + 1`, and a study long enough to amortize the start. That claim isn't proven yet.
 - **Agents were fast.** Workers on this toy thought for only 17–22 s and mostly finished after one submission.
 
@@ -1787,20 +1787,20 @@ Three studies ran on one toy Python pipeline with a `noisy` metric. All had `max
 
 ## v0.1.0: M0, the main assumption
 
-What M0 built, and every place it differs from the [design](design.md). Checked against BB 0.45.0 and `@get-bb/plugin-sdk` 0.6.14.
+What M0 built, and every place it differs from the [design](design.md). Checked against VesnALIA 0.45.0 and `@vesnalia/plugin-sdk` 0.6.14.
 
 ### Platform
 
-- **SDK pin.** `bb plugin types` selects 0.6.15, which is not published to npm. The plugin pins 0.6.14, the newest published version (`engines.bbPluginSdk: ">=0.6.14"`). Every API used exists in both.
-- **Host RPC is the only path to the machine.** Git, gates, builds and measurements run through the `bb.host` entry (`host.ts`) via `bb.hosts.experimental_client`, targeting `bb.sdk.system.config().primaryHostId`. The server never touches the repo with `child_process`. The same ops also run in-process behind the `HostRunner` interface (`LocalHostRunner`), which the tests use. M2 adds remote bench hosts by pointing a `HostRunner` at another host id.
+- **SDK pin.** `alia plugin types` selects 0.6.15, which is not published to npm. The plugin pins 0.6.14, the newest published version (`engines.aliaPluginSdk: ">=0.6.14"`). Every API used exists in both.
+- **Host RPC is the only path to the machine.** Git, gates, builds and measurements run through the `alia.host` entry (`host.ts`) via `alia.hosts.experimental_client`, targeting `alia.sdk.system.config().primaryHostId`. The server never touches the repo with `child_process`. The same ops also run in-process behind the `HostRunner` interface (`LocalHostRunner`), which the tests use. M2 adds remote bench hosts by pointing a `HostRunner` at another host id.
 - **Call duration.** A host call is capped at 30 minutes, so one `build`, `gate` or `measure` command is capped at 29 (`oracle.timeout_minutes`, default 20). A paired measurement is many calls, so a whole evaluation can run longer. Benchmarks that need more than 29 minutes per run need a background job on the host that reports through signals (open question 3, M2). *(M2: built as host jobs; see [the M2 notes](#v010-m2-remote-bench-and-trust).)*
 - **Repo location.** The study's repo is the project's checkout on the server's machine (`projects.get().sources`). Projects without one are refused in M0.
 
 ### Git model
 
 - **One commit per candidate, built without a checkout.** `prepareCandidate` applies the worker's changes since its fork point onto the current `best` with `git merge-tree --write-tree` and `git commit-tree`. The result is a single commit whose parent is `best`: it is both the rebase (step 3) and the squash (step 8). Gates and measurements run on that commit, and promotion re-messages it and compare-and-swaps `studies/<slug>/best` onto it. A failed merge is the `conflict` verdict. This needs git 2.38 or newer.
-- **Plugin-owned checkouts.** Gates and measurements run in detached worktrees under the host bundle's data directory (`<slug>-gate`, `<slug>-best`, `<slug>-cand`), never in the worker's worktree. `bb study archive` removes them.
-- **Worker branches.** BB's managed-worktree provider names the worker's branch itself (for example `<user>/<slug>-idea-1-…-thr_x`). The spawn API takes only a base branch, so `studies/<slug>/w/<n>` isn't used. When a worker ends, the plugin archives and stops the thread, deletes its environment once no live thread uses it (`environments.delete`, instead of waiting for core's retirement grace period), and deletes the branch. Candidate refs keep the commits.
+- **Plugin-owned checkouts.** Gates and measurements run in detached worktrees under the host bundle's data directory (`<slug>-gate`, `<slug>-best`, `<slug>-cand`), never in the worker's worktree. `alia study archive` removes them.
+- **Worker branches.** VesnALIA's managed-worktree provider names the worker's branch itself (for example `<user>/<slug>-idea-1-…-thr_x`). The spawn API takes only a base branch, so `studies/<slug>/w/<n>` isn't used. When a worker ends, the plugin archives and stops the thread, deletes its environment once no live thread uses it (`environments.delete`, instead of waiting for core's retirement grace period), and deletes the branch. Candidate refs keep the commits.
 - **Starting from a candidate.** An idea with `start_ref = "c/12"` gets a branch `studies/<slug>/start/<idea>` at that candidate. Its fork point is the candidate's own fork point, so its changes carry forward onto the current `best`.
 
 ### Pipeline and statistics
@@ -1817,10 +1817,10 @@ What M0 built, and every place it differs from the [design](design.md). Checked 
 
 ### Agents
 
-- **Role gating.** `bb.agents.configure` is synchronous, and so is better-sqlite3, so `configure` checks both the metadata and the `threads` table. Worker metadata selects worker tools only when it matches a live worker row (by thread id, or by `spawnToken` while the spawn call is still in flight). Strategists are known only by their row. A thread with no row gets `study_propose` and the two skills. Every tool call checks the role against the table again. Forged metadata gets no tools.
+- **Role gating.** `alia.agents.configure` is synchronous, and so is better-sqlite3, so `configure` checks both the metadata and the `threads` table. Worker metadata selects worker tools only when it matches a live worker row (by thread id, or by `spawnToken` while the spawn call is still in flight). Strategists are known only by their row. A thread with no row gets `study_propose` and the two skills. Every tool call checks the role against the table again. Forged metadata gets no tools.
 - **`threads` has a surrogate id and a `spawn_token`.** The thread id isn't known until `threads.spawn` returns, and `configure` (or a fast first tool call) can run before that. The token in the worker's metadata ties the thread to its row. Reconciliation uses it to adopt or fail spawns that were interrupted.
-- **Strategist tools need a fresh session.** Tool sets apply when a provider session starts. The study thread is created as an ordinary thread, so `bb study start` stops its runtime (when idle) and the first strategist round opens a new session that has the strategist tools. The smoke test confirmed this.
-- **Human-message trigger.** BB has no "a human sent a message" event. A `thread.active` on the study thread that the plugin didn't cause counts as the human trigger. If there are new verdicts or findings, the digest is sent with `mode: "auto"`, which steers it into the human's turn. Plugin-sent notifications (calibration results, system pauses) count as rounds so they don't look like human messages. *(M1: notifications no longer start turns; see Notices below.)*
+- **Strategist tools need a fresh session.** Tool sets apply when a provider session starts. The study thread is created as an ordinary thread, so `alia study start` stops its runtime (when idle) and the first strategist round opens a new session that has the strategist tools. The smoke test confirmed this.
+- **Human-message trigger.** VesnALIA has no "a human sent a message" event. A `thread.active` on the study thread that the plugin didn't cause counts as the human trigger. If there are new verdicts or findings, the digest is sent with `mode: "auto"`, which steers it into the human's turn. Plugin-sent notifications (calibration results, system pauses) count as rounds so they don't look like human messages. *(M1: notifications no longer start turns; see Notices below.)*
 - **Round triggers** are K verdicts (`agents.strategist_every`), queue low (fewer ready ideas than W, only after something changed, so an unproductive round doesn't loop), stall (`agents.stall_after` verdicts without a win, once per window), the human, and a first round at start.
 - **Idle handling.** Idle time starts at `thread.idle` and doesn't count while a verdict is pending. One nudge comes after `idle_nudge_minutes`. A worker still idle at `idle_abandon_minutes` is stopped and archived, and its idea is marked `abandoned`. A new submission clears the nudge.
 - **Rate limits.** `turn.failed` with category `rate-limit` is retried at the window reset plus 15 s, up to 3 times.
@@ -1831,7 +1831,7 @@ What M0 built, and every place it differs from the [design](design.md). Checked 
 ### Human surface
 
 - **No frontend.** The Study page, Studies nav panel, and header badges are deferred (M1/M3). The CLI is the M0 surface. *(M1: the Studies panel, study page v1, and the header badge exist; see M1 below.)*
-- **Approval is in the CLI.** `bb study calibrate` approves the current spec version and calibrates. `bb study start` approves the calibration. Also built: `list`, `show`, `pause`, `resume`, `ideas add`, `ideas list`, `workers`, and `archive`. `harvest` prints a placeholder. Human controls are refused when they come from a study's own worker or strategist thread. The strategist may run `ideas add`.
+- **Approval is in the CLI.** `alia study calibrate` approves the current spec version and calibrates. `alia study start` approves the calibration. Also built: `list`, `show`, `pause`, `resume`, `ideas add`, `ideas list`, `workers`, and `archive`. `harvest` prints a placeholder. Human controls are refused when they come from a study's own worker or strategist thread. The strategist may run `ideas add`.
 - **Pause** stops new spawns. In-flight candidates finish and running workers keep their submission. Holding worker messages with the experimental `message.dispatch` hook isn't used.
 
 ### Data model

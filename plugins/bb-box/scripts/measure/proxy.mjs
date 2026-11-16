@@ -1,16 +1,16 @@
-// A viewer's way to bb-box's desktop route through BB's server, for measuring.
+// A viewer's way to alia-box's desktop route through VesnALIA's server, for measuring.
 // The browser loads pages from here (a secure context: localhost) and opens
 // ws://127.0.0.1:7000/bb?box=..&viewer=..[&stream=selkies]; this proxy sends
-// the upgrade on to BB's server with no Origin, as a client of its own, and
+// the upgrade on to VesnALIA's server with no Origin, as a client of its own, and
 // then copies bytes both ways. Static files come from ./web.
-// usage: node proxy.mjs <file holding BB's server URL>
+// usage: node proxy.mjs <file holding VesnALIA's server URL>
 import { createServer } from "node:http";
 import { connect as tls } from "node:tls";
 import { connect as tcp } from "node:net";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
 const server = new URL(readFileSync(process.argv[2], "utf8").trim());
-const route = "/api/v1/plugins/bb-box/http/desktop";
+const route = "/api/v1/plugins/alia-box/http/desktop";
 const types = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml", ".png": "image/png" };
 const http = createServer((req, res) => {
   const path = join("web", decodeURIComponent(new URL(req.url, "http://x").pathname));

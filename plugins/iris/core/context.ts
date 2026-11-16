@@ -1,7 +1,7 @@
 // ContextMeter: how full a session's context window is, by category, with its
-// cost, and how both moved over the session. Reads load("bb:thread") ({title,
+// cost, and how both moved over the session. Reads load("VesnALIA:thread") ({title,
 // context: {used, window, percent, model, categories}, cost}), a list of them
-// (load("bb:threads?usage=1"), which also totals by model), or plain
+// (load("VesnALIA:threads?usage=1"), which also totals by model), or plain
 // {used, window, model?, categories?, cost?}. History comes from points
 // [{t, used, cost?}] or from the readings a live card sees as it re-reads.
 
@@ -88,8 +88,8 @@ export function readContext(input: unknown): ContextModel {
   const list = Array.isArray(input) ? input.filter(isObj) : isObj(input) ? [input] : [];
   const rows = list.map(rowOf).filter((r): r is ContextRow => !!r);
   if (input != null && !rows.length) {
-    if (list.length && list.every((o) => o.context === null)) problems.push("bb has no context reading for this session yet");
-    else problems.push('needs load("bb:thread"), a list from load("bb:threads?usage=1"), or {used, window}');
+    if (list.length && list.every((o) => o.context === null)) problems.push("alia has no context reading for this session yet");
+    else problems.push('needs load("VesnALIA:thread"), a list from load("VesnALIA:threads?usage=1"), or {used, window}');
   }
   const models = new Map<string, ModelTotal>();
   for (const r of rows) {

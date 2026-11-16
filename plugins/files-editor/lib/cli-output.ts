@@ -1,5 +1,5 @@
 /**
- * BB rejects an oversized CLI result outright rather than clipping it, so a big
+ * VesnALIA rejects an oversized CLI result outright rather than clipping it, so a big
  * file has to be cut before it is returned.
  */
 export function clipForCli(

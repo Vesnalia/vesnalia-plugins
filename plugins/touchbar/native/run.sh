@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP="${BB_TOUCHBAR_APP:-$HOME/Applications/BBTouchBar.app}"
+APP="${ALIA_TOUCHBAR_APP:-$HOME/Applications/BBTouchBar.app}"
 BIN="$APP/Contents/MacOS/BBTouchBar"
 READY="$HOME/Library/Application Support/BBTouchBar/BBTouchBar.ready"
 

@@ -38,7 +38,7 @@ export function mountHints(doc: Document, getConfig: () => Promise<Config | unde
       if (!info || b.disabled || !visible(b)) continue;
       current.add(b);
       if (!originals.has(b)) originals.set(b, {title: b.getAttribute('title'), aria: b.getAttribute('aria-keyshortcuts')});
-            // Do not add a browser title: BB already owns a Radix tooltip.
+            // Do not add a browser title: VesnALIA already owns a Radix tooltip.
       setAttribute(b, 'title', null);
       setAttribute(b, 'aria-keyshortcuts', info.aria);
       if (held && enabled) {
@@ -56,7 +56,7 @@ export function mountHints(doc: Document, getConfig: () => Promise<Config | unde
         badge.style.top = `${Math.max(28,rect.top-4)}px`;
       }
     }
-    // Follow aria-describedby to BB's existing tooltip; touch only known text
+    // Follow aria-describedby to VesnALIA's existing tooltip; touch only known text
     // nodes, retaining the portal, placement, animation and accessible copy.
     for (const b of current) {
       const label = b.getAttribute('aria-label');

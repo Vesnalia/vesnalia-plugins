@@ -424,7 +424,7 @@ export const Grid = forwardRef<GridHandle, Props>(function Grid(props, ref) {
   const colSelected = (col: number) => range !== null && col >= range.c1 && col <= range.c2;
 
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden bg-background" role="grid" aria-rowcount={sheet.rows} aria-colcount={sheet.cols} data-bb-ru-skip="">
+    <div className="relative h-full min-h-0 w-full overflow-hidden bg-background" role="grid" aria-rowcount={sheet.rows} aria-colcount={sheet.cols} data-alia-ru-skip="">
       <div
         className="absolute left-0 top-0 border-b border-r border-border bg-muted"
         style={{ width: gutter, height: HEADER_HEIGHT }}

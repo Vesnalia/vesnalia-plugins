@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 const hosts:ReturnType<typeof createFakePluginHost>[]=[];
-async function host(){const h=createFakePluginHost({pluginId:"threadspace"});hosts.push(h);await plugin(h.bb);return h;}
+async function host(){const h=createFakePluginHost({pluginId:"threadspace"});hosts.push(h);await plugin(h.alia);return h;}
 afterEach(async()=>{await Promise.all(hosts.splice(0).map(h=>h.harness.lifecycle.dispose()));});
 describe("project emoji storage",()=>{
   it("toggles hover sidebar mode through its setting",async()=>{

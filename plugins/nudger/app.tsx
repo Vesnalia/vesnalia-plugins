@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { definePluginApp, useBbNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { ContinuationBanner } from "./continuation-banner.js";
 import type { rpcContract } from "./rpc-contract.js";
 import type { NudgerSnapshot } from "./nudger-contract.js";
@@ -34,7 +34,7 @@ function jevStatus(config: Configuration): { headline: string; problem: boolean;
 }
 function NudgerSettings() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const connected = useRealtimeConnectionState() === "connected";
   const [config, setConfig] = useState<Configuration | null>(null);
   const [snapshot, setSnapshot] = useState<NudgerSnapshot | null>(null);

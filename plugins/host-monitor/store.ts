@@ -35,7 +35,7 @@ export const hostMonitorMigrations = [
     swap_out_pages_per_second REAL,
     refault_pages_per_second REAL,
     reclaim_pages_per_second REAL,
-    bb_cgroup_memory_bytes INTEGER,
+    alia_cgroup_memory_bytes INTEGER,
     processes_json TEXT NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS memory_diagnostics_collected_at ON memory_diagnostics(collected_at)`,

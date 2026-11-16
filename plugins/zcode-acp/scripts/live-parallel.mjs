@@ -1,6 +1,6 @@
 // Live proof that ZCode tasks run side by side through zcode-acp (Mac mini, real zcbridge, real ZCode; spends a little of the owner's plan).
 // usage: node scripts/live-parallel.mjs <project folder known to ZCode> [reads per task, default 25]
-// Three ACP agent processes (like three BB chats) start a task each, back to back. Each task reads N small files one tool call at a time, so it
+// Three ACP agent processes (like three VesnALIA chats) start a task each, back to back. Each task reads N small files one tool call at a time, so it
 // runs for about a minute. While the others run, task C is cancelled, and task A gets a second turn (continue) as soon as its first turn ends.
 // Prints the time line, then the check of every answer. Exit code 1 when an answer is wrong or the tasks did not overlap.
 import { execFileSync } from "node:child_process";

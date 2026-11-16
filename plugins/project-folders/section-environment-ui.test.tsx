@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeAll, afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { installTestMatchMedia } from "./test-match-media";
 import {
   composerEnvironmentId,
@@ -36,7 +36,7 @@ beforeAll(async () => {
 });
 afterEach(cleanup);
 
-describe("the control BB renders for it", () => {
+describe("the control VesnALIA renders for it", () => {
   it("keeps parents before children and counts the depth", () => {
     const options = sectionOptions(
       { folders: [nested, section, remote], roots: [root] },
@@ -118,7 +118,7 @@ describe("the control BB renders for it", () => {
   });
 });
 
-describe("the line naming the section under BB's own composer", () => {
+describe("the line naming the section under VesnALIA's own composer", () => {
   it("names the section of the environment the composer reuses", () => {
     const tree = {
       folders: [section, nested],
@@ -129,15 +129,15 @@ describe("the line naming the section under BB's own composer", () => {
       label: "Project / Website / Design",
       path: "/work/Website/Design",
     });
-    // An environment outside the tree is BB's own business.
+    // An environment outside the tree is VesnALIA's own business.
     expect(environmentLabel(tree, "env-unknown")).toBeNull();
   });
-  it("reads only a reused environment out of BB's picker keys", () => {
+  it("reads only a reused environment out of VesnALIA's picker keys", () => {
     const session = {
       getItem: (k: string) =>
         ({
-          "bb.promptbox.environment-p1-1": "reuse:env-1",
-          "bb.promptbox.environment-p2-1": "provider:project-checkout",
+          "alia.promptbox.environment-p1-1": "reuse:env-1",
+          "alia.promptbox.environment-p2-1": "provider:project-checkout",
         })[k] ?? null,
     };
     expect(composerEnvironmentId("p1", session)).toBe("env-1");
@@ -153,7 +153,7 @@ describe("the line naming the section under BB's own composer", () => {
   });
 });
 
-describe("the section picker in BB's own composer", () => {
+describe("the section picker in VesnALIA's own composer", () => {
   it("sets the composer's environment to that section's folder and machine", async () => {
     const registration = app.composerCustomizations
       .flatMap((c) => c.banners ?? [])

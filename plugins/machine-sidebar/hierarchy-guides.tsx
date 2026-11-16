@@ -1,4 +1,4 @@
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import { HIERARCHY_GUIDES_SETTING } from "./tree";
 
 /** Center of a depth's child toggle (`left: 4 + depth * 14`, 16px wide). */

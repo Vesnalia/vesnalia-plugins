@@ -21,7 +21,7 @@ export function mountTimelineActivity({ signal }: { signal: AbortSignal }) {
     if (!enabled) return;
     document.querySelectorAll<HTMLElement>(GROUP).forEach(group => {
       const children = Array.from(group.querySelectorAll<HTMLElement>(ROW)).filter(row => row.parentElement?.closest(ROW) === group);
-      // BB's shimmer marks live work. Unknown structures fall back to the native UI.
+      // VesnALIA's shimmer marks live work. Unknown structures fall back to the native UI.
       const live = children.some(row => row.querySelector(".animate-shine"));
       const past = live ? children.filter(row =>
         row.querySelector(".opacity-40") && !row.querySelector(".animate-shine, .text-destructive-text, [role=alert]") &&

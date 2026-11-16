@@ -3,7 +3,7 @@
 // Both ends of §8.8 (the row menu in the panel and the composer's own file
 // browser) add the same thing: one @-mention pill per file, bound to this
 // plugin's `file` provider, with the absolute path as its item id.
-import type { PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 
 import { MENTION_PROVIDER_ID, type FileEntry } from "../contract";
 

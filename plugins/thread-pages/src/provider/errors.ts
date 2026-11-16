@@ -1,5 +1,5 @@
-// bb/SDK failure → ProviderError: one mapping on the SDK's structured `status` / `body.code`, no message regexes
-// (DESIGN §B.0, D-bb-17). `message` names the member, never a path (05 R2.42); the cause rides along for the log.
+// alia/SDK failure → ProviderError: one mapping on the SDK's structured `status` / `body.code`, no message regexes
+// (DESIGN §B.0, D-alia-17). `message` names the member, never a path (05 R2.42); the cause rides along for the log.
 import { ProviderError } from "../../core/src/host/index.ts";
 
 export function asRecord(value: unknown): Record<string, unknown> | null {
@@ -48,10 +48,10 @@ export function providerError(error: unknown, context: string): ProviderError {
   const status = httpStatus(error);
   const code = bodyCode(error);
   if (status === 404 || code === "not_found" || code === "ENOENT") return new ProviderError("not_found", `${context}: not found`, undefined, { cause: error });
-  if (status === 413 || code === "file_too_large") return new ProviderError("too_large", `${context}: larger than bb reads`, undefined, { cause: error });
+  if (status === 413 || code === "file_too_large") return new ProviderError("too_large", `${context}: larger than VesnALIA reads`, undefined, { cause: error });
   if (status === 409 || code === "conflict") return new ProviderError("conflict", `${context}: conflict`, undefined, { cause: error });
   if (status === 410 || code === "thread_archived") return new ProviderError("unavailable", `${context}: archived`, "archived", { cause: error });
-  if ((status !== null && status >= 500) || isNetworkError(error)) return new ProviderError("unavailable", `${context}: bb did not answer`, undefined, { cause: error });
+  if ((status !== null && status >= 500) || isNetworkError(error)) return new ProviderError("unavailable", `${context}: VesnALIA did not answer`, undefined, { cause: error });
   return new ProviderError("other", `${context}: ${errorText(error)}`, undefined, { cause: error });
 }
 

@@ -5,7 +5,7 @@
 // since when, when they were last synced well, the tracker's own words,
 // what to do, and two buttons, "Sync now" and "Show log".
 //
-// Why: the owner (bead-bb-c9l.16): "Failures should be displayed in the
+// Why: the owner (bead-alia-c9l.16): "Failures should be displayed in the
 // plugin ... it will be pretty prominent because ... it can mess up the
 // data." A sync that does not work means changes made here stay here and
 // changes made elsewhere do not arrive; work is then lost or done twice.

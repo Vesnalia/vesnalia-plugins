@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { BotInfo, rpcContract, TaskStats, TodoView } from "../server";
 
 /** Every task with its relations, kept current by the server's change signal. */

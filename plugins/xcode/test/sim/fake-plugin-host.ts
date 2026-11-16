@@ -1,9 +1,9 @@
 /**
- * A small, host-faithful fake of `BbPluginApi`.
+ * A small, host-faithful fake of `AliaPluginApi`.
  *
- * bb ships `@bb/plugin-sdk/testing`'s `createFakePluginHost`, which is the
+ * VesnALIA ships `@vesnalia/plugin-sdk/testing`'s `createFakePluginHost`, which is the
  * official version of this and does far more. It is **not published to npm** —
- * it lives in the bb monorepo — and this repo ships publicly, so a stranger
+ * it lives in the VesnALIA monorepo — and this repo ships publicly, so a stranger
  * running `npm ci && npm test` has to get a green suite without it. Rather than
  * skip the backend tests, this reproduces the host semantics the tests actually
  * depend on, and each one is named below so the list is auditable:
@@ -16,12 +16,12 @@
  *   output validation through the contract's Standard Schema
  * - strict-JSON results: `undefined` and non-finite numbers are rejected rather
  *   than coerced
- * - `onDispose` hooks run LIFO, and every `bb.*` call after disposal throws
+ * - `onDispose` hooks run LIFO, and every `VesnALIA.*` call after disposal throws
  *   `PluginContextStaleError` **by name**
  * - background services started on demand and aborted on dispose
  * - CLI `run(argv, ctx)` with argv excluding the command name
- * - `bb.sdk` calls recorded, with an unstubbed path throwing and naming itself
- * - `bb.hosts.experimental_client`: calls need an explicit `hostId`, input
+ * - `alia.sdk` calls recorded, with an unstubbed path throwing and naming itself
+ * - `alia.hosts.experimental_client`: calls need an explicit `hostId`, input
  *   and output are validated against the contract with a JSON round-trip in
  *   between, and signals are validated against their declared payload
  */
@@ -78,9 +78,9 @@ export interface FakeHostOptions {
   pluginId?: string;
   settings?: Record<string, string | boolean>;
   sdk?: Record<string, unknown>;
-  /** Answers `bb.hosts.experimental_client(...).call`, as a host worker would. */
+  /** Answers `alia.hosts.experimental_client(...).call`, as a host worker would. */
   hostRpc?: (call: HostRpcCall) => Promise<unknown>;
-  /** Answers `bb.ui.requestInput`; the default cancels, like nobody answering. */
+  /** Answers `alia.ui.requestInput`; the default cancels, like nobody answering. */
   requestInput?: (request: unknown) => Promise<unknown>;
 }
 
@@ -122,7 +122,7 @@ export interface Harness {
   };
 }
 
-export function createFakePluginHost(options: FakeHostOptions = {}): { bb: unknown; harness: Harness } {
+export function createFakePluginHost(options: FakeHostOptions = {}): { alia: unknown; harness: Harness } {
   const pluginId = options.pluginId ?? "xcode-simulators";
   const dir = mkdtempSync(join(tmpdir(), "xcsim-test-"));
   const dbPath = join(dir, "data.db");
@@ -165,7 +165,7 @@ export function createFakePluginHost(options: FakeHostOptions = {}): { bb: unkno
   const workerExitHandlers: Array<(event: { hostId: string }) => unknown> = [];
   let migrationsApplied = 0;
 
-  /** Every `bb.sdk` path is recorded; an unstubbed one throws naming itself. */
+  /** Every `alia.sdk` path is recorded; an unstubbed one throws naming itself. */
   function sdkProxy(path: string[]): unknown {
     return new Proxy(() => {}, {
       get(_target, property) {
@@ -180,7 +180,7 @@ export function createFakePluginHost(options: FakeHostOptions = {}): { bb: unkno
         sdkCalls.push(name);
         const stub = resolveStub(path);
         if (typeof stub !== "function") {
-          throw new Error(`bb.sdk.${name} is not stubbed — add it to createFakePluginHost({ sdk })`);
+          throw new Error(`alia.sdk.${name} is not stubbed — add it to createFakePluginHost({ sdk })`);
         }
         return (stub as (...a: unknown[]) => unknown)(...args);
       },
@@ -196,7 +196,7 @@ export function createFakePluginHost(options: FakeHostOptions = {}): { bb: unkno
     return node;
   }
 
-  const bb = {
+  const alia = {
     pluginId,
 
     log: {
@@ -263,14 +263,14 @@ export function createFakePluginHost(options: FakeHostOptions = {}): { bb: unkno
       migrate: (target: BetterSqlite3.Database, statements: string[]) => {
         assertLive("storage.migrate");
         target.exec(
-          `CREATE TABLE IF NOT EXISTS _bb_migrations (idx INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)`,
+          `CREATE TABLE IF NOT EXISTS _alia_migrations (idx INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)`,
         );
         const applied = new Set(
-          (target.prepare(`SELECT idx FROM _bb_migrations`).all() as Array<{ idx: number }>).map(
+          (target.prepare(`SELECT idx FROM _alia_migrations`).all() as Array<{ idx: number }>).map(
             (row) => row.idx,
           ),
         );
-        const record = target.prepare(`INSERT INTO _bb_migrations (idx, applied_at) VALUES (?, ?)`);
+        const record = target.prepare(`INSERT INTO _alia_migrations (idx, applied_at) VALUES (?, ?)`);
         target.transaction(() => {
           statements.forEach((statement, index) => {
             if (applied.has(index)) return;
@@ -570,5 +570,5 @@ export function createFakePluginHost(options: FakeHostOptions = {}): { bb: unkno
   };
 
   void migrationsApplied;
-  return { bb, harness };
+  return { alia, harness };
 }

@@ -34,9 +34,9 @@ What the backends can do:
   backend's base disk: the template's or image's, or the host's where the
   backend cannot limit it. A disk asked for below the base gets the base.
 - Each kind has three presets, `small`, `medium` and `large`, a default
-  preset, and a largest custom size, in bb-box's configuration. They are the
+  preset, and a largest custom size, in alia-box's configuration. They are the
   same on every offer of the kind, so `large` means one thing. Presets leave
-  the disk at the base. bb-box ships:
+  the disk at the base. alia-box ships:
 
 | Kinds | `small` | `medium` | `large` |
 | --- | --- | --- | --- |

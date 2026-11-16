@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { formerWorkerReview } from "./former-workers";
 import { testSql, testStore } from "./test-store.test-support";
@@ -9,29 +9,29 @@ type ListArgs = { archived?: boolean; originPluginId?: string; limit?: number; o
 
 async function setup() {
   const answering = new Set<string>();
-  // BB's thread list: unarchived threads unless archived is asked for, one page at a time.
+  // VesnALIA's thread list: unarchived threads unless archived is asked for, one page at a time.
   const listed: ListedThread[] = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     stop: async () => ({}), delete: async () => ({ ok: true }),
     list: async ({ archived = false, originPluginId, limit = 50, offset = 0 }: ListArgs = {}) => listed
       .filter((thread) => (thread.archivedAt !== null) === archived && (!originPluginId || thread.originPluginId === originPluginId))
       .slice(offset, offset + limit),
     get: async ({ threadId }: { threadId: string }) => ({ archivedAt: null, deletedAt: null, status: answering.has(threadId) ? "active" : "idle" }),
   } } });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   for (const key of ["pr-1", "pr-2"]) {
     await store.saveReview({ targetKey: key, kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1 });
     await store.setAssistantThread(key, `assistant-${key}`);
-    // A legacy conversation, from before conversations moved into bb threads.
-    await testSql(bb).run(`INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES (?,'user','question',NULL,1)`, [key]);
-    await testSql(bb).run(`INSERT INTO agent_threads (target_key,thread_id,created_at) VALUES (?,?,1)`, [key, `worker-${key}`]);
+    // A legacy conversation, from before conversations moved into VesnALIA threads.
+    await testSql(alia).run(`INSERT INTO agent_messages (target_key,role,text,context,created_at) VALUES (?,'user','question',NULL,1)`, [key]);
+    await testSql(alia).run(`INSERT INTO agent_threads (target_key,thread_id,created_at) VALUES (?,?,1)`, [key, `worker-${key}`]);
   }
-  return { bb, harness, store, answering, listed };
+  return { alia, harness, store, answering, listed };
 }
 
 test("archiving moves a review out of the queue until it is unarchived, keeping GitHub state", async () => {
-  const { bb, harness, store } = await setup();
+  const { alia, harness, store } = await setup();
   await store.setLifecycle("pr-1", { prState: "OPEN", archivedAt: null });
   expect(await harness.behavior.callRpc("archiveReview", { targetKey: "pr-1", archived: true })).toEqual({ ok: true });
   expect(await store.getReview("pr-1")).toMatchObject({ userArchivedAt: expect.any(Number), archivedAt: null, prState: "OPEN" });
@@ -40,7 +40,7 @@ test("archiving moves a review out of the queue until it is unarchived, keeping 
   expect((await store.getReview("pr-1"))?.userArchivedAt).toBeNull();
 
   expect(await harness.behavior.callRpc("archiveReview", { targetKey: "missing", archived: true })).toMatchObject({ ok: false });
-  expect(await testSql(bb).get(`SELECT COUNT(*) AS n FROM review_lifecycle WHERE target_key='missing'`)).toEqual({ n: 0 });
+  expect(await testSql(alia).get(`SELECT COUNT(*) AS n FROM review_lifecycle WHERE target_key='missing'`)).toEqual({ n: 0 });
 });
 
 test("pinning records when, unpinning clears it, and both tell open pages", async () => {
@@ -72,10 +72,10 @@ test("renaming keeps your name for the review, trimmed, and tells open pages; an
 });
 
 test("deleting a review removes its data, queued notification, and hidden worker, and nothing else", async () => {
-  const { bb, harness, store } = await setup();
-  await bb.storage.kv.set("needs-you:pending:pr-1", { targetKey: "pr-1" });
-  await bb.storage.kv.set("needs-you:clock:pr-1", 5);
-  await bb.storage.kv.set("needs-you:clock:pr-2", 5);
+  const { alia, harness, store } = await setup();
+  await alia.storage.kv.set("needs-you:pending:pr-1", { targetKey: "pr-1" });
+  await alia.storage.kv.set("needs-you:clock:pr-1", 5);
+  await alia.storage.kv.set("needs-you:clock:pr-2", 5);
 
   expect(await harness.behavior.callRpc("deleteReview", { targetKey: "pr-1" })).toEqual({ ok: true });
   expect(await store.getReview("pr-1")).toBeNull();
@@ -83,7 +83,7 @@ test("deleting a review removes its data, queued notification, and hidden worker
   expect(await store.getReview("pr-2")).not.toBeNull();
   expect(await store.getAssistantThread("pr-2")).toBe("assistant-pr-2");
   expect(await store.getAgentThread("pr-2")).toBe("worker-pr-2");
-  expect(await bb.storage.kv.list("needs-you:")).toEqual(["needs-you:clock:pr-2"]);
+  expect(await alia.storage.kv.list("needs-you:")).toEqual(["needs-you:clock:pr-2"]);
   expect(harness.inspection.sdk.callsTo("threads.stop")).toEqual([[{ threadId: "assistant-pr-1" }], [{ threadId: "worker-pr-1" }]]);
   expect(harness.inspection.sdk.callsTo("threads.delete")).toEqual([[{ threadId: "assistant-pr-1", childThreadsConfirmed: false }], [{ threadId: "worker-pr-1", childThreadsConfirmed: false }]]);
   expect(harness.inspection.realtimeSignals.map((s) => s.channel)).toEqual(expect.arrayContaining(["reviews", "review:pr-1"]));
@@ -96,9 +96,9 @@ test("deleting a review removes its data, queued notification, and hidden worker
 // bug bash LIV-4: a page saving after another window deleted the review wrote rows Delete could no longer remove, and
 // they came back when the PR was reviewed again.
 test("a summary, verdict, viewed mark or reply draft saved after the review was deleted writes nothing", async () => {
-  const { bb, harness, store } = await setup();
+  const { alia, harness, store } = await setup();
   expect(await harness.behavior.callRpc("deleteReview", { targetKey: "pr-1" })).toEqual({ ok: true });
-  const rows = async (table: string) => (await testSql(bb).get<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table} WHERE target_key='pr-1'`))!.n;
+  const rows = async (table: string) => (await testSql(alia).get<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table} WHERE target_key='pr-1'`))!.n;
   await expect(harness.behavior.callRpc("saveSummary", { targetKey: "pr-1", body: "Old summary from the deleted review." })).rejects.toThrow("This review no longer exists.");
   await expect(harness.behavior.callRpc("setVerdict", { targetKey: "pr-1", verdict: "REQUEST_CHANGES" })).rejects.toThrow("This review no longer exists.");
   expect(await harness.behavior.callRpc("setFilesViewed", { targetKey: "pr-1", files: ["a.ts"], viewed: false, previous: [{ file: "a.ts", hash: "h", viewedAt: 1 }] })).toEqual({ ok: false });
@@ -123,17 +123,17 @@ test("a missing worker thread doesn't block deleting the review", async () => {
 // A thread whose delete failed for another reason survived unrecorded, so it ran as an ordinary thread on any review
 // (80-fixes, 70-review-correctness #2's second half).
 test("a review thread that a delete leaves behind is kept to the deleted review; a missing or deleted one isn't recorded", async () => {
-  const { bb, harness } = await setup();
+  const { alia, harness } = await setup();
   harness.inspection.sdk.stub("threads.delete", async ({ threadId }: { threadId: string }) => {
     if (threadId === "assistant-pr-1") throw new Error("HTTP 500: Internal error");
     if (threadId === "worker-pr-1") throw new Error("HTTP 404: Thread not found");
     return { ok: true };
   });
   expect(await harness.behavior.callRpc("deleteReview", { targetKey: "pr-1" })).toEqual({ ok: true });
-  expect([await formerWorkerReview(bb, "assistant-pr-1"), await formerWorkerReview(bb, "worker-pr-1")]).toEqual(["pr-1", null]);
+  expect([await formerWorkerReview(alia, "assistant-pr-1"), await formerWorkerReview(alia, "worker-pr-1")]).toEqual(["pr-1", null]);
   expect(await harness.behavior.runCli(["summary", "pr-2", "--body", "injected"], { threadId: "assistant-pr-1", projectId: "p1" })).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("only its own review") });
   expect(await harness.behavior.callRpc("deleteReview", { targetKey: "pr-2" })).toEqual({ ok: true });
-  expect([await formerWorkerReview(bb, "assistant-pr-2"), await formerWorkerReview(bb, "worker-pr-2")]).toEqual([null, null]);
+  expect([await formerWorkerReview(alia, "assistant-pr-2"), await formerWorkerReview(alia, "worker-pr-2")]).toEqual([null, null]);
 });
 
 test("a review can't be deleted while its guide is generating or an answer is in progress", async () => {

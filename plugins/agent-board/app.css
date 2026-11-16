@@ -1,5 +1,5 @@
 /*
- * bb-plugin-agent-board — shared live-execution animation vocabulary.
+ * alia-plugin-agent-board — shared live-execution animation vocabulary.
  *
  * Operations-dashboard feel: slow, restrained, state-driven. Every moving
  * effect is disabled under `prefers-reduced-motion: reduce` AND when the
@@ -9,7 +9,7 @@
  * never depends on animation: glyphs, chips, and text carry the state.
  */
 
-/* BB deliberately does not provide a global preflight to plugin panels. Keep
+/* ALIA deliberately does not provide a global preflight to plugin panels. Keep
    the dashboard's width contract local: padding and borders must be included
    in every descendant's declared/max width, including third-party primitives
    such as buttons and dialogs rendered inside cards. */

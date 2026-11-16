@@ -2,12 +2,12 @@ import type { ColorValue } from "./vendor/pixel-agents/webview-ui/src/components
 import type { CarpetTile } from "./vendor/pixel-agents/webview-ui/src/office/types";
 
 export const OFFICE_APPEARANCE_SETTING_OPTIONS = [
-  "Follow BB",
+  "Follow VesnALIA",
   "Neutral",
   "Original",
 ] as const;
 
-export type OfficeAppearance = "follow-bb" | "neutral" | "original";
+export type OfficeAppearance = "follow-alia" | "neutral" | "original";
 
 export interface OfficeVisualTheme {
   appearance: OfficeAppearance;
@@ -64,7 +64,7 @@ export function parseOfficeAppearance(
 ): OfficeAppearance {
   if (value === "Neutral") return "neutral";
   if (value === "Original") return "original";
-  return "follow-bb";
+  return "follow-alia";
 }
 
 export function officeVisualThemeFromRgb(

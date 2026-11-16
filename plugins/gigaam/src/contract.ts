@@ -1,6 +1,6 @@
 // Shared by server.ts and host.ts: the host RPC contract, the model list, and
 // the OpenAI-compatible transcription call both sides make.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const MODELS = ["v3_e2e_rnnt", "v3_e2e_ctc", "v3_rnnt", "v3_ctc"] as const;

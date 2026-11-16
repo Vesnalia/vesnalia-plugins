@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run at each boot of a Linux VM box as root, by bb-box-boot.service, before
+# Run at each boot of a Linux VM box as root, by alia-box-boot.service, before
 # systemd-networkd starts. It reads the box's address from the SMBIOS serial,
 # which the backend sets on each clone as the address with its prefix, a
 # space, then the gateway (qm set --smbios1 base64=1,serial=<base64>), and
@@ -9,10 +9,10 @@
 # size asks for more than the template's.
 set -uo pipefail
 
-log() { echo "bb-box-boot: $*"; }
+log() { echo "alia-box-boot: $*"; }
 
 serial=$(cat /sys/class/dmi/id/product_serial 2>/dev/null || true)
-network=/run/systemd/network/10-bb-box.network
+network=/run/systemd/network/10-alia-box.network
 if [[ "$serial" =~ ^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+)\ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
   install -d -m 0755 /run/systemd/network
   # IPv4 only: IPv6 link-local DAD holds network-online, and Docker, back.
@@ -39,7 +39,7 @@ root=$(findmnt -no SOURCE /)
 part=$(cat "/sys/class/block/${root#/dev/}/partition" 2>/dev/null || true)
 disk=$(lsblk -no PKNAME "$root" 2>/dev/null || true)
 if [ -n "$part" ] && [ -n "$disk" ]; then
-  growpart_dir_outside_tmp=$(mktemp -d /run/bb-box-boot.XXXXXX)
+  growpart_dir_outside_tmp=$(mktemp -d /run/alia-box-boot.XXXXXX)
   TMPDIR=$growpart_dir_outside_tmp growpart "/dev/$disk" "$part" >"$growpart_dir_outside_tmp.out" 2>&1
   grown=$?
   if [ "$grown" -eq 0 ]; then

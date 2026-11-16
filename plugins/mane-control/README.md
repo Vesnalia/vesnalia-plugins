@@ -12,11 +12,11 @@ keeps the active mode on the control. Mode-command messages render as compact
 
 ## Showcase
 
-These screenshots use disposable fixture data in a real BB thread.
+These screenshots use disposable fixture data in a real VesnALIA thread.
 
 | Thread control | Mode menu |
 | --- | --- |
-| ![Mane Control in BB](output/playwright/mane-control-thread.png) | ![Ponytail mode menu](output/playwright/mane-control-menu.png) |
+| ![Mane Control in VesnALIA](output/playwright/mane-control-thread.png) | ![Ponytail mode menu](output/playwright/mane-control-menu.png) |
 
 | Lite mode | Ultra mode |
 | --- | --- |
@@ -24,17 +24,17 @@ These screenshots use disposable fixture data in a real BB thread.
 
 ## Project layout
 
-- `src/` — BB server and app entries
+- `src/` — VesnALIA server and app entries
 - `src/lib/` — shared mode parsing and types
 - `test/` — backend and message-recognition checks
 - `assets/` — theme-aware horse icons
 - `PLUGIN_OVERVIEW.md` — long-form store overview
-- `output/playwright/` — privacy-safe captures from the running BB app
+- `output/playwright/` — privacy-safe captures from the running VesnALIA app
 
 ```sh
 npm install
 npm test
 npm run check
 npm run build
-bb plugin install .
+alia plugin install .
 ```

@@ -2,7 +2,7 @@
 
 **A tidier prompt box that never eats your draft.**
 
-BB keeps the prompt box open long after you have stopped using it. Composer Auto-collapse closes it when you click elsewhere or leave it idle, using BB's own collapse control so drafts, attachments and focus behaviour stay native.
+VesnALIA keeps the prompt box open long after you have stopped using it. Composer Auto-collapse closes it when you click elsewhere or leave it idle, using VesnALIA's own collapse control so drafts, attachments and focus behaviour stay native.
 
 ## What it does
 
@@ -19,7 +19,7 @@ BB keeps the prompt box open long after you have stopped using it. Composer Auto
 
 ## Compatibility
 
-BB 0.49.0+ (plugin SDK 0.6.132+), Node 22.19+ for development. Rendered-visibility checks keep CSS-hidden composer trees from being collapsed. If the composer markup changes, the plugin stays inert.
+VesnALIA 0.49.0+ (plugin SDK 0.6.132+), Node 22.19+ for development. Rendered-visibility checks keep CSS-hidden composer trees from being collapsed. If the composer markup changes, the plugin stays inert.
 
 ## Privacy
 

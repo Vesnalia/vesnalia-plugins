@@ -1,6 +1,6 @@
 // Markdown review interaction adapted from Doc Review (MIT), Copyright (c) 2026 Foma.
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { Anchor, Comment } from "../src/review-contract";
 import type { Strings } from "../src/i18n";
 import { clearHighlights, contextAround, findQuoteRange, setHighlights } from "./text-ranges";
@@ -68,7 +68,7 @@ export function MarkdownReview({ content, comments, t, activeId, editId, onAncho
     const range = findQuoteRange([root.current], quote, prefix, suffix);
     // A collapsed requirement or scenario hides the quote; open it first.
     for (let node = range?.startContainer.parentElement?.closest("details"); node; node = node.parentElement?.closest("details")) node.open = true;
-    // scrollIntoView would also shift BB's overflow-hidden layout; scroll only our panel.
+    // scrollIntoView would also shift VesnALIA's overflow-hidden layout; scroll only our panel.
     const panel = root.current.closest(".openspec-workspace"); const box = range?.getBoundingClientRect();
     if (panel && box) { const bounds = panel.getBoundingClientRect(); if (box.top < bounds.top || box.bottom > bounds.bottom) panel.scrollBy({ top: box.top - bounds.top - bounds.height / 3 }); }
     // Editing floats the form at the comment's own quote, like a new selection.

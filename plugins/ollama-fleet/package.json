@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-ollama-fleet",
+  "name": "alia-plugin-ollama-fleet",
   "version": "0.6.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Ollama Fleet",
-    "description": "Local inference routing and observability for BB.",
+    "description": "Local inference routing and observability for VesnALIA.",
     "branding": {
       "icon": "ListTodo"
     },
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "^0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -58,20 +57,29 @@
     "better-sqlite3": true
   },
   "license": "MIT",
-  "description": "Local inference routing and observability for BB.",
+  "description": "Local inference routing and observability for VesnALIA.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "observability",
     "ollama",
     "local-inference",
     "routing"
   ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ollama-fleet#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aaronphifer/bb-plugin-ollama-fleet.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ollama-fleet"
   },
-  "homepage": "https://github.com/aaronphifer/bb-plugin-ollama-fleet#readme",
   "bugs": {
-    "url": "https://github.com/aaronphifer/bb-plugin-ollama-fleet/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

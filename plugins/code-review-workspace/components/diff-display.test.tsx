@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs } from "../lib/knobs";
 import { getReviewState, patchReviewState } from "../lib/panel-state";
@@ -16,7 +16,7 @@ vi.mock("@pierre/diffs/react", () => ({
   },
 }));
 
-// The workspace's renders, by its Finish review button, which draws with its band where BB's title bar didn't take it.
+// The workspace's renders, by its Finish review button, which draws with its band where VesnALIA's title bar didn't take it.
 let workspaceRenders = 0;
 vi.mock("../lib/draft-status", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../lib/draft-status")>();
@@ -28,7 +28,7 @@ afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); vi.cl
 const file = (path: string, hunks: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${hunks}`;
 const patch = [
   file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n"),
-  file("src/b.ts", "@@ -1 +1 @@\n-b\n+bb\n"),
+  file("src/b.ts", "@@ -1 +1 @@\n-b\n+alia\n"),
   file("src/c.ts", "@@ -1 +1 @@\n-c\n+cc\n"),
 ].join("");
 const guide = {
@@ -422,7 +422,7 @@ test("with Summarize lockfile changes off, a lockfile shows only its diff", asyn
   slot.lifecycle.unmount();
 });
 
-test("a local review's file opens in an editor on the BB server at its first changed line, but not a deleted one, a PR review's, or with Open in editor off", async () => {
+test("a local review's file opens in an editor on the VesnALIA server at its first changed line, but not a deleted one, a PR review's, or with Open in editor off", async () => {
   const deleted = "diff --git a/src/old.ts b/src/old.ts\ndeleted file mode 100644\n--- a/src/old.ts\n+++ /dev/null\n@@ -1 +0,0 @@\n-old\n";
   const bundle = {
     review: { targetKey: "pr-42", kind: "ref", gitRef: "HEAD", cwd: "/repo/", status: "ready", createdAt: 1, title: "HEAD" },

@@ -5,7 +5,7 @@
 // - A free candidate goes to the quietest free host first: the lowest
 //   effective threshold, then the lowest noise floor, then spec order.
 // - A host much noisier than its peers (more than `max_host_noise_ratio`
-//   times the median noise floor of the other hosts) is not used: a BB
+//   times the median noise floor of the other hosts) is not used: a VesnALIA
 //   machine or the edit host leaves the dispatch set, a remote machine is
 //   replaced.
 //

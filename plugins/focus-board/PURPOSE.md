@@ -1,6 +1,6 @@
 # Purpose
 
-Focus Board gives bb's threads a home you can act from: a kanban board that ranks threads by what needs you, plus a thread pane where you read, reply, and answer agent questions without leaving the board.
+Focus Board gives VesnALIA's threads a home you can act from: a kanban board that ranks threads by what needs you, plus a thread pane where you read, reply, and answer agent questions without leaving the board.
 
 ## The attention philosophy
 

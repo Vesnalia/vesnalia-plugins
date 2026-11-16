@@ -35,11 +35,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## vburojevic/bb-plugin-ayu
+## vburojevic/alia-plugin-ayu
 
 Source: <https://github.com/vburojevic/bb-plugin-ayu>
 
-bb theme-plugin packaging patterns.
+VesnALIA theme-plugin packaging patterns.
 
 MIT License
 
@@ -67,7 +67,7 @@ SOFTWARE.
 
 Source: <https://github.com/divyesh-puri/vercel-theme>
 
-bb theme-plugin packaging patterns.
+VesnALIA theme-plugin packaging patterns.
 
 MIT License
 

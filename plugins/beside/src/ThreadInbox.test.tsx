@@ -8,7 +8,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { resetLifecycleStoreForTests } from "./lifecycleStore";
 import { toast } from "sonner";
 
@@ -19,9 +19,9 @@ import type {
   PluginSidebarPullRequest,
   PluginSidebarThread,
   PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
-// Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
+// Load through the harness so the plugin's `@vesnalia/plugin-sdk/app` import binds
 // to the test runtime; importing the component directly would bind it to an
 // empty runtime first.
 const app = await loadPluginApp(() => import("../app"));
@@ -92,7 +92,7 @@ function render(
   projects = [
     {
       id: "proj_1",
-      name: "bb",
+      name: "alia",
       isPersonal: false,
       href: "/p/proj_1",
       settingsHref: "/p/proj_1/settings",
@@ -175,7 +175,7 @@ describe("ThreadInbox", () => {
           projects: [
             {
               id: "proj_1",
-              name: "bb",
+              name: "alia",
               isPersonal: false,
               href: "/p/proj_1",
               settingsHref: "/p/proj_1/settings",
@@ -229,7 +229,7 @@ describe("ThreadInbox", () => {
           projects: [
             {
               id: "proj_1",
-              name: "bb",
+              name: "alia",
               isPersonal: false,
               href: "/p/proj_1",
               settingsHref: "/p/proj_1/settings",
@@ -256,13 +256,13 @@ describe("ThreadInbox", () => {
   it("scopes to one project", () => {
     render(
       [
-        thread({ id: "a", title: "In bb", projectId: "proj_1" }),
+        thread({ id: "a", title: "In VesnALIA", projectId: "proj_1" }),
         thread({ id: "b", title: "In other", projectId: "proj_2" }),
       ],
       [
         {
           id: "proj_1",
-          name: "bb",
+          name: "alia",
           isPersonal: false,
           href: "/p/proj_1",
           settingsHref: "/p/proj_1/settings",
@@ -285,13 +285,13 @@ describe("ThreadInbox", () => {
   it("finds a project by typing in the picker", () => {
     render(
       [
-        thread({ id: "a", title: "In bb", projectId: "proj_1" }),
+        thread({ id: "a", title: "In VesnALIA", projectId: "proj_1" }),
         thread({ id: "b", title: "In other", projectId: "proj_2" }),
       ],
       [
         {
           id: "proj_1",
-          name: "bb",
+          name: "alia",
           isPersonal: false,
           href: "/p/proj_1",
           settingsHref: "/p/proj_1/settings",
@@ -313,7 +313,7 @@ describe("ThreadInbox", () => {
     ]);
     fireEvent.keyDown(search, { key: "Enter" });
     expect(screen.getByText("In other")).toBeDefined();
-    expect(screen.queryByText("In bb")).toBeNull();
+    expect(screen.queryByText("In VesnALIA")).toBeNull();
     fireEvent.click(screen.getByLabelText(/Project scope/));
     fireEvent.change(screen.getByRole("combobox", { name: "Search projects" }), {
       target: { value: "nothing" },
@@ -341,7 +341,7 @@ describe("parking threads", () => {
         projects: [
           {
             id: "proj_1",
-            name: "bb",
+            name: "alia",
             isPersonal: false,
             href: "/p/proj_1",
             settingsHref: "/p/proj_1/settings",
@@ -458,7 +458,7 @@ describe("parking threads", () => {
         projects: [
           {
             id: "proj_1",
-            name: "bb",
+            name: "alia",
             isPersonal: false,
             href: "/p/proj_1",
             settingsHref: "/p/proj_1/settings",
@@ -486,7 +486,7 @@ describe("parking threads", () => {
         projects: [
           {
             id: "proj_1",
-            name: "bb",
+            name: "alia",
             isPersonal: false,
             href: "/p/proj_1",
             settingsHref: "/p/proj_1/settings",
@@ -519,8 +519,8 @@ describe("thread actions", () => {
   const archiveRuns: string[] = [];
   const threadActions = (target: PluginThreadActionTarget) => [
     {
-      key: "bb--core/archive",
-      pluginId: "bb--core",
+      key: "alia--core/archive",
+      pluginId: "alia--core",
       group: "4_lifecycle",
       action: {
         label: "Archive",
@@ -541,7 +541,7 @@ describe("thread actions", () => {
         projects: [
           {
             id: "proj_1",
-            name: "bb",
+            name: "alia",
             isPersonal: false,
             href: "/p/proj_1",
             settingsHref: "/p/proj_1/settings",
@@ -553,14 +553,14 @@ describe("thread actions", () => {
     });
   }
 
-  it("opens bb's thread menu on right-click", async () => {
+  it("opens VesnALIA's thread menu on right-click", async () => {
     renderWithActions([thread({ id: "thr_menu", title: "Right click me" })]);
     fireEvent.contextMenu(await screen.findByText("Right click me"));
     fireEvent.click(await screen.findByRole("menuitem", { name: /Archive/ }));
     await waitFor(() => expect(archiveRuns).toEqual(["thr_menu"]));
   });
 
-  it("opens bb's thread menu from the row's actions button", async () => {
+  it("opens VesnALIA's thread menu from the row's actions button", async () => {
     renderWithActions([thread({ id: "thr_more", title: "More actions" })]);
     fireEvent.click(
       await screen.findByRole("button", { name: "Thread actions" }),
@@ -620,7 +620,7 @@ describe("row metadata", () => {
         environment: {
           id: "env_1",
           name: "Worktree",
-          branchName: "bb/feature",
+          branchName: "alia/feature",
           path: null,
           isWorktree: true,
           providerId: null,
@@ -631,8 +631,8 @@ describe("row metadata", () => {
     expect(await screen.findByText("A thread")).toBeDefined();
     expect(screen.queryByLabelText("Claude Code")).toBeNull();
     expect(screen.queryByText("Sawyer's MacBook")).toBeNull();
-    expect(screen.queryByText("bb/feature")).toBeNull();
-    expect(screen.queryByText("bb")).toBeNull();
+    expect(screen.queryByText("alia/feature")).toBeNull();
+    expect(screen.queryByText("alia")).toBeNull();
   });
 
   it("leaves the slot empty for an idle thread", async () => {
@@ -647,7 +647,7 @@ describe("row metadata", () => {
     render([
       thread({
         id: "thr_new",
-        indicator: "something-bb-ships-later" as never,
+        indicator: "something-alia-ships-later" as never,
         updatedAt: Date.now() - (3 * 3_600_000 + 60_000),
       }),
     ]);
@@ -657,7 +657,7 @@ describe("row metadata", () => {
 });
 
 // The three states that want the user take the slot from the age label, and
-// they use bb's own glyphs: the two lists sit in one window, and a user who
+// they use VesnALIA's own glyphs: the two lists sit in one window, and a user who
 // switches between them should not have to learn a second vocabulary.
 function statusGlyphs(): string[] {
   return [...document.querySelectorAll("[data-thread-status-glyph]")].map(
@@ -672,7 +672,7 @@ describe("status glyphs", () => {
     "unread-success",
     "runtime",
   ] as const) {
-    it(`draws bb's ${indicator} glyph`, async () => {
+    it(`draws VesnALIA's ${indicator} glyph`, async () => {
       render([thread({ id: `thr_${indicator}`, indicator })]);
       await screen.findByText("A thread");
       expect(statusGlyphs()).toEqual([indicator]);
@@ -930,7 +930,7 @@ describe("remembered layout", () => {
 });
 
 describe("pinned row actions", () => {
-  it("offers bb's Archive and the menu on a pinned row", async () => {
+  it("offers VesnALIA's Archive and the menu on a pinned row", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -949,8 +949,8 @@ describe("pinned row actions", () => {
       rpc: { listLifecycle: () => ({ rows: [] }) },
       threadActions: () => [
         {
-          key: "bb--core/archive",
-          pluginId: "bb--core",
+          key: "alia--core/archive",
+          pluginId: "alia--core",
           group: "4_lifecycle",
           action: { label: "Archive", icon: "Archive", run: async () => {} },
         },
@@ -1026,7 +1026,7 @@ describe("reordering pinned threads", () => {
     return link.closest<HTMLElement>('[aria-roledescription="sortable"]')!;
   }
 
-  it("moves a pinned thread and saves the order in bb", async () => {
+  it("moves a pinned thread and saves the order in VesnALIA", async () => {
     const calls: unknown[] = [];
     renderPinned(async (args) => {
       calls.push(args);
@@ -1403,7 +1403,7 @@ describe("muted threads", () => {
   });
 });
 
-describe("mute action in bb's thread menu", () => {
+describe("mute action in VesnALIA's thread menu", () => {
   const action = app.threadActions.find(
     (registration) => registration.id === "mute",
   )!;
@@ -1798,7 +1798,7 @@ describe("parked shelf menus", () => {
     );
   });
 
-  it("archives every settled thread through bb", async () => {
+  it("archives every settled thread through VesnALIA", async () => {
     const { archived } = renderShelf("settled");
     await pick("Settled", "Archive all");
     await waitFor(() =>
@@ -1817,7 +1817,7 @@ describe("parked shelf menus", () => {
     );
   });
 
-  it("archives every muted thread through bb", async () => {
+  it("archives every muted thread through VesnALIA", async () => {
     const { archived } = renderShelf("muted");
     await pick("Muted", "Archive all");
     await waitFor(() =>
@@ -1899,7 +1899,7 @@ describe("engineering pass regressions", () => {
     mutedAt: 200,
   });
 
-  it("leaves bb's hidden helper threads out", async () => {
+  it("leaves VesnALIA's hidden helper threads out", async () => {
     render([
       thread({ id: "thr_seen", title: "Seen" }),
       thread({ id: "thr_hidden", title: "Helper", isHidden: true }),
@@ -2113,7 +2113,7 @@ describe("windowing for large sidebars", () => {
     act(() => observer.callback(entries));
   }
 
-  it("draws placeholders that keep bb's shortcut attributes", async () => {
+  it("draws placeholders that keep VesnALIA's shortcut attributes", async () => {
     vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
     render(manyThreads(200));
     await screen.findByText("Thread 0");
@@ -2173,7 +2173,7 @@ describe("decision mode", () => {
   const projects = [
     {
       id: "proj_1",
-      name: "bb",
+      name: "alia",
       isPersonal: false,
       href: "/p/proj_1",
       settingsHref: "/p/proj_1/settings",
@@ -2394,7 +2394,7 @@ describe("quiet news while running", () => {
         projects: [
           {
             id: "proj_1",
-            name: "bb",
+            name: "alia",
             isPersonal: false,
             href: "/p/proj_1",
             settingsHref: "/p/proj_1/settings",
@@ -2441,7 +2441,7 @@ describe("inline rename", () => {
   const projects = [
     {
       id: "proj_1",
-      name: "bb",
+      name: "alia",
       isPersonal: false,
       href: "/p/proj_1",
       settingsHref: "/p/proj_1/settings",
@@ -2542,7 +2542,7 @@ describe("inline rename on a parent", () => {
           projects: [
             {
               id: "proj_1",
-              name: "bb",
+              name: "alia",
               isPersonal: false,
               href: "/p/proj_1",
               settingsHref: "/p/proj_1/settings",

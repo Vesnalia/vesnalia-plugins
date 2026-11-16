@@ -74,9 +74,9 @@ or evidence. `wontfix` needs a message of 60+ characters. `duplicate` and
 with open children cannot be closed: the daemon's refusal rolls the row back
 and reopens the menu with the message.
 
-### Verified live (2026-09-22, scratch project `bb-plugin-kata-scratch`)
+### Verified live (2026-09-22, scratch project `alia-plugin-kata-scratch`)
 
-Driven from the keyboard in a headless Chromium against the running bb app,
+Driven from the keyboard in a headless Chromium against the running VesnALIA app,
 with results checked against the daemon:
 
 - `n` + title + Enter showed a placeholder row within about 100 ms. `!2`
@@ -91,33 +91,33 @@ with results checked against the daemon:
 - Closing the parent as wontfix while its child was open: the daemon refused;
   the row rolled back and the menu reopened with the error. After closing the
   child (`x Enter` = done): wontfix + message → `r` reopen → `x Enter` done.
-- `y` put `bb-plugin-kata-scratch#cr3x` on the clipboard; `v`, `E`/`E`
+- `y` put `alia-plugin-kata-scratch#cr3x` on the clipboard; `v`, `E`/`E`
   behaved as expected.
 - A create, a priority change and a close done straight against the daemon
-  (outside bb) appeared in the open panel within about 1 s, with no reload.
+  (outside VesnALIA) appeared in the open panel within about 1 s, with no reload.
 
 ## T3: kata-aware threads
 
-A bb project is **kata-bound** when its default source directory, or an
+A VesnALIA project is **kata-bound** when its default source directory, or an
 ancestor, has a `.kata.toml` whose `[project] name` names a kata project on
 the daemon. The nearest file wins, even when it is malformed (then the
 project is unbound, reason `malformed .kata.toml`).
 
-- **Binding detection** (`lib/workspace.ts`). `bb.sdk.projects.get` gives the
-  default source `{hostId, path}`. `bb.sdk.files.read({hostId, path})` reads
+- **Binding detection** (`lib/workspace.ts`). `alia.sdk.projects.get` gives the
+  default source `{hostId, path}`. `alia.sdk.files.read({hostId, path})` reads
   each candidate `.kata.toml` up to `/`, so no `node:fs` is used on user
   paths. A missing file (`ENOENT`, "not found") means "look further up". Any
   other read error (host offline) rejects, and the last good binding is kept.
-  Results are cached per bb project for 60 s (5 s after a failure). The
+  Results are cached per VesnALIA project for 60 s (5 s after a failure). The
   `bindings` background service resolves every project at startup. It also
   subscribes to `project:changed` (`project-created`, `-deleted`,
   `-sources-changed`, `-updated`) and re-resolves that project. When a result
   changes it publishes `binding.changed`. Bound kata projects join the issue
   store's *watched* set, so their open lists stay warm and emit
   `issues.changed` even when they are not tabs.
-- **Reuse (T4)**: `createBindingResolver({ sdk: () => bb.sdk, kataProjects })`
-  has `forProject(bbProjectId)`, `forThread(threadId)` and a synchronous
-  `peek(bbProjectId)`. `readThreadLink(metadata)` validates the link. Both
+- **Reuse (T4)**: `createBindingResolver({ sdk: () => alia.sdk, kataProjects })`
+  has `forProject(aliaProjectId)`, `forThread(threadId)` and a synchronous
+  `peek(aliaProjectId)`. `readThreadLink(metadata)` validates the link. Both
   are re-exported from `server.ts`. None of them need RPC.
 - **Thread ↔ issue link**: this plugin's thread metadata namespace holds
   `{ issueUid, qualifiedId, projectUid }`. `readThreadLink` checks every
@@ -153,12 +153,12 @@ project is unbound, reason `malformed .kata.toml`).
   marked `linked`. **`L`** links the selected issue to the thread (in the nav
   page it only shows a hint). The scoped panel does not take focus on mount
   (it would steal it from the composer when a thread opens); click into it.
-- **Agent instructions** (`bb.agents.configure`, synchronous, uses `peek`).
+- **Agent instructions** (`alia.agents.configure`, synchronous, uses `peek`).
   For bound projects it returns `{tools: [], skills: [], instructions}`,
   about 500 characters: the project name, the `project#abc4` ref format, the
   linked issue as JSON-quoted data (with its title when the server has seen
   it since the last reload), "search before creating, never delete/purge",
-  and "run `bb kata --help`". For unbound projects it returns `{tools: [],
+  and "run `alia kata --help`". For unbound projects it returns `{tools: [],
   skills: []}` and no instructions. A project that has never been resolved
   gets nothing on that turn, and `peek` starts the resolution for the next
   one. The startup warm-up makes this rare.
@@ -175,24 +175,24 @@ project is unbound, reason `malformed .kata.toml`).
   *Open Kata issues* opened the thread panel with grippify's 3 open issues
   and no tab strip, and `j` moved the selection. A Work thread shows no
   control. No console errors.
-- Mutations used a temporary bb project whose directory held a `.kata.toml`
-  naming `bb-plugin-kata-scratch`, plus a thread in it. Both were deleted
+- Mutations used a temporary VesnALIA project whose directory held a `.kata.toml`
+  naming `alia-plugin-kata-scratch`, plus a thread in it. Both were deleted
   afterwards. Its first turn's system prompt carried the Kata block, which
   the agent quoted back word for word. Header *Link issue…* → typing →
-  `Enter` linked `bb-plugin-kata-scratch#tcz4`, and the control changed to
+  `Enter` linked `alia-plugin-kata-scratch#tcz4`, and the control changed to
   the id + P2. The panel opened with that issue preselected and marked.
   Header *Unlink* cleared it. `L` in the panel linked it again. The metadata
   read back through `binding.forThread` with title/status/priority. The
   server log showed `configure` returning the linked line
-  (`This thread is linked to kata issue "bb-plugin-kata-scratch#tcz4"`). The
+  (`This thread is linked to kata issue "alia-plugin-kata-scratch#tcz4"`). The
   scratch issue was closed afterwards.
 - Caveat seen live: the Claude Code session keeps the instructions it was
   built with. After linking, later turns in the same session still had the
-  old (unlinked) block, even after `bb thread stop`. A new thread gets the
+  old (unlinked) block, even after `alia thread stop`. A new thread gets the
   current block. This is host behaviour ("instructions apply when the session
   is next constructed"), not something the plugin controls.
 
-## T4: `bb kata` CLI, agent tools, skill
+## T4: `alia kata` CLI, agent tools, skill
 
 One service (`lib/kata-service.ts`) backs both the CLI and the agent tools.
 It talks to the daemon through the same client, uses the T3 binding resolver
@@ -217,7 +217,7 @@ precedence, request bodies, close rules, and formatting.
   Agent tool results stop at 64 KiB.
 - **`--body-file`** reads the file on the machine that invoked the command:
   the thread's environment host, else the server machine. Relative paths
-  resolve against `ctx.cwd`. The read goes through `bb.sdk.files`, never
+  resolve against `ctx.cwd`. The read goes through `alia.sdk.files`, never
   `node:fs`. `--body-stdin` / `--message-stdin` come from the SDK's `stdin`
   option.
 - **Close rules for agents** (no `source:"tui"`; probed with `dry_run` on
@@ -235,7 +235,7 @@ precedence, request bodies, close rules, and formatting.
 
 | Command | Does |
 | --- | --- |
-| `projects [--json]` | kata projects: name, id, uid, `[included]`, bound bb projects |
+| `projects [--json]` | kata projects: name, id, uid, `[included]`, bound VesnALIA projects |
 | `list [--status open\|closed\|all] [--priority N] [--label L]… [--owner A \| --unowned] [--limit 50] [--json]` | `P2 abc4  title  [labels] @owner`, sorted by priority then update |
 | `ready [--label L]… [--owner A \| --unowned] [--limit N]` | open, unblocked (`GET .../ready`) |
 | `search <query…> [--limit 20]` | daemon search (open and closed), with `matched_in` |
@@ -262,7 +262,7 @@ errors map to `PluginCliError`: codes `kata_<daemon code>` and
   `kata_close` (same rules, `dry_run`), and `kata_link_thread` (`ref: null`
   unlinks). Errors come back as `isError` text with the hint.
 - **`configure`**: kata-bound threads get all seven tools, the `kata` skill,
-  and the instruction block. The block now names the tools and `bb kata
+  and the instruction block. The block now names the tools and `alia kata
   --help` and states the close discipline (about 800 characters). Unbound
   threads get nothing.
 - **Skill** `skills/kata/SKILL.md` (93 lines) covers when a thread is bound,
@@ -276,18 +276,18 @@ errors map to `PluginCliError`: codes `kata_<daemon code>` and
 
 - `npm run typecheck`, `npm test` (86 pass, 18 of them new in
   `lib/cli-core.test.ts` / `lib/cli.test.ts`, which drive the real
-  `defineCli` parser against a recording fake client), `bb plugin build`,
-  `bb plugin reload kata`. `bb plugin list` shows the plugin running with
-  `command: bb kata`.
-- `bb kata --help`, `bb kata list --help`, `bb kata close --help` and
-  `bb kata create --help` print full option help, including the rules.
-- From an unbound thread (Personal): `bb kata projects` lists 8 projects,
-  with grippify and utilityonhome-signup shown as bound. `bb kata list`
+  `defineCli` parser against a recording fake client), `alia plugin build`,
+  `alia plugin reload kata`. `alia plugin list` shows the plugin running with
+  `command: alia kata`.
+- `alia kata --help`, `alia kata list --help`, `alia kata close --help` and
+  `alia kata create --help` print full option help, including the rules.
+- From an unbound thread (Personal): `alia kata projects` lists 8 projects,
+  with grippify and utilityonhome-signup shown as bound. `alia kata list`
   without `--project` fails with the `--project` hint, and `--json` gives the
   envelope. Read-only on grippify: `list`, `list --status all --limit 5`
   (with the "… 7 more" note), `show --project grippify 06fh`,
   `show grippify#g8ex`, `search`, `ready`.
-- Mutations, all on `bb-plugin-kata-scratch`:
+- Mutations, all on `alia-plugin-kata-scratch`:
   - `create` with `--priority`, `--label a,b`, `--parent`, `--blocked-by`
     and `--body` printed `…#d0w0`. The same `--idempotency-key` a second
     time returned the same id.
@@ -303,13 +303,13 @@ errors map to `PluginCliError`: codes `kata_<daemon code>` and
 - `link`, `linked` (text and `--json`), `unlink`, and `linked` again from
   this thread. The refactored `thread.linkIssue` / `thread.unlinkIssue` RPCs
   still work.
-- `include` / `exclude bb-plugin-kata-scratch` (the second `include` is a
+- `include` / `exclude alia-plugin-kata-scratch` (the second `include` is a
   no-op), plus an unknown project name, which gives a hint. The
   `includedProjects` list was not `[]` when testing started: it held 5
   projects, apparently chosen in the panel. It was left exactly as found.
-- A throwaway bb project whose root had a `.kata.toml` naming the scratch
+- A throwaway VesnALIA project whose root had a `.kata.toml` naming the scratch
   project, plus one thread in it: the agent listed all seven
-  `kata_*` tools (as `mcp__bb-bridge__kata_*`). It called `kata_list`
+  `kata_*` tools (as `mcp__alia-bridge__kata_*`). It called `kata_list`
   (`status: all`, `limit: 5`) and `kata_show ypd1` with no `project`, so
   the binding resolved it. Thread and project were deleted afterwards.
 - Every scratch issue is closed again.
@@ -330,12 +330,12 @@ errors map to `PluginCliError`: codes `kata_<daemon code>` and
 
 The SDK has no hook that decorates plain text in assistant messages
 (`richText.effects` is for the composer only; `experimental_contentScript`
-would mean editing host DOM). So issue links reach bb in two supported ways:
+would mean editing host DOM). So issue links reach VesnALIA in two supported ways:
 the `::kata-issue` directive, and a message action for refs in prose.
 
 - **Directive** `::kata-issue{ref="grippify#06fh"}` (`messageDirective`,
   `components/issue-chip.tsx`). It also takes `ref="06fh"` (resolved against the
-  message's bb project binding, or the thread's when the message has no
+  message's VesnALIA project binding, or the thread's when the message has no
   project) and `uid="<ULID>"`. A valid `uid` wins over `ref`, and the `ref` is
   still the label while the chip loads. Attributes are untrusted:
   `parseIssueDirective` (`lib/refs.ts`) checks lengths and ref shapes, and
@@ -394,7 +394,7 @@ the `::kata-issue` directive, and a message action for refs in prose.
 - **Agent adoption**: the configure block has one more sentence (write
   `::kata-issue{ref="project#abc4"}` on its own line when mentioning an
   issue), and `skills/kata/SKILL.md` has a matching paragraph.
-  `bb kata show` prints `mention in chat as: ::kata-issue{ref="…"}`, and
+  `alia kata show` prints `mention in chat as: ::kata-issue{ref="…"}`, and
   `--json` / `kata_show` JSON include `directive`. Both come from
   `issueDirective`, which only emits a clean `project#abc4`.
 - **Shared refs**: `lib/refs.ts` (no zod, no Node APIs) now owns ref parsing.
@@ -404,13 +404,13 @@ the `::kata-issue` directive, and a message action for refs in prose.
 
 - `npm run typecheck`, `npm test` (96 pass; new: `lib/refs.test.ts`,
   `lib/badge.test.ts`, and a directive-formatting case in
-  `lib/cli-core.test.ts`), `bb plugin build`, `bb plugin reload kata`, and
-  `bb plugin list` (running).
+  `lib/cli-core.test.ts`), `alia plugin build`, `alia plugin reload kata`, and
+  `alia plugin list` (running).
 - RPC: `issues.resolve` on a qualified ref, a bare id with and without a
   binding, a cross-project ref, junk, a missing short id, and a
-  first-that-resolves list. `issues.openCounts` matched `bb kata list` for
+  first-that-resolves list. `issues.openCounts` matched `alia kata list` for
   each included project.
-- A temporary bb project whose `.kata.toml` named `bb-plugin-kata-scratch`,
+- A temporary VesnALIA project whose `.kata.toml` named `alia-plugin-kata-scratch`,
   with a thread in it, and the scratch issue `#e8xf` ("T5 chip test"),
   checked in headless Chromium against the running app:
   - An assistant message rendered chips for `ref="project#id"`, bare
@@ -418,7 +418,7 @@ the `::kata-issue` directive, and a message action for refs in prose.
     only). `#zzzz` rendered muted with the tooltip "not found", and
     `<b>junk</b>` rendered muted as literal text. A directive written inline
     in a sentence stays literal, as the host documents.
-  - Clicking a chip opened `Kata · bb-plugin-kata-scratch#e8xf` with e8xf
+  - Clicking a chip opened `Kata · alia-plugin-kata-scratch#e8xf` with e8xf
     selected. The grippify chip opened a sibling tab on grippify with 06fh
     selected. Right-click showed both items. *Copy ref* put the ref on
     the clipboard, with a toast.
@@ -427,15 +427,15 @@ the `::kata-issue` directive, and a message action for refs in prose.
     The action-bar button on a message holding the directive opened e8xf.
   - Palette "Kata: open issue…": in the thread, `nope#zzzz` showed an inline
     error and `grippify#g8ex` opened a new tab with g8ex selected. On the root
-    page, `bb-plugin-kata-scratch#e8xf` went to `/plugins/kata/kata` with that
+    page, `alia-plugin-kata-scratch#e8xf` went to `/plugins/kata/kata` with that
     tab active and e8xf selected. `katha#czmp` added an italic visiting tab
     with czmp selected, which was gone after switching tabs.
     `includedProjects` was unchanged.
   - "Kata: link issue to this thread": the typeahead, then Enter, linked
-    e8xf (toast, header control, and `bb kata linked`). The command is not
+    e8xf (toast, header control, and `alia kata linked`). The command is not
     listed outside a thread.
   - A new thread asked a plain question ("which open kata issue is in this
-    project?"). The agent answered with `::kata-issue{ref="bb-plugin-kata-scratch#e8xf"}`
+    project?"). The agent answered with `::kata-issue{ref="alia-plugin-kata-scratch#e8xf"}`
     without being told to, which shows the instruction works.
   - The sidebar showed `48`, the sum over the included projects. After
     closing `#e8xf` with the CLI (done + evidence), it showed `47` and the
@@ -446,7 +446,7 @@ the `::kata-issue` directive, and a message action for refs in prose.
     the scratch issue is closed.
 - `includedProjects` changed during this session, and not from here: at the
   start it had 5 projects, and by the first browser check
-  `bb-plugin-kata-scratch` had been appended. No RPC, CLI or UI action in
+  `alia-plugin-kata-scratch` had been appended. No RPC, CLI or UI action in
   this session set it, and the test threads made no tool calls. It was left
   as found.
 
@@ -493,10 +493,10 @@ the `::kata-issue` directive, and a message action for refs in prose.
   directory first, skipped when it is the project source) and
   `resolveFromSources(sources, readOnHost)` (the first source with a hit wins,
   and the nearest file per source). `forThread` reads the thread's
-  `environmentId`, then `bb.sdk.environments.get` → `{hostId, path}`, and
+  `environmentId`, then `alia.sdk.environments.get` → `{hostId, path}`, and
   looks there first (`forEnvironment`, with its own 60 s / 5 s cache). It falls
   back to `forProject`, including when the environment cannot be read.
-  `peekThread(projectId, environmentId)` backs `bb.agents.configure`.
+  `peekThread(projectId, environmentId)` backs `alia.agents.configure`.
   `Binding.origin` says where the file came from. Environment-bound kata
   projects join the watched set too.
 - **Narrow layout** (`NARROW_PX = 720`, measured with a ResizeObserver on the
@@ -552,11 +552,11 @@ view), far below the ~300-row threshold, so the list is **not virtualized**.
 - `npm run typecheck`, `npm test` (110 pass; new tests for status views and
   lingering in `lib/optimistic.test.ts`, the resolver in
   `lib/workspace.test.ts`, help coverage in `lib/keymap.test.ts`, and
-  `lib/kata-client.test.ts`), `bb plugin build`, `bb plugin reload kata`, and
-  `bb plugin list` (running).
-- A temporary bb project whose source directory had no `.kata.toml`, and a
+  `lib/kata-client.test.ts`), `alia plugin build`, `alia plugin reload kata`, and
+  `alia plugin list` (running).
+- A temporary VesnALIA project whose source directory had no `.kata.toml`, and a
   thread in it whose environment was an unmanaged directory holding a
-  `.kata.toml` naming `bb-plugin-kata-scratch`. `binding.forThread` → scratch,
+  `.kata.toml` naming `alia-plugin-kata-scratch`. `binding.forThread` → scratch,
   while `binding.forProject` → unbound "no .kata.toml". The thread header
   showed scratch.
 - Thread side panel (539px wide, so narrow), all on scratch: *Open Kata issues*
@@ -572,7 +572,7 @@ view), far below the ~300-row threshold, so the list is **not virtualized**.
   showed `ALL` then `CLOSED` on grippify, and the view survived `]` / `[`.
   At a 900px viewport the panel went narrow, and `Enter` / `Esc` worked. The
   tabs and `includedProjects` were unchanged.
-- The palette "Kata: open issue…" with the closed `bb-plugin-kata-scratch#e8xf`
+- The palette "Kata: open issue…" with the closed `alia-plugin-kata-scratch#e8xf`
   opened a visiting tab in the *all* view with e8xf selected. In the *closed*
   view, `r` on `ypd1` kept its row, shown open, and `x` closed it again. The
   visiting tab went away after `]`.
@@ -589,7 +589,7 @@ view), far below the ~300-row threshold, so the list is **not virtualized**.
 
 kata keeps no HTTP log: `daemon.log` is empty, and `kata daemon logs` only
 covers hook runs. The plugin log had rotated past T2. What T6 did show is that
-any RPC handler that throws reaches the browser as **HTTP 500** from bb's
+any RPC handler that throws reaches the browser as **HTTP 500** from VesnALIA's
 plugin RPC route. For example, `issues.list` for a closed/all view while the
 daemon was down returned 500, and the panel showed the error with *Retry*. The
 lone T2 500 fits a transient daemon error during a mutation or `issues.get`.
@@ -601,7 +601,7 @@ It did not recur in T2–T6. No fix was made.
   "kata web ↗" button, the chip context-menu item, the thread header popover
   item, the `o` binding (keymap, help overlay, tests), the RPCs
   `issues.webUrl` / `projects.webUrl`, `lib/issue-open.ts`'s `openInKataWeb`,
-  and the client's `launchTarget` (with `KataLaunchTarget`). `bb kata show`
+  and the client's `launchTarget` (with `KataLaunchTarget`). `alia kata show`
   never printed a web URL. Nothing opens `openUrl` any more, so the panel no
   longer takes a navigator (`components/kata-panel.tsx`).
 - **Key hints follow one pattern**: `<key>: <verb phrase>` or
@@ -657,14 +657,14 @@ It did not recur in T2–T6. No fix was made.
 
 - `npm run typecheck`, `npm test` (113 pass: `lib/reorder.test.ts` is new, the
   three badge tests are gone, and `lib/keymap.test.ts` covers the Alt chords),
-  `bb plugin build`, `bb plugin reload kata`, `bb plugin list` (running).
+  `alia plugin build`, `alia plugin reload kata`, `alia plugin list` (running).
 - Headless Chromium at 1400×900 on the nav page, with the real tab strip:
   - Dragging `ops` onto the left of `grippify` faded the dragged tab to 50%,
     drew the bar in the leading gap, and dropped `ops` first. `included.get`
     matched the strip, and the order survived a page reload. `[` / `]` still
     switched tabs afterwards.
   - `alt-]` then `alt-[` moved the active tab right and back; a third `alt-[`
-    at the left end changed nothing and saved nothing. bb does not claim
+    at the left end changed nothing and saved nothing. VesnALIA does not claim
     Alt+bracket, so the `⌘⇧[` fallback was not needed. The help overlay lists
     `move tab left alt-[` / `move tab right alt-]`.
   - With a visiting `katha` tab (palette "Kata: open issue…" on
@@ -676,8 +676,8 @@ It did not recur in T2–T6. No fix was made.
   - The Kata sidebar row reads `Kata` with no number. No console errors.
 - `includedProjects` was restored to the order found at the start
   (grippify, utilityonhome-signup, voice-agent-playground, ops,
-  utilityon-property-portal, bb-plugin-kata-scratch) and `diff`s clean against
-  the copy taken before the work. Note `bb kata projects` lists by kata id and
+  utilityon-property-portal, alia-plugin-kata-scratch) and `diff`s clean against
+  the copy taken before the work. Note `alia kata projects` lists by kata id and
   only marks `[included]`; the tab order is read with `included.get`.
 - **Found and fixed while testing**: the tab buttons called `preventDefault`
   on `mousedown` (so a click would not take focus from the list). Chrome then
@@ -705,7 +705,7 @@ It did not recur in T2–T6. No fix was made.
   `sameFraction` compare what is rendered, and `readFraction` guards anything
   read back from storage.
 - **Stored server-side**: RPC `layout.get` / `layout.set` (`{surface: "nav"}`)
-  over `bb.storage.kv` (`layout.split.nav`), so the split follows the user
+  over `alia.storage.kv` (`layout.split.nav`), so the split follows the user
   across browser tabs and reloads. `localStorage` (`kata.split.nav`) mirrors it
   for the first paint; the RPC answer wins unless a drag beat it
   (`splitTouched`). The key is per surface: only the nav page has one today.
@@ -737,7 +737,7 @@ It did not recur in T2–T6. No fix was made.
 ### Verified live (2026-09-23, headless Chromium 1600×1000)
 
 - `npm run typecheck`, `npm test` (121 pass; `lib/split.test.ts` is new),
-  `bb plugin build`, `bb plugin reload kata`, `bb plugin list` (running, no
+  `alia plugin build`, `alia plugin reload kata`, `alia plugin list` (running, no
   handler errors).
 - Nav page: dragging the handle moved the list 576 → 830px with the keyboard
   still on the list. A reload kept 830px; clearing `localStorage` and reloading
@@ -761,7 +761,7 @@ It did not recur in T2–T6. No fix was made.
   horizontal one; the footer keeps its single `border-t`. `Enter` tinted the
   divider and dimmed the selected row, `Esc` put both back. The grippify thread
   panel (639px) has no handle, no pane border and no ring.
-- No console errors from the plugin (bb's own environment-status 409s on the
+- No console errors from the plugin (VesnALIA's own environment-status 409s on the
   grippify thread are unrelated). `includedProjects` is unchanged.
 
 ## T10: a chip opens the issue's detail
@@ -802,9 +802,9 @@ enter).
 
 ### Verified live (2026-09-28, headless Chromium 1400×900)
 
-`npm run typecheck`, `npm test` (125 pass, 3 new), `bb plugin build`,
-`bb plugin reload kata`. A temporary bb project on a temp directory holding a
-`.kata.toml` for `bb-plugin-kata-scratch`, one thread, one scratch issue
+`npm run typecheck`, `npm test` (125 pass, 3 new), `alia plugin build`,
+`alia plugin reload kata`. A temporary VesnALIA project on a temp directory holding a
+`.kata.toml` for `alia-plugin-kata-scratch`, one thread, one scratch issue
 (`#nas2`), all deleted afterwards; `includedProjects` untouched.
 
 - The assistant message's `::kata-issue` chip opened the side panel (1400px
@@ -815,7 +815,7 @@ enter).
   (the footer read `? help`, not "Click to use the keyboard") while the chip's
   tab stayed on its issue. Clicking the chip with that other tab in front
   re-activated the issue's tab on its detail.
-- The header popover's linked issue (linked with `bb kata link`) opened the
+- The header popover's linked issue (linked with `alia kata link`) opened the
   detail, focused.
 - Nav page: the sidebar row focused the list, `j` moved the selection and `]`
   switched tabs. No console errors from the plugin.
@@ -844,16 +844,16 @@ enter).
 | `components/dialogs.tsx` | Close menu, comment box, body editor (`b`) |
 | `components/fields.tsx` | Field key hand-over, two-step Esc discard guard, inputs |
 | `components/{issue-list,issue-detail,project-tabs,project-picker,help-overlay,issue-bits}.tsx` | UI pieces |
-| `components/ui/*`, `lib/utils.ts`, `lib/portal-scope.ts`, `hooks/` | Vendored bb shadcn source |
+| `components/ui/*`, `lib/utils.ts`, `lib/portal-scope.ts`, `hooks/` | Vendored VesnALIA shadcn source |
 | `lib/workspace.ts` | `.kata.toml` parse, ancestor search, binding resolver (cache, `peek`), thread-link validation, agent instructions |
 | `hooks/useThreadBinding.ts` | Per-component thread binding state + realtime refresh |
 | `components/thread-header.tsx` | Thread header control, popover, link typeahead |
 | `components/thread-issues-panel.tsx` | "Kata issues" thread panel (scoped `KataPanel`) |
-| `components/ui/popover.tsx` | Vendored from the `@bb` registry (desktop-v0.43.3) |
+| `components/ui/popover.tsx` | Vendored from the `@alia` registry (desktop-v0.43.3) |
 | `lib/*.test.ts` | `node --test` units: keymap, tree, optimistic, labels, issue-detail, issue-store, workspace, cli-core, cli, refs, reorder, split, kata-client |
 | `lib/cli-core.ts` | Pure: refs, project precedence, list/create/close request bodies, evidence, formatting, byte bounding |
 | `lib/kata-service.ts` | Operations shared by CLI and tools (resolution, daemon calls, thread link, viewer tabs) |
-| `lib/cli.ts` | `defineCli` spec for `bb kata` |
+| `lib/cli.ts` | `defineCli` spec for `alia kata` |
 | `lib/agent-tools.ts` | `kata_*` agent tools |
 | `skills/kata/SKILL.md` | Agent-facing conventions and command reference |
 | `lib/refs.ts` | Pure: ref parsing, `::kata-issue` attribute validation, ref extraction from text, panel-param targets, directive text |
@@ -863,7 +863,7 @@ enter).
 | `hooks/useResolvedIssue.ts` | Shared `issues.resolve` cache with realtime invalidation |
 | `components/issue-chip.tsx` | `::kata-issue` directive chip and its context menu |
 | `components/command-dialogs.tsx` | Palette "open issue…" / "link issue" dialogs (app overlay) |
-| `components/ui/context-menu.tsx`, `menu-item-hover.tsx` | Vendored from the `@bb` registry (desktop-v0.43.3) |
+| `components/ui/context-menu.tsx`, `menu-item-hover.tsx` | Vendored from the `@alia` registry (desktop-v0.43.3) |
 
 ## How to run
 
@@ -871,10 +871,10 @@ enter).
 npm install --include=dev
 npm run typecheck           # tsc
 npm test                    # node --test lib/*.test.ts
-bb plugin build
-bb plugin install . --yes   # first time; afterwards: bb plugin reload kata
-bb plugin rpc call kata projects.list
-bb plugin logs kata
+alia plugin build
+alia plugin install . --yes   # first time; afterwards: alia plugin reload kata
+alia plugin rpc call kata projects.list
+alia plugin logs kata
 ```
 
 ## Known gaps
@@ -900,7 +900,7 @@ bb plugin logs kata
 - The first connection after the plugin loads still uses `kata daemon
   locate`, which starts a stopped daemon, as every kata command does. Only
   later reconnects respect a stopped daemon.
-- An RPC handler failure shows in the browser as HTTP 500 (bb's RPC route).
+- An RPC handler failure shows in the browser as HTTP 500 (VesnALIA's RPC route).
   The panel shows the message, but the console logs a failed request.
 - T3: the linked issue's title appears in agent instructions only after the
   server has read it (the header or panel did, or a link was made) since the
@@ -910,7 +910,7 @@ bb plugin logs kata
   environment's `.kata.toml` gets the block from its second turn on. Opening
   the thread (header control) usually resolves it first. `binding.forThread`
   does not report `origin` to the UI.
-- T4: `bb kata` peer lines for blockers show only the qualified id (the
+- T4: `alia kata` peer lines for blockers show only the qualified id (the
   daemon's `showIssue` links carry no titles).
 - T4: agents cannot close `done` without evidence. This is the daemon's rule
   for non-TUI closes, and it is deliberate.
@@ -918,7 +918,7 @@ bb plugin logs kata
   is no SDK hook for that). Use the directive or the selection action.
 - T5: each different issue opened from chips gets its own tab (the host keys
   tabs by params). That is deliberate, but the tabs can pile up.
-- `bb plugin list` counts handler errors, including the RPC 500s from the
+- `alia plugin list` counts handler errors, including the RPC 500s from the
   daemon-down test, so the count is above T5's 3.
 - A thread panel opened by the host without a deliberate action (for example,
   restored on reload) does not take focus. Click it, or use the footer

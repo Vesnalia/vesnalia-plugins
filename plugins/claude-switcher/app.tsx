@@ -1,12 +1,12 @@
-// Claude Switcher — bb plugin frontend.
+// Claude Switcher — VesnALIA plugin frontend.
 //
 // A Settings section: every Claude Code account as design B draws it (a
 // sentence on top, one row per account with a thin bar of what is spent per
 // window; see src/panel.ts), a form to add an account and log it in, which account each
-// project runs on (with a picker to change it), and the history of moves. The windows themselves are ALSO published to bb's
+// project runs on (with a picker to change it), and the history of moves. The windows themselves are ALSO published to VesnALIA's
 // Provider usage panel through server.ts; this section is where you act.
 // And, in a Claude Code thread's header, the project's account with a menu
-// to change it (an experimental bb slot, registered only when the host has it);
+// to change it (an experimental VesnALIA slot, registered only when the host has it);
 // the same control in the new-thread composer, for the project picked there;
 // and over a thread's composer, the advice to switch it to Opus when nothing
 // queued says it.
@@ -25,7 +25,7 @@ import {
   useRealtimeConnectionState,
   useRpc,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, State } from "./server";
 import {
   askForProject,
@@ -79,7 +79,7 @@ const EXTERNAL = "__external__";
 const STALE = "__stale__";
 
 // The last list any view received: a header mounting for another thread
-// shows it at once while its own read is under way (bb can take seconds).
+// shows it at once while its own read is under way (VesnALIA can take seconds).
 let lastSeen: State | null = null;
 // Shared by every view, as lastSeen is: a read started before a pick that
 // lands after it must not show the account the project had before.
@@ -103,7 +103,7 @@ function useAccounts() {
     setState(shown);
     return shown;
   }, []);
-  // A failed read is tried again (bb busy or restarting) rather than leaving
+  // A failed read is tried again (VesnALIA busy or restarting) rather than leaving
   // the view empty until the next change; one pending retry per view.
   const retry = useRef<{
     alive: boolean;
@@ -953,7 +953,7 @@ function ThreadAccountMenu({
   const lang = useLang();
   const helpId = useId();
   // A project made a moment ago can be missing from the list the views
-  // share: asked for by name, and again after a failed read (bb busy).
+  // share: asked for by name, and again after a failed read (VesnALIA busy).
   const missing =
     state !== null && headerStatus(state, projectId, Date.now()) === null;
   const [failedReads, setFailedReads] = useState(0);
@@ -1022,11 +1022,11 @@ function ThreadAccountMenu({
         mobileTitle="Claude account"
         // Read out with the menu: the arrow keys never reach a label.
         aria-describedby={keepsHelp ? helpId : undefined}
-        // bb's composer form takes a mousedown that is not on a button for a
+        // VesnALIA's composer form takes a mousedown that is not on a button for a
         // click on its draft, and React passes it up through the portal.
         onMouseDown={newThread ? (event) => event.stopPropagation() : undefined}
-        // As bb's own composer menu does; unless something else took focus.
-        // On a phone bb hides the keyboard when a menu closes: left so.
+        // As VesnALIA's own composer menu does; unless something else took focus.
+        // On a phone VesnALIA hides the keyboard when a menu closes: left so.
         onCloseAutoFocus={
           focusComposer === undefined
             ? undefined
@@ -1124,7 +1124,7 @@ function ThreadAccountMenu({
  */
 function NewThreadAccount() {
   const composer = useComposer();
-  // The composer only reports its collapsed layout, where bb hides plugin
+  // The composer only reports its collapsed layout, where VesnALIA hides plugin
   // actions anyway: the screen width is what keeps the button short.
   const narrow = useIsCompactViewport();
   const projectId = composerProject(composer.scope, composer.selection);
@@ -1144,7 +1144,7 @@ function NewThreadAccount() {
  * Over a thread's composer: the advice of its latest failure to switch it
  * to Opus, when nothing queued says it (a decline: beyond the maximum wait,
  * or no account will free; D3, Sol B2-004). It only shows: switching is the
- * user's, with bb's model picker. Read again on the server's signal for
+ * user's, with VesnALIA's model picker. Read again on the server's signal for
  * this thread; a failed read is tried again.
  */
 function ThreadAdvice() {
@@ -1181,7 +1181,7 @@ function ThreadAdvice() {
     if ((payload as { threadId?: unknown } | null)?.threadId === threadId)
       setSignals((n) => n + 1);
   });
-  // A signal sent while bb's connection was down is lost, whether it added
+  // A signal sent while VesnALIA's connection was down is lost, whether it added
   // the advice or took it away: read again when it is back (Sol B2-R2-004).
   const connection = useRealtimeConnectionState();
   const seen = useRef<typeof connection | undefined>(undefined);
@@ -1207,7 +1207,7 @@ export default definePluginApp((app) => {
       "Every Claude Code account on this machine, its usage windows, and which account each project uses.",
     component: AccountsSection,
   });
-  // Experimental in bb: a host without it (older, or once it is renamed)
+  // Experimental in VesnALIA: a host without it (older, or once it is renamed)
   // keeps the Settings section instead of failing the whole frontend.
   if (typeof app.slots.experimental_threadHeaderAction === "function")
     app.slots.experimental_threadHeaderAction({

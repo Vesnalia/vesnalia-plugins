@@ -7,7 +7,7 @@ import {
 } from "react";
 import {
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { threadDisplayTitle, threadEditableTitle } from "./inbox";
 import { useThreadMutations } from "./thread-actions";
@@ -15,7 +15,7 @@ import { useThreadMutations } from "./thread-actions";
 /**
  * The row's title, which becomes an inline rename field on double-click.
  *
- * Derived from bb-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
+ * Derived from alia-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
  * see THIRD-PARTY-NOTICES.md at the repository root.
  */
 export function InlineThreadTitle({

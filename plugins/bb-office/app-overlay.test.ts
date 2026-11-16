@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { createElement, type ReactNode } from "react";
 import { act, cleanup, fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_OFFICE_CONFIG } from "./office-config-schema";
 
@@ -70,9 +70,9 @@ async function setCompact(value: boolean) {
   });
 }
 
-describe("BB Office app overlay", () => {
+describe("VesnALIA Office app overlay", () => {
   test("registers once without claiming a sidebar replacement", () => {
-    expect(app.appOverlays.map((slot) => slot.id)).toEqual(["bb-office-floating"]);
+    expect(app.appOverlays.map((slot) => slot.id)).toEqual(["alia-office-floating"]);
     expect(app.threadLists).toEqual([]);
   });
 

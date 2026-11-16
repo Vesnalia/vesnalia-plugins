@@ -10,7 +10,7 @@ import { BOAT_KEYS, parseBoatPart } from "../src/backends/boat/config.ts";
 import { BoatBackend, LABELS, knownHostsLine, ownKeyScript, powerOf, sandboxName, sizeFor } from "../src/backends/boat/backend.ts";
 import { ARCHIVE_WITHIN_MS, BoatTemplates, BuildLeftRunning, FAILED_BUILD_RETRY_MS, LEFT_BUILD_WHY, TEMPLATE_FILES, TEMPLATE_ROLE, TRIAL_ROLE, buildWaitWords, failedChecks, guestBuildFrom, guestStep, templateArchive, templateFingerprint, templateName, type Reached, type TemplateDeps, type TemplateRecord } from "../src/backends/boat/templates.ts";
 import { BackendError, type AcquireHooks, type BoxIdentity, type Guest } from "../src/backends/types.ts";
-import { bbReach, isPrivateAddress } from "../src/backends/boat/reach-bb.ts";
+import { aliaReach, isPrivateAddress } from "../src/backends/boat/reach-alia.ts";
 import { BoatOwner } from "../src/backends/boat/owner.ts";
 import { setupDir } from "../src/backends/setup-dir.ts";
 import { FAKE_BOAT_KEY, FakeBoat } from "./fake-boat.ts";
@@ -118,7 +118,7 @@ test("an acquire claims the box before boat makes anything, forks the kind's tem
   assert.equal((await transports.command!.run("echo hi", { timeoutMs: 10_000 })).stdout.trim(), "hi");
 });
 
-test("a desktop box waits for its display and offers BB Box's VNC and Selkies through SSH", async () => {
+test("a desktop box waits for its display and offers VesnALIA Box's VNC and Selkies through SSH", async () => {
   const { backend } = setup();
   const recorded = hooks();
   const guest = await backend.acquire(box("d1", "linux-desktop-cpu", { cores: 4, memoryMiB: 8192, diskGiB: null }), null, recorded.hooks, signal());
@@ -165,13 +165,13 @@ test("boat's busy answers are tried again, then refused as no capacity so anothe
   assert.deepEqual(fake.running(), [], "a box that did not start leaves no sandbox");
 });
 
-test("capacity says when BB Box's most boxes, the plan's sandboxes, the starts a minute or the trial's compute are used up, and refuses a size the plan does not allow before asking boat", async () => {
+test("capacity says when VesnALIA Box's most boxes, the plan's sandboxes, the starts a minute or the trial's compute are used up, and refuses a size the plan does not allow before asking boat", async () => {
   const { fake, backend } = setup({ config: { mostBoxes: 1 } });
   assert.equal((await backend.capacity("linux", SMALL, [])).ok, true);
   await backend.acquire(box("b1"), null, hooks().hooks, signal());
   const full = await backend.capacity("linux", SMALL, []);
   assert.equal(full.ok, false);
-  assert.match(full.message!, /^boat.dev has 1 of the 1 sandboxes BB Box may run on it at once/);
+  assert.match(full.message!, /^boat.dev has 1 of the 1 sandboxes ALIA Box may run on it at once/);
   const large = await setup().backend.capacity("linux", { cores: 8, memoryMiB: 16384, diskGiB: null }, []);
   assert.equal(large.ok, false);
   assert.match(large.message!, /large size would hold 8 cores and 16 GiB, but the plan does not allow it now/);
@@ -229,7 +229,7 @@ test("stop is boat's stop, and start resumes the sandbox and pins its new host k
   assert.match(made.hostKey, /x$/);
 });
 
-test("the upkeep renews the auto-stop of the running boxes BB Box holds, once it is near, and lets a sandbox no record names run out", async () => {
+test("the upkeep renews the auto-stop of the running boxes VesnALIA Box holds, once it is near, and lets a sandbox no record names run out", async () => {
   let now = Date.parse("2030-01-01T00:00:00Z");
   const { fake, backend } = setup({ now: () => now });
   const guest = await backend.acquire(box("b1"), null, hooks().hooks, signal());
@@ -279,7 +279,7 @@ function templateWorld(options: { readonly holdSteps?: boolean; readonly guestRe
       trialRuns.push({ sandbox, user, script });
       const answered = await trialRun?.(sandbox, script);
       if (answered) return answered;
-      if (script.startsWith("bb-box-check")) return { ...OK_RUN, stdout: "Docker                             ok\n" };
+      if (script.startsWith("alia-box-check")) return { ...OK_RUN, stdout: "Docker                             ok\n" };
       return OK_RUN;
     },
   });
@@ -316,11 +316,11 @@ test("with no template, the first box waits for its build and says so; the build
   let checkFails = false;
   let finalizedWhenChecked: number | null = null;
   world.answerTrials(async (sandbox, script) => {
-    if (!script.startsWith("bb-box-check")) return null;
+    if (!script.startsWith("alia-box-check")) return null;
     finalizedWhenChecked = [...world.guests.values()].reduce((sum, guest) => sum + guest.runs("finalize").length, 0);
     return checkFails ? { ...OK_RUN, stdout: "Docker                             FAIL no daemon\n" } : null;
   });
-  const templates = new BoatTemplates(world.deps({ restored: async (sandbox) => void world.trialRuns.push({ sandbox, user: "bb-box", script: "boat restored" }) }));
+  const templates = new BoatTemplates(world.deps({ restored: async (sandbox) => void world.trialRuns.push({ sandbox, user: "alia-box", script: "boat restored" }) }));
   try {
     const waiting: (string | null)[] = [];
     const record = await templates.forBox("linux", signal(), async (words) => void waiting.push(words));
@@ -340,7 +340,7 @@ test("with no template, the first box waits for its build and says so; the build
     assert.equal(guest.controlFile("android-sdk-license"), null, "only Android's build accepts the SDK licence");
     assert.equal(guest.stagings().length, 1);
 
-    const check = world.trialRuns.find((each) => each.script.startsWith("bb-box-check-headless"))!;
+    const check = world.trialRuns.find((each) => each.script.startsWith("alia-box-check-headless"))!;
     assert.notEqual(check.sandbox, record.sandbox, "the check runs in a fork of the template, as a box is");
     assert.equal(check.user, "box", "the check runs as the box user");
     assert.equal(world.fake.sandboxes.get(check.sandbox)?.state, "deleted", "the trial fork goes");
@@ -363,7 +363,7 @@ test("with no template, the first box waits for its build and says so; the build
   }
 });
 
-test("a BB Box that starts while the template's guest scripts run follows that build: no second sandbox and one customize, and the BB Box that stopped leaves it running and records no failure", { skip: GUEST_SKIP }, async () => {
+test("a VesnALIA Box that starts while the template's guest scripts run follows that build: no second sandbox and one customize, and the VesnALIA Box that stopped leaves it running and records no failure", { skip: GUEST_SKIP }, async () => {
   const world = templateWorld({ holdSteps: true });
   try {
     const first = new BoatTemplates(world.deps());
@@ -374,7 +374,7 @@ test("a BB Box that starts while the template's guest scripts run follows that b
 
     first.dispose();
     await assert.rejects(building, BuildLeftRunning);
-    assert.equal(made.state, "ready", "the build's sandbox is left running for the next bb-box");
+    assert.equal(made.state, "ready", "the build's sandbox is left running for the next alia-box");
     assert.equal(made.name, templateName("linux", "building"));
     assert.equal(await first.failedBuild("linux"), null, "a stop is not a failed build, so the upkeep does not wait hours");
 
@@ -398,7 +398,7 @@ test("a BB Box that starts while the template's guest scripts run follows that b
   }
 });
 
-test("a box that stops waiting for its template, as BB Box stops and aborts its acquires before its backends, leaves the build going, so the stop is not held up for the build's minutes", { skip: GUEST_SKIP }, async () => {
+test("a box that stops waiting for its template, as VesnALIA Box stops and aborts its acquires before its backends, leaves the build going, so the stop is not held up for the build's minutes", { skip: GUEST_SKIP }, async () => {
   const world = templateWorld({ holdSteps: true });
   try {
     const templates = new BoatTemplates(world.deps());
@@ -409,9 +409,9 @@ test("a box that stops waiting for its template, as BB Box stops and aborts its 
 
     let ended = false;
     waiting.catch(() => undefined).finally(() => (ended = true));
-    acquire.abort(new Error("BB Box is stopping."));
+    acquire.abort(new Error("VesnALIA Box is stopping."));
     await until("the box stops waiting", () => ended, 2_000);
-    await assert.rejects(waiting, /BB Box is stopping\./);
+    await assert.rejects(waiting, /ALIA Box is stopping\./);
     assert.equal(templates.building("linux"), true, "the build goes on");
     assert.equal(made.state, "ready");
 
@@ -424,7 +424,7 @@ test("a box that stops waiting for its template, as BB Box stops and aborts its 
   }
 });
 
-test("a reload during the staging: the follower waits on the build's lock rather than stage again, so the one customize is the first BB Box's", { skip: GUEST_SKIP }, async () => {
+test("a reload during the staging: the follower waits on the build's lock rather than stage again, so the one customize is the first VesnALIA Box's", { skip: GUEST_SKIP }, async () => {
   let releaseUpload: (() => void) | null = null;
   let uploadsHeld = 0;
   const world = templateWorld({ holdSteps: true, guestReady: (guest) => guest.holdStdin(async (script, stdin) => {
@@ -438,7 +438,7 @@ test("a reload during the staging: the follower waits on the build's lock rather
     await until("the build's sandbox is made", () => world.templateSandboxes().length === 1);
     const made = world.templateSandboxes()[0]!;
     const guest = world.guestOf(made.id);
-    await until("the first BB Box is mid-upload, holding the lock, its log made", () => releaseUpload !== null && existsSync(join(guest.buildDir, "log")));
+    await until("the first VesnALIA Box is mid-upload, holding the lock, its log made", () => releaseUpload !== null && existsSync(join(guest.buildDir, "log")));
 
     first.dispose();
     const second = new BoatTemplates(world.deps());
@@ -455,14 +455,14 @@ test("a reload during the staging: the follower waits on the build's lock rather
 
     assert.equal(record.sandbox, made.id);
     assert.equal(guest.runs("customize").length, 1, "one customize in the sandbox");
-    assert.deepEqual(guest.stagings().map((run) => run.exitCode), [0], "one staging, the first BB Box's");
+    assert.deepEqual(guest.stagings().map((run) => run.exitCode), [0], "one staging, the first VesnALIA Box's");
     assert.equal(world.creates(), 1);
   } finally {
     world.dispose();
   }
 });
 
-test("an upload cut off by the reload leaves the build to the next bb-box, which stages it again in the same sandbox, and a stopped BB Box starts no staging of its own", { skip: GUEST_SKIP }, async () => {
+test("an upload cut off by the reload leaves the build to the next alia-box, which stages it again in the same sandbox, and a stopped VesnALIA Box starts no staging of its own", { skip: GUEST_SKIP }, async () => {
   let releaseUpload: (() => void) | null = null;
   let releaseArchive: (() => void) | null = null;
   let uploadsHeld = 0;
@@ -477,11 +477,11 @@ test("an upload cut off by the reload leaves the build to the next bb-box, which
     await until("the build's sandbox is made", () => world.templateSandboxes().length === 1);
     const made = world.templateSandboxes()[0]!;
     const guest = world.guestOf(made.id);
-    await until("the first BB Box is mid-upload", () => releaseUpload !== null);
+    await until("the first VesnALIA Box is mid-upload", () => releaseUpload !== null);
     first.dispose();
     releaseUpload!();
-    await assert.rejects(building, (error: unknown) => error instanceof BuildLeftRunning && /could not unpack BB Box's template scripts/.test(error.message));
-    assert.equal(made.state, "ready", "a step that failed as BB Box stopped is not the build failing");
+    await assert.rejects(building, (error: unknown) => error instanceof BuildLeftRunning && /could not unpack ALIA Box's template scripts/.test(error.message));
+    assert.equal(made.state, "ready", "a step that failed as VesnALIA Box stopped is not the build failing");
     assert.equal(await first.failedBuild("linux"), null);
 
     const late = new BoatTemplates(world.deps({ publicKey: async () => "ssh-ed25519 AAAAlate", setupArchive: async () => {
@@ -489,18 +489,18 @@ test("an upload cut off by the reload leaves the build to the next bb-box, which
       return guestScriptsArchive();
     } }));
     const lateBuild = late.build("linux", LEFT_BUILD_WHY);
-    await until("a second BB Box reads the archive to stage again", () => releaseArchive !== null);
+    await until("a second VesnALIA Box reads the archive to stage again", () => releaseArchive !== null);
     late.dispose();
     releaseArchive!();
     await assert.rejects(lateBuild, BuildLeftRunning);
-    assert.equal(guest.stagings().length, 1, "a BB Box stopped while it read the archive did not stage");
+    assert.equal(guest.stagings().length, 1, "a VesnALIA Box stopped while it read the archive did not stage");
 
     const second = new BoatTemplates(world.deps({ publicKey: async () => "ssh-ed25519 AAAAsecond" }));
     const record = await second.build("linux", LEFT_BUILD_WHY);
     assert.equal(record.sandbox, made.id);
     assert.equal(world.creates(), 1);
     assert.equal(guest.runs("customize").length, 1);
-    assert.equal(guest.controlFile("plugin-key.pub"), "ssh-ed25519 AAAAsecond\n", "the BB Box that ran on staged it");
+    assert.equal(guest.controlFile("plugin-key.pub"), "ssh-ed25519 AAAAsecond\n", "the VesnALIA Box that ran on staged it");
   } finally {
     world.dispose();
   }
@@ -531,11 +531,11 @@ test("a build whose guest scripts died is given up at the next look, not after t
   }
 });
 
-test("a trial fork left by a reload is checked again by the next bb-box, which reuses only a trial of that template", { skip: GUEST_SKIP }, async () => {
+test("a trial fork left by a reload is checked again by the next alia-box, which reuses only a trial of that template", { skip: GUEST_SKIP }, async () => {
   const world = templateWorld();
   let checking: ((answer: Awaited<ReturnType<Reached["run"]>>) => void) | null = null;
   try {
-    world.answerTrials(async (_sandbox, script) => (script.startsWith("bb-box-check") && !checking ? new Promise((resolve) => (checking = resolve)) : null));
+    world.answerTrials(async (_sandbox, script) => (script.startsWith("alia-box-check") && !checking ? new Promise((resolve) => (checking = resolve)) : null));
     const first = new BoatTemplates(world.deps());
     const building = first.build("linux", "a box needs it");
     await until("the check runs in the trial", () => checking !== null);
@@ -547,7 +547,7 @@ test("a trial fork left by a reload is checked again by the next bb-box, which r
     first.dispose();
     checking!({ ...OK_RUN, exitCode: 255, stderr: "Connection to the trial closed." });
     await assert.rejects(building, BuildLeftRunning);
-    assert.equal(trial.state, "ready", "the trial is left for the next bb-box");
+    assert.equal(trial.state, "ready", "the trial is left for the next alia-box");
     assert.equal(template.state, "archived");
     assert.equal(await first.adoptable("linux"), null, "a template whose check has not passed is not forked");
 
@@ -555,7 +555,7 @@ test("a trial fork left by a reload is checked again by the next bb-box, which r
     const record = await second.build("linux", LEFT_BUILD_WHY);
     assert.equal(record.sandbox, template.id);
     assert.equal(world.forks().length, 1, "no second trial fork");
-    assert.deepEqual(world.trialRuns.filter((run) => run.script.startsWith("bb-box-check")).map((run) => run.sandbox), [trial.id, trial.id]);
+    assert.deepEqual(world.trialRuns.filter((run) => run.script.startsWith("alia-box-check")).map((run) => run.sandbox), [trial.id, trial.id]);
     assert.equal(world.trialRuns.some((run) => run.sandbox === decoy.id), false, "a trial of another template is not used");
     assert.equal(decoy.state, "ready");
     assert.equal(trial.state, "deleted");
@@ -570,7 +570,7 @@ test("a failed trial leaves a template another instance recorded, named ready, o
   const world = templateWorld();
   const mode: { current: "record" | "ready" | "trial" } = { current: "record" };
   world.answerTrials(async (sandbox, script) => {
-    if (!script.startsWith("bb-box-check")) return null;
+    if (!script.startsWith("alia-box-check")) return null;
     const templateId = world.fake.sandboxes.get(sandbox)?.labels[LABELS.template];
     const template = templateId ? world.fake.sandboxes.get(templateId) : undefined;
     assert.ok(template);
@@ -606,9 +606,9 @@ test("a trial retries its check once when the first Docker start cannot start it
   const world = templateWorld();
   let checks = 0;
   world.answerTrials(async (_sandbox, script) => {
-    if (!script.startsWith("bb-box-check")) return null;
+    if (!script.startsWith("alia-box-check")) return null;
     checks += 1;
-    if (checks === 1) return { ...OK_RUN, exitCode: 1, stdout: 'first docker command                 FAIL unable to start unit "docker-abc123.scope" (properties [{Name:Description Value:bb-box}]): transaction is destructive\n' };
+    if (checks === 1) return { ...OK_RUN, exitCode: 1, stdout: 'first docker command                 FAIL unable to start unit "docker-abc123.scope" (properties [{Name:Description Value:alia-box}]): transaction is destructive\n' };
     return null;
   });
   const templates = new BoatTemplates(world.deps());
@@ -618,12 +618,12 @@ test("a trial retries its check once when the first Docker start cannot start it
     assert.equal(world.fake.sandboxes.get(record.sandbox)?.name, templateName("linux", "ready"));
     checks = 0;
     world.answerTrials(async (_sandbox, script) => {
-      if (!script.startsWith("bb-box-check")) return null;
+      if (!script.startsWith("alia-box-check")) return null;
       checks += 1;
-      return { ...OK_RUN, exitCode: 1, stderr: 'unable to start unit "docker-def456.scope" (properties [{Name:Description Value:bb-box}]): transaction is destructive' };
+      return { ...OK_RUN, exitCode: 1, stderr: 'unable to start unit "docker-def456.scope" (properties [{Name:Description Value:alia-box}]): transaction is destructive' };
     });
     await world.storage.delete("template/linux-desktop-cpu");
-    await assert.rejects(templates.build("linux-desktop-cpu", "test"), /unable to start unit "docker-def456\.scope" \(properties \[\{Name:Description Value:bb-box\}\]\): transaction is destructive/);
+    await assert.rejects(templates.build("linux-desktop-cpu", "test"), /unable to start unit "docker-def456\.scope" \(properties \[\{Name:Description Value:alia-box\}\]\): transaction is destructive/);
     assert.equal(checks, 2, "one retry, then the failure stands");
   } finally {
     world.dispose();
@@ -653,7 +653,7 @@ test("a follower that stops hearing the build leaves the sandbox when the build 
     await assert.rejects(building, /stopped answering: ssh closed/);
     assert.equal(refused, 31, "thirty misses, then one more read before deleting");
     assert.match(guest.ran.at(-1)?.stdout ?? "", /^running=yes/, "that read shows the lock still held");
-    assert.equal(made.state, "ready", "the sandbox stays while another BB Box's build holds the lock");
+    assert.equal(made.state, "ready", "the sandbox stays while another VesnALIA Box's build holds the lock");
   } finally {
     world.dispose();
   }
@@ -710,7 +710,7 @@ test("a kept build the last failure left is not due again until that failure is 
   let now = Date.now();
   const world = templateWorld();
   world.answerTrials(async (sandbox, script) => {
-    if (!script.startsWith("bb-box-check")) return null;
+    if (!script.startsWith("alia-box-check")) return null;
     const templateId = world.fake.sandboxes.get(sandbox)?.labels[LABELS.template];
     world.fake.add({ labels: { [LABELS.install]: "inst1", [LABELS.role]: TRIAL_ROLE, [LABELS.kind]: "linux", [LABELS.template]: templateId! }, state: "ready" });
     return { ...OK_RUN, exitCode: 1, stdout: "services                          FAIL ssh\n" };
@@ -764,7 +764,7 @@ test("the Android template's build stages the licence's acceptance with the gues
   }
 });
 
-test("a template build that fails writes the last lines of its log to BB Box's log before its sandbox is deleted, so the cause is not only the last 600 characters", { skip: GUEST_SKIP }, async () => {
+test("a template build that fails writes the last lines of its log to VesnALIA Box's log before its sandbox is deleted, so the cause is not only the last 600 characters", { skip: GUEST_SKIP }, async () => {
   const world = templateWorld({ guestReady: (guest) => {
     writeFileSync(join(guest.control, "customize-says"), "the line that says why\nthe end of the log\n");
     guest.finish("customize", 1);
@@ -772,14 +772,14 @@ test("a template build that fails writes the last lines of its log to BB Box's l
   try {
     await assert.rejects(new BoatTemplates(world.deps()).build("linux", "test"), /failed with exit 1: [\s\S]*the line that says why\nthe end of the log/);
     const written = world.logs.find((line) => line.includes("the last 120 lines of its log"));
-    assert.match(written ?? "", /which bb-box deletes now:\n[\s\S]*the line that says why\nthe end of the log\n\d\d:\d\d:\d\d  customized$/);
+    assert.match(written ?? "", /which alia-box deletes now:\n[\s\S]*the line that says why\nthe end of the log\n\d\d:\d\d:\d\d  customized$/);
     assert.equal([...world.fake.sandboxes.values()].filter((each) => each.state !== "deleted").length, 0, "the failed build is still deleted");
   } finally {
     world.dispose();
   }
 });
 
-test("the upkeep keeps a build and a trial the next BB Box follows, and deletes a build of other scripts, an unfinished one boat stopped, and trials of other templates", async () => {
+test("the upkeep keeps a build and a trial the next VesnALIA Box follows, and deletes a build of other scripts, an unfinished one boat stopped, and trials of other templates", async () => {
   const fake = new FakeBoat();
   const long = Date.now() - 11 * 60_000;
   const template = (name: string, state: string, key = "fp1", createdAt = long) => fake.add({ labels: { [LABELS.install]: "inst1", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "linux", [LABELS.key]: key }, name, state, createdAt });
@@ -827,7 +827,7 @@ test("the guest's answers read as the build's step: a code wins, then a process 
   assert.equal(step({ staged: "yes", state: "yes" }), "unstaged", "a staging that ended before customize started");
   assert.equal(step({ running: "yes", started: "yes", staged: "yes", state: "yes" }), "running");
   assert.equal(step({ started: "yes", staged: "yes", state: "yes" }), "died");
-  assert.equal(step({ staged: "yes" }), "died", "a log without the build's state: an older BB Box's build, or a restarted sandbox");
+  assert.equal(step({ staged: "yes" }), "died", "a log without the build's state: an older VesnALIA Box's build, or a restarted sandbox");
   assert.equal(step({ started: "yes", state: "yes", customized: "0" }), "died", "it died between customize and finalize");
   assert.equal(step({ running: "yes", started: "yes", state: "yes", customized: "2" }), "customize-failed");
   assert.equal(step({ started: "yes", state: "yes", customized: "0", finalized: "1" }), "finalize-failed");
@@ -836,7 +836,7 @@ test("the guest's answers read as the build's step: a code wins, then a process 
   assert.deepEqual(guestBuildFrom(answer({}))?.tail, ["12:00:00  customize-base.sh"]);
 });
 
-test("boat offers linux and the CPU desktop, both VMs with KVM, the desktop with BB Box's own VNC, Selkies and Cua Driver", () => {
+test("boat offers linux and the CPU desktop, both VMs with KVM, the desktop with VesnALIA Box's own VNC, Selkies and Cua Driver", () => {
   fakeSsh();
   const backend = disposed(new BoatBackend(CONFIG, testContext(new MemoryStorage(), "inst1", { id: "boat" }), { fetch: new FakeBoat().fetch, sshBinary: FAKE_SSH_BINARY, templates: { setupArchive: NO_BUILDS } }));
   assert.deepEqual(backend.kinds().map((kind) => kind.id), ["linux", "linux-desktop-cpu"]);
@@ -860,59 +860,59 @@ test("the doctor says what the plan allows and what the key is missing, in words
   assert.match(api.fix ?? "", /Make a new API key/);
 });
 
-test("BB's URL on a private network, with no tailnet, is said plainly with its fix, in the doctor and on each box", async () => {
+test("VesnALIA's URL on a private network, with no tailnet, is said plainly with its fix, in the doctor and on each box", async () => {
   assert.equal(isPrivateAddress("10.0.0.69"), true);
   assert.equal(isPrivateAddress("100.101.102.103"), true);
   assert.equal(isPrivateAddress("fd7a:115c:a1e0::1"), true);
   assert.equal(isPrivateAddress("203.0.113.10"), false);
-  assert.deepEqual(await bbReach("https://bb.example.com", true), { from: "tailnet" });
-  assert.deepEqual(await bbReach("https://bb.example.com", false, async () => ["203.0.113.10"]), { from: "url", host: "bb.example.com" });
-  assert.deepEqual(await bbReach("https://bb.example.com", false, async () => ["100.101.102.103"]), { from: "nowhere", host: "bb.example.com", why: "bb.example.com points at 100.101.102.103, on a private network" });
-  assert.equal((await bbReach("http://10.0.0.5:7777", false)).from, "nowhere");
-  assert.deepEqual(await bbReach(null, false), { from: "unknown" });
+  assert.deepEqual(await aliaReach("https://bb.example.com", true), { from: "tailnet" });
+  assert.deepEqual(await aliaReach("https://bb.example.com", false, async () => ["203.0.113.10"]), { from: "url", host: "alia.example.com" });
+  assert.deepEqual(await aliaReach("https://bb.example.com", false, async () => ["100.101.102.103"]), { from: "nowhere", host: "alia.example.com", why: "alia.example.com points at 100.101.102.103, on a private network" });
+  assert.equal((await aliaReach("http://10.0.0.5:7777", false)).from, "nowhere");
+  assert.deepEqual(await aliaReach(null, false), { from: "unknown" });
 
   fakeSsh();
   const fake = new FakeBoat();
-  const context = { ...testContext(new MemoryStorage(), "inst1", { id: "boat" }), bbUrl: () => "https://bb.example.com" };
+  const context = { ...testContext(new MemoryStorage(), "inst1", { id: "boat" }), aliaUrl: () => "https://bb.example.com" };
   const backend = disposed(new BoatBackend(CONFIG, context, { fetch: fake.fetch, sshBinary: FAKE_SSH_BINARY, sleep: async () => {}, readyTimeoutMs: 20_000, busyGivesUpAfterMs: 0, resolve: async () => ["10.0.0.69"], ownKeyScript: () => ":", settledScript: "true", templates: { fingerprint: () => "fp1", setupArchive: NO_BUILDS } }));
-  const check = (await backend.doctor()).checks.find((each) => each.id === "boat.bb")!;
+  const check = (await backend.doctor()).checks.find((each) => each.id === "boat.alia")!;
   assert.equal(check.status, "warn");
-  assert.match(check.detail, /cannot reach BB's server: bb.example.com points at 10.0.0.69, on a private network. So boat boxes run commands and copy files, but do not become BB machines/);
+  assert.match(check.detail, /cannot reach ALIA's server: alia.example.com points at 10.0.0.69, on a private network. So boat boxes run commands and copy files, but do not become ALIA machines/);
   assert.match(check.fix ?? "", /Turn the tailnet on/);
   const template = fake.add({ labels: { [LABELS.install]: "inst1", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "linux", [LABELS.key]: "fp1" }, name: templateName("linux", "ready"), state: "archived" });
   await context.storage.set("template/linux", { kind: "linux", sandbox: template.id, key: "fp1", builtAt: Date.now(), buildMs: 1, usedAt: null });
   const guest = await backend.acquire(box("b1"), null, hooks().hooks, signal());
-  assert.match(guest.facts?.find((fact) => fact.label === "BB machine")?.value ?? "", /^No\. boat's sandboxes cannot reach BB's server/);
+  assert.match(guest.facts?.find((fact) => fact.label === "VesnALIA machine")?.value ?? "", /^No\. boat's sandboxes cannot reach ALIA's server/);
 });
 
-test("on the trial's 2 sandboxes at once, a box whose template must be built first, or one beside sandboxes that are not BB Box's, is refused with why", async () => {
+test("on the trial's 2 sandboxes at once, a box whose template must be built first, or one beside sandboxes that are not VesnALIA Box's, is refused with why", async () => {
   const none = setup({ templates: false });
   none.fake.add({ labels: { other: "x" } });
   const refused = await none.backend.capacity("linux", SMALL, []);
   assert.equal(refused.ok, false);
-  assert.match(refused.message!, /boat's free trial allows 2 sandboxes at once, and 1 is running or starting, 1 of them not BB Box's. This box's template must be built first, in a sandbox of its own: building boat's Linux template first/);
+  assert.match(refused.message!, /boat's free trial allows 2 sandboxes at once, and 1 is running or starting, 1 of them not ALIA Box's. This box's template must be built first, in a sandbox of its own: building boat's Linux template first/);
   const adoptable = setup({ templates: false });
   adoptable.fake.add({ labels: { [LABELS.install]: "other", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "linux", [LABELS.key]: "fp1" }, name: templateName("linux", "ready"), state: "archived" });
   adoptable.fake.add({ labels: { other: "x" } });
   assert.equal((await adoptable.backend.capacity("linux", SMALL, [])).ok, true, "a template another install built counts as built");
   const left = setup({ templates: false });
   left.fake.add({ labels: { [LABELS.install]: "inst1", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "linux", [LABELS.key]: "fp1" }, name: templateName("linux", "building"), state: "ready" });
-  assert.equal((await left.backend.capacity("linux", SMALL, [])).ok, true, "a build an earlier BB Box left running is the template's sandbox, not one more");
+  assert.equal((await left.backend.capacity("linux", SMALL, [])).ok, true, "a build an earlier VesnALIA Box left running is the template's sandbox, not one more");
   const built = setup();
   built.fake.add({ labels: { other: "x" } });
   built.fake.add({ labels: { other: "y" } });
-  assert.match((await built.backend.capacity("linux", SMALL, [])).message!, /allows 2 sandboxes at once, and 2 are running or starting, 2 of them not BB Box's\. Release or stop a boat box/);
+  assert.match((await built.backend.capacity("linux", SMALL, [])).message!, /allows 2 sandboxes at once, and 2 are running or starting, 2 of them not ALIA Box's\. Release or stop a boat box/);
 });
 
-test("with no record of its template, as after lost storage or for another install on the account, BB Box forks the newest stopped template its labels match, and gives the box only its own key", async () => {
+test("with no record of its template, as after lost storage or for another install on the account, VesnALIA Box forks the newest stopped template its labels match, and gives the box only its own key", async () => {
   const { fake, backend } = setup({ templates: false });
   fake.add({ labels: { [LABELS.install]: "other", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "linux", [LABELS.key]: "old" }, state: "archived" });
   const matching = fake.add({ labels: { [LABELS.install]: "other", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "linux", [LABELS.key]: "fp1" }, name: templateName("linux", "ready"), state: "archived" });
   const guest = await backend.acquire(box("b1"), null, hooks().hooks, signal());
   assert.equal(fake.sandboxes.get(String(guest.data?.sandbox))?.forkedFrom, matching.id);
   assert.equal(fake.calls.filter((call) => call.method === "POST" && call.path === "/sandboxes").length, 0, "nothing was built");
-  const script = ownKeyScript("ssh-ed25519 AAAAmine bb-box");
-  assert.match(script, /printf '%s\\n' 'ssh-ed25519 AAAAmine bb-box' \| sudo -n tee "\$home\/.ssh\/authorized_keys"/);
+  const script = ownKeyScript("ssh-ed25519 AAAAmine alia-box");
+  assert.match(script, /printf '%s\\n' 'ssh-ed25519 AAAAmine alia-box' \| sudo -n tee "\$home\/.ssh\/authorized_keys"/);
   assert.doesNotMatch(script, /tee -a/, "the template builder's key is replaced, not kept");
 });
 
@@ -1012,7 +1012,7 @@ test("an Android box forks the template, and shows its device, not a desktop", a
 test("another install's Android template is forked once its devices are read from its snapshot", async () => {
   const { fake, backend } = setup({ config: { androidLicence: true } });
   const theirs = fake.add({ labels: { [LABELS.install]: "other", [LABELS.role]: TEMPLATE_ROLE, [LABELS.kind]: "android", [LABELS.key]: "fp1" }, name: templateName("android", "ready"), state: "archived" });
-  theirs.files["usr/share/bb-box/android-devices.json"] = JSON.stringify(ANDROID_DEVICES);
+  theirs.files["usr/share/alia-box/android-devices.json"] = JSON.stringify(ANDROID_DEVICES);
   await backend.maintain(undefined, new Set());
   assert.deepEqual(backend.kinds().find((kind) => kind.id === "android")?.capabilities.device, { platform: "android", devices: ANDROID_DEVICES });
   assert.equal(fake.calls.filter((call) => call.method === "POST" && call.path === "/sandboxes").length, 0, "nothing was built");

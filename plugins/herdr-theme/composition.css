@@ -1,7 +1,7 @@
 /* Herdr Theme composition: terminal pane framing and a left-aligned transcript.
    Scoped to :root[data-herdr-theme]. Loaded after chrome.css. Palette and font
-   stay in themes/lavender.css and font.css; this file only arranges what BB
-   already renders. Hooks were read from bb-app 0.43 source and verified in
+   stay in themes/lavender.css and font.css; this file only arranges what ALIA
+   already renders. Hooks were read from alia-app 0.43 source and verified in
    the live DOM by the integration pass; see design/composition.md. */
 
 :root[data-herdr-theme] {
@@ -32,7 +32,7 @@
   content: "";
   position: absolute;
   z-index: 30;
-  top: calc(var(--bb-app-chrome-row-height, 3rem) / 2);
+  top: calc(var(--alia-app-chrome-row-height, 3rem) / 2);
   right: var(--herdr-theme-frame-inset);
   bottom: var(--herdr-theme-frame-inset);
   left: var(--herdr-theme-frame-inset);
@@ -41,7 +41,7 @@
   pointer-events: none;
   transition: border-color 120ms linear;
 }
-/* Focus: the whole frame turns lavender when this pane is BB's focused split
+/* Focus: the whole frame turns lavender when this pane is ALIA's focused split
    or when anything inside it (editor, buttons) has focus. Two thin lines are
    all the focus treatment; no glow. */
 :root[data-herdr-theme] [data-split-pane-id][data-focused="true"] [data-conversation-collapsed="false"]:has(> [data-thread-window])::before,
@@ -75,17 +75,17 @@
   padding-inline: 0.4rem;
   margin-left: -0.4rem;
 }
-:root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]) > header .bb-thread-title,
+:root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]) > header .alia-thread-title,
 :root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]) > header > div > div > div > div > p {
   color: var(--muted-foreground);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-:root[data-herdr-theme] [data-split-pane-id][data-focused="true"] [data-conversation-collapsed="false"]:has(> [data-thread-window]) > header .bb-thread-title,
-:root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]):focus-within > header .bb-thread-title {
+:root[data-herdr-theme] [data-split-pane-id][data-focused="true"] [data-conversation-collapsed="false"]:has(> [data-thread-window]) > header .alia-thread-title,
+:root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]):focus-within > header .alia-thread-title {
   color: var(--primary);
 }
-/* BB tints the focused split's title wrapper with --state-active, a
+/* ALIA tints the focused split's title wrapper with --state-active, a
    translucent wash. Make it solid so the line does not show through. */
 :root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]) > header [data-pane-header-focus-tab] {
   background: color-mix(in oklab, var(--primary) 12%, var(--canvas));
@@ -129,7 +129,7 @@
 :root[data-herdr-theme] [data-message-column] {
   max-width: 100%;
 }
-/* When the pane is wide enough for BB's table-of-contents rail (56rem), keep
+/* When the pane is wide enough for ALIA's table-of-contents rail (56rem), keep
    the measure clear of the rail on the right. */
 @container thread-pane (width >= 56rem) {
   :root[data-herdr-theme] [data-message-column] {
@@ -184,7 +184,7 @@
   justify-content: flex-start;
   padding-left: var(--herdr-theme-marker-gutter);
 }
-/* Action bar for user messages: BB pins it to the bubble's right edge. With
+/* Action bar for user messages: ALIA pins it to the bubble's right edge. With
    the bubble gone it moves under the text, aligned with the gutter, same as
    the assistant bar. Slot height and button sizes are native. */
 :root[data-herdr-theme] [data-message-column] > .group\/message > div > div:nth-child(2) {
@@ -247,7 +247,7 @@
     padding: 0;
   }
   :root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window])::before {
-    top: calc(var(--bb-app-chrome-row-height, 3rem) - 1px);
+    top: calc(var(--alia-app-chrome-row-height, 3rem) - 1px);
     right: 0;
     bottom: 0;
     left: 0;
@@ -295,9 +295,9 @@
   }
 }
 
-/* BB centers wide markdown tables with negative inline margins. That breakout
+/* ALIA centers wide markdown tables with negative inline margins. That breakout
    crosses our left pane frame. Keep the native scroll wrapper, but bound its
-   outer box to the message text width. Important overrides BB's inline style. */
+   outer box to the message text width. Important overrides ALIA's inline style. */
 :root[data-herdr-theme] [data-message-column] div:has(> div.overflow-x-auto > table) {
   width: 100% !important;
   margin-inline: 0 !important;
@@ -308,11 +308,11 @@
   :root[data-herdr-theme] [data-promptbox]:not([data-promptbox-compact]):not([data-promptbox-voice-active]) [data-promptbox-editor-scroll] { min-height:44px !important; }
   :root[data-herdr-theme] [data-conversation-collapsed="false"]:has(> [data-thread-window]):focus-within::before,
   :root[data-herdr-theme] [data-split-pane-id][data-focused="true"] [data-conversation-collapsed="false"]:has(> [data-thread-window])::before { border-color:var(--primary); }
-  :root[data-herdr-theme] [data-conversation-collapsed="false"] > header .bb-thread-title { background:var(--primary); color:var(--primary-foreground); padding:2px 10px; }
-  :root[data-herdr-theme] [data-conversation-collapsed="false"]:focus-within > header .bb-thread-title { color:var(--primary-foreground); }
+  :root[data-herdr-theme] [data-conversation-collapsed="false"] > header .alia-thread-title { background:var(--primary); color:var(--primary-foreground); padding:2px 10px; }
+  :root[data-herdr-theme] [data-conversation-collapsed="false"]:focus-within > header .alia-thread-title { color:var(--primary-foreground); }
 }
 @media(min-width:768px) {
-  :root[data-herdr-theme] [data-conversation-collapsed="false"] > header .bb-thread-title { color:var(--primary-foreground) !important; }
+  :root[data-herdr-theme] [data-conversation-collapsed="false"] > header .alia-thread-title { color:var(--primary-foreground) !important; }
 }
 /* Native tool panels keep their own tab strip and scroll geometry. */
 @media(min-width:768px) {
@@ -323,12 +323,12 @@
   :root[data-herdr-theme] [data-panel]:has([data-testid="thread-secondary-panel-top-chrome"]):focus-within {
     outline-color:var(--primary);
   }
-  :root[data-herdr-theme] [data-split-pane-id]:not([data-focused="true"]) [data-conversation-collapsed="false"] > header .bb-thread-title {
+  :root[data-herdr-theme] [data-split-pane-id]:not([data-focused="true"]) [data-conversation-collapsed="false"] > header .alia-thread-title {
     background:var(--canvas);
     color:var(--muted-foreground) !important;
   }
 }
-/* In splits BB owns the header outside the conversation column. */
+/* In splits ALIA owns the header outside the conversation column. */
 :root[data-herdr-theme] [data-split-pane-id] [data-conversation-collapsed="false"]:has(> [data-thread-window]):not(:has(> header))::before { top:0; border-top:0; }
 
 /* Center the standalone new-thread form in available space. Auto margins

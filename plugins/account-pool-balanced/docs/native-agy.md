@@ -20,8 +20,8 @@ These documented interfaces are not a guarantee against account restrictions.
 Registration is an operator operation, disabled by default:
 
 ```sh
-bb pool native configure '{"id":"native-mac","accountId":"subscription-one","hostId":"host-one","callerIds":["host-one"],"projectIds":["project-one"],"enabled":false,"autopilotAllowed":false}'
-bb pool native status --json
+alia pool native configure '{"id":"native-mac","accountId":"subscription-one","hostId":"host-one","callerIds":["host-one"],"projectIds":["project-one"],"enabled":false,"autopilotAllowed":false}'
+alia pool native status --json
 ```
 
 Open the Google subscription card in Accounts to use the existing Projects form.
@@ -39,7 +39,7 @@ network checks, prepared runtime bindings and host workspace limits still apply.
 Use the SAME subscription identifier for executors sharing one real Google
 account; do not infer identity from a path or copy a native profile. Multiple
 accounts on one host require an explicit preferred executor. Choose **Use** on
-the account card or run `bb pool native prefer <executor-id>`. The choice is
+the account card or run `alia pool native prefer <executor-id>`. The choice is
 stored separately from admitted process bindings, so existing sessions keep
 their account and queued work is not rebound. A stale UI revision refuses;
 unknown/disabled executors cannot be selected. With no explicit preference,
@@ -56,7 +56,7 @@ standalone callers require existing server-issued project/purpose-bound clients;
 project IDs and caller-provided host headers do not create authority. Every
 executor host must be enrolled. Machine login contexts remain host-local.
 
-Model discovery has no BB thread or project. An explicit `catalogCallerIds` list
+Model discovery has no VesnALIA thread or project. An explicit `catalogCallerIds` list
 authorizes separate existing project-bound catalog clients, never task clients.
 The private host profile supplies that catalog credential; no null-project task
 token is minted. The wrapper's catalog-only ACP allows initialize/new/list/close,
@@ -66,7 +66,7 @@ The server binds catalog leases to kind=catalog; that credential or lease cannot
 be upgraded into task admission. Ambiguous/missing host configuration refuses.
 
 Enable a validated executor by configuring that complete record with enabled=true.
-After host setup and live acceptance, `bb pool native mode managed` activates the
+After host setup and live acceptance, `alia pool native mode managed` activates the
 new provider environment and disables the legacy AGY OAuth/model-proxy paths and
 their background refresh. `off` restores the previous mode and is not an automatic
 error fallback. Do not switch modes during an active session.
@@ -100,7 +100,7 @@ Expiry or a plugin restart quarantines ACTIVE leases; it never proves process
 termination. Queued leases expire normally. A disconnected active process keeps
 its slot unavailable until the same caller confirms termination. If the wrapper
 has died, an operator must first establish actual process cleanup, then use
-`bb pool native attest-stopped <lease-id> --confirmed`. An expired active lease
+`alia pool native attest-stopped <lease-id> --confirmed`. An expired active lease
 cannot be freed by completed=true. There is no automatic uncertain-slot reset.
 
 Registry: at most 32 executors, 128 leases, 256 events retained for 14 days.

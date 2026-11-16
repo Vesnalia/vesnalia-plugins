@@ -1,4 +1,4 @@
-import type { ComposerStructuredDraft, ComposerView } from "@get-bb/plugin-sdk/app";
+import type { ComposerStructuredDraft, ComposerView } from "@vesnalia/plugin-sdk/app";
 let state: { projectId: string | null; draft: ComposerStructuredDraft } = { projectId: null, draft: { text: "", mentions: [] } };
 const listeners = new Set<() => void>();
 export const subscribeDraft = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };

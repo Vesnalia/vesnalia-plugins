@@ -20,10 +20,10 @@ async function skipSetup(page, url) {
 
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-await skipSetup(await context.newPage(), `${base}/plugins/bb-box/desktop`);
+await skipSetup(await context.newPage(), `${base}/plugins/alia-box/desktop`);
 for (const box of boxes) {
   const page = await context.newPage();
-  await page.goto(`${base}/plugins/bb-box/desktop/box/${box.id}`);
+  await page.goto(`${base}/plugins/alia-box/desktop/box/${box.id}`);
   await page.getByText(/^Read at /).first().waitFor({ timeout: 60_000 }).catch(() => note(`page ${box.name} did not say Read at`));
 }
 note(`${boxes.length} pages open on Live`);

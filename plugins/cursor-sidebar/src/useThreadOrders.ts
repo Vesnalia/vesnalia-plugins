@@ -3,7 +3,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { THREAD_ORDER_CHANNEL } from "./channels";
 import type { cursorSidebarRpcContract } from "./server";

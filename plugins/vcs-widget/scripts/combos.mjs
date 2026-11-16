@@ -8,7 +8,7 @@
 //   node scripts/combos.mjs [popup|log]
 //
 // Like scripts/hero.mjs it photographs a local HTML page, so it needs system
-// Chromium and puppeteer-core but no running bb. The shots it reads are
+// Chromium and puppeteer-core but no running VesnALIA. The shots it reads are
 // hand-taken; retake one and re-run this.
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

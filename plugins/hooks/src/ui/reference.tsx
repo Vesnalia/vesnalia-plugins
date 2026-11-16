@@ -57,24 +57,24 @@ export function ReferenceTab() {
 }`}</Code>
         </div>
         <div className="space-y-2">
-          <SectionTitle hint="Set for every command hook. Secrets arrive as BB_SECRET_<NAME>.">Environment</SectionTitle>
-          <Code>{`BB_HOOK_EVENT        thread.idle
-BB_HOOK_ID           notify
-BB_THREAD_ID         thr_…
-BB_THREAD_TITLE      first 1000 characters
-BB_THREAD_STATUS     idle | active | error | pending | …
-BB_PROJECT_ID        proj_…
-BB_PROVIDER_ID       claude-code
-BB_ENVIRONMENT_ID    env_…            (when known)
-BB_PARENT_THREAD_ID  thr_…            (child threads only)
-BB_SERVER_URL        http://127.0.0.1:38886
-BB_CLI               absolute path to the bb binary
-BB_MODEL             the thread's model      (gate hooks always; observe
-BB_REASONING_LEVEL   … reasoning level        hooks when the command
-BB_SERVICE_TIER      … service tier           mentions the variable)
-BB_PERMISSION_MODE   … permission mode
-BB_MESSAGE_TEXT      gate hooks: the message (first 1000 chars)
-BB_DISPATCH_ATTEMPT  gate hooks: start-turn | join-turn`}</Code>
+          <SectionTitle hint="Set for every command hook. Secrets arrive as ALIA_SECRET_<NAME>.">Environment</SectionTitle>
+          <Code>{`ALIA_HOOK_EVENT        thread.idle
+ALIA_HOOK_ID           notify
+ALIA_THREAD_ID         thr_…
+ALIA_THREAD_TITLE      first 1000 characters
+ALIA_THREAD_STATUS     idle | active | error | pending | …
+ALIA_PROJECT_ID        proj_…
+ALIA_PROVIDER_ID       claude-code
+ALIA_ENVIRONMENT_ID    env_…            (when known)
+ALIA_PARENT_THREAD_ID  thr_…            (child threads only)
+ALIA_SERVER_URL        http://127.0.0.1:38886
+ALIA_CLI               absolute path to the VesnALIA binary
+ALIA_MODEL             the thread's model      (gate hooks always; observe
+ALIA_REASONING_LEVEL   … reasoning level        hooks when the command
+ALIA_SERVICE_TIER      … service tier           mentions the variable)
+ALIA_PERMISSION_MODE   … permission mode
+ALIA_MESSAGE_TEXT      gate hooks: the message (first 1000 chars)
+ALIA_DISPATCH_ATTEMPT  gate hooks: start-turn | join-turn`}</Code>
         </div>
       </section>
 
@@ -95,27 +95,27 @@ echo "reason" >&2; exit 3    wait     (queued with the reason)
         </div>
         <div className="space-y-2">
           <SectionTitle hint="Webhook bodies are templates; commands use the environment or stdin.">Placeholders and secrets</SectionTitle>
-          <Code>{`{"text": "BB {{event}} — {{thread.title}}\\n{{lastAssistantText|500}}"}
+          <Code>{`{"text": "VesnALIA {{event}} — {{thread.title}}\\n{{lastAssistantText|500}}"}
 
 {{path}}          any payload path, JSON-escaped when a string
 {{path|300}}      truncated to 300 characters
 {{secret:name}}   a stored secret (url, headers, body); in a
-                  command it becomes "$BB_SECRET_NAME"
+                  command it becomes "$ALIA_SECRET_NAME"
                   values of 8+ characters are redacted from run output
 
-Webhook headers: x-bb-hooks-event, x-bb-hooks-id and, when the
-signing secret is set, x-bb-hooks-timestamp plus
-x-bb-hooks-signature = sha256 HMAC of "<timestamp>.<body>"`}</Code>
+Webhook headers: x-alia-hooks-event, x-alia-hooks-id and, when the
+signing secret is set, x-alia-hooks-timestamp plus
+x-alia-hooks-signature = sha256 HMAC of "<timestamp>.<body>"`}</Code>
         </div>
       </section>
 
       <section className="space-y-2">
         <SectionTitle hint="Everything on this page is also a command, which is what agents use.">CLI</SectionTitle>
-        <Code>{`bb hooks templates [--search text]        bb hooks use <template> --set key=value [--yes]
-bb hooks list | show <id> | test <id>    bb hooks add <id> --event <event> --command '…' | --url …
-bb hooks enable|disable|remove <id>      bb hooks history [--hook id] [--limit n]
-bb hooks marketplace add owner/repo      bb hooks secrets set <name> <value>
-bb hooks export <id>                     bb hooks marketplace init > hooks-catalog.json`}</Code>
+        <Code>{`alia hooks templates [--search text]        VesnALIA hooks use <template> --set key=value [--yes]
+VesnALIA hooks list | show <id> | test <id>    VesnALIA hooks add <id> --event <event> --command '…' | --url …
+VesnALIA hooks enable|disable|remove <id>      VesnALIA hooks history [--hook id] [--limit n]
+VesnALIA hooks marketplace add owner/repo      VesnALIA hooks secrets set <name> <value>
+VesnALIA hooks export <id>                     VesnALIA hooks marketplace init > hooks-catalog.json`}</Code>
       </section>
     </div>
   );

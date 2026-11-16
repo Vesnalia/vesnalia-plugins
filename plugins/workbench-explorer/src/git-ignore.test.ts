@@ -10,7 +10,7 @@ import { ignoredChildNames } from "./git-ignore";
 const execFileAsync = promisify(execFile);
 
 test("a directory outside a work tree reports nothing ignored", async () => {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-ignore-nonrepo-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-ignore-nonrepo-"));
   try {
     const ignored = await ignoredChildNames(dir, ["notes.md", "build"]);
     assert.equal(ignored.size, 0);
@@ -20,7 +20,7 @@ test("a directory outside a work tree reports nothing ignored", async () => {
 });
 
 test("a repo's gitignore rules mark exactly the ignored children", async () => {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-ignore-repo-"));
+  const dir = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-ignore-repo-"));
   try {
     try {
       await execFileAsync("git", ["init", "-q"], { cwd: dir });

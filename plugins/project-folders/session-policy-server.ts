@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import type Database from "better-sqlite3";
@@ -52,10 +52,10 @@ type VkAgents = {
 /**
  * Session context rules: storage per place, inheritance down the tree, and
  * the answer to core's per-thread question. Registers with core only when the
- * running BB has the experimental session-policy extension.
+ * running VesnALIA has the experimental session-policy extension.
  */
 export function makeSessionPolicies(args: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   db: Database.Database;
   folders: () => Folder[];
   canonicalPath: (hostId: string, p: string) => string;
@@ -63,8 +63,8 @@ export function makeSessionPolicies(args: {
     scope: Scope,
   ) => Promise<{ folder: Folder | null; hostId: string | null }>;
 }) {
-  const { bb, db } = args;
-  const agents = bb.agents as unknown as VkAgents;
+  const { alia, db } = args;
+  const agents = alia.agents as unknown as VkAgents;
   const available = typeof agents.experimental_vkSessionPolicy === "function";
 
   const key = (scope: Scope) =>
@@ -158,9 +158,9 @@ export function makeSessionPolicies(args: {
         scope.kind === "global"
           ? []
           : layers(place.folder, scope.projectId, true);
-      // The BB-wide instructions file the "user instructions" switch governs:
+      // The ALIA-wide instructions file the "user instructions" switch governs:
       // shown by path, and flagged when there is nothing to switch off.
-      const file = path.join(bb.server.experimental_dataDir, "AGENTS.md");
+      const file = path.join(alia.server.experimental_dataDir, "AGENTS.md");
       return {
         own,
         userInstructionsFile: { path: file, exists: existsSync(file) },
@@ -178,7 +178,7 @@ export function makeSessionPolicies(args: {
     /** Names to offer in the editor; every source is best effort. */
     inventory: async (scope: Scope) => {
       const place = await args.place(scope);
-      // What each plugin adds to agent sessions, when BB can tell.
+      // What each plugin adds to agent sessions, when VesnALIA can tell.
       const contributions = new Map(
         (agents.experimental_vkContextContributions?.() ?? []).map((c) => [
           c.pluginId,
@@ -191,7 +191,7 @@ export function makeSessionPolicies(args: {
           },
         ]),
       );
-      const plugins = await bb.sdk.plugins
+      const plugins = await alia.sdk.plugins
         .list()
         .then((r) =>
           r.plugins.map((p) => {
@@ -207,7 +207,7 @@ export function makeSessionPolicies(args: {
       let skills: { name: string; label: string }[] = [];
       let machine: SessionInventory = { mcpServers: [], nativePlugins: [] };
       if (scope.kind !== "global") {
-        skills = await bb.sdk.skills
+        skills = await alia.sdk.skills
           .list({ projectId: scope.projectId, environmentId: null })
           .then((r) =>
             r.skills.map((s) => ({
@@ -218,7 +218,7 @@ export function makeSessionPolicies(args: {
           .catch(() => []);
         const cwd = place.folder?.path ?? null;
         if (place.hostId)
-          machine = await bb.hosts
+          machine = await alia.hosts
             .experimental_client({ contract: moveHostContract })
             .call("session_inventory", { cwd }, { hostId: place.hostId })
             .catch(() => machine);
@@ -228,7 +228,7 @@ export function makeSessionPolicies(args: {
           a.name.localeCompare(b.name),
         );
       return {
-        bbPlugins: unique(plugins),
+        aliaPlugins: unique(plugins),
         skills: unique(skills),
         mcpServers: machine.mcpServers.map((m) => ({
           name: m.name,

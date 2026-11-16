@@ -15,7 +15,7 @@ sources:
 ---
 # Agent rules
 
-TL;DR: Projects & Sections manages project and section rule templates in `AGENTS.md`, synchronizes custom-rule blocks into an existing `CLAUDE.md`, and passes session-targeted custom rules to BB-started chats (`agents-template.ts:1-18`, `server.ts:1731-1746`, `server.ts:3607-3631`).
+TL;DR: Projects & Sections manages project and section rule templates in `AGENTS.md`, synchronizes custom-rule blocks into an existing `CLAUDE.md`, and passes session-targeted custom rules to ALIA-started chats (`agents-template.ts:1-18`, `server.ts:1731-1746`, `server.ts:3607-3631`).
 
 ## Purpose
 
@@ -29,7 +29,7 @@ The rules editor supports shared and per-place templates, an own-file mode, cust
 4. Saving settings writes a project or folder rule row; session-only custom rules are excluded from file writes, and manual mode returns before writing template blocks (`server.ts:3044-3086`).
 5. `applyAgentsBlock` replaces only the managed block or appends it; `applyCustomBlock` similarly upserts/removes the custom block (`agents-template.ts:16-41`, `agents-template.ts:52-66`).
 6. New project roots, added project copies and new sections attempt to seed applicable template blocks; failures are logged without undoing creation (`server.ts:1727-1743`, `server.ts:1757-1773`, `server.ts:2629-2638`, `server.ts:2679-2688`). `agents_apply` visits project roots and non-group sections, skips manual-mode records, counts unchanged blocks, writes changed blocks and reports per-folder failures (`server.ts:3297-3346`).
-7. For a BB-created chat, session-targeted custom text is resolved from the nearest section, then project, then plugin settings and returned as BB agent instructions. Startup text resolves from the nearest section/project/global setting and is appended as an agent-only input to that chat’s first request (`server.ts:1113-1158`, `server.ts:3426-3444`, `server.ts:3607-3631`).
+7. For a ALIA-created chat, session-targeted custom text is resolved from the nearest section, then project, then plugin settings and returned as VesnALIA agent instructions. Startup text resolves from the nearest section/project/global setting and is appended as an agent-only input to that chat’s first request (`server.ts:1113-1158`, `server.ts:3426-3444`, `server.ts:3607-3631`).
 
 ### Apply to existing places
 
@@ -95,7 +95,7 @@ Custom rules target `file`, `session` or `both`; startup text is separate and li
 - Without a saved mode, an existing file without a managed block resolves to `manual`; new-folder seeding leaves an existing `AGENTS.md` untouched (`server.ts:1512-1531`, `server.ts:1727-1743`).
 - Rules read, file save and settings save reject group nodes (`server.ts:2967-2970`, `server.ts:3017-3020`, `server.ts:3033-3038`).
 - Saving file content sends the editor's expected SHA to `files.write`; a conflict result throws instead of reporting a successful save (`server.ts:3039-3049`).
-- Session-only custom rules remove the plugin's custom file block; `file` and `both` retain it. BB sessions receive custom rules unless the target is `file` only (`server.ts:3053-3056`, `server.ts:3607-3631`).
+- Session-only custom rules remove the plugin's custom file block; `file` and `both` retain it. VesnALIA sessions receive custom rules unless the target is `file` only (`server.ts:3053-3056`, `server.ts:3607-3631`).
 
 ## Public API
 
@@ -103,7 +103,7 @@ Custom rules target `file`, `session` or `both`; startup text is separate and li
 |---|---|---|
 | `rules_read`, `rules_save`, `rules_settings_save` | Read file and settings, save file or template settings | `server.ts:430-467`, `server.ts:2972-3086` |
 | `agents_config`, `agents_config_save`, `agents_apply` | Read global rule settings, save them and apply templates | `server.ts:551-575`, `server.ts:3218-3247`, `server.ts:3297-3346` |
-| `bb project-folders rules show|set ...` | CLI read/write equivalent of the rules card | `server.ts:3881-3886`, `server.ts:4046-4082` |
+| `alia project-folders rules show|set ...` | CLI read/write equivalent of the rules card | `server.ts:3881-3886`, `server.ts:4046-4082` |
 
 ## Gotchas
 

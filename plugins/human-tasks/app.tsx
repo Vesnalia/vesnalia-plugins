@@ -1,7 +1,7 @@
-// bb-plugin-human-tasks — frontend entry. Registers the Human tasks page, the
+// alia-plugin-human-tasks — frontend entry. Registers the Human tasks page, the
 // badge icon and alerts, the home screen section, the thread banner, and the
 // in-thread form for blocking tasks.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { AlertsController, NavIcon } from "./ui/alerts";
 import { HomepageSection } from "./ui/homepage";
 import { TasksPage } from "./ui/page";
@@ -9,7 +9,7 @@ import { TaskForm } from "./ui/task-form";
 import { ThreadBanner } from "./ui/thread-banner";
 
 export default definePluginApp((app) => {
-  // The navigation icon carries a live count, so it is the one icon registered with bb.
+  // The navigation icon carries a live count, so it is the one icon registered with VesnALIA.
   app.experimental_icons.register({ name: "human-tasks/nav", component: NavIcon });
   app.slots.experimental_appOverlay({ id: "alerts", component: AlertsController });
   app.slots.navPanel({

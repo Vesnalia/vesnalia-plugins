@@ -44,17 +44,17 @@ export function DockRow({ glyph, glyphTip, title, trailing, actions, active, ari
   return <a href="#" draggable={false} aria-label={ariaLabel} aria-current={active ? "page" : undefined}
     onClick={event => { event.preventDefault(); onOpen(); }}
     className={cn(
-      "bb-ws-row bb-ws-dock-row group/row flex min-w-0 flex-1 items-center gap-1.5 rounded-md py-1 pl-[6px] pr-2 text-sm transition-colors",
+      "alia-ws-row alia-ws-dock-row group/row flex min-w-0 flex-1 items-center gap-1.5 rounded-md py-1 pl-[6px] pr-2 text-sm transition-colors",
       "min-h-6 text-muted-foreground hover:bg-accent/60 hover:text-foreground",
       active && "bg-accent text-foreground",
     )}>
     <span aria-hidden className="w-4 shrink-0" />
     <RowTip label={glyphTip}><span className="flex shrink-0 items-center">{glyph}</span></RowTip>
     <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
-      <span className={cn("bb-ws-title min-w-0 flex-1 truncate", active ? "font-medium text-foreground" : "text-foreground/90")}>{title}</span>
-      <span className="bb-ws-dock-trailing flex shrink-0 items-center gap-1.5 text-xs">{trailing}</span>
+      <span className={cn("alia-ws-title min-w-0 flex-1 truncate", active ? "font-medium text-foreground" : "text-foreground/90")}>{title}</span>
+      <span className="alia-ws-dock-trailing flex shrink-0 items-center gap-1.5 text-xs">{trailing}</span>
       <span className={cn(
-        "bb-ws-dock-actions absolute right-0 flex items-center gap-0.5 rounded bg-accent pl-1 opacity-0 transition-opacity",
+        "alia-ws-dock-actions absolute right-0 flex items-center gap-0.5 rounded bg-accent pl-1 opacity-0 transition-opacity",
         "pointer-events-none group-hover/row:pointer-events-auto group-hover/row:opacity-100 group-focus-within/row:pointer-events-auto group-focus-within/row:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:opacity-100",
       )}>{actions}</span>
     </span>
@@ -73,7 +73,7 @@ export function DockAction({ label, icon, text, disabled, onActivate }: {
     <button type="button" aria-label={label} disabled={disabled}
       onPointerDown={event => event.stopPropagation()}
       onClick={event => { event.preventDefault(); event.stopPropagation(); onActivate(); }}
-      className={cn("bb-ws-row-action flex h-5 shrink-0 items-center gap-1 rounded text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      className={cn("alia-ws-row-action flex h-5 shrink-0 items-center gap-1 rounded text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         text === undefined ? "px-0.5" : "px-1")}>
       <Icon name={icon} aria-hidden className="size-3.5" />
       {text === undefined ? null : <span className="text-[11px] font-medium">{text}</span>}

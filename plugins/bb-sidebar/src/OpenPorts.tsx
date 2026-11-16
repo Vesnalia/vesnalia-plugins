@@ -9,10 +9,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { UrlLink, useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
 import { BROWSER_EVENTS } from "./lib/browser-events";
-import type { bbSidebarRpcContract, OpenPort, PortSnapshot } from "./contract";
+import type { aliaSidebarRpcContract, OpenPort, PortSnapshot } from "./contract";
 import { portsByEnvironment } from "./open-ports";
 import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
@@ -75,7 +75,7 @@ const NO_SETTLED_WORKSPACES: ReadonlySet<string> = new Set();
  * until that answer expires. Nothing polls before the shelves are known.
  */
 export function OpenPortsProvider({ scope, children }: { scope: PortScanScope; children: ReactNode }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [ports, setPorts] = useState<ReadonlyMap<string, readonly OpenPort[]>>(new Map());
   const refreshRef = useRef<() => void>(() => {});
   const liveKey = scope === null ? null : scope.live.join("\n");
@@ -298,7 +298,7 @@ function StopPortButton({
   port: number;
   pid: number;
 }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const { refresh: refreshPorts } = useContext(OpenPortsActionsContext);
   const [state, setState] = useState<"idle" | "confirm" | "stopping">("idle");
   useEffect(() => {

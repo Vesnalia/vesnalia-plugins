@@ -2,7 +2,7 @@
 // set is a data edit, never a change to the UI or the RPC surface.
 //
 // Every shipped value is drawn from the live provider catalogue on this host
-// (see `bb provider list` / `bb provider models <id>`). A wrong value is not
+// (see `alia provider list` / `alia provider models <id>`). A wrong value is not
 // fatal — `experimental_setSelection` reconciles against the provider's real
 // catalogue — but an incoherent preset makes a button that lies about what it
 // does, so keep these honest.
@@ -28,7 +28,7 @@ export const PERMISSION_MODES = ["accept-edits", "auto", "full"] as const;
 
 /**
  * One preset button. `label` is the button's text — short enough to sit beside
- * the project picker on a phone — and `icon` is a BB icon name resolved by the
+ * the project picker on a phone — and `icon` is a VesnALIA icon name resolved by the
  * host, falling back to the generic `Zap` when unknown.
  *
  * `id` is optional in what a user writes: a hand-written set should not have to

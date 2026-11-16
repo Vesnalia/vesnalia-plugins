@@ -1,11 +1,11 @@
-// bb-plugin-simple-sidebar-folders — backend.
+// alia-plugin-simple-sidebar-folders — backend.
 //
 // Owns one thing: the list of folders and which projects each one holds. The
 // sidebar layout itself is all frontend (app.tsx). Folders live in plugin kv
-// storage on the BB server, so every client sees the same folders; which
+// storage on the VesnALIA server, so every client sees the same folders; which
 // folders are folded is per client and never reaches the server.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const folderSchema = z.object({
@@ -49,14 +49,14 @@ export const rpcContract = defineRpcContract({
 export const FOLDERS_CHANGED = "folders-changed";
 const KV_KEY = "folders";
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function read(): Promise<Folder[]> {
-    const parsed = z.array(folderSchema).safeParse(await bb.storage.kv.get(KV_KEY));
+    const parsed = z.array(folderSchema).safeParse(await alia.storage.kv.get(KV_KEY));
     return parsed.success ? parsed.data : [];
   }
   async function write(folders: Folder[]): Promise<void> {
-    await bb.storage.kv.set(KV_KEY, folders);
-    bb.realtime.publish(FOLDERS_CHANGED, {});
+    await alia.storage.kv.set(KV_KEY, folders);
+    alia.realtime.publish(FOLDERS_CHANGED, {});
   }
 
   async function create(name: string): Promise<Folder> {
@@ -103,7 +103,7 @@ export default async function plugin(bb: BbPluginApi) {
     return true;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     folders_list: async () => ({ folders: await read() }),
     folder_create: ({ name }) => create(name),
     folder_rename: async ({ id, name }) => ({ ok: await rename(id, name) }),
@@ -116,31 +116,31 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb sidebar-folders list [--json]",
-    "  bb sidebar-folders create <name>",
-    "  bb sidebar-folders rename <folder-id> <name>",
-    "  bb sidebar-folders delete <folder-id>",
-    "  bb sidebar-folders move <folder-id> up|down",
-    "  bb sidebar-folders assign <project-id> <folder-id|none>",
+    "  VesnALIA sidebar-folders list [--json]",
+    "  VesnALIA sidebar-folders create <name>",
+    "  VesnALIA sidebar-folders rename <folder-id> <name>",
+    "  VesnALIA sidebar-folders delete <folder-id>",
+    "  VesnALIA sidebar-folders move <folder-id> up|down",
+    "  VesnALIA sidebar-folders assign <project-id> <folder-id|none>",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "sidebar-folders",
     summary: "Group sidebar projects into collapsible folders",
     commands: [
-      { name: "list", summary: "List folders and their projects", usage: "bb sidebar-folders list [--json]" },
-      { name: "create", summary: "Create a folder", usage: "bb sidebar-folders create <name>" },
-      { name: "rename", summary: "Rename a folder", usage: "bb sidebar-folders rename <folder-id> <name>" },
+      { name: "list", summary: "List folders and their projects", usage: "alia sidebar-folders list [--json]" },
+      { name: "create", summary: "Create a folder", usage: "alia sidebar-folders create <name>" },
+      { name: "rename", summary: "Rename a folder", usage: "alia sidebar-folders rename <folder-id> <name>" },
       {
         name: "delete",
         summary: "Delete a folder (its projects become unfiled)",
-        usage: "bb sidebar-folders delete <folder-id>",
+        usage: "alia sidebar-folders delete <folder-id>",
       },
-      { name: "move", summary: "Move a folder up or down", usage: "bb sidebar-folders move <folder-id> up|down" },
+      { name: "move", summary: "Move a folder up or down", usage: "alia sidebar-folders move <folder-id> up|down" },
       {
         name: "assign",
         summary: "Put a project in a folder, or none to unfile it",
-        usage: "bb sidebar-folders assign <project-id> <folder-id|none>",
+        usage: "alia sidebar-folders assign <project-id> <folder-id|none>",
       },
     ],
     async run(argv) {
@@ -149,7 +149,7 @@ export default async function plugin(bb: BbPluginApi) {
       const ok = (stdout: string) => ({ exitCode: 0, stdout });
       const fail = (stderr: string) => ({ exitCode: 1, stderr });
       const unknownFolder = (id: string) =>
-        fail(`No folder with id ${id}. Run "bb sidebar-folders list" to see ids.`);
+        fail(`No folder with id ${id}. Run "alia sidebar-folders list" to see ids.`);
 
       switch (command) {
         case undefined:
@@ -158,7 +158,7 @@ export default async function plugin(bb: BbPluginApi) {
           return ok(usage);
         case "list": {
           const folders = await read();
-          const projects = await bb.sdk.projects.list({ includePersonal: true });
+          const projects = await alia.sdk.projects.list({ includePersonal: true });
           const names = new Map(projects.map((project) => [project.id, project.name]));
           const filed = new Set(folders.flatMap((folder) => folder.projectIds));
           const unfiled = projects.filter((project) => !filed.has(project.id));

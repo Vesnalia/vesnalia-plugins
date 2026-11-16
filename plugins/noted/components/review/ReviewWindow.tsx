@@ -1,4 +1,4 @@
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import ReviewTab from "./ReviewTab";
 
 export default function ReviewWindow({ subPath }: PluginNavPanelProps) {

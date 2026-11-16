@@ -458,7 +458,7 @@ async function appendUserPathWindows(binDir: string, updatePath: boolean, notes:
       return;
     }
     await execFileAsync("setx", ["Path", next], { windowsHide: true });
-    notes.push(`Added ${binDir} to the user PATH (setx). Restart the bb daemon so it takes effect.`);
+    notes.push(`Added ${binDir} to the user PATH (setx). Restart the VesnALIA daemon so it takes effect.`);
   } catch (err) {
     notes.push(`Could not update the user PATH: ${(err as Error).message}. Add ${binDir} to PATH manually.`);
   }
@@ -661,7 +661,7 @@ export async function probeLocal(): Promise<ProbeResult> {
   }
   let error: string | null = binaryPath
     ? null
-    : `\`${binaryName}\` was not found on PATH. Install it with \`bb google-antigravity-acp install\`.`;
+    : `\`${binaryName}\` was not found on PATH. Install it with \`alia google-antigravity-acp install\`.`;
   if (binaryPath && target.isWindows && !(await stat(binaryPath).catch(() => null))?.isFile()) {
     error = `Antigravity launch target ${binaryPath} is not a file.`;
   }

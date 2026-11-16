@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import { test } from 'node:test';
-import { createFakePluginHost, makeThreadResponse, makeTurnFailedEvent } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makeThreadResponse, makeTurnFailedEvent } from '@vesnalia/plugin-sdk/testing';
 
 // Run the plugin's bundler-style TypeScript imports using Node's type stripping.
 registerHooks({ resolve(specifier, context, next) {
@@ -16,7 +16,7 @@ const { createFactoryStorage } = await import('./factory-storage.ts');
 const failure = (category, httpStatusCode = null, attemptNumber = 1) =>
   makeTurnFailedEvent({ attemptNumber, errorInfo: { category, httpStatusCode } });
 
-test('BB owns transient provider failures throughout and after its retry budget', () => {
+test('VesnALIA owns transient provider failures throughout and after its retry budget', () => {
   for (const attempt of [1, 2, 5, 6]) {
     for (const category of ['overloaded', 'rate-limit', 'connection-failed', 'internal', 'stream-disconnected']) {
       assert.equal(supervisorAction(failure(category, null, attempt)), 'leave');
@@ -41,7 +41,7 @@ async function fixture(t, fallback = false, initial = {}, overrides = {}) {
   const comments = [];
   const messages = [];
   const task = { id: 'task_1', key: 'TEST-1', projectId: 'tracker', title: 'Test', description: '', status: 'in_review', priority: 'none', position: 0, labelIds: [], createdAt: '', updatedAt: '' };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: 'factory', settings: { superviseAgents: true },
     experimental_callHostRpc: overrides.hostRpc,
     sdk: {
@@ -72,20 +72,20 @@ async function fixture(t, fallback = false, initial = {}, overrides = {}) {
     },
   });
   t.after(() => harness.lifecycle.dispose());
-  await bb.storage.kv.set('agents-migrated', true);
+  await alia.storage.kv.set('agents-migrated', true);
   const factory = {
-    prefix: 'TEST', name: 'Test', bbProjectId: 'proj_test', trackerProjectId: 'tracker', blockedLabelId: 'blocked', leadThreadId: 'thr_lead', createdAt: '',
+    prefix: 'TEST', name: 'Test', aliaProjectId: 'proj_test', trackerProjectId: 'tracker', blockedLabelId: 'blocked', leadThreadId: 'thr_lead', createdAt: '',
     prs: [], plans: [], repo: null, archivedAt: null,
     agents: [{ threadId: 'thr_builder', role: 'build', taskKey: 'TEST-1', providerId: 'codex', createdAt: '', pr: null }],
     ...initial,
   };
-  if (Buffer.byteLength(JSON.stringify(factory)) > 262144) await createFactoryStorage(bb.storage, value => value).write(factory);
-  else await bb.storage.kv.set('factory:TEST', factory);
-  await plugin(bb);
-  return { bb, harness, spawns, failureEffects, comments, messages };
+  if (Buffer.byteLength(JSON.stringify(factory)) > 262144) await createFactoryStorage(alia.storage, value => value).write(factory);
+  else await alia.storage.kv.set('factory:TEST', factory);
+  await plugin(alia);
+  return { alia, harness, spawns, failureEffects, comments, messages };
 }
 
-test('failure handler leaves later BB retries alone without blocking the task', async t => {
+test('failure handler leaves later VesnALIA retries alone without blocking the task', async t => {
   const { harness, failureEffects } = await fixture(t);
   for (const attemptNumber of [1, 2, 5]) {
     await harness.behavior.emitThreadEvent('turn.failed', {
@@ -152,13 +152,13 @@ test('incomplete or foreign planning comments cannot unlock a build', async t =>
 });
 
 test('replanning invalidates an old sign-off and survives plugin reload', async t => {
-  const { bb, harness, comments } = await fixture(t);
+  const { alia, harness, comments } = await fixture(t);
   const assign = role => harness.behavior.callRpc('task_assign', { taskKey: 'TEST-1', role, instructions: null });
   await assign('plan');
   comments.push(planningDocument);
   await harness.behavior.runCli(['plan-ready', 'TEST-1', '--comment', 'plan_comment'], { threadId: 'thr_spawned_1' });
   await assign('plan');
-  assert.equal(JSON.parse(bb.storage.database().prepare("SELECT payload FROM factory_records WHERE prefix='TEST' AND kind='plan'").get().payload).commentId, null);
+  assert.equal(JSON.parse(alia.storage.database().prepare("SELECT payload FROM factory_records WHERE prefix='TEST' AND kind='plan'").get().payload).commentId, null);
   await harness.lifecycle.reload(plugin);
   const stale = await harness.behavior.runCli(['plan-ready', 'TEST-1', '--comment', 'plan_comment'], { threadId: 'thr_spawned_1' });
   assert.notEqual(stale.exitCode, 0);
@@ -190,14 +190,14 @@ test('verdict and reviewer assignment work with 225 tasks and 12 agents each; ap
     for (let j = 0; j < 12; j++) agents.push({ ...agents[0], threadId: `worker_${i}_${j}`, taskKey: `TEST-${i}` });
     prs.push({ ...trackedPr, number: i, taskKey: `TEST-${i}`, state: i === 1 ? 'open' : 'merged', reviews: [] });
   }
-  const { bb, harness, messages } = await fixture(t, false, { agents, prs });
+  const { alia, harness, messages } = await fixture(t, false, { agents, prs });
   assert.equal((await harness.behavior.runCli(['assign', 'TEST-1', '--role', 'review1', '--pr', '1'])).exitCode, 0);
   const verdict = await harness.behavior.runCli(['verdict', 'TEST-1', '--role', 'review1', '--verdict', 'approve', '--pr', '1'], { threadId: 'thr_spawned_1' });
   assert.equal(verdict.exitCode, 0, JSON.stringify(verdict));
   await harness.behavior.emitThreadEvent('thread.idle', { thread: makeThreadResponse({ id: 'thr_spawned_1' }), lastAssistantText: 'APPROVE' });
   assert.equal(messages.length, 0);
-  assert.ok(Buffer.byteLength(JSON.stringify(await bb.storage.kv.get('factory:TEST'))) < 100);
-  const db = bb.storage.database();
+  assert.ok(Buffer.byteLength(JSON.stringify(await alia.storage.kv.get('factory:TEST'))) < 100);
+  const db = alia.storage.database();
   assert.equal(db.prepare("SELECT count(*) AS n FROM factory_records WHERE kind='agent'").get().n, agents.length + 1);
   const reviews = db.prepare("SELECT payload FROM factory_records WHERE kind='review' ORDER BY position").all().map(row => JSON.parse(row.payload));
   assert.equal(reviews.at(-1).verdict, 'approve');
@@ -207,7 +207,7 @@ test('verdict and reviewer assignment work with 225 tasks and 12 agents each; ap
 test('assign --pr tracks a missing PR by builder branch; --track-only never spawns or writes GitHub', async t => {
   const calls = [];
   const gp = { number: 81, url: 'https://github.com/owner/repo/pull/81', title: 'Fix', headRefName: 'build-branch', headRefOid: 'abc123', isDraft: true, additions: 350, deletions: 0, isCrossRepository: false, state: 'OPEN' };
-  const { bb, harness, spawns } = await fixture(t, false, {}, {
+  const { alia, harness, spawns } = await fixture(t, false, {}, {
     threads: { list: async () => [{ id: 'thr_builder', environmentBranchName: 'build-branch' }] },
     hostRpc: async ({ input }) => {
       calls.push(input.args);
@@ -220,7 +220,7 @@ test('assign --pr tracks a missing PR by builder branch; --track-only never spaw
   assert.equal(JSON.parse(result.stdout).reviewerStarted, false);
   assert.equal(spawns.length, 0);
   assert.equal(calls.length, 2);
-  assert.equal(bb.storage.database().prepare("SELECT count(*) AS n FROM factory_records WHERE kind='pr'").get().n, 1);
+  assert.equal(alia.storage.database().prepare("SELECT count(*) AS n FROM factory_records WHERE kind='pr'").get().n, 1);
   const assigned = await harness.behavior.runCli(['assign', 'TEST-1', '--role', 'review1', '--pr', '81']);
   assert.equal(assigned.exitCode, 0, JSON.stringify(assigned));
   assert.equal(spawns.length, 1);
@@ -240,14 +240,14 @@ test('an unrelated or fork PR cannot be attached to a task', async t => {
 test('recover-agent reattaches only a matching Factory thread and is idempotent', async t => {
   const thread = makeThreadResponse({ id: 'orphan', projectId: 'proj_test', providerId: 'codex', originPluginId: 'factory', createdAt: 1000 });
   let metadata = { factory: 'TEST', taskKey: 'TEST-1', role: 'build' };
-  const { bb, harness, spawns, messages } = await fixture(t, false, {}, { threads: {
+  const { alia, harness, spawns, messages } = await fixture(t, false, {}, { threads: {
     get: async () => thread, getPluginMetadata: async () => metadata,
   } });
   for (let i = 0; i < 2; i++) {
     const result = await harness.behavior.runCli(['recover-agent', 'TEST-1', '--thread', 'orphan']);
     assert.equal(result.exitCode, 0, JSON.stringify(result));
   }
-  assert.equal(bb.storage.database().prepare("SELECT count(*) AS n FROM factory_records WHERE kind='agent'").get().n, 2);
+  assert.equal(alia.storage.database().prepare("SELECT count(*) AS n FROM factory_records WHERE kind='agent'").get().n, 2);
   assert.equal(spawns.length, 0);
   assert.equal(messages.length, 0);
   metadata = { ...metadata, taskKey: 'TEST-2' };
@@ -256,10 +256,10 @@ test('recover-agent reattaches only a matching Factory thread and is idempotent'
 
 test('pausing one factory prevents automatic PR actions while leaving verdict commands available', async t => {
   let reads = 0;
-  const { bb, harness } = await fixture(t, false, {}, { hostRpc: async () => { reads++; throw new Error('PR actions must be paused'); } });
+  const { alia, harness } = await fixture(t, false, {}, { hostRpc: async () => { reads++; throw new Error('PR actions must be paused'); } });
   const paused = await harness.behavior.runCli(['reviews', 'pause', 'TEST']);
   assert.equal(paused.exitCode, 0, JSON.stringify(paused));
-  assert.equal(await bb.storage.kv.get('pr-watch-paused:TEST'), true);
+  assert.equal(await alia.storage.kv.get('pr-watch-paused:TEST'), true);
   await harness.behavior.setSettings({ prReviews: true });
   const service = harness.behavior.runService('pr-watch');
   await new Promise(resolve => setTimeout(resolve, 50));
@@ -267,7 +267,7 @@ test('pausing one factory prevents automatic PR actions while leaving verdict co
   await service.done;
   assert.equal(reads, 0);
   assert.equal((await harness.behavior.runCli(['reviews', 'resume', 'TEST'])).exitCode, 0);
-  assert.equal(await bb.storage.kv.get('pr-watch-paused:TEST'), undefined);
+  assert.equal(await alia.storage.kv.get('pr-watch-paused:TEST'), undefined);
 });
 
 test('concurrent planning and builder assignments cannot bypass pending planning', async t => {
@@ -279,8 +279,8 @@ test('concurrent planning and builder assignments cannot bypass pending planning
 });
 
 test('existing agent choices survive the new Planner default', async t => {
-  const { bb, harness } = await fixture(t);
-  await bb.storage.kv.set('agents', {
+  const { alia, harness } = await fixture(t);
+  await alia.storage.kv.set('agents', {
     roles: { lead: { providerId: 'acp-opencode', model: 'synthetic/hf:zai-org/GLM-5.3', reasoningLevel: 'high' } },
     shadowCustomModel: null,
   });

@@ -51,9 +51,9 @@ describe("signatureOf", () => {
     expect(sign("cd web && pnpm test --filter checkout")).toBe("pnpm test");
     expect(sign("pnpm --filter web run lint")).toBe("pnpm run lint");
     expect(sign("git -C ../repo diff --stat")).toBe("git diff");
-    expect(sign("bb thread wait thr_abc --timeout 9m")).toBe("bb thread wait");
-    expect(sign("bb status 2>&1 | head -30")).toBe("bb status");
-    expect(sign("bb thread --help 2>&1 | head -20")).toBe("bb thread");
+    expect(sign("alia thread wait thr_abc --timeout 9m")).toBe("alia thread wait");
+    expect(sign("alia status 2>&1 | head -30")).toBe("alia status");
+    expect(sign("alia thread --help 2>&1 | head -20")).toBe("alia thread");
     expect(sign("gh pr view 12 --json files")).toBe("gh pr view");
     expect(sign('timeout 300 ./bin/clj-nrepl-eval -p 7888 "(fast-dev)"')).toBe("clj-nrepl-eval");
     expect(sign("node /tmp/race/bench.mjs 1000")).toBe("node bench.mjs");
@@ -73,7 +73,7 @@ describe("signatureOf", () => {
     ).toBe("curl");
     expect(sign('bash -lc "cd web && pnpm test"')).toBe("pnpm test");
     expect(sign("exec node server.mjs")).toBe("node server.mjs");
-    expect(sign('spawn() { bb thread spawn --title "$1"; }; spawn a; spawn b')).toBe("shell");
+    expect(sign('spawn() { VesnALIA thread spawn --title "$1"; }; spawn a; spawn b')).toBe("shell");
     expect(sign("curl -X POST https://x.test \\\n  -d '{}'")).toBe("curl");
   });
 

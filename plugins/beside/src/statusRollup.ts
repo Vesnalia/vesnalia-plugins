@@ -1,4 +1,4 @@
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 
 const ROLLUP_PRIORITY: readonly PluginSidebarThreadIndicator[] = [
   "waiting-for-input",

@@ -2,12 +2,12 @@
 
 Skeptical review. Read-only; nothing run except grep/read and `git show v1.9.0:…`.
 Legend: **[V]** opened and checked (file:line or SDK type). **[I]** inferred.
-SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.104). It is readable; 03's "no readable `.d.ts`" is wrong.
+SDK = `node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts` (0.6.104). It is readable; 03's "no readable `.d.ts`" is wrong.
 
 ## 0. Verdict
 
 - Architecture A (hidden thread per focus, review agent merges) is right. Keep it.
-- **Two safety gaps** the design misses: focus threads have a shell and the `bb review` CLI, and the lowest permission mode isn't read-only (§3.1).
+- **Two safety gaps** the design misses: focus threads have a shell and the `alia review` CLI, and the lowest permission mode isn't read-only (§3.1).
 - Phase 1 as written can't ship alone: Stop, plugin restart and new-head handling are deferred to Phase 3 (§7).
 - "Off = today exactly" breaks on the review agent's tool list (§3.9).
 - One 03 claim is wrong: per-thread token usage **is** exposed (§1b).
@@ -24,7 +24,7 @@ SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.10
 ### b. Per-thread usage: **03 is wrong, it's exposed**
 - [V] Thread events `thread/tokenUsage/updated` carry `{ last, total }` input/output/cached/reasoning tokens (SDK:2840-2865).
 - [V] `thread/contextWindowUsage/updated` carries an optional `cost: { amount, currency }` (SDK:2866-2871).
-- [V] Readable through `bb.sdk.threads.events.list({ threadId, types: [...] })` (SDK:18705-18712, 18789-18792).
+- [V] Readable through `alia.sdk.threads.events.list({ threadId, types: [...] })` (SDK:18705-18712, 18789-18792).
 - [I] Whether every provider emits them, and whether cost is filled in, is unknown. Treat tokens as best-effort and cost as optional.
 - Consequence: §7 #10 ("words only") can become real numbers per run. Read the archived focus thread's last `total` at run end.
 
@@ -77,21 +77,21 @@ SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.10
 ### 3.1 Prompt injection / trust (PRODUCT.md, Trust)
 - **CLI bypass. [V] Real gap.**
   - `run()` sets `ownReview` from `toolThreadReview ?? formerWorkerReview` (`server.ts:396`).
-  - A live focus thread is neither, so `ownReview` is undefined, and `bb review comment add` accepts **any** review (`src/comment-command.ts:78`).
+  - A live focus thread is neither, so `ownReview` is undefined, and `alia review comment add` accepts **any** review (`src/comment-command.ts:78`).
   - So a steered focus with a shell can draft straight into this review or another one, skipping merge, attribution and fencing.
-  - [I] Whether a hidden plugin thread can reach `bb` (PATH, `BB_THREAD_ID`) and run commands without an approval at `accept-edits` is unverified. Assume it can under `auto`.
+  - [I] Whether a hidden plugin thread can reach `alia` (PATH, `ALIA_THREAD_ID`) and run commands without an approval at `accept-edits` is unverified. Assume it can under `auto`.
   - Fix: `run()` refuses every write subcommand from a focus thread, live or former, by role.
 - **Don't implement `focusThread` inside `threadReview`/`toolThreadReview`.** [V] Those feed `run()`'s `ownReview` and `read_changes_since_review` (`src/feedback-tools.ts:54,81`). Add a separate check in the read tools.
 - **Permission mode isn't read-only. [V]** `accept-edits` allows file edits. Focuses run in `project-default` placement (`src/machines.ts:40`), which may be the user's checkout.
   - Exposure is the guide writer's today, times N, and focuses get `read_file`, so they look harder.
-  - [I] Ask BB whether a hidden thread can get a read-only or no-workspace environment. If not, say so in Settings.
+  - [I] Ask VesnALIA whether a hidden thread can get a read-only or no-workspace environment. If not, say so in Settings.
 - **Fence the guide.** The spawn prompt carries "the guide's core (intent, chapters, risk)", written from untrusted PR text. Wrap it in `untrusted()`, as `buildGenerationPrompt` does with earlier chapters (`src/generate.ts:124`).
 - Findings fenced for the merge turn, and the merge turn unattended: ✓ (§1c).
 
 ### 3.2 Concurrency limits
 - [V] Host limit defaults to one thread per processor. Hidden focus threads take slots the user can't see, so the user's own threads sit `pending` for no visible reason. That is thread-management overhead in disguise.
 - [V] 03 §7 #11 is false as written: the writer's loop fails a pending worker once the deadline passes (`src/generate.ts:256`). A queued focus times out after `waitCap`.
-- Several PRs auto-starting at once (watched repos): 4 focuses × k reviews, all unbounded. Add a **plugin-wide cap** on concurrent focus threads (e.g. 2) and queue the rest in the plugin, not in BB.
+- Several PRs auto-starting at once (watched repos): 4 focuses × k reviews, all unbounded. Add a **plugin-wide cap** on concurrent focus threads (e.g. 2) and queue the rest in the plugin, not in VesnALIA.
 
 ### 3.3 Plugin restart mid-run
 - 03: "unfinished focuses become failed, threads stop, submitted findings merge".
@@ -107,7 +107,7 @@ SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.10
 - Stop aborts the focuses. 03 is silent on the merge message:
   - **Queued**: delete it (`threads.queuedMessages.delete`, SDK:18796-18800).
   - **Running**: stop the turn or let it finish? Pick one.
-- **The user can delete or edit the queued merge message in BB's queue.** The run then sits `merging` forever. It needs a watchdog: review agent idle after dispatch with findings still `pending` → `not-checked`.
+- **The user can delete or edit the queued merge message in VesnALIA's queue.** The run then sits `merging` forever. It needs a watchdog: review agent idle after dispatch with findings still `pending` → `not-checked`.
 
 ### 3.6 One focus fails or times out
 - Others continue, the merge uses what arrived: ✓ well covered.
@@ -134,7 +134,7 @@ SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.10
 - [V] `former-workers` is a kv array capped at 500 (`src/former-workers.ts:10`). 4 focus records per review pushes out former assistants after ~100 reviews.
 - An evicted former assistant then reads as "relayed from the reviewer" (01 §7.4 #26). That is a trust regression.
 - Fix: keep focus threads in `focus_threads` (already planned) and have `ownThread` consult it. Don't record focus threads in `former-workers`.
-- Archived hidden threads build up in BB's database: ~4 per review, forever unless the review is deleted [I]. Consider deleting focus threads at run end, since "ask a focus later" is out of scope.
+- Archived hidden threads build up in VesnALIA's database: ~4 per review, forever unless the review is deleted [I]. Consider deleting focus threads at run end, since "ask a focus later" is out of scope.
 
 ### 3.11 Storage copy / merge of new tables
 - `REVIEW_TABLES` completeness is test-enforced [V `src/merge.test.ts:198`].
@@ -188,7 +188,7 @@ SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.10
 ## 8. Top 5 changes, ranked
 
 1. **Lock down focus threads as untrusted shell agents.**
-   - `run()` refuses `bb review` write subcommands (and relays) from focus threads, live or former.
+   - `run()` refuses `alia review` write subcommands (and relays) from focus threads, live or former.
    - Read tools check `focusThread` separately; don't extend `threadReview`.
    - Fence the guide core in the spawn prompt.
    - Fail a focus on any pending permission interaction.

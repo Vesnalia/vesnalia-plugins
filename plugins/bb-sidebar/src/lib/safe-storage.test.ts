@@ -4,13 +4,13 @@ import { safeSetItem } from "./safe-storage";
 
 // Least critical first: a lost working-since stamp only restarts a duration
 // label, so it goes before the lifecycle cache.
-const working = "bb-sidebar:working-since:v1";
-const order = "bb-sidebar:inbox-order-cache:v1";
-const lifecycle = "bb-sidebar:lifecycle-cache:v1";
-const children = "bb-sidebar:child-expansion:v1";
-const shelves = "bb-sidebar:shelf-expansion:v1";
-const sort = "bb-sidebar:active-sort:v1";
-const settings = "bb-sidebar:settings-cache:v1";
+const working = "alia-sidebar:working-since:v1";
+const order = "alia-sidebar:inbox-order-cache:v1";
+const lifecycle = "alia-sidebar:lifecycle-cache:v1";
+const children = "alia-sidebar:child-expansion:v1";
+const shelves = "alia-sidebar:shelf-expansion:v1";
+const sort = "alia-sidebar:active-sort:v1";
+const settings = "alia-sidebar:settings-cache:v1";
 
 function limitStorage(characters: number) {
   const setItem = Storage.prototype.setItem;
@@ -56,14 +56,14 @@ describe("safe storage quota recovery", () => {
     expect(localStorage.getItem(shelves)).toBe("{}");
   });
 
-  it("clears an unsavable target without touching bb core storage", () => {
-    localStorage.setItem("bb.core.preference", "x".repeat(40));
+  it("clears an unsavable target without touching VesnALIA core storage", () => {
+    localStorage.setItem("alia.core.preference", "x".repeat(40));
     localStorage.setItem(children, "old");
     limitStorage(50);
 
     expect(safeSetItem(children, "x".repeat(100))).toBe(false);
     expect(localStorage.getItem(children)).toBeNull();
-    expect(localStorage.getItem("bb.core.preference")).toBe("x".repeat(40));
+    expect(localStorage.getItem("alia.core.preference")).toBe("x".repeat(40));
   });
 
   it("does not evict data when storage is blocked for a non-quota reason", () => {

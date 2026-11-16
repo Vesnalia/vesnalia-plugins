@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createCli } from "./src/cli.ts";
 import { createCrawlService, type CrawlEngineOptions } from "./src/crawl/engine.ts";
 import { FORAGE_MIGRATIONS } from "./src/crawl/schema.ts";
@@ -23,16 +23,16 @@ function authoritativeNotFound(error: unknown): boolean {
  return value.status === 404 || value.statusCode === 404 || value.code === "not_found";
 }
 
-export async function createServerRuntime(bb: BbPluginApi, dependencies: {
+export async function createServerRuntime(alia: AliaPluginApi, dependencies: {
  fetch?: RuntimeDependencies["fetch"];
  search?: RuntimeDependencies["search"];
  crawl?: Partial<Omit<CrawlEngineOptions, "getSources" | "getConfig" | "onChanged" | "allowRestrictedThreadCapture">>;
 } = {}): Promise<ForageRuntime> {
- const settings = bb.settings.define(SETTINGS);
+ const settings = alia.settings.define(SETTINGS);
  const initialSettings = await settings.get();
  let cachedConfig = configFromSettings(initialSettings);
  let keepActivity = initialSettings.keepActivityLog !== false;
- const db = bb.storage.database(); configureSourceDatabase(db); bb.storage.migrate(db, [...FORAGE_MIGRATIONS]);
+ const db = alia.storage.database(); configureSourceDatabase(db); alia.storage.migrate(db, [...FORAGE_MIGRATIONS]);
  let disposed = false;
  let sources: SqliteSourceRepository;
  let runtime: ForageRuntime;
@@ -41,16 +41,16 @@ export async function createServerRuntime(bb: BbPluginApi, dependencies: {
  const changed = (scope: SourceScope) => { if (!disposed) api?.invalidate(scope, ["sources", "jobs", "activity"]); };
  const activity = new ActivityRepository(db);
  const policies = createThreadPolicyStore({
-  read: (threadId, signal) => bb.sdk.threads.getPluginMetadata({ threadId, ...(signal ? { signal } : {}) }),
+  read: (threadId, signal) => alia.sdk.threads.getPluginMetadata({ threadId, ...(signal ? { signal } : {}) }),
   async readMany(threadIds) {
    const out: Record<string, unknown> = {};
    for (let i = 0; i < threadIds.length; i += 200) {
-    const result = await bb.sdk.threads.experimental_listPluginMetadata({ threadIds: threadIds.slice(i, i + 200) });
+    const result = await alia.sdk.threads.experimental_listPluginMetadata({ threadIds: threadIds.slice(i, i + 200) });
     for (const row of result.threads) out[row.threadId] = row.metadata;
    }
    return out;
   },
-  write: (threadId, policy) => bb.sdk.threads.updatePluginMetadata({ threadId, set: { [POLICY_METADATA_KEY]: policy } }),
+  write: (threadId, policy) => alia.sdk.threads.updatePluginMetadata({ threadId, set: { [POLICY_METADATA_KEY]: policy } }),
  });
  const crawl = createCrawlService(db, { ...dependencies.crawl, getSources: () => sources, getConfig: () => cachedConfig, allowRestrictedThreadCapture: () => cachedConfig.allowRestrictedThreadCapture, onChanged: changed });
  sources = new SqliteSourceRepository(db, { maintenance: crawl });
@@ -67,10 +67,10 @@ export async function createServerRuntime(bb: BbPluginApi, dependencies: {
  async function authority(scope: SourceScope, signal?: AbortSignal): Promise<"present" | "missing"> {
   const deadline = createDeadline(5000, signal);
   try {
-   const project = await bb.sdk.projects.get({ projectId: scope.projectId, signal: deadline.signal });
+   const project = await alia.sdk.projects.get({ projectId: scope.projectId, signal: deadline.signal });
    if (project.id !== scope.projectId) throw new Error("Scope authority returned a different project");
    if (scope.kind === "thread") {
-    const thread = await bb.sdk.threads.get({ threadId: scope.threadId, signal: deadline.signal });
+    const thread = await alia.sdk.threads.get({ threadId: scope.threadId, signal: deadline.signal });
     if (thread.id !== scope.threadId) throw new Error("Scope authority returned a different thread");
     if (thread.projectId !== scope.projectId || thread.deletedAt !== null) return "missing";
    }
@@ -82,7 +82,7 @@ export async function createServerRuntime(bb: BbPluginApi, dependencies: {
   async resolveScope(scope, signal) {
    if (await authority(scope, signal) === "missing") { await sources.deleteScope(scope, { signal }); throw new Error("SOURCE_NOT_VISIBLE: The requested scope is unavailable."); }
    return scope;
-  }, fetch: dependencies.fetch, search: dependencies.search, onChanged: changed, onInvalidateAll: () => { if (!disposed) bb.rpc.experimental_invalidateAll(); },
+  }, fetch: dependencies.fetch, search: dependencies.search, onChanged: changed, onInvalidateAll: () => { if (!disposed) alia.rpc.experimental_invalidateAll(); },
   threadPolicy: (scope, signal) => policies.get(scope.threadId, signal),
   recordActivity(event) {
    if (!keepActivity || disposed) return;
@@ -103,9 +103,9 @@ export async function createServerRuntime(bb: BbPluginApi, dependencies: {
     return { snapshots: receipt.expiredSnapshots + receipt.budgetSnapshots, sources: receipt.sources, activity: removed, bytes: receipt.bytes };
    }),
   } };
- api = createSourcesRpc(bb, rpcDependencies); registerSourcesRpc(bb, api); registerSourcesHttp(bb, rpcDependencies, api);
- registerTools(bb, runtime); bb.cli.register(createCli(runtime));
- bb.agents.configure((context) => {
+ api = createSourcesRpc(alia, rpcDependencies); registerSourcesRpc(alia, api); registerSourcesHttp(alia, rpcDependencies, api);
+ registerTools(alia, runtime); alia.cli.register(createCli(runtime));
+ alia.agents.configure((context) => {
   const policy = policyFromMetadata(context.pluginMetadata);
   policies.prime(context.thread.id, policy);
   return policy === "off" ? { tools: [], skills: ["forage"] } : { tools: [...TOOL_NAMES], skills: ["forage", "forage-research"] };
@@ -117,44 +117,44 @@ export async function createServerRuntime(bb: BbPluginApi, dependencies: {
   for (const repository of [sources, crawl, activity]) for await (const scope of repository.scopes()) {
    signal.throwIfAborted();
    try { if (await authority(scope, signal) === "missing") await sources.deleteScope(scope, { signal }); }
-   catch (error) { if (signal.aborted) throw error; bb.log.warn("Scope authority lookup failed; retained existing evidence."); }
+   catch (error) { if (signal.aborted) throw error; alia.log.warn("Scope authority lookup failed; retained existing evidence."); }
   }
   await pruneNow(signal);
   runtime.invalidateAll();
  }
- bb.events.on("thread.deleted", ({ thread }) => {
+ alia.events.on("thread.deleted", ({ thread }) => {
   const scope: SourceScope = { kind: "thread", projectId: thread.projectId, threadId: thread.id };
   runtime.fenceScope(scope);
   return serialize(async () => { await sources.deleteScope(scope, { signal: lifecycle.signal }); });
  });
- bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+ alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
   if (disposed || !lastAssistantText?.includes("::forage-cite")) return;
   const scope = { kind: "thread" as const, projectId: thread.projectId, threadId: thread.id };
   try { if (recordReplyCitations({ scope, text: lastAssistantText, messageId: `reply:${thread.id}:${Date.now()}`, sources, activity }) > 0) changed(scope); }
-  catch { bb.log.warn("Could not record the citations in a reply."); }
+  catch { alia.log.warn("Could not record the citations in a reply."); }
  });
- bb.background.service("crawl", { async start(signal) {
+ alia.background.service("crawl", { async start(signal) {
   const combined = AbortSignal.any([signal, lifecycle.signal]);
   await serialize(() => maintain(combined));
   await crawl.run(combined);
  } });
- bb.background.schedule("retention", "0 * * * *", () => serialize(() => maintain(lifecycle.signal)));
+ alia.background.schedule("retention", "0 * * * *", () => serialize(() => maintain(lifecycle.signal)));
  settings.onChange((next) => {
   cachedConfig = configFromSettings(next);
   keepActivity = next.keepActivityLog !== false;
   if (!keepActivity && activity.deleteAll() > 0) runtime.invalidateAll();
   runtime.fenceAll(); const revoked = crawl.revoke();
   runtime.cache.clear(); runtime.invalidateAll();
-  for (const field of cachedConfig.warnings) bb.log.warn(`Settings: ${field.split(":", 1)[0]} is invalid or was clamped.`);
+  for (const field of cachedConfig.warnings) alia.log.warn(`Settings: ${field.split(":", 1)[0]} is invalid or was clamped.`);
   void serialize(async () => {
    for (const scope of revoked) { await crawl.cancelScope(scope); changed(scope); }
-  }).catch(() => { if (!disposed) bb.log.warn("Settings revocation cleanup failed; jobs remain fenced."); });
+  }).catch(() => { if (!disposed) alia.log.warn("Settings revocation cleanup failed; jobs remain fenced."); });
  });
- bb.onDispose(async () => {
+ alia.onDispose(async () => {
   disposed = true; lifecycle.abort(new Error("Forage disposed"));
   await runtime.dispose(); await crawl.dispose(); await Promise.allSettled([tail]);
  });
  return runtime;
 }
 
-export default async function foragePlugin(bb: BbPluginApi): Promise<void> { await createServerRuntime(bb); }
+export default async function foragePlugin(alia: AliaPluginApi): Promise<void> { await createServerRuntime(alia); }

@@ -66,7 +66,7 @@ export function localProblemReport(root: string) {
   let pluginVersion = 'unknown';
   try { const value = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
     if (typeof value === 'string' && /^\d+\.\d+\.\d+$/.test(value)) pluginVersion = value; } catch { /* bundled version fallback */ }
-  return { bb: tuple.bb, ZCode: tuple.desktop, CLI: tuple.cli, plugin: pluginVersion, macOS,
+  return { alia: tuple.alia, ZCode: tuple.desktop, CLI: tuple.cli, plugin: pluginVersion, macOS,
     state: location.bundle ? 'installed' : 'not installed', ZCodePath: location.bundle,
     cliLogin: cliLogin ? 'set' : 'not set', events: reportEvents(root) };
 }
@@ -75,7 +75,7 @@ export function formatProblemReport(local: ReturnType<typeof localProblemReport>
 }
 export function problemReport(local: ReturnType<typeof localProblemReport>, settings: Record<string, unknown>) {
   const version = (value: unknown) => typeof value === 'string' && /^\d{1,6}\.\d{1,6}(?:\.\d{1,6})?$/.test(value) ? value : null;
-  return { scope: 'server-local', remoteAgentDiagnostics: false, bb: version(local.bb), ZCode: version(local.ZCode),
+  return { scope: 'server-local', remoteAgentDiagnostics: false, alia: version(local.alia), ZCode: version(local.ZCode),
     CLI: version(local.CLI), plugin: version(local.plugin), macOS: version(local.macOS), pluginState: 'running',
     state: local.state === 'installed' ? 'installed' : 'not installed',
     desktopCredentialFile: local.cliLogin === 'set' ? 'present' : 'absent',

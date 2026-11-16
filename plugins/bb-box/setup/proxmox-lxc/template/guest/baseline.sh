@@ -37,7 +37,7 @@ if [ "$(dpkg --print-architecture)" = amd64 ]; then
 # The suites are the image's release's: noble for 24.04, resolute for 26.04.
 suite=$(. /etc/os-release && echo "$VERSION_CODENAME")
 [ -n "$suite" ] || { echo "baseline: /etc/os-release names no release" >&2; exit 1; }
-cat >/etc/apt/sources.list.d/zz-bb-box-build-fallback.sources <<EOF
+cat >/etc/apt/sources.list.d/zz-alia-box-build-fallback.sources <<EOF
 Types: deb
 URIs: http://gb.archive.ubuntu.com/ubuntu
 Suites: $suite $suite-updates $suite-backports $suite-security
@@ -45,7 +45,7 @@ Components: main universe restricted multiverse
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 Snapshot: no
 EOF
-cat >/etc/apt/preferences.d/bb-box-build-fallback <<'EOF'
+cat >/etc/apt/preferences.d/alia-box-build-fallback <<'EOF'
 Package: *
 Pin: origin "gb.archive.ubuntu.com"
 Pin-Priority: -1

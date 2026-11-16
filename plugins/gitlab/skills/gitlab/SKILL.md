@@ -1,23 +1,23 @@
 ---
 name: gitlab
-description: Read and act on GitLab issues, merge requests, pipelines, and notes with the glab CLI and the `bb gitlab` command. Use when a task references a GitLab issue (#123), a merge request (!456), a GitLab project path, a pipeline failure, or when opening/updating a merge request.
+description: Read and act on GitLab issues, merge requests, pipelines, and notes with the glab CLI and the `alia gitlab` command. Use when a task references a GitLab issue (#123), a merge request (!456), a GitLab project path, a pipeline failure, or when opening/updating a merge request.
 ---
 
 # Working with GitLab
 
 Two tools, different jobs:
 
-- `bb gitlab …` — the plugin's cached view across every tracked project. Fast,
+- `alia gitlab …` — the plugin's cached view across every tracked project. Fast,
   no network, no host flags. Use it to find things.
 - `glab …` — the GitLab CLI, live. Use it to read details and to write.
 
 ## Find work
 
 ```sh
-bb gitlab projects                       # tracked projects, host-qualified
-bb gitlab issues [host/group/project]    # cached open issues
-bb gitlab mrs [host/group/project]       # cached open merge requests
-bb gitlab sync                           # refresh the cache now
+alia gitlab projects                       # tracked projects, host-qualified
+alia gitlab issues [host/group/project]    # cached open issues
+alia gitlab mrs [host/group/project]       # cached open merge requests
+alia gitlab sync                           # refresh the cache now
 ```
 
 A project is always host-qualified — `gitlab.example.dev/group/subgroup/app` —
@@ -34,7 +34,7 @@ glab mr diff <iid> -R <project>
 glab ci status -R <project>              # pipeline for the current branch
 ```
 
-`-R` accepts the same host-qualified ref `bb gitlab` prints.
+`-R` accepts the same host-qualified ref `alia gitlab` prints.
 
 For anything the subcommands do not cover, call the REST API directly. The
 project path is one URL-encoded id segment, and `--hostname` takes the bare

@@ -1,8 +1,8 @@
 // The window's one copy of the plugin state, shared by every component, plus
 // small helpers (error text, project chips) that read it.
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import type { FlowState, rpcContract } from "./server";
 const DAY_MS = 86_400_000;
 

@@ -38,7 +38,7 @@ Mention cost as courtesy when heavy work runs; never block on it.
   in-scope work itself, then one-line outcome with full PR URL.
 - Never merge red under either setting unless a current explicit captain
   instruction names the single waived check — and everything else is green.
-- Merge ONLY via `bb firstmate merge <id> [--yes]` / `firstmate_merge`:
+- Merge ONLY via `alia firstmate merge <id> [--yes]` / `firstmate_merge`:
   PR path re-verifies open + CI green + mergeable; local-only path is
   ff-only onto the project checkout. `--yes` is the captain's word for that
   one exact land. Never route around with raw git merges.

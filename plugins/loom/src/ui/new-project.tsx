@@ -1,5 +1,5 @@
 import { memo, useCallback, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_NewThreadComposer as NewThreadComposer, useComposers, type NewThreadRequest, type PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import { experimental_NewThreadComposer as NewThreadComposer, useComposers, type NewThreadRequest, type PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 import { MAX_PLANNING_REPOS } from "../prompts";
 import { MERGE_CHOICES, type MergeChoice } from "../states";
 import { BUTTON, CARD, CHIP, FIELD, HEADING, messageOf, useLoom, useLoomWrite } from "./common";
@@ -23,7 +23,7 @@ function saveProjectId(projectId: string): void {
   } catch {}
 }
 
-/** The project of the newest new-thread composer on screen, which on this page is its own; bb updates it as the human picks another. Null when bb lists none or has not resolved its project. */
+/** The project of the newest new-thread composer on screen, which on this page is its own; VesnALIA updates it as the human picks another. Null when VesnALIA lists none or has not resolved its project. */
 function composerProjectOf(composers: readonly PluginComposerApi[]): string | null {
   for (const composer of [...composers].reverse()) {
     if (composer.scope.kind === "new-thread") return composer.scope.projectId;
@@ -31,9 +31,9 @@ function composerProjectOf(composers: readonly PluginComposerApi[]): string | nu
   return null;
 }
 
-/** bb's standard projects except `exclude`, filterable by name. A picked repo stays listed under any filter, so it can be unpicked. */
+/** VesnALIA's standard projects except `exclude`, filterable by name. A picked repo stays listed under any filter, so it can be unpicked. */
 function RepoPicker({ exclude, picked, onChange }: { exclude: string | null; picked: readonly string[]; onChange(next: string[]): void }) {
-  const choices = useLoom("bbProjects", null);
+  const choices = useLoom("aliaProjects", null);
   const [query, setQuery] = useState("");
   const offered = (choices.data ?? []).filter((choice) => choice.id !== exclude);
   const needle = query.trim().toLowerCase();
@@ -42,8 +42,8 @@ function RepoPicker({ exclude, picked, onChange }: { exclude: string | null; pic
   const note = (text: string, tone = "text-muted-foreground") => <p className={`text-xs ${tone}`}>{text}</p>;
 
   let list: ReactNode;
-  if (choices.data === undefined) list = choices.error === null ? note("Loading bb's projects…") : note(`Could not list bb's projects: ${choices.error}`, "text-destructive-text");
-  else if (offered.length === 0) list = note("bb has no other projects.");
+  if (choices.data === undefined) list = choices.error === null ? note("Loading VesnALIA's projects…") : note(`Could not list VesnALIA's projects: ${choices.error}`, "text-destructive-text");
+  else if (offered.length === 0) list = note("alia has no other projects.");
   else if (shown.length === 0) list = note(`No repo matches "${query.trim()}".`);
   else
     list = (
@@ -83,12 +83,12 @@ function RepoPicker({ exclude, picked, onChange }: { exclude: string | null; pic
 
 type Submit = (request: NewThreadRequest) => Promise<void>;
 
-// bb's composer registers a fresh API for useComposers each time it renders, and that registration re-renders NewProject: re-rendering the composer from there loops until React gives up (minified error #185).
+// VesnALIA's composer registers a fresh API for useComposers each time it renders, and that registration re-renders NewProject: re-rendering the composer from there loops until React gives up (minified error #185).
 const PlannerComposer = memo(function PlannerComposer({ projectId, onSubmit }: { projectId: string | null; onSubmit: Submit }) {
   return <NewThreadComposer placeholder="Describe the outcome…" layout="document" defaultPermissionMode="full" onSubmit={onSubmit} {...(projectId === null ? {} : { defaultProjectId: projectId })} />;
 });
 
-/** bb's own new-thread composer, whose submit starts a Loom planner with the answers given up front. */
+/** VesnALIA's own new-thread composer, whose submit starts a Loom planner with the answers given up front. */
 export function NewProject({ go }: { go(subPath: string): void }) {
   const startPlanning = useLoomWrite("startPlanning");
   const reviewerId = useId();
@@ -97,7 +97,7 @@ export function NewProject({ go }: { go(subPath: string): void }) {
   const [repos, setRepos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [projectId] = useState(savedProjectId);
-  // Until bb reports the composer's project, it is the one the composer was seeded with.
+  // Until VesnALIA reports the composer's project, it is the one the composer was seeded with.
   const composerProject = composerProjectOf(useComposers()) ?? projectId;
   const picked = repos.filter((id) => id !== composerProject);
 

@@ -1,6 +1,6 @@
 // Findings tab: what workers learned, searchable and filterable by outcome,
 // theme, and the candidate's verdict (every facet with counts), paged.
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -114,7 +114,7 @@ export function FindingsTab({ slug, onOpenCandidate }: { slug: string; onOpenCan
 }
 
 function FindingItem({ f, onOpenCandidate }: { f: FindingsView["findings"][number]; onOpenCandidate: (n: number) => void }) {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   return (
     <li className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-sm">
       <div className="flex flex-wrap items-center gap-2">

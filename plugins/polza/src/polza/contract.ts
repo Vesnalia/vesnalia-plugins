@@ -1,5 +1,5 @@
 // polza: shared vocabulary of the Polza provider. Imported by the server
-// entry (bb server process), the bridge (host daemon) and the frontend
+// entry (VesnALIA server process), the bridge (host daemon) and the frontend
 // (type-only), so keep it free of Node and React imports.
 import { z } from "zod";
 

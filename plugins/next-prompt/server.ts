@@ -2,7 +2,7 @@
 // instructions the user is most likely to type next, and hold them for the
 // composer in app.tsx. Suggestions are display-only: nothing is written
 // to the thread or the agent's context.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
 	API_FORMATS,
@@ -61,7 +61,7 @@ export const rpcContract = defineRpcContract({
 });
 
 
-type SpawnArgs = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0];
+type SpawnArgs = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0];
 
 type Outcome = { threadId: string; result: string; at: string };
 
@@ -101,8 +101,8 @@ type ThreadEventTarget = {
 	parentThreadId?: string | null;
 };
 
-export default async function plugin(bb: BbPluginApi) {
-	const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+	const settings = alia.settings.define({
 		enabled: {
 			type: "boolean",
 			label: "Suggest the next prompt automatically",
@@ -173,7 +173,7 @@ export default async function plugin(bb: BbPluginApi) {
 		values = next;
 	});
 
-	const storedSelection = modelSelectionSchema.safeParse(await bb.storage.kv.get(MODEL_SELECTION_KEY));
+	const storedSelection = modelSelectionSchema.safeParse(await alia.storage.kv.get(MODEL_SELECTION_KEY));
 	let selection: ModelSelection | null = storedSelection.success ? storedSelection.data : null;
 
 	/** One line naming what answers the next request, for status output. */
@@ -185,18 +185,18 @@ export default async function plugin(bb: BbPluginApi) {
 		return `${active.providerId}/${active.model} @ ${active.reasoningLevel} via ${via}${selection ? "" : " (default)"}`;
 	};
 
-	/** Hidden worker thread on any bb provider, archived and stopped after each attempt. */
+	/** Hidden worker thread on any VesnALIA provider, archived and stopped after each attempt. */
 	const completeWithWorker = async (
 		sourceThreadId: string,
 		execution: ModelSelection,
 		request: CompletionRequest,
 	): Promise<string> => {
-		const source = await bb.sdk.threads.get({ threadId: sourceThreadId, signal: request.signal });
-		const options = await bb.sdk.system.executionOptions({ signal: request.signal });
+		const source = await alia.sdk.threads.get({ threadId: sourceThreadId, signal: request.signal });
+		const options = await alia.sdk.system.executionOptions({ signal: request.signal });
 		const supported: readonly string[] =
 			options.providers.find((provider) => provider.id === execution.providerId)?.capabilities.permissionModes ?? [];
 		const permissionMode = WORKER_PERMISSION_MODES.find((mode) => supported.includes(mode)) ?? "accept-edits";
-		const worker = await bb.sdk.threads.spawn({
+		const worker = await alia.sdk.threads.spawn({
 			projectId: source.projectId,
 			environment: source.environmentId
 				? { type: "reuse", environmentId: source.environmentId }
@@ -212,16 +212,16 @@ export default async function plugin(bb: BbPluginApi) {
 		});
 		try {
 			// Rejects as soon as the worker enters error, so a failed start does not run out the timeout.
-			await bb.sdk.threads.wait({
+			await alia.sdk.threads.wait({
 				threadId: worker.id,
 				status: "idle",
 				timeoutMs: values.timeoutSeconds * 1000,
 				signal: request.signal,
 			});
-			return (await bb.sdk.threads.output({ threadId: worker.id, signal: request.signal })).output ?? "";
+			return (await alia.sdk.threads.output({ threadId: worker.id, signal: request.signal })).output ?? "";
 		} finally {
-			await bb.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
-			await bb.sdk.threads.stop({ threadId: worker.id }).catch(() => {});
+			await alia.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
+			await alia.sdk.threads.stop({ threadId: worker.id }).catch(() => {});
 		}
 	};
 
@@ -257,23 +257,23 @@ export default async function plugin(bb: BbPluginApi) {
 
 	const readStored = async (threadId: string): Promise<Stored | undefined> => {
 		const key = `${STORED_PREFIX}${threadId}`;
-		const raw = await bb.storage.kv.get(key);
+		const raw = await alia.storage.kv.get(key);
 		if (raw === undefined) return undefined;
 		const parsed = storedSchema.safeParse(raw);
 		if (parsed.success) return parsed.data;
-		await bb.storage.kv.delete(key);
+		await alia.storage.kv.delete(key);
 		return undefined;
 	};
 	const writeStored = (threadId: string, record: Omit<Stored, "createdAt"> & { createdAt?: string }) =>
-		bb.storage.kv.set(`${STORED_PREFIX}${threadId}`, { createdAt: new Date().toISOString(), ...record });
-	const forgetStored = (threadId: string) => bb.storage.kv.delete(`${STORED_PREFIX}${threadId}`).catch(() => {});
+		alia.storage.kv.set(`${STORED_PREFIX}${threadId}`, { createdAt: new Date().toISOString(), ...record });
+	const forgetStored = (threadId: string) => alia.storage.kv.delete(`${STORED_PREFIX}${threadId}`).catch(() => {});
 
 	const toSuggestion = (held: Held): Suggestion => ({ threadId: held.threadId, texts: held.texts, createdAt: held.createdAt });
 
 	const publish = (threadId: string) => {
 		if (disposed) return;
 		try {
-			bb.realtime.publish(SUGGESTION_CHANGED, { threadId });
+			alia.realtime.publish(SUGGESTION_CHANGED, { threadId });
 		} catch {
 			// The host can invalidate handles while a request unwinds during dispose.
 		}
@@ -282,7 +282,7 @@ export default async function plugin(bb: BbPluginApi) {
 	const record = (threadId: string, result: string) => {
 		outcomes.push({ threadId, result, at: new Date().toISOString() });
 		if (outcomes.length > 20) outcomes.shift();
-		if (!disposed) bb.log.info(`${threadId}: ${result}`);
+		if (!disposed) alia.log.info(`${threadId}: ${result}`);
 	};
 
 	const clear = (threadId: string) => {
@@ -305,7 +305,7 @@ export default async function plugin(bb: BbPluginApi) {
 		};
 		let before: { id: string; seq: number } | undefined;
 		for (let page = 0; page < MAX_TIMELINE_PAGES; page += 1) {
-			const response = await bb.sdk.threads.timeline({
+			const response = await alia.sdk.threads.timeline({
 				threadId,
 				includeNestedRows: "true",
 				...(before ? { beforeAnchorId: before.id, beforeAnchorSeq: String(before.seq) } : {}),
@@ -382,7 +382,7 @@ export default async function plugin(bb: BbPluginApi) {
 	// Child threads are driven by their parent agent, so a suggestion there
 	// would cost a request nobody reads.
 	const isTarget = (thread: ThreadEventTarget) =>
-		thread.visibility !== "hidden" && !thread.parentThreadId && thread.originPluginId !== bb.pluginId;
+		thread.visibility !== "hidden" && !thread.parentThreadId && thread.originPluginId !== alia.pluginId;
 
 	/**
 	 * The thread's suggestions. After a reload the first call checks the stored
@@ -408,7 +408,7 @@ export default async function plugin(bb: BbPluginApi) {
 			restored.add(threadId);
 			return null;
 		}
-		const thread = await bb.sdk.threads.get({ threadId });
+		const thread = await alia.sdk.threads.get({ threadId });
 		const prompt = thread.status === "idle" ? (await readConversation(threadId)).prompt : undefined;
 		// The thread moved on during the check; clear() has dropped the record.
 		if (epoch(threadId) !== start) return suggestions.get(threadId) ?? null;
@@ -423,7 +423,7 @@ export default async function plugin(bb: BbPluginApi) {
 		return restoredHeld;
 	};
 
-	bb.events.on("thread.idle", async ({ thread }) => {
+	alia.events.on("thread.idle", async ({ thread }) => {
 		if (!values.enabled || !isTarget(thread)) return;
 		if (thread.queuedMessageCount > 0) {
 			record(thread.id, "skipped: queued messages");
@@ -433,7 +433,7 @@ export default async function plugin(bb: BbPluginApi) {
 		const start = epoch(thread.id);
 		const counts = await Promise.all(
 			CHILD_WORKING_STATUSES.map((status) =>
-				bb.sdk.threads.count({ parentThreadId: thread.id, status }).catch(() => ({ total: 0 })),
+				alia.sdk.threads.count({ parentThreadId: thread.id, status }).catch(() => ({ total: 0 })),
 			),
 		);
 		if (epoch(thread.id) !== start) return;
@@ -443,15 +443,15 @@ export default async function plugin(bb: BbPluginApi) {
 		}
 		void generate(thread.id, { automatic: true }).then((result) => record(thread.id, outcomeOf(result)));
 	});
-	bb.events.on("thread.active", ({ thread }) => clear(thread.id));
-	bb.events.on("thread.failed", ({ thread }) => clear(thread.id));
-	bb.events.on("thread.archived", ({ thread }) => clear(thread.id));
-	bb.events.on("thread.deleted", ({ thread }) => clear(thread.id));
+	alia.events.on("thread.active", ({ thread }) => clear(thread.id));
+	alia.events.on("thread.failed", ({ thread }) => clear(thread.id));
+	alia.events.on("thread.archived", ({ thread }) => clear(thread.id));
+	alia.events.on("thread.deleted", ({ thread }) => clear(thread.id));
 
-	bb.rpc.register(rpcContract, {
+	alia.rpc.register(rpcContract, {
 		model_get: () => ({ selection: selection ?? DEFAULT_SELECTION, configured: selection !== null }),
 		model_set: async (next) => {
-			await bb.storage.kv.set(MODEL_SELECTION_KEY, next);
+			await alia.storage.kv.set(MODEL_SELECTION_KEY, next);
 			selection = next;
 			return { selection: next };
 		},
@@ -471,32 +471,32 @@ export default async function plugin(bb: BbPluginApi) {
 
 	const usage = [
 		"Usage:",
-		"  bb next-prompt show [thread-id] [--json]      Print the current suggestions, best first",
-		"  bb next-prompt suggest [thread-id] [--json]   Generate suggestions now",
-		"  bb next-prompt context [thread-id]            Print the transcript a request would send",
-		"  bb next-prompt status [--json]                Show the model route and recent outcomes",
-		"  bb next-prompt model [<provider>/<model>[@<reasoning>] | reset]",
+		"  VesnALIA next-prompt show [thread-id] [--json]      Print the current suggestions, best first",
+		"  VesnALIA next-prompt suggest [thread-id] [--json]   Generate suggestions now",
+		"  VesnALIA next-prompt context [thread-id]            Print the transcript a request would send",
+		"  VesnALIA next-prompt status [--json]                Show the model route and recent outcomes",
+		"  VesnALIA next-prompt model [<provider>/<model>[@<reasoning>] | reset]",
 		"                                                Show, set, or clear the suggestion model",
 	].join("\n");
-	bb.cli.register({
+	alia.cli.register({
 		name: "next-prompt",
-		summary: "Show or generate next-prompt suggestions for BB threads",
+		summary: "Show or generate next-prompt suggestions for VesnALIA threads",
 		commands: [
-			{ name: "show", summary: "Print a thread's current suggestions", usage: "bb next-prompt show [thread-id] [--json]" },
-			{ name: "suggest", summary: "Generate suggestions for an idle thread now", usage: "bb next-prompt suggest [thread-id] [--json]" },
-			{ name: "context", summary: "Print the transcript a suggestion request would send", usage: "bb next-prompt context [thread-id]" },
-			{ name: "status", summary: "Show the model route and recent outcomes", usage: "bb next-prompt status [--json]" },
+			{ name: "show", summary: "Print a thread's current suggestions", usage: "alia next-prompt show [thread-id] [--json]" },
+			{ name: "suggest", summary: "Generate suggestions for an idle thread now", usage: "alia next-prompt suggest [thread-id] [--json]" },
+			{ name: "context", summary: "Print the transcript a suggestion request would send", usage: "alia next-prompt context [thread-id]" },
+			{ name: "status", summary: "Show the model route and recent outcomes", usage: "alia next-prompt status [--json]" },
 			{
 				name: "model",
 				summary: "Show, set, or clear the suggestion model (same as the settings picker)",
-				usage: "bb next-prompt model [<provider>/<model>[@<reasoning>] | reset]",
+				usage: "alia next-prompt model [<provider>/<model>[@<reasoning>] | reset]",
 			},
 		],
 		async run(argv, context) {
 			const json = argv.includes("--json");
 			const [command, ...args] = argv.filter((arg) => arg !== "--json");
 			const threadId = args[0] ?? context.threadId;
-			const needThread = { exitCode: 1, stderr: "Pass a thread id, or run this inside a bb thread." };
+			const needThread = { exitCode: 1, stderr: "Pass a thread id, or run this inside a VesnALIA thread." };
 			switch (command) {
 				case undefined:
 				case "help":
@@ -513,7 +513,7 @@ export default async function plugin(bb: BbPluginApi) {
 				}
 				case "suggest": {
 					if (!threadId) return needThread;
-					const thread = await bb.sdk.threads.get({ threadId, signal: context.signal });
+					const thread = await alia.sdk.threads.get({ threadId, signal: context.signal });
 					if (thread.status !== "idle") return { exitCode: 1, stderr: `Thread ${threadId} is ${thread.status}; wait until it is idle.` };
 					const result = await generate(threadId, { automatic: false, signal: context.signal });
 					record(threadId, outcomeOf(result));
@@ -532,13 +532,13 @@ export default async function plugin(bb: BbPluginApi) {
 				case "model": {
 					const spec = args[0];
 					if (spec === "reset") {
-						await bb.storage.kv.delete(MODEL_SELECTION_KEY);
+						await alia.storage.kv.delete(MODEL_SELECTION_KEY);
 						selection = null;
 					} else if (spec !== undefined) {
 						const match = /^([^/@\s]+)\/([^@\s]+)(?:@(\S+))?$/.exec(spec);
 						if (!match) return { exitCode: 1, stderr: "Expected <provider>/<model>[@<reasoning>], e.g. claude-code/claude-haiku-4-5-20251001@low." };
 						const next = modelSelectionSchema.parse({ providerId: match[1], model: match[2], reasoningLevel: match[3] ?? "low" });
-						await bb.storage.kv.set(MODEL_SELECTION_KEY, next);
+						await alia.storage.kv.set(MODEL_SELECTION_KEY, next);
 						selection = next;
 					}
 					return { exitCode: 0, stdout: describeRoute() };
@@ -571,20 +571,20 @@ export default async function plugin(bb: BbPluginApi) {
 
 	void (async () => {
 		const cutoff = Date.now() - STORED_MAX_AGE_MS;
-		for (const key of await bb.storage.kv.list(STORED_PREFIX)) {
-			const parsed = storedSchema.safeParse(await bb.storage.kv.get(key));
-			if (!parsed.success || Date.parse(parsed.data.createdAt) < cutoff) await bb.storage.kv.delete(key);
+		for (const key of await alia.storage.kv.list(STORED_PREFIX)) {
+			const parsed = storedSchema.safeParse(await alia.storage.kv.get(key));
+			if (!parsed.success || Date.parse(parsed.data.createdAt) < cutoff) await alia.storage.kv.delete(key);
 		}
 	})().catch((error: unknown) => {
-		if (!disposed) bb.log.warn(`pruning stored suggestions failed: ${error instanceof Error ? error.message : String(error)}`);
+		if (!disposed) alia.log.warn(`pruning stored suggestions failed: ${error instanceof Error ? error.message : String(error)}`);
 	});
 
-	bb.onDispose(() => {
+	alia.onDispose(() => {
 		disposed = true;
 		for (const controller of inFlight.values()) controller.abort();
 		inFlight.clear();
 		suggestions.clear();
 	});
 
-	bb.log.info("loaded");
+	alia.log.info("loaded");
 }

@@ -3,8 +3,8 @@ import {
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // Each of these bridges rebuilds a thread's session, keeping its
@@ -54,7 +54,7 @@ function parseProviderIds(value: string): string[] {
     .filter((id) => id.length > 0);
 }
 
-// bb.sdk rejects failed API calls with an error carrying the HTTP status;
+// alia.sdk rejects failed API calls with an error carrying the HTTP status;
 // its class is not exported by the SDK.
 function isNotFoundError(error: unknown): boolean {
   return (
@@ -65,8 +65,8 @@ function isNotFoundError(error: unknown): boolean {
   );
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     extraProviderIds: {
       type: "string",
       label: "Additional provider IDs",
@@ -80,9 +80,9 @@ export default async function plugin(bb: BbPluginApi) {
   const contributedProviderIds = new Set<string>();
 
   function contributeNonce(providerId: string) {
-    bb.providers.experimental_contributeEnv(providerId, async ({ threadId }) => {
+    alia.providers.experimental_contributeEnv(providerId, async ({ threadId }) => {
       if (!supportedProviderIds.has(providerId)) return [];
-      const nonce = await bb.storage.kv.get<string>(nonceKey(threadId));
+      const nonce = await alia.storage.kv.get<string>(nonceKey(threadId));
       if (typeof nonce !== "string") return [];
       return [
         {
@@ -118,7 +118,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<Refusal | null> {
     let thread;
     try {
-      thread = await bb.sdk.threads.get({ threadId, signal });
+      thread = await alia.sdk.threads.get({ threadId, signal });
     } catch (error) {
       if (!isNotFoundError(error)) throw error;
       return {
@@ -147,11 +147,11 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<Refusal | null> {
     const refusal = await findRefusal(threadId, signal);
     if (refusal) return refusal;
-    await bb.storage.kv.set(nonceKey(threadId), new Date().toISOString());
+    await alia.storage.kv.set(nonceKey(threadId), new Date().toISOString());
     return null;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     reload_supported: async ({ threadId }) => ({
       supported: (await findRefusal(threadId)) === null,
     }),
@@ -161,7 +161,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "agent-reload",
       summary:
@@ -182,7 +182,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (!threadId) {
             throw new PluginCliError("no thread to reload", {
               code: "thread_required",
-              hint: "Pass a thread id: `bb agent-reload <thread-id>`.",
+              hint: "Pass a thread id: `alia agent-reload <thread-id>`.",
             });
           }
           const refusal = await markForReload(threadId, ctx.signal);
@@ -198,7 +198,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.events.on("thread.deleted", async ({ thread }) => {
-    await bb.storage.kv.delete(nonceKey(thread.id));
+  alia.events.on("thread.deleted", async ({ thread }) => {
+    await alia.storage.kv.delete(nonceKey(thread.id));
   });
 }

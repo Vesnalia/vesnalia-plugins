@@ -123,7 +123,7 @@ export function mountCapyEffect(parent: HTMLElement, initial: BackgroundSettings
   layer.append(air, ink, focus, fade, sheet); parent.prepend(layer);
   // The sheet stays still while messages scroll, so it tracks the column's
   // horizontal position and width, and starts below the thread header.
-  // BB can swap the column on navigation.
+  // VesnALIA can swap the column on navigation.
   let column: HTMLElement | null = null;
   const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => placeSheet());
   resize?.observe(parent);

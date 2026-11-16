@@ -8,7 +8,7 @@ export type DestinationOptions = {
   /** Canonical source checkout ({repoPath}) and primary checkout name ({repo}). */
   source: string;
   repo: string;
-  /** BB's launch key; absent in previews. */
+  /** VesnALIA's launch key; absent in previews. */
   pathKey?: string;
   /** Per-thread overrides: a templated parent directory, and a literal folder name. */
   root?: string;
@@ -19,7 +19,7 @@ export const branchSegment = (branch: string) => branch.replace(/[\\/:*?"<>|\x00
 const placeholders: Partial<Record<TemplateToken, string>> = { branch: "<automatic branch>", pathKey: "<automatic folder>" };
 
 /**
- * Resolve destinations for one launch. `branch` fills {branch}; empty means BB names it at launch.
+ * Resolve destinations for one launch. `branch` fills {branch}; empty means VesnALIA names it at launch.
  * Launch-time names render as placeholders in previews and must be known at launch.
  * Template-derived folders get -2, -3… on collision; an explicit folder that exists is refused.
  */
@@ -32,7 +32,7 @@ export function destinations(o: DestinationOptions) {
     };
     const render = (template: string) => templateSchema.parse(template).replace(/\{([^{}]+)\}/g, (_, token: TemplateToken) => {
       const value = values[token] ?? (preview ? placeholders[token] : undefined);
-      if (value === undefined) throw new Error("Destination is unresolved: BB didn't provide a branch name for this launch.");
+      if (value === undefined) throw new Error("Destination is unresolved: VesnALIA didn't provide a branch name for this launch.");
       return value;
     });
     let root = o.root ? expand(render(o.root)) : undefined;

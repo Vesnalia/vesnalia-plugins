@@ -1,4 +1,4 @@
-// bb-plugin-clickable-local-link - backend entry.
+// alia-plugin-clickable-local-link - backend entry.
 //
 // POST /api/v1/plugins/clickable-local-link/http/open  { path, reveal? }
 // Opens a local document in its default Mac app, or a folder in Finder.
@@ -7,7 +7,7 @@
 import { execFile } from "node:child_process";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** Extensions that open in their app on click. Everything else is revealed. */
@@ -84,8 +84,8 @@ function runOpen(target: string, action: Action): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     language: {
       type: "select",
       label: "Language / Язык",
@@ -95,7 +95,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route("POST", "/open", async (c) => {
+  alia.http.route("POST", "/open", async (c) => {
     if (process.platform !== "darwin") {
       return c.json({ ok: false, error: "Only macOS is supported" }, 501);
     }
@@ -117,12 +117,12 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       await runOpen(decision.path, action);
     } catch (error) {
-      bb.log.warn(`open failed for ${target}: ${String(error)}`);
+      alia.log.warn(`open failed for ${target}: ${String(error)}`);
       return c.json({ ok: false, error: "Could not open", path: target }, 500);
     }
     return c.json({ ok: true, action, path: target });
   });
 
-  bb.log.info("loaded");
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.log.info("loaded");
+  alia.onDispose(() => alia.log.info("disposed"));
 }

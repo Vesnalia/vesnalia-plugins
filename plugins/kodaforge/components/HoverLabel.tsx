@@ -1,5 +1,5 @@
 // A label that slides out beside an activity-bar icon on hover or keyboard focus, as in VS Code.
-// BB's webview shows the native title tooltip late or not at all, so the bar uses this instead.
+// VesnALIA's webview shows the native title tooltip late or not at all, so the bar uses this instead.
 // Put it inside a button that has `group relative`.
 export function HoverLabel({ text, keys }: { text: string; keys?: string }) {
   return (

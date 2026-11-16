@@ -5,24 +5,24 @@ import { DatabaseSync } from "node:sqlite";
 
 export const home = process.env.HOME;
 export const base = process.env.LIVE_BASE ?? "http://127.0.0.1:7801";
-export const boxes = `${base}/plugins/bb-box/desktop`;
-export const settingsUrl = `${base}/settings/plugins/bb-box`;
+export const boxes = `${base}/plugins/alia-box/desktop`;
+export const settingsUrl = `${base}/settings/plugins/alia-box`;
 export const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function bb(args) {
+export function alia(args) {
   return execFileSync(join(home, "bbc"), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
 
-export function bbMay(args) {
+export function aliaMay(args) {
   try {
-    return { ok: true, out: bb(args) };
+    return { ok: true, out: alia(args) };
   } catch (error) {
     return { ok: false, out: `${error.stdout ?? ""}${error.stderr ?? ""}` };
   }
 }
 
 export async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -61,7 +61,7 @@ const tracePath = join(home, "agent-trace.log");
 
 export function agentStart(thread, tool, args = {}) {
   const before = existsSync(tracePath) ? readFileSync(tracePath, "utf8").length : 0;
-  bb(["thread", "tell", thread, `CALL ${tool} ${JSON.stringify(args)}`]);
+  alia(["thread", "tell", thread, `CALL ${tool} ${JSON.stringify(args)}`]);
   return before;
 }
 
@@ -77,7 +77,7 @@ export async function agent(thread, tool, args = {}) {
 }
 
 export function events(boxId) {
-  const db = new DatabaseSync(join(home, "bbdata", "plugins", "bb-box", "box-log.db"), { readOnly: true });
+  const db = new DatabaseSync(join(home, "bbdata", "plugins", "alia-box", "box-log.db"), { readOnly: true });
   try {
     return db.prepare("SELECT seq, at, kind, who, agent, words FROM box_events WHERE box = ? ORDER BY seq").all(boxId);
   } finally {

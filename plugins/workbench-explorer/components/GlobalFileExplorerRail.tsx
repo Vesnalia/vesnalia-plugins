@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBbContext, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
@@ -24,11 +24,11 @@ import { TitleBarFileExplorerToggle } from "@/components/TitleBarFileExplorerTog
 import type { RootChoice } from "../shared";
 import type { rpcContract } from "../contract";
 
-const ROOT_STORAGE_KEY = "bb-plugin-workbench-explorer:pinned-root";
+const ROOT_STORAGE_KEY = "alia-plugin-workbench-explorer:pinned-root";
 
 /** The views the rail carries: names, the text inside them, and what changed. */
 type ExplorerTab = "files" | "search" | "changes";
-const TAB_STORAGE_KEY = "bb-plugin-workbench-explorer:tab";
+const TAB_STORAGE_KEY = "alia-plugin-workbench-explorer:tab";
 
 function readStoredTab(): ExplorerTab {
   try {
@@ -66,10 +66,10 @@ function writePinnedRoot(id: string): void {
   }
 }
 
-/** Mounted once per BB window. Navigation never owns or unmounts the tree. */
+/** Mounted once per VesnALIA window. Navigation never owns or unmounts the tree. */
 export function GlobalFileExplorerRail() {
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId, projectId } = useBbContext();
+  const { threadId, projectId } = useAliaContext();
   const { values, isLoading: settingsLoading } = useSettings();
   const compact = useIsCompactViewport();
   const railWidthPx = useRailWidthPx();
@@ -177,9 +177,9 @@ export function GlobalFileExplorerRail() {
   }, [compact, insetHolderId, railOpen]);
 
   if (!ready) return null;
-  // BB's desktop window is framed: a full-width title bar (z-index 44) sits
+  // VesnALIA's desktop window is framed: a full-width title bar (z-index 44) sits
   // over the top of the window. The rail starts below it as a card of its own,
-  // and its toggle joins BB's title-bar buttons, so nothing the user can click
+  // and its toggle joins VesnALIA's title-bar buttons, so nothing the user can click
   // is left underneath the title bar.
   const framed = frame !== null && !compact;
   return <>

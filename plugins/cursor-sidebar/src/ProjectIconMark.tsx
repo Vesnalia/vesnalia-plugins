@@ -1,4 +1,4 @@
-import { experimental_Icon as HostIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as HostIcon } from "@vesnalia/plugin-sdk/app";
 import { ProjectIconGlyph } from "@wy3z/bb-suite/project-icon/picker";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -7,7 +7,7 @@ import { projectIconColorClassName } from "./project-icons";
 import { ProjectMonogram } from "./ProjectMonogram";
 
 export const BOARD_FALLBACK = "board";
-export const BOARD_HOST_ICON = "bb-projects:project";
+export const BOARD_HOST_ICON = "alia-projects:project";
 
 export function ProjectIconMark({
   icon,

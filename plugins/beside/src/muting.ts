@@ -1,6 +1,6 @@
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import * as z from "zod/mini";
-import type { bbSidebarRpcContract } from "./server";
+import type { aliaSidebarRpcContract } from "./server";
 
 interface ParsingSchema<TOutput> {
   parse(value: unknown): TOutput;
@@ -17,7 +17,7 @@ interface PluginsRpcCaller {
   };
 }
 
-type LifecycleRpc = PluginRpcClient<typeof bbSidebarRpcContract>;
+type LifecycleRpc = PluginRpcClient<typeof aliaSidebarRpcContract>;
 
 const PUSH_NOTIFICATIONS_PLUGIN_ID = "push-notifications";
 

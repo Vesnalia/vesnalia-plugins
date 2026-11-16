@@ -7,7 +7,7 @@ import { Toggle } from "./controls";
 import { newerRelease } from "./model";
 import type { MattState } from "./model";
 
-export const UPDATE_COMMAND = `bb plugin update ${mirrorConfig.identity.pluginId}`;
+export const UPDATE_COMMAND = `alia plugin update ${mirrorConfig.identity.pluginId}`;
 export function StatusCard({
   state,
   pending,
@@ -81,7 +81,7 @@ export function StatusCard({
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Installed bb plugin version: {installedVersion ?? "Unknown"}
+            Installed VesnALIA plugin version: {installedVersion ?? "Unknown"}
           </p>
           <p className="text-sm">
             {update?.upstreamAheadCount == null
@@ -108,7 +108,7 @@ export function StatusCard({
           )}
           {update?.latestPluginVersion && (
             <p className="text-xs text-muted-foreground">
-              Latest bb plugin release: {update.latestPluginVersion}
+              Latest VesnALIA plugin release: {update.latestPluginVersion}
             </p>
           )}
           {update?.checkedAt && (
@@ -135,7 +135,7 @@ export function StatusCard({
       {newer && (
         <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
           <p className="text-sm">
-            bb plugin {update?.latestPluginVersion} is available. Update to receive
+            alia plugin {update?.latestPluginVersion} is available. Update to receive
             the latest mirrored skills.
           </p>
           <div className="flex flex-wrap items-center gap-2">

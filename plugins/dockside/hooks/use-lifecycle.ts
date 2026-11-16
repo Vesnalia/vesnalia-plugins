@@ -3,8 +3,8 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import type { docksideRpcContract } from "@/server";
 import {
   canPark,
@@ -32,7 +32,7 @@ function signalsFor(thread: PluginSidebarThread): ThreadActivitySignals {
 export interface LifecycleApi {
   shelfFor(thread: PluginSidebarThread): ThreadShelf;
   /**
-   * Every thread the plugin has parked. Settling archives a thread in bb, so
+   * Every thread the plugin has parked. Settling archives a thread in VesnALIA, so
    * the list needs this to keep showing the ones it put away itself.
    */
   parkedThreadIds: ReadonlySet<string>;
@@ -42,7 +42,7 @@ export interface LifecycleApi {
    * `parkedThreadIds` answers whether a thread already on screen is parked.
    * This answers what the plugin knows about a thread that is not on screen at
    * all, which is the only question a settled thread can be asked before
-   * `listSettledThreads` lands: settling archives it, so bb reports nothing and
+   * `listSettledThreads` lands: settling archives it, so VesnALIA reports nothing and
    * the row is the whole of what a fresh mount holds about it.
    */
   parkedRows: ReadonlyMap<string, ThreadLifecycleRow>;
@@ -96,7 +96,7 @@ export function useLifecycle(
   const [shelvesReady, setShelvesReady] = useState(seededRows !== null);
   // This one asks whether the server has spoken for itself, and only it may
   // gate a write. Seeded rows are a guess, and the reconcile effect below
-  // un-settles threads: acting on a guess would take bb's archive off a thread
+  // un-settles threads: acting on a guess would take VesnALIA's archive off a thread
   // and delete a row another window had just replaced.
   const [serverRowsLoaded, setServerRowsLoaded] = useState(false);
 
@@ -150,7 +150,7 @@ export function useLifecycle(
   // The shelves keep whatever they already had, and the read comes back for
   // them. Without a retry a single failure would also pin `serverRowsLoaded`
   // false for the life of the mount, and that is what holds the reconcile
-  // effect below — and with it bb's archive — shut.
+  // effect below — and with it VesnALIA's archive — shut.
   const refresh = useRetryingRead(readLifecycle);
 
   useEffect(() => {
@@ -205,12 +205,12 @@ export function useLifecycle(
 
   // A settled thread that comes back has to come back everywhere. The shelf
   // already reads it as active, and this is what makes the store agree — and
-  // with it bb's archive, which `unsettle` takes off again. Ids in flight are
+  // with it VesnALIA's archive, which `unsettle` takes off again. Ids in flight are
   // held so a slow round trip cannot fire the same unsettle twice.
   const wakingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     // The one place the seeded rows are not allowed. This effect deletes rows
-    // and unarchives threads, and bb's own thread data is already warm on a
+    // and unarchives threads, and VesnALIA's own thread data is already warm on a
     // remount, so without this guard a cached row plus fresh activity would
     // destroy a park that another window or device had set in the meantime.
     if (!serverRowsLoaded) return;

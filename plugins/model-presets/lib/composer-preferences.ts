@@ -1,21 +1,21 @@
 // Bridge into the built-in New thread composer's remembered selection.
 //
-// bb persists the root composer's provider/model/effort/speed choice in
+// VesnALIA persists the root composer's provider/model/effort/speed choice in
 // localStorage through jotai `atomWithStorage` atoms that subscribe to the
 // window `storage` event. Writing those keys and dispatching a synthetic
 // StorageEvent updates the live composer without touching its DOM.
 //
-// This is an internal contract of the bb app (see
+// This is an internal contract of the VesnALIA app (see
 // apps/app/src/hooks/thread-creation-options/persisted-selection-fields.ts in
-// the bb repository), pinned here to storage version "1". If bb changes the
+// the VesnALIA repository), pinned here to storage version "1". If VesnALIA changes the
 // layout, bump STORAGE_VERSION or adjust the key builders below.
 import type { ReasoningLevel, ServiceTier } from "@/shared/constants";
 import { REASONING_LEVELS, SERVICE_TIERS } from "@/shared/constants";
 
-const PROVIDER_KEY = "bb.promptbox.provider";
-const MODEL_KEY = "bb.promptbox.model";
-const REASONING_KEY = "bb.promptbox.reasoning";
-const SERVICE_TIER_KEY = "bb.promptbox.service-tier";
+const PROVIDER_KEY = "alia.promptbox.provider";
+const MODEL_KEY = "alia.promptbox.model";
+const REASONING_KEY = "alia.promptbox.reasoning";
+const SERVICE_TIER_KEY = "alia.promptbox.service-tier";
 const STORAGE_VERSION = "1";
 
 export interface ComposerSelection {

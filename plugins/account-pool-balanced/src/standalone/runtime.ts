@@ -15,8 +15,8 @@ export async function openPool(dataDir: string, config: Partial<AccountPoolConfi
   if (existing.length && !existing.includes("pool.db") && !existing.includes("standalone.lock")) {
     throw new Error("Use an empty directory or an existing standalone pool directory.");
   }
-  if (existing.includes("bb.db") || existing.includes("data.db")) {
-    throw new Error("Use an empty directory, never BB's live storage.");
+  if (existing.includes("alia.db") || existing.includes("data.db")) {
+    throw new Error("Use an empty directory, never VesnALIA's live storage.");
   }
   await fs.chmod(dataDir, 0o700);
   const lock = path.join(dataDir, "standalone.lock");

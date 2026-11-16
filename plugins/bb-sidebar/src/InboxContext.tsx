@@ -7,8 +7,8 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import type { useSidebarThreads } from "./bb-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import type { useSidebarThreads } from "./alia-sdk";
 import type { SidebarProvider } from "./ProviderGlyph";
 import { DEFAULT_SIDEBAR_SETTINGS, type SidebarSettingsValues } from "./sidebar-settings";
 import type { ConfiguredSnoozePreset } from "./lifecycle";
@@ -195,7 +195,7 @@ export function useInboxActivity() {
 
 type ExplicitChildListInputs = {
   childrenByParent: ReadonlyMap<string, readonly PluginSidebarThread[]>;
-  /** Runs on a click that bb's link routing opens; it does not navigate. */
+  /** Runs on a click that VesnALIA's link routing opens; it does not navigate. */
   onThreadOpen: () => void;
 };
 

@@ -1,4 +1,4 @@
-import type { BbPluginApi, MessageDispatchHookContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext } from "@vesnalia/plugin-sdk";
 import type { RetryDiagnostic } from "./diagnostics.js";
 import type { ProbeFn, ProbeResult } from "./probe.js";
 import {
@@ -35,7 +35,7 @@ const OWN_RETRY_REASONS = new Set([TRANSPORT_RETRY_REASON, "Rate limited", "Prov
  */
 const ARMED_KEY = "armed";
 
-/** BB Workflows owns its hidden workers' retries, replay and cleanup. */
+/** VesnALIA Workflows owns its hidden workers' retries, replay and cleanup. */
 const WORKFLOW_ENGINE_PLUGIN_ID = "workflows";
 
 const LIST_PAGE_SIZE = 200;
@@ -94,7 +94,7 @@ interface ThreadRow extends ThreadState {
   };
 }
 
-type QueueRow = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["queue"]["list"]>>[number];
+type QueueRow = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["queue"]["list"]>>[number];
 type DispatchDecision =
   | { action: "proceed" }
   | { action: "wait"; reason: string; sendAt?: number | null }
@@ -215,7 +215,7 @@ export function isOwnRetryRow(row: Pick<QueueRow, "payload">): row is QueueRow &
 }
 
 export function createTransportRecovery(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: TransportRecoveryOptions,
 ): TransportRecovery {
   const now = options.now ?? Date.now;
@@ -246,7 +246,7 @@ export function createTransportRecovery(
   async function listThreads(): Promise<ThreadRow[]> {
     const rows: ThreadRow[] = [];
     for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
-      const page = (await bb.sdk.threads.list({
+      const page = (await alia.sdk.threads.list({
         archived: false,
         includeHidden: true,
         limit: LIST_PAGE_SIZE,
@@ -260,11 +260,11 @@ export function createTransportRecovery(
   async function forgetWorkflow(threadId: string): Promise<void> {
     workflowsSeen.delete(threadId);
     workflowReady.delete(threadId);
-    await bb.storage.kv.delete(`workflow:${threadId}`);
+    await alia.storage.kv.delete(`workflow:${threadId}`);
   }
 
   /**
-   * Workflows a restart killed and nothing resumed since, oldest first. A BB
+   * Workflows a restart killed and nothing resumed since, oldest first. A VesnALIA
    * restart (or the thread's machine restarting or dropping off) kills the
    * Claude Code process, and with it workflows still running in the
    * background, even when the turn that started them had ended and the
@@ -280,7 +280,7 @@ export function createTransportRecovery(
   async function killedWorkflows(threadId: string, record: WorkflowRecord): Promise<KilledWorkflow[]> {
     const killed: KilledWorkflow[] = [];
     for (let before: number | undefined; ; ) {
-      const page = await listEvents(bb, { threadId, types: ["item/backgroundTask/completed"], beforeSeq: before, order: "desc", limit: LIST_PAGE_SIZE });
+      const page = await listEvents(alia, { threadId, types: ["item/backgroundTask/completed"], beforeSeq: before, order: "desc", limit: LIST_PAGE_SIZE });
       const recent = page.filter((event) => (event.createdAt ?? 0) >= record.sinceAt);
       for (const event of recent) {
         const item = (event.data as { item: TaskItem }).item;
@@ -290,16 +290,16 @@ export function createTransportRecovery(
           // run), and the request before its start (the chain it belongs to).
           const origin: WorkflowOrigin = { runId: null, chain: null };
           for (let startBefore = event.seq; ; ) {
-            const starts = await listEvents(bb, { threadId, types: ["item/started"], beforeSeq: startBefore, order: "desc", limit: LIST_PAGE_SIZE });
+            const starts = await listEvents(alia, { threadId, types: ["item/started"], beforeSeq: startBefore, order: "desc", limit: LIST_PAGE_SIZE });
             const start = starts.find((started) => (started.data as { item: TaskItem }).item.id === item.id);
             if (start !== undefined) {
-              const completed = await listEvents(bb, { threadId, types: ["item/completed"], afterSeq: start.seq, order: "asc", limit: 50 });
+              const completed = await listEvents(alia, { threadId, types: ["item/completed"], afterSeq: start.seq, order: "asc", limit: 50 });
               const call = completed.find((done) => (done.data as { item: TaskItem }).item.id === item.parentToolCallId);
               if (call !== undefined) {
                 const match = RUN_ID.exec(String((call.data as { item: TaskItem }).item.result));
                 if (match !== null) origin.runId = match[1]!;
               }
-              const [request] = await listEvents(bb, { threadId, types: ["client/turn/requested"], beforeSeq: start.seq, order: "desc", limit: 1 });
+              const [request] = await listEvents(alia, { threadId, types: ["client/turn/requested"], beforeSeq: start.seq, order: "desc", limit: 1 });
               if (request !== undefined) {
                 const parsed = parseRequest(request);
                 origin.chain = parsed.retryOfRequestId ?? parsed.requestId;
@@ -320,7 +320,7 @@ export function createTransportRecovery(
     // Workflow calls after the first kill that resume a run by id.
     const resumes: Array<{ seq: number; runId: string }> = [];
     for (let afterSeq = killed[0]!.seq; ; ) {
-      const page = await listEvents(bb, { threadId, types: ["item/started"], afterSeq, order: "asc", limit: LIST_PAGE_SIZE });
+      const page = await listEvents(alia, { threadId, types: ["item/started"], afterSeq, order: "asc", limit: LIST_PAGE_SIZE });
       for (const event of page) {
         const item = (event.data as { item: TaskItem }).item;
         if (item.tool === "Workflow" && item.arguments?.resumeFromRunId !== undefined) resumes.push({ seq: event.seq, runId: item.arguments.resumeFromRunId });
@@ -355,7 +355,7 @@ export function createTransportRecovery(
     thread: Pick<ThreadRow, "id" | "status" | "originPluginId">,
     record: WorkflowRecord,
   ): Promise<{ state: "ready" | "waiting" | "skipped"; reason: string; labels?: string[]; seq?: number }> {
-    const [latest] = await listEvents(bb, { threadId: thread.id, order: "desc", limit: 1 });
+    const [latest] = await listEvents(alia, { threadId: thread.id, order: "desc", limit: 1 });
     const all = await killedWorkflows(thread.id, record);
     const killed = all.filter((run) => run.chain === null || skipped.get(thread.id) !== run.chain);
     if (all.length === 0) return { state: "skipped", reason: "workflow-finished-or-resumed" };
@@ -364,21 +364,21 @@ export function createTransportRecovery(
     if (killed.some((run) => run.chain === null)) return { state: "waiting", reason: "workflow-origin-unknown" };
     if (held.has(thread.id)) return { state: "skipped", reason: "held" };
     if (thread.originPluginId === WORKFLOW_ENGINE_PLUGIN_ID) return { state: "skipped", reason: "workflow-engine-owned" };
-    const stops = await listEvents(bb, { threadId: thread.id, types: ["system/thread/interrupted"], order: "desc", limit: 50 });
+    const stops = await listEvents(alia, { threadId: thread.id, types: ["system/thread/interrupted"], order: "desc", limit: 50 });
     if (stops.some((event) => (event.createdAt ?? 0) >= record.sinceAt && (event.data as { reason?: unknown }).reason === "manual-stop")) {
       return { state: "skipped", reason: "stopped-by-user" };
     }
-    const after = await requestsAfter(bb, thread.id, killed[0]!.seq);
+    const after = await requestsAfter(alia, thread.id, killed[0]!.seq);
     if (after.some((request) => request.text.startsWith(WORKFLOW_TAG))) return { state: "skipped", reason: "already-sent" };
     if (after.some((r) => !isOwnMessage(r) && r.retryOfRequestId === null && (r.initiator === "user" || r.initiator === "agent"))) {
       return { state: "skipped", reason: "a-newer-message-took-over" };
     }
     // A failed turn is retried first (doScan); a busy or waiting thread is checked again later.
     if (thread.status !== "idle") return { state: "waiting", reason: `thread-${thread.status}` };
-    if (await hasPendingInteraction(bb, thread.id)) return { state: "waiting", reason: "pending-interaction" };
-    if (!armed) return { state: "waiting", reason: "not-armed (run: bb provider-retry-advanced arm)" };
-    if ((await openBackgroundWork(bb, thread.id)) > 0) return { state: "waiting", reason: "background-work-open" };
-    const queued = await bb.sdk.threads.queue.list({ threadId: thread.id });
+    if (await hasPendingInteraction(alia, thread.id)) return { state: "waiting", reason: "pending-interaction" };
+    if (!armed) return { state: "waiting", reason: "not-armed (run: VesnALIA provider-retry-advanced arm)" };
+    if ((await openBackgroundWork(alia, thread.id)) > 0) return { state: "waiting", reason: "background-work-open" };
+    const queued = await alia.sdk.threads.queue.list({ threadId: thread.id });
     record.asked = killed.map((run) => run.id);
     if (queued.some(isWorkflowRow)) return { state: "waiting", reason: "message-queued", seq: latest!.seq };
     if (queued.length > 0) return { state: "waiting", reason: "other-message-queued" };
@@ -397,18 +397,18 @@ export function createTransportRecovery(
     refreshing.add(`workflow:${threadId}`);
     void (async () => {
       try {
-        const thread = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadRow;
+        const thread = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadRow;
         // The queued message itself is the one row: judge the thread as if it were not queued.
         const decision = await checkWorkflow({ ...thread, status: "idle" }, record);
         if (decision.reason === "message-queued") workflowReady.set(threadId, decision.seq!);
-        await bb.storage.kv.set(`workflow:${threadId}`, record);
+        await alia.storage.kv.set(`workflow:${threadId}`, record);
         if (decision.state === "skipped") {
           await forgetWorkflow(threadId);
           await withdrawThreadRows(threadId, `workflow ${decision.reason}`);
         }
-        await bb.experimental_hooks.recheck("message.dispatch");
+        await alia.experimental_hooks.recheck("message.dispatch");
       } catch (error) {
-        bb.log.warn(`Could not check the interrupted workflow of ${threadId}: ${String(error)}`);
+        alia.log.warn(`Could not check the interrupted workflow of ${threadId}: ${String(error)}`);
       } finally {
         refreshing.delete(`workflow:${threadId}`);
       }
@@ -422,7 +422,7 @@ export function createTransportRecovery(
       // The scan's start bounds the close: a workflow closed after this list read is still found.
       const record: WorkflowRecord = { sinceAt: report.at, origins: {}, asked: [] };
       workflowsSeen.set(thread.id, record);
-      await bb.storage.kv.set(`workflow:${thread.id}`, record);
+      await alia.storage.kv.set(`workflow:${thread.id}`, record);
     }
     for (const [threadId, record] of workflowsSeen) {
       const thread = rows.get(threadId);
@@ -437,7 +437,7 @@ export function createTransportRecovery(
       try {
         const decision = await checkWorkflow(thread, record);
         entry.reason = `workflow:${decision.reason}`;
-        await bb.storage.kv.set(`workflow:${threadId}`, record);
+        await alia.storage.kv.set(`workflow:${threadId}`, record);
         if (decision.state === "skipped") {
           await forgetWorkflow(threadId);
           await withdrawThreadRows(threadId, `workflow ${decision.reason}`);
@@ -447,18 +447,18 @@ export function createTransportRecovery(
           entry.state = "waiting";
           continue;
         }
-        const request = await latestRequest(bb, threadId);
+        const request = await latestRequest(alia, threadId);
         // The hook lets this send through once, if nothing happened after the checks;
         // the marker stays until a scan sees the message dispatched.
         workflowReady.set(threadId, decision.seq!);
-        await sendAgentOnly(bb, { threadId, text: workflowText(decision.labels!), execution: request!.execution });
+        await sendAgentOnly(alia, { threadId, text: workflowText(decision.labels!), execution: request!.execution });
         entry.state = "resumed";
-        bb.log.info(`Interrupted workflow: ${threadId} lost ${decision.labels!.length} Claude Code workflow(s) to a restart; sent one message to resume.`);
+        alia.log.info(`Interrupted workflow: ${threadId} lost ${decision.labels!.length} Claude Code workflow(s) to a restart; sent one message to resume.`);
       } catch (error) {
         workflowReady.delete(threadId);
         entry.state = "waiting";
         entry.reason = `workflow:send-failed`;
-        bb.log.warn(`Could not ask ${threadId} to resume its interrupted workflow: ${String(error)}`);
+        alia.log.warn(`Could not ask ${threadId} to resume its interrupted workflow: ${String(error)}`);
       }
     }
   }
@@ -470,7 +470,7 @@ export function createTransportRecovery(
     beforeSeq?: number;
     order: "asc" | "desc";
   }): Promise<EventLike | undefined> {
-    const [event] = await bb.sdk.threads.events.list({
+    const [event] = await alia.sdk.threads.events.list({
       threadId: args.threadId,
       types: args.types as never,
       afterSeq: String(args.afterSeq),
@@ -506,7 +506,7 @@ export function createTransportRecovery(
    * event, so a later provider turn under the same request is read afresh.
    */
   async function readFailedTurn(thread: ThreadState): Promise<FailedTurn | null> {
-    const [request] = await bb.sdk.threads.events.list({
+    const [request] = await alia.sdk.threads.events.list({
       threadId: thread.id,
       types: ["client/turn/requested"],
       order: "desc",
@@ -565,7 +565,7 @@ export function createTransportRecovery(
           ? { kind: "retry", reason: TRANSPORT_RETRY_REASON, sendAt: at }
           : { kind: "decline", reason: entry.reason },
     };
-    await bb.storage.kv.set(`decision:${entry.threadId}`, diagnostic);
+    await alia.storage.kv.set(`decision:${entry.threadId}`, diagnostic);
   }
 
   /**
@@ -591,12 +591,12 @@ export function createTransportRecovery(
     const started = generation.get(threadId) ?? 0;
     void (async () => {
       try {
-        const thread = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadState;
+        const thread = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadState;
         if (thread.status === "error") await loadFailedTurn(thread);
         else currentChain.delete(threadId);
-        await bb.experimental_hooks.recheck("message.dispatch");
+        await alia.experimental_hooks.recheck("message.dispatch");
       } catch (error) {
-        bb.log.warn(`Could not read the failed turn of ${threadId}: ${String(error)}`);
+        alia.log.warn(`Could not read the failed turn of ${threadId}: ${String(error)}`);
       } finally {
         refreshing.delete(threadId);
         // A failure that arrived while this read ran skipped its own refresh.
@@ -610,11 +610,11 @@ export function createTransportRecovery(
     for (const row of rows) {
       selfDeleting.add(row.id);
       try {
-        await bb.sdk.threads.queuedMessages.delete({ threadId: row.threadId, queuedMessageId: row.id });
+        await alia.sdk.threads.queuedMessages.delete({ threadId: row.threadId, queuedMessageId: row.id });
         removed += 1;
-        bb.log.info(`Withdrew automatic retry ${row.id} on ${row.threadId}: ${why}.`);
+        alia.log.info(`Withdrew automatic retry ${row.id} on ${row.threadId}: ${why}.`);
       } catch (error) {
-        bb.log.warn(`Could not withdraw retry ${row.id} on ${row.threadId}: ${String(error)}`);
+        alia.log.warn(`Could not withdraw retry ${row.id} on ${row.threadId}: ${String(error)}`);
       } finally {
         selfDeleting.delete(row.id);
       }
@@ -625,7 +625,7 @@ export function createTransportRecovery(
   /** This plugin's queued retries (of `chain` only, when given) and its interrupted-workflow message. */
   async function withdrawThreadRows(threadId: string, why: string, chain?: string): Promise<void> {
     const record = workflowsSeen.get(threadId);
-    const rows = (await bb.sdk.threads.queue.list({ threadId })).filter(
+    const rows = (await alia.sdk.threads.queue.list({ threadId })).filter(
       (row) =>
         row.state !== "claimed" &&
         ((isOwnRetryRow(row) && (chain === undefined || row.payload.retryOfTurnRequestId === chain)) ||
@@ -646,7 +646,7 @@ export function createTransportRecovery(
     let removed = 0;
     for (const row of rows) {
       if (!isOwnRetryRow(row) || row.state === "claimed") continue;
-      const thread = (await bb.sdk.threads.get({ threadId: row.threadId })) as unknown as ThreadState;
+      const thread = (await alia.sdk.threads.get({ threadId: row.threadId })) as unknown as ThreadState;
       if (thread.archivedAt !== null || thread.deletedAt !== null) continue; // core drops these rows
       if (thread.status === "error") await loadFailedTurn(thread);
       const why = ineligible({ threadId: row.threadId, status: thread.status, chain: row.payload.retryOfTurnRequestId });
@@ -668,10 +668,10 @@ export function createTransportRecovery(
     };
     if (!report.enabled && !options.workflowRecovery()) return report;
 
-    const queuedBefore = await bb.sdk.threads.queue.list({});
+    const queuedBefore = await alia.sdk.threads.queue.list({});
     // Before arm, rows are kept as they are (the hook holds them); after, stale ones go.
     if (armed) report.staleRowsRemoved = await removeStaleOwnRows(queuedBefore);
-    const queued = report.staleRowsRemoved === 0 ? queuedBefore : await bb.sdk.threads.queue.list({});
+    const queued = report.staleRowsRemoved === 0 ? queuedBefore : await alia.sdk.threads.queue.list({});
 
     const listed = await listThreads();
     if (options.workflowRecovery()) await checkWorkflows(listed, report);
@@ -726,7 +726,7 @@ export function createTransportRecovery(
     if (!armed) {
       for (const { entry } of candidates) {
         entry.state = "waiting";
-        entry.reason = `not-armed (run: bb provider-retry-advanced arm)`;
+        entry.reason = `not-armed (run: VesnALIA provider-retry-advanced arm)`;
       }
       return report;
     }
@@ -764,26 +764,26 @@ export function createTransportRecovery(
    * core also enforces archive/delete/stopping, the failed turn and dedupe.
    */
   async function resume(threadId: string, failed: FailedTurn): Promise<string> {
-    const current = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadState;
+    const current = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadState;
     if (current.archivedAt !== null || current.deletedAt !== null) return "state-changed:archived";
     if (current.status !== "error") return `state-changed:${current.status}`;
-    if ((await bb.sdk.threads.interactions.list({ threadId })).length > 0) return "pending-interaction";
+    if ((await alia.sdk.threads.interactions.list({ threadId })).length > 0) return "pending-interaction";
     if (!armed) return "not-armed";
     const why = ineligible({ threadId, status: current.status, chain: failed.originalRequestId });
     if (why !== null) return why;
     inflight.set(threadId, failed.originalRequestId);
     try {
-      await bb.sdk.threads.retry({
+      await alia.sdk.threads.retry({
         threadId,
         turnRequestId: failed.requestId,
         reason: TRANSPORT_RETRY_REASON,
       });
-      bb.log.info(`Connectivity restored: resumed ${threadId} (${failed.requestId}).`);
+      alia.log.info(`Connectivity restored: resumed ${threadId} (${failed.requestId}).`);
       return "resumed";
     } catch (error) {
       const { status, code } = errorStatus(error);
       if (status === 409) return `core:${code ?? "conflict"}`;
-      bb.log.warn(`Connectivity retry failed for ${threadId}: ${String(error)}`);
+      alia.log.warn(`Connectivity retry failed for ${threadId}: ${String(error)}`);
       return `retry-error:${code ?? status ?? "unknown"}`;
     } finally {
       inflight.delete(threadId);
@@ -792,19 +792,19 @@ export function createTransportRecovery(
 
   async function setSkip(threadId: string, chain: string): Promise<void> {
     skipped.set(threadId, chain);
-    await bb.storage.kv.set(`skip:${threadId}`, { originalRequestId: chain, at: now() } satisfies SkipRecord);
+    await alia.storage.kv.set(`skip:${threadId}`, { originalRequestId: chain, at: now() } satisfies SkipRecord);
   }
 
   const recovery: TransportRecovery = {
     async init() {
-      armed = (await bb.storage.kv.get(ARMED_KEY)) !== undefined;
-      for (const key of await bb.storage.kv.list("hold:")) held.add(key.slice("hold:".length));
-      for (const key of await bb.storage.kv.list("workflow:")) {
-        const record = await bb.storage.kv.get<WorkflowRecord>(key);
+      armed = (await alia.storage.kv.get(ARMED_KEY)) !== undefined;
+      for (const key of await alia.storage.kv.list("hold:")) held.add(key.slice("hold:".length));
+      for (const key of await alia.storage.kv.list("workflow:")) {
+        const record = await alia.storage.kv.get<WorkflowRecord>(key);
         if (record !== undefined) workflowsSeen.set(key.slice("workflow:".length), record);
       }
-      for (const key of await bb.storage.kv.list("skip:")) {
-        const record = await bb.storage.kv.get<SkipRecord>(key);
+      for (const key of await alia.storage.kv.list("skip:")) {
+        const record = await alia.storage.kv.get<SkipRecord>(key);
         if (record !== undefined) skipped.set(key.slice("skip:".length), record.originalRequestId);
       }
     },
@@ -823,28 +823,28 @@ export function createTransportRecovery(
     isArmed: () => armed,
     async arm() {
       if (!armed) {
-        await bb.storage.kv.set(ARMED_KEY, { at: now() });
+        await alia.storage.kv.set(ARMED_KEY, { at: now() });
         armed = true;
-        await bb.experimental_hooks.recheck("message.dispatch");
+        await alia.experimental_hooks.recheck("message.dispatch");
       }
       await running;
       return recovery.scan();
     },
     async hold(threadId) {
       held.add(threadId);
-      await bb.storage.kv.set(`hold:${threadId}`, { at: now() });
+      await alia.storage.kv.set(`hold:${threadId}`, { at: now() });
       await forgetWorkflow(threadId);
       await withdrawThreadRows(threadId, "held");
     },
     async release(threadId) {
       held.delete(threadId);
       skipped.delete(threadId);
-      await bb.storage.kv.delete(`hold:${threadId}`);
-      await bb.storage.kv.delete(`skip:${threadId}`);
+      await alia.storage.kv.delete(`hold:${threadId}`);
+      await alia.storage.kv.delete(`skip:${threadId}`);
     },
     isHeld: (threadId) => held.has(threadId),
     async skipCurrentFailure(threadId) {
-      const thread = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadState;
+      const thread = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadState;
       if (thread.status !== "error") return null;
       const failed = await loadFailedTurn(thread);
       if (failed === null) return null;
@@ -881,13 +881,13 @@ export function createTransportRecovery(
           if (checkedAt === undefined) return { action: "reject", message: "Interrupted-workflow message withdrawn: not-checked." };
           // One indexed read (core allows async decisions within its box): anything on the thread
           // after the checks (a turn, a request, a stop, a workflow starting) refuses the send.
-          return listEvents(bb, { threadId, afterSeq: checkedAt, order: "asc", limit: 1 }).then(([next]) =>
+          return listEvents(alia, { threadId, afterSeq: checkedAt, order: "asc", limit: 1 }).then(([next]) =>
             next === undefined ? { action: "proceed" } : { action: "reject", message: "Interrupted-workflow message withdrawn: the thread moved on." },
           );
         }
         if (blocked !== null) {
           setTimeout(() => {
-            void deleteOwnRows(workflowRows, blocked).then(() => bb.experimental_hooks.recheck("message.dispatch"));
+            void deleteOwnRows(workflowRows, blocked).then(() => alia.experimental_hooks.recheck("message.dispatch"));
           }, 0);
           return { action: "wait", reason: `Interrupted-workflow message withdrawn: ${blocked}` };
         }
@@ -896,7 +896,7 @@ export function createTransportRecovery(
           refreshWorkflow(threadId);
           return { action: "wait", reason: "Checking the interrupted workflow", sendAt: now() + NOT_READY_WAIT_MS };
         }
-        return listEvents(bb, { threadId, afterSeq: checkedAt, order: "asc", limit: 1 }).then(([next]): DispatchDecision => {
+        return listEvents(alia, { threadId, afterSeq: checkedAt, order: "asc", limit: 1 }).then(([next]): DispatchDecision => {
           if (next === undefined) return { action: "proceed" };
           refreshWorkflow(threadId);
           return { action: "wait", reason: "Checking the interrupted workflow", sendAt: now() + NOT_READY_WAIT_MS };
@@ -914,7 +914,7 @@ export function createTransportRecovery(
       }
       // Before arm, automatic retries this plugin would own (including rows left
       // by the bundled plugin) wait untouched; `arm` asks core to re-run this.
-      if (!armed) return { action: "wait", reason: "Waiting for bb provider-retry-advanced arm" };
+      if (!armed) return { action: "wait", reason: "Waiting for VesnALIA provider-retry-advanced arm" };
       const verdicts = own.map((row) => ({
         row,
         why: ineligible({ threadId, status: context.thread.status, chain: row.payload.retryOfTurnRequestId }),
@@ -929,7 +929,7 @@ export function createTransportRecovery(
       // Hold the attempt, then take the rows off the queue outside the hook's
       // lock; anything else grouped with them is re-attempted afterwards.
       setTimeout(() => {
-        void deleteOwnRows(blocked, why ?? "withdrawn").then(() => bb.experimental_hooks.recheck("message.dispatch"));
+        void deleteOwnRows(blocked, why ?? "withdrawn").then(() => alia.experimental_hooks.recheck("message.dispatch"));
       }, 0);
       return { action: "wait", reason: `Automatic retry withdrawn: ${why}` };
     },
@@ -959,7 +959,7 @@ export function sleep(ms: number, signal: AbortSignal): Promise<void> {
 export async function runRecoveryLoop(args: {
   recovery: TransportRecovery;
   signal: AbortSignal;
-  log: BbPluginApi["log"];
+  log: AliaPluginApi["log"];
   wait?: (ms: number, signal: AbortSignal) => Promise<void>;
 }): Promise<void> {
   const wait = args.wait ?? sleep;

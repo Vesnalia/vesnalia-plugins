@@ -3,11 +3,11 @@
 // computer.ts does the work; this file is the agent's side of it.
 
 import { toolsForPurposes } from "./purposes.ts";
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ComputerError, TREE_LIMIT, TREE_LIMIT_MAX, type ComputerResult } from "../core/computer.ts";
 import type { BoxRecord } from "../core/boxes.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { boxParam, failure, thread } from "./tools.ts";
 import { next } from "./views.ts";
 import { PRODUCT } from "../brand.ts";
@@ -47,8 +47,8 @@ function onDevice(box: BoxRecord): boolean {
   return box.capabilities.device !== null && box.capabilities.device !== undefined;
 }
 
-export function registerComputerTools(bb: BbPluginApi, app: BbBox): void {
-  const registerTool = toolsForPurposes(bb);
+export function registerComputerTools(alia: AliaPluginApi, app: AliaBox): void {
+  const registerTool = toolsForPurposes(alia);
   const { computer, deviceComputer } = app;
   const resolved = async (threadId: string | undefined, ref: string, signal: AbortSignal | undefined) => (await app.resolve(thread(threadId), ref, signal)).box;
 
@@ -209,7 +209,7 @@ export function registerComputerTools(bb: BbPluginApi, app: BbBox): void {
   registerTool({
     name: "computer_take_control",
     description:
-      "Take control of a desktop box's desktop, or a device box's device, back from a person who took it in BB, so the computer tools work again. Keys they held down are let go, and the desktop gets back its size. " +
+      "Take control of a desktop box's desktop, or a device box's device, back from a person who took it in VesnALIA, so the computer tools work again. Keys they held down are let go, and the desktop gets back its size. " +
       "Use it when the person asks you to continue, or when the thread makes clear they have finished; otherwise wait for them to hand control back.",
     presentation: { label: { pending: "Taking control", completed: "Took control" } },
     parameters: z.object({ box: boxParam }),

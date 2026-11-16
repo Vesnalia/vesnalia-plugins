@@ -1,8 +1,8 @@
-// Folder paths in chat messages: BB renders them as broken app routes, so a
+// Folder paths in chat messages: VesnALIA renders them as broken app routes, so a
 // content script catches the click and hands it to a bridge that the thread
 // header button registers (it owns the thread's navigation and RPC hooks).
 import {useEffect} from 'react';
-import {useBbContext, useBbNavigate, useRpc, type PluginContentScriptContext} from '@get-bb/plugin-sdk/app';
+import {useAliaContext, useAliaNavigate, useRpc, type PluginContentScriptContext} from '@vesnalia/plugin-sdk/app';
 import type {explorerContract} from './explorer-contract.js';
 import {folderLinkPath} from './folder-links.js';
 
@@ -12,8 +12,8 @@ const bridges = new Map<string, Bridge>();
 /** Mounted inside each thread header; registers how to open folders for that thread. */
 export function useFolderLinkBridge() {
   const rpc = useRpc<typeof explorerContract>();
-  const navigate = useBbNavigate();
-  const {threadId} = useBbContext();
+  const navigate = useAliaNavigate();
+  const {threadId} = useAliaContext();
   useEffect(() => {
     if (!threadId) return;
     const bridge: Bridge = async ({threadId: source, path}) => {

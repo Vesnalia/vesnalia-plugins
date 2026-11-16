@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { Companions, companionMessage, filesFolder, rewriteReferences, storageReferences } from "../src/companion";
 import { MODEL_ID, PROVIDER_ID, parseRenderPrompt } from "../src/provider";
@@ -17,7 +17,7 @@ function setup(world: World = {}) {
   let now = 1_000_000;
   let spawned = 0;
   const written: Record<string, string> = {};
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "flare",
     sdk: {
       threads: {
@@ -54,10 +54,10 @@ function setup(world: World = {}) {
       plugins: { callRpc: async () => ({ ok: true }) },
     },
   });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new FlareStore(db);
-  const companions = new Companions(bb, store, () => now);
+  const companions = new Companions(alia, store, () => now);
   const calls = (path: string) => harness.inspection.sdk.callsTo(path).map((args) => args[0] as Record<string, unknown>);
   const add = (title: string, options: { threadId?: string; body?: string; audience?: string[]; at?: number } = {}): FlareRow => {
     now = options.at ?? now + 1_000;
@@ -85,13 +85,13 @@ describe("companionMessage", () => {
 
 describe("storage references", () => {
   it("finds thread-storage files a body names, and points the copied ones at a folder per flare", () => {
-    const body = 'Tests(Load("$BB_THREAD_STORAGE/tests.json")) and /storage/thr_a/reports/out.html, not $BB_THREAD_STORAGE/../x';
+    const body = 'Tests(Load("$ALIA_THREAD_STORAGE/tests.json")) and /storage/thr_a/reports/out.html, not $ALIA_THREAD_STORAGE/../x';
     expect(storageReferences(body, "/storage/thr_a")).toEqual(["tests.json", "reports/out.html"]);
-    expect(rewriteReferences("Saved to $BB_THREAD_STORAGE/report.html.", null, new Set(["report.html"]), filesFolder("fl_1"))).toBe(
-      "Saved to $BB_THREAD_STORAGE/flare-files/fl_1/report.html.",
+    expect(rewriteReferences("Saved to $ALIA_THREAD_STORAGE/report.html.", null, new Set(["report.html"]), filesFolder("fl_1"))).toBe(
+      "Saved to $ALIA_THREAD_STORAGE/flare-files/fl_1/report.html.",
     );
     expect(rewriteReferences(body, "/storage/thr_a", new Set(["tests.json"]), filesFolder("fl_1"))).toBe(
-      'Tests(Load("$BB_THREAD_STORAGE/flare-files/fl_1/tests.json")) and /storage/thr_a/reports/out.html, not $BB_THREAD_STORAGE/../x',
+      'Tests(Load("$ALIA_THREAD_STORAGE/flare-files/fl_1/tests.json")) and /storage/thr_a/reports/out.html, not $ALIA_THREAD_STORAGE/../x',
     );
   });
 });
@@ -213,28 +213,28 @@ describe("Companions", () => {
     add("First");
     await companions.show(["thr_a"]);
     world.writeFails = true;
-    add("With a file", { body: 'Load("$BB_THREAD_STORAGE/tests.json")' });
+    add("With a file", { body: 'Load("$ALIA_THREAD_STORAGE/tests.json")' });
     add("After it");
     await companions.show(["thr_a"]);
-    expect(texts("threads.send")).toEqual(['**With a file**\n\nLoad("$BB_THREAD_STORAGE/tests.json")', "**After it**"]);
+    expect(texts("threads.send")).toEqual(['**With a file**\n\nLoad("$ALIA_THREAD_STORAGE/tests.json")', "**After it**"]);
     expect(store.unshownFor("thr_a", 10)).toEqual([]);
   });
 
   it("sends a new companion's first flare unchanged when its files could not be copied", async () => {
     const { companions, calls, add } = setup({ files: { "/storage/thr_a/tests.json": "{}" }, writeFails: true });
-    add("Tests", { body: 'Load("$BB_THREAD_STORAGE/tests.json")' });
+    add("Tests", { body: 'Load("$ALIA_THREAD_STORAGE/tests.json")' });
     await companions.show(["thr_a"]);
     const [update] = calls("threads.queuedMessages.update");
     expect(update).toMatchObject({ threadId: "thr_companion_1", queuedMessageId: "qm_thr_companion_1", expectedUpdatedAt: 7 });
-    expect((update!.input as { text: string }[])[0]!.text).toContain('Load("$BB_THREAD_STORAGE/tests.json")');
+    expect((update!.input as { text: string }[])[0]!.text).toContain('Load("$ALIA_THREAD_STORAGE/tests.json")');
   });
 
   it("copies the storage files a body names into a folder for that flare, before releasing the companion", async () => {
     const { companions, written, add, texts } = setup({ files: { "/storage/thr_a/tests.json": '{"ok":true}' } });
-    const flare = add("Tests", { body: 'Tests(Load("$BB_THREAD_STORAGE/tests.json")) and $BB_THREAD_STORAGE/missing.json' });
+    const flare = add("Tests", { body: 'Tests(Load("$ALIA_THREAD_STORAGE/tests.json")) and $ALIA_THREAD_STORAGE/missing.json' });
     await companions.show(["thr_a"]);
     expect(written).toEqual({ [`/storage/thr_companion_1/flare-files/${flare.id}/tests.json`]: '{"ok":true}' });
-    expect(texts("threads.spawn")[0]).toContain(`Load("$BB_THREAD_STORAGE/flare-files/${flare.id}/tests.json")`);
-    expect(texts("threads.spawn")[0]).toContain("$BB_THREAD_STORAGE/missing.json");
+    expect(texts("threads.spawn")[0]).toContain(`Load("$ALIA_THREAD_STORAGE/flare-files/${flare.id}/tests.json")`);
+    expect(texts("threads.spawn")[0]).toContain("$ALIA_THREAD_STORAGE/missing.json");
   });
 });

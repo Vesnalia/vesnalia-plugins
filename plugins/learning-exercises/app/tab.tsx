@@ -9,7 +9,7 @@
  *   delete.
  * - The footer: offers in this thread on or off, "Never for this project" (with Undo), and the settings.
  *
- * The tab is fixed, on the tab bar, in every thread bb lists in the sidebar: top-level threads, child
+ * The tab is fixed, on the tab bar, in every thread VesnALIA lists in the sidebar: top-level threads, child
  * and sub-agent threads, other plugins' threads, and this plugin's own session threads. Hidden threads
  * are not listed, so they get none. Offers are made only in top-level threads (the server's
  * `isHumanThread`: another plugin's top-level thread counts unless that plugin is on the never-offer
@@ -17,18 +17,18 @@
  * as the source (`canStartByHand`, which also keeps Start out of a session's own thread).
  *
  * Earlier builds put the tab in sub-agent threads only as an action tab (`LEARNING_ON_DEMAND_TAB`) added
- * from the side panel's launcher. bb keeps an action tab's instances with the thread, so that tab stays
+ * from the side panel's launcher. VesnALIA keeps an action tab's instances with the thread, so that tab stays
  * registered, never offered, and `useOneLearningTab` closes any instance still open.
  */
 import {
   experimental_useAppPanel,
   experimental_usePanelTabs,
   experimental_useTabVisible,
-  useBbNavigate,
+  useAliaNavigate,
   type ExperimentalPanelTab,
   type ExperimentalTabReference,
   type ExperimentalThreadTabProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -70,7 +70,7 @@ function isOnDemandInstance(tab: ExperimentalPanelTab): boolean {
 }
 
 /**
- * Keeps one Learning tab per thread. bb keeps an action tab's open instances, persisted with the thread,
+ * Keeps one Learning tab per thread. VesnALIA keeps an action tab's open instances, persisted with the thread,
  * even once its `useVisible` is false, so an on-demand instance an earlier build opened would sit beside
  * the fixed tab. Once the thread's row is known (and the fixed tab shows), close every on-demand instance
  * in this thread view's panel, and if one was the selected tab of an open panel, select the fixed tab
@@ -147,7 +147,7 @@ export function useAct() {
 function SessionControls(props: { session: Session; currentThreadId: string }) {
   const { session, currentThreadId } = props;
   const rpc = useLearningRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { busy, act } = useAct();
   const open = session.state !== "finished" && session.state !== "abandoned";
   return (
@@ -256,7 +256,7 @@ function Now(props: { view: ThreadView; threadId: string; visible: boolean }) {
 
 function Start(props: { threadId: string; view: ThreadView; visible: boolean }) {
   const rpc = useLearningRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const choices = useTopicChoices(props.threadId, props.visible);
   const [picked, setPicked] = useState<string>("");
   const [typed, setTyped] = useState("");
@@ -347,7 +347,7 @@ function ExerciseList(props: { sessionId: string }) {
 function SessionRow(props: { session: Session; currentThreadId: string }) {
   const { session } = props;
   const rpc = useLearningRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [expanded, setExpanded] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const { busy, act } = useAct();
@@ -485,7 +485,7 @@ export function LearningTab({ threadId }: ExperimentalThreadTabProps) {
   const visible = experimental_useTabVisible();
   // This browser's unsent answers to questions that have closed since (finished elsewhere, deleted).
   useDraftSweep();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const view = useThreadView(threadId, visible);
   if (view.error !== null && view.data === undefined) return <p className="p-3 text-sm text-destructive">Learning Exercises: {view.error.message}</p>;
   if (view.data === undefined) return <p className="p-3 text-sm text-muted-foreground">Loading…</p>;

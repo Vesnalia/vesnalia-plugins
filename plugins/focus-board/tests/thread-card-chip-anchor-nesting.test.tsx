@@ -11,7 +11,7 @@
 // The defect itself is fixed; this file asserts the invariant, not a fix.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ThreadCard } from "../components/thread-card";
 import { thread } from "./thread-fixture";
 import type { GitHubItemLink, ExternalItemLink } from "../lib/link-metadata";

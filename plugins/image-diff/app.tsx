@@ -1,18 +1,18 @@
 // Image diff — imgdiff-style pixel comparison of changed images, read through
-// bb's bundled Git plugin. Git LFS objects are resolved by this plugin's host entry.
+// VesnALIA's bundled Git plugin. Git LFS objects are resolved by this plugin's host entry.
 import { useMemo, useState } from "react";
 import {
   definePluginApp,
   experimental_useRpcKeyedQuery,
   experimental_useRpcQuery,
-  useBbContext,
+  useAliaContext,
   type ExperimentalThreadTabProps,
   type PluginDiffRendererProps,
   type PluginFileOpenerProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { rpcContract } from "./contract";
-import { BB_GIT, git, toSideTarget, type ChangedFile, type GitTarget, type SideTarget } from "./git";
+import { ALIA_GIT, git, toSideTarget, type ChangedFile, type GitTarget, type SideTarget } from "./git";
 import { ImageDiffView, Notice, type ImageSide } from "./image-diff";
 import { parsePointer, pointersFromPatch, type LfsPointer } from "./lfs";
 
@@ -31,13 +31,13 @@ const safeAtob = (b64: string) => {
 const ZERO_OID = "0".repeat(64);
 
 function useMergeBaseBranch(environmentId: string | null) {
-  const { data, isLoading } = experimental_useRpcKeyedQuery({ pluginId: BB_GIT, contract: git, method: "status", keys: environmentId ? [environmentId] : [] });
+  const { data, isLoading } = experimental_useRpcKeyedQuery({ pluginId: ALIA_GIT, contract: git, method: "status", keys: environmentId ? [environmentId] : [] });
   return { branch: (environmentId && data?.[environmentId]?.workspace?.mergeBase?.mergeBaseBranch) || null, isLoading };
 }
 
 function useChangedImages(environmentId: string | null, target: GitTarget | null) {
   const query = experimental_useRpcQuery({
-    pluginId: BB_GIT,
+    pluginId: ALIA_GIT,
     contract: git,
     method: "files",
     input: { environmentId: environmentId ?? "-", target: target ?? { type: "uncommitted" }, ignoreWhitespace: false },
@@ -67,14 +67,14 @@ function useLfsObject(scope: { environmentId: string } | { threadId: string }, p
 function useSide(environmentId: string, target: SideTarget | null, path: string | null, side: "old" | "new"): ImageSide {
   const enabled = target !== null && path !== null;
   const query = experimental_useRpcQuery({
-    pluginId: BB_GIT,
+    pluginId: ALIA_GIT,
     contract: git,
     method: "fileSide",
     input: { environmentId, query: { ...(target ?? { target: "uncommitted" }), path: path ?? "-", side } },
     enabled,
   });
   const file = query.data?.outcome === "available" ? query.data.file : null;
-  // bb's Git plugin base64-encodes anything with an image extension, pointer or not. Pointers are under 1 KiB.
+  // VesnALIA's Git plugin base64-encodes anything with an image extension, pointer or not. Pointers are under 1 KiB.
   const pointer = file ? parsePointer(file.contentEncoding === "utf8" ? file.content.slice(0, 1024) : safeAtob(file.content.slice(0, 1400))) : null;
   const lfs = useLfsObject({ environmentId }, path ?? "-", pointer);
   const src = useMemo(() => {
@@ -160,7 +160,7 @@ function useHasChangedImages({ environment }: ExperimentalThreadTabProps) {
   return uncommitted.images.length > 0 || all.images.length > 0;
 }
 
-/** Opening a changed image anywhere in bb shows its diff; an unchanged one gets bb's preview. */
+/** Opening a changed image anywhere in VesnALIA shows its diff; an unchanged one gets VesnALIA's preview. */
 function OpenedImage({ environmentId, path, Original }: { environmentId: string; path: string; Original: PluginFileOpenerProps["Original"] }) {
   const mergeBase = useMergeBaseBranch(environmentId);
   const uncommitted = useChangedImages(environmentId, { type: "uncommitted" });
@@ -179,9 +179,9 @@ function ImageOpener({ path, source, Original }: PluginFileOpenerProps) {
 }
 
 /**
- * bb's Diff tab shows a Git LFS image as a text diff of its pointer file. The
+ * VesnALIA's Diff tab shows a Git LFS image as a text diff of its pointer file. The
  * pointer lines carry both object ids, so the image diff renders in place.
- * Every other diff is delegated back to bb's renderer.
+ * Every other diff is delegated back to VesnALIA's renderer.
  */
 function LfsPointerDiff({ threadId, path, pointers }: { threadId: string; path: string; pointers: { old: LfsPointer | null; new: LfsPointer | null } }) {
   const before = useLfsObject({ threadId }, path, pointers.old);
@@ -190,7 +190,7 @@ function LfsPointerDiff({ threadId, path, pointers }: { threadId: string; path: 
 }
 
 function DiffRenderer({ patch, path, experimental_fullFileContents: full, Original }: PluginDiffRendererProps) {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const pointers = useMemo(() => {
     if (!isImage(path)) return null;
     if (full) {
@@ -224,7 +224,7 @@ export default definePluginApp((app) => {
   app.slots.experimental_diffRenderer({
     id: "lfs-images",
     title: "Image diff for Git LFS images",
-    description: "Shows a pixel diff where bb would show the LFS pointer text; other diffs keep bb's renderer.",
+    description: "Shows a pixel diff where VesnALIA would show the LFS pointer text; other diffs keep VesnALIA's renderer.",
     component: DiffRenderer,
   });
 });

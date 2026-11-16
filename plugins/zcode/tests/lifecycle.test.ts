@@ -5,7 +5,7 @@ import { afterEach, expect, it } from "vitest";
 import { createBridge } from "../src/bridge.js";
 import { record } from "../src/protocol.js";
 import { ProtocolError, type ClientCallbacks } from "../src/client.js";
-import { threadDeltaNotificationParamsSchema } from "@get-bb/plugin-sdk/provider-bridge";
+import { threadDeltaNotificationParamsSchema } from "@vesnalia/plugin-sdk/provider-bridge";
 
 const options = {
   permissionMode: "full",
@@ -20,7 +20,7 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((f) => f()));
 });
 function harness(compatible = true) {
-  const cwd = mkdtempSync(join(tmpdir(), "bb-zcode-lifecycle-"));
+  const cwd = mkdtempSync(join(tmpdir(), "alia-zcode-lifecycle-"));
   const messages: Record<string, unknown>[] = [],
     calls: Array<{ method: string; params: Record<string, unknown> }> = [];
   const sessions = new Map<
@@ -307,7 +307,7 @@ function harness(compatible = true) {
   };
 }
 
-it("publishes stable native checkpoints and uses them for bb forks/rewind", async () => {
+it("publishes stable native checkpoints and uses them for VesnALIA forks/rewind", async () => {
   const h = harness(),
     id = await h.start();
   await h.send(id, "first");
@@ -636,7 +636,7 @@ it("allows a conversation fork into a different authorized workspace", async () 
   const r = await h.rpc("thread/fork", {
     threadId: "different-workspace",
     sourceProviderThreadId: id,
-    cwd: mkdtempSync(join(tmpdir(), "bb-zcode-fork-")),
+    cwd: mkdtempSync(join(tmpdir(), "alia-zcode-fork-")),
     options,
     instructionMode: "append",
   });
@@ -661,7 +661,7 @@ it("does not silently fork an older tip while the latest turn is active", async 
   ).toBeDefined();
   expect(h.calls.some((c) => c.method === "v4/command")).toBe(false);
 });
-it("cancels background work when bb interrupts an idle session", async () => {
+it("cancels background work when VesnALIA interrupts an idle session", async () => {
   const h = harness(),
     id = await h.start();
   h.sessions.get(id)!.jobs = [
@@ -691,7 +691,7 @@ it("cancels background work when bb interrupts an idle session", async () => {
   ).toBe(true);
 });
 
-it("rebinds an idle bb thread to its prepared rewind fork", async () => {
+it("rebinds an idle VesnALIA thread to its prepared rewind fork", async () => {
   const h = harness(),
     id = await h.start();
   await h.send(id, "first");
@@ -774,7 +774,7 @@ it.each(["plan", "background"])(
   },
 );
 
-it("commits bb rewind by forking a staged tip over the idle target", async () => {
+it("commits VesnALIA rewind by forking a staged tip over the idle target", async () => {
   const h = harness(),
     id = await h.start();
   await h.send(id, "first");
@@ -851,7 +851,7 @@ it("accepts an explicit model in /zcode-check and rejects malformed ids", async 
   expect(bad.error).toBeDefined();
 });
 
-it("acks bb-local archive, unarchive and rename without native calls", async () => {
+it("acks alia-local archive, unarchive and rename without native calls", async () => {
   const h = harness();
   for (const method of [
     "thread/archive",

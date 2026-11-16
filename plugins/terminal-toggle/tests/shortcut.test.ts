@@ -123,7 +123,7 @@ it("does not resolve the full host for an unrelated key", () => {
   expect(read).not.toHaveBeenCalled();
 });
 
-it("reports dispatcher discovery failure without consuming the key or throwing into bb", () => {
+it("reports dispatcher discovery failure without consuming the key or throwing into VesnALIA", () => {
   const report = vi.fn(),
     read = vi.fn(() => host());
   const listener = createShortcutHandler(read, () => null, report);

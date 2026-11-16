@@ -1,4 +1,4 @@
-// bb-plugin-followups — frontend entry.
+// alia-plugin-followups — frontend entry.
 //
 // One composer banner, shown above a thread's message box: the follow-up
 // prompts the server drafted from the thread's last finished answer.
@@ -17,12 +17,12 @@ import {
   useComposer,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   ExperimentalProviderModelPickerValue,
   PluginSettingsSectionProps,
   PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { FollowupStats, ModelSelection, rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import { Glyph, GLYPHS } from "@/components/glyph";
@@ -52,7 +52,7 @@ const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 /**
  * Two balanced columns when there's room (a lone fourth tile looks orphaned in three); one when narrow.
- * 21rem lets two fit in BB's 726px message box, whose banner leaves 706px for the grid (22rem needed 710px).
+ * 21rem lets two fit in VesnALIA's 726px message box, whose banner leaves 706px for the grid (22rem needed 710px).
  */
 const GRID =
   "grid gap-1.5 [grid-template-columns:repeat(auto-fit,minmax(21rem,1fr))]";
@@ -452,7 +452,7 @@ function ThreadFollowups({ threadId }: { threadId: string }) {
 
   // Follow-ups belong to a finished answer: nothing is shown while the agent is
   // running, whatever the server holds. (The server clears them when a thread
-  // goes idle → active, but BB sends no such signal for one that is already
+  // goes idle → active, but VesnALIA sends no such signal for one that is already
   // running, so this is what keeps a stray banner off a running thread.)
   const running = composer.isRunning;
 
@@ -860,7 +860,7 @@ function ModelSettingsSection(_props: PluginSettingsSectionProps) {
             name="Spinner"
             className="size-3.5 animate-spin motion-reduce:animate-none"
           />
-          Loading BB models…
+          Loading VesnALIA models…
         </p>
       ) : pickerValue ? (
         <ProviderModelPicker
@@ -873,7 +873,7 @@ function ModelSettingsSection(_props: PluginSettingsSectionProps) {
       ) : (
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            BB&apos;s model catalog is unavailable.
+            VesnALIA&apos;s model catalog is unavailable.
           </p>
           <Button
             type="button"
@@ -898,7 +898,7 @@ function ModelSettingsSection(_props: PluginSettingsSectionProps) {
               ? "Saving…"
               : configured
                 ? "Using your saved model."
-                : "Using BB’s primary default model."}
+                : "Using VesnALIA’s primary default model."}
           </span>
           {configured && !saving ? (
             <Button
@@ -923,7 +923,7 @@ export default definePluginApp((app) => {
     scopes: ["thread"],
     banners: [{ id: "followups", chrome: "card", component: FollowupsBanner }],
   });
-  // BB has no way for a plugin to add to the thread's own "more" menu, so the
+  // VesnALIA has no way for a plugin to add to the thread's own "more" menu, so the
   // switch is a button in the header's action row.
   app.slots.experimental_threadHeaderAction({
     id: "switch",
@@ -934,7 +934,7 @@ export default definePluginApp((app) => {
     id: "model",
     title: "Follow-ups model",
     description:
-      "Choose the model that drafts follow-up prompts. Without a saved choice, BB's primary default is used.",
+      "Choose the model that drafts follow-up prompts. Without a saved choice, VesnALIA's primary default is used.",
     component: ModelSettingsSection,
   });
 });

@@ -1,15 +1,15 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export interface ThreadEnvironmentTarget {
   hostId: string;
   rootPath: string;
 }
 
-type BbSdk = BbPluginApi["sdk"];
+type AliaSdk = AliaPluginApi["sdk"];
 
 /** Resolve the thread environment afresh for every filesystem request. */
 export async function resolveThreadEnvironment(
-  sdk: BbSdk,
+  sdk: AliaSdk,
   threadId: string,
 ): Promise<ThreadEnvironmentTarget> {
   const thread = await sdk.threads.get({ threadId, include: "environment" });

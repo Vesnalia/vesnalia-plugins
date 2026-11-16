@@ -1,7 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { chromium, type Page } from "playwright";
 import { mkdir } from "node:fs/promises";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import plugin from "../server";
 import { runGh } from "../src/gh";
@@ -10,29 +10,29 @@ import { queueStore } from "../src/store-queue";
 
 vi.mock("../src/gh", async (original) => ({ ...await original<typeof import("../src/gh")>(), runGh: vi.fn() }));
 
-/** BB keeps its side panel open or closed on the server, across sessions: the test starts with it closed. */
-async function hideBbPanel(page: Page) {
+/** VesnALIA keeps its side panel open or closed on the server, across sessions: the test starts with it closed. */
+async function hideAliaPanel(page: Page) {
   const hide = page.getByRole("button", { name: /^Hide right panel/ }).first();
   await hide.waitFor({ timeout: 3000 }).then(() => hide.click()).catch(() => {});
 }
 
-// Doing and reviewing: a review's Main thread ↗ and its tab in BB's side panel, a thread's Review tab and its way back,
-// and Switch between review and main thread. BB's thread pages and chats need a real thread in the test BB, which needs a
-// machine (a host daemon of its own): BB_E2E_THREAD names one. Plugin RPCs go to the official test host, as in
+// Doing and reviewing: a review's Main thread ↗ and its tab in VesnALIA's side panel, a thread's Review tab and its way back,
+// and Switch between review and main thread. VesnALIA's thread pages and chats need a real thread in the test VesnALIA, which needs a
+// machine (a host daemon of its own): ALIA_E2E_THREAD names one. Plugin RPCs go to the official test host, as in
 // review-flow; ThreadChat reads the real thread.
-test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ main thread: Main thread ↗ and back, Show beside review, Send then Watch, the thread's Review tab, and the switch key", async () => {
-  const base = loopbackUrl("BB_E2E_URL", process.env.BB_E2E_URL!);
-  const main = process.env.BB_E2E_THREAD!;
+test.skipIf(!process.env.ALIA_E2E_URL || !process.env.ALIA_E2E_THREAD)("review ⇄ main thread: Main thread ↗ and back, Show beside review, Send then Watch, the thread's Review tab, and the switch key", async () => {
+  const base = loopbackUrl("ALIA_E2E_URL", process.env.ALIA_E2E_URL!);
+  const main = process.env.ALIA_E2E_THREAD!;
   vi.mocked(runGh).mockImplementation(async () => ({ code: 1, stderr: "no GitHub here", stdout: "" }));
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     get: async ({ threadId }: { threadId: string }) => ({ id: threadId, title: "Add b export", titleFallback: null, archivedAt: null, deletedAt: null, environmentId: null, status: "idle", visibility: "visible", originPluginId: null }),
-    spawn: async () => ({ id: process.env.BB_E2E_AGENT_THREAD ?? "e2e-hidden-agent" }),
+    spawn: async () => ({ id: process.env.ALIA_E2E_AGENT_THREAD ?? "e2e-hidden-agent" }),
     send: async () => ({ ok: true, delivery: "sent" }),
     experimental_listAncestors: async ({ threadIds }: { threadIds: string[] }) => ({ threads: threadIds.map((threadId) => ({ threadId, ancestorIds: [] })) }),
     stop: async () => ({}), update: async () => ({}), archive: async () => ({}),
   }, projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) } } as any });
-  await plugin(bb);
-  const store = queueStore(createStore(bb));
+  await plugin(alia);
+  const store = queueStore(createStore(alia));
   // A long file, so the review has somewhere to scroll to and come back to.
   const lines = Array.from({ length: 160 }, (_, at) => `+export const n${at} = ${at};`).join("\n");
   const seed = async (key: string, title: string, file: string) => {
@@ -69,9 +69,9 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
   const review = `${base}/plugins/code-review-workspace/review/e2e-doing`;
   try {
     await page.goto(review);
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await page.getByRole("button", { name: /^Start reading/ }).click();
-    // Show beside review: BB's Main thread tab, the thread's own chat, with Main thread ↗.
+    // Show beside review: VesnALIA's Main thread tab, the thread's own chat, with Main thread ↗.
     const beside = commands.getByRole("button", { name: "Show main thread beside review", exact: true });
     await beside.click();
     const tab = page.getByRole("region", { name: "Main thread", exact: true });
@@ -80,12 +80,12 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     await expect.poll(() => beside.getAttribute("aria-pressed")).toBe("true");
     await page.waitForTimeout(1500);
     await page.screenshot({ animations: "disabled", path: `${dir}/main-tab-desktop.png` });
-    // BB keeps a chat's unsent reply per thread: through its panel closing, and on the thread's own page (below).
+    // VesnALIA keeps a chat's unsent reply per thread: through its panel closing, and on the thread's own page (below).
     const reply = `Unsent reply ${Date.now()}`;
     const box = () => tab.locator("[contenteditable=true]").last();
     await box().click();
     await page.keyboard.type(reply);
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await beside.click();
     await expect.poll(() => box().innerText()).toContain(reply);
     // Another review: no main thread, so no Main thread tab; the agent's is the review's own.
@@ -98,10 +98,10 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     await page.getByRole("region", { name: "Review agent", exact: true }).getByText("local:e2e-other").waitFor();
     expect(await commands.getByRole("button", { name: "Go to main thread", exact: true }).count()).toBe(0);
     await page.screenshot({ animations: "disabled", path: `${dir}/agent-tab-other-review.png` });
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     // Send now, then Watch: the main thread beside the review, in one click.
     await page.goto(review);
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     const card = page.getByRole("article", { name: "Draft comment on src/a.ts:1" });
     await card.getByRole("button", { name: /^Send now to/ }).click();
     const watch = page.getByRole("button", { name: "Watch", exact: true });
@@ -111,7 +111,7 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     await expect.poll(() => beside.getAttribute("aria-pressed")).toBe("true");
     await page.waitForTimeout(800);
     await page.screenshot({ animations: "disabled", path: `${dir}/watch-main-tab.png` });
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     // Finish review: its key opens it, and the title bar's button, a local review's too, closes and opens it.
     const finish = commands.getByRole("button", { name: /^Finish review/ });
     await page.keyboard.press("s");
@@ -119,7 +119,7 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     await finish.click();
     await expect.poll(() => finish.getAttribute("aria-pressed"), { message: "Finish review closes it" }).toBe("false");
     await finish.click();
-    // Its Change main thread: the Main thread tab opens with its menu, which stays open as BB focuses the chat box,
+    // Its Change main thread: the Main thread tab opens with its menu, which stays open as VesnALIA focuses the chat box,
     // until a click outside it.
     await page.getByRole("complementary", { name: "Comments and Finish review", exact: true }).getByRole("button", { name: "Change main thread", exact: true }).click();
     const changeMenu = page.getByRole("menu", { name: "Change main thread", exact: true });
@@ -130,12 +130,12 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     await tab.locator("[contenteditable=true]").last().click();
     await changeMenu.waitFor({ state: "hidden" });
     await finish.click();
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await commands.getByRole("button", { name: "Ask agent", exact: true }).click();
     await page.getByRole("region", { name: "Review agent", exact: true }).waitFor();
     await page.waitForTimeout(500);
     await page.screenshot({ animations: "disabled", path: `${dir}/agent-tab-header.png` });
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     // Main thread ↗ goes to the thread: reviewing to doing, one click; the review keeps its place for the way back.
     const reading = page.getByRole("button", { name: /^(Start reading|Continue)/ });
     if (await reading.isVisible().catch(() => false)) await reading.click();
@@ -168,7 +168,7 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     const first = pane.getByRole("textbox", { name: "Ask the agent" });
     await first.waitFor();
     await page.screenshot({ animations: "disabled", path: `${dir}/thread-review-tab.png` });
-    if (process.env.BB_E2E_AGENT_THREAD) {
+    if (process.env.ALIA_E2E_AGENT_THREAD) {
       await first.fill("Why name it so?");
       await pane.getByRole("button", { name: "Send", exact: true }).click();
       await expect.poll(() => harness.inspection.sdk.callsTo("threads.spawn").length).toBe(1);
@@ -188,17 +188,17 @@ test.skipIf(!process.env.BB_E2E_URL || !process.env.BB_E2E_THREAD)("review ⇄ m
     await page.keyboard.press("ControlOrMeta+Shift+Period");
     await page.waitForURL(/\/review\/e2e-doing/);
     await commands.getByRole("button", { name: "Ask agent", exact: true }).waitFor();
-    // A phone: BB's panel over the page, from the dock.
+    // A phone: VesnALIA's panel over the page, from the dock.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload();
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await commands.getByRole("button", { name: "Ask agent", exact: true }).click();
     const agent = page.getByRole("region", { name: "Review agent", exact: true });
     await agent.waitFor();
     await page.waitForTimeout(800);
     expect(await agent.evaluate((element) => element.getBoundingClientRect().right <= innerWidth)).toBe(true);
     await page.screenshot({ animations: "disabled", path: `${dir}/agent-phone.png` });
-    await hideBbPanel(page);
+    await hideAliaPanel(page);
     await page.screenshot({ animations: "disabled", path: `${dir}/dock-phone.png` });
     expect(errors).toEqual([]);
   } catch (error) { await page.screenshot({ path: `${dir}/failed.png` }); throw error; } finally { await browser.close(); await harness.lifecycle.dispose(); }

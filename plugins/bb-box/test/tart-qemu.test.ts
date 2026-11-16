@@ -18,7 +18,7 @@ import { FAKE_DISK_GIB, FAKE_MAC, FAKE_WINDOWS_IMAGE, WINDOWS_TOOLS, addImage, a
 import { EXPIRED_ON, FAKE_SSH_BINARY, MemoryStorage, NOT_SET_NEVER_TO_EXPIRE, fakeSsh, testContext, windowsWithExpiringPassword } from "./helpers.ts";
 
 const MAC = FAKE_MAC;
-/** Where the fake ssh runs what BB Box sends a Windows VM, which it reaches at 127.0.0.1 through the Mac. */
+/** Where the fake ssh runs what VesnALIA Box sends a Windows VM, which it reaches at 127.0.0.1 through the Mac. */
 const GUEST = "127.0.0.1";
 const KIND = "windows-arm64-desktop";
 const SMALL: MachineSize = { cores: 4, memoryMiB: 8192, diskGiB: null };
@@ -37,7 +37,7 @@ after(async () => {
   for (const backend of made) await backend.dispose();
   // Ends any fake QEMU a failed test left running.
   for (const mac of macs) {
-    const vms = join(mac, ".bb-box", "qemu", "vms");
+    const vms = join(mac, ".alia-box", "qemu", "vms");
     for (const vm of existsSync(vms) ? readdirSync(vms) : []) {
       const pid = join(vms, vm, "pid");
       if (existsSync(pid)) rmSync(pid);
@@ -66,8 +66,8 @@ function setup(values: Record<string, unknown> = {}, options: TartBackendOptions
       `  *Resize-Partition*) echo extended >> "$HOME/extend"; exit 0;;`,
       `  *"Get-Process explorer"*) n=$(cat "$HOME/desktop" 2>/dev/null || echo 0); echo $((n + 1)) > "$HOME/desktop"; [ ! -f "$HOME/no-desktop" ] && [ "$n" -ge 2 ];;`,
       `  *Add-Type*) echo compiled >> "$HOME/compiled"; exit 0;;`,
-      // Whether the box has bb-box-stream.exe (060): where $HOME/stream is.
-      `  *"Test-Path -LiteralPath"*bb-box-stream.exe*) [ -f "$HOME/stream" ] && exit 0; exit 3;;`,
+      // Whether the box has alia-box-stream.exe (060): where $HOME/stream is.
+      `  *"Test-Path -LiteralPath"*alia-box-stream.exe*) [ -f "$HOME/stream" ] && exit 0; exit 3;;`,
       `  *) exec sh -c "$1";;`,
       `esac`,
       ``,
@@ -75,7 +75,7 @@ function setup(values: Record<string, unknown> = {}, options: TartBackendOptions
   );
   const config = tartConfig({ "tart-windows-image": FAKE_WINDOWS_IMAGE, "tart-reserve-disk-gib": 0, ...values });
   /** A backend on the Mac: another install's, or this one's after a restart. */
-  // How often the backend said a kind changed by itself, so BB Box gives its boxes the change.
+  // How often the backend said a kind changed by itself, so VesnALIA Box gives its boxes the change.
   const kindsChanged = { count: 0 };
   const make = (installId = "test", counts = warm) => {
     const context = { ...testContext(new MemoryStorage(), installId, { warm: counts }), kindsChanged: () => void kindsChanged.count++ };
@@ -92,8 +92,8 @@ function setup(values: Record<string, unknown> = {}, options: TartBackendOptions
     backend,
     make,
     kindsChanged,
-    qemu: join(mac, ".bb-box", "qemu"),
-    owners: join(mac, ".bb-box", "tart", "owners"),
+    qemu: join(mac, ".alia-box", "qemu"),
+    owners: join(mac, ".alia-box", "tart", "owners"),
     firmware: join(mac, ".nix-profile", "share", "qemu", "edk2-aarch64-code.fd"),
   };
 }
@@ -183,7 +183,7 @@ test("offers windows-arm64-desktop only with a Windows image, as a Windows deskt
   });
   assert.equal(kind.readyTimeoutMs, 3 * 60_000);
   assert.match(kind.description, /x64 apps run under Windows' emulation, more slowly; x64 drivers do not/);
-  // Its boxes join BB unless Tart's switch is set off, as on Proxmox QEMU (#539), and the macOS and Linux kinds as ever.
+  // Its boxes join VesnALIA unless Tart's switch is set off, as on Proxmox QEMU (#539), and the macOS and Linux kinds as ever.
   const off = new TartBackend(tartConfig({ "tart-windows-image": FAKE_WINDOWS_IMAGE, "tart-windows-enrol": false }), testContext()).kinds();
   assert.equal(off.find((candidate) => candidate.id === KIND)?.capabilities.enrol, false);
   assert.ok(off.filter((candidate) => candidate.id !== KIND).every((candidate) => candidate.capabilities.enrol));
@@ -203,16 +203,16 @@ test("reads QEMU's VMs and its checks from the state script", () => {
   const state = parseQemuState(
     [
       "@qemu",
-      "=bb-box-wx1",
-      "image=bb-box-windows",
+      "=alia-box-wx1",
+      "image=alia-box-windows",
       "build=2",
       "ssh=42000",
       "vnc=42001",
       "cores=4",
       "memory=8192",
       "power=suspended",
-      "=bb-box-wx3",
-      "image=bb-box-windows",
+      "=alia-box-wx3",
+      "image=alia-box-windows",
       "build=2",
       "ssh=42002",
       "vnc=42003",
@@ -220,8 +220,8 @@ test("reads QEMU's VMs and its checks from the state script", () => {
       "memory=8192",
       "disk=72",
       "power=running",
-      "=bb-box-wx2",
-      "image=bb-box-windows",
+      "=alia-box-wx2",
+      "image=alia-box-windows",
       "power=stopped",
       "@qemu-version",
       "QEMU emulator version 11.1.0",
@@ -236,8 +236,8 @@ test("reads QEMU's VMs and its checks from the state script", () => {
   assert.deepEqual(
     [...state.vms],
     [
-      ["bb-box-wx1", { image: "bb-box-windows", build: "2", cores: 4, memoryMiB: 8192, ssh: 42000, vnc: 42001, diskGiB: null, power: "suspended" }],
-      ["bb-box-wx3", { image: "bb-box-windows", build: "2", cores: 4, memoryMiB: 8192, ssh: 42002, vnc: 42003, diskGiB: 72, power: "running" }],
+      ["alia-box-wx1", { image: "alia-box-windows", build: "2", cores: 4, memoryMiB: 8192, ssh: 42000, vnc: 42001, diskGiB: null, power: "suspended" }],
+      ["alia-box-wx3", { image: "alia-box-windows", build: "2", cores: 4, memoryMiB: 8192, ssh: 42002, vnc: 42003, diskGiB: 72, power: "running" }],
     ],
   );
   assert.deepEqual(
@@ -254,7 +254,7 @@ test("reads QEMU's VMs and its checks from the state script", () => {
 test("acquires a Windows box: an owner file, an overlay on the image's build, two ports, QEMU, SSH through the Mac, then the desktop", async () => {
   const { backend, mac, qemu, owners, ssh, build, firmware } = setup();
   const box = identity();
-  const vm = `bb-box-${box.boxId}`;
+  const vm = `alia-box-${box.boxId}`;
   const { hooks: value, events, claimed } = hooks();
   const guest = await backend.acquire(box, null, value, signal());
 
@@ -322,8 +322,8 @@ test("acquires a Windows box: an owner file, an overlay on the image's build, tw
   assert.equal(await backend.power(guest, signal()), null);
 });
 
-test("Windows on a Mac offers video by choice while every Mac's image records OpenH264 and every Mac has built bb-box-stream, and a box shows it where it has bb-box-stream.exe (060, #865)", async () => {
-  const { backend, ssh, build, mac, qemu, kindsChanged } = setup({}, { qemuVideoSource: "// bb-box-stream, as a test gives it\n" });
+test("Windows on a Mac offers video by choice while every Mac's image records OpenH264 and every Mac has built alia-box-stream, and a box shows it where it has alia-box-stream.exe (060, #865)", async () => {
+  const { backend, ssh, build, mac, qemu, kindsChanged } = setup({}, { qemuVideoSource: "// alia-box-stream, as a test gives it\n" });
   fakeSwift(mac);
   const kind = () => backend.kinds().find((candidate) => candidate.id === KIND)!;
   assert.equal(await backend.asOffered({ ref: "x", host: MAC, address: null, size: null }, KIND), false, "unknown until a Mac answers");
@@ -332,18 +332,18 @@ test("Windows on a Mac offers video by choice while every Mac's image records Op
   assert.equal(kind().capabilities.displays.length, 1, "an image without OpenH264 has no video");
 
   // The Mac's image now has the stream and the hardware cursor, as prepare-windows-image.sh records them. The Mac built
-  // bb-box-stream as its state first said it had none, in the background, so the video comes once it has.
+  // alia-box-stream as its state first said it had none, in the background, so the video comes once it has.
   writeFileSync(join(build, "image.json"), `${imageRecord(KIND, { tools: { ...WINDOWS_TOOLS, openh264: "2.6.0", "hardware-cursor": "1" } })}\n`);
-  const bin = join(mac, ".bb-box", "qemu", "bin");
+  const bin = join(mac, ".alia-box", "qemu", "bin");
   // Until the build has its hash and its source has gone: the hash comes before the source goes.
   const built = () => readdirSync(bin).filter((name) => !name.endsWith(".lock"));
-  await until(() => existsSync(bin) && built().some((name) => name.endsWith(".sha256")) && built().length === 2, "the build of bb-box-stream");
+  await until(() => existsSync(bin) && built().some((name) => name.endsWith(".sha256")) && built().length === 2, "the build of alia-box-stream");
   assert.equal(statSync(bin).mode & 0o777, 0o700, "in a folder only the host user can open");
   assert.deepEqual(built().length, 2, "the build and its hash, the source gone");
   const before = kindsChanged.count;
   await backend.capacity(KIND, SMALL, [], signal());
   assert.deepEqual(kind().capabilities.displays[1], { id: "video", protocol: "selkies", resizable: true, cursor: "stream" }, "it opens as video (#865)");
-  // So a box made before, as just after BB Box restarted while the Mac's video was not ready, gets it too.
+  // So a box made before, as just after VesnALIA Box restarted while the Mac's video was not ready, gets it too.
   assert.equal(kindsChanged.count, before + 1, "the backend says the kind changed");
   await backend.capacity(KIND, SMALL, [], signal());
   assert.equal(kindsChanged.count, before + 1, "and only when it does");
@@ -356,13 +356,13 @@ test("Windows on a Mac offers video by choice while every Mac's image records Op
   writeFileSync(join(ssh.home(GUEST), "stream"), "");
   const other = { ...guest, data: { ...guest.data, box: "bx-another" } };
   const shown = (await backend.transports(other, KIND)).displays;
-  // Where the pointer is, from bb-box-stream.exe, for people watching: neither the video nor QEMU's VNC has it (#865).
+  // Where the pointer is, from alia-box-stream.exe, for people watching: neither the video nor QEMU's VNC has it (#865).
   assert.equal(typeof shown[0]!.followPointer, "function");
   assert.deepEqual(shown.map(({ open: _, openInput: __, resize: ___, pointer: ____, followPointer: _____, ...display }) => display), [
     { id: "desktop", label: "Desktop", protocol: "rfb", resizable: true, clipboard: "commands", refresh: "viewer", quality: 4, pointerWhile: "rfb", minSize: { width: 800, height: 600 } },
     { id: "video", label: "Desktop, as video", protocol: "selkies", resizable: true, cursor: "stream" },
   ]);
-  // The input, the clipboard and the pointer's shape go through the guest's bb-box-stream.exe.
+  // The input, the clipboard and the pointer's shape go through the guest's alia-box-stream.exe.
   const input = (await shown[1]!.openInput!()).route;
   assert.match(JSON.stringify(input), /NamedPipeClientStream/, "the pipe to the guest's server, through box's SSH");
 
@@ -387,7 +387,7 @@ test("Windows on a Mac offers video by choice while every Mac's image records Op
   assert.ok(existsSync(join(vm, "video-dbus.log")), "the D-Bus bridge's log is kept");
   rmSync(join(mac, ".fake-stream-no-dbus"));
   // A build that is not whole does not run.
-  const binary = readdirSync(bin).find((name) => /^bb-box-stream-[0-9a-f]+$/.test(name))!;
+  const binary = readdirSync(bin).find((name) => /^alia-box-stream-[0-9a-f]+$/.test(name))!;
   writeFileSync(join(bin, `${binary}.sha256`), "0\n");
   assert.throws(run, /not whole/);
 
@@ -401,8 +401,8 @@ test("Windows on a Mac offers video by choice while every Mac's image records Op
   await until(() => !alive(pid), "the bridge to end");
 });
 
-test("Windows on a Mac shows over VNC only, and the doctor says why, while the Mac cannot build bb-box-stream (#865)", async () => {
-  const { backend, build, mac } = setup({}, { qemuVideoSource: "// bb-box-stream, as a test gives it\n" });
+test("Windows on a Mac shows over VNC only, and the doctor says why, while the Mac cannot build alia-box-stream (#865)", async () => {
+  const { backend, build, mac } = setup({}, { qemuVideoSource: "// alia-box-stream, as a test gives it\n" });
   writeFileSync(join(build, "image.json"), `${imageRecord(KIND, { tools: { ...WINDOWS_TOOLS, openh264: "2.6.0" } })}\n`);
   const kind = () => backend.kinds().find((candidate) => candidate.id === KIND)!;
   const check = async () => (await backend.doctor(signal())).checks.find((each) => each.id === "qemu-video.mac1")!;
@@ -418,11 +418,11 @@ test("Windows on a Mac shows over VNC only, and the doctor says why, while the M
   // swiftc fails: the doctor gives its error, and nothing half-built runs.
   fakeSwift(mac, { fails: true });
   await backend.capacity(KIND, SMALL, [], signal());
-  const bin = join(mac, ".bb-box", "qemu", "bin");
+  const bin = join(mac, ".alia-box", "qemu", "bin");
   await until(() => existsSync(bin) && readdirSync(bin).some((name) => name.endsWith(".failed")), "the failed build");
   found = await check();
   assert.equal(found.status, "warn");
-  assert.match(found.detail, /swiftc could not build bb-box-stream: mac-stream\.swift:12:3: error: cannot find 'SCStream' in scope/);
+  assert.match(found.detail, /swiftc could not build alia-box-stream: mac-stream\.swift:12:3: error: cannot find 'SCStream' in scope/);
   assert.equal(kind().capabilities.displays.length, 1, "still no video");
 
   // Once it builds, the video comes.
@@ -456,10 +456,10 @@ test("the desktop resizes to the listed mode that best covers the viewer, set by
   await displays[0]!.resize!({ width: 1500, height: 900 });
   const compiled = readFileSync(join(home, "compiled"), "utf8");
   const task = readFileSync(join(home, "resize"), "utf8");
-  assert.match(task, /\$bbTask\.Principal\.LogonType = 3\n/, "a task in the box user's session");
+  assert.match(task, /\$aliaTask\.Principal\.LogonType = 3\n/, "a task in the box user's session");
   const run = Buffer.from(/FromBase64String\(''([A-Za-z0-9+\/=]+)''\)/.exec(task)![1]!, "base64").toString("utf8");
   assert.ok(run.startsWith(compiled), "loads the file the acquire compiled");
-  assert.match(run, /\n\$bbRefused = \$bbDisplay::Fit\(1500, 900, 0\)\n/, "the driver takes a viewer's size only at its next boot");
+  assert.match(run, /\n\$aliaRefused = \$aliaDisplay::Fit\(1500, 900, 0\)\n/, "the driver takes a viewer's size only at its next boot");
 
   writeFileSync(join(home, "exit"), `echo "Windows refused 1500x900 and the modes it lists, with -2." >&2; exit 1\n`);
   await assert.rejects(displays[0]!.resize!({ width: 1500, height: 900 }), { message: "Windows could not set the desktop to 1500x900: Windows refused 1500x900 and the modes it lists, with -2." });
@@ -470,7 +470,7 @@ test("a Windows box with a disk larger than the image's has an overlay of that s
   const { backend, qemu, ssh, build } = setup();
   const size: MachineSize = { ...SMALL, diskGiB: 72 };
   const box = identity(size);
-  const vm = `bb-box-${box.boxId}`;
+  const vm = `alia-box-${box.boxId}`;
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
   assert.deepEqual(guest.size, size);
   assert.equal(config(qemu, vm).disk, "72");
@@ -697,7 +697,7 @@ test("an acquire whose QEMU does not start removes its VM and owner file, and sa
   const { backend, qemu, owners, firmware } = setup();
   rmSync(firmware);
   const box = identity();
-  const vm = `bb-box-${box.boxId}`;
+  const vm = `alia-box-${box.boxId}`;
   await assert.rejects(backend.acquire(box, null, hooks().hooks, signal()), {
     message: `QEMU could not start ${vm} on mac1: QEMU's firmware ${firmware} is missing.`,
   });
@@ -710,7 +710,7 @@ test("an acquire whose Windows desktop does not come up removes its VM, and says
   mkdirSync(ssh.home(GUEST), { recursive: true });
   writeFileSync(join(ssh.home(GUEST), "no-desktop"), "");
   const box = identity();
-  const vm = `bb-box-${box.boxId}`;
+  const vm = `alia-box-${box.boxId}`;
   await assert.rejects(backend.acquire(box, null, hooks().hooks, signal()), {
     message: new RegExp(`^Windows' desktop in ${vm} on mac1 was not up within \\d+ s: Explorer did not run in a desktop session, or Cua's daemon did not listen on`),
   });
@@ -732,7 +732,7 @@ test("an acquire from an image whose box user's password has expired sets it nev
   assert.equal(readFileSync(join(home, "restarts"), "utf8"), "restarted\n");
   assert.equal(existsSync(join(home, "no-desktop")), false);
   assert.deepEqual(context.logs.filter((line) => line.includes("password")), [
-    `bb-box-${box.boxId} on mac1: ${EXPIRED_ON} Windows did not log the box user in to the desktop, so BB Box set the password never to expire and restarted Windows.`,
+    `alia-box-${box.boxId} on mac1: ${EXPIRED_ON} Windows did not log the box user in to the desktop, so VesnALIA Box set the password never to expire and restarted Windows.`,
   ]);
 });
 
@@ -748,8 +748,8 @@ test("an acquire whose repair Windows refuses fails at once with the reason and 
 
   const failed = await backend.acquire(box, null, hooks().hooks, signal()).then(() => "acquired", (error: Error) => error.message);
 
-  assert.equal(failed, `Windows' desktop in bb-box-${box.boxId} on mac1 is not up: ${NOT_SET_NEVER_TO_EXPIRE} ${BY_HAND}`);
-  assert.equal(existsSync(join(qemu, "vms", `bb-box-${box.boxId}`)), false);
+  assert.equal(failed, `Windows' desktop in alia-box-${box.boxId} on mac1 is not up: ${NOT_SET_NEVER_TO_EXPIRE} ${BY_HAND}`);
+  assert.equal(existsSync(join(qemu, "vms", `alia-box-${box.boxId}`)), false);
 });
 
 test("a start whose repair Windows refuses says the box is not ready for computer use, why, and what to run", async () => {
@@ -808,7 +808,7 @@ test("a Mac without QEMU or without the Windows image takes no Windows box, and 
   const { backend, mac, qemu } = setup();
   rmSync(join(qemu, "images"), { recursive: true });
   let capacity = await backend.capacity(KIND, SMALL, [], signal());
-  assert.match(capacity.message!, /mac1 has no Windows image bb-box-windows in ~\/\.bb-box\/qemu\/images\. Prepare it there/);
+  assert.match(capacity.message!, /mac1 has no Windows image alia-box-windows in ~\/\.alia-box\/qemu\/images\. Prepare it there/);
   rmSync(join(mac, ".nix-profile", "bin", "qemu-system-aarch64"));
   capacity = await backend.capacity(KIND, SMALL, [], signal());
   assert.match(capacity.message!, /mac1 has no QEMU on the PATH of bbbox-admin's SSH sessions, which Windows boxes need/);
@@ -824,7 +824,7 @@ test("the doctor checks QEMU, the Hypervisor framework, the firmware and the Win
   assert.equal(check("host.mac1")?.detail, "macOS 27.0 on Apple silicon, Tart 2.30.0.");
   assert.deepEqual([check("qemu.mac1")?.status, check("qemu.mac1")?.detail], ["ok", "QEMU 11.1.0, with the Hypervisor framework and its UEFI firmware."]);
   assert.equal(check(`image.mac1.${KIND}`)?.status, "ok");
-  assert.match(check(`image.mac1.${KIND}`)!.detail, /^bb-box-windows, build 1\. Standard image build\.20261003-021500, built \d+ \w+ \(today\): fake OS, node 24\.21\.0, /);
+  assert.match(check(`image.mac1.${KIND}`)!.detail, /^alia-box-windows, build 1\. Standard image build\.20261003-021500, built \d+ \w+ \(today\): fake OS, node 24\.21\.0, /);
 
   // The build's record (049), beside its disk: older than twice the month Windows images are rebuilt in.
   const day = 24 * 60 * 60 * 1000;
@@ -832,14 +832,14 @@ test("the doctor checks QEMU, the Hypervisor framework, the firmware and the Win
   report = await backend.doctor(signal());
   assert.equal(check(`image.mac1.${KIND}`)?.status, "warn");
   assert.match(check(`image.mac1.${KIND}`)!.detail, / It is 61 days old, more than 60, so its tools and packages are behind\.$/);
-  // Its boxes join BB, so an image without Node.js and an agent CLI is behind too (#539).
+  // Its boxes join VesnALIA, so an image without Node.js and an agent CLI is behind too (#539).
   writeFileSync(join(build, "image.json"), imageRecord(KIND));
   report = await backend.doctor(signal());
-  assert.match(check(`image.mac1.${KIND}`)!.detail, /It has no Node\.js, and BB's installer needs 22\.19\.0 or later, .* It has none of the agent CLIs BB runs threads with, Claude Code, Codex, Pi, so box_thread refuses its boxes \(#561\)\.$/);
+  assert.match(check(`image.mac1.${KIND}`)!.detail, /It has no Node\.js, and ALIA's installer needs 22\.19\.0 or later, .* It has none of the agent CLIs ALIA runs threads with, Claude Code, Codex, Pi, so box_thread refuses its boxes \(#561\)\.$/);
   writeFileSync(join(build, "image.json"), imageRecord(KIND, { built: new Date(Date.now() - 61 * day).toISOString(), tools: WINDOWS_TOOLS }));
   assert.equal(
     check(`image.mac1.${KIND}`)?.fix,
-    "Build it again on mac1 with setup/tart/prepare-windows-image.sh --iso <ISO> --iso-sha256 <its SHA-256> --key '<BB Box's public key>' --name bb-box-windows --replace.",
+    "Build it again on mac1 with setup/tart/prepare-windows-image.sh --iso <ISO> --iso-sha256 <its SHA-256> --key '<VesnALIA Box's public key>' --name alia-box-windows --replace.",
   );
   writeFileSync(join(build, "image.json"), imageRecord(KIND, { contract: 0 }));
   report = await backend.doctor(signal());
@@ -847,13 +847,13 @@ test("the doctor checks QEMU, the Hypervisor framework, the firmware and the Win
   rmSync(join(build, "image.json"));
   report = await backend.doctor(signal());
   assert.equal(check(`image.mac1.${KIND}`)?.status, "warn");
-  assert.match(check(`image.mac1.${KIND}`)!.detail, /^bb-box-windows, build 1\. It has no image record/);
+  assert.match(check(`image.mac1.${KIND}`)!.detail, /^alia-box-windows, build 1\. It has no image record/);
   writeFileSync(join(build, "image.json"), imageRecord(KIND));
 
   chmodSync(join(build, "disk.qcow2"), 0o644);
   report = await backend.doctor(signal());
   assert.equal(check(`image.mac1.${KIND}`)?.status, "warn");
-  assert.equal(check(`image.mac1.${KIND}`)?.fix, "Make it read-only: chmod a-w ~/.bb-box/qemu/images/bb-box-windows/1/disk.qcow2");
+  assert.equal(check(`image.mac1.${KIND}`)?.fix, "Make it read-only: chmod a-w ~/.alia-box/qemu/images/alia-box-windows/1/disk.qcow2");
 
   rmSync(firmware);
   report = await backend.doctor(signal());
@@ -900,7 +900,7 @@ test("a Mac that serves only Windows boxes needs no Tart", async () => {
 /** The warm VMs on the Mac. */
 function warmVms(qemu: string): string[] {
   const vms = join(qemu, "vms");
-  return existsSync(vms) ? readdirSync(vms).filter((name) => name.startsWith("bb-box-warm-")) : [];
+  return existsSync(vms) ? readdirSync(vms).filter((name) => name.startsWith("alia-box-warm-")) : [];
 }
 
 /** Whether QEMU saved the VM to a file and quit. */
@@ -978,7 +978,7 @@ test("a Windows box at another size clones, and leaves the warm VM", async () =>
   const [warm] = warmVms(qemu);
   const box = identity(sized(6));
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   assert.ok(saved(qemu, warm!));
   await backend.release(guest, releasing, signal());
 });
@@ -990,7 +990,7 @@ test("a Windows warm VM that does not restore gives way to a clone, and goes", a
   writeFileSync(join(qemu, "vms", warm!, "state"), "corrupt");
   const box = identity();
   const guest = await backend.acquire(box, null, hooks().hooks, signal());
-  assert.equal(guest.ref, `bb-box-${box.boxId}`);
+  assert.equal(guest.ref, `alia-box-${box.boxId}`);
   assert.ok(!existsSync(join(qemu, "vms", warm!)), "the warm VM that failed is deleted");
   assert.ok(context.errors.some((error) => /could not use VM [\s\S]*failed to restore/.test(error)), context.errors.join("\n"));
   await backend.maintain();
@@ -1051,7 +1051,7 @@ test("an acquire that meets a Windows fill holding the last memory takes it over
       await until(() => !warmVms(qemu).includes(fill!), "the fill to be stopped");
       up();
       const guest = await acquiring;
-      assert.equal(guest.ref, `bb-box-${box.boxId}`, "a box of another size clones");
+      assert.equal(guest.ref, `alia-box-${box.boxId}`, "a box of another size clones");
       await backend.release(guest, releasing, signal());
     }
     assert.equal(await filling, undefined);
@@ -1104,7 +1104,7 @@ test("the window namer titles only visible, unowned, top-level windows with no t
   assert.deepEqual(parseNamed(""), []);
   // A title the app set, even of spaces, has a length: only an empty one is named.
   assert.match(NAME_WINDOWS_SCRIPT, /!IsWindowVisible\(window\) \|\| GetWindow\(window, 4\) != IntPtr\.Zero \|\| GetWindowTextLength\(window\) != 0/);
-  assert.match(NAME_WINDOWS_SCRIPT, /\$bbDll = .*'windows-[0-9a-f]{12}\.dll'/, "compiled once, and kept, as the display helper is");
+  assert.match(NAME_WINDOWS_SCRIPT, /\$aliaDll = .*'windows-[0-9a-f]{12}\.dll'/, "compiled once, and kept, as the display helper is");
 });
 
 test("a Windows image's operations on a Mac (#450): a box of its build, a capture as a build of its own, a trial box, and the build made current", async () => {
@@ -1112,7 +1112,7 @@ test("a Windows image's operations on a Mac (#450): a box of its build, a captur
   const images = backend.images;
   assert.equal(images.windows, true, "the nightly refresh takes in its Windows images");
   const record = JSON.stringify({ contract: 1, image: "standard", kind: KIND, arch: "arm64", build: "build.20261007-020000-abcd", built: "2026-10-07T02:00:00Z", os: "Windows 11", tools: { pwsh: "7.6.0" } });
-  // The guest's record, as a refresh leaves it in C:\bb-box\image.json.
+  // The guest's record, as a refresh leaves it in C:\alia-box\image.json.
   ssh.powershell(GUEST, ['case "$1" in', `  *image.json*) echo '${record}';;`, '  *) exec sh -c "$1";;', "esac", ""].join("\n"));
   const dir = join(qemu, "images", FAKE_WINDOWS_IMAGE);
 
@@ -1130,7 +1130,7 @@ test("a Windows image's operations on a Mac (#450): a box of its build, a captur
   // An image box: an overlay on the current build, marked as one.
   const box = await images.box(current, "refresh of the image", AbortSignal.timeout(30_000));
   const vm = box.ref.slice("mac1/".length);
-  assert.match(readFileSync(join(qemu, "vms", vm, "config"), "utf8"), /^image=bb-box-windows\nbuild=1\n/);
+  assert.match(readFileSync(join(qemu, "vms", vm, "config"), "utf8"), /^image=alia-box-windows\nbuild=1\n/);
   assert.match(readFileSync(join(owners, vm), "utf8"), /\nimage-box=refresh of the image\n/);
   assert.deepEqual((await images.list()).boxes, [box.ref]);
 
@@ -1161,7 +1161,7 @@ test("a Windows image's operations on a Mac (#450): a box of its build, a captur
   await assert.rejects(images.remove(`mac1/${FAKE_WINDOWS_IMAGE}@build.20261007-020000-abcd`, AbortSignal.timeout(30_000)), /is not a refresh's build of this install's/);
   // A VM made from the image's current build now is an overlay on the new build.
   const next = await images.box(replaced, "after the replace", AbortSignal.timeout(30_000));
-  assert.match(readFileSync(join(qemu, "vms", next.ref.slice("mac1/".length), "config"), "utf8"), /^image=bb-box-windows\nbuild=build\.20261007-020000-abcd\n/);
+  assert.match(readFileSync(join(qemu, "vms", next.ref.slice("mac1/".length), "config"), "utf8"), /^image=alia-box-windows\nbuild=build\.20261007-020000-abcd\n/);
   await images.remove(next.ref, AbortSignal.timeout(30_000));
 
   // The next replace: the build it replaces is the rollback now, and the rollback before, which no VM uses, goes.

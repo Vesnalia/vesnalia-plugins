@@ -1,12 +1,12 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { testSql } from "./test-store.test-support";
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  return { bb, call: harness.behavior.callRpc, channels: () => harness.inspection.realtimeSignals.map((s) => s.channel) };
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  return { alia, call: harness.behavior.callRpc, channels: () => harness.inspection.realtimeSignals.map((s) => s.channel) };
 }
 
 test("saved views are the plugin's, oldest first: saving again renames or refilters one in its place, and each change tells other tabs", async () => {
@@ -36,7 +36,7 @@ test("a view without a name, with a field this version doesn't know, or with a m
 });
 
 test("a view a newer version saved, with a field this one doesn't know, still lists, for the panel to leave that filter out", async () => {
-  const { bb, call } = await setup();
-  await testSql(bb).run(`INSERT INTO filter_views (id,name,filters,created_at) VALUES ('v1','Newer',?,1)`, [JSON.stringify([{ field: "milestone", values: ["Q4"] }])]);
+  const { alia, call } = await setup();
+  await testSql(alia).run(`INSERT INTO filter_views (id,name,filters,created_at) VALUES ('v1','Newer',?,1)`, [JSON.stringify([{ field: "milestone", values: ["Q4"] }])]);
   expect(await call("listFilterViews", null)).toEqual({ views: [{ id: "v1", name: "Newer", filters: [{ field: "milestone", values: ["Q4"] }] }] });
 });

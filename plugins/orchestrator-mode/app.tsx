@@ -28,7 +28,7 @@ import {
   type ComposerView,
   type ExperimentalProviderModelPickerValue,
   type PluginComposerScope,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { WORKER_MODEL_POLICY_DESCRIPTIONS, WORKER_RETENTION, WORKER_RETENTION_DESCRIPTIONS, WORKER_WORKSPACE_DESCRIPTIONS, WORKER_WORKSPACES, type ContractDto, type OrchestratorStateDto, type ScopeSettingsDto, type SettingsViewDto, type rpcContract } from "./server";
 import {
@@ -103,7 +103,7 @@ function message(cause: unknown): string {
 
 /**
  * The glyph every surface draws. The artwork itself is declared once, in the
- * manifest under `bb.branding.experimental_icons`, and BB serves it hashed and
+ * manifest under `alia.branding.experimental_icons`, and VesnALIA serves it hashed and
  * tinted, so there is exactly one drawing of it to keep in step.
  */
 const ICON_NAME = "orchestrator-mode/hub";
@@ -302,10 +302,10 @@ function OrchestratorToggle() {
  * One section, one scope: **Scope** at the top decides whose values everything
  * below reads and writes. Global is the record every project inherits, and a
  * project stores only the fields it changes — a cleared field inherits again.
- * The section renders the editor itself because BB's settings form has one value
+ * The section renders the editor itself because VesnALIA's settings form has one value
  * per install, and these resolve per project.
  *
- * Worker execution still uses BB's provider/model picker: the model list has to
+ * Worker execution still uses VesnALIA's provider/model picker: the model list has to
  * follow the chosen provider, and a `select` cannot depend on another `select`.
  * That picker resolves provider, model, reasoning level and service tier against
  * the live catalog as one coherent value, the same value `threads.spawn` takes.
@@ -610,12 +610,12 @@ function ScopeSettings() {
         {numberRow(
           "maxNudges",
           "Reminders per thread",
-          "How many times this plugin may prod one thread. One budget covers both gates: doing the work itself, and leaving a worker unjudged. `bb orchestrator-mode status` reports the split. 0 turns reminders off, and violations are still recorded.",
+          "How many times this plugin may prod one thread. One budget covers both gates: doing the work itself, and leaving a worker unjudged. `alia orchestrator-mode status` reports the split. 0 turns reminders off, and violations are still recorded.",
         )}
         {enumRow(
           "childMessageDelivery",
           "Child messages",
-          "When messages from child threads reach an orchestrator. BB's automatic completion notices use its own delivery path.",
+          "When messages from child threads reach an orchestrator. VesnALIA's automatic completion notices use its own delivery path.",
           [
             {
               value: "queued",
@@ -1002,7 +1002,7 @@ type SettingsKey = keyof SettingsViewDto;
 /**
  * One row of the settings list: what the setting does, its control, and the state
  * the control writes from. Labels sit on the left and controls on the right, the
- * way BB's own settings rows read.
+ * way VesnALIA's own settings rows read.
  */
 function SettingRow({
   label,
@@ -1092,7 +1092,7 @@ export default definePluginApp((app) => {
     id: "scope",
     title: "Settings",
     description:
-      "Pick a scope, then edit what it runs with. Global is what every project inherits; a project stores only what it changes. The plugin renders this section itself, since BB's settings form holds one value per install and these resolve per project.",
+      "Pick a scope, then edit what it runs with. Global is what every project inherits; a project stores only what it changes. The plugin renders this section itself, since VesnALIA's settings form holds one value per install and these resolve per project.",
     component: ScopeSettings,
   });
 

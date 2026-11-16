@@ -1,6 +1,6 @@
 import {Button} from './ui/components/ui/button';
 import React,{useEffect,useState} from 'react';
-import {useRpc} from '@get-bb/plugin-sdk/app';
+import {useRpc} from '@vesnalia/plugin-sdk/app';
 import type {accountPoolRpcContract} from './src/rpc.js';
 import type {AccountEgress} from './src/account-egress.js';
 import type {PoolProvider} from './src/contracts.js';

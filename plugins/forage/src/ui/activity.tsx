@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery } from "@vesnalia/plugin-sdk/app";
 import type { ActivityEntryView } from "../research/contract.ts";
 import type { ThreadScope } from "../research/activity.ts";
 import type { CrawlJobView } from "../jobs/model.ts";

@@ -18,7 +18,7 @@ export function kindNameInSettings(kind: string): string {
 
 export function raiseLargestWords(kind: string, over: readonly LargestPart[]): string {
   const flags = (over.length ? over : (["cores", "memory", "disk"] as const)).map((part) => LARGEST_FLAGS[part]).join(" ");
-  return `${RAISE_LARGEST} the kind's largest size in BB Box settings, under Kinds, ${kindNameInSettings(kind)}, Sizes, or run bb box kind set ${kind} ${flags}.`;
+  return `${RAISE_LARGEST} the kind's largest size in VesnALIA Box settings, under Kinds, ${kindNameInSettings(kind)}, Sizes, or run alia box kind set ${kind} ${flags}.`;
 }
 
 export function withoutRaiseLargest(text: string): string {

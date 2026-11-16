@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { ContinuationStatus } from "./continuation-status.js";
 import { decisionsRequestSchema, decisionsSchema, historyRequestSchema, historySchema, labelRequestSchema, labelSchema, pauseSchema, snapshotSchema, versionSchema } from "./nudger-contract.js";

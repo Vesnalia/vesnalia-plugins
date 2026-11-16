@@ -1,10 +1,10 @@
 // Thread Images: finds the images an agent opened, whatever its provider, and serves them to the app.
 import { access } from "node:fs/promises";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract, threadTag, type AgentMessage, type ReadImage } from "./contract";
 import { imageReadOf } from "./image-reads";
 
-// The most events bb returns in one page.
+// The most events VesnALIA returns in one page.
 const PAGE = 100;
 const PREVIEW_TTL_MS = 60 * 60 * 1000;
 const PREVIEW_RENEW_MS = 5 * 60 * 1000;
@@ -48,7 +48,7 @@ function turnOf(row: { scope?: unknown }): string | null {
   return typeof turnId === "string" ? turnId : null;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const scans = new Map<string, Scan>();
   const previews = new Map<string, Preview>();
   const scanning = new Map<string, Promise<boolean>>();
@@ -62,7 +62,7 @@ export default async function plugin(bb: BbPluginApi) {
       scans.set(threadId, scan);
       let changed = false;
       for (;;) {
-        const rows = await bb.sdk.threads.events.list({
+        const rows = await alia.sdk.threads.events.list({
           threadId,
           types: ["item/started", "item/completed"],
           order: "asc",
@@ -106,17 +106,17 @@ export default async function plugin(bb: BbPluginApi) {
     const cached = previews.get(dir);
     if (cached && cached.expiresAtMs - Date.now() > PREVIEW_RENEW_MS) return cached;
     try {
-      const preview = await bb.sdk.files.createPreview({ rootPath: dir, ttlMs: PREVIEW_TTL_MS });
+      const preview = await alia.sdk.files.createPreview({ rootPath: dir, ttlMs: PREVIEW_TTL_MS });
       previews.set(dir, preview);
       return preview;
     } catch (cause) {
-      bb.log.warn(`cannot serve ${dir}: ${String(cause)}`);
+      alia.log.warn(`cannot serve ${dir}: ${String(cause)}`);
       previews.delete(dir);
       return null;
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     thread_images: async ({ threadId }) => {
       await scanThread(threadId);
       const scan = scans.get(threadId) ?? emptyScan();
@@ -137,12 +137,12 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Only threads someone has looked at are followed, so an unopened thread costs nothing.
-  bb.events.on("experimental_thread.events", async ({ thread }) => {
+  alia.events.on("experimental_thread.events", async ({ thread }) => {
     if (!scans.has(thread.id)) return;
-    if (await scanThread(thread.id)) bb.rpc.experimental_invalidate([threadTag(thread.id)]);
+    if (await scanThread(thread.id)) alia.rpc.experimental_invalidate([threadTag(thread.id)]);
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     scans.clear();
     previews.clear();
   });

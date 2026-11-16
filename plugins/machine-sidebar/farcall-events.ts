@@ -4,7 +4,7 @@ import type { FarcallTask } from "./farcall-contract";
 // SDK 0.5.29 ThreadEventRow: item/started + item/completed, data.item.type=toolCall.
 // Real codex-worker events: tests/fixtures/farcall-events.sanitized.json.
 // Claude Code's documented plugin MCP naming: mcp__plugin_<plugin>_<server>__<tool>.
-// BB's Claude adapter splits that into server + tool; direct MCP clients use the server key.
+// VesnALIA's Claude adapter splits that into server + tool; direct MCP clients use the server key.
 // https://code.claude.com/docs/en/mcp#plugin-provided-mcp-servers
 const SERVERS = new Map<string, FarcallTask["provider"]>([
   ["claude_worker", "claude"], ["plugin_claude-worker_claude_worker", "claude"],
@@ -51,7 +51,7 @@ function excerpt(value: string | null | undefined): string | null {
 function known(value: string | null | undefined): string | null {
   return value && value !== "unknown" ? value : null;
 }
-/** Epoch ms from BB's `createdAt` or a worker's ISO `completed_at`; anything else is unavailable. */
+/** Epoch ms from VesnALIA's `createdAt` or a worker's ISO `completed_at`; anything else is unavailable. */
 function time(value: unknown): number | null {
   const ms = typeof value === "number" ? value : typeof value === "string" ? Date.parse(value) : NaN;
   return Number.isFinite(ms) && ms > 0 ? ms : null;
@@ -86,7 +86,7 @@ function taskText(task: z.infer<typeof requestTaskSchema>): string | null {
 
 interface Call { keys: string[]; turnId?: string; tool: "run" | "run_batch" }
 
-/** Incremental replay of BB events; stores display metadata only, in memory. */
+/** Incremental replay of VesnALIA events; stores display metadata only, in memory. */
 export class FarcallProjection {
   private calls = new Map<string, Call>();
   private tasks = new Map<string, FarcallTask>();

@@ -104,7 +104,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!box) return;
     if (method === "take") return update(id, (each) => withView(each, { control: { owner: "human", holder: "this-tab" } }));
     if (method === "handBack") return update(id, (each) => withView(each, { control: { owner: "agent", holder: null } }));
-    if (method === "refresh") return say(box.unreachable ? `${box.view.backendLabel.replace(/^.* on /, "")} still does not answer.` : box.backendGone ? `${box.view.name}'s backend is not in settings, so bb-box cannot check it.` : `Checked ${box.view.name}: it answers.`);
+    if (method === "refresh") return say(box.unreachable ? `${box.view.backendLabel.replace(/^.* on /, "")} still does not answer.` : box.backendGone ? `${box.view.name}'s backend is not in settings, so alia-box cannot check it.` : `Checked ${box.view.name}: it answers.`);
     if (method === "forget") {
       setBoxes((current) => current.filter((each) => each.view.id !== id));
       setReleased((current) => new Map(current).set(id, { name: box.view.name, at: Date.now() }));
@@ -142,7 +142,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           started: { askedAt, by: { kind: "you" }, readyAt: at },
           load: { ...each.load, cpu: each.load.cpu || 9, memory: each.load.memory || 36 },
           processes: each.processes.length ? each.processes : [
-            { pid: 1402, name: "bb-daemon", cpu: 1.2, memoryMiB: 98 },
+            { pid: 1402, name: "alia-daemon", cpu: 1.2, memoryMiB: 98 },
             { pid: 980, name: "dockerd", cpu: 0.6, memoryMiB: 84 },
             { pid: 612, name: "sshd", cpu: 0.1, memoryMiB: 9 },
             { pid: 1, name: "systemd", cpu: 0.1, memoryMiB: 14 },

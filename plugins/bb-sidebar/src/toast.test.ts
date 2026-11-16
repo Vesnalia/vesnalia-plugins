@@ -31,7 +31,7 @@ it("keeps every production Sonner path inside the shared styling wrapper", () =>
 it.each(["success", "error", "message"] as const)("marks %s toasts, including calls without options", (method) => {
   sonner[method].mockReturnValue("toast-id");
   expect(toast[method]("Confirmation")).toBe("toast-id");
-  expect(sonner[method]).toHaveBeenCalledWith("Confirmation", { className: "bb-sidebar-toast" });
+  expect(sonner[method]).toHaveBeenCalledWith("Confirmation", { className: "alia-sidebar-toast" });
 });
 
 it.each(["success", "error", "message"] as const)("preserves %s content, timing, callbacks and classes", (method) => {
@@ -47,7 +47,7 @@ it.each(["success", "error", "message"] as const)("preserves %s content, timing,
   toast[method]("Thread settled", options);
   expect(sonner[method]).toHaveBeenCalledWith("Thread settled", {
     ...options,
-    className: "bb-sidebar-toast extra",
+    className: "alia-sidebar-toast extra",
   });
   expect(sonner[method].mock.calls[0][1].action).toBe(options.action);
   expect(options.className).toBe("extra");

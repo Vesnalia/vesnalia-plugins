@@ -1,11 +1,11 @@
 # Local bench provider (example)
 
-A BB plugin (id `bench-provider-local`) that implements bb-autoresearch's
+A VesnALIA plugin (id `bench-provider-local`) that implements alia-autoresearch's
 **bench provider contract** against local temp directories and child
 processes. Each "machine" it lends is a directory on the machine running the
-BB server; each exec is a local process.
+VesnALIA server; each exec is a local process.
 
-It exists for bb-autoresearch's tests and live smoke tests, and as a worked
+It exists for alia-autoresearch's tests and live smoke tests, and as a worked
 example of the contract. **It is not a bench.** Nothing is isolated (processes
 run as your user, absolute paths reach your whole file system), measurements
 share the CPU with everything else on the machine, and nothing costs anything.
@@ -15,7 +15,7 @@ share the CPU with everything else on the machine, and nothing costs anything.
 From the repository root:
 
 ```sh
-bb plugin install ./examples/bench-provider-local
+alia plugin install ./examples/bench-provider-local
 ```
 
 Then point a study at it:
@@ -30,7 +30,7 @@ lifetime_minutes = 30
 
 ## How it works
 
-- Machines live under `<tmpdir>/bb-bench-provider-local/machines/<hostId>/`;
+- Machines live under `<tmpdir>/alia-bench-provider-local/machines/<hostId>/`;
   a machine's home is `home/` there. Remote paths are relative to that home
   unless absolute.
 - The registry (host id, key, labels, state, creation and expiry times,
@@ -49,7 +49,7 @@ lifetime_minutes = 30
 - A machine past its expiry (creation time plus `lifetimeSeconds`, capped at
   `maxLifetimeSeconds`) becomes `gone`: its processes are killed and its
   directory removed. Expiry is checked on every call and by a sweep timer.
-- Only calls from the plugin `bb-autoresearch` are accepted.
+- Only calls from the plugin `alia-autoresearch` are accepted.
 - Unloading the plugin stops its timers and kills running execs; it does not
   destroy machines.
 
@@ -60,9 +60,9 @@ from `provider.ts` directly:
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `root` | `<tmpdir>/bb-bench-provider-local` | Where machines and `state.json` live. |
+| `root` | `<tmpdir>/alia-bench-provider-local` | Where machines and `state.json` live. |
 | `now` | `Date.now` | Clock (ms) for expiry and provisioning. |
-| `allowedCaller` | `"bb-autoresearch"` | The plugin id allowed to call. |
+| `allowedCaller` | `"alia-autoresearch"` | The plugin id allowed to call. |
 | `maxHosts` | `4` | Live (not gone) machines at once; more is `[capacity]`. |
 | `maxLifetimeSeconds` | `7200` | Lifetime cap. |
 | `cores` | `{ min: 1, max: <CPU count> }` | Accepted core counts; outside is `[invalid]`. Cores are a pretend quota (reported by `info`, not enforced). |
@@ -77,7 +77,7 @@ and `sweep`.
 
 ## Writing your own provider
 
-A BB plugin can't import files outside its own directory, so `contract.ts` here
+A VesnALIA plugin can't import files outside its own directory, so `contract.ts` here
 is a copy of the repository's `src/bench-provider/contract.ts` (a test keeps the
 two identical). Any provider does the same: copy the schemas (they are plain
-zod) and register them with `bb.rpc.register(benchProviderContract, handlers)`.
+zod) and register them with `alia.rpc.register(benchProviderContract, handlers)`.

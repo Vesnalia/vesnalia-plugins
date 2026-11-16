@@ -1,17 +1,17 @@
-// bb-plugin-ultra-sidebar — backend entry.
+// alia-plugin-ultra-sidebar — backend entry.
 //
 // Owns the sidebar's own state: the hand-picked order of projects and threads,
-// and each thread's triage status and snooze. bb's own projects and threads are
+// and each thread's triage status and snooze. VesnALIA's own projects and threads are
 // never mutated for it, so uninstalling this plugin loses that state and
 // nothing else.
 //
 // Three surfaces share one store: the replaced sidebar (app.tsx, over RPC),
-// the `bb sidebar` CLI, and the skill in skills/sidebar/SKILL.md. Every
+// the `alia sidebar` CLI, and the skill in skills/sidebar/SKILL.md. Every
 // write goes through Store.withWrite, which bumps a revision and publishes a
 // realtime signal, so a change from any surface reaches every open window.
 import { spawn } from "node:child_process";
 import { stat } from "node:fs/promises";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createStore, MIGRATIONS, type Store } from "./lib/store.server";
 import { placeItem, toPlacement } from "./lib/order";
@@ -154,7 +154,7 @@ export const rpcContract = defineRpcContract({
     output: z.object({ entries: z.array(locationSchema) }),
   },
   /**
-   * Reveal an environment's folder in the file manager of the machine bb runs
+   * Reveal an environment's folder in the file manager of the machine VesnALIA runs
    * on. A checkout on another host is reported rather than opened.
    */
   "environments.openFolder": {
@@ -226,7 +226,7 @@ export const rpcContract = defineRpcContract({
   },
   /**
    * The model a thread runs on is deliberately not in the sidebar payload.
-   * It only exists behind bb.sdk.threads.defaultExecutionOptions, which is
+   * It only exists behind alia.sdk.threads.defaultExecutionOptions, which is
    * server-side. Batched so one sidebar paint is one request.
    */
   "threads.execution": {
@@ -234,7 +234,7 @@ export const rpcContract = defineRpcContract({
     output: z.object({ entries: z.array(executionSchema) }),
   },
   /**
-   * Each project's artwork: a BB glyph its package.json names, rendered to
+   * Each project's artwork: a VesnALIA glyph its package.json names, rendered to
    * SVG here, or "image" when an icon or logo file was found — the bytes
    * themselves come from the /project-icon HTTP route so the browser can
    * cache them. Every project asked about gets an entry.
@@ -253,16 +253,16 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const scheduledTasks = createScheduledTasksReader(bb.sdk.plugins);
-  const workflowAgents = createWorkflowAgentsReader(bb.sdk.plugins);
-  const scheduledTaskActions = createScheduledTasksActions(bb.sdk.plugins, scheduledTasks.invalidate);
-  const readThreadDiffs = createThreadDiffReader(bb.sdk.environments);
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default async function plugin(alia: AliaPluginApi) {
+  const scheduledTasks = createScheduledTasksReader(alia.sdk.plugins);
+  const workflowAgents = createWorkflowAgentsReader(alia.sdk.plugins);
+  const scheduledTaskActions = createScheduledTasksActions(alia.sdk.plugins, scheduledTasks.invalidate);
+  const readThreadDiffs = createThreadDiffReader(alia.sdk.environments);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
 
   const store: Store = createStore(db, (revision) => {
-    bb.realtime.publish(SIDEBAR_CHANGED, { revision });
+    alia.realtime.publish(SIDEBAR_CHANGED, { revision });
   });
 
   // ---- last prompted ----------------------------------------------------
@@ -277,10 +277,10 @@ export default async function plugin(bb: BbPluginApi) {
   // start, a queued message firing, a retry after a failure all land here too.
   // Only the person's own prompts move a row, so the turn that caused this is
   // read back and its initiator checked.
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     store.resumeBacklog(thread.id);
     try {
-      const [turn] = await bb.sdk.threads.events.list({
+      const [turn] = await alia.sdk.threads.events.list({
         threadId: thread.id,
         limit: "1",
         order: "desc",
@@ -292,13 +292,13 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (cause) {
       // A row that keeps its old position is a far smaller problem than a
       // handler that throws on every thread that starts working.
-      bb.log.warn(`Could not record the prompt for ${thread.id}: ${cause}`);
+      alia.log.warn(`Could not record the prompt for ${thread.id}: ${cause}`);
     }
   });
 
   // Clear the parked status regardless of who started the work. This is
   // separate from prompt recency, which still belongs to the person.
-  bb.events.on("message.queued", ({ entry }) => {
+  alia.events.on("message.queued", ({ entry }) => {
     if (entry.initiator === "user") store.resumeBacklog(entry.threadId);
   });
 
@@ -308,14 +308,14 @@ export default async function plugin(bb: BbPluginApi) {
   const artworkCache = new ProjectIconCache<ProjectArtwork>((projectId, signal) =>
     findProjectArtwork(
       {
-        listFiles: (args) => bb.sdk.projects.files(args),
-        readFile: (args) => bb.sdk.projects.fileContent(args),
+        listFiles: (args) => alia.sdk.projects.files(args),
+        readFile: (args) => alia.sdk.projects.fileContent(args),
       },
       projectId,
       signal,
     ),
   );
-  bb.onDispose(() => artworkCache.dispose());
+  alia.onDispose(() => artworkCache.dispose());
 
   async function projectArtworkEntry(projectId: string) {
     try {
@@ -325,16 +325,16 @@ export default async function plugin(bb: BbPluginApi) {
         ? { projectId, kind: "glyph" as const, svg: artwork.svg }
         : { projectId, kind: "image" as const };
     } catch (error) {
-      // A project with no checkout on this machine, or one bb cannot read,
+      // A project with no checkout on this machine, or one VesnALIA cannot read,
       // simply has no artwork. The row keeps its folder icon.
-      bb.log.debug(
+      alia.log.debug(
         `No artwork for project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return { projectId, kind: "missing" as const };
     }
   }
 
-  bb.http.route("GET", "/project-icon", async (context) => {
+  alia.http.route("GET", "/project-icon", async (context) => {
     const projectId = context.req.query("projectId")?.trim();
     if (!projectId) return new Response(null, { status: 400 });
     try {
@@ -354,7 +354,7 @@ export default async function plugin(bb: BbPluginApi) {
         },
       });
     } catch (error) {
-      bb.log.debug(
+      alia.log.debug(
         `Could not serve an icon for project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return new Response(null, {
@@ -364,15 +364,15 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     "projects.artwork": async ({ projectIds }) => ({
       entries: await Promise.all([...new Set(projectIds)].map(projectArtworkEntry)),
     }),
     "threads.plan": async ({ threadId }) => ({
-      plan: (await bb.sdk.threads.timeline({ threadId, segmentLimit: "1", summaryOnly: "true" })).activePromptMode,
+      plan: (await alia.sdk.threads.timeline({ threadId, segmentLimit: "1", summaryOnly: "true" })).activePromptMode,
     }),
     "threads.goal": async ({ threadId }) => ({
-      goal: (await bb.sdk.threads.timeline({ threadId, segmentLimit: "1", summaryOnly: "true" })).goal,
+      goal: (await alia.sdk.threads.timeline({ threadId, segmentLimit: "1", summaryOnly: "true" })).goal,
     }),
     "scheduledTasks.list": () => scheduledTasks.list(),
     "threads.workflowAgents": ({ threadIds }) => workflowAgents(threadIds),
@@ -380,23 +380,23 @@ export default async function plugin(bb: BbPluginApi) {
     "scheduledTasks.setEnabled": (input) => scheduledTaskActions.setEnabled(input),
     "scheduledTasks.delete": (ref) => scheduledTaskActions.remove(ref),
     "threads.title": async ({ threadId }) =>
-      (await bb.sdk.threads.get({ threadId })).title,
+      (await alia.sdk.threads.get({ threadId })).title,
     "threads.restoreTitle": async ({ threadId, expected, title }) => {
-      const current = await bb.sdk.threads.get({ threadId });
+      const current = await alia.sdk.threads.get({ threadId });
       if (current.title !== expected)
         throw new Error(
           "The thread was renamed elsewhere. Undo was not applied.",
         );
-      await bb.sdk.threads.update({ threadId, title });
+      await alia.sdk.threads.update({ threadId, title });
       return null;
     },
     "threads.handoffOptions": async ({ threadId, providerId }) => {
-      const source = await bb.sdk.threads.get({ threadId });
+      const source = await alia.sdk.threads.get({ threadId });
       const routing = source.environmentId ? { environmentId: source.environmentId } : { environmentId: undefined };
       const selected = providerId ?? source.providerId;
       const [providers, catalog] = await Promise.all([
-        bb.sdk.providers.list(routing),
-        bb.sdk.providers.models({ ...routing, providerId: selected }),
+        alia.sdk.providers.list(routing),
+        alia.sdk.providers.models({ ...routing, providerId: selected }),
       ]);
       return {
         providerId: selected,
@@ -406,17 +406,17 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     "threads.handoff": async ({ threadId, target }) => {
-      return await bb.sdk.plugins.callRpc({
+      return await alia.sdk.plugins.callRpc({
         pluginId: "handoff", method: "handoff", input: { threadId, ...(target ? { target } : {}) },
         outputSchema: z.object({ threadId: z.string() }),
       });
     },
     "threads.retry": async ({ threadId }) => ({
-      delivery: (await bb.sdk.threads.retry({ threadId })).delivery,
+      delivery: (await alia.sdk.threads.retry({ threadId })).delivery,
     }),
     "sidebar.state": () => store.readState(),
     "sidebar.edit": ({ before, after }) => store.edit(before, after),
-    "threads.queueSummary": async () => ({ entries: summarizeQueue(await bb.sdk.threads.queue.list()) }),
+    "threads.queueSummary": async () => ({ entries: summarizeQueue(await alia.sdk.threads.queue.list()) }),
     "threads.execution": async ({ threadIds }) => ({
       entries: await readExecutionOptions(threadIds),
     }),
@@ -443,7 +443,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (cached !== undefined) return cached;
     let name: string | null = null;
     try {
-      name = (await bb.sdk.hosts.get({ hostId })).name;
+      name = (await alia.sdk.hosts.get({ hostId })).name;
     } catch {
       // An unenrolled host still has a folder; it just has no name to show.
     }
@@ -458,7 +458,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (cached !== undefined) return cached;
     let value: z.infer<typeof locationSchema> | null = null;
     try {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       if (environment.path !== null) {
         value = {
           environmentId,
@@ -502,7 +502,7 @@ export default async function plugin(bb: BbPluginApi) {
       throw new Error("This thread has no folder yet");
     }
     // Existence here is the test for "this machine", not the host id: a
-    // path that resolves locally can be opened whatever bb calls the host.
+    // path that resolves locally can be opened whatever VesnALIA calls the host.
     const isLocalDirectory = await stat(location.path).then(
       (info) => info.isDirectory(),
       () => false,
@@ -524,8 +524,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const readPullRequests = createPullRequestReader({
-    environments: bb.sdk.environments,
-    threads: bb.sdk.threads,
+    environments: alia.sdk.environments,
+    threads: alia.sdk.threads,
     bindings: createPullRequestBindings(db),
   });
 
@@ -560,7 +560,7 @@ export default async function plugin(bb: BbPluginApi) {
           serviceTier: null,
         };
         try {
-          const options = await bb.sdk.threads.defaultExecutionOptions({
+          const options = await alia.sdk.threads.defaultExecutionOptions({
             threadId,
           });
           if (options !== null) {
@@ -584,24 +584,24 @@ export default async function plugin(bb: BbPluginApi) {
 
   // A deleted thread's position is dead weight, and a recycled id would
   // inherit it. Archived threads keep theirs — they come back.
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     executionCache.delete(thread.id);
     try {
       store.clearOrder([{ kind: "thread", refId: thread.id }]);
     } catch (cause) {
-      bb.log.warn(`Could not clear the order row for a deleted thread: ${cause}`);
+      alia.log.warn(`Could not clear the order row for a deleted thread: ${cause}`);
     }
   });
 
-  // ---- bb sidebar --------------------------------------------------------
+  // ---- VesnALIA sidebar --------------------------------------------------------
 
   const usage = [
     "Usage:",
-    "  bb sidebar list [--project <id>] [--json]",
-    "  bb sidebar status (in-progress|backlog|done|canceled) (--thread <id>)... [--json]",
-    "  bb sidebar snooze (--thread <id>) (--hours <n> | --until <epoch-ms> | --wake) [--json]",
-    "  bb sidebar order (--project <id> | --thread <id>)... [--json]",
-    "  bb sidebar unorder (--project <id> | --thread <id>)... [--json]",
+    "  VesnALIA sidebar list [--project <id>] [--json]",
+    "  VesnALIA sidebar status (in-progress|backlog|done|canceled) (--thread <id>)... [--json]",
+    "  VesnALIA sidebar snooze (--thread <id>) (--hours <n> | --until <epoch-ms> | --wake) [--json]",
+    "  VesnALIA sidebar order (--project <id> | --thread <id>)... [--json]",
+    "  VesnALIA sidebar unorder (--project <id> | --thread <id>)... [--json]",
     "",
     "`order` puts the items in the order given, ahead of everything the",
     "sidebar has not been told about; `unorder` hands them back to recency.",
@@ -638,37 +638,37 @@ export default async function plugin(bb: BbPluginApi) {
     return value === undefined || value.startsWith("--") ? null : value;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "sidebar",
     summary: "Read and file the threads the Ultra Sidebar shows",
     commands: [
       {
         name: "list",
         summary: "List threads with their status, order and snooze",
-        usage: "bb sidebar list [--project <id>] [--json]",
+        usage: "alia sidebar list [--project <id>] [--json]",
       },
       {
         name: "status",
         summary:
           "File threads in Backlog, Done or Canceled, or back In progress",
         usage:
-          "bb sidebar status (in-progress|backlog|done|canceled) (--thread <id>)...",
+          "alia sidebar status (in-progress|backlog|done|canceled) (--thread <id>)...",
       },
       {
         name: "snooze",
         summary: "Park a thread in the Snoozed dock until a time",
         usage:
-          "bb sidebar snooze --thread <id> (--hours <n> | --until <epoch-ms> | --wake)",
+          "alia sidebar snooze --thread <id> (--hours <n> | --until <epoch-ms> | --wake)",
       },
       {
         name: "order",
         summary: "Put projects or threads in a hand-picked order",
-        usage: "bb sidebar order (--project <id> | --thread <id>)...",
+        usage: "alia sidebar order (--project <id> | --thread <id>)...",
       },
       {
         name: "unorder",
         summary: "Drop a hand-picked order, back to newest first",
-        usage: "bb sidebar unorder (--project <id> | --thread <id>)...",
+        usage: "alia sidebar unorder (--project <id> | --thread <id>)...",
       },
     ],
     async run(argv) {
@@ -700,7 +700,7 @@ export default async function plugin(bb: BbPluginApi) {
             );
             const wantedProject = flagValue(args, "--project");
             const threads = (
-              await bb.sdk.threads.list({ archived: false })
+              await alia.sdk.threads.list({ archived: false })
             )
               .filter(
                 (thread) =>
@@ -848,5 +848,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("ultra sidebar ready");
+  alia.log.info("ultra sidebar ready");
 }

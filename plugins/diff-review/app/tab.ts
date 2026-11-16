@@ -1,9 +1,9 @@
 /**
- * The Review tab as bb addresses it: an action tab in each thread's side panel. The header button,
- * the palette commands and the Reviews page open it through bb's panel controller with this
+ * The Review tab as VesnALIA addresses it: an action tab in each thread's side panel. The header button,
+ * the palette commands and the Reviews page open it through VesnALIA's panel controller with this
  * reference, and `params: { target }` to start on a view.
  */
-import type { ExperimentalPanelController, ExperimentalTabReference } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalPanelController, ExperimentalTabReference } from "@vesnalia/plugin-sdk/app";
 
 import type { TargetRequest } from "../shared/types";
 

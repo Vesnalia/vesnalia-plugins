@@ -6,8 +6,8 @@
 // "the control the user pressed sent exactly this".
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import { MAX_BOOKMARKS, type Bookmark, type FileEntry, type FileManagerContract } from "../../contract";
 import { bookmarkMessages, findBookmark, isBookmarked } from "../../lib/bookmarks";

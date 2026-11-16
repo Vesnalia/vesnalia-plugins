@@ -45,7 +45,7 @@ export function makeSummary(range: string) {
     totalActiveMs: workingMs, totalComputeMs: agentRuntimeMs, turnCount,
     days,
     projects: [
-      { name: "bb-plugin-wakatime", workingMs: Math.round(workingMs * 0.34), activeMs: 0 },
+      { name: "alia-plugin-wakatime", workingMs: Math.round(workingMs * 0.34), activeMs: 0 },
       { name: "sage", workingMs: Math.round(workingMs * 0.26), activeMs: 0 },
       { name: "creator-discovery", workingMs: Math.round(workingMs * 0.18), activeMs: 0 },
       { name: "linux-buddy", workingMs: Math.round(workingMs * 0.13), activeMs: 0 },

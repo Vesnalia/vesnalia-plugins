@@ -42,9 +42,9 @@ describe("createdPullRequestUrls", () => {
   it("ignores commands that only mention gh pr create", () => {
     expect(
       createdPullRequestUrls([
-        command('bb thread search "gh pr create" --json', "https://github.com/o/r/pull/1"),
+        command('alia thread search "gh pr create" --json', "https://github.com/o/r/pull/1"),
         command(
-          "bb thread log thr_a --json | python3 -c \"\nif 'gh pr create' in s: print(s)\"",
+          "alia thread log thr_a --json | python3 -c \"\nif 'gh pr create' in s: print(s)\"",
           "https://github.com/o/r/pull/2",
         ),
         command("grep -rn 'opened with `gh pr create`' CHANGELOG.md", "https://github.com/o/r/pull/3"),

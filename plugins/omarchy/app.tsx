@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { AnimationStyle, SyncStatus } from "./contract";
 import type { rpcContract } from "./server";
 
@@ -7,7 +7,7 @@ const ANIMATIONS: AnimationStyle[] = ["off", "subtle", "smooth", "cinematic"];
 
 type ClientWindow = Window & {
   ReactNativeWebView?: unknown;
-  bb?: { native?: { __installed?: unknown } };
+  alia?: { native?: { __installed?: unknown } };
 };
 
 type ClientNavigator = Navigator & {
@@ -32,7 +32,7 @@ function isInstalledPwa(): boolean {
 
 function isIndependentClient(): boolean {
   const client = window as ClientWindow;
-  if (client.ReactNativeWebView !== undefined || client.bb?.native?.__installed === true) return true;
+  if (client.ReactNativeWebView !== undefined || client.alia?.native?.__installed === true) return true;
 
   // Display mode is the authoritative PWA signal and continues to work when
   // the browser reduces or replaces mobile user-agent fields.
@@ -210,7 +210,7 @@ function OmarchyPage() {
           </div>
         </div>
         {error ? <p role="alert" className="mt-3 text-sm text-destructive">{error}</p> : null}
-        <p className="mt-4 text-center text-xs text-muted-foreground">BB palette · code theme · ANSI · favicon · reduced-motion aware</p>
+        <p className="mt-4 text-center text-xs text-muted-foreground">VesnALIA palette · code theme · ANSI · favicon · reduced-motion aware</p>
       </div>
     </div>
   );
@@ -220,16 +220,16 @@ export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "omarchy-theme-overlay",
     async mount(context) {
-      // PWAs, phones, and tablets keep BB's own appearance settings. Remove a
+      // PWAs, phones, and tablets keep VesnALIA's own appearance settings. Remove a
       // stale overlay left by an older plugin generation before returning.
       if (isIndependentClient()) {
-        document.head.querySelectorAll("[data-bb-omarchy-theme]").forEach((node) => node.remove());
+        document.head.querySelectorAll("[data-alia-omarchy-theme]").forEach((node) => node.remove());
         return;
       }
 
       const style = document.createElement("style");
-      style.id = `bb-omarchy-theme-${context.generation}`;
-      style.dataset.bbOmarchyTheme = "client-only";
+      style.id = `alia-omarchy-theme-${context.generation}`;
+      style.dataset.aliaOmarchyTheme = "client-only";
       document.head.appendChild(style);
       let disposed = false;
       let timer: ReturnType<typeof setTimeout> | null = null;
@@ -251,9 +251,9 @@ export default definePluginApp((app) => {
               if (style.textContent !== value.css) {
                 style.textContent = value.css;
               }
-              // Keep the client overlay after BB's own palette element so an
+              // Keep the client overlay after VesnALIA's own palette element so an
               // ordinary Appearance change cannot silently outrank Omarchy.
-              const palette = document.getElementById("bb-app-theme");
+              const palette = document.getElementById("alia-app-theme");
               if (palette && (style.compareDocumentPosition(palette) & Node.DOCUMENT_POSITION_FOLLOWING)) {
                 palette.after(style);
               }
@@ -262,7 +262,7 @@ export default definePluginApp((app) => {
             }
           }
         } catch (cause) {
-          if (!context.signal.aborted) console.warn("[bb-plugin-omarchy] overlay refresh failed", cause);
+          if (!context.signal.aborted) console.warn("[alia-plugin-omarchy] overlay refresh failed", cause);
         } finally {
           if (!disposed && !context.signal.aborted) {
             timer = setTimeout(refresh, document.visibilityState === "visible" ? 750 : 5000);

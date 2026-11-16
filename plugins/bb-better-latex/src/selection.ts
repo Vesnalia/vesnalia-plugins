@@ -1,16 +1,16 @@
 import { KATEX_SHADOW_CSS } from "./katex-shadow-css";
 
 const KATEX_SELECTOR = ".katex";
-const PLUGIN_MATH_SELECTOR = ".bb-latex";
+const PLUGIN_MATH_SELECTOR = ".alia-latex";
 const PREVIEW_SELECTOR = "[data-markdown-preview]";
-const DISPLAY_SELECTOR = ".katex-display, .bb-latex-display";
-const SOURCE_ATTRIBUTE = "data-bb-latex-source";
-const ENHANCED_CLASS = "bb-latex-selection-enhanced";
-const PROXY_CLASS = "bb-latex-selection-proxy";
-const SOURCE_CLASS = "bb-latex-selection-source";
-const SOURCE_SLOT = "bb-better-latex-source";
-const PROXY_OWNER_ATTRIBUTE = "data-bb-latex-selection-owner";
-const SHADOW_VISUAL_ATTRIBUTE = "data-bb-latex-selection-visual";
+const DISPLAY_SELECTOR = ".katex-display, .alia-latex-display";
+const SOURCE_ATTRIBUTE = "data-alia-latex-source";
+const ENHANCED_CLASS = "alia-latex-selection-enhanced";
+const PROXY_CLASS = "alia-latex-selection-proxy";
+const SOURCE_CLASS = "alia-latex-selection-source";
+const SOURCE_SLOT = "alia-better-latex-source";
+const PROXY_OWNER_ATTRIBUTE = "data-alia-latex-selection-owner";
+const SHADOW_VISUAL_ATTRIBUTE = "data-alia-latex-selection-visual";
 
 const SHADOW_BASE_CSS = `
 :host {
@@ -94,7 +94,7 @@ export interface MathSelectionController {
 const stylesByDocument = new WeakMap<Document, ShadowStyles>();
 
 /**
- * Keep BB's native Selection path while making rendered KaTeX selectable as
+ * Keep VesnALIA's native Selection path while making rendered KaTeX selectable as
  * canonical TeX. Only plugin-owned proxy elements receive shadow roots, so a
  * disabled or reloaded plugin can restore the original KaTeX DOM completely.
  */
@@ -259,7 +259,7 @@ function isEligibleHost(host: HTMLElement): boolean {
   return (
     host.matches(KATEX_SELECTOR) &&
     host.closest(PREVIEW_SELECTOR) !== null &&
-    host.closest(".bb-latex-error") === null &&
+    host.closest(".alia-latex-error") === null &&
     host.querySelector(".katex-error") === null &&
     texSource(host) !== null
   );

@@ -3,7 +3,7 @@ import {
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
   experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { RowContextMenu } from "@/components/inbox/row-context-menu";
@@ -18,7 +18,7 @@ import { resolveSnoozePresets } from "@/lib/lifecycle";
  * question: whether the user or the agent can act next.
  *
  * The row is a positioned container with a full-bleed anchor UNDER the
- * controls, the way bb's own thread row does it: a `<button>` inside an `<a>`
+ * controls, the way VesnALIA's own thread row does it: a `<button>` inside an `<a>`
  * is invalid interactive nesting and breaks keyboard behaviour.
  */
 export function ThreadCard({
@@ -37,7 +37,7 @@ export function ThreadCard({
   thread: PluginSidebarThread;
   provider?: ProviderGlyphInfo;
   projectName: string | null;
-  /** bb's branch, or GitButler's virtual-branch summary for its workspace. */
+  /** VesnALIA's branch, or GitButler's virtual-branch summary for its workspace. */
   branchName: string | null;
   isActive: boolean;
   /** False while the thread is working or blocked on the user. */
@@ -72,7 +72,7 @@ export function ThreadCard({
               anchor: the shortcut-target contract below and modifier-click
               split-open both depend on it. A button breaks each. */}
           <a
-            // Both attributes, or bb's nine thread shortcuts stop finding rows.
+            // Both attributes, or VesnALIA's nine thread shortcuts stop finding rows.
             data-sidebar-thread-shortcut-target=""
             data-sidebar-thread-id={thread.id}
             href="#"

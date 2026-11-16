@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   ExperimentalHostClient,
   PluginCliContext,
   PluginCliResult,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { ARTIFACT_SCHEMA_VERSION } from "./artifacts.js";
 import {
   RUNNER_ARGUMENT,
@@ -194,7 +194,7 @@ function status(job: Job) {
     terminal: {
       id: job.terminalId,
       state: job.terminalState,
-      bbStatus: job.lastBbStatus,
+      aliaStatus: job.lastAliaStatus,
       exitCode: job.exitCode,
       closeReason: job.closeReason,
       lastError: job.lastObservationError,
@@ -268,7 +268,7 @@ function skippedText(skipped: SkippedJob[]): string {
 }
 
 async function resolveScope(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   parsed: Parsed,
   ctx: PluginCliContext,
 ): Promise<{ scope: Scope; hostId: string; ownerThreadId: string }> {
@@ -298,7 +298,7 @@ async function resolveScope(
   }
   if (environmentFlag !== undefined) {
     const environmentId = safeText(environmentFlag, "--environment");
-    const environment = await bb.sdk.environments.get({ environmentId, signal: ctx.signal });
+    const environment = await alia.sdk.environments.get({ environmentId, signal: ctx.signal });
     return {
       scope: { kind: "environment", environmentId },
       hostId: environment.hostId,
@@ -311,9 +311,9 @@ async function resolveScope(
   safeText(threadId, "--thread");
   const ownerThreadId = explicitOwner ?? ctx.threadId ?? threadId;
   safeText(ownerThreadId, "notification owner");
-  const thread = await bb.sdk.threads.get({ threadId, signal: ctx.signal });
+  const thread = await alia.sdk.threads.get({ threadId, signal: ctx.signal });
   if (!thread.environmentId) throw new CliError(`thread ${threadId} has no environment`);
-  const environment = await bb.sdk.environments.get({
+  const environment = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
     signal: ctx.signal,
   });
@@ -366,7 +366,7 @@ function prunePathError(job: Job): string | null {
 
 export class TerminalJobCli {
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: JobStore,
     private readonly wake: () => void,
     private readonly runnerHost: RunnerClient,
@@ -406,7 +406,7 @@ export class TerminalJobCli {
     if (parsed.positionals.length > 0) throw new CliError(`unexpected argument: ${parsed.positionals[0]}`);
     const title = safeText(required(parsed.options, "--title"), "--title");
     const artifactRoot = absolutePath(required(parsed.options, "--artifact-root"), "--artifact-root");
-    const resolved = await resolveScope(this.bb, parsed, ctx);
+    const resolved = await resolveScope(this.alia, parsed, ctx);
     const mode = deliveryMode(parsed.options.get("--delivery"));
     let readiness: RunnerReadiness;
     try {
@@ -442,9 +442,9 @@ export class TerminalJobCli {
       terminalState: "preparing",
       outcomeState: "unchecked",
     });
-    let terminal: Awaited<ReturnType<BbPluginApi["sdk"]["terminals"]["create"]>>;
+    let terminal: Awaited<ReturnType<AliaPluginApi["sdk"]["terminals"]["create"]>>;
     try {
-      terminal = await this.bb.sdk.terminals.create({
+      terminal = await this.alia.sdk.terminals.create({
         cols: 120,
         rows: 30,
         scope: terminalScope(resolved.scope),
@@ -476,7 +476,7 @@ export class TerminalJobCli {
     job = this.store.update(jobId, {
       terminalId: terminal.id,
       terminalState: terminal.status === "exited" ? "exited" : "observing",
-      lastBbStatus: terminal.status,
+      lastAliaStatus: terminal.status,
       exitCode: terminal.status === "exited" ? terminal.exitCode : null,
       closeReason: terminal.status === "exited" ? terminal.closeReason : null,
       observedAt,
@@ -492,7 +492,7 @@ export class TerminalJobCli {
     const terminalId = safeText(parsed.positionals[0]!, "TERMINAL_ID");
     const ownerThreadId = safeText(required(parsed.options, "--notify-thread"), "--notify-thread");
     const logPath = absolutePath(required(parsed.options, "--log"), "--log");
-    const terminal = await this.bb.sdk.terminals.get({ terminalId, signal: ctx.signal });
+    const terminal = await this.alia.sdk.terminals.get({ terminalId, signal: ctx.signal });
     let scope: Scope;
     if (terminal.threadId) scope = { kind: "thread", threadId: terminal.threadId };
     else if (terminal.environmentId) scope = { kind: "environment", environmentId: terminal.environmentId };
@@ -515,7 +515,7 @@ export class TerminalJobCli {
       outcomePath: null,
       terminalId,
       terminalState: terminal.status === "exited" ? "exited" : "observing",
-      lastBbStatus: terminal.status,
+      lastAliaStatus: terminal.status,
       outcomeState: terminal.status === "exited" ? "not-applicable" : "unchecked",
     });
     if (terminal.status === "exited") {
@@ -586,7 +586,7 @@ export class TerminalJobCli {
       try {
         if (job.source === "run") {
           try {
-            await this.bb.sdk.files.remove({
+            await this.alia.sdk.files.remove({
               hostId: job.hostId,
               rootPath: job.artifactRoot,
               path: job.jobDirectory!,
@@ -638,7 +638,7 @@ export class TerminalJobCli {
   }
 
   private help(): string {
-    return `Usage:\n  bb terminal-job run --title TITLE [scope] --artifact-root ABSOLUTE_PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]\n  bb terminal-job watch TERMINAL_ID --notify-thread THREAD --log ABSOLUTE_PATH [--delivery queue|steer] [--json]\n  bb terminal-job show JOB_ID [--json]\n  bb terminal-job list [--limit N] [--json]\n  bb terminal-job prune --older-than-days N [--limit N] [--delete] [--json]\n  bb terminal-job retry-notification JOB_ID [--json]\n`;
+    return `Usage:\n  VesnALIA terminal-job run --title TITLE [scope] --artifact-root ABSOLUTE_PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]\n  VesnALIA terminal-job watch TERMINAL_ID --notify-thread THREAD --log ABSOLUTE_PATH [--delivery queue|steer] [--json]\n  VesnALIA terminal-job show JOB_ID [--json]\n  VesnALIA terminal-job list [--limit N] [--json]\n  VesnALIA terminal-job prune --older-than-days N [--limit N] [--delete] [--json]\n  VesnALIA terminal-job retry-notification JOB_ID [--json]\n`;
   }
 }
 

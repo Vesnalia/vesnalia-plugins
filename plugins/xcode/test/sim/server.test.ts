@@ -16,19 +16,19 @@ import { MIGRATIONS, prepareConnection } from "../../src/sim/store.js";
  * CLI registration — the SDK allows one of each per plugin and `server.ts`
  * owns all three. The fake host already provides them, so this just adapts.
  */
-function simulatorHost(bb: unknown): SimulatorHost {
-  const api = bb as {
+function simulatorHost(alia: unknown): SimulatorHost {
+  const api = alia as {
     storage: { database(): unknown };
     settings: { define(d: Record<string, unknown>): SimulatorHost["settings"] };
   };
   return {
     db: api.storage.database(),
     settings: api.settings.define(SIM_SETTINGS as never),
-    // `server.ts` hangs these verbs off `bb xcode sim`; the harness only needs
+    // `server.ts` hangs these verbs off `alia xcode sim`; the harness only needs
     // them reachable, so it registers them as their own command and the tests
     // below drive them exactly as a user would after the prefix.
     mountCli: (run) => {
-      (bb as { cli: { register(r: unknown): void } }).cli.register({
+      (alia as { cli: { register(r: unknown): void } }).cli.register({
         name: "sim",
         summary: "Look at, and touch, an iOS simulator",
         commands: SIM_VERBS,
@@ -78,7 +78,7 @@ afterEach(async () => {
 });
 
 /**
- * Load the Simulators half as a bb server on `platform` would.
+ * Load the Simulators half as a VesnALIA server on `platform` would.
  *
  * `installSimulators` registers nothing unless the server runs on macOS, so
  * the platform is pinned rather than inherited: CI runs this suite on Linux,
@@ -89,12 +89,12 @@ async function load(
   options: Parameters<typeof createFakePluginHost>[0] = {},
   platform: NodeJS.Platform = "darwin",
 ) {
-  const { bb, harness } = createFakePluginHost({ sdk: sdkStubs(), ...options });
+  const { alia, harness } = createFakePluginHost({ sdk: sdkStubs(), ...options });
   harnesses.push(harness);
   const original = Object.getOwnPropertyDescriptor(process, "platform")!;
   Object.defineProperty(process, "platform", { value: platform, configurable: true });
   try {
-    await installSimulators(bb as never, simulatorHost(bb));
+    await installSimulators(alia as never, simulatorHost(alia));
   } finally {
     Object.defineProperty(process, "platform", original);
   }
@@ -142,7 +142,7 @@ describe("registrations", () => {
   it("claims exactly the surfaces it says it does", async () => {
     const harness = await load({ settings: { allowAgentCapture: true } });
     expect(harness.registrations.services).toEqual(["sim-live"]);
-    // Mounted, not registered: `bb.cli.register` is one call per plugin and
+    // Mounted, not registered: `alia.cli.register` is one call per plugin and
     // `server.ts` owns it. The harness stands in for that mount.
     expect(harness.registrations.cli).toBe("sim");
     expect(harness.registrations.httpRoutes).toEqual([
@@ -163,14 +163,14 @@ describe("registrations", () => {
       "simulator_stream_status",
     ]);
     // No agent tool can create or return a network share. Remote viewing stays
-    // inside the main bb panel.
+    // inside the main VesnALIA panel.
     expect(harness.registrations.agentTools).not.toContain("simulator_expose");
   });
 
   it("keeps a proxied stream for the viewers that need one", async () => {
     // This route used to be the only way to see a frame, for three stated
     // reasons: the per-boot secret never reached the DOM, the URL was
-    // same-origin so a remote bb panel did not hit mixed-content rules, and
+    // same-origin so a remote VesnALIA panel did not hit mixed-content rules, and
     // there was one auth model instead of two.
     //
     // The first is now handled by a stream-scoped token that authorises the
@@ -228,13 +228,13 @@ describe("the agent tools", () => {
   });
 });
 
-describe("a bb server that is not on macOS", () => {
+describe("a VesnALIA server that is not on macOS", () => {
   it("says so and registers nothing", async () => {
-    // bb supports a Linux server with enrolled Macs — which is why
-    // `bb.sdk.terminals` takes an explicit host scope. Without this check that
+    // VesnALIA supports a Linux server with enrolled Macs — which is why
+    // `alia.sdk.terminals` takes an explicit host scope. Without this check that
     // topology gets told to run `xcode-select --install`.
     const harness = await load({}, "linux");
-    expect(harness.needsConfiguration[0]).toContain("only works when the bb server itself runs on macOS");
+    expect(harness.needsConfiguration[0]).toContain("only works when the VesnALIA server itself runs on macOS");
     expect(harness.needsConfiguration[0]).toContain("This server runs on Linux.");
     expect(harness.registrations.rpcMethods).toEqual([]);
     expect(harness.registrations.services).toEqual([]);
@@ -247,7 +247,7 @@ describe("the CLI", () => {
     const harness = await load();
     const help = await harness.runCli([]);
     expect(help.exitCode).toBe(0);
-    expect(help.stdout).toContain("bb xcode sim doctor");
+    expect(help.stdout).toContain("alia xcode sim doctor");
 
     const unknown = await harness.runCli(["frobnicate"]);
     expect(unknown.exitCode).toBe(2);
@@ -348,11 +348,11 @@ describe("the CLI", () => {
     }
   });
 
-  it("does not infer the first bb project for a CLI invocation with no checkout", async () => {
+  it("does not infer the first VesnALIA project for a CLI invocation with no checkout", async () => {
     const harness = await load({ settings: { allowAgentCapture: true } });
     const result = await harness.runCli(["look"]);
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("Run this command from the bb thread checkout");
+    expect(result.stderr).toContain("Run this command from the VesnALIA thread checkout");
   });
 });
 
@@ -406,7 +406,7 @@ describe("server-side destructive authorization", () => {
 
 describe("the gear menu's allowlist, at the RPC boundary", () => {
   it("refuses a trust-shaped key with a sentence, before any write", async () => {
-    // `bb.sdk.plugins.updateSettings` is deliberately NOT stubbed here: if the
+    // `alia.sdk.plugins.updateSettings` is deliberately NOT stubbed here: if the
     // handler reached for it, the fake host would throw naming the unstubbed
     // path instead of this sentence — so the message match also proves the
     // write was never attempted.
@@ -451,18 +451,18 @@ describe("the service", () => {
 });
 
 describe("disposal", () => {
-  it("makes every bb call throw PluginContextStaleError afterwards", async () => {
+  it("makes every VesnALIA call throw PluginContextStaleError afterwards", async () => {
     // Publishing or logging through a disposed handle throws, and from a
     // detached continuation Node raises that as an uncaughtException that takes
-    // the whole bb server down.
-    const { bb, harness } = createFakePluginHost({ sdk: sdkStubs() });
-    await installSimulators(bb as never, simulatorHost(bb));
+    // the whole VesnALIA server down.
+    const { alia, harness } = createFakePluginHost({ sdk: sdkStubs() });
+    await installSimulators(alia as never, simulatorHost(alia));
     await harness.dispose();
-    expect(() => (bb as { log: { info: (m: string) => void } }).log.info("x")).toThrow(
+    expect(() => (alia as { log: { info: (m: string) => void } }).log.info("x")).toThrow(
       /stale/,
     );
     try {
-      (bb as { log: { info: (m: string) => void } }).log.info("x");
+      (alia as { log: { info: (m: string) => void } }).log.info("x");
     } catch (error) {
       expect((error as Error).name).toBe("PluginContextStaleError");
     }
@@ -489,7 +489,7 @@ describe("migrations", () => {
   }
 
   it("replays from a v1-shaped database and still returns valid rows", async () => {
-    // `bb.storage.migrate` keys migrations by statement index, so the array is
+    // `alia.storage.migrate` keys migrations by statement index, so the array is
     // append-only and a statement is never edited after release. This is the
     // test that catches an edit.
     const db = tempDb();
@@ -554,7 +554,7 @@ describe("migrations", () => {
 
 describe("forward-compatible parsing", () => {
   it("treats every field as optional, whatever the interface claims", () => {
-    // A baselined look is read months after it was written, bb validates RPC
+    // A baselined look is read months after it was written, VesnALIA validates RPC
     // output against the contract, and a row missing a newly-required key would
     // take down the whole card rather than one field.
     expect(parseLookMeta(null)).toEqual({});

@@ -1,4 +1,4 @@
-// The operations behind `bb kata` and the kata agent tools. Both front ends
+// The operations behind `alia kata` and the kata agent tools. Both front ends
 // call these; neither shells out to `kata` or goes through RPC. Every
 // project-scoped call resolves its kata project with `resolveProject`
 // (lib/cli-core.ts) and every mutation records the configured actor.
@@ -20,12 +20,12 @@ import type { KataClient } from "./kata-client.ts";
 import type { KataEditIssueBody, KataIssue, KataIssueDetail, KataProject } from "./kata-types.ts";
 import { readThreadLink, type Binding, type ThreadLink } from "./workspace.ts";
 
-/** Where a call comes from: `--project`, plus the invoking thread / bb project. */
+/** Where a call comes from: `--project`, plus the invoking thread / VesnALIA project. */
 export interface Scope {
   project?: string | undefined;
   threadId?: string | undefined;
   projectId?: string | undefined;
-  /** Command line shown in the "add --project" hint, e.g. `bb kata list`. */
+  /** Command line shown in the "add --project" hint, e.g. `alia kata list`. */
   usage: string;
 }
 
@@ -37,7 +37,7 @@ export interface KataServiceDeps {
     forProject(projectId: string): Promise<Binding>;
   };
   actor(): Promise<string>;
-  bbProjects(): Promise<{ id: string; name: string }[]>;
+  aliaProjects(): Promise<{ id: string; name: string }[]>;
   included: { get(): string[]; set(uids: string[]): Promise<string[]> };
   threadLink: {
     get(threadId: string): Promise<unknown>;
@@ -96,15 +96,15 @@ export function createKataService(deps: KataServiceDeps) {
     target,
 
     async projects() {
-      const [projects, bbProjects] = await Promise.all([deps.projects(), deps.bbProjects().catch(() => [])]);
+      const [projects, aliaProjects] = await Promise.all([deps.projects(), deps.aliaProjects().catch(() => [])]);
       const included = deps.included.get();
-      const bindings = await Promise.allSettled(bbProjects.map((bp) => deps.bindings.forProject(bp.id)));
+      const bindings = await Promise.allSettled(aliaProjects.map((bp) => deps.bindings.forProject(bp.id)));
       return projects.map((p) => ({
         id: p.id,
         uid: p.uid,
         name: p.name,
         included: included.includes(p.uid),
-        boundBy: bbProjects
+        boundBy: aliaProjects
           .filter((_, i) => {
             const r = bindings[i]!;
             return r.status === "fulfilled" && r.value.kataProject?.uid === p.uid;

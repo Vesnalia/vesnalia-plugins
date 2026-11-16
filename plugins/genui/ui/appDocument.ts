@@ -45,7 +45,7 @@ const THEME_SOURCES: ReadonlyArray<readonly [string, ...string[]]> = [
 ];
 
 // The SVG kit: text, box, connector and tone classes for diagrams drawn as
-// inline SVG, so they read like the rest of BB without the model picking
+// inline SVG, so they read like the rest of VesnALIA without the model picking
 // colours. A tone on a shape or a <g> tints fills, strokes the outline and
 // colours the text inside.
 const SVG_KIT = `svg .t,svg .ts,svg .th{font-family:var(--font-sans,ui-sans-serif,system-ui,sans-serif)}
@@ -218,9 +218,9 @@ window.open=function(){refuse("open");return null;};
 addEventListener("submit",function(event){event.preventDefault();},true);
 HTMLFormElement.prototype.submit=function(){};
 // A link the app didn't handle itself would load its page inside the frame,
-// replacing the app: https links open in BB instead, others stay put. A
-// "#part" link resolves against BB's address (a srcdoc document's base),
-// so it would load BB in the frame: it moves this document's hash instead.
+// replacing the app: https links open in VesnALIA instead, others stay put. A
+// "#part" link resolves against VesnALIA's address (a srcdoc document's base),
+// so it would load VesnALIA in the frame: it moves this document's hash instead.
 addEventListener("click",function(event){
 if(standalone||event.defaultPrevented||event.button!==0)return;
 var link=event.target&&event.target.closest?event.target.closest("a[href]"):null;

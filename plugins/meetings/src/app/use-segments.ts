@@ -3,7 +3,7 @@
 // meeting is active. A flip of `final` (or of the transcript status) means the
 // transcriber relabelled or rebuilt everything, so the whole list is reloaded.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { SegmentView, TranscriptStatus } from "../shared/rpc-contract";
 import { CHANNEL_MEETING_SEGMENTS } from "./constants";
 import { useDebouncedCallback, useInterval, useMountedRef, useOnReconnect } from "./hooks";

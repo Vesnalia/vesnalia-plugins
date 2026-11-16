@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds bb-box's Linux VM templates on a Proxmox host, as root (057).
+# Builds alia-box's Linux VM templates on a Proxmox host, as root (057).
 #
 #   build.sh linux <vmid> [--replace] [--keep]
 #   build.sh linux-desktop <vmid> [--replace] [--keep]
@@ -11,7 +11,7 @@
 #       with its snapshot for each device. It needs the operator's
 #       acceptance of the Android SDK's licence first, as
 #       ../android/accept-sdk-licence.sh writes it, and KVM in the build VM.
-#       --with-x264 builds x264 from source for bb-box-h264.
+#       --with-x264 builds x264 from source for alia-box-h264.
 #
 # Imports Ubuntu 24.04's cloud image, pinned by its SHA-256, as a VM on the
 # box bridge, and boots it once with cloud-init, which gives it the build
@@ -22,15 +22,15 @@
 # over SSH: its address from the SMBIOS serial, its root grown over a bigger
 # disk, and a hibernate and resume.
 #
-# Options: --replace  <vmid> may be a bb-box Linux VM template of the same
+# Options: --replace  <vmid> may be a alia-box Linux VM template of the same
 #                     kind already. The new one is built and checked in
 #                     another VM (BBBOX_BUILD_VMID, or the next free VMID)
 #                     and only then takes its place.
 #          --keep     leave the build VM when the build fails, to look at it.
-# Settings: /etc/bb-box/bb-box.env (see
-# ../proxmox-lxc/host/bb-box.env.example), BBBOX_CHECK_VMID, the clone
+# Settings: /etc/alia-box/alia-box.env (see
+# ../proxmox-lxc/host/alia-box.env.example), BBBOX_CHECK_VMID, the clone
 # the check runs in (the next free VMID), and for android
-# BBBOX_ANDROID_LICENCE, the acceptance (/etc/bb-box/android-sdk-license).
+# BBBOX_ANDROID_LICENCE, the acceptance (/etc/alia-box/android-sdk-license).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=../proxmox-lxc/host/common.sh
@@ -63,16 +63,16 @@ IMAGE_URL=https://cloud-images.ubuntu.com/releases/noble/release-$IMAGE_RELEASE/
 # The template waits at its kind's default size (028), on the LXC
 # template's disk. Each kind's artifacts, finalize.sh's kind and check.
 if [ "$kind" = linux ]; then
-  cores=2 memory=4096 disk=16 artifacts=linux finalize=linux check=bb-box-check-headless
+  cores=2 memory=4096 disk=16 artifacts=linux finalize=linux check=alia-box-check-headless
 elif [ "$kind" = android ]; then
-  cores=8 memory=16384 disk=48 artifacts=linux finalize=android check=bb-box-check-android
+  cores=8 memory=16384 disk=48 artifacts=linux finalize=android check=alia-box-check-android
 else
-  cores=4 memory=8192 disk=24 artifacts=desktop-cpu finalize=desktop check=bb-box-check-desktop
+  cores=4 memory=8192 disk=24 artifacts=desktop-cpu finalize=desktop check=alia-box-check-desktop
 fi
-name=bb-box-$kind
+name=alia-box-$kind
 
 for tool in curl jq ssh sha256sum; do command -v "$tool" >/dev/null || die "$tool is required"; done
-licence=${BBBOX_ANDROID_LICENCE:-/etc/bb-box/android-sdk-license}
+licence=${BBBOX_ANDROID_LICENCE:-/etc/alia-box/android-sdk-license}
 if [ "$kind" = android ]; then
   accepted=$(jq -r .license.accepted "$here/../android/pins.json")
   grep -qx "$accepted" "$licence" 2>/dev/null ||
@@ -112,10 +112,10 @@ wait_for() { # what seconds interval command...
 # the old one.
 vm=$vmid
 if in_use "$vmid"; then
-  [ -n "$replace" ] || die "VMID $vmid is already in use (--replace replaces a bb-box $kind VM template)"
+  [ -n "$replace" ] || die "VMID $vmid is already in use (--replace replaces a alia-box $kind VM template)"
   config=$(qm config "$vmid" 2>/dev/null || true)
-  grep -q '^template: 1' <<<"$config" && grep -q "^description: bb-box $kind vm template" <<<"$config" ||
-    die "$vmid is not a bb-box $kind VM template; --replace replaces only those"
+  grep -q '^template: 1' <<<"$config" && grep -q "^description: alia-box $kind vm template" <<<"$config" ||
+    die "$vmid is not a alia-box $kind VM template; --replace replaces only those"
   clones=$(linked_clones "$vmid")
   [ -z "$clones" ] || die "boxes are linked clones of template $vmid and need it ($clones); release them first"
   vm=${BBBOX_BUILD_VMID:-$(pvesh get /cluster/nextid)}
@@ -126,12 +126,12 @@ fi
 # The plugin's key, as the LXC template build makes it.
 [ -f "$BBBOX_SSH_KEY" ] || {
   install -d -m 0700 "$(dirname "$BBBOX_SSH_KEY")"
-  ssh-keygen -q -t ed25519 -N '' -C "bb-box plugin" -f "$BBBOX_SSH_KEY"
+  ssh-keygen -q -t ed25519 -N '' -C "alia-box plugin" -f "$BBBOX_SSH_KEY"
   echo "created the plugin's SSH key $BBBOX_SSH_KEY"
 }
 
 # The cloud image, downloaded once and checked each time.
-images=/var/cache/bb-box/images
+images=/var/cache/alia-box/images
 image=$images/ubuntu-24.04-server-cloudimg-amd64-$IMAGE_RELEASE.img
 install -d -m 0755 "$images"
 if ! echo "$IMAGE_SHA256  $image" | sha256sum -c --status 2>/dev/null; then
@@ -142,9 +142,9 @@ if ! echo "$IMAGE_SHA256  $image" | sha256sum -c --status 2>/dev/null; then
 fi
 
 # The build directory, as the LXC template build stages it, with linux/.
-cache=/var/cache/bb-box/artifacts
-stage=$(mktemp -d /var/tmp/bb-box-linux-vm-XXXXXX)
-in_vm=/var/tmp/bb-box-build
+cache=/var/cache/alia-box/artifacts
+stage=$(mktemp -d /var/tmp/alia-box-linux-vm-XXXXXX)
+in_vm=/var/tmp/alia-box-build
 bash "$template/fetch-artifacts.sh" "$cache" "$artifacts"
 install -d -m 0700 "$stage/artifacts"
 cp -r "$template/guest" "$template/pins.json" "$template/desktop-pins.tsv" "$template/baseline-packages.txt" "$template/apt-snapshot" "$here/linux" "$stage/"
@@ -154,7 +154,7 @@ cat >"$stage/build.env" <<EOF
 BOX_USER=box
 BOX_RUNTIME=vm
 BOX_DNS="$BBBOX_DNS"
-BB_URL="$BBBOX_BB_URL"
+ALIA_URL="$BBBOX_ALIA_URL"
 DESKTOP_GPU=none
 BUILD_ID=$build
 ANDROID_X264=$x264
@@ -222,7 +222,7 @@ if [ "$kind" = android ]; then
   ssh_box 'python3 -c "import fcntl, os; fcntl.ioctl(os.open(\"/dev/kvm\", os.O_RDWR), 0xAE01, 0)"' </dev/null 2>/dev/null ||
     ssh_box 'sudo python3 -c "import fcntl, os; fcntl.ioctl(os.open(\"/dev/kvm\", os.O_RDWR), 0xAE01, 0)"' </dev/null ||
     die "KVM does not work in the build VM, and the emulator needs it: allow nested virtualization on the host (kvm_amd or kvm_intel nested=1)"
-  log "the Android layer (../android/customize-android.sh): the SDK, bb-box-h264, the device's firewall, and each device's AVD and snapshot"
+  log "the Android layer (../android/customize-android.sh): the SDK, alia-box-h264, the device's firewall, and each device's AVD and snapshot"
   ssh_box "sudo bash $in_vm/android/customize-android.sh $in_vm" </dev/null
 fi
 
@@ -255,7 +255,7 @@ log "finalizing the build VM"
 # plugin's doctor, as its second line. It is read in finalize.sh's session:
 # finalize.sh removes the SSH host keys, so no new connection can be made.
 # Its own output goes to stderr, so the record is all there is on stdout.
-record=$(ssh_box "sudo bash $in_vm/guest/finalize.sh $in_vm $finalize >&2 && cat /usr/share/bb-box/image.json" </dev/null | jq -c .) ||
+record=$(ssh_box "sudo bash $in_vm/guest/finalize.sh $in_vm $finalize >&2 && cat /usr/share/alia-box/image.json" </dev/null | jq -c .) ||
   die "finalizing failed, or the template has no image record"
 [ -n "$record" ] || die "the template has no image record"
 qm shutdown "$vm" --timeout 120
@@ -311,7 +311,7 @@ qm destroy "$check_vm" --purge 1 >/dev/null
 check_vm=
 [ "$checked" = 0 ] || die "the check failed (above)"
 
-description="bb-box $kind vm template, built $(date -u +%F) from Ubuntu 24.04's cloud image $IMAGE_RELEASE.
+description="alia-box $kind vm template, built $(date -u +%F) from Ubuntu 24.04's cloud image $IMAGE_RELEASE.
 $record"
 # The pool's ACL lets the plugin's token delete guests in it; protection keeps
 # it from deleting templates. Clones inherit the flag, so the plugin clears it

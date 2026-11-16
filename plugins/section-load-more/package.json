@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-section-load-more",
+  "name": "alia-plugin-section-load-more",
   "version": "0.1.1",
   "description": "Keeps long sidebar sections short: each section shows its first threads, with a Load more button at the end of the same section.",
   "license": "MIT",
@@ -7,23 +7,18 @@
     "name": "siluthfi",
     "url": "https://github.com/siluthfi"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/siluthfi/bb-plugin-section-load-more.git"
-  },
-  "homepage": "https://github.com/siluthfi/bb-plugin-section-load-more#readme",
   "type": "module",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "sidebar",
     "sections",
     "threads"
   ],
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Section Load More",
     "description": "Keeps long sidebar sections short: each section shows its first threads, with a Load more button at the end of the same section.",
     "branding": {
@@ -36,15 +31,30 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --test test/controller.test.ts"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/react": "^19.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "jsdom": "^26.0.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/section-load-more#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/section-load-more"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

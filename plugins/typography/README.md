@@ -1,11 +1,11 @@
-# bb-plugin-typography
+# alia-plugin-typography
 
-A [bb](https://getbb.app) plugin that sets the interface and code font family, size, line height, bold weight, and OpenType features. Settings live in Settings > Typography, with a live preview, and in the CLI.
+A [VesnALIA](https://getbb.app) plugin that sets the interface and code font family, size, line height, bold weight, and OpenType features. Settings live in Settings > Typography, with a live preview, and in the CLI.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/n30g30/bb-plugin-typography.git
+alia plugin install git:https://github.com/n30g30/bb-plugin-typography.git
 ```
 
 ## Settings
@@ -21,11 +21,11 @@ bb plugin install git:https://github.com/n30g30/bb-plugin-typography.git
 Empty values keep the theme defaults.
 
 ```sh
-bb plugin config typography set codeFont "Berkeley Mono"
-bb plugin config typography unset codeFont
+alia plugin config typography set codeFont "Berkeley Mono"
+alia plugin config typography unset codeFont
 ```
 
-bb's bundled Inter has no stylistic sets; install full Inter and set `uiFont` to `Inter` to use `ss`/`cv` features.
+VesnALIA's bundled Inter has no stylistic sets; install full Inter and set `uiFont` to `Inter` to use `ss`/`cv` features.
 
 ## Development
 
@@ -33,8 +33,8 @@ bb's bundled Inter has no stylistic sets; install full Inter and set `uiFont` to
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 The icon is `TextFontIcon` from [Hugeicons](https://hugeicons.com) (MIT).

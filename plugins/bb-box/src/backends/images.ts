@@ -1,5 +1,5 @@
 /**
- * An image's record (049): /usr/share/bb-box/image.json in every image bb-box
+ * An image's record (049): /usr/share/alia-box/image.json in every image alia-box
  * starts boxes from, and a copy outside it that can be read without starting
  * it, such as an LXC template's description. The doctor judges each image by
  * it: how old it is, what is in it, and what it was built with.
@@ -14,7 +14,7 @@ import { TEMPLATE_FILES as BOAT_TEMPLATE_FILES } from "./boat/templates.ts";
 /**
  * The entry a Windows image's record lists among its tools where its VirtIO
  * GPU driver draws the pointer as a hardware cursor (060): Desktop
- * Duplication then leaves the pointer out of the image, so bb-box-stream can
+ * Duplication then leaves the pointer out of the image, so alia-box-stream can
  * leave it out of the video while a person holds control.
  */
 import { PRODUCT } from "../brand.ts";
@@ -41,8 +41,8 @@ export interface ImageRecord {
   readonly aptSnapshot: string | null;
   /** The SHA-256 of the pins it was built with. */
   readonly pins: string;
-  /** The SHA-256 of BB's host app in it, or null for none. */
-  readonly bbApp: string | null;
+  /** The SHA-256 of VesnALIA's host app in it, or null for none. */
+  readonly aliaApp: string | null;
   /** Each tool's version, such as {"node": "24.21.0"}. */
   readonly tools: Readonly<Record<string, string>>;
   /** The NVIDIA userspace's version, where the image has one. */
@@ -54,7 +54,7 @@ export interface ImageRecord {
   readonly encoders?: { readonly hardware: boolean | null; readonly software: string | null } | null;
   /**
    * SHA-256 of the guest scripts, the identity reset this kind's build writes,
-   * and the prepare script. Absent on an image built before bb-box recorded it.
+   * and the prepare script. Absent on an image built before alia-box recorded it.
    */
   readonly program?: string | null;
 }
@@ -90,7 +90,7 @@ export function parseImageRecord(value: unknown): ImageRecord | null {
     os: text(record.os) ?? "",
     aptSnapshot: text(record.aptSnapshot),
     pins: text(record.pins) ?? "",
-    bbApp: text(record.bbApp),
+    aliaApp: text(record.aliaApp),
     tools: Object.fromEntries(Object.entries(tools).filter((entry): entry is [string, string] => typeof entry[1] === "string")),
     nvidia: text(record.nvidia),
     layer:
@@ -246,7 +246,7 @@ async function listedSourcesDigest(setup: string, listFile: string): Promise<str
   return hash.digest("hex");
 }
 
-/** The SHA-256 of what a backend's Linux image is built with, or null when this bb-box has no such files. */
+/** The SHA-256 of what a backend's Linux image is built with, or null when this alia-box has no such files. */
 export async function prepareDigest(setup: string, backendId: string): Promise<string | null> {
   const sources = prepareSourcesOf(backendId);
   if (!sources) return null;
@@ -310,12 +310,12 @@ export async function chromePin(setup: string, arch: string): Promise<string | n
   }
 }
 
-/** What bb-box knows now to judge an image by. Each is null when it cannot tell. */
+/** What alia-box knows now to judge an image by. Each is null when it cannot tell. */
 export interface ImageFacts {
-  /** The SHA-256 of the pins this bb-box builds a set of images with. */
+  /** The SHA-256 of the pins this alia-box builds a set of images with. */
   pins(set: PinSet): Promise<string | null>;
-  /** The SHA-256 of BB's host app that BB's server gives now. */
-  bbApp(signal?: AbortSignal): Promise<string | null>;
+  /** The SHA-256 of VesnALIA's host app that VesnALIA's server gives now. */
+  aliaApp(signal?: AbortSignal): Promise<string | null>;
   /** The program digest a rebuild of this kind on this backend would record. */
   program?(kind: string, backendId: string): Promise<string | null>;
   /** The Chrome pin for an architecture, such as 156.0.8078.79. */
@@ -325,9 +325,9 @@ export interface ImageFacts {
 /** Days after which an image warns: twice the interval it is rebuilt at, a week for Linux and a month for Android, Windows and macOS. */
 export const STALE_DAYS: Readonly<Record<"linux" | "android" | "windows" | "macos" | "ios", number>> = { linux: 14, android: 60, windows: 60, macos: 60, ios: 60 };
 
-/** The Node.js BB's Windows installer needs (#539). */
+/** The Node.js VesnALIA's Windows installer needs (#539). */
 const WINDOWS_NODE = "22.19.0";
-/** The agent CLIs a Windows image carries for BB's threads, as its record names them, with their names (#561). */
+/** The agent CLIs a Windows image carries for VesnALIA's threads, as its record names them, with their names (#561). */
 const AGENT_CLIS: readonly (readonly [string, string])[] = [
   ["claude-code", "Claude Code"],
   ["codex", "Codex"],
@@ -375,20 +375,20 @@ export function describeImage(record: ImageRecord, now = Date.now()): string {
 
 /**
  * Judges an image by its record (049): its contract and NVIDIA userspace
- * fail, and no record, its age, another build of BB's app and other pins
+ * fail, and no record, its age, another build of VesnALIA's app and other pins
  * warn. `rebuild` says how to rebuild it, as the fix.
  */
 export function judgeImage(
   record: ImageRecord | null,
   facts: {
     readonly os: keyof typeof STALE_DAYS;
-    /** The pins this bb-box would build it with. */
+    /** The pins this alia-box would build it with. */
     readonly pins: string | null;
-    /** BB's app on BB's server now. */
-    readonly bbApp: string | null;
+    /** VesnALIA's app on VesnALIA's server now. */
+    readonly aliaApp: string | null;
     /** The host's NVIDIA driver as a box last saw it, for an image with NVIDIA's userspace. */
     readonly hostNvidia?: { readonly version: string; readonly seen: string } | null;
-    /** Whether its boxes join BB, for a Windows image, which must then carry Node.js and an agent CLI (#539). */
+    /** Whether its boxes join VesnALIA, for a Windows image, which must then carry Node.js and an agent CLI (#539). */
     readonly joins?: boolean;
     readonly macosBuild?: string | null;
     readonly now?: number;
@@ -420,9 +420,9 @@ export function judgeImage(
   if (days > STALE_DAYS[facts.os]) {
     warnings.push(`It is ${Math.floor(days)} days old, more than ${STALE_DAYS[facts.os]}, so its tools and packages are behind.`);
   }
-  if (facts.bbApp && record.bbApp !== facts.bbApp) {
+  if (facts.aliaApp && record.aliaApp !== facts.aliaApp) {
     warnings.push(
-      `It has ${record.bbApp ? "another build of BB's app than BB's server gives" : "no build of BB's app"}, so each box downloads the app as it enrols, 2 to 5 s more.`,
+      `It has ${record.aliaApp ? "another build of VesnALIA's app than VesnALIA's server gives" : "no build of VesnALIA's app"}, so each box downloads the app as it enrols, 2 to 5 s more.`,
     );
   }
   if (facts.pins && record.pins !== facts.pins) {
@@ -452,10 +452,10 @@ export function judgeImage(
   if (facts.os === "windows" && facts.joins) {
     const node = record.tools.node;
     if (!node || !atLeast(node, WINDOWS_NODE)) {
-      warnings.push(`It has ${node ? `Node.js ${node}` : "no Node.js"}, and BB's installer needs ${WINDOWS_NODE} or later, so each box installs it as it joins BB, about 11 s more.`);
+      warnings.push(`It has ${node ? `Node.js ${node}` : "no Node.js"}, and VesnALIA's installer needs ${WINDOWS_NODE} or later, so each box installs it as it joins VesnALIA, about 11 s more.`);
     }
     if (!AGENT_CLIS.some(([tool]) => record.tools[tool])) {
-      warnings.push(`It has none of the agent CLIs BB runs threads with, ${AGENT_CLIS.map(([, name]) => name).join(", ")}, so box_thread refuses its boxes (#561).`);
+      warnings.push(`It has none of the agent CLIs VesnALIA runs threads with, ${AGENT_CLIS.map(([, name]) => name).join(", ")}, so box_thread refuses its boxes (#561).`);
     }
   }
   const problems = [...failures, ...warnings];

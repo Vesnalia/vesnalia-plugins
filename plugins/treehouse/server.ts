@@ -1,4 +1,4 @@
-import { experimental_PluginRpcRefusal, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
@@ -15,8 +15,8 @@ interface Target {
   root: string;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     anthropicApiKey: {
       type: "string",
       label: "Anthropic API key",
@@ -28,18 +28,18 @@ export default async function plugin(bb: BbPluginApi) {
   });
   const { anthropicApiKey } = await settings.get();
 
-  const host = bb.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
+  const host = alia.hosts.experimental_client({ contract: hostContract, experimental_signals: hostSignals });
   const watchers = new Map<string, Set<string>>();
   const watchKey = (hostId: string, root: string) => `${hostId}\u0000${path.resolve(root)}`;
   const stopSignals = host.experimental_onSignal("changed", ({ hostId, payload }) => {
     for (const environmentId of watchers.get(watchKey(hostId, payload.root)) ?? []) {
-      bb.realtime.publish(CHANGED_CHANNEL, { environmentId });
+      alia.realtime.publish(CHANGED_CHANNEL, { environmentId });
     }
   });
   const stopExits = host.experimental_onWorkerExit(({ hostId }) => {
     for (const key of [...watchers.keys()]) if (key.startsWith(`${hostId}\u0000`)) watchers.delete(key);
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     stopSignals();
     stopExits();
     watchers.clear();
@@ -57,7 +57,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function resolveEnvironment(environmentId: string): Promise<Target> {
-    const environment = await bb.sdk.environments.get({ environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId });
     if (environment.status !== "ready" || environment.path === null) {
       throw new experimental_PluginRpcRefusal({
         code: "conflict",
@@ -68,7 +68,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function resolveProject(projectId: string): Promise<Target> {
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     const local = project.sources.filter((source) => source.type === "local_path");
     const source = local.find((candidate) => candidate.isDefault) ?? local[0];
     if (source === undefined || source.path === null || source.hostId === null) {
@@ -81,15 +81,15 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function changed(environmentId: string) {
-    bb.realtime.publish(CHANGED_CHANNEL, { environmentId });
-    await bb.sdk.plugins
+    alia.realtime.publish(CHANGED_CHANNEL, { environmentId });
+    await alia.sdk.plugins
       .callRpc({
-        pluginId: "bb--git",
+        pluginId: "alia--git",
         method: "refresh",
         input: { environmentId },
         outputSchema: z.unknown(),
       })
-      .catch((error: unknown) => bb.log.debug(`bb--git refresh failed: ${String(error)}`));
+      .catch((error: unknown) => alia.log.debug(`alia--git refresh failed: ${String(error)}`));
   }
 
   function mutation<I extends { environmentId: string }, O>(run: (target: Target, input: I) => Promise<O>) {
@@ -103,7 +103,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listDir: async ({ environmentId, rel }) => {
       const { hostId, root } = await resolve(environmentId);
       return host.call("listDir", { root, rel }, { hostId, timeoutMs: READ_TIMEOUT_MS });
@@ -232,11 +232,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb treehouse status <environment-id> [folder] [--json]",
-    "  bb treehouse ls <environment-id> [dir] [--json]",
+    "  VesnALIA treehouse status <environment-id> [folder] [--json]",
+    "  VesnALIA treehouse ls <environment-id> [dir] [--json]",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "treehouse",
     summary: "Read an environment's file tree and git changes as Treehouse shows them",
     commands: [
@@ -244,12 +244,12 @@ export default async function plugin(bb: BbPluginApi) {
         name: "status",
         summary:
           "Show branch, ahead/behind and changed files for every git repository in the workspace, or under one folder",
-        usage: "bb treehouse status <environment-id> [folder] [--json]",
+        usage: "alia treehouse status <environment-id> [folder] [--json]",
       },
       {
         name: "ls",
         summary: "List one directory of the workspace, marking ignored entries",
-        usage: "bb treehouse ls <environment-id> [dir] [--json]",
+        usage: "alia treehouse ls <environment-id> [dir] [--json]",
       },
     ],
     async run(argv) {

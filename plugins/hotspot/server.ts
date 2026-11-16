@@ -1,10 +1,10 @@
-// bb-plugin-hotspot — records when the Mac runs hot and which BB thread
+// alia-plugin-hotspot — records when the Mac runs hot and which VesnALIA thread
 // caused it.
 //
 // A background service samples heat, CPU, memory and the busiest threads on a timer
 // and stores every sample in the plugin's SQLite database. Each sample also
 // feeds the episode detector (lib/episodes.ts), which opens, extends and
-// closes stored hot episodes and ranks their culprit threads. While a BB
+// closes stored hot episodes and ranks their culprit threads. While a VesnALIA
 // window is visible and holds the watch lease, the same service also takes a
 // live reading every couple of seconds and pushes it to the footer and page;
 // live readings are never stored and never reach the detector. The sampler reads
@@ -12,13 +12,13 @@
 // never a remote host.
 // Sampling only reads. The one thing that signals a process is the user's own
 // "kill this thread's processes" (lib/kill.ts), from the footer popover or
-// `bb hotspot kill`; it is never offered to agents, and neither is stopping a
+// `alia hotspot kill`; it is never offered to agents, and neither is stopping a
 // thread's turn. The other thing the user can start is the OS's own process
 // monitor (lib/monitor.ts), which opens on this machine, not the viewer's.
 import { randomUUID } from "node:crypto";
 import os from "node:os";
 import { performance } from "node:perf_hooks";
-import { PluginCliError, cliCommand, defineCli, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   type KillPlanView,
@@ -154,7 +154,7 @@ export interface HotspotDeps {
     readRows: () => Promise<KillRow[]>;
     signal: (pid: number, signal: Signal) => void;
     sleep?: (ms: number) => Promise<void>;
-    /** The plugin server's pid; its ancestors are BB. */
+    /** The plugin server's pid; its ancestors are VesnALIA. */
     selfPid?: number;
   };
   /** How the OS process monitor is found and opened. */
@@ -171,14 +171,14 @@ function ancestry(rows: readonly KillRow[], pid: number): Set<number> {
   return chain;
 }
 
-/** BB's entry point: the plugin with its real sampler. */
-export default function plugin(bb: BbPluginApi): Promise<void> {
-  return createHotspot(bb);
+/** VesnALIA's entry point: the plugin with its real sampler. */
+export default function plugin(alia: AliaPluginApi): Promise<void> {
+  return createHotspot(alia);
 }
 
 /** The plugin, with the sampler injectable so tests can control its timing. */
-export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Promise<void> {
-  const settings = bb.settings.define({
+export async function createHotspot(alia: AliaPluginApi, deps: HotspotDeps = {}): Promise<void> {
+  const settings = alia.settings.define({
     sampleIntervalSeconds: {
       type: "number",
       label: "Sample interval (seconds)",
@@ -204,13 +204,13 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     },
     allowKill: {
       type: "boolean",
-      label: "Offer \"Kill processes\" for a thread (footer popover and bb hotspot kill)",
+      label: "Offer \"Kill processes\" for a thread (footer popover and VesnALIA hotspot kill)",
       default: true,
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = createStore(db);
 
   // Titles and existence are looked up when shown, never stored, so every
@@ -218,7 +218,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
   const directory = createThreadDirectory(
     async (threadId) => {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         return { title: thread.title ?? thread.titleFallback ?? null };
       } catch (error) {
         if (isNotFound(error)) return null;
@@ -263,26 +263,26 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     onProcessError(error) {
       if (processErrorLogged) return;
       processErrorLogged = true;
-      bb.log.warn(`ps failed; recording CPU without threads: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`ps failed; recording CPU without threads: ${error instanceof Error ? error.message : String(error)}`);
     },
     onMemoryError(error) {
       if (memoryErrorLogged) return;
       memoryErrorLogged = true;
-      bb.log.warn(`memory read failed; recording without memory: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`memory read failed; recording without memory: ${error instanceof Error ? error.message : String(error)}`);
     },
   });
 
   // The detector's state lives in SQLite beside the episodes and is written
   // in the same transaction. Builds before that kept it in KV: read it from
   // there once, then drop the key.
-  const legacy = await bb.storage.kv.get<unknown>(LEGACY_DETECTOR_KEY);
+  const legacy = await alia.storage.kv.get<unknown>(LEGACY_DETECTOR_KEY);
   let detector: DetectorState = restoreState(store.detectorState() ?? legacy);
   if (legacy !== null && legacy !== undefined) {
     store.saveDetectorState(detector);
-    await bb.storage.kv.delete(LEGACY_DETECTOR_KEY);
+    await alia.storage.kv.delete(LEGACY_DETECTOR_KEY);
   }
   const strays = store.closeStrayEpisodes(detector.open?.id ?? null);
-  if (strays > 0) bb.log.info(`closed ${strays} episode(s) the detector no longer tracks`);
+  if (strays > 0) alia.log.info(`closed ${strays} episode(s) the detector no longer tracks`);
 
   // The loop and an on-demand "now" share the sampler's windows, so one
   // reading runs at a time.
@@ -309,11 +309,11 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
   function announceRunning(threadId: string, running: boolean): void {
     if (!(latestSample()?.threads.some((entry) => entry.threadId === threadId) ?? false)) return;
     const payload: RunningChangedSignal = { threadId, running };
-    bb.realtime.publish(RUNNING_CHANGED, payload);
+    alia.realtime.publish(RUNNING_CHANGED, payload);
   }
-  bb.events.on("thread.active", ({ thread }) => announceRunning(thread.id, true));
-  bb.events.on("thread.idle", ({ thread }) => announceRunning(thread.id, false));
-  bb.events.on("thread.failed", ({ thread }) => announceRunning(thread.id, false));
+  alia.events.on("thread.active", ({ thread }) => announceRunning(thread.id, true));
+  alia.events.on("thread.idle", ({ thread }) => announceRunning(thread.id, false));
+  alia.events.on("thread.failed", ({ thread }) => announceRunning(thread.id, false));
 
   /**
    * A fresh-enough reading for "now": the last one, or a new one that peeks
@@ -326,7 +326,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
       lastLive = (await takeReading(Date.now(), { store: false, peek: true })).live;
       lastLiveTick = monotonic();
     } catch (error) {
-      bb.log.warn(`reading failed: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`reading failed: ${error instanceof Error ? error.message : String(error)}`);
     }
     return latestSample();
   }
@@ -348,10 +348,10 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     });
     detector = state;
     if (closed !== null) {
-      bb.log.info(`episode ${closed.id} closed after ${closed.samples} hot samples`);
+      alia.log.info(`episode ${closed.id} closed after ${closed.samples} hot samples`);
     }
     if (result.opened !== null && open !== null) await announce(open);
-    bb.realtime.publish(SAMPLED, {
+    alia.realtime.publish(SAMPLED, {
       at: sample.at,
       thermal: sample.thermal,
       cpu: sample.cpu,
@@ -365,7 +365,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
   async function announce(episode: Episode): Promise<void> {
     const [view] = await viewEpisodes([episode], 1);
     const top = view.culprits[0] ?? null;
-    bb.log.info(
+    alia.log.info(
       `episode ${episode.id} opened; top thread ${top === null ? "none" : top.threadId}`,
     );
     if (episode.id === null || !(await settings.get()).toast) return;
@@ -376,7 +376,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
       peakCpu: episode.peakCpu,
       top: top === null ? null : { threadId: top.threadId, title: top.title },
     };
-    bb.realtime.publish(EPISODE_OPENED, signal);
+    alia.realtime.publish(EPISODE_OPENED, signal);
   }
 
   // Killing a thread's processes: plan, show, then apply by plan id only.
@@ -393,7 +393,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     if (!(await settings.get()).allowKill) {
       throw new PluginCliError("Killing thread processes is turned off (setting allowKill).", {
         code: "kill_disabled",
-        hint: "bb plugin config hotspot set allowKill true",
+        hint: "alia plugin config hotspot set allowKill true",
       });
     }
   }
@@ -401,7 +401,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
   async function threadTitle(threadId: string): Promise<string | null> {
     const known = await directory.resolve([threadId]);
     if (!known.has(threadId)) {
-      throw new PluginCliError(`No BB thread ${threadId}.`, { code: "thread_not_found" });
+      throw new PluginCliError(`No VesnALIA thread ${threadId}.`, { code: "thread_not_found" });
     }
     return known.get(threadId) ?? null;
   }
@@ -476,7 +476,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
       context: entry.context,
       signal: killDeps.signal,
       sleep: killDeps.sleep ?? wait,
-      log: (message) => bb.log.info(message),
+      log: (message) => alia.log.info(message),
     });
     return {
       ...result,
@@ -486,7 +486,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
 
   async function isRunning(threadId: string): Promise<boolean> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return RUNNING.has(thread.status);
     } catch {
       return false;
@@ -497,7 +497,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
   const monitorRunner = deps.monitor ?? systemMonitorRunner;
   const monitor = findMonitor(monitorRunner).catch(() => null);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async overview() {
       const latest = latestSample();
       const threadIds = (latest?.threads ?? []).slice(0, TOP_THREADS).map((entry) => entry.threadId);
@@ -516,14 +516,14 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
       if (!(await isRunning(threadId))) {
         throw new PluginCliError(`Thread ${threadId} is not running a turn.`, { code: "not_running" });
       }
-      await bb.sdk.threads.stop({ threadId });
-      bb.log.info(`stopped the running turn of ${threadId} from the footer popover`);
+      await alia.sdk.threads.stop({ threadId });
+      alia.log.info(`stopped the running turn of ${threadId} from the footer popover`);
       return { ok: true as const };
     },
     async openMonitor() {
       const result = await openMonitor(await monitor, monitorRunner);
-      if (result.ok) bb.log.info(`opened ${result.app} from the app`);
-      else bb.log.warn(result.error);
+      if (result.ok) alia.log.info(`opened ${result.app} from the app`);
+      else alia.log.warn(result.error);
       return result;
     },
     watch(input) {
@@ -567,7 +567,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
   // One ticker serves both cadences. Each tick is one reading: stored when
   // a sample is due, pushed live while a window holds the watch lease, and
   // skipped entirely when neither applies.
-  bb.background.service("sampler", {
+  alia.background.service("sampler", {
     async start(signal) {
       // A reload restarts the service; sampling again at once would count
       // one extra sample into the streak. Wait out the rest of the interval.
@@ -580,10 +580,10 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
         const { sampleIntervalSeconds } = await settings.get();
         const due = tick >= storeAt;
         const live = watched();
-        if (live && !wasLive) bb.log.info(`live readings started by a heartbeat (${startReason})`);
+        if (live && !wasLive) alia.log.info(`live readings started by a heartbeat (${startReason})`);
         if (!live && wasLive) {
           const ago = ((tick - lastHeartbeat) / 1_000).toFixed(1);
-          bb.log.info(`live readings stopped: the last heartbeat arrived ${ago} s ago`);
+          alia.log.info(`live readings stopped: the last heartbeat arrived ${ago} s ago`);
         }
         wasLive = live;
         if (due || live) {
@@ -599,10 +599,10 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
             }
             if (live) {
               const payload: LiveSignal = await view(now);
-              bb.realtime.publish(LIVE, payload);
+              alia.realtime.publish(LIVE, payload);
             }
           } catch (error) {
-            bb.log.warn(`sample failed: ${error instanceof Error ? error.message : String(error)}`);
+            alia.log.warn(`sample failed: ${error instanceof Error ? error.message : String(error)}`);
           }
           if (due) storeAt = tick + sampleIntervalSeconds * 1_000;
         }
@@ -645,10 +645,10 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     return { from, to };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "hotspot_history",
     description:
-      "Why was the Mac hot or slow, and which BB thread caused it? Returns recorded hot episodes " +
+      "Why was the Mac hot or slow, and which VesnALIA thread caused it? Returns recorded hot episodes " +
       "(thermal pressure above nominal or sustained high CPU) overlapping a time window, each " +
       "with its culprit threads ranked by CPU, plus a summary of CPU, memory used, swap, memory " +
       "pressure, thermal level and the busiest threads (CPU and peak memory) across the whole " +
@@ -674,10 +674,10 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "hotspot",
-      summary: "When the Mac ran hot and which BB thread caused it",
+      summary: "When the Mac ran hot and which VesnALIA thread caused it",
       commands: {
         kill: cliCommand({
           summary: "Plan (and with --yes, apply) killing a thread's work processes (dev servers, builds, test runners), or with --pid one of them",
@@ -697,7 +697,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
             if (!threadId.success) {
               throw new PluginCliError(`"${input.positionals.threadId}" is not a thread id.`, {
                 code: "invalid_thread",
-                hint: "Pass an id like thr_abc12345; `bb hotspot status` lists the busiest threads.",
+                hint: "Pass an id like thr_abc12345; `alia hotspot status` lists the busiest threads.",
               });
             }
             const pid = input.options.pid;
@@ -714,7 +714,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
             if (!caller.ok) {
               throw new PluginCliError(`Refusing --yes: ${caller.reason}.`, {
                 code: "not_interactive",
-                hint: "Kill from the Hotspot popover in the BB sidebar footer, or run this command yourself in a terminal. Without --yes it only prints the plan.",
+                hint: "Kill from the Hotspot popover in the VesnALIA sidebar footer, or run this command yourself in a terminal. Without --yes it only prints the plan.",
               });
             }
             const applied = await applyPlan(plan.planId);
@@ -762,7 +762,7 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
             if ("error" in window) {
               throw new PluginCliError(window.error ?? "invalid window", {
                 code: "invalid_time",
-                hint: "Try `bb hotspot episodes --since 24h` or `--since 15:00 --until 16:00`.",
+                hint: "Try `alia hotspot episodes --since 24h` or `--since 15:00 --until 16:00`.",
               });
             }
             if (json) {
@@ -783,8 +783,8 @@ export async function createHotspot(bb: BbPluginApi, deps: HotspotDeps = {}): Pr
     const { retentionDays } = await settings.get();
     const removed = store.prune(Date.now(), retentionDays);
     if (removed.samples + removed.episodes > 0) {
-      bb.log.info(`pruned ${removed.samples} samples and ${removed.episodes} episodes`);
+      alia.log.info(`pruned ${removed.samples} samples and ${removed.episodes} episodes`);
     }
   }
-  bb.background.schedule("prune", "17 * * * *", prune);
+  alia.background.schedule("prune", "17 * * * *", prune);
 }

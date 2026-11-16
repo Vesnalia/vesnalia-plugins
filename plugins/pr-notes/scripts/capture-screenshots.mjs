@@ -1,15 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "@playwright/test";
-const server = process.env.BB_SERVER_URL ?? "http://127.0.0.1:38886";
+const server = process.env.ALIA_SERVER_URL ?? "http://127.0.0.1:38886";
 const ref = { repo: "hardbeat920/monocode", number: 1 };
 const routePath = "/plugins/pr-notes/inbox/hardbeat920/monocode/1";
 const output = path.resolve("docs/screenshots");
 fs.mkdirSync(output, { recursive: true });
 const browser = await chromium.launch({
   headless: true,
-  ...(process.env.BB_PR_CHROMIUM
-    ? { executablePath: process.env.BB_PR_CHROMIUM }
+  ...(process.env.ALIA_PR_CHROMIUM
+    ? { executablePath: process.env.ALIA_PR_CHROMIUM }
     : {}),
 });
 try {

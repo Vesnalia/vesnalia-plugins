@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-thread-tabs",
+  "name": "alia-plugin-thread-tabs",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.48.1 <0.49.0",
-    "bbPluginSdk": ">=0.6.94 <0.7.0",
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.94 <0.7.0",
     "node": ">=22.18.0"
   },
-  "bb": {
+  "alia": {
     "name": "Thread Tabs",
     "description": "Up to eight independent agent chat tabs per thread, sharing one workspace. Fork conversations into tabs.",
     "branding": {
@@ -21,7 +21,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.94",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -52,21 +51,13 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --experimental-strip-types --test server.test.ts contracts.test.ts",
     "test:ui": "vitest run app.test.tsx message-fork-menu.test.ts",
     "verify": "npm run check && npm test && npm run test:ui"
   },
   "license": "MIT",
   "author": "Anirudh Ranganath",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/anirudhranganath/bb-plugin-thread-tabs.git"
-  },
-  "homepage": "https://github.com/anirudhranganath/bb-plugin-thread-tabs#readme",
-  "bugs": {
-    "url": "https://github.com/anirudhranganath/bb-plugin-thread-tabs/issues"
-  },
   "files": [
     "server.ts",
     "app.tsx",
@@ -89,5 +80,22 @@
     "dist/app.css",
     "dist/app.meta.json",
     "dist/package.json"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-tabs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-tabs"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

@@ -9,13 +9,13 @@ import {
   useRpc,
   Markdown,
   ThreadChat,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   ExperimentalPanelController,
   ExperimentalThreadActionTabProps,
   PluginRpcResult,
   PluginThreadAction,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { ModelConfiguration, rpcContract } from "./server";
 
 const PANEL_ACTION_ID = "reviews";
@@ -1636,7 +1636,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "models",
     title: "Advisor model by machine",
-    description: "Live model choices from each enrolled bb machine.",
+    description: "Live model choices from each enrolled VesnALIA machine.",
     component: AdvisorModelSettings,
   });
 

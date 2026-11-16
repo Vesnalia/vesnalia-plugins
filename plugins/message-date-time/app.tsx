@@ -1,18 +1,18 @@
-// bb-plugin-message-date-time - frontend entry.
+// alia-plugin-message-date-time - frontend entry.
 //
 // Adds a date-and-time line above every user and agent message in the thread
 // chat ("Today, 4:34 PM", "Yesterday, 22:10", "Сегодня, 16:34", "3 окт., 09:15").
 // Language and clock come from the plugin settings; "System" follows the
 // computer's language and the region's clock.
 //
-// BB keeps each message's time on the timeline row (`startedAt`) but shows it
+// VesnALIA keeps each message's time on the timeline row (`startedAt`) but shows it
 // only inside the message "..." menu, and the Plugin SDK has no slot for
 // message chrome. So a content script reads the time from the React props of
 // each rendered message column and writes it into a data attribute; a
 // stylesheet renders that attribute with ::before. Nothing is inserted into
 // React-owned DOM, and disposal removes every attribute, observer and style.
 import { useEffect, useState } from "react";
-import { definePluginApp, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { resolveHour12, resolveLang, type Lang, type SystemClockHint } from "./lib/locale";
 import { makeFormatter, type Formatter } from "./lib/format";
@@ -20,7 +20,7 @@ import { makeFormatter, type Formatter } from "./lib/format";
 const MESSAGE_SELECTOR = "[data-message-column]";
 const LABEL_ATTR = "data-mdt-label";
 const ROLE_ATTR = "data-mdt-role";
-const STYLE_ID = "bb-plugin-message-date-time-style";
+const STYLE_ID = "alia-plugin-message-date-time-style";
 const MAX_FIBER_DEPTH = 30;
 const REFRESH_MS = 60_000;
 
@@ -78,7 +78,7 @@ function readMessageTime(element: Element): MessageTime | null {
     const props = fiber.memoizedProps;
     if (props && typeof props === "object") {
       const record = props as Record<string, unknown>;
-      // The message body component: { role, timestamp } (BB passes startedAt).
+      // The message body component: { role, timestamp } (VesnALIA passes startedAt).
       const role = asRole(record.role);
       const ms = toMs(record.timestamp);
       if (role && ms !== null) return { ms, role };

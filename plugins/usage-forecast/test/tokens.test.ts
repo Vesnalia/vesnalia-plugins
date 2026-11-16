@@ -136,7 +136,7 @@ describe("applyEvents (R2–R4)", () => {
     const aged = applyEvents(emptyTokenState(), ref("thr_old", "codex", old - DAY_MS), [ev(1, 5000, old)], NOW).state;
     expect(aged.threads.thr_old).toBeUndefined();
     expect(aged.evictedBefore).toBe(old);
-    // bb keeps one event per thread: the newest one carries the old total too.
+    // VesnALIA keeps one event per thread: the newest one carries the old total too.
     const back = applyEvents(aged, ref("thr_old", "codex", old - DAY_MS), [ev(9, 5600, at(10))], NOW);
     expect(back.counted).toBe(false);
     const later = applyEvents(back.state, ref("thr_old", "codex", old - DAY_MS), [ev(10, 5900, at(11)), ev(10, 5900, at(11))], NOW).state;

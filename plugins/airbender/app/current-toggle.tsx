@@ -5,7 +5,7 @@
 // another current issue.
 //
 // Why: which issue a thread is on, and doing the next step of an issue's
-// workflow, are two different things (bead-bb-l3m). Before this the only way
+// workflow, are two different things (bead-alia-l3m). Before this the only way
 // to make an issue current was its workflow button, which also starts the
 // agent. The user's words: "Just making a thing current doesn't mean we need
 // to move through the workflow. I just wanna move it to current and out of
@@ -47,8 +47,8 @@ import { useActions } from "./actions.ts";
  * The icon for the current-issue button: a target when pressing makes the
  * issue current, an exit door when pressing releases it (`on`).
  *
- * Drawn here because BB's icon set has neither (checked in its bundle), and
- * an unknown name would show BB's fallback icon. The door's paths are
+ * Drawn here because VesnALIA's icon set has neither (checked in its bundle), and
+ * an unknown name would show VesnALIA's fallback icon. The door's paths are
  * Tabler Icons' "door-exit", unchanged (see the design notes).
  */
 export function CurrentIcon({ on, className }: { on: boolean; className?: string }) {

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { inputsSchema, planSchema, type Inputs, type Plan } from "../inputs";
 
 /**
- * Durable ownership receipt keyed by BB's pathKey, not a launch/lifecycle registry.
+ * Durable ownership receipt keyed by VesnALIA's pathKey, not a launch/lifecycle registry.
  * Retries reuse its plan; `provisioned` keeps finished launches from re-running setup. No paths are ever deleted.
  */
 const receiptSchema = z.object({ inputs: inputsSchema, plan: planSchema, provisioned: z.boolean() }).strict();

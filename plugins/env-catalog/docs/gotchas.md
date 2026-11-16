@@ -61,7 +61,7 @@ TL;DR: Credential handling has sharp edges around master-key replacement, `.env`
 
 **Risk:** A partial migration can finish with a lower imported count than the source record count.
 
-**Workaround:** Compare the reported count with expected source entries and inspect BB server logs for decryption warnings.
+**Workaround:** Compare the reported count with expected source entries and inspect VesnALIA server logs for decryption warnings.
 
 ## Low
 
@@ -71,7 +71,7 @@ TL;DR: Credential handling has sharp edges around master-key replacement, `.env`
 
 **Risk:** A shell workflow copied from a prior README or another release can refer to an unavailable command.
 
-**Workaround:** Use the UI import action or call `env_import` through the BB plugin RPC interface (`app.tsx:833-864`, `server.ts:593-595`).
+**Workaround:** Use the UI import action or call `env_import` through the VesnALIA plugin RPC interface (`app.tsx:833-864`, `server.ts:593-595`).
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

@@ -14,11 +14,11 @@ import {
   type GitHubItemLink,
   type ThreadLink,
 } from "../lib/link-metadata";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 const GITHUB: GitHubItemLink = {
   tracker: "github",
-  repo: "cristoslc/bb-plugin-focus-board",
+  repo: "cristoslc/alia-plugin-focus-board",
   issue: 12,
   kind: "issue",
   href: "https://github.com/cristoslc/bb-plugin-focus-board/issues/12",
@@ -28,7 +28,7 @@ const GITHUB: GitHubItemLink = {
 const LINK: ThreadLink = GITHUB;
 const OTHER: ThreadLink = {
   tracker: "github",
-  repo: "cristoslc/bb-plugin-focus-board",
+  repo: "cristoslc/alia-plugin-focus-board",
   issue: 9,
   kind: "pull",
   href: "https://github.com/cristoslc/bb-plugin-focus-board/pull/9",
@@ -225,8 +225,8 @@ describe("raw-dedupe among emitted links", () => {
 describe("linkedRefKeys", () => {
   it("maps links to owner-repo#number strings for the status fetch", () => {
     expect(linkedRefKeys([LINK, OTHER])).toEqual([
-      "cristoslc/bb-plugin-focus-board#12",
-      "cristoslc/bb-plugin-focus-board#9",
+      "cristoslc/alia-plugin-focus-board#12",
+      "cristoslc/alia-plugin-focus-board#9",
     ]);
   });
 
@@ -410,7 +410,7 @@ describe("external links — chip merge and dot path", () => {
   });
 
   it("external links never enter the GitHub status-dot batch", () => {
-    expect(linkedRefKeys([EXT, GITHUB])).toEqual(["cristoslc/bb-plugin-focus-board#12"]);
+    expect(linkedRefKeys([EXT, GITHUB])).toEqual(["cristoslc/alia-plugin-focus-board#12"]);
     expect(linkedRefKeys([EXT])).toEqual([]);
   });
 });

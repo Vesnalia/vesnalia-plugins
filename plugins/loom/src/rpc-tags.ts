@@ -1,9 +1,9 @@
-// Which page reads each change refreshes, through bb's tagged query cache. The server contract and the page's zod-free
+// Which page reads each change refreshes, through VesnALIA's tagged query cache. The server contract and the page's zod-free
 // copy of it (ui/contract-client.ts) both spread these, so the two cannot disagree.
 import type { PlannerView } from "./planner-view";
 import type { ThreadInfo, TicketDetail } from "./contract";
 
-/** Every read that is not of one project: home, planning, the badge, bb's projects. */
+/** Every read that is not of one project: home, planning, the badge, VesnALIA's projects. */
 export const ANY = "loom";
 export const projectTag = (slug: string) => `project:${slug}`;
 /** What a change to one project refreshes, or, with null, a change outside any project. Project reads stay as they are when another project changes. */
@@ -41,7 +41,7 @@ export const RPC_TAGS = {
   ackBadge: { invalidates: changesProject },
   syncPullRequests: { invalidates: changesProject },
   markLive: { invalidates: changesProject },
-  bbProjects: { tags: anything },
+  aliaProjects: { tags: anything },
   startPlanning: { invalidates: anything },
   specVersion: { tags: ofProject },
   changes: { tags: ofProject },

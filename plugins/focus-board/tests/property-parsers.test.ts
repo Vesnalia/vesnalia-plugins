@@ -6,7 +6,7 @@
 // would silently coerce persisted state. Round-trip laws ride alongside.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import {
   parseDoneRecord,
   doneAtToEpochMs,

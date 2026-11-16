@@ -17,4 +17,4 @@ CHROMIUM=/path/to/chromium npm run og
 
 `CHROMIUM` defaults to `chromium` on the path. Look at `og.png` at full size and at 600 pixels wide, the width of a chat preview, before you commit it.
 
-The site's icons, `../public/favicon.png` (64 by 64) and `../public/apple-touch-icon.png` (192 by 192), are BB Box's app icon, exported at those sizes. Replace the files to change them.
+The site's icons, `../public/favicon.png` (64 by 64) and `../public/apple-touch-icon.png` (192 by 192), are VesnALIA Box's app icon, exported at those sizes. Replace the files to change them.

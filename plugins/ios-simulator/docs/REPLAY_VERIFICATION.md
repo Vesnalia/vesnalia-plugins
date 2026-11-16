@@ -27,7 +27,7 @@ cancelled detach persistence, and shutdown consent cancellation.
 ## Real WebCodecs check
 
 An isolated headless Chrome 155 process used a dedicated temporary profile
-and a standalone localhost fixture, without accessing BB windows or Cua.
+and a standalone localhost fixture, without accessing VesnALIA windows or Cua.
 It generated 90 real AVC frames in a single GOP and passed 17 assertions:
 initial/long-GOP seeks, rotation landmark pixels, seek-to-play keyframe
 re-priming, no presentation of resume preroll, pause/resume/end, seeking after
@@ -61,12 +61,12 @@ Crash-report delay can exceed the rolling video window. Collection timestamps
 are explicit; a delayed report does not imply its event aligns with the exact
 crash frame, or that a previously saved immutable clip gains later events.
 
-## Native BB panel verification pending
+## Native VesnALIA panel verification pending
 
-Cua Driver reported a system-permission block while inspecting the new BB
+Cua Driver reported a system-permission block while inspecting the new VesnALIA
 window. Automation stopped and the user was directed to
 `/settings/plugins/cua-driver` to make this machine's permission checklist
-Ready. No native BB playback, seek, download, or complete human/agent handoff
+Ready. No native VesnALIA playback, seek, download, or complete human/agent handoff
 flow is claimed from this run. That native-window recheck remains unverified.
 Release validation includes the isolated real-component browser checks,
 native codec/decoder lifecycle harness and integration tests documented in

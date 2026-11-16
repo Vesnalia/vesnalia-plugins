@@ -6,8 +6,8 @@ export const FIRST_BOAT_BACKEND_ID = "boat";
 
 const BOAT_NAMING: OwnerNaming = {
   firstBackendId: FIRST_BOAT_BACKEND_ID,
-  firstTailnetPrefix: "bb-box-boat-",
-  siblingTailnetPrefix: "bb-box-boatb-",
+  firstTailnetPrefix: "alia-box-boat-",
+  siblingTailnetPrefix: "alia-box-boatb-",
 };
 
 export class BoatOwner extends LabelledOwner {

@@ -647,7 +647,7 @@ it("lists a group tile's members as rows when it has the room, and never draws i
   expect(group).not.toBeNull();
   const rows = Array.from(group.querySelectorAll<HTMLElement>(".wm-heat-row"));
   // Either the tile is too short for rows, or it lists members and the rest.
-  const bb = group.getBoundingClientRect();
+  const alia = group.getBoundingClientRect();
   if (rows.length) {
     const rest = rows.filter((row) => row.classList.contains("wm-heat-row-rest"));
     expect(rows.length - rest.length).toBeGreaterThan(0);
@@ -658,7 +658,7 @@ it("lists a group tile's members as rows when it has the room, and never draws i
     fireEvent.click(rows[0]);
     expect(opened).toHaveLength(1);
   }
-  void bb;
+  void alia;
 });
 
 it("fits as many member rows as the tile's height allows, keeping one for the remainder", () => {

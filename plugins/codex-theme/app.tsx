@@ -5,8 +5,8 @@ import {
   useComposer,
   useSettings,
   type PluginHomepageSectionProps,
-} from "@get-bb/plugin-sdk/app";
-import { bbLogoUrl } from "./bb-logo";
+} from "@vesnalia/plugin-sdk/app";
+import { aliaLogoUrl } from "./alia-logo";
 import { applyOptions, enabledOptions, type OptionValues } from "./options";
 import "./app.css";
 
@@ -38,7 +38,7 @@ export function OptionAttributes() {
   return null;
 }
 
-// New-thread welcome by Jaryd Diamond (bb-codex). Shown only with the
+// New-thread welcome by Jaryd Diamond (alia-codex). Shown only with the
 // "Centered welcome" setting on; theme CSS lays it out.
 export function Welcome({ projectId }: PluginHomepageSectionProps) {
   const { projects } = experimental_useSidebarThreads();
@@ -49,7 +49,7 @@ export function Welcome({ projectId }: PluginHomepageSectionProps) {
 
   return (
     <div className="codex-welcome">
-      <img className="codex-logo" src={bbLogoUrl} alt="" aria-hidden="true" />
+      <img className="codex-logo" src={aliaLogoUrl} alt="" aria-hidden="true" />
       <h1>
         What should we build
         {project && !project.isPersonal ? <> in <span>{project.name}</span></> : null}?

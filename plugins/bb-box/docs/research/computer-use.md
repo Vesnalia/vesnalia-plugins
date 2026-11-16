@@ -24,11 +24,11 @@ macOS checked from source and documentation only. Checked on 30 September
    two versions measured.
 2. **Run it as one daemon per box, reached over one long-lived SSH session.**
    The template starts `cua-driver serve` inside the desktop session. The
-   bb-box plugin keeps one SSH session per box running `cua-driver mcp
+   alia-box plugin keeps one SSH session per box running `cua-driver mcp
    --socket <path>` and speaks MCP over it. A call then costs 2 to 4 ms of
    transport instead of 165 ms for a new SSH connection, and element
    references live as long as the daemon.
-3. **Give the agent bb-box's own tools, not Cua's.** Six tools:
+3. **Give the agent alia-box's own tools, not Cua's.** Six tools:
    `computer_observe`, `computer_screenshot`, `computer_act`,
    `computer_type`, `computer_launch` and `computer_windows`. The plugin
    calls a fixed list of Cua tools behind them. This is where the plugin
@@ -92,7 +92,7 @@ Other candidates, briefly:
   exact web automation, but only inside a browser started with a debugging
   port, and blind to native dialogs and other apps. A possible complement for
   web-heavy work, not a desktop tool.
-- **A bb-box daemon on `accessibility-core`**: a long-lived process would fix
+- **A alia-box daemon on `accessibility-core`**: a long-lived process would fix
   accessibility-cli's speed and reference problems, but Linux input and
   screenshots would still have to be written.
 
@@ -238,7 +238,7 @@ inside the standard limit.
 ## Design
 
 ```
-agent (BB thread)             bb-box plugin (BB server)                     box
+agent (ALIA thread)             alia-box plugin (ALIA server)                     box
 computer_* tools  --call-->   control check                                 cua-driver serve
                               reference map, budgets       --one ssh-->     (desktop session,
                               one MCP session per box       cua-driver mcp    socket or pipe)
@@ -315,7 +315,7 @@ role, name, and the roles and names of its ancestors.
   foreground off for the box.
 - On Windows, a key chord with a modifier goes in foreground from the
   start: Cua's background chord reaches the app as the bare key without a
-  refusal (below). bb-box brings the chord's window to the front first
+  refusal (below). alia-box brings the chord's window to the front first
   (`bring_to_front`) and leaves it there. Cua's foreground swap alone puts
   the window back behind the one that was in front, and its editor's focus
   does not come back, so text typed into the window next was lost, with
@@ -336,7 +336,7 @@ input when you do not hold it. The same state gates the computer tools.
 1. **Before every computer tool call**, the plugin checks the box. If you
    hold control, it returns at once, as an error, without reaching the box:
 
-   > Paused: a person has taken control of this box's desktop in BB. The
+   > Paused: a person has taken control of this box's desktop in VesnALIA. The
    > computer tools will work again when they hand control back. Nothing was
    > done and the desktop is as they left it. Wait, or ask them in the thread.
 
@@ -347,7 +347,7 @@ input when you do not hold it. The same state gates the computer tools.
    the box. The first call after that carries a note: "Control returned; the
    desktop may have changed. Observe before acting."
 
-This is cooperative, not a security boundary, like the rest of bb-box. The
+This is cooperative, not a security boundary, like the rest of alia-box. The
 agent can still reach the box through SSH and run input tools there. A
 stronger pause would stop the Cua daemon while you hold control, at the cost
 of its references and a restart.
@@ -392,7 +392,7 @@ From Cua Driver's `WINDOWS.md` and accessibility-cli's source.
   (`background_unavailable`) only for windows it recognises as Chromium, a
   WebView2 host, WPF, Tk or LibreOffice (`would_be_silently_dropped` in
   `delivery.rs`). Windows 11's Notepad is none of these, so Cua answers
-  success, and bb-box, which falls back to foreground only on a refusal,
+  success, and alia-box, which falls back to foreground only on a refusal,
   says the chord was pressed. Measured in Notepad on a Proxmox QEMU box:
 
   | Chord | Background | Foreground (the real keyboard) |
@@ -404,7 +404,7 @@ From Cua Driver's `WINDOWS.md` and accessibility-cli's source.
   | alt+Tab | no switch; touches Notepad's System menu | switches window |
 
   For comparison, on Linux (Mousepad, X11) Cua refuses ctrl+a in
-  background, bb-box presses it with the real keyboard, and it selects all.
+  background, alia-box presses it with the real keyboard, and it selects all.
   On macOS (TextEdit on Tart) cmd+a selects all in background, and ctrl+a
   moves to the line's start, as Cocoa's text bindings do.
 - **On Linux, background typing leaves a selection in place** (Cua Driver
@@ -414,7 +414,7 @@ From Cua Driver's `WINDOWS.md` and accessibility-cli's source.
   and never deletes the selected range. In Mousepad, text typed after
   ctrl+a went in at the start, and after a double-click on a word it went
   in before the word. Cua's window state says nothing of a selection. So
-  bb-box types through the real keyboard into a window where its last
+  alia-box types through the real keyboard into a window where its last
   action could have selected text, a key chord or a double-click, until a
   click or typing there; the real keyboard types over the selection.
 
@@ -485,7 +485,7 @@ On the local rig first, then on each backend as it arrives:
 6. **Windows VM.** Automatic logon, the Scheduled Task, the named-pipe
    proxy over OpenSSH, and the same sequences in Edge and Notepad.
 7. **Conformance suite.** Turn the rig's Chrome and GTK sequences into the
-   computer-use part of bb-box's conformance suite, run on every backend and
+   computer-use part of alia-box's conformance suite, run on every backend and
    on every change of the Cua pin.
 
 ## Open questions
@@ -498,7 +498,7 @@ On the local rig first, then on each backend as it arrives:
   can be written offline like the TCC rows, is unknown.
 - **iOS Simulator.** Cua does not document it; accessibility-cli has a
   dedicated platform, and Devin uses it for this. The iOS Simulator kind may
-  need accessibility-cli behind the same bb-box tools. Evaluate on the macOS
+  need accessibility-cli behind the same alia-box tools. Evaluate on the macOS
   backend.
 - **Browser tools.** Whether web-heavy work also needs Playwright MCP or
   Chrome DevTools MCP, which need Chrome started with a debugging port.
@@ -530,7 +530,7 @@ On the local rig first, then on each backend as it arrives:
   https://support.apple.com/guide/deployment/privacy-preferences-policy-control-payload-dep38df53c2a/web
 - Devin's Mac article, https://devin.ai/ (image preparation, the
   accessibility loop, accessibility-cli)
-- BB plugin SDK 0.5.29 (`bb.agents.registerTool` results with text and image
+- VesnALIA plugin SDK 0.5.29 (`alia.agents.registerTool` results with text and image
   content)
 - [Desktop streaming](desktop-streaming.md) (control filter, resolution lock)
   and [the GPU in a desktop box](gpu-desktop.md) (real Xorg)

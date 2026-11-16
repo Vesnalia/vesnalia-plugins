@@ -1,7 +1,7 @@
 import { specificationPath } from "./specification-model";
 import { pluginError } from "./plugin-error";
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { hostContract, hostSignals } from "./host-contract";
 import { changeForPath } from "./change-paths";
 import { liveTags } from "./live-tags";
@@ -9,15 +9,15 @@ import { workspace } from "./reader";
 import { errorMessage } from "./reader-error";
 import { sourceSelectionSchema } from "./planning-source";
 
-export function createHostClient(bb: BbPluginApi) {
-  return bb.hosts.experimental_client({
+export function createHostClient(alia: AliaPluginApi) {
+  return alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
 }
 type Host = ReturnType<typeof createHostClient>;
 
-export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
+export function registerLiveUpdates(alia: AliaPluginApi, host: Host) {
   const active = new Map<
     string,
     {
@@ -40,7 +40,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
   const ready = new Promise<void>((resolve) => {
     activate = resolve;
   });
-  bb.background.service("openspec-live", {
+  alia.background.service("openspec-live", {
     async start(signal) {
       activate();
       if (!signal.aborted)
@@ -49,7 +49,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
         );
     },
   });
-  bb.onDispose(activate);
+  alia.onDispose(activate);
 
   async function start(
     entry: typeof active extends Map<string, infer T> ? T : never,
@@ -72,7 +72,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
         errorMessage(cause),
       );
     }
-    bb.rpc.experimental_invalidate([liveTags.changes(entry.environmentId), liveTags.specifications(entry.environmentId)]);
+    alia.rpc.experimental_invalidate([liveTags.changes(entry.environmentId), liveTags.specifications(entry.environmentId)]);
   }
 
   const observe = async (read: { input: unknown } | { key: string }, signal: AbortSignal) => {
@@ -81,7 +81,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
     await ready;
     if (signal.aborted) return;
     const { environmentId, storeId } = rpcInput(read.input);
-    const source = await workspace(bb.sdk, environmentId);
+    const source = await workspace(alia.sdk, environmentId);
     if (signal.aborted) return;
     const entry = {
       subscriptionId: randomUUID(),
@@ -114,12 +114,12 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
           { hostId: source.hostId },
         );
       } catch (cause) {
-        bb.log.warn(`OpenSpec watcher cleanup: ${errorMessage(cause)}`);
+        alia.log.warn(`OpenSpec watcher cleanup: ${errorMessage(cause)}`);
       }
     }
   };
-  bb.rpc.experimental_whileWatched("changes", observe);
-  bb.rpc.experimental_whileWatched("specifications", observe);
+  alia.rpc.experimental_whileWatched("changes", observe);
+  alia.rpc.experimental_whileWatched("specifications", observe);
 
   disposers.push(
     host.experimental_onSignal("changed", ({ hostId, payload }) => {
@@ -138,7 +138,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
       }
       if (payload.rescan || payload.structural) {
         // Structural changes can add/remove the selected artifact as well as its task file.
-        bb.rpc.experimental_invalidate([
+        alia.rpc.experimental_invalidate([
           liveTags.environment(payload.environmentId),
         ]);
         return;
@@ -153,7 +153,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
           tags.add(liveTags.detail(payload.environmentId, changeId));
         }
       }
-      if (tags.size) bb.rpc.experimental_invalidate([...tags]);
+      if (tags.size) alia.rpc.experimental_invalidate([...tags]);
     }),
   );
 
@@ -188,7 +188,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
     }
     if (!entries.length) knownHosts.delete(hostId);
     for (const entry of entries)
-      bb.rpc.experimental_invalidate([
+      alia.rpc.experimental_invalidate([
         liveTags.environment(entry.environmentId),
       ]);
   }
@@ -196,7 +196,7 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
     host.experimental_onWorkerExit(({ hostId }) => restoreHost(hostId)),
   );
   disposers.push(
-    bb.sdk.subscribe({
+    alia.sdk.subscribe({
       event: "host:changed",
       callback: (event) => {
         if (event.id) void restoreHost(event.id);
@@ -214,15 +214,15 @@ export function registerLiveUpdates(bb: BbPluginApi, host: Host) {
     "thread.deleted",
   ] as const;
   for (const event of threadEvents) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       if (thread.environmentId)
-        bb.rpc.experimental_invalidate([
+        alia.rpc.experimental_invalidate([
           liveTags.threads(thread.environmentId),
           liveTags.changes(thread.environmentId),
         ]);
     });
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const dispose of disposers) dispose();
   });
   return {

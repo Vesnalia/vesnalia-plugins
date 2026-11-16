@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Seven agent skills adapting the pinned Elephant-Goldfish Model to BB.
+Seven agent skills adapting the pinned Elephant-Goldfish Model to VesnALIA.
 
 ## Ownership
 
@@ -24,15 +24,15 @@ Seven agent skills adapting the pinned Elephant-Goldfish Model to BB.
 
 ## Work Guidance
 
-- State actual BB tool names and unavailable features plainly.
+- State actual VesnALIA tool names and unavailable features plainly.
 - Read the matching upstream skill before changing its adapted counterpart.
 
 ## Verification
 
-- `bb plugin install . --yes` imports the skills into BB; busy sessions get
+- `alia plugin install . --yes` imports the skills into VesnALIA; busy sessions get
   them only at a safe session start.
 - Live Elephant smoke exercised `egm_review_status` and `egm_propose` from a
-  newly started BB thread.
+  newly started VesnALIA thread.
 
 ## Child DOX Index
 

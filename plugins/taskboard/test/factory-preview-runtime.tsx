@@ -261,8 +261,8 @@ const rpc = {
     return { record: structuredClone(record) };
   }
 };
-export function useBbContext() { return { projectId: 'proj_test', threadId: 'thr_test' }; }
-export function useBbNavigate() { return {
+export function useAliaContext() { return { projectId: 'proj_test', threadId: 'thr_test' }; }
+export function useAliaNavigate() { return {
   toThread: (id: string) => window.factoryNavigation.push(id),
   toPluginPanel: (_path: string, options: { subPath: string }) => window.factoryNavigation.push(options.subPath)
 }; }

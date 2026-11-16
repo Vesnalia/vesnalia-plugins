@@ -165,7 +165,7 @@ describe("git links in a thread", () => {
     expect(callsTo(slot, "linkCard")).toEqual([{ url: `${PR_URL}#discussion_r5` }]);
     fireEvent.click(within(shown).getByRole("button", { name: "Open in Shuttle" }));
     expect(slot.inspection.navigateCalls).toContainEqual({ method: "toPluginPanel", path: "shuttle", options: { subPath: "pr/github/acme/checkout/4821" } });
-    const states = JSON.parse(window.sessionStorage.getItem("bb-plugin-shuttle:pr-state")!);
+    const states = JSON.parse(window.sessionStorage.getItem("alia-plugin-shuttle:pr-state")!);
     expect(states[JSON.stringify([retryPr.key, ""])].tab).toBe("conversation");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });

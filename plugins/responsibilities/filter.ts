@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { isUnread, isWorking, type Attention } from "./attention";
 
 export type Filter = "all" | "working" | "needs" | "quiet" | "managers";

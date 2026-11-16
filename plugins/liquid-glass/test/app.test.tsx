@@ -4,7 +4,7 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_APPEARANCE, RANGES } from "../src/appearance.js";
@@ -338,14 +338,14 @@ describe("the Liquid Glass settings section", () => {
     slot.lifecycle.unmount();
   });
 
-  it("writes bb's own light/dark key and dispatches the storage event", async () => {
+  it("writes VesnALIA's own light/dark key and dispatches the storage event", async () => {
     const slot = renderSection();
     const events: StorageEvent[] = [];
     const listener = (event: Event) => events.push(event as StorageEvent);
     window.addEventListener("storage", listener);
     fireEvent.click(await slot.findByText("Light"));
-    expect(localStorage.getItem("bb.theme")).toBe("light");
-    expect(events.at(-1)?.key).toBe("bb.theme");
+    expect(localStorage.getItem("alia.theme")).toBe("light");
+    expect(events.at(-1)?.key).toBe("alia.theme");
     window.removeEventListener("storage", listener);
     slot.lifecycle.unmount();
   });

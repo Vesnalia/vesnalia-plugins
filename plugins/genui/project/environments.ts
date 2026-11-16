@@ -3,7 +3,7 @@
 // status and pull request (read on request, for the rows on screen). Through
 // the SDK only, and only inside the thread's own project: an environment of
 // another project answers "not found" like an unknown one.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   byActivity,
   defaultEnvironments,
@@ -22,9 +22,9 @@ import {
 import { RUNNING, THREAD_ID, type EnvironmentsResult, type ProjectFailure, type ThreadDisplayStatus } from "../core/project";
 import { pullRequestInfo } from "./source";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
-/** The fields of BB's environment record (environments.list/get) Environments reads. */
+/** The fields of VesnALIA's environment record (environments.list/get) Environments reads. */
 export interface EnvironmentEntry {
   readonly id: string;
   readonly name: string | null;
@@ -43,7 +43,7 @@ export interface EnvironmentEntry {
   readonly updatedAt: number;
 }
 
-/** The fields of BB's thread list entry Environments reads. */
+/** The fields of VesnALIA's thread list entry Environments reads. */
 export interface ThreadEntry {
   readonly id: string;
   readonly projectId: string;
@@ -90,14 +90,14 @@ export type UnreadStatus =
 /** Most threads of the project read for the list. */
 export const MAX_PROJECT_THREADS = 1000;
 
-/** Most environments of live threads that BB no longer lists (destroyed) looked up one by one. */
+/** Most environments of live threads that VesnALIA no longer lists (destroyed) looked up one by one. */
 const MAX_MISSING_ENVIRONMENTS = 20;
 
 /** Environments whose detail the markdown fallback reads, and how many at once. */
 const MARKDOWN_DETAILS = 12;
 const DETAIL_CONCURRENCY = 3;
 
-/** How long a thread's project is reused before asking BB again. */
+/** How long a thread's project is reused before asking VesnALIA again. */
 const PROJECT_CACHE_MS = 60_000;
 
 export interface EnvironmentsSource {
@@ -114,7 +114,7 @@ function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-/** Where the environment is in its life, from BB's status, lifecycle phase and machine. */
+/** Where the environment is in its life, from VesnALIA's status, lifecycle phase and machine. */
 export function environmentLife(environment: Pick<EnvironmentEntry, "status" | "lifecycle" | "hostLifecycle">): EnvironmentLife {
   if (environment.status === "destroyed" || environment.lifecycle.phase === "destroyed") return "destroyed";
   if (environment.hostLifecycle === "removed" || environment.hostLifecycle === "removing") return "host-gone";
@@ -124,7 +124,7 @@ export function environmentLife(environment: Pick<EnvironmentEntry, "status" | "
   return "ready";
 }
 
-/** The kind of place, as BB's environment picker names them. */
+/** The kind of place, as VesnALIA's environment picker names them. */
 export function environmentKind(
   environment: Pick<EnvironmentEntry, "workspaceProvisionType" | "isWorktree" | "isGitRepo" | "environmentProviderId">,
   life: EnvironmentLife,
@@ -153,7 +153,7 @@ export function environmentThread(thread: ThreadEntry, activeAt: number): Enviro
 }
 
 /**
- * When the thread last did something. BB moves `updatedAt` when the thread is
+ * When the thread last did something. VesnALIA moves `updatedAt` when the thread is
  * read, so it isn't activity: the last time the thread asked for attention
  * (finished a turn, asked a question) is. A running thread's latest event is newer.
  */
@@ -164,7 +164,7 @@ async function latestActivity(sdk: Sdk, thread: ThreadEntry): Promise<number> {
   return Math.max(settled, latest?.createdAt ?? 0);
 }
 
-/** One environment's row: its BB record and the threads on it. */
+/** One environment's row: its VesnALIA record and the threads on it. */
 export function environmentInfo(
   environment: EnvironmentEntry,
   threads: readonly EnvironmentThread[],
@@ -203,7 +203,7 @@ export function environmentInfo(
   };
 }
 
-/** A live thread's environment BB no longer has at all: what the thread itself remembers of it. */
+/** A live thread's environment VesnALIA no longer has at all: what the thread itself remembers of it. */
 function vanishedEnvironment(thread: ThreadEntry): EnvironmentEntry {
   return {
     id: thread.environmentId ?? "",
@@ -229,7 +229,7 @@ function unread(reason: CheckoutFailure["reason"], message: string, path: string
   return { ok: false, reason, message, path };
 }
 
-/** BB's answer for a checkout it couldn't read, as Environments says it. */
+/** VesnALIA's answer for a checkout it couldn't read, as Environments says it. */
 export function checkoutFailure(answer: UnreadStatus): CheckoutFailure {
   if (answer.outcome === "not_applicable") return unread("not-git", "Not a git checkout");
   switch (answer.failure.code) {
@@ -239,7 +239,7 @@ export function checkoutFailure(answer: UnreadStatus): CheckoutFailure {
     case "workspace_type_mismatch":
       return unread("not-git", "Not a git checkout");
     case "unknown_environment":
-      return unread("gone", "BB no longer knows this environment");
+      return unread("gone", "VesnALIA no longer knows this environment");
     default:
       return unread("unavailable", answer.failure.message, answer.failure.workspacePath);
   }
@@ -293,7 +293,7 @@ export function createEnvironmentsSource(sdk: Sdk): EnvironmentsSource {
     try {
       thread = await sdk.threads.get({ threadId });
     } catch {
-      return failure("not-found", "BB has no such thread");
+      return failure("not-found", "VesnALIA has no such thread");
     }
     if (thread.deletedAt !== null) return failure("not-found", "This thread was deleted");
     const own = { at: Date.now(), projectId: thread.projectId, environmentId: thread.environmentId };
@@ -338,7 +338,7 @@ export function createEnvironmentsSource(sdk: Sdk): EnvironmentsSource {
       return {
         ok: true,
         id: environment.id,
-        checkout: unread("unavailable", `BB couldn't read the checkout: ${errorMessage(cause)}`),
+        checkout: unread("unavailable", `VesnALIA couldn't read the checkout: ${errorMessage(cause)}`),
         pull: null,
         fetchedAt: Date.now(),
       };
@@ -360,7 +360,7 @@ export function createEnvironmentsSource(sdk: Sdk): EnvironmentsSource {
         );
         const kept = threads.filter((thread) => thread.projectId === projectId && thread.deletedAt === null && thread.environmentId !== null);
         const read = kept.slice(0, MAX_PROJECT_THREADS);
-        // BB doesn't list destroyed environments; one a live thread still points at is shown, honestly.
+        // VesnALIA doesn't list destroyed environments; one a live thread still points at is shown, honestly.
         const missing = [
           ...new Map(
             read
@@ -395,7 +395,7 @@ export function createEnvironmentsSource(sdk: Sdk): EnvironmentsSource {
         );
         return { ...view, environments: infos.map((info) => ({ ...info, detail: details.get(info.id) ?? null })) };
       } catch (cause) {
-        return failure("unavailable", `BB couldn't list the environments: ${errorMessage(cause)}`);
+        return failure("unavailable", `VesnALIA couldn't list the environments: ${errorMessage(cause)}`);
       }
     },
 
@@ -411,7 +411,7 @@ export function createEnvironmentsSource(sdk: Sdk): EnvironmentsSource {
         }
         return await detailOf(environment);
       } catch (cause) {
-        return { ok: false, reason: "unavailable", message: `BB couldn't read the environment: ${errorMessage(cause)}` };
+        return { ok: false, reason: "unavailable", message: `VesnALIA couldn't read the environment: ${errorMessage(cause)}` };
       }
     },
   };

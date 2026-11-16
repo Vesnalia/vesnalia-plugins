@@ -5,7 +5,7 @@ import { kilocodeSqliteCollectorSource } from "./host-scripts.generated";
 
 // Kilo Code's own session database is the single canonical usage source for
 // the `kilocode` agent: the CLI writes it directly (XDG_DATA_HOME/kilo/kilo.db
-// or ~/.local/share/kilo/kilo.db) and it works with or without BB. `kilocode`
+// or ~/.local/share/kilo/kilo.db) and it works with or without VesnALIA. `kilocode`
 // is deliberately NOT a JSONL agent — a second ~/.kilocode/usage.jsonl root
 // would count the same turns twice, so that path is never scanned here.
 //
@@ -39,8 +39,8 @@ async function kilocodeSqliteCollector(encodedInput: string, dependencies: {
   loadSqlite: () => typeof import("node:sqlite");
 }) {
   const { buffer, fs, path, zlib, loadSqlite } = dependencies;
-  const scanBegin = "__BB_USAGE_SCAN_BEGIN__";
-  const scanEnd = "__BB_USAGE_SCAN_END__";
+  const scanBegin = "__ALIA_USAGE_SCAN_BEGIN__";
+  const scanEnd = "__ALIA_USAGE_SCAN_END__";
   const input = JSON.parse(buffer.from(encodedInput, "base64").toString("utf8")) as KilocodeScanInput;
   if (input.agentId !== "kilocode") throw new Error("Unsupported usage agent.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.sinceDay)) throw new Error("Invalid usage history boundary.");
@@ -217,7 +217,7 @@ async function kilocodeSqliteCollector(encodedInput: string, dependencies: {
 export function kilocodeCollectorScript(input: KilocodeScanInput) {
   const encodedInput = Buffer.from(JSON.stringify(input)).toString("base64");
   const dependencies = "{buffer:require('node:buffer').Buffer,fs:require('node:fs'),path:require('node:path'),zlib:require('node:zlib'),loadSqlite:function(){return require('node:sqlite');}}";
-  return `(${kilocodeSqliteCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__BB_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
+  return `(${kilocodeSqliteCollectorSource})(${JSON.stringify(encodedInput)},${dependencies}).catch((error)=>{process.stderr.write('__ALIA_USAGE_ERROR__:'+String(error?.message??error).replace(/[\\r\\n]+/g,' ').slice(0,300)+'\\n');process.exitCode=1;});`;
 }
 
 export function compressedKilocodeCollectorScript(input: KilocodeScanInput) {

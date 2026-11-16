@@ -3,11 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers, type PluginSdkTestFakes, type RenderSlotOptions } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers, type PluginSdkTestFakes, type RenderSlotOptions } from "@vesnalia/plugin-sdk/testing/app";
 import { useLayoutEffect, useState, useSyncExternalStore } from "react";
-import { useComposers, type NewThreadRequest, type PluginComposerApi, type PluginNavPanelProps, type PluginSidebarThread, type PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+import { useComposers, type NewThreadRequest, type PluginComposerApi, type PluginNavPanelProps, type PluginSidebarThread, type PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import { mergeLead } from "../src/ui/merge-order";
-import type { Attempt, MergeConfirmView, BadgeView, BbProjectChoice, InsightsWindow, ChangedFile, ChangeSource, ChangesView, ChecksItem, HomeProject, MergeEntry, MergeOrderView, NextStep, PlannerView, PlanningSession, ProjectSummary, ProjectView, RepoOverview, RolloutStep, RolloutView, SentNote, SpecVersionView, ThreadInfo, TicketDetail, rpcContract } from "../src/contract";
+import type { Attempt, MergeConfirmView, BadgeView, AliaProjectChoice, InsightsWindow, ChangedFile, ChangeSource, ChangesView, ChecksItem, HomeProject, MergeEntry, MergeOrderView, NextStep, PlannerView, PlanningSession, ProjectSummary, ProjectView, RepoOverview, RolloutStep, RolloutView, SentNote, SpecVersionView, ThreadInfo, TicketDetail, rpcContract } from "../src/contract";
 import type { TicketRow } from "../src/db/store";
 import { repoOverviews } from "../src/projects";
 import { clockTime } from "../src/format";
@@ -47,7 +47,7 @@ const handlers = (over: Partial<Handlers> = {}): Handlers => ({
   confirmMerge: unexpected,
   control: unexpected,
   startPlanning: unexpected,
-  bbProjects: () => [],
+  aliaProjects: () => [],
   planning: () => [],
   planningSession: () => null,
   plannerView: () => null,
@@ -85,24 +85,24 @@ describe("registration", () => {
     expect(app.navPanels[0]).toMatchObject({ experimental_sidebar: expect.any(Function), experimental_useBadge: expect.any(Function), experimental_usePageTitle: expect.any(Function) });
     expect(app.threadHeaderActions.map(({ id, title }) => ({ id, title }))).toEqual([{ id: "ticket", title: "Loom" }]);
     expect(app.threadInfoRows.map(({ id, group, order }) => ({ id, group, order }))).toEqual([{ id: "loom", group: "1_thread", order: 40 }]);
-    // bb draws the rail's badge now, so nothing reaches into its DOM.
+    // VesnALIA draws the rail's badge now, so nothing reaches into its DOM.
     expect(app.contentScripts).toEqual([]);
   });
 
   it("is declared as the plugin's app entry", () => {
     const manifest = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
-    expect(manifest.bb).toMatchObject({ server: "./server.ts", app: "./app.tsx", host: "./host.ts" });
+    expect(manifest.alia).toMatchObject({ server: "./server.ts", app: "./app.tsx", host: "./host.ts" });
   });
 
   it("brands the plugin with the spool and declares it for the page, the chip and the marketplace", () => {
     const root = join(__dirname, "..");
     const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-    expect(manifest.bb.branding).toEqual({ icon: "./icons/loom.svg", experimental_icons: { loom: "./icons/loom.svg" } });
+    expect(manifest.alia.branding).toEqual({ icon: "./icons/loom.svg", experimental_icons: { loom: "./icons/loom.svg" } });
     const entry = JSON.parse(readFileSync(join(root, "../../entries/loom.json"), "utf8"));
     expect(entry.icon).toEqual({ url: "plugins/loom/icons/loom.svg" });
   });
 
-  it("ships a monochrome 24px SVG that bb's icon validator accepts", () => {
+  it("ships a monochrome 24px SVG that VesnALIA's icon validator accepts", () => {
     const path = join(__dirname, "..", "icons/loom.svg");
     expect(existsSync(path)).toBe(true);
     const svg = readFileSync(path, "utf8");
@@ -252,7 +252,7 @@ describe("rail badge", () => {
     expect(shown(slot)).toBeNull();
   });
 
-  it("counts the Needs you items and the Loom threads bb shows waiting on you, in amber", async () => {
+  it("counts the Needs you items and the Loom threads VesnALIA shows waiting on you, in amber", async () => {
     const slot = await mountBadge({ needsYou: 1, blocked: false, threadIds: ["thr_plan", "thr_w1"] }, [
       { id: "thr_plan", hasPendingInteraction: true },
       { id: "thr_w1", hasPendingInteraction: false },
@@ -275,7 +275,7 @@ describe("rail badge", () => {
   });
 });
 
-describe("title in bb's header", () => {
+describe("title in VesnALIA's header", () => {
   const titleOf = async (subPath: string, rpc: Partial<Handlers> = {}) => {
     const app = await loadPluginApp(() => import("../app"));
     const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>({ component: () => null, experimental_usePageTitle: app.navPanels[0]!.experimental_usePageTitle }, { subPath }, { pluginId: "loom", rpc: handlers(rpc) });
@@ -284,7 +284,7 @@ describe("title in bb's header", () => {
   };
   const home = () => homeView({ projects: [homeProject()] });
 
-  it("keeps bb's own title on the home page and names the other pages", async () => {
+  it("keeps VesnALIA's own title on the home page and names the other pages", async () => {
     expect((await titleOf("")).inspection.experimental_pageTitle).toBeNull();
     expect((await titleOf("_guide")).inspection.experimental_pageTitle).toEqual({ title: "How Loom works" });
     expect((await titleOf("_new")).inspection.experimental_pageTitle).toEqual({ title: "New project" });
@@ -310,7 +310,7 @@ describe("title in bb's header", () => {
     );
   });
 
-  it("leaves the breadcrumb row to bb", async () => {
+  it("leaves the breadcrumb row to VesnALIA", async () => {
     const { slot } = await mountPage("_guide");
     expect(slot.queryByRole("navigation", { name: "Loom" })).toBeNull();
   });
@@ -419,7 +419,7 @@ describe("sidebar", () => {
     expect(names(again)).toContain("Old workOLD");
   });
 
-  it("marks the route the page reopens on, and names it in the title, while the address is still bb's root", async () => {
+  it("marks the route the page reopens on, and names it in the title, while the address is still VesnALIA's root", async () => {
     const page = await mountPage("docs", { project: () => projectView({ overview: overview({ slug: "docs", name: "Docs site", key: "DOC" }) }) });
     await page.slot.findByRole("heading", { name: "Docs site" });
     page.slot.lifecycle.unmount();
@@ -440,7 +440,7 @@ describe("sidebar", () => {
   });
 });
 
-// The question plugin's wire format: q1 as bb's built-in Ask User Question sends it, q2 with Better Ask's extra fields.
+// The question plugin's wire format: q1 as VesnALIA's built-in Ask User Question sends it, q2 with Better Ask's extra fields.
 const singleSelect = {
   id: "q1",
   prompt: "How should finished tickets merge?",
@@ -492,7 +492,7 @@ describe("questionsOf", () => {
 
 async function mountPage(subPath: string, rpc: Partial<Handlers> = {}, options: Pick<RenderSlotOptions<typeof rpcContract>, "sdk" | "sidebarThreads"> = {}) {
   const app = await loadPluginApp(() => import("../app"));
-  // The page alone: its title in bb's header has tests of its own.
+  // The page alone: its title in VesnALIA's header has tests of its own.
   const slot = renderSlot<PluginNavPanelProps, typeof rpcContract>({ component: app.navPanels[0]!.component }, { subPath }, { pluginId: "loom", rpc: handlers(rpc), ...options });
   mounts.push(slot);
   const Panel = app.navPanels[0]!.component;
@@ -528,7 +528,7 @@ describe("project list", () => {
     expect([...guide.querySelectorAll("[data-guide-step]")].map((step) => step.querySelector("b")!.textContent)).toEqual(["Plan.", "Approve.", "Start.", "Check and review.", "Merge and land."]);
     expect(guide.textContent).toContain("Who does what");
     expect(guide.textContent).toContain("A ticket's life");
-    expect(guide.textContent).toContain("bb loom approve <slug>");
+    expect(guide.textContent).toContain("alia loom approve <slug>");
     fireEvent.click(slot.getByRole("button", { name: "Start your first project" }));
     expect(slot.inspection.navigateCalls).toEqual([pushed("_new")]);
   });
@@ -787,7 +787,7 @@ describe("home", () => {
 
 describe("new project", () => {
   const SAVED = "loom.newProject.projectId";
-  const runtime = () => (globalThis as unknown as { __bbPluginRuntime: { pluginSdkApp: Record<string, unknown> } }).__bbPluginRuntime;
+  const runtime = () => (globalThis as unknown as { __aliaPluginRuntime: { pluginSdkApp: Record<string, unknown> } }).__aliaPluginRuntime;
   let restoreComposer: (() => void) | null = null;
   afterEach(() => {
     vi.restoreAllMocks();
@@ -795,8 +795,8 @@ describe("new project", () => {
     restoreComposer?.();
     restoreComposer = null;
   });
-  const typeGoal = (slot: Slot, text: string) => fireEvent.change(slot.getByTestId("bb-new-thread-composer-input"), { target: { value: text } });
-  const seed = (slot: Slot) => slot.getByTestId("bb-new-thread-composer").getAttribute("data-default-project-id");
+  const typeGoal = (slot: Slot, text: string) => fireEvent.change(slot.getByTestId("alia-new-thread-composer-input"), { target: { value: text } });
+  const seed = (slot: Slot) => slot.getByTestId("alia-new-thread-composer").getAttribute("data-default-project-id");
   const request = (text: string, projectId = "project-test") => ({ projectId, providerId: "codex", model: "gpt-5", reasoningLevel: "medium", permissionMode: "full", executionInputSources: {}, environment: { type: "project-default" }, input: [{ type: "text", text, mentions: [] }] });
 
   it("starts planning with the composer's request and the answers given up front, then opens the conversation", async () => {
@@ -804,13 +804,13 @@ describe("new project", () => {
     const { slot } = await mountPage("_new", { startPlanning });
     expect(await slot.findByRole("heading", { name: "What should exist when the project is done?" })).toBeTruthy();
     expect(slot.container.querySelectorAll("[data-guide-step]")).toHaveLength(5);
-    expect(slot.getByTestId("bb-new-thread-composer").getAttribute("data-default-permission-mode")).toBe("full");
+    expect(slot.getByTestId("alia-new-thread-composer").getAttribute("data-default-permission-mode")).toBe("full");
     typeGoal(slot, "Let people export their orders as CSV.");
     fireEvent.click(slot.getByRole("button", { name: "Integration branch" }));
     expect(slot.getByRole("button", { name: "Integration branch" }).getAttribute("aria-pressed")).toBe("true");
     expect(slot.getByRole("button", { name: "Ask me" }).getAttribute("aria-pressed")).toBe("false");
     fireEvent.change(slot.getByRole("textbox", { name: "Reviewer model" }), { target: { value: "codex, gpt-5" } });
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(slot.inspection.navigateCalls).toEqual([pushed("_plan/thr_p7")]));
     expect(startPlanning).toHaveBeenCalledTimes(1);
     expect(startPlanning).toHaveBeenCalledWith({ request: request("Let people export their orders as CSV."), merge: "integration", reviewer: "codex, gpt-5", repos: [], confirm: true });
@@ -818,13 +818,13 @@ describe("new project", () => {
 
   it("asks the planner about the merge by default, and shows a refusal without leaving the page", async () => {
     const startPlanning = vi.fn((): { threadId: string } => {
-      throw new Error("Loom needs a bb project with a git checkout. Pick a project in the composer.");
+      throw new Error("Loom needs a VesnALIA project with a git checkout. Pick a project in the composer.");
     });
     const { slot } = await mountPage("_new", { startPlanning });
-    await slot.findByTestId("bb-new-thread-composer-input");
+    await slot.findByTestId("alia-new-thread-composer-input");
     expect(slot.getByRole("button", { name: "Ask me" }).getAttribute("aria-pressed")).toBe("true");
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     expect((await slot.findByRole("alert")).textContent).toContain("git checkout");
     expect(startPlanning).toHaveBeenCalledWith({ request: request("Write the docs site."), merge: "ask", reviewer: "", repos: [], confirm: true });
     expect(slot.inspection.navigateCalls).toEqual([]);
@@ -833,24 +833,24 @@ describe("new project", () => {
 
   it("starts the composer on no particular project the first time, then on the project of the last planning it started", async () => {
     const first = await mountPage("_new", { startPlanning: () => ({ threadId: "thr_p7" }) });
-    await first.slot.findByTestId("bb-new-thread-composer-input");
+    await first.slot.findByTestId("alia-new-thread-composer-input");
     expect(seed(first.slot)).toBe("");
     typeGoal(first.slot, "Let people export their orders as CSV.");
-    fireEvent.click(first.slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(first.slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(localStorage.getItem(SAVED)).toBe("project-test"));
     first.slot.lifecycle.unmount();
 
     localStorage.setItem(SAVED, "proj_shop");
     const startPlanning = vi.fn(() => ({ threadId: "thr_p8" }));
     const { slot } = await mountPage("_new", { startPlanning });
-    await slot.findByTestId("bb-new-thread-composer-input");
+    await slot.findByTestId("alia-new-thread-composer-input");
     expect(seed(slot)).toBe("proj_shop");
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(startPlanning).toHaveBeenCalledWith({ request: request("Write the docs site.", "proj_shop"), merge: "ask", reviewer: "", repos: [], confirm: true }));
   });
 
-  const choices = (): BbProjectChoice[] => [
+  const choices = (): AliaProjectChoice[] => [
     { id: "proj_docs", name: "docs", hostIds: [] },
     { id: "proj_shop", name: "shop", hostIds: ["host_1"] },
     { id: "proj_api", name: "shop-api", hostIds: ["host_1"] },
@@ -859,15 +859,15 @@ describe("new project", () => {
   const repoRows = (slot: Slot) => [...slot.getByRole("group", { name: "Repos" }).querySelectorAll("[data-repo-choice]")].map((row) => row.getAttribute("data-repo-choice"));
   const repoBox = (slot: Slot, name: string) => within(slot.getByRole("group", { name: "Repos" })).getByRole("checkbox", { name: new RegExp(`^${name}(?: no checkout)?$`) }) as HTMLInputElement;
 
-  // Uncontrolled like bb's composer: it submits the project bb reports for it, which setComposerScope changes as the human's pick in its project picker would.
+  // Uncontrolled like VesnALIA's composer: it submits the project VesnALIA reports for it, which setComposerScope changes as the human's pick in its project picker would.
   function SwitchingComposer({ onSubmit }: { onSubmit(request: NewThreadRequest): void | Promise<void> }) {
     const scope = useComposers()[0]!.scope;
     const [text, setText] = useState("");
     const projectId = scope.kind === "new-thread" ? (scope.projectId ?? "") : "";
     return (
       <div>
-        <textarea data-testid="bb-new-thread-composer-input" value={text} onChange={(event) => setText(event.target.value)} />
-        <button type="button" data-testid="bb-new-thread-composer-submit" onClick={() => void onSubmit(request(text, projectId) as NewThreadRequest)}>
+        <textarea data-testid="alia-new-thread-composer-input" value={text} onChange={(event) => setText(event.target.value)} />
+        <button type="button" data-testid="alia-new-thread-composer-submit" onClick={() => void onSubmit(request(text, projectId) as NewThreadRequest)}>
           Start thread
         </button>
       </div>
@@ -887,7 +887,7 @@ describe("new project", () => {
     return slot;
   };
 
-  // As bb's composer does: each render registers a fresh API for useComposers in a layout effect, which re-renders every reader at once.
+  // As VesnALIA's composer does: each render registers a fresh API for useComposers in a layout effect, which re-renders every reader at once.
   const mountRegistering = async (rpc: Partial<Handlers>, projectId: string) => {
     const app = await loadPluginApp(() => import("../app"));
     const sdk = runtime().pluginSdkApp;
@@ -900,7 +900,7 @@ describe("new project", () => {
         version += 1;
         for (const listener of [...listeners]) listener();
       });
-      return <div data-testid="bb-new-thread-composer" />;
+      return <div data-testid="alia-new-thread-composer" />;
     }
     const subscribe = (listener: () => void) => {
       listeners.add(listener);
@@ -922,17 +922,17 @@ describe("new project", () => {
     return slot;
   };
 
-  it("renders bb's composer once per registration, so the page does not loop on the composer's own updates", async () => {
-    const slot = await mountRegistering({ bbProjects: choices }, "proj_shop");
+  it("renders VesnALIA's composer once per registration, so the page does not loop on the composer's own updates", async () => {
+    const slot = await mountRegistering({ aliaProjects: choices }, "proj_shop");
     expect(await slot.findByRole("heading", { name: "What should exist when the project is done?" })).toBeTruthy();
     await waitFor(() => expect(repoRows(slot)).toEqual(["proj_docs", "proj_api", "project-test"]));
-    expect(slot.getAllByTestId("bb-new-thread-composer")).toHaveLength(1);
+    expect(slot.getAllByTestId("alia-new-thread-composer")).toHaveLength(1);
   });
 
   it("follows the composer's project: switched from shop to shop-api, it offers shop, hides shop-api, and sends shop as a repo", async () => {
     localStorage.setItem(SAVED, "proj_shop");
     const startPlanning = vi.fn(() => ({ threadId: "thr_p7" }));
-    const slot = await mountSwitching({ startPlanning, bbProjects: choices }, "proj_shop");
+    const slot = await mountSwitching({ startPlanning, aliaProjects: choices }, "proj_shop");
     await waitFor(() => expect(repoRows(slot)).toEqual(["proj_docs", "proj_api", "project-test"]));
     fireEvent.click(repoBox(slot, "shop-api"));
     expect(slot.getByRole("group", { name: "Repos" }).textContent).toContain("1 of up to 10 picked");
@@ -943,14 +943,14 @@ describe("new project", () => {
     fireEvent.click(repoBox(slot, "shop"));
 
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(slot.inspection.navigateCalls).toEqual([pushed("_plan/thr_p7")]));
     expect(startPlanning).toHaveBeenCalledWith({ request: request("Write the docs site.", "proj_api"), merge: "ask", reviewer: "", repos: ["proj_shop"], confirm: true });
   });
 
   it("keeps a pick hidden while it is the composer's project, and shows it picked again when the composer moves off it", async () => {
     const startPlanning = vi.fn(() => ({ threadId: "thr_p7" }));
-    const slot = await mountSwitching({ startPlanning, bbProjects: choices }, "proj_shop");
+    const slot = await mountSwitching({ startPlanning, aliaProjects: choices }, "proj_shop");
     await waitFor(() => expect(repoRows(slot)).toHaveLength(3));
     fireEvent.click(repoBox(slot, "docs"));
     await slot.setComposerScope({ kind: "new-thread", projectId: "proj_docs" });
@@ -958,16 +958,16 @@ describe("new project", () => {
     await slot.setComposerScope({ kind: "new-thread", projectId: "proj_shop" });
     expect(repoBox(slot, "docs").checked).toBe(true);
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(startPlanning).toHaveBeenCalledWith(expect.objectContaining({ request: request("Write the docs site.", "proj_shop"), repos: ["proj_docs"] })));
   });
 
-  it("offers bb's other standard projects as repos, filterable by name, marks one with no checkout, and passes the picked ids to startPlanning", async () => {
+  it("offers VesnALIA's other standard projects as repos, filterable by name, marks one with no checkout, and passes the picked ids to startPlanning", async () => {
     localStorage.setItem(SAVED, "proj_shop");
     const startPlanning = vi.fn(() => ({ threadId: "thr_p7" }));
-    const { slot } = await mountPage("_new", { startPlanning, bbProjects: choices });
+    const { slot } = await mountPage("_new", { startPlanning, aliaProjects: choices });
     await waitFor(() => expect(repoRows(slot)).toEqual(["proj_docs", "proj_api", "project-test"]));
-    expect(calls(slot, "bbProjects")).toEqual([{ method: "bbProjects", input: null }]);
+    expect(calls(slot, "aliaProjects")).toEqual([{ method: "aliaProjects", input: null }]);
     const group = slot.getByRole("group", { name: "Repos" });
     expect([...group.querySelectorAll("[data-no-checkout]")].map((mark) => mark.closest("[data-repo-choice]")!.getAttribute("data-repo-choice"))).toEqual(["proj_docs"]);
     expect(group.querySelector("[data-no-checkout]")!.textContent).toBe("no checkout");
@@ -986,14 +986,14 @@ describe("new project", () => {
     expect(group.textContent).toContain("2 of up to 10 picked");
 
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(slot.inspection.navigateCalls).toEqual([pushed("_plan/thr_p7")]));
     expect(startPlanning).toHaveBeenCalledWith({ request: request("Write the docs site.", "proj_shop"), merge: "ask", reviewer: "", repos: ["proj_api", "proj_docs"], confirm: true });
   });
 
   it("says when no repo matches the filter, and unpicks a repo when its box is cleared", async () => {
     const startPlanning = vi.fn(() => ({ threadId: "thr_p7" }));
-    const { slot } = await mountPage("_new", { startPlanning, bbProjects: choices });
+    const { slot } = await mountPage("_new", { startPlanning, aliaProjects: choices });
     await waitFor(() => expect(repoRows(slot)).toHaveLength(4));
     fireEvent.click(repoBox(slot, "docs"));
     fireEvent.click(repoBox(slot, "docs"));
@@ -1001,25 +1001,25 @@ describe("new project", () => {
     expect(repoRows(slot)).toEqual([]);
     expect(slot.getByRole("group", { name: "Repos" }).textContent).toContain('No repo matches "zzz".');
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(startPlanning).toHaveBeenCalledWith(expect.objectContaining({ repos: [] })));
   });
 
   it("leaves out a picked repo that the composer submits as its own project", async () => {
     const startPlanning = vi.fn(() => ({ threadId: "thr_p7" }));
-    const { slot } = await mountPage("_new", { startPlanning, bbProjects: choices });
+    const { slot } = await mountPage("_new", { startPlanning, aliaProjects: choices });
     await waitFor(() => expect(repoRows(slot)).toEqual(["proj_docs", "proj_shop", "proj_api", "project-test"]));
     fireEvent.click(repoBox(slot, "test"));
     fireEvent.click(repoBox(slot, "shop-api"));
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(startPlanning).toHaveBeenCalledTimes(1));
     expect(startPlanning).toHaveBeenCalledWith({ request: request("Write the docs site."), merge: "ask", reviewer: "", repos: ["proj_api"], confirm: true });
   });
 
   it("lets the human pick at most 10 repos", async () => {
-    const many = Array.from({ length: 11 }, (_, n): BbProjectChoice => ({ id: `proj_${n}`, name: `repo-${String(n).padStart(2, "0")}`, hostIds: ["host_1"] }));
-    const { slot } = await mountPage("_new", { bbProjects: () => many });
+    const many = Array.from({ length: 11 }, (_, n): AliaProjectChoice => ({ id: `proj_${n}`, name: `repo-${String(n).padStart(2, "0")}`, hostIds: ["host_1"] }));
+    const { slot } = await mountPage("_new", { aliaProjects: () => many });
     await waitFor(() => expect(repoRows(slot)).toHaveLength(11));
     for (const choice of many.slice(0, 10)) fireEvent.click(repoBox(slot, choice.name));
     expect(repoBox(slot, "repo-10").disabled).toBe(true);
@@ -1028,17 +1028,17 @@ describe("new project", () => {
     expect(repoBox(slot, "repo-10").disabled).toBe(false);
   });
 
-  it("says when bb cannot list its projects, and still starts planning without repos", async () => {
+  it("says when VesnALIA cannot list its projects, and still starts planning without repos", async () => {
     const startPlanning = vi.fn(() => ({ threadId: "thr_p7" }));
     const { slot } = await mountPage("_new", {
       startPlanning,
-      bbProjects: () => {
-        throw new Error("bb is restarting");
+      aliaProjects: () => {
+        throw new Error("alia is restarting");
       },
     });
-    await waitFor(() => expect(slot.getByRole("group", { name: "Repos" }).textContent).toContain("Could not list bb's projects: bb is restarting"));
+    await waitFor(() => expect(slot.getByRole("group", { name: "Repos" }).textContent).toContain("Could not list VesnALIA's projects: VesnALIA is restarting"));
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(slot.inspection.navigateCalls).toEqual([pushed("_plan/thr_p7")]));
     expect(startPlanning).toHaveBeenCalledWith(expect.objectContaining({ repos: [] }));
   });
@@ -1051,10 +1051,10 @@ describe("new project", () => {
       throw new Error("QuotaExceededError");
     });
     const { slot } = await mountPage("_new", { startPlanning: () => ({ threadId: "thr_p7" }) });
-    await slot.findByTestId("bb-new-thread-composer-input");
+    await slot.findByTestId("alia-new-thread-composer-input");
     expect(seed(slot)).toBe("");
     typeGoal(slot, "Write the docs site.");
-    fireEvent.click(slot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(slot.getByTestId("alia-new-thread-composer-submit"));
     await waitFor(() => expect(slot.inspection.navigateCalls).toEqual([pushed("_plan/thr_p7")]));
   });
 });
@@ -1080,7 +1080,7 @@ describe("planning conversation", () => {
     expect(slot.inspection.navigateCalls).toEqual([{ method: "toThread", threadId: "thr_p1" }]);
 
     fireEvent.click(slot.getByRole("tab", { name: "Conversation" }));
-    const chat = slot.getByTestId("bb-thread-chat");
+    const chat = slot.getByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe("thr_p1");
     expect(chat.getAttribute("data-variant")).toBe("compact");
     expect(chat.getAttribute("data-layout")).toBe("contained");
@@ -1104,7 +1104,7 @@ describe("planning conversation", () => {
   it("says so when the thread is not a Loom planning thread", async () => {
     const { slot } = await mountPage("_plan/thr_other");
     expect(await slot.findByText("This thread is not a Loom planning thread.")).toBeTruthy();
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
   });
 
   it("shows the merges the planner asks the human to confirm under Needs you, with a Confirm that sends the commit shown", async () => {
@@ -1367,7 +1367,7 @@ describe("planner page", () => {
       ],
       review: { kind: "skipped", version: 2, against: 1, paths },
     });
-    const repos = [repoOverview({ name: "web" }), repoOverview({ name: "infra", bbProjectId: "proj_infra" })];
+    const repos = [repoOverview({ name: "web" }), repoOverview({ name: "infra", aliaProjectId: "proj_infra" })];
     const slot = await openPlanner({ plannerView: () => view }, projectView({ overview: overview({ pendingVersion: 2, repos }) }));
     const card = await waitFor(() => {
       const found = page(slot).querySelector<HTMLElement>('[data-version-card="2"]');
@@ -1480,7 +1480,7 @@ describe("planner page states", () => {
     const card = slot.container.querySelector<HTMLElement>('[data-version-card="1"]')!;
     expect(card.querySelector("h3")!.textContent).toBe("Loom's spec review of v1 did not finish");
     expect(card.textContent).toContain("the reviewer ended its turn twice without a verdict");
-    expect(card.querySelector("code")!.textContent).toBe("bb loom approve csv --skip-review");
+    expect(card.querySelector("code")!.textContent).toBe("alia loom approve csv --skip-review");
     expect(card.textContent).not.toContain("`");
     expect(slot.container.querySelector("[data-planner-status]")!.textContent).toBe("Idle · Loom's spec review did not finish");
     expect(slot.container.querySelector('[data-planning-step="current"]')!.textContent).toContain("Loom's spec review");
@@ -1649,7 +1649,7 @@ describe("planner questions", () => {
     expect(idle.list).not.toHaveBeenCalled();
   });
 
-  it("tells the answered rounds from bb's thread events in the story and under What you decided", async () => {
+  it("tells the answered rounds from VesnALIA's thread events in the story and under What you decided", async () => {
     const lifecycle = (status: string, at: number, resolution: unknown = null) => ({
       id: `evt_${at}`,
       threadId: "thr_p1",
@@ -1681,7 +1681,7 @@ describe("planner questions", () => {
     expect(slot.container.querySelector("[data-about-planner]")!.textContent).toContain("1 round, 2 answers");
   });
 
-  it("keeps a round open while bb resolves it, says when one ended unanswered, and reads the open questions when the sidebar leaves the thread out", async () => {
+  it("keeps a round open while VesnALIA resolves it, says when one ended unanswered, and reads the open questions when the sidebar leaves the thread out", async () => {
     const lifecycle = (id: string, status: string, at: number) => ({ id: `evt_${id}_${at}`, threadId: "thr_p1", seq: at, createdAt: NOW - HOUR + at, type: "system/interaction/lifecycle", data: { interaction: { id, status, origin: { kind: "plugin", pluginId: "better-ask", rendererId: "ask-user-question" }, payload: { kind: "plugin", title: id === "pint_1" ? "Merge plan" : "Checks" }, resolution: null } } });
     const list = vi.fn(async () => []);
     const sdk = { threads: { interactions: { list }, events: { list: async () => [lifecycle("pint_1", "pending", 1), lifecycle("pint_1", "resolving", 2), lifecycle("pint_2", "pending", 3), lifecycle("pint_2", "interrupted", 4)] } } } as unknown as PluginSdkTestFakes;
@@ -1713,7 +1713,7 @@ describe("planner questions", () => {
     expect(slot.container.querySelector("[data-waits-in-chat]")).toBeNull();
   });
 
-  it("says the planner waits in its chat, with the way there, when bb's wait is on nothing the page can show", async () => {
+  it("says the planner waits in its chat, with the way there, when VesnALIA's wait is on nothing the page can show", async () => {
     // A provider's own tool approval is no plugin interaction, so the list Loom reads has nothing for it.
     const sdk = { threads: { interactions: { list: async () => [] } } } as unknown as PluginSdkTestFakes;
     const { slot } = await mountPage("csv", { project: () => projectView(), plannerView: () => plannerViewOf({ projectState: "running", approvedVersion: 1 }) }, { sdk, sidebarThreads: sidebar("thr_plan", true) });
@@ -1769,7 +1769,7 @@ describe("where the page was left", () => {
   const rpc = { home: () => homeView(), project: () => projectView(), ticket: () => ticketDetail(), insights: () => projectInsights(story().rows(), { now: at(60), strategy: "integration", maxWorkers: 2, maxTokens: null }) };
   const scroller = (slot: Slot) => slot.container.querySelector<HTMLElement>("[data-loom-scroll]")!;
 
-  it("reopens from bb's rail on the route it was left on, and puts that route in the address", async () => {
+  it("reopens from VesnALIA's rail on the route it was left on, and puts that route in the address", async () => {
     const first = await mountPage("csv/CSV-2", rpc);
     await waitFor(() => expect(calls(first.slot, "ticket")).toHaveLength(1));
     first.slot.lifecycle.unmount();
@@ -1918,13 +1918,13 @@ describe("project controls", () => {
   });
 
   it("shows the next step over the tabs, yellow with the reason when tickets are blocked", async () => {
-    const next: NextStep = { stage: 4, tone: "warning", title: "1 ticket is blocked.", text: "CSV-1: bb refused to start a worker.", action: null };
+    const next: NextStep = { stage: 4, tone: "warning", title: "1 ticket is blocked.", text: "CSV-1: VesnALIA refused to start a worker.", action: null };
     const { slot } = await mountPage("csv", { project: () => ({ ...withState("running"), next }) });
     await slot.findByRole("heading", { name: "CSV export" });
     const bar = slot.container.querySelector<HTMLElement>('[data-next-step][data-tone="warning"]')!;
     expect(bar.getAttribute("aria-label")).toBe("Next step");
     expect(bar.textContent).toContain("1 ticket is blocked.");
-    expect(bar.textContent).toContain("CSV-1: bb refused to start a worker.");
+    expect(bar.textContent).toContain("CSV-1: VesnALIA refused to start a worker.");
     expect([...bar.querySelectorAll("[data-stage]")].map((stage) => [stage.getAttribute("data-stage"), stage.getAttribute("data-stage-state")])).toEqual([
       ["Plan", "done"],
       ["Review draft", "done"],
@@ -1994,8 +1994,8 @@ describe("project controls", () => {
     await waitFor(() => expect(control).toHaveBeenLastCalledWith({ slug: "csv", action: "approve", version: 2, confirm: true }));
   });
 
-  // bb's query client shows its own toast for every failed write, so Loom adds none and says nothing went through.
-  it("leaves a refusal to bb's toast, says nothing went through, and keeps the controls", async () => {
+  // VesnALIA's query client shows its own toast for every failed write, so Loom adds none and says nothing went through.
+  it("leaves a refusal to VesnALIA's toast, says nothing went through, and keeps the controls", async () => {
     const control = vi.fn(() => {
       throw new Error("Project csv is ready; pause needs a running project.");
     });
@@ -2255,18 +2255,18 @@ describe("changes tab", () => {
     expect(slot.getByText("Viewed 1 of 2", { exact: false })).toBeTruthy();
   });
 
-  it("shows a file's diff with bb's viewer between the listing's commits, in split view when asked", async () => {
+  it("shows a file's diff with VesnALIA's viewer between the listing's commits, in split view when asked", async () => {
     const slot = await mountChanges();
     await openTab(slot);
     fireEvent.click(slot.getByRole("button", { name: "Show src/a.ts" }));
-    const diff = await slot.findByTestId("bb-diff");
+    const diff = await slot.findByTestId("alia-diff");
     expect(diff.getAttribute("data-path")).toBe("src/a.ts");
     expect(diff.getAttribute("data-view")).toBe("unified");
     expect(calls(slot, "changePatch")).toEqual([{ method: "changePatch", input: { slug: "csv", path: "src/a.ts", base: A, head: C } }]);
     fireEvent.click(slot.getByRole("button", { name: "split" }));
-    expect(slot.getByTestId("bb-diff").getAttribute("data-view")).toBe("split");
+    expect(slot.getByTestId("alia-diff").getAttribute("data-view")).toBe("split");
     fireEvent.click(slot.getByRole("button", { name: "Expand all" }));
-    await waitFor(() => expect(slot.getAllByTestId("bb-diff")).toHaveLength(2));
+    await waitFor(() => expect(slot.getAllByTestId("alia-diff")).toHaveLength(2));
   });
 
   it("opens a ticket's changes from a file's ticket chip and from a board card's Changes link", async () => {
@@ -2289,7 +2289,7 @@ describe("changes tab", () => {
     fireEvent.click(slot.getByRole("button", { name: "Open worker thread" }));
     expect(slot.inspection.navigateCalls.at(-1)).toMatchObject({ method: "toThread" });
     fireEvent.click(slot.getByRole("button", { name: "Show src/export.ts" }));
-    await slot.findByTestId("bb-diff");
+    await slot.findByTestId("alia-diff");
     expect(calls(slot, "changePatch")).toEqual([{ method: "changePatch", input: { slug: "csv", path: "src/export.ts", key: "CSV-2" } }]);
   });
 
@@ -2319,9 +2319,9 @@ describe("changes tab", () => {
     const slot = await mountChanges({ changes: () => view });
     await openTab(slot);
     fireEvent.click(slot.getByRole("button", { name: "Show src/a.ts" }));
-    await slot.findByTestId("bb-diff");
+    await slot.findByTestId("alia-diff");
     fireEvent.click(within(fileRow(slot, "src/a.ts")).getByRole("button", { name: "Viewed" }));
-    expect(slot.queryByTestId("bb-diff")).toBeNull();
+    expect(slot.queryByTestId("alia-diff")).toBeNull();
     expect(fileRow(slot, "src/a.ts").hasAttribute("data-viewed")).toBe(true);
     expect(slot.getByText("Viewed 1 of 2", { exact: false })).toBeTruthy();
     expect(JSON.parse(localStorage.getItem("loom.viewed.csv")!)).toEqual(["src/a.ts\u0000blob-src/a.ts"]);
@@ -2359,9 +2359,9 @@ describe("changes tab", () => {
     expect(slot.container.querySelector("[data-gone]")!.textContent).toBe("1 part of this project is no longer in the repository, so it is left out.");
     slot.lifecycle.unmount();
 
-    const none = await mountChanges({ changes: () => changesView({ sources: [], unavailable: "The bb project has no checkout on the machine host_1, so its changes cannot be read." }) });
+    const none = await mountChanges({ changes: () => changesView({ sources: [], unavailable: "The VesnALIA project has no checkout on the machine host_1, so its changes cannot be read." }) });
     fireEvent.click(none.getByRole("tab", { name: "Changes" }));
-    expect(await none.findByText("The bb project has no checkout on the machine host_1, so its changes cannot be read.")).toBeTruthy();
+    expect(await none.findByText("The VesnALIA project has no checkout on the machine host_1, so its changes cannot be read.")).toBeTruthy();
   });
 
   it("has no Changes tab before the project starts, nor while it is rewound", async () => {
@@ -2376,7 +2376,7 @@ describe("changes tab", () => {
   describe("on a multi-repo project", () => {
     // web landed before and has nothing new; api has merged work to land, onto its own base and remote.
     const web = (over: Partial<RepoOverview> = {}) => repoOverview({ toLand: false, landedAt: NOW - HOUR, ...over });
-    const api = (over: Partial<RepoOverview> = {}) => repoOverview({ name: "api", bbProjectId: "proj_api", base: "trunk", ...over });
+    const api = (over: Partial<RepoOverview> = {}) => repoOverview({ name: "api", aliaProjectId: "proj_api", base: "trunk", ...over });
     const multiChanges = (over: Partial<ChangesView> = {}): ChangesView =>
       changesView({
         repos: [changeRepo(), changeRepo({ name: "api", base: "trunk", remoteBase: "upstream/trunk" })],
@@ -2436,7 +2436,7 @@ describe("changes tab", () => {
     });
 
     it("says in its section why a repo cannot be read, and opens a repo that can", async () => {
-      const message = 'The repo "api" has no checkout on the machine host_1, so its changes cannot be read. Clone it there with bb.';
+      const message = 'The repo "api" has no checkout on the machine host_1, so its changes cannot be read. Clone it there with VesnALIA.';
       const unread = multiChanges({
         repos: [changeRepo(), changeRepo({ name: "api", base: "trunk", remoteBase: "upstream/trunk", unavailable: message })],
         sources: multiChanges().sources.map((entry) => (entry.repo === "api" ? { ...entry, base: null, head: null, files: null, note: message } : entry)),
@@ -2450,8 +2450,8 @@ describe("changes tab", () => {
     });
 
     it("keeps every repo's section when no source can be shown, and says why beside them", async () => {
-      const apiMessage = 'The repo "api" has no checkout on the machine host_1, so its changes cannot be read. Clone it there with bb.';
-      const webMessage = 'The repo "web" has no checkout on the machine host_1, so its changes cannot be read. Clone it there with bb.';
+      const apiMessage = 'The repo "api" has no checkout on the machine host_1, so its changes cannot be read. Clone it there with VesnALIA.';
+      const webMessage = 'The repo "web" has no checkout on the machine host_1, so its changes cannot be read. Clone it there with VesnALIA.';
       const empty = (slot: Slot) => waitFor(() => slot.container.querySelector<HTMLElement>("[data-changes-empty]")!.textContent);
       // web's commits are gone and api has no checkout: nothing can be shown, and both repos still say what happened.
       const goneAndUnread = multiChanges({
@@ -2496,7 +2496,7 @@ describe("changes tab", () => {
       const slot = await mountChanges({ changes: () => multiChanges() }, running());
       await openTab(slot);
       fireEvent.click(slot.getByRole("button", { name: "Show src/a.ts" }));
-      await slot.findByTestId("bb-diff");
+      await slot.findByTestId("alia-diff");
       pick(slot, "branch:web");
       fireEvent.click(slot.getByRole("button", { name: "Show src/a.ts" }));
       await waitFor(() => expect(calls(slot, "changePatch")).toHaveLength(2));
@@ -2883,8 +2883,8 @@ describe("ticket", () => {
     expect(post(slot, 3).textContent).toContain("Worker · attempt 1");
     expect(post(slot, 3).textContent).toContain("note");
     const body = post(slot, 2).querySelector<HTMLElement>("[data-post-body]")!;
-    expect(within(body).getByTestId("bb-markdown").textContent).toBe("Use the v2 API");
-    expect(within(body).getByTestId("bb-markdown").className).toContain("[overflow-wrap:anywhere]");
+    expect(within(body).getByTestId("alia-markdown").textContent).toBe("Use the v2 API");
+    expect(within(body).getByTestId("alia-markdown").className).toContain("[overflow-wrap:anywhere]");
   });
 
   it("sends a reply to a post with its parentId and shows the refreshed thread", async () => {
@@ -2942,7 +2942,7 @@ describe("ticket", () => {
     expect(toast.success).toHaveBeenCalledWith("CSV-2 requeued");
     slot.lifecycle.unmount();
 
-    const refused = await mountTicket({ ...blocked, posts, replyTo: null, blockedReason: "bb refused to start a worker: HTTP 400" });
+    const refused = await mountTicket({ ...blocked, posts, replyTo: null, blockedReason: "alia refused to start a worker: HTTP 400" });
     const plain = refused.container.querySelector<HTMLElement>("[data-blocked-callout]")!;
     expect(plain.textContent).toContain("Blocked");
     expect(plain.textContent).not.toContain("the worker needs an answer");
@@ -3088,7 +3088,7 @@ describe("ticket", () => {
     expect(card.textContent).toContain("Reviewer · round 2");
     expect(card.textContent).toContain("Changes requested");
     expect(card.textContent).toContain("took 1m 11s");
-    expect(within(card).getAllByTestId("bb-markdown")[0]!.textContent).toBe("Needs a fix");
+    expect(within(card).getAllByTestId("alia-markdown")[0]!.textContent).toBe("Needs a fix");
     const finding = card.querySelector("[data-finding]")!;
     expect(finding.textContent).toContain("blocking");
     expect(finding.textContent).toContain("Off by one");
@@ -3170,7 +3170,7 @@ describe("ticket", () => {
     expect(slot.container.querySelector("[data-ticket-details]")!.className).toContain("@4xl:hidden");
     fireEvent.click(slot.getByRole("tab", { name: "Brief" }));
     const pane = slot.container.querySelector<HTMLElement>("[data-ticket-brief]")!;
-    expect(within(pane).getByTestId("bb-markdown").textContent).toBe("Serve the file.\n\n## Notes\nStream it.");
+    expect(within(pane).getByTestId("alia-markdown").textContent).toBe("Serve the file.\n\n## Notes\nStream it.");
     expect(pane.textContent).toContain("This is the brief the next worker reads.");
     expect(slot.container.querySelector("[data-attempt]")).toBeNull();
   });
@@ -3574,7 +3574,7 @@ describe("ticket", () => {
     }
   });
 
-  it("says a worker that bb never started could not start, with no thread button and no running time", async () => {
+  it("says a worker that VesnALIA never started could not start, with no thread button and no running time", async () => {
     const refused = { id: 6, parentId: null, depth: 0, authorKind: "loom" as const, authorThreadId: null, kind: "system" as const, body: "Could not start a worker: HTTP 400", at: 6 };
     const slot = await mountTicket({
       state: "queued",
@@ -4003,7 +4003,7 @@ describe("insights tab", () => {
     runs = true;
     await slot.experimental_invalidateRpc(changedTags("csv"));
     await waitFor(() => expect(slot.queryByRole("button", { name: "Latest run" })).not.toBeNull());
-    // A stretch read before reopens from bb's cache, so the failed read is of one not read yet.
+    // A stretch read before reopens from VesnALIA's cache, so the failed read is of one not read yet.
     fail = true;
     fireEvent.click(slot.getByRole("button", { name: "Last 24 hours" }));
     expect((await slot.findByRole("alert")).textContent).toContain("db is closed");
@@ -4819,10 +4819,10 @@ describe("spec page", () => {
   });
 
   it("shows each repo of a multi-repo spec with its settings, and a repo chip on its tickets", async () => {
-    const slot = await openPage({ specVersion: () => specVersionView({}, withRepos) }, draft({ overview: overview({ state: "draft", approvedVersion: null, ticketCount: 0, ticketCounts: {}, repos: [repoOverview(), repoOverview({ name: "api", bbProjectId: "proj_api", bbProjectName: null, base: "trunk" })] }) }));
+    const slot = await openPage({ specVersion: () => specVersionView({}, withRepos) }, draft({ overview: overview({ state: "draft", approvedVersion: null, ticketCount: 0, ticketCounts: {}, repos: [repoOverview(), repoOverview({ name: "api", aliaProjectId: "proj_api", aliaProjectName: null, base: "trunk" })] }) }));
     entire(slot);
     const repo = (name: string) => section(slot, "settings").querySelector<HTMLElement>(`[data-repo="${name}"]`)!;
-    expect(repo("web").querySelector("[data-repo-project]")!.textContent).toBe("bb project shop-web");
+    expect(repo("web").querySelector("[data-repo-project]")!.textContent).toBe("alia project shop-web");
     expect(repo("web").querySelector("[data-repo-checks]")!.textContent).toContain("npm run web-test");
     expect(repo("api").textContent).toContain("base trunk");
     expect(repo("api").textContent).toContain("remote upstream");
@@ -4833,7 +4833,7 @@ describe("spec page", () => {
 
 describe("repos", () => {
   beforeEach(() => localStorage.clear());
-  const repos = () => [repoOverview(), repoOverview({ name: "api", bbProjectId: "proj_api", bbProjectName: null, base: "trunk" })];
+  const repos = () => [repoOverview(), repoOverview({ name: "api", aliaProjectId: "proj_api", aliaProjectName: null, base: "trunk" })];
   const multi = (over: Partial<ProjectView> = {}) =>
     projectView({
       overview: overview({ repos: repos() }),
@@ -4919,7 +4919,7 @@ describe("repos", () => {
   it("names every repo the land pushes in its confirm, a repo landed before included, even when it lands onto each base instead", async () => {
     const control = vi.fn(() => multi({ next: null }));
     // web opened its pull request before api had merged work; a land without a repo pushes both again.
-    const partly = [repoOverview({ prUrl: "https://github.com/acme/web/pull/4", landedAt: NOW - HOUR, toLand: false }), repoOverview({ name: "api", bbProjectId: "proj_api", base: "trunk" })];
+    const partly = [repoOverview({ prUrl: "https://github.com/acme/web/pull/4", landedAt: NOW - HOUR, toLand: false }), repoOverview({ name: "api", aliaProjectId: "proj_api", base: "trunk" })];
     const { slot } = await mountPage("csv", { project: () => multi({ overview: overview({ repos: partly, ticketCounts: { done: 2 } }), next: null }), control });
     await slot.findByRole("heading", { name: "CSV export" });
     expect([...slot.container.querySelectorAll("[data-controls] button")].map((button) => button.textContent)).toEqual(["Pause", "Pause now", "Land · open the pull requests", "Land to each repo's base", "⋯"]);
@@ -4937,7 +4937,7 @@ describe("repos", () => {
   });
 
   it("leaves out a repo with no done ticket, and keeps the bar's label when every repo is landed", async () => {
-    const apiOnly = [repoOverview({ toLand: false }), repoOverview({ name: "api", bbProjectId: "proj_api", base: "trunk" })];
+    const apiOnly = [repoOverview({ toLand: false }), repoOverview({ name: "api", aliaProjectId: "proj_api", base: "trunk" })];
     const { slot } = await mountPage("csv", { project: () => multi({ overview: overview({ repos: apiOnly, ticketCounts: { done: 1 } }), next: null }) });
     await slot.findByRole("heading", { name: "CSV export" });
     fireEvent.click(slot.getByRole("button", { name: "Land · open the pull requests" }));
@@ -4965,7 +4965,7 @@ describe("repos", () => {
     const tickets = [row("web", "done", NOW - 2 * HOUR), row("api", "done", NOW - HOUR), row("docs", "queued", NOW - HOUR)];
     // web landed after its merge, api never landed, docs has nothing done.
     const lands = new Map([["web", { prUrl: "https://github.com/acme/web/pull/4", landedAt: NOW - HOUR }]]);
-    const overviews = repoOverviews({ bb_project_id: "proj_1" }, spec, tickets, lands);
+    const overviews = repoOverviews({ alia_project_id: "proj_1" }, spec, tickets, lands);
     expect(overviews.map((repo) => [repo.name, repo.toLand])).toEqual([
       ["web", false],
       ["api", true],
@@ -4979,7 +4979,7 @@ describe("repos", () => {
   });
 
   it("opens each repo's pull request from under the header", async () => {
-    const landed = [repoOverview({ prUrl: "https://github.com/acme/web/pull/4", toLand: false }), repoOverview({ name: "api", bbProjectId: "proj_api", prUrl: null, toLand: false })];
+    const landed = [repoOverview({ prUrl: "https://github.com/acme/web/pull/4", toLand: false }), repoOverview({ name: "api", aliaProjectId: "proj_api", prUrl: null, toLand: false })];
     const { slot } = await mountPage("csv", { project: () => multi({ overview: overview({ repos: landed }) }) });
     await slot.findByRole("heading", { name: "CSV export" });
     expect(chipsIn(slot.container.querySelector("[data-repo-prs]")!)).toEqual(["web"]);
@@ -5966,7 +5966,7 @@ describe("on a narrow page", () => {
   });
 
   it("puts the next-step bar's button under its text when they do not fit, and lists a skipped review's settings behind a disclosure", async () => {
-    const repos = [repoOverview({ name: "web" }), repoOverview({ name: "api", bbProjectId: "proj_api" })];
+    const repos = [repoOverview({ name: "web" }), repoOverview({ name: "api", aliaProjectId: "proj_api" })];
     const paths = ["repo[0].forge.kind", "repo[1].forge.kind", "repo[0].refresh_behind"];
     const summary = overview({ pendingVersion: 2, repos });
     const next = nextStepOf({ overview: summary, board: [], version: 1, maxWorkers: 2, triage: true, startFailed: [], reviewRefused: [], specReview: { kind: "skipped", version: 2, against: 1, paths } })!;
@@ -6053,7 +6053,7 @@ describe("on a narrow page", () => {
     expect(within(group).getAllByRole("button").map((button) => button.textContent)).toEqual(["Ask me", "Integration branch", "PR per ticket"]);
   });
 
-  it("names a ticket's project by its key in bb's title bar, and by its name on a wide page", async () => {
+  it("names a ticket's project by its key in VesnALIA's title bar, and by its name on a wide page", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const titled = (width: number) =>
       measuring(width, async () => {

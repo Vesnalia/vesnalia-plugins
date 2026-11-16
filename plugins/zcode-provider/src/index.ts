@@ -17,7 +17,7 @@ export * from './attachments.ts';
 export * from './mentions.ts';
 export * from './compaction.ts';
 export * from './session-knowledge.ts';
-export * from './bb-skills.ts';
+export * from './alia-skills.ts';
 export * from './process.ts';
 export * from './bridge.ts';
 export * from './runtime.ts';

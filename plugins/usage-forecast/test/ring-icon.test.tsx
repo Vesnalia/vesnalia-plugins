@@ -2,7 +2,7 @@
 // The footer ring: arc length, tone, the empty ring, and the store the
 // overlay feeds for the icon, which renders outside the plugin slot.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { act, cleanup, render as rtl, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { IndicatorFeeder, getIndicatorState, setIndicatorState } from "../src/app/indicator-store";

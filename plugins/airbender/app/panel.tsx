@@ -59,7 +59,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 /**
  * The tab body: current bead, create line, then the grouped issues or a
@@ -100,7 +100,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
         ? { name: setup.status.tracker, repository: null }
         : null;
   const [showingSyncLog, setShowingSyncLog] = useState(false);
-  // The window that switches the project's tracker (bead-bb-c9l.18): open
+  // The window that switches the project's tracker (bead-alia-c9l.18): open
   // while it holds the tracker in use.
   const [switchingFrom, setSwitchingFrom] = useState<{
     name: string;
@@ -113,11 +113,11 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
   const [syncingGithub, setSyncingGithub] = useState(false);
   // A warning waiting to be read in its message box; null when none is.
   const [warning, setWarning] = useState<string | null>(null);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { threadId, projectId } = scope;
   const { currentIssue, tree, descendantIds, types, categories } =
     useIssueTree(result);
-  // Epic mode (bead-bb-ha9): the conversation's tab can be zoomed in on one
+  // Epic mode (bead-alia-ha9): the conversation's tab can be zoomed in on one
   // issue, and then lists that issue's direct sub-issues in place of the
   // top-level issues. Everything below (groups, Group, Filter, Closed, the
   // rows) is the same code fed a different list.
@@ -139,7 +139,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
   // conversation's until the new one answers, and must not be used to
   // judge the new conversation's focus.
   // The epic last left, which the tab offers the way back to
-  // (bead-bb-fmg). Worth offering only while it is still there and open.
+  // (bead-alia-fmg). Worth offering only while it is still there and open.
   const lastEpic =
     lastFocusId === null ? null : (tree.byId.get(lastFocusId) ?? null);
   const lastGone =
@@ -178,7 +178,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
   // while it is not finished. The band then offers to close the epic.
   const focusedDone =
     focused === null ? 0 : finishedEpicSize(tree.byId, focused.id);
-  // The epic holds a branch its issues are worked on (bead-bb-ty5.2), and,
+  // The epic holds a branch its issues are worked on (bead-alia-ty5.2), and,
   // when this folder is on that branch, the move that closes and merges it.
   const workflowNow = workflowFor(result?.workflow ?? DEFAULT_WORKFLOW_ID);
   const focusedHolds =
@@ -199,7 +199,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
     focused.branch === (result?.branch ?? null)
       ? { move: landingMove, branch: focused.branch }
       : null;
-  // Autopilot for the epic the tab is zoomed in on (bead-bb-8ff): whether
+  // Autopilot for the epic the tab is zoomed in on (bead-alia-8ff): whether
   // it is on, and the one line that says what the run is doing, what it
   // waits for, or why it stopped.
   const autopilotHere =
@@ -249,7 +249,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
   // starts with the short list.
   const [showClosed, setShowClosed] = useState(false);
   // Someday is folded away the same way, and for the same reason
-  // (bead-bb-26g): set-aside issues are not the work in hand.
+  // (bead-alia-26g): set-aside issues are not the work in hand.
   const [showSomeday, setShowSomeday] = useState(false);
   const { openSections, closedSection } = useMemo(() => {
     const sections = toSections(
@@ -301,7 +301,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
       navigate.toThread(threadId);
       // The user wants the Airbender tab open in the new conversation. The
       // server has put the tab among that conversation's tabs; this asks
-      // BB to show it, once the app has had a moment to get there. BB
+      // VesnALIA to show it, once the app has had a moment to get there. VesnALIA
       // opens panels "in the current thread surface", so it must come
       // after the jump; asked twice because how long the jump takes is
       // not known. A refusal is harmless: the tab is in the strip.
@@ -363,14 +363,14 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
     <IssueActionsProvider value={actions}>
       <div className="flex h-full min-h-0 flex-col">
         {/* Top band, pinned: the toolbar first (the user's layout,
-            bead-bb-8j6: folder, refresh and the menu that holds the choice
+            bead-alia-8j6: folder, refresh and the menu that holds the choice
             of workflow sit above everything), then Current. */}
         <div
           className="shrink-0 space-y-3 border-b border-border p-3"
           style={pinnedStyle}
         >
           <div className="flex items-center gap-1">
-            {/* The folder, then the branch it is on (bead-bb-ty5.3; the
+            {/* The folder, then the branch it is on (bead-alia-ty5.3; the
                 user: "maybe tag branch:aaa-bbb-ccc next to the project
                 path?"). Plain text in the path's own hand, no box: it used
                 to be a boxed tag in the epic band, where it looked like a
@@ -500,7 +500,7 @@ export function BeadsPanel({ scope }: { scope: Scope }) {
           </div>
           {/* What is wrong with the syncing of the issues, across the top
               and not to be put away: a sync that does not work can lose
-              work (bead-bb-c9l.16). */}
+              work (bead-alia-c9l.16). */}
           {ok ? (
             <SyncTrouble
               status={syncStatus}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./server";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./server";
 import { SETTINGS_CHANNEL } from "./layoutSets";
 import type { DecisionLimits, DecisionProvider } from "./decisionRules";
 
@@ -15,7 +15,7 @@ export interface DecisionConfig {
 }
 
 export function useDecisionConfig() {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [config, setConfig] = useState<DecisionConfig | null>(null);
 
   const refresh = useCallback(async () => {

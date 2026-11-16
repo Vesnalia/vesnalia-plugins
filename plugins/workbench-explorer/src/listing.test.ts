@@ -21,7 +21,7 @@ import { listHostDirectory } from "./host-listing";
 import { invalidateListings, listDir } from "./listing";
 import { registerRoot } from "./roots";
 test("host listing shows immediate hidden children, symlinks, and .git when enabled", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-list-test-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-list-test-"));
   try {
     await mkdir(path.join(rootPath, "Docs"));
     await mkdir(path.join(rootPath, ".claude", "handoffs"), { recursive: true });
@@ -55,8 +55,8 @@ test("host listing shows immediate hidden children, symlinks, and .git when enab
 });
 
 test("host listing follows a symlink whose target leaves the workspace", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-symlink-test-"));
-  const outside = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-outside-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-symlink-test-"));
+  const outside = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-outside-"));
   try {
     await writeFile(path.join(outside, "out.md"), "x");
     await symlink(outside, path.join(rootPath, "outside"));

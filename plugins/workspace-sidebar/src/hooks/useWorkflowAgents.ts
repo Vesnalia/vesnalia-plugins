@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useRealtimeConnectionState, useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRealtimeConnectionState, useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { WorkflowAgentsEntry } from "../lib/workflow-agents";
 

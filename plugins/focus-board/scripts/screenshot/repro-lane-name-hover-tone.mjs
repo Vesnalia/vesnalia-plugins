@@ -11,7 +11,7 @@
 // background and caret tone at rest and on hover, and the contrast each
 // candidate fill scores against the canvas (the numbers behind the pick).
 //
-// Exits 1 when the hover read regresses: the fill is no longer bb's
+// Exits 1 when the hover read regresses: the fill is no longer VesnALIA's
 // interactive-state step, or the caret no longer reaches full ink.
 //
 // Usage: start the harness server first —
@@ -203,7 +203,7 @@ for (const theme of THEMES) {
   report.themes[theme] = { clip, rest: restore, hover };
   await stackPair(theme, clip);
 
-  // The shipped read: bb's interactive-state fill on hover, and a caret that
+  // The shipped read: VesnALIA's interactive-state fill on hover, and a caret that
   // reaches full ink (the rest tone is muted-foreground at 60%).
   const hoverFill = /oklab\(([^)]*)\)/.exec(hover.background) ?? [];
   const alpha = Number(hoverFill[1]?.split("/")[1]?.trim() ?? "1");

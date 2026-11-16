@@ -1,21 +1,21 @@
-# STL Preview for BB
+# STL Preview for VesnALIA
 
-Inspect 3D models without leaving your BB thread. Click an STL file to rotate, pan, zoom, or switch to wireframe in the side panel.
+Inspect 3D models without leaving your VesnALIA thread. Click an STL file to rotate, pan, zoom, or switch to wireframe in the side panel.
 
 ![Solid preview of the included mounting bracket, with model dimensions and triangle count](screenshots/solid.png)
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/obostjancic/bb-plugin-stl-preview.git@^0.1.0
+alia plugin install git:https://github.com/obostjancic/bb-plugin-stl-preview.git@^0.1.0
 ```
 
-Requires **BB 0.46+**, Plugin SDK **0.6.49+**, and a **WebGL2**-capable browser or desktop client. No separate viewer, account, or API key.
+Requires **VesnALIA 0.46+**, Plugin SDK **0.6.49+**, and a **WebGL2**-capable browser or desktop client. No separate viewer, account, or API key.
 
 Click an `.stl` file link in chat or use the file picker. From an agent thread:
 
 ```sh
-bb thread open path/to/model.stl
+alia thread open path/to/model.stl
 ```
 
 If another opener is pinned, choose **STL Preview** under **Settings → File openers**, or right-click a file link and choose **Open with**.
@@ -27,7 +27,7 @@ If another opener is pinned, choose **STL Preview** under **Settings → File op
 - **Wireframe:** inspect the STL's triangle mesh.
 - **Dimensions:** read X/Y/Z bounding dimensions and the triangle count in the footer.
 - **Reload:** fetch the latest file after an agent changes it.
-- **Open original preview:** switch back to BB's built-in preview.
+- **Open original preview:** switch back to VesnALIA's built-in preview.
 
 STL files contain no unit metadata. Dimensions are shown in **model units**, not assumed millimeters.
 
@@ -51,7 +51,7 @@ Python and cadgen are needed only to regenerate the sample, not to use the viewe
 
 Supports **binary and ASCII STL**, up to **64 MiB** and **one million triangles**.
 
-Workspace, project, host, and thread-storage files load through BB's existing authenticated file routes, including selected remote hosts. Models are rendered in your client; the plugin does not upload them to an external service or open another server port.
+Workspace, project, host, and thread-storage files load through VesnALIA's existing authenticated file routes, including selected remote hosts. Models are rendered in your client; the plugin does not upload them to an external service or open another server port.
 
 Files load when opened. Use Reload after changes; automatic file watching is not included. Malformed, empty, nonfinite, and oversized files show an error with retry and original-preview controls. Parsing happens on the client's main thread, so large meshes can briefly pause the interface.
 
@@ -64,11 +64,11 @@ npm ci
 npm test
 npm run typecheck
 npm run format:check
-bb plugin build .
-bb plugin install . --yes
+alia plugin build .
+alia plugin install . --yes
 ```
 
-After editing, rebuild and run `bb plugin reload stl-preview`. React and the BB SDK are provided by the host. Three.js is bundled into the viewer; rendering is on demand, with graphics resources and file requests cleaned up on close or reload.
+After editing, rebuild and run `alia plugin reload stl-preview`. React and the VesnALIA SDK are provided by the host. Three.js is bundled into the viewer; rendering is on demand, with graphics resources and file requests cleaned up on close or reload.
 
 ## License
 

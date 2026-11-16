@@ -1,6 +1,6 @@
 export type ConversationChoice = { id: string; history: boolean };
 type WorkspaceMemory = { projectId: string | null; conversations: Record<string, ConversationChoice> };
-const key = "bb-dashboard:workspace-session:v1";
+const key = "alia-dashboard:workspace-session:v1";
 
 export function readWorkspaceMemory(): WorkspaceMemory {
   const empty: WorkspaceMemory = { projectId: null, conversations: {} };

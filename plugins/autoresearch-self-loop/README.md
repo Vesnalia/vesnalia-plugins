@@ -1,14 +1,14 @@
 # Autoresearch Self Loop
 
-A BB port of [pi-autoresearch](https://pi.dev/packages/pi-autoresearch) v1.9.0.
+A VesnALIA port of [pi-autoresearch](https://pi.dev/packages/pi-autoresearch) v1.9.0.
 An agent runs an experiment loop in a git checkout: it edits the code, runs a
 benchmark, and decides whether to keep or discard the change. The plugin runs
 the benchmark and the checks, enforces the keep rules, and appends every run to
 a session log. The log lets a loop survive restarts and context resets.
 
-This is a close port of pi-autoresearch adapted for BB. It presents a compact
+This is a close port of pi-autoresearch adapted for VesnALIA. It presents a compact
 panel and an autonomous workflow: after setup, the agent can iterate without a
-series of manual approval steps. BB permissions and repository protections
+series of manual approval steps. VesnALIA permissions and repository protections
 still apply.
 
 > Based on pi-autoresearch, MIT License, Copyright (c) 2026 Tobi Lutke,
@@ -27,16 +27,16 @@ steps; see [Behaviour notes](#behaviour-notes).
 
 ```
 npm install
-bb plugin build .
-bb plugin install . --yes
-bb plugin reload
+alia plugin build .
+alia plugin install . --yes
+alia plugin reload
 ```
 
-- `bb plugin build .` compiles `dist/` and needs no server.
-- `bb plugin install` runs on the BB server, so the server must be up. Without
+- `alia plugin build .` compiles `dist/` and needs no server.
+- `alia plugin install` runs on the VesnALIA server, so the server must be up. Without
   `--yes` it shows a confirmation prompt first; read that prompt before you
   accept it.
-- `bb plugin reload` with no id reloads every plugin. Pass an id to reload one.
+- `alia plugin reload` with no id reloads every plugin. Pass an id to reload one.
 
 ## Requirements
 
@@ -53,13 +53,13 @@ A loop runs on the host of its thread's environment. Its files, commands and
 checks go to that host. The plugin never falls back to a path with the same name
 on the primary host.
 
-- On the **primary BB host** the plugin reads, writes and runs commands on its
+- On the **primary VesnALIA host** the plugin reads, writes and runs commands on its
   own disk.
 - On **any other host** every read, write, existence check and command goes
-  through the BB server's SDK: files through `files`, existence through
+  through the VesnALIA server's SDK: files through `files`, existence through
   `hosts.pathsExist`, and commands in a terminal scoped to that host and the
   checkout directory. The plugin runs no agent on the remote host.
-- **A remote loop depends on the BB server.** The server is the only channel to
+- **A remote loop depends on the VesnALIA server.** The server is the only channel to
   the remote host, so if it is down, remote operations fail with an error. This
   path has been tested only against a mocked SDK.
 - A checkout path that does not exist on its host is refused.
@@ -91,15 +91,15 @@ What that costs and how it behaves:
 ## CLI
 
 ```
-bb self-loop start ["goal"] [--thread <id> | --dir <checkout>]
-bb self-loop init --name <name> --metric <metric> [--unit <u>] [--direction lower|higher]
-bb self-loop run "<command>" [--timeout <seconds>]
-bb self-loop log "<what this run tried>" --status keep|discard|crash|checks_failed --metric <value> [--commit <sha>] [--secondary name=value ...] [--asi '<json>'] [--force]
-bb self-loop status
-bb self-loop off
-bb self-loop finalize
-bb self-loop export
-bb self-loop clear --yes
+alia self-loop start ["goal"] [--thread <id> | --dir <checkout>]
+alia self-loop init --name <name> --metric <metric> [--unit <u>] [--direction lower|higher]
+alia self-loop run "<command>" [--timeout <seconds>]
+alia self-loop log "<what this run tried>" --status keep|discard|crash|checks_failed --metric <value> [--commit <sha>] [--secondary name=value ...] [--asi '<json>'] [--force]
+alia self-loop status
+alia self-loop off
+alia self-loop finalize
+alia self-loop export
+alia self-loop clear --yes
 ```
 
 - `--thread` defaults to the calling thread. Passing `--thread` and `--dir`
@@ -276,22 +276,22 @@ tool, with a hint. Nothing is recorded. Refusals cover:
 ## Caveats
 
 - Testing so far: real git repositories on local disk, a scripted harness, and a
-  mocked BB SDK for remote hosts. Not yet run against a live BB server, a remote
-  host, or the panel in BB.
+  mocked VesnALIA SDK for remote hosts. Not yet run against a live VesnALIA server, a remote
+  host, or the panel in VesnALIA.
 - The owner-thread instructions come from `contributeInstructions`, which is
   synchronous. They are rebuilt after each change and on resume, but may go stale
   until the agent's session rebuilds, so every resume message carries the current
   state line.
-- The idle/resume timer calls `bb.sdk` from a timer, and the reload re-arm calls
-  `bb.sdk.threads.get` at plugin load. Both paths have only been exercised against
+- The idle/resume timer calls `alia.sdk` from a timer, and the reload re-arm calls
+  `alia.sdk.threads.get` at plugin load. Both paths have only been exercised against
   a mocked host, and the reload's wait for pending writes has not been timed
   against a live reload.
 - Remote paths: the terminal behaviour, the directory check (`pathsExist` does
   not document directories) and the panel's refresh cost are not checked against
   a real host.
-- Remote loops depend on the BB server. The loop runtime, its timers and the
+- Remote loops depend on the VesnALIA server. The loop runtime, its timers and the
   auto-resume run in the plugin's server process. Each remote file, path,
-  command and git step goes through `bb.sdk`. With the server down, a remote
+  command and git step goes through `alia.sdk`. With the server down, a remote
   loop cannot be driven, resumed or controlled from the panel or the CLI.
 - A `keep` is checked only against the last `run`, and a `log` clears that result.
   Nothing requires a `run` before each `log`.
@@ -313,12 +313,12 @@ tool, with a hint. Nothing is recorded. Refusals cover:
 ```
 npm install
 npx tsc --noEmit -p tsconfig.json
-bb plugin build .
-bb plugin install . --yes
-bb plugin reload
+alia plugin build .
+alia plugin install . --yes
+alia plugin reload
 ```
 
-`bb plugin dev .` watches the sources, rebuilds and reloads on every change
+`alia plugin dev .` watches the sources, rebuilds and reloads on every change
 (Ctrl+C to stop).
 
 Sources: `server.ts` (backend, CLI, tools, events), `app.tsx` (the panel), `lib/`

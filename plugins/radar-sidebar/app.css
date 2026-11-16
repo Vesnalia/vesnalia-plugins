@@ -1,5 +1,5 @@
-/* Radar Sidebar. All rules are prefixed `radar-` and read BB's live theme
-   tokens (with fallbacks), so custom palettes keep working. None touch BB's
+/* Radar Sidebar. All rules are prefixed `radar-` and read ALIA's live theme
+   tokens (with fallbacks), so custom palettes keep working. None touch ALIA's
    own elements. */
 
 /* Narrow list (a default-width sidebar, or the drawer on a 360px

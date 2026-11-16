@@ -2,7 +2,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type ExperimentalFakeHostRpcCall,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import type { SnapshotPayload } from "../contracts.js";
 import browserTools from "../server.js";
 import { FakeDesktop } from "./fake-desktop.js";
@@ -107,7 +107,7 @@ export function makePluginRig(options: { settings?: Record<string, boolean | str
         throw new Error(`unhandled host method ${call.method}`);
     }
   };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "browser-tools",
     settings: options.settings,
     agentSkillIds: ["browser-tools"],
@@ -132,11 +132,11 @@ export function makePluginRig(options: { settings?: Record<string, boolean | str
   });
   harness.sdk.stub("threads.get", async () => makeThreadResponse({ id: THREAD }));
   const ready = (async () => {
-    const manager = await browserTools(bb);
+    const manager = await browserTools(alia);
     manager.markReady();
     return manager;
   })();
-  return { bb, harness, desktop, hostCalls, impls, ready };
+  return { alia, harness, desktop, hostCalls, impls, ready };
 }
 
 /** Runs the registered lifecycle service once, like the host does after load. */

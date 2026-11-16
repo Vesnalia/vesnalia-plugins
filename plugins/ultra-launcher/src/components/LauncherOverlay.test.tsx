@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { mockViewport } from "../../test/viewport";
 
 afterEach(() => {
@@ -26,13 +26,13 @@ describe.each([
     fireEvent.keyDown(document, { key: "n", code: "KeyN", metaKey: true });
     const dialog = await screen.findByRole("dialog", { name: "New thread" });
     expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(dialog.contains(screen.getByTestId("bb-new-thread-composer"))).toBe(true);
+    expect(dialog.contains(screen.getByTestId("alia-new-thread-composer"))).toBe(true);
     expect(dialog.querySelector("[data-persistent-drawer-handle]") !== null).toBe(sheet);
 
     fireEvent.keyDown(document, { key: "Escape" });
-    // A closed launcher must not look like an open modal, or BB suppresses its own shortcuts.
+    // A closed launcher must not look like an open modal, or VesnALIA suppresses its own shortcuts.
     await waitFor(() => expect(document.querySelector('[aria-modal="true"]')).toBeNull());
     expect(document.querySelector('[role="dialog"][data-state="open"]')).toBeNull();
-    expect(screen.getByTestId("bb-new-thread-composer")).toBeTruthy();
+    expect(screen.getByTestId("alia-new-thread-composer")).toBeTruthy();
   });
 });

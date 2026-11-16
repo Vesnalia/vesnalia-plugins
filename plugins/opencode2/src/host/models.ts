@@ -21,10 +21,10 @@ function parseModel(value: unknown): ModelRef | undefined {
 }
 
 /**
- * BB sends the selected model as `options.model` (`provider/model[#variant]`)
+ * VesnALIA sends the selected model as `options.model` (`provider/model[#variant]`)
  * and the selected reasoning effort as `options.reasoningLevel` (`low`,
  * `high`, ...). OpenCode has no separate reasoning field: reasoning effort is
- * a named model variant (`provider/model#variant`). Combine both BB fields
+ * a named model variant (`provider/model#variant`). Combine both VesnALIA fields
  * into a single OpenCode `Model.Ref` so the effort picker actually reaches
  * the OpenCode thread. An explicit `reasoningLevel` wins over a `#variant`
  * suffix because it reflects the current picker state.
@@ -102,7 +102,7 @@ export function turnModelRef(
   return undefined;
 }
 
-const BB_REASONING_LEVELS = [
+const ALIA_REASONING_LEVELS = [
   "none",
   "low",
   "medium",
@@ -112,16 +112,16 @@ const BB_REASONING_LEVELS = [
   "ultra",
 ] as const;
 
-// OpenCode variant IDs that are not BB levels but mean the same thing. They
-// only apply when the model has no variant with the BB level's own name.
-const VARIANT_ALIASES: Record<string, (typeof BB_REASONING_LEVELS)[number]> = {
+// OpenCode variant IDs that are not VesnALIA levels but mean the same thing. They
+// only apply when the model has no variant with the VesnALIA level's own name.
+const VARIANT_ALIASES: Record<string, (typeof ALIA_REASONING_LEVELS)[number]> = {
   minimal: "low",
   thinking: "high",
 };
 
 export type ModelCatalogEntry = {
   id: string;
-  /** BB reasoning level -> OpenCode variant ID, in OpenCode's order. */
+  /** VesnALIA reasoning level -> OpenCode variant ID, in OpenCode's order. */
   variants: Map<string, string>;
   contextWindow: number | null;
 };
@@ -134,7 +134,7 @@ export function modelCatalogEntry(model: RecordValue): ModelCatalogEntry {
     .filter((value: string | undefined): value is string => !!value);
   const variants = new Map<string, string>();
   for (const variant of variantIds) {
-    if ((BB_REASONING_LEVELS as readonly string[]).includes(variant))
+    if ((ALIA_REASONING_LEVELS as readonly string[]).includes(variant))
       variants.set(variant, variant);
   }
   for (const variant of variantIds) {
@@ -142,7 +142,7 @@ export function modelCatalogEntry(model: RecordValue): ModelCatalogEntry {
     if (level && !variants.has(level)) variants.set(level, variant);
   }
   const ordered = new Map(
-    BB_REASONING_LEVELS.filter((level) => variants.has(level)).map(
+    ALIA_REASONING_LEVELS.filter((level) => variants.has(level)).map(
       (level) => [level, variants.get(level)!] as const,
     ),
   );
@@ -158,7 +158,7 @@ export function modelCatalogEntry(model: RecordValue): ModelCatalogEntry {
 }
 
 /**
- * Translate BB's reasoning level on a model ref into the model's actual
+ * Translate VesnALIA's reasoning level on a model ref into the model's actual
  * OpenCode variant. A level the model does not offer is dropped rather than
  * sent, so variant-less models run on their default settings.
  */
@@ -176,9 +176,9 @@ export function resolveModelVariant(
 }
 
 /**
- * BB's native per-model session option for choosing OpenCode's primary agent.
+ * VesnALIA's native per-model session option for choosing OpenCode's primary agent.
  * It is the only way to pick `build` or `plan`, since the provider does not
- * offer BB's own plan mode.
+ * offer VesnALIA's own plan mode.
  */
 export function agentSessionOption(
   agents: readonly { id: string; description?: string }[],
@@ -225,7 +225,7 @@ export function mapModel(
     displayName: stringValue(model.name) ?? entry.id,
     routeProviderId: providerId,
     description: `OpenCode provider ${providerId}`,
-    // BB needs at least one level. A model without variants advertises one
+    // VesnALIA needs at least one level. A model without variants advertises one
     // placeholder that resolveModelVariant never forwards to OpenCode.
     supportedReasoningEfforts: levels.length
       ? levels

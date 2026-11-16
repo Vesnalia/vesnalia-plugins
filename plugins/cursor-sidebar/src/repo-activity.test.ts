@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { buildSections, flattenShelf } from "./forest";
 import { hasHiddenWork, renderedIdsOf, repoActivityMembers, sameIds } from "./repo-activity";
 import { aggregateSectionStatus } from "./status";

@@ -1,4 +1,4 @@
-import type { ExperimentalFileLocation } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalFileLocation } from "@vesnalia/plugin-sdk/app";
 
 export interface ChatFileLink { path: string; location: ExperimentalFileLocation | null }
 
@@ -29,8 +29,8 @@ export function parseChatFileLink(href: string): ChatFileLink | null {
   if (path.includes("#")) return null;
   path = path.replace(/\\/g, "/").replace(/^\/([a-z]:\/)/i, "$1");
   if (path.startsWith("//")) return null;
-  // Root-relative BB routes are web links. Only root paths with a file basename
-  // are candidates; recognized BB endpoints always retain their own behavior.
+  // Root-relative VesnALIA routes are web links. Only root paths with a file basename
+  // are candidates; recognized VesnALIA endpoints always retain their own behavior.
   if (/^\/(?:api|projects|threads|plugins|settings|attachments|assets)(?:\/|$)/.test(path)) return null;
   const basename = path.split("/").at(-1) ?? "";
   if (!basename || basename === "." || basename === "..") return null;

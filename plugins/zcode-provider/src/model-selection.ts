@@ -1,6 +1,6 @@
 import type { AccountPlan } from './auth.ts';
 
-// Only bb IDs carry a plan namespace. Native IDs and provider IDs stay intact.
+// Only VesnALIA IDs carry a plan namespace. Native IDs and provider IDs stay intact.
 export const startModelPrefix = 'start-plan/';
 export function selectedModel(model: string): { model: string; accountPlan: AccountPlan } {
   if (!model.startsWith(startModelPrefix)) return { model, accountPlan: 'coding-plan' };

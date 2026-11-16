@@ -1,11 +1,11 @@
-// bb-plugin-handoff — move a session between agents, in both directions.
+// alia-plugin-handoff — move a session between agents, in both directions.
 //
-// Out: capture a bb thread's full transcript from bb's provider-independent
+// Out: capture a VesnALIA thread's full transcript from VesnALIA's provider-independent
 // event log, render a handoff document, and spawn a new thread on any
 // installed provider (Codex, Claude Code, Cursor, …) seeded with it.
-// In ("adopt", see adopt/): take a session that ran OUTSIDE bb — Claude Code,
-// Codex, or Gemini CLI — and continue it as a bb thread.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// In ("adopt", see adopt/): take a session that ran OUTSIDE VesnALIA — Claude Code,
+// Codex, or Gemini CLI — and continue it as a VesnALIA thread.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { adoptCommandSpecs, runAdoptCli } from "./adopt/cli";
 import { adoptRpcShape, createAdoptRpcHandlers } from "./adopt/rpc";
@@ -90,7 +90,7 @@ export const rpcContract = defineRpcContract({
           displayName: z.string(),
           available: z.boolean(),
           logoUrl: z.string().nullable(),
-          /** bb's brand color for the mark, per color scheme; null draws it in the text color. */
+          /** VesnALIA's brand color for the mark, per color scheme; null draws it in the text color. */
           iconTint: z.object({ light: z.string(), dark: z.string() }).nullable(),
         }),
       ),
@@ -186,61 +186,61 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-async function environmentIdOfThread(bb: BbPluginApi, threadId: string): Promise<string | null> {
+async function environmentIdOfThread(alia: AliaPluginApi, threadId: string): Promise<string | null> {
   // deno-lint-ignore no-explicit-any
-  const thread = (await bb.sdk.threads.get({ threadId })) as any;
+  const thread = (await alia.sdk.threads.get({ threadId })) as any;
   return thread.environmentId ?? null;
 }
 
 /** The machine a thread runs on, and the project it belongs to. */
 async function threadLocation(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<{ projectId: string | null; hostId: string | null }> {
   // deno-lint-ignore no-explicit-any
-  const thread = (await bb.sdk.threads.get({ threadId })) as any;
+  const thread = (await alia.sdk.threads.get({ threadId })) as any;
   const projectId: string | null = thread.projectId ?? null;
   if (!thread.environmentId) return { projectId, hostId: null };
   try {
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     return { projectId, hostId: environment.hostId ?? null };
   } catch {
     return { projectId, hostId: null };
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // Settle any handoff waiting on its source thread's briefing turn, and
   // verify fresh handoff targets when their first turn finishes.
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     settleBriefing(thread.id, lastAssistantText);
-    void settleVerification(bb, thread.id, true, lastAssistantText).catch((error) => {
-      bb.log.warn(`verification settle failed: ${error instanceof Error ? error.message : error}`);
+    void settleVerification(alia, thread.id, true, lastAssistantText).catch((error) => {
+      alia.log.warn(`verification settle failed: ${error instanceof Error ? error.message : error}`);
     });
   });
-  bb.events.on("thread.failed", ({ thread }) => {
+  alia.events.on("thread.failed", ({ thread }) => {
     settleBriefing(thread.id, null);
-    void settleVerification(bb, thread.id, false).catch((error) => {
-      bb.log.warn(`verification settle failed: ${error instanceof Error ? error.message : error}`);
+    void settleVerification(alia, thread.id, false).catch((error) => {
+      alia.log.warn(`verification settle failed: ${error instanceof Error ? error.message : error}`);
     });
   });
   // A source agent that stops for an approval or a question cannot finish its
   // briefing turn without the user, so the handoff stops waiting right away.
-  bb.events.on("interaction.pending", ({ thread }) => {
+  alia.events.on("interaction.pending", ({ thread }) => {
     blockBriefing(thread.id);
   });
 
-  bb.rpc.register(rpcContract, {
-    ...createAdoptRpcHandlers(bb),
+  alia.rpc.register(rpcContract, {
+    ...createAdoptRpcHandlers(alia),
     async prepareHandoff({ threadId, upToSeq }) {
-      const captured = await captureThread(bb, threadId, { untilSeq: upToSeq });
+      const captured = await captureThread(alia, threadId, { untilSeq: upToSeq });
       const doc = renderHandoff(captured, new Date());
       // Same signals requestBriefing checks, so the panel's warning and the
       // actual skip decision cannot drift apart.
       let sourceState: "idle" | "busy" | "blocked" = "idle";
       try {
         // deno-lint-ignore no-explicit-any
-        const thread = (await bb.sdk.threads.get({ threadId })) as any;
+        const thread = (await alia.sdk.threads.get({ threadId })) as any;
         if (thread.hasPendingInteraction) sourceState = "blocked";
         else if (thread.status !== "idle") sourceState = "busy";
       } catch {
@@ -261,24 +261,24 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async listTargets({ threadId, machineId }) {
       const [{ projectId, hostId }, machines] = await Promise.all([
-        threadLocation(bb, threadId),
-        listMachines(bb).catch(() => []),
+        threadLocation(alia, threadId),
+        listMachines(alia).catch(() => []),
       ]);
       const target = machineId ? matchMachine(machines, machineId) : null;
       // Providers are discovered per machine: the target's CLIs decide what
       // this handoff can actually land on, not the source's.
-      const environmentId = target ? null : await environmentIdOfThread(bb, threadId);
+      const environmentId = target ? null : await environmentIdOfThread(alia, threadId);
       // Discovering a target machine's provider CLIs is a round trip to that
-      // machine. Unbounded, one sleeping laptop held this handler — and bb's
+      // machine. Unbounded, one sleeping laptop held this handler — and VesnALIA's
       // event loop with it — for seconds; an empty list just means "we could
       // not ask", which the picker already renders as nothing available.
       const providers = await listProvidersBounded(
-        bb,
+        alia,
         target ? { hostId: target.id } : environmentId ? { environmentId } : undefined,
       );
       // One project fetch for every machine, not one per machine: this is a
       // pure filter over the project's sources once we have them.
-      const sources = projectId === null ? [] : await projectSources(bb, projectId);
+      const sources = projectId === null ? [] : await projectSources(alia, projectId);
       const checkouts = machines.map((machine) =>
         sourcePathOnHostFrom(sources, machine.id) !== null,
       );
@@ -301,7 +301,7 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     async previewHandoff({ threadId, upToSeq }) {
-      const captured = await captureThread(bb, threadId, { untilSeq: upToSeq });
+      const captured = await captureThread(alia, threadId, { untilSeq: upToSeq });
       const doc = renderHandoff(captured, new Date());
       const docBytes = new TextEncoder().encode(doc).byteLength;
       const PREVIEW_CAP = 250_000;
@@ -313,10 +313,10 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     async listModels({ threadId, providerId, machineId }) {
-      const machines = machineId ? await listMachines(bb).catch(() => []) : [];
+      const machines = machineId ? await listMachines(alia).catch(() => []) : [];
       const target = machineId ? matchMachine(machines, machineId) : null;
-      const environmentId = target ? null : await environmentIdOfThread(bb, threadId);
-      const options = await bb.sdk.providers.models(
+      const environmentId = target ? null : await environmentIdOfThread(alia, threadId);
+      const options = await alia.sdk.providers.models(
         target
           ? { hostId: target.id, providerId }
           : environmentId
@@ -336,7 +336,7 @@ export default async function plugin(bb: BbPluginApi) {
       briefing,
       reasoningLevel,
     }) {
-      const result = await startHandoff(bb, {
+      const result = await startHandoff(alia, {
         sourceThreadId: threadId,
         providerId,
         model,
@@ -348,7 +348,7 @@ export default async function plugin(bb: BbPluginApi) {
         reasoningLevel,
       });
       const where = result.crossMachine ? ` on ${result.targetMachine}` : "";
-      bb.log.info(`handoff ${threadId} → ${providerId}${where} (${result.newThreadId})`);
+      alia.log.info(`handoff ${threadId} → ${providerId}${where} (${result.newThreadId})`);
       return {
         newThreadId: result.newThreadId,
         docBytes: result.docBytes,
@@ -360,13 +360,13 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     async history() {
-      return { handoffs: await listHandoffs(bb) };
+      return { handoffs: await listHandoffs(alia) };
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "handoff",
-    summary: "Move a session between agents — hand off a bb thread, or adopt an external one",
+    summary: "Move a session between agents — hand off a VesnALIA thread, or adopt an external one",
     commands: [
       ...adoptCommandSpecs,
       {
@@ -374,25 +374,25 @@ export default async function plugin(bb: BbPluginApi) {
         summary:
           "Capture a thread and spawn a new thread on another provider — and optionally another machine — seeded with it",
         usage:
-          "bb handoff <thread-id|--self> --to <provider> [--machine <host>] [--model <model>] [--effort <level>] [--workspace reuse|checkout|worktree|personal] [--instructions <text>] [--up-to-seq <n>] [--briefing] [--dry-run]",
+          "alia handoff <thread-id|--self> --to <provider> [--machine <host>] [--model <model>] [--effort <level>] [--workspace reuse|checkout|worktree|personal] [--instructions <text>] [--up-to-seq <n>] [--briefing] [--dry-run]",
       },
       {
         name: "export",
-        summary: "Write the handoff document to a file (for codex exec / claude -p outside bb)",
-        usage: "bb handoff export <thread-id|--self> [--out <path>] [--up-to-seq <n>]",
+        summary: "Write the handoff document to a file (for codex exec / claude -p outside VesnALIA)",
+        usage: "alia handoff export <thread-id|--self> [--out <path>] [--up-to-seq <n>]",
       },
       {
         name: "targets",
         summary: "List target providers available for a thread's host",
-        usage: "bb handoff targets [--thread <thread-id>] [--json]",
+        usage: "alia handoff targets [--thread <thread-id>] [--json]",
       },
-      { name: "list", summary: "Show past handoffs", usage: "bb handoff list [--json]" },
+      { name: "list", summary: "Show past handoffs", usage: "alia handoff list [--json]" },
     ],
     async run(argv, ctx) {
       // The adopt direction owns its own argv grammar (ids, resume commands,
       // --cwd/--agent/…), so it is dispatched before handoff's flag parsing.
       if (argv[0] === "adopt") {
-        return runAdoptCli(bb, argv.slice(1), { cwd: ctx.cwd, threadId: ctx.threadId });
+        return runAdoptCli(alia, argv.slice(1), { cwd: ctx.cwd, threadId: ctx.threadId });
       }
       const fail = (message: string) => ({ exitCode: 1, stderr: `${message}\n` });
       const BOOLEAN_FLAGS = new Set(["--self", "--dry-run", "--json", "--help", "--briefing"]);
@@ -414,29 +414,29 @@ export default async function plugin(bb: BbPluginApi) {
 
       if (command === "help" || flags.has("--help")) {
         const help = [
-          "bb handoff — move a session between agents and machines, in both directions",
+          "alia handoff — move a session between agents and machines, in both directions",
           "",
-          "  bb handoff <thread-id|--self> --to <provider> [--machine <host>] [--model <m>]",
+          "  VesnALIA handoff <thread-id|--self> --to <provider> [--machine <host>] [--model <m>]",
           "             [--effort none|low|medium|high|xhigh|ultracode|max|ultra]",
           "             [--workspace reuse|checkout|worktree|personal]",
           "             [--instructions <text>] [--up-to-seq <n>] [--briefing] [--dry-run]",
           "             --effort sets the new thread's thinking effort; omit to use the",
-          "             target model's own default. Run `bb handoff targets` for providers,",
+          "             target model's own default. Run `alia handoff targets` for providers,",
           "             and note that the levels a model accepts vary by model.",
           "             --briefing asks the (idle) source agent for a handoff note first",
           "             --machine runs the new thread on another enrolled machine. The source's",
           "             uncommitted work travels with it as a patch; reuse is same-machine only,",
           "             so pick checkout (that machine's project checkout), worktree, or personal.",
-          "  bb handoff export <thread-id|--self> [--out <path>] [--up-to-seq <n>]",
-          "  bb handoff targets [--thread <thread-id>] [--machine <host>] [--json]",
-          "  bb handoff list [--json]",
-          "  bb handoff adopt …   (see `bb handoff adopt help`)",
+          "  VesnALIA handoff export <thread-id|--self> [--out <path>] [--up-to-seq <n>]",
+          "  VesnALIA handoff targets [--thread <thread-id>] [--machine <host>] [--json]",
+          "  VesnALIA handoff list [--json]",
+          "  VesnALIA handoff adopt …   (see `alia handoff adopt help`)",
         ].join("\n");
         return { exitCode: 0, stdout: `${help}\n` };
       }
 
       if (command === "list") {
-        const handoffs = await listHandoffs(bb);
+        const handoffs = await listHandoffs(alia);
         if (flags.has("--json")) {
           return { exitCode: 0, stdout: `${JSON.stringify({ handoffs }, null, 2)}\n` };
         }
@@ -455,7 +455,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (command === "targets") {
         const threadId = flags.get("--thread") ?? ctx.threadId;
         const machineFlag = flags.get("--machine");
-        const machines = await listMachines(bb).catch(() => []);
+        const machines = await listMachines(alia).catch(() => []);
         const target = machineFlag ? matchMachine(machines, machineFlag) : null;
         if (machineFlag && !target) {
           return fail(
@@ -463,11 +463,11 @@ export default async function plugin(bb: BbPluginApi) {
           );
         }
         const environmentId =
-          target || !threadId ? null : await environmentIdOfThread(bb, threadId);
+          target || !threadId ? null : await environmentIdOfThread(alia, threadId);
         // Bounded like the rpc path: asking a sleeping machine for its provider
-        // CLIs must not hold bb's event loop until that machine wakes up.
+        // CLIs must not hold VesnALIA's event loop until that machine wakes up.
         const providers = await listProvidersBounded(
-          bb,
+          alia,
           target ? { hostId: target.id } : environmentId ? { environmentId } : undefined,
         );
         if (providers.length === 0 && target) {
@@ -509,8 +509,8 @@ export default async function plugin(bb: BbPluginApi) {
 
       if (command === "export") {
         const threadId = resolveThreadId(positional[0]);
-        if (!threadId) return fail("No thread. Pass a thread id or run with --self inside a bb thread.");
-        const captured = await captureThread(bb, threadId, { untilSeq: upToSeq });
+        if (!threadId) return fail("No thread. Pass a thread id or run with --self inside a VesnALIA thread.");
+        const captured = await captureThread(alia, threadId, { untilSeq: upToSeq });
         const doc = renderHandoff(captured, new Date());
         const out = flags.get("--out") ?? `handoff-${threadId}.md`;
         const absolute = out.startsWith("/") ? out : `${ctx.cwd ?? captured.workspacePath ?? "."}/${out}`;
@@ -518,20 +518,20 @@ export default async function plugin(bb: BbPluginApi) {
         // otherwise the server host — never blindly on run()'s filesystem.
         let hostId: string | undefined;
         if (ctx.threadId) {
-          const environmentId = await environmentIdOfThread(bb, ctx.threadId);
-          if (environmentId) hostId = (await bb.sdk.environments.get({ environmentId })).hostId;
+          const environmentId = await environmentIdOfThread(alia, ctx.threadId);
+          if (environmentId) hostId = (await alia.sdk.environments.get({ environmentId })).hostId;
         }
-        const written = await bb.sdk.files.write({ hostId, path: absolute, content: doc, createParents: true });
+        const written = await alia.sdk.files.write({ hostId, path: absolute, content: doc, createParents: true });
         if (written.outcome !== "written") return fail(`Could not write ${absolute}: ${written.outcome}`);
         return {
           exitCode: 0,
-          stdout: `Wrote ${written.sizeBytes} bytes to ${absolute}\nUse it outside bb, e.g.: codex exec - < ${absolute}\n`,
+          stdout: `Wrote ${written.sizeBytes} bytes to ${absolute}\nUse it outside VesnALIA, e.g.: codex exec - < ${absolute}\n`,
         };
       }
 
       if (command === "start") {
         const threadId = resolveThreadId(positional[0]);
-        if (!threadId) return fail("No thread. Pass a thread id or run with --self inside a bb thread.");
+        if (!threadId) return fail("No thread. Pass a thread id or run with --self inside a VesnALIA thread.");
         const providerId = flags.get("--to");
         const machine = flags.get("--machine") || undefined;
         // Crossing machines cannot reuse the source environment, so a bare
@@ -547,10 +547,10 @@ export default async function plugin(bb: BbPluginApi) {
         }
         const reasoningLevel = effort?.success ? effort.data : undefined;
         if (flags.has("--dry-run")) {
-          const captured = await captureThread(bb, threadId, { untilSeq: upToSeq });
+          const captured = await captureThread(alia, threadId, { untilSeq: upToSeq });
           let plan: TransferPlan;
           try {
-            plan = await planTransfer(bb, {
+            plan = await planTransfer(alia, {
               projectId: captured.projectId,
               sourceHostId: captured.hostId,
               sourceBranch: captured.branchName,
@@ -565,7 +565,7 @@ export default async function plugin(bb: BbPluginApi) {
           const doc = renderHandoff(captured, new Date(), null, { transfer: plan });
           const working =
             plan.crossMachine && captured.environmentId
-              ? await captureWorkingState(bb, captured.environmentId)
+              ? await captureWorkingState(alia, captured.environmentId)
               : null;
           const stats = [
             `Source: ${captured.title} (${captured.providerId}, ${threadId})`,
@@ -587,10 +587,10 @@ export default async function plugin(bb: BbPluginApi) {
           ];
           return { exitCode: 0, stdout: `${stats.join("\n")}\n` };
         }
-        if (!providerId) return fail("Missing --to <provider>. See `bb handoff targets`.");
+        if (!providerId) return fail("Missing --to <provider>. See `alia handoff targets`.");
         let result: Awaited<ReturnType<typeof startHandoff>>;
         try {
-          result = await startHandoff(bb, {
+          result = await startHandoff(alia, {
             sourceThreadId: threadId,
             providerId,
             model: flags.get("--model"),
@@ -621,7 +621,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

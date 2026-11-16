@@ -1,4 +1,4 @@
-// Wires bb-box into BB: its configuration, the active backends, the box registry,
+// Wires alia-box into VesnALIA: its configuration, the active backends, the box registry,
 // enrolment, thread events, the sweep, and the tools, RPC and CLI that use
 // them. server.ts calls setup with the built-in drivers; tests pass fakes.
 
@@ -7,7 +7,7 @@ import { tailnetDoctor } from "../core/tailnet-doctor.ts";
 import { hostname } from "node:os";
 import { dockerFix, machineAccessProblem, machineSetups, type AccessConfig, type MachineAccessProblem, type MachineSetup } from "./setup-offer.ts";
 import type { SetupFacts } from "../host/relay.ts";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import packageJson from "../../package.json" with { type: "json" };
 import { Backends, DRIVERS, offerChecks, overlapChecks } from "../backends/index.ts";
 import { providerName } from "../core/provider-name.ts";
@@ -65,7 +65,7 @@ import { MSB_ROUTE, msbClientArgv, refuseMsb } from "../relay/msb.ts";
 import { NAME_WINDOWS_SCRIPT, parseNamed } from "../backends/windows.ts";
 import { abortable } from "../core/abortable.ts";
 import { DESKTOP_ON_DEMAND, DockerHosts, backendOn, desktopsOnDemand, machineOffline, withDesktopImage, withDockerHost, withoutDesktopImage, type DesktopOnDemandKind, type MachineRecord, MachineNames, MachinePlatforms } from "./docker-hosts.ts";
-import { bbAppDigest, DockerImages, outdated } from "./docker-images.ts";
+import { aliaAppDigest, DockerImages, outdated } from "./docker-images.ts";
 import { hostContract } from "../host/contract.ts";
 import { Refreshing } from "./refreshing.ts";
 import type { DesktopOnDemandView, KindCards, ThreadOnBox } from "./contract.ts";
@@ -95,7 +95,7 @@ import { FakeSnapshotPrices, MachineRestores, SnapshotHolds, ZfsOrder } from "./
 import { registerSnapshotTools } from "./snapshot-tools.ts";
 import { TurnHold } from "./turn-hold.ts";
 import { ReachCheck } from "../core/reach.ts";
-import { byBbBox, type Actor } from "../core/box-log.ts";
+import { byAliaBox, type Actor } from "../core/box-log.ts";
 import { RecordingInputs } from "../core/record-input.ts";
 import { recordingChecks } from "../core/record-support.ts";
 import { ClipFfmpegLedger } from "./record-device.ts";
@@ -104,15 +104,15 @@ import { ClipFfmpegLedger } from "./record-device.ts";
 import { PRODUCT } from "../brand.ts";
 export const CHANGED = "changed";
 
-/** In a box that is a BB machine, the program of the process whose workers carry BB's variables. */
+/** In a box that is a VesnALIA machine, the program of the process whose workers carry VesnALIA's variables. */
 const DAEMON_PARENT = "host-daemon/dist/daemon-bundle";
 const SWEEP_EVERY_MS = 3 * 60_000;
-/** The nightly rebuilds' schedule (049): its name in BB, its time on BB's server, and the hours after which no image starts, as bb box images refresh's default. */
+/** The nightly rebuilds' schedule (049): its name in VesnALIA, its time on VesnALIA's server, and the hours after which no image starts, as VesnALIA box images refresh's default. */
 const NIGHTLY_SCHEDULE = "nightly-images";
 const NIGHTLY_CRON = "0 3 * * *";
 const NIGHTLY_HOURS = 4;
-/** How often bb-box looks for a BB update that leaves the images behind. */
-const BB_UPDATE_LOOK_MS = 5 * 60_000;
+/** How often alia-box looks for a VesnALIA update that leaves the images behind. */
+const ALIA_UPDATE_LOOK_MS = 5 * 60_000;
 const DOCTOR_TIMEOUT_MS = 30_000;
 const ROOM_ANSWER_MS = 6_000;
 
@@ -149,27 +149,27 @@ function firstSentence(text: string | null): string | null {
   return sentence.length > SHORT_REASON && clause > 0 ? sentence.slice(0, clause) : sentence;
 }
 /**
- * What BB's daemon gives its workers besides the machine variables: the
- * GitHub token and the user's git identity. A user without GitHub in BB
+ * What VesnALIA's daemon gives its workers besides the machine variables: the
+ * GitHub token and the user's git identity. A user without GitHub in VesnALIA
  * still has the identity, which ends the enrolment's wait for a worker.
  */
 const NOTHING_COMES: readonly string[] = [];
 const DAEMON_NAMES = ["GH_TOKEN", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"];
-/** How long the names of BB's machine variables are kept before a refresh. */
+/** How long the names of VesnALIA's machine variables are kept before a refresh. */
 const NAMES_FRESH_MS = 60_000;
 /** How long the host call that opens a Docker relay may take, the worker's start included. */
 const RELAY_CALL_TIMEOUT_MS = 15_000;
 /** The longest a streamed box_copy may take (#492). */
 const FILE_CALL_TIMEOUT_MS = 2 * 60 * 60_000;
-/** How long each msb script may run on a BB machine (053), with a minute more for the call. */
+/** How long each msb script may run on a VesnALIA machine (053), with a minute more for the call. */
 const MSB_SCRIPT_TIMEOUT_MS = { install: 11 * 60_000, status: 2 * 60_000, images: 2 * 60_000, import: 31 * 60_000, undisk: 2 * 60_000, disks: 90_000, memory: 90_000, oom: 90_000, transfer: 31 * 60_000, retag: 31 * 60_000, snapshots: 2 * 60_000, keep: 90_000 } as const;
-/** How long BB's word on a machine's connection is trusted, so each docker command does not ask again. */
+/** How long VesnALIA's word on a machine's connection is trusted, so each docker command does not ask again. */
 const MACHINE_STATE_MS = 2_000;
-/** bb-box's version, which the move from BB's settings records. */
+/** alia-box's version, which the move from VesnALIA's settings records. */
 export const VERSION: string = packageJson.version;
 
 /** What the tools, RPC and CLI work with. */
-export interface BbBox {
+export interface AliaBox {
   readonly boxes: Boxes;
   readonly backends: Backends;
   readonly enrolment: Enrolment;
@@ -185,34 +185,34 @@ export interface BbBox {
   /** The configuration document (029). */
   readonly configuration: Configuration;
   readonly replyDrops: ReplyDrops | null;
-  /** The Monitor (066): machine status in BB's sidebar footer, and background monitoring of BB's server. */
+  /** The Monitor (066): machine status in VesnALIA's sidebar footer, and background monitoring of VesnALIA's server. */
   readonly monitor: Monitor;
-  /** The Docker API relay to BB machines that are Docker hosts (042). */
+  /** The Docker API relay to VesnALIA machines that are Docker hosts (042). */
   readonly relay: RelayHub;
   /** Streams box_copy's large files through the worker on the thread's machine (#492). */
   readonly files: FileRelay;
-  /** BB machines that can host Docker boxes (042). */
+  /** VesnALIA machines that can host Docker boxes (042). */
   readonly dockerHosts: DockerHosts;
-  /** Builds bb-box's images on BB machines that host Docker boxes (042). */
+  /** Builds alia-box's images on VesnALIA machines that host Docker boxes (042). */
   readonly dockerImages: DockerImages;
-  /** What each BB machine offers first-run setup: its Docker, and the one line that fixes what stands in the way. */
+  /** What each VesnALIA machine offers first-run setup: its Docker, and the one line that fixes what stands in the way. */
   setups(): Promise<MachineSetup[]>;
-  /** What stands in the way of boxes joining BB through its machine access, or null. */
+  /** What stands in the way of boxes joining VesnALIA through its machine access, or null. */
   machineAccess(): Promise<MachineAccessProblem | null>;
-  /** BB machine `machine`, by ID or name, and its Docker backend, from BB's record and the configuration, with no call to it. */
+  /** VesnALIA machine `machine`, by ID or name, and its Docker backend, from VesnALIA's record and the configuration, with no call to it. */
   dockerHostOf(machine: string): Promise<{ hostId: string; name: string; backend: BackendConfig | null } | null>;
-  /** Turns a BB machine on or off as a Docker host (042), through the configuration. */
+  /** Turns a VesnALIA machine on or off as a Docker host (042), through the configuration. */
   setDockerHost(hostId: string, enabled: boolean, linuxOnly?: boolean, operation?: string): Promise<ApplyResult>;
   /** Why the desktop box a thread asked to build first was not made once its image was built, and when, or null. */
   desktopProblem(threadId: string): { message: string; at: number } | null;
-  /** The BB machine whose desktop image the New box form can build, with its name, or null for none (the setup plan's PR 4). */
+  /** The VesnALIA machine whose desktop image the New box form can build, with its name, or null for none (the setup plan's PR 4). */
   desktopOnDemand(audience?: Audience): Promise<DesktopOnDemandView | null>;
   /**
-   * Turns on the desktop image of BB machine `hostId`'s Docker and builds it, then makes a desktop box for the thread
+   * Turns on the desktop image of VesnALIA machine `hostId`'s Docker and builds it, then makes a desktop box for the thread
    * once it is built. Returns once the configuration is saved; the panel shows the build.
    */
   buildDesktop(input: { threadId: string; hostId: string; kind?: DesktopOnDemandKind; size?: SizeRequest; name?: string }): Promise<ApplyResult>;
-  /** Docker on BB machine `machine`, by ID or name, through the relay, and how long it took. */
+  /** Docker on VesnALIA machine `machine`, by ID or name, through the relay, and how long it took. */
   dockerCheck(machine: string, signal?: AbortSignal): Promise<{ hostId: string; name: string; endpoint: string; info: DockerInfo; firstMs: number; againMs: number }>;
   /** What a rebuild of the standard Linux images would take now (049): upstream's latest of the tools that follow it, or with `pinned` the pins alone. */
   imageVersions(options: { pinned?: boolean; signal?: AbortSignal }): Promise<Versions>;
@@ -239,7 +239,7 @@ export interface BbBox {
   forget(threadId: string, ref: string, who: Actor): Promise<void>;
   checkNow(threadId: string, ref: string, signal?: AbortSignal): Promise<BoxRecord>;
   joinAgain(threadId: string, ref: string, options?: { readonly waitMs?: number; readonly signal?: AbortSignal }): Promise<JoinAgain>;
-  /** With each kind's sizes from bb-box's settings. */
+  /** With each kind's sizes from alia-box's settings. */
   kinds(audience?: Audience): Promise<KindView[]>;
   /** The projects' images a box can choose (049), marked as `project`'s or not, with their projects' names and builds. */
   imageOptions(project: string | null): Promise<ImageOptionView[]>;
@@ -258,7 +258,7 @@ export interface BbBox {
   setInstallId(id: string): Promise<void>;
   /** The machine and directory a thread works in, for copying files to and from its boxes. */
   workspace(threadId: string, signal?: AbortSignal): Promise<{ hostId: string; path: string | null }>;
-  /** The thread's own storage folder, $BB_THREAD_STORAGE, and its host (#482); null when BB gives none. */
+  /** The thread's own storage folder, $ALIA_THREAD_STORAGE, and its host (#482); null when VesnALIA gives none. */
   threadStorage(threadId: string, signal?: AbortSignal): Promise<{ hostId: string; path: string } | null>;
   /** The storage folders of the thread's parent, its parent's parent and so on, nearest first, up to `limit`. */
   ancestorStorages(threadId: string, limit: number, signal?: AbortSignal): Promise<{ threadId: string; hostId: string; path: string }[]>;
@@ -266,16 +266,16 @@ export interface BbBox {
   projectOf(threadId: string): Promise<string | null>;
   projects(): Promise<readonly ProjectChoice[]>;
   /**
-   * Starts a child thread of `threadId` on a box's BB machine, with the
+   * Starts a child thread of `threadId` on a box's VesnALIA machine, with the
    * parent's project, in a worktree of the project's repository there. The
-   * first thread on a box clones the repository onto it; BB forgets that
-   * clone with the machine. In BB's personal project, which has no
+   * first thread on a box clones the repository onto it; VesnALIA forgets that
+   * clone with the machine. In VesnALIA's personal project, which has no
    * repository, the thread gets a personal workspace on the box instead. The thread is archived and deleted with its
    * parent, which is also when the box goes. Returns its ID.
    */
   startThread(input: { threadId: string; box: string; prompt: string; title?: string; signal?: AbortSignal }): Promise<string>;
   /**
-   * The box whose BB machine a thread runs on, whoever owns it (036): one
+   * The box whose VesnALIA machine a thread runs on, whoever owns it (036): one
    * of your machines, a "New box", or another thread's box. Null when the
    * thread runs on no box.
    */
@@ -285,11 +285,11 @@ export interface BbBox {
    * with the thread that owns it for the calls that take one.
    */
   resolve(threadId: string, ref: string, signal?: AbortSignal): Promise<{ owner: string; box: BoxRecord; runsOn: boolean }>;
-  /** The threads, not archived or deleted, that run on a box's BB machine. */
+  /** The threads, not archived or deleted, that run on a box's VesnALIA machine. */
   threadsOn(box: BoxRecord): Promise<ThreadOnBox[]>;
   holderOf(box: BoxRecord): Promise<ThreadOnBox | null>;
   /**
-   * Refuses, naming them, while threads are working on a box's BB machine:
+   * Refuses, naming them, while threads are working on a box's VesnALIA machine:
    * releasing or stopping it would end their work. Returns the idle threads
    * there, which lose their machine, for the answer to name.
    */
@@ -297,13 +297,13 @@ export interface BbBox {
   /**
    * Refuses a restart of a box for a resize (061) while a person holds its
    * desktop's control, and, unless `force`, while threads are working on
-   * its BB machine. Returns the idle threads there.
+   * its VesnALIA machine. Returns the idle threads there.
    */
   checkRestart(box: BoxRecord, force: boolean): Promise<ThreadOnBox[]>;
   /**
-   * After a live resize that changed a BB machine's cores (061): BB counts
+   * After a live resize that changed a VesnALIA machine's cores (061): VesnALIA counts
    * a machine's processors only when its daemon connects, and sets its
-   * automatic thread limit from them (BB request 28). Restarts BB's daemon
+   * automatic thread limit from them (VesnALIA request 28). Restarts VesnALIA's daemon
    * there when no thread works on the machine, as the restart ends a
    * running turn, and says so; otherwise says how to set the limit by hand.
    * Never changes a limit. Null when there is nothing to say.
@@ -312,7 +312,7 @@ export interface BbBox {
 }
 
 /**
- * Restarts BB's daemon, a systemd user service, once the box shows its new
+ * Restarts VesnALIA's daemon, a systemd user service, once the box shows its new
  * cores, as the daemon reads the processors as it starts: the wait, up to
  * 15 s, and the restart run on in the box, detached, so the resize answers
  * at once (#916). Exits 3 where there is no daemon, as in a Docker box. Only
@@ -320,7 +320,7 @@ export interface BbBox {
  * fake box runs on, whose own daemon it would restart.
  */
 export const restartDaemon = (cores: number) => String.raw`[ "$HOME" = /home/box ] || exit 3
-unit=$(systemctl --user list-units --plain --no-legend 'bb-host-daemon-*.service' 2>/dev/null | awk '{ print $1; exit }')
+unit=$(systemctl --user list-units --plain --no-legend 'alia-host-daemon-*.service' 2>/dev/null | awk '{ print $1; exit }')
 [ -n "$unit" ] || exit 3
 setsid nohup sh -c 'i=0; while [ "$(nproc)" -ne ${cores} ] && [ $i -lt 15 ]; do sleep 1; i=$((i + 1)); done; systemctl --user restart --no-block "$1"' sh "$unit" </dev/null >/dev/null 2>&1 &`;
 
@@ -339,7 +339,7 @@ function status(error: unknown): { status?: unknown; code?: unknown } {
 }
 
 /**
- * Only BB's own answer for a thread that does not exist, or was deleted,
+ * Only VesnALIA's own answer for a thread that does not exist, or was deleted,
  * counts: a thread that ended loses its boxes. Any other error, another 404
  * included, keeps them.
  */
@@ -349,13 +349,13 @@ export function isMissingThread(error: unknown): boolean {
   return name === undefined && code === 404 && error instanceof Error && /^(HTTP 404: )?Thread not found\.?$/i.test(error.message);
 }
 
-/** An error from BB as it came, for the log: its status, code and message. */
+/** An error from VesnALIA as it came, for the log: its status, code and message. */
 export function describeAnswer(error: unknown): string {
   const { status: code, code: name } = status(error);
   return `status ${String(code ?? "none")}, code ${String(name ?? "none")}, message ${JSON.stringify(error instanceof Error ? error.message : String(error))}`;
 }
 
-/** A thread's archivedAt or deletedAt as BB sent it, for the log. */
+/** A thread's archivedAt or deletedAt as VesnALIA sent it, for the log. */
 function when(value: unknown): string {
   return typeof value === "number" && Number.isFinite(value) ? new Date(value).toISOString() : String(value);
 }
@@ -372,7 +372,7 @@ function isSet(value: unknown): boolean {
 /** Commands a project image's script may call at start (049), from the setup files, or none when they are not there. */
 function imageTools(setup: string): Record<string, string> {
   try {
-    return { "bb-box-feature": readFileSync(join(setup, "proxmox-lxc", "template", "guest", "bb-box-feature.sh"), "utf8") };
+    return { "alia-box-feature": readFileSync(join(setup, "proxmox-lxc", "template", "guest", "alia-box-feature.sh"), "utf8") };
   } catch {
     return {};
   }
@@ -393,7 +393,7 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 
 export interface SetupOptions {
   readonly drivers?: readonly BackendDriver<any>[];
-  /** Where commands in a box take BB's variables from. Tests give a process of their own. */
+  /** Where commands in a box take VesnALIA's variables from. Tests give a process of their own. */
   readonly daemonParent?: string;
   /** How long a viewer holding control may be gone before the agent has it again. */
   readonly controlStaleMs?: number;
@@ -407,18 +407,18 @@ export interface SetupOptions {
   readonly controlReconnectMs?: number;
   /** How long a terminal session stays with no tab showing it. */
   readonly terminalIdleMs?: number;
-  /** How long an enrolment waits for a worker of BB's daemon with the thread's variables. */
+  /** How long an enrolment waits for a worker of VesnALIA's daemon with the thread's variables. */
   readonly variablesWaitMs?: number;
-  /** How long a Windows box's daemon may take to connect by itself after a start, before bb-box runs BB's reconnect (#917). */
+  /** How long a Windows box's daemon may take to connect by itself after a start, before alia-box runs VesnALIA's reconnect (#917). */
   readonly logonWaitMs?: number;
-  /** How long an enrolment waits to ask BB again when BB does not know bb-box's machine provider yet. */
+  /** How long an enrolment waits to ask VesnALIA again when VesnALIA does not know alia-box's machine provider yet. */
   readonly providerRetryMs?: number;
-  /** How long a release waits for BB to finish removing a Windows box's manual machine. */
+  /** How long a release waits for VesnALIA to finish removing a Windows box's manual machine. */
   readonly manualRemoveMs?: number;
   readonly joinWaitsMs?: readonly number[];
   readonly joinAlarm?: JoinAlarm;
   readonly now?: () => number;
-  /** setup/docker/build.sh, which builds images on a BB machine (042). By default the one beside the plugin's bundle. */
+  /** setup/docker/build.sh, which builds images on a VesnALIA machine (042). By default the one beside the plugin's bundle. */
   readonly dockerBuildScript?: string | null;
   /** Computer use's waits, shorter in tests. */
   readonly computer?: Pick<ComputerDeps, "idleMs" | "pauseWaitMs" | "cursorRestoreRetryMs" | "callTimeoutMs" | "launchWaitMs" | "lookupWaitMs" | "pageWaitMs" | "desktopWaitMs" | "smallTree" | "nameWindows">;
@@ -430,37 +430,37 @@ function awaitedNames(gitToken: boolean, variablesSet: boolean): readonly string
   return variablesSet ? undefined : NOTHING_COMES;
 }
 
-export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promise<BbBox> {
+export async function setup(alia: AliaPluginApi, options: SetupOptions = {}): Promise<AliaBox> {
   const drivers = options.drivers ?? DRIVERS;
   const logError = (operation: string, error: unknown) => {
-    bb.log.error(`${operation}: ${error instanceof Error ? error.message : String(error)}`);
+    alia.log.error(`${operation}: ${error instanceof Error ? error.message : String(error)}`);
   };
   const notify = (threadId: string | null) => {
     try {
-      bb.realtime.publish(CHANGED, { threadId });
+      alia.realtime.publish(CHANGED, { threadId });
     } catch (error) {
       logError("notify", error);
     }
   };
 
-  // BB's settings move into the configuration document once, before any
+  // VesnALIA's settings move into the configuration document once, before any
   // backend is built (029). The old keys stay declared until they are
   // cleared, and nothing listens to them: once the document exists they
   // drive nothing, so clearing them leaves the backends alone.
-  const kv = bb.storage.kv;
-  const reloadTimes = new ReloadTimes((message) => bb.log.info(message), kv);
-  bb.onDispose(() => reloadTimes.stopped());
+  const kv = alia.storage.kv;
+  const reloadTimes = new ReloadTimes((message) => alia.log.info(message), kv);
+  alia.onDispose(() => reloadTimes.stopped());
   const earlier = earlierSettings(drivers);
   const freshInstall = !(await kv.get<unknown>(DOCUMENT_KEY)) && !(await kv.get<unknown>(INSTALL_ID_KEY));
   if (freshInstall) await kv.set(CLEARED_KEY, { at: Date.now() });
-  const settings = (await kv.get<unknown>(CLEARED_KEY)) ? null : bb.settings.define(earlier);
+  const settings = (await kv.get<unknown>(CLEARED_KEY)) ? null : alia.settings.define(earlier);
   if (!(await kv.get<ConfigDocument>(DOCUMENT_KEY))) {
     if (settings) {
       const { notes } = await moveSettings({ kv, drivers, values: await settings.get(), settings: earlier, version: VERSION });
-      bb.log.info(`Moved ${PRODUCT}'s settings into its configuration. bb box config migrated shows what they were.`);
-      for (const note of notes) bb.log.warn(`Moving ${PRODUCT}'s settings: ${note}`);
+      alia.log.info(`Moved ${PRODUCT}'s settings into its configuration. VesnALIA box config migrated shows what they were.`);
+      for (const note of notes) alia.log.warn(`Moving ${PRODUCT}'s settings: ${note}`);
     } else {
-      // BB's settings were moved and cleared before, so there is nothing to move: start empty, keeping the secrets.
+      // VesnALIA's settings were moved and cleared before, so there is nothing to move: start empty, keeping the secrets.
       await kv.set(DOCUMENT_KEY, emptyDocument(1));
     }
   }
@@ -468,17 +468,17 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
 
   const storedFiles = (() => {
     try {
-      return openBoxFiles(bb.storage, { log: BOX_LOG_MIGRATIONS, history: BOX_HISTORY_MIGRATIONS, snapshots: SNAPSHOT_MIGRATIONS });
+      return openBoxFiles(alia.storage, { log: BOX_LOG_MIGRATIONS, history: BOX_HISTORY_MIGRATIONS, snapshots: SNAPSHOT_MIGRATIONS });
     } catch (error) {
       logError(`open ${PRODUCT}'s box log and box history`, error);
       return unopenedFiles(error);
     }
   })();
-  if (storedFiles.shared) bb.log.warn(`${PRODUCT} keeps its box log and box history in its own database, as BB's handle refused to attach their files: ${storedFiles.log.refusal}`);
-  if (storedFiles.snapshotsMoved) bb.log.info(`Moved ${storedFiles.snapshotsMoved} snapshot records and operations from ${PRODUCT}'s database into snapshots.db, which BB's handle now attaches.`);
+  if (storedFiles.shared) alia.log.warn(`${PRODUCT} keeps its box log and box history in its own database, as VesnALIA's handle refused to attach their files: ${storedFiles.log.refusal}`);
+  if (storedFiles.snapshotsMoved) alia.log.info(`Moved ${storedFiles.snapshotsMoved} snapshot records and operations from ${PRODUCT}'s database into snapshots.db, which VesnALIA's handle now attaches.`);
   for (const file of [storedFiles.log, storedFiles.history, storedFiles.snapshots]) {
-    if (file.problem) bb.log.warn(`${PRODUCT} could not set up ${file.spec.file}: ${file.problem}`);
-    else bb.log.info(`Opened ${file.attached ? `${file.spec.file}, attached to ${PRODUCT}'s database` : `${file.spec.file}'s tables in ${PRODUCT}'s database`}: ${file.migrationsRun === 0 ? "no migration to run" : `ran ${file.migrationsRun} ${file.migrationsRun === 1 ? "migration" : "migrations"}`}.`);
+    if (file.problem) alia.log.warn(`${PRODUCT} could not set up ${file.spec.file}: ${file.problem}`);
+    else alia.log.info(`Opened ${file.attached ? `${file.spec.file}, attached to ${PRODUCT}'s database` : `${file.spec.file}'s tables in ${PRODUCT}'s database`}: ${file.migrationsRun === 0 ? "no migration to run" : `ran ${file.migrationsRun} ${file.migrationsRun === 1 ? "migration" : "migrations"}`}.`);
   }
   const boxLog = new BoxLogStore({
     file: storedFiles.log,
@@ -492,22 +492,22 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   const zfsOrder = snapshotHolds ? new ZfsOrder() : null;
   const machineRestores = snapshotHolds ? new MachineRestores() : null;
 
-  // bb-box's host entry on BB machines (src/host/entry.ts).
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  // alia-box's host entry on VesnALIA machines (src/host/entry.ts).
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
-  // The Docker API relay (042): a socket per BB machine for the docker CLI, each
+  // The Docker API relay (042): a socket per VesnALIA machine for the docker CLI, each
   // connection a channel on one WebSocket the machine's worker opens out to this route.
-  // Each BB machine's name, kept across restarts, and looked up again as bb-box starts.
+  // Each VesnALIA machine's name, kept across restarts, and looked up again as alia-box starts.
   const machineNames = new MachineNames(kv);
   await machineNames.load();
-  // Each BB machine's OS, as bb-box's host entry there last reported it, kept across restarts.
+  // Each VesnALIA machine's OS, as alia-box's host entry there last reported it, kept across restarts.
   const machinePlatforms = new MachinePlatforms(kv);
   await machinePlatforms.load();
   reloadTimes.phase("storage");
   const machineStates = new Map<string, { at: number; connected: boolean | null; offline: string | null }>();
   /**
-   * Whether BB shows the machine connected and has heard from it lately, from
-   * BB with no call to it, for a moment at a time. Null for no such machine.
+   * Whether VesnALIA shows the machine connected and has heard from it lately, from
+   * VesnALIA with no call to it, for a moment at a time. Null for no such machine.
    */
   const machineConnected = async (hostId: string): Promise<boolean | null> => {
     const known = machineStates.get(hostId);
@@ -515,7 +515,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     let offline: string | null = null;
     let connected: boolean | null;
     try {
-      const found = await bb.sdk.hosts.get({ hostId });
+      const found = await alia.sdk.hosts.get({ hostId });
       await machineNames.learn(hostId, found.name);
       offline = machineOffline(found, Date.now());
       connected = offline === null;
@@ -529,8 +529,8 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   const offline = (hostId: string, connected: boolean | null) =>
     new Error(
       connected === null
-        ? `BB has no machine ${hostId}.`
-        : `${machineNames.get(hostId) ?? `BB machine ${hostId}`} ${machineStates.get(hostId)?.offline ?? "is offline in BB."}`,
+        ? `VesnALIA has no machine ${hostId}.`
+        : `${machineNames.get(hostId) ?? `VesnALIA machine ${hostId}`} ${machineStates.get(hostId)?.offline ?? "is offline in VesnALIA."}`,
     );
   const relayTargets = new Map<string, string>();
   const dockerOnMachine = (hostId: string) => machineDockerHost(configuration.document.backends, hostId);
@@ -540,42 +540,42 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       if (connected !== true) throw offline(hostId, connected);
       const dockerHost = dockerOnMachine(hostId);
       relayTargets.set(hostId, dockerHost ?? "");
-      return host.call("relay", { secret, path: `/api/v1/plugins/${bb.pluginId}/http${RELAY_ROUTE}`, ...(dockerHost ? { dockerHost } : {}) }, { hostId, signal, timeoutMs: RELAY_CALL_TIMEOUT_MS });
+      return host.call("relay", { secret, path: `/api/v1/plugins/${alia.pluginId}/http${RELAY_ROUTE}`, ...(dockerHost ? { dockerHost } : {}) }, { hostId, signal, timeoutMs: RELAY_CALL_TIMEOUT_MS });
     },
-    // While bb-box has a box on a Docker backend on the machine, its relay stays open.
+    // While alia-box has a box on a Docker backend on the machine, its relay stays open.
     async keep(hostId) {
-      const ids = new Set(configuration.document.backends.filter((backend) => backend.fields.host === `bb:${hostId}`).map((backend) => backend.id));
+      const ids = new Set(configuration.document.backends.filter((backend) => backend.fields.host === `alia:${hostId}`).map((backend) => backend.id));
       return ids.size > 0 && (await boxes.all()).some((box) => ids.has(box.backend) && box.state !== "gone");
     },
     async offline(hostId) {
-      // BB's word now, not a moment ago: this is asked when a relay has gone quiet.
+      // VesnALIA's word now, not a moment ago: this is asked when a relay has gone quiet.
       machineStates.delete(hostId);
       const connected = await machineConnected(hostId);
       return connected === true ? null : offline(hostId, connected).message;
     },
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
-  bb.http.experimental_websocket(RELAY_ROUTE, ({ url }) => relay.route(url), { auth: "none" });
+  alia.http.experimental_websocket(RELAY_ROUTE, ({ url }) => relay.route(url), { auth: "none" });
   const fileRelay = new FileRelay({
-    call: (hostId, request, signal) => host.call("file", { ...request, path: `/api/v1/plugins/${bb.pluginId}/http${FILE_ROUTE}` }, { hostId, signal, timeoutMs: FILE_CALL_TIMEOUT_MS }),
+    call: (hostId, request, signal) => host.call("file", { ...request, path: `/api/v1/plugins/${alia.pluginId}/http${FILE_ROUTE}` }, { hostId, signal, timeoutMs: FILE_CALL_TIMEOUT_MS }),
     logError,
   });
-  bb.http.experimental_websocket(FILE_ROUTE, ({ url }) => fileRelay.route(url), { auth: "none" });
-  bb.onDispose(() => relay.dispose());
+  alia.http.experimental_websocket(FILE_ROUTE, ({ url }) => fileRelay.route(url), { auth: "none" });
+  alia.onDispose(() => relay.dispose());
   // The msb relay (053): as the Docker relay, with a channel per run of
-  // bb-box's msb on the machine, for its msb client here.
+  // alia-box's msb on the machine, for its msb client here.
   const msbRelay = new RelayHub({
     what: "msb",
     refuse: refuseMsb,
     async open(hostId, secret, signal) {
       const connected = await machineConnected(hostId);
       if (connected !== true) throw offline(hostId, connected);
-      return host.call("msbRelay", { secret, path: `/api/v1/plugins/${bb.pluginId}/http${MSB_ROUTE}` }, { hostId, signal, timeoutMs: RELAY_CALL_TIMEOUT_MS });
+      return host.call("msbRelay", { secret, path: `/api/v1/plugins/${alia.pluginId}/http${MSB_ROUTE}` }, { hostId, signal, timeoutMs: RELAY_CALL_TIMEOUT_MS });
     },
-    // While bb-box has a box on a microsandbox backend on the machine, its relay stays open.
+    // While alia-box has a box on a microsandbox backend on the machine, its relay stays open.
     async keep(hostId) {
-      const ids = new Set(configuration.document.backends.filter((backend) => backend.type === "microsandbox" && backend.fields.host === `bb:${hostId}`).map((backend) => backend.id));
+      const ids = new Set(configuration.document.backends.filter((backend) => backend.type === "microsandbox" && backend.fields.host === `alia:${hostId}`).map((backend) => backend.id));
       return ids.size > 0 && (await boxes.all()).some((box) => ids.has(box.backend) && box.state !== "gone");
     },
     async offline(hostId) {
@@ -584,10 +584,10 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       return connected === true ? null : offline(hostId, connected).message;
     },
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
-  bb.http.experimental_websocket(MSB_ROUTE, ({ url }) => msbRelay.route(url), { auth: "none" });
-  bb.onDispose(() => msbRelay.dispose());
+  alia.http.experimental_websocket(MSB_ROUTE, ({ url }) => msbRelay.route(url), { auth: "none" });
+  alia.onDispose(() => msbRelay.dispose());
   const machines: MachineAccess = {
     dockerHost: (hostId) => relay.address(hostId),
     async ready(hostId) {
@@ -621,13 +621,13 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   };
 
   // What the doctor judges images by (049): the pins in the plugin's own
-  // setup files, and BB's app on BB's server now.
+  // setup files, and VesnALIA's app on VesnALIA's server now.
   const pins = setupDir();
   const images: ImageFacts = {
     pins: (set) => pinsDigest(pins, set),
-    async bbApp() {
-      const url = bb.server.experimental_appUrl;
-      return url ? bbAppDigest(url).catch(() => null) : null;
+    async aliaApp() {
+      const url = alia.server.experimental_appUrl;
+      return url ? aliaAppDigest(url).catch(() => null) : null;
     },
     program: (kind, backendId) => imageProgram(pins, kind, backendId),
     chrome: (arch) => chromePin(pins, arch),
@@ -644,23 +644,23 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     controlled: (boxId) => desktops?.control.view(boxId).owner === "human",
     send: (box, decision) => ledgerSent(box, decision),
     probe: (mac, signal) => probeEncoder(mac, signal),
-    log: (line) => bb.log.info(line),
+    log: (line) => alia.log.info(line),
     logError,
   });
-  bb.onDispose(() => ledger.dispose());
+  alia.onDispose(() => ledger.dispose());
   const backends = new Backends({
     storage: kv,
     installId: await loadInstallId(kv),
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
     changed: () => notify(null),
     kindsChanged: () => kindsChanged(),
     drivers,
     machines,
     images,
-    bbUrl: () => bb.server.experimental_appUrl,
+    aliaUrl: () => alia.server.experimental_appUrl,
     threadTitle: async (threadId) => {
-      const found = await bb.sdk.threads.get({ threadId }).catch(() => null);
+      const found = await alia.sdk.threads.get({ threadId }).catch(() => null);
       return found?.title ?? found?.titleFallback ?? null;
     },
     encoder: { load: (key) => ledger.load(key), vmStarting: (key, place) => ledger.vmStarting(key, place) },
@@ -700,9 +700,9 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     },
     logError,
   });
-  // The names of the BB machines providers run on, from BB, once as bb-box starts, in the background: a machine bb-box has not
+  // The names of the VesnALIA machines providers run on, from VesnALIA, once as alia-box starts, in the background: a machine alia-box has not
   // reached this run, or one renamed since, is named at once, not by its ID (#916).
-  for (const hostId of new Set(configuration.document.backends.map((backend) => backend.fields.host).filter((host): host is string => typeof host === "string" && host.startsWith("bb:")).map((host) => host.slice("bb:".length)))) {
+  for (const hostId of new Set(configuration.document.backends.map((backend) => backend.fields.host).filter((host): host is string => typeof host === "string" && host.startsWith("alia:")).map((host) => host.slice("alia:".length)))) {
     void machineConnected(hostId).catch(() => {});
   }
   ledgerOn = () => configuration.document.general.encoderLedger ?? GENERAL_DEFAULTS.encoderLedger;
@@ -711,11 +711,11 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   reloadTimes.phase("configuration and backends");
   const general = async () => configuration.general();
 
-  const listProjects = async (): Promise<readonly ProjectChoice[]> => ((await bb.sdk.projects.list({ includePersonal: true })) as { id: string; name: string }[]).map(({ id, name }) => ({ id, name }));
+  const listProjects = async (): Promise<readonly ProjectChoice[]> => ((await alia.sdk.projects.list({ includePersonal: true })) as { id: string; name: string }[]).map(({ id, name }) => ({ id, name }));
 
   const projectOf = async (threadId: string): Promise<string | null> => {
     try {
-      return (await bb.sdk.threads.get({ threadId })).projectId;
+      return (await alia.sdk.threads.get({ threadId })).projectId;
     } catch {
       return null;
     }
@@ -723,12 +723,12 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
 
   const projectServedOnKeptBox = async (box: BoxRecord, threadId: string): Promise<string> => {
     const cannot = `a new thread cannot start on box ${box.name}. The box itself keeps working`;
-    const answer = await bb.sdk.threads.get({ threadId }).then(
+    const answer = await alia.sdk.threads.get({ threadId }).then(
       (thread) => ({ read: true, projectId: thread.projectId ?? null }) as const,
       () => ({ read: false }) as const,
     );
     if (!answer.read) {
-      throw new BoxError("unreachable", `BB could not say which project this thread is in just now. ${box.backendLabel} is kept for certain projects, so ${cannot}. Try again in a minute.`);
+      throw new BoxError("unreachable", `VesnALIA could not say which project this thread is in just now. ${box.backendLabel} is kept for certain projects, so ${cannot}. Try again in a minute.`);
     }
     const kept = boxes.keptFrom(box, threadAudience(answer.projectId), cannot);
     if (kept) throw kept;
@@ -736,11 +736,11 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     return answer.projectId;
   };
 
-  // Names only: BB never gives plugins the values. Every command in an
-  // enrolled box needs them, and BB can take seconds to answer while it is
+  // Names only: VesnALIA never gives plugins the values. Every command in an
+  // enrolled box needs them, and VesnALIA can take seconds to answer while it is
   // busy, so they are kept per project and refreshed in the background. The
   // key "" holds the machine-wide names.
-  // With the names, whether BB gives machines GH_TOKEN: its built-in Git is
+  // With the names, whether VesnALIA gives machines GH_TOKEN: its built-in Git is
   // logged in to GitHub, or a variable sets it. Only then does a new box wait for it.
   const variableNames = new Refreshing<{ readonly names: readonly string[]; readonly gitToken: boolean }>({
     freshMs: NAMES_FRESH_MS,
@@ -749,11 +749,11 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       let variables: readonly { name: string }[];
       let git: string;
       if (projectId) {
-        const project = await bb.sdk.projects.machineEnvironment({ projectId });
+        const project = await alia.sdk.projects.machineEnvironment({ projectId });
         variables = [...project.inheritedVariables, ...project.variables];
         git = project.builtInGit.status;
       } else {
-        const system = await bb.sdk.system.machineEnvironment();
+        const system = await alia.sdk.system.machineEnvironment();
         variables = system.variables;
         git = system.builtInGit.status;
       }
@@ -766,19 +766,19 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     const set = [...(system?.names ?? []), ...(project?.names ?? [])];
     return {
       names: [...new Set([...DAEMON_NAMES, ...set])],
-      // The project's own answer, when the box has one: it can override BB's Git.
+      // The project's own answer, when the box has one: it can override VesnALIA's Git.
       gitToken: (project ?? system)?.gitToken ?? false,
       variablesSet: set.length > 0,
     };
   };
   const names = async (box: BoxRecord): Promise<string[]> => (await access(box)).names;
 
-  // bb-box's host entry on each enrolled box keeps a process with the thread's access, as BB's workers come and go.
+  // alia-box's host entry on each enrolled box keeps a process with the thread's access, as VesnALIA's workers come and go.
   const holders = new Holders({
     access: (hostId, names) => host.call("access", { names: [...names] }, { hostId, timeoutMs: CALL_TIMEOUT_MS }),
-    terminals: () => bb.sdk.terminals as unknown as RetiredTerminals,
+    terminals: () => alia.sdk.terminals as unknown as RetiredTerminals,
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
   host.experimental_onWorkerExit(({ hostId }) => {
     holders.forget(hostId);
@@ -791,10 +791,10 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   let terminals: Terminals | undefined;
   let computer: Computer | undefined;
   let deviceComputer: DeviceComputer | undefined;
-  // Projects' names, for a choice of image (049): asked of BB at most once a minute, as the panel polls.
+  // Projects' names, for a choice of image (049): asked of VesnALIA at most once a minute, as the panel polls.
   const projectNames = new Refreshing<Map<string, string>>({
     freshMs: 60_000,
-    load: async () => new Map(((await bb.sdk.projects.list({ includePersonal: true })) as { id: string; name: string }[]).map((one) => [one.id, one.name])),
+    load: async () => new Map(((await alia.sdk.projects.list({ includePersonal: true })) as { id: string; name: string }[]).map((one) => [one.id, one.name])),
     onError: (error) => logError("project names", error),
   });
   // Projects' images, baked where their boxes start (049).
@@ -803,7 +803,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     images: () => configuration.document.images ?? {},
     storage: kv,
     setup: pins,
-    log: (line) => bb.log.info(line),
+    log: (line) => alia.log.info(line),
     // A build made or removed: the images' spares (#440) follow at once.
     changed: () => void boxes.keepSpares(),
     // A tried image's box, from its kept build (#451), ready to look inside.
@@ -840,9 +840,9 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       return (await command.probe(signal)) ? null : "It did not answer a command.";
     },
     changed: (box) => notify(box.threadId),
-    log: (message) => bb.log.info(`Reach check: ${message}`),
+    log: (message) => alia.log.info(`Reach check: ${message}`),
   });
-  bb.onDispose(() => reach.dispose());
+  alia.onDispose(() => reach.dispose());
   const backendInSettings = (box: BoxRecord) => configuration.document.backends.some((backend) => backend.id === box.backend);
   const reachOf = (box: BoxRecord): ReachView => {
     const known = reach.reach(box);
@@ -852,7 +852,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     return known.is === "not-answering" && box.state !== "ready" ? { is: "answers", lastAnswered: known.lastAnswered } : known;
   };
   const boxes: Boxes = new Boxes({
-    kv: bb.storage.kv,
+    kv: alia.storage.kv,
     events: boxLog,
     reach,
     backends,
@@ -879,20 +879,20 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
         // Its shells are gone with it; their tabs hear why.
         void terminals?.end(box.id, deleted ? "The box was released." : box.state === "stopped" || box.state === "stopping" ? "The box stopped." : "The box is no longer running.");
       }
-      // A box that joins BB, or starts again, gets the files for every box it lacks.
+      // A box that joins VesnALIA, or starts again, gets the files for every box it lacks.
       files?.recorded(box, deleted);
       deviceServers?.recorded(box, deleted);
     },
     ended: (box, how) => snapshots.boxEnded(box, how),
     forked: (box) => snapshots.forkEnded(box),
-    ...(snapshotHolds ? { forkHold: (box: BoxRecord, signal: AbortSignal) => snapshotHolds.hold({ id: box.fork?.operation ?? box.id, kind: "fork" }, "forked", signal, (message) => bb.log.info(message)) } : {}),
+    ...(snapshotHolds ? { forkHold: (box: BoxRecord, signal: AbortSignal) => snapshotHolds.hold({ id: box.fork?.operation ?? box.id, kind: "fork" }, "forked", signal, (message) => alia.log.info(message)) } : {}),
     keepsGuest: (backendId, guestRef, ended) => snapshots.holdsGuest(backendId, guestRef, ended),
-    holdKeptOn: (backendId, guestRef, boxId) => snapshots.holdKeptOn(backendId, guestRef, byBbBox("its guest's thread ended"), boxId),
+    holdKeptOn: (backendId, guestRef, boxId) => snapshots.holdKeptOn(backendId, guestRef, byAliaBox("its guest's thread ended"), boxId),
     leftoverReleased: (backendId, guestRef, boxId, why) => snapshots.leftoverReleased(backendId, guestRef, boxId, why),
     beforeRelease: (box, who) => snapshots.holdKept(box, who),
     async thread(threadId): Promise<ThreadAnswer> {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         const said = `archivedAt ${when(thread.archivedAt)}, deletedAt ${when(thread.deletedAt)}`;
         return { state: isSet(thread.archivedAt) || isSet(thread.deletedAt) ? "ended" : "live", said };
       } catch (error) {
@@ -900,10 +900,10 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       }
     },
     async tell(threadId, text) {
-      await bb.sdk.threads.send({ threadId, input: [{ type: "text", text, mentions: [] }], mode: "queue-if-active" });
+      await alia.sdk.threads.send({ threadId, input: [{ type: "text", text, mentions: [] }], mode: "queue-if-active" });
     },
     projectOf,
-    machineOf: (boxId) => newBoxHost({ list: (args) => bb.sdk.hosts.list(args), getResource: (hostId) => bb.experimental_machines.getResource(hostId) }, boxId),
+    machineOf: (boxId) => newBoxHost({ list: (args) => alia.sdk.hosts.list(args), getResource: (hostId) => alia.experimental_machines.getResource(hostId) }, boxId),
     enrol: (box, options) => enrolment.enrol(box, { since: options?.restored ? "restored" : "ready" }),
     unenrol: (box) => enrolment.unenrol(box),
     reconnect: (box) => enrolment.reconnect(box),
@@ -918,13 +918,13 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     renameMachine: (box) => enrolment.rename(box),
     spareSettled: async (box) => (deviceServers ? deviceServers.spareSettled(box) : { is: "settled" }),
     spareClaimed: (box) => void deviceServers?.switchClaimed(box).catch((error) => logError(`switch claimed spare ${box.name}'s device`, error)),
-    // A box on Docker on a BB machine whose relay is coming back, as after an update, is waited for (#415).
+    // A box on Docker on a VesnALIA machine whose relay is coming back, as after an update, is waited for (#415).
     reconnecting: (box) => {
       const host = configuration.document.backends.find((backend) => backend.id === box.backend)?.fields.host;
-      if (typeof host !== "string" || !host.startsWith("bb:")) return null;
-      const hostId = host.slice("bb:".length);
+      if (typeof host !== "string" || !host.startsWith("alia:")) return null;
+      const hostId = host.slice("alia:".length);
       if (!relay.reopening(hostId)) return null;
-      return `${PRODUCT} is reconnecting to ${machineNames.get(hostId) ?? `BB machine ${hostId}`}, which runs its Docker, as after an update.`;
+      return `${PRODUCT} is reconnecting to ${machineNames.get(hostId) ?? `VesnALIA machine ${hostId}`}, which runs its Docker, as after an update.`;
     },
     access: async (box) => {
       const { names: listed, gitToken, variablesSet } = await access(box);
@@ -932,7 +932,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       return { names: listed, parent: options.daemonParent ?? DAEMON_PARENT, required: awaitedNames(gitToken, variablesSet) };
     },
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
   const snapshots: Snapshots = new Snapshots({
     ledger: snapshotStore,
@@ -941,13 +941,13 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     events: boxLog,
     notify,
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
     settings: () => snapshotConfig(configuration.document),
     ...(snapshotPrices ? { priced: (backend, offer) => snapshotPrices.priced(backend, offer), billed: (backend, bill) => snapshotPrices.billed(backend, bill) } : {}),
     ...(zfsOrder ? { undoByCopy: (backendId) => zfsOrder.has(backendId) } : {}),
     machineRestores: () => machineRestores?.on ?? MACHINE_RESTORES_SHIP,
     marksChanged: () => void turnHold.refresh(),
-    ...(snapshotHolds ? { hold: (operation, step, signal) => snapshotHolds.hold(operation, step, signal, (message) => bb.log.info(message)) } : {}),
+    ...(snapshotHolds ? { hold: (operation, step, signal) => snapshotHolds.hold(operation, step, signal, (message) => alia.log.info(message)) } : {}),
     guard: async (box) => {
       let threads: { id: string; title: string; running: boolean }[] | null = null;
       let threadsUnread: string | null = null;
@@ -957,9 +957,9 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
         threadsUnread = error instanceof Error ? error.message : String(error);
       }
       const control = box.capabilities.displays.length > 0 && api.control(box).owner === "human";
-      const bbTerminals = box.enrol.state === "enrolled" && box.enrol.hostId ? await openTerminals(box.enrol.hostId).catch(() => null) : 0;
+      const aliaTerminals = box.enrol.state === "enrolled" && box.enrol.hostId ? await openTerminals(box.enrol.hostId).catch(() => null) : 0;
       const ownTerminals = terminals?.openOn(box.id) ?? 0;
-      return { threads, threadsUnread, control, terminals: bbTerminals === null ? null : bbTerminals + ownTerminals };
+      return { threads, threadsUnread, control, terminals: aliaTerminals === null ? null : aliaTerminals + ownTerminals };
     },
     screen: async (box, signal) => {
       if (box.device) {
@@ -976,10 +976,10 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   const turnHold = new TurnHold({
     boxes: () => boxes.all(),
     unconfirmed: (operation) => snapshotStore.operation(operation)?.state === "unknown",
-    recheck: () => void bb.experimental_hooks.recheck("message.dispatch").catch((error: unknown) => logError("ask BB to send the messages held while a box was restored", error)),
+    recheck: () => void alia.experimental_hooks.recheck("message.dispatch").catch((error: unknown) => logError("ask VesnALIA to send the messages held while a box was restored", error)),
     logError,
   });
-  bb.experimental_hooks.on("message.dispatch", (context) => turnHold.decide(context));
+  alia.experimental_hooks.on("message.dispatch", (context) => turnHold.decide(context));
   void turnHold.refresh();
   snapshotsHeld = () => {
     const held = new Map<string, { count: number; words: string }>();
@@ -1031,11 +1031,11 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   enrolment = new Enrolment({
     boxes,
     kv,
-    hosts: () => bb.sdk.hosts as unknown as HostApi,
-    bootstrap: (request) => bb.experimental_machines.bootstrap(request),
+    hosts: () => alia.sdk.hosts as unknown as HostApi,
+    bootstrap: (request) => alia.experimental_machines.bootstrap(request),
     logError,
-    log: (message) => bb.log.info(message),
-    bbUrl: () => bb.server.experimental_appUrl,
+    log: (message) => alia.log.info(message),
+    aliaUrl: () => alia.server.experimental_appUrl,
     variablesWaitMs: options.variablesWaitMs,
     logonWaitMs: options.logonWaitMs,
     providerRetryMs: options.providerRetryMs,
@@ -1044,18 +1044,18 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     ...(options.joinAlarm ? { joinAlarm: options.joinAlarm } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
-  bb.experimental_machines.register(enrolment.provider());
-  registerNewBox(bb, {
+  alia.experimental_machines.register(enrolment.provider());
+  registerNewBox(alia, {
     boxes,
     async thread(threadId) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         return { id: thread.id, projectId: thread.projectId };
       } catch {
         return null;
       }
     },
-    bootstrap: (request) => bb.experimental_machines.bootstrap(request),
+    bootstrap: (request) => alia.experimental_machines.bootstrap(request),
   });
   const recordings = new RecordingInputs();
   const clipFfmpeg = new ClipFfmpegLedger();
@@ -1109,7 +1109,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     personHasControl: (boxId) => desktops?.control.view(boxId).owner === "human",
     ledger,
     iosEncoder: () => configuration.document.general.iosEncoder ?? GENERAL_DEFAULTS.iosEncoder,
-    log: (line) => bb.log.info(line),
+    log: (line) => alia.log.info(line),
     logError,
     ...options.devices,
   });
@@ -1123,7 +1123,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     takeBack: (boxId) => desktops?.control.takeBack(boxId) ?? Promise.resolve(false),
   });
   deviceComputer = deviceComputing;
-  const desktop = registerDesktop(bb, {
+  const desktop = registerDesktop(alia, {
     boxes,
     notify,
     logError,
@@ -1138,46 +1138,46 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     },
   });
   desktops = desktop;
-  const terminal = registerTerminals(bb, { boxes, logError, idleMs: options.terminalIdleMs });
+  const terminal = registerTerminals(alia, { boxes, logError, idleMs: options.terminalIdleMs });
   terminals = terminal;
   const control = desktop.control;
 
   // Disposed in reverse: boxes first, so acquires stop before their backends.
-  // The nightly rebuilds (049): bb box images refresh starts a run here.
+  // The nightly rebuilds (049): VesnALIA box images refresh starts a run here.
   const imageJobs = new ImageJobs({
     backends: () => backends.on(),
     setup: pins,
-    bbUrl: () => bb.server.experimental_appUrl,
+    aliaUrl: () => alia.server.experimental_appUrl,
     facts: images,
     storage: kv,
     bakes: imageBakes,
-    log: (line) => bb.log.info(line),
-    afterBbUpdates: () => configuration.document.general.nightlyImages ?? GENERAL_DEFAULTS.nightlyImages,
+    log: (line) => alia.log.info(line),
+    afterAliaUpdates: () => configuration.document.general.nightlyImages ?? GENERAL_DEFAULTS.nightlyImages,
     changed: () => notify(null),
   });
-  // Stalls of the event loop bb-box runs on, BB's server's, which hold up every desktop's frames and input.
+  // Stalls of the event loop alia-box runs on, VesnALIA's server's, which hold up every desktop's frames and input.
   const loopWatch = new LoopWatch({
-    log: (message) => bb.log.warn(message),
+    log: (message) => alia.log.warn(message),
     spawns: spawnTotals,
     longestSpawn: takeLongestSpawn,
     memory: () => process.memoryUsage(),
   });
-  bb.onDispose(() => loopWatch.dispose());
+  alia.onDispose(() => loopWatch.dispose());
   setTimeout(() => {
     const swept = sweepStaleTempFolders();
-    if (swept.removed.length) bb.log.info(`Removed ${swept.removed.length} of ${PRODUCT}'s temporary folders that earlier runs of ${PRODUCT} left: ${swept.removed.join(", ")}.`);
+    if (swept.removed.length) alia.log.info(`Removed ${swept.removed.length} of ${PRODUCT}'s temporary folders that earlier runs of ${PRODUCT} left: ${swept.removed.join(", ")}.`);
   }, 0).unref();
-  bb.onDispose(() => stopForker());
-  bb.onDispose(() => imageJobs.stop());
-  bb.onDispose(() => imageBakes.stop());
-  bb.onDispose(() => enrolment.dispose());
-  bb.onDispose(() => backends.dispose());
-  bb.onDispose(() => boxes.dispose());
-  bb.onDispose(() => snapshots.dispose());
-  bb.onDispose(() => desktop.dispose());
-  bb.onDispose(() => terminal.dispose());
-  bb.onDispose(() => computing.dispose());
-  bb.onDispose(() => devices.dispose());
+  alia.onDispose(() => stopForker());
+  alia.onDispose(() => imageJobs.stop());
+  alia.onDispose(() => imageBakes.stop());
+  alia.onDispose(() => enrolment.dispose());
+  alia.onDispose(() => backends.dispose());
+  alia.onDispose(() => boxes.dispose());
+  alia.onDispose(() => snapshots.dispose());
+  alia.onDispose(() => desktop.dispose());
+  alia.onDispose(() => terminal.dispose());
+  alia.onDispose(() => computing.dispose());
+  alia.onDispose(() => devices.dispose());
   void devices.startAll().catch((error) => logError("device servers", error));
 
   /** Asks for configuration while no backend is on and valid. */
@@ -1187,63 +1187,63 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       .statuses()
       .filter((backend) => backend.state === "misconfigured")
       .map((backend) => `${backend.label}: ${backend.problems.join(" ")}`);
-    bb.status.needsConfiguration(unconfigured.length ? unconfigured.join(" ") : "Set a backend up in BB Box's settings and turn it on.");
+    alia.status.needsConfiguration(unconfigured.length ? unconfigured.join(" ") : "Set a backend up in VesnALIA Box's settings and turn it on.");
   }
   needsConfiguration();
 
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.archived", ({ thread }) => {
     threadHosts.delete(thread.id);
     void forPurpose("thread archived", () => boxes.releaseThread(thread.id, "archived")).catch((error) => logError("thread archived", error));
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     threadHosts.delete(thread.id);
     void forPurpose("thread deleted", () => boxes.releaseThread(thread.id, "deleted")).catch((error) => logError("thread deleted", error));
   });
-  // A thread that starts on a spare's machine from BB's picker makes it yours
+  // A thread that starts on a spare's machine from VesnALIA's picker makes it yours
   // now, not at the next spare upkeep (036, #155). Its machine is known once
   // it has an environment, which it may not have when it is created.
   const startedOn = async (thread: { id: string; environmentId: string | null }) => {
     if (thread.environmentId && (await boxes.list(SPARES)).length) await api.runsOn(thread.id);
   };
   for (const event of ["thread.created", "thread.active"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       void forPurpose(event, () => startedOn(thread)).catch((error) => logError(event, error));
     });
   }
-  bb.events.on("experimental_host.deleted", ({ host }) => {
+  alia.events.on("experimental_host.deleted", ({ host }) => {
     holders.forget(host.id);
     void forPurpose("host deleted", () => enrolment.machineDeleted(host.id)).catch((error) => logError("host deleted", error));
   });
 
-  // The nightly rebuilds (049) behind General's switch: BB runs this schedule while bb-box is loaded, and a run goes on
-  // after it returns, as one that bb box images refresh starts does. A run already going is not started again.
-  bb.background.schedule(NIGHTLY_SCHEDULE, NIGHTLY_CRON, () => {
+  // The nightly rebuilds (049) behind General's switch: VesnALIA runs this schedule while alia-box is loaded, and a run goes on
+  // after it returns, as one that VesnALIA box images refresh starts does. A run already going is not started again.
+  alia.background.schedule(NIGHTLY_SCHEDULE, NIGHTLY_CRON, () => {
     if (!(configuration.document.general.nightlyImages ?? GENERAL_DEFAULTS.nightlyImages)) return;
     if (imageJobs.running()) return;
-    bb.log.info("Rebuilding the standard images that are due, as Rebuild each night is on.");
+    alia.log.info("Rebuilding the standard images that are due, as Rebuild each night is on.");
     void forPurpose("nightly images", () => imageJobs.refreshAll({ limitMs: NIGHTLY_HOURS * 60 * 60_000 })).catch((error) => logError("nightly images", error));
   });
 
-  // After a BB update, the images with BB's old app are refreshed within the hour, while the nightly switch is on.
-  bb.background.service("bb-update-images", {
+  // After a VesnALIA update, the images with VesnALIA's old app are refreshed within the hour, while the nightly switch is on.
+  alia.background.service("alia-update-images", {
     async start(signal) {
       while (!signal.aborted) {
         // Its wait ends when the plugin stops, as the sweeper's steps do: a backend's listing of its images through a
-        // machine BB no longer answers for a stopping plugin may never end, and kept the plugin from stopping on an
+        // machine VesnALIA no longer answers for a stopping plugin may never end, and kept the plugin from stopping on an
         // update (18 October 2026). What it started finishes on its own.
-        await abortable(forPurpose("images after a BB update", () => imageJobs.afterBbUpdate(signal)), signal).catch((error) => {
-          if (!signal.aborted) logError("images after a BB update", error);
+        await abortable(forPurpose("images after a VesnALIA update", () => imageJobs.afterAliaUpdate(signal)), signal).catch((error) => {
+          if (!signal.aborted) logError("images after a VesnALIA update", error);
         });
         // sleep sees an abort that came before it began, as one during the look above does: a listener added then
         // would never hear it, and the plugin stopped only when the wait ran out (19 October 2026).
-        await sleep(BB_UPDATE_LOOK_MS, signal);
+        await sleep(ALIA_UPDATE_LOOK_MS, signal);
       }
     },
   });
 
-  bb.background.service("sweeper", {
+  alia.background.service("sweeper", {
     async start(signal) {
-      // Each step ends its wait when the plugin stops: BB may no longer answer
+      // Each step ends its wait when the plugin stops: VesnALIA may no longer answer
       // a stopping plugin, and a call to a machine through it, such as a Docker
       // host's relay, may never end. What a step started finishes on its own.
       const step = async (operation: string, work: () => Promise<unknown>) => {
@@ -1280,17 +1280,17 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       slot: placement.on === "slot" ? { host: slotHostName(box) ?? placement.host, most: placement.most } : null,
     };
   };
-  const monitor = startMonitor(bb, {
+  const monitor = startMonitor(alia, {
     settings: () => monitorConfig(configuration.document),
     hosts: async () =>
-      ((await bb.sdk.hosts.list({ type: "persistent" })) as readonly { id: string; name: string; status: string; machineProviderId: string | null }[]).map((machine) => ({
+      ((await alia.sdk.hosts.list({ type: "persistent" })) as readonly { id: string; name: string; status: string; machineProviderId: string | null }[]).map((machine) => ({
         id: machine.id,
         name: machine.name,
         connected: machine.status === "connected",
         machineProviderId: machine.machineProviderId,
       })),
     serverHostId: () => {
-      serverHostId ??= bb.sdk.system.config().then(
+      serverHostId ??= alia.sdk.system.config().then(
         (config) => config.primaryHostId ?? null,
         (error: unknown) => {
           serverHostId = null;
@@ -1328,7 +1328,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       const budget = ledger.budget(place.mac).budget;
       return budget > 0 ? { usedPercent: Math.min(100, Math.max(0, (used / budget) * 100)), words: roomWords(used, budget) } : null;
     },
-    log: { warn: (message) => bb.log.warn(message) },
+    log: { warn: (message) => alia.log.warn(message) },
   });
   const history = createBoxHistory({
     store: new BoxHistoryStore({ file: storedFiles.history, logError }),
@@ -1344,9 +1344,9 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       const connected = await machineConnected(hostId).catch(() => null);
       if (connected !== true) reach.failed(box, offline(hostId, connected).message);
     },
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
-  bb.background.service("box-history", { start: (signal) => history.start(signal) });
+  alia.background.service("box-history", { start: (signal) => history.start(signal) });
   monitorChanged = () => {
     monitor.configure(monitorConfig(configuration.document));
     history.configure();
@@ -1377,14 +1377,14 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       const labels = (JSON.parse(result.stdout || "null") as Record<string, unknown> | null) ?? {};
       return outdated(labels, app);
     },
-    appUrl: () => bb.server.experimental_appUrl,
-    appDigest: bbAppDigest,
+    appUrl: () => alia.server.experimental_appUrl,
+    appDigest: aliaAppDigest,
     changed: () => notify(null),
     storage: kv,
     logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
   });
-  /** What each BB machine's host entry last said for first-run setup. */
+  /** What each VesnALIA machine's host entry last said for first-run setup. */
   const setupFactsOf = new Map<string, SetupFacts>();
   const dockerHosts = new DockerHosts({
     images: (hostId) => dockerImages.state(hostId),
@@ -1392,7 +1392,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       const known = setupFactsOf.get(view.hostId) ?? null;
       return dockerFix(view, known, known?.hostname === hostname());
     },
-    machines: async () => (await bb.sdk.hosts.list({ includeCreating: false } as never)) as unknown as readonly MachineRecord[],
+    machines: async () => (await alia.sdk.hosts.list({ includeCreating: false } as never)) as unknown as readonly MachineRecord[],
     document: () => configuration.document,
     providers: [MACHINE_PROVIDER_ID, NEW_BOX_PROVIDER_ID],
     async found(hostId, signal) {
@@ -1401,8 +1401,8 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       if (answer.setup) setupFactsOf.set(hostId, answer.setup);
       // A machine's OS newly known: panels with the form open learn it for "Runs on".
       if (answer.platform && (await machinePlatforms.learn(hostId, answer.platform))) notify(null);
-      // A socket that refused BB's daemon is Docker to fix, not a machine without Docker.
-      if (answer.refused) throw new Error(answer.reason ?? "Docker's socket refused BB's daemon.");
+      // A socket that refused VesnALIA's daemon is Docker to fix, not a machine without Docker.
+      if (answer.refused) throw new Error(answer.reason ?? "Docker's socket refused VesnALIA's daemon.");
       if (answer.attached === false) throw new Error(answer.reason ?? "WSL's localhost forwarder dropped the attached output.");
       return answer.found ? null : `there is no Docker to reach: ${answer.reason ?? "it did not answer"}`;
     },
@@ -1423,12 +1423,12 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
   const desktopProblems = new Map<string, { message: string; at: number }>();
   const desktopsAwaited = new Set<string>();
   /**
-   * BB terminal sessions open on a machine (061): its own, and those of
-   * each thread on it and of each such thread's environment, which BB lists
-   * apart. bb-box's retired access terminal does not count.
+   * VesnALIA terminal sessions open on a machine (061): its own, and those of
+   * each thread on it and of each such thread's environment, which VesnALIA lists
+   * apart. alia-box's retired access terminal does not count.
    */
   const openTerminals = async (hostId: string): Promise<number> => {
-    const threads = await bb.sdk.threads.list({ hostId, archived: false, includeHidden: true });
+    const threads = await alia.sdk.threads.list({ hostId, archived: false, includeHidden: true });
     const environments = [...new Set(threads.map((thread) => thread.environmentId).filter((id): id is string => typeof id === "string" && id.length > 0))];
     const scopes = [
       { kind: "host_path" as const, hostId },
@@ -1437,7 +1437,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     ];
     const seen = new Set<string>();
     for (const scope of scopes) {
-      const { sessions } = await bb.sdk.terminals.list({ scope });
+      const { sessions } = await alia.sdk.terminals.list({ scope });
       for (const session of sessions) {
         if (session.hostId !== hostId || session.title === RETIRED_TITLE) continue;
         if (session.status === "running" || session.status === "starting") seen.add(session.id);
@@ -1446,7 +1446,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     return seen.size;
   };
 
-  const api: BbBox = {
+  const api: AliaBox = {
     monitor,
     boxes,
     backends,
@@ -1460,15 +1460,15 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       const took = new Map(await Promise.all(hosts.map(async (host) => [host.hostId, await dockerImages.took(host.hostId)] as const)));
       return machineSetups(hosts, setupFactsOf, hostname(), took).map((setup) => (desktopsAwaited.has(setup.hostId) ? { ...setup, boxFollows: true } : setup));
     },
-    machineAccess: async () => machineAccessProblem((await bb.sdk.system.config().catch(() => null)) as AccessConfig | null),
+    machineAccess: async () => machineAccessProblem((await alia.sdk.system.config().catch(() => null)) as AccessConfig | null),
     async dockerHostOf(machine) {
-      const hosts = (await bb.sdk.hosts.list({ includeCreating: true })) as readonly { id: string; name: string }[];
+      const hosts = (await alia.sdk.hosts.list({ includeCreating: true })) as readonly { id: string; name: string }[];
       const found = hosts.find((candidate) => candidate.id === machine) ?? hosts.find((candidate) => candidate.name === machine);
       return found ? { hostId: found.id, name: found.name, backend: backendOn(configuration.document, found.id) } : null;
     },
     async setDockerHost(hostId, enabled, linuxOnly = false, operation) {
       const machine = (await dockerHosts.list()).find((candidate) => candidate.hostId === hostId);
-      if (!machine) throw new BoxError("not_found", `BB machine ${hostId} cannot host boxes: it is not a connected, persistent machine of BB's that ${PRODUCT} did not make.`);
+      if (!machine) throw new BoxError("not_found", `VesnALIA machine ${hostId} cannot host boxes: it is not a connected, persistent machine of VesnALIA's that ${PRODUCT} did not make.`);
       if (enabled && !machine.docker) throw new BoxError("unsupported", `${machine.name} cannot host boxes yet. ${machine.problem ?? ""}`.trim());
       const document = configuration.document;
       dockerHosts.forget(hostId);
@@ -1505,7 +1505,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     async buildDesktop({ threadId, hostId, kind = DESKTOP_ON_DEMAND, size, name }) {
       const document = configuration.document;
       const found = desktopsOnDemand(document).find((candidate) => candidate.hostId === hostId && candidate.kind === kind);
-      if (!found) throw new BoxError("not_found", `BB machine ${hostId} has no Docker desktop image to build for ${kind}: its Docker is off, or that image is set already.`);
+      if (!found) throw new BoxError("not_found", `VesnALIA machine ${hostId} has no Docker desktop image to build for ${kind}: its Docker is off, or that image is set already.`);
       const kept = await boxes.keptFromThread({ threadId, backend: found.backend, backendLabel: backends.statuses().find((status) => status.id === found.backend)?.label ?? found.backend }, "it builds no desktop for this thread");
       if (kept) throw kept;
       const result = await configuration.apply(withDesktopImage(document, found.backend, kind), document.revision);
@@ -1547,9 +1547,9 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       }
     },
     async dockerCheck(machine, signal) {
-      const hosts = (await bb.sdk.hosts.list({ includeCreating: true })) as readonly { id: string; name: string }[];
+      const hosts = (await alia.sdk.hosts.list({ includeCreating: true })) as readonly { id: string; name: string }[];
       const found = hosts.find((candidate) => candidate.id === machine) ?? hosts.find((candidate) => candidate.name === machine);
-      if (!found) throw new BoxError("not_found", `BB has no machine ${machine}. bb machine list lists them.`);
+      if (!found) throw new BoxError("not_found", `VesnALIA has no machine ${machine}. VesnALIA machine list lists them.`);
       const endpoint = await relay.endpoint(found.id);
       const cli = new DockerCli(endpoint);
       let started = performance.now();
@@ -1681,7 +1681,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       const unsettled = (await configuration.problems()).filter((problem) => !problem.path.startsWith("backends."));
       if (unsettled.length) {
         sections.push({
-          title: "bb-box",
+          title: "alia-box",
           report: {
             ok: true,
             summary: "Some settings need fixing.",
@@ -1744,14 +1744,14 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       if (resetChecks.length) {
         sections.push({
           title: "Identity resets",
-          report: { ok: resetChecks.every((check) => check.status !== "fail"), summary: `Boxes of ${PRODUCT}'s whose identity reset at a boot, which ${PRODUCT} keeps and enrols again as new BB machines.`, checks: resetChecks, notes: [] },
+          report: { ok: resetChecks.every((check) => check.status !== "fail"), summary: `Boxes of ${PRODUCT}'s whose identity reset at a boot, which ${PRODUCT} keeps and enrols again as new VesnALIA machines.`, checks: resetChecks, notes: [] },
         });
       }
       const joins = joinChecks(await boxes.all(), Date.now());
       if (joins.length) {
         sections.push({
-          title: "Joining BB",
-          report: { ok: joins.every((check) => check.status !== "fail"), summary: `Boxes that did not join BB at their first try, and what ${PRODUCT} does about them.`, checks: joins, notes: [] },
+          title: "Joining VesnALIA",
+          report: { ok: joins.every((check) => check.status !== "fail"), summary: `Boxes that did not join VesnALIA at their first try, and what ${PRODUCT} does about them.`, checks: joins, notes: [] },
         });
       }
       const userspaceChecks = await boxes.userspaceChecks(signal).catch((error: unknown) => {
@@ -1761,7 +1761,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       if (userspaceChecks.length) {
         sections.push({
           title: "NVIDIA userspace",
-          report: { ok: true, summary: `NVIDIA's userspace in each box with a GPU, against its host's driver. ${PRODUCT} never updates it by itself: bb box gpu update does, when a person asks.`, checks: userspaceChecks, notes: [] },
+          report: { ok: true, summary: `NVIDIA's userspace in each box with a GPU, against its host's driver. ${PRODUCT} never updates it by itself: VesnALIA box gpu update does, when a person asks.`, checks: userspaceChecks, notes: [] },
         });
       }
       const spareChecks = await boxes.spareChecks();
@@ -1782,7 +1782,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       if (fileChecks.length) {
         sections.push({
           title: "Files for every box",
-          report: { ok: true, summary: `${PRODUCT} writes them into each Linux and macOS box as it joins BB or starts, and into running boxes when they change.`, checks: fileChecks, notes: [] },
+          report: { ok: true, summary: `${PRODUCT} writes them into each Linux and macOS box as it joins VesnALIA or starts, and into running boxes when they change.`, checks: fileChecks, notes: [] },
         });
       }
       const deviceChecks = (await deviceServers?.checks()) ?? [];
@@ -1806,7 +1806,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
           report: { ok: true, summary: `Some presets of Linux kinds have less than ${LINUX_LEAST_MEMORY_GIB} GiB memory.`, checks: small, notes: [] },
         });
       }
-      sections.push({ title: "Monitor", report: { ok: true, summary: "Machine status in BB's sidebar footer, and background monitoring of BB's server.", checks: monitor.checks(), notes: [] } });
+      sections.push({ title: "Monitor", report: { ok: true, summary: "Machine status in VesnALIA's sidebar footer, and background monitoring of VesnALIA's server.", checks: monitor.checks(), notes: [] } });
       const snapshotChecks = [...snapshotStore.checks(), ...(await snapshots.restoreChecks(signal).catch((error: unknown) => {
         logError("check restores and locked guests", error);
         return [];
@@ -1846,27 +1846,27 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
             `this install's ID ${backends.installId}, so under another ID ${holding.length === 1 ? "it" : "they"} would count as gone.`,
         );
       }
-      await storeInstallId(bb.storage.kv, id);
+      await storeInstallId(alia.storage.kv, id);
       await backends.useInstallId(id);
       notify(null);
     },
     async workspace(threadId, signal) {
-      const thread = await bb.sdk.threads.get({ threadId, signal });
+      const thread = await alia.sdk.threads.get({ threadId, signal });
       if (!thread.environmentId) throw new Error("This thread has no workspace yet, so there is nowhere to copy files to or from.");
-      const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId, signal });
+      const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId, signal });
       return { hostId: environment.hostId, path: environment.path ?? null };
     },
     async threadStorage(threadId, signal) {
-      const location = await bb.sdk.threads.storageLocation({ threadId, signal }).catch(() => null);
+      const location = await alia.sdk.threads.storageLocation({ threadId, signal }).catch(() => null);
       return location ? { hostId: location.hostId, path: location.storageRootPath } : null;
     },
     async ancestorStorages(threadId, limit, signal) {
       const found: { threadId: string; hostId: string; path: string }[] = [];
-      let parent = (await bb.sdk.threads.get({ threadId, signal }).catch(() => null))?.parentThreadId ?? null;
+      let parent = (await alia.sdk.threads.get({ threadId, signal }).catch(() => null))?.parentThreadId ?? null;
       while (parent && found.length < limit && !found.some((one) => one.threadId === parent)) {
-        const location = await bb.sdk.threads.storageLocation({ threadId: parent, signal }).catch(() => null);
+        const location = await alia.sdk.threads.storageLocation({ threadId: parent, signal }).catch(() => null);
         if (location) found.push({ threadId: parent, hostId: location.hostId, path: location.storageRootPath });
-        parent = (await bb.sdk.threads.get({ threadId: parent, signal }).catch(() => null))?.parentThreadId ?? null;
+        parent = (await alia.sdk.threads.get({ threadId: parent, signal }).catch(() => null))?.parentThreadId ?? null;
       }
       return found;
     },
@@ -1902,7 +1902,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     async threadsOn(box) {
       const hostId = box.enrol.hostId;
       if (!hostId) return [];
-      const threads = await bb.sdk.threads.list({ hostId, archived: false, includeHidden: true });
+      const threads = await alia.sdk.threads.list({ hostId, archived: false, includeHidden: true });
       return threads
         .filter((thread) => !isSet(thread.archivedAt) && !isSet(thread.deletedAt))
         .map(threadOnBox)
@@ -1911,7 +1911,7 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
     async holderOf(box) {
       if (!ownedByThread(box.threadId)) return null;
       try {
-        const thread = await bb.sdk.threads.get({ threadId: box.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: box.threadId });
         return !isSet(thread.archivedAt) && !isSet(thread.deletedAt) ? threadOnBox(thread) : null;
       } catch (error) {
         if (isMissingThread(error)) return null;
@@ -1934,22 +1934,22 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
       if (!answer.changed || box.resize?.restart || from.cores === to.cores) return null;
       if (box.enrol.state !== "enrolled" || box.capabilities.os !== "linux" || box.capabilities.command?.shell !== "sh") return null;
       const kept = (why: string) =>
-        `BB still counts ${from.cores} processors on machine ${box.name}, and its automatic thread limit stays at ${from.cores}, until BB's daemon there restarts, as it does when the box next starts${why}. ` +
-        `To raise the limit now: bb concurrency-limit host ${box.name} ${to.cores}, and then bb concurrency-limit host ${box.name} auto once BB counts the new cores.`;
+        `VesnALIA still counts ${from.cores} processors on machine ${box.name}, and its automatic thread limit stays at ${from.cores}, until VesnALIA's daemon there restarts, as it does when the box next starts${why}. ` +
+        `To raise the limit now: VesnALIA concurrency-limit host ${box.name} ${to.cores}, and then VesnALIA concurrency-limit host ${box.name} auto once VesnALIA counts the new cores.`;
       const working = (await api.threadsOn(box).catch(() => [])).filter((thread) => thread.running);
       if (working.length) {
         const one = working.length === 1;
         return kept(`. ${PRODUCT} does not restart it while ${threadsWords(working)} ${one ? "works" : "work"} on the machine, as that would end ${one ? "its" : "their"} turn`);
       }
-      // BB's terminals there are the daemon's too, and a restart would end them.
+      // VesnALIA's terminals there are the daemon's too, and a restart would end them.
       const terminals = await openTerminals(box.enrol.hostId!).catch(() => null);
-      if (terminals === null) return kept(`. ${PRODUCT} could not tell whether a BB terminal is open there, so it did not restart it`);
+      if (terminals === null) return kept(`. ${PRODUCT} could not tell whether a VesnALIA terminal is open there, so it did not restart it`);
       if (terminals > 0) {
-        return kept(`. ${PRODUCT} does not restart it while ${terminals === 1 ? "a BB terminal is" : `${terminals} BB terminals are`} open on the machine, as that would end ${terminals === 1 ? "it" : "them"}`);
+        return kept(`. ${PRODUCT} does not restart it while ${terminals === 1 ? "a VesnALIA terminal is" : `${terminals} VesnALIA terminals are`} open on the machine, as that would end ${terminals === 1 ? "it" : "them"}`);
       }
       const result = await boxes.runOwn(box, restartDaemon(to.cores), { timeoutMs: 30_000, maxOutputBytes: 1024 }).catch(() => null);
       if (!result || result.exitCode !== 0) return kept("");
-      return `BB's daemon on machine ${box.name} restarts once the box shows its ${to.cores} cores, within about 15 s, so BB counts its ${to.cores} processors and sets its automatic thread limit from them. A limit a person set stays as it is.`;
+      return `VesnALIA's daemon on machine ${box.name} restarts once the box shows its ${to.cores} cores, within about 15 s, so VesnALIA counts its ${to.cores} processors and sets its automatic thread limit from them. A limit a person set stays as it is.`;
     },
     async checkRestart(box, force) {
       if (box.capabilities.displays.length && api.control(box).owner === "human") {
@@ -1967,31 +1967,31 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
           box.enrol.state === "enrolling" && box.joinTries
             ? `it is ${joiningWords(box.joinTries, Date.now())}`
             : box.enrol.state === "enrolling"
-            ? `it is still becoming a BB machine. Try again in ${box.capabilities.os === "windows" ? "a minute or two" : "a few seconds"}`
+            ? `it is still becoming a VesnALIA machine. Try again in ${box.capabilities.os === "windows" ? "a minute or two" : "a few seconds"}`
             : box.enrol.state === "failed"
-              ? `its enrolment as a BB machine failed: ${box.enrol.error ?? "no reason given"}`
+              ? `its enrolment as a VesnALIA machine failed: ${box.enrol.error ?? "no reason given"}`
               : box.capabilities.enrol && (await general()).enrol
-                ? // Made before its kind's boxes joined BB, as a Windows box made before #539: it stays a box only, and is not enrolled in place.
-                  `it was made before ${box.kindLabel} boxes joined BB, and stays a box only until it is released. Acquire another ${box.kind} box, which joins BB, for the thread`
-                : `it is not a BB machine. Its kind does not enrol, or enrolment is off in ${PRODUCT}'s settings`;
+                ? // Made before its kind's boxes joined VesnALIA, as a Windows box made before #539: it stays a box only, and is not enrolled in place.
+                  `it was made before ${box.kindLabel} boxes joined VesnALIA, and stays a box only until it is released. Acquire another ${box.kind} box, which joins VesnALIA, for the thread`
+                : `it is not a VesnALIA machine. Its kind does not enrol, or enrolment is off in ${PRODUCT}'s settings`;
         throw new BoxError("unsupported", `A thread cannot run on box ${box.name}: ${why}.`);
       }
       const projectId = projectOnKeptBox ?? box.projectId ?? (await projectOf(threadId));
       if (!projectId) throw new BoxError("unsupported", "This thread has no project, so a thread on its box would have none either.");
       const hostId = box.enrol.hostId;
-      // Before the clone: a box with none of BB's agent CLIs is refused (#561).
-      const agent = await agentFor(bb.sdk, threadId, hostId, box.name, logError);
-      // BB's personal project has no repository, and its threads take a personal workspace. A thread
+      // Before the clone: a box with none of VesnALIA's agent CLIs is refused (#561).
+      const agent = await agentFor(alia.sdk, threadId, hostId, box.name, logError);
+      // VesnALIA's personal project has no repository, and its threads take a personal workspace. A thread
       // of any other project runs where the project has a source, so a box gets a clone of its repository.
-      const project = ((await bb.sdk.projects.list({ includePersonal: true })) as { id: string; kind: string; sources: { hostId: string }[] }[]).find(
+      const project = ((await alia.sdk.projects.list({ includePersonal: true })) as { id: string; kind: string; sources: { hostId: string }[] }[]).find(
         (candidate) => candidate.id === projectId,
       );
-      if (!project) throw new BoxError("not_found", `BB has no project ${projectId} for a thread on box ${box.name}.`);
+      if (!project) throw new BoxError("not_found", `VesnALIA has no project ${projectId} for a thread on box ${box.name}.`);
       const personal = project.kind === "personal";
-      if (!personal && !project.sources.some((source) => source.hostId === hostId)) await bb.sdk.projects.sources.add({ projectId, type: "clone", hostId });
-      // Spawned without its parent, then linked: BB gives a personal-project child its parent's
+      if (!personal && !project.sources.some((source) => source.hostId === hostId)) await alia.sdk.projects.sources.add({ projectId, type: "clone", hostId });
+      // Spawned without its parent, then linked: VesnALIA gives a personal-project child its parent's
       // environment, on the parent's machine, whatever machine the request names.
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         lifecycleOwnerThreadId: threadId,
         environment: {
@@ -2003,20 +2003,20 @@ export async function setup(bb: BbPluginApi, options: SetupOptions = {}): Promis
         title: title ?? `On box ${box.name}`,
         ...agent,
       });
-      await bb.sdk.threads.update({ threadId: thread.id, parentThreadId: threadId });
+      await alia.sdk.threads.update({ threadId: thread.id, parentThreadId: threadId });
       return thread.id;
     },
   };
 
-  registerTools(bb, api, { drainMs: options.drainMs, runWaitMs: options.runWaitMs });
-  registerSnapshotTools(bb, api);
-  registerComputerTools(bb, api);
-  registerDeviceTools(bb, api);
-  selectTools(bb, () => wholeCardsOn(api), logError);
-  registerRpc(bb, api);
-  registerCli(bb, api);
+  registerTools(alia, api, { drainMs: options.drainMs, runWaitMs: options.runWaitMs });
+  registerSnapshotTools(alia, api);
+  registerComputerTools(alia, api);
+  registerDeviceTools(alia, api);
+  selectTools(alia, () => wholeCardsOn(api), logError);
+  registerRpc(alia, api);
+  registerCli(alia, api);
   reloadTimes.phase("the rest");
-  bb.onDispose(() => reloadTimes.stopping());
+  alia.onDispose(() => reloadTimes.stopping());
   void reloadTimes.started();
   return api;
 }

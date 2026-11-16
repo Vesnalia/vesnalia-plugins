@@ -1,6 +1,6 @@
-# bb-plugin-chat-find
+# alia-plugin-chat-find
 
-Ctrl+F (Cmd+F on macOS) find bar for bb chat transcripts.
+Ctrl+F (Cmd+F on macOS) find bar for VesnALIA chat transcripts.
 
 - Opens over the chat that holds keyboard focus, or the chat last clicked when
   nothing is focused, falling back to the focused pane's main chat.
@@ -19,7 +19,7 @@ rows and older messages that have not loaded are not searched.
 
 ```bash
 npm install
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
-After editing, `bb plugin build . && bb plugin reload chat-find`.
+After editing, `alia plugin build . && alia plugin reload chat-find`.

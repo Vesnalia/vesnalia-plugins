@@ -1,7 +1,7 @@
 // Phase 6: Source Control. Staged and unstaged changes from `git status`, stage
 // and unstage, commit, and a side-by-side diff for each file.
 import { useCallback, useEffect, useState } from "react";
-import { experimental_useCodeTheme, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import { decorationOf, type GitEntry } from "@/lib/git-status";
 import type { DiffSide } from "@/lib/diff-key";

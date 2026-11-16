@@ -1,6 +1,6 @@
 // Run against the exported tree. TypeScript is a declared development dependency
-// used by the bb-retry fixture to inspect actual shipped source; no blanket allow.
-import { experimental_scanPublicSdkOnly as scan } from '@get-bb/plugin-sdk/testing';
+// used by the alia-retry fixture to inspect actual shipped source; no blanket allow.
+import { experimental_scanPublicSdkOnly as scan } from '@vesnalia/plugin-sdk/testing';
 import { readFileSync, readdirSync, existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -8,9 +8,9 @@ import assert from 'node:assert/strict';
 
 const root = resolve(process.argv[2] ?? '.');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-assert.equal(pkg.name, 'bb-plugin-zcode-provider');
+assert.equal(pkg.name, 'alia-plugin-zcode-provider');
 assert.equal(pkg.version, '0.2.3');
-assert.equal(pkg.bb.name, 'ZCode Provider');
+assert.equal(pkg.alia.name, 'ZCode Provider');
 for (const kind of ['server', 'host']) {
   const meta = JSON.parse(readFileSync(join(root, 'dist', kind + '.meta.json'), 'utf8'));
   assert.equal(meta.pluginId, 'zcode-provider');
@@ -27,7 +27,7 @@ for (const point of registry.touchpoints ?? registry.points) for (const path of 
 const temp = mkdtempSync(join(tmpdir(), 'sdk-mjs-'));
 try {
   writeFileSync(join(temp, 'package.json'), '{}');
-  writeFileSync(join(temp, 'forbidden.mjs'), "import '@bb/domain';\n");
+  writeFileSync(join(temp, 'forbidden.mjs'), "import '@alia-core/domain';\n");
   const negative = scan(temp);
   assert.ok(negative.files.includes('forbidden.mjs'));
   assert.ok(negative.violations.some(v => v.file === 'forbidden.mjs' && v.reason === 'private-package'));
@@ -120,7 +120,7 @@ try {
 } finally { rmSync(fixture, { recursive: true }); }
 const overview = readFileSync(join(root, 'PLUGIN_OVERVIEW.md'), 'utf8');
 assert.ok([...overview].length <= 4000);
-const hook = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).bb.description;
+const hook = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).alia.description;
 assert.ok([...hook].length <= 140);
 assert.match(overview, /^## /);
 assert.ok(!overview.includes(hook), 'overview repeats lead');

@@ -9,7 +9,7 @@ vi.mock("sonner", async () => (await import("./test-inbox")).sonnerMock());
 await loadInboxApp();
 
 it("shows port details in the thread hover card", async () => {
-  localStorage.setItem("bb-sidebar:port-link-host:v1", "host_local");
+  localStorage.setItem("alia-sidebar:port-link-host:v1", "host_local");
   const openUrl = vi.fn(() => true);
   renderSlot(inbox, listProps, {
     openUrl,
@@ -184,7 +184,7 @@ it("marks only the owning thread without a count and clears its icon when the po
         thread({ id: "ports_b", environment }),
         thread({ id: "no_ports" }),
       ],
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     },
     rpc: {
       listLifecycle: () => ({ rows: [] }),

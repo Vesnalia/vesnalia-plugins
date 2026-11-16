@@ -12,7 +12,7 @@ export interface Fixture {
   dir: string;
   repo: string;
   t3Path: string;
-  bbPath: string;
+  aliaPath: string;
   claudeHome: string;
   t3: Database.Database;
   ledger: Map<string, LedgerEntry>;
@@ -31,11 +31,11 @@ export function fixture(): Fixture {
   t3.prepare(`INSERT INTO projection_projects(project_id, title, workspace_root, scripts_json, created_at, updated_at)
     VALUES ('p1', 'repo', ?, '[]', '2026-09-01T00:00:00.000Z', '2026-09-01T00:00:00.000Z')`).run(repo);
 
-  const bbPath = join(dir, "bb.db");
-  const bb = new Database(bbPath);
-  bb.exec(readFileSync(join(fixtures, "bb-0.45-schema.sql"), "utf8"));
-  bb.prepare("INSERT INTO hosts(id, name, type, created_at, updated_at) VALUES (?, 'test', 'persistent', 0, 0)").run(HOST_ID);
-  bb.close();
+  const aliaPath = join(dir, "alia.db");
+  const alia = new Database(aliaPath);
+  alia.exec(readFileSync(join(fixtures, "alia-0.45-schema.sql"), "utf8"));
+  alia.prepare("INSERT INTO hosts(id, name, type, created_at, updated_at) VALUES (?, 'test', 'persistent', 0, 0)").run(HOST_ID);
+  alia.close();
 
   const claudeHome = join(dir, "claude");
   mkdirSync(join(claudeHome, "projects"), { recursive: true });
@@ -44,12 +44,12 @@ export function fixture(): Fixture {
   const createdProjects: string[] = [];
   const deps: ImporterDeps = {
     t3DbPath: t3Path,
-    bbDbPath: bbPath,
+    aliaDbPath: aliaPath,
     claudeHome,
     backupDir: join(dir, "backups"),
     hostId: HOST_ID,
     listProjects: async () => {
-      const db = new Database(bbPath, { readonly: true });
+      const db = new Database(aliaPath, { readonly: true });
       const rows = db.prepare(`SELECT p.id, p.name, s.host_id AS hostId, s.path FROM projects p
         LEFT JOIN project_sources s ON s.project_id = p.id WHERE p.deleted_at IS NULL`).all() as { id: string; name: string; hostId: string | null; path: string | null }[];
       db.close();
@@ -63,7 +63,7 @@ export function fixture(): Fixture {
     },
     createProject: async (name, path) => {
       const id = `proj_${createdProjects.length + 1}`;
-      const db = new Database(bbPath);
+      const db = new Database(aliaPath);
       db.prepare("INSERT INTO projects(id, name, created_at, updated_at, sort_key) VALUES (?, ?, 0, 0, ?)").run(id, name, `a${createdProjects.length}`);
       db.prepare(`INSERT INTO project_sources(id, project_id, host_id, type, path, is_default, created_at, updated_at)
         VALUES (?, ?, ?, 'local_path', ?, 1, 0, 0)`).run(`src_${id}`, id, HOST_ID, path);
@@ -76,7 +76,7 @@ export function fixture(): Fixture {
       set: async (id, entry) => { ledger.set(id, entry); },
     },
   };
-  return { dir, repo, t3Path, bbPath, claudeHome, t3, ledger, createdProjects, deps };
+  return { dir, repo, t3Path, aliaPath, claudeHome, t3, ledger, createdProjects, deps };
 }
 
 export interface ThreadSeed {

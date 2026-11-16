@@ -1,5 +1,5 @@
 ---
-title: Pokecut Theme for BB
+title: Pokecut Theme for VesnALIA
 updated: 2026-10-18
 sources:
   - package.json
@@ -11,13 +11,13 @@ sources:
   - docs/gotchas.md
 ---
 
-# Pokecut Theme for BB
+# Pokecut Theme for VesnALIA
 
 ## Identity
 
-- BB plugin package: `bb-plugin-pokecut-theme`; manifest name: `Pokecut Theme` (`package.json:2-3`, `package.json:10-12`).
+- VesnALIA plugin package: `alia-plugin-pokecut-theme`; manifest name: `Pokecut Theme` (`package.json:2-3`, `package.json:10-12`).
 - Provides a selectable theme plus a plugin app and server (`package.json:16-27`).
-- BB compatibility: `>=0.44`; plugin SDK compatibility: `>=0.5.0` (`package.json:6-9`).
+- VesnALIA compatibility: `>=0.44`; plugin SDK compatibility: `>=0.5.0` (`package.json:6-9`).
 - Start with [overview](docs/overview.md); system boundaries are in [architecture](docs/architecture.md).
 
 ## Entry points
@@ -41,9 +41,9 @@ sources:
 
 ## Common gotchas
 
-- A second chat restyler can compete for the same BB markup; see [gotchas](docs/gotchas.md#high).
+- A second chat restyler can compete for the same VesnALIA markup; see [gotchas](docs/gotchas.md#high).
 - The coins loader needs CSS Paint Worklet support and falls back if registration fails (`app.tsx:70-83`).
-- File-preview behavior depends on a thread environment root and BB's experimental preview API (`app.tsx:84-100`).
+- File-preview behavior depends on a thread environment root and VesnALIA's experimental preview API (`app.tsx:84-100`).
 
 ## Useful commands
 
@@ -51,8 +51,8 @@ sources:
 - `npm run build:theme` — regenerate the bundled stylesheet.
 - `npm run typecheck` — run TypeScript checking.
 - `npm test` — run Node's test runner over `*.test.ts`.
-- `npm run build` — run theme generation, typecheck, tests, and `bb plugin build .` (`package.json:34-38`).
-- `bb plugin install path:. --yes` — install the working tree into BB.
-- `bb plugin reload pokecut-theme` — reload an installed plugin after CSS changes.
+- `npm run build` — run theme generation, typecheck, tests, and `alia plugin build .` (`package.json:34-38`).
+- `alia plugin install path:. --yes` — install the working tree into VesnALIA.
+- `alia plugin reload pokecut-theme` — reload an installed plugin after CSS changes.
 
 See [deployment](docs/deployment.md) for the command sequence and requirements.

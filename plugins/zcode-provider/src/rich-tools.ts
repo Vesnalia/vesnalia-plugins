@@ -1,4 +1,4 @@
-import type { ThreadDelta } from '@get-bb/plugin-sdk/provider-bridge';
+import type { ThreadDelta } from '@vesnalia/plugin-sdk/provider-bridge';
 import type { Row } from './native.ts';
 import type { Warn } from './errors.ts';
 import { record } from './errors.ts';

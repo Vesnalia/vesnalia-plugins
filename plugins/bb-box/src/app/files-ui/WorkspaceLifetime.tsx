@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useRealtime, useRealtimeConnectionState, useRpc } from '@get-bb/plugin-sdk/app';
+import { useRealtime, useRealtimeConnectionState, useRpc } from '@vesnalia/plugin-sdk/app';
 import type { Contract } from '../../plugin/contract.ts';
 import { forgetWorkspaceBox, workspaceBoxes } from './workspace-memory.ts';
 

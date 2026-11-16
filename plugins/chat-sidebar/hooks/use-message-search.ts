@@ -1,15 +1,15 @@
-// Search inside conversations, through bb's own thread search: a query of a
+// Search inside conversations, through VesnALIA's own thread search: a query of a
 // few letters finds the chats whose messages mention it, and the best match
-// is shown under the chat's title the way bb's search does. Titles are still
+// is shown under the chat's title the way VesnALIA's search does. Titles are still
 // matched locally and at once; this adds the chats that only their messages
 // would find. Results arrive after a short pause in typing, and a newer query
 // cancels the request before it.
 //
-// Archived chats come back too. bb hands the list its archive a page at a
+// Archived chats come back too. VesnALIA hands the list its archive a page at a
 // time, so a hit there is kept with the thread fields the search returns,
 // and the list can show it whether or not that page is loaded.
 import { useEffect, useState } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { titleSearchScore } from "@/lib/search";
 
 export const MIN_MESSAGE_QUERY = 3;

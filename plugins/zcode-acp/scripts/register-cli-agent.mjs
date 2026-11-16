@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-function bbEntry() {
-  const candidates = [process.env.BB_CLI, ...(process.env.PATH || "").split(path.delimiter).flatMap(dir => [path.join(dir, "bb"), path.join(dir, "bb.exe")])].filter(Boolean);
+function aliaEntry() {
+  const candidates = [process.env.ALIA_CLI, ...(process.env.PATH || "").split(path.delimiter).flatMap(dir => [path.join(dir, "alia"), path.join(dir, "alia.exe")])].filter(Boolean);
   for (const candidate of candidates) {
     try {
       if (!fs.statSync(candidate).isFile()) continue;
@@ -14,18 +14,18 @@ function bbEntry() {
       if (/^#![^\n]*\bnode\b/.test(prefix.toString("utf8")) || /\.[cm]?js$/i.test(candidate)) return { command: process.execPath, args: [candidate] };
     } catch { /* next official CLI location */ }
   }
-  throw new Error("Set BB_CLI to BB's JavaScript CLI entry or executable");
+  throw new Error("Set ALIA_CLI to VesnALIA's JavaScript CLI entry or executable");
 }
 
 const agent = {
   id: "zcode-cli", displayName: "ZCode CLI", command: process.env.ZCODE_ACP_BIN || "zcode-acp", args: [],
   env: {},
-  permissionCli: { full: ["--bb-permission=full"], workspaceWrite: ["--bb-permission=accept-edits"] },
+  permissionCli: { full: ["--alia-permission=full"], workspaceWrite: ["--alia-permission=accept-edits"] },
 };
 if (!process.argv.includes("--register")) {
   process.stdout.write(JSON.stringify({ providerId: "acp-zcode-cli", agent, nativeProvider: true, dryRun: true }, null, 2) + "\n");
 } else {
-  const launch = bbEntry();
+  const launch = aliaEntry();
   const run = args => execFileSync(launch.command, [...launch.args, ...args], { encoding: "utf8", windowsHide: true, stdio: ["ignore", "pipe", "pipe"], maxBuffer: 2 * 1024 * 1024 });
   const config = JSON.parse(run(["plugin", "config", "provider-acp", "--json"]));
   const existing = JSON.parse(config.values?.customAgents || "[]");

@@ -1,10 +1,10 @@
-// bb-plugin-pinned-turns — backend entry.
+// alia-plugin-pinned-turns — backend entry.
 //
 // Owns the settings and the debug log. The bar is drawn in the page by app.tsx,
 // which reads the timeline with useSdk(); the page calls back here only to write a
 // setting (the frontend can read plugin settings but not write them) and to hand
 // over debug lines (the frontend has no plugin logger).
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { DEFAULTS, DEFAULT_HALVES, HALVES, SETTING_KEYS } from "./src/shared";
 
@@ -20,8 +20,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: { type: "boolean", label: "Pin the current turn", default: DEFAULTS.enabled },
     showStatus: {
       type: "boolean",
@@ -56,11 +56,11 @@ export default async function plugin(bb: BbPluginApi) {
     debugLog: {
       type: "boolean",
       label: "Debug log",
-      description: "Write timeline fetch timing to the plugin log (`bb plugin logs pinned-turns`).",
+      description: "Write timeline fetch timing to the plugin log (`alia plugin logs pinned-turns`).",
       default: DEFAULTS.debugLog,
     },
   });
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     set_setting: async ({ key, value }) => {
       await settings.experimental_set({ [key]: value });
       return null;
@@ -71,10 +71,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
     debug: async ({ event, data }) => {
       if (!(await settings.get()).debugLog) return null;
-      bb.log.debug(`${event} ${Object.entries(data).map(([k, v]) => `${k}=${v}`).join(" ")}`);
+      alia.log.debug(`${event} ${Object.entries(data).map(([k, v]) => `${k}=${v}`).join(" ")}`);
       return null;
     },
   });
-  bb.log.info("loaded");
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.log.info("loaded");
+  alia.onDispose(() => alia.log.info("disposed"));
 }

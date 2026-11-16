@@ -4,9 +4,9 @@ import { appendFileSync } from "node:fs";
 const input = createInterface({ input: process.stdin });
 input.on("line", (line) => {
   const message = JSON.parse(line);
-  if (process.env.BB_MCP_FIXTURE_LOG)
+  if (process.env.ALIA_MCP_FIXTURE_LOG)
     appendFileSync(
-      process.env.BB_MCP_FIXTURE_LOG,
+      process.env.ALIA_MCP_FIXTURE_LOG,
       `${JSON.stringify({ method: message.method, pid: process.pid })}\n`,
     );
   if (message.id === undefined) return;
@@ -15,7 +15,7 @@ input.on("line", (line) => {
       ? {
           protocolVersion: message.params.protocolVersion,
           capabilities: { tools: {} },
-          serverInfo: { name: "bb-zcode-fixture", version: "1.0.0" },
+          serverInfo: { name: "alia-zcode-fixture", version: "1.0.0" },
         }
       : message.method === "tools/list"
         ? {

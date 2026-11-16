@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-skill-manager",
+  "name": "alia-plugin-skill-manager",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Skill Manager",
     "description": "Manage agent skills across Claude Code, Codex, Pi, OpenCode, Gemini and more from one hub.",
     "branding": {
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -54,14 +53,27 @@
     "vitest": "^5.0.1"
   },
   "description": "Manage agent skills across Claude Code, Codex, Pi, OpenCode, Gemini and more from one hub.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sankalpaacharya/bb-skill-manager.git"
-  },
   "license": "MIT",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/skill-manager#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/skill-manager"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

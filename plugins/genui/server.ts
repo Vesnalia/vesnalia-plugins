@@ -1,4 +1,4 @@
-// bb-plugin-genui backend. Agents write ```ui and ```app blocks straight into
+// alia-plugin-genui backend. Agents write ```ui and ```app blocks straight into
 // their replies, so a UI costs no extra model call. The backend:
 // - decides which sessions are told about the blocks, in three sections: the
 //   language reference (the instructions of the optional check_ui and
@@ -7,16 +7,16 @@
 // - loads the files specs reference with Load(path) and Snippet(path), and
 //   the images Image(path) shows,
 // - renders replies as plain markdown for clients that don't run the UI
-//   (`bb genui render`, the `render_markdown` RPC),
+//   (`alia genui render`, the `render_markdown` RPC),
 // - serves UIs stored by the retired show_ui pilot tool,
 // - does the plugin's only web lookups (web/lookups.ts), behind the
 //   `webLookups` setting: photo search, geocoding, map tiles, https images,
-// - reads the reply's own thread's state from BB (project/source.ts) for
+// - reads the reply's own thread's state from VesnALIA (project/source.ts) for
 //   Changes, Commits, PullRequest and Threads, and keeps what Changes and
 //   Commits first showed per reply block; and its project's environments
 //   (project/environments.ts) for Environments,
 // - declares the `animations` setting, which only the page reads.
-import { cliCommand, defineCli, defineRpcContract, PluginCliError, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { cliCommand, defineCli, defineRpcContract, PluginCliError, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   listGallery,
@@ -61,7 +61,7 @@ const UI_ID = /^[a-z0-9]{10}$/;
 /** Thread ids kept for the code-work instruction section (see configure). */
 const MAX_PERSON_THREADS = 10_000;
 
-/** Declared here so BB lists it; the page reads it (ui/components/motion.ts). */
+/** Declared here so VesnALIA lists it; the page reads it (ui/components/motion.ts). */
 export const MOTION_SETTINGS = {
   animations: {
     type: "boolean",
@@ -221,9 +221,9 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const web = createWebLookups(bb);
-  bb.settings.define(MOTION_SETTINGS);
+export default async function plugin(alia: AliaPluginApi) {
+  const web = createWebLookups(alia);
+  alia.settings.define(MOTION_SETTINGS);
   /** Image searches and Wikipedia photos (Map places) for markdown renderings: the photo found, or null (none, or lookups off). */
   const findImage = {
     search: async (query: string) => {
@@ -235,13 +235,13 @@ export default async function plugin(bb: BbPluginApi) {
       return found.ok ? found.photo : null;
     },
   };
-  const project = createProjectSource(bb);
-  const environments = createEnvironmentsSource(bb.sdk);
+  const project = createProjectSource(alia);
+  const environments = createEnvironmentsSource(alia.sdk);
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "check_ui",
     description:
-      "Checks a ```ui block before you put it in your reply: compile errors, files Load or Snippet can't read, inaccessible local images (Image, Gallery, Compare, Hotspots and Entity), wrong line ranges, errors its inputs cause once used (each slider end, toggle, option, emptied list), and the text version of what the user will see. Local images must be in this thread's workspace, $BB_THREAD_STORAGE or /tmp; copy external tool screenshots there first. Optional; use it for blocks with files, images or inputs. With language \"app\" it checks a ```app page instead: script syntax, network use, dialogs, genui calls outside a handler.",
+      "Checks a ```ui block before you put it in your reply: compile errors, files Load or Snippet can't read, inaccessible local images (Image, Gallery, Compare, Hotspots and Entity), wrong line ranges, errors its inputs cause once used (each slider end, toggle, option, emptied list), and the text version of what the user will see. Local images must be in this thread's workspace, $ALIA_THREAD_STORAGE or /tmp; copy external tool screenshots there first. Optional; use it for blocks with files, images or inputs. With language \"app\" it checks a ```app page instead: script syntax, network use, dialogs, genui calls outside a handler.",
     instructions: UI_REFERENCE,
     parameters: z.object({
       // A ```ui spec has its own, smaller cap, which compile reports.
@@ -255,16 +255,16 @@ export default async function plugin(bb: BbPluginApi) {
           ? checkApp(spec)
           : await checkSpec(
               spec,
-              (request) => loadThreadFile(bb, ctx.threadId, request.path, request),
+              (request) => loadThreadFile(alia, ctx.threadId, request.path, request),
               findImage,
               projectReader(project, environments, ctx.threadId),
-              (src) => loadThreadImage(bb, ctx.threadId, src),
+              (src) => loadThreadImage(alia, ctx.threadId, src),
             );
       return { content: [{ type: "text", text: report }], isError: !ok };
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ui_examples",
     description:
       "Returns working ```ui examples of the components you name (from the plugin's gallery), with each component's signature. Optional; use it for a component you haven't written before.",
@@ -279,16 +279,16 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // Threads configure last found to have a person reading their replies. BB
+  // Threads configure last found to have a person reading their replies. VesnALIA
   // resolves configure before it asks instruction contributors, within the
   // same session resolution, so the code-work section below reaches exactly
   // the sessions that get the other three. Bounded; oldest forgotten first.
   const personThreads = new Set<string>();
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     // Only sessions whose replies a person reads in chat: not threads another
     // agent spawned (their reply goes back to that agent) and not threads a
     // plugin runs (workflows, automations), except the user's side chats and
-    // the subthreads `bb genui ask` opens to try a prompt.
+    // the subthreads `alia genui ask` opens to try a prompt.
     const forPerson =
       context.pluginMetadata.audience === "person" ||
       (context.thread.parentThreadId === null &&
@@ -300,22 +300,22 @@ export default async function plugin(bb: BbPluginApi) {
     const instructions = web.isOn() ? AGENT_INSTRUCTIONS : AGENT_INSTRUCTIONS_WEB_OFF;
     return { tools: ["check_ui", "ui_examples"], skills: [], instructions };
   });
-  bb.agents.contributeInstructions(({ threadId }) => (personThreads.has(threadId) ? CODE_WORK_INSTRUCTIONS : null));
+  alia.agents.contributeInstructions(({ threadId }) => (personThreads.has(threadId) ? CODE_WORK_INSTRUCTIONS : null));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async get_ui({ id }) {
-      const parsed = storedUiSchema.safeParse(await bb.storage.kv.get(`ui:${id}`));
+      const parsed = storedUiSchema.safeParse(await alia.storage.kv.get(`ui:${id}`));
       if (!parsed.success) throw new Error(`UI ${id} not found`);
       return { source: parsed.data.source };
     },
-    load_data: ({ threadId, path, raw }) => loadThreadFile(bb, threadId, path, { raw }),
-    load_image: ({ threadId, path }) => loadThreadImage(bb, threadId, path),
-    load_audio: ({ threadId, path }) => loadThreadAudio(bb, threadId, path),
-    load_asset: ({ threadId, path }) => loadThreadAsset(bb, threadId, path),
+    load_data: ({ threadId, path, raw }) => loadThreadFile(alia, threadId, path, { raw }),
+    load_image: ({ threadId, path }) => loadThreadImage(alia, threadId, path),
+    load_audio: ({ threadId, path }) => loadThreadAudio(alia, threadId, path),
+    load_asset: ({ threadId, path }) => loadThreadAsset(alia, threadId, path),
     async render_markdown({ threadId, text }) {
       const markdown = await renderReplyMarkdown(
         text,
-        (request) => loadThreadFile(bb, threadId, request.path, request),
+        (request) => loadThreadFile(alia, threadId, request.path, request),
         findImage,
         projectReader(project, environments, threadId),
       );
@@ -353,7 +353,7 @@ export default async function plugin(bb: BbPluginApi) {
     project_environment: ({ threadId, environmentId }) => environments.environment(threadId, environmentId),
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "genui",
       summary: "Read replies that contain inline UI as plain markdown",
@@ -361,7 +361,7 @@ export default async function plugin(bb: BbPluginApi) {
         ask: cliCommand({
           summary: "Try a prompt in a subthread of this thread whose agent gets the inline UI instructions",
           description:
-            "The subthread is deleted with this thread. Wait for it with `bb thread wait <id>` and read it with `bb genui render <id>` or in BB.",
+            "The subthread is deleted with this thread. Wait for it with `alia thread wait <id>` and read it with `alia genui render <id>` or in VesnALIA.",
           options: {
             model: { type: "string", description: "Model ID; omitted, the project's default" },
             provider: { type: "string", description: "Provider ID; omitted, the project's remembered provider" },
@@ -373,11 +373,11 @@ export default async function plugin(bb: BbPluginApi) {
             if (parentId === undefined) {
               throw new PluginCliError("ask runs inside a thread", {
                 code: "thread_required",
-                hint: "Run it from an agent's shell in BB, where BB_THREAD_ID is set",
+                hint: "Run it from an agent's shell in VesnALIA, where ALIA_THREAD_ID is set",
               });
             }
-            const parent = await bb.sdk.threads.get({ threadId: parentId });
-            const thread = await bb.sdk.threads.spawn({
+            const parent = await alia.sdk.threads.get({ threadId: parentId });
+            const thread = await alia.sdk.threads.spawn({
               projectId: parent.projectId,
               environment:
                 parent.environmentId === null
@@ -404,16 +404,16 @@ export default async function plugin(bb: BbPluginApi) {
             if (threadId === undefined) {
               throw new PluginCliError("no thread to render", {
                 code: "thread_required",
-                hint: "Pass a thread ID: bb genui render thr_…",
+                hint: "Pass a thread ID: VesnALIA genui render thr_…",
               });
             }
-            const { output } = await bb.sdk.threads.output({ threadId });
+            const { output } = await alia.sdk.threads.output({ threadId });
             if (output === null) {
               throw new PluginCliError(`thread ${threadId} has no completed reply yet`, { code: "no_output" });
             }
             const markdown = await renderReplyMarkdown(
               output,
-              (request) => loadThreadFile(bb, threadId, request.path, request),
+              (request) => loadThreadFile(alia, threadId, request.path, request),
               findImage,
               projectReader(project, environments, threadId),
             );

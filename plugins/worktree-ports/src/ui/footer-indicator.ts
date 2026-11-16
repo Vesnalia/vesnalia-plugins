@@ -1,10 +1,10 @@
 // The sidebar-footer button is host-rendered and its registration carries no
 // badge field, so the "something is listening" dot is painted onto the host's
 // own button from a content script — the sanctioned place to decorate app-shell
-// DOM. Everything here degrades to doing nothing if BB's markup moves.
+// DOM. Everything here degrades to doing nothing if VesnALIA's markup moves.
 const DOT_ATTR = "data-worktree-ports-indicator";
 
-/** BB's own id-keyed test id, with the accessible label as a fallback. */
+/** VesnALIA's own id-keyed test id, with the accessible label as a fallback. */
 function buttonSelector(pluginId: string, itemId: string): string {
   return [
     `[data-testid="plugin-sidebar-footer-item-${pluginId}-${itemId}"]`,

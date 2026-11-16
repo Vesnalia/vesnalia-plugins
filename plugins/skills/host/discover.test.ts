@@ -19,7 +19,7 @@ async function writeSkill(dir: string, name: string, description: string): Promi
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-discover-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-discover-"));
   roots = {
     claudeHome: path.join(root, "claude-home"),
     codexHome: path.join(root, "codex-home"),

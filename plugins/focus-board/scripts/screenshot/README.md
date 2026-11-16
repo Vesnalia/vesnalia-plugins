@@ -1,8 +1,8 @@
 # Screenshot harness
 
 Renders the real plugin app (app.tsx + components/) against a mocked
-`@get-bb/plugin-sdk/app` with simulated threads, then captures the README
-screenshots in `docs/screenshots/` with headless Chrome. No bb server or
+`@vesnalia/plugin-sdk/app` with simulated threads, then captures the README
+screenshots in `docs/screenshots/` with headless Chrome. No VesnALIA server or
 host app involved.
 
 - `data.ts` — simulated projects, providers, and threads (shapes mirror the
@@ -12,7 +12,7 @@ host app involved.
   in the attention lanes — the base fixture's families are deliberately old
   (parent-lane UAT stability) and never surface there.
 - `mock-sdk.tsx` — SDK stand-in: hooks return the simulated state,
-  `ThreadChat` renders a canned conversation, and `useBbNavigate` drives a
+  `ThreadChat` renders a canned conversation, and `useAliaNavigate` drives a
   minimal real-history router (hash-based) so UAT suites can exercise the
   app's pane-history behavior with genuine browser back/forward. Its `useSdk`
   returns one stable object across renders — a per-render object loops the
@@ -40,10 +40,10 @@ host app involved.
   single-load diag probe (`scripts/perf/load-probe.mjs`) drives one staged
   load of this harness and prints every console payload for attribution
   (it found the staged-mode render loop's cause during the bench's build).
-- `index.html` — defines bb's built-in theme tokens (extracted from the bb
+- `index.html` — defines VesnALIA's built-in theme tokens (extracted from the VesnALIA
   app bundle): the dark set on `html.dark`, a light set on `html:not(.dark)`,
   plus a minimal preflight (the plugin's compiled CSS ships without one
-  because the host app provides it) and the `data-bb-plugin="focus-board"`
+  because the host app provides it) and the `data-alia-plugin="focus-board"`
   attribute so the compiled utilities' scoping matches.
 - `shoot.mjs` — the capture driver. Captures three shots in both themes,
   toggling the `dark` class per pass: board with the thread pane open
@@ -59,29 +59,29 @@ host app involved.
   remains MockQueuedSendRow's own flag. Honors `CHROME_PATH`, `HARNESS_URL`,
   and `OUT_DIR`.
 - `repro-touch-reveal-cascade.mjs` — runtime re-verification of the queued-send
-  touch-reveal overrides (#296/#297) against the LIVE bb app (the
-  pane-parity audit's Gap 10, 2026-11-04; bb 0.48.1): stages nothing itself —
-  call it after `bb thread queue create <threadId> "probe"` — then emulates a
+  touch-reveal overrides (#296/#297) against the LIVE VesnALIA app (the
+  pane-parity audit's Gap 10, 2026-11-04; VesnALIA 0.48.1): stages nothing itself —
+  call it after `alia thread queue create <threadId> "probe"` — then emulates a
   touch phone, opens the pane, expands the queued drawer, measures the row's
   "…" control (tappable with the overrides), strips the hover:none reveal
   rules from the served plugin-scoped sheet, and re-measures (untappable
   without them), proving the collision premise still holds on 0.48.1. Exits 1
   unless the pair reads exactly that. Artifacts land in
   `docs/screenshots/repro-touch-reveal-cascade/`. Delete the queued row
-  (`bb thread queue delete`) after. Run the vite harness NOT needed; this
-  drives bb, so set `BB_APP` and `THREAD_ID`; honors `CHROME_PATH` and
+  (`alia thread queue delete`) after. Run the vite harness NOT needed; this
+  drives VesnALIA, so set `ALIA_APP` and `THREAD_ID`; honors `CHROME_PATH` and
   `OUT_DIR`.
 - `repro-context-row-0-48-1.mjs` — runtime re-verification of the pane's
-  composer-context fallback (the pane-parity audit's Gap 10, 2026-11-04; bb
-  0.48.1): drives the live bb app in a desktop and a touch-phone viewport,
+  composer-context fallback (the pane-parity audit's Gap 10, 2026-11-04; VesnALIA
+  0.48.1): drives the live VesnALIA app in a desktop and a touch-phone viewport,
   opens one thread's pane at rest, and reports the host composer footer's
   mount state, its chips' paint reach (the app's own paint walk), and the
   pane's fallback row. Artifacts land in
   `docs/screenshots/repro-context-row-0-48-1/` (two shots). Set `THREAD_ID`
   to a board card's thread with a project + checkout environment; honors
-  `BB_APP`, `CHROME_PATH`, and `OUT_DIR`.
+  `ALIA_APP`, `CHROME_PATH`, and `OUT_DIR`.
 - `repro-file-change-title.mjs` — runtime probe for the file-change title
-  click (the pane-parity audit's Gap 4) against the LIVE bb app: opens the
+  click (the pane-parity audit's Gap 4) against the LIVE VesnALIA app: opens the
   named thread's pane, wheels to the bottom, then walks the transcript one
   tick at a time to where a `span.text-timeline-accent` file-accent title
   mounts, clicks it, and reports whether the pane left for the main view.
@@ -89,15 +89,15 @@ host app involved.
   and the main checkout rebuilds, the same run is the fallback's live proof.
   Artifacts land in `docs/screenshots/repro-file-change-title/`. Set
   `THREAD_ID` to a board card whose transcript carries file-change rows;
-  honors `BB_APP`, `CHROME_PATH`, and `OUT_DIR`.
+  honors `ALIA_APP`, `CHROME_PATH`, and `OUT_DIR`.
 - `repro-pending-question-double.mjs` — runtime probe for the pane-parity
-  audit's Gap 1 against the LIVE bb app: with one thread's turn blocked on a
+  audit's Gap 1 against the LIVE VesnALIA app: with one thread's turn blocked on a
   pending question, it captures the pane (plugin card + host banner = the
   duplicate), then answers through the host banner and re-checks the plugin
   card for the stale state. Needs a provider whose agent tool set carries a
   real AskUserQuestion (the operator's install currently has none connected;
   the script exits 1 with its readings until one is staged). Set `THREAD_ID`
-  to the blocked thread; honors `BB_APP`, `CHROME_PATH`, and `OUT_DIR`.
+  to the blocked thread; honors `ALIA_APP`, `CHROME_PATH`, and `OUT_DIR`.
 - `repro-markread-mobile.mjs` — one-shot headless repro for the mobile
   thread-actions bug (#14): opens a thread pane at phone size (390x844),
   dumps the pane header's control list to
@@ -221,7 +221,7 @@ host app involved.
 - `repro-new-project-row.mjs` — one-shot headless repro/verification for the
   New Thread dialog's New project button (the row-anchor placement and the
   typical folder-picker flow): opens the dialog against the mock composer's
-  structural replica of bb's pickers row (`data-new-thread-footer`), audits
+  structural replica of VesnALIA's pickers row (`data-new-thread-footer`), audits
   the floating button's geometry (its right edge on the row's content start,
   centered on the row's line), walks the pointer boundary with
   `document.elementFromPoint` over each of the row's three pickers and the

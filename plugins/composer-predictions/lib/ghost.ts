@@ -37,7 +37,7 @@ export function mountGhostDecorations(doc: Document): () => void {
 
   function decorate(binding: GhostBinding, editor: HTMLElement): Decoration {
     const parent = editor.parentElement!;
-    // BB listens for sidebar gestures on document capture, before our editor
+    // VesnALIA listens for sidebar gestures on document capture, before our editor
     // handlers. Reserve the padded text area up front while a ghost is visible.
     const swipeArea = editor.closest<HTMLElement>("[data-promptbox-editor-scroll]") ?? parent;
     const originalSidebarGuard = swipeArea.getAttribute("data-no-sidebar-swipe");

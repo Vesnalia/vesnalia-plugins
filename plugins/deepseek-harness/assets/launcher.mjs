@@ -1,13 +1,13 @@
-// Mode launcher for bb's acp-deepseek provider.
+// Mode launcher for VesnALIA's acp-deepseek provider.
 //
-// bb runs this file as the provider command (node launcher.mjs). It reads the
+// VesnALIA runs this file as the provider command (node launcher.mjs). It reads the
 // mode the dsh-modes plugin recorded, maps it to a dsh profile, and execs dsh
-// over inherited stdio so bb sees ordinary ACP traffic.
+// over inherited stdio so VesnALIA sees ordinary ACP traffic.
 //
 // It also self-heals the two things a `npm i -g @deepseek-ai/dsh` upgrade
 // removes from the installed package: the dsh-acp patch (command + session
 // restore bridge) and the copied run_command plugin. Copies of both live in
-// ~/.bb-dsh-modes, so a new dsh process repairs them before it boots instead of
+// ~/.alia-dsh-modes, so a new dsh process repairs them before it boots instead of
 // silently losing session continuity until someone re-runs install.
 //
 // R1: real binary (process.execPath) + argument array, shell disabled.
@@ -17,7 +17,7 @@ import path from "node:path";
 import { execFileSync, spawn } from "node:child_process";
 
 const HOME = os.homedir();
-const STATE_DIR = path.join(HOME, ".bb-dsh-modes");
+const STATE_DIR = path.join(HOME, ".alia-dsh-modes");
 const STATE_FILE = path.join(STATE_DIR, "state.json");
 const LOG_FILE = path.join(STATE_DIR, "launcher.log");
 const ACP_PATCH = path.join(STATE_DIR, "acp-patch.mjs");
@@ -43,7 +43,7 @@ const MODE_PROFILE = {
 };
 
 // Both bridges must be present; an upgrade wipes the whole file.
-const PATCH_MARKERS = ["bbAcpRunCommand", "bbAcpLoadSessionBridge"];
+const PATCH_MARKERS = ["aliaAcpRunCommand", "aliaAcpLoadSessionBridge"];
 
 function log(line) {
   try {
@@ -151,7 +151,7 @@ function repairProvisioning() {
 }
 
 function resolveMode() {
-  const threadId = process.env.BB_THREAD_ID;
+  const threadId = process.env.ALIA_THREAD_ID;
   if (typeof threadId === "string" && /^[A-Za-z0-9_-]+$/u.test(threadId)) {
     const perThread = readJson(path.join(STATE_DIR, "threads", `${threadId}.json`));
     const mode = perThread?.mode;
@@ -165,11 +165,11 @@ function resolveMode() {
 
 const { mode, source } = resolveMode();
 const profile = MODE_PROFILE[mode];
-log(`launch thread=${process.env.BB_THREAD_ID ?? "-"} mode=${mode} (${source}) profile=${profile}`);
+log(`launch thread=${process.env.ALIA_THREAD_ID ?? "-"} mode=${mode} (${source}) profile=${profile}`);
 
 // Record what this thread actually booted with. The composer shows it read-only,
-// because neither bb nor dsh can change the composition of a started session.
-// bb passes BB_THREAD_ID to the provider process for thread launches (drafts and
+// because neither VesnALIA nor dsh can change the composition of a started session.
+// VesnALIA passes ALIA_THREAD_ID to the provider process for thread launches (drafts and
 // some restarts come through without it).
 function recordThreadMode(threadId, bootedMode) {
   if (typeof threadId !== "string" || !/^[A-Za-z0-9_-]+$/u.test(threadId)) return;
@@ -186,7 +186,7 @@ function recordThreadMode(threadId, bootedMode) {
   }
 }
 
-recordThreadMode(process.env.BB_THREAD_ID, mode);
+recordThreadMode(process.env.ALIA_THREAD_ID, mode);
 
 if (!fs.existsSync(DSH_BIN)) {
   log(`fatal: dsh entry not found at ${DSH_BIN}`);
@@ -203,14 +203,14 @@ const child = spawn(process.execPath, [DSH_BIN, "--profile", profile], {
     ...process.env,
     // dsh's workspace-write sandbox calls SetNamedSecurityInfoW to grant itself
     // write on the workspace root. On a drive root that fails with Win32 5 and
-    // every tool call errors out, so dsh runs unconfined: bb already enforces
+    // every tool call errors out, so dsh runs unconfined: VesnALIA already enforces
     // permissions on its side. Override with DSH_PERMISSION_MODE=workspace-write.
     DSH_PERMISSION_MODE: process.env.DSH_PERMISSION_MODE ?? "danger-full-access",
   },
 });
 
 child.on("exit", (code, signal) => {
-  log(`exit thread=${process.env.BB_THREAD_ID ?? "-"} mode=${mode} code=${code ?? "null"} signal=${signal ?? "none"}`);
+  log(`exit thread=${process.env.ALIA_THREAD_ID ?? "-"} mode=${mode} code=${code ?? "null"} signal=${signal ?? "none"}`);
   process.exit(code ?? 1);
 });
 

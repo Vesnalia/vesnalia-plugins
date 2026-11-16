@@ -6,11 +6,11 @@
 
 ### Find what is taking up your thread's context.
 
-Explore recorded messages, tool output and skills in a BB thread panel.<br>
+Explore recorded messages, tool output and skills in a VesnALIA thread panel.<br>
 Find large contributions, inspect previews and understand the coverage.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.42](https://img.shields.io/badge/bb-%E2%89%A5%200.42-69cfbc)
+![VesnALIA ≥ 0.42](https://img.shields.io/badge/bb-%E2%89%A5%200.42-69cfbc)
 ![Plugin SDK ≥ 0.4.48](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.4.48-0f766e)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Find large contributions, inspect previews and understand the coverage.
 <br>
 
 > [!NOTE]
-> The screenshots show the BB panel populated with fictional demo data.
+> The screenshots show the VesnALIA panel populated with fictional demo data.
 
 ## The problem
 
@@ -37,7 +37,7 @@ the recorded text and distinguish observed skill reads from the available invent
 
 | At a glance | You get |
 | --- | --- |
-| Overall usage | BB's provider-reported or estimated usage, when available |
+| Overall usage | VesnALIA's provider-reported or estimated usage, when available |
 | Large contributions | Category bars and entries sorted by estimated text size |
 | Skill evidence | Separate views for observed reads and available skills |
 | Coverage | Notices explaining context boundaries and inspection limits |
@@ -50,7 +50,7 @@ the recorded text and distinguish observed skill reads from the available invent
 
 ### 📊 Context usage
 
-See used tokens and context-window capacity when BB exposes them. The meter
+See used tokens and context-window capacity when VesnALIA exposes them. The meter
 preserves the provider-reported or estimated classification.
 
 </td>
@@ -113,7 +113,7 @@ instructions, skill catalogue entries and dynamic tool definitions.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-context-health --yes
+alia plugin install git:https://github.com/MacHatter1/bb-context-health --yes
 ```
 
 Open a thread's right panel, then choose **New tab → Context Health**.
@@ -123,17 +123,17 @@ Open a thread's right panel, then choose **New tab → Context Health**.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-context-health
-cd bb-context-health
+cd alia-context-health
 npm ci --include=dev
-bb plugin build
-bb plugin install "path:$PWD" --yes
+alia plugin build
+alia plugin install "path:$PWD" --yes
 ```
 
 </details>
 
 **Requirements**
 
-- BB **0.42+**, with a compatible Plugin SDK runtime **0.4.48+**.
+- VesnALIA **0.42+**, with a compatible Plugin SDK runtime **0.4.48+**.
 - Node.js and npm for source development. Tests use Node's `--experimental-strip-types`.
 - Access to the matching session log on the thread host for optional Codex detail.
 
@@ -142,7 +142,7 @@ bb plugin install "path:$PWD" --yes
 | Where | What |
 | --- | --- |
 | **Thread right panel → New tab → Context Health** | Inspect usage, recorded content, loaded skills and available skills |
-| **Data source** on Codex threads | Switch between BB recorded activity and Codex session detail |
+| **Data source** on Codex threads | Switch between VesnALIA recorded activity and Codex session detail |
 | **Settings → Installed plugins → Context Health** | Override the Codex home directory on the thread host |
 
 Select a category or search to filter entries. Expand an entry for its preview.
@@ -153,10 +153,10 @@ Open **Data coverage & accuracy** to see notices for the current snapshot.
 ```mermaid
 flowchart TD
     Panel[Context Health thread panel] --> RPC[Plugin inspection RPC]
-    RPC --> Timeline[BB thread and timeline]
+    RPC --> Timeline[ALIA thread and timeline]
     Timeline --> Usage[Overall usage when available]
     RPC --> Choice{Selected data source}
-    Choice -->|BB recorded activity| Events[Completed events after the latest context boundary]
+    Choice -->|ALIA recorded activity| Events[Completed events after the latest context boundary]
     Choice -->|Codex session detail| Host[Matching session log on the thread host]
     Events --> Estimates[Recorded-text estimates and observed skill reads]
     Host --> Estimates
@@ -166,7 +166,7 @@ flowchart TD
     Inventory --> Result
 ```
 
-- **Two kinds of numbers.** The meter comes from BB. Entry sizes estimate
+- **Two kinds of numbers.** The meter comes from VesnALIA. Entry sizes estimate
   recorded text at four Unicode characters per token, rounded up per entry.
   Category percentages describe that recorded text, not the model's capacity.
 - **Context boundaries.** The shared view excludes activity before the latest
@@ -183,13 +183,13 @@ flowchart TD
 <details>
 <summary><b>Provider support, estimates and inspection limits</b></summary>
 
-The shared view uses BB's normalised events across Codex, Claude Code, Pi and ACP
+The shared view uses VesnALIA's normalised events across Codex, Claude Code, Pi and ACP
 providers. Detail depends on the text each provider exposes.
 
 | Capability | Codex | Claude Code, Pi and ACP providers |
 | --- | --- | --- |
 | Recorded activity | Supported normalised items | Supported normalised items |
-| Overall usage | When exposed by BB | When exposed by BB |
+| Overall usage | When exposed by VesnALIA | When exposed by VesnALIA |
 | Observed skill reads | Tool results and optional session logs | Tool results with qualifying evidence |
 | Available skill inventory | Filtered for the provider | Filtered for the provider |
 | Local session-log inspection | Optional | Not implemented |
@@ -238,9 +238,9 @@ malformed records are skipped and reported in coverage notices.
 
 ## Privacy
 
-- **Read-only inspection.** The plugin reads BB records and opens matching
+- **Read-only inspection.** The plugin reads VesnALIA records and opens matching
   session files for reading. It does not modify those files.
-- **No external analysis service.** Results return to the BB panel through
+- **No external analysis service.** Results return to the VesnALIA panel through
   plugin RPC. Context is not sent to a separate external service or stored in
   a plugin database.
 - **No added agent context.** The plugin registers no agent tools, instructions,
@@ -250,7 +250,7 @@ malformed records are skipped and reported in coverage notices.
 
 ## Settings
 
-`bb plugin config context-health`, or **Settings → Installed plugins → Context Health**.
+`alia plugin config context-health`, or **Settings → Installed plugins → Context Health**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -269,11 +269,11 @@ rollout log. Shared recorded activity does not require provider logs.
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb plugin disable context-health
-bb plugin enable context-health
+alia plugin disable context-health
+alia plugin enable context-health
 ```
 
-Use `bb plugin remove context-health` to uninstall it.
+Use `alia plugin remove context-health` to uninstall it.
 
 </details>
 
@@ -283,14 +283,14 @@ Use `bb plugin remove context-health` to uninstall it.
 npm ci --include=dev
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install "path:$PWD" --yes
-bb plugin dev
+alia plugin build
+alia plugin install "path:$PWD" --yes
+alia plugin dev
 ```
 
 `npm run check` remains available as the original typecheck command.
-`bb plugin dev` watches source changes, rebuilds and reloads the installed
-plugin. Use `bb plugin build` followed by `bb plugin reload context-health`
+`alia plugin dev` watches source changes, rebuilds and reloads the installed
+plugin. Use `alia plugin build` followed by `alia plugin reload context-health`
 to rebuild and reload once.
 
 ```text
@@ -312,13 +312,13 @@ filtering, sorting and paging with the SDK test harness and JSDOM.
 
 The development SDK uses `^0.4.48`, allowing updates within the 0.4 series;
 `package-lock.json` records the version used for reproducible installs. The
-runtime compatibility floor remains `>=0.4.48`. React is provided by BB at
+runtime compatibility floor remains `>=0.4.48`. React is provided by VesnALIA at
 runtime; Zod validates RPC data and YAML parses skill frontmatter. Keep
 generated `dist/` bundles,
 local `output/` previews and workspace state out of Git.
 
 [PLUGIN_OVERVIEW.md](PLUGIN_OVERVIEW.md) is the store listing. Keep its claims
-in step with this README and `bb.description` in `package.json`.
+in step with this README and `alia.description` in `package.json`.
 
 ## Licence
 

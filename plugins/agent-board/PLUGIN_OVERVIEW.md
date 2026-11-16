@@ -3,12 +3,12 @@
 Open the global dashboard for active executions, Needs Attention, and recent
 completion. Open a thread's Agent Board action for single-agent focus or a
 multi-agent board. Inspect models, tools and public operational updates as
-sources report them. Load earlier BB timeline activity while keeping your place.
+sources report them. Load earlier VesnALIA timeline activity while keeping your place.
 
 ## Catch up and act
 
 Reply to a reported question, review an approval request, or inspect a failure
-in BB's native surface. Review completed work with objectives, observed files,
+in VesnALIA's native surface. Review completed work with objectives, observed files,
 reported result links and checks; a finished turn does not prove verification.
 Expand observed child agents and delegations when source data is available.
 
@@ -19,13 +19,13 @@ board compact; running strips show activity rather than percentage complete.
 
 What's New shows bundled highlights. An update card checks official GitHub
 release metadata without credentials and lets you review and confirm updates
-that BB considers eligible. Pinned or out-of-range sources remain advisory.
+that VesnALIA considers eligible. Pinned or out-of-range sources remain advisory.
 
 ## Requirements and limits
 
-Requires BB 0.40 or newer; a current BB supplies current history and update
+Requires VesnALIA 0.40 or newer; a current VesnALIA supplies current history and update
 APIs. Ollama Fleet 0.6.0 or newer and Redteam's public observability RPC are
-optional separate integrations. Native BB observation works without them.
+optional separate integrations. Native VesnALIA observation works without them.
 Mobile layouts and reduced motion are supported. Hidden reasoning is excluded.
 History depends on source retention; Fleet and Redteam provide bounded
 snapshots. Saved views and catch-up state are browser-local. No push

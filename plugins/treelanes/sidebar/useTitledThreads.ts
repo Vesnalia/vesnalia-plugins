@@ -4,7 +4,7 @@ import {
   useRpc,
   useRealtime,
   useRealtimeConnectionState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { sidebarRpcContract } from "./server";
 import { withGeneratedTitle, type GeneratedTitle } from "./display-title";
 

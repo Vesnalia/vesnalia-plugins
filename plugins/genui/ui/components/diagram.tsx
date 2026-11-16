@@ -1,12 +1,12 @@
-// Clickable Mermaid nodes. BB draws the diagram (code.tsx's Diagram); this
+// Clickable Mermaid nodes. VesnALIA draws the diagram (code.tsx's Diagram); this
 // layer finds the drawn nodes named in `details` by their mermaid id and
 // turns them into buttons, and opens the selected node's detail under the
 // diagram, or in a popup over it in the full-screen view (DiagramViewer). The
-// SVG belongs to BB's renderer and is replaced on every redraw (source
+// SVG belongs to VesnALIA's renderer and is replaced on every redraw (source
 // toggle, theme change, streaming), so nodes are decorated with attributes
 // only and re-found by a MutationObserver; events are delegated.
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import type { Size } from "../../core/compare";
@@ -30,7 +30,7 @@ const SHAPES = `:is(rect,polygon,circle,ellipse,path):not(.label *)`;
  * Hand-drawn nodes (sketch.ts) are rough.js paths: the hachure fill is a path
  * stroked in the fill colour, the outline a path stroked in ink. Tints go on
  * the hachure, emphasis on the outline, in Excalidraw's colours for the theme
- * the diagram was drawn in (BB marks its dark theme with `html.dark`).
+ * the diagram was drawn in (VesnALIA marks its dark theme with `html.dark`).
  */
 function roughNodeCss(theme: string, colors: SketchPalette): string {
   const node = `${theme} [${NODE_ATTR}].rough-node`;
@@ -120,7 +120,7 @@ function decorate(svg: SVGSVGElement, details: readonly DiagramDetail[], selecte
     if (detail.key === selected) element.setAttribute(SELECTED_ATTR, "");
     else element.removeAttribute(SELECTED_ATTR);
   }
-  // BB marks the drawing as one image, which would hide these buttons from screen readers.
+  // VesnALIA marks the drawing as one image, which would hide these buttons from screen readers.
   const frame = svg.parentElement;
   if (Object.keys(labels).length > 0 && frame?.getAttribute("role") === "img") frame.setAttribute("role", "group");
   return { labels };
@@ -148,7 +148,7 @@ function DetailBody({ detail }: { detail: DiagramDetail }) {
 }
 
 /**
- * The diagram (`children`, BB's markdown rendering of it) with its detail
+ * The diagram (`children`, VesnALIA's markdown rendering of it) with its detail
  * panel. Rendered inside the Diagram's frame.
  */
 export function DiagramDetails({ details, children }: { details: readonly DiagramDetail[]; children: ReactNode }) {
@@ -175,7 +175,7 @@ export function DiagramDetails({ details, children }: { details: readonly Diagra
   const applyRef = useRef(apply);
   applyRef.current = apply;
 
-  // BB swaps the SVG on every redraw; decorate each new one.
+  // VesnALIA swaps the SVG on every redraw; decorate each new one.
   useLayoutEffect(() => {
     const root = host.current;
     if (root === null) return;
@@ -223,7 +223,7 @@ export function DiagramDetails({ details, children }: { details: readonly Diagra
       <style href="genui-diagram-details" precedence="default">
         {NODE_CSS}
       </style>
-      {/* Delegated: the nodes live in BB's SVG, which React does not render. */}
+      {/* Delegated: the nodes live in VesnALIA's SVG, which React does not render. */}
       <div ref={host} onClick={onClick} onKeyDown={onKeyDown} className="min-w-0">
         {children}
       </div>
@@ -293,7 +293,7 @@ const NO_DETAILS: readonly DiagramDetail[] = [];
 
 /**
  * A diagram full screen: a copy of the drawn SVG (`markup`, at its natural
- * `size`), zoomed and panned like a picture, with BB's copy action. A node
+ * `size`), zoomed and panned like a picture, with VesnALIA's copy action. A node
  * with a detail opens it in a popup over the drawing, which folds to its
  * title; a tap elsewhere, Escape or its close button dismisses it and leaves
  * the diagram open.

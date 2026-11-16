@@ -14,7 +14,7 @@
 // Design notes:
 // - Issues are read and changed only by running the bend program
 //   (server/bend.ts), the one agents use too, so there is one code path to
-//   the tracker (bead-bb-c9l.4). No bd command is written in this file;
+//   the tracker (bead-alia-c9l.4). No bd command is written in this file;
 //   bend's beads adapter holds them all.
 // - Expected problems are returned as data (a state, or a message in plain
 //   words), never thrown, so the tab can show them. The tracker throws;
@@ -34,7 +34,7 @@
 //   itself. Its refusals are in plain words and are passed on.
 
 import { homedir } from "node:os";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   BEAD_ID_PATTERN,
   CHANGED_CHANNEL,
@@ -96,14 +96,14 @@ const notInList = (id: string) => `Issue ${id} is no longer in the list.`;
  * Side effects: none until an operation is called.
  */
 export function createStore({
-  bb,
+  alia,
   folders,
   trackers,
   currentBead,
   watchFolder,
   workflowChoice,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   folders: Folders;
   trackers: Trackers;
   currentBead: CurrentBead;
@@ -115,9 +115,9 @@ export function createStore({
 
   /** Tells every open tab to reload. */
   const changed = (threadId: string | null) =>
-    bb.realtime.publish(CHANGED_CHANNEL, { threadId });
+    alia.realtime.publish(CHANGED_CHANNEL, { threadId });
 
-  // bend keeps a copy of the issues and answers from it (bead-bb-c9l.14),
+  // bend keeps a copy of the issues and answers from it (bead-alia-c9l.14),
   // so nothing is kept here. Two small things remain: a folder whose issues
   // were changed by something bend cannot know of is noted, so that the
   // next read has bend reread its copy; and requests for the same folder
@@ -289,7 +289,7 @@ export function createStore({
     };
     const current = issues.find((issue) => issue.id === currentBeadId);
     // Not among the folder's issues: the repository's tracker was switched
-    // (bead-bb-c9l.18), and the id is an issue of the other one. It is not
+    // (bead-alia-c9l.18), and the id is an issue of the other one. It is not
     // shown as current; what is stored is left, so that switching back
     // shows it again.
     if (currentBeadId !== null && current === undefined) {
@@ -388,7 +388,7 @@ export function createStore({
    *
    * A new sub-issue takes its parent's category unless one is given, and
    * none of its parent's labels (so not its workflow step, its size or an
-   * epic's branch: bead-bb-ty5.4); the tracker sees to both. This happens
+   * epic's branch: bead-alia-ty5.4); the tracker sees to both. This happens
    * once, at creation, and later changes to the parent do not follow.
    *
    * @returns `{ id }` of the new issue, or `{ message }` saying in plain words
@@ -439,7 +439,7 @@ export function createStore({
   }
 
   /**
-   * Puts one issue in Someday, or brings it back (bead-bb-26g).
+   * Puts one issue in Someday, or brings it back (bead-alia-26g).
    *
    * @param command "defer" or "undefer".
    * @returns `{ message: null }` on success, else the reason in plain words.

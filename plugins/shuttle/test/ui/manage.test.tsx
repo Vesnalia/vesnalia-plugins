@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../../src/contract";
 import { applyChange, type Change } from "../../src/ui/edit";
 import { formatRoute } from "../../src/ui/route";
@@ -93,7 +93,7 @@ describe("changing your own PR from its view", () => {
     fireEvent.click(await within(await more(view)).findByRole("menuitem", { name: "Reopen" }));
     await waitFor(() => expect(edits(slot)).toEqual([{ kind: "ready" }, { kind: "draft" }, { kind: "close" }, { kind: "reopen" }]));
     expect(toasts.success.mock.calls.map(([message]) => message)).toEqual([
-      "get-bb/bb#4411 is ready for review", "get-bb/bb#4411 is a draft again", "Closed get-bb/bb#4411", "Reopened get-bb/bb#4411",
+      "get-alia/alia#4411 is ready for review", "get-alia/alia#4411 is a draft again", "Closed get-alia/alia#4411", "Reopened get-alia/alia#4411",
     ]);
   });
 
@@ -208,7 +208,7 @@ describe("changing your own PR from its view", () => {
     fireEvent.click(within(await more(view)).getByRole("menuitem", { name: "Ready for review" }));
     await waitFor(() => expect(toasts.success).toHaveBeenCalledTimes(1));
     expect(edits(slot)).toEqual([{ kind: "ready" }]);
-    expect(toasts.success.mock.calls[0]).toEqual(["get-bb/bb#4411 is ready for review"]);
+    expect(toasts.success.mock.calls[0]).toEqual(["get-alia/alia#4411 is ready for review"]);
   });
 
   it("puts a refused change back and shows the server's message", async () => {
@@ -235,20 +235,20 @@ describe("changing your own PR from its view", () => {
     release();
   });
 
-  // bb applies Shuttle's CSS only under [data-bb-plugin=shuttle]; a portal outside it loses classes such as size-[22px].
+  // VesnALIA applies Shuttle's CSS only under [data-alia-plugin=shuttle]; a portal outside it loses classes such as size-[22px].
   it("portals its pickers inside Shuttle's CSS scope, as a menu and as a sheet", async () => {
     const desktop = await open(mine());
     openMenu(within(desktop.people()).getByRole("button", { name: "Request reviewers" }));
     const menu = await screen.findByRole("menu", { name: "Request reviewers" });
     expect(desktop.slot.container.contains(menu)).toBe(false);
-    expect(menu.closest("[data-bb-plugin='shuttle'][data-bb-plugin-root]")).not.toBeNull();
+    expect(menu.closest("[data-alia-plugin='shuttle'][data-alia-plugin-root]")).not.toBeNull();
     unmountAll();
     setViewport(390);
     const phone = await open(mine());
     fireEvent.click(within(phone.people()).getByRole("button", { name: "Request reviewers" }));
     const sheet = await screen.findByRole("dialog", { name: "Request reviewers" });
     expect(phone.slot.container.contains(sheet)).toBe(false);
-    expect(sheet.closest("[data-bb-plugin='shuttle'][data-bb-plugin-root]")).not.toBeNull();
+    expect(sheet.closest("[data-alia-plugin='shuttle'][data-alia-plugin-root]")).not.toBeNull();
   });
 
   it("opens its pickers as bottom sheets on a phone", async () => {

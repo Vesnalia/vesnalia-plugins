@@ -12,45 +12,45 @@ export const EN: Record<string, string> = {
   "Заменить копию (канон новее)": "Replace copy with newer canon",
   "Удалить копию (канон новее)": "Remove copy (canon is newer)",
   // --- CLI help ----------------------------------------------------------
-  "  bb tools status [--json]        Каталог, машины, расхождения":
-    "  bb tools status [--json]        Catalogue, machines, drift",
-  "  bb tools scan [--host <id>]     Пересканировать машины":
-    "  bb tools scan [--host <id>]     Sweep the machines again",
-  "  bb tools catalog [--json]       Записи каталога":
-    "  bb tools catalog [--json]       Catalogue entries",
-  "  bb tools pending [--json]       Новые серверы, ещё не принятые":
-    "  bb tools pending [--json]       New servers, not adopted yet",
-  "  bb tools adopt <name...>        Принять серверы в каталог":
-    "  bb tools adopt <name...>        Adopt servers into the catalogue",
-  "  bb tools ignore <name...>       Больше не предлагать":
-    "  bb tools ignore <name...>       Stop suggesting",
-  "  bb tools unignore <name...>     Вернуть скрытый сервер":
-    "  bb tools unignore <name...>     Bring a hidden server back",
-  "  bb tools forget <name>          Убрать запись из каталога":
-    "  bb tools forget <name>          Drop the catalogue entry",
-  "  bb tools remove <name> [--with-gateways]   Удалить сервер со всех машин":
-    "  bb tools remove <name> [--with-gateways]   Remove a server from every machine",
-  "  bb tools plan [--host <id>]     Что изменит синхронизация":
-    "  bb tools plan [--host <id>]     What sync would change",
-  "  bb tools probe [<name>]         Живая проверка связи":
-    "  bb tools probe [<name>]         Live connectivity check",
-  "  bb tools enable|disable <name>  Включить или выключить сервер":
-    "  bb tools enable|disable <name>  Enable or disable a server",
-  "  bb tools auto on|off            Автосинхронизация раз в час":
-    "  bb tools auto on|off            Hourly sweep",
-  "  bb tools gateway-add <файл> --host <id>  Добавить серверы за шлюз":
-    "  bb tools gateway-add <file> --host <id>  Add servers behind the gateway",
-  "  bb tools skills [--host <id>]            Скиллы вне канона":
-    "  bb tools skills [--host <id>]            Skills outside the canon",
-  "  bb tools skills-adopt <папка> <имя> --host <id> [--link|--delete|--take|--unlink]  Скилл за канон":
-    "  bb tools skills-adopt <folder> <name> --host <id> [--link|--delete|--take|--unlink]  Skill into the canon",
-  "bb tools gateway-add <файл.json> --host <id>": "bb tools gateway-add <file.json> --host <id>",
-  "bb tools skills-adopt <папка> <имя> --host <id> [--link|--delete|--take|--unlink]":
-    "bb tools skills-adopt <folder> <name> --host <id> [--link|--delete|--take|--unlink]",
-  "bb tools skills-restore <id-снимка> --host <id>": "bb tools skills-restore <snapshot-id> --host <id>",
+  "  VesnALIA tools status [--json]        Каталог, машины, расхождения":
+    "  VesnALIA tools status [--json]        Catalogue, machines, drift",
+  "  VesnALIA tools scan [--host <id>]     Пересканировать машины":
+    "  VesnALIA tools scan [--host <id>]     Sweep the machines again",
+  "  VesnALIA tools catalog [--json]       Записи каталога":
+    "  VesnALIA tools catalog [--json]       Catalogue entries",
+  "  VesnALIA tools pending [--json]       Новые серверы, ещё не принятые":
+    "  VesnALIA tools pending [--json]       New servers, not adopted yet",
+  "  VesnALIA tools adopt <name...>        Принять серверы в каталог":
+    "  VesnALIA tools adopt <name...>        Adopt servers into the catalogue",
+  "  VesnALIA tools ignore <name...>       Больше не предлагать":
+    "  VesnALIA tools ignore <name...>       Stop suggesting",
+  "  VesnALIA tools unignore <name...>     Вернуть скрытый сервер":
+    "  VesnALIA tools unignore <name...>     Bring a hidden server back",
+  "  VesnALIA tools forget <name>          Убрать запись из каталога":
+    "  VesnALIA tools forget <name>          Drop the catalogue entry",
+  "  VesnALIA tools remove <name> [--with-gateways]   Удалить сервер со всех машин":
+    "  VesnALIA tools remove <name> [--with-gateways]   Remove a server from every machine",
+  "  VesnALIA tools plan [--host <id>]     Что изменит синхронизация":
+    "  VesnALIA tools plan [--host <id>]     What sync would change",
+  "  VesnALIA tools probe [<name>]         Живая проверка связи":
+    "  VesnALIA tools probe [<name>]         Live connectivity check",
+  "  VesnALIA tools enable|disable <name>  Включить или выключить сервер":
+    "  VesnALIA tools enable|disable <name>  Enable or disable a server",
+  "  VesnALIA tools auto on|off            Автосинхронизация раз в час":
+    "  VesnALIA tools auto on|off            Hourly sweep",
+  "  VesnALIA tools gateway-add <файл> --host <id>  Добавить серверы за шлюз":
+    "  VesnALIA tools gateway-add <file> --host <id>  Add servers behind the gateway",
+  "  VesnALIA tools skills [--host <id>]            Скиллы вне канона":
+    "  VesnALIA tools skills [--host <id>]            Skills outside the canon",
+  "  VesnALIA tools skills-adopt <папка> <имя> --host <id> [--link|--delete|--take|--unlink]  Скилл за канон":
+    "  VesnALIA tools skills-adopt <folder> <name> --host <id> [--link|--delete|--take|--unlink]  Skill into the canon",
+  "alia tools gateway-add <файл.json> --host <id>": "alia tools gateway-add <file.json> --host <id>",
+  "alia tools skills-adopt <папка> <имя> --host <id> [--link|--delete|--take|--unlink]":
+    "alia tools skills-adopt <folder> <name> --host <id> [--link|--delete|--take|--unlink]",
+  "alia tools skills-restore <id-снимка> --host <id>": "alia tools skills-restore <snapshot-id> --host <id>",
 
-  "  bb tools lang [ru|en]           Язык интерфейса и вывода":
-    "  bb tools lang [ru|en]           Interface and output language",
+  "  VesnALIA tools lang [ru|en]           Язык интерфейса и вывода":
+    "  VesnALIA tools lang [ru|en]           Interface and output language",
 
   // --- command summaries --------------------------------------------------
   "Каталог, машины и расхождения": "Catalogue, machines and drift",
@@ -75,22 +75,22 @@ export const EN: Record<string, string> = {
   "Перенести скилл в канон или перекрыть симлинком": "Move a skill into the canon or replace it with a symlink",
   "Новее и новые в канон, синк git, дома CLI":
     "Newer and new skills into the canon, git sync, then CLI homes",
-  "Разложить канон по домам CLI: ссылки, зеркало BB, архив":
-    "Lay the canon out into the CLI homes: symlinks, the BB mirror, the archive",
+  "Разложить канон по домам CLI: ссылки, зеркало ALIA, архив":
+    "Lay the canon out into the CLI homes: symlinks, the VesnALIA mirror, the archive",
   "Архив снимков скиллов": "Skill snapshot archive",
   "Вернуть снимок из архива в канон": "Restore a snapshot from the archive into the canon",
   "Синк канона скиллов с git-remote": "Sync the skills canon through the git remote",
-  "Установленные плагины BB по машинам": "Installed CLI plugins per machine",
+  "Установленные плагины ALIA по машинам": "Installed CLI plugins per machine",
   "Состояние моделей и провайдеров OpenCode на всех машинах":
     "OpenCode models and providers across every machine",
   "Синхронизировать конфигурацию OpenCode с эталона на другие машины":
     "Sync the OpenCode configuration from the reference machine to the others",
   "Очистить устаревшие провайдеры OpenCode": "Drop stale OpenCode providers",
-  "Выбрать предустановленную модель OpenCode для новых чатов BB и CLI":
-    "Pick the preselected OpenCode model for new BB and CLI chats",
+  "Выбрать предустановленную модель OpenCode для новых чатов ALIA и CLI":
+    "Pick the preselected OpenCode model for new VesnALIA and CLI chats",
   "Язык интерфейса и вывода: ru или en": "Interface and output language: ru or en",
-  "Инструменты агентов: MCP-серверы и навыки на всех машинах BB":
-    "Agent Tools: MCP servers and skills across every BB machine",
+  "Инструменты агентов: MCP-серверы и навыки на всех машинах ALIA":
+    "Agent Tools: MCP servers and skills across every VesnALIA machine",
 
   // --- settings -----------------------------------------------------------
   "MetaMCP: адрес": "MetaMCP: address",
@@ -104,10 +104,10 @@ export const EN: Record<string, string> = {
   "Любой git-URL (свой GitHub/GitLab/сервер). Пусто — синк выключен. Плагин не привязан к конкретному хостингу.":
     "Any git URL (your own GitHub, GitLab or server). Empty means sync is off. The plugin is not tied to a particular host.",
   "Скиллы: раскатывать и то, что отдают плагины": "Skills: fan out names that plugins already provide",
-  "Включено — в домах CLI лежит весь канон, даже если имя уже приходит из плагина-маркетплейса: так навык виден и в CLI мимо BB. Цена — в сессиях BB такое имя показано дважды. Выключите, чтобы список навыков в BB был без двойников.":
-    "On — every CLI home holds the whole canon even when a marketplace plugin already provides the name, so the skill is there for a CLI started outside BB. The price is that such a name appears twice inside BB sessions. Turn it off to keep BB's skill list free of duplicates.",
-  "Модель, которая автоматически выбирается при создании нового чата в BB и является основной в CLI OpenCode.":
-    "The model picked automatically for a new BB chat and used as the primary one in the OpenCode CLI.",
+  "Включено — в домах CLI лежит весь канон, даже если имя уже приходит из плагина-маркетплейса: так навык виден и в CLI мимо ALIA. Цена — в сессиях ALIA такое имя показано дважды. Выключите, чтобы список навыков в ALIA был без двойников.":
+    "On — every CLI home holds the whole canon even when a marketplace plugin already provides the name, so the skill is there for a CLI started outside VesnALIA. The price is that such a name appears twice inside VesnALIA sessions. Turn it off to keep VesnALIA's skill list free of duplicates.",
+  "Модель, которая автоматически выбирается при создании нового чата в VesnALIA и является основной в CLI OpenCode.":
+    "The model picked automatically for a new VesnALIA chat and used as the primary one in the OpenCode CLI.",
 
   // --- layout and navigation ---------------------------------------------
   "Инструменты агентов": "Agent Tools",
@@ -134,8 +134,8 @@ export const EN: Record<string, string> = {
   "Язык интерфейса": "Interface language",
   "На каком языке показывать страницы плагина.": "Which language the plugin pages are shown in.",
   "Язык": "Language",
-  "«Как в BB» учитывает Русификатор и тему Pokecut.": "\"Like BB\" takes the Russifier and the Pokecut theme into account.",
-  "Как в BB": "Like BB",
+  "«Как в ALIA» учитывает Русификатор и тему Pokecut.": "\"Like VesnALIA\" takes the Russifier and the Pokecut theme into account.",
+  "Как в ALIA": "Like VesnALIA",
   "обход": "sweep",
 
   // --- tables and columns -------------------------------------------------
@@ -162,7 +162,7 @@ export const EN: Record<string, string> = {
   "Почему снят": "Why it was taken",
   "Разложен в дома": "Laid out into homes",
   "Расхождения:": "Drift:",
-  "Сейчас в BB:": "Currently in BB:",
+  "Сейчас в ALIA:": "Currently in VesnALIA:",
   "Основная модель:": "Primary model:",
   "Быстрая модель:": "Fast model:",
   "В CLI": "In the CLI",
@@ -208,13 +208,13 @@ export const EN: Record<string, string> = {
   "Копии": "Copies",
   "Расходятся": "Diverged",
   "Лишние ссылки": "Stray links",
-  "Дубли BB": "BB duplicates",
+  "Дубли ALIA": "VesnALIA duplicates",
   "Локальные": "Local",
   "Не на всех машинах": "Not on every machine",
   "Отдаёт плагин": "Provided by a plugin",
-  "BB не примет": "BB will reject",
-  "Канон или копия в ~/.bb/skills больше 10 МБ — BB не подставит скилл в $":
-    "The canon or ~/.bb/skills copy is over 10 MB — BB will not inject the skill into $",
+  "ALIA не примет": "VesnALIA will reject",
+  "Канон или копия в ~/.vesnalia/skills больше 10 МБ — ALIA не подставит скилл в $":
+    "The canon or ~/.vesnalia/skills copy is over 10 MB — VesnALIA will not inject the skill into $",
   "Нет скиллов тяжелее 10 МБ.": "No skills over 10 MB.",
   "Обнаружены расхождения": "Drift found",
 
@@ -224,8 +224,8 @@ export const EN: Record<string, string> = {
   "Пусто — в этом срезе новых серверов нет.": "Empty — no new servers in this slice.",
   "Пусто. Примите серверы из списка ниже — они станут общим стандартом для всех машин.":
     "Empty. Adopt servers from the list below and they become the standard for every machine.",
-  "Каталог пуст. Примите серверы: bb tools adopt <name>":
-    "The catalogue is empty. Adopt servers: bb tools adopt <name>",
+  "Каталог пуст. Примите серверы: VesnALIA tools adopt <name>":
+    "The catalogue is empty. Adopt servers: VesnALIA tools adopt <name>",
   "В этом срезе пусто — посмотри другие.": "This slice is empty — try another one.",
   "В этом срезе плагинов не найдено.": "No plugins in this slice.",
   "Всё на местах: вне канона скиллов не найдено.": "All good: no skills outside the canon.",
@@ -253,10 +253,10 @@ export const EN: Record<string, string> = {
   "Результат действия": "Action result",
   "раскатка пропущена — синк канона не прошёл":
     "fan-out skipped — canon sync on this machine failed",
-  "сервер BB": "BB server",
-  "сервер BB: синк канона не прошёл": "BB server: canon sync failed",
-  "на сервере BB нет канона и не задан git-remote синка":
-    "the BB server has no local canon and no git-sync remote is set",
+  "сервер ALIA": "VesnALIA server",
+  "сервер ALIA: синк канона не прошёл": "VesnALIA server: canon sync failed",
+  "на сервере ALIA нет канона и не задан git-remote синка":
+    "the VesnALIA server has no local canon and no git-sync remote is set",
   "git не найден": "git was not found",
   "машина не ответила за {0} с": "the machine did not respond in {0} s",
   "машина не на связи": "machine is offline",
@@ -282,10 +282,10 @@ export const EN: Record<string, string> = {
     "A row is one plugin, the icon shows the CLI, and the machine columns show where it is installed and which version runs. Pick a CLI to hide the rest.",
   "Конфигурация OpenCode (~/.config/opencode/opencode.json(c)): провайдеры, модели и чистота настроек. Эталон — канонический набор: 9Router + DeepSeek + Z.AI Coding Plan + Zen. Кнопка «Синхронизировать» приводит конфигурацию остальных машин к эталону.":
     "The OpenCode configuration (~/.config/opencode/opencode.json(c)): providers, models and config hygiene. The reference is the canonical set: 9Router + DeepSeek + Z.AI Coding Plan + Zen. “Sync” brings the other machines in line with it.",
-  "Источник правды — канон ~/.agents/skills: его читают Codex, Cursor и OpenCode сами, а ~/.claude/skills получает симлинки, потому что Claude Code читает только свой дом. Папку ~/.bb/skills правила не трогают: у BB свой реестр, и туда попадают только реальные папки — симлинк оттуда исчезает из списка навыков BB. Папку ~/.gemini/config/skills не используем. «Применить все правила» разбирает видимый срез: новые уходят в канон, копии удаляются или заменяются симлинком, расходящиеся решаются по дате файлов скилла, равные даты остаются тебе. Всё заменённое и удалённое лежит во вкладке «Архив» и восстанавливается оттуда.":
-    "The source of truth is the ~/.agents/skills canon: Codex, Cursor and OpenCode read it themselves, while ~/.claude/skills gets symlinks because Claude Code reads only its own home. The rules never touch ~/.bb/skills: BB keeps its own registry and indexes real folders only, so a symlink there drops the skill out of BB's list. The ~/.gemini/config/skills folder is unused. “Apply every rule” works through the visible slice: new skills move into the canon, copies are deleted or replaced by a symlink, diverged ones are settled by the skill's file dates, and equal dates are left to you. Everything replaced or deleted sits in the “Archive” tab and can be restored from there.",
-  "ссылки для Claude Code, зеркало для BB; то, что уже отдают плагины, не дублируется":
-    "symlinks for Claude Code, a mirror for BB; names that plugins already provide are not duplicated",
+  "Источник правды — канон ~/.agents/skills: его читают Codex, Cursor и OpenCode сами, а ~/.claude/skills получает симлинки, потому что Claude Code читает только свой дом. Папку ~/.vesnalia/skills правила не трогают: у VesnALIA свой реестр, и туда попадают только реальные папки — симлинк оттуда исчезает из списка навыков VesnALIA. Папку ~/.gemini/config/skills не используем. «Применить все правила» разбирает видимый срез: новые уходят в канон, копии удаляются или заменяются симлинком, расходящиеся решаются по дате файлов скилла, равные даты остаются тебе. Всё заменённое и удалённое лежит во вкладке «Архив» и восстанавливается оттуда.":
+    "The source of truth is the ~/.agents/skills canon: Codex, Cursor and OpenCode read it themselves, while ~/.claude/skills gets symlinks because Claude Code reads only its own home. The rules never touch ~/.vesnalia/skills: VesnALIA keeps its own registry and indexes real folders only, so a symlink there drops the skill out of VesnALIA's list. The ~/.gemini/config/skills folder is unused. “Apply every rule” works through the visible slice: new skills move into the canon, copies are deleted or replaced by a symlink, diverged ones are settled by the skill's file dates, and equal dates are left to you. Everything replaced or deleted sits in the “Archive” tab and can be restored from there.",
+  "ссылки для Claude Code, зеркало для VesnALIA; то, что уже отдают плагины, не дублируется":
+    "symlinks for Claude Code, a mirror for VesnALIA; names that plugins already provide are not duplicated",
   "Снимок снимается перед каждой заменой и удалением скилла: правилами вкладки «Скиллы», раскаткой канона и приехавшим по синку удалением. «Уникальная» — такого содержимого больше нет ни в каноне, ни в других снимках. Восстановление кладёт версию в канон, а то, что там было, уходит в архив.":
     "A snapshot is taken before every replacement or deletion of a skill: by the rules of the “Skills” tab, by the canon fan-out, and by a deletion that arrived through sync. “Unique” means this content exists nowhere else — neither in the canon nor in another snapshot. Restoring puts the version into the canon and moves whatever was there into the archive.",
   "Все скиллы вне канона ~/.agents/skills": "Every skill outside the ~/.agents/skills canon",
@@ -293,8 +293,8 @@ export const EN: Record<string, string> = {
   "Содержимое отличается от канона": "Content differs from the canon",
   "В каноне такого скилла нет": "The canon has no such skill",
   "Ссылки в папках, которые мы не используем": "Links in folders we do not use",
-  "Ссылки в ~/.bb/skills: внутри BB скилл виден дважды, вне BB ссылка нужна — решение по каждой строке за тобой":
-    "Links in ~/.bb/skills: inside BB the skill shows up twice, outside BB the link is needed — each row is your call",
+  "Ссылки в ~/.vesnalia/skills: внутри ALIA скилл виден дважды, вне ALIA ссылка нужна — решение по каждой строке за тобой":
+    "Links in ~/.vesnalia/skills: inside VesnALIA the skill shows up twice, outside VesnALIA the link is needed — each row is your call",
 
   // --- statuses and states ------------------------------------------------
   "есть": "present",
@@ -362,7 +362,7 @@ export const EN: Record<string, string> = {
   "ошибка": "error",
   "отвечает": "responds",
   "⚡ Основная в OpenCode": "⚡ Primary in OpenCode",
-  "⭐ Предустановлена в BB": "⭐ Preselected in BB",
+  "⭐ Предустановлена в ALIA": "⭐ Preselected in VesnALIA",
   "OpenCode готов": "OpenCode is ready",
   "агент не управляется": "agent is not managed",
   "не управляется": "not managed",
@@ -385,7 +385,7 @@ export const EN: Record<string, string> = {
   "расходится с каноном": "diverged from the canon",
   "новый — не в каноне": "new — not in the canon",
   "лишняя ссылка": "stray link",
-  "дубль реестра BB": "BB registry duplicate",
+  "дубль реестра ALIA": "VesnALIA registry duplicate",
   "источник канона": "canon source",
   "ссылка мимо канона": "link outside the canon",
   "содержимое совпадает с каноном — дубликат": "content matches the canon — a duplicate",
@@ -395,13 +395,13 @@ export const EN: Record<string, string> = {
   "ссылка в проект: содержимое отличается от канона — копируем в канон, ссылку не трогаем":
     "a project link whose content differs from the canon — copy into the canon, leave the link",
   "ссылка в папке, которую мы не используем": "a link in a folder we do not use",
-  "ссылка в ~/.bb/skills — BB подставляет этот скилл в свои сессии сам, поэтому внутри BB он виден дважды; нужна только для запуска CLI вне BB":
-    "a link in ~/.bb/skills — BB injects this skill into its own sessions, so inside BB it shows up twice; it is only needed for a CLI started outside BB",
+  "ссылка в ~/.vesnalia/skills — ALIA подставляет этот скилл в свои сессии сам, поэтому внутри ALIA он виден дважды; нужна только для запуска CLI вне ALIA":
+    "a link in ~/.vesnalia/skills — VesnALIA injects this skill into its own sessions, so inside VesnALIA it shows up twice; it is only needed for a CLI started outside VesnALIA",
   "реальное хранилище, на которое ссылается канон": "the real folder the canon points at",
   "расходятся с одинаковой датой": "diverged with the same date",
   "решить вручную": "decide by hand",
   "ссылок": "links",
-  "зеркал BB": "BB mirrors",
+  "зеркал ALIA": "VesnALIA mirrors",
   "убрано": "removed",
   "забрано в канон": "taken into the canon",
   "уведено в архив": "moved to the archive",
@@ -449,8 +449,8 @@ export const EN: Record<string, string> = {
   "расхождения: не хватает {0}, отличается {1}": "drift: {0} missing, {1} different",
   "Новые серверы ({0}):": "New servers ({0}):",
   "локальный: {0}": "local: {0}",
-  "Всего {0}; не на всех машинах: {1}; расходятся: {2}; BB не примет: {3}":
-    "{0} total; not on every machine: {1}; diverged: {2}; BB will reject: {3}",
+  "Всего {0}; не на всех машинах: {1}; расходятся: {2}; ALIA не примет: {3}":
+    "{0} total; not on every machine: {1}; diverged: {2}; VesnALIA will reject: {3}",
   "Скилл {0}: {1} ({2} в ожидании)": "Skill {0}: {1} ({2} pending)",
   "Отдаёт плагин, не дублируем: {0}": "Provided by a plugin, not duplicated: {0}",
   "Синк скиллов: машин {0}": "Skills sync: {0} machines",
@@ -465,13 +465,13 @@ export const EN: Record<string, string> = {
   "Вернуть {0} в предложения": "Bring {0} back into suggestions",
   "На «{0}» нет конфига шлюза ~/.agents/metamcp.mcp.json — плагин не создаёт конфиги с неподтверждённым путём":
     "“{0}” has no ~/.agents/metamcp.mcp.json gateway config — the plugin does not create configs at unconfirmed paths",
-  "Язык: {0}. Переключить: bb tools lang ru|en": "Language: {0}. Switch with: bb tools lang ru|en",
+  "Язык: {0}. Переключить: VesnALIA tools lang ru|en": "Language: {0}. Switch with: VesnALIA tools lang ru|en",
   "Язык переключён. Подписи настроек и команд обновятся после перезагрузки плагина.":
     "Language switched. Setting and command labels update after the plugin reloads.",
   "Укажите язык: ru или en": "Specify the language: ru or en",
   "Укажите машину: --host <id>": "Specify the machine: --host <id>",
-  "Укажите id модели: bb tools opencode-set-default <modelId>":
-    "Specify the model id: bb tools opencode-set-default <modelId>",
+  "Укажите id модели: VesnALIA tools opencode-set-default <modelId>":
+    "Specify the model id: VesnALIA tools opencode-set-default <modelId>",
   "Снимок восстановлен": "Snapshot restored",
   "Автосинхронизация": "Hourly sweep",
   "Раскатывать по расписанию": "Lay out on schedule",
@@ -550,17 +550,17 @@ export const EN: Record<string, string> = {
   "не отвечает: {0}": "no answer: {0}",
   "{0} в {1}": "{0} in {1}",
   "Автосинхронизация {0}": "Hourly sweep {0}",
-  "Предустановленная модель: {0} (BB: {1}, хосты: {2})": "Preselected model: {0} (BB: {1}, hosts: {2})",
+  "Предустановленная модель: {0} (ALIA: {1}, хосты: {2})": "Preselected model: {0} (VesnALIA: {1}, hosts: {2})",
   "{0}: {1} в {2}": "{0}: {1} in {2}",
   "ещё {0}": "{0} more",
-  "нет провайдера BB": "no BB provider",
+  "нет провайдера ALIA": "no VesnALIA provider",
   "файл": "file",
   "файла": "files",
   "файлов": "files",
   "заменено каноном: канон новее": "replaced by the canon: the canon is newer",
-  "заменено каноном: нет в доме BB": "replaced by the canon: missing from the BB home",
+  "заменено каноном: нет в доме ALIA": "replaced by the canon: missing from the VesnALIA home",
   "убрано из дома: нет в каноне": "removed from the home: not in the canon",
-  "удалён в bb: удалён в BB": "deleted in BB",
+  "удалён в alia: удалён в ALIA": "deleted in VesnALIA",
 
   "Через хаб · /{0}": "Through the hub · /{0}",
   "есть на всех машинах": "on every machine",
@@ -579,10 +579,10 @@ export const EN: Record<string, string> = {
 
   "Скиллы: раскатывать канон по расписанию": "Skills: lay the canon out on schedule",
   "Скиллы: обновлять по расписанию": "Skills: update on schedule",
-  "Выключено — плагин ничего не перекладывает сам: раскатка только по кнопке «Разложить канон по домам» или командой bb tools skills-fanout. Включите, если хотите, чтобы дома CLI подтягивались за каноном в часовом обходе.":
-    "Off — the plugin never moves anything on its own: fan-out happens only through the “Lay the canon out into the homes” button or the bb tools skills-fanout command. Turn it on to let the hourly sweep keep the CLI homes in step with the canon.",
-  "Выключено — плагин сам ничего не копирует в канон и не раскладывает дома: только кнопка «Обновить скиллы везде» или bb tools skills-fanout. Включите, чтобы часовой обход забирал более новые и новые скиллы в канон, синхронизировал git и раскладывал дома CLI.":
-    "Off — the plugin does not copy into the canon or lay out homes by itself: only the “Update skills everywhere” button or bb tools skills-fanout. Turn it on so the hourly sweep takes newer and new skills into the canon, syncs git, and lays out CLI homes.",
+  "Выключено — плагин ничего не перекладывает сам: раскатка только по кнопке «Разложить канон по домам» или командой VesnALIA tools skills-fanout. Включите, если хотите, чтобы дома CLI подтягивались за каноном в часовом обходе.":
+    "Off — the plugin never moves anything on its own: fan-out happens only through the “Lay the canon out into the homes” button or the VesnALIA tools skills-fanout command. Turn it on to let the hourly sweep keep the CLI homes in step with the canon.",
+  "Выключено — плагин сам ничего не копирует в канон и не раскладывает дома: только кнопка «Обновить скиллы везде» или VesnALIA tools skills-fanout. Включите, чтобы часовой обход забирал более новые и новые скиллы в канон, синхронизировал git и раскладывал дома CLI.":
+    "Off — the plugin does not copy into the canon or lay out homes by itself: only the “Update skills everywhere” button or VesnALIA tools skills-fanout. Turn it on so the hourly sweep takes newer and new skills into the canon, syncs git, and lays out CLI homes.",
 
   // --- code sample placeholders ------------------------------------------
   "имя-сервера": "server-name",
@@ -591,37 +591,37 @@ export const EN: Record<string, string> = {
   "Навыки": "Skills",
   "Плагины CLI": "CLI plugins",
   "Разделы": "Sections",
-  "Навыки живут на хабе: BB отдаёт их в каждую сессию на любой машине.": "Skills live on the hub: BB hands them to every session on every machine.",
+  "Навыки живут на хабе: ALIA отдаёт их в каждую сессию на любой машине.": "Skills live on the hub: VesnALIA hands them to every session on every machine.",
   "Навыки: провайдер классификатора": "Skills: classifier provider",
-  "Провайдер BB для скрытого треда, который раскладывает новые навыки по категориям.": "BB provider for the hidden thread that sorts new skills into categories.",
+  "Провайдер ALIA для скрытого треда, который раскладывает новые навыки по категориям.": "VesnALIA provider for the hidden thread that sorts new skills into categories.",
   "Навыки: модель классификатора": "Skills: classifier model",
   "Модель для раскладки навыков по категориям. Подходит быстрая и недорогая.": "Model that sorts skills into categories. A fast, inexpensive one is enough.",
   "Навыки: проект для треда классификатора": "Skills: project for the classifier thread",
-  "ID проекта BB. Пусто — личный проект.": "BB project ID. Empty means the personal project.",
+  "ID проекта ALIA. Пусто — личный проект.": "VesnALIA project ID. Empty means the personal project.",
   "Навыки на хабе: git, проблемы, копии на машинах": "Skills on the hub: git, problems, copies on machines",
   "Дерево категорий навыков": "Skill category tree",
   "Опубликовать навык на хаб": "Publish a skill to the hub",
-  "bb tools skills-publish <папка> [--host <машина>] [--dry-run]": "bb tools skills-publish <folder> [--host <machine>] [--dry-run]",
+  "alia tools skills-publish <папка> [--host <машина>] [--dry-run]": "alia tools skills-publish <folder> [--host <machine>] [--dry-run]",
   "Взять навык с хаба в работу": "Take a hub skill out for editing",
-  "bb tools skills-pull <навык> [--to <папка>] [--host <машина>]": "bb tools skills-pull <skill> [--to <folder>] [--host <machine>]",
+  "alia tools skills-pull <навык> [--to <папка>] [--host <машина>]": "alia tools skills-pull <skill> [--to <folder>] [--host <machine>]",
   "Перенести навык в категорию вручную": "Move a skill to a category by hand",
   "Разложить навыки без категории": "Sort skills that have no category",
   "Убрать навык с хаба в архив": "Move a skill from the hub to the archive",
-  "bb tools skills-remove <навык>": "bb tools skills-remove <skill>",
+  "alia tools skills-remove <навык>": "alia tools skills-remove <skill>",
   "Копии навыков на машинах": "Skill copies on machines",
   "Убрать копии навыков с машины в архив": "Move skill copies off a machine into an archive",
-  "bb tools skills-cleanup --host <машина> [--dry-run]": "bb tools skills-cleanup --host <machine> [--dry-run]",
-  "bb tools skills-move <навык> \"Раздел/Подраздел\"": "bb tools skills-move <skill> \"Section/Subsection\"",
+  "alia tools skills-cleanup --host <машина> [--dry-run]": "alia tools skills-cleanup --host <machine> [--dry-run]",
+  "alia tools skills-move <навык> \"Раздел/Подраздел\"": "alia tools skills-move <skill> \"Section/Subsection\"",
   "Нет файла SKILL.md": "No SKILL.md file",
   "Шапка SKILL.md должна начинаться строкой ---": "SKILL.md frontmatter must start with a --- line",
   "Шапка SKILL.md не читается: ошибка YAML": "SKILL.md frontmatter does not parse: YAML error",
   "В шапке нет имени": "The frontmatter has no name",
-  "Имя не подходит BB: только строчные латинские буквы, цифры и дефисы": "BB rejects the name: lowercase Latin letters, digits and hyphens only",
+  "Имя не подходит ALIA: только строчные латинские буквы, цифры и дефисы": "VesnALIA rejects the name: lowercase Latin letters, digits and hyphens only",
   "Имя в шапке не совпадает с папкой": "The name differs from the folder",
   "Нет описания": "No description",
   "Описание длиннее 1024 символов": "Description is longer than 1024 characters",
-  "Больше 10 МБ — BB не перенесёт в сессию": "Over 10 MB — BB will not copy it into sessions",
-  "Больше 1000 файлов — BB не перенесёт в сессию": "Over 1000 files — BB will not copy it into sessions",
+  "Больше 10 МБ — ALIA не перенесёт в сессию": "Over 10 MB — VesnALIA will not copy it into sessions",
+  "Больше 1000 файлов — ALIA не перенесёт в сессию": "Over 1000 files — VesnALIA will not copy it into sessions",
   "Ссылается на ~/.agents/skills: в сессии навык лежит в другом месте": "Points at ~/.agents/skills: in a session the skill lives elsewhere",
   "вручную": "by hand",
   "по соседям": "by siblings",
@@ -639,7 +639,7 @@ export const EN: Record<string, string> = {
   "Поиск по всем навыкам": "Search all skills",
   "Разложить новые": "Sort new skills",
   "На машинах остались копии навыков": "Machines still hold skill copies",
-  "BB и так отдаёт навыки хаба в каждую сессию — копии на машинах дают дубли.": "BB already hands hub skills to every session — copies on machines show up twice.",
+  "ALIA и так отдаёт навыки хаба в каждую сессию — копии на машинах дают дубли.": "VesnALIA already hands hub skills to every session — copies on machines show up twice.",
   "Очистить…": "Clean up…",
   "Категории навыков": "Skill categories",
   "Категории": "Categories",
@@ -673,16 +673,16 @@ export const EN: Record<string, string> = {
   "Навыки остаются на месте, меняется только название.": "Skills stay where they are; only the name changes.",
   "Название": "Name",
   "Сохранить": "Save",
-  "Копия навыка с хаба ляжет в папку на машине. Поправьте её и опубликуйте обратно: bb tools skills-publish <папка>.": "A copy of the hub skill goes into a folder on the machine. Edit it and publish it back: bb tools skills-publish <folder>.",
+  "Копия навыка с хаба ляжет в папку на машине. Поправьте её и опубликуйте обратно: VesnALIA tools skills-publish <папка>.": "A copy of the hub skill goes into a folder on the machine. Edit it and publish it back: VesnALIA tools skills-publish <folder>.",
   "Не удалось": "Failed",
   "Скопировать": "Copy",
-  "Навык пропадёт из всех сессий BB. Папка уйдёт в архив на хабе, удаление запишется в git — вернуть можно из истории.": "The skill disappears from every BB session. The folder goes to the hub archive and the removal is committed to git, so history can bring it back.",
+  "Навык пропадёт из всех сессий ALIA. Папка уйдёт в архив на хабе, удаление запишется в git — вернуть можно из истории.": "The skill disappears from every VesnALIA session. The folder goes to the hub archive and the removal is committed to git, so history can bring it back.",
   "Убрать": "Remove",
   "Всё переедет в архив ~/.agents/skills-backups/cleanup-<дата> на этой машине, ничего не удаляется. Папки самих CLI (synced у Claude Code, .system у Codex) остаются.": "Everything moves to ~/.agents/skills-backups/cleanup-<date> on that machine; nothing is deleted. Folders the CLIs own (synced for Claude Code, .system for Codex) stay.",
-  "Вне BB (терминал, codex exec, writer-линии) этих навыков больше не будет.": "Outside BB (terminal, codex exec, writer lanes) these skills will be gone.",
+  "Вне VesnALIA (терминал, codex exec, writer-линии) этих навыков больше не будет.": "Outside VesnALIA (terminal, codex exec, writer lanes) these skills will be gone.",
   "Очистить": "Clean up",
   "Поиск: {0}": "Search: {0}",
-  "Ожидалась папка {0} на сервере BB.": "Expected the folder {0} on the BB server.",
+  "Ожидалась папка {0} на сервере ALIA.": "Expected the folder {0} on the VesnALIA server.",
   "Классификатор остановился: {0}": "The classifier stopped: {0}",
   "Классификатор: последний запуск {0}": "Classifier: last run {0}",
   ", не закоммичено: {0}": ", uncommitted: {0}",
@@ -699,16 +699,16 @@ export const EN: Record<string, string> = {
   "навыка на хабе": "skills on the hub",
   "навыков на хабе": "skills on the hub",
   "git: папка не под git": "git: the folder is not under git",
-  "Укажите папку навыка: bb tools skills-publish <папка> [--host <машина>] [--dry-run]": "Give the skill folder: bb tools skills-publish <folder> [--host <machine>] [--dry-run]",
+  "Укажите папку навыка: VesnALIA tools skills-publish <папка> [--host <машина>] [--dry-run]": "Give the skill folder: VesnALIA tools skills-publish <folder> [--host <machine>] [--dry-run]",
   "Не удалось определить машину: укажите --host": "Could not tell the machine: pass --host",
-  "Укажите навык: bb tools skills-pull <навык> [--to <папка>] [--host <машина>]": "Give the skill: bb tools skills-pull <skill> [--to <folder>] [--host <machine>]",
-  "Классификация запущена в фоне; итог — bb tools skills-hub": "Sorting started in the background; see bb tools skills-hub",
-  "Укажите навык: bb tools skills-remove <навык>": "Give the skill: bb tools skills-remove <skill>",
-  "Укажите машину: bb tools skills-cleanup --host <машина> [--dry-run]": "Give the machine: bb tools skills-cleanup --host <machine> [--dry-run]",
+  "Укажите навык: VesnALIA tools skills-pull <навык> [--to <папка>] [--host <машина>]": "Give the skill: VesnALIA tools skills-pull <skill> [--to <folder>] [--host <machine>]",
+  "Классификация запущена в фоне; итог — VesnALIA tools skills-hub": "Sorting started in the background; see VesnALIA tools skills-hub",
+  "Укажите навык: VesnALIA tools skills-remove <навык>": "Give the skill: VesnALIA tools skills-remove <skill>",
+  "Укажите машину: VesnALIA tools skills-cleanup --host <машина> [--dry-run]": "Give the machine: VesnALIA tools skills-cleanup --host <machine> [--dry-run]",
   "Будет перенесено в архив:": "Would move to the archive:",
   "Навыки на хабе: {0} ({1})": "Skills on the hub: {0} ({1})",
   "git: {0} {1}, незакоммичено {2}": "git: {0} {1}, uncommitted {2}",
-  "Без категории: {0}, на проверке: {1}, BB не примет: {2}": "No category: {0}, in review: {1}, rejected by BB: {2}",
+  "Без категории: {0}, на проверке: {1}, ALIA не примет: {2}": "No category: {0}, in review: {1}, rejected by VesnALIA: {2}",
   "Копии на машине {0}: {1}": "Copies on {0}: {1}",
   "Не опубликовано: {0}": "Not published: {0}",
   "Проверка пройдена: {0} можно публиковать": "Check passed: {0} can be published",
@@ -720,19 +720,19 @@ export const EN: Record<string, string> = {
   "Убрано с хаба в архив: {0}": "Moved from the hub to the archive: {0}",
   "{0}: чисто": "{0}: clean",
   "Перенесено в архив {0}:": "Moved to the archive {0}:",
-  "Формат: bb tools skills-move <навык> \"Раздел/Подраздел\"": "Format: bb tools skills-move <skill> \"Section/Subsection\"",
-  "  bb tools skills-hub [--json]                Навыки на хабе: git, проблемы, копии на машинах": "  bb tools skills-hub [--json]                Skills on the hub: git, problems, copies on machines",
-  "  bb tools skills-tree [--skills] [--json]    Дерево категорий": "  bb tools skills-tree [--skills] [--json]    Category tree",
-  "  bb tools skills-publish <папка> [--host <машина>] [--dry-run]  Опубликовать навык на хаб": "  bb tools skills-publish <folder> [--host <machine>] [--dry-run]  Publish a skill to the hub",
-  "  bb tools skills-pull <навык> [--to <папка>] [--host <машина>]  Взять навык с хаба в работу": "  bb tools skills-pull <skill> [--to <folder>] [--host <machine>]  Take a hub skill out for editing",
-  "  bb tools skills-move <навык> \"Раздел/Подраздел\"  Перенести навык вручную": "  bb tools skills-move <skill> \"Section/Subsection\"  Move a skill by hand",
-  "  bb tools skills-classify [--wait]           Разложить навыки без категории": "  bb tools skills-classify [--wait]           Sort skills that have no category",
-  "  bb tools skills-suggest --message <текст> [--json]  Какой навык подходит к сообщению": "  bb tools skills-suggest --message <text> [--json]  Which skill fits the message",
-  "  bb tools skills-cards [--refresh] [--wait] [--json] [--show <навык>]  Карточки маршрутизации навыков": "  bb tools skills-cards [--refresh] [--wait] [--json] [--show <skill>]  Skill routing cards",
-  "  bb tools skills-suggest-log [--limit N] [--json]  Журнал подбора навыков": "  bb tools skills-suggest-log [--limit N] [--json]  Skill suggestion log",
-  "  bb tools skills-remove <навык>              Убрать навык с хаба в архив": "  bb tools skills-remove <skill>              Move a skill from the hub to the archive",
-  "  bb tools skills-machines                    Копии навыков на машинах": "  bb tools skills-machines                    Skill copies on machines",
-  "  bb tools skills-cleanup --host <машина> [--dry-run]  Убрать копии с машины в архив": "  bb tools skills-cleanup --host <machine> [--dry-run]  Move skill copies off a machine",
+  "Формат: VesnALIA tools skills-move <навык> \"Раздел/Подраздел\"": "Format: VesnALIA tools skills-move <skill> \"Section/Subsection\"",
+  "  VesnALIA tools skills-hub [--json]                Навыки на хабе: git, проблемы, копии на машинах": "  VesnALIA tools skills-hub [--json]                Skills on the hub: git, problems, copies on machines",
+  "  VesnALIA tools skills-tree [--skills] [--json]    Дерево категорий": "  VesnALIA tools skills-tree [--skills] [--json]    Category tree",
+  "  VesnALIA tools skills-publish <папка> [--host <машина>] [--dry-run]  Опубликовать навык на хаб": "  VesnALIA tools skills-publish <folder> [--host <machine>] [--dry-run]  Publish a skill to the hub",
+  "  VesnALIA tools skills-pull <навык> [--to <папка>] [--host <машина>]  Взять навык с хаба в работу": "  VesnALIA tools skills-pull <skill> [--to <folder>] [--host <machine>]  Take a hub skill out for editing",
+  "  VesnALIA tools skills-move <навык> \"Раздел/Подраздел\"  Перенести навык вручную": "  VesnALIA tools skills-move <skill> \"Section/Subsection\"  Move a skill by hand",
+  "  VesnALIA tools skills-classify [--wait]           Разложить навыки без категории": "  VesnALIA tools skills-classify [--wait]           Sort skills that have no category",
+  "  VesnALIA tools skills-suggest --message <текст> [--json]  Какой навык подходит к сообщению": "  VesnALIA tools skills-suggest --message <text> [--json]  Which skill fits the message",
+  "  VesnALIA tools skills-cards [--refresh] [--wait] [--json] [--show <навык>]  Карточки маршрутизации навыков": "  VesnALIA tools skills-cards [--refresh] [--wait] [--json] [--show <skill>]  Skill routing cards",
+  "  VesnALIA tools skills-suggest-log [--limit N] [--json]  Журнал подбора навыков": "  VesnALIA tools skills-suggest-log [--limit N] [--json]  Skill suggestion log",
+  "  VesnALIA tools skills-remove <навык>              Убрать навык с хаба в архив": "  VesnALIA tools skills-remove <skill>              Move a skill from the hub to the archive",
+  "  VesnALIA tools skills-machines                    Копии навыков на машинах": "  VesnALIA tools skills-machines                    Skill copies on machines",
+  "  VesnALIA tools skills-cleanup --host <машина> [--dry-run]  Убрать копии с машины в архив": "  VesnALIA tools skills-cleanup --host <machine> [--dry-run]  Move skill copies off a machine",
   "Свернуть все": "Collapse all",
   "Развернуть все": "Expand all",
   "ещё пустых: {0}": "{0} more empty",
@@ -740,30 +740,30 @@ export const EN: Record<string, string> = {
   "Навыки: раскладывать новые автоматически": "Skills: sort new ones automatically",
   "Раз в час новые навыки без категории уходят классификатору. Выключено — только по кнопке «Разложить новые».": "Every hour, new skills without a category go to the classifier. Off: only with the “Sort new skills” button.",
   "На машинах есть навыки, которых нет на хабе": "Machines hold skills the hub does not have",
-  "Перенесите их на хаб — тогда BB отдаст их в каждую сессию на любой машине. Потом очистите копии, чтобы не было дублей.": "Move them to the hub so BB hands them to every session on every machine. Then clean up the copies to avoid duplicates.",
+  "Перенесите их на хаб — тогда ALIA отдаст их в каждую сессию на любой машине. Потом очистите копии, чтобы не было дублей.": "Move them to the hub so VesnALIA hands them to every session on every machine. Then clean up the copies to avoid duplicates.",
   "Перенесено на хаб: {0}": "Moved to the hub: {0}",
   "Не перенесено ({0}): {1}": "Not moved ({0}): {1}",
   "Перенести на хаб · {0}": "Move to the hub · {0}",
   "Только на этой машине: {0}": "Only on this machine: {0}",
-  "{0} из них нет на хабе: после очистки они пропадут из сессий BB (останутся только в архиве). Сначала перенесите их на хаб.": "{0} of them are not on the hub: after cleanup they leave BB sessions (they stay only in the backup). Move them to the hub first.",
+  "{0} из них нет на хабе: после очистки они пропадут из сессий ALIA (останутся только в архиве). Сначала перенесите их на хаб.": "{0} of them are not on the hub: after cleanup they leave VesnALIA sessions (they stay only in the backup). Move them to the hub first.",
   "Перенести на хаб навыки, которых там нет": "Move skills the hub lacks to the hub",
-  "bb tools skills-import --host <машина> [<навык>...] [--dry-run]": "bb tools skills-import --host <machine> [<skill>...] [--dry-run]",
-  "Укажите машину: bb tools skills-import --host <машина> [--dry-run]": "Give the machine: bb tools skills-import --host <machine> [--dry-run]",
+  "alia tools skills-import --host <машина> [<навык>...] [--dry-run]": "alia tools skills-import --host <machine> [<skill>...] [--dry-run]",
+  "Укажите машину: VesnALIA tools skills-import --host <машина> [--dry-run]": "Give the machine: VesnALIA tools skills-import --host <machine> [--dry-run]",
   "На этой машине нет навыков, которых не хватает на хабе": "This machine has no skills the hub lacks",
   "Проверка переноса на хаб:": "Check before moving to the hub:",
   "Перенос на хаб:": "Moved to the hub:",
   "; нет на хабе: {0}": "; not on the hub: {0}",
-  "  bb tools skills-import --host <машина> [--dry-run]  Перенести на хаб навыки, которых там нет": "  bb tools skills-import --host <machine> [--dry-run]  Move skills the hub lacks to the hub",
+  "  VesnALIA tools skills-import --host <машина> [--dry-run]  Перенести на хаб навыки, которых там нет": "  VesnALIA tools skills-import --host <machine> [--dry-run]  Move skills the hub lacks to the hub",
   "Настройки": "Settings",
   "Навыки: только на хабе (экспериментально)": "Skills: hub only (experimental)",
-  "Плагин сам держит папки навыков CLI на всех машинах пустыми: раз в час переносит на хаб навыки, которых там нет, и убирает копии в архив на той же машине. Навыки приходят в сессии только с хаба BB. Выключено — машины не трогаются.": "The plugin keeps the CLI skill folders on every machine empty: every hour it moves skills the hub lacks to the hub and archives the copies on that machine. Skills reach sessions only from the BB hub. Off: machines are not touched.",
-  "Канона навыков на машинах больше нет: навыки живут на хабе BB, плагин не пишет в папки навыков на машинах. Смотрите bb tools skills-hub.": "There is no machine skills canon any more: skills live on the BB hub and the plugin does not write into skill folders on machines. See bb tools skills-hub.",
+  "Плагин сам держит папки навыков CLI на всех машинах пустыми: раз в час переносит на хаб навыки, которых там нет, и убирает копии в архив на той же машине. Навыки приходят в сессии только с хаба ALIA. Выключено — машины не трогаются.": "The plugin keeps the CLI skill folders on every machine empty: every hour it moves skills the hub lacks to the hub and archives the copies on that machine. Skills reach sessions only from the VesnALIA hub. Off: machines are not touched.",
+  "Канона навыков на машинах больше нет: навыки живут на хабе VesnALIA, плагин не пишет в папки навыков на машинах. Смотрите VesnALIA tools skills-hub.": "There is no machine skills canon any more: skills live on the VesnALIA hub and the plugin does not write into skill folders on machines. See VesnALIA tools skills-hub.",
   "изменить": "change",
-  "Перенос копирует навык на хаб — тогда BB отдаст его в каждую сессию на любой машине. Оригинал на машине остаётся.": "Moving copies the skill to the hub, so BB hands it to every session on every machine. The original stays on the machine.",
+  "Перенос копирует навык на хаб — тогда ALIA отдаст его в каждую сессию на любой машине. Оригинал на машине остаётся.": "Moving copies the skill to the hub, so VesnALIA hands it to every session on every machine. The original stays on the machine.",
   "модель: {0}": "model: {0}",
   "Классификатор навыков": "Skill classifier",
-  "Новые навыки без категории по одному уходят в скрытый тред BB с этой моделью; она выбирает или создаёт категорию.": "New skills without a category go one by one to a hidden BB thread on this model; it picks or creates a category.",
-  "Агент BB, в котором работает тред классификатора.": "The BB agent that runs the classifier thread.",
+  "Новые навыки без категории по одному уходят в скрытый тред ALIA с этой моделью; она выбирает или создаёт категорию.": "New skills without a category go one by one to a hidden VesnALIA thread on this model; it picks or creates a category.",
+  "Агент ALIA, в котором работает тред классификатора.": "The VesnALIA agent that runs the classifier thread.",
   "недоступен": "unavailable",
   "Подойдёт быстрая и недорогая: задача — выбрать категорию по описанию.": "A fast, inexpensive one is enough: the job is to pick a category from a description.",
   "Модель провайдера по умолчанию": "The provider's default model",
@@ -774,7 +774,7 @@ export const EN: Record<string, string> = {
   "Раскладывать автоматически": "Sort automatically",
   "Раз в час новые навыки уходят классификатору. Выключено — только по кнопке «Разложить новые».": "Every hour, new skills go to the classifier. Off: only with the “Sort new skills” button.",
   "Навыки на машинах": "Skills on machines",
-  "Канон навыков — хаб BB: он отдаёт навыки в каждую сессию на любой машине.": "The skills canon is the BB hub: it hands skills to every session on every machine.",
+  "Канон навыков — хаб ALIA: он отдаёт навыки в каждую сессию на любой машине.": "The skills canon is the VesnALIA hub: it hands skills to every session on every machine.",
   "Только на хабе": "Hub only",
   "Эксперимент": "Experimental",
   "Раз в час плагин переносит на хаб навыки, которых там нет, и убирает копии с машин в архив на той же машине. Сессии получают навыки только с хаба. Выключено — папки навыков на машинах не меняются.": "Every hour the plugin moves skills the hub lacks to the hub and archives the copies on the machines. Sessions get skills only from the hub. Off: skill folders on machines are not changed.",
@@ -785,15 +785,15 @@ export const EN: Record<string, string> = {
   "Режим «только на хабе» выключен: включите его в настройках плагина (Настройки → Инструменты агентов)": "Hub-only mode is off: turn it on in the plugin settings (Settings → Agent Tools)",
   "Прогонов ещё не было": "No runs yet",
   "Последний прогон: {0}": "Last run: {0}",
-  "Прогон по требованию: bb tools skills-hub-only --run": "Run on demand: bb tools skills-hub-only --run",
+  "Прогон по требованию: VesnALIA tools skills-hub-only --run": "Run on demand: VesnALIA tools skills-hub-only --run",
   "{0}: пропущено — {1}": "{0}: skipped — {1}",
   "импортировано {0}": "imported {0}",
   "отклонено {0}": "rejected {0}",
   "убрано {0}": "archived {0}",
   "отклонены: {0}": "rejected: {0}",
   "Режим «только на хабе»: отчёт или прогон": "Hub-only mode: report or run",
-  "bb tools skills-hub-only [--run] [--json]": "bb tools skills-hub-only [--run] [--json]",
-  "  bb tools skills-hub-only [--run] [--json]  Режим «только на хабе»: отчёт или прогон": "  bb tools skills-hub-only [--run] [--json]  Hub-only mode: report or run",
+  "alia tools skills-hub-only [--run] [--json]": "alia tools skills-hub-only [--run] [--json]",
+  "  VesnALIA tools skills-hub-only [--run] [--json]  Режим «только на хабе»: отчёт или прогон": "  VesnALIA tools skills-hub-only [--run] [--json]  Hub-only mode: report or run",
   "Сохранение…": "Saving…",
   "Сохранено": "Saved",
   "Подбор навыков: ключ TypeSafe (Jev)": "Skill matching: TypeSafe (Jev) key",
@@ -815,7 +815,7 @@ export const EN: Record<string, string> = {
   "Какой навык подходит к сообщению": "Which skill fits the message",
   "Карточки маршрутизации навыков": "Skill routing cards",
   "Журнал подбора навыков": "Skill suggestion log",
-  "Укажите сообщение: bb tools skills-suggest --message <текст> [--json]": "Give a message: bb tools skills-suggest --message <text> [--json]",
+  "Укажите сообщение: VesnALIA tools skills-suggest --message <текст> [--json]": "Give a message: VesnALIA tools skills-suggest --message <text> [--json]",
   "Ключ TypeSafe (Jev) не задан": "The TypeSafe (Jev) key is not set",
   "Обновление карточек запущено в фоне.": "Card refresh started in the background.",
   "Навыки: {0}. Карточек: свежих {1}, устаревших {2}, ручных {3}, нет {4}": "Skills: {0}. Cards: fresh {1}, stale {2}, manual {3}, missing {4}",

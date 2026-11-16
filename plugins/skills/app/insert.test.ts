@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ComposerMention } from "@get-bb/plugin-sdk/app";
+import type { ComposerMention } from "@vesnalia/plugin-sdk/app";
 
 import {
   canBePill,
@@ -111,7 +111,7 @@ describe("discoveredCommand", () => {
   it("is a skill, from the project when the workspace holds it and from the user otherwise", () => {
     expect(discoveredCommand("a", "project").origin).toBe("project");
     expect(discoveredCommand("a", "repo").origin).toBe("project");
-    for (const kind of ["personal", "admin", "plugin", "bb"] as const) expect(discoveredCommand("a", kind).origin).toBe("user");
+    for (const kind of ["personal", "admin", "plugin", "alia"] as const) expect(discoveredCommand("a", kind).origin).toBe("user");
     expect(discoveredCommand("a", undefined)).toEqual({ name: "a", source: "skill", origin: "user", argumentHint: null });
   });
 });

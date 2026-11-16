@@ -1,22 +1,18 @@
 {
-  "name": "bb-plugin-nanogpt-provider",
+  "name": "alia-plugin-nanogpt-provider",
   "version": "0.1.7",
   "private": true,
   "type": "module",
   "license": "MIT",
   "author": "Oleksander Trybushnyi",
-  "description": "Use NanoGPT's models in bb threads: paste an API key and the live model catalog appears.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AlllxTry/bb-plugin-nanoGPT-provider.git"
-  },
+  "description": "Use NanoGPT's models in VesnALIA threads: paste an API key and the live model catalog appears.",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.133"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.133"
   },
-  "bb": {
+  "alia": {
     "name": "NanoGPT provider",
-    "description": "Use NanoGPT's models in bb threads: paste an API key and the live model catalog appears.",
+    "description": "Use NanoGPT's models in VesnALIA threads: paste an API key and the live model catalog appears.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -35,18 +31,18 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build .",
-    "install:bb": "bb plugin install . --yes",
-    "dev": "bb plugin dev ."
+    "build": "alia plugin build .",
+    "install:bb": "alia plugin install . --yes",
+    "dev": "alia plugin dev ."
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.133",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@vesnalia/plugin-sdk": "^0.6.133"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
@@ -66,5 +62,14 @@
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/nanogpt-provider#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/nanogpt-provider"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

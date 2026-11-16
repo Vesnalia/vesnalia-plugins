@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useBbContext, useBbNavigate, useRpc, type PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useAliaNavigate, useRpc, type PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { usePortalScopeProps } from "./lib/portal-scope";
 
 const itemClass =
@@ -42,9 +42,9 @@ function ProjectMenu({
   project: PluginSidebarProject;
   children: (menu: ProjectMenuState) => ReactNode;
 }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
-  const navigate = useBbNavigate();
-  const context = useBbContext();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
+  const navigate = useAliaNavigate();
+  const context = useAliaContext();
   const portalScope = usePortalScopeProps();
   const [action, setAction] = useState<Action | null>(null);
   const [value, setValue] = useState("");
@@ -95,7 +95,7 @@ function ProjectMenu({
         toast.success("Local path added");
       } else {
         await rpc.call("removeProject", { projectId: project.id, confirmation: value });
-        toast.success(`${project.name} removed from BB`);
+        toast.success(`${project.name} removed from VesnALIA`);
         if (context.projectId === project.id) navigate.toCompose();
       }
       setAction(null);

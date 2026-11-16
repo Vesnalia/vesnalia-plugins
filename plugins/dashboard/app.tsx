@@ -6,7 +6,7 @@ import {
   experimental_SidebarNavigationIcon as NavigationIcon,
   useSidebarThreadDraftIds as useDraftIds,
   experimental_usePluginId as usePluginId,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Catalog } from "./catalog";
 import type { CatalogChange } from "./catalog-config";
 import { Icon } from "./components/ui/icon";

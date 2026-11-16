@@ -2,10 +2,10 @@ import {
   cliCommand,
   defineCli,
   PluginCliError,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginAgentToolContext,
   type PluginCliContext,
-} from '@get-bb/plugin-sdk';
+} from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { traceHostContract } from './contract.js';
 import { decisionTypeSchema, traceUiRpcContract } from './ui-contract.js';
@@ -65,19 +65,19 @@ function displayHealthWarning(warning: string): string {
   return warning.length > 180 ? `${warning.slice(0, 177)}…` : warning;
 }
 
-export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
-  const host = bb.hosts.experimental_client({ contract: traceHostContract });
+export default async function tracePlugin(alia: AliaPluginApi): Promise<void> {
+  const host = alia.hosts.experimental_client({ contract: traceHostContract });
 
   async function targetThread(threadId: string, signal?: AbortSignal) {
-    const thread = await bb.sdk.threads.get({ threadId, signal });
+    const thread = await alia.sdk.threads.get({ threadId, signal });
     if (thread.environmentId === null)
-      throw new Error('Select a bb environment with a repository before using trace-mcp.');
-    const environment = await bb.sdk.environments.get({
+      throw new Error('Select a VesnALIA environment with a repository before using trace-mcp.');
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
       signal,
     });
     if (environment.path === null)
-      throw new Error('The bb environment has no local path for trace-mcp.');
+      throw new Error('The VesnALIA environment has no local path for trace-mcp.');
     return { path: environment.path, hostId: environment.hostId };
   }
 
@@ -119,7 +119,7 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
           },
           destination,
         ),
-        bb.sdk.threads.context({ threadId }),
+        alia.sdk.threads.context({ threadId }),
       ]);
       let index = { status: 'unavailable', files: 0, symbols: 0, warnings: [] as string[] };
       let indexError: string | null = null;
@@ -202,14 +202,14 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
       };
     },
   };
-  bb.rpc.register(traceUiRpcContract, handlers);
+  alia.rpc.register(traceUiRpcContract, handlers);
 
   function requiredThread(value: string | undefined, context: PluginCliContext): string {
     const threadId = value ?? context.threadId;
     if (!threadId) {
-      throw new PluginCliError('A bb thread is required for this command.', {
+      throw new PluginCliError('A VesnALIA thread is required for this command.', {
         code: 'thread_required',
-        hint: 'Run the command inside a bb thread or pass --thread <id>.',
+        hint: 'Run the command inside a VesnALIA thread or pass --thread <id>.',
       });
     }
     return threadId;
@@ -217,16 +217,16 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
 
   const threadOption = {
     type: 'string',
-    description: 'BB thread ID; defaults to the invoking thread',
+    description: 'VesnALIA thread ID; defaults to the invoking thread',
   } as const;
   const jsonOption = { type: 'boolean', description: 'Emit machine-readable JSON' } as const;
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: 'trace',
       summary: 'Inspect indexed context and project decisions',
       commands: {
         status: cliCommand({
-          summary: 'Show repository index and bb context-window usage',
+          summary: 'Show repository index and VesnALIA context-window usage',
           options: { thread: threadOption, json: jsonOption },
           async run(input, context) {
             const snapshot = await handlers.readOverview({
@@ -298,7 +298,7 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
           },
         }),
         index: cliCommand({
-          summary: 'Reindex the bb thread repository',
+          summary: 'Reindex the VesnALIA thread repository',
           options: { thread: threadOption, json: jsonOption },
           async run(input, context) {
             const result = await handlers.reindex({
@@ -343,7 +343,7 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
     };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_search',
     description:
       'Search the indexed repository for symbols and relevant code with compact results.',
@@ -354,7 +354,7 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
     }),
     execute: (args, ctx) => call('search', args, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_get_symbol',
     description:
       'Read the exact indexed definition of a symbol, using its symbol ID or fully qualified name.',
@@ -367,22 +367,22 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
       .refine((v) => Boolean(v.symbol_id || v.fqn)),
     execute: (args, ctx) => call('get_symbol', args, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_get_outline',
     description: 'Get a compact outline of symbols in a repository file.',
     parameters: z.object({ path: z.string().min(1) }),
     execute: (args, ctx) => call('get_outline', args, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_query_decisions',
     description: 'Recall project decisions previously stored by trace-mcp.',
     parameters: z.object({ search: z.string().min(1) }),
     execute: (args, ctx) => call('query_decisions', args, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_remember_decision',
     description:
-      'Save an English-language project decision to shared memory with bb thread deduplication.',
+      'Save an English-language project decision to shared memory with VesnALIA thread deduplication.',
     parameters: z.object({
       title: z.string().min(1).max(200),
       content: z.string().min(1).max(5000),
@@ -391,19 +391,19 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
     }),
     execute: (args, ctx) => call('remember_decision', { ...args, session_id: ctx.threadId }, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_get_index_health',
-    description: 'Check whether the bb environment repository is indexed and ready for queries.',
+    description: 'Check whether the VesnALIA environment repository is indexed and ready for queries.',
     parameters: z.object({}),
     execute: (args, ctx) => call('get_index_health', args, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_get_project_memo',
     description: 'Recall the compact project memo and durable decisions before a task.',
     parameters: z.object({}),
     execute: (args, ctx) => call('get_project_memo', args, ctx),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_tools',
     description:
       'Discover additional trace-mcp tools by name or description without loading its entire catalog into context.',
@@ -431,7 +431,7 @@ export default async function tracePlugin(bb: BbPluginApi): Promise<void> {
         : matches.map((tool) => `${tool.name}: ${tool.description ?? ''}`).join('\n');
     },
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: 'trace_call',
     description:
       'Call a trace-mcp tool discovered with trace_tools. Supports the complete trace-mcp tool surface.',

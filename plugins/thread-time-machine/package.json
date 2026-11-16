@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-thread-time-machine",
+  "name": "alia-plugin-thread-time-machine",
   "version": "0.1.1",
   "description": "Replay any thread frame by frame, with a diff between any two moments.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Thread Time Machine",
     "description": "Replay any thread frame by frame: every message, command, file change and error, with a diff between any two moments.",
     "branding": {
@@ -20,7 +20,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
@@ -31,7 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -57,5 +56,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-time-machine#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-time-machine"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { formatAgo, formatBytes, resolveScanPath, scanPath, type ScanResult } from "./scan.js";
 
@@ -70,9 +70,9 @@ function formatScan(result: ScanResult & { fromCache: boolean }, top: number): s
   return lines.join("\n");
 }
 
-const USAGE = "Usage: bb disk-usage [path] [--top N] [--json] [--refresh]";
+const USAGE = "Usage: VesnALIA disk-usage [path] [--top N] [--json] [--refresh]";
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   // Last completed scan per resolved path, insertion-ordered for LRU eviction.
   const cache = new Map<string, ScanResult>();
   // Concurrent requests for the same path join one walk instead of racing.
@@ -103,7 +103,7 @@ export default function plugin(bb: BbPluginApi) {
     if (!pending) {
       pending = scanPath(target, {
         onProgress: (progress) =>
-          bb.realtime.publish(PROGRESS_CHANNEL, {
+          alia.realtime.publish(PROGRESS_CHANNEL, {
             scanId: options.scanId,
             path: target,
             ...progress,
@@ -120,27 +120,27 @@ export default function plugin(bb: BbPluginApi) {
     return { ...(await pending), fromCache: false };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     scan: ({ path, refresh, scanId }) =>
       getScan(path, { refresh: refresh ?? false, scanId: scanId ?? null }),
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "disk-usage",
-    summary: "Show what's taking up disk space on the bb server host",
+    summary: "Show what's taking up disk space on the VesnALIA server host",
     commands: [
       {
         name: "scan",
         summary:
           "Scan a directory (default: the server home directory) and list the largest entries",
-        usage: "bb disk-usage [path] [--top N] [--json] [--refresh]",
+        usage: "alia disk-usage [path] [--top N] [--json] [--refresh]",
       },
     ],
     async run(argv) {
       if (argv.includes("--help") || argv.includes("-h")) {
         return {
           exitCode: 0,
-          stdout: `${USAGE}\n\nScans the filesystem of the host running the bb server and lists the largest entries per directory. Symlinks are never followed. Results are cached per path until --refresh.`,
+          stdout: `${USAGE}\n\nScans the filesystem of the host running the VesnALIA server and lists the largest entries per directory. Symlinks are never followed. Results are cached per path until --refresh.`,
         };
       }
 

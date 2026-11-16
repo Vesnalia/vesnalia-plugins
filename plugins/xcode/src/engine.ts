@@ -47,7 +47,7 @@ export const LAUNCH_SLACK_MS = 5_000;
 /**
  * Commands that WATCH a build rather than run one. Their exit status describes
  * the poll loop and must never become a build's verdict — the shapes here are
- * taken from real agent transcripts (`until ! bb xcode status …; do sleep 5;
+ * taken from real agent transcripts (`until ! VesnALIA xcode status …; do sleep 5;
  * done`, `until pgrep -f xcodebuild; …`).
  */
 const WATCHER_RE =
@@ -70,7 +70,7 @@ export function looksLikeBuildLauncher(command: string): boolean {
 
 export interface EngineHooks {
   /**
-   * Resolve which bb project owns a path, most specific wins. `hostId` is the
+   * Resolve which VesnALIA project owns a path, most specific wins. `hostId` is the
    * machine the path is on (null: this one); a path means nothing elsewhere.
    */
   projectFor(
@@ -81,7 +81,7 @@ export interface EngineHooks {
     },
     hostId: string | null,
   ): string | null;
-  /** Resolve which bb thread's environment, on that machine, contains a path. */
+  /** Resolve which VesnALIA thread's environment, on that machine, contains a path. */
   threadFor(
     signals: {
       root?: string | null;
@@ -155,7 +155,7 @@ interface LiveEntry {
    *
    * A pid is a stable identity *within* one instance's lifetime, because the
    * tracker drops a pid the moment it leaves the snapshot. Across a restart it
-   * is not: a run left `running` by a killed bb server keeps its pid in the
+   * is not: a run left `running` by a killed VesnALIA server keeps its pid in the
    * store, and macOS hands pids out again. Re-adopting blind meant the first
    * unrelated process to land on that pid kept the old run alive forever —
    * `hasOpenRuns` stayed true, so the 30s sweep became a 4s sweep for the life
@@ -727,7 +727,7 @@ export class Engine {
   // ------------------------------------------------------ wrapped-exit fold
 
   /**
-   * Fold the exit of a build the plugin itself spawned (`bb xcode run`).
+   * Fold the exit of a build the plugin itself spawned (`alia xcode run`).
    *
    * The exit status plus the live stream's tallies are an honest RANK.logged
    * verdict the moment the process dies — a `.xcresult` parse can still
@@ -779,7 +779,7 @@ export class Engine {
   }
 
   /**
-   * Fold BB's terminal background-command exit into the Xcode children that
+   * Fold VesnALIA's terminal background-command exit into the Xcode children that
    * ran inside it. This is the only verdict source for agent-launched shell
    * and XcodeBuildMCP builds, which never write an `.xcresult` of their own.
    *
@@ -788,7 +788,7 @@ export class Engine {
    * literal word `xcodebuild`. Measured against production data, both arms
    * failed:
    *
-   *  - bb reports `cwd: ""` on every `commandExecution` item, and agents write
+   *  - VesnALIA reports `cwd: ""` on every `commandExecution` item, and agents write
    *    relative commands (`./scripts/build_app.sh build …`), so the haystack
    *    contained no absolute path at all and the path arm could never match.
    *    The same build resolved or not purely on whether the agent happened to
@@ -1145,7 +1145,7 @@ export class Engine {
       tests?.startedAt ?? build?.startedAt ?? tests?.endedAt ?? build?.endedAt;
     if (!anchor) return false;
 
-    // Prefer the run that already recorded this bundle path (wrapper/`bb
+    // Prefer the run that already recorded this bundle path (wrapper/`VesnALIA
     // xcode run` case), else window-match.
     const byPath = this.store.getRunByBundlePath(bundlePath, hostId);
     const target =

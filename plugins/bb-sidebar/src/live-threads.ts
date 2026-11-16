@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { resolveRowShelf, sidebarThreadSignals, type ThreadLifecycleRow } from "./lifecycle";
 import { shelfRowIds } from "./inbox";
 import { threadsWithAskingDescendants } from "./child-status";
@@ -9,7 +9,7 @@ import { threadsWithAskingDescendants } from "./child-status";
  * Inactive shelf included, stays live.
  *
  * A child goes wherever its row thread goes (`shelfRowIds`), as in
- * `bb sidebar list`. Rows are placed over every unarchived thread, not the
+ * `alia sidebar list`. Rows are placed over every unarchived thread, not the
  * project scope, so changing the picker never changes what is looked up.
  *
  * This needs no limit rows: they only keep a snooze waiting on its scheduled

@@ -277,11 +277,11 @@ const SEED: Seed[] = [
     ["Инфраструктура и серверы", "Infrastructure and servers", "Linux, облака, прокси, деплой"],
     ["Безопасность", "Security", "аудит безопасности"],
   ]],
-  ["BB и агенты", "BB and agents", "", [
-    ["Плагины и ядро BB", "BB plugins and core", "плагины BB, ядро, CLI bb"],
+  ["ALIA и агенты", "VesnALIA and agents", "", [
+    ["Плагины и ядро ALIA", "VesnALIA plugins and core", "плагины VesnALIA, ядро, CLI VesnALIA"],
     ["Провайдеры CLI", "CLI providers", "Codex, Claude Code, OpenCode, ACP"],
     ["Lane Stack и Lane Pilot", "Lane Stack and Lane Pilot", "оркестрация писателей, контракты линий"],
-    ["Память агентов", "Agent memory", "agentmemory, память BB"],
+    ["Память агентов", "Agent memory", "agentmemory, память ALIA"],
     ["Инструкции и навыки", "Instructions and skills", "AGENTS.md, промпты, создание навыков"],
     ["MCP", "MCP", "MCP-серверы, MetaMCP"],
   ]],

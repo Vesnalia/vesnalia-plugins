@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 describe("Miku server bridge", () => {
   it("registers lifecycle listeners and the optional Tasks watcher", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "miku" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "miku" });
+    await plugin(alia);
 
     expect(harness.registrations.services.map((service) => service.name)).toEqual([
       "brain",
@@ -31,8 +31,8 @@ describe("Miku server bridge", () => {
   });
 
   it("publishes a scoped companion event after a thread completes", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "miku" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "miku" });
+    await plugin(alia);
 
     await harness.emitThreadEvent("thread.idle", {
       thread: makeThreadResponse({ id: "thr_done", projectId: "proj_demo" }),
@@ -52,8 +52,8 @@ describe("Miku server bridge", () => {
   });
 
   it("serves the animation test bench with local auth", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "miku" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "miku" });
+    await plugin(alia);
 
     const response = await harness.fetchHttp("GET", "/test-bench");
     expect(response.status).toBe(200);
@@ -73,7 +73,7 @@ describe("Miku server bridge", () => {
       originPluginId: "miku",
       status: "idle",
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "miku",
       settings: { brainProject: "proj_demo" },
       sdk: {
@@ -89,7 +89,7 @@ describe("Miku server bridge", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callRpc("brain.create", {
       projectId: "proj_demo",

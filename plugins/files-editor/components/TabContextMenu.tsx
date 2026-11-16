@@ -13,7 +13,7 @@ export interface TabContextMenuProps {
 /**
  * The usual right-click menu on an editor tab.
  *
- * Radix's context menu is one of the portalling families BB shims to its own
+ * Radix's context menu is one of the portalling families VesnALIA shims to its own
  * copy, so this shares the host's dismissable-layer and focus stack rather than
  * stacking a second one on top of it.
  */

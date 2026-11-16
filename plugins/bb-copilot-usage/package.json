@@ -1,14 +1,14 @@
 {
-  "name": "bb-copilot-usage",
+  "name": "alia-plugin-bb-copilot-usage",
   "version": "0.1.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "GitHub Copilot Usage",
-    "description": "Shows GitHub Copilot AI-credit or premium-request usage in BB's Provider Usage panel.",
+    "description": "Shows GitHub Copilot AI-credit or premium-request usage in VesnALIA's Provider Usage panel.",
     "branding": {
       "icon": "Github"
     },
@@ -17,8 +17,8 @@
     "skills": []
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -28,5 +28,14 @@
     "hono": "^4.13.12",
     "react": "^19.3.0",
     "typescript": "^5.7.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bb-copilot-usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bb-copilot-usage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

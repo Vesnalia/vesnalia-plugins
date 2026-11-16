@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { randomUUID } from "node:crypto";
 import { reconcileThread, hideThread, serverActivity as activity, type TrackedThread } from "./state";
 import { languageSetting } from "./i18n";
@@ -10,14 +10,14 @@ import { createActivitySync, type ActivitySyncWork } from "./activity-sync";
 export { rpcContract } from "./contracts";
 export type { DashboardConfig } from "./contracts";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({ language: languageSetting });
-  const stored = configSchema.safeParse(await bb.storage.kv.get("config-v1"));
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({ language: languageSetting });
+  const stored = configSchema.safeParse(await alia.storage.kv.get("config-v1"));
   let config: DashboardConfig = stored.success ? stored.data : { projects: [], launcher: [], sharedPool: true };
   const tracked = new Map<string, TrackedThread>();
   const undoTokens = new Map<string, string>();
-  for (const key of await bb.storage.kv.list("thread:")) {
-    const parsed = trackedSchema.safeParse(await bb.storage.kv.get(key));
+  for (const key of await alia.storage.kv.list("thread:")) {
+    const parsed = trackedSchema.safeParse(await alia.storage.kv.get(key));
     if (parsed.success) tracked.set(parsed.data.id, parsed.data);
   }
   let syncedAt: number | null = null;
@@ -32,10 +32,10 @@ export default async function plugin(bb: BbPluginApi) {
     chain = next.catch(() => undefined);
     return next;
   }
-  function publish() { if (!disposed) bb.realtime.publish("dashboard-changed", {}); }
+  function publish() { if (!disposed) alia.realtime.publish("dashboard-changed", {}); }
   async function saveConfig(next: DashboardConfig) {
     next = configSchema.parse(next);
-    await bb.storage.kv.set("config-v1", next);
+    await alia.storage.kv.set("config-v1", next);
     const beforeProjects = new Map(config.projects.map(project => [project.id, project]));
     const afterProjects = new Map(next.projects.map(project => [project.id, project]));
     for (const id of new Set([...beforeProjects.keys(), ...afterProjects.keys()])) {
@@ -48,7 +48,7 @@ export default async function plugin(bb: BbPluginApi) {
     publish();
     return next;
   }
-  type Row = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  type Row = Awaited<ReturnType<typeof alia.sdk.threads.list>>[number];
   const projectVersions = () => new Map(config.projects.filter(project => project.enabled).map(project => [project.id, projectRevisions.get(project.id) ?? 0]));
   type ReadTicket = { revision: number; projects: Map<string, number> };
   const readTicket = (): ReadTicket => ({ revision, projects: projectVersions() });
@@ -68,7 +68,7 @@ export default async function plugin(bb: BbPluginApi) {
       const previous = tracked.get(row.id);
       const next = reconcileThread(previous, activity(row), project.connectedAt);
       if (next && JSON.stringify(previous) !== JSON.stringify(next)) {
-        await bb.storage.kv.set("thread:" + row.id, next);
+        await alia.storage.kv.set("thread:" + row.id, next);
         // A write already started cannot be cancelled. Mirror its confirmed
         // result before releasing the queue, even if this read pass was stopped.
         tracked.set(row.id, next);
@@ -90,7 +90,7 @@ export default async function plugin(bb: BbPluginApi) {
         for (let offset = 0; ; offset += 200) {
           if (!current() || disposed) return;
           const ticket = readTicket();
-          const rows = await bb.sdk.threads.list({ projectId: project.id, archived: false, includeHidden: false, limit: 200, offset, signal });
+          const rows = await alia.sdk.threads.list({ projectId: project.id, archived: false, includeHidden: false, limit: 200, offset, signal });
           if (!current() || disposed) return;
           if (!await serial(() => observe(rows, ticket, current))) fresh = false;
           if (rows.length < 200 || !current() || disposed) break;
@@ -101,7 +101,7 @@ export default async function plugin(bb: BbPluginApi) {
         for (let offset = 0; offset < work.threads.length; offset += 200) {
           if (!current() || disposed) return;
           const ticket = readTicket();
-          const rows = await bb.sdk.threads.list({ threadIds: work.threads.slice(offset, offset + 200), archived: false, includeHidden: false, limit: 200, signal });
+          const rows = await alia.sdk.threads.list({ threadIds: work.threads.slice(offset, offset + 200), archived: false, includeHidden: false, limit: 200, signal });
           if (!current() || disposed) return;
           await serial(() => observe(rows, ticket, current));
         }
@@ -119,7 +119,7 @@ export default async function plugin(bb: BbPluginApi) {
       await serial(async () => {
         if (!current() || disposed) return;
         const message = cause instanceof Error ? cause.message : String(cause);
-        if (syncError !== message) { syncError = message; bb.log.warn("Activity sync: " + message); publish(); }
+        if (syncError !== message) { syncError = message; alia.log.warn("Activity sync: " + message); publish(); }
       });
       throw cause;
     }
@@ -129,7 +129,7 @@ export default async function plugin(bb: BbPluginApi) {
     return serial(async () => {
       const ids = projectValidationIds(config, mutation);
       if (ids !== null) {
-        const projects = await bb.sdk.projects.list({ includePersonal: true });
+        const projects = await alia.sdk.projects.list({ includePersonal: true });
         const known = new Set(projects.map(project => project.id));
         if (ids.some(id => !known.has(id))) throw new Error("DASHBOARD_PROJECT_UNAVAILABLE");
       }
@@ -139,14 +139,14 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
   async function commitThreadAction(next: TrackedThread) {
-    await bb.storage.kv.set("thread:" + next.id, next);
+    await alia.storage.kv.set("thread:" + next.id, next);
     tracked.set(next.id, next);
     threadRevisions.set(next.id, ++revision);
   }
   async function hideTrackedThread(threadId: string) {
     const previous = tracked.get(threadId);
     if (!previous || !config.projects.some(p => p.id === previous.projectId && p.enabled)) return { hidden: false };
-    const [row] = await bb.sdk.threads.list({ threadIds: [threadId], archived: false, limit: 1 });
+    const [row] = await alia.sdk.threads.list({ threadIds: [threadId], archived: false, limit: 1 });
     if (!row) return { hidden: false };
     await commitThreadAction(hideThread(previous, activity(row)));
     const undoToken = randomUUID();
@@ -159,14 +159,14 @@ export default async function plugin(bb: BbPluginApi) {
   async function restoreTrackedThread(threadId: string, undoToken: string) {
     const previous = tracked.get(threadId);
     if (undoTokens.get(threadId) !== undoToken || !previous || !config.projects.some(p => p.id === previous.projectId && p.enabled)) return { restored: false };
-    const [row] = await bb.sdk.threads.list({ threadIds: [threadId], archived: false, includeHidden: false, limit: 1 });
+    const [row] = await alia.sdk.threads.list({ threadIds: [threadId], archived: false, includeHidden: false, limit: 1 });
     if (!row || row.visibility === "hidden" || row.archivedAt !== null || row.deletedAt !== null || row.projectId !== previous.projectId) return { restored: false };
     await commitThreadAction({ ...previous, visible: true, latestAttentionAt: row.latestAttentionAt });
     undoTokens.delete(threadId);
     publish();
     return { restored: true };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     snapshot: () => serial(async () => {
       // Read confirmed state without awaiting SDK history. Initial snapshots may
       // have syncedAt:null; the completed pass publishes another signal.
@@ -179,7 +179,7 @@ export default async function plugin(bb: BbPluginApi) {
     thread_hide: ({ threadId }) => serial(() => hideTrackedThread(threadId)),
     thread_restore: ({ threadId, undoToken }) => serial(() => restoreTrackedThread(threadId, undoToken)),
   });
-  bb.background.service("activity", {
+  alia.background.service("activity", {
     async start(signal) {
       if (signal.aborted || disposed) return;
       sync.start();
@@ -188,13 +188,13 @@ export default async function plugin(bb: BbPluginApi) {
       const subscriptions: (() => void)[] = [];
       let lastFull = Date.now();
       try {
-        subscriptions.push(bb.sdk.subscribe({ event: "thread:changed", callback: event => {
+        subscriptions.push(alia.sdk.subscribe({ event: "thread:changed", callback: event => {
           if (signal.aborted || disposed) return;
           if (event.changes.some(change => ["thread-created", "status-changed", "queue-changed", "interactions-changed", "events-appended", "archived-changed", "thread-deleted"].includes(change))) {
             if (event.id) sync.requestThreads([event.id]); else sync.requestFull(true);
           }
         } }));
-        subscriptions.push(bb.sdk.subscribe({ event: "realtime:connection", callback: event => { if (!signal.aborted && !disposed && event.state === "connected") sync.requestFull(true); } }));
+        subscriptions.push(alia.sdk.subscribe({ event: "realtime:connection", callback: event => { if (!signal.aborted && !disposed && event.state === "connected") sync.requestFull(true); } }));
         sync.requestFull();
         while (!signal.aborted) {
           await new Promise<void>(resolve => {
@@ -209,5 +209,5 @@ export default async function plugin(bb: BbPluginApi) {
       } finally { signal.removeEventListener("abort", stop); subscriptions.reverse().forEach(unsubscribe => unsubscribe()); sync.stop(); }
     },
   });
-  bb.onDispose(() => { disposed = true; sync.stop(); });
+  alia.onDispose(() => { disposed = true; sync.stop(); });
 }

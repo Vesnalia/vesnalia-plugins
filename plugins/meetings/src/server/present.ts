@@ -75,7 +75,7 @@ export function joinOutcome(row: MeetingRow, notifying: boolean): NextStep {
     case "joining":
       return {
         ru: `Бот ещё подключается. Проверьте статус чуть позже (meetings_status).${later.ru}`,
-        en: `The bot is still joining. Check again shortly (meetings_status / bb meetings show ${row.id}).${later.en}`,
+        en: `The bot is still joining. Check again shortly (meetings_status / VesnALIA meetings show ${row.id}).${later.en}`,
         failed: false,
       };
     case "failed": {
@@ -83,7 +83,7 @@ export function joinOutcome(row: MeetingRow, notifying: boolean): NextStep {
       const en = row.errorCode !== null ? explainError(row.errorCode, "en") : "unknown error";
       return {
         ru: maskMeetingUrl(`Не удалось подключиться: ${ru.replace(/[.\s]+$/, "")}.`),
-        en: `Joining failed: ${en}. Details: bb meetings logs ${row.id}`,
+        en: `Joining failed: ${en}. Details: VesnALIA meetings logs ${row.id}`,
         failed: true,
       };
     }
@@ -99,7 +99,7 @@ export function joinOutcome(row: MeetingRow, notifying: boolean): NextStep {
   }
 }
 
-/** Multi-line English description for `bb meetings show` and meetings_status. */
+/** Multi-line English description for `alia meetings show` and meetings_status. */
 export function describeMeetingEn(row: MeetingRow): string {
   const lines = [
     `Meeting ${row.id}: ${row.title}`,

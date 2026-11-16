@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { kindTemplate } from "./task-kinds";
 import { makeWorkspaceSdk, shippedSkills } from "./test-workspace";
-import type { ProviderInfo, ThreadEventRow } from "@get-bb/plugin-sdk";
+import type { ProviderInfo, ThreadEventRow } from "@vesnalia/plugin-sdk";
 
 const disposals: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const dispose of disposals.splice(0)) await dispose(); });
@@ -22,7 +22,7 @@ async function setup(assigned = true, settings: Record<string, string | boolean>
   const failedRequests = new Map<string, string>();
   const requests: Array<{ prompt?: string; providerId?: string; model?: string; reasoningLevel?: string }> = [];
   const pullRequests: Record<string, unknown> = {};
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "treelanes", agentSkillIds: shippedSkills,
     settings: { startInDesign: false, useInitiatingThread: false, ...settings },
     sdk: {
@@ -32,7 +32,7 @@ async function setup(assigned = true, settings: Record<string, string | boolean>
           models: ["small", "large", "claude-fable-5-1", "gpt-5.6-sol"].map(model => ({ id: model, model, displayName: model, description: "Test model", isDefault: false,
             defaultReasoningEffort: "low" as const, supportedReasoningEfforts: [{ reasoningEffort: "low" as const, description: "Low" }, { reasoningEffort: "high" as const, description: "High" }] })) }),
       },
-      skills: { list: async () => ({ skills: [{ id: "test-skill", name: "tdd", filePath: "/skills/tdd/SKILL.md", description: "Test first", manageable: false, pluginId: null, provider: null, registrySkillId: null, scope: "bb-user" }] }) },
+      skills: { list: async () => ({ skills: [{ id: "test-skill", name: "tdd", filePath: "/skills/tdd/SKILL.md", description: "Test first", manageable: false, pluginId: null, provider: null, registrySkillId: null, scope: "alia-user" }] }) },
       threads: {
         send: async request => { sends.push(request); return { ok: true }; },
         get: async ({ threadId }) => threads.find(t => t.id === threadId)!,
@@ -60,13 +60,13 @@ async function setup(assigned = true, settings: Record<string, string | boolean>
       }) },
       projects: { list: async () => [{ id: "project", name: "Project" }] },
       plugins: { callRpc: async ({ pluginId, method, input }: { pluginId: string; method: string; input?: unknown }) => {
-        if (pluginId !== "bb--github-pr-status" || method !== "pullRequests") return snapshot.sdk.plugins.callRpc({ pluginId, method, input } as never);
+        if (pluginId !== "alia--github-pr-status" || method !== "pullRequests") return snapshot.sdk.plugins.callRpc({ pluginId, method, input } as never);
         return Object.fromEntries((input as { keys: string[] }).keys.map(key => [key, pullRequests[key] ?? { outcome: "absent" }]));
       } },
     },
   });
   disposals.push(() => harness.lifecycle.dispose());
-  await plugin(bb);
+  await plugin(alia);
   const agent = { threadId: root.id, projectId: "project" };
   if (assigned) await harness.behavior.callAgentTool("treelanes_move_card", { stage: "tdd" }, agent);
   const task = { deliveryTarget: "local" as const, outcome: "Fix the reported bug", scope: ["src/api.ts"], decisions: ["Keep the existing API"],
@@ -81,8 +81,8 @@ async function setup(assigned = true, settings: Record<string, string | boolean>
   };
   const submit = (value: unknown) => harness.behavior.callAgentTool("treelanes_complete_stage", value, agent);
   const idle = (thread = root) => harness.behavior.emitThreadEvent("thread.idle", { thread, lastAssistantText: "Verified.\n[workflow:tdd-complete]" });
-  const stage = () => (bb.storage.database().prepare("SELECT stage FROM worktree_cards WHERE environment_id = 'env'").get() as { stage: string }).stage;
-  return { snapshot, bb, harness, root, threads, visibility, requests, sends, retries, failedRequests, pullRequests, agent, task, context, receipt, submit, idle, stage };
+  const stage = () => (alia.storage.database().prepare("SELECT stage FROM worktree_cards WHERE environment_id = 'env'").get() as { stage: string }).stage;
+  return { snapshot, alia, harness, root, threads, visibility, requests, sends, retries, failedRequests, pullRequests, agent, task, context, receipt, submit, idle, stage };
 }
 
 async function atPrWatch() {
@@ -117,8 +117,8 @@ describe("reopen PR Watch", () => {
     expect(ctx.activeStep).toBeNull();
     expect(ctx.completedStepIds).toEqual([]);
     expect(ctx.automaticSetup.kind).toBe("reopen");
-    expect(t.bb.storage.database().prepare("SELECT * FROM worktree_stage_results").all()).toHaveLength(3);
-    const previous = t.bb.storage.database().prepare("SELECT context_json FROM worktree_task_versions WHERE revision = ?").get(before.taskRevision) as { context_json: string };
+    expect(t.alia.storage.database().prepare("SELECT * FROM worktree_stage_results").all()).toHaveLength(3);
+    const previous = t.alia.storage.database().prepare("SELECT context_json FROM worktree_task_versions WHERE revision = ?").get(before.taskRevision) as { context_json: string };
     expect(JSON.parse(previous.context_json)).toEqual(before.task);
     await expect(t.harness.behavior.callAgentTool("treelanes_reopen", input, t.planner)).rejects.toThrow();
     const baseReceipt = await t.receipt();
@@ -167,13 +167,13 @@ describe("reopen PR Watch", () => {
     let caller = t.planner;
     if (guard === "wrong-owner") caller = t.agent;
     if (guard === "stale") input.taskRevision--;
-    if (guard === "paused") t.bb.storage.database().prepare("INSERT INTO worktree_controls VALUES ('env', 1)").run();
+    if (guard === "paused") t.alia.storage.database().prepare("INSERT INTO worktree_controls VALUES ('env', 1)").run();
     if (guard === "active-worker") t.threads.at(-1)!.status = "active";
     if (guard === "question") t.harness.sdk.stub("threads.interactions.list", async () => [{ id: "pending" }]);
     if (guard === "queued") t.harness.sdk.stub("threads.queuedMessages.list", async () => [{ id: "queued" }]);
     if (guard === "missing-orchestrator") t.threads[1]!.archivedAt = 123;
     if (guard === "race") t.harness.sdk.stub("threads.queuedMessages.list", async () => {
-      t.bb.storage.database().prepare("INSERT OR REPLACE INTO worktree_controls VALUES ('env', 1)").run();
+      t.alia.storage.database().prepare("INSERT OR REPLACE INTO worktree_controls VALUES ('env', 1)").run();
       return [];
     });
     await expect(t.harness.behavior.callAgentTool("treelanes_reopen", input, caller)).rejects.toThrow();
@@ -222,7 +222,7 @@ describe("saved stage evidence", () => {
     await t.submit(receipt);
     await t.idle();
     expect(t.stage()).toBe("quality");
-    const saved = t.bb.storage.database().prepare("SELECT evidence_json FROM worktree_stage_results WHERE environment_id = 'env' ORDER BY stage_updated_at LIMIT 1").get() as { evidence_json: string };
+    const saved = t.alia.storage.database().prepare("SELECT evidence_json FROM worktree_stage_results WHERE environment_id = 'env' ORDER BY stage_updated_at LIMIT 1").get() as { evidence_json: string };
     expect(JSON.parse(saved.evidence_json).checks[1]).toMatchObject({ status: "failed", nonTaskFailure: { kind } });
   });
 
@@ -250,7 +250,7 @@ describe("saved stage evidence", () => {
 
   it.each(["tdd", "quality", "simplify"])("waits for the user in %s when no required check passed, even with a repair action", async stage => {
     const t = await setup();
-    t.bb.storage.database().prepare("UPDATE worktree_cards SET stage = ? WHERE environment_id = 'env'").run(stage);
+    t.alia.storage.database().prepare("UPDATE worktree_cards SET stage = ? WHERE environment_id = 'env'").run(stage);
     await t.harness.behavior.callAgentTool("treelanes_set_task", { ...t.task, deliveryTarget: "pr" }, t.agent);
     t.harness.sdk.stub("threads.events.list", async () => [{ id: "finished-turn", threadId: "root", seq: 20,
       createdAt: Date.now() + 1, type: "turn/completed", data: { status: "completed" } }]);
@@ -267,7 +267,7 @@ describe("saved stage evidence", () => {
     expect(context.blockedAttempt.evidence.checks).toEqual(receipt.checks);
     expect(context.blockedAttempt.waitingForUser).toBe(true);
     expect(context.blockedAttempt.evidence.nextAction).toBe(receipt.nextAction);
-    expect(t.bb.storage.database().prepare("SELECT * FROM worktree_tdd_repairs").all()).toEqual([]);
+    expect(t.alia.storage.database().prepare("SELECT * FROM worktree_tdd_repairs").all()).toEqual([]);
     await expect(t.harness.behavior.callAgentTool("treelanes_recover", { reason: "All required checks failed", nextAction: receipt.nextAction }, t.agent))
       .rejects.toThrow(/Stop and wait for the user/);
     await t.idle();
@@ -307,7 +307,7 @@ describe("saved stage evidence", () => {
     ], ...(mode === "pending repair" ? { nextAction: "Retry API regression" } : {}) };
     const result = await t.harness.behavior.runCli(["complete", JSON.stringify(failed)], agent);
     expect(result).toMatchObject({ exitCode: 1, stderr: expect.stringMatching(/Stop and wait for the user\.$/) });
-    expect(t.bb.storage.database().prepare("SELECT * FROM worktree_stage_results").all()).toEqual([]);
+    expect(t.alia.storage.database().prepare("SELECT * FROM worktree_stage_results").all()).toEqual([]);
     const health = await t.harness.behavior.runCli(["health", "project"]);
     expect(JSON.parse(String(health.stdout))).toEqual([expect.objectContaining({ status: "checks-blocked", waitingForInput: true })]);
     const board = await t.harness.behavior.callRpc("getBoard", { projectId: "project" }) as { cards: Array<{ note: string }> };
@@ -319,14 +319,14 @@ describe("saved stage evidence", () => {
     await next.harness.behavior.runSchedule("reconcile-worktrees");
     expect(t.sends).toEqual([]);
     expect(t.requests).toHaveLength(2);
-    expect(next.bb.storage.database().prepare("SELECT stage FROM worktree_cards").get()).toEqual({ stage: "tdd" });
+    expect(next.alia.storage.database().prepare("SELECT stage FROM worktree_cards").get()).toEqual({ stage: "tdd" });
     const recovery = { reason: "Base failures remain", nextAction: "Retry API regression" };
     expect(await next.harness.behavior.runCli(["recover", JSON.stringify(recovery)], agent))
       .toMatchObject({ exitCode: 1, stderr: expect.stringContaining("Stop and wait for the user") });
     const passed = await next.harness.behavior.runCli(["complete", JSON.stringify(receipt)], agent);
     expect(passed.exitCode).toBe(0);
     await next.harness.behavior.emitThreadEvent("thread.idle", { thread: worker, lastAssistantText: "Fresh checks passed" });
-    expect(next.bb.storage.database().prepare("SELECT stage FROM worktree_cards").get()).toEqual({ stage: "pr" });
+    expect(next.alia.storage.database().prepare("SELECT stage FROM worktree_cards").get()).toEqual({ stage: "pr" });
   });
 
   it.each(["decision", "finding", "optional task failure"])("keeps a %s out of the all-non-task-failures wait path", async problem => {
@@ -509,7 +509,7 @@ describe("saved stage evidence", () => {
     const steps = kindTemplate({ kind: "feature", deliveryTarget: "pr" }).filter(step => step.id !== "bug-hunt").map(({ skills, ...step }) =>
       ({ ...step, checks: step.checks.slice(0, 1), execution: { providerId: "codex", model: "small", reasoningLevel: "low", skills: skills.filter(skill => skill !== prProof), reason: "Fits." } }));
     const task = { ...t.task, kind: "feature", deliveryTarget: "pr", setup: { summary: "Feature", steps } };
-    const db = t.bb.storage.database();
+    const db = t.alia.storage.database();
     db.prepare("UPDATE worktree_task_contexts SET context_json = ? WHERE environment_id = 'env'").run(JSON.stringify(task));
     db.prepare("UPDATE worktree_cards SET stage = 'simplify', active_step_id = 'simplify' WHERE environment_id = 'env'").run();
     const save = (outcome: string) => t.harness.behavior.callAgentTool("treelanes_set_task", { ...task, outcome }, t.agent);
@@ -666,7 +666,7 @@ describe("saved stage evidence", () => {
 
   it.each(["quality", "simplify"])("continues an in-scope %s repair automatically in the same worker", async stage => {
     const t = await setup();
-    t.bb.storage.database().prepare("UPDATE worktree_cards SET stage = ? WHERE environment_id = 'env'").run(stage);
+    t.alia.storage.database().prepare("UPDATE worktree_cards SET stage = ? WHERE environment_id = 'env'").run(stage);
     t.harness.sdk.stub("threads.send", async () => ({ ok: true }));
     t.harness.sdk.stub("threads.events.list", async () => [{ id: "finished-turn", threadId: "root", seq: 20,
       createdAt: Date.now() + 1, type: "turn/completed", data: { status: "completed" } }]);
@@ -812,7 +812,7 @@ describe("saved stage evidence", () => {
     expect(cli.exitCode).toBe(0);
     expect(JSON.parse(String(cli.stdout))).toEqual(context);
     expect(t.requests).toHaveLength(0);
-    expect(t.bb.storage.database().prepare("SELECT COUNT(*) AS count FROM worktree_cards").get()).toEqual({ count: 0 });
+    expect(t.alia.storage.database().prepare("SELECT COUNT(*) AS count FROM worktree_cards").get()).toEqual({ count: 0 });
     expect(t.harness.inspection.sdk.callsTo("environments.diff")).toHaveLength(0);
     await expect(t.harness.behavior.callAgentTool("treelanes_set_task", t.task, t.agent)).rejects.toThrow(/Assign a Worktree Stage/);
     await expect(t.submit({ stage: "tdd", stageUpdatedAt: 0, taskRevision: 0, workspaceDigest: "invented",
@@ -848,8 +848,8 @@ describe("saved stage evidence", () => {
     expect(t.requests).toHaveLength(2);
     await expect(t.harness.behavior.callAgentTool("treelanes_recover", { reason: "The same base failures remain" }, worker)).rejects.toThrow(/nextAction/);
     expect(t.requests).toHaveLength(2);
-    expect(next.bb.storage.database().prepare("SELECT stage FROM worktree_cards").get()).toEqual({ stage: "tdd" });
-    expect(next.bb.storage.database().prepare("SELECT COUNT(*) AS count FROM worktree_stage_results").get()).toEqual({ count: 0 });
+    expect(next.alia.storage.database().prepare("SELECT stage FROM worktree_cards").get()).toEqual({ stage: "tdd" });
+    expect(next.alia.storage.database().prepare("SELECT COUNT(*) AS count FROM worktree_stage_results").get()).toEqual({ count: 0 });
   });
 
   it("replaces a rejected result with fresh passing evidence without another TDD worker", async () => {
@@ -926,11 +926,11 @@ describe("saved stage evidence", () => {
     await t.harness.behavior.runSchedule("reconcile-worktrees");
     const worker = { ...t.agent, threadId: t.threads[2]!.id };
     t.harness.inspection.sdk.stub("threads.interactions.list", async () => {
-      t.bb.storage.database().prepare("UPDATE worktree_cards SET owner_thread_id = 'other'").run();
+      t.alia.storage.database().prepare("UPDATE worktree_cards SET owner_thread_id = 'other'").run();
       return [];
     });
     await expect(t.harness.behavior.callAgentTool("treelanes_recover", { reason: "Failure", nextAction: "Fix parser" }, worker)).rejects.toThrow(/changed/);
-    expect(t.bb.storage.database().prepare("SELECT recovery_count FROM worktree_delivery_runs").get()).toEqual({ recovery_count: 0 });
+    expect(t.alia.storage.database().prepare("SELECT recovery_count FROM worktree_delivery_runs").get()).toEqual({ recovery_count: 0 });
     expect(t.requests).toHaveLength(2);
   });
 
@@ -971,7 +971,7 @@ describe("saved stage evidence", () => {
     await t.harness.behavior.callAgentTool("treelanes_set_task", { ...t.task, requiredChecks: [...t.task.requiredChecks, "Security CI"] }, t.agent);
     await t.harness.behavior.callAgentTool("treelanes_set_task", { ...t.task, requiredChecks: [...t.task.requiredChecks, "Required Security CI"] }, t.agent);
     // Persist the state left by the old plugin, using the host's real test database.
-    t.bb.storage.database().prepare("UPDATE worktree_setup_requests SET status = 'stale', last_error = 'Task or stage changed'").run();
+    t.alia.storage.database().prepare("UPDATE worktree_setup_requests SET status = 'stale', last_error = 'Task or stage changed'").run();
     const next = await t.harness.lifecycle.reload(plugin); t.harness = next.harness;
     disposals.push(() => next.harness.lifecycle.dispose());
     if (method === "recover") {
@@ -985,8 +985,8 @@ describe("saved stage evidence", () => {
     expect(context.automaticSetup).toMatchObject({ kind: "initial", status: "started", task_revision: context.taskRevision });
     expect(t.requests[1]?.prompt).toContain(`"taskRevision":${context.taskRevision}`);
     expect(context.task.requiredChecks).toContain("Required Security CI");
-    expect(next.bb.storage.database().prepare("SELECT recovery_count FROM worktree_delivery_runs").get()).toEqual({ recovery_count: 0 });
-    expect(next.bb.storage.database().prepare("SELECT COUNT(*) AS count FROM worktree_setup_requests").get()).toEqual({ count: 2 });
+    expect(next.alia.storage.database().prepare("SELECT recovery_count FROM worktree_delivery_runs").get()).toEqual({ recovery_count: 0 });
+    expect(next.alia.storage.database().prepare("SELECT COUNT(*) AS count FROM worktree_setup_requests").get()).toEqual({ count: 2 });
   });
 
   it.each(["pause", "live worker", "pending input"])("waits for %s before starting a replacement planner", async (blocker) => {
@@ -1032,7 +1032,7 @@ describe("saved stage evidence", () => {
     const t = await setup();
     const other = { ...t.root, id: "other-worker", environmentId: "other-env", status: "error" as const };
     t.threads.push(other);
-    t.bb.storage.database().prepare("INSERT INTO worktree_cards(environment_id, stage, updated_at, owner_thread_id) VALUES ('other-env', 'tdd', 42, 'other-worker')").run();
+    t.alia.storage.database().prepare("INSERT INTO worktree_cards(environment_id, stage, updated_at, owner_thread_id) VALUES ('other-env', 'tdd', 42, 'other-worker')").run();
     await t.harness.behavior.runCli(["resume", "env"]);
     expect(t.retries).toHaveLength(0);
     expect(t.requests).toHaveLength(0);
@@ -1067,7 +1067,7 @@ describe("saved stage evidence", () => {
     expect(ctx.taskRevision).toBe(before.taskRevision);
     expect(ctx.stageUpdatedAt).toBe(before.stageUpdatedAt);
     expect(ctx.ownerThreadId).toBe(before.ownerThreadId);
-    expect(next.bb.storage.database().prepare("SELECT recovery_count FROM worktree_delivery_runs").get()).toEqual({ recovery_count: 0 });
+    expect(next.alia.storage.database().prepare("SELECT recovery_count FROM worktree_delivery_runs").get()).toEqual({ recovery_count: 0 });
     // A stale failure view cannot duplicate the failed turn, even after reload.
     const restarted = await t.harness.lifecycle.reload(plugin); t.harness = restarted.harness;
     disposals.push(() => restarted.harness.lifecycle.dispose());
@@ -1090,7 +1090,7 @@ describe("saved stage evidence", () => {
     const t = await setup();
     await t.harness.behavior.callAgentTool("treelanes_deliver", { stage: "tdd", task: t.task }, t.agent);
     await t.harness.behavior.callAgentTool("treelanes_set_task", { ...t.task, requiredChecks: [...t.task.requiredChecks, "Security CI"] }, t.agent);
-    t.bb.storage.database().prepare("UPDATE worktree_setup_requests SET status = 'stale', last_error = 'Task or stage changed'").run();
+    t.alia.storage.database().prepare("UPDATE worktree_setup_requests SET status = 'stale', last_error = 'Task or stage changed'").run();
     const health = await t.harness.behavior.runCli(["health", "project"]);
     expect(JSON.parse(String(health.stdout))).toEqual([expect.objectContaining({ status: "setup-stale", error: "Task or stage changed" })]);
   });
@@ -1413,7 +1413,7 @@ describe("saved stage evidence", () => {
     const t = await setup();
     const evidence = await t.receipt();
     await t.submit(evidence);
-    const row = t.bb.storage.database().prepare("SELECT * FROM worktree_stage_results").get() as { task_revision: number; evidence_json: string };
+    const row = t.alia.storage.database().prepare("SELECT * FROM worktree_stage_results").get() as { task_revision: number; evidence_json: string };
     expect(row.task_revision).toBe(evidence.taskRevision);
     expect(JSON.parse(row.evidence_json)).toEqual(evidence);
     await Promise.all([t.idle(), t.idle()]);
@@ -1663,7 +1663,7 @@ describe("board holds and gates", () => {
     const t = await setup();
     await t.harness.behavior.setSettings({ autoAdvanceImplementation: false });
     await t.harness.behavior.runSchedule("reconcile-worktrees");
-    const db = t.bb.storage.database();
+    const db = t.alia.storage.database();
     for (const [id, environmentId] of [["worker-a", "env"], ["worker-b", "env-b"]] as const) {
       t.threads.push({ ...t.root, id, environmentId, status: "error" });
     }
@@ -1696,7 +1696,7 @@ describe("board holds and gates", () => {
   it("names a waiting thread only while the start can still run", async () => {
     const t = await appliedSetup();
     t.root.status = "active";
-    t.bb.storage.database().prepare("UPDATE worktree_stage_thread_launches SET status = 'blocked', last_error = 'Spawn rejected the model'").run();
+    t.alia.storage.database().prepare("UPDATE worktree_stage_thread_launches SET status = 'blocked', last_error = 'Spawn rejected the model'").run();
     const health = JSON.parse((await t.harness.behavior.runCli(["health", "project"])).stdout!);
     expect(health).toEqual([expect.objectContaining({ status: "blocked", error: "Spawn rejected the model" })]);
   });

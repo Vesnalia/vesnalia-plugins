@@ -1,6 +1,6 @@
 # Prototype: connectors for flowcharts (Axure Connector tool, E)
 
-Source: `.bb/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` (toolbar «Connector (E)», Flow library) and data-model.md. Our Flow shapes exist (type Shape); there is no way to link them.
+Source: `.vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` (toolbar «Connector (E)», Flow library) and data-model.md. Our Flow shapes exist (type Shape); there is no way to link them.
 
 1. Model: new element type `Connector` (additive, format unchanged in version): `props: {from?: {id, anchor: top|right|bottom|left|auto}, to?: {id, anchor}, points?: [x,y][] for free ends, routing: straight|elbow|curved, startArrow: none|arrow|dot, endArrow: none|arrow|dot, dashed, label?: string}`; stroke style from element.style.
 2. Tool: E (and a toolbar button + palette entry «Соединитель» in Блок-схемы) — drag from one element to another; hovering an element shows 4 anchor dots; releasing on an element attaches, on empty space leaves a free end. Connectors re-route live when attached elements move/resize; deleting an element detaches (free end keeps last point).

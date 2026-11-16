@@ -2,7 +2,7 @@
  * The RPC contract between the app and the server. The server registers it;
  * the app imports its type only — see `shared/herald.ts` for why.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import {
@@ -45,7 +45,7 @@ export const rpcContract = defineRpcContract({
   },
   /**
    * What decides each thread's choice of what Herald announces — its own, and
-   * the nearest one above it — for the threads a thread menu shows. Threads bb
+   * the nearest one above it — for the threads a thread menu shows. Threads VesnALIA
    * does not know are left out.
    */
   "choices.list": {
@@ -58,7 +58,7 @@ export const rpcContract = defineRpcContract({
     output: ChoiceInputsSchema,
   },
   /**
-   * Sets the same choice on several threads at once — a selection in bb's
+   * Sets the same choice on several threads at once — a selection in VesnALIA's
    * sidebar — and tells every open menu once. Each thread is tried; a failure
    * names how many were not saved.
    */
@@ -67,7 +67,7 @@ export const rpcContract = defineRpcContract({
     output: z.null(),
   },
   /**
-   * A line from the app for `bb plugin logs herald`: the announcer says here
+   * A line from the app for `alia plugin logs herald`: the announcer says here
    * what it spoke and why it stayed quiet, since the app's console is out of
    * reach on most clients.
    */
@@ -76,7 +76,7 @@ export const rpcContract = defineRpcContract({
     output: z.null(),
   },
   /**
-   * The bb server Mac's `say` voices, and whether `say` is there at all. The
+   * The VesnALIA server Mac's `say` voices, and whether `say` is there at all. The
    * app cannot run a command, but the server can, and its voices are better
    * than a browser's; so the server renders the sentence and the app plays it.
    */

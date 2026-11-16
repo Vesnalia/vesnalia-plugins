@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { PROJECT_ICONS_CHANNEL } from "./realtime-channels";
 import { PROJECT_ICON_EXTENSIONS, projectIconUrl } from "./project-icons";
 import { ProjectMonogram } from "./ProjectFavicon";
@@ -41,7 +41,7 @@ function readFileAsBase64(file: File): Promise<string> {
 
 /** Project color and icon controls, rendered inside Project appearance. */
 export function ProjectAppearanceSettings() {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadRequestSeq = useRef(0);
   const [iconSettings, setIconSettings] = useState<ProjectIconSetting[]>([]);

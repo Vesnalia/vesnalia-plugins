@@ -25,37 +25,37 @@ interface WindowsAnswers {
 const NOBODY = { quserExit: 1, quserOutput: "No User exists for *" };
 const LOGGED_IN = { quserExit: 0, quserOutput: " USERNAME  SESSIONNAME  ID  STATE\n box       console       1  Disc" };
 
-const WINDOWS_STAND_INS = String.raw`$bbTest = Get-Content -LiteralPath $env:BB_TEST_ANSWERS -Raw | ConvertFrom-Json
-function Note($what) { Add-Content -LiteralPath $env:BB_TEST_CALLS -Value $what }
+const WINDOWS_STAND_INS = String.raw`$aliaTest = Get-Content -LiteralPath $env:ALIA_TEST_ANSWERS -Raw | ConvertFrom-Json
+function Note($what) { Add-Content -LiteralPath $env:ALIA_TEST_CALLS -Value $what }
 function Test-Set { Test-Path -LiteralPath (Join-Path $HOME 'settings-set') }
 function Get-LocalUser {
   [CmdletBinding()] param([string] $Name)
-  $script:bbReads = 1 + [int] $script:bbReads
-  if ($bbTest.failingRead -eq $script:bbReads) { Write-Error 'Access is denied.'; return }
-  $never = -not $bbTest.expired -or ($bbTest.keepsSettings -and (Test-Set))
+  $script:aliaReads = 1 + [int] $script:aliaReads
+  if ($aliaTest.failingRead -eq $script:aliaReads) { Write-Error 'Access is denied.'; return }
+  $never = -not $aliaTest.expired -or ($aliaTest.keepsSettings -and (Test-Set))
   [pscustomobject]@{ Name = $Name; PasswordLastSet = [datetime]'2020-01-01T00:00:00'; PasswordExpires = if ($never) { $null } else { (Get-Date).AddDays(-1) } }
 }
 function Set-LocalUser {
   [CmdletBinding()] param([string] $Name, [bool] $PasswordNeverExpires)
-  if ($bbTest.setFails) { Write-Error 'Access is denied.'; return }
+  if ($aliaTest.setFails) { Write-Error 'Access is denied.'; return }
   Note 'Set-LocalUser'
   Set-Content -LiteralPath (Join-Path $HOME 'settings-set') -Value 1
 }
 function Get-CimInstance {
   [CmdletBinding()] param([string] $ClassName, [string] $Filter)
-  [pscustomobject]@{ PasswordExpires = -not ($bbTest.keepsSettings -and (Test-Set)) }
+  [pscustomobject]@{ PasswordExpires = -not ($aliaTest.keepsSettings -and (Test-Set)) }
 }
 function net.exe {
   if ($args[1] -eq '/maxpwage:unlimited') {
-    $global:LASTEXITCODE = [int] $bbTest.netSetExit
-    if ($bbTest.netSetExit) { 'System error 5 has occurred.' } else { Note 'net accounts /maxpwage:unlimited' }
+    $global:LASTEXITCODE = [int] $aliaTest.netSetExit
+    if ($aliaTest.netSetExit) { 'System error 5 has occurred.' } else { Note 'net accounts /maxpwage:unlimited' }
     return
   }
   $global:LASTEXITCODE = 0
-  "Maximum password age (days):     $(if ($bbTest.keepsSettings -and (Test-Set)) { 'Unlimited' } else { '42' })"
+  "Maximum password age (days):     $(if ($aliaTest.keepsSettings -and (Test-Set)) { 'Unlimited' } else { '42' })"
 }
-function quser.exe { $global:LASTEXITCODE = [int] $bbTest.quserExit; $bbTest.quserOutput -split "\n" }
-function shutdown.exe { Note 'shutdown'; $global:LASTEXITCODE = [int] $bbTest.shutdownExit; if ($bbTest.shutdownExit) { 'Access is denied.(5)' } }
+function quser.exe { $global:LASTEXITCODE = [int] $aliaTest.quserExit; $aliaTest.quserOutput -split "\n" }
+function shutdown.exe { Note 'shutdown'; $global:LASTEXITCODE = [int] $aliaTest.shutdownExit; if ($aliaTest.shutdownExit) { 'Access is denied.(5)' } }
 `;
 
 function windowsInPowerShell(home: string, answers: WindowsAnswers): CommandTransport {
@@ -63,7 +63,7 @@ function windowsInPowerShell(home: string, answers: WindowsAnswers): CommandTran
     const file = join(home, "script.ps1");
     writeFileSync(join(home, "answers.json"), JSON.stringify({ shutdownExit: 0, netSetExit: 0, ...answers }));
     writeFileSync(file, `${WINDOWS_STAND_INS}\n${script}\n`);
-    const env = { PATH: process.env.PATH, HOME: home, BB_TEST_ANSWERS: join(home, "answers.json"), BB_TEST_CALLS: join(home, "calls") };
+    const env = { PATH: process.env.PATH, HOME: home, ALIA_TEST_ANSWERS: join(home, "answers.json"), ALIA_TEST_CALLS: join(home, "calls") };
     const ran = spawnSync("pwsh", ["-NoProfile", "-NonInteractive", "-File", file], { env, encoding: "utf8" });
     return { exitCode: ran.status ?? 1, stdout: ran.stdout, stderr: ran.stderr };
   };
@@ -98,7 +98,7 @@ test("someone logged in, though no shell runs, stops the restart, and says so", 
   const checked = await checkDesktopOrRepairExpiredPassword(windowsInPowerShell(home, { expired: true, keepsSettings: true, ...LOGGED_IN }));
 
   assert.equal(checked.state, "refused");
-  assert.match(checked.state === "refused" ? checked.said : "", /It now never expires, but someone is logged in to the box \(USERNAME .* box +console +1 +Disc\), so BB Box did not restart it\. Restart the box once their work is saved\./);
+  assert.match(checked.state === "refused" ? checked.said : "", /It now never expires, but someone is logged in to the box \(USERNAME .* box +console +1 +Disc\), so ALIA Box did not restart it\. Restart the box once their work is saved\./);
   assert.ok(!calls(home).includes("shutdown"), "no restart");
 });
 
@@ -122,7 +122,7 @@ test("a read-back that fails, or settings Windows did not keep, stop the restart
   assert.equal(unread.state, "refused");
   assert.match(unread.state === "refused" ? unread.said : "", /could not read the settings back, so it did not restart the box: Access is denied\./);
   assert.equal(unkept.state, "refused");
-  assert.match(unkept.state === "refused" ? unkept.said : "", /Windows did not keep the settings: the password expires True, the maximum password age is '42'\. BB Box did not restart the box\./);
+  assert.match(unkept.state === "refused" ? unkept.said : "", /Windows did not keep the settings: the password expires True, the maximum password age is '42'\. ALIA Box did not restart the box\./);
   assert.ok(!calls(readBackFails).includes("shutdown"));
   assert.ok(!calls(notKept).includes("shutdown"));
 });
@@ -135,7 +135,7 @@ test("a setting Windows refuses stops the repair before any restart", { skip }, 
   const policy = await checkDesktopOrRepairExpiredPassword(windowsInPowerShell(policyRefused, { expired: true, keepsSettings: true, netSetExit: 2, ...NOBODY }));
 
   assert.equal(user.state, "refused");
-  assert.match(user.state === "refused" ? user.said : "", /BB Box could not set it never to expire: Access is denied\./);
+  assert.match(user.state === "refused" ? user.said : "", /ALIA Box could not set it never to expire: Access is denied\./);
   assert.equal(policy.state, "refused");
   assert.match(policy.state === "refused" ? policy.said : "", /net accounts \/maxpwage:unlimited exited with 2: System error 5 has occurred\./);
   assert.ok(!calls(userRefused).includes("shutdown"));
@@ -161,6 +161,6 @@ test("Windows restarts once for a password: if it has expired again after the re
 
   assert.equal(first.state, "restarting");
   assert.equal(second.state, "refused");
-  assert.match(second.state === "refused" ? second.said : "", /BB Box restarted the box once for this password already, and it still expired, so it did not restart it again\./);
+  assert.match(second.state === "refused" ? second.said : "", /ALIA Box restarted the box once for this password already, and it still expired, so it did not restart it again\./);
   assert.equal(calls(home).filter((call) => call === "shutdown").length, 1);
 });

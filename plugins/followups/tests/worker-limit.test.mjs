@@ -4,13 +4,13 @@
 // message draft for a clicked follow-up is never held up. Run with `npm test`.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { modelStubs, sleep, until } from "./helpers.mjs";
 
 const MAX = 4; // MAX_CONCURRENT_DRAFTS in server.ts
 
-/** A fake BB with threads t1..t8, worker threads the test finishes by hand, and `failFirst` spawns that fail. */
+/** A fake VesnALIA with threads t1..t8, worker threads the test finishes by hand, and `failFirst` spawns that fail. */
 async function boot({ failFirst = 0, metadata = {} } = {}) {
   const world = { workers: {}, spawnCalls: 0, spawned: [], stops: [], metadata: structuredClone(metadata) };
   const row = (id) => makeThreadResponse({ id, status: "idle", parentThreadId: null, visibility: "visible", projectId: "p", environmentId: "e" });
@@ -49,7 +49,7 @@ async function boot({ failFirst = 0, metadata = {} } = {}) {
       ...modelStubs(),
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const rpc = (name, input) => host.harness.callRpc(name, input);
   const OUTPUT = '[{"label": "Add a test", "why": "The fix shipped untested"}]';
   return {
@@ -58,7 +58,7 @@ async function boot({ failFirst = 0, metadata = {} } = {}) {
     /** Thread `id` finishes with an answer that says so. */
     idle: (id) => host.harness.emitThreadEvent("thread.idle", { thread: row(id), lastAssistantText: `The answer of ${id}.` }),
     active: (id) => host.harness.emitThreadEvent("thread.active", { thread: row(id) }),
-    /** The worker finishes, and BB says so. */
+    /** The worker finishes, and VesnALIA says so. */
     finish: async (workerId) => {
       world.workers[workerId].status = "idle";
       world.workers[workerId].output = OUTPUT;

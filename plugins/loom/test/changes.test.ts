@@ -10,7 +10,7 @@ let changes: Changes;
 
 beforeEach(() => {
   h = makeCtx();
-  changes = new Changes({ store: h.store, bb: h.bb, host: h.host });
+  changes = new Changes({ store: h.store, alia: h.alia, host: h.host });
 });
 
 const project = () => h.store.projectBySlug("csv")!;
@@ -35,14 +35,14 @@ describe("the changes of an integration project", () => {
     const env2 = ticketOf(h, "CSV-2").environment_id!;
     h.host.listings.set("origin/main..refs/heads/loom/csv", listing("base000", "m1", ["src/model/a.ts", "src/shared.ts"]));
     h.host.listings.set("base000..m1", listing("base000", "m1", ["src/model/a.ts"]));
-    h.bb.environmentChanges.set(env2, { files: [{ path: "src/export/b.ts", previousPath: null, status: "added", additions: 4, deletions: 0, binary: false, untracked: true }], patches: {} });
+    h.alia.environmentChanges.set(env2, { files: [{ path: "src/export/b.ts", previousPath: null, status: "added", additions: 4, deletions: 0, binary: false, untracked: true }], patches: {} });
 
-    h.bb.calls = [];
+    h.alia.calls = [];
     const view = await changes.view("csv");
     expect(view).toMatchObject({ strategy: "integration", base: "main", remoteBase: "origin/main", branch: "loom/csv", finished: false, unavailable: null });
     expect(view.repos).toEqual([{ name: null, base: "main", remoteBase: "origin/main", branch: "loom/csv", unavailable: null }]);
     expect(view.sources.every((source) => source.repo === null)).toBe(true);
-    expect(h.bb.callsTo("projectCheckout")).toEqual([["proj_1", "host_1"]]);
+    expect(h.alia.callsTo("projectCheckout")).toEqual([["proj_1", "host_1"]]);
     expect(view.sources.map((source) => [source.id, source.state])).toEqual([
       ["branch", null],
       ["merge:CSV-1", "done"],
@@ -54,7 +54,7 @@ describe("the changes of an integration project", () => {
       { base: "base000", head: "m1", mergeBase: false },
       { base: "loom/csv", head: head3, mergeBase: true },
     ]);
-    expect(h.bb.callsTo("environmentFiles")).toEqual([[env2, "loom/csv"]]);
+    expect(h.alia.callsTo("environmentFiles")).toEqual([[env2, "loom/csv"]]);
 
     const [branch, merge, live] = view.sources;
     expect(branch!.files!.map((changed) => [changed.path, changed.tickets])).toEqual([
@@ -145,12 +145,12 @@ describe("the changes of a pull request project", () => {
 
 describe("what cannot be read", () => {
   it("says so for a draft and for a project with no checkout on its machine", async () => {
-    await h.projects.propose({ toml: (await import("./helpers")).specToml(), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: (await import("./helpers")).specToml(), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     expect(await changes.view("csv")).toMatchObject({ sources: [], unavailable: "The project has no approved spec yet." });
     await h.projects.approve("csv", "human");
-    h.bb.checkout = null;
-    expect(await changes.view("csv")).toMatchObject({ sources: [], unavailable: "The bb project has no checkout on the machine host_1, so its changes cannot be read." });
-    h.bb.projectCheckout = async () => Promise.reject(new Error("HTTP 404: Project not found"));
+    h.alia.checkout = null;
+    expect(await changes.view("csv")).toMatchObject({ sources: [], unavailable: "The VesnALIA project has no checkout on the machine host_1, so its changes cannot be read." });
+    h.alia.projectCheckout = async () => Promise.reject(new Error("HTTP 404: Project not found"));
     expect((await changes.view("csv")).unavailable).toBe("The project's checkout cannot be found, so its changes cannot be read: HTTP 404: Project not found");
     expect(await changes.patch({ slug: "csv", path: "a", base: "a".repeat(40), head: "b".repeat(40) })).toMatchObject({ patch: null, message: expect.stringContaining("HTTP 404") });
     await expect(changes.view("nope")).rejects.toThrow('No Loom project named "nope".');
@@ -161,12 +161,12 @@ describe("a file's patch", () => {
   it("reads git between the listing's commits, or the worker's worktree for a working ticket", async () => {
     await midProject();
     const env2 = ticketOf(h, "CSV-2").environment_id!;
-    h.bb.environmentChanges.set(env2, { files: [], patches: { "src/export/b.ts": "@@ -0,0 +1 @@\n+b\n" } });
+    h.alia.environmentChanges.set(env2, { files: [], patches: { "src/export/b.ts": "@@ -0,0 +1 @@\n+b\n" } });
     const [base, head] = ["a".repeat(40), "b".repeat(40)];
     expect(await changes.patch({ slug: "csv", path: "src/a.ts", base, head })).toEqual({ patch: "diff --git a/src/a.ts b/src/a.ts\n+changed\n", truncated: false });
     expect(h.host.callsTo("filePatch")).toEqual([{ repo: "/repo", base, head, path: "src/a.ts", maxBytes: 400_000 }]);
     expect(await changes.patch({ slug: "csv", path: "src/export/b.ts", key: "CSV-2" })).toEqual({ patch: "@@ -0,0 +1 @@\n+b\n", truncated: false });
-    expect(h.bb.callsTo("environmentPatch")).toEqual([[env2, "loom/csv", "src/export/b.ts"]]);
+    expect(h.alia.callsTo("environmentPatch")).toEqual([[env2, "loom/csv", "src/export/b.ts"]]);
   });
 
   it("says when the commits or the worktree are gone, and refuses a request it cannot place", async () => {
@@ -185,7 +185,7 @@ describe("a file's patch", () => {
 const withWebDocsTicket = (doc: Doc) =>
   doc.ticket.push({ ref: "web-docs", title: "Web docs", body: "Write the docs.", acceptance: ["WHEN the docs are built THE SYSTEM SHALL list the export"], scope: ["docs/**"], repo: "web" });
 const repoListed = () => h.host.callsTo("changedFiles").map(({ repo, base, head, mergeBase }) => ({ repo, base, head, mergeBase }));
-const noCheckout = (name: string) => `Repo "${name}" (bb project proj_${name}) has no checkout on the machine host_1 that this Loom project uses. Clone it there with \`bb project source add proj_${name} --clone --machine host_1\`, then resume.`;
+const noCheckout = (name: string) => `Repo "${name}" (VesnALIA project proj_${name}) has no checkout on the machine host_1 that this Loom project uses. Clone it there with \`alia project source add proj_${name} --clone --machine host_1\`, then resume.`;
 
 async function mergeNext(key: string): Promise<void> {
   await reachApproved(h, key);
@@ -209,8 +209,8 @@ describe("the changes of a multi-repo integration project", () => {
   it("reads one whole branch per repo and each merge in its own repo's checkout, and a working ticket against its repo's fresh base", async () => {
     await repoProject();
     const env3 = ticketOf(h, "CSV-3").environment_id!;
-    h.bb.environmentChanges.set(env3, { files: [{ path: "docs/export.md", previousPath: null, status: "added", additions: 3, deletions: 0, binary: false, untracked: true }], patches: {} });
-    h.bb.calls = [];
+    h.alia.environmentChanges.set(env3, { files: [{ path: "docs/export.md", previousPath: null, status: "added", additions: 3, deletions: 0, binary: false, untracked: true }], patches: {} });
+    h.alia.calls = [];
 
     const view = await changes.view("csv");
     expect(view).toMatchObject({ strategy: "integration", base: "main", remoteBase: "origin/main", branch: "loom/csv", finished: false, unavailable: null });
@@ -227,7 +227,7 @@ describe("the changes of a multi-repo integration project", () => {
       ["merge:CSV-2", "api", "loom/csv", null],
       ["live:CSV-3", "web", "loom/csv", null],
     ]);
-    expect(h.bb.callsTo("projectCheckout")).toEqual([
+    expect(h.alia.callsTo("projectCheckout")).toEqual([
       ["proj_web", "host_1"],
       ["proj_api", "host_1"],
       ["proj_docs", "host_1"],
@@ -238,7 +238,7 @@ describe("the changes of a multi-repo integration project", () => {
       { repo: "/src/web", base: "base000", head: "m1", mergeBase: false },
       { repo: "/src/api", base: "base000", head: "m2", mergeBase: false },
     ]);
-    expect(h.bb.callsTo("environmentFiles")).toEqual([[env3, "loom/csv"]]);
+    expect(h.alia.callsTo("environmentFiles")).toEqual([[env3, "loom/csv"]]);
 
     const byId = (id: string) => view.sources.find((source) => source.id === id)!;
     // src/shared.ts changed in both repos: each whole branch credits only its own repo's merges.
@@ -272,7 +272,7 @@ describe("the changes of a multi-repo integration project", () => {
 
   it("still reads the other repos when one has no checkout, and gives that repo's sources a note with the clone command", async () => {
     await repoProject();
-    h.bb.checkouts.set("proj_api", {});
+    h.alia.checkouts.set("proj_api", {});
     const view = await changes.view("csv");
     expect(view.unavailable).toBeNull();
     expect(view.repos.map((repo) => [repo.name, repo.unavailable])).toEqual([
@@ -288,13 +288,13 @@ describe("the changes of a multi-repo integration project", () => {
 
   it("says why a repo's checkout cannot be found, and that nothing can be read when no repo has a checkout", async () => {
     await repoProject();
-    const lookup = h.bb.projectCheckout.bind(h.bb);
-    h.bb.projectCheckout = async (bbProjectId, hostId) => (bbProjectId === "proj_docs" ? Promise.reject(new Error("HTTP 404: Project not found")) : lookup(bbProjectId, hostId));
+    const lookup = h.alia.projectCheckout.bind(h.alia);
+    h.alia.projectCheckout = async (aliaProjectId, hostId) => (aliaProjectId === "proj_docs" ? Promise.reject(new Error("HTTP 404: Project not found")) : lookup(aliaProjectId, hostId));
     const docs = 'The checkout of the repo "docs" cannot be found, so its changes cannot be read: HTTP 404: Project not found';
     expect((await changes.view("csv")).repos.map((repo) => repo.unavailable)).toEqual([null, null, docs]);
 
-    h.bb.checkouts.set("proj_web", {});
-    h.bb.checkouts.set("proj_api", {});
+    h.alia.checkouts.set("proj_web", {});
+    h.alia.checkouts.set("proj_api", {});
     const none = await changes.view("csv");
     expect(none.sources).toEqual([]);
     expect(none.unavailable).toBe(`None of the project's repos can be read. ${noCheckout("web")} ${noCheckout("api")} ${docs}`);
@@ -308,7 +308,7 @@ describe("the changes of a multi-repo pull request project", () => {
     const head1 = ticketOf(h, "CSV-1").head_sha!;
     await startWorker(h, "CSV-2");
     const env2 = ticketOf(h, "CSV-2").environment_id!;
-    h.bb.environmentChanges.set(env2, { files: [], patches: { "src/export/b.ts": "@@ -0,0 +1 @@\n+b\n" } });
+    h.alia.environmentChanges.set(env2, { files: [], patches: { "src/export/b.ts": "@@ -0,0 +1 @@\n+b\n" } });
 
     const view = await changes.view("csv");
     expect(view.repos.map((repo) => [repo.name, repo.remoteBase, repo.branch])).toEqual([
@@ -321,10 +321,10 @@ describe("the changes of a multi-repo pull request project", () => {
       ["live:CSV-2", "api", "upstream/trunk"],
     ]);
     expect(repoListed()).toEqual([{ repo: "/src/web", base: "origin/main", head: head1, mergeBase: true }]);
-    expect(h.bb.callsTo("environmentFiles")).toEqual([[env2, "upstream/trunk"]]);
+    expect(h.alia.callsTo("environmentFiles")).toEqual([[env2, "upstream/trunk"]]);
 
     expect(await changes.patch({ slug: "csv", path: "src/export/b.ts", key: "CSV-2" })).toEqual({ patch: "@@ -0,0 +1 @@\n+b\n", truncated: false });
-    expect(h.bb.callsTo("environmentPatch")).toEqual([[env2, "upstream/trunk", "src/export/b.ts"]]);
+    expect(h.alia.callsTo("environmentPatch")).toEqual([[env2, "upstream/trunk", "src/export/b.ts"]]);
   });
 });
 
@@ -342,12 +342,12 @@ describe("a file's patch on a multi-repo project", () => {
 
   it("says a repo has no checkout, with the clone command, and needs no repo for a working ticket's worktree", async () => {
     await repoProject();
-    h.bb.checkouts.set("proj_web", {});
+    h.alia.checkouts.set("proj_web", {});
     expect(await changes.patch({ slug: "csv", path: "x", base, head, repo: "web" })).toEqual({ patch: null, message: noCheckout("web") });
     const env3 = ticketOf(h, "CSV-3").environment_id!;
-    h.bb.environmentChanges.set(env3, { files: [], patches: { "docs/export.md": "+docs\n" } });
+    h.alia.environmentChanges.set(env3, { files: [], patches: { "docs/export.md": "+docs\n" } });
     expect(await changes.patch({ slug: "csv", path: "docs/export.md", key: "CSV-3" })).toEqual({ patch: "+docs\n", truncated: false });
-    expect(h.bb.callsTo("environmentPatch")).toEqual([[env3, "loom/csv", "docs/export.md"]]);
+    expect(h.alia.callsTo("environmentPatch")).toEqual([[env3, "loom/csv", "docs/export.md"]]);
   });
 
   it("refuses a repo on a single-repo project", async () => {

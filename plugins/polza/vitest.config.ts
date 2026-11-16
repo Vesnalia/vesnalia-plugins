@@ -7,7 +7,7 @@ export default defineConfig({
   },
   test: {
     silent: "passed-only",
-    name: "bb-plugin-polza",
+    name: "alia-plugin-polza",
     include: ["src/**/*.test.ts", "*.test.ts", "*.test.tsx"],
     exclude: ["node_modules/**", "dist/**"],
   },

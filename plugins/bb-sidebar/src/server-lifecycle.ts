@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ServerContext } from "./server-context";
 import type { SettledOverride } from "./auto-settle";
 import { LIFECYCLE_CHANNEL } from "./contract";
@@ -6,7 +6,7 @@ import { canPark, hasLiveWork, isTurnInFlight, resolveRowShelf, rowActivity } fr
 import { threadTreeIds } from "./thread-tree";
 import { shelfRowIds } from "./inbox";
 
-/** One-time data repairs that need bb's thread tree, which SQL cannot see. */
+/** One-time data repairs that need VesnALIA's thread tree, which SQL cannot see. */
 export const LIFECYCLE_BACKFILLS_MIGRATION = `CREATE TABLE IF NOT EXISTS lifecycle_backfills (
   name TEXT PRIMARY KEY
 )`;
@@ -87,7 +87,7 @@ export function createServerLifecycle(ctx: ServerContext) {
       )
       .run(row.threadId, row.settledAt, row.settledOverride, row.snoozedUntil, row.snoozedAt, row.parkedAt ?? null);
     if (publish) {
-      ctx.bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId: row.threadId });
+      ctx.alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId: row.threadId });
     }
   };
 
@@ -97,12 +97,12 @@ export function createServerLifecycle(ctx: ServerContext) {
 
   const publishLifecycleChanges = (threadIds: readonly string[]): void => {
     if (threadIds.length === 0) return;
-    ctx.bb.realtime.publish(LIFECYCLE_CHANNEL, { threadIds });
+    ctx.alia.realtime.publish(LIFECYCLE_CHANNEL, { threadIds });
   };
 
   const clear = (threadId: string): void => {
     ctx.db.prepare(`DELETE FROM thread_lifecycle WHERE thread_id = ?`).run(threadId);
-    ctx.bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    ctx.alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
   };
 
   const clearSettlingState = (threadId: string): boolean => {
@@ -122,7 +122,7 @@ export function createServerLifecycle(ctx: ServerContext) {
         false,
       );
     }
-    ctx.bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    ctx.alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
     return true;
   };
 
@@ -130,7 +130,7 @@ export function createServerLifecycle(ctx: ServerContext) {
     JSON.stringify(left) === JSON.stringify(right);
 
   type AncestorThread = Pick<
-    Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>,
+    Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>,
     "id" | "parentThreadId" | "archivedAt" | "deletedAt"
   >;
 
@@ -157,9 +157,9 @@ export function createServerLifecycle(ctx: ServerContext) {
       try {
         // RPCs and policy passes already loaded the complete tree. Do not
         // introduce another network failure after their shelf writes succeed.
-        parent = threadsById ? threadsById.get(parentId) : await ctx.bb.sdk.threads.get({ threadId: parentId });
+        parent = threadsById ? threadsById.get(parentId) : await ctx.alia.sdk.threads.get({ threadId: parentId });
       } catch (error) {
-        ctx.bb.log.warn(
+        ctx.alia.log.warn(
           `Could not load ancestor ${parentId}: ${error instanceof Error ? error.message : String(error)}`,
         );
         break;
@@ -231,7 +231,7 @@ export function createServerLifecycle(ctx: ServerContext) {
   // or deleted thread omitted from the newer thread list.
   const loadPolicyThreads = async (includeHidden = false) => {
     if (!includeHidden) {
-      const projects = await ctx.bb.sdk.projects.list({ include: "threads", includePersonal: true });
+      const projects = await ctx.alia.sdk.projects.list({ include: "threads", includePersonal: true });
       return projects.flatMap((project) =>
         "threads" in project
           ? project.threads.filter(
@@ -240,11 +240,11 @@ export function createServerLifecycle(ctx: ServerContext) {
           : [],
       );
     }
-    const byId = new Map<string, Awaited<ReturnType<typeof ctx.bb.sdk.threads.list>>[number]>();
-    // Same page size as port discovery; bb sets no upper bound on this list.
+    const byId = new Map<string, Awaited<ReturnType<typeof ctx.alia.sdk.threads.list>>[number]>();
+    // Same page size as port discovery; VesnALIA sets no upper bound on this list.
     const limit = 500;
     for (let offset = 0; ; offset += limit) {
-      const page = await ctx.bb.sdk.threads.list({ archived: false, includeHidden: true, limit, offset });
+      const page = await ctx.alia.sdk.threads.list({ archived: false, includeHidden: true, limit, offset });
       for (const thread of page) {
         if (thread.archivedAt === null && thread.deletedAt === null) byId.set(thread.id, { ...thread });
         else byId.delete(thread.id);
@@ -256,7 +256,7 @@ export function createServerLifecycle(ctx: ServerContext) {
 
   /** One thread under loadPolicyThreads' rules, without listing every thread. */
   const loadPolicyThread = async (threadId: string, includeHidden = false) => {
-    const [thread] = await ctx.bb.sdk.threads.list({ threadIds: [threadId], archived: false, includeHidden });
+    const [thread] = await ctx.alia.sdk.threads.list({ threadIds: [threadId], archived: false, includeHidden });
     if (!thread || thread.id !== threadId || thread.archivedAt !== null || thread.deletedAt !== null) return undefined;
     return includeHidden || thread.visibility === "visible" ? thread : undefined;
   };

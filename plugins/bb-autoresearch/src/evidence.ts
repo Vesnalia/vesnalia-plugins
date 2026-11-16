@@ -1,5 +1,5 @@
-// `bb study evidence`: everything an agent needs to harvest a study, as one
-// stable JSON document (format "bb-autoresearch/evidence", version 1). It is
+// `alia study evidence`: everything an agent needs to harvest a study, as one
+// stable JSON document (format "alia-autoresearch/evidence", version 1). It is
 // what the plugin measured and decided, never an agent's claim: candidates
 // with their refs, commit messages, diff stats, verdicts, measurements,
 // guardrails and samples; findings; segments and calibration; base and best
@@ -21,7 +21,7 @@ import { safeJson } from "./prompts.ts";
 import { bestBranch, candidateRef, type StudySpec } from "./spec.ts";
 import type { GuardrailJudgement, StoredGuardrails } from "./guardrails.ts";
 
-export const EVIDENCE_FORMAT = "bb-autoresearch/evidence";
+export const EVIDENCE_FORMAT = "alia-autoresearch/evidence";
 export const EVIDENCE_VERSION = 1;
 
 export interface EvidenceOptions {
@@ -120,7 +120,7 @@ export async function studyEvidence(ctx: Ctx, study: StudyRow, spec: StudySpec, 
   if (study.base_sha && study.best_sha && study.host_id && study.repo_path) {
     if (study.base_sha !== study.best_sha) {
       try {
-        const log = await ctx.bb.hostRunner(study.host_id).commitLog(study.repo_path, study.base_sha, study.best_sha);
+        const log = await ctx.alia.hostRunner(study.host_id).commitLog(study.repo_path, study.base_sha, study.best_sha);
         promotions = log.map((c) => {
           const n = candidateFromMessage(c.message, study.slug);
           const cand = n !== null ? store.candidateByN(study.id, n) : store.candidates(study.id).find((x) => x.promoted_sha === c.sha);
@@ -196,7 +196,7 @@ export async function studyEvidence(ctx: Ctx, study: StudyRow, spec: StudySpec, 
     findings: findings.map((f) => ({ id: f.id, candidate: f.candidate_id !== null ? (store.candidate(f.candidate_id)?.n ?? null) : null, idea: f.idea_id, outcome: f.outcome, learned: f.learned, revisitIf: f.revisit_if || null, evidence: f.evidence || null, at: f.created_at })),
     ideas: ideaRows.map((i) => ({ id: i.id, title: i.title, theme: i.theme, status: i.status, source: i.source })),
     harvests: harvests.map((h) => ({ seq: h.seq, state: h.state, base: h.base_sha, best: h.best_sha, startedAt: h.started_at, finishedAt: h.finished_at, legacy: store.changesets(h.id).length > 0 || !["waiting", "frozen", "cancelled", "failed"].includes(h.state) })),
-    /** `bb study measure` / `bb study gate` runs, newest first. */
+    /** `alia study measure` / `alia study gate` runs, newest first. */
     runs: store.adhocRuns(study.id, { limit: 200 }).map((r) => ({ id: `r${r.seq}`, kind: r.kind, a: r.ref_a ? { ref: r.ref_a, sha: r.sha_a } : null, b: { ref: r.ref_b, sha: r.sha_b }, state: r.state, error: r.error, result: adhocResult(r), requestedBy: r.actor, requestedAt: r.requested_at, finishedAt: r.finished_at })),
     budget: { candidates: store.candidateCount(study.id), maxCandidates: spec.budget.max_candidates, benchSeconds: store.budget(study).bench_seconds, maxBenchHours: spec.budget.max_bench_hours },
   };

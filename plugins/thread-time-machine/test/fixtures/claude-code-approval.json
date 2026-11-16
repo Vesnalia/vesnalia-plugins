@@ -107,9 +107,9 @@
      "id": "da1f958c67-i6",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md\n+- **Recurring tasks**: Support daily/weekly/monthly task templates to reduce manual entry for repetitive items\n+- **Priority levels**: Add visual indicators (high/medium/low) with filtering to focus on what matters most\n+- **Dark mode**: Implement a dark theme toggle for better usability during evening work sessions\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md\n+- **Recurring tasks**: Support daily/weekly/monthly task templates to reduce manual entry for repetitive items\n+- **Priority levels**: Add visual indicators (high/medium/low) with filtering to focus on what matters most\n+- **Dark mode**: Implement a dark theme toggle for better usability during evening work sessions\n"
       }
      ],
      "status": "pending",
@@ -192,9 +192,9 @@
      "id": "da1f958c67-i6",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md\n+- **Recurring tasks**: Support daily/weekly/monthly task templates to reduce manual entry for repetitive items\n+- **Priority levels**: Add visual indicators (high/medium/low) with filtering to focus on what matters most\n+- **Dark mode**: Implement a dark theme toggle for better usability during evening work sessions\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_726tsr8fax-1/rewind-playground/notes/ideas.md\n+- **Recurring tasks**: Support daily/weekly/monthly task templates to reduce manual entry for repetitive items\n+- **Priority levels**: Add visual indicators (high/medium/low) with filtering to focus on what matters most\n+- **Dark mode**: Implement a dark theme toggle for better usability during evening work sessions\n"
       }
      ],
      "status": "interrupted",

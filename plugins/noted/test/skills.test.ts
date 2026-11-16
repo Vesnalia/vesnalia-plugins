@@ -42,7 +42,7 @@ describe("bundled skills", () => {
     const text = `${skill}\n${commands}`;
 
     for (const command of ["open", "reply", "status", "end", "file"]) {
-      expect(text).toContain(`bb noted ${command}`);
+      expect(text).toContain(`alia noted ${command}`);
     }
     for (const option of [
       "--view",

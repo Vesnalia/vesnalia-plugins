@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, TaskMapResult } from "./server";
 import type { Choice, Choices } from "./task-map";
 import { stageLabel, type StageId } from "./workflow";

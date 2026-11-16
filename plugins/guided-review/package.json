@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-guided-review",
+  "name": "alia-plugin-guided-review",
   "version": "0.2.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.41.0",
-    "bbPluginSdk": ">=0.4.34",
+    "alia": ">=0.41.0",
+    "aliaPluginSdk": ">=0.4.34",
     "node": ">=24"
   },
-  "bb": {
+  "alia": {
     "name": "Guided Review",
     "description": "Turn a GitHub PR or local git ref into an agent-authored chaptered review, and submit it back to GitHub.",
     "branding": {
@@ -23,7 +23,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -59,15 +58,27 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build",
-    "check": "npm test && npm run typecheck && bb plugin types --check && npm run build"
+    "build": "alia plugin build",
+    "check": "npm test && npm run typecheck && alia plugin types --check && npm run build"
   },
-  "description": "Chaptered pull-request reviews inside BB, with private notes and a review assistant.",
+  "description": "Chaptered pull-request reviews inside VesnALIA, with private notes and a review assistant.",
   "author": "Pritam Sharma",
-  "homepage": "https://notpritam.in/plugins/guided-review",
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/guided-review#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/notpritam/bb-plugin-guided-review.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/guided-review"
   },
-  "license": "MIT"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

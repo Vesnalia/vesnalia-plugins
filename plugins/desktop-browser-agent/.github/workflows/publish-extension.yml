@@ -1,4 +1,4 @@
-# Uploads Browser Bridge for bb to the Chrome Web Store on an extension-v* tag
+# Uploads Browser Bridge for alia to the Chrome Web Store on an extension-v* tag
 # (plugin releases use v*). The tag must match the version in
 # browser-extension/static/manifest.json and browser-extension/package.json.
 # A manual run builds the given tag, or else the branch it runs on, and can
@@ -66,7 +66,7 @@ jobs:
       - run: npm run package --workspace browser-extension
       - uses: mnao305/chrome-extension-upload@f549d5d654694a7722d6abfa64c97409ad5e64c1 # v7.0.0
         with:
-          file-path: browser-extension/browser-bridge-for-bb-${{ steps.tag.outputs.version }}.zip
+          file-path: browser-extension/browser-bridge-for-alia-${{ steps.tag.outputs.version }}.zip
           extension-id: ${{ secrets.EXTENSION_ID }}
           publisher-id: ${{ secrets.PUBLISHER_ID }}
           client-id: ${{ secrets.CLIENT_ID }}

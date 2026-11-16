@@ -6,7 +6,7 @@ export interface Animation {
   restyle?: () => void;
 }
 
-const motionChanged = "bb-box-motion-change";
+const motionChanged = "alia-box-motion-change";
 const reducedMotionQuery = matchMedia("(prefers-reduced-motion: reduce)");
 
 export const reducedMotion = () => reducedMotionQuery.matches;

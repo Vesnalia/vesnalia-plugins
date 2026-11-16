@@ -1,5 +1,5 @@
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
-import type { PluginComposerThreadRowStatus, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
+import type { PluginComposerThreadRowStatus, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 /** What the plugin server recorded for a thread (epoch ms, null when never). */
 export type Attention = {
@@ -22,13 +22,13 @@ export const UNREAD: PluginComposerThreadRowStatus = { icon: "Circle", label: "U
 export const FAILED: PluginComposerThreadRowStatus = { icon: "CircleX", tone: "error", label: "Thread failed" };
 export const COLLAPSED_FAILED: PluginComposerThreadRowStatus = { ...FAILED, label: "A collapsed thread failed" };
 
-type Event = Awaited<ReturnType<PluginBbSdk["threads"]["events"]["list"]>>[number];
+type Event = Awaited<ReturnType<PluginAliaSdk["threads"]["events"]["list"]>>[number];
 
 /**
  * Scan one page of a thread's events, newest first, for the run that went
  * idle at `endedAt` (the idle transition's `updatedAt`). Returns when that run
  * wrote its last non-empty assistant message (an agent message, or a legacy
- * manager message, which BB shows as assistant text), null when its request is reached
+ * manager message, which VesnALIA shows as assistant text), null when its request is reached
  * without one, and undefined when the page ends first. Events after the
  * transition belong to a later run; a steer joins the running turn, so the run
  * starts at its last request that is not one.
@@ -57,7 +57,7 @@ export function merge(known: Attention | undefined, next: Attention): Attention 
 }
 
 /**
- * Unread means a result nobody has looked at: newer than BB's own read mark
+ * Unread means a result nobody has looked at: newer than VesnALIA's own read mark
  * (roots) and the plugin's seen mark (all threads). A root's native unread
  * still counts, unless the plugin saw that its latest attention came from a
  * run without output.
@@ -75,14 +75,14 @@ export const isWorking = (thread: Pick<AttentionThread, "status" | "hasPendingIn
 
 export type RowAttention = { status: PluginComposerThreadRowStatus | null; failed: boolean; unread: boolean; quiet: boolean; summary: { working: number; waiting: number; failed: number } };
 
-/** Glyphs BB's collapsed parent takes over from its hidden descendants. */
+/** Glyphs VesnALIA's collapsed parent takes over from its hidden descendants. */
 const COLLAPSED_ACTIVITY = new Set(["waiting-for-input", "working-draft", "workflow", "background-agent", "background-command", "plan-mode", "goal", "runtime"]);
 
 /**
  * One row: the thread itself plus, for a collapsed parent, its hidden
  * descendants. A failure shows the red cross. An unread result shows a dot:
- * as the row glyph when BB would show nothing else, otherwise over BB's glyph.
- * BB ignores a row status while its spinner or question shows, so `failed`
+ * as the row glyph when VesnALIA would show nothing else, otherwise over VesnALIA's glyph.
+ * VesnALIA ignores a row status while its spinner or question shows, so `failed`
  * lets the stylesheet draw the cross there.
  */
 export function rowAttention(
@@ -92,10 +92,10 @@ export function rowAttention(
 ): RowAttention {
   const unread = group.some((member) => isUnread(member, attention.get(member.id)));
   const failure = thread.status === "error" ? FAILED : group.some((member) => member.status === "error") ? COLLAPSED_FAILED : null;
-  const bbGlyph =
+  const aliaGlyph =
     !(thread.indicator === "none" || thread.indicator === "unread-success") ||
     group.some((member) => member !== thread && COLLAPSED_ACTIVITY.has(member.indicator));
-  const status = failure ?? (unread && !bbGlyph ? UNREAD : null);
+  const status = failure ?? (unread && !aliaGlyph ? UNREAD : null);
   const summary = { working: 0, waiting: 0, failed: 0 };
   for (const member of group) {
     if (member.id === thread.id) continue;

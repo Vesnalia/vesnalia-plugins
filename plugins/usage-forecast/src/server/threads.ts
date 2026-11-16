@@ -255,7 +255,7 @@ export async function measureThread(
 }
 
 // A provider compacts on its own at `autoCompactAtTokens` when it reports one
-// (Claude Code on bb 0.49: its window minus a 33 000-token buffer, 167 000 of
+// (Claude Code on VesnALIA 0.49: its window minus a 33 000-token buffer, 167 000 of
 // a 200 000 window, 117 000 of a 150 000 one; Codex reports none). A
 // threshold at or above that never fires, so the effective threshold is
 // capped PROVIDER_MARGIN_PERCENT of the window below it: the plugin then

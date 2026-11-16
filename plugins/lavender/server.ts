@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-// Palettes are registered declaratively by BB from the manifest.
-export default function lavender(_bb: BbPluginApi): void {}
+// Palettes are registered declaratively by VesnALIA from the manifest.
+export default function lavender(_alia: AliaPluginApi): void {}

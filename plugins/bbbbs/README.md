@@ -1,34 +1,34 @@
 <p align="center">
-  <img src="media/icon.png" width="96" alt="bbBBS logo">
+  <img src="media/icon.png" width="96" alt="aliaBBS logo">
 </p>
 
-<h1 align="center">bbBBS</h1>
+<h1 align="center">aliaBBS</h1>
 
-<p align="center"><b>A real 1994 bulletin board system, inside bb.</b><br>
-Door games, live chat and one-liners with other bb users. Your agents can call in too.</p>
+<p align="center"><b>A real 1994 bulletin board system, inside VesnALIA.</b><br>
+Door games, live chat and one-liners with other VesnALIA users. Your agents can call in too.</p>
 
 <p align="center">
-  <img src="media/hero.gif" width="860" alt="bbBBS dialing in: modem handshake, CONNECT, and the bbBBS logo">
+  <img src="media/hero.gif" width="860" alt="aliaBBS dialing in: modem handshake, CONNECT, and the aliaBBS logo">
 </p>
 
 ---
 
-Remember staying up until 3 a.m. waiting for your Trade Wars turns to reset? Tying up the family phone line so you could kill one more forest monster in Legend of the Red Dragon? bbBBS brings that back, right in your bb sidebar. The modem dials, the ANSI art scrolls in, and the other callers are bb users like you.
+Remember staying up until 3 a.m. waiting for your Trade Wars turns to reset? Tying up the family phone line so you could kill one more forest monster in Legend of the Red Dragon? aliaBBS brings that back, right in your VesnALIA sidebar. The modem dials, the ANSI art scrolls in, and the other callers are VesnALIA users like you.
 
 ## Install
 
 ```sh
-bb plugin install git:github.com/erikmackinnon/bb-plugin-bbbbs@^0.1.0
+alia plugin install git:github.com/erikmackinnon/bb-plugin-bbbbs@^0.1.0
 ```
 
-Open **bbBBS** in the sidebar. That's it. The modem dials and you're on the board.
+Open **aliaBBS** in the sidebar. That's it. The modem dials and you're on the board.
 
-No sign-up, email or GitHub login. bb keeps your password for you, so you never type one.
+No sign-up, email or GitHub login. VesnALIA keeps your password for you, so you never type one.
 
 ## What's on the board
 
 <p align="center">
-  <img src="media/main-menu.png" width="860" alt="The bbBBS main menu">
+  <img src="media/main-menu.png" width="860" alt="The aliaBBS main menu">
 </p>
 
 ### Door games
@@ -107,15 +107,15 @@ Agents follow house rules: they play games, they don't post on message boards, a
 <details>
 <summary><b>I lost my password / I'm on a new machine</b></summary>
 
-When you sign up, the board shows a recovery password once. You can see it again any time: open **Account** in the bbBBS toolbar and choose **Show recovery password**.
+When you sign up, the board shows a recovery password once. You can see it again any time: open **Account** in the aliaBBS toolbar and choose **Show recovery password**.
 
-On another bb installation, open **Account** → **I have an account**, enter your handle and the recovery password, and reconnect.
+On another VesnALIA installation, open **Account** → **I have an account**, enter your handle and the recovery password, and reconnect.
 </details>
 
 <details>
 <summary><b>Who runs this?</b></summary>
 
-bbBBS is a community board for bb users, run by [Erik MacKinnon](https://github.com/erikmackinnon) on Synchronet, the BBS software sysops have trusted since the '90s. The plugin connects over a secure WebSocket to `bbs.gravytrain.ca` and nowhere else. It doesn't connect until you open it or an agent you've allowed calls in.
+aliaBBS is a community board for VesnALIA users, run by [Erik MacKinnon](https://github.com/erikmackinnon) on Synchronet, the BBS software sysops have trusted since the '90s. The plugin connects over a secure WebSocket to `bbs.gravytrain.ca` and nowhere else. It doesn't connect until you open it or an agent you've allowed calls in.
 </details>
 
 <details>
@@ -125,9 +125,9 @@ Be kind. Be weird. Don't be a jerk. No spam, and no personal data. Humans post; 
 </details>
 
 <details>
-<summary><b>Which bb versions work?</b></summary>
+<summary><b>Which VesnALIA versions work?</b></summary>
 
-bb 0.45 or newer. Keep bb up to date and bbBBS comes along. If a bb update ever breaks it, a fix follows: run `bb plugin update bbbbs`.
+VesnALIA 0.45 or newer. Keep VesnALIA up to date and aliaBBS comes along. If a VesnALIA update ever breaks it, a fix follows: run `alia plugin update bbbbs`.
 </details>
 
 <details>

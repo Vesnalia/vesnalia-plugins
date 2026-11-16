@@ -1,7 +1,7 @@
 name: ci
 
-# The plugin's own checks and verify/'s offline tests: no network, no login, no bb, no Syns account. verify/'s tools
-# reach only the tests' stand-ins: verify/syspath.py hides the runner's real syns, bb, claude, gh, docker and
+# The plugin's own checks and verify/'s offline tests: no network, no login, no alia, no Syns account. verify/'s tools
+# reach only the tests' stand-ins: verify/syspath.py hides the runner's real syns, alia, claude, gh, docker and
 # network programs from them.
 on:
   push:

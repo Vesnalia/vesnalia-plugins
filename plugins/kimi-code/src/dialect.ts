@@ -1,5 +1,5 @@
-import { experimental_downloadedInstallerCommand as downloadedInstallerCommand } from "@get-bb/plugin-sdk/provider-bridge";
-import type { AcpClassifiedToolCall, AcpDialect, AcpToolCallUpdateEvent } from "@get-bb/plugin-sdk/provider-bridge/acp-next";
+import { experimental_downloadedInstallerCommand as downloadedInstallerCommand } from "@vesnalia/plugin-sdk/provider-bridge";
+import type { AcpClassifiedToolCall, AcpDialect, AcpToolCallUpdateEvent } from "@vesnalia/plugin-sdk/provider-bridge/acp-next";
 
 import { readKimiAccountFromDisk } from "./kimi-account.js";
 import { createKimiCommandNormalizer, normalizeKimiToolCallEvent } from "./kimi-command-echo.js";

@@ -19,13 +19,13 @@ export const RETIRED_TEMPLATE_KEPT_MS = 60 * 60_000;
 export const LEFT_BUILD_GRACE_MS = 10 * 60_000;
 export const BUILD_TTL_SECONDS = 2 * 3600;
 export const TEMPLATE_FILES = [
-  "android/bb-box-device-firewall",
-  "android/bb-box-emulator",
-  "android/bb-box-h264/encoder.h",
-  "android/bb-box-h264/main.c",
-  "android/bb-box-h264/openh264.c",
-  "android/bb-box-h264/simulator.m",
-  "android/bb-box-h264/x264.c",
+  "android/alia-box-device-firewall",
+  "android/alia-box-emulator",
+  "android/alia-box-h264/encoder.h",
+  "android/alia-box-h264/main.c",
+  "android/alia-box-h264/openh264.c",
+  "android/alia-box-h264/simulator.m",
+  "android/alia-box-h264/x264.c",
   "android/build-h264.sh",
   "android/check-android.sh",
   "android/clear-device-state.sh",
@@ -42,15 +42,15 @@ export const TEMPLATE_FILES = [
   "proxmox-lxc/template/fetch-artifacts.sh",
   "proxmox-lxc/template/guest/apt.sh",
   "proxmox-lxc/template/guest/baseline.sh",
-  "proxmox-lxc/template/guest/bb-box-feature.sh",
-  "proxmox-lxc/template/guest/bb-box-identity.sh",
-  "proxmox-lxc/template/guest/bb-box-nvidia-drivers.sh",
+  "proxmox-lxc/template/guest/alia-box-feature.sh",
+  "proxmox-lxc/template/guest/alia-box-identity.sh",
+  "proxmox-lxc/template/guest/alia-box-nvidia-drivers.sh",
   "proxmox-lxc/template/guest/check-desktop.sh",
   "proxmox-lxc/template/guest/check-headless.sh",
   "proxmox-lxc/template/guest/customize-base.sh",
   "proxmox-lxc/template/guest/customize-desktop.sh",
   "proxmox-lxc/template/guest/docker-first-start.sh",
-  "proxmox-lxc/template/guest/files/bb-box-nofbc.c",
+  "proxmox-lxc/template/guest/files/alia-box-nofbc.c",
   "proxmox-lxc/template/guest/files/chrome-gpu.mjs",
   "proxmox-lxc/template/guest/files/cua-probe.mjs",
   "proxmox-lxc/template/guest/files/display",
@@ -59,23 +59,23 @@ export const TEMPLATE_FILES = [
   "proxmox-lxc/template/guest/files/vnc-password",
   "proxmox-lxc/template/guest/finalize.sh",
   "proxmox-lxc/template/guest/image-record.sh",
-  "proxmox-lxc/template/guest/install-bb-app.sh",
+  "proxmox-lxc/template/guest/install-alia-app.sh",
   "proxmox-lxc/template/guest/install-tools.sh",
   "proxmox-lxc/template/guest/nvidia-userspace.sh",
   "proxmox-lxc/template/pins.json",
 ] as const;
-const BUILD_DIR = "/var/tmp/bb-box-build";
-const BUILD_STATE = "/run/bb-box-build";
+const BUILD_DIR = "/var/tmp/alia-box-build";
+const BUILD_STATE = "/run/alia-box-build";
 const IN_HAND_ELSEWHERE = 75;
 export const OUT_OF_BOATS_HOME = "cd /";
 const DESKTOP_UP = 'pgrep -x xfwm4 >/dev/null && test -S "$HOME/.cache/cua-driver/cua-driver.sock"';
 export const CUA_READY = [
   "for round in 1 2 3 4 5 6; do",
-  "  systemctl --user restart bb-box-cua-driver.service",
-  '  for attempt in 1 2 3 4; do if timeout 6 node /usr/local/libexec/bb-box/cua-probe.mjs --socket "$HOME/.cache/cua-driver/cua-driver.sock" >/dev/null 2>&1; then exit 0; fi; sleep 1; done',
+  "  systemctl --user restart alia-box-cua-driver.service",
+  '  for attempt in 1 2 3 4; do if timeout 6 node /usr/local/libexec/alia-box/cua-probe.mjs --socket "$HOME/.cache/cua-driver/cua-driver.sock" >/dev/null 2>&1; then exit 0; fi; sleep 1; done',
   "done",
   'echo "Cua Driver did not answer over MCP after 6 restarts in about 3 minutes." >&2',
-  "journalctl --user -u bb-box-cua-driver.service -n 5 --no-pager -o cat >&2 2>/dev/null || :",
+  "journalctl --user -u alia-box-cua-driver.service -n 5 --no-pager -o cat >&2 2>/dev/null || :",
   "exit 1",
 ].join("\n");
 const BUILD_POLL_MS = 10_000;
@@ -94,10 +94,10 @@ export const LEFT_BUILD_WHY = `a build was going when ${PRODUCT} restarted`;
 const RETIRED = "retired-templates";
 
 export const TEMPLATE_STEP: Readonly<Record<BoatKind, "linux" | "desktop" | "android">> = { linux: "linux", "linux-desktop-cpu": "desktop", android: "android" };
-export const TEMPLATE_CHECK: Readonly<Record<BoatKind, string>> = { linux: "bb-box-check-headless", "linux-desktop-cpu": "bb-box-check-desktop", android: "bb-box-check-android" };
+export const TEMPLATE_CHECK: Readonly<Record<BoatKind, string>> = { linux: "alia-box-check-headless", "linux-desktop-cpu": "alia-box-check-desktop", android: "alia-box-check-android" };
 const USUAL_BUILD_MINUTES: Readonly<Record<BoatKind, number>> = { linux: 6, "linux-desktop-cpu": 12, android: 30 };
 const KIND_WORDS: Readonly<Record<BoatKind, string>> = { linux: "Linux", "linux-desktop-cpu": "Linux desktop", android: "Android" };
-const ANDROID_DEVICES_FILE = "/usr/share/bb-box/android-devices.json";
+const ANDROID_DEVICES_FILE = "/usr/share/alia-box/android-devices.json";
 
 export interface TemplateRecord {
   readonly kind: BoatKind;
@@ -131,7 +131,7 @@ export interface TemplateLabels {
 export type TemplateStage = "building" | "checking" | "ready";
 
 export function templateName(kind: BoatKind, stage: TemplateStage): string {
-  return stage === "ready" ? `bb-box ${kind} template` : `bb-box ${kind} template, ${stage}`;
+  return stage === "ready" ? `alia-box ${kind} template` : `alia-box ${kind} template, ${stage}`;
 }
 
 export interface StagedFiles {
@@ -212,7 +212,7 @@ export function templateArchive(setup = setupDir()): Promise<Buffer> {
 }
 
 export function buildEnvFor(buildId: string, kind: BoatKind): string {
-  return ["BOX_USER=box", "BOX_RUNTIME=vm", "DESKTOP_GPU=none", "BB_URL=", `BUILD_ID=${buildId}`, ...identityBuildSettings(kind), ""].join("\n");
+  return ["BOX_USER=box", "BOX_RUNTIME=vm", "DESKTOP_GPU=none", "ALIA_URL=", `BUILD_ID=${buildId}`, ...identityBuildSettings(kind), ""].join("\n");
 }
 
 export function buildWaitWords(kind: BoatKind, lastBuildMs: number | null): string {
@@ -397,7 +397,7 @@ export class BoatTemplates {
   async #adopt(kind: BoatKind, signal?: AbortSignal): Promise<TemplateRecord | null> {
     const found = await this.adoptable(kind, signal);
     if (!found) return null;
-    this.#deps.log(`${this.#deps.logName}: using the ${kind} template ${found.id}, which bb-box built ${this.#deps.owner.owns(found.labels) ? "before" : "for another install on this account"}.`);
+    this.#deps.log(`${this.#deps.logName}: using the ${kind} template ${found.id}, which alia-box built ${this.#deps.owner.owns(found.labels) ? "before" : "for another install on this account"}.`);
     let devices: readonly unknown[] | null = null;
     if (TEMPLATE_STEP[kind] === "android") {
       const text = await this.#deps.api.latestSnapshotFile(found.id, ANDROID_DEVICES_FILE, signal).catch(() => null);
@@ -491,7 +491,7 @@ export class BoatTemplates {
     const left = await this.leftBuild(kind);
     if (TEMPLATE_STEP[kind] === "android" && !licence) {
       if (left) throw new BuildLeftRunning(`boat leaves the Android template build ${left.id} until it expires, because the Android SDK's licence is not accepted.`);
-      throw new Error("boat's Android template needs the Android SDK's licence accepted in BB Box's settings first.");
+      throw new Error("boat's Android template needs the Android SDK's licence accepted in VesnALIA Box's settings first.");
     }
     if (left) log(`${this.#deps.logName}: following the ${kind} template build ${left.id}, which ${PRODUCT} started before it restarted, rather than build another.`);
     else log(`${this.#deps.logName}: building the ${kind} template, as ${why}.`);
@@ -572,7 +572,7 @@ export class BoatTemplates {
     this.#stillHere();
     const staged = await (await this.#deps.reach(id, "user")).run(`sudo -n sh -c ${quote(stageScript(kind, files))}`, { stdin: archive, timeoutMs: STAGE_WITHIN_MS });
     if (staged.exitCode === IN_HAND_ELSEWHERE) {
-      this.#deps.log(`${this.#deps.logName}: another bb-box is staging or running the ${kind} template build in ${id}, so this one follows it.`);
+      this.#deps.log(`${this.#deps.logName}: another alia-box is staging or running the ${kind} template build in ${id}, so this one follows it.`);
       return false;
     }
     if (staged.exitCode !== 0) throw new Error(`boat's template build could not stage its scripts in ${id}: ${staged.stderr.trim().slice(-400) || `exit ${staged.exitCode}`}`);
@@ -598,7 +598,7 @@ export class BoatTemplates {
     const left = (await this.#ownTrials(kind, template)).filter((sandbox) => !this.#buildSandboxes.has(sandbox.id) && (isRunning(sandbox.state) || isStarting(sandbox.state))).sort(newestFirst)[0] ?? null;
     this.#stillHere();
     if (left) log(`${this.#deps.logName}: checking the ${kind} template ${template} in its trial fork ${left.id}, which ${PRODUCT} made before it restarted.`);
-    const trial = left ?? (await api.fork(template, { size, ttlSeconds: BUILD_TTL_SECONDS, labels: trialLabels, name: `bb-box ${kind} template trial` }));
+    const trial = left ?? (await api.fork(template, { size, ttlSeconds: BUILD_TTL_SECONDS, labels: trialLabels, name: `alia-box ${kind} template trial` }));
     this.#buildSandboxes.add(trial.id);
     let leftRunning = false;
     try {
@@ -746,7 +746,7 @@ export class BoatTemplates {
 
   async #logBuildLog(id: string, kind: BoatKind): Promise<void> {
     const read = await (await this.#deps.reach(id, "user")).run(`sudo -n tail -n ${FAILED_BUILD_LOG_LINES} ${BUILD_DIR}/log`, { timeoutMs: 30_000 }).catch(() => null);
-    if (read?.stdout.trim()) this.#deps.log(`${this.#deps.logName}: ${kind} template build failed; the last ${FAILED_BUILD_LOG_LINES} lines of its log, from sandbox ${id}, which bb-box deletes now:\n${read.stdout.trimEnd()}`);
+    if (read?.stdout.trim()) this.#deps.log(`${this.#deps.logName}: ${kind} template build failed; the last ${FAILED_BUILD_LOG_LINES} lines of its log, from sandbox ${id}, which alia-box deletes now:\n${read.stdout.trimEnd()}`);
   }
 
   async #retire(sandbox: string): Promise<void> {

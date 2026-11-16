@@ -1,6 +1,6 @@
 // Window geometry: persistence, viewport clamping, dragging, and resizing.
 //
-// Ported from bb-plugin-floating-terminal and generalized: this plugin floats
+// Ported from alia-plugin-floating-terminal and generalized: this plugin floats
 // N windows (the main window plus any number of stickies), so every helper
 // takes a storage key and a size profile instead of baking in one window's
 // constants. Kept in plain DOM rather than React because the windows are
@@ -34,7 +34,7 @@ export const STICKY_PROFILE: SizeProfile = {
   defaultHeight: 260,
 };
 
-const STORAGE_PREFIX = "bb-plugin-notes:frame:v1:";
+const STORAGE_PREFIX = "alia-plugin-notes:frame:v1:";
 /** Keep this much of a window reachable so it can never be dragged away. */
 const KEEP_VISIBLE = 120;
 /** One inset for every edge, so the corner reads as a corner. */

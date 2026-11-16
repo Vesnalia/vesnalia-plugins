@@ -1,8 +1,8 @@
-// bb-plugin-x-viral — sidebar page: paste a post, score it, autoresearch it,
+// alia-plugin-x-viral — sidebar page: paste a post, score it, autoresearch it,
 // check an image for the feed, draft a video script, hand off to an agent.
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent, DragEvent, ReactNode } from "react";
-import { definePluginApp, experimental_Diff as Diff, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_Diff as Diff, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { AutoresearchResponse, ScoreResponse, rpcContract } from "./server";
 import type { PostContext } from "./lib/features";
 import { checkImage, checkVideo, type ImageCheck, type VideoCheck } from "./lib/image";
@@ -81,7 +81,7 @@ function Delta({ value }: { value: number }) {
 
 function Page() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [draft] = useState<Draft>(loadDraft);
   const [text, setText] = useState(draft.text);
   const [ctx, setCtx] = useState<PostContext>(draft.ctx);

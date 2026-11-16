@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   CAPS,
   captureThread,
@@ -92,7 +92,7 @@ describe("captureThread pagination", () => {
     { count: 205, serverCap: 100 },
     { count: 205, serverCap: 50 },
   ])("captures all $count events when the server caps pages at $serverCap", async ({ count, serverCap }) => {
-    type ListEvents = BbPluginApi["sdk"]["threads"]["events"]["list"];
+    type ListEvents = AliaPluginApi["sdk"]["threads"]["events"]["list"];
     const events = Array.from({ length: count }, (_, index) => ({
       id: `evt_${index}`,
       threadId: "thr_1",
@@ -110,7 +110,7 @@ describe("captureThread pagination", () => {
       if (pageSize > 100) throw new Error("Thread event limit cannot exceed 100");
       return events.filter((event) => event.seq > Number(afterSeq ?? 0)).slice(0, Math.min(pageSize, serverCap));
     });
-    const bb = {
+    const alia = {
       sdk: {
         threads: {
           get: async () => ({ id: "thr_1", providerId: "codex", environmentId: null }),
@@ -118,9 +118,9 @@ describe("captureThread pagination", () => {
           output: async () => ({ output: "Done." }),
         },
       },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
 
-    const captured = await captureThread(bb, "thr_1");
+    const captured = await captureThread(alia, "thr_1");
 
     expect(captured.eventCount).toBe(count);
     expect(captured.entries.map((entry) => entry.body)).toEqual(events.map((event) => event.data.item.text));
@@ -129,7 +129,7 @@ describe("captureThread pagination", () => {
 });
 
 describe("captureThread paging guards", () => {
-  type ListEvents = BbPluginApi["sdk"]["threads"]["events"]["list"];
+  type ListEvents = AliaPluginApi["sdk"]["threads"]["events"]["list"];
   const event = (seq: number) => ({
     id: `evt_${seq}`, threadId: "thr_1", scope: { kind: "thread" }, seq, createdAt: seq, type: "item/completed",
     data: { providerThreadId: "session_1", item: { id: `msg_${seq}`, type: "agentMessage", text: `Message ${seq}` } },
@@ -140,7 +140,7 @@ describe("captureThread paging guards", () => {
       events: { list },
       output: async () => ({ output: "Done." }),
     } },
-  } as unknown as BbPluginApi);
+  } as unknown as AliaPluginApi);
 
   it("stops at untilSeq inside a later capped page", async () => {
     const events = Array.from({ length: 120 }, (_, index) => event(index + 1));
@@ -234,46 +234,46 @@ describe("projectEvents", () => {
 
 describe("native session discovery helpers", () => {
   it("derives home directories on macOS and Linux", () => {
-    expect(deriveHomeDir("/Users/dev/.bb/x/y")).toBe("/Users/dev");
+    expect(deriveHomeDir("/Users/dev/.vesnalia/x/y")).toBe("/Users/dev");
     expect(deriveHomeDir("/home/ci/work")).toBe("/home/ci");
     expect(deriveHomeDir("/srv/data")).toBeNull();
     expect(deriveHomeDir(null)).toBeNull();
   });
 
   it("slugifies workspace paths the way Claude Code does", () => {
-    expect(claudeProjectSlug("/Users/dev/.bb/personal-workspaces/env_d699ce8g2z")).toBe(
-      "-Users-dev--bb-personal-workspaces-env-d699ce8g2z",
+    expect(claudeProjectSlug("/Users/dev/.vesnalia/personal-workspaces/env_d699ce8g2z")).toBe(
+      "-Users-dev--alia-personal-workspaces-env-d699ce8g2z",
     );
   });
 });
 
 describe("findNativeSessionPath", () => {
-  type ListFiles = BbPluginApi["sdk"]["files"]["list"];
+  type ListFiles = AliaPluginApi["sdk"]["files"]["list"];
   const api = (paths: string[]) => {
     const list = vi.fn<ListFiles>(async () => ({
       files: paths.map((path) => ({ name: path.slice(path.lastIndexOf("/") + 1), path })),
       truncated: false,
     }));
-    return { list, bb: { sdk: { files: { list } } } as unknown as BbPluginApi };
+    return { list, alia: { sdk: { files: { list } } } as unknown as AliaPluginApi };
   };
   const query = (providerId: string) => ({
     providerId, providerThreadId: "abc-123", hostId: "host_1", workspacePath: "/Users/dev/work",
   });
 
   it("picks the Claude Code main transcript over subagent transcripts listed first", async () => {
-    const { bb } = api(["abc-123/subagents/agent-a1.jsonl", "abc-123/subagents/agent-a2.jsonl", "abc-123.jsonl"]);
-    expect(await findNativeSessionPath(bb, query("claude-code"))).toBe(
+    const { alia } = api(["abc-123/subagents/agent-a1.jsonl", "abc-123/subagents/agent-a2.jsonl", "abc-123.jsonl"]);
+    expect(await findNativeSessionPath(alia, query("claude-code"))).toBe(
       "/Users/dev/.claude/projects/-Users-dev-work/abc-123.jsonl",
     );
   });
 
   it("finds the Claude Code main transcript past 100 subagent transcripts", async () => {
-    type ListFiles = BbPluginApi["sdk"]["files"]["list"];
+    type ListFiles = AliaPluginApi["sdk"]["files"]["list"];
     const paths = [
       ...Array.from({ length: 100 }, (_, index) => `abc-123/subagents/agent-a${index}.jsonl`),
       "abc-123.jsonl",
     ];
-    // Like bb's listing: paths containing the query, subagents ranked first, capped at the limit.
+    // Like VesnALIA's listing: paths containing the query, subagents ranked first, capped at the limit.
     const list = vi.fn<ListFiles>(async ({ query, limit }) => ({
       files: paths
         .filter((path) => path.includes(query ?? ""))
@@ -281,30 +281,30 @@ describe("findNativeSessionPath", () => {
         .map((path) => ({ name: path.slice(path.lastIndexOf("/") + 1), path })),
       truncated: false,
     }));
-    const bb = { sdk: { files: { list } } } as unknown as BbPluginApi;
-    expect(await findNativeSessionPath(bb, query("claude-code"))).toBe(
+    const alia = { sdk: { files: { list } } } as unknown as AliaPluginApi;
+    expect(await findNativeSessionPath(alia, query("claude-code"))).toBe(
       "/Users/dev/.claude/projects/-Users-dev-work/abc-123.jsonl",
     );
   });
 
   it("returns null when only subagent transcripts match", async () => {
-    const { bb } = api(["abc-123/subagents/agent-a1.jsonl"]);
-    expect(await findNativeSessionPath(bb, query("claude-code"))).toBeNull();
+    const { alia } = api(["abc-123/subagents/agent-a1.jsonl"]);
+    expect(await findNativeSessionPath(alia, query("claude-code"))).toBeNull();
   });
 
   it("matches the Codex rollout whose id suffix is exact", async () => {
-    const { bb } = api([
+    const { alia } = api([
       "2026/10/09/rollout-2026-10-09T01-00-00-xabc-123.jsonl",
       "2026/10/09/rollout-2026-10-09T02-00-00-abc-123.jsonl",
     ]);
-    expect(await findNativeSessionPath(bb, query("codex"))).toBe(
+    expect(await findNativeSessionPath(alia, query("codex"))).toBe(
       "/Users/dev/.codex/sessions/2026/10/09/rollout-2026-10-09T02-00-00-abc-123.jsonl",
     );
   });
 
   it("skips the listing for providers without a known session layout", async () => {
-    const { bb, list } = api(["abc-123.jsonl"]);
-    expect(await findNativeSessionPath(bb, query("gemini"))).toBeNull();
+    const { alia, list } = api(["abc-123.jsonl"]);
+    expect(await findNativeSessionPath(alia, query("gemini"))).toBeNull();
     expect(list).not.toHaveBeenCalled();
   });
 });

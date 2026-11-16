@@ -27,11 +27,11 @@ function appFiles(entry: string, seen = new Set<string>()): Set<string> {
 }
 
 describe("the frontend bundle", () => {
-  // A git install leaves dev dependencies out, and bb's frontend build supplies only @get-bb/plugin-sdk/app.
+  // A git install leaves dev dependencies out, and VesnALIA's frontend build supplies only @vesnalia/plugin-sdk/app.
   it("never imports a value from the SDK's root entry", () => {
     const offenders = [...appFiles(join(root, "app.tsx"))].flatMap((file) =>
       [...readFileSync(file, "utf8").matchAll(IMPORT)]
-        .filter(([, typeOnly, names, specifier]) => specifier === "@get-bb/plugin-sdk" && !typeOnly && !/^\{\s*type\s[^,]*\}$/.test(names!))
+        .filter(([, typeOnly, names, specifier]) => specifier === "@vesnalia/plugin-sdk" && !typeOnly && !/^\{\s*type\s[^,]*\}$/.test(names!))
         .map(() => file.slice(root.length + 1)),
     );
     expect(offenders).toEqual([]);

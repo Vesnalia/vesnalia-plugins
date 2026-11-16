@@ -1,6 +1,6 @@
 Third-party notices for Obsidian at Home
 
-These notices cover installed production dependencies. BB supplies its runtime shims separately.
+These notices cover installed production dependencies. VesnALIA supplies its runtime shims separately.
 
 
 ========================================================================

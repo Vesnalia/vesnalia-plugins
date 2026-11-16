@@ -38,13 +38,13 @@ export function notificationText(row: MeetingRow, summaryPrompt: string): string
     }
     if (row.warning !== null) lines.push(`Внимание: ${row.warning}`);
     if (row.options.autoTranscribe === false) {
-      lines.push(`Аудиозапись доступна на странице встречи; распознать позже: \`bb meetings retranscribe ${row.id}\`.`);
+      lines.push(`Аудиозапись доступна на странице встречи; распознать позже: \`alia meetings retranscribe ${row.id}\`.`);
     } else if (row.segmentsCount === 0) {
       // Nothing to summarize: don't ask the agent for a summary of silence.
       lines.push("Речь не распознана: транскрипт пуст (в эфире было тихо или бот не слышал звук встречи).");
     } else {
       lines.push(
-        `Прочитать транскрипт: инструмент meetings_transcript (id: "${row.id}", постранично) или команда \`bb meetings transcript ${row.id}\`.`,
+        `Прочитать транскрипт: инструмент meetings_transcript (id: "${row.id}", постранично) или команда \`alia meetings transcript ${row.id}\`.`,
       );
       const prompt = fillPrompt(summaryPrompt, row);
       if (prompt !== "") lines.push("", prompt);
@@ -55,11 +55,11 @@ export function notificationText(row: MeetingRow, summaryPrompt: string): string
     lines.push(`Причина: ${reason.replace(/[.\s]+$/, "")}.`);
     if (row.segmentsCount > 0) {
       lines.push(
-        `Частичный транскрипт (${row.segmentsCount} сегм.) доступен: инструмент meetings_transcript (id: "${row.id}") или \`bb meetings transcript ${row.id}\`.`,
+        `Частичный транскрипт (${row.segmentsCount} сегм.) доступен: инструмент meetings_transcript (id: "${row.id}") или \`alia meetings transcript ${row.id}\`.`,
       );
     }
     if (row.warning !== null) lines.push(`Внимание: ${row.warning}`);
-    lines.push(`Подробности: \`bb meetings show ${row.id}\`, журнал: \`bb meetings logs ${row.id}\`. Ссылка: ${link}`);
+    lines.push(`Подробности: \`alia meetings show ${row.id}\`, журнал: \`alia meetings logs ${row.id}\`. Ссылка: ${link}`);
   }
   // Bot error messages may quote the join URL.
   return maskMeetingUrl(lines.join("\n"));
@@ -73,7 +73,7 @@ export function warningNotificationText(row: MeetingRow): string {
   const lines = [
     `Встреча «${row.title}» (${row.id}) идёт, но с записью проблема.`,
     row.warning ?? "Бот не слышит участников встречи.",
-    `Бот остаётся во встрече и продолжает попытки. Состояние: \`bb meetings show ${row.id}\` или инструмент meetings_status; остановить: \`bb meetings stop ${row.id}\`.`,
+    `Бот остаётся во встрече и продолжает попытки. Состояние: \`alia meetings show ${row.id}\` или инструмент meetings_status; остановить: \`alia meetings stop ${row.id}\`.`,
   ];
   return maskMeetingUrl(lines.join("\n"));
 }

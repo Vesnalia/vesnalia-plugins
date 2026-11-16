@@ -1,6 +1,6 @@
-# E Corp theme for bb
+# E Corp theme for VesnALIA
 
-E Corp is a cold corporate workstation theme for [bb](https://getbb.app). It pairs smoky petroleum-blue surfaces, restrained cyan illumination, steel dividers, compact geometry, and an illuminated focus seam with matching code, diff, file-tree, and terminal colors.
+E Corp is a cold corporate workstation theme for [VesnALIA](https://getbb.app). It pairs smoky petroleum-blue surfaces, restrained cyan illumination, steel dividers, compact geometry, and an illuminated focus seam with matching code, diff, file-tree, and terminal colors.
 
 The palette includes coordinated dark and light modes: the same window, the same illumination low and centre, at two exposures. IBM Plex Sans carries conversation and navigation, IBM Plex Mono carries code and operational metadata, and the bundled Pierre-compatible themes keep syntax surfaces aligned with the app palette.
 
@@ -9,8 +9,8 @@ This is an unofficial fan-made theme. It is not affiliated with or endorsed by t
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/xcke/bb-plugin-e-corp.git@^0.1.0
-bb theme set plugin:e-corp:e-corp
+alia plugin install git:https://github.com/xcke/bb-plugin-e-corp.git@^0.1.0
+alia theme set plugin:e-corp:e-corp
 ```
 
 The theme can also be selected under **Settings → Appearance** after installation.
@@ -24,13 +24,13 @@ npm install
 npm run check
 ```
 
-`source/build.sh` embeds the fonts and texture into `themes/e-corp.css`, stripping the source comments on the way. The build refuses to replace the output if it reaches bb's stylesheet limit of 256,000 characters — past that, bb rejects the theme at `bb theme set` with a bare `Invalid theme id`.
+`source/build.sh` embeds the fonts and texture into `themes/e-corp.css`, stripping the source comments on the way. The build refuses to replace the output if it reaches VesnALIA's stylesheet limit of 256,000 characters — past that, VesnALIA rejects the theme at `alia theme set` with a bare `Invalid theme id`.
 
 For local testing:
 
 ```sh
-bb plugin install .
-bb theme set plugin:e-corp:e-corp
+alia plugin install .
+alia theme set plugin:e-corp:e-corp
 ```
 
 ## Assets

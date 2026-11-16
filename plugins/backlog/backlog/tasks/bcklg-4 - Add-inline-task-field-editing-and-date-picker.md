@@ -49,7 +49,7 @@ The refined modal now uses double-click correctly, but the active editor still a
 <!-- SECTION:NOTES:BEGIN -->
 The user requested that double-click editing stay next to the clicked field and that dates use a date picker. This is an interaction/layout refinement on top of BCKLG-3.
 
-Verification evidence: focused modal suite passed 12/12, including inline property placement and date input type/value; full mise test passed 62/62; typecheck and build passed in named tmux session. Reloaded the installed plugin and checked a fresh BB-owned CDP tab: title double-click produced a textarea inside #task-modal-title with no distant .field-editor, and the narrow modal remained within the 430px viewport. The owned lease and tab were released and closed.
+Verification evidence: focused modal suite passed 12/12, including inline property placement and date input type/value; full mise test passed 62/62; typecheck and build passed in named tmux session. Reloaded the installed plugin and checked a fresh ALIA-owned CDP tab: title double-click produced a textarea inside #task-modal-title with no distant .field-editor, and the narrow modal remained within the 430px viewport. The owned lease and tab were released and closed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

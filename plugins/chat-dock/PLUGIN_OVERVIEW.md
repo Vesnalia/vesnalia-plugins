@@ -2,7 +2,7 @@
 
 Open a thread's right panel and the composer moves into it: the message box, the cards above it (running commands, child threads, questions) and the chips under it. The timeline keeps the full width of its column, and you can read a diff, a file or a browser tab in the panel while you write about it.
 
-Nothing is rebuilt. BB's own composer is moved as it is, so a half-written draft, an open picker and the other plugins' parts of the composer come along, and they go back to the column when the panel closes.
+Nothing is rebuilt. VesnALIA's own composer is moved as it is, so a half-written draft, an open picker and the other plugins' parts of the composer come along, and they go back to the column when the panel closes.
 
 ## Behavior
 
@@ -16,6 +16,6 @@ Nothing is rebuilt. BB's own composer is moved as it is, so a half-written draft
 
 ## Requirements
 
-- BB 0.48 or later.
-- It moves BB's own page elements, which are not a documented interface, so a future BB release may need a plugin update.
+- VesnALIA 0.48 or later.
+- It moves VesnALIA's own page elements, which are not a documented interface, so a future VesnALIA release may need a plugin update.
 - No external service or account is used.

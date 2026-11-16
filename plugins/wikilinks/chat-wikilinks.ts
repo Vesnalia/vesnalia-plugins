@@ -4,9 +4,9 @@ import {
 } from "./wikilink-markdown.js";
 import { elementRect, type HoverAnchorRect } from "./hover-types.js";
 
-export const CHAT_WIKILINK_OPEN_EVENT = "bb:wikilinks:open";
-export const CHAT_WIKILINK_HOVER_EVENT = "bb:wikilinks:hover";
-export const CHAT_WIKILINK_LEAVE_EVENT = "bb:wikilinks:leave";
+export const CHAT_WIKILINK_OPEN_EVENT = "alia:wikilinks:open";
+export const CHAT_WIKILINK_HOVER_EVENT = "alia:wikilinks:hover";
+export const CHAT_WIKILINK_LEAVE_EVENT = "alia:wikilinks:leave";
 
 export interface ChatWikilinkOpenDetail {
   bridgeId: string;

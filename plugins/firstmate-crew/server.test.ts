@@ -1,8 +1,8 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import plugin, { rpcContract } from "./server";
@@ -29,8 +29,8 @@ async function load(options: { mateId?: string } = {}) {
   const home = await tempDir();
   const host = createFakePluginHost({ pluginId: "firstmate-crew", settings: { homeDirectory: home } });
   hosts.push(host);
-  if (options.mateId !== undefined) await host.bb.storage.kv.set("mateThreadId", options.mateId);
-  await plugin(host.bb);
+  if (options.mateId !== undefined) await host.alia.storage.kv.set("mateThreadId", options.mateId);
+  await plugin(host.alia);
   return { home, ...host };
 }
 
@@ -48,7 +48,7 @@ describe("server wiring", () => {
     expect(harness.registrations.services.map((service) => service.name)).toEqual(["watches", "autocompact"]);
   });
 
-  it("loads a fleet with no first mate without asking bb anything", async () => {
+  it("loads a fleet with no first mate without asking VesnALIA anything", async () => {
     const { home, harness } = await load();
     const fleet = (await harness.callRpc("fleet.load", {})) as Fleet;
     expect(fleet).toMatchObject({ home, homeReady: false, mate: null, mateMissing: false, cards: [], watches: [] });
@@ -165,7 +165,7 @@ describe("server wiring", () => {
   });
 
   describe("autocompact's service", () => {
-    /** A first mate idle for ages with a large context; `events` is how bb answers its event reads. */
+    /** A first mate idle for ages with a large context; `events` is how VesnALIA answers its event reads. */
     async function idleMate(events: () => Promise<unknown[]>) {
       const loaded = await load({ mateId: "thr_mate" });
       await loaded.harness.setSettings({ mateAutoCompact: true });
@@ -244,7 +244,7 @@ describe("server wiring", () => {
   });
 
   it("runs the watches for a prepared home, toggles them in the store, and stops on abort", async () => {
-    const { home, bb, harness } = await load();
+    const { home, alia, harness } = await load();
     await prepareHome(home, { crewProvider: "", crewReasoning: "" });
     const service = harness.runService("watches");
     // Let the service's start reach the runner.
@@ -252,11 +252,11 @@ describe("server wiring", () => {
 
     const summaries = (await harness.callRpc("watch.toggle", { name: "pr-watch", enabled: false })) as WatchSummary[];
     expect(summaries.find((watch) => watch.name === "pr-watch")?.enabled).toBe(false);
-    expect(await bb.storage.kv.get("disabledWatches")).toEqual(["pr-watch"]);
+    expect(await alia.storage.kv.get("disabledWatches")).toEqual(["pr-watch"]);
 
     const again = (await harness.callRpc("watch.toggle", { name: "pr-watch", enabled: true })) as WatchSummary[];
     expect(again.find((watch) => watch.name === "pr-watch")?.enabled).toBe(true);
-    expect(await bb.storage.kv.get("disabledWatches")).toEqual([]);
+    expect(await alia.storage.kv.get("disabledWatches")).toEqual([]);
 
     service.controller.abort();
     await service.done;

@@ -1,4 +1,4 @@
-export const BASE = process.env.QA_BB_URL ?? "http://127.0.0.1:48886";
+export const BASE = process.env.QA_ALIA_URL ?? "http://127.0.0.1:48886";
 export const A = process.env.QA_THREAD ?? "thr_w3q5j4ac75";
 const PROJECT = process.env.QA_PROJECT ?? "proj_uqmgqxvk48";
 export async function open(page, thread) {

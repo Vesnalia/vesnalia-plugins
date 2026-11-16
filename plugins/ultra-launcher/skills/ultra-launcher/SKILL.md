@@ -1,6 +1,6 @@
 ---
 name: ultra-launcher
-description: Use when the user asks who owns Cmd+N in BB, wants Ultra Launcher to take over or release the shortcut, wants to list or reset its model presets, or asks how the launcher starts threads.
+description: Use when the user asks who owns Cmd+N in VesnALIA, wants Ultra Launcher to take over or release the shortcut, wants to list or reset its model presets, or asks how the launcher starts threads.
 ---
 
 # Ultra Launcher
@@ -11,19 +11,19 @@ tier.
 
 ## Commands
 
-- `bb ultra-launcher status` says whether Ctrl/Cmd+N opens the launcher, and why.
-- `bb ultra-launcher claim` takes Ctrl/Cmd+N and moves BB's own New thread
+- `alia ultra-launcher status` says whether Ctrl/Cmd+N opens the launcher, and why.
+- `alia ultra-launcher claim` takes Ctrl/Cmd+N and moves VesnALIA's own New thread
   shortcut to Ctrl/Cmd+Shift+O.
-- `bb ultra-launcher release` gives Ctrl/Cmd+N back to BB's New thread. Run it
+- `alia ultra-launcher release` gives Ctrl/Cmd+N back to VesnALIA's New thread. Run it
   before you uninstall the plugin.
-- `bb ultra-launcher presets` prints the saved presets as JSON.
-- `bb ultra-launcher restore-defaults` replaces the saved presets with defaults
-  built from the providers this BB has. It deletes the user's presets, so ask
+- `alia ultra-launcher presets` prints the saved presets as JSON.
+- `alia ultra-launcher restore-defaults` replaces the saved presets with defaults
+  built from the providers this VesnALIA has. It deletes the user's presets, so ask
   first.
 
-If `status` says the user bound BB's New thread to Ctrl/Cmd+N themselves, the
+If `status` says the user bound VesnALIA's New thread to Ctrl/Cmd+N themselves, the
 plugin leaves that binding alone. To free the shortcut, run
-`bb settings keyboard set thread.new disabled`.
+`alia settings keyboard set thread.new disabled`.
 
 The **Take over Ctrl/Cmd+N** setting under **Settings → Ultra Launcher** does
 the same as `claim` and `release`.

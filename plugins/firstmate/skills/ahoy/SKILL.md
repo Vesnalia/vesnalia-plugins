@@ -5,7 +5,7 @@ description: Recap since the last captain message and walk open decisions. Use w
 
 # Ahoy
 
-Session recap, no fresh gathering beyond `firstmate_bearings` / `bb firstmate bearings`.
+Session recap, no fresh gathering beyond `firstmate_bearings` / `alia firstmate bearings`.
 
 - If this is the first real captain message of the session, run bearings and stop.
 - Otherwise recap only what this visible session supports: outcomes, landings, failures, decisions made or needed since the last captain message.

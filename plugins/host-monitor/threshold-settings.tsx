@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Fleet, rpcContract } from "./contract.ts";
 import { Button } from "./components/ui/button.tsx";
 

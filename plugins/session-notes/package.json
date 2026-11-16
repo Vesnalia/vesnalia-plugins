@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-session-notes",
+  "name": "alia-plugin-session-notes",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.38",
-    "bbPluginSdk": ">=0.4.6"
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
   },
-  "bb": {
+  "alia": {
     "name": "Session Notes",
     "description": "Attach private, thread-scoped notes to timeline messages. Never sent to the agent.",
     "branding": {
@@ -18,13 +18,12 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
   },
   "dependencies": {
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.6",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -33,5 +32,22 @@
     "hono": "^4.11.9",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/session-notes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/session-notes"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,29 +1,29 @@
-# PR X-ray for bb
+# PR X-ray for VesnALIA
 
 Understand a GitHub pull request before you review it:
 
 - **Diff tab**: hunks grouped by concern and ordered as a reading path (noise last), with viewed checkmarks, split/unified view and GitHub-style inline comments: single comments, start/submit a review, suggestions, replies, editing your posted comments and resolve.
-- **Explain tab**: a summary informed by the linked Notion ticket and its parent project, "where to look closely", and interactive PR Lens diagrams with a step-by-step walkthrough that zooms to each step. Click a node or table to leave a design comment (kept in bb only).
+- **Explain tab**: a summary informed by the linked Notion ticket and its parent project, "where to look closely", and interactive PR Lens diagrams with a step-by-step walkthrough that zooms to each step. Click a node or table to leave a design comment (kept in VesnALIA only).
 - **Fix with agents**: fix one thread, fix your open review comments or all open comments (one button, with a dropdown that remembers your choice), or redesign from all diagram comments (plan first, then waits for your approval). Each start shows a toast with a link to the thread.
 - **New commits**: the page stays on the commit you are reading. A banner offers Refresh when new commits arrive, so the code never jumps. It checks about once a minute while the page is visible.
-- **Retro feed**: tag comments yourself or click “AI tag”; `bb pr-xray comments --json` exports them.
+- **Retro feed**: tag comments yourself or click “AI tag”; `alia pr-xray comments --json` exports them.
 
 ## Install
 
-Find **PR X-ray** in bb's plugin store (Settings → Plugins), or run:
+Find **PR X-ray** in VesnALIA's plugin store (Settings → Plugins), or run:
 
 ```sh
-bb plugin install pr-xray@bb-community
+alia plugin install pr-xray@alia-community
 ```
 
-Open it with the command palette (**PR X-ray: Review a pull request**; bind a shortcut in Settings → Keyboard), from the **PR X-ray** page in the nav rail, by asking any agent to "x-ray <PR url>", or with `bb pr-xray review <url>`.
+Open it with the command palette (**PR X-ray: Review a pull request**; bind a shortcut in Settings → Keyboard), from the **PR X-ray** page in the nav rail, by asking any agent to "x-ray <PR url>", or with `alia pr-xray review <url>`.
 
 ## Setup
 
 - **GitHub**: uses your `gh` login by default, so if `gh auth status` shows you're logged in, there's nothing to set up. To use a token instead, see [Create a GitHub token](#create-a-github-token).
 - **Notion**: the analysis agent reads the ticket through your agent provider's Notion connection, so Notion must be connected for the provider you analyse with. The ticket is the first link matching *Ticket URL pattern* in the PR description (default: `notion.so` / `notion.com` links), and the parent project is followed through the *Notion parent project property* relation (default `Project`).
-- **Models**: PR X-ray uses your bb default model unless you choose others under Settings → Plugins → PR X-ray. Analysis and chat share one setting, and AI tagging has its own.
-- **Repository context**: when a bb project on the same machine as bb's server has a git remote matching the PR's repository, the analysis and chat agents read a disposable copy of the PR's commit, never your own checkout. Your checkout and any agents working in it are untouched, and setup scripts from the PR branch don't run. PR X-ray deletes the copy when the agent's thread is archived. An open chat keeps its copy until you reset the chat. Fork PRs, and projects where the copy can't be made, use the diff only, and analyses show a badge saying so. Fix threads also run in a copy, so they need a bb project on that machine, and aren't available for fork PRs. Push a fix before archiving its thread, because unpushed commits go with the copy.
+- **Models**: PR X-ray uses your VesnALIA default model unless you choose others under Settings → Plugins → PR X-ray. Analysis and chat share one setting, and AI tagging has its own.
+- **Repository context**: when a VesnALIA project on the same machine as VesnALIA's server has a git remote matching the PR's repository, the analysis and chat agents read a disposable copy of the PR's commit, never your own checkout. Your checkout and any agents working in it are untouched, and setup scripts from the PR branch don't run. PR X-ray deletes the copy when the agent's thread is archived. An open chat keeps its copy until you reset the chat. Fork PRs, and projects where the copy can't be made, use the diff only, and analyses show a badge saying so. Fix threads also run in a copy, so they need a VesnALIA project on that machine, and aren't available for fork PRs. Push a fix before archiving its thread, because unpushed commits go with the copy.
 
 ## Create a GitHub token
 
@@ -41,7 +41,7 @@ You only need this if you don't use the `gh` CLI, or want PR X-ray limited to ce
    | Contents | Read | Showing full files |
 
    GitHub adds *Metadata: read* itself. PR X-ray doesn't need any other permission.
-6. In bb, paste it under **Settings → Plugins → PR X-ray → GitHub token**. The page should then say *Connected as* your GitHub username.
+6. In VesnALIA, paste it under **Settings → Plugins → PR X-ray → GitHub token**. The page should then say *Connected as* your GitHub username.
 
 If the resource owner is an organization that requires approval, the token only reads public resources until an admin approves it.
 
@@ -53,7 +53,7 @@ The token is only for PR X-ray's GitHub requests. A fix agent pushes with the gi
 
 PR titles, descriptions, diffs and branch files are untrusted, and a malicious PR can try to prompt-inject the agents that read them. Those agents run in a disposable copy of the PR's commit, or with no repository, and are told to treat PR content as data and stay off the network. That instruction is not a security boundary.
 
-**With Codex, analysis and chat agents have network access.** bb's Codex workspace sandbox always allows it and PR X-ray can't turn it off, so an injected agent could reach the internet, run `gh` with your login and read files on your machine. Other providers depend on their own sandbox and approval settings, so don't treat those as a hard boundary either.
+**With Codex, analysis and chat agents have network access.** VesnALIA's Codex workspace sandbox always allows it and PR X-ray can't turn it off, so an injected agent could reach the internet, run `gh` with your login and read files on your machine. Other providers depend on their own sandbox and approval settings, so don't treat those as a hard boundary either.
 
 Trust matters most for PRs from people outside your team. PR X-ray asks you to confirm once per PR before an agent works on someone else's PR, or chats over other people's comments, unless Skip trust prompts is on in Settings. Ticking *Don't ask again for any PR* in either prompt turns that setting on. It can't see commits or edits others made to your own PR.
 
@@ -61,7 +61,7 @@ Comments and analysis text can't load remote images or media in PR X-ray: they s
 
 **Fix agents can push to the PR branch.** *Fix with agent* and *Fix my open comments* send only your own comments to the agent. *Fix all open comments* and *Include others' comments* also send everyone else's, and on a public repo anyone can post one, so they ask you to confirm every time, unless Skip trust prompts is on in Settings. The agent is told when comments were left out, because a reply can make little sense without what it answers.
 
-## `bb pr-xray comments --json`
+## `alia pr-xray comments --json`
 
 ```json
 { "since": "...", "count": 1, "comments": [
@@ -77,8 +77,8 @@ Options: `--since 30d|12w|<ISO date>`, `--repo`, `--source`, `--tag`, `--limit`.
 
 ```sh
 npm install --include=dev
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```
 
 Run `npm run check` for linting (oxlint), type checking and tests.

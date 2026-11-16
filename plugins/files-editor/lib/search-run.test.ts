@@ -167,7 +167,7 @@ describe("the worker executor", () => {
 
   it("kills a catastrophically backtracking pattern instead of hanging", async () => {
     // (a+)+$ against a run of a's that ends in a mismatch is exponential. On
-    // the server's own thread this would freeze all of BB.
+    // the server's own thread this would freeze all of VesnALIA.
     const executor = createWorkerExecutor("(a+)+$", "g", 300);
     const started = Date.now();
     await expect(executor.exec([`${"a".repeat(40)}!`], 10)).rejects.toBeInstanceOf(

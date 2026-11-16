@@ -1,12 +1,12 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { OverviewTarget, rpcContract } from "./contract";
 import { writeStorage } from "./remember";
 import { createVantageStore, type VantageSnapshot, type VantageStore } from "./store";
 
 // The page and its sidebar, title bar and Agent tab are separate React trees, and so are a thread's tab, composer segment
 // and Info section. Each surface shares one store per target; it outlives its last reader briefly, so moving between
-// views does not load everything again. "sidebar" is the line under bb's thread rows, which never shows archived threads.
+// views does not load everything again. "sidebar" is the line under VesnALIA's thread rows, which never shows archived threads.
 export type Surface = "page" | "thread" | "sidebar";
 
 const LINGER_MS = 30_000;

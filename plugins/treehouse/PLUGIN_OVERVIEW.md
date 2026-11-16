@@ -3,8 +3,8 @@ Treehouse adds one **Files** tab to every thread's side panel, with three views:
 ## Files
 
 - A file tree with icons for 200+ file types, git badges carried up to each parent folder, a folder picker, and fuzzy **Find files** across nested repositories.
-- The panel is split in two: Treehouse's own tabs on the left, and the file tree, change list or graph on the right. Files, diffs and commits share one set of tabs, remembered per workspace. Pin, drag to reorder, reopen closed tabs, or pop one out to a bb tab.
-- Switch a tab to **Edit** to change the file, with syntax highlighting in bb's code theme and Ctrl/⌘+S to save. A save is refused if the file changed on disk since you opened it; you choose to reload or overwrite.
+- The panel is split in two: Treehouse's own tabs on the left, and the file tree, change list or graph on the right. Files, diffs and commits share one set of tabs, remembered per workspace. Pin, drag to reorder, reopen closed tabs, or pop one out to a VesnALIA tab.
+- Switch a tab to **Edit** to change the file, with syntax highlighting in VesnALIA's code theme and Ctrl/⌘+S to save. A save is refused if the file changed on disk since you opened it; you choose to reload or overwrite.
 - Right-click for New File, New Folder, Copy Path, Duplicate, Download (folders as `.tar.gz`), Open in an external editor or a terminal, Rename, Move to Trash and Delete Permanently.
 - Drag files and folders onto a folder to move them, with Undo.
 - Ignore rules come from the repository that owns each folder, and one button hides ignored entries.
@@ -25,14 +25,14 @@ Treehouse adds one **Files** tab to every thread's side panel, with three views:
 
 ## How it works
 
-Every git command runs on the thread's machine through the plugin's host entry. Treehouse does not poll: it subscribes to bb's native file watcher for the workspace and each repository's git directory, and refreshes when something changes. Folders load when opened and only visible rows are drawn. Every button has a tooltip, and tab commands can be rebound in bb's keyboard settings.
+Every git command runs on the thread's machine through the plugin's host entry. Treehouse does not poll: it subscribes to VesnALIA's native file watcher for the workspace and each repository's git directory, and refreshes when something changes. Folders load when opened and only visible rows are drawn. Every button has a tooltip, and tab commands can be rebound in VesnALIA's keyboard settings.
 
-`bb treehouse status <environment-id>` and `bb treehouse ls <environment-id>` print the same data for scripts and agents.
+`alia treehouse status <environment-id>` and `alia treehouse ls <environment-id>` print the same data for scripts and agents.
 
 ## Requirements
 
-- bb 0.49 or later and `git` on the thread's machine.
-- **✨** needs an Anthropic API key in the plugin settings, Anthropic credentials on the bb server (`ANTHROPIC_API_KEY` or `ant auth login`), or the `claude` CLI on the thread's machine. It sends the diff being committed (up to 120 KB) to Claude Opus 5.5. Everything else works without it.
-- **Create PR** and push use the repository's own git remote and credentials. No GitHub, GitLab or Bitbucket account is connected to bb.
+- VesnALIA 0.49 or later and `git` on the thread's machine.
+- **✨** needs an Anthropic API key in the plugin settings, Anthropic credentials on the VesnALIA server (`ANTHROPIC_API_KEY` or `ant auth login`), or the `claude` CLI on the thread's machine. It sends the diff being committed (up to 120 KB) to Claude Opus 5.5. Everything else works without it.
+- **Create PR** and push use the repository's own git remote and credentials. No GitHub, GitLab or Bitbucket account is connected to VesnALIA.
 
 Source and issues: https://github.com/redhajuanda/bb-treehouse

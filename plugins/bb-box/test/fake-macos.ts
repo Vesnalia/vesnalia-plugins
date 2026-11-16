@@ -42,7 +42,7 @@ export interface FakeMacos {
   start(args: readonly string[]): ChildProcess;
   /** Runs setup-mac.sh, as root through sudo by `sudoUser`. */
   setup(args: readonly string[], sudoUser?: string): Run;
-  /** A file under the Mac's disk, such as /var/db/bb-box/generation, or null when it is missing. */
+  /** A file under the Mac's disk, such as /var/db/alia-box/generation, or null when it is missing. */
   file(path: string): string | null;
   /** A user's attributes, or null when there is no such user. */
   user(name: string): Record<string, string> | null;
@@ -80,7 +80,7 @@ function rewrite(from: string, to: string, root: string, bin: string, settings: 
 /**
  * A fresh fake Mac: Apple silicon, FileVault off, Remote Login on with Full
  * Disk Access, nobody at the console, a person's account `person` (UID 501), and the groups every
- * Mac has. `template` installs BB Box's home template, as setup would.
+ * Mac has. `template` installs VesnALIA Box's home template, as setup would.
  */
 export function fakeMacos(options: { template?: boolean; settings?: Readonly<Record<string, string>> } = {}): FakeMacos {
   const dir = realpathSync(tempDir("macos"));
@@ -121,7 +121,7 @@ export function fakeMacos(options: { template?: boolean; settings?: Readonly<Rec
   cpSync(join(POOL, "mac-home"), join(pool, "mac-home"), { recursive: true });
   // It takes ROOT from setup-mac.sh, and the fake tools from its PATH.
   cpSync(join(POOL, "mac-chrome.sh"), join(pool, "mac-chrome.sh"));
-  if (options.template !== false) cpSync(join(POOL, "mac-home"), join(data, "usr", "local", "share", "bb-box", "home"), { recursive: true });
+  if (options.template !== false) cpSync(join(POOL, "mac-home"), join(data, "usr", "local", "share", "alia-box", "home"), { recursive: true });
 
   const env = { FAKE_MAC_STATE: state, FAKE_MAC_ROOT: root, FAKE_MAC_BIN: bin, PATH: pathRefusingRealHostTools("The fake Mac", pathWithHostStubs(dir, [bin], "/usr/bin:/bin")), LC_ALL: "C", ...ownedFoldersEnv([dir], join(dir, "tmp")) };
   const run = (script: string, args: readonly string[], input: string, more: Record<string, string> = {}): Run => {

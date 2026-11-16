@@ -3,12 +3,12 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./server";
+} from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./server";
 import { SETTINGS_CHANNEL } from "./layoutSets";
 
 export function useSettleOnRead() {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [since, setSince] = useState<number | null>(null);
   const [autoArchiveDays, setAutoArchiveDaysState] = useState<number | null>(
     null,

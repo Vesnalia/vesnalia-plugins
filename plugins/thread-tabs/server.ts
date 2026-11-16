@@ -1,6 +1,6 @@
 // Thread Tabs backend: stores each thread's tab group, starts hidden sessions for tabs, and serves the RPC and CLI.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { collectTranscript } from "./transcript.ts";
 const id = z.string().trim().min(1).max(200);
@@ -41,7 +41,7 @@ export const rpcContract = defineRpcContract({
     restore: { input: z.object({ threadId: id, rootThreadId: id }).strict(), output: groupSchema },
 });
 // Registers the tab RPC handlers and the `thread-tabs` CLI.
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
     const queues = new Map<string, Promise<unknown>>();
     const startingSessions = new Map<string, string>();
     // Runs operations for one root thread one at a time.
@@ -59,10 +59,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
     // Loads the tab group containing this thread (a Main-only group if none is saved); throws if the thread is not a tab.
     async function read(threadId: string): Promise<TabGroup> {
-        const metadata = await bb.sdk.threads.getPluginMetadata({ threadId });
+        const metadata = await alia.sdk.threads.getPluginMetadata({ threadId });
         const root = id.safeParse(metadata.rootThreadId);
         const rootThreadId = root.success ? root.data : threadId;
-        const saved = await bb.storage.kv.get(`group:${rootThreadId}`);
+        const saved = await alia.storage.kv.get(`group:${rootThreadId}`);
         const group = saved == null ? { rootThreadId, revision: 0, tabs: [{ id: rootThreadId, title: "Main", kind: "main" as const, closed: false, draft: false, selection: null, manualTitle: false, transcript: null, unread: false }] } : groupSchema.parse(saved);
         if (group.rootThreadId !== rootThreadId) throw new Error("Stored tab group has an invalid owner.");
         if (!group.tabs.some(tab => tab.id === threadId))
@@ -73,12 +73,12 @@ export default async function plugin(bb: BbPluginApi) {
     async function save(group: TabGroup) {
         group.tabs = await Promise.all(group.tabs.map(async tab => {
             if (tab.draft || tab.closed || tab.manualTitle) return tab;
-            return {...tab, title:sessionTitle(await bb.sdk.threads.get({threadId:tab.id}), tab.title)};
+            return {...tab, title:sessionTitle(await alia.sdk.threads.get({threadId:tab.id}), tab.title)};
         }));
         group.revision++;
         groupSchema.parse(group);
-        await bb.storage.kv.set(`group:${group.rootThreadId}`, group);
-        bb.realtime.publish("changed", { rootThreadId: group.rootThreadId });
+        await alia.storage.kv.set(`group:${group.rootThreadId}`, group);
+        alia.realtime.publish("changed", { rootThreadId: group.rootThreadId });
     }
     // Like `read`, but requires the main thread's ID.
     async function readRoot(rootThreadId: string) {
@@ -92,7 +92,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     // Returns the main thread, throwing if it is archived or deleted.
     async function requireLive(group: TabGroup) {
-        const root = await bb.sdk.threads.get({ threadId: group.rootThreadId });
+        const root = await alia.sdk.threads.get({ threadId: group.rootThreadId });
         if (root.archivedAt !== null || root.deletedAt !== null)
             throw new Error("Restore the main thread before changing tabs.");
         return root;
@@ -105,10 +105,10 @@ export default async function plugin(bb: BbPluginApi) {
     // Returns the tab group with refreshed automatic titles, plus the project, workspace and execution defaults the UI needs.
     async function get(threadId: string): Promise<TabState> {
         const group = await read(threadId);
-        const [thread, execution] = await Promise.all([bb.sdk.threads.get({ threadId }), bb.sdk.threads.defaultExecutionOptions({ threadId })]);
+        const [thread, execution] = await Promise.all([alia.sdk.threads.get({ threadId }), alia.sdk.threads.defaultExecutionOptions({ threadId })]);
         group.tabs = await Promise.all(group.tabs.map(async tab => {
             if (tab.draft || tab.closed || tab.manualTitle) return tab;
-            const session = tab.id === threadId ? thread : await bb.sdk.threads.get({ threadId: tab.id });
+            const session = tab.id === threadId ? thread : await alia.sdk.threads.get({ threadId: tab.id });
             return { ...tab, title: sessionTitle(session, tab.title) };
         }));
         return { projectId: thread.projectId, group, environmentId: thread.environmentId, selection: execution ? { providerId: thread.providerId, model: execution.model, reasoningLevel: execution.reasoningLevel, serviceTier: execution.serviceTier } : null, permissionMode: execution?.permissionMode ?? "auto" };
@@ -116,11 +116,11 @@ export default async function plugin(bb: BbPluginApi) {
     // Builds a session's Markdown transcript, prefixed with its enabled inherited transcript; limited to 2 MB.
     async function transcriptFor(threadId: string, sourceSeqEnd?: number, full = false) {
         const group = await read(threadId);
-        const snapshot = await collectTranscript(bb.sdk, threadId, sourceSeqEnd, full);
+        const snapshot = await collectTranscript(alia.sdk, threadId, sourceSeqEnd, full);
         const inherited = group.tabs.find(tab => tab.id === threadId)?.transcript;
         if (inherited?.enabled) {
-            const source = await bb.sdk.threads.get({ threadId });
-            const file = await bb.sdk.projects.attachments.read({ projectId: source.projectId, path: inherited.file.path });
+            const source = await alia.sdk.threads.get({ threadId });
+            const file = await alia.sdk.projects.attachments.read({ projectId: source.projectId, path: inherited.file.path });
             if (file.bytes.byteLength > 2 * 1024 * 1024) throw new Error("The inherited transcript exceeds 2 MB.");
             snapshot.text = new TextDecoder().decode(file.bytes) + "\n\n---\n\n" + snapshot.text;
             if (Buffer.byteLength(snapshot.text, "utf8") > 2 * 1024 * 1024) throw new Error("The combined conversation transcript exceeds 2 MB.");
@@ -135,7 +135,7 @@ export default async function plugin(bb: BbPluginApi) {
             capacity(group);
             if (Buffer.byteLength(JSON.stringify(group), "utf8") > 200 * 1024) throw new Error("This thread's saved tab history is full. Start a new thread to create more tabs.");
             const root = await requireLive(group);
-            const source = await bb.sdk.threads.get({ threadId: input.threadId });
+            const source = await alia.sdk.threads.get({ threadId: input.threadId });
             if (source.archivedAt !== null || !group.tabs.some(tab => tab.id === source.id && !tab.closed))
                 throw new Error("Restore this tab before creating another.");
             if (!root.environmentId || source.environmentId !== root.environmentId || source.projectId !== root.projectId)
@@ -147,10 +147,10 @@ export default async function plugin(bb: BbPluginApi) {
                 const snapshot = await transcriptFor(source.id, input.sourceSeqEnd);
                 const sourceTitle = source.title ?? source.titleFallback ?? "chat";
                 const filename = `Transcript of ${sourceTitle.replace(/[\/\\:*?"<>|\u0000-\u001f]/g, " ").slice(0, 100)}.md`;
-                const file = await bb.sdk.projects.attachments.upload({ projectId: root.projectId, filename, mimeType: "text/markdown", clientFile: Buffer.from(snapshot.text, "utf8") });
+                const file = await alia.sdk.projects.attachments.upload({ projectId: root.projectId, filename, mimeType: "text/markdown", clientFile: Buffer.from(snapshot.text, "utf8") });
                 transcript = transcriptSchema.parse({ sourceThreadId: source.id, sourceTitle, sourceSeqEnd: snapshot.sourceSeqEnd, enabled: true, file });
             }
-            const execution = input.selection ? null : await bb.sdk.threads.defaultExecutionOptions({ threadId: source.id });
+            const execution = input.selection ? null : await alia.sdk.threads.defaultExecutionOptions({ threadId: source.id });
             const selection = input.selection ?? (execution ? { providerId: source.providerId, model: execution.model, reasoningLevel: execution.reasoningLevel, serviceTier: execution.serviceTier } : null);
             group.tabs.push({ id: draftId, title, kind: input.kind, closed: false, draft: true, selection, manualTitle: false, transcript, unread: false });
             await save(group);
@@ -173,13 +173,13 @@ export default async function plugin(bb: BbPluginApi) {
                 capacity(group);
             if (!tab.draft) {
                 if (!tab.manualTitle) {
-                    const session = await bb.sdk.threads.get({ threadId });
+                    const session = await alia.sdk.threads.get({ threadId });
                     tab.title = sessionTitle(session, tab.title);
                 }
                 if (closed)
-                    await bb.sdk.threads.archive({ threadId });
+                    await alia.sdk.threads.archive({ threadId });
                 else
-                    await bb.sdk.threads.unarchive({ threadId });
+                    await alia.sdk.threads.unarchive({ threadId });
             }
             tab.closed = closed;
             await save(group);
@@ -196,21 +196,21 @@ export default async function plugin(bb: BbPluginApi) {
             if (group.tabs.some(tab => tab.id === threadId && tab.draftId === draftId))
                 return group;
             const root = await requireLive(group);
-            const [thread, metadata] = await Promise.all([bb.sdk.threads.get({ threadId }), bb.sdk.threads.getPluginMetadata({ threadId })]);
+            const [thread, metadata] = await Promise.all([alia.sdk.threads.get({ threadId }), alia.sdk.threads.getPluginMetadata({ threadId })]);
             if (thread.environmentId !== root.environmentId || thread.projectId !== root.projectId || thread.lifecycleOwnerThreadId !== rootThreadId || thread.visibility !== "hidden" || metadata.rootThreadId !== rootThreadId || metadata.draftId !== draftId)
                 throw new Error("The new session must belong to this draft and share this thread's workspace.");
             const existing = group.tabs.find(tab => tab.draftId === draftId);
             if (existing) {
                 // Two clients can submit the same draft; retain only the first attached session.
-                await bb.sdk.threads.archive({ threadId });
+                await alia.sdk.threads.archive({ threadId });
                 return group;
             }
             const tab = group.tabs.find(tab => tab.id === draftId && tab.draft);
             if (!tab) throw new Error("The draft tab no longer exists.");
-            if (tab.manualTitle) await bb.sdk.threads.update({ threadId, title: tab.title });
+            if (tab.manualTitle) await alia.sdk.threads.update({ threadId, title: tab.title });
             else tab.title = sessionTitle(thread, tab.title);
             // A draft can be closed in another window while the native composer starts it.
-            if (tab.closed) await bb.sdk.threads.archive({ threadId });
+            if (tab.closed) await alia.sdk.threads.archive({ threadId });
             tab.id = threadId;
             tab.draft = false;
             tab.draftId = draftId;
@@ -229,15 +229,15 @@ export default async function plugin(bb: BbPluginApi) {
             if (!tab) throw new Error("This draft is no longer open.");
             if (request.projectId !== root.projectId || request.environment.environmentId !== root.environmentId) throw new Error("Chat tabs must share the main thread's project and workspace.");
             const recoveryKey = `started:${draftId}`;
-            const recovered = startingSessions.get(draftId) ?? id.nullish().parse(await bb.storage.kv.get(recoveryKey));
+            const recovered = startingSessions.get(draftId) ?? id.nullish().parse(await alia.storage.kv.get(recoveryKey));
             let threadId = recovered;
             if (!threadId) {
-                // BB validates the complete PromptInput union before creating the session.
-                const input = request.input as NonNullable<Parameters<typeof bb.sdk.threads.spawn>[0]["input"]>;
-                const thread = await bb.sdk.threads.spawn({...request, input:tab.transcript?.enabled ? [tab.transcript.file, ...input] : input, ...(tab.manualTitle ? {title:tab.title} : {}), visibility:"hidden", lifecycleOwnerThreadId:rootThreadId, pluginMetadata:{rootThreadId,draftId}});
+                // VesnALIA validates the complete PromptInput union before creating the session.
+                const input = request.input as NonNullable<Parameters<typeof alia.sdk.threads.spawn>[0]["input"]>;
+                const thread = await alia.sdk.threads.spawn({...request, input:tab.transcript?.enabled ? [tab.transcript.file, ...input] : input, ...(tab.manualTitle ? {title:tab.title} : {}), visibility:"hidden", lifecycleOwnerThreadId:rootThreadId, pluginMetadata:{rootThreadId,draftId}});
                 threadId = thread.id;
                 startingSessions.set(draftId, threadId);
-                await bb.storage.kv.set(recoveryKey, threadId);
+                await alia.storage.kv.set(recoveryKey, threadId);
             }
             const attached = await attachUnlocked({rootThreadId, draftId, threadId});
             startingSessions.delete(draftId);
@@ -250,7 +250,7 @@ export default async function plugin(bb: BbPluginApi) {
             const group = await readRoot(rootThreadId);
             const tab = group.tabs.find(tab => tab.id === threadId);
             if (!tab) throw new Error("Tab not found in this thread.");
-            if (!tab.draft) await bb.sdk.threads.update({ threadId, title });
+            if (!tab.draft) await alia.sdk.threads.update({ threadId, title });
             tab.title = title;
             tab.manualTitle = true;
             await save(group);
@@ -273,8 +273,8 @@ export default async function plugin(bb: BbPluginApi) {
         const group = await readRoot(rootThreadId);
         const tab = group.tabs.find(tab => tab.id === tabId);
         if (!tab?.transcript) throw new Error("This tab has no transcript attachment.");
-        const root = await bb.sdk.threads.get({ threadId: rootThreadId });
-        const file = await bb.sdk.projects.attachments.read({ projectId: root.projectId, path: tab.transcript.file.path });
+        const root = await alia.sdk.threads.get({ threadId: rootThreadId });
+        const file = await alia.sdk.projects.attachments.read({ projectId: root.projectId, path: tab.transcript.file.path });
         if (file.bytes.byteLength > 2 * 1024 * 1024) throw new Error("The transcript exceeds 2 MB.");
         return { text: new TextDecoder().decode(file.bytes), name: tab.transcript.file.name };
     }
@@ -286,8 +286,8 @@ export default async function plugin(bb: BbPluginApi) {
             if (!tab) throw new Error("Tab not found in this thread.");
             if (tab.unread === value) return group;
             if (!tab.draft) {
-                if (value) await bb.sdk.threads.markUnread({ threadId: tabId });
-                else await bb.sdk.threads.markRead({ threadId: tabId });
+                if (value) await alia.sdk.threads.markUnread({ threadId: tabId });
+                else await alia.sdk.threads.markRead({ threadId: tabId });
             }
             tab.unread = value;
             await save(group);
@@ -303,7 +303,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         return readRoot(rootThreadId);
     }
-    bb.rpc.register(rpcContract, {
+    alia.rpc.register(rpcContract, {
         start,
         transcript: ({ threadId, full }) => transcriptFor(threadId, undefined, full),
         preview: ({ rootThreadId, tabId }) => preview(rootThreadId, tabId),
@@ -311,14 +311,14 @@ export default async function plugin(bb: BbPluginApi) {
         unread: ({ rootThreadId, tabId, unread: value }) => unread(rootThreadId, tabId, value),
         close_others: ({ rootThreadId, tabId }) => closeOthers(rootThreadId, tabId),
         rename: ({ rootThreadId, threadId, title }) => rename(rootThreadId, threadId, title), attach, get: ({ threadId }) => get(threadId), create, close: ({ rootThreadId, threadId }) => setClosed(rootThreadId, threadId, true), restore: ({ rootThreadId, threadId }) => setClosed(rootThreadId, threadId, false) });
-    bb.cli.register({
+    alia.cli.register({
         name: "thread-tabs", summary: "List, create, fork, close, and restore chat tabs within a thread",
-        commands: ["list", "new", "fork", "close", "restore", "rename", "transcript", "unread", "read", "close-others", "detach-transcript", "restore-transcript", "preview-transcript"].map(name => ({ name, summary: `${name} thread tabs`, usage: name === "rename" ? "bb thread-tabs rename <tab-id> <root-thread-id> <title...> [--json]" : `bb thread-tabs ${name} <thread-id> [--json]` })),
+        commands: ["list", "new", "fork", "close", "restore", "rename", "transcript", "unread", "read", "close-others", "detach-transcript", "restore-transcript", "preview-transcript"].map(name => ({ name, summary: `${name} thread tabs`, usage: name === "rename" ? "alia thread-tabs rename <tab-id> <root-thread-id> <title...> [--json]" : `alia thread-tabs ${name} <thread-id> [--json]` })),
         async run(argv) {
             const args = argv.filter(arg => arg !== "--json");
             const [command, threadId, providerId, model, reasoningLevel = "medium"] = args;
             if (!threadId || !["list", "new", "fork", "close", "restore", "rename", "transcript", "unread", "read", "close-others", "detach-transcript", "restore-transcript", "preview-transcript"].includes(command ?? ""))
-                return { exitCode: 1, stderr: "Usage: bb thread-tabs list|fork <thread-id> [--json]\n       bb thread-tabs transcript <session-id> [full] [--json]\n       bb thread-tabs unread|read|close-others <tab-id> [root-thread-id for a draft] [--json]\n       bb thread-tabs detach-transcript|restore-transcript|preview-transcript <tab-id> <root-thread-id> [--json]\n       bb thread-tabs close|restore <tab-id> [root-thread-id for a draft] [--json]\n       bb thread-tabs new <thread-id> <provider-id> <model> [reasoning-level] [--json]\n       bb thread-tabs rename <tab-id> <root-thread-id> <title...> [--json]" };
+                return { exitCode: 1, stderr: "Usage: VesnALIA thread-tabs list|fork <thread-id> [--json]\n       VesnALIA thread-tabs transcript <session-id> [full] [--json]\n       VesnALIA thread-tabs unread|read|close-others <tab-id> [root-thread-id for a draft] [--json]\n       VesnALIA thread-tabs detach-transcript|restore-transcript|preview-transcript <tab-id> <root-thread-id> [--json]\n       VesnALIA thread-tabs close|restore <tab-id> [root-thread-id for a draft] [--json]\n       VesnALIA thread-tabs new <thread-id> <provider-id> <model> [reasoning-level] [--json]\n       VesnALIA thread-tabs rename <tab-id> <root-thread-id> <title...> [--json]" };
             let result;
             if (command === "detach-transcript" || command === "restore-transcript") result = await setTranscript(id.parse(providerId), id.parse(threadId), command === "restore-transcript");
             else if (command === "preview-transcript") result = await preview(id.parse(providerId), id.parse(threadId));

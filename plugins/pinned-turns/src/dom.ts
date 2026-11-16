@@ -1,6 +1,6 @@
 import { dataIdOf } from "./model.ts";
 
-/** BB's timeline DOM, as found in bb-app 0.47.0. Undocumented: see AGENTS.md. */
+/** VesnALIA's timeline DOM, as found in alia-app 0.47.0. Undocumented: see AGENTS.md. */
 export interface Timeline {
   scroller: HTMLElement;
   /** `[data-timeline-items]`: the mounted rows and the windowing spacers. */
@@ -35,7 +35,7 @@ export function rowById(items: HTMLElement, id: string): HTMLElement | null {
 
 /**
  * The rank of the row a mounted row stands for, walking back to the nearest row
- * the timeline knows when it is one BB made up (and the data has no id for).
+ * the timeline knows when it is one VesnALIA made up (and the data has no id for).
  */
 export function rankOfRow(rows: readonly HTMLElement[], at: number, rank: ReadonlyMap<string, number>): number | null {
   for (let i = at; i >= 0; i--) {

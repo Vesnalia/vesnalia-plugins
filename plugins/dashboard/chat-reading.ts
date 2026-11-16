@@ -1,5 +1,5 @@
 type ReadingPosition = { top: number; atBottom: boolean };
-// Session-only and bounded; native BB continues to own the conversation and drafts.
+// Session-only and bounded; native VesnALIA continues to own the conversation and drafts.
 const positions = new Map<string, ReadingPosition>();
 
 export function preserveChatReading(root: HTMLElement, threadId: string) {

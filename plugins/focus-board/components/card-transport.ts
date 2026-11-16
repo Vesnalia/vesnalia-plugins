@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { GroupRunItem } from "./group-boxes";
 import { columnRunItems } from "./group-boxes";
 import type { GroupBoxMap } from "./group-boxes";

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { accountPoolLimits, createAccountPoolLimitsLoader, mergeAccountPoolLimits, poolAccountsSchema } from "./account-pool-limits";
 import { groupProviderLimits, isLimitVisibleOnMachine } from "./provider-limits";
@@ -136,7 +136,7 @@ describe("Account Pooler limits", () => {
     });
   });
 
-  it("merges the window labels returned by BB's local provider bridges", () => {
+  it("merges the window labels returned by VesnALIA's local provider bridges", () => {
     const local = localLimits();
     local[0]!.windows = [
       { label: "Current session", usedPercent: 25, resetsAt: new Date(resetAt).toISOString() },
@@ -199,8 +199,8 @@ describe("optional pool integration", () => {
   function setup() {
     const list = vi.fn().mockResolvedValue({ plugins: [{ id: "account-pool", enabled: true }] });
     const callRpc = vi.fn().mockResolvedValue([account({ limitWindows: codexWindows })]);
-    const bb = { sdk: { plugins: { list, callRpc } }, log: { debug: vi.fn() } } as unknown as BbPluginApi;
-    return { bb, list, callRpc, load: createAccountPoolLimitsLoader(bb, 20) };
+    const alia = { sdk: { plugins: { list, callRpc } }, log: { debug: vi.fn() } } as unknown as AliaPluginApi;
+    return { alia, list, callRpc, load: createAccountPoolLimitsLoader(alia, 20) };
   }
 
   it("reads all accounts once without touching account credentials or refresh operations", async () => {
@@ -259,8 +259,8 @@ describe("optional pool integration", () => {
     const accounts = [account({ limitWindows: codexWindows }), account({ id: "codex-two", email: "work@example.com", limitWindows: codexWindows })];
     let refresh: () => Promise<unknown> = async () => ({ account: { ...accounts[0], observedAt: Date.now() } });
     const callRpc = vi.fn(({ method }: { method: string }) => method === "account.refreshUsage" ? refresh() : Promise.resolve(accounts));
-    const bb = { sdk: { plugins: { list, callRpc } }, log: { debug: vi.fn() } } as unknown as BbPluginApi;
-    const load = createAccountPoolLimitsLoader(bb, 20, 20);
+    const alia = { sdk: { plugins: { list, callRpc } }, log: { debug: vi.fn() } } as unknown as AliaPluginApi;
+    const load = createAccountPoolLimitsLoader(alia, 20, 20);
 
     const plain = await load();
     expect(callRpc.mock.calls.map(([call]) => call.method)).toEqual(["account.list"]);

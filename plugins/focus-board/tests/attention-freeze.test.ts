@@ -3,7 +3,7 @@
 // placement, so live data churn re-sorts around it instead of moving it.
 // The pin releases when attention releases (mouse out / pane close).
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   applyLaneFreezes,
   applySlotPins,

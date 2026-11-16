@@ -1,6 +1,6 @@
-// A stand-in for the bb plugin runtime, so the engine's and the shell's
-// `@get-bb/plugin-sdk/app` imports work outside bb: `experimental_Icon` draws
-// the same Hugeicons glyphs bb resolves these names to, `ThreadTitle` and
+// A stand-in for the VesnALIA plugin runtime, so the engine's and the shell's
+// `@vesnalia/plugin-sdk/app` imports work outside VesnALIA: `experimental_Icon` draws
+// the same Hugeicons glyphs VesnALIA resolves these names to, `ThreadTitle` and
 // `experimental_ProviderIcon` draw the fixture's titles and marks, and splits
 // are always available.
 import * as React from "react";
@@ -90,7 +90,7 @@ function HarnessProviderIcon({ provider }: { provider: { id: string } }) {
 const split = { isAvailable: true, splitProps: {} };
 
 export function installHarnessRuntime(): void {
-  (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime = {
+  (globalThis as { __aliaPluginRuntime?: unknown }).__aliaPluginRuntime = {
     react: React,
     pluginSdkApp: {
       experimental_Icon: HarnessIcon,

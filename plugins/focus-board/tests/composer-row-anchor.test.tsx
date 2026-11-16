@@ -76,7 +76,7 @@ describe("measureFooterRowAnchor (DOM)", () => {
     Object.defineProperty(row, "offsetHeight", { configurable: true, value: box.offsetHeight });
   }
 
-  it("finds the footer row through bb's own hook inside the wrapper", () => {
+  it("finds the footer row through VesnALIA's own hook inside the wrapper", () => {
     const { wrapper, row } = buildWrapper();
     stubRowBox(row, wrapper, { offsetTop: 350, offsetLeft: 0, offsetHeight: 28 });
     const placement = measureFooterRowAnchor(wrapper, 28, 28);
@@ -102,7 +102,7 @@ describe("measureFooterRowAnchor (DOM)", () => {
 
   it("a positioned element between wrapper and row falls back to rect pairs", () => {
     const { wrapper, row } = buildWrapper();
-    // A positioned intermediate (a future bb markup change) makes
+    // A positioned intermediate (a future VesnALIA markup change) makes
     // offsetParent disagree with the wrapper: the measure falls back to
     // rect pairs relative to the wrapper with the same answer.
     const positioned = document.createElement("div");
@@ -140,7 +140,7 @@ describe("measureFooterRowAnchor (DOM)", () => {
     expect(placement!.left).toBe((40 - 40 + 14) - 28);
   });
 
-  it("the selector names bb's own row hook literally", () => {
+  it("the selector names VesnALIA's own row hook literally", () => {
     expect(COMPOSER_FOOTER_ROW_SELECTOR).toBe('[data-new-thread-footer=""]');
     const { wrapper } = buildWrapper();
     expect(wrapper.querySelector(COMPOSER_FOOTER_ROW_SELECTOR)).not.toBeNull();

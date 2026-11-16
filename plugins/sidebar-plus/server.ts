@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   PROJECT_VISIBILITY_CHANNEL,
   PROJECT_VISIBILITY_KV_KEY,
@@ -14,7 +14,7 @@ class SidebarPreferencesError extends Error {
   override name: string = "SidebarPreferencesError";
 }
 
-type ProjectListResult = Awaited<ReturnType<BbPluginApi["sdk"]["projects"]["list"]>>;
+type ProjectListResult = Awaited<ReturnType<AliaPluginApi["sdk"]["projects"]["list"]>>;
 
 type PreferenceChange = (current: ProjectVisibilityState) => ProjectVisibilityState;
 
@@ -28,22 +28,22 @@ function moveBefore(ids: readonly string[], projectId: string, beforeProjectId: 
   return remaining;
 }
 
-export default async function plugin(bb: BbPluginApi): Promise<void> {
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
   let mutationQueue: Promise<void> = Promise.resolve();
 
   async function readState(): Promise<ProjectVisibilityState> {
     let stored: unknown;
     try {
-      stored = await bb.storage.kv.get<unknown>(PROJECT_VISIBILITY_KV_KEY);
+      stored = await alia.storage.kv.get<unknown>(PROJECT_VISIBILITY_KV_KEY);
     } catch (cause: unknown) {
-      bb.log.error(JSON.stringify({ event: "sidebar_preferences_read_failed", key: PROJECT_VISIBILITY_KV_KEY, cause: String(cause) }));
+      alia.log.error(JSON.stringify({ event: "sidebar_preferences_read_failed", key: PROJECT_VISIBILITY_KV_KEY, cause: String(cause) }));
       throw new SidebarPreferencesError("Sidebar Plus could not read your preferences. Reconnect and retry; your data has not been reset.");
     }
     if (stored === undefined) return createInitialProjectVisibilityState();
     try {
       return parseStoredPreferences(stored);
     } catch (cause: unknown) {
-      bb.log.error(JSON.stringify({ event: "sidebar_preferences_invalid", key: PROJECT_VISIBILITY_KV_KEY, cause: String(cause) }));
+      alia.log.error(JSON.stringify({ event: "sidebar_preferences_invalid", key: PROJECT_VISIBILITY_KV_KEY, cause: String(cause) }));
       throw new SidebarPreferencesError("Saved Sidebar Plus preferences are invalid. Ask the maintainer to repair the preference key; your data has not been reset.");
     }
   }
@@ -51,15 +51,15 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   async function commitState(current: ProjectVisibilityState, changed: ProjectVisibilityState): Promise<ProjectVisibilityState> {
     const snapshot: ProjectVisibilityState = projectVisibilityStateSchema.parse({ ...changed, revision: current.revision + 1 });
     try {
-      await bb.storage.kv.set(PROJECT_VISIBILITY_KV_KEY, snapshot);
+      await alia.storage.kv.set(PROJECT_VISIBILITY_KV_KEY, snapshot);
     } catch (cause: unknown) {
-      bb.log.error(JSON.stringify({ event: "sidebar_preferences_write_failed", revision: snapshot.revision, cause: String(cause) }));
+      alia.log.error(JSON.stringify({ event: "sidebar_preferences_write_failed", revision: snapshot.revision, cause: String(cause) }));
       throw new SidebarPreferencesError("Sidebar Plus could not save your preferences. Retry the action; the change was not saved.");
     }
     try {
-      bb.realtime.publish(PROJECT_VISIBILITY_CHANNEL, { snapshot });
+      alia.realtime.publish(PROJECT_VISIBILITY_CHANNEL, { snapshot });
     } catch (cause: unknown) {
-      bb.log.error(JSON.stringify({ event: "sidebar_preferences_publish_failed", revision: snapshot.revision, cause: String(cause) }));
+      alia.log.error(JSON.stringify({ event: "sidebar_preferences_publish_failed", revision: snapshot.revision, cause: String(cause) }));
       throw new SidebarPreferencesError("Preferences were saved, but could not reach other windows. Reconnect those windows to refresh them.");
     }
     return snapshot;
@@ -67,9 +67,9 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
 
   async function listProjects(): Promise<ProjectListResult> {
     try {
-      return await bb.sdk.projects.list({ includePersonal: true });
+      return await alia.sdk.projects.list({ includePersonal: true });
     } catch (cause: unknown) {
-      bb.log.error(JSON.stringify({ event: "sidebar_projects_list_failed", params: { includePersonal: true }, cause: String(cause) }));
+      alia.log.error(JSON.stringify({ event: "sidebar_projects_list_failed", params: { includePersonal: true }, cause: String(cause) }));
       throw new SidebarPreferencesError("Sidebar Plus could not load the current projects. Reconnect and retry the action.");
     }
   }
@@ -171,7 +171,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     });
   }
 
-  bb.rpc.register(sidebarRpcContract, {
+  alia.rpc.register(sidebarRpcContract, {
     getProjectVisibility: () => getSynchronizedState(),
     syncProjects: () => getSynchronizedState(),
     pinProject: ({ projectId }) => pinProject(projectId),
@@ -192,6 +192,6 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     expandProject: ({ projectId }) => update((current) => ({ ...current, collapsedProjectIds: current.collapsedProjectIds.filter((id) => id !== projectId) })),
   });
 
-  bb.log.info(JSON.stringify({ event: "sidebar_plus_loaded", pluginId: bb.pluginId }));
-  bb.onDispose(() => bb.log.info(JSON.stringify({ event: "sidebar_plus_disposed", pluginId: bb.pluginId })));
+  alia.log.info(JSON.stringify({ event: "sidebar_plus_loaded", pluginId: alia.pluginId }));
+  alia.onDispose(() => alia.log.info(JSON.stringify({ event: "sidebar_plus_disposed", pluginId: alia.pluginId })));
 }

@@ -1,4 +1,4 @@
-// §8.8 — the composer mention provider: "@" a file from the machine bb runs on.
+// §8.8 — the composer mention provider: "@" a file from the machine VesnALIA runs on.
 //
 // Two host contracts drive every case here. `search` is time-boxed and
 // failure-isolated, so it must answer with a list or with nothing — never with
@@ -7,8 +7,8 @@
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { PluginMentionSearchContext } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { PluginMentionSearchContext } from "@vesnalia/plugin-sdk";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { MENTION_PROVIDER_ID, MENTION_PROVIDER_LABEL, PLUGIN_ID } from "../../contract";
@@ -45,7 +45,7 @@ afterEach(async () => {
 describe("registration", () => {
   it("registers one provider with the shared id and label", () => {
     const host = createFakePluginHost({ pluginId: PLUGIN_ID });
-    registerMentions(host.bb);
+    registerMentions(host.alia);
 
     const providers = host.harness.inspection.registrations.mentionProviders;
     expect(providers).toHaveLength(1);
@@ -55,7 +55,7 @@ describe("registration", () => {
 
   it("claims the @ trigger only", () => {
     const host = createFakePluginHost({ pluginId: PLUGIN_ID });
-    registerMentions(host.bb);
+    registerMentions(host.alia);
 
     expect(host.harness.inspection.registrations.mentionProviders[0]?.triggers).toEqual(["@"]);
     // The registration itself leaves it out — "@" is the host's default, and

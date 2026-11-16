@@ -9,7 +9,7 @@
 //   * the sort/filter memo, which is pure client-side work: changing the sort
 //     column or typing in the search box must never issue an RPC.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 
 import { FS_CHANNEL, type FileEntry, type Preferences } from "../contract";
 import { parseRpcError, type ParsedRpcError } from "../lib/errors";

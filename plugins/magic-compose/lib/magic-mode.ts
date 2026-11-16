@@ -1,9 +1,9 @@
 // Whether the Magic Compose toggle is on. Per browser, and shared by every open
 // compose screen in that browser.
 
-const STORAGE_KEY = "bb-plugin-magic-compose:enabled";
+const STORAGE_KEY = "alia-plugin-magic-compose:enabled";
 /** The plugin was Auto Dispatch until it was renamed. A toggle left on then is still on. */
-const FORMER_STORAGE_KEY = "bb-plugin-auto-dispatch:enabled";
+const FORMER_STORAGE_KEY = "alia-plugin-auto-dispatch:enabled";
 
 type Listener = () => void;
 

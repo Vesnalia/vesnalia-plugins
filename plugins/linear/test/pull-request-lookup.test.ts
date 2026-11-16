@@ -6,7 +6,7 @@ import {
   type GithubPrStatusRpc,
 } from "../src/automations/pull-request-lookup.js";
 
-/** A row as bb's GitHub PR Status plugin actually returns it, extra fields and all. */
+/** A row as VesnALIA's GitHub PR Status plugin actually returns it, extra fields and all. */
 const MERGED_ROW = {
   outcome: "available",
   pullRequest: {
@@ -28,7 +28,7 @@ const MERGED_ROW = {
 
 type PeerCall = Parameters<GithubPrStatusRpc>[0];
 
-/** Behaves like `bb.sdk.plugins.callRpc`: the output schema parses the peer's answer. */
+/** Behaves like `alia.sdk.plugins.callRpc`: the output schema parses the peer's answer. */
 function peer(
   answer: () => unknown,
   refresh: () => unknown = () => ({ ok: true }),
@@ -87,7 +87,7 @@ describe("lookupPullRequest", () => {
 
   it("reads a disabled peer or a changed shape as unavailable instead of throwing", async () => {
     const disabled = peer(() => {
-      throw new Error("Plugin bb--github-pr-status is disabled");
+      throw new Error("Plugin alia--github-pr-status is disabled");
     });
     const reshaped = peer(() => ({ env_1: { outcome: "available", pullRequest: { number: "two" } } }));
 

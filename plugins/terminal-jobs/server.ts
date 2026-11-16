@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { TerminalJobCli } from "./src/cli.js";
 import { createServiceLoop, TerminalJobService } from "./src/service.js";
 import { terminalJobHostContract } from "./src/host-contract.js";
@@ -31,56 +31,56 @@ function createWakeSignal() {
   };
 }
 
-export default function terminalJobsPlugin(bb: BbPluginApi): void {
-  const store = JobStore.open(bb);
-  const service = new TerminalJobService(bb, store);
+export default function terminalJobsPlugin(alia: AliaPluginApi): void {
+  const store = JobStore.open(alia);
+  const service = new TerminalJobService(alia, store);
   const wakeSignal = createWakeSignal();
   const generationToken = `generation_${randomUUID()}`;
-  const runnerHost = bb.hosts.experimental_client({ contract: terminalJobHostContract });
+  const runnerHost = alia.hosts.experimental_client({ contract: terminalJobHostContract });
   const cli = new TerminalJobCli(
-    bb,
+    alia,
     store,
     () => wakeSignal.wake(),
     runnerHost,
     generationToken,
   );
 
-  bb.cli.register({
+  alia.cli.register({
     name: "terminal-job",
     summary: "Run and inspect durable terminal jobs.",
     commands: [
       {
         name: "run",
-        summary: "Run a command in a durable BB terminal.",
+        summary: "Run a command in a durable VesnALIA terminal.",
         usage:
-          "bb terminal-job run --title TITLE [scope] --artifact-root PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]",
+          "alia terminal-job run --title TITLE [scope] --artifact-root PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]",
       },
       {
         name: "watch",
         summary: "Register an existing terminal without recovering scrollback.",
         usage:
-          "bb terminal-job watch TERMINAL_ID --notify-thread THREAD --log PATH [--delivery queue|steer] [--json]",
+          "alia terminal-job watch TERMINAL_ID --notify-thread THREAD --log PATH [--delivery queue|steer] [--json]",
       },
       {
         name: "show",
         summary: "Show durable job status without command arguments.",
-        usage: "bb terminal-job show JOB_ID [--json]",
+        usage: "alia terminal-job show JOB_ID [--json]",
       },
       {
         name: "list",
         summary: "List recent terminal jobs without command arguments.",
-        usage: "bb terminal-job list [--limit N] [--json]",
+        usage: "alia terminal-job list [--limit N] [--json]",
       },
       {
         name: "prune",
         summary: "Preview or delete old settled job data.",
         usage:
-          "bb terminal-job prune --older-than-days N [--limit N] [--delete] [--json]",
+          "alia terminal-job prune --older-than-days N [--limit N] [--delete] [--json]",
       },
       {
         name: "retry-notification",
         summary: "Retry an abandoned or waiting completion notice.",
-        usage: "bb terminal-job retry-notification JOB_ID [--json]",
+        usage: "alia terminal-job retry-notification JOB_ID [--json]",
       },
     ],
     run(argv, ctx) {
@@ -88,9 +88,9 @@ export default function terminalJobsPlugin(bb: BbPluginApi): void {
     },
   });
 
-  bb.background.service("reconciler", {
+  alia.background.service("reconciler", {
     start: createServiceLoop(service, store, (delay, signal) => wakeSignal.wait(delay, signal)),
   });
 
-  bb.log.info("Terminal jobs loaded");
+  alia.log.info("Terminal jobs loaded");
 }

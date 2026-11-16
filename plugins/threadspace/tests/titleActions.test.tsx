@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
-import { useBbNavigate, useSdk, type PluginThreadAction, type PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot, type RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
+import { useAliaNavigate, useSdk, type PluginThreadAction, type PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { titleRegenerationAction } from "../src/titleActions";
 import type { TitleRegenerationResult } from "../src/titleGeneration";
@@ -49,7 +49,7 @@ async function mount({ compact = false, language = "ru", response = async () => 
   // once, then give its evaluated items to the real sidebar's native menus.
   function Host(props: PluginThreadListProps) {
     const data = titleRegenerationAction.useData!({ threadIds: threads.map(item => item.id) });
-    const sdk = useSdk(), navigate = useBbNavigate();
+    const sdk = useSdk(), navigate = useAliaNavigate();
     for (const target of threads) {
       const action = titleRegenerationAction.item({ thread: { ...target, environment: null }, data, sdk, navigate });
       if (action) actions.set(target.id, action);
@@ -70,7 +70,7 @@ async function mount({ compact = false, language = "ru", response = async () => 
     threadActions: (target, { requestRename }) => {
       const action = actions.get(target.id);
       return [
-        { key: "bb--core/rename", pluginId: "bb--core", group: "organize", action: { label: language === "ru" ? "Переименовать" : "Rename", icon: "Pencil", run: async () => requestRename(target.id) } },
+        { key: "alia--core/rename", pluginId: "alia--core", group: "organize", action: { label: language === "ru" ? "Переименовать" : "Rename", icon: "Pencil", run: async () => requestRename(target.id) } },
         ...(action ? [{ key: "threadspace/regenerate-title", pluginId: "threadspace", group: titleRegenerationAction.group, action: { ...action, run: async (value?: string) => { await action.run({ value, requestRename }); } } }] : []),
       ];
     },
@@ -150,7 +150,7 @@ describe("thread title regeneration actions", () => {
     openMenu("t1");
     expect(within(row("t1")).getByRole("menuitem", { name: "Сгенерировать название заново" }).hasAttribute("disabled")).toBe(false);
     await act(async () => { job.resolve({ ok: true, title: "Готово", previousTitle: "Вторая задача" }); await job.promise; });
-    const context = row().closest('[data-testid="bb-thread-actions-context-menu"]')!;
+    const context = row().closest('[data-testid="alia-thread-actions-context-menu"]')!;
     // Reopen to read the current host action after its shared data changed.
     fireEvent.contextMenu(row());
     expect(within(context as HTMLElement).getByRole("menuitem", { name: "Сгенерировать название заново" }).hasAttribute("disabled")).toBe(false);
@@ -177,7 +177,7 @@ describe("thread title regeneration actions", () => {
     expectNoNavigationOrWrite(current);
   });
 
-  it("reports English success from the current BB interface language", async () => {
+  it("reports English success from the current VesnALIA interface language", async () => {
     const current = await mount({ language: "en" });
     openMenu("t2", "en");
     fireEvent.click(screen.getByRole("menuitem", { name: "Regenerate title" }));
@@ -188,9 +188,9 @@ describe("thread title regeneration actions", () => {
   });
 
   const failures = [
-    ["off", "Генерация названий отключена в BB → AI services", "Thread title generation is off in BB → AI services"],
-    ["unavailable", "Сервис названий недоступен. Проверь BB → AI services", "The title service is unavailable. Check BB → AI services"],
-    ["unsupported", "Для этого сервиса нужен API генерации от BB. Сейчас поддерживается bb cloud", "This service needs a title-generation API from BB. Currently supported: bb cloud"],
+    ["off", "Генерация названий отключена в VesnALIA → AI services", "Thread title generation is off in VesnALIA → AI services"],
+    ["unavailable", "Сервис названий недоступен. Проверь VesnALIA → AI services", "The title service is unavailable. Check VesnALIA → AI services"],
+    ["unsupported", "Для этого сервиса нужен API генерации от VesnALIA. Сейчас поддерживается VesnALIA cloud", "This service needs a title-generation API from VesnALIA. Currently supported: VesnALIA cloud"],
     ["empty", "В треде пока нет сообщений для названия", "This thread has no messages to name"],
     ["invalid-response", "Сервис не вернул подходящее название", "The service returned no usable title"],
     ["conflict", "Во время генерации название изменилось. Попробуй ещё раз", "The title changed during generation. Try again"],

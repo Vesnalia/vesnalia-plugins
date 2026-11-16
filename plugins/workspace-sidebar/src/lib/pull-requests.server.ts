@@ -4,7 +4,7 @@
 // child_process into the browser bundle. The pure half is in pull-requests.ts.
 import { execFile } from "node:child_process";
 import type { Database } from "better-sqlite3";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   GH_PULL_FIELDS,
   isSettled,
@@ -147,8 +147,8 @@ function fetchPullRequest(
 export type PullRequestEntry = PullRequestSnapshot & { threadId: string };
 
 type Target = { threadId: string; environmentId: string };
-type Environments = Pick<BbPluginApi["sdk"]["environments"], "pullRequest">;
-type Threads = Pick<BbPluginApi["sdk"]["threads"], "get">;
+type Environments = Pick<AliaPluginApi["sdk"]["environments"], "pullRequest">;
+type Threads = Pick<AliaPluginApi["sdk"]["threads"], "get">;
 
 export interface PullRequestReaderDeps {
   environments: Environments;
@@ -177,8 +177,8 @@ type EnvironmentAnswer =
   | { kind: "unknown" };
 
 /**
- * Narrow bb's pull request response to the three answers that change what we
- * do next. The distinction bb draws between "absent" and "unavailable" is the
+ * Narrow VesnALIA's pull request response to the three answers that change what we
+ * do next. The distinction VesnALIA draws between "absent" and "unavailable" is the
  * whole point: absent is the environment telling us, authoritatively, that its
  * branch has no pull request. Unavailable is the environment failing to
  * answer — a deleted checkout, an unreachable host — and treating that as "no
@@ -217,7 +217,7 @@ function narrow(result: {
  *
  * Three sources, in descending order of authority:
  *
- *   1. The environment, via bb's own API. Live, complete, and the only one
+ *   1. The environment, via VesnALIA's own API. Live, complete, and the only one
  *      that can discover a pull request nobody has told us about yet.
  *   2. The binding this module wrote the last time source 1 worked. Survives
  *      the checkout it was learned from. Settled pull requests stop here and
@@ -381,7 +381,7 @@ export function createPullRequestReader(deps: PullRequestReaderDeps) {
 /**
  * The repository a pull request URL belongs to.
  *
- * bb hands back a URL rather than an owner/repo pair, and the binding needs
+ * VesnALIA hands back a URL rather than an owner/repo pair, and the binding needs
  * the pair to ask about the number later. An unparseable URL yields "", which
  * simply makes the binding unusable for refreshing — the snapshot still
  * stores, and the environment stays the source of truth for that thread.

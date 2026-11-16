@@ -41,14 +41,14 @@ test("mounts when a home target arrives after starting on a thread", async () =>
   const { doc, cleanup } = setup(THREAD);
   await tick();
   assert.equal(doc.getElementById(HERO_ID), null);
-  assert.equal(doc.getElementById("bb-hero-style"), null);
+  assert.equal(doc.getElementById("alia-hero-style"), null);
 
   swapBody(doc, HOME);
   await tick();
   const hero = doc.getElementById(HERO_ID);
   assert.ok(hero, "hero attaches once the home composer appears");
   assert.equal(hero.parentElement, doc.getElementById("home-column"));
-  assert.equal(doc.querySelector(".bb-hero-name").textContent, "Alex", "configured name renders");
+  assert.equal(doc.querySelector(".alia-hero-name").textContent, "Alex", "configured name renders");
   cleanup();
 });
 
@@ -60,7 +60,7 @@ test("re-attaches across home -> thread -> home without an appearance change", a
   swapBody(doc, THREAD);
   await tick();
   assert.equal(doc.getElementById(HERO_ID), null, "leaving home removes the hero");
-  assert.equal(doc.getElementById("bb-hero-style"), null, "and its styling");
+  assert.equal(doc.getElementById("alia-hero-style"), null, "and its styling");
 
   swapBody(doc, HOME);
   await tick();
@@ -80,14 +80,14 @@ test("handles the compact home target", async () => {
 test("applies a changed appearance when the home target comes back", async () => {
   const { doc, state, cleanup } = setup(HOME);
   await tick();
-  assert.equal(doc.querySelector(".bb-hero-name").textContent, "Alex");
+  assert.equal(doc.querySelector(".alia-hero-name").textContent, "Alex");
 
   state.appearance = { displayName: "Blair", iconDataUrl: null };
   swapBody(doc, THREAD);
   await tick();
   swapBody(doc, HOME);
   await tick();
-  assert.equal(doc.querySelector(".bb-hero-name").textContent, "Blair");
+  assert.equal(doc.querySelector(".alia-hero-name").textContent, "Blair");
   cleanup();
 });
 
@@ -114,7 +114,7 @@ test("a pre-aborted signal never attaches", async () => {
   swapBody(doc, HOME);
   await tick();
   assert.equal(doc.getElementById(HERO_ID), null);
-  assert.equal(doc.getElementById("bb-hero-style"), null);
+  assert.equal(doc.getElementById("alia-hero-style"), null);
   cleanup();
 });
 

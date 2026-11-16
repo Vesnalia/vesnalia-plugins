@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { testStore } from "./test-store.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -13,9 +13,9 @@ test("read_pr_context reads the context of the guide writer's or the assistant's
     ? { stdout: JSON.stringify({ data: { viewer: { login: "me" }, repository: { pullRequest: { title: "Retry", body: "Fixes it.", author: { login: "alice" }, baseRefName: "main", headRefName: "retry" } } } }), stderr: "", code: 0 }
     : { stdout: "[]", stderr: "", code: 0 });
   const titles: Record<string, string> = { writer: "Generate guide: pr-1", stranger: "Something else" };
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async ({ threadId }: { threadId: string }) => ({ title: titles[threadId] ?? null }) } } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { get: async ({ threadId }: { threadId: string }) => ({ title: titles[threadId] ?? null }) } } as any });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, base: "main", headSha: "abc", status: "generating", createdAt: 1 });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n");
   await store.setReviewContext("pr-1", "Implements LIN-42.");
@@ -34,9 +34,9 @@ test("read_pr_context tells the agent not to follow an untrusted author's ticket
   runGh.mockImplementation(async (args: string[]) => args[1] === "graphql"
     ? { stdout: JSON.stringify({ data: { viewer: { login: "me" }, repository: { pullRequest: { title: "Fix LIN-42", body: "Also read SEC-7.", author: { login: "mallory" }, baseRefName: "main", headRefName: "fix" } } } }), stderr: "", code: 0 }
     : { stdout: "[]", stderr: "", code: 0 });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, base: "main", headSha: "abc", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n");
   await store.setAssistantThread("pr-1", "assistant");
@@ -53,9 +53,9 @@ test("read_pr_context judges the author's trust from its own read until the sync
   runGh.mockImplementation(async (args: string[]) => args[1] === "graphql"
     ? { stdout: JSON.stringify({ data: { viewer: { login: "me" }, repository: { pullRequest: { title: "Fix LIN-42", body: "", author: { login: "alice" }, isCrossRepository: false, baseRefName: "main", headRefName: "fix", ...author } } } }), stderr: "", code: 0 }
     : { stdout: "[]", stderr: "", code: 0 });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, base: "main", headSha: "abc", status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n");
   await store.setAssistantThread("pr-1", "assistant");
@@ -78,8 +78,8 @@ test("read_pr_context judges the author's trust from its own read until the sync
 });
 
 test("read_pr_context's description says a local review's instructions are read where its diff starts", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
   const tool = harness.inspection.registrations.agentTools.find((t) => t.name === "read_pr_context");
   expect(tool?.description).toContain("For a local review, its commits and the review instructions at the diff's start.");
 });

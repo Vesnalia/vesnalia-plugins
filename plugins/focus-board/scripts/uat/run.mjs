@@ -1102,10 +1102,10 @@ const pageAriaProbe = (label) => {
 };
 
 /**
- * The queued-message row's touch reveal, end to end (issue #296). bb's row
+ * The queued-message row's touch reveal, end to end (issue #296). VesnALIA's row
  * control is `opacity-0 pointer-events-none` at rest and leans on the host's
  * `@media (hover:none)` reveal utilities to become tappable on a touch device.
- * Inside the plugin root bb's scoped plugin sheet could outrank those host
+ * Inside the plugin root VesnALIA's scoped plugin sheet could outrank those host
  * utilities, so the control stayed invisible and Send was unreachable. This
  * probe demands the real thing: the control must compute painted AND be the
  * element at its own center (hit-testable), the Send control must be hidden
@@ -1855,8 +1855,8 @@ const pageWhatsNew = () => {
     document.querySelector('button[aria-label="Focus Board settings"]');
   const modal =
     document.querySelector("[role=dialog]") ??
-    document.querySelector("[data-bb-portaled-overlay] [role=dialog]") ??
-    document.querySelector("[data-bb-portaled-overlay] [role=alertdialog]");
+    document.querySelector("[data-alia-portaled-overlay] [role=dialog]") ??
+    document.querySelector("[data-alia-portaled-overlay] [role=alertdialog]");
   const tab = document.querySelector('[role="tab"][aria-selected="true"]');
   return {
     icon: button !== null,
@@ -2392,7 +2392,7 @@ const pagePaneState = () => {
  * rect test alone would miscount it.
  */
 const pagePaneBoardFloor = ({ floor }) => {
-  const panel = document.querySelector('[data-bb-plugin="focus-board"]');
+  const panel = document.querySelector('[data-alia-plugin="focus-board"]');
   const aside = document.querySelector('aside[aria-label^="Thread: "]');
   if (panel === null || aside === null) {
     return { ok: false, detail: "no pane or no panel on the page" };
@@ -4764,7 +4764,7 @@ async function runSuite(file, { port, browser, cell = null }) {
             await sleep(300);
           } else if (gesture === "push_url") {
             // A push to a surface the mock router does not own — the shape of
-            // a link-out to main bb. The app's own state is untouched by it.
+            // a link-out to main VesnALIA. The app's own state is untouched by it.
             await page.evaluate(
               (url) => history.pushState(null, "", url),
               payload,
@@ -4773,7 +4773,7 @@ async function runSuite(file, { port, browser, cell = null }) {
           } else if (gesture === "push_update") {
             // A host push with the gesture's patch (status, flags, age): the
             // simulated sidebar rewrites and the board re-derives live — the
-            // thing a real bb does while an operator gestures.
+            // thing a real VesnALIA does while an operator gestures.
             await page.evaluate(
               (p) => globalThis.__uat.pushThreadUpdate(p.threadId, p.patch ?? {}),
               { threadId: payload.threadId, patch: payload.patch ?? {} },
@@ -4890,7 +4890,7 @@ for (const file of suiteFiles) {
     }
   }
   for (const cell of cells) {
-    // Port handout with retry: another runner (a concurrent bb thread's UAT,
+    // Port handout with retry: another runner (a concurrent VesnALIA thread's UAT,
     // a crashed session's stray vite) can own a handed-out port; retrying a
     // few ports ahead beats a confusing cross-runner test run.
     let attemptPort = port;

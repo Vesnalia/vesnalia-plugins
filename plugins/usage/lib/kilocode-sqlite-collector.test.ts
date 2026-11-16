@@ -14,7 +14,7 @@ const execFileAsync = promisify(execFile);
 const temporaryDirectories: string[] = [];
 
 async function temporaryDirectory() {
-  const directory = await mkdtemp(join(tmpdir(), "bb-usage-kilocode-scan-"));
+  const directory = await mkdtemp(join(tmpdir(), "alia-usage-kilocode-scan-"));
   temporaryDirectories.push(directory);
   return directory;
 }

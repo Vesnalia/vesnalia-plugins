@@ -19,8 +19,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: var(--bb-sidebar-control-size);
-  height: var(--bb-sidebar-control-size);
+  width: var(--alia-sidebar-control-size);
+  height: var(--alia-sidebar-control-size);
   padding: 0;
   border: 0;
   border-radius: 8px;
@@ -49,8 +49,8 @@
 }
 
 .compact-nav-icon {
-  width: var(--bb-sidebar-control-icon-size);
-  height: var(--bb-sidebar-control-icon-size);
+  width: var(--alia-sidebar-control-icon-size);
+  height: var(--alia-sidebar-control-icon-size);
   flex-shrink: 0;
 }
 

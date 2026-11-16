@@ -39,7 +39,7 @@ describe("clipForCli", () => {
 
 describe("clipLinesForCli", () => {
   it("keeps every line when they fit", () => {
-    const result = clipLinesForCli(["a", "bb", "ccc"], 100);
+    const result = clipLinesForCli(["a", "alia", "ccc"], 100);
     expect(result.text).toBe("a\nbb\nccc\n");
     expect(result.omitted).toBe(0);
   });
@@ -68,7 +68,7 @@ describe("clipLinesForCli", () => {
 });
 
 /**
- * BB discards an oversize CLI result rather than truncating it, so these
+ * VesnALIA discards an oversize CLI result rather than truncating it, so these
  * budgets are the difference between a partial answer and none. The numbers
  * mirror server.ts; if either constant moves, this is what catches it.
  */
@@ -87,7 +87,7 @@ describe("the CLI budgets leave room for what the commands actually print", () =
     const notes =
       `(showing ${lines.length} of ${lines.length + 1} entries)\n` +
       "(listing was truncated)\n" +
-      `(output capped: printed ${lines.length - clipped.omitted} of ${lines.length} entries — BB caps a command's output)\n`;
+      `(output capped: printed ${lines.length - clipped.omitted} of ${lines.length} entries — VesnALIA caps a command's output)\n`;
     const total =
       Buffer.byteLength(clipped.text, "utf8") + Buffer.byteLength(notes, "utf8");
     expect(total).toBeLessThanOrEqual(MAX);
@@ -96,7 +96,7 @@ describe("the CLI budgets leave room for what the commands actually print", () =
   it("reserves more than the note block can possibly need", () => {
     const worstCaseNotes =
       "(showing 40000 of 40000 entries)\n(listing was truncated)\n" +
-      "(output capped: printed 40000 of 40000 entries — BB caps a command's output)\n";
+      "(output capped: printed 40000 of 40000 entries — VesnALIA caps a command's output)\n";
     expect(Buffer.byteLength(worstCaseNotes, "utf8")).toBeLessThan(1024);
   });
 
@@ -106,7 +106,7 @@ describe("the CLI budgets leave room for what the commands actually print", () =
       (_, index) => `${"p".repeat(120)}/${index}.ts`,
     );
     const clipped = clipLinesForCli(lines, LISTING_BUDGET);
-    const stderr = `(output capped: ${clipped.omitted} more matches omitted — BB caps a command's output)\n`;
+    const stderr = `(output capped: ${clipped.omitted} more matches omitted — VesnALIA caps a command's output)\n`;
     const total =
       Buffer.byteLength(clipped.text, "utf8") + Buffer.byteLength(stderr, "utf8");
     expect(total).toBeLessThanOrEqual(MAX);
@@ -114,7 +114,7 @@ describe("the CLI budgets leave room for what the commands actually print", () =
 
   it("fits a worst-case read: clipped content plus the stderr note", () => {
     const clipped = clipForCli("x".repeat(5_000_000), OUTPUT_BUDGET);
-    const stderr = `(truncated: printed ${OUTPUT_BUDGET} of ${clipped.clippedFrom} bytes — BB caps a command's output)\n`;
+    const stderr = `(truncated: printed ${OUTPUT_BUDGET} of ${clipped.clippedFrom} bytes — VesnALIA caps a command's output)\n`;
     const total =
       Buffer.byteLength(clipped.text, "utf8") + Buffer.byteLength(stderr, "utf8");
     expect(total).toBeLessThanOrEqual(MAX);

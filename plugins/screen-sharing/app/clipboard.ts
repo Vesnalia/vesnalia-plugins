@@ -10,7 +10,7 @@
  *   page asks the plugin's server for the Mac's clipboard (`clipboardRead`,
  *   `clipboardWrite`), which reads and writes its plain text through
  *   NSPasteboard on that Mac (host/pasteboard.ts).
- * - **Whose clipboard.** That is the clipboard of the macOS account bb runs as
+ * - **Whose clipboard.** That is the clipboard of the macOS account VesnALIA runs as
  *   on the Mac. A Screen Sharing sign-in as another account shows that
  *   account's own desktop, whose clipboard only root could reach; the sync
  *   then stays off and says why.
@@ -25,8 +25,8 @@
  *   coming back, the pointer or focus entering the screen — one read at a
  *   time, and stops after the first refusal, saying so, until the user turns
  *   Auto sync on again or presses Send clipboard. This side is not polled.
- * - **Writing it** is bb's own clipboard writer (`experimental_copyToClipboard`):
- *   bb's desktop app writes the native clipboard, focused or not; a browser
+ * - **Writing it** is VesnALIA's own clipboard writer (`experimental_copyToClipboard`):
+ *   VesnALIA's desktop app writes the native clipboard, focused or not; a browser
  *   needs focus, and Safari a click. Receive asks the Mac first, so where the
  *   write needs a click of its own the notice offers a Copy button.
  * - **Only changes cross.** The sync keeps what each side was last known to
@@ -36,7 +36,7 @@
  *   from here changes nothing, and a copy here that failed does not send the
  *   old text back over the Mac's new one.
  */
-import { experimental_copyToClipboard } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard } from "@vesnalia/plugin-sdk/app";
 
 import { MAX_CLIPBOARD_BYTES, type ClipboardAccount, type ClipboardRead, type ClipboardWritten } from "../shared/channels";
 
@@ -104,7 +104,7 @@ export function signedInAsAccount(typed: string, account: ClipboardAccount): boo
 
 /** Why the sync is off when the sign-in was another account's. */
 export function wrongAccount(hostName: string, account: ClipboardAccount): string {
-  return `Clipboard sync reaches only the clipboard of ${account.userName}, the account bb runs as on ${hostName}. Sign in as ${account.userName} to use it.`;
+  return `Clipboard sync reaches only the clipboard of ${account.userName}, the account VesnALIA runs as on ${hostName}. Sign in as ${account.userName} to use it.`;
 }
 
 /** Auto sync, remembered on this computer for every session and the next ones. */
@@ -288,7 +288,7 @@ export class ClipboardSync {
       try {
         text = await reading;
       } catch (error) {
-        this.say({ tone: "warning", text: `bb could not read this computer’s clipboard: ${errorText(error)}.` });
+        this.say({ tone: "warning", text: `alia could not read this computer’s clipboard: ${errorText(error)}.` });
         return;
       }
       if (this.ended) return;
@@ -342,7 +342,7 @@ export class ClipboardSync {
     if (await this.writeLocal(text)) {
       this.say({ tone: "info", text: `Copied ${this.session.hostName()}’s clipboard to this computer.` });
     } else {
-      this.say({ tone: "warning", text: "bb could not write to this computer’s clipboard." });
+      this.say({ tone: "warning", text: "alia could not write to this computer’s clipboard." });
     }
   }
 
@@ -477,7 +477,7 @@ export class ClipboardSync {
     } else if (offerCopy) {
       this.say({ tone: "warning", text: `This browser needs one more click to copy ${hostName}’s clipboard here.`, copy: text });
     } else {
-      this.say({ tone: "warning", text: "bb could not write to this computer’s clipboard." });
+      this.say({ tone: "warning", text: "alia could not write to this computer’s clipboard." });
     }
   }
 

@@ -1,5 +1,5 @@
 import { interactionRequestPayloadSchema, pendingInteractionResolutionSchema,
-  isUserQuestionPendingInteractionResolution } from '@get-bb/plugin-sdk/provider-bridge';
+  isUserQuestionPendingInteractionResolution } from '@vesnalia/plugin-sdk/provider-bridge';
 import { ProtocolError, record, string } from './errors.ts';
 import type { Snapshot } from './native.ts';
 

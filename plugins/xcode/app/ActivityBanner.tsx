@@ -55,7 +55,7 @@
  */
 
 import { memo, useCallback } from "react";
-import { useComposer, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import { cn } from "@/lib/utils";
 

@@ -1,9 +1,9 @@
-// Measures how much a BB thread's conversation moves under the reader while
+// Measures how much a VesnALIA thread's conversation moves under the reader while
 // they scroll it: the regression check for scroll jitter. Scrolls the thread
 // up with the mouse wheel and, after each step, watches the element in the
 // middle of the view for 900 ms; any movement then is content resizing
 // (nothing is scrolling). Compare with --off, the same page without this
-// plugin, which is BB's own baseline.
+// plugin, which is VesnALIA's own baseline.
 //
 //   node scripts/scroll-jitter.mjs <threadId> [--off] [--steps 40] [--profile dir]
 //                                  [--verbose] [--url http://127.0.0.1:38886]
@@ -24,7 +24,7 @@ if (thread === undefined) {
 const off = args.includes("--off");
 const verbose = args.includes("--verbose");
 const steps = Number(option("--steps", "24"));
-const base = option("--url", process.env.BB_URL ?? "http://127.0.0.1:38886");
+const base = option("--url", process.env.ALIA_URL ?? "http://127.0.0.1:38886");
 const project = option("--project", null);
 const profile = option("--profile", null);
 const WHEEL = 260;
@@ -35,7 +35,7 @@ const context = profile === null ? await browser.newContext(contextOptions) : aw
 const page = await context.newPage();
 
 if (off) {
-  // BB without this plugin, in this page only.
+  // VesnALIA without this plugin, in this page only.
   await page.route("**/api/v1/plugins", async (route) => {
     const response = await route.fetch();
     const body = await response.json();

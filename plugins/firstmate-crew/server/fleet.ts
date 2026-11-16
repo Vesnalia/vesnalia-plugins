@@ -60,7 +60,7 @@ export class ReportCache {
 }
 
 /**
- * Where a crewmate belongs. What bb knows wins while the thread is busy or stuck — an interaction
+ * Where a crewmate belongs. What VesnALIA knows wins while the thread is busy or stuck — an interaction
  * waiting, an error, a turn in flight — and the status line decides once its turn has ended. A live
  * crewmate is never Done, even after `done:` or `resolved:`: the task has landed only once the backlog
  * says so, and until then the first mate still has work to do with it.
@@ -228,7 +228,7 @@ async function charterState(home: string): Promise<CharterState> {
 export type FleetDeps = MateDeps & {
   reports: ReportCache;
   watches: () => Promise<WatchSummary[]>;
-  /** Where the reads the board does without are logged: bb's plugin log. */
+  /** Where the reads the board does without are logged: VesnALIA's plugin log. */
   log: Log;
 };
 

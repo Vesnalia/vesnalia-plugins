@@ -1,5 +1,5 @@
 // Plain-text rendering for CLI output. JSON output bypasses this module.
-import type { PluginCliResult } from "@get-bb/plugin-sdk";
+import type { PluginCliResult } from "@vesnalia/plugin-sdk";
 import {
   contractHome,
   shortHash,
@@ -15,29 +15,29 @@ import type { StatusResponse } from "../contract";
 
 export const USAGE = [
   "Usage:",
-  "  bb skill-manager status [--json]                 Skill × agent matrix with sources",
-  "  bb skill-manager agents [--json]                 Agent targets and their directories",
-  "  bb skill-manager show <skill> [--json]           One skill: source, hub, and each agent",
-  "  bb skill-manager diff <skill> <agent>            Compare an agent's copy with the hub",
-  "  bb skill-manager sync <skill>|--all [--to a,b] [--copy|--link] [--force]",
-  "  bb skill-manager remove <skill> --from <a,b> [--force]",
-  "  bb skill-manager adopt <skill> --from <agent> [--force] [--link]",
+  "  VesnALIA skill-manager status [--json]                 Skill × agent matrix with sources",
+  "  VesnALIA skill-manager agents [--json]                 Agent targets and their directories",
+  "  VesnALIA skill-manager show <skill> [--json]           One skill: source, hub, and each agent",
+  "  VesnALIA skill-manager diff <skill> <agent>            Compare an agent's copy with the hub",
+  "  VesnALIA skill-manager sync <skill>|--all [--to a,b] [--copy|--link] [--force]",
+  "  VesnALIA skill-manager remove <skill> --from <a,b> [--force]",
+  "  VesnALIA skill-manager adopt <skill> --from <agent> [--force] [--link]",
   "",
-  "  bb skill-manager install <source> [--to a,b|--all-agents] [--force]",
+  "  VesnALIA skill-manager install <source> [--to a,b|--all-agents] [--force]",
   "      source: owner/repo@skill · owner/repo/path · github URL · git URL · ./dir",
-  "  bb skill-manager list-source <source>            Skills a source offers, without installing",
-  "  bb skill-manager source <skill> <source>         Record where an existing hub skill came from",
-  "  bb skill-manager resolve-sources [--force]       Match untracked skills on skills.sh; record confident ones",
-  "  bb skill-manager check [skill...] [--json]       Compare hub skills with upstream",
-  "  bb skill-manager update [skill...] [--force]     Fetch newer versions into the hub",
+  "  VesnALIA skill-manager list-source <source>            Skills a source offers, without installing",
+  "  VesnALIA skill-manager source <skill> <source>         Record where an existing hub skill came from",
+  "  VesnALIA skill-manager resolve-sources [--force]       Match untracked skills on skills.sh; record confident ones",
+  "  VesnALIA skill-manager check [skill...] [--json]       Compare hub skills with upstream",
+  "  VesnALIA skill-manager update [skill...] [--force]     Fetch newer versions into the hub",
   "",
-  "  bb skill-manager search [query] [--page n]       Search skills.sh (trending when empty)",
-  "  bb skill-manager preview <registry-id>           Print a registry skill's SKILL.md",
-  "  bb skill-manager cat <skill> [file] [--from a]   Print SKILL.md (or another file)",
-  "  bb skill-manager files <skill> [--from a]        List a skill's files",
-  "  bb skill-manager tag|untag <skill> <tag...>      Organize skills with tags",
-  "  bb skill-manager tags [tag]                      List tags, or skills carrying one",
-  "  bb skill-manager doctor [--json]                 Problems with a fix for each",
+  "  VesnALIA skill-manager search [query] [--page n]       Search skills.sh (trending when empty)",
+  "  VesnALIA skill-manager preview <registry-id>           Print a registry skill's SKILL.md",
+  "  VesnALIA skill-manager cat <skill> [file] [--from a]   Print SKILL.md (or another file)",
+  "  VesnALIA skill-manager files <skill> [--from a]        List a skill's files",
+  "  VesnALIA skill-manager tag|untag <skill> <tag...>      Organize skills with tags",
+  "  VesnALIA skill-manager tags [tag]                      List tags, or skills carrying one",
+  "  VesnALIA skill-manager doctor [--json]                 Problems with a fix for each",
   "",
   "Cell states: link, same, MOD, only, ext, BROKEN, hub (reads the hub natively), plugin (Claude Code plugin, read-only), -",
 ].join("\n");
@@ -94,7 +94,7 @@ export function renderStatus(status: StatusResponse): string {
     "",
     rows.length === 0 ? "No skills found." : table(header, rows),
     "",
-    "source ? = origin unknown; record one with: bb skill-manager source <skill> <owner/repo/path>",
+    "source ? = origin unknown; record one with: VesnALIA skill-manager source <skill> <owner/repo/path>",
   ]
     .filter((part) => part !== "")
     .join("\n");
@@ -118,7 +118,7 @@ export function renderUpdateResults(results: UpdateResult[]): string {
 }
 
 export function renderChecks(checks: UpdateCheck[]): string {
-  if (checks.length === 0) return "No tracked skills. Install one, or record a source with `bb skill-manager source`.";
+  if (checks.length === 0) return "No tracked skills. Install one, or record a source with `alia skill-manager source`.";
   const rows = checks.map((check) => [
     check.skill,
     UPDATE_GLYPH[check.state],

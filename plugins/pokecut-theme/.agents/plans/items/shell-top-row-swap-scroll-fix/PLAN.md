@@ -6,7 +6,7 @@ Task shell-top-row-new-project added in src/theme/base.css (desktop block):
   overflow: visible;
 }
 ```
-`[data-sidebar="content"]` is BB's scroll container for the project list; `overflow: visible` kills scrolling. It is also unnecessary: the New project button is `position: absolute` with its containing block on `[data-sidebar="sidebar"]` (`position: relative`), which is OUTSIDE the scroller, so the button escapes the scroller's clipping anyway (an absolutely positioned box is clipped only by overflow on ancestors up to its containing block). REMOVE that whole rule (do not set overflow on `[data-sidebar="content"]` or `.pf-tree` at all). Add a theme.test.ts guard: the desktop block must not set `overflow: visible` on `[data-sidebar="content"]`.
+`[data-sidebar="content"]` is VesnALIA's scroll container for the project list; `overflow: visible` kills scrolling. It is also unnecessary: the New project button is `position: absolute` with its containing block on `[data-sidebar="sidebar"]` (`position: relative`), which is OUTSIDE the scroller, so the button escapes the scroller's clipping anyway (an absolutely positioned box is clipped only by overflow on ancestors up to its containing block). REMOVE that whole rule (do not set overflow on `[data-sidebar="content"]` or `.pf-tree` at all). Add a theme.test.ts guard: the desktop block must not set `overflow: visible` on `[data-sidebar="content"]`.
 
 ## Owner's correction: swap the order
 Left: the compact «[icon] Проект» button (New project). Right: «Новый тред», full label.

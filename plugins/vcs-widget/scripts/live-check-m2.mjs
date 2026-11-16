@@ -1,4 +1,4 @@
-// Headless click-through of the milestone 2 features against a running bb:
+// Headless click-through of the milestone 2 features against a running VesnALIA:
 // context menu, favourites, rename, delete (-d then -D), tracked branch,
 // compare and diff panels, merge, conflict + abort, rebase, tag checkout,
 // worktree, background jobs (fetch, update, push, force-with-lease, remote
@@ -205,7 +205,7 @@ try {
   await H.openPopup(page);
   await page.click('[data-action="fetch"]');
   const st13 = await H.waitStatus(page, /Fetched/);
-  const logs13 = sh(`bb plugin logs vcs-widget | tail -20`);
+  const logs13 = sh(`alia plugin logs vcs-widget | tail -20`);
   step("M2-13 fetch runs as a background job", /Fetched/.test(st13) && /fetch job [0-9a-f-]+ started/.test(logs13) && /fetch job [0-9a-f-]+ finished/.test(logs13), st13);
   await H.closePopup(page);
 

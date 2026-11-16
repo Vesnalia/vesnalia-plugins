@@ -2,8 +2,8 @@
   "$schema": "https://getbb.app/schemas/marketplace.schema.json",
   "schemaVersion": 1,
   "name": "ahsan7162",
-  "displayName": "ahsan7162's bb plugins",
-  "description": "bb plugins by ahsan7162.",
+  "displayName": "ahsan7162's VesnALIA plugins",
+  "description": "alia plugins by ahsan7162.",
   "plugins": [
     {
       "id": "openui",

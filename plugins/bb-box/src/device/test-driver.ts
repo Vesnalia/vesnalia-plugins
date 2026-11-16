@@ -134,17 +134,17 @@ export class TestDriver implements DeviceDriver {
     this.#keyAsked = true;
     const at = this.#clock.now();
     this.#iosSettings = {
-      appearance: { known: true, value: this.#appearance, at, by: "bb-box" },
-      textSize: { known: true, value: "large", at, by: "bb-box" },
+      appearance: { known: true, value: this.#appearance, at, by: "alia-box" },
+      textSize: { known: true, value: "large", at, by: "alia-box" },
       location: { set: null, at: null },
       statusBar: { set: null, at: null },
     };
     this.#androidSettings = {
-      appearance: { known: true, value: this.#appearance, at, by: "bb-box" },
-      fontScale: { known: true, value: 1, at, by: "bb-box" },
-      location: { known: true, value: null, at, by: "bb-box" },
-      battery: { known: true, value: { level: 100, charging: true }, at, by: "bb-box" },
-      network: { known: true, value: "online", at, by: "bb-box" },
+      appearance: { known: true, value: this.#appearance, at, by: "alia-box" },
+      fontScale: { known: true, value: 1, at, by: "alia-box" },
+      location: { known: true, value: null, at, by: "alia-box" },
+      battery: { known: true, value: { level: 100, charging: true }, at, by: "alia-box" },
+      network: { known: true, value: "online", at, by: "alia-box" },
       statusBar: { set: null, at: null },
     };
     this.#power = { is: "booted", awake: true };
@@ -296,25 +296,25 @@ export class TestDriver implements DeviceDriver {
         break;
       case "appearance":
         this.#appearance = control.to;
-        if (this.#iosSettings) this.#iosSettings = { ...this.#iosSettings, appearance: { known: true, value: control.to, at, by: "bb-box" } };
-        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, appearance: { known: true, value: control.to, at, by: "bb-box" } };
+        if (this.#iosSettings) this.#iosSettings = { ...this.#iosSettings, appearance: { known: true, value: control.to, at, by: "alia-box" } };
+        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, appearance: { known: true, value: control.to, at, by: "alia-box" } };
         break;
       case "text_size": {
         const ios = this.#iosSettings;
         const android = this.#androidSettings;
         if (ios?.textSize.known && typeof control.to !== "number") {
           const to = control.to === "larger" || control.to === "smaller" || control.to === "default" ? nextContentSize(ios.textSize.value, control.to) : control.to;
-          this.#iosSettings = { ...ios, textSize: { known: true, value: to, at, by: "bb-box" } };
+          this.#iosSettings = { ...ios, textSize: { known: true, value: to, at, by: "alia-box" } };
         }
         if (android?.fontScale.known) {
           const to = typeof control.to === "number" ? control.to : control.to === "larger" || control.to === "smaller" || control.to === "default" ? nextFontScale(android.fontScale.value, control.to) : null;
-          if (to !== null) this.#androidSettings = { ...android, fontScale: { known: true, value: to, at, by: "bb-box" } };
+          if (to !== null) this.#androidSettings = { ...android, fontScale: { known: true, value: to, at, by: "alia-box" } };
         }
         break;
       }
       case "location":
         if (this.#iosSettings) this.#iosSettings = { ...this.#iosSettings, location: control.to ? { set: control.to, at } : { set: null, at } };
-        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, location: { known: true, value: control.to, at, by: "bb-box" } };
+        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, location: { known: true, value: control.to, at, by: "alia-box" } };
         break;
       case "status_bar":
         if (this.#iosSettings) {
@@ -328,10 +328,10 @@ export class TestDriver implements DeviceDriver {
           const clean = this.#iosSettings.statusBar.set?.clean ?? false;
           this.#iosSettings = { ...this.#iosSettings, statusBar: clean || control.to ? { set: { clean, battery: control.to }, at } : { set: null, at } };
         }
-        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, battery: { known: true, value: control.to ?? { level: 100, charging: true }, at, by: "bb-box" } };
+        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, battery: { known: true, value: control.to ?? { level: 100, charging: true }, at, by: "alia-box" } };
         break;
       case "network":
-        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, network: { known: true, value: control.to, at, by: "bb-box" } };
+        if (this.#androidSettings) this.#androidSettings = { ...this.#androidSettings, network: { known: true, value: control.to, at, by: "alia-box" } };
         break;
       case "lock":
         this.#power = { is: "booted", awake: false };

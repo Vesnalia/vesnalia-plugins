@@ -1,6 +1,6 @@
-// What BB's thread pages show of the reviews (app.tsx): Review changes above a thread's message box, and the Review tab
-// beside a thread linked to a review. Both read the plugin's own records here, and BB's git status of the folder in the
-// page, as BB's own Changed files does: never a diff, so a thread page costs no git call of the plugin's.
+// What VesnALIA's thread pages show of the reviews (app.tsx): Review changes above a thread's message box, and the Review tab
+// beside a thread linked to a review. Both read the plugin's own records here, and VesnALIA's git status of the folder in the
+// page, as VesnALIA's own Changed files does: never a diff, so a thread page costs no git call of the plugin's.
 import { placeFacts, reviewPlaces } from "./review-places";
 import { folderBranchOf } from "./feature-review";
 import { formerWorkers } from "./former-workers";
@@ -17,10 +17,10 @@ function linkedThreads(review: ReviewMeta): string[] {
 const isOpen = (comment: { state?: string }) => !comment.state || comment.state === "open";
 
 export function register(deps: ServeDeps) {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const handlers = {
     // Every review a thread page could show, by the threads and the folder it's linked to, and the switch for Review
-    // changes. Archived ones aren't: Review changes opens one again, as bb review does.
+    // changes. Archived ones aren't: Review changes opens one again, as VesnALIA review does.
     async threadLinks() {
       const { reviews, knobs, agents } = await store.exclusive(async (tx) => ({
         reviews: await tx.listReviews(), knobs: (await tx.getPreferences()).preferences.knobs,
@@ -36,7 +36,7 @@ export function register(deps: ServeDeps) {
       }).filter((link) => link.threads.length || link.folder);
       // The plugin's own agents and guide writers, and those that were, the Suggest instructions worker among them: their
       // pages offer no Review changes.
-      return { reviewChangesLine: knobs.reviewChangesLine, reviews: links, agents: [...new Set([...agents, ...await formerWorkers(bb)])] };
+      return { reviewChangesLine: knobs.reviewChangesLine, reviews: links, agents: [...new Set([...agents, ...await formerWorkers(alia)])] };
     },
     // One review as a thread page shows it: its id and name, what its comments' status lines say of it, and how many
     // comments are open.
@@ -49,7 +49,7 @@ export function register(deps: ServeDeps) {
       });
       if (!read) return { review: null, open: 0 };
       const { review: { reviewBodies: _bodies, agentReads: _reads, ...review }, all, comments, guideTitle } = read;
-      const place = reviewPlaces(await placeFacts(bb, all), all).get(targetKey) ?? null;
+      const place = reviewPlaces(await placeFacts(alia, all), all).get(targetKey) ?? null;
       // JSON drops the literal undefined fields rowToMeta leaves.
       return { review: JSON.parse(JSON.stringify({ ...review, place, guideTitle })), open: comments.filter(isOpen).length };
     },

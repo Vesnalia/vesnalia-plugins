@@ -24,7 +24,7 @@ import { bestBranch, formatPct, oracleHash, parseSpec, specIssueText, type Study
 export type Role = "worker" | "strategist" | "creator";
 
 /**
- * Who changed a human control. BB gives plugins no caller-thread identity
+ * Who changed a human control. VesnALIA gives plugins no caller-thread identity
  * for RPC (app, CLI and agents are all "client"), and the CLI's thread id
  * comes from the invoking shell, so this is recorded, not trusted.
  */
@@ -48,7 +48,7 @@ export class EngineError extends Error {
 }
 
 const LIVE_WORKER_STATES = ["spawning", "active", "finishing"] as const;
-/** BB caps a thread events page at 100 rows. */
+/** VesnALIA caps a thread events page at 100 rows. */
 const THREAD_EVENTS_PAGE = 100;
 
 /** The last provider usage reading stored on the study. */
@@ -59,7 +59,7 @@ export interface UsageReading {
 export class Engine {
   readonly pipeline: Pipeline;
   readonly harvester: Harvester;
-  /** `bb study measure` and `bb study gate`: measurements and gates agents ask for. */
+  /** `alia study measure` and `alia study gate`: measurements and gates agents ask for. */
   readonly primitives: Primitives;
   private currentTick: Promise<void> | null = null;
   private tickAgain = false;
@@ -75,7 +75,7 @@ export class Engine {
       onDecided: (c) => this.onDecided(c),
       systemPause: (study, reason) => this.systemPause(study.id, reason),
       maxWorkers: (study) => this.maxWorkers(study),
-      bestMoved: (study, winner, promoted) => void this.notifyBestMoved(study, winner, promoted).catch((e) => this.ctx.bb.log("warn", `best-moved notice: ${errText(e)}`)),
+      bestMoved: (study, winner, promoted) => void this.notifyBestMoved(study, winner, promoted).catch((e) => this.ctx.alia.log("warn", `best-moved notice: ${errText(e)}`)),
       notify: (study, kind, text) => this.notify(study.id, kind, text),
       onSample: (studyId, candidateId) => this.live.onSample(studyId, candidateId),
       onMeasured: (candidateId) => this.live.storeBand(candidateId),
@@ -107,7 +107,7 @@ export class Engine {
   }
 
   /**
-   * Plugin dispose (reload, disable, shutdown). BB closes the database right
+   * Plugin dispose (reload, disable, shutdown). VesnALIA closes the database right
    * after the dispose hooks, but this instance may still have measurements,
    * harvests and activity reads in flight. Stop them and close the store
    * first, so nothing touches the closed handle and nothing is logged; the
@@ -129,14 +129,14 @@ export class Engine {
 
   study(slug: string): StudyRow {
     const s = this.store.study(slug);
-    if (!s) throw new EngineError(`no study named ${JSON.stringify(slug)}; see \`bb study list\``);
+    if (!s) throw new EngineError(`no study named ${JSON.stringify(slug)}; see \`alia study list\``);
     return s;
   }
 
   // ---------------------------------------------------------------- roles
 
   /**
-   * Role for tool selection. Synchronous (bb.agents.configure is sync; the
+   * Role for tool selection. Synchronous (alia.agents.configure is sync; the
    * database is too). Metadata alone never grants a role: worker metadata
    * must match a live worker row, and strategists are known only by row.
    */
@@ -174,7 +174,7 @@ export class Engine {
 
   /** A tool call can race the spawn call's return; bind the thread id through the spawn token in its metadata. */
   private async bindBySpawnToken(threadId: string): Promise<ThreadRow | null> {
-    const meta = await this.ctx.bb.getMetadata(threadId).catch(() => ({}) as Record<string, unknown>);
+    const meta = await this.ctx.alia.getMetadata(threadId).catch(() => ({}) as Record<string, unknown>);
     const token = typeof meta.spawnToken === "string" ? meta.spawnToken : null;
     if (!token) return null;
     const row = this.store.threadByToken(token);
@@ -202,14 +202,14 @@ export class Engine {
       hostId = study.host_id!;
     } else {
       if (this.store.study(spec.study.slug)) throw new EngineError(`A study named ${spec.study.slug} already exists; pick another slug.`);
-      const primary = await this.ctx.bb.primaryHostId();
-      if (!primary) throw new EngineError("The BB server has no local machine identity; studies edit on the server's own machine.");
+      const primary = await this.ctx.alia.primaryHostId();
+      if (!primary) throw new EngineError("The VesnALIA server has no local machine identity; studies edit on the server's own machine.");
       hostId = primary;
     }
-    const resolved = resolveBenchHosts(spec.oracle.bench_hosts, await this.ctx.bb.listHosts().catch(() => []), hostId, { remote: (spec.oracle.remote_bench ?? []).length > 0 });
+    const resolved = resolveBenchHosts(spec.oracle.bench_hosts, await this.ctx.alia.listHosts().catch(() => []), hostId, { remote: (spec.oracle.remote_bench ?? []).length > 0 });
     if (!resolved.ok) throw new EngineError(`Spec not saved. Fix the bench hosts and resubmit with study_propose:\n${specIssueText(resolved.errors)}`);
     if (!study) {
-      const repo = await this.ctx.bb.projectCheckout(projectId, hostId);
+      const repo = await this.ctx.alia.projectCheckout(projectId, hostId);
       if (!repo) throw new EngineError("This project has no checkout on the server's machine; the edit host must be the server's machine.");
       const id = `std_${randomUUID().replace(/-/gu, "").slice(0, 12)}`;
       this.store.tx(() => {
@@ -218,7 +218,7 @@ export class Engine {
         this.store.event(id, "study.created", threadId, { slug: spec.study.slug, project: projectId, repo });
       });
       study = this.store.study(id)!;
-      await this.ctx.bb.setMetadata(threadId, { study: spec.study.slug, role: "strategist" }).catch((e) => this.ctx.bb.log("warn", `metadata: ${errText(e)}`));
+      await this.ctx.alia.setMetadata(threadId, { study: spec.study.slug, role: "strategist" }).catch((e) => this.ctx.alia.log("warn", `metadata: ${errText(e)}`));
     }
     const benchText = [
       ...resolved.hosts.map((h) => `${h.name} (${h.mode === "clone" ? "own clone, git bundles" : "local checkouts"})`),
@@ -231,12 +231,12 @@ export class Engine {
       const changed = oracleHash(active) !== oracleHash(spec);
       const version = this.store.addSpecVersion(study.id, toml, spec, oracleHash(spec), threadId, { bench: resolved.hosts, pending: true });
       this.publish(study.id);
-      await this.notify(study.id, "spec.proposed", `Spec v${version} of \`${study.slug}\` waits for your approval (${changed ? "the oracle changed: approving recalibrates and starts a new segment" : "oracle unchanged: approving applies it as is"}). Next: review and approve it on the Oracle tab, or \`${changed ? "bb study calibrate" : "bb study approve"} ${study.slug}\`.`);
+      await this.notify(study.id, "spec.proposed", `Spec v${version} of \`${study.slug}\` waits for your approval (${changed ? "the oracle changed: approving recalibrates and starts a new segment" : "oracle unchanged: approving applies it as is"}). Next: review and approve it on the Oracle tab, or \`${changed ? "alia study calibrate" : "alia study approve"} ${study.slug}\`.`);
       return [
         `Spec v${version} recorded for \`${spec.study.slug}\`; the study keeps running on spec v${study.spec_version} until the human approves it.`,
         changed
-          ? `The oracle changed (${oracleHash(active)} → ${oracleHash(spec)}). The human approves it on the Studies page (Oracle tab) or with \`bb study calibrate ${spec.study.slug}\`: in-flight measurements are cancelled, best is calibrated under the new oracle, and a new segment starts once the human approves that calibration.`
-          : `The oracle is unchanged, so no recalibration is needed: the human applies it on the Studies page (Oracle tab) or with \`bb study approve ${spec.study.slug}\`.`,
+          ? `The oracle changed (${oracleHash(active)} → ${oracleHash(spec)}). The human approves it on the Studies page (Oracle tab) or with \`alia study calibrate ${spec.study.slug}\`: in-flight measurements are cancelled, best is calibrated under the new oracle, and a new segment starts once the human approves that calibration.`
+          : `The oracle is unchanged, so no recalibration is needed: the human applies it on the Studies page (Oracle tab) or with \`alia study approve ${spec.study.slug}\`.`,
         ...warnings.map((w) => `Warning: ${w}`),
       ].join("\n");
     }
@@ -245,8 +245,8 @@ export class Engine {
     this.publish(study.id);
     return [
       `Draft ready: \`${spec.study.slug}\` · spec v${version}.`,
-      `Needs you (human): review the spec and approve calibration. Studies → ${spec.study.slug} → Oracle, or \`bb study calibrate ${spec.study.slug}\`.`,
-      `Calibration runs tests and baseline measurements; workers do not start yet. After it finishes, review the result, then approve starting workers with \`bb study start ${spec.study.slug}\`.`,
+      `Needs you (human): review the spec and approve calibration. Studies → ${spec.study.slug} → Oracle, or \`alia study calibrate ${spec.study.slug}\`.`,
+      `Calibration runs tests and baseline measurements; workers do not start yet. After it finishes, review the result, then approve starting workers with \`alia study start ${spec.study.slug}\`.`,
       "",
       `Details: oracle ${oracleHash(spec)} · repo ${study.repo_path} on this machine · bench ${benchText}.`,
       ...warnings.map((w) => `Accepted with warning: ${w}`),
@@ -268,7 +268,7 @@ export class Engine {
     if (pending === null) throw new EngineError(`${slug} has no pending spec to approve`);
     const next = this.store.specOfVersion(study.id, pending);
     if (oracleHash(next) !== oracleHash(this.store.spec(study))) {
-      throw new EngineError(`spec v${pending} changes the oracle; approve it with \`bb study calibrate ${slug}\` (new segment, recalibration)`);
+      throw new EngineError(`spec v${pending} changes the oracle; approve it with \`alia study calibrate ${slug}\` (new segment, recalibration)`);
     }
     this.store.approveSpec(study.id, pending, actor);
     this.store.tx(() => {
@@ -287,7 +287,7 @@ export class Engine {
    * background. Before Running this is the first calibration. Mid-run it is
    * an oracle change: in-flight measurements are cancelled, queued
    * candidates go back to the gate, best is calibrated under the new oracle,
-   * and `bb study start` then opens a new segment.
+   * and `alia study start` then opens a new segment.
    */
   async calibrate(slug: string, actor: string): Promise<string> {
     const study = this.study(slug);
@@ -304,7 +304,7 @@ export class Engine {
       });
       this.startCalibrationJob(study.id);
       const remote = (this.store.spec(study).oracle.remote_bench ?? []).reduce((a, e) => a + e.hosts, 0);
-      return `Spec v${study.spec_version} approved. Calibrating ${slug}: gates on the base commit, then A/A measurement on ${this.store.benchHosts(study.id).filter((h) => h.mode !== "remote").length} bench host(s)${remote ? ` and ${remote} remote machine(s), once they have joined` : ""}. Check progress with \`bb study show ${slug}\`.`;
+      return `Spec v${study.spec_version} approved. Calibrating ${slug}: gates on the base commit, then A/A measurement on ${this.store.benchHosts(study.id).filter((h) => h.mode !== "remote").length} bench host(s)${remote ? ` and ${remote} remote machine(s), once they have joined` : ""}. Check progress with \`alia study show ${slug}\`.`;
     }
     if (study.state === "archived") throw new EngineError(`${slug} is archived`);
     const version = study.pending_spec_version ?? study.spec_version;
@@ -331,7 +331,7 @@ export class Engine {
     this.store.syncBenchHosts(study.id, this.benchOf(study, version));
     this.startCalibrationJob(study.id);
     this.publish(study.id);
-    return `Spec v${version} approved for ${slug}: recalibrating on the current best (${cancelled} measurement(s) cancelled, ${regated.length} queued candidate(s) sent back to the gate). Workers keep editing; \`bb study start ${slug}\` approves the calibration and opens segment ${study.segment + 1}.`;
+    return `Spec v${version} approved for ${slug}: recalibrating on the current best (${cancelled} measurement(s) cancelled, ${regated.length} queued candidate(s) sent back to the gate). Workers keep editing; \`alia study start ${slug}\` approves the calibration and opens segment ${study.segment + 1}.`;
   }
 
   private startCalibrationJob(studyId: string): void {
@@ -347,7 +347,7 @@ export class Engine {
         await recordCalibration(this.ctx, study, report);
         await this.notify(studyId, report.ok ? "calibration.ready" : "calibration.failed", calibrationNotice(this.store.study(studyId)!, report));
       } catch (e) {
-        this.ctx.bb.log("error", `calibration failed: ${errText(e)}`);
+        this.ctx.alia.log("error", `calibration failed: ${errText(e)}`);
         this.store.tx(() => {
           this.store.updateStudy(studyId, { calibration_status: "failed", calibration_json: JSON.stringify({ ok: false, problems: [errText(e)] }) });
           this.store.setStudyState(studyId, "draft", "plugin", { reason: "calibration error", error: clip(errText(e), 500) });
@@ -372,7 +372,7 @@ export class Engine {
     void this.notify(
       study.id,
       "calibration.failed",
-      `Recalibration of \`${study.slug}\` under spec v${study.spec_version} failed: the study is back on spec v${prev} (segment ${study.segment}) and paused. Next: resume on the Overview (\`bb study resume ${study.slug}\`), or ask the study thread for a fixed spec.\n${report.problems.map((p) => `- ${clip(p, 500)}`).join("\n")}`,
+      `Recalibration of \`${study.slug}\` under spec v${study.spec_version} failed: the study is back on spec v${prev} (segment ${study.segment}) and paused. Next: resume on the Overview (\`alia study resume ${study.slug}\`), or ask the study thread for a fixed spec.\n${report.problems.map((p) => `- ${clip(p, 500)}`).join("\n")}`,
     );
   }
 
@@ -389,11 +389,11 @@ export class Engine {
     if (study.state === "paused") return this.resume(slug, actor);
     if (study.state === "running") return `${slug} is already running.`;
     if (study.state !== "calibrating" || study.calibration_status !== "ready") {
-      if (study.state === "archived") throw new EngineError(`Cannot start ${slug}: it is archived and cannot resume. Review its history with \`bb study show ${slug}\`.`);
-      if (study.calibration_status === "running") throw new EngineError(`Cannot start ${slug}: calibration is still running. Check progress with \`bb study show ${slug}\`; after it finishes, review the result before starting.`);
-      if (study.calibration_status === "failed") throw new EngineError(`Cannot start ${slug}: calibration failed. Inspect the failure with \`bb study show ${slug}\`, fix the environment or revise the spec, then ask the human to approve calibration again.`);
-      if (study.state === "harvesting") throw new EngineError(`Cannot start ${slug}: it is harvesting. The human can keep exploring with \`bb study resume ${slug}\`.`);
-      throw new EngineError(`Cannot start ${slug}: calibration has not finished. The human must review the spec and approve calibration with \`bb study calibrate ${slug}\`.`);
+      if (study.state === "archived") throw new EngineError(`Cannot start ${slug}: it is archived and cannot resume. Review its history with \`alia study show ${slug}\`.`);
+      if (study.calibration_status === "running") throw new EngineError(`Cannot start ${slug}: calibration is still running. Check progress with \`alia study show ${slug}\`; after it finishes, review the result before starting.`);
+      if (study.calibration_status === "failed") throw new EngineError(`Cannot start ${slug}: calibration failed. Inspect the failure with \`alia study show ${slug}\`, fix the environment or revise the spec, then ask the human to approve calibration again.`);
+      if (study.state === "harvesting") throw new EngineError(`Cannot start ${slug}: it is harvesting. The human can keep exploring with \`alia study resume ${slug}\`.`);
+      throw new EngineError(`Cannot start ${slug}: calibration has not finished. The human must review the spec and approve calibration with \`alia study calibrate ${slug}\`.`);
     }
     const midRun = this.store.hasRun(study.id);
     this.store.tx(() => {
@@ -410,8 +410,8 @@ export class Engine {
     // Strategist tools apply when the provider session next starts: release
     // the study thread's runtime so the first round starts a fresh session.
     if (study.study_thread_id) {
-      const t = await this.ctx.bb.getThread(study.study_thread_id).catch(() => null);
-      if (t && t.status === "idle") await this.ctx.bb.stop(study.study_thread_id).catch(() => undefined);
+      const t = await this.ctx.alia.getThread(study.study_thread_id).catch(() => null);
+      if (t && t.status === "idle") await this.ctx.alia.stop(study.study_thread_id).catch(() => undefined);
     }
     this.kick();
     const spec = this.store.spec(study);
@@ -438,7 +438,7 @@ export class Engine {
   }
 
   /**
-   * Audit a human control: an event with the caller information BB gives
+   * Audit a human control: an event with the caller information VesnALIA gives
    * (via, thread id from the CLI's environment, plugin id for plugin RPC)
    * and which of the study's own agent turns were running at that moment,
    * plus a notice. The study thread is marked unread only when a study agent
@@ -453,12 +453,12 @@ export class Engine {
     ].filter((t) => t.thread_id);
     const active: string[] = [];
     for (const t of agents) {
-      const info = await this.ctx.bb.getThread(t.thread_id!).catch(() => null);
+      const info = await this.ctx.alia.getThread(t.thread_id!).catch(() => null);
       if (info?.status === "active" || info?.status === "starting") active.push(`${t.thread_id} (${t.role === "worker" ? "worker" : "study thread"})`);
     }
     const actor = callerActor(caller);
     this.store.event(study.id, `control.${kind}`, actor, { ...data, via: caller.via, thread: caller.threadId ?? null, plugin: caller.pluginId ?? null, active_agent_turns: active });
-    const text = `Control: ${detail} (via ${actor}).${active.length ? ` Study agent turn(s) running at that moment: ${active.join(", ")}. BB does not identify RPC callers; if you did not do this, check those threads.` : ""}`;
+    const text = `Control: ${detail} (via ${actor}).${active.length ? ` Study agent turn(s) running at that moment: ${active.join(", ")}. VesnALIA does not identify RPC callers; if you did not do this, check those threads.` : ""}`;
     await this.notify(study.id, `control.${kind}`, text, { quiet: active.length === 0 });
   }
 
@@ -504,7 +504,7 @@ export class Engine {
    * current harvest. In-flight candidates finish first; then base, best and
    * the promotion list are recorded and best is pinned. Grouping, measuring,
    * branches, PR descriptions and publishing are an agent's job (the
-   * study-harvest skill), with `bb study evidence`, `measure` and `gate`.
+   * study-harvest skill), with `alia study evidence`, `measure` and `gate`.
    *
    * Idempotent: on a study already harvesting (waiting, frozen, or a ready
    * harvest from before 1.0) it reports that harvest and changes nothing.
@@ -525,7 +525,7 @@ export class Engine {
         current.state === "waiting"
           ? `${slug} is harvesting: harvest h${current.seq} is waiting${current.phase_detail ? ` (${current.phase_detail})` : ""}.`
           : isLegacyHarvest(this.store, current)
-            ? `${slug} is harvesting: harvest h${current.seq} (from before 1.0) froze best at ${current.best_sha?.slice(0, 10) ?? "?"}. Ask an agent to finish it with the study-harvest skill, or \`bb study resume ${slug}\` to keep exploring.`
+            ? `${slug} is harvesting: harvest h${current.seq} (from before 1.0) froze best at ${current.best_sha?.slice(0, 10) ?? "?"}. Ask an agent to finish it with the study-harvest skill, or \`alia study resume ${slug}\` to keep exploring.`
             : harvestFrozenText(study, current);
       return { harvest: current, started: false, text };
     }
@@ -544,7 +544,7 @@ export class Engine {
       text: [
         `${slug} is harvesting (h${h.seq}). No new workers start and submissions are closed${live ? `; ${live} live worker(s) finish their current idea` : ""}.`,
         inFlight ? `First, ${inFlight} in-flight candidate(s) finish so best is final; then best freezes.` : "Best freezes now.",
-        `Then ask an agent to harvest it with the study-harvest skill: it reads \`bb study evidence ${slug} --json\`, measures with \`bb study measure\`, gates with \`bb study gate\`, and builds branches and PR descriptions with the repository's own tools. Nothing is pushed unless you ask it to publish.`,
+        `Then ask an agent to harvest it with the study-harvest skill: it reads \`alia study evidence ${slug} --json\`, measures with \`alia study measure\`, gates with \`alia study gate\`, and builds branches and PR descriptions with the repository's own tools. Nothing is pushed unless you ask it to publish.`,
       ]
         .filter(Boolean)
         .join("\n"),
@@ -562,7 +562,7 @@ export class Engine {
     return this.store.threads(study.id, { role: "worker", states: [...LIVE_WORKER_STATES] }).length;
   }
 
-  /** `bb study measure`: B against A with the study's protocol on one of its bench hosts. */
+  /** `alia study measure`: B against A with the study's protocol on one of its bench hosts. */
   async requestMeasure(slug: string, input: { refA: string; refB: string; pairs?: number | null; host?: string | null }, actor: string) {
     const study = this.study(slug);
     try {
@@ -574,7 +574,7 @@ export class Engine {
     }
   }
 
-  /** `bb study gate`: the study's gates on one commit, on the edit host. */
+  /** `alia study gate`: the study's gates on one commit, on the edit host. */
   async requestGate(slug: string, input: { ref: string }, actor: string) {
     const study = this.study(slug);
     try {
@@ -590,7 +590,7 @@ export class Engine {
   adhocRun(slug: string, seq: number) {
     const study = this.study(slug);
     const r = this.store.adhocRunBySeq(study.id, seq);
-    if (!r) throw new EngineError(`${slug} has no run r${seq}; see \`bb study results ${slug}\``);
+    if (!r) throw new EngineError(`${slug} has no run r${seq}; see \`alia study results ${slug}\``);
     return r;
   }
 
@@ -658,38 +658,38 @@ export class Engine {
     let clones = 0;
     for (const h of this.store.benchHosts(s.id, { all: true })) {
       if (h.mode !== "clone") continue;
-      const runner = this.ctx.bb.hostRunner(h.host_id);
+      const runner = this.ctx.alia.hostRunner(h.host_id);
       try {
         const repo = h.repo_path ?? (await runner.benchRepo(s.slug)).path;
         await runner.removeCheckouts(repo, `${s.slug}-bench-`);
         if (await runner.removeBenchRepo(s.slug)) clones += 1;
       } catch (e) {
-        this.ctx.bb.log("warn", `bench clone cleanup on ${h.host_id}: ${errText(e)}`);
+        this.ctx.alia.log("warn", `bench clone cleanup on ${h.host_id}: ${errText(e)}`);
       }
     }
     const machines = await this.fleet.releaseStudy(s, "study archived").catch((e) => {
-      this.ctx.bb.log("warn", `remote bench cleanup: ${errText(e)}`);
+      this.ctx.alia.log("warn", `remote bench cleanup: ${errText(e)}`);
       return 0;
     });
     if (s.host_id && s.repo_path) {
-      await this.ctx.bb.hostRunner(s.host_id).removeCheckouts(s.repo_path, `${s.slug}-`).catch((e) => this.ctx.bb.log("warn", `checkout cleanup: ${errText(e)}`));
+      await this.ctx.alia.hostRunner(s.host_id).removeCheckouts(s.repo_path, `${s.slug}-`).catch((e) => this.ctx.alia.log("warn", `checkout cleanup: ${errText(e)}`));
     }
     const threadArchived = opts.archiveThread ? await this.archiveStudyThread(s) : false;
     this.publish(study.id);
     return `${slug} archived: ${stopped} worker(s) stopped, bench checkouts removed${clones ? `, ${clones} bench clone(s) deleted` : ""}${machines ? `, ${machines} remote machine(s) destroyed` : ""}${threadArchived ? ", study thread archived" : ""}. Refs under refs/studies/${slug}/ and the branch ${bestBranch(slug)} are kept.`;
   }
 
-  /** Archive (and stop) the study thread of an archived study; false when there is none or BB refused. */
+  /** Archive (and stop) the study thread of an archived study; false when there is none or VesnALIA refused. */
   private async archiveStudyThread(study: StudyRow): Promise<boolean> {
     const id = study.study_thread_id;
     if (!id) return false;
     try {
-      await this.ctx.bb.archive(id);
-      await this.ctx.bb.stop(id).catch(() => undefined);
+      await this.ctx.alia.archive(id);
+      await this.ctx.alia.stop(id).catch(() => undefined);
       this.store.event(study.id, "study_thread.archived", "plugin", { thread: id });
       return true;
     } catch (e) {
-      this.ctx.bb.log("warn", `archive study thread ${id}: ${errText(e)}`);
+      this.ctx.alia.log("warn", `archive study thread ${id}: ${errText(e)}`);
       return false;
     }
   }
@@ -941,7 +941,7 @@ export class Engine {
       return;
     }
     this.store.updateThread(row.id, { last_idle_at: now });
-    if (row.state === "finishing") void this.endWorker(row, "finished", "finished").catch((e) => this.ctx.bb.log("warn", `cleanup: ${errText(e)}`));
+    if (row.state === "finishing") void this.endWorker(row, "finished", "finished").catch((e) => this.ctx.alia.log("warn", `cleanup: ${errText(e)}`));
   }
 
   onThreadActive(threadId: string): void {
@@ -954,13 +954,13 @@ export class Engine {
     const study = this.store.study(row.study_id);
     if (study && !study.round_in_flight && ["draft", "calibrating"].includes(study.state)) {
       // Before Running there are no rounds: pending notices (calibration results) ride the human's own turn.
-      void this.steerNotices(study, threadId).catch((e) => this.ctx.bb.log("warn", `notices: ${errText(e)}`));
+      void this.steerNotices(study, threadId).catch((e) => this.ctx.alia.log("warn", `notices: ${errText(e)}`));
       return;
     }
     if (!study || study.round_in_flight || !["running", "paused"].includes(study.state)) return;
     // A turn we didn't start: the human sent a message. Treat it as a round
     // and steer the current digest into it if anything changed.
-    void this.sendRound(study, "human").catch((e) => this.ctx.bb.log("warn", `human round: ${errText(e)}`));
+    void this.sendRound(study, "human").catch((e) => this.ctx.alia.log("warn", `human round: ${errText(e)}`));
   }
 
   private async steerNotices(study: StudyRow, threadId: string): Promise<void> {
@@ -974,19 +974,19 @@ export class Engine {
       ...(forHuman.length ? [`[autoresearch] Notices for study \`${study.slug}\` (for the human; relay briefly):`, ...forHuman.map((n) => `- [${n.kind}] ${clip(n.text, 1500)}`)] : [`[autoresearch] Study \`${study.slug}\`: no notices for the human.`]),
       ...(controls.length ? [`The human's own controls (audit trail; nothing to relay unless one looks unexpected):`, ...controls.map((n) => `- [${n.kind}] ${clip(n.text, 300)}`)] : []),
     ].join("\n");
-    await this.ctx.bb.steer(threadId, text).catch(() => this.ctx.bb.send(threadId, text));
+    await this.ctx.alia.steer(threadId, text).catch(() => this.ctx.alia.send(threadId, text));
   }
 
   /**
    * A worker's thread appended events (coalesced to one call per second by
-   * BB): read the tool items it started since the last read and record what
+   * VesnALIA): read the tool items it started since the last read and record what
    * the agent is doing (reading, editing, testing) for the live view.
    * Message text is never read.
    */
   onThreadEvents(threadId: string, sequence: number): void {
     const row = this.store.threadById(threadId);
     if (!row || row.role !== "worker" || !(row.state === "active" || row.state === "spawning")) return;
-    // Only read when the thread moved past what was already read (BB notifies about every event, items or not).
+    // Only read when the thread moved past what was already read (VesnALIA notifies about every event, items or not).
     if (sequence <= row.activity_seq || sequence <= (this.activitySeen.get(threadId) ?? 0)) return;
     this.activitySeen.set(threadId, sequence);
     if (this.activityReads.has(threadId)) {
@@ -997,7 +997,7 @@ export class Engine {
       try {
         await this.readActivity(row.id);
       } catch (e) {
-        this.ctx.bb.log("warn", `worker activity ${threadId}: ${errText(e)}`);
+        this.ctx.alia.log("warn", `worker activity ${threadId}: ${errText(e)}`);
       } finally {
         this.activityReads.delete(threadId);
         if (this.activityAgain.delete(threadId)) {
@@ -1020,7 +1020,7 @@ export class Engine {
         w = this.store.threadRow(rowId)!;
       }
       const limit = THREAD_EVENTS_PAGE;
-      const { seq, items } = await this.ctx.bb.threadActivity(w.thread_id!, w.activity_seq, limit);
+      const { seq, items } = await this.ctx.alia.threadActivity(w.thread_id!, w.activity_seq, limit);
       if (seq <= w.activity_seq) return;
       let latest: { activity: Activity; at: number } | null = null;
       for (let i = items.length - 1; i >= 0 && !latest; i--) {
@@ -1090,7 +1090,7 @@ export class Engine {
       await this.notify(study.id, "rate_limit", `\`${study.slug}\`: a ${row.role === "worker" ? "worker" : "study thread"} turn stayed rate limited after ${row.rate_limit_retries} retries and is left idle. Next: ${row.role === "worker" ? "nothing (the idle timeout abandons it)" : "send the study thread a message to retry"}. New workers wait until ${new Date(sendAt).toISOString().slice(11, 16)} UTC.`);
       return;
     }
-    await this.ctx.bb.retryTurn(event.threadId, event.requestId, sendAt);
+    await this.ctx.alia.retryTurn(event.threadId, event.requestId, sendAt);
     this.store.updateThread(row.id, { rate_limit_retries: row.rate_limit_retries + 1 });
     this.store.event(study.id, "turn.retry", "plugin", { thread: event.threadId, attempt: event.attemptNumber, sendAt, reset });
     if (!wasBlocked) {
@@ -1102,7 +1102,7 @@ export class Engine {
   // --------------------------------------------------------- control loop
 
   kick(): void {
-    void this.tick().catch((e) => this.ctx.bb.log("error", `tick: ${errText(e)}`));
+    void this.tick().catch((e) => this.ctx.alia.log("error", `tick: ${errText(e)}`));
   }
 
   /** One control-loop pass over running studies. Concurrent callers share one pass; a kick during a pass runs another. */
@@ -1122,7 +1122,7 @@ export class Engine {
             try {
               await this.tickStudy(study.id);
             } catch (e) {
-              if (!this.ctx.disposed) this.ctx.bb.log("warn", `study ${study.slug}: ${errText(e)}`);
+              if (!this.ctx.disposed) this.ctx.alia.log("warn", `study ${study.slug}: ${errText(e)}`);
             }
           }
         } while (this.tickAgain && !this.ctx.disposed);
@@ -1131,7 +1131,7 @@ export class Engine {
           try {
             this.fleet.tick();
           } catch (e) {
-            this.ctx.bb.log("warn", `remote bench: ${errText(e)}`);
+            this.ctx.alia.log("warn", `remote bench: ${errText(e)}`);
           }
         }
       } finally {
@@ -1209,11 +1209,11 @@ export class Engine {
     const ids = new Set<string>();
     for (const p of [spec.agents.worker.provider, spec.agents.strategist.provider]) if (p) ids.add(p);
     for (const t of this.store.threads(study.id)) if (t.provider_id && (t.role === "strategist" || ["spawning", "active", "finishing"].includes(t.state))) ids.add(t.provider_id);
-    let all: Awaited<ReturnType<Ctx["bb"]["usageLimits"]>> = [];
+    let all: Awaited<ReturnType<Ctx["alia"]["usageLimits"]>> = [];
     try {
-      all = await this.ctx.bb.usageLimits();
+      all = await this.ctx.alia.usageLimits();
     } catch (e) {
-      this.ctx.bb.log("warn", `usage limits: ${errText(e)}`);
+      this.ctx.alia.log("warn", `usage limits: ${errText(e)}`);
     }
     const providers = all.filter((p) => p.status === "ok" && (ids.size === 0 || ids.has(p.providerId))).map((p) => ({ providerId: p.providerId, windows: p.windows.slice(0, 8) }));
     const before = this.usageState(study);
@@ -1237,7 +1237,7 @@ export class Engine {
 
   private async readTokens(t: ThreadRow): Promise<void> {
     if (!t.thread_id) return;
-    const tokens = await this.ctx.bb.threadTokens(t.thread_id).catch(() => null);
+    const tokens = await this.ctx.alia.threadTokens(t.thread_id).catch(() => null);
     this.store.updateThread(t.id, { tokens_at: this.ctx.now(), ...(tokens !== null ? { tokens, ...(t.tokens_base === null && t.role === "strategist" ? { tokens_base: t.tokens ?? tokens } : {}) } : {}) });
   }
 
@@ -1286,7 +1286,7 @@ export class Engine {
 
     // Finishing workers whose turn already ended (missed idle event), or that never end their turn.
     for (const w of workers.filter((x) => x.state === "finishing" && x.thread_id)) {
-      const t = await this.ctx.bb.getThread(w.thread_id!).catch(() => null);
+      const t = await this.ctx.alia.getThread(w.thread_id!).catch(() => null);
       const overdue = w.finishing_at !== null && now - w.finishing_at > this.ctx.config.finishingTimeoutMs;
       if (!t || t.status === "idle" || t.status === "error" || t.archivedAt || overdue) await this.endWorker(w, "finished", overdue ? "finished (turn did not end; stopped)" : "finished");
     }
@@ -1305,7 +1305,7 @@ export class Engine {
       if (action.kind === "nudge") {
         this.store.updateThread(w.id, { nudged_at: now });
         this.store.event(study.id, "worker.nudged", "plugin", { thread: w.thread_id });
-        await this.ctx.bb.send(w.thread_id!, nudgeMessage((now - w.last_idle_at!) / 60_000)).catch(() => undefined);
+        await this.ctx.alia.send(w.thread_id!, nudgeMessage((now - w.last_idle_at!) / 60_000)).catch(() => undefined);
       } else if (action.kind === "abandon") {
         await this.endWorker(w, "abandoned", "idle after nudge");
       }
@@ -1334,7 +1334,7 @@ export class Engine {
       const live = this.store.threads(study.id, { role: "worker", states: [...LIVE_WORKER_STATES] }).length;
       if (exhausted) {
         const inFlight = this.store.candidates(study.id, { stages: [...IN_FLIGHT_STAGES] });
-        if (!live && !inFlight.length) await this.systemPause(study.id, `budget exhausted: ${exhausted}. Review the results and harvest them with \`bb study harvest ${study.slug}\` (or raise the budget with a spec change)`);
+        if (!live && !inFlight.length) await this.systemPause(study.id, `budget exhausted: ${exhausted}. Review the results and harvest them with \`alia study harvest ${study.slug}\` (or raise the budget with a spec change)`);
       } else if (hold) {
         // Rate limited: no new worker until the provider window resets.
       } else {
@@ -1354,7 +1354,7 @@ export class Engine {
     const fresh = this.store.study(study.id)!;
     if (fresh.state === "harvesting") return;
     if (fresh.round_in_flight && fresh.study_thread_id && fresh.last_round_at && now - fresh.last_round_at > 5 * 60_000) {
-      const t = await this.ctx.bb.getThread(fresh.study_thread_id).catch(() => null);
+      const t = await this.ctx.alia.getThread(fresh.study_thread_id).catch(() => null);
       if (!t || t.status === "idle" || t.status === "error") this.store.updateStudy(study.id, { round_in_flight: 0 });
     }
     const decided = this.store.decided(study.id, Math.max(spec.agents.stall_after, 50));
@@ -1378,7 +1378,7 @@ export class Engine {
 
   /** Spawn one worker for `idea`; false when the spawn failed (the study is paused). */
   private async spawnWorker(study: StudyRow, spec: StudySpec, idea: IdeaRow): Promise<boolean> {
-    const runner = this.ctx.bb.hostRunner(study.host_id!);
+    const runner = this.ctx.alia.hostRunner(study.host_id!);
     let baseBranch = bestBranch(study.slug);
     let forkSha = study.best_sha!;
     if (idea.start_ref) {
@@ -1398,7 +1398,7 @@ export class Engine {
     });
     let sectionId = study.section_id;
     if (!sectionId) {
-      sectionId = await this.ctx.bb.ensureSection(`Study: ${study.slug}`).catch(() => null);
+      sectionId = await this.ctx.alia.ensureSection(`Study: ${study.slug}`).catch(() => null);
       if (sectionId) this.store.updateStudy(study.id, { section_id: sectionId });
     }
     if (this.store.study(study.id)?.state !== "running") {
@@ -1423,7 +1423,7 @@ export class Engine {
       guardrailPositions: bestGuardrailPositions(this.store, study, spec),
     });
     try {
-      const spawned = await this.ctx.bb.spawnWorker({
+      const spawned = await this.ctx.alia.spawnWorker({
         projectId: study.project_id,
         hostId: study.host_id!,
         baseBranch,
@@ -1448,7 +1448,7 @@ export class Engine {
         await this.endWorker(this.store.threadRow(row.id)!, "abandoned", current.end_reason ?? "ended while spawning", { alreadyEnded: true });
         return false;
       }
-      const info = await this.ctx.bb.getThread(spawned.threadId).catch(() => null);
+      const info = await this.ctx.alia.getThread(spawned.threadId).catch(() => null);
       if (info?.providerId) this.store.updateThread(row.id, { provider_id: info.providerId });
       const now = this.store.study(study.id);
       if (now?.state !== "running") {
@@ -1475,10 +1475,10 @@ export class Engine {
 
   private async resolveWorktree(worker: ThreadRow): Promise<void> {
     if (!worker.thread_id) return;
-    const t = await this.ctx.bb.getThread(worker.thread_id);
+    const t = await this.ctx.alia.getThread(worker.thread_id);
     const envId = t?.environmentId ?? worker.environment_id;
     if (!envId) return;
-    const env = await this.ctx.bb.getEnvironment(envId);
+    const env = await this.ctx.alia.getEnvironment(envId);
     const study = this.store.study(worker.study_id)!;
     if (env?.path && env.hostId === study.host_id) this.store.updateThread(worker.id, { worktree_path: env.path, environment_id: envId });
   }
@@ -1500,19 +1500,19 @@ export class Engine {
     // The spawn response can omit the environment (it provisions asynchronously),
     // and only a submission resolves it otherwise: look it up before archiving.
     let environmentId = fresh.environment_id;
-    if (!environmentId && fresh.thread_id) environmentId = (await this.ctx.bb.getThread(fresh.thread_id).catch(() => null))?.environmentId ?? null;
+    if (!environmentId && fresh.thread_id) environmentId = (await this.ctx.alia.getThread(fresh.thread_id).catch(() => null))?.environmentId ?? null;
     await this.readTokens(fresh);
     if (fresh.thread_id) {
-      await this.ctx.bb.archive(fresh.thread_id).catch((e) => this.ctx.bb.log("warn", `archive ${fresh.thread_id}: ${errText(e)}`));
-      await this.ctx.bb.stop(fresh.thread_id).catch(() => undefined);
+      await this.ctx.alia.archive(fresh.thread_id).catch((e) => this.ctx.alia.log("warn", `archive ${fresh.thread_id}: ${errText(e)}`));
+      await this.ctx.alia.stop(fresh.thread_id).catch(() => undefined);
     }
     if (environmentId) {
       // Remove the worktree, then the worker's branch. Candidate refs keep its commits.
-      const env = await this.ctx.bb.getEnvironment(environmentId).catch(() => null);
-      await this.ctx.bb.releaseEnvironment(environmentId).catch((e) => this.ctx.bb.log("warn", `release env: ${errText(e)}`));
+      const env = await this.ctx.alia.getEnvironment(environmentId).catch(() => null);
+      await this.ctx.alia.releaseEnvironment(environmentId).catch((e) => this.ctx.alia.log("warn", `release env: ${errText(e)}`));
       const study = this.store.study(w.study_id);
       if (env?.branchName && study?.repo_path && env.hostId === study.host_id) {
-        await this.ctx.bb.hostRunner(env.hostId).deleteRef(study.repo_path, `refs/heads/${env.branchName}`).catch(() => undefined);
+        await this.ctx.alia.hostRunner(env.hostId).deleteRef(study.repo_path, `refs/heads/${env.branchName}`).catch(() => undefined);
       }
     }
     this.publish(w.study_id);
@@ -1544,10 +1544,10 @@ export class Engine {
       const pending = this.store.candidates(study.id, { threadId: w.thread_id }).some((c) => c.stage !== "decided");
       let via: "steer" | "deferred" = "deferred";
       if (!pending) {
-        const t = await this.ctx.bb.getThread(w.thread_id).catch(() => null);
+        const t = await this.ctx.alia.getThread(w.thread_id).catch(() => null);
         if (t?.status === "active") {
           try {
-            await this.ctx.bb.steer(w.thread_id, text);
+            await this.ctx.alia.steer(w.thread_id, text);
             via = "steer";
           } catch {
             via = "deferred";
@@ -1617,7 +1617,7 @@ export class Engine {
       this.store.event(study.id, "strategist.round", "plugin", { round: study.rounds + 1, trigger, verdicts: verdicts.length, findings: findings.length, notices: notices.length });
     });
     try {
-      await this.ctx.bb.send(study.study_thread_id, digest);
+      await this.ctx.alia.send(study.study_thread_id, digest);
     } catch (e) {
       this.store.updateStudy(study.id, { round_in_flight: 0 });
       throw e;
@@ -1626,7 +1626,7 @@ export class Engine {
 
   /**
    * Milestones for the human, without starting an agent turn: recorded as a
-   * notice (study page, header badge, `bb study show`), the study thread is
+   * notice (study page, header badge, `alia study show`), the study thread is
    * marked unread, and the notice rides along in the next strategist round.
    */
   async notify(studyId: string, kind: string, text: string, opts: { quiet?: boolean } = {}): Promise<void> {
@@ -1637,7 +1637,7 @@ export class Engine {
       this.store.event(studyId, "notice.added", "plugin", { notice: id, kind });
     });
     this.publish(studyId);
-    if (study.study_thread_id && !opts.quiet) await this.ctx.bb.markUnread(study.study_thread_id).catch((e) => this.ctx.bb.log("warn", `mark unread: ${errText(e)}`));
+    if (study.study_thread_id && !opts.quiet) await this.ctx.alia.markUnread(study.study_thread_id).catch((e) => this.ctx.alia.log("warn", `mark unread: ${errText(e)}`));
   }
 
   /** A host worker exited (server.ts): measurements on it restart from scratch. */
@@ -1653,7 +1653,7 @@ export class Engine {
     for (const h of this.pipeline.benchHosts(study)) {
       if (h.mode === "remote") continue; // the fleet polls the provider
       if (h.status_at !== null && now - h.status_at < this.ctx.config.hostStatusTtlMs && h.status !== "offline") continue;
-      const status = await this.ctx.bb.hostStatus(h.host_id).catch(() => "unknown" as const);
+      const status = await this.ctx.alia.hostStatus(h.host_id).catch(() => "unknown" as const);
       this.pipeline.noteHostStatus(study, h, status);
     }
   }
@@ -1683,10 +1683,10 @@ export class Engine {
           : "study.paused";
     const next =
       kind === "budget.exhausted"
-        ? `Next: harvest the wins on the Harvest tab (\`bb study harvest ${study.slug}\`), or raise the budget with a spec change.`
+        ? `Next: harvest the wins on the Harvest tab (\`alia study harvest ${study.slug}\`), or raise the budget with a spec change.`
         : kind === "drift" || kind === "oracle.broken"
-          ? `Next: check the bench host on the Bench tab, then resume on the Overview (\`bb study resume ${study.slug}\`).`
-          : `Next: resume on the Overview when it's fixed (\`bb study resume ${study.slug}\`).`;
+          ? `Next: check the bench host on the Bench tab, then resume on the Overview (\`alia study resume ${study.slug}\`).`
+          : `Next: resume on the Overview when it's fixed (\`alia study resume ${study.slug}\`).`;
     await this.notify(studyId, kind, `\`${study.slug}\` paused itself: ${reason}. ${next}`);
   }
 
@@ -1781,7 +1781,7 @@ export class Engine {
    * isn't a worker. A held turn waits for at most one measurement: once any
    * measurement on that machine has ended since it was first held, it starts
    * even if the next one already began, so a busy bench never starves workers.
-   * Pipeline.withBench asks BB to re-decide when a quiet measurement ends.
+   * Pipeline.withBench asks VesnALIA to re-decide when a quiet measurement ends.
    * Must decide in milliseconds: a few indexed SQLite reads.
    */
   dispatchDecision(q: DispatchQuery): DispatchDecision {
@@ -1824,7 +1824,7 @@ export class Engine {
     return {
       action: "wait",
       reason: `Autoresearch quiet bench: waits for ${what} on ${host} (study ${study.slug}) to end, then starts. Turns already running are not interrupted.`,
-      // A safety net in case a recheck is missed: BB asks again then.
+      // A safety net in case a recheck is missed: VesnALIA asks again then.
       sendAt: now + 10 * 60_000,
     };
   }
@@ -1835,9 +1835,9 @@ export class Engine {
   async reconcile(): Promise<{ requeued: number; workers: number; calibrations: number }> {
     const { requeued } = this.pipeline.reconcile();
     // Remote machines the previous instance kept are re-adopted once verified; the rest are ended and destroyed.
-    await this.fleet.reconcile().catch((e) => this.ctx.bb.log("warn", `remote bench reconcile: ${errText(e)}`));
+    await this.fleet.reconcile().catch((e) => this.ctx.alia.log("warn", `remote bench reconcile: ${errText(e)}`));
     // Worker turns held by a previous instance (quiet bench) are re-decided: no measurement runs now.
-    this.ctx.bb.recheckDispatch().catch(() => undefined);
+    this.ctx.alia.recheckDispatch().catch(() => undefined);
     let calibrations = 0;
     for (const study of this.store.studies(["calibrating"])) {
       if (study.calibration_status === "running" && !this.calibrations.has(study.id)) {
@@ -1851,7 +1851,7 @@ export class Engine {
       for (const w of this.store.threads(study.id, { role: "worker", states: [...LIVE_WORKER_STATES] })) {
         workers += 1;
         if (!w.thread_id) {
-          const found = w.spawn_token ? await this.ctx.bb.findSpawnedThread(w.spawn_token).catch(() => null) : null;
+          const found = w.spawn_token ? await this.ctx.alia.findSpawnedThread(w.spawn_token).catch(() => null) : null;
           if (found) {
             this.store.updateThread(w.id, { thread_id: found, state: "active", last_active_at: this.ctx.now() });
           } else {
@@ -1867,7 +1867,7 @@ export class Engine {
           await this.endWorker(w, "abandoned", "study archived (reconcile)");
           continue;
         }
-        const t = await this.ctx.bb.getThread(w.thread_id).catch(() => null);
+        const t = await this.ctx.alia.getThread(w.thread_id).catch(() => null);
         if (!t || t.deletedAt || t.archivedAt) {
           await this.endWorker(w, w.state === "finishing" ? "finished" : "abandoned", "thread gone (reconcile)");
         } else if (t.status === "idle" || t.status === "error") {
@@ -1878,7 +1878,7 @@ export class Engine {
         }
       }
       if (study.round_in_flight && study.study_thread_id) {
-        const t = await this.ctx.bb.getThread(study.study_thread_id).catch(() => null);
+        const t = await this.ctx.alia.getThread(study.study_thread_id).catch(() => null);
         if (!t || t.status === "idle" || t.status === "error") this.store.updateStudy(study.id, { round_in_flight: 0 });
       }
     }
@@ -1906,7 +1906,7 @@ export class Engine {
   }
 
   private publish(studyId: string): void {
-    this.ctx.bb.publish("study-changed", { study: studyId });
+    this.ctx.alia.publish("study-changed", { study: studyId });
     this.live.schedule(studyId);
   }
 }
@@ -1921,10 +1921,10 @@ export function profileSummary(stdout: string, stderr: string): string {
 
 function calibrationNotice(study: StudyRow, report: CalibrationReport): string {
   if (!report.ok) {
-    return `Calibration of \`${study.slug}\` failed; the study is back in Draft. Next: ask the study thread to revise the spec, then approve the new version on the Oracle tab (\`bb study calibrate ${study.slug}\`).\n${report.problems.map((p) => `- ${clip(p, 500)}`).join("\n")}`;
+    return `Calibration of \`${study.slug}\` failed; the study is back in Draft. Next: ask the study thread to revise the spec, then approve the new version on the Oracle tab (\`alia study calibrate ${study.slug}\`).\n${report.problems.map((p) => `- ${clip(p, 500)}`).join("\n")}`;
   }
   const warnings = (report.warnings ?? []).map((w) => `- Warning: ${clip(w, 500)}`).join("\n");
-  return `Calibration of \`${study.slug}\` is ready. Next: review it and start the study on the Oracle tab (\`bb study start ${study.slug}\`).\n${report.report}${warnings ? `\n${warnings}` : ""}`;
+  return `Calibration of \`${study.slug}\` is ready. Next: review it and start the study on the Oracle tab (\`alia study start ${study.slug}\`).\n${report.report}${warnings ? `\n${warnings}` : ""}`;
 }
 
 /** The notice after an automatic recalibration: why, and what changed per host (side runs, run time, noise floor, MDE). */

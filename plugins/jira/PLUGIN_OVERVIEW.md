@@ -25,11 +25,11 @@ the Jira page never ask.
 
 ## Project links
 
-Link a BB project to one or more Jira projects. In that project's chats, agent
+Link a VesnALIA project to one or more Jira projects. In that project's chats, agent
 searches, `@` mentions, and the side panel stay within the linked projects, and
 a separate tool still searches all of Jira when you ask about something else.
 
-**Send to agent** starts a chat in the BB project linked to the issue's Jira
+**Send to agent** starts a chat in the VesnALIA project linked to the issue's Jira
 project. When none is linked, pick a project and link it in the same step. The
 chat runs in that project's checkout; tick **Work in a new worktree** to give
 the issue its own branch and checkout instead. When the project is checked out
@@ -42,5 +42,5 @@ reasoning level to run the issue on a different one.
 Jira Cloud only; Jira Server and Data Center are not supported. Enter your site
 (for example `acme.atlassian.net`), your Atlassian account email, and an API
 token from id.atlassian.com under Security, API tokens. The token is stored as a
-secret on the BB server and used only for Jira's REST API. The plugin acts with
+secret on the VesnALIA server and used only for Jira's REST API. The plugin acts with
 that account's Jira permissions.

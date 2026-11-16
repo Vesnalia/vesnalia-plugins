@@ -1,22 +1,22 @@
 # Tab Close Right
 
-Move BB secondary-panel tab close buttons to the right while keeping the original icons visible on the left. Space stays reserved so labels do not jump on hover. The active tab always shows its close button; inactive tabs show it on hover or keyboard focus. Touch screens show close buttons without hover. Pinned tabs keep their original behavior.
+Move VesnALIA secondary-panel tab close buttons to the right while keeping the original icons visible on the left. Space stays reserved so labels do not jump on hover. The active tab always shows its close button; inactive tabs show it on hover or keyboard focus. Touch screens show close buttons without hover. Pinned tabs keep their original behavior.
 
 ## Requirements
 
-BB 0.46.1+ with Plugin SDK 0.6.49 in the 0.6 series. Verified visually on BB 0.46.1. Later BB releases are not automatically verified: this plugin uses DOM selectors and CSS rather than a stable tab-layout API. It only affects the right-panel tab strip.
+VesnALIA 0.46.1+ with Plugin SDK 0.6.49 in the 0.6 series. Verified visually on VesnALIA 0.46.1. Later VesnALIA releases are not automatically verified: this plugin uses DOM selectors and CSS rather than a stable tab-layout API. It only affects the right-panel tab strip.
 
 ## Install from this repository
 
 ```sh
-bb plugin install . --subdirectory plugins/tab-close-right
+alia plugin install . --subdirectory plugins/tab-close-right
 ```
 
-Run that command at the repository root. Inside this plugin folder use `bb plugin install .` instead. A clean Git install needs no development dependencies: BB supplies its SDK and build toolchain.
+Run that command at the repository root. Inside this plugin folder use `alia plugin install .` instead. A clean Git install needs no development dependencies: VesnALIA supplies its SDK and build toolchain.
 
 ## Develop
 
-Run inside this folder with BB CLI, Node and npm available:
+Run inside this folder with VesnALIA CLI, Node and npm available:
 
 ```sh
 npm ci --include=dev
@@ -29,11 +29,11 @@ There are no runtime npm dependencies. The SDK, TypeScript and React declaration
 ## Disable or enable
 
 ```sh
-bb plugin disable tab-close-right
-bb plugin enable tab-close-right
+alia plugin disable tab-close-right
+alia plugin enable tab-close-right
 ```
 
-Disabling removes the stylesheet. No tab data, event handlers, account credentials or network services are changed. Existing BB click, middle-click and drag behavior remains owned by BB. No model calls are made.
+Disabling removes the stylesheet. No tab data, event handlers, account credentials or network services are changed. Existing VesnALIA click, middle-click and drag behavior remains owned by VesnALIA. No model calls are made.
 
 ## Release
 

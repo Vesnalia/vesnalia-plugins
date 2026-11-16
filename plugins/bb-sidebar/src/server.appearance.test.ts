@@ -4,8 +4,8 @@ import { createFakePluginHost, disposers, standardProject, loadPlugin } from "./
 
 describe("lifecycle RPC", () => {
   it("loads archive-preview storage without resetting shelves or project appearance", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar" });
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
     const settings = (await harness.behavior.callRpc("getSidebarSettings", {})) as Record<string, unknown>;
     const saved = await harness.behavior.callRpc("updateSidebarSettings", {
@@ -15,7 +15,7 @@ describe("lifecycle RPC", () => {
       autoSettleInactive: false,
       autoSettleOnMerge: false,
     });
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     db.prepare("UPDATE sidebar_settings SET archived_shelf_enabled = 1 WHERE id = 1").run();
     db.prepare("INSERT INTO project_colors (project_id, color) VALUES (?, ?)").run("proj_1", "#668899");
     db.prepare(

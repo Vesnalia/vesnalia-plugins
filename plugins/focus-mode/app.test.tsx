@@ -2,14 +2,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import appDefinition, { focusCommand } from "./app";
 
 const route = vi.hoisted(() => ({ projectId: "project", threadId: "thread-a" }));
 
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@get-bb/plugin-sdk/app")>()),
-  useBbContext: () => route,
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>()),
+  useAliaContext: () => route,
 }));
 
 afterEach(() => {
@@ -93,7 +93,7 @@ describe("Focus mode", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("uses BB's supported expand and collapse icon names", async () => {
+  it("uses VesnALIA's supported expand and collapse icon names", async () => {
     const { user } = await mount();
     const trigger = screen.getByRole("button", { name: "Enter focus mode" });
     expect(trigger.querySelector("[data-icon]")?.getAttribute("data-icon")).toBe("Maximize2");
@@ -106,10 +106,10 @@ describe("Focus mode", () => {
     const { user, overlay, header } = await mount();
     await user.click(screen.getByRole("button", { name: "Enter focus mode" }));
     expect(screen.getByRole("dialog", { name: "Focus mode" })).toBeTruthy();
-    const transcript = await screen.findByTestId("bb-focus-mode-transcript");
+    const transcript = await screen.findByTestId("alia-focus-mode-transcript");
     await waitFor(() => expect(transcript.textContent).toContain("Question for thread-a"));
     expect(transcript.querySelector("blockquote")?.textContent).toBe("Question for thread-a");
-    const prose = [...transcript.querySelectorAll("[data-testid='bb-markdown']")].map((n) => n.textContent);
+    const prose = [...transcript.querySelectorAll("[data-testid='alia-markdown']")].map((n) => n.textContent);
     expect(prose).toEqual(["I’ll take a look.", "**Done** — all set."]);
     expect(transcript.textContent).not.toContain("rm -rf build");
     expect(transcript.textContent).not.toContain("Child finished");
@@ -136,7 +136,7 @@ describe("Focus mode", () => {
     const { user } = await mount();
     await user.click(screen.getByRole("button", { name: "Enter focus mode" }));
     await user.click(await screen.findByRole("button", { name: "Show earlier messages" }));
-    const transcript = screen.getByTestId("bb-focus-mode-transcript");
+    const transcript = screen.getByTestId("alia-focus-mode-transcript");
     await waitFor(() => expect(transcript.querySelector("blockquote")?.textContent).toBe("Earliest question"));
     expect(screen.queryByRole("button", { name: "Show earlier messages" })).toBeNull();
     expect(timeline).toHaveBeenCalledWith(
@@ -149,7 +149,7 @@ describe("Focus mode", () => {
     const trigger = screen.getByRole("button", { name: "Enter focus mode" });
     await user.click(trigger);
     await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByTestId("bb-focus-mode-transcript")),
+      expect(document.activeElement).toBe(screen.getByTestId("alia-focus-mode-transcript")),
     );
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -161,7 +161,7 @@ describe("Focus mode", () => {
     const { user } = await mount();
     await user.click(screen.getByRole("button", { name: "Enter focus mode" }));
     const exit = screen.getByRole("button", { name: /Exit focus/ });
-    const transcript = screen.getByTestId("bb-focus-mode-transcript");
+    const transcript = screen.getByTestId("alia-focus-mode-transcript");
     await screen.findByText("Question for thread-a");
     expect(document.activeElement).toBe(transcript);
     await user.tab();
@@ -210,9 +210,9 @@ describe("Focus mode", () => {
   it("ignores malformed open events", async () => {
     await mount();
     await act(async () => {
-      window.dispatchEvent(new Event("bb-plugin-focus-mode:open"));
+      window.dispatchEvent(new Event("alia-plugin-focus-mode:open"));
       for (const detail of [null, {}, 1, "", "  "]) {
-        window.dispatchEvent(new CustomEvent("bb-plugin-focus-mode:open", { detail }));
+        window.dispatchEvent(new CustomEvent("alia-plugin-focus-mode:open", { detail }));
       }
     });
     expect(screen.queryByRole("dialog")).toBeNull();

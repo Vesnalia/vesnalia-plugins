@@ -1,4 +1,4 @@
-// The top of the Gen-UI Gallery: one sticky header, two rows. BB's own page
+// The top of the Gen-UI Gallery: one sticky header, two rows. VesnALIA's own page
 // bar already names the gallery, so the header is navigation only.
 //   - The top row is a search box on the index; on a component's page, back,
 //     where you are ("Data / Chart / Funnel") and a search button.
@@ -574,7 +574,7 @@ function SearchList({
 
 /**
  * Scrolls `scroller` (and nothing around it: scrollIntoView would also move
- * BB's own page) so `target` starts `offset` px below its top, and keeps it
+ * VesnALIA's own page) so `target` starts `offset` px below its top, and keeps it
  * there while examples above it mount and change height, for two seconds or
  * until the user scrolls.
  */

@@ -15,7 +15,7 @@ export interface Scope {
   projects: string[] | null;
 }
 
-/** The parts of a BB project a project glob can match. */
+/** The parts of a VesnALIA project a project glob can match. */
 export interface ProjectRef {
   id: string;
   name: string;

@@ -1,4 +1,4 @@
-import type { PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 
 export type RpcApi<Contract extends PluginRpcContract> = {
   [Method in Extract<keyof Contract, string>]: (

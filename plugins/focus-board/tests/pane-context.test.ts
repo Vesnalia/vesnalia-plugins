@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { paneContextInfo } from "../lib/pane-context";
-import { BB_PERSONAL_PROJECT_ID } from "../lib/new-thread-seed";
+import { ALIA_PERSONAL_PROJECT_ID } from "../lib/new-thread-seed";
 
 const personalProjectId = "proj_mine_personal";
 
@@ -64,7 +64,7 @@ describe("paneContextInfo", () => {
   it("labels the personal project 'No project', like the composer's picker", () => {
     const info = paneContextInfo(
       {
-        projectId: BB_PERSONAL_PROJECT_ID,
+        projectId: ALIA_PERSONAL_PROJECT_ID,
         environment: { name: "Personal", branchName: null, isWorktree: false },
       },
       { personalProjectId, projects },

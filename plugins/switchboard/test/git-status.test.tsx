@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { gitStatusContract, resetGitStatus, useGitStatus, type GitStatus } from "../src/git-status";
 
 const available: GitStatus = { outcome: "available", workspace: {
@@ -24,7 +24,7 @@ const rows = (row: GitStatus) => async ({ keys }: { keys: string[] }) => Object.
 
 afterEach(() => { cleanup(); resetGitStatus(); vi.useRealTimers(); });
 
-describe("git status from bb's Git plugin", () => {
+describe("git status from VesnALIA's Git plugin", () => {
   it("waits 250 ms, then reads the environment's keyed status", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const { slot, status } = mount("e", rows(available));
@@ -52,7 +52,7 @@ describe("git status from bb's Git plugin", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("error"));
     failed.slot.unmount();
     resetGitStatus();
-    mount("e", async () => { throw new Error("bb--git is disabled"); });
+    mount("e", async () => { throw new Error("alia--git is disabled"); });
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("error"));
   });
 

@@ -164,7 +164,7 @@ describe("createSessionLogStore", () => {
     expect(fake.calls).toHaveLength(2);
   });
 
-  it("takes a whole window in place of a delta when bb no longer has the log's baseline", async () => {
+  it("takes a whole window in place of a delta when VesnALIA no longer has the log's baseline", async () => {
     vi.useFakeTimers();
     const first = userRow("first");
     const replaced = assistantRow("replaced");

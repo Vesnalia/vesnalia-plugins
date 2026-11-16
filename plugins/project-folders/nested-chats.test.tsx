@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { defaultPrefs } from "./preferences";
 import { installTestMatchMedia } from "./test-match-media";
 
@@ -14,8 +14,8 @@ const state = vi.hoisted(() => ({
 }));
 // A live host hands out a new array of new thread objects on every update; the
 // harness keeps one fixed list. `freshLists` makes the hook behave like the host.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => {
-  const sdk = await importOriginal<typeof import("@get-bb/plugin-sdk/app")>();
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => {
+  const sdk = await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>();
   return {
     ...sdk,
     experimental_useSidebarThreads: () => {
@@ -589,7 +589,7 @@ it("drags only the chosen chat; the branch is neither moved nor reparented", asy
   fireEvent.dragStart(row, { dataTransfer: { setData, effectAllowed: "" } });
   expect(setData).toHaveBeenCalledTimes(1);
   expect(setData).toHaveBeenCalledWith(
-    "application/x-bb-project-folders-thread",
+    "application/x-alia-project-folders-thread",
     "a1",
   );
   expect(view.inspection.rpcCalls.map((c) => c.method)).not.toContain(

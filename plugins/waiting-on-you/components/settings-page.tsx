@@ -19,14 +19,14 @@ import {
   experimental_copyToClipboard as copyToClipboard,
   experimental_saveFile as saveFile,
   experimental_usePluginId as usePluginId,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ImportResult } from "@/server";
 import { useInboxSettings, useNow } from "@/hooks/use-inbox";
 import { isMac, useCommandHints } from "@/hooks/use-keyboard-hints";
 import { useSettingsDraft } from "@/hooks/use-settings-draft";
 import { formatKeys, jumpKeys, type HeldKeys } from "@/lib/shortcuts";
-import { bbSettingsHref, openBbSettings } from "@/lib/navigation";
+import { aliaSettingsHref, openAliaSettings } from "@/lib/navigation";
 import type { InboxView } from "@/lib/inbox";
 import { emptySampleView, SAMPLE_PROJECTS, sampleView } from "@/lib/sample";
 import { matchPreset, PRESETS } from "@/lib/presets";
@@ -70,7 +70,7 @@ const NO_QUESTION_TIMES: ReadonlyMap<string, number> = new Map();
 
 const ROW_MARKER_OPTIONS: { value: RowMarker; label: string }[] = [
   { value: "dot", label: "Dot" },
-  { value: "glyph", label: "bb status" },
+  { value: "glyph", label: "alia status" },
   { value: "icon", label: "Icon" },
   { value: "stripe", label: "Stripe" },
   { value: "tint", label: "Tint" },
@@ -80,7 +80,7 @@ const ROW_MARKER_OPTIONS: { value: RowMarker; label: string }[] = [
 
 const COUNTER_STYLE_OPTIONS: { value: CounterStyle; label: string }[] = [
   { value: "dot", label: "Dot" },
-  { value: "glyph", label: "bb status" },
+  { value: "glyph", label: "alia status" },
   { value: "icon", label: "Icon" },
   { value: "number", label: "Number only" },
   { value: "pill", label: "Pill" },
@@ -197,7 +197,7 @@ export function SettingsPage() {
   const pluginId = usePluginId();
   const commandHints = useCommandHints(pluginId, true);
   // Every control edits the draft; the sidebar changes only on Save.
-  const draft = useSettingsDraft(`bb-plugin-${pluginId}:settings-draft`, saved, save);
+  const draft = useSettingsDraft(`alia-plugin-${pluginId}:settings-draft`, saved, save);
   const settings = draft.current;
   const update = draft.edit;
   const reset = () => draft.replace(DEFAULT_SETTINGS);
@@ -352,7 +352,7 @@ export function SettingsPage() {
           <SubHeading title="Content" description="What a row shows." />
           <Row
             label="Marker"
-            description="What tells the kinds of thread apart. Colors and icons are set in “Colors & icons”; bb status uses bb's own colors."
+            description="What tells the kinds of thread apart. Colors and icons are set in “Colors & icons”; VesnALIA status uses VesnALIA's own colors."
             wide
           >
             <Segmented
@@ -554,7 +554,7 @@ export function SettingsPage() {
             update={update}
             field="keyHints"
             label="Key hints"
-            description="While ⌘ is held, keys show on the block like on bb's own rows. Also follows bb's “Show keyboard hints”."
+            description="While ⌘ is held, keys show on the block like on VesnALIA's own rows. Also follows VesnALIA's “Show keyboard hints”."
           />
           <Row
             label="Jump to a thread"
@@ -590,16 +590,16 @@ export function SettingsPage() {
           </Row>
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
             <p className="text-xs text-muted-foreground">
-              Change these keys in bb's keyboard settings: search for “Waiting On You”.
+              Change these keys in VesnALIA's keyboard settings: search for “Waiting On You”.
             </p>
             <Button variant="outline" size="sm" asChild>
               <a
-                href={bbSettingsHref("keyboard")}
+                href={aliaSettingsHref("keyboard")}
                 onClick={(event) => {
                   // Keep middle-click and ⌘-click as plain links.
                   if (event.button !== 0 || event.metaKey || event.ctrlKey) return;
                   event.preventDefault();
-                  openBbSettings("keyboard");
+                  openAliaSettings("keyboard");
                 }}
               >
                 Open keyboard settings
@@ -968,9 +968,9 @@ function ImportExportGroup({
       ) : null}
       <div className="px-4 py-3 text-xs text-muted-foreground">
         From a terminal:{" "}
-        <code className="font-mono">bb waiting-on-you export &gt; waiting-on-you.json</code> and{" "}
+        <code className="font-mono">alia waiting-on-you export &gt; waiting-on-you.json</code> and{" "}
         <code className="font-mono">
-          bb waiting-on-you import --json "$(cat waiting-on-you.json)"
+          alia waiting-on-you import --json "$(cat waiting-on-you.json)"
         </code>
       </div>
     </Group>
@@ -983,7 +983,7 @@ function jumpLabel(modifier: JumpModifier): string {
   return keys === null ? "Off" : `${formatKeys(keys, isMac())}1–9`;
 }
 
-/** Warns when bb already binds the chosen keys plus a digit. */
+/** Warns when VesnALIA already binds the chosen keys plus a digit. */
 function JumpConflict({
   modifier,
   takenBy,
@@ -1005,7 +1005,7 @@ function JumpConflict({
   if (command === null) return null;
   return (
     <p role="alert" className="text-xs text-destructive">
-      bb already uses {formatKeys(keys, isMac())}+digit for “{command}”. Pick other
+      alia already uses {formatKeys(keys, isMac())}+digit for “{command}”. Pick other
       keys, or the two will clash.
     </p>
   );
@@ -1216,7 +1216,7 @@ function Group({
 }) {
   const active = quick === undefined ? null : matchGroupPreset(quick.group, quick.settings);
   const pluginId = usePluginId();
-  const storageKey = quick === undefined ? null : `bb-plugin-${pluginId}:fine-tune:${quick.group}`;
+  const storageKey = quick === undefined ? null : `alia-plugin-${pluginId}:fine-tune:${quick.group}`;
   const [openByUser, setOpenByUser] = useState<boolean | null>(() => {
     if (storageKey === null) return null;
     const stored = window.localStorage.getItem(storageKey);

@@ -1,23 +1,19 @@
 {
-  "name": "bb-plugin-multi-repo-git",
+  "name": "alia-plugin-multi-repo-git",
   "version": "0.1.4",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nicolay-i/bb-plugin-multi-repo-git.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.48.1",
-    "bbPluginSdk": ">=0.6.104",
+    "alia": ">=0.48.1",
+    "aliaPluginSdk": ">=0.6.104",
     "node": ">=24.20.0"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "bb": {
+  "alia": {
     "name": "Atrium — MonoRepo Projects",
     "description": "Group related projects into native workspaces, page thread families, and scroll through recent chats with global title/project search. Includes repository-local Source Control.",
     "branding": {
@@ -36,7 +32,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -66,5 +61,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/multi-repo-git#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/multi-repo-git"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

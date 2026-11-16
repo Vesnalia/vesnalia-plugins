@@ -33,5 +33,5 @@ assign("page", (box) => box.backend === "lxc" && !box.enrolled);
 writeFileSync(join(home, "run", "boxes.json"), JSON.stringify(boxes, null, 2));
 writeFileSync(join(home, "run", "plan.json"), JSON.stringify({ thread }, null, 2));
 const count = (test) => boxes.filter(test).length;
-console.log(`${boxes.length} boxes: ${count((box) => box.backend === "docker")} Docker, ${count((box) => box.backend === "lxc")} LXC, ${count((box) => box.backend === "vm")} VM; ${count((box) => box.enrolled)} BB machines, ${count((box) => !box.enrolled)} read through their route`);
+console.log(`${boxes.length} boxes: ${count((box) => box.backend === "docker")} Docker, ${count((box) => box.backend === "lxc")} LXC, ${count((box) => box.backend === "vm")} VM; ${count((box) => box.enrolled)} VesnALIA machines, ${count((box) => !box.enrolled)} read through their route`);
 for (const box of boxes) console.log(`${box.name} ${box.id} ${box.backend} ${box.enrolled ? "machine" : "route"} ${box.address} ${box.container ?? ""} ${box.role ?? ""}`);

@@ -1,5 +1,5 @@
 /**
- * `bb agent-icons …`. Calls the same IconStore as the RPC handlers, so
+ * `alia agent-icons …`. Calls the same IconStore as the RPC handlers, so
  * every change invalidates the settings page and marks live.
  */
 import { readdir, readFile, stat } from "node:fs/promises";
@@ -10,7 +10,7 @@ import {
   experimental_PluginRpcRefusal as Refusal,
   PluginCliError,
   type PluginCliRegistration,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { colorSchema, iconRef, providerIdSchema, type Assignment, type IconSource, type IconsState } from "../shared/contract";
 import { BUILTIN_ICONS } from "../shared/builtin-icons";
 import { tooLargeReason, type Language } from "../shared/i18n";
@@ -74,7 +74,7 @@ function formatList(
     .filter((id) => !known.has(id))
     .sort();
   if (absent.length > 0) {
-    lines.push(providers ? t.notInBb : t.assignmentsHeading);
+    lines.push(providers ? t.notInAlia : t.assignmentsHeading);
     for (const id of absent) lines.push(`  ${id}: ${describe(state.assignments[id]!, state, t)}`);
   }
   lines.push(t.setsHeading);
@@ -113,8 +113,8 @@ async function readSvgDir(dir: string, language: Language): Promise<{ files: Upl
 export function createCli(store: IconStore, listProviders: () => Promise<ProviderSummary[]>): PluginCliRegistration {
   return defineCli({
     name: "agent-icons",
-    summary: "Agent icons and colors in bb",
-    description: "Assignments are shared by all devices; changes show at once on open bb pages.",
+    summary: "Agent icons and colors in VesnALIA",
+    description: "Assignments are shared by all devices; changes show at once on open VesnALIA pages.",
     commands: {
       list: cliCommand({
         summary: "Show providers, their assignments and icon sets",

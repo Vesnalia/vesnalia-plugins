@@ -1,10 +1,10 @@
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { CoreWrite, DropPlan, TreeIndex } from "./drop-plan";
 import type { LayoutApi } from "./use-layout";
 
 export interface ApplyDeps {
-  sdk: { threads: Pick<PluginBrowserBbSdk["threads"], "update" | "pin" | "unpin" | "reorderPinned"> };
+  sdk: { threads: Pick<PluginBrowserAliaSdk["threads"], "update" | "pin" | "unpin" | "reorderPinned"> };
   layout: Pick<LayoutApi, "setOrder" | "setCollapsed" | "refetch">;
   index: TreeIndex;
   announce(message: string): void;
@@ -86,7 +86,7 @@ export async function applyPlan(plan: Extract<DropPlan, { ok: true }>, deps: App
   };
   toast(plan.summary, {
     description: plan.moves.some((move) => move.fromParent !== move.toParent) ?
-      "bb tells the parent's agent about this in 2 seconds. Undo before then and nothing is sent." : undefined,
+      "alia tells the parent's agent about this in 2 seconds. Undo before then and nothing is sent." : undefined,
     action: { label: "Undo", onClick },
   });
   deps.announce(plan.summary);

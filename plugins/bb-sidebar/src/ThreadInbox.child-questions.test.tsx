@@ -12,7 +12,7 @@ vi.mock("sonner", async () => (await import("./test-inbox")).sonnerMock());
 
 await loadInboxApp();
 
-const projects = [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }];
+const projects = [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }];
 
 describe("a child waiting on the user", () => {
   it("keeps its tree out of Working even while a sibling still works", async () => {

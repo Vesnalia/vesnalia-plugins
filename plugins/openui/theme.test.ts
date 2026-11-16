@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { chartRamp } from "./ui/theme";
 
-test("chart ramp runs dark to light around BB's accent", () => {
+test("chart ramp runs dark to light around VesnALIA's accent", () => {
   const ramp = chartRamp((css) => css);
   assert.equal(ramp.length, 11);
   assert.match(ramp[5]!, /^var\(--color-timeline-accent, var\(--primary\)\)$/);

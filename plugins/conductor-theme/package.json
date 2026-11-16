@@ -1,10 +1,10 @@
 {
-  "name": "bb-plugin-conductor-theme",
+  "name": "alia-plugin-conductor-theme",
   "version": "0.1.0",
-  "description": "Conductor-inspired dark and light themes for bb with espresso and native black surfaces, warm brown message cards, bone ink, and emerald accents.",
+  "description": "Conductor-inspired dark and light themes for VesnALIA with espresso and native black surfaces, warm brown message cards, bone ink, and emerald accents.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "theme",
     "conductor",
     "dark-mode",
@@ -14,16 +14,12 @@
   ],
   "license": "MIT",
   "author": "bottlebrushes",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bottlebrushes/bb-plugin-conductor-theme.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.40.0 <1.0.0",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40.0 <1.0.0",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Conductor Theme",
     "description": "Conductor-inspired themes with espresso and native black canvases, warm brown message cards, bone ink, and emerald accents.",
     "branding": {
@@ -57,13 +53,29 @@
     "server.ts"
   ],
   "scripts": {
-    "build": "npm run check && bb plugin build .",
+    "build": "npm run check && alia plugin build .",
     "check": "npm run typecheck",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/conductor-theme#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/conductor-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

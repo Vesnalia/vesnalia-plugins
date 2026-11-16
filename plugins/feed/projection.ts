@@ -80,7 +80,7 @@ function parseStatus(value: unknown): ThreadStatus {
   ) {
     return value as ThreadStatus;
   }
-  throw new Error(`Unsupported BB thread status: ${String(value)}`);
+  throw new Error(`Unsupported VesnALIA thread status: ${String(value)}`);
 }
 
 function parseQueuedWork(value: unknown): QueuedWork {
@@ -90,7 +90,7 @@ function parseQueuedWork(value: unknown): QueuedWork {
   ) {
     return value as QueuedWork;
   }
-  throw new Error(`Unsupported BB queued-work state: ${String(value)}`);
+  throw new Error(`Unsupported VesnALIA queued-work state: ${String(value)}`);
 }
 
 function capitalized(status: ThreadStatus): string {
@@ -180,7 +180,7 @@ export function projectThread(
     title: facts.title,
     section: annotations.paused ? "paused" : placement.section,
     state: placement.state,
-    // A paused row shows the live BB status; "With manager" is not one.
+    // A paused row shows the live VesnALIA status; "With manager" is not one.
     statusLabel:
       annotations.paused && placement.state === "with_manager"
         ? "Idle"

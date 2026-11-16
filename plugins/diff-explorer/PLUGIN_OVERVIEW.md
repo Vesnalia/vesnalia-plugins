@@ -18,4 +18,4 @@ Definitions come from the language server for the file's language. The server ru
 - Go: `gopls`. Rust: `rust-analyzer`. Python: `pyright-langserver`. C and C++: `clangd`. Swift: `sourcekit-lsp`. Each must be on your PATH.
 - Files in other languages show the diff without go to definition.
 - Binary files and files too large to diff are skipped.
-- Tested on macOS. The plugin uses experimental BB plugin APIs.
+- Tested on macOS. The plugin uses experimental VesnALIA plugin APIs.

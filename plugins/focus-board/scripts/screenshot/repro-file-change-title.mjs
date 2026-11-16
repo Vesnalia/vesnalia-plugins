@@ -1,5 +1,5 @@
 // Runtime probe for the pane-parity audit's Gap 4 — file-change row titles
-// in the pane. bb renders the path segment with the timeline's file accent
+// in the pane. VesnALIA renders the path segment with the timeline's file accent
 // (`span.text-timeline-accent`), and the main view's resolver opens the
 // file's diff on click; the plugin path passes no resolver, so in the pane
 // the title is a colored dead spot.
@@ -10,13 +10,13 @@
 // the title leaves the plugin panel (the thread opens in the main view).
 //
 // Usage: THREAD_ID=<board card id> node scripts/screenshot/repro-file-change-title.mjs
-// Honors BB_APP, CHROME_PATH, OUT_DIR (default
+// Honors ALIA_APP, CHROME_PATH, OUT_DIR (default
 // docs/screenshots/repro-file-change-title). Exits 0 when a file-change
 // title was found and clicked; the verdict line says which way the click
 // went.
 import puppeteer from "puppeteer-core";
 
-const APP = process.env.BB_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
+const APP = process.env.ALIA_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
 const THREAD_ID = process.env.THREAD_ID ?? "";
 if (!THREAD_ID) {
   console.error("Set THREAD_ID to a board card whose transcript carries file-change rows.");
@@ -48,7 +48,7 @@ if (!box) { console.error("board card not found:", THREAD_ID); await browser.clo
 await page.mouse.click(box.x, box.y);
 await new Promise((r) => setTimeout(r, 5000));
 
-// The pane restores bb's persisted reading position (a stored mid-transcript
+// The pane restores VesnALIA's persisted reading position (a stored mid-transcript
 // anchor can open the pane away from the newest rows), so wheel to the bottom
 // first (trusted gestures; programmatic writes get reconciled), then walk the
 // transcript one wheel tick at a time: the timeline virtualizes, so only the

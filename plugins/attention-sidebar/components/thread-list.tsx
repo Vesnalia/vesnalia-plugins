@@ -4,7 +4,7 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   buildSidebarModel,
   collapsedStorageKey,
@@ -114,7 +114,7 @@ function Skeleton() {
   return (
     <div aria-busy="true" aria-label="Загрузка тредов" className="flex flex-col gap-px px-2 pt-1">
       {[72, 55, 64, 48].map((width) => (
-        <div key={width} className="flex h-[var(--bb-sidebar-row-height)] items-center gap-2">
+        <div key={width} className="flex h-[var(--alia-sidebar-row-height)] items-center gap-2">
           <span className="size-[18px] shrink-0 animate-pulse rounded-full bg-sidebar-accent" />
           <span
             className="h-3 animate-pulse rounded bg-sidebar-accent"

@@ -1,4 +1,4 @@
-/** KodaForge terminals are titled "Koda 1", "Koda 2"… so a reopened IDE finds its own and not BB's others. */
+/** KodaForge terminals are titled "Koda 1", "Koda 2"… so a reopened IDE finds its own and not VesnALIA's others. */
 export const TITLE_PREFIX = "Koda ";
 
 /** UTF-8 text → base64, for terminals.input. */

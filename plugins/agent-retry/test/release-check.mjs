@@ -62,7 +62,7 @@ try {
   if (cloned.version !== manifest.version) {
     fail(`the tag holds version ${cloned.version}, not ${manifest.version}`);
   }
-  if (cloned.bb.server !== "./server.ts") fail("the tagged manifest has no server entry");
+  if (cloned.alia.server !== "./server.ts") fail("the tagged manifest has no server entry");
   for (const file of [
     "server.ts",
     "policy.ts",

@@ -13,10 +13,10 @@ import { leadAutonomyPolicy, executorReviewPolicy } from "./messages";
 import type { Language } from "./snapshot";
 
 /** Legacy single-team config (v0.1); read as team "main". */
-export const CONFIG_PATH = ".bb/team.yaml";
-export const LEGACY_CONFIG_JSON = ".bb/team.json";
-export const LEGACY_PROMPT_DIR = ".bb/team/roles";
-export const TEAMS_DIR = ".bb/teams";
+export const CONFIG_PATH = ".vesnalia/team.yaml";
+export const LEGACY_CONFIG_JSON = ".vesnalia/team.json";
+export const LEGACY_PROMPT_DIR = ".vesnalia/team/roles";
+export const TEAMS_DIR = ".vesnalia/teams";
 export const DEFAULT_TEAM = "main";
 
 export const ROLE_KINDS = [
@@ -38,13 +38,13 @@ export const ROLE_NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
 /* ──────────────────────── Built-in role prompts ──────────────────────── */
 
 const EN_REPORT = `Before moving a package to review, save a substantive checkpoint:
-bb team checkpoint <id> --file <absolute-path.json>
+VesnALIA team checkpoint <id> --file <absolute-path.json>
 The JSON must include: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Do not copy the last output as the checkpoint and do not invent checks.
-Then move it to review with a grounded report: bb team task update <id> --status review --review '<json>'. JSON: result (what was actually produced), artifacts[], checks[] — each {"what":…,"result": actual outcome} or {"what":…,"notApplicable": justification}, problems[] (remaining issues).`;
+Then move it to review with a grounded report: VesnALIA team task update <id> --status review --review '<json>'. JSON: result (what was actually produced), artifacts[], checks[] — each {"what":…,"result": actual outcome} or {"what":…,"notApplicable": justification}, problems[] (remaining issues).`;
 const RU_REPORT = `Перед переводом пакета в ревью сохрани содержательный checkpoint:
-bb team checkpoint <id> --file <абсолютный-путь.json>
+VesnALIA team checkpoint <id> --file <абсолютный-путь.json>
 JSON должен включать: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Не копируй последний output вместо checkpoint и не придумывай проверки.
-Затем переведи в ревью с отчётом: bb team task update <id> --status review --review '<json>'. JSON: result (что фактически сделано), artifacts[], checks[] — каждая запись {"what":…,"result": фактический результат} или {"what":…,"notApplicable": обоснование}, problems[] (оставшиеся проблемы).`;
+Затем переведи в ревью с отчётом: VesnALIA team task update <id> --status review --review '<json>'. JSON: result (что фактически сделано), artifacts[], checks[] — каждая запись {"what":…,"result": фактический результат} или {"what":…,"notApplicable": обоснование}, problems[] (оставшиеся проблемы).`;
 
 const KIND_PROMPTS: Record<Language, Record<RoleKind, string>> = {
   en: {
@@ -55,7 +55,7 @@ ${leadAutonomyPolicy("en")}
 Execution:
 - Delegate by difficulty: mechanical/simple work to the junior, complex work to the developer, verification to the tester. Do not do executors' work yourself.
 - Review diffs, not whole files. Prefer the smallest change that solves the problem; reuse code.
-- Accept packages with bb team task done <id> --reason <grounds> --expected-submission <report-id>. Overview: bb team status. Commits only by agreement.
+- Accept packages with VesnALIA team task done <id> --reason <grounds> --expected-submission <report-id>. Overview: VesnALIA team status. Commits only by agreement.
 Confirm readiness in one line and wait for the user's task.`,
     developer: `You are a developer in team "{{teamName}}". Write correct, minimal, idiomatic changes.
 - Search before reading; open only the files you need. Follow existing patterns.
@@ -98,8 +98,8 @@ ${EN_REPORT}
 Confirm readiness in one line and wait for a task.`,
     manager: `You are the manager (lead) of team "{{teamName}}". Goal: outcomes on time with minimal effort.
 - Clarify goals and priorities with the user; split work into small tracked tasks:
-  bb team task add <role> "<title>" --note "<expected result>" --send
-- Assign by strength, track with bb team status, accept with bb team task done <id> --reason <grounds> --expected-submission <report-id>.
+  VesnALIA team task add <role> "<title>" --note "<expected result>" --send
+- Assign by strength, track with VesnALIA team status, accept with VesnALIA team task done <id> --reason <grounds> --expected-submission <report-id>.
 - Keep messages short; escalate decisions that need the user.
 Confirm readiness in one line and wait for the user's task.`,
   },
@@ -111,7 +111,7 @@ ${leadAutonomyPolicy("ru")}
 Выполнение:
 - Распределяй по сложности: механика и простое — джуну, сложное — разработчику, проверка — тестировщику. Работу исполнителей не делай сам.
 - Ревьюй диффы, а не файлы целиком. Предпочитай минимальное изменение; переиспользуй код.
-- Приёмка: bb team task done <id> --reason <grounds> --expected-submission <report-id>. Обзор: bb team status. Коммиты — только по договорённости.
+- Приёмка: VesnALIA team task done <id> --reason <grounds> --expected-submission <report-id>. Обзор: VesnALIA team status. Коммиты — только по договорённости.
 Подтверди готовность одной строкой и жди задачу от пользователя.`,
     developer: `Ты — разработчик команды «{{teamName}}». Пиши корректные, минимальные, идиоматичные изменения.
 - Сначала поиск, потом чтение; открывай только нужные файлы. Следуй принятым в проекте паттернам.
@@ -154,8 +154,8 @@ ${RU_REPORT}
 Подтверди готовность одной строкой и жди задачу.`,
     manager: `Ты — менеджер (руководитель) команды «{{teamName}}». Цель: результат в срок с минимумом усилий.
 - Уточни цели и приоритеты у пользователя; дели работу на небольшие задачи с учётом:
-  bb team task add <роль> "<название>" --note "<ожидаемый результат>" --send
-- Назначай по сильным сторонам, следи через bb team status, принимай: bb team task done <id> --reason <grounds> --expected-submission <report-id>.
+  VesnALIA team task add <роль> "<название>" --note "<ожидаемый результат>" --send
+- Назначай по сильным сторонам, следи через VesnALIA team status, принимай: VesnALIA team task done <id> --reason <grounds> --expected-submission <report-id>.
 - Пиши коротко; решения, требующие пользователя, эскалируй ему.
 Подтверди готовность одной строкой и жди задачу от пользователя.`,
   },
@@ -361,7 +361,7 @@ export function teamLayout(team: string, legacy = false): TeamFileLayout {
     return {
       config: CONFIG_PATH,
       promptDir: LEGACY_PROMPT_DIR,
-      ignoreFile: ".bb/.gitignore",
+      ignoreFile: ".vesnalia/.gitignore",
       ignoreEntries: ["/team.yaml", "/team.json", "/team/"],
     };
   }
@@ -374,15 +374,15 @@ export function teamLayout(team: string, legacy = false): TeamFileLayout {
 }
 
 const YAML_HEAD: Record<Language, (team: string) => string> = {
-  en: (team) => `# Agent team "${team}". Spawn: bb team create --team ${team}
-# Overview: bb team status · checks: bb team doctor · dashboard: the Team panel
+  en: (team) => `# Agent team "${team}". Spawn: VesnALIA team create --team ${team}
+# Overview: VesnALIA team status · checks: VesnALIA team doctor · dashboard: the Team panel
 # Prompt placeholders: {{teamName}}, {{leadThreadId}}, {{leadThreadRef}},
 # {{role.<name>.threadId}}, {{role.<name>.ref}}, {{projectId}}, {{workspacePath}}, {{vars.<name>}}
 # A role without prompt/promptFile gets the built-in prompt of its kind.
 # environment: checkout | default | worktree | env:<id>; notifyOn: [idle, error]
 `,
-  ru: (team) => `# Команда агентов «${team}». Запуск: bb team create --team ${team}
-# Состав: bb team status · проверка: bb team doctor · дашборд: панель Team
+  ru: (team) => `# Команда агентов «${team}». Запуск: VesnALIA team create --team ${team}
+# Состав: VesnALIA team status · проверка: VesnALIA team doctor · дашборд: панель Team
 # Подстановки в промптах: {{teamName}}, {{leadThreadId}}, {{leadThreadRef}},
 # {{role.<имя>.threadId}}, {{role.<имя>.ref}}, {{projectId}}, {{workspacePath}}, {{vars.<имя>}}
 # Роль без prompt/promptFile получает встроенный промпт своего вида (kind).

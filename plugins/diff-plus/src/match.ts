@@ -1,5 +1,5 @@
-// Which files BB's path search ("Search filenames") lets through, by BB's own
-// rules (bb--git's `Fw`/`Mw`, bb-app 0.48): the value splits at commas; a part
+// Which files VesnALIA's path search ("Search filenames") lets through, by VesnALIA's own
+// rules (alia--git's `Fw`/`Mw`, alia-app 0.48): the value splits at commas; a part
 // that is not a glob matches as a case-insensitive substring; a glob is
 // picomatch with `dot` and `nocase`, on the base name when it has no "/"; when
 // no file matches a glob exactly it matches as a prefix instead; "!" parts

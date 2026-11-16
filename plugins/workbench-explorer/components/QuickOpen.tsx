@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBbContext, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { FileTypeIcon } from "@/components/FileTypeIcon";
 import { fuzzyPositions } from "@/lib/fuzzy";
@@ -60,7 +60,7 @@ export function QuickOpen({ root }: { root: Workspace | null }) {
 
 function QuickOpenDialog({ root }: { root: Workspace | null }) {
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const portalScopeProps = usePortalScopeProps();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);

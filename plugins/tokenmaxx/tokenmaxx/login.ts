@@ -1,15 +1,15 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 // `tokenmaxx login` drives `codex login` / `claude setup-token` with inherited
-// stdio, so it needs a real pty. A bb terminal on the server's own host is one,
+// stdio, so it needs a real pty. A VesnALIA terminal on the server's own host is one,
 // and its output can be streamed into the panel.
-export const createLoginSessions = (bb: BbPluginApi) => {
+export const createLoginSessions = (alia: AliaPluginApi) => {
   const sessions = new Set<string>();
 
   const primaryHostId = async (): Promise<string> => {
-    const config = await bb.sdk.system.config();
+    const config = await alia.sdk.system.config();
     if (config.primaryHostId === null) {
-      throw new Error("bb has no primary host to run the login on.");
+      throw new Error("alia has no primary host to run the login on.");
     }
     return config.primaryHostId;
   };
@@ -19,7 +19,7 @@ export const createLoginSessions = (bb: BbPluginApi) => {
       const home = input.home.trim();
       const prefix = home.length > 0 ? `TOKENMAXX_HOME=${JSON.stringify(home)} ` : "";
       const command = `${prefix}${JSON.stringify(input.binary)} ${input.args.join(" ")}`;
-      const terminal = await bb.sdk.terminals.create({
+      const terminal = await alia.sdk.terminals.create({
         cols: 100,
         rows: 30,
         scope: { kind: "host_path", hostId: await primaryHostId(), cwd: null },
@@ -32,8 +32,8 @@ export const createLoginSessions = (bb: BbPluginApi) => {
 
     read: async (input: { terminalId: string; sinceSeq: number }) => {
       const [output, session] = await Promise.all([
-        bb.sdk.terminals.output({ terminalId: input.terminalId, sinceSeq: input.sinceSeq }),
-        bb.sdk.terminals.get({ terminalId: input.terminalId }),
+        alia.sdk.terminals.output({ terminalId: input.terminalId, sinceSeq: input.sinceSeq }),
+        alia.sdk.terminals.get({ terminalId: input.terminalId }),
       ]);
       return {
         text: output.chunks
@@ -46,7 +46,7 @@ export const createLoginSessions = (bb: BbPluginApi) => {
     },
 
     write: async (input: { terminalId: string; data: string }) => {
-      await bb.sdk.terminals.input({
+      await alia.sdk.terminals.input({
         terminalId: input.terminalId,
         dataBase64: Buffer.from(input.data, "utf8").toString("base64"),
       });
@@ -54,14 +54,14 @@ export const createLoginSessions = (bb: BbPluginApi) => {
 
     close: async (terminalId: string) => {
       sessions.delete(terminalId);
-      await bb.sdk.terminals.close({ terminalId, mode: "force" }).catch(() => undefined);
+      await alia.sdk.terminals.close({ terminalId, mode: "force" }).catch(() => undefined);
     },
 
     closeAll: async () => {
       const open = [...sessions];
       sessions.clear();
       await Promise.allSettled(
-        open.map((terminalId) => bb.sdk.terminals.close({ terminalId, mode: "force" })),
+        open.map((terminalId) => alia.sdk.terminals.close({ terminalId, mode: "force" })),
       );
     },
   };

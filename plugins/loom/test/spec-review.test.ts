@@ -27,16 +27,16 @@ beforeEach(() => {
 
 const project = () => h.store.projectBySlug("csv")!;
 const status = () => specReviewStatus(h.store, project());
-const propose = (edit?: (doc: Doc) => void) => h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+const propose = (edit?: (doc: Doc) => void) => h.projects.propose({ toml: specToml(edit), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
 const draft = async (edit?: (doc: Doc) => void) => {
   await propose(edit);
   return ensureSpecReview(h.ctx, "csv");
 };
-const spawns = () => h.bb.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
+const spawns = () => h.alia.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
 const rows = () => h.store.specReviews(project().id);
 const reviewer = () => rows().at(-1)!.thread_id!;
 const findings = (n: number): SpecFinding[] => Array.from({ length: n }, (_, index) => ({ path: "ticket[csv-model]", title: `Problem ${index + 1}`, detail: `Detail ${index + 1}` }));
-const toPlanner = () => h.bb.sent("thr_plan");
+const toPlanner = () => h.alia.sent("thr_plan");
 const goal = (n: number) => (doc: Doc) => (doc.project.goal = `Let people export their orders as a CSV file, revision ${n}.`);
 
 describe("starting a spec review", () => {
@@ -45,7 +45,7 @@ describe("starting a spec review", () => {
     expect(spawns()).toHaveLength(1);
     const args = spawns()[0]!;
     expect(args).toMatchObject({
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
       baseBranch: "origin/main",
       title: "CSV · spec review v1",
@@ -54,7 +54,7 @@ describe("starting a spec review", () => {
       model: "gpt",
       metadata: { project: "csv", role: "spec-review", version: "1" },
     });
-    expect(args.prompt).toContain("bb thread log thr_plan --format minimal --all");
+    expect(args.prompt).toContain("alia thread log thr_plan --format minimal --all");
     expect(args.prompt).toContain("Ask User Question");
     for (const line of SPEC_REVIEW_RUBRIC) expect(args.prompt).toContain(line);
     expect(args.prompt).toMatch(/project\.done_when item to the tickets whose acceptance criteria make it true/);
@@ -67,30 +67,30 @@ describe("starting a spec review", () => {
     expect(await draft()).toEqual({ kind: "reviewing", version: 1, round: 1 });
     expect(spawns()).toHaveLength(1);
     expect(approvalRefusal("csv", status())?.message).toBe("Draft v1 of csv is still in its spec review (round 1 of 3).");
-    expect(approvalRefusal("csv", status())?.hint).toContain("bb loom approve csv --skip-review");
+    expect(approvalRefusal("csv", status())?.hint).toContain("alia loom approve csv --skip-review");
   });
 
   it("starts a multi-repo project's reviewer in its first repo, from that repo's remote base", async () => {
-    h.bb.addBbProject("proj_api", { host_1: "/src/api" });
+    h.alia.addAliaProject("proj_api", { host_1: "/src/api" });
     await draft((doc) => {
       doc.repo = [{ name: "api", project: "proj_api", base: "trunk", remote: "upstream" }];
       for (const ticket of doc.ticket) ticket.repo = "api";
     });
-    expect(spawns()[0]).toMatchObject({ bbProjectId: "proj_api", baseBranch: "upstream/trunk" });
+    expect(spawns()[0]).toMatchObject({ aliaProjectId: "proj_api", baseBranch: "upstream/trunk" });
   });
 
-  it("ends the review as failed when bb refuses the reviewer, without a message: the tool reply tells the planner", async () => {
-    h.bb.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.");
-    expect(await draft()).toEqual({ kind: "failed", version: 1, round: 1, reason: "bb could not start the reviewer: HTTP 400: Provider pi only supports full permission mode." });
+  it("ends the review as failed when VesnALIA refuses the reviewer, without a message: the tool reply tells the planner", async () => {
+    h.alia.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.");
+    expect(await draft()).toEqual({ kind: "failed", version: 1, round: 1, reason: "alia could not start the reviewer: HTTP 400: Provider pi only supports full permission mode." });
     expect(toPlanner()).toEqual([]);
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     expect(await draft()).toEqual({ kind: "reviewing", version: 1, round: 1 });
   });
 
   it("waits when the reviewer cannot start, tries again from the tick, and fails only after four failures in a row", async () => {
-    h.bb.spawnError = () => new Error("bb is restarting");
-    expect(await draft()).toEqual({ kind: "reviewing", version: 1, round: 1, waiting: { reason: "bb is restarting", until: h.clock.t + 60_000 } });
-    expect(approvalRefusal("csv", status())?.message).toBe("Draft v1 of csv is still in its spec review (round 1 of 3): its reviewer could not start (bb is restarting), and Loom tries again.");
+    h.alia.spawnError = () => new Error("alia is restarting");
+    expect(await draft()).toEqual({ kind: "reviewing", version: 1, round: 1, waiting: { reason: "alia is restarting", until: h.clock.t + 60_000 } });
+    expect(approvalRefusal("csv", status())?.message).toBe("Draft v1 of csv is still in its spec review (round 1 of 3): its reviewer could not start (VesnALIA is restarting), and Loom tries again.");
     await retrySpecReviews(h.ctx);
     expect(spawns()).toHaveLength(1);
     // A restart keeps a review that waits.
@@ -102,19 +102,19 @@ describe("starting a spec review", () => {
       await retrySpecReviews(h.ctx);
     }
     expect(spawns()).toHaveLength(4);
-    expect(status()).toMatchObject({ kind: "failed", reason: "bb could not start the reviewer: bb is restarting" });
-    expect(toPlanner().join("\n")).toContain("bb could not start the reviewer: bb is restarting");
+    expect(status()).toMatchObject({ kind: "failed", reason: "alia could not start the reviewer: VesnALIA is restarting" });
+    expect(toPlanner().join("\n")).toContain("alia could not start the reviewer: VesnALIA is restarting");
   });
 
   it("starts the same review once the provider is available again, and fails it if the provider stays unavailable for an hour", async () => {
-    h.bb.spawnError = () => new SpawnUnavailableError("No free slot.");
+    h.alia.spawnError = () => new SpawnUnavailableError("No free slot.");
     await draft();
     for (let n = 0; n < 3; n++) {
       h.clock.advance(15 * 60_000);
       await retrySpecReviews(h.ctx);
     }
     expect(status()).toMatchObject({ kind: "reviewing", waiting: { reason: "No free slot." } });
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     h.clock.advance(15 * 60_000);
     await retrySpecReviews(h.ctx);
     expect(rows()).toHaveLength(1);
@@ -123,24 +123,24 @@ describe("starting a spec review", () => {
     expect(status()).toEqual({ kind: "reviewing", version: 1, round: 1 });
 
     h = makeCtx();
-    h.bb.spawnError = () => new SpawnUnavailableError("No free slot.");
+    h.alia.spawnError = () => new SpawnUnavailableError("No free slot.");
     await draft();
     for (let n = 0; n < 4; n++) {
       h.clock.advance(15 * 60_000);
       await retrySpecReviews(h.ctx);
     }
-    expect(status()).toMatchObject({ kind: "failed", reason: "bb could not start the reviewer: the environment provider was unavailable for 1h: No free slot." });
+    expect(status()).toMatchObject({ kind: "failed", reason: "alia could not start the reviewer: the environment provider was unavailable for 1h: No free slot." });
     expect(toPlanner().join("\n")).toContain("the environment provider was unavailable for 1h");
   });
 
   it("treats a reviewer whose environment could not be provisioned as one that did not start", async () => {
     await draft();
-    h.bb.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
+    h.alia.systemErrors.set("thr_w1", { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
     await onSpecReviewerTurnFailed(h.ctx, rows()[0]!, { threadId: "thr_w1", requestId: "req_1", attemptNumber: 1, errorInfo: null, rateLimits: null });
     expect(rows()[0]).toMatchObject({ state: "reviewing", thread_id: null });
     expect(status()).toMatchObject({ kind: "reviewing", waiting: { reason: "No free slot." } });
-    expect(h.bb.sent("thr_w1")).toEqual([]);
-    expect(h.bb.callsTo("archive")).toEqual([["thr_w1"]]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toEqual([["thr_w1"]]);
   });
 
   it("has nothing to wait for on a draft with no review", async () => {
@@ -185,7 +185,7 @@ describe("reviewing a pending version", () => {
     expect(brief).toContain("- project.goal: rewritten");
     expect(brief).not.toContain("## Earlier rounds");
     expect(approvalRefusal("csv", status(), true)?.message).toBe("Pending v3 of csv is still in its spec review (round 1 of 3).");
-    expect(approvalRefusal("csv", status(), true)?.hint).toContain("bb loom approve csv --version 3 --skip-review");
+    expect(approvalRefusal("csv", status(), true)?.hint).toContain("alia loom approve csv --version 3 --skip-review");
   });
 
   it("tells the planner a passed pending version waits for the human, with loom_ask_human for what follows", async () => {
@@ -305,8 +305,8 @@ describe("verdicts", () => {
     const old = reviewer();
     expect(await draft(goal(2))).toEqual({ kind: "reviewing", version: 2, round: 1 });
     expect(rows()[0]!.state).toBe("superseded");
-    expect(h.bb.callsTo("stop")).toContainEqual([old]);
-    expect(h.bb.callsTo("archive")).toContainEqual([old]);
+    expect(h.alia.callsTo("stop")).toContainEqual([old]);
+    expect(h.alia.callsTo("archive")).toContainEqual([old]);
     await expect(specVerdict(h.ctx, old, [], "late")).rejects.toThrow("This review is over");
   });
 
@@ -329,11 +329,11 @@ describe("the reviewer's thread", () => {
     await draft();
     const first = () => rows()[0]!;
     await onSpecReviewerIdle(h.ctx, first());
-    expect(h.bb.sent("thr_w1")).toEqual(["[loom] Your turn ended without a verdict on spec v1. Call loom_spec_approve({ summary }) or loom_spec_request_changes({ summary, findings }), then end your turn."]);
+    expect(h.alia.sent("thr_w1")).toEqual(["[loom] Your turn ended without a verdict on spec v1. Call loom_spec_approve({ summary }) or loom_spec_request_changes({ summary, findings }), then end your turn."]);
     await onSpecReviewerIdle(h.ctx, first());
     expect(first()).toMatchObject({ state: "failed", reason: "the reviewer ended its turn twice without a verdict" });
     expect(toPlanner().at(-1)).toContain("[loom] The spec review of v1 of csv did not finish: the reviewer ended its turn twice without a verdict.");
-    expect(h.bb.callsTo("archive")).toContainEqual(["thr_w1"]);
+    expect(h.alia.callsTo("archive")).toContainEqual(["thr_w1"]);
     expect(status()).toMatchObject({ kind: "failed", version: 1, round: 1 });
     expect(approvalRefusal("csv", status())?.message).toBe("Draft v1 of csv was not reviewed: the reviewer ended its turn twice without a verdict.");
     expect(await draft()).toEqual({ kind: "reviewing", version: 1, round: 1 });
@@ -344,8 +344,8 @@ describe("the reviewer's thread", () => {
     await draft();
     await specVerdict(h.ctx, reviewer(), [], "Fits.");
     await onSpecReviewerIdle(h.ctx, rows()[0]!);
-    expect(h.bb.callsTo("archive")).toContainEqual(["thr_w1"]);
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.callsTo("archive")).toContainEqual(["thr_w1"]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
   });
 
   it("fails the review when the human archives the reviewer's thread", async () => {
@@ -360,11 +360,11 @@ describe("the reviewer's thread", () => {
     const reset = h.clock.t + 60_000;
     const event = (attemptNumber: number): TurnFailure => ({ threadId: "thr_w1", requestId: "req_1", attemptNumber, errorInfo: { category: "rate-limit" }, rateLimits: { windows: [{ resetsAtMs: reset, status: "blocked" }] } });
     await onSpecReviewerTurnFailed(h.ctx, rows()[0]!, event(1));
-    expect(h.bb.callsTo("retryTurn")).toEqual([["thr_w1", "req_1", reset + 15_000]]);
-    expect(h.bb.sent("thr_w1")).toEqual([]);
+    expect(h.alia.callsTo("retryTurn")).toEqual([["thr_w1", "req_1", reset + 15_000]]);
+    expect(h.alia.sent("thr_w1")).toEqual([]);
     await onSpecReviewerTurnFailed(h.ctx, rows()[0]!, event(MAX_RATE_LIMIT_RETRIES + 1));
-    expect(h.bb.callsTo("retryTurn")).toHaveLength(1);
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.callsTo("retryTurn")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
     await onSpecReviewerTurnFailed(h.ctx, rows()[0]!, { ...event(1), errorInfo: { category: "provider" } });
     expect(rows()[0]!.state).toBe("failed");
   });
@@ -373,7 +373,7 @@ describe("the reviewer's thread", () => {
     await draft();
     await endSpecReviews(h.ctx, project().id);
     expect(rows()[0]!.state).toBe("superseded");
-    expect(h.bb.callsTo("archive")).toContainEqual(["thr_w1"]);
+    expect(h.alia.callsTo("archive")).toContainEqual(["thr_w1"]);
     expect(toPlanner()).toEqual([]);
   });
 });
@@ -391,12 +391,12 @@ describe("binding and restarts", () => {
 
   it("on restart, nudges a reviewer whose thread went idle and fails one that never started", async () => {
     await draft();
-    h.bb.threads.get("thr_w1")!.status = "idle";
+    h.alia.threads.get("thr_w1")!.status = "idle";
     await reconcileSpecReviews(h.ctx);
-    expect(h.bb.sent("thr_w1")).toHaveLength(1);
+    expect(h.alia.sent("thr_w1")).toHaveLength(1);
     expect(rows()[0]!.idle_count).toBe(1);
 
-    h.bb.threads.get("thr_w1")!.status = "active";
+    h.alia.threads.get("thr_w1")!.status = "active";
     const lost = h.store.addSpecReview({ project_id: project().id, version: 1, round: 1, spawn_token: "tok_lost" });
     await reconcileSpecReviews(h.ctx);
     expect(h.store.specReview(lost.id)).toMatchObject({ state: "failed", reason: "Loom restarted before the reviewer started" });
@@ -405,7 +405,7 @@ describe("binding and restarts", () => {
 
   it("on restart, fails a review whose thread is gone", async () => {
     await draft();
-    h.bb.threads.delete("thr_w1");
+    h.alia.threads.delete("thr_w1");
     await reconcileSpecReviews(h.ctx);
     expect(rows()[0]).toMatchObject({ state: "failed", reason: "the reviewer's thread was archived or deleted" });
   });
@@ -413,8 +413,8 @@ describe("binding and restarts", () => {
 
 describe("the spec reviewer's environment", () => {
   it("starts in the spec's environment provider, on its own branch from the remote base, and in a managed worktree without one", async () => {
-    h.bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...GIT_WORKTREE_PROVIDER, id: "trees", pluginId: "trees", inputs: { type: "object" } }];
-    h.bb.pluginList = [...h.bb.pluginList, { id: "trees", enabled: true, builtin: false }];
+    h.alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...GIT_WORKTREE_PROVIDER, id: "trees", pluginId: "trees", inputs: { type: "object" } }];
+    h.alia.pluginList = [...h.alia.pluginList, { id: "trees", enabled: true, builtin: false }];
     await draft((doc) => (doc.environment = { provider: "trees", inputs: { branch: "{branch}", base: "{base}" } }));
     expect(spawns().at(-1)!.environment).toEqual({ providerId: "trees", inputs: { branch: "loom/csv/spec-review-1-1", base: "origin/main" } });
   });

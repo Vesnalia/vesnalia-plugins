@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   THREAD_QUERY_LIMIT,
   buildSnapshot,
@@ -12,11 +12,11 @@ import {
 
 const USAGE = [
   "Usage:",
-  "  bb touchbar snapshot [--pretty]",
-  "  bb touchbar card <summary|0|1|2|3|4|5>",
-  "  bb touchbar open <thread-id>",
-  "  bb touchbar open-card <0|1|2|3|4|5>",
-  "  bb touchbar stop <thread-id>",
+  "  VesnALIA touchbar snapshot [--pretty]",
+  "  VesnALIA touchbar card <summary|0|1|2|3|4|5>",
+  "  VesnALIA touchbar open <thread-id>",
+  "  VesnALIA touchbar open-card <0|1|2|3|4|5>",
+  "  VesnALIA touchbar stop <thread-id>",
 ].join("\n");
 
 function errorMessage(error: unknown): string {
@@ -33,7 +33,7 @@ function parseSlot(raw: string | undefined): number | null {
 }
 
 type UsageLimits = Awaited<
-  ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>
+  ReturnType<AliaPluginApi["sdk"]["system"]["usageLimits"]>
 >;
 
 const USAGE_PROVIDERS = [
@@ -85,8 +85,8 @@ export function projectTouchBarUsage(limits: UsageLimits): TouchBarUsage[] {
   });
 }
 
-export default async function touchBarPlugin(bb: BbPluginApi): Promise<void> {
-  const settings = bb.settings.define({
+export default async function touchBarPlugin(alia: AliaPluginApi): Promise<void> {
+  const settings = alia.settings.define({
     cardLimit: {
       type: "string",
       label: "Thread cards",
@@ -105,17 +105,17 @@ export default async function touchBarPlugin(bb: BbPluginApi): Promise<void> {
   async function snapshot(): Promise<TouchBarSnapshot> {
     const values = await settings.get();
     const [threads, projects, usage] = await Promise.all([
-      bb.sdk.threads.list({
+      alia.sdk.threads.list({
         archived: false,
         includeHidden: true,
         limit: THREAD_QUERY_LIMIT,
       }),
-      bb.sdk.projects.list({ includePersonal: true }),
+      alia.sdk.projects.list({ includePersonal: true }),
       Promise.resolve()
-        .then(() => bb.sdk.system.usageLimits())
+        .then(() => alia.sdk.system.usageLimits())
         .then(projectTouchBarUsage)
         .catch((error: unknown) => {
-          bb.log.warn(`Could not load Touch Bar usage: ${errorMessage(error)}`);
+          alia.log.warn(`Could not load Touch Bar usage: ${errorMessage(error)}`);
           return [];
         }),
     ]);
@@ -134,11 +134,11 @@ export default async function touchBarPlugin(bb: BbPluginApi): Promise<void> {
 
   async function resolveThread(threadId: string) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.archivedAt !== null || thread.deletedAt !== null) return null;
       return thread;
     } catch (error) {
-      bb.log.warn(`Could not resolve Touch Bar thread: ${errorMessage(error)}`);
+      alia.log.warn(`Could not resolve Touch Bar thread: ${errorMessage(error)}`);
       return null;
     }
   }
@@ -146,7 +146,7 @@ export default async function touchBarPlugin(bb: BbPluginApi): Promise<void> {
   async function openThread(threadId: string) {
     const thread = await resolveThread(threadId);
     if (thread === null) return failure("Thread not found or no longer open.");
-    await bb.sdk.threads.open({ threadId: thread.id, file: null });
+    await alia.sdk.threads.open({ threadId: thread.id, file: null });
     return { exitCode: 0, stdout: `Opened ${thread.id}` };
   }
 
@@ -156,38 +156,38 @@ export default async function touchBarPlugin(bb: BbPluginApi): Promise<void> {
     if (thread.status !== "active" && thread.status !== "starting") {
       return failure("Only an active or starting thread can be stopped.");
     }
-    await bb.sdk.threads.stop({ threadId: thread.id });
+    await alia.sdk.threads.stop({ threadId: thread.id });
     return { exitCode: 0, stdout: `Stopped ${thread.id}` };
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "touchbar",
-    summary: "Show BB agent activity on an Intel Mac Touch Bar",
+    summary: "Show VesnALIA agent activity on an Intel Mac Touch Bar",
     commands: [
       {
         name: "snapshot",
         summary: "Print the bounded Touch Bar JSON snapshot",
-        usage: "bb touchbar snapshot [--pretty]",
+        usage: "alia touchbar snapshot [--pretty]",
       },
       {
         name: "card",
         summary: "Render one BetterTouchTool label",
-        usage: "bb touchbar card <summary|0|1|2|3|4|5>",
+        usage: "alia touchbar card <summary|0|1|2|3|4|5>",
       },
       {
         name: "open",
-        summary: "Open one exact BB thread",
-        usage: "bb touchbar open <thread-id>",
+        summary: "Open one exact VesnALIA thread",
+        usage: "alia touchbar open <thread-id>",
       },
       {
         name: "open-card",
         summary: "Open the current thread in one Touch Bar slot",
-        usage: "bb touchbar open-card <0|1|2|3|4|5>",
+        usage: "alia touchbar open-card <0|1|2|3|4|5>",
       },
       {
         name: "stop",
-        summary: "Stop one exact active BB thread",
-        usage: "bb touchbar stop <thread-id>",
+        summary: "Stop one exact active VesnALIA thread",
+        usage: "alia touchbar stop <thread-id>",
       },
     ],
     async run(argv) {
@@ -234,8 +234,8 @@ export default async function touchBarPlugin(bb: BbPluginApi): Promise<void> {
             return await stopThread(args[0]!);
         }
       } catch (error) {
-        bb.log.warn(`Touch Bar command failed: ${errorMessage(error)}`);
-        return failure("BB Touch Bar command failed. Check the BB connection and retry.");
+        alia.log.warn(`Touch Bar command failed: ${errorMessage(error)}`);
+        return failure("VesnALIA Touch Bar command failed. Check the VesnALIA connection and retry.");
       }
       return failure(USAGE);
     },

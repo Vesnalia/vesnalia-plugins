@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import type { CheckpointDto, RestoreDto } from "../src/rpc-contract";
 
@@ -431,7 +431,7 @@ describe("Rewind to here", () => {
     expect(Array.from(note!.querySelectorAll("code"), (code) => code.textContent)).toEqual(["git push", "npm publish"]);
   });
 
-  it("offers editing only for messages bb can edit, and says why not otherwise", async () => {
+  it("offers editing only for messages VesnALIA can edit, and says why not otherwise", async () => {
     const { rpc, before2 } = focusRpc();
     const slot = renderPanel(focusParams, rpc);
     const focusCard = await slot.findByRole("region", { name: /Rewind to before this message/u });

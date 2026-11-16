@@ -1,7 +1,7 @@
 import { STORAGE_KEYS } from "./lib/storage-keys";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./contract";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./contract";
 import { LIFECYCLE_CHANNEL } from "./realtime-channels";
 import type { ThreadLifecycleRow } from "./lifecycle";
 import { createCachedRpcState } from "./lib/cached-rpc-state";
@@ -27,7 +27,7 @@ const UNLOADED_RETRY_MS = 30_000;
  * needs its limit rows to place snoozed ones, so neither can own this read.
  */
 export function useLifecycleRows(): LifecycleRows {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [state, setState] = useState(() => {
     const cached = lifecycleCache.read(rpc);
     return { rows: cached ?? new Map<string, ThreadLifecycleRow>(), loaded: cached !== null };

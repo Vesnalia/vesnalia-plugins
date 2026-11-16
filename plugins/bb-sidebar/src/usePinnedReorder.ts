@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type PluginSidebarThread, useRpc } from "@get-bb/plugin-sdk/app";
+import { type PluginSidebarThread, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { orderPinnedThreads, pinnedNeighbors, sortPinnedThreads } from "./pinned-order";
 
 interface OptimisticOrder {
@@ -23,7 +23,7 @@ function orderKey(ids: readonly string[]): string {
 
 /** Optimistic pinned order with one in-flight write and host-truth rollback. */
 export function usePinnedReorder(pinnedThreads: readonly PluginSidebarThread[]): PinnedReorderApi {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const baseThreads = useMemo(() => sortPinnedThreads(pinnedThreads), [pinnedThreads]);
   const baseIds = useMemo(() => baseThreads.map((thread) => thread.id), [baseThreads]);
   const baseKey = orderKey(baseIds);
@@ -49,7 +49,7 @@ export function usePinnedReorder(pinnedThreads: readonly PluginSidebarThread[]):
     () => new Set(baseThreads.filter((thread) => thread.pinSortKey != null).map((thread) => thread.id)),
     [baseThreads],
   );
-  // Match bb's pinned roots: a child is excluded only while its parent is pinned.
+  // Match VesnALIA's pinned roots: a child is excluded only while its parent is pinned.
   const childIds = useMemo(() => {
     return new Set(
       pinnedThreads

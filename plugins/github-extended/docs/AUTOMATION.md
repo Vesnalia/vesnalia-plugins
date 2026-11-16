@@ -78,12 +78,12 @@ Actions:
 
 | Action | What it does | Parameter |
 | --- | --- | --- |
-| `bb.review` | Starts an isolated GitHub+ review thread, links it to the PR, waits for the agent to go idle, and captures its output for later actions. | `reviewPrompt` (extra trusted instructions) |
-| `bb.agent` | Runs your instructions with event context in an isolated BB worktree, waits for the agent to go idle, and captures its output. Works with issues, PR events, and base-branch pushes. | `agentPrompt` (required) |
+| `alia.review` | Starts an isolated GitHub+ review thread, links it to the PR, waits for the agent to go idle, and captures its output for later actions. | `reviewPrompt` (extra trusted instructions) |
+| `alia.agent` | Runs your instructions with event context in an isolated VesnALIA worktree, waits for the agent to go idle, and captures its output. Works with issues, PR events, and base-branch pushes. | `agentPrompt` (required) |
 | `github.comment` | Posts a conversation comment on the issue or PR. | `bodyTemplate` |
 | `github.review` | Posts a review comment on the PR. | `bodyTemplate` |
-| `github.label` | Adds a label to the issue or PR (default `bb-automation`). | `label` |
-| `checkout.update` | Fast-forwards the base branch in the attached BB project checkout with `git pull --ff-only`; refuses if the checkout is on another branch. | `targetBranch` |
+| `github.label` | Adds a label to the issue or PR (default `alia-automation`). | `label` |
+| `checkout.update` | Fast-forwards the base branch in the attached VesnALIA project checkout with `git pull --ff-only`; refuses if the checkout is on another branch. | `targetBranch` |
 
 Body templates accept `{{review}}`, `{{agent}}`, `{{repo}}`, `{{owner}}`, `{{name}}`,
 `{{prNumber}}`, `{{issueNumber}}`, `{{number}}` (either item type), `{{title}}`, `{{event}}`, `{{base}}`, `{{head}}`, `{{actor}}`,
@@ -101,7 +101,7 @@ from Action. The multi-action editor under Advanced also offers **Something else
 Describe what the agent should do, then save the rule. For example: “Investigate
 the failing CI checks, fix the cause, and open a pull request.” The action uses
 the attached project's default provider and model (or the configured default
-project), with BB's `accept-edits` permission mode and a separate managed
+project), with VesnALIA's `accept-edits` permission mode and a separate managed
 worktree based on the project's default branch. The agent receives the PR
 or issue number, branches, SHA, actor, labels, and other event fields as untrusted data;
 your saved instructions are kept separate and are not template-expanded.
@@ -110,7 +110,7 @@ to work on that revision. Instructions cannot grant additional permissions.
 
 Custom actions use the same approval and dry-run settings as other actions.
 Dry run records the instructions without starting an agent. Agent threads
-remain visible in BB, issue and PR events link the thread to the matching item, and the audit trail
+remain visible in VesnALIA, issue and PR events link the thread to the matching item, and the audit trail
 records its ID. A later comment or review action can use `{{agent}}` to post the
 latest preceding custom agent's response. An agent has up to 30 minutes to go
 idle; a failed wait stops it and the normal job retry policy applies. Actions
@@ -138,6 +138,6 @@ including the plugin's own sync.
 
 Agents get the `github_extended_create_rule` tool and the `github-automation`
 skill. Ask for a rule in natural language; the tool creates it disabled and
-approval-gated for the repository attached to the current BB project (or an
+approval-gated for the repository attached to the current VesnALIA project (or an
 explicit `repo`), and the reply ends with a result card that opens the Rules
 page.

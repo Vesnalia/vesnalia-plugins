@@ -31,7 +31,7 @@ export const POLL_MS = 2_000;
 const CLAIM_WAIT_MS = 6_000;
 const SLOT_MAKING_MS = 45_000;
 const HOST_SETUP_MS = 25 * 60_000;
-const SETUP_FOLDER = "bb-box-setup";
+const SETUP_FOLDER = "alia-box-setup";
 const HELPER_LONG_MS = 360_000;
 export const MACHINE_POLL_MS = 10_000;
 const ENDED_STATUSES: ReadonlySet<InstanceStatus> = new Set(["destroying", "destroyed", "suspending", "suspended", "error"]);
@@ -492,7 +492,7 @@ export class NamespaceHosts implements SlotLender {
       if (signal.aborted) throw error;
       const why = words(error);
       const failed = (await this.#update((current) => ({ ...current, phase: "failed", failure: why, startBy: null, startBeat: null })).catch(() => null)) ?? this.known();
-      if (failed?.instance) await this.#access.destroy(failed.instance, "bb-box: the Namespace host did not start").catch((cause) => this.#access.logError("destroy the Namespace host after its start failed", cause));
+      if (failed?.instance) await this.#access.destroy(failed.instance, "alia-box: the Namespace host did not start").catch((cause) => this.#access.logError("destroy the Namespace host after its start failed", cause));
       throw new Error(`The Namespace host did not start: ${why}`);
     } finally {
       clearInterval(beat);
@@ -509,9 +509,9 @@ export class NamespaceHosts implements SlotLender {
       const failed = await this.record();
       if (signal.aborted || !failed?.instance || failed.firstStartFailure) throw first;
       const firstWords = words(first);
-      this.#access.log(`The Namespace host's Mac ${failed.instance} did not start, so bb-box destroys it and starts a fresh Namespace Mac, once: ${firstWords}`);
+      this.#access.log(`The Namespace host's Mac ${failed.instance} did not start, so alia-box destroys it and starts a fresh Namespace Mac, once: ${firstWords}`);
       await this.#access.leaveTailnet?.(failed.instance).catch((error) => this.#access.logError("take the Namespace host's first Mac off the tailnet", error));
-      await this.#access.destroy(failed.instance, "bb-box: the Namespace host's Mac did not start, so a fresh one replaces it", signal).catch((error: unknown) => {
+      await this.#access.destroy(failed.instance, "alia-box: the Namespace host's Mac did not start, so a fresh one replaces it", signal).catch((error: unknown) => {
         throw new Error(`${firstWords} ${PRODUCT} could not destroy its Mac to start a fresh one: ${words(error)}`);
       });
       const fresh = (await this.#update((current) => ({ ...current, instance: null, firstStartFailure: firstWords })))!;
@@ -568,7 +568,7 @@ export class NamespaceHosts implements SlotLender {
         const now = await this.#access.describe(instance, watched).catch(() => undefined);
         if (now === undefined || (now && !ENDED_STATUSES.has(now.status))) continue;
         ended = new Error(`Namespace's Mac ${instance} ${now ? `is ${now.status}` : "is gone"} before the host served: Namespace ${now ? `lists it ${now.status}` : "no longer lists it"}.`);
-        this.#access.log(`${ended.message} bb-box saw it ${((performance.now() - ran) / 1000).toFixed(1)} s after the Mac ran, and stops waiting for it.`);
+        this.#access.log(`${ended.message} alia-box saw it ${((performance.now() - ran) / 1000).toFixed(1)} s after the Mac ran, and stops waiting for it.`);
         watching.abort(ended);
       }
     })();
@@ -594,7 +594,7 @@ export class NamespaceHosts implements SlotLender {
   async #deleteHost(record: NamespaceHostRecord, why: string): Promise<void> {
     const began = performance.now();
     if (record.instance) await this.#access.leaveTailnet?.(record.instance).catch((error) => this.#access.logError("take the Namespace host off the tailnet", error));
-    if (record.instance) await this.#access.destroy(record.instance, `bb-box: the Namespace host is deleted, as ${why}`);
+    if (record.instance) await this.#access.destroy(record.instance, `alia-box: the Namespace host is deleted, as ${why}`);
     await this.#save(null);
     this.#access.log(`Deleted the Namespace host${record.instance ? ` ${record.instance}` : ""}, as ${why}, in ${((performance.now() - began) / 1000).toFixed(1)} s.`);
   }
@@ -790,7 +790,7 @@ export class NamespaceHosts implements SlotLender {
     if (!record) return;
     try {
       if (record.phase === "failed") {
-        if (record.instance) await this.#access.destroy(record.instance, "bb-box: the Namespace host failed", signal).catch(() => undefined);
+        if (record.instance) await this.#access.destroy(record.instance, "alia-box: the Namespace host failed", signal).catch(() => undefined);
         await this.#save(null);
         return;
       }
@@ -801,7 +801,7 @@ export class NamespaceHosts implements SlotLender {
       if (!record.instance) return;
       const instance = await this.#access.describe(record.instance, signal);
       if (!instance || instance.status === "destroyed" || instance.status === "destroying" || this.#access.now() >= record.endsAt) {
-        if (instance && instance.status !== "destroyed") await this.#access.destroy(record.instance, "bb-box: the Namespace host reached the plan's longest life", signal).catch(() => undefined);
+        if (instance && instance.status !== "destroyed") await this.#access.destroy(record.instance, "alia-box: the Namespace host reached the plan's longest life", signal).catch(() => undefined);
         await this.#save(null);
         this.#access.log(`The Namespace host ${record.instance} is gone${this.#access.now() >= record.endsAt ? ", at the plan's longest life" : ""}.`);
         return;
@@ -825,7 +825,7 @@ export class NamespaceHosts implements SlotLender {
     const offerable = this.offerable();
     const record = await this.record();
     if (!record) {
-      if (!offerable.ok) return { id, name, status: "warn", detail: `No Namespace host can start: ${offerable.why}.`, fix: `Run bb box doctor again once ${PRODUCT} has measured a Namespace Mac; it measures each one it starts.` };
+      if (!offerable.ok) return { id, name, status: "warn", detail: `No Namespace host can start: ${offerable.why}.`, fix: `Run alia box doctor again once ${PRODUCT} has measured a Namespace Mac; it measures each one it starts.` };
       const device = offerable.device.devices[0];
       const os = "os" in device.runtime ? device.runtime.os : "";
       return { id, name, status: "ok", detail: `No Namespace host runs. One starts when an ios box finds no slot on a pool Mac or a Tart host: a ${device.model} on iOS ${os}, on the workspace's one Mac, which then holds no macos box. It lives until its last box goes, or an hour before the plan's longest life.`, fix: null };

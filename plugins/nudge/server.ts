@@ -1,11 +1,11 @@
-// bb-plugin-nudge — re-run the agent without typing a message.
+// alia-plugin-nudge — re-run the agent without typing a message.
 
 // An empty composer draft cannot be submitted, so this plugin adds an
 // explicit Nudge affordance: on an errored thread it retries the failed turn
 // by reference; on an idle thread it starts a turn with an agent-only
-// continuation (same hidden-input rule BB uses for retries — no user bubble).
+// continuation (same hidden-input rule VesnALIA uses for retries — no user bubble).
 // Busy threads are refused — wait until the thread is idle or errored.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // Hidden from the timeline; the provider still receives it so the turn starts.
@@ -45,16 +45,16 @@ function deliveryOf(value: unknown): string {
 }
 
 async function nudgeThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   args: { threadId: string; message?: string; reason?: string },
 ): Promise<NudgeResult> {
   const threadId = args.threadId.trim();
   if (threadId === "") throw new Error("threadId is required.");
-  const thread = await bb.sdk.threads.get({ threadId });
+  const thread = await alia.sdk.threads.get({ threadId });
   const status: unknown = (thread as { status?: unknown }).status;
   if (status === "error") {
     const reason = args.reason?.trim();
-    const result = await bb.sdk.threads.retry(
+    const result = await alia.sdk.threads.retry(
       reason ? { threadId, reason } : { threadId },
     );
     return { action: "retried", delivery: deliveryOf(result), threadId };
@@ -67,7 +67,7 @@ async function nudgeThread(
   }
   const text = args.message?.trim() || NUDGE_TEXT;
   const visibility = args.message?.trim() ? undefined : ("agent-only" as const);
-  const sent = await bb.sdk.threads.send({
+  const sent = await alia.sdk.threads.send({
     threadId,
     mode: "auto",
     input: [
@@ -81,11 +81,11 @@ async function nudgeThread(
 
 const usage = [
   "Usage:",
-  "  bb nudge [thread-id] [--message <text>] [--reason <text>] [--json]",
+  "  VesnALIA nudge [thread-id] [--message <text>] [--reason <text>] [--json]",
   "",
   "Re-runs the agent without typing a message: retries the failed turn on",
   "an errored thread, or starts an idle thread with a hidden continuation",
-  "(no user bubble). Defaults to the current thread inside a BB thread.",
+  "(no user bubble). Defaults to the current thread inside a VesnALIA thread.",
 ].join("\n");
 
 function parseArgs(argv: string[]): {
@@ -119,22 +119,22 @@ function parseArgs(argv: string[]): {
   return { threadId, message, reason, json, help };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     nudge: ({ threadId, message, reason }) =>
-      nudgeThread(bb, { threadId, message, reason }),
+      nudgeThread(alia, { threadId, message, reason }),
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "nudge",
     summary: "Re-run the agent without sending a message (retry or continue)",
     commands: [
       {
         name: "nudge",
         summary: "Retry a failed turn, or continue an idle thread",
-        usage: "bb nudge [thread-id] [--message <text>] [--reason <text>] [--json]",
+        usage: "alia nudge [thread-id] [--message <text>] [--reason <text>] [--json]",
       },
     ],
     async run(argv, ctx) {
@@ -148,11 +148,11 @@ export default async function plugin(bb: BbPluginApi) {
       if (!threadId) {
         return {
           exitCode: 1,
-          stderr: "No thread selected. Pass a thread id or run inside a BB thread.\n" + usage,
+          stderr: "No thread selected. Pass a thread id or run inside a VesnALIA thread.\n" + usage,
         };
       }
       try {
-        const result = await nudgeThread(bb, {
+        const result = await nudgeThread(alia, {
           threadId,
           message: parsed.message,
           reason: parsed.reason,
@@ -171,7 +171,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

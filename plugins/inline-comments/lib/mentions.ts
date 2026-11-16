@@ -1,8 +1,8 @@
-import type { ComposerMention, PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { ComposerMention, PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 import { MENTION_PROVIDER } from "./mention-provider";
 
-declare const __BB_PLUGIN_ID__: string | undefined;
-const PLUGIN_ID = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
+const PLUGIN_ID = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : undefined;
 
 type PluginMention = Extract<ComposerMention, { kind: "plugin" }>;
 

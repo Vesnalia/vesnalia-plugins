@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { CREATE_OUTCOME_UNCERTAIN_MARKER } from '../contract.js';
 import type {
@@ -521,7 +521,7 @@ export class GitlabClient {
 
 
 export function createGitlabAdapter(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   enabled: boolean,
   projectId: string,
   projectRef: string,
@@ -547,7 +547,7 @@ export function createGitlabAdapter(
     if (!enabled) throw new Error('GitLab is disabled');
     if (!projectRef) {
       throw new Error(
-        'Choose a GitLab project (host/path) for this BB project in Manage.'
+        'Choose a GitLab project (host/path) for this VesnALIA project in Manage.'
       );
     }
     const { host, path } = parseGitlabRef(projectRef);

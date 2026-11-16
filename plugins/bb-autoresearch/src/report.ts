@@ -84,9 +84,9 @@ export function accountingText(a: Accounting, spec?: StudySpec): string[] {
 }
 
 function studyLink(ctx: Ctx, study: StudyRow, tab = "harvest"): string {
-  const url = ctx.bb.appUrl();
+  const url = ctx.alia.appUrl();
   const path = `studies/${study.slug}/${tab}`;
-  return url ? `${url.replace(/\/$/u, "")}/plugins/${ctx.bb.pluginId()}/${path}` : `BB Studies page \`${path}\``;
+  return url ? `${url.replace(/\/$/u, "")}/plugins/${ctx.alia.pluginId()}/${path}` : `VesnALIA Studies page \`${path}\``;
 }
 
 export function standaloneText(cs: ChangesetRow, spec?: StudySpec): string {
@@ -219,7 +219,7 @@ function frozenSection(ctx: Ctx, study: StudyRow, h: HarvestRow): string[] {
   if (h.state === "waiting") return [...lines, "Waiting for in-flight candidates to finish before best freezes."];
   if (!h.best_sha) return [...lines, h.error ? `Could not freeze best: ${mdText(h.error, 400)}` : "Best was not frozen."];
   lines.push(
-    `Best frozen at \`${h.best_sha.slice(0, 10)}\` (\`${frozenRef(study.slug, h.seq)}\`) on base \`${h.base_sha?.slice(0, 10) ?? "?"}\`, ${promotions.length} promotion(s) in first-parent order. An agent harvests it into PRs with the study-harvest skill (\`bb study evidence\`, \`measure\`, \`gate\`).${h.phase_detail ? ` ${mdText(h.phase_detail, 300)}.` : ""}`,
+    `Best frozen at \`${h.best_sha.slice(0, 10)}\` (\`${frozenRef(study.slug, h.seq)}\`) on base \`${h.base_sha?.slice(0, 10) ?? "?"}\`, ${promotions.length} promotion(s) in first-parent order. An agent harvests it into PRs with the study-harvest skill (\`alia study evidence\`, \`measure\`, \`gate\`).${h.phase_detail ? ` ${mdText(h.phase_detail, 300)}.` : ""}`,
     "",
   );
   for (const p of promotions) lines.push(`- \`${p.sha.slice(0, 10)}\`${p.n !== null ? ` c/${p.n}` : ""} ${mdText(p.title, 120)} (${p.paths.length} file${p.paths.length === 1 ? "" : "s"})`);

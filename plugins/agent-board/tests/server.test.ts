@@ -7,15 +7,15 @@ import {
   makeThreadResponse,
   type FakePluginHost,
   type FakeSdkOverrides,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "@/server";
 import { BOARD_CHANGED_CHANNEL } from "@/contract/rpc";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /** The subscribe args the fake host hands our stub (realtime types are not
  * exported individually; derive them structurally from the public sdk). */
-type SubscribeArgs = Parameters<BbPluginApi["sdk"]["subscribe"]>[0];
-type ThreadGetArgsLike = Parameters<BbPluginApi["sdk"]["threads"]["get"]>[0];
+type SubscribeArgs = Parameters<AliaPluginApi["sdk"]["subscribe"]>[0];
+type ThreadGetArgsLike = Parameters<AliaPluginApi["sdk"]["threads"]["get"]>[0];
 
 type ChangedHandler = (event: {
   entity: "thread";
@@ -26,7 +26,7 @@ type ChangedHandler = (event: {
 }) => void | Promise<void>;
 
 interface Harness {
-  bb: Awaited<ReturnType<typeof plugin>> extends never ? never : Parameters<typeof plugin>[0];
+  alia: Awaited<ReturnType<typeof plugin>> extends never ? never : Parameters<typeof plugin>[0];
   host: FakePluginHost;
   changed: (event: Parameters<ChangedHandler>[0]) => void;
 }
@@ -86,9 +86,9 @@ async function makeHost(overrides: FakeSdkOverrides = {}) {
     pluginId: "agent-board",
     sdk: { ...defaults, ...overrides },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
-    bb: host.bb,
+    alia: host.alia,
     host,
     changed: (event: Parameters<ChangedHandler>[0]) => {
       if (changedHandler) void changedHandler(event);
@@ -128,13 +128,13 @@ describe("rpc registration", () => {
   it("serves the bounded lazy execution timeline contract", async () => {
     const { host } = await makeHost();
     const result = (await host.harness.behavior.callRpc("execution_timeline", {
-      source: "bb",
-      executionKey: "bb:thr_root",
+      source: "alia",
+      executionKey: "alia:thr_root",
       threadId: "thr_root",
     })) as { source: string; events: unknown[]; active: boolean; truncated: boolean };
-    expect(result).toMatchObject({ source: "bb", active: false, truncated: false });
+    expect(result).toMatchObject({ source: "alia", active: false, truncated: false });
     expect(result.events).toEqual([]);
-    await expect(host.harness.behavior.callRpc("execution_timeline", { source: "bb" })).rejects.toThrow();
+    await expect(host.harness.behavior.callRpc("execution_timeline", { source: "alia" })).rejects.toThrow();
   });
 
   it("serves the global dashboard even when optional Redteam is unavailable", async () => {
@@ -380,11 +380,11 @@ describe("attention dismissal RPCs", () => {
     const first = (await host.harness.behavior.callRpc("global_dashboard", {})) as DashLike;
     expect(first.attention).toHaveLength(1);
     const item = first.attention[0]!;
-    expect(item.executionKey).toBe("bb:thr_fail");
+    expect(item.executionKey).toBe("alia:thr_fail");
     expect(item.type).toBe("failed");
     expect(first.counts.attention).toBe(1);
     expect(first.dismissedCount).toBe(0);
-    expect(first.recent.some((entry) => entry.key === "bb:thr_fail")).toBe(true);
+    expect(first.recent.some((entry) => entry.key === "alia:thr_fail")).toBe(true);
 
     const dismissed = (await host.harness.behavior.callRpc("dismiss_attention", {
       executionKey: item.executionKey,
@@ -399,7 +399,7 @@ describe("attention dismissal RPCs", () => {
     expect(second.attention).toEqual([]); // hidden from Needs attention
     expect(second.counts.attention).toBe(0); // hidden from the badge count
     expect(second.dismissedCount).toBe(1);
-    expect(second.recent.some((entry) => entry.key === "bb:thr_fail")).toBe(true); // recent untouched
+    expect(second.recent.some((entry) => entry.key === "alia:thr_fail")).toBe(true); // recent untouched
 
     // Reload the plugin (same persisted kv): the dismissal survives.
     const reloaded = await host.harness.lifecycle.reload(plugin);
@@ -441,10 +441,10 @@ describe("attention dismissal RPCs", () => {
       host.harness.behavior.callRpc("dismiss_attention", { type: "failed", updatedAt: 0 }),
     ).rejects.toThrow();
     await expect(
-      host.harness.behavior.callRpc("dismiss_attention", { executionKey: "bb:x", type: "nope", updatedAt: 0 }),
+      host.harness.behavior.callRpc("dismiss_attention", { executionKey: "alia:x", type: "nope", updatedAt: 0 }),
     ).rejects.toThrow();
     await expect(
-      host.harness.behavior.callRpc("dismiss_attention", { executionKey: "bb:x", type: "failed", updatedAt: -1 }),
+      host.harness.behavior.callRpc("dismiss_attention", { executionKey: "alia:x", type: "failed", updatedAt: -1 }),
     ).rejects.toThrow();
   });
 });

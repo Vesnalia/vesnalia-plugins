@@ -10,8 +10,8 @@ Open a thread backed by a Git repository and select **Graph** in the thread head
 
 When additional repositories are configured for the workspace, use the repository selector to switch between them.
 
-Agents and terminals can inspect the same history with `bb git-graph show`.
+Agents and terminals can inspect the same history with `alia git-graph show`.
 
 ## Requirements
 
-Requires BB 0.47.1 or newer, Git in the thread's environment, and npm for installation from Git. No external account, API key, or paid service is required. The graph reads repository history without changing commits, branches, or files.
+Requires VesnALIA 0.47.1 or newer, Git in the thread's environment, and npm for installation from Git. No external account, API key, or paid service is required. The graph reads repository history without changing commits, branches, or files.

@@ -9,12 +9,12 @@ import { imageSize } from "./files/image";
 const env = { environmentId: "env_1", path: "/work/repo", hostId: "host_1" };
 
 test("paths: a path or inline text", () => {
-  for (const p of ["$BB_THREAD_STORAGE/build.log", "/tmp/out.txt", "./a.log", "src/app.ts", "build.log", "Dockerfile.dev"]) assert.equal(isPath(p), true, p);
+  for (const p of ["$ALIA_THREAD_STORAGE/build.log", "/tmp/out.txt", "./a.log", "src/app.ts", "build.log", "Dockerfile.dev"]) assert.equal(isPath(p), true, p);
   for (const t of ["error: x failed", "line one\nline two", "", "Hello world.", "npm ERR! code 1"]) assert.equal(isPath(t), false, t);
 });
 
-test("paths: BB file targets", () => {
-  assert.deepEqual(fileTarget("$BB_THREAD_STORAGE/out/a.png", "thr", env), { kind: "thread-storage", threadId: "thr", path: "out/a.png" });
+test("paths: VesnALIA file targets", () => {
+  assert.deepEqual(fileTarget("$ALIA_THREAD_STORAGE/out/a.png", "thr", env), { kind: "thread-storage", threadId: "thr", path: "out/a.png" });
   assert.deepEqual(fileTarget("./src/a.ts", "thr", env), { kind: "workspace", environmentId: "env_1", path: "src/a.ts" });
   assert.deepEqual(fileTarget("/work/repo/src/a.ts", "thr", env), { kind: "workspace", environmentId: "env_1", path: "src/a.ts" });
   assert.deepEqual(fileTarget("/tmp/x.log", "thr", env), { kind: "host", hostId: "host_1", path: "/tmp/x.log" });

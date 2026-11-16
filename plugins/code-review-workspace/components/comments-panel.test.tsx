@@ -3,7 +3,7 @@
 // their lines. It took over Feedback, Threads, and the comment list of Draft review.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState, setHideNits } from "../lib/panel-state";
 import type { FeedbackItem, FeedbackView } from "../lib/feedback";
@@ -28,7 +28,7 @@ Element.prototype.scrollIntoView ??= () => {};
 const now = Date.now();
 const HOUR = 3_600_000;
 const file = (path: string, lines: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${lines}`;
-const patch = file("src/a.ts", "@@ -1,2 +1,2 @@\n one\n-two\n+TWO\n") + file("src/b.ts", "@@ -1 +1 @@\n-x\n+bb\n");
+const patch = file("src/a.ts", "@@ -1,2 +1,2 @@\n one\n-two\n+TWO\n") + file("src/b.ts", "@@ -1 +1 @@\n-x\n+alia\n");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [
   { id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }] },
   { id: "c2", title: "Caching", overview: "Keeps rows.", diffs: [{ file: "src/b.ts" }] },
@@ -94,7 +94,7 @@ async function renderWorkspace({ review = {}, rpc = {} }: { review?: Record<stri
   return { slot, rpc: handlers };
 }
 type Slot = Awaited<ReturnType<typeof renderWorkspace>>["slot"];
-/** Comments, from the band's button where BB's title bar didn't take it, read from GitHub. A panel left open opens so again. */
+/** Comments, from the band's button where VesnALIA's title bar didn't take it, read from GitHub. A panel left open opens so again. */
 async function openComments(slot: Slot) {
   const button = await slot.findByRole("button", { name: /^Comments/ });
   if (!slot.queryByRole("region", { name: "Comments" })) fireEvent.click(button);
@@ -115,7 +115,7 @@ test("one list: chips count what they show, the groups come in order, and each i
   // Not submitted counts every draft comment, as Submit does; the one on an older diff shows in Needs you.
   expect(list.getAllByRole("radio").map((radio) => radio.getAttribute("aria-label"))).toEqual(["All, 8", "Needs you, 2", "Not submitted, 3", "On GitHub, 3"]);
   expect(chip(list, "All").getAttribute("aria-checked")).toBe("true");
-  expect(headings(list)).toEqual(["Needs you · 2", "Not submitted · only in BB · 3", "On GitHub · 3", "Private · with the agent · 1"]);
+  expect(headings(list)).toEqual(["Needs you · 2", "Not submitted · only in VesnALIA · 3", "On GitHub · 3", "Private · with the agent · 1"]);
   expect(list.getByText("1 blocking · 1 nit")).toBeTruthy();
   expect(list.getByText("+1 on an older diff, in Needs you")).toBeTruthy();
   expect(list.getByText("Yours: 1 of 1 handled")).toBeTruthy();
@@ -343,7 +343,7 @@ test("images in GitHub's comments, by anyone, and in the agent's words show as l
   const cards = code(slot, "src/a.ts");
   await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
   fireEvent.click(cards.getByRole("button", { name: "How the agent checked" }));
-  const texts = cards.getAllByTestId("bb-markdown").map((markdown: HTMLElement) => markdown.textContent);
+  const texts = cards.getAllByTestId("alia-markdown").map((markdown: HTMLElement) => markdown.textContent);
   expect(texts).toEqual(expect.arrayContaining([
     "Look [Image: bob](https://attacker.example/bob.png)",
     "[Image](https://attacker.example/alice.gif)",
@@ -373,7 +373,7 @@ test("a suggestion by the agent or on GitHub shows its code as written, and only
   await cards.findByRole("article", { name: "GitHub thread on src/a.ts:2" });
   const shown = cards.getAllByRole("figure", { name: "Suggested change" }).map((figure: HTMLElement) => figure.querySelector("pre code")?.textContent);
   expect(shown).toEqual(['<img src={logo} alt="Logo" />\nif (!["a"].includes(kind)) return;', '<img src={logo} alt="Logo" />\nif (!["a"].includes(kind)) return;']);
-  const texts = cards.getAllByTestId("bb-markdown").map((markdown: HTMLElement) => markdown.textContent);
+  const texts = cards.getAllByTestId("alia-markdown").map((markdown: HTMLElement) => markdown.textContent);
   expect(texts.join("\n")).toMatch(/\[Image: bob\]\(https:\/\/attacker\.example\/bob\.png\)/);
   expect(texts.join("\n")).toMatch(/\[Image: agent\]\(https:\/\/attacker\.example\/agent\.png\)/);
   slot.lifecycle.unmount();
@@ -632,7 +632,7 @@ test("with a mouse, chips past a narrow panel's edge scroll sideways, the end fa
   }
 });
 
-test("empty states: no comments yet; nothing needs you, with Show all; a local review's comments stay in BB", async () => {
+test("empty states: no comments yet; nothing needs you, with Show all; a local review's comments stay in VesnALIA", async () => {
   const none = { getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments: [] }, stale: [] }), getReviewThreads: () => ({ threads: [] }), getFeedback: () => ({ feedback: feedbackOf([], null) }), getReplyDrafts: () => ({ drafts: [] }) };
   let { slot } = await renderWorkspace({ rpc: none });
   let list = await openComments(slot);
@@ -648,7 +648,7 @@ test("empty states: no comments yet; nothing needs you, with Show all; a local r
   slot.lifecycle.unmount();
   ({ slot } = await renderWorkspace({ review: { kind: "ref" }, rpc: none }));
   list = await openComments(slot);
-  expect(list.getByText("Comments on a local review stay in BB.")).toBeTruthy();
+  expect(list.getByText("Comments on a local review stay in VesnALIA.")).toBeTruthy();
   expect(list.queryByRole("radio")).toBeNull();
   slot.lifecycle.unmount();
 });
@@ -722,11 +722,11 @@ test("the filter chips' strip leaves room for their 2px focus ring on top as bel
 
 test("on your own PR, every thread whose latest comment isn't yours or a bot's needs your reply, and bots' threads fold", async () => {
   const bot = { id: "t5", isResolved: false, isOutdated: false, path: "src/b.ts", line: 1, side: "LEFT", subjectType: "LINE", comments: [{ ...said("c6", 116, "ci[bot]", "Coverage dropped.", 3), bot: true }] };
-  const erin = { id: "t6", isResolved: false, isOutdated: false, path: "src/a.ts", line: 1, side: "RIGHT", subjectType: "LINE", comments: [said("c7", 117, "erin", "Why bb?", 2)] };
+  const erin = { id: "t6", isResolved: false, isOutdated: false, path: "src/a.ts", line: 1, side: "RIGHT", subjectType: "LINE", comments: [said("c7", 117, "erin", "Why VesnALIA?", 2)] };
   // The server keeps everyone's threads on your PR, erin's too.
   const { label: _, ...yours } = mine();
-  const erins: FeedbackItem = { ...yours, id: "t6", title: "Why bb?", replyDraft: null, assessment: null, thread: {
-    ...mine().thread!, id: "t6", commentId: 117, path: "src/a.ts", line: 1, body: "Why bb?", replies: [], author: "erin",
+  const erins: FeedbackItem = { ...yours, id: "t6", title: "Why VesnALIA?", replyDraft: null, assessment: null, thread: {
+    ...mine().thread!, id: "t6", commentId: 117, path: "src/a.ts", line: 1, body: "Why VesnALIA?", replies: [], author: "erin",
     status: "question", replyAt: now - 2 * HOUR, needsReply: { comments: 1, at: now - 2 * HOUR, by: "erin" },
   } };
   const { slot, rpc } = await renderWorkspace({

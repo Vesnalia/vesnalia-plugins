@@ -1,2 +1,2 @@
-import type {BbPluginApi} from '@get-bb/plugin-sdk';
-export default function plugin(_bb:BbPluginApi) {}
+import type {AliaPluginApi} from '@vesnalia/plugin-sdk';
+export default function plugin(_alia:AliaPluginApi) {}

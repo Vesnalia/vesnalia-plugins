@@ -1,23 +1,15 @@
 {
-  "name": "bb-plugin-pstack",
+  "name": "alia-plugin-pstack",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "The pstack engineering skill library, delivered as a BB plugin.",
+  "description": "The pstack engineering skill library, delivered as a VesnALIA plugin.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wy3z/bb-plugin-pstack.git"
-  },
-  "homepage": "https://github.com/wy3z/bb-plugin-pstack#readme",
-  "bugs": {
-    "url": "https://github.com/wy3z/bb-plugin-pstack/issues"
-  },
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.84"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.84"
   },
-  "bb": {
+  "alia": {
     "name": "pstack",
     "description": "Playbooks, reviewers, and principles for rigorous agent-assisted development, adapted from cursor/plugins pstack.",
     "branding": {
@@ -30,10 +22,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.84",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   },
@@ -51,5 +42,22 @@
     "MANIFEST.md",
     "CAPABILITIES.md",
     "!**/*.test.*"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.84"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/pstack#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/pstack"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

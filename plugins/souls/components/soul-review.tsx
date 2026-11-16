@@ -1,6 +1,6 @@
 // The review card an AI-led interview ends with, and every agent edit.
 //
-// `souls_propose` and `souls_update` open this through `bb.ui.requestInput`
+// `souls_propose` and `souls_update` open this through `alia.ui.requestInput`
 // and wait. Nothing is written to storage until the user approves here, which
 // is what keeps the interview honest: the AI drafts, the person decides. An
 // edit reaches every thread running the soul, so it gets the same card.
@@ -8,7 +8,7 @@
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import { soulDraftSchema, soulSummarySchema } from "../shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

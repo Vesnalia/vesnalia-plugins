@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import { CATCH_CHANNEL } from "./catch-event";
 
 /** Runs `refetch` on mount, after every catch, and after a reconnect. */

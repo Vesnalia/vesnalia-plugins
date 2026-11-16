@@ -3,7 +3,7 @@
 // each caller supplies where answers go and how file links reach its thread.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { collectLoads, dataKey, evaluate, imageSearches, initialState, toMarkdownWithImages, wikiPhotos, type LoadedData, type Program } from "../core";
 import { answersText } from "../core/answers";
 import type { Action, Diagnostic, Value } from "../core/types";
@@ -25,7 +25,7 @@ import { HintProvider } from "./components/inputs";
 import { EntranceContext, newStreamCadence, trackStream, useMotionScope } from "./components/motion";
 import { foundImages, foundWikiPhotos } from "./webLookups";
 
-/** Blocks mounted in this page, so a remount (BB's timeline while scrolling) doesn't replay entrances. */
+/** Blocks mounted in this page, so a remount (VesnALIA's timeline while scrolling) doesn't replay entrances. */
 const MOUNTED = new Set<string>();
 /** Long enough to cover the remount's first commit, short enough for the user's next action to animate. */
 const REMOUNT_QUIET_MS = 300;
@@ -131,7 +131,7 @@ export function LiveUi({
     }
   }, [stateKey, changed]);
 
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const setValue = useCallback(
     (name: string, value: Value) => {
       if (Object.hasOwn(initial, name)) setChanged((previous) => ({ ...previous, [name]: value }));
@@ -214,7 +214,7 @@ export function LiveUi({
   const tree = useMemo(() => <RenderNodes nodes={roots} isolate />, [roots]);
   // Built only when the user copies: the block as it reads now, with the photos
   // its searches already found on this page (Project components, which need
-  // BB's answer, name themselves instead).
+  // VesnALIA's answer, name themselves instead).
   const markdown = useCallback(() => toMarkdownWithImages(roots, foundImages(imageSearches(roots)), foundWikiPhotos(wikiPhotos(roots))), [roots]);
   // The gallery reads files from its own folder, so they're listed under gallery/.
   const inGallery = gallery !== undefined;
@@ -361,17 +361,17 @@ export function Frame({
   children: ReactNode;
 }) {
   const motion = useMotionScope();
-  // data-bb-image-preview-ignore: the components size and open their own
+  // data-alia-image-preview-ignore: the components size and open their own
   // images; an image-preview plugin restyling every <img> would break them.
   return gallery === undefined ? (
-    <div {...motion} data-bb-image-preview-ignore="" className="group/genui not-prose my-3 flex flex-col gap-3">
+    <div {...motion} data-alia-image-preview-ignore="" className="group/genui not-prose my-3 flex flex-col gap-3">
       {children}
       <ReplySource source={source} language={language} files={files} diagnostics={diagnostics} markdown={markdown} />
     </div>
   ) : (
     <div
       {...motion}
-      data-bb-image-preview-ignore=""
+      data-alia-image-preview-ignore=""
       role="group"
       aria-label={exampleTitle(gallery)}
       className="group/genui not-prose my-3 flex flex-col gap-1.5"

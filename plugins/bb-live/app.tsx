@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { definePluginApp, useRpc, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type {
   ExperimentalSidebarFooterDisclosureController,
   ExperimentalSidebarFooterDisclosureProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./src/contract";
 import * as live from "./src/client";
 import { Icon } from "./src/icons";
@@ -19,11 +19,11 @@ function SettingsLink() {
   return (
     <a
       className="bl-settings"
-      href="/settings/plugins/bb-live"
+      href="/settings/plugins/alia-live"
       onClick={(event) => {
         if (!event.metaKey && !event.ctrlKey && !event.shiftKey) {
           event.preventDefault();
-          history.pushState(null, "", "/settings/plugins/bb-live");
+          history.pushState(null, "", "/settings/plugins/alia-live");
           window.dispatchEvent(new PopStateEvent("popstate"));
         }
       }}
@@ -90,8 +90,8 @@ function Controls() {
         </button>
       )}
       <button
-        aria-label={s.silenced ? "Unsilence BB Live" : "Silence BB Live"}
-        title={s.silenced ? "Turn BB's voice back on" : "Silence BB's voice"}
+        aria-label={s.silenced ? "Unsilence VesnALIA Live" : "Silence VesnALIA Live"}
+        title={s.silenced ? "Turn VesnALIA's voice back on" : "Silence VesnALIA's voice"}
         aria-pressed={s.silenced}
         onClick={live.silence}
       >
@@ -103,7 +103,7 @@ function Controls() {
       </button>
       <button
         aria-label="Stop talking"
-        title="Interrupt BB"
+        title="Interrupt VesnALIA"
         onClick={() => void live.interrupt()}
       >
         <Icon name="Square" style={{ width: 16, height: 16 }} />
@@ -153,7 +153,7 @@ function Status() {
     connecting: "Connecting",
     listening: s.muted && !s.ptt ? "Microphone muted" : "Listening",
     speaking: "Speaking",
-    delegated: "Working in BB",
+    delegated: "Working in VesnALIA",
     reconnecting: "Reconnecting",
     error: "Connection needs attention",
   };
@@ -178,7 +178,7 @@ function Status() {
 }
 function Transcript() {
   const s = useLive();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const bottom = useRef<HTMLDivElement>(null);
   const grouped = s.events.reduce<typeof s.events>((items, event) => {
     const previous = items.at(-1);
@@ -214,9 +214,9 @@ function Transcript() {
                 {(
                   {
                     user: "You",
-                    speech: "BB",
+                    speech: "ALIA",
                     delegation: "Delegated",
-                    result: "BB result",
+                    result: "VesnALIA result",
                     approval: "Needs your attention",
                     focus: "Focus",
                     failure: "Unable to verify",
@@ -271,7 +271,7 @@ function FocusPicker() {
           void live.focus(kind as "global" | "project" | "thread", id ?? null);
         }}
       >
-        <option value="global">All of BB</option>
+        <option value="global">All of VesnALIA</option>
         {world?.projects.map((p) => (
           <optgroup key={p.id} label={p.name}>
             <option value={`project:${p.id}`}>{p.name} · whole project</option>
@@ -290,7 +290,7 @@ function FocusPicker() {
 }
 function Details() {
   const s = useLive();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const close = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
@@ -302,7 +302,7 @@ function Details() {
   return (
     <section
       className="bl-details"
-      aria-label="BB Live session details"
+      aria-label="VesnALIA Live session details"
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
@@ -312,7 +312,7 @@ function Details() {
     >
       <header>
         <div>
-          <span className="bl-eyebrow">BB Live</span>
+          <span className="bl-eyebrow">VesnALIA Live</span>
           <h2>Transcript</h2>
         </div>
         <button
@@ -342,7 +342,7 @@ function Details() {
             className="bl-text-button"
             onClick={() => nav.toThread(s.operatorId!)}
           >
-            Open BB Operator
+            Open VesnALIA Operator
             <Icon name="ArrowUpRight" style={{ width: 13, height: 13 }} />
           </button>
         )}
@@ -353,7 +353,7 @@ function Details() {
 }
 function Controller() {
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const s = useLive();
   useEffect(() => {
     if (s.status === "connecting") footer?.open();
@@ -408,10 +408,10 @@ function FooterPanel({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {
   // Collapsing the footer must release a held microphone without ending voice.
   useEffect(() => () => live.pushToTalk(false), []);
   return (
-    <section className="bl bl-footer" aria-label="BB Live voice controls">
+    <section className="bl bl-footer" aria-label="VesnALIA Live voice controls">
       <header className="bl-footer-header">
         <div className="bl-footer-status">
-          <strong>BB Live</strong>
+          <strong>VesnALIA Live</strong>
           <Status />
           <p title={s.focus.label}>{s.focus.label}</p>
         </div>
@@ -438,7 +438,7 @@ function FooterPanel({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {
         </p>
       )}
       {s.busy && !s.auth && s.status !== "connecting" && (
-        <p className="bl-config">Voice is open in another BB window.</p>
+        <p className="bl-config">Voice is open in another VesnALIA window.</p>
       )}
       {s.notice && (
         <p className="bl-notice" role="status">
@@ -481,7 +481,7 @@ function FooterPanel({ dismiss }: ExperimentalSidebarFooterDisclosureProps) {
 function LivePage() {
   const s = useLive();
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [world, setWorld] = useState<Awaited<ReturnType<typeof load>> | null>(
     null,
   );
@@ -518,7 +518,7 @@ function LivePage() {
         <header className="bl-page-header">
           <div className="bl-wordmark">
             <Icon name="Mic" style={{ width: 22, height: 22 }} />
-            <span>BB Live</span>
+            <span>VesnALIA Live</span>
           </div>
           <SettingsLink />
         </header>
@@ -526,7 +526,7 @@ function LivePage() {
           <section className="bl-conversation">
             <div className="bl-hero">
               <span className="bl-eyebrow">Voice for your workspace</span>
-              <h1>Talk to BB while your agents work.</h1>
+              <h1>Talk to VesnALIA while your agents work.</h1>
               <p>Check in, change direction, or get something started.</p>
               <Wave />
               <Status />
@@ -549,7 +549,7 @@ function LivePage() {
                 </p>
               )}
               {s.busy && !s.auth && s.status !== "connecting" && (
-                <p className="bl-config">Voice is open in another BB window.</p>
+                <p className="bl-config">Voice is open in another VesnALIA window.</p>
               )}
               {s.notice && (
                 <p className="bl-notice" role="status">
@@ -578,7 +578,7 @@ function LivePage() {
               </span>
             </header>
             {worldError ? (
-              <p role="alert">Couldn’t load BB status. Reconnecting…</p>
+              <p role="alert">Couldn’t load VesnALIA status. Reconnecting…</p>
             ) : !world ? (
               <p>Loading your threads…</p>
             ) : (
@@ -658,7 +658,7 @@ function LivePage() {
           </aside>
         </div>
         <footer className="bl-page-footer">
-          <span>One voice session per BB</span>
+          <span>One voice session per VesnALIA</span>
           <span>Text transcript only · no audio is recorded</span>
         </footer>
       </div>
@@ -675,19 +675,19 @@ export default definePluginApp((app) => {
   app.slots.navPanel({
     id: "live",
     path: "live",
-    title: "BB Live",
+    title: "VesnALIA Live",
     icon: "Mic",
     component: LivePage,
   });
   app.experimental_icons.register({
-    name: "bb-live:voice",
+    name: "alia-live:voice",
     component: FooterIcon,
   });
   footer = app.experimental_sidebarFooter.register({
     id: "voice",
     kind: "disclosure",
-    label: "BB Live voice controls",
-    icon: "bb-live:voice",
+    label: "VesnALIA Live voice controls",
+    icon: "alia-live:voice",
     component: FooterPanel,
   });
 });

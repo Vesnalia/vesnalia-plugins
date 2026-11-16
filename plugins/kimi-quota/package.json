@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-kimi-quota",
+  "name": "alia-plugin-kimi-quota",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Kimi Quota",
-    "description": "Kimi Code membership quota in the BB usage panel (via the Kimi Code CLI login)",
+    "description": "Kimi Code membership quota in the VesnALIA usage panel (via the Kimi Code CLI login)",
     "branding": {
       "icon": "Gauge"
     },
@@ -18,7 +18,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -42,5 +41,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/kimi-quota#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/kimi-quota"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

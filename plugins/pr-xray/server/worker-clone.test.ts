@@ -8,7 +8,7 @@ import { createWorkerDir, removeFilesWhenArchived, removeWorkerDir } from "./wor
 
 let root: string;
 
-/** Archives a thread whose files are in `dir`, and returns the mock that removes bb's environment record. */
+/** Archives a thread whose files are in `dir`, and returns the mock that removes VesnALIA's environment record. */
 async function archiveThread(dir: string | undefined, environmentPath: string, stop = vi.fn(async () => ({}))) {
   const remove = vi.fn(async () => ({ ok: true }));
   let archived: ((event: { thread: { id: string; environmentId: string } }) => Promise<void>) | undefined;
@@ -76,10 +76,10 @@ describe("clonePrCommit", () => {
   it("doesn't run or inherit anything from the branch or the user's repository", async () => {
     const source = repo("source");
     const marker = join(root, "ran").replaceAll("\\", "/");
-    const headSha = commit(source, ".bb-env-setup.sh", `echo ran > "${marker}"\n`);
+    const headSha = commit(source, ".alia-env-setup.sh", `echo ran > "${marker}"\n`);
     git(source, "config", "core.hooksPath", "planted");
     const path = await clonePrCommit({ projectPath: source, remoteUrl: "https://github.com/acme/web.git", headSha, dir: join(root, "worker") });
-    expect(existsSync(join(path, ".bb-env-setup.sh"))).toBe(true);
+    expect(existsSync(join(path, ".alia-env-setup.sh"))).toBe(true);
     expect(existsSync(marker)).toBe(false);
     expect(readFileSync(join(path, ".git", "config"), "utf8")).not.toContain("planted");
     expect(existsSync(join(path, ".git", "hooks"))).toBe(false);
@@ -127,7 +127,7 @@ describe("clonePrCommit", () => {
     expect(existsSync(dir)).toBe(false);
   });
 
-  it("leaves other threads in bb alone", async () => {
+  it("leaves other threads in VesnALIA alone", async () => {
     const stop = vi.fn(async () => ({}));
     const removeEnvironment = await archiveThread(undefined, join(root, "someone-elses"), stop);
     expect(stop).not.toHaveBeenCalled();

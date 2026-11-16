@@ -10,14 +10,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 const pkg = readJson(path.join(root, 'package.json'));
 const lock = readJson(path.join(root, 'package-lock.json'));
-assert.equal(pkg.name, 'bb-plugin-agent-board');
+assert.equal(pkg.name, 'alia-plugin-agent-board');
 assert.equal(pkg.version, lock.version);
 assert.equal(pkg.version, lock.packages[''].version);
 assert.deepEqual(pkg.dependencies, lock.packages[''].dependencies);
 assert.deepEqual(pkg.devDependencies, lock.packages[''].devDependencies);
 assert.deepEqual(pkg.engines, lock.packages[''].engines);
-assert.equal(pkg.bb.server, './server.ts');
-assert.equal(pkg.bb.app, './app.tsx');
+assert.equal(pkg.alia.server, './server.ts');
+assert.equal(pkg.alia.app, './app.tsx');
 
 const temp = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'agent-board-pack-'));
 assert(process.env.npm_execpath, 'Run through npm run verify:package');
@@ -63,7 +63,7 @@ for (const side of ['app', 'server']) {
   assert.equal(meta.pluginId, 'agent-board');
   assert.equal(meta.pluginVersion, pkg.version);
   assert.equal(meta.artifactFormatVersion, 1);
-  assert.match(meta.builtWith.bbVersion, /^\d+\.\d+\.\d+(?:[-+].*)?$/, 'Build must identify its actual BB builder version');
+  assert.match(meta.builtWith.aliaVersion, /^\d+\.\d+\.\d+(?:[-+].*)?$/, 'Build must identify its actual VesnALIA builder version');
 }
 const sha256 = createHash('sha256').update(fs.readFileSync(archive)).digest('hex');
 console.log(JSON.stringify({ pluginId: 'agent-board', version: pkg.version, files: entries.length, size: pack.size, sha256 }));

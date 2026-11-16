@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { definePluginApp, useRpc, useRealtime } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc, useRealtime } from '@vesnalia/plugin-sdk/app';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Icon } from '@/components/ui/icon';
 import './style.css';

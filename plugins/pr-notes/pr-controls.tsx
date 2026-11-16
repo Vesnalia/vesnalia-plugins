@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useRpc, experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { useRpc, experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { Detail, PrRef, PrControls, PrAction } from "./github";
 import { Button } from "./components/ui/button";

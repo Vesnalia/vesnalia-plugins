@@ -113,7 +113,7 @@ function readTokenGroup(value: unknown): TokenCounters | null {
   };
 }
 
-/** Read counters from a BB `thread/tokenUsage/updated` event or its stored row. Missing usage stays null. */
+/** Read counters from a VesnALIA `thread/tokenUsage/updated` event or its stored row. Missing usage stays null. */
 export function parseTokenUsageEvent(value: unknown): TokenCounters | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;

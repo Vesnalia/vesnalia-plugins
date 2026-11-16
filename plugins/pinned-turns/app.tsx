@@ -1,10 +1,10 @@
-// bb-plugin-pinned-turns — frontend entry.
+// alia-plugin-pinned-turns — frontend entry.
 //
 // An app overlay (React, knows the route's threadId) that portals the bar into
-// the thread scroller. React and @get-bb/plugin-sdk/app are provided by BB at
+// the thread scroller. React and @vesnalia/plugin-sdk/app are provided by VesnALIA at
 // load time, never bundled.
 import { useEffect, useState } from "react";
-import { definePluginApp, useBbContext } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaContext } from "@vesnalia/plugin-sdk/app";
 import { useOptions } from "./src/options";
 import { PinnedTurns } from "./src/PinnedTurns";
 import { threadMenu } from "./src/ThreadMenu";
@@ -27,7 +27,7 @@ function whenIdle(callback: () => void): () => void {
 
 /**
  * The thread whose bar may mount: `threadId` once the page has drawn it and gone
- * idle, `null` until then. Opening a thread is BB's busiest moment (its timeline
+ * idle, `null` until then. Opening a thread is VesnALIA's busiest moment (its timeline
  * fetch, mounting and measuring the rows), and the bar is not needed to read it,
  * so its own fetch and setup wait their turn.
  */
@@ -55,8 +55,8 @@ function useSettled(threadId: string | null): string | null {
 const PANE_SCAN_MS = 1000;
 
 /**
- * The threads whose timelines are on the page: one for a single thread, one per pane in a split workspace. BB hands a
- * plugin only the focused one (`useBbContext`), so the rest are read off the page: a timeline's rows carry their
+ * The threads whose timelines are on the page: one for a single thread, one per pane in a split workspace. VesnALIA hands a
+ * plugin only the focused one (`useAliaContext`), so the rest are read off the page: a timeline's rows carry their
  * thread's id as the start of `data-timeline-row-id`.
  */
 function paneThreads(): string[] {
@@ -101,7 +101,7 @@ function usePaneThreads(settled: string | null): string[] {
 }
 
 function Overlay() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const { ready, enabled } = useOptions();
   const settled = useSettled(threadId);
   const threads = usePaneThreads(settled);

@@ -97,7 +97,7 @@ describe("managedAgent", () => {
     expect(managedAgent(BINARY, { id: PROFILE.id, env: "nope" }).env).toBeUndefined();
   });
 
-  it("drops a logo and a modelCli that bb 0.40 would reject", () => {
+  it("drops a logo and a modelCli that VesnALIA 0.40 would reject", () => {
     const existing: CustomAgent = {
       id: PROFILE.id,
       logo: "droid-logo.svg",
@@ -196,8 +196,8 @@ describe("parseCustomAgents", () => {
   });
 
   it("names the adapter whose setting is malformed", () => {
-    expect(() => parseCustomAgents('{"id":"droid"}', "bb--provider-acp-next")).toThrow(
-      /^bb--provider-acp-next customAgents must be a JSON array/,
+    expect(() => parseCustomAgents('{"id":"droid"}', "alia--provider-acp-next")).toThrow(
+      /^alia--provider-acp-next customAgents must be a JSON array/,
     );
   });
 });
@@ -207,7 +207,7 @@ describe("readActiveAcpSetting", () => {
   const notRunning = () => Promise.reject(new Error("HTTP 404: unknown plugin, or plugin is not running"));
 
   it("tries the rebuilt adapter before provider-acp", () => {
-    expect(ACP_PLUGIN_IDS).toEqual(["bb--provider-acp-next", "provider-acp"]);
+    expect(ACP_PLUGIN_IDS).toEqual(["alia--provider-acp-next", "provider-acp"]);
   });
 
   it("uses the rebuilt adapter when it is running", async () => {
@@ -216,8 +216,8 @@ describe("readActiveAcpSetting", () => {
       asked.push(pluginId);
       return { customAgents: stringifyCustomAgents([droid]) };
     });
-    expect(asked).toEqual(["bb--provider-acp-next"]);
-    expect(result.setting).toEqual({ pluginId: "bb--provider-acp-next", agents: [droid] });
+    expect(asked).toEqual(["alia--provider-acp-next"]);
+    expect(result.setting).toEqual({ pluginId: "alia--provider-acp-next", agents: [droid] });
   });
 
   it("falls back to provider-acp when the rebuilt adapter is disabled", async () => {
@@ -226,7 +226,7 @@ describe("readActiveAcpSetting", () => {
     );
     expect(result.setting).toEqual({ pluginId: "provider-acp", agents: [] });
     expect(result.failures).toHaveLength(1);
-    expect(result.failures[0]).toMatch(/^bb--provider-acp-next: /);
+    expect(result.failures[0]).toMatch(/^alia--provider-acp-next: /);
   });
 
   it("returns null with every failure when no adapter is running", async () => {
@@ -242,8 +242,8 @@ describe("readActiveAcpSetting", () => {
         asked.push(pluginId);
         return { customAgents: '{"id":"droid"}' };
       }),
-    ).rejects.toThrow(/^bb--provider-acp-next customAgents must be a JSON array/);
-    expect(asked).toEqual(["bb--provider-acp-next"]);
+    ).rejects.toThrow(/^alia--provider-acp-next customAgents must be a JSON array/);
+    expect(asked).toEqual(["alia--provider-acp-next"]);
   });
 
   it("names the adapter and stops when its setting is not valid JSON", async () => {
@@ -253,8 +253,8 @@ describe("readActiveAcpSetting", () => {
         asked.push(pluginId);
         return { customAgents: "[not json" };
       }),
-    ).rejects.toThrow(/^bb--provider-acp-next customAgents is not valid JSON/);
-    expect(asked).toEqual(["bb--provider-acp-next"]);
+    ).rejects.toThrow(/^alia--provider-acp-next customAgents is not valid JSON/);
+    expect(asked).toEqual(["alia--provider-acp-next"]);
   });
 });
 

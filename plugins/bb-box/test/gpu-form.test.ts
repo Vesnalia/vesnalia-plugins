@@ -101,9 +101,9 @@ test("071 unit 13: the GPU line keeps one height, and each state says what the n
   const free = offer({ gpuRoom: room([card({ index: 0, boxes: 0, freeMiB: 24_576, totalMiB: 24_576, freeForWhole: true })]) });
   const whole = gpuFormLine([free], "whole", NOW);
   assert.equal(whole.state, "whole");
-  assert.equal(whole.words, "Card 0 on pve-1, to itself: BB Box places no other box on it.");
+  assert.equal(whole.words, "Card 0 on pve-1, to itself: VesnALIA Box places no other box on it.");
   const outside = offer({ gpuRoom: room([card({ index: 0, boxes: 0, freeMiB: 3_486, totalMiB: 24_576, freeForWhole: true })]) });
-  assert.equal(gpuFormLine([outside], "whole", NOW).words, "Card 0 on pve-1, to itself. 20.6 GiB of it is in use outside BB Box's boxes.");
+  assert.equal(gpuFormLine([outside], "whole", NOW).words, "Card 0 on pve-1, to itself. 20.6 GiB of it is in use outside VesnALIA Box's boxes.");
 
   const reading = gpuFormLine([offer({ gpuRoom: null, unread: true })], "shared", NOW);
   assert.equal(reading.state, "reading");
@@ -116,7 +116,7 @@ test("071 unit 13: the GPU line keeps one height, and each state says what the n
   assert.match(gpuFormLine([docker], "none", NOW).words, /^No GPU, and none can be added later on Docker on the host\. Boxes with Docker in them can still open every card\.$/);
   assert.match(gpuFormLine([offer({ reachesEveryCard: true })], "none", NOW).words, /You can add one later with Resize\. Boxes with Docker in them can still open every card\.$/);
   const reached = offer({ reachesEveryCard: true, gpuRoom: room([card({ index: 0, boxes: 0, freeMiB: 24_576, totalMiB: 24_576, freeForWhole: true })]) });
-  assert.match(gpuFormLine([reached], "whole", NOW).words, /to itself: BB Box places no other box on it\. Boxes with Docker in them can still open every card\.$/);
+  assert.match(gpuFormLine([reached], "whole", NOW).words, /to itself: ALIA Box places no other box on it\. Boxes with Docker in them can still open every card\.$/);
 
   const second = offer({ host: "other", label: "Other", gpuRoom: room([], { host: "other", withheld: "No card is free." }) });
   const both = gpuFormLine([held, second], "whole", NOW);
@@ -125,7 +125,7 @@ test("071 unit 13: the GPU line keeps one height, and each state says what the n
 });
 
 test("the Docker reach sentence is kept for a chosen GPU on the one provider it belongs to", () => {
-  const reach = "On docker-1, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what BB Box places, not what a box can reach.";
+  const reach = "On docker-1, every box with Docker in it can open every card, with a GPU or without. None and Whole card are what VesnALIA Box places, not what a box can reach.";
   const docker = { cardReach: reach };
   const other = { cardReach: null };
   assert.equal(cardReachLine(false, [docker]), "");
@@ -133,7 +133,7 @@ test("the Docker reach sentence is kept for a chosen GPU on the one provider it 
   assert.equal(cardReachLine(true, [other]), "");
   assert.equal(cardReachLine(true, []), "");
   assert.equal(cardReachLine(true, [docker]), reach);
-  assert.doesNotMatch(cardReachLine(true, [docker]), /bb-box/);
+  assert.doesNotMatch(cardReachLine(true, [docker]), /alia-box/);
 });
 
 test("071 unit 13: Resize names the way, and a move confirmation names the programs that have the GPU open", () => {
@@ -142,10 +142,10 @@ test("071 unit 13: Resize names the way, and a move confirmation names the progr
   assert.match(gpuWaysLine(proxmox, "LXC"), /Adding, removing or moving a card restarts the box/);
   const docker: GpuResizing = { add: "no", share: "live", move: "no" };
   assert.match(gpuWaysLine(docker, "Docker", "none"), /cannot be added, removed or moved/);
-  assert.match(gpuWaysLine(docker, "Docker", "shared"), /every box with Docker in it can open every card\. None and Whole card are what BB Box places/);
-  assert.match(gpuWaysLine(docker, "Docker", "whole"), /what BB Box places, not what a box can reach/);
+  assert.match(gpuWaysLine(docker, "Docker", "shared"), /every box with Docker in it can open every card\. None and Whole card are what ALIA Box places/);
+  assert.match(gpuWaysLine(docker, "Docker", "whole"), /what ALIA Box places, not what a box can reach/);
   assert.doesNotMatch(gpuWaysLine(docker, "Docker", "none"), /every box with Docker in it can open every card/);
-  assert.doesNotMatch(gpuWaysLine(docker, "Docker", "none"), /BB Box places/);
+  assert.doesNotMatch(gpuWaysLine(docker, "Docker", "none"), /ALIA Box places/);
   assert.doesNotMatch(gpuWaysLine(docker, "Docker"), /every box with Docker in it can open every card/);
   const words = "amber-fox restarts without card 1. Everything running in it stops.";
   assert.equal(withGpuPrograms(words, ": python3 (3310) has the GPU open"), "amber-fox restarts without card 1. Everything running in it stops: python3 (3310) has the GPU open.");

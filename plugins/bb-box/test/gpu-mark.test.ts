@@ -5,7 +5,7 @@ import { answerTo, deviceSetOf, judgeGpuMigration, linesFor, parseHelperLines, p
 import { parseTags } from "../src/backends/proxmox/api.ts";
 import type { GpuMarkGuest, GpuMarking } from "../src/backends/types.ts";
 import { gpuCommands, guestLine, markingFailed, markingText } from "../src/plugin/gpu-cli.ts";
-import type { BbBox } from "../src/plugin/setup.ts";
+import type { AliaBox } from "../src/plugin/setup.ts";
 import { Bridge, desktop, request, today } from "./gpu-helper/bridge.ts";
 import { CARD_A, CARD_B, INSTALL, REPORT_VMID, boxLabels, cardLines, marker } from "./gpu-helper/node.ts";
 
@@ -23,7 +23,7 @@ function nothingButTags(before: Map<number, Record<string, string>>, after: Map<
 }
 
 
-test("bb box gpu mark marks each of this install's guests whose lines name a card, running or stopped, warm guests too, with the card its lines give; the real helper, in a dry run, grants each and would write nothing; only tags change (071 unit 4)", async () => {
+test("alia box gpu mark marks each of this install's guests whose lines name a card, running or stopped, warm guests too, with the card its lines give; the real helper, in a dry run, grants each and would write nothing; only tags change (071 unit 4)", async () => {
   const bridge = new Bridge();
   today(bridge);
   bridge.helper();
@@ -34,7 +34,7 @@ test("bb box gpu mark marks each of this install's guests whose lines name a car
   const marking = await backend.markGpus(request());
   assert.equal(marking.refused, null);
   const guests = byVmid(marking);
-  assert.deepEqual([...guests.keys()], [7001, 7002, 7003, 7004], "only this install's guests that hold a card, in its pool, and none BB Box makes and removes itself");
+  assert.deepEqual([...guests.keys()], [7001, 7002, 7003, 7004], "only this install's guests that hold a card, in its pool, and none VesnALIA Box makes and removes itself");
   assert.deepEqual(
     [...guests.values()].map((guest) => [guest.vmid, guest.outcome, guest.marker, guest.card, guest.running, guest.answer]),
     [
@@ -46,7 +46,7 @@ test("bb box gpu mark marks each of this install's guests whose lines name a car
   );
   assert.equal(marking.withoutCards, 2, "the server and the CPU desktop with no card's lines need no marker");
   assert.deepEqual(bridge.tags(7001), [...boxLabels("bx7001", "amber-fox", "linux-desktop").tags, marker("shared", CARD_A, 1)], "every tag it had stays, the marker last");
-  assert.deepEqual(bridge.tags(7004), ["bb-box", `install.${INSTALL}`, "warm", "template.9001", "bb-box-starting", marker("shared", CARD_B, 1)]);
+  assert.deepEqual(bridge.tags(7004), ["alia-box", `install.${INSTALL}`, "warm", "template.9001", "alia-box-starting", marker("shared", CARD_B, 1)]);
   for (const vmid of [7005, 7006, 9001, 7010, 7011, 7012, 7013, 7014, 7015]) assert.deepEqual(bridge.configs().get(vmid), before.get(vmid), `CT ${vmid} is left as it was`);
   nothingButTags(before, bridge.configs());
 
@@ -99,7 +99,7 @@ test("--check says what it would mark, and changes nothing", async () => {
   assert.match(markingText([checked]), /^Proxmox LXC on pve: would mark 4 guests; changes nothing \(--check\)\./);
 });
 
-test("bb box gpu mark refuses, naming why and changing nothing, a guest whose lines the helper would rewrite or refuse: an unknown card, two cards, lines that are not the card's set, a lock, a device change waiting, a privileged container, another install's description, another marker, a record that says no GPU, and a whole card another guest holds", async () => {
+test("alia box gpu mark refuses, naming why and changing nothing, a guest whose lines the helper would rewrite or refuse: an unknown card, two cards, lines that are not the card's set, a lock, a device change waiting, a privileged container, another install's description, another marker, a record that says no GPU, and a whole card another guest holds", async () => {
   const bridge = new Bridge();
   const card0Desktop = cardLines(CARD_A, "desktop");
   bridge.guest(7020, desktop("bx7020", "unknown-card", CARD_A, { lines: ["/dev/nvidia7,mode=0666", "/dev/nvidiactl,mode=0666"] }));
@@ -109,7 +109,7 @@ test("bb box gpu mark refuses, naming why and changing nothing, a guest whose li
   bridge.guest(7024, desktop("bx7024", "locked", CARD_A, { lock: "backup" }));
   bridge.guest(7025, desktop("bx7025", "pending", CARD_A), [{ key: "dev7", pending: "/dev/net/tun" }]);
   bridge.guest(7026, desktop("bx7026", "privileged", CARD_A, { unprivileged: false }));
-  bridge.guest(7027, { ...desktop("bx7027", "mislabelled"), description: "bb-box mislabelled\ninstall zz99\nbox bx7027\nkind linux-desktop" });
+  bridge.guest(7027, { ...desktop("bx7027", "mislabelled"), description: "alia-box mislabelled\ninstall zz99\nbox bx7027\nkind linux-desktop" });
   bridge.guest(7028, desktop("bx7028", "other-marker", CARD_A, { marker: marker("shared", CARD_B, 1) }));
   bridge.guest(7029, desktop("bx7029", "none-marker", CARD_A, { marker: marker("none", null, 1) }));
   bridge.guest(7030, desktop("bx7030", "record-none", CARD_A));
@@ -125,16 +125,16 @@ test("bb box gpu mark refuses, naming why and changing nothing, a guest whose li
     7021: ["refused", "Its device lines name card 0 and card 1; a guest holds one card at most."],
     7022: ["refused", "Its device lines are not the ones the helper gives a desktop on card 0: it lacks /dev/nvidia-modeset,mode=0666. Marked, the helper would rewrite them once writes are on."],
     7023: ["refused", "Its device lines are not the ones the helper gives a server on card 0: it has /dev/dri/card2,mode=0666, /dev/dri/renderD129,mode=0666 and /dev/nvidia-modeset,mode=0666 besides. Marked, the helper would rewrite them once writes are on."],
-    7024: ["refused", "It is locked (backup). Run bb box gpu mark again once the lock is gone."],
-    7025: ["refused", "It has a device change waiting for its next start, which the helper refuses to act beside. Run bb box gpu mark again after it restarts."],
+    7024: ["refused", "It is locked (backup). Run alia box gpu mark again once the lock is gone."],
+    7025: ["refused", "It has a device change waiting for its next start, which the helper refuses to act beside. Run alia box gpu mark again after it restarts."],
     7026: ["refused", "It is a privileged container, which the helper never writes."],
     7027: ["refused", `Its description does not name install ${INSTALL}, so it is not this install's to the helper.`],
-    7028: ["refused", `It already has the tag ${marker("shared", CARD_B, 1)}, not the marker its lines give, gpu.shared.${A}; bb box gpu mark leaves a marker it did not write.`],
-    7029: ["refused", `It already has the tag gpu.none.g1, not the marker its lines give, gpu.shared.${A}; bb box gpu mark leaves a marker it did not write.`],
+    7028: ["refused", `It already has the tag ${marker("shared", CARD_B, 1)}, not the marker its lines give, gpu.shared.${A}; VesnALIA box gpu mark leaves a marker it did not write.`],
+    7029: ["refused", `It already has the tag gpu.none.g1, not the marker its lines give, gpu.shared.${A}; VesnALIA box gpu mark leaves a marker it did not write.`],
     7030: ["refused", "Its box's record says no GPU, but its device lines name card 0: say which it should have before it is marked."],
     7031: ["refused", "Its box's record says a whole card, but card 0 is also held by CT 7021, CT 7022, CT 7023, CT 7024, CT 7025, CT 7026, CT 7027, CT 7028, CT 7029, CT 7030 and CT 7032, so the helper would refuse it."],
-    7032: ["refused", `It already has the tag gpu.shared.GPU-${A}.g1, not the marker its lines give, gpu.shared.${A}; bb box gpu mark leaves a marker it did not write.`],
-    7033: ["refused", `It has the tag ${marker("shared", CARD_A, 1)} and no card's device lines; bb box gpu mark leaves a marker it did not write.`],
+    7032: ["refused", `It already has the tag gpu.shared.GPU-${A}.g1, not the marker its lines give, gpu.shared.${A}; VesnALIA box gpu mark leaves a marker it did not write.`],
+    7033: ["refused", `It has the tag ${marker("shared", CARD_A, 1)} and no card's device lines; VesnALIA box gpu mark leaves a marker it did not write.`],
   });
   assert.deepEqual(bridge.configs(), before, "no guest changed");
   assert.deepEqual(bridge.tagWrites(), []);
@@ -157,7 +157,7 @@ test("a box whose record says a whole card, alone on it, is marked whole, and th
   assert.deepEqual(bridge.node.guestWrites(), []);
 });
 
-test("071 unit 8, round 4: with helper 0.4.2, bb box gpu mark asks no whole claim: a box whose record says a whole card, alone on it, is refused with the upgrade it needs, and its tags are not written", async () => {
+test("071 unit 8, round 4: with helper 0.4.2, VesnALIA box gpu mark asks no whole claim: a box whose record says a whole card, alone on it, is refused with the upgrade it needs, and its tags are not written", async () => {
   const bridge = new Bridge({ helperVersion: "0.4.2" });
   bridge.guest(7040, desktop("bx7040", "long-job", CARD_B, { running: true }));
   bridge.guest(7041, desktop("bx7041", "sharer", CARD_A));
@@ -167,7 +167,7 @@ test("071 unit 8, round 4: with helper 0.4.2, bb box gpu mark asks no whole clai
     [
       7040,
       "refused",
-      "Its box's record says a whole card, which bb box gpu mark does not ask for now: its GPU helper is bb-box-gpu 0.4.2, and a whole card needs 0.4.3 or later, which takes a card only from this install's own stopped boxes. Upgrade the helper with host/setup-gpu.sh from a BB Box release with bb-box-gpu 0.4.3 or later, as root on pve.",
+      "Its box's record says a whole card, which VesnALIA box gpu mark does not ask for now: its GPU helper is alia-box-gpu 0.4.2, and a whole card needs 0.4.3 or later, which takes a card only from this install's own stopped boxes. Upgrade the helper with host/setup-gpu.sh from a VesnALIA Box release with alia-box-gpu 0.4.3 or later, as root on pve.",
     ],
     [7041, "marked", null],
   ]);
@@ -213,7 +213,7 @@ test("--undo clears each claim through the helper, then takes the shared and who
     assert.ok(report.some((line) => line.startsWith(`ledger ${vmid} `) && line.endsWith(" answered g2 claim none")), `CT ${vmid}'s claim is cleared`);
   }
   assert.ok(report.includes(`holder ${A} 7001 shared running install ${INSTALL} unmanaged`), "it holds its card by its lines, unmanaged, as before marking");
-  assert.match(markingText([undone]), /^Proxmox LXC on pve: cleared the claim of 4 guests\. Each claim is cleared by the GPU helper first, through a gpu\.release marker, which then comes off: the guest keeps its device lines, and the helper no longer writes them\. A box BB Box makes from now on is marked as it is made; these guests stay unmarked until bb box gpu mark marks them again\.\n/);
+  assert.match(markingText([undone]), /^Proxmox LXC on pve: cleared the claim of 4 guests\. Each claim is cleared by the GPU helper first, through a gpu\.release marker, which then comes off: the guest keeps its device lines, and the helper no longer writes them\. A box ALIA Box makes from now on is marked as it is made; these guests stay unmarked until alia box gpu mark marks them again\.\n/);
   assert.doesNotMatch(markingText([undone]), /starts later is marked/, "Opus 9: a start does not mark a box again");
   const writes = bridge.tagWrites().length;
   const again = await backend.markGpus(request({ undo: true }));
@@ -236,14 +236,14 @@ test("a marker the helper refused is asked again with the next generation once t
   assert.ok(!bridge.tags(7060).includes(marker("shared", CARD_A, 1)));
 });
 
-test("bb box gpu mark waits up to 10 s for the helper's answers, and says when it had none", async () => {
+test("alia box gpu mark waits up to 10 s for the helper's answers, and says when it had none", async () => {
   const bridge = new Bridge();
   bridge.guest(7070, desktop("bx7070", "quiet", CARD_A));
   bridge.helper();
   bridge.answering = false;
   const marking = await bridge.backend().markGpus(request());
   assert.deepEqual(marking.guests.map((guest) => [guest.outcome, guest.answer]), [["marked", "unanswered"]]);
-  assert.match(guestLine(marking.guests[0]!), /The GPU helper had not answered within 10 s: run bb box doctor in a minute\.$/);
+  assert.match(guestLine(marking.guests[0]!), /The GPU helper had not answered within 10 s: run alia box doctor in a minute\.$/);
   assert.equal(markingFailed([marking]), true);
 });
 
@@ -264,14 +264,14 @@ test("a guest's config changed between the read and the write is read again; one
   const marking = await bridge.backend().markGpus(request());
   assert.deepEqual(marking.guests.map((guest) => [guest.vmid, guest.outcome, guest.why]), [
     [7080, "marked", null],
-    [7081, "refused", "Its config kept changing while BB Box wrote its tags. Run bb box gpu mark again."],
+    [7081, "refused", "Its config kept changing while VesnALIA Box wrote its tags. Run alia box gpu mark again."],
   ]);
   assert.equal(bridge.proxmox.guests.get(7080)!.config.memory, "4096", "the other change stands");
   assert.ok(bridge.tags(7080).includes(marker("shared", CARD_A, 1)));
   assert.ok(!bridge.tags(7081).some((tag) => tag.startsWith("gpu.")));
 });
 
-test("bb box gpu mark refuses the whole run, changing nothing, with no helper, a report 3 minutes old, a pool the helper does not serve, or no card listed", async () => {
+test("alia box gpu mark refuses the whole run, changing nothing, with no helper, a report 3 minutes old, a pool the helper does not serve, or no card listed", async () => {
   const fresh = new Bridge();
   fresh.guest(7090, desktop("bx7090", "waiting", CARD_A));
   const outcomes: [string, GpuMarking][] = [];
@@ -290,11 +290,11 @@ test("bb box gpu mark refuses the whole run, changing nothing, with no helper, a
   assert.deepEqual(
     outcomes.map(([name, marking]) => [name, marking.refused?.detail, marking.refused?.fix, marking.guests.length]),
     [
-      ["no helper", "pve has no GPU helper: VM 9190's report has no helper line, and only the helper, bb-box-gpu, answers a marker.", "Run host/setup-gpu.sh from the setup guide as root on pve.", 0],
-      ["old", "The GPU helper on pve last reported 3 minutes ago, in VM 9190.", "Run systemctl status bb-box-gpu as root on pve, and check the host's clock.", 0],
-      ["not served", "bb-box-gpu 0.4.4 on pve serves pool team, not this install's pool bbbox.", "Run host/setup-gpu.sh --pool bbbox as root on pve.", 0],
-      ["no cards", "The GPU helper on pve lists no card in VM 9190's report, so BB Box cannot tell which card a guest's lines name.", "Run systemctl status bb-box-gpu and nvidia-smi as root on pve.", 0],
-      ["no report VM", "The token can read no VM named bb-box-gpu-memory on pve, so BB Box cannot read the GPU helper's report.", "Run host/setup-gpu-report.sh, then host/setup-gpu.sh, from the setup guide as root on pve.", 0],
+      ["no helper", "pve has no GPU helper: VM 9190's report has no helper line, and only the helper, alia-box-gpu, answers a marker.", "Run host/setup-gpu.sh from the setup guide as root on pve.", 0],
+      ["old", "The GPU helper on pve last reported 3 minutes ago, in VM 9190.", "Run systemctl status alia-box-gpu as root on pve, and check the host's clock.", 0],
+      ["not served", "alia-box-gpu 0.4.4 on pve serves pool team, not this install's pool bbbox.", "Run host/setup-gpu.sh --pool bbbox as root on pve.", 0],
+      ["no cards", "The GPU helper on pve lists no card in VM 9190's report, so VesnALIA Box cannot tell which card a guest's lines name.", "Run systemctl status alia-box-gpu and nvidia-smi as root on pve.", 0],
+      ["no report VM", "The token can read no VM named alia-box-gpu-memory on pve, so VesnALIA Box cannot read the GPU helper's report.", "Run host/setup-gpu-report.sh, then host/setup-gpu.sh, from the setup guide as root on pve.", 0],
     ],
   );
   assert.deepEqual(fresh.tagWrites(), []);
@@ -311,8 +311,8 @@ test("the doctor's proxmox.gpu-migration: none without a helper; skipped when th
   const before = await check(bridge);
   assert.deepEqual([before?.status, before?.detail, before?.fix], [
     "fail",
-    "These 4 guests of this install have GPU device lines and no marker: CT 7001 (amber-fox), CT 7002 (lone-pine), CT 7003 (calm-reef) and CT 7004 (bb-box-warm).",
-    "Run bb box gpu mark: it marks each with the card its lines name, or says why it cannot.",
+    "These 4 guests of this install have GPU device lines and no marker: CT 7001 (amber-fox), CT 7002 (lone-pine), CT 7003 (calm-reef) and CT 7004 (alia-box-warm).",
+    "Run alia box gpu mark: it marks each with the card its lines name, or says why it cannot.",
   ]);
   await bridge.backend().markGpus(request());
   const after = await check(bridge);
@@ -334,7 +334,7 @@ test("proxmox.gpu-migration fails on a write the helper would make or a refusal 
   assert.deepEqual(await check(would), [
     "fail",
     `The GPU helper on pve would write this guest once writes are on: CT 7110 (crossed), lines ${B} desktop for request g1. The GPU helper refused the marker of CT 7111 (locked), as it was locked (backup).`,
-    "Find why with journalctl -u bb-box-gpu on pve: each write it would make must be explained before writes come on (071). Put right what it was refused for, then run bb box gpu mark, which asks again.",
+    "Find why with journalctl -u alia-box-gpu on pve: each write it would make must be explained before writes come on (071). Put right what it was refused for, then run alia box gpu mark, which asks again.",
   ]);
 
   const other = new Bridge();
@@ -346,7 +346,7 @@ test("proxmox.gpu-migration fails on a write the helper would make or a refusal 
   assert.deepEqual(await check(other), [
     "warn",
     "The GPU helper has not answered the marker of CT 7122 (just-marked) yet. It would write CT 7121, which is not a guest of this install's pool.",
-    "Run bb box doctor again in a minute: the helper answers within seconds.",
+    "Run alia box doctor again in a minute: the helper answers within seconds.",
   ]);
 
   const empty = new Bridge();
@@ -359,9 +359,9 @@ test("the marking rules on their own: the marker's grammar, a guest's device set
   assert.deepEqual(parseMarker(`gpu.whole.${A}.g12`), { part: "whole", card: A, generation: 12 });
   for (const bad of [`gpu.shared.GPU-${A}.g1`, `gpu.shared.${A}.g0`, `gpu.shared.${A}.g01`, "gpu.none", `gpu.half.${A}.g1`, `GPU.none.g1`]) assert.equal(parseMarker(bad), null, bad);
   assert.equal(deviceSetOf(["kind.linux-desktop"], ""), "desktop");
-  assert.equal(deviceSetOf([], `bb-box warm desktop\ninstall ${INSTALL}`), "desktop");
-  assert.equal(deviceSetOf([], `bb-box image box: build\ninstall ${INSTALL}`), "server");
-  assert.equal(deviceSetOf(["kind.linux"], "bb-box x\nkind linux-desktop"), "server", "the kind tag wins, as the helper reads it");
+  assert.equal(deviceSetOf([], `alia-box warm desktop\ninstall ${INSTALL}`), "desktop");
+  assert.equal(deviceSetOf([], `alia-box image box: build\ninstall ${INSTALL}`), "server");
+  assert.equal(deviceSetOf(["kind.linux"], "alia-box x\nkind linux-desktop"), "server", "the kind tag wins, as the helper reads it");
   const cards = parseHelperLines(`    card ${A} pci 0000:21:00.0 minor 1 drm card2 renderD129\n    card ${B} pci 0000:d1:00.0 minor - drm - -\n    gpu GPU-${A} 00000000:21:00.0 0 1 2`).cards;
   assert.deepEqual(linesFor(cards[0]!, "desktop"), cardLines(CARD_A, "desktop"));
   assert.equal(linesFor(cards[1]!, "server"), null);
@@ -370,22 +370,22 @@ test("the marking rules on their own: the marker's grammar, a guest's device set
     "lxc.cgroup2.devices.allow: c 195:1 rwm",
     "lxc.mount.entry: /dev/nvidiactl dev/nvidiactl none bind,optional,create=file",
   ]);
-  const eligibility = { installId: INSTALL, madeAndRemovedByBbBox: () => false };
+  const eligibility = { installId: INSTALL, madeAndRemovedByAliaBox: () => false };
   const context: MarkContext = { ...eligibility, cards, holders: [], ledger: new Map(), answers: [], boxNamedBy: new Map(), wholeTooOld: null };
-  const look = (config: Record<string, unknown>, pending: GuestLook["pending"] = []): GuestLook => ({ vmid: 1, config: { description: `bb-box x\ninstall ${INSTALL}\nkind linux-desktop`, tags: `bb-box;install.${INSTALL}`, unprivileged: "1", ...config }, pending });
+  const look = (config: Record<string, unknown>, pending: GuestLook["pending"] = []): GuestLook => ({ vmid: 1, config: { description: `alia-box x\ninstall ${INSTALL}\nkind linux-desktop`, tags: `alia-box;install.${INSTALL}`, unprivileged: "1", ...config }, pending });
   assert.deepEqual(planMark({ look: look({ lxc: [["lxc.cgroup2.devices.allow", "c 195:1 rwm"]] }), recordedPart: null }, context), { is: "refused", why: "It has raw lines for GPU devices (lxc.cgroup2.devices.allow: c 195:1 rwm), which the helper does not manage.", card: null });
-  assert.deepEqual(planUnmark(look({ tags: `bb-box;install.${INSTALL};gpu.shared.${A}.g3`, lock: "backup" }), eligibility, new Map()), { is: "refused", why: "It is locked (backup). Run bb box gpu mark --undo again once the lock is gone.", card: null });
+  assert.deepEqual(planUnmark(look({ tags: `alia-box;install.${INSTALL};gpu.shared.${A}.g3`, lock: "backup" }), eligibility, new Map()), { is: "refused", why: "It is locked (backup). Run alia box gpu mark --undo again once the lock is gone.", card: null });
   const claimed = new Map([[1, { vmid: 1, box: null, answered: 4, claim: { generation: 4, part: "shared" as const, card: A, answer: "granted" as const } }]]);
-  assert.deepEqual(planUnmark(look({ tags: `bb-box;install.${INSTALL};gpu.shared.${A}.g3` }), eligibility, claimed), { is: "release", marker: { part: "release", card: null, generation: 5 }, replaces: `gpu.shared.${A}.g3`, asked: false });
+  assert.deepEqual(planUnmark(look({ tags: `alia-box;install.${INSTALL};gpu.shared.${A}.g3` }), eligibility, claimed), { is: "release", marker: { part: "release", card: null, generation: 5 }, replaces: `gpu.shared.${A}.g3`, asked: false });
   assert.deepEqual(planUnmark(look({}), eligibility, claimed), { is: "release", marker: { part: "release", card: null, generation: 5 }, replaces: null, asked: false }, "a claim with no marker, as unit 4's undo left it, is cleared too");
-  assert.deepEqual(planUnmark(look({ tags: `bb-box;install.${INSTALL};gpu.release.g5` }), eligibility, claimed), { is: "release", marker: { part: "release", card: null, generation: 5 }, replaces: null, asked: true });
+  assert.deepEqual(planUnmark(look({ tags: `alia-box;install.${INSTALL};gpu.release.g5` }), eligibility, claimed), { is: "release", marker: { part: "release", card: null, generation: 5 }, replaces: null, asked: true });
   const released = new Map([[1, { vmid: 1, box: null, answered: 5, claim: null }]]);
-  assert.deepEqual(planUnmark(look({ tags: `bb-box;install.${INSTALL};gpu.release.g5` }), eligibility, released), { is: "unmark", marker: "gpu.release.g5" });
+  assert.deepEqual(planUnmark(look({ tags: `alia-box;install.${INSTALL};gpu.release.g5` }), eligibility, released), { is: "unmark", marker: "gpu.release.g5" });
   assert.deepEqual(planUnmark(look({}), eligibility, released), { is: "unmarked" });
   assert.deepEqual(parseMarker("gpu.release.g5"), { part: "release", card: null, generation: 5 });
   assert.equal(parseMarker(`gpu.release.${A}.g5`), null);
   assert.deepEqual(parseHelperLines("    claim 9 g5 released").answers, [{ vmid: 9, generation: 5, is: "released" }]);
-  assert.deepEqual(withGpuTagsOf(["bb-box", "warm", marker("shared", CARD_B, 1)], ["bb-box", "box.bx1"]), ["bb-box", "box.bx1", marker("shared", CARD_B, 1)]);
+  assert.deepEqual(withGpuTagsOf(["alia-box", "warm", marker("shared", CARD_B, 1)], ["alia-box", "box.bx1"]), ["alia-box", "box.bx1", marker("shared", CARD_B, 1)]);
   const lines = parseHelperLines([
     `    claim 5 g1 granted shared ${A}`,
     `    claim 6 g2 refused running ${A}`,
@@ -410,7 +410,7 @@ test("the marking rules on their own: the marker's grammar, a guest's device set
   assert.deepEqual(lines.omitted, ["2 holder lines, 1 answers"]);
   assert.deepEqual(parseHelperLines("    omitted the rest, as the report was too long").omitted, ["the rest, as the report was too long"]);
   const verdict = judgeGpuMigration(lines, [], { ...eligibility, node: "pve", vmid: REPORT_VMID });
-  assert.deepEqual([verdict.status, verdict.detail], ["fail", "VM 9190's report leaves lines out (2 holder lines, 1 answers), so BB Box cannot show every guest is marked and the helper would write nothing."], "an incomplete report never passes (Astra 4)");
+  assert.deepEqual([verdict.status, verdict.detail], ["fail", "VM 9190's report leaves lines out (2 holder lines, 1 answers), so VesnALIA Box cannot show every guest is marked and the helper would write nothing."], "an incomplete report never passes (Astra 4)");
   const desktopLines = cardLines(CARD_A, "desktop");
   const duplicated = (more: string[]) => Object.fromEntries([...desktopLines, ...more].map((line, at) => [`dev${at}`, line]));
   assert.deepEqual(planMark({ look: look(duplicated(["/dev/nvidiactl,mode=0666"])), recordedPart: null }, context), {
@@ -420,12 +420,12 @@ test("the marking rules on their own: the marker's grammar, a guest's device set
   }, "a device line twice is not the helper's set, which it compares as a whole sorted list (Astra 5)");
 });
 
-test("bb box gpu mark from the CLI: the text, --json, and exit 1 when a guest is left or the helper did not grant", async () => {
+test("alia box gpu mark from the CLI: the text, --json, and exit 1 when a guest is left or the helper did not grant", async () => {
   const guest = (more: Partial<GpuMarkGuest>): GpuMarkGuest => ({ vmid: 7001, name: "amber-fox", running: true, card: "card 0", marker: marker("shared", CARD_A, 1), outcome: "marked", why: null, answer: "granted", answerWhy: null, ...more });
   const marking = (guests: GpuMarkGuest[]): GpuMarking => ({ backend: "proxmox-lxc", label: "Proxmox LXC on pve", node: "pve", check: false, undo: false, refused: null, guests, withoutCards: 1 });
   let asked: unknown = null;
   const answers = [marking([guest({})]), marking([guest({ answer: "would", answerWhy: "the helper would write its device lines: lines none for request g1" })])];
-  const app = { gpuMark: async (options: unknown) => ((asked = options), [answers.shift()!]) } as unknown as BbBox;
+  const app = { gpuMark: async (options: unknown) => ((asked = options), [answers.shift()!]) } as unknown as AliaBox;
   const command = gpuCommands(app)["gpu mark"] as unknown as { run: (input: { positionals: object; options: Record<string, unknown> }, ctx: object) => Promise<{ exitCode: number; stdout?: string }> };
   const ok = await command.run({ positionals: {}, options: { on: "proxmox-lxc" } }, {});
   assert.deepEqual(asked, { check: false, undo: false, on: "proxmox-lxc" });

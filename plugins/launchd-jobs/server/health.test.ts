@@ -129,7 +129,7 @@ describe("the failing count", () => {
     expect((await monitor.refresh()).failing).toHaveLength(1);
   });
 
-  it("forgets a Mac removed from bb, with its failures", async () => {
+  it("forgets a Mac removed from VesnALIA, with its failures", async () => {
     const { monitor, deps, saved } = setup({
       connected: { mini: "Mini", laptop: "Laptop" },
       watched: ["laptop"],

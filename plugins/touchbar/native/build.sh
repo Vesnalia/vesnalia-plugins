@@ -7,9 +7,9 @@ APP="$BUILD/BBTouchBar.app"
 MACOS_DIR="$APP/Contents/MacOS"
 RESOURCES="$APP/Contents/Resources"
 DEPLOY_TARGET="11.0"
-VERSION="${BB_TOUCHBAR_VERSION:-0.1.0}"
-BUILD_NUMBER="${BB_TOUCHBAR_BUILD_NUMBER:-1}"
-SIGN_IDENTITY="${BB_TOUCHBAR_SIGN_IDENTITY:--}"
+VERSION="${ALIA_TOUCHBAR_VERSION:-0.1.0}"
+BUILD_NUMBER="${ALIA_TOUCHBAR_BUILD_NUMBER:-1}"
+SIGN_IDENTITY="${ALIA_TOUCHBAR_SIGN_IDENTITY:--}"
 
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || {
   printf 'error: invalid app version %s\n' "$VERSION" >&2
@@ -65,7 +65,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>BBTouchBar</string>
   <key>CFBundleIdentifier</key><string>app.getbb.touchbar.native</string>
   <key>CFBundleName</key><string>BBTouchBar</string>
-  <key>CFBundleDisplayName</key><string>BB Touch Bar</string>
+  <key>CFBundleDisplayName</key><string>ALIA Touch Bar</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>

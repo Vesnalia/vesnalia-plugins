@@ -2,7 +2,7 @@
  * An in-memory `Ports` for tests: threads, projects, HEADs, commits and pull requests set by the test,
  * and every fork, send and card recorded. Cards stay open until the test answers or cancels them.
  */
-import type { PluginInteractionResult } from "@get-bb/plugin-sdk";
+import type { PluginInteractionResult } from "@vesnalia/plugin-sdk";
 
 import {
   FileConflict,
@@ -63,7 +63,7 @@ export class FakePorts implements Ports {
   pulls = new Map<string, PullRequestInfo>();
   forkable = new Set<string>(["claude-code", "codex"]);
   forkFails = false;
-  /** Runs after bb made the fork but before `fork` answers: the fork's agent acting early, or a held fork. */
+  /** Runs after VesnALIA made the fork but before `fork` answers: the fork's agent acting early, or a held fork. */
   duringFork: ((threadId: string) => Promise<void>) | null = null;
   /** `card` throws instead of opening. */
   cardThrows = false;
@@ -72,9 +72,9 @@ export class FakePorts implements Ports {
   threadMetadata = new Map<string, Record<string, string>>();
   spawned: SpawnRequest[] = [];
   spawnFails = false;
-  /** Runs before bb made the thread: a reload that lands while the spawn request is still on its way. */
+  /** Runs before VesnALIA made the thread: a reload that lands while the spawn request is still on its way. */
   beforeSpawn: (() => Promise<void>) | null = null;
-  /** Runs after bb made the thread but before `spawn` answers. */
+  /** Runs after VesnALIA made the thread but before `spawn` answers. */
   duringSpawn: ((threadId: string) => Promise<void>) | null = null;
   /** Threads stopped and archived, each only when the call worked. */
   stopped: string[] = [];
@@ -101,7 +101,7 @@ export class FakePorts implements Ports {
   /** Every `writeFile`, in order. */
   writes: { root: FileRoot; path: string; content: string; expectedSha256: string | null }[] = [];
   /**
-   * `pluginThreadsWith` answers null, as when bb cannot list. Unlike bb's port (which asks for unarchived
+   * `pluginThreadsWith` answers null, as when VesnALIA cannot list. Unlike VesnALIA's port (which asks for unarchived
    * threads only), the fake lists archived ones too, flagged, so the callers' own check is exercised.
    */
   pluginThreadsUnreadable = false;

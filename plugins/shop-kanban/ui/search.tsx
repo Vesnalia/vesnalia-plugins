@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { experimental_Icon as Icon, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server/schema";
 import { CLOCK_TICK_MS, errorMessage, formatRelativeTime, type SearchResponse } from "./model";
 import { useNow } from "./hooks";
@@ -10,11 +10,11 @@ const SEARCH_DEBOUNCE_MS = 200;
 
 /**
  * Title-bar search over every thread qmd has indexed, archived included. Picking a result only opens
- * the thread in bb: it never reads, moves, adds or unarchives anything on the board.
+ * the thread in VesnALIA: it never reads, moves, adds or unarchives anything on the board.
  */
 export function ThreadSearch({ maxListHeight }: { maxListHeight: number }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const now = useNow(CLOCK_TICK_MS);
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);

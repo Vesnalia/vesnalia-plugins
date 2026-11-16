@@ -2,8 +2,8 @@
 import type { WorkspaceState } from "./workspaces";
 import { useContext } from "react";
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { ThreadTitle, useRpc, useSdk, experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest, experimental_useSidebarThreadSplit as useSidebarThreadSplit, useSidebarThreadShortcut } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarProject, PluginSidebarSection, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { ThreadTitle, useRpc, useSdk, experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest, experimental_useSidebarThreadSplit as useSidebarThreadSplit, useSidebarThreadShortcut } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarSection, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FlowState, rpcContract } from "./server";
 import { useSidebarThreadActions } from "./thread-actions";
 import { PR_TONE, StatusIcon, ThreadHoverPreview, attentionLabel, duration, rowStatus, runInfo, threadPrs, worstPr } from "./ui-extras";
@@ -103,7 +103,7 @@ export function ThreadRow({
   workspaceState: WorkspaceState;
   onWorkspace: (workspaceId: string | null, automatic: boolean) => void;
   project: PluginSidebarProject | undefined;
-  /** The machine it runs on; `remote` when it's not the machine BB runs on (tagged on the row). */
+  /** The machine it runs on; `remote` when it's not the machine VesnALIA runs on (tagged on the row). */
   machine: { name: string; remote: boolean } | null;
   active: boolean;
   tags: readonly string[];

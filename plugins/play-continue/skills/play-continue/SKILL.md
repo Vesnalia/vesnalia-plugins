@@ -1,6 +1,6 @@
 ---
 name: play-continue
-description: Explain or troubleshoot the Play Continue plugin's double-Escape stop shortcut and the Play button that continues an interrupted BB turn.
+description: Explain or troubleshoot the Play Continue plugin's double-Escape stop shortcut and the Play button that continues an interrupted VesnALIA turn.
 ---
 
 # Play Continue
@@ -13,5 +13,5 @@ description: Explain or troubleshoot the Play Continue plugin's double-Escape st
   or `failed` or never completed. Clicking it submits a fixed continuation
   message through the composer, which starts a new turn.
 - No commands, settings or server behavior. Not shown in compact composer layout
-  or when the plugin's composer action lands in BB's overflow menu (more than
+  or when the plugin's composer action lands in VesnALIA's overflow menu (more than
   three plugins with composer actions).

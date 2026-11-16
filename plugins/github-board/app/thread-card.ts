@@ -43,7 +43,7 @@ export function batches<T>(ids: readonly T[], size: number = METADATA_BATCH): T[
 
 /**
  * The threads whose card is still to be read: those this plugin started
- * (bb stamps `originPluginId` on a thread spawned with plugin metadata), that
+ * (VesnALIA stamps `originPluginId` on a thread spawned with plugin metadata), that
  * have not been read yet and are not being read now. A thread the board did
  * not start carries no card, so it costs no request.
  */

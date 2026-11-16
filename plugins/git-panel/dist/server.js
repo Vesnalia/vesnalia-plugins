@@ -11,7 +11,7 @@ var __export = (target, all) => {
 };
 
 // server.ts
-import { defineRpcContract as defineRpcContract2 } from "@get-bb/plugin-sdk";
+import { defineRpcContract as defineRpcContract2 } from "@vesnalia/plugin-sdk";
 
 // node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -19682,7 +19682,7 @@ function date4(params) {
 }
 
 // contract.ts
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 var lines = external_exports.object({ added: external_exports.number().nullable(), removed: external_exports.number().nullable() }).nullable();
 var file2 = external_exports.object({ path: external_exports.string(), index: external_exports.string(), worktree: external_exports.string(), stagedLines: lines, worktreeLines: lines });
 var remote = external_exports.object({ ahead: external_exports.number(), behind: external_exports.number(), upstream: external_exports.string().nullable() });
@@ -19725,21 +19725,21 @@ var rpcContract = defineRpcContract2({
   stash: { input: external_exports.object({ threadId: external_exports.string() }).strict(), output: state.extend({ syncMessage: external_exports.string() }) },
   stashPop: { input: external_exports.object({ threadId: external_exports.string() }).strict(), output: state.extend({ syncMessage: external_exports.string() }) }
 });
-async function plugin(bb) {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+async function plugin(alia) {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   async function workspace(threadId) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) throw new Error("This thread has no workspace.");
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     if (!environment.isGitRepo || !environment.path) throw new Error("This workspace is not a Git repository.");
     return { environmentId: environment.id, hostId: environment.hostId, cwd: environment.path };
   }
   async function status(threadId) {
     const place = await workspace(threadId);
     const gitStatus = await host.call("status", { cwd: place.cwd }, { hostId: place.hostId });
-    return { ...gitStatus, hostId: place.hostId, projectId: (await bb.sdk.environments.get({ environmentId: place.environmentId })).projectId };
+    return { ...gitStatus, hostId: place.hostId, projectId: (await alia.sdk.environments.get({ environmentId: place.environmentId })).projectId };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: ({ threadId }) => status(threadId),
     async stage({ threadId, paths }) {
       const place = await workspace(threadId);
@@ -19753,7 +19753,7 @@ async function plugin(bb) {
     },
     async commit({ threadId }) {
       const place = await workspace(threadId);
-      const committed = await bb.sdk.environments.commit({ environmentId: place.environmentId });
+      const committed = await alia.sdk.environments.commit({ environmentId: place.environmentId });
       return { ...await status(threadId), commitSubject: committed.commitSubject };
     },
     async switchBranch({ threadId, branch }) {
@@ -19807,7 +19807,7 @@ async function plugin(bb) {
       return { ...await status(threadId), syncMessage: result.message };
     }
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }
 export {
   plugin as default,

@@ -1,4 +1,4 @@
-import type { AvailableModel } from "@get-bb/plugin-sdk/provider-bridge";
+import type { AvailableModel } from "@vesnalia/plugin-sdk/provider-bridge";
 import { Transform } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 
@@ -24,7 +24,7 @@ export function presentModeControls(line: string): string {
     }
   }
   for (const delta of Array.isArray(message?.params?.deltas) ? message.params.deltas : []) {
-    if (delta.kind === "extension.state" && delta.extensionKind === "bb/session-options" && Array.isArray(delta.payload?.options)) {
+    if (delta.kind === "extension.state" && delta.extensionKind === "alia/session-options" && Array.isArray(delta.payload?.options)) {
       delta.payload.options = workModes(delta.payload.options);
     }
   }

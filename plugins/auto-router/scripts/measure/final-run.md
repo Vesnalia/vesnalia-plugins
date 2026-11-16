@@ -96,14 +96,14 @@ That total comes from `spend.py --since 2026-10-19T12:35:00Z`.
 
 ## Deviations from the plan
 
-1. BB did not allow a second Model Pilot variant beside the first, so 0.4.4 ran as a second wave after the three other arms.
+1. VesnALIA did not allow a second Model Pilot variant beside the first, so 0.4.4 ran as a second wave after the three other arms.
 2. Wave 1 first failed on 14 runs with `ENOTFOUND`. When the five-hour window ran out, a second attempt stopped. `final_run.py` set aside the finished arms of each failed task, so all arms of a task ran in the same window.
 3. RTK ran in its own worktrees, `thr_b5s4qp9y75/rtk/`, because its hook lives in project-level Claude Code settings. Those worktrees were at the same commits as the other arms.
 4. Model Pilot 0.4.4 helpers wait on approvals that nobody can see. The runner waited for every child thread, so it stopped on r101 for 30 minutes. `settled()` now stops a child that waits on an approval after the main turn ends, and r101 ran again.
 
 ## Files
 
-All run data lives outside the repo, in `~/.bb/thread-storage/thr_b5s4qp9y75/measure/final/`.
+All run data lives outside the repo, in `~/.vesnalia/thread-storage/thr_b5s4qp9y75/measure/final/`.
 
 | File | Content |
 | --- | --- |

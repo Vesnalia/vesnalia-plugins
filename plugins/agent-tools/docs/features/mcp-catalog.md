@@ -20,7 +20,7 @@ sources:
   - i18n.en.ts
 ---
 # MCP server catalogue
-The MCP feature scans managed CLI configurations across connected BB machines, compares them with a stored desired-state catalogue, and offers explicit add, update, enable, and removal actions (`server.ts:603-645`, `server.ts:701-736`).
+The MCP feature scans managed CLI configurations across connected VesnALIA machines, compares them with a stored desired-state catalogue, and offers explicit add, update, enable, and removal actions (`server.ts:603-645`, `server.ts:701-736`).
 
 ## Purpose
 
@@ -47,7 +47,7 @@ Additional detected CLI binaries with no MCP adapter are `aider`, `amp`, `copilo
 
 ## How it works
 
-1. `scanAll` lists enrolled BB machines, filters to connected hosts, then calls host `scan` (`server.ts:603-612`).
+1. `scanAll` lists enrolled VesnALIA machines, filters to connected hosts, then calls host `scan` (`server.ts:603-612`).
 2. `host.ts` searches configured CLI binaries and candidate config paths, parses supported JSON/TOML dialects, and returns each machine's detected agents (`host.ts:151-210`, `host.ts:782-818`, `agents.ts:56-219`).
 3. The server normalizes entries and calculates missing/different catalogue entries plus unrecognized pending servers (`server.ts:663-725`, `normalize.ts:27-86`, `normalize.ts:227-283`).
 4. An operator adopts a pending item globally or as local-only, ignores it, or edits/removes a catalogue entry (`server.ts:1882-1900`, `server.ts:2051-2091`).
@@ -58,9 +58,9 @@ Additional detected CLI binaries with no MCP adapter are `aider`, `amp`, `copilo
 
 ### Agent registry
 
-`AGENTS` is a static list; each definition provides a `kind`, label, executable names, ordered candidate config files, BB provider ids, and optional gateway/path-confirmation flags (`agents.ts:27-46`, `agents.ts:56-129`). The catalogue uses these fields to select installed CLIs and interpret their files; this declaration does not probe machines or parse configs (`host.ts:782-818`).
+`AGENTS` is a static list; each definition provides a `kind`, label, executable names, ordered candidate config files, VesnALIA provider ids, and optional gateway/path-confirmation flags (`agents.ts:27-46`, `agents.ts:56-129`). The catalogue uses these fields to select installed CLIs and interpret their files; this declaration does not probe machines or parse configs (`host.ts:782-818`).
 
-The host checks each entry's executable names to mark a CLI installed, loads all config candidates, and selects the first candidate with text in declared order; if none has text, it falls back to the first candidate (`agents.ts:18-46`, `host.ts:151-210`). `format`, `pointer`, and `style` route the selected file to its parser; `confirmedPath` supports the rule that a missing config path is writable only when confirmed; `bbProviders` identifies BB thread providers; `gateway` marks aggregators (`agents.ts:18-46`, `server.ts:664-670`). The supported path/format/style values are listed above. A missing binary marks a non-gateway CLI as not installed; a gateway is treated as installed when its config exists. An aborted scan throws at the host scan entry (`host.ts:785-818`). The static registry itself has no error branch (`agents.ts:56-129`).
+The host checks each entry's executable names to mark a CLI installed, loads all config candidates, and selects the first candidate with text in declared order; if none has text, it falls back to the first candidate (`agents.ts:18-46`, `host.ts:151-210`). `format`, `pointer`, and `style` route the selected file to its parser; `confirmedPath` supports the rule that a missing config path is writable only when confirmed; `aliaProviders` identifies VesnALIA thread providers; `gateway` marks aggregators (`agents.ts:18-46`, `server.ts:664-670`). The supported path/format/style values are listed above. A missing binary marks a non-gateway CLI as not installed; a gateway is treated as installed when its config exists. An aborted scan throws at the host scan entry (`host.ts:785-818`). The static registry itself has no error branch (`agents.ts:56-129`).
 
 ### RPC contract
 
@@ -115,7 +115,7 @@ String arrays are accepted only when every member is a string. Header/env record
 - `CatalogTable` resolves the selected machine, then uses host columns for the all-machines view or that machine's manageable CLI columns for a single-machine view. An empty catalogue shows an adopt-pending message when pending entries exist; otherwise it directs the user to configure an MCP server and rescan (`app.tsx:1119-1158`).
 - For a non-empty catalogue it renders state and enabled legends, a row per entry, the entry description and local-only scope marker, and one state cell per host/agent column (`app.tsx:1160-1235`). The remove action calls `onRemove` immediately and keeps machine configs; purge first sets a per-entry confirmation state, then calls `onPurge` on the second click. Both controls are disabled while `busy` (`app.tsx:1132-1133`, `app.tsx:1237-1274`).
 - `CatalogTable` does not perform RPCs or render an error result itself. The parent handles thrown RPC errors through `act`/`report`, updates overview data on success, and shows purge's returned removed/failed counts and error list in a notice. Purge targets the current selected host or all hosts, includes gateway configs, and disables dry-run (`app.tsx:128-145`, `app.tsx:3168-3181`, `app.tsx:3444-3452`).
-- `hostState` ignores agents that are not manageable, installed, configured, or targeted by the entry. It returns `n/a` when none qualify, `missing` when none contain the entry, `partial` when only some contain it, `different` when a non-local-only entry differs, and `present` otherwise (`app.tsx:539-570`). The state and enabled-state accessible labels, along with pending-server filter labels, are resolved from `t()` during render, so they follow BB’s document locale (`app.tsx:114-119`, `app.tsx:325-348`, `app.tsx:377-405`, `app.tsx:1299-1324`, `i18n.ts:31-39`, `i18n.en.ts:4-63`).
+- `hostState` ignores agents that are not manageable, installed, configured, or targeted by the entry. It returns `n/a` when none qualify, `missing` when none contain the entry, `partial` when only some contain it, `different` when a non-local-only entry differs, and `present` otherwise (`app.tsx:539-570`). The state and enabled-state accessible labels, along with pending-server filter labels, are resolved from `t()` during render, so they follow VesnALIA’s document locale (`app.tsx:114-119`, `app.tsx:325-348`, `app.tsx:377-405`, `app.tsx:1299-1324`, `i18n.ts:31-39`, `i18n.en.ts:4-63`).
 - An empty catalogue explains either that pending servers can be adopted or that an MCP server must first be configured in a CLI and scanned (`app.tsx:1147-1156`).
 
 ## Modes, variants, and states

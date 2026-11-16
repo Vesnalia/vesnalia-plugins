@@ -1,7 +1,7 @@
-import { useSidebarThreads, useProviders } from "./bb-sdk";
+import { useSidebarThreads, useProviders } from "./alia-sdk";
 import { STORAGE_KEYS } from "./lib/storage-keys";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { PluginSidebarThread, PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import { useInboxShelfThreads } from "./useInboxShelfThreads";
 import { createDragReorderHandler } from "./drag-reorder";
 import type { InboxDragOrder } from "./drag-reorder-geometry";
@@ -56,7 +56,7 @@ type ActiveShelfKind = "pinned" | "inbox";
  * The sidebar's scrolling list. Manual order is durable; optional views sort
  * the same rows without changing their saved positions.
  *
- * The host owns New thread, and thread search lives in bb's quick palette, so
+ * The host owns New thread, and thread search lives in VesnALIA's quick palette, so
  * this list ignores the deprecated `searchQuery` prop. It adds the plugin's
  * project scope picker.
  */

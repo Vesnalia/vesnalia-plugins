@@ -15,7 +15,7 @@ import { MemoryStorage, tempDir } from "./helpers.ts";
 import { COMMAND, THREAD, rejection, standing, untilHeld, world, type World } from "./snapshot-world.ts";
 
 const LINUX_IMAGE = "bbbox/linux:1";
-const SOURCE_CREDENTIALS = { "home/box/.bb-machines/bb.example/auth.json": '{"token":"source"}\n' } as const;
+const SOURCE_CREDENTIALS = { "home/box/.alia-machines/alia.example/auth.json": '{"token":"source"}\n' } as const;
 const RESTORED = /^bbbox-bx[0-9a-z]+-[0-9a-f]{8}$/;
 const SMALL_HOST_MiB = 8192;
 
@@ -115,8 +115,8 @@ test("Hetzner Cloud forks a snapshot on the same host, and the fork passes the i
   assert.equal(fork.state, "ready", fork.error ?? "");
   assert.equal(fork.guest!.data?.hetznerHost, box.guest!.data?.hetznerHost, "the fork is on its snapshot's host");
   assert.ok(fake.inspect(fork.guest!.ref).Config.Env.includes(`BBBOX_IDENTITY=${fork.id}`));
-  assert.match(readFileSync(join(fake.identityRoot(fork.guest!.ref), "var/lib/bb-box/identity-resets"), "utf8"), /not the marker's/, "its boot reset ran");
-  assert.equal(existsSync(join(fake.identityRoot(fork.guest!.ref), Object.keys(SOURCE_CREDENTIALS)[0]!)), false, "the source's BB credentials are gone");
+  assert.match(readFileSync(join(fake.identityRoot(fork.guest!.ref), "var/lib/alia-box/identity-resets"), "utf8"), /not the marker's/, "its boot reset ran");
+  assert.equal(existsSync(join(fake.identityRoot(fork.guest!.ref), Object.keys(SOURCE_CREDENTIALS)[0]!)), false, "the source's VesnALIA credentials are gone");
   assert.deepEqual(readBoth(fake, fork), ["A", "A"]);
 });
 
@@ -170,7 +170,7 @@ test("Hetzner Cloud keeps no snapshot past its box's release, and says why in Ke
   const refused = await rejection(state.snapshots.checkKeep(COMMAND, standing(box), target.id, { days: 30 }));
 
   assert.equal(refused.code, "unsupported");
-  assert.ok(refused.message.includes(`: ${HETZNER_KEEP_OFF}, so BB Box does not keep "A".`), refused.message);
+  assert.ok(refused.message.includes(`: ${HETZNER_KEEP_OFF}, so VesnALIA Box does not keep "A".`), refused.message);
   assert.equal(keepWhyOf(state.store.record(target.id)!, offer, null), HETZNER_KEEP_OFF);
   assert.deepEqual([offer?.keepsPastRelease, offer?.fork, offer?.forkSafeFrom], ["no", "copy", 7]);
   assert.equal(hetznerOf(state).snapshotting("linux-desktop-cpu")?.forkSafeFrom, 9, "desktops fork from reset version 9");
@@ -190,7 +190,7 @@ test("Hetzner Cloud asks no host for snapshots while none of its boxes took one"
   assert.equal(snapshotListings(fake), before, "the host was not asked");
 });
 
-test("Hetzner Cloud finishes a restore that BB Box stopped after the new container was made, leaving one working box", async () => {
+test("Hetzner Cloud finishes a restore that VesnALIA Box stopped after the new container was made, leaving one working box", async () => {
   const { state, fake, box, target } = await boxWithSnapshotOfA();
   state.holds.step = "adopted";
 

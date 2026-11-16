@@ -16,11 +16,11 @@ sources:
 ---
 # Skill suggestion through Jev
 
-BB puts every skill's description and path into each session (hundreds of lines). This feature
+VesnALIA puts every skill's description and path into each session (hundreds of lines). This feature
 picks at most one hub skill per user message with TypeSafe's System One model Jev, so an agent can
 get one relevant line instead of the whole list. It ports TypeSafe's
 [Skill suggestion cookbook](https://docs.typesafe.ai/cookbooks/skill_suggestion.md) with three changes
-measured on real BB traffic.
+measured on real VesnALIA traffic.
 
 ## Pipeline
 
@@ -58,7 +58,7 @@ suggested: setting `skillsSuggestExclude`.
 
 ## Measurement
 
-636 real user turns from BB thread exports (336 where the agent loaded a skill, 300 random others),
+636 real user turns from VesnALIA thread exports (336 where the agent loaded a skill, 300 random others),
 349 skills, an independent judge model deciding which candidate skills fit each turn.
 
 | | useful | wrong skill | missed | noise on turns needing none |
@@ -76,28 +76,28 @@ requests.
 Limits: the judge only saw skills some arm or the agent proposed; thresholds were tuned on the same
 sample; turns were not consecutive, so the per-thread repeat filter was not measured.
 
-## Per-turn hint on stock BB (`skillsSuggestInject`)
+## Per-turn hint on stock VesnALIA (`skillsSuggestInject`)
 
 Off by default. When on (and a Jev key is set), every user turn gets the suggestion as an
 agent-only prompt block: the agent reads it, the chat does not show it. It works with any provider
-and needs no provider hook and no patched BB core, only public Plugin SDK surfaces:
+and needs no provider hook and no patched VesnALIA core, only public Plugin SDK surfaces:
 
-1. `bb.experimental_hooks.on("message.dispatch")` answers `wait` for a user's `start-turn`
+1. `alia.experimental_hooks.on("message.dispatch")` answers `wait` for a user's `start-turn`
    (instantly: the hook pass holds a server-wide lock) with `sendAt` = 8 s later.
-2. `bb.events.on("message.queued")` gets the queued row; Jev runs on its visible text with the
+2. `alia.events.on("message.queued")` gets the queued row; Jev runs on its visible text with the
    agent's last reply (`thread.idle`) and the previous user message as context.
-3. `bb.sdk.threads.queuedMessages.update` appends `{ type: "text", visibility: "agent-only" }` with
-   the `<skill_relevance>` block; `bb.experimental_hooks.recheck("message.dispatch")` re-asks.
+3. `alia.sdk.threads.queuedMessages.update` appends `{ type: "text", visibility: "agent-only" }` with
+   the `<skill_relevance>` block; `alia.experimental_hooks.recheck("message.dispatch")` re-asks.
 4. The hook sees the row is decided (or carries the block) and answers `proceed`.
 
 Passed at once: steers into a running turn (`join-turn`), hidden threads, child threads (any
-`parentThreadId`: subagents, Devin, Lane Pilot tasks — BB marks their first message as the user's), agent and system
+`parentThreadId`: subagents, Devin, Lane Pilot tasks — VesnALIA marks their first message as the user's), agent and system
 messages, retries, rows that already carry the block. Fail open: a Jev error or no skill leaves the
 row as is; if the plugin hangs, core re-attempts at `sendAt` and the hook lets a row older than 8 s
 go; a stopped plugin's waits are cleared by core. Cost: the turn starts about a second later and the
 queue row flashes above the composer (the roster is kept warm so a queued turn never waits for a
 cold build of ~1.5 s) with the reason "Agent Tools: picking a skill". Messages
-injected by `bb thread tell` from other agents are not touched. Log entries have `mode: "dispatch"`.
+injected by `alia thread tell` from other agents are not touched. Log entries have `mode: "dispatch"`.
 
 The hint names the skill and says to load its SKILL.md natively; with `skillsSuggestTools` on it
 points at `skill_read` instead.
@@ -106,12 +106,12 @@ points at `skill_read` instead.
 
 | Surface | What it does |
 |---|---|
-| `bb tools skills-suggest --message <text> [--prev-user …] [--prev-assistant …] [--thread <id>] [--json]` | prints a `<skill_relevance>` block or nothing; the caller's thread id is used when `--thread` is absent |
-| `bb tools skills-cards [--refresh] [--wait] [--json] [--show <skill>]` | card counts; queues stale cards; `--show` prints one card |
-| `bb tools skills-suggest-log [--limit N] [--json]` | last entries of the 200-entry log (KV `skillSuggestLog`) |
+| `alia tools skills-suggest --message <text> [--prev-user …] [--prev-assistant …] [--thread <id>] [--json]` | prints a `<skill_relevance>` block or nothing; the caller's thread id is used when `--thread` is absent |
+| `alia tools skills-cards [--refresh] [--wait] [--json] [--show <skill>]` | card counts; queues stale cards; `--show` prints one card |
+| `alia tools skills-suggest-log [--limit N] [--json]` | last entries of the 200-entry log (KV `skillSuggestLog`) |
 | tools `skills_find`, `skill_read` | ranked search and SKILL.md / file reading for ordinary threads; setting `skillsSuggestTools`, off by default |
 
 Settings: `jevApiKey` (secret), `jevModel` (`jev-1.14.0`), `skillsSuggestGate`, `skillsSuggestFits`,
 `skillsSuggestExclude`, `skillsSuggestTools`.
 
-Not in this phase: a screen, hiding BB's skill list.
+Not in this phase: a screen, hiding VesnALIA's skill list.

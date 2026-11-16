@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { burnUsageSchema, usageOf } from "../src/bb-port";
+import { burnUsageSchema, usageOf } from "../src/alia-port";
 import { usageText } from "../src/format";
 import type { ThreadUsage, TokenCounts, UsageRead } from "../src/ports";
 import { MISSING_RETRY_MS, PASS_CALLS, REREAD_MS, readUsage, SETTLE_MS } from "../src/usage";

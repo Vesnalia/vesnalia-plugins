@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useRpc, type PluginSidebarProject } from "@bb/plugin-sdk/app";
-// Type-only, so the backend and @bb/plugin-sdk never reach the app bundle.
+import { useRpc, type PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
+// Type-only, so the backend and @vesnalia/plugin-sdk never reach the app bundle.
 import type { treeSidebarRpcContract } from "./server";
 import { isIndented } from "./names";
 import type { ProjectRow } from "./tree";
@@ -9,9 +9,9 @@ import type { ProjectRow } from "./tree";
 const SETTLE_MS = 500;
 
 /**
- * Push the tree's shape into the two things about a project that bb owns.
+ * Push the tree's shape into the two things about a project that VesnALIA owns.
  *
- * bb's new-thread picker renders projects in bb's own manual order, and nothing
+ * VesnALIA's new-thread picker renders projects in VesnALIA's own manual order, and nothing
  * about that order follows a sidebar. `order` writes the sort key so the two
  * match; it is off by default, because that order is the user's to set by
  * dragging. Indentation is no longer done here at all — `projectMenu.ts` styles

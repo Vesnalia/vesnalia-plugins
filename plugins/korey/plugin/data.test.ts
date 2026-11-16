@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
 import { shortcutRequestSchema } from "./contracts.js";
@@ -20,7 +20,7 @@ function request(operationId: string) {
   return shortcutRequestSchema.parse({
     operationId,
     requestHash: "a".repeat(64),
-    bbThreadId: "thread-test",
+    aliaThreadId: "thread-test",
     action: "create",
     storyId: null,
     instruction: "Create the approved Story.",
@@ -72,7 +72,7 @@ describe("Korey durable state", () => {
       migrations.forEach((migration) => db.exec(migration));
       const original = setLinkedMapping(db, "thread-one", "korey-one");
       expect(() => setLinkedMapping(db, "thread-two", "korey-one")).toThrow(
-        "bb korey unlink --bb-thread thread-one",
+        "alia korey unlink --alia-thread thread-one",
       );
       expect(getMapping(db, "thread-one")).toEqual(original);
       expect(getMapping(db, "thread-two")).toBeNull();
@@ -117,7 +117,7 @@ describe("Korey durable state", () => {
       migrations.slice(0, 2).forEach((migration) => db.exec(migration));
       const snapshot = { ...request("korey-1"), futureField: true };
       db.prepare(`INSERT INTO korey_operations
-        (id, bb_thread_id, status, request_json, request_hash, created_at, updated_at)
+        (id, alia_thread_id, status, request_json, request_hash, created_at, updated_at)
         VALUES (?, ?, 'reconcile-required', ?, ?, 1, 1)`).run(
         "korey-1",
         "thread-test",
@@ -145,39 +145,39 @@ describe("Korey durable state", () => {
       migrations.forEach((migration) => db.exec(migration));
       const seeds = [
         {
-          bbThreadId: "thread-b",
+          aliaThreadId: "thread-b",
           koreyThreadId: "conversation-one",
           status: "reconcile-required",
         },
         {
-          bbThreadId: "thread-b",
+          aliaThreadId: "thread-b",
           koreyThreadId: "conversation-two",
           status: "reconcile-required",
         },
         {
-          bbThreadId: "thread-a",
+          aliaThreadId: "thread-a",
           koreyThreadId: "conversation-one",
           status: "reconcile-required",
         },
         {
-          bbThreadId: "thread-a",
+          aliaThreadId: "thread-a",
           koreyThreadId: "conversation-one",
           status: "awaiting-response",
         },
         {
-          bbThreadId: "thread-a",
+          aliaThreadId: "thread-a",
           koreyThreadId: "conversation-two",
           status: "reconcile-required",
         },
         {
-          bbThreadId: "thread-a",
+          aliaThreadId: "thread-a",
           koreyThreadId: "conversation-one",
           status: "korey-complete",
         },
       ] as const;
       const ids = seeds.map((seed, index) => {
         const id = `korey-${index + 1}`;
-        createOperation(db, { ...request(id), bbThreadId: seed.bbThreadId });
+        createOperation(db, { ...request(id), aliaThreadId: seed.aliaThreadId });
         transitionOperation(db, {
           id,
           from: "requested",
@@ -212,8 +212,8 @@ describe("Korey durable state", () => {
 
   it("atomically reserves only one first-use mapping", async () => {
     const host = createFakePluginHost({ pluginId: "korey-data-test" });
-    const db = host.bb.storage.database();
-    host.bb.storage.migrate(db, migrations);
+    const db = host.alia.storage.database();
+    host.alia.storage.migrate(db, migrations);
     try {
       const first = reserveMapping(db, "thread-test", "marker-one");
       const second = reserveMapping(db, "thread-test", "marker-two");
@@ -234,8 +234,8 @@ describe("Korey durable state", () => {
 
   it("recovers interrupted states without replaying remote mutations", async () => {
     const host = createFakePluginHost({ pluginId: "korey-recovery-test" });
-    const db = host.bb.storage.database();
-    host.bb.storage.migrate(db, migrations);
+    const db = host.alia.storage.database();
+    host.alia.storage.migrate(db, migrations);
     try {
       createOperation(
         db,

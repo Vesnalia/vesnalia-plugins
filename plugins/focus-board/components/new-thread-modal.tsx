@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import {
   experimental_NewThreadComposer as NewThreadComposer,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useFooterRowAnchor } from "@/components/use-footer-row-anchor";
 import { Icon } from "@/components/ui/icon";
@@ -30,9 +30,9 @@ export interface SpawnedThread {
 }
 
 /**
- * The board's own new-thread composer: bb's host compose surface in a
+ * The board's own new-thread composer: VesnALIA's host compose surface in a
  * responsive dialog over the board and pane, so starting a thread never
- * leaves the board (and never opens bb's new-thread window). On submit the
+ * leaves the board (and never opens VesnALIA's new-thread window). On submit the
  * request forwards verbatim to `threads.spawn`, which attributes the thread
  * to this plugin; the board opens the spawned thread in the pane.
  *
@@ -123,7 +123,7 @@ export function NewThreadModal({
    */
   groupName?: string;
   /**
-   * Maximize: expand this composer into bb's main new-thread view. The app
+   * Maximize: expand this composer into VesnALIA's main new-thread view. The app
    * supplies the hand-off (seeds and the stored prompt text ride along; the
    * board's own draft is kept — a maximize is a close, not a spawn;
    * lib/compose-maximize) and omits it while a child preset is armed, since
@@ -156,7 +156,7 @@ export function NewThreadModal({
    * composer's project picker. Absent (the host cannot create, the tests'
    * stub flows) renders no option — the composer works exactly as before.
    * The picker's dropdown itself is host-owned and the plugin-facing
-   * composer drops bb's `createProject` capability (get-bb/bb#7015), so the
+   * composer drops VesnALIA's `createProject` capability (get-alia/alia#7015), so the
    * option lives as a small icon-only button ON the composer's pickers
    * row's line — at the row's left edge, beside the project picker —
    * swapped for an inline name field when armed.
@@ -164,13 +164,13 @@ export function NewThreadModal({
   onCreateProject?: (name: string) => Promise<{ id: string }>;
   /**
    * The SAME button's typical-flow hand-off (the operator's ruling: the
-   * button follows bb's typical new-project flow): the app runs bb's
+   * button follows VesnALIA's typical new-project flow): the app runs VesnALIA's
    * native folder picker on the board's single connected persistent host
    * and creates from the picked folder (lib/project-create-flow) — absent
    * (untestable host topologies, the tests' stub flows) the button's click
    * arms the inline name field directly, the shipped fallback flow.
    * `{ id: null }` means the operator cancelled the native pick: nothing
-   * is created and the dialog rests, bb's own answer to a null pick.
+   * is created and the dialog rests, VesnALIA's own answer to a null pick.
    */
   onCreateProjectFromPicker?: () => Promise<{ id: string | null }>;
   onSpawned: (thread: SpawnedThread) => void;
@@ -188,8 +188,8 @@ export function NewThreadModal({
   const [createError, setCreateError] = useState<string | null>(null);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   // The typical flow's pick: while the native folder picker is on screen
-  // (the app side runs bb's hosts.pickFolder) the affordance disables —
-  // bb's isCreating slot does the same for its own pick.
+  // (the app side runs VesnALIA's hosts.pickFolder) the affordance disables —
+  // VesnALIA's isCreating slot does the same for its own pick.
   const [pickingPending, setPickingPending] = useState(false);
   // The host composer's pickers row, measured for the floating New project
   // button (components/use-footer-row-anchor): desktop viewports place the
@@ -221,7 +221,7 @@ export function NewThreadModal({
   // directory — arms the name field with the reason shown (each error's
   // own words: the field flow's failures read "Create failed: …", the
   // picker's read the picker's case). A cancelled pick (null) rests the
-  // dialog untouched, bb's own answer to a null pick.
+  // dialog untouched, VesnALIA's own answer to a null pick.
   const startCreateProject = useCallback(() => {
     if (onCreateProjectFromPicker === undefined || pickingPending) {
       if (!pickingPending) setCreatingProject(true);
@@ -314,14 +314,14 @@ export function NewThreadModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* The composer's control row needs real width — bb's guidance is that
+      {/* The composer's control row needs real width — VesnALIA's guidance is that
       it does not fit a ~420px column, so the dialog runs wider than the
       pane's default. */}
       <DialogContent className="max-w-3xl">
         {onMaximize ? (
           // A further 16px inset from the dialog's own close (right-4), so the
           // two header buttons leave a clear gap instead of abutting and
-          // reading as one control. Maximize expands this composer into bb's
+          // reading as one control. Maximize expands this composer into VesnALIA's
           // main new-thread view, seeds and prompt text riding along, without
           // spending the draft on a spawn.
           <button
@@ -392,7 +392,7 @@ export function NewThreadModal({
         </DialogHeader>
         {spawnFailed ? (
           <p role="alert" className="text-sm text-destructive">
-            bb could not start the thread. Your draft is kept — try again.
+            alia could not start the thread. Your draft is kept — try again.
           </p>
         ) : null}
         {/* No scroll wrapper around the composer: the host promptbox's
@@ -403,7 +403,7 @@ export function NewThreadModal({
         overflow risk the old max-h-[70vh] guard chased does not warrant
         resurrecting the clipper; the host keeps its own internal editor
         scroll. */}
-        {/* The composer wrapper is the plugin's own (bb's DOM is only read,
+        {/* The composer wrapper is the plugin's own (VesnALIA's DOM is only read,
         never written): it carries `relative` so the floating New project
         button (below, when the pickers row is anchored) absolute-positions
         against it, and so lib/composer-row-anchor's offsets and the row's

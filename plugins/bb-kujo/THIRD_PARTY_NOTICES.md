@@ -1,8 +1,8 @@
 # Attribution
 
-- Kujo / SiteKit design tokens and Kujo mark: Kujo, https://kujolang.ai and https://github.com/kujolang/site-kit. SiteKit MIT text is included in `assets/SiteKit-LICENSE.txt`. Kujo branding remains attributable to Kujo; this plugin is not an official bb product.
+- Kujo / SiteKit design tokens and Kujo mark: Kujo, https://kujolang.ai and https://github.com/kujolang/site-kit. SiteKit MIT text is included in `assets/SiteKit-LICENSE.txt`. Kujo branding remains attributable to Kujo; this plugin is not an official VesnALIA product.
 - Departure Mono by Helena Zhang: SIL Open Font License 1.1. Unmodified font distributed in `assets/DepartureMono-Regular.woff2` and embedded in the generated stylesheet. Full copyright and OFL text: `assets/DepartureMono-LICENSE.txt`.
-- bb is MIT licensed: https://github.com/get-bb/bb. The separate compatibility patch contains a small bb source excerpt; its MIT license is included in `assets/bb-LICENSE.txt`. No third-party theme design is redistributed. Research references are in `docs/research.md`.
+- VesnALIA is MIT licensed: https://github.com/get-bb/bb. The separate compatibility patch contains a small VesnALIA source excerpt; its MIT license is included in `assets/alia-LICENSE.txt`. No third-party theme design is redistributed. Research references are in `docs/research.md`.
 
 No remote fonts, scripts, analytics, telemetry or runtime CDN dependencies.
 

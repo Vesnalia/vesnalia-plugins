@@ -1,11 +1,11 @@
-// bb-plugin-keep-last-blocks-open: frontend entry.
+// alia-plugin-keep-last-blocks-open: frontend entry.
 //
 // keep-open.ts folds timeline blocks from a content script, which has no React
 // context. Its settings come from the plugin's settings through useSettings.
-// The thread action below hands them over: bb calls its useData once for the
+// The thread action below hands them over: VesnALIA calls its useData once for the
 // whole app, and item returns null, so no button ever shows.
 import { useEffect } from "react";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 import { keepLastBlocksOpen, setKeepConfig } from "./keep-open";
 
 export default definePluginApp((app) => {

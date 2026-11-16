@@ -1,8 +1,8 @@
 /**
  * The app bundle must not import `shared/contract.ts` at run time: that file
- * imports `defineRpcContract` from the SDK root, which bb provides to the
+ * imports `defineRpcContract` from the SDK root, which VesnALIA provides to the
  * server bundle only and shims for no app bundle. Before the SDK became a
- * production dependency (for the server's `@get-bb/plugin-sdk/process`), a git
+ * production dependency (for the server's `@vesnalia/plugin-sdk/process`), a git
  * install had no copy to bundle and the build failed there and nowhere else;
  * now it would quietly bundle server-side SDK code into the app.
  */

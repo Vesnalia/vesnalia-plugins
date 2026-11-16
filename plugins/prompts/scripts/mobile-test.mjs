@@ -1,6 +1,6 @@
-// Mobile functional test for the Prompts plugin, driven against a real bb.
+// Mobile functional test for the Prompts plugin, driven against a real VesnALIA.
 //
-//   BB_DEMO_PROJECT=proj_… BB_DEMO_THREAD=thr_… npm run mobile-test
+//   ALIA_DEMO_PROJECT=proj_… ALIA_DEMO_THREAD=thr_… npm run mobile-test
 //
 // Emulates real touch devices (Playwright sets pointer:coarse and hover:none,
 // which is what the plugin's compact/coarse branches key off) and exercises the
@@ -9,21 +9,21 @@
 // dialog has to survive the on-screen keyboard.
 //
 // Two notes for anyone reading a failure:
-//   - T3 measures the pill against bb's OWN composer buttons, not a fixed 44pt.
-//     bb scopes touch sizing to narrow viewports, so a flat minimum would fail
+//   - T3 measures the pill against VesnALIA's OWN composer buttons, not a fixed 44pt.
+//     VesnALIA scopes touch sizing to narrow viewports, so a flat minimum would fail
 //     the host itself on a tablet.
 //   - T7 queues a real prompt and does not clean up after itself. Remove the
-//     "regression check mobile-*" rows with `bb prompts rm` when you are done.
+//     "regression check mobile-*" rows with `alia prompts rm` when you are done.
 import { chromium, devices } from "playwright";
 
-const APP = process.env.BB_APP_URL ?? "http://localhost:16581";
-const PROJECT = process.env.BB_DEMO_PROJECT;
-const THREAD = process.env.BB_DEMO_THREAD;
+const APP = process.env.ALIA_APP_URL ?? "http://localhost:16581";
+const PROJECT = process.env.ALIA_DEMO_PROJECT;
+const THREAD = process.env.ALIA_DEMO_THREAD;
 
 if (!PROJECT || !THREAD) {
   console.error(
-    "Set BB_DEMO_PROJECT and BB_DEMO_THREAD to a seeded demo thread, e.g.\n" +
-      "  BB_DEMO_PROJECT=proj_… BB_DEMO_THREAD=thr_… npm run mobile-test",
+    "Set ALIA_DEMO_PROJECT and ALIA_DEMO_THREAD to a seeded demo thread, e.g.\n" +
+      "  ALIA_DEMO_PROJECT=proj_… ALIA_DEMO_THREAD=thr_… npm run mobile-test",
   );
   process.exit(1);
 }
@@ -97,8 +97,8 @@ async function run(target) {
     if (pillCount === 0) throw new Error("no queue pill; cannot continue");
 
     // T3 — touch target, measured against the host rather than a fixed number.
-    // bb scopes its own touch sizing to narrow viewports: on a tablet its own
-    // composer buttons stay 32px, so an absolute 44pt rule would fail bb itself.
+    // VesnALIA scopes its own touch sizing to narrow viewports: on a tablet its own
+    // composer buttons stay 32px, so an absolute 44pt rule would fail VesnALIA itself.
     // The standard that actually means something is that this plugin's pill is
     // never the smallest control in the row it lives in.
     const targets = await page.evaluate(() => {
@@ -224,7 +224,7 @@ async function run(target) {
     let navOk = false, navTxt = "";
     // Only reveal the sidebar when it is actually hidden. On a tablet it is
     // already open, and toggling would close it and hide the nav entry.
-    // Route straight to the panel. Reaching it via the sidebar exercises bb's
+    // Route straight to the panel. Reaching it via the sidebar exercises VesnALIA's
     // off-canvas drawer animation, not this plugin, and tapping mid-transition
     // is flaky; what matters here is that the plugin's own surface renders and
     // is usable at this width.

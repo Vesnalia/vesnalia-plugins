@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.ts";
 
 let hostNumber = 0;
@@ -52,13 +52,13 @@ async function loadHost({ connections, tokens, fetchResponse }) {
   globalThis.fetch = (input, init) => fetchResponse(new URL(input), init);
   const host = createFakePluginHost({
     pluginId: "sentry-lifecycle-" + id,
-    dataDir: "/tmp/bb-sentry-lifecycle-" + id,
+    dataDir: "/tmp/alia-sentry-lifecycle-" + id,
     settings: { connectionTokens: JSON.stringify(tokens) },
     sdk: { plugins: { updateSettings: () => undefined } },
   });
   try {
-    await host.bb.storage.kv.set("sentry-connections", connections);
-    await plugin(host.bb);
+    await host.alia.storage.kv.set("sentry-connections", connections);
+    await plugin(host.alia);
     return {
       host,
       restore: () => {
@@ -107,7 +107,7 @@ test("aborting the background service aborts fetch and leaves no failure state",
     service.controller.abort();
     await service.done;
     assert.equal(aborted, true);
-    const db = loaded.host.bb.storage.database();
+    const db = loaded.host.alia.storage.database();
     assert.equal(db.prepare("SELECT COUNT(*) AS count FROM issue_snapshots").get().count, 0);
     assert.equal(db.prepare("SELECT COUNT(*) AS count FROM connection_health").get().count, 0);
   } finally {
@@ -188,8 +188,8 @@ test("connection removal invalidates an in-flight refresh before it can write st
     pending.resolve(response([issue("stale")]));
     await assert.rejects(refresh, /aborted|superseded/iu);
     await removal;
-    assert.deepEqual(await loaded.host.bb.storage.kv.get("sentry-connections"), []);
-    const db = loaded.host.bb.storage.database();
+    assert.deepEqual(await loaded.host.alia.storage.kv.get("sentry-connections"), []);
+    const db = loaded.host.alia.storage.database();
     for (const table of ["issue_snapshots", "issue_details", "connection_health", "triage_thread_links"]) {
       assert.equal(db.prepare("SELECT COUNT(*) AS count FROM " + table).get().count, 0);
     }
@@ -239,7 +239,7 @@ test("serializes refresh and pagination so load-more observes the newest cursor"
   }
 });
 
-test("rejects metadata that would exceed the BB KV limit before touching secrets", async () => {
+test("rejects metadata that would exceed the VesnALIA KV limit before touching secrets", async () => {
   const longSlug = (id, index) => id + "-" + String(index).padStart(2, "0") + "-" + "p".repeat(180);
   const heavy = (id) => {
     const projectSlugs = Array.from({ length: 50 }, (_, index) => longSlug(id, index));
@@ -279,7 +279,7 @@ test("rejects metadata that would exceed the BB KV limit before touching secrets
   const tokens = Object.fromEntries(connections.map((item) => [item.id, "test-token"]));
   const loaded = await loadHost({ connections, tokens, fetchResponse: async () => response([]) });
   try {
-    const before = await loaded.host.bb.storage.kv.get("sentry-connections");
+    const before = await loaded.host.alia.storage.kv.get("sentry-connections");
     await assert.rejects(
       loaded.host.harness.behavior.callRpc("saveConnection", {
         id: "spare",
@@ -292,7 +292,7 @@ test("rejects metadata that would exceed the BB KV limit before touching secrets
       }),
       /256 KiB/iu,
     );
-    assert.deepEqual(await loaded.host.bb.storage.kv.get("sentry-connections"), before);
+    assert.deepEqual(await loaded.host.alia.storage.kv.get("sentry-connections"), before);
     assert.equal(loaded.host.harness.sdk.callsTo("plugins.updateSettings").length, 0);
   } finally {
     await cleanup(loaded);
@@ -310,7 +310,7 @@ test("rolls back metadata and keeps SQLite artifacts when connection removal sec
       connectionId: "work",
       projectSlug: "web",
     });
-    const before = await loaded.host.bb.storage.kv.get("sentry-connections");
+    const before = await loaded.host.alia.storage.kv.get("sentry-connections");
     loaded.host.harness.sdk.stub("plugins.updateSettings", () => {
       throw new Error("simulated secret storage failure");
     });
@@ -321,8 +321,8 @@ test("rolls back metadata and keeps SQLite artifacts when connection removal sec
       }),
       /secret|credentials/iu,
     );
-    assert.deepEqual(await loaded.host.bb.storage.kv.get("sentry-connections"), before);
-    const db = loaded.host.bb.storage.database();
+    assert.deepEqual(await loaded.host.alia.storage.kv.get("sentry-connections"), before);
+    const db = loaded.host.alia.storage.database();
     assert.equal(db.prepare("SELECT COUNT(*) AS count FROM issue_snapshots WHERE connection_id = 'work'").get().count, 1);
     const connections = await loaded.host.harness.behavior.callRpc("getConnections", null);
     assert.deepEqual(connections.connections.map((item) => item.id), ["work"]);

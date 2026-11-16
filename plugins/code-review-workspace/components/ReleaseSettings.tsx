@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { ReleaseStatus } from "../src/plugin-updates";
 import { Button } from "./ui/button";
@@ -13,7 +13,7 @@ const descriptions: Record<ReleaseStatus["outcome"], string> = {
   unchecked: "Check for a compatible release.",
   current: "You’re on the latest compatible release.",
   "update-available": "A compatible release is available.",
-  incompatible: "A newer release needs a newer BB or Node version. Update your BB server, then check again.",
+  incompatible: "A newer release needs a newer VesnALIA or Node version. Update your VesnALIA server, then check again.",
   pinned: "This is a local or pinned installation. Installations from a Git version range can follow compatible releases.",
   unavailable: "Couldn’t resolve updates. Check your connection and try again.",
 };
@@ -43,10 +43,10 @@ export function ReleaseSettings({ clientId, disabled, onUpdatingChange }: { clie
       else if (action === "toggle" && status) setStatus(await rpc.call("setAutomaticUpdates", { enabled: !status.automatic }));
       else if (status?.candidateVersion) {
         const result = await rpc.call("applyPluginUpdate", { clientId, candidateVersion: status.candidateVersion });
-        if (result.outcome === "rolled-back") setError("The update failed and BB restored the previous version. Check for updates before retrying.");
+        if (result.outcome === "rolled-back") setError("The update failed and VesnALIA restored the previous version. Check for updates before retrying.");
         else { setMessage(result.outcome === "updated" ? `Updated${result.version ? ` to ${result.version}` : ""}. Reopen Code Review Workspace to load it.` : "Already on the latest compatible release."); await rpc.call("getReleaseStatus", null).then(setStatus).catch(() => {}); }
       }
-    } catch (error) { setError(error instanceof Error ? error.message : "Couldn’t complete the update. Your reviews stay saved in BB."); }
+    } catch (error) { setError(error instanceof Error ? error.message : "Couldn’t complete the update. Your reviews stay saved in VesnALIA."); }
     finally { setBusy(""); if (action === "update") onUpdatingChange?.(false); }
   }
   return <section aria-label="Plugin updates" className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-xs">
@@ -58,7 +58,7 @@ export function ReleaseSettings({ clientId, disabled, onUpdatingChange }: { clie
       <a className={cn("relative self-center text-xs text-muted-foreground underline underline-offset-4", TOUCH_TARGET)} href="https://github.com/AndrewBird81/bb-plugin-code-review-workspace/releases" target="_blank" rel="noreferrer">Release notes</a>
     </div>
     {disabled && <p className="text-xs text-muted-foreground">Save or discard your settings edits before updating.</p>}
-    <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 size-4 shrink-0 accent-(--primary)" checked={status?.automatic ?? false} disabled={!status || !!busy || (status.outcome === "pinned" && !status.automatic)} onChange={() => void perform("toggle")} /><span><span className="font-medium">Update automatically when idle</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Off by default. Checks hourly after five idle minutes, once all review and Settings pages are closed. Installs the latest compatible release through BB; saved reviews, drafts, notes, and preferences stay in place.</span></span></label>
+    <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 size-4 shrink-0 accent-(--primary)" checked={status?.automatic ?? false} disabled={!status || !!busy || (status.outcome === "pinned" && !status.automatic)} onChange={() => void perform("toggle")} /><span><span className="font-medium">Update automatically when idle</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Off by default. Checks hourly after five idle minutes, once all review and Settings pages are closed. Installs the latest compatible release through VesnALIA; saved reviews, drafts, notes, and preferences stay in place.</span></span></label>
     {(error || status?.error) && <p role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive-text"><Icon name="AlertCircle" className="mt-0.5 size-4 shrink-0" aria-hidden />{error || status?.error}</p>}
     {message && <p role="status" className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-sm text-diff-added"><Icon name="CircleCheck" className="mt-0.5 size-4 shrink-0" aria-hidden />{message}</p>}
   </section>;
@@ -85,17 +85,17 @@ export function SetupReadiness({ account }: { account?: ReactNode }) {
   useEffect(() => { void check(); }, [rpc]);
   return <section aria-label="Setup" className="space-y-3 rounded-xl border border-border bg-card p-5 shadow-xs">
     <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><IconTile tone="primary" icon="BadgeCheck" /><h2 className="text-sm font-semibold">Ready to review</h2></div><Button variant="ghost" size="sm" className={TOUCH_CONTROL} disabled={busy} onClick={() => void check()}>{busy ? "Checking…" : "Check setup"}</Button></div>
-    <p className="max-w-[75ch] text-sm text-muted-foreground">Connect GitHub on the machine running BB, then paste a PR link. Guides use your BB agent and its normal usage allowance.</p>
+    <p className="max-w-[75ch] text-sm text-muted-foreground">Connect GitHub on the machine running VesnALIA, then paste a PR link. Guides use your VesnALIA agent and its normal usage allowance.</p>
     {setup && <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border text-sm">
-      <ReadinessRow ok={setup.githubCli}>{setup.githubCli ? "GitHub CLI installed" : "Install GitHub CLI on the BB server."}</ReadinessRow>
-      <ReadinessRow ok={!!setup.account} action={setup.account ? account : undefined}>{setup.account ? <>GitHub account: <strong>@{setup.account}</strong></> : <>Sign in on the BB server: <code className="break-all text-xs">gh auth login --hostname github.com</code></>}</ReadinessRow>
-      {setup.account && Array.isArray(setup.missingScopes) && setup.missingScopes.length ? <ReadinessRow ok={false}>Your GitHub token is missing {setup.missingScopes.map((scope, i) => <span key={scope}>{i ? " and " : ""}<code className="text-xs">{scope}</code></span>)}. Posting needs <code className="text-xs">repo</code>, and team reviewers need <code className="text-xs">read:org</code>. On the BB server, run <code className="break-all text-xs">gh auth refresh -h github.com -s {setup.missingScopes.join(",")}</code></ReadinessRow> : null}
+      <ReadinessRow ok={setup.githubCli}>{setup.githubCli ? "GitHub CLI installed" : "Install GitHub CLI on the VesnALIA server."}</ReadinessRow>
+      <ReadinessRow ok={!!setup.account} action={setup.account ? account : undefined}>{setup.account ? <>GitHub account: <strong>@{setup.account}</strong></> : <>Sign in on the VesnALIA server: <code className="break-all text-xs">gh auth login --hostname github.com</code></>}</ReadinessRow>
+      {setup.account && Array.isArray(setup.missingScopes) && setup.missingScopes.length ? <ReadinessRow ok={false}>Your GitHub token is missing {setup.missingScopes.map((scope, i) => <span key={scope}>{i ? " and " : ""}<code className="text-xs">{scope}</code></span>)}. Posting needs <code className="text-xs">repo</code>, and team reviewers need <code className="text-xs">read:org</code>. On the VesnALIA server, run <code className="break-all text-xs">gh auth refresh -h github.com -s {setup.missingScopes.join(",")}</code></ReadinessRow> : null}
       {setup.account && setup.missingScopes === "unlisted" && <ReadinessRow ok={null}>Your GitHub token doesn’t list its scopes, as fine-grained tokens don’t, so they weren’t checked. If posting fails, check the token’s access to the repo.</ReadinessRow>}
       {setup.account && setup.missingScopes === null && <ReadinessRow ok={null}>Couldn’t check your GitHub token’s scopes. Check setup again.</ReadinessRow>}
-      <ReadinessRow ok={setup.agentAvailable}>{setup.agentAvailable === true ? "BB agent available" : setup.agentAvailable === false ? "Connect an agent provider in BB Settings before generating a guide." : "Couldn’t verify the agent provider. Check BB Settings."}</ReadinessRow>
-      {setup.projectAvailable !== true && <ReadinessRow ok={setup.projectAvailable}>{setup.projectAvailable === false ? "Add a BB project before starting a review." : "Couldn’t verify the BB project. Check your project list."}</ReadinessRow>}
+      <ReadinessRow ok={setup.agentAvailable}>{setup.agentAvailable === true ? "VesnALIA agent available" : setup.agentAvailable === false ? "Connect an agent provider in VesnALIA Settings before generating a guide." : "Couldn’t verify the agent provider. Check VesnALIA Settings."}</ReadinessRow>
+      {setup.projectAvailable !== true && <ReadinessRow ok={setup.projectAvailable}>{setup.projectAvailable === false ? "Add a VesnALIA project before starting a review." : "Couldn’t verify the VesnALIA project. Check your project list."}</ReadinessRow>}
     </ul>}
-    <p className="max-w-[75ch] text-xs leading-relaxed text-muted-foreground">Use your own BB installation for your own GitHub identity. On a shared installation, account selection and saved reviews are shared. The selected account must have access to the PR repository.</p>
+    <p className="max-w-[75ch] text-xs leading-relaxed text-muted-foreground">Use your own VesnALIA installation for your own GitHub identity. On a shared installation, account selection and saved reviews are shared. The selected account must have access to the PR repository.</p>
     {error && <p role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive-text"><Icon name="AlertCircle" className="mt-0.5 size-4 shrink-0" aria-hidden />{error}</p>}
   </section>;
 }

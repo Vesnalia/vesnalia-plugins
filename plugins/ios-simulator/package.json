@@ -1,15 +1,15 @@
 {
-  "name": "bb-plugin-ios-simulator",
+  "name": "alia-plugin-ios-simulator",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37",
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37",
     "node": ">=20"
   },
-  "bb": {
+  "alia": {
     "name": "iOS Simulator",
-    "description": "Run iOS simulators and Android emulators beside your BB thread, with shared controls and tools for agents to launch and test apps.",
+    "description": "Run iOS simulators and Android emulators beside your VesnALIA thread, with shared controls and tools for agents to launch and test apps.",
     "branding": {
       "icon": "Smartphone",
       "experimental_icons": {
@@ -42,7 +42,6 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -75,21 +74,34 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
-  "description": "Run and control iOS simulators and Android emulators beside a BB thread.",
+  "description": "Run and control iOS simulators and Android emulators beside a VesnALIA thread.",
   "license": "MIT",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "build:native": "./scripts/build-native.sh",
     "build:pasteboard": "./scripts/build-pasteboard.sh"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/peteabu/bb-plugin-ios-simulator.git"
   },
   "author": {
     "name": "Peter Abu",
     "url": "https://github.com/peteabu"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ios-simulator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ios-simulator"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

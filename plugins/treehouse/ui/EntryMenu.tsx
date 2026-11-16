@@ -4,10 +4,10 @@ import {
   experimental_copyToClipboard,
   experimental_saveFile,
   experimental_useCanOpenFileExternally,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { entryName } from "../contract";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -88,9 +88,9 @@ type Prompt =
  * the same way.
  */
 export function useEntryActions({ rpc, environmentId, rootPath, openFile, onChanged }: EntryActionsOptions) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const sdk = useSdk();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [notice, setNotice] = useState<{
     text: string;

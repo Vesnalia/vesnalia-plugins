@@ -98,13 +98,13 @@ const GRAPHITE = "#3b3b3e";
 const GRAPHITE_DEEP = "#2a2a2c";
 const GLASS = "#060607";
 const SVG = "http://www.w3.org/2000/svg";
-const STYLE_ID = "bb-box-device-stage-style";
+const STYLE_ID = "alia-box-device-stage-style";
 const STAGE_CSS = `
-.bb-device-body-art { filter: drop-shadow(0 0 1px rgba(0,0,0,0.35)) drop-shadow(0 10px 28px rgba(0,0,0,0.22)); }
-.bb-device-edge { stroke: rgba(0,0,0,0); }
-:where(.dark) .bb-device-body-art { filter: none; }
-:where(.dark) .bb-device-edge { stroke: rgba(255,255,255,0.22); }
-.bb-device-label { color: var(--muted-foreground, #8a8a8e); }
+.alia-device-body-art { filter: drop-shadow(0 0 1px rgba(0,0,0,0.35)) drop-shadow(0 10px 28px rgba(0,0,0,0.22)); }
+.alia-device-edge { stroke: rgba(0,0,0,0); }
+:where(.dark) .alia-device-body-art { filter: none; }
+:where(.dark) .alia-device-edge { stroke: rgba(255,255,255,0.22); }
+.alia-device-label { color: var(--muted-foreground, #8a8a8e); }
 `;
 
 function ensureStyle(): void {
@@ -133,13 +133,13 @@ function roundedRect(x: number, y: number, width: number, height: number, radius
 export function bodyArt(shape: FrameShape, scale: number): SVGSVGElement {
   const { body } = shape;
   const svg = svgElement("svg", { viewBox: `0 0 ${body.width} ${body.height}`, width: body.width * scale, height: body.height * scale, "aria-hidden": "true" });
-  svg.setAttribute("class", "bb-device-body-art");
+  svg.setAttribute("class", "alia-device-body-art");
   svg.style.cssText = "position:absolute;left:0;top:0;overflow:visible;pointer-events:none";
   for (const button of shape.buttons) svg.appendChild(roundedRect(button.x, button.y, button.width, button.height, Math.min(button.width, button.height) / 2, GRAPHITE_DEEP));
   if (shape.framed) {
     svg.appendChild(roundedRect(0, 0, body.width, body.height, body.radius, GRAPHITE));
     const edge = roundedRect(0.5, 0.5, body.width - 1, body.height - 1, body.radius, "none");
-    edge.setAttribute("class", "bb-device-edge");
+    edge.setAttribute("class", "alia-device-edge");
     edge.setAttribute("stroke-width", String(Math.max(1, 1 / scale)));
     edge.setAttribute("vector-effect", "non-scaling-stroke");
     svg.appendChild(edge);
@@ -239,7 +239,7 @@ export class DeviceStage {
   constructor(canvas: HTMLCanvasElement, model: string | null) {
     ensureStyle();
     this.#canvas = canvas;
-    this.element.className = "bb-device-stage";
+    this.element.className = "alia-device-stage";
     this.element.style.cssText = "position:absolute;inset:0;overflow:hidden";
     this.#content.style.cssText = "position:relative;min-width:100%;min-height:100%";
     this.#device.style.cssText = "position:absolute;left:0;top:0;transform-origin:50% 50%";
@@ -247,7 +247,7 @@ export class DeviceStage {
     this.#crease.style.cssText = "position:absolute;inset:0;pointer-events:none";
     this.#veil.style.cssText = "position:absolute;inset:0;pointer-events:none;background:rgba(0,0,0,0.38);opacity:0;transition:opacity 160ms ease-out";
     this.#cutout.style.cssText = "position:absolute;background:#000;pointer-events:none";
-    this.#label.className = "bb-device-label";
+    this.#label.className = "alia-device-label";
     this.#label.style.cssText = "position:absolute;left:0;right:0;text-align:center;font-size:12px;pointer-events:none";
     this.#words.style.cssText = "position:absolute;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:#f2f2f4;font-size:13px;line-height:1.35;padding:16px;box-sizing:border-box";
     this.#words.setAttribute("role", "status");

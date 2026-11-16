@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-code-review-workspace",
+  "name": "alia-plugin-code-review-workspace",
   "version": "1.13.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.48.0",
-    "bbPluginSdk": ">=0.6.79",
+    "alia": ">=0.48.0",
+    "aliaPluginSdk": ">=0.6.79",
     "node": ">=24"
   },
-  "bb": {
+  "alia": {
     "name": "Code Review Workspace",
     "description": "Read a pull request or local diff as a chaptered guide, edit the comments and verdict the review agent drafts, see whose turn each review is, re-review against your earlier feedback, and submit pull request reviews to GitHub.",
     "branding": {
@@ -31,7 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-popover": "^1.1.19",
@@ -64,12 +63,12 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "build": "bb plugin build",
-    "check": "npm test && npm run typecheck && npm run lint && bb plugin types --check && npm run build"
+    "build": "alia plugin build",
+    "check": "npm test && npm run typecheck && npm run lint && alia plugin types --check && npm run build"
   },
-  "description": "A code review workspace for BB: chaptered guides to pull requests and local diffs, a review agent that drafts comments and a verdict you edit, and pull request reviews submitted to GitHub.",
+  "description": "A code review workspace for VesnALIA: chaptered guides to pull requests and local diffs, a review agent that drafts comments and a verdict you edit, and pull request reviews submitted to GitHub.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "code-review",
     "pull-request",
     "github",
@@ -82,10 +81,22 @@
   "contributors": [
     "Pritam Sharma (https://github.com/notpritam)"
   ],
-  "homepage": "https://github.com/AndrewBird81/bb-plugin-code-review-workspace#readme",
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/code-review-workspace#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AndrewBird81/bb-plugin-code-review-workspace.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/code-review-workspace"
   },
-  "license": "MIT"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

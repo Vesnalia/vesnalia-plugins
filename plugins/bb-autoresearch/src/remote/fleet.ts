@@ -50,7 +50,7 @@ import { clip, formatDuration, safeJson } from "../prompts.ts";
 import type { RemoteBenchSpec, StudySpec } from "../spec.ts";
 
 /** Label every machine carries, so `list` finds this plugin's machines (and orphans). */
-export const OWNER_LABEL = { owner: "bb-autoresearch" } as const;
+export const OWNER_LABEL = { owner: "alia-autoresearch" } as const;
 
 export interface FleetHooks {
   notify(study: StudyRow, kind: string, text: string, opts?: { quiet?: boolean }): Promise<void>;
@@ -140,7 +140,7 @@ export class RemoteFleet {
   client(provider: string): BenchProviderClient {
     let c = this.clients.get(provider);
     if (!c) {
-      c = new BenchProviderClient(provider, (method, input, schema) => this.ctx.bb.callPlugin(provider, method, input, schema), { retryMs: 1000 });
+      c = new BenchProviderClient(provider, (method, input, schema) => this.ctx.alia.callPlugin(provider, method, input, schema), { retryMs: 1000 });
       this.clients.set(provider, c);
     }
     return c;
@@ -156,7 +156,7 @@ export class RemoteFleet {
       r = new RemoteBenchRunner(this.client(row.provider), row.remote_id ?? "", row.bench_host_id, {
         home: row.home,
         env: this.machineEnv(row, entry),
-        stagingDir: this.config.stagingDir ?? join(tmpdir(), "bb-autoresearch-staging"),
+        stagingDir: this.config.stagingDir ?? join(tmpdir(), "alia-autoresearch-staging"),
         pollMs: this.config.execPollMs,
         onLost: (reason) => this.lostByRunner(row.id, reason),
       });
@@ -182,7 +182,7 @@ export class RemoteFleet {
       ...(entry?.env ?? {}),
       AUTORESEARCH_REMOTE: "1",
       AUTORESEARCH_CORES: String(row.cores),
-      ...(row.home && row.seed_sha ? { AUTORESEARCH_SEED: `${row.home}/bb-autoresearch/seed/${row.seed_sha}` } : {}),
+      ...(row.home && row.seed_sha ? { AUTORESEARCH_SEED: `${row.home}/alia-autoresearch/seed/${row.seed_sha}` } : {}),
     };
   }
 
@@ -489,7 +489,7 @@ export class RemoteFleet {
         return;
       } catch (e) {
         if (e instanceof BenchProviderError && e.code === "not_found") return;
-        if (i === 2) this.ctx.bb.log("warn", `remote bench: destroying ${provider} machine ${remoteId} failed: ${errText(e)} (orphan cleanup retries on the next load)`);
+        if (i === 2) this.ctx.alia.log("warn", `remote bench: destroying ${provider} machine ${remoteId} failed: ${errText(e)} (orphan cleanup retries on the next load)`);
       }
     }
   }
@@ -501,7 +501,7 @@ export class RemoteFleet {
       try {
         await fn();
       } catch (e) {
-        if (!this.ctx.disposed) this.ctx.bb.log("warn", `remote bench ${key}: ${errText(e)}`);
+        if (!this.ctx.disposed) this.ctx.alia.log("warn", `remote bench ${key}: ${errText(e)}`);
       } finally {
         this.jobs.delete(key);
       }
@@ -658,7 +658,7 @@ export class RemoteFleet {
       this.phase(rowId, `uploading the seed (${mib(seed.bytes ?? 0)})`);
       await runner.installSeed(seed.path!, seed.sha256!, signal);
       this.store.updateRemoteHost(rowId, { seed_sha: seed.sha256 });
-      runner.setEnv({ AUTORESEARCH_SEED: `${home}/bb-autoresearch/seed/${seed.sha256}` });
+      runner.setEnv({ AUTORESEARCH_SEED: `${home}/alia-autoresearch/seed/${seed.sha256}` });
     }
     this.phase(rowId, `uploading the repository (${mib(base.bytes ?? 0)}, shallow at the study base)`);
     await runner.initRepo(base.path!, base.sha256!, baseSha, signal);
@@ -837,7 +837,7 @@ export class RemoteFleet {
     let job = this.artifactJobs.get(key);
     if (!job) {
       job = (async () => {
-        const edit = this.ctx.bb.hostRunner(study.host_id!);
+        const edit = this.ctx.alia.hostRunner(study.host_id!);
         const b = await edit.baseBundle(study.repo_path!, baseSha);
         return this.store.upsertArtifact({ study_id: study.id, kind: "base", entry: -1, key: baseSha, state: "ok", path: b.path, sha256: b.sha256, bytes: b.bytes, files: null, detail_json: JSON.stringify({ cached: b.cached }) });
       })();
@@ -857,7 +857,7 @@ export class RemoteFleet {
     const k = this.seedKey(study, entryIndex, baseline);
     const cached = this.store.artifact(study.id, "seed", entryIndex, k);
     if (cached?.state === "refused") throw new SeedError(`the seed was refused: ${seedRefusalText(cached)}`, true);
-    const edit = this.ctx.bb.hostRunner(study.host_id!);
+    const edit = this.ctx.alia.hostRunner(study.host_id!);
     if (cached?.state === "ok" && cached.path) {
       const there = await edit.exec({ cwd: study.repo_path!, command: `test -f '${cached.path.replace(/'/gu, `'\\''`)}'`, timeoutMs: 30_000 }).catch(() => null);
       if (there?.exitCode === 0) return cached;
@@ -873,7 +873,7 @@ export class RemoteFleet {
   }
 
   private async buildSeed(study: StudyRow, entryIndex: number, entry: RemoteBenchSpec, baseline: string, key: string): Promise<RemoteArtifactRow> {
-    const edit = this.ctx.bb.hostRunner(study.host_id!);
+    const edit = this.ctx.alia.hostRunner(study.host_id!);
     const spec = this.store.spec(study);
     const dir = await edit.checkout(study.repo_path!, `${study.slug}-seed`, baseline);
     this.store.event(study.id, "remote.seed_building", "plugin", { entry: entryIndex, baseline });
@@ -981,7 +981,7 @@ export class RemoteFleet {
       try {
         hosts = (await this.client(provider).call("benchProvider.list", { labels: { ...OWNER_LABEL } }, { retries: 1 })).hosts;
       } catch (e) {
-        this.ctx.bb.log("info", `remote bench: listing ${provider} machines failed: ${errText(e)}`);
+        this.ctx.alia.log("info", `remote bench: listing ${provider} machines failed: ${errText(e)}`);
         continue;
       }
       const live = this.store.liveRemoteHosts().filter((r) => r.provider === provider);
@@ -1025,7 +1025,7 @@ export class RemoteFleet {
     for (const r of live) this.leave(r, reason, { expected: true });
     await this.settle();
     await this.cleanupOrphans([...new Set([...live.map((r) => r.provider), ...this.entries(study).map((e) => e.provider)])]);
-    await this.gcArtifacts("study archived").catch((e) => this.ctx.bb.log("warn", `remote bench artifact cleanup: ${errText(e)}`));
+    await this.gcArtifacts("study archived").catch((e) => this.ctx.alia.log("warn", `remote bench artifact cleanup: ${errText(e)}`));
     return live.length;
   }
 
@@ -1098,7 +1098,7 @@ export class RemoteFleet {
       const exp = status.expiresAt ? Date.parse(status.expiresAt) : NaN;
       if (Number.isFinite(exp) && (row.expires_at === null || exp < row.expires_at)) this.store.updateRemoteHost(rowId, { expires_at: exp });
       const runner = this.runnerOf(row);
-      const seedDir = row.seed_sha ? `${row.home}/bb-autoresearch/seed/${row.seed_sha}` : null;
+      const seedDir = row.seed_sha ? `${row.home}/alia-autoresearch/seed/${row.seed_sha}` : null;
       const probe = await runner
         .exec({ cwd: row.home!, command: `test -f ${q(`${runner.repoPath}/HEAD`)}${seedDir ? ` && test -f ${q(`${seedDir}/.autoresearch-seed-ok`)}` : ""} && echo ok`, timeoutMs: 60_000 })
         .catch((e: unknown) => ({ exitCode: -1, stdout: "", stderr: errText(e), timedOut: false, durationMs: 0 }));
@@ -1200,16 +1200,16 @@ export class RemoteFleet {
       if (this.ctx.disposed) break;
       let report: ArtifactReport;
       try {
-        report = await this.ctx.bb.hostRunner(hostId).artifacts({ keep: [...keep], gc: true });
+        report = await this.ctx.alia.hostRunner(hostId).artifacts({ keep: [...keep], gc: true });
       } catch (e) {
-        this.ctx.bb.log("info", `remote bench: artifact cleanup on ${hostId} failed: ${errText(e)}`);
+        this.ctx.alia.log("info", `remote bench: artifact cleanup on ${hostId} failed: ${errText(e)}`);
         continue;
       }
       out.set(hostId, report);
       this.artifactReports.set(hostId, { at: this.ctx.now(), report, reason });
       if (report.deleted.files || report.scratch) {
         this.store.event(null, "remote.artifacts_deleted", "plugin", { host: hostId, reason, files: report.deleted.files, bytes: report.deleted.bytes, scratch: report.scratch, kept: report.seeds.files + report.bases.files - report.deleted.files });
-        this.ctx.bb.log("info", `remote bench: deleted ${report.deleted.files} unused seed(s) and base bundle(s) (${mib(report.deleted.bytes)}) on ${hostId} (${reason})`);
+        this.ctx.alia.log("info", `remote bench: deleted ${report.deleted.files} unused seed(s) and base bundle(s) (${mib(report.deleted.bytes)}) on ${hostId} (${reason})`);
       }
     }
     return out;
@@ -1224,9 +1224,9 @@ export class RemoteFleet {
     if (!study.host_id) return null;
     let report: ArtifactReport;
     try {
-      // A report for `bb study bench`: don't hold the command for long on a slow disk.
+      // A report for `alia study bench`: don't hold the command for long on a slow disk.
       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 15_000).unref?.());
-      report = await Promise.race([this.ctx.bb.hostRunner(study.host_id).artifacts({ keep: [], gc: false }), timeout]);
+      report = await Promise.race([this.ctx.alia.hostRunner(study.host_id).artifacts({ keep: [], gc: false }), timeout]);
     } catch {
       return null;
     }
@@ -1254,7 +1254,7 @@ export class RemoteFleet {
   }
 }
 
-/** Seeds and base bundles on a study's edit host (`bb study bench`, the Bench tab). */
+/** Seeds and base bundles on a study's edit host (`alia study bench`, the Bench tab). */
 export interface ArtifactUsage {
   seeds: { files: number; bytes: number };
   bases: { files: number; bytes: number };

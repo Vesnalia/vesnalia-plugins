@@ -1,13 +1,13 @@
-// Installed bb 0.48.1 provider-usage.v1 protocol, as used by builtin Codex.
+// Installed VesnALIA 0.48.1 provider-usage.v1 protocol, as used by builtin Codex.
 // Only public SDK calls; no account identity is inferred from credentials.
-import { defineRpcContract } from '@get-bb/plugin-sdk';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
-import { providerUsageSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { defineRpcContract } from '@vesnalia/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
+import { providerUsageSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 import { record } from './errors.ts';
 
 const text = { type: 'string', minLength: 1 }, nullableText = { anyOf: [text, { type: 'null' }] };
 const object = (properties: Record<string, unknown>, required = Object.keys(properties)) => ({ type: 'object', properties, required });
-// Standard JSON Schema export is required for discoverable RPC in bb 0.48.1.
+// Standard JSON Schema export is required for discoverable RPC in VesnALIA 0.48.1.
 // Keep validation and publication here; no additional schema dependency.
 function schema<T>(json: Record<string, unknown>, decode: (value: unknown) => T) {
   return { '~standard': { version: 1 as const, vendor: 'zcode', jsonSchema: { input: () => json, output: () => json },
@@ -50,19 +50,19 @@ export const usageSourceContract = defineRpcContract({
   [usageList]: { input: schema<Record<string, never>>(object({}), value => { if (Object.keys(record(value)).length) throw Error(); return {}; }), output: inventory },
   [usageGet]: { input: schema<{ resourceId: string; refresh: boolean }>(object({ resourceId: text, refresh: { type: 'boolean' } }), value => { const r = record(value); if (typeof r.refresh !== 'boolean') throw Error(); return { resourceId: nonempty(r.resourceId), refresh: r.refresh }; }), output: measurement },
 });
-export function registerUsageSource(bb: BbPluginApi, providerId: string, mode: () => Promise<'desktop' | 'coding-plan-key'> = async () => 'desktop') {
+export function registerUsageSource(alia: AliaPluginApi, providerId: string, mode: () => Promise<'desktop' | 'coding-plan-key'> = async () => 'desktop') {
   const observed = new Map<string, number>();
-  const hostClient = bb.hosts?.experimental_client({ contract: codingHostContract });
+  const hostClient = alia.hosts?.experimental_client({ contract: codingHostContract });
   async function resources(): Promise<Resource[]> {
     const result: Resource[] = [];
-    for (const host of await bb.sdk.hosts.list()) {
-      const providers = await bb.sdk.providers.list({ hostId: host.id, capability: 'usage' });
-      if (providers.some(p => p.id === providerId && p.pluginId === bb.pluginId)) for (const plan of ['coding', 'start']) result.push({ id: JSON.stringify([host.id, providerId, plan]), accountKey: null,
+    for (const host of await alia.sdk.hosts.list()) {
+      const providers = await alia.sdk.providers.list({ hostId: host.id, capability: 'usage' });
+      if (providers.some(p => p.id === providerId && p.pluginId === alia.pluginId)) for (const plan of ['coding', 'start']) result.push({ id: JSON.stringify([host.id, providerId, plan]), accountKey: null,
         providerId, label: plan === 'coding' ? 'Coding Plan' : 'Start Plan', scope: { kind: 'host', hostId: host.id, hostName: host.name } });
     }
     return result;
   }
-  bb.rpc.register(usageSourceContract, {
+  alia.rpc.register(usageSourceContract, {
     [usageList]: async () => ({ resources: await resources() }),
     [usageGet]: async input => {
       const r = record(input), resourceId = nonempty(r.resourceId), refresh = r.refresh === true;
@@ -79,7 +79,7 @@ export function registerUsageSource(bb: BbPluginApi, providerId: string, mode: (
         } catch { return usageMeasurement({ status: 'error', message: 'Coding Plan usage could not be collected from this machine.' }, observed.get(resourceId) ?? null); }
       }
       let usage;
-      try { usage = (await bb.sdk.system.usageLimits({ hostId: resource.scope.hostId, providerId, refresh }))[providerId]; }
+      try { usage = (await alia.sdk.system.usageLimits({ hostId: resource.scope.hostId, providerId, refresh }))[providerId]; }
       catch { /* Fixed failure below, never a remote error body. */ }
       const checked = providerUsageSchema.parse(usage ?? { status: 'error', message: 'Start usage could not be collected from this machine.', accountEmail: null, planLabel: 'Start Plan' });
       if (checked.status === 'ok') observed.set(resourceId, Date.now());

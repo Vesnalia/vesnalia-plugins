@@ -1,6 +1,6 @@
 ---
 name: vcs-widget
-description: Read the git state of the thread's worktree with `bb vcs-widget` or the `vcs_widget_status` tool, and know which git actions belong to the human. Use when you need the current branch, the upstream, what is staged, the branch lists or recent commits — especially on a thread whose worktree lives on another machine — or before you consider running git yourself. Triggers - branch, git status, ahead/behind, upstream, uncommitted, log, "what branch am I on", commit, push.
+description: Read the git state of the thread's worktree with `alia vcs-widget` or the `vcs_widget_status` tool, and know which git actions belong to the human. Use when you need the current branch, the upstream, what is staged, the branch lists or recent commits — especially on a thread whose worktree lives on another machine — or before you consider running git yourself. Triggers - branch, git status, ahead/behind, upstream, uncommitted, log, "what branch am I on", commit, push.
 ---
 
 # Reading git through VCS Widget
@@ -11,11 +11,11 @@ work the same when the worktree is on a connected machine, where `git` in your
 own shell would read the wrong disk.
 
 ```
-bb vcs-widget status                    # branch, upstream, working tree, running job
-bb vcs-widget branches                  # local branches with ahead/behind
-bb vcs-widget branches --all --limit 20 # local and remote
-bb vcs-widget log                       # recent commits on the current branch
-bb vcs-widget log --all --grep fix      # every branch, literal message filter
+alia vcs-widget status                    # branch, upstream, working tree, running job
+alia vcs-widget branches                  # local branches with ahead/behind
+alia vcs-widget branches --all --limit 20 # local and remote
+alia vcs-widget log                       # recent commits on the current branch
+alia vcs-widget log --all --grep fix      # every branch, literal message filter
 ```
 
 Add `--json` for the data instead of the table, `--thread <id>` to read another
@@ -41,7 +41,7 @@ So:
   this conversation.
 - When you have made file edits the user should keep, say so and let them
   commit from the Commit panel, or ask before you commit yourself.
-- A read is always fine: `bb vcs-widget ...`, `git status`, `git log`,
+- A read is always fine: `alia vcs-widget ...`, `git status`, `git log`,
   `git diff`.
 
 ## Reading the output

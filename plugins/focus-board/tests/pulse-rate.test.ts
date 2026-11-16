@@ -1,5 +1,5 @@
 // The pulse-rate math behind the working dot's breathing (issue #279): the
-// period mapping and the burn-rate derivation are pure functions with no bb
+// period mapping and the burn-rate derivation are pure functions with no VesnALIA
 // and no DOM, so the whole band is pinned here instead of in a board test.
 //
 // The band copies the Activity Overview reference (thread thr_s5vbtjtgwe) so

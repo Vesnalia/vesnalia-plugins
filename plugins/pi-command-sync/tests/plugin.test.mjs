@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import plugin from "../dist/server.js";
 import hostEntry from "../dist/host.js";
 
@@ -17,16 +17,16 @@ console.log("Retained fixtures:", fixture);
 // The backend harness deletes its storage directory on dispose. Do not invoke
 // that cleanup; these tests allocate no database, service, or external thread.
 test("ordinary Pi addon, validated RPC, CLI and no provider registration", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "pi-command-sync",
     experimental_callHostRpc: ({ method }) => method === "prepareRuntime"
-      ? { launcher: "/owned/pi-bb" } : { commands: 7, skillRoots: 2 },
+      ? { launcher: "/owned/pi-alia" } : { commands: 7, skillRoots: 2 },
   });
-  plugin(bb);
+  plugin(alia);
   assert.deepEqual(harness.inspection.registrations.providerRegistrations, []);
   assert.deepEqual([...harness.inspection.registrations.providerEnvResolvers.keys()], ["pi"]);
   const env = await harness.inspection.registrations.providerEnvResolvers.get("pi")({ hostId: "host-test" });
-  assert.deepEqual(env, [{ name: "BB_PI_BRIDGE_COMMAND", value: "/owned/pi-bb", reason: "Load native Pi commands in BB" }]);
+  assert.deepEqual(env, [{ name: "ALIA_PI_BRIDGE_COMMAND", value: "/owned/pi-alia", reason: "Load native Pi commands in VesnALIA" }]);
   assert.deepEqual(await harness.behavior.callRpc("syncCommands", { hostId: "host-test", cwd: null }), { commands: 7, skillRoots: 2 });
   await assert.rejects(harness.behavior.callRpc("syncCommands", { hostId: "host-test", cwd: null, unexpected: true }));
   const cli = await harness.behavior.runCli(["sync", "--host", "host-test", "--cwd", "/workspace"]);
@@ -56,7 +56,7 @@ test("packaged source uses public contracts and carries no master checkout depen
   // The built artifact must not depend on the author's checkout layout.
   assert(!/\/Users\/|\/home\/[a-z0-9_-]+\/Projects\//i.test(artifact));
   assert(!artifact.includes("experimental_providerBridge"), "Addon must not ship a second bridge");
-  assert(!manifest.bb.skills, "Do not register stale Pi+ instructions");
+  assert(!manifest.alia.skills, "Do not register stale Pi+ instructions");
   assert(!manifest.files.includes("vendor"));
 });
 
@@ -86,7 +86,7 @@ test("real cold Pi registry exports commands and imported project skill roots", 
     assert(readFileSync(first.launcher, "utf8").includes("--extension"));
     const counts = await harness.experimental_call("syncCommands", { cwd });
     assert(counts.commands >= 7);
-    const menu = join(fixture, ".pi/bb-commands");
+    const menu = join(fixture, ".pi/alia-commands");
     const key = createHash("sha256").update(cwd).digest("hex");
     const pointerPath = join(menu, "projects", key + ".json");
     const snapshot = JSON.parse(readFileSync(pointerPath, "utf8"));

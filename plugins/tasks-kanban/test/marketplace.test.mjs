@@ -1,5 +1,5 @@
 // Validates the self-hosted marketplace catalog (marketplace.json) at the
-// repository root against the official BB marketplace v2 schema, plus
+// repository root against the official VesnALIA marketplace v2 schema, plus
 // consistency checks that the schema cannot express:
 //   * the entry id matches the plugin id derived from package.json
 //   * the git source URL matches the repository declared in package.json
@@ -17,15 +17,15 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 const SCHEMA_URL = "https://getbb.app/schemas/marketplace-v2.schema.json";
 
-// Same algorithm BB uses to derive a plugin id from the package name:
-// strip the npm scope, strip a lowercase `bb-plugin-` prefix, lowercase,
+// Same algorithm VesnALIA uses to derive a plugin id from the package name:
+// strip the npm scope, strip a lowercase `alia-plugin-` prefix, lowercase,
 // replace other characters with hyphens, trim edge hyphens.
 function derivePluginId(packageName) {
   const base = packageName.includes("/")
     ? packageName.split("/").at(-1)
     : packageName;
   return base
-    .replace(/^bb-plugin-/, "")
+    .replace(/^alia-plugin-/, "")
     .toLowerCase()
     .replace(/[^a-z0-9-]/g, "-")
     .replace(/^-+|-+$/, "");
@@ -109,7 +109,7 @@ test("relative asset references point at existing files", async () => {
 });
 
 test("category id is one the community marketplace uses", () => {
-  // Keep in sync with get-bb/marketplace marketplace.base.json categories.
+  // Keep in sync with get-alia/marketplace marketplace.base.json categories.
   const allowed = [
     "themes-and-appearance",
     "thread-management",

@@ -1,21 +1,13 @@
 {
-  "name": "bb-plugin-audio-preview",
+  "name": "alia-plugin-audio-preview",
   "version": "0.1.1",
-  "description": "Plays audio files in BB's file panel, including .m4a (audio/mp4) that the built-in preview refuses.",
+  "description": "Plays audio files in VesnALIA's file panel, including .m4a (audio/mp4) that the built-in preview refuses.",
   "license": "MIT",
   "author": "Braedon Saunders",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/braedonsaunders/bb-plugin-audio-preview.git"
-  },
-  "bugs": {
-    "url": "https://github.com/braedonsaunders/bb-plugin-audio-preview/issues"
-  },
-  "homepage": "https://github.com/braedonsaunders/bb-plugin-audio-preview#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "audio",
     "preview",
     "m4a"
@@ -35,10 +27,10 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.8"
   },
-  "bb": {
+  "alia": {
     "name": "Audio Preview",
     "description": "Play .m4a, .mp3, .wav, and other audio files in the file panel.",
     "branding": {
@@ -56,9 +48,25 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/audio-preview#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/audio-preview"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

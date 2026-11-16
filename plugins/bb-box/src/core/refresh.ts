@@ -1,6 +1,6 @@
 /**
  * Refreshing a standard image (049): a Linux image's guest scripts run again
- * in a box of it, with the versions a rebuild takes (versions.ts) and BB's
+ * in a box of it, with the versions a rebuild takes (versions.ts) and VesnALIA's
  * app, then finalizing; a Windows image's refresh script installs Windows'
  * updates and the pinned tools in a box of it (054). Then a capture, the
  * checks before replacing on a trial box, and the replace. A failure keeps
@@ -24,11 +24,11 @@ import { TransportError, type CommandTransport } from "../transports/types.ts";
 /** How each Linux kind's standard image is built, as template/build.sh builds it. */
 import { PRODUCT } from "../brand.ts";
 const BUILDS: Readonly<Record<string, { readonly artifacts: string; readonly finalize: string; readonly gpu: string; readonly session: string; readonly check: string; readonly userspaceOfHostDriver?: true }>> = {
-  linux: { artifacts: "linux", finalize: "linux", gpu: "", session: "", check: "bb-box-check-headless", userspaceOfHostDriver: true },
-  "linux-desktop": { artifacts: "desktop", finalize: "desktop", gpu: "nvidia", session: "", check: "bb-box-check-desktop" },
-  "linux-desktop-cpu": { artifacts: "desktop-cpu", finalize: "desktop", gpu: "none", session: "", check: "bb-box-check-desktop" },
-  "linux-desktop-wayland-cpu": { artifacts: "desktop-wayland-cpu", finalize: "desktop", gpu: "none", session: "wayland", check: "bb-box-check-desktop" },
-  android: { artifacts: "linux", finalize: "android", gpu: "", session: "", check: "bb-box-check-android" },
+  linux: { artifacts: "linux", finalize: "linux", gpu: "", session: "", check: "alia-box-check-headless", userspaceOfHostDriver: true },
+  "linux-desktop": { artifacts: "desktop", finalize: "desktop", gpu: "nvidia", session: "", check: "alia-box-check-desktop" },
+  "linux-desktop-cpu": { artifacts: "desktop-cpu", finalize: "desktop", gpu: "none", session: "", check: "alia-box-check-desktop" },
+  "linux-desktop-wayland-cpu": { artifacts: "desktop-wayland-cpu", finalize: "desktop", gpu: "none", session: "wayland", check: "alia-box-check-desktop" },
+  android: { artifacts: "linux", finalize: "android", gpu: "", session: "", check: "alia-box-check-android" },
 };
 
 const LINUX_GPU_OF_HOST_DRIVER = [
@@ -46,9 +46,9 @@ const SLOWER_MS = 5_000;
 /** How long a refresh waits for room for one of its boxes, as while threads' boxes take a Mac's two macOS slots (#650), and how often it asks. */
 const ROOM = { waitMs: 60 * 60_000, pollMs: 30_000 };
 /** Where the build's files go in the box, as build.sh puts them in its CT. */
-const BUILD_DIR = "/var/tmp/bb-box-build";
+const BUILD_DIR = "/var/tmp/alia-box-build";
 /** Where a Windows refresh's files go in the box (054). */
-const WINDOWS_DIR = "C:\\bb-box\\build";
+const WINDOWS_DIR = "C:\\alia-box\\build";
 /** How many times a Windows refresh restarts the box for its updates before it gives up (054). */
 const WINDOWS_ROUNDS = 5;
 /** What refresh.ps1 exits with when Windows needs a restart first. */
@@ -66,10 +66,10 @@ export interface RefreshOptions {
   readonly current: ImageBuild;
   /** The plugin's setup/ directory. */
   readonly setup: string;
-  /** BB's server URL, for the image to have BB's app, or null for none. */
-  readonly bbUrl: string | null;
-  /** The digest of BB's app the server gives now, or null when it gives none. */
-  readonly bbApp: string | null;
+  /** VesnALIA's server URL, for the image to have VesnALIA's app, or null for none. */
+  readonly aliaUrl: string | null;
+  /** The digest of VesnALIA's app the server gives now, or null when it gives none. */
+  readonly aliaApp: string | null;
   /** Build from the repository's pins alone. */
   readonly pinned?: boolean;
   /** False to try a refresh: the build and its checks, then the build goes and the current one stays. */
@@ -110,17 +110,17 @@ export interface RefreshResult {
 }
 
 /** The script that runs the guest scripts again in a build box, as root through sudo, from the staged files in setup.tgz. */
-export function buildScript(kind: string, bbUrl: string | null, buildId: string, prepare = ""): string {
+export function buildScript(kind: string, aliaUrl: string | null, buildId: string, prepare = ""): string {
   const build = BUILDS[kind];
   if (!build) throw new Error(`${PRODUCT} refreshes no ${kind} image.`);
   const src = `${BUILD_DIR}/proxmox-lxc/template`;
   return [
     "set -euo pipefail",
     `sudo rm -rf ${BUILD_DIR} && sudo install -d -m 0700 ${BUILD_DIR}`,
-    `sudo tar -xzf ~/bb-box-setup.tgz -C ${BUILD_DIR} && rm -f ~/bb-box-setup.tgz`,
-    // As the image has them: bb-box's key, which its box user accepts, and its DNS servers.
+    `sudo tar -xzf ~/alia-box-setup.tgz -C ${BUILD_DIR} && rm -f ~/alia-box-setup.tgz`,
+    // As the image has them: alia-box's key, which its box user accepts, and its DNS servers.
     `awk '$1 == "ssh-ed25519" { print; exit }' ~/.ssh/authorized_keys | sudo tee ${src}/plugin-key.pub >/dev/null`,
-    'dns=$(sed -n "s/^DNS=//p" /etc/systemd/resolved.conf.d/10-bb-box.conf 2>/dev/null || true)',
+    'dns=$(sed -n "s/^DNS=//p" /etc/systemd/resolved.conf.d/10-alia-box.conf 2>/dev/null || true)',
     // A VM's image, as Proxmox QEMU's Linux template (057), keeps its kernel and network: customize-base.sh's vm runtime.
     "runtime=lxc; [ \"$(systemd-detect-virt --container 2>/dev/null)\" != none ] || runtime=vm",
     'arch=x86_64; [ "$(uname -m)" = x86_64 ] || arch=arm64',
@@ -129,7 +129,7 @@ export function buildScript(kind: string, bbUrl: string | null, buildId: string,
     "BOX_USER=box",
     "BOX_RUNTIME=$runtime",
     'BOX_DNS="$dns"',
-    `BB_URL=${quote(bbUrl ?? "")}`,
+    `ALIA_URL=${quote(aliaUrl ?? "")}`,
     ...(build.gpu ? [`DESKTOP_GPU=${build.gpu}`] : []),
     ...(build.session ? [`DESKTOP_SESSION=${build.session}`] : []),
     ...(build.userspaceOfHostDriver ? ["LINUX_GPU=$linux_gpu"] : []),
@@ -137,7 +137,7 @@ export function buildScript(kind: string, bbUrl: string | null, buildId: string,
     `BOX_IDENTITY_RESET=${identityResetFor(kind)}`,
     `PREPARE=${prepare}`,
     "EOF",
-    `sudo env BBBOX_ENV=/nonexistent BBBOX_BB_URL=${quote(bbUrl ?? "")} bash ${src}/fetch-artifacts.sh ${src}/artifacts ${build.userspaceOfHostDriver ? '"$artifacts"' : build.artifacts} "$arch"`,
+    `sudo env BBBOX_ENV=/nonexistent BBBOX_ALIA_URL=${quote(aliaUrl ?? "")} bash ${src}/fetch-artifacts.sh ${src}/artifacts ${build.userspaceOfHostDriver ? '"$artifacts"' : build.artifacts} "$arch"`,
     `sudo bash ${src}/guest/customize-base.sh ${src}`,
     `[ "$runtime" != vm ] || sudo bash ${BUILD_DIR}/proxmox-qemu/linux/customize-vm.sh ${src}`,
     ...(build.finalize === "desktop" ? [`sudo bash ${src}/guest/customize-desktop.sh ${src}`] : []),
@@ -165,7 +165,7 @@ export function trialCheck(images: BackendImages, kind: string, windowsCheck?: s
   const check = BUILDS[kind]?.check ?? "false";
   return {
     name: `the kind's check (${check})`,
-    script: `for i in $(seq 1 60); do [ ! -e /etc/systemd/system/bb-box-display.service ] || [ -s /run/bb-box/display-mode ] && break; sleep 1; done; ${check}`,
+    script: `for i in $(seq 1 60); do [ ! -e /etc/systemd/system/alia-box-display.service ] || [ -s /run/alia-box/display-mode ] && break; sleep 1; done; ${check}`,
   };
 }
 
@@ -188,10 +188,10 @@ export async function windowsPins(setup: string, arch: string): Promise<WindowsP
 /**
  * A new Windows build's record (054): the old one's, with the new build ID,
  * the pinned tools' versions, and the pins digest of the build script whose
- * pins setup/windows/pins.json has. Where the image has bb-box-stream, as
+ * pins setup/windows/pins.json has. Where the image has alia-box-stream, as
  * every x86_64 image does and an arm64 one does once OpenH264 is pinned for
  * it (060), it lists the hardware cursor, which refresh.ps1 turns on: without
- * it, bb-box does not leave the pointer out of the video.
+ * it, alia-box does not leave the pointer out of the video.
  */
 export function windowsRecord(current: ImageBuild, pins: readonly WindowsPin[], buildId: string, built: number, digest: string): ImageRecord {
   const arch = KIND_INFO[current.kind]?.arch ?? "x86_64";
@@ -207,7 +207,7 @@ export function windowsRecord(current: ImageBuild, pins: readonly WindowsPin[], 
     os: current.record?.os ?? "Windows",
     aptSnapshot: null,
     pins: digest,
-    bbApp: null,
+    aliaApp: null,
     tools: { ...current.record?.tools, ...Object.fromEntries(pins.map((pin) => [pin.name, pin.version])), ...(stream ? { [WINDOWS_HARDWARE_CURSOR]: "1" } : {}), [WINDOWS_PASSWORD_NEVER_EXPIRES]: "1" },
     nvidia: null,
     layer: null,
@@ -386,7 +386,7 @@ async function steadyWindows(command: CommandTransport, before: string | null, o
 export function recordChecks(record: ImageRecord | null, old: ImageRecord | null, kind: string): RefreshCheck[] {
   if (!record) return [{ name: "the record", ok: false, detail: "The new build has no image record." }];
   const whole = record.contract === IMAGE_CONTRACT && !!record.os && !!record.pins && Object.keys(record.tools).length > 0;
-  // A tool named by a hash of its source, as bb-box-stream is, has no order: a new hash is not older.
+  // A tool named by a hash of its source, as alia-box-stream is, has no order: a new hash is not older.
   const ordered = (version: string) => !/^[0-9a-f]{12,64}$/.test(version);
   const older = old
     ? Object.entries(old.tools).filter(([tool, version]) => {
@@ -479,7 +479,7 @@ export async function refreshImage(options: RefreshOptions): Promise<RefreshResu
     output,
     seconds: Math.round((now() - started) / 1000),
   });
-  const staged = await mkdtemp(join(tmpdir(), "bb-box-refresh-"));
+  const staged = await mkdtemp(join(tmpdir(), "alia-box-refresh-"));
   try {
     const kind = current.kind;
     const windows = KIND_INFO[kind]?.os === "windows";
@@ -503,17 +503,17 @@ export async function refreshImage(options: RefreshOptions): Promise<RefreshResu
       const buildId = newBuildId(now());
       const files: [string, string][] = [
         ["refresh.ps1", await readFile(join(options.setup, "windows", "refresh.ps1"), "utf8")],
-        // bb-box-stream.exe (060): its source, and its install, which the refresh runs when either changes.
-        ["bb-box-stream.cs", await readFile(join(options.setup, "windows", "bb-box-stream.cs"), "utf8")],
+        // alia-box-stream.exe (060): its source, and its install, which the refresh runs when either changes.
+        ["alia-box-stream.cs", await readFile(join(options.setup, "windows", "alia-box-stream.cs"), "utf8")],
         ["install-stream.ps1", await readFile(join(options.setup, "windows", "install-stream.ps1"), "utf8")],
-        // The pointer as the VirtIO GPU's hardware cursor, which bb-box-stream needs to leave it out of the video.
+        // The pointer as the VirtIO GPU's hardware cursor, which alia-box-stream needs to leave it out of the video.
         ["hardware-cursor.ps1", await readFile(join(options.setup, "windows", "hardware-cursor.ps1"), "utf8")],
         // Proxmox's boot.ps1, which gives each clone its address at boot: a refresh keeps the image's first logon's copy otherwise.
-        ...(kind === "windows-desktop" ? [["boot.ps1", await readFile(join(options.setup, "proxmox-qemu", "answer", "bb-box", "boot.ps1"), "utf8")] as [string, string]] : []),
+        ...(kind === "windows-desktop" ? [["boot.ps1", await readFile(join(options.setup, "proxmox-qemu", "answer", "alia-box", "boot.ps1"), "utf8")] as [string, string]] : []),
         ["pins.json", `${JSON.stringify({ tools: pins }, null, 2)}\n`],
         ["image.json", `${JSON.stringify(windowsRecord(current, pins, buildId, now(), digest))}\n`],
-        // The server whose BB app refresh.ps1 installs, so a box enrols without installing it (#916).
-        ...(options.bbUrl ? [["bb-url", `${options.bbUrl}\n`] as [string, string]] : []),
+        // The server whose VesnALIA app refresh.ps1 installs, so a box enrols without installing it (#916).
+        ...(options.aliaUrl ? [["alia-url", `${options.aliaUrl}\n`] as [string, string]] : []),
       ];
       say(`building ${buildId} in a box of ${current.ref}`);
       const { box } = await boxOf(current, `refresh of ${current.ref}`);
@@ -542,7 +542,7 @@ export async function refreshImage(options: RefreshOptions): Promise<RefreshResu
     } else if (images.build) {
       // A backend whose standard images come from a build script, as Docker's do.
       say(`building a new build of ${current.ref}`);
-      captured = await images.build(current, join(staged, "setup"), { bbUrl: options.bbUrl, log: buildOutput, signal });
+      captured = await images.build(current, join(staged, "setup"), { aliaUrl: options.aliaUrl, log: buildOutput, signal });
       made.push(captured.ref);
     } else {
       const tar = spawnSync("tar", ["-C", join(staged, "setup"), "-czf", "-", "proxmox-lxc/template", "proxmox-lxc/host/common.sh", "proxmox-qemu/linux", "android"], { maxBuffer: 64 * 1024 * 1024 });
@@ -553,8 +553,8 @@ export async function refreshImage(options: RefreshOptions): Promise<RefreshResu
       say(`building ${buildId} in a box of ${current.ref}`);
       const { box } = await boxOf(current, `refresh of ${current.ref}`);
       made.push(box.ref);
-      await box.command.writeFile("bb-box-setup.tgz", tar.stdout, { signal });
-      const built = await streamLines(box.command, buildScript(kind, options.bbUrl, buildId, options.prepare ?? ""), options.buildTimeoutMs ?? 90 * 60_000, signal, buildOutput);
+      await box.command.writeFile("alia-box-setup.tgz", tar.stdout, { signal });
+      const built = await streamLines(box.command, buildScript(kind, options.aliaUrl, buildId, options.prepare ?? ""), options.buildTimeoutMs ?? 90 * 60_000, signal, buildOutput);
       if (built.exitCode !== 0) return end(false, null, built.timedOut ? "The build ran out of time." : `The build failed with exit code ${built.exitCode}: ${output.at(-1) ?? ""}. Its whole output is in ${buildLog.path}.`);
 
       // The capture.
@@ -601,16 +601,16 @@ export async function refreshImage(options: RefreshOptions): Promise<RefreshResu
       ok: ran.exitCode !== null && !failed.length && ran.stdout.trim() !== "",
       detail: failed.length ? failed.join(" | ").slice(0, 600) : ran.stdout.trim() ? `${ran.stdout.trim().split("\n").length} checks passed.` : `It printed nothing: ${ran.stderr.trim().slice(0, 300)}`,
     });
-    if (options.bbUrl) {
+    if (options.aliaUrl) {
       const read = windows
-        ? "Get-Content \"$HOME\\.bb-machines\\*\\host-artifact.sha256\" -ErrorAction SilentlyContinue | Select-Object -First 1"
-        : "cat ~/.bb-machines/*/host-artifact.sha256 2>/dev/null | head -n 1";
+        ? "Get-Content \"$HOME\\.alia-machines\\*\\host-artifact.sha256\" -ErrorAction SilentlyContinue | Select-Object -First 1"
+        : "cat ~/.alia-machines/*/host-artifact.sha256 2>/dev/null | head -n 1";
       const app = await trial.command.run(read, { timeoutMs: 15_000, signal });
       const has = app.stdout.trim();
       checks.push({
-        name: "BB's app",
-        ok: !!has && has === captured.record?.bbApp && (!options.bbApp || has === options.bbApp),
-        detail: has ? `The box has BB's app ${has.slice(0, 12)}, the record ${captured.record?.bbApp?.slice(0, 12) ?? "none"}, the server ${options.bbApp?.slice(0, 12) ?? "unknown"}.` : "The box has no BB's app.",
+        name: "ALIA's app",
+        ok: !!has && has === captured.record?.aliaApp && (!options.aliaApp || has === options.aliaApp),
+        detail: has ? `The box has VesnALIA's app ${has.slice(0, 12)}, the record ${captured.record?.aliaApp?.slice(0, 12) ?? "none"}, the server ${options.aliaApp?.slice(0, 12) ?? "unknown"}.` : "The box has no VesnALIA's app.",
       });
     }
     checks.push(...recordChecks(captured.record, current.record, kind));

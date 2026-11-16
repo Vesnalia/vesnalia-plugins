@@ -1,6 +1,6 @@
 /*
- * The plugin's own classes, prefixed so nothing of BB's matches them. `bb plugin
- * build` scopes Tailwind utilities as `:where([data-bb-plugin=…]) .<utility>`, and BB's
+ * The plugin's own classes, prefixed so nothing of ALIA's matches them. `alia plugin
+ * build` scopes Tailwind utilities as `:where([data-alia-plugin=…]) .<utility>`, and ALIA's
  * elements carry the same class names, so every utility a plugin uses is matched
  * against the whole page on every style recalc. CSS imported here is passed through
  * as written.
@@ -13,7 +13,7 @@
 }
 
 /*
- * The folder tree (src/Tree.tsx). Its column goes first in the box around BB's
+ * The folder tree (src/Tree.tsx). Its column goes first in the box around ALIA's
  * file list, which the plugin flags with `data-diff-plus-tree`: "side" lays it
  * out as a row, the tree beside the list, and "stacked" (a narrow tab) as a
  * column, the tree above it. The menu button goes first in the tab's toolbar
@@ -26,7 +26,7 @@ div[data-diff-plus-tree] > :not(.diff-plus-tree) {
   min-width: 0;
   min-height: 0;
 }
-/* BB's list scroller pads its cards 16px from the left; beside the tree that is a gutter. */
+/* ALIA's list scroller pads its cards 16px from the left; beside the tree that is a gutter. */
 div[data-diff-plus-tree="side"] > :not(.diff-plus-tree) > * {
   padding-left: 0.25rem;
 }
@@ -60,7 +60,7 @@ div[data-diff-plus-tree="side"] > :not(.diff-plus-tree) > * {
 .diff-plus-toggle:focus-visible {
   outline: 1px solid var(--ring);
 }
-/* BB's toolbar buttons grow for touch on narrow screens (`max-md:pointer-coarse`). */
+/* ALIA's toolbar buttons grow for touch on narrow screens (`max-md:pointer-coarse`). */
 @media (width < 48rem) and (pointer: coarse) {
   .diff-plus-toggle {
     width: 2.25rem;
@@ -114,7 +114,7 @@ div[data-diff-plus-tree="stacked"] > .diff-plus-tree {
 }
 /*
  * Above the list, its first card would sit on the tree's border. The gap goes
- * outside BB's scroller: a file's header sticks below the scroller's padding,
+ * outside ALIA's scroller: a file's header sticks below the scroller's padding,
  * so padding there let the diff scroll by in a strip above the header.
  */
 div[data-diff-plus-tree="stacked"] > :not(.diff-plus-tree) {
@@ -246,7 +246,7 @@ div[data-diff-plus-tree="stacked"] .diff-plus-tree-resize {
 .diff-plus-root-label .diff-plus-name {
   flex: 0 1 auto;
 }
-/* In a narrow column the root's count and +/- give way first: BB's toolbar shows
+/* In a narrow column the root's count and +/- give way first: ALIA's toolbar shows
    the same totals just above. With the view menu and the fold button
    they fit down to about 254px (measured); 16rem is 256px. */
 @container diff-plus-tree (width < 16rem) {
@@ -266,7 +266,7 @@ div[data-diff-plus-tree="stacked"] .diff-plus-tree-resize {
 .diff-plus-fill {
   flex: 1 1 0;
 }
-/* Opens or closes every folder, like BB's "Expand all files" beside the query. */
+/* Opens or closes every folder, like ALIA's "Expand all files" beside the query. */
 .diff-plus-fold-all {
   display: inline-flex;
   width: 1.25rem;
@@ -480,7 +480,7 @@ div[data-diff-plus-tree="stacked"] .diff-plus-tree-resize {
 }
 
 /* The menus (src/TreeMenu.tsx), portalled to the page's end, in the
-   measures of BB's own menus (the Diff tab's query menu): 12px/16px text,
+   measures of ALIA's own menus (the Diff tab's query menu): 12px/16px text,
    5px 8px items, the check on the right. */
 .diff-plus-menu {
   z-index: 50;
@@ -607,8 +607,8 @@ div[data-diff-plus-tree="stacked"] .diff-plus-tree-resize {
   font-weight: 500;
 }
 
-/* BB's scope picker (Picker.tsx): a column its items can be ordered in, with the
-   recent commits under a heading. Matches BB's menu items: 5px 8px, 12px/16px. */
+/* ALIA's scope picker (Picker.tsx): a column its items can be ordered in, with the
+   recent commits under a heading. Matches ALIA's menu items: 5px 8px, 12px/16px. */
 [data-diff-plus-picker] {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 // Token Guard page: whether the guard is on, and what a history scan found.
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { GuardState, rpcContract } from "./server";
 import { ICONS } from "./lib/icons";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ function GuardPage() {
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
           Checks message text and uploaded UTF-8 or UTF-16 text files. Images, PDFs,
-          office documents and archives are not checked. BB stores uploads before
+          office documents and archives are not checked. VesnALIA stores uploads before
           the check; Token Guard stops dispatch to the agent.
         </p>
         <div className="mt-4 flex items-center gap-3">

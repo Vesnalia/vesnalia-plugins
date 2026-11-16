@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Derive the plugin id from a package manifest, exactly as bb and the
-// marketplace do: drop the npm scope, drop a lowercase `bb-plugin-` prefix,
+// Derive the plugin id from a package manifest, exactly as VesnALIA and the
+// marketplace do: drop the npm scope, drop a lowercase `alia-plugin-` prefix,
 // lowercase, replace every other character run with a hyphen, trim the edges.
 //
 // This mirrors the marketplace's `scripts/derive-plugin-id.mjs` so the gate
 // stays runnable from a clone of this repository alone, without reaching into
-// a local bb installation.
+// a local VesnALIA installation.
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -13,8 +13,8 @@ export function derivePluginId(packageName) {
   const withoutScope = packageName.startsWith("@")
     ? packageName.slice(packageName.indexOf("/") + 1)
     : packageName;
-  const withoutPrefix = withoutScope.toLowerCase().startsWith("bb-plugin-")
-    ? withoutScope.slice("bb-plugin-".length)
+  const withoutPrefix = withoutScope.toLowerCase().startsWith("alia-plugin-")
+    ? withoutScope.slice("alia-plugin-".length)
     : withoutScope;
   return withoutPrefix
     .toLowerCase()

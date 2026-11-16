@@ -4,8 +4,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
 
-const baseUrl = process.env.BB_SERVER_URL;
-if (!baseUrl) throw new Error('Run inside BB or set BB_SERVER_URL to the running BB app.');
+const baseUrl = process.env.ALIA_SERVER_URL;
+if (!baseUrl) throw new Error('Run inside VesnALIA or set ALIA_SERVER_URL to the running VesnALIA app.');
 const output = path.resolve(process.env.MD_PROMPT_REPORT_DIR ?? 'artifacts/e2e');
 await mkdir(output, { recursive: true });
 const results = [];
@@ -17,7 +17,7 @@ if (captureTrace) await context.tracing.start({ screenshots: false, snapshots: t
 const page = await context.newPage();
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
-const cli = (...args) => execFileSync('bb', ['md-prompt', ...args], { encoding: 'utf8' }).trim();
+const cli = (...args) => execFileSync('alia', ['md-prompt', ...args], { encoding: 'utf8' }).trim();
 let initialMode;
 try { initialMode = JSON.parse(cli('status', '--json')).enabled; } catch { /* Pre-install red run. */ }
 async function check(name, action) {
@@ -72,7 +72,7 @@ try {
   await page.goto(baseUrl);
   const editor = page.locator('[contenteditable="true"]').first();
   const toggle = page.getByRole('button', { name: /Turn (on|off) Markdown highlighting/ }).first();
-  await check('Plugin loads in a real BB composer', async () => {
+  await check('Plugin loads in a real VesnALIA composer', async () => {
     await editor.waitFor({ timeout: 15000 });
     await toggle.waitFor({ timeout: 10000 });
   });
@@ -162,7 +162,7 @@ try {
   });
   await check('Invalid CLI and RPC input leave the saved mode intact', async () => {
     const saved = JSON.parse(cli('status', '--json'));
-    const invalid = spawnSync('bb', ['md-prompt', 'on', '--unknown'], { encoding: 'utf8' });
+    const invalid = spawnSync('alia', ['md-prompt', 'on', '--unknown'], { encoding: 'utf8' });
     assert.notEqual(invalid.status, 0);
     const response = await context.request.post(`${baseUrl}/api/v1/plugins/md-prompt/rpc/setMode`, { data: { mode: 'invalid' } });
     assert.ok(response.status() >= 400);
@@ -170,7 +170,7 @@ try {
   });
   await check('Plugin reload preserves text and does not duplicate controls', async () => {
     const text = await draftText(editor);
-    execFileSync('bb', ['plugin', 'reload', 'md-prompt'], { encoding: 'utf8' });
+    execFileSync('alia', ['plugin', 'reload', 'md-prompt'], { encoding: 'utf8' });
     await waitUntil(async () => await toggle.count() === 1 && await toggle.isVisible());
     assert.equal(await draftText(editor), text);
     assert.ok(await editor.locator('.mdp-bg-1f2430').count() > 0);
@@ -178,12 +178,12 @@ try {
   await check('Plugin disable removes painting and enable restores the same draft', async () => {
     const text = await draftText(editor);
     try {
-      execFileSync('bb', ['plugin', 'disable', 'md-prompt'], { encoding: 'utf8' });
+      execFileSync('alia', ['plugin', 'disable', 'md-prompt'], { encoding: 'utf8' });
       await waitUntil(async () => await toggle.count() === 0);
       assert.equal(await editor.locator('[class*="mdp-"]').count(), 0);
       assert.equal(await draftText(editor), text);
     } finally {
-      execFileSync('bb', ['plugin', 'enable', 'md-prompt'], { encoding: 'utf8' });
+      execFileSync('alia', ['plugin', 'enable', 'md-prompt'], { encoding: 'utf8' });
     }
     await toggle.waitFor();
     await waitUntil(async () => await editor.locator('.mdp-bg-1f2430').count() > 0);

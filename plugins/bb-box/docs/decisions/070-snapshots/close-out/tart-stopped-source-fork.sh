@@ -21,7 +21,7 @@ mac_of() { $B box run "$1" --machine 'cat /sys/class/net/e*/address | head -1' |
 seen() { echo "$1 records $(recorded "$1"), holds $(held "$1"), client ID $(client_id "$1")"; }
 forks_on_mac() {
   for _ in $(seq 1 240); do
-    on_mac "h=\${TART_HOME:-\$HOME/.tart}; for f in \$HOME/.bb-box/tart/owners/*; do grep -qxF install=$install \"\$f\" || continue; vm=\${f##*/}; echo \"\$vm \$(sed -n 's/.*\"macAddress\" *: *\"\\([^\"]*\\)\".*/\\1/p' \"\$h/vms/\$vm/config.json\" 2>/dev/null)\"; done" 2>/dev/null
+    on_mac "h=\${TART_HOME:-\$HOME/.tart}; for f in \$HOME/.alia-box/tart/owners/*; do grep -qxF install=$install \"\$f\" || continue; vm=\${f##*/}; echo \"\$vm \$(sed -n 's/.*\"macAddress\" *: *\"\\([^\"]*\\)\".*/\\1/p' \"\$h/vms/\$vm/config.json\" 2>/dev/null)\"; done" 2>/dev/null
     sleep 0.5
   done
 }
@@ -41,7 +41,7 @@ for m in $(awk '$2 != "" { print $2 }' fork-macs.log | sort -u); do [ "$m" = "$s
 $B box machines
 if $B box machines | grep -q '^- tl-fork: .*ready'; then
   seen tl-fork
-  $B box run tl-fork --machine 'sudo journalctl -b -o short-monotonic --no-pager | grep -E "Finished bb-box-identity.service|DHCPv4 address"'
+  $B box run tl-fork --machine 'sudo journalctl -b -o short-monotonic --no-pager | grep -E "Finished alia-box-identity.service|DHCPv4 address"'
   step "stop the fork" $B box stop tl-fork --machine
 fi
 step "start the source" $B box start tl-src --machine

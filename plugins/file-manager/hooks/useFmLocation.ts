@@ -7,7 +7,7 @@
 // question the panel asks ("which folder, and how do I move to another one"),
 // which is why `FileManagerSurface` takes a location rather than a `subPath`.
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { PANEL_PATH } from "../contract";
 
@@ -24,7 +24,7 @@ export interface FmLocation {
 
 /** Nav panel flavour: the route is the state. */
 export function useRouteLocation(subPath: string): FmLocation {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // The host hands a fresh `navigate` object every render; the callback below
   // is handed to memoized panel code, so it reads through a ref instead of
   // taking the object as a dependency.

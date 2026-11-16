@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// §8.12 — the built-in viewer: what opens a file when the surface has no bb
+// §8.12 — the built-in viewer: what opens a file when the surface has no VesnALIA
 // preview panel to delegate to, which is every surface except a thread split
 // view and the right-hand panel host.
 //
@@ -10,8 +10,8 @@
 // also the only thing that can say "these bytes are not text".
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot, RpcCall } from "@vesnalia/plugin-sdk/testing/app";
 
 import { PREVIEW_TTL_MS, type FileEntry, type FileManagerContract } from "../../contract";
 
@@ -169,28 +169,28 @@ afterEach(() => {
 });
 
 describe("built-in viewer — text (§8.12)", () => {
-  it("renders markdown through bb's document renderer, with the source one click away", async () => {
+  it("renders markdown through VesnALIA's document renderer, with the source one click away", async () => {
     const slot = mount();
     const viewer = await openViewer(slot, README);
 
     expect(viewer).toBeTruthy();
     expect(callsTo(slot, "readTextFile")[0]?.input).toEqual({ path: README.path });
-    expect(slot.getByTestId("bb-markdown").textContent).toBe(MARKDOWN);
+    expect(slot.getByTestId("alia-markdown").textContent).toBe(MARKDOWN);
 
     fireEvent.click(slot.getByTestId("fm-viewer-toggle-source"));
 
-    const source = await slot.findByTestId("bb-source-code");
+    const source = await slot.findByTestId("alia-source-code");
     expect(source.textContent).toBe(MARKDOWN);
     // Language detection is the host's, from the name we hand it.
     expect(source.getAttribute("data-path")).toBe("readme.md");
-    expect(slot.queryByTestId("bb-markdown")).toBeNull();
+    expect(slot.queryByTestId("alia-markdown")).toBeNull();
   });
 
-  it("renders every other text file through bb's source viewer", async () => {
+  it("renders every other text file through VesnALIA's source viewer", async () => {
     const slot = mount();
     await openViewer(slot, SCRIPT);
 
-    expect(slot.getByTestId("bb-source-code").getAttribute("data-path")).toBe("build.sh");
+    expect(slot.getByTestId("alia-source-code").getAttribute("data-path")).toBe("build.sh");
     // No Markdown toggle: there is no second way to read a shell script.
     expect(slot.queryByTestId("fm-viewer-toggle-source")).toBeNull();
   });
@@ -200,7 +200,7 @@ describe("built-in viewer — text (§8.12)", () => {
     // matches no extension list anyone would write.
     const slot = mount();
     await openViewer(slot, MAKEFILE);
-    expect(slot.getByTestId("bb-source-code").getAttribute("data-path")).toBe("Makefile");
+    expect(slot.getByTestId("alia-source-code").getAttribute("data-path")).toBe("Makefile");
   });
 
   it("never mints a preview URL for a text file", async () => {
@@ -300,7 +300,7 @@ describe("built-in viewer — bytes a browser paints (§8.12)", () => {
 });
 
 describe("built-in viewer — what never reaches it", () => {
-  it("hands the file to bb's preview panel when this surface has one", async () => {
+  it("hands the file to VesnALIA's preview panel when this surface has one", async () => {
     const slot = renderSlot(
       { component: registration.component },
       { subPath: "" },

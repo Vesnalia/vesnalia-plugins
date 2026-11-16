@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { Preset } from "../config";
 import type { PrView, ReviewInput } from "../contract";
 import { BUTTON_GHOST, BUTTON_PRIMARY, BUTTON_SUCCESS, Choice, Dialog, FIELD } from "./common";
@@ -12,14 +12,14 @@ import { reviewInQueue, useQueueReview } from "./posts";
 export const defaultPresetOf = (presets: readonly Preset[]): Preset | null => presets.find((preset) => preset.default) ?? presets[0] ?? null;
 
 export function presetSummary(preset: Pick<Preset, "skill" | "model" | "reasoningLevel">): string {
-  const parts = [preset.skill || "no skill", preset.model ?? "bb default model"];
+  const parts = [preset.skill || "no skill", preset.model ?? "alia default model"];
   if (preset.reasoningLevel) parts.push(`thinking ${preset.reasoningLevel}`);
   return parts.join(" · ");
 }
 
 export function useStartReview() {
   const review = useShuttleMutation("review");
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const start = async (input: ReviewInput, presetName: string) => {
     const result = await review.run(input);
     if (result !== null) {

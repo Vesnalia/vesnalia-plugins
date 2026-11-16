@@ -1,12 +1,12 @@
-// Where a path a spec names opens in BB's file preview. It follows the rule
+// Where a path a spec names opens in VesnALIA's file preview. It follows the rule
 // data-source.ts reads by, so a file a spec can show is a file it can open:
-// `$BB_THREAD_STORAGE/…` and absolute paths inside the thread storage open in
+// `$ALIA_THREAD_STORAGE/…` and absolute paths inside the thread storage open in
 // the storage; relative paths and absolute paths inside the workspace open in
 // the workspace; absolute paths in the host's /tmp open on the host; any
 // other absolute path opens nothing.
 
 /** The prefix a spec uses for the thread's storage, where agents write artifacts. */
-export const THREAD_STORAGE_PREFIX = "$BB_THREAD_STORAGE/";
+export const THREAD_STORAGE_PREFIX = "$ALIA_THREAD_STORAGE/";
 
 export type FileOpenTarget =
   | { readonly kind: "thread-storage"; readonly path: string }

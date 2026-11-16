@@ -1,6 +1,6 @@
 // The Planner page's account of a planner's work, from what Loom keeps itself: the spec versions it proposed, Loom's
 // reviews of them, the human's comments and controls, triage rounds, the planner's board changes, and the planner's last
-// words in each turn, which bb hands over when its thread goes idle. Question rounds live in bb's thread; the page adds them.
+// words in each turn, which VesnALIA hands over when its thread goes idle. Question rounds live in VesnALIA's thread; the page adds them.
 import { plannerAsk, type AskStep, type PlannerAsk } from "./asks";
 import { mergeConfirmOf, type MergeConfirmState } from "./auto-merge";
 import { specOf } from "./workers";
@@ -42,7 +42,7 @@ export type PlannerAction =
   | { kind: "add"; key: string }
   | { kind: "ask"; why: string; steps: AskStep[] };
 
-/** One turn of the planner: what it changed, and its last words, which are null for a turn bb did not hand over yet. */
+/** One turn of the planner: what it changed, and its last words, which are null for a turn VesnALIA did not hand over yet. */
 export interface TurnStep {
   kind: "turn";
   at: number;

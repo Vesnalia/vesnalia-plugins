@@ -31,7 +31,7 @@ items/plunger-scepter/item.json
 
 ## Интерфейс
 
-- **CLI:** `bb image-studio model item create|list|show|attach|select|export`:
+- **CLI:** `alia image-studio model item create|list|show|attach|select|export`:
   - `attach --item <id> --step model --file assets/3d/x.fbx`;
   - `attach --step concept --image <путь|id галереи>`;
   - `select --step texture --take <id>`.
@@ -57,7 +57,7 @@ items/plunger-scepter/item.json
 | item-panel | подвкладка «Предметы», карточка с лентой шагов, выбор дубля, значок в галерее | item-core |
 | item-skill | скилл: конвейер предмета через item (концепт → чертёж → модель в Blender → развёртка → текстура → экспорт), примеры CLI и инструмента | item-core |
 
-Проверки по задачам: `npx tsc --noEmit`, `node --test --experimental-strip-types tests/*.test.ts`. Сборку `bb plugin build` делает PM перед выпуском.
+Проверки по задачам: `npx tsc --noEmit`, `node --test --experimental-strip-types tests/*.test.ts`. Сборку `alia plugin build` делает PM перед выпуском.
 
 ## Приёмка
 
@@ -85,7 +85,7 @@ items/plunger-scepter/item.json
 | item-fixes | 0.9.3 | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 | item-skill | — | done | lprun_7ab1f614e5bf4e9cac43bc49529371b0 |
 
-Acceptance items 1–4 above are not yet run: the plunger-scepter item has not been assembled from the existing files on the host, and the panel and gallery badge have not been checked in BB.
+Acceptance items 1–4 above are not yet run: the plunger-scepter item has not been assembled from the existing files on the host, and the panel and gallery badge have not been checked in VesnALIA.
 
 ## History
 ### 2026-10-28

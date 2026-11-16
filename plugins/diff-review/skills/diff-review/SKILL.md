@@ -1,28 +1,28 @@
 ---
 name: diff-review
-description: "Answer review comments sent from Diff Review's Review tab with `bb diff-review` (or its `diff_review_*` tools). Use when a message titled \"Address review comments\", \"Address a review thread\" or \"Review\" from Diff Review arrives, or the user asks you to reply to, resolve or dismiss a Diff Review comment thread."
+description: "Answer review comments sent from Diff Review's Review tab with `alia diff-review` (or its `diff_review_*` tools). Use when a message titled \"Address review comments\", \"Address a review thread\" or \"Review\" from Diff Review arrives, or the user asks you to reply to, resolve or dismiss a Diff Review comment thread."
 ---
 
 # Answering Diff Review comments
 
 The user reviews a thread's changes in Diff Review's **Review** tab, beside the thread, and sends their
 comment threads to the thread's agent. Each sent thread has an id (twelve hex characters). Answer each
-one with `bb diff-review`, from this thread: the plugin accepts answers only from the thread the
+one with `alia diff-review`, from this thread: the plugin accepts answers only from the thread the
 comments were sent to, and the user sees them in the tab, next to the code.
 
 ## Commands
 
-- `bb diff-review list` — the open threads sent to this thread, with every comment. `--all` adds the
+- `alia diff-review list` — the open threads sent to this thread, with every comment. `--all` adds the
   resolved and dismissed ones; `--json` prints them as JSON.
-- `bb diff-review reply <id>` — answer in a thread; it stays open.
-- `bb diff-review resolve <id>` — mark it resolved, with a one-line summary of what you changed.
-- `bb diff-review dismiss <id>` — close it without acting, with the reason.
-- `bb diff-review comment <file> --line <n> [--end-line <n>] [--side new|old] [--severity …]` — only in
+- `alia diff-review reply <id>` — answer in a thread; it stays open.
+- `alia diff-review resolve <id>` — mark it resolved, with a one-line summary of what you changed.
+- `alia diff-review dismiss <id>` — close it without acting, with the reason.
+- `alia diff-review comment <file> --line <n> [--end-line <n>] [--side new|old] [--severity …]` — only in
   the thread of an AI review, summary or explanation Diff Review started: a new comment on lines the
   diff shows (`--line 0` for the whole file, `--general` instead of a file for the whole diff).
-- `bb diff-review open [file] [--view uncommitted|staged|unstaged|branch|all|commit|range]
+- `alia diff-review open [file] [--view uncommitted|staged|unstaged|branch|all|commit|range]
   [--base <branch>] [--commit <sha>] [--range a...b] [--thread <id>]` — when the user asks to see a
-  review: opens this thread's (or `--thread`'s) review on that view, at that file, in the bb window
+  review: opens this thread's (or `--thread`'s) review on that view, at that file, in the VesnALIA window
   that shows the thread, and prints the page's address to give the user. A GitHub pull request's
   address in place of the file opens that pull request's review.
 - Comments marked GitHub come from a pull request's review threads. You never post to GitHub: answer
@@ -47,14 +47,14 @@ Give the text as base64 through stdin, so quotes, backticks, `$(...)` and new li
 heredoc whose delimiter is in single quotes leaves the text alone:
 
 ```sh
-base64 <<'DIFF_REVIEW_END' | tr -d '\n' | bb diff-review reply 3fa9c2 --text-base64-stdin
+base64 <<'DIFF_REVIEW_END' | tr -d '\n' | alia diff-review reply 3fa9c2 --text-base64-stdin
 Because `b` is read before it is set; see src/a.ts:12.
 DIFF_REVIEW_END
 ```
 
 Run that one pipeline per answer. If a line of your text is exactly `DIFF_REVIEW_END`, pick another
 delimiter. The one new line the heredoc adds is dropped. Texts up to 12,000 bytes fit. Plain words after
-the id also work (`bb diff-review resolve 3fa9c2 Fixed: accept http too.`), but only for text with
+the id also work (`alia diff-review resolve 3fa9c2 Fixed: accept http too.`), but only for text with
 nothing the shell would change.
 
 ## How to answer
@@ -76,12 +76,12 @@ If you end your turn without answering a thread, the tab marks it "No reply" and
 ## Notices from Diff Review's threads
 
 Diff Review starts its AI reviews (which also answer @reviewer questions), summaries, explanations and
-fixes as child threads of the thread under review, so that thread gets bb's `@thread:… completed: …` notice after each of their turns. A notice
+fixes as child threads of the thread under review, so that thread gets VesnALIA's `@thread:… completed: …` notice after each of their turns. A notice
 that opens with "Diff Review status report — no action needed" is a report: read it, and do nothing
 about it unless the user asks. Review comments reach you only as a message from the Review tab.
 
 ## Errors
 
 - "was not sent to this thread" — the comment went to another thread; leave it.
-- "No comment thread … was sent to this thread" — check the id with `bb diff-review list`.
-- "Run this inside the bb thread the comments were sent to" — the command ran outside a bb thread.
+- "No comment thread … was sent to this thread" — check the id with `alia diff-review list`.
+- "Run this inside the VesnALIA thread the comments were sent to" — the command ran outside a VesnALIA thread.

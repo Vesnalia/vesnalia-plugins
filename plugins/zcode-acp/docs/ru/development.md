@@ -9,9 +9,9 @@ npm ci
 npm run verify
 ```
 
-Команда проверяет типы и контракт Rust-адаптера, собирает бандлы BB и запускает тесты CLI/ACP, установки, квот и правил тегирования. Фикстуры не отправляют запросы к модели. `npm test` и контракт CI для трёх ОС используют профильный набор тестов из `npm run verify`.
+Команда проверяет типы и контракт Rust-адаптера, собирает бандлы VesnALIA и запускает тесты CLI/ACP, установки, квот и правил тегирования. Фикстуры не отправляют запросы к модели. `npm test` и контракт CI для трёх ОС используют профильный набор тестов из `npm run verify`.
 
-Workflow `CI` работает на Linux, Windows и macOS с Node 24 и закреплённым BB CLI 0.49.0. Он загружает открытый Rust-адаптер по тегу `v0.3.2`, собирает его командой `cargo build --release --locked` и передаёт путь через `ZCODE_ACP_BIN`. Адаптер не является npm-зависимостью. Ключ модуля не требуется; pull request из fork может выполнять те же проверки.
+Workflow `CI` работает на Linux, Windows и macOS с Node 24 и закреплённым VesnALIA CLI 0.49.0. Он загружает открытый Rust-адаптер по тегу `v0.3.2`, собирает его командой `cargo build --release --locked` и передаёт путь через `ZCODE_ACP_BIN`. Адаптер не является npm-зависимостью. Ключ модуля не требуется; pull request из fork может выполнять те же проверки.
 
 ## Автоматические теги
 
@@ -41,7 +41,7 @@ npm run check
 npm run preview
 ```
 
-Базовый путь сайта — `/bb-plugin-zcode/`. Для размещения под другим репозиторием задайте `DOCS_BASE` перед сборкой. Сборка отклоняет неработающие Markdown-ссылки; проверка сайта сверяет языковые разделы, ссылки статических страниц и скриншоты.
+Базовый путь сайта — `/alia-plugin-zcode/`. Для размещения под другим репозиторием задайте `DOCS_BASE` перед сборкой. Сборка отклоняет неработающие Markdown-ссылки; проверка сайта сверяет языковые разделы, ссылки статических страниц и скриншоты.
 
 Загружается только результат `.vitepress/dist`. Локальные отчёты проверок и прежние материалы agent skill исключены из поиска страниц. Приватным файлам не место в `docs/public`.
 
@@ -49,18 +49,18 @@ npm run preview
 
 Workflow `Documentation` собирает сайт при изменении связанных файлов в push и pull request. Для публикации нужно включить Pages с источником **GitHub Actions** и переменную репозитория `PAGES_ENABLED=true`.
 
-Этот репозиторий и `zcode-acp` открыты. Сайт публикуется по адресу [ichinya.github.io/bb-plugin-zcode](https://ichinya.github.io/bb-plugin-zcode/). Настройка хостинга описана в [инструкции GitHub по источнику публикации](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
+Этот репозиторий и `zcode-acp` открыты. Сайт публикуется по адресу [ichinya.github.io/alia-plugin-zcode](https://ichinya.github.io/bb-plugin-zcode/). Настройка хостинга описана в [инструкции GitHub по источнику публикации](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
 Для восстановления конфигурации Pages в подходящем fork замените имя репозитория и выполните:
 
 ```sh
-gh api repos/ichinya/bb-plugin-zcode/pages --method POST -f build_type=workflow
-gh variable set PAGES_ENABLED --repo ichinya/bb-plugin-zcode --body true
-gh workflow run docs.yml --repo ichinya/bb-plugin-zcode
+gh api repos/ichinya/alia-plugin-zcode/pages --method POST -f build_type=workflow
+gh variable set PAGES_ENABLED --repo ichinya/alia-plugin-zcode --body true
+gh workflow run docs.yml --repo ichinya/alia-plugin-zcode
 ```
 
 Публикации выполняются последовательно через окружение `github-pages` с разрешениями `pages: write` и `id-token: write`. Публикуется только собранный артефакт документации.
 
 ## Авторство и лицензии
 
-Плагин основан на [VKirill/bb-plugin-zcode](https://github.com/VKirill/bb-plugin-zcode), Apache-2.0. MIT-атрибуция адаптера аккаунта и уведомления об исходниках сохранены в самостоятельном модуле `zcode-acp`. Интеграция поддерживается сообществом.
+Плагин основан на [VKirill/alia-plugin-zcode](https://github.com/VKirill/bb-plugin-zcode), Apache-2.0. MIT-атрибуция адаптера аккаунта и уведомления об исходниках сохранены в самостоятельном модуле `zcode-acp`. Интеграция поддерживается сообществом.

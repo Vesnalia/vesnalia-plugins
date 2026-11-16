@@ -1,4 +1,4 @@
-// bb-plugin-preset-buttons — backend entry.
+// alia-plugin-preset-buttons — backend entry.
 //
 // This plugin adds a row of preset buttons beside the project picker on the
 // New thread screen. Each button applies one stored provider / model /
@@ -7,14 +7,14 @@
 // The split of responsibility is deliberate:
 //
 //   * THIS FILE owns configuration. The active preset set is a plugin setting
-//     (a dropdown in BB's settings UI, or `bb plugin config`), so swapping
+//     (a dropdown in VesnALIA's settings UI, or `alia plugin config`), so swapping
 //     which four buttons appear is a config change, never a code change.
 //     It also serves the active presets over RPC and a realtime signal.
 //
 //   * app.tsx owns application. `experimental_setSelection` is only reachable
 //     from inside a composer's React context, so the frontend — not the
 //     backend — is what actually writes the selection.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   BUILT_IN_SETS,
@@ -95,10 +95,10 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     presetSet: {
       type: "select",
       label: "Preset set",
@@ -148,7 +148,7 @@ export default async function plugin(bb: BbPluginApi) {
         customPresets.trim() === ""
           ? `"${CUSTOM_SET_LABEL}" is selected but the custom JSON set is empty. Showing "${fallbackSet.label}" instead.`
           : `"${CUSTOM_SET_LABEL}" is selected but the custom JSON set is invalid. Showing "${fallbackSet.label}" instead.`;
-      bb.log.warn(warning);
+      alia.log.warn(warning);
       return {
         setName: fallbackSet.label,
         isCustom: false,
@@ -167,16 +167,16 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     presets_get: async () => {
       // Detect built-in drift the first time anything asks for presets, which
-      // is also the first moment `bb.sdk` is safely readable.
+      // is also the first moment `alia.sdk` is safely readable.
       await reportCatalogDrift();
       return activePresets();
     },
     presets_set: async ({ label }) => {
       const next = await settings.experimental_set({ presetSet: label });
-      bb.log.info(`preset set switched to ${next.presetSet}`);
+      alia.log.info(`preset set switched to ${next.presetSet}`);
       await reportCatalogDrift();
       return activePresets();
     },
@@ -191,7 +191,7 @@ export default async function plugin(bb: BbPluginApi) {
         customPresets: JSON.stringify(normalized, null, 2),
         presetSet: CUSTOM_SET_LABEL,
       });
-      bb.log.info(`saved ${normalized.length} custom preset buttons`);
+      alia.log.info(`saved ${normalized.length} custom preset buttons`);
       return activePresets();
     },
   });
@@ -204,7 +204,7 @@ export default async function plugin(bb: BbPluginApi) {
    * button. Providers rename models, so a shipped set WILL drift. This turns
    * that into a log line instead of a click-by-click discovery.
    *
-   * Lives here rather than in the factory because `bb.sdk` is bind-gated:
+   * Lives here rather than in the factory because `alia.sdk` is bind-gated:
    * reading it before the server listens throws, so it runs from the first
    * handler to ask for presets and memoises. Best effort throughout — a
    * provider whose catalogue cannot be read is skipped, never guessed at.
@@ -221,7 +221,7 @@ export default async function plugin(bb: BbPluginApi) {
       await Promise.all(
         providerIds.map(async (providerId) => {
           try {
-            const { models } = await bb.sdk.providers.models({ providerId });
+            const { models } = await alia.sdk.providers.models({ providerId });
             modelsByProvider[providerId] = models.map((model) => model.id);
           } catch {
             // No catalogue right now (offline, signed out); skip this provider.
@@ -242,7 +242,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
       }
       if (stale.length > 0) {
-        bb.log.warn(
+        alia.log.warn(
           `built-in presets name models the live catalogue does not list:\n  ${stale.join("\n  ")}`,
         );
       }
@@ -250,39 +250,39 @@ export default async function plugin(bb: BbPluginApi) {
     return driftReported;
   }
 
-  // A settings write from anywhere — the settings UI, `bb plugin config`,
+  // A settings write from anywhere — the settings UI, `alia plugin config`,
   // or this plugin's own CLI — republishes so open composers re-render with
   // the new four buttons without a reload.
   settings.onChange(async () => {
     const { setName } = await activePresets();
-    bb.realtime.publish(PRESETS_CHANGED, { setName });
+    alia.realtime.publish(PRESETS_CHANGED, { setName });
   });
 
   const usage = [
     "Usage:",
-    "  bb preset-buttons list [--json]",
-    "  bb preset-buttons sets [--json]",
-    "  bb preset-buttons use <set-id|set-label> [--json]",
+    "  VesnALIA preset-buttons list [--json]",
+    "  VesnALIA preset-buttons sets [--json]",
+    "  VesnALIA preset-buttons use <set-id|set-label> [--json]",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "preset-buttons",
     summary: "Inspect and switch the New thread preset buttons",
     commands: [
       {
         name: "list",
         summary: "Show the presets the buttons currently apply",
-        usage: "bb preset-buttons list [--json]",
+        usage: "alia preset-buttons list [--json]",
       },
       {
         name: "sets",
         summary: "List every selectable preset set",
-        usage: "bb preset-buttons sets [--json]",
+        usage: "alia preset-buttons sets [--json]",
       },
       {
         name: "use",
         summary: "Switch the active preset set",
-        usage: "bb preset-buttons use <set-id|set-label> [--json]",
+        usage: "alia preset-buttons use <set-id|set-label> [--json]",
       },
     ],
     async run(argv) {
@@ -354,7 +354,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

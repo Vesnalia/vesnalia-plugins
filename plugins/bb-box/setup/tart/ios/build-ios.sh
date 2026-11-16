@@ -8,7 +8,7 @@ step() { printf '%s  %s\n' "$(date +%H:%M:%S)" "$*" >&2; }
 seconds_since() { python3 -c "import sys, time; print(f'{time.time() - float(sys.argv[1]):.1f}')" "$1"; }
 now() { python3 -c 'import time; print(f"{time.time():.3f}")'; }
 
-share=/usr/local/share/bb-box
+share=/usr/local/share/alia-box
 sudo -n true 2>/dev/null || die "$(id -un) needs passwordless sudo while the image is built"
 xcrun simctl help >/dev/null 2>&1 || die "this macOS image has no Xcode with the iOS Simulator"
 
@@ -136,13 +136,13 @@ install_idb_companion
 h264="$here/../android/build-h264.sh"
 [ -f "$h264" ] || die "found no $h264: copy setup/android beside setup/tart"
 if [ "${H264_WITH_X264:-no}" = yes ]; then
-  step "building bb-box-h264, with x264 from its pinned source, for iOS video where the Mac has no hardware encoder"
-  sudo -n bash "$h264" /usr/local --with-x264 >&2 || die "bb-box-h264 did not build"
+  step "building alia-box-h264, with x264 from its pinned source, for iOS video where the Mac has no hardware encoder"
+  sudo -n bash "$h264" /usr/local --with-x264 >&2 || die "alia-box-h264 did not build"
 else
-  step "building bb-box-h264, with Cisco's OpenH264, for iOS video where the Mac has no hardware encoder"
-  sudo -n bash "$h264" /usr/local >&2 || die "bb-box-h264 did not build"
+  step "building alia-box-h264, with Cisco's OpenH264, for iOS video where the Mac has no hardware encoder"
+  sudo -n bash "$h264" /usr/local >&2 || die "alia-box-h264 did not build"
 fi
-software_encoder=$(/usr/local/bin/bb-box-h264 --version 2>&1 | head -n 1)
+software_encoder=$(/usr/local/bin/alia-box-h264 --version 2>&1 | head -n 1)
 hardware_encoder=unknown
 if command -v ffmpeg >/dev/null 2>&1; then
   if ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=size=1206x2622:rate=60 -frames:v 12 -c:v h264_videotoolbox -allow_sw 0 -f null - </dev/null >/dev/null 2>&1; then hardware_encoder=yes; else hardware_encoder=no; fi
@@ -192,10 +192,10 @@ while IFS="$tab" read -r model type width height; do
   printf 'device=%s\t%s\t%s\t%s\t%s\t%s\n' "$model" "$type" "$udid" "$first_boot" "$slim_seconds" "$count"
 done <"$here/devices.tsv"
 
-step "installing bb-box-check-ios and its probe app"
-sudo install -d -m 0755 /usr/local/libexec/bb-box "$share/ios"
-sudo install -m 0755 "$here/check-ios.sh" /usr/local/bin/bb-box-check-ios
-sudo install -m 0755 "$here/slot-clipboard.sh" /usr/local/libexec/bb-box/slot-clipboard
+step "installing alia-box-check-ios and its probe app"
+sudo install -d -m 0755 /usr/local/libexec/alia-box "$share/ios"
+sudo install -m 0755 "$here/check-ios.sh" /usr/local/bin/alia-box-check-ios
+sudo install -m 0755 "$here/slot-clipboard.sh" /usr/local/libexec/alia-box/slot-clipboard
 sudo install -m 0644 "$here/devices.tsv" "$share/ios/devices.tsv"
 sudo install -m 0644 "$list" "$share/ios/$list_name.txt"
 sudo rm -rf "$share/ios/probe"

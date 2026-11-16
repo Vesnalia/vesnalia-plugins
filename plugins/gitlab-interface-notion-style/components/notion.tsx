@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 // and dark): 14px text, 36px table rows plus a 1px rule, 8px cell padding,
 // 20px-tall tags with a 4px radius, 34px property rows with a 160px label
 // column. Chrome colors come from the host theme tokens so the panel follows
-// bb's palette; only the categorical tag hues are fixed, the way Notion's are.
-// `[.dark_&]:` keys dark mode off bb's `dark` class rather than the OS setting.
+// VesnALIA's palette; only the categorical tag hues are fixed, the way Notion's are.
+// `[.dark_&]:` keys dark mode off VesnALIA's `dark` class rather than the OS setting.
 
 export type NotionColor =
   | "default"

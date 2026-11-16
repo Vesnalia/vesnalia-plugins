@@ -131,6 +131,6 @@ describe("comments on a live site", () => {
     expect(text).toContain("Site: https://retro.example.com\n");
     expect(text).toContain("[c_web] Element <button>, /room/42 · text: «Start»");
     expect(text).toContain("Page: https://retro.example.com/room/42?tab=board\n");
-    expect(text).toContain("live site opened in bb's browser");
+    expect(text).toContain("live site opened in VesnALIA's browser");
   });
 });

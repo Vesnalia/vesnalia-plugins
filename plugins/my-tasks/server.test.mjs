@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 
 const setup = async (
@@ -21,7 +21,7 @@ const setup = async (
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return h;
 };
 test("concurrent additions, partial updates and reload preserve user data", async () => {

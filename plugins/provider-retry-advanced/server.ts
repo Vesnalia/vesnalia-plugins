@@ -1,4 +1,4 @@
-// Derived from get-bb/bb plugins/provider-retry/server.ts (MIT, desktop-v0.46.1).
+// Derived from get-alia/alia plugins/provider-retry/server.ts (MIT, desktop-v0.46.1).
 // Changes: the stock overload/subscription-limit policy runs only for those
 // failures; connectivity (transport) failures are recovered by a fixed 60s
 // scan that probes the provider path and asks core to retry natively; a
@@ -13,7 +13,7 @@ import {
   retryAvailabilitySchema,
   type RetryAvailability,
 } from "./src/retry-contract.js";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { registerProviderRetryCli } from "./src/cli.js";
 import { createFollowUps } from "./src/follow-ups.js";
 import { createProbe, type ProbeFn } from "./src/probe.js";
@@ -63,8 +63,8 @@ export interface PluginOptions {
 }
 
 export function createPlugin(options: PluginOptions = {}) {
-  return async function plugin(bb: BbPluginApi) {
-    const settings = bb.settings.define({
+  return async function plugin(alia: AliaPluginApi) {
+    const settings = alia.settings.define({
       maximumWait: {
         type: "select",
         label: "Maximum automatic wait",
@@ -84,14 +84,14 @@ export function createPlugin(options: PluginOptions = {}) {
         type: "boolean",
         label: "Resume workflows a restart killed",
         description:
-          "When a BB or machine restart kills a Claude Code workflow, send the idle thread one message to resume that run by its id. Agents that were mid-step run again, so their side effects can repeat.",
+          "When a VesnALIA or machine restart kills a Claude Code workflow, send the idle thread one message to resume that run by its id. Agents that were mid-step run again, so their side effects can repeat.",
         default: false,
       },
       stallWatchdog: {
         type: "select",
         label: "Restart stalled turns",
         description:
-          "Stop a running turn that sent no events for this long while BB was awake, and continue it once. Never touches a turn waiting for you, running a tool, or with background work open.",
+          "Stop a running turn that sent no events for this long while VesnALIA was awake, and continue it once. Never touches a turn waiting for you, running a tool, or with background work open.",
         options: [...STALL_WATCHDOG_OPTIONS],
         default: "Off",
       },
@@ -127,13 +127,13 @@ export function createPlugin(options: PluginOptions = {}) {
     });
 
     const now = options.now ?? Date.now;
-    const recovery = createTransportRecovery(bb, {
+    const recovery = createTransportRecovery(alia, {
       probe: options.probe ?? createProbe(),
       enabled: () => transportRecovery,
       workflowRecovery: () => workflowRecovery,
       now,
     });
-    const watchdog = createStallWatchdog(bb, {
+    const watchdog = createStallWatchdog(alia, {
       limitMs: () => stallLimit,
       isArmed: () => recovery.isArmed(),
       isHeld: (threadId) => recovery.isHeld(threadId),
@@ -141,7 +141,7 @@ export function createPlugin(options: PluginOptions = {}) {
       monotonic: options.monotonic ?? (() => performance.now()),
       ...(options.wait === undefined ? {} : { wait: options.wait }),
     });
-    const followUps = createFollowUps(bb, {
+    const followUps = createFollowUps(alia, {
       continuationCheck: () => continuationCheck,
       unfinishedFollowUp: () => unfinishedFollowUp,
       isArmed: () => recovery.isArmed(),
@@ -149,8 +149,8 @@ export function createPlugin(options: PluginOptions = {}) {
       now,
     });
 
-    bb.rpc.register(retryDiagnosticContract, {
-      "decision.get": ({ threadId }) => readRetryDiagnostic(bb, threadId),
+    alia.rpc.register(retryDiagnosticContract, {
+      "decision.get": ({ threadId }) => readRetryDiagnostic(alia, threadId),
     });
 
     // Stock policy, unchanged, for the two failure kinds it owns. Every other
@@ -158,10 +158,10 @@ export function createPlugin(options: PluginOptions = {}) {
     await recovery.init();
     await watchdog.init();
     await followUps.init();
-    bb.events.on("turn.failed", async (event) => {
+    alia.events.on("turn.failed", async (event) => {
       recovery.noteFailure(event.threadId);
       await followUps.noteFailure(event).catch((error: unknown) =>
-        bb.log.warn(`Could not record the failed request on ${event.threadId}: ${String(error)}`),
+        alia.log.warn(`Could not record the failed request on ${event.threadId}: ${String(error)}`),
       );
       if (event.errorInfo?.category !== "overloaded" && !isRateLimitFailure(event)) {
         return;
@@ -170,28 +170,28 @@ export function createPlugin(options: PluginOptions = {}) {
       const gate = () =>
         !recovery.isArmed() ? "not-armed" : recovery.isHeld(event.threadId) ? "held" : null;
       const declineFor = async (reason: string) => {
-        await bb.storage.kv.set(`decision:${event.threadId}`, {
+        await alia.storage.kv.set(`decision:${event.threadId}`, {
           requestId: event.requestId,
           observedAt: Date.now(),
           availability: { kind: "not-routed" },
           decision: { kind: "decline", reason },
         });
-        bb.log.info(`Automatic retry skipped for ${event.threadId}: ${reason}.`);
+        alia.log.info(`Automatic retry skipped for ${event.threadId}: ${reason}.`);
       };
       const before = gate();
       if (before !== null) return declineFor(before);
       let availability: RetryAvailability = { kind: "not-routed" };
       if (isRateLimitFailure(event)) {
-        const sources = await bb.sdk.plugins.experimental_discoverRpc({
+        const sources = await alia.sdk.plugins.experimental_discoverRpc({
           method: retryAvailabilityMethod,
         });
         for (const source of sources) {
           try {
             // Fork: inferring callRpc's output from the zod schema exceeds
-            // TypeScript's instantiation depth outside the BB monorepo, so the
+            // TypeScript's instantiation depth outside the VesnALIA monorepo, so the
             // answer is parsed with the same schema the host validates with.
             const result = retryAvailabilitySchema.parse(
-              await bb.sdk.plugins.callRpc({
+              await alia.sdk.plugins.callRpc({
                 pluginId: source.pluginId,
                 method: retryAvailabilityMethod,
                 input: { threadId: event.threadId, requestId: event.requestId },
@@ -204,7 +204,7 @@ export function createPlugin(options: PluginOptions = {}) {
               break;
             }
           } catch (error) {
-            bb.log.warn(
+            alia.log.warn(
               `Retry availability failed for ${event.threadId}: ${String(error)}`,
             );
             availability = { kind: "unavailable", reason: "source-unavailable" };
@@ -219,7 +219,7 @@ export function createPlugin(options: PluginOptions = {}) {
         random: Math.random(),
       });
       const recordDecision = () =>
-        bb.storage.kv.set(`decision:${event.threadId}`, {
+        alia.storage.kv.set(`decision:${event.threadId}`, {
           requestId: event.requestId,
           observedAt: Date.now(),
           availability,
@@ -230,12 +230,12 @@ export function createPlugin(options: PluginOptions = {}) {
       if (after !== null) return declineFor(after);
       if (decision.kind === "decline") {
         await recordDecision();
-        bb.log.info(
+        alia.log.info(
           `Automatic retry skipped for ${event.threadId}: ${decision.reason}${availability.kind === "unavailable" ? ` (${availability.reason})` : ""}.`,
         );
         return;
       }
-      await bb.sdk.threads.retry({
+      await alia.sdk.threads.retry({
         threadId: event.threadId,
         turnRequestId: event.requestId,
         sendAt: decision.sendAt,
@@ -246,32 +246,32 @@ export function createPlugin(options: PluginOptions = {}) {
 
     // Core asks before every attempt and every queued drain; this is where a
     // hold, cancel, stop or newer failure stops an already queued retry.
-    bb.experimental_hooks.on("message.dispatch", (context) =>
+    alia.experimental_hooks.on("message.dispatch", (context) =>
       recovery.decideDispatch(context),
     );
 
     // A retry row the user deleted is a decision about that failure.
-    bb.events.on("message.cancelled", ({ entry }) =>
+    alia.events.on("message.cancelled", ({ entry }) =>
       recovery.onRetryRowCancelled(entry),
     );
 
     // A thread became idle: maybe a resumed turn only promised to continue,
     // or a failed request was superseded and never retried.
-    bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+    alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
       await followUps
         .onIdle(thread as never, lastAssistantText)
-        .catch((error: unknown) => bb.log.warn(`Follow-up check failed for ${thread.id}: ${String(error)}`));
+        .catch((error: unknown) => alia.log.warn(`Follow-up check failed for ${thread.id}: ${String(error)}`));
     });
 
-    bb.background.service("connectivity-recovery", {
-      start: (signal) => runRecoveryLoop({ recovery, signal, log: bb.log }),
+    alia.background.service("connectivity-recovery", {
+      start: (signal) => runRecoveryLoop({ recovery, signal, log: alia.log }),
     });
 
-    bb.background.service("stall-watchdog", {
-      start: (signal) => runWatchdogLoop({ watchdog, signal, log: bb.log, wait: sleep }),
+    alia.background.service("stall-watchdog", {
+      start: (signal) => runWatchdogLoop({ watchdog, signal, log: alia.log, wait: sleep }),
     });
 
-    registerProviderRetryCli(bb, recovery, { watchdog, followUps });
+    registerProviderRetryCli(alia, recovery, { watchdog, followUps });
   };
 }
 

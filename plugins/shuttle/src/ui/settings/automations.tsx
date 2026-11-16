@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { Config } from "../../config";
 import { BUTTON_GHOST, BUTTON_PRIMARY, CARD, Checkbox, ErrorNote, FIELD, FitTextarea, Toggle } from "../common";
 import { AUTO_TRIGGERS, WATCH_MODES } from "../constants";

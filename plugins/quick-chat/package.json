@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-quick-chat",
+  "name": "alia-plugin-quick-chat",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.92"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.92"
   },
-  "bb": {
+  "alia": {
     "name": "Quick Chat",
     "description": "A floating chat window for quick, projectless questions. Open it with Mod+Shift+K or the command palette.",
     "branding": {
@@ -17,7 +17,7 @@
     "skills": []
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -28,7 +28,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -54,9 +53,21 @@
     "vitest": "^4.1.1"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/quick-chat#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SawyerHood/sawyer-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/quick-chat"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -3,7 +3,7 @@
 // the real fake-host settings save, so a schema that stops rejecting bad input
 // fails here rather than in the field.
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   DEFAULT_SKIP_CATEGORIES,
   compilePattern,
@@ -16,10 +16,10 @@ import {
 import { decideRetry, type DecisionInput } from "../policy.js";
 
 async function resolve(settings: Record<string, string | number | boolean> = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "agent-retry", settings });
-  const handle = defineSettings(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "agent-retry", settings });
+  const handle = defineSettings(alia);
   const resolved = await resolvePolicy(handle);
-  return { resolved, handle, harness, bb };
+  return { resolved, handle, harness, alia };
 }
 
 function input(overrides: Partial<DecisionInput> = {}): DecisionInput {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { CONTRACT_VERSION } from "../lib/contract";
 import { replyFromEvents } from "../lib/reply";
 import plugin from "../server";
@@ -106,8 +106,8 @@ describe("§4.8 contract", () => {
   });
 
   it("is registered as RPC methods on the server", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "crew" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "crew" });
+    await plugin(alia);
     for (const method of ["resolveMember", "sendToMember", "listMembers", "memberReply"]) expect(harness.registrations.rpcMethods).toContain(method);
     expect(await harness.behavior.callRpc("listMembers", { projectId: "p1" })).toEqual({ contractVersion: 1, members: [] });
     expect(await harness.behavior.callRpc("memberReply", { messageId: "msg_x" })).toMatchObject({ contractVersion: 1, status: "refused" });

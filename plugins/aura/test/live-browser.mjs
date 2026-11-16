@@ -2,11 +2,11 @@
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-const base=process.env.BB_BASE_URL||'http://127.0.0.1:38886';
-const shots=process.env.BB_SCREENSHOT_DIR||process.env.BB_THREAD_STORAGE;
-if(!shots)throw new Error('Set BB_SCREENSHOT_DIR.');
+const base=process.env.ALIA_BASE_URL||'http://127.0.0.1:38886';
+const shots=process.env.ALIA_SCREENSHOT_DIR||process.env.ALIA_THREAD_STORAGE;
+if(!shots)throw new Error('Set ALIA_SCREENSHOT_DIR.');
 await mkdir(shots,{recursive:true});
-const browser=await chromium.launch({headless:true,...(process.env.BB_CHROMIUM_PATH?{executablePath:process.env.BB_CHROMIUM_PATH}:{}),args:['--no-sandbox','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({headless:true,...(process.env.ALIA_CHROMIUM_PATH?{executablePath:process.env.ALIA_CHROMIUM_PATH}:{}),args:['--no-sandbox','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1440,height:1050}});
 page.setDefaultTimeout(15000);
 const rpc=async(method,input=null)=>{const r=await page.request.post(`${base}/api/v1/plugins/aura/rpc/${method}`,{data:JSON.stringify(input),headers:{'Content-Type':'application/json'}});const b=await r.json();assert.equal(b.ok,true,JSON.stringify(b.error));return b.result;};

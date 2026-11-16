@@ -1,7 +1,7 @@
 /**
  * Live end-to-end checks against the Cua Driver installed on this machine.
- * They run the plugin's own server code in the SDK's fake bb host, wired to its
- * real host entry, so every call takes the same path a bb thread's would:
+ * They run the plugin's own server code in the SDK's fake VesnALIA host, wired to its
+ * real host entry, so every call takes the same path a VesnALIA thread's would:
  * agent tool → server → host RPC → `cua-driver mcp` → the daemon.
  *
  * Skipped unless CUA_LIVE=1. They drive real apps in the background:
@@ -16,8 +16,8 @@ import { mkdtempSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { afterAll, describe, expect, it } from "vitest";
 import hostEntry from "./host.js";
 import plugin from "./server.js";
@@ -59,7 +59,7 @@ async function livePlugin(settings: Record<string, string | boolean> = {}) {
     experimental_paths: { tempDir: mkdtempSync(join(tmpdir(), "cua-live-")) },
   };
   const handlers = hostEntry.handlers as unknown as Record<string, (input: unknown, context: unknown) => unknown>;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "desktop-browser-agent",
     settings,
     agentSkillIds: ["desktop-browser-agent"],
@@ -76,7 +76,7 @@ async function livePlugin(settings: Record<string, string | boolean> = {}) {
       return handler(input, context);
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(() => {
     handlers.disconnect?.(null, context);
     controller.abort();

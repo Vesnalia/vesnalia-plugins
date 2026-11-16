@@ -1,10 +1,10 @@
 // How the files and media chunks reach the thread's files. The server leases
-// the file's folder from bb (shared/rpc.ts file_url, folder_files) and the
+// the file's folder from VesnALIA (shared/rpc.ts file_url, folder_files) and the
 // browser streams from that URL with byte ranges; a lease that lapses is
 // renewed on the next error. Without a thread (the gallery) views use the
 // bundled samples (sampleUrl).
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { literalStrings, sampleUrl, useEnv } from "@iris/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FolderFilesResult, RpcContract } from "../shared/rpc";
@@ -72,7 +72,7 @@ export async function probe(url: string): Promise<{ ok: true; size: number | nul
   try {
     const r = await fetch(url, { headers: { range: "bytes=0-0" }, credentials: "same-origin" });
     if (r.status === 404) return { ok: false, error: "file not found" };
-    if (!r.ok) return { ok: false, error: `bb answered ${r.status}` };
+    if (!r.ok) return { ok: false, error: `alia answered ${r.status}` };
     const total = /\/(\d+)$/.exec(r.headers.get("content-range") ?? "")?.[1];
     const size = total ? Number(total) : r.headers.get("content-length") ? Number(r.headers.get("content-length")) : null;
     void r.body?.cancel();
@@ -129,7 +129,7 @@ export function useFolder(path: string, limit: number, enabled = true): [FolderS
 export async function fetchBytes(url: string, cap: number, signal?: AbortSignal): Promise<ArrayBuffer> {
   const r = await fetch(url, { credentials: "same-origin", signal });
   if (r.status === 404) throw new Error("file not found");
-  if (!r.ok) throw new Error(`bb answered ${r.status}`);
+  if (!r.ok) throw new Error(`alia answered ${r.status}`);
   const size = Number(r.headers.get("content-length"));
   if (Number.isFinite(size) && size > cap) {
     void r.body?.cancel();

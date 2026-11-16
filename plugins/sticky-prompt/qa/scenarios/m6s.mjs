@@ -13,7 +13,7 @@ export default async (page) => {
   await page.waitForTimeout(2500);
   b = await bar(page);
   bbq("plugin", "config", "sticky-prompt", "set", "includeOtherSenders", "false");
-  check("S17 agent message with a long reply: skipped by default, pinned with the setting on", off.visible && !off.text?.startsWith("[bb message") && b.visible && b.text?.startsWith("[bb message from thread:"), { off: off.text, on: b.text });
+  check("S17 agent message with a long reply: skipped by default, pinned with the setting on", off.visible && !off.text?.startsWith("[VesnALIA message") && b.visible && b.text?.startsWith("[VesnALIA message from thread:"), { off: off.text, on: b.text });
   await page.waitForTimeout(1500);
 
   return results;

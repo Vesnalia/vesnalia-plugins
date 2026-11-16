@@ -17,7 +17,7 @@ IBM Plex is distributed under the SIL Open Font License; see [OFL.txt](OFL.txt),
 | `sans-latinext.woff2` | [Google Fonts WOFF2](https://fonts.gstatic.com/s/ibmplexsans/v23/zYXzKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1syxQKYbSB4ZhRNU.woff2) |
 | `sans-latin.woff2` | [Google Fonts WOFF2](https://fonts.gstatic.com/s/ibmplexsans/v23/zYXzKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1syxeKYbSB4Zh.woff2) |
 
-The Mono 500 files are unmodified downloads. The four Sans files preserve the downloaded Unicode coverage, hinting, and OpenType features, with the variable `wght` axis restricted from 100–700 to 400–700. This avoids carrying unused light weights and leaves room for true italic and bold faces under BB's stylesheet cap. No glyph subsetting or layout-feature removal is applied.
+The Mono 500 files are unmodified downloads. The four Sans files preserve the downloaded Unicode coverage, hinting, and OpenType features, with the variable `wght` axis restricted from 100–700 to 400–700. This avoids carrying unused light weights and leaves room for true italic and bold faces under VesnALIA's stylesheet cap. No glyph subsetting or layout-feature removal is applied.
 
 To reproduce a Sans asset, download its original above to a temporary file, then run this with FontTools 4.64.0 and Brotli 1.2.0 (the preparation versions). Regular theme builds use only Python's standard library and the prepared assets; they need no network or font tooling.
 

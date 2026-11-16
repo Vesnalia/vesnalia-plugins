@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const [what, tag = "now"] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
@@ -11,13 +11,13 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const browser = await chromium.launch();
 
 async function open(page, hash) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   await page.locator("[data-settings-view]").waitFor();
   await page.getByText(/Looking for Docker|Looking…/).first().waitFor({ state: "detached", timeout: 15_000 }).catch(() => {});

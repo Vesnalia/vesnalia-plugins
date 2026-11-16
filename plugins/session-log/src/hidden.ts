@@ -5,11 +5,11 @@ type RequestData = RequestedEvent["data"];
 type PromptPart = RequestData["input"][number];
 export type SystemMessageKind = NonNullable<RequestData["systemMessageKind"]>;
 
-/** The events that say what bb sent an agent and whether the agent took it. */
+/** The events that say what VesnALIA sent an agent and whether the agent took it. */
 export const REQUEST_EVENT_TYPES = ["client/turn/requested", "turn/input/accepted", "client/turn/rejected"] as const;
 
 /**
- * Input bb delivered to the agent that its timeline leaves out: `agent-only`
+ * Input VesnALIA delivered to the agent that its timeline leaves out: `agent-only`
  * parts (plugin steers, mention context, retries) and system messages whose
  * tool-call subject asks to be suppressed.
  */
@@ -17,7 +17,7 @@ export interface HiddenMessage {
   kind: "hidden";
   id: string;
   requestId: string;
-  /** Where bb's timeline would place the message: at its acceptance for a steer, at its request otherwise. */
+  /** Where VesnALIA's timeline would place the message: at its acceptance for a steer, at its request otherwise. */
   seq: number;
   startedAt: number;
   turnId: string | null;
@@ -42,7 +42,7 @@ export interface HiddenMessage {
   };
 }
 
-// Mirrors bb's parsePromptInput: a part the chat renders.
+// Mirrors VesnALIA's parsePromptInput: a part the chat renders.
 function isVisible(part: PromptPart): boolean {
   if (part.visibility === "agent-only") return false;
   return part.type !== "text" || part.text.length > 0;
@@ -57,7 +57,7 @@ function describeAttachment(part: PromptPart): string | null {
   }
 }
 
-// bb treats a request as a steer while it still targets the turn it expected (resolveTurnRequestKind).
+// VesnALIA treats a request as a steer while it still targets the turn it expected (resolveTurnRequestKind).
 function settle(message: HiddenMessage): HiddenMessage {
   const { request } = message;
   const steer = request.expectedTurnId !== null &&

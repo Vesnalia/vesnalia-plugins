@@ -80,7 +80,7 @@ test("a box that does not start destroys its machine, and the most machines at o
   await backend.acquire(box("b2"), null, hooks().hooks, new AbortController().signal);
   const full = await backend.capacity("macos", { cores: 4, memoryMiB: 8192, diskGiB: null }, []);
   assert.equal(full.ok, false);
-  assert.match(full.message ?? "", /1 of the 1 machines BB Box may have at once/);
+  assert.match(full.message ?? "", /1 of the 1 machines ALIA Box may have at once/);
 });
 
 test("a workspace's largest Mac, set or learned from Namespace's refusal, is refused up front with what to ask for instead", async () => {
@@ -113,7 +113,7 @@ function suggestedSize(message: string): { cores: number; memoryMiB: number; dis
   return { cores: Number(match[1]), memoryMiB: Number(match[2]) * 1024, diskGiB: match[3] === undefined ? null : Number(match[3]) };
 }
 
-test("the Namespace guide's Mac sizes give each Mac's disk as BB Box reckons it", () => {
+test("the Namespace guide's Mac sizes give each Mac's disk as VesnALIA Box reckons it", () => {
   const guide = readFileSync(new URL("../docs/guide/namespace.md", import.meta.url), "utf8");
   const rows = [...guide.matchAll(/^\| (\d+)x(\d+) \| (\d+) \| (\d+) GiB \| (\d+) GiB \|$/gm)].map((row) => row.slice(1).map(Number));
 
@@ -190,7 +190,7 @@ test("with the usage grant, capacity reads the workspace's Mac limits from Names
   assert.equal(full.message, "Namespace's workspace has 4 of its 6 Mac cores and 14 of its 14 GB of Mac memory in use, and this box needs a 4x14 Mac. Release a Mac box, or wait for one to end.");
   assert.equal(workspace.calls.filter((call) => call.method === "CreateInstance").length, 1, "the second Mac was never asked for");
   const doctor = await limited.doctor();
-  assert.equal(doctor.checks.find((check) => check.id === "namespace.limits")?.detail, "The workspace allows 6 Mac cores and 14 GB of Mac memory at once, 4 cores in use now; the largest Mac BB Box asks for is 6x14.");
+  assert.equal(doctor.checks.find((check) => check.id === "namespace.limits")?.detail, "The workspace allows 6 Mac cores and 14 GB of Mac memory at once, 4 cores in use now; the largest Mac VesnALIA Box asks for is 6x14.");
 
   fake.usageGranted = false;
   assert.equal((await backend.capacity("macos", small, [])).ok, true, "without the grant, capacity goes on as before");
@@ -308,9 +308,9 @@ test("with a tailnet, each Mac joins it with a single-use key of its own, given 
   const tools = fakeTailscaleToolsOnEveryHost(fakeSsh().dir);
   const minted: string[] = [];
   const devices = [
-    { nodeId: "old", hostname: "bb-box-ns-inst1-gone-box", tags: ["tag:bb-box"], lastSeen: "2020-01-01T00:00:00Z" },
-    { nodeId: "other-install", hostname: "bb-box-ns-inst2-gone-box", tags: ["tag:bb-box"], lastSeen: "2020-01-01T00:00:00Z" },
-    { nodeId: "hetzner", hostname: "bb-box-hz-inst1-host-1", tags: ["tag:bb-box"], lastSeen: "2020-01-01T00:00:00Z" },
+    { nodeId: "old", hostname: "alia-box-ns-inst1-gone-box", tags: ["tag:alia-box"], lastSeen: "2020-01-01T00:00:00Z" },
+    { nodeId: "other-install", hostname: "alia-box-ns-inst2-gone-box", tags: ["tag:alia-box"], lastSeen: "2020-01-01T00:00:00Z" },
+    { nodeId: "hetzner", hostname: "alia-box-hz-inst1-host-1", tags: ["tag:alia-box"], lastSeen: "2020-01-01T00:00:00Z" },
   ];
   const removed: string[] = [];
   const tailnet = new Tailnet({
@@ -334,10 +334,10 @@ test("with a tailnet, each Mac joins it with a single-use key of its own, given 
   const recorded = hooks();
   const guest = await backend.acquire(box("b1"), null, recorded.hooks, new AbortController().signal);
   assert.deepEqual(recorded.steps, ["create", "ready", "ssh", "grants", "tailnet"]);
-  assert.deepEqual(minted, ["BB Box Namespace box-b1"]);
+  assert.deepEqual(minted, ["VesnALIA Box Namespace box-b1"]);
   const calls = tools.calls();
   assert.ok(!calls.some((call) => call.startsWith("brew")), "a Mac with Tailscale installs nothing");
-  assert.ok(calls.some((call) => /^tailscale up --auth-key=file:\S+ --hostname=bb-box-ns-inst1-box-b1 --accept-dns=false --timeout=60s$/.test(call)), calls.join("; "));
+  assert.ok(calls.some((call) => /^tailscale up --auth-key=file:\S+ --hostname=alia-box-ns-inst1-box-b1 --accept-dns=false --timeout=60s$/.test(call)), calls.join("; "));
   assert.ok(calls.includes("key tskey-auth-one-off-1"));
   assert.ok(!calls.some((call) => call.startsWith("tailscale") && call.includes("tskey-")), "the key is never on a command line");
   await backend.maintain();
@@ -346,7 +346,7 @@ test("with a tailnet, each Mac joins it with a single-use key of its own, given 
   assert.equal(tools.calls().at(-1), "tailscale logout");
 });
 
-test("a macos-desktop box gets its desktop ready as it starts: the video helper built from BB Box's source, Screen Recording, Accessibility and event posting for the processes that need them, no screen-capture notice for those that capture, and a display that stays awake; and shows it over Screen Sharing and as video", async () => {
+test("a macos-desktop box gets its desktop ready as it starts: the video helper built from VesnALIA Box's source, Screen Recording, Accessibility and event posting for the processes that need them, no screen-capture notice for those that capture, and a display that stays awake; and shows it over Screen Sharing and as video", async () => {
   const { fake, backend } = setup();
   const dir = join(process.env.FAKE_SSH_DIR!, "bin");
   mkdirSync(dir);
@@ -364,10 +364,10 @@ test("a macos-desktop box gets its desktop ready as it starts: the video helper 
   const desktop = await backend.acquire({ ...box("d1"), kind: "macos-desktop" }, null, hooks().hooks, new AbortController().signal);
   const calls = readFileSync(log, "utf8").trim().split("\n");
   assert.ok(calls.some((call) => /^xcrun swiftc -O -swift-version 5 -o \S+ \S+stream\.swift$/.test(call)), calls.join("; "));
-  assert.ok(calls.some((call) => /^sudo -n install -m 0755 \S+ \/usr\/local\/bin\/bb-box-stream$/.test(call)), calls.join("; "));
+  assert.ok(calls.some((call) => /^sudo -n install -m 0755 \S+ \/usr\/local\/bin\/alia-box-stream$/.test(call)), calls.join("; "));
   const grants = calls.filter((call) => call.startsWith("sudo -n sqlite3"));
   assert.equal(grants.length, 9);
-  for (const client of ["/opt/namespace/vmguest", "/usr/bin/osascript", "/usr/local/bin/bb-box-stream"]) {
+  for (const client of ["/opt/namespace/vmguest", "/usr/bin/osascript", "/usr/local/bin/alia-box-stream"]) {
     for (const service of ["kTCCServiceScreenCapture", "kTCCServiceAccessibility", "kTCCServicePostEvent"]) {
       assert.ok(grants.some((grant) => grant.includes(`'${service}', '${client}', 1, 2`)), `${service} for ${client}`);
     }
@@ -376,7 +376,7 @@ test("a macos-desktop box gets its desktop ready as it starts: the video helper 
   assert.ok(calls.includes("caffeinate -u -t 1"), calls.join("; "));
   const approvals = readFileSync(join(process.env.FAKE_SSH_DIR!, "home", "ssh.us.namespace.so", "Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist"), "utf8");
   const hintYear = new Date().getUTCFullYear() + 5;
-  for (const client of ["/opt/namespace/vmguest", "/usr/local/bin/bb-box-stream", "com.trycua.driver"]) {
+  for (const client of ["/opt/namespace/vmguest", "/usr/local/bin/alia-box-stream", "com.trycua.driver"]) {
     assert.ok(approvals.includes(`<key>${client}</key><dict><key>kScreenCaptureAlertableUsageCount</key>`), `${client}'s notice put off`);
   }
   assert.equal(approvals.match(new RegExp(`<key>kScreenCapturePrivacyHintDate</key><date>${hintYear}-01-01T00:00:00Z</date>`, "g"))?.length, 3);
@@ -392,7 +392,7 @@ test("a macos-desktop box gets its desktop ready as it starts: the video helper 
   const route = JSON.stringify(opened.route);
   assert.match(route, /127\.0\.0\.1:5900/);
   assert.match(route, new RegExp(`${made.id}@ssh\\.us\\.namespace\\.so`));
-  assert.match(JSON.stringify((await transports.displays[1]!.open()).route), /bb-box-stream connect/);
+  assert.match(JSON.stringify((await transports.displays[1]!.open()).route), /alia-box-stream connect/);
   assert.deepEqual((await backend.transports(desktop, "macos")).displays, []);
 });
 
@@ -440,7 +440,7 @@ test("a macos-desktop box gets Cua Driver for computer use: the pinned release c
   const { backend } = setup();
   assert.deepEqual(backend.kinds().find((kind) => kind.id === "macos-desktop")!.capabilities.computerUse, { driver: "cua", version: CUA_VERSION, socket: "/Users/runner/Library/Caches/cua-driver/cua-driver.sock" });
   assert.equal(backend.kinds().find((kind) => kind.id === "macos")!.capabilities.computerUse, null);
-  assert.equal(backend.kinds().find((kind) => kind.id === "macos-desktop")!.capabilities.displays[0]!.clipboard, "commands", "Screen Sharing sends a viewer none of the box's clipboard, so BB Box moves it with pbcopy and pbpaste");
+  assert.equal(backend.kinds().find((kind) => kind.id === "macos-desktop")!.capabilities.displays[0]!.clipboard, "commands", "Screen Sharing sends a viewer none of the box's clipboard, so VesnALIA Box moves it with pbcopy and pbpaste");
 });
 
 test("Namespace offers ios as slots on a shared host once it has measured a Mac that runs the iOS Simulator, and not while its setting is off (065, unit 7)", async () => {
@@ -453,7 +453,7 @@ test("Namespace offers ios as slots on a shared host once it has measured a Mac 
     capabilities: {
       simulator: { is: "yes", what: { xcode: "26.1.1", runtimes: ["iOS 26.2"], newest: { os: "26.2", build: "23C54" }, deviceTypes: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17"] } },
       hardwareEncoder: { is: "yes", what: { fullSizeFps: 141 } },
-      softwareEncoder: { is: "no", why: "bb-box-h264 is not installed" },
+      softwareEncoder: { is: "no", why: "alia-box-h264 is not installed" },
     },
   };
   const made = async (iosHosts?: NamespaceConfig["iosHosts"]) => {
@@ -488,7 +488,7 @@ const IOS_REPORT: MacReport = {
   capabilities: {
     simulator: { is: "yes", what: { xcode: "26.1.1", runtimes: ["iOS 26.2"], newest: { os: "26.2", build: "23C54" }, deviceTypes: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17"] } },
     hardwareEncoder: { is: "yes", what: { fullSizeFps: 141 } },
-    softwareEncoder: { is: "no", why: "bb-box-h264 is not installed" },
+    softwareEncoder: { is: "no", why: "alia-box-h264 is not installed" },
   },
   probe: PROBE_VERSION,
 };
@@ -500,7 +500,7 @@ test("Namespace counts which of its Macs of a kind had a hardware encoder, once 
   reports.remember({ ...IOS_REPORT, mac: "instance-a" }, "instance-a");
   reports.remember({ ...IOS_REPORT, mac: "instance-a" }, "instance-a");
   assert.deepEqual(reports.all()[0]?.machines, { withHardwareEncoder: 1, withoutHardwareEncoder: 0 });
-  assert.equal(reports.all()[0]?.capabilities.softwareEncoder.is, "yes", "each host builds bb-box-h264 as it starts");
+  assert.equal(reports.all()[0]?.capabilities.softwareEncoder.is, "yes", "each host builds alia-box-h264 as it starts");
   reports.remember({ ...noHardware, mac: "instance-b" }, "instance-b");
   const [kind] = reports.all();
   assert.deepEqual(kind?.machines, { withHardwareEncoder: 1, withoutHardwareEncoder: 1 });
@@ -528,7 +528,7 @@ test("a Namespace Mac released while it is measured, seconds after it is ready, 
   assert.deepEqual((await storage.get<MacReport>(reportKey(IOS_REPORT.chip!)))?.capabilities.simulator, IOS_REPORT.capabilities.simulator, "what is saved is the whole measurement");
   reports.remember(parseMacProbe("", "instance-c", 3, "mac"), "instance-c");
   assert.deepEqual(reports.all().map((report) => report.mac), [IOS_REPORT.chip], "a probe that said nothing, not even its chip, makes no kind of Mac");
-  const noRuntime = parseMacProbe(`chip=${IOS_REPORT.chip}\nxcode=26.1.1\nruntimes=\nhardware=yes frames=12 seconds=0.1\nsoftware=no why=bb-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-d", 4, "mac");
+  const noRuntime = parseMacProbe(`chip=${IOS_REPORT.chip}\nxcode=26.1.1\nruntimes=\nhardware=yes frames=12 seconds=0.1\nsoftware=no why=alia-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-d", 4, "mac");
   reports.remember(noRuntime, "instance-d");
   assert.equal(reports.all()[0]?.capabilities.simulator.is, "no", "a whole measurement that finds no runtime still counts");
 });
@@ -541,7 +541,7 @@ test("a new kind of Namespace Mac whose first measurement was cut short does not
   reports.remember(cutShort, "instance-b");
   assert.deepEqual(reports.all().map((report) => report.mac), [m5, IOS_REPORT.chip], "the doctor still lists the newest first");
   assert.equal(reports.forOffer()?.chip, IOS_REPORT.chip);
-  const noRuntime = parseMacProbe(`chip=${m5}\nxcode=26.1.1\nruntimes=\nsoftware=no why=bb-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-c", 3, "mac");
+  const noRuntime = parseMacProbe(`chip=${m5}\nxcode=26.1.1\nruntimes=\nsoftware=no why=alia-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-c", 3, "mac");
   reports.remember(noRuntime, "instance-c");
   assert.equal(reports.forOffer()?.chip, m5, "a newer whole measurement that finds no runtime retires the older yes");
   const onlyUnknown = new NamespaceMacReports(new MemoryStorage(), () => {});
@@ -584,7 +584,7 @@ test("an old yes for one kind of Namespace Mac does not keep ios on offer once a
   fakeSsh();
   const storage = new MemoryStorage();
   const m5 = "Apple M5 Pro (Virtual)";
-  const noRuntime = parseMacProbe(`chip=${m5}\nmacos=26.3.1\nxcode=26.1.1\nruntimes=\nhardware=yes frames=12 seconds=0.1\nsoftware=no why=bb-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-b", 2, "mac");
+  const noRuntime = parseMacProbe(`chip=${m5}\nmacos=26.3.1\nxcode=26.1.1\nruntimes=\nhardware=yes frames=12 seconds=0.1\nsoftware=no why=alia-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-b", 2, "mac");
   await storage.set(reportKey(IOS_REPORT.chip!), IOS_REPORT);
   await storage.set(reportKey(m5), { ...noRuntime, mac: m5 });
   const fake = new FakeNamespace({ lifeCapMs: 4 * 3600_000, maxCores: 64 });
@@ -602,7 +602,7 @@ test("while no offer stands, a report from an older probe is measured again thou
   const storage = new MemoryStorage();
   const m5 = "Apple M5 Pro (Virtual)";
   const olderNo: MacReport = { ...IOS_REPORT, at: 1, probe: 2, capabilities: { ...IOS_REPORT.capabilities, simulator: { is: "no", why: "Xcode 26.1.1 has no iOS runtime" } } };
-  const newerNo = parseMacProbe(`chip=${m5}\nmacos=26.3.1\nxcode=26.1.1\nruntimes=\nhardware=yes frames=12 seconds=0.1\nsoftware=no why=bb-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-b", 2, "mac");
+  const newerNo = parseMacProbe(`chip=${m5}\nmacos=26.3.1\nxcode=26.1.1\nruntimes=\nhardware=yes frames=12 seconds=0.1\nsoftware=no why=alia-box-h264 is not installed\n${PROBE_FINISHED}\n`, "instance-b", 2, "mac");
   await storage.set(reportKey(IOS_REPORT.chip!), olderNo);
   await storage.set(reportKey(m5), { ...newerNo, mac: m5 });
   const fake = new FakeNamespace({ lifeCapMs: 4 * 3600_000, maxCores: 64 });
@@ -617,7 +617,7 @@ test("while no offer stands, a report from an older probe is measured again thou
   assert.match(context.logs.join("\n"), /afresh, as its report of an Apple M4 Pro \(Virtual\) came from an older probe, and no kind of Mac makes an offer\./);
 });
 
-test("a kind of Namespace Mac whose last measurement did not finish, and so makes no offer, is measured again on a Mac BB Box starts, at most once a day", async () => {
+test("a kind of Namespace Mac whose last measurement did not finish, and so makes no offer, is measured again on a Mac VesnALIA Box starts, at most once a day", async () => {
   let now = Date.parse("2030-01-01T00:00:00Z");
   fakeSsh();
   const storage = new MemoryStorage();
@@ -662,7 +662,7 @@ async function measuredAfresh(backend: NamespaceBackend): Promise<void> {
   while (backend.measuringAfreshUntil() !== null) await new Promise((resolve) => setTimeout(resolve, 10));
 }
 
-test("a Namespace report from an older probe that cannot make an offer is measured again on a Mac BB Box starts for a few minutes, logged, at most once a day, only while shared iOS hosts are on (065 C follow-up)", async () => {
+test("a Namespace report from an older probe that cannot make an offer is measured again on a Mac VesnALIA Box starts for a few minutes, logged, at most once a day, only while shared iOS hosts are on (065 C follow-up)", async () => {
   let now = Date.parse("2030-01-01T00:00:00Z");
   fakeSsh();
   const storage = new MemoryStorage();
@@ -692,11 +692,11 @@ test("a Namespace report from an older probe that cannot make an offer is measur
   await measuredAfresh(backend);
   const measuring = [...fake.instances.values()].find((instance) => instance.labels[LABELS.role] === MEASURE_ROLE);
   assert.ok(measuring, "a Mac is started to measure");
-  assert.equal(measuring.deadline, now + MEASURE_LIFE_MS, "Namespace ends it itself should BB Box lose it");
+  assert.equal(measuring.deadline, now + MEASURE_LIFE_MS, "Namespace ends it itself should VesnALIA Box lose it");
   assert.equal(measuring.status, "DESTROYED", "it is destroyed once measured");
   assert.ok(backend.macCapabilities().some((report) => report.probe === PROBE_VERSION), "a report from the current probe is kept");
   const logged = context.logs.join("\n");
-  assert.match(logged, /bb-box is starting a \d+x\d+ Namespace Mac to measure what Namespace's Macs offer iOS devices afresh, as its last report came from an older probe and cannot make an offer\. It is destroyed once measured, and by \d\d:\d\d UTC at the latest\./);
+  assert.match(logged, /alia-box is starting a \d+x\d+ Namespace Mac to measure what Namespace's Macs offer iOS devices afresh, as its last report came from an older probe and cannot make an offer\. It is destroyed once measured, and by \d\d:\d\d UTC at the latest\./);
   for (const step of ["made", "running", "answering SSH", "measured: an unknown chip", "destroyed"]) assert.match(logged, new RegExp(`made to measure afresh: ${step}`), step);
   now += MEASURE_AGAIN_AFTER_MS;
   await backend.maintain();
@@ -719,7 +719,7 @@ test("a Namespace report from an older probe that can still make an offer is not
 });
 
 function helperFlag(name: string, on: boolean): void {
-  const flags = join(process.env.FAKE_SSH_DIR!, "home", "ssh.us.namespace.so", ".bb-box-state", "flags");
+  const flags = join(process.env.FAKE_SSH_DIR!, "home", "ssh.us.namespace.so", ".alia-box-state", "flags");
   mkdirSync(flags, { recursive: true });
   if (on) writeFileSync(join(flags, name), "");
   else rmSync(join(flags, name), { force: true });
@@ -750,7 +750,7 @@ test("a Mac box on Namespace grants its programs macOS permissions through the M
   await assert.rejects(backend.grant!(guest, { program: "/usr/bin/true", permissions: ["camera"] }), refusedAs(/is not in the box user's home/));
 
   helperFlag("tcc-unknown", true);
-  await assert.rejects(backend.grant!(guest, app), refusedAs(/^TCC's database on this Mac has columns bb-box does not know/));
+  await assert.rejects(backend.grant!(guest, app), refusedAs(/^TCC's database on this Mac has columns alia-box does not know/));
   assert.equal((await backend.grants!(guest))?.blockedBy, "unknown-database");
 
   helperFlag("tcc-unknown", false);
@@ -764,11 +764,11 @@ test("a Linux box or a box on a shared iOS host on Namespace has no macOS permis
   const { backend } = setup();
   helperFlag("sip-off", true);
   const guest = await backend.acquire(box("b1"), null, hooks().hooks, new AbortController().signal);
-  const linux = { ...guest, ref: "bb-box-b1" };
+  const linux = { ...guest, ref: "alia-box-b1" };
   const slot = { ...guest, data: { ...guest.data, [NS_HOST_KEY]: "bbbox-inst1-host", slot: "s1" } };
   const request = { program: "/Users/runner/bin/tool", permissions: ["accessibility"] as const };
 
-  await assert.rejects(backend.grant!(linux, request), refusedAs(/^Only a macOS box has macOS permissions to grant: bb-box-b1 runs Linux\.$/));
+  await assert.rejects(backend.grant!(linux, request), refusedAs(/^Only a macOS box has macOS permissions to grant: alia-box-b1 runs Linux\.$/));
   await assert.rejects(backend.grant!(slot, request), refusedAs(/^A box on a shared iOS host is a macOS user with no console session, so there is nothing to grant macOS permissions to, and a grant in the Mac's own database would reach every box on the host\.$/));
   assert.equal(await backend.grants!(linux), null);
   assert.equal(await backend.grants!(slot), null);
@@ -786,13 +786,13 @@ test("the doctor says whether box_grant works on Namespace's Macs, as measured o
   const works = await grantsCheck();
 
   assert.equal(works?.status, "ok");
-  assert.equal(works?.detail, "box_grant works: System Integrity Protection is off and TCC's database is one BB Box knows (macOS 26.3.1). Measured on the last Mac BB Box started, most recently just now.");
+  assert.equal(works?.detail, "box_grant works: System Integrity Protection is off and TCC's database is one VesnALIA Box knows (macOS 26.3.1). Measured on the last Mac VesnALIA Box started, most recently just now.");
 
   helperFlag("tcc-unknown", true);
   const refuses = await grantsCheck();
 
   assert.equal(refuses?.status, "warn");
-  assert.equal(refuses?.detail, "Measured on the last Mac BB Box started, most recently just now. box_grant refuses, as TCC's database has columns BB Box does not know (macOS 26.3.1).");
+  assert.equal(refuses?.detail, "Measured on the last Mac VesnALIA Box started, most recently just now. box_grant refuses, as TCC's database has columns VesnALIA Box does not know (macOS 26.3.1).");
   helperFlag("tcc-unknown", false);
   await backend.release(guest, { resetting: async () => {}, timing: () => {} });
 });
@@ -815,7 +815,7 @@ test("a Mac helper that stalls at a box's start holds the box up only for readin
   const check = (await backend.doctor()).checks.find((check) => check.id === "namespace.grants");
 
   assert.equal(check?.status, "warn");
-  assert.equal(check?.detail, `BB Box could not measure whether box_grant works on Namespace's Mac ${instance}, most recently just now: the Mac helper did not answer within 2 seconds.`);
+  assert.equal(check?.detail, `VesnALIA Box could not measure whether box_grant works on Namespace's Mac ${instance}, most recently just now: the Mac helper did not answer within 2 seconds.`);
 });
 
 test("a doctor whose measurement of a Mac fails warns with the reason, and keeps what earlier measurements found (058)", async () => {
@@ -832,7 +832,7 @@ test("a doctor whose measurement of a Mac fails warns with the reason, and keeps
   assert.equal(failed?.status, "warn");
   assert.equal(
     failed?.detail,
-    `BB Box could not measure whether box_grant works on Namespace's Mac ${instance}, most recently just now: sudo: a password is required. Earlier measurements: box_grant works: System Integrity Protection is off and TCC's database is one BB Box knows (macOS 26.3.1). Measured on the last Mac BB Box started, most recently just now.`,
+    `VesnALIA Box could not measure whether box_grant works on Namespace's Mac ${instance}, most recently just now: sudo: a password is required. Earlier measurements: box_grant works: System Integrity Protection is off and TCC's database is one VesnALIA Box knows (macOS 26.3.1). Measured on the last Mac VesnALIA Box started, most recently just now.`,
   );
   assert.match(failed?.fix ?? "", /sudo -n true/);
 
@@ -875,5 +875,5 @@ test("what Namespace's Macs allowed box_grant is kept for the last Macs measured
   assert.ok(!restarted.some((report) => report.machine === "m1"), "the oldest go");
   const check = grantCheck(restarted, [], now);
   assert.equal(check.status, "warn");
-  assert.equal(check.detail, "Measured on the last 20 Macs BB Box started, most recently 1 minute ago. box_grant works on 19 of them and refuses on the others, as System Integrity Protection is on (macOS 26.4).");
+  assert.equal(check.detail, "Measured on the last 20 Macs VesnALIA Box started, most recently 1 minute ago. box_grant works on 19 of them and refuses on the others, as System Integrity Protection is on (macOS 26.4).");
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
-import { Markdown, useSdk } from "@get-bb/plugin-sdk/app";
+import { Markdown, useSdk } from "@vesnalia/plugin-sdk/app";
 import { mergeRows, readerMessages, type RowLike } from "./transcript";
 
 const POLL_MS = 2000;
@@ -142,17 +142,17 @@ export function FocusReader({
   return (
     <div
       ref={setScroller}
-      className="bb-focus-mode-scroll"
+      className="alia-focus-mode-scroll"
       tabIndex={0}
       aria-label="Conversation"
       onScroll={onScroll}
-      data-testid="bb-focus-mode-transcript"
+      data-testid="alia-focus-mode-transcript"
     >
-      <article className="bb-focus-mode-column">
+      <article className="alia-focus-mode-column">
         {olderCursor && (
           <button
             type="button"
-            className="bb-focus-mode-earlier"
+            className="alia-focus-mode-earlier"
             onClick={() => void loadOlder()}
             disabled={loadingOlder}
           >
@@ -161,17 +161,17 @@ export function FocusReader({
         )}
         {messages.map((message) =>
           message.role === "user" ? (
-            <blockquote key={message.id} className="bb-focus-mode-message bb-focus-mode-user">
+            <blockquote key={message.id} className="alia-focus-mode-message alia-focus-mode-user">
               {message.text}
             </blockquote>
           ) : (
-            <div key={message.id} className="bb-focus-mode-message bb-focus-mode-assistant">
-              <Markdown content={message.text} className="bb-focus-mode-markdown" />
+            <div key={message.id} className="alia-focus-mode-message alia-focus-mode-assistant">
+              <Markdown content={message.text} className="alia-focus-mode-markdown" />
             </div>
           ),
         )}
         {loaded && messages.length === 0 && (
-          <p className="bb-focus-mode-empty">
+          <p className="alia-focus-mode-empty">
             {failed ? "Couldn’t load this conversation. Retrying…" : "No messages yet."}
           </p>
         )}

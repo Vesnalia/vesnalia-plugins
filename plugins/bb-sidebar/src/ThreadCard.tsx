@@ -1,7 +1,7 @@
 import { ThreadLocation, ThreadPullRequest } from "./ThreadMetadata";
 import { CompactRow } from "./CompactRow";
 import { WokeMarker } from "./WokeMarker";
-import { ShortcutHint, useSidebarThreadSplit, useThreadActions } from "./bb-sdk";
+import { ShortcutHint, useSidebarThreadSplit, useThreadActions } from "./alia-sdk";
 import {
   useId,
   useLayoutEffect,
@@ -11,7 +11,7 @@ import {
   type KeyboardEventHandler,
   type PointerEventHandler,
 } from "react";
-import { useSidebarThreadShortcut, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSidebarThreadShortcut, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { ChildThreadBadge, ChildThreadList } from "./ChildThreadList";
 import { Icon } from "./components/Icon";
 import { Tooltip } from "./components/Tooltip";
@@ -91,7 +91,7 @@ export function ThreadCard({
   compactAlways?: boolean;
   onRenamingChange?: (editing: boolean) => void;
 }) {
-  const [pin] = useThreadActions(thread, { keys: ["bb--core/pin"] });
+  const [pin] = useThreadActions(thread, { keys: ["alia--core/pin"] });
   const limit = useThreadLimit(thread);
   const {
     providerById,
@@ -136,7 +136,7 @@ export function ThreadCard({
     return () => {
       const focused = document.activeElement;
       if (!(focused instanceof HTMLElement) || !rowRef.current?.contains(focused)) return;
-      const sidebar = rowRef.current.closest<HTMLElement>("[data-bb-sidebar-root]");
+      const sidebar = rowRef.current.closest<HTMLElement>("[data-alia-sidebar-root]");
       const childId = focused.getAttribute("data-child-thread-id");
       const control = focused.getAttribute("data-thread-control");
       // Moving a row between shelf trees unmounts its focused control.
@@ -300,7 +300,7 @@ export function ThreadCard({
                   reorder && !reorder.disabled ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
                 ),
               }}
-              beforeContent={isSettling ? <span aria-hidden="true" className="bb-sidebar-settle-sweep" /> : null}
+              beforeContent={isSettling ? <span aria-hidden="true" className="alia-sidebar-settle-sweep" /> : null}
               fadeContent
               trailing={
                 <span className="pointer-events-none relative flex shrink-0 items-center gap-1.5">
@@ -348,11 +348,11 @@ export function ThreadCard({
                   "bg-[linear-gradient(var(--sidebar-accent),var(--sidebar-accent)),linear-gradient(var(--sidebar),var(--sidebar))] shadow-lg ring-1 ring-sidebar-border",
               )}
             >
-              {isSettling ? <span aria-hidden="true" className="bb-sidebar-settle-sweep" /> : null}
+              {isSettling ? <span aria-hidden="true" className="alia-sidebar-settle-sweep" /> : null}
               {showProject && projectName ? <ProjectStripe projectId={thread.projectId} view={stripeView} /> : null}
               <ThreadDetailsTooltip thread={thread} disabled={isRenaming || !!reorder?.isDragging}>
                 <a
-                  // Both attributes, or bb's nine thread shortcuts stop finding rows.
+                  // Both attributes, or VesnALIA's nine thread shortcuts stop finding rows.
                   data-sidebar-thread-shortcut-target=""
                   data-sidebar-thread-id={thread.id}
                   href={thread.href}
@@ -402,7 +402,7 @@ export function ThreadCard({
                     ) : null}
                     <span
                       style={projectColor}
-                      className={cn("min-w-0 truncate", projectColor && "bb-sidebar-project-name")}
+                      className={cn("min-w-0 truncate", projectColor && "alia-sidebar-project-name")}
                     >
                       {projectName ?? " "}
                     </span>
@@ -410,7 +410,7 @@ export function ThreadCard({
                 ) : (
                   titleLine
                 )}
-                {/* Show bb's thread shortcut in place of the status while the modifier is held. */}
+                {/* Show VesnALIA's thread shortcut in place of the status while the modifier is held. */}
                 {shortcut ? (
                   <span className={cn(STATUS_SLOT_CLASS, "w-auto")}>
                     <ShortcutHint shortcut={shortcut} />
@@ -461,7 +461,7 @@ export function ThreadCard({
                         <SnoozeSelect
                           label="Snooze thread"
                           snoozePresets={snoozePresets}
-                          triggerClassName="h-5 w-5 border-0 px-0.5 py-0 shadow-none duration-200 ease-out hover:bg-transparent hover:duration-200 hover:text-[color:var(--bb-sidebar-snooze-active)] focus:ring-0 focus-visible:text-[color:var(--bb-sidebar-snooze-active)] data-[state=open]:text-[color:var(--bb-sidebar-snooze-active)] motion-reduce:transition-none [&>svg:last-child]:size-3"
+                          triggerClassName="h-5 w-5 border-0 px-0.5 py-0 shadow-none duration-200 ease-out hover:bg-transparent hover:duration-200 hover:text-[color:var(--alia-sidebar-snooze-active)] focus:ring-0 focus-visible:text-[color:var(--alia-sidebar-snooze-active)] data-[state=open]:text-[color:var(--alia-sidebar-snooze-active)] motion-reduce:transition-none [&>svg:last-child]:size-3"
                           onOpenChange={setIsSnoozeOpen}
                           onSnooze={onSnooze}
                           onPark={onPark}
@@ -539,22 +539,22 @@ function ParkButton({ label, settling, onActivate }: { label: string; settling: 
         onActivate();
       }}
       className={cn(
-        "bb-sidebar-settle relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground",
-        "transition-colors duration-200 ease-out hover:text-[color:var(--bb-sidebar-settle-active)]",
-        "focus-visible:text-[color:var(--bb-sidebar-settle-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
+        "alia-sidebar-settle relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground",
+        "transition-colors duration-200 ease-out hover:text-[color:var(--alia-sidebar-settle-active)]",
+        "focus-visible:text-[color:var(--alia-sidebar-settle-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
         "motion-reduce:transition-none",
-        settling && "text-[color:var(--bb-sidebar-settle-active)]",
+        settling && "text-[color:var(--alia-sidebar-settle-active)]",
       )}
     >
       {/* Move only the artwork so hovering an edge cannot move the hit area. */}
       <span
         aria-hidden="true"
-        className="bb-sidebar-settle-art pointer-events-none relative flex size-full items-center justify-center rounded-[inherit]"
+        className="alia-sidebar-settle-art pointer-events-none relative flex size-full items-center justify-center rounded-[inherit]"
       >
-        <Icon name="Check" aria-hidden className="bb-sidebar-settle-check size-3.5" />
-        <span className="bb-sidebar-settle-stars">
+        <Icon name="Check" aria-hidden className="alia-sidebar-settle-check size-3.5" />
+        <span className="alia-sidebar-settle-stars">
           {[0, 1, 2].map((star) => (
-            <span key={star} className="bb-sidebar-settle-star" />
+            <span key={star} className="alia-sidebar-settle-star" />
           ))}
         </span>
       </span>

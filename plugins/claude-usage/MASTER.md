@@ -5,7 +5,7 @@ duration in `app.tsx` and `tokens.css` comes from here.
 
 ## Theses (validated)
 
-**Visual.** A calm monochrome page in bb's own ink and ground until something needs you:
+**Visual.** A calm monochrome page in VesnALIA's own ink and ground until something needs you:
 the hero is one large Inter Variable 700 sentence ("Room for a big task.") with the window
 figures below it; colour appears only as state, an amber `#F2B33D` or red `#F0524F` wash on the
 window that needs attention; airy spacing (48px between groups); flat pill-shaped chips and
@@ -40,8 +40,8 @@ provider's first, second and later models. With one provider, models keep `--cu-
 line ("On pace to use 26% before it resets") and the Session tile keeps the block cost; model
 bars keep `--cu-m0..m3`. (All clear first shipped as an opt-in style next to Classic; see "Classic retired".)
 
-**Mode:** redesign of the page's visual layer, inside bb's rules: the ground, ink, muted text
-and overlay colours stay bb's tokens, so the page follows the user's bb theme (light and dark).
+**Mode:** redesign of the page's visual layer, inside VesnALIA's rules: the ground, ink, muted text
+and overlay colours stay VesnALIA's tokens, so the page follows the user's VesnALIA theme (light and dark).
 
 ## Where it lives
 
@@ -52,22 +52,22 @@ the page root always carries.
 
 | Token | Value | Use |
 |---|---|---|
-| ground | bb `--background` | page |
-| ink | bb `--foreground` | all text and data ink: the trend line, bars, heatmap |
-| muted ink | bb `--muted-foreground` | labels, meta lines |
+| ground | VesnALIA `--background` | page |
+| ink | VesnALIA `--foreground` | all text and data ink: the trend line, bars, heatmap |
+| muted ink | VesnALIA `--muted-foreground` | labels, meta lines |
 | `--cu-tile` | `color-mix(in oklab, var(--foreground) 5%, transparent)` | a calm tile or row |
 | `--cu-tile-hover` | `color-mix(in oklab, var(--foreground) 9%, transparent)` | hovered row or chip |
 | `--cu-tight` | `#F2B33D` | state: a window that is tight |
 | `--cu-out` | `#F0524F` | state: a window that runs out before it resets |
 | `--cu-tight-wash`, `--cu-out-wash` | state at 22% over transparent | tile wash |
-| `--cu-tight-ink`, `--cu-out-ink` | amber 45% / red 70% mixed with bb ink | state-coloured text on the plain ground only |
+| `--cu-tight-ink`, `--cu-out-ink` | amber 45% / red 70% mixed with VesnALIA ink | state-coloured text on the plain ground only |
 | `--cu-m0` to `--cu-m3` | the classic terracotta rank steps | model bars (allowed exception) |
 | `--cu-line` | `--cu-accent` (terracotta) | the trend line and its area |
 | `--cu-h0` to `--cu-h4` | Classic's terracotta steps | heatmap, empty to full |
 
 Data is drawn in Classic's terracotta palette; surfaces and text stay monochrome; amber and red mark state.
 
-### Measured contrast (bb dark `#060606` / bb light `#f5f5f3`)
+### Measured contrast (VesnALIA dark `#060606` / VesnALIA light `#f5f5f3`)
 
 | Pair | Dark | Light |
 |---|---|---|
@@ -81,8 +81,8 @@ Data is drawn in Classic's terracotta palette; surfaces and text stay monochrome
 
 ## Type
 
-bb's own faces only: **Inter Variable** (chosen because it is bb's UI face: the page reads as part
-of bb, and its tabular figures keep columns of numbers still while they roll) and **JetBrains Mono**
+VesnALIA's own faces only: **Inter Variable** (chosen because it is VesnALIA's UI face: the page reads as part
+of VesnALIA, and its tabular figures keep columns of numbers still while they roll) and **JetBrains Mono**
 (model names and session ids only, because they are identifiers).
 
 | Step | Size / line | Weight | Tracking | Use |
@@ -108,7 +108,7 @@ All figures use `font-variant-numeric: tabular-nums`.
 | `--cu-r-row` | 16px | list rows, expanded details |
 | pill | 9999px | chips, segmented controls, the provider button, the search field |
 
-No borders and no shadows on the page. Overlays (the provider menu, the chart tooltip) keep bb's
+No borders and no shadows on the page. Overlays (the provider menu, the chart tooltip) keep VesnALIA's
 popover surface and shadow, because they float above the page.
 
 ## Motion
@@ -129,10 +129,10 @@ Under `prefers-reduced-motion: reduce` every one of these is instant.
 ## Components
 
 - **Window tile**: 28px radius, `--cu-tile` ground, or the state wash; label (meta), figure,
-  verdict (body), projection line (meta), block cost on the Session tile (meta), "Resets in" (meta). Text on a wash stays bb ink: red ink on the red wash is
+  verdict (body), projection line (meta), block cost on the Session tile (meta), "Resets in" (meta). Text on a wash stays VesnALIA ink: red ink on the red wash is
   4.1:1 in the light theme, under 4.5.
 - **Chip**: pill, `--cu-tile` ground, body text, `--cu-tile-hover` on hover.
-- **Segmented control**: pill track in `--cu-tile`, the selected option a pill in bb's ground with ink.
+- **Segmented control**: pill track in `--cu-tile`, the selected option a pill in VesnALIA's ground with ink.
 - **Row**: 16px radius, transparent, `--cu-tile` on hover and while open; 4px between rows.
-- **States** on every control: default, hover (`--cu-tile-hover`), focus (bb's ring), active
+- **States** on every control: default, hover (`--cu-tile-hover`), focus (VesnALIA's ring), active
   (`scale(0.98)`), disabled (50% opacity).

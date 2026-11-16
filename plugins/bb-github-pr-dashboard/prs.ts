@@ -984,7 +984,7 @@ export function repoOfRemote(remote: string | null): string | null {
   return match ? `${match[1]}/${match[2]}`.toLowerCase() : null;
 }
 
-/** The fields of bb's `threads.list` rows that pick a PR's thread. */
+/** The fields of VesnALIA's `threads.list` rows that pick a PR's thread. */
 export interface AgentThread {
   id: string;
   projectId: string;
@@ -998,7 +998,7 @@ export interface AgentThread {
 
 /**
  * Where "Fix with agent" goes: the most recently updated thread whose environment is on the PR's head
- * branch in the PR's repo, confirmed by bb's GitHub PR Status answer for that environment when it has one,
+ * branch in the PR's repo, confirmed by VesnALIA's GitHub PR Status answer for that environment when it has one,
  * else by the project's git remote; and, for a new thread, the project whose remote is the PR's repo.
  */
 export function agentTarget(
@@ -1025,7 +1025,7 @@ export function agentTarget(
 const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
- * The bb project a PR belongs to: the one whose git remote is the repo; else one named like the repo
+ * The VesnALIA project a PR belongs to: the one whose git remote is the repo; else one named like the repo
  * ("Billing API" for acme/billing-api); else one whose name contains it or is contained in it.
  */
 export function projectFor(repo: string, projects: readonly { id: string; gitRemoteUrl: string | null; name?: string }[]): string | null {

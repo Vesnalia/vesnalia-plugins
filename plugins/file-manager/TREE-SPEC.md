@@ -1,7 +1,7 @@
 # TREE-SPEC — expand a folder in place (v0.2.0)
 
 Implementation spec for the "VS Code file tree" feature on top of the shipped
-`bb-plugin-file-manager`. Written against the code that exists today, not
+`alia-plugin-file-manager`. Written against the code that exists today, not
 against an idealised design: every symbol named here is either already in the
 repo or is introduced by this document with its exact file, name and signature.
 
@@ -33,9 +33,9 @@ drop, keyboard — keeps working because that list keeps its shape.
 | `listDir` is one level, never recursive, capped at `MAX_LIST_ENTRIES = 5000` | `src/listing.ts:2`, `contract.ts:28` |
 | The `fs` realtime payload is `{ paths: string[], reason }` = *directories that changed* | `contract.ts:156-168`, `src/signals.ts:14-22` |
 | Batch RPCs echo back the caller's **source** paths in `succeeded`, never the destination | `src/mutations.ts:5,178,218,227` |
-| `useRealtime(channel, handler)` keeps a `Set` of listeners per channel — a second subscription on `"fs"` is legal | `@get-bb/plugin-sdk/dist/testing/app.js:718-735` |
+| `useRealtime(channel, handler)` keeps a `Set` of listeners per channel — a second subscription on `"fs"` is legal | `@vesnalia/plugin-sdk/dist/testing/app.js:718-735` |
 | `ChevronRight` / `ChevronDown` / `Loading` / `AlertTriangle` / `RotateCcw` are all in the vendored `ICON_MAP` | `components/ui/icon.tsx:305-307,367,280` |
-| The app SDK exposes no storage hook (`useRpc`, `useRealtime`, `useRealtimeConnectionState`, `useSettings`, `useBbContext`, `useBbNavigate`, `useComposer*` only) | `bundled-types/bb-plugin-sdk-app.d.ts:1620` |
+| The app SDK exposes no storage hook (`useRpc`, `useRealtime`, `useRealtimeConnectionState`, `useSettings`, `useAliaContext`, `useAliaNavigate`, `useComposer*` only) | `bundled-types/alia-plugin-sdk-app.d.ts:1620` |
 
 ---
 
@@ -250,7 +250,7 @@ export const MAX_EXPANDED_PATHS = 200;
 export const MAX_CACHED_NODES = 256;
 export const LOAD_CONCURRENCY = 4;
 export const AUTO_EXPAND_HOVER_MS = 700;
-export const EXPANDED_STORAGE_KEY = "bb-plugin-file-manager:expanded:v1";
+export const EXPANDED_STORAGE_KEY = "alia-plugin-file-manager:expanded:v1";
 export const EXPANDED_STORAGE_MAX_BYTES = 64 * 1024;
 ```
 
@@ -817,7 +817,7 @@ issues **no** RPC, preserving the guarantee in `hooks/useDirectory.ts:9-10`.
 ## 6. Persistence of the expanded set
 
 **Requirement:** survive (a) navigating between directories, (b) a remount of
-the panel component, (c) a bb/app restart. **Not** required to survive a plugin
+the panel component, (c) a alia/app restart. **Not** required to survive a plugin
 uninstall or to sync across machines.
 
 **Mechanism — two tiers, in `hooks/useTree.ts` module scope:**
@@ -1082,8 +1082,8 @@ Whole existing suites, unchanged files, all must stay green:
   `registration.test.tsx` — untouched behaviour.
 
 Gate for the whole feature: `npx tsc --noEmit` = 0 errors, `npm test` = all files
-green with the two new suites, `bb plugin build` clean, and a manual pass in the
-running panel (expand, collapse, drag onto a nested folder, restart bb, confirm
+green with the two new suites, `alia plugin build` clean, and a manual pass in the
+running panel (expand, collapse, drag onto a nested folder, restart VesnALIA, confirm
 the tree comes back).
 
 ---

@@ -1,4 +1,4 @@
-// Converts Asana rich text (`html_notes`, `html_text`) to Markdown for bb's
+// Converts Asana rich text (`html_notes`, `html_text`) to Markdown for VesnALIA's
 // Markdown renderer, so the frontend never renders Asana HTML directly.
 //
 // Asana emits a small, well-formed XML subset: body, strong, em, u, s, code,

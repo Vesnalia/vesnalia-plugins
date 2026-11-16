@@ -9,7 +9,7 @@ import {
 } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Icon } from "./ui/icon";
-import { experimental_useSidebarThreads, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { SETTINGS, type SettingKey } from "../lib/settings";
 import { latestProjectActivity } from "../lib/recent-projects";
@@ -78,14 +78,14 @@ export function LocalizedSettings() {
 
   return (
     <section
-      className="bb-chat-tabs-settings"
+      className="alia-chat-tabs-settings"
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
       aria-busy={saving || settings.isLoading}
     >
-      <h2 className="bb-chat-tabs-settings-heading">{t("Configuration")}</h2>
+      <h2 className="alia-chat-tabs-settings-heading">{t("Configuration")}</h2>
       <div
-        className="bb-chat-tabs-settings-tabs"
+        className="alia-chat-tabs-settings-tabs"
         role="tablist"
         aria-label={t("Configuration")}
         onKeyDown={(event) => {
@@ -128,7 +128,7 @@ export function LocalizedSettings() {
       <fieldset disabled={saving || settings.isLoading || settings.values === undefined}>
         <div
           role="tabpanel"
-          className="bb-chat-tabs-settings-panel"
+          className="alia-chat-tabs-settings-panel"
           id={`${prefix}-general-panel`}
           aria-labelledby={`${prefix}-general-tab`}
           hidden={tab !== "general"}
@@ -140,8 +140,8 @@ export function LocalizedSettings() {
               const id = `${prefix}-${key}`;
               const value = values[key] ?? descriptor.default;
               return (
-                <div className="bb-chat-tabs-settings-row" key={key}>
-                  <div className="bb-chat-tabs-settings-copy">
+                <div className="alia-chat-tabs-settings-row" key={key}>
+                  <div className="alia-chat-tabs-settings-copy">
                     <label htmlFor={id}>{t(descriptor.label)}</label>
                     <p id={`${id}-description`}>{t(descriptor.description)}</p>
                   </div>
@@ -176,14 +176,14 @@ export function LocalizedSettings() {
         </div>
         <div
           role="tabpanel"
-          className="bb-chat-tabs-settings-panel"
+          className="alia-chat-tabs-settings-panel"
           id={`${prefix}-appearance-panel`}
           aria-labelledby={`${prefix}-appearance-tab`}
           hidden={tab !== "appearance"}
         >
           {appearanceVisited &&
             (appearance === null ? (
-              <p className="bb-chat-tabs-settings-error" role="alert">
+              <p className="alia-chat-tabs-settings-error" role="alert">
                 {t("Invalid tab appearance settings.")}
               </p>
             ) : (
@@ -199,7 +199,7 @@ export function LocalizedSettings() {
         </div>
       </fieldset>
       {failed ? (
-        <p className="bb-chat-tabs-settings-error" role="alert">
+        <p className="alia-chat-tabs-settings-error" role="alert">
           {t("Could not save settings.")}
         </p>
       ) : null}
@@ -299,9 +299,9 @@ function AppearanceSettings({
     setSuggestionsOpen(false);
   };
   return (
-    <div className="bb-chat-tabs-appearance-settings">
+    <div className="alia-chat-tabs-appearance-settings">
       <h3>{t("Tab colors")}</h3>
-      <div className="bb-chat-tabs-palette">
+      <div className="alia-chat-tabs-palette">
         {appearance.palette.map((color, index) => (
           <label key={index}>
             {t("Color {number}", { number: index + 1 })}
@@ -318,7 +318,7 @@ function AppearanceSettings({
       </div>
       <button
         type="button"
-        className="bb-chat-tab-dialog-button"
+        className="alia-chat-tab-dialog-button"
         disabled={Object.keys(colors).length === 0}
         onClick={() =>
           void save({
@@ -344,14 +344,14 @@ function AppearanceSettings({
         }}
       >
         <Dialog.Trigger asChild>
-          <button type="button" className="bb-chat-tab-dialog-button bb-chat-tabs-project-manage">
+          <button type="button" className="alia-chat-tab-dialog-button alia-chat-tabs-project-manage">
             {t("Project aliases and colors")}…
           </button>
         </Dialog.Trigger>
         <Dialog.Portal>
-          <Dialog.Overlay className="bb-chat-tab-rename-overlay bb-chat-tabs-workspace-overlay" />
+          <Dialog.Overlay className="alia-chat-tab-rename-overlay alia-chat-tabs-workspace-overlay" />
           <Dialog.Content
-            className="bb-chat-tab-rename-dialog bb-chat-tabs-workspace-dialog bb-chat-tabs-project-dialog bb-chat-tabs-settings bb-chat-tabs-appearance-settings"
+            className="alia-chat-tab-rename-dialog alia-chat-tabs-workspace-dialog alia-chat-tabs-project-dialog alia-chat-tabs-settings alia-chat-tabs-appearance-settings"
             lang={locale}
             dir={locale === "ar" ? "rtl" : "ltr"}
             aria-busy={pending}
@@ -363,56 +363,56 @@ function AppearanceSettings({
               }
             }}
           >
-            <div className="bb-chat-tabs-workspace-dialog-header">
-              <Dialog.Title className="bb-chat-tab-rename-title">
+            <div className="alia-chat-tabs-workspace-dialog-header">
+              <Dialog.Title className="alia-chat-tab-rename-title">
                 {t("Project aliases and colors")}
               </Dialog.Title>
-              <Dialog.Description className="bb-chat-tab-rename-description">
+              <Dialog.Description className="alia-chat-tab-rename-description">
                 {t(
-                  "Projects and chats in BB are not deleted. Removing a project clears only its alias and project color.",
+                  "Projects and chats in VesnALIA are not deleted. Removing a project clears only its alias and project color.",
                 )}
               </Dialog.Description>
             </div>
             {failed && (
-              <p role="alert" className="bb-chat-tabs-settings-error">
+              <p role="alert" className="alia-chat-tabs-settings-error">
                 {t("Could not save settings.")}
               </p>
             )}
-            <fieldset className="bb-chat-tabs-appearance-settings" disabled={pending}>
+            <fieldset className="alia-chat-tabs-appearance-settings" disabled={pending}>
               <label htmlFor={`${prefix}-list-search`}>{t("Search projects")}</label>
               <input
                 ref={listSearchRef}
                 id={`${prefix}-list-search`}
                 type="search"
-                className="bb-chat-tabs-project-search"
+                className="alia-chat-tabs-project-search"
                 value={listQuery}
                 maxLength={300}
                 onChange={(event) => setListQuery(event.target.value)}
               />
-              <ul className="bb-chat-tabs-workspace-list bb-chat-tabs-project-list">
+              <ul className="alia-chat-tabs-workspace-list alia-chat-tabs-project-list">
                 {listedProjects.map((project) => (
                   <li key={project.id}>
                     {deleteId === project.id ? (
                       <div
-                        className="bb-chat-tabs-workspace-confirm"
+                        className="alia-chat-tabs-workspace-confirm"
                         role="group"
                         aria-label={`${t("Remove from list")}: ${project.name}`}
                       >
                         <p>
                           {t("Remove this project from the list?")} <strong>{project.name}</strong>
                         </p>
-                        <div className="bb-chat-tabs-workspace-confirm-actions">
+                        <div className="alia-chat-tabs-workspace-confirm-actions">
                           <button
                             type="button"
                             autoFocus
-                            className="bb-chat-tab-dialog-button"
+                            className="alia-chat-tab-dialog-button"
                             onClick={() => setDeleteId(null)}
                           >
                             {t("Cancel")}
                           </button>
                           <button
                             type="button"
-                            className="bb-chat-tab-dialog-button bb-chat-tabs-project-remove"
+                            className="alia-chat-tab-dialog-button alia-chat-tabs-project-remove"
                             onClick={() =>
                               void save({ kind: "project-remove", projectId: project.id }).then(
                                 (saved) => {
@@ -433,13 +433,13 @@ function AppearanceSettings({
                       </div>
                     ) : (
                       <>
-                        <div className="bb-chat-tabs-project-row-copy">
+                        <div className="alia-chat-tabs-project-row-copy">
                           <strong dir="auto">{project.name}</strong>
                           <span dir="auto">{project.alias || "—"}</span>
                         </div>
                         {project.color !== null && (
                           <span
-                            className="bb-chat-tabs-project-color"
+                            className="alia-chat-tabs-project-color"
                             style={{ background: appearance.palette[project.color] }}
                             role="img"
                             aria-label={t("Color {number}", { number: project.color + 1 })}
@@ -447,7 +447,7 @@ function AppearanceSettings({
                         )}
                         <button
                           type="button"
-                          className="bb-chat-tabs-workspace-action"
+                          className="alia-chat-tabs-workspace-action"
                           title={t("Edit")}
                           aria-label={`${t("Edit")}: ${project.name}`}
                           onClick={() => {
@@ -459,7 +459,7 @@ function AppearanceSettings({
                         </button>
                         <button
                           type="button"
-                          className="bb-chat-tabs-workspace-action bb-chat-tabs-project-remove"
+                          className="alia-chat-tabs-workspace-action alia-chat-tabs-project-remove"
                           title={t("Remove from list")}
                           aria-label={`${t("Remove from list")}: ${project.name}`}
                           onClick={() => setDeleteId(project.id)}
@@ -474,7 +474,7 @@ function AppearanceSettings({
               {listedProjects.length === 0 && <p role="status">{t("No projects found")}</p>}
               <h3>{t(projectId && appearance.projects[projectId] ? "Edit" : "Add project")}</h3>
               <div
-                className="bb-chat-tabs-project-picker"
+                className="alia-chat-tabs-project-picker"
                 onBlur={(event) => {
                   if (!event.currentTarget.contains(event.relatedTarget)) setSuggestionsOpen(false);
                 }}
@@ -483,7 +483,7 @@ function AppearanceSettings({
                 <input
                   ref={projectInputRef}
                   id={`${prefix}-project`}
-                  className="bb-chat-tabs-project-search"
+                  className="alia-chat-tabs-project-search"
                   type="text"
                   role="combobox"
                   autoComplete="off"
@@ -536,7 +536,7 @@ function AppearanceSettings({
                 {expanded && (
                   <div
                     id={`${prefix}-projects`}
-                    className="bb-chat-tabs-project-options"
+                    className="alia-chat-tabs-project-options"
                     ref={projectListRef}
                     role="listbox"
                     aria-label={t("Choose a project")}
@@ -577,11 +577,11 @@ function AppearanceSettings({
                 />
               ) : null}
             </fieldset>
-            <div className="bb-chat-tabs-workspace-dialog-footer">
+            <div className="alia-chat-tabs-workspace-dialog-footer">
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="bb-chat-tab-dialog-button bb-chat-tab-dialog-button-primary"
+                  className="alia-chat-tab-dialog-button alia-chat-tab-dialog-button-primary"
                   disabled={pending}
                 >
                   {t("Done")}
@@ -620,7 +620,7 @@ function ProjectAppearanceEditor({
   const dirty = alias !== undefined || color !== undefined;
   return (
     <form
-      className="bb-chat-tabs-project-appearance"
+      className="alia-chat-tabs-project-appearance"
       aria-label={projectName}
       onSubmit={(event) => {
         event.preventDefault();
@@ -639,7 +639,7 @@ function ProjectAppearanceEditor({
         });
       }}
     >
-      <strong className="bb-chat-tabs-selected-project" dir="auto">
+      <strong className="alia-chat-tabs-selected-project" dir="auto">
         {projectName}
       </strong>
       <label htmlFor={`${prefix}-alias`}>{t("Project alias")}</label>
@@ -674,7 +674,7 @@ function ProjectAppearanceEditor({
         ))}
       </select>
       <button
-        className="bb-chat-tab-dialog-button"
+        className="alia-chat-tab-dialog-button"
         type="submit"
         disabled={!dirty && project !== undefined}
       >

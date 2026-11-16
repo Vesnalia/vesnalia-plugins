@@ -21,7 +21,7 @@ export function creditDetails(usage, { stale = false, provider, sessionId } = {}
   if (usage?.inFlight) { notes.push(`${calls(usage.inFlight)} unfinished. Not counted yet.`); action ??= 'If Pi is idle, check /copilot-probe status.'; }
   if (state === 'Missing data' && cli) { label = 'Copilot CLI partial'; notes.push('Copilot CLI reported partial coverage.'); action = 'Check Copilot CLI diagnostics. Missing usage cannot be reconstructed here.'; }
   if (state === 'Missing data' && !notes.length) { notes.push('Capture data is incomplete.'); action = 'Check /copilot-probe status in Pi.'; }
-  if (state === 'Unavailable' && pi && !action) action = 'Check /copilot-probe status in the BB-managed Pi session.';
+  if (state === 'Unavailable' && pi && !action) action = 'Check /copilot-probe status in the ALIA-managed Pi session.';
   const readiness = usage?.readiness?.state ?? 'unconfirmed';
   const awaiting = pi && readiness === 'ready' && usage?.aic == null && !usage?.observed && !usage?.reported && !usage?.inFlight && !usage?.missing && !usage?.conflicting && !usage?.captureIssue && issues.size === 0;
   const noUsage = !!usage && usage.aic == null && !usage.observed && !usage.reported && !usage.inFlight && !usage.missing && !usage.conflicting && !usage.captureIssue && issues.size === 0;
@@ -40,16 +40,16 @@ export function creditDetails(usage, { stale = false, provider, sessionId } = {}
       action = readiness === 'disabled' ? 'Run /copilot-probe on in this Pi session.' : readiness === 'unsupported' ? 'Use an authenticated Pi 1.5.0+ runtime, then reload or restart Pi.' : 'Check /copilot-probe status and receipt-folder permissions.';
     }
   }
-  if (issues.has('host-unavailable')) { label = 'Unavailable'; tone = 'bad'; notes.push("Cannot read this session's host."); action = 'Check the BB host connection.'; }
+  if (issues.has('host-unavailable')) { label = 'Unavailable'; tone = 'bad'; notes.push("Cannot read this session's host."); action = 'Check the VesnALIA host connection.'; }
   if (stale) {
     if (usage?.aic == null) { label = 'Disconnected'; tone = 'warn'; }
     notes.unshift(usage?.aic != null ? 'Connection lost. Last value kept.' : 'Connection lost. No current reading.');
-    action = 'Reconnect BB to refresh.';
+    action = 'Reconnect VesnALIA to refresh.';
   }
   return {
     label, tone, action, notes, setup,
     summary: pi ? awaiting ? 'Ready — awaiting Copilot usage.' : usage?.reported ? `${calls(usage.reported)} completed and counted.` : setup ? 'Pi capture not confirmed.' : 'No completed calls counted.' : cli ? 'Latest Copilot CLI total. Includes Copilot CLI subagents.' : usage?.reason ?? 'Reading usage…',
-    scope: pi ? 'This Pi session. Other BB threads separate.' : cli ? 'This Copilot CLI session. Other BB threads separate.' : 'This provider session. Other BB threads separate.',
+    scope: pi ? 'This Pi session. Other VesnALIA threads separate.' : cli ? 'This Copilot CLI session. Other VesnALIA threads separate.' : 'This provider session. Other VesnALIA threads separate.',
     coverage: pi ? 'Partial coverage. Earlier calls and hidden retries may be missing.' : cli && usage.coverage === 'unknown' ? 'Copilot CLI did not report coverage.' : null,
   };
 }

@@ -27,8 +27,8 @@ export type SourceId = (typeof SOURCE_IDS)[number];
  * A provider's identity colour, in a dark-background and a light-background
  * variant.
  *
- * **This is the one place in the plugin that does not take a colour from bb's
- * theme classes, and it is deliberate.** bb's semantic colours carry meaning —
+ * **This is the one place in the plugin that does not take a colour from VesnALIA's
+ * theme classes, and it is deliberate.** VesnALIA's semantic colours carry meaning —
  * `text-destructive`, `text-success`, `text-warning-text` — and there are not
  * five neutral hues among them to tell five providers apart. Painting Anthropic
  * "destructive" is a sentence about Anthropic, not a label. (In Paseo a theme
@@ -37,7 +37,7 @@ export type SourceId = (typeof SOURCE_IDS)[number];
  * So the five hues are spread around the wheel — orange, green, violet, blue,
  * pink — and each is given two values: a bright one that reads on a dark
  * background and a darker one that reads on a light one. `pickAccent` chooses
- * between them from bb's own light/dark mode.
+ * between them from VesnALIA's own light/dark mode.
  */
 export interface ProviderAccent {
   /** Used on a dark background: bright enough to read as text on it. */
@@ -133,7 +133,7 @@ export function providersOfSource(source: SourceId): readonly ProviderInfo[] {
   return PROVIDERS.filter((provider) => provider.source === source);
 }
 
-/** bb's appearance: `experimental_useCodeTheme().mode` in the app. */
+/** VesnALIA's appearance: `experimental_useCodeTheme().mode` in the app. */
 export type ColorMode = "dark" | "light";
 
 /**
@@ -150,7 +150,7 @@ export function isDarkColor(color: string): boolean {
   return (red * 0.299 + green * 0.587 + blue * 0.114) / 255 < 0.5;
 }
 
-/** A provider's colour for bb's current appearance. */
+/** A provider's colour for VesnALIA's current appearance. */
 export function pickAccent(accent: ProviderAccent, mode: ColorMode): string {
   return mode === "dark" ? accent.dark : accent.light;
 }

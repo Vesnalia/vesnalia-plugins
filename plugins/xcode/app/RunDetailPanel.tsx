@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -194,7 +194,7 @@ export function RunDetailPanel({
             <p className="text-xs text-muted-foreground">
               This run finished, but Xcode records no pass/fail for command-line
               builds without a result bundle. Run{" "}
-              <code className="rounded bg-muted px-1 py-0.5">bb xcode shim install</code>{" "}
+              <code className="rounded bg-muted px-1 py-0.5">alia xcode shim install</code>{" "}
               once to capture verdicts for every build.
             </p>
           ) : null}
@@ -319,7 +319,7 @@ function IssuesTab({ findings, run }: { findings: Finding[]; run: DetailRun }) {
         Xcode counted {run.errorCount} error(s) and {run.warningCount} warning(s),
         but the messages live in a result bundle this run did not produce.
         Builds made through{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-xs">bb xcode run</code>{" "}
+        <code className="rounded bg-muted px-1 py-0.5 text-xs">alia xcode run</code>{" "}
         or with the shim installed capture them automatically.
       </p>
     );
@@ -363,7 +363,7 @@ function TestsTab({ tests, run }: { tests: TestResult[]; run: DetailRun }) {
     return (
       <p className="text-sm text-muted-foreground">
         Per-test results exist only in a result bundle. Run tests through{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-xs">bb xcode run</code>{" "}
+        <code className="rounded bg-muted px-1 py-0.5 text-xs">alia xcode run</code>{" "}
         or install the shim to capture them.
       </p>
     );

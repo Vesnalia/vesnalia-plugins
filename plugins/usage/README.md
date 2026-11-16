@@ -1,6 +1,6 @@
-# bb-plugin-usage
+# alia-plugin-usage
 
-Track coding-agent token usage and estimated API cost across every machine enrolled in BB.
+Track coding-agent token usage and estimated API cost across every machine enrolled in VesnALIA.
 
 ![Usage dashboard](https://5kas5z928t.ufs.sh/f/wBHVA4PQTleAMvssUiregkXmOAPY4ndWVuS718FbTZLDztxM)
 
@@ -15,8 +15,8 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 - Filter by machine, agent, model provider, and the last 7, 30, or 90 days.
 - Show exact, alias-matched, agent-reported, and unknown pricing in the breakdown table.
 - Show Grok Build, OpenCode Go, Claude Code, Cursor, and Codex plan windows in the usage-limits section. The same subscription on several machines is one card with machine tags; different accounts stay separate cards in a horizontal grid.
-- Show every Claude and Codex account from BB’s Account Pooler with its account label, reported limit windows, and pool status. Pooled accounts stay visible under every machine filter because the pool is shared. Matching local subscriptions are combined when the account email identifies one pool account; windows from either source are kept, preferring the newer reset cycle and the higher usage within a cycle. Disabled accounts and accounts without reported limits remain visible.
-- Offer a reset shortcut when either the five-hour or weekly limit has **less than 20% remaining**. Confirmed credits show **Reset usage**; unknown availability shows **Reset options**. A confirmed empty or expired balance has no reset action. Verified Codex reset credits show their count and expiry even before usage runs low. Both actions open the provider’s usage page; returning to BB refreshes the limits, and an Account Pooler card first asks the pool to re-read that account. If that re-read can’t be confirmed, the card shows its last values as stale without a reset action and retries on the next return.
+- Show every Claude and Codex account from VesnALIA’s Account Pooler with its account label, reported limit windows, and pool status. Pooled accounts stay visible under every machine filter because the pool is shared. Matching local subscriptions are combined when the account email identifies one pool account; windows from either source are kept, preferring the newer reset cycle and the higher usage within a cycle. Disabled accounts and accounts without reported limits remain visible.
+- Offer a reset shortcut when either the five-hour or weekly limit has **less than 20% remaining**. Confirmed credits show **Reset usage**; unknown availability shows **Reset options**. A confirmed empty or expired balance has no reset action. Verified Codex reset credits show their count and expiry even before usage runs low. Both actions open the provider’s usage page; returning to VesnALIA refreshes the limits, and an Account Pooler card first asks the pool to re-read that account. If that re-read can’t be confirmed, the card shows its last values as stale without a reset action and retries on the next return.
 - Resolve model prices from [models.dev](https://models.dev), refreshed daily at runtime with the bundled snapshot as fallback, without inventing prices for ambiguous models.
 - Sync automatically every 15 minutes or manually from the dashboard.
 
@@ -25,19 +25,19 @@ Track coding-agent token usage and estimated API cost across every machine enrol
 - Codex: `rollout-*.jsonl` files recursively under both `sessions/` and `archived_sessions/` in `~/.codex` and each `~/.codex-profiles/<name>` home; each profile reports as its own agent, `Codex (<name>)`. Additional homes can be configured in plugin settings. A call logged twice in a row is counted once. Forks saved in Codex's older copied-history format replay their ancestors' history; that copy is skipped and counted in the original session's rollout, so it is missing if that rollout was deleted.
 - Claude Code: `~/.claude/projects/**/*.jsonl`
 - DeepSeek Harness: `~/.dsh/sessions/*/*/session.v3.jsonl.zstd` (Zstandard-compressed JSONL; requires Node.js 22.15+ on the machine)
-- Devin: `~/.local/share/devin/cli/sessions.db` — the Devin CLI's SQLite session store, opened read-only (`$XDG_DATA_HOME` is honored). Devin runs in BB through the `acp-devin` provider and writes no JSONL session logs.
-- Kilo Code: `~/.local/share/kilo/kilo.db` — the Kilo CLI's SQLite session store, opened read-only (`$XDG_DATA_HOME` and `APPDATA` are honored). Kilo Code runs in BB through the `kilocode` provider. Its database is the only Kilo Code source: `~/.kilocode/usage.jsonl` is deliberately not scanned, so a bridge-written log cannot double-count turns the database already reports
+- Devin: `~/.local/share/devin/cli/sessions.db` — the Devin CLI's SQLite session store, opened read-only (`$XDG_DATA_HOME` is honored). Devin runs in VesnALIA through the `acp-devin` provider and writes no JSONL session logs.
+- Kilo Code: `~/.local/share/kilo/kilo.db` — the Kilo CLI's SQLite session store, opened read-only (`$XDG_DATA_HOME` and `APPDATA` are honored). Kilo Code runs in VesnALIA through the `kilocode` provider. Its database is the only Kilo Code source: `~/.kilocode/usage.jsonl` is deliberately not scanned, so a bridge-written log cannot double-count turns the database already reports
 - FX: `~/.fx/usage.jsonl`
 - Grok Agent: `~/.grok/logs/unified.jsonl`
 - Pi: `~/.pi/agent/sessions/**/*.jsonl`, plus optional extra roots in plugin settings
 - Prime Agent: root sessions in `~/.prime/agent/sessions/*.jsonl` and recursive-agent sessions under `~/.prime/agent/session-artifacts/**/*.jsonl`, plus optional custom session directories in plugin settings
 - OpenCode: assistant-message usage from the last 90 days, recorded by `opencode db` (v1) or the read-only local database (v2)
-- Antigravity: `~/.antigravity-acp/usage.jsonl`, written by the `bb-plugin-antigravity-acp` provider bridge (the `agy` CLI has no session log of its own in a stable, parseable shape, so the bridge is the source of truth, one line per turn it runs)
+- Antigravity: `~/.antigravity-acp/usage.jsonl`, written by the `alia-plugin-antigravity-acp` provider bridge (the `agy` CLI has no session log of its own in a stable, parseable shape, so the bridge is the source of truth, one line per turn it runs)
 - Grok Build limits: credit usage and reset times from the Grok billing endpoint, using the local Grok login (`~/.grok/auth.json`, respecting `GROK_HOME` and `GROK_AUTH_PATH`)
 - OpenCode Go limits: plan windows from `https://opencode.ai/zen/go/v1/usage`, authenticated with the `opencode-go` credential in `~/.local/share/opencode/auth.json` on each machine
-- Account Pooler limits: non-secret account summaries from the enabled BB `account-pool` plugin’s `account.list` RPC, including Codex limit windows and Claude five-hour, weekly, and model-family limits. API key accounts show that subscription limits are unavailable. This adds quota cards, not per-account token or cost attribution. Pool refresh failures retain the last successful snapshot with a warning; an absent or disabled pool plugin needs no configuration.
+- Account Pooler limits: non-secret account summaries from the enabled VesnALIA `account-pool` plugin’s `account.list` RPC, including Codex limit windows and Claude five-hour, weekly, and model-family limits. API key accounts show that subscription limits are unavailable. This adds quota cards, not per-account token or cost attribution. Pool refresh failures retain the last successful snapshot with a warning; an absent or disabled pool plugin needs no configuration.
 
-JSON-log collection requires Node.js on each enrolled machine. Logs are streamed and reduced to usage metadata on that machine, so large histories are not transferred through BB's file API. A metadata-only per-file cache in `~/.cache/bb-plugin-usage/json-log-scan-v1/` makes later syncs reparse only changed files. The initial 365-day scan can take longer on machines with large histories.
+JSON-log collection requires Node.js on each enrolled machine. Logs are streamed and reduced to usage metadata on that machine, so large histories are not transferred through VesnALIA's file API. A metadata-only per-file cache in `~/.cache/alia-plugin-usage/json-log-scan-v1/` makes later syncs reparse only changed files. The initial 365-day scan can take longer on machines with large histories.
 
 For a custom `CODEX_HOME` outside the default locations, add the home directory to **Extra Codex homes** (`codexHomes`) in the plugin settings. Separate paths with semicolons or newlines; `~` expands to each enrolled machine's home. Both active and archived sessions are scanned, and these extra homes report under Codex. Copies of the same session within an account are counted once. The first sync after upgrading reparses Codex logs to populate session identities in the metadata cache; later syncs reuse unchanged files.
 
@@ -57,7 +57,7 @@ Reset availability and expiry are separate from each usage window’s automatic 
 
 Claude’s CLI usage interface does not expose reset offers, so low-quota Claude cards show **Reset options** without a count or expiry. [Claude Settings > Usage](https://claude.ai/settings/usage) shows availability, the affected limit, and any expiry. [Claude’s reset documentation](https://support.claude.com/en/articles/17007452-what-is-a-limit-reset) describes the web/desktop redemption flow. Use the account shown on the card when signing in to a provider page. The plugin does not redeem credits automatically or infer expiry from a normal five-hour/weekly rollover.
 
-The plugin never stores prompts or message content. It stores timestamps, agent/model identifiers, token buckets, pricing status, and aggregate cost. To break usage down by project it also records the working directory's final segment (the project folder name, e.g. `bb-plugin-usage`) for agents that log one; the full directory path is never stored or transferred. FX uses the spend recorded in its local usage ledger, OpenCode, Pi, and Prime prefer positive agent-recorded costs and fall back to standard API-rate estimates, and other agents use standard API-rate estimates when models.dev can resolve a model, then agent-reported cost when available. They are not subscription-billing totals.
+The plugin never stores prompts or message content. It stores timestamps, agent/model identifiers, token buckets, pricing status, and aggregate cost. To break usage down by project it also records the working directory's final segment (the project folder name, e.g. `alia-plugin-usage`) for agents that log one; the full directory path is never stored or transferred. FX uses the spend recorded in its local usage ledger, OpenCode, Pi, and Prime prefer positive agent-recorded costs and fall back to standard API-rate estimates, and other agents use standard API-rate estimates when models.dev can resolve a model, then agent-reported cost when available. They are not subscription-billing totals.
 
 Missing log roots are treated as normal “no data” results. Offline machines, unreadable files, malformed collector output, missing runtime tools, query failures, and timeouts are retained as per-agent sync states so available history remains visible with an error notice.
 
@@ -67,11 +67,11 @@ Missing log roots are treated as normal “no data” results. Offline machines,
 
 ## Install
 
-Cursor subscription limits can also come from BB's `acp-cursor-sdk` provider.
-BB names custom ACP providers `acp-<id>`, and this plugin only reads that exact
+Cursor subscription limits can also come from VesnALIA's `acp-cursor-sdk` provider.
+VesnALIA names custom ACP providers `acp-<id>`, and this plugin only reads that exact
 key, so the `customAgents` entry must already use `"id": "cursor-sdk"`; entries
 with other IDs are not discovered here. On that entry, set `"dialect": "cursor"`
-and `"providerUsage": true`. BB then reads the native Cursor CLI credentials and
+and `"providerUsage": true`. VesnALIA then reads the native Cursor CLI credentials and
 dashboard endpoints; the adapter does not need a quota extension. SDK login
 credentials are separate, so this reports the account signed in through the
 native Cursor CLI. Native Cursor may stay disabled. When both providers are
@@ -80,19 +80,19 @@ used when available, otherwise the SDK provider's. Matching Cursor accounts on
 different machines are still grouped into one card. Each machine's subscription
 query may take up to 20 seconds.
 
-Requires BB 0.36 or newer.
+Requires VesnALIA 0.36 or newer.
 
 ```sh
-bb plugin install git:https://github.com/MayankBansal12/bb-plugin-usage.git@main --yes
+alia plugin install git:https://github.com/MayankBansal12/bb-plugin-usage.git@main --yes
 ```
 
-Open BB and select **Usage** from the plugin sidebar. The plugin scans supported local data on connected machines and refreshes automatically.
+Open VesnALIA and select **Usage** from the plugin sidebar. The plugin scans supported local data on connected machines and refreshes automatically.
 
 ## Develop
 
 ```sh
 git clone https://github.com/MayankBansal12/bb-plugin-usage.git
-cd bb-plugin-usage
+cd alia-plugin-usage
 npm install
 npm run check
 npm test
@@ -102,7 +102,7 @@ npm run test:built
 
 Host collector functions stay in TypeScript, but run as standalone JavaScript on
 enrolled machines. `npm run generate:collectors` compiles their source into the
-checked-in `lib/host-scripts.generated.ts` strings before BB bundles the server.
+checked-in `lib/host-scripts.generated.ts` strings before VesnALIA bundles the server.
 This prevents bundler helpers from leaking into remote commands. Regenerate and
 commit that file when changing a host function; `npm test` checks it is current.
 `npm run test:built` executes the commands from `dist/server.js` in fresh Node
@@ -111,8 +111,8 @@ processes, so production-only packaging failures are covered too.
 Install the local build and start development mode:
 
 ```sh
-bb plugin install . --yes
-bb plugin dev
+alia plugin install . --yes
+alia plugin dev
 ```
 
 ## Contributions

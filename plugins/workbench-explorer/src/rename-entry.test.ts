@@ -3,12 +3,12 @@ import { rename, mkdtemp, mkdir, rm, writeFile, readdir, stat } from "node:fs/pr
 import os from "node:os";
 import path from "node:path";
 import { test } from "bun:test";
-import type { BbPluginApi, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../host-contract";
 import { renameEntry } from "./rename-entry";
 import { registerRoot } from "./roots";
 
-function mockBb(moveImpl?: (source: string, dest: string) => Promise<void>): BbPluginApi {
+function mockAlia(moveImpl?: (source: string, dest: string) => Promise<void>): AliaPluginApi {
   const doMove = moveImpl ?? (async () => undefined);
   return {
     sdk: {
@@ -18,7 +18,7 @@ function mockBb(moveImpl?: (source: string, dest: string) => Promise<void>): BbP
         },
       },
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 function mockHost(rootPath: string): ExperimentalHostClient<typeof hostContract> {
@@ -56,13 +56,13 @@ function mockHost(rootPath: string): ExperimentalHostClient<typeof hostContract>
 }
 
 test("renameEntry moves a file to the new name in the same folder", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-test-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-test-"));
   try {
     await writeFile(path.join(rootPath, "old-name.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb((source, dest) => rename(source, dest));
+    const alia = mockAlia((source, dest) => rename(source, dest));
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, {
+    const result = await renameEntry(alia, host, {
       rootId,
       relativePath: "old-name.ts",
       newName: "new-name.ts",
@@ -78,13 +78,13 @@ test("renameEntry moves a file to the new name in the same folder", async () => 
 });
 
 test("renameEntry renames a dotfile", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-dotfile-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-dotfile-"));
   try {
     await writeFile(path.join(rootPath, ".env"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb((source, dest) => rename(source, dest));
+    const alia = mockAlia((source, dest) => rename(source, dest));
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, {
+    const result = await renameEntry(alia, host, {
       rootId,
       relativePath: ".env",
       newName: ".env.local",
@@ -100,14 +100,14 @@ test("renameEntry renames a dotfile", async () => {
 });
 
 test("renameEntry refuses a destination that already exists (including dotfiles)", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-collision-dotfile-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-collision-dotfile-"));
   try {
     await writeFile(path.join(rootPath, "a.ts"), "old");
     await writeFile(path.join(rootPath, ".b"), "other");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb();
+    const alia = mockAlia();
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "a.ts", newName: ".b" });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "a.ts", newName: ".b" });
     assert.equal(result.ok, false);
     assert.deepEqual((await readdir(rootPath)).sort(), [".b", "a.ts"]);
   } finally {
@@ -116,14 +116,14 @@ test("renameEntry refuses a destination that already exists (including dotfiles)
 });
 
 test("renameEntry preserves the parent folder for nested files", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-nested-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-nested-"));
   try {
     await mkdir(path.join(rootPath, "src"));
     await writeFile(path.join(rootPath, "src", "old.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb((source, dest) => rename(source, dest));
+    const alia = mockAlia((source, dest) => rename(source, dest));
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, {
+    const result = await renameEntry(alia, host, {
       rootId,
       relativePath: "src/old.ts",
       newName: "new.ts",
@@ -139,13 +139,13 @@ test("renameEntry preserves the parent folder for nested files", async () => {
 });
 
 test("renameEntry trims whitespace in the new name", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-trim-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-trim-"));
   try {
     await writeFile(path.join(rootPath, "a.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb((source, dest) => rename(source, dest));
+    const alia = mockAlia((source, dest) => rename(source, dest));
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "a.ts", newName: "  b.ts  " });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "a.ts", newName: "  b.ts  " });
     assert.equal(result.ok, true);
     if (result.ok) assert.equal(result.relativePath, "b.ts");
   } finally {
@@ -154,12 +154,12 @@ test("renameEntry trims whitespace in the new name", async () => {
 });
 
 test("renameEntry refuses the workspace root", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-root-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-root-"));
   try {
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb();
+    const alia = mockAlia();
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "", newName: "something" });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "", newName: "something" });
     assert.equal(result.ok, false);
     if (!result.ok) assert.match(result.message, /workspace root cannot be renamed/);
   } finally {
@@ -168,13 +168,13 @@ test("renameEntry refuses the workspace root", async () => {
 });
 
 test("renameEntry refuses an empty new name", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-empty-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-empty-"));
   try {
     await writeFile(path.join(rootPath, "a.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb();
+    const alia = mockAlia();
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "a.ts", newName: "   " });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "a.ts", newName: "   " });
     assert.equal(result.ok, false);
     if (!result.ok) assert.match(result.message, /name cannot be empty/);
   } finally {
@@ -183,13 +183,13 @@ test("renameEntry refuses an empty new name", async () => {
 });
 
 test("renameEntry refuses a new name with a path separator", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-sep-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-sep-"));
   try {
     await writeFile(path.join(rootPath, "a.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb();
+    const alia = mockAlia();
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "a.ts", newName: "sub/b.ts" });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "a.ts", newName: "sub/b.ts" });
     assert.equal(result.ok, false);
     if (!result.ok) assert.match(result.message, /single name, not a path/);
   } finally {
@@ -198,14 +198,14 @@ test("renameEntry refuses a new name with a path separator", async () => {
 });
 
 test("renameEntry refuses a destination that already exists", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-collision-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-collision-"));
   try {
     await writeFile(path.join(rootPath, "a.ts"), "old");
     await writeFile(path.join(rootPath, "b.ts"), "other");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb();
+    const alia = mockAlia();
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "a.ts", newName: "b.ts" });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "a.ts", newName: "b.ts" });
     assert.equal(result.ok, false);
     assert.deepEqual((await readdir(rootPath)).sort(), ["a.ts", "b.ts"]);
   } finally {
@@ -214,14 +214,14 @@ test("renameEntry refuses a destination that already exists", async () => {
 });
 
 test("renameEntry renames a directory", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-dir-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-dir-"));
   try {
     await mkdir(path.join(rootPath, "mydir"));
     await writeFile(path.join(rootPath, "mydir", "child.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb((source, dest) => rename(source, dest));
+    const alia = mockAlia((source, dest) => rename(source, dest));
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: "mydir", newName: "otherdir" });
+    const result = await renameEntry(alia, host, { rootId, relativePath: "mydir", newName: "otherdir" });
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.equal(result.relativePath, "otherdir");
@@ -233,14 +233,14 @@ test("renameEntry renames a directory", async () => {
 });
 
 test("renameEntry renames a dotfile directory", async () => {
-  const rootPath = await mkdtemp(path.join(os.tmpdir(), "bb-file-explorer-rename-dotdir-"));
+  const rootPath = await mkdtemp(path.join(os.tmpdir(), "alia-file-explorer-rename-dotdir-"));
   try {
     await mkdir(path.join(rootPath, ".config"));
     await writeFile(path.join(rootPath, ".config", "child.ts"), "content");
     const rootId = registerRoot("test-host", rootPath);
-    const bb = mockBb((source, dest) => rename(source, dest));
+    const alia = mockAlia((source, dest) => rename(source, dest));
     const host = mockHost(rootPath);
-    const result = await renameEntry(bb, host, { rootId, relativePath: ".config", newName: ".settings" });
+    const result = await renameEntry(alia, host, { rootId, relativePath: ".config", newName: ".settings" });
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.equal(result.relativePath, ".settings");

@@ -25,7 +25,7 @@ An ACP client attaches a file by sending a `resource_link` prompt block. The blo
 | Transport | ACP over stdio, direct client, no editor |
 | Model | `cove/text:standard` behind a custom OpenAI-compatible endpoint. Model selection is downstream of the loss: any model receives the same text. |
 | Bun | not involved. The tap artifact is the compiled binary. Host Bun is 1.4.4. |
-| First seen in | bb 0.47.1, whose ACP client sends `resource_link{uri: "file:///…/Attachments/Pasted-text-3.txt", name: "Pasted text.txt"}` for a 29 KB paste |
+| First seen in | VesnALIA 0.47.1, whose ACP client sends `resource_link{uri: "file:///…/Attachments/Pasted-text-3.txt", name: "Pasted text.txt"}` for a 29 KB paste |
 
 ## Steps to Reproduce
 

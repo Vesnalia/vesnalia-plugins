@@ -1,9 +1,9 @@
-// Keyboard hints like bb's own: while a modifier is held, show the keys that
-// act on the block. Bindings come from bb's keyboard settings, so a
-// rebound key shows as rebound, and bb's "show keyboard hints" switch is
+// Keyboard hints like VesnALIA's own: while a modifier is held, show the keys that
+// act on the block. Bindings come from VesnALIA's keyboard settings, so a
+// rebound key shows as rebound, and VesnALIA's "show keyboard hints" switch is
 // respected.
 import { useEffect, useRef, useState } from "react";
-import { useSdk, type PluginCommandShortcut } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginCommandShortcut } from "@vesnalia/plugin-sdk/app";
 import {
   COMMAND_IDS,
   formatShortcut,
@@ -51,16 +51,16 @@ export function useHeldKeys(): HeldKeys {
   return held;
 }
 
-/** True while ⌘ (macOS) or Ctrl (elsewhere) is held, like bb's hints. */
+/** True while ⌘ (macOS) or Ctrl (elsewhere) is held, like VesnALIA's hints. */
 export function isModHeld(keys: HeldKeys): boolean {
   return isMac() ? keys.meta : keys.control;
 }
 
 export interface CommandHints {
-  /** bb's "show keyboard hints" setting. */
+  /** VesnALIA's "show keyboard hints" setting. */
   enabled: boolean;
   /**
-   * The bb command already bound to these modifiers plus a digit, if any,
+   * The VesnALIA command already bound to these modifiers plus a digit, if any,
    * so the settings page can warn before the two fight over a key.
    */
   takenBy: (keys: HeldKeys) => string | null;
@@ -75,7 +75,7 @@ interface KeybindingEntry {
   when?: { all?: readonly string[] };
 }
 
-/** Skips bindings bb scopes to another platform. */
+/** Skips bindings VesnALIA scopes to another platform. */
 function onThisPlatform(entry: KeybindingEntry): boolean {
   const all = entry.when?.all ?? [];
   const mac = isMac();
@@ -88,7 +88,7 @@ function onThisPlatform(entry: KeybindingEntry): boolean {
 
 const REFRESH_MS = 15_000;
 
-/** A bb shortcut's modifiers as held keys, resolving "mod" per platform. */
+/** A VesnALIA shortcut's modifiers as held keys, resolving "mod" per platform. */
 function toHeldKeys(shortcut: PluginCommandShortcut): HeldKeys {
   const mac = isMac();
   return {
@@ -137,7 +137,7 @@ export function useCommandHints(pluginId: string, wanted: boolean): CommandHints
           entries.find(
             (entry) => entry.command === keybindingCommand(pluginId, commandId),
           );
-        // When bb lists plugin bindings at all, a missing one is unbound;
+        // When VesnALIA lists plugin bindings at all, a missing one is unbound;
         // otherwise fall back to the default we registered.
         const listsPlugins = entries.some((entry) =>
           entry.command.startsWith("plugin:"),

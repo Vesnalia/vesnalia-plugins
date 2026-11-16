@@ -1,6 +1,6 @@
-// The page's copy of the RPC contract for bb's query hooks: the same methods and tags, with schemas that pass every value
+// The page's copy of the RPC contract for VesnALIA's query hooks: the same methods and tags, with schemas that pass every value
 // through, so zod and the spec parser stay out of the app bundle. The server validates each input and output.
-import type { StandardSchemaV1 } from "@get-bb/plugin-sdk/app";
+import type { StandardSchemaV1 } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../contract";
 import { RPC_TAGS } from "../rpc-tags";
 

@@ -1,9 +1,9 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { lameDuckContract, type LameDuckStatus } from "./contract.js";
 
-export default async function lameDuckPlugin(bb: BbPluginApi): Promise<void> {
-  const stored = await bb.storage.kv.get<unknown>("paused");
+export default async function lameDuckPlugin(alia: AliaPluginApi): Promise<void> {
+  const stored = await alia.storage.kv.get<unknown>("paused");
   let paused =
     stored === undefined || stored === null ? false : z.boolean().parse(stored);
   let saving = Promise.resolve();
@@ -11,8 +11,8 @@ export default async function lameDuckPlugin(bb: BbPluginApi): Promise<void> {
   async function status(): Promise<LameDuckStatus> {
     await saving;
     const [running, held] = await Promise.all([
-      bb.sdk.threads.listRunning(),
-      bb.sdk.threads.queue.list({ waitHolder: "plugin:lame-duck" }),
+      alia.sdk.threads.listRunning(),
+      alia.sdk.threads.queue.list({ waitHolder: "plugin:lame-duck" }),
     ]);
     return {
       paused,
@@ -24,17 +24,17 @@ export default async function lameDuckPlugin(bb: BbPluginApi): Promise<void> {
 
   async function setPaused(next: boolean): Promise<LameDuckStatus> {
     const write = saving.then(async () => {
-      await bb.storage.kv.set("paused", next);
+      await alia.storage.kv.set("paused", next);
       paused = next;
     });
     saving = write.catch(() => {});
     await write;
-    bb.realtime.publish("status-changed", {});
-    if (!next) await bb.experimental_hooks.recheck("message.dispatch");
+    alia.realtime.publish("status-changed", {});
+    if (!next) await alia.experimental_hooks.recheck("message.dispatch");
     return status();
   }
 
-  bb.experimental_hooks.on("message.dispatch", async () => {
+  alia.experimental_hooks.on("message.dispatch", async () => {
     await saving;
     return paused
       ? {
@@ -44,30 +44,30 @@ export default async function lameDuckPlugin(bb: BbPluginApi): Promise<void> {
       : { action: "proceed" };
   });
 
-  bb.rpc.register(lameDuckContract, {
+  alia.rpc.register(lameDuckContract, {
     status,
     pause: () => setPaused(true),
     resume: () => setPaused(false),
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "lame-duck",
     summary: "Pause sends, drain running threads, and resume queued work",
     commands: [
       {
         name: "status",
         summary: "Show whether sends are paused and threads have drained",
-        usage: "bb lame-duck status [--json]",
+        usage: "alia lame-duck status [--json]",
       },
       {
         name: "pause",
         summary: "Persistently pause sends while running turns finish",
-        usage: "bb lame-duck pause [--json]",
+        usage: "alia lame-duck pause [--json]",
       },
       {
         name: "resume",
         summary: "Resume sends and recheck queued work",
-        usage: "bb lame-duck resume [--json]",
+        usage: "alia lame-duck resume [--json]",
       },
     ],
     async run(argv) {
@@ -79,7 +79,7 @@ export default async function lameDuckPlugin(bb: BbPluginApi): Promise<void> {
       ) {
         return {
           exitCode: 1,
-          stderr: "Usage: bb lame-duck <status|pause|resume> [--json]",
+          stderr: "Usage: VesnALIA lame-duck <status|pause|resume> [--json]",
         };
       }
       const view =
@@ -107,8 +107,8 @@ export default async function lameDuckPlugin(bb: BbPluginApi): Promise<void> {
     "thread.archived",
     "thread.deleted",
   ] as const) {
-    bb.events.on(event, () => {
-      bb.realtime.publish("status-changed", {});
+    alia.events.on(event, () => {
+      alia.realtime.publish("status-changed", {});
     });
   }
 }

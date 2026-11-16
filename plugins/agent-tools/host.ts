@@ -1,7 +1,7 @@
 // Full-trust entry: runs on every enrolled machine, reads each CLI's MCP
 // config and writes the ones the catalogue asks for. Writes are atomic
 // (temp file + rename) and always leave a timestamped backup behind.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { cleanupSkillHomes, countSkillHomes, listMachineSkills, packSkillDir, unpackSkill } from "./host-skills.ts";
 import { readFile, writeFile, rename, stat, chmod, mkdir, readdir, unlink, copyFile, cp, symlink, lstat, readlink, realpath, rm } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -16,14 +16,14 @@ import { readServers, removeServer, upsertServer } from "./toml-mcp.js";
 import { locationPolicy, planFanOut, type FanOutOp, type FanOutState, type SkillActionMode } from "./skills.js";
 import { binCandidates, wrapForWindows } from "./platform.js";
 import { execFileOutput, resolveGitBin, runGit } from "./skills-sync.js";
-import { copySkillTree, isSkillJunk, measureBbTree, SKILL_TAR_EXCLUDES } from "./skill-tree.js";
+import { copySkillTree, isSkillJunk, measureAliaTree, SKILL_TAR_EXCLUDES } from "./skill-tree.js";
 import { probeServer } from "./probe.js";
 import { parseOpenCodeText, applyOpenCodeOps } from "./opencode.js";
 import { gitBinSearchDirs } from "./i18n.js";
 
 export { resolveGitBin, runGit };
 
-const BACKUP_PREFIX = ".bak-bb-mcp-";
+const BACKUP_PREFIX = ".bak-alia-mcp-";
 
 
 const FINGERPRINT_MAX_FILES = 500;
@@ -241,7 +241,7 @@ async function writeAtomic(absolute: string, contents: string): Promise<void> {
   } catch {
     // new file keeps the private default
   }
-  const temp = `${absolute}.bb-mcp-${process.pid}.tmp`;
+  const temp = `${absolute}.alia-mcp-${process.pid}.tmp`;
   await writeFile(temp, contents, { mode });
   await chmod(temp, mode);
   await rename(temp, absolute);
@@ -273,7 +273,7 @@ const SKILL_LOCATIONS = [
   { id: "claude", path: ".claude/skills" },
   { id: "codex", path: ".codex/skills" },
   { id: "gemini-config", path: ".gemini/config/skills" },
-  { id: "bb", path: ".bb/skills" },
+  { id: "alia", path: ".vesnalia/skills" },
   { id: "opencode", path: ".config/opencode/skills" },
   { id: "cursor", path: ".cursor/skills" },
   { id: "qwen", path: ".qwen/skills" },
@@ -345,15 +345,15 @@ async function measureDir(dir: string): Promise<{ files: number; bytes: number }
 
 /**
  * Имена скиллов, которые сессии и так получают из плагинов. Плагины лежат в
- * разных корнях и на разной глубине (маркетплейсы Claude Code, плагины BB,
+ * разных корнях и на разной глубине (маркетплейсы Claude Code, плагины VesnALIA,
  * кэш Codex), поэтому ищем папки `skills` обходом с ограничением глубины.
  */
 async function pluginSkillNames(): Promise<string[]> {
   const roots = [
     expand(".claude/plugins"),
-    expand(".bb/plugins"),
+    expand(".vesnalia/plugins"),
     expand(".codex/plugins"),
-    expand(".local/share/bb-server-runtime"),
+    expand(".local/share/alia-server-runtime"),
   ];
   const names = new Set<string>();
   const skip = new Set(["node_modules", ".git", "dist", "build", ".cache", "test", "tests"]);
@@ -409,8 +409,8 @@ async function scanSkills(signal?: AbortSignal): Promise<SkillsScan> {
           : null;
         const hasSkillMd = await exists(path.join(full, "SKILL.md"));
         const fingerprint = hasSkillMd ? await fingerprintDir(full) : null;
-        // Реальную папку меряем так, как её увидит BB: с мусором и симлинками.
-        const tree = hasSkillMd && !isSymlink ? await measureBbTree(full) : null;
+        // Реальную папку меряем так, как её увидит VesnALIA: с мусором и симлинками.
+        const tree = hasSkillMd && !isSymlink ? await measureAliaTree(full) : null;
         entries.push({
           name,
           kind: isSymlink ? "symlink" : "dir",
@@ -419,8 +419,8 @@ async function scanSkills(signal?: AbortSignal): Promise<SkillsScan> {
           mtime: fingerprint?.mtime ?? null,
           hasSkillMd,
           bytes: fingerprint?.bytes ?? 0,
-          bbBytes: tree?.bytes ?? 0,
-          bbFiles: tree?.files ?? 0,
+          aliaBytes: tree?.bytes ?? 0,
+          aliaFiles: tree?.files ?? 0,
           junk: (tree?.junk.length ?? 0) > 0,
         });
       }
@@ -491,8 +491,8 @@ async function adoptSkill(
   if (location === undefined) return { ok: false, error: "неизвестная папка" };
   if (locationId === "agents") return { ok: false, error: "скилл уже в каноне" };
   const policy = locationPolicy(locationId);
-  // Папка со своим реестром (BB) — только руками её хозяина: замена реальной
-  // папки симлинком выкидывает скилл из реестра bb-user.
+  // Папка со своим реестром (VesnALIA) — только руками её хозяина: замена реальной
+  // папки симлинком выкидывает скилл из реестра alia-user.
   if (policy === "own") {
     return { ok: false, error: "у этой папки свой реестр — плагин её не меняет" };
   }
@@ -506,11 +506,11 @@ async function adoptSkill(
   if (info.isSymbolicLink()) {
     if (mode === "unlink") {
       // Ссылку разрешено убирать в папке, которую мы не используем, и в случае
-      // дубля реестра BB (ссылка ведёт в ~/.bb/skills — эти скиллы BB подставляет сам).
+      // дубля реестра VesnALIA (ссылка ведёт в ~/.vesnalia/skills — эти скиллы VesnALIA подставляет сам).
       const target = await realpathOrNull(original);
-      const bbHome = expand(".bb/skills");
-      const isBbRegistry = target !== null && (target === bbHome || target.startsWith(`${bbHome}/`));
-      if (policy !== "drop" && !isBbRegistry) {
+      const aliaHome = expand(".vesnalia/skills");
+      const isAliaRegistry = target !== null && (target === aliaHome || target.startsWith(`${aliaHome}/`));
+      if (policy !== "drop" && !isAliaRegistry) {
         return { ok: false, error: "ссылку в этой папке убирать нельзя — её читает CLI" };
       }
       await unlink(original);
@@ -890,7 +890,7 @@ export default experimental_defineHostEntry({
       },
 
       /**
-       * Раскатка канона по домам: Claude Code получает симлинки, BB — реальное
+       * Раскатка канона по домам: Claude Code получает симлинки, VesnALIA — реальное
        * зеркало (его реестр видит только папки), всё заменяемое и пропадающее
        * уходит в архив. Возвращает то, что сделала, по операциям.
        */
@@ -977,7 +977,7 @@ export default experimental_defineHostEntry({
           );
         }
         for (const item of plan.blocked) {
-          results.push({ kind: "mirror", locationId: "bb", name: item.name, reason: item.reason, ok: false, error: item.reason });
+          results.push({ kind: "mirror", locationId: "alia", name: item.name, reason: item.reason, ok: false, error: item.reason });
         }
         return { ops: results, skippedByPlugin: plan.skippedByPlugin };
       },
@@ -1079,7 +1079,7 @@ export default experimental_defineHostEntry({
         if (tarBin === null) return { ok: false, error: "tar не найден", archiveBase64: null };
         const maxBytes = 8 * 1024 * 1024;
         try {
-          // Мусор (node_modules и т.п.) на сервер BB не везём: BB отказал бы всему скиллу.
+          // Мусор (node_modules и т.п.) на сервер VesnALIA не везём: VesnALIA отказал бы всему скиллу.
           const excludes = SKILL_TAR_EXCLUDES.map((pattern) => `--exclude=${pattern}`);
           const { stdout } = await execFileOutput(tarBin, ["czf", "-", ...excludes, "-C", expand(".agents/skills"), name], {
             encoding: "buffer",

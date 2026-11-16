@@ -1,6 +1,6 @@
 // Dependencies between crews (§3.9.2): `waitsFor: [{ task, until }]`.
 //
-// BB Tasks has no dependencies and no server-side change feed, so the plugin
+// VesnALIA Tasks has no dependencies and no server-side change feed, so the plugin
 // keeps them in `crew_dependencies` and polls once a minute — only for open
 // rows. `merged` is answered from the plugin's own merge requests (no RPC),
 // `done` from the task status, `comment:<keyword>` from the task comments.
@@ -8,7 +8,7 @@
 // Exactly one waking message per fulfilment: `satisfyDependency` flips the
 // row with `WHERE state = 'open'`, and only the call that flipped it sends.
 //
-// Tasks RPC (verified in the built-in tasks plugin, bb-app
+// Tasks RPC (verified in the built-in tasks plugin, alia-app
 // server/dist/builtin-plugins/tasks/dist/server.js): `getTaskByKey({taskKey})
 // → {task|null}` with `id, projectId, status, labelIds`; `listComments({taskId})
 // → {comments:[{body}]}`; `listLabels({projectId}) → {labels}`;
@@ -136,7 +136,7 @@ export function createDependencies(deps: DependenciesDeps) {
   };
 }
 
-/** The tasks plugin over `bb.sdk.plugins.callRpc`. */
+/** The tasks plugin over `alia.sdk.plugins.callRpc`. */
 export function createTasksRpcPort(callRpc: (method: string, input: unknown) => Promise<unknown>): TasksPort {
   return {
     async getTask(key) {

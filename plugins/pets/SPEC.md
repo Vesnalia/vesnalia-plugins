@@ -1,8 +1,8 @@
-# bb-plugin-pets — Spec v1
+# alia-plugin-pets — Spec v1
 
-A single AI-hatched pixel companion that roams the bb window, mirrors your agents' activity, and levels up from real completed work.
+A single AI-hatched pixel companion that roams the VesnALIA window, mirrors your agents' activity, and levels up from real completed work.
 
-Inspired by [Hermes pets](https://hermes-agent.nousresearch.com/docs/user-guide/features/pets) (activity-state mascot, AI hatch, roaming desktop overlay) — diverging with: **XP + evolution**, a **den collection**, **hybrid thread-aware reactivity**, and **bb-native navigation** (the pet is a shortcut to the thread that needs you).
+Inspired by [Hermes pets](https://hermes-agent.nousresearch.com/docs/user-guide/features/pets) (activity-state mascot, AI hatch, roaming desktop overlay) — diverging with: **XP + evolution**, a **den collection**, **hybrid thread-aware reactivity**, and **alia-native navigation** (the pet is a shortcut to the thread that needs you).
 
 Built public-ready from day one: private install first, but every behavior is configurable, there are no personal assumptions, and it degrades gracefully without an API key.
 
@@ -22,14 +22,14 @@ Built public-ready from day one: private install first, but every behavior is co
 | Evolution art | Regenerate the spritesheet from the base reference at each stage |
 | Collection | Den: keep every hatched pet, one active, switchable, each keeps its own XP |
 | Interactions | Petting, status speech bubbles, drag + resize, double-click → neediest thread, plus extras (§7) |
-| Name | `bb-plugin-pets`, display name **Pets**, CLI `bb pets` |
+| Name | `alia-plugin-pets`, display name **Pets**, CLI `alia pets` |
 
 ---
 
 ## 2. Product shape
 
 ### The pet
-- One active companion rendered as a pixel sprite floating above the bb UI, in every window/tab (each window renders independently; state is shared).
+- One active companion rendered as a pixel sprite floating above the VesnALIA UI, in every window/tab (each window renders independently; state is shared).
 - It reacts to agent activity with 8 animation states (§5).
 - It roams when idle (walks along the bottom edge, occasional hops), sleeps after inactivity, waves when you arrive.
 - It earns XP from real work and evolves through stages with regenerated, grander artwork.
@@ -49,7 +49,7 @@ Built public-ready from day one: private install first, but every behavior is co
 ## 3. Architecture
 
 ```
-bb-plugin-pets/
+alia-plugin-pets/
   package.json          # manifest: server, app, skills, branding icon "PawPrint"
   server.ts             # factory: settings, sqlite, events, rpc, http, cli, generation jobs
   src/
@@ -70,8 +70,8 @@ bb-plugin-pets/
 ```
 
 ### Backend (`server.ts`)
-- **Settings** (`bb.settings.define`) — everything user-tunable, safe defaults:
-  - `openaiApiKey` — string, **secret**. Only needed for hatching/evolving art. Missing key ⇒ `bb.status.needsConfiguration` is NOT used globally (the plugin still works with starter/bundled pets); hatch UI explains instead.
+- **Settings** (`alia.settings.define`) — everything user-tunable, safe defaults:
+  - `openaiApiKey` — string, **secret**. Only needed for hatching/evolving art. Missing key ⇒ `alia.status.needsConfiguration` is NOT used globally (the plugin still works with starter/bundled pets); hatch UI explains instead.
   - `enabled` — boolean, default `true` (master switch; overlay unmounts cleanly when off).
   - `roaming` — boolean, default `true`.
   - `bubbles` — select `off | rare | normal | chatty`, default `normal`.
@@ -82,15 +82,15 @@ bb-plugin-pets/
   - `imageModel` — string, default `gpt-image-1.5` (future-proofing; public users may point elsewhere).
   - `hideOnCompact` — boolean, default `true` (auto-hide on narrow viewports).
 - **Storage**:
-  - SQLite (`bb.storage.database()` + append-only `migrate`): `pets` (id, name, description, stage, xp, active, atlas meta, timestamps), `xp_events` (pet_id, source, amount, thread_id, ts — auditable ledger, idempotency keys), `gen_jobs` (kind: draft|sheet|evolve, status, error, request/response meta).
+  - SQLite (`alia.storage.database()` + append-only `migrate`): `pets` (id, name, description, stage, xp, active, atlas meta, timestamps), `xp_events` (pet_id, source, amount, thread_id, ts — auditable ledger, idempotency keys), `gen_jobs` (kind: draft|sheet|evolve, status, error, request/response meta).
   - Sprite PNGs + atlas JSON on disk under the plugin data dir (`node:fs` is correct here — server-local plugin data). Every generation artifact kept (drafts included) for regen/debugging.
   - `kv` for small per-client state: overlay position, live scale override.
-- **Fleet state**: in-memory map fed by the six `bb.events.on` lifecycle events (`active`, `idle`, `failed`, `created`, `archived`, `deleted`) plus `bb.sdk.subscribe` for pending-interaction/attention changes ("waiting on you" detection — exact event names validated against `types/bb-plugin-sdk.d.ts` at impl time). Debounced `bb.realtime.publish("state", …)` on change.
+- **Fleet state**: in-memory map fed by the six `alia.events.on` lifecycle events (`active`, `idle`, `failed`, `created`, `archived`, `deleted`) plus `alia.sdk.subscribe` for pending-interaction/attention changes ("waiting on you" detection — exact event names validated against `types/alia-plugin-sdk.d.ts` at impl time). Debounced `alia.realtime.publish("state", …)` on change.
 - **XP engine**: pure module; awards on events; publishes `xp` and `evolve` realtime signals.
 - **Generation pipeline**: rpc `hatchDrafts { description }` → job → 4 parallel draft images (low quality tier, 1024²) → publish progress → rpc `hatchCommit { draftId, name }` → full sheet generation using the chosen draft as reference image → slice + validate (§6) → atlas → publish `hatched`. Evolution reuses the same pipeline with the base portrait + "next evolution form, same species and palette, older and grander" prompt.
 - **HTTP** (`auth: "local"`): `GET /sprite/<petId>/<stage>` serves sheet PNGs with long-cache headers; `GET /draft/<jobId>/<n>` serves draft images.
 - **RPC contract**: `getState`, `getActivePet`, `listDen`, `selectPet`, `renamePet`, `hatchDrafts`, `hatchCommit`, `cancelJob`, `petPet` (XP + cooldown enforced server-side), `getNeediestThread`, `setOverlayPrefs`.
-- **CLI** `bb pets`: `status`, `hatch "<description>"`, `list`, `select <name>`, `rename <old> <new>`, `off` / `on`, `scale <s|m|l>`, `doctor` (key present? assets readable? overlay mounted? last job error?).
+- **CLI** `alia pets`: `status`, `hatch "<description>"`, `list`, `select <name>`, `rename <old> <new>`, `off` / `on`, `scale <s|m|l>`, `doctor` (key present? assets readable? overlay mounted? last job error?).
 
 ### Frontend (`app.tsx`)
 - **Content script** renders the overlay: creates a positioned container on `document.body`, mounts a React root with our Sprite/Bubble/Dialog components. Full cleanup on dispose (nodes, listeners, rAF, observers) — perf-watch clean.
@@ -109,7 +109,7 @@ bb-plugin-pets/
 - Atlas JSON per sheet: cell rect per state/frame, fps per state, loop vs one-shot, anchor point.
 - Generation prompt enforces the grid contract (row order fixed, frame count fixed, no grid lines, no labels). Drafts are single portraits; the sheet generation takes the chosen draft as reference for identity consistency.
 
-## 5. Animation states → bb activity
+## 5. Animation states → VesnALIA activity
 
 | Row | State | Trigger |
 | --- | --- | --- |
@@ -182,19 +182,19 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 - [ ] Fully functional without an API key via bundled starter pet(s); key only gates *custom* hatching + art regen.
 - [ ] Secret key: secret descriptor only, read server-side, never logged, never in realtime payloads or rpc outputs.
 - [ ] Privacy: only the creature description leaves the machine (to OpenAI); README states this plainly. No telemetry.
-- [ ] `engines.bb` + `engines.bbPluginSdk` honest; `dist/` built + committed for git installs; load-safe factory (an update never strands users).
-- [ ] Unit tests (`@bb/plugin-sdk/testing`): XP ledger, fleet state machine, slicer against fixture sheets (good + broken), rpc contract, settings gating; frontend: content-script mount/dispose leaves zero DOM/listeners, hatch dialog flow with stubbed rpc.
+- [ ] `engines.alia` + `engines.aliaPluginSdk` honest; `dist/` built + committed for git installs; load-safe factory (an update never strands users).
+- [ ] Unit tests (`@vesnalia/plugin-sdk/testing`): XP ledger, fleet state machine, slicer against fixture sheets (good + broken), rpc contract, settings gating; frontend: content-script mount/dispose leaves zero DOM/listeners, hatch dialog flow with stubbed rpc.
 - [ ] Perf discipline: rAF paused on hidden tab, debounced realtime, no timers when disabled, log restraint, storage bounded (old draft cleanup command). perf-watch must stay quiet.
 - [ ] Accessibility: decorative sprite `aria-hidden`; popover/dialog keyboard + screen-reader correct; reduced-motion respected (static poses, no roaming).
 - [ ] Theme-token styling only (no hardcoded grays); bubbles/dialogs match host theme light/dark.
-- [ ] README: gifs, settings table, CLI reference, hatch cost note (~5 images per hatch, 1 per evolution), troubleshooting (`bb pets doctor`).
+- [ ] README: gifs, settings table, CLI reference, hatch cost note (~5 images per hatch, 1 per evolution), troubleshooting (`alia pets doctor`).
 
 ## 11. Milestones
 
 1. **M0 — Spike (de-risk):** content-script overlay + React root; validate SDK hooks binding outside slots (else SSE fallback); route observation for hybrid follow; animate the bundled starter sheet end-to-end. *Go/no-go on the two risky assumptions.*
 2. **M1 — Backend core:** settings, sqlite, fleet state, XP ledger, rpc, realtime, CLI `status|list|select|on|off`.
 3. **M2 — Living sprite:** state mapping, roaming, sleep/wake, petting, drag, resize, double-click nav, den popover.
-4. **M3 — Hatchery:** OpenAI pipeline (drafts → pick → sheet → validate → atlas), egg theater, `bb pets hatch`, evolution regen.
+4. **M3 — Hatchery:** OpenAI pipeline (drafts → pick → sheet → validate → atlas), egg theater, `alia pets hatch`, evolution regen.
 5. **M4 — Polish + public prep:** bubbles + copy pack, settings-section den manager, reduced motion, tests, README, `doctor`, starter-pet art.
 
 ## 12. Open questions (defaults chosen, veto anytime)
@@ -203,16 +203,16 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 - XP numbers / stage thresholds are first-guess tuning.
 - 4 frames per state (vs Hermes' denser grids) — chosen for generation reliability; revisit after M3 real-world results.
 - Bubble copy pack tone samples above — will draft ~40 lines for review.
-- Icon: `PawPrint` (validated against bb's icon set at impl time).
+- Icon: `PawPrint` (validated against VesnALIA's icon set at impl time).
 
 ---
 
-## Amendments from M0 (2026-08-13, verified against bb source + live)
+## Amendments from M0 (2026-08-13, verified against VesnALIA source + live)
 
-1. **Hook-free overlay data plane.** *Superseded in bb 0.49: the overlay now mounts through `app.slots.experimental_appOverlay`, so it uses `useRpc`, `useRealtime`, `useBbContext` and `useBbNavigate` like any slot.* SDK app hooks throw outside host slot trees (they need `PluginContext`), so the content script uses: plain `fetch` to `/api/v1/plugins/pets/rpc/*`, its own WebSocket to `/ws` filtering `plugin-signal` frames (broadcast to all clients, same-origin only), and `location.pathname` + Navigation API for viewed-thread detection. `react-dom/client` IS shimmed, so the overlay renders through the host's React.
+1. **Hook-free overlay data plane.** *Superseded in VesnALIA 0.49: the overlay now mounts through `app.slots.experimental_appOverlay`, so it uses `useRpc`, `useRealtime`, `useAliaContext` and `useAliaNavigate` like any slot.* SDK app hooks throw outside host slot trees (they need `PluginContext`), so the content script uses: plain `fetch` to `/api/v1/plugins/pets/rpc/*`, its own WebSocket to `/ws` filtering `plugin-signal` frames (broadcast to all clients, same-origin only), and `location.pathname` + Navigation API for viewed-thread detection. `react-dom/client` IS shimmed, so the overlay renders through the host's React.
 2. **Per-state strips instead of one grid sheet.** The model miscounts 32-cell grids (got 5×6) but nails "one row of 4 frames". Pipeline: transparent hero portrait → 8 strips via `images/edits` with hero as identity reference → per-strip validation (transparent corners, 4 non-empty cells) → flood-fill deglow from borders (kills the near-opaque halo the model paints, preserves enclosed soft pixels) → vertical crop; renderer bottom-aligns. Atlas v2 = per-state `{frames, fps, loop, width, height}`.
-3. **Fleet state is server-side** (works with zero windows; feeds CLI + overlay). Sources: the six lifecycle events + `bb.sdk.subscribe("thread:changed")` for `metadata.hasPendingInteraction`, seeded from `threads.list` (rows carry `hasPendingInteraction`). Plugin-origin and hidden threads are excluded from both XP and fleet.
-4. **`PawPrint` is not a BB icon** — shipped `assets/icon.svg` (CSS-mask paw) instead.
+3. **Fleet state is server-side** (works with zero windows; feeds CLI + overlay). Sources: the six lifecycle events + `alia.sdk.subscribe("thread:changed")` for `metadata.hasPendingInteraction`, seeded from `threads.list` (rows carry `hasPendingInteraction`). Plugin-origin and hidden threads are excluded from both XP and fleet.
+4. **`PawPrint` is not a VesnALIA icon** — shipped `assets/icon.svg` (CSS-mask paw) instead.
 5. Starter pet is named Pixel and earns XP from install (42 XP within minutes on a live fleet).
 
 ## Round 2 (2026-08-13): free movement, pointing missions, panel, hatchery
@@ -244,7 +244,7 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 - **gpt-image-2 is the default hero/draft model.** Discovery: it rejects `background: transparent` (API error) — the pipeline auto-falls back to flat-magenta generation + chroma-key (`keyMagenta`) per run, and the quantizer eats the fringe. Verified live: keyed+quantized gpt-image-2 hero is cleaner than the 1.5 equivalent.
 - **Retro Diffusion engine** (`rdApiKey` setting + `spriteEngine` auto/openai/retro-diffusion): strips via `POST api.retrodiffusion.ai/v1/inferences` with `rd_advanced_animation__*` styles (walking/idle/jump + custom_action prompts for think/waiting/sad/sleep/wave/point), 8 frames @ 64px, `return_spritesheet`, hero quantized to a 64px square as the identity input frame, grid→strip normalization, per-state fps map. Untested live (no key yet — add rdpk-… to activate); heroes/drafts/evolve stay on OpenAI.
 - **Sprite URLs carry `&v=<idle-strip mtime>`** — immutable caching survives in-place art replacement.
-- **Dev reset**: `bb pets reset` wipes den/XP/sprites/drafts/prefs and reseeds Pixel; legacy prefs-merge and one-time migration scripts removed (development mode, no external users).
+- **Dev reset**: `alia pets reset` wipes den/XP/sprites/drafts/prefs and reseeds Pixel; legacy prefs-merge and one-time migration scripts removed (development mode, no external users).
 
 ## Round 5 (2026-08-13): the walk-cycle fix + hatchery guidance
 
@@ -275,7 +275,7 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 
 ## Round 8 (2026-08-13): the Habitat — mobile-first pet surface
 
-- The floating overlay is desktop-shaped (and hidden on compact viewports), so mobile got a first-class home instead: a Habitat tab in the Pets panel — full-bleed stage where the same canvas pet lives with the same brain (fleet-reactive states, eased roaming, toss physics with wall/floor bounces, petting with heart bursts, XP motes, evolution celebrate) scoped to the container instead of the window. Habitat is the panel's default tab, so "Open Pets panel" lands on the living pet everywhere; touch works via unified pointer events. Panel context means real SDK hooks (useRpc/useRealtime/useBbNavigate — proper navigation, no pushState hack). No missions or perching in the habitat; double-tap still jumps to the neediest thread.
+- The floating overlay is desktop-shaped (and hidden on compact viewports), so mobile got a first-class home instead: a Habitat tab in the Pets panel — full-bleed stage where the same canvas pet lives with the same brain (fleet-reactive states, eased roaming, toss physics with wall/floor bounces, petting with heart bursts, XP motes, evolution celebrate) scoped to the container instead of the window. Habitat is the panel's default tab, so "Open Pets panel" lands on the living pet everywhere; touch works via unified pointer events. Panel context means real SDK hooks (useRpc/useRealtime/useAliaNavigate — proper navigation, no pushState hack). No missions or perching in the habitat; double-tap still jumps to the neediest thread.
 
 ## Round 9 (2026-08-13): tiered animation packs + skip-resilience
 
@@ -302,13 +302,13 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 - Six-critic audit (correctness, UX/a11y, performance, resilience, code quality, docs) returned 58 findings; the confirmed set landed: atomic job-slot acquisition (double-start race), staged hero writes (failed evolve no longer corrupts identity), post-dispose publish guards (the timer-flavored stale-handle crash), fleet publish dedup, per-pet petting fairness, clickable rename, den/habitat empty states, honest disabled-button tooltips, hatchery start feedback, draft-pick a11y, Habitat honoring roaming/walkSpeed/xpMotes/reducedMotion, WS backoff that survives flapping, rpc ok-checks with mount retry, decay-purge correctness, refetch no longer clobbering live position, pointercancel handling, per-pet-only sizing (global scale retired), dead scaffold/duplicate cleanup, README/SPEC refresh.
 - Deferred deliberately: extracting the ~300 shared Overlay/Habitat lines into a module (high churn, tail-of-session), sprite-route response caching, SpriteThumb offscreen gating beyond document.hidden.
 
-## Round 12 (2026-08-14): targeted regeneration, walk-to, emotions, deeper bb hooks
+## Round 12 (2026-08-14): targeted regeneration, walk-to, emotions, deeper VesnALIA hooks
 
 - Per-state regeneration: `regenerateStates` rpc + a "Fix animations…" picker on every den card — regenerate exactly the broken states (walk cycle quick-pick) and merge, no full re-animate needed.
 - Walk-to instructions: tap the Habitat ground to send the pet there; ⌘+click the desktop floor for the overlay pet; named spots in the redesigned menu.
 - Emotion indicator toggle: a small named-feeling badge above the pet (default off).
 - Menu hardening: controlled open with a 350ms dismiss guard against environment-triggered instant closes; redesigned content with portrait header, size row, and grouped actions.
-- New bb interactions: drag the pet onto a sidebar thread row to open it, click-while-pointing opens the target thread, a "while you were away" digest on window return, long-running-turn nudges, 10-turn milestone bubbles, window-scale evolution confetti, and benched-pet cameo walk-bys.
+- New VesnALIA interactions: drag the pet onto a sidebar thread row to open it, click-while-pointing opens the target thread, a "while you were away" digest on window return, long-running-turn nudges, 10-turn milestone bubbles, window-scale evolution confetti, and benched-pet cameo walk-bys.
 
 ## Round 13 (2026-08-14): the pet gets a life
 
@@ -323,7 +323,7 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 - Side-profile locomotion: RD animates the input image as posed (no direction parameter), so front-facing heroes produced front-facing walks. Each pet now gets a cached right-facing side-profile hero variant (`<id>-hero-side.png`, one gpt-image edit) fed to RD for walk and run only; regenerated automatically when a pet evolves. Verified: both pets' walk cycles are now true side-profile.
 - Chroma hygiene: RD occasionally emits pure `FF00FF` transparency-marker pixels inside the character. The RD path now keys exactly that band (`keyChromaMarker`) — deliberately NOT the loose gpt-backdrop `keyMagenta`, which would punch holes in pink/purple pets. `keySolidBackground` also gained a second global pass that kills background-colored pockets enclosed by character pixels (skipped for grey/dark backgrounds).
 - turn-failed ledger: failed turns now insert a 0-amount xp_events row, so `getAmbientContext.failuresToday` reflects reality and the sarcastic lines can actually fire.
-- Ring lifecycle: mission expiry is enforced in the render tick (not just on fleet signals), the pointed thread row is re-resolved by id every ~200ms (bb recycles sidebar row nodes, so element references go stale), missions end early when their thread stops needing attention, and the highlight ring's pulse is finite — three pulses, then a steady hold until the exit fade.
+- Ring lifecycle: mission expiry is enforced in the render tick (not just on fleet signals), the pointed thread row is re-resolved by id every ~200ms (VesnALIA recycles sidebar row nodes, so element references go stale), missions end early when their thread stops needing attention, and the highlight ring's pulse is finite — three pulses, then a steady hold until the exit fade.
 - Composer courtesy: keyed to the composer having keyboard focus. While focused and overlapped the pet ghosts (35% opacity, click-through), gets startled and evacuates just past the nearest composer edge, roaming treats the focused composer as a wall, `walkTo` re-aims targets outside it, and the cozy composer-watch act now sits beside the input facing it instead of on it.
 
 ## Rounds 17–18 (2026-08-14): ring memory, the composer becomes terrain
@@ -331,7 +331,7 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 - Ring re-flash killed at the source: a pointed-thread memory means the auto-pointer won't re-ring the same waiting thread for 10 minutes (pruned when it resolves, so a fresh wait re-arms it); manual pointing bypasses but also stamps it. A hard-cap timer detached from all mission state removes the ring at most POINT_MS + 2.5s after it appears.
 - Ledge-walking (user-picked design over always-avoid, z-demotion, transit ghosting, and a dock): the composer is terrain. `terrainAt(x)` maps the pet's center to a ground elevation; grounded pets lerp between elevations at 620px/s with a hop pulse and land squash, toss physics lands on terrain, and stationary life (naps, sits, digs, roam pauses) re-rolls off the ledge. Focus-avoidance was removed as obsolete; focus-ghosting remains as a floor-level-only safety net.
 - Split panes: terrain generalized to every visible composer (highest containing band wins); the ghost safety net keys to whichever input actually holds focus. Verified by anchor-transform probes: elevation −153px on the ledge vs an expected −151, −1 on open floor, before and after the multi-band change.
-- Stale-window lesson, recorded: `bb plugin reload` restarts the server but never hot-swaps content scripts in open windows — every overlay fix needs a window reload (⌘R) to be seen. Diagnose "fix didn't work" reports against this first.
+- Stale-window lesson, recorded: `alia plugin reload` restarts the server but never hot-swaps content scripts in open windows — every overlay fix needs a window reload (⌘R) to be seen. Diagnose "fix didn't work" reports against this first.
 
 ## Round 19 (2026-08-14): foundation for launch — dev panel, perf, a11y, tiers
 
@@ -366,4 +366,4 @@ Dry, understated, specific — one line, no exclamation marks (the flair registe
 
 - Staleness handshake: the overlay notices when the server ships a newer bundle and asks for a window reload — the stale-window class of bug report retires.
 - Retry skipped states in one click from the generation warning; cost hints on every button that spends API money.
-- Ceremony preview from the dev panel; glow-up nudges when art lags the pet's stage; bubbles clamp to the viewport and coexist with the emotion badge; the director now inspects bb chrome (paw button, nav row, pane headers).
+- Ceremony preview from the dev panel; glow-up nudges when art lags the pet's stage; bubbles clamp to the viewport and coexist with the emotion badge; the director now inspects VesnALIA chrome (paw button, nav row, pane headers).

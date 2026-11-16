@@ -232,7 +232,7 @@ export function normalizeClaudeUsageResponse(
 /**
  * Reads Claude Code usage with the credentials stored under an explicit
  * Keychain service, for installs where CLAUDE_CONFIG_DIR changes the service
- * name that BB looks up by default.
+ * name that VesnALIA looks up by default.
  */
 const inFlight = new Map<string, Promise<RawProviderUsage>>();
 

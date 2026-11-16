@@ -6,7 +6,7 @@ Defines reproducible checks for installing the plugin from Git and release-maint
 ## Requirements
 
 ### Requirement: Git installation build verification
-The repository SHALL provide a local build check using the same dependency-installation flags as bb's Git installation.
+The repository SHALL provide a local build check using the same dependency-installation flags as VesnALIA's Git installation.
 
 #### Scenario: Production dependencies only
 - **WHEN** a maintainer runs the check

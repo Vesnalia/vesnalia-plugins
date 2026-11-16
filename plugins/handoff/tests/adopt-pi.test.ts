@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { collectSessions, performAdoptQuery } from "../adopt/adopt-core";
 import { getAdapter, resolveAgentId } from "../adopt/agents";
@@ -59,7 +59,7 @@ describe("Pi discovery", () => {
   it("registers the Pi adapter and preferred provider", () => {
     expect(resolveAgentId("Pi")).toBe("pi");
     expect(getAdapter("pi")).toBe(piAdapter);
-    expect(piAdapter.bbProviderId).toBe("pi");
+    expect(piAdapter.aliaProviderId).toBe("pi");
   });
 
   it("matches Pi's POSIX and Windows directory encoding", () => {
@@ -272,7 +272,7 @@ describe("Pi adoption engine", () => {
     const original = fs.readFileSync(filePath, "utf8");
     const spawn = vi.fn(async () => ({ id: "thr_pi" }));
     const set = vi.fn();
-    const bb = {
+    const alia = {
       sdk: {
         projects: { list: async () => [{ id: "proj_pi", name: "Example", sources: [{ hostId: "host_local", path: cwd }] }] },
         system: { config: async () => ({ primaryHostId: "host_local" }) },
@@ -281,9 +281,9 @@ describe("Pi adoption engine", () => {
       },
       storage: { kv: { get: async () => null, set } },
       log: { info: vi.fn() },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     expect(await collectSessions(cwd, "pi")).toHaveLength(1);
-    const result = await performAdoptQuery(bb, { query: `pi --session ${ID}` });
+    const result = await performAdoptQuery(alia, { query: `pi --session ${ID}` });
     expect(result).toMatchObject({ ok: true, dryRun: false, threadId: "thr_pi", plan: { agent: "pi", providerId: "pi", cwd } });
     const input = spawn.mock.calls[0] as unknown as [Record<string, unknown>];
     expect(input[0]).toMatchObject({ providerId: "pi", environment: { workspace: { path: cwd } } });

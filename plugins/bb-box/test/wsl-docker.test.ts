@@ -100,32 +100,32 @@ test("a wsl host that cannot start wsl.exe fails the doctor with the reason", as
 });
 
 test("machine-docker-host names where Docker is on a relayed machine", () => {
-  assert.equal(dockerConfig({ host: "bb:host_win", "machine-docker-host": "wsl://archlinux" }).machineDockerHost, "wsl://archlinux");
-  assert.equal(dockerConfig({ host: "bb:host_win", "machine-docker-host": "wsl://box@archlinux" }).machineDockerHost, "wsl://box@archlinux");
-  assert.equal(dockerConfig({ host: "bb:host_win", "machine-docker-host": "unix:///var/run/docker.sock" }).machineDockerHost, "unix:///var/run/docker.sock");
-  assert.equal(dockerConfig({ host: "bb:host_win", "machine-docker-host": "tcp://10.0.0.2:2375" }).machineDockerHost, "tcp://10.0.0.2:2375");
-  assert.equal(dockerConfig({ host: "bb:host_win" }).machineDockerHost, null);
-  const bad = parseDockerPart({ id: "docker", fields: { host: "bb:host_win", "machine-docker-host": "ssh://box@pc" }, hosts: [] });
+  assert.equal(dockerConfig({ host: "alia:host_win", "machine-docker-host": "wsl://archlinux" }).machineDockerHost, "wsl://archlinux");
+  assert.equal(dockerConfig({ host: "alia:host_win", "machine-docker-host": "wsl://box@archlinux" }).machineDockerHost, "wsl://box@archlinux");
+  assert.equal(dockerConfig({ host: "alia:host_win", "machine-docker-host": "unix:///var/run/docker.sock" }).machineDockerHost, "unix:///var/run/docker.sock");
+  assert.equal(dockerConfig({ host: "alia:host_win", "machine-docker-host": "tcp://10.0.0.2:2375" }).machineDockerHost, "tcp://10.0.0.2:2375");
+  assert.equal(dockerConfig({ host: "alia:host_win" }).machineDockerHost, null);
+  const bad = parseDockerPart({ id: "docker", fields: { host: "alia:host_win", "machine-docker-host": "ssh://box@pc" }, hosts: [] });
   assert.equal(bad.ok, false);
   if (!bad.ok) assert.match(bad.problems.map((problem) => problem.message).join("\n"), /machine-docker-host/);
   const local = parseDockerPart({ id: "docker", fields: { "machine-docker-host": "wsl://archlinux" }, hosts: [] });
   assert.equal(local.ok, false);
-  if (!local.ok) assert.match(local.problems.map((problem) => problem.message).join("\n"), /bb:<machine ID>/);
-  assert.equal(machineDockerHost([{ type: "docker", fields: { host: "bb:host_win", "machine-docker-host": "wsl://archlinux" } }], "host_win"), "wsl://archlinux");
-  assert.equal(machineDockerHost([{ type: "docker", fields: { host: "bb:host_win" } }], "host_win"), null);
+  if (!local.ok) assert.match(local.problems.map((problem) => problem.message).join("\n"), /alia:<machine ID>/);
+  assert.equal(machineDockerHost([{ type: "docker", fields: { host: "alia:host_win", "machine-docker-host": "wsl://archlinux" } }], "host_win"), "wsl://archlinux");
+  assert.equal(machineDockerHost([{ type: "docker", fields: { host: "alia:host_win" } }], "host_win"), null);
   assert.throws(() => machineDockerHost([
-    { type: "docker", fields: { host: "bb:host_win", "machine-docker-host": "wsl://archlinux" } },
-    { type: "docker", fields: { host: "bb:host_win", "machine-docker-host": "wsl://other" } },
+    { type: "docker", fields: { host: "alia:host_win", "machine-docker-host": "wsl://archlinux" } },
+    { type: "docker", fields: { host: "alia:host_win", "machine-docker-host": "wsl://other" } },
   ], "host_win"), /more than one/);
 });
 
 test("a relayed Windows machine at tcp://127.0.0.1 fails the attach check and the fix names machine-docker-host", async () => {
   const fake = fakeDockerHost();
   const context = testContext();
-  const backend = new DockerBackend(dockerConfig({ host: "bb:host_win" }), {
+  const backend = new DockerBackend(dockerConfig({ host: "alia:host_win" }), {
     ...context,
     machines: {
-      dockerHost: () => "unix:///tmp/bb-box-test.sock",
+      dockerHost: () => "unix:///tmp/alia-box-test.sock",
       ready: async () => {},
       name: () => "pc",
       platform: () => "windows",
@@ -139,10 +139,10 @@ test("a relayed Windows machine at tcp://127.0.0.1 fails the attach check and th
   assert.match(check?.detail ?? "", /localhost forwarder/);
   assert.match(check?.fix ?? "", /machine-docker-host/);
 
-  const kept = new DockerBackend(dockerConfig({ host: "bb:host_win", "machine-docker-host": "wsl://archlinux" }), {
+  const kept = new DockerBackend(dockerConfig({ host: "alia:host_win", "machine-docker-host": "wsl://archlinux" }), {
     ...testContext(new MemoryStorage(), "kept"),
     machines: {
-      dockerHost: () => "unix:///tmp/bb-box-test.sock",
+      dockerHost: () => "unix:///tmp/alia-box-test.sock",
       ready: async () => {},
       name: () => "pc",
       platform: () => "windows" as const,

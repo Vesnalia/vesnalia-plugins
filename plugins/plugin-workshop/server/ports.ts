@@ -9,7 +9,7 @@ export class MachineUnavailable extends Error {
   override name = "MachineUnavailable";
 }
 
-/** The work's worktree is gone (bb removes it 5 minutes after the last thread is archived): there is nothing left to read from. */
+/** The work's worktree is gone (VesnALIA removes it 5 minutes after the last thread is archived): there is nothing left to read from. */
 export class WorktreeGone extends Error {
   override name = "WorktreeGone";
 }
@@ -64,20 +64,20 @@ export interface GitFacts {
   /** Uncommitted changes; new (untracked) files count too. */
   dirtyCount: number;
 }
-/** The plugin's state in bb (`status` in `plugins.list`). bb reports `missing` on a load from scratch, not on `reload`. */
+/** The plugin's state in VesnALIA (`status` in `plugins.list`). VesnALIA reports `missing` on a load from scratch, not on `reload`. */
 export type PluginState = "running" | "needs-configuration" | "degraded" | "error" | "incompatible" | "missing" | "disabled" | "starting";
 /** An installed plugin (built-in `builtin:` plugins are not listed). */
 export interface InstalledPlugin {
   id: string;
-  /** null for `missing` (bb does not know the name until it has loaded the plugin). */
+  /** null for `missing` (VesnALIA does not know the name until it has loaded the plugin). */
   name: string | null;
   state: PluginState;
   enabled: boolean;
-  /** Install source as bb reports it: `path:<folder>`, `git:…`. */
+  /** Install source as VesnALIA reports it: `path:<folder>`, `git:…`. */
   source: string;
-  /** The folder bb builds the plugin from; null — bb did not report it. */
+  /** The folder VesnALIA builds the plugin from; null — VesnALIA did not report it. */
   rootDir: string | null;
-  /** bb's `statusDetail`: why `error`, `degraded`, `needs-configuration`. */
+  /** VesnALIA's `statusDetail`: why `error`, `degraded`, `needs-configuration`. */
   error: string | null;
 }
 export type JobState = "queued" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled";
@@ -98,7 +98,7 @@ export function runningJobsOf(jobs: InstallJob[], dir: string): InstallJob[] {
 export type HolderState = "held" | "waiting" | "none";
 
 /**
- * What `bb plugin new` puts into a scaffold (top level, bb 0.46.0). `node_modules` and `package-lock.json` appear last (`npm install`
+ * What `alia plugin new` puts into a scaffold (top level, VesnALIA 0.46.0). `node_modules` and `package-lock.json` appear last (`npm install`
  * runs at the end) — they tell a complete scaffold from an interrupted one. The scaffold creates neither `.git` nor `dist/`.
  */
 export const SCAFFOLD_FILES: readonly string[] = [
@@ -146,7 +146,7 @@ export interface Snapshot {
   mustExist: string[];
 }
 
-/** Everything the Engine does outside itself. In bb — sdkPorts, in tests — FakePorts. */
+/** Everything the Engine does outside itself. In VesnALIA — sdkPorts, in tests — FakePorts. */
 export interface Ports {
   now(): number;
   /**
@@ -172,7 +172,7 @@ export interface Ports {
   /** Text of a worktree file by relative path; null — no such file. */
   read(environmentId: string, relPath: string): Promise<string | null>;
   /**
-   * A worktree file as is (text or base64). On the bb server machine a symbolic link, or a path through one, throws `SymlinkRefused`: the
+   * A worktree file as is (text or base64). On the VesnALIA server machine a symbolic link, or a path through one, throws `SymlinkRefused`: the
    * file endpoint and the snapshots never follow links. On another machine the host's root confinement is all there is.
    */
   readRaw(environmentId: string, relPath: string): Promise<RawFile | null>;
@@ -180,7 +180,7 @@ export interface Ports {
   list(environmentId: string, relDir: string): Promise<string[]>;
   /** `.superpowers/.gitignore` = `*` — the work's working files and the SDD journal stay out of git. */
   ensureWorkDir(environmentId: string): Promise<void>;
-  /** The environment's worktree folder on the bb server machine — for the cancel snapshot's git. WorktreeGone — removed; MachineUnavailable — the machine does not answer. */
+  /** The environment's worktree folder on the VesnALIA server machine — for the cancel snapshot's git. WorktreeGone — removed; MachineUnavailable — the machine does not answer. */
   worktreeDir(environmentId: string): Promise<string>;
   /**
    * A snapshot into the plugin's data under a label (folders `0700`, files `0600`): the number of files saved and what was withheld — key files
@@ -192,7 +192,7 @@ export interface Ports {
   /** Relative paths of files under relDir in the most recent snapshot that has this folder. */
   listSaved(workId: string, relDir: string): Promise<string[]>;
   projectHost(projectId: string): Promise<string>;
-  /** bb's navigation bar (UI preferences shared by all devices): the sections in order and the visible ones (null — everything is visible). */
+  /** VesnALIA's navigation bar (UI preferences shared by all devices): the sections in order and the visible ones (null — everything is visible). */
   ui: {
     panels(): Promise<{ order: string[]; orderRevision: number; visible: string[] | null; visibleRevision: number }>;
     /** Write with the revision that was read: someone else's change between the read and the write throws instead of being overwritten. */
@@ -201,8 +201,8 @@ export interface Ports {
   };
   tasks: {
     byKey(key: string): Promise<TaskRef | null>;
-    linkedProject(bbProjectId: string): Promise<string | null>;
-    linkedBbProject(tasksProjectId: string): Promise<string | null>;
+    linkedProject(aliaProjectId: string): Promise<string | null>;
+    linkedAliaProject(tasksProjectId: string): Promise<string | null>;
     create(a: { tasksProjectId: string; title: string; description: string }): Promise<TaskRef>;
     setStatus(taskId: string, status: TaskStatus): Promise<void>;
     comment(taskId: string, body: string): Promise<void>;
@@ -213,11 +213,11 @@ export interface Ports {
   plugins: {
     /** Installed plugins, except built-in ones. A failure throws. */
     list(): Promise<InstalledPlugin[]>;
-    /** Folders `<pluginsRoot>/bb-plugin-*`: id — what follows `bb-plugin-`; name — from the manifest, if readable. */
+    /** Folders `<pluginsRoot>/alia-plugin-*`: id — what follows `alia-plugin-`; name — from the manifest, if readable. */
     folders(): Promise<Array<{ id: string; dir: string; name: string | null }>>;
-    /** Start an install from a folder; returns the job id. While a job for the same source is running, bb returns that job. */
+    /** Start an install from a folder; returns the job id. While a job for the same source is running, VesnALIA returns that job. */
     startInstall(dir: string): Promise<string>;
-    /** null — bb does not know this job (it keeps finished ones for ~10 minutes, and none survive a server restart). */
+    /** null — VesnALIA does not know this job (it keeps finished ones for ~10 minutes, and none survive a server restart). */
     job(id: string): Promise<InstallJob | null>;
     jobs(): Promise<InstallJob[]>;
     cancelJob(id: string): Promise<void>;
@@ -226,7 +226,7 @@ export interface Ports {
     disable(id: string): Promise<void>;
   };
   /**
-   * Dependencies of the plugin's working copy: bb builds the plugin from it, while the implementer's `npm ci` ran in the worktree. They are
+   * Dependencies of the plugin's working copy: VesnALIA builds the plugin from it, while the implementer's `npm ci` ran in the worktree. They are
    * installed by a background process (under the build lock the attempt already holds); the outcome is kept in files, so a plugin restart does not disturb it.
    */
   deps: {
@@ -292,7 +292,7 @@ export interface Ports {
     changedFiles(dir: string, exclude: string[]): Promise<string[]>;
   };
   /**
-   * GitHub of the plugin's working copy: GitHub is the source of truth. Local `git` and `gh` under the bb server's sign-in; never `--force`.
+   * GitHub of the plugin's working copy: GitHub is the source of truth. Local `git` and `gh` under the VesnALIA server's sign-in; never `--force`.
    * Content reaches GitHub only through `publish` (publish.ts): `push` takes a clearance issued by the publication gate.
    * Not a repository or no network — throws.
    */
@@ -342,7 +342,7 @@ export interface Ports {
     prMerged(dir: string, branch: string): Promise<boolean>;
   };
   projects: {
-    /** bb projects for this folder on this machine (by real path). */
+    /** VesnALIA projects for this folder on this machine (by real path). */
     findByPath(hostId: string, dir: string): Promise<string[]>;
     create(a: { name: string; dir: string; hostId: string }): Promise<string>;
   };
@@ -356,17 +356,17 @@ export interface Ports {
     list(dir: string): Promise<string[]>;
     freeDiskGb(p: string): Promise<number>;
     /**
-     * Creates `<tmpDir>/bb-plugin-<id>/` (a nested folder, like `bb plugin new`) rather than filling `tmpDir` itself. The port creates `tmpDir`
-     * too (`mkdir -p`): `Creation` does not call a separate command for it. The exit code of `bb plugin new` guarantees nothing (bb 0.46 returns 0
+     * Creates `<tmpDir>/alia-plugin-<id>/` (a nested folder, like `alia plugin new`) rather than filling `tmpDir` itself. The port creates `tmpDir`
+     * too (`mkdir -p`): `Creation` does not call a separate command for it. The exit code of `alia plugin new` guarantees nothing (VesnALIA 0.46 returns 0
      * even when `npm install` failed), so `Creation` checks the nested folder for completeness against `SCAFFOLD_FILES`.
      */
     scaffold(id: string, tmpDir: string): Promise<void>;
   };
   /** A text file in the work's snapshot folder under a label. */
   saveText(workId: string, label: string, relPath: string, content: string): Promise<void>;
-  /** bb's providers and their models with reasoning levels (as in the new-thread dialog). */
+  /** VesnALIA's providers and their models with reasoning levels (as in the new-thread dialog). */
   modelCatalog(): Promise<Array<{ id: string; name: string; models: Array<{ id: string; label: string; efforts: string[]; defaultEffort: string | null }>; error: string | null }>>;
-  /** The machine bb itself runs on: the plugin working copies live there. */
+  /** The machine VesnALIA itself runs on: the plugin working copies live there. */
   serverHostId(): Promise<string>;
   /** A signal to the UI: the work has changed. */
   changed(workId: string): void;

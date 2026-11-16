@@ -255,7 +255,7 @@ describe("judge", () => {
     expect(estado).toEqual({ primeraVez: { q2: NOW }, avisado: {}, vista: { q2: NOW }, conLibre: { t1: NOW } });
   });
 
-  it("una fila que bb oculta un momento mientras la reevalúa no pierde su antigüedad", () => {
+  it("una fila que VesnALIA oculta un momento mientras la reevalúa no pierde su antigüedad", () => {
     const hueco = judge({
       filas: [],
       health: INCIDENTE,
@@ -408,7 +408,7 @@ describe("familia", () => {
   });
 });
 
-describe("el script entero, con un bb de mentira", () => {
+describe("el script entero, con un VesnALIA de mentira", () => {
   const SCRIPT = fileURLToPath(new URL("./canario-cola.mjs", import.meta.url));
   const correr = async (fake: string, estado?: unknown, fallo?: unknown, env: Record<string, string> = {}) => {
     const dir = await mkdtemp(join(tmpdir(), "canario-"));
@@ -416,13 +416,13 @@ describe("el script entero, con un bb de mentira", () => {
       await writeFile(join(dir, "canario-cola-estado.json"), JSON.stringify(estado));
     if (fallo !== undefined)
       await writeFile(join(dir, "canario-cola-fallo.json"), JSON.stringify(fallo));
-    const binario = join(dir, "bb-falso");
+    const binario = join(dir, "alia-falso");
     await writeFile(binario, `#!/bin/sh\n${fake}\n`);
     await chmod(binario, 0o755);
     try {
       const salida = await promisify(execFile)(process.execPath, [SCRIPT], {
         cwd: dir,
-        env: { ...process.env, BB_CLI: binario, ...env },
+        env: { ...process.env, ALIA_CLI: binario, ...env },
       });
       return { code: 0, ...salida, dir };
     } catch (error) {
@@ -432,19 +432,19 @@ describe("el script entero, con un bb de mentira", () => {
 
   it("ejecutado por un enlace mira igual: no sale en verde sin haber mirado", async () => {
     const dir = await mkdtemp(join(tmpdir(), "canario-enlace-"));
-    const binario = join(dir, "bb-falso");
+    const binario = join(dir, "alia-falso");
     await writeFile(binario, `#!/bin/sh\ncase "$1" in thread) echo '[]';; *) echo '{"cuentas":[]}';; esac\n`);
     await chmod(binario, 0o755);
     const enlace = join(dir, "canario.mjs");
     await symlink(SCRIPT, enlace);
     const salida = await promisify(execFile)(process.execPath, [enlace], {
       cwd: dir,
-      env: { ...process.env, BB_CLI: binario },
+      env: { ...process.env, ALIA_CLI: binario },
     });
     expect(salida.stdout).toContain("0 retenidas");
   });
 
-  it("sale 1 si bb falla: nunca «todo bien» sin haber mirado", async () => {
+  it("sale 1 si VesnALIA falla: nunca «todo bien» sin haber mirado", async () => {
     const r = await correr("exit 3");
     expect(r.code).toBe(1);
     expect(r.stderr).toContain("lectura fallida");
@@ -474,8 +474,8 @@ describe("el script entero, con un bb de mentira", () => {
     const rota = `case "$1" in plugin) echo "$@" > "$PWD/llamada"; cp "$6" "$PWD/entrada"; echo '{"ok":true,"channels":["web"]}';; *) exit 3;; esac`;
     const hay = (dir: string, fichero: string) => readFile(join(dir, fichero), "utf8").then(() => true, () => false);
 
-    it("un bb colgado es no poder mirar: sale 1 y apunta desde cuándo", async () => {
-      const r = await correr("exec sleep 30", undefined, undefined, { CANARIO_BB_MS: "200" });
+    it("un VesnALIA colgado es no poder mirar: sale 1 y apunta desde cuándo", async () => {
+      const r = await correr("exec sleep 30", undefined, undefined, { CANARIO_ALIA_MS: "200" });
       expect(r.code).toBe(1);
       expect(r.stderr).toContain("lectura fallida");
       expect(await hay(r.dir, "canario-cola-fallo.json")).toBe(true);
@@ -510,11 +510,11 @@ describe("el script entero, con un bb de mentira", () => {
       primeraVez: { q1: Date.now() - UMBRAL_MS - 60_000 },
       conLibre: { t1: Date.now() - UMBRAL_MS },
     });
-    const bbFalso = (push: string) =>
+    const aliaFalso = (push: string) =>
       `case "$1" in thread) echo '${filaJson}';; claude-switcher) echo '${salud}';; plugin) echo "$@" > "$PWD/llamada"; cp "$6" "$PWD/entrada"; ${push};; esac`;
 
     it("llama al plugin de avisos, lo apunta y no lo repite en la hora", async () => {
-      const r = await correr(bbFalso(`echo '{"ok":true,"channels":["web"]}'`), viejo());
+      const r = await correr(aliaFalso(`echo '{"ok":true,"channels":["web"]}'`), viejo());
       expect(r.code).toBe(0);
       expect(r.stdout).toContain("AVISO El switcher retiene el hilo t1 (Opus) 11 min con team2 libre");
       expect(await readFile(join(r.dir, "llamada"), "utf8")).toContain(
@@ -533,7 +533,7 @@ describe("el script entero, con un bb de mentira", () => {
       ["no llega a nadie", `echo '{"ok":true,"channels":[]}'`],
       ["se cuelga", "exec sleep 30"],
     ])("si el aviso %s sale 1 y lo repite en la pasada siguiente", async (_, push) => {
-      const r = await correr(bbFalso(push), viejo(), undefined, { CANARIO_BB_MS: "2000" });
+      const r = await correr(aliaFalso(push), viejo(), undefined, { CANARIO_ALIA_MS: "2000" });
       expect(r.code).toBe(1);
       expect(r.stderr).toContain("aviso no entregado");
       const estado = JSON.parse(await readFile(join(r.dir, "canario-cola-estado.json"), "utf8"));

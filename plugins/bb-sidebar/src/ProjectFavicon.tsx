@@ -6,7 +6,7 @@ import { useProjectColor, useProjectStripeColor, type ProjectStripeView } from "
 
 // Keyed by the icon route URL. A loaded entry holds the attempt URL that
 // succeeded. A failure is retried with backoff instead of blocking the icon
-// until reload: the first request can fail while bb's host is still starting.
+// until reload: the first request can fail while VesnALIA's host is still starting.
 // A project the server says has no icon is asked again only once an hour: the
 // answer changes only when an icon file appears, and picking or uploading one
 // in Settings changes the URL, which starts over at once.
@@ -78,8 +78,8 @@ export function ProjectMonogram({
       data-letter={projectMonogramLetter(name)}
       style={color}
       className={cn(
-        "bb-sidebar-monogram flex size-3.5 shrink-0 items-center justify-center rounded-[3px] text-[8px] font-semibold leading-none",
-        color ? "bb-sidebar-project-monogram" : `bb-sidebar-monogram-${projectMonogramColor(name)}`,
+        "alia-sidebar-monogram flex size-3.5 shrink-0 items-center justify-center rounded-[3px] text-[8px] font-semibold leading-none",
+        color ? "alia-sidebar-project-monogram" : `alia-sidebar-monogram-${projectMonogramColor(name)}`,
         className,
       )}
     />
@@ -108,7 +108,7 @@ export function ProjectStripe({
       data-project-stripe=""
       style={color}
       className={cn(
-        "bb-sidebar-project-stripe pointer-events-none absolute bottom-1.5 left-0.5 top-1.5 w-0.5 rounded-full",
+        "alia-sidebar-project-stripe pointer-events-none absolute bottom-1.5 left-0.5 top-1.5 w-0.5 rounded-full",
         className,
       )}
     />

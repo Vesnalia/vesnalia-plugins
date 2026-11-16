@@ -1,11 +1,11 @@
 # Spike: the cross-surface pin/read feed, and state-truth for parked cards
 
 *2026-09-30 · spike into "who did the action?" — can the board observe and
-act on state writes from every bb surface, or only from its own gestures?*
+act on state writes from every VesnALIA surface, or only from its own gestures?*
 Started from the parked-pin model's one documented gap: a pin toggled off on
-a foreign surface (bb's own thread menu) could not be intercepted, so a
+a foreign surface (VesnALIA's own thread menu) could not be intercepted, so a
 parked pin could in principle resurrect against it. Turns out the answer was
-already in bb, plus one fact in bb's own write map that makes a pure
+already in VesnALIA, plus one fact in VesnALIA's own write map that makes a pure
 state-driven rule safe.
 
 ## The feed: `thread:changed` exists natively, per surface, per kind
@@ -16,7 +16,7 @@ native event names — the relevant one is `thread:changed`. Payload shape
 "thread", id?, changes: [...] }` where `changes` lists granular kinds:
 `pin-state-changed`, `read-state-changed`, `archived-changed`,
 `interactions-changed`, `status-changed`, … Every mutation publishes through
-the ONE server notifier, from every surface: bb's own menus, the sidebar
+the ONE server notifier, from every surface: VesnALIA's own menus, the sidebar
 actions plugins call, CLI, other plugins — one write, one event, all clients.
 
 What it does NOT carry: actor/session metadata. "Who" is not in the payload.
@@ -26,7 +26,7 @@ publish through a NOOP notifier.
 
 ## The deciding fact: `lastReadAt = null` has exactly one author
 
-bb's server (`server/dist`, the bundled `applyThreadLifecycleEvent` /
+VesnALIA's server (`server/dist`, the bundled `applyThreadLifecycleEvent` /
 `updateThread` / read routes plus Drizzle schema) writes `lastReadAt` from:
 
 | Writer | Value | Publishes? |
@@ -88,7 +88,7 @@ not a timer, a one-shot handoff.
 - A foreign pin+unpin cycle compressing entirely into one reconcile's
   fresh-read latency (~ms, same connection) can still hide; there is no
   persistent trace of a pin cycle to inspect, and no actor metadata —
-  unknowable in principle until bb enriches `thread:changed` with actor
+  unknowable in principle until VesnALIA enriches `thread:changed` with actor
   data, at which point the reconciler could key on the actor exactly.
 - Embedded contexts (the screenshot harness) have no `subscribe`; there the
   gestures carry the effects alone and foreign-surface reactions are inert.

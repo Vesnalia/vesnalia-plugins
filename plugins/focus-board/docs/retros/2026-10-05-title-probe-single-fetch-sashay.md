@@ -2,7 +2,7 @@
 title: "Retro: Title probe single-fetch sashay"
 period: "2026-10-05 15:25 — 2026-10-05 16:35"
 created: 2026-10-05
-scope: "Sashay follow-up to the issue-10 review: single bb.sdk.threads.get fetch per title-probe invocation, PR #11, branch bb/autotitle-probe-fetch-once-thr_puzvmb77q7, merged as 94c444f"
+scope: "Sashay follow-up to the issue-10 review: single alia.sdk.threads.get fetch per title-probe invocation, PR #11, branch alia/autotitle-probe-fetch-once-thr_puzvmb77q7, merged as 94c444f"
 parleyed: false
 ---
 
@@ -14,7 +14,7 @@ parleyed: false
 
 ## Scope
 
-The sashay spawned by the issue-10 review ("Title probe on a model-less thread resolved the provider's metered catalog default"): a behavior-neutral cleanup in bb-plugin-focus-board that made `probeSpawnPlan` fetch the source thread row once per probe invocation and return `{ plan, source }` to its two consumers, plus removal of a dead anonymous `environmentId?` field. Branch `bb/autotitle-probe-fetch-once-thr_puzvmb77q7`, PR #11, squash-merged as `94c444f` on `dev`; issue #10 closed as completed.
+The sashay spawned by the issue-10 review ("Title probe on a model-less thread resolved the provider's metered catalog default"): a behavior-neutral cleanup in alia-plugin-focus-board that made `probeSpawnPlan` fetch the source thread row once per probe invocation and return `{ plan, source }` to its two consumers, plus removal of a dead anonymous `environmentId?` field. Branch `alia/autotitle-probe-fetch-once-thr_puzvmb77q7`, PR #11, squash-merged as `94c444f` on `dev`; issue #10 closed as completed.
 
 ## What happened
 
@@ -37,9 +37,9 @@ The review of issue #10 verified the metered-catalog-default fix (`1261e8c`) and
 ## What surfaced
 
 - **Post-merge trunk drift is a recurring shape** — a generated artifact (`lib/unreleased-changelog.generated.ts`) went stale on trunk because a CHANGELOG edit without a test run doesn't regenerate it. This is the second time a regen blob has needed a reconciliation commit after unrelated merges.
-- **Squash-merge + branch deletion makes chronicle SHA citations and branch-perma-links dangle** — resolvable as objects only until garbage collection; the final review classed this "acceptable as-is", but a convention of citing `path@<merge-sha>` for commit-trail lookups would make the links durable (retro bookends already do this: `docs/plans/bb-autotitle-probe-fetch-once-thr_puzvmb77q7.md@81be035` vs `@94c444f`).
-- **No plan drift** — the plan at `81be035` and its state at merge time are identical; all four plan tasks shipped, no scope shift, no deferred work in this plugin. The metered-catalog residual risk lives in bb-core's spawn-default chain and is tracked via issue #10's closure thread.
-- The decision-point narrative (why `{ plan, source }`, why the dead field died on the shared type) is in the chronicle, not here: `docs/chronicles/2026-10-05-bb-autotitle-probe-fetch-once-thr_puzvmb77q7/` (eight entries, durable on trunk).
+- **Squash-merge + branch deletion makes chronicle SHA citations and branch-perma-links dangle** — resolvable as objects only until garbage collection; the final review classed this "acceptable as-is", but a convention of citing `path@<merge-sha>` for commit-trail lookups would make the links durable (retro bookends already do this: `docs/plans/alia-autotitle-probe-fetch-once-thr_puzvmb77q7.md@81be035` vs `@94c444f`).
+- **No plan drift** — the plan at `81be035` and its state at merge time are identical; all four plan tasks shipped, no scope shift, no deferred work in this plugin. The metered-catalog residual risk lives in alia-core's spawn-default chain and is tracked via issue #10's closure thread.
+- The decision-point narrative (why `{ plan, source }`, why the dead field died on the shared type) is in the chronicle, not here: `docs/chronicles/2026-10-05-alia-autotitle-probe-fetch-once-thr_puzvmb77q7/` (eight entries, durable on trunk).
 
 ## Next actions
 

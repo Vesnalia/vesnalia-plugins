@@ -24,7 +24,7 @@ function fakeViewport(page = 844) {
   };
 }
 
-/** The workspace under BB's 48px title bar, down to the bottom of a `page` tall. */
+/** The workspace under VesnALIA's 48px title bar, down to the bottom of a `page` tall. */
 function workspace(page = 844, top = 48) {
   const root = document.createElement("div");
   const box = document.createElement("textarea");
@@ -102,7 +102,7 @@ test("without a visual viewport there's nothing to do", () => {
 });
 
 test("with the keyboard up, the workspace says whether it leaves a phone held sideways' room or less", () => {
-  // The Duo folded sideways: 386 tall, less BB's bar, less a 230px keyboard, leaves 108.
+  // The Duo folded sideways: 386 tall, less VesnALIA's bar, less a 230px keyboard, leaves 108.
   stubWindow(594, 386);
   const short = fakeViewport(386);
   const { root, box } = workspace(386);
@@ -115,7 +115,7 @@ test("with the keyboard up, the workspace says whether it leaves a phone held si
   expect(root.hasAttribute("data-keyboard")).toBe(false);
 });
 
-test("where BB shrinks its pane to what shows above the keyboard, the keyboard is up all the same: the box comes into view", async () => {
+test("where VesnALIA shrinks its pane to what shows above the keyboard, the keyboard is up all the same: the box comes into view", async () => {
   stubWindow(390, 844);
   Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
   restores.push(() => { delete (window as { innerHeight?: number }).innerHeight; });
@@ -123,7 +123,7 @@ test("where BB shrinks its pane to what shows above the keyboard, the keyboard i
   const { root, box } = workspace(844);
   renderHook(() => useKeyboardInset(root));
   act(() => box.focus());
-  // BB's pane ends at the keyboard's top: it covers none of the workspace.
+  // VesnALIA's pane ends at the keyboard's top: it covers none of the workspace.
   root.getBoundingClientRect = () => new DOMRect(0, 48, 390, 460);
   viewport.show(336);
   expect(root.style.getPropertyValue("--gr-kb")).toBe("0px");
@@ -291,7 +291,7 @@ test("as what holds the workspace scrolls, bringing the box into view, the works
   act(() => box.focus());
   viewport.show(290);
   expect(root.style.getPropertyValue("--gr-kb")).toBe("290px");
-  // BB's frame scrolled 58px to show the box: the workspace's bottom is at 540, 232 of it under the keyboard.
+  // VesnALIA's frame scrolled 58px to show the box: the workspace's bottom is at 540, 232 of it under the keyboard.
   root.getBoundingClientRect = () => new DOMRect(0, -10, 390, 550);
   act(() => { document.body.dispatchEvent(new Event("scroll")); });
   expect(root.style.getPropertyValue("--gr-kb")).toBe("232px");

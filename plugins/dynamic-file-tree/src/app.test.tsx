@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup } from "@testing-library/react";
 import { useLayoutEffect } from "react";
-import type { ExperimentalTabRegistration, ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { ExperimentalTabRegistration, ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { rpcContract } from "./contracts";
 
 afterEach(cleanup);
@@ -109,7 +109,7 @@ describe("Dynamic File Tree app", () => {
     expect(rendered.inspection.navigateCalls).toEqual([]);
   });
 
-  it("opens a selected workspace file in BB preview", async () => {
+  it("opens a selected workspace file in VesnALIA preview", async () => {
     const tab = await loadFixedThreadTab();
     const rendered = renderSlot(
       tab,
@@ -153,7 +153,7 @@ describe("Dynamic File Tree app", () => {
 });
 
 describe("activity_snapshot contract", () => {
-  it("accepts all activity kinds and BB row statuses", () => {
+  it("accepts all activity kinds and VesnALIA row statuses", () => {
     const activities = [
       { activityId: "a1", path: "src/app.ts", kind: "read", status: "completed" },
       { activityId: "a2", path: "src/app.ts", kind: "write", status: "error" },

@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { experimental_ThreadStatusGlyph as ThreadStatusGlyph } from "@get-bb/plugin-sdk/app";
+import { experimental_ThreadStatusGlyph as ThreadStatusGlyph } from "@vesnalia/plugin-sdk/app";
 import { reviewState, type ReviewItem } from "../../lib/review-state";
 import { reviewIndicator } from "../../lib/review-indicator";
 import { renamedFrom } from "../../lib/review-name";
@@ -24,7 +24,7 @@ const MAX_LABELS = 3;
 
 /**
  * A review in the inbox, on two lines: its title (your name for it, with the PR's title on hover), its id, its review
- * agent's status as BB draws a thread's, and age (in Needs review, how long it's been your turn; elsewhere, its last
+ * agent's status as VesnALIA draws a thread's, and age (in Needs review, how long it's been your turn; elsewhere, its last
  * activity), then its status line.
  * The whole row opens it. Where there's a fine pointer, hovering shows Snooze, Pin and Archive with Review actions; on
  * touch, Review actions is always there.

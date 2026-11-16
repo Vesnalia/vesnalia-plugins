@@ -1,15 +1,15 @@
 import "./check-test-machine.mjs";
-// BB Box's configuration document (029): the move from BB's settings, each
+// VesnALIA Box's configuration document (029): the move from VesnALIA's settings, each
 // start cut short after each of its steps, the settings RPC and the
-// `bb box config` commands. Values are made up; addresses come from
+// `alia box config` commands. Values are made up; addresses come from
 // 192.0.2.0/24, which is reserved for documentation.
 
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import type { BbPluginApi, PluginSettingValue } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi, PluginSettingValue } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { DRIVERS, layeredStorage } from "../src/backends/index.ts";
 import { storedKeyPair } from "../src/backends/ssh-key.ts";
 import { parseLxcSettings } from "../src/backends/proxmox-lxc/config.ts";
@@ -23,7 +23,7 @@ import { INSTALL_ID_KEY } from "../src/core/install.ts";
 import { CLEARED_KEY, COPY_KEY, DOCUMENT_KEY, SECRETS_KEY, SIZES_ADOPTED_KEY, fromSettings, type MovedCopy } from "../src/core/move.ts";
 import { boundedDoctor, type ApplyResult, type CheckResult, type ConfigState } from "../src/plugin/configuration.ts";
 import { ReloadTimes, STARTED_AT_KEY, STOPPED_AT_KEY } from "../src/plugin/reload-times.ts";
-import { setup, type BbBox } from "../src/plugin/setup.ts";
+import { setup, type AliaBox } from "../src/plugin/setup.ts";
 import { helperPid, startChild } from "../src/transports/forker.ts";
 import { FakeBackend, fakeDriver, type FakeBackendOptions } from "./fake-backend.ts";
 import { KEY, MemoryStorage, tempDir } from "./helpers.ts";
@@ -35,7 +35,7 @@ const TOKEN = "0a1b2c3d-made-up-token-secret";
 const FINGERPRINT = Array.from({ length: 32 }, (_, i) => (i * 7 + 16).toString(16).toUpperCase().padStart(2, "0")).join(":");
 
 /**
- * BB's settings as an install before 029 has them, in the shape BB gives a
+ * VesnALIA's settings as an install before 029 has them, in the shape VesnALIA gives a
  * plugin: every declared key, with its default when unset. Proxmox LXC was
  * set up with the setup guide, then its Linux keys renamed by 027 while the
  * keys before 027 kept their old values, and its sizes saved before 028.
@@ -78,19 +78,19 @@ const SAVED: Record<string, PluginSettingValue> = {
   "ssh-pool-known-hosts": "",
 };
 
-/** Faults a start can meet: a storage write or BB's settings write that fails, as when the server stops then. */
+/** Faults a start can meet: a storage write or VesnALIA's settings write that fails, as when the server stops then. */
 interface Faults {
   failWrite?: string;
   failClear?: boolean;
 }
 
-/** BB's settings handles each start declared, to read what BB keeps. */
+/** VesnALIA's settings handles each start declared, to read what VesnALIA keeps. */
 type Handle = { get(): Promise<Record<string, unknown>> };
 
-function withFaults(bb: BbPluginApi, faults: Faults, handles: Handle[]): BbPluginApi {
-  const kv = bb.storage.kv;
+function withFaults(alia: AliaPluginApi, faults: Faults, handles: Handle[]): AliaPluginApi {
+  const kv = alia.storage.kv;
   const storage = {
-    ...bb.storage,
+    ...alia.storage,
     kv: {
       get: <T,>(key: string) => kv.get<T>(key),
       list: (prefix?: string) => kv.list(prefix),
@@ -103,7 +103,7 @@ function withFaults(bb: BbPluginApi, faults: Faults, handles: Handle[]): BbPlugi
   };
   const settings = {
     define(descriptors: never) {
-      const handle = bb.settings.define(descriptors);
+      const handle = alia.settings.define(descriptors);
       handles.push(handle as Handle);
       return {
         get: () => handle.get(),
@@ -115,7 +115,7 @@ function withFaults(bb: BbPluginApi, faults: Faults, handles: Handle[]): BbPlugi
       };
     },
   };
-  return Object.create(bb, { storage: { value: storage }, settings: { value: settings } }) as BbPluginApi;
+  return Object.create(alia, { storage: { value: storage }, settings: { value: settings } }) as AliaPluginApi;
 }
 
 /** A driver made like Proxmox LXC's, whose backend is the fake one, so the move reads realistic settings. */
@@ -137,8 +137,8 @@ function lxcLike(root: string, built: FakeBackend[]): BackendDriver<any> {
 async function start(settings: Record<string, PluginSettingValue>, options: { faults?: Faults; seed?: Record<string, unknown>; drivers?: BackendDriver<any>[]; fake?: Partial<FakeBackendOptions>; freshInstall?: boolean } = {}) {
   const root = tempDir("config");
   const threads = new Map([[THREAD, makeThreadResponse({ id: THREAD, projectId: "prj_config", environmentId: "env_config" })]]);
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-box",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-box",
     settings,
     sdk: {
       threads: {
@@ -159,10 +159,10 @@ async function start(settings: Record<string, PluginSettingValue>, options: { fa
     /** The context each backend of the other drivers was built with, by backend ID. */
     real: new Map<string, BackendContext>(),
     handles: [] as Handle[],
-    kv: bb.storage.kv,
+    kv: alia.storage.kv,
   };
   const earlierInstall = options.freshInstall ? {} : { [INSTALL_ID_KEY]: "earlier01" };
-  for (const [key, value] of Object.entries({ ...earlierInstall, ...options.seed })) await bb.storage.kv.set(key, value);
+  for (const [key, value] of Object.entries({ ...earlierInstall, ...options.seed })) await alia.storage.kv.set(key, value);
   const recorded = (driver: BackendDriver<any>): BackendDriver<any> => ({
     ...driver,
     create: (config, context) => {
@@ -172,18 +172,18 @@ async function start(settings: Record<string, PluginSettingValue>, options: { fa
   });
   const drivers = [fakeDriver(root, world, options.fake), recorded(lxcLike(root, world.built)), recorded(sshPoolDriver), recorded(tartDriver), ...(options.drivers ?? [])];
   const options_ = { drivers, daemonParent: join(root, "no-daemon") };
-  const begin = (on: BbPluginApi, faults: Faults = {}) => setup(withFaults(on, faults, world.handles), options_);
-  let app: BbBox | null = null;
+  const begin = (on: AliaPluginApi, faults: Faults = {}) => setup(withFaults(on, faults, world.handles), options_);
+  let app: AliaBox | null = null;
   let failure: unknown = null;
   try {
-    app = await begin(bb, options.faults);
+    app = await begin(alia, options.faults);
   } catch (error) {
     failure = error;
   }
   /** Starts the plugin again on the same storage and settings. */
   let current = harness;
   const restart = async (faults: Faults = {}) => {
-    let next: BbBox | null = null;
+    let next: AliaBox | null = null;
     const replacement = await current.lifecycle.reload(async (fresh) => {
       world.kv = fresh.storage.kv;
       next = await begin(fresh, faults);
@@ -202,10 +202,10 @@ test.afterEach(async () => {
 });
 
 /** The storage of the latest start. */
-const kvOf = (world: { kv: BbPluginApi["storage"]["kv"] }) => world.kv;
+const kvOf = (world: { kv: AliaPluginApi["storage"]["kv"] }) => world.kv;
 
 /** Every storage key and value outside the configuration's own keys and the times versions started and stopped. */
-async function outsideConfig(world: { kv: BbPluginApi["storage"]["kv"] }): Promise<Record<string, unknown>> {
+async function outsideConfig(world: { kv: AliaPluginApi["storage"]["kv"] }): Promise<Record<string, unknown>> {
   const kv = kvOf(world);
   const all: Record<string, unknown> = {};
   for (const key of await kv.list("")) if (!key.startsWith("config/") && key !== STOPPED_AT_KEY && key !== STARTED_AT_KEY) all[key] = await kv.get(key);
@@ -288,7 +288,7 @@ test("an off backend moves in off, and a value that is not valid moves as it is"
   assert.equal(document.backends[0]!.fields.subnet, "not a subnet");
 });
 
-test("a fresh install declares none of BB's earlier settings, on its first start or after, so BB's settings page shows BB Box's own sections alone", async () => {
+test("a fresh install declares none of VesnALIA's earlier settings, on its first start or after, so VesnALIA's settings page shows VesnALIA Box's own sections alone", async () => {
   const { harness, latest, world, restart } = await start({}, { freshInstall: true });
   assert.deepEqual(Object.keys(harness.inspection.registrations.settingsDescriptors), []);
   assert.equal(world.handles.length, 0);
@@ -299,7 +299,7 @@ test("a fresh install declares none of BB's earlier settings, on its first start
   assert.equal(world.handles.length, 0);
 });
 
-test("the first start moves BB's settings: secrets, then the copy, then the document, then clears them; the next start changes nothing", async () => {
+test("the first start moves VesnALIA's settings: secrets, then the copy, then the document, then clears them; the next start changes nothing", async () => {
   const { app, world, harness, latest, restart } = await start(SAVED);
   const kv = kvOf(world);
 
@@ -314,9 +314,9 @@ test("the first start moves BB's settings: secrets, then the copy, then the docu
   assert.deepEqual(copy.values["ssh-pool-ssh-private-key"], { set: false });
   assert.ok(!JSON.stringify(copy).includes(TOKEN) && !JSON.stringify(copy).includes("OPENSSH PRIVATE KEY"), "the copy holds no secret");
   assert.ok(await kv.get(CLEARED_KEY));
-  assert.equal(await kv.get(SIZES_ADOPTED_KEY), undefined, "the mark 028 reads is left as it was, for a version that goes back to BB's settings");
+  assert.equal(await kv.get(SIZES_ADOPTED_KEY), undefined, "the mark 028 reads is left as it was, for a version that goes back to VesnALIA's settings");
   const cleared = await world.handles[0]!.get();
-  assert.equal(cleared["proxmox-lxc-url"], "", "BB's settings are back to their defaults");
+  assert.equal(cleared["proxmox-lxc-url"], "", "VesnALIA's settings are back to their defaults");
   assert.equal(cleared["proxmox-lxc-token-secret"], undefined, "no second copy of a secret is left");
   assert.equal(app().backends.get("proxmox-lxc")?.id, "proxmox-lxc");
   assert.ok(!harness.inspection.logEntries.some((entry) => entry.message.includes(TOKEN)), "no secret is logged");
@@ -334,13 +334,13 @@ test("the first start moves BB's settings: secrets, then the copy, then the docu
 });
 
 for (const step of [SECRETS_KEY, COPY_KEY, DOCUMENT_KEY]) {
-  test(`a first start cut short before writing ${step} leaves BB's settings, and the next start moves them`, async () => {
+  test(`a first start cut short before writing ${step} leaves VesnALIA's settings, and the next start moves them`, async () => {
     const { world, failure, restart } = await start(SAVED, { faults: { failWrite: step } });
     assert.match(String(failure), new RegExp(`cut short before ${step}`), "the start fails rather than run without its configuration");
     const kv = kvOf(world);
     assert.equal(await kv.get(DOCUMENT_KEY), undefined);
     assert.equal(await kv.get(CLEARED_KEY), undefined);
-    assert.equal((await world.handles[0]!.get())["proxmox-lxc-token-secret"], TOKEN, "BB's settings are as they were");
+    assert.equal((await world.handles[0]!.get())["proxmox-lxc-token-secret"], TOKEN, "VesnALIA's settings are as they were");
 
     const app = await restart();
     assert.equal(app.configuration.document.revision, 1);
@@ -350,17 +350,17 @@ for (const step of [SECRETS_KEY, COPY_KEY, DOCUMENT_KEY]) {
   });
 }
 
-test("a start cut short before clearing BB's settings keeps its boxes working, and the next start clears them", async () => {
+test("a start cut short before clearing VesnALIA's settings keeps its boxes working, and the next start clears them", async () => {
   const { app, world, harness, restart } = await start({ ...SAVED, "fake-enabled": true }, { faults: { failClear: true } });
   const kv = kvOf(world);
   assert.ok(await kv.get(DOCUMENT_KEY));
   assert.equal(await kv.get(CLEARED_KEY), undefined);
-  assert.ok(harness.inspection.logEntries.some((entry) => /clear the settings BB Box moved: cut short before clearing/.test(entry.message)));
+  assert.ok(harness.inspection.logEntries.some((entry) => /clear the settings ALIA Box moved: cut short before clearing/.test(entry.message)));
 
   const box = await app().boxes.acquire({ threadId: THREAD, projectId: null, kind: "linux" });
   await app().boxes.settled(box);
   const backend = app().backends.get("fake");
-  // BB's settings still exist and someone changes them: they drive nothing now.
+  // VesnALIA's settings still exist and someone changes them: they drive nothing now.
   await harness.behavior.setSettings({ "fake-enabled": false, "proxmox-lxc-enabled": false });
   assert.equal(app().backends.get("fake"), backend, "the backend was not rebuilt or disposed");
   assert.equal((await app().boxes.run(THREAD, box.name, "echo still here")).result.stdout.trim(), "still here");
@@ -391,9 +391,9 @@ test("a document lost after the move starts empty, and keeps the secrets", async
 });
 
 test("a key a backend generated survives the move and the restarts unchanged, for Tart and the SSH host pool", async () => {
-  // BB Box made these keys, so BB's settings have none; each is in its backend's own storage.
-  const tartKey = { privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nTART\n-----END OPENSSH PRIVATE KEY-----\n", publicKey: "ssh-ed25519 AAAATART bb-box" };
-  const poolKey = { privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nPOOL\n-----END OPENSSH PRIVATE KEY-----\n", publicKey: "ssh-ed25519 AAAAPOOL bb-box" };
+  // VesnALIA Box made these keys, so VesnALIA's settings have none; each is in its backend's own storage.
+  const tartKey = { privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nTART\n-----END OPENSSH PRIVATE KEY-----\n", publicKey: "ssh-ed25519 AAAATART alia-box" };
+  const poolKey = { privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nPOOL\n-----END OPENSSH PRIVATE KEY-----\n", publicKey: "ssh-ed25519 AAAAPOOL alia-box" };
   const seed = { "backend/tart/ssh-key": tartKey, "backend/ssh-pool/ssh-key": poolKey, "backend/ssh-pool/machine/build-1": { generation: 3 } };
   const settings = {
     ...SAVED,
@@ -430,7 +430,7 @@ test("a key a backend generated survives the move and the restarts unchanged, fo
 test("a warm count out of range moves into range and is noted, and a moved document saves as it is (review F3)", async () => {
   const { document, notes } = fromSettings({ ...SAVED, "proxmox-lxc-linux-warm": 25 }, DRIVERS, true);
   assert.deepEqual(document.backends[0]!.warm, { linux: 20, "linux-desktop": 1 });
-  assert.deepEqual(notes, ["Proxmox LXC kept 25 warm linux boxes; BB Box keeps 0 to 20, so it is 20."]);
+  assert.deepEqual(notes, ["Proxmox LXC kept 25 warm linux boxes; VesnALIA Box keeps 0 to 20, so it is 20."]);
   const moved = fromSettings(SAVED, DRIVERS, false);
   const again = readDraft(exported(moved.document, moved.secrets, DRIVERS), DRIVERS);
   assert.deepEqual(again.problems, [], "the export of a moved document reads back with no problem");
@@ -512,7 +512,7 @@ test("apply tops the warm pools up at once, and a pool short of room is in the l
     name: "Warm pool of linux",
     status: "warn",
     detail: "It has 1 of its 2 boxes, and no room for another: pve has 3.5 GiB of memory free, and a warm box needs 4 GiB",
-    fix: "Make room there, or lower the warm count in BB Box's settings.",
+    fix: "Make room there, or lower the warm count in VesnALIA Box's settings.",
   });
 
   // Another sweep with other figures but the same reason says nothing more.
@@ -639,7 +639,7 @@ test("only a kind that is on keeps spare boxes (032)", () => {
   assert.deepEqual(generalConfig(readDraft({}, DRIVERS).document).spares, {}, "none by default");
 });
 
-test("a secret in a draft is kept, replaced or cleared, and never leaves bb-box", () => {
+test("a secret in a draft is kept, replaced or cleared, and never leaves alia-box", () => {
   const stored: Secrets = { "proxmox-lxc": { "token-secret": "old", "ssh-private-key": KEY } };
   const draft = readDraft(
     { backends: [{ id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: { "token-secret": "new", "ssh-private-key": null } }] },
@@ -674,8 +674,8 @@ test("a backend and a check of it that need an SSH key at the same moment get on
   const [live, checked] = await Promise.all([storedKeyPair(storage, "ssh-key"), storedKeyPair(layeredStorage(storage), "ssh-key")]);
   assert.equal(checked.publicKey, live.publicKey);
   assert.deepEqual(await storage.get("ssh-key"), live);
-  await storage.set("ssh-key", { privateKey: "made earlier", publicKey: "ssh-ed25519 MADE bb-box" });
-  assert.equal((await storedKeyPair(layeredStorage(storage), "ssh-key")).publicKey, "ssh-ed25519 MADE bb-box", "a key the backend has is never replaced");
+  await storage.set("ssh-key", { privateKey: "made earlier", publicKey: "ssh-ed25519 MADE alia-box" });
+  assert.equal((await storedKeyPair(layeredStorage(storage), "ssh-key")).publicKey, "ssh-ed25519 MADE alia-box", "a key the backend has is never replaced");
 });
 
 test("a doctor that takes too long is cut off at its time limit", async () => {
@@ -918,21 +918,21 @@ test("a host with boxes cannot be removed or renamed", async () => {
 
 // The CLI.
 
-test("bb box config show prints the configuration, and --json the export, with no secret in either", async () => {
+test("alia box config show prints the configuration, and --json the export, with no secret in either", async () => {
   const { harness } = await start({ "fake-enabled": true, "fake-token": "t0ken", "enrol-boxes": false, "boxes-per-thread": 3 });
   const shown = await harness.behavior.runCli(["config", "show"]);
   assert.equal(shown.exitCode, 0, shown.stderr);
-  assert.match(shown.stdout ?? "", /^BB Box's configuration, revision 1\./);
+  assert.match(shown.stdout ?? "", /^ALIA Box's configuration, revision 1\./);
   assert.match(shown.stdout ?? "", /- fake \(Fake host\): on, ready, offers linux, linux-desktop\.\n {4}token: set/);
-  assert.match(shown.stdout ?? "", /Boxes per thread: 3\. Enrol boxes as BB machines: no\. Default kind: linux\./);
-  assert.match(shown.stdout ?? "", /BB Box keeps a copy of the BB settings it moved .* bb box config migrated shows it, and --remove removes it\./);
+  assert.match(shown.stdout ?? "", /Boxes per thread: 3\. Enrol boxes as ALIA machines: no\. Default kind: linux\./);
+  assert.match(shown.stdout ?? "", /ALIA Box keeps a copy of the ALIA settings it moved .* alia box config migrated shows it, and --remove removes it\./);
   const json = await harness.behavior.runCli(["config", "show", "--json"]);
   const exportedDocument = JSON.parse(json.stdout ?? "") as ConfigDocument;
   assert.deepEqual(exportedDocument.backends[0]!.fields, { token: { set: true } });
   assert.ok(!(json.stdout ?? "").includes("t0ken") && !(shown.stdout ?? "").includes("t0ken"));
 });
 
-test("bb box config check and apply read a file from where bb runs, and migrated shows and removes the copy", async () => {
+test("alia box config check and apply read a file from where VesnALIA runs, and migrated shows and removes the copy", async () => {
   const { harness, app } = await start({ "fake-enabled": true, "enrol-boxes": false });
   const dir = tempDir("config-cli");
   const document = app().configuration.exported();
@@ -970,14 +970,14 @@ test("bb box config check and apply read a file from where bb runs, and migrated
   assert.equal(app().configuration.general().perThreadLimit, 5);
 
   const migrated = await harness.behavior.runCli(["config", "migrated"]);
-  assert.ok((migrated.stdout ?? "").startsWith(`BB Box ${THIS_VERSION} moved these BB settings into its configuration on `), migrated.stdout);
+  assert.ok((migrated.stdout ?? "").startsWith(`VesnALIA Box ${THIS_VERSION} moved these VesnALIA settings into its configuration on `), migrated.stdout);
   assert.match(migrated.stdout ?? "", /\nfake-enabled: true\n/);
   assert.match((await harness.behavior.runCli(["config", "migrated", "--remove"])).stdout ?? "", /Removed the copy/);
   assert.match((await harness.behavior.runCli(["config", "migrated"])).stdout ?? "", /There is no copy/);
   assert.doesNotMatch((await harness.behavior.runCli(["config", "show"])).stdout ?? "", /keeps a copy/);
 });
 
-test("a field a backend does not have names the backend, and the key it has now when it is its old name in BB's settings", () => {
+test("a field a backend does not have names the backend, and the key it has now when it is its old name in VesnALIA's settings", () => {
   const { problems } = readDraft(
     {
       schema: 1,
@@ -993,9 +993,9 @@ test("a field a backend does not have names the backend, and the key it has now 
   assert.deepEqual(
     problems.map((problem) => `${problem.path}: ${problem.message}`),
     [
-      `backends.tart.tart-linux-image: Backend tart has no field "tart-linux-image". That was its name in BB's settings; here it is "linux-image".`,
+      `backends.tart.tart-linux-image: Backend tart has no field "tart-linux-image". That was its name in VesnALIA's settings; here it is "linux-image".`,
       `backends.tart.hosts.0.tart-user: Host mac1 of backend tart has no field "tart-user". The fields are address, user, host-keys, ios-hosts-most, ios-hosts-cores, ios-hosts-memory-gib.`,
-      `backends.proxmox-lxc.proxmox-lxc-vmid-first: Backend proxmox-lxc has no field "proxmox-lxc-vmid-first". That was its name in BB's settings; here it is "vmid-first".`,
+      `backends.proxmox-lxc.proxmox-lxc-vmid-first: Backend proxmox-lxc has no field "proxmox-lxc-vmid-first". That was its name in VesnALIA's settings; here it is "vmid-first".`,
     ],
   );
 });
@@ -1022,13 +1022,13 @@ test("the configuration takes several Docker backends, one per host, and still o
   const docker = (id: string, host?: string) => ({ id, type: "docker", enabled: true, fields: host === undefined ? {} : { host } });
   const problems = (backends: unknown[]) =>
     checkDocument(readDraft({ schema: 1, backends, kinds: {}, general: {} }, DRIVERS).document, {}, DRIVERS).filter((problem) => /both Docker|one .* backend for now/.test(problem.message));
-  assert.deepEqual(problems([docker("docker"), docker("docker:devpc", "bb:host_m1"), docker("docker:lab", "ssh://me@lab")]), []);
-  assert.deepEqual(problems([docker("docker:one", "bb:host_m1"), docker("docker:two", "bb:host_m1")]).map((problem) => `${problem.path}: ${problem.message}`), [
-    "backends.docker:two: docker:two and docker:one are both Docker on bb:host_m1. Give each its own host, or remove one.",
+  assert.deepEqual(problems([docker("docker"), docker("docker:devpc", "alia:host_m1"), docker("docker:lab", "ssh://me@lab")]), []);
+  assert.deepEqual(problems([docker("docker:one", "alia:host_m1"), docker("docker:two", "alia:host_m1")]).map((problem) => `${problem.path}: ${problem.message}`), [
+    "backends.docker:two: docker:two and docker:one are both Docker on VesnALIA:host_m1. Give each its own host, or remove one.",
   ]);
   assert.match(problems([docker("docker"), docker("docker:local", "")])[0]?.message ?? "", /both Docker on the default host/);
   const lxc = { id: "proxmox-lxc", type: "proxmox-lxc", enabled: false, fields: {} };
-  assert.match(problems([lxc, { ...lxc, id: "proxmox-lxc:two" }])[0]?.message ?? "", /BB Box runs one Proxmox LXC backend for now/);
+  assert.match(problems([lxc, { ...lxc, id: "proxmox-lxc:two" }])[0]?.message ?? "", /ALIA Box runs one Proxmox LXC backend for now/);
 });
 
 test("the configuration takes several Namespace backends, even on one workspace with one token, each with its own fields (#1455)", () => {
@@ -1143,7 +1143,7 @@ async function endsWithin(pid: number): Promise<boolean> {
   return false;
 }
 
-test("a disposed BB Box leaves no spawn helper, nor any child the helper started", async () => {
+test("a disposed VesnALIA Box leaves no spawn helper, nor any child the helper started", async () => {
   const { latest } = await start({});
   const sleeper = startChild("sleep", ["30"], { site: "test" });
   await new Promise((resolve) => sleeper.once("spawn", resolve));
@@ -1158,19 +1158,19 @@ test("a disposed BB Box leaves no spawn helper, nor any child the helper started
   assert.ok(await endsWithin(child), "the helper's child still runs");
 });
 
-test("BB Box logs how long it took to stop, and to start by phase, and which came first", async () => {
+test("VesnALIA Box logs how long it took to stop, and to start by phase, and which came first", async () => {
   const { harness, latest, restart } = await start({});
-  // BB's test host loads the new version, then disposes the old.
+  // VesnALIA's test host loads the new version, then disposes the old.
   await restart();
   await new Promise((resolve) => setImmediate(resolve));
   const messages = (one: typeof harness) => one.inspection.logEntries.map((entry) => entry.message);
-  assert.ok(messages(latest()).some((line) => /^BB Box started in \d+\.\d\d s: storage \d+\.\d\d s, configuration and backends \d+\.\d\d s, the rest \d+\.\d\d s\.$/.test(line)));
-  assert.ok(messages(harness).some((line) => /^BB Box stopped in \d+\.\d\d s, -?\d+\.\d\d s after BB began the next version\.$/.test(line)));
+  assert.ok(messages(latest()).some((line) => /^ALIA Box started in \d+\.\d\d s: storage \d+\.\d\d s, configuration and backends \d+\.\d\d s, the rest \d+\.\d\d s\.$/.test(line)));
+  assert.ok(messages(harness).some((line) => /^ALIA Box stopped in \d+\.\d\d s, -?\d+\.\d\d s after ALIA began the next version\.$/.test(line)));
 });
 
-test("a start after the last version stopped tells how long BB took between the two", async () => {
+test("a start after the last version stopped tells how long VesnALIA took between the two", async () => {
   const lines: string[] = [];
-  const kv = new MemoryStorage() as unknown as BbPluginApi["storage"]["kv"];
+  const kv = new MemoryStorage() as unknown as AliaPluginApi["storage"]["kv"];
   let now = 10_000;
   const old = new ReloadTimes((line) => lines.push(line), kv, () => now);
   now += 1_000;
@@ -1182,10 +1182,10 @@ test("a start after the last version stopped tells how long BB took between the 
   now += 1_500;
   fresh.phase("storage");
   await fresh.started();
-  assert.deepEqual(lines, ["BB Box stopped in 2.50 s.", "BB Box started in 1.50 s: storage 1.50 s; BB began it 4.00 s after the last version stopped."]);
+  assert.deepEqual(lines, ["VesnALIA Box stopped in 2.50 s.", "VesnALIA Box started in 1.50 s: storage 1.50 s; VesnALIA began it 4.00 s after the last version stopped."]);
 });
 
-test("070 unit 11b review, Opus 1: a backend whose snapshots live on its provider cannot be removed while the provider holds any of this install's, kept or not; BB Box asks the provider only when a save would remove it", async () => {
+test("070 unit 11b review, Opus 1: a backend whose snapshots live on its provider cannot be removed while the provider holds any of this install's, kept or not; VesnALIA Box asks the provider only when a save would remove it", async () => {
   const { rpc, app, world } = await start({ "fake-enabled": true, "enrol-boxes": false });
   const base = app().configuration.exported();
   const backend = world.backend! as unknown as Record<string, unknown>;
@@ -1206,12 +1206,12 @@ test("070 unit 11b review, Opus 1: a backend whose snapshots live on its provide
   assert.ok(!removed.ok && removed.reason === "problems");
   assert.equal(
     removed.problems[0]!.message,
-    "Backend fake has 1 snapshot on its provider's account, kept or not, which would go on costing after it is removed, with nothing to delete it: earlier01-bxaaaaaaaaaaaa-snaaaaaaaaaaaa, kept until 2026-11-30. Delete it first: bb box snapshot delete <box> <snapshot> deletes each one BB Box records, as bb box snapshot list --all names them; delete any other in the provider's own dashboard.",
+    "Backend fake has 1 snapshot on its provider's account, kept or not, which would go on costing after it is removed, with nothing to delete it: earlier01-bxaaaaaaaaaaaa-snaaaaaaaaaaaa, kept until 2026-11-30. Delete it first: VesnALIA box snapshot delete <box> <snapshot> deletes each one VesnALIA Box records, as VesnALIA box snapshot list --all names them; delete any other in the provider's own dashboard.",
   );
   held = null as unknown as unknown[];
   const unread = await rpc<ApplyResult>("config.apply", { draft: { ...base, backends: [] }, revision: 2 });
   assert.ok(!unread.ok && unread.reason === "problems");
-  assert.match(unread.problems[0]!.message, /^BB Box could not list the snapshots backend fake holds on its provider's account \(the provider did not answer\), so it does not remove it/);
+  assert.match(unread.problems[0]!.message, /^ALIA Box could not list the snapshots backend fake holds on its provider's account \(the provider did not answer\), so it does not remove it/);
   held = [];
   const gone = await rpc<ApplyResult>("config.apply", { draft: { ...base, backends: [] }, revision: 2 });
   assert.ok(gone.ok, JSON.stringify(gone));
@@ -1235,11 +1235,11 @@ test("a backend whose snapshots stay on its own engine at no charge, as Docker's
   assert.ok(!removed.ok && removed.reason === "problems");
   assert.equal(
     removed.problems[0]!.message,
-    "Backend fake has 1 snapshot on its host, kept or not, which would stay and take its disk after it is removed, with nothing to delete it: bbbox-snapshot/test/bxaaaaaaaaaaaa:snaaaaaaaaaaaa, kept until 2026-11-30. Delete it first: bb box snapshot delete <box> <snapshot> deletes each one BB Box records, as bb box snapshot list --all names them; delete any other on the host itself.",
+    "Backend fake has 1 snapshot on its host, kept or not, which would stay and take its disk after it is removed, with nothing to delete it: bbbox-snapshot/test/bxaaaaaaaaaaaa:snaaaaaaaaaaaa, kept until 2026-11-30. Delete it first: VesnALIA box snapshot delete <box> <snapshot> deletes each one VesnALIA Box records, as VesnALIA box snapshot list --all names them; delete any other on the host itself.",
   );
 
   held = null;
   const unread = await rpc<ApplyResult>("config.apply", { draft: { ...base, backends: [] }, revision: 1 });
   assert.ok(!unread.ok && unread.reason === "problems");
-  assert.match(unread.problems[0]!.message, /^BB Box could not list the snapshots backend fake holds on its host \(Docker did not answer\), so it does not remove it: one left there would stay and take its disk, with nothing to delete it\./);
+  assert.match(unread.problems[0]!.message, /^ALIA Box could not list the snapshots backend fake holds on its host \(Docker did not answer\), so it does not remove it: one left there would stay and take its disk, with nothing to delete it\./);
 });

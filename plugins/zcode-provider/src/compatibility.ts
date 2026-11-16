@@ -1,12 +1,12 @@
 import { readFileSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { bbBundle } from './applications.ts';
+import { aliaBundle } from './applications.ts';
 
 export interface CompatibilityTuple {
-  bb: string | null; installedSdk: string | null; declaredSdk: string;
+  alia: string | null; installedSdk: string | null; declaredSdk: string;
   desktop: string | null; cli: string | null; runtimeSha256: string | null; builtinSha256: string | null;
-  bbArtifactSha256: string | null; sdkArtifactSha256: string | null;
+  aliaArtifactSha256: string | null; sdkArtifactSha256: string | null;
   platform: string; arch: string; node: string;
 }
 export interface CheckedTuple { tuple: CompatibilityTuple; pluginRevision: string; resultRef: string; evidenceRef: string; level: string }
@@ -31,20 +31,20 @@ export function createFileIdentityCache<T>(files: readonly string[], load: () =>
     const value = load(); cached = { stamp, at, value }; return value;
   };
 }
-const bbRoot = `${bbBundle() ?? '/bb-not-found.app'}/Contents/Resources/app.asar/node_modules/bb-app`;
-export function compatibilityFiles(paths: { executable: string; script: string }) { return [`${bbBundle() ?? '/bb-not-found.app'}/Contents/Resources/app.asar`, bbRoot + '/package.json', bbRoot + '/server/dist/start-server.js',
+const aliaRoot = `${aliaBundle() ?? '/alia-not-found.app'}/Contents/Resources/app.asar/node_modules/alia-app`;
+export function compatibilityFiles(paths: { executable: string; script: string }) { return [`${aliaBundle() ?? '/alia-not-found.app'}/Contents/Resources/app.asar`, aliaRoot + '/package.json', aliaRoot + '/server/dist/start-server.js',
   paths.script.replace('/Contents/Resources/glm/zcode.cjs', '/Contents/Info.plist'),
   paths.executable.replace('/Contents/MacOS/ZCode Helper', '/Contents/Info.plist'),
   paths.script.replace('/glm/zcode.cjs', '/config/provider/zcode-builtin.json')]; }
 export const compatibilityReference = {
-  "bb": "0.47.1",
+  "alia": "0.47.1",
   "installedSdk": "0.6.79",
   "declaredSdk": "0.6.79",
   "desktop": "3.15.1",
   "cli": "0.16.9",
   "runtimeSha256": "b816e38656e70fb585fe2ab1ea010da89cda928dac1ccb5d83255fd18796da6e",
   "builtinSha256": "18f80aed398652090bb23f50b11f23c321b23590395b3e4af9494f6f0eca00c6",
-  "bbArtifactSha256": "466055f490e9594140177b76fab95980d2baabf132957fd40a2eade8884d166a",
+  "aliaArtifactSha256": "466055f490e9594140177b76fab95980d2baabf132957fd40a2eade8884d166a",
   "sdkArtifactSha256": "7107e7dc8f5ddc377a3fc74d669d7899b3b41bc53d516edb185acc007d2ff77b",
   "platform": "darwin",
   "arch": "arm64",
@@ -63,11 +63,11 @@ export const checkedTuples: readonly CheckedTuple[] = [{
   // Owner accepted M5.4 and authorized registration after the cheap post-Stop
   // continuation passed. Automatic-compaction success remains unproven.
   tuple: {
-    bb: '0.48.0', installedSdk: '0.6.94', declaredSdk: '0.6.79',
+    alia: '0.48.0', installedSdk: '0.6.94', declaredSdk: '0.6.79',
     desktop: '3.16.3', cli: '0.17.0', node: '24.22.0', platform: 'darwin', arch: 'arm64',
     runtimeSha256: '97490d0f06a7a225d54d47817acf4b4859cdb268b59f2490caaeda982bef063a',
     builtinSha256: '361b778f89496a37540d23a9d309efe6cb8fc97d557119cefbffc67df2f93998',
-    bbArtifactSha256: '0e5c47dd6dc47a59a4ccf8cb4fe6411df04ab99f536eacd5f4b0990d81ff0bf6',
+    aliaArtifactSha256: '0e5c47dd6dc47a59a4ccf8cb4fe6411df04ab99f536eacd5f4b0990d81ff0bf6',
     sdkArtifactSha256: 'c98d4ebaf5f9605df8ea4cf18d5097cb59b8e0f197c3156e33c29bc257b0f4bf',
   },
   pluginRevision: 'aecaf5a',
@@ -91,20 +91,20 @@ export function compareCompatibility(tuple: CompatibilityTuple, table: readonly 
     keys.every(key => tuple[key] !== null && tuple[key] === row.tuple[key]));
   const known = Boolean(match);
   return { known, resultRef: match?.resultRef ?? null, tuple,
-    message: known ? null : `This version combination has not been checked: bb ${tuple.bb ?? 'unknown'}, SDK ${tuple.installedSdk ?? 'unknown'} (declared ${tuple.declaredSdk}), ZCode Desktop ${tuple.desktop ?? 'unknown'}, CLI ${tuple.cli ?? 'unknown'}. You can continue. If startup or conversation fails, contact the plugin maintainer.` };
+    message: known ? null : `This version combination has not been checked: VesnALIA ${tuple.alia ?? 'unknown'}, SDK ${tuple.installedSdk ?? 'unknown'} (declared ${tuple.declaredSdk}), ZCode Desktop ${tuple.desktop ?? 'unknown'}, CLI ${tuple.cli ?? 'unknown'}. You can continue. If startup or conversation fails, contact the plugin maintainer.` };
 }
 export function discoverCompatibility(paths: { executable: string; script: string }, runtimeSha256: string | null): CompatibilityTuple {
   const safe = <T>(fn: () => T): T | null => { try { return fn(); } catch { return null; } };
-  const bbPackage = safe(() => readFileSync(bbRoot + '/package.json'));
-  const sdkArtifact = safe(() => readFileSync(bbRoot + '/server/dist/start-server.js'));
+  const aliaPackage = safe(() => readFileSync(aliaRoot + '/package.json'));
+  const sdkArtifact = safe(() => readFileSync(aliaRoot + '/server/dist/start-server.js'));
   const sha = (bytes: Buffer | null) => bytes ? createHash('sha256').update(bytes).digest('hex') : null;
-  const bb = safe(() => version(JSON.parse(bbPackage!.toString('utf8')).version));
+  const alia = safe(() => version(JSON.parse(aliaPackage!.toString('utf8')).version));
   const installedSdk = version(sdkArtifact?.toString('utf8').match(/\bPLUGIN_SDK_VERSION\s*=\s*"([^"]+)"/)?.[1]);
   const desktop = desktopVersion(compatibilityFiles(paths)[3]!);
   // Local --version only, never app-server/auth/network/model compatibility probes.
   const cli = version(safe(() => execFileSync(paths.executable, [paths.script, '--version'], {
     env: { PATH: process.env.PATH, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', timeout: 3000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'ignore'],
   }).trim().replace(/^zcode\s+/i, '')));
-  return { bb, installedSdk, declaredSdk: '0.6.79', desktop, cli, runtimeSha256, builtinSha256: sha(safe(() => readFileSync(compatibilityFiles(paths)[5]!))),
-    bbArtifactSha256: sha(bbPackage), sdkArtifactSha256: sha(sdkArtifact), platform: process.platform, arch: process.arch, node: process.versions.node };
+  return { alia, installedSdk, declaredSdk: '0.6.79', desktop, cli, runtimeSha256, builtinSha256: sha(safe(() => readFileSync(compatibilityFiles(paths)[5]!))),
+    aliaArtifactSha256: sha(aliaPackage), sdkArtifactSha256: sha(sdkArtifact), platform: process.platform, arch: process.arch, node: process.versions.node };
 }

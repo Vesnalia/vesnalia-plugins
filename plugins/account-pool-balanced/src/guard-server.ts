@@ -48,7 +48,7 @@ export async function runGuardProbe(access:GuardServerAccess,input:GuardProbeInp
     };
     return serverGuardRead(wrapped)(provider,signal,trace);
   },timeoutMs,event=>events.push(event));
-  try{return {schema:'bb-account-pool/guard-probe/1' as const,allowed:true,route:await check(config.provider)??'guard-allowed',events};}
+  try{return {schema:'alia-account-pool/guard-probe/1' as const,allowed:true,route:await check(config.provider)??'guard-allowed',events};}
   catch(error){if(!(error instanceof GuardRequiredError))throw error;
-    return {schema:'bb-account-pool/guard-probe/1' as const,allowed:false,code:error.code,reason:error.failureReason??'blocked',events};}
+    return {schema:'alia-account-pool/guard-probe/1' as const,allowed:false,code:error.code,reason:error.failureReason??'blocked',events};}
 }

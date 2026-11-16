@@ -49,8 +49,8 @@ describe("subvolume detection and conversion", () => {
     expect(await git(["rev-parse", "HEAD"], source)).toBe(headBefore);
     expect(await git(["status", "--short"], source)).toContain("dirty.txt");
     expect(await readFile(path.join(source, "node_modules", "dep", "index.js"), "utf8")).toBe("// dep\n");
-    expect(await exists(`${source}.bb-subvol-new`)).toBe(false);
-    expect(await exists(`${source}.bb-subvol-old`)).toBe(false);
+    expect(await exists(`${source}.alia-subvol-new`)).toBe(false);
+    expect(await exists(`${source}.alia-subvol-old`)).toBe(false);
   });
 
   it("refuses to convert a subvolume, a file, or a missing path", async () => {

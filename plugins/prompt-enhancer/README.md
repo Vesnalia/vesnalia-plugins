@@ -1,12 +1,12 @@
 <h1 align="center">Prompt Enhancer</h1>
 
-<p align="center"><b>Turn a rough draft into a prompt worth sending, right in the <a href="https://getbb.app">bb</a> composer you are typing in.</b><br>The rewrite runs in a hidden bb thread on the provider you already use. No API keys, no external service.</p>
+<p align="center"><b>Turn a rough draft into a prompt worth sending, right in the <a href="https://getbb.app">VesnALIA</a> composer you are typing in.</b><br>The rewrite runs in a hidden VesnALIA thread on the provider you already use. No API keys, no external service.</p>
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-prompt-enhancer/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-prompt-enhancer?style=flat-square&color=57606a&label=release" alt="Latest release"></a>
-<img src="https://img.shields.io/badge/bb-%E2%89%A5%200.49-57606a?style=flat-square" alt="Requires bb 0.49 or later">
+<img src="https://img.shields.io/badge/bb-%E2%89%A5%200.49-57606a?style=flat-square" alt="Requires VesnALIA 0.49 or later">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 </p>
 
 <picture>
@@ -16,24 +16,24 @@
 
 ## Install
 
-Prompt Enhancer is listed in the [BB Community marketplace](https://github.com/get-bb/marketplace), so bb installs it by name:
+Prompt Enhancer is listed in the [VesnALIA Community marketplace](https://github.com/get-bb/marketplace), so VesnALIA installs it by name:
 
 ```sh
-bb plugin install prompt-enhancer
+alia plugin install prompt-enhancer
 ```
 
 Then click the spark in any composer, or press <kbd>⌘</kbd> <kbd>E</kbd> (<kbd>Ctrl</kbd> <kbd>E</kbd> on Windows and Linux) while the composer is focused.
 
 > [!TIP]
-> You can also find it inside bb under **Settings → Plugins**, or install straight from git. bb git installs take an explicit ref, so pin a release if you prefer:
+> You can also find it inside VesnALIA under **Settings → Plugins**, or install straight from git. VesnALIA git installs take an explicit ref, so pin a release if you prefer:
 >
 > ```sh
-> bb plugin install git:https://github.com/vburojevic/bb-plugin-prompt-enhancer.git@main
-> bb plugin install git:https://github.com/vburojevic/bb-plugin-prompt-enhancer.git@v0.3.0
+> alia plugin install git:https://github.com/vburojevic/bb-plugin-prompt-enhancer.git@main
+> alia plugin install git:https://github.com/vburojevic/bb-plugin-prompt-enhancer.git@v0.3.0
 > ```
 
 > [!NOTE]
-> Releases after v0.2.6 need bb 0.49 or later. bb skips releases your bb cannot run, so an older bb stays on v0.2.6 until you update it.
+> Releases after v0.2.6 need VesnALIA 0.49 or later. VesnALIA skips releases your VesnALIA cannot run, so an older VesnALIA stays on v0.2.6 until you update it.
 
 ## It picks the shape from the draft
 
@@ -113,7 +113,7 @@ When the rewrite lands, the toast offers **Undo** to restore your original draft
 
 ```mermaid
 flowchart LR
-  draft["Your draft"] -->|"⌘E or the spark"| hidden["Hidden bb thread<br/>in the same workspace"]
+  draft["Your draft"] -->|"⌘E or the spark"| hidden["Hidden alia thread<br/>in the same workspace"]
   hidden -->|"rewrite"| gate{"Review before applying?"}
   gate -->|"off"| typed["Types into the draft<br/>Undo in the toast"]
   gate -->|"on"| dialog["Apply or Discard"]
@@ -153,7 +153,7 @@ On a phone the preview opens as a bottom sheet.
 
 By default the rewrite runs on the provider of the thread you are drafting in (or the project default in the new-thread composer), at that provider's default model.
 
-Pin something else under **Settings → Prompt Enhancer**. Picking a model shows its reasoning levels in their own group, the same progressive disclosure bb's own model picker uses. It lives in settings rather than beside the draft because it is a set-once preference: the composer keeps a single button.
+Pin something else under **Settings → Prompt Enhancer**. Picking a model shows its reasoning levels in their own group, the same progressive disclosure VesnALIA's own model picker uses. It lives in settings rather than beside the draft because it is a set-once preference: the composer keeps a single button.
 
 **Custom rewrite instructions** appends a standing instruction to every rewrite: `keep prompts under 100 words`, `always write in German`, whatever you keep asking for.
 
@@ -165,9 +165,9 @@ Pin something else under **Settings → Prompt Enhancer**. Picking a model shows
 Both settings are also reachable from the CLI:
 
 ```sh
-bb plugin config prompt-enhancer
-bb plugin config prompt-enhancer set previewBeforeApply true
-bb plugin config prompt-enhancer set customInstructions "keep prompts under 100 words"
+alia plugin config prompt-enhancer
+alia plugin config prompt-enhancer set previewBeforeApply true
+alia plugin config prompt-enhancer set customInstructions "keep prompts under 100 words"
 ```
 
 | Setting | Key | Default |
@@ -188,7 +188,7 @@ The enhancer model is chosen in **Settings → Prompt Enhancer** only.
 - **Long drafts:** the draft is capped at 8000 characters in the rewrite prompt, and custom instructions at 500, so they can't dominate it.
 - **Language:** the rewrite stays in the language the draft was written in.
 - **Enhance while busy:** you can enhance a draft while the agent is still running its previous turn.
-- **Touch:** on a phone the composer action grows to the same 36x40 target bb's own composer buttons use, and the review step opens as a bottom sheet instead of a centered dialog.
+- **Touch:** on a phone the composer action grows to the same 36x40 target VesnALIA's own composer buttons use, and the review step opens as a bottom sheet instead of a centered dialog.
 - **Shortcut:** <kbd>⌘</kbd> <kbd>E</kbd> or <kbd>Ctrl</kbd> <kbd>E</kbd> starts a rewrite while the composer is focused, and the spark's tooltip shows it.
 
 </details>
@@ -198,7 +198,7 @@ The enhancer model is chosen in **Settings → Prompt Enhancer** only.
 
 <br>
 
-- **A rewrite failed.** The error names bb's own cause, for example "There's an issue with the selected model" or "The provider did not start: …". A provider that fails to start before writing anything is retried twice, and the last attempt moves to another provider unless you picked the model yourself. Rate limits and sign-in errors are shown at once, because a retry would fail the same way.
+- **A rewrite failed.** The error names VesnALIA's own cause, for example "There's an issue with the selected model" or "The provider did not start: …". A provider that fails to start before writing anything is retried twice, and the last attempt moves to another provider unless you picked the model yourself. Rate limits and sign-in errors are shown at once, because a retry would fail the same way.
 - **The composer stayed locked.** A run ends when the rewrite lands, when you cancel it, or 190 seconds after you started it, however many retries it took.
 - **A reference was dropped.** The warning names it before you send. Undo restores the original draft, or edit the rewrite by hand.
 - **The model list is empty.** Check that at least one provider is enabled under **Settings → Providers**, then press Retry under the picker.
@@ -213,14 +213,14 @@ The enhancer model is chosen in **Settings → Prompt Enhancer** only.
 ```sh
 npm install
 npm test              # logic in lib/ and the server against the SDK's fake host
-bb plugin build       # dist/server.js + dist/app.js
-bb plugin install .
-bb plugin reload prompt-enhancer
+alia plugin build       # dist/server.js + dist/app.js
+alia plugin install .
+alia plugin reload prompt-enhancer
 ```
 
-The interesting logic is pure and unit-tested in `lib/`: prompt construction, the dropped-reference guard, pill re-anchoring, reveal pacing, adaptive timeouts, composer-scope identity, and what an expired deadline means. `server.ts` owns all I/O and is tested in `tests/server.test.ts` with `@get-bb/plugin-sdk/testing`. `app.tsx` owns the composer UI.
+The interesting logic is pure and unit-tested in `lib/`: prompt construction, the dropped-reference guard, pill re-anchoring, reveal pacing, adaptive timeouts, composer-scope identity, and what an expired deadline means. `server.ts` owns all I/O and is tested in `tests/server.test.ts` with `@vesnalia/plugin-sdk/testing`. `app.tsx` owns the composer UI.
 
-The bb plugin API declarations come from the [`@get-bb/plugin-sdk`](https://www.npmjs.com/package/@get-bb/plugin-sdk) package, pinned in `devDependencies`. Repin it to your bb with `bb plugin types` (`--check` in CI).
+The VesnALIA plugin API declarations come from the [`@vesnalia/plugin-sdk`](https://www.npmjs.com/package/@get-bb/plugin-sdk) package, pinned in `devDependencies`. Repin it to your VesnALIA with `alia plugin types` (`--check` in CI).
 
 </details>
 
@@ -230,4 +230,4 @@ MIT. See [LICENSE](LICENSE).
 
 ---
 
-<p align="center"><sub>More bb plugins I publish: <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/bb-plugins</b></a></sub></p>
+<p align="center"><sub>More VesnALIA plugins I publish: <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/alia-plugins</b></a></sub></p>

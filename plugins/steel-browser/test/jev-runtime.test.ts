@@ -34,10 +34,10 @@ class Agent:
         bridge_file=os.environ.get("FAKE_JEV_BRIDGE_FILE")
         if bridge_file:
             with open(bridge_file, "w") as output:
-                output.write(os.environ["BB_JEV_BRIDGE"])
+                output.write(os.environ["ALIA_JEV_BRIDGE"])
         if os.environ.get("FAKE_JEV_MODE") == "unauthorized":
             self.state["status"]="blocked"
-            request=urllib.request.Request(os.environ["BB_JEV_BRIDGE"],
+            request=urllib.request.Request(os.environ["ALIA_JEV_BRIDGE"],
                 data=json.dumps({"method":"Runtime.evaluate","params":{}}).encode(),
                 headers={"Authorization":"Bearer invalid","Content-Type":"application/json"})
             try:
@@ -62,7 +62,7 @@ async function runtimeFixture(): Promise<{
   runtime: JevEnvironment;
   cleanup(): Promise<void>;
 }> {
-  const checkout = await mkdtemp(join(tmpdir(), "bb-surf-jev-runtime-"));
+  const checkout = await mkdtemp(join(tmpdir(), "alia-surf-jev-runtime-"));
   await mkdir(join(checkout, ".venv/bin"), { recursive: true });
   await mkdir(join(checkout, "jev_ultrafast"));
   const python = (await exec("python3", ["-c", "import sys; print(sys.executable)"])).stdout.trim();

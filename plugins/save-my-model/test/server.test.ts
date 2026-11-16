@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
-test("lists BB hosts in connected-first order through the public SDK", async () => {
-  const { bb, harness } = createFakePluginHost({
+test("lists VesnALIA hosts in connected-first order through the public SDK", async () => {
+  const { alia, harness } = createFakePluginHost({
     pluginId: "save-my-model",
     sdk: {
       hosts: {
@@ -18,7 +18,7 @@ test("lists BB hosts in connected-first order through the public SDK", async () 
       },
     },
   });
-  plugin(bb);
+  plugin(alia);
   const result = await harness.behavior.callRpc("listHosts", null) as {
     hosts: Array<{ id: string; name: string; status: string }>;
     error: string | null;
@@ -34,17 +34,17 @@ test("lists BB hosts in connected-first order through the public SDK", async () 
 });
 
 test("contains host-list failures", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "save-my-model",
     sdk: { hosts: { list: async () => { throw new Error("offline"); } } },
   });
-  plugin(bb);
+  plugin(alia);
   const result = await harness.behavior.callRpc("listHosts", null) as {
     hosts: unknown[];
     error: string | null;
   };
   assert.deepEqual(result.hosts, []);
-  assert.equal(result.error, "BB could not list machines.");
+  assert.equal(result.error, "VesnALIA could not list machines.");
   await harness.lifecycle.dispose();
 });
 
@@ -57,15 +57,15 @@ test("imports only public SDK and declared package surfaces", () => {
   assert.deepEqual(result.privateDependencies, []);
 });
 
-test("rejects a catalog request for a host BB no longer enrolls", async () => {
-  const { bb, harness } = createFakePluginHost({
+test("rejects a catalog request for a host VesnALIA no longer enrolls", async () => {
+  const { alia, harness } = createFakePluginHost({
     pluginId: "save-my-model",
     sdk: {
       hosts: { get: async () => { throw new Error("unknown host /private/path"); } },
       system: { executionOptions: async () => { throw new Error("must not run"); } },
     },
   });
-  plugin(bb);
+  plugin(alia);
   const result = await harness.behavior.callRpc("resolveSelection", {
     hostId: "host-gone",
     preferred: null,
@@ -73,7 +73,7 @@ test("rejects a catalog request for a host BB no longer enrolls", async () => {
   assert.equal(result.selection, null);
   assert.deepEqual(result.error, {
     code: "host-unavailable",
-    message: "This machine is no longer enrolled in BB.",
+    message: "This machine is no longer enrolled in VesnALIA.",
   });
   assert.equal(harness.inspection.sdk.callsTo("system.executionOptions").length, 0);
   await harness.lifecycle.dispose();

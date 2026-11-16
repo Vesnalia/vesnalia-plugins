@@ -44,7 +44,7 @@ describe("ThreadChoices", () => {
     expect(calls.ownChoices).toEqual([["w1", "coord", "w2", "solo"]]);
   });
 
-  it("reads in batches bb accepts", async () => {
+  it("reads in batches VesnALIA accepts", async () => {
     const parents = Object.fromEntries(Array.from({ length: 450 }, (_, index) => [`t${index}`, null]));
     const { port, calls } = fakePort(parents);
     const inputs = await new ThreadChoices(port).inputs(Object.keys(parents));
@@ -90,7 +90,7 @@ describe("ThreadChoices", () => {
     expect(Object.fromEntries(stored)).toEqual({ a: "questions", c: "questions" });
   });
 
-  it("has no choice for a thread bb does not know", async () => {
+  it("has no choice for a thread VesnALIA does not know", async () => {
     const { port } = fakePort({});
     expect(await new ThreadChoices(port).inputsOf("gone")).toEqual({ own: null, inherited: null });
   });

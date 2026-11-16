@@ -71,7 +71,7 @@ const eventsTable = (name: string, kinds: readonly string[]) => `CREATE TABLE ${
     name TEXT NOT NULL CHECK(length(CAST(name AS BLOB)) <= ${SHORT_BYTES}),
     at INTEGER NOT NULL,
     kind TEXT NOT NULL CHECK(kind IN (${kinds.map((kind) => `'${kind}'`).join(", ")})),
-    who TEXT NOT NULL CHECK(who IN ('person', 'agent', 'command', 'bb-box', 'outside', 'unknown')),
+    who TEXT NOT NULL CHECK(who IN ('person', 'agent', 'command', 'alia-box', 'outside', 'unknown')),
     agent TEXT CHECK(agent IS NULL OR length(CAST(agent AS BLOB)) <= ${SHORT_BYTES}),
     why TEXT CHECK(why IS NULL OR length(CAST(why AS BLOB)) <= ${WHY_BYTES}),
     words TEXT CHECK(words IS NULL OR length(CAST(words AS BLOB)) <= ${EVENT_WORDS_BYTES}),
@@ -134,8 +134,8 @@ function actorOf(row: Row): Actor {
   switch (row.who) {
     case "agent":
       return { is: "agent", threadId: row.agent ?? "" };
-    case "bb-box":
-      return { is: "bb-box", why: row.why ?? "" };
+    case "alia-box":
+      return { is: "alia-box", why: row.why ?? "" };
     default:
       return { is: row.who };
   }
@@ -235,7 +235,7 @@ export class BoxLogStore implements BoxLog {
       event.kind,
       by.is,
       by.is === "agent" ? short(by.threadId) : null,
-      by.is === "bb-box" ? short(by.why, WHY_BYTES) : null,
+      by.is === "alia-box" ? short(by.why, WHY_BYTES) : null,
       short(event.words, EVENT_WORDS_BYTES),
       event.observed?.state ?? null,
       event.observed?.at ?? null,
@@ -382,12 +382,12 @@ export class BoxLogStore implements BoxLog {
           name: "Box log",
           status: "fail",
           detail: `${PRODUCT} could not write ${failures.count} ${failures.count === 1 ? "event" : "events"} to its box log in ${where}, from ${new Date(failures.firstAt).toISOString()} to ${new Date(failures.lastAt).toISOString()}: ${sentence(failures.lastError)} Boxes, stops, starts and releases still work, and pages say nothing the log would have said about those boxes.`,
-          fix: `Check that BB's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}.`,
+          fix: `Check that VesnALIA's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}.`,
         },
       ];
     }
     if (file.problem) {
-      return [{ id: "box-log", name: "Box log", status: "fail", detail: `${PRODUCT} could not set up its box log in ${where}: ${sentence(file.problem)}`, fix: `Check that BB's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}.` }];
+      return [{ id: "box-log", name: "Box log", status: "fail", detail: `${PRODUCT} could not set up its box log in ${where}: ${sentence(file.problem)}`, fix: `Check that VesnALIA's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}.` }];
     }
     let rows: number | null = null;
     try {

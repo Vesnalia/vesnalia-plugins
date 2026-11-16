@@ -1,13 +1,13 @@
-import { definePluginApp, useBbNavigate, type PluginThreadHeaderActionProps } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useAliaNavigate, type PluginThreadHeaderActionProps } from '@vesnalia/plugin-sdk/app';
 import { useEffect } from 'react';
 import { currentId, mountSwitcher, type Session } from './switcher';
 import './app.css';
 import { createStatusBridge } from './status-ui';
 
-// One bridge per rendered pane; navigation stays on BB's supported router.
-const navigators = new Map<string, ReturnType<typeof useBbNavigate>>();
+// One bridge per rendered pane; navigation stays on VesnALIA's supported router.
+const navigators = new Map<string, ReturnType<typeof useAliaNavigate>>();
 function NavigationBridge({ threadId }: PluginThreadHeaderActionProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useEffect(() => { navigators.set(threadId, navigate); return () => { if (navigators.get(threadId) === navigate) navigators.delete(threadId); }; }, [threadId, navigate]);
   return null;
 }

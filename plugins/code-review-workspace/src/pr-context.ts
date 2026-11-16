@@ -1,7 +1,7 @@
 // read_pr_context: what the PR says about itself, what others already said on it,
 // and the repo's own review rules, for the guide writer and the review assistant.
 // Everything the PR's author or other people wrote is fenced as untrusted.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ghPrChecksJsonArgs, type runGh, type runGit } from "./gh";
 import { gitFile, localRevs, readFeatureFile } from "./file-contents";
 import { compileGlob, globMatches, type Glob } from "./glob";
@@ -129,10 +129,10 @@ function readChecks(out: { stdout: string; stderr: string }) {
  * `reviewMd`: Read REVIEW.md, the knob; off, the agents read AGENTS.md, CLAUDE.md and Copilot's instructions only.
  * `author` is what the read said of a PR's author's trust; null for a local review or a partial read.
  */
-export async function readPrContext(deps: { runGh: Run; runGit: typeof runGit; bb?: BbPluginApi }, review: ReviewMeta, files: readonly string[], context: string | null, { reviewMd }: { reviewMd: boolean }): Promise<{ text: string; author: AuthorTrust | null }> {
+export async function readPrContext(deps: { runGh: Run; runGit: typeof runGit; alia?: AliaPluginApi }, review: ReviewMeta, files: readonly string[], context: string | null, { reviewMd }: { reviewMd: boolean }): Promise<{ text: string; author: AuthorTrust | null }> {
   const { sections, author } = review.kind === "pr" && review.repo && review.number
     ? await pullRequestContext(deps.runGh, review, files, reviewMd)
-    : { sections: review.feature ? await featureContext(deps.bb, review.feature, files, reviewMd) : await localContext(deps.runGit, review, files, reviewMd), author: null };
+    : { sections: review.feature ? await featureContext(deps.alia, review.feature, files, reviewMd) : await localContext(deps.runGit, review, files, reviewMd), author: null };
   if (context) sections.push(`Context from the thread that started this review:\n${untrusted("review context", context)}`);
   return { text: sections.join("\n\n"), author };
 }
@@ -201,11 +201,11 @@ async function pullRequestContext(run: Run, review: ReviewMeta, files: readonly 
  * A folder's review: its instructions at the commit its diff starts from. Scoped instructions aren't read, as nothing
  * lists a directory at a commit on the folder's machine.
  */
-async function featureContext(bb: BbPluginApi | undefined, feature: FeatureReview, files: readonly string[], reviewMd: boolean): Promise<string[]> {
+async function featureContext(alia: AliaPluginApi | undefined, feature: FeatureReview, files: readonly string[], reviewMd: boolean): Promise<string[]> {
   const sections = [`A local review of the branch ${feature.branch} in ${feature.path} on ${feature.machine}, with its uncommitted and untracked changes; there's no PR.`];
   if (!feature.mergeBaseRef) return sections;
   const read = async (path: string): Promise<[string, string | null]> => {
-    const out = await readFeatureFile(bb, feature, "old", path);
+    const out = await readFeatureFile(alia, feature, "old", path);
     return [path, "text" in out ? out.text : null];
   };
   const rules = await Promise.all([...instructionFiles(reviewMd), ...reviewMd ? reviewRulesPaths(files) : []].map(read));

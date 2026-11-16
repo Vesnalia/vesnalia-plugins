@@ -54,7 +54,7 @@ test("every pack supplies both spinner names", () => {
   }
 });
 
-test("parses stored icon packs and falls back to BB Default", () => {
+test("parses stored icon packs and falls back to VesnALIA Default", () => {
   assert.deepEqual(
     ICON_PACK_OPTIONS.map((option) => option.id),
     ["default", "lucide", "iconoir", "tabler"],

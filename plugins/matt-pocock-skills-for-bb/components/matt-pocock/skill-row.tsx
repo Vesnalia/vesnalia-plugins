@@ -56,7 +56,7 @@ export function SkillRow({
   const displayName = secondaryName(skill);
   const effective = state.project !== null
     ? conflicts.find((conflict) => verifiedDelivery(conflict, snapshot))?.effectiveName
-    : resolved.bbName;
+    : resolved.aliaName;
   const name = effective ? `/${effective}` : state.project === null ? `/${skill.canonicalId}` : skill.canonicalId;
   const keptDescriptionId = useId();
   const prerequisites = skill.prereqs.map(prerequisite => {

@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 const waiting = mine({
-  repo: "acme/infrastructure", number: 85915, title: "Route bb plugin traffic through the shared egress proxy", unseen: true, updatedAt: NOW - 25 * 60_000,
+  repo: "acme/infrastructure", number: 85915, title: "Route VesnALIA plugin traffic through the shared egress proxy", unseen: true, updatedAt: NOW - 25 * 60_000,
   agent: agent({ title: "Fix egress proxy review", status: "waiting" }),
   next: next({ kind: "agent_waiting", tone: "warn", label: "The agent needs your answer", why: "“Fix egress proxy review” asked you something in its thread.", inbox: true, clears: "Leaves when you answer in the thread.", primary: { id: "open_agent", label: "Answer in the thread" } }),
 });
@@ -61,11 +61,11 @@ const runningNext = next({ kind: "running", tone: "info", label: "AI review runn
 const reviewingWorking = pr({ repo: "acme/app", server: "lab", serverName: "Lab", number: 2312070, title: "Checkout: retry the payment session once", author: "elvin", additions: 40, deletions: 6, lastReview: run(), next: runningNext });
 const reviewingWaiting = pr({
   number: 4420, title: "Sidebar: keep the thread list scroll on reload", author: "rmartin", additions: 12, deletions: 2, dismissed: { at: NOW - 2 * HOUR, activity: false },
-  lastReview: run({ threadId: "thr_waiting", title: "Review get-bb/bb#4420", preset: "Security pass", trigger: "auto", at: NOW - 3 * HOUR, thread: "waiting" }), next: runningNext,
+  lastReview: run({ threadId: "thr_waiting", title: "Review get-alia/alia#4420", preset: "Security pass", trigger: "auto", at: NOW - 3 * HOUR, thread: "waiting" }), next: runningNext,
 });
 const postingNext = next({ kind: "posting", tone: "info", label: "Your review is queued to post" });
-const postQueued = pr({ number: 4430, title: "Composer: keep the draft on reload", author: "ana-r", post: queued({ id: 51, key: "github:get-bb/bb#4430", display: "get-bb/bb#4430", serverName: "GitHub" }), next: postingNext });
-const postPosting = pr({ number: 4431, title: "Sidebar: drop the stale badge", author: "bkim", post: queued({ id: 50, key: "github:get-bb/bb#4431", display: "get-bb/bb#4431", serverName: "GitHub", state: "posting", verdict: "approve", comments: 0, startedAt: NOW - 2 * 60_000 }), next: postingNext });
+const postQueued = pr({ number: 4430, title: "Composer: keep the draft on reload", author: "ana-r", post: queued({ id: 51, key: "github:get-alia/alia#4430", display: "get-alia/alia#4430", serverName: "GitHub" }), next: postingNext });
+const postPosting = pr({ number: 4431, title: "Sidebar: drop the stale badge", author: "bkim", post: queued({ id: 50, key: "github:get-alia/alia#4431", display: "get-alia/alia#4431", serverName: "GitHub", state: "posting", verdict: "approve", comments: 0, startedAt: NOW - 2 * 60_000 }), next: postingNext });
 const rule: InboxRule = { id: 4, kind: "repo", server: "github", serverName: "GitHub", value: "acme/ui-kit", createdAt: NOW - 5 * 24 * HOUR, keeps: ["github:acme/ui-kit#1201", "github:acme/ui-kit#1188"] };
 const mentionRule: InboxRule = { id: 5, kind: "mention", server: "github", serverName: "GitHub", value: "acme/web", createdAt: NOW - 14 * 24 * HOUR, keeps: [] };
 
@@ -141,7 +141,7 @@ describe("the Inbox", () => {
     fireEvent.click(heading);
     expect(heading.getAttribute("aria-expanded")).toBe("false");
     expect(slot.container.querySelector(`[data-row="${waiting.key}"]`)).toBeNull();
-    expect(window.localStorage.getItem("bb-plugin-shuttle:folds")).toContain("inbox/kind:needs");
+    expect(window.localStorage.getItem("alia-plugin-shuttle:folds")).toContain("inbox/kind:needs");
   });
 
   it("says on each row only what its heading, avatar and time do not", async () => {
@@ -156,7 +156,7 @@ describe("the Inbox", () => {
     expect(own.querySelector("[data-age]")!.getAttribute("title")).toMatch(/^Last activity /u);
     expect(own.querySelector("[data-repo]")!.getAttribute("title")).toBe("acme/infrastructure on GitHub");
     expect(own.querySelector("[data-unseen]")).not.toBeNull();
-    expect(own.querySelector("[data-title]")!.textContent).toBe("New: Route bb plugin traffic through the shared egress proxy");
+    expect(own.querySelector("[data-title]")!.textContent).toBe("New: Route VesnALIA plugin traffic through the shared egress proxy");
     expect(own.querySelector("[data-title] .sr-only")!.textContent).toBe("New: ");
 
     expect(facts(await row(slot, nobody.key))).toEqual(["Changes requested by priya-s", "2 checks fail", "No agent"]);
@@ -869,9 +869,9 @@ describe("the Reviewing tab", () => {
     expect(rowKeys(slot)).toEqual([reviewingWorking.key, waitingA.key, waitingB.key]);
     fireEvent.click(within(await row(slot, waitingA.key)).getByRole("button", { name: "Start now" }));
     await waitFor(() => expect(callsTo(slot, "review")).toEqual([{ key: waitingA.key, presetId: "quick" }]));
-    fireEvent.click(within(await row(slot, waitingB.key)).getByRole("button", { name: "Never auto review bb#502" }));
+    fireEvent.click(within(await row(slot, waitingB.key)).getByRole("button", { name: "Never auto review VesnALIA#502" }));
     await waitFor(() => expect(callsTo(slot, "skipAutoReview")).toEqual([{ keys: [waitingB.key], on: true }]));
-    await waitFor(() => expect(toasts.success).toHaveBeenCalledWith("Auto review never starts on bb#502 now.", expect.anything()));
+    await waitFor(() => expect(toasts.success).toHaveBeenCalledWith("Auto review never starts on VesnALIA#502 now.", expect.anything()));
   });
 });
 

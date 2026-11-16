@@ -21,22 +21,22 @@ sources:
 ---
 # Architecture
 
-TL;DR: The BB plugin server gates message dispatch, stores MoA state, runs two advisor workers, and enriches the queued message with private advice. The plugin app configures that behavior and inspects its recorded runs through typed RPC. (server.ts:27-33, server.ts:113-153, app.tsx:171-195)
+TL;DR: The VesnALIA plugin server gates message dispatch, stores MoA state, runs two advisor workers, and enriches the queued message with private advice. The plugin app configures that behavior and inspects its recorded runs through typed RPC. (server.ts:27-33, server.ts:113-153, app.tsx:171-195)
 
 ## System Context
 
 ```mermaid
 C4Context
   title MoA system context
-  Person(user, "BB user", "Configures MoA and sends chat messages")
+  Person(user, "ALIA user", "Configures MoA and sends chat messages")
   System(moa, "MoA plugin", "Coordinates advisor sessions and stores consultation state")
-  System_Ext(bb, "BB host", "Owns queues, threads, providers, RPC and UI extension points")
+  System_Ext(alia, "ALIA host", "Owns queues, threads, providers, RPC and UI extension points")
   System_Ext(models, "Configured model providers", "Generate advisor and acting-model responses")
   System_Ext(gateway, "File Gateway plugin", "Optional read access for advisor sessions")
-  Rel(user, bb, "Uses chat composer and history")
-  Rel(bb, moa, "Calls hooks, RPC, lifecycle events")
-  Rel(moa, bb, "Uses SDK for queues, threads, storage and providers")
-  Rel(bb, models, "Runs model requests")
+  Rel(user, alia, "Uses chat composer and history")
+  Rel(alia, moa, "Calls hooks, RPC, lifecycle events")
+  Rel(moa, alia, "Uses SDK for queues, threads, storage and providers")
+  Rel(alia, models, "Runs model requests")
   Rel(moa, gateway, "Checks plugin availability; preserves native mentions")
 ```
 
@@ -45,10 +45,10 @@ C4Context
 ```mermaid
 C4Container
   title MoA plugin containers
-  Container(server, "Plugin server", "TypeScript / BB Plugin SDK", "Dispatch hook, coordinator, RPC, CLI and lifecycle handlers")
-  Container(app, "Plugin app", "React / BB app SDK", "Composer controls, settings, message action and audit overlay")
+  Container(server, "Plugin server", "TypeScript / ALIA Plugin SDK", "Dispatch hook, coordinator, RPC, CLI and lifecycle handlers")
+  Container(app, "Plugin app", "React / ALIA app SDK", "Composer controls, settings, message action and audit overlay")
   ContainerDb(storage, "Plugin database", "SQLite", "Documents keyed by plugin-owned identifiers")
-  System_Ext(host, "BB host", "Queue, threads, providers, events and app extension APIs")
+  System_Ext(host, "ALIA host", "Queue, threads, providers, events and app extension APIs")
   System_Ext(provider, "Model providers", "Advisor and acting-model inference")
   Rel(server, storage, "Reads and writes")
   Rel(server, host, "Hooks, RPC, CLI, SDK and events")
@@ -71,7 +71,7 @@ C4Container
 ```mermaid
 sequenceDiagram
   participant User
-  participant Host as BB queue and dispatch
+  participant Host as ALIA queue and dispatch
   participant Server as MoA server
   participant Advisors as A and B worker threads
   participant Main as Acting chat model
@@ -94,7 +94,7 @@ sequenceDiagram
   participant User
   participant App as NewChatMoA
   participant Server as MoA RPC and store
-  participant Host as BB dispatch
+  participant Host as ALIA dispatch
   App->>Server: draftDefaults(projectId)
   App->>Server: prepareDraft(projectId, config)
   Server-->>App: UUID token
@@ -108,7 +108,7 @@ sequenceDiagram
 
 ### UI control and RPC
 
-`ComposerMoA` chooses `NewChatMoA` only for a `new-thread` scope; all other composer scopes use `MoAControl`. The latter loads `status`, saves via `save`, toggles the chat via `toggle`, and requests retry or audit through RPC. The same control is wrapped in BB’s dialog trigger, whose compact viewport implementation uses click handling. (app.tsx:61-120, app.tsx:193-195, new-chat.tsx:71-85, components/ui/responsive-overlay.tsx:157-225)
+`ComposerMoA` chooses `NewChatMoA` only for a `new-thread` scope; all other composer scopes use `MoAControl`. The latter loads `status`, saves via `save`, toggles the chat via `toggle`, and requests retry or audit through RPC. The same control is wrapped in VesnALIA’s dialog trigger, whose compact viewport implementation uses click handling. (app.tsx:61-120, app.tsx:193-195, new-chat.tsx:71-85, components/ui/responsive-overlay.tsx:157-225)
 
 The RPC contract exposes `messageIndex`, `audit`, `replaceParticipant`, `draftDefaults`, `prepareDraft`, `readDraft`, `status`, `save`, `toggle`, `retry`, `providers`, and `models`. Their Zod input and output shapes are declared in `contract.ts:55-89`; server handlers are registered in `server.ts:431-489`. Configuration validation rejects identical A/B models, missing required reserve models, reserve collisions, unavailable models, and unsupported reasoning levels. (server.ts:388-405)
 
@@ -123,13 +123,13 @@ The RPC contract exposes `messageIndex`, `audit`, `replaceParticipant`, `draftDe
 
 ## Cross-cutting concerns
 
-**Persistence:** `createStore` serializes typed plugin values as JSON in SQLite; BB storage migrations create the table and index. (store.ts:12-32)
+**Persistence:** `createStore` serializes typed plugin values as JSON in SQLite; VesnALIA storage migrations create the table and index. (store.ts:12-32)
 
 **Errors and recovery:** Participant failures follow `wait`, `reserve`, or `available`; failed runs remain associated with the queued message for explicit retry or a settings change. (server.ts:276-294, server.ts:303-326, server.ts:419-429)
 
-**Audit:** The audit correlates an agent-only reference UUID in BB request events to a stored run, with request event pagination capped at 5 pages of 100. (audit.ts:16-38, audit.ts:41-70)
+**Audit:** The audit correlates an agent-only reference UUID in VesnALIA request events to a stored run, with request event pagination capped at 5 pages of 100. (audit.ts:16-38, audit.ts:41-70)
 
-**File access:** Each attempt checks whether the File Gateway plugin is enabled and running. Without it, advisor input omits external-source mentions; with it, native File Gateway resources are preserved for BB resolution. (file-access.ts:4-27, server.ts:193-200)
+**File access:** Each attempt checks whether the File Gateway plugin is enabled and running. Without it, advisor input omits external-source mentions; with it, native File Gateway resources are preserved for VesnALIA resolution. (file-access.ts:4-27, server.ts:193-200)
 
 <!-- lane-pilot:backlinks -->
 ## Referenced by

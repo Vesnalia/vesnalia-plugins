@@ -2,7 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { resolve } from 'node:path';
 
-const client = new Client({ name: 'bb-plugin-smoke', version: '0.1.0' });
+const client = new Client({ name: 'alia-plugin-smoke', version: '0.1.0' });
 const windows = process.platform === 'win32';
 const transport = new StdioClientTransport({
   command: windows ? 'cmd.exe' : 'npm',

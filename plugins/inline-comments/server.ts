@@ -1,7 +1,7 @@
 // Stores comment bodies and turns each comment pill into agent context when
 // the message is sent. Which comments are pending is not stored here: that is
 // whatever pills the thread's composer draft still holds.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   MENTION_PROVIDER,
   commentSchema,
@@ -29,22 +29,22 @@ export function formatContext(comment: Comment): string {
   ].join("\n\n");
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function read(id: string): Promise<Comment | null> {
-    const parsed = commentSchema.safeParse(await bb.storage.kv.get(key(id)));
+    const parsed = commentSchema.safeParse(await alia.storage.kv.get(key(id)));
     return parsed.success ? parsed.data : null;
   }
 
   async function collectGarbage() {
     const cutoff = Date.now() - MAX_AGE_MS;
-    for (const k of await bb.storage.kv.list("comment:")) {
+    for (const k of await alia.storage.kv.list("comment:")) {
       const comment = await read(k.slice("comment:".length));
-      if (!comment || Date.parse(comment.updatedAt) < cutoff) await bb.storage.kv.delete(k);
+      if (!comment || Date.parse(comment.updatedAt) < cutoff) await alia.storage.kv.delete(k);
     }
   }
-  void collectGarbage().catch((error) => bb.log.warn(`cleanup failed: ${String(error)}`));
+  void collectGarbage().catch((error) => alia.log.warn(`cleanup failed: ${String(error)}`));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     comments_get: async ({ ids }) => {
       const found = await Promise.all(ids.map(read));
       return { comments: found.filter((c): c is Comment => c !== null) };
@@ -57,20 +57,20 @@ export default async function plugin(bb: BbPluginApi) {
         createdAt: previous?.createdAt ?? now,
         updatedAt: now,
       };
-      await bb.storage.kv.set(key(comment.id), comment);
-      bb.realtime.publish(COMMENTS_CHANGED, { threadId: comment.threadId });
+      await alia.storage.kv.set(key(comment.id), comment);
+      alia.realtime.publish(COMMENTS_CHANGED, { threadId: comment.threadId });
       return comment;
     },
     comment_delete: async ({ id }) => {
       const previous = await read(id);
       if (!previous) return { removed: false };
-      await bb.storage.kv.delete(key(id));
-      bb.realtime.publish(COMMENTS_CHANGED, { threadId: previous.threadId });
+      await alia.storage.kv.delete(key(id));
+      alia.realtime.publish(COMMENTS_CHANGED, { threadId: previous.threadId });
       return { removed: true };
     },
   });
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: MENTION_PROVIDER,
     label: "Comments",
     // Pills are only ever inserted by the selection action, never picked.

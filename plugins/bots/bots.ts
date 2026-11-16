@@ -1,7 +1,7 @@
-// Pure bot logic — no BB handle, no I/O. Everything here is unit-testable
+// Pure bot logic — no VesnALIA handle, no I/O. Everything here is unit-testable
 // without a running server.
 
-/** BB truncates instruction contributions at 4096 characters. */
+/** VesnALIA truncates instruction contributions at 4096 characters. */
 export const INSTRUCTION_LIMIT = 4096;
 
 /**
@@ -81,7 +81,7 @@ export interface Bot {
   providerId: string;
   model: string;
   reasoningLevel: ReasoningLevel | null;
-  /** null = projectless chat in BB's personal project. */
+  /** null = projectless chat in VesnALIA's personal project. */
   projectId: string | null;
   status: BotStatus;
   createdAt: number;
@@ -201,7 +201,7 @@ export function draftBlockers(bot: Bot): string[] {
 }
 
 /**
- * The persona block BB injects into every turn of a bot's threads. Kept under
+ * The persona block VesnALIA injects into every turn of a bot's threads. Kept under
  * INSTRUCTION_LIMIT by construction: MAX_INSTRUCTIONS plus this wrapper.
  */
 export function renderBotInstructions(bot: Bot): string {

@@ -6,7 +6,7 @@ const PROTECTED_TARGET = [
 /**
  * Whether a keyboard event target is a text field, editor, dialog or menu that
  * a plugin reorder shortcut must never act on. Unlike a settle chord, this
- * protects BB's composer too: an arrow key while typing is never a reorder.
+ * protects VesnALIA's composer too: an arrow key while typing is never a reorder.
  */
 export function isProtectedInteractionTarget(
   element: Element | null,

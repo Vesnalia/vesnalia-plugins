@@ -3,7 +3,7 @@
 // What: checks what counts as a change to an issue (fingerprint), which
 // issues need a size (needsSizing, toSize), and what the worker is told.
 //
-// Why: these are the user's rules (bead-bb-zkc), and getting one wrong
+// Why: these are the user's rules (bead-alia-zkc), and getting one wrong
 // either overwrites a size the user chose or sizes the same issue for
 // ever: a size they chose is never touched; a started issue is never
 // touched; a change re-sizes only what the background sized itself; the

@@ -6,8 +6,8 @@ import {
   renderSlot,
   type PluginRpcTestHandlers,
   type RenderSlotOptions,
-} from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { FeedRow as QueueRow, rpcContract } from "./contract.js";
 
 const toastError = vi.hoisted(() => vi.fn());
@@ -275,7 +275,7 @@ describe("queue panel", () => {
       },
     });
 
-    const markdownSummaries = await slot.findAllByTestId("bb-markdown");
+    const markdownSummaries = await slot.findAllByTestId("alia-markdown");
     expect(markdownSummaries.map((summary) => summary.textContent)).toEqual([
       normalTable,
       errorTable,

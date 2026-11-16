@@ -6,7 +6,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   makeTurnFailedEvent,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.js";
 
 interface QueuedRow {
@@ -47,7 +47,7 @@ function makeHost(options: {
 
 async function ready(options: Parameters<typeof makeHost>[0] = {}) {
   const host = makeHost(options);
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -69,7 +69,7 @@ describe("registration", () => {
     // Every command carries a usage line, which is what the generated
     // `plugin-commands` skill shows an agent.
     for (const command of cli?.commands ?? []) {
-      expect(command.usage).toMatch(/^bb agent-retry /u);
+      expect(command.usage).toMatch(/^alia agent-retry /u);
     }
     await harness.lifecycle.dispose();
   });
@@ -81,7 +81,7 @@ describe("help and parser errors", () => {
     for (const argv of [["--help"], ["help"], ["status", "--help"], ["simulate", "--help"]]) {
       const result = await harness.behavior.runCli(argv);
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("bb agent-retry");
+      expect(result.stdout).toContain("alia agent-retry");
     }
     await harness.lifecycle.dispose();
   });

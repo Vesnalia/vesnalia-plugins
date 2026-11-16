@@ -1,9 +1,9 @@
 import { fileURLToPath } from "node:url";
-import { experimental_acpLaunchSpecSchema } from "@get-bb/plugin-sdk/provider-bridge/acp";
+import { experimental_acpLaunchSpecSchema } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import plugin, { fxProviderDeclaration } from "../server.js";
 
@@ -21,12 +21,12 @@ function createHost() {
 }
 
 function register() {
-  const { bb, harness } = createHost();
-  plugin(bb);
+  const { alia, harness } = createHost();
+  plugin(alia);
   return harness.inspection.registrations.providerRegistrations;
 }
 
-/** The `acpLaunchSpec` as the shared ACP bridge receives it from BB. */
+/** The `acpLaunchSpec` as the shared ACP bridge receives it from VesnALIA. */
 function registeredLaunchSpec(): Record<string, unknown> {
   const [registration] = register();
   const options = registration?.experimental_bridgeOptions as
@@ -44,7 +44,7 @@ describe("fx provider registration", () => {
     expect(registrations[0]?.id).toBe("fx");
   });
 
-  it("declares fx as an ACP agent BB launches with `fx acp`", () => {
+  it("declares fx as an ACP agent VesnALIA launches with `fx acp`", () => {
     const [registration] = register();
 
     expect(registration?.family).toBe("acp");
@@ -101,8 +101,8 @@ describe("fx provider registration", () => {
   });
 
   it("uses no experimental registration or bridge-authoring API", () => {
-    const { bb, harness } = createHost();
-    expect(() => plugin(bb)).not.toThrow();
+    const { alia, harness } = createHost();
+    expect(() => plugin(alia)).not.toThrow();
     expect(harness.inspection.registrations.providerRegistrations).toHaveLength(
       1,
     );
@@ -112,25 +112,25 @@ describe("fx provider registration", () => {
 describe("pinned launch environment", () => {
   // fx reads its permission mode from the environment and defaults to `auto`,
   // which decides sensitive tool calls inside fx instead of asking the client.
-  // BB can only enforce `accept-edits` / `full` if fx asks, so the mode is
-  // pinned on the launch spec rather than inherited from whatever shell BB
+  // VesnALIA can only enforce `accept-edits` / `full` if fx asks, so the mode is
+  // pinned on the launch spec rather than inherited from whatever shell VesnALIA
   // happens to run under.
-  it("pins fx's permission mode to `ask` so BB decides sensitive tool calls", () => {
+  it("pins fx's permission mode to `ask` so VesnALIA decides sensitive tool calls", () => {
     expect(registeredLaunchSpec().env).toEqual({ FX_PERMISSION_MODE: "ask" });
   });
 
-  it("never launches fx in a mode that bypasses BB's approval", () => {
+  it("never launches fx in a mode that bypasses VesnALIA's approval", () => {
     const env = registeredLaunchSpec().env as Record<string, string>;
 
     // `auto` self-approves inside fx; `yolo` disables fx's permission policy
-    // outright. Either one silently detaches BB's permission mode from what
+    // outright. Either one silently detaches VesnALIA's permission mode from what
     // the agent actually does.
     expect(env.FX_PERMISSION_MODE).not.toBe("auto");
     expect(env.FX_PERMISSION_MODE).not.toBe("yolo");
   });
 
-  it("hands BB an environment nothing downstream can rewrite", () => {
-    // The declaration spreads a fresh copy of the module constant and BB
+  it("hands VesnALIA an environment nothing downstream can rewrite", () => {
+    // The declaration spreads a fresh copy of the module constant and VesnALIA
     // freezes what it registers, so neither the plugin nor a later caller can
     // downgrade the mode between registration and launch.
     const env = registeredLaunchSpec().env as Record<string, string>;

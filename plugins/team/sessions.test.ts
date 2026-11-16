@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import {
   activeSessionKey,
   readReplacementIntent,
@@ -63,7 +63,7 @@ function threadDefaults(): Omit<FakeThread, "id"> {
 }
 
 interface Host {
-  bb: ReturnType<typeof createFakePluginHost>["bb"];
+  alia: ReturnType<typeof createFakePluginHost>["alia"];
   harness: ReturnType<typeof createFakePluginHost>["harness"];
   threads: Map<string, FakeThread>;
   queuePrompt(threadId: string, text: string): void;
@@ -145,7 +145,7 @@ function makeHost(initial: FakeThread[] = []): Host {
   };
 
   const host: Host = {
-    bb: null as unknown as ReturnType<typeof createFakePluginHost>["bb"],
+    alia: null as unknown as ReturnType<typeof createFakePluginHost>["alia"],
     harness: null as unknown as ReturnType<
       typeof createFakePluginHost
     >["harness"],
@@ -175,7 +175,7 @@ function makeHost(initial: FakeThread[] = []): Host {
     afterSwitchFailOnce: null,
   };
 
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "team",
     sdk: {
       threads: {
@@ -306,10 +306,10 @@ function makeHost(initial: FakeThread[] = []): Host {
     },
   });
 
-  host.bb = bb;
+  host.alia = alia;
   host.harness = harness;
-  const recheck = bb.experimental_hooks.recheck;
-  bb.experimental_hooks.recheck = async (hook) => {
+  const recheck = alia.experimental_hooks.recheck;
+  alia.experimental_hooks.recheck = async (hook) => {
     if (releaseFailOnce) {
       const error = releaseFailOnce;
       releaseFailOnce = null;
@@ -380,7 +380,7 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toBeInstanceOf(ReplacementError);
 
     expect(host.spawnCount()).toBe(0);
@@ -395,7 +395,7 @@ describe("replaceSession", () => {
       } as FakeThread,
     ]);
 
-    await replaceSession(host.bb, baseInput(host));
+    await replaceSession(host.alia, baseInput(host));
 
     const spawnCalls = host.harness.inspection.sdk.callsTo("threads.spawn");
     expect(spawnCalls).toHaveLength(1);
@@ -442,7 +442,7 @@ describe("replaceSession", () => {
       } as FakeThread,
     ]);
 
-    const result = await replaceSession(host.bb, baseInput(host));
+    const result = await replaceSession(host.alia, baseInput(host));
 
     expect(result.reparented).toBe(2);
     expect(host.threads.get("thr_child1")!.parentThreadId).toMatch(/^thr_new/);
@@ -464,7 +464,7 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_has_lifecycle_owned_descendants" });
 
     expect(host.spawnCount()).toBe(0);
@@ -484,7 +484,7 @@ describe("replaceSession", () => {
 
     host.setArchiveFailOnce("archive down");
 
-    await expect(replaceSession(host.bb, baseInput(host))).rejects.toThrow(
+    await expect(replaceSession(host.alia, baseInput(host))).rejects.toThrow(
       "archive down",
     );
 
@@ -492,7 +492,7 @@ describe("replaceSession", () => {
     expect(host.threads.get("thr_old")!.archivedAt).toBeNull();
 
     // Retry continues on the already-spawned idle fresh thread.
-    const result = await replaceSession(host.bb, baseInput(host));
+    const result = await replaceSession(host.alia, baseInput(host));
 
     expect(host.spawnCount()).toBe(1);
     expect(result.resumed).toBe(true);
@@ -511,11 +511,11 @@ describe("replaceSession", () => {
       } as FakeThread,
     ]);
 
-    const first = await replaceSession(host.bb, baseInput(host));
+    const first = await replaceSession(host.alia, baseInput(host));
     expect(host.releaseCount()).toBe(1);
 
     // Early complete retry is a no-op that does not recheck again.
-    const second = await replaceSession(host.bb, baseInput(host));
+    const second = await replaceSession(host.alia, baseInput(host));
     expect(second.newThreadId).toBe(first.newThreadId);
     expect(second.resumed).toBe(true);
     expect(host.spawnCount()).toBe(1);
@@ -531,7 +531,7 @@ describe("replaceSession", () => {
     ]);
 
     const result = await replaceSession(
-      host.bb,
+      host.alia,
       baseInput(host, { keep: true }),
     );
 
@@ -548,7 +548,7 @@ describe("replaceSession", () => {
     expect(freshMeta.teamReplacement).toBe(false);
 
     expect(
-      await host.bb.storage.kv.get(
+      await host.alia.storage.kv.get(
         activeSessionKey("proj_1", "team-a", "developer"),
       ),
     ).toBe(result.newThreadId);
@@ -563,11 +563,11 @@ describe("replaceSession", () => {
       } as FakeThread,
     ]);
 
-    // Temporarily swap bb.experimental_hooks.recheck with one that throws once.
-    const originalRecheck = host.bb.experimental_hooks.recheck;
+    // Temporarily swap alia.experimental_hooks.recheck with one that throws once.
+    const originalRecheck = host.alia.experimental_hooks.recheck;
     let thrown = false;
     (
-      host.bb.experimental_hooks as { recheck: (hook: string) => Promise<void> }
+      host.alia.experimental_hooks as { recheck: (hook: string) => Promise<void> }
     ).recheck = async () => {
       if (!thrown) {
         thrown = true;
@@ -577,11 +577,11 @@ describe("replaceSession", () => {
     };
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "release_failed" });
 
     const intent = await readReplacementIntent(
-      host.bb,
+      host.alia,
       "proj_1",
       "team-a",
       "developer",
@@ -589,7 +589,7 @@ describe("replaceSession", () => {
     expect(intent?.stage).toBe("complete");
     expect(intent?.delivery).toBe("sent");
 
-    const canonical = await host.bb.storage.kv.get(
+    const canonical = await host.alia.storage.kv.get(
       activeSessionKey("proj_1", "team-a", "developer"),
     );
     expect(typeof canonical).toBe("string");
@@ -607,13 +607,13 @@ describe("replaceSession", () => {
     host.setSpawnError("timeout");
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "spawn_uncertain" });
 
     expect(host.spawnCount()).toBe(1);
 
     const intent = await readReplacementIntent(
-      host.bb,
+      host.alia,
       "proj_1",
       "team-a",
       "developer",
@@ -623,7 +623,7 @@ describe("replaceSession", () => {
 
     // Retry must not attempt another spawn until the intent is reset.
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "spawn_uncertain" });
     expect(host.spawnCount()).toBe(1);
   });
@@ -649,11 +649,11 @@ describe("replaceSession", () => {
         teamRetired: false,
       },
     });
-    await host.bb.storage.kv.set(
+    await host.alia.storage.kv.set(
       activeSessionKey("proj_1", "team-a", "developer"),
       freshId,
     );
-    await host.bb.storage.kv.set(
+    await host.alia.storage.kv.set(
       replacementKey("proj_1", "team-a", "developer"),
       {
         oldThreadId: "thr_old",
@@ -668,7 +668,7 @@ describe("replaceSession", () => {
       },
     );
 
-    const result = await replaceSession(host.bb, baseInput(host));
+    const result = await replaceSession(host.alia, baseInput(host));
 
     expect(result.newThreadId).toBe(freshId);
     expect(result.resumed).toBe(true);
@@ -692,11 +692,11 @@ describe("replaceSession", () => {
       status: "idle",
       metadata: { teamReplacement: true },
     });
-    await host.bb.storage.kv.set(
+    await host.alia.storage.kv.set(
       activeSessionKey("proj_1", "team-a", "developer"),
       freshId,
     );
-    await host.bb.storage.kv.set(
+    await host.alia.storage.kv.set(
       replacementKey("proj_1", "team-a", "developer"),
       {
         oldThreadId: "thr_old",
@@ -711,7 +711,7 @@ describe("replaceSession", () => {
       },
     );
 
-    const result = await replaceSession(host.bb, baseInput(host));
+    const result = await replaceSession(host.alia, baseInput(host));
 
     expect(result.newThreadId).toBe(freshId);
     expect(result.oldThreadId).toBe("thr_old");
@@ -728,13 +728,13 @@ describe("replaceSession", () => {
       } as FakeThread,
     ]);
 
-    const first = await replaceSession(host.bb, baseInput(host));
+    const first = await replaceSession(host.alia, baseInput(host));
 
     const freshThread = host.threads.get(first.newThreadId)!;
     freshThread.status = "idle";
 
     const second = await replaceSession(
-      host.bb,
+      host.alia,
       baseInput(host, { oldThreadId: first.newThreadId }),
     );
 
@@ -755,12 +755,12 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_environment_mismatch" });
 
     host.threads.get("thr_old")!.environmentId = null;
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_environment_missing" });
   });
 
@@ -775,7 +775,7 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_has_background_activity" });
     expect(host.spawnCount()).toBe(0);
   });
@@ -791,7 +791,7 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_has_pending_interaction" });
     expect(host.spawnCount()).toBe(0);
   });
@@ -810,7 +810,7 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host, { keep: true })),
+      replaceSession(host.alia, baseInput(host, { keep: true })),
     ).rejects.toMatchObject({ code: "old_has_lifecycle_owned_descendants" });
 
     expect(host.spawnCount()).toBe(0);
@@ -826,14 +826,14 @@ describe("replaceSession", () => {
     ]);
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_has_background_agents" });
 
     host.threads.get("thr_old")!.activeBackgroundAgentCount = 0;
     host.threads.get("thr_old")!.queuedMessageCount = 1;
 
     await expect(
-      replaceSession(host.bb, baseInput(host)),
+      replaceSession(host.alia, baseInput(host)),
     ).rejects.toMatchObject({ code: "old_has_queued_messages" });
   });
 
@@ -847,7 +847,7 @@ describe("replaceSession", () => {
 
     await expect(
       replaceSession(
-        host.bb,
+        host.alia,
         baseInput(host, {
           afterSwitch: async () => {
             host.threads.get("thr_old")!.status = "active";
@@ -857,7 +857,7 @@ describe("replaceSession", () => {
     ).rejects.toMatchObject({ code: "old_active_before_archive" });
 
     expect(host.spawnCount()).toBe(1);
-    const canonical = await host.bb.storage.kv.get(
+    const canonical = await host.alia.storage.kv.get(
       activeSessionKey("proj_1", "team-a", "developer"),
     );
     expect(typeof canonical).toBe("string");
@@ -874,14 +874,14 @@ describe("replaceSession", () => {
 
     host.setAfterSwitchFailOnce("history store down");
 
-    await expect(replaceSession(host.bb, baseInput(host))).rejects.toThrow(
+    await expect(replaceSession(host.alia, baseInput(host))).rejects.toThrow(
       "history store down",
     );
 
     expect(host.spawnCount()).toBe(1);
     expect(host.afterSwitchCalls).toHaveLength(0);
 
-    const result = await replaceSession(host.bb, baseInput(host));
+    const result = await replaceSession(host.alia, baseInput(host));
 
     expect(host.spawnCount()).toBe(1);
     expect(result.resumed).toBe(true);
@@ -909,12 +909,12 @@ describe("live pending handoff contract", () => {
         },
       ]);
       if (own) {
-        const result = await replaceSession(host.bb, input);
+        const result = await replaceSession(host.alia, input);
         expect(result.newThreadId).toBe("thr_new1");
         expect(host.threads.get("thr_old")!.archivedAt).not.toBeNull();
         expect(host.releaseCount()).toBe(1);
       } else {
-        await expect(replaceSession(host.bb, input)).rejects.toMatchObject({
+        await expect(replaceSession(host.alia, input)).rejects.toMatchObject({
           code: "fresh_not_idle",
         });
         expect(host.archiveCount()).toBe(0);
@@ -936,7 +936,7 @@ describe("core dispatcher preparation race", () => {
         content: [{ type: "text", text: input.prompt, mentions: [] }],
       },
     ]);
-    await replaceSession(host.bb, input);
+    await replaceSession(host.alia, input);
     expect(reads).toBe(2);
     expect(host.spawnCount()).toBe(1);
     expect(host.releaseCount()).toBe(1);

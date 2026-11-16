@@ -1,6 +1,6 @@
 # Темы, анимации и доступность
 
-Chat Tabs использует semantic tokens темы BB и `color-mix(in oklch)`, а не отдельную фиксированную палитру. Избранное, работа и выбранность должны оставаться различимыми в light/dark/custom themes; серый nested-only индикатор намеренно без halo.
+Chat Tabs использует semantic tokens темы VesnALIA и `color-mix(in oklch)`, а не отдельную фиксированную палитру. Избранное, работа и выбранность должны оставаться различимыми в light/dark/custom themes; серый nested-only индикатор намеренно без halo.
 
 ![Та же полоса в тёмной теме](screenshots/current/chat-strip-dark.png)
 

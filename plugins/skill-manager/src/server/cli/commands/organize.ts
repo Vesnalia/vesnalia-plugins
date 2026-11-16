@@ -23,6 +23,6 @@ export const tags: CommandHandler = async ({ service, args, json }) => {
     return ok(json, { tag: filter, skills }, skills.length === 0 ? `No skills tagged "${filter}".` : skills.join("\n"));
   }
   const summary = await service.tagSummary();
-  if (summary.length === 0) return ok(json, summary, "No tags yet. Add one with: bb skill-manager tag <skill> <tag>");
+  if (summary.length === 0) return ok(json, summary, "No tags yet. Add one with: VesnALIA skill-manager tag <skill> <tag>");
   return ok(json, summary, table(["tag", "skills"], summary.map((entry) => [entry.tag, String(entry.count)])));
 };

@@ -1,5 +1,5 @@
 // What the follow-ups banner remembers per thread lives outside the component, so a
-// message box that BB rebuilds (on a resize, or switching threads away and back)
+// message box that VesnALIA rebuilds (on a resize, or switching threads away and back)
 // shows the same drafted tile, draft cost and composer text. A rebuilt banner is a
 // new reader of the same memory: these tests act out the banner's steps against it,
 // mounting and unmounting nothing. Run with `npm test`.

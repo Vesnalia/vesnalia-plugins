@@ -48,9 +48,9 @@ import {
 const IOS_RUNTIME = { platform: "ios", os: "27.0", build: "24A434", xcode: "27A266a", companion: "1.7.7" } as const;
 const ANDROID_RUNTIME = { platform: "android", api: 35, image: "google_apis", revision: 9, abi: "x86_64", emulator: "37.2.12.0", snapshot: { emulator: "37.2.12.0", cpu: "AMD EPYC 7763", made: "build.20261026-020000-ab12" } } as const;
 const UNKNOWN = { known: false, why: "not read yet" } as const;
-const SEEN_LIGHT = { known: true, value: "light", at: 1, by: "bb-box" } as const;
+const SEEN_LIGHT = { known: true, value: "light", at: 1, by: "alia-box" } as const;
 const IOS_SETTINGS = { appearance: SEEN_LIGHT, textSize: { known: true, value: "large", at: 1, by: "outside" }, location: { set: { latitude: 51.5, longitude: -0.12 }, at: 2 }, statusBar: { set: null, at: null } };
-const ANDROID_SETTINGS = { appearance: SEEN_LIGHT, fontScale: { known: true, value: 1.3, at: 1, by: "bb-box" }, location: { known: true, value: null, at: 1, by: "bb-box" }, battery: UNKNOWN, network: { known: true, value: "slow", at: 1, by: "bb-box" }, statusBar: { set: "clean", at: 3 } };
+const ANDROID_SETTINGS = { appearance: SEEN_LIGHT, fontScale: { known: true, value: 1.3, at: 1, by: "alia-box" }, location: { known: true, value: null, at: 1, by: "alia-box" }, battery: UNKNOWN, network: { known: true, value: "slow", at: 1, by: "alia-box" }, statusBar: { set: "clean", at: 3 } };
 const GEOMETRY = { generation: 3, physical: "turned-left", content: "upright", video: { width: 2622, height: 1206 } };
 
 const iosState = { platform: "ios", model: "iPhone 18 Pro", power: { is: "booted", awake: true }, geometry: GEOMETRY, settings: IOS_SETTINGS, at: 5 };
@@ -191,11 +191,11 @@ describe("a device's state", () => {
     refusal(parseDeviceState({ ...iosState, power: { is: "booted", awake: true, error: { code: "boot-failed", words: "x" } } }), /^state\.power has "error"/);
     refusal(parseDeviceState({ ...iosState, power: { is: "failed", since: 1 } }), /^state\.power\.error must be an object, not missing/);
     refusal(parseDeviceState({ ...iosState, settings: { ...IOS_SETTINGS, network: UNKNOWN } }), /^state\.settings has "network"/);
-    refusal(parseDeviceState({ ...iosState, settings: { ...IOS_SETTINGS, textSize: { known: true, value: 1.3, at: 1, by: "bb-box" } } }), /^state\.settings\.textSize\.value must be "extra-small"/);
-    refusal(parseDeviceState({ ...phoneState, settings: { ...ANDROID_SETTINGS, fontScale: { known: true, value: 1.2, at: 1, by: "bb-box" } } }), /^state\.settings\.fontScale\.value must be 0\.85, 1, 1\.15, 1\.3, 1\.5, 1\.8 or 2, not 1\.2/);
+    refusal(parseDeviceState({ ...iosState, settings: { ...IOS_SETTINGS, textSize: { known: true, value: 1.3, at: 1, by: "alia-box" } } }), /^state\.settings\.textSize\.value must be "extra-small"/);
+    refusal(parseDeviceState({ ...phoneState, settings: { ...ANDROID_SETTINGS, fontScale: { known: true, value: 1.2, at: 1, by: "alia-box" } } }), /^state\.settings\.fontScale\.value must be 0\.85, 1, 1\.15, 1\.3, 1\.5, 1\.8 or 2, not 1\.2/);
     refusal(parseDeviceState({ ...iosState, settings: { ...IOS_SETTINGS, location: { set: { latitude: 1, longitude: 2 }, at: null } } }), /^state\.settings\.location\.at must be a number/);
-    refusal(parseDeviceState({ ...iosState, settings: { ...IOS_SETTINGS, appearance: { known: true, at: 1, by: "bb-box" } } }), /^state\.settings\.appearance\.value must be "light" or "dark", not missing/);
-    refusal(parseDeviceState({ ...phoneState, settings: { ...ANDROID_SETTINGS, battery: { known: true, value: { level: 101, charging: true }, at: 1, by: "bb-box" } } }), /level must be a whole number from 0 to 100, not 101/);
+    refusal(parseDeviceState({ ...iosState, settings: { ...IOS_SETTINGS, appearance: { known: true, at: 1, by: "alia-box" } } }), /^state\.settings\.appearance\.value must be "light" or "dark", not missing/);
+    refusal(parseDeviceState({ ...phoneState, settings: { ...ANDROID_SETTINGS, battery: { known: true, value: { level: 101, charging: true }, at: 1, by: "alia-box" } } }), /level must be a whole number from 0 to 100, not 101/);
     refusal(parseDeviceState({ ...iosState, geometry: { ...GEOMETRY, physical: "landscape" } }), /physical must be "upright", "turned-left", "upside-down" or "turned-right", not "landscape"/);
   });
 });
@@ -387,10 +387,10 @@ describe("messages", () => {
     { id: "c1", type: "result" },
   ];
 
-  test("each request goes as BB_DEVICE and its JSON, and reads back", () => {
+  test("each request goes as ALIA_DEVICE and its JSON, and reads back", () => {
     for (const request of requests) {
       const text = deviceRequestText(request);
-      assert.ok(text.startsWith("BB_DEVICE {"));
+      assert.ok(text.startsWith("ALIA_DEVICE {"));
       assert.deepEqual(value(parseDeviceRequest(text)), request);
     }
   });
@@ -398,23 +398,23 @@ describe("messages", () => {
   test("each server message goes as its verb and its JSON, and reads back", () => {
     const messages: readonly DeviceServerMessage[] = [
       {
-        verb: "BB_DEVICE_HELLO",
+        verb: "ALIA_DEVICE_HELLO",
         hello: { protocol: 1, version: 3, platform: "ios", devices: [{ model: "iPhone 18 Pro", native: "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro", runtime: IOS_RUNTIME }], state: iosState as DeviceState & { platform: "ios" }, lease: true },
       },
       {
-        verb: "BB_DEVICE_HELLO",
+        verb: "ALIA_DEVICE_HELLO",
         hello: { protocol: 1, version: 10, platform: "ios", devices: [{ model: "iPhone 18 Pro", native: "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro", runtime: IOS_RUNTIME }], state: iosState as DeviceState & { platform: "ios" }, lease: false, bootedHere: ["iPhone 18 Pro"] },
       },
-      { verb: "BB_DEVICE_STATE", state: foldState as DeviceState },
-      { verb: "BB_DEVICE_STATE", state: { ...iosState, settings: { ...(iosState as DeviceState & { platform: "ios" }).settings, changesShowAtStart: true } } as DeviceState },
-      { verb: "BB_DEVICE_TOUCH", contacts: [{ id: 0, x: 5, y: 6 }], by: "agent", generation: 2 },
-      { verb: "BB_DEVICE_STILL", png: "iVBORw0KGgo=", generation: 2 },
-      { verb: "BB_DEVICE_ANSWER", answer: { id: "s1", ok: true, ms: 22, state: iosState as DeviceState, result: { type: "screenshot", png: "iVBORw0KGgo=", generation: 3 } } },
-      { verb: "BB_DEVICE_ANSWER", answer: { id: "c1", ok: true, ms: 300, state: iosState as DeviceState, result: { type: "done" } } },
-      { verb: "BB_DEVICE_ANSWER", answer: { id: "p1", ok: true, ms: 41, state: iosState as DeviceState, result: { type: "clipboard", text: "Привет, 日本語\n" } } },
-      { verb: "BB_DEVICE_ANSWER", answer: { id: "p2", ok: true, ms: 12, state: iosState as DeviceState, result: { type: "clipboard", text: "" } } },
-      { verb: "BB_DEVICE_ANSWER", answer: { id: "c2", ok: false, error: { code: "outcome-unknown", words: "The connection ended while turning the device." }, state: phoneState as DeviceState } },
-      { verb: "BB_DEVICE_ANSWER", answer: { id: "c3", ok: false, error: { code: "in-progress", words: "Still turning." }, state: null } },
+      { verb: "ALIA_DEVICE_STATE", state: foldState as DeviceState },
+      { verb: "ALIA_DEVICE_STATE", state: { ...iosState, settings: { ...(iosState as DeviceState & { platform: "ios" }).settings, changesShowAtStart: true } } as DeviceState },
+      { verb: "ALIA_DEVICE_TOUCH", contacts: [{ id: 0, x: 5, y: 6 }], by: "agent", generation: 2 },
+      { verb: "ALIA_DEVICE_STILL", png: "iVBORw0KGgo=", generation: 2 },
+      { verb: "ALIA_DEVICE_ANSWER", answer: { id: "s1", ok: true, ms: 22, state: iosState as DeviceState, result: { type: "screenshot", png: "iVBORw0KGgo=", generation: 3 } } },
+      { verb: "ALIA_DEVICE_ANSWER", answer: { id: "c1", ok: true, ms: 300, state: iosState as DeviceState, result: { type: "done" } } },
+      { verb: "ALIA_DEVICE_ANSWER", answer: { id: "p1", ok: true, ms: 41, state: iosState as DeviceState, result: { type: "clipboard", text: "Привет, 日本語\n" } } },
+      { verb: "ALIA_DEVICE_ANSWER", answer: { id: "p2", ok: true, ms: 12, state: iosState as DeviceState, result: { type: "clipboard", text: "" } } },
+      { verb: "ALIA_DEVICE_ANSWER", answer: { id: "c2", ok: false, error: { code: "outcome-unknown", words: "The connection ended while turning the device." }, state: phoneState as DeviceState } },
+      { verb: "ALIA_DEVICE_ANSWER", answer: { id: "c3", ok: false, error: { code: "in-progress", words: "Still turning." }, state: null } },
     ];
     for (const message of messages) {
       const text = deviceServerMessageText(message);
@@ -424,23 +424,23 @@ describe("messages", () => {
   });
 
   test("are refused, in words, when malformed", () => {
-    refusal(parseDeviceRequest("BB_DEVICE"), /has no verb and JSON value/);
-    refusal(parseDeviceRequest("BB_DEVICE {nope"), /^BB_DEVICE is not followed by JSON\.$/);
-    refusal(parseDeviceRequest('BB_CURSOR {"id":"a","type":"tree"}'), /^BB_CURSOR is not BB_DEVICE\.$/);
-    refusal(parseDeviceRequest('BB_DEVICE {"id":"","type":"tree"}'), /^BB_DEVICE\.id must be 1 to 64 letters/);
-    refusal(parseDeviceRequest('BB_DEVICE {"id":"a","type":"touch","contacts":[{"id":0,"x":1,"y":1},{"id":0,"x":2,"y":2}],"generation":1}'), /names a contact twice/);
-    refusal(parseDeviceRequest('BB_DEVICE {"id":"a","type":"owner","generation":1,"holder":"viewer"}'), /holder must be "agent" or "person"/);
-    refusal(parseDeviceServerMessage('BB_DEVICE_NOPE {}'), /^BB_DEVICE_NOPE is not one of the device server's messages/);
-    refusal(parseDeviceServerMessage('BB_DEVICE_STILL {"png":"not base64!","generation":1}'), /png must be base64/);
+    refusal(parseDeviceRequest("ALIA_DEVICE"), /has no verb and JSON value/);
+    refusal(parseDeviceRequest("ALIA_DEVICE {nope"), /^ALIA_DEVICE is not followed by JSON\.$/);
+    refusal(parseDeviceRequest('ALIA_CURSOR {"id":"a","type":"tree"}'), /^ALIA_CURSOR is not ALIA_DEVICE\.$/);
+    refusal(parseDeviceRequest('ALIA_DEVICE {"id":"","type":"tree"}'), /^ALIA_DEVICE\.id must be 1 to 64 letters/);
+    refusal(parseDeviceRequest('ALIA_DEVICE {"id":"a","type":"touch","contacts":[{"id":0,"x":1,"y":1},{"id":0,"x":2,"y":2}],"generation":1}'), /names a contact twice/);
+    refusal(parseDeviceRequest('ALIA_DEVICE {"id":"a","type":"owner","generation":1,"holder":"viewer"}'), /holder must be "agent" or "person"/);
+    refusal(parseDeviceServerMessage('ALIA_DEVICE_NOPE {}'), /^ALIA_DEVICE_NOPE is not one of the device server's messages/);
+    refusal(parseDeviceServerMessage('ALIA_DEVICE_STILL {"png":"not base64!","generation":1}'), /png must be base64/);
     const hello = { protocol: 1, version: 1, platform: "android", devices: [{ model: "Pixel 8", native: "pixel_8", runtime: ANDROID_RUNTIME }], state: foldState, lease: false };
-    refusal(parseDeviceServerMessage(`BB_DEVICE_HELLO ${JSON.stringify(hello)}`), /state\.model is the Pixel Fold, which the box's devices do not include/);
-    refusal(parseDeviceServerMessage(`BB_DEVICE_HELLO ${JSON.stringify({ ...hello, platform: "ios" })}`), /are Android devices, from an iOS server/);
-    refusal(parseDeviceServerMessage(`BB_DEVICE_ANSWER ${JSON.stringify({ id: "a", ok: false, result: { type: "done" }, state: null })}`), /has "result", which it does not take/);
-    refusal(parseDeviceServerMessage(`BB_DEVICE_HELLO ${JSON.stringify({ ...hello, state: phoneState, bootedHere: ["iPhone 17"] })}`), /bootedHere\[0\]/);
-    refusal(parseDeviceRequest('BB_DEVICE {"id":"a","type":"open","url":"example.com"}'), /url is not a link to open: A link starts with its scheme/);
-    refusal(parseDeviceRequest('BB_DEVICE {"id":"a","type":"open","url":"https://example.com/two words"}'), /A link has no spaces/);
+    refusal(parseDeviceServerMessage(`ALIA_DEVICE_HELLO ${JSON.stringify(hello)}`), /state\.model is the Pixel Fold, which the box's devices do not include/);
+    refusal(parseDeviceServerMessage(`ALIA_DEVICE_HELLO ${JSON.stringify({ ...hello, platform: "ios" })}`), /are Android devices, from an iOS server/);
+    refusal(parseDeviceServerMessage(`ALIA_DEVICE_ANSWER ${JSON.stringify({ id: "a", ok: false, result: { type: "done" }, state: null })}`), /has "result", which it does not take/);
+    refusal(parseDeviceServerMessage(`ALIA_DEVICE_HELLO ${JSON.stringify({ ...hello, state: phoneState, bootedHere: ["iPhone 17"] })}`), /bootedHere\[0\]/);
+    refusal(parseDeviceRequest('ALIA_DEVICE {"id":"a","type":"open","url":"example.com"}'), /url is not a link to open: A link starts with its scheme/);
+    refusal(parseDeviceRequest('ALIA_DEVICE {"id":"a","type":"open","url":"https://example.com/two words"}'), /A link has no spaces/);
     const long = { id: "p3", ok: true, ms: 1, state: iosState, result: { type: "clipboard", text: "x".repeat(DEVICE_CLIPBOARD_MOST + 1) } };
-    refusal(parseDeviceServerMessage(`BB_DEVICE_ANSWER ${JSON.stringify(long)}`), new RegExp(`result\\.text is longer than ${DEVICE_CLIPBOARD_MOST} characters`));
+    refusal(parseDeviceServerMessage(`ALIA_DEVICE_ANSWER ${JSON.stringify(long)}`), new RegExp(`result\\.text is longer than ${DEVICE_CLIPBOARD_MOST} characters`));
   });
 });
 
@@ -530,8 +530,8 @@ describe("box_device's parameters, refusals and words (063, 6.3)", () => {
       power: { is: "booted", awake: true },
       geometry: { generation: 2, physical: "turned-left", content: "turned-left", video: { width: 2622, height: 1206 } },
       settings: {
-        appearance: { known: true, value: "dark", at: 1, by: "bb-box" },
-        textSize: { known: true, value: "large", at: 1, by: "bb-box" },
+        appearance: { known: true, value: "dark", at: 1, by: "alia-box" },
+        textSize: { known: true, value: "large", at: 1, by: "alia-box" },
         location: { set: null, at: null },
         statusBar: { set: null, at: 1 },
       },
@@ -545,8 +545,8 @@ describe("box_device's parameters, refusals and words (063, 6.3)", () => {
     assert.equal(deviceStateWords(clean), "booted, turned left, 2622x1206, dark, text size large, status bar clean, battery shown at 100%, location 51.5, -0.12");
     assert.equal(deviceStateWords({ ...state, power: { is: "booted", awake: false } }).startsWith("booted, asleep"), true);
     const outside = { ...state, settings: { ...state.settings, appearance: { known: true, value: "light", at: 3, by: "outside" } } } as DeviceState;
-    assert.equal(deviceStateWords(outside), "booted, turned left, 2622x1206, light, changed outside bb-box, text size large");
-    assert.equal(lostWords("rotate", state), "The connection to the box ended while turning the device, so BB Box cannot tell whether it turned. It is now booted, turned left, 2622x1206, dark, text size large. Read box_status before trying again.");
+    assert.equal(deviceStateWords(outside), "booted, turned left, 2622x1206, light, changed outside alia-box, text size large");
+    assert.equal(lostWords("rotate", state), "The connection to the box ended while turning the device, so VesnALIA Box cannot tell whether it turned. It is now booted, turned left, 2622x1206, dark, text size large. Read box_status before trying again.");
     assert.equal(controlDeadlineMs({ action: "install", paths: ["a.app"] }), 300_000);
     assert.equal(controlDeadlineMs({ action: "home" }), 10_000);
     const shared = { ...state, settings: { ...state.settings, changesShowAtStart: true } } as DeviceState;
@@ -559,7 +559,7 @@ describe("box_device's parameters, refusals and words (063, 6.3)", () => {
 
   test("answers on Android in Android's words: a clean status bar with the battery set, the emulator's own location and battery, and the network presets", () => {
     const pixel = deviceModel("Pixel 8") as DeviceModel;
-    const known = <T,>(value: T, by: "bb-box" | "outside" = "bb-box") => ({ known: true as const, value, at: 1, by });
+    const known = <T,>(value: T, by: "alia-box" | "outside" = "alia-box") => ({ known: true as const, value, at: 1, by });
     const state: DeviceState = {
       platform: "android",
       form: "phone",
@@ -584,7 +584,7 @@ describe("box_device's parameters, refusals and words (063, 6.3)", () => {
     assert.match(done({ action: "network", to: "slow" }), /Its Wi-Fi carries 473\.6 kbit\/s each way, 100 ms later on the way out\./);
     assert.match(done({ action: "install", paths: ["app.apk"] }), /written to the device's disk/);
     const set = { ...state, settings: { ...state.settings, statusBar: { set: "clean" as const, at: 2 }, battery: known({ level: 42, charging: false }), location: known({ latitude: 51.5072, longitude: -0.1276 }, "outside"), network: known("slow" as const, "outside") } } as DeviceState;
-    assert.equal(deviceStateWords(set), "booted, upright, 1080x2400, light, font scale 1.3, network slow, changed outside bb-box, status bar clean, battery 42%, location 51.5072, -0.1276, changed outside bb-box");
+    assert.equal(deviceStateWords(set), "booted, upright, 1080x2400, light, font scale 1.3, network slow, changed outside alia-box, status bar clean, battery 42%, location 51.5072, -0.1276, changed outside alia-box");
     assert.ok(supports(pixel, { action: "status_bar", to: "clean" }).supported);
     const unshaped = { ...state, settings: { ...state.settings, network: { known: false as const, why: notANetworkPreset("airplane mode disabled, Wi-Fi off, not slowed, no default network") } } } as DeviceState;
     assert.equal(deviceStateWords(unshaped), "booted, upright, 1080x2400, light, font scale 1.3, network none of the presets (airplane mode disabled, Wi-Fi off, not slowed, no default network)");
@@ -595,9 +595,9 @@ describe("box_device's parameters, refusals and words (063, 6.3)", () => {
 
 describe("large messages", () => {
   test("a still or screenshot of many megabytes is read, and base64 of the wrong length is refused", () => {
-    const big = parseDeviceServerMessage(`BB_DEVICE_STILL ${JSON.stringify({ png: "QUJD".repeat(3_000_000), generation: 1 })}`);
+    const big = parseDeviceServerMessage(`ALIA_DEVICE_STILL ${JSON.stringify({ png: "QUJD".repeat(3_000_000), generation: 1 })}`);
     assert.ok(big.ok, big.ok ? "" : big.words);
-    const short = parseDeviceServerMessage(`BB_DEVICE_STILL ${JSON.stringify({ png: "QUJ", generation: 1 })}`);
+    const short = parseDeviceServerMessage(`ALIA_DEVICE_STILL ${JSON.stringify({ png: "QUJ", generation: 1 })}`);
     assert.ok(!short.ok);
   });
 });
@@ -644,7 +644,7 @@ describe("the toolbar's controls (063, 6.4)", () => {
   });
 
   test("says what changed for a screen reader, and nothing for the first state", () => {
-    const turned = { ...iosState, geometry: { ...GEOMETRY, physical: "upright" }, settings: { ...IOS_SETTINGS, appearance: { known: true, value: "dark", at: 2, by: "bb-box" } } } as DeviceState;
+    const turned = { ...iosState, geometry: { ...GEOMETRY, physical: "upright" }, settings: { ...IOS_SETTINGS, appearance: { known: true, value: "dark", at: 2, by: "alia-box" } } } as DeviceState;
     assert.equal(changeWords(null, iosState as DeviceState), null);
     assert.equal(changeWords(iosState as DeviceState, turned), "Upright. Dark appearance.");
     assert.equal(changeWords(iosState as DeviceState, { ...iosState, power: { is: "booted", awake: false } } as DeviceState), "Asleep.");

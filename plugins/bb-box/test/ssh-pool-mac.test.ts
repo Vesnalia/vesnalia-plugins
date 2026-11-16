@@ -19,7 +19,7 @@ const KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBoxKeyForTests box";
 const CLAIM = (box = "box_a", install = "inst_a") =>
   `install=${install}\nbox=${box}\nthread=thr_a\nname=mac-box\nkind=macos-desktop\ncreated=1790000000000\nkey=${KEY}\n`;
 const RELEASE = (box = "box_a", install = "inst_a") => `install=${install}\nbox=${box}\n`;
-const NOT_READY = "Box user bbx-0 is not ready. Reset the Mac: sudo /usr/local/libexec/bb-box/machine reset\n";
+const NOT_READY = "Box user bbx-0 is not ready. Reset the Mac: sudo /usr/local/libexec/alia-box/machine reset\n";
 /** The privacy database: the helper has Full Disk Access when it can read it. */
 const TCC = "Library/Application Support/com.apple.TCC/TCC.db";
 
@@ -55,10 +55,10 @@ test("init makes the first box user, hidden and in _developer, from the home tem
   const mac = readyMac();
   assert.deepEqual(mac.users(), ["bbx-0", "person"]);
   const user = mac.user("bbx-0")!;
-  assert.deepEqual([user.UniqueID, user.RealName, user.IsHidden, user.NFSHomeDirectory], ["70000", "bb-box bbx-0", "1", "/Users/bbx-0"]);
+  assert.deepEqual([user.UniqueID, user.RealName, user.IsHidden, user.NFSHomeDirectory], ["70000", "alia-box bbx-0", "1", "/Users/bbx-0"]);
   assert.deepEqual(mac.members("_developer"), ["bbx-0"]);
   assert.match(mac.file("/Users/bbx-0/.zshenv")!, /path_helper/);
-  // BB Box's pinned CLIs in /usr/local/bin come before Homebrew's, prepended last.
+  // VesnALIA Box's pinned CLIs in /usr/local/bin come before Homebrew's, prepended last.
   const zshenv = mac.file("/Users/bbx-0/.zshenv")!;
   assert.ok(zshenv.indexOf('PATH="/usr/local/bin:$PATH"') > zshenv.lastIndexOf("/opt/homebrew"), "after Homebrew's and Node's");
   assert.match(mac.file("/Users/bbx-0/Library/LaunchAgents/com.trycua.cua-driver.plist")!, /<string>serve<\/string>/);
@@ -72,7 +72,7 @@ test("init makes the first box user, hidden and in _developer, from the home tem
   const approvals = "/Users/bbx-0/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist";
   const approval = mac.file(approvals)!;
   const year = new Date().getUTCFullYear();
-  for (const client of ["com.trycua.driver", "/usr/libexec/sshd-keygen-wrapper", "file:///usr/local/libexec/bb-box/Launcher.app/"]) {
+  for (const client of ["com.trycua.driver", "/usr/libexec/sshd-keygen-wrapper", "file:///usr/local/libexec/alia-box/Launcher.app/"]) {
     assert.ok(approval.includes(`<key>${client}</key><dict>`), client);
   }
   assert.equal(approval.match(/<key>kScreenCapturePrivacyHintDate<\/key>/g)?.length, 3);
@@ -81,11 +81,11 @@ test("init makes the first box user, hidden and in _developer, from the home tem
   assert.equal(statSync(join(mac.root, approvals)).mode & 0o777, 0o600);
   assert.equal(statSync(join(mac.root, "/Users/bbx-0/Library/Group Containers/group.com.apple.replayd")).mode & 0o777, 0o700);
 
-  const password = mac.file("/var/db/bb-box/passwords/bbx-0")!;
+  const password = mac.file("/var/db/alia-box/passwords/bbx-0")!;
   assert.match(password, /^[A-Za-z0-9]{24}\n$/);
   assert.equal(password, readFileSync(join(mac.state, "secrets", "bbx-0"), "utf8"), "the password the user was made with");
-  assert.equal(statSync(join(mac.root, "var/db/bb-box/passwords/bbx-0")).mode & 0o777, 0o600);
-  assert.equal(statSync(join(mac.root, "var/db/bb-box/passwords")).mode & 0o777, 0o700);
+  assert.equal(statSync(join(mac.root, "var/db/alia-box/passwords/bbx-0")).mode & 0o777, 0o600);
+  assert.equal(statSync(join(mac.root, "var/db/alia-box/passwords")).mode & 0o777, 0o700);
   assert.ok(!mac.calls().some((line) => line.includes(password.trim())), "the password is in no command's arguments");
   assert.equal(readFileSync(join(mac.state, "defaults", "_Library_Preferences_com.apple.loginwindow", "autoLoginUser"), "utf8"), "bbx-0\n");
   assert.equal(statSync(join(mac.root, "etc/kcpassword")).mode & 0o777, 0o600);
@@ -143,7 +143,7 @@ test("status gives the pool the Linux helper's keys, and the Mac's user, console
   const xcodeOf = (args: readonly string[]) => parseStatus(mac.helper(["status", ...args]).stdout).mac?.xcode;
   assert.deepEqual(xcodeOf(["xcode"]), { version: null, runtimes: [] });
   assert.equal(count(mac, "xcrun"), 0, "with only the Command Line Tools, xcrun is not run, as it may offer to install them");
-  assert.equal(mac.file("/var/db/bb-box/xcode"), "xcode=\nruntimes=\n");
+  assert.equal(mac.file("/var/db/alia-box/xcode"), "xcode=\nruntimes=\n");
   mkdirSync(join(mac.root, "Applications/Xcode.app"), { recursive: true });
   mkdirSync(join(mac.state, "defaults/_Applications_Xcode.app_Contents_Info"));
   const version = join(mac.state, "defaults/_Applications_Xcode.app_Contents_Info/CFBundleShortVersionString");
@@ -152,7 +152,7 @@ test("status gives the pool the Linux helper's keys, and the Mac's user, console
   const xcode = mac.helper(["status", "xcode"]);
   assert.deepEqual(["xcode", "runtimes", "accessibility"].map((key) => fields(xcode.stdout).get(key)), ["26.0", "iOS 26.0,watchOS 26.0", undefined]);
   assert.deepEqual(parseStatus(xcode.stdout).mac?.xcode, { version: "26.0", runtimes: ["iOS 26.0", "watchOS 26.0"] });
-  assert.equal(mac.file("/var/db/bb-box/xcode"), "xcode=26.0\nruntimes=iOS 26.0,watchOS 26.0\n");
+  assert.equal(mac.file("/var/db/alia-box/xcode"), "xcode=26.0\nruntimes=iOS 26.0,watchOS 26.0\n");
   for (const args of [[], ["grants"]]) assert.deepEqual(xcodeOf(args), { version: "26.0", runtimes: ["iOS 26.0", "watchOS 26.0"] });
   assert.equal(count(mac, "xcrun simctl list runtimes available"), 1, "plain status stays fast, as the pool reads it twice for each box it lends");
   mac.flag("simctl-fails");
@@ -183,7 +183,7 @@ test("status gives the pool the Linux helper's keys, and the Mac's user, console
 test("a claim lends the ready user with the box's key and 030's desktop sudo rule, and says why it cannot", () => {
   const mac = lentMac();
   assert.equal(
-    mac.file("/var/db/bb-box/owner"),
+    mac.file("/var/db/alia-box/owner"),
     "install=inst_a\nbox=box_a\nthread=thr_a\nname=mac-box\nkind=macos-desktop\ncreated=1790000000000\ngeneration=0\nuser=bbx-0\nuid=70000\n",
   );
   assert.equal(mac.file("/Users/bbx-0/.ssh/authorized_keys"), `${KEY}\n`);
@@ -201,11 +201,11 @@ test("a claim lends the ready user with the box's key and 030's desktop sudo rul
   assert.deepEqual(free.helper(["claim", "3"], CLAIM()), { status: EXIT.moved, stdout: "", stderr: "The Mac is at reset generation 0, not 3.\n" });
   assert.deepEqual(free.helper(["claim", "0", "docker"], CLAIM()), { status: 2, stdout: "", stderr: "Boxes on a Mac have no Docker.\n" });
   assert.equal(free.helper(["claim", "0"], "install=inst_a\nbox=box_a\n").status, 2, "no key");
-  assert.equal(free.file("/var/db/bb-box/owner"), null);
+  assert.equal(free.file("/var/db/alia-box/owner"), null);
 
   const unmade = fakeMacos();
-  mkdirSync(join(unmade.root, "var/db/bb-box"), { recursive: true });
-  writeFileSync(join(unmade.root, "var/db/bb-box/generation"), "0\n");
+  mkdirSync(join(unmade.root, "var/db/alia-box"), { recursive: true });
+  writeFileSync(join(unmade.root, "var/db/alia-box/generation"), "0\n");
   assert.deepEqual(unmade.helper(["claim", "0"], CLAIM()), { status: EXIT.dirty, stdout: "", stderr: NOT_READY });
 
   const left = readyMac();
@@ -215,18 +215,18 @@ test("a claim lends the ready user with the box's key and 030's desktop sudo rul
 
   const refused = readyMac();
   refused.flag("visudo-refuses");
-  assert.deepEqual([refused.helper(["claim", "0"], CLAIM()).status, refused.file("/var/db/bb-box/owner")], [1, null]);
+  assert.deepEqual([refused.helper(["claim", "0"], CLAIM()).status, refused.file("/var/db/alia-box/owner")], [1, null]);
   assert.equal(refused.file("/Users/bbx-0/.ssh/authorized_keys"), null, "a claim that fails takes the key away");
 });
 
 test("a claim does not wait for the Mac's lock", async () => {
   const mac = readyMac();
-  const lock = join(mac.root, "var/db/bb-box/lock");
+  const lock = join(mac.root, "var/db/alia-box/lock");
   // Linux's flock locks as perl's flock does on a Mac.
   const holder = spawn("flock", [lock, "sleep", "30"], { stdio: "ignore", detached: true });
   try {
     for (let i = 0; i < 50 && spawnSync("flock", ["-n", lock, "true"]).status === 0; i++) await pause(50);
-    assert.deepEqual(mac.helper(["claim", "0"], CLAIM()), { status: EXIT.held, stdout: "", stderr: "Another bb-box command holds the Mac's lock.\n" });
+    assert.deepEqual(mac.helper(["claim", "0"], CLAIM()), { status: EXIT.held, stdout: "", stderr: "Another alia-box command holds the Mac's lock.\n" });
   } finally {
     process.kill(-holder.pid!);
   }
@@ -289,11 +289,11 @@ test("a release removes the box's user with everything it left, and signs in the
 
   assert.deepEqual(mac.users(), ["bbx-1", "person"]);
   assert.equal(mac.user("bbx-1")?.UniqueID, "70001");
-  for (const path of ["/Users/bbx-0", "/private/tmp/box-file", "/Users/Shared/box-folder", "/private/var/folders/zz/box", "/private/var/at/jobs/a0000501c77838", "/Library/Managed Preferences/bbx-0", "/private/var/at/tabs/bbx-0", "/etc/sudoers.d/bbx-0", "/var/db/bb-box/passwords/bbx-0"]) {
+  for (const path of ["/Users/bbx-0", "/private/tmp/box-file", "/Users/Shared/box-folder", "/private/var/folders/zz/box", "/private/var/at/jobs/a0000501c77838", "/Library/Managed Preferences/bbx-0", "/private/var/at/tabs/bbx-0", "/etc/sudoers.d/bbx-0", "/var/db/alia-box/passwords/bbx-0"]) {
     assert.equal(existsSync(join(mac.root, path)), false, path);
   }
   assert.equal(mac.file("/private/tmp/root-file"), "left\n");
-  assert.match(mac.file("/var/db/bb-box/passwords/bbx-1")!, /^[A-Za-z0-9]{24}\n$/);
+  assert.match(mac.file("/var/db/alia-box/passwords/bbx-1")!, /^[A-Za-z0-9]{24}\n$/);
   assert.equal(mac.file("/private/var/at/jobs/a0000601c77839"), "left\n");
   assert.deepEqual(mac.lines("ipc"), ["q 1 person"]);
   assert.deepEqual(mac.lines("processes"), ["403 501 Terminal 1"]);
@@ -310,8 +310,8 @@ test("a release removes the box's user with everything it left, and signs in the
   );
   assert.equal(readFileSync(join(mac.state, "defaults", "_Library_Preferences_com.apple.loginwindow", "autoLoginUser"), "utf8"), "bbx-1\n");
   assert.equal(mac.console(), "bbx-1");
-  assert.deepEqual([mac.file("/var/db/bb-box/generation"), mac.file("/var/db/bb-box/resetting"), mac.file("/var/db/bb-box/owner")], ["1\n", null, null]);
-  assert.equal(mac.file("/var/db/bb-box/signs-in-by"), "loginwindow\n");
+  assert.deepEqual([mac.file("/var/db/alia-box/generation"), mac.file("/var/db/alia-box/resetting"), mac.file("/var/db/alia-box/owner")], ["1\n", null, null]);
+  assert.equal(mac.file("/var/db/alia-box/signs-in-by"), "loginwindow\n");
   const status = fields(mac.helper(["status"]).stdout);
   assert.deepEqual([status.get("dirty"), status.get("user"), status.get("console")], ["", "bbx-1", "bbx-1"]);
 
@@ -346,7 +346,7 @@ test("a release that cannot remove a file the old user owned fails, naming Full 
   try {
     const failed = mac.helper(["release", "0"], RELEASE());
     assert.deepEqual([failed.status, failed.stderr], [1, "Could not remove /private/var/locked/file, which bbx-0 owned.\n"]);
-    assert.equal(mac.file("/var/db/bb-box/resetting")?.includes("generation=0"), true);
+    assert.equal(mac.file("/var/db/alia-box/resetting")?.includes("generation=0"), true);
     assert.equal(mac.user("bbx-0")?.UniqueID, "70000", "the user stays until its files are gone");
 
     rmSync(join(mac.root, TCC));
@@ -393,7 +393,7 @@ test("a release leaves what macOS 27 keeps of the old user's /private/var/folder
     assert.equal(status.get("leftovers"), "1");
     assert.match(status.get("leftovers_kib") ?? "", /^\d+$/);
     assert.equal(fields(mac.helper(["status"]).stdout).get("leftovers"), undefined, "not in an ordinary status");
-    // BB Box reads them, and the doctor's state check says so.
+    // VesnALIA Box reads them, and the doctor's state check says so.
     const parsed = parseStatus(mac.helper(["status", "xcode"]).stdout).mac?.leftovers;
     assert.equal(parsed?.count, 1);
     assert.equal(parseStatus(mac.helper(["status"]).stdout).mac?.leftovers, null);
@@ -476,7 +476,7 @@ test("while the next user is not signed in, the reset is still running; it resta
   mac.clock(1000);
   assert.deepEqual(mac.helper(["release", "0"], RELEASE()), { status: EXIT.restoring, stdout: "signin=loginwindow\n", stderr: "" });
   assert.deepEqual(mac.users(), ["bbx-1", "person"], "the old user is gone while the next signs in");
-  assert.equal(mac.file("/var/db/bb-box/generation"), "0\n");
+  assert.equal(mac.file("/var/db/alia-box/generation"), "0\n");
   const sweeps = count(mac, "find ");
 
   mac.clock(1059);
@@ -491,7 +491,7 @@ test("while the next user is not signed in, the reset is still running; it resta
   mac.flag("directory-down");
   mac.clock(1062);
   assert.deepEqual(mac.helper(["release", "0"], RELEASE()), { status: EXIT.restoring, stdout: "signin=userspace\n", stderr: "" });
-  assert.match(mac.file("/var/db/bb-box/passwords/bbx-1")!, /^[A-Za-z0-9]{24}\n$/);
+  assert.match(mac.file("/var/db/alia-box/passwords/bbx-1")!, /^[A-Za-z0-9]{24}\n$/);
   assert.match(mac.file("/Users/bbx-1/.zshenv")!, /path_helper/);
   mac.flag("directory-down", false);
   mac.clock(1240);
@@ -518,7 +518,7 @@ test("the reset remembers the way that signed the user in, and starts with it", 
   await waitForCall(mac, "launchctl reboot userspace");
   mac.setConsole("bbx-1");
   assert.deepEqual(mac.helper(["release", "0"], RELEASE()), { status: 0, stdout: "generation=1\nreleased=yes\n", stderr: "" });
-  assert.equal(mac.file("/var/db/bb-box/signs-in-by"), "userspace\n");
+  assert.equal(mac.file("/var/db/alia-box/signs-in-by"), "userspace\n");
 
   assert.equal(mac.helper(["claim", "1"], CLAIM()).status, 0);
   const kicks = count(mac, "launchctl kickstart");
@@ -540,11 +540,11 @@ test("on macOS 27 and later, the first reset restarts userspace, as restarting l
   await waitForCall(mac, "launchctl reboot userspace");
   mac.setConsole("bbx-1");
   assert.deepEqual(mac.helper(["release", "0"], RELEASE()), { status: 0, stdout: "generation=1\nreleased=yes\n", stderr: "" });
-  assert.equal(mac.file("/var/db/bb-box/signs-in-by"), "userspace\n");
+  assert.equal(mac.file("/var/db/alia-box/signs-in-by"), "userspace\n");
 
   // A Mac updated to macOS 27 starts with the way it remembers.
   const updated = lentMac();
-  writeFileSync(join(updated.root, "var/db/bb-box/signs-in-by"), "loginwindow\n");
+  writeFileSync(join(updated.root, "var/db/alia-box/signs-in-by"), "loginwindow\n");
   updated.flag("macos", true, "27.0\n");
   updated.flag("loginwindow-waits");
   assert.equal(updated.helper(["release", "0"], RELEASE()).stdout, "signin=loginwindow\n");
@@ -559,7 +559,7 @@ test("an operator's reset moves a free Mac on to the next user, and leaves alone
   assert.deepEqual(mac.helper(["reset"]), {
     status: EXIT.notOurs,
     stdout: "",
-    stderr: "Box mac-box of bb-box install inst_a holds the Mac. Release the box first.\n",
+    stderr: "Box mac-box of alia-box install inst_a holds the Mac. Release the box first.\n",
   });
   assert.equal(mac.helper(["reset"], "install=inst_b\n").status, EXIT.notOurs);
   assert.deepEqual(mac.helper(["reset", "machine"]), { status: 2, stdout: "", stderr: "A Mac has no whole-machine reset. usage: machine reset\n" });
@@ -574,11 +574,11 @@ test("a person signed in at the console stops the reset, which leaves their sess
   const failed = mac.helper(["release", "0"], RELEASE());
   assert.deepEqual([failed.status, failed.stderr], [
     1,
-    "person is signed in at the Mac's console, so the Mac cannot sign the next box's user in. Sign person out, then reset the Mac: sudo /usr/local/libexec/bb-box/machine reset\n",
+    "person is signed in at the Mac's console, so the Mac cannot sign the next box's user in. Sign person out, then reset the Mac: sudo /usr/local/libexec/alia-box/machine reset\n",
   ]);
   assert.equal(mac.console(), "person");
   assert.equal(count(mac, "launchctl kickstart"), kicks);
-  assert.match(mac.file("/var/db/bb-box/resetting")!, /^install=inst_a\n/);
+  assert.match(mac.file("/var/db/alia-box/resetting")!, /^install=inst_a\n/);
 
   mac.setConsole("root");
   assert.deepEqual(mac.helper(["reset"]), { status: 0, stdout: "generation=1\nreleased=yes\n", stderr: "" });
@@ -588,7 +588,7 @@ test("a user sysadminctl did not make, a directory that does not answer, a UID a
   const silent = fakeMacos();
   silent.flag("sysadminctl-fails");
   assert.deepEqual(silent.helper(["init"]), { status: 1, stdout: "", stderr: "sysadminctl did not make bbx-0.\nCould not make box user bbx-0.\n" });
-  assert.deepEqual([silent.file("/Users/bbx-0/.zshenv"), silent.file("/var/db/bb-box/passwords/bbx-0")], [null, null]);
+  assert.deepEqual([silent.file("/Users/bbx-0/.zshenv"), silent.file("/var/db/alia-box/passwords/bbx-0")], [null, null]);
   silent.flag("sysadminctl-fails", false);
   assert.equal(silent.helper(["init"]).status, 0);
   assert.equal(silent.user("bbx-0")?.UniqueID, "70000");
@@ -598,16 +598,16 @@ test("a user sysadminctl did not make, a directory that does not answer, a UID a
   assert.equal(down.helper(["init"]).stderr, "The Mac's directory service did not answer.\nCould not make box user bbx-0.\n");
 
   const named = fakeMacos();
-  writeFileSync(join(named.state, "users", "person", "RealName"), "bb-box bbx-0\n");
+  writeFileSync(join(named.state, "users", "person", "RealName"), "alia-box bbx-0\n");
   assert.equal(
     named.helper(["init"]).stderr,
-    "sysadminctl did not make bbx-0: User with full name 'bb-box bbx-0' already exists.\nCould not make box user bbx-0.\n",
+    "sysadminctl did not make bbx-0: User with full name 'alia-box bbx-0' already exists.\nCould not make box user bbx-0.\n",
   );
 
   const taken = fakeMacos();
   mkdirSync(join(taken.state, "users", "someone"));
   writeFileSync(join(taken.state, "users", "someone", "UniqueID"), "70000\n");
-  assert.equal(taken.helper(["init"]).stderr, "UID 70000 belongs to someone. bb-box's box users take UIDs 70000 to 79999.\nCould not make box user bbx-0.\n");
+  assert.equal(taken.helper(["init"]).stderr, "UID 70000 belongs to someone. alia-box's box users take UIDs 70000 to 79999.\nCould not make box user bbx-0.\n");
 
   const locked = fakeMacos();
   locked.flag("filevault-on");
@@ -648,9 +648,9 @@ function setupMac(): FakeMacos {
 
 test("setup-mac.sh makes the admin user, installs the helper, template, Homebrew and Cua Driver, and signs in the first box user", () => {
   const mac = setupMac();
-  const result = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests bb-box"]);
+  const result = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests alia-box"]);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /^Installing Homebrew as person\.\nThis Mac is ready for bb-box's SSH host pool, at reset generation 0, once a person has done the steps below\.\n/);
+  assert.match(result.stdout, /^Installing Homebrew as person\.\nThis Mac is ready for alia-box's SSH host pool, at reset generation 0, once a person has done the steps below\.\n/);
   assert.ok(result.stdout.includes("\n  mac-mini bbbox-admin@192.0.2.30 macos,macos-desktop\n"), result.stdout);
   assert.ok(result.stdout.includes("\n  192.0.2.30 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMacHostKeyForTests\n"));
   assert.ok(result.stdout.includes("\n1. Turn on Screen Sharing in System Settings, General, Sharing, if it is off."));
@@ -661,34 +661,34 @@ test("setup-mac.sh makes the admin user, installs the helper, template, Homebrew
   assert.ok(!result.stdout.includes("Check these"), result.stdout);
 
   const admin = mac.user("bbbox-admin")!;
-  assert.deepEqual([admin.RealName, admin.IsHidden, admin.NFSHomeDirectory], ["bb-box admin", "1", "/private/var/bbbox-admin"]);
+  assert.deepEqual([admin.RealName, admin.IsHidden, admin.NFSHomeDirectory], ["alia-box admin", "1", "/private/var/bbbox-admin"]);
   assert.equal(statSync(join(mac.root, "private/var/bbbox-admin")).mode & 0o777, 0o700, "closed to box users, in staff (047)");
-  // bb-box-own, which runs a granted program as its own responsible process (058).
-  assert.ok(statSync(join(mac.root, "usr/local/bin/bb-box-own")).mode & 0o111, "bb-box-own is built");
-  assert.ok(statSync(join(mac.root, "usr/local/bin/bb-box-stream")).mode & 0o111, "bb-box-stream is built (060)");
-  // bb-box-display, which gives each box user's desktop the 2x mode of its size.
-  assert.ok(statSync(join(mac.root, "usr/local/bin/bb-box-display")).mode & 0o111, "bb-box-display is built");
+  // alia-box-own, which runs a granted program as its own responsible process (058).
+  assert.ok(statSync(join(mac.root, "usr/local/bin/alia-box-own")).mode & 0o111, "alia-box-own is built");
+  assert.ok(statSync(join(mac.root, "usr/local/bin/alia-box-stream")).mode & 0o111, "alia-box-stream is built (060)");
+  // alia-box-display, which gives each box user's desktop the 2x mode of its size.
+  assert.ok(statSync(join(mac.root, "usr/local/bin/alia-box-display")).mode & 0o111, "alia-box-display is built");
   // The agent CLIs, pinned, linked from /usr/local/bin (#561).
   for (const [command, target] of [
-    ["claude", "/usr/local/lib/bb-box/claude-code-2.1.283/claude"],
-    ["codex", "/usr/local/lib/bb-box/codex-0.157.1/codex-aarch64-apple-darwin"],
-    ["pi", "/usr/local/lib/bb-box/pi-0.87.1/pi"],
+    ["claude", "/usr/local/lib/alia-box/claude-code-2.1.283/claude"],
+    ["codex", "/usr/local/lib/alia-box/codex-0.157.1/codex-aarch64-apple-darwin"],
+    ["pi", "/usr/local/lib/alia-box/pi-0.87.1/pi"],
   ]) {
     assert.equal(readlinkSync(join(mac.root, "usr/local/bin", command)), target, command);
     assert.ok(statSync(join(mac.root, target)).mode & 0o111, `${command} is executable`);
   }
-  assert.equal(mac.file("/private/var/bbbox-admin/.ssh/authorized_keys"), "restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests bb-box\n");
-  assert.equal(mac.file("/etc/sudoers.d/bb-box"), "Defaults:bbbox-admin !requiretty\nbbbox-admin ALL=(root) NOPASSWD: /usr/local/libexec/bb-box/machine\n");
-  assert.equal(statSync(join(mac.root, "usr/local/libexec/bb-box/machine")).mode & 0o777, 0o755);
-  assert.match(mac.file("/usr/local/share/bb-box/home/.zshenv")!, /path_helper/);
-  assert.equal(mac.file("/usr/local/share/bb-box/cua-driver"), "0.30.4\n");
+  assert.equal(mac.file("/private/var/bbbox-admin/.ssh/authorized_keys"), "restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests alia-box\n");
+  assert.equal(mac.file("/etc/sudoers.d/alia-box"), "Defaults:bbbox-admin !requiretty\nbbbox-admin ALL=(root) NOPASSWD: /usr/local/libexec/alia-box/machine\n");
+  assert.equal(statSync(join(mac.root, "usr/local/libexec/alia-box/machine")).mode & 0o777, 0o755);
+  assert.match(mac.file("/usr/local/share/alia-box/home/.zshenv")!, /path_helper/);
+  assert.equal(mac.file("/usr/local/share/alia-box/cua-driver"), "0.30.4\n");
   // BlackHole 2ch, the box's audio input, pinned as Tart's image pins it (#631).
-  assert.equal(mac.file("/usr/local/share/bb-box/blackhole"), "0.7.1\n");
+  assert.equal(mac.file("/usr/local/share/alia-box/blackhole"), "0.7.1\n");
   assert.equal(count(mac, "installer -pkg "), 1);
   assert.equal(count(mac, "killall coreaudiod"), 1);
   assert.equal(mac.file("/Applications/CuaDriver.app/Contents/MacOS/cua-driver"), "#!/bin/sh\n");
   assert.equal(readlinkSync(join(mac.root, "usr/local/bin/cua-driver")), "/Applications/CuaDriver.app/Contents/MacOS/cua-driver");
-  assert.match(mac.file("/Library/LaunchDaemons/dev.bb-box.clear-bb-state.plist")!, /rm -rf \/Users\/bbx-\*\/\.bb-machines\/\*\/daemon\.lock\.lock /);
+  assert.match(mac.file("/Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist")!, /rm -rf \/Users\/bbx-\*\/\.alia-machines\/\*\/daemon\.lock\.lock /);
   assert.equal(count(mac, "sudo -u person -H env NONINTERACTIVE=1 /bin/bash -c mkdir"), 1, "Homebrew's installer, as the person who ran sudo");
   assert.equal(count(mac, "brew install git gh node ffmpeg"), 1);
   assert.equal(count(mac, "pmset -a sleep 0 displaysleep 0 disksleep 0 autorestart 1"), 1);
@@ -700,7 +700,7 @@ test("setup-mac.sh makes the admin user, installs the helper, template, Homebrew
     assert.equal(count(mac, call), 1, call);
   }
   assert.deepEqual([mac.console(), mac.user("bbx-0")?.UniqueID], ["bbx-0", "70000"]);
-  assert.equal(mac.file("/var/db/bb-box/xcode"), "xcode=\nruntimes=\n");
+  assert.equal(mac.file("/var/db/alia-box/xcode"), "xcode=\nruntimes=\n");
 
   // Again, with Xcode, another install's key, and a person at the console.
   mkdirSync(join(mac.root, "Applications/Xcode.app"));
@@ -715,10 +715,10 @@ test("setup-mac.sh makes the admin user, installs the helper, template, Homebrew
   mkdirSync(join(mac.root, "usr/libexec"), { recursive: true });
   writeFileSync(join(mac.root, "usr/libexec/sshd-keygen-wrapper.sig"), 'identifier=com.apple.sshd-keygen-wrapper\nrequirement=identifier "com.apple.sshd-keygen-wrapper" and anchor apple\n');
   // An approval placed in the template by hand before the helper wrote one per user (047): setup removes it.
-  const placed = join(mac.root, "usr/local/share/bb-box/home/Library/Group Containers/group.com.apple.replayd");
+  const placed = join(mac.root, "usr/local/share/alia-box/home/Library/Group Containers/group.com.apple.replayd");
   mkdirSync(placed, { recursive: true });
   writeFileSync(join(placed, "ScreenCaptureApprovals.plist"), "<plist/>\n");
-  const again = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests bb-box", "--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtherInstall bb-box", "--name", "studio"]);
+  const again = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests alia-box", "--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtherInstall alia-box", "--name", "studio"]);
   assert.equal(again.status, 0, again.stderr);
   assert.ok(again.stdout.includes("\n  studio bbbox-admin@192.0.2.30 macos,macos-desktop\n"));
   assert.match(again.stdout, /- iOS slots are not set up, as setup\/tart\/ios is not beside setup\/ssh-pool\. To lend ios boxes from this Mac, copy the whole setup folder/);
@@ -735,18 +735,18 @@ test("setup-mac.sh makes the admin user, installs the helper, template, Homebrew
   // Its policies where macOS keeps them without device management, and box users' profiles past its first run.
   assert.ok(mac.calls().some((line) => /^defaults write \S*\/Library\/Preferences\/com\.google\.Chrome DefaultBrowserSettingEnabled -bool false$/.test(line)), "the default-browser prompt off");
   assert.equal(existsSync(join(mac.root, "Library/Managed Preferences/com.google.Chrome.plist")), false, "nothing where macOS empties it at boot");
-  assert.equal(mac.file("/usr/local/share/bb-box/home/Library/Application Support/Google/Chrome/First Run"), "");
-  assert.equal(mac.file("/usr/local/share/bb-box/home/Library/Application Support/Google/Chrome/Local State"), '{"browser":{"last_whats_new_version":9999}}\n');
-  assert.match(mac.file("/usr/local/libexec/bb-box/chrome-policies.mjs")!, /chrome:\/\/policy/, "the reader the image's check runs");
+  assert.equal(mac.file("/usr/local/share/alia-box/home/Library/Application Support/Google/Chrome/First Run"), "");
+  assert.equal(mac.file("/usr/local/share/alia-box/home/Library/Application Support/Google/Chrome/Local State"), '{"browser":{"last_whats_new_version":9999}}\n');
+  assert.match(mac.file("/usr/local/libexec/alia-box/chrome-policies.mjs")!, /chrome:\/\/policy/, "the reader the image's check runs");
   for (const file of ["/claude", "codex-aarch64-apple-darwin.tar.gz", "pi-darwin-arm64.tar.gz"]) {
     assert.equal(mac.calls().filter((line) => line.startsWith("curl -fsSL --retry 3 -o") && line.endsWith(file)).length, 1, `${file} is downloaded once`);
   }
   for (const call of ["xcodebuild -license accept", "xcodebuild -runFirstLaunch", "DevToolsSecurity -enable"]) assert.equal(count(mac, call), 1, call);
   assert.equal(count(mac, "xcodebuild -downloadPlatform iOS"), 0, "the iOS runtime is there");
-  assert.equal(mac.file("/var/db/bb-box/xcode"), "xcode=26.0\nruntimes=iOS 26.0,watchOS 26.0\n", "what the pool's offers follow");
+  assert.equal(mac.file("/var/db/alia-box/xcode"), "xcode=26.0\nruntimes=iOS 26.0,watchOS 26.0\n", "what the pool's offers follow");
   assert.equal(count(mac, "sudo -u person open x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"), 1);
-  assert.equal(mac.file("/var/db/bb-box/generation"), "0\n");
-  assert.equal(existsSync(join(mac.root, "usr/local/share/bb-box/home/Library/Group Containers")), false, "the hand-placed approval is gone");
+  assert.equal(mac.file("/var/db/alia-box/generation"), "0\n");
+  assert.equal(existsSync(join(mac.root, "usr/local/share/alia-box/home/Library/Group Containers")), false, "the hand-placed approval is gone");
   assert.equal(
     spawnSync("sqlite3", [tcc, "select client_type || '|' || auth_value || '|' || cast(csreq as text) from access where service = 'kTCCServiceScreenCapture' and client = '/usr/libexec/sshd-keygen-wrapper';"], { encoding: "utf8" }).stdout.trim(),
     '1|2|identifier "com.apple.sshd-keygen-wrapper" and anchor apple',
@@ -758,15 +758,15 @@ test("setup-mac.sh makes the admin user, installs the helper, template, Homebrew
   const idb = tempDir("idb");
   writeFileSync(join(idb, "idb_companion"), "#!/bin/sh\n", { mode: 0o755 });
   assert.equal(spawnSync("tar", ["-czf", join(mac.state, "flags", "idb-companion.macos-arm64.tar.gz"), "-C", idb, "idb_companion"]).status, 0);
-  const unlisted = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests bb-box", "--name", "studio"]);
+  const unlisted = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests alia-box", "--name", "studio"]);
   assert.equal(unlisted.status, 0, unlisted.stderr);
-  assert.match(unlisted.stderr, /mac-ios\.sh: bb-box has no slimming list for iOS 26\.0 \(23A343\), so it lends no iOS slot on this Mac/);
+  assert.match(unlisted.stderr, /mac-ios\.sh: alia-box has no slimming list for iOS 26\.0 \(23A343\), so it lends no iOS slot on this Mac/);
   assert.match(unlisted.stdout, /- iOS slots are not set up, so the Mac lends no ios box: mac-ios\.sh says why above\./);
   assert.ok(unlisted.stdout.includes("\n  studio bbbox-admin@192.0.2.30 macos,macos-desktop\n"), "no ios on its line");
 });
 
 test("setup-mac.sh refuses a Mac with FileVault on or Remote Login off, no key, someone else's admin user, or a Cua Driver that is not the pinned one", () => {
-  const key = ["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests bb-box"];
+  const key = ["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests alia-box"];
   const failed = (mac: FakeMacos, args: readonly string[] = key) => {
     const result = mac.setup(args);
     assert.equal(result.status, 1, result.stdout);
@@ -779,11 +779,11 @@ test("setup-mac.sh refuses a Mac with FileVault on or Remote Login off, no key, 
   const closed = setupMac();
   closed.flag("no-remote-login");
   assert.equal(failed(closed), "setup-mac.sh: Remote Login is off. Turn it on in System Settings, General, Sharing, then run setup-mac.sh again.\n");
-  assert.equal(failed(setupMac(), []), "setup-mac.sh: Give --key the public key bb-box's doctor shows, starting ssh-ed25519.\n");
+  assert.equal(failed(setupMac(), []), "setup-mac.sh: Give --key the public key alia-box's doctor shows, starting ssh-ed25519.\n");
   const taken = setupMac();
   mkdirSync(join(taken.state, "users", "bbbox-admin"));
   writeFileSync(join(taken.state, "users", "bbbox-admin", "RealName"), "Someone\n");
-  assert.equal(failed(taken), "setup-mac.sh: User bbbox-admin exists and setup-mac.sh did not make it. Choose a new name for bb-box's admin user with --admin.\n");
+  assert.equal(failed(taken), "setup-mac.sh: User bbbox-admin exists and setup-mac.sh did not make it. Choose a new name for alia-box's admin user with --admin.\n");
   const tampered = setupMac();
   tampered.flag("bad-sha");
   assert.equal(failed(tampered), "setup-mac.sh: Cua Driver's archive does not match its pin.\n");
@@ -803,7 +803,7 @@ test("setup-mac.sh refuses a Chrome that Gatekeeper does not accept, or that Goo
       writeFileSync(join(work, "Google Chrome.app.sig"), "identifier=com.google.Chrome\nteam=SOMEONEELS\n");
       assert.equal(spawnSync("tar", ["-cf", join(mac.state, "flags", "googlechrome.dmg"), "-C", work, "Google Chrome.app", "Google Chrome.app.sig"]).status, 0);
     }
-    const result = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests bb-box"]);
+    const result = mac.setup(["--key", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPoolKeyForTests alia-box"]);
     assert.equal(result.status, 1);
     assert.ok(result.stderr.includes(`mac-chrome.sh: ${said}`), result.stderr);
     assert.ok(result.stderr.includes("Could not install Google Chrome."), result.stderr);
@@ -842,7 +842,7 @@ test("the doctor's status names the people whose homes box users can enter, as m
   assert.equal(fields(mac.helper(["status"]).stdout).get("openhomes"), undefined, "not in an ordinary status");
   chmodSync(home, 0o700);
   assert.equal(fields(mac.helper(["status", "xcode"]).stdout).get("openhomes"), "", "closed to others");
-  // A hidden user, as BB Box's admin, is not a person's, though macOS names the flag dsAttrTypeNative:IsHidden.
+  // A hidden user, as VesnALIA Box's admin, is not a person's, though macOS names the flag dsAttrTypeNative:IsHidden.
   for (const [name, value] of Object.entries({ UniqueID: "502", UserShell: "/bin/zsh", IsHidden: "1", NFSHomeDirectory: "/private/var/hidden" })) {
     mkdirSync(join(mac.state, "users", "hidden"), { recursive: true });
     writeFileSync(join(mac.state, "users", "hidden", name), `${value}\n`);
@@ -903,7 +903,7 @@ test("with SIP off, the helper grants the box user's programs their permissions,
     "granted=screen-recording",
     "granted=microphone",
     "granted=system-audio",
-    "refused=telepathy bb-box grants accessibility, screen-recording, input-monitoring, microphone, camera, system-audio and automation.",
+    "refused=telepathy alia-box grants accessibility, screen-recording, input-monitoring, microphone, camera, system-audio and automation.",
     "client=dev.example.probe",
   ]);
   assert.equal(
@@ -937,7 +937,7 @@ test("with SIP off, the helper grants the box user's programs their permissions,
 
   // Refusals: Apple's, a shell, outside the box user's folders, another box, and SIP on.
   writeFileSync(`${tool}.sig`, 'identifier=com.apple.tool\nrequirement=identifier "com.apple.tool"\n');
-  assert.match(grant("/Users/bbx-0/project/target/release/tool", ["accessibility"]).stderr, /is Apple's\. bb-box grants nothing to Apple's programs\./);
+  assert.match(grant("/Users/bbx-0/project/target/release/tool", ["accessibility"]).stderr, /is Apple's\. alia-box grants nothing to Apple's programs\./);
   writeFileSync(join(home, "zsh"), "#!/bin/sh\n", { mode: 0o755 });
   writeFileSync(join(home, "zsh.sig"), 'identifier=zsh\nrequirement=cdhash H"34"\n');
   assert.match(grant("/Users/bbx-0/zsh", ["accessibility"]).stderr, /runs any script/);
@@ -1010,11 +1010,11 @@ test("in a Mac VM that is itself the box, as Tart's are, the helper makes the us
   const ready = mac.helper(["vm-ready", "bbx-0"]);
   assert.equal(ready.status, 0, ready.stderr);
   assert.equal(ready.stdout, "sip=0\ntcc=1\nmacos=26.0\nsigning=1\n");
-  assert.ok(existsSync(join(mac.root, "/Users/bbx-0/Library/Keychains/bb-box-signing.keychain-db")));
+  assert.ok(existsSync(join(mac.root, "/Users/bbx-0/Library/Keychains/alia-box-signing.keychain-db")));
   assert.equal(sqlite(user, "select service from access where client = '/usr/libexec/sshd-keygen-wrapper' order by service;"), "kTCCServiceCamera\nkTCCServiceMicrophone");
   // A desktop command's screencapture raises no notice: the approvals cover SSH and Tart's launcher too.
   const approvals = mac.file("/Users/bbx-0/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist")!;
-  assert.ok(approvals.includes("<key>/usr/libexec/sshd-keygen-wrapper</key>") && approvals.includes("<key>file:///usr/local/libexec/bb-box/Launcher.app/</key>"), approvals);
+  assert.ok(approvals.includes("<key>/usr/libexec/sshd-keygen-wrapper</key>") && approvals.includes("<key>file:///usr/local/libexec/alia-box/Launcher.app/</key>"), approvals);
 
   const tool = join(mac.data, "Users/bbx-0/bin/tool");
   mkdirSync(dirname(tool), { recursive: true });
@@ -1034,15 +1034,15 @@ test("in a Mac VM that is itself the box, as Tart's are, the helper makes the us
   assert.equal(mac.helper(["vm-grant"]).status, 2);
 });
 
-test("each box user's desktop gets the 2x mode of its size for its session, after its sign-in and at a claim, where setup-mac.sh built bb-box-display", () => {
+test("each box user's desktop gets the 2x mode of its size for its session, after its sign-in and at a claim, where setup-mac.sh built alia-box-display", () => {
   const mac = readyMac();
-  const display = "launchctl asuser 70000 /usr/bin/sudo -n -H -u bbx-0 -- /usr/local/bin/bb-box-display hidpi";
+  const display = "launchctl asuser 70000 /usr/bin/sudo -n -H -u bbx-0 -- /usr/local/bin/alia-box-display hidpi";
   // Without the tool, as before setup-mac.sh builds it, nothing runs.
   assert.equal(mac.helper(["claim", "0"], CLAIM()).status, 0);
   assert.equal(count(mac, display), 0);
   assert.equal(mac.helper(["release", "0"], RELEASE()).status, 0);
   mkdirSync(join(mac.root, "usr/local/bin"), { recursive: true });
-  writeFileSync(join(mac.root, "usr/local/bin/bb-box-display"), "#!/bin/sh\n", { mode: 0o755 });
+  writeFileSync(join(mac.root, "usr/local/bin/alia-box-display"), "#!/bin/sh\n", { mode: 0o755 });
   assert.equal(mac.helper(["claim", "1"], CLAIM("box_b")).status, 0);
   assert.equal(count(mac, display.replaceAll("70000", "70001").replace("bbx-0", "bbx-1")), 1, "at the claim");
   assert.equal(mac.helper(["release", "1"], RELEASE("box_b")).status, 0);
@@ -1051,7 +1051,7 @@ test("each box user's desktop gets the 2x mode of its size for its session, afte
 
 test("each box user gets a code-signing identity of its own in a keychain codesign uses with no prompt, made at the reset and unlocked at each claim (058)", () => {
   const mac = lentMac();
-  const keychain = "/Users/bbx-0/Library/Keychains/bb-box-signing.keychain-db";
+  const keychain = "/Users/bbx-0/Library/Keychains/alia-box-signing.keychain-db";
   assert.ok(existsSync(join(mac.root, keychain)), "made at the claim, as the first user had none");
   const calls = mac.calls().filter((line) => line.startsWith("security "));
   for (const call of [
@@ -1067,7 +1067,7 @@ test("each box user gets a code-signing identity of its own in a keychain codesi
 
   // The next user's is made at the reset, once it is signed in, so its claim only unlocks it.
   assert.equal(mac.helper(["release", "0"], RELEASE()).status, 0);
-  assert.ok(existsSync(join(mac.root, "/Users/bbx-1/Library/Keychains/bb-box-signing.keychain-db")));
+  assert.ok(existsSync(join(mac.root, "/Users/bbx-1/Library/Keychains/alia-box-signing.keychain-db")));
   const before = mac.calls().length;
   assert.equal(mac.helper(["claim", "1"], CLAIM("box_b")).status, 0);
   const claim = mac.calls().slice(before).filter((line) => line.startsWith("security "));
@@ -1075,12 +1075,12 @@ test("each box user gets a code-signing identity of its own in a keychain codesi
   const signing = (generation: string, box: string) => fields(mac.helper(["granted", generation], RELEASE(box)).stdout).get("signing");
   assert.equal(signing("1", "box_b"), "1", "box_status can say the box has its identity");
   // The work folder is in /tmp, which the box user can enter, not in root's own temporary folder.
-  assert.ok(mac.calls().some((line) => /^security import \/tmp\/bb-box-signing\.\w+\/id\.p12 /.test(line)), "imported from /tmp");
+  assert.ok(mac.calls().some((line) => /^security import \/tmp\/alia-box-signing\.\w+\/id\.p12 /.test(line)), "imported from /tmp");
 
   // A failed attempt is reported, and leaves no keychain.
   mac.flag("no-import");
   assert.equal(mac.helper(["release", "1"], RELEASE("box_b")).status, 0);
-  const next = join(mac.root, "/Users/bbx-2/Library/Keychains/bb-box-signing.keychain-db");
+  const next = join(mac.root, "/Users/bbx-2/Library/Keychains/alia-box-signing.keychain-db");
   assert.equal(existsSync(next), false);
   // A keychain without the identity, as an earlier attempt could leave, is made again at the claim.
   writeFileSync(next, "");
@@ -1109,11 +1109,11 @@ test("snapshot probe finds APFS clones under /Users, keeps its report for status
 
   assert.deepEqual([apfs.homes, apfs.filesystem, apfs.home, apfs.hook], ["/Users", "apfs", { is: "yes", what: { way: "apfs", dataset: null } }, { is: "no", why: "no snapshot hook is installed" }]);
   assert.match(mac.helper(["status"]).stdout, /^snapshot\.home=yes$/m);
-  assert.deepEqual(readdirSync(join(mac.root, "var/db/bb-box/snapshot-trials")), []);
+  assert.deepEqual(readdirSync(join(mac.root, "var/db/alia-box/snapshot-trials")), []);
 
   mac.flag("no-clonefile");
   assert.match(JSON.stringify(probedSnapshots(mac).home), /^\{"is":"no","why":"box homes are on APFS under \/Users, but a trial clone failed: cp: .*clonefile failed: Operation not supported"\}$/);
-  assert.deepEqual(readdirSync(join(mac.root, "var/db/bb-box/snapshot-trials")), []);
+  assert.deepEqual(readdirSync(join(mac.root, "var/db/alia-box/snapshot-trials")), []);
   mac.flag("no-clonefile", false);
 
   rmSync(join(mac.root, TCC));
@@ -1126,7 +1126,7 @@ test("snapshot probe finds APFS clones under /Users, keeps its report for status
 
 test("snapshot probe runs an operator's hook's describe, and says when it fails", () => {
   const mac = readyMac();
-  const hook = join(mac.root, "usr/local/libexec/bb-box/snapshot-machine");
+  const hook = join(mac.root, "usr/local/libexec/alia-box/snapshot-machine");
   mkdirSync(dirname(hook), { recursive: true });
   writeFileSync(hook, `#!/bin/sh\n[ "$1" = describe ] && printf '{"contract":1,"scope":"machine",\\n"storage":{"name":"vg0/thin","type":"lvmthin","percentFull":12}}\\n'\n`, { mode: 0o755 });
 
@@ -1174,7 +1174,7 @@ test("on a Mac VM with macOS 26's TCC schema, as Namespace's Macs have, the help
   const newer = mac.helper(["vm-grant", "bbx-0"], "program=/Users/bbx-0/Applications/Probe.app\npermission=accessibility\n");
 
   assert.equal(newer.status, EXIT.protected);
-  assert.equal(newer.stderr, "TCC's database on this Mac has columns bb-box does not know, as a newer macOS may have, so it writes nothing there. A person grants permissions in System Settings, or a newer bb-box may know them.\n");
+  assert.equal(newer.stderr, "TCC's database on this Mac has columns alia-box does not know, as a newer macOS may have, so it writes nothing there. A person grants permissions in System Settings, or a newer alia-box may know them.\n");
   assert.equal(sqlite(system, "select count(*) from access;"), "0");
   assert.deepEqual(mac.helper(["vm-granted", "bbx-0"]).stdout.split("\n").filter(Boolean).slice(0, 2), ["sip=0", "tcc=0"]);
 });

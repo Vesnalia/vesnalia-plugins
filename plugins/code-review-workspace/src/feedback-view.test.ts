@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import type { ReviewMeta } from "./store";
 import { diffAt, pruneOldDiffs, sinceReview } from "./feedback-view";
 import { changedFiles } from "./patch";
@@ -10,8 +10,8 @@ const DAY = 86_400_000;
 const file = (filename: string) => JSON.stringify({ filename, status: "modified", patch: "@@ -1 +1 @@\n-a\n+b" });
 
 async function setup() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   const review: ReviewMeta = { targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, base: "main", headSha: "sha1", latestHeadSha: "sha2", status: "ready", createdAt: 1 };
   await store.saveReview(review);
   return { store, review };
@@ -110,8 +110,8 @@ test("Since your review is compared once per baseline and diff, and leaves out a
 });
 
 test("diffs of reviews out of play for a month are dropped, keeping the guide, the draft, notes, and what Since your review needs", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   const now = 100 * DAY;
   const old = now - 31 * DAY;
   const reviews: Array<Partial<ReviewMeta> & { targetKey: string }> = [

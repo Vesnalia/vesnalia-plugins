@@ -3,9 +3,9 @@ import {
   definePluginApp,
   useRealtime,
   useRpc,
-  useBbNavigate,
+  useAliaNavigate,
   Markdown,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Task, Mode, Section } from "./server";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +21,7 @@ const labels: Record<Mode, string> = {
 
 function Page() {
   const rpc = useRpc<typeof rpcContract>();
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   const [tasks, setTasks] = useState<Task[] | null>(null),
     [error, setError] = useState("");
   const [sections, setSections] = useState<Section[]>([]);

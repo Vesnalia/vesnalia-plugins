@@ -8,9 +8,9 @@ export interface HermesResolveOptions {
   /**
    * `$HERMES_HOME` or `~/.hermes`. Which profile a Hermes agent runs with
    * decides where its skills are, and nothing the plugin can see says which
-   * profile an agent uses — the host worker reads the environment bb's host
+   * profile an agent uses — the host worker reads the environment VesnALIA's host
    * daemon passed it, not the agent's. The resolver reads the home an
-   * unprofiled `hermes acp` reads, the common case for a bb-launched agent;
+   * unprofiled `hermes acp` reads, the common case for a alia-launched agent;
    * `HERMES_HOME` moves it only when the host daemon itself was started with
    * that variable in its environment. See AGENTS.md for the limitation.
    */

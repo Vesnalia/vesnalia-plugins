@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { BOARD_LIMITS } from "@/lib/board-model";
 import { BoardCollector, groupGlobalThreadRows, PROJECT_METADATA_TIMEOUT_MS } from "@/lib/collect";
 afterEach(() => vi.useRealTimers());
@@ -57,11 +57,11 @@ function makeCollector(options: {
       return options.redteam ?? { schemaVersion: 1, observedAt: "2026-09-03T12:00:00.000Z", scans: [] };
     }) },
   };
-  const collector = new BoardCollector({ sdk } as unknown as BbPluginApi, options.now ?? (() => 2_000));
+  const collector = new BoardCollector({ sdk } as unknown as AliaPluginApi, options.now ?? (() => 2_000));
   return { collector, sdk };
 }
 
-describe("global BB collection", () => {
+describe("global VesnALIA collection", () => {
   it("loads the parent review result after a newer child finishes", async () => {
     const { collector, sdk } = makeCollector({ rows: [row("root", { updatedAt: 800 }), row("child", { parentThreadId: "root", updatedAt: 1000 })] });
     sdk.threads.output.mockImplementation(async (input: { threadId: string }) => ({ output: input.threadId === "root" ? "Parent result" : "Child result" }));
@@ -142,14 +142,14 @@ describe("global BB collection", () => {
     expect(sdk.threads.list).toHaveBeenCalledTimes(2);
   });
 
-  it("isolates Redteam absence without breaking BB", async () => {
+  it("isolates Redteam absence without breaking VesnALIA", async () => {
     const { collector } = makeCollector({ callRpcError: new Error("unknown_method") });
     const result = await collector.globalDashboard();
     expect(result.active).toHaveLength(1);
     expect(result.unavailableSources).toContain("redteam");
   });
 
-  it("isolates BB failure while preserving Redteam", async () => {
+  it("isolates VesnALIA failure while preserving Redteam", async () => {
     const redteam = {
       schemaVersion: 1, observedAt: "2026-09-03T12:00:00.000Z", scans: [{
         scanId: "scan-1", projectId: "proj", title: "Tiny lab", mode: "static", status: "running",
@@ -159,10 +159,10 @@ describe("global BB collection", () => {
         findingCounts: { total: 0, unverified: 0, confirmed: 0, inconclusive: 0, rejected: 0, severity: { critical: 0, high: 0, medium: 0, low: 0, info: 0 } }, error: null,
       }],
     };
-    const { collector } = makeCollector({ listError: new Error("BB unavailable"), redteam });
+    const { collector } = makeCollector({ listError: new Error("VesnALIA unavailable"), redteam });
     const result = await collector.globalDashboard();
     expect(result.active[0]!.key).toBe("redteam:scan-1");
-    expect(result.unavailableSources).toContain("bb");
+    expect(result.unavailableSources).toContain("alia");
   });
 
   it("does not fabricate a model when execution options are unavailable", async () => {
@@ -179,11 +179,11 @@ describe("attention dismissal plumbing (global collect)", () => {
     expect(open.attention).toHaveLength(1);
     const item = open.attention[0]!;
     expect(item.type).toBe("failed");
-    expect(item.executionKey).toBe("bb:thr_fail");
+    expect(item.executionKey).toBe("alia:thr_fail");
     expect(item.updatedAt).toBe(5_000);
     expect(open.counts.attention).toBe(1);
     expect(open.dismissedCount).toBe(0);
-    expect(open.recent.some((entry) => entry.key === "bb:thr_fail")).toBe(true);
+    expect(open.recent.some((entry) => entry.key === "alia:thr_fail")).toBe(true);
 
     const key = `${item.executionKey}::${item.type}::${item.updatedAt}`;
     const dismissed = await collector.globalDashboard({
@@ -194,7 +194,7 @@ describe("attention dismissal plumbing (global collect)", () => {
     expect(dismissed.counts.attention).toBe(0);
     expect(dismissed.counts.failures).toBe(0);
     expect(dismissed.dismissedCount).toBe(1);
-    expect(dismissed.recent.some((entry) => entry.key === "bb:thr_fail")).toBe(true);
+    expect(dismissed.recent.some((entry) => entry.key === "alia:thr_fail")).toBe(true);
   });
 
   it("reappears only when the underlying condition changes (new updatedAt)", async () => {

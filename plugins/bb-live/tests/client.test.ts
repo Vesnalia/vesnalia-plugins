@@ -78,7 +78,7 @@ const rpc = {
         focus: {
           kind: "global",
           id: null,
-          label: "All of BB",
+          label: "All of VesnALIA",
           explicit: false,
         },
       };

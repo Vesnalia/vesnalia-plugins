@@ -2,10 +2,10 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-test_root="$(mktemp -d "${TMPDIR:-/tmp}/bb-terminal-jobs-smoke.XXXXXX")"
+test_root="$(mktemp -d "${TMPDIR:-/tmp}/alia-terminal-jobs-smoke.XXXXXX")"
 test_root="$(cd "$test_root" && pwd -P)"
-app="$repo_root/node_modules/bb-app-host/dist/bb-app.js"
-cli="$repo_root/node_modules/bb-app-host/dist/bb.js"
+app="$repo_root/node_modules/alia-app-host/dist/alia-app.js"
+cli="$repo_root/node_modules/alia-app-host/dist/alia.js"
 current_app_pid=""
 current_data=""
 current_port=""
@@ -37,16 +37,16 @@ run_bounded() {
   wait "$pid"
 }
 
-bb_cli() {
-  env -u BB_CLI -u BB_ENVIRONMENT_ID -u BB_PROJECT_ID -u BB_THREAD_ID \
-    BB_SERVER_URL="http://127.0.0.1:$current_port" BB_HOST_DAEMON_PORT="$current_daemon_port" \
+alia_cli() {
+  env -u ALIA_CLI -u ALIA_ENVIRONMENT_ID -u ALIA_PROJECT_ID -u ALIA_THREAD_ID \
+    ALIA_SERVER_URL="http://127.0.0.1:$current_port" ALIA_HOST_DAEMON_PORT="$current_daemon_port" \
     "$cli" "$@"
 }
 
 stop_server() {
   set +e
   if [[ -n "$current_data" ]]; then
-    run_bounded 15 env -u BB_CLI -u BB_ENVIRONMENT_ID -u BB_PROJECT_ID -u BB_THREAD_ID -u BB_SERVER_URL \
+    run_bounded 15 env -u ALIA_CLI -u ALIA_ENVIRONMENT_ID -u ALIA_PROJECT_ID -u ALIA_THREAD_ID -u ALIA_SERVER_URL \
       "$app" --data-dir "$current_data" --server-port "$current_port" \
       --host-daemon-port "$current_daemon_port" stop >/dev/null 2>&1
   fi
@@ -139,17 +139,17 @@ start_server() {
   local started=$SECONDS
   while (( SECONDS - started < 60 )); do
     if ! kill -0 "$current_app_pid" 2>/dev/null; then
-      printf 'Disposable BB server exited before readiness. Log: %s\n' "$server_log" >&2
+      printf 'Disposable ALIA server exited before readiness. Log: %s\n' "$server_log" >&2
       return 1
     fi
-    if run_bounded 5 bb_cli plugin list --json >"$test_root/readiness-$mode.out" 2>&1; then
+    if run_bounded 5 alia_cli plugin list --json >"$test_root/readiness-$mode.out" 2>&1; then
       ready=1
       break
     fi
     sleep 0.25
   done
   [[ "$ready" -eq 1 ]] || {
-    printf 'Disposable BB server did not become ready. Log: %s\n' "$server_log" >&2
+    printf 'Disposable ALIA server did not become ready. Log: %s\n' "$server_log" >&2
     return 1
   }
 }
@@ -159,7 +159,7 @@ wait_for_delivery() {
   local output="$2"
   local delivered=0
   for _ in $(seq 1 120); do
-    bb_cli terminal-job show "$job_id" --json >"$output"
+    alia_cli terminal-job show "$job_id" --json >"$output"
     if node -e 'const v=require(process.argv[1]); process.exit(v.delivery.state === "delivered" ? 0 : 1)' "$output"; then
       delivered=1
       break
@@ -172,7 +172,7 @@ wait_for_delivery() {
 set_thread_model() {
   local thread_id="$1"
   local model_id="$2"
-  node --no-warnings - "$current_data/bb.db" "$thread_id" "$model_id" <<'NODE'
+  node --no-warnings - "$current_data/alia.db" "$thread_id" "$model_id" <<'NODE'
 const { DatabaseSync } = require("node:sqlite");
 const [databasePath, threadId, modelId] = process.argv.slice(2);
 const db = new DatabaseSync(databasePath);
@@ -199,7 +199,7 @@ prune_and_assert_deleted() {
   local directory="$2"
   local output="$3"
   backdate_job "$job_id"
-  bb_cli terminal-job prune --older-than-days 1 --delete --json >"$output"
+  alia_cli terminal-job prune --older-than-days 1 --delete --json >"$output"
   node - "$output" "$job_id" <<'NODE'
 const result = require(process.argv[2]);
 const jobId = process.argv[3];
@@ -208,7 +208,7 @@ if (!result.results.some((item) => item.jobId === jobId && item.action === "dele
 }
 NODE
   [[ ! -e "$directory" ]] || { printf 'prune left artifact directory %s\n' "$directory" >&2; return 1; }
-  if bb_cli terminal-job show "$job_id" --json >"$test_root/pruned-show.out" 2>&1; then
+  if alia_cli terminal-job show "$job_id" --json >"$test_root/pruned-show.out" 2>&1; then
     printf 'prune left database row %s\n' "$job_id" >&2
     return 1
   fi
@@ -244,8 +244,8 @@ smoke_mode() {
   local source="$2"
   start_server "$mode"
 
-  run_bounded 120 bb_cli plugin install "$source" --yes
-  bb_cli plugin list --json >"$test_root/plugins-$mode.json"
+  run_bounded 120 alia_cli plugin install "$source" --yes
+  alia_cli plugin list --json >"$test_root/plugins-$mode.json"
   node - "$test_root/plugins-$mode.json" <<'NODE'
 const fs = require("node:fs");
 const value = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
@@ -254,14 +254,14 @@ const item = plugins.find((plugin) => plugin.id === "terminal-jobs");
 if (!item || item.status !== "running") throw new Error("terminal-jobs did not start");
 NODE
 
-  bb_cli terminal-job --help >"$test_root/help-$mode.txt"
-  grep -F "bb terminal-job list" "$test_root/help-$mode.txt" >/dev/null
-  grep -F "bb terminal-job prune" "$test_root/help-$mode.txt" >/dev/null
+  alia_cli terminal-job --help >"$test_root/help-$mode.txt"
+  grep -F "alia terminal-job list" "$test_root/help-$mode.txt" >/dev/null
+  grep -F "alia terminal-job prune" "$test_root/help-$mode.txt" >/dev/null
 
-  bb_cli machine list --json >"$test_root/machines-$mode.json"
+  alia_cli machine list --json >"$test_root/machines-$mode.json"
   machine_id="$(node -e 'const v=require(process.argv[1]); const xs=Array.isArray(v)?v:v.machines; if(!xs?.[0]?.id) throw Error("no disposable machine"); process.stdout.write(xs[0].id)' "$test_root/machines-$mode.json")"
-  bb_cli project create --name "Terminal jobs smoke $mode" --root "$test_root/git-source" --machine "$machine_id" --json >"$test_root/project-$mode.json"
-  bb_cli provider list --machine "$machine_id" --json >"$test_root/providers-$mode.json"
+  alia_cli project create --name "Terminal jobs smoke $mode" --root "$test_root/git-source" --machine "$machine_id" --json >"$test_root/project-$mode.json"
+  alia_cli provider list --machine "$machine_id" --json >"$test_root/providers-$mode.json"
   read -r project_id provider_id < <(node - "$test_root/project-$mode.json" "$test_root/providers-$mode.json" <<'NODE'
 const fs = require("node:fs");
 const rawProject = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
@@ -281,24 +281,24 @@ const config = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath
 config.customModels = [{ providerId, model, displayName: "Terminal jobs smoke" }];
 fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
 NODE
-  bb_cli settings reload >/dev/null
-  bb_cli provider models "$provider_id" --machine "$machine_id" --json >"$test_root/models-$mode.json"
+  alia_cli settings reload >/dev/null
+  alia_cli provider models "$provider_id" --machine "$machine_id" --json >"$test_root/models-$mode.json"
   node -e 'const v=require(process.argv[1]); const id=process.argv[2]; const xs=Array.isArray(v)?v:v.models; if(!xs?.some((m)=>typeof m === "string" ? m === id : m.id === id)) throw Error("disposable custom model is missing")' "$test_root/models-$mode.json" "$model_id"
-  bb_cli thread spawn --project "$project_id" --provider "$provider_id" --model "$model_id" \
+  alia_cli thread spawn --project "$project_id" --provider "$provider_id" --model "$model_id" \
     --prompt "Scheduled smoke owner" --send-at 7d --json >"$test_root/thread-$mode.json"
   thread_id="$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.id)' "$test_root/thread-$mode.json")"
   set_thread_model "$thread_id" "$model_id"
   artifact_root="$test_root/artifacts-$mode"
-  bb_cli terminal-job run --machine "$machine_id" --notify-thread "$thread_id" --title "public smoke" \
+  alia_cli terminal-job run --machine "$machine_id" --notify-thread "$thread_id" --title "public smoke" \
     --artifact-root "$artifact_root" --json -- /bin/sh -c 'printf smoke-ok' >"$test_root/job-$mode.json"
   terminal_id="$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.terminal.id)' "$test_root/job-$mode.json")"
   job_id="$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.jobId)' "$test_root/job-$mode.json")"
-  run_bounded 45 bb_cli terminal wait "$terminal_id" --exit --timeout 40 --json >"$test_root/wait-$mode.json"
+  run_bounded 45 alia_cli terminal wait "$terminal_id" --exit --timeout 40 --json >"$test_root/wait-$mode.json"
 
   wait_for_delivery "$job_id" "$test_root/final-$mode.json"
 
-  bb_cli terminal-job list --limit 1 --json >"$test_root/list-$mode.json"
-  bb_cli terminal-job prune --older-than-days 1 --json >"$test_root/prune-$mode.json"
+  alia_cli terminal-job list --limit 1 --json >"$test_root/list-$mode.json"
+  alia_cli terminal-job prune --older-than-days 1 --json >"$test_root/prune-$mode.json"
   node - "$test_root/final-$mode.json" "$test_root/list-$mode.json" "$artifact_root/$job_id" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
@@ -319,11 +319,11 @@ NODE
   prune_and_assert_deleted "$job_id" "$artifact_root/$job_id" "$test_root/prune-delete-$mode.json"
 
   if [[ "$mode" == "path" ]]; then
-    bb_cli terminal-job run --machine "$machine_id" --notify-thread "$thread_id" --title "missing prune" \
+    alia_cli terminal-job run --machine "$machine_id" --notify-thread "$thread_id" --title "missing prune" \
       --artifact-root "$artifact_root" --json -- true >"$test_root/missing-job.json"
     missing_terminal_id="$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.terminal.id)' "$test_root/missing-job.json")"
     missing_job_id="$(node -e 'const v=require(process.argv[1]); process.stdout.write(v.jobId)' "$test_root/missing-job.json")"
-    run_bounded 45 bb_cli terminal wait "$missing_terminal_id" --exit --timeout 40 --json >"$test_root/missing-wait.json"
+    run_bounded 45 alia_cli terminal wait "$missing_terminal_id" --exit --timeout 40 --json >"$test_root/missing-wait.json"
     wait_for_delivery "$missing_job_id" "$test_root/missing-final.json"
     missing_directory="$artifact_root/$missing_job_id"
     rm -rf "$missing_directory"
@@ -332,7 +332,7 @@ NODE
     stop_pid_file="$test_root/terminal-stop.pids"
     # The target shell, not this smoke-test shell, expands the process IDs.
     # shellcheck disable=SC2016
-    bb_cli terminal-job run --machine "$machine_id" --notify-thread "$thread_id" --title "terminal stop" \
+    alia_cli terminal-job run --machine "$machine_id" --notify-thread "$thread_id" --title "terminal stop" \
       --artifact-root "$artifact_root" --json -- /bin/sh -c \
       'sleep 60 & echo "$$ $!" > "$1"; wait' terminal-stop "$stop_pid_file" \
       >"$test_root/stop-job.json"
@@ -349,8 +349,8 @@ NODE
     read -r stop_parent_pid stop_grandchild_pid <"$stop_pid_file"
     fixture_group="$stop_parent_pid"
     assert_processes_running "$stop_parent_pid" "$stop_grandchild_pid"
-    bb_cli terminal stop "$stop_terminal_id" --json >"$test_root/stop-result.json"
-    run_bounded 45 bb_cli terminal wait "$stop_terminal_id" --exit --timeout 40 --json >"$test_root/stop-wait.json"
+    alia_cli terminal stop "$stop_terminal_id" --json >"$test_root/stop-result.json"
+    run_bounded 45 alia_cli terminal wait "$stop_terminal_id" --exit --timeout 40 --json >"$test_root/stop-wait.json"
     assert_processes_stopped "$stop_parent_pid" "$stop_grandchild_pid"
     fixture_group=""
   fi

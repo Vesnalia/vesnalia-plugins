@@ -2,7 +2,7 @@
 
 /**
  * Environment changes that can change which files differ. "work-status-changed" is the one a
- * file written, reverted or discarded in the working tree raises (BB's own Diff tab refreshes
+ * file written, reverted or discarded in the working tree raises (VesnALIA's own Diff tab refreshes
  * on it too); "git-refs-changed" a commit, "status-changed" and "metadata-changed" the rest.
  */
 export const REFRESH_ON: ReadonlySet<string> = new Set(["work-status-changed", "status-changed", "git-refs-changed", "metadata-changed"]);

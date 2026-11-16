@@ -32,7 +32,7 @@ steps:
     assert:
       - text_visible: "Refactor grouping.ts column sort keys"
       - text_visible: "Write E2E test for drag-to-done"
-      - text_visible: "Research: bb plugin RPC auth tokens"
+      - text_visible: "Research: alia plugin RPC auth tokens"
       - text_visible: "chat-imagegent"
 
   - id: menu-item-zooms-to-the-boxs-group
@@ -44,7 +44,7 @@ steps:
         ordered: [thr_column_sort, thr_drag_done]
       - text_visible: "Refactor grouping.ts column sort keys"
       - text_visible: "Write E2E test for drag-to-done"
-      - text_hidden: "Research: bb plugin RPC auth tokens"
+      - text_hidden: "Research: alia plugin RPC auth tokens"
 
   - id: the-stored-restrict-restores-after-a-reload
     title: On the Group view, the stored group restrict re-opens the board filtered (the refresh-restore path)
@@ -52,4 +52,4 @@ steps:
     assert:
       - column: grp_chat_imagegent
         ordered: [thr_column_sort, thr_drag_done]
-      - text_hidden: "Research: bb plugin RPC auth tokens"
+      - text_hidden: "Research: alia plugin RPC auth tokens"

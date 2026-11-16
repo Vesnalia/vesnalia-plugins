@@ -5,7 +5,7 @@
 import type { TaskDetail } from "./asana";
 import { fieldValueToMinutes, formatDuration } from "./duration";
 
-/** bb truncates a plugin's instruction contribution at 4096 characters. */
+/** VesnALIA truncates a plugin's instruction contribution at 4096 characters. */
 export const MAX_BRIEF_CHARS = 3200;
 
 const DESCRIPTION_CHARS = 1400;

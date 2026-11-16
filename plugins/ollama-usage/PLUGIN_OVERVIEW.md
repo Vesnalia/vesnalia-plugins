@@ -1,6 +1,6 @@
 ## What you get
 
-BB's Provider usage view knows about the OpenCode Go subscription, Claude Code
+VesnALIA's Provider usage view knows about the OpenCode Go subscription, Claude Code
 and Kimi Code. An Ollama Cloud plan has no source there, so the panel shows
 nothing about it even though every agent run spends from that pool.
 
@@ -18,7 +18,7 @@ breakdown.
 
 ## Command
 
-`bb ollama-usage show [--host <id>] [--range 24h|7d|30d] [--json]` prints the
+`alia ollama-usage show [--host <id>] [--range 24h|7d|30d] [--json]` prints the
 same numbers in a terminal: the percentage and money of the pool, the reset
 date, purchased credits, spend for the range and the models that caused it.
 `--json` emits the full reading for a script.
@@ -27,7 +27,7 @@ date, purchased credits, spend for the range and the models that caused it.
 
 An Ollama Cloud account and an API key on the host: either `OLLAMA_API_KEY`, or
 the Ollama sign-in that OpenCode already stores. The key is never logged or
-shown, and the only host it is sent to is ollama.com. bb 0.49 or newer, and the
+shown, and the only host it is sent to is ollama.com. VesnALIA 0.49 or newer, and the
 opencode ACP provider enabled: with no such provider no model spends credits, so
 the row is not advertised at all.
 

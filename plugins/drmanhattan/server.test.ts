@@ -3,7 +3,7 @@ import {
   makeHostResponse,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import type { HostStatus } from "./contract.js";
 import { makeQueue } from "./fixtures.js";
@@ -45,7 +45,7 @@ async function setup({ status, settings }: Setup = {}) {
       return status?.(hostId, input as { session: string | null; limit: number }) ?? fallback;
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return { ...host, calls };
 }
 
@@ -92,7 +92,7 @@ describe("the thread's runs", () => {
     expect(calls).toEqual([{ method: "status", input: { session: "thr_abc", limit: 10 }, hostId: "mac" }]);
   });
 
-  it("prints them for `bb drmanhattan runs`", async () => {
+  it("prints them for `alia drmanhattan runs`", async () => {
     const { harness } = await setup();
     const out = await harness.behavior.runCli(["runs"], { threadId: "thr_abc" });
     expect(out.exitCode).toBe(0);

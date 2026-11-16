@@ -33,7 +33,7 @@ export function AnnotationEditor({
       }, 0);
     };
 
-    // BB can restore composer focus after its native iOS selection menu closes.
+    // VesnALIA can restore composer focus after its native iOS selection menu closes.
     // Guard only that startup window; controls inside this form remain focusable.
     document.addEventListener("focusin", queueFocusCheck);
     document.addEventListener("focusout", queueFocusCheck);

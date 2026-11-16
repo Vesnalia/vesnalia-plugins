@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { definePluginApp, useRpc, type PluginRpcResult } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc, type PluginRpcResult } from '@vesnalia/plugin-sdk/app';
 import type { traceUiRpcContract } from './ui-contract.js';
 import './app.css';
 

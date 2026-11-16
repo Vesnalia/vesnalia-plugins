@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ReviewSummary } from "../shared/types";
@@ -25,7 +25,7 @@ const REVIEW: ReviewSummary = {
   projectId: "proj_1",
 };
 
-/** What bb hands the page: each segment of the subPath percent-encoded. */
+/** What VesnALIA hands the page: each segment of the subPath percent-encoded. */
 const asReceived = (subPath: string) => subPath.split("/").map(encodeURIComponent).join("/");
 
 describe("the Reviews page's addresses", () => {

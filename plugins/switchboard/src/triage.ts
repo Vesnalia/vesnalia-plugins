@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { SnoozeEntry, SortMode } from "./layout";
 import { hasBackgroundWork, STATE_ORDER, worstState } from "./status";
 import type { TreeNode } from "./tree";

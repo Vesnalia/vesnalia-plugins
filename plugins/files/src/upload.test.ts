@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { createUploadHandler, MAX_UPLOAD_BYTES, readUploadBody } from "./upload";
 
@@ -12,7 +12,7 @@ describe("workspace uploads", () => {
       sha256,
       sizeBytes: bytes.byteLength,
     }));
-    const bb = {
+    const alia = {
       sdk: {
         threads: {
           get: async () => ({
@@ -21,7 +21,7 @@ describe("workspace uploads", () => {
         },
         files: { write },
       },
-    } as unknown as BbPluginApi;
+    } as unknown as AliaPluginApi;
     const request = new Request("https://bb.test/upload", {
       method: "POST",
       body: bytes,
@@ -31,7 +31,7 @@ describe("workspace uploads", () => {
       directory: "assets",
       fileName: "notes.md",
     });
-    const response = await createUploadHandler(bb)({
+    const response = await createUploadHandler(alia)({
       req: {
         raw: request,
         query: (name: string) => query.get(name) ?? undefined,

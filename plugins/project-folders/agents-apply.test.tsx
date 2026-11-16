@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeAll, afterEach, expect, it } from "vitest";
 import { fireEvent, waitFor, cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { installTestMatchMedia } from "./test-match-media";
 let app: Awaited<ReturnType<typeof loadPluginApp>>;
 beforeAll(async () => {
@@ -39,7 +39,7 @@ it("exposes the shared settings with the AGENTS.md rules and managed markers", a
     await view.findByText(/Projects get the project template/),
   ).toBeTruthy();
   expect(view.baseElement.textContent).toContain(
-    "<!-- bb-project-folders:agents:start -->",
+    "<!-- alia-project-folders:agents:start -->",
   );
   view.lifecycle.unmount();
 });

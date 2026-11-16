@@ -3,12 +3,12 @@ import type { ProviderHost } from "../../core/src/host/index.ts";
 
 export type CommandHandler = Parameters<ProviderHost["command"]["register"]>[1];
 
-export interface BbCommand {
+export interface AliaCommand {
   command: ProviderHost["command"];
   handlers: ReadonlyMap<string, CommandHandler>;
 }
 
-export function createBbCommand(): BbCommand {
+export function createAliaCommand(): AliaCommand {
   const handlers = new Map<string, CommandHandler>();
   return { command: { register: (role, handler) => void handlers.set(role, handler) }, handlers };
 }

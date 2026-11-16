@@ -1,5 +1,5 @@
 // The dialogs that ask before an agent reads text the user didn't write.
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

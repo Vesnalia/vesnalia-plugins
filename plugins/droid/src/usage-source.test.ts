@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeHostResponse, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeHostResponse, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import { registerUsageSource } from "./usage-source.js";
 import { usageFetchMethod, usageListMethod, usageMeasurementSchema } from "./usage-contract.js";
 import { unavailableUsage } from "./factory-usage.js";
@@ -14,12 +14,12 @@ const measurement = () => usageMeasurementSchema.parse({ accountKey: "factory:or
 it("discovers machine-scoped resources without opening credentials; caches only the requested machine", async () => {
   let removed = false;
   const collect = vi.fn(async () => measurement());
-  const { bb, harness } = createFakePluginHost({ pluginId: "droid", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "droid", sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "online", name: "Laptop", status: "connected" }), makeHostResponse({ id: "offline", status: "disconnected" })] },
     providers: { list: async () => removed ? [] : [{ id: "acp-droid", displayName: "Factory Droid", pluginId: "provider-acp" }] },
   }, experimental_callHostRpc: collect });
   try {
-    const clear = registerUsageSource(bb, async () => "fk-test");
+    const clear = registerUsageSource(alia, async () => "fk-test");
     const read = (resourceId = "online", refresh = false) => harness.behavior.callRpc(usageFetchMethod, { resourceId, refresh });
     expect(await harness.behavior.callRpc(usageListMethod, {})).toMatchObject({ resources: [{ id: "online", scope: { hostId: "online" } }, { id: "offline" }] });
     expect(collect).not.toHaveBeenCalled();
@@ -41,12 +41,12 @@ it("retries expired/error measurements, expires successful cache, and preserves 
   vi.useFakeTimers();
   const success = measurement();
   const collect = vi.fn().mockResolvedValueOnce(success).mockResolvedValue(unavailableUsage("expired"));
-  const { bb, harness } = createFakePluginHost({ sdk: {
+  const { alia, harness } = createFakePluginHost({ sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "host", status: "connected" })] },
     providers: { list: async () => [{ id: "acp-droid", displayName: "Droid", pluginId: "provider-acp" }] },
   }, experimental_callHostRpc: collect });
   try {
-    registerUsageSource(bb, async () => undefined);
+    registerUsageSource(alia, async () => undefined);
     const read = () => harness.behavior.callRpc(usageFetchMethod, { resourceId: "host", refresh: false });
     await read(); vi.advanceTimersByTime(60_001);
     expect(await read()).toMatchObject({ observedAt: success.observedAt, usage: { status: "expired" } });
@@ -57,12 +57,12 @@ it("retries expired/error measurements, expires successful cache, and preserves 
 it("coalesces concurrent refreshes and sanitizes worker failures", async () => {
   let resolve!: (value: ReturnType<typeof measurement>) => void;
   const collect = vi.fn(() => new Promise<ReturnType<typeof measurement>>((done) => { resolve = done; }));
-  const { bb, harness } = createFakePluginHost({ sdk: {
+  const { alia, harness } = createFakePluginHost({ sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "host", status: "connected" })] },
     providers: { list: async () => [{ id: "acp-droid", displayName: "Droid", pluginId: "provider-acp" }] },
   }, experimental_callHostRpc: collect });
   try {
-    registerUsageSource(bb, async () => undefined);
+    registerUsageSource(alia, async () => undefined);
     const read = () => harness.behavior.callRpc(usageFetchMethod, { resourceId: "host", refresh: true });
     const a = read(), b = read();
     await vi.waitFor(() => expect(collect).toHaveBeenCalledTimes(1));
@@ -82,12 +82,12 @@ it("does not repopulate the cache with an old account when the API key changes d
   let finishOld!: (value: ReturnType<typeof measurement>) => void;
   let key = "old-key";
   const collect = vi.fn().mockImplementationOnce(() => new Promise((resolve) => { finishOld = resolve; })).mockImplementation(async () => measurement());
-  const { bb, harness } = createFakePluginHost({ sdk: {
+  const { alia, harness } = createFakePluginHost({ sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "host", status: "connected" })] },
     providers: { list: async () => [{ id: "acp-droid", displayName: "Droid", pluginId: "provider-acp" }] },
   }, experimental_callHostRpc: collect });
   try {
-    const clear = registerUsageSource(bb, async () => key);
+    const clear = registerUsageSource(alia, async () => key);
     const read = () => harness.behavior.callRpc(usageFetchMethod, { resourceId: "host", refresh: false });
     const oldRead = read(); await vi.waitFor(() => expect(collect).toHaveBeenCalledTimes(1));
     key = "new-key"; clear(); await read();
@@ -100,11 +100,11 @@ it("does not repopulate the cache with an old account when the API key changes d
 
 it("cancels the host request when the plugin is disposed", async () => {
   let signal: AbortSignal | undefined;
-  const { bb, harness } = createFakePluginHost({ sdk: {
+  const { alia, harness } = createFakePluginHost({ sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "host", status: "connected" })] },
     providers: { list: async () => [{ id: "acp-droid", displayName: "Droid", pluginId: "provider-acp" }] },
   }, experimental_callHostRpc: async (call) => { signal = call.signal; return measurement(); } });
-  registerUsageSource(bb, async () => undefined);
+  registerUsageSource(alia, async () => undefined);
   try {
     await harness.behavior.callRpc(usageFetchMethod, { resourceId: "host", refresh: false });
     expect(signal?.aborted).toBe(false);
@@ -117,13 +117,13 @@ it.each([
   { setting: undefined, entry: "entry-key", expected: "entry-key" },
   { setting: undefined, entry: undefined, expected: undefined },
 ])("uses the plugin/managed-entry credential precedence: $expected", async ({ setting, entry, expected }) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "droid", settings: setting ? { factoryApiKey: setting } : {}, sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "droid", settings: setting ? { factoryApiKey: setting } : {}, sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "host", status: "connected" })] },
     providers: { list: async () => [{ id: "acp-droid", displayName: "Droid", pluginId: "provider-acp" }] },
     plugins: { getSettings: async () => ({ values: { customAgents: JSON.stringify([{ id: "droid", env: entry ? { FACTORY_API_KEY: entry } : {} }]) } }) },
   }, experimental_callHostRpc: async () => measurement() });
   try {
-    plugin(bb);
+    plugin(alia);
     await harness.behavior.callRpc(usageFetchMethod, { resourceId: "host", refresh: false });
     expect(harness.experimental_hostRpcCalls[0].input).toEqual(expected ? { apiKey: expected } : {});
   } finally { await harness.lifecycle.dispose(); }
@@ -132,12 +132,12 @@ it.each([
 it("drops fields outside the public measurement and rejects malformed worker payloads", async () => {
   const leaky = { ...measurement(), refreshToken: "never-expose-this", usage: { ...measurement().usage, accessToken: "never-expose-this" } };
   const collect = vi.fn().mockResolvedValueOnce(leaky).mockResolvedValueOnce({ usage: "nonsense" });
-  const { bb, harness } = createFakePluginHost({ sdk: {
+  const { alia, harness } = createFakePluginHost({ sdk: {
     hosts: { list: async () => [makeHostResponse({ id: "host", status: "connected" })] },
     providers: { list: async () => [{ id: "acp-droid", displayName: "Droid", pluginId: "provider-acp" }] },
   }, experimental_callHostRpc: collect });
   try {
-    registerUsageSource(bb, async () => undefined);
+    registerUsageSource(alia, async () => undefined);
     const read = (refresh: boolean) => harness.behavior.callRpc(usageFetchMethod, { resourceId: "host", refresh });
     const first = await read(false);
     expect(first).toMatchObject({ usage: { status: "ok" } });

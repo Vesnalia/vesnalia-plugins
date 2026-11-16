@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createFakePluginHost, makeThreadResponse } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, makeThreadResponse } from '@vesnalia/plugin-sdk/testing';
 import { createBrowserbasePlugin } from './server.ts';
 
 const success = (data) => ({ content: [{ type: 'text', text: JSON.stringify({ success: true, data }) }] });
@@ -31,7 +31,7 @@ function fixture(options = {}) {
       async close() { state.closed = true; },
     };
   };
-  createBrowserbasePlugin(connect)(host.bb);
+  createBrowserbasePlugin(connect)(host.alia);
   return {
     ...host, calls, clients,
     call: (name, args = {}, threadId = 'thread-a') => host.harness.behavior.callAgentTool(`browserbase_${name}`, args, { threadId }),

@@ -118,7 +118,7 @@ describe("sets", () => {
     const state = await t.state();
     expect(state.sets).toEqual([]);
     expect(Object.keys(state.assignments)).toEqual(["acp-alpha"]);
-    expect(await t.bb.storage.kv.list("icons/")).toEqual([]);
+    expect(await t.alia.storage.kv.list("icons/")).toEqual([]);
   });
 
   it("deletes one icon and the assignments that use it", async () => {

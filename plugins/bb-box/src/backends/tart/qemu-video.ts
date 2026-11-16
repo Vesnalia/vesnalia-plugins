@@ -1,17 +1,17 @@
-// A Windows VM's desktop as video from the Mac (#865): bb-box-stream's qemu
+// A Windows VM's desktop as video from the Mac (#865): alia-box-stream's qemu
 // mode reads the VM's QEMU VNC server on the Mac's loopback and encodes it
 // with VideoToolbox, as Desktop Duplication in the guest gives only a few
 // frames a second on the Mac's VirtIO GPU. It gives the person's pointer to
-// QEMU's tablet, as the VNC display does. The guest's bb-box-stream.exe still
+// QEMU's tablet, as the VNC display does. The guest's alia-box-stream.exe still
 // takes the keys, and sends the clipboard and the pointer's shape.
 //
-// bb-box builds it on each Mac from setup/ssh-pool/mac-stream.swift, with the
-// Command Line Tools' swiftc, into ~/.bb-box/qemu/bin, which only the host
+// alia-box builds it on each Mac from setup/ssh-pool/mac-stream.swift, with the
+// Command Line Tools' swiftc, into ~/.alia-box/qemu/bin, which only the host
 // user can open. A build is named by its source's hash, so a new source is
 // built again, and keeps its own hash beside it, which is checked before it
 // runs. One runs for each VM while anyone watches it, as the VM's directory
 // says in video.pid; it ends when the VM's QEMU does, when no viewer has come
-// for a minute, or when bb-box saves, captures or deletes the VM, by that PID
+// for a minute, or when alia-box saves, captures or deletes the VM, by that PID
 // only, as the Mac is its owner's.
 
 import { createHash } from "node:crypto";
@@ -22,18 +22,18 @@ import { setupDir } from "../setup-dir.ts";
 import { script, sections } from "./host.ts";
 import { qemuScript } from "./qemu.ts";
 
-/** bb-box-stream's source, as the pool Macs build it. */
+/** alia-box-stream's source, as the pool Macs build it. */
 export function qemuVideoSource(): string {
   return readFileSync(join(setupDir(), "ssh-pool", "mac-stream.swift"), "utf8");
 }
 
 /** The name a build of `source` has, from its hash. */
 export function qemuVideoBuild(source: string): string {
-  return `bb-box-stream-${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
+  return `alia-box-stream-${createHash("sha256").update(source).digest("hex").slice(0, 16)}`;
 }
 
 /** Where builds are, and the build `build` there; and whether it is whole, as its hash beside it says. */
-const BIN = String.raw`bin="$HOME/.bb-box/qemu/bin"
+const BIN = String.raw`bin="$HOME/.alia-box/qemu/bin"
 vok() { [ -x "$1" ] && [ -f "$1.sha256" ] && [ "$(shasum -a 256 < "$1" | cut -d ' ' -f 1)" = "$(cat "$1.sha256")" ] && [ -z "$(find "$1" -perm -022 2>/dev/null)" ]; }
 `;
 
@@ -65,7 +65,7 @@ export function parseQemuVideo(text: string): QemuVideo | null {
 
 /** Where the build's source goes before buildScript runs. */
 export function qemuVideoSourcePath(build: string): string {
-  return `.bb-box/qemu/bin/${build}.swift`;
+  return `.alia-box/qemu/bin/${build}.swift`;
 }
 
 /**
@@ -76,7 +76,7 @@ export function qemuVideoSourcePath(build: string): string {
  */
 export function qemuVideoBuildScript(build: string): string {
   return script(String.raw`${BIN}b="$bin/"${quote(build)}; t="$bin/"${quote(`${build}.build`)}
-mkdir -p "$bin" && chmod 700 "$HOME/.bb-box/qemu" "$bin" || exit 1
+mkdir -p "$bin" && chmod 700 "$HOME/.alia-box/qemu" "$bin" || exit 1
 [ -f "$b.swift" ] || { echo "The source to build is not on the Mac." >&2; exit 1; }
 # A build that died left its lock: one older than a quarter of an hour is taken over.
 [ -n "$(find "$t.lock" -prune -mmin +15 2>/dev/null)" ] && rm -rf "$t.lock"
@@ -86,7 +86,7 @@ rm -rf "$t"; mkdir "$t" || exit 1
 if xcrun swiftc -O -swift-version 5 -o "$t/out" "$b.swift" > "$t/log" 2>&1; then
   shasum -a 256 < "$t/out" | cut -d ' ' -f 1 > "$t/sha" && chmod 700 "$t/out" && mv -f "$t/out" "$b" && mv -f "$t/sha" "$b.sha256" || exit 1
   rm -f "$b.failed"
-  for o in "$bin"/bb-box-stream-*; do
+  for o in "$bin"/alia-box-stream-*; do
     case "$o" in "$b" | "$b.sha256" | "$t" | "$t.lock") ;; *) rm -rf "$o" ;; esac
   done
   echo built
@@ -109,7 +109,7 @@ fi
 export function qemuVideoOpenScript(vm: string, port: number, build: string): string {
   return qemuScript(String.raw`${BIN}vm=${quote(vm)}; v="$q/vms/$vm"; b="$bin/"${quote(build)}; s="$v/video.sock"
 [ -d "$v" ] || { echo "The VM $vm is not on the Mac." >&2; exit 1; }
-vok "$b" || { echo "BB Box's build of bb-box-stream on the Mac is not whole: $b." >&2; exit 3; }
+vok "$b" || { echo "VesnALIA Box's build of alia-box-stream on the Mac is not whole: $b." >&2; exit 3; }
 if ! qvideo "$vm"; then
   i=0; until mkdir "$v/video.lock" 2>/dev/null; do i=$((i + 1)); [ "$i" -lt 50 ] || rm -rf "$v/video.lock"; sleep 0.1; done
   if ! qvideo "$vm"; then
@@ -134,8 +134,8 @@ if ! qvideo "$vm"; then
 fi
 i=0
 until [ -S "$s" ]; do
-  qvideo "$vm" || { echo "bb-box-stream did not start for $vm:" >&2; tail -n 5 "$v/video.log" >&2; exit 1; }
-  i=$((i + 1)); [ "$i" -lt 100 ] || { echo "bb-box-stream did not listen for $vm within 10 s." >&2; exit 1; }
+  qvideo "$vm" || { echo "alia-box-stream did not start for $vm:" >&2; tail -n 5 "$v/video.log" >&2; exit 1; }
+  i=$((i + 1)); [ "$i" -lt 100 ] || { echo "alia-box-stream did not listen for $vm within 10 s." >&2; exit 1; }
   sleep 0.1
 done
 exec "$b" attach "$s"

@@ -1,5 +1,5 @@
 // The frontend <-> server contract. Both schemas run at the wire boundary.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { ChangesResult, CommitsResult, EnvironmentsResult, PatchResult, PullRequestResult, ThreadsResult } from "../core/project";
 import type { GeocodeResult, PhotoResult, TileResult } from "../core/web";
@@ -24,7 +24,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ threadId: z.string().min(1), path: z.string().min(1).max(2000) }),
     output: z.union([z.object({ ok: z.literal(true), base64: z.string(), ext: z.enum(["glb", "gltf"]) }), z.object({ ok: z.literal(false), error: z.string() })]),
   },
-  /** A workspace or thread-storage file to stream (players, PDFs, fonts): a bb preview URL that answers byte ranges, or a data URL when bb can't lease one. */
+  /** A workspace or thread-storage file to stream (players, PDFs, fonts): a VesnALIA preview URL that answers byte ranges, or a data URL when VesnALIA can't lease one. */
   file_url: {
     input: z.object({ threadId, path: z.string().min(1).max(2000) }),
     output: z.custom<FileUrlResult>(),
@@ -68,8 +68,8 @@ export const rpcContract = defineRpcContract({
   project_pull_request: { input: z.object({ threadId }), output: z.custom<PullRequestResult>() },
   project_environments: { input: z.object({ threadId }), output: z.custom<EnvironmentsResult>() },
   /** ids: null for the thread's subthreads. */
-  /** Live data from bb itself for load("bb:<source>"), scoped to the card's thread. */
-  bb_data: {
+  /** Live data from VesnALIA itself for load("VesnALIA:<source>"), scoped to the card's thread. */
+  alia_data: {
     input: z.object({ threadId: z.string().min(1).max(64).nullable(), spec: z.string().min(3).max(300) }),
     output: z.union([z.object({ ok: z.literal(true), value: json }), z.object({ ok: z.literal(false), error: z.string() })]),
   },
@@ -107,10 +107,10 @@ export type FolderFilesResult =
       /** Paths from the folder, "/"-separated. */
       files: string[];
       truncated: boolean;
-      /** The folder's preview URL (append a file's encoded path), or null when bb couldn't lease one. */
+      /** The folder's preview URL (append a file's encoded path), or null when VesnALIA couldn't lease one. */
       base: string | null;
       expiresAtMs: number | null;
-      /** The folder as a card path: workspace-relative or under $BB_THREAD_STORAGE. */
+      /** The folder as a card path: workspace-relative or under $ALIA_THREAD_STORAGE. */
       folder: string;
       /** The folder's path from the workspace root, for git markers; null in thread storage. */
       repoPrefix: string | null;

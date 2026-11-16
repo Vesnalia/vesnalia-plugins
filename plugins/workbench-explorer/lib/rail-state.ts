@@ -1,14 +1,14 @@
 /**
- * The rail's open/closed flag is shared by controls mounted in different BB
+ * The rail's open/closed flag is shared by controls mounted in different VesnALIA
  * surfaces. The rail initializes it after settings load.
  */
-export const RAIL_STORAGE_KEY = "bb-plugin-workbench-explorer:rail-open";
-export const RAIL_EVENT = "bb-plugin-workbench-explorer:rail-open";
+export const RAIL_STORAGE_KEY = "alia-plugin-workbench-explorer:rail-open";
+export const RAIL_EVENT = "alia-plugin-workbench-explorer:rail-open";
 /** Storage key and event name for the git plugin's rail. When this rail opens,
  *  the sibling rail is closed so the two right-side panels never overlap —
  *  both sit at `fixed right-0 z-40` in the host window. */
-const SIBLING_RAIL_STORAGE_KEY = "bb-plugin-git:rail-open";
-const SIBLING_RAIL_EVENT = "bb-plugin-git:rail-open";
+const SIBLING_RAIL_STORAGE_KEY = "alia-plugin-git:rail-open";
+const SIBLING_RAIL_EVENT = "alia-plugin-git:rail-open";
 let currentOpen: boolean | null = null;
 
 /** Close the sibling git rail by writing its storage key and dispatching its

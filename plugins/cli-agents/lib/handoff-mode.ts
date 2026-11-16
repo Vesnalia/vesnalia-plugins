@@ -1,7 +1,7 @@
-/** BB 0.43 has no public ComposerView flag for “Handoff to new thread”.
+/** VesnALIA 0.43 has no public ComposerView flag for “Handoff to new thread”.
  * The panel is still scope.kind "thread". Detect it from the composer form.
  * No language-independent attribute was found in SDK 0.4.84; match en+ru
- * labels from the live panel (AG-87). Breaks if BB renames those buttons.
+ * labels from the live panel (AG-87). Breaks if VesnALIA renames those buttons.
  */
 const HANDOFF_LABEL =
   /exit handoff|create new thread|выйти из передачи|создать новый тред|отменить передачу/iu;

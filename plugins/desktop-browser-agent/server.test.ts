@@ -1,5 +1,5 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import plugin, { isPermissionFailure } from "./server.js";
 import type { CatalogTool, DriverStatus, ToolCallResult } from "./src/contract.js";
@@ -76,7 +76,7 @@ const NEWER_DRIVER: CatalogTool[] = [
 
 async function load(options: {
   settings?: Record<string, string | boolean>;
-  /** Values bb still stores for keys the plugin no longer declares. */
+  /** Values VesnALIA still stores for keys the plugin no longer declares. */
   storedSettings?: Record<string, string | boolean>;
   status?: DriverStatus;
   toolResult?: ToolCallResult;
@@ -88,7 +88,7 @@ async function load(options: {
   browserReplies?: unknown[];
 } = {}) {
   const hostCalls: Array<{ method: string; input: unknown; hostId: string }> = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "desktop-browser-agent",
     settings: options.settings ?? {},
     agentSkillIds: ["desktop-browser-agent"],
@@ -137,14 +137,14 @@ async function load(options: {
       return { disconnected: false };
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const toolCalls = () => hostCalls.filter((call) => call.method === "callTool").map((call) => call.input as {
     name: string;
     arguments: Record<string, unknown>;
     session?: string;
     grants: string[];
   });
-  return { bb, harness, hostCalls, toolCalls };
+  return { alia, harness, hostCalls, toolCalls };
 }
 
 /** Waits until the plugin asks, and returns that request. */
@@ -191,11 +191,11 @@ describe("routing", () => {
     expect(rejected.exitCode).toBe(1);
   });
 
-  it("keeps the mode out of bb's Configuration form and carries an old setting over", async () => {
-    const { bb, harness } = await load({ storedSettings: { mode: "off" } });
+  it("keeps the mode out of VesnALIA's Configuration form and carries an old setting over", async () => {
+    const { alia, harness } = await load({ storedSettings: { mode: "off" } });
     expect(Object.keys(harness.registrations.settingsDescriptors)).not.toContain("mode");
     expect(names(await harness.behavior.resolveAgentConfiguration(context("claude-code")))).toEqual([]);
-    expect(await bb.storage.kv.get("routing-mode")).toBe("off");
+    expect(await alia.storage.kv.get("routing-mode")).toBe("off");
   });
 });
 
@@ -223,7 +223,7 @@ describe("exposure policy", () => {
     const refused = structured(await harness.behavior.callAgentTool("cua_call", { tool: "run_script", arguments: { source: "x" } }));
     expect(refused.isError).toBe(true);
     expect(text(refused)).toMatch(/run_script is turned off.*Do not reach the same capability another way/s);
-    expect(text(refused)).toContain("bb cua expose run_script call");
+    expect(text(refused)).toContain("alia cua expose run_script call");
 
     const managed = structured(await harness.behavior.callAgentTool("cua_call", { tool: "start_session", arguments: {} }));
     expect(managed.isError).toBe(true);
@@ -267,7 +267,7 @@ describe("exposure policy", () => {
     expect(toolCalls()).toHaveLength(0);
   });
 
-  it("applies the policy to `bb cua call` too", async () => {
+  it("applies the policy to `alia cua call` too", async () => {
     const { harness, toolCalls } = await load();
     const refused = await harness.behavior.runCli(["call", "kill_app", '{"pid":1}']);
     expect(refused.exitCode).toBe(1);
@@ -293,7 +293,7 @@ describe("live catalog", () => {
     expect(names(configuration).sort()).toEqual(["cua_call", "cua_click", "cua_describe", "cua_list_windows", "cua_run_steps", "cua_status"]);
     const click = configuration.tools.find((tool) => tool.name === "cua_click");
     expect(click?.inputSchema).toEqual({ type: "object", properties: { brand_new_arg: { type: "string" }, pid: { type: "integer" } }, required: ["pid"] });
-    // A schema bb would refuse as an override falls back to a permissive one.
+    // A schema VesnALIA would refuse as an override falls back to a permissive one.
     expect(configuration.tools.find((tool) => tool.name === "cua_list_windows")?.inputSchema).toEqual({ type: "object", additionalProperties: true });
     expect(configuration.instructions).toMatch(/Cua Driver 9\.0\.0 is untested \(plugin tested with .*\): 2 new \(peek_menu_bar, wipe_window\)/);
 
@@ -374,7 +374,7 @@ describe("driver calls", () => {
     expect(hostCalls.find((call) => call.method === "callTool")?.hostId).toBe("host_9");
     expect(toolCalls()[0]).toMatchObject({ name: "click", arguments: { pid: 4, element_token: "s1:2" } });
     const firstSession = toolCalls()[0]!.session;
-    expect(firstSession).toMatch(/^bb-/);
+    expect(firstSession).toMatch(/^alia-/);
 
     await harness.behavior.emitThreadEvent("thread.idle", { thread: makeThreadResponse({ id: "thread-test" }), lastAssistantText: null });
     await vi.waitFor(() => expect(toolCalls().some((call) => call.name === "end_session")).toBe(true));
@@ -394,13 +394,13 @@ describe("driver calls", () => {
       session: "someone-elses-session",
     });
     expect(toolCalls()[0]!.arguments).toEqual({ pid: 4, element_token: "s1:2", from_zoom: true, target: { window_id: 9 } });
-    expect(toolCalls()[0]!.session).toMatch(/^bb-/);
+    expect(toolCalls()[0]!.session).toMatch(/^alia-/);
     expect(toolCalls()[0]!.grants).toEqual([]);
   });
 
   it("retries once with a fresh session after Cua Driver ended the old one", async () => {
     const ended: ToolCallResult = {
-      content: [{ type: "text", text: "session 'bb-thr' has ended; tool call 'click' was rejected." }],
+      content: [{ type: "text", text: "session 'alia-thr' has ended; tool call 'click' was rejected." }],
       isError: true,
     };
     const { harness, toolCalls } = await load({ toolResults: [ended] });
@@ -413,7 +413,7 @@ describe("driver calls", () => {
 
   it("keeps each session label unique under a long prefix, cutting the prefix rather than the suffix", async () => {
     const ended: ToolCallResult = {
-      content: [{ type: "text", text: "session 'bb-thr' has ended; tool call 'click' was rejected." }],
+      content: [{ type: "text", text: "session 'alia-thr' has ended; tool call 'click' was rejected." }],
       isError: true,
     };
     const { harness, toolCalls } = await load({ settings: { sessionPrefix: "p".repeat(200) }, toolResults: [ended] });
@@ -520,7 +520,7 @@ describe("asking before sensitive actions", () => {
     expect(toolCalls().filter((call) => call.name === "browser_set_input_files")).toHaveLength(2);
   });
 
-  it("asks only for the sensitive form of a tool, through cua_call and `bb cua call` too", async () => {
+  it("asks only for the sensitive form of a tool, through cua_call and `alia cua call` too", async () => {
     const { harness, toolCalls } = await load({ settings: { confirmSensitiveTools: true, signedInBrowserProfiles: true } });
     await harness.behavior.callAgentTool("cua_clipboard_read", {});
     await harness.behavior.callAgentTool("cua_browser_prepare", { allow_launch: true });
@@ -764,7 +764,7 @@ describe("browser extension", () => {
   it("sends the user to settings when the extension is not set up, and passes refusals through", async () => {
     const { harness } = await load({
       browserReplies: [
-        { ok: false, code: "not_connected", message: "No browser with the Browser Bridge for bb extension is connected." },
+        { ok: false, code: "not_connected", message: "No browser with the Browser Bridge for VesnALIA extension is connected." },
         { ok: false, code: "tab_not_shared", message: "Tab 3 is not shared with agents." },
         { ok: false, code: "not_installed", message: "The browser bridge is not installed on this machine." },
       ],
@@ -772,7 +772,7 @@ describe("browser extension", () => {
     await harness.behavior.runCli(["browser", "on"]);
     const setup = structured(await harness.behavior.callAgentTool("browser_tabs", {}));
     expect(setup.isError).toBe(true);
-    expect(text(setup)).toMatch(/Ask the user to open a browser with the Browser Bridge for bb extension.*\*\*Browser extension\*\* card of .*\/settings\/plugins\/desktop-browser-agent/s);
+    expect(text(setup)).toMatch(/Ask the user to open a browser with the Browser Bridge for alia extension.*\*\*Browser extension\*\* card of .*\/settings\/plugins\/desktop-browser-agent/s);
     const refused = structured(await harness.behavior.callAgentTool("browser_read", { tab_id: 3 }));
     expect(text(refused)).toBe("browser_read failed (tab_not_shared): Tab 3 is not shared with agents.");
     const missing = structured(await harness.behavior.callAgentTool("browser_open", { url: "https://example.com" }));
@@ -799,7 +799,7 @@ describe("browser extension", () => {
     expect(request.payload).toMatchObject({
       tool: "browser_open",
       shownName: "browser_open",
-      reason: expect.stringMatching(/Browser Bridge for bb.*covers every browser_\* tool in this thread/),
+      reason: expect.stringMatching(/Browser Bridge for alia.*covers every browser_\* tool in this thread/),
     });
     harness.behavior.submitInteraction(request.id, { allow: "thread" });
     expect(structured(await pending).isError).toBe(false);
@@ -838,7 +838,7 @@ describe("browser extension", () => {
     harness.behavior.submitInteraction((await asked(harness)).id, { allow: "once" });
     const refused = structured(await old);
     expect(refused.isError).toBe(true);
-    expect(text(refused)).toMatch(/^browser_upload needs a newer Browser Bridge for bb/);
+    expect(text(refused)).toMatch(/^browser_upload needs a newer Browser Bridge for alia/);
   });
 
   it("shows and changes the bridge from the app", async () => {

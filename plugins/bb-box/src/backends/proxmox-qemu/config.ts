@@ -1,4 +1,4 @@
-// The Proxmox QEMU backend's fields in bb-box's configuration (029), parsed
+// The Proxmox QEMU backend's fields in alia-box's configuration (029), parsed
 // into a typed config. The settings page and the tests go through
 // parseQemuPart.
 //
@@ -38,10 +38,10 @@ export interface QemuConfig {
   readonly androidTemplates: readonly number[];
   readonly vmids: VmidRange;
   readonly network: ProxmoxNetwork;
-  /** A null key means bb-box generates one and shows its public key. */
+  /** A null key means alia-box generates one and shows its public key. */
   readonly ssh: { readonly privateKey: string | null; readonly user: string };
   readonly reserve: { readonly memoryMiB: number; readonly diskGiB: number };
-  /** Windows boxes join BB as machines, unless set off (#539). */
+  /** Windows boxes join VesnALIA as machines, unless set off (#539). */
   readonly enrol: boolean;
   /** Linux VM boxes have KVM, where the host allows nested virtualization (057). Off by default. */
   readonly kvm: boolean;
@@ -61,7 +61,7 @@ export const QEMU_DEFAULTS = {
   reserveDiskGiB: 50,
 } as const;
 
-/** Field keys in bb-box's configuration (029). The backend had no BB settings before it. */
+/** Field keys in alia-box's configuration (029). The backend had no VesnALIA settings before it. */
 export const QEMU_KEYS = {
   url: "url",
   tokenId: "token-id",
@@ -177,8 +177,8 @@ export const QEMU_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   },
   [QEMU_KEYS.enrol]: {
     type: "boolean",
-    label: "Windows boxes as BB machines",
-    description: "Windows boxes join BB as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only.",
+    label: "Windows boxes as VesnALIA machines",
+    description: "Windows boxes join VesnALIA as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only.",
     group: "boxes",
     default: true,
   },
@@ -230,7 +230,7 @@ export const QEMU_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   [QEMU_KEYS.sshUser]: {
     type: "string",
     label: "SSH user",
-    description: `The user in the template that ${PRODUCT} and BB work as.`,
+    description: `The user in the template that ${PRODUCT} and VesnALIA work as.`,
     group: "advanced",
     default: QEMU_DEFAULTS.sshUser,
   },
@@ -275,7 +275,7 @@ function templateList(values: Readonly<Record<string, unknown>>, problem: Proble
   return templates;
 }
 
-/** Proxmox QEMU's part of bb-box's configuration (029), with each problem at its field. */
+/** Proxmox QEMU's part of alia-box's configuration (029), with each problem at its field. */
 export function parseQemuPart(part: BackendPart): ParsedBackend<QemuConfig> {
   const values = part.fields;
   const problems: FieldProblem[] = [];

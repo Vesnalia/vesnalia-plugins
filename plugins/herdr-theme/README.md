@@ -1,12 +1,12 @@
-![Herdr Theme: A little terminal character for BB. Pixel sheep in lavender terminal frames.](assets/banner.png)
+![Herdr Theme: A little terminal character for VesnALIA. Pixel sheep in lavender terminal frames.](assets/banner.png)
 
 # Herdr Theme
 
-Give BB a little terminal character. Herdr Theme frames conversations like
+Give VesnALIA a little terminal character. Herdr Theme frames conversations like
 terminal panes, keeps the prompt compact, and connects child threads with tree
 branches. Choose from eleven color families, each with light and dark versions.
 
-Inspired by [Herdr](https://herdr.dev/) and built for BB's threads and subthreads.
+Inspired by [Herdr](https://herdr.dev/) and built for VesnALIA's threads and subthreads.
 Independent and unofficial.
 
 [Build checks](https://github.com/davideiffert/bb-plugin-herdr-theme/actions/workflows/check.yml) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
@@ -16,7 +16,7 @@ Independent and unofficial.
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/conversation-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/screenshots/conversation-light.png">
-  <img alt="Herdr Theme in BB, showing a dashboard conversation, highlighted user messages, and three demo projects with connected child threads and branch names." src="assets/screenshots/conversation-dark.png" width="1440">
+  <img alt="Herdr Theme in VesnALIA, showing a dashboard conversation, highlighted user messages, and three demo projects with connected child threads and branch names." src="assets/screenshots/conversation-dark.png" width="1440">
 </picture>
 
 *Branch names turned on. [Lavender dark](assets/screenshots/conversation-dark.png) · [Catppuccin Latte light](assets/screenshots/conversation-light.png). The image follows your light or dark appearance.*
@@ -29,29 +29,29 @@ Independent and unofficial.
 - **Eleven palette families.** Light and dark appearances, coordinated code highlighting, and a swatch picker in settings.
 - **A bundled font.** JetBrains Mono is bundled. No font service or network request required.
 
-BB still owns the editor, attachments, voice controls, menus, keyboard shortcuts,
+VesnALIA still owns the editor, attachments, voice controls, menus, keyboard shortcuts,
 and thread navigation. This theme does not change agent behavior or add workspace
 management.
 
 ## Room for the whole task
 
-![Herdr Tokyo Night with six related conversations in BB's native split layout, arranged in two rows of three. The Orbit project tree stays visible beside the plan, interface, API, tests, docs, and release review.](assets/screenshots/six-panes-dark.png)
+![Herdr Tokyo Night with six related conversations in VesnALIA's native split layout, arranged in two rows of three. The Orbit project tree stays visible beside the plan, interface, API, tests, docs, and release review.](assets/screenshots/six-panes-dark.png)
 
-*Tokyo Night. One plan and five child threads, arranged with BB's native split controls.
+*Tokyo Night. One plan and five child threads, arranged with VesnALIA's native split controls.
 [Open the full-size screenshot](assets/screenshots/six-panes-dark.png).*
 
-Screenshots show BB 0.43 with sample projects and conversations written for the
+Screenshots show VesnALIA 0.43 with sample projects and conversations written for the
 demo. They do not show private conversations or live agent runs.
 
 ## Install
 
-Requires BB 0.43 or newer. This installs the latest compatible 0.5 release:
+Requires VesnALIA 0.43 or newer. This installs the latest compatible 0.5 release:
 
 ```sh
-bb plugin install git:https://github.com/davideiffert/bb-plugin-herdr-theme@^0.5.0
+alia plugin install git:https://github.com/davideiffert/bb-plugin-herdr-theme@^0.5.0
 ```
 
-Open **Settings → Herdr Theme → Color schemes** to choose a palette. Use BB's
+Open **Settings → Herdr Theme → Color schemes** to choose a palette. Use VesnALIA's
 Appearance settings for Light, Dark, or System. Pick any other theme and Herdr's
 extra styling turns off.
 
@@ -61,7 +61,7 @@ Lavender, Catppuccin, Tokyo Night, Dracula, Nord, Gruvbox, One, Solarized,
 Kanagawa, Rosé Pine, and Vesper.
 
 Lavender is original to this theme. The other ten families adapt Herdr's palette
-values for BB. Herdr's Dracula, Nord, and Vesper are dark-only, so this theme adds
+values for VesnALIA. Herdr's Dracula, Nord, and Vesper are dark-only, so this theme adds
 its own light versions. The picker labels them.
 
 <picture>
@@ -70,12 +70,12 @@ its own light versions. The picker labels them.
   <img alt="Herdr Theme settings showing all eleven palette families with light and dark swatches." src="assets/screenshots/palettes-dark.png" width="770">
 </picture>
 
-*The palette picker in BB's settings.*
+*The palette picker in VesnALIA's settings.*
 
 ## Optional branch names
 
 Turn on **Show branch names** in **Settings → Herdr Theme → Configuration**.
-It is off by default. When BB knows a thread's Git branch, its name appears under
+It is off by default. When VesnALIA knows a thread's Git branch, its name appears under
 the thread title. Threads without a branch stay on one line. Pinned threads and
 sidebars supplied by other plugins do not show these branch names.
 
@@ -85,12 +85,12 @@ sidebars supplied by other plugins do not show these branch names.
 
 ## Compatibility
 
-Tested on BB 0.43. The theme styles parts of BB's current interface that can
-change between releases. A new BB version may need a theme update.
+Tested on VesnALIA 0.43. The theme styles parts of VesnALIA's current interface that can
+change between releases. A new VesnALIA version may need a theme update.
 
 - The Folders plugin keeps its own thread list.
 - Compact Navigation and Herdr use the same navigation slot. Only one supplies the navigation at a time.
-- On phones, BB's sidebar and touch controls stay in place. The editor has been tried on an iPhone. Other phone checks used browser emulation. Microphone recording remains untested.
+- On phones, VesnALIA's sidebar and touch controls stay in place. The editor has been tried on an iPhone. Other phone checks used browser emulation. Microphone recording remains untested.
 - Workspace tabs and saved split arrangements are outside this theme's scope.
 
 See [release checks](docs/RELEASE_CHECKS.md) for what was and was not tested.
@@ -98,7 +98,7 @@ See [release checks](docs/RELEASE_CHECKS.md) for what was and was not tested.
 ## Contribute
 
 Found a problem? [Open an issue](https://github.com/davideiffert/bb-plugin-herdr-theme/issues)
-with your BB version, palette, device, and reproduction steps. Focused pull
+with your VesnALIA version, palette, device, and reproduction steps. Focused pull
 requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
 To build locally:
@@ -109,7 +109,7 @@ npm run check
 npm run build
 ```
 
-The committed `font.css` is intentional. BB's Git installer builds the plugin
+The committed `font.css` is intentional. VesnALIA's Git installer builds the plugin
 directly without running npm lifecycle scripts. The build command regenerates
 it from the bundled WOFF2. This project is currently distributed through Git,
 not npm.
@@ -118,7 +118,7 @@ not npm.
 
 Created by David Eiffert. Inspired by Herdr.
 
-Herdr Theme is not affiliated with Herdr, BB, or Catppuccin. Plugin code is
+Herdr Theme is not affiliated with Herdr, VesnALIA, or Catppuccin. Plugin code is
 [MIT licensed](LICENSE).
 
 [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) is bundled under the

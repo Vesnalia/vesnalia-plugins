@@ -1,7 +1,7 @@
 // Window durations. A window is identified by (providerId, label); the host
 // gives no duration, so it comes from the label table below. The host's
 // undocumented `kind` is only a fallback hint for labels outside the table.
-// Labels seen on bb 0.49.0 are listed in AGENTS.md «Host facts».
+// Labels seen on VesnALIA 0.49.0 are listed in AGENTS.md «Host facts».
 
 export const MIN_MS = 60_000;
 export const HOUR_MS = 60 * MIN_MS;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { idleSidebarThreadFields } from "./test-fixtures";
 import { childThreadsByParent } from "./ChildThreadList";
 import {
@@ -98,7 +98,7 @@ describe("sortSettledThreads", () => {
     expect(ordered.map((candidate) => candidate.id)).toEqual(["new-thread", "old-thread"]);
   });
 
-  it("falls back to the latest bb activity time", () => {
+  it("falls back to the latest VesnALIA activity time", () => {
     const ordered = sortSettledThreads(
       [
         thread({ id: "updated", updatedAt: 800, latestAttentionAt: 100 }),
@@ -121,7 +121,7 @@ describe("threadDisplayTitle", () => {
     expect(threadDisplayTitle(thread({ title: "   ", titleFallback: "Fallback" }))).toBe("Fallback");
   });
 
-  it("shows bb's resolved names for mention titles and keeps the stored text for editing", () => {
+  it("shows VesnALIA's resolved names for mention titles and keeps the stored text for editing", () => {
     const mentioned = thread({ title: "Review @thread:thr_other", displayTitle: "Review Other thread" });
     expect(threadTitleHasMentions(mentioned)).toBe(true);
     expect(threadDisplayTitle(mentioned)).toBe("Review Other thread");
@@ -130,7 +130,7 @@ describe("threadDisplayTitle", () => {
     expect(threadDisplayTitle({ ...mentioned, displayTitle: "" })).toBe("Review @thread:thr_other");
   });
 
-  it("follows whatever bb resolved, including section aliases and file paths", () => {
+  it("follows whatever VesnALIA resolved, including section aliases and file paths", () => {
     const folder = thread({ title: "Review @folder:sec_work", displayTitle: "Review Work" });
     expect(threadTitleHasMentions(folder)).toBe(true);
     expect(threadDisplayTitle(folder)).toBe("Review Work");
@@ -138,11 +138,11 @@ describe("threadDisplayTitle", () => {
     expect(threadDisplayTitle(file)).toBe("Fix inbox.ts");
   });
 
-  it("leaves titles bb did not change exactly as stored", () => {
+  it("leaves titles VesnALIA did not change exactly as stored", () => {
     const plain = thread({ title: "Email me@example.com", displayTitle: "Email me@example.com" });
     expect(threadTitleHasMentions(plain)).toBe(false);
     expect(threadDisplayTitle(plain)).toBe("Email me@example.com");
-    // An unnamed thread keeps the sidebar's placeholder, not bb's short id.
+    // An unnamed thread keeps the sidebar's placeholder, not VesnALIA's short id.
     const unnamed = thread({ title: null, titleFallback: null, displayTitle: "thr_1" });
     expect(threadTitleHasMentions(unnamed)).toBe(false);
     expect(threadDisplayTitle(unnamed)).toBe("Untitled thread");
@@ -156,7 +156,7 @@ describe("resolveThreadTitlesIn", () => {
     thread({ id: "c", title: "Plain title", displayTitle: "Plain title" }),
   ];
 
-  it("swaps stored mention titles for bb's names and leaves the rest of the text", () => {
+  it("swaps stored mention titles for VesnALIA's names and leaves the rest of the text", () => {
     expect(resolveThreadTitlesIn('shares a workspace with "Review @thread:thr_x", which is not settled', threads)).toBe(
       'shares a workspace with "Review Login fix", which is not settled',
     );
@@ -172,7 +172,7 @@ describe("resolveThreadTitlesIn", () => {
 describe("filterProjectsByName", () => {
   const projects = [
     { id: "all", name: "All projects" },
-    { id: "p1", name: "bb-sidebar" },
+    { id: "p1", name: "alia-sidebar" },
     { id: "p2", name: "kanban" },
   ];
 

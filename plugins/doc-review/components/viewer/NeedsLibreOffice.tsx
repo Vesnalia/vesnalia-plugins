@@ -9,7 +9,7 @@ const messages = defineMessages(
     copied: "Copied",
     copyCommand: "Copy command",
     needed: "LibreOffice is needed to show this file",
-    shownAsPdf: (kind: string) => `${kind} files are shown as PDF, converted by LibreOffice on the machine bb runs on.`,
+    shownAsPdf: (kind: string) => `${kind} files are shown as PDF, converted by LibreOffice on the machine VesnALIA runs on.`,
     noModule: (module: string) => `LibreOffice is installed there, but without its ${module} module.`,
     notFound: "LibreOffice was not found there.",
     unusual: "Installed somewhere unusual? Set the path to soffice in this plugin's settings.",
@@ -20,7 +20,7 @@ const messages = defineMessages(
     copied: "Скопировано",
     copyCommand: "Скопировать команду",
     needed: "Чтобы показать этот файл, нужен LibreOffice",
-    shownAsPdf: (kind) => `Файлы ${kind} показываются как PDF: их переводит LibreOffice на машине, где работает bb.`,
+    shownAsPdf: (kind) => `Файлы ${kind} показываются как PDF: их переводит LibreOffice на машине, где работает alia.`,
     noModule: (module) => `LibreOffice там есть, но без модуля ${module}.`,
     notFound: "LibreOffice там не найден.",
     unusual: "Стоит в необычном месте? Укажите путь к soffice в настройках этого плагина.",
@@ -30,7 +30,7 @@ const messages = defineMessages(
 );
 
 /**
- * Install commands for the machine bb runs on — which is not necessarily the
+ * Install commands for the machine VesnALIA runs on — which is not necessarily the
  * one this browser runs on, hence the server reports its platform.
  */
 function installCommands(

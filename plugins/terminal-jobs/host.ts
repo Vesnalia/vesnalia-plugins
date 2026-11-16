@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import {
   RUNNER_ARGUMENT,
   RUNNER_PROTOCOL_VERSION,

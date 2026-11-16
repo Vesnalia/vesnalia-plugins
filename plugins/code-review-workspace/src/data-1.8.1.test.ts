@@ -34,20 +34,20 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
  */
 function host(branch: string) {
   const made = folderHost({ files: [{ path: "retry.ts" }], env: { branchName: branch } }, { threads: { list: async () => [], experimental_listDescendants: async () => ({ threads: [] }) } });
-  createStore(made.bb);
-  made.bb.storage.database().exec(fixture("data.sql"));
-  const store = queueStore(createStore(made.bb));
+  createStore(made.alia);
+  made.alia.storage.database().exec(fixture("data.sql"));
+  const store = queueStore(createStore(made.alia));
   const view = (n: number) => ({ number: n, title: `Retry downloads ${n}`, author: { login: "casey" }, baseRefName: "main", headRefName: `casey/downloads-${n}`, url: `https://github.com/acme/web/pull/${n}`, headRefOid: "c3d4e5f60718293a4b5c6d7e8f90123456789abc", state: "OPEN" });
   const runGh = vi.fn(async (args: string[]) => ({ code: 0, stderr: "", stdout: args[1] === "diff" ? PATCH : JSON.stringify(view(Number(args[2]))) }));
-  const deps = { bb: made.bb, store, gh: { runGh, runGit: vi.fn() } as any, changed: vi.fn(), sync: { one: vi.fn(async () => {}), health: () => ({ lastReadAt: null, error: null }) } };
+  const deps = { alia: made.alia, store, gh: { runGh, runGit: vi.fn() } as any, changed: vi.fn(), sync: { one: vi.fn(async () => {}), health: () => ({ lastReadAt: null, error: null }) } };
   return { ...made, store, deps };
 }
 
 test("every Store read of reviews 1.8.1 wrote gives what 1.8.1's gave, but the new knobs and focuses at their defaults", async () => {
-  const { bb, harness } = host("main");
+  const { alia, harness } = host("main");
   const dir = mkdtempSync(join(tmpdir(), "data-1.8.1-"));
   dirs.push(dir);
-  bb.storage.database().prepare(`VACUUM INTO ?`).run(join(dir, "data.db"));
+  alia.storage.database().prepare(`VACUUM INTO ?`).run(join(dir, "data.db"));
   await harness.dispose();
   const read181 = JSON.parse(fixture("reads.json"));
   // 1.12.0's paces read at their defaults.
@@ -93,12 +93,12 @@ test("a 1.8.1 folder's review linked to its PR's review merges with it when read
 });
 
 test("a review 1.8.1 made its PR's reads its folder for what isn't pushed yet, and answers to its id from before", async () => {
-  const { bb, store, deps, calls } = host("casey/downloads-21");
+  const { alia, store, deps, calls } = host("casey/downloads-21");
   const converted = (await store.getReview(keys.converted))!;
   expect(converted).toMatchObject({ kind: "pr", number: 21, feature: { environmentId: "env_21", branch: "casey/downloads-21" } });
   expect(await checkFeature(deps, keys.converted)).toMatchObject({ state: "ahead", aheadFiles: 1, aheadPaths: ["retry.ts"] });
   expect(calls.length).toBeGreaterThan(0);
   const before = localIdOf({ ...converted, feature: converted.feature! });
   expect(before).toBe("web:casey/downloads-21");
-  expect(await reviewNamed(store, bb, before)).toMatchObject({ targetKey: keys.converted });
+  expect(await reviewNamed(store, alia, before)).toMatchObject({ targetKey: keys.converted });
 });

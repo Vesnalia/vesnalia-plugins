@@ -23,7 +23,7 @@ import { autoPostInsights } from "./shadow";
 import { feedbackSignature, phaseOf } from "./next";
 import { errText, ShuttleError, type Ctx } from "./ctx";
 import type { EventRow, MergeRow, PostRow, ServerRow, Store, SyncRunRow } from "./db/store";
-import { THREAD_SCAN, type BbPort, type ProjectInfo } from "./ports";
+import { THREAD_SCAN, type AliaPort, type ProjectInfo } from "./ports";
 import { fetchPr, linkPr, lookup, rememberThread, requirePr, setWatch, shortKey, unlinkPr } from "./prs";
 import { parseKey, prKey, resolveQuery } from "./keys";
 import { matchProject } from "./projects";
@@ -58,7 +58,7 @@ const kindsOf = (run: SyncRunRow | null) => (run === null ? [] : stepsOf(run).fl
 
 export interface ShuttleDeps {
   store: Store;
-  port: BbPort;
+  port: AliaPort;
   now: () => number;
   settings: () => Settings;
   runner?: Runner;
@@ -69,7 +69,7 @@ export interface ShuttleDeps {
 }
 
 /** Settles with `work`, or as soon as `signal` aborts; the abort listener goes either way. */
-/** Linked threads read from bb at once when their titles are refreshed. */
+/** Linked threads read from VesnALIA at once when their titles are refreshed. */
 const THREADS_PER_READ = 100;
 
 function settleOrAbort(work: Promise<void>, signal: AbortSignal): Promise<void> {
@@ -87,7 +87,7 @@ export function toEventView(row: EventRow): EventView {
 
 export class Shuttle implements Ctx {
   readonly store: Store;
-  readonly port: BbPort;
+  readonly port: AliaPort;
   readonly now: () => number;
   readonly settings: () => Settings;
   private readonly rawSettings: () => Settings;
@@ -124,7 +124,7 @@ export class Shuttle implements Ctx {
   private readonly posters = new Map<string, Promise<void>>();
   /** The worker carrying out each server's queued merges, by server id. */
   private readonly mergers = new Map<string, Promise<void>>();
-  /** Each thread's parent, as bb's events name it, so work deep under a review thread counts as the review at work. */
+  /** Each thread's parent, as VesnALIA's events name it, so work deep under a review thread counts as the review at work. */
   private readonly parents = new Map<string, string>();
 
   constructor(deps: ShuttleDeps) {
@@ -941,7 +941,7 @@ export class Shuttle implements Ctx {
       const name = pr ? shortKey(this, pr) : key;
       this.store.addEvent("auto_skip", on ? `Auto review never starts on ${name} now; a review you start yourself still runs.` : `Auto review can start on ${name} again.`, pr?.id ?? null);
     }
-    // `bb shuttle skip` comes here without the RPC's invalidation, so an open Settings page must hear of the new config.
+    // `alia shuttle skip` comes here without the RPC's invalidation, so an open Settings page must hear of the new config.
     this.port.publish(["config", "prs"]);
     return { skipPrs: saved.autoReview.skipPrs, changed };
   }
@@ -1219,7 +1219,7 @@ export class Shuttle implements Ctx {
     return this.fastLane.settled();
   }
 
-  /** Titles and states of linked threads: bb's list has whether one waits on the user, a single read does not. */
+  /** Titles and states of linked threads: VesnALIA's list has whether one waits on the user, a single read does not. */
   /**
    * Every linked thread's title and whether it is archived, a hundred to a read. Delivery skips an archived owner by this
    * copy, so a thread archived while Shuttle missed the event must be read too, however many threads are linked.
@@ -1234,7 +1234,7 @@ export class Shuttle implements Ctx {
   }
 
   private async refreshThreads(linked: string[]): Promise<void> {
-    let listed = new Map<string, Awaited<ReturnType<BbPort["threadsById"]>>[number]>();
+    let listed = new Map<string, Awaited<ReturnType<AliaPort["threadsById"]>>[number]>();
     try {
       listed = new Map((await this.port.threadsById(linked)).map((t) => [t.id, t]));
     } catch {

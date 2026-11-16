@@ -6,14 +6,14 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Limits } from "../../src/cli.js";
 import hostEntry from "../../src/host-entry.js";
 import { serve, type Served } from "../../hosts/claude/process.js";
-import { fakeBb } from "../fake-bb.js";
+import { fakeAlia } from "../fake-alia.js";
 import { alive, fakeSyns, type Logged, type Reply } from "../fake-syns.js";
 
-// The SDK's host bundle loads only inside bb's host worker ("Dynamic require of child_process").
-vi.mock("@get-bb/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
+// The SDK's host bundle loads only inside VesnALIA's host worker ("Dynamic require of child_process").
+vi.mock("@vesnalia/plugin-sdk/host", () => ({ experimental_defineHostEntry: (entry: unknown) => entry }));
 
 /**
- * Row 40 (D-244 §1): one suite, two hosts. The same calls go through bb (the server half, its host call driving the
+ * Row 40 (D-244 §1): one suite, two hosts. The same calls go through VesnALIA (the server half, its host call driving the
  * real host half in the SDK's harness, runSyns included) and through Claude Code (the process the Unife Pages daemon
  * POSTs to), against one fake `syns` answering from the recordings. The answers are deep-equal, the runs per call are
  * equal, and the two runs' logs differ only in SYNS_CALLER.
@@ -45,7 +45,7 @@ function post(endpoint: string, call: Record<string, unknown>): Promise<unknown>
 
 let served: Served;
 let daemon: http.Server;
-let bbInvoke: (call: unknown) => Promise<unknown>;
+let aliaInvoke: (call: unknown) => Promise<unknown>;
 let host: { experimental_dispose(): Promise<void> };
 
 beforeAll(async () => {
@@ -55,12 +55,12 @@ beforeAll(async () => {
   writeFileSync(join(checkout, "clients", "vela", "crm", ".syns.yaml"), "holder: acme/crm\npath: clients/vela/crm\n");
   writeFileSync(join(checkout, "vendor", "other", ".syns.yaml"), "owner: other\nname: elsewhere\n");
 
-  // bb: the server half over a host call that runs the real host half in the SDK's harness.
-  const { experimental_createHostEntryHarness } = await import("@get-bb/plugin-sdk/testing/host");
+  // VesnALIA: the server half over a host call that runs the real host half in the SDK's harness.
+  const { experimental_createHostEntryHarness } = await import("@vesnalia/plugin-sdk/testing/host");
   const harness = experimental_createHostEntryHarness(hostEntry as never);
   host = harness;
-  const bb = fakeBb({ synsPath: syns.bin }, (method, input, options) => harness.experimental_call(method as never, input as never, { ...(options.signal ? { signal: options.signal as AbortSignal } : {}) }), LIMITS);
-  bbInvoke = async (call) => JSON.parse(JSON.stringify(await bb.handlers.threadPagesInvoke!(call)));
+  const alia = fakeAlia({ synsPath: syns.bin }, (method, input, options) => harness.experimental_call(method as never, input as never, { ...(options.signal ? { signal: options.signal as AbortSignal } : {}) }), LIMITS);
+  aliaInvoke = async (call) => JSON.parse(JSON.stringify(await alia.handlers.threadPagesInvoke!(call)));
 
   // Claude Code: the process, registered with a stand-in daemon.
   daemon = http.createServer((req, res) => {
@@ -116,31 +116,31 @@ const CASES: Case[] = [
 /** A run's log without the one key the two hosts set differently. */
 const withoutCaller = (runs: Logged[]) => runs.map((run) => ({ ...run, env: { ...run.env, SYNS_CALLER: undefined } }));
 
-describe("row 40: the same calls through bb and through Claude Code answer alike", () => {
+describe("row 40: the same calls through VesnALIA and through Claude Code answer alike", () => {
   for (const one of CASES) {
     it(one.name, async () => {
       syns.answer(one.replies);
       const call = { method: one.method, params: one.params ?? {}, caller: { sessionId: SESSION, scope: one.scope ?? null, workspace: { id: "ws", path: checkout, machine: null } }, requestId: "r1" };
 
       syns.reset();
-      const viaBb = (await bbInvoke(call)) as Record<string, any>;
-      const bbRuns = syns.runs();
-      const bbPids = syns.pids();
+      const viaAlia = (await aliaInvoke(call)) as Record<string, any>;
+      const aliaRuns = syns.runs();
+      const aliaPids = syns.pids();
 
       syns.reset();
       const viaClaude = (await post(served.endpoint, call)) as Record<string, any>;
       const claudeRuns = syns.runs();
       const claudePids = syns.pids();
 
-      one.expect(viaBb);
-      expect(viaClaude).toEqual(viaBb);
-      expect(claudeRuns.length).toBe(bbRuns.length);
-      expect(bbRuns.length).toBeGreaterThan(0);
-      expect(withoutCaller(claudeRuns)).toEqual(withoutCaller(bbRuns));
-      expect(bbRuns.every((run) => run.env.SYNS_CALLER === "bb-plugin")).toBe(true);
+      one.expect(viaAlia);
+      expect(viaClaude).toEqual(viaAlia);
+      expect(claudeRuns.length).toBe(aliaRuns.length);
+      expect(aliaRuns.length).toBeGreaterThan(0);
+      expect(withoutCaller(claudeRuns)).toEqual(withoutCaller(aliaRuns));
+      expect(aliaRuns.every((run) => run.env.SYNS_CALLER === "alia-plugin")).toBe(true);
       expect(claudeRuns.every((run) => run.env.SYNS_CALLER === "claude-pages")).toBe(true);
       // No process outlives its call on either host.
-      await vi.waitFor(() => expect([...bbPids, ...claudePids].filter(alive)).toEqual([]), { timeout: 3000 });
+      await vi.waitFor(() => expect([...aliaPids, ...claudePids].filter(alive)).toEqual([]), { timeout: 3000 });
     }, 15_000);
   }
 });

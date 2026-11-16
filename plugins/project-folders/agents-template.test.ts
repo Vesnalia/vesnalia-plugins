@@ -13,7 +13,7 @@ const block = agentsBlock(template);
 describe("agents managed block", () => {
   it("wraps the template between markers", () => {
     expect(block).toBe(
-      "<!-- bb-project-folders:agents:start -->\n# Правила\n\n- Будь вежлив.\n<!-- bb-project-folders:agents:end -->",
+      "<!-- alia-project-folders:agents:start -->\n# Правила\n\n- Будь вежлив.\n<!-- alia-project-folders:agents:end -->",
     );
   });
 
@@ -61,8 +61,8 @@ describe("agents managed block", () => {
   });
 
   it("exports the marker constants used in documentation", () => {
-    expect(AGENTS_BLOCK_START).toContain("bb-project-folders:agents");
-    expect(AGENTS_BLOCK_END).toContain("bb-project-folders:agents");
+    expect(AGENTS_BLOCK_START).toContain("alia-project-folders:agents");
+    expect(AGENTS_BLOCK_END).toContain("alia-project-folders:agents");
     expect(block.startsWith(AGENTS_BLOCK_START)).toBe(true);
     expect(block.endsWith(AGENTS_BLOCK_END)).toBe(true);
   });

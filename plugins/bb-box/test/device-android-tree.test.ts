@@ -42,7 +42,7 @@ function named(elements: readonly DeviceElement[], label: string, role?: string)
   return found;
 }
 
-describe("Android's tree, from BB Box's tree server and from uiautomator dump (063, 7.2 and 7.3)", () => {
+describe("Android's tree, from VesnALIA Box's tree server and from uiautomator dump (063, 7.2 and 7.3)", () => {
   test("reads the server's windows, with the display's rotation and size", () => {
     const screen = served("android-tree-settings.json");
     assert.equal(screen.source, "server");
@@ -231,7 +231,7 @@ function source(overrides: Partial<AndroidTreeOptions> & { channels?: FakeChanne
 const TREE_LINE = text("android-tree-settings.json").trim();
 
 describe("where an Android tree comes from (063, 7.3)", () => {
-  test("starts BB Box's tree server from its dex on the device, and reads through it", async () => {
+  test("starts VesnALIA Box's tree server from its dex on the device, and reads through it", async () => {
     const channel = new FakeChannel();
     channel.answers.push(() => TREE_LINE);
     const { tree, spawned, ran } = source({ channels: [channel] });
@@ -239,7 +239,7 @@ describe("where an Android tree comes from (063, 7.3)", () => {
     assert.equal(read.screen.source, "server");
     assert.equal(tree.lastVia, "server");
     const digest = createHash("sha256").update(readFileSync(TREE_SERVER_DEX)).digest("hex").slice(0, 16);
-    assert.deepEqual(spawned, [`CLASSPATH=/data/local/tmp/bb-box-tree-${digest}.dex exec app_process / TreeServer 30000`]);
+    assert.deepEqual(spawned, [`CLASSPATH=/data/local/tmp/alia-box-tree-${digest}.dex exec app_process / TreeServer 30000`]);
     assert.deepEqual(ran, [], "the dex was there already, and nothing was dumped");
   });
 
@@ -248,14 +248,14 @@ describe("where an Android tree comes from (063, 7.3)", () => {
     channel.answers.push(() => TREE_LINE);
     const { tree, ran, shells } = source({ channels: [channel], present: false });
     await tree.read();
-    assert.match(shells[0]!, /rm -f \/data\/local\/tmp\/bb-box-tree-\*\.dex; echo missing/);
+    assert.match(shells[0]!, /rm -f \/data\/local\/tmp\/alia-box-tree-\*\.dex; echo missing/);
     assert.equal(ran[0]?.[0], "push");
     assert.equal(ran[0]?.[1], TREE_SERVER_DEX);
   });
 
   test("gives way to an instrumentation test: the read is refused in words, and nothing is dumped, as a dump could crash the test", async () => {
     const channel = new FakeChannel();
-    channel.answers.push(() => JSON.stringify({ ok: false, code: "instrumentation", words: "BB Box's tree server gives way to an instrumentation running on the device." }));
+    channel.answers.push(() => JSON.stringify({ ok: false, code: "instrumentation", words: "VesnALIA Box's tree server gives way to an instrumentation running on the device." }));
     channel.answers.push(() => TREE_LINE);
     const { tree, ran, logs } = source({ channels: [channel] });
     await assert.rejects(tree.read(), (error: unknown) => error instanceof DriverError && error.code === "held-elsewhere" && error.message === instrumentationWords());
@@ -284,7 +284,7 @@ describe("where an Android tree comes from (063, 7.3)", () => {
     const first = await tree.read();
     assert.equal(first.screen.source, "dump");
     assert.deepEqual(ran.at(-1), ["exec-out", "uiautomator", "dump", "/dev/tty"]);
-    assert.ok(logs.some((line) => /tree server failed, so uiautomator dump reads for the next 30 s: BB Box's tree server stopped: it ended with SIGKILL/.test(line)));
+    assert.ok(logs.some((line) => /tree server failed, so uiautomator dump reads for the next 30 s: ALIA Box's tree server stopped: it ended with SIGKILL/.test(line)));
     assert.equal((await tree.read()).screen.source, "dump", "within the retry window, the dump reads");
     assert.equal(spawned.length, 1);
     advance(TREE_SERVER_RETRY_MS);
@@ -334,10 +334,10 @@ describe("where an Android tree comes from (063, 7.3)", () => {
 
   test("a paste the tree server cannot make leaves it to the Paste key, with the reason logged (F-18)", async () => {
     const held = new FakeChannel();
-    held.answers.push(() => JSON.stringify({ ok: false, code: "instrumentation", words: "BB Box's tree server gives way to an instrumentation running on the device." }));
+    held.answers.push(() => JSON.stringify({ ok: false, code: "instrumentation", words: "VesnALIA Box's tree server gives way to an instrumentation running on the device." }));
     const first = source({ channels: [held] });
     assert.equal(await first.tree.pasteIntoFocusedField(), false);
-    assert.ok(first.logs.some((line) => /^paste: the tree server did not paste, so the Paste key goes: BB Box's tree server gives way/.test(line)));
+    assert.ok(first.logs.some((line) => /^paste: the tree server did not paste, so the Paste key goes: ALIA Box's tree server gives way/.test(line)));
 
     const silent = source({ channels: [new FakeChannel("Exception in thread main")] });
     assert.equal(await silent.tree.pasteIntoFocusedField(), false);

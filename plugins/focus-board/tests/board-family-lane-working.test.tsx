@@ -9,7 +9,7 @@
 // the idle control keeps the lift an unread child has always had.
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { assembleBoard } from "../components/nesting";
 import type { GroupingContext } from "../components/grouping";
@@ -31,7 +31,7 @@ type BoardProps = Parameters<typeof Board>[0];
 function orchestrator(overrides: Partial<PluginSidebarThread> = {}): PluginSidebarThread {
   return thread({
     id: "thr_nusa59caqp",
-    displayTitle: "Decision Queue bb plugin orchestrator",
+    displayTitle: "Decision Queue VesnALIA plugin orchestrator",
     projectId: "proj_rzv6zurfm8",
     providerId: "acp-opencode",
     status: "active",

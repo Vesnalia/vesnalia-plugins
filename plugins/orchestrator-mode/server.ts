@@ -2,7 +2,7 @@
 //
 // One per-thread switch, three enforcement layers:
 //
-//   1. `bb.agents.configure` injects the orchestrator contract and selects the
+//   1. `alia.agents.configure` injects the orchestrator contract and selects the
 //      `orchestrator_delegate` tool for threads that are orchestrating. This is
 //      the layer that actually changes what the agent does.
 //   2. The `message.dispatch` hook keeps the thread-metadata mirror in step
@@ -14,16 +14,16 @@
 //      new work row; in `guard`/`block` it records violations, stops the
 //      turn and sends a corrective nudge.
 //
-// BB gives plugins no pre-tool-call veto, so layer 3 is detect-and-intervene
+// VesnALIA gives plugins no pre-tool-call veto, so layer 3 is detect-and-intervene
 // rather than prevent-at-source. That limitation is documented in README.md.
 import {
   PluginCliError,
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginCliContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { childMessageQueue, CHILD_BATCH_WAIT_REASON } from "./child-message-queue";
 import {
@@ -80,7 +80,7 @@ const STATE_CHANGED = "orchestrator-state";
 const STATE_KEY = "state";
 /**
  * The global settings record: every thread-behaviour setting, plus the composer
- * default. Stored here rather than as BB settings descriptors because a
+ * default. Stored here rather than as VesnALIA settings descriptors because a
  * descriptor has one value per install, and these resolve per project; the
  * editor is the plugin's own settings section, which picks the scope.
  */
@@ -106,7 +106,7 @@ const MAX_UNJUDGED_RETAINED = 200;
 /** Threads kept in the KV map before the least recently touched is dropped. */
 const MAX_THREADS = 300;
 /**
- * The KV map's byte ceiling, under BB's 262,144-byte value limit. A write past
+ * The KV map's byte ceiling, under VesnALIA's 262,144-byte value limit. A write past
  * that limit fails with an opaque store error and the toggle silently stays
  * off, so the map is trimmed to fit here and leave 64 KiB of headroom — several
  * rows at the measured ~15 KB each — for the row the write is adding.
@@ -117,7 +117,7 @@ const MAX_SEEN_ROWS = 500;
 const MAX_DELEGATIONS = 50;
 /**
  * One page each of a thread's children and of its forks, read so the
- * `bb thread tell` exemption covers threads this plugin did not itself
+ * `alia thread tell` exemption covers threads this plugin did not itself
  * delegate. Hidden threads count: a worker kept out of the sidebar is still
  * owned. The cap bounds each read; a parent with more than this under-exempts
  * rather than paging the host from a scan.
@@ -170,7 +170,7 @@ export interface ThreadState {
   /**
    * Turns that ran in a provider session which never received the contract or
    * the tool: the one in flight when the mode was switched on (if any) and the
-   * first one after it, because BB resumes a live session rather than
+   * first one after it, because VesnALIA resumes a live session rather than
    * hot-mutating it. Recorded but never judged.
    */
   graceTurnIds: string[];
@@ -305,7 +305,7 @@ export const WORKER_WORKSPACE_DESCRIPTIONS: Record<WorkerWorkspace, string> = {
   shared:
     "Shared runs every worker in the orchestrator's own checkout, so two units that touch the same files can overwrite each other.",
   worktree:
-    "Worktree gives each unit its own git worktree and branch. Nothing it writes lands in your checkout until you merge it, each worktree needs its dependencies installed by a committed .bb-env-setup.sh, and a check unit can only run tests once that has happened.",
+    "Worktree gives each unit its own git worktree and branch. Nothing it writes lands in your checkout until you merge it, each worktree needs its dependencies installed by a committed .alia-env-setup.sh, and a check unit can only run tests once that has happened.",
   mixed:
     "Mixed makes it the orchestrator's call: every delegation names `workspace: \"shared\"` or `workspace: \"worktree\"`, and the contract tells it to give a worktree to a unit that would touch files another unit is touching. A shared unit's edits are visible to you at once; a worktree unit's stay on its branch until a merge unit brings them in.",
 };
@@ -505,7 +505,7 @@ function asScanRows(rows: unknown): ScanRow[] {
 
 /**
  * Every model the SDK's own picker would offer, with the provider that serves
- * it. Read from `bb.sdk.providers.models()`, the same source the new-thread
+ * it. Read from `alia.sdk.providers.models()`, the same source the new-thread
  * composer's provider and model pickers use, so a worker runs on something the
  * user can actually select there.
  *
@@ -513,12 +513,12 @@ function asScanRows(rows: unknown): ScanRow[] {
  * provider-registration pass, which itself waits for all factories to return.
  * Failed reads preserve saved choices and retry without blocking activation.
  */
-async function loadWorkerCatalog(bb: BbPluginApi, signal: AbortSignal): Promise<WorkerCatalog> {
+async function loadWorkerCatalog(alia: AliaPluginApi, signal: AbortSignal): Promise<WorkerCatalog> {
   // The unfiltered response enumerates available providers; their models each
   // need a separate request. SDK failures may be returned as modelLoadError
   // rather than thrown, and must not turn into an authoritative empty catalog.
   signal.throwIfAborted();
-  const system = await whileActive(bb.sdk.providers.models(), signal);
+  const system = await whileActive(alia.sdk.providers.models(), signal);
   if (system.modelLoadError) throw new Error(`Provider catalog: ${system.modelLoadError.code}`);
   const providers: string[] = [];
   const models: WorkerModelOption[] = [];
@@ -526,7 +526,7 @@ async function loadWorkerCatalog(bb: BbPluginApi, signal: AbortSignal): Promise<
     if (!provider.available) continue;
     providers.push(provider.id);
     signal.throwIfAborted();
-    const response = await whileActive(bb.sdk.providers.models({ providerId: provider.id }), signal);
+    const response = await whileActive(alia.sdk.providers.models({ providerId: provider.id }), signal);
     if (response.modelLoadError) throw new Error(`Provider ${provider.id}: ${response.modelLoadError.code}`);
     for (const model of response.models) {
       if (models.some((existing) => existing.id === model.id)) continue;
@@ -572,7 +572,7 @@ function executionSources(exec: WorkerExecution): WorkerExecutionSources {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   /** Stop in-flight consumers before the plugin context becomes stale. */
   let disposed = false;
   let catalog: WorkerCatalog = { providers: [], models: [] };
@@ -627,8 +627,8 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   /**
-   * The stored global record. Not a BB settings descriptor: a descriptor has one
-   * value per install and BB renders one form for it, while these resolve per
+   * The stored global record. Not a VesnALIA settings descriptor: a descriptor has one
+   * value per install and VesnALIA renders one form for it, while these resolve per
    * project, so the plugin owns the record and the settings section renders the
    * editor for whichever scope is selected.
    */
@@ -677,10 +677,10 @@ export default async function plugin(bb: BbPluginApi) {
   async function writeSettings(patch: Partial<OrchestratorSettings>): Promise<void> {
     const next = readGlobals({ ...globalSettings, ...patch }, globalsView());
     globalSettings = next;
-    await bb.storage.kv.set(GLOBAL_SETTINGS_KEY, next);
+    await alia.storage.kv.set(GLOBAL_SETTINGS_KEY, next);
     applySettings(next);
-    bb.log.info(`enforcement=${live.enforcement} default=${live.defaultForNewThreads}`);
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    alia.log.info(`enforcement=${live.enforcement} default=${live.defaultForNewThreads}`);
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
   }
 
   /**
@@ -717,7 +717,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): string | undefined {
     if (value === undefined || value === "") return undefined;
     if (catalogReady && !options.includes(value)) {
-      bb.log.warn(`${setting} "${value}" is not in the current catalog; ignoring it`);
+      alia.log.warn(`${setting} "${value}" is not in the current catalog; ignoring it`);
       return undefined;
     }
     return value;
@@ -733,7 +733,7 @@ export default async function plugin(bb: BbPluginApi) {
     const owner = catalog.models.find((option) => option.id === exec.model)?.providerId;
     if (owner === undefined || owner === exec.providerId) return exec;
     if (exec.providerId !== undefined) {
-      bb.log.warn(
+      alia.log.warn(
         `worker provider ${exec.providerId} does not serve ${exec.model}; using ${owner}`,
       );
     }
@@ -889,13 +889,13 @@ export default async function plugin(bb: BbPluginApi) {
         .map((option) => option.id)
         .join(", ");
       throw new Error(
-        `Unknown worker model "${exec.model}". Models this machine offers include: ${sample}. Run \`bb provider models <provider>\` for the full list, or omit model to inherit the project default.`,
+        `Unknown worker model "${exec.model}". Models this machine offers include: ${sample}. Run \`alia provider models <provider>\` for the full list, or omit model to inherit the project default.`,
       );
     }
   }
 
   async function persistDefaultEnabledAt(): Promise<void> {
-    await bb.storage.kv.set(DEFAULT_KEY, {
+    await alia.storage.kv.set(DEFAULT_KEY, {
       enabledAtMs: live.defaultForNewThreads ? live.defaultEnabledAtMs : null,
     });
   }
@@ -955,18 +955,18 @@ export default async function plugin(bb: BbPluginApi) {
                   ),
                 }),
           };
-    await bb.storage.kv.set(WORKER_KEY, stored);
+    await alia.storage.kv.set(WORKER_KEY, stored);
     // Discovery may have finished while this provisional write was in flight.
     live.worker = storedWorkerConfig(stored);
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
     return live.worker;
   }
 
   /**
    * The project rules the user appended. Held in memory as well as storage
-   * because `bb.agents.configure` is synchronous and cannot await a read.
+   * because `alia.agents.configure` is synchronous and cannot await a read.
    */
-  let extraInstructions = readExtra(await bb.storage.kv.get<unknown>(CONTRACT_KEY));
+  let extraInstructions = readExtra(await alia.storage.kv.get<unknown>(CONTRACT_KEY));
 
   /** The appended rules out of a stored record, or "" when there are none. */
   function readExtra(stored: unknown): string {
@@ -983,15 +983,15 @@ export default async function plugin(bb: BbPluginApi) {
         `Project rules are capped at ${EXTRA_INSTRUCTION_LIMIT} characters so the contract stays inside the ${INSTRUCTION_LIMIT}-character limit; that text is ${text.length}.`,
       );
     }
-    await bb.storage.kv.set(CONTRACT_KEY, { extra: text });
+    await alia.storage.kv.set(CONTRACT_KEY, { extra: text });
     extraInstructions = text;
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
     return text;
   }
 
   /**
    * Per-project overrides, held in memory beside the globals for the same reason:
-   * `bb.agents.configure` is synchronous and cannot await a read. A project with no
+   * `alia.agents.configure` is synchronous and cannot await a read. A project with no
    * record inherits every field, so an install that never scopes anything behaves
    * exactly as before.
    */
@@ -1044,8 +1044,8 @@ export default async function plugin(bb: BbPluginApi) {
   async function writeProjectSettings(projectId: string, next: Partial<OrchestratorSettings>): Promise<SettingsView> {
     if (Object.keys(next).length === 0) delete projectSettings[projectId];
     else projectSettings[projectId] = next;
-    await bb.storage.kv.set(PROJECT_SETTINGS_KEY, projectSettings);
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    await alia.storage.kv.set(PROJECT_SETTINGS_KEY, projectSettings);
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
     return settingsFor(projectId);
   }
 
@@ -1065,8 +1065,8 @@ export default async function plugin(bb: BbPluginApi) {
               ),
             }),
       };
-    await bb.storage.kv.set(PROJECT_WORKER_KEY, projectWorker);
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    await alia.storage.kv.set(PROJECT_WORKER_KEY, projectWorker);
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
     return workerFor(projectId);
   }
 
@@ -1080,28 +1080,28 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (text === "") delete projectRules[projectId];
     else projectRules[projectId] = text;
-    await bb.storage.kv.set(PROJECT_RULES_KEY, projectRules);
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    await alia.storage.kv.set(PROJECT_RULES_KEY, projectRules);
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
     return text;
   }
 
   /** Load every project override once, before any thread can be governed by it. */
   async function loadProjectOverrides(): Promise<void> {
-    const storedSettings = await bb.storage.kv.get<unknown>(PROJECT_SETTINGS_KEY);
+    const storedSettings = await alia.storage.kv.get<unknown>(PROJECT_SETTINGS_KEY);
     if (storedSettings !== null && typeof storedSettings === "object") {
       for (const [projectId, value] of Object.entries(storedSettings as Record<string, unknown>)) {
         if (value === null || typeof value !== "object") continue;
         projectSettings[projectId] = value as Partial<OrchestratorSettings>;
       }
     }
-    const storedWorker = await bb.storage.kv.get<unknown>(PROJECT_WORKER_KEY);
+    const storedWorker = await alia.storage.kv.get<unknown>(PROJECT_WORKER_KEY);
     if (storedWorker !== null && typeof storedWorker === "object") {
       for (const [projectId, value] of Object.entries(storedWorker as Record<string, unknown>)) {
         if (value === null || typeof value !== "object") continue;
         projectWorker[projectId] = storedWorkerConfig(value);
       }
     }
-    const storedRules = await bb.storage.kv.get<unknown>(PROJECT_RULES_KEY);
+    const storedRules = await alia.storage.kv.get<unknown>(PROJECT_RULES_KEY);
     if (storedRules !== null && typeof storedRules === "object") {
       for (const [projectId, value] of Object.entries(storedRules as Record<string, unknown>)) {
         if (typeof value === "string" && value.trim() !== "") projectRules[projectId] = value;
@@ -1112,7 +1112,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** The project a thread belongs to, or null when the thread cannot be read. */
   async function projectOfThread(threadId: string): Promise<string | null> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return typeof thread.projectId === "string" ? thread.projectId : null;
     } catch {
       return null;
@@ -1120,7 +1120,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /**
-   * The exact text `bb.agents.configure` injects for one thread. Pass a null
+   * The exact text `alia.agents.configure` injects for one thread. Pass a null
    * thread for the text a thread that has not run yet would receive. Exposed so
    * the contract can be read instead of guessed at.
    */
@@ -1146,12 +1146,12 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  globalSettings = readGlobals(await bb.storage.kv.get<unknown>(GLOBAL_SETTINGS_KEY));
+  globalSettings = readGlobals(await alia.storage.kv.get<unknown>(GLOBAL_SETTINGS_KEY));
   applySettings(globalSettings);
-  live.worker = storedWorkerConfig(await bb.storage.kv.get<unknown>(WORKER_KEY));
+  live.worker = storedWorkerConfig(await alia.storage.kv.get<unknown>(WORKER_KEY));
   await loadProjectOverrides();
   {
-    const stored = await bb.storage.kv.get<{ enabledAtMs?: unknown }>(DEFAULT_KEY);
+    const stored = await alia.storage.kv.get<{ enabledAtMs?: unknown }>(DEFAULT_KEY);
     const storedAt =
       stored !== undefined && typeof stored.enabledAtMs === "number" ? stored.enabledAtMs : null;
     if (live.defaultForNewThreads) {
@@ -1169,7 +1169,7 @@ export default async function plugin(bb: BbPluginApi) {
   //
   // Authoritative per-thread state lives in this plugin's KV, which the thread's
   // own agent cannot write. Thread metadata carries a mirror of it only because
-  // `bb.agents.configure` is synchronous and metadata is its only per-thread
+  // `alia.agents.configure` is synchronous and metadata is its only per-thread
   // input. The dispatch hook rewrites the mirror before every turn.
 
   let cache: Record<string, ThreadState> | null = null;
@@ -1222,18 +1222,18 @@ export default async function plugin(bb: BbPluginApi) {
     // "no row" as an ordinary state, so degrade to an empty map and log.
     let rows: Record<string, unknown> = {};
     try {
-      const stored = await bb.storage.kv.get<unknown>(STATE_KEY);
+      const stored = await alia.storage.kv.get<unknown>(STATE_KEY);
       if (stored === undefined || stored === null) {
         rows = {};
       } else if (typeof stored === "object" && !Array.isArray(stored)) {
         rows = stored as Record<string, unknown>;
       } else {
-        bb.log.warn(
+        alia.log.warn(
           `stored state is not an object (${Array.isArray(stored) ? "array" : typeof stored}); starting empty`,
         );
       }
     } catch (cause) {
-      bb.log.warn(`state read failed; starting empty: ${String(cause)}`);
+      alia.log.warn(`state read failed; starting empty: ${String(cause)}`);
     }
     // Normalize here, not only in getState and mutateState: every reader shares this
     // cache, including the agent-configuration path, and a row written by an older
@@ -1287,9 +1287,9 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function persist(next: Record<string, ThreadState>): Promise<void> {
-    await bb.storage.kv.set(STATE_KEY, next);
+    await alia.storage.kv.set(STATE_KEY, next);
     cache = next;
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
   }
 
   function emptyState(now: number): ThreadState {
@@ -1419,7 +1419,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     }
     if (dropped.length > 0) {
-      bb.log.warn(
+      alia.log.warn(
         `state map over budget: dropped ${dropped.length} least recently touched thread(s) (${dropped.slice(0, 5).join(", ")}${dropped.length > 5 ? ", …" : ""})`,
       );
     }
@@ -1485,7 +1485,7 @@ export default async function plugin(bb: BbPluginApi) {
     // silent, the way a pruned thread is.
     const retained = owed.slice(-MAX_UNJUDGED_RETAINED);
     if (retained.length < owed.length) {
-      bb.log.warn(
+      alia.log.warn(
         `delegation records over cap: dropped ${owed.length - retained.length} oldest verdict-owed record(s)`,
       );
     }
@@ -1513,7 +1513,7 @@ export default async function plugin(bb: BbPluginApi) {
     threadId: string,
   ): Promise<{ seq: number; turnId: string | null }> {
     try {
-      const timeline = await bb.sdk.threads.timeline({ threadId });
+      const timeline = await alia.sdk.threads.timeline({ threadId });
       const response = timeline as { maxSeq?: unknown; rows?: unknown };
       const seq =
         typeof response.maxSeq === "number" && Number.isFinite(response.maxSeq)
@@ -1522,7 +1522,7 @@ export default async function plugin(bb: BbPluginApi) {
       const rows = asScanRows(response.rows);
       return { seq, turnId: rows.length === 0 ? null : (rows[rows.length - 1]!.turnId ?? null) };
     } catch (cause) {
-      bb.log.warn(`timeline head read failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`timeline head read failed for ${threadId}: ${String(cause)}`);
       return { seq: 0, turnId: null };
     }
   }
@@ -1541,14 +1541,14 @@ export default async function plugin(bb: BbPluginApi) {
     let graceSlots = 1;
     let active = false;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       active = thread.status === "active";
       if (enabled && active && head.turnId !== null) {
         graceTurnIds = [head.turnId];
         graceSlots = 2;
       }
     } catch (cause) {
-      bb.log.warn(`thread status read failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`thread status read failed for ${threadId}: ${String(cause)}`);
     }
     const state = await mutateState(threadId, (current) => ({
       ...current,
@@ -1571,13 +1571,13 @@ export default async function plugin(bb: BbPluginApi) {
         const text = enabled
           ? await contractText(threadId)
           : "Orchestrator mode is now off. The earlier orchestrator contract no longer applies; continue following the user's request.";
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId,
           mode: "steer",
           input: [{ type: "text", mentions: [], text }],
         });
       } catch (cause) {
-        bb.log.warn(`mode notification failed for ${threadId}: ${String(cause)}`);
+        alia.log.warn(`mode notification failed for ${threadId}: ${String(cause)}`);
       }
     }
     return state ?? emptyState(Date.now());
@@ -1589,7 +1589,7 @@ export default async function plugin(bb: BbPluginApi) {
     enforcement: EnforcementLevel | null,
   ): Promise<void> {
     try {
-      const current = await bb.sdk.threads.getPluginMetadata({ threadId });
+      const current = await alia.sdk.threads.getPluginMetadata({ threadId });
       const mirror = readMirror(current as Record<string, unknown>);
       if (mirror !== null && mirror.enabled === enabled && mirror.enforcement === enforcement) {
         return;
@@ -1597,13 +1597,13 @@ export default async function plugin(bb: BbPluginApi) {
       // No mirror of ours and nothing to enforce: leave the namespace alone
       // rather than writing an "off" entry onto every thread in the app.
       if (mirror === null && !enabled) return;
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId,
         set: writeMirror({ enabled, enforcement }),
       });
     } catch (cause) {
       // A missing thread (deleted between the write and the mirror) is normal.
-      bb.log.warn(`mirror sync failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`mirror sync failed for ${threadId}: ${String(cause)}`);
     }
   }
 
@@ -1663,7 +1663,7 @@ export default async function plugin(bb: BbPluginApi) {
       .max(200)
       .optional()
       .describe(
-        "Model id for this worker, taken from the provider catalog (`bb provider models <provider>`). Defaults to the plugin's worker model, then the project's remembered model.",
+        "Model id for this worker, taken from the provider catalog (`alia provider models <provider>`). Defaults to the plugin's worker model, then the project's remembered model.",
       ),
     provider: z
       .string()
@@ -1672,7 +1672,7 @@ export default async function plugin(bb: BbPluginApi) {
       .max(120)
       .optional()
       .describe(
-        "Provider id for this worker, taken from the provider catalog (`bb provider list`). Defaults to the plugin's worker provider, then the project's remembered provider.",
+        "Provider id for this worker, taken from the provider catalog (`alia provider list`). Defaults to the plugin's worker provider, then the project's remembered provider.",
       ),
     reasoning: z
       .enum(REASONING_LEVELS)
@@ -1721,7 +1721,7 @@ export default async function plugin(bb: BbPluginApi) {
      * own, so under it every delegation has to say, which is the whole point of
      * the mode: the orchestrator decides per unit.
      */
-    const parent = await bb.sdk.threads.get({ threadId });
+    const parent = await alia.sdk.threads.get({ threadId });
     const projectId = contextProjectId ?? parent.projectId;
     const scopeWorkspace = settingsFor(projectId).workerWorkspace;
     if (workspace === undefined && scopeWorkspace === "mixed") {
@@ -1733,19 +1733,19 @@ export default async function plugin(bb: BbPluginApi) {
     /**
      * The machine a new worktree belongs on: the orchestrator's own, so the unit
      * sees the same host as the thread that handed it the work. An environment
-     * that cannot be read leaves it unset, which asks BB for this machine.
+     * that cannot be read leaves it unset, which asks VesnALIA for this machine.
      */
     let parentHostId: string | undefined;
     if (unitWorkspace === "worktree" && parent.environmentId !== null) {
       try {
-        parentHostId = (await bb.sdk.environments.get({ environmentId: parent.environmentId })).hostId;
+        parentHostId = (await alia.sdk.environments.get({ environmentId: parent.environmentId })).hostId;
       } catch {
         parentHostId = undefined;
       }
     }
     /**
      * The checkout one unit runs in. Without a worktree it is the orchestrator's
-     * own; with one, BB creates a managed worktree off the project's default
+     * own; with one, VesnALIA creates a managed worktree off the project's default
      * branch on the machine the orchestrator runs on. A check unit or a retry
      * passes the environment its unit was spawned into, so it inspects and
      * continues the same working tree instead of opening a second one.
@@ -1864,7 +1864,7 @@ export default async function plugin(bb: BbPluginApi) {
       await assertWithinBudget(orchestratorId, countPerTurn, targetProjectId);
       try {
         assertInCatalog(exec);
-        const spawned = await bb.sdk.threads.spawn({
+        const spawned = await alia.sdk.threads.spawn({
           projectId: targetProjectId,
           environment,
           prompt: options.brief ?? task,
@@ -1915,7 +1915,7 @@ export default async function plugin(bb: BbPluginApi) {
     async function settle(workerId: string, timeoutMs: number): Promise<Settled> {
       const deadline = Date.now() + timeoutMs;
       try {
-        await bb.sdk.threads.wait({ threadId: workerId, status: "idle", timeoutMs, signal });
+        await alia.sdk.threads.wait({ threadId: workerId, status: "idle", timeoutMs, signal });
       } catch {
         // `wait` matches one status and polls, so an errored thread never
         // reaches `idle`: the server rejects the wait immediately with
@@ -1926,7 +1926,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       let status: string | null = null;
       try {
-        status = (await bb.sdk.threads.get({ threadId: workerId })).status;
+        status = (await alia.sdk.threads.get({ threadId: workerId })).status;
       } catch {
         status = null;
       }
@@ -1941,10 +1941,10 @@ export default async function plugin(bb: BbPluginApi) {
       }
       let output: string | null = null;
       try {
-        const result = await bb.sdk.threads.output({ threadId: workerId });
+        const result = await alia.sdk.threads.output({ threadId: workerId });
         output = (result as { output?: string | null }).output ?? null;
       } catch (cause) {
-        bb.log.warn(`worker output read failed for ${workerId}: ${String(cause)}`);
+        alia.log.warn(`worker output read failed for ${workerId}: ${String(cause)}`);
       }
       await maybeArchive(orchestratorId, workerId);
       return { status, output, running: false };
@@ -1972,7 +1972,7 @@ export default async function plugin(bb: BbPluginApi) {
     async function retryOnFallback(fallback: WorkerExecution, reason: string): Promise<string> {
       const retryExec = reconcile({ ...workerExec, ...fallback });
       const target = retryExec.model ?? "the project default";
-      bb.log.warn(`${reason} Retrying on ${target}.`);
+      alia.log.warn(`${reason} Retrying on ${target}.`);
       const retry = await spawnWorker(
         retryExec,
         `${workerTitle} (fallback)`,
@@ -2007,7 +2007,7 @@ export default async function plugin(bb: BbPluginApi) {
           })
         ).id;
       } catch (cause) {
-        bb.log.warn(`check unit for ${workerId} could not start: ${String(cause)}`);
+        alia.log.warn(`check unit for ${workerId} could not start: ${String(cause)}`);
         return `\n\nNo check unit ran: ${String(cause)}`;
       }
       await mutateState(orchestratorId, (current) => ({
@@ -2030,18 +2030,18 @@ export default async function plugin(bb: BbPluginApi) {
     /**
      * What a worktree unit leaves behind, named so it can be reviewed or merged.
      * An environment that cannot be read still names the id, because that is the
-     * handle every `bb environment` command takes.
+     * handle every `alia environment` command takes.
      */
     async function worktreeNote(environmentId: string | null): Promise<string> {
       if (unitWorkspace !== "worktree" || environmentId === null) return "";
       try {
-        const environment = await bb.sdk.environments.get({ environmentId });
+        const environment = await alia.sdk.environments.get({ environmentId });
         const branch = environment.branchName;
         const where = branch === null ? `environment ${environmentId}` : `branch \`${branch}\``;
         // The merge brief is written out, because the orchestrator cannot merge by
         // hand: the watchdog counts that as doing the work.
         const land = `delegate a merge unit with \`workspace: "shared"\`: "Merge ${where} into this checkout and report what conflicts instead of resolving them."`;
-        return `\n\nThis unit ran in its own worktree on ${where}. Nothing is merged from it: \`bb environment diff ${environmentId}\` shows what it changed. To land it, ${land}`;
+        return `\n\nThis unit ran in its own worktree on ${where}. Nothing is merged from it: \`alia environment diff ${environmentId}\` shows what it changed. To land it, ${land}`;
       } catch {
         return `\n\nThis unit ran in its own worktree (environment ${environmentId}). Nothing is merged from it. To land it, delegate a merge unit with \`workspace: "shared"\` naming that environment.`;
       }
@@ -2094,7 +2094,7 @@ export default async function plugin(bb: BbPluginApi) {
     return await retryOnFallback(fallback, `Worker ${workerId} failed.`);
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: DELEGATE_TOOL,
     description:
       "Hand one unit of work to a worker thread and get its result back. Optionally pin its providerId and model before it starts. The only way an orchestrator-mode thread gets work done. The worker cannot see this conversation, so `task` must be a complete, self-contained brief: goal, context, constraints, and what done means.",
@@ -2110,7 +2110,7 @@ export default async function plugin(bb: BbPluginApi) {
     execute: delegateTask,
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: REVIEW_TOOL,
     description:
       "Record your verdict on one worker's output. Call it once per worker whose result you used, before you report, because the watchdog checks for it. `rejected` means the unit is re-delegated to a worker, never patched by you.",
@@ -2189,7 +2189,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     // The mirror is the only source of truth here. `configure` is synchronous
     // and receives no createdAt, so it cannot tell a thread created under the
     // new-thread default from one that merely predates it, and guessing here is
@@ -2241,21 +2241,21 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- layer 2: the dispatch checkpoint ------------------------------------
 
-  const childQueue = childMessageQueue(bb, async (threadId) => {
+  const childQueue = childMessageQueue(alia, async (threadId) => {
     if (disposed || (await getState(threadId))?.enabled !== true || disposed) return false;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     return !disposed && (await getState(threadId))?.enabled === true && !disposed &&
       settingsFor(thread.projectId).childMessageDelivery === "queued";
   });
 
-  bb.events.on("message.queued", ({ entry }) => {
+  alia.events.on("message.queued", ({ entry }) => {
     if (childQueue.owned(entry)) return childQueue.prepare(entry.threadId);
   });
   // Once a leading batch leaves, the next child becomes the queue's prefix.
-  bb.events.on("message.dispatched", ({ entry }) => childQueue.prepare(entry.threadId));
-  bb.events.on("message.cancelled", ({ entry }) => childQueue.prepare(entry.threadId));
+  alia.events.on("message.dispatched", ({ entry }) => childQueue.prepare(entry.threadId));
+  alia.events.on("message.cancelled", ({ entry }) => childQueue.prepare(entry.threadId));
 
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
     const threadId = ctx.thread.id;
     try {
       let state = await getState(threadId);
@@ -2284,7 +2284,7 @@ export default async function plugin(bb: BbPluginApi) {
             graceTurnIds: head.turnId === null ? [] : [head.turnId],
             graceSlots: 1,
           }));
-          bb.log.info(`orchestrator mode applied by default to ${threadId}`);
+          alia.log.info(`orchestrator mode applied by default to ${threadId}`);
         }
       }
       if (state === undefined) {
@@ -2319,7 +2319,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (senders.size > 0) {
             const children = await Promise.all(
               [...senders].map(async (senderThreadId) =>
-                (await bb.sdk.threads.get({ threadId: senderThreadId })).parentThreadId === threadId,
+                (await alia.sdk.threads.get({ threadId: senderThreadId })).parentThreadId === threadId,
               ),
             );
             if (children.every(Boolean)) {
@@ -2345,7 +2345,7 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (cause) {
       // Never block a dispatch because the mirror could not be refreshed; the
       // next turn tries again and the watchdog still reads authoritative state.
-      bb.log.warn(`dispatch sync failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`dispatch sync failed for ${threadId}: ${String(cause)}`);
     }
     return { action: "proceed" as const };
   });
@@ -2374,7 +2374,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       await scan(threadId);
     } catch (cause) {
-      bb.log.warn(`scan failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`scan failed for ${threadId}: ${String(cause)}`);
     } finally {
       scanning.delete(threadId);
     }
@@ -2383,7 +2383,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function scan(threadId: string): Promise<void> {
     // Resolved once per scan: the project a thread belongs to cannot change
     // mid-scan, and the classifier reads two values from it per row.
-    const scanThread = await bb.sdk.threads.get({ threadId }).catch(() => null);
+    const scanThread = await alia.sdk.threads.get({ threadId }).catch(() => null);
     const scanSettings = settingsFor(scanThread?.projectId);
     const providerId = scanThread?.providerId;
     const state = await getState(threadId);
@@ -2391,7 +2391,7 @@ export default async function plugin(bb: BbPluginApi) {
     const enforcement = effectiveEnforcement(state);
     if (enforcement === "instruct") return;
 
-    const timeline = await bb.sdk.threads.timeline({
+    const timeline = await alia.sdk.threads.timeline({
       threadId,
       includeNestedRows: "true",
       ...(state.lastSeq > 0 ? { afterSequence: String(state.lastSeq) } : {}),
@@ -2403,7 +2403,7 @@ export default async function plugin(bb: BbPluginApi) {
     // and a thread this orchestrator owns can exist without a delegation row.
     // A child keeps `parentThreadId`; a fork keeps `sourceThreadId` and a null
     // parent. Hidden threads are included, because a worker kept out of the
-    // sidebar is still owned. The classifier exempts `bb thread tell` for any
+    // sidebar is still owned. The classifier exempts `alia thread tell` for any
     // of them: a correction sent to a thread this orchestrator owns is
     // coordination, not work. Each read is one page, and a failed read
     // contributes nothing, so the scan keeps the delegation record and the
@@ -2412,7 +2412,7 @@ export default async function plugin(bb: BbPluginApi) {
       filter: { parentThreadId: string } | { sourceThreadId: string },
     ): Promise<string[]> {
       try {
-        const children = await bb.sdk.threads.list({
+        const children = await alia.sdk.threads.list({
           ...filter,
           includeHidden: true,
           limit: MAX_CHILD_THREADS,
@@ -2486,7 +2486,7 @@ export default async function plugin(bb: BbPluginApi) {
       } catch (cause) {
         // A malformed row must not wedge the watchdog: the cursor still advances
         // past it, so the next scan keeps enforcing instead of failing forever.
-        bb.log.warn(`scan skipped a malformed row in ${threadId}: ${String(cause)}`);
+        alia.log.warn(`scan skipped a malformed row in ${threadId}: ${String(cause)}`);
       }
 
     }
@@ -2502,12 +2502,12 @@ export default async function plugin(bb: BbPluginApi) {
     }));
     if (fresh.length === 0) return;
 
-    bb.log.warn(
+    alia.log.warn(
       `${threadId} did direct work ${fresh.length} time(s): ${fresh
         .map((violation) => violation.detail)
         .join("; ")}`,
     );
-    bb.realtime.publish(STATE_CHANGED, { at: Date.now(), threadId, violations: fresh.length });
+    alia.realtime.publish(STATE_CHANGED, { at: Date.now(), threadId, violations: fresh.length });
     await intervene(threadId, updated, fresh, enforcement, liveTurnKey ?? fresh[fresh.length - 1]!.id);
   }
 
@@ -2523,11 +2523,11 @@ export default async function plugin(bb: BbPluginApi) {
 
     if (enforcement === "block" && state.lastStopTurnId !== liveTurnKey) {
       try {
-        await bb.sdk.threads.stop({ threadId });
+        await alia.sdk.threads.stop({ threadId });
         await mutateState(threadId, (current) => ({ ...current, lastStopTurnId: liveTurnKey }));
-        bb.log.warn(`stopped ${threadId} for doing direct work`);
+        alia.log.warn(`stopped ${threadId} for doing direct work`);
       } catch (cause) {
-        bb.log.warn(`stop failed for ${threadId}: ${String(cause)}`);
+        alia.log.warn(`stop failed for ${threadId}: ${String(cause)}`);
       }
     }
 
@@ -2535,7 +2535,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (state.nudgeCount >= settingsFor(await projectOfThread(threadId)).maxNudges) return;
     const text = buildNudge(violations, enforcement);
     try {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [{ type: "text", text, mentions: [] }],
@@ -2547,18 +2547,18 @@ export default async function plugin(bb: BbPluginApi) {
         lastNudgeTurnId: liveTurnKey,
       }));
     } catch (cause) {
-      bb.log.warn(`nudge failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`nudge failed for ${threadId}: ${String(cause)}`);
     }
   }
 
-  bb.events.on("experimental_thread.events", ({ thread }) => {
+  alia.events.on("experimental_thread.events", ({ thread }) => {
     void (async () => {
       const state = await getState(thread.id);
       if (state?.enabled === true) scheduleScan(thread.id);
     })();
   });
 
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     void (async () => {
       await syncDelegationFor(thread.id, thread.status);
       const state = await getState(thread.id);
@@ -2569,13 +2569,13 @@ export default async function plugin(bb: BbPluginApi) {
     })();
   });
 
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     void (async () => {
       await syncDelegationFor(thread.id, thread.status, error);
     })();
   });
 
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     void mutateState(thread.id, () => null);
   });
 
@@ -2638,10 +2638,10 @@ export default async function plugin(bb: BbPluginApi) {
       return;
     }
     try {
-      await bb.sdk.threads.archive({ threadId: workerId });
-      bb.log.info(`archived worker ${workerId} (retention: ${retention})`);
+      await alia.sdk.threads.archive({ threadId: workerId });
+      alia.log.info(`archived worker ${workerId} (retention: ${retention})`);
     } catch (cause) {
-      bb.log.warn(`could not archive worker ${workerId}: ${String(cause)}`);
+      alia.log.warn(`could not archive worker ${workerId}: ${String(cause)}`);
     }
   }
 
@@ -2729,10 +2729,10 @@ export default async function plugin(bb: BbPluginApi) {
     const before = await getState(threadId);
     if (reviewNudgeMarker(before ?? emptyState(Date.now()), maxNudges) === undefined) return;
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status !== "idle" && thread.status !== "error") return;
     } catch (cause) {
-      bb.log.warn(`review gate could not read ${threadId}: ${String(cause)}`);
+      alia.log.warn(`review gate could not read ${threadId}: ${String(cause)}`);
       return;
     }
     // Claim inside the serialized mutation: two events for the same unjudged set
@@ -2758,7 +2758,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (claimed === undefined) return;
     const { titles, count, marker, enforcement } = claimed;
     try {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [
@@ -2769,9 +2769,9 @@ export default async function plugin(bb: BbPluginApi) {
           },
         ],
       });
-      bb.log.warn(`${threadId} ended a turn with ${count} unjudged worker(s)`);
+      alia.log.warn(`${threadId} ended a turn with ${count} unjudged worker(s)`);
     } catch (cause) {
-      bb.log.warn(`review nudge failed for ${threadId}: ${String(cause)}`);
+      alia.log.warn(`review nudge failed for ${threadId}: ${String(cause)}`);
       // Give the reminder back: the marker would otherwise mute the gate for this set.
       await mutateState(threadId, (current) =>
         current.lastReviewNudge === marker
@@ -2788,7 +2788,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- RPC -----------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     get_state: async ({ threadId }) =>
       toDto(threadId, await getState(threadId), settingsFor(await projectOfThread(threadId))),
     set_enabled: async ({ threadId, enabled, enforcement }) => {
@@ -2917,7 +2917,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (threadId === undefined || threadId === "") {
       throw new PluginCliError("no thread to act on", {
         code: "thread_required",
-        hint: "Pass --thread <thread-id>, or run this inside a bb thread.",
+        hint: "Pass --thread <thread-id>, or run this inside a VesnALIA thread.",
       });
     }
     return threadId;
@@ -2990,12 +2990,12 @@ export default async function plugin(bb: BbPluginApi) {
     return lines.join("\n");
   }
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "orchestrator-mode",
       summary: "Force a thread to delegate every unit of work instead of doing it",
       description:
-        "Turn orchestrator mode on for a thread and it may only read, plan, ask, delegate and report. `bb orchestrator-mode --help` for every command.",
+        "Turn orchestrator mode on for a thread and it may only read, plan, ask, delegate and report. `alia orchestrator-mode --help` for every command.",
       commands: {
         status: cliCommand({
           summary: "Show a thread's orchestrator mode, violations and delegations",
@@ -3074,7 +3074,7 @@ export default async function plugin(bb: BbPluginApi) {
               input.options.json,
               dto,
               `Orchestrator mode ON for ${threadId} (${dto.effectiveEnforcement}).\n` +
-                "Running turns are notified now. If the native tool is unavailable, use bb orchestrator-mode delegate.",
+                "Running turns are notified now. If the native tool is unavailable, use VesnALIA orchestrator-mode delegate.",
             );
           },
         }),
@@ -3233,7 +3233,7 @@ export default async function plugin(bb: BbPluginApi) {
                   `--global writes the values every project inherits; ${misplaced.map((flag) => `--${flag}`).join(", ")} ${misplaced.length === 1 ? "belongs" : "belong"} to one project.`,
                   {
                     code: "project_only_flag",
-                    hint: "The global worker execution is `bb orchestrator-mode worker`; the global rules are `bb orchestrator-mode contract --rules <text>`.",
+                    hint: "The global worker execution is `alia orchestrator-mode worker`; the global rules are `alia orchestrator-mode contract --rules <text>`.",
                   },
                 );
               }
@@ -3426,10 +3426,10 @@ export default async function plugin(bb: BbPluginApi) {
           summary: "Show or set the execution every delegated worker defaults to",
           options: {
             clear: { type: "boolean", description: "Clear it, so workers inherit again" },
-            provider: { type: "string", description: "Provider id, from `bb provider list`" },
+            provider: { type: "string", description: "Provider id, from `alia provider list`" },
             model: {
               type: "string",
-              description: "Model id, from `bb provider models <provider>`",
+              description: "Model id, from `alia provider models <provider>`",
             },
             reasoning: {
               type: "enum",
@@ -3562,7 +3562,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     childQueue.dispose();
     for (const timer of scanTimers.values()) clearTimeout(timer);
@@ -3570,11 +3570,11 @@ export default async function plugin(bb: BbPluginApi) {
     scanning.clear();
   });
 
-  bb.background.service("worker-catalog", {
+  alia.background.service("worker-catalog", {
     async start(signal) {
       while (!signal.aborted) {
         try {
-          const discovered = await loadWorkerCatalog(bb, signal);
+          const discovered = await loadWorkerCatalog(alia, signal);
           if (signal.aborted || disposed) return;
           catalog = discovered;
           catalogReady = true;
@@ -3584,11 +3584,11 @@ export default async function plugin(bb: BbPluginApi) {
           for (const [projectId, config] of Object.entries(projectWorker)) {
             projectWorker[projectId] = storedWorkerConfig(config);
           }
-          bb.realtime.publish(STATE_CHANGED, { at: Date.now() });
+          alia.realtime.publish(STATE_CHANGED, { at: Date.now() });
           return;
         } catch (cause) {
           if (signal.aborted || disposed) return;
-          bb.log.warn(`worker provider catalog unavailable; preserving saved choices and retrying: ${String(cause)}`);
+          alia.log.warn(`worker provider catalog unavailable; preserving saved choices and retrying: ${String(cause)}`);
         }
         // Own the retry timer through the service's abort signal; discovery
         // failure must neither fail activation nor leak a timer after reload.
@@ -3603,7 +3603,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("queue-recovery", {
+  alia.background.service("queue-recovery", {
     async start(signal) {
       // Abort precedes onDispose in the host lifecycle. Stop nested recovery
       // consumers now, before any late SDK result can touch a stale context.
@@ -3612,17 +3612,17 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         if (signal.aborted || disposed) return;
         try {
-          const waiting = await whileActive(bb.sdk.threads.queue.list({ waitHolder: `plugin:${bb.pluginId}` }), signal);
+          const waiting = await whileActive(alia.sdk.threads.queue.list({ waitHolder: `plugin:${alia.pluginId}` }), signal);
           if (signal.aborted || disposed) return;
           await whileActive(Promise.all([...new Set(waiting.map((entry) => entry.threadId))].map(childQueue.prepare)), signal);
         } catch (cause) {
           if (signal.aborted || disposed) return;
-          bb.log.warn(`child queue recovery failed: ${String(cause)}`);
+          alia.log.warn(`child queue recovery failed: ${String(cause)}`);
         }
       } finally {
         signal.removeEventListener("abort", stop);
       }
     },
   });
-  bb.log.info(`loaded (enforcement=${live.enforcement})`);
+  alia.log.info(`loaded (enforcement=${live.enforcement})`);
 }

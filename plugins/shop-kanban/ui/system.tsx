@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server/schema";
 import { usePoll } from "./hooks";
 import { ACCENT_TEXT, type AiUsage, type SystemProcesses, type SystemStats } from "./model";
@@ -282,7 +282,7 @@ const PANEL_LABEL: Record<PanelKey, string> = {
 };
 
 /**
- * Title-bar resource monitor for the bb server machine (where threads run, even when this page is open elsewhere):
+ * Title-bar resource monitor for the VesnALIA server machine (where threads run, even when this page is open elsewhere):
  * a borderless danger chip each for CPU, memory pressure, disk and battery drain (a high figure always means
  * trouble), plus today's AI spend. Hovering or clicking a chip opens a popover about that resource alone; a click
  * pins it open until clicking again, outside, or Escape.
@@ -579,7 +579,7 @@ function AiUsageSection({ usage }: { usage: AiUsage }) {
         ) : null}
         {usage.pricingStale ? <span className="block">The proxy has no pricing loaded; costs read $0.</span> : null}
         {usage.error ? <span className="block text-destructive">Last update failed: {usage.error}</span> : null}
-        <span className="block text-muted-foreground/70">All your Shopify AI proxy use, not just bb threads. Amber from {formatUsd(AI_SPEND_WARN_USD, false)}.</span>
+        <span className="block text-muted-foreground/70">All your Shopify AI proxy use, not just VesnALIA threads. Amber from {formatUsd(AI_SPEND_WARN_USD, false)}.</span>
       </Detail>
     </Section>
   );

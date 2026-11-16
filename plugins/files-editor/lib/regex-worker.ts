@@ -40,7 +40,7 @@ export function createInProcessExecutor(source: string, flags: string): MatchExe
 /**
  * The worker's whole program. A string rather than a module because a plugin
  * cannot ship a second entry file: path installs load `server.ts` as
- * TypeScript, and `bb plugin build` emits one bundle. Evaluated as CommonJS, so
+ * TypeScript, and `alia plugin build` emits one bundle. Evaluated as CommonJS, so
  * `require` is available. It must stay self-contained — nothing from the
  * enclosing module exists inside the worker.
  */
@@ -76,9 +76,9 @@ parentPort.on("message", (message) => {
 /**
  * A user-written regex runs in a worker thread with a deadline.
  *
- * This plugin runs inside BB's own server process. A pattern that backtracks
+ * This plugin runs inside VesnALIA's own server process. A pattern that backtracks
  * catastrophically — `(a+)+$` against a long line of `a`s — would otherwise
- * block that thread for minutes and freeze all of BB with it, not just this
+ * block that thread for minutes and freeze all of VesnALIA with it, not just this
  * search. In a worker it can only burn its own thread, and missing the deadline
  * terminates it.
  */

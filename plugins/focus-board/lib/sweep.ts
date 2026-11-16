@@ -12,7 +12,7 @@
  * arms (Done, A-while-ago) pre-select their candidates — Pinned, Unread,
  * and the fresher idle buckets arm empty and are curated by clicking cards.
  */
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { threadState } from "../components/grouping";
 import {
   DEFAULT_ARCHIVE_UNIT,
@@ -32,7 +32,7 @@ export const DEFAULT_DONE_ARCHIVE_MS = archiveThresholdMs(
 export const DEFAULT_IDLE_ARCHIVE_MS = DEFAULT_DONE_ARCHIVE_MS;
 
 /**
- * Where Done ages come from. The done-state musing's final lean is bb-native
+ * Where Done ages come from. The done-state musing's final lean is alia-native
  * thread plugin metadata (stamped `doneAt`, optional `keep`); until that
  * sashay lands, the board implements this over its own KV store with
  * first-seen stamps. Threads with no known stamp are never eligible — the

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   boundedErrorText,
   isMissingThreadError,
@@ -11,7 +11,7 @@ import type { FeedStore } from "./store.js";
 import { latestAgentMessage } from "./summaries.js";
 
 type ThreadListEntry = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>
 >[number];
 type ThreadShape = Pick<
   ThreadResponse,
@@ -115,7 +115,7 @@ async function boundedMap<T, R>(
 
 export class FeedService {
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: FeedStore,
     private readonly readSettings: () => Promise<FeedSettings>,
     private readonly onResultSeen: (threadId: string, resultSeq: number) => void,
@@ -186,7 +186,7 @@ export class FeedService {
   async latestCompletion(
     threadId: string,
   ): Promise<{ seq: number; at: number | null }> {
-    const events = await this.bb.sdk.threads.events.list({
+    const events = await this.alia.sdk.threads.events.list({
       threadId,
       types: ["turn/completed"],
       order: "desc",
@@ -274,7 +274,7 @@ export class FeedService {
     const children = settings.childrenSectionId?.trim() ?? "";
     let sections: Array<{ id: string; name: string }> = [];
     try {
-      sections = await this.bb.sdk.threadSections.list();
+      sections = await this.alia.sdk.threadSections.list();
     } catch {
       // The IDs below stand in for the names.
     }
@@ -309,7 +309,7 @@ export class FeedService {
     if (!userManagedSectionId) {
       throw new Error("Feed is not configured. Set userManagedSectionId.");
     }
-    await this.bb.sdk.threads.update({
+    await this.alia.sdk.threads.update({
       threadId: input.threadId,
       parentThreadId: null,
       sectionId: userManagedSectionId,
@@ -339,7 +339,7 @@ export class FeedService {
       thread.sectionId === userManagedSectionId
         ? childrenSectionId!
         : userManagedSectionId!;
-    await this.bb.sdk.threads.update({ threadId: input.threadId, sectionId });
+    await this.alia.sdk.threads.update({ threadId: input.threadId, sectionId });
     this.publish(input.threadId, "section-moved");
     return { sectionId };
   }
@@ -350,7 +350,7 @@ export class FeedService {
   }): Promise<{ archived: true }> {
     await this.authorizedManager(input.surfaceThreadId);
     await this.requireFeedThread(input.threadId);
-    await this.bb.sdk.threads.archive({ threadId: input.threadId });
+    await this.alia.sdk.threads.archive({ threadId: input.threadId });
     return { archived: true };
   }
 
@@ -361,7 +361,7 @@ export class FeedService {
   }): Promise<{ accepted: true }> {
     await this.authorizedManager(input.surfaceThreadId);
     await this.requireFeedThread(input.threadId);
-    await this.bb.sdk.threads.send({
+    await this.alia.sdk.threads.send({
       threadId: input.threadId,
       mode: "auto",
       input: [{ type: "text", text: input.text, mentions: [] }],
@@ -407,18 +407,18 @@ export class FeedService {
   }
 
   publish(threadId: string, reason: string): void {
-    this.bb.realtime.publish("feed-invalidated", { threadId, reason });
+    this.alia.realtime.publish("feed-invalidated", { threadId, reason });
   }
 
   private async listAll(
     query: Pick<
-      NonNullable<Parameters<BbPluginApi["sdk"]["threads"]["list"]>[0]>,
+      NonNullable<Parameters<AliaPluginApi["sdk"]["threads"]["list"]>[0]>,
       "parentThreadId" | "sectionId" | "hasParent" | "includeHidden"
     >,
   ): Promise<ThreadListEntry[]> {
     const threads: ThreadListEntry[] = [];
     for (let offset = 0; ; offset += PAGE_SIZE) {
-      const page = await this.bb.sdk.threads.list({
+      const page = await this.alia.sdk.threads.list({
         ...query,
         archived: false,
         limit: PAGE_SIZE,
@@ -439,20 +439,20 @@ export class FeedService {
 
   private async requireLiveManager(managerThreadId: string): Promise<void> {
     try {
-      const manager = await this.bb.sdk.threads.get({
+      const manager = await this.alia.sdk.threads.get({
         threadId: managerThreadId,
       });
       if (manager.archivedAt === null && manager.deletedAt === null) return;
     } catch (error) {
-      this.bb.log.warn(
+      this.alia.log.warn(
         `Configured manager ${managerThreadId} lookup failed: ${boundedErrorText(error)}`,
       );
       if (!isMissingThreadError(error)) {
         throw new Error("Could not verify the configured manager thread.");
       }
     }
-    this.bb.log.warn(`${STALE_MANAGER_MESSAGE} Manager: ${managerThreadId}.`);
-    this.bb.status.needsConfiguration(STALE_MANAGER_MESSAGE);
+    this.alia.log.warn(`${STALE_MANAGER_MESSAGE} Manager: ${managerThreadId}.`);
+    this.alia.status.needsConfiguration(STALE_MANAGER_MESSAGE);
     throw new Error(STALE_MANAGER_MESSAGE);
   }
 
@@ -480,13 +480,13 @@ export class FeedService {
         const thread = threads[index];
         if (thread === undefined) return;
         const completion = await this.latestCompletion(thread.id);
-        const terminalList = await this.bb.sdk.terminals.list({
+        const terminalList = await this.alia.sdk.terminals.list({
           scope: { kind: "thread", threadId: thread.id },
         });
         results[index] = {
           latestCompletionSeq: completion.seq,
           latestResultAt: completion.at,
-          latestMessage: await latestAgentMessage(this.bb.sdk, thread.id),
+          latestMessage: await latestAgentMessage(this.alia.sdk, thread.id),
           hasActiveNativeTerminal: terminalList.sessions.some(
             (session) =>
               session.threadId === thread.id &&
@@ -523,7 +523,7 @@ export class FeedService {
       }
     }
     const terminalTitles = await boundedMap(descendants, async ({ thread }) => {
-      const { sessions } = await this.bb.sdk.terminals.list({
+      const { sessions } = await this.alia.sdk.terminals.list({
         scope: { kind: "thread", threadId: thread.id },
       });
       return (
@@ -553,7 +553,7 @@ export class FeedService {
     if (feedThreadIds.size === 0) return new Set();
     const runningThreadIds = [
       ...new Set(
-        (await this.bb.sdk.threads.listRunning()).map((thread) => thread.id),
+        (await this.alia.sdk.threads.listRunning()).map((thread) => thread.id),
       ),
     ].filter((threadId) => !feedThreadIds.has(threadId));
     const ancestry = new Map<string, Promise<ThreadResponse | null>>();
@@ -595,7 +595,7 @@ export class FeedService {
     threadId: string,
   ): Promise<ThreadResponse | null> {
     try {
-      return await this.bb.sdk.threads.get({ threadId });
+      return await this.alia.sdk.threads.get({ threadId });
     } catch (error) {
       if (isMissingThreadError(error)) return null;
       throw error;

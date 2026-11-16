@@ -1,5 +1,5 @@
 /**
- * Where a checkout lives and how the loop reaches it. The primary bb host runs
+ * Where a checkout lives and how the loop reaches it. The primary VesnALIA host runs
  * this plugin, so its checkouts are read and written on disk. Any other host is
  * reached through the SDK: `files` for reads, writes and folder listings,
  * `hosts.pathsExist` for existence, and a terminal running argv for commands. The
@@ -11,7 +11,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { type CaptureResult, captureCommand } from "./process";
 import { type Shell, shellOf } from "./shell";
@@ -44,7 +44,7 @@ export interface ExecOptions {
 }
 
 export interface Workspace {
-  /** The bb host the checkout lives on, or null for the primary host. */
+  /** The VesnALIA host the checkout lives on, or null for the primary host. */
   readonly hostId: string | null;
   /** Existence for several paths in one call. */
   existence(filePaths: string[]): Promise<Record<string, boolean>>;
@@ -180,13 +180,13 @@ export class LocalWorkspace implements Workspace {
 }
 
 /**
- * Another bb host, reached through the SDK. Commands run in a terminal scoped to
+ * Another VesnALIA host, reached through the SDK. Commands run in a terminal scoped to
  * the host and the checkout's directory, and their output is read back when they end.
  */
 export class RemoteWorkspace implements Workspace {
   /** `root` is the checkout's path on the host; commands run from there. */
   constructor(
-    private readonly sdk: BbPluginApi["sdk"],
+    private readonly sdk: AliaPluginApi["sdk"],
     readonly hostId: string,
     private readonly root: string,
   ) {}
@@ -340,7 +340,7 @@ const LOCAL = new LocalWorkspace();
  * Rebuilds a checkout from its record: the local disk for the primary host, otherwise the SDK.
  * The run directory starts at the root; `resolveRunDir` moves it to `workingDir`.
  */
-export function openCheckout(sdk: BbPluginApi["sdk"], ref: CheckoutRef): Checkout {
+export function openCheckout(sdk: AliaPluginApi["sdk"], ref: CheckoutRef): Checkout {
   const ws = ref.hostId ? new RemoteWorkspace(sdk, ref.hostId, ref.workDir) : LOCAL;
   return { hostId: ref.hostId ?? null, workDir: ref.workDir, runDir: ref.workDir, ws, shell: shellOf(ref.workDir) };
 }

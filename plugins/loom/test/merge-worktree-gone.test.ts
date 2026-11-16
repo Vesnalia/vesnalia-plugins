@@ -35,8 +35,8 @@ const changesRequested = { items: [{ key: "review:1:a", kind: "review" as const,
 /** The worker's environment is destroyed, its thread still active and idle, as after its sandbox expired. */
 function environmentGone(worker: ThreadRow): void {
   const id = h.store.thread(worker.id)!.environment_id!;
-  h.bb.environments.set(id, { ...h.bb.environments.get(id)!, path: null, status: "destroyed" });
-  h.bb.threads.get(worker.thread_id!)!.status = "idle";
+  h.alia.environments.set(id, { ...h.alia.environments.get(id)!, path: null, status: "destroyed" });
+  h.alia.threads.get(worker.thread_id!)!.status = "idle";
 }
 
 async function prProject(edit?: (doc: Doc) => void): Promise<void> {
@@ -73,7 +73,7 @@ async function fixRoundApproved(): Promise<ThreadRow> {
   return h.store.thread(worker.id)!;
 }
 
-/** bb restores the environment on the worker's branch, which holds the reviewed commit. */
+/** VesnALIA restores the environment on the worker's branch, which holds the reviewed commit. */
 async function restore(): Promise<void> {
   await advanceWakes(h.ctx, project().id);
   h.host.worktree("/wt/env_r1").head = ticket().head_sha!;
@@ -100,19 +100,19 @@ describe("a merge whose worker's environment is gone", () => {
     await queue();
     expect(ticket().state).toBe("approved");
     await restore();
-    expect(h.bb.callsTo("restoreEnvironment")).toEqual([[worker.thread_id]]);
+    expect(h.alia.callsTo("restoreEnvironment")).toEqual([[worker.thread_id]]);
     expect(h.store.thread(worker.id)).toMatchObject({ released_at: null, environment_id: "env_r1" });
     await queue();
     expect(ticket()).toMatchObject({ state: "pr_open" });
     expect(outcomes()).toContain("pr_pushed");
   });
 
-  it("hands the ticket to a new worker from its branch when bb cannot restore the environment, and never pauses", async () => {
+  it("hands the ticket to a new worker from its branch when VesnALIA cannot restore the environment, and never pauses", async () => {
     await prProject();
     const worker = await fixRoundApproved();
     pushedByOthers();
     environmentGone(worker);
-    h.bb.restorable = false;
+    h.alia.restorable = false;
     await queue();
     expect(ticket().state).toBe("approved");
     await advanceWakes(h.ctx, project().id);

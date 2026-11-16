@@ -1043,7 +1043,7 @@ const SETTING_LABELS: Readonly<Record<string, string>> = {
   "general/tailnet/tags": "Tags",
   "general/tailnet/clientId": "the OAuth client ID",
   "general/tailnet/clientSecret": "the OAuth client secret",
-  "general/enrol": "Boxes join BB as machines",
+  "general/enrol": "Boxes join VesnALIA as machines",
   "general/video": "Linux desktops as video",
   "general/nightlyImages": "Rebuild each night",
   "general/defaultKind": "Default kind",

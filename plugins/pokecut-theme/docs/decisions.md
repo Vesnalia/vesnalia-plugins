@@ -21,7 +21,7 @@ TL;DR: The plugin places the chat restyle in the selected theme stylesheet so it
 
 ## 001. Ship chat styling in the selected theme stylesheet
 
-**Context:** BB's theme CSS is the plugin's app-wide stylesheet and exists while that theme is selected; the chat layer therefore needs to follow theme selection (`scripts/build-theme.mjs:1-4`).
+**Context:** VesnALIA's theme CSS is the plugin's app-wide stylesheet and exists while that theme is selected; the chat layer therefore needs to follow theme selection (`scripts/build-theme.mjs:1-4`).
 
 **Decision:** Build one theme CSS file from base, chat, and integrations source files (`scripts/build-theme.mjs:9-17`). The chat layer is included in this selected-theme file (`src/theme/chat.css:1-5`). This choice appears in the commit that absorbed Beautiful Chat into the Pokecut theme (`cdf2f8a`).
 
@@ -32,4 +32,4 @@ TL;DR: The plugin places the chat restyle in the selected theme stylesheet so it
 <!-- lane-pilot:backlinks -->
 ## Referenced by
 
-- [Pokecut Theme for BB overview](overview.md)
+- [Pokecut Theme for VesnALIA overview](overview.md)

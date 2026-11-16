@@ -11,13 +11,13 @@
 import { isUtf8 } from "node:buffer";
 import { createHash } from "node:crypto";
 import { setImmediate as nextTurn } from "node:timers/promises";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { PgSql } from "./db/pg";
 import { PG_MIGRATIONS } from "./db/pg-migrations";
 import type { SqlValue } from "./db/sql";
 import { SQLITE_MIGRATIONS } from "./store";
 
-type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 /** A Store table: its columns by name, as SQLite declares them, its primary key, and the id AUTOINCREMENT hands out. */
 export interface Table {
@@ -64,8 +64,8 @@ export function stopIfAborted(signal: AbortSignal) {
 const PAGE_BYTES = 4 * 1024 * 1024;
 const PAGE_VALUES = 30_000;
 
-/** Tables in data.db that aren't the Store's: BB's migrations record, and plugin_updates, which stays in SQLite. */
-const SQLITE_ONLY = new Set(["_bb_migrations", "plugin_updates"]);
+/** Tables in data.db that aren't the Store's: VesnALIA's migrations record, and plugin_updates, which stays in SQLite. */
+const SQLITE_ONLY = new Set(["_alia_migrations", "plugin_updates"]);
 
 const quote = (name: string) => `"${name.replaceAll(`"`, `""`)}"`;
 const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
@@ -157,12 +157,12 @@ function migrationProblems(where: string, applied: Array<{ id: number; statement
 /** How SQLite's migrations differ from this version's. */
 export function sqliteMigrationProblems(db: Database, schema = "main", allowUpgrade = false): string[] {
   const where = schema === "main" ? "SQLite's data.db" : "The SQLite export";
-  if (!db.prepare(`SELECT 1 FROM ${quote(schema)}.sqlite_master WHERE type='table' AND name='_bb_migrations'`).get()) {
+  if (!db.prepare(`SELECT 1 FROM ${quote(schema)}.sqlite_master WHERE type='table' AND name='_alia_migrations'`).get()) {
     return allowUpgrade ? [] : [`${where} has none of the Store's tables: the plugin hasn't kept its reviews there.`];
   }
-  const columns = db.prepare(`PRAGMA ${quote(schema)}.table_info(_bb_migrations)`).all() as Array<{ name: string }>;
+  const columns = db.prepare(`PRAGMA ${quote(schema)}.table_info(_alia_migrations)`).all() as Array<{ name: string }>;
   const hash = columns.some((column) => column.name === "statement_hash") ? "statement_hash" : "NULL AS statement_hash";
-  return migrationProblems(where, db.prepare(`SELECT id, ${hash} FROM ${quote(schema)}._bb_migrations ORDER BY id`).all() as Array<{ id: number; statement_hash: string | null }>, SQLITE_MIGRATIONS, allowUpgrade);
+  return migrationProblems(where, db.prepare(`SELECT id, ${hash} FROM ${quote(schema)}._alia_migrations ORDER BY id`).all() as Array<{ id: number; statement_hash: string | null }>, SQLITE_MIGRATIONS, allowUpgrade);
 }
 
 /** How Postgres's migrations, in `schema`, differ from this version's. */
@@ -331,7 +331,7 @@ function hashPgRow(hash: Hash, row: unknown[]) {
 
 interface Reader<Sizes, Rows> { sizes(): Sizes; rows(offset: number, limit: number): Rows }
 
-/** Each table's checksum, read a page at a time, letting BB's event loop run between pages. */
+/** Each table's checksum, read a page at a time, letting VesnALIA's event loop run between pages. */
 async function checksumsOf(
   tables: Table[], signal: AbortSignal,
   reader: (table: Table) => Reader<number[] | Promise<number[]>, unknown[][] | Promise<unknown[][]>>, hashRow: (hash: Hash, row: unknown[]) => void,

@@ -3,7 +3,7 @@
 // `NewThreadComposer`'s `initialPrompt` only seeds plain text, so the mention
 // renders as raw `@thread:thr_…`. Until the composer can seed mentions, write
 // the draft to the host's prompt draft storage before the composer mounts. The
-// key and shape mirror bb's usePromptDraftStorage (storage version 3); if they
+// key and shape mirror VesnALIA's usePromptDraftStorage (storage version 3); if they
 // drift, the host ignores the entry and `initialPrompt` still seeds plain text.
 
 export interface HandoffSource {
@@ -13,7 +13,7 @@ export interface HandoffSource {
 }
 
 export function pluginDraftStorageKey(draftKey: string): string {
-  return `bb.promptbox.contents-plugin-draft-${encodeURIComponent(draftKey.trim())}-3`;
+  return `alia.promptbox.contents-plugin-draft-${encodeURIComponent(draftKey.trim())}-3`;
 }
 
 export function threadMentionToken(threadId: string): string {

@@ -12,8 +12,8 @@ import {
 function source(overrides: Partial<OverviewSource> = {}): OverviewSource {
   return {
     crews: [
-      { name: "alpha", status: "running", summary: "", task: "BBP-1", branch: "bb/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [] },
-      { name: "beta", status: "idle", summary: "", task: null, branch: "bb/beta", needsYou: 1, members: [{ key: "beta-lead", lead: true, activity: "idle" }], labelTasks: [] },
+      { name: "alpha", status: "running", summary: "", task: "BBP-1", branch: "alia/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [] },
+      { name: "beta", status: "idle", summary: "", task: null, branch: "alia/beta", needsYou: 1, members: [{ key: "beta-lead", lead: true, activity: "idle" }], labelTasks: [] },
     ],
     leadLinks: [{ from: "alpha", to: "beta", count: 3 }],
     dependencies: [{ crew: "beta", task: "BBP-2", until: "done", state: "open", source: null }],
@@ -121,7 +121,7 @@ describe("buildOverviewGraph: label-assigned tasks (crew-<crew> label, no crew.t
         [
           "p1",
           source({
-            crews: [{ name: "alpha", status: "running", summary: "", task: "BBP-1", branch: "bb/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [{ key: "BBP-1", title: "Alpha ticket", status: "in_progress" }] }],
+            crews: [{ name: "alpha", status: "running", summary: "", task: "BBP-1", branch: "alia/alpha", needsYou: 0, members: [{ key: "alpha-lead", lead: true, activity: "working" }], labelTasks: [{ key: "BBP-1", title: "Alpha ticket", status: "in_progress" }] }],
           }),
         ],
       ]),

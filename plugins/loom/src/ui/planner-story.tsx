@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import type { PlannerAction, TurnStep } from "../contract";
 import { changeLine, leadOf, proposalOf, stepMatches, type Chapter, type JourneyFilter, type JourneyStep } from "../planner-journey";
 import { SPEC_REVIEW_ROUNDS } from "../states";

@@ -2,7 +2,7 @@
 
 ## Product model
 
-Atrium — MonoRepo Projects adds an explicit workspace layer over real BB projects.
+Atrium — MonoRepo Projects adds an explicit workspace layer over real VesnALIA projects.
 Filesystem nesting never groups projects automatically. **Edit workspace**
 links direct child projects selected from folders beneath a root project.
 
@@ -15,11 +15,11 @@ root project
 
 `main` is a UI label, not a Git branch. A child has at most one parent, a child
 cannot own children, and a root cannot also be a child. Unlinking removes only
-the relationship; BB projects and all BB/Git/filesystem state remain intact.
+the relationship; VesnALIA projects and all ALIA/Git/filesystem state remain intact.
 
 ## Execution boundaries
 
-- The server entry owns durable workspace relationships, BB context resolution,
+- The server entry owns durable workspace relationships, VesnALIA context resolution,
   typed RPC, and realtime invalidation.
 - The host entry owns canonical path checks and argument-array Git processes on
   the machine holding the active environment.
@@ -45,32 +45,32 @@ diff, stage, unstage, branch creation, commit, and push.
 
 ## Native worktree ownership
 
-BB's native **New thread** screen is the sole worktree creation surface. The
+VesnALIA's native **New thread** screen is the sole worktree creation surface. The
 user selects project, machine, source, and current-folder/new-worktree placement
-there. BB owns environment creation, worktree paths, branches, archive behavior,
+there. VesnALIA owns environment creation, worktree paths, branches, archive behavior,
 and cleanup. This plugin has no worktree creation, merge, removal, retry, or
-archive hook and does not intercept BB's lifecycle.
+archive hook and does not intercept VesnALIA's lifecycle.
 
-A BB-created workspace-root worktree is therefore just another active
+A ALIA-created workspace-root worktree is therefore just another active
 environment. Source Control applies the same explicit relative member paths to
 that environment and reports members not present there as unavailable.
 
 Target projects provision extra repositories and local inputs through declared
-submodules, `.bb-env-setup.sh`, and/or `.worktreeinclude`. The plugin does not
+submodules, `.alia-env-setup.sh`, and/or `.worktreeinclude`. The plugin does not
 run those mechanisms itself. Durable task work must be committed and pushed or
 otherwise integrated before the final environment thread is archived or
-deleted, after which BB may apply its native cleanup policy.
+deleted, after which VesnALIA may apply its native cleanup policy.
 
 ## Sidebar presentation and collapse
 
-The sidebar always keeps BB's real project and thread rows. BB 0.40 and public
-`@get-bb/plugin-sdk` 0.4.21 do not expose project grouping or project-menu
+The sidebar always keeps VesnALIA's real project and thread rows. VesnALIA 0.40 and public
+`@vesnalia/plugin-sdk` 0.4.21 do not expose project grouping or project-menu
 contribution hooks, so an isolated bridge decorates compatible native rows and
 adds **Edit workspace**. Unsupported markup or RPC failure leaves the native
 list untouched.
 
 A root's native collapse state controls the presented subtree. `main` has an
-independent per-client collapse state, while each child retains BB's native
+independent per-client collapse state, while each child retains VesnALIA's native
 state. The injected `main` heading uses a compatible native project heading as
 its visual reference. Its root-chat content and each child group's native
 content receive the same additional 8px hierarchy inset, so chat rows and
@@ -87,7 +87,7 @@ order so existing databases continue to open safely. Those tables are queried
 only for a read-only legacy inventory. No current RPC or UI action inserts,
 updates, deletes, merges, retries, or removes a legacy set or filesystem path.
 
-The inventory is recovery information, not proof that BB owns the historical
+The inventory is recovery information, not proof that VesnALIA owns the historical
 paths. Users must inspect and recover or clean legacy Git state manually.
 
 ## Safety invariants

@@ -8,7 +8,7 @@ const PAD = 16;
 /**
  * The element as a PNG on the given background, at twice its size (or the screen's density when
  * higher), without its toolbar. The background is the surface the card sits on, so the image
- * looks like the card does in bb.
+ * looks like the card does in VesnALIA.
  */
 export async function cardPng(el: HTMLElement, background: string): Promise<Blob> {
   const rect = el.getBoundingClientRect();

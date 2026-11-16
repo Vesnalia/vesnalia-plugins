@@ -9,7 +9,7 @@ import {
   useRealtimeConnectionState,
   useRpc,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import type { autoresearchContract } from "./server";
 import { formatNum } from "./lib/metrics";

@@ -1,6 +1,6 @@
 // Plugin-owned SQLite storage: reviews, analyses, comments, pending drafts.
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   analysisBaseSchema,
   analysisResultSchema,
@@ -16,7 +16,7 @@ import {
 } from "../shared/schema";
 import { prRefKey, prRefUrl } from "../shared/pr-ref";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 const MIGRATIONS = [
   `CREATE TABLE reviews (
@@ -154,9 +154,9 @@ function toAnalysis(row: AnalysisRow): AnalysisRecord {
   };
 }
 
-export function createStore(bb: BbPluginApi) {
-  const db: Db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export function createStore(alia: AliaPluginApi) {
+  const db: Db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
 
   return {
     touchReview(ref: PrRef, title: string, url = prRefUrl(ref)) {
@@ -323,7 +323,7 @@ export function createStore(bb: BbPluginApi) {
         .all(prRefKey(ref)) as { id: string; json: string; created_at: string }[];
       return rows.flatMap((row) => {
         const draft = parseDraft(row.json);
-        if (draft === null) bb.log.warn(`skipping invalid pending comment ${row.id}`);
+        if (draft === null) alia.log.warn(`skipping invalid pending comment ${row.id}`);
         return draft === null ? [] : [{ ...draft, id: row.id, createdAt: row.created_at }];
       });
     },

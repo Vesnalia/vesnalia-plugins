@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadActionEntry, PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadActionEntry, PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import { archivedThreads } from "../src/archived";
 import { EMPTY_LAYOUT } from "../src/layout";
 import type { RpcContract } from "../src/rpc";
@@ -19,7 +19,7 @@ const threads = [
     environment: { id: "e", name: null, branchName: "kalindudc/review", path: null, isWorktree: false, providerId: null, workspaceDisplayKind: null } }),
   sidebarThread({ id: "helper", displayTitle: "Hidden helper", isArchived: true, archivedAt: 4000, isHidden: true }),
 ].map((thread) => ({ ...thread, href: `/projects/p/threads/${thread.id}` }));
-const names = { project: () => "bb-marketplace", section: (id: string | null) => id === "s" ? "cortex" : "" };
+const names = { project: () => "alia-marketplace", section: (id: string | null) => id === "s" ? "cortex" : "" };
 
 describe("archived threads", () => {
   it("is a setting that defaults to hidden", () => {
@@ -32,7 +32,7 @@ describe("archived threads", () => {
     expect(archivedThreads(threads, "", names).map((thread) => thread.id)).toEqual(["newer", "old"]);
     expect(archivedThreads(threads, "REVIEW", names).map((thread) => thread.id)).toEqual(["newer"]);
     expect(archivedThreads(threads, "cortex", names).map((thread) => thread.id)).toEqual(["old"]);
-    expect(archivedThreads(threads, "bb-market", names)).toHaveLength(2);
+    expect(archivedThreads(threads, "alia-market", names)).toHaveLength(2);
   });
 });
 
@@ -40,13 +40,13 @@ async function mount(showArchived: boolean, archivedPage: { hasNextPage: boolean
   const app = await loadPluginApp(() => import("../app"));
   const unarchive = vi.fn(async () => undefined);
   const threadActions = (target: { id: string; archivedAt: number | null }): PluginThreadActionEntry[] =>
-    target.archivedAt === null ? [] : [{ key: "bb--core/archive", pluginId: "bb--core", group: "4_lifecycle",
+    target.archivedAt === null ? [] : [{ key: "alia--core/archive", pluginId: "alia--core", group: "4_lifecycle",
       action: { label: "Unarchive", icon: "ArchiveRestore", run: unarchive } }];
   const props: PluginThreadListProps = { activeThreadId: null, activeProjectId: "p", isCompactViewport: false,
     onNavigate: vi.fn(), searchQuery: "" };
   const slot = renderSlot<PluginThreadListProps, RpcContract>(app.threadLists[0]!, props, {
     pluginId: "switchboard", threadActions,
-    sidebarThreads: { status: "ready", threads, sections: [section], projects: [sidebarProject("p", "bb-marketplace")],
+    sidebarThreads: { status: "ready", threads, sections: [section], projects: [sidebarProject("p", "alia-marketplace")],
       experimental_archived: { status: "ready", isFetchingNextPage: false, isFetchNextPageError: false, ...archivedPage } },
     sdk: { plugins: { getSettings: async () => ({ ok: true, schema: {}, values: { showArchived } }), updateSettings: async () => undefined } } as never,
     rpc: { ...layoutWriteFakes, getLayout: () => ({ ...EMPTY_LAYOUT, sectionOrder: [], collapsed: [], order: {},

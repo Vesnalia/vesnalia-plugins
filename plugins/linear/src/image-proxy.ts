@@ -1,7 +1,7 @@
 export const LINEAR_UPLOAD_HOST = "uploads.linear.app";
 export const IMAGE_PROXY_PATH = "/api/v1/plugins/linear/http/image";
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-// A stalled upload must not hold a locally-authenticated bb request forever.
+// A stalled upload must not hold a locally-authenticated VesnALIA request forever.
 export const IMAGE_FETCH_TIMEOUT_MS = 30_000;
 
 export type ImageFetch = (
@@ -104,7 +104,7 @@ export async function fetchLinearImage(input: {
   if (!upstream.ok) return response(502, "upstream failed");
   const contentType = upstream.headers.get("content-type")?.split(";", 1)[0]?.trim() ?? "";
   if (!contentType.toLowerCase().startsWith("image/")) return response(502, "not an image");
-  // SVG remains active XML when opened top-level. Serving it from bb's API
+  // SVG remains active XML when opened top-level. Serving it from VesnALIA's API
   // origin would give uploaded script the local-auth origin it must never get.
   if (contentType.toLowerCase() === "image/svg+xml") return response(502, "unsafe image");
   const declared = Number(upstream.headers.get("content-length"));

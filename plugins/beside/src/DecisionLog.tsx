@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./server";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./server";
 import {
   needsYouSignals,
   type DecisionLimits,
@@ -276,7 +276,7 @@ function DecisionRow({
   now: number;
 }) {
   const [open, setOpen] = useState(false);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <li>
       <button
@@ -327,7 +327,7 @@ export function TryAMessage({
   enabled: boolean;
   limits: DecisionLimits;
 }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<Verdict | null>(null);
   const [error, setError] = useState<string | null>(null);

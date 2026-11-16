@@ -1,13 +1,13 @@
 /**
  * One changed file: its header (with "Comment on file" and how many comment threads it has), its whole-file threads, and the patch drawn
- * by the `@pierre/diffs` bb provides, with each line thread as an annotation under its last line. The
+ * by the `@pierre/diffs` VesnALIA provides, with each line thread as an annotation under its last line. The
  * gutter "+" (or a dragged line selection, then "+") opens a new comment there.
  *
  * Pierre's line ranges carry a side for each end; a thread has one side, so a selection that crosses
  * from removed to added lines keeps only its first line.
  */
 import { PatchDiff, type DiffLineAnnotation, type SelectedLineRange } from "@pierre/diffs/react";
-import { experimental_useCodeTheme, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, useSettings } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ export interface FileDiffProps {
   diffStyle: DiffStyle;
   /** The patch shown is the previous load's, kept on screen while it is fetched again. */
   stalePatch?: boolean;
-  /** Where the patch stands when bb did not send it with the file list; undefined before it is asked for. */
+  /** Where the patch stands when VesnALIA did not send it with the file list; undefined before it is asked for. */
   patchState: PatchState | undefined;
   /** Asks for the patch; called on its own when the file comes near the screen. */
   requestPatch(path: string): void;
@@ -133,7 +133,7 @@ export function FileDiff({ file, threads, showThreadCount, diffStyle, stalePatch
   // A file with an unsent comment in it opens, so the comment shows.
   const [collapsed, setCollapsed] = useState(() => {
     if (viewState.draft(draftKeys.line(file.path)) !== undefined || viewState.draft(draftKeys.file(file.path)) !== undefined) return false;
-    // A file marked Viewed (in this tab or bb's diff panel) starts folded, as bb's panel shows it.
+    // A file marked Viewed (in this tab or VesnALIA's diff panel) starts folded, as VesnALIA's panel shows it.
     return viewState.collapsed(file.path) ?? (file.viewed === "yes" || changedLines > FOLD_ABOVE_LINES);
   });
   const sectionRef = useRef<HTMLElement>(null);
@@ -158,7 +158,7 @@ export function FileDiff({ file, threads, showThreadCount, diffStyle, stalePatch
     viewState.setCollapsed(file.path, !collapsed);
     setCollapsed(!collapsed);
   };
-  // Marking a file Viewed folds it and clearing the mark unfolds it, as in bb's diff panel.
+  // Marking a file Viewed folds it and clearing the mark unfolds it, as in VesnALIA's diff panel.
   const toggleViewed = (viewed: boolean) => {
     if (viewed !== collapsed) toggleCollapsed();
     void actions.setViewed(file, viewed).catch(() => undefined);
@@ -391,7 +391,7 @@ export function currentLines(thread: Pick<ReviewThread, "side">, placement: Plac
   return text === null ? undefined : { startLine: placement.startLine, endLine: placement.endLine, text };
 }
 
-/** Whether the file changed since the thread was made on it (by the revision bb's Git plugin gives). */
+/** Whether the file changed since the thread was made on it (by the revision VesnALIA's Git plugin gives). */
 export function changedSince(thread: Pick<ReviewThread, "fileRevision">, file: Pick<DiffFile, "revision">): boolean {
   return thread.fileRevision !== null && thread.fileRevision !== file.revision;
 }

@@ -7,11 +7,11 @@ import { DriverError } from "./driver.ts";
 import { runProgram, type Runner } from "./simctl.ts";
 
 export const ANDROID_SDK = "/opt/android-sdk";
-export const FIREWALL_PROGRAM = "/usr/local/bin/bb-box-device-firewall";
+export const FIREWALL_PROGRAM = "/usr/local/bin/alia-box-device-firewall";
 export const EMULATOR_SERIAL = "emulator-5554";
 export const CONSOLE_PORT = 5554;
 export const GRPC_PORT = 8554;
-export const EMULATOR_UNIT = "bb-box-emulator@.service";
+export const EMULATOR_UNIT = "alia-box-emulator@.service";
 export const SAVE_GRACE_SECONDS = 180;
 export const STOP_WAIT_MS = (SAVE_GRACE_SECONDS + 30) * 1000;
 export const UNSAVED_PREFIX = "emulator-unsaved-";
@@ -70,19 +70,19 @@ export function emulatorFlags(avd: string, cold: boolean): readonly string[] {
 export function emulatorUnit(sdk: string, firewall: string): string {
   const adb = `${sdk}/platform-tools/adb`;
   return `[Unit]
-Description=bb-box: the Android emulator, AVD %i
+Description=alia-box: the Android emulator, AVD %i
 
 [Service]
 Type=simple
 Environment=ANDROID_HOME=${sdk} ANDROID_SDK_ROOT=${sdk} ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL=${SAVE_GRACE_SECONDS}
-EnvironmentFile=-%h/.bb-box/device/emulator-boot.env
+EnvironmentFile=-%h/.alia-box/device/emulator-boot.env
 ExecStartPre=${firewall} check
-ExecStart=${sdk}/emulator/emulator ${emulatorFlags("%i", false).join(" ")} $BB_BOX_EMULATOR_BOOT
-ExecStop=/bin/sh -c 'if ${adb} -s ${EMULATOR_SERIAL} emu kill >/dev/null 2>&1; then while kill -0 $MAINPID 2>/dev/null; do sleep 0.1; done; rm -f %h/.bb-box/device/${UNSAVED_PREFIX}%i; fi; while kill -0 $MAINPID 2>/dev/null; do sleep 0.1; done'
+ExecStart=${sdk}/emulator/emulator ${emulatorFlags("%i", false).join(" ")} $ALIA_BOX_EMULATOR_BOOT
+ExecStop=/bin/sh -c 'if ${adb} -s ${EMULATOR_SERIAL} emu kill >/dev/null 2>&1; then while kill -0 $MAINPID 2>/dev/null; do sleep 0.1; done; rm -f %h/.alia-box/device/${UNSAVED_PREFIX}%i; fi; while kill -0 $MAINPID 2>/dev/null; do sleep 0.1; done'
 TimeoutStopSec=${STOP_WAIT_MS / 1000}
 KillMode=mixed
 Restart=no
-StandardOutput=truncate:%h/.bb-box/device/emulator.log
+StandardOutput=truncate:%h/.alia-box/device/emulator.log
 StandardError=inherit
 `;
 }
@@ -196,8 +196,8 @@ export class Emulator {
       this.#saidUndiscovered = undiscovered.pid;
       this.#options.log(
         undiscovered.token
-          ? `emulator: ${undiscovered.avd} runs as process ${undiscovered.pid} without its discovery file; bb-box reaches it by its own copy of that file`
-          : `emulator: ${undiscovered.avd} runs as process ${undiscovered.pid} on console port ${CONSOLE_PORT} without its discovery file, and bb-box has no copy of it, so its gRPC token is unknown`,
+          ? `emulator: ${undiscovered.avd} runs as process ${undiscovered.pid} without its discovery file; alia-box reaches it by its own copy of that file`
+          : `emulator: ${undiscovered.avd} runs as process ${undiscovered.pid} on console port ${CONSOLE_PORT} without its discovery file, and alia-box has no copy of it, so its gRPC token is unknown`,
       );
     }
     return undiscovered;
@@ -258,7 +258,7 @@ export class Emulator {
 
   async firewallInPlace(): Promise<string | null> {
     const ran = await this.#run(this.#options.firewall ?? FIREWALL_PROGRAM, ["check"], { timeoutMs: COMMAND_MS });
-    return ran.code === 0 ? null : words(ran) || "bb-box-device-firewall check failed";
+    return ran.code === 0 ? null : words(ran) || "alia-box-device-firewall check failed";
   }
 
   async #freshConsoleToken(): Promise<void> {
@@ -267,7 +267,7 @@ export class Emulator {
 
   async #bootFlags(cold: boolean): Promise<void> {
     const file = join(this.#options.dir, "emulator-boot.env");
-    if (cold) await writeFile(file, `BB_BOX_EMULATOR_BOOT=-no-snapshot-load\n`, { mode: 0o600 });
+    if (cold) await writeFile(file, `ALIA_BOX_EMULATOR_BOOT=-no-snapshot-load\n`, { mode: 0o600 });
     else await rm(file, { force: true });
   }
 
@@ -294,7 +294,7 @@ export class Emulator {
 
   async start(avd: string, options: { readonly cold: boolean; readonly signal: AbortSignal }): Promise<{ readonly cold: boolean; readonly unsaved: boolean }> {
     const refused = await this.firewallInPlace();
-    if (refused) throw new EmulatorRefused("firewall-missing", `The device's firewall is not in place, so the emulator does not start: ${refused}. Run sudo systemctl restart bb-box-device-firewall in the box, or acquire another box.`);
+    if (refused) throw new EmulatorRefused("firewall-missing", `The device's firewall is not in place, so the emulator does not start: ${refused}. Run sudo systemctl restart alia-box-device-firewall in the box, or acquire another box.`);
     await mkdir(this.#options.dir, { recursive: true, mode: 0o700 });
     const unsaved = await this.endedUnsaved(avd);
     const cold = options.cold || unsaved;
@@ -304,7 +304,7 @@ export class Emulator {
     if ((await this.#managerOf()) === "systemd") {
       await this.#writeUnit();
       await this.#bootFlags(cold);
-      const unit = `bb-box-emulator@${avd}.service`;
+      const unit = `alia-box-emulator@${avd}.service`;
       await this.#run("systemctl", ["--user", "reset-failed", unit], { timeoutMs: COMMAND_MS });
       const ran = await this.#run("systemctl", ["--user", "start", unit], { timeoutMs: COMMAND_MS, signal: options.signal });
       await this.#bootFlags(false);
@@ -343,7 +343,7 @@ export class Emulator {
   }
 
   async unitActive(avd: string): Promise<boolean> {
-    const ran = await this.#run("systemctl", ["--user", "is-active", `bb-box-emulator@${avd}.service`], { timeoutMs: COMMAND_MS });
+    const ran = await this.#run("systemctl", ["--user", "is-active", `alia-box-emulator@${avd}.service`], { timeoutMs: COMMAND_MS });
     return ["active", "activating", "reloading", "deactivating"].includes(ran.stdout.trim());
   }
 
@@ -388,7 +388,7 @@ export class Emulator {
     const bySystemd = (await this.#managerOf()) === "systemd" && (await this.unitActive(running.avd));
     let answered = false;
     if (bySystemd) {
-      const ran = await this.#run("systemctl", ["--user", "stop", `bb-box-emulator@${running.avd}.service`], { timeoutMs: STOP_WAIT_MS + COMMAND_MS, signal });
+      const ran = await this.#run("systemctl", ["--user", "stop", `alia-box-emulator@${running.avd}.service`], { timeoutMs: STOP_WAIT_MS + COMMAND_MS, signal });
       if (ran.code !== 0) this.#options.log(`emulator: systemd did not stop ${running.avd} cleanly: ${words(ran)}`);
     } else {
       answered = (await this.#run(this.adb, ["-s", EMULATOR_SERIAL, "emu", "kill"], { timeoutMs: COMMAND_MS, signal })).code === 0;

@@ -5,7 +5,7 @@
 // thread give them one: S, M or L, with a one-line reason on the issue.
 //
 // Why: the user wants sizes on the backlog before an issue is started, and
-// without their conversation being used for it (bead-bb-zkc): "can we
+// without their conversation being used for it (bead-alia-zkc): "can we
 // assess the issue size using background thread? ... when it changes /
 // created". Their rules: every change counts; a size they chose themselves
 // is never overwritten; an issue that has started is not re-sized; all
@@ -40,7 +40,7 @@
 //   first real run: an agent's sandbox has the beads database read-only,
 //   the same wall that makes the conversation's agent use native tools.
 // - That tool is offered only to the plugin's own workers, recognised by
-//   their title when BB asks which tools a thread gets (`isWorker`), so
+//   their title when VesnALIA asks which tools a thread gets (`isWorker`), so
 //   ordinary threads do not carry a third tool.
 // - The user can also ask for one issue to be sized now, from its row's
 //   menu (their addition: "a menu command resize for each issue to trigger
@@ -57,7 +57,7 @@
 // - A worker started from the new-thread screen (no thread) runs in the
 //   project's default environment, which may be a work tree.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CHANGED_CHANNEL, CLOSED_STATUS } from "../shared/constants.ts";
 import { stateOf } from "../shared/workflow.ts";
 import type { Workflow } from "../shared/workflow.ts";
@@ -259,14 +259,14 @@ interface Job {
  *   timers and storage writes later.
  */
 export async function createSizing({
-  bb,
+  alia,
   readSettings,
   readIssues,
   setSize,
   addComment,
   workflowFor,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   readSettings: () => Promise<{
     enabled: boolean;
     providerId: string;
@@ -291,7 +291,7 @@ export async function createSizing({
 }) {
   /** Folder path -> issue id -> what the background did. */
   const memory = new Map<string, Record<string, Sized>>();
-  const saved = await bb.storage.kv.get<unknown>(MEMORY_KEY).catch(() => undefined);
+  const saved = await alia.storage.kv.get<unknown>(MEMORY_KEY).catch(() => undefined);
   if (typeof saved === "object" && saved !== null) {
     for (const [path, entries] of Object.entries(saved)) {
       if (typeof entries === "object" && entries !== null) {
@@ -300,9 +300,9 @@ export async function createSizing({
     }
   }
   const save = () =>
-    bb.storage.kv
+    alia.storage.kv
       .set(MEMORY_KEY, Object.fromEntries(memory))
-      .catch((cause) => bb.log.warn("could not save background sizes: " + cause));
+      .catch((cause) => alia.log.warn("could not save background sizes: " + cause));
   const remember = (path: string, beadId: string, sized: Sized) => {
     memory.set(path, { ...(memory.get(path) ?? {}), [beadId]: sized });
   };
@@ -341,7 +341,7 @@ export async function createSizing({
       setTimeout(() => {
         pending.delete(path);
         void run(path).catch((cause) =>
-          bb.log.warn("background sizing failed: " + cause),
+          alia.log.warn("background sizing failed: " + cause),
         );
       }, COLLECT_MS),
     );
@@ -389,7 +389,7 @@ export async function createSizing({
     return run(path);
   }
 
-  /** Whether BB is asking about one of this plugin's own workers. */
+  /** Whether VesnALIA is asking about one of this plugin's own workers. */
   function isWorker(title: string | null): boolean {
     return title !== null && jobs.has(title);
   }
@@ -410,7 +410,7 @@ export async function createSizing({
     threadId: string,
     sizes: { id: string; size: string; reason: string }[],
   ): Promise<string> {
-    const thread = await bb.sdk.threads.get({ threadId }).catch(() => null);
+    const thread = await alia.sdk.threads.get({ threadId }).catch(() => null);
     const job = thread?.title == null ? undefined : jobs.get(thread.title);
     if (job === undefined) {
       return "This tool is only for Airbender's own background sizing; nothing was changed.";
@@ -451,7 +451,7 @@ export async function createSizing({
       }
     }
     void save();
-    bb.realtime.publish(CHANGED_CHANNEL, { path: job.path });
+    alia.realtime.publish(CHANGED_CHANNEL, { path: job.path });
     return lines.length === 0 ? "Nothing was reported." : lines.join("\n");
   }
 
@@ -513,7 +513,7 @@ export async function createSizing({
     }
 
     // The errand is filed under the worker's title before the worker
-    // exists: BB asks which tools a thread gets as its session starts,
+    // exists: VesnALIA asks which tools a thread gets as its session starts,
     // which can be before the call that creates it has returned.
     const title = `${WORKER_TITLE}${Date.now().toString(36)}-${++serial}`;
     const job: Job = { path, workflow, batch, asked: wanted, done: new Set() };
@@ -536,8 +536,8 @@ export async function createSizing({
       // thread's own environment where there is a thread, and otherwise
       // that same folder, used as it is. Never the project's default
       // environment: where that is a fresh work tree, every run made one,
-      // with a branch that BB left behind when it removed the tree
-      // (bead-bb-2u0). A worker only reads, so it needs no folder of its
+      // with a branch that VesnALIA left behind when it removed the tree
+      // (bead-alia-2u0). A worker only reads, so it needs no folder of its
       // own.
       let projectId = scope.projectId;
       let environment:
@@ -549,7 +549,7 @@ export async function createSizing({
           }
         | null = null;
       if (scope.threadId !== null) {
-        const thread = await bb.sdk.threads.get({ threadId: scope.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: scope.threadId });
         projectId = thread.projectId;
         if (thread.environmentId !== null) {
           environment = { type: "reuse", environmentId: thread.environmentId };
@@ -559,7 +559,7 @@ export async function createSizing({
       if (environment === null) {
         // The machine the folder is on: the project's default source,
         // which is where the folder was found (server/folder.ts).
-        const project = await bb.sdk.projects.get({ projectId });
+        const project = await alia.sdk.projects.get({ projectId });
         const hostId = project.sources.find((source) => source.isDefault)?.hostId;
         environment = {
           type: "host",
@@ -567,7 +567,7 @@ export async function createSizing({
           workspace: { type: "unmanaged", path },
         };
       }
-      const worker = await bb.sdk.threads.spawn({
+      const worker = await alia.sdk.threads.spawn({
         projectId,
         environment,
         title,
@@ -591,40 +591,40 @@ export async function createSizing({
       // refresh; a change to the issue, or the user's request, tries again.
       settle();
       const message = `Could not start a background agent to size issues: ${cause instanceof Error ? cause.message : String(cause)}`;
-      bb.log.warn(`${message} (${path})`);
+      alia.log.warn(`${message} (${path})`);
       return { message };
     }
 
     // Not awaited: the answer goes back now. The rest happens when the
     // worker goes idle (finished, or stuck waiting for someone), fails, or
     // runs past the time limit.
-    void bb.sdk.threads
+    void alia.sdk.threads
       .wait({ threadId: workerId, status: "idle", timeoutMs: WORKER_TIMEOUT_MS })
-      .catch((cause) => bb.log.warn("sizing wait ended: " + cause))
+      .catch((cause) => alia.log.warn("sizing wait ended: " + cause))
       .then(async () => {
         // A hidden worker is cleaned up by nobody else: archive it so it
         // leaves the active lists, then stop it to release its agent.
-        await bb.sdk.threads
+        await alia.sdk.threads
           .archive({ threadId: workerId })
-          .catch((cause) => bb.log.warn("sizing archive failed: " + cause));
-        await bb.sdk.threads
+          .catch((cause) => alia.log.warn("sizing archive failed: " + cause));
+        await alia.sdk.threads
           .stop({ threadId: workerId })
-          .catch((cause) => bb.log.warn("sizing stop failed: " + cause));
+          .catch((cause) => alia.log.warn("sizing stop failed: " + cause));
       })
       .finally(() => {
         settle();
-        bb.realtime.publish(CHANGED_CHANNEL, { path });
+        alia.realtime.publish(CHANGED_CHANNEL, { path });
         // Anything the user asked for meanwhile goes next.
         if ((asked.get(path)?.size ?? 0) > 0) {
           void run(path).catch((cause) =>
-            bb.log.warn("background sizing failed: " + cause),
+            alia.log.warn("background sizing failed: " + cause),
           );
         }
       });
     return { message: null };
   }
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const timer of pending.values()) clearTimeout(timer);
     pending.clear();
   });

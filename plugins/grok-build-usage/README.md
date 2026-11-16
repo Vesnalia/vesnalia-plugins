@@ -1,11 +1,11 @@
-# Grok Build Usage for bb
+# Grok Build Usage for VesnALIA
 
-This bb plugin adds live Grok Build subscription and usage information to
+This VesnALIA plugin adds live Grok Build subscription and usage information to
 **Settings → Usage Limits**.
 
-![Grok Build usage in bb](assets/showcase/grok-build-usage.png)
+![Grok Build usage in VesnALIA](assets/showcase/grok-build-usage.png)
 
-It registers a companion provider because bb's built-in ACP provider already
+It registers a companion provider because VesnALIA's built-in ACP provider already
 owns the `acp-grok` id. The companion keeps the existing Grok Build execution
 provider intact while adding the maintenance bridge needed for usage data.
 
@@ -15,12 +15,12 @@ provider intact while adding the maintenance bridge needed for usage data.
 - Reports the active credit window, percentage used, and reset time.
 - Supports the current weekly credit response and the legacy monthly counter
   response.
-- Reuses bb's normal provider health, sign-in, and expired-session states.
+- Reuses VesnALIA's normal provider health, sign-in, and expired-session states.
 - Uses the Grok icon in the provider and usage-limit surfaces.
 
 ## Requirements
 
-- bb `>=0.40`.
+- VesnALIA `>=0.40`.
 - Grok Build installed with the `grok` command available on `PATH`.
 - An authenticated Grok Build session created with:
 
@@ -28,7 +28,7 @@ provider intact while adding the maintenance bridge needed for usage data.
   grok login
   ```
 
-If Grok Build is not installed or signed in, bb shows the normal provider
+If Grok Build is not installed or signed in, VesnALIA shows the normal provider
 status and sign-in guidance.
 
 ## Install
@@ -36,18 +36,18 @@ status and sign-in guidance.
 Install from a local checkout while developing:
 
 ```sh
-bb plugin install /path/to/bb-plugin-grok-build-usage --yes
+alia plugin install /path/to/alia-plugin-grok-build-usage --yes
 ```
 
 Once this repository is published, the marketplace submission should provide
 the canonical Git URL. A Git-based install will then look like:
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-grok-build-usage.git@main
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-grok-build-usage.git@main
 ```
 
 This assumes the repository is published as
-`MacHatter1/bb-plugin-grok-build-usage`. Update the URL if the final
+`MacHatter1/alia-plugin-grok-build-usage`. Update the URL if the final
 marketplace repository uses a different owner or name.
 
 ## Development
@@ -56,11 +56,11 @@ marketplace repository uses a different owner or name.
 npm install
 npm test
 npx tsc --noEmit
-bb plugin build
-bb plugin install . --yes
+alia plugin build
+alia plugin install . --yes
 ```
 
-`bb plugin build` writes the generated bundle to `dist/`. The generated bundle
+`alia plugin build` writes the generated bundle to `dist/`. The generated bundle
 and installed dependencies are ignored by Git.
 
 ## Repository layout
@@ -87,9 +87,9 @@ Build's billing endpoint and supplements the response with the current
 subscription label from the settings endpoint. The billing implementation is
 based on the endpoint flow used by [xAI's Grok Build billing extension](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/extensions/billing.rs).
 
-The plugin does not replace bb's built-in `acp-grok` provider. Its
+The plugin does not replace VesnALIA's built-in `acp-grok` provider. Its
 `grok-build-usage` companion id owns the additional maintenance requests while
-delegating ACP traffic to bb's existing bridge.
+delegating ACP traffic to VesnALIA's existing bridge.
 
 ## Privacy and security
 
@@ -100,11 +100,11 @@ delegating ACP traffic to bb's existing bridge.
 - Do not commit `auth.json`, generated bundles, or local logs.
 
 Grok Build usage is subject to xAI's account and product policies. The plugin
-is an independent community integration and is not affiliated with xAI or bb.
+is an independent community integration and is not affiliated with xAI or VesnALIA.
 
 ## Limitations
 
 The integration depends on the Grok CLI's local credential format and its
 authenticated billing and settings endpoints. Those interfaces may change
-without notice. If a request fails, bb reports the provider's health or usage
+without notice. If a request fails, VesnALIA reports the provider's health or usage
 error so the failure remains visible instead of being presented as valid usage.

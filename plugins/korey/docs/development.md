@@ -13,7 +13,7 @@ Use the Bun version pinned in `package.json` and Node.js 24, as specified in
 nvm use
 bun install --frozen-lockfile
 bun run check
-bb plugin install .
+alia plugin install .
 ```
 
 `bunfig.toml` requires newly resolved package versions to be at least one day
@@ -33,33 +33,33 @@ the OpenAPI client and checks it for uncommitted changes.
 
 The `validate-production-build` CI job tests production-only installs with
 lifecycle scripts and optional dependencies disabled, then builds all three
-entries using bb 0.43.4. This checks that users can build the plugin from
+entries using VesnALIA 0.43.4. This checks that users can build the plugin from
 a managed Git install, without relying on development dependencies or code
 generation during installation. It does not publish or deploy anything.
 
-The manifest requires bb 0.43.4 or newer and plugin SDK 0.5.9 or newer. The
-development SDK is pinned to 0.5.9 for bb 0.43.4. The test suite exercises the
-SDK 0.5.9 backend and UI harnesses; live compatibility with another bb version
+The manifest requires VesnALIA 0.43.4 or newer and plugin SDK 0.5.9 or newer. The
+development SDK is pinned to 0.5.9 for VesnALIA 0.43.4. The test suite exercises the
+SDK 0.5.9 backend and UI harnesses; live compatibility with another VesnALIA version
 needs a separate smoke test, including resolution forms, host RPC, and other
 experimental runtime surfaces.
 macOS descriptor validation runs with mocked `lsof` output on Linux; CI does
 not run a real macOS host.
 
-Runtime imports that bb does not provide belong in `dependencies`; SDK types,
+Runtime imports that VesnALIA does not provide belong in `dependencies`; SDK types,
 React, and development tools belong in `devDependencies`.
 
 Local installations of the earlier test package use a different plugin
 identity and storage namespace. Reconfigure the token and relink conversations
-after installing `bb-plugin-korey`; no unpublished test state is migrated.
+after installing `alia-plugin-korey`; no unpublished test state is migrated.
 
 ## Dependencies
 
 `zod` is the only production dependency. The plugin uses it for API response
-validation and its own contracts. bb supplies the SDK and React at runtime.
+validation and its own contracts. VesnALIA supplies the SDK and React at runtime.
 
 The development dependencies support these tasks:
 
-- `@get-bb/plugin-sdk` and `bb-app` provide SDK declarations, test harnesses,
+- `@vesnalia/plugin-sdk` and `alia-app` provide SDK declarations, test harnesses,
   compatibility checks, and plugin builds.
 - `typescript` and the `@types/*` packages type-check the plugin, tests, and SDK
   declarations with `skipLibCheck: false`.
@@ -72,18 +72,18 @@ The development dependencies support these tasks:
 - `oxlint`, `oxfmt`, and `typed-openapi` run the lint, formatting, and OpenAPI
   generation scripts.
 
-The remaining 16 UI packages are required by bb 0.43.4's SDK compatibility check:
+The remaining 16 UI packages are required by VesnALIA 0.43.4's SDK compatibility check:
 `@pierre/diffs`, the `@radix-ui/*` entries, `class-variance-authority`, `clsx`,
-`sonner`, `tailwind-merge`, and `vaul`. Our code does not import them. bb scaffolds
+`sonner`, `tailwind-merge`, and `vaul`. Our code does not import them. VesnALIA scaffolds
 their development dependency pins for app plugins and supplies their runtime
 implementations. Removing these entries makes `bun run check:sdk` fail even when
-the plugin does not use those components. Revisit them if bb makes this check
+the plugin does not use those components. Revisit them if VesnALIA makes this check
 depend on the plugin's actual imports.
 
-Keep bb-managed version ranges when updating dependencies; the lockfile can
+Keep alia-managed version ranges when updating dependencies; the lockfile can
 still select newer compatible releases within those ranges. `@types/node`
 tracks Node.js 24, and `@types/better-sqlite3` stays on 7.x to satisfy the SDK's
-peer dependency. Newer SDK and Sonner versions must wait for a compatible bb
+peer dependency. Newer SDK and Sonner versions must wait for a compatible VesnALIA
 release.
 
 ## API contract
@@ -159,8 +159,8 @@ personal access tokens.
 
 `plugin/oauth.ts` implements the protocol, and `plugin/connection.ts` runs the
 sign-in. Each installation registers its own public client, named
-"bb Korey plugin", through dynamic client registration. Its redirect URI is the
-plugin's callback route on the bb server's loopback address. Korey ignores the
+"VesnALIA Korey plugin", through dynamic client registration. Its redirect URI is the
+plugin's callback route on the VesnALIA server's loopback address. Korey ignores the
 port when matching loopback redirect URIs. A shared client ID would not work:
 Korey keeps one active token per user and client, so signing in on a second
 computer would sign out the first.
@@ -177,11 +177,11 @@ consent window, and are lost on reload. Credentials are stored as JSON in the
 secret `oauthCredentials` setting.
 
 Secret settings keep the credentials out of the plugin database and away from
-the frontend. bb has no hidden settings, so the field appears in the settings
+the frontend. VesnALIA has no hidden settings, so the field appears in the settings
 form even though users should not edit it, and the form cannot clear secret
 fields. The **Korey
 account** section provides Disconnect and token removal instead. Move the
-credentials if bb adds hidden secret settings or a plugin secret store.
+credentials if VesnALIA adds hidden secret settings or a plugin secret store.
 
 Access tokens last one hour. Refresh tokens last 30 days and are single-use;
 each refresh also revokes the previous access token. The token source refreshes
@@ -200,14 +200,14 @@ Sign-in was verified against a live Korey account on 2026-10-31.
 ## Distribution
 
 This repository is intentionally marked `private` in `package.json` to prevent
-accidental npm publication. bb's managed Git installer installs runtime
+accidental npm publication. VesnALIA's managed Git installer installs runtime
 dependencies with scripts disabled and builds the server, app, and host
 artifacts itself.
 
 The repository root is the plugin: `package.json` declares the server, app,
-host, and skill entries. No bb checkout, collection manifest, or committed
+host, and skill entries. No VesnALIA checkout, collection manifest, or committed
 build output is required. The Git install tracks the default branch; use
-`bb plugin outdated` to inspect updates and `bb plugin update korey` to apply
+`alia plugin outdated` to inspect updates and `alia plugin update korey` to apply
 one. To pin a particular commit, install
 `git:https://github.com/useshortcut/bb-plugin-korey.git@<commit-sha>` instead.
 

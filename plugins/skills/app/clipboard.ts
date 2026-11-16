@@ -1,13 +1,13 @@
 /**
- * Copying text through bb's own clipboard writer, `experimental_copyToClipboard`
- * (bb 0.46): native in bb's desktop app, the clipboard bridge in the mobile
+ * Copying text through VesnALIA's own clipboard writer, `experimental_copyToClipboard`
+ * (VesnALIA 0.46): native in VesnALIA's desktop app, the clipboard bridge in the mobile
  * app, the browser's clipboard in a tab.
  *
- * bb 0.45 has no such writer, and the SDK's shim throws when the app runtime
+ * VesnALIA 0.45 has no such writer, and the SDK's shim throws when the app runtime
  * lacks a member, so a throw falls back to `navigator.clipboard` — the plugin
- * keeps `engines.bb >=0.45`.
+ * keeps `engines.alia >=0.45`.
  */
-import { experimental_copyToClipboard } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard } from "@vesnalia/plugin-sdk/app";
 
 type Copy = (content: { text: string }) => Promise<boolean>;
 

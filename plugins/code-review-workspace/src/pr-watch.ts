@@ -11,7 +11,7 @@ import { githubWaits } from "./review-lifecycle";
 import type { EventListeners, RpcHandlers, ServeDeps } from "./server-modules";
 
 type Run = typeof runGh;
-type Deps = Pick<ServeDeps, "bb" | "store" | "gh" | "changed"> & { sync: Pick<ServeDeps["sync"], "one" | "health"> };
+type Deps = Pick<ServeDeps, "alia" | "store" | "gh" | "changed"> & { sync: Pick<ServeDeps["sync"], "one" | "health"> };
 type Watched = ReviewMeta & { feature: FeatureReview & { repo: string } };
 
 /** An open PR, a draft too, from a branch: in the repo it goes to. */
@@ -121,7 +121,7 @@ function joined(reads: BranchRead[]): BranchRead {
 export async function becomeFound(deps: Parameters<typeof becomePr>[0], key: string, read: BranchRead): Promise<boolean> {
   const pr = "prs" in read ? read.prs[0] : undefined;
   if (!pr) return false;
-  await becomePr(deps, key, { repo: pr.repo, number: pr.number }).catch((error) => deps.bb.log.warn(`Could not make ${key} the review of ${pr.url}: ${String(error)}`));
+  await becomePr(deps, key, { repo: pr.repo, number: pr.number }).catch((error) => deps.alia.log.warn(`Could not make ${key} the review of ${pr.url}: ${String(error)}`));
   return true;
 }
 
@@ -130,9 +130,9 @@ export async function becomeFound(deps: Parameters<typeof becomePr>[0], key: str
  * so it names one pushed under another name too.
  */
 async function statusPr(deps: Deps, feature: Watched["feature"]): Promise<{ repo: string; number: number } | null> {
-  const env = await deps.bb.sdk.environments.get({ environmentId: feature.environmentId }).catch(() => null);
+  const env = await deps.alia.sdk.environments.get({ environmentId: feature.environmentId }).catch(() => null);
   if (env?.status !== "ready" || env.branchName !== folderBranchOf(feature)) return null;
-  const found = await featureBase(deps.bb, env, feature.repo);
+  const found = await featureBase(deps.alia, env, feature.repo);
   const pr = "pr" in found ? found.pr : undefined;
   const link = pr?.url ? parsePrLink(pr.url) : null;
   if (!pr?.number || !link || link.repo.toLowerCase() !== feature.repo.toLowerCase() || pr.state !== undefined && !/^(open|draft)$/i.test(pr.state)) return null;
@@ -140,7 +140,7 @@ async function statusPr(deps: Deps, feature: Watched["feature"]): Promise<{ repo
 }
 
 export function register(deps: Deps) {
-  const { bb, store, gh } = deps;
+  const { alia, store, gh } = deps;
   /** Each review's check in flight, and when each was last checked, and asked for by its page. */
   const running = new Map<string, Promise<void>>();
   const checkedAt = new Map<string, number>();
@@ -184,7 +184,7 @@ export function register(deps: Deps) {
       if (await settle(review, read, now) || why !== "thread") return;
       const pr = await statusPr(deps, feature);
       if (pr) await becomePr(deps, key, pr);
-    })().catch((error) => bb.log.warn(`Could not look for the PR of ${key}: ${String(error)}`)).finally(() => running.delete(key));
+    })().catch((error) => alia.log.warn(`Could not look for the PR of ${key}: ${String(error)}`)).finally(() => running.delete(key));
     running.set(key, work);
     return work;
   }
@@ -212,7 +212,7 @@ export function register(deps: Deps) {
         let at = 0;
         for (const [i, review] of batch.entries()) await settle(review, joined(reads.slice(at, at += asked[i]!.length)), now);
         return true;
-      })().catch((error) => { bb.log.warn(`Could not look for local reviews' PRs: ${String(error)}`); return false; });
+      })().catch((error) => { alia.log.warn(`Could not look for local reviews' PRs: ${String(error)}`); return false; });
       const work = answered.then(() => {});
       for (const review of batch) {
         checkedAt.set(review.targetKey, now);
@@ -235,7 +235,7 @@ export function register(deps: Deps) {
    */
   async function savePushedAs(reviews: Watched[], names: Array<NonNullable<ReturnType<typeof pushedName>> & { at: number }>): Promise<void> {
     if (!names.length) return;
-    const env = names.some((name) => name.from === null) ? await bb.sdk.environments.get({ environmentId: reviews[0]!.feature.environmentId }).catch(() => null) : null;
+    const env = names.some((name) => name.from === null) ? await alia.sdk.environments.get({ environmentId: reviews[0]!.feature.environmentId }).catch(() => null) : null;
     for (const review of reviews) {
       const branch = folderBranchOf(review.feature);
       const name = names.filter((one) => one.at >= review.createdAt && (one.from ?? (env?.status === "ready" ? env.branchName : undefined)) === branch).at(-1);
@@ -269,7 +269,7 @@ export function register(deps: Deps) {
       if (!reviews.length) return void cursors.delete(thread.id);
       const after = cursors.get(thread.id);
       // The first read of a thread takes its latest commands.
-      const rows = await bb.sdk.threads.events?.list({ threadId: thread.id, types: ["item/completed"], limit: "100", ...after === undefined ? { order: "desc" } : { afterSeq: String(after), order: "asc" } });
+      const rows = await alia.sdk.threads.events?.list({ threadId: thread.id, types: ["item/completed"], limit: "100", ...after === undefined ? { order: "desc" } : { afterSeq: String(after), order: "asc" } });
       if (!rows?.length) return;
       cursors.set(thread.id, Math.max(after ?? 0, ...rows.map((row) => row.seq)));
       // Oldest first.
@@ -285,7 +285,7 @@ export function register(deps: Deps) {
       }));
       for (const review of reviews) unpushed.delete(review.targetKey);
       await Promise.all(reviews.map((review) => check(review.targetKey, "thread")));
-    }).catch((error) => bb.log.warn(`Could not read the commands of thread ${thread.id}: ${String(error)}`));
+    }).catch((error) => alia.log.warn(`Could not read the commands of thread ${thread.id}: ${String(error)}`));
     scanning.set(thread.id, next);
     void next.finally(() => { if (scanning.get(thread.id) === next) scanning.delete(thread.id); });
     return next;

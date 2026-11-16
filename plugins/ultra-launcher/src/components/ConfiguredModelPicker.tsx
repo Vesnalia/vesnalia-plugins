@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_ProviderModelPicker as ProviderModelPicker } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker } from "@vesnalia/plugin-sdk/app";
 import { PresetProviderLogo } from "./PresetProviderLogo";
 import { usePresets } from "../hooks/usePresets";
 import { EDIT_PRESETS_EVENT } from "../lib/presets";

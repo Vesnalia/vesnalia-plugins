@@ -8,7 +8,7 @@ import {
   experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness,
   type BridgeJsonRpcOutputMessage,
   type BridgeJsonRpcTestHarness,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 /**
  * Muse splits one shell command into argv stages and reviews each stage it
@@ -16,17 +16,17 @@ import {
  * approvals. `approval/decide` settles one stage and reports the approval
  * non-terminal while others remain; a client that answers the first stage and
  * stops leaves Muse holding the tool call forever, with nothing on screen but
- * the approval bb already resolved.
+ * the approval VesnALIA already resolved.
  *
  * This suite drives the whole chain against a scripted host: one prompt to the
  * user, every stage answered, and the turn finishes.
  */
 const fixtureDir = dirname(fileURLToPath(import.meta.url));
 
-const previousExecutable = process.env.BB_MUSE_EXECUTABLE;
+const previousExecutable = process.env.ALIA_MUSE_EXECUTABLE;
 const previousApiKey = process.env.META_API_KEY;
 const previousStages = process.env.FAKE_MUSE_APPROVAL_STAGES;
-process.env.BB_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
+process.env.ALIA_MUSE_EXECUTABLE = join(fixtureDir, "fake-muse-serve.mjs");
 process.env.META_API_KEY = "approval-key";
 process.env.FAKE_MUSE_APPROVAL_STAGES = "3";
 
@@ -36,7 +36,7 @@ let harness: BridgeJsonRpcTestHarness;
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-stages-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-stages-"));
   harness = createBridgeJsonRpcTestHarness(handleLine);
 });
 
@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  restore("BB_MUSE_EXECUTABLE", previousExecutable);
+  restore("ALIA_MUSE_EXECUTABLE", previousExecutable);
   restore("META_API_KEY", previousApiKey);
   restore("FAKE_MUSE_APPROVAL_STAGES", previousStages);
 });
@@ -63,8 +63,8 @@ function restore(name: string, value: string | undefined): void {
 
 /**
  * `accept-edits` is the one mode whose reviewer is the user, so it is the only
- * one where an approval reaching bb is correct. `auto` and `full` are policies
- * bb has already decided, and the suite asserts they never reach the user.
+ * one where an approval reaching VesnALIA is correct. `auto` and `full` are policies
+ * VesnALIA has already decided, and the suite asserts they never reach the user.
  */
 const EXECUTION_OPTIONS = {
   model: "muse-spark-1.3",
@@ -80,7 +80,7 @@ const AUTO_OPTIONS = {
   approvalReviewer: "automatic",
 } as const;
 
-/** bb's schema rejects a reviewer or an escalation on `full`: nobody reviews. */
+/** VesnALIA's schema rejects a reviewer or an escalation on `full`: nobody reviews. */
 const FULL_OPTIONS = {
   ...EXECUTION_OPTIONS,
   permissionMode: "full",
@@ -121,7 +121,7 @@ function collect(
   }
 }
 
-/** Answers every approval bb puts up, with the decision under test. */
+/** Answers every approval VesnALIA puts up, with the decision under test. */
 async function drive(
   decision: string,
   done: (collected: Collected) => boolean,
@@ -165,7 +165,7 @@ async function startTurn(
   const threadId = `thr_${randomUUID().slice(0, 8)}`;
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/start", {
@@ -240,7 +240,7 @@ it("puts an approval a resumed session is still holding back on screen", async (
   const threadId = `thr_${randomUUID().slice(0, 8)}`;
   harness.sendRequest(1, "initialize", {
     protocolVersion: 1,
-    client: { name: "bb", version: "1" },
+    client: { name: "alia", version: "1" },
   });
   await harness.waitForResponse(1);
   harness.sendRequest(2, "thread/resume", {
@@ -281,14 +281,14 @@ it("stops at the first stage when the user refuses", async () => {
  * Muse escalates any shell command its grammar cannot statically canonicalise
  * — a substitution, a `${VAR}`, a pipeline, a heredoc — to a human, whatever
  * approval mode the session is in. Selecting `allowAll` is therefore only half
- * a policy; the bridge has to answer those itself, or bb's `full` ("approval
+ * a policy; the bridge has to answer those itself, or VesnALIA's `full` ("approval
  * bypass") and `auto` ("provider-native automatic review") both degrade into a
  * prompt per command.
  */
 it.each([
   ["auto", AUTO_OPTIONS],
   ["full", FULL_OPTIONS],
-])("never asks the user under %s, a policy bb has already decided", async (_name, options) => {
+])("never asks the user under %s, a policy VesnALIA has already decided", async (_name, options) => {
   await startTurn(options);
   const collected = await drive("deny", completedTurn);
 
@@ -302,7 +302,7 @@ it.each([
 });
 
 /**
- * The other axis of bb's policy. `permissionEscalation` governs only a reach
+ * The other axis of VesnALIA's policy. `permissionEscalation` governs only a reach
  * past the permission scope — what Muse marks with `protectedWrite` and
  * `judgeEscalated` — so `auto` still puts those to the user, and bypassing
  * them along with the rest would quietly widen the mode.

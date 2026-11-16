@@ -11,7 +11,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
   }
 } });
 const { abortableDelay } = await import("../lib/abort-delay.ts");
-const { readAllUsageEvents, scanBbThreadUsage } = await import("../lib/bb-usage-scan.ts");
+const { readAllUsageEvents, scanAliaThreadUsage } = await import("../lib/alia-usage-scan.ts");
 
 test("poll delays release their abort listeners when the timer completes", async () => {
   const controller = new AbortController();
@@ -46,9 +46,9 @@ test("pagination rejects a stuck cursor rather than looping forever", async () =
   await assert.rejects(readAllUsageEvents(async () => rows), /did not advance/);
 });
 
-test("Muse transcripts suppress the BB history fallback to avoid double counting", async () => {
+test("Muse transcripts suppress the VesnALIA history fallback to avoid double counting", async () => {
   let reads = 0;
-  const result = await scanBbThreadUsage({
+  const result = await scanAliaThreadUsage({
     listThreads: async () => [{ id: "muse", providerId: "muse", updatedAt: Date.now() }],
     listEvents: async () => { reads++; return [{ seq: 1, createdAt: Date.now(), total: { totalTokens: 100 } }]; },
   });
@@ -56,8 +56,8 @@ test("Muse transcripts suppress the BB history fallback to avoid double counting
   assert.deepEqual(result.daily, {});
 });
 
-test("remote Muse and Codex threads use BB history because their transcripts are not local", async () => {
-  const result = await scanBbThreadUsage({
+test("remote Muse and Codex threads use VesnALIA history because their transcripts are not local", async () => {
+  const result = await scanAliaThreadUsage({
     localHostId: "mac",
     listThreads: async () => [
       { id: "local", providerId: "muse", hostId: "mac", updatedAt: Date.now() },

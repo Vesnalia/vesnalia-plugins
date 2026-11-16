@@ -1,9 +1,9 @@
-// Route: in-turn calls from a BB thread to other agents and models.
-//   route_worker  hands a task to another BB harness/model that edits files in the same environment
+// Route: in-turn calls from a VesnALIA thread to other agents and models.
+//   route_worker  hands a task to another VesnALIA harness/model that edits files in the same environment
 //   route_decide  asks a System One decision model (for example TypeSafe Jev) for a typed decision
 //   route_ask     asks a model on any OpenAI-compatible endpoint and returns its text
 // Nothing is preconfigured: each tool is offered only after its settings are filled in.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   buildDecideRequest,
@@ -19,13 +19,13 @@ const POLL_MS = 2_000;
 const HTTP_TIMEOUT_MS = 120_000;
 const ASK_MAX_TOKENS = 16_384;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     workers: {
       type: "string",
       label: "Workers",
       description:
-        'JSON array of BB harnesses route_worker may use. The first is the default. Example: [{"name": "cheap", "provider": "codex", "model": "gpt-5-mini", "reasoningLevel": "low", "permissionMode": "full"}]. provider and model are the ids from `bb provider list` and `bb provider models <provider>`. permissionMode defaults to full, because nobody approves a hidden worker\'s actions.',
+        'JSON array of VesnALIA harnesses route_worker may use. The first is the default. Example: [{"name": "cheap", "provider": "codex", "model": "gpt-5-mini", "reasoningLevel": "low", "permissionMode": "full"}]. provider and model are the ids from `alia provider list` and `alia provider models <provider>`. permissionMode defaults to full, because nobody approves a hidden worker\'s actions.',
       experimental_multiline: true,
       experimental_schema: workersSettingSchema,
       default: "[]",
@@ -81,7 +81,7 @@ export default async function plugin(bb: BbPluginApi) {
   const askReady = () => Boolean(current.askBaseUrl.trim()) && askModels().length > 0;
   const decideReady = () => Boolean(current.decideUrl.trim() && current.decideModel.trim());
 
-  bb.agents.configure(() => {
+  alia.agents.configure(() => {
     const tools: string[] = [];
     const lines: string[] = [];
     const pool = workers();
@@ -115,7 +115,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "route_decide",
     description:
       "Ask a decision model for a fast typed decision. With options: returns the pick and every option ranked by probability. Without options: a yes/no answer with p(yes).",
@@ -135,7 +135,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "route_ask",
     description:
       "Ask another model a self-contained question and get its text answer. It sees only the prompt you send, not this thread, and cannot edit files.",
@@ -184,7 +184,7 @@ export default async function plugin(bb: BbPluginApi) {
   // add a worktree option if parallel workers are needed.
   const busyEnvironments = new Set<string>();
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "route_worker",
     description:
       "Hand a self-contained task to another coding agent. It runs as a hidden child thread in this thread's environment, edits the same files, and returns its final message when done. Blocks until it finishes or times out.",
@@ -207,7 +207,7 @@ export default async function plugin(bb: BbPluginApi) {
         );
       }
       const label = describeWorker(chosen);
-      const parent = await bb.sdk.threads.get({ threadId });
+      const parent = await alia.sdk.threads.get({ threadId });
       const environmentId = parent.environmentId;
       if (!environmentId) throw new Error("This thread has no environment yet");
       if (busyEnvironments.has(environmentId)) {
@@ -217,7 +217,7 @@ export default async function plugin(bb: BbPluginApi) {
       let workerId: string | undefined;
       let finished = false;
       try {
-        const spawned = await bb.sdk.threads.spawn({
+        const spawned = await alia.sdk.threads.spawn({
           projectId,
           environment: { type: "reuse", environmentId },
           prompt: task,
@@ -235,11 +235,11 @@ export default async function plugin(bb: BbPluginApi) {
         let started = false;
         for (;;) {
           signal.throwIfAborted();
-          const { status } = await bb.sdk.threads.get({ threadId: workerId });
+          const { status } = await alia.sdk.threads.get({ threadId: workerId });
           if (status === "error") throw new Error(`Worker ${workerId} ${label} failed. Open it to see why.`);
           if (status !== "idle") started = true;
           if (status === "idle") {
-            const { output } = await bb.sdk.threads.output({ threadId: workerId });
+            const { output } = await alia.sdk.threads.output({ threadId: workerId });
             if (started || output) {
               finished = true;
               return `Worker ${workerId} ${label} finished:\n${truncate(output ?? "(no final message)")}`;
@@ -257,8 +257,8 @@ export default async function plugin(bb: BbPluginApi) {
         if (workerId) {
           // Stop always frees the agent process; keep failed workers unarchived so they can be inspected.
           const id = workerId;
-          await bb.sdk.threads.stop({ threadId: id }).catch((error) => bb.log.warn(`stop ${id}: ${error}`));
-          if (finished) await bb.sdk.threads.archive({ threadId: id }).catch(() => undefined);
+          await alia.sdk.threads.stop({ threadId: id }).catch((error) => alia.log.warn(`stop ${id}: ${error}`));
+          if (finished) await alia.sdk.threads.archive({ threadId: id }).catch(() => undefined);
         }
       }
     },

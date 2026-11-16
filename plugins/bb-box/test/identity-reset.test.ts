@@ -9,13 +9,13 @@ import { forkSafeVersion, parseIdentityStatus } from "../src/core/identity.ts";
 import { buildEnvFor } from "../src/backends/boat/templates.ts";
 import { tempDir } from "./helpers.ts";
 
-const SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/bb-box-identity.sh", import.meta.url));
+const SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/alia-box-identity.sh", import.meta.url));
 const CUSTOMIZE_BASE = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/customize-base.sh", import.meta.url));
 const FINALIZE = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/finalize.sh", import.meta.url));
 const DOCKER_START = fileURLToPath(new URL("../setup/docker/start", import.meta.url));
-const BB_FOLDER = "home/box/.bb-machines/bb.example.com";
-const WORKTREE_FILE = `${BB_FOLDER}/plugins/environment-git-worktree/host-data/worktrees/thr_a/notes.txt`;
-const DAEMON_UNIT = "bb-host-daemon-bb-example-com-host_source.service";
+const ALIA_FOLDER = "home/box/.alia-machines/alia.example.com";
+const WORKTREE_FILE = `${ALIA_FOLDER}/plugins/environment-git-worktree/host-data/worktrees/thr_a/notes.txt`;
+const DAEMON_UNIT = "alia-host-daemon-alia-example-com-host_source.service";
 const USER_UNITS = "home/box/.config/systemd/user";
 const ETHER = 1;
 const NONE = 65534;
@@ -81,23 +81,23 @@ function hostKey(root: string, type: string): void {
 }
 
 function seedIdentity(root: string): void {
-  const bb = join(root, BB_FOLDER);
-  mkdirSync(join(bb, "npm/lib/node_modules/bb-app"), { recursive: true });
+  const alia = join(root, ALIA_FOLDER);
+  mkdirSync(join(alia, "npm/lib/node_modules/alia-app"), { recursive: true });
   mkdirSync(join(root, WORKTREE_FILE, ".."), { recursive: true });
-  mkdirSync(join(bb, "logs"), { recursive: true });
-  mkdirSync(join(bb, "daemon.lock.lock"), { recursive: true });
+  mkdirSync(join(alia, "logs"), { recursive: true });
+  mkdirSync(join(alia, "daemon.lock.lock"), { recursive: true });
   writeFileSync(join(root, WORKTREE_FILE), "the thread's work");
-  writeFileSync(join(bb, "auth.json"), '{"token":"secret"}');
-  writeFileSync(join(bb, "config.json"), "{}");
-  writeFileSync(join(bb, "host-id"), "host_source\n");
-  writeFileSync(join(bb, "host-artifact.sha256"), "0123abcd\n");
-  writeFileSync(join(bb, "logs/daemon.log"), "a log");
+  writeFileSync(join(alia, "auth.json"), '{"token":"secret"}');
+  writeFileSync(join(alia, "config.json"), "{}");
+  writeFileSync(join(alia, "host-id"), "host_source\n");
+  writeFileSync(join(alia, "host-artifact.sha256"), "0123abcd\n");
+  writeFileSync(join(alia, "logs/daemon.log"), "a log");
   mkdirSync(join(root, USER_UNITS, "default.target.wants"), { recursive: true });
   writeFileSync(join(root, USER_UNITS, DAEMON_UNIT), "[Service]\n");
   symlinkSync(`../${DAEMON_UNIT}`, join(root, USER_UNITS, "default.target.wants", DAEMON_UNIT));
-  mkdirSync(join(root, "home/box/.config/bb-box"), { recursive: true });
-  writeFileSync(join(root, "home/box/.config/bb-box/env"), "export GH_TOKEN=token\n");
-  writeFileSync(join(root, "home/box/.config/bb-box/access-a17e70a62012"), "");
+  mkdirSync(join(root, "home/box/.config/alia-box"), { recursive: true });
+  writeFileSync(join(root, "home/box/.config/alia-box/env"), "export GH_TOKEN=token\n");
+  writeFileSync(join(root, "home/box/.config/alia-box/access-a17e70a62012"), "");
   mkdirSync(join(root, "var/lib/tailscale"), { recursive: true });
   writeFileSync(join(root, "var/lib/tailscale/tailscaled.state"), '{"_machinekey":"x"}');
   mkdirSync(join(root, "etc/ssh"), { recursive: true });
@@ -139,12 +139,12 @@ function read(root: string, path: string): string | null {
 
 function identityOf(root: string) {
   return {
-    auth: read(root, `${BB_FOLDER}/auth.json`),
-    config: read(root, `${BB_FOLDER}/config.json`),
-    hostId: read(root, `${BB_FOLDER}/host-id`),
+    auth: read(root, `${ALIA_FOLDER}/auth.json`),
+    config: read(root, `${ALIA_FOLDER}/config.json`),
+    hostId: read(root, `${ALIA_FOLDER}/host-id`),
     daemonUnit: existsSync(join(root, USER_UNITS, DAEMON_UNIT)),
     daemonWanted: existsSync(join(root, USER_UNITS, "default.target.wants", DAEMON_UNIT)),
-    access: read(root, "home/box/.config/bb-box/env"),
+    access: read(root, "home/box/.config/alia-box/env"),
     tailnet: readdirSync(join(root, "var/lib/tailscale")).length,
     ed25519: read(root, "etc/ssh/ssh_host_ed25519_key.pub"),
     ecdsa: read(root, "etc/ssh/ssh_host_ecdsa_key.pub"),
@@ -166,10 +166,10 @@ function written(root: string, box: string, source: string) {
 
 function assertReset(root: string, before: ReturnType<typeof identityOf>): void {
   const after = identityOf(root);
-  assert.equal(after.auth, null, "BB's machine credentials are gone");
+  assert.equal(after.auth, null, "VesnALIA's machine credentials are gone");
   assert.equal(after.config, null);
-  assert.equal(after.hostId, null, "BB's host ID is gone, so the box enrols as a new machine");
-  assert.equal(after.daemonUnit, false, "BB's daemon unit for the old host ID is gone");
+  assert.equal(after.hostId, null, "VesnALIA's host ID is gone, so the box enrols as a new machine");
+  assert.equal(after.daemonUnit, false, "VesnALIA's daemon unit for the old host ID is gone");
   assert.equal(after.daemonWanted, false);
   assert.equal(after.access, null, "the thread's access file is gone");
   assert.equal(after.tailnet, 0, "the tailnet node's state is gone");
@@ -178,10 +178,10 @@ function assertReset(root: string, before: ReturnType<typeof identityOf>): void 
   assert.match(after.machineId ?? "", /^[0-9a-f]{32}\n$/);
   assert.notEqual(after.machineId, before.machineId, "a new machine ID");
   assert.equal(read(root, WORKTREE_FILE), "the thread's work", "the thread's files stay");
-  assert.equal(read(root, `${BB_FOLDER}/host-artifact.sha256`), "0123abcd\n", "BB's installed app stays");
-  assert.ok(existsSync(join(root, BB_FOLDER, "npm/lib/node_modules/bb-app")));
-  assert.equal(existsSync(join(root, BB_FOLDER, "logs")), false);
-  assert.equal(read(root, "home/box/.config/bb-box/access-a17e70a62012"), "");
+  assert.equal(read(root, `${ALIA_FOLDER}/host-artifact.sha256`), "0123abcd\n", "VesnALIA's installed app stays");
+  assert.ok(existsSync(join(root, ALIA_FOLDER, "npm/lib/node_modules/alia-app")));
+  assert.equal(existsSync(join(root, ALIA_FOLDER, "logs")), false);
+  assert.equal(read(root, "home/box/.config/alia-box/access-a17e70a62012"), "");
 }
 
 test("a desktop copy drops only host-bound session locks, keeps its profile, keyring and desktop setup, and a same-box restart changes none of them", () => {
@@ -194,9 +194,9 @@ test("a desktop copy drops only host-bound session locks, keeps its profile, key
       "home/box/.config/google-chrome/Default/Cookies",
       "home/box/.local/share/keyrings/login.keyring",
       "home/box/.cache/sessions/xfce4-session-source:99",
-      "etc/bb-box/sway.conf",
-      "usr/local/libexec/bb-box/display",
-      "usr/local/libexec/bb-box/selkies",
+      "etc/alia-box/sway.conf",
+      "usr/local/libexec/alia-box/display",
+      "usr/local/libexec/alia-box/selkies",
       "usr/local/bin/cua-driver",
     ];
     const locks = [
@@ -230,20 +230,20 @@ test("a box made before the change, with the reset in its image but no marker, k
   for (let restart = 0; restart < 3; restart++) {
     const ran = boot(root);
     assert.equal(ran.code, 0, ran.err);
-    assert.match(ran.out, /kept: bb-box has written no identity marker here/);
+    assert.match(ran.out, /kept: alia-box has written no identity marker here/);
   }
   assert.deepEqual(identityOf(root), before);
   assert.deepEqual(status(root), { version: "9", enabled: "yes", boot: "unarmed", marker: "missing", armed: "no", pending: "no", box: "", source: "" });
 });
 
-test("in an image where the reset is off, a boot does nothing and BB Box can write no marker", () => {
+test("in an image where the reset is off, a boot does nothing and VesnALIA Box can write no marker", () => {
   const root = guest([LOOP, LXC_ETH0], { on: false });
   const before = identityOf(root);
   assert.match(boot(root).out, /the identity reset is off in this image/);
   const refused = identity(root, ["write", "--box", "bxsource1", "--source", "eth"]);
   assert.equal(refused.code, 3);
-  assert.match(refused.err, /off in this image, so bb-box writes no marker/);
-  assert.equal(existsSync(join(root, "etc/bb-box/identity")), false);
+  assert.match(refused.err, /off in this image, so alia-box writes no marker/);
+  assert.equal(existsSync(join(root, "etc/alia-box/identity")), false);
   assert.deepEqual(identityOf(root), before);
   assert.equal(status(root).enabled, "no");
   assert.equal(status(root).boot, "off");
@@ -252,8 +252,8 @@ test("in an image where the reset is off, a boot does nothing and BB Box can wri
 test("on Proxmox LXC the marker holds the eth interfaces only, and a box with Docker's and Tailscale's own interfaces keeps its identity at each restart", () => {
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
-  assert.equal(written(root, "bxsource1", "eth"), "bb-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:aa:f1:b6\n");
-  assert.equal(read(root, "var/lib/bb-box/identity-armed"), "bxsource1\n");
+  assert.equal(written(root, "bxsource1", "eth"), "alia-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:aa:f1:b6\n");
+  assert.equal(read(root, "var/lib/alia-box/identity-armed"), "bxsource1\n");
   setNics(root, [LOOP, LXC_ETH0, ...BOX_MADE]);
   const before = identityOf(root);
   for (let restart = 0; restart < 3; restart++) {
@@ -263,7 +263,7 @@ test("on Proxmox LXC the marker holds the eth interfaces only, and a box with Do
   }
   assert.deepEqual(identityOf(root), before);
   assert.deepEqual(status(root), { version: "9", enabled: "yes", boot: "kept", marker: "matches", armed: "yes", pending: "no", box: "bxsource1", source: "eth" });
-  assert.equal(read(root, "var/lib/bb-box/identity-resets"), null);
+  assert.equal(read(root, "var/lib/alia-box/identity-resets"), null);
 });
 
 test("a box that is not a copy keeps its identity when a card is added or one of two is removed, at every boot; a card renamed from eth is no card, so the box is held, removing nothing", () => {
@@ -294,7 +294,7 @@ test("a box that is not a copy keeps its identity when a card is added or one of
   written(vm, "bxvm1", "device");
   setNics(vm, [LOOP, { name: "ens18", mac: "bc:24:11:00:00:18", device: true }, { name: "ens19", mac: "bc:24:11:00:00:19", device: true }]);
   assert.match(boot(vm).out, /kept/, "qm set --net1");
-  assert.equal(read(added, "var/lib/bb-box/identity-resets"), null);
+  assert.equal(read(added, "var/lib/alia-box/identity-resets"), null);
 });
 
 test("a copy with new MAC addresses, as any Proxmox clone gets, resets every item of section 9's table once, and keeps the rest of its disk", () => {
@@ -307,9 +307,9 @@ test("a copy with new MAC addresses, as any Proxmox clone gets, resets every ite
   assert.equal(ran.code, 0, ran.err);
   assert.match(ran.out, /this box is a copy, so it resets its identity: none of the marker's MAC addresses \(bc:24:11:aa:f1:b6\) is on this box's interfaces \(bc:24:11:5e:77:01\)/);
   assertReset(root, before);
-  assert.match(read(root, "etc/bb-box/identity") ?? "", /^bb-box identity 1\nsource eth\nmac bc:24:11:5e:77:01\nreset \d{4}-\d\d-\d\dT[\d:]+Z\n$/);
-  assert.match(read(root, "var/lib/bb-box/identity-resets") ?? "", /Z none of the marker's MAC addresses .*; BB machines removed: host_source\n$/);
-  assert.equal(existsSync(join(root, "var/lib/bb-box/identity-reset-pending")), false);
+  assert.match(read(root, "etc/alia-box/identity") ?? "", /^alia-box identity 1\nsource eth\nmac bc:24:11:5e:77:01\nreset \d{4}-\d\d-\d\dT[\d:]+Z\n$/);
+  assert.match(read(root, "var/lib/alia-box/identity-resets") ?? "", /Z none of the marker's MAC addresses .*; ALIA machines removed: host_source\n$/);
+  assert.equal(existsSync(join(root, "var/lib/alia-box/identity-reset-pending")), false);
   assert.deepEqual(status(root), { version: "9", enabled: "yes", boot: "reset", marker: "matches", armed: "yes", pending: "no", box: "", source: "eth" });
   const once = identityOf(root);
   assert.match(boot(root).out, /kept: the identity marker of box none matches/);
@@ -331,21 +331,21 @@ test("only a new card of the backend's shows a copy: one whose card has no eth n
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
   written(root, "bxsource2", "eth");
-  rmSync(join(root, "etc/bb-box/identity"));
+  rmSync(join(root, "etc/alia-box/identity"));
   setNics(root, [LOOP, { name: "lan0", mac: "bc:24:11:5e:77:01" }]);
   const ran = boot(root);
   assert.match(ran.out, /resets its identity: its identity marker is missing or unreadable/);
   assert.match(ran.out, /found no interface of the backend's to write a marker for, so it unarms this box/);
-  assert.equal(existsSync(join(root, "etc/bb-box/identity")), false);
-  assert.equal(existsSync(join(root, "var/lib/bb-box/identity-armed")), false);
-  assert.match(boot(root).out, /kept: bb-box has written no identity marker here/);
+  assert.equal(existsSync(join(root, "etc/alia-box/identity")), false);
+  assert.equal(existsSync(join(root, "var/lib/alia-box/identity-armed")), false);
+  assert.match(boot(root).out, /kept: alia-box has written no identity marker here/);
 });
 
 test("on a VM the backend's interfaces are those with a device, and a VM whose cards are all new resets", () => {
   const ens18: Nic = { name: "ens18", mac: "bc:24:11:00:00:18", device: true };
   const root = guest([LOOP, ens18]);
   boot(root);
-  assert.equal(written(root, "bxvm1", "device"), "bb-box identity 1\nbox bxvm1\nsource device\nmac bc:24:11:00:00:18\n");
+  assert.equal(written(root, "bxvm1", "device"), "alia-box identity 1\nbox bxvm1\nsource device\nmac bc:24:11:00:00:18\n");
   setNics(root, [LOOP, ens18, ...BOX_MADE, { name: "br0", mac: "bc:24:11:00:00:18" }]);
   assert.match(boot(root).out, /kept/);
   const before = identityOf(root);
@@ -373,7 +373,7 @@ test("a card that appears late is waited for; with none of the marker's cards an
   assert.match(absent.out, /not knowing yet whether this box is a copy: after waiting about 1 s it found none of the marker's MAC addresses \(bc:24:11:00:00:18\) and no new one/);
   assert.deepEqual(identityOf(root), before, "never erases credentials on unknown");
   assert.equal(status(root).boot, "unknown");
-  assert.equal(read(root, "var/lib/bb-box/identity-resets"), null);
+  assert.equal(read(root, "var/lib/alia-box/identity-resets"), null);
 });
 
 test("a marker missing on a box that had one, or unreadable, resets: failing closed", () => {
@@ -382,26 +382,26 @@ test("a marker missing on a box that had one, or unreadable, resets: failing clo
     boot(root);
     written(root, "bxsource1", "eth");
     const before = identityOf(root);
-    const marker = join(root, "etc/bb-box/identity");
+    const marker = join(root, "etc/alia-box/identity");
     if (spoil === "remove") rmSync(marker);
-    if (spoil === "header") writeFileSync(marker, "bb-box identity 9\nsource eth\nmac bc:24:11:aa:f1:b6\n");
-    if (spoil === "mac") writeFileSync(marker, "bb-box identity 1\nsource eth\nmac not-a-mac\n");
-    if (spoil === "source") writeFileSync(marker, "bb-box identity 1\nsource wifi\nmac bc:24:11:aa:f1:b6\n");
+    if (spoil === "header") writeFileSync(marker, "alia-box identity 9\nsource eth\nmac bc:24:11:aa:f1:b6\n");
+    if (spoil === "mac") writeFileSync(marker, "alia-box identity 1\nsource eth\nmac not-a-mac\n");
+    if (spoil === "source") writeFileSync(marker, "alia-box identity 1\nsource wifi\nmac bc:24:11:aa:f1:b6\n");
     const ran = boot(root);
     assert.equal(ran.code, 0, ran.err);
     assert.match(ran.out, /resets its identity: its identity marker is missing or unreadable/, spoil);
     assertReset(root, before);
-    assert.match(read(root, "etc/bb-box/identity") ?? "", /^bb-box identity 1\nsource eth\nmac bc:24:11:aa:f1:b6\nreset /, `${spoil}: the box's own marker, so the next boot keeps`);
+    assert.match(read(root, "etc/alia-box/identity") ?? "", /^alia-box identity 1\nsource eth\nmac bc:24:11:aa:f1:b6\nreset /, `${spoil}: the box's own marker, so the next boot keeps`);
   }
 });
 
 test("a marker whose last line has no newline is still read", () => {
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
-  mkdirSync(join(root, "etc/bb-box"), { recursive: true });
-  mkdirSync(join(root, "var/lib/bb-box"), { recursive: true });
-  writeFileSync(join(root, "etc/bb-box/identity"), "bb-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:aa:f1:b6");
-  writeFileSync(join(root, "var/lib/bb-box/identity-armed"), "bxsource1\n");
+  mkdirSync(join(root, "etc/alia-box"), { recursive: true });
+  mkdirSync(join(root, "var/lib/alia-box"), { recursive: true });
+  writeFileSync(join(root, "etc/alia-box/identity"), "alia-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:aa:f1:b6");
+  writeFileSync(join(root, "var/lib/alia-box/identity-armed"), "bxsource1\n");
   assert.match(boot(root).out, /kept: the identity marker of box bxsource1 matches/);
 });
 
@@ -414,17 +414,17 @@ test("a reset records what it removes, with the original host IDs, before it rem
   assert.equal(failed.code, 1);
   assert.match(failed.out, /could not make new SSH host keys/);
   assert.match(failed.out, /the reset failed, so the network, SSH, Tailscale, Docker, the desktop and the box user's services stay off; the next boot resumes it/);
-  assert.match(read(root, "var/lib/bb-box/identity-reset-pending") ?? "", /Z none of the marker's MAC addresses .*; BB machines removed: host_source\n$/);
-  assert.equal(read(root, `${BB_FOLDER}/host-id`), null, "BB's credentials went before the step that failed");
-  assert.equal(read(root, "var/lib/bb-box/identity-resets"), null, "not done, so no receipt");
+  assert.match(read(root, "var/lib/alia-box/identity-reset-pending") ?? "", /Z none of the marker's MAC addresses .*; ALIA machines removed: host_source\n$/);
+  assert.equal(read(root, `${ALIA_FOLDER}/host-id`), null, "VesnALIA's credentials went before the step that failed");
+  assert.equal(read(root, "var/lib/alia-box/identity-resets"), null, "not done, so no receipt");
   assert.equal(status(root).pending, "yes");
-  assert.equal(identity(root, ["write", "--box", "bxsource1", "--source", "eth"]).code, 3, "BB Box writes no marker while a reset is unfinished");
+  assert.equal(identity(root, ["write", "--box", "bxsource1", "--source", "eth"]).code, 3, "VesnALIA Box writes no marker while a reset is unfinished");
   const resumed = boot(root);
   assert.equal(resumed.code, 0, resumed.err);
   assert.match(resumed.out, /resuming the reset that began at /);
-  assert.match(read(root, "var/lib/bb-box/identity-resets") ?? "", /; BB machines removed: host_source\n$/, "the original host ID, not none");
+  assert.match(read(root, "var/lib/alia-box/identity-resets") ?? "", /; ALIA machines removed: host_source\n$/, "the original host ID, not none");
   assert.ok(read(root, "etc/ssh/ssh_host_ed25519_key.pub") && read(root, "etc/ssh/ssh_host_ecdsa_key.pub"), "host keys made again, though the failed attempt had removed them");
-  assert.equal(existsSync(join(root, "var/lib/bb-box/identity-reset-pending")), false);
+  assert.equal(existsSync(join(root, "var/lib/alia-box/identity-reset-pending")), false);
   assert.equal(status(root).boot, "reset");
 });
 
@@ -433,48 +433,48 @@ test("a reset whose receipt cannot be written fails the boot, and the next boot 
   boot(root);
   written(root, "bxsource1", "eth");
   setNics(root, [LOOP, { name: "eth0", mac: "bc:24:11:5e:77:01" }]);
-  mkdirSync(join(root, "var/lib/bb-box/identity-resets"));
+  mkdirSync(join(root, "var/lib/alia-box/identity-resets"));
   const failed = boot(root);
   assert.equal(failed.code, 1);
   assert.match(failed.out, /could not record the reset in .*identity-resets/);
   assert.equal(status(root).boot, "failed");
-  assert.match(read(root, "var/lib/bb-box/identity-reset-pending") ?? "", /BB machines removed: host_source/);
-  rmSync(join(root, "var/lib/bb-box/identity-resets"), { recursive: true });
+  assert.match(read(root, "var/lib/alia-box/identity-reset-pending") ?? "", /ALIA machines removed: host_source/);
+  rmSync(join(root, "var/lib/alia-box/identity-resets"), { recursive: true });
   assert.equal(boot(root).code, 0);
-  assert.match(read(root, "var/lib/bb-box/identity-resets") ?? "", /BB machines removed: host_source\n$/);
+  assert.match(read(root, "var/lib/alia-box/identity-resets") ?? "", /ALIA machines removed: host_source\n$/);
 });
 
-test("a reset removes root's BB machines and daemon units too, set aside or not", () => {
+test("a reset removes root's VesnALIA machines and daemon units too, set aside or not", () => {
   const root = guest([LOOP, LXC_ETH0]);
-  mkdirSync(join(root, "root/.bb-machines/.set-aside/old"), { recursive: true });
-  writeFileSync(join(root, "root/.bb-machines/.set-aside/old/auth.json"), "{}");
-  writeFileSync(join(root, "root/.bb-machines/.set-aside/old/host-id"), "host_root\n");
+  mkdirSync(join(root, "root/.alia-machines/.set-aside/old"), { recursive: true });
+  writeFileSync(join(root, "root/.alia-machines/.set-aside/old/auth.json"), "{}");
+  writeFileSync(join(root, "root/.alia-machines/.set-aside/old/host-id"), "host_root\n");
   mkdirSync(join(root, "root/.config/systemd/user/default.target.wants"), { recursive: true });
-  writeFileSync(join(root, "root/.config/systemd/user/bb-host-daemon-x-host_root.service"), "[Service]\n");
+  writeFileSync(join(root, "root/.config/systemd/user/alia-host-daemon-x-host_root.service"), "[Service]\n");
   boot(root);
   written(root, "bxsource1", "eth");
   setNics(root, [LOOP, { name: "eth0", mac: "bc:24:11:5e:77:01" }]);
   assert.equal(boot(root).code, 0);
-  assert.equal(existsSync(join(root, "root/.bb-machines/.set-aside/old/auth.json")), false);
-  assert.equal(existsSync(join(root, "root/.config/systemd/user/bb-host-daemon-x-host_root.service")), false);
-  assert.match(read(root, "var/lib/bb-box/identity-resets") ?? "", /BB machines removed: host_root host_source\n$/);
+  assert.equal(existsSync(join(root, "root/.alia-machines/.set-aside/old/auth.json")), false);
+  assert.equal(existsSync(join(root, "root/.config/systemd/user/alia-host-daemon-x-host_root.service")), false);
+  assert.match(read(root, "var/lib/alia-box/identity-resets") ?? "", /ALIA machines removed: host_root host_source\n$/);
 });
 
-test("a box of Docker's image compares the value BB Box set on its guest, which its start passes, not its interfaces", () => {
+test("a box of Docker's image compares the value VesnALIA Box set on its guest, which its start passes, not its interfaces", () => {
   const root = guest([LOOP, { name: "eth0", mac: "02:42:ac:11:00:02" }]);
   assert.match(boot(root, "bxdock1").out, /no identity marker/);
-  assert.equal(written(root, "bxdock1", "value"), "bb-box identity 1\nbox bxdock1\nsource value\nvalue bxdock1\n");
+  assert.equal(written(root, "bxdock1", "value"), "alia-box identity 1\nbox bxdock1\nsource value\nvalue bxdock1\n");
   setNics(root, [LOOP, { name: "eth0", mac: "02:42:ac:11:00:07" }]);
   for (let restart = 0; restart < 3; restart++) assert.match(boot(root, "bxdock1").out, /kept/, "Docker gave it a new MAC address at the restart");
   const before = identityOf(root);
-  assert.match(boot(root, "bxdock2").out, /resets its identity: the value bb-box set on this guest is not the marker's/);
+  assert.match(boot(root, "bxdock2").out, /resets its identity: the value alia-box set on this guest is not the marker's/);
   assertReset(root, before);
-  assert.match(read(root, "etc/bb-box/identity") ?? "", /^bb-box identity 1\nsource value\nvalue bxdock2\nreset /);
+  assert.match(read(root, "etc/alia-box/identity") ?? "", /^alia-box identity 1\nsource value\nvalue bxdock2\nreset /);
   assert.match(boot(root, "bxdock2").out, /kept/);
   const none = boot(root, "");
-  assert.match(none.out, /resets its identity: the value bb-box set on this guest is not the marker's/, "a guest BB Box set no value on is a copy too");
+  assert.match(none.out, /resets its identity: the value alia-box set on this guest is not the marker's/, "a guest VesnALIA Box set no value on is a copy too");
   assert.match(none.out, /unarms this box/);
-  assert.match(boot(root, "").out, /kept: bb-box has written no identity marker here/, "unarmed, it does not reset again");
+  assert.match(boot(root, "").out, /kept: alia-box has written no identity marker here/, "unarmed, it does not reset again");
 });
 
 test("write refuses a marker that would not match at the next boot, and names its fault; unarm removes the marker", () => {
@@ -482,18 +482,18 @@ test("write refuses a marker that would not match at the next boot, and names it
   boot(root);
   const noValue = identity(root, ["write", "--box", "bxdock1", "--source", "value"]);
   assert.equal(noValue.code, 3);
-  assert.match(noValue.err, /this boot saw no value from bb-box/);
+  assert.match(noValue.err, /this boot saw no value from alia-box/);
   const vm = identity(root, ["write", "--box", "bxdock1", "--source", "device"]);
   assert.equal(vm.code, 3);
   assert.match(vm.err, /found none of this box's device interfaces/);
   assert.equal(identity(root, ["write", "--box", "BX/1", "--source", "eth"]).code, 2);
   assert.equal(identity(root, ["write", "--box", "bxdock1", "--source", "wifi"]).code, 2);
   assert.equal(identity(root, ["write", "--box", "bxdock1", "--source"]).code, 2, "an option with no value is refused, not looped on");
-  assert.equal(existsSync(join(root, "etc/bb-box/identity")), false);
+  assert.equal(existsSync(join(root, "etc/alia-box/identity")), false);
   written(root, "bxdock1", "eth");
   assert.equal(identity(root, ["unarm"]).code, 0);
-  assert.equal(existsSync(join(root, "etc/bb-box/identity")), false);
-  assert.equal(existsSync(join(root, "var/lib/bb-box/identity-armed")), false);
+  assert.equal(existsSync(join(root, "etc/alia-box/identity")), false);
+  assert.equal(existsSync(join(root, "var/lib/alia-box/identity-armed")), false);
 });
 
 test("a reset that cannot finish fails the boot, so the network and identity services stay off", { skip: process.getuid?.() === 0 ? "root can remove what the test protects" : false }, () => {
@@ -516,7 +516,7 @@ test("forkSafe is the reset's version only when it is on, this boot's check ran,
   const status = (lines: string) => forkSafeVersion(parseIdentityStatus(lines));
   const on = "version=2\nenabled=yes\npending=no\n";
   assert.equal(status(`${on}boot=kept\nmarker=matches\narmed=yes\nbox=bx1\nsource=eth\n`), 2);
-  assert.equal(status(`${on}boot=unarmed\nmarker=matches\narmed=yes\nbox=bx1\nsource=eth\n`), 2, "written by BB Box after this boot's check");
+  assert.equal(status(`${on}boot=unarmed\nmarker=matches\narmed=yes\nbox=bx1\nsource=eth\n`), 2, "written by VesnALIA Box after this boot's check");
   assert.equal(status(`${on}boot=reset\nmarker=matches\narmed=yes\nbox=\nsource=device\n`), 2);
   assert.equal(status(`${on}boot=unknown\nmarker=matches\narmed=yes\n`), null, "a boot that could not tell");
   assert.equal(status(`${on}boot=none\nmarker=matches\narmed=yes\n`), null, "the boot check did not run: the unit is not wired");
@@ -533,40 +533,40 @@ test("forkSafe is the reset's version only when it is on, this boot's check ran,
 test("enable writes the unit before the network and identity services, and requires it of them, Docker's and the desktop's; disable removes it all", () => {
   const root = tempDir("identity-units");
   assert.equal(identity(root, ["enable"]).code, 0);
-  const unit = read(root, "etc/systemd/system/bb-box-identity.service") ?? "";
+  const unit = read(root, "etc/systemd/system/alia-box-identity.service") ?? "";
   assert.match(unit, /^DefaultDependencies=no$/m);
   const before = /^Before=(.*)$/m.exec(unit)?.[1]?.split(" ") ?? [];
-  for (const unitName of ["network-pre.target", "systemd-networkd.service", "ssh.service", "tailscaled.service", "docker.service", "containerd.service", "bb-box-display.service"]) assert.ok(before.includes(unitName), unitName);
-  assert.match(unit, /^ExecStart=\/usr\/local\/sbin\/bb-box-identity boot$/m);
-  for (const gated of ["systemd-networkd.service", "docker.service", "docker.socket", "containerd.service", "bb-box-docker-containers.service"]) {
-    assert.equal(read(root, `etc/systemd/system/${gated}.d/10-bb-box-identity.conf`), "[Unit]\nRequires=bb-box-identity.service\nAfter=bb-box-identity.service\n", gated);
+  for (const unitName of ["network-pre.target", "systemd-networkd.service", "ssh.service", "tailscaled.service", "docker.service", "containerd.service", "alia-box-display.service"]) assert.ok(before.includes(unitName), unitName);
+  assert.match(unit, /^ExecStart=\/usr\/local\/sbin\/alia-box-identity boot$/m);
+  for (const gated of ["systemd-networkd.service", "docker.service", "docker.socket", "containerd.service", "alia-box-docker-containers.service"]) {
+    assert.equal(read(root, `etc/systemd/system/${gated}.d/10-alia-box-identity.conf`), "[Unit]\nRequires=alia-box-identity.service\nAfter=alia-box-identity.service\n", gated);
   }
-  for (const user of ["ssh.service", "tailscaled.service", "user@.service", "bb-box-display.service", "bb-box-session.service", "bb-box-vnc.service", "bb-box-vnc-password.service", "bb-box-selkies.service"]) {
-    assert.equal(read(root, `etc/systemd/system/${user}.d/10-bb-box-identity.conf`), "[Unit]\nRequires=bb-box-identity.service bb-box-identity-settle.service\nAfter=bb-box-identity.service bb-box-identity-settle.service\n", user);
+  for (const user of ["ssh.service", "tailscaled.service", "user@.service", "alia-box-display.service", "alia-box-session.service", "alia-box-vnc.service", "alia-box-vnc-password.service", "alia-box-selkies.service"]) {
+    assert.equal(read(root, `etc/systemd/system/${user}.d/10-alia-box-identity.conf`), "[Unit]\nRequires=alia-box-identity.service alia-box-identity-settle.service\nAfter=alia-box-identity.service alia-box-identity-settle.service\n", user);
   }
-  const settleUnit = read(root, "etc/systemd/system/bb-box-identity-settle.service") ?? "";
-  assert.match(settleUnit, /^Before=ssh\.service tailscaled\.service bb-box-display\.service bb-box-session\.service bb-box-vnc\.service bb-box-vnc-password\.service bb-box-selkies\.service shutdown\.target$/m);
-  assert.match(settleUnit, /^After=bb-box-identity\.service$/m);
+  const settleUnit = read(root, "etc/systemd/system/alia-box-identity-settle.service") ?? "";
+  assert.match(settleUnit, /^Before=ssh\.service tailscaled\.service alia-box-display\.service alia-box-session\.service alia-box-vnc\.service alia-box-vnc-password\.service alia-box-selkies\.service shutdown\.target$/m);
+  assert.match(settleUnit, /^After=alia-box-identity\.service$/m);
   assert.match(settleUnit, /^TimeoutStartSec=infinity$/m);
-  assert.ok(existsSync(join(root, "etc/systemd/system/multi-user.target.wants/bb-box-identity-settle.service")));
-  assert.equal(read(root, "etc/systemd/user/bb-host-daemon-.service.d/10-bb-box-identity.conf"), "[Service]\nExecStartPre=/usr/local/sbin/bb-box-identity wait %n\nTimeoutStartSec=infinity\n", "BB's daemon, a user unit, waits too");
-  assert.ok(existsSync(join(root, "etc/systemd/system/multi-user.target.wants/bb-box-identity.service")));
-  assert.equal(read(root, "usr/local/lib/bb-box/identity-reset-on"), "on\n");
+  assert.ok(existsSync(join(root, "etc/systemd/system/multi-user.target.wants/alia-box-identity-settle.service")));
+  assert.equal(read(root, "etc/systemd/user/alia-host-daemon-.service.d/10-alia-box-identity.conf"), "[Service]\nExecStartPre=/usr/local/sbin/alia-box-identity wait %n\nTimeoutStartSec=infinity\n", "VesnALIA's daemon, a user unit, waits too");
+  assert.ok(existsSync(join(root, "etc/systemd/system/multi-user.target.wants/alia-box-identity.service")));
+  assert.equal(read(root, "usr/local/lib/alia-box/identity-reset-on"), "on\n");
   assert.equal(identity(root, ["disable"]).code, 0);
-  assert.equal(existsSync(join(root, "etc/systemd/system/bb-box-identity.service")), false);
+  assert.equal(existsSync(join(root, "etc/systemd/system/alia-box-identity.service")), false);
   assert.equal(existsSync(join(root, "etc/systemd/system/ssh.service.d")), false);
-  assert.equal(existsSync(join(root, "etc/systemd/system/bb-box-identity-settle.service")), false);
-  assert.equal(existsSync(join(root, "etc/systemd/user/bb-host-daemon-.service.d")), false);
-  assert.equal(existsSync(join(root, "usr/local/lib/bb-box/identity-reset-on")), false);
+  assert.equal(existsSync(join(root, "etc/systemd/system/alia-box-identity-settle.service")), false);
+  assert.equal(existsSync(join(root, "etc/systemd/user/alia-host-daemon-.service.d")), false);
+  assert.equal(existsSync(join(root, "usr/local/lib/alia-box/identity-reset-on")), false);
   const docker = tempDir("identity-docker");
   assert.equal(identity(docker, ["enable", "--no-unit"]).code, 0);
-  assert.equal(existsSync(join(docker, "etc/systemd/system/bb-box-identity.service")), false);
-  assert.equal(read(docker, "usr/local/lib/bb-box/identity-reset-on"), "on\n");
+  assert.equal(existsSync(join(docker, "etc/systemd/system/alia-box-identity.service")), false);
+  assert.equal(read(docker, "usr/local/lib/alia-box/identity-reset-on"), "on\n");
 });
 
 test("every Linux build turns the reset on, including desktops; finalizing clears what a box wrote", () => {
   const base = readFileSync(CUSTOMIZE_BASE, "utf8");
-  assert.match(base, /install -m 0755 "\$build\/guest\/bb-box-identity\.sh" \/usr\/local\/sbin\/bb-box-identity\n\/usr\/local\/sbin\/bb-box-identity disable\nif \[ "\$\{BOX_IDENTITY_RESET:-off\}" = on \]; then/);
+  assert.match(base, /install -m 0755 "\$build\/guest\/alia-box-identity\.sh" \/usr\/local\/sbin\/alia-box-identity\n\/usr\/local\/sbin\/alia-box-identity disable\nif \[ "\$\{BOX_IDENTITY_RESET:-off\}" = on \]; then/);
   const on = (file: string) => readFileSync(fileURLToPath(new URL(`../setup/${file}`, import.meta.url)), "utf8");
   for (const build of ["proxmox-lxc/template/build.sh", "docker/customize.sh"]) {
     assert.match(on(build), /^BOX_IDENTITY_RESET=on$/m, build);
@@ -575,12 +575,12 @@ test("every Linux build turns the reset on, including desktops; finalizing clear
   const tart = on("tart/prepare-linux-image.sh");
   assert.match(tart, /kind=linux-arm64 artifacts=linux finalize=linux identity_reset=on\n/);
   assert.match(tart, /kind=linux-arm64-desktop-cpu artifacts=desktop-cpu finalize=desktop identity_reset=on\n/);
-  assert.match(tart, /BUILD_ID=%s\\nBOX_IDENTITY_RESET=%s\\nPREPARE=%s\\n' "\$bb_url" "\$build_id" "\$identity_reset" "\$prepare" \| as_root sh -c "cat >\$src\/build\.env"/);
+  assert.match(tart, /BUILD_ID=%s\\nBOX_IDENTITY_RESET=%s\\nPREPARE=%s\\n' "\$alia_url" "\$build_id" "\$identity_reset" "\$prepare" \| as_root sh -c "cat >\$src\/build\.env"/);
   for (const unchecked of ["boat/template.sh", "boat/customize-sandbox.sh"]) assert.doesNotMatch(on(unchecked), /BOX_IDENTITY_RESET/, unchecked);
-  assert.match(readFileSync(FINALIZE, "utf8"), /rm -f \/etc\/bb-box\/identity .*\/var\/lib\/bb-box\/identity-armed/);
+  assert.match(readFileSync(FINALIZE, "utf8"), /rm -f \/etc\/alia-box\/identity .*\/var\/lib\/alia-box\/identity-armed/);
   const start = readFileSync(DOCKER_START, "utf8");
-  const check = start.indexOf('bb-box-identity boot --value "${BBBOX_IDENTITY:-}"');
-  assert.ok(check > 0 && check < start.indexOf("rm -f \"$home\"/.bb-machines/*/daemon.lock.lock") && check < start.indexOf(`touch "$run/ready"`), "a Docker box checks before it starts anything");
+  const check = start.indexOf('alia-box-identity boot --value "${BBBOX_IDENTITY:-}"');
+  assert.ok(check > 0 && check < start.indexOf("rm -f \"$home\"/.alia-machines/*/daemon.lock.lock") && check < start.indexOf(`touch "$run/ready"`), "a Docker box checks before it starts anything");
 });
 
 function settle(root: string, options: { readonly waitSeconds?: number; readonly path?: string } = {}) {
@@ -616,7 +616,7 @@ test("a card added and booted becomes an anchor, so removing the first card late
   const grew = boot(lxc);
   assert.match(grew.out, /kept/);
   assert.match(grew.out, /added this boot's interfaces \( bc:24:11:00:00:11 \) to the marker/);
-  assert.equal(read(lxc, "etc/bb-box/identity"), "bb-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:00:00:11\nmac bc:24:11:aa:f1:b6\n");
+  assert.equal(read(lxc, "etc/alia-box/identity"), "alia-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:00:00:11\nmac bc:24:11:aa:f1:b6\n");
   setNics(lxc, [LOOP, eth1]);
   const before = identityOf(lxc);
   assert.match(boot(lxc).out, /kept/, "net0 removed after net1 had booted");
@@ -631,7 +631,7 @@ test("a card added and booted becomes an anchor, so removing the first card late
   assert.match(boot(vm).out, /kept/);
   setNics(vm, [LOOP, ens19]);
   assert.match(boot(vm).out, /kept/, "qm set --net1, a boot, then --delete net0");
-  assert.equal(read(vm, "var/lib/bb-box/identity-resets"), null);
+  assert.equal(read(vm, "var/lib/alia-box/identity-resets"), null);
 
   const copy = guest([LOOP, LXC_ETH0]);
   boot(copy);
@@ -642,7 +642,7 @@ test("a card added and booted becomes an anchor, so removing the first card late
   assert.match(boot(copy).out, /resets its identity/, "a copy of a box whose anchors grew still resets: all its cards are new");
 });
 
-test("a copy whose card appears after the wait is held, not let through: SSH, Tailscale and BB's daemon wait, and it resets once the card is there", async () => {
+test("a copy whose card appears after the wait is held, not let through: SSH, Tailscale and VesnALIA's daemon wait, and it resets once the card is there", async () => {
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
   written(root, "bxsource1", "eth");
@@ -650,13 +650,13 @@ test("a copy whose card appears after the wait is held, not let through: SSH, Ta
   const before = identityOf(root);
   const unknown = boot(root);
   assert.equal(unknown.code, 0, "the boot goes on, to the network and the console");
-  assert.match(unknown.out, /not knowing yet whether this box is a copy: .* It removes nothing; SSH, Tailscale and BB's daemon wait while it looks again/);
+  assert.match(unknown.out, /not knowing yet whether this box is a copy: .* It removes nothing; SSH, Tailscale and ALIA's daemon wait while it looks again/);
   assert.deepEqual(identityOf(root), before, "nothing removed on unknown");
   const holding = settle(root);
   const done = ended(holding);
-  const daemon = waitFor(root, "bb-host-daemon-bb-example-com-host_source.service");
+  const daemon = waitFor(root, "alia-host-daemon-alia-example-com-host_source.service");
   const daemonDone = ended(daemon);
-  assert.equal(await stillRunning(daemon, 400), true, "BB's daemon waits");
+  assert.equal(await stillRunning(daemon, 400), true, "VesnALIA's daemon waits");
   assert.deepEqual(identityOf(root), before);
   setNics(root, [LOOP, { name: "eth0", mac: "bc:24:11:5e:77:01" }]);
   const settled = await done;
@@ -666,7 +666,7 @@ test("a copy whose card appears after the wait is held, not let through: SSH, Ta
   assert.equal(status(root).boot, "reset");
   const daemonEnd = await daemonDone;
   assert.equal(daemonEnd.code, 1, "the copied machine's daemon never starts");
-  assert.match(daemonEnd.out, /BB machine host_source went with this box's identity reset, so its daemon does not start/);
+  assert.match(daemonEnd.out, /ALIA machine host_source went with this box's identity reset, so its daemon does not start/);
 });
 
 test("the box itself, its card late past the wait, keeps everything once the card appears, and its daemon starts", async () => {
@@ -677,7 +677,7 @@ test("the box itself, its card late past the wait, keeps everything once the car
   const before = identityOf(root);
   boot(root);
   const holding = ended(settle(root));
-  const daemon = ended(waitFor(root, "bb-host-daemon-bb-example-com-host_source.service"));
+  const daemon = ended(waitFor(root, "alia-host-daemon-alia-example-com-host_source.service"));
   setTimeout(() => setNics(root, [LOOP, LXC_ETH0]), 300);
   const settled = await holding;
   assert.equal(settled.code, 0);
@@ -695,7 +695,7 @@ test("a box with no card at all still boots: nothing is removed, and only what u
   const before = identityOf(root);
   assert.equal(boot(root).code, 0);
   const holding = settle(root);
-  const daemon = waitFor(root, "bb-host-daemon-bb-example-com-host_source.service");
+  const daemon = waitFor(root, "alia-host-daemon-alia-example-com-host_source.service");
   assert.equal(await stillRunning(holding, 800), true, "SSH and Tailscale, behind it, wait");
   assert.equal(await stillRunning(daemon, 10), true);
   holding.kill();
@@ -721,7 +721,7 @@ test("a box with no card past the wait stays held while its network, Docker and 
     const daemonDone = ended(daemon);
     setNics(root, [LOOP, ...BOX_MADE]);
     assert.equal(await stillRunning(settling, 600), true, `${source}: SSH and Tailscale still wait`);
-    assert.equal(await stillRunning(daemon, 10), true, `${source}: BB's daemon still waits`);
+    assert.equal(await stillRunning(daemon, 10), true, `${source}: VesnALIA's daemon still waits`);
     assert.deepEqual(identityOf(root), before, `${source}: nothing removed`);
     assert.equal(status(root).boot, "unknown");
     assert.equal(status(root).marker, "incomplete");
@@ -730,8 +730,8 @@ test("a box with no card past the wait stays held while its network, Docker and 
     assert.equal(done.code, 0);
     assert.match(done.out, /kept, now that its cards are here/);
     assert.deepEqual(identityOf(root), before);
-    assert.equal((await daemonDone).code, 0, `${source}: BB's daemon starts`);
-    assert.equal(read(root, "var/lib/bb-box/identity-resets"), null);
+    assert.equal((await daemonDone).code, 0, `${source}: VesnALIA's daemon starts`);
+    assert.equal(read(root, "var/lib/alia-box/identity-resets"), null);
   }
 });
 
@@ -769,7 +769,7 @@ test("on LXC only a veth whose peer is in another namespace, on no bridge and na
       assert.deepEqual(identityOf(root), before, `${source}, ${what}: nothing removed`);
       setNics(root, [LOOP, card, ...made]);
       assert.match((await settled).out, /kept, now that its cards are here/, `${source}, ${what}`);
-      assert.equal(read(root, "var/lib/bb-box/identity-resets"), null);
+      assert.equal(read(root, "var/lib/alia-box/identity-resets"), null);
     }
   }
 });
@@ -783,9 +783,9 @@ test("only a card the backend gave becomes an anchor or keeps a box: a software 
   const kept = boot(root);
   assert.match(kept.out, /kept: the identity marker of box bxsource1 matches/);
   assert.doesNotMatch(kept.out, /added this boot's interfaces/);
-  assert.equal(read(root, "etc/bb-box/identity"), "bb-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:aa:f1:b6\n");
+  assert.equal(read(root, "etc/alia-box/identity"), "alia-box identity 1\nbox bxsource1\nsource eth\nmac bc:24:11:aa:f1:b6\n");
 
-  writeFileSync(join(root, "etc/bb-box/identity"), "bb-box identity 1\nbox bxsource1\nsource eth\nmac 02:55:44:33:22:11\nmac bc:24:11:aa:f1:b6\n");
+  writeFileSync(join(root, "etc/alia-box/identity"), "alia-box identity 1\nbox bxsource1\nsource eth\nmac 02:55:44:33:22:11\nmac bc:24:11:aa:f1:b6\n");
   const before = identityOf(root);
   setNics(root, [LOOP]);
   assert.match(boot(root).out, /not knowing yet whether this box is a copy/);
@@ -815,20 +815,20 @@ test("a card's peer is told by the namespace the kernel names, not by index: a v
   assert.match(boot(root).out, /kept: the identity marker of box bxsource1 matches/);
   const second: Nic = { name: "eth1", mac: "bc:24:11:00:00:11", index: 101, linkIndex: 200 };
   setNics(root, [LOOP, card, mirror, second]);
-  writeFileSync(join(root, "run/bb-box-identity/boot"), "unknown\n");
+  writeFileSync(join(root, "run/alia-box-identity/boot"), "unknown\n");
   const settled = identity(root, ["settle"]);
   assert.equal(settled.code, 0, settled.err);
   assert.match(settled.out, /kept, now that its cards are here/);
   assert.match(boot(root).out, /added this boot's interfaces \( bc:24:11:00:00:11 \) to the marker/);
   assert.deepEqual(identityOf(root), before);
-  assert.equal(read(root, "var/lib/bb-box/identity-resets"), null);
+  assert.equal(read(root, "var/lib/alia-box/identity-resets"), null);
 });
 
 test("settle reads the cards once, so a second reading that arrives with a new card cannot turn the box into a copy", async () => {
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
   written(root, "bxsource1", "eth");
-  const marker = read(root, "etc/bb-box/identity");
+  const marker = read(root, "etc/alia-box/identity");
   setNics(root, [LOOP]);
   boot(root);
   const full = [LOOP, LXC_ETH0, { name: "eth1", mac: "bc:24:11:00:00:11" }];
@@ -844,34 +844,34 @@ if [ "$n" -eq 0 ]; then cat "$BBBOX_IDENTITY_ROOT/ip-empty.json"; else cat "$BBB
   const settled = await ended(settle(root, { path: `${bin}:${TEST_PATH}` }));
   assert.equal(settled.code, 0, settled.out);
   assert.match(settled.out, /kept, now that its cards are here/);
-  assert.equal(read(root, "etc/bb-box/identity"), marker);
-  assert.equal(read(root, "var/lib/bb-box/identity-resets"), null);
+  assert.equal(read(root, "etc/alia-box/identity"), marker);
+  assert.equal(read(root, "var/lib/alia-box/identity-resets"), null);
 });
 
 test("anchors grow only at boot, before the box's own software makes interfaces, never in settle", async () => {
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
   written(root, "bxsource1", "eth");
-  const marker = read(root, "etc/bb-box/identity");
+  const marker = read(root, "etc/alia-box/identity");
   setNics(root, [LOOP]);
   boot(root);
   const settled = ended(settle(root));
   setTimeout(() => setNics(root, [LOOP, LXC_ETH0, { name: "eth1", mac: "bc:24:11:00:00:11" }]), 200);
   assert.match((await settled).out, /kept, now that its cards are here/);
-  assert.equal(read(root, "etc/bb-box/identity"), marker);
+  assert.equal(read(root, "etc/alia-box/identity"), marker);
   assert.match(boot(root).out, /added this boot's interfaces \( bc:24:11:00:00:11 \) to the marker/);
 });
 
-test("wait lets BB's daemon start once the identity is known, unless its machine went with a reset", async () => {
+test("wait lets VesnALIA's daemon start once the identity is known, unless its machine went with a reset", async () => {
   const root = guest([LOOP, LXC_ETH0]);
   boot(root);
-  assert.equal((await ended(waitFor(root, "bb-host-daemon-bb-example-com-host_source.service"))).code, 0, "unarmed");
+  assert.equal((await ended(waitFor(root, "alia-host-daemon-alia-example-com-host_source.service"))).code, 0, "unarmed");
   written(root, "bxsource1", "eth");
   setNics(root, [LOOP, { name: "eth0", mac: "bc:24:11:5e:77:01" }]);
   boot(root);
-  assert.equal((await ended(waitFor(root, "bb-host-daemon-bb-example-com-host_source.service"))).code, 1, "the copied machine");
-  assert.equal((await ended(waitFor(root, "bb-host-daemon-bb-example-com-host_new.service"))).code, 0, "the machine BB Box enrols it as next");
-  assert.equal((await ended(waitFor(root, "bb-host-daemon-bb-example-com-host_sour.service"))).code, 0, "another machine whose ID begins the same");
+  assert.equal((await ended(waitFor(root, "alia-host-daemon-alia-example-com-host_source.service"))).code, 1, "the copied machine");
+  assert.equal((await ended(waitFor(root, "alia-host-daemon-alia-example-com-host_new.service"))).code, 0, "the machine VesnALIA Box enrols it as next");
+  assert.equal((await ended(waitFor(root, "alia-host-daemon-alia-example-com-host_sour.service"))).code, 0, "another machine whose ID begins the same");
 });
 
 const SOURCE_NETWORK = "[Match]\nName = eth0\n\n[Network]\nAddress = 192.0.2.180/24\nGateway = 192.0.2.1\n";
@@ -883,7 +883,7 @@ function networkFile(root: string, text: string): void {
   writeFileSync(join(root, NETWORK_FILE), text);
 }
 
-const HELD_FILE = "var/lib/bb-box/held-network/eth0.network";
+const HELD_FILE = "var/lib/alia-box/held-network/eth0.network";
 
 function armedWithNetwork(nics: readonly Nic[] = [LOOP, LXC_ETH0], source = "eth"): string {
   const root = guest(nics);
@@ -901,7 +901,7 @@ test("version 7: an LXC box that starts with no card holds its network settings 
   const root = armedWithNetwork();
   setNics(root, [LOOP]);
   const unknown = boot(root);
-  assert.match(unknown.out, /held its network settings \( eth0\.network \) aside in \S+\/var\/lib\/bb-box\/held-network, as it started with no card of its own/);
+  assert.match(unknown.out, /held its network settings \( eth0\.network \) aside in \S+\/var\/lib\/alia-box\/held-network, as it started with no card of its own/);
   assert.ok(unknown.out.indexOf("held its network settings") < unknown.out.indexOf("not knowing yet"), "held before it waits");
   assert.equal(read(root, NETWORK_FILE), null, "networkd, which starts after this, finds no settings for a card that comes later");
   assert.equal(read(root, HELD_FILE), SOURCE_NETWORK, "held on disk, not in /run");
@@ -914,7 +914,7 @@ test("version 7: an LXC box that starts with no card holds its network settings 
   const done = await settled;
   assert.match(done.out, /resets its identity/);
   assert.equal(read(root, NETWORK_FILE), OWN_NETWORK, "its backend's settings for its own card stay");
-  assert.equal(existsSync(join(root, "var/lib/bb-box/held-network")), false, "the copied settings are gone");
+  assert.equal(existsSync(join(root, "var/lib/alia-box/held-network")), false, "the copied settings are gone");
 });
 
 test("version 7: a copy's card that comes during the boot's own wait finds its settings already held, so the copy resets with only its backend's", async () => {
@@ -930,7 +930,7 @@ test("version 7: a copy's card that comes during the boot's own wait finds its s
   assert.equal(booted.code, 0);
   assert.match(booted.out, /resets its identity/);
   assert.equal(read(root, NETWORK_FILE), OWN_NETWORK);
-  assert.equal(existsSync(join(root, "var/lib/bb-box/held-network")), false);
+  assert.equal(existsSync(join(root, "var/lib/alia-box/held-network")), false);
 });
 
 test("version 7: a reboot before settle decides loses nothing: the box itself, its card back, gets its held settings back, or keeps its backend's new ones", () => {
@@ -948,15 +948,15 @@ test("version 7: a reboot before settle decides loses nothing: the box itself, i
       assert.match(kept.out, /put back its network settings \( eth0\.network \), as it is the box itself/);
       assert.equal(read(root, NETWORK_FILE), SOURCE_NETWORK, "its own settings, back after the reboot");
     }
-    assert.equal(existsSync(join(root, "var/lib/bb-box/held-network")), false);
+    assert.equal(existsSync(join(root, "var/lib/alia-box/held-network")), false);
   }
 });
 
 test("version 7: a hold that cannot be made deletes the copied settings instead", () => {
   const root = armedWithNetwork();
   setNics(root, [LOOP]);
-  mkdirSync(join(root, "var/lib/bb-box"), { recursive: true });
-  writeFileSync(join(root, "var/lib/bb-box/held-network"), "not a folder");
+  mkdirSync(join(root, "var/lib/alia-box"), { recursive: true });
+  writeFileSync(join(root, "var/lib/alia-box/held-network"), "not a folder");
   const deleted = boot(root);
   assert.equal(deleted.code, 0);
   assert.match(deleted.out, /could not hold its network settings aside in \S+, so it deletes them instead/);
@@ -967,8 +967,8 @@ test("version 7: a hold that cannot be made deletes the copied settings instead"
 test("version 7: a boot that can neither hold nor delete the copied settings fails closed", { skip: process.getuid?.() === 0 ? "root can remove what the test protects" : false }, () => {
   const stuck = armedWithNetwork();
   setNics(stuck, [LOOP]);
-  mkdirSync(join(stuck, "var/lib/bb-box"), { recursive: true });
-  writeFileSync(join(stuck, "var/lib/bb-box/held-network"), "not a folder");
+  mkdirSync(join(stuck, "var/lib/alia-box"), { recursive: true });
+  writeFileSync(join(stuck, "var/lib/alia-box/held-network"), "not a folder");
   chmodSync(join(stuck, "etc/systemd/network"), 0o555);
   try {
     const failed = boot(stuck);
@@ -985,7 +985,7 @@ test("version 7: nothing is held for the box itself with a renamed card that car
   setNics(renamed, [LOOP, { name: "lan0", mac: "BC:24:11:AA:F1:B6" }]);
   boot(renamed);
   assert.equal(read(renamed, NETWORK_FILE), SOURCE_NETWORK, "a card proven the box's own, whatever its name, holds nothing back");
-  assert.equal(existsSync(join(renamed, "var/lib/bb-box/held-network")), false);
+  assert.equal(existsSync(join(renamed, "var/lib/alia-box/held-network")), false);
   const vm = armedWithNetwork([LOOP, ENS18], "device");
   setNics(vm, [LOOP]);
   assert.match(boot(vm).out, /not knowing yet/);
@@ -996,12 +996,12 @@ test("version 7: nothing is held for the box itself with a renamed card that car
   assert.match(boot(present).out, /resets its identity/);
   assert.equal(read(present, NETWORK_FILE), OWN_NETWORK, "a copy whose card was there at its start has its backend's settings, untouched");
   const unmarked = armedWithNetwork();
-  rmSync(join(unmarked, "etc/bb-box/identity"));
+  rmSync(join(unmarked, "etc/alia-box/identity"));
   setNics(unmarked, [LOOP]);
   const reset = boot(unmarked);
   assert.match(reset.out, /missing or unreadable/);
   assert.equal(read(unmarked, NETWORK_FILE), null, "the copied settings are not left for a card added later");
-  assert.equal(existsSync(join(unmarked, "var/lib/bb-box/held-network")), false);
+  assert.equal(existsSync(join(unmarked, "var/lib/alia-box/held-network")), false);
 });
 
 const BOAT_ENV = "run/ascii-secrets/env.sh";
@@ -1021,14 +1021,14 @@ function boatValue(root: string, value: string | null): void {
 test("version 8: enable can read the value from a file a provider writes, and leave the machine ID and SSH host keys to the provider; disable removes both settings, and a bad path is refused", () => {
   const root = tempDir("identity-options");
   assert.equal(identity(root, ["enable", "--value-file", "/run/ascii-secrets/env.sh", "--machine-from-provider"]).code, 0);
-  assert.equal(read(root, "usr/local/lib/bb-box/identity-options"), "value-file /run/ascii-secrets/env.sh\nmachine provider\n");
+  assert.equal(read(root, "usr/local/lib/alia-box/identity-options"), "value-file /run/ascii-secrets/env.sh\nmachine provider\n");
   assert.equal(identity(root, ["enable"]).code, 0);
-  assert.equal(existsSync(join(root, "usr/local/lib/bb-box/identity-options")), false, "a plain enable, as every other image runs, has no options");
+  assert.equal(existsSync(join(root, "usr/local/lib/alia-box/identity-options")), false, "a plain enable, as every other image runs, has no options");
   assert.equal(identity(root, ["enable", "--value-file", "relative/env.sh"]).code, 2);
   assert.equal(identity(root, ["enable", "--value-file"]).code, 2);
   assert.equal(identity(root, ["enable", "--value-file", "/run/env.sh"]).code, 0);
   assert.equal(identity(root, ["disable"]).code, 0);
-  assert.equal(existsSync(join(root, "usr/local/lib/bb-box/identity-options")), false);
+  assert.equal(existsSync(join(root, "usr/local/lib/alia-box/identity-options")), false);
   assert.equal(identity(root, ["version"]).out, "9\n");
 });
 
@@ -1036,7 +1036,7 @@ test("version 8, boat: the value is read from the file boat writes, never from t
   const root = boatGuest();
   boatValue(root, "bxsource1");
   assert.match(boot(root).out, /no identity marker/);
-  assert.equal(written(root, "bxsource1", "value"), "bb-box identity 1\nbox bxsource1\nsource value\nvalue bxsource1\n");
+  assert.equal(written(root, "bxsource1", "value"), "alia-box identity 1\nbox bxsource1\nsource value\nvalue bxsource1\n");
   assert.deepEqual(status(root), { version: "9", enabled: "yes", boot: "unarmed", marker: "matches", armed: "yes", pending: "no", box: "bxsource1", source: "value" });
   const before = identityOf(root);
   setNics(root, [LOOP, { name: "enp0s1", mac: "02:00:00:00:00:99", device: true }]);
@@ -1045,7 +1045,7 @@ test("version 8, boat: the value is read from the file boat writes, never from t
   assert.equal(forkSafeVersion(parseIdentityStatus(identity(root, ["status"]).out)), 9);
 });
 
-test("version 8, boat: a fork's new value resets BB's machine credentials and host ID, the access file and the tailnet node, and leaves the SSH host keys and machine ID, which boat makes new on every machine, alone", () => {
+test("version 8, boat: a fork's new value resets VesnALIA's machine credentials and host ID, the access file and the tailnet node, and leaves the SSH host keys and machine ID, which boat makes new on every machine, alone", () => {
   const root = boatGuest();
   boatValue(root, "bxsource1");
   boot(root);
@@ -1053,7 +1053,7 @@ test("version 8, boat: a fork's new value resets BB's machine credentials and ho
   const before = identityOf(root);
   boatValue(root, "bxfork1");
   const ran = boot(root);
-  assert.match(ran.out, /this box is a copy, so it resets its identity: the value bb-box set on this guest is not the marker's/);
+  assert.match(ran.out, /this box is a copy, so it resets its identity: the value alia-box set on this guest is not the marker's/);
   assert.match(ran.out, /its provider gives each machine its own SSH host keys and machine ID/);
   const after = identityOf(root);
   assert.equal(after.auth, null);
@@ -1065,7 +1065,7 @@ test("version 8, boat: a fork's new value resets BB's machine credentials and ho
   assert.equal(after.ecdsa, before.ecdsa);
   assert.equal(after.machineId, before.machineId);
   assert.equal(read(root, WORKTREE_FILE), "the thread's work");
-  assert.match(read(root, "etc/bb-box/identity") ?? "", /^bb-box identity 1\nsource value\nvalue bxfork1\nreset /, "the fork's own marker, naming no box");
+  assert.match(read(root, "etc/alia-box/identity") ?? "", /^alia-box identity 1\nsource value\nvalue bxfork1\nreset /, "the fork's own marker, naming no box");
   assert.deepEqual(status(root), { version: "9", enabled: "yes", boot: "reset", marker: "matches", armed: "yes", pending: "no", box: "", source: "value" });
   assert.match(boot(root).out, /kept/, "it does not reset again");
 });
@@ -1079,13 +1079,13 @@ test("version 8, boat: a value missing from the file never counts the box as a c
   rmSync(join(root, BOAT_ENV));
   const held = identity(root, ["boot"], { waitSeconds: 1 });
   assert.equal(held.code, 0);
-  assert.match(held.out, /not knowing yet whether this box is a copy: it has found no BBBOX_IDENTITY in \/run\/ascii-secrets\/env\.sh yet, so it cannot tell\. It removes nothing; SSH, Tailscale and BB's daemon wait while it looks again/);
+  assert.match(held.out, /not knowing yet whether this box is a copy: it has found no BBBOX_IDENTITY in \/run\/ascii-secrets\/env\.sh yet, so it cannot tell\. It removes nothing; SSH, Tailscale and ALIA's daemon wait while it looks again/);
   assert.equal(status(root).boot, "unknown");
   assert.deepEqual(identityOf(root), before, "a slow start costs the box nothing");
   const settling = settle(root);
-  const daemon = waitFor(root, "bb-host-daemon-bb-example-com-host_source.service");
+  const daemon = waitFor(root, "alia-host-daemon-alia-example-com-host_source.service");
   assert.equal(await stillRunning(settling, 3_100), true, "still waiting, with no reset, past what version 8 first allowed");
-  assert.equal(await stillRunning(daemon, 10), true, "BB's daemon waits too");
+  assert.equal(await stillRunning(daemon, 10), true, "VesnALIA's daemon waits too");
   assert.deepEqual(identityOf(root), before);
   boatValue(root, "bxsource1");
   assert.equal((await ended(settling)).code, 0);
@@ -1093,27 +1093,27 @@ test("version 8, boat: a value missing from the file never counts the box as a c
   assert.equal(status(root).boot, "kept");
   assert.deepEqual(identityOf(root), before);
   boatValue(root, "bxother1");
-  assert.match(boot(root).out, /resets its identity: the value bb-box set on this guest is not the marker's/, "only a value that differs is a copy");
+  assert.match(boot(root).out, /resets its identity: the value alia-box set on this guest is not the marker's/, "only a value that differs is a copy");
 });
 
-test("version 8, boat: a box that reset with no value to write unarms itself in words that name the value, so BB Box writes its marker again at its next start", () => {
+test("version 8, boat: a box that reset with no value to write unarms itself in words that name the value, so VesnALIA Box writes its marker again at its next start", () => {
   const root = boatGuest();
   boatValue(root, "bxsource1");
   boot(root);
   written(root, "bxsource1", "value");
-  rmSync(join(root, "etc/bb-box/identity"));
+  rmSync(join(root, "etc/alia-box/identity"));
   rmSync(join(root, BOAT_ENV));
   const ran = boot(root);
   assert.match(ran.out, /its identity marker is missing or unreadable/);
-  assert.match(ran.out, /found no BBBOX_IDENTITY in \/run\/ascii-secrets\/env\.sh to write a marker for, so it unarms this box until bb-box writes one at its next start/);
+  assert.match(ran.out, /found no BBBOX_IDENTITY in \/run\/ascii-secrets\/env\.sh to write a marker for, so it unarms this box until alia-box writes one at its next start/);
   assert.doesNotMatch(ran.out, /no interface/);
   assert.equal(status(root).armed, "no");
 });
 
 test("version 8 on Proxmox: with a plain enable, wait goes on at once when no check has run, exactly as version 7 did (Opus 3)", async () => {
   const root = guest([LOOP, LXC_ETH0]);
-  assert.equal(existsSync(join(root, "run/bb-box-identity/boot")), false);
-  const ran = await ended(waitFor(root, "bb-host-daemon-bb-example-com-host_source.service"));
+  assert.equal(existsSync(join(root, "run/alia-box-identity/boot")), false);
+  const ran = await ended(waitFor(root, "alia-host-daemon-alia-example-com-host_source.service"));
   assert.equal(ran.code, 0);
 });
 
@@ -1125,22 +1125,22 @@ test("version 8, boat: a value that is not a box ID, or sits on another variable
     boot(root);
     const wrote = identity(root, ["write", "--box", "bxsource1", "--source", "value"]);
     assert.equal(wrote.code, 3, text);
-    assert.match(wrote.err, /this boot saw no value from bb-box/);
+    assert.match(wrote.err, /this boot saw no value from alia-box/);
   }
   writeFileSync(join(root, BOAT_ENV), "BBBOX_IDENTITY=bxsource1\n");
   boot(root);
-  assert.equal(written(root, "bxsource1", "value"), "bb-box identity 1\nbox bxsource1\nsource value\nvalue bxsource1\n", "plain or exported, quoted or not");
+  assert.equal(written(root, "bxsource1", "value"), "alia-box identity 1\nbox bxsource1\nsource value\nvalue bxsource1\n", "plain or exported, quoted or not");
 });
 
-test("version 8: with a value file, wait holds BB's daemon until this machine's own check has run, as on boat the box user's services can start before it; with the reset off it never holds", async () => {
+test("version 8: with a value file, wait holds VesnALIA's daemon until this machine's own check has run, as on boat the box user's services can start before it; with the reset off it never holds", async () => {
   const root = boatGuest();
   boatValue(root, "bxsource1");
-  const waiting = waitFor(root, "bb-host-daemon-bb-example-com-host_source.service");
+  const waiting = waitFor(root, "alia-host-daemon-alia-example-com-host_source.service");
   assert.equal(await stillRunning(waiting, 400), true, "no check has run on this machine yet");
   boot(root);
   assert.equal((await ended(waiting)).code, 0);
   const off = guest([LOOP, LXC_ETH0], { on: false });
-  assert.equal((await ended(waitFor(off, "bb-host-daemon-bb-example-com-host_source.service"))).code, 0);
+  assert.equal((await ended(waitFor(off, "alia-host-daemon-alia-example-com-host_source.service"))).code, 0);
 });
 
 test("boat's Linux and desktop templates turn the reset on with boat's settings; Android does not", () => {
@@ -1155,11 +1155,11 @@ test("boat's Linux and desktop templates turn the reset on with boat's settings;
   const fake = tempDir("customize-identity");
   const bin = join(fake, "bin");
   mkdirSync(bin);
-  writeFileSync(join(bin, "bb-box-identity"), `#!/bin/sh\necho "$@" >> ${join(fake, "calls")}\n`, { mode: 0o755 });
+  writeFileSync(join(bin, "alia-box-identity"), `#!/bin/sh\necho "$@" >> ${join(fake, "calls")}\n`, { mode: 0o755 });
   const lines = base.split("\n");
   const from = lines.findIndex((line) => line.startsWith('if [ "${BOX_IDENTITY_RESET:-off}" = on ]; then'));
   const to = lines.indexOf("fi", from);
-  const block = lines.slice(from, to + 1).join("\n").replaceAll("/usr/local/sbin/bb-box-identity", join(bin, "bb-box-identity"));
+  const block = lines.slice(from, to + 1).join("\n").replaceAll("/usr/local/sbin/alia-box-identity", join(bin, "alia-box-identity"));
   for (const [settings, wanted] of [
     [{ BOX_IDENTITY_RESET: "on", runtime: "vm", BOX_IDENTITY_VALUE_FILE: "/run/ascii-secrets/env.sh", BOX_IDENTITY_MACHINE: "provider" }, "enable --value-file /run/ascii-secrets/env.sh --machine-from-provider"],
     [{ BOX_IDENTITY_RESET: "on", runtime: "lxc" }, "enable"],

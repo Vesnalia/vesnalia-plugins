@@ -32,7 +32,7 @@ import {
   ZoomOutIcon,
 } from "@hugeicons/core-free-icons";
 import { getStroke } from "perfect-freehand";
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -418,7 +418,7 @@ export function ImageEditor({
   write: WriteImage | null;
   onClose: () => void;
   onSaved: (result: { name: string; absPath: string }, overwrite: boolean) => void;
-  /** Inside BB's image preview: hands the PNG back instead of saving files. */
+  /** Inside VesnALIA's image preview: hands the PNG back instead of saving files. */
   onDone?: (png: Blob) => Promise<void>;
   /** Paint keeps a blank canvas, eraser and smooth pen; annotate is the file and chat editor. */
   variant?: "annotate" | "paint";

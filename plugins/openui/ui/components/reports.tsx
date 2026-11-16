@@ -3,7 +3,7 @@
 // Parsing lives in ./reports/*.ts (pure, tested); this file only draws.
 import type { ReactNode } from "react";
 import { defineComponent } from "@openuidev/react-lang";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod/v4";
 import {
   Ban,
@@ -918,7 +918,7 @@ const Provenance = defineComponent({
 export const reportsGroup: ExtraGroup = {
   name: "Reports",
   notes: [
-    "For tool output, write it to a file in this thread (e.g. $BB_THREAD_STORAGE/vitest.json) and pass the path; the component detects the format. Small results can go inline as rows.",
+    "For tool output, write it to a file in this thread (e.g. $ALIA_THREAD_STORAGE/vitest.json) and pass the path; the component detects the format. Small results can go inline as rows.",
   ],
   components: [Tests, Findings, Coverage, Dependencies, Pipeline, Benchmark, Waterfall, Provenance],
   examples: {

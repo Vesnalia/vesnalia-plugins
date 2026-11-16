@@ -1,18 +1,18 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { skillId } from "./task-kinds";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 
-/** The plugins whose data `bb treelanes import` copies once. */
+/** The plugins whose data `alia treelanes import` copies once. */
 export const IMPORT_SOURCES = ["workflow-board", "worktree-sidebar"] as const;
 
 export const importMigration = `CREATE TABLE plugin_import (
   id INTEGER PRIMARY KEY CHECK(id = 1), imported_at INTEGER NOT NULL, summary_json TEXT NOT NULL
 )`;
 
-const SKIPPED_TABLES = new Set(["_bb_migrations", "plugin_import"]);
+const SKIPPED_TABLES = new Set(["_alia_migrations", "plugin_import"]);
 const quote = (name: string) => `"${name.replaceAll('"', '""')}"`;
 
 /**

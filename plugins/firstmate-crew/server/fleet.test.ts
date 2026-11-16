@@ -29,7 +29,7 @@ function crew(overrides: Partial<CrewSummary> = {}): CrewSummary {
 describe("crewColumn", () => {
   const done = { state: "done" as const, text: "PR" };
 
-  it("lets what bb knows win while the thread is busy or stuck", () => {
+  it("lets what VesnALIA knows win while the thread is busy or stuck", () => {
     expect(crewColumn(crew({ pendingInteractions: 1, status: "active" }), done)).toBe("blocked");
     expect(crewColumn(crew({ pendingInteractions: 2, status: "idle" }), null)).toBe("blocked");
     expect(crewColumn(crew({ status: "error" }), done)).toBe("failed");

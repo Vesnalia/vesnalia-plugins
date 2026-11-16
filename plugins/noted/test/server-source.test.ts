@@ -4,7 +4,7 @@ import { host } from "./helpers";
 
 describe("openSession source", () => {
   it("openSession resolves a thread-storage relative path when source is given", async () => {
-    const { bb, harness } = host(); await plugin(bb);
+    const { alia, harness } = host(); await plugin(alia);
     const r: any = await harness.behavior.callRpc("openSession", { threadId: "thr_a", path: "noted-smoke/plan.html", source: "thread-storage" });
     expect(r.session.sourceKind).toBe("thread-storage");
     expect(r.session.hostId).toBe("thread_storage_host");

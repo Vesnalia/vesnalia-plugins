@@ -22,7 +22,7 @@ export type WorkerPhase = (typeof WORKER_PHASES)[number];
 /** What the agent is doing, from its thread's tool items. */
 export type Activity = "reading" | "editing" | "testing";
 
-/** Words and glyphs (BB icon names) for each phase: state is always in words and shapes, never color alone. */
+/** Words and glyphs (VesnALIA icon names) for each phase: state is always in words and shapes, never color alone. */
 export const PHASE_INFO: Record<WorkerPhase, { label: string; icon: string; step: number }> = {
   starting: { label: "starting", icon: "Clock", step: 0 },
   reading: { label: "reading the code", icon: "Eye", step: 1 },
@@ -234,7 +234,7 @@ export function stageText(stage: Stage, queueTests: readonly number[] | undefine
 // --------------------------------------------------------------- the view
 
 export interface LiveWorker {
-  /** threads.id: stable from the spawn on (the BB thread id arrives later). */
+  /** threads.id: stable from the spawn on (the VesnALIA thread id arrives later). */
   key: number;
   threadId: string | null;
   ideaId: number | null;

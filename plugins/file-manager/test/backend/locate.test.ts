@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { isFileManagerError } from "../../src/errors";
 import { locateFile, type FileOpenerSource } from "../../src/locate";
@@ -27,10 +27,10 @@ const HOST_SOURCE: FileOpenerSource = {
 };
 
 /** Only the two SDK areas locate.ts can reach, stubbed per test. */
-function fakeBb(overrides: {
+function fakeAlia(overrides: {
   environmentPath?: string | null;
   storageRootPath?: string;
-}): BbPluginApi {
+}): AliaPluginApi {
   return {
     sdk: {
       environments: {
@@ -39,7 +39,7 @@ function fakeBb(overrides: {
           hostId: "host_1",
         })),
       },
-      // Only `storageLocation`: bb 0.43 refuses a `storagePaths` call that asks
+      // Only `storageLocation`: VesnALIA 0.43 refuses a `storagePaths` call that asks
       // for no entries, so reaching for it here would fail in the real host.
       threads: {
         storageLocation: vi.fn(async () => ({
@@ -48,7 +48,7 @@ function fakeBb(overrides: {
         })),
       },
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 beforeEach(async () => {
@@ -67,7 +67,7 @@ describe("locateFile", () => {
     await mkdir(path.join(root, "notes"), { recursive: true });
     await writeFile(path.join(root, "notes", "todo.md"), "# todo\n");
 
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: path.join(root, "notes", "todo.md"),
       source: HOST_SOURCE,
     });
@@ -85,7 +85,7 @@ describe("locateFile", () => {
   it("answers a folder link with the folder itself and nothing to select", async () => {
     await mkdir(path.join(root, "notes"), { recursive: true });
 
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: path.join(root, "notes"),
       source: HOST_SOURCE,
     });
@@ -99,7 +99,7 @@ describe("locateFile", () => {
   it("walks up to the nearest existing folder when the file is gone", async () => {
     await mkdir(path.join(root, "backups"), { recursive: true });
 
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: path.join(root, "backups", "gone.md"),
       source: HOST_SOURCE,
     });
@@ -115,7 +115,7 @@ describe("locateFile", () => {
   it("resolves a relative host path under the root, not the server's cwd", async () => {
     await mkdir(path.join(root, "notes"), { recursive: true });
 
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: "notes/todo.md",
       source: HOST_SOURCE,
     });
@@ -125,7 +125,7 @@ describe("locateFile", () => {
   });
 
   it("keeps walking past folders that do not exist either", async () => {
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: path.join(root, "no", "such", "tree", "file.txt"),
       source: HOST_SOURCE,
     });
@@ -137,7 +137,7 @@ describe("locateFile", () => {
   it("turns a glob name into a filter the panel can use", async () => {
     await mkdir(path.join(root, "backups"), { recursive: true });
 
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: path.join(root, "backups", "*-otlozhena-2026-08-25.md"),
       source: HOST_SOURCE,
     });
@@ -148,7 +148,7 @@ describe("locateFile", () => {
   });
 
   it("picks the longest literal run out of a multi-glob name", async () => {
-    const located = await locateFile(fakeBb({}), {
+    const located = await locateFile(fakeAlia({}), {
       path: path.join(root, "*-report-2026*.csv"),
       source: HOST_SOURCE,
     });
@@ -157,7 +157,7 @@ describe("locateFile", () => {
   });
 
   it("refuses a path outside the hard root instead of walking up to it", async () => {
-    const error: unknown = await locateFile(fakeBb({}), {
+    const error: unknown = await locateFile(fakeAlia({}), {
       path: path.join(outside, "secrets.txt"),
       source: HOST_SOURCE,
     }).then(
@@ -176,7 +176,7 @@ describe("locateFile", () => {
     await mkdir(path.join(checkout, "src"), { recursive: true });
     await writeFile(path.join(checkout, "src", "index.ts"), "export {};\n");
 
-    const located = await locateFile(fakeBb({ environmentPath: checkout }), {
+    const located = await locateFile(fakeAlia({ environmentPath: checkout }), {
       path: "src/index.ts",
       source: {
         kind: "workspace",
@@ -192,7 +192,7 @@ describe("locateFile", () => {
   });
 
   it("says so when the environment has no checkout on disk", async () => {
-    const error: unknown = await locateFile(fakeBb({ environmentPath: null }), {
+    const error: unknown = await locateFile(fakeAlia({ environmentPath: null }), {
       path: "src/index.ts",
       source: {
         kind: "workspace",
@@ -215,8 +215,8 @@ describe("locateFile", () => {
     await mkdir(path.join(storage, "Attachments"), { recursive: true });
     await writeFile(path.join(storage, "Attachments", "shot.png"), "png");
 
-    const bb = fakeBb({ storageRootPath: storage });
-    const located = await locateFile(bb, {
+    const alia = fakeAlia({ storageRootPath: storage });
+    const located = await locateFile(alia, {
       path: "Attachments/shot.png",
       source: {
         kind: "thread-storage",
@@ -229,6 +229,6 @@ describe("locateFile", () => {
     expect(located.dirPath).toBe(path.join(storage, "Attachments"));
     expect(located.name).toBe("shot.png");
     expect(located.exists).toBe(true);
-    expect(bb.sdk.threads.storageLocation).toHaveBeenCalledWith({ threadId: "thr_1" });
+    expect(alia.sdk.threads.storageLocation).toHaveBeenCalledWith({ threadId: "thr_1" });
   });
 });

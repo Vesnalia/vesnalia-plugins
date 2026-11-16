@@ -1,4 +1,4 @@
-// Finds releases bb's own update check can't offer: semver tags beyond the
+// Finds releases VesnALIA's own update check can't offer: semver tags beyond the
 // installed range, or newer than a pinned ref. Pure — the caller runs
 // `git ls-remote --tags` and passes its output in, and judges each release's
 // engines for selectRunnableRelease.
@@ -26,7 +26,7 @@ export interface OutOfRangeRelease {
   compareUrl: string;
 }
 
-/** A newer release this bb can't run, and why (bb's engine-range reasons). */
+/** A newer release this VesnALIA can't run, and why (VesnALIA's engine-range reasons). */
 export interface BlockedRelease {
   version: string;
   reasons: string[];
@@ -51,8 +51,8 @@ const TAG_REF = /(?:^|\/)v?\d+\.\d+\.\d+$/;
 
 /**
  * The install's intent: a range stays a range, a commit pin stays a commit
- * pin, a tag pin stays a tag pin. Anything else tracks a branch, which bb
- * already follows. bb records a bare range (`@^1.2.0`) as typed, with `range`
+ * pin, a tag pin stays a tag pin. Anything else tracks a branch, which VesnALIA
+ * already follows. VesnALIA records a bare range (`@^1.2.0`) as typed, with `range`
  * set, so `range` marks one as surely as `semver:` does.
  */
 function parseGitSource(
@@ -146,7 +146,7 @@ export function resolveNewerRelease(args: {
 export const MAX_ENGINE_PROBES = 5;
 
 /**
- * The newest of `releases` (newest first) that this bb runs, judged by
+ * The newest of `releases` (newest first) that this VesnALIA runs, judged by
  * `problems`, and the newest it can't, if newer. Reads only as many as it
  * needs, and at most MAX_ENGINE_PROBES; a read that throws fails the lot.
  */

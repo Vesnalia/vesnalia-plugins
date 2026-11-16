@@ -1,8 +1,8 @@
-# Calm for bb
+# Calm for VesnALIA
 
 A little world while your agent works.
 
-Sheep hop fences. A cat knocks a flowerpot off a rooftop. A lighthouse keeper loses his sandwich to a gull. Calm adds sixteen pixel-art scenes above [bb](https://getbb.app)'s prompt box, with small reactions as your agent works and occasional mischief along the way.
+Sheep hop fences. A cat knocks a flowerpot off a rooftop. A lighthouse keeper loses his sandwich to a gull. Calm adds sixteen pixel-art scenes above [VesnALIA](https://getbb.app)'s prompt box, with small reactions as your agent works and occasional mischief along the way.
 
 ![Calm scene animation with the pasture, city cat, lighthouse keeper, and pond.](assets/launch/hero.gif)
 
@@ -14,17 +14,17 @@ It has a job, too. An amber light means your agent needs you. A little rain clou
 
 ## Try it
 
-Requires bb 0.45 or later. Runs inside your bb, with no external service or account.
+Requires VesnALIA 0.45 or later. Runs inside your VesnALIA, with no external service or account.
 
 ```sh
-bb plugin install git:https://github.com/davideiffert/bb-plugin-calm@^1.1.1
+alia plugin install git:https://github.com/davideiffert/bb-plugin-calm@^1.1.1
 ```
 
 Open a thread and send a message. Calm appears above the prompt box while the agent works.
 
 ![Calm's Space scene between a thread conversation and the prompt box.](assets/launch/thread-context.png)
 
-*Calm sits above your prompt while the agent works. A staged conversation in bb 0.45.*
+*Calm sits above your prompt while the agent works. A staged conversation in VesnALIA 0.45.*
 
 [See the full app view](assets/launch/working.png).
 
@@ -47,7 +47,7 @@ Tap a creature for a silent reaction. The light follows your local clock, long r
 | Your agent works | The scene plays. |
 | It finishes an action | A sheep hops, a frog leaps, or another small reaction. |
 | It needs your answer | The scene holds and an amber light glows. |
-| It hits a rate limit | The scene rests and shows the return time, if bb reports it. |
+| It hits a rate limit | The scene rests and shows the return time, if VesnALIA reports it. |
 | Something fails | A little rain cloud appears. |
 | The run finishes | The scene closes, or stays when **Show scenes** is set to **Always**. |
 
@@ -61,15 +61,15 @@ Open **Plugins → Installed plugins → Calm**.
 
 Set **Show scenes** to **Always** to keep the scene up between runs, playing just as it does during work. With a new scene each run, it moves to the next scene in the mix every 3 minutes while the agent is idle, never during a run.
 
-Choose **Edit mix**, tap scene cards to include or leave them out, then choose **Done**. Outside mix editing, tap a card to always show that scene. Turn off gags, surprises, tap reactions, helpers, or the time-of-day effects. **Still pictures** keeps the art still while continuing to show your agent's state. Calm also follows your system's reduced-motion setting and bb's light or dark mode.
+Choose **Edit mix**, tap scene cards to include or leave them out, then choose **Done**. Outside mix editing, tap a card to always show that scene. Turn off gags, surprises, tap reactions, helpers, or the time-of-day effects. **Still pictures** keeps the art still while continuing to show your agent's state. Calm also follows your system's reduced-motion setting and VesnALIA's light or dark mode.
 
 Use the scene icon in a thread's header to pin a scene or turn Calm off for that thread. Disable the plugin in Installed plugins to turn it off everywhere.
 
-## Local to your bb
+## Local to your VesnALIA
 
-Calm reads bb's thread activity and stores your preferences and scene choices in your bb. It sends nothing to an outside service and adds no telemetry. Animation pauses while the scene is out of sight.
+Calm reads VesnALIA's thread activity and stores your preferences and scene choices in your VesnALIA. It sends nothing to an outside service and adds no telemetry. Animation pauses while the scene is out of sight.
 
-Tested on bb 0.45. A few bb APIs are experimental and have fallbacks. Rate-limit return times depend on the provider. Seasons follow northern-hemisphere months. Some phone themes fold the scene into a card you tap to open.
+Tested on VesnALIA 0.45. A few VesnALIA APIs are experimental and have fallbacks. Rate-limit return times depend on the provider. Seasons follow northern-hemisphere months. Some phone themes fold the scene into a card you tap to open.
 
 [Scene reference](docs/scene-reference.md) · [How it works](docs/how-it-works.md) · [Changelog](CHANGELOG.md) · [Build checks](https://github.com/davideiffert/bb-plugin-calm/actions/workflows/check.yml)
 

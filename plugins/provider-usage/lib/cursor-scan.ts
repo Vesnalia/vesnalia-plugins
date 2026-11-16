@@ -417,7 +417,7 @@ export function mergeCursorDaily(
  * Cursor ACP stores have no per-message token counters or timestamps. This
  * source therefore reports the same growing text-derived session estimate as
  * the daily chart. The local scanner differences successive snapshots and
- * labels them under the BB thread whose provider identity owns the store.
+ * labels them under the VesnALIA thread whose provider identity owns the store.
  */
 export function createCursorLiveThroughputSource(options?: {
   home?: string;

@@ -1,12 +1,12 @@
 import { expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { sqliteSql } from "./sql";
 
 const tick = () => new Promise<void>((resolve) => { setTimeout(resolve, 1); });
 
 function notes() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const db = bb.storage.database();
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const db = alia.storage.database();
   db.exec(`CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT NOT NULL)`);
   const executor = sqliteSql(db);
   const bodies = async () => (await executor.all<{ body: string }>(`SELECT body FROM notes ORDER BY id`)).map((row) => row.body);
@@ -141,6 +141,6 @@ test("work a transaction started without awaiting, still running once it ended, 
 });
 
 test("stores sharing a database handle share its executor, so they wait for each other's transactions", () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  expect(sqliteSql(bb.storage.database())).toBe(sqliteSql(bb.storage.database()));
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  expect(sqliteSql(alia.storage.database())).toBe(sqliteSql(alia.storage.database()));
 });

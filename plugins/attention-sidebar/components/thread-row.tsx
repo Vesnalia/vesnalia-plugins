@@ -11,7 +11,7 @@ import {
   useSidebarThreadShortcut,
   type PluginSidebarThread,
   type PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { AttentionReason } from "../lib/model";
 import { formatRelativeTime } from "../lib/time";
 import { useNow } from "./hooks";
@@ -48,7 +48,7 @@ export interface ThreadRowProps {
   isActive: boolean;
   /** Indentation level inside a project folder; 0 elsewhere. */
   depth: number;
-  /** Set in «Ждут вас»: draws ✓ ? ! instead of bb's status glyph. */
+  /** Set in «Ждут вас»: draws ✓ ? ! instead of VesnALIA's status glyph. */
   reason: AttentionReason | null;
   /** "↳ parent" caption for a child shown outside its parent. */
   parentTitle: string | null;
@@ -57,7 +57,7 @@ export interface ThreadRowProps {
   onNavigate: () => void;
 }
 
-/** The fields bb's thread menu reads, from a sidebar thread. */
+/** The fields VesnALIA's thread menu reads, from a sidebar thread. */
 function toActionTarget(thread: PluginSidebarThread): PluginThreadActionTarget {
   const environmentId = thread.environment?.id ?? null;
   return {
@@ -96,8 +96,8 @@ function ReasonGlyph({ reason }: { reason: AttentionReason }) {
 }
 
 /**
- * bb's own status for the row, plus a status another plugin set on it. In
- * «Ждут вас» the reason glyph replaces bb's indicator (it is the same
+ * VesnALIA's own status for the row, plus a status another plugin set on it. In
+ * «Ждут вас» the reason glyph replaces VesnALIA's indicator (it is the same
  * information), but another plugin's row status stays beside it.
  */
 function StatusGlyphs({
@@ -163,7 +163,7 @@ export const ThreadRow = memo(function ThreadRow({
         data-active={isActive ? "true" : undefined}
         className={cx(
           "group/row relative flex w-full items-center rounded-md text-sm text-sidebar-foreground transition-colors",
-          "h-[var(--bb-sidebar-row-height)] max-md:pointer-coarse:h-[var(--bb-sidebar-row-height-coarse)]",
+          "h-[var(--alia-sidebar-row-height)] max-md:pointer-coarse:h-[var(--alia-sidebar-row-height-coarse)]",
           "has-[[data-state=open]]:bg-sidebar-accent",
           isActive
             ? "bg-state-active"

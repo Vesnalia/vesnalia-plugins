@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import {
   createSdkThreadPort,
   isWorkspaceBusy,
@@ -64,13 +64,13 @@ describe("workspace_busy backoff", () => {
 });
 
 describe("permission mapping", () => {
-  it("ask maps to accept-edits (BB has no read-only mode)", () => expect(permissionModeFor("ask")).toBe("accept-edits"));
+  it("ask maps to accept-edits (VesnALIA has no read-only mode)", () => expect(permissionModeFor("ask")).toBe("accept-edits"));
   it.each(["accept-edits", "auto", "full"] as const)("%s passes through", (mode) => expect(permissionModeFor(mode)).toBe(mode));
 });
 
 describe("SDK thread port", () => {
   it("spawns with explicit execution sources, metadata seed, visible, managed worktree", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "crew",
       sdk: {
         threads: { spawn: async () => makeThreadResponse({ id: "th_new", providerId: "claude-code" }) },
@@ -80,7 +80,7 @@ describe("SDK thread port", () => {
         },
       },
     });
-    const port = createSdkThreadPort(bb);
+    const port = createSdkThreadPort(alia);
     const thread = await port.spawn(request());
     expect(thread.id).toBe("th_new");
     const [call] = harness.inspection.sdk.callsTo("threads.spawn");
@@ -99,11 +99,11 @@ describe("SDK thread port", () => {
   });
 
   it("passes reasoning level and service tier as explicit choices; negative: absent ones are not sent", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "crew",
       sdk: { threads: { spawn: async () => makeThreadResponse({ id: "th_r" }) } },
     });
-    const port = createSdkThreadPort(bb);
+    const port = createSdkThreadPort(alia);
     await port.spawn(request({ parentThreadId: null, environment: { kind: "reuse", environmentId: "env_1" }, reasoningLevel: "high", serviceTier: "fast" }));
     await port.spawn(request({ parentThreadId: null, environment: { kind: "reuse", environmentId: "env_1" } }));
     const [withChoice, without] = harness.inspection.sdk.callsTo("threads.spawn").map((call) => call[0] as Record<string, unknown>);
@@ -118,11 +118,11 @@ describe("SDK thread port", () => {
   });
 
   it("maps reuse and omits parentThreadId for the lead", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "crew",
       sdk: { threads: { spawn: async () => makeThreadResponse({ id: "th_l" }) } },
     });
-    await createSdkThreadPort(bb).spawn(request({ parentThreadId: null, environment: { kind: "reuse", environmentId: "env_1" } }));
+    await createSdkThreadPort(alia).spawn(request({ parentThreadId: null, environment: { kind: "reuse", environmentId: "env_1" } }));
     const args = harness.inspection.sdk.callsTo("threads.spawn")[0]![0] as Record<string, unknown>;
     expect(args.environment).toEqual({ type: "reuse", environmentId: "env_1" });
     expect("parentThreadId" in args).toBe(false);
@@ -130,7 +130,7 @@ describe("SDK thread port", () => {
 
   it("retries a busy spawn", async () => {
     let calls = 0;
-    const { bb } = createFakePluginHost({
+    const { alia } = createFakePluginHost({
       pluginId: "crew",
       sdk: {
         threads: {
@@ -143,13 +143,13 @@ describe("SDK thread port", () => {
         projects: { get: async () => ({ sources: [{ hostId: "h", isDefault: true }] }) as never },
       },
     });
-    const port = createSdkThreadPort(bb, { backoff: { sleep: async () => undefined } });
+    const port = createSdkThreadPort(alia, { backoff: { sleep: async () => undefined } });
     expect((await port.spawn(request())).id).toBe("th_2");
     expect(calls).toBe(2);
   });
 
   it("get: 404 and deleted threads are null, archived is flagged", async () => {
-    const { bb } = createFakePluginHost({
+    const { alia } = createFakePluginHost({
       pluginId: "crew",
       sdk: {
         threads: {
@@ -161,14 +161,14 @@ describe("SDK thread port", () => {
         },
       },
     });
-    const port = createSdkThreadPort(bb);
+    const port = createSdkThreadPort(alia);
     expect(await port.get("gone")).toBeNull();
     expect(await port.get("deleted")).toBeNull();
     expect((await port.get("a"))!.archived).toBe(true);
   });
 
-  it("model comes from defaultExecutionOptions, null when BB has none", async () => {
-    const { bb } = createFakePluginHost({
+  it("model comes from defaultExecutionOptions, null when VesnALIA has none", async () => {
+    const { alia } = createFakePluginHost({
       pluginId: "crew",
       sdk: {
         threads: {
@@ -177,17 +177,17 @@ describe("SDK thread port", () => {
         },
       },
     });
-    const port = createSdkThreadPort(bb);
+    const port = createSdkThreadPort(alia);
     expect(await port.model("t")).toBe("claude-haiku-4-5-20251001");
     expect(await port.model("none")).toBeNull();
   });
 
   it("listOwn asks for own, hidden, archived and active threads", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "crew",
       sdk: { threads: { list: async () => [] } },
     });
-    await createSdkThreadPort(bb).listOwn("p1");
+    await createSdkThreadPort(alia).listOwn("p1");
     const calls = harness.inspection.sdk.callsTo("threads.list").map((c) => c[0]);
     expect(calls).toEqual([
       expect.objectContaining({ projectId: "p1", originPluginId: "crew", includeHidden: true, archived: false }),

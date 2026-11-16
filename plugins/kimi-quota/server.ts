@@ -1,13 +1,13 @@
-// bb-plugin-kimi-quota — shows Kimi Code membership quota in BB's usage panel.
+// alia-plugin-kimi-quota — shows Kimi Code membership quota in VesnALIA's usage panel.
 //
-// The built-in bb--provider-usage plugin discovers any plugin that exposes a
+// The built-in alia--provider-usage plugin discovers any plugin that exposes a
 // discoverable RPC contract with the `provider-usage.v1.*` methods and renders
 // its measurements next to the other providers (Codex, Claude, ...). This
 // plugin is such a source: it reads the OAuth credential the Kimi Code CLI
 // stores locally (~/.kimi-code/credentials/kimi-code.json), refreshes it when
 // expired, and queries the same read-only endpoint the CLI's `/usage` slash
 // command uses (GET {api}/coding/v1/usages).
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -77,7 +77,7 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-// The same wire contract bb--provider-usage consumes from its built-in sources.
+// The same wire contract alia--provider-usage consumes from its built-in sources.
 type Measurement = z.infer<typeof measurementSchema>;
 
 const RESOURCE_ID = "kimi-code";
@@ -260,8 +260,8 @@ async function collectUsage(): Promise<Measurement> {
   return { status: "ok", plan: null, accountEmail: null, planLabel: "Kimi Code", windows };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   const cache = new Map<string, { usage: Measurement; observedAt: number | null }>();
 
@@ -283,17 +283,17 @@ export default async function plugin(bb: BbPluginApi) {
     return next;
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     rpcContract,
     {
       [LIST_RESOURCES]: async () => {
         // The usage panel groups host resources into the selected machine's
         // card. A shared resource instead creates a separate source menu item.
-        // These credentials live on the BB server, so use its primary host.
+        // These credentials live on the VesnALIA server, so use its primary host.
         const host = await (async () => {
           try {
-            const { primaryHostId } = await bb.sdk.system.config();
-            return primaryHostId ? await bb.sdk.hosts.get({ hostId: primaryHostId }) : null;
+            const { primaryHostId } = await alia.sdk.system.config();
+            return primaryHostId ? await alia.sdk.hosts.get({ hostId: primaryHostId }) : null;
           } catch {
             return null;
           }
@@ -332,15 +332,15 @@ export default async function plugin(bb: BbPluginApi) {
     {
       experimental_discoverable: true,
       experimental_description:
-        "Kimi Code membership quota from the Kimi Code CLI login on the BB server, shown alongside that machine's other provider limits.",
+        "Kimi Code membership quota from the Kimi Code CLI login on the VesnALIA server, shown alongside that machine's other provider limits.",
     },
   );
 
-  // `bb kimi-quota [--json]` — the same numbers for the shell and for agents.
-  bb.cli.register({
+  // `alia kimi-quota [--json]` — the same numbers for the shell and for agents.
+  alia.cli.register({
     name: "kimi-quota",
     summary: "Show Kimi Code membership quota (5h window, monthly limits)",
-    commands: [{ name: "show", summary: "Show current quota", usage: "bb kimi-quota [--json]" }],
+    commands: [{ name: "show", summary: "Show current quota", usage: "alia kimi-quota [--json]" }],
     async run(argv) {
       const json = argv.includes("--json");
       const { usage, observedAt } = await collect(RESOURCE_ID, true);
@@ -356,8 +356,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     cache.clear();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

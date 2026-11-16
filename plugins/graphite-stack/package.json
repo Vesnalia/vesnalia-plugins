@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-graphite-stack",
+  "name": "alia-plugin-graphite-stack",
   "version": "0.1.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.94"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94"
   },
-  "bb": {
+  "alia": {
     "name": "Graphite Stack",
     "description": "Review local Graphite stacks with parent-relative diffs, private line notes, optional GitHub PR reviews, and explicit gt actions.",
     "branding": {
@@ -20,13 +20,13 @@
     "host": "./host.ts"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.94",
     "@radix-ui/react-checkbox": "^1.3.7",
     "@radix-ui/react-slot": "^1.3.0",
     "@shikijs/langs": "^4.5.0",
     "diff": "^9.0.0",
     "shiki": "^4.5.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.94"
   },
   "devDependencies": {
     "@pierre/diffs": "^1.2.9",
@@ -60,11 +60,20 @@
     "vaul": "^1.1.2",
     "vitest": "^3.2.4"
   },
-  "description": "Review and operate local Graphite stacks in BB.",
+  "description": "Review and operate local Graphite stacks in VesnALIA.",
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/graphite-stack#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/graphite-stack"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

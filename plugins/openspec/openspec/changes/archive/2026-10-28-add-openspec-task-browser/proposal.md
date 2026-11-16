@@ -1,6 +1,6 @@
 ## Why
 
-OpenSpec stores changes, specifications, and checklists in the repository, but bb has no dedicated view for this data as tasks. The plugin will show progress and work context alongside agent threads; its own repository will be the first usage example.
+OpenSpec stores changes, specifications, and checklists in the repository, but VesnALIA has no dedicated view for this data as tasks. The plugin will show progress and work context alongside agent threads; its own repository will be the first usage example.
 
 Status: the first version is agreed; implementation follows this change's specifications.
 
@@ -24,7 +24,7 @@ For discussion after the initial version: a board, creating and archiving change
 
 - `change-management/change-browser`: browse changes and their artifacts in the context of a project and environment.
 - `change-management/task-checklist`: view task groups, their statuses, and progress without manual editing.
-- `change-management/thread-context`: explicitly link a change to bb threads.
+- `change-management/thread-context`: explicitly link a change to VesnALIA threads.
 
 ### Modified Capabilities
 
@@ -32,6 +32,6 @@ None: the directory was empty before the research began, with no existing specif
 
 ## Impact
 
-A new standalone bb plugin with frontend/backend and, if needed for files on remote machines, a host entry. OpenSpec remains the source of content and progress; thread links are stored separately. No dependency on Tasks is planned.
+A new standalone VesnALIA plugin with frontend/backend and, if needed for files on remote machines, a host entry. OpenSpec remains the source of content and progress; thread links are stored separately. No dependency on Tasks is planned.
 
-The primary unit is a change with nested tasks; the checklist is read-only and uses Unicode indicators. Starting an agent creates a thread in the selected existing environment. The first version supports the standard spec-driven artifact structure. Mockup: docs/mockups/openspec-browser-v2.html; research: docs/research/bb-task-plugins.md.
+The primary unit is a change with nested tasks; the checklist is read-only and uses Unicode indicators. Starting an agent creates a thread in the selected existing environment. The first version supports the standard spec-driven artifact structure. Mockup: docs/mockups/openspec-browser-v2.html; research: docs/research/alia-task-plugins.md.

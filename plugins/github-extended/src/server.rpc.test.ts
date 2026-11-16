@@ -10,7 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 let binDir: string;
@@ -27,7 +27,7 @@ function ghCalls(): string[] {
 }
 
 beforeEach(() => {
-  binDir = mkdtempSync(join(tmpdir(), "bb-github-rpc-"));
+  binDir = mkdtempSync(join(tmpdir(), "alia-github-rpc-"));
   partialFlag = join(binDir, "gh-partial");
   accessDeniedFlag = join(binDir, "gh-access-denied");
   dependabotDisabledFlag = join(binDir, "gh-dependabot-disabled");
@@ -234,7 +234,7 @@ async function loadPlugin(extraRepos = "acme/widgets") {
     pluginId: "github",
     settings: { extraRepos },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -244,14 +244,14 @@ describe("github plugin RPC behavior", () => {
 
     expect(harness.registrations.cli?.name).toBe("github-extended");
     expect(harness.registrations.cli?.commands.map((command) => command.usage)).toEqual([
-      "bb github-extended repos",
-      "bb github-extended issues [owner/repo]",
-      "bb github-extended prs [owner/repo]",
-      "bb github-extended sync",
-      "bb github-extended rules",
-      "bb github-extended jobs",
-      "bb github-extended poll",
-      "bb github-extended approve <job>",
+      "alia github-extended repos",
+      "alia github-extended issues [owner/repo]",
+      "alia github-extended prs [owner/repo]",
+      "alia github-extended sync",
+      "alia github-extended rules",
+      "alia github-extended jobs",
+      "alia github-extended poll",
+      "alia github-extended approve <job>",
     ]);
   });
 
@@ -299,7 +299,7 @@ describe("github plugin RPC behavior", () => {
   });
 
   it("does not retry or reject a known unavailable Dependabot repository", async () => {
-    const { bb, harness } = await loadPlugin();
+    const { alia, harness } = await loadPlugin();
     writeFileSync(dependabotDisabledFlag, "");
 
     await expect(harness.callRpc("refresh")).resolves.toEqual({
@@ -311,7 +311,7 @@ describe("github plugin RPC behavior", () => {
       items: 2,
     });
 
-    expect(await bb.storage.kv.get("sync-cursor")).toMatchObject({
+    expect(await alia.storage.kv.get("sync-cursor")).toMatchObject({
       repos: 1,
       items: 2,
     });
@@ -398,7 +398,7 @@ describe("github plugin RPC behavior", () => {
 
   it("reuses one repository discovery snapshot for a full sync", async () => {
     let projectListCalls = 0;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "github",
       settings: { extraRepos: "acme/widgets other/repo" },
       sdk: {
@@ -410,7 +410,7 @@ describe("github plugin RPC behavior", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await expect(harness.callRpc("refresh")).resolves.toEqual({
       repos: 2,
@@ -576,9 +576,9 @@ describe("github plugin RPC behavior", () => {
     });
   });
   it("serves the cache until a refresh sees that repository access was revoked", async () => {
-    const { bb, harness } = await loadPlugin();
+    const { alia, harness } = await loadPlugin();
     await harness.callRpc("refresh");
-    await bb.storage.kv.set("link:issue:acme/widgets#7", [{
+    await alia.storage.kv.set("link:issue:acme/widgets#7", [{
       kind: "issue",
       repo: "acme/widgets",
       number: 7,
@@ -684,8 +684,8 @@ describe("github plugin RPC behavior", () => {
 
 
   it("persists picker PR links and ignores issue links for pull lookup", async () => {
-    const { bb, harness } = await loadPlugin();
-    await bb.storage.kv.set("link:issue:acme/widgets#7", [{
+    const { alia, harness } = await loadPlugin();
+    await alia.storage.kv.set("link:issue:acme/widgets#7", [{
       kind: "issue",
       repo: "acme/widgets",
       number: 7,
@@ -705,7 +705,7 @@ describe("github plugin RPC behavior", () => {
       .resolves.toMatchObject({
         pull: { repo: "acme/widgets", number: 42 },
       });
-    expect(await bb.storage.kv.get("link:pr:acme/widgets#42")).toEqual([
+    expect(await alia.storage.kv.get("link:pr:acme/widgets#42")).toEqual([
       expect.objectContaining({
         kind: "pr",
         repo: "acme/widgets",
@@ -729,18 +729,18 @@ describe("github plugin RPC behavior", () => {
 
 
   it("does not advance the cursor or retain failed phase rows after a partial refresh", async () => {
-    const { bb, harness } = await loadPlugin("acme/widgets other/repo");
+    const { alia, harness } = await loadPlugin("acme/widgets other/repo");
     await expect(harness.callRpc("refresh")).resolves.toEqual({
       repos: 2,
       items: 2,
     });
-    const cursor = await bb.storage.kv.get("sync-cursor");
+    const cursor = await alia.storage.kv.get("sync-cursor");
     writeFileSync(partialFlag, "");
 
     await expect(harness.callRpc("refresh")).rejects.toThrow(
       /sync incomplete for 1 of 2 repo/,
     );
-    expect(await bb.storage.kv.get("sync-cursor")).toEqual(cursor);
+    expect(await alia.storage.kv.get("sync-cursor")).toEqual(cursor);
     const listed = (await harness.callRpc("listItems", {})) as {
       items: Array<{ repo: string; number: number }>;
     };
@@ -777,7 +777,7 @@ describe("github plugin RPC behavior", () => {
       "https://github.com/acme/widgets.git",
     ]);
     let sourcePath = checkout;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "github",
       settings: { extraRepos: "" },
       sdk: {
@@ -789,16 +789,16 @@ describe("github plugin RPC behavior", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await expect(harness.callRpc("refresh")).resolves.toEqual({ repos: 1, items: 2 });
-    await bb.storage.kv.set("link:issue:acme/widgets#7", [{
+    await alia.storage.kv.set("link:issue:acme/widgets#7", [{
       kind: "issue",
       repo: "acme/widgets",
       number: 7,
       threadId: "thread-1",
       createdAt: "2026-08-20T00:00:00Z",
     }]);
-    const cursor = await bb.storage.kv.get("sync-cursor");
+    const cursor = await alia.storage.kv.get("sync-cursor");
     sourcePath = join(binDir, "missing-checkout");
 
     // Invalidate the discovery cache while the project source is unavailable;
@@ -820,7 +820,7 @@ describe("github plugin RPC behavior", () => {
         ],
       },
     });
-    expect(await bb.storage.kv.get("sync-cursor")).toEqual(cursor);
+    expect(await alia.storage.kv.get("sync-cursor")).toEqual(cursor);
   });
 
   it("isolates review spawns and keeps GitHub titles out of trusted thread metadata", async () => {
@@ -834,7 +834,7 @@ describe("github plugin RPC behavior", () => {
       "origin",
       "https://github.com/acme/widgets.git",
     ]);
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "github",
       settings: { extraRepos: "" },
       sdk: {
@@ -853,9 +853,9 @@ describe("github plugin RPC behavior", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.callRpc("refresh");
-    bb.storage
+    alia.storage
       .database()
       .prepare("UPDATE items SET title = ? WHERE repo = ? AND kind = ? AND number = ?")
       .run(

@@ -1,5 +1,5 @@
 // Starts visible agent threads that fix review feedback on the PR branch.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { FixScope, PrDetails, ReviewThread, StoredComment } from "../shared/schema";
 import { stripMarker } from "./comments";
 import { findProject } from "./projects";
@@ -20,26 +20,26 @@ function quote(text: string): string {
     .join("\n");
 }
 
-async function spawnFix(bb: BbPluginApi, pr: PrDetails, title: string, prompt: string): Promise<FixThread> {
+async function spawnFix(alia: AliaPluginApi, pr: PrDetails, title: string, prompt: string): Promise<FixThread> {
   if (!pr.headInBaseRepo) {
     throw new Error("Fixing with agents is not available for pull requests from forks.");
   }
-  const target = prCloneTarget(await findProject(bb, pr.ref), pr);
-  if (target === null) throw new Error("Add this repository as a bb project on this machine first, so the fix can run in a copy of the PR's commit.");
+  const target = prCloneTarget(await findProject(alia, pr.ref), pr);
+  if (target === null) throw new Error("Add this repository as a VesnALIA project on this machine first, so the fix can run in a copy of the PR's commit.");
   // A private copy keeps the user's checkout untouched. If it can't be
   // made the error reaches the user: never fall back to that checkout.
   const tempDir = await createWorkerDir();
   try {
     const path = await clonePrCommit({ projectPath: target.path, remoteUrl: target.remoteUrl, headSha: pr.headSha, dir: tempDir });
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId: target.projectId,
       prompt,
       title,
       pluginMetadata: { role: "fix", pr: `${pr.ref.owner}/${pr.ref.repo}#${pr.ref.number}`, tempDir },
       environment: prCloneEnvironment(target.hostId, path),
     });
-    if (await provisioningFailed(bb, thread.id)) {
-      await bb.sdk.threads.archive({ threadId: thread.id }).catch(() => undefined);
+    if (await provisioningFailed(alia, thread.id)) {
+      await alia.sdk.threads.archive({ threadId: thread.id }).catch(() => undefined);
       throw new Error(`Could not start an agent in a copy of ${pr.headRef}.`);
     }
     return { threadId: thread.id };
@@ -58,7 +58,7 @@ function branchInstructions(pr: PrDetails): string {
 }
 
 export async function fixDiffComments(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   pr: PrDetails,
   threads: ReviewThread[],
   tags: Map<number, string>,
@@ -87,11 +87,11 @@ export async function fixDiffComments(
     "",
     ...items,
   ].join("\n");
-  return spawnFix(bb, pr, `Fix review comments: ${pr.ref.repo}#${pr.ref.number}`, prompt);
+  return spawnFix(alia, pr, `Fix review comments: ${pr.ref.repo}#${pr.ref.number}`, prompt);
 }
 
 export async function fixDiagramComments(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   pr: PrDetails,
   comments: StoredComment[],
   diagramTitles: Map<string, string>,
@@ -110,5 +110,5 @@ export async function fixDiagramComments(
     "",
     ...items,
   ].join("\n");
-  return spawnFix(bb, pr, `Redesign from diagram feedback: ${pr.ref.repo}#${pr.ref.number}`, prompt);
+  return spawnFix(alia, pr, `Redesign from diagram feedback: ${pr.ref.repo}#${pr.ref.number}`, prompt);
 }

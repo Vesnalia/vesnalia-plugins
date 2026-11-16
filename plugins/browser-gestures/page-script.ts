@@ -1,8 +1,8 @@
-export const cleanupScript = `(globalThis.__bbBrowserGestures?.dispose(), true)`;
+export const cleanupScript = `(globalThis.__aliaBrowserGestures?.dispose(), true)`;
 
 export function installScript(): string {
   return `(() => {
-    const key = '__bbBrowserGestures';
+    const key = '__aliaBrowserGestures';
     const old = globalThis[key];
     if (old) { return old.renew(); }
     const THRESHOLD = 160;
@@ -39,7 +39,7 @@ export function installScript(): string {
     const ensureIndicator = () => {
       if (indicator && indicator.isConnected) return indicator;
       const el = document.createElement("div");
-      el.setAttribute("data-bb-browser-gestures-indicator", "");
+      el.setAttribute("data-alia-browser-gestures-indicator", "");
       el.style.cssText = "position:fixed;top:50%;z-index:2147483647;pointer-events:none;box-sizing:border-box;width:" + SIZE + "px;height:" + SIZE + "px;margin-top:-" + SIZE / 2 + "px;border-radius:50%;display:flex;align-items:center;color:#fff;transition:opacity .15s,background-color .12s;opacity:0;";
       el.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>';
       (document.body || document.documentElement).appendChild(el);
@@ -115,11 +115,11 @@ export function installScript(): string {
       clearInterval(timer);
       clearTimeout(hideTimer);
       if (indicator) indicator.remove();
-      document.documentElement.removeAttribute("data-bb-browser-gestures");
+      document.documentElement.removeAttribute("data-alia-browser-gestures");
       delete globalThis[key];
     };
     globalThis[key] = { dispose, renew() { lease = Date.now() + 2500; return diagnostic; } };
-    document.documentElement.setAttribute("data-bb-browser-gestures", "active");
+    document.documentElement.setAttribute("data-alia-browser-gestures", "active");
     document.addEventListener('wheel', onWheel, { passive: false, capture: true });
     return diagnostic;
   })()`;

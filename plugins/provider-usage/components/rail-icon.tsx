@@ -1,6 +1,6 @@
 // Live navigation-rail icon.
 //
-// BB 0.46 made the navigation rail icon-only, so `experimental_sidebarAccessory`
+// VesnALIA 0.46 made the navigation rail icon-only, so `experimental_sidebarAccessory`
 // no longer has a host surface that mounts it. What the rail still renders is
 // the panel's icon *name* — and the host resolves a name registered through
 // `app.experimental_icons` to plugin artwork before any built-in. So the
@@ -15,10 +15,10 @@
 // share the module.
 //
 // The badge is styled inline, against the host's theme variables. The plugin
-// stylesheet is scoped under `[data-bb-plugin=<id>]`, and the rail is host DOM
+// stylesheet is scoped under `[data-alia-plugin=<id>]`, and the rail is host DOM
 // outside that scope, so a Tailwind class here would silently match nothing.
 import { useSyncExternalStore, type CSSProperties } from "react";
-import { experimental_Icon as HostIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as HostIcon } from "@vesnalia/plugin-sdk/app";
 
 export type RailTone = "calm" | "warn" | "critical";
 

@@ -1,4 +1,4 @@
-bb claude-switcher list: antes (0.2.29) y despues (0.2.30)
+alia claude-switcher list: antes (0.2.29) y despues (0.2.30)
 Mismo fixture (src/list-fixture.ts): 10 cuentas, 5 Team sin semanal general (absent), 5 Max;
 team3 al 100 % de sesion y max4 al 100 % de semanal. Hora: 2026-10-29 11:00 en Madrid.
 Generado con la funcion real de cada version (0.2.29: textState de server.ts en 2c41fd9;

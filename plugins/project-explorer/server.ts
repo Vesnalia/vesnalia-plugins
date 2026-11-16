@@ -1,4 +1,4 @@
-// bb-plugin-project-explorer — backend entry.
+// alia-plugin-project-explorer — backend entry.
 //
 // Seven RPC methods back a VS Code-style file tree in the thread right panel:
 //
@@ -13,11 +13,11 @@
 //
 // Every path crossing the wire is confined beneath the environment's
 // workspace root before it reaches the host.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract } from "./contract.js";
 
-/** Git porcelain codes bb reports for a working-tree file. */
+/** Git porcelain codes VesnALIA reports for a working-tree file. */
 const gitStatusSchema = z.enum(["?", "??", "A", "C", "D", "M", "R", "U"]);
 export type GitStatus = z.infer<typeof gitStatusSchema>;
 
@@ -204,14 +204,14 @@ function compareEntries(a: Entry, b: Entry): number {
   return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   // Listing goes through our own host entry: the SDK's hosts.directory
   // hides dotfiles, and .claude / .env / .github belong in the tree.
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     hiddenFiles: {
       type: "boolean",
       label: "Show dotfiles",
@@ -221,11 +221,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** Resolves a thread to the workspace its files live in. */
   async function resolveRoot(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.environmentId === null) {
       throw new Error("This thread has no environment, so it has no files.");
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     if (environment.path === null) {
@@ -240,7 +240,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     explorer_root: ({ threadId }) => resolveRoot(threadId),
 
     // One directory per call. The tree expands lazily, so opening a repo
@@ -255,7 +255,7 @@ export default async function plugin(bb: BbPluginApi) {
       const listing = await host.call("listDirectory", { path: target }, { hostId });
       const entries = listing.entries
         .filter((entry) => showDotfiles || !entry.name.startsWith("."))
-        // .git is bb's own bookkeeping and is never useful to browse.
+        // .git is VesnALIA's own bookkeeping and is never useful to browse.
         .filter((entry) => entry.name !== ".git")
         .map((entry) => {
           const absolute = `${base}/${entry.name}`;
@@ -271,7 +271,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     explorer_git: async ({ environmentId }) => {
-      const status = await bb.sdk.environments.status({ environmentId });
+      const status = await alia.sdk.environments.status({ environmentId });
       if (status.outcome !== "available") {
         return { available: false, branch: null, files: [] };
       }
@@ -290,7 +290,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!isInsideRoot(rootPath, path)) {
         throw new Error("Path is outside the workspace root.");
       }
-      const file = await bb.sdk.files.read({ hostId, path, rootPath });
+      const file = await alia.sdk.files.read({ hostId, path, rootPath });
       if (file.sizeBytes > MAX_EDITABLE_BYTES) {
         return { outcome: "too_large" as const, sizeBytes: file.sizeBytes };
       }
@@ -305,10 +305,10 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
 
-    // Ask bb for one bounded patch instead of invoking Git ourselves. This
+    // Ask VesnALIA for one bounded patch instead of invoking Git ourselves. This
     // follows the environment's own routing and works for remote workspaces.
     explorer_diff: async ({ environmentId, path }) => {
-      const result = await bb.sdk.environments.diffPatch({
+      const result = await alia.sdk.environments.diffPatch({
         environmentId,
         paths: [path],
         target: { type: "uncommitted" },
@@ -350,7 +350,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
       const relativePath = toRelative(rootPath, path);
-      const preview = await bb.sdk.files.createPreview({
+      const preview = await alia.sdk.files.createPreview({
         hostId,
         rootPath,
         ttlMs: 60 * 60 * 1000,
@@ -374,7 +374,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!isInsideRoot(rootPath, path)) {
         throw new Error("Path is outside the workspace root.");
       }
-      const saved = await bb.sdk.files.write({
+      const saved = await alia.sdk.files.write({
         hostId,
         path,
         rootPath,
@@ -387,7 +387,7 @@ export default async function plugin(bb: BbPluginApi) {
           currentSha256: saved.currentSha256,
         };
       }
-      bb.realtime.publish(TREE_CHANGED, { path });
+      alia.realtime.publish(TREE_CHANGED, { path });
       return {
         outcome: "written" as const,
         sha256: saved.sha256,
@@ -396,15 +396,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // `bb project-explorer ls <path>` — the same listing the tree renders.
-  bb.cli.register({
+  // `alia project-explorer ls <path>` — the same listing the tree renders.
+  alia.cli.register({
     name: "project-explorer",
     summary: "Inspect the workspace listing Project Explorer renders",
     commands: [
       {
         name: "ls",
         summary: "List one directory on a host",
-        usage: "bb project-explorer ls <absolute-path> [--json]",
+        usage: "alia project-explorer ls <absolute-path> [--json]",
       },
     ],
     async run(argv) {
@@ -414,10 +414,10 @@ export default async function plugin(bb: BbPluginApi) {
       if (command !== "ls" || target === undefined) {
         return {
           exitCode: 1,
-          stderr: "Usage: bb project-explorer ls <absolute-path> [--json]",
+          stderr: "Usage: VesnALIA project-explorer ls <absolute-path> [--json]",
         };
       }
-      const hosts = await bb.sdk.hosts.list();
+      const hosts = await alia.sdk.hosts.list();
       const hostId = hosts[0]?.id;
       if (hostId === undefined) {
         return { exitCode: 1, stderr: "No host available." };
@@ -434,7 +434,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

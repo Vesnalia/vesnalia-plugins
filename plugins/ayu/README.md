@@ -1,55 +1,55 @@
-<h1 align="center">Ayu for bb</h1>
+<h1 align="center">Ayu for VesnALIA</h1>
 
-<p align="center"><b>The three <a href="https://github.com/ayu-theme/ayu-colors">ayu</a> themes for <a href="https://getbb.app">bb</a>: Light, Dark and Mirage.</b><br>With a palette explorer in Settings and a <code>bb ayu</code> color lookup for agents and scripts.</p>
+<p align="center"><b>The three <a href="https://github.com/ayu-theme/ayu-colors">ayu</a> themes for <a href="https://getbb.app">VesnALIA</a>: Light, Dark and Mirage.</b><br>With a palette explorer in Settings and a <code>VesnALIA ayu</code> color lookup for agents and scripts.</p>
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-ayu/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-ayu?style=flat-square&color=57606a&label=release" alt="Latest release"></a>
-<img src="https://img.shields.io/badge/bb-%E2%89%A50.49-57606a?style=flat-square" alt="Requires bb 0.49 or later">
+<img src="https://img.shields.io/badge/bb-%E2%89%A50.49-57606a?style=flat-square" alt="Requires VesnALIA 0.49 or later">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 </p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/hero-dark.png">
-  <img src="assets/screenshots/hero-light.png" width="100%" alt="bb's Settings, Ayu page with the three ayu themes, painted in Ayu Light (Ayu Mirage on a dark page)">
+  <img src="assets/screenshots/hero-light.png" width="100%" alt="VesnALIA's Settings, Ayu page with the three ayu themes, painted in Ayu Light (Ayu Mirage on a dark page)">
 </picture>
 
 ## Install
 
 ```sh
-bb plugin install ayu
+alia plugin install ayu
 ```
 
 Or install straight from this repository:
 
 ```sh
-bb plugin install git:https://github.com/vburojevic/bb-plugin-ayu.git
+alia plugin install git:https://github.com/vburojevic/bb-plugin-ayu.git
 ```
 
 > [!TIP]
 > Then pick a theme under **Settings → Appearance** or **Settings → Ayu**, or from a terminal:
 >
 > ```sh
-> bb theme set plugin:ayu:ayu-dark
+> alia theme set plugin:ayu:ayu-dark
 > ```
 
 ## The three themes
 
 <p align="center"><img src="assets/screenshots/hero.png" width="100%" alt="Ayu Light, Ayu Dark and Ayu Mirage side by side: the same code in each palette, with a strip of its color ramps"></p>
 
-Each variant is a whole theme, the way ayu ships them everywhere else: one stylesheet paints both of bb's modes, so selecting Ayu Dark gives you Ayu Dark whichever way the light and dark switch is set.
+Each variant is a whole theme, the way ayu ships them everywhere else: one stylesheet paints both of VesnALIA's modes, so selecting Ayu Dark gives you Ayu Dark whichever way the light and dark switch is set.
 
 ```sh
-bb theme set plugin:ayu:ayu-light
-bb theme set plugin:ayu:ayu-dark
-bb theme set plugin:ayu:ayu-mirage
+alia theme set plugin:ayu:ayu-light
+alia theme set plugin:ayu:ayu-dark
+alia theme set plugin:ayu:ayu-mirage
 ```
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-<img src="assets/screenshots/ui-light.png" width="100%" alt="A bb-style window in Ayu Light">
+<img src="assets/screenshots/ui-light.png" width="100%" alt="A alia-style window in Ayu Light">
 
 ### Ayu Light
 
@@ -58,7 +58,7 @@ Warm off-white, amber accent. A low-contrast palette by design.
 </td>
 <td width="50%" valign="top">
 
-<img src="assets/screenshots/ui-dark.png" width="100%" alt="A bb-style window in Ayu Dark">
+<img src="assets/screenshots/ui-dark.png" width="100%" alt="A alia-style window in Ayu Dark">
 
 ### Ayu Dark
 
@@ -69,7 +69,7 @@ Deep near-black, amber accent.
 <tr>
 <td width="50%" valign="top">
 
-<img src="assets/screenshots/ui-mirage.png" width="100%" alt="A bb-style window in Ayu Mirage">
+<img src="assets/screenshots/ui-mirage.png" width="100%" alt="A alia-style window in Ayu Mirage">
 
 ### Ayu Mirage
 
@@ -80,19 +80,19 @@ Muted blue-grey, warm amber accent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/diff-dark.png">
-  <img src="assets/screenshots/diff-light.png" width="100%" alt="bb's diff viewer painted with the ayu code theme">
+  <img src="assets/screenshots/diff-light.png" width="100%" alt="VesnALIA's diff viewer painted with the ayu code theme">
 </picture>
 
 ### Diffs and file previews
 
-bb paints diffs, file previews and the file editor with a code theme of its own. Each ayu theme brings its matching ayu code theme along, so code reads the same everywhere in bb.
+VesnALIA paints diffs, file previews and the file editor with a code theme of its own. Each ayu theme brings its matching ayu code theme along, so code reads the same everywhere in VesnALIA.
 
 </td>
 </tr>
 </table>
 
 > [!NOTE]
-> The window chrome in the three theme images is a stand-in for bb's, with invented content. Every color in it is one the plugin ships. [About the screenshots](#about-the-screenshots) has the details.
+> The window chrome in the three theme images is a stand-in for VesnALIA's, with invented content. Every color in it is one the plugin ships. [About the screenshots](#about-the-screenshots) has the details.
 
 ## The Ayu panel
 
@@ -102,12 +102,12 @@ bb paints diffs, file previews and the file editor with a code theme of its own.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshots/panel-dark.png">
-  <img src="assets/screenshots/panel-light.png" width="100%" alt="The theme switcher on bb's Settings → Ayu page">
+  <img src="assets/screenshots/panel-light.png" width="100%" alt="The theme switcher on VesnALIA's Settings → Ayu page">
 </picture>
 
 ### Switch themes
 
-**Settings → Ayu** switches themes with live miniature previews drawn from each palette. The panel follows theme changes made elsewhere: in Settings → Appearance, with `bb theme set` or in another window.
+**Settings → Ayu** switches themes with live miniature previews drawn from each palette. The panel follows theme changes made elsewhere: in Settings → Appearance, with `alia theme set` or in another window.
 
 </td>
 <td width="50%" valign="top">
@@ -146,13 +146,13 @@ Below the switcher sits every color ayu publishes for the selected variant: ramp
 
 </details>
 
-## `bb ayu`
+## `alia ayu`
 
 For agents and scripts:
 
 ```sh
-bb ayu themes                  # the three themes and the command that activates each
-bb ayu colors light syntax     # resolved colors, filterable, --json available
+alia ayu themes                  # the three themes and the command that activates each
+alia ayu colors light syntax     # resolved colors, filterable, --json available
 ```
 
 <details>
@@ -160,12 +160,12 @@ bb ayu colors light syntax     # resolved colors, filterable, --json available
 <br>
 
 ```
-bb ayu themes [--json]                     The three ayu themes and how to activate each
-bb ayu colors [variant] [filter] [--json]  Resolved ayu colors
+alia ayu themes [--json]                     The three ayu themes and how to activate each
+alia ayu colors [variant] [filter] [--json]  Resolved ayu colors
 ```
 
 - `variant` is `light`, `dark` or `mirage`, and defaults to `dark`.
-- `filter` matches dotted keys, for example `syntax` or `palette.orange`. A lone `bb ayu colors syntax` reads as a filter on the default variant.
+- `filter` matches dotted keys, for example `syntax` or `palette.orange`. A lone `alia ayu colors syntax` reads as a filter on the default variant.
 - `--json` prints the same data as JSON: the theme list, or a key to hex map.
 
 </details>
@@ -177,10 +177,10 @@ flowchart TD
   ayu["ayu npm package"] --> gen["scripts/generate-themes.mjs"]
   gen --> css["themes/*.css"]
   gen --> pal["generated/palettes.ts"]
-  css --> bb["bb: Settings → Appearance, bb theme set"]
+  css --> alia["alia: Settings → Appearance, alia theme set"]
   pal --> panel["Settings → Ayu panel (app.tsx)"]
-  pal --> cli["bb ayu CLI (server.ts)"]
-  panel -- "Apply: rpc to bb.sdk.theme.set" --> bb
+  pal --> cli["alia ayu CLI (server.ts)"]
+  panel -- "Apply: rpc to alia.sdk.theme.set" --> alia
 ```
 
 <details>
@@ -190,32 +190,32 @@ flowchart TD
 ```
 scripts/generate-themes.mjs   the single source of truth: upstream `ayu` npm
                               package -> themes/*.css + generated/palettes.ts
-themes/*.css                  generated bb stylesheets (do not edit)
+themes/*.css                  generated alia stylesheets (do not edit)
 generated/palettes.ts         generated resolved palettes (do not edit)
 themes-meta.ts                plain shared data (theme ids/names/variants)
-server.ts                     rpc (active theme, switch via bb.sdk.theme),
-                              realtime signal, `bb ayu` CLI
+server.ts                     rpc (active theme, switch via alia.sdk.theme),
+                              realtime signal, `alia ayu` CLI
 app.tsx                       the Settings-page panel, vendored shadcn components
 scripts/generate-screenshots.mjs   the README images, rendered from the above
 ```
 
-Palette data never crosses rpc: `generated/palettes.ts` is a plain module the frontend bundles directly. Only the active-theme read and the switch go through the backend, which uses `bb.sdk.theme.set()` (the same server API the Settings page uses) and publishes a `theme-changed` realtime signal so every open panel stays in sync.
+Palette data never crosses rpc: `generated/palettes.ts` is a plain module the frontend bundles directly. Only the active-theme read and the switch go through the backend, which uses `alia.sdk.theme.set()` (the same server API the Settings page uses) and publishes a `theme-changed` realtime signal so every open panel stays in sync.
 
 </details>
 
 <details>
-<summary>How the palette maps onto bb tokens</summary>
+<summary>How the palette maps onto VesnALIA tokens</summary>
 <br>
 
-**Ayu and bb stack their surfaces in opposite directions, and that governs the whole mapping.**
+**Ayu and VesnALIA stack their surfaces in opposite directions, and that governs the whole mapping.**
 
 Ayu names three surfaces: `surface.base` (window chrome: sidebar, status bar), `surface.lift` (the editor), and `ui.panel`/`ui.popup` on top. Base is the *darkest*; the editor sits lifted above it.
 
-bb has one anchor, `--canvas`, and derives everything else by mixing in `--ink`. Every derivation moves *away* from canvas, including the sidebar, which is always a step lighter. `--background`, `--card` and `--popover` are all plain `var(--canvas)`.
+VesnALIA has one anchor, `--canvas`, and derives everything else by mixing in `--ink`. Every derivation moves *away* from canvas, including the sidebar, which is always a step lighter. `--background`, `--card` and `--popover` are all plain `var(--canvas)`.
 
 So `--canvas` is ayu's **`surface.lift`**, not `surface.base`. Anchoring on base inverts the hierarchy (sidebar renders lighter than content) and flattens the app into one tone. The surfaces ayu places below or above the editor are set explicitly:
 
-| bb | ayu | vscode-ayu equivalent |
+| VesnALIA | ayu | vscode-ayu equivalent |
 | --- | --- | --- |
 | `--canvas` (⇒ `--background`) | `editor.bg` (`surface.lift`) | `editor.background` |
 | `--sidebar` | `ui.bg` (`surface.base`) | `sideBar` / `statusBar` / `activityBar.background` |
@@ -237,7 +237,7 @@ So `--canvas` is ayu's **`surface.lift`**, not `surface.base`. Anchoring on base
 Two derived-fill traps worth knowing:
 
 - `--surface-selected` defaults to solid `var(--primary)`. Left alone, every selected row is a block of amber. Ayu selects with a neutral wash.
-- bb builds neutral fills by mixing `--ink` into `--canvas`, and ayu's ink is a **warm** grey while its surfaces are cool navy, so derived chips and wells come out tan (measured `#282225` against a `#10141c` app). The fills are set from `ui.selection` and `surface.base` instead.
+- VesnALIA builds neutral fills by mixing `--ink` into `--canvas`, and ayu's ink is a **warm** grey while its surfaces are cool navy, so derived chips and wells come out tan (measured `#282225` against a `#10141c` app). The fills are set from `ui.selection` and `surface.base` instead.
 
 </details>
 
@@ -245,7 +245,7 @@ Two derived-fill traps worth knowing:
 <summary>Syntax highlighting, diffs and file previews</summary>
 <br>
 
-bb highlights chat code blocks with [sugar-high](https://github.com/huozhi/sugar-high), whose tokens read their color from `--sh-*` custom properties:
+VesnALIA highlights chat code blocks with [sugar-high](https://github.com/huozhi/sugar-high), whose tokens read their color from `--sh-*` custom properties:
 
 | sugar-high | ayu | |
 | --- | --- | --- |
@@ -257,11 +257,11 @@ bb highlights chat code blocks with [sugar-high](https://github.com/huozhi/sugar
 | `--sh-property` | `syntax.tag` | |
 | `--sh-jsxliterals` | `syntax.tag` | JSX element names |
 
-bb declares these **on `.bb-code-highlight` itself**, not on `:root`, so they must be overridden at element level; a `:root` block silently loses. The generated selector repeats `.dark .bb-code-highlight` to outrank bb's dark override at equal specificity (this stylesheet is injected last).
+VesnALIA declares these **on `.alia-code-highlight` itself**, not on `:root`, so they must be overridden at element level; a `:root` block silently loses. The generated selector repeats `.dark .alia-code-highlight` to outrank VesnALIA's dark override at equal specificity (this stylesheet is injected last).
 
-`--sh-identifier`, `--sh-sign` and `--sh-space` are deliberately left to bb: they already resolve to ayu's `editor.fg` and a dimmed tier of it, and sugar-high's `sign` covers *all* punctuation, so ayu's salmon operator color there would tint every bracket and comma.
+`--sh-identifier`, `--sh-sign` and `--sh-space` are deliberately left to VesnALIA: they already resolve to ayu's `editor.fg` and a dimmed tier of it, and sugar-high's `sign` covers *all* punctuation, so ayu's salmon operator color there would tint every bracket and comma.
 
-bb paints diffs, file previews and the file editor with a code theme, not with the stylesheet. Each ayu theme declares Shiki's matching ayu theme as its `codeTheme` (`ayu-light`, `ayu-dark` or `ayu-mirage`, which bb bundles) for both modes, the same way its stylesheet paints both modes. Their editor background and foreground are the same colors this plugin's palette uses. Without the declaration bb falls back to its default `pierre-dark` / `pierre-light` code theme.
+VesnALIA paints diffs, file previews and the file editor with a code theme, not with the stylesheet. Each ayu theme declares Shiki's matching ayu theme as its `codeTheme` (`ayu-light`, `ayu-dark` or `ayu-mirage`, which VesnALIA bundles) for both modes, the same way its stylesheet paints both modes. Their editor background and foreground are the same colors this plugin's palette uses. Without the declaration VesnALIA falls back to its default `pierre-dark` / `pierre-light` code theme.
 
 </details>
 
@@ -269,9 +269,9 @@ bb paints diffs, file previews and the file editor with a code theme, not with t
 <summary>What is <i>not</i> taken from ayu</summary>
 <br>
 
-**The three secondary text tiers.** bb's own sit close to `--ink` (78% / 71.5% / 68% mixes) because `--muted-foreground` carries a lot of ordinary secondary text; ayu's `ui.fg` is a tab-label color, far too dim for that role. The tiers follow bb's anchor-derived recipe and pick the palette's hue up through `--ink` and `--canvas`.
+**The three secondary text tiers.** VesnALIA's own sit close to `--ink` (78% / 71.5% / 68% mixes) because `--muted-foreground` carries a lot of ordinary secondary text; ayu's `ui.fg` is a tab-label color, far too dim for that role. The tiers follow VesnALIA's anchor-derived recipe and pick the palette's hue up through `--ink` and `--canvas`.
 
-**Success text in Ayu Light.** bb draws status text, such as a finished thread's sidebar label, in `--success-foreground`. Ayu Light's `vcs.added` is 2.2:1 on its canvas, so that one token takes the darkest green ayu publishes, `palette.green.l1` (3.3:1). The dark variants keep `vcs.added`.
+**Success text in Ayu Light.** VesnALIA draws status text, such as a finished thread's sidebar label, in `--success-foreground`. Ayu Light's `vcs.added` is 2.2:1 on its canvas, so that one token takes the darkest green ayu publishes, `palette.green.l1` (3.3:1). The dark variants keep `vcs.added`.
 
 **ANSI bright black on the dark variants**, where ayu 9 sets both black and bright black to near-black. Bright black is what dim terminal output is drawn in, so it falls back to `ui.fg`, the same substitution vscode-ayu makes.
 
@@ -288,11 +288,11 @@ npm install
 npm run generate        # regenerate themes/ + generated/ from the ayu package
 npm run screenshots     # regenerate the rendered images in assets/screenshots/
 npm run typecheck
-bb plugin build         # bundle app.tsx -> dist/
-bb plugin install .     # or: bb plugin dev  (watch loop)
+alia plugin build         # bundle app.tsx -> dist/
+alia plugin install .     # or: alia plugin dev  (watch loop)
 ```
 
-UI components under `components/ui/` are vendored from the bb registry (shadcn model). Add more with `npx shadcn@latest add @bb/<name>`.
+UI components under `components/ui/` are vendored from the VesnALIA registry (shadcn model). Add more with `npx shadcn@latest add @alia-core/<name>`.
 
 </details>
 
@@ -302,11 +302,11 @@ UI components under `components/ui/` are vendored from the bb registry (shadcn m
 <summary>Which images are rendered and which are captured</summary>
 <br>
 
-**The side-by-side strip and the theme, panel and palette images are rendered, not captured from a running bb.** `npm run screenshots` loads `themes/<id>.css` verbatim into a headless Chromium page over a small base layer that reproduces the token derivations bb performs but this plugin leaves alone (`--foreground`, `--ring`, the `--sh-*` defaults), then screenshots it at 2x. The code block is highlighted by sugar-high, the same library bb uses, so the `--sh-*` mapping above is exercised for real.
+**The side-by-side strip and the theme, panel and palette images are rendered, not captured from a running VesnALIA.** `npm run screenshots` loads `themes/<id>.css` verbatim into a headless Chromium page over a small base layer that reproduces the token derivations VesnALIA performs but this plugin leaves alone (`--foreground`, `--ring`, the `--sh-*` defaults), then screenshots it at 2x. The code block is highlighted by sugar-high, the same library VesnALIA uses, so the `--sh-*` mapping above is exercised for real.
 
-Every color in those images is therefore a color the plugin actually ships, and regenerating after a palette change keeps them honest. The window layout is a stand-in for bb's chrome; the content is invented. Nothing comes from anyone's bb instance.
+Every color in those images is therefore a color the plugin actually ships, and regenerating after a palette change keeps them honest. The window layout is a stand-in for VesnALIA's chrome; the content is invented. Nothing comes from anyone's VesnALIA instance.
 
-**The header image (`hero-light`, `hero-dark`) and the diff images are captured** from bb 0.49 itself, running headless with its own empty data folder and this plugin installed. The diff shows an invented change to a sample file.
+**The header image (`hero-light`, `hero-dark`) and the diff images are captured** from VesnALIA 0.49 itself, running headless with its own empty data folder and this plugin installed. The diff shows an invented change to a sample file.
 
 </details>
 
@@ -314,6 +314,6 @@ Colors are MIT-licensed by the ayu project (Ike Ku / Konstantin Pschera).
 
 ---
 
-## More bb plugins
+## More VesnALIA plugins
 
-<p align="center">See every bb plugin I publish at <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/bb-plugins</b></a>.</p>
+<p align="center">See every VesnALIA plugin I publish at <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/alia-plugins</b></a>.</p>

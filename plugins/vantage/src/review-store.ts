@@ -8,7 +8,7 @@ export interface KvStorage {
 
 const REVIEWED_PREFIX = "reviewed:";
 const MAX_MARKS = 2000;
-// bb caps a kv row at 256 KiB of UTF-8.
+// VesnALIA caps a kv row at 256 KiB of UTF-8.
 const MAX_ROW_BYTES = 200_000;
 const encoder = new TextEncoder();
 const bytes = (value: unknown): number => encoder.encode(JSON.stringify(value)).length;

@@ -1,4 +1,4 @@
-// UI strings follow BB's interface language (`<html lang>`); English by default.
+// UI strings follow VesnALIA's interface language (`<html lang>`); English by default.
 
 const en = {
   cancel: "Cancel",
@@ -17,8 +17,8 @@ const en = {
   save: "Save",
   fontSize: "Font size",
   fontSizePixels: "Font size (px)",
-  fontSizeAuto: "Follow BB",
-  fontSizeHint: "Leave empty to follow BB. Applies to formatted text and source in this browser.",
+  fontSizeAuto: "Follow VesnALIA",
+  fontSizeHint: "Leave empty to follow VesnALIA. Applies to formatted text and source in this browser.",
   edit: "Edit",
   view: "View",
   showFormatting: "Format",
@@ -212,8 +212,8 @@ const ru: Record<I18nKey, string> = {
   save: "Сохранить",
   fontSize: "Размер шрифта",
   fontSizePixels: "Размер шрифта (px)",
-  fontSizeAuto: "Как в BB",
-  fontSizeHint: "Оставьте пустым, чтобы следовать BB. Применяется к тексту и исходнику в этом браузере.",
+  fontSizeAuto: "Как в ALIA",
+  fontSizeHint: "Оставьте пустым, чтобы следовать ALIA. Применяется к тексту и исходнику в этом браузере.",
   edit: "Редактировать",
   view: "Просмотр",
   showFormatting: "Формат",

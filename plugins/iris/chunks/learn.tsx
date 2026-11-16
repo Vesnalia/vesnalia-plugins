@@ -4,7 +4,7 @@
 // Progress is kept in the card's saved state under "@" keys, so a half-done
 // quiz or a running timer survives scrolling, reloads and devices.
 
-import { experimental_SourceCode as SourceCode } from "@get-bb/plugin-sdk/app";
+import { experimental_SourceCode as SourceCode } from "@vesnalia/plugin-sdk/app";
 import { Chip, Glyph, InlineError, Prose, Shimmer, cn, num, str, useEnv } from "@iris/ui";
 import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { ElementNode } from "../core/ast";

@@ -1,16 +1,16 @@
 ---
 name: animation
-description: Author step-based explainer diagrams as .scene.json files for BB's Animation plugin. Use when the user wants to animate a diagram, show how a system/protocol/algorithm behaves over time, build a motion explainer, export animation HTML, or turn a static architecture diagram into something that plays.
+description: Author step-based explainer diagrams as .scene.json files for VesnALIA's Animation plugin. Use when the user wants to animate a diagram, show how a system/protocol/algorithm behaves over time, build a motion explainer, export animation HTML, or turn a static architecture diagram into something that plays.
 ---
 
 # Animation - step-based explainer diagrams
 
-`.scene.json` files open in BB's Animation editor: a named scene plus an ordered list of steps that assign states to the scene's parts. You write plain JSON. Any agent can author or edit one with `Write` and `Edit` -- there is no binary format and no tool call required to author. Existing `.anim.json` files, `::animation` embeds, and Nimbalyst `anim-subpart` / `anim-spin` / `--anim-*` tokens still work. Write `.scene.json`, `::scene`, `scene-subpart`, `scene-spin`, and `--scene-*`.
+`.scene.json` files open in VesnALIA's Animation editor: a named scene plus an ordered list of steps that assign states to the scene's parts. You write plain JSON. Any agent can author or edit one with `Write` and `Edit` -- there is no binary format and no tool call required to author. Existing `.anim.json` files, `::animation` embeds, and Nimbalyst `anim-subpart` / `anim-spin` / `--anim-*` tokens still work. Write `.scene.json`, `::scene`, `scene-subpart`, `scene-spin`, and `--scene-*`.
 
-BB surfaces:
+VesnALIA surfaces:
 
 - Open `*.scene.json` in the file preview (Animation editor).
-- `bb animation new|validate|export` from a thread workspace.
+- `alia animation new|validate|export` from a thread workspace.
 - Native tools `animation_export_html` and `animation_validate`.
 - Inline chat preview: `::scene{file="docs/flow.scene.json"}`. Attributes are separated by a space, never a comma.
 - Click a part on the stage to quote its current state into chat.
@@ -201,7 +201,7 @@ A partial has no defaults -- a var you leave out renders as empty, not as an err
 
 ### Compiling components
 
-This BB plugin does **not** ship the Nimbalyst `.tsx` compiler. Author `html` or `htmlFile` markup directly, and declare `subParts` by hand when a step needs to address a region inside that markup.
+This VesnALIA plugin does **not** ship the Nimbalyst `.tsx` compiler. Author `html` or `htmlFile` markup directly, and declare `subParts` by hand when a step needs to address a region inside that markup.
 
 ### tones
 
@@ -313,14 +313,14 @@ Design around these; they are not bugs to work around.
 1. **Sketch the steps first, in prose.** Write the captions before you place a single coordinate. If the captions do not read as a paragraph, the animation will not read either.
 2. **Place the scene on a grid.** Nodes and their coordinates, then labels, then edges last -- edges are constrained by where the boxes ended up.
 3. **Write the steps as deltas**, in canonical order.
-4. **Write the file and validate it.** Name it in kebab-case with the `.scene.json` extension. Run `bb animation validate <path>` or `animation_validate`. Then tell the user to open the file in BB's Animation editor so they can scrub it.
+4. **Write the file and validate it.** Name it in kebab-case with the `.scene.json` extension. Run `alia animation validate <path>` or `animation_validate`. Then tell the user to open the file in VesnALIA's Animation editor so they can scrub it.
 5. **Iterate on geometry from what you wrote**: node height vs row count, edge gaps vs edge `text`, cumulative states that never turn off, a final frame with too much lit at once.
 
 If the user gave you a style reference image, match its *vocabulary* -- caps micro-labels, card density, how much is dim at rest - rather than trying to reproduce it pixel for pixel. Say plainly which parts of it the format cannot express.
 
 ## Exporting
 
-`animation_export_html` (or `bb animation export <path>`) writes a `.scene.json` out as a self-contained HTML file that plays and loops on its own, with no external references. Point it at a path; it does not need the file open in an editor.
+`animation_export_html` (or `alia animation export <path>`) writes a `.scene.json` out as a self-contained HTML file that plays and loops on its own, with no external references. Point it at a path; it does not need the file open in an editor.
 
 ```
 animation_export_html { filePath: "docs/cache.scene.json" }
@@ -329,13 +329,13 @@ animation_export_html { filePath: "docs/cache.scene.json" }
 
 Pass `outputPath` to put it somewhere else; a relative path resolves the same way as `filePath`. It refuses to export a document with parse errors, and returns any warnings alongside the result. It only overwrites an earlier Animation export: if another file already sits at the output path, including the scene itself, it stops with an error, so pick a different `outputPath` rather than deleting the user's file. Clicking the exported page pauses it.
 
-**There is no GIF or MP4 export in this BB plugin.** If the destination cannot run HTML, say so and offer the standalone HTML anyway, or a screenshot of one step. Do not pretend a GIF tool exists.
+**There is no GIF or MP4 export in this VesnALIA plugin.** If the destination cannot run HTML, say so and offer the standalone HTML anyway, or a screenshot of one step. Do not pretend a GIF tool exists.
 
 The editor preview and the HTML export use the palette in `stage.theme`, or a fixed dark fallback when the document names none. They agree by construction.
 
-### Showing it live inside BB
+### Showing it live inside VesnALIA
 
-Open the `.scene.json` file in BB to play it in the Animation editor.
+Open the `.scene.json` file in VesnALIA to play it in the Animation editor.
 
 To embed a live preview in an assistant message, emit this directive on its own line (not in a code fence):
 
@@ -349,7 +349,7 @@ To embed a live preview in an assistant message, emit this directive on its own 
 ::scene{file="docs/cache.scene.json" height=480}
 ```
 
-**Never put a comma between the attributes.** With a comma, BB does not read the line as a directive and shows it as plain text instead of the animation. `animation_validate` returns the exact line for a file, so copy that rather than composing it.
+**Never put a comma between the attributes.** With a comma, VesnALIA does not read the line as a directive and shows it as plain text instead of the animation. `animation_validate` returns the exact line for a file, so copy that rather than composing it.
 
 After `Write`/`Edit` creates the file, emit the directive so the user sees it play in the thread.
 

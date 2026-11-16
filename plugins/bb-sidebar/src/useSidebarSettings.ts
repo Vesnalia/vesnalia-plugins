@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./contract";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./contract";
 import { SIDEBAR_SETTINGS_CHANNEL } from "./realtime-channels";
 import { cachedSidebarSettings, cacheSidebarSettings, type SidebarSettingsValues } from "./sidebar-settings";
 
@@ -14,7 +14,7 @@ import { cachedSidebarSettings, cacheSidebarSettings, type SidebarSettingsValues
  * Null until the first load when nothing is cached yet.
  */
 export function useSidebarSettings(): SidebarSettingsValues | null {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const loadRequestSeq = useRef(0);
   const [settings, setSettings] = useState<SidebarSettingsValues | null>(() => cachedSidebarSettings(rpc));
   const load = useCallback(async () => {

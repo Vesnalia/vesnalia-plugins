@@ -1,9 +1,9 @@
 import { expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createThreadPullRequests } from "./thread-pull-requests";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 function created(seq: number, number: number) {
   return {
@@ -21,7 +21,7 @@ function created(seq: number, number: number) {
 
 it("scans new events only and caches merged PR status", async () => {
   let events = [created(1, 10), created(2, 11)];
-  // Pages like bb's API: at most `limit` events, which it caps at 100.
+  // Pages like VesnALIA's API: at most `limit` events, which it caps at 100.
   const list = vi.fn(async ({ afterSeq, limit }: { afterSeq?: string; limit: string }) => {
     if (Number(limit) > 100) throw new Error("Thread event limit cannot exceed 100");
     return events.filter((event) => event.seq > Number(afterSeq ?? 0)).slice(0, Number(limit));
@@ -34,7 +34,7 @@ it("scans new events only and caches merged PR status", async () => {
       state: url.endsWith("/10") ? "merged" : "open",
     })),
   }));
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     experimental_callHostRpc: call,
     sdk: {
       threads: {
@@ -47,7 +47,7 @@ it("scans new events only and caches merged PR status", async () => {
     },
   });
   try {
-    const pullRequests = createThreadPullRequests(bb);
+    const pullRequests = createThreadPullRequests(alia);
     await expect(pullRequests.getThreadPullRequests({ threadId: "thr_a" })).resolves.toEqual({
       pullRequests: [
         { url: "https://github.com/o/r/pull/11", number: 11, title: "PR 11", state: "open" },
@@ -70,7 +70,7 @@ it("scans new events only and caches merged PR status", async () => {
 });
 
 it("lists PR numbers without status when the host lookup fails", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     experimental_callHostRpc: async () => {
       throw new Error("gh: not found");
     },
@@ -85,7 +85,7 @@ it("lists PR numbers without status when the host lookup fails", async () => {
     },
   });
   try {
-    await expect(createThreadPullRequests(bb).getThreadPullRequests({ threadId: "thr_a" })).resolves.toEqual({
+    await expect(createThreadPullRequests(alia).getThreadPullRequests({ threadId: "thr_a" })).resolves.toEqual({
       pullRequests: [{ url: "https://github.com/o/r/pull/5", number: 5, title: null, state: null }],
     });
   } finally {
@@ -122,12 +122,12 @@ function sharedHost(eventsByThread: Record<string, ReturnType<typeof created>[]>
 }
 
 it("forgets a deleted thread's scan and the statuses only it used", async () => {
-  const { bb, harness, list, lookups } = sharedHost({
+  const { alia, harness, list, lookups } = sharedHost({
     thr_a: [created(1, 10), created(2, 11)],
     thr_b: [created(1, 10)],
   });
   try {
-    const pullRequests = createThreadPullRequests(bb);
+    const pullRequests = createThreadPullRequests(alia);
     await pullRequests.getThreadPullRequests({ threadId: "thr_a" });
     await pullRequests.getThreadPullRequests({ threadId: "thr_b" });
     expect(lookups()).toEqual([["https://github.com/o/r/pull/10", "https://github.com/o/r/pull/11"]]);
@@ -147,7 +147,7 @@ it("forgets a deleted thread's scan and the statuses only it used", async () => 
 });
 
 it("does not let a scan in flight bring back a forgotten thread", async () => {
-  const { bb, harness, list, lookups } = sharedHost({ thr_a: [created(1, 10)] });
+  const { alia, harness, list, lookups } = sharedHost({ thr_a: [created(1, 10)] });
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
@@ -158,7 +158,7 @@ it("does not let a scan in flight bring back a forgotten thread", async () => {
     return listed(args);
   });
   try {
-    const pullRequests = createThreadPullRequests(bb);
+    const pullRequests = createThreadPullRequests(alia);
     const first = pullRequests.getThreadPullRequests({ threadId: "thr_a" });
     await vi.waitFor(() => expect(list).toHaveBeenCalledTimes(1));
     pullRequests.forgetThread("thr_a");

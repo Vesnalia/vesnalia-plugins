@@ -1,6 +1,6 @@
 // RPC contract shared by server.ts and app.tsx. Kept free of Node imports so
 // the app bundle can import it.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { RANGES } from "./usage";
 
@@ -22,7 +22,7 @@ const session = z.object({
   /** Claude Code sessions only: read from the transcript. */
   title: z.string().nullable(),
   project: z.string().nullable(),
-  /** Set when the session is a bb thread's own Claude session. */
+  /** Set when the session is a VesnALIA thread's own Claude session. */
   threadId: z.string().nullable(),
 });
 export type Session = z.infer<typeof session>;
@@ -47,11 +47,11 @@ export const rpcContract = defineRpcContract({
       prices: z.record(z.string(), z.object({ input: z.number(), output: z.number(), cacheRead: z.number() })),
     }),
   },
-  /** Claude plan limits: Anthropic first, bb's provider-usage as the fallback, plus ccusage's live burn rate. */
+  /** Claude plan limits: Anthropic first, VesnALIA's provider-usage as the fallback, plus ccusage's live burn rate. */
   limits: {
     input: z.object({ refresh: z.boolean() }),
     output: z.object({
-      source: z.enum(["anthropic", "bb"]).nullable(),
+      source: z.enum(["anthropic", "alia"]).nullable(),
       plan: z.string().nullable(),
       windows: z.array(window),
       burn: z.object({ costPerHour: z.number(), blockCost: z.number(), blockEndsAt: z.string() }).nullable(),

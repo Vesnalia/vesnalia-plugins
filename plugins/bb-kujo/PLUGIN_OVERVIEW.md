@@ -1,4 +1,4 @@
-Kujo brings the design language of [kujolang.ai](https://kujolang.ai/) and [SiteKit](https://github.com/kujolang/site-kit) into bb.
+Kujo brings the design language of [kujolang.ai](https://kujolang.ai/) and [SiteKit](https://github.com/kujolang/site-kit) into VesnALIA.
 
 ## What you get
 
@@ -13,8 +13,8 @@ The signal effect stops when reduced motion is enabled. Fonts, icons and backgro
 
 ## Requirements
 
-Tested with bb 0.43. Select **Kujo** in Appearance, then choose light or dark mode.
+Tested with VesnALIA 0.43. Select **Kujo** in Appearance, then choose light or dark mode.
 
-bb 0.43 has a separate Monaco disposal bug that can affect editing and undo with any theme. See the [compatibility notes](https://github.com/kujolang/bb-kujo/blob/main/docs/monaco-compatibility.md) before using that editor version.
+VesnALIA 0.43 has a separate Monaco disposal bug that can affect editing and undo with any theme. See the [compatibility notes](https://github.com/kujolang/bb-kujo/blob/main/docs/monaco-compatibility.md) before using that editor version.
 
 [Source and installation](https://github.com/kujolang/bb-kujo) · [Kujo](https://kujolang.ai/)

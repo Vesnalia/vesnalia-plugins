@@ -4,13 +4,13 @@
  * Adapted from diffity's `src-tauri/prompts/review-feedback.md` and `resolve.md`
  * (https://github.com/nilbuild/diffity), Copyright (c) 2026 Kamran Ahmed, MIT License — see
  * THIRD_PARTY_NOTICES.md. The writing rules, the rejected-edit rules and the per-thread instructions
- * are diffity's; the tools are `bb diff-review` commands instead of diffity's MCP server, and the
+ * are diffity's; the tools are `alia diff-review` commands instead of diffity's MCP server, and the
  * threads are written into the message, so the agent needs no call to read them.
  */
 import { describeLocation, describeTarget, GENERAL_PATH, type ReviewThread, type Target } from "../shared/types";
 
 /** The command an agent answers with; the skill in `skills/diff-review` says the same. */
-export const CLI = "bb diff-review";
+export const CLI = "alia diff-review";
 
 function quote(body: string): string {
   return body

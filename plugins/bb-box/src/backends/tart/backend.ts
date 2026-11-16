@@ -1,12 +1,12 @@
 // The Tart backend: macOS boxes, and Linux boxes on arm64 (040), as VMs on
-// Macs with Apple silicon, made by Tart on Apple's Virtualization framework. bb-box reaches each Mac over SSH
+// Macs with Apple silicon, made by Tart on Apple's Virtualization framework. alia-box reaches each Mac over SSH
 // as its host user and runs `tart` there (see host.ts). VMs sit on the Mac's
-// own NAT, so bb-box reaches them through the Mac: commands over SSH with the
+// own NAT, so alia-box reaches them through the Mac: commands over SSH with the
 // Mac as the jump host, and a macOS desktop through Tart's VNC server, which
 // listens on the Mac's loopback. A Linux desktop (linux-arm64-desktop-cpu)
 // has its own VNC server in the VM, reached over SSH like its commands.
 //
-// - Acquire: the box's VM is named bb-box-<box ID>, so it is claimed before
+// - Acquire: the box's VM is named alia-box-<box ID>, so it is claimed before
 //   anything is made. Its owner file goes first, then the clone (copy on
 //   write on APFS), then `tart run` detached from SSH, then its address from
 //   the Mac's DHCP leases, then SSH through the Mac.
@@ -18,7 +18,7 @@
 //   resumes it with a new VNC port and password. A Linux VM is shut down and
 //   boots again, since Tart cannot resume one; it runs as user box, with no
 //   Tart VNC server, and no warm pool.
-// - A VM's address can change when it starts again, so bb-box asks the Mac
+// - A VM's address can change when it starts again, so alia-box asks the Mac
 //   for it when it does not know it, and forgets it when the VM stops.
 // - Windows boxes (046) are VMs QEMU runs on Apple's Hypervisor framework
 //   (qemu.ts). Each has two ports on the Mac's loopback, for SSH and QEMU's
@@ -235,7 +235,7 @@ const VM_STOPPED_POLL_MS = 3_000;
 const UNREAD_MAC_READ_MS = 60_000;
 const STARTS_LEFT_MOST_MS = 15_000;
 /**
- * How long no warm VM is filled after a box is ready, for its enrolment: a fill, a VM booting beside it, made BB's
+ * How long no warm VM is filled after a box is ready, for its enrolment: a fill, a VM booting beside it, made VesnALIA's
  * installer in a claimed Mac take 21.9 s, where it takes 3.3 s alone. None is filled while an acquire runs either.
  */
 const FILL_QUIET_MS = 30_000;
@@ -246,13 +246,13 @@ const MiB_PER_GiB = 1024;
 
 const SSH_COMMAND: CommandCapability = { transport: "ssh", shell: "sh", admin: true, inDesktopSession: false, streaming: true };
 
-/** The user Linux boxes work as, as in every Linux image bb-box builds. */
+/** The user Linux boxes work as, as in every Linux image alia-box builds. */
 const LINUX_USER = "box";
 /** The Linux desktop's VNC server, inside the VM, and the password it makes at first boot, readable by the box user. */
 const LINUX_VNC_PORT = 5900;
-const LINUX_VNC_PASSWORD_FILE = "/var/lib/bb-box/vnc-password";
+const LINUX_VNC_PASSWORD_FILE = "/var/lib/alia-box/vnc-password";
 /** The cookie the Linux desktop's display :99 writes at each start. */
-const DISPLAY_AUTH_FILE = "/run/bb-box/Xauthority";
+const DISPLAY_AUTH_FILE = "/run/alia-box/Xauthority";
 /** The Cua Driver the Linux desktop image pins (desktop-pins.tsv), run by the box user's service. */
 const LINUX_CUA: ComputerUse = { driver: "cua", version: "0.28.3", socket: `/home/${LINUX_USER}/.cache/cua-driver/cua-driver.sock` };
 
@@ -278,33 +278,33 @@ function footprint(kind: string, size: MachineSize): number {
 }
 
 /** A Mac's state: Tart's VMs and the Mac's own (host.ts), and QEMU's VMs (qemu.ts). */
-/** `qemuVideo`: the Mac's build of bb-box-stream for Windows video (#865); null while Windows boxes are off. */
+/** `qemuVideo`: the Mac's build of alia-box-stream for Windows video (#865); null while Windows boxes are off. */
 type MacState = HostState & { readonly qemu: QemuState; readonly qemuVideo: QemuVideo | null };
 
 type Step = <T>(name: string, run: () => Promise<T>) => Promise<T>;
 
 /** Where an image's record is in it (049): macOS keeps /usr/share read-only. */
-const RECORD_PATH: Readonly<Record<string, string>> = { linux: "/usr/share/bb-box/image.json", macos: "/usr/local/share/bb-box/image.json" };
+const RECORD_PATH: Readonly<Record<string, string>> = { linux: "/usr/share/alia-box/image.json", macos: "/usr/local/share/alia-box/image.json" };
 
 /**
  * A macOS box's checks as its user (049), as its image has no check of its
- * own: the tools and Cua Driver, and Xcode and bb-box-stream where its
+ * own: the tools and Cua Driver, and Xcode and alia-box-stream where its
  * record says it has them (#475, 060), a line per check, with ok or FAIL.
  */
 export const MAC_CHECK = String.raw`t() { name=$1; shift; if out=$("$@" 2>&1); then echo "$name ok   $(echo "$out" | head -n 1)"; else echo "$name FAIL $(echo "$out" | head -n 1)"; fi; }
 t node node --version
 t git git --version
 t cua-driver /usr/local/bin/cua-driver --version
-t "image record" test -s /usr/local/share/bb-box/image.json
-if grep -q '"bb-box-stream"' /usr/local/share/bb-box/image.json 2>/dev/null; then
-  t bb-box-stream test -x /usr/local/bin/bb-box-stream
+t "image record" test -s /usr/local/share/alia-box/image.json
+if grep -q '"alia-box-stream"' /usr/local/share/alia-box/image.json 2>/dev/null; then
+  t alia-box-stream test -x /usr/local/bin/alia-box-stream
 fi
-if grep -q '"chrome"' /usr/local/share/bb-box/image.json 2>/dev/null; then
+if grep -q '"chrome"' /usr/local/share/alia-box/image.json 2>/dev/null; then
   t chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version
-  t "chrome policies, as Chrome applies them" sh -c 'node /usr/local/libexec/bb-box/chrome-policies.mjs | grep -x "DefaultBrowserSettingEnabled false .* OK"'
+  t "chrome policies, as Chrome applies them" sh -c 'node /usr/local/libexec/alia-box/chrome-policies.mjs | grep -x "DefaultBrowserSettingEnabled false .* OK"'
   t "chrome past its first run" test -e "$HOME/Library/Application Support/Google/Chrome/First Run"
 fi
-if grep -q '"xcode"' /usr/local/share/bb-box/image.json 2>/dev/null; then
+if grep -q '"xcode"' /usr/local/share/alia-box/image.json 2>/dev/null; then
   t xcode xcodebuild -version
   t "xcode licence and first launch" sh -c 'xcodebuild -license check && xcodebuild -checkFirstLaunchStatus'
   t metal xcrun -f metal
@@ -333,7 +333,7 @@ export function macWindowsCheck(check: string, clock: string): string {
   return out.join("\n");
 }
 
-export const IOS_CHECK = "/usr/local/bin/bb-box-check-ios";
+export const IOS_CHECK = "/usr/local/bin/alia-box-check-ios";
 
 function iosPrepareCommand(macosImage: string, vm: string): string[] {
   return ["./prepare-ios-image.sh", "--from", macosImage, "--name", vm];
@@ -344,13 +344,13 @@ function tartCheck(kind: string): string {
   if (guestOsOf(kind) === "windows") return "";
   if (kind === IOS_IMAGE_KIND) return `${MAC_CHECK}\n${IOS_CHECK}`;
   if (guestOsOf(kind) === "macos") return MAC_CHECK;
-  if (kind === "linux-arm64") return "bb-box-check-headless";
-  return "for i in $(seq 1 60); do [ -s /run/bb-box/display-mode ] && break; sleep 1; done; bb-box-check-desktop";
+  if (kind === "linux-arm64") return "alia-box-check-headless";
+  return "for i in $(seq 1 60); do [ -s /run/alia-box/display-mode ] && break; sleep 1; done; alia-box-check-desktop";
 }
 
 export interface TartBackendOptions {
   readonly sshBinary?: string;
-  /** bb-box-stream's source for Windows video (#865), instead of mac-stream.swift: a small one, in tests. */
+  /** alia-box-stream's source for Windows video (#865), instead of mac-stream.swift: a small one, in tests. */
   readonly qemuVideoSource?: string;
   readonly sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
   /** The longest an acquire may take, instead of the kind's. */
@@ -358,7 +358,7 @@ export interface TartBackendOptions {
   /** What runs the Mac helper's VM commands in a macOS VM, instead of machine-mac.sh through sudo: a fake, in tests. */
   readonly macHelper?: string;
   readonly macHelperReadyTimeoutMs?: number;
-  /** Where a macOS VM's bb-box-stream is, instead of MAC_STREAM: a fake, in tests. */
+  /** Where a macOS VM's alia-box-stream is, instead of MAC_STREAM: a fake, in tests. */
   readonly macStream?: string;
   /** Where a Linux desktop's image has Selkies' launcher, instead of SELKIES_LAUNCHER: a file the test finds, in tests. */
   readonly selkiesLauncher?: string;
@@ -398,7 +398,7 @@ interface SshKeys {
   readonly generated: boolean;
 }
 
-/** A VM bb-box is starting on a Mac, counted against the Mac until Tart or QEMU runs it. Keyed by the VM. */
+/** A VM alia-box is starting on a Mac, counted against the Mac until Tart or QEMU runs it. Keyed by the VM. */
 interface Placing {
   readonly host: string;
   readonly vm: string;
@@ -414,13 +414,13 @@ const BUILD_TIMEOUT_MS = 60 * 60_000;
 const LEFTOVER_MS = 4 * 60 * 60_000;
 /** How long the Mac may be out of reach while its prepare script runs, before the build counts as lost (#707). */
 const BUILD_LOST_MS = 10 * 60_000;
-/** How often bb-box looks at a running build's log. */
+/** How often alia-box looks at a running build's log. */
 const BUILD_POLL_MS = 2_000;
 /** The most of a build's log one look takes. */
 const BUILD_LOG_CHUNK = 256 * 1024;
 
 /** The prefix of a warm VM's name. A box that takes it keeps the name. */
-const WARM_PREFIX = "bb-box-warm-";
+const WARM_PREFIX = "alia-box-warm-";
 
 /**
  * Warm VMs of one image at one size, which serve every kind whose image and
@@ -436,7 +436,7 @@ interface WarmPool {
   readonly target: number;
 }
 
-/** A warm VM bb-box is filling, until it is suspended or saved, or a box takes it over. */
+/** A warm VM alia-box is filling, until it is suspended or saved, or a box takes it over. */
 interface Fill {
   readonly host: string;
   readonly size: MachineSize;
@@ -471,7 +471,7 @@ function sameSize(a: MachineSize, b: MachineSize): boolean {
   return a.cores === b.cores && a.memoryMiB === b.memoryMiB && a.diskGiB === b.diskGiB;
 }
 
-/** A VM bb-box filled or held for a warm pool, which is no box's. */
+/** A VM alia-box filled or held for a warm pool, which is no box's. */
 function warmState(fields: Readonly<Record<string, string>>): "warm" | "filling" | null {
   return fields.state === "warm" || fields.state === "filling" ? fields.state : null;
 }
@@ -637,7 +637,7 @@ export function tartKinds(config: TartConfig): BoxKind[] {
         command: SSH_COMMAND,
         // Tart's VNC server shares the pasteboard with its host only (#464),
         // and takes Alt as Command and Meta as Option.
-        // And video, once every Mac's image has bb-box-stream (060): #states.
+        // And video, once every Mac's image has alia-box-stream (060): #states.
         displays: [{ id: "desktop", protocol: "rfb", resizable: false, clipboard: "commands", macKeys: "alt-command" }],
         computerUse: cua,
         enrol: true,
@@ -688,11 +688,11 @@ export function tartKinds(config: TartConfig): BoxKind[] {
         features: [],
         command: WINDOWS_COMMAND,
         // QEMU's VNC server, at the listed mode that best covers the viewer. It moves no clipboard without the SPICE
-        // guest agent, so bb-box moves it with Get-Clipboard and Set-Clipboard in the desktop session (#461). With
+        // guest agent, so alia-box moves it with Get-Clipboard and Set-Clipboard in the desktop session (#461). With
         // lossy=on its JPEG at quality 2 broke text up, and its own refresh of a still area kept some JPEG (056).
         displays: [{ id: "desktop", protocol: "rfb", resizable: true, clipboard: "commands", refresh: "viewer", quality: 4 }],
         computerUse: WINDOWS_CUA,
-        // Windows boxes join BB unless the switch is set off (#539).
+        // Windows boxes join VesnALIA unless the switch is set off (#539).
         enrol: config.windowsEnrol,
         device: null,
       },
@@ -746,7 +746,7 @@ export function hostnameOf(name: string): string {
  * yet; exits 4 when it is another VM.
  */
 export function identityScript(vm: string): string {
-  return String.raw`f="$HOME/.config/bb-box/vm"
+  return String.raw`f="$HOME/.config/alia-box/vm"
 [ -s "$f" ] || { echo none; exit 0; }
 if [ "$(cat "$f")" != ${quote(vm)} ]; then echo "The VM that answers is $(cat "$f"), not ${vm}." >&2; exit 4; fi
 echo same`;
@@ -754,7 +754,7 @@ echo same`;
 
 /** Writes the name a VM keeps of itself (identityScript). */
 export function rememberScript(vm: string): string {
-  return String.raw`mkdir -p "$HOME/.config/bb-box" && printf '%s\n' ${quote(vm)} > "$HOME/.config/bb-box/vm"`;
+  return String.raw`mkdir -p "$HOME/.config/alia-box" && printf '%s\n' ${quote(vm)} > "$HOME/.config/alia-box/vm"`;
 }
 
 /**
@@ -776,17 +776,17 @@ done`;
  * box's desktop opens at once. Nothing to wait for in a VM with no desktop.
  */
 export function linuxDesktopScript(): string {
-  return String.raw`systemctl cat bb-box-display.service >/dev/null 2>&1 || exit 0
+  return String.raw`systemctl cat alia-box-display.service >/dev/null 2>&1 || exit 0
 i=0
-until systemctl is-active --quiet bb-box-display.service && systemctl is-active --quiet bb-box-session.service; do
-  i=$((i + 1)); [ "$i" -lt 600 ] || { echo "The desktop did not start within 2 minutes: display $(systemctl is-active bb-box-display.service), session $(systemctl is-active bb-box-session.service)." >&2; exit 1; }
+until systemctl is-active --quiet alia-box-display.service && systemctl is-active --quiet alia-box-session.service; do
+  i=$((i + 1)); [ "$i" -lt 600 ] || { echo "The desktop did not start within 2 minutes: display $(systemctl is-active alia-box-display.service), session $(systemctl is-active alia-box-session.service)." >&2; exit 1; }
   sleep 0.2
 done`;
 }
 
 /**
  * Names a VM after its box: its ComputerName, LocalHostName and HostName,
- * which its prompt, its Bonjour name and its BB machine show; in a Linux VM,
+ * which its prompt, its Bonjour name and its VesnALIA machine show; in a Linux VM,
  * its hostname, /etc/hostname and the 127.0.1.1 line in /etc/hosts. Only in
  * a Virtualization framework VM, never on a machine a command reaches by
  * mistake, such as a test machine.
@@ -847,14 +847,14 @@ Stop-Computer -Force
  */
 export function powerOffScript(vm: string): string {
   return String.raw`[ "$(systemd-detect-virt --vm 2>/dev/null)" = apple ] || { echo "not a VM"; exit 0; }
-[ "$(cat "$HOME/.config/bb-box/vm" 2>/dev/null)" = ${quote(vm)} ] || { echo "not ${vm}"; exit 0; }
+[ "$(cat "$HOME/.config/alia-box/vm" 2>/dev/null)" = ${quote(vm)} ] || { echo "not ${vm}"; exit 0; }
 sync
 sudo -n systemctl poweroff --no-block && echo "powering off"`;
 }
 
 export function macPowerOffScript(vm: string): string {
   return String.raw`case "$(sysctl -n hw.model 2>/dev/null)" in VirtualMac*) ;; *) echo "not a VM"; exit 0 ;; esac
-[ "$(cat "$HOME/.config/bb-box/vm" 2>/dev/null)" = ${quote(vm)} ] || { echo "not ${vm}"; exit 0; }
+[ "$(cat "$HOME/.config/alia-box/vm" 2>/dev/null)" = ${quote(vm)} ] || { echo "not ${vm}"; exit 0; }
 sudo -n true || exit 1
 sync
 (sudo -n shutdown -h now >/dev/null 2>&1 &)
@@ -881,11 +881,11 @@ export class TartBackend implements Backend {
   readonly #kinds: BoxKind[];
   readonly #keyFile = new KeyFile();
   #ssh: Promise<SshKeys> | null = null;
-  /** Each VM's address while bb-box knows it: learnt when it starts, forgotten when it stops. */
+  /** Each VM's address while alia-box knows it: learnt when it starts, forgotten when it stops. */
   readonly #addresses = new Map<string, string>();
-  /** Whether each macOS VM has bb-box-stream, as its image gives it or not. */
+  /** Whether each macOS VM has alia-box-stream, as its image gives it or not. */
   readonly #streams = new Map<string, boolean>();
-  /** Whether each Windows box has bb-box-stream.exe, as its image gives it or not (060). */
+  /** Whether each Windows box has alia-box-stream.exe, as its image gives it or not (060). */
   readonly #windowsStreams = new Map<string, boolean>();
   #macHelper: MacVmHelper | null = null;
   /** VMs being started for boxes or warm pools, by VM, until they run or their start ends. */
@@ -900,7 +900,7 @@ export class TartBackend implements Backend {
    * its capture as a VM of its own with its record beside it, a new build of
    * a standard image by its prepare script, and the image's name moved to a
    * build. A reference is <Mac>/<VM>. A Windows image's build is a QEMU disk
-   * under ~/.bb-box/qemu, refreshed in a box of it (054, #450): its current
+   * under ~/.alia-box/qemu, refreshed in a box of it (054, #450): its current
    * build is <Mac>/<image>, and another <Mac>/<image>@<build>.
    */
   readonly images: BackendImages = {
@@ -937,7 +937,7 @@ export class TartBackend implements Backend {
   /** Whether windows-arm64-desktop's video is known: once a Mac has answered, as for macos-desktop's. */
   #windowsVideoKnown = false;
   readonly slots: IosHosts | undefined;
-  /** The build of bb-box-stream that Windows video runs on each Mac (#865), from mac-stream.swift's source. */
+  /** The build of alia-box-stream that Windows video runs on each Mac (#865), from mac-stream.swift's source. */
   #qemuVideo: { readonly source: string; readonly build: string } | null = null;
   /** Each Mac's build of it, while it runs, so a Mac builds it once at a time. */
   readonly #qemuVideoBuilds = new Map<string, Promise<void>>();
@@ -982,7 +982,7 @@ export class TartBackend implements Backend {
     if (!image || !record || !state.vms.some((vm) => vm.name === image)) return null;
     const device = record.devices?.[0];
     const runtime = device && "runtime" in device && device.runtime && "xcode" in device.runtime ? { os: device.runtime.os, xcode: device.runtime.xcode } : null;
-    return { build: record.build, runtime, softwareEncoder: record.encoders?.software ?? record.tools["bb-box-h264"] ?? null, hardwareEncoder: record.encoders?.hardware ?? null };
+    return { build: record.build, runtime, softwareEncoder: record.encoders?.software ?? record.tools["alia-box-h264"] ?? null, hardwareEncoder: record.encoders?.hardware ?? null };
   }
 
   #iosReport(mac: string): MacReport | null {
@@ -1067,8 +1067,8 @@ export class TartBackend implements Backend {
       logError: (operation, error) => this.#context.logError(operation, error),
       log: (message) => this.#context.log?.(message),
       serverApp: async (signal) => {
-        const url = this.#context.bbUrl?.() ?? null;
-        const digest = url ? await this.#context.images?.bbApp(signal).catch(() => null) : null;
+        const url = this.#context.aliaUrl?.() ?? null;
+        const digest = url ? await this.#context.images?.aliaApp(signal).catch(() => null) : null;
         return url && digest ? { url, digest } : null;
       },
       ...(this.#options.sleep ? { sleep: this.#options.sleep } : {}),
@@ -1113,7 +1113,7 @@ export class TartBackend implements Backend {
       const state = await this.#run(host, vmStateScript(vm), { timeoutMs: 30_000, signal }).then((result) => result.stdout.trim().split("\n").pop(), () => null);
       if (signal.aborted || !state || state === "running") continue;
       const words = state === "gone" ? `${vm} on ${host.name} went before it answered on SSH.` : `${vm} on ${host.name} stopped before it answered on SSH: Tart lists it ${state}.`;
-      this.#context.log?.(`${words} bb-box saw it ${((performance.now() - began) / 1000).toFixed(1)} s after the VM started, and stops waiting for it.`);
+      this.#context.log?.(`${words} alia-box saw it ${((performance.now() - began) / 1000).toFixed(1)} s after the VM started, and stops waiting for it.`);
       return words;
     }
   }
@@ -1136,7 +1136,7 @@ export class TartBackend implements Backend {
     const answered = [...states.keys()].filter((host) => !silent.some(([name]) => name === host));
     const whys = [
       ...silent.map(([host, error]) => `${host} did not answer, so ${PRODUCT} cannot read which devices its iOS image offers: ${error.message}`),
-      ...(answered.length ? [`the iOS image ${image} on ${answered.join(" and ")} lists no iOS devices in its record, so there is none to boot. bb box doctor says why`] : []),
+      ...(answered.length ? [`the iOS image ${image} on ${answered.join(" and ")} lists no iOS devices in its record, so there is none to boot. VesnALIA box doctor says why`] : []),
     ];
     return [{ kind: IOS_IMAGE_KIND, why: `${whys.join("; ")}.`, passing: !answered.length }];
   }
@@ -1157,7 +1157,7 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * Declares macos-desktop's video, from bb-box-stream (060), while every Mac
+   * Declares macos-desktop's video, from alia-box-stream (060), while every Mac
    * that answered has it in its image's record, as the SSH host pool does from
    * every Mac's survey; and stops declaring it when one does not. The viewer
    * opens it by default only while the backend's video field is on; else it
@@ -1174,7 +1174,7 @@ export class TartBackend implements Backend {
     const answered = [...states.values()].filter((state): state is MacState => !(state instanceof Error));
     if (!answered.length) return;
     this.#videoKnown = true;
-    const video = answered.every((state) => state.records.get(image)?.tools?.["bb-box-stream"] !== undefined);
+    const video = answered.every((state) => state.records.get(image)?.tools?.["alia-box-stream"] !== undefined);
     const kind = this.#kinds[index]!;
     const others = kind.capabilities.displays.filter((display) => display.protocol !== "selkies");
     const displays = video ? [...others, this.#config.video ? MAC_VIDEO : { ...MAC_VIDEO, byChoice: true }] : others;
@@ -1184,8 +1184,8 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * A macOS desktop's video follows the Macs' image records, which bb-box
-   * reads only once a Mac answers, so before then, as just after bb-box
+   * A macOS desktop's video follows the Macs' image records, which alia-box
+   * reads only once a Mac answers, so before then, as just after alia-box
    * starts, its boxes keep the video they have, as the SSH host pool's Mac
    * boxes keep their features (047).
    */
@@ -1197,9 +1197,9 @@ export class TartBackend implements Backend {
 
   /**
    * Declares windows-arm64-desktop's video (060), while every Mac that
-   * answered has bb-box-stream.exe in its Windows image, as OpenH264 in its
+   * answered has alia-box-stream.exe in its Windows image, as OpenH264 in its
    * record says, for the keys and the clipboard, and its own build of
-   * bb-box-stream, which gives the video from QEMU (#865). Leaves the pointer
+   * alia-box-stream, which gives the video from QEMU (#865). Leaves the pointer
    * out of it while a person holds control where every record lists the
    * hardware cursor too, as on Proxmox. Opens as video: measured, it keeps
    * up with VNC on a LAN and is ahead on a slow link, for under 2% of a core
@@ -1222,7 +1222,7 @@ export class TartBackend implements Backend {
     const displays = video ? [...others, { ...WINDOWS_VIDEO, ...(cursor ? { cursor: "stream" as const } : {}) }] : others;
     if (JSON.stringify(displays) === JSON.stringify(kind.capabilities.displays)) return;
     this.#kinds[index] = { ...kind, capabilities: { ...kind.capabilities, displays } };
-    // Boxes made before, as just after bb-box restarted while the Mac's video was not ready, take it too.
+    // Boxes made before, as just after alia-box restarted while the Mac's video was not ready, take it too.
     this.#context.kindsChanged?.();
   }
 
@@ -1324,7 +1324,7 @@ export class TartBackend implements Backend {
     } else if (os === "windows" && !state.qemu.version) {
       why = `${host.name} has no QEMU on the PATH of ${host.user}'s SSH sessions, which Windows boxes need. Install QEMU there, with Homebrew or Nix`;
     } else if (os === "windows" && !state.qemu.image) {
-      why = `${host.name} has no Windows image ${image ?? ""} in ~/.bb-box/qemu/images. Prepare it there, or set the Windows image in ${PRODUCT}'s settings`;
+      why = `${host.name} has no Windows image ${image ?? ""} in ~/.alia-box/qemu/images. Prepare it there, or set the Windows image in ${PRODUCT}'s settings`;
     } else if (os === "macos" && macos.length + starting >= this.#config.vmsPerHost) {
       const names = macos.map((vm) => this.#vmWords(vm.name, state.owners.get(vm.name))).join(", ");
       why =
@@ -1562,7 +1562,7 @@ export class TartBackend implements Backend {
           if (placement.how === "warm") this.#context.logError("acquire", new Error(`Box ${box.name} could not use ${used} (${message(error)}).`));
           throw error;
         }
-        this.#context.logError("acquire", new Error(`Box ${box.name} could not use ${used} (${message(error)}), so bb-box clones a VM for it.`));
+        this.#context.logError("acquire", new Error(`Box ${box.name} could not use ${used} (${message(error)}), so alia-box clones a VM for it.`));
       } finally {
         this.#placing.delete(placement.vm);
       }
@@ -1586,7 +1586,7 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * Acquires a Windows box (046). A clone claims its VM, bb-box-<box ID>,
+   * Acquires a Windows box (046). A clone claims its VM, alia-box-<box ID>,
    * makes its overlay and ports, starts QEMU, and waits for SSH through the
    * Mac. A disk larger than the image's has C: extended over it then. Then
    * it waits for Windows' desktop, as a box is ready only once Cua can drive
@@ -1683,7 +1683,7 @@ export class TartBackend implements Backend {
           await step("ssh", () => this.#waitReady(host, vm, access, "windows", deadline, signal));
           // A restore leaves Windows' clock at the time it was saved.
           await step("clock", () => setClock(new SshTransport(ssh, access, "windows"), signal));
-          // A VM filled by an older bb-box has an older helper.
+          // A VM filled by an older alia-box has an older helper.
           this.#compileDisplay(vm, access);
         }
         // A VM at the image's disk has no disk in its config: its disk as QEMU reads it, so the box says its size (#916).
@@ -1698,7 +1698,7 @@ export class TartBackend implements Backend {
         if (owned) await this.#delete(host, vm, "windows", box.boxId, undefined, made?.ssh).catch((cause) => this.#context.logError("release after a failed acquire", cause));
         const retry = placement.how !== "clone" && attempt === 0 && !signal.aborted && Date.now() < deadline;
         if (!retry) throw error;
-        this.#context.logError("acquire", new Error(`Box ${box.name} could not use VM ${vm} (${message(error)}), so bb-box clones a VM for it.`));
+        this.#context.logError("acquire", new Error(`Box ${box.name} could not use VM ${vm} (${message(error)}), so alia-box clones a VM for it.`));
       } finally {
         this.#placing.delete(placement.vm);
       }
@@ -1714,7 +1714,7 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * The VM a restarted acquire made or held: bb-box-<box ID>, or a warm VM
+   * The VM a restarted acquire made or held: alia-box-<box ID>, or a warm VM
    * whose owner file names the box (it was held before the restart). A warm
    * VM still marked warm was not held, and the acquire starts over.
    */
@@ -1767,8 +1767,8 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * A macOS VM's access setup, which the box's enrolment runs as a BB machine and then finds done: run before, where the
-   * claim's enrolment would run it beside BB's installer, which slowed both. Best effort: the enrolment runs it if not.
+   * A macOS VM's access setup, which the box's enrolment runs as a VesnALIA machine and then finds done: run before, where the
+   * claim's enrolment would run it beside VesnALIA's installer, which slowed both. Best effort: the enrolment runs it if not.
    */
   async #accessReady(host: TartHost, address: string, vm: string, signal?: AbortSignal): Promise<void> {
     const { ssh } = await this.#keys();
@@ -1814,7 +1814,7 @@ export class TartBackend implements Backend {
     if (!host) return null;
     const result = await this.#run(host, encoderProbeScript(), { timeoutMs: (PROBE_SECONDS + 60) * 1000, signal });
     const probe = parseEncoderProbe(result.stdout);
-    if (probe.fps === null) this.#context.log?.(`bb-box could not measure the video encoder of ${mac}: ${probe.words ?? `exit code ${result.exitCode}`}.`);
+    if (probe.fps === null) this.#context.log?.(`alia-box could not measure the video encoder of ${mac}: ${probe.words ?? `exit code ${result.exitCode}`}.`);
     return probe.fps;
   }
 
@@ -2500,7 +2500,7 @@ export class TartBackend implements Backend {
         // An image box or build (049) is no box's: its build removes it.
         if (fields["image-box"] || fields["image-build"] || isHostOwner(fields)) continue;
         // A warm VM is no box's, and neither is one this instance is filling.
-        // One being filled when bb-box stopped is listed with no owner, so the
+        // One being filled when alia-box stopped is listed with no owner, so the
         // sweep releases it.
         const warm = warmState(fields);
         if (warm === "warm" || (warm === "filling" && this.#filling.has(vm))) continue;
@@ -2642,7 +2642,7 @@ export class TartBackend implements Backend {
    * saved under another macOS build, or another version of the engine that
    * saved it, Tart or QEMU, serves none, as its state may not restore; nor
    * does a macOS VM saved more than tart-warm-max-hours ago, or at a time
-   * bb-box did not note.
+   * alia-box did not note.
    */
   #servedBy(state: MacState, fields: Readonly<Record<string, string>>, size: MachineSize | null): string[] {
     const windows = fields.engine === "qemu";
@@ -2901,11 +2901,11 @@ export class TartBackend implements Backend {
       const ports = await this.#ports(host, guest);
       const access = this.#windows(mac, ports.ssh);
       const command = new SshTransport(ssh, access, "windows");
-      // Video where the kind declares it and this box has bb-box-stream.exe, for the keys and the clipboard: a box of an
+      // Video where the kind declares it and this box has alia-box-stream.exe, for the keys and the clipboard: a box of an
       // older build may not (060).
       const declared = (capabilities?.displays ?? []).some((display) => display.protocol === "selkies");
       const video = declared && (await this.#hasWindowsStream(this.#streamKey(guest), command));
-      // The video comes from QEMU's VNC server on the Mac, through the Mac's build of bb-box-stream (#865), where it is ready.
+      // The video comes from QEMU's VNC server on the Mac, through the Mac's build of alia-box-stream (#865), where it is ready.
       const fromMac = video && this.#qemuVideoReady.has(host.name);
       const displays = (capabilities?.displays ?? []).flatMap((display): Display[] => {
         if (display.protocol === "selkies") {
@@ -2921,7 +2921,7 @@ export class TartBackend implements Backend {
             },
           ];
         }
-        // QEMU types a person's keys by key on a US layout: a character it would type wrong goes to bb-box-stream.
+        // QEMU types a person's keys by key on a US layout: a character it would type wrong goes to alia-box-stream.
         const stream: OpenStream = (signal) => openRoute(ssh.commandRoute(access, WINDOWS_STREAM), signal);
         return [
           {
@@ -2937,7 +2937,7 @@ export class TartBackend implements Backend {
             // QEMU's VNC shows the pointer Windows draws once a mouse has moved: out while a person in control watches it.
             pointer: (shown, signal) => windowsPointer(command, shown, signal),
             pointerWhile: "rfb",
-            // Where the pointer is, from bb-box-stream.exe, which bb-box draws for people watching: the video from the Mac
+            // Where the pointer is, from alia-box-stream.exe, which alia-box draws for people watching: the video from the Mac
             // has no pointer in it, nor has QEMU's VNC, as Windows puts it on the GPU's cursor plane (#865).
             ...(video ? { followPointer: (onEvent: (event: BoxPointer) => void, signal: AbortSignal) => followWindowsPointer(stream, onEvent, signal) } : {}),
             minSize: MIN_DESKTOP,
@@ -2954,7 +2954,7 @@ export class TartBackend implements Backend {
     const os = guestOsOf(kind);
     const access = this.#vm(mac, address, os);
     const command = new SshTransport(ssh, access, os);
-    // Video where the kind declares it and this VM has its stream: bb-box-stream on macOS, Selkies' launcher on a Linux
+    // Video where the kind declares it and this VM has its stream: alia-box-stream on macOS, Selkies' launcher on a Linux
     // desktop (060). A box of an older build, or of a project's image, may not.
     const stream = os === "macos" ? (this.#options.macStream ?? MAC_STREAM) : (this.#options.selkiesLauncher ?? SELKIES_LAUNCHER);
     const video = desktopDisplays(capabilities?.displays ?? []).some((display) => display.protocol === "selkies") && (await this.#hasStream(guest.ref, command, stream));
@@ -3004,7 +3004,7 @@ export class TartBackend implements Backend {
 
   async doctor(signal?: AbortSignal): Promise<DoctorReport> {
     const checks: DoctorCheck[] = [];
-    const notes: string[] = [`This install's ID is ${this.#context.installId}. Its VMs' owner files on each Mac, in ~/.bb-box/tart/owners, name it.`];
+    const notes: string[] = [`This install's ID is ${this.#context.installId}. Its VMs' owner files on each Mac, in ~/.alia-box/tart/owners, name it.`];
     const push = (id: CheckId, name: string, status: DoctorCheck["status"], detail: string, fix: string | null = null) =>
       checks.push({ id, name, status, detail, fix });
 
@@ -3033,7 +3033,7 @@ export class TartBackend implements Backend {
       images?.pins("linux-desktop") ?? null,
       images?.pins("macos") ?? null,
       images?.pins("windows-arm64") ?? null,
-      images?.bbApp(signal) ?? null,
+      images?.aliaApp(signal) ?? null,
       this.#config.iosImage ? (images?.pins("ios") ?? null) : null,
       images?.chrome?.("arm64") ?? null,
     ]).catch(() => [null, null, null, null, null, null, null] as const);
@@ -3047,11 +3047,11 @@ export class TartBackend implements Backend {
         os === "windows"
           ? `prepare-windows-image.sh --iso <ISO> --iso-sha256 <its SHA-256> ${key} --name ${image} --replace`
           : os === "linux"
-            ? `prepare-linux-image.sh${kind === "linux-arm64-desktop-cpu" ? " --desktop" : ""} ${key} --name ${image} --bb-url <BB's server URL> --replace`
-            : `prepare-image.sh ${key} --name ${image} --bb-url <BB's server URL> --replace`;
+            ? `prepare-linux-image.sh${kind === "linux-arm64-desktop-cpu" ? " --desktop" : ""} ${key} --name ${image} --alia-url <VesnALIA's server URL> --replace`
+            : `prepare-image.sh ${key} --name ${image} --alia-url <VesnALIA's server URL> --replace`;
       const pins = os === "windows" ? windowsPins : os === "macos" ? macosPins : kind === "linux-arm64-desktop-cpu" ? desktopPins : linuxPins;
-      // A Windows image carries no build of BB's app: BB's installer puts it in as a box joins BB.
-      return judgeImage(record, { os, pins, bbApp: os === "windows" ? null : app, joins: this.#config.windowsEnrol, pinChrome: os === "linux" ? chromeArm : null }, `Build it again on ${on} with setup/tart/${command}.`);
+      // A Windows image carries no build of VesnALIA's app: VesnALIA's installer puts it in as a box joins VesnALIA.
+      return judgeImage(record, { os, pins, aliaApp: os === "windows" ? null : app, joins: this.#config.windowsEnrol, pinChrome: os === "linux" ? chromeArm : null }, `Build it again on ${on} with setup/tart/${command}.`);
     };
     const others = new Map<string, number>();
     const tart = this.#tart();
@@ -3182,7 +3182,7 @@ export class TartBackend implements Backend {
       return;
     }
     const macosBuild = macosImage ? (state.records.get(macosImage)?.build ?? null) : null;
-    const judged = judgeImage(state.records.get(image) ?? null, { os: "ios", pins, bbApp: app, macosBuild }, rebuild);
+    const judged = judgeImage(state.records.get(image) ?? null, { os: "ios", pins, aliaApp: app, macosBuild }, rebuild);
     push(id, name, judged.status, `${image}. ${judged.detail}`, judged.fix);
   }
 
@@ -3208,14 +3208,14 @@ export class TartBackend implements Backend {
     const imageId = `image.${host.name}.windows-arm64-desktop` as const;
     const imageName = `windows-arm64-desktop image on ${host.name}`;
     if (!qemu.image) {
-      push(imageId, imageName, "fail", `${host.name} has no Windows image ${image} in ~/.bb-box/qemu/images.`, `Prepare it on the Mac, or set the Windows image in ${PRODUCT}'s settings.`);
+      push(imageId, imageName, "fail", `${host.name} has no Windows image ${image} in ~/.alia-box/qemu/images.`, `Prepare it on the Mac, or set the Windows image in ${PRODUCT}'s settings.`);
     } else if (!qemu.image.readOnly) {
       push(
         imageId,
         imageName,
         "warn",
         `Build ${qemu.image.build} of ${image} is writable, and every box's disk is an overlay on it, which a change to it breaks.`,
-        `Make it read-only: chmod a-w ~/.bb-box/qemu/images/${image}/${qemu.image.build}/disk.qcow2`,
+        `Make it read-only: chmod a-w ~/.alia-box/qemu/images/${image}/${qemu.image.build}/disk.qcow2`,
       );
     } else {
       const judged = judge("windows-arm64-desktop", image, qemu.image.record, host.name);
@@ -3266,13 +3266,13 @@ export class TartBackend implements Backend {
     const name = `Windows video on ${host.name}`;
     const off = "Until then, Windows desktops show over VNC only.";
     if (video.status === "ready") {
-      push(id, name, "ok", `${PRODUCT}'s build of bb-box-stream, ${this.#videoBuild().build}, gives Windows desktops video from QEMU.`);
+      push(id, name, "ok", `${PRODUCT}'s build of alia-box-stream, ${this.#videoBuild().build}, gives Windows desktops video from QEMU.`);
     } else if (video.status === "no-tools") {
-      push(id, name, "warn", `${host.name} has no swiftc from Xcode's Command Line Tools, which ${PRODUCT} builds bb-box-stream with. ${off}`, "Install them on the Mac: xcode-select --install.");
+      push(id, name, "warn", `${host.name} has no swiftc from Xcode's Command Line Tools, which ${PRODUCT} builds alia-box-stream with. ${off}`, "Install them on the Mac: xcode-select --install.");
     } else if (video.status === "failed") {
-      push(id, name, "warn", `swiftc could not build bb-box-stream: ${video.why} ${off}`, "Update Xcode's Command Line Tools on the Mac, then run the checks again.");
+      push(id, name, "warn", `swiftc could not build alia-box-stream: ${video.why} ${off}`, "Update Xcode's Command Line Tools on the Mac, then run the checks again.");
     } else {
-      push(id, name, "warn", `${PRODUCT} is building bb-box-stream on ${host.name}, which takes about a minute. ${off}`, "Run the checks again in a minute.");
+      push(id, name, "warn", `${PRODUCT} is building alia-box-stream on ${host.name}, which takes about a minute. ${off}`, "Run the checks again in a minute.");
     }
   }
 
@@ -3401,7 +3401,7 @@ export class TartBackend implements Backend {
     return { ...state, qemu: parseQemuState(text), qemuVideo };
   }
 
-  /** bb-box-stream's source and its build's name, read once. */
+  /** alia-box-stream's source and its build's name, read once. */
   #videoBuild(): { readonly source: string; readonly build: string } {
     if (!this.#qemuVideo) {
       const source = this.#options.qemuVideoSource ?? qemuVideoSource();
@@ -3411,7 +3411,7 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * Builds bb-box-stream on the Mac for Windows video (#865), in the background, unless it builds there already. The
+   * Builds alia-box-stream on the Mac for Windows video (#865), in the background, unless it builds there already. The
    * Mac's state says how it went: the doctor shows why it failed, and Windows video waits for it.
    */
   #buildVideo(host: TartHost): void {
@@ -3420,13 +3420,13 @@ export class TartBackend implements Backend {
     const running = (async () => {
       const { ssh } = await this.#keys();
       const mac = new SshTransport(ssh, await this.#mac(host), "macos");
-      await this.#run(host, script('mkdir -p "$HOME/.bb-box/qemu/bin" && chmod 700 "$HOME/.bb-box/qemu" "$HOME/.bb-box/qemu/bin"'), { signal: this.#stopping.signal });
+      await this.#run(host, script('mkdir -p "$HOME/.alia-box/qemu/bin" && chmod 700 "$HOME/.alia-box/qemu" "$HOME/.alia-box/qemu/bin"'), { signal: this.#stopping.signal });
       await mac.writeFile(qemuVideoSourcePath(build), new TextEncoder().encode(source), { mode: "600", signal: this.#stopping.signal });
       await this.#run(host, qemuVideoBuildScript(build), { timeoutMs: 15 * 60_000, signal: this.#stopping.signal });
       this.#qemuVideoReady.add(host.name);
     })()
       .catch((error: unknown) => {
-        if (!this.#stopping.signal.aborted) this.#context.logError("build bb-box-stream for Windows video", error instanceof Error ? error : new Error(String(error)));
+        if (!this.#stopping.signal.aborted) this.#context.logError("build alia-box-stream for Windows video", error instanceof Error ? error : new Error(String(error)));
       })
       .finally(() => this.#qemuVideoBuilds.delete(host.name));
     this.#qemuVideoBuilds.set(host.name, running);
@@ -3470,7 +3470,7 @@ export class TartBackend implements Backend {
     if (!windows) this.#context.encoder?.vmStarting(host.name, this.#chips.get(host.name) ?? null);
     const result = await ssh.run(await this.#mac(host), script, { timeoutMs: (seconds + 30) * 1000, signal, maxOutputBytes: 1 << 16 }, "macos");
     const ranAgain = /^ran-again: (.*)$/m.exec(result.stdout)?.[1];
-    if (ranAgain) this.#context.log?.(`Tart's run of ${vm} on ${host.name} failed at once, as when another process has its disk open at that moment, so bb-box ran it again ${TART_RUN_AGAIN_SECONDS} s later: ${ranAgain}`);
+    if (ranAgain) this.#context.log?.(`Tart's run of ${vm} on ${host.name} failed at once, as when another process has its disk open at that moment, so alia-box ran it again ${TART_RUN_AGAIN_SECONDS} s later: ${ranAgain}`);
     if (result.exitCode === 0) return;
     const said = result.stderr.trim();
     if (!windows && result.exitCode === 3 && /exceeds the system limit/i.test(said)) {
@@ -3571,7 +3571,7 @@ export class TartBackend implements Backend {
    * A viewer's way to the VM's desktop: the run's VNC holder on the Mac,
    * started now if the run began before holders, through a bridge to its
    * socket, which only the Mac's host user can open. Tart's VNC server
-   * crashes the VM on a second connection in a run, so bb-box never connects
+   * crashes the VM on a second connection in a run, so alia-box never connects
    * to it but through the holder, which makes the run's only connection.
    */
   async #held(host: TartHost, mac: SshAccess, vm: string, ssh: Ssh, signal?: AbortSignal): Promise<DisplayOpened> {
@@ -3586,14 +3586,14 @@ export class TartBackend implements Backend {
           : `${host.name} could not start the desktop's stream for ${vm}: ${why}`,
       );
     }
-    const socket = `"$HOME"/.bb-box/tart/run/${quote(`${vm}.vnc`)}`;
+    const socket = `"$HOME"/.alia-box/tart/run/${quote(`${vm}.vnc`)}`;
     return { route: ssh.commandRoute(mac, `exec /usr/bin/python3 -c '${VNC_BRIDGE_PY}' ${socket}`), auth: { type: "none" } };
   }
 
   /**
    * Checks that the VM that answers at `address` is `vm` (identityScript). A
    * VM that keeps no name, as one made before names were kept or whose file
-   * was removed, is named only when the Mac's ARP table, just after bb-box
+   * was removed, is named only when the Mac's ARP table, just after alia-box
    * reached the address, gives the MAC address in the VM's config.
    */
   async #identify(host: TartHost, address: string, vm: string, os: GuestOs, signal?: AbortSignal, copyOf: string | null = null): Promise<boolean> {
@@ -3655,7 +3655,7 @@ export class TartBackend implements Backend {
     return `${guest.ref}:${this.#boxOf(guest) ?? ""}`;
   }
 
-  /** Whether a Windows box has bb-box-stream.exe, asked once a box: a box keeps its image's. False, not kept, when it cannot be asked. */
+  /** Whether a Windows box has alia-box-stream.exe, asked once a box: a box keeps its image's. False, not kept, when it cannot be asked. */
   async #hasWindowsStream(key: string, command: SshTransport): Promise<boolean> {
     const known = this.#windowsStreams.get(key);
     if (known !== undefined) return known;
@@ -3666,7 +3666,7 @@ export class TartBackend implements Backend {
   }
 
   /**
-   * Whether a VM has its video stream, `path`: bb-box-stream on macOS, Selkies' launcher on a Linux desktop. Asked once a VM:
+   * Whether a VM has its video stream, `path`: alia-box-stream on macOS, Selkies' launcher on a Linux desktop. Asked once a VM:
    * a box keeps its image's. False, not kept, when it cannot be asked.
    */
   async #hasStream(vm: string, command: SshTransport, path: string): Promise<boolean> {
@@ -3824,7 +3824,7 @@ export class TartBackend implements Backend {
     }
   }
 
-  /** Stops an image box and keeps it as bb-box-img-<image>-<build>, with its record beside it and an owner file that names its image. */
+  /** Stops an image box and keeps it as alia-box-img-<image>-<build>, with its record beside it and an owner file that names its image. */
   async #capture(box: ImageBox, from: ImageBuild, image: string, signal: AbortSignal): Promise<ImageBuild> {
     const { host, vm } = this.#imageRef(box.ref);
     const os = guestOsOf(from.kind);
@@ -3851,9 +3851,9 @@ export class TartBackend implements Backend {
     const { host, vm } = this.#imageRef(box.ref);
     const target = this.#imageRef(from.ref).vm.split("@")[0]!;
     if (image !== "standard") throw new Error("A Windows image has no project's images: their scripts are Linux's.");
-    const read = await box.command.run("Get-Content -Raw -LiteralPath 'C:\\bb-box\\image.json'", { timeoutMs: 30_000, signal, maxOutputBytes: 64 * 1024 });
+    const read = await box.command.run("Get-Content -Raw -LiteralPath 'C:\\alia-box\\image.json'", { timeoutMs: 30_000, signal, maxOutputBytes: 64 * 1024 });
     const record = read.exitCode === 0 ? recordFromJson(read.stdout.trim()) : null;
-    if (!record) throw new Error(`Image box ${vm} on ${host.name} has no image record in C:\\bb-box\\image.json.`);
+    if (!record) throw new Error(`Image box ${vm} on ${host.name} has no image record in C:\\alia-box\\image.json.`);
     const build = record.build.startsWith("build.") ? record.build : `build.${record.build}`;
     await this.#forget(host, vm, "windows", this.#imagePorts.get(vm) ?? null);
     this.#imagePorts.delete(vm);
@@ -3885,7 +3885,7 @@ export class TartBackend implements Backend {
 
   /** The base an image was prepared from, as its prepare script noted it beside it, or "". */
   async #baseOf(host: TartHost, image: string, signal?: AbortSignal): Promise<string> {
-    return (await this.#run(host, `exec /bin/sh -c ${quote(`sed -n 's/^from=//p' "$HOME/.bb-box/tart/images/${image}" 2>/dev/null | head -n 1`)}`, { signal })).stdout.trim();
+    return (await this.#run(host, `exec /bin/sh -c ${quote(`sed -n 's/^from=//p' "$HOME/.alia-box/tart/images/${image}" 2>/dev/null | head -n 1`)}`, { signal })).stdout.trim();
   }
 
   /** Removes an image box, a captured build or a refresh's build of this install's, and nothing else. */
@@ -3909,11 +3909,11 @@ export class TartBackend implements Backend {
 
   /**
    * A new build of a configured image by its prepare script, run on its Mac
-   * as the user bb-box logs in as, from a copy of `setup` there, under a name
+   * as the user alia-box logs in as, from a copy of `setup` there, under a name
    * of its own until it replaces the image. The image's user accepts
-   * bb-box's key, and a macOS image starts from the base the image did.
+   * alia-box's key, and a macOS image starts from the base the image did.
    */
-  async #buildStandard(current: ImageBuild, setup: string, options: { bbUrl: string | null; log: (line: string) => void; signal: AbortSignal }): Promise<ImageBuild> {
+  async #buildStandard(current: ImageBuild, setup: string, options: { aliaUrl: string | null; log: (line: string) => void; signal: AbortSignal }): Promise<ImageBuild> {
     const { host, vm: image } = this.#imageRef(current.ref);
     const os = guestOsOf(current.kind);
     // A Windows image is refreshed in a box of its current build (054): no prepare script runs for it.
@@ -3922,8 +3922,8 @@ export class TartBackend implements Backend {
     if (!key) throw new Error(`${PRODUCT} has no SSH public key for the image's user to accept.`);
     const stamp = Date.now().toString(36);
     const vm = `${VM_PREFIX}img-refresh-${stamp}`;
-    const dir = `.bb-box/tart/setup-${stamp}`;
-    // bb-box-stream's source is the pool Mac's (060).
+    const dir = `.alia-box/tart/setup-${stamp}`;
+    // alia-box-stream's source is the pool Mac's (060).
     const ios = current.kind === IOS_IMAGE_KIND;
     const macosImage = this.#config.kinds.macos.image ?? this.#config.kinds["macos-desktop"].image;
     if (ios && !macosImage) throw new Error(`The iOS image is built on the macOS image, and ${PRODUCT}'s Tart settings name none.`);
@@ -3948,7 +3948,7 @@ export class TartBackend implements Backend {
         "--key", key,
         ...(from ? ["--from", from] : []),
         "--name", vm,
-        ...(options.bbUrl ? ["--bb-url", options.bbUrl] : []),
+        ...(options.aliaUrl ? ["--alia-url", options.aliaUrl] : []),
       ];
       const prepare = `cd "$HOME/${dir}" 2>/dev/null || { mkdir -p "$HOME/${dir}" && tar -xzf "$HOME/${dir}.tgz" -C "$HOME/${dir}"; }; cd "$HOME/${dir}/tart"`;
       const started = await this.#run(host, detachedBuildScript(dir, prepare, args), { signal: options.signal });

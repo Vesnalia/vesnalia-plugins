@@ -11,7 +11,7 @@ async function call(method: string, input: unknown) {
 }
 const projects = rpcContract.projects.output.parse(await call("projects", null));
 const project = projects.find(p => p.sources.some(s => s.path === process.cwd()));
-assert(project, "This checkout must be a BB project");
+assert(project, "This checkout must be a VesnALIA project");
 const source = project.sources.find(s => s.path === process.cwd())!;
 const folder = resolve(".test-results/live-backlog");
 const original = { projectId: project.id, sourceId: project.selectedSourceId ?? source.id, folder: project.folder };

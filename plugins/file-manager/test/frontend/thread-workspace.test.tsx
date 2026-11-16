@@ -2,15 +2,15 @@
 //
 // §10.3 — the panel tab's one-click jump into the thread's own checkout.
 //
-// The rules this holds: only a surface bb named a thread for offers it; a
+// The rules this holds: only a surface VesnALIA named a thread for offers it; a
 // usable answer becomes a toolbar button that navigates through the ordinary
 // folder navigation; a "no" answer becomes a disabled overflow row that says
 // which "no" it is, and never a button; and a lookup that failed stays
-// clickable, because "bb did not answer" is not "there is nowhere to go".
+// clickable, because "alia did not answer" is not "there is nowhere to go".
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 
@@ -37,7 +37,7 @@ const { resetLastFolderStore, writeLastFolder } = await import("../../lib/last-f
 const threadAction = app.threadPanelActions[0]!;
 const newThreadAction = app.newThreadPanelActions[0]!;
 const ROOT = "/home/coder";
-const WORKTREE = `${ROOT}/work/bb-plugins`;
+const WORKTREE = `${ROOT}/work/alia-plugins`;
 
 class TestResizeObserver {
   observe(): void {}
@@ -233,14 +233,14 @@ describe("thread folder (§10.3)", () => {
   );
 
   it("keeps the button live when the lookup failed, and retries on click", async () => {
-    // "bb did not answer" is not "there is nowhere to go", so a transient
+    // "alia did not answer" is not "there is nowhere to go", so a transient
     // failure must not remove the control until a retry says otherwise.
     let attempt = 0;
     const slot = mountTab(
       baseRpc({
         threadWorkspace: () => {
           attempt += 1;
-          if (attempt === 1) throw new Error("io_error: bb is restarting");
+          if (attempt === 1) throw new Error("io_error: VesnALIA is restarting");
           return { path: WORKTREE, insideRoot: true, reason: null };
         },
       }),
@@ -260,7 +260,7 @@ describe("thread folder (§10.3)", () => {
     const slot = mountTab(
       baseRpc({
         threadWorkspace: () => {
-          throw new Error("io_error: bb is restarting");
+          throw new Error("io_error: VesnALIA is restarting");
         },
       }),
     );
@@ -271,7 +271,7 @@ describe("thread folder (§10.3)", () => {
     await waitFor(() => {
       expect(toasts.error).toHaveLength(1);
     });
-    expect(toasts.error[0]).toContain("bb is restarting");
+    expect(toasts.error[0]).toContain("alia is restarting");
     expect(currentPath(slot)).toBe(ROOT);
   });
 
@@ -281,7 +281,7 @@ describe("thread folder (§10.3)", () => {
       baseRpc({
         threadWorkspace: () => {
           attempt += 1;
-          if (attempt === 1) throw new Error("io_error: bb is restarting");
+          if (attempt === 1) throw new Error("io_error: VesnALIA is restarting");
           return { path: null, insideRoot: false, reason: "no_environment" };
         },
       }),
@@ -361,7 +361,7 @@ describe("opening in the thread's folder (§1.5)", () => {
     const slot = mountTab(
       withPreferenceOn({
         threadWorkspace: () => {
-          throw new Error("io_error: bb is restarting");
+          throw new Error("io_error: VesnALIA is restarting");
         },
       }),
     );

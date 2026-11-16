@@ -1,6 +1,6 @@
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const execFileAsync = promisify(execFile);
@@ -160,10 +160,10 @@ function friendlyAwsError(cause: unknown): string {
   return lines.at(-1) ?? "AWS request failed.";
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     accountId: {
       type: "string",
       label: "AWS account ID",
@@ -177,7 +177,7 @@ export default async function plugin(bb: BbPluginApi) {
     profile: {
       type: "string",
       label: "AWS CLI profile",
-      description: "Uses the existing local AWS profile. No access keys are stored in BB.",
+      description: "Uses the existing local AWS profile. No access keys are stored in VesnALIA.",
       default: "default",
       experimental_schema: z.string().trim().min(1),
     },
@@ -215,7 +215,7 @@ export default async function plugin(bb: BbPluginApi) {
     cacheMinutes: {
       type: "number",
       label: "Refresh interval (minutes)",
-      description: "AWS credit estimates update daily. BB reuses the last successful result inside this window.",
+      description: "AWS credit estimates update daily. VesnALIA reuses the last successful result inside this window.",
       default: 360,
       experimental_schema: z.number().min(15).max(1440),
     },
@@ -232,7 +232,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
   settings.onChange((next) => {
     config = next;
-    bb.realtime.publish(UI_PREFERENCES_CHANGED, {
+    alia.realtime.publish(UI_PREFERENCES_CHANGED, {
       sidebarDisplay: sidebarDisplay(),
       dailySpendPeriod: dailySpendPeriod(),
     });
@@ -428,13 +428,13 @@ export default async function plugin(bb: BbPluginApi) {
       warning: [allocationWarning, dailyCostWarning].filter(Boolean).join(" ") || null,
     };
 
-    await bb.storage.kv.set(CACHE_KEY, summary);
-    bb.realtime.publish(CREDITS_CHANGED, { fetchedAt: summary.fetchedAt });
+    await alia.storage.kv.set(CACHE_KEY, summary);
+    alia.realtime.publish(CREDITS_CHANGED, { fetchedAt: summary.fetchedAt });
     return summary;
   }
 
   async function getSummary(force: boolean): Promise<AwsCreditsSummary> {
-    const cachedRaw = await bb.storage.kv.get<unknown>(CACHE_KEY);
+    const cachedRaw = await alia.storage.kv.get<unknown>(CACHE_KEY);
     const cachedResult = summarySchema.safeParse(cachedRaw);
     const cached = cachedResult.success ? cachedResult.data : null;
     const maxAgeMs = Math.max(15, config.cacheMinutes) * 60_000;
@@ -449,7 +449,7 @@ export default async function plugin(bb: BbPluginApi) {
       return await fetchFreshSummary();
     } catch (cause) {
       const warning = friendlyAwsError(cause);
-      bb.log.warn(warning);
+      alia.log.warn(warning);
       if (cached !== null) {
         return { ...cached, stale: true, warning };
       }
@@ -475,7 +475,7 @@ export default async function plugin(bb: BbPluginApi) {
         },
       });
       child.on("error", (cause) => {
-        bb.log.warn(`Could not start AWS login: ${friendlyAwsError(cause)}`);
+        alia.log.warn(`Could not start AWS login: ${friendlyAwsError(cause)}`);
       });
       child.unref();
       return {
@@ -489,7 +489,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     credits_summary: ({ force }) => getSummary(force),
     ui_preferences: async () => ({
       sidebarDisplay: sidebarDisplay(),
@@ -500,9 +500,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb aws-activate-usage summary [--json]",
-    "  bb aws-activate-usage refresh [--json]",
-    "  bb aws-activate-usage login",
+    "  VesnALIA aws-activate-usage summary [--json]",
+    "  VesnALIA aws-activate-usage refresh [--json]",
+    "  VesnALIA aws-activate-usage login",
   ].join("\n");
 
   function summaryText(summary: AwsCreditsSummary): string {
@@ -525,13 +525,13 @@ export default async function plugin(bb: BbPluginApi) {
     ].filter(Boolean).join("\n");
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "aws-activate-usage",
     summary: "Show AWS Activate credit balance and usage",
     commands: [
-      { name: "summary", summary: "Show the cached or current credit summary", usage: "bb aws-activate-usage summary [--json]" },
-      { name: "refresh", summary: "Fetch fresh credit data from AWS", usage: "bb aws-activate-usage refresh [--json]" },
-      { name: "login", summary: "Open the official AWS reconnect flow", usage: "bb aws-activate-usage login" },
+      { name: "summary", summary: "Show the cached or current credit summary", usage: "alia aws-activate-usage summary [--json]" },
+      { name: "refresh", summary: "Fetch fresh credit data from AWS", usage: "alia aws-activate-usage refresh [--json]" },
+      { name: "login", summary: "Open the official AWS reconnect flow", usage: "alia aws-activate-usage login" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -558,7 +558,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

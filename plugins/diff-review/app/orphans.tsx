@@ -3,7 +3,7 @@
  * workspace gone, so the Reviews page does not list them. The page says how many there are and
  * deletes them, with all their comments, only after the user confirms. Nothing deletes them unasked.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 

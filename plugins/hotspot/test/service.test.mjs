@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createHotspot } from "../server.ts";
 import { startupDelay } from "../lib/sample.ts";
 import { LIVE, RUNNING_CHANGED, SAMPLED } from "../lib/signals.ts";
@@ -31,9 +31,9 @@ test("startupDelay waits out the rest of the interval after a recent sample", ()
 
 test("a restarted service does not sample while the last sample is younger than one interval", async () => {
   const sampler = recordingSampler();
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
-  await createHotspot(bb, { takeReading: sampler.takeReading });
-  createStore(bb.storage.database()).addSample(sample(Date.now() - 1_000));
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  await createHotspot(alia, { takeReading: sampler.takeReading });
+  createStore(alia.storage.database()).addSample(sample(Date.now() - 1_000));
   const service = harness.runService("sampler");
   await tick();
   assert.deepEqual(sampler.calls, []);
@@ -43,8 +43,8 @@ test("a restarted service does not sample while the last sample is younger than 
 
 test("a sample that finishes after the service stopped is not written", async () => {
   let release;
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
-  await createHotspot(bb, {
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  await createHotspot(alia, {
     takeReading: (at, options) =>
       new Promise((resolve) => (release = () => resolve({ live: sample(at), stored: options.store ? sample(at) : null }))),
   });
@@ -54,15 +54,15 @@ test("a sample that finishes after the service stopped is not written", async ()
   service.controller.abort();
   release();
   await service.done;
-  assert.equal(createStore(bb.storage.database()).latestAt(), null);
+  assert.equal(createStore(alia.storage.database()).latestAt(), null);
 });
 
 /** Loaded with a stored sample a second old, so the next stored one is a minute away. */
 async function loadWatched(cpu) {
   const sampler = recordingSampler(cpu);
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
-  await createHotspot(bb, { takeReading: sampler.takeReading, liveIntervalMs: 10, watchLeaseMs: 150 });
-  const store = createStore(bb.storage.database());
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  await createHotspot(alia, { takeReading: sampler.takeReading, liveIntervalMs: 10, watchLeaseMs: 150 });
+  const store = createStore(alia.storage.database());
   store.addSample(sample(Date.now() - 1_000));
   const service = harness.runService("sampler");
   const signals = (channel) => harness.inspection.realtimeSignals.filter((signal) => signal.channel === channel);
@@ -115,9 +115,9 @@ test("live readings stop when the lease lapses and start again on the next heart
 
 test("a due sample is stored once per interval while live readings run", async () => {
   const sampler = recordingSampler();
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
-  await createHotspot(bb, { takeReading: sampler.takeReading, liveIntervalMs: 10, watchLeaseMs: 1_000 });
-  const store = createStore(bb.storage.database());
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  await createHotspot(alia, { takeReading: sampler.takeReading, liveIntervalMs: 10, watchLeaseMs: 1_000 });
+  const store = createStore(alia.storage.database());
   await harness.callRpc("watch", null);
   const service = harness.runService("sampler");
   await tick(100);
@@ -162,9 +162,9 @@ test("setting the wall clock back an hour neither stalls live readings, stores a
 test("a shown thread starting or ending a turn is announced; other threads are not", async () => {
   const shown = { threadId: "thr_shownthread", cpu: 40, processes: 2, memBytes: null };
   const sampler = recordingSampler(50, [shown]);
-  const { bb, harness } = createFakePluginHost({ pluginId: "hotspot" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hotspot" });
   harness.sdk.stub("threads.get", async ({ threadId }) => ({ id: threadId, title: "Shown", titleFallback: null, status: "idle" }));
-  await createHotspot(bb, { takeReading: sampler.takeReading });
+  await createHotspot(alia, { takeReading: sampler.takeReading });
   await harness.runCli(["status"]);
   const thread = (id) => ({ thread: { id } });
   await harness.emitThreadEvent("thread.active", thread("thr_shownthread"));

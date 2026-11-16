@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { ICON_GHOST } from "./common";
 
 /** A grey shape where a word, a chip or an avatar will be; the caller gives its size and its corners. */
@@ -18,7 +18,7 @@ const times = (count: number) => Array.from({ length: count }, (_, index) => ind
  * reader. It fades in after a moment, so an answer that comes at once never flashes it.
  */
 function Loading({ label, className = "", children }: { label: string; className?: string; children: ReactNode }) {
-  // bb's delay-150 is a transition delay; animate-in reads its delay from this property.
+  // VesnALIA's delay-150 is a transition delay; animate-in reads its delay from this property.
   return (
     <div role="status" aria-label={label} data-skeleton className={`animate-in fade-in fill-mode-both duration-300 [--tw-animation-delay:150ms] ${className}`}>
       {children}

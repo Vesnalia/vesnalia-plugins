@@ -4,13 +4,13 @@ import { testStore } from "./test-store.test-support";
 const { gh } = vi.hoisted(() => ({ gh: vi.fn() }));
 vi.mock("./gh", async (original) => ({ ...await original<typeof import("./gh")>(), runGh: gh }));
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 async function prunedReview() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.saveGuide("pr-1", { title: "t", intent: "i", sections: [], unplacedFiles: [] });
   await store.setVerdict("pr-1", "APPROVE", "LGTM");
@@ -46,13 +46,13 @@ test("a pruned review whose diff GitHub refuses says why, without suggesting a r
 });
 
 test("old diffs are dropped on a daily schedule, not when the plugin starts", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n");
   await store.setLifecycle("pr-1", { prState: "MERGED", archivedAt: Date.now() - 40 * 86_400_000 });
   gh.mockImplementation(async () => ({ stdout: "", stderr: "", code: 1 }));
-  await plugin(bb);
+  await plugin(alia);
   const { controller, done } = harness.runService("review-state");
   await new Promise((resolve) => setTimeout(resolve, 20));
   controller.abort();

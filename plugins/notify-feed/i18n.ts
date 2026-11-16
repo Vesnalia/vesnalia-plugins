@@ -53,7 +53,7 @@ type Strings = {
   sending: string;
   sendFailed: (reason: string) => string;
   tooLong: (length: number, max: number) => string;
-  // The request failed without an answer from BB and the message is not in the thread's feed: it may still arrive.
+  // The request failed without an answer from VesnALIA and the message is not in the thread's feed: it may still arrive.
   maybeSent: string;
   noteUnknown: string;
   noteLabel: string;
@@ -63,11 +63,11 @@ type Strings = {
   noteText: (title: string, text: string) => string;
   closed: { archived: string; gone: string; none: string };
   instruction: (marker: string) => string;
-  // BB's own English system texts and what to show instead. Empty = leave BB's text untouched.
-  // A card shows a notice without BB's header line, so the text starts with the predicate ("failed."):
-  // English rewrites only that start into a full phrase and leaves the rest of BB's text as it is.
+  // VesnALIA's own English system texts and what to show instead. Empty = leave VesnALIA's text untouched.
+  // A card shows a notice without VesnALIA's header line, so the text starts with the predicate ("failed."):
+  // English rewrites only that start into a full phrase and leaves the rest of VesnALIA's text as it is.
   systemTexts: [RegExp, string][];
-  // Shown for a "completed" notice that carries no text of the thread's own. Empty = leave BB's word untouched.
+  // Shown for a "completed" notice that carries no text of the thread's own. Empty = leave VesnALIA's word untouched.
   bareCompleted: string;
 };
 
@@ -107,8 +107,8 @@ export const STRINGS: Record<Lang, Strings> = {
     sending: "Sending…",
     sendFailed: reason => `Not sent: ${reason}. Your text is kept, try again.`,
     tooLong: (length, max) => `The message is ${length.toLocaleString("en-US")} characters long; the limit is ${max.toLocaleString("en-US")}. Shorten it to send.`,
-    maybeSent: "It may have been sent: the connection dropped before BB answered. Check the conversation before you send it again.",
-    noteUnknown: "The message was sent. The note to the agent may not have been: the connection dropped before BB answered.",
+    maybeSent: "It may have been sent: the connection dropped before VesnALIA answered. Check the conversation before you send it again.",
+    noteUnknown: "The message was sent. The note to the agent may not have been: the connection dropped before VesnALIA answered.",
     noteLabel: "Tell the agent",
     noteHint: "The agent gets a note in its Notifications tab. The note starts its turn.",
     noteFailed: reason => `The message was sent, but the note to the agent was not: ${reason}.`,
@@ -161,8 +161,8 @@ export const STRINGS: Record<Lang, Strings> = {
     sending: "Отправка…",
     sendFailed: reason => `Не отправлено: ${reason}. Текст сохранён, попробуйте ещё раз.`,
     tooLong: (length, max) => `В сообщении ${length.toLocaleString("ru-RU")} знаков, предел — ${max.toLocaleString("ru-RU")}. Сократите его, чтобы отправить.`,
-    maybeSent: "Возможно, отправлено: связь оборвалась раньше ответа BB. Проверьте переписку, прежде чем повторять.",
-    noteUnknown: "Сообщение отправлено. Заметка ведущему, возможно, не ушла: связь оборвалась раньше ответа BB.",
+    maybeSent: "Возможно, отправлено: связь оборвалась раньше ответа ALIA. Проверьте переписку, прежде чем повторять.",
+    noteUnknown: "Сообщение отправлено. Заметка ведущему, возможно, не ушла: связь оборвалась раньше ответа ALIA.",
     noteLabel: "Сообщить ведущему",
     noteHint: "Ведущий получит заметку во вкладку «Уведомления». Заметка запускает его ход.",
     noteFailed: reason => `Сообщение отправлено, но заметка ведущему не ушла: ${reason}.`,
@@ -175,7 +175,7 @@ export const STRINGS: Record<Lang, Strings> = {
     instruction: marker => `Короткий служебный ответ на сообщение другого треда или системы начинай с ${marker}; итог для пользователя — без метки.`,
     systemTexts: [
       [/^\s*failed\.?(?=\s|$)/i, "Завершился с ошибкой."],
-      [/was interrupted because its host daemon restarted\./gi, "Прерван: перезапустилась служба BB на машине исполнителя."],
+      [/was interrupted because its host daemon restarted\./gi, "Прерван: перезапустилась служба ALIA на машине исполнителя."],
       [/Child thread updates:/g, "Завершили ход:"],
       [/\bcompleted\./gi, "завершил."],
       [/\bfailed\./gi, "упал."],

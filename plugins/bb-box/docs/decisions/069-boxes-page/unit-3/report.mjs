@@ -56,7 +56,7 @@ const docker = (enrolled) => boxes.filter((box) => box.backend === "docker" && b
 const containerMean = (result, list) => mean(list.map((box) => result.containers[box.container]).filter((value) => typeof value === "number"));
 
 console.log("## Hours\n");
-console.log("| Hour from the start | bb-box's server, % of one core (own, children, ssh) | Docker daemon % | Server RSS MiB (min to max) | Idle routed Docker box % | Idle Docker BB machine % |");
+console.log("| Hour from the start | alia-box's server, % of one core (own, children, ssh) | Docker daemon % | Server RSS MiB (min to max) | Idle routed Docker box % | Idle Docker VesnALIA machine % |");
 console.log("| --- | --- | --- | --- | --- | --- |");
 for (const row of hours) {
   console.log(`| ${row.hour} (${new Date(row.from).toISOString().slice(11, 16)}) | ${fixed(row.serverPercent)} (${fixed(row.ownPercent)}, ${fixed(row.childrenPercent)}, ${fixed(row.sshPercent)}) | ${fixed(row.dockerPercent)} | ${Math.round(Math.min(...row.rssMiB))} to ${Math.round(Math.max(...row.rssMiB))} | ${fixed(containerMean(row, docker(false)), 4)} | ${fixed(containerMean(row, docker(true)), 4)} |`);
@@ -70,7 +70,7 @@ const firstHour = execs.filter((exec) => exec.at >= start && exec.at < start + H
 const perBox = new Map();
 for (const exec of firstHour) perBox.set(exec.name, (perBox.get(exec.name) ?? 0) + 1);
 console.log("\n## Docker execs in hour 0, per container\n");
-for (const box of boxes.filter((each) => each.backend === "docker")) console.log(`- ${box.name} (${box.enrolled ? "BB machine" : "route"}): ${perBox.get(box.container) ?? 0}`);
+for (const box of boxes.filter((each) => each.backend === "docker")) console.log(`- ${box.name} (${box.enrolled ? "VesnALIA machine" : "route"}): ${perBox.get(box.container) ?? 0}`);
 
 console.log("\n## Freshness\n");
 const excluded = (box, at) => {
@@ -88,7 +88,7 @@ const excluded = (box, at) => {
     const onAt = events.filter((event) => event.event === to && event.at > (offAt ?? Infinity))[0]?.at;
     if (offAt && at >= offAt && at < (onAt ?? Infinity) + 3 * 60_000) return true;
   }
-  for (const restart of events.filter((event) => event.event === "bb-box restarted half way" || event.event.startsWith("bb-box installed again"))) {
+  for (const restart of events.filter((event) => event.event === "alia-box restarted half way" || event.event.startsWith("alia-box installed again"))) {
     if (at >= restart.at && at < restart.at + 3 * 60_000) return true;
   }
   return false;

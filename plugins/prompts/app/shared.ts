@@ -1,12 +1,12 @@
 // Types, formatting, and the realtime/fetch plumbing every surface shares.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  useBbContext,
+  useAliaContext,
   useComposer,
   useRealtime,
   useRpc,
   useSdk,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../lib/contract";
 import {
   EMPTY_QUEUE,
@@ -79,7 +79,7 @@ export function composerProjectIdFromScope(scope: {
  */
 export function useComposerProjectId(): string | null {
   const composer = useComposer();
-  const context = useBbContext();
+  const context = useAliaContext();
   return composerProjectIdFromScope(composer.scope) ?? context.projectId ?? null;
 }
 
@@ -137,9 +137,9 @@ export function usePromptSignal(
 }
 
 /**
- * Call `onChange` whenever bb's own message queue for `threadId` changes: a
- * message queued from the composer, edited or deleted in bb's queue card, or
- * delivered at a turn boundary. bb announces each of those as a
+ * Call `onChange` whenever VesnALIA's own message queue for `threadId` changes: a
+ * message queued from the composer, edited or deleted in VesnALIA's queue card, or
+ * delivered at a turn boundary. VesnALIA announces each of those as a
  * `queue-changed` thread change, so nothing here polls. Realtime events are
  * not replayed, so a reconnect counts as a change too.
  */

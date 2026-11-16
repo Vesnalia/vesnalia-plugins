@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { interdiff } from "../src/interdiff";
 import { patchReviewState } from "../lib/panel-state";
@@ -56,7 +56,7 @@ test("in full screen, the compare select's menu and Diff options open inside the
   await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
   fireEvent.click(slot.getByRole("button", { name: "Diff options" }));
   expect(root.contains(await slot.findByRole("switch", { name: "Wrap long lines" }))).toBe(true);
-  // Over the page, BB's toaster is under it: the workspace shows the toasts itself, Undo and all.
+  // Over the page, VesnALIA's toaster is under it: the workspace shows the toasts itself, Undo and all.
   const { toast } = await import("sonner");
   act(() => { toast.success("Marked 1 file viewed", { action: { label: "Undo", onClick: () => {} } }); });
   await waitFor(() => expect(root.contains(screen.getByText("Marked 1 file viewed"))).toBe(true));

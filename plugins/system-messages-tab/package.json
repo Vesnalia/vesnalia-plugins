@@ -1,21 +1,21 @@
 {
-  "name": "bb-plugin-system-messages-tab",
+  "name": "alia-plugin-system-messages-tab",
   "version": "0.2.0",
   "type": "module",
-  "description": "Moves [bb system] notices and messages from other threads out of \"Your messages\" into their own tab, dates every outline entry, and lists entries newest first.",
+  "description": "Moves [VesnALIA system] notices and messages from other threads out of \"Your messages\" into their own tab, dates every outline entry, and lists entries newest first.",
   "license": "MIT",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "chat",
     "navigation"
   ],
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.94"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94"
   },
-  "bb": {
+  "alia": {
     "name": "System Messages Tab",
-    "description": "Moves [bb system] notices and messages from other threads out of \"Your messages\" into their own tab, dates every outline entry, and lists entries newest first.",
+    "description": "Moves [VesnALIA system] notices and messages from other threads out of \"Your messages\" into their own tab, dates every outline entry, and lists entries newest first.",
     "branding": {
       "icon": "Bell"
     },
@@ -28,10 +28,9 @@
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build": "bb plugin build . && node scripts/strip-map-paths.mjs"
+    "build": "alia plugin build . && node scripts/strip-map-paths.mjs"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.94",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -42,11 +41,24 @@
     "typescript": "^5.7.0"
   },
   "author": "FlowGoCrazy",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/FlowGoCrazy/bb-plugin-system-messages-tab.git"
-  },
   "dependencies": {
     "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/system-messages-tab#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/system-messages-tab"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -23,14 +23,14 @@ project accounts from the general group. Disabled accounts, authentication error
 and actual provider limits still apply. The setting clears on the first observed exhausted
 provider window; it does not perform a provider reset.
 
-BB supplies a project-bound hub token automatically when it starts a routed
+VesnALIA supplies a project-bound hub token automatically when it starts a routed
 provider. Project identity comes from that token, not a caller-supplied project
 header. Sessions and active-account cursors are isolated by project. Changing
 project rules takes effect on the next request, including an existing session.
 After upgrading from a version without project-bound tokens, restart existing
 provider sessions to acquire project identity. Their old tokens remain unbound;
 the hub cannot infer a project from them. Newly started sessions bind automatically.
-Project names are only display labels; rules store stable BB project IDs.
+Project names are only display labels; rules store stable VesnALIA project IDs.
 Unavailable projects remain listed so their restrictions are not silently lost.
 
 ## CLI and external clients
@@ -38,9 +38,9 @@ Unavailable projects remain listed so their restrictions are not silently lost.
 Set account rules with synthetic IDs replaced by your actual IDs:
 
 ```sh
-bb pool account projects ACCOUNT_UUID '{"onlySelected":true,"rules":[{"projectId":"PROJECT_ID","role":"primary"}]}'
-bb pool account projects ACCOUNT_UUID off
-bb pool client add project-client --output NEW_PRIVATE_TOKEN_FILE --project PROJECT_ID
+alia pool account projects ACCOUNT_UUID '{"onlySelected":true,"rules":[{"projectId":"PROJECT_ID","role":"primary"}]}'
+alia pool account projects ACCOUNT_UUID off
+alia pool client add project-client --output NEW_PRIVATE_TOKEN_FILE --project PROJECT_ID
 ```
 
 Use the issued token with the normal [external-client setup](external-clients.md).
@@ -53,9 +53,9 @@ project tokens. Rotating a machine token rotates its project tokens with the sam
 Standalone `client-add` also accepts `--project PROJECT_ID`; standalone account
 imports accept the same `projects` field. Projects are operator-defined IDs there.
 
-Devin Local CLI uses the same hub rules. A BB ACP launcher must run the current
+Devin Local CLI uses the same hub rules. A VesnALIA ACP launcher must run the current
 `scripts/devin-pool.mjs`, which reads `OXI_DEVIN_POOL_TOKEN` and
-`OXI_DEVIN_POOL_URL` contributed by BB. If you installed a separate launcher copy,
+`OXI_DEVIN_POOL_URL` contributed by VesnALIA. If you installed a separate launcher copy,
 update that copy as well. The separate experimental Devin cloud-session API does
 not use these account routing rules.
 

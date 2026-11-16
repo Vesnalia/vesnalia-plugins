@@ -1,4 +1,4 @@
-import type { PluginSidebarPullRequest } from "@get-bb/plugin-sdk";
+import type { PluginSidebarPullRequest } from "@vesnalia/plugin-sdk";
 import type { SemanticStateTone } from "./attention-state.ts";
 
 export interface PullRequestPresentation {
@@ -24,7 +24,7 @@ export interface PullRequestPresentation {
 }
 
 /**
- * Turn BB's rolled-up PR state into one stable, compact sidebar treatment.
+ * Turn VesnALIA's rolled-up PR state into one stable, compact sidebar treatment.
  * Terminal states win first; attention then refines an open pull request.
  */
 export function pullRequestPresentation(

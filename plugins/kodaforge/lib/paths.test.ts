@@ -46,7 +46,7 @@ describe("relativeToRoot", () => {
 
 describe("resolveWithinRoot on a Windows root written with forward slashes", () => {
   it("resolves rather than reporting an escape", () => {
-    // BB reports whatever the host stored; a drive-letter root can arrive with
+    // VesnALIA reports whatever the host stored; a drive-letter root can arrive with
     // either separator, and the containment check is textual.
     expect(resolveWithinRoot("C:/Users/dev/app", "README.md")).toBe(
       "C:\\Users\\dev\\app\\README.md",

@@ -1,7 +1,7 @@
 // A card that lives in a file: the agent writes Iris markup to a workspace or thread storage file and
 // the card follows it, read again every few seconds while it shows. Pins that follow a file and the
 // ::iris{file="..."} message directive both draw through here.
-import { useRpc, type PluginMessageDirectiveProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginMessageDirectiveProps } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { cardFromFile } from "../core/pins";
 import type { RpcContract } from "../shared/rpc";
@@ -82,7 +82,7 @@ export function FileCardDirective({ attributes, message }: PluginMessageDirectiv
   return (
     <div ref={box} className="iris-file-card my-2 min-w-0" data-iris-file={file ?? ""}>
       {!file ? (
-        <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">An Iris file card needs a file, like ::iris{"{"}file="$BB_THREAD_STORAGE/status.iris"{"}"}</div>
+        <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">An Iris file card needs a file, like ::iris{"{"}file="$ALIA_THREAD_STORAGE/status.iris"{"}"}</div>
       ) : source ? (
         <IrisBlock source={source} streaming={false} threadId={message.threadId} mode="fence" stateKey={`${message.id}#iris-file#${shortHash(file)}`} />
       ) : (

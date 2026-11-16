@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./contract";
 import { hostContract } from "./host-contract";
 import type { PathProbe } from "./src/reveal";
@@ -28,16 +28,16 @@ import {
 
 export { rpcContract } from "./contract";
 
-export default async function plugin(bb: BbPluginApi): Promise<void> {
-  bb.log.info("loaded");
-  registerMaterialIconRoute(bb);
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
+  alia.log.info("loaded");
+  registerMaterialIconRoute(alia);
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const probe: PathProbe = (hostId, rootPath, relativePath) =>
     host.call("statPath", { rootPath, relativePath }, { hostId });
   const onThisComputer = async (rootId: string): Promise<boolean> => {
     const root = resolveRoot(rootId);
     if (root === undefined) throw new Error("File Explorer root expired. Choose the folder again.");
-    const config = await bb.sdk.system.config();
+    const config = await alia.sdk.system.config();
     return root.hostId === config.primaryHostId;
   };
 
@@ -49,7 +49,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
    */
   const hostFileStore = (hostId: string, rootPath: string): HostFileStore => ({
     read: async (absolutePath) => {
-      const result = await bb.sdk.files.read({ hostId, path: absolutePath, rootPath });
+      const result = await alia.sdk.files.read({ hostId, path: absolutePath, rootPath });
       return {
         content: result.content,
         contentEncoding: result.contentEncoding,
@@ -58,7 +58,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       };
     },
     write: async ({ absolutePath, content, expectedSha256 }) => {
-      const result = await bb.sdk.files.write({
+      const result = await alia.sdk.files.write({
         hostId,
         path: absolutePath,
         rootPath,
@@ -70,10 +70,10 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     },
   });
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     openByDefault: {
       type: "boolean",
-      label: "Show the pinned file explorer when BB opens",
+      label: "Show the pinned file explorer when VesnALIA opens",
       default: true,
     },
     confirmDelete: {
@@ -98,7 +98,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       type: "string",
       label: "Root folder for personal threads",
       description:
-        "Absolute path or ~/ path used only for BB personal threads. Project threads always show their project workspace.",
+        "Absolute path or ~/ path used only for VesnALIA personal threads. Project threads always show their project workspace.",
       default: "",
     },
     searchRoots: {
@@ -126,22 +126,22 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     const raw = typeof values.ignoredFolders === "string" ? values.ignoredFolders : "";
     return new Set(raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
   };
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listRootChoices: async (input) => ({
-      choices: await listRootChoices(bb, input, await getTreeRoot()),
+      choices: await listRootChoices(alia, input, await getTreeRoot()),
     }),
     resolveInRoot: async (input) =>
-      resolveInRoot(bb, input, getSearchRoots, probe, await getIgnoredDirs()),
+      resolveInRoot(alia, input, getSearchRoots, probe, await getIgnoredDirs()),
     searchFilesInRoot: async (input) =>
-      searchFilesInRoot(bb, input, await getIgnoredDirs()),
+      searchFilesInRoot(alia, input, await getIgnoredDirs()),
     workspaceForThread: async ({ threadId }) =>
-      workspaceForThread(bb, threadId, await getTreeRoot()),
+      workspaceForThread(alia, threadId, await getTreeRoot()),
     workspaceForProject: async ({ projectId }) =>
-      workspaceForProject(bb, projectId, await getTreeRoot()),
+      workspaceForProject(alia, projectId, await getTreeRoot()),
     resolveInWorkspace: async (input) => {
       const ignoredDirs = await getIgnoredDirs();
-      const result = await resolveInWorkspace(bb, input, getSearchRoots, probe, ignoredDirs);
-      bb.log.info(
+      const result = await resolveInWorkspace(alia, input, getSearchRoots, probe, ignoredDirs);
+      alia.log.info(
         `reveal ${JSON.stringify(input.path)} -> ${
           result.ok ? `${result.relativePath} (root ${result.root?.rootName ?? "thread"})` : result.message
         }`,
@@ -149,30 +149,30 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       return result;
     },
     clientLog: ({ message }) => {
-      bb.log.info(`client: ${message}`);
+      alia.log.info(`client: ${message}`);
       return { ok: true };
     },
     resolvePaths: async (input) => {
       const ignoredDirs = await getIgnoredDirs();
-      const result = await resolvePaths(bb, input, getSearchRoots, probe, ignoredDirs);
-      bb.log.info(
+      const result = await resolvePaths(alia, input, getSearchRoots, probe, ignoredDirs);
+      alia.log.info(
         `resolvePaths: ${input.paths.length} candidates -> ${result.known.length} known`,
       );
       return result;
     },
     searchFiles: async (input) => {
       const ignoredDirs = await getIgnoredDirs();
-      const result = await searchFiles(bb, input, getSearchRoots, ignoredDirs);
-      bb.log.info(
+      const result = await searchFiles(alia, input, getSearchRoots, ignoredDirs);
+      alia.log.info(
         `searchFiles ${JSON.stringify(input.query)} -> ${result.hits.length} hits`,
       );
       return result;
     },
     resolveFileAnchors: async (input) => {
       const ignoredDirs = await getIgnoredDirs();
-      const result = await resolveFileAnchors(bb, input, getSearchRoots, probe, ignoredDirs);
+      const result = await resolveFileAnchors(alia, input, getSearchRoots, probe, ignoredDirs);
       for (const fix of result.fixes) {
-        bb.log.info(`anchor fix ${JSON.stringify(fix.text)}: ${fix.href} -> ${fix.absolutePath}`);
+        alia.log.info(`anchor fix ${JSON.stringify(fix.text)}: ${fix.href} -> ${fix.absolutePath}`);
       }
       return result;
     },
@@ -187,17 +187,17 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       return copyTextToClipboard(input.text);
     },
     createFile: async (input) => {
-      const result = await createFile(bb, host, input);
+      const result = await createFile(alia, host, input);
       if (result.ok) invalidateListings(input.rootId);
       return result;
     },
     createFolder: async (input) => {
-      const result = await createFolder(bb, host, input);
+      const result = await createFolder(alia, host, input);
       if (result.ok) invalidateListings(input.rootId);
       return result;
     },
     deleteEntry: async (input) => {
-      const result = await deleteEntry(bb, host, input);
+      const result = await deleteEntry(alia, host, input);
       if (result.ok) invalidateListings(input.rootId);
       return result;
     },
@@ -226,18 +226,18 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       }
     },
     moveEntry: async (input) => {
-      const result = await moveEntry(bb, host, input);
+      const result = await moveEntry(alia, host, input);
       if (result.ok) invalidateListings(input.rootId);
       return result;
     },
     renameEntry: async (input) => {
-      const result = await renameEntry(bb, host, input);
+      const result = await renameEntry(alia, host, input);
       if (result.ok) invalidateListings(input.rootId);
       return result;
     },
     quickOpen: async ({ rootId, query, limit }) => {
       // Ask for more than shown: ignored hits are dropped after ranking.
-      const { hits } = await searchFilesInRoot(bb, { rootId, query, limit: Math.min(limit * 4, 200) }, await getIgnoredDirs());
+      const { hits } = await searchFilesInRoot(alia, { rootId, query, limit: Math.min(limit * 4, 200) }, await getIgnoredDirs());
       const root = resolveRoot(rootId);
       if (root === undefined || hits.length === 0) return { hits: hits.slice(0, limit) };
       const { ignored } = await host.call(
@@ -277,7 +277,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
         include: input.include,
         exclude: input.exclude,
       }, { hostId: root.hostId });
-      bb.log.info(
+      alia.log.info(
         `searchInFiles ${JSON.stringify(input.query)} -> ${result.matches.length} matches in ${result.filesWithMatches} files`,
       );
       return result;
@@ -294,7 +294,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
       );
       if (result.ok) {
         invalidateListings(input.rootId);
-        bb.log.info(
+        alia.log.info(
           `replaceInFiles ${JSON.stringify(input.query)} -> ${result.totalReplaced} replacements in ${result.files.length} files`,
         );
       }
@@ -302,7 +302,7 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

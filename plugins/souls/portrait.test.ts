@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { ACCESSORY, HEADWEAR, PORTRAIT_SIZE, SPECIES, accessoriesFor, drawPortrait, portraitRuns, resolveLook } from "./portrait.ts";
 import { soulPortrait, type Soul } from "./shared.ts";
 import plugin from "./server.ts";
@@ -92,9 +92,9 @@ test("every species, headwear and accessory draws a full, outlined portrait", ()
 });
 
 test("a created soul keeps the face its draft was previewed with", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   try {
-    await plugin(bb);
+    await plugin(alia);
     const preview = soulPortrait({ name: "Hazel", emoji: "🦉", look: null });
     const { soul } = (await harness.behavior.callRpc("souls_create", {
       draft: { name: "Hazel", emoji: "🦉" },

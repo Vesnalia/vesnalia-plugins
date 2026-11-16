@@ -1,15 +1,15 @@
-# Chat Tabs for BB
+# Chat Tabs for VesnALIA
 
-Chat Tabs adds VS Code-style pinned and preview chat tabs beneath BB's native
+Chat Tabs adds VS Code-style pinned and preview chat tabs beneath VesnALIA's native
 header. Switch chats, search recent conversations, or start a new chat in a
 selected project directly from the strip. An optional **Tabs** list of pinned tabs also
-appears on the **New chat** screen. The BB sidebar remains available.
+appears on the **New chat** screen. The VesnALIA sidebar remains available.
 
-![Project aliases and colored chat tabs in BB](docs/screenshots/chat-strip-desktop-en.png)
+![Project aliases and colored chat tabs in VesnALIA](docs/screenshots/chat-strip-desktop-en.png)
 
 ![Pinned tabs and independent favorites on New chat](docs/screenshots/new-chat-lists-en.png)
 
-The screenshots show real plugin components in running BB with browser-local demonstration data. See [screenshot provenance and the complete gallery](docs/screenshots/README.md).
+The screenshots show real plugin components in running VesnALIA with browser-local demonstration data. See [screenshot provenance and the complete gallery](docs/screenshots/README.md).
 
 ## Documentation
 
@@ -18,7 +18,7 @@ This README and the plugin overview are the English publication guides. Addition
 ## Highlights
 
 - **Independent workspaces.** Switch between Work, Home, Other, or your own sets. Each has its own pinned tabs, order, preview, and favorites. Selection belongs to the current window; matching workspaces synchronize across windows. Switching restores that window’s last active tab in the set, or its first tab; an empty set opens New chat. The previously viewed chat is never inserted into the new set.
-- **15 interface languages.** Follow the BB page or browser language, or select
+- **15 interface languages.** Follow the VesnALIA page or browser language, or select
   a language explicitly. User-authored chat titles and project names stay unchanged.
 
 - **Favorite chats.** Choose **Add to favorites** in a tab's context menu. Favorites appear in their own list on **New chat**, independently of pinned tabs, and remain saved when you close a tab or replace its preview. Use **Remove from favorites** in the same menu to remove one; archiving or deleting the chat also removes it.
@@ -30,7 +30,7 @@ This README and the plugin overview are the English publication guides. Addition
   pin it. Drag pinned tabs between projects in one shared horizontal sequence;
   the preview always remains last and is never draggable. Double-click a pinned
   tab title to rename it inline.
-- **Distinct input, activity, and unread signals.** When BB is waiting for a
+- **Distinct input, activity, and unread signals.** When VesnALIA is waiting for a
   question to be answered or a permission to be approved, a compact **?**
   marker replaces the working dot. Its tooltip explains the pending input;
   chat lists and pinned cards show the full **Needs input** status. This also works for nested chats.
@@ -44,11 +44,11 @@ This README and the plugin overview are the English publication guides. Addition
   unread subthreads keep their dots. Select a title to open that subthread as the
   normal preview tab. Keyboard navigation and separate touch expansion arrows
   are supported; archived branches are excluded.
-- **Create a chat from the strip.** A fixed plus outside the horizontal scroller opens BB's native composer with the prompt focused. Hover for 300 ms to see projects with tabs in the current workspace first, then other recently active projects, ordered by activity within each group. **More** reveals the next 15 on click or after another 300 ms of hover. Choosing a project preselects it in the composer.
+- **Create a chat from the strip.** A fixed plus outside the horizontal scroller opens VesnALIA's native composer with the prompt focused. Hover for 300 ms to see projects with tabs in the current workspace first, then other recently active projects, ordered by activity within each group. **More** reveals the next 15 on click or after another 300 ms of hover. Choosing a project preselects it in the composer.
 - **Try tab appearance locally.** The General/Appearance settings tabs offer a six-color palette and a searchable project alias/color manager with autocomplete, editing, and confirmed removal from the appearance list only. Strip titles can show `[alias] Title`; a tab's context menu overrides its inherited project color or restores inheritance. Appearance is shared across workspaces, without renaming native projects/chats or changing pins.
 - **Pinned and recent navigation menu.** Open it by click, a 300 ms mouse
   hover, or two quick Shift presses with no other key in between. Search chat titles and project names across
-  available BB chats, including older chats outside the last 100 visits. A project
+  available VesnALIA chats, including older chats outside the last 100 visits. A project
   name finds chats in that project; combine it with title words to narrow results,
   for example `Office login`. Enable **Include archived
   chats in search** to also find archived chats with struck-through titles and
@@ -62,11 +62,11 @@ This README and the plugin overview are the English publication guides. Addition
   chat from tabs, pins, and the home list. A disabled history tombstone remains
   with an Archived or Deleted label. Unarchiving makes that history item
   clickable again but intentionally does not restore its old pin or preview.
-- **Reopen closed tabs.** `Ctrl+Shift+T` / `⌘⇧T` restores the last explicitly closed tab in the current workspace, including from New chat. Repeated presses undo older closes in that window; up to 100 records survive reload in session storage. Original order/pin is retained; a restored preview is pinned if another preview is already open, so no chat is displaced. Archived/deleted and already reopened chats are skipped; failed writes remain retryable. Browser-reserved shortcuts can only work when the browser forwards the key event to BB.
-- **Keyboard commands.** The BB palette (`Ctrl+Shift+P` / `⌘⇧P`) lists Chat Tabs commands, and Settings → Keyboard can rebind any of them. Defaults: `Ctrl+Alt+1…8` / `⌘⌥1…8` select a tab and `9` the last one; `Ctrl+Alt+P` / `⌘⌥P` pins or unpins; `Ctrl+Alt+S` / `⌘⌥S` toggles a favorite; `Ctrl+Alt+W` / `⌘⌥W` switches to the next workspace; `F2` renames. Letter shortcuts follow the physical key, so they also work in Russian and other layouts. Parent chat, subthread tree, tab list, copy link, close others, and move left/right are palette-only until you bind them. On Windows, `Ctrl+Alt` doubles as AltGr, so rebind any default that collides with a character you type.
+- **Reopen closed tabs.** `Ctrl+Shift+T` / `⌘⇧T` restores the last explicitly closed tab in the current workspace, including from New chat. Repeated presses undo older closes in that window; up to 100 records survive reload in session storage. Original order/pin is retained; a restored preview is pinned if another preview is already open, so no chat is displaced. Archived/deleted and already reopened chats are skipped; failed writes remain retryable. Browser-reserved shortcuts can only work when the browser forwards the key event to VesnALIA.
+- **Keyboard commands.** The VesnALIA palette (`Ctrl+Shift+P` / `⌘⇧P`) lists Chat Tabs commands, and Settings → Keyboard can rebind any of them. Defaults: `Ctrl+Alt+1…8` / `⌘⌥1…8` select a tab and `9` the last one; `Ctrl+Alt+P` / `⌘⌥P` pins or unpins; `Ctrl+Alt+S` / `⌘⌥S` toggles a favorite; `Ctrl+Alt+W` / `⌘⌥W` switches to the next workspace; `F2` renames. Letter shortcuts follow the physical key, so they also work in Russian and other layouts. Parent chat, subthread tree, tab list, copy link, close others, and move left/right are palette-only until you bind them. On Windows, `Ctrl+Alt` doubles as AltGr, so rebind any default that collides with a character you type.
 - **Desktop and touch behavior.** Desktop supports drag and drop, horizontal
   mouse-wheel scrolling, a conditional top scrollbar, middle-click close,
-  `Ctrl+Tab` / `Ctrl+Shift+Tab`, and `Ctrl+W` / `⌘W` in BB Desktop. Touch
+  `Ctrl+Tab` / `Ctrl+Shift+Tab`, and `Ctrl+W` / `⌘W` in VesnALIA Desktop. Touch
   layouts keep a 44×44 target, native horizontal swipe, and explicit Close
   buttons instead of HTML drag and drop.
 - **Native-feeling actions.** The tab context menu offers Copy link, Mark as
@@ -75,9 +75,9 @@ This README and the plugin overview are the English publication guides. Addition
   that set, removing closes only that tab and preserves favorites. Neither action
   navigates or switches your current workspace. Links are absolute and retain a
   textarea fallback when the Clipboard API is unavailable.
-- **Theme-aware presentation.** The stylesheet uses BB semantic theme tokens
+- **Theme-aware presentation.** The stylesheet uses VesnALIA semantic theme tokens
   and `color-mix(in oklch)` rather than hard-coded UI colors. It follows light,
-  dark, and custom BB themes.
+  dark, and custom VesnALIA themes.
 
 ## Workspaces
 
@@ -127,11 +127,11 @@ open during a switch into an otherwise empty set; explicit navigation clears it.
 ## Settings
 
 All settings are available in **Settings → Installed plugins → Chat Tabs** or
-through `bb plugin config tabs set <key> <value>`. Hiding a surface preserves pins, preview, order, favorites, and visit history. Disabling workspaces temporarily changes which saved set is used without merging or deleting the other sets; see [settings and their consequences](docs/plugin-settings.md).
+through `alia plugin config tabs set <key> <value>`. Hiding a surface preserves pins, preview, order, favorites, and visit history. Disabling workspaces temporarily changes which saved set is used without merging or deleting the other sets; see [settings and their consequences](docs/plugin-settings.md).
 
 | Key                     | Default | Purpose                                                                                                                                                                                                                                                                          |
 | ----------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `language`              | `Auto`  | Follow the BB page/browser language, or choose one of 15 languages: Bahasa Indonesia, Deutsch, English, Español, Français, Italiano, Português (Brasil), Tiếng Việt, Türkçe, Русский, العربية, हिन्दी, 한국어, 中文（简体）, 日本語. Unsupported languages fall back to English. |
+| `language`              | `Auto`  | Follow the VesnALIA page/browser language, or choose one of 15 languages: Bahasa Indonesia, Deutsch, English, Español, Français, Italiano, Português (Brasil), Tiếng Việt, Türkçe, Русский, العربية, हिन्दी, 한국어, 中文（简体）, 日本語. Unsupported languages fall back to English. |
 | `searchArchivedChats`   | `false` | Include archived chats in title search. Results remain disabled with a struck-through title and Archived status; deleted chats stay excluded.                                                                                                                                    |
 | `enableWorkspaces`      | `true`  | Enable separate workspaces. Off uses Work (or the first remaining set); other sets and window preferences are retained.                                                                                                                                                          |
 | `showPinnedTabsList`    | `true`  | Show the Tabs list below the composer on the New chat screen. It contains pinned tabs in their manual order.                                                                                                                                                                     |
@@ -156,23 +156,23 @@ panel cannot mount.
 ## Design boundaries
 
 Workspace sets live in a single versioned JSON envelope in plugin-owned SQLite,
-created through `bb.storage.migrate`; shared history stays in `bb.storage.kv`.
+created through `alia.storage.migrate`; shared history stays in `alia.storage.kv`.
 This avoids KV's 256 KB-per-value limit for the full 20-workspace collection.
 Legacy `tabs.state.v1` and `tabs.closedThreads.v1` remain untouched as migration
 sources. Failed writes are retryable; damaged new storage is reported rather
-than overwritten with legacy data. Reload the BB window after restoring a backup.
+than overwritten with legacy data. Reload the VesnALIA window after restoring a backup.
 
 Every set operation explicitly addresses a workspace ID. Scoped realtime events
 carry the ID and a monotonic snapshot revision; catalog events never propagate a
 window's selection. Late RPCs and older notifications cannot replace a new visit's
-state. Sets are not derived from the BB sidebar and never replace it.
+state. Sets are not derived from the VesnALIA sidebar and never replace it.
 
-The implementation uses the public `homepageSection` API, `experimental_threadHeaderAction` for the workspace selector, `experimental_appOverlay` for the strip, `settingsSection`, and declarative `bb.settings.define`. The settings section saves validated patches through the
+The implementation uses the public `homepageSection` API, `experimental_threadHeaderAction` for the workspace selector, `experimental_appOverlay` for the strip, `settingsSection`, and declarative `alia.settings.define`. The settings section saves validated patches through the
 plugin RPC and `experimental_set`. A narrowly scoped CSS rule hides the redundant
 host-generated form only on the Chat Tabs detail page while the localized section
 is mounted; the native form returns if the section unmounts. This compatibility
-rule depends on the host detail layout and needs checking after BB upgrades. It does
-not modify BB core, replace sidebar slots, call `threads.tabs.update`, manually relocate host DOM, or use content scripts. The header control is host-rendered through its registered slot, not DOM injection.
+rule depends on the host detail layout and needs checking after VesnALIA upgrades. It does
+not modify VesnALIA core, replace sidebar slots, call `threads.tabs.update`, manually relocate host DOM, or use content scripts. The header control is host-rendered through its registered slot, not DOM injection.
 
 The tab strip's visual reservation, unlike the registered header action, is a deliberately scoped CSS hybrid:
 
@@ -184,7 +184,7 @@ The tab strip's visual reservation, unlike the registered header action, is a de
   overflows; touch layouts retain native horizontal swipe;
 - CSS anchors follow the main chat pane and sidebar without DOM mutation.
 
-If BB changes its internal layout, validate the visual integration manually.
+If VesnALIA changes its internal layout, validate the visual integration manually.
 The plugin state itself remains independent of that layout.
 
 ## Development
@@ -200,22 +200,22 @@ TypeScript (including tests), and Vitest. Use `npm run format` to apply formatti
 The development lint tools require Node.js 20.19+, 22.13+, or 24+; Node.js 24 is
 recommended. `components/ui/` retains its upstream formatting and is excluded
 from ESLint/Prettier, not from TypeScript or the public-SDK boundary test.
-Mandatory completion checks are documented in [AGENTS.md](AGENTS.md); BB loads
-the reminder from `.bb/AGENTS.md`.
+Mandatory completion checks are documented in [AGENTS.md](AGENTS.md); VesnALIA loads
+the reminder from `.vesnalia/AGENTS.md`.
 
-For a live development cycle in BB:
+For a live development cycle in VesnALIA:
 
 ```bash
-bb plugin dev
+alia plugin dev
 ```
 
 To install the local plugin after building it:
 
 ```bash
-bb plugin install .
+alia plugin install .
 ```
 
-Chat Tabs requires BB `0.43+` and Plugin SDK `0.4.97+`.
+Chat Tabs requires VesnALIA `0.43+` and Plugin SDK `0.4.97+`.
 
 See the [changelog](CHANGELOG.md) for version history.
 

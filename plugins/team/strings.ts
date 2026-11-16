@@ -91,19 +91,19 @@ const STRINGS: Record<Language, Strings> = {
     sectionName: "Team",
     projectNotResolved: {
       message: "no project specified: run from a project thread or add --project <id|name>",
-      hint: "List projects: bb project list",
+      hint: "List projects: VesnALIA project list",
     },
     projectNotFound: (name) => ({
       message: `project "${name}" not found`,
-      hint: "List projects: bb project list",
+      hint: "List projects: VesnALIA project list",
     }),
     projectSourceMissing: (name) =>
       `project "${name}" has no sources (checkout) on a connected machine`,
     pathOutsideWorkspace: (abs, ws) =>
       `path "${abs}" escapes the workspace ${ws}`,
     configMissing: (team, projectId) => ({
-      message: `team "${team}" has no config (.bb/teams/${team}.yaml): create it first`,
-      hint: `bb team init --team ${team} --project ${projectId} — or the Team panel`,
+      message: `team "${team}" has no config (.vesnalia/teams/${team}.yaml): create it first`,
+      hint: `alia team init --team ${team} --project ${projectId} — or the Team panel`,
     }),
     configParseFailed: (source, error) =>
       `${source}: parse error (${error})`,
@@ -122,34 +122,34 @@ const STRINGS: Record<Language, Strings> = {
     checkoutMissing: (projectId) => ({
       message:
         "the project has no checkout environment: set environment: default or env:<id>",
-      hint: `Project environments: bb environment list --project ${projectId}`,
+      hint: `Project environments: VesnALIA environment list --project ${projectId}`,
     }),
     environmentNotFound: (id, projectId) => ({
       message: `environment "${id}" not found in the project`,
-      hint: `Project environments: bb environment list --project ${projectId}`,
+      hint: `Project environments: VesnALIA environment list --project ${projectId}`,
     }),
     promptFileMissing: (role, file) =>
       `role "${role}": cannot read prompt file ${file}`,
     providerDisabled: (ids, avail, first) => ({
       message: `providers disabled: ${ids}`,
-      hint: `Enable: bb provider enable ${first} — or change the provider in the team config. Available now: ${avail}`,
+      hint: `Enable: VesnALIA provider enable ${first} — or change the provider in the team config. Available now: ${avail}`,
     }),
     providerUnknown: (ids, avail) => ({
       message: `unknown providers: ${ids}`,
-      hint: `Available: ${avail}. Model list: bb provider models`,
+      hint: `Available: ${avail}. Model list: VesnALIA provider models`,
     }),
     threadNotFound: (role, id) => `role "${role}": thread ${id} not found`,
     spawnFailed: (role: string, error: string) => ({
       message: `role "${role}": thread spawn failed — ${error}`,
-      hint: "Re-run bb team create: it skips finished roles and completes the rest.",
+      hint: "Re-run alia team create: it skips finished roles and completes the rest.",
     }),
     tellRoleNotFound: (role) => ({
       message: `role "${role}" has no team thread in this project`,
-      hint: "Roles with threads: bb team status. Spawn the team: bb team create",
+      hint: "Roles with threads: VesnALIA team status. Spawn the team: VesnALIA team create",
     }),
     tellMessageRequired: {
       message: "set the message: --message <text> or --message-file <path>",
-      hint: "Multi-line: bb team tell <role> --message-stdin <<'EOF' … EOF",
+      hint: "Multi-line: VesnALIA team tell <role> --message-stdin <<'EOF' … EOF",
     },
     tellFileReadFailed: (path) => `cannot read the message file "${path}"`,
     tellSent: (role, threadId) => `  ${role} — @thread:${threadId} — sent`,
@@ -166,7 +166,7 @@ const STRINGS: Record<Language, Strings> = {
       `role "${role}": thread ${id} belongs to another project`,
     threadArchived: (role, id) => ({
       message: `role "${role}": thread ${id} is archived`,
-      hint: `Unarchive it: bb thread unarchive ${id} — or drop threadId from the config so the role gets a fresh thread`,
+      hint: `Unarchive it: VesnALIA thread unarchive ${id} — or drop threadId from the config so the role gets a fresh thread`,
     }),
     leadStub: "<lead-not-created-yet>",
     roleStub: (name) => `<role-${name}-not-created-yet>`,
@@ -174,13 +174,13 @@ const STRINGS: Record<Language, Strings> = {
     initNext: (team, config) => [
       "Next:",
       `  1) edit ${config}: roles, providers, models (prompts sit next to it)`,
-      `  2) bb team doctor --team ${team} — check providers, environments, prompts`,
-      `  3) bb team create --team ${team} — spawn the team threads`,
-      `  versioning: the config stays out of git until bb team version on --team ${team}`,
+      `  2) VesnALIA team doctor --team ${team} — check providers, environments, prompts`,
+      `  3) VesnALIA team create --team ${team} — spawn the team threads`,
+      `  versioning: the config stays out of git until VesnALIA team version on --team ${team}`,
     ],
     scaffoldExists: (files) => ({
       message: `template already exists: ${files}`,
-      hint: "Overwrite: bb team init --force (edits in these files will be lost)",
+      hint: "Overwrite: VesnALIA team init --force (edits in these files will be lost)",
     }),
     planTitle: (source, project) =>
       `Team plan (config ${source}, project "${project}") — dry-run:`,
@@ -197,11 +197,11 @@ const STRINGS: Record<Language, Strings> = {
       `Team roster sent to the lead (@thread:${leadId}).`,
     statusTitle: (project) => `Project "${project}":`,
     statusThreads: "team threads:",
-    statusThreadsEmpty: "team threads: none (bb team create)",
-    statusNoConfig: (team) => `no config (bb team init --team ${team})`,
+    statusThreadsEmpty: "team threads: none (VesnALIA team create)",
+    statusNoConfig: (team) => `no config (VesnALIA team init --team ${team})`,
     teamHeader: (team, title, versioned) =>
       `Team "${team}"${title ? ` — ${title}` : ""}${versioned ? " [versioned]" : " [not versioned]"}:`,
-    noTeams: "No teams in this project yet. Create one: bb team init (or the Team panel)",
+    noTeams: "No teams in this project yet. Create one: VesnALIA team init (or the Team panel)",
     teamAmbiguous: (teams) => ({
       message: `the project has several teams: ${teams}`,
       hint: "Pick one with --team <name>",
@@ -209,12 +209,12 @@ const STRINGS: Record<Language, Strings> = {
     helpers: (count) => `${count} helper thread(s)`,
     projectByPathNotFound: (cwd) => ({
       message: `no project found for path "${cwd}"`,
-      hint: "cd into a project, or pass --project <id|name>. List projects: bb project list",
+      hint: "cd into a project, or pass --project <id|name>. List projects: VesnALIA project list",
     }),
     gitignoreNote: [
-      "note: the root .gitignore ignores the whole .bb/ directory, so team configs",
+      "note: the root .gitignore ignores the whole .vesnalia/ directory, so team configs",
       "cannot be versioned. To version teams, replace that line with:",
-      "  .bb/*   and   !.bb/teams/",
+      "  .vesnalia/*   and   !.alia/teams/",
     ],
     labels: {
       thread: "thread",
@@ -230,10 +230,10 @@ const STRINGS: Record<Language, Strings> = {
       disabledRole: " (disabled)",
     },
     rosterLines: {
-      header: (team, source) => `Team "${team}" was created by bb team create (config ${source}).`,
+      header: (team, source) => `Team "${team}" was created by VesnALIA team create (config ${source}).`,
       executors:
         "Executors are your child threads; they report to you by message:",
-      tell: 'Assign packages by role: bb team task add <role> "<title>" --note "<details>" --send',
+      tell: 'Assign packages by role: VesnALIA team task add <role> "<title>" --note "<details>" --send',
       notify:
         "You are woken on executor failures and blockers (parentNotifications: stuck).",
       next: "Next: wait for the user's task, decompose it, distribute the work packages.",
@@ -244,19 +244,19 @@ const STRINGS: Record<Language, Strings> = {
     sectionName: "Команда",
     projectNotResolved: {
       message: "не указан проект: запустите из треда проекта или добавьте --project <id|имя>",
-      hint: "Список проектов: bb project list",
+      hint: "Список проектов: VesnALIA project list",
     },
     projectNotFound: (name) => ({
       message: `проект "${name}" не найден`,
-      hint: "Список проектов: bb project list",
+      hint: "Список проектов: VesnALIA project list",
     }),
     projectSourceMissing: (name) =>
       `у проекта "${name}" нет источников (checkout) на подключённой машине`,
     pathOutsideWorkspace: (abs, ws) =>
       `путь "${abs}" выходит за границы воркспейса ${ws}`,
     configMissing: (team, projectId) => ({
-      message: `у команды "${team}" нет конфига (.bb/teams/${team}.yaml): сначала создайте его`,
-      hint: `bb team init --team ${team} --project ${projectId} — или панель Team`,
+      message: `у команды "${team}" нет конфига (.vesnalia/teams/${team}.yaml): сначала создайте его`,
+      hint: `alia team init --team ${team} --project ${projectId} — или панель Team`,
     }),
     configParseFailed: (source, error) => `${source}: ошибка разбора (${error})`,
     configInvalid: (source, issues) =>
@@ -273,33 +273,33 @@ const STRINGS: Record<Language, Strings> = {
     checkoutMissing: (projectId) => ({
       message:
         "у проекта нет checkout-окружения: укажите environment: default или env:<id>",
-      hint: `Окружения проекта: bb environment list --project ${projectId}`,
+      hint: `Окружения проекта: VesnALIA environment list --project ${projectId}`,
     }),
     environmentNotFound: (id, projectId) => ({
       message: `окружение "${id}" не найдено в проекте`,
-      hint: `Окружения проекта: bb environment list --project ${projectId}`,
+      hint: `Окружения проекта: VesnALIA environment list --project ${projectId}`,
     }),
     promptFileMissing: (role, file) => `роль "${role}": не читается промпт-файл ${file}`,
     providerDisabled: (ids, avail, first) => ({
       message: `провайдеры отключены: ${ids}`,
-      hint: `Включить: bb provider enable ${first} — или заменить provider в конфиге команды. Доступны сейчас: ${avail}`,
+      hint: `Включить: VesnALIA provider enable ${first} — или заменить provider в конфиге команды. Доступны сейчас: ${avail}`,
     }),
     providerUnknown: (ids, avail) => ({
       message: `неизвестные провайдеры: ${ids}`,
-      hint: `Доступны: ${avail}. Список моделей: bb provider models`,
+      hint: `Доступны: ${avail}. Список моделей: VesnALIA provider models`,
     }),
     threadNotFound: (role, id) => `роль "${role}": тред ${id} не найден`,
     spawnFailed: (role: string, error: string) => ({
       message: `роль "${role}": не удалось создать тред — ${error}`,
-      hint: "Повторите bb team create: готовые роли пропускаются, остальное дозасоздастся.",
+      hint: "Повторите VesnALIA team create: готовые роли пропускаются, остальное дозасоздастся.",
     }),
     tellRoleNotFound: (role) => ({
       message: `у роли "${role}" нет треда команды в этом проекте`,
-      hint: "Роли с тредами: bb team status. Создать команду: bb team create",
+      hint: "Роли с тредами: VesnALIA team status. Создать команду: VesnALIA team create",
     }),
     tellMessageRequired: {
       message: "укажите сообщение: --message <текст> или --message-file <путь>",
-      hint: "Многострочно: bb team tell <роль> --message-stdin <<'EOF' … EOF",
+      hint: "Многострочно: VesnALIA team tell <роль> --message-stdin <<'EOF' … EOF",
     },
     tellFileReadFailed: (path) => `не читается файл сообщения "${path}"`,
     tellSent: (role, threadId) => `  ${role} — @thread:${threadId} — отправлено`,
@@ -316,7 +316,7 @@ const STRINGS: Record<Language, Strings> = {
       `роль "${role}": тред ${id} принадлежит другому проекту`,
     threadArchived: (role, id) => ({
       message: `роль "${role}": тред ${id} архивирован`,
-      hint: `Разархивируйте: bb thread unarchive ${id} — или уберите threadId из конфига, тогда роль получит новый тред`,
+      hint: `Разархивируйте: VesnALIA thread unarchive ${id} — или уберите threadId из конфига, тогда роль получит новый тред`,
     }),
     leadStub: "<lead-ещё-не-создан>",
     roleStub: (name) => `<роль-${name}-ещё-не-создана>`,
@@ -324,13 +324,13 @@ const STRINGS: Record<Language, Strings> = {
     initNext: (team, config) => [
       "Дальше:",
       `  1) отредактируйте ${config}: роли, провайдеры, модели (промпты лежат рядом)`,
-      `  2) bb team doctor --team ${team} — проверить провайдеры, окружения, промпты`,
-      `  3) bb team create --team ${team} — поднять треды команды`,
-      `  версионирование: конфиг не попадает в git, пока не включите bb team version on --team ${team}`,
+      `  2) VesnALIA team doctor --team ${team} — проверить провайдеры, окружения, промпты`,
+      `  3) VesnALIA team create --team ${team} — поднять треды команды`,
+      `  версионирование: конфиг не попадает в git, пока не включите VesnALIA team version on --team ${team}`,
     ],
     scaffoldExists: (files) => ({
       message: `шаблон уже существует: ${files}`,
-      hint: "Перезаписать: bb team init --force (правки в файлах будут потеряны)",
+      hint: "Перезаписать: VesnALIA team init --force (правки в файлах будут потеряны)",
     }),
     planTitle: (source, project) =>
       `План команды (конфиг ${source}, проект "${project}") — dry-run:`,
@@ -346,11 +346,11 @@ const STRINGS: Record<Language, Strings> = {
     rosterSent: (leadId) => `Руководителю (@thread:${leadId}) отправлен состав команды.`,
     statusTitle: (project) => `Проект "${project}":`,
     statusThreads: "треды команды:",
-    statusThreadsEmpty: "треды команды: не созданы (bb team create)",
-    statusNoConfig: (team) => `конфига нет (bb team init --team ${team})`,
+    statusThreadsEmpty: "треды команды: не созданы (VesnALIA team create)",
+    statusNoConfig: (team) => `конфига нет (VesnALIA team init --team ${team})`,
     teamHeader: (team, title, versioned) =>
       `Команда "${team}"${title ? ` — ${title}` : ""}${versioned ? " [в git]" : " [не в git]"}:`,
-    noTeams: "В проекте ещё нет команд. Создать: bb team init (или панель Team)",
+    noTeams: "В проекте ещё нет команд. Создать: VesnALIA team init (или панель Team)",
     teamAmbiguous: (teams) => ({
       message: `в проекте несколько команд: ${teams}`,
       hint: "Укажите одну: --team <имя>",
@@ -358,12 +358,12 @@ const STRINGS: Record<Language, Strings> = {
     helpers: (count) => `тредов-помощников: ${count}`,
     projectByPathNotFound: (cwd) => ({
       message: `по пути "${cwd}" не найден проект`,
-      hint: "перейдите в каталог проекта или укажите --project <id|имя>. Список: bb project list",
+      hint: "перейдите в каталог проекта или укажите --project <id|имя>. Список: VesnALIA project list",
     }),
     gitignoreNote: [
-      "замечание: корневой .gitignore игнорирует весь каталог .bb/, поэтому конфиги",
+      "замечание: корневой .gitignore игнорирует весь каталог .vesnalia/, поэтому конфиги",
       "команд нельзя версионировать. Чтобы версионировать, замените эту строку на:",
-      "  .bb/*   и   !.bb/teams/",
+      "  .vesnalia/*   и   !.alia/teams/",
     ],
     labels: {
       thread: "тред",
@@ -379,9 +379,9 @@ const STRINGS: Record<Language, Strings> = {
       disabledRole: " (выключена)",
     },
     rosterLines: {
-      header: (team, source) => `Команда "${team}" создана командой bb team create (конфиг ${source}).`,
+      header: (team, source) => `Команда "${team}" создана командой VesnALIA team create (конфиг ${source}).`,
       executors: "Исполнители — твои дочерние треды, отчёты приходят тебе сообщениями:",
-      tell: 'Пакеты выдавай по роли: bb team task add <роль> "<название>" --note "<детали>" --send',
+      tell: 'Пакеты выдавай по роли: VesnALIA team task add <роль> "<название>" --note "<детали>" --send',
       notify:
         "Уведомления приходят при сбоях и блокировках исполнителей (parentNotifications: stuck).",
       next: "Дальше: жди постановку от пользователя, декомпозируй и распределяй пакеты.",

@@ -1,4 +1,4 @@
-// The grid's "paper": fixed Excel-like colors that do not follow bb's theme.
+// The grid's "paper": fixed Excel-like colors that do not follow VesnALIA's theme.
 // Workbooks set their fills and fonts assuming white cells, so the cell area
 // stays light in dark mode too; only the chrome around it uses theme tokens.
 

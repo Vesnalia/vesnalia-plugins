@@ -4,7 +4,7 @@ import test from "node:test";
 import ts from "typescript";
 import * as recapHelpers from "../src/recap.ts";
 
-// Exercise the production hook's async RPC flow without requiring a BB host or DOM.
+// Exercise the production hook's async RPC flow without requiring a VesnALIA host or DOM.
 // Hook stubs keep state between renders and expose the realtime subscription.
 function mountRecapHook(call: (method: string) => Promise<unknown>) {
   const source = readFileSync(new URL("../src/app.tsx", import.meta.url), "utf8");

@@ -1,7 +1,7 @@
 # Aura
 
 Personal PNG/JPG and animated GIF backgrounds, Capy's animated dithering effect, six saved
-slots, and an optional GitHub activity overview for BB. Open **Settings → Aura**,
+slots, and an optional GitHub activity overview for VesnALIA. Open **Settings → Aura**,
 or **+ → Actions → Aura** in a thread panel.
 
 ## Activity overview
@@ -15,7 +15,7 @@ remain scrollable. On phones the native composer stays pinned to the bottom of
 the screen, with recent threads scrolling above it and the overview below the
 composer. The overview is part of AURA, with no extra plugin required.
 
-The BB server needs an authenticated [GitHub CLI](https://cli.github.com/): run
+The VesnALIA server needs an authenticated [GitHub CLI](https://cli.github.com/): run
 `gh auth login` directly on that server if necessary. AURA invokes `gh api` against
 GitHub; credentials stay in the CLI and are never sent to the browser. The
 overview makes no activity requests while disabled. Results are cached for five
@@ -57,7 +57,7 @@ In **Settings → Aura**, use **Half wallpaper on New thread**:
 
 Select **Apply background** to save the setting.
 
-- **Top bar background** is off by default, so BB's top bar stays clean and the
+- **Top bar background** is off by default, so VesnALIA's top bar stays clean and the
   wallpaper starts below it. Turn it on to continue the wallpaper behind the
   top bar. This preference is global and survives slot switches and reset.
 
@@ -85,26 +85,26 @@ Select **Apply background** to save the setting.
   **Reset to default** restores the noise effect while keeping your saved slots
   and global scope/enabled preferences.
 
-Settings and slots are shared across this BB server and its remote clients.
+Settings and slots are shared across this VesnALIA server and its remote clients.
 The current window updates immediately; other windows refresh on focus or within
 15 seconds. Images stay in plugin-owned SQLite and are served through a
-BB-authenticated image route. Images are not sent to Capy or included in prompts.
+ALIA-authenticated image route. Images are not sent to Capy or included in prompts.
 
 ## Install
 
-Requires BB 0.40+ and SDK 0.4.21+. From the workspace root:
+Requires VesnALIA 0.40+ and SDK 0.4.21+. From the workspace root:
 
 ```sh
 npm install
-npm run check --workspace bb-plugin-aura
-bb plugin install ./plugins/aura --yes
-bb plugin reload aura
+npm run check --workspace alia-plugin-aura
+alia plugin install ./plugins/aura --yes
+alia plugin reload aura
 ```
 
 The published background release can also be installed with:
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.2.6 \
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.2.6 \
   --subdirectory plugins/aura --tag-prefix aura/
 ```
 
@@ -117,16 +117,16 @@ and the pattern, motion, and dither choices.
 ## CLI
 
 ```sh
-bb aura status --json
-bb aura slots
-bb aura use 1
-bb aura new-thread-only on
-bb aura new-thread-only off
-bb aura overview on
-bb aura overview off
-bb aura enable
-bb aura disable
-bb aura reset
+alia aura status --json
+alia aura slots
+alia aura use 1
+alia aura new-thread-only on
+alia aura new-thread-only off
+alia aura overview on
+alia aura overview off
+alia aura enable
+alia aura disable
+alia aura reset
 ```
 
 Use the settings UI to upload and save slots. CLI output contains metadata,
@@ -141,7 +141,7 @@ Wide Markdown tables get an opaque backing across their entire width, including
 where they extend beyond the normal reading column.
 Half-wallpaper mode applies only to the New thread screen.
 On screens 768px and wider the New thread composer stays centered, with the
-optional overview below it. Below that breakpoint Aura leaves BB's compact
+optional overview below it. Below that breakpoint Aura leaves VesnALIA's compact
 layout untouched: the composer stays pinned to the bottom of the screen for
 one-thumb reach and the Recent list scrolls above it. On phones the Recent list
 sits in its own theme-colored card below the wallpaper, with a quiet heading
@@ -154,17 +154,17 @@ Aura's enable/scope settings; composer centering stays independent of them.
 The shader and fade masks come from [Capy](https://capy.ai/new). Source URLs and
 the Paper Shaders Apache-2.0 license are recorded in
 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Wallpaper requests stay local;
-the optional overview requests GitHub activity from the BB server.
+the optional overview requests GitHub activity from the VesnALIA server.
 
-Aura decorates BB's `root-compose-main-panel` and `thread-detail-timeline-panel`
-DOM containers. Recheck these host names when upgrading BB. Canvas/GL resources,
+Aura decorates VesnALIA's `root-compose-main-panel` and `thread-detail-timeline-panel`
+DOM containers. Recheck these host names when upgrading VesnALIA. Canvas/GL resources,
 observers and listeners are disposed when disabling or reloading. Noise and photo animation
 run at the chosen FPS and pause off-screen, when hidden, and for reduced motion.
 GIF frames keep their own timing and are decoded with WebCodecs' `ImageDecoder`;
 without it, the shader shows the first frame. The image/gradient remains if WebGL is unavailable.
 
 ```sh
-npm run check --workspace bb-plugin-aura
+npm run check --workspace alia-plugin-aura
 ```
 
 Unit tests cover atomic apply/rejection, six-slot persistence and replacement,
@@ -176,4 +176,4 @@ Activity tests cover UTC date ranges, gaps/ties/streaks, actual response parsing
 auth/source failures, scoped queries, discovery bounds, cache expiry/coalescing,
 late responses, retry and disabled/empty/unavailable states. The component tests
 use the SDK's isolated slot harness; installed-host screenshots require a
-signed-in BB browser session.
+signed-in VesnALIA browser session.

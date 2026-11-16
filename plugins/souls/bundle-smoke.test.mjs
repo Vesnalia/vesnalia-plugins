@@ -1,13 +1,13 @@
 // Run with npm run test:bundle. Source tests cannot catch dependencies whose
-// internal requires survive BB's bundler and fail in the deployed artifact.
+// internal requires survive VesnALIA's bundler and fail in the deployed artifact.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 test("the built server loads and converts TOML, Markdown and JSONC without unresolved runtime dependencies", async () => {
   const { default: plugin } = await import("./dist/server.js");
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls" });
+  await plugin(alia);
   try {
     for (const source of [
       'name = "Reviewer"\ndeveloper_instructions = "Be precise."',

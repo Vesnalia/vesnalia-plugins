@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { makeThreadMoves } from "./thread-move";
 import { z } from "zod";
 async function setup({
@@ -20,7 +20,7 @@ async function setup({
     environmentId: "e1",
     status,
   });
-  const files = new Set(["/work/.bb/chats/t1"]);
+  const files = new Set(["/work/.vesnalia/chats/t1"]);
   const sent: string[] = [];
   let fail = failFiles;
   const h = createFakePluginHost({
@@ -70,7 +70,7 @@ async function setup({
       },
     },
   });
-  h.bb.storage.migrate(h.bb.storage.database(), [
+  h.alia.storage.migrate(h.alia.storage.database(), [
     "CREATE TABLE thread_moves (threadId TEXT PRIMARY KEY, data TEXT NOT NULL)",
   ]);
   const filed: (string | null)[] = [];
@@ -107,7 +107,7 @@ async function setup({
     recover: () => {
       fail = false;
     },
-    moves: makeThreadMoves(h.bb, options),
+    moves: makeThreadMoves(h.alia, options),
   };
 }
 const input = { threadId: "t1", projectId: "p1", folderId: "f1", hostId: "h1" };
@@ -117,7 +117,7 @@ describe("native chat relocation", () => {
     try {
       await x.moves.move(input);
       expect(x.current()).toMatchObject({ id: "t1", environmentId: "e2" });
-      expect([...x.files]).toEqual(["/work/section/.bb/chats/t1"]);
+      expect([...x.files]).toEqual(["/work/section/.vesnalia/chats/t1"]);
       expect(x.moves.blocked("t1")).toBe(false);
     } finally {
       await x.h.harness.lifecycle.dispose();
@@ -130,7 +130,7 @@ describe("native chat relocation", () => {
       expect(result).toMatchObject({ path: "/work/section", asked: true });
       // Nothing moved yet: the chat still works in the old folder.
       expect(x.current().environmentId).toBe("e1");
-      expect([...x.files]).toEqual(["/work/.bb/chats/t1"]);
+      expect([...x.files]).toEqual(["/work/.vesnalia/chats/t1"]);
       // Nothing has moved, so the chat is not locked out of its own turns.
       expect(x.moves.blocked("t1")).toBe(false);
       expect(x.moves.any()).toBe(true);
@@ -146,7 +146,7 @@ describe("native chat relocation", () => {
       // The agent obeys: the storage follows and the barrier lifts.
       x.agentSwitchesDirectory();
       expect(await x.moves.finish("t1")).toBe("moved");
-      expect([...x.files]).toEqual(["/work/section/.bb/chats/t1"]);
+      expect([...x.files]).toEqual(["/work/section/.vesnalia/chats/t1"]);
       expect(x.moves.any()).toBe(false);
     } finally {
       await x.h.harness.lifecycle.dispose();
@@ -174,7 +174,7 @@ describe("native chat relocation", () => {
       x.agentAnswersWithoutSwitching();
       expect(await x.moves.finish("t1")).toBe("kept");
       expect(x.filed).toEqual(["f1"]);
-      expect([...x.files]).toEqual(["/work/.bb/chats/t1"]);
+      expect([...x.files]).toEqual(["/work/.vesnalia/chats/t1"]);
       expect(x.moves.any()).toBe(false);
       expect(x.moves.blocked("t1")).toBe(false);
     } finally {
@@ -187,10 +187,10 @@ describe("native chat relocation", () => {
       await expect(x.moves.move(input)).rejects.toThrow("Disk unavailable");
       expect(x.moves.blocked("t1")).toBe(true);
       x.recover();
-      const resumed = makeThreadMoves(x.h.bb, x.options);
+      const resumed = makeThreadMoves(x.h.alia, x.options);
       await resumed.move(input);
       expect(resumed.blocked("t1")).toBe(false);
-      expect([...x.files]).toEqual(["/work/section/.bb/chats/t1"]);
+      expect([...x.files]).toEqual(["/work/section/.vesnalia/chats/t1"]);
     } finally {
       await x.h.harness.lifecycle.dispose();
     }

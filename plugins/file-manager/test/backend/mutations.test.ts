@@ -4,8 +4,8 @@ import { lstat, mkdir, mkdtemp, readFile, readlink, realpath, rm, symlink, write
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, type FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, type FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 
 import { FS_CHANNEL, PLUGIN_ID } from "../../contract";
 import { isFileManagerError } from "../../src/errors";
@@ -23,7 +23,7 @@ import { initRoot } from "../../src/root";
 
 let root = "";
 let outside = "";
-let bb: BbPluginApi;
+let alia: AliaPluginApi;
 let harness: FakePluginHarness;
 
 interface FsSignalPayload {
@@ -62,7 +62,7 @@ beforeEach(async () => {
   outside = await realpath(await mkdtemp(path.join(tmpdir(), "fm-outside-")));
   await initRoot(root);
   const host = createFakePluginHost({ pluginId: PLUGIN_ID });
-  bb = host.bb;
+  alia = host.alia;
   harness = host.harness;
 });
 
@@ -106,7 +106,7 @@ describe("splitName / numberedName / uniqueName", () => {
 
 describe("createFolder", () => {
   it("creates the folder, returns its entry and signals the parent", async () => {
-    const result = await createFolder(bb, { path: "", name: "New Folder" });
+    const result = await createFolder(alia, { path: "", name: "New Folder" });
     expect(result.entry).toMatchObject({
       name: "New Folder",
       kind: "directory",
@@ -119,15 +119,15 @@ describe("createFolder", () => {
 
   it("fails with exists on a collision and publishes nothing", async () => {
     await mkdir(path.join(root, "dup"));
-    await expectCode(createFolder(bb, { path: "", name: "dup" }), "exists");
+    await expectCode(createFolder(alia, { path: "", name: "dup" }), "exists");
     expect(fsSignals()).toEqual([]);
   });
 
   it("rejects path-like names and escaping parents", async () => {
-    await expectCode(createFolder(bb, { path: "", name: "../evil" }), "invalid_name");
-    await expectCode(createFolder(bb, { path: "", name: ".." }), "invalid_name");
-    await expectCode(createFolder(bb, { path: "/etc", name: "evil" }), "path_escape");
-    await expectCode(createFolder(bb, { path: outside, name: "evil" }), "path_escape");
+    await expectCode(createFolder(alia, { path: "", name: "../evil" }), "invalid_name");
+    await expectCode(createFolder(alia, { path: "", name: ".." }), "invalid_name");
+    await expectCode(createFolder(alia, { path: "/etc", name: "evil" }), "path_escape");
+    await expectCode(createFolder(alia, { path: outside, name: "evil" }), "path_escape");
     await expect(exists(path.join(outside, "evil"))).resolves.toBe(false);
   });
 });
@@ -136,7 +136,7 @@ describe("renameEntry", () => {
   it("renames a file in place and signals its directory", async () => {
     await mkdir(path.join(root, "sub"));
     await writeFile(path.join(root, "sub", "old.txt"), "data");
-    const result = await renameEntry(bb, { path: "sub/old.txt", newName: "new.txt" });
+    const result = await renameEntry(alia, { path: "sub/old.txt", newName: "new.txt" });
     expect(result.entry.path).toBe(path.join(root, "sub", "new.txt"));
     await expect(readFile(path.join(root, "sub", "new.txt"), "utf8")).resolves.toBe("data");
     expect(fsSignals()).toEqual([{ paths: [path.join(root, "sub")], reason: "rename" }]);
@@ -145,14 +145,14 @@ describe("renameEntry", () => {
   it("refuses to clobber an existing destination", async () => {
     await writeFile(path.join(root, "a.txt"), "a");
     await writeFile(path.join(root, "b.txt"), "b");
-    await expectCode(renameEntry(bb, { path: "a.txt", newName: "b.txt" }), "exists");
+    await expectCode(renameEntry(alia, { path: "a.txt", newName: "b.txt" }), "exists");
     await expect(readFile(path.join(root, "b.txt"), "utf8")).resolves.toBe("b");
   });
 
   it("renames the link, not its target", async () => {
     await writeFile(path.join(root, "target.txt"), "t");
     await symlink(path.join(root, "target.txt"), path.join(root, "link.txt"));
-    const result = await renameEntry(bb, { path: "link.txt", newName: "renamed-link.txt" });
+    const result = await renameEntry(alia, { path: "link.txt", newName: "renamed-link.txt" });
     expect(result.entry.kind).toBe("symlink");
     await expect(readlink(path.join(root, "renamed-link.txt"))).resolves.toBe(
       path.join(root, "target.txt"),
@@ -161,10 +161,10 @@ describe("renameEntry", () => {
   });
 
   it("refuses the root and invalid names", async () => {
-    await expectCode(renameEntry(bb, { path: "", newName: "hacked" }), "path_escape");
+    await expectCode(renameEntry(alia, { path: "", newName: "hacked" }), "path_escape");
     await writeFile(path.join(root, "a.txt"), "a");
-    await expectCode(renameEntry(bb, { path: "a.txt", newName: "../a.txt" }), "invalid_name");
-    await expectCode(renameEntry(bb, { path: "a.txt", newName: "sub/a.txt" }), "invalid_name");
+    await expectCode(renameEntry(alia, { path: "a.txt", newName: "../a.txt" }), "invalid_name");
+    await expectCode(renameEntry(alia, { path: "a.txt", newName: "sub/a.txt" }), "invalid_name");
   });
 });
 
@@ -172,7 +172,7 @@ describe("deleteEntries", () => {
   it("deletes files and empty directories and signals once", async () => {
     await writeFile(path.join(root, "a.txt"), "a");
     await mkdir(path.join(root, "empty"));
-    const result = await deleteEntries(bb, {
+    const result = await deleteEntries(alia, {
       paths: [path.join(root, "a.txt"), path.join(root, "empty")],
       recursive: true,
     });
@@ -185,7 +185,7 @@ describe("deleteEntries", () => {
     await mkdir(path.join(root, "full"));
     await writeFile(path.join(root, "full", "inner.txt"), "i");
 
-    const refused = await deleteEntries(bb, {
+    const refused = await deleteEntries(alia, {
       paths: [path.join(root, "full")],
       recursive: false,
     });
@@ -195,7 +195,7 @@ describe("deleteEntries", () => {
     ]);
     await expect(exists(path.join(root, "full"))).resolves.toBe(true);
 
-    const removed = await deleteEntries(bb, {
+    const removed = await deleteEntries(alia, {
       paths: [path.join(root, "full")],
       recursive: true,
     });
@@ -208,7 +208,7 @@ describe("deleteEntries", () => {
     await writeFile(path.join(outside, "victim", "keep.txt"), "k");
     await symlink(path.join(outside, "victim"), path.join(root, "victim-link"));
 
-    const result = await deleteEntries(bb, {
+    const result = await deleteEntries(alia, {
       paths: [path.join(root, "victim-link")],
       recursive: true,
     });
@@ -219,7 +219,7 @@ describe("deleteEntries", () => {
 
   it("puts escapes and misses in failed[] and still deletes the rest", async () => {
     await writeFile(path.join(root, "ok.txt"), "o");
-    const result = await deleteEntries(bb, {
+    const result = await deleteEntries(alia, {
       paths: ["/etc/passwd", path.join(outside, "x"), "ghost.txt", path.join(root, "ok.txt"), root],
       recursive: true,
     });
@@ -235,7 +235,7 @@ describe("deleteEntries", () => {
   });
 
   it("publishes nothing when everything failed", async () => {
-    const result = await deleteEntries(bb, { paths: ["/etc/passwd"], recursive: true });
+    const result = await deleteEntries(alia, { paths: ["/etc/passwd"], recursive: true });
     expect(result.succeeded).toEqual([]);
     expect(fsSignals()).toEqual([]);
   });
@@ -249,7 +249,7 @@ describe("moveEntries", () => {
   });
 
   it("moves a file and signals both directories", async () => {
-    const result = await moveEntries(bb, {
+    const result = await moveEntries(alia, {
       paths: [path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "dst"),
       conflict: "fail",
@@ -264,7 +264,7 @@ describe("moveEntries", () => {
 
   it("conflict: fail leaves both sides untouched", async () => {
     await writeFile(path.join(root, "dst", "a.txt"), "existing");
-    const result = await moveEntries(bb, {
+    const result = await moveEntries(alia, {
       paths: [path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "dst"),
       conflict: "fail",
@@ -277,7 +277,7 @@ describe("moveEntries", () => {
 
   it("conflict: rename lands as `name (1).ext`", async () => {
     await writeFile(path.join(root, "dst", "a.txt"), "existing");
-    const result = await moveEntries(bb, {
+    const result = await moveEntries(alia, {
       paths: [path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "dst"),
       conflict: "rename",
@@ -289,7 +289,7 @@ describe("moveEntries", () => {
 
   it("conflict: overwrite replaces the destination", async () => {
     await writeFile(path.join(root, "dst", "a.txt"), "existing");
-    const result = await moveEntries(bb, {
+    const result = await moveEntries(alia, {
       paths: [path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "dst"),
       conflict: "overwrite",
@@ -301,14 +301,14 @@ describe("moveEntries", () => {
 
   it("refuses to move a directory into itself or its own subtree", async () => {
     await mkdir(path.join(root, "src", "deep"));
-    const intoSelf = await moveEntries(bb, {
+    const intoSelf = await moveEntries(alia, {
       paths: [path.join(root, "src")],
       destinationDir: path.join(root, "src"),
       conflict: "fail",
     });
     expect(intoSelf.failed[0]?.code).toBe("destination_inside_source");
 
-    const intoChild = await moveEntries(bb, {
+    const intoChild = await moveEntries(alia, {
       paths: [path.join(root, "src")],
       destinationDir: path.join(root, "src", "deep"),
       conflict: "fail",
@@ -319,7 +319,7 @@ describe("moveEntries", () => {
 
   it("refuses an escaping destination outright", async () => {
     await expectCode(
-      moveEntries(bb, {
+      moveEntries(alia, {
         paths: [path.join(root, "src", "a.txt")],
         destinationDir: outside,
         conflict: "fail",
@@ -327,7 +327,7 @@ describe("moveEntries", () => {
       "path_escape",
     );
     await expectCode(
-      moveEntries(bb, {
+      moveEntries(alia, {
         paths: [path.join(root, "src", "a.txt")],
         destinationDir: path.join(root, "src", "a.txt"),
         conflict: "fail",
@@ -337,7 +337,7 @@ describe("moveEntries", () => {
   });
 
   it("puts escaping sources in failed[] and moves the rest", async () => {
-    const result = await moveEntries(bb, {
+    const result = await moveEntries(alia, {
       paths: ["/etc/passwd", path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "dst"),
       conflict: "fail",
@@ -347,7 +347,7 @@ describe("moveEntries", () => {
   });
 
   it("treats a move into the source's own directory as a no-op", async () => {
-    const result = await moveEntries(bb, {
+    const result = await moveEntries(alia, {
       paths: [path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "src"),
       conflict: "overwrite",
@@ -366,7 +366,7 @@ describe("copyEntries", () => {
   });
 
   it("copies a directory tree and leaves the source alone", async () => {
-    const result = await copyEntries(bb, {
+    const result = await copyEntries(alia, {
       paths: [path.join(root, "src")],
       destinationDir: path.join(root, "dst"),
       conflict: "rename",
@@ -383,7 +383,7 @@ describe("copyEntries", () => {
 
   it("conflict: rename produces a numbered sibling", async () => {
     await writeFile(path.join(root, "dst", "a.txt"), "existing");
-    const result = await copyEntries(bb, {
+    const result = await copyEntries(alia, {
       paths: [path.join(root, "src", "a.txt")],
       destinationDir: path.join(root, "dst"),
       conflict: "rename",
@@ -394,7 +394,7 @@ describe("copyEntries", () => {
 
   it("copies a symlink verbatim instead of dereferencing it", async () => {
     await symlink(path.join(outside, "anything"), path.join(root, "src", "escape-link"));
-    const result = await copyEntries(bb, {
+    const result = await copyEntries(alia, {
       paths: [path.join(root, "src", "escape-link")],
       destinationDir: path.join(root, "dst"),
       conflict: "fail",
@@ -408,7 +408,7 @@ describe("copyEntries", () => {
   });
 
   it("refuses to copy a directory into its own subtree", async () => {
-    const result = await copyEntries(bb, {
+    const result = await copyEntries(alia, {
       paths: [path.join(root, "src")],
       destinationDir: path.join(root, "src", "nested"),
       conflict: "rename",

@@ -68,7 +68,7 @@ happy path; amend/resume/holes/multi-lane fan-out are unexercised.
 ## Approval
 
 `CreateWorkflow` triggers the standard `interaction/requestPermission`
-reverse RPC (already answered by our bridge via bb approvals). Shape
+reverse RPC (already answered by our bridge via VesnALIA approvals). Shape
 observed: `{ sessionId, turnId, toolCallId, toolName: "CreateWorkflow",
 reason: "Tool CreateWorkflow always requires explicit approval", riskLevel,
 requestId, options: [{kind: "allow_once"|"deny", response: {decision, reason}}],
@@ -86,8 +86,8 @@ carries `result.display` with `kind: "create_workflow"` and the full
 `steps` (ask/world-read sites with `line/column/lane/phase`), `lanes`
 (actors), `participants` (phase:lane cards), `handoffs`, `phases`,
 `phaseEdges`, `exits`, optional `holes`/`truncated`. Our bridge already
-translates `tool.updated` into bb tool rows - the graph needs no new event
-channel, only a renderer (bb `experimental_timelineRenderer`) on the bb side.
+translates `tool.updated` into VesnALIA tool rows - the graph needs no new event
+channel, only a renderer (VesnALIA `experimental_timelineRenderer`) on the VesnALIA side.
 `truncated: true` drops the whole phase vocabulary; renderers must honor
 that (half a picture would lie).
 
@@ -114,7 +114,7 @@ Verified cold from a second CLI process against the persisted store:
   `workflows/move`, `workflows/updateMeta` exist; `forRun` returned `{}` for
   an unsaved run.
 
-The store outlives the thread's CLI process, so a bb-side hub/pane can read
+The store outlives the thread's CLI process, so a alia-side hub/pane can read
 run history from any live session without the original thread.
 
 ## Live run status (POC-verified 2026-10-27, CLI 0.17.0)
@@ -127,7 +127,7 @@ Three host-visible sources, exercised mid-run with the loopback fixture:
 "CreateWorkflow", taskKind: "workflow", cancellable: true|false, status:
 "running"→"completed"|"failed"|"cancelled", startedAt, completedAt}`.
   `cancellable` flips false at settle. The bridge's `BackgroundWork` polls
-  this at 1 s and now maps `taskKind: "workflow"` rows to bb's
+  this at 1 s and now maps `taskKind: "workflow"` rows to VesnALIA's
   `backgroundTask`/`local_workflow` item.
 - **Run journal events** (the lamp source; same feed the Desktop consumes):
   `v4/conversation/workflowRunEvents {sessionId, runId, afterSequence?,
@@ -149,7 +149,7 @@ failureCode/Message?, resumable}]}` (session-scoped, no usage).
   ask-only two-phase script (live and post-run) — workspace nodes are not a
   reliable lamp source; fold the journal instead.
 
-bb's `backgroundTask.workflow` snapshot grammar is 1-based (`agents[].index`
+VesnALIA's `backgroundTask.workflow` snapshot grammar is 1-based (`agents[].index`
 and `attempt` ≥ 1, `phases[].index` ≥ 1); the plugin fills `agents` from
 folded actor/node states and `phases` from `run-launched.phaseNames`.
 
@@ -175,8 +175,8 @@ still fail-fast), so a slow status read can never end the thread.
   topologies are unexercised.
 - Subagent child sessions: no parent-stream events observed (children are
   invisible to the owning session's subscription beyond the notification).
-- bb's own rendering of the `workflow` snapshot grammar is not yet verified
-  in an installed bb run (only the delta grammar is schema-validated); the
+- VesnALIA's own rendering of the `workflow` snapshot grammar is not yet verified
+  in an installed VesnALIA run (only the delta grammar is schema-validated); the
   row degrades honestly to run-level status if the journal surface is
   missing.
 

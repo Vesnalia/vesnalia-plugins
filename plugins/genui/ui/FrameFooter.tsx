@@ -1,7 +1,7 @@
 // What sits under a rendered UI (see Frame in LiveUi.tsx). A chat reply keeps
 // a Source toggle that shows only on hover, so replies read quiet; the
 // gallery names each example in a footer with Source, Copy and Open. Both
-// open the same source panel: the spec with numbered lines in BB's code
+// open the same source panel: the spec with numbered lines in VesnALIA's code
 // viewer, the files it reads, and its diagnostics. A ```ui block also gets
 // "Copy as markdown": the block's plain-markdown form (core/markdown.ts) with
 // the values the user moved, built only when clicked.
@@ -309,7 +309,7 @@ function SourceBody({
   files: readonly SourceFile[];
   diagnostics: readonly Diagnostic[];
 }) {
-  // BB's viewer picks its highlighting by extension and has none for .ui; the
+  // VesnALIA's viewer picks its highlighting by extension and has none for .ui; the
   // spec language is JavaScript-shaped, so its calls, strings and lambdas read right that way.
   const viewerName = language === "html" ? name : `${name}.js`;
   return (

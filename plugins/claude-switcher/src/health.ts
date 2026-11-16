@@ -1,4 +1,4 @@
-// `bb claude-switcher health`: a stable read of every account for other
+// `alia claude-switcher health`: a stable read of every account for other
 // threads and scripts (Optimizador informes/2026-10-30/ultra/SPEC.md §4,
 // version 1). The same schema as the Mac's `claude-cuentas.py salud
 // --json`: Spanish keys as they are, times ISO 8601 with Madrid's offset.
@@ -25,7 +25,7 @@ export interface HealthAccount {
         capacity: number;
         running: number;
         reserved: number;
-        /** Seats held from outside bb (`reserve`), counted as taken. */
+        /** Seats held from outside VesnALIA (`reserve`), counted as taken. */
         external?: ReadonlyArray<{ id: string; until: number }>;
       }
     | undefined;
@@ -63,7 +63,7 @@ export interface HealthReport {
   /**
    * The accounts a turn failed on for want of a session, per machine, while
    * their mark stands (0.2.51, Aitor 2026-11-10): no project with threads on
-   * that machine is placed there. `maquina` is bb's host id ("" when the
+   * that machine is placed there. `maquina` is VesnALIA's host id ("" when the
    * thread's machine could not be told).
    */
   sinSesion: SinSesion[];
@@ -78,7 +78,7 @@ export interface HealthReport {
    * The accounts set aside by a refusal, while it stands (0.2.54, Aitor
    * 2026-11-13): no turn is placed there until `hasta`, or until lifted
    * (`unblock`, a turn that ends well there, or a run of refusals on one
-   * machine taken as the machine's). `http`: the status bb gave, null when
+   * machine taken as the machine's). `http`: the status VesnALIA gave, null when
    * none.
    */
   rechazos: Rechazo[];
@@ -86,7 +86,7 @@ export interface HealthReport {
    * The machines whose refusals are taken as their network's, not the
    * accounts', while the run lasts (0.2.54): «bloqueo de red» (a page of
    * Cloudflare's or HTML) or «cortacircuitos» (several accounts refused
-   * there within minutes). `maquina` is bb's host id ("" when unknown).
+   * there within minutes). `maquina` is VesnALIA's host id ("" when unknown).
    */
   red: Red[];
   cuentas: Array<{
@@ -107,7 +107,7 @@ export interface HealthReport {
     plazas: {
       usadas: number;
       total: number | null;
-      /** Held from outside bb (`reserve`); counted in usadas. */
+      /** Held from outside VesnALIA (`reserve`); counted in usadas. */
       externas: { id: string; hasta: string }[];
     } | null;
     usable: boolean;

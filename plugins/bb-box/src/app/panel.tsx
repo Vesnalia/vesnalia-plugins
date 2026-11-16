@@ -1,7 +1,7 @@
 // The Box panel: a thread's boxes as rows, "New box", and the empty states.
 
 import { FirstRun, SetupProgress } from "./first-run.tsx";
-import { experimental_Icon as Icon, UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BoxResult, Contract, PanelState, ThreadOnBox } from "../plugin/contract.ts";
@@ -17,7 +17,7 @@ import { useBoxesNav } from "./box-nav.tsx";
 import { boxPage } from "./box-route.ts";
 import { IMAGE_REQUEST, NewBox, useDesktopOnDemand, useDesktopProblemShownOnce, type SizeRequest } from "./new-box.tsx";
 
-/** bb-box's page under BB's settings. */
+/** alia-box's page under VesnALIA's settings. */
 
 function isMoving(box: BoxView): boolean {
   return box.state === "acquiring" || box.state === "starting";
@@ -25,7 +25,7 @@ function isMoving(box: BoxView): boolean {
 
 export function BoxesPanel({ threadId }: { threadId: string }) {
   const rpc = useRpc<Contract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const nav = useBoxesNav();
   const { value: state, error, refresh } = useLive<PanelState>(threadId, () => rpc.call("state", { threadId }), forThread(threadId));
   const [open, setOpen] = useState<string | null>(null);
@@ -84,16 +84,16 @@ export function BoxesPanel({ threadId }: { threadId: string }) {
     );
   }
   if (!state.kinds.length && !rows.length) {
-    // First run: one action on a BB machine that can take it, or the empty state as before where none can (the setup job).
+    // First run: one action on a VesnALIA machine that can take it, or the empty state as before where none can (the setup job).
     return (
       <FirstRun
         fallback={
-      <EmptyPanel title="BB Box is not set up yet">
+      <EmptyPanel title="VesnALIA Box is not set up yet">
         <p className="mt-1">Set a backend up in its settings and turn it on.</p>
         <Button asChild variant="outline" size="sm" className="mt-3">
           <UrlLink href={SETTINGS_PATH} onClick={leaveModifiedClick}>
             <Icon name="Settings" aria-hidden />
-            Open BB Box settings
+            Open VesnALIA Box settings
           </UrlLink>
         </Button>
       </EmptyPanel>

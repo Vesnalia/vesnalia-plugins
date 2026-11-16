@@ -75,7 +75,7 @@ test("suggestions complete types and priorities after #, categories after $", ()
   );
 });
 
-test("#someday files the issue in Someday (bead-bb-26g)", () => {
+test("#someday files the issue in Someday (bead-alia-26g)", () => {
   assert.deepEqual(parseQuickTags("Idea for later #someday #p3"), {
     title: "Idea for later",
     type: null,

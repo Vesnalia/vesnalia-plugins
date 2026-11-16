@@ -19,7 +19,7 @@ import { SCHEMA, type AttachedFile } from "./attached-files.ts";
 import { PRODUCT } from "../brand.ts";
 
 const listed = (values: readonly string[]) => values.map((value) => `'${value}'`).join(", ");
-const ACTORS = ["person", "agent", "command", "bb-box", "outside", "unknown"] as const;
+const ACTORS = ["person", "agent", "command", "alia-box", "outside", "unknown"] as const;
 const FIRST_OPERATION_KINDS = ["take", "restore", "fork", "delete", "hold-copy", "adopt", "expire"] as const;
 
 const operationsTable = (name: string) => `CREATE TABLE ${SCHEMA}.${name} (
@@ -265,15 +265,15 @@ function actorOf(who: Actor["is"], agent: string | null, why: string | null): Ac
   switch (who) {
     case "agent":
       return { is: "agent", threadId: agent ?? "" };
-    case "bb-box":
-      return { is: "bb-box", why: why ?? "" };
+    case "alia-box":
+      return { is: "alia-box", why: why ?? "" };
     default:
       return { is: who };
   }
 }
 
 function actorColumns(by: Actor): { who: Actor["is"]; agent: string | null; why: string | null } {
-  return { who: by.is, agent: by.is === "agent" ? by.threadId : null, why: by.is === "bb-box" ? by.why : null };
+  return { who: by.is, agent: by.is === "agent" ? by.threadId : null, why: by.is === "alia-box" ? by.why : null };
 }
 
 function parsed<T>(text: string | null, fallback: T): T {
@@ -724,7 +724,7 @@ export class SnapshotStore implements SnapshotLedger {
       : file.schema !== "main"
         ? file.spec.file
         : `${PRODUCT}'s database, as its handle refused to attach ${file.spec.file}${file.refusal ? `: ${file.refusal}` : ""}`;
-    const fix = `Check that BB's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}. Until then ${PRODUCT} takes and deletes no snapshots.`;
+    const fix = `Check that VesnALIA's data folder has room and that ${PRODUCT}'s files in it are writable, then restart ${PRODUCT}. Until then ${PRODUCT} takes and deletes no snapshots.`;
     if (file.problem) return [{ id: "snapshots", name: "Snapshots' records", status: "fail", detail: `${PRODUCT} could not set up its snapshots' records in ${where}: ${sentence(file.problem)}`, fix }];
     if (this.#failure) {
       return [

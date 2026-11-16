@@ -4,7 +4,7 @@
 // and quoted into the chat.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { useComposer, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { renderAsync } from "docx-preview";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
@@ -411,7 +411,7 @@ export function DocumentOpener({ path, source }: PluginFileOpenerProps) {
             )}
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-52" data-bb-ru-skip="" onCloseAutoFocus={(event) => event.preventDefault()}>
+        <ContextMenuContent className="w-52" data-alia-ru-skip="" onCloseAutoFocus={(event) => event.preventDefault()}>
           <ContextMenuItem disabled={!selected} onSelect={quote}>
             <Icon name="MessageSquarePlus" className="size-4" /> {t("quote")}
           </ContextMenuItem>

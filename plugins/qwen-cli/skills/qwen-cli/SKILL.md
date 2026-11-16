@@ -1,11 +1,11 @@
 ---
 name: qwen-cli
-description: "Spawn, configure, or troubleshoot Qwen Code CLI (qwen) threads in BB — models, reasoning levels, permissions, and sign-in."
+description: "Spawn, configure, or troubleshoot Qwen Code CLI (qwen) threads in VesnALIA — models, reasoning levels, permissions, and sign-in."
 ---
 
 # Qwen Code CLI provider
 
-Threads on the `qwen-cli` provider run the locally installed Qwen Code CLI (`qwen --acp`) through BB's shared ACP bridge.
+Threads on the `qwen-cli` provider run the locally installed Qwen Code CLI (`qwen --acp`) through VesnALIA's shared ACP bridge.
 
 ## Requirements
 
@@ -19,7 +19,7 @@ Threads on the `qwen-cli` provider run the locally installed Qwen Code CLI (`qwe
   - `enabled` (default `true`): show or hide in the provider picker.
   - `autoApprove` (default `false`): auto-approve permission requests in Accept edits mode.
   - `sandbox` (default `false`): pass `--sandbox` for new threads.
-  - `subagentsDisabled` (default `false`): block native subagent tools; agents use `bb thread spawn --parent-self` instead.
+  - `subagentsDisabled` (default `false`): block native subagent tools; agents use `alia thread spawn --parent-self` instead.
   - `commandDescriptionsEnabled` (default `true`): show tool summaries on command cards.
 
 ## Models and reasoning levels
@@ -27,13 +27,13 @@ Threads on the `qwen-cli` provider run the locally installed Qwen Code CLI (`qwe
 `qwen-cli` discovers models and reasoning levels from the signed-in CLI:
 
 ```sh
-bb provider models qwen-cli --environment "$BB_ENVIRONMENT_ID" --json
+alia provider models qwen-cli --environment "$ALIA_ENVIRONMENT_ID" --json
 ```
 
 Pass reasoning level with `--reasoning-level`:
 
 ```sh
-bb thread spawn --project "$BB_PROJECT_ID" --provider qwen-cli --model <model-id> --reasoning-level medium --prompt "..."
+alia thread spawn --project "$ALIA_PROJECT_ID" --provider qwen-cli --model <model-id> --reasoning-level medium --prompt "..."
 ```
 
 ## Plan mode
@@ -42,11 +42,11 @@ Use `--prompt-mode plan` or the Plan composer action to research and plan before
 
 ## Permissions
 
-- `accept-edits`: BB shows permission requests as approvals. Qwen edits files automatically in this mode.
+- `accept-edits`: VesnALIA shows permission requests as approvals. Qwen edits files automatically in this mode.
 - `full`: auto-approves all ACP permission requests.
 
 ## Limits
 
-- Use BB Workflows for workflow orchestration. Qwen's native workflow tools and Workflow mode control are disabled by the plugin, including on resume.
+- Use VesnALIA Workflows for workflow orchestration. Qwen's native workflow tools and Workflow mode control are disabled by the plugin, including on resume.
 - Session fork/rewind (`fork: "none"`), manual compaction, service tiers, and native thread archive/rename are not supported.
 - Native skills are indexed from `~/.qwen/skills` (user) and `.qwen/skills` (project).

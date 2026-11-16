@@ -1,6 +1,6 @@
 // A box's terminal for people: a WebSocket route,
 // /terminal?box=<id>&session=<id>&cols=<n>&rows=<n>, over a shell whose PTY
-// is on BB's server (src/transports/terminal.ts). The plugin owns the
+// is on VesnALIA's server (src/transports/terminal.ts). The plugin owns the
 // session, not the socket: a panel tab remounts when a person switches
 // tabs, so its socket comes and goes while the shell stays. A socket that
 // names a live session attaches to it, gets the last 256 KiB of output and
@@ -9,7 +9,7 @@
 // minutes; one also ends when its shell exits, when its box stops or goes,
 // and when the plugin stops. A tab then shows why, and offers a new shell.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Boxes } from "../core/boxes.ts";
 import { clampSize } from "../transports/terminal.ts";
 import type { Terminal, TerminalSize } from "../transports/types.ts";
@@ -259,7 +259,7 @@ export class TerminalSessions {
 }
 
 export interface Terminals {
-  /** Where the panel opens a terminal's WebSocket, on the BB server's origin. */
+  /** Where the panel opens a terminal's WebSocket, on the VesnALIA server's origin. */
   readonly path: string;
   /** Sessions open now. */
   readonly live: number;
@@ -280,11 +280,11 @@ function control(data: string): TerminalSize | null {
   return null;
 }
 
-export function registerTerminals(bb: BbPluginApi, deps: { boxes: Boxes; logError(operation: string, error: unknown): void; idleMs?: number }): Terminals {
+export function registerTerminals(alia: AliaPluginApi, deps: { boxes: Boxes; logError(operation: string, error: unknown): void; idleMs?: number }): Terminals {
   const sessions = new TerminalSessions({
     idleMs: deps.idleMs,
     logError: deps.logError,
-    log: (message) => bb.log.info(message),
+    log: (message) => alia.log.info(message),
     async open(boxId, size) {
       const box = await deps.boxes.find(boxId);
       if (!box) throw new Error(`${PRODUCT} has no such box. It may have been released.`);
@@ -295,7 +295,7 @@ export function registerTerminals(bb: BbPluginApi, deps: { boxes: Boxes; logErro
     },
   });
 
-  bb.http.experimental_websocket(
+  alia.http.experimental_websocket(
     TERMINAL_ROUTE,
     ({ url }) => {
       const boxId = url.searchParams.get("box") ?? "";
@@ -357,7 +357,7 @@ export function registerTerminals(bb: BbPluginApi, deps: { boxes: Boxes; logErro
   );
 
   return {
-    path: terminalPath(bb.pluginId),
+    path: terminalPath(alia.pluginId),
     get live() {
       return sessions.size;
     },

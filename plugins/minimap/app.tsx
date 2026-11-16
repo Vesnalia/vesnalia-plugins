@@ -1,10 +1,10 @@
-// bb-plugin-minimap — frontend entry.
+// alia-plugin-minimap — frontend entry.
 //
 // An app overlay (React, knows the focused thread; the others of a split workspace are read
-// off the page) that mounts one strip per thread beside its timeline's scroller. React and @get-bb/plugin-sdk/app are provided by BB
+// off the page) that mounts one strip per thread beside its timeline's scroller. React and @vesnalia/plugin-sdk/app are provided by VesnALIA
 // at load time, never bundled.
 import { useEffect, useMemo, useState } from "react";
-import { definePluginApp, useBbContext } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaContext } from "@vesnalia/plugin-sdk/app";
 import { Minimap } from "./src/Minimap";
 import { Panel, SettingsPage } from "./src/Panel";
 import { stripOptions, useOptions } from "./src/options";
@@ -29,7 +29,7 @@ function whenIdle(callback: () => void): () => void {
 
 /**
  * The thread whose strip may mount: `threadId` once the page has drawn it and gone
- * idle, `null` until then. Opening a thread is BB's busiest moment, and the strip is
+ * idle, `null` until then. Opening a thread is VesnALIA's busiest moment, and the strip is
  * not needed to read it, so its own fetch and setup wait their turn.
  */
 function useSettled(threadId: string | null): string | null {
@@ -56,8 +56,8 @@ function useSettled(threadId: string | null): string | null {
 const PANE_SCAN_MS = 1000;
 
 /**
- * The threads whose timelines are on the page: one for a single thread, one per pane in a split workspace. BB hands a
- * plugin only the focused one (`useBbContext`), so the rest are read off the page: a timeline's rows carry their
+ * The threads whose timelines are on the page: one for a single thread, one per pane in a split workspace. VesnALIA hands a
+ * plugin only the focused one (`useAliaContext`), so the rest are read off the page: a timeline's rows carry their
  * thread's id as the start of `data-timeline-row-id`.
  */
 function paneThreads(): string[] {
@@ -98,7 +98,7 @@ function usePaneThreads(settled: string | null): string[] {
 }
 
 function Overlay() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const options = useOptions();
   const { ready, enabled, loadHistory } = options;
   const settled = useSettled(threadId);

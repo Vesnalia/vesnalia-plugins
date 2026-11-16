@@ -17,7 +17,7 @@ describe("Muse data directory safety", () => {
   let museDir: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), "bb-muse-data-"));
+    root = mkdtempSync(join(tmpdir(), "alia-muse-data-"));
     dataHome = join(root, "share");
     museDir = join(dataHome, "muse");
     mkdirSync(museDir, { recursive: true });

@@ -45,7 +45,7 @@ export async function fetchKnobs(fetchImpl = globalThis.fetch) {
 let activeDispose = null;
 
 /**
- * Collapse the BB composer when focus leaves it or it sits idle, with the
+ * Collapse the VesnALIA composer when focus leaves it or it sits idle, with the
  * user's saved thresholds. Returns a disposer that removes every listener and
  * timer; a second mount replaces the first.
  * @param {{signal?: AbortSignal, document?: Document, fetchSettings?: () => Promise<unknown>, initialSettings?: unknown, hasLayout?: (element: Element) => boolean}} [options]

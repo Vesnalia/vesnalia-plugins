@@ -1,9 +1,9 @@
-// bb-plugin-usage-bar — backend entry.
+// alia-plugin-usage-bar — backend entry.
 //
 // Reads agent-provider usage limits (weekly windows and friends) through
-// bb.sdk.system.usageLimits, caches them per host, and exposes them to the
-// frontend over RPC and to shells/agents via `bb usage-bar`.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// alia.sdk.system.usageLimits, caches them per host, and exposes them to the
+// frontend over RPC and to shells/agents via `alia usage-bar`.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createTokenTotals } from "./lib/token-totals";
 
@@ -56,12 +56,12 @@ export function isWeeklyLabel(label: string): boolean {
   return WEEKLY_PATTERN.test(label);
 }
 
-type Host = Awaited<ReturnType<BbPluginApi["sdk"]["hosts"]["list"]>>[number];
+type Host = Awaited<ReturnType<AliaPluginApi["sdk"]["hosts"]["list"]>>[number];
 type Provider = Awaited<
-  ReturnType<BbPluginApi["sdk"]["providers"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["providers"]["list"]>
 >[number];
 type UsageResponse = Awaited<
-  ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>
+  ReturnType<AliaPluginApi["sdk"]["system"]["usageLimits"]>
 >;
 
 function normalizeProvider(
@@ -107,9 +107,9 @@ function normalizeProvider(
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const getTokens = createTokenTotals(bb);
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const getTokens = createTokenTotals(alia);
+  const settings = alia.settings.define({
     cacheMinutes: {
       type: "number",
       label: "Cache usage for (minutes)",
@@ -135,7 +135,7 @@ export default async function plugin(bb: BbPluginApi) {
     let error: string | null = null;
     let hosts: Host[] = [];
     try {
-      hosts = await bb.sdk.hosts.list();
+      hosts = await alia.sdk.hosts.list();
     } catch (cause) {
       error = cause instanceof Error ? cause.message : String(cause);
     }
@@ -144,8 +144,8 @@ export default async function plugin(bb: BbPluginApi) {
         if (host.status === "disconnected") return;
         try {
           const [list, usage] = await Promise.all([
-            bb.sdk.providers.list({ hostId: host.id, capability: "usage" }),
-            bb.sdk.system.usageLimits({ hostId: host.id }),
+            alia.sdk.providers.list({ hostId: host.id, capability: "usage" }),
+            alia.sdk.system.usageLimits({ hostId: host.id }),
           ]);
           for (const provider of list) {
             providers.push(normalizeProvider(host, provider, usage[provider.id]));
@@ -170,7 +170,7 @@ export default async function plugin(bb: BbPluginApi) {
     pending = loadSnapshot()
       .then((snapshot) => {
         cached = { at: Date.now(), snapshot, dirty: false };
-        bb.realtime.publish("usage-changed", { fetchedAt: snapshot.fetchedAt });
+        alia.realtime.publish("usage-changed", { fetchedAt: snapshot.fetchedAt });
         return snapshot;
       })
       .finally(() => {
@@ -182,10 +182,10 @@ export default async function plugin(bb: BbPluginApi) {
   const markDirty = () => {
     if (cached !== null) cached.dirty = true;
   };
-  bb.events.on("thread.idle", markDirty);
-  bb.events.on("thread.failed", markDirty);
+  alia.events.on("thread.idle", markDirty);
+  alia.events.on("thread.failed", markDirty);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getTokens: (input) => getTokens(input.timeZone, input.force),
     getUsage: (input) => getUsage(input?.force === true),
   });
@@ -233,22 +233,22 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usageText = [
     "Usage:",
-    "  bb usage-bar [--all] [--force] [--json]",
+    "  VesnALIA usage-bar [--all] [--force] [--json]",
     "",
-    "  --tokens total tokens across BB for today and this month (JSON)",
+    "  --tokens total tokens across VesnALIA for today and this month (JSON)",
     "  --all    show every window, not only weekly ones",
     "  --force  bypass the cache and query providers now",
     "  --json   machine-readable output",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "usage-bar",
     summary: "Show agent-provider usage limits (weekly windows by default)",
     commands: [
       {
         name: "show",
         summary: "Print usage windows",
-        usage: "bb usage-bar [show] [--all] [--force] [--json]",
+        usage: "alia usage-bar [show] [--all] [--force] [--json]",
       },
     ],
     async run(argv) {
@@ -275,7 +275,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     cached = null;
   });
 }

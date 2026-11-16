@@ -1,9 +1,9 @@
-// bb-plugin-security-guidance — pattern-matched security warnings for code
+// alia-plugin-security-guidance — pattern-matched security warnings for code
 // the agent writes.
 //
-// Port of the Hermes `security-guidance` plugin to BB's plugin model.
+// Port of the Hermes `security-guidance` plugin to VesnALIA's plugin model.
 //
-// BB has no `transform_tool_result` hook (the Hermes plugin's delivery
+// VesnALIA has no `transform_tool_result` hook (the Hermes plugin's delivery
 // mechanism), so this port exposes the same 25-rule pattern engine as a
 // native agent tool instead:
 //
@@ -18,14 +18,14 @@
 // Same warn-by-default philosophy as the Hermes original: the scan is
 // advisory, not blocking. Pattern matching has a non-trivial false-positive
 // rate, so the tool returns warnings rather than refusing anything.
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { scanContent, formatWarningBlock } from "./patterns";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("bb-plugin-security-guidance loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("alia-plugin-security-guidance loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     mode: {
       type: "select" as const,
       label: "Mode",
@@ -41,10 +41,10 @@ export default async function plugin(bb: BbPluginApi) {
   // Re-read settings on change without a plugin reload.
   settings.onChange((next) => {
     mode = next.mode;
-    bb.log.info(`[security-guidance] mode updated → ${mode}`);
+    alia.log.info(`[security-guidance] mode updated → ${mode}`);
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "security_scan",
     description:
       "Scan code content for known-dangerous security patterns (pickle.load, yaml.load, eval(, os.system, " +
@@ -76,7 +76,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("bb-plugin-security-guidance disposed");
+  alia.onDispose(() => {
+    alia.log.info("alia-plugin-security-guidance disposed");
   });
 }

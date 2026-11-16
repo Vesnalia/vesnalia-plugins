@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { FilesRead } from "../../core/box-fs.ts";
 import type { Contract } from "../../plugin/contract.ts";
 import type { GuestOs } from "../../transports/types.ts";

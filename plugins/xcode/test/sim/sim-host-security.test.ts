@@ -255,7 +255,7 @@ describe("the allow list", () => {
 
     expect(mjpeg.status).toBe(200);
     expect(avcc.status).toBe(200);
-    expect(avcc.headers.get("content-type")).toBe("application/vnd.bb.sim-avcc;version=2");
+    expect(avcc.headers.get("content-type")).toBe("application/vnd.alia.sim-avcc;version=2");
     expect((await fetch(`${harness.base}/helper/${other}/stream.mjpeg?k=${capability}`)).status).toBe(401);
     for (const path of [
       `/helper/${UDID}/config`,

@@ -1,13 +1,13 @@
 // GitHub Board — the server entry.
 //
-// Runs `gh` on the bb server's machine, with the user's own `gh` login, and
-// matches cards to bb projects. What each handler does lives in
-// server/service.ts; this file wires it to bb: settings, storage, realtime,
+// Runs `gh` on the VesnALIA server's machine, with the user's own `gh` login, and
+// matches cards to VesnALIA projects. What each handler does lives in
+// server/service.ts; this file wires it to VesnALIA: settings, storage, realtime,
 // projects and thread creation. See AGENTS.md.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-import type { BbPluginApi, ExperimentalPluginRpcHandlerContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalPluginRpcHandlerContext } from "@vesnalia/plugin-sdk";
 
 import type { PromptSettings } from "./shared/board";
 import { rpcContract } from "./shared/contract";
@@ -33,7 +33,7 @@ export type { RpcContract } from "./shared/contract";
 const execFileAsync = promisify(execFile);
 
 const GH_HINT =
-  "Install the GitHub CLI (`brew install gh`) and run `gh auth login` on the machine running bb. The board finds it on its next refresh; `bb plugin reload github-board` clears this notice.";
+  "Install the GitHub CLI (`brew install gh`) and run `gh auth login` on the machine running VesnALIA. The board finds it on its next refresh; `alia plugin reload github-board` clears this notice.";
 
 const DISPLAY_KEY = "display";
 const PROMPTS_KEY = "prompts";
@@ -41,10 +41,10 @@ const LAUNCH_KEY = "launch";
 
 const DEFAULT_DISPLAY: DisplayPrefs = { hiddenRepositories: [], detailWidthFraction: null };
 
-type SpawnArgs = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0];
+type SpawnArgs = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0];
 
 /**
- * The RPC caller's signal. Typed as always there, but bb before 0.48.1 passes
+ * The RPC caller's signal. Typed as always there, but VesnALIA before 0.48.1 passes
  * a context without it.
  */
 function callerSignal(ctx: ExperimentalPluginRpcHandlerContext | undefined): AbortSignal | undefined {
@@ -61,8 +61,8 @@ async function localRemotes(path: string): Promise<string[]> {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     login: {
       type: "string",
       label: "GitHub login",
@@ -72,7 +72,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // `gh` is found through bb's host toolchain on every call, so one installed
+  // `gh` is found through VesnALIA's host toolchain on every call, so one installed
   // after the plugin loaded works without a reload. A check at load marks the
   // plugin as needing configuration when `gh` is missing or signed out, rather
   // than failing the load; that mark lasts until the next load, and every call
@@ -84,18 +84,18 @@ export default async function plugin(bb: BbPluginApi) {
   } catch (error) {
     const message = describeGhFailure(error);
     if (isGhMissing(error)) {
-      bb.status.needsConfiguration(`GitHub CLI (gh) was not found. ${GH_HINT}`);
+      alia.status.needsConfiguration(`GitHub CLI (gh) was not found. ${GH_HINT}`);
     } else if (/not authenticated|not logged in|gh auth login/i.test(message)) {
-      bb.status.needsConfiguration(`GitHub CLI is not signed in. ${GH_HINT}`);
+      alia.status.needsConfiguration(`GitHub CLI is not signed in. ${GH_HINT}`);
     } else {
       // Probably transient (the network); every call reports its own failure.
-      bb.log.warn(`gh auth status failed: ${message}`);
+      alia.log.warn(`gh auth status failed: ${message}`);
     }
   }
 
   const api: GitHubApi = {
     graphql: (query, variables, signal) => ghGraphql(gh, query, variables, signal),
-    warn: (message) => bb.log.warn(message),
+    warn: (message) => alia.log.warn(message),
   };
 
   let cachedIndex: { index: ProjectIndex; storedAt: number } | null = null;
@@ -103,14 +103,14 @@ export default async function plugin(bb: BbPluginApi) {
     if (!force && cachedIndex !== null && Date.now() - cachedIndex.storedAt < CACHE_TTL_MS) {
       return cachedIndex.index;
     }
-    const projects: readonly ProjectRecord[] = await bb.sdk.projects.list();
+    const projects: readonly ProjectRecord[] = await alia.sdk.projects.list();
     const index = await buildProjectIndex(projects, await localHostId(), localRemotes);
     cachedIndex = { index, storedAt: Date.now() };
     return index;
   }
 
   async function localHostId(): Promise<string | null> {
-    return (await bb.sdk.system.config()).primaryHostId;
+    return (await alia.sdk.system.config()).primaryHostId;
   }
 
   const service = createBoardService({
@@ -123,25 +123,25 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   function publishPatch(patch: ItemPatch): void {
-    bb.realtime.publish(ITEM_PATCHED, patch);
+    alia.realtime.publish(ITEM_PATCHED, patch);
   }
 
   let displayWrites: Promise<unknown> = Promise.resolve();
 
   async function displayPrefs(): Promise<DisplayPrefs> {
-    return { ...DEFAULT_DISPLAY, ...((await bb.storage.kv.get<DisplayPrefs>(DISPLAY_KEY)) ?? {}) };
+    return { ...DEFAULT_DISPLAY, ...((await alia.storage.kv.get<DisplayPrefs>(DISPLAY_KEY)) ?? {}) };
   }
 
   async function prompts(): Promise<PromptSettings> {
-    const stored = await bb.storage.kv.get<PromptSettings>(PROMPTS_KEY);
+    const stored = await alia.storage.kv.get<PromptSettings>(PROMPTS_KEY);
     return stored === undefined
       ? { byType: { ...DEFAULT_PROMPTS }, byProject: {} }
       : normalizePrompts({ byType: { ...DEFAULT_PROMPTS, ...stored.byType }, byProject: stored.byProject ?? {} });
   }
 
-  bb.rpc.register(rpcContract, {
-    // bb 0.48.1 aborts `experimental_signal` when the caller stops waiting or
-    // this copy of the plugin goes; older bb passes none, and the load runs on.
+  alia.rpc.register(rpcContract, {
+    // VesnALIA 0.48.1 aborts `experimental_signal` when the caller stops waiting or
+    // this copy of the plugin goes; older VesnALIA passes none, and the load runs on.
     loadBoard: (input, ctx) => service.loadBoard(input, callerSignal(ctx)),
     loadItem: (input, ctx) => service.loadItem(input, callerSignal(ctx)),
     loadComments: (input, ctx) => service.loadComments(input, callerSignal(ctx)),
@@ -163,8 +163,8 @@ export default async function plugin(bb: BbPluginApi) {
       // filter toggle and a width commit say, would drop one of them.
       const write = displayWrites.then(async () => {
         const next = { ...(await displayPrefs()), ...patch };
-        await bb.storage.kv.set(DISPLAY_KEY, next);
-        bb.realtime.publish(DISPLAY_PREFS_CHANGED, next);
+        await alia.storage.kv.set(DISPLAY_KEY, next);
+        alia.realtime.publish(DISPLAY_PREFS_CHANGED, next);
         return next;
       });
       displayWrites = write.catch(() => undefined);
@@ -173,14 +173,14 @@ export default async function plugin(bb: BbPluginApi) {
     getPrompts: () => prompts(),
     savePrompts: async (value) => {
       const next = normalizePrompts(value);
-      await bb.storage.kv.set(PROMPTS_KEY, next);
-      bb.realtime.publish(PROMPTS_CHANGED, next);
+      await alia.storage.kv.set(PROMPTS_KEY, next);
+      alia.realtime.publish(PROMPTS_CHANGED, next);
       return next;
     },
     sendOptions: async ({ repository, url }) => {
       const [{ project, candidates }, launch] = await Promise.all([
         service.projectsForCard({ repository, url }),
-        bb.storage.kv.get<LaunchDefaults>(LAUNCH_KEY),
+        alia.storage.kv.get<LaunchDefaults>(LAUNCH_KEY),
       ]);
       const choice = (ref: { id: string; name: string }) => ({ id: ref.id, name: ref.name });
       return {
@@ -190,15 +190,15 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     send: async ({ card, request }) => {
-      // The composer's request goes to bb as it built it; bb validates it.
+      // The composer's request goes to VesnALIA as it built it; VesnALIA validates it.
       // The card rides along as this plugin's metadata on the thread, since
       // no plugin API can add a row of its own to a thread's timeline.
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         ...(request as unknown as SpawnArgs),
         title: workspaceTitle(card.repository, card.number, card.title),
         pluginMetadata: { card },
       });
-      // Saved only once the thread exists, so a selection bb refused is not
+      // Saved only once the thread exists, so a selection VesnALIA refused is not
       // what the next card opens on.
       const launch: LaunchDefaults = {
         projectId: request.projectId,
@@ -209,8 +209,8 @@ export default async function plugin(bb: BbPluginApi) {
         ...(request.serviceTier === undefined ? {} : { serviceTier: request.serviceTier }),
         environment: request.environment,
       };
-      await bb.storage.kv.set(LAUNCH_KEY, launch);
-      bb.log.info(`started thread ${thread.id} on ${card.repository}#${card.number}`);
+      await alia.storage.kv.set(LAUNCH_KEY, launch);
+      alia.log.info(`started thread ${thread.id} on ${card.repository}#${card.number}`);
       return { threadId: thread.id };
     },
   });

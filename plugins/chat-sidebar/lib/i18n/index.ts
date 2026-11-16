@@ -1,5 +1,5 @@
 // A tiny translator: no runtime dependency, typed keys, plural forms through
-// `Intl.PluralRules`. bb has no locale API for plugins, so "Auto" follows the
+// `Intl.PluralRules`. VesnALIA has no locale API for plugins, so "Auto" follows the
 // browser's language list and falls back to English.
 //
 // To add a language: copy `ru.ts`, translate it, and add it to `CATALOGS`

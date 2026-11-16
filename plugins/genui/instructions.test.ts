@@ -11,9 +11,9 @@ import {
 } from "./instructions";
 
 describe("agent instructions", () => {
-  // BB refuses a tool whose instructions pass 4096 characters (the plugin then
+  // VesnALIA refuses a tool whose instructions pass 4096 characters (the plugin then
   // fails to load) and truncates the configure and contributed sections there.
-  it("fit BB's 4096-character cap per section", () => {
+  it("fit VesnALIA's 4096-character cap per section", () => {
     expect(AGENT_INSTRUCTIONS.length).toBeLessThanOrEqual(4096);
     expect(AGENT_INSTRUCTIONS_WEB_OFF.length).toBeLessThanOrEqual(4096);
     expect(CODE_WORK_INSTRUCTIONS.length).toBeLessThanOrEqual(4096);

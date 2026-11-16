@@ -1,6 +1,6 @@
 // Server entry: settings, the limits poller, storage, auto-compact, RPC
-// `usage-forecast.v1` and the `bb usage-forecast` CLI.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// `usage-forecast.v1` and the `alia usage-forecast` CLI.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   CONTEXT_LIMIT_DEFAULT_TOKENS,
@@ -41,7 +41,7 @@ import { DEFAULT_RESET_SHOW, RESET_SHOW } from "./src/shared/reset-show";
 
 export const POLL_SCHEDULE = "poll-limits";
 
-/** The bb plugin that delivers pushes, and the answer of its `notifications.send`. */
+/** The VesnALIA plugin that delivers pushes, and the answer of its `notifications.send`. */
 export const PUSH_PLUGIN_ID = "push-notifications";
 const pushSendOutput = z.object({
   ok: z.literal(true),
@@ -59,8 +59,8 @@ export const CONTEXT_EVENT_TYPES: ReadonlySet<string> = new Set([
 /** Shortest gap between two invalidations of one thread from context events. */
 export const CONTEXT_INVALIDATE_MIN_MS = 2_000;
 
-export default async function plugin(bb: BbPluginApi) {
-  const settingsHandle = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settingsHandle = alia.settings.define({
     autoCompactEnabled: {
       type: "boolean",
       label: "Auto-compact",
@@ -84,14 +84,14 @@ export default async function plugin(bb: BbPluginApi) {
     [PROVIDER_LIMIT_SETTINGS["claude-code"]]: {
       type: "number",
       label: "Claude Code context limit, tokens",
-      description: `Working limit for Claude Code threads, ${CONTEXT_LIMIT_MIN_TOKENS.toLocaleString("en-US")}-${CONTEXT_LIMIT_MAX_TOKENS.toLocaleString("en-US")}. 0 (auto) uses the point where Claude Code compacts on its own, as bb reports it, else the context limit above.`,
+      description: `Working limit for Claude Code threads, ${CONTEXT_LIMIT_MIN_TOKENS.toLocaleString("en-US")}-${CONTEXT_LIMIT_MAX_TOKENS.toLocaleString("en-US")}. 0 (auto) uses the point where Claude Code compacts on its own, as VesnALIA reports it, else the context limit above.`,
       default: PROVIDER_LIMIT_AUTO,
       experimental_schema: providerLimitSchema,
     },
     [PROVIDER_LIMIT_SETTINGS.codex]: {
       type: "number",
       label: "Codex context limit, tokens",
-      description: `Working limit for Codex threads, ${CONTEXT_LIMIT_MIN_TOKENS.toLocaleString("en-US")}-${CONTEXT_LIMIT_MAX_TOKENS.toLocaleString("en-US")}. bb does not report where Codex compacts on its own, so 0 (auto) uses the context limit above; set your model_auto_compact_token_limit here to measure against it.`,
+      description: `Working limit for Codex threads, ${CONTEXT_LIMIT_MIN_TOKENS.toLocaleString("en-US")}-${CONTEXT_LIMIT_MAX_TOKENS.toLocaleString("en-US")}. VesnALIA does not report where Codex compacts on its own, so 0 (auto) uses the context limit above; set your model_auto_compact_token_limit here to measure against it.`,
       default: PROVIDER_LIMIT_AUTO,
       experimental_schema: providerLimitSchema,
     },
@@ -118,7 +118,7 @@ export default async function plugin(bb: BbPluginApi) {
     pollIntervalMinutes: {
       type: "number",
       label: "Limits poll interval, minutes",
-      description: `How often the server asks bb for the provider limits, ${POLL_MIN_MINUTES}-${POLL_MAX_MINUTES}.`,
+      description: `How often the server asks VesnALIA for the provider limits, ${POLL_MIN_MINUTES}-${POLL_MAX_MINUTES}.`,
       default: POLL_DEFAULT_MINUTES,
       experimental_schema: pollIntervalSchema,
     },
@@ -156,32 +156,32 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Hidden providers",
       description:
-        "Provider ids to leave out of the band's other providers, the sidebar sign, limit pushes and `bb usage-forecast headroom`, separated by commas or spaces (for example: acp-opencode, codex). A thread's own provider is always shown. `bb usage-forecast status` prints the ids. Limits are still polled.",
+        "Provider ids to leave out of the band's other providers, the sidebar sign, limit pushes and `alia usage-forecast headroom`, separated by commas or spaces (for example: acp-opencode, codex). A thread's own provider is always shown. `alia usage-forecast status` prints the ids. Limits are still polled.",
       default: "",
     },
   });
   const settings = async () => parseSettings(await settingsHandle.get());
 
-  const invalidateLimits = () => bb.rpc.experimental_invalidate([LIMITS_TAG]);
-  const invalidateThread = (threadId: string) => bb.rpc.experimental_invalidate([LIMITS_TAG, threadTag(threadId)]);
+  const invalidateLimits = () => alia.rpc.experimental_invalidate([LIMITS_TAG]);
+  const invalidateThread = (threadId: string) => alia.rpc.experimental_invalidate([LIMITS_TAG, threadTag(threadId)]);
   // A new threshold or switch changes every thread's effective policy.
-  settingsHandle.onChange(() => bb.rpc.experimental_invalidateAll());
+  settingsHandle.onChange(() => alia.rpc.experimental_invalidateAll());
 
-  const storage = new Storage(bb.storage.kv);
-  // `bb.sdk` is bind-gated, so it is read inside each call.
+  const storage = new Storage(alia.storage.kv);
+  // `alia.sdk` is bind-gated, so it is read inside each call.
   const threads: ThreadsSdk = {
-    get: (args) => bb.sdk.threads.get(args),
-    context: (args) => bb.sdk.threads.context(args),
-    getPluginMetadata: (args) => bb.sdk.threads.getPluginMetadata(args),
+    get: (args) => alia.sdk.threads.get(args),
+    context: (args) => alia.sdk.threads.context(args),
+    getPluginMetadata: (args) => alia.sdk.threads.getPluginMetadata(args),
     updatePluginMetadata: (args) =>
-      bb.sdk.threads.updatePluginMetadata(args as Parameters<typeof bb.sdk.threads.updatePluginMetadata>[0]),
-    compact: (args) => bb.sdk.threads.compact(args),
-    send: ({ input, ...rest }) => bb.sdk.threads.send({ ...rest, input: input.map((item) => ({ ...item, mentions: [] })) }),
-    output: (args) => bb.sdk.threads.output(args),
-    clearContext: (args) => bb.sdk.threads.clearContext(args),
-    environment: (args) => bb.sdk.environments.get(args),
-    list: (args) => bb.sdk.threads.list(args),
-    events: (args) => bb.sdk.threads.events.list(args),
+      alia.sdk.threads.updatePluginMetadata(args as Parameters<typeof alia.sdk.threads.updatePluginMetadata>[0]),
+    compact: (args) => alia.sdk.threads.compact(args),
+    send: ({ input, ...rest }) => alia.sdk.threads.send({ ...rest, input: input.map((item) => ({ ...item, mentions: [] })) }),
+    output: (args) => alia.sdk.threads.output(args),
+    clearContext: (args) => alia.sdk.threads.clearContext(args),
+    environment: (args) => alia.sdk.environments.get(args),
+    list: (args) => alia.sdk.threads.list(args),
+    events: (args) => alia.sdk.threads.events.list(args),
   };
 
   const notifier = new LimitNotifier({
@@ -189,45 +189,45 @@ export default async function plugin(bb: BbPluginApi) {
     settings,
     send: async ({ title, body }) =>
       (
-        await bb.sdk.plugins.callRpc({
+        await alia.sdk.plugins.callRpc({
           pluginId: PUSH_PLUGIN_ID,
           method: "notifications.send",
           input: { title, body },
           outputSchema: pushSendOutput,
         })
       ).channels,
-    log: bb.log,
+    log: alia.log,
   });
 
   const poller = new Poller({
-    usageLimits: (args) => bb.sdk.system.usageLimits(args),
-    hosts: () => bb.sdk.hosts.list(),
-    primaryHostId: async () => (await bb.sdk.system.config()).primaryHostId,
+    usageLimits: (args) => alia.sdk.system.usageLimits(args),
+    hosts: () => alia.sdk.hosts.list(),
+    primaryHostId: async () => (await alia.sdk.system.config()).primaryHostId,
     storage,
     intervalMinutes: async () => (await settings()).pollIntervalMinutes,
     invalidate: invalidateLimits,
     afterPoll: (hosts, now) => notifier.checkHosts(hosts, now),
   });
 
-  const compactor = new AutoCompactor({ threads, storage, settings, invalidate: invalidateThread, log: bb.log });
-  bb.onDispose(() => compactor.dispose());
+  const compactor = new AutoCompactor({ threads, storage, settings, invalidate: invalidateThread, log: alia.log });
+  alia.onDispose(() => compactor.dispose());
 
   const counter = new TokenCounter({
     threads,
     storage,
-    invalidate: () => bb.rpc.experimental_invalidate([TOKENS_TAG]),
-    log: bb.log,
+    invalidate: () => alia.rpc.experimental_invalidate([TOKENS_TAG]),
+    log: alia.log,
   });
-  bb.onDispose(() => counter.dispose());
+  alia.onDispose(() => counter.dispose());
 
   const service = createService({ threads, storage, settings, poller, compactor, invalidateThread });
 
-  bb.background.schedule(POLL_SCHEDULE, TICK_CRON, () => poller.tick());
+  alia.background.schedule(POLL_SCHEDULE, TICK_CRON, () => poller.tick());
 
-  bb.events.on("thread.active", ({ thread }) => compactor.onActive(thread.id));
+  alia.events.on("thread.active", ({ thread }) => compactor.onActive(thread.id));
   // A turn that moved the context number, or a compaction, invalidates the
   // thread's RPC cache so an open app re-reads at once instead of on its
-  // backstop poll (after bb-plugin-context-meter). The host reports a usage
+  // backstop poll (after alia-plugin-context-meter). The host reports a usage
   // event on every tool call of a turn, so invalidations of one thread are
   // coalesced to one per CONTEXT_INVALIDATE_MIN_MS.
   const contextTimers = new Map<string, { timer: ReturnType<typeof setTimeout> | null; lastAt: number }>();
@@ -246,7 +246,7 @@ export default async function plugin(bb: BbPluginApi) {
     contextTimers.set(threadId, entry);
     for (const [id, e] of contextTimers) if (e.timer === null && e.lastAt + CONTEXT_INVALIDATE_MIN_MS <= now) contextTimers.delete(id);
   };
-  const unsubscribe = bb.sdk.subscribe({
+  const unsubscribe = alia.sdk.subscribe({
     event: "thread:changed",
     callback: (event) => {
       if (typeof event.id !== "string" || event.id === "") return;
@@ -255,22 +255,22 @@ export default async function plugin(bb: BbPluginApi) {
       invalidateThreadSoon(event.id);
     },
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribe();
     for (const e of contextTimers.values()) if (e.timer !== null) clearTimeout(e.timer);
     contextTimers.clear();
   });
   // Not awaited: a check reads the thread several times and must not hold up
   // other listeners. `onIdle` never throws.
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     void compactor.onIdle(thread.id);
   });
   // A separate listener, so a failing count never touches auto-compact.
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     void counter.onIdle(thread.id);
   });
 
-  bb.rpc.register(usageForecastContract, {
+  alia.rpc.register(usageForecastContract, {
     snapshot: () => service.snapshot(),
     thread: ({ threadId }) => service.thread(threadId),
     refresh: () => service.refresh(),
@@ -282,9 +282,9 @@ export default async function plugin(bb: BbPluginApi) {
     tokens: ({ threadId, dayStart, monthStart }) => counter.view(threadId ?? null, dayStart, monthStart),
   });
 
-  bb.cli.register(createCli(service, Date.now, async () => (await settings()).hiddenProviders, { counter }));
+  alia.cli.register(createCli(service, Date.now, async () => (await settings()).hiddenProviders, { counter }));
 
-  bb.log.info("usage-forecast loaded");
+  alia.log.info("usage-forecast loaded");
   // The first token collection runs once, in the background; it returns at
   // once when storage says it is done.
   void counter.backfill();

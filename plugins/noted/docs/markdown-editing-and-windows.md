@@ -23,7 +23,7 @@ Successful and failed save attempts emit structured log events without document 
 
 ## Delivery checklist
 
-- [x] T2 because Noted is used in the live BB review workflow (TIER-5; AGENT-9).
+- [x] T2 because Noted is used in the live VesnALIA review workflow (TIER-5; AGENT-9).
 - [x] Written scope, acceptance criteria, seam, settings and rollback (SLICE-1–3; REV-1, REV-3).
 - [x] Map criteria to implementation and named tests (SLICE-5; AGENT-1–4, AGENT-7).
 - [x] Pass repository gates without bypasses (SLICE-6).

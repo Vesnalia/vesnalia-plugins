@@ -751,7 +751,7 @@ export function planCodemod(project: Project, options: CodemodOptions): CodemodP
       needImport(sf, "AsyncStore");
       note(ref, "type", nameOf(ownerOf(ref)), ref.getText());
     }
-    // createStore(bb) becomes queueStore(createStore(bb)), outside the store's own files and where it's queued already.
+    // createStore(VesnALIA) becomes queueStore(createStore(VesnALIA)), outside the store's own files and where it's queued already.
     if (storeFiles.has(sf.getFilePath())) continue;
     for (const call of sf.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       if (targetOf(call) !== factory) continue;
@@ -1077,7 +1077,7 @@ function ownName(fn: Fn): string {
 
 const shorten = (text: string, length = 60) => { const flat = text.replace(/\s+/g, " "); return flat.length > length ? `${flat.slice(0, length - 1)}…` : flat; };
 
-/** A call's callee, with its first argument when that's a string: `bb.events.on("thread.idle")`. */
+/** A call's callee, with its first argument when that's a string: `alia.events.on("thread.idle")`. */
 function callLabel(call: CallExpression): string {
   const first = call.getArguments()[0];
   const name = Node.isStringLiteral(first) || Node.isNoSubstitutionTemplateLiteral(first) ? first.getText() : "";

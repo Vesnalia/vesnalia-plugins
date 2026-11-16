@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 // Passive projection of provider thread events, latest sequence wins:
 // item/started + item/completed toolCall events for native subagent Task
@@ -26,7 +26,7 @@ const STEER_GRACE_MS = 5 * 60_000;
 const HARD_TTL_MS = 30 * 60_000;
 
 async function listEvents(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   args: {
     threadId: string;
     types?: readonly [string, ...string[]];
@@ -36,7 +36,7 @@ async function listEvents(
   },
 ): Promise<Array<Record<string, unknown>>> {
   try {
-    const result = await bb.sdk.threads.events.list(args as never);
+    const result = await alia.sdk.threads.events.list(args as never);
     if (Array.isArray(result)) return result as unknown as Array<Record<string, unknown>>;
     const wrapped = result as { events?: unknown[]; items?: unknown[] };
     return (wrapped.events ?? wrapped.items ?? []) as Array<Record<string, unknown>>;
@@ -90,10 +90,10 @@ function createdAtOf(row: Record<string, unknown>): number {
  * sequence, so long turns are paged through once and then tailed cheaply.
  */
 export async function listLiveNativeTasks(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<LiveNativeTask[]> {
-  const boundary = await listEvents(bb, {
+  const boundary = await listEvents(alia, {
     threadId,
     types: ["turn/started", "turn/completed"],
     order: "desc",
@@ -118,7 +118,7 @@ export async function listLiveNativeTasks(
   }
 
   for (let page = 0; page < MAX_PAGES_PER_SYNC; page += 1) {
-    const rows = await listEvents(bb, {
+    const rows = await listEvents(alia, {
       threadId,
       types: ["item/started", "item/completed", "turn/completed", "turn/input/accepted"],
       order: "asc",

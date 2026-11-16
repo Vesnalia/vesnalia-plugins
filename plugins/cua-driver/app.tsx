@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EASE_BOUNCE_CLASS, EASE_OUT_CLASS } from "@/components/ui/motion";
@@ -440,7 +440,7 @@ function setupChecks(host: Host): SetupCheck[] {
   const checks: SetupCheck[] = [
     {
       label: "Machine connection",
-      detail: host.status === "connected" ? undefined : "Bring this machine online in bb",
+      detail: host.status === "connected" ? undefined : "Bring this machine online in VesnALIA",
       state: host.status === "connected" ? "complete" : "required",
     },
     {
@@ -769,7 +769,7 @@ export function AboutComputerUse() {
   return (
     <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
       <p>
-        Computer Use is an independent bb integration powered by <strong className="font-medium text-foreground">Cua Driver</strong>, the open-source desktop and browser automation runtime from Cua AI, Inc.
+        Computer Use is an independent VesnALIA integration powered by <strong className="font-medium text-foreground">Cua Driver</strong>, the open-source desktop and browser automation runtime from Cua AI, Inc.
       </p>
       <div className="flex flex-wrap gap-x-4 gap-y-2">
         <a className="rounded-sm text-foreground underline underline-offset-4 hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" href={CUA_DOCS_URL} target="_blank" rel="noreferrer">

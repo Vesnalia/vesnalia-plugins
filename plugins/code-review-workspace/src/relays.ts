@@ -1,9 +1,9 @@
-// What your other threads ask of a review: `bb review ask`, which relays a message to its agent, starting one if it has
-// none, and `bb review approve`, which lines approvals up. A relayed approve, merge or close, from these or one the agent
+// What your other threads ask of a review: `alia review ask`, which relays a message to its agent, starting one if it has
+// none, and `alia review approve`, which lines approvals up. A relayed approve, merge or close, from these or one the agent
 // is asked for (src/review-agent-tools.ts), never posts: it waits in Needs review as Ready to approve, with exactly what
 // it posts, for your own click (Part 2 §6).
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { messageAssistant } from "./agent";
 import { runGh } from "./gh";
 import { mergePr, pushback, readWriteFacts, refusalText } from "./github-writes";
@@ -16,14 +16,14 @@ import type { AsyncStore } from "./store-queue";
 import type { RpcHandlers, ServeDeps, Subcommands } from "./server-modules";
 
 export const ASK_USAGE = [
-  "usage: bb review ask <review> <text>",
+  "usage: VesnALIA review ask <review> <text>",
   "",
   "Sends <text> to the review's agent as relayed from this thread, starting the agent if the review has none. It answers this thread.",
   "  <review>  the review's id (web#12, api:feat-x), a GitHub PR URL, owner/repo#n, or a review key (pr-…, ref-…)",
-  "A review with an agent can take `bb thread tell <agentThreadId>` too, with the id from `bb review list --json`.",
+  "A review with an agent can take `alia thread tell <agentThreadId>` too, with the id from `alia review list --json`.",
 ].join("\n");
 export const APPROVE_USAGE = [
-  "usage: bb review approve <review…> [--body <text>]",
+  "usage: VesnALIA review approve <review…> [--body <text>]",
   "",
   "Lines each PR's approval up in Needs review as Ready to approve. Nothing posts until the reviewer approves it there.",
   "  <review>  the review's id (web#12), a GitHub PR URL, owner/repo#n, or a review key (pr-…)",
@@ -40,9 +40,9 @@ const readyToken = (targetKey: string, row: Omit<ReadyToApprove, "token" | "from
  * Line `hold` up as the review's Ready to approve row, replacing one waiting there: on the review's head, with no line
  * comments, the draft's staying in it, and the title of the thread that asked.
  */
-export async function holdForApproval(bb: BbPluginApi, store: AsyncStore, review: ReviewMeta & { headSha: string }, hold: Hold): Promise<ReadyToApprove> {
+export async function holdForApproval(alia: AliaPluginApi, store: AsyncStore, review: ReviewMeta & { headSha: string }, hold: Hold): Promise<ReadyToApprove> {
   const asked = { action: hold.action, verdict: hold.verdict, body: hold.body, comments: [], headSha: review.headSha, ...(hold.merge ? { merge: hold.merge } : {}) };
-  const fromTitle = hold.from ? await bb.sdk.threads.get({ threadId: hold.from }).then((thread) => thread.title ?? undefined, () => undefined) : undefined;
+  const fromTitle = hold.from ? await alia.sdk.threads.get({ threadId: hold.from }).then((thread) => thread.title ?? undefined, () => undefined) : undefined;
   const row: ReadyToApprove = { ...asked, token: readyToken(review.targetKey, asked), from: hold.from, ...(fromTitle ? { fromTitle } : {}), at: Date.now() };
   await store.setLifecycle(review.targetKey, { readyToApprove: row });
   return row;
@@ -52,12 +52,12 @@ type Outcome = { outcome: "posted"; url?: string } | { outcome: "held" | "failed
 
 /**
  * Why a command can't run from here: a review's own agent, or a thread one started, which would be acting for itself;
- * or a thread bb can't place, which fails closed. A plain shell, with no thread, may.
+ * or a thread VesnALIA can't place, which fails closed. A plain shell, with no thread, may.
  */
 export async function refusedFromAgents(deps: Pick<ServeDeps, "fromOwnAgent">, ownReview: string | undefined, threadId: string | undefined, refusal: string): Promise<{ exitCode: number; stderr: string } | null> {
   if (ownReview !== undefined) return { exitCode: 2, stderr: refusal };
   const own = threadId === undefined ? false : await deps.fromOwnAgent(threadId);
-  if (own === null) return { exitCode: 1, stderr: "bb couldn't say which threads this one was started from, so nothing was done. Try again in a moment." };
+  if (own === null) return { exitCode: 1, stderr: "alia couldn't say which threads this one was started from, so nothing was done. Try again in a moment." };
   return own ? { exitCode: 2, stderr: refusal } : null;
 }
 
@@ -65,12 +65,12 @@ export function register(deps: ServeDeps, { submit }: {
   /** draft-rpc's Submit: it posts, then records what follows. */
   submit: (targetKey: string, revision: undefined, account: undefined, comments: [], summary: { body: string; verdict: Verdict }, force: readonly SubmitWarning[], options: { alone: boolean; reviewed: string }) => Promise<SubmitResult>;
 }) {
-  const { bb, store, githubWrites, changed } = deps;
+  const { alia, store, githubWrites, changed } = deps;
   const notFromAgents = (ownReview: string | undefined, threadId: string | undefined, refusal: string) => refusedFromAgents(deps, ownReview, threadId, refusal);
   /** The reviews being approved now: a second click waits for the first's answer. */
   const posting = new Set<string>();
 
-  const reviewNamed = (given: string) => reviewOf(store, bb, given);
+  const reviewNamed = (given: string) => reviewOf(store, alia, given);
   const named = (review: ReviewMeta) => `${reviewIdentity(review).id} (${review.targetKey})`;
 
   /** Post one row, if it's still the one waiting: held, without `alsoHeld`, when the PR has commits since it was asked. */
@@ -160,10 +160,10 @@ export function register(deps: ServeDeps, { submit }: {
       if ("ambiguous" in review) return { exitCode: 1, stderr: review.ambiguous };
       const from = ctx.threadId ?? null;
       const context = from
-        ? `Relayed with bb review ask from thread ${from}, one of the reviewer's. Answer that thread with \`bb thread tell ${from}\`.`
-        : "Relayed with bb review ask from a shell outside any bb thread. Answer in your reply.";
+        ? `Relayed with VesnALIA review ask from thread ${from}, one of the reviewer's. Answer that thread with \`alia thread tell ${from}\`.`
+        : "Relayed with VesnALIA review ask from a shell outside any VesnALIA thread. Answer in your reply.";
       try {
-        const sent = await messageAssistant(bb, store, review.targetKey, text, context, { kind: "relay", from, said: text });
+        const sent = await messageAssistant(alia, store, review.targetKey, text, context, { kind: "relay", from, said: text });
         return { exitCode: 0, stdout: `${sent.started ? "Started the review agent of" : "Sent to the review agent of"} ${named(review)}. ${from ? "It answers this thread." : "It answers in the review."}` };
       } catch (error) {
         return { exitCode: 1, stderr: `Couldn't send to the review agent of ${named(review)}: ${error instanceof Error ? error.message : String(error)}` };
@@ -199,7 +199,7 @@ export function register(deps: ServeDeps, { submit }: {
           : !review.headSha ? `${named(review)}: the review hasn't read the PR's code yet. Build its guide first.`
           : null;
         if (refused) { failures++; lines.push(refused); continue; }
-        await holdForApproval(bb, store, { ...review!, headSha: review!.headSha! }, { action: "approve", verdict: "APPROVE", body: body ?? "", from: ctx.threadId ?? null });
+        await holdForApproval(alia, store, { ...review!, headSha: review!.headSha! }, { action: "approve", verdict: "APPROVE", body: body ?? "", from: ctx.threadId ?? null });
         changed(review!.targetKey);
         lines.push(`${named(review!)}: Ready to approve in Needs review. Nothing posts until the reviewer approves it there.`);
       }

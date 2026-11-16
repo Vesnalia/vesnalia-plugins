@@ -1,4 +1,4 @@
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 
@@ -96,7 +96,7 @@ export type DriverGrant = (typeof DRIVER_GRANTS)[number];
 /** An exact stable Cua Driver version such as 0.36.0. */
 export const driverVersionSchema = z.string().regex(/^\d+\.\d+\.\d+$/, "expected an x.y.z version");
 
-/** The Browser Bridge for bb on one machine: native host files and the browsers connected to it. */
+/** The Browser Bridge for VesnALIA on one machine: native host files and the browsers connected to it. */
 export const browserBridgeStateSchema = z
   .object({
     supported: z.boolean(),

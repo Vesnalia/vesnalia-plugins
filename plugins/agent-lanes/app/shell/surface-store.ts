@@ -3,7 +3,7 @@
 // live mode, and filter they both touch live in a small module-level store
 // per surface instead of React context.
 import { useMemo, useSyncExternalStore } from "react";
-import { experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 import type { Viewport } from "../../shared/view";
 import type { GroupMode, LaneFilter } from "./grouping/types";
 import {

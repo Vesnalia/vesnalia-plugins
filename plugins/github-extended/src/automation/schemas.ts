@@ -79,7 +79,7 @@ const actionParametersSchema = z
   .strict();
 
 function validateRuleActions(rule: Pick<z.output<typeof ruleObjectSchema>, "actions" | "events" | "actionParameters">, context: z.RefinementCtx) {
-  if (rule.actions.includes("bb.agent") && !rule.actionParameters.agentPrompt) {
+  if (rule.actions.includes("alia.agent") && !rule.actionParameters.agentPrompt) {
     context.addIssue({ code: "custom", path: ["actionParameters", "agentPrompt"], message: "Describe what the agent should do" });
   }
   if (rule.events.some(isIssueEvent) && rule.actions.some((action) => !supportsIssueEvents(action))) {

@@ -12,26 +12,26 @@ function line(pid, ppid, command, { uid = UID, cpu = 0, start = START, tty = "??
   return `${String(pid).padStart(6)} ${String(ppid).padStart(6)} ${String(uid).padStart(5)} ${tty.padEnd(8)} ${cpu.toFixed(1).padStart(5)} ${start}     ${command}`;
 }
 
-const BB = "/Applications/bb.app/Contents/MacOS/bb";
-const BRIDGE = `${BB} /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb-provider-bridge-worker.mjs`;
-const PLUGIN_HOST = `${BB} /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb-plugin-host-worker.mjs`;
-const BB_CLI = "node /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb hotspot kill thr_target0001";
+const ALIA = "/Applications/alia.app/Contents/MacOS/alia";
+const BRIDGE = `${ALIA} /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia-provider-bridge-worker.mjs`;
+const PLUGIN_HOST = `${ALIA} /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia-plugin-host-worker.mjs`;
+const ALIA_CLI = "node /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia hotspot kill thr_target0001";
 
-/** BB, one agent for THREAD with work under it, another thread, and the user's own apps. */
+/** VesnALIA, one agent for THREAD with work under it, another thread, and the user's own apps. */
 function table(overrides = {}) {
   const rows = {
     1: line(1, 0, "/sbin/launchd", { uid: 0 }),
-    100: line(100, 1, BB),
+    100: line(100, 1, ALIA),
     200: line(200, 100, BRIDGE),
-    300: line(300, 200, `/Users/me/.local/bin/claude --output-format stream-json BB_THREAD_ID=${THREAD} HOME=/Users/me`, { cpu: 6 }),
+    300: line(300, 200, `/Users/me/.local/bin/claude --output-format stream-json ALIA_THREAD_ID=${THREAD} HOME=/Users/me`, { cpu: 6 }),
     // A background tool shell running a dev server with a worker.
     310: line(310, 300, "/bin/zsh -c npm run dev"),
     311: line(311, 310, "node /Users/me/app/node_modules/.bin/next dev", { cpu: 80 }),
     312: line(312, 311, "node /Users/me/app/node_modules/next/dist/server/worker.js", { cpu: 20 }),
     313: line(313, 310, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --headless=new --remote-debugging-port=9222", { cpu: 10 }),
-    // The foreground tool shell running `bb hotspot kill` itself.
-    320: line(320, 300, "/bin/zsh -c bb hotspot kill thr_target0001 | head"),
-    321: line(321, 320, BB_CLI),
+    // The foreground tool shell running `alia hotspot kill` itself.
+    320: line(320, 300, "/bin/zsh -c VesnALIA hotspot kill thr_target0001 | head"),
+    321: line(321, 320, ALIA_CLI),
     322: line(322, 320, "head -c 2500"),
     // A shell that opened the user's editor and ran a system tool and sudo.
     330: line(330, 300, "/bin/zsh -c code ."),
@@ -40,7 +40,7 @@ function table(overrides = {}) {
     341: line(341, 340, "/usr/libexec/xpcproxy something"),
     342: line(342, 340, "/usr/bin/sudo thing", { uid: 0 }),
     // Another thread's agent and dev server.
-    400: line(400, 200, `/Users/me/.local/bin/claude BB_THREAD_ID=${OTHER}`),
+    400: line(400, 200, `/Users/me/.local/bin/claude ALIA_THREAD_ID=${OTHER}`),
     401: line(401, 400, "node vite", { cpu: 50 }),
     // The user's own browser, and the plugin host running Hotspot.
     500: line(500, 1, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", { cpu: 30 }),
@@ -54,7 +54,7 @@ const rowsOf = (stdout) => stdout.split("\n").map((entry) => parseKillLine(entry
 const context = { uid: UID, selfPids: new Set([600, 100, 1]) };
 
 test("parses pid, uid, start time, argv and the thread from a ps -E line", () => {
-  const row = parseKillLine(line(311, 310, `node next dev BB_THREAD_ID=${THREAD} PATH=/bin`, { cpu: 12.5 }));
+  const row = parseKillLine(line(311, 310, `node next dev ALIA_THREAD_ID=${THREAD} PATH=/bin`, { cpu: 12.5 }));
   assert.deepEqual(row, {
     pid: 311,
     ppid: 310,
@@ -77,13 +77,13 @@ test("targets only the thread's work, children first", () => {
   assert.deepEqual(plan.targets.map((target) => target.pid), [312, 311, 313, 310]);
 });
 
-test("never selects the agent, BB, the calling shell, other users, system or app processes", () => {
+test("never selects the agent, VesnALIA, the calling shell, other users, system or app processes", () => {
   const plan = planKill(rowsOf(table()), THREAD, context);
   const reasons = Object.fromEntries(plan.excluded.map((entry) => [entry.pid, entry.reason]));
   assert.match(reasons[300], /agent/);
-  assert.match(reasons[321], /BB itself/);
+  assert.match(reasons[321], /ALIA itself/);
   assert.match(reasons[320], /parent of a protected process/);
-  assert.match(reasons[322], /same command as a bb CLI call/);
+  assert.match(reasons[322], /same command as a alia CLI call/);
   assert.match(reasons[331], /an app/);
   assert.match(reasons[330], /parent of a protected process/);
   assert.match(reasons[341], /system/);
@@ -103,12 +103,12 @@ test("an app launched from a thread is a wall: its terminals are never the threa
   const orca = "thr_orcaopener";
   const helper = `/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper /Applications/Orca.app/Contents/Resources/app.asar`;
   const stdout = table({
-    44304: line(44304, 1, `${helper} BB_THREAD_ID=${orca}`),
+    44304: line(44304, 1, `${helper} ALIA_THREAD_ID=${orca}`),
     45728: line(45728, 44304, "/usr/bin/login -flpq me /bin/bash --noprofile --norc -p -c export", { uid: 0 }),
     45761: line(45761, 45728, "-/bin/zsh -l"),
     45800: line(45800, 45761, "node /Users/me/app/node_modules/.bin/vite", { cpu: 30 }),
     91794: line(91794, 44304, "/usr/bin/login -flpq me /bin/bash --noprofile --norc -p -c export", { uid: 0 }),
-    92020: line(92020, 91794, `-/bin/zsh -l BB_THREAD_ID=${orca}`),
+    92020: line(92020, 91794, `-/bin/zsh -l ALIA_THREAD_ID=${orca}`),
   });
   const plan = planKill(rowsOf(stdout), orca, context);
   assert.deepEqual(plan.targets, []);
@@ -122,7 +122,7 @@ test("an app launched from a thread is a wall: its terminals are never the threa
 
 test("a detached dev server that carries the thread id is the thread's work", () => {
   const stdout = table({
-    700: line(700, 1, `node /Users/me/app/node_modules/.bin/next dev BB_THREAD_ID=${THREAD}`, { cpu: 40 }),
+    700: line(700, 1, `node /Users/me/app/node_modules/.bin/next dev ALIA_THREAD_ID=${THREAD}`, { cpu: 40 }),
     701: line(701, 700, "next-server (v15.5.26)", { cpu: 20 }),
   });
   const plan = planKill(rowsOf(stdout), THREAD, context);
@@ -142,10 +142,10 @@ test("an interactive shell is recognised by a login dash or by having no command
 });
 
 test("a relaunching agent and its MCP servers are spared; only work under its shells is targeted", () => {
-  // Gemini CLI: BB starts node, which relaunches itself with more heap.
+  // Gemini CLI: VesnALIA starts node, which relaunches itself with more heap.
   const gemini = "/opt/homebrew/lib/node_modules/@google/gemini-cli/dist/index.js";
   const stdout = table({
-    300: line(300, 200, `node ${gemini} --experimental-acp BB_THREAD_ID=${THREAD}`),
+    300: line(300, 200, `node ${gemini} --experimental-acp ALIA_THREAD_ID=${THREAD}`),
     301: line(301, 300, `node --max-old-space-size=8192 ${gemini} --experimental-acp`, { cpu: 12 }),
     302: line(302, 301, "uvx mcp-server-fetch", { cpu: 1 }),
     303: line(303, 302, "python -m mcp_server_fetch"),
@@ -165,7 +165,7 @@ test("a relaunching agent and its MCP servers are spared; only work under its sh
   const plan = planKill(rowsOf(stdout), THREAD, context);
   assert.deepEqual(plan.targets.map((target) => target.pid), [311, 310]);
   const reasons = Object.fromEntries(plan.excluded.map((entry) => [entry.pid, entry.reason]));
-  assert.match(reasons[300], /agent \(launched by BB\)/);
+  assert.match(reasons[300], /agent \(launched by ALIA\)/);
   assert.match(reasons[301], /agent, or a launcher/);
   assert.match(reasons[302], /helper/);
   assert.match(reasons[303], /helper/);
@@ -174,7 +174,7 @@ test("a relaunching agent and its MCP servers are spared; only work under its sh
 
 test("an agent started through npx is spared down to its own shells", () => {
   const stdout = table({
-    300: line(300, 200, `node /opt/homebrew/lib/node_modules/npm/bin/npx-cli.js -y @google/gemini-cli BB_THREAD_ID=${THREAD}`),
+    300: line(300, 200, `node /opt/homebrew/lib/node_modules/npm/bin/npx-cli.js -y @google/gemini-cli ALIA_THREAD_ID=${THREAD}`),
     301: line(301, 300, "sh -c gemini --yolo"),
     302: line(302, 301, "node /Users/me/.npm/_npx/1a2b/node_modules/.bin/gemini --yolo", { cpu: 8 }),
     303: line(303, 302, "npm exec @playwright/mcp@latest"),
@@ -201,7 +201,7 @@ test("an agent started through npx is spared down to its own shells", () => {
 });
 
 test("kill --yes is accepted only from a terminal that no agent runs", () => {
-  const cli = `node /Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/host-daemon/dist/bb hotspot kill ${THREAD} --yes`;
+  const cli = `node /Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/host-daemon/dist/alia hotspot kill ${THREAD} --yes`;
   const fromTerminal = rowsOf(table({
     900: line(900, 1, "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal"),
     901: line(901, 900, "login -pf me", { uid: 0, tty: "ttys003" }),
@@ -224,7 +224,7 @@ test("kill --yes is accepted only from a terminal that no agent runs", () => {
 test("Codex's commands under sandbox-exec are work; Codex itself is spared", () => {
   const profile = "(version 1) (deny default) (allow file-read*) (allow process-exec)";
   const stdout = table({
-    300: line(300, 200, `/opt/homebrew/bin/codex app-server BB_THREAD_ID=${THREAD}`, { cpu: 5 }),
+    300: line(300, 200, `/opt/homebrew/bin/codex app-server ALIA_THREAD_ID=${THREAD}`, { cpu: 5 }),
     301: line(301, 300, `/usr/bin/sandbox-exec -p ${profile} -D WRITABLE_ROOT_0=/Users/me/app -- /bin/zsh -lc npm run dev`),
     302: line(302, 301, "/bin/zsh -lc npm run dev"),
     303: line(303, 302, "node /Users/me/app/node_modules/.bin/vite", { cpu: 60 }),
@@ -245,20 +245,20 @@ test("Codex's commands under sandbox-exec are work; Codex itself is spared", () 
   const plan = planKill(rowsOf(stdout), THREAD, context);
   assert.deepEqual(plan.targets.map((target) => target.pid), [303, 302, 301]);
   const reasons = Object.fromEntries(plan.excluded.map((entry) => [entry.pid, entry.reason]));
-  assert.match(reasons[300], /agent \(launched by BB\)/);
+  assert.match(reasons[300], /agent \(launched by ALIA\)/);
   assert.match(reasons[304], /helper/);
   assert.match(reasons[305], /helper/);
 });
 
 test("a Homebrew terminal opened from a thread is a wall, and so is tmux", () => {
   const stdout = table({
-    800: line(800, 1, `/opt/homebrew/Caskroom/alacritty/0.15.1/Alacritty.app/Contents/MacOS/alacritty BB_THREAD_ID=${THREAD}`),
-    801: line(801, 800, `/bin/zsh -c tmux attach BB_THREAD_ID=${THREAD}`),
+    800: line(800, 1, `/opt/homebrew/Caskroom/alacritty/0.15.1/Alacritty.app/Contents/MacOS/alacritty ALIA_THREAD_ID=${THREAD}`),
+    801: line(801, 800, `/bin/zsh -c tmux attach ALIA_THREAD_ID=${THREAD}`),
     802: line(802, 801, "tmux attach"),
-    810: line(810, 1, `tmux new-session -d BB_THREAD_ID=${THREAD}`),
+    810: line(810, 1, `tmux new-session -d ALIA_THREAD_ID=${THREAD}`),
     811: line(811, 810, "-zsh"),
     812: line(812, 811, "node /Users/me/app/server.js", { cpu: 30 }),
-    820: line(820, 1, `/opt/homebrew/bin/kitty BB_THREAD_ID=${THREAD}`),
+    820: line(820, 1, `/opt/homebrew/bin/kitty ALIA_THREAD_ID=${THREAD}`),
     821: line(821, 820, "/bin/zsh -c npm start"),
     310: null,
     311: null,
@@ -277,11 +277,11 @@ test("a Homebrew terminal opened from a thread is a wall, and so is tmux", () =>
 
 test("an app bundle anywhere is a wall; an argument naming a bundle is not", () => {
   const stdout = table({
-    850: line(850, 1, `/Users/me/Applications/Zed.app/Contents/MacOS/zed BB_THREAD_ID=${THREAD}`),
+    850: line(850, 1, `/Users/me/Applications/Zed.app/Contents/MacOS/zed ALIA_THREAD_ID=${THREAD}`),
     851: line(851, 850, "/bin/zsh -c cargo build"),
-    860: line(860, 1, `/opt/homebrew/bin/node /Users/me/tools/Fake.app/Contents/x.js BB_THREAD_ID=${THREAD}`, { cpu: 5 }),
-    870: line(870, 1, `/Users/me/Library/Caches/ms-playwright/chromium-1187/chrome-mac/Chromium.app/Contents/MacOS/Chromium --headless BB_THREAD_ID=${THREAD}`),
-    880: line(880, 1, `/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -m http.server 8899 BB_THREAD_ID=${THREAD}`),
+    860: line(860, 1, `/opt/homebrew/bin/node /Users/me/tools/Fake.app/Contents/x.js ALIA_THREAD_ID=${THREAD}`, { cpu: 5 }),
+    870: line(870, 1, `/Users/me/Library/Caches/ms-playwright/chromium-1187/chrome-mac/Chromium.app/Contents/MacOS/Chromium --headless ALIA_THREAD_ID=${THREAD}`),
+    880: line(880, 1, `/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -m http.server 8899 ALIA_THREAD_ID=${THREAD}`),
     310: null,
     311: null,
     312: null,
@@ -306,12 +306,12 @@ test("the plugin's own process chain is never a target even inside the thread", 
   assert.match(plan.excluded.find((entry) => entry.pid === 312).reason, /Hotspot's own/);
 });
 
-test("an agent whose parent BB process names the thread is still protected", () => {
-  // BB_THREAD_ID on the bridge too: the provider CLI below it is the agent.
-  const stdout = table({ 200: line(200, 100, `${BRIDGE} BB_THREAD_ID=${THREAD}`) });
+test("an agent whose parent VesnALIA process names the thread is still protected", () => {
+  // ALIA_THREAD_ID on the bridge too: the provider CLI below it is the agent.
+  const stdout = table({ 200: line(200, 100, `${BRIDGE} ALIA_THREAD_ID=${THREAD}`) });
   const plan = planKill(rowsOf(stdout), THREAD, context);
   const reasons = Object.fromEntries(plan.excluded.map((entry) => [entry.pid, entry.reason]));
-  assert.match(reasons[200], /BB itself/);
+  assert.match(reasons[200], /ALIA itself/);
   assert.match(reasons[300], /agent/);
   assert.equal(plan.targets.some((target) => target.pid === 300 || target.pid === 200), false);
 });
@@ -403,7 +403,7 @@ const keyOf = (pid, start = START) => `${pid}@${start}`;
 
 test("a plan narrowed to one process keeps it and the targets it started, children first", () => {
   // 314 is under the dev server but carries another thread's id: not this thread's.
-  const rows = rowsOf(table({ 314: line(314, 311, `node worker.js BB_THREAD_ID=${OTHER}`) }));
+  const rows = rowsOf(table({ 314: line(314, 311, `node worker.js ALIA_THREAD_ID=${OTHER}`) }));
   const whole = planKill(rows, THREAD, context);
   const narrowed = narrowPlan(whole, rows, keyOf(311));
   assert.deepEqual(narrowed.targets.map((target) => target.pid), [312, 311]);

@@ -1,20 +1,16 @@
 {
-  "name": "bb-plugin-linear",
+  "name": "alia-plugin-linear",
   "version": "0.7.0",
   "type": "module",
   "license": "MIT",
-  "description": "Linear inside bb — issues, inbox, triage, projects and cycles, with every thread knowing which issue it works on.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vburojevic/bb-plugin-linear.git"
-  },
+  "description": "Linear inside VesnALIA — issues, inbox, triage, projects and cycles, with every thread knowing which issue it works on.",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Linear",
-    "description": "Linear inside bb — issues, inbox, triage, projects and cycles, with every thread knowing which issue it works on.",
+    "description": "Linear inside VesnALIA — issues, inbox, triage, projects and cycles, with every thread knowing which issue it works on.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -44,7 +40,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-context-menu": "^2.3.7",
     "@radix-ui/react-dialog": "^1.1.19",
@@ -65,5 +60,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/linear#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/linear"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

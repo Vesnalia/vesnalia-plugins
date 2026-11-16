@@ -11,7 +11,7 @@
       "{1}"
     ]
   },
-  "{0} in ~/.bb-dev whose source checkout no longer exists. Servers still running from them are stopped before removal.": {
+  "{0} in ~/.alia-dev whose source checkout no longer exists. Servers still running from them are stopped before removal.": {
     "placeholderUnits": {
       "{0}": {
         "development instance": "个开发实例",
@@ -105,7 +105,7 @@
       }
     }
   },
-  "Remove {0} created outside BB ({1})?": {
+  "Remove {0} created outside ALIA ({1})?": {
     "placeholderUnits": {
       "{0}": {
         "worktree": "个 worktree",
@@ -209,7 +209,7 @@
       }
     }
   },
-  "bb cloud can't transcribe {0} audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC": {
+  "alia cloud can't transcribe {0} audio; use WebM, Ogg, MP4, MP3, WAV, FLAC, or AAC": {
     "placeholderChoices": {
       "{0}": {
         "this": "未知类型"

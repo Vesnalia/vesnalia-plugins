@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const stageSchema = z.object({
@@ -455,12 +455,12 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, migrations);
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, migrations);
 
   // Cards and native sessions are separate sidebar preferences.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     showThreadsInSidebar: {
       type: "boolean",
       label: "Show Triage sessions in the sidebar",
@@ -471,7 +471,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "Show Triage in the sidebar",
       description:
-        "List your Triage cards above the threads in BB's sidebar, ordered by what needs you first.",
+        "List your Triage cards above the threads in VesnALIA's sidebar, ordered by what needs you first.",
       default: false,
     },
   });
@@ -479,12 +479,12 @@ export default async function plugin(bb: BbPluginApi) {
   let showThreadsInSidebar = (await settings.get()).showThreadsInSidebar;
   const pendingVisibility = new Map<string, { visible: boolean }>();
   let disposed = false;
-  bb.onDispose(() => { disposed = true; pendingVisibility.clear(); });
+  alia.onDispose(() => { disposed = true; pendingVisibility.clear(); });
   let sidebarWrites: Promise<unknown> = Promise.resolve();
   const applySidebarVisibility = (threadId: string, change: { visible: boolean }) => {
     const operation = sidebarWrites.then(async () => {
       if (disposed || pendingVisibility.get(threadId) !== change) return;
-      await bb.sdk.threads.update({ threadId, visibility: change.visible ? "visible" : "hidden" });
+      await alia.sdk.threads.update({ threadId, visibility: change.visible ? "visible" : "hidden" });
       if (disposed) return;
       if (pendingVisibility.get(threadId) === change) pendingVisibility.delete(threadId);
       publish();
@@ -502,7 +502,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         await applySidebarVisibility(threadId, change);
       } catch (error) {
-        if (!disposed) bb.log.warn(`Could not update sidebar visibility: ${errorMessage(error)}`);
+        if (!disposed) alia.log.warn(`Could not update sidebar visibility: ${errorMessage(error)}`);
       }
     }
   };
@@ -572,7 +572,7 @@ export default async function plugin(bb: BbPluginApi) {
     body: string;
     level: "info" | "success" | "attention";
   }) => {
-    bb.realtime.publish("triage", {
+    alia.realtime.publish("triage", {
       kind: "changed",
       at: Date.now(),
       ...(notification ? { notification } : {}),
@@ -648,7 +648,7 @@ export default async function plugin(bb: BbPluginApi) {
     let machineId = typeof environment.hostId === "string" ? environment.hostId : null;
     if (!machineId && environment.type === "reuse" && typeof environment.environmentId === "string") {
       try {
-        const resolved = await bb.sdk.environments.get({
+        const resolved = await alia.sdk.environments.get({
           environmentId: environment.environmentId,
         });
         machineId = resolved.hostId;
@@ -658,7 +658,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (!machineId) return { machineId: null, machineName: "Project default" };
     try {
-      const host = await bb.sdk.hosts.get({ hostId: machineId });
+      const host = await alia.sdk.hosts.get({ hostId: machineId });
       return { machineId, machineName: host.name };
     } catch {
       return { machineId, machineName: machineId };
@@ -708,14 +708,14 @@ export default async function plugin(bb: BbPluginApi) {
           mentions: [],
         },
       ];
-      type SpawnArgs = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0];
+      type SpawnArgs = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0];
       const spawnArgs = {
         ...request,
         input,
         title: `Triage #${number}: ${current.title}`,
         visibility: showThreadsInSidebar ? "visible" as const : "hidden" as const,
       } as SpawnArgs;
-      const thread = await bb.sdk.threads.spawn(spawnArgs);
+      const thread = await alia.sdk.threads.spawn(spawnArgs);
       const activeStage = getSystemStage("active");
       db.prepare(
         "UPDATE triage_tasks SET thread_id = ?, stage_id = ?, run_state = 'starting', attention_reason = NULL, updated_at = ? WHERE id = ?",
@@ -750,8 +750,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   const snapshot = async () => {
     const [projectRows, machineRows] = await Promise.all([
-      bb.sdk.projects.list({ includePersonal: true }),
-      bb.sdk.hosts.list(),
+      alia.sdk.projects.list({ includePersonal: true }),
+      alia.sdk.hosts.list(),
     ]);
     const projects = [...projectRows]
       .sort((left, right) => {
@@ -778,10 +778,10 @@ export default async function plugin(bb: BbPluginApi) {
         count: number;
       }
     ).count;
-    const environments = new Map<string, ReturnType<typeof bb.sdk.environments.get>>();
+    const environments = new Map<string, ReturnType<typeof alia.sdk.environments.get>>();
     const tasks = await Promise.all(listTasks().map(async (task) => {
       const thread = task.threadId
-        ? await bb.sdk.threads.get({ threadId: task.threadId }).catch(() => null)
+        ? await alia.sdk.threads.get({ threadId: task.threadId }).catch(() => null)
         : null;
       const requestEnvironment = task.request?.environment;
       const environmentId = thread?.environmentId ??
@@ -792,7 +792,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           let pending = environments.get(environmentId);
           if (!pending) {
-            pending = bb.sdk.environments.get({ environmentId });
+            pending = alia.sdk.environments.get({ environmentId });
             environments.set(environmentId, pending);
           }
           const environment = await pending;
@@ -812,7 +812,7 @@ export default async function plugin(bb: BbPluginApi) {
    * lookup fails on its own.
    */
   const agentOptions = async () => {
-    const providers = await bb.sdk.providers.list();
+    const providers = await alia.sdk.providers.list();
     const models: {
       id: string;
       providerId: string;
@@ -825,7 +825,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const provider of providers) {
       if (!provider.available) continue;
       try {
-        const result = await bb.sdk.providers.models({ providerId: provider.id });
+        const result = await alia.sdk.providers.models({ providerId: provider.id });
         for (const model of result.models) {
           models.push({
             id: `${provider.id}:${model.id}`,
@@ -840,7 +840,7 @@ export default async function plugin(bb: BbPluginApi) {
           });
         }
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Triage could not list models for ${provider.id}: ${errorMessage(error)}`,
         );
       }
@@ -855,11 +855,11 @@ export default async function plugin(bb: BbPluginApi) {
     };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     snapshot: () => snapshot(),
     agentOptions: () => agentOptions(),
     async importThread({ threadId }) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.deletedAt !== null || thread.archivedAt !== null) {
         throw new Error("Open an unarchived session before moving it to Triage");
       }
@@ -869,8 +869,8 @@ export default async function plugin(bb: BbPluginApi) {
         publish();
         return toTask(existing);
       }
-      const project = await bb.sdk.projects.get({ projectId: thread.projectId });
-      const execution = await bb.sdk.threads.defaultExecutionOptions({ threadId });
+      const project = await alia.sdk.projects.get({ projectId: thread.projectId });
+      const execution = await alia.sdk.threads.defaultExecutionOptions({ threadId });
       const machine = await resolveMachine({ type: "reuse", environmentId: thread.environmentId });
       // The unique thread_id plus this synchronous transaction makes retries and
       // concurrent imports converge on one card and one ticket number.
@@ -918,7 +918,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async createTask(input) {
       getStageRow(input.stageId);
-      const project = await bb.sdk.projects.get({ projectId: input.request.projectId });
+      const project = await alia.sdk.projects.get({ projectId: input.request.projectId });
       const machine = await resolveMachine(input.request.environment);
       const allocateNumber = db.transaction(() => {
         const row = db
@@ -1005,7 +1005,7 @@ export default async function plugin(bb: BbPluginApi) {
 
       if (!task.thread_id && input.request) {
         request = input.request;
-        const project = await bb.sdk.projects.get({ projectId: request.projectId });
+        const project = await alia.sdk.projects.get({ projectId: request.projectId });
         const machine = await resolveMachine(request.environment);
         projectId = request.projectId;
         projectName = project.name;
@@ -1076,12 +1076,12 @@ export default async function plugin(bb: BbPluginApi) {
       addEvent(task.id, "user", "edited task");
       if (task.thread_id && input.title.trim() !== task.title) {
         try {
-          await bb.sdk.threads.update({
+          await alia.sdk.threads.update({
             threadId: task.thread_id,
             title: `Triage #${task.number}: ${input.title.trim()}`,
           });
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `Updated Triage #${task.number}, but its thread title could not be synced: ${errorMessage(error)}`,
           );
         }
@@ -1092,7 +1092,7 @@ export default async function plugin(bb: BbPluginApi) {
     async renameTask({ number, title }) {
       const task = getTaskRow(number);
       if (task.thread_id) {
-        await bb.sdk.threads.update({ threadId: task.thread_id, title: `Triage #${number}: ${title}` });
+        await alia.sdk.threads.update({ threadId: task.thread_id, title: `Triage #${number}: ${title}` });
       }
       db.prepare("UPDATE triage_tasks SET title = ?, updated_at = ? WHERE id = ?").run(title, Date.now(), task.id);
       addEvent(task.id, "user", "renamed task");
@@ -1106,7 +1106,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!["dispatching", "starting", "working"].includes(task.run_state)) {
         throw new Error(`Triage #${number} is not currently running`);
       }
-      await bb.sdk.threads.stop({ threadId: task.thread_id });
+      await alia.sdk.threads.stop({ threadId: task.thread_id });
       db.prepare(
         "UPDATE triage_tasks SET run_state = 'stopped', updated_at = ? WHERE id = ?",
       ).run(Date.now(), task.id);
@@ -1218,10 +1218,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "triage_move_task",
     description:
-      "Move the Triage card assigned to this BB thread into another workflow stage and leave a concise handoff summary.",
+      "Move the Triage card assigned to this VesnALIA thread into another workflow stage and leave a concise handoff summary.",
     instructions:
       "Keep the assigned card accurate when work starts or resumes. Before the final response, move completed work to the completion stage or work requiring user input to the attention stage, with a concise summary.",
     presentation: {
@@ -1253,7 +1253,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const task = getTaskByThread(context.thread.id);
     if (!task) return { tools: [], skills: [] };
     return {
@@ -1266,18 +1266,18 @@ export default async function plugin(bb: BbPluginApi) {
     };
   });
 
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     const task = getTaskByThread(thread.id);
     if (!task) return;
     const active = getSystemStage("active");
     db.prepare(
       "UPDATE triage_tasks SET stage_id = ?, run_state = 'working', attention_reason = NULL, settled_at = NULL, updated_at = ? WHERE id = ?",
     ).run(active.id, Date.now(), task.id);
-    addEvent(task.id, "bb", "agent active");
+    addEvent(task.id, "alia", "agent active");
     publish();
   });
 
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     const task = getTaskByThread(thread.id);
     if (!task) return;
     if (task.run_state === "stopped" || getStageRow(task.stage_id).system_role === "done") {
@@ -1302,15 +1302,15 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     const task = getTaskByThread(thread.id);
     if (!task) return;
     const attention = getSystemStage("attention");
-    const reason = error?.trim() || "The assigned BB thread failed.";
+    const reason = error?.trim() || "The assigned VesnALIA thread failed.";
     db.prepare(
       "UPDATE triage_tasks SET stage_id = ?, run_state = 'failed', attention_reason = ?, updated_at = ? WHERE id = ?",
     ).run(attention.id, reason, Date.now(), task.id);
-    addEvent(task.id, "bb", "agent failed", reason);
+    addEvent(task.id, "alia", "agent failed", reason);
     notify({
       taskNumber: task.number,
       action: "Needs attention",
@@ -1320,31 +1320,31 @@ export default async function plugin(bb: BbPluginApi) {
     });
   });
 
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     pendingVisibility.delete(thread.id);
     const task = getTaskByThread(thread.id);
     if (!task) return;
     db.prepare(
-      "UPDATE triage_tasks SET thread_id = NULL, run_state = 'stopped', attention_reason = 'The linked BB thread was deleted.', updated_at = ? WHERE id = ?",
+      "UPDATE triage_tasks SET thread_id = NULL, run_state = 'stopped', attention_reason = 'The linked VesnALIA thread was deleted.', updated_at = ? WHERE id = ?",
     ).run(Date.now(), task.id);
     notify({
       taskNumber: task.number,
       action: "Lost its thread",
       taskTitle: task.title,
-      body: "The linked BB thread was deleted. You can run the card again.",
+      body: "The linked VesnALIA thread was deleted. You can run the card again.",
       level: "attention",
     });
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "triage",
     summary: "List, inspect, run, and move Triage cards",
     commands: [
-      { name: "list", summary: "List Triage cards", usage: "bb triage list [--json]" },
-      { name: "show", summary: "Show a Triage card", usage: "bb triage show <number> [--json]" },
-      { name: "run", summary: "Run a Triage card now", usage: "bb triage run <number> [--json]" },
-      { name: "move", summary: "Move a Triage card", usage: "bb triage move <number> <stage> [--summary <text>] [--json]" },
-      { name: "stages", summary: "List workflow stages", usage: "bb triage stages [--json]" },
+      { name: "list", summary: "List Triage cards", usage: "alia triage list [--json]" },
+      { name: "show", summary: "Show a Triage card", usage: "alia triage show <number> [--json]" },
+      { name: "run", summary: "Run a Triage card now", usage: "alia triage run <number> [--json]" },
+      { name: "move", summary: "Move a Triage card", usage: "alia triage move <number> <stage> [--summary <text>] [--json]" },
+      { name: "stages", summary: "List workflow stages", usage: "alia triage stages [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -1355,8 +1355,8 @@ export default async function plugin(bb: BbPluginApi) {
           return {
             exitCode: 0,
             stdout:
-              "Usage: bb triage list|show|run|move|stages\n" +
-              "Cards use GitHub-style numbers, for example: bb triage show 42",
+              "Usage: VesnALIA triage list|show|run|move|stages\n" +
+              "Cards use GitHub-style numbers, for example: VesnALIA triage show 42",
           };
         }
         if (command === "list") {
@@ -1414,7 +1414,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("scheduler", {
+  alia.background.service("scheduler", {
     async start(signal) {
       while (!signal.aborted) {
         await syncSidebarVisibility();
@@ -1433,5 +1433,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("Triage loaded");
+  alia.log.info("Triage loaded");
 }

@@ -1,10 +1,10 @@
 /*
- * The plugin's own classes, prefixed `guest-view-` so nothing of BB's matches them
+ * The plugin's own classes, prefixed `guest-view-` so nothing of ALIA's matches them
  * (see AGENTS.md: the plugin build scopes any utility word it finds in this folder).
- * Colours are BB's theme variables.
+ * Colours are ALIA's theme variables.
  */
 
-/* Same box as BB's git row beneath it (36px, 8px radius, raised surface); BB's own 8px gap sits between the banners. */
+/* Same box as ALIA's git row beneath it (36px, 8px radius, raised surface); ALIA's own 8px gap sits between the banners. */
 .guest-view-card {
   display: flex;
   flex-direction: column;

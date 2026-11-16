@@ -45,7 +45,7 @@ outside the tab show up in it.
 
 ## Getting started
 
-You need BB 0.44 or later on the machine that has the repository. On Linux
+You need VesnALIA 0.44 or later on the machine that has the repository. On Linux
 and macOS, on Intel/AMD or ARM64, setup downloads the matching `bend` release
 and verifies its SHA-256 checksum; Go is not required, and the download
 needs `curl` and `sha256sum` or `shasum`. Other platforms can build `bend`

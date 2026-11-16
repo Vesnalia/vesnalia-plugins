@@ -344,7 +344,7 @@
      "id": "daf3272c1d-i3",
      "tool": "write",
      "arguments": {
-      "file_path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md",
+      "file_path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md",
       "content": "alpha\nbeta\n"
      },
      "status": "pending",
@@ -372,9 +372,9 @@
      "id": "daf3272c1d-i4",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md\n+alpha\n+beta\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md\n+alpha\n+beta\n"
       }
      ],
      "status": "completed",
@@ -403,11 +403,11 @@
      "id": "daf3272c1d-i3",
      "tool": "write",
      "arguments": {
-      "file_path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md",
+      "file_path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md",
       "content": "alpha\nbeta\n"
      },
      "status": "completed",
-     "result": "{\"type\":\"SearchReplace\",\"EditsApplied\":{\"old_string\":\"\",\"new_string\":\"alpha\\nbeta\\n\",\"tool_output_for_prompt\":\"The file /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md has been created.\",\"tool_output_for_prompt_concise\":\"The file /Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md has been created.\",\"absolute_path\":\"/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md\",\"edits\":{\"details\":[{\"old_string\":\"\",\"old_line\":1,\"new_string\":\"alpha\\nbeta\\n\",\"new_line\":1,\"context_before\":\"\",\"context_after\":\"\",\"line_prefix\":\"\"}]}}}",
+     "result": "{\"type\":\"SearchReplace\",\"EditsApplied\":{\"old_string\":\"\",\"new_string\":\"alpha\\nbeta\\n\",\"tool_output_for_prompt\":\"The file /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md has been created.\",\"tool_output_for_prompt_concise\":\"The file /Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md has been created.\",\"absolute_path\":\"/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md\",\"edits\":{\"details\":[{\"old_string\":\"\",\"old_line\":1,\"new_string\":\"alpha\\nbeta\\n\",\"new_line\":1,\"context_before\":\"\",\"context_after\":\"\",\"line_prefix\":\"\"}]}}}",
      "presentation": {
       "label": {
        "pending": "Running write",
@@ -482,7 +482,7 @@
      "id": "daf3272c1d-i6",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "update"
       }
      ],
@@ -512,9 +512,9 @@
      "id": "daf3272c1d-i6",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "update",
-       "diff": "--- a/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine/probe/notes.md\n-beta\n+gamma\n"
+       "diff": "--- a/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine/probe/notes.md\n-beta\n+gamma\n"
       }
      ],
      "status": "completed",
@@ -602,7 +602,7 @@
      "type": "commandExecution",
      "id": "daf3272c1d-i8",
      "command": "cat probe/notes.md && ls probe",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -628,7 +628,7 @@
      "type": "commandExecution",
      "id": "daf3272c1d-i9",
      "command": "ls probe/does-not-exist",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -664,7 +664,7 @@
      "type": "commandExecution",
      "id": "daf3272c1d-i9",
      "command": "ls probe/does-not-exist",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "ls: probe/does-not-exist: No such file or directory\n",
@@ -702,7 +702,7 @@
      "type": "commandExecution",
      "id": "daf3272c1d-i8",
      "command": "cat probe/notes.md && ls probe",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/bb-plugin-thread-time-machine",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_vrz92gzzfd-1/alia-plugin-thread-time-machine",
      "status": "completed",
      "approvalStatus": null,
      "aggregatedOutput": "alpha\ngamma\nnotes.md\n",

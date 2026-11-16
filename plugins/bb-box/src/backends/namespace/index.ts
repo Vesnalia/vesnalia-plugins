@@ -12,7 +12,7 @@ export const namespaceDriver: BackendDriver<NamespaceConfig> = {
   kinds: NAMESPACE_KINDS,
   sharedKinds: ["ios"],
   fields: NAMESPACE_FIELDS,
-  setup: { guide: "docs/guide/namespace.md", scripts: [], needs: "A Namespace workspace, a token made with its CLI, and a way for its machines to reach BB." },
+  setup: { guide: "docs/guide/namespace.md", scripts: [], needs: "A Namespace workspace, a token made with its CLI, and a way for its machines to reach VesnALIA." },
   parse: parseNamespacePart,
   several: () => null,
   longestName: LONGEST_NAMESPACE_BACKEND_NAME,

@@ -4,8 +4,8 @@ import { mirrorConfig } from "../mirror.config.ts";
 export const BUCKETS = mirrorConfig.selection.buckets;
 export const bucketSchema = z.enum(BUCKETS);
 export const stableBucketSchema = z.enum(["engineering", "productivity"]);
-export const bbNameSchema = z.string().min(1).max(mirrorConfig.skillNames.maxLength).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$(?![\s\S])/);
-export const canonicalIdSchema = bbNameSchema;
+export const aliaNameSchema = z.string().min(1).max(mirrorConfig.skillNames.maxLength).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$(?![\s\S])/);
+export const canonicalIdSchema = aliaNameSchema;
 export const relativePathSchema = z.string().min(1).refine((path) =>
   !path.includes("\\") && !path.includes("\0") && !/^[A-Za-z]:/.test(path) &&
   path.split("/").every((part) => part !== "" && part !== "." && part !== ".."),
@@ -14,7 +14,7 @@ export const relativePathSchema = z.string().min(1).refine((path) =>
 export const sha256Schema = z.string().length(64).regex(/^[a-f0-9]{64}$/);
 export const commitShaSchema = z.string().length(40).regex(/^[a-f0-9]{40}$/);
 export type CanonicalId = z.infer<typeof canonicalIdSchema>;
-export type BbName = z.infer<typeof bbNameSchema>;
+export type AliaName = z.infer<typeof aliaNameSchema>;
 export type RelativePath = z.infer<typeof relativePathSchema>;
 export type Sha256 = z.infer<typeof sha256Schema>;
 export type CommitSha = z.infer<typeof commitShaSchema>;
@@ -54,7 +54,7 @@ export type Prerequisite = z.infer<typeof prerequisiteSchema>;
 
 export const catalogSkillSchema = z.strictObject({
   canonicalId: canonicalIdSchema,
-  aliasName: bbNameSchema,
+  aliasName: aliaNameSchema,
   bucket: bucketSchema,
   defaultEnabled: z.boolean(),
   sourcePath: relativePathSchema,

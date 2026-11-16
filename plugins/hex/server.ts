@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { homedir, tmpdir } from "node:os";
 import { extname, join } from "node:path";
-import { cliCommand, defineCli, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { cliCommand, defineCli, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 const MODEL_IDS = [
   "apple_speech",
@@ -143,7 +143,7 @@ function guessExtension(file: File): string {
 
 async function convertToWav16kMono(audio: File, rawBytes: Uint8Array, signal?: AbortSignal): Promise<Buffer> {
   const ffmpeg = resolveFfmpegBinary();
-  const tempDir = await mkdtemp(join(tmpdir(), "bb-hex-audio-"));
+  const tempDir = await mkdtemp(join(tmpdir(), "alia-hex-audio-"));
   const inputPath = join(tempDir, `input${guessExtension(audio)}`);
   const outputPath = join(tempDir, "output.pcm");
 
@@ -478,8 +478,8 @@ async function ensureModelPrepared(
   throw new Error("Hex model preparation stream ended without confirmation");
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     model: {
       type: "select",
       label: "Transcription model",
@@ -547,7 +547,7 @@ export default async function plugin(bb: BbPluginApi) {
     return hostInFlight;
   }
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     if (activeHost !== null) {
       const host = activeHost;
@@ -556,7 +556,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.experimental_aiServices.register({
+  alia.experimental_aiServices.register({
     id: "hex",
     displayName: "Hex (Apple Speech)",
     async status() {
@@ -616,7 +616,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "hex",
       summary: "Inspect and manage the Hex local voice transcription service.",

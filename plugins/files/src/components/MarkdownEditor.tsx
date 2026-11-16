@@ -143,8 +143,8 @@ export function MarkdownEditor({
   return (
     <div
       ref={rootRef}
-      className="bb-files-markdown-editor h-full min-h-0 overflow-y-auto bg-background"
-      data-testid="bb-files-markdown-editor"
+      className="alia-files-markdown-editor h-full min-h-0 overflow-y-auto bg-background"
+      data-testid="alia-files-markdown-editor"
     />
   );
 }

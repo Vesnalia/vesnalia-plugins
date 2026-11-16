@@ -5,7 +5,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { HierarchyGuides } from "./hierarchy-guides";
@@ -53,7 +53,7 @@ function useFarcallTasks(threadId: string) {
 }
 
 const focus = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-/** BB's agent provider ids; the icons are the ones BB shows for those workers' threads. */
+/** VesnALIA's agent provider ids; the icons are the ones VesnALIA shows for those workers' threads. */
 const PROVIDER_IDS: Record<FarcallRow["provider"], string> = { claude: "claude-code", codex: "codex" };
 const PROVIDER_NAMES: Record<FarcallRow["provider"], string> = { claude: "Claude", codex: "Codex" };
 
@@ -76,7 +76,7 @@ export function formatDuration(ms: number): string {
   return `${Math.floor(hours / 24)}d ${hours % 24}h`;
 }
 
-/** Call time from BB events; unavailable stays unavailable. */
+/** Call time from VesnALIA events; unavailable stays unavailable. */
 export function callDuration(task: FarcallRow, now: number): string {
   const end = task.callState === "open" ? now : task.endedAt;
   if (task.startedAt === null || end === null || end < task.startedAt) return "time unavailable";
@@ -121,7 +121,7 @@ function TaskDetails({ task }: { task: FarcallRow }) {
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground">
         <span className={TONE[status.outcome]}>{status.label}</span>
         <span className="inline-flex min-w-0 items-center gap-1 tabular-nums"
-          title="Elapsed tool call time from BB events, not measured worker run time">
+          title="Elapsed tool call time from VesnALIA events, not measured worker run time">
           <Icon name="Clock" fallback="Dot" aria-hidden className="size-3 shrink-0" />
           <span>{callDuration(task, now)}</span>
         </span>

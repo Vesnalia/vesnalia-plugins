@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { PrView } from "../contract";
 import type { Intent, PageActions } from "./actions";
 import { AgentDialog } from "./agent";
@@ -42,7 +42,7 @@ export interface SurfaceOptions {
  * asks open. The Shuttle page and the thread tab each host one.
  */
 export function useSurface({ phone, sheetComposer, selected, select, threadIds }: SurfaceOptions) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const config = useShuttleQuery("getConfig", {});
   const [dialog, setDialog] = useState<DialogState>(null);
   const [intent, setIntent] = useState<Intent | null>(null);

@@ -116,7 +116,7 @@ export function setMemberValue(yaml: string, key: string, field: string, value: 
   return write(doc);
 }
 
-/** What BB's provider/model picker chose; level and tier are dropped when the picker returns none. */
+/** What VesnALIA's provider/model picker chose; level and tier are dropped when the picker returns none. */
 export function setMemberExecution(
   yaml: string,
   key: string,

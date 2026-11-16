@@ -48,12 +48,12 @@ export async function inspectMove(input: {
   for (const protectedPath of [
     home,
     process.cwd(),
-    path.join(home, ".bb"),
-    path.join(home, ".bb-machines"),
+    path.join(home, ".vesnalia"),
+    path.join(home, ".alia-machines"),
   ])
     if (within(protectedPath, source))
       throw new Error(
-        "The home folder or a directory containing BB runtime data cannot be moved.",
+        "The home folder or a directory containing VesnALIA runtime data cannot be moved.",
       );
   if (dst)
     throw new Error(

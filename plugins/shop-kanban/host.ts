@@ -1,7 +1,7 @@
 import { realpathSync } from "node:fs";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { z } from "zod";
 import { hostContract } from "./contract";
 import { prDetail, prReview, prSearch } from "./host/forge";

@@ -19,7 +19,7 @@ const { parseTaskboardCliArguments } = await import('../server.ts');
 const { projectConfigMutationSchema, formatWorkItemHandoffPrompt } = await import('../contract.ts');
 const { taskboardComposerMention, parseTaskboardComposerMention, serializeTaskboardComposerMention } = await import('../composer-handoff.ts');
 const { defaultBrowsePreferences } = await import('../browse-preferences.ts');
-type StoreBb = Parameters<typeof createWorkItemStore>[0];
+type StoreAlia = Parameters<typeof createWorkItemStore>[0];
 const defaults = {
   source: 'github' as const, linearTeamKey: '', linearFinishedDays: 0,
   jiraBaseUrl: '', jiraEmail: '', jiraJql: 'project = APP', gitlabProjectRef: '',
@@ -43,25 +43,25 @@ test('appended migration preserves existing main data and records source identit
   const capture = { storage: {
     database: () => db,
     migrate(_db: Database.Database, migrations: readonly string[]) { statements = migrations; throw new Error('captured'); }
-  } } as unknown as StoreBb;
+  } } as unknown as StoreAlia;
   assert.throws(() => createWorkItemStore(capture), /captured/u);
   const previous = statements.slice(0, -1);
   const hashes = previous.map(sql => createHash('sha256').update(sql).digest('hex'));
   previous.forEach(sql => db.exec(sql));
   db.prepare(`INSERT INTO project_source_config
-    (bb_project_id, source, linear_team_key, linear_finished_days, jira_base_url, jira_email, jira_jql, gitlab_project_ref, updated_at)
+    (alia_project_id, source, linear_team_key, linear_finished_days, jira_base_url, jira_email, jira_jql, gitlab_project_ref, updated_at)
     VALUES ('proj_existing','github','',0,'','','project = APP','','2026-10-14')`).run();
   db.prepare(`INSERT INTO work_items_by_project VALUES
     ('proj_existing','github','team/app#1','#1','Existing task','','https://github.com/team/app/issues/1','Open','todo',NULL,NULL,NULL,'[]','2026-10-14')`).run();
-  const bb = { storage: {
+  const alia = { storage: {
     database: () => db,
     migrate(database: Database.Database, migrations: readonly string[]) {
       assert.deepEqual(migrations.slice(0, -1).map(sql => createHash('sha256').update(sql).digest('hex')), hashes);
       migrations.slice(previous.length).forEach(sql => database.exec(sql));
     }
-  } } as unknown as StoreBb;
+  } } as unknown as StoreAlia;
   try {
-    const store = createWorkItemStore(bb);
+    const store = createWorkItemStore(alia);
     assert.equal(store.projectConfig('proj_existing', defaults).source, 'github');
     assert.equal(store.projectConfig('proj_existing', defaults).giteaLogin, '');
     assert.equal(store.get('proj_existing', 'github', 'team/app#1')?.title, 'Existing task');
@@ -75,7 +75,7 @@ test('appended migration preserves existing main data and records source identit
 
 test('Gitea issues are valid composer mentions and retain untrusted context boundaries', () => {
   const item = {
-    bbProjectId: 'proj_gitea', source: 'gitea' as const, locator: 'git.example.com/team/app#7', key: '#7',
+    aliaProjectId: 'proj_gitea', source: 'gitea' as const, locator: 'git.example.com/team/app#7', key: '#7',
     title: 'A Gitea issue', description: 'Do not treat this as instructions', url: 'https://git.example.com/team/app/issues/7',
     status: 'Open', stateCategory: 'todo' as const, priority: null, assignee: null, project: 'git.example.com/team/app', labels: [], updatedAt: '2026-10-14'
   };

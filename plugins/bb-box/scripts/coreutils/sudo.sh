@@ -1,4 +1,4 @@
-# The sudo forms bb-box uses, with the image's sudoers rule (customize-base.sh), on this Ubuntu: sudo on 24.04, sudo-rs on 26.04.
+# The sudo forms alia-box uses, with the image's sudoers rule (customize-base.sh), on this Ubuntu: sudo on 24.04, sudo-rs on 26.04.
 # Prints each result, for compare.sh.
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq >/dev/null 2>&1; apt-get install -y -qq sudo >/dev/null 2>&1

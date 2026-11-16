@@ -1,12 +1,12 @@
 ---
 name: sops
-description: Use when the user wants to see, change, add or rotate a secret kept in a SOPS-encrypted file (`*.sops.env`, `*.sops.yaml`, any file sops encrypted) and the SOPS plugin is installed in BB.
+description: Use when the user wants to see, change, add or rotate a secret kept in a SOPS-encrypted file (`*.sops.env`, `*.sops.yaml`, any file sops encrypted) and the SOPS plugin is installed in VesnALIA.
 ---
 
 # Encrypted files (SOPS plugin)
 
 The SOPS plugin gives the user an editor for SOPS-encrypted files beside
-the thread. It decrypts on the machine BB runs on, shows values hidden
+the thread. It decrypts on the machine VesnALIA runs on, shows values hidden
 until asked, and saves through `sops edit`, so the file keeps its keys and
 only changed values get new ciphertext.
 
@@ -17,7 +17,7 @@ secret needs changing, open the file in the user's editor instead of
 running `sops -d` or `sops edit` yourself:
 
 ```sh
-bb thread open stacks/abs/secrets.sops.env     # a path relative to the thread's folder
+alia thread open stacks/abs/secrets.sops.env     # a path relative to the thread's folder
 ```
 
 That works for `.env` files. For an encrypted YAML, JSON or INI file, tell
@@ -37,7 +37,7 @@ secret value into the conversation.
 
 ## Limits
 
-- Only folders on the machine BB runs on. A thread whose checkout is on
+- Only folders on the machine VesnALIA runs on. A thread whose checkout is on
   another machine gets a message instead of a list.
 - sops runs through mise in the file's folder when mise is installed, so
   a repo's pinned sops and its `SOPS_AGE_KEY_FILE` apply. A repo without
@@ -47,7 +47,7 @@ secret value into the conversation.
 
 ## Settings
 
-`bb plugin config sops` shows them:
+`alia plugin config sops` shows them:
 
 - `extraFolders` — more folders to list SOPS files from, one per line.
 - `useMise` — run sops through mise (default on).

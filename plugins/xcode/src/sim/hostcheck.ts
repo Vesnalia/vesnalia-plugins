@@ -1,7 +1,7 @@
 /**
- * Is this thread's checkout on the machine that runs bb?
+ * Is this thread's checkout on the machine that runs VesnALIA?
  *
- * bb supports a Linux server with enrolled Macs, and a thread's environment can
+ * VesnALIA supports a Linux server with enrolled Macs, and a thread's environment can
  * live on a host that is not the server's own. Stills builds with `xcodebuild`
  * on the server's filesystem, so a checkout on another host is a real refusal
  * with a real sentence rather than a mysterious "no such file".
@@ -55,7 +55,7 @@ export async function resolveServerHostId(deps: HostcheckDeps): Promise<string |
 
   const noncePath = join(deps.pluginDataDir, `.host-probe-${randomBytes(8).toString("hex")}`);
   await mkdir(deps.pluginDataDir, { recursive: true });
-  await writeFile(noncePath, "bb-plugin-xcode-simulators host probe\n", { mode: 0o600 });
+  await writeFile(noncePath, "alia-plugin-xcode-simulators host probe\n", { mode: 0o600 });
 
   try {
     for (const host of hosts) {
@@ -108,11 +108,11 @@ export function describeCheckoutLocation(location: CheckoutLocation): string | n
     case "unknown":
       return null;
     case "other-host":
-      // Tracked builds do run there (`xcode_build`, `bb xcode run`); Stills
+      // Tracked builds do run there (`xcode_build`, `alia xcode run`); Stills
       // and the live mirror still drive this machine's simulators only.
       return (
-        `This thread's checkout lives on ${location.hostName}, but Stills renders on the machine running bb. ` +
-        `Tracked builds (xcode_build, bb xcode run) do run on ${location.hostName}.`
+        `This thread's checkout lives on ${location.hostName}, but Stills renders on the machine running VesnALIA. ` +
+        `Tracked builds (xcode_build, VesnALIA xcode run) do run on ${location.hostName}.`
       );
   }
 }

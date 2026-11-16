@@ -10,7 +10,7 @@ context: `lib/rank.ts`, `docs/musings/2026-09-25-rank-ordering.md`, `server.ts`
 A `rank_move` RPC carries the whole displayed order (`visibleIds`) plus the
 drop target. `applyMoveVisible` (lib/rank.ts) derives the resulting order's
 HEAD segment from the client's `visibleIds` and keeps the stored order's cards
-below the head. A second bb window holding a stale view of the lane therefore
+below the head. A second VesnALIA window holding a stale view of the lane therefore
 rewrites the arrangement of every head card when it drops: window A's drag
 lands briefly, then B's later drop (or refetch) reverts it to B's stale
 arrangement. The server's write serialization (PR #243, `withKvWriteLock`)
@@ -216,6 +216,6 @@ Nothing in `app.tsx`, `components/preferences.ts`, or preference persistence
   reordering raced the drop; ranked cards always sort first, so ranked
   arrangement can never be corrupted — worst case is recency-order drift
   among newly-minted cards, self-correcting on the next refetch. Left honest.
-- Two windows writing to the same column via DIFFERENT bb plugin processes
-  (if bb ever serves one board from two host processes) is outside the
+- Two windows writing to the same column via DIFFERENT VesnALIA plugin processes
+  (if VesnALIA ever serves one board from two host processes) is outside the
   in-process lock's model — pre-existing limitation of #243, unchanged here.

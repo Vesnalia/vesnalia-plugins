@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, Markdown, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, Markdown, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { ConversationItem, HunkLine, PrView } from "../contract";
 import { nudgeText, useActions } from "./actions";
 import { Avatar } from "./avatar";
@@ -119,7 +119,7 @@ function Comment({ pr, item, since }: { pr: PrView; item: ConversationItem; sinc
 /** A review thread on a line: the code, every comment, and Reply, Resolve and Send to an agent where they apply. */
 function ThreadCard({ pr, group, since, onResolve }: { pr: PrView; group: ThreadGroup; since: number | null; onResolve(group: ThreadGroup): void }) {
   const actions = useActions();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [replying, setReplying] = usePrState(pr.key, "replyOpen", false, `reply/${group.key}`);
   const focusReply = useRef(false);
   const live = isLive(pr);

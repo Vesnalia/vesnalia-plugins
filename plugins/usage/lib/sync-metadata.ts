@@ -1,6 +1,6 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 const LAST_COMPLETED_SYNC_KEY = "last_completed_sync_at";
 

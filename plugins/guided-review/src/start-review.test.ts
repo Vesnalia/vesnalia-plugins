@@ -30,7 +30,7 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { createPrReview } from "./start-review";
 import * as gh from "./gh";
@@ -38,14 +38,14 @@ import { targetKey } from "./targets";
 const key = targetKey({ kind: "pr", number: 7, repo: "acme/web" });
 
 test("createPrReview stores the review + patch and returns ok with a targetKey", async () => {
-  const { bb } = createFakePluginHost({
+  const { alia } = createFakePluginHost({
     pluginId: "guided-review",
     sdk: { threads: { spawn: async () => ({ id: "th_1" }), wait: async () => {}, archive: async () => {}, stop: async () => {} } },
   });
-  const store = createStore(bb);
+  const store = createStore(alia);
 
   const res = await createPrReview(
-    { bb, store, gh },
+    { alia, store, gh },
     { input: "https://github.com/acme/web/pull/7", projectId: "p1" },
   );
 
@@ -61,10 +61,10 @@ test("createPrReview stores the review + patch and returns ok with a targetKey",
 });
 
 test("createPrReview rejects a non-PR-URL input", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "guided-review" });
-  const store = createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "guided-review" });
+  const store = createStore(alia);
 
-  const res = await createPrReview({ bb, store, gh }, { input: "42", projectId: "p1" });
+  const res = await createPrReview({ alia, store, gh }, { input: "42", projectId: "p1" });
 
   expect(res.ok).toBe(false);
   expect(res.targetKey).toBeUndefined();

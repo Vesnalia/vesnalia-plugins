@@ -1,7 +1,7 @@
-// bb.host entry: runs on the host that owns each environment. It runs git,
+// alia.host entry: runs on the host that owns each environment. It runs git,
 // gt, and gh with argument arrays, timeouts, and byte caps. It reads Graphite
 // topology only through `gt state` and never reads or writes Graphite files.
-import { experimental_defineHostEntry, type ExperimentalHostWatchSubscription } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry, type ExperimentalHostWatchSubscription } from "@vesnalia/plugin-sdk/host";
 import { hostContract, hostSignals } from "./contract";
 import * as github from "./lib/github";
 import * as gitops from "./lib/gitops";

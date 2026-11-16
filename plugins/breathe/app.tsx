@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { definePluginApp, useComposer, useSettings, useRealtimeConnectionState, experimental_useSidebarThreads } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useSettings, useRealtimeConnectionState, experimental_useSidebarThreads } from "@vesnalia/plugin-sdk/app";
 import { Button } from "./components/ui/button";
 import { Icon } from "./components/ui/icon";
 import { BreatheWave } from "./components/breathe-wave";

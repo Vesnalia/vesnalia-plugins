@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   MAX_TAB_ID_LENGTH,
@@ -10,7 +10,7 @@ import {
 } from "./lib/tab-model.ts";
 
 type ThreadTabsResult = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["tabs"]["get"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["tabs"]["get"]>
 >;
 type ThreadTab = ThreadTabsResult["tabs"][number];
 const MAX_TABS = 200;
@@ -80,7 +80,7 @@ function browserLabel(url: string, title: string | null): string {
 
 function summarizeTab(tab: ThreadTab): TabSummary {
   const kind = tab.kind as TabKind;
-  // BB 0.48 persists Info and Diff as "plugin-fixed" tabs. The pinned SDK
+  // VesnALIA 0.48 persists Info and Diff as "plugin-fixed" tabs. The pinned SDK
   // types predate that kind, so read it through a loose shape.
   const fixed = tab as { kind: string; id: string; tabId?: unknown };
   if (fixed.kind === "plugin-fixed") {
@@ -172,44 +172,44 @@ function summarizeTabs(result: ThreadTabsResult) {
   };
 }
 
-export default function plugin(bb: BbPluginApi): void {
-  bb.rpc.register(actionTopbarRpcContract, {
+export default function plugin(alia: AliaPluginApi): void {
+  alia.rpc.register(actionTopbarRpcContract, {
     async closeTab({ tabId, terminalId, threadId }) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        const current = await bb.sdk.threads.tabs.get({ threadId });
+        const current = await alia.sdk.threads.tabs.get({ threadId });
         const target = current.tabs.find((tab) => tab.id === tabId);
         let terminalToClose =
           target?.kind === "terminal" ? target.terminalId : undefined;
         if (target === undefined && terminalId !== undefined) {
           try {
-            const terminal = await bb.sdk.terminals.get({ terminalId });
+            const terminal = await alia.sdk.terminals.get({ terminalId });
             if (terminal.threadId !== threadId) {
-              bb.log.warn(
+              alia.log.warn(
                 `Terminal ${terminalId} does not belong to thread ${threadId}`,
               );
               return summarizeTabs(current);
             }
             terminalToClose = terminal.id;
           } catch {
-            bb.log.warn(`Terminal ${terminalId} was already unavailable`);
+            alia.log.warn(`Terminal ${terminalId} was already unavailable`);
             return summarizeTabs(current);
           }
         }
         if (terminalToClose !== undefined) {
           try {
-            await bb.sdk.terminals.close({
+            await alia.sdk.terminals.close({
               mode: "force",
               terminalId: terminalToClose,
             });
           } catch {
-            bb.log.warn(`Terminal ${terminalToClose} was already unavailable`);
+            alia.log.warn(`Terminal ${terminalToClose} was already unavailable`);
           }
-          const closed = await bb.sdk.threads.tabs.get({ threadId });
+          const closed = await alia.sdk.threads.tabs.get({ threadId });
           if (!closed.tabs.some((tab) => tab.id === tabId)) {
             return summarizeTabs(closed);
           }
           return summarizeTabs(
-            await bb.sdk.threads.tabs.update({
+            await alia.sdk.threads.tabs.update({
               expectedRevision: closed.revision,
               tabs: closed.tabs.filter((tab) => tab.id !== tabId),
               threadId,
@@ -221,7 +221,7 @@ export default function plugin(bb: BbPluginApi): void {
         }
         try {
           return summarizeTabs(
-            await bb.sdk.threads.tabs.update({
+            await alia.sdk.threads.tabs.update({
               expectedRevision: current.revision,
               tabs: current.tabs.filter((tab) => tab.id !== tabId),
               threadId,
@@ -232,14 +232,14 @@ export default function plugin(bb: BbPluginApi): void {
         }
       }
 
-      return summarizeTabs(await bb.sdk.threads.tabs.get({ threadId }));
+      return summarizeTabs(await alia.sdk.threads.tabs.get({ threadId }));
     },
     async listTabs({ threadId }) {
-      return summarizeTabs(await bb.sdk.threads.tabs.get({ threadId }));
+      return summarizeTabs(await alia.sdk.threads.tabs.get({ threadId }));
     },
     async reorderTabs({ activeTabId, overTabId, threadId }) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        const current = await bb.sdk.threads.tabs.get({ threadId });
+        const current = await alia.sdk.threads.tabs.get({ threadId });
         const activeIndex = current.tabs.findIndex(
           (tab) => tab.id === activeTabId,
         );
@@ -258,7 +258,7 @@ export default function plugin(bb: BbPluginApi): void {
         tabs.splice(overIndex, 0, activeTab);
         try {
           return summarizeTabs(
-            await bb.sdk.threads.tabs.update({
+            await alia.sdk.threads.tabs.update({
               expectedRevision: current.revision,
               tabs,
               threadId,
@@ -269,7 +269,7 @@ export default function plugin(bb: BbPluginApi): void {
         }
       }
 
-      return summarizeTabs(await bb.sdk.threads.tabs.get({ threadId }));
+      return summarizeTabs(await alia.sdk.threads.tabs.get({ threadId }));
     },
   });
 }

@@ -1,5 +1,5 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { AcpLaunchSpec } from "@get-bb/plugin-sdk/provider-bridge/acp";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { AcpLaunchSpec } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 const GROK_LAUNCH_SPEC = {
   displayName: "Grok Build",
@@ -35,9 +35,9 @@ const GROK_LAUNCH_SPEC = {
   },
 } satisfies AcpLaunchSpec;
 
-export default function plugin(bb: BbPluginApi) {
-  bb.providers.register({
-    // `acp-grok` is owned by bb's built-in ACP plugin. This companion id keeps
+export default function plugin(alia: AliaPluginApi) {
+  alia.providers.register({
+    // `acp-grok` is owned by VesnALIA's built-in ACP plugin. This companion id keeps
     // the existing execution provider untouched while adding usage support.
     id: "grok-build-usage",
     displayName: "Grok Build",

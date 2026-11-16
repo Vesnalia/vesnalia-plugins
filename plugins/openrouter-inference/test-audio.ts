@@ -1,7 +1,7 @@
-// The Test button's audio: "Testing voice transcription in BB.", 2.6 seconds,
+// The Test button's audio: "Testing voice transcription in VesnALIA.", 2.6 seconds,
 // synthesized with hexgrad/kokoro-82m and encoded as 12 kbps mono Opus.
 export const TEST_CLIP = {
-  text: "Testing voice transcription in BB.",
+  text: "Testing voice transcription in VesnALIA.",
   filename: "test-clip.ogg",
   mimeType: "audio/ogg",
   base64: [

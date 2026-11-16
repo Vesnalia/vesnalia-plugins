@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fill the QA BB with conversations that exercise Sticky Prompt.
+# Fill the QA ALIA with conversations that exercise Sticky Prompt.
 set -euo pipefail
 Q=/home/box/qa/bbq
 P=${1:?project id}
@@ -80,7 +80,7 @@ for i in 1 2 3 4; do tell "$A" "Follow-up question number $i about the rollout o
 
 B=$(spawn "Release notes" "short: draft the release notes heading")
 "$Q" thread wait "$B" --timeout 120 >/dev/null
-BB_THREAD_ID="$B" "$Q" thread tell "$A" "Message from the release notes thread: please confirm the queue cut-over date" >/dev/null
+ALIA_THREAD_ID="$B" "$Q" thread tell "$A" "Message from the release notes thread: please confirm the queue cut-over date" >/dev/null
 "$Q" thread wait "$A" --timeout 120 >/dev/null
 
 C=$("$Q" thread spawn --project "$P" --provider acp-qa --permission-mode full --title "Child check" --parent-thread "$A" --prompt "short: check the cron job" --json \

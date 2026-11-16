@@ -8,7 +8,7 @@ export function normalizeListedPath(relativePath: string): string {
 /**
  * The host a workspace lives on picks the path flavour, not the machine this
  * plugin runs on: a Windows workspace browsed from a macOS server still needs
- * backslashes when the absolute path goes back to BB.
+ * backslashes when the absolute path goes back to VesnALIA.
  *
  * Detected by drive letter or UNC prefix, NOT by `win32.isAbsolute` — that
  * returns true for `/work/app` too, which would send every POSIX root down the
@@ -21,7 +21,7 @@ export function pathApiFor(root: string): path.PlatformPath {
 
 /**
  * Join a workspace-relative path onto its root, refusing anything that would
- * escape the root. `rootPath` confinement on BB's side is the real guard; this
+ * escape the root. `rootPath` confinement on VesnALIA's side is the real guard; this
  * one keeps a bad request from ever reaching it.
  */
 export function resolveWithinRoot(root: string, relativePath: string): string {

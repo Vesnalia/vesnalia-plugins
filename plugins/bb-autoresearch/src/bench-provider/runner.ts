@@ -7,10 +7,10 @@
 // runner stages in a local file and uploads with putFile.
 //
 // Layout on the machine (under the remote user's home):
-//   bb-autoresearch/repo.git          bare clone, shallow at the study base
-//   bb-autoresearch/checkouts/<key>   worktrees, reused per key
-//   bb-autoresearch/seed/<sha256>     the unpacked seed
-//   bb-autoresearch/incoming/         uploads in transit
+//   alia-autoresearch/repo.git          bare clone, shallow at the study base
+//   alia-autoresearch/checkouts/<key>   worktrees, reused per key
+//   alia-autoresearch/seed/<sha256>     the unpacked seed
+//   alia-autoresearch/incoming/         uploads in transit
 import { createHash } from "node:crypto";
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, rmSync, statSync, writeSync } from "node:fs";
 import { join } from "node:path";
@@ -28,8 +28,8 @@ export class RemoteHostLostError extends Error {
   }
 }
 
-/** Root of everything bb-autoresearch keeps on a remote machine, relative to its home. */
-export const REMOTE_ROOT = "bb-autoresearch";
+/** Root of everything alia-autoresearch keeps on a remote machine, relative to its home. */
+export const REMOTE_ROOT = "alia-autoresearch";
 /** The ref a bundle's tip travels under (host/bundle.ts BUNDLE_REF). */
 const BUNDLE_REF = "refs/autoresearch/bundle";
 
@@ -38,7 +38,7 @@ export interface RemoteRunnerOptions {
   home: string | null;
   /** Environment for every command (the spec entry's `env` plus what the fleet adds). */
   env?: Record<string, string>;
-  /** Local directory for bundles in transit (on the BB server's machine). */
+  /** Local directory for bundles in transit (on the VesnALIA server's machine). */
   stagingDir: string;
   /** Longest wait between two execPoll calls (they start at 50 ms and double). */
   pollMs?: number;
@@ -51,14 +51,14 @@ export interface RemoteRunnerOptions {
   onLost?: (reason: string) => void;
   sleep?: (ms: number) => Promise<void>;
   /**
-   * Largest file sent in one putFile call. BB gives a plugin RPC 75 seconds, so
+   * Largest file sent in one putFile call. VesnALIA gives a plugin RPC 75 seconds, so
    * a seed of hundreds of MB would time out on a slow link: bigger files travel
    * as parts of this size and are joined (and checksummed) on the machine.
    */
   chunkBytes?: number;
 }
 
-/** Default part size for uploads: 32 MiB takes about 5 s at the 6-16 MB/s seen in practice, and stays under BB's 75 s RPC limit down to about 0.5 MB/s. */
+/** Default part size for uploads: 32 MiB takes about 5 s at the 6-16 MB/s seen in practice, and stays under VesnALIA's 75 s RPC limit down to about 0.5 MB/s. */
 export const PUT_CHUNK_BYTES = 32 * 1024 * 1024;
 
 /** Single-quote a string for a POSIX shell. */
@@ -107,7 +107,7 @@ export class RemoteBenchRunner implements HostRunner {
     readonly client: BenchProviderClient,
     /** The provider's host id. */
     readonly remoteId: string,
-    /** Its bench host id in bb-autoresearch ("remote-<n>"). */
+    /** Its bench host id in alia-autoresearch ("remote-<n>"). */
     readonly hostId: string,
     private readonly opts: RemoteRunnerOptions,
   ) {

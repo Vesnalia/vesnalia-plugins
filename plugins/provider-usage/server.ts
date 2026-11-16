@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { abortableDelay } from "./lib/abort-delay";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   PROVIDER_KEYS,
@@ -17,11 +17,11 @@ import {
 } from "./lib/token-scan";
 import {
   mergeDaily,
-  scanBbThreadUsage,
+  scanAliaThreadUsage,
   readAllUsageEvents,
-  type BbUsageEvent,
-  type BbUsageTotal,
-} from "./lib/bb-usage-scan";
+  type AliaUsageEvent,
+  type AliaUsageTotal,
+} from "./lib/alia-usage-scan";
 import {
   TOKEN_WINDOWS,
   createTokenRangeStore,
@@ -270,8 +270,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-function createLimitStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
+function createLimitStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   const read = db.prepare("SELECT value FROM limits_cache WHERE key = ?");
   const write = db.prepare(
     `INSERT INTO limits_cache (key, value) VALUES (?, ?)
@@ -286,8 +286,8 @@ function createLimitStore(bb: BbPluginApi) {
     write: (key, value) => { write.run(key, JSON.stringify(value)); },
     fetchLimits: async (hostId) => {
       const [raw, catalog] = await Promise.all([
-        bb.sdk.system.usageLimits(hostId ? { hostId } : {}),
-        bb.sdk.providers.list(hostId ? { hostId } : {}),
+        alia.sdk.system.usageLimits(hostId ? { hostId } : {}),
+        alia.sdk.providers.list(hostId ? { hostId } : {}),
       ]);
       if (!catalog.some((provider) => provider.id === "acp-antigravity")) return raw;
       return { ...raw, "acp-antigravity": hostId === null
@@ -295,19 +295,19 @@ function createLimitStore(bb: BbPluginApi) {
         : raw["acp-antigravity"] ?? { status: "error", message: "Antigravity quota collection is available on the primary machine only." } };
     },
     fetchClaude: readClaudeUsageSupplement,
-    onRateLimit: () => bb.log.warn("usage limits: a provider was rate-limited; serving last good windows"),
+    onRateLimit: () => alia.log.warn("usage limits: a provider was rate-limited; serving last good windows"),
   });
 }
 
 async function loadDashboard(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   hostId: string | null,
   limitsStore: {
     get: (hostId: string | null, force?: boolean) => Promise<LimitsSnapshot>;
   },
   force = false,
 ): Promise<DashboardSnapshot> {
-  const hosts = (await bb.sdk.hosts.list()).map(
+  const hosts = (await alia.sdk.hosts.list()).map(
     (host): UsageHost => ({
       id: host.id,
       name: host.name,
@@ -317,15 +317,15 @@ async function loadDashboard(
   if (hostId && !hosts.some((host) => host.id === hostId)) {
     throw new Error(`Unknown machine: ${hostId}`);
   }
-  const info = await bb.sdk.system.config();
+  const info = await alia.sdk.system.config();
   const resolvedHostId = hostId === info.primaryHostId ? null : hostId;
   const [snapshot, catalog] = await Promise.all([
     limitsStore.get(resolvedHostId, force),
-    bb.sdk.providers.list(resolvedHostId ? { hostId: resolvedHostId } : {}),
+    alia.sdk.providers.list(resolvedHostId ? { hostId: resolvedHostId } : {}),
   ]);
   const slices = snapshot.limits;
 
-  // Both reads describe processes on the machine bb runs on, so neither is
+  // Both reads describe processes on the machine VesnALIA runs on, so neither is
   // meaningful once the user is inspecting a remote host's meters.
   const [codexSupplement, pool] = await Promise.all([
     resolvedHostId === null && slices.codex.status === "ok"
@@ -413,9 +413,9 @@ function isPersistedTokenFile(value: unknown): value is PersistedTokenFile {
   return row.version === 2 && !!row.daily && typeof row.daily === "object";
 }
 
-function createTokenStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+function createTokenStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS token_file_cache (
       path TEXT PRIMARY KEY,
       mtime_ms INTEGER NOT NULL,
@@ -486,10 +486,10 @@ function createTokenStore(bb: BbPluginApi) {
   let inflight: Promise<TokenSnapshot> | null = null;
   let lastSnapshot: TokenSnapshot | null = null;
   const ranges = createTokenRangeStore();
-  let lastBbUsage: Awaited<ReturnType<typeof scanBbThreadUsage>> = { daily: {}, providers: [], threadsScanned: 0 };
+  let lastAliaUsage: Awaited<ReturnType<typeof scanAliaThreadUsage>> = { daily: {}, providers: [], threadsScanned: 0 };
 
   const publish = () => {
-    bb.realtime.publish("tokens", { at: Date.now() });
+    alia.realtime.publish("tokens", { at: Date.now() });
   };
 
   const persistFiles = (files: FileScanResult[]) => {
@@ -578,7 +578,7 @@ function createTokenStore(bb: BbPluginApi) {
       }
     });
     tx(dead);
-    bb.log.info(`token ledger pruned ${dead.length} aged-out deleted files`);
+    alia.log.info(`token ledger pruned ${dead.length} aged-out deleted files`);
   };
 
   const paintCachedStores = (
@@ -592,23 +592,23 @@ function createTokenStore(bb: BbPluginApi) {
   };
 
   /**
-   * Every provider bb can drive, without a scanner per vendor: bb's own
+   * Every provider VesnALIA can drive, without a scanner per vendor: VesnALIA's own
    * `thread/tokenUsage/updated` is part of the provider-bridge contract, so an
    * agent the plugin has never heard of still lands in the chart as soon as it
    * reports usage. Providers with a dedicated transcript scanner are skipped
-   * inside scanBbThreadUsage so they are not counted twice.
+   * inside scanAliaThreadUsage so they are not counted twice.
    */
-  const scanBbThreads = async (nowMs: number) => {
-    const info = await bb.sdk.system.config();
-    return scanBbThreadUsage({
+  const scanAliaThreads = async (nowMs: number) => {
+    const info = await alia.sdk.system.config();
+    return scanAliaThreadUsage({
       nowMs,
       localHostId: info.primaryHostId,
       onError: (error) =>
-        bb.log.warn(
-          `bb thread usage scan: ${error instanceof Error ? error.message : String(error)}`,
+        alia.log.warn(
+          `alia thread usage scan: ${error instanceof Error ? error.message : String(error)}`,
         ),
       listThreads: async () => {
-        const rows = await bb.sdk.threads.list({ includeHidden: true });
+        const rows = await alia.sdk.threads.list({ includeHidden: true });
         return rows.map((row) => ({
           id: row.id,
           providerId: row.providerId,
@@ -617,17 +617,17 @@ function createTokenStore(bb: BbPluginApi) {
         }));
       },
       listEvents: async (threadId) => {
-        const rows = await readAllUsageEvents((page) => bb.sdk.threads.events.list({
+        const rows = await readAllUsageEvents((page) => alia.sdk.threads.events.list({
           threadId,
           types: ["thread/tokenUsage/updated"],
           order: page.order,
           limit: String(page.limit),
           ...(page.afterSeq === undefined ? {} : { afterSeq: String(page.afterSeq) }),
         }));
-        const events: BbUsageEvent[] = [];
+        const events: AliaUsageEvent[] = [];
         for (const row of rows) {
           if (row.type !== "thread/tokenUsage/updated") continue;
-          const total = row.data.tokenUsage?.total as BbUsageTotal | undefined;
+          const total = row.data.tokenUsage?.total as AliaUsageTotal | undefined;
           if (!total) continue;
           events.push({ seq: row.seq, createdAt: row.createdAt, total });
         }
@@ -656,11 +656,11 @@ function createTokenStore(bb: BbPluginApi) {
       });
       persistFiles(jsonl.files);
       paintCachedStores(jsonl);
-      mergeDaily(jsonl.daily, lastBbUsage.daily);
-      jsonl.sources.push(...lastBbUsage.providers);
+      mergeDaily(jsonl.daily, lastAliaUsage.daily);
+      jsonl.sources.push(...lastAliaUsage.providers);
       snapshotFrom(days, jsonl);
       publish();
-      bb.log.info(
+      alia.log.info(
         `token scan phase1 ${Date.now() - phase1Started}ms sources=[${jsonl.sources.join(", ")}]`,
       );
 
@@ -672,16 +672,16 @@ function createTokenStore(bb: BbPluginApi) {
         includeOpencode: true,
       });
       persistFiles(full.files);
-      const bbUsage = await scanBbThreads(nowMs);
-      lastBbUsage = bbUsage;
-      mergeDaily(full.daily, bbUsage.daily);
-      full.sources.push(...bbUsage.providers);
-      bb.log.info(
+      const aliaUsage = await scanAliaThreads(nowMs);
+      lastAliaUsage = aliaUsage;
+      mergeDaily(full.daily, aliaUsage.daily);
+      full.sources.push(...aliaUsage.providers);
+      alia.log.info(
         `token scan phase2 ${Date.now() - phase2Started}ms ` +
           `changed=${full.changedFiles} ` +
           `retained=${full.retainedFiles} ` +
-          `bbThreads=${bbUsage.threadsScanned} ` +
-          `providers [${bbUsage.providers.join(", ") || "none"}]`,
+          `aliaThreads=${aliaUsage.threadsScanned} ` +
+          `providers [${aliaUsage.providers.join(", ") || "none"}]`,
       );
       pruneLedger(nowMs);
       const snapshot = snapshotFrom(days, full);
@@ -702,7 +702,7 @@ function createTokenStore(bb: BbPluginApi) {
         )?.value;
         const stale =
           !lastScan || Date.now() - Date.parse(lastScan) >= 120_000;
-        if (stale) void sync(days).catch((error) => bb.log.warn(`token scan failed: ${String(error)}`));
+        if (stale) void sync(days).catch((error) => alia.log.warn(`token scan failed: ${String(error)}`));
       }
       return ranges.get(days)!;
     }
@@ -715,7 +715,7 @@ function createTokenStore(bb: BbPluginApi) {
     persistFiles(jsonl.files);
     paintCachedStores(jsonl);
     const snapshot = snapshotFrom(days, jsonl);
-    void sync(days).catch((error) => bb.log.warn(`token scan failed: ${String(error)}`));
+    void sync(days).catch((error) => alia.log.warn(`token scan failed: ${String(error)}`));
     return snapshot;
   };
 
@@ -726,7 +726,7 @@ function createTokenStore(bb: BbPluginApi) {
 const THROUGHPUT_BUSY_MS = 2_000;
 const THROUGHPUT_QUIET_MS = 10_000;
 
-function createThroughputStore(bb: BbPluginApi) {
+function createThroughputStore(alia: AliaPluginApi) {
   const recorder = createThroughputRecorder();
   let tracked = 0;
   let working = 0;
@@ -734,7 +734,7 @@ function createThroughputStore(bb: BbPluginApi) {
   let refreshInflight: Promise<ThroughputSnapshot> | null = null;
 
   const readThreads = async (): Promise<ThroughputScanThread[]> => {
-    const rows = await bb.sdk.threads.list({ includeHidden: true });
+    const rows = await alia.sdk.threads.list({ includeHidden: true });
     return rows
       .filter((row) => !row.archivedAt && !row.deletedAt)
       .map(
@@ -754,12 +754,12 @@ function createThroughputStore(bb: BbPluginApi) {
 
   const scanner = createThroughputScanner(recorder, {
     onError: (error) =>
-      bb.log.warn(
+      alia.log.warn(
         `throughput scan: ${error instanceof Error ? error.message : String(error)}`,
       ),
     listThreads,
     listEvents: async ({ threadId, afterSeq, beforeSeq, order, limit }) => {
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         threadId,
         types: ["thread/tokenUsage/updated"],
         order,
@@ -767,13 +767,13 @@ function createThroughputStore(bb: BbPluginApi) {
         ...(afterSeq === undefined ? {} : { afterSeq: String(afterSeq) }),
         ...(beforeSeq === undefined ? {} : { beforeSeq: String(beforeSeq) }),
       });
-      const events: BbUsageEvent[] = [];
+      const events: AliaUsageEvent[] = [];
       for (const row of rows) {
         if (row.type !== "thread/tokenUsage/updated") continue;
         const usage = row.data.tokenUsage;
-        const total = usage?.total as BbUsageTotal | undefined;
+        const total = usage?.total as AliaUsageTotal | undefined;
         if (!total) continue;
-        const last = usage?.last as BbUsageTotal | undefined;
+        const last = usage?.last as AliaUsageTotal | undefined;
         events.push({
           seq: row.seq,
           createdAt: row.createdAt,
@@ -792,18 +792,18 @@ function createThroughputStore(bb: BbPluginApi) {
       createCursorLiveThroughputSource(),
     ],
     onError: (error) =>
-      bb.log.warn(
+      alia.log.warn(
         `local throughput scan: ${error instanceof Error ? error.message : String(error)}`,
       ),
     listThreadSessionInfo: async (threadId) => {
       const [identityRows, usageRows] = await Promise.all([
-        bb.sdk.threads.events.list({
+        alia.sdk.threads.events.list({
           threadId,
           types: ["thread/identity"],
           order: "desc",
           limit: "100",
         }),
-        bb.sdk.threads.events.list({
+        alia.sdk.threads.events.list({
           threadId,
           types: ["thread/tokenUsage/updated"],
           order: "desc",
@@ -863,15 +863,15 @@ function createThroughputStore(bb: BbPluginApi) {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
-  const tokens = createTokenStore(bb);
-  const limits = createLimitStore(bb);
-  const throughput = createThroughputStore(bb);
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
+  const tokens = createTokenStore(alia);
+  const limits = createLimitStore(alia);
+  const throughput = createThroughputStore(alia);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getDashboard({ hostId, force }) {
-      return loadDashboard(bb, hostId, limits, force === true);
+      return loadDashboard(alia, hostId, limits, force === true);
     },
     async getTokens({ days, force }) {
       return tokens.get(days, force === true);
@@ -881,13 +881,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("token-scan", {
+  alia.background.service("token-scan", {
     async start(signal) {
       try {
         await tokens.sync(30);
-        bb.realtime.publish("tokens", { at: Date.now() });
+        alia.realtime.publish("tokens", { at: Date.now() });
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `initial token scan failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -896,9 +896,9 @@ export default async function plugin(bb: BbPluginApi) {
         if (signal.aborted) break;
         try {
           await tokens.sync(30);
-          bb.realtime.publish("tokens", { at: Date.now() });
+          alia.realtime.publish("tokens", { at: Date.now() });
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `token scan failed: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -906,21 +906,21 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("throughput-scan", {
+  alia.background.service("throughput-scan", {
     async start(signal) {
       // A thread row changes the moment its turn moves, which is the earliest
       // signal available that new usage events may exist — well before the
       // next poll would have come round.
       let unsubscribe: (() => void) | null = null;
       try {
-        unsubscribe = bb.sdk.subscribe({
+        unsubscribe = alia.sdk.subscribe({
           event: "thread:changed",
           callback: (event) => {
             if (event.id) throughput.markDirty(event.id);
           },
         });
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `throughput thread subscription unavailable: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -935,10 +935,10 @@ export default async function plugin(bb: BbPluginApi) {
           const signature = `${snapshot.windowTotals.tokens}:${snapshot.windowTotals.turns}:${snapshot.activeThreads}`;
           if (signature !== previous) {
             previous = signature;
-            bb.realtime.publish("throughput", { at: snapshot.nowMs });
+            alia.realtime.publish("throughput", { at: snapshot.nowMs });
           }
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `throughput refresh failed: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -949,24 +949,24 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "usage",
     summary: "Show provider subscription usage, remaining limits, and token totals",
     commands: [
       {
         name: "show",
         summary: "Print remaining usage, plans, and reset windows",
-        usage: "bb usage [show] [--machine <id-or-name>] [--json]",
+        usage: "alia usage [show] [--machine <id-or-name>] [--json]",
       },
       {
         name: "tokens",
         summary: "Print global token usage across providers",
-        usage: "bb usage tokens [--days 7|30|90] [--force] [--json]",
+        usage: "alia usage tokens [--days 7|30|90] [--force] [--json]",
       },
       {
         name: "live",
         summary: "Print live token throughput across running threads",
-        usage: "bb usage live [--json]",
+        usage: "alia usage live [--json]",
       },
     ],
     async run(argv) {
@@ -976,7 +976,7 @@ export default async function plugin(bb: BbPluginApi) {
         return {
           exitCode: 0,
           stdout:
-            "Usage: bb usage [show|tokens|live] [--days 7|30|90] [--machine <id-or-name>] [--force] [--json]\n",
+            "Usage: VesnALIA usage [show|tokens|live] [--days 7|30|90] [--machine <id-or-name>] [--force] [--json]\n",
         };
       }
 
@@ -998,7 +998,7 @@ export default async function plugin(bb: BbPluginApi) {
 
       let resolvedHostId = hostId;
       if (hostId) {
-        const hosts = await bb.sdk.hosts.list();
+        const hosts = await alia.sdk.hosts.list();
         const match = hosts.find(
           (host) => host.id === hostId || host.name === hostId,
         );
@@ -1011,7 +1011,7 @@ export default async function plugin(bb: BbPluginApi) {
         resolvedHostId = match.id;
       }
 
-      const snapshot = await loadDashboard(bb, resolvedHostId, limits, force);
+      const snapshot = await loadDashboard(alia, resolvedHostId, limits, force);
       const tokenSnapshot = await tokens.get(days, force);
       if (json) {
         return {
@@ -1026,7 +1026,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

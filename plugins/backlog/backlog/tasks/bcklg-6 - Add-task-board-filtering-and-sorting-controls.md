@@ -48,7 +48,7 @@ Verification: mise run test (68 pass), mise run typecheck (pass), mise run build
 
 Refined filter presentation after visual review: replaced tall multi-select boxes with compact disclosure menus, active-count triggers, compact sort control, and denser responsive wrapping aligned with the reference board toolbar. Rebuilt and reloaded the installed path plugin.
 
-Final validation: compact filter menus expose active counts; CSS chevrons are centered with the trigger labels and placed to their right. Keyboard interaction and reset are covered by board-controls-ui.test.tsx. mise run test: 68 passed; mise run typecheck: passed; mise run build: passed; plugin reloaded successfully from /Users/vulture/Projects/bb-plugin-backlog.
+Final validation: compact filter menus expose active counts; CSS chevrons are centered with the trigger labels and placed to their right. Keyboard interaction and reset are covered by board-controls-ui.test.tsx. mise run test: 68 passed; mise run typecheck: passed; mise run build: passed; plugin reloaded successfully from /Users/vulture/Projects/alia-plugin-backlog.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

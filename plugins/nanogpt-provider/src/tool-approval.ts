@@ -1,4 +1,4 @@
-import { approvalInteractionOutcomeSchema, threadEventItemPresentationSchema, type ThreadEventItemPresentation } from "@get-bb/plugin-sdk/provider-bridge";
+import { approvalInteractionOutcomeSchema, threadEventItemPresentationSchema, type ThreadEventItemPresentation } from "@vesnalia/plugin-sdk/provider-bridge";
 
 const SECRET_FIELD = /api[_-]?key|token|password|secret|authorization|credential|private[_-]?key/iu;
 const MAX_REVIEW_BYTES = 12_000;

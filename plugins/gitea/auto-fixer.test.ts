@@ -101,18 +101,18 @@ describe("parseMarker", () => {
   it("accepts one distinct marker only", () => {
     expect(parseMarker("done\nBB_GITEA_AUTO_FIX: MERGED")).toBe("merged");
     expect(
-      parseMarker("BB_GITEA_AUTO_FIX: MERGED\nBB_GITEA_AUTO_FIX: MERGED"),
+      parseMarker("ALIA_GITEA_AUTO_FIX: MERGED\nBB_GITEA_AUTO_FIX: MERGED"),
     ).toBe("merged");
     expect(
-      parseMarker("BB_GITEA_AUTO_FIX: MERGED\nBB_GITEA_AUTO_FIX: FAILED"),
+      parseMarker("ALIA_GITEA_AUTO_FIX: MERGED\nBB_GITEA_AUTO_FIX: FAILED"),
     ).toBeNull();
-    expect(parseMarker("BB_GITHUB_AUTO_FIXER: MERGED")).toBeNull();
+    expect(parseMarker("ALIA_GITHUB_AUTO_FIXER: MERGED")).toBeNull();
     expect(parseMarker(null)).toBeNull();
   });
 });
 
 describe("decisions", () => {
-  it("starts only open pull requests in a BB project and reuses retained sessions", () => {
+  it("starts only open pull requests in a VesnALIA project and reuses retained sessions", () => {
     const input = { session: null, lifecycle: open };
     expect(decideStart({ ...input, projectId: "p1" })).toEqual({
       kind: "spawn",
@@ -218,7 +218,7 @@ describe("decisions", () => {
 describe("transitions", () => {
   it("trusts Gitea's terminal state over the agent marker", () => {
     expect(
-      onIdle(watching, "BB_GITEA_AUTO_FIX: NEEDS_YOU", merged, now),
+      onIdle(watching, "ALIA_GITEA_AUTO_FIX: NEEDS_YOU", merged, now),
     ).toEqual({
       repo: "acme/widgets",
       number: 42,
@@ -229,7 +229,7 @@ describe("transitions", () => {
       mergedAt: merged.mergedAt,
     });
     expect(
-      onIdle(watching, "BB_GITEA_AUTO_FIX: MERGED", closed, now),
+      onIdle(watching, "ALIA_GITEA_AUTO_FIX: MERGED", closed, now),
     ).toMatchObject({
       status: "failed",
       error: "Gitea reported CLOSED, not MERGED.",
@@ -238,7 +238,7 @@ describe("transitions", () => {
 
   it("fails an unconfirmed terminal marker and records human requests", () => {
     expect(
-      onIdle(watching, "BB_GITEA_AUTO_FIX: MERGED", open, now),
+      onIdle(watching, "ALIA_GITEA_AUTO_FIX: MERGED", open, now),
     ).toMatchObject({
       status: "failed",
       error:
@@ -259,7 +259,7 @@ describe("transitions", () => {
     expect(
       onIdle(
         watching,
-        "BB_GITEA_AUTO_FIX: CLOSED",
+        "ALIA_GITEA_AUTO_FIX: CLOSED",
         { state: "unknown", error: "HTTP 500" },
         now,
       ),
@@ -634,7 +634,7 @@ describe("pull change signal", () => {
       policy: { fix: true, merge: false },
     });
     expect(prompt).toContain(
-      "bb gitea pr-watch acme/widgets 42 --since <token>",
+      "alia gitea pr-watch acme/widgets 42 --since <token>",
     );
     expect(prompt).not.toMatch(/sleep \d/);
   });

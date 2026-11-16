@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { ORCHESTRATOR_LIMIT } from "./delegation";
 
@@ -67,8 +67,8 @@ async function area(
                   id: "p1",
                   name: "Test project",
                   prefix: "TEST",
-                  linkedBbProjectId:
-                    options.linked === undefined ? "proj_bb" : options.linked,
+                  linkedAliaProjectId:
+                    options.linked === undefined ? "proj_alia" : options.linked,
                 },
               ],
             };
@@ -114,7 +114,7 @@ async function area(
       },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   const dispatch = (input: Record<string, unknown> = {}) =>
     fake.harness.behavior.callRpc("delegateArea", {
       requestId: "11111111-1111-4111-8111-111111111111",
@@ -140,7 +140,7 @@ describe("handing a whole area to one orchestrator", () => {
     // Three tasks, one agent: the cap lives inside the brief, not in a queue.
     expect(spawned).toHaveLength(1);
     expect(spawned[0].title).toBe("Test project orchestrator");
-    expect(spawned[0].projectId).toBe("proj_bb");
+    expect(spawned[0].projectId).toBe("proj_alia");
     expect(result).toMatchObject({
       threadId: "thr_orch1",
       title: "Test project orchestrator",
@@ -273,7 +273,7 @@ describe("what the dispatch refuses to do", () => {
   it("explains an unlinked project instead of failing with a 500", async () => {
     const { dispatch, spawned, harness } = await area({ linked: null });
     await expect(dispatch()).rejects.toThrow(
-      /not linked to a bb project.*Link it in Tasks/s,
+      /not linked to a alia project.*Link it in Tasks/s,
     );
     expect(spawned).toHaveLength(0);
     await harness.lifecycle.dispose();

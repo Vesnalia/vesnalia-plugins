@@ -83,11 +83,11 @@ export async function codexInstructions(name: string, home = codexHome()) {
   const instructions = config.developer_instructions;
   if (typeof instructions !== "string" || !instructions.trim())
     throw new Error(
-      "This profile has no developer_instructions. Configuration-only profiles are not supported by BB 0.43.",
+      "This profile has no developer_instructions. Configuration-only profiles are not supported by VesnALIA 0.43.",
     );
   if (instructions.length > 4096)
     throw new Error(
-      "Profile instructions exceed BB's 4096-character limit. Shorten developer_instructions before selecting this profile.",
+      "Profile instructions exceed VesnALIA's 4096-character limit. Shorten developer_instructions before selecting this profile.",
     );
   return instructions;
 }

@@ -64,7 +64,7 @@ const DEPTH = 2;
 
 /** A thread at work, or waiting on the user's answer, under `threadId`, down to `depth` levels. */
 async function busyBelow(ctx: Ctx, threadId: string, depth: number): Promise<boolean> {
-  // Hidden threads too: bb archives them with the rest, and one may be at work, such as another plugin's.
+  // Hidden threads too: VesnALIA archives them with the rest, and one may be at work, such as another plugin's.
   for (const child of await ctx.port.childThreads(threadId, { hidden: true })) {
     if (child.waiting || BUSY.has(child.status) || (child.queuedMessageCount ?? 0) > 0) return true;
     if (depth > 1 && (await busyBelow(ctx, child.id, depth - 1))) return true;
@@ -73,27 +73,27 @@ async function busyBelow(ctx: Ctx, threadId: string, depth: number): Promise<boo
 }
 
 /**
- * Why bb says the thread must stay right now, or null: it or a thread under it works or waits on the user, or bb archived
+ * Why VesnALIA says the thread must stay right now, or null: it or a thread under it works or waits on the user, or VesnALIA archived
  * or lost it already. Shuttle's own copy of a thread's status comes from events it may have missed, so it is not enough;
- * bb's answer becomes that copy, so a missed event holds a thread back for one pass, not for good.
+ * VesnALIA's answer becomes that copy, so a missed event holds a thread back for one pass, not for good.
  */
 async function inUseNow(ctx: Ctx, threadId: string): Promise<string | null> {
   const [thread] = await ctx.port.threadsById([threadId]);
-  if (thread === undefined) return "bb no longer has it";
+  if (thread === undefined) return "alia no longer has it";
   if (thread.archived) {
     ctx.store.setThreadArchived(threadId, true);
     return "it is archived already";
   }
   ctx.store.setThreadStatus(threadId, thread.status, thread.waiting);
   if (thread.waiting || BUSY.has(thread.status) || (thread.queuedMessageCount ?? 0) > 0) return "it is at work";
-  // bb archives every thread under it along with it.
+  // VesnALIA archives every thread under it along with it.
   return (await busyBelow(ctx, threadId, DEPTH)) ? "a thread under it is at work" : null;
 }
 
 /**
- * Archives each review thread Shuttle started whose review is done, with its child threads (bb archives
+ * Archives each review thread Shuttle started whose review is done, with its child threads (VesnALIA archives
  * them together). A thread stays as it is when it, or a thread under it, works or waits on the user, by
- * Shuttle's copy or by bb now; when it became the PR's agent or is linked to another PR still open; or when
+ * Shuttle's copy or by VesnALIA now; when it became the PR's agent or is linked to another PR still open; or when
  * the user brought it back after Shuttle archived it.
  */
 export async function archiveDoneReviewThreads(ctx: Ctx, filter: { prId?: number; threadId?: string } = {}): Promise<number> {
@@ -112,7 +112,7 @@ export async function archiveDoneReviewThreads(ctx: Ctx, filter: { prId?: number
     const heardBusy = thread.waiting === 1 || (thread.status !== null && BUSY.has(thread.status));
     busy.add(run.thread_id);
     try {
-      // Both must say it is free: what Shuttle last heard, and bb now. Unsure is a no, so a thread bb cannot answer for
+      // Both must say it is free: what Shuttle last heard, and VesnALIA now. Unsure is a no, so a thread VesnALIA cannot answer for
       // stays until the next pass.
       if ((await inUseNow(ctx, run.thread_id)) !== null || heardBusy) continue;
       const current = ctx.store.unarchivedReviewRun(run.id);
@@ -124,7 +124,7 @@ export async function archiveDoneReviewThreads(ctx: Ctx, filter: { prId?: number
         const output = await ctx.port.threadOutput(run.thread_id);
         for (const other of earlier) if (cleanupConfirmed(other, output)) ctx.store.finishReviewCleanup(other.id);
         if (earlier.some((other) => !cleanupConfirmed(other, output))) continue;
-        // Reading the output waited on bb, and the thread or one under it may have started work meanwhile.
+        // Reading the output waited on VesnALIA, and the thread or one under it may have started work meanwhile.
         if ((await inUseNow(ctx, run.thread_id)) !== null || ctx.store.runningReviewsOfThread(run.thread_id).length > 0) continue;
       }
       if (current.cleanup_finished_at === null && (current.cleanup_requested_at !== null || reviewWasPosted(ctx, fresh, current))) {
@@ -173,7 +173,7 @@ export async function archiveDoneReviewThreads(ctx: Ctx, filter: { prId?: number
 
 /**
  * Sends a review prompt to a thread, bringing it back from the archive first, and its workspace too when
- * bb removed it. Its child threads stay archived. A thread brought back and then refused goes back.
+ * VesnALIA removed it. Its child threads stay archived. A thread brought back and then refused goes back.
  */
 export async function sendToReviewThread(ctx: Ctx, threadId: string, prompt: string, options: SendOptions & { providerId?: string }): Promise<{ revived: boolean }> {
   const info = await ctx.port.getThread(threadId);
@@ -185,8 +185,8 @@ export async function sendToReviewThread(ctx: Ctx, threadId: string, prompt: str
     throw new ShuttleError(`it runs on ${info.providerId}, and this review asks for ${options.providerId}`);
   }
   // Its workspace cannot be built again without the machine, so the thread could not run the review.
-  if (info.machineRemoved) throw new ShuttleError(info.archived ? "bb removed its machine after it was archived" : "bb removed its machine");
-  // Sent again, bb would set up the same workspace that just failed, under the same keys.
+  if (info.machineRemoved) throw new ShuttleError(info.archived ? "alia removed its machine after it was archived" : "alia removed its machine");
+  // Sent again, VesnALIA would set up the same workspace that just failed, under the same keys.
   if (info.status === "error" && info.hasWorkspace === false) throw new ShuttleError("its workspace was never set up");
   const send: SendOptions = { ...(options.model ? { model: options.model } : {}), ...(options.reasoningLevel ? { reasoningLevel: options.reasoningLevel } : {}) };
   const revived = info.archived;

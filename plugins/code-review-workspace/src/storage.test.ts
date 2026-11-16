@@ -6,8 +6,8 @@ vi.mock("./store-queue", async (original) => {
 });
 
 import { createServer, type Server, type Socket } from "node:net";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makePluginAgentConfigurationContext, type FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makePluginAgentConfigurationContext, type FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import pg from "pg";
 import plugin from "../server";
 import { PgWriterLockError } from "./db/pg";
@@ -19,9 +19,9 @@ const PASSWORD = "s3cret-pass-p10";
 
 /** A fake host with these stored settings, and storage:owner set to `owner` unless it's undefined. */
 async function host(settings: Record<string, string> = {}, owner?: unknown) {
-  const { bb, harness } = createFakePluginHost({ pluginId: PLUGIN, settings });
-  if (owner !== undefined) await bb.storage.kv.set(STORAGE_OWNER_KEY, owner);
-  return { bb, harness };
+  const { alia, harness } = createFakePluginHost({ pluginId: PLUGIN, settings });
+  if (owner !== undefined) await alia.storage.kv.set(STORAGE_OWNER_KEY, owner);
+  return { alia, harness };
 }
 
 /** What the plugin registered, by kind. */
@@ -57,7 +57,7 @@ function expectConfiguresNothing(harness: FakePluginHarness) {
 }
 
 /** Whether the Store made its tables in the plugin's SQLite database. */
-const sqliteHasReviews = (bb: BbPluginApi) => !!bb.storage.database().prepare("SELECT 1 FROM sqlite_master WHERE name = 'reviews'").get();
+const sqliteHasReviews = (alia: AliaPluginApi) => !!alia.storage.database().prepare("SELECT 1 FROM sqlite_master WHERE name = 'reviews'").get();
 
 /** A local TCP server that counts connections and closes each one, so nothing Postgres can sign in. */
 async function listener(): Promise<{ server: Server; port: number; connections: () => number }> {
@@ -76,8 +76,8 @@ afterEach(async () => {
 
 describe("the storage settings", () => {
   test("are defined with SQLite the default, Postgres's schema and TLS defaults, and its password secret", async () => {
-    const { bb, harness } = await host();
-    await plugin(bb);
+    const { alia, harness } = await host();
+    await plugin(alia);
     const descriptors = harness.inspection.registrations.settingsDescriptors;
     expect(Object.keys(descriptors)).toEqual(["storageBackend", "postgresUrl", "postgresPassword", "postgresSchema", "postgresSsl", "postgresCaPem"]);
     expect(descriptors.storageBackend).toMatchObject({ type: "select", options: ["sqlite", "postgres"], default: "sqlite" });
@@ -88,11 +88,11 @@ describe("the storage settings", () => {
   });
 
   test("a change is logged as applying once the plugin reloads, and changes nothing until then", async () => {
-    const { bb, harness } = await host();
-    await plugin(bb);
+    const { alia, harness } = await host();
+    await plugin(alia);
     const before = registered(harness);
     await harness.behavior.setSettings({ storageBackend: "postgres" });
-    expect(harness.inspection.logEntries).toContainEqual({ level: "info", message: `Storage settings changed: they apply once the plugin reloads (bb plugin reload ${PLUGIN}).` });
+    expect(harness.inspection.logEntries).toContainEqual({ level: "info", message: `Storage settings changed: they apply once the plugin reloads (VesnALIA plugin reload ${PLUGIN}).` });
     expect(registered(harness)).toEqual(before);
     expect(harness.inspection.needsConfigurationMessages).toEqual([]);
   });
@@ -100,8 +100,8 @@ describe("the storage settings", () => {
 
 describe("SQLite, the default", () => {
   test("with no settings and no owner marked, the plugin serves from SQLite in the factory, as before", async () => {
-    const { bb, harness } = await host();
-    await plugin(bb);
+    const { alia, harness } = await host();
+    await plugin(alia);
     expect(registered(harness)).toMatchObject({ cli: "review", services: ["plugin-updates", "review-state"], schedules: ["prune-old-diffs"] });
     expect(registered(harness).tools).toBeGreaterThan(10);
     expect(harness.inspection.registrations.rpcMethods).toContain("getPreferences");
@@ -110,12 +110,12 @@ describe("SQLite, the default", () => {
     expect(await harness.behavior.callRpc("getPreferences", null)).toMatchObject({ revision: expect.any(Number) });
     expect(await harness.behavior.runCli(["storage", "status"])).toEqual({ exitCode: 0, stderr: "", stdout: "storageBackend: sqlite\nstorage:owner: sqlite\nstate: serving" });
     // The owner stays unmarked: an install that never moved its reviews keeps them where 1.2.0 did.
-    expect(await bb.storage.kv.get(STORAGE_OWNER_KEY)).toBeUndefined();
+    expect(await alia.storage.kv.get(STORAGE_OWNER_KEY)).toBeUndefined();
   });
 
   test("owned by SQLite, it serves from it", async () => {
-    const { bb, harness } = await host({ storageBackend: "sqlite" }, "sqlite");
-    await plugin(bb);
+    const { alia, harness } = await host({ storageBackend: "sqlite" }, "sqlite");
+    await plugin(alia);
     expect(registered(harness).tools).toBeGreaterThan(10);
     expect(harness.inspection.needsConfigurationMessages).toEqual([]);
   });
@@ -127,9 +127,9 @@ const postgres = (port: number, extra: Record<string, string> = {}) => ({
 
 describe("maintenance: only the CLI, until the settings and the owner agree", () => {
   const cases: Array<{ name: string; settings: Record<string, string>; owner?: unknown; says: string }> = [
-    { name: "Postgres chosen, reviews never moved", settings: postgres(5432), says: "Run bb review storage migrate to copy them to Postgres, then bb plugin reload code-review-workspace" },
+    { name: "Postgres chosen, reviews never moved", settings: postgres(5432), says: "Run alia review storage migrate to copy them to Postgres, then VesnALIA plugin reload code-review-workspace" },
     { name: "Postgres chosen, reviews in SQLite", settings: postgres(5432), owner: "sqlite", says: "its reviews are in SQLite" },
-    { name: "SQLite chosen, reviews in Postgres", settings: { storageBackend: "sqlite" }, owner: "postgres", says: "or run bb review storage export-sqlite --replace-data-db to copy them to SQLite first" },
+    { name: "SQLite chosen, reviews in Postgres", settings: { storageBackend: "sqlite" }, owner: "postgres", says: "or run alia review storage export-sqlite --replace-data-db to copy them to SQLite first" },
     { name: "an owner this version doesn't know", settings: {}, owner: "mysql", says: "marked as kept in mysql (storage:owner), which this version doesn't know" },
     { name: "an owner that isn't a name", settings: {}, owner: { backend: "sqlite" }, says: "marked as kept in {\"backend\":\"sqlite\"}" },
     { name: "Postgres without a URL", settings: { storageBackend: "postgres", postgresPassword: PASSWORD }, owner: "postgres", says: "can't use Postgres: postgresUrl is not set" },
@@ -140,8 +140,8 @@ describe("maintenance: only the CLI, until the settings and the owner agree", ()
   ];
 
   test.each(cases)("$name", async ({ settings, owner, says }) => {
-    const { bb, harness } = await host(settings, owner);
-    await plugin(bb);
+    const { alia, harness } = await host(settings, owner);
+    await plugin(alia);
     expect(registered(harness)).toEqual(ONLY_CLI);
     const [message, ...more] = harness.inspection.needsConfigurationMessages;
     expect(more).toEqual([]);
@@ -156,10 +156,10 @@ describe("maintenance: only the CLI, until the settings and the owner agree", ()
     }
     const status = await harness.behavior.runCli(["storage", "status"]);
     expect(status.exitCode).toBe(0);
-    expect(status.stdout).toContain("state: maintenance; only bb review storage answers");
+    expect(status.stdout).toContain("state: maintenance; only VesnALIA review storage answers");
     expect(status.stdout).toContain(`problem: ${message}`);
     // It never falls back to SQLite.
-    expect(sqliteHasReviews(bb)).toBe(false);
+    expect(sqliteHasReviews(alia)).toBe(false);
     await harness.lifecycle.dispose();
   });
 });
@@ -168,25 +168,25 @@ describe("Postgres, before it's open", () => {
   test("the factory connects to nothing, and registers the CLI, configure, and the services that open the store and wait for it", async () => {
     const pgServer = await listener();
     closing.push(() => new Promise((resolve) => { pgServer.server.close(() => resolve()); }));
-    const { bb, harness } = await host(postgres(pgServer.port), "postgres");
-    await plugin(bb);
+    const { alia, harness } = await host(postgres(pgServer.port), "postgres");
+    await plugin(alia);
     expect(pgServer.connections()).toBe(0);
     expect(registered(harness)).toEqual({ ...ONLY_CLI, services: ["plugin-updates", "review-state", "storage"], schedules: ["prune-old-diffs"] });
     expect(harness.inspection.needsConfigurationMessages).toEqual([]);
     expectConfiguresNothing(harness);
-    expect(await harness.behavior.runCli(["list"])).toEqual({ exitCode: 1, stdout: "", stderr: "Code Review Workspace is opening its Postgres storage. Try again in a moment; bb review storage status says more." });
-    expect((await harness.behavior.runCli(["storage", "status"])).stdout).toBe("storageBackend: postgres\nstorage:owner: postgres\nstate: opening Postgres; only bb review storage answers until it's open");
+    expect(await harness.behavior.runCli(["list"])).toEqual({ exitCode: 1, stdout: "", stderr: "Code Review Workspace is opening its Postgres storage. Try again in a moment; VesnALIA review storage status says more." });
+    expect((await harness.behavior.runCli(["storage", "status"])).stdout).toBe("storageBackend: postgres\nstorage:owner: postgres\nstate: opening Postgres; only VesnALIA review storage answers until it's open");
     // The pruning a day brings waits for the store too.
     await harness.behavior.runSchedule("prune-old-diffs");
-    expect(sqliteHasReviews(bb)).toBe(false);
+    expect(sqliteHasReviews(alia)).toBe(false);
     await harness.lifecycle.dispose();
   });
 
   test("out of reach at activation, it tries again without telling needsConfiguration yet, serving only the CLI, and its services stop at once", async () => {
     const pgServer = await listener();
     closing.push(() => new Promise((resolve) => { pgServer.server.close(() => resolve()); }));
-    const { bb, harness } = await host(postgres(pgServer.port), "postgres");
-    await plugin(bb);
+    const { alia, harness } = await host(postgres(pgServer.port), "postgres");
+    await plugin(alia);
     const storage = harness.behavior.runService("storage");
     const waiting = [harness.behavior.runService("plugin-updates"), harness.behavior.runService("review-state")];
     // The server closing the connection reads as a reset or as an end, depending on when it lands.
@@ -201,12 +201,12 @@ describe("Postgres, before it's open", () => {
     expect(registered(harness)).toEqual({ ...ONLY_CLI, services: ["plugin-updates", "review-state", "storage"], schedules: ["prune-old-diffs"] });
     expectConfiguresNothing(harness);
     expect((await harness.behavior.runCli(["storage", "status"])).stdout).toContain(`problem: ${problem}`);
-    expect(await harness.behavior.runCli(["list"])).toEqual({ exitCode: 1, stdout: "", stderr: `Code Review Workspace is opening its Postgres storage (latest try: ${problem}). Try again in a moment; bb review storage status says more.` });
+    expect(await harness.behavior.runCli(["list"])).toEqual({ exitCode: 1, stdout: "", stderr: `Code Review Workspace is opening its Postgres storage (latest try: ${problem}). Try again in a moment; VesnALIA review storage status says more.` });
     const stopped = Date.now();
     for (const service of [storage, ...waiting]) service.controller.abort();
     await Promise.all([storage.done, ...waiting.map((service) => service.done)]);
     expect(Date.now() - stopped).toBeLessThan(1_000);
-    expect(sqliteHasReviews(bb)).toBe(false);
+    expect(sqliteHasReviews(alia)).toBe(false);
     await harness.lifecycle.dispose();
   });
 });
@@ -216,18 +216,18 @@ describe("openPostgres", () => {
   const refused = () => Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:5432"), { code: "ECONNREFUSED" });
 
   async function postgresChoice() {
-    const { bb, harness } = await host(postgres(5432), "postgres");
-    const storage = await chooseStorage(bb) as Extract<StorageChoice, { kind: "postgres" }>;
+    const { alia, harness } = await host(postgres(5432), "postgres");
+    const storage = await chooseStorage(alia) as Extract<StorageChoice, { kind: "postgres" }>;
     expect(storage.kind).toBe("postgres");
     closing.push(() => storage.pg.end());
-    return { bb, harness, storage };
+    return { alia, harness, storage };
   }
 
   test("out of reach, it's logged each time and told to needsConfiguration only past the grace, once; then it opens", async () => {
-    const { bb, harness, storage } = await postgresChoice();
+    const { alia, harness, storage } = await postgresChoice();
     const started = Date.now();
     let tries = 0;
-    const opened = await openPostgres(bb, storage, new AbortController().signal, async () => {
+    const opened = await openPostgres(alia, storage, new AbortController().signal, async () => {
       tries++;
       if (Date.now() - started < 300) throw refused();
       return "open";
@@ -238,28 +238,28 @@ describe("openPostgres", () => {
     expect(warned).toHaveLength(tries - 1);
     expect(warned.slice(0, 4)).toEqual([0.005, 0.01, 0.02, 0.02].map((s) => `Could not open Code Review Workspace's Postgres storage: connect ECONNREFUSED 127.0.0.1:5432. Trying again in ${s} s.`));
     expect(harness.inspection.needsConfigurationMessages).toEqual([
-      "Code Review Workspace can't open its Postgres storage: connect ECONNREFUSED 127.0.0.1:5432. It keeps trying, and serves once it gets through; this status stays until the plugin reloads (bb plugin reload code-review-workspace).",
+      "Code Review Workspace can't open its Postgres storage: connect ECONNREFUSED 127.0.0.1:5432. It keeps trying, and serves once it gets through; this status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace).",
     ]);
-    expect(harness.inspection.logEntries.at(-1)).toEqual({ level: "info", message: "Code Review Workspace's Postgres storage is open. Its needs-configuration status stays until the plugin reloads (bb plugin reload code-review-workspace)." });
+    expect(harness.inspection.logEntries.at(-1)).toEqual({ level: "info", message: "Code Review Workspace's Postgres storage is open. Its needs-configuration status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace)." });
   });
 
   test("a failure that trying again can't fix alone is told at once, each new one again, without the URL or password", async () => {
-    const { bb, harness, storage } = await postgresChoice();
+    const { alia, harness, storage } = await postgresChoice();
     const url = storage.settings.postgresUrl!;
     const failures: unknown[] = [
       Object.assign(new pg.DatabaseError(`password authentication failed for user "crw" at ${url} with ${PASSWORD}`, 0, "error"), { code: "28P01" }),
       Object.assign(new pg.DatabaseError(`password authentication failed for user "crw" at ${url} with ${PASSWORD}`, 0, "error"), { code: "28P01" }),
       new PgWriterLockError("code_review_workspace", 30_000),
     ];
-    const opened = await openPostgres(bb, storage, new AbortController().signal, async () => {
+    const opened = await openPostgres(alia, storage, new AbortController().signal, async () => {
       const failure = failures.shift();
       if (failure) throw failure;
       return "open";
     }, TIMING);
     expect(opened).toBe("open");
     expect(harness.inspection.needsConfigurationMessages).toEqual([
-      "Code Review Workspace can't open its Postgres storage: Postgres answered: password authentication failed for user \"crw\" at [redacted] with [redacted] (SQLSTATE 28P01). It keeps trying, and serves once it gets through; this status stays until the plugin reloads (bb plugin reload code-review-workspace).",
-      "Code Review Workspace can't open its Postgres storage: Another Code Review Workspace holds the writer lock on Postgres schema \"code_review_workspace\" (waited 30 s). Stop the other BB using this schema, or give this one a schema of its own (postgresSchema). It keeps trying, and serves once it gets through; this status stays until the plugin reloads (bb plugin reload code-review-workspace).",
+      "Code Review Workspace can't open its Postgres storage: Postgres answered: password authentication failed for user \"crw\" at [redacted] with [redacted] (SQLSTATE 28P01). It keeps trying, and serves once it gets through; this status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace).",
+      "Code Review Workspace can't open its Postgres storage: Another Code Review Workspace holds the writer lock on Postgres schema \"code_review_workspace\" (waited 30 s). Stop the other VesnALIA using this schema, or give this one a schema of its own (postgresSchema). It keeps trying, and serves once it gets through; this status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace).",
     ]);
     for (const { message } of harness.inspection.logEntries) {
       expect(message).not.toContain(PASSWORD);
@@ -268,13 +268,13 @@ describe("openPostgres", () => {
   });
 
   test("aborted, it gives up at once, while a try still runs, and what that try does later goes unheard", async () => {
-    const { bb, harness, storage } = await postgresChoice();
+    const { alia, harness, storage } = await postgresChoice();
     const controller = new AbortController();
     let fail: (error: Error) => void = () => {};
     const unhandled = vi.fn();
     process.on("unhandledRejection", unhandled);
     try {
-      const opening = openPostgres(bb, storage, controller.signal, () => new Promise<string>((_, reject) => { fail = reject; }), TIMING);
+      const opening = openPostgres(alia, storage, controller.signal, () => new Promise<string>((_, reject) => { fail = reject; }), TIMING);
       await new Promise((resolve) => setTimeout(resolve, 20));
       controller.abort();
       expect(await opening).toBeNull();
@@ -289,9 +289,9 @@ describe("openPostgres", () => {
   });
 
   test("aborted while it waits to try again, it gives up at once", async () => {
-    const { bb, storage } = await postgresChoice();
+    const { alia, storage } = await postgresChoice();
     const controller = new AbortController();
-    const opening = openPostgres(bb, storage, controller.signal, async () => { throw refused(); }, { ...TIMING, firstRetryMs: 60_000 });
+    const opening = openPostgres(alia, storage, controller.signal, async () => { throw refused(); }, { ...TIMING, firstRetryMs: 60_000 });
     await vi.waitFor(() => { expect(storage.status.problem).toContain("ECONNREFUSED"); });
     controller.abort();
     expect(await opening).toBeNull();
@@ -313,7 +313,7 @@ test("only a failure to reach Postgres, or a server starting or stopping, counts
 });
 
 // bug bash F7: a statement timeout or a lock wait at activation, which passes a moment later, was reported as
-// needs-configuration at once, and BB kept saying so until a reload.
+// needs-configuration at once, and VesnALIA kept saying so until a reload.
 test("a statement cancelled by its timeout, a lock not granted, a deadlock, and pg's own read timeout count as passing", () => {
   const database = (code: string) => Object.assign(new pg.DatabaseError("from the server", 0, "error"), { code });
   for (const error of [database("57014"), database("55P03"), database("40P01"), new Error("Query read timeout")]) expect(unreachable(error)).toBe(true);
@@ -330,8 +330,8 @@ test("verify-full's refusals of the server's certificate say which setting to ch
 });
 
 test("a failed restart of the idle review assistants after a Settings change is logged, not left unhandled", async () => {
-  const { bb, harness } = await host();
-  const store = await startPlugin(bb);
+  const { alia, harness } = await host();
+  const store = await startPlugin(alia);
   vi.spyOn(store, "listAssistantThreads").mockRejectedValue(new Error("The store was disposed"));
   const { preferences, revision } = await harness.behavior.callRpc("getPreferences", null) as { preferences: { assistantInstructions: string }; revision: number };
   await harness.behavior.callRpc("savePreferences", { preferences: { ...preferences, assistantInstructions: `${preferences.assistantInstructions} Be brief.` }, revision });

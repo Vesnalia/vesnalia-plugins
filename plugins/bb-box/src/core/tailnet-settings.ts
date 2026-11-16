@@ -2,7 +2,7 @@ import type { TailnetCredentials } from "./tailnet.ts";
 import { PRODUCT } from "../brand.ts";
 import { unknownKey, type ProblemAt } from "./problems.ts";
 
-export const DEFAULT_TAILNET_TAGS: readonly string[] = ["tag:bb-box"];
+export const DEFAULT_TAILNET_TAGS: readonly string[] = ["tag:alia-box"];
 
 export const TAILNET_CLIENT_ID = "tailnet:client-id";
 export const TAILNET_CLIENT_SECRET = "tailnet:client-secret";
@@ -51,7 +51,7 @@ const TAILNET_SETTINGS = "There are mode, tags, clientId and clientSecret.";
 
 export function readTailnet(value: unknown, problem: ProblemAt, changes: Record<string, string | null>): TailnetSetting | undefined {
   if (!isRecord(value)) {
-    problem("general.tailnet", 'tailnet is an object: {"mode": "off"}, or {"mode": "oauth", "tags": ["tag:bb-box"], "clientId": "…", "clientSecret": "…"}.');
+    problem("general.tailnet", 'tailnet is an object: {"mode": "off"}, or {"mode": "oauth", "tags": ["tag:alia-box"], "clientId": "…", "clientSecret": "…"}.');
     return undefined;
   }
   for (const key of Object.keys(value)) {
@@ -59,13 +59,13 @@ export function readTailnet(value: unknown, problem: ProblemAt, changes: Record<
   }
   const mode = value.mode ?? "off";
   if (typeof mode !== "string" || !(MODES as readonly string[]).includes(mode)) {
-    problem("general.tailnet.mode", `The tailnet's mode is "off", for a BB that machines reach without it, or "oauth", for a Tailscale OAuth client that ${PRODUCT} makes keys with.`);
+    problem("general.tailnet.mode", `The tailnet's mode is "off", for a VesnALIA that machines reach without it, or "oauth", for a Tailscale OAuth client that ${PRODUCT} makes keys with.`);
     return undefined;
   }
   let tags: string[] | undefined;
   if (value.tags !== undefined) {
     if (!Array.isArray(value.tags) || !value.tags.length || !value.tags.every((tag) => typeof tag === "string" && TAG.test(tag))) {
-      problem("general.tailnet.tags", "The tailnet's tags are a list of at least one, each like tag:bb-box: lower-case letters, digits and -.");
+      problem("general.tailnet.tags", "The tailnet's tags are a list of at least one, each like tag:alia-box: lower-case letters, digits and -.");
     } else tags = [...new Set(value.tags as string[])];
   }
   readSecret(value.clientId, TAILNET_CLIENT_ID, "general.tailnet.clientId", "OAuth client's ID", problem, changes);

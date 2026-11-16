@@ -133,7 +133,7 @@ describe("resolveDrop across sections", () => {
     }
   });
 
-  it("never moves a thread into another project: bb owns that", () => {
+  it("never moves a thread into another project: VesnALIA owns that", () => {
     expect(resolveDrop(thread(p1), zone("thread", "t2", p2))).toBeNull();
     expect(resolveDrop(thread(p1), zone("section", p2, p2))).toBeNull();
     expect(resolveDrop(thread(done), zone("project", "p2", p2))).toBeNull();

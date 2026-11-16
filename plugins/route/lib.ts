@@ -1,4 +1,4 @@
-// Pure helpers for the route tools. No BB or network access, so tests can run them directly.
+// Pure helpers for the route tools. No VesnALIA or network access, so tests can run them directly.
 import { z } from "zod";
 
 export const MAX_OUTPUT_CHARS = 12_000;

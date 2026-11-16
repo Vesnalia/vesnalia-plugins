@@ -162,7 +162,7 @@ export function formatModeText(mode: number, typeChar = "-"): string {
 }
 
 /**
- * Only the user bb itself runs as can be named. Node exposes no getpwuid, and
+ * Only the user VesnALIA itself runs as can be named. Node exposes no getpwuid, and
  * parsing /etc/passwd would both leave the hard root and answer wrongly on any
  * host that resolves users through LDAP or SSSD — so every other owner, and
  * every group, is reported as a plain number, which is what `ls -n` does.
@@ -295,7 +295,7 @@ export async function pathProperties(input: { path: string }): Promise<PathPrope
  *  - **200 000 entries**: roughly one large dependency tree, and about a
  *    second of `readdir` + `lstat` on a warm ext4 cache.
  *  - **5 s**: past this a dialog stops looking busy and starts looking broken.
- *    It also bounds the work an abandoned call leaves behind: bb's RPC has no
+ *    It also bounds the work an abandoned call leaves behind: VesnALIA's RPC has no
  *    abort channel, so a dialog closed mid-count cannot call the walk off — it
  *    can only ignore the answer, and this is what makes that cheap.
  */

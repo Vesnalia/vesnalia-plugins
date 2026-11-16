@@ -2,7 +2,7 @@
 //
 // Lists the side chats forked from a thread and works out which message each
 // one was started from, so app.tsx can show a link on that message.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   rpcContract,
@@ -99,13 +99,13 @@ const seedEventSchema = z.object({
   }),
 });
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   async function listSideChatThreads(
     sourceThreadId: string,
   ): Promise<SideChatThread[]> {
     const found: SideChatThread[] = [];
     for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         sourceThreadId,
         originKind: "fork",
         originPluginId: SIDE_CHAT_PLUGIN_ID,
@@ -128,7 +128,7 @@ export default function plugin(bb: BbPluginApi) {
 
   /** True once the user has sent the side chat a message. */
   async function hasStartedTurn(threadId: string): Promise<boolean> {
-    const events = await bb.sdk.threads.events.list({
+    const events = await alia.sdk.threads.events.list({
       threadId,
       types: ["turn/started"],
       limit: "1",
@@ -138,7 +138,7 @@ export default function plugin(bb: BbPluginApi) {
 
   /** The text the side chat quotes, or null when it was started without one. */
   async function readAnchorText(threadId: string): Promise<string | null> {
-    const events = await bb.sdk.threads.events.list({
+    const events = await alia.sdk.threads.events.list({
       threadId,
       types: ["client/turn/requested"],
       limit: "1",
@@ -166,7 +166,7 @@ export default function plugin(bb: BbPluginApi) {
     let before: { beforeAnchorId: string; beforeAnchorSeq: string } | null =
       null;
     for (let page = 0; page < MAX_TIMELINE_PAGES; page += 1) {
-      const timeline: TimelinePage = await bb.sdk.threads.timeline({
+      const timeline: TimelinePage = await alia.sdk.threads.timeline({
         threadId: sourceThreadId,
         includeNestedRows: "true",
         ...before,
@@ -219,7 +219,7 @@ export default function plugin(bb: BbPluginApi) {
     const pending: (SideChatThread & { anchorText: string | null })[] = [];
     for (const thread of threads) {
       const stored = resolvedSchema.safeParse(
-        await bb.storage.kv.get(`${RESOLVED_KEY_PREFIX}${thread.id}`),
+        await alia.storage.kv.get(`${RESOLVED_KEY_PREFIX}${thread.id}`),
       );
       if (stored.success) {
         known.set(thread.id, stored.data);
@@ -233,7 +233,7 @@ export default function plugin(bb: BbPluginApi) {
       const resolved = await resolvePending(sourceThreadId, pending);
       for (const [threadId, value] of resolved) {
         known.set(threadId, value);
-        await bb.storage.kv.set(`${RESOLVED_KEY_PREFIX}${threadId}`, value);
+        await alia.storage.kv.set(`${RESOLVED_KEY_PREFIX}${threadId}`, value);
       }
     }
     const pendingById = new Map(pending.map((chat) => [chat.id, chat]));
@@ -254,21 +254,21 @@ export default function plugin(bb: BbPluginApi) {
     return sideChats;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async listSideChats({ threadId }) {
       return { sideChats: await listSideChats(threadId) };
     },
-    // The name is the side chat thread's own title, so bb shows it wherever
+    // The name is the side chat thread's own title, so VesnALIA shows it wherever
     // it shows that thread.
     async renameSideChat({ threadId, title }) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const sourceThreadId = sideChatSourceThreadId(thread);
       if (sourceThreadId === null) {
         throw new Error("Only a side chat can be renamed here.");
       }
       const next = title.length > 0 ? title : null;
-      await bb.sdk.threads.update({ threadId, title: next });
-      bb.rpc.experimental_invalidate([sourceThreadTag(sourceThreadId)]);
+      await alia.sdk.threads.update({ threadId, title: next });
+      alia.rpc.experimental_invalidate([sourceThreadTag(sourceThreadId)]);
       return { title: next };
     },
   });
@@ -278,7 +278,7 @@ export default function plugin(bb: BbPluginApi) {
   function refreshSourceThread(thread: ForkOrigin): void {
     const sourceThreadId = sideChatSourceThreadId(thread);
     if (sourceThreadId !== null) {
-      bb.rpc.experimental_invalidate([sourceThreadTag(sourceThreadId)]);
+      alia.rpc.experimental_invalidate([sourceThreadTag(sourceThreadId)]);
     }
   }
   for (const event of [
@@ -287,12 +287,12 @@ export default function plugin(bb: BbPluginApi) {
     "thread.archived",
     "thread.unarchived",
   ] as const) {
-    bb.events.on(event, ({ thread }) => refreshSourceThread(thread));
+    alia.events.on(event, ({ thread }) => refreshSourceThread(thread));
   }
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     refreshSourceThread(thread);
     if (sideChatSourceThreadId(thread) !== null) {
-      await bb.storage.kv.delete(`${RESOLVED_KEY_PREFIX}${thread.id}`);
+      await alia.storage.kv.delete(`${RESOLVED_KEY_PREFIX}${thread.id}`);
     }
   });
 }

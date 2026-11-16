@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { chmod, copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { taskTypeSchema, type TaskType } from "./lib/task-type";
 import { JobRegistry, JOBS_KEY, JOBS_CHANGED, snapshotInputSchema, snapshotSchema, type Job } from "./lib/observability";
@@ -252,7 +252,7 @@ const piCloudModelSchema = z.object({
   }),
 });
 
-const bbModelCatalogResultSchema = z.object({
+const aliaModelCatalogResultSchema = z.object({
   path: z.string(),
   providerId: z.literal("ollama-cloud"),
   modelCount: z.number().int().nonnegative(),
@@ -266,7 +266,7 @@ const bbModelCatalogResultSchema = z.object({
   updatedAt: z.string(),
 });
 
-export type BbModelCatalogResult = z.infer<typeof bbModelCatalogResultSchema>;
+export type AliaModelCatalogResult = z.infer<typeof aliaModelCatalogResultSchema>;
 
 export const rpcContract = defineRpcContract({
   fleet_list: {
@@ -463,7 +463,7 @@ function toPiCloudModel(model: z.infer<typeof ollamaTagsResponseSchema>["models"
     reasoning: likelyReasoningModel(id),
     input: likelyVisionModel(id) ? ["text", "image"] : ["text"],
     // Pi's documented defaults are intentionally conservative. Ollama Cloud
-    // models with a larger window remain usable without BB overcommitting a
+    // models with a larger window remain usable without VesnALIA overcommitting a
     // context size the catalog endpoint does not promise.
     contextWindow: 128_000,
     maxTokens: 32_768,
@@ -565,7 +565,7 @@ async function syncPiApiKeyCredential(): Promise<{
   return { path, configured: true, backupPath };
 }
 
-async function syncOllamaCloudToBbModels(): Promise<BbModelCatalogResult> {
+async function syncOllamaCloudToAliaModels(): Promise<AliaModelCatalogResult> {
   const path = piModelsPath();
   const [models, current, credential] = await Promise.all([
     fetchOllamaCloudModels(),
@@ -603,7 +603,7 @@ async function syncOllamaCloudToBbModels(): Promise<BbModelCatalogResult> {
   };
 }
 
-async function bbModelCatalogStatus(): Promise<Omit<BbModelCatalogResult, "models" | "backupPath" | "credentialBackupPath" | "updatedAt"> & { configured: boolean }> {
+async function aliaModelCatalogStatus(): Promise<Omit<AliaModelCatalogResult, "models" | "backupPath" | "credentialBackupPath" | "updatedAt"> & { configured: boolean }> {
   const path = piModelsPath();
   const credentialPath = piAuthPath();
   const [current, credentials] = await Promise.all([
@@ -626,7 +626,7 @@ async function bbModelCatalogStatus(): Promise<Omit<BbModelCatalogResult, "model
   };
 }
 
-async function removeOllamaCloudFromBbModels(): Promise<{
+async function removeOllamaCloudFromAliaModels(): Promise<{
   path: string;
   removed: boolean;
   backupPath: string | null;
@@ -943,15 +943,15 @@ function scoreCandidate(
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("Ollama Fleet loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("Ollama Fleet loaded");
   const jobs = new JobRegistry({
-    read: () => bb.storage.kv.get(JOBS_KEY),
-    write: value => bb.storage.kv.set(JOBS_KEY, value),
-    publish: value => bb.realtime.publish(JOBS_CHANGED, value),
+    read: () => alia.storage.kv.get(JOBS_KEY),
+    write: value => alia.storage.kv.set(JOBS_KEY, value),
+    publish: value => alia.realtime.publish(JOBS_CHANGED, value),
   });
   await jobs.initialize();
-  bb.onDispose(() => jobs.flush());
+  alia.onDispose(() => jobs.flush());
   const contextCache = new Map<string, number | null>();
   const lastHealthRecordedAt = new Map<string, number>();
   let telemetryWriteChain: Promise<void> = Promise.resolve();
@@ -963,11 +963,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readHealthHistory(): Promise<HealthEvent[]> {
-    const raw = await bb.storage.kv.get<unknown>("health-history");
+    const raw = await alia.storage.kv.get<unknown>("health-history");
     const parsed = z.array(healthEventSchema).safeParse(raw ?? []);
 
     if (!parsed.success) {
-      bb.log.warn("Stored Ollama Fleet health history was invalid");
+      alia.log.warn("Stored Ollama Fleet health history was invalid");
       return [];
     }
 
@@ -975,11 +975,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readBenchmarkHistory(): Promise<BenchmarkEvent[]> {
-    const raw = await bb.storage.kv.get<unknown>("benchmark-history");
+    const raw = await alia.storage.kv.get<unknown>("benchmark-history");
     const parsed = z.array(benchmarkEventSchema).safeParse(raw ?? []);
 
     if (!parsed.success) {
-      bb.log.warn("Stored Ollama Fleet benchmark history was invalid");
+      alia.log.warn("Stored Ollama Fleet benchmark history was invalid");
       return [];
     }
 
@@ -996,13 +996,13 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       await enqueueTelemetry(async () => {
         const history = await readHealthHistory();
-        await bb.storage.kv.set(
+        await alia.storage.kv.set(
           "health-history",
           [...history, event].slice(-HEALTH_HISTORY_LIMIT),
         );
       });
     } catch (cause) {
-      bb.log.warn(`Could not record Ollama Fleet health history: ${errorMessage(cause)}`);
+      alia.log.warn(`Could not record Ollama Fleet health history: ${errorMessage(cause)}`);
     }
   }
 
@@ -1010,13 +1010,13 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       await enqueueTelemetry(async () => {
         const history = await readBenchmarkHistory();
-        await bb.storage.kv.set(
+        await alia.storage.kv.set(
           "benchmark-history",
           [...history, event].slice(-BENCHMARK_HISTORY_LIMIT),
         );
       });
     } catch (cause) {
-      bb.log.warn(`Could not record Ollama Fleet benchmark history: ${errorMessage(cause)}`);
+      alia.log.warn(`Could not record Ollama Fleet benchmark history: ${errorMessage(cause)}`);
     }
   }
 
@@ -1063,7 +1063,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readEndpoints(): Promise<Endpoint[]> {
-    const raw = await bb.storage.kv.get<unknown>("endpoints");
+    const raw = await alia.storage.kv.get<unknown>("endpoints");
 
     if (raw === undefined || raw === null) {
       return [];
@@ -1072,7 +1072,7 @@ export default async function plugin(bb: BbPluginApi) {
     const parsed = z.array(endpointSchema).safeParse(raw);
 
     if (!parsed.success) {
-      bb.log.warn("Stored Ollama Fleet endpoint data was invalid");
+      alia.log.warn("Stored Ollama Fleet endpoint data was invalid");
       return [];
     }
 
@@ -1080,15 +1080,15 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function writeEndpoints(endpoints: Endpoint[]): Promise<void> {
-    await bb.storage.kv.set("endpoints", endpoints);
+    await alia.storage.kv.set("endpoints", endpoints);
 
-    bb.realtime.publish(FLEET_CHANGED, {
+    alia.realtime.publish(FLEET_CHANGED, {
       count: endpoints.length,
     });
   }
 
   async function readOverrides(): Promise<ModelOverride[]> {
-    const raw = await bb.storage.kv.get<unknown>("model-overrides");
+    const raw = await alia.storage.kv.get<unknown>("model-overrides");
 
     if (raw === undefined || raw === null) {
       return [];
@@ -1097,7 +1097,7 @@ export default async function plugin(bb: BbPluginApi) {
     const parsed = z.array(modelOverrideSchema).safeParse(raw);
 
     if (!parsed.success) {
-      bb.log.warn("Stored Ollama Fleet model overrides were invalid");
+      alia.log.warn("Stored Ollama Fleet model overrides were invalid");
       return [];
     }
 
@@ -1105,8 +1105,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function writeOverrides(overrides: ModelOverride[]): Promise<void> {
-    await bb.storage.kv.set("model-overrides", overrides);
-    bb.realtime.publish(FLEET_CHANGED, { overrides: overrides.length });
+    await alia.storage.kv.set("model-overrides", overrides);
+    alia.realtime.publish(FLEET_CHANGED, { overrides: overrides.length });
   }
 
   async function overrideMap(): Promise<Map<string, ModelOverride>> {
@@ -1653,7 +1653,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     fleet_observability_snapshot: input => jobs.snapshot(input),
     fleet_list: async () => ({
       endpoints: await readEndpoints(),
@@ -1735,22 +1735,22 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     "Usage:",
-    "  bb ollama-fleet list [--json]",
-    "  bb ollama-fleet add <name> <url> [--json]",
-    "  bb ollama-fleet remove <endpoint-id> [--json]",
-    "  bb ollama-fleet status [endpoint-id] [--json]",
-    "  bb ollama-fleet models [endpoint-id] [--json]",
-    "  bb ollama-fleet test <endpoint-id> <model> [--generate] [--prompt <text>] [--json]",
-    "  bb ollama-fleet recommend <coding|reasoning|security|general> [--local-only] [--min-context <tokens>] [--prefer-running] [--prefer-reliable] [--endpoint <id>] [--json]",
-    "  bb ollama-fleet route <coding|reasoning|security|general> <prompt> [recommend options] [--max-attempts 1..5] [--label <text>] [--json]",
-    "  bb ollama-fleet history [endpoint-id] [--json]",
-    "  bb ollama-fleet override list [--json]",
-    "  bb ollama-fleet override set <model> [--location local|cloud] [--tags <csv|none>] [--priority -100..100] [--json]",
-    "  bb ollama-fleet override clear <model> [--json]",
-    "  bb ollama-fleet bb-models <sync|status|remove> [--json]",
+    "  VesnALIA ollama-fleet list [--json]",
+    "  VesnALIA ollama-fleet add <name> <url> [--json]",
+    "  VesnALIA ollama-fleet remove <endpoint-id> [--json]",
+    "  VesnALIA ollama-fleet status [endpoint-id] [--json]",
+    "  VesnALIA ollama-fleet models [endpoint-id] [--json]",
+    "  VesnALIA ollama-fleet test <endpoint-id> <model> [--generate] [--prompt <text>] [--json]",
+    "  VesnALIA ollama-fleet recommend <coding|reasoning|security|general> [--local-only] [--min-context <tokens>] [--prefer-running] [--prefer-reliable] [--endpoint <id>] [--json]",
+    "  VesnALIA ollama-fleet route <coding|reasoning|security|general> <prompt> [recommend options] [--max-attempts 1..5] [--label <text>] [--json]",
+    "  VesnALIA ollama-fleet history [endpoint-id] [--json]",
+    "  VesnALIA ollama-fleet override list [--json]",
+    "  VesnALIA ollama-fleet override set <model> [--location local|cloud] [--tags <csv|none>] [--priority -100..100] [--json]",
+    "  VesnALIA ollama-fleet override clear <model> [--json]",
+    "  VesnALIA ollama-fleet alia-models <sync|status|remove> [--json]",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "ollama-fleet",
     summary: "Manage and inspect Ollama servers",
 
@@ -1758,61 +1758,61 @@ export default async function plugin(bb: BbPluginApi) {
       {
         name: "list",
         summary: "List configured Ollama endpoints",
-        usage: "bb ollama-fleet list [--json]",
+        usage: "alia ollama-fleet list [--json]",
       },
       {
         name: "add",
         summary: "Add an Ollama endpoint",
-        usage: 'bb ollama-fleet add "Desktop PC" http://10.0.0.50:11434',
+        usage: 'alia ollama-fleet add "Desktop PC" http://10.0.0.50:11434',
       },
       {
         name: "remove",
         summary: "Remove an Ollama endpoint",
-        usage: "bb ollama-fleet remove <endpoint-id>",
+        usage: "alia ollama-fleet remove <endpoint-id>",
       },
       {
         name: "status",
         summary: "Check Ollama endpoint health",
-        usage: "bb ollama-fleet status [endpoint-id] [--json]",
+        usage: "alia ollama-fleet status [endpoint-id] [--json]",
       },
       {
         name: "models",
         summary: "List models available through the fleet",
-        usage: "bb ollama-fleet models [endpoint-id] [--json]",
+        usage: "alia ollama-fleet models [endpoint-id] [--json]",
       },
       {
         name: "test",
         summary: "Inspect a model or run a real generation smoke test",
         usage:
-          "bb ollama-fleet test <endpoint-id> <model> [--generate] [--prompt <text>] [--json]",
+          "alia ollama-fleet test <endpoint-id> <model> [--generate] [--prompt <text>] [--json]",
       },
       {
         name: "recommend",
         summary: "Choose the best available model for a task",
         usage:
-          "bb ollama-fleet recommend <coding|reasoning|security|general> [--local-only] [--min-context <tokens>] [--prefer-running] [--prefer-reliable] [--endpoint <id>] [--json]",
+          "alia ollama-fleet recommend <coding|reasoning|security|general> [--local-only] [--min-context <tokens>] [--prefer-running] [--prefer-reliable] [--endpoint <id>] [--json]",
       },
       {
         name: "route",
         summary: "Generate with an ordered model fallback chain",
         usage:
-          "bb ollama-fleet route <coding|reasoning|security|general> <prompt> [recommend options] [--max-attempts 1..5] [--label <text>] [--json]",
+          "alia ollama-fleet route <coding|reasoning|security|general> <prompt> [recommend options] [--max-attempts 1..5] [--label <text>] [--json]",
       },
       {
         name: "history",
         summary: "Inspect bounded health and benchmark history",
-        usage: "bb ollama-fleet history [endpoint-id] [--json]",
+        usage: "alia ollama-fleet history [endpoint-id] [--json]",
       },
       {
         name: "override",
         summary: "Manage per-model capability and routing overrides",
         usage:
-          "bb ollama-fleet override <list|set|clear> ... [--json]",
+          "alia ollama-fleet override <list|set|clear> ... [--json]",
       },
       {
-        name: "bb-models",
-        summary: "Sync Ollama Cloud into BB's Pi-backed model list",
-        usage: "bb ollama-fleet bb-models <sync|status|remove> [--json]",
+        name: "alia-models",
+        summary: "Sync Ollama Cloud into VesnALIA's Pi-backed model list",
+        usage: "alia ollama-fleet alia-models <sync|status|remove> [--json]",
       },
     ],
 
@@ -2416,26 +2416,26 @@ export default async function plugin(bb: BbPluginApi) {
           return { exitCode: 1, stderr: usage };
         }
 
-        case "bb-models": {
+        case "alia-models": {
           const action = args[0];
           if (args.length !== 1 || !["sync", "status", "remove"].includes(action ?? "")) {
             return { exitCode: 1, stderr: usage };
           }
           try {
             if (action === "status") {
-              const status = await bbModelCatalogStatus();
+              const status = await aliaModelCatalogStatus();
               return reply(
                 status,
                 [
-                  `Ollama Cloud BB models: ${status.configured ? `${status.modelCount} configured` : "not configured"}`,
+                  `Ollama Cloud VesnALIA models: ${status.configured ? `${status.modelCount} configured` : "not configured"}`,
                   `Catalog: ${status.path}`,
-                  `${status.apiKeyEnvironmentVariable}: ${status.apiKeyAvailable ? "available to BB" : "not available to BB"}`,
+                  `${status.apiKeyEnvironmentVariable}: ${status.apiKeyAvailable ? "available to VesnALIA" : "not available to VesnALIA"}`,
                   `Pi credential: ${status.credentialConfigured ? `configured in ${status.credentialPath}` : "not configured"}`,
                 ].join("\n"),
               );
             }
             if (action === "remove") {
-              const result = await removeOllamaCloudFromBbModels();
+              const result = await removeOllamaCloudFromAliaModels();
               return result.removed || result.credentialRemoved
                 ? reply(
                     result,
@@ -2446,16 +2446,16 @@ export default async function plugin(bb: BbPluginApi) {
                   )
                 : { exitCode: 1, stderr: `Ollama Cloud is not configured in ${result.path}` };
             }
-            const result = await syncOllamaCloudToBbModels();
+            const result = await syncOllamaCloudToAliaModels();
             return reply(
               result,
               [
-                `Synced ${result.modelCount} Ollama Cloud models into BB`,
+                `Synced ${result.modelCount} Ollama Cloud models into VesnALIA`,
                 `Provider: ${result.providerId} · catalog ${result.path}`,
                 result.backupPath === null ? "Created a new Pi model catalog" : `Backup: ${result.backupPath}`,
                 result.apiKeyAvailable
-                  ? `${result.apiKeyEnvironmentVariable} is available to BB`
-                  : `WARNING: ${result.apiKeyEnvironmentVariable} is not available to BB; set it for the BB host before using these models`,
+                  ? `${result.apiKeyEnvironmentVariable} is available to VesnALIA`
+                  : `WARNING: ${result.apiKeyEnvironmentVariable} is not available to VesnALIA; set it for the VesnALIA host before using these models`,
                 result.credentialConfigured
                   ? `Pi credential configured in ${result.credentialPath}`
                   : `WARNING: Pi credential is not configured; set ${result.apiKeyEnvironmentVariable} and sync again`,
@@ -2476,7 +2476,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ollama_fleet_status",
     description:
       "Check the health, latency, and model count of Ollama servers configured in Ollama Fleet.",
@@ -2505,7 +2505,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ollama_fleet_models",
     description:
       "List models available from the Ollama servers configured in Ollama Fleet.",
@@ -2538,7 +2538,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ollama_fleet_test",
     description:
       "Inspect a model or run a real generation smoke test with latency and throughput metrics.",
@@ -2584,7 +2584,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ollama_fleet_recommend",
     description:
       "Recommend the best currently available Ollama model for coding, reasoning, security, or general work.",
@@ -2643,7 +2643,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ollama_fleet_history",
     description:
       "Read bounded Ollama Fleet health checks and model benchmark history.",
@@ -2660,7 +2660,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "ollama_fleet_route",
     description:
       "Select an Ollama model, generate a response, and automatically try ordered fallback models when an attempt fails.",
@@ -2712,7 +2712,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: [
       "ollama_fleet_status",
       "ollama_fleet_models",
@@ -2724,7 +2724,7 @@ export default async function plugin(bb: BbPluginApi) {
     skills: [],
   }));
 
-  bb.onDispose(() => {
-    bb.log.info("Ollama Fleet disposed");
+  alia.onDispose(() => {
+    alia.log.info("Ollama Fleet disposed");
   });
 }

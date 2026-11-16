@@ -1,4 +1,4 @@
-# Each form of a coreutils command that bb-box's in-box code uses on Linux, run here, printing its exit code and a hash of its
+# Each form of a coreutils command that alia-box's in-box code uses on Linux, run here, printing its exit code and a hash of its
 # output, so a run on Ubuntu 24.04 (GNU coreutils) and one on 26.04 (uutils) can be compared line by line. compare.sh runs both.
 cd "$(mktemp -d)"
 printf 'one\ntwo\nthree\nfour\nfive\n' > f; printf 'b\na\nc\na\n' > s; printf 'a\nb\n' > c1; printf 'b\nc\n' > c2

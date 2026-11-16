@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { setTimeout as delay } from "node:timers/promises";
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["list"]>>[number];
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>>[number];
 
-// BB's sidebar hook and row actions only accept visible threads. Reveal linked
+// VesnALIA's sidebar hook and row actions only accept visible threads. Reveal linked
 // agent children through the host API so those actions and live status work.
-export function childVisibility(bb: BbPluginApi) {
+export function childVisibility(alia: AliaPluginApi) {
   let busy = false;
   async function run(signal?: AbortSignal) {
     if (busy) return;
@@ -13,7 +13,7 @@ export function childVisibility(bb: BbPluginApi) {
     try {
       const threads = new Map<string, Thread>();
       for (let offset = 0; ; offset += 200) {
-        const page = await bb.sdk.threads.list({
+        const page = await alia.sdk.threads.list({
           archived: false, includeHidden: true, limit: 200, offset, signal,
         });
         for (const thread of page) threads.set(thread.id, thread);
@@ -39,29 +39,29 @@ export function childVisibility(bb: BbPluginApi) {
           !["managed-worktree", "unmanaged-worktree"].includes(thread.environmentWorkspaceDisplayKind) ||
           !linkedToVisibleThread(thread)) continue;
         signal?.throwIfAborted();
-        const current = await bb.sdk.threads.get({ threadId: thread.id, signal });
+        const current = await alia.sdk.threads.get({ threadId: thread.id, signal });
         if (current.visibility !== "hidden" || current.archivedAt || current.deletedAt ||
           current.originPluginId || current.parentThreadId !== thread.parentThreadId ||
           current.environmentId !== thread.environmentId || current.projectId !== thread.projectId)
           continue;
-        await bb.sdk.threads.update({ threadId: thread.id, visibility: "visible" });
+        await alia.sdk.threads.update({ threadId: thread.id, visibility: "visible" });
       }
     } finally {
       busy = false;
     }
   }
-  bb.events.on("thread.created", async ({ thread }) => {
+  alia.events.on("thread.created", async ({ thread }) => {
     if (thread.visibility === "hidden" && thread.parentThreadId && !thread.originPluginId)
       await run();
   });
-  bb.background.service("child-visibility", {
+  alia.background.service("child-visibility", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           await run(signal);
         } catch (error) {
           if (!signal.aborted)
-            bb.log.warn("Child visibility: " + (error instanceof Error ? error.message : "failed"));
+            alia.log.warn("Child visibility: " + (error instanceof Error ? error.message : "failed"));
         }
         try {
           await delay(60_000, undefined, { signal });

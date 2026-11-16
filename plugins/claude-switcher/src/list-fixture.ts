@@ -1,4 +1,4 @@
-// Ten accounts as `bb claude-switcher list` sees them: the fixture of the
+// Ten accounts as `alia claude-switcher list` sees them: the fixture of the
 // list's tests (src/ui.test.ts) and of docs/lista-antes-despues.txt. Five
 // Team seats (no general weekly: `absent`), five Max accounts, one Team
 // seat out of session and one Max out of its weekly.

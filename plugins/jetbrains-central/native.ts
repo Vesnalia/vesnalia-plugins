@@ -6,15 +6,15 @@ import { centralArgs } from "./profiles.js";
 export function findNativeBridge(bridge: string, configured = ""): string {
   if (!["codex", "claude-code", "pi"].includes(bridge)) throw new Error("Unsupported native bridge");
   const roots = configured ? [configured] : [
-    "/Applications/bb.app/Contents/Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins",
-    resolve(dirname(process.execPath), "../Resources/app.asar.unpacked/node_modules/bb-app/server/dist/builtin-plugins"),
-    resolve(dirname(process.execPath), "../lib/node_modules/bb-app/server/dist/builtin-plugins"),
+    "/Applications/alia.app/Contents/Resources/app.asar.unpacked/node_modules/alia-app/server/dist/builtin-plugins",
+    resolve(dirname(process.execPath), "../Resources/app.asar.unpacked/node_modules/alia-app/server/dist/builtin-plugins"),
+    resolve(dirname(process.execPath), "../lib/node_modules/alia-app/server/dist/builtin-plugins"),
   ];
   for (const root of roots) {
     const path = join(root, `provider-${bridge}`, "dist/host.js");
     if (existsSync(path)) return path;
   }
-  throw new Error("BB native bridge not found. Set Central's builtinPluginsDirectory to this machine's BB built-in plugins directory.");
+  throw new Error("VesnALIA native bridge not found. Set Central's builtinPluginsDirectory to this machine's VesnALIA built-in plugins directory.");
 }
 export function shellQuote(value: string) { return "'" + value.replaceAll("'", "'\\''") + "'"; }
 export function resolveOnPath(command: string): string {
@@ -66,24 +66,24 @@ export function claudeWrapper(command: string, profile: Profile) {
 }
 export function nativeLaunchEnv(profile: Profile, command: string, wrapper: string, dataDir: string): NodeJS.ProcessEnv {
   if (profile.bridge === "codex") return {
-    BB_CODEX_BRIDGE_APP_SERVER_COMMAND: command,
-    BB_CODEX_BRIDGE_APP_SERVER_ARGS: JSON.stringify(centralArgs(profile, ["app-server"])),
+    ALIA_CODEX_BRIDGE_APP_SERVER_COMMAND: command,
+    ALIA_CODEX_BRIDGE_APP_SERVER_ARGS: JSON.stringify(centralArgs(profile, ["app-server"])),
     CODEX_HOME: join(dataDir, "codex"),
   };
-  if (profile.bridge === "claude-code") return { BB_CLAUDE_CODE_EXECUTABLE: wrapper };
+  if (profile.bridge === "claude-code") return { ALIA_CLAUDE_CODE_EXECUTABLE: wrapper };
   if (profile.bridge === "pi") return {
-    BB_PI_BRIDGE_COMMAND: command, BB_PI_BRIDGE_ARGS: JSON.stringify(centralArgs(profile, [])),
+    ALIA_PI_BRIDGE_COMMAND: command, ALIA_PI_BRIDGE_ARGS: JSON.stringify(centralArgs(profile, [])),
   };
   throw new Error("Not a native profile");
 }
 
-// Only the public bridge export is used. No bundled BB files are patched or copied.
+// Only the public bridge export is used. No bundled VesnALIA files are patched or copied.
 export const runner = `
 import { createInterface } from 'node:readline';
 import { pathToFileURL } from 'node:url';
 const module = await import(pathToFileURL(process.env.CENTRAL_NATIVE_BRIDGE).href);
 const bridge = module.experimental_providerBridge;
-if (bridge?.experimental_apiVersion !== 1) throw new Error('Incompatible BB native bridge');
+if (bridge?.experimental_apiVersion !== 1) throw new Error('Incompatible VesnALIA native bridge');
 bridge.start?.(JSON.parse(process.env.CENTRAL_BRIDGE_CONTEXT));
 createInterface({input: process.stdin, crlfDelay: Infinity}).on('line', line => bridge.handleLine(line)).on('close', () => {bridge.onClose?.(); process.exit(0)});
 process.on('SIGTERM', () => {bridge.onSigterm?.(); process.exit(0)});

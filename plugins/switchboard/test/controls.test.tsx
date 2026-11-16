@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { GroupHeader } from "../src/group-header";
 import { FilterBar } from "../src/filter-bar";
 import { EMPTY_COUNTS } from "../src/status";

@@ -1,9 +1,9 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterEach, expect, test } from "bun:test";
-import type { PluginProvidersState } from "@get-bb/plugin-sdk/app";
+import type { PluginProvidersState } from "@vesnalia/plugin-sdk/app";
 import { assigneeProvider, initials } from "../src/task-relations";
 if (typeof document === "undefined") GlobalRegistrator.register();
-const { installTestPluginRuntime, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+const { installTestPluginRuntime, renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
 installTestPluginRuntime();
 const { cleanup } = await import("@testing-library/react");
 const { default: AssigneeAvatar } = await import("../src/AssigneeAvatar");

@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type FakePluginHost,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import type { ReadAttachmentResult } from "./attachments.js";
 import {
   operationResolutionPayloadSchema,
@@ -33,7 +33,7 @@ function jsonResponse(value: unknown, status = 200): Response {
 function identityResponse(): Response {
   return jsonResponse({
     sub: "user-sub",
-    name: "bb User",
+    name: "VesnALIA User",
     email: "user@example.com",
     korey_user_id: 42,
     korey_organization_id: 7,
@@ -49,11 +49,11 @@ function koreyThread(
 ) {
   return {
     id,
-    name: "bb: Shape the feature",
+    name: "VesnALIA: Shape the feature",
     state,
     is_private: true,
     archived: false,
-    owner: { id: "korey-user-1", name: "bb User" },
+    owner: { id: "korey-user-1", name: "VesnALIA User" },
     created_at: "2026-08-21T12:00:00.000Z",
     updated_at: updatedAt,
     app_url: `https://app.korey.ai/threads/${id}`,
@@ -195,14 +195,14 @@ async function loadPlugin(
       },
     },
   });
-  await koreyPlugin(host.bb);
+  await koreyPlugin(host.alia);
   hosts.push(host);
   return host;
 }
 
 function recordedRequest(host: FakePluginHost) {
   const operation = listOperations(
-    host.bb.storage.database(),
+    host.alia.storage.database(),
     "thread-test",
     1,
   )[0];
@@ -211,7 +211,7 @@ function recordedRequest(host: FakePluginHost) {
 }
 
 function storeMapping(host: FakePluginHost, koreyThreadId = "korey-thread-1") {
-  setLinkedMapping(host.bb.storage.database(), "thread-test", koreyThreadId);
+  setLinkedMapping(host.alia.storage.database(), "thread-test", koreyThreadId);
 }
 
 const hosts: FakePluginHost[] = [];
@@ -243,18 +243,18 @@ describe("Korey plugin conversations", () => {
     const pending = await host.harness.runCli([
       "ask",
       "Research this question",
-      "--bb-thread",
+      "--alia-thread",
       "thread-test",
     ]);
     const operation = listOperations(
-      host.bb.storage.database(),
+      host.alia.storage.database(),
       "thread-test",
       1,
     )[0]!;
     expect(pending.exitCode).toBe(0);
     expect(pending.stdout).toContain("awaiting-response");
     expect(pending.stdout).toContain(
-      `bb korey operation resume ${operation.id}`,
+      `alia korey operation resume ${operation.id}`,
     );
     expect(operation).toMatchObject({ error: null, completedAt: null });
     responses.push(completeResponse("The eventual consultation answer"));
@@ -262,7 +262,7 @@ describe("Korey plugin conversations", () => {
       "operation",
       "resume",
       operation.id,
-      "--bb-thread",
+      "--alia-thread",
       "thread-test",
     ]);
     expect(resumed.exitCode).toBe(0);
@@ -291,7 +291,7 @@ describe("Korey plugin conversations", () => {
       { signal: controller.signal },
     );
     const operations = listOperations(
-      host.bb.storage.database(),
+      host.alia.storage.database(),
       "thread-test",
       10,
     );
@@ -347,7 +347,7 @@ describe("Korey plugin conversations", () => {
                 "Research the attached specification",
                 "--file",
                 "spec.md",
-                "--bb-thread",
+                "--alia-thread",
                 "thread-test",
                 "--json",
               ])
@@ -363,7 +363,7 @@ describe("Korey plugin conversations", () => {
         appUrl: koreyThread().app_url,
       });
       const stored = getOperation(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         pending.operationId,
       )!;
       expect(stored).toMatchObject({
@@ -409,7 +409,7 @@ describe("Korey plugin conversations", () => {
       prompt: "Research this question",
     });
     const operations = listOperations(
-      host.bb.storage.database(),
+      host.alia.storage.database(),
       "thread-test",
       100,
     );
@@ -483,7 +483,7 @@ describe("Korey plugin conversations", () => {
       prompt: "Research this question",
     });
     const operations = listOperations(
-      host.bb.storage.database(),
+      host.alia.storage.database(),
       "thread-test",
       100,
     );
@@ -491,7 +491,7 @@ describe("Korey plugin conversations", () => {
     expect(operations[0]?.status).toBe("awaiting-response");
     expect(
       listUnresolvedOperations(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         "korey-thread-1",
       ),
@@ -565,7 +565,7 @@ describe("Korey plugin conversations", () => {
         : [];
       const calls = stubFetch(responses);
       const host = await loadPlugin();
-      const db = host.bb.storage.database();
+      const db = host.alia.storage.database();
       const controller = new AbortController();
       let preparationState: string | undefined;
       host.harness.inspection.sdk.stub("threads.get", async () => {
@@ -639,7 +639,7 @@ describe("Korey plugin conversations", () => {
               await host.harness.runCli([
                 "ask",
                 "Summarize",
-                "--bb-thread",
+                "--alia-thread",
                 "thread-test",
                 "--json",
               ])
@@ -706,7 +706,7 @@ describe("Korey plugin conversations", () => {
       const marker = "11111111-1111-4111-8111-111111111111";
       const matched = {
         ...koreyThread(),
-        name: `bb: Recovered [bb-korey:${marker}]`,
+        name: `alia: Recovered [alia-korey:${marker}]`,
       };
       const page = (data: unknown[], after: string | null, more: boolean) =>
         jsonResponse({
@@ -726,12 +726,12 @@ describe("Korey plugin conversations", () => {
       ]);
       const host = await loadPlugin();
       const mapping = reserveMapping(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         marker,
       );
       beginMappingCreate(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         mapping.generation,
       );
@@ -740,7 +740,7 @@ describe("Korey plugin conversations", () => {
       });
       expect(result).toBeTypeOf("string");
       expect(
-        getMapping(host.bb.storage.database(), "thread-test"),
+        getMapping(host.alia.storage.database(), "thread-test"),
       ).toMatchObject({ state: "ready", koreyThreadId: matched.id });
       const pages = calls.filter(
         (call) => new URL(call.url).pathname === "/api/v1/threads",
@@ -761,7 +761,7 @@ describe("Korey plugin conversations", () => {
       const marker = "11111111-1111-4111-8111-111111111111";
       const matches = ["one", "two"].map((id) => ({
         ...koreyThread(id),
-        name: `bb: [bb-korey:${marker}]`,
+        name: `alia: [alia-korey:${marker}]`,
       }));
       const responses =
         problem === "duplicate"
@@ -786,12 +786,12 @@ describe("Korey plugin conversations", () => {
       const calls = stubFetch(responses);
       const host = await loadPlugin();
       const mapping = reserveMapping(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         marker,
       );
       beginMappingCreate(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         mapping.generation,
       );
@@ -808,7 +808,7 @@ describe("Korey plugin conversations", () => {
       );
       expect(calls.every((call) => call.init?.method === "GET")).toBe(true);
       expect(
-        getMapping(host.bb.storage.database(), "thread-test")?.koreyThreadId,
+        getMapping(host.alia.storage.database(), "thread-test")?.koreyThreadId,
       ).toBeNull();
     },
   );
@@ -825,7 +825,7 @@ describe("Korey plugin conversations", () => {
     const name: string = JSON.parse(String(calls[0]?.init?.body)).name;
     expect(Buffer.from(name, "utf8").toString("utf8")).toBe(name);
     expect(name.length).toBeLessThanOrEqual(120);
-    expect(name).toMatch(/\[bb-korey:[a-f0-9-]+\]$/u);
+    expect(name).toMatch(/\[alia-korey:[a-f0-9-]+\]$/u);
   });
 
   it("creates one marked private thread and persists its mapping", async () => {
@@ -847,7 +847,7 @@ describe("Korey plugin conversations", () => {
       koreyThreadId: "korey-thread-1",
       response: "Here is the refined Story draft.",
     });
-    expect(getMapping(host.bb.storage.database(), "thread-test")).toMatchObject(
+    expect(getMapping(host.alia.storage.database(), "thread-test")).toMatchObject(
       {
         koreyThreadId: "korey-thread-1",
         state: "ready",
@@ -856,7 +856,7 @@ describe("Korey plugin conversations", () => {
     const createBody = JSON.parse(String(calls[0]?.init?.body));
     expect(createBody).toMatchObject({ is_private: true });
     expect(createBody.name).toMatch(
-      /^bb: Shape the feature \[bb-korey:[a-f0-9-]+\]$/u,
+      /^alia: Shape the feature \[alia-korey:[a-f0-9-]+\]$/u,
     );
     expect(JSON.parse(String(calls[2]?.init?.body)).text).toContain(
       "This request is consultation-only.",
@@ -980,7 +980,7 @@ describe("Korey connector changes", () => {
                 prompt,
                 "--file",
                 "spec.md",
-                "--bb-thread",
+                "--alia-thread",
                 "thread-test",
                 "--json",
               ])
@@ -998,7 +998,7 @@ describe("Korey connector changes", () => {
         approvedAt: null,
       });
       const operation = getOperation(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         result.operationId,
       )!;
       expect(operation.request.instruction).toBe(prompt);
@@ -1015,7 +1015,7 @@ describe("Korey connector changes", () => {
       });
       expect(body.text).toContain(prompt);
       expect(body.text).toContain(
-        `bb operation reference: ${result.operationId}`,
+        `alia operation reference: ${result.operationId}`,
       );
       expect(body.text).not.toContain("consultation-only");
       expect(body.text).not.toContain("Shortcut Story");
@@ -1026,7 +1026,7 @@ describe("Korey connector changes", () => {
       const listed = await host.harness.runCli([
         "operation",
         "list",
-        "--bb-thread",
+        "--alia-thread",
         "thread-test",
       ]);
       expect(listed.stdout).toContain("change");
@@ -1053,10 +1053,10 @@ describe("Korey connector changes", () => {
     );
     expect(result.status).toBe("korey-complete");
     expect(JSON.parse(String(calls[1]?.init?.body))).toMatchObject({
-      name: expect.stringContaining(`[bb-korey:${result.operationId}]`),
+      name: expect.stringContaining(`[alia-korey:${result.operationId}]`),
       is_private: true,
     });
-    expect(getMapping(host.bb.storage.database(), "thread-test")).toMatchObject(
+    expect(getMapping(host.alia.storage.database(), "thread-test")).toMatchObject(
       {
         state: "ready",
         marker: result.operationId,
@@ -1088,7 +1088,7 @@ describe("Korey connector changes", () => {
       );
       expect(failed).toMatchObject({ isError: true });
       const operation = listOperations(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         10,
       )[0]!;
@@ -1119,10 +1119,10 @@ describe("Korey connector changes", () => {
         "consultation-only",
       );
       expect(
-        listOperations(host.bb.storage.database(), "thread-test", 10),
+        listOperations(host.alia.storage.database(), "thread-test", 10),
       ).toHaveLength(2);
       expect(
-        getOperation(host.bb.storage.database(), operation.id)?.status,
+        getOperation(host.alia.storage.database(), operation.id)?.status,
       ).toBe("reconcile-required");
     },
   );
@@ -1151,14 +1151,14 @@ describe("Korey connector changes", () => {
         }),
       ).toMatchObject({ isError: true });
       const operation = listOperations(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         10,
       )[0]!;
       expect(operation.requestVersion).toBe(3);
       await host.harness.callAgentTool("korey_unlink_thread", {});
       setLinkedMapping(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-other",
         "korey-thread-1",
       );
@@ -1223,7 +1223,7 @@ describe("Korey connector changes", () => {
       });
       expect(result).toMatchObject({ isError: true });
       expect(
-        listOperations(host.bb.storage.database(), "thread-test", 10),
+        listOperations(host.alia.storage.database(), "thread-test", 10),
       ).toEqual([]);
       expect(calls.every(({ init }) => init?.method === "GET")).toBe(true);
     },
@@ -1245,7 +1245,7 @@ describe("Korey connector changes", () => {
         prompt: "Enable checkout-v2 in staging.",
         mode: "change",
       });
-      const db = host.bb.storage.database();
+      const db = host.alia.storage.database();
       const before = listOperations(db, "thread-test", 1)[0]!;
       expect(before.status).toBe("reconcile-required");
       const resolving = host.harness.runCli([
@@ -1253,7 +1253,7 @@ describe("Korey connector changes", () => {
         "resolve",
         before.id,
         "Verified checkout-v2 is enabled in staging.",
-        "--bb-thread",
+        "--alia-thread",
         "thread-test",
         "--json",
       ]);
@@ -1322,7 +1322,7 @@ describe("Korey connector changes", () => {
           : { status: "awaiting-response", action: "change", error: null },
       );
       const operation = listOperations(
-        host.bb.storage.database(),
+        host.alia.storage.database(),
         "thread-test",
         1,
       )[0]!;
@@ -1388,7 +1388,7 @@ describe("Korey Shortcut requests and recovery", () => {
         await host.harness.callAgentTool("korey_unlink_thread", {});
       const target = scenario === "relinked" ? "thread-other" : "thread-test";
       if (scenario === "relinked")
-        setLinkedMapping(host.bb.storage.database(), target, "korey-thread-1");
+        setLinkedMapping(host.alia.storage.database(), target, "korey-thread-1");
       const result = await host.harness.callAgentTool(
         "korey_shortcut_change",
         input,
@@ -1398,7 +1398,7 @@ describe("Korey Shortcut requests and recovery", () => {
       expect(JSON.stringify(result)).toContain(original.operationId);
       expect(JSON.stringify(result)).toContain("This request was not sent");
       expect(JSON.stringify(result)).toContain(
-        `bb korey operation show ${original.operationId} --bb-thread thread-test`,
+        `alia korey operation show ${original.operationId} --alia-thread thread-test`,
       );
       expect(calls).toHaveLength(5);
       expect(calls.filter((call) => call.init?.method === "POST")).toHaveLength(
@@ -1406,7 +1406,7 @@ describe("Korey Shortcut requests and recovery", () => {
       );
       expect(host.harness.pendingInteractions).toHaveLength(0);
       expect(
-        listOperations(host.bb.storage.database(), target, 20),
+        listOperations(host.alia.storage.database(), target, 20),
       ).toHaveLength(scenario === "relinked" ? 0 : 1);
     },
   );
@@ -1432,7 +1432,7 @@ describe("Korey Shortcut requests and recovery", () => {
         action: "create",
         instruction: "Create one Story.",
       });
-      const db = host.bb.storage.database();
+      const db = host.alia.storage.database();
       const request = recordedRequest(host);
       const original = getOperation(db, request.operationId)!;
       const context = { threadId: "thread-other" };
@@ -1469,7 +1469,7 @@ describe("Korey Shortcut requests and recovery", () => {
       const listed = await host.harness.runCli([
         "operation",
         "list",
-        "--bb-thread",
+        "--alia-thread",
         context.threadId,
         "--json",
       ]);
@@ -1512,7 +1512,7 @@ describe("Korey Shortcut requests and recovery", () => {
           "resolve",
           original.id,
           "Verified the requested Story exists.",
-          "--bb-thread",
+          "--alia-thread",
           context.threadId,
           "--json",
         ]);
@@ -1591,12 +1591,12 @@ describe("Korey Shortcut requests and recovery", () => {
   it("rechecks unresolved operations after preparing attachments", async () => {
     const host = await loadPlugin();
     storeMapping(host);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     const predecessorId = "korey-11111111-1111-4111-8111-111111111111";
     createOperation(db, {
       operationId: predecessorId,
       requestHash: "a".repeat(64),
-      bbThreadId: "previous-thread",
+      aliaThreadId: "previous-thread",
       action: "create",
       storyId: null,
       instruction: "Create the previous Story.",
@@ -1698,7 +1698,7 @@ describe("Korey Shortcut requests and recovery", () => {
       identityResponse(),
       () => {
         setLinkedMapping(
-          host.bb.storage.database(),
+          host.alia.storage.database(),
           "thread-test",
           "korey-thread-2",
         );
@@ -1713,7 +1713,7 @@ describe("Korey Shortcut requests and recovery", () => {
     expect(JSON.stringify(result)).toContain("destination changed");
     expect(calls.map((call) => call.init?.method)).toEqual(["GET", "GET"]);
     expect(
-      listOperations(host.bb.storage.database(), "thread-test", 1),
+      listOperations(host.alia.storage.database(), "thread-test", 1),
     ).toEqual([]);
   });
 
@@ -1729,7 +1729,7 @@ describe("Korey Shortcut requests and recovery", () => {
     expect(result).toMatchObject({ isError: true });
     expect(calls).toEqual([]);
     expect(
-      listOperations(host.bb.storage.database(), "thread-test", 1),
+      listOperations(host.alia.storage.database(), "thread-test", 1),
     ).toEqual([]);
   });
 
@@ -1769,7 +1769,7 @@ describe("Korey Shortcut requests and recovery", () => {
           : { status: "awaiting-response", action: "create", error: null },
       );
       expect(
-        getOperation(host.bb.storage.database(), request.operationId),
+        getOperation(host.alia.storage.database(), request.operationId),
       ).toMatchObject({
         status:
           stage === "dispatch" ? "reconcile-required" : "awaiting-response",
@@ -1781,7 +1781,7 @@ describe("Korey Shortcut requests and recovery", () => {
         });
       }
       expect(
-        getOperation(host.bb.storage.database(), request.operationId)?.status,
+        getOperation(host.alia.storage.database(), request.operationId)?.status,
       ).toBe(stage === "dispatch" ? "reconcile-required" : "korey-complete");
       expect(calls.filter((call) => call.init?.method === "POST")).toHaveLength(
         1,
@@ -1840,7 +1840,7 @@ describe("Korey Shortcut requests and recovery", () => {
       expect(JSON.stringify(result)).toContain("before sending the request");
       expect(host.harness.pendingInteractions).toHaveLength(0);
       expect(
-        listOperations(host.bb.storage.database(), "thread-test", 20),
+        listOperations(host.alia.storage.database(), "thread-test", 20),
       ).toEqual([]);
       expect(calls.map((call) => call.init?.method)).toEqual(["GET", "GET"]);
     },
@@ -1865,7 +1865,7 @@ describe("Korey Shortcut requests and recovery", () => {
       await pending;
       const request = recordedRequest(host);
 
-      const db = host.bb.storage.database();
+      const db = host.alia.storage.database();
       const before = getOperation(db, request.operationId)!;
       expect(before.status).toBe("reconcile-required");
       const resolving = host.harness.runCli([
@@ -1873,7 +1873,7 @@ describe("Korey Shortcut requests and recovery", () => {
         "resolve",
         before.id,
         "Inspected Korey and Shortcut; SC-123 contains the requested change.",
-        "--bb-thread",
+        "--alia-thread",
         "thread-test",
         "--json",
       ]);
@@ -1929,7 +1929,7 @@ describe("Korey Shortcut requests and recovery", () => {
           "resolve",
           before.id,
           "Resolve again",
-          "--bb-thread",
+          "--alia-thread",
           "thread-test",
         ]);
         replayExitCode = replay.exitCode;
@@ -1990,7 +1990,7 @@ describe("Korey Shortcut requests and recovery", () => {
           expect(result).toMatchObject({ isError: true });
           expect(JSON.stringify(result)).toContain("unknown Shortcut outcome");
           expect(
-            listOperations(host.bb.storage.database(), "thread-test", 10)[0],
+            listOperations(host.alia.storage.database(), "thread-test", 10)[0],
           ).toMatchObject({
             status: "reconcile-required",
             koreyMessageId: null,
@@ -2027,7 +2027,7 @@ describe("Korey Shortcut requests and recovery", () => {
 
       expect(changeResult).toMatchObject({ isError: true });
       expect(
-        listOperations(host.bb.storage.database(), "thread-test", 10)[0],
+        listOperations(host.alia.storage.database(), "thread-test", 10)[0],
       ).toMatchObject({
         status: "reconcile-required",
         koreyMessageId: null,
@@ -2111,11 +2111,11 @@ describe("Korey Shortcut requests and recovery", () => {
       expect(host.harness.pendingInteractions).toHaveLength(0);
       const sentBody = JSON.parse(String(calls[3]?.init?.body));
       expect(sentBody.text).toContain(
-        `bb operation reference: ${request.operationId}`,
+        `alia operation reference: ${request.operationId}`,
       );
       expect(sentBody.text).toContain("Create exactly one Shortcut Story");
       expect(sentBody.text).toContain(
-        "The user requested this Shortcut change from bb.",
+        "The user requested this Shortcut change from VesnALIA.",
       );
       expect(sentBody.text).not.toContain("confirmation UI");
       expect(calls).toHaveLength(7);
@@ -2144,9 +2144,9 @@ describe("Korey Shortcut requests and recovery", () => {
       koreyThreadId: "korey-thread-1",
     });
     expect(JSON.parse(String(calls[1]?.init?.body)).name).toContain(
-      `[bb-korey:${request.operationId}]`,
+      `[alia-korey:${request.operationId}]`,
     );
-    expect(getMapping(host.bb.storage.database(), "thread-test")).toMatchObject(
+    expect(getMapping(host.alia.storage.database(), "thread-test")).toMatchObject(
       {
         marker: request.operationId,
         generation: 1,
@@ -2171,7 +2171,7 @@ describe("Korey Shortcut requests and recovery", () => {
     expect(JSON.stringify(result)).toContain(
       "stopped before sending a Shortcut message",
     );
-    expect(getMapping(host.bb.storage.database(), "thread-test")).toMatchObject(
+    expect(getMapping(host.alia.storage.database(), "thread-test")).toMatchObject(
       {
         marker: null,
         state: "unlinked",
@@ -2206,7 +2206,7 @@ describe("Korey Shortcut requests and recovery", () => {
       ),
     ).toHaveLength(1);
     const operation = listOperations(
-      host.bb.storage.database(),
+      host.alia.storage.database(),
       "thread-test",
       10,
     )[0];
@@ -2245,22 +2245,22 @@ describe("Korey Shortcut requests and recovery", () => {
 
       const sentBody = JSON.parse(String(calls[4]?.init?.body));
       if (journal !== "recorded") {
-        const historicalProductName = "bb".toUpperCase();
+        const historicalProductName = "alia".toUpperCase();
         sentBody.text = sentBody.text
           .replace(
-            "bb operation reference:",
+            "alia operation reference:",
             `${historicalProductName} operation reference:`,
           )
           .replace(
-            "The user requested this Shortcut change from bb.",
+            "The user requested this Shortcut change from VesnALIA.",
             journal === "legacy"
-              ? "The user approved this external write through bb's confirmation UI."
+              ? "The user approved this external write through VesnALIA's confirmation UI."
               : `The user requested this Shortcut change from ${historicalProductName}.`,
           );
       }
       // Reconciliation uses the recorded bytes even if a later approval schema
       // has changed. Historical records must remain inspectable as well.
-      host.bb.storage
+      host.alia.storage
         .database()
         .prepare(
           "UPDATE korey_operations SET request_json = ?, request_version = ?, dispatched_text = ? WHERE id = ?",
@@ -2289,7 +2289,7 @@ describe("Korey Shortcut requests and recovery", () => {
       responses.push(
         messagePage([
           userMessage(
-            `Please investigate ${request.operationId}. bb operation reference: ${request.operationId}`,
+            `Please investigate ${request.operationId}. VesnALIA operation reference: ${request.operationId}`,
             "diagnostic-message",
           ),
         ]),
@@ -2357,7 +2357,7 @@ describe("Korey Shortcut requests and recovery", () => {
     expect(result).toMatchObject({ isError: true });
     expect(JSON.stringify(result)).toContain("rejected operation");
     expect(
-      listOperations(host.bb.storage.database(), "thread-test", 10)[0],
+      listOperations(host.alia.storage.database(), "thread-test", 10)[0],
     ).toMatchObject({ status: "definite-failure" });
     expect(calls).toHaveLength(4);
   });
@@ -2385,7 +2385,7 @@ describe("Korey Shortcut requests and recovery", () => {
 
     expect(failed).toMatchObject({ isError: true });
     expect(
-      listOperations(host.bb.storage.database(), "thread-test", 10)[0],
+      listOperations(host.alia.storage.database(), "thread-test", 10)[0],
     ).toMatchObject({
       status: "awaiting-response",
       koreyMessageId: "write-message-1",
@@ -2422,7 +2422,7 @@ describe("Korey Shortcut requests and recovery", () => {
       "Create from this file",
       "--file",
       "spec.md",
-      "--bb-thread",
+      "--alia-thread",
       "thread-test",
     ]);
     const result = await pendingResult;
@@ -2490,7 +2490,7 @@ it("registers consultation, direct writes, and operation recovery surfaces", asy
   expect(host.harness.registrations.cli?.name).toBe("korey");
   await expect(host.harness.runCli(["status"])).resolves.toEqual({
     exitCode: 0,
-    stdout: "Authenticated as bb User in example with a personal access token.",
+    stdout: "Authenticated as VesnALIA User in example with a personal access token.",
     stderr: "",
   });
 });
@@ -2503,13 +2503,13 @@ it("allows token-free local unlinking and operation inspection", async () => {
     host.harness.runCli([
       "operation",
       "list",
-      "--bb-thread",
+      "--alia-thread",
       "thread-test",
       "--json",
     ]),
   ).resolves.toEqual({ exitCode: 0, stdout: "[]", stderr: "" });
   await expect(
-    host.harness.runCli(["unlink", "--bb-thread", "thread-test", "--json"]),
+    host.harness.runCli(["unlink", "--alia-thread", "thread-test", "--json"]),
   ).resolves.toMatchObject({
     exitCode: 0,
     stdout: expect.stringContaining('"removed": true'),

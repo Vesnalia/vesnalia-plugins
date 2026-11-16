@@ -1,10 +1,10 @@
 // The runtime: a declarative graph becomes a LangGraph StateGraph whose nodes
-// spawn BB threads.
+// spawn VesnALIA threads.
 //
 // Division of labour, per the design this plugin was asked for:
 //   LangGraph owns state, edges, cycles, checkpointing.
-//   BB owns execution — threads, worktrees, providers, permissions.
-// So a node is never a model call. It is "spawn a BB thread, wait for it to go
+//   VesnALIA owns execution — threads, worktrees, providers, permissions.
+// So a node is never a model call. It is "spawn a VesnALIA thread, wait for it to go
 // idle, put its last message into the state". That keeps every unit of work
 // visible in the sidebar and on the user's existing provider subscriptions,
 // instead of needing separate API keys.
@@ -50,7 +50,7 @@ import {
   type RunState,
 } from "./graph";
 
-/** How the runtime reaches BB. Narrow on purpose, so it can be faked in tests. */
+/** How the runtime reaches VesnALIA. Narrow on purpose, so it can be faked in tests. */
 export type RuntimeHost = {
   /** Spawn a worker thread and return its id. */
   spawn(args: {

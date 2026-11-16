@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 import { MAX_BOOKMARKS, MAX_BOOKMARK_NAME_LENGTH, PLUGIN_ID } from "../../contract";
 import { BOOKMARKS_KEY, createBookmarks, type BookmarksModule } from "../../src/bookmarks";
@@ -29,11 +29,11 @@ async function expectCode(promise: Promise<unknown>, code: string): Promise<void
 
 /** What the kv row holds, straight from the fake host's Map. */
 async function storedRow(): Promise<unknown> {
-  return host.bb.storage.kv.get<unknown>(BOOKMARKS_KEY);
+  return host.alia.storage.kv.get<unknown>(BOOKMARKS_KEY);
 }
 
 async function seedRow(value: unknown): Promise<void> {
-  await host.bb.storage.kv.set(BOOKMARKS_KEY, value);
+  await host.alia.storage.kv.set(BOOKMARKS_KEY, value);
 }
 
 /** Make `count` directories under the root and bookmark every one of them. */
@@ -50,7 +50,7 @@ beforeEach(async () => {
   outside = await realpath(await mkdtemp(path.join(tmpdir(), "fm-bm-outside-")));
   await initRoot(root);
   host = createFakePluginHost({ pluginId: PLUGIN_ID });
-  bookmarks = createBookmarks(host.bb);
+  bookmarks = createBookmarks(host.alia);
 });
 
 afterEach(async () => {
@@ -82,7 +82,7 @@ describe("list", () => {
   });
 
   it("drops a row that now points outside the root", async () => {
-    // The same bb data directory carried to a host with a different home. A
+    // The same VesnALIA data directory carried to a host with a different home. A
     // path that can never be opened from here is not "unavailable", it is not
     // this machine's bookmark at all.
     await seedRow([

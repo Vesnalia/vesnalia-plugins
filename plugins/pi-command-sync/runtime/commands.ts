@@ -4,18 +4,18 @@ import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-// Explicitly loaded by the BB launcher only; terminal Pi keeps its native UI.
+// Explicitly loaded by the VesnALIA launcher only; terminal Pi keeps its native UI.
 export default function (pi: ExtensionAPI) {
   const report = (content: string) => pi.sendMessage({
-    customType: "bb-pi-command", content, display: true,
+    customType: "alia-pi-command", content, display: true,
   }, { triggerTurn: false });
   const reloadKey = Symbol.for("pi-command-sync-reload");
   const state = globalThis as typeof globalThis & { [reloadKey]?: boolean };
 
   pi.on("session_start", (_event, ctx) => {
-    // BB scans Markdown command roots, not Pi's in-memory command registry.
+    // VesnALIA scans Markdown command roots, not Pi's in-memory command registry.
     // Content-addressed snapshots retain old files without stale menu entries.
-    const root = process.env.BB_PI_COMMAND_MENU_DIR ?? join(homedir(), ".pi", "bb-commands");
+    const root = process.env.ALIA_PI_COMMAND_MENU_DIR ?? join(homedir(), ".pi", "alia-commands");
     const hash = (text: string) => createHash("sha256").update(text).digest("hex");
     const commands = pi.getCommands().filter(c =>
       /^[a-zA-Z0-9_:.-]+$/.test(c.name) && !c.sourceInfo?.path.includes("/tests/pi_runtime/"));
@@ -44,7 +44,7 @@ export default function (pi: ExtensionAPI) {
       publish(commands.filter(c => c.sourceInfo?.scope !== "project"), "global.json");
       publish(commands, join("projects", `${hash(ctx.cwd)}.json`));
     } catch (error) {
-      console.error("BB Pi command menu write failed:", error);
+      console.error("VesnALIA Pi command menu write failed:", error);
     }
     if (state[reloadKey]) {
       state[reloadKey] = false;
@@ -52,7 +52,7 @@ export default function (pi: ExtensionAPI) {
     }
   });
   pi.registerCommand("reload", {
-    description: "Reload Pi resources in this BB session (no model request)",
+    description: "Reload Pi resources in this VesnALIA session (no model request)",
     handler: async (args, ctx) => {
       if (args.trim()) return report("Usage: /reload");
       if (!ctx.isIdle()) return report("Wait for the current Pi run to finish before /reload.");
@@ -67,7 +67,7 @@ export default function (pi: ExtensionAPI) {
     },
   });
   pi.registerCommand("commands", {
-    description: "List the actual Pi commands loaded in this BB session",
+    description: "List the actual Pi commands loaded in this VesnALIA session",
     handler: async (args) => {
       const query = args.trim().toLowerCase();
       report(pi.getCommands()
@@ -107,10 +107,10 @@ export default function (pi: ExtensionAPI) {
     },
   });
   pi.registerCommand("model", {
-    description: "Show/set Pi model: /model <provider/model>; use BB picker for persistent selection",
+    description: "Show/set Pi model: /model <provider/model>; use VesnALIA picker for persistent selection",
     handler: async (args, ctx) => {
       const selection = args.trim();
-      if (!selection) return report(`Model: ${ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "(none)"}. Use /model provider/model or the BB model picker.`);
+      if (!selection) return report(`Model: ${ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "(none)"}. Use /model provider/model or the VesnALIA model picker.`);
       const separator = selection.indexOf("/");
       const model = separator < 1 ? undefined : ctx.modelRegistry.find(selection.slice(0, separator), selection.slice(separator + 1));
       if (!model) return report("Unknown model. Usage: /model provider/model");
@@ -119,7 +119,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerCommand("compact", {
-    description: "Compact Pi context in BB: /compact [instructions]",
+    description: "Compact Pi context in VesnALIA: /compact [instructions]",
     handler: async (args, ctx) => {
       if (!ctx.isIdle()) return report("Wait for the current Pi run to finish before /compact.");
       await new Promise<void>(resolve => ctx.compact({
@@ -131,12 +131,12 @@ export default function (pi: ExtensionAPI) {
   });
 
   // Never turn a terminal-only control into a paid model prompt. Session
-  // replacement/authentication must remain owned by BB, not desync its thread.
+  // replacement/authentication must remain owned by VesnALIA, not desync its thread.
   const terminalCommands = ["settings", "tree", "scoped-models", "export", "import", "share", "bug", "copy", "changelog", "hotkeys", "fork", "clone", "trust", "login", "logout", "new", "resume", "quit"];
   for (const name of terminalCommands) {
     pi.registerCommand(name, {
-      description: `Terminal Pi control: /${name} (use BB controls or terminal Pi)`,
-      handler: async () => report(`BB cannot render or safely forward /${name}'s terminal/session control. Use the corresponding BB control or run /${name} in terminal Pi. /commands lists loaded extension commands. No model request was made.`),
+      description: `Terminal Pi control: /${name} (use VesnALIA controls or terminal Pi)`,
+      handler: async () => report(`VesnALIA cannot render or safely forward /${name}'s terminal/session control. Use the corresponding VesnALIA control or run /${name} in terminal Pi. /commands lists loaded extension commands. No model request was made.`),
     });
   }
 }

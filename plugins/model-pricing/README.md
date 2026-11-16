@@ -12,20 +12,20 @@ cheapest model on screen. Sort by any of it, search by name, and switch provider
 Prices come from two places, neither of which needs an API key. Anthropic, OpenAI and Fireworks AI
 publish no pricing API at all — their own model endpoints want a key and return no prices — so those
 three, together with Ollama Cloud, are read from [models.dev](https://models.dev), a community catalog
-of model specifications. OpenRouter publishes its own, so it is read directly from OpenRouter. The bb
+of model specifications. OpenRouter publishes its own, so it is read directly from OpenRouter. The VesnALIA
 server does the fetching; nothing is sent anywhere.
 
 ## What you need
 
-- bb 0.44 or later.
-- Network access from the machine running the bb server to `models.dev` and `openrouter.ai`.
+- VesnALIA 0.44 or later.
+- Network access from the machine running the VesnALIA server to `models.dev` and `openrouter.ai`.
 
 No accounts, keys or logins. The plugin only reads public price lists.
 
 ## Install
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@^0.1.0' --plugin model-pricing --tag-prefix model-pricing/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@^0.1.0' --plugin model-pricing --tag-prefix model-pricing/
 ```
 
 The page is **Model pricing** in the sidebar. The command palette has *Model pricing: open the price
@@ -33,7 +33,7 @@ table* and *Model pricing: open settings*.
 
 ## Settings
 
-In bb's **Settings → Plugins → Model Pricing**, or the gear at the top of the page.
+In VesnALIA's **Settings → Plugins → Model Pricing**, or the gear at the top of the page.
 
 **Providers.** One switch each for Anthropic, OpenAI, Fireworks AI, Ollama Cloud and OpenRouter. A
 provider switched off is not shown *and not fetched*. All five are on to begin with, which is a little
@@ -74,7 +74,7 @@ read rather than scanned across.
 
 ## Where prices are kept
 
-Fetched prices are kept in bb's plugin storage, one entry per source, and reused for twelve hours.
+Fetched prices are kept in VesnALIA's plugin storage, one entry per source, and reused for twelve hours.
 **Refresh** ignores that and asks again. The refresh is cheap: models.dev supports conditional
 requests, so an unchanged catalog costs a single round trip rather than a 4.7 MB download.
 
@@ -96,4 +96,4 @@ saying so and how old they are, and the other source's rows are unaffected.
   longer exists.
 - **"Ollama" here means Ollama Cloud**, the hosted models with real per-token prices — not the models
   pulled onto your own machine.
-- **Prices are not shown in bb's model chooser.** bb gives plugins no way to add to it yet.
+- **Prices are not shown in VesnALIA's model chooser.** VesnALIA gives plugins no way to add to it yet.

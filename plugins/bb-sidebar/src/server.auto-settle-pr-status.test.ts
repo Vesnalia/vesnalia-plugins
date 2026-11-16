@@ -18,13 +18,13 @@ describe("automatic settle with GitHub PR Status", () => {
     [
       "the plugin is disabled",
       () => {
-        throw new Error("Plugin bb--github-pr-status is disabled");
+        throw new Error("Plugin alia--github-pr-status is disabled");
       },
     ],
     ["a row is malformed", () => ({ outcome: "available", pullRequest: { state: "merged" } }) as never],
   ])("keeps quiet workspace threads in place when %s", async (_, row) => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: {
           list: async () =>
@@ -36,7 +36,7 @@ describe("automatic settle with GitHub PR Status", () => {
         plugins: { callRpc: pullRequestStatus(row) },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     // A failed lookup is not evidence that no open PR exists, so only the
@@ -53,14 +53,14 @@ describe("automatic settle with GitHub PR Status", () => {
     const threads = Array.from({ length: 201 }, (_, index) =>
       projectThread({ id: `thr_${index}`, environmentId: `env_${index}`, ...quiet }),
     );
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         projects: { list: async () => projectsWith(threads) },
         plugins: { callRpc: pullRequestStatus(() => ({ outcome: "absent" }), batches) },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     const { changedThreadIds } = (await harness.behavior.callRpc("evaluateAutoSettle", {})) as {

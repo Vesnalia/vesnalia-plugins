@@ -1,4 +1,4 @@
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { describe, expect, it } from "vitest";
 
 import type { AttentionEntry } from "../shared/herald";

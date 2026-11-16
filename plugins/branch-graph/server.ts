@@ -1,10 +1,10 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { hostContract, rpcContract, type GraphProject, type GraphThread } from './contract.js';
 
-export default async function plugin(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+export default async function plugin(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   async function snapshot() {
-    const [projects, threads] = await Promise.all([bb.sdk.projects.list(), bb.sdk.threads.list({ limit: 10000 })]);
+    const [projects, threads] = await Promise.all([alia.sdk.projects.list(), alia.sdk.threads.list({ limit: 10000 })]);
     const results: GraphProject[] = [];
     const placed = new Set<string>();
     const asThread = (thread: typeof threads[number], scope: GraphThread['scope']): GraphThread => ({
@@ -26,16 +26,16 @@ export default async function plugin(bb: BbPluginApi) {
     const unplacedThreads = threads.filter(thread => !placed.has(thread.id)).map(thread => asThread(thread, thread.projectId === 'proj_personal' ? 'personal' : 'unmatched'));
     return { projects: results, unplacedThreads, generatedAt: new Date().toISOString() };
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     graph_snapshot: snapshot,
     graph_inspect: async ({ root, path, branch, hostId }) => {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       if (!projects.some(project => project.kind === 'standard' && project.sources.some(source => source.path === root && source.hostId === hostId))) throw new Error('Source is not a registered project checkout.');
       return host.call('inspect', { root, path, branch }, { hostId });
     },
   });
-  bb.cli.register({ name: 'branch-graph', summary: 'Read the local Git worktree graph', commands: [{ name: 'snapshot', summary: 'Print graph snapshot as JSON', usage: 'bb branch-graph snapshot --json' }], async run(argv) {
+  alia.cli.register({ name: 'branch-graph', summary: 'Read the local Git worktree graph', commands: [{ name: 'snapshot', summary: 'Print graph snapshot as JSON', usage: 'alia branch-graph snapshot --json' }], async run(argv) {
     if (argv[0] === 'snapshot') return { exitCode: 0, stdout: JSON.stringify(await snapshot()) };
-    return { exitCode: 0, stdout: 'Usage: bb branch-graph snapshot --json' };
+    return { exitCode: 0, stdout: 'Usage: VesnALIA branch-graph snapshot --json' };
   } });
 }

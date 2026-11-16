@@ -1,4 +1,4 @@
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 
 export type Environment = Awaited<ReturnType<ReturnType<typeof useSdk>["environments"]["get"]>>;
 export interface AutomaticBase {

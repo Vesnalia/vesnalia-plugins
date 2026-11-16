@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { readClaudeResetCredits } from "./claude-reset-credits.ts";
 import { hostContract } from "./host-contract.ts";
 import { withTimeout } from "./pooled-usage.ts";
@@ -12,12 +12,12 @@ const CLAUDE_RESET_CACHE_MS = 10 * 60_000;
 const CLAUDE_RESET_RETRY_MS = 2 * 60_000;
 
 /** Reset counts for logins the server cannot spend from: Codex on every machine, Claude on this one. */
-export function createResetSources(bb: Pick<BbPluginApi, "hosts" | "sdk">) {
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+export function createResetSources(alia: Pick<AliaPluginApi, "hosts" | "sdk">) {
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
   const codexReaders = new Map<string, () => Promise<ResetReading | null>>();
 
   const connectedHosts = async (): Promise<Array<{ id: string; name: string }>> =>
-    (await bb.sdk.hosts.list().catch(() => [])).filter((host) => host.status === "connected");
+    (await alia.sdk.hosts.list().catch(() => [])).filter((host) => host.status === "connected");
 
   const readCodexOn = (hostId: string): Promise<ResetReading | null> => {
     let reader = codexReaders.get(hostId);

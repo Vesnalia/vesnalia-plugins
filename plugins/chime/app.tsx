@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
   DEFAULT_CONFIG,
@@ -116,7 +116,7 @@ function Settings() {
           <span>Delivery</span>
           <SelectShell>
             <select value={config.deliveryMode} onChange={(event) => setConfig({ ...config, deliveryMode: event.target.value as ChimeConfig["deliveryMode"] })}>
-              <option value="client">This browser or bb window</option>
+              <option value="client">This browser or VesnALIA window</option>
               <option value="server" disabled={!serverAvailable}>Server audio {serverAvailable ? "(macOS)" : "(unavailable)"}</option>
             </select>
           </SelectShell>

@@ -2,7 +2,7 @@
 @import url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.css');
 
 /*
- * Conductor Theme for bb
+ * Conductor Theme for alia
  * Based on Conductor's (conductor.build) dark and light aesthetic:
  * espresso charcoal surfaces, warm bone ink, stone borders,
  * Geist typography, emerald green actions, and warm terracotta accents.
@@ -248,7 +248,7 @@
 }
 
 /* Syntax Highlighting for lightweight chat code */
-.dark .bb-code-highlight.bb-code-highlight {
+.dark .alia-code-highlight.alia-code-highlight {
   --sh-identifier: #ece9e7;
   --sh-sign: #a5a09e;
   --sh-property: #81ddf9;
@@ -260,7 +260,7 @@
   --sh-jsxliterals: #81ddf9;
 }
 
-.light .bb-code-highlight.bb-code-highlight {
+.light .alia-code-highlight.alia-code-highlight {
   --sh-identifier: #2c2826;
   --sh-sign: #756f6c;
   --sh-property: #0550ae;

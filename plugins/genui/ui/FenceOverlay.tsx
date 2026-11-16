@@ -1,15 +1,15 @@
-// Fallback for BB versions without the code-fence renderer slot: a thread-scoped
-// overlay finds the ```ui and ```app code blocks BB rendered in assistant
+// Fallback for VesnALIA versions without the code-fence renderer slot: a thread-scoped
+// overlay finds the ```ui and ```app code blocks VesnALIA rendered in assistant
 // replies, hides each one, and portals a Fence into a node placed just before
 // it. The header slot supplies the owning thread navigation context without
 // rendering a header control. Anywhere the overlay is not running the block
 // stays readable code.
 import { useEffect, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
-import { experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 import { Fence, useThreadActions, type FenceLanguage, type ThreadActions } from "./Fence";
 
-/** BB renders a fence as `div > pre > code.language-<lang>` inside a timeline row. */
+/** VesnALIA renders a fence as `div > pre > code.language-<lang>` inside a timeline row. */
 const FENCE_CODE = "[data-timeline-row-id] pre > code.language-ui, [data-timeline-row-id] pre > code.language-app";
 const ROW = "[data-timeline-row-id]";
 const MOUNT_ATTRIBUTE = "data-genui-fence";
@@ -25,7 +25,7 @@ interface FenceBlock {
   key: string;
   language: FenceLanguage;
   threadId: string;
-  /** The assistant reply's timeline row id, which is also its BB message id. */
+  /** The assistant reply's timeline row id, which is also its VesnALIA message id. */
   messageId: string;
   /** Its index among the message's blocks of its language. */
   index: number;
@@ -70,9 +70,9 @@ function scan(
     const mount = known?.mount ?? document.createElement("div");
     mount.setAttribute(MOUNT_ATTRIBUTE, "");
     mount.setAttribute("data-genui-renderer", "overlay");
-    // BB scopes plugin CSS to `[data-bb-plugin=<id>]` subtrees; a portal into
-    // BB's own DOM is outside every plugin root unless it declares one.
-    mount.setAttribute("data-bb-plugin", pluginId);
+    // VesnALIA scopes plugin CSS to `[data-alia-plugin=<id>]` subtrees; a portal into
+    // VesnALIA's own DOM is outside every plugin root unless it declares one.
+    mount.setAttribute("data-alia-plugin", pluginId);
     if (wrapper.previousElementSibling !== mount) wrapper.before(mount);
     if (wrapper instanceof HTMLElement && !wrapper.hasAttribute(HIDDEN_ATTRIBUTE)) {
       wrapper.setAttribute(HIDDEN_ATTRIBUTE, "");
@@ -110,7 +110,7 @@ export function FenceOverlay({ threadId }: { threadId: string }) {
       clearTimeout(timer);
       timer = undefined;
       current = blocks;
-      // A block BB just laid out (a new reply, or a row its timeline remounted
+      // A block VesnALIA just laid out (a new reply, or a row its timeline remounted
       // while the user scrolls) renders in this same task, before the browser
       // paints: the row is measured once, with the UI in it, so the
       // conversation never moves under the reader.
@@ -150,7 +150,7 @@ export function FenceOverlay({ threadId }: { threadId: string }) {
 }
 
 /**
- * The text each block last settled on in this page. BB's timeline remounts
+ * The text each block last settled on in this page. VesnALIA's timeline remounts
  * rows as the user scrolls back; a block whose text is unchanged is complete
  * at once instead of waiting out SETTLE_MS (an app would otherwise show
  * "Building app…" and then grow).
@@ -177,7 +177,7 @@ function SettlingFence({ block, actions }: { block: FenceBlock; actions: ThreadA
       language={block.language}
       code={block.code}
       complete={settledCode === block.code}
-      stateKey={`bb.genui.state:${block.key}`}
+      stateKey={`alia.genui.state:${block.key}`}
       threadId={block.threadId}
       messageId={block.messageId}
       fence={block.index}

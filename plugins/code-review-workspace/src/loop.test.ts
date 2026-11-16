@@ -2,7 +2,7 @@
 // snapshot; Send now; the review agent's send_now, with its patch on the comment's Send; the main thread archived or
 // gone, a folder removed, and someone else's PR, which warn and then send as you choose; and changing the main thread.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn(async () => ({ stdout: "", stderr: "no GitHub here", code: 1 })));
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh }));
@@ -36,8 +36,8 @@ const B2 = { file: "src/a.ts", line: 2, side: "LEFT" as const };
 
 interface T { title: string | null; archivedAt?: number | null; deletedAt?: number | null; environmentId?: string | null; busy?: boolean; originPluginId?: string | null; visibility?: string }
 
-/** A BB with `threads`, by id; a busy one queues what's sent to it. Spawns start "fresh", in the environment asked for. */
-/** The folder a spawn in a new worktree gets: BB may not say yet (null). */
+/** A VesnALIA with `threads`, by id; a busy one queues what's sent to it. Spawns start "fresh", in the environment asked for. */
+/** The folder a spawn in a new worktree gets: VesnALIA may not say yet (null). */
 const spawned = { environmentId: "env_new" as string | null };
 
 function threadsSdk(threads: Record<string, T>) {
@@ -54,12 +54,12 @@ function threadsSdk(threads: Record<string, T>) {
 }
 
 function host(threads: Record<string, T> = { coder: { title: "Retry uploads" } }) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: threadsSdk(threads),
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) },
   } as any });
   const calls = (method: string) => harness.inspection.sdk.callsTo(method).map((call) => call[0] as any);
-  return { bb, harness, threads, sends: () => calls("threads.send"), spawns: () => calls("threads.spawn"), calls };
+  return { alia, harness, threads, sends: () => calls("threads.send"), spawns: () => calls("threads.spawn"), calls };
 }
 
 /** Your own PR acme/web#12, sent to `coder`, with two draft comments. */
@@ -76,7 +76,7 @@ const comment = async (store: AsyncStore, at: CommentLocation) => (await store.g
 
 test("Send gives each comment an id and sends them to the main thread with the review's header, their code and words, no push, and how to report", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   const sent = await call(h.harness, "sendToSourceThread", { targetKey: "pr-1", comments: [A3, B2] });
   expect(sent).toEqual({ ok: true, delivery: "sent", title: "Retry uploads", threadId: "coder", sendN: 1 });
@@ -88,7 +88,7 @@ test("Send gives each comment an id and sends them to the main thread with the r
   expect([b.id, a.id]).toEqual(["c1", "c2"]);
   expect(text).toContain("c1 · `src/a.ts:2` (old line)\n```diff\n-const b = 2;\n```\nWhy change b?");
   expect(text).toContain("c2 · `src/a.ts:3`\n```diff\n+const c = 4;\n```\nName this better.");
-  expect(text.endsWith("Don't push until I say.\n\nReport each with `bb review report <id> done|declined --note \"…\"`; run `bb review ready` when finished.")).toBe(true);
+  expect(text.endsWith("Don't push until I say.\n\nReport each with `alia review report <id> done|declined --note \"…\"`; run `alia review ready` when finished.")).toBe(true);
   // Each is sent in Send 1, whose diff is kept; the draft is otherwise as it was.
   expect([a, b].map(({ state, sendN }) => ({ state, sendN }))).toEqual([{ state: "sent", sendN: 1 }, { state: "sent", sendN: 1 }]);
   const review = (await store.getReview("pr-1"))!;
@@ -101,7 +101,7 @@ test("Send gives each comment an id and sends them to the main thread with the r
 
 test("Send takes a comment on a line only in the folder, with its code from Not pushed yet, and keeps that diff as send:<n>:local", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   const shown = "diff --git a/src/b.ts b/src/b.ts\n--- /dev/null\n+++ b/src/b.ts\n@@ -0,0 +1 @@\n+export const d = 5;\n";
   await store.saveSnapshot("pr-1", "not-pushed", shown);
@@ -116,7 +116,7 @@ test("Send takes a comment on a line only in the folder, with its code from Not 
 
 test("two Sends while the main thread is busy are two queued messages, Send 1 and Send 2, and a comment keeps its id", async () => {
   const h = host({ coder: { title: "Retry uploads", busy: true } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   expect(await call(h.harness, "sendToSourceThread", { targetKey: "pr-1", comments: [A3] })).toMatchObject({ ok: true, delivery: "queued", sendN: 1 });
   // Edited after it went, it's open again, with its id, for the next Send.
@@ -131,7 +131,7 @@ test("two Sends while the main thread is busy are two queued messages, Send 1 an
 
 test("a Send queued behind a busy thread's turn is queued until the thread takes it; deleted from the queue, its comments are open again", async () => {
   const h = host({ coder: { title: "Retry uploads", busy: true } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   await call(h.harness, "sendNow", { targetKey: "pr-1", comment: A3 });
   expect((await store.getReview("pr-1"))!.sends![0]).toMatchObject({ n: 1, queued: "q1" });
@@ -159,7 +159,7 @@ test("Change main thread's Start a fresh thread here starts one in the folder, t
 
 test("Send now sends one comment with an id, as its own Send", async () => {
   const h = host({ coder: { title: "Retry uploads", busy: true } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   const sent = await call(h.harness, "sendNow", { targetKey: "pr-1", comment: A3 });
   expect(sent).toEqual({ ok: true, sent: { id: "c1", sendN: 1, threadId: "coder", title: "Retry uploads", delivery: "queued" } });
@@ -174,7 +174,7 @@ test("Send now sends one comment with an id, as its own Send", async () => {
 
 test("Let it push when done leaves out Don't push, for the review or for one Send", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   await call(h.harness, "sendNow", { targetKey: "pr-1", comment: A3, letPush: true });
   expect(await call(h.harness, "setLetPush", { targetKey: "pr-1", letPush: true })).toEqual({ ok: true });
@@ -187,7 +187,7 @@ test("Let it push when done leaves out Don't push, for the review or for one Sen
 
 test("your message leads and the summary follows the comments, when you add them", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   await store.setVerdict("pr-1", "COMMENT", "  Mostly fine.  ");
   await call(h.harness, "sendToSourceThread", { targetKey: "pr-1", comments: [A3], message: "  Do these first.  ", includeSummary: true });
@@ -198,7 +198,7 @@ test("your message leads and the summary follows the comments, when you add them
 
 test("someone else's PR warns, and sent anyway, their code is fenced as theirs and Submit's draft keeps the comment", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store, { ownPr: false });
   expect(await call(h.harness, "sendToSourceThread", { targetKey: "pr-1", comments: [A3] })).toEqual({ ok: false, warning: "This is @alice’s PR, not yours. Your review on GitHub stays as it is.", offers: ["anyway"] });
   expect(await call(h.harness, "sendNow", { targetKey: "pr-1", comment: A3 })).toMatchObject({ ok: false, warning: expect.stringContaining("@alice’s PR"), offers: ["anyway"] });
@@ -211,7 +211,7 @@ test("someone else's PR warns, and sent anyway, their code is fenced as theirs a
 
 test("on someone else's PR whose review your folder joined, a Send to its main thread there doesn't ask, though their code is fenced as theirs and Submit's draft keeps the comment", async () => {
   const h = host({ coder: { title: "Retry uploads", environmentId: "env1" } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store, {
     ownPr: false, mainThread: { threadId: "coder", environmentId: "env1", origin: "adopted", since: 2 },
     feature: { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/web", branch: "retry-uploads", baseRef: "main", repo: "acme/web", joinedAt: 2 },
@@ -226,7 +226,7 @@ test("on someone else's PR whose review your folder joined, a Send to its main t
 
 test("on someone else's PR whose review your folder joined, a Send that lets the thread push says whose branch a push changes", async () => {
   const h = host({ coder: { title: "Retry uploads", environmentId: "env1" } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store, {
     ownPr: false, mainThread: { threadId: "coder", environmentId: "env1", origin: "adopted", since: 2 },
     feature: { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/web", branch: "retry-uploads", baseRef: "main", repo: "acme/web", joinedAt: 2 },
@@ -243,7 +243,7 @@ test("on someone else's PR whose review your folder joined, a Send that lets the
 
 test("an archived main thread offers to unarchive it or start a fresh thread, and each does", async () => {
   const h = host({ coder: { title: "Retry uploads", archivedAt: 5 } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   expect(await call(h.harness, "getSourceThread", { targetKey: "pr-1" })).toEqual({ thread: { threadId: "coder", title: "Retry uploads", state: "archived", machine: null } });
   expect(await call(h.harness, "sendNow", { targetKey: "pr-1", comment: A3 })).toEqual({ ok: false, warning: "Retry uploads is archived. Unarchive it and send, or start a fresh thread in the review’s project.", offers: ["unarchive", "fresh"], freshWhere: "in the review’s project" });
@@ -269,13 +269,13 @@ async function folderReview(over: { threads?: Record<string, T>; removed?: boole
   spawned.environmentId = "env_new";
   // The folder, and a new worktree a fresh thread works in, on its own branch made from feat/qa.
   const environments = { get: async ({ environmentId }: { environmentId: string }) => environmentId === "env_new"
-    ? { id: "env_new", hostId: "host_max", path: "/Users/me/.bb/worktrees/api-fresh", status: "ready", isGitRepo: true, branchName: "bb/qa-fixes-thr_fresh", mergeBaseBranch: "feat/qa", baseBranch: null, defaultBranch: "main", projectId: "proj_api" }
+    ? { id: "env_new", hostId: "host_max", path: "/Users/me/.vesnalia/worktrees/api-fresh", status: "ready", isGitRepo: true, branchName: "alia/qa-fixes-thr_fresh", mergeBaseBranch: "feat/qa", baseBranch: null, defaultBranch: "main", projectId: "proj_api" }
     : { id: environmentId, hostId: "host_max", path: "/Users/me/src/api", status: "ready", isGitRepo: true, branchName: "feat/qa", mergeBaseBranch: null, baseBranch: null, defaultBranch: "main", projectId: "proj_api" } };
   const h = folderHost({ files: [{ path: "src/a.ts", body: BODY }, { path: ".env", origin: "untracked" }] }, { environments, threads: threadsSdk(threads), projects: {
     get: async () => ({ id: "proj_api", gitRemoteUrl: "git@github.com:acme/api.git" }), list: async () => [{ id: "proj_api", kind: "standard", gitRemoteUrl: "git@github.com:acme/api.git" }],
     defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low" }),
   } });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   const key = featureKey("env1", "feat/qa");
   const patch = `diff --git a/src/a.ts b/src/a.ts\nindex 1111111..2222222 100644\n--- a/src/a.ts\n+++ b/src/a.ts\n${BODY}`;
   await store.saveReview({ targetKey: key, kind: "ref", gitRef: "feat/qa", title: "Snooze flaky checks", status: "ready", createdAt: 1, projectId: "proj_api" });
@@ -316,10 +316,10 @@ test("a deleted main thread warns, and Send starts a fresh thread in the folder,
   expect(review.implementers).toEqual([expect.objectContaining({ threadId: "main", origin: "adopted" })]);
 });
 
-test("a folder bb removed warns that its uncommitted work went with it; Send starts a fresh thread in a new worktree, told so, and the review reads that worktree from then on", async () => {
+test("a folder VesnALIA removed warns that its uncommitted work went with it; Send starts a fresh thread in a new worktree, told so, and the review reads that worktree from then on", async () => {
   const f = await folderReview({ removed: true });
   const warned = await f.harness.behavior.callRpc("sendNow", { targetKey: f.key, comment: AT });
-  expect(warned).toEqual({ ok: false, warning: "BB removed the folder ~/src/api on MaxBook, and any uncommitted work in it. Send starts a fresh thread in a new worktree from feat/qa.", offers: ["fresh"], freshWhere: "in a new worktree from feat/qa" });
+  expect(warned).toEqual({ ok: false, warning: "VesnALIA removed the folder ~/src/api on MaxBook, and any uncommitted work in it. Send starts a fresh thread in a new worktree from feat/qa.", offers: ["fresh"], freshWhere: "in a new worktree from feat/qa" });
   expect(f.calls("threads.send")).toHaveLength(0);
   await f.harness.behavior.callRpc("sendNow", { targetKey: f.key, comment: AT, force: true, thread: "fresh" });
   const [spawn] = f.calls("threads.spawn");
@@ -330,7 +330,7 @@ test("a folder bb removed warns that its uncommitted work went with it; Send sta
   expect(spawn.prompt).toContain("Don't push, open or update a PR, or change anything on GitHub unless I ask in this thread.\n\nReport each with");
   // The review now reads the new worktree, on its own branch; it still pushes to feat/qa, under the same key.
   const review = (await f.store.getReview(f.key))!;
-  expect(review.feature).toMatchObject({ environmentId: "env_new", hostId: "host_max", path: "/Users/me/.bb/worktrees/api-fresh", branch: "feat/qa", workBranch: "bb/qa-fixes-thr_fresh", folderGone: false, baseRef: "main" });
+  expect(review.feature).toMatchObject({ environmentId: "env_new", hostId: "host_max", path: "/Users/me/.vesnalia/worktrees/api-fresh", branch: "feat/qa", workBranch: "alia/qa-fixes-thr_fresh", folderGone: false, baseRef: "main" });
   expect(review.mainThread).toMatchObject({ threadId: "fresh", environmentId: "env_new", origin: "fresh" });
   // So Update reads it, against the review's own base, not the branch the worktree was made from.
   expect(await f.harness.behavior.callRpc("updateFeature", { targetKey: f.key })).toEqual({ ok: true });
@@ -340,21 +340,21 @@ test("a folder bb removed warns that its uncommitted work went with it; Send sta
   expect(await f.harness.behavior.callRpc("sendNow", { targetKey: f.key, comment: AT })).toMatchObject({ ok: true, sent: { threadId: "fresh", sendN: 2 } });
 });
 
-test("a fresh thread whose worktree BB hasn't named yet is noted once it's read, and the review then reads it; deleted before, the next is from the branch too", async () => {
+test("a fresh thread whose worktree VesnALIA hasn't named yet is noted once it's read, and the review then reads it; deleted before, the next is from the branch too", async () => {
   const f = await folderReview({ removed: true });
   spawned.environmentId = null;
   await f.harness.behavior.callRpc("sendNow", { targetKey: f.key, comment: AT, force: true, thread: "fresh" });
   let review = (await f.store.getReview(f.key))!;
   expect(review.mainThread).toMatchObject({ threadId: "fresh", environmentId: null, origin: "fresh" });
   expect(review.feature).toMatchObject({ environmentId: "env1", folderGone: true });
-  // Deleted before BB said: a gone folder's next fresh thread is from the branch again, in a new worktree.
+  // Deleted before VesnALIA said: a gone folder's next fresh thread is from the branch again, in a new worktree.
   expect(await f.harness.behavior.callRpc("sendNow", { targetKey: f.key, comment: AT })).toMatchObject({ ok: false, offers: ["fresh"], freshWhere: "in a new worktree from feat/qa" });
-  // BB names it: the page's read of the main thread notes it, and the review moves there.
+  // VesnALIA names it: the page's read of the main thread notes it, and the review moves there.
   f.threads.fresh = { title: "Fixes for api:feat/qa", environmentId: "env_new" };
   expect(await f.harness.behavior.callRpc("getSourceThread", { targetKey: f.key })).toMatchObject({ thread: { threadId: "fresh", state: "open" } });
   review = (await f.store.getReview(f.key))!;
   expect(review.mainThread?.environmentId).toBe("env_new");
-  expect(review.feature).toMatchObject({ environmentId: "env_new", workBranch: "bb/qa-fixes-thr_fresh", folderGone: false });
+  expect(review.feature).toMatchObject({ environmentId: "env_new", workBranch: "alia/qa-fixes-thr_fresh", folderGone: false });
 });
 
 test("an approval starts no thread: with the main thread deleted or its folder removed, Send anyway only records it", async () => {
@@ -374,7 +374,7 @@ test("an approval starts no thread: with the main thread deleted or its folder r
 
 test("the Approved message names the review; unsent comments, or an approval already sent for this diff, warn first", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   const revision = await reviewRevision(store, "pr-1");
   expect(await call(h.harness, "sendApprovalToSourceThread", { targetKey: "pr-1", revision })).toEqual({ ok: false, warning: "Your draft has 2 comments you haven’t sent. Send them instead, or send Approved anyway?", offers: ["anyway"] });
@@ -392,7 +392,7 @@ test("the Approved message names the review; unsent comments, or an approval alr
 
 test("an approval is for the diff the page shows: not one that changed since, nor while the guide rebuilds", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   for (const at of [A3, B2]) await store.deleteDraftComment("pr-1", at);
   const shown = await reviewRevision(store, "pr-1");
@@ -410,7 +410,7 @@ test("an approval is for the diff the page shows: not one that changed since, no
 
 test("an approval ends once the review shows another diff or head, as after Update; the same diff saved again keeps it, and so does the prune", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   for (const at of [A3, B2]) await store.deleteDraftComment("pr-1", at);
   const approve = async () => {
@@ -445,7 +445,7 @@ test("an approval ends once the review shows another diff or head, as after Upda
 
 test("a local review's approval names the review, its summary only when you add it", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main...feature", status: "ready", createdAt: 1, projectId: "p1", cwd: "/repo" });
   await store.setLifecycle("ref-1", { sourceThreadId: "coder" });
   await store.savePatch("ref-1", PATCH);
@@ -459,7 +459,7 @@ test("a local review's approval names the review, its summary only when you add 
 test("Change main thread takes a live thread in the folder and keeps the one before; it refuses archived threads, other folders and the plugin's own", async () => {
   const f = await folderReview({ threads: { old: { title: "Old", environmentId: "env1", archivedAt: 3 }, mine: { title: "Review agent", environmentId: "env1", originPluginId: "code-review-workspace", visibility: "hidden" }, fixer: { title: "Fixes for api:feat/qa", environmentId: "env1", originPluginId: "code-review-workspace" } } });
   const set = (threadId: string) => f.harness.behavior.callRpc("setMainThread", { targetKey: f.key, threadId }) as Promise<any>;
-  expect(await set("old")).toEqual({ ok: false, error: "Old is archived. Unarchive it in BB first, or choose another." });
+  expect(await set("old")).toEqual({ ok: false, error: "Old is archived. Unarchive it in VesnALIA first, or choose another." });
   expect(await set("away")).toEqual({ ok: false, error: "That thread works in another folder. Choose one working in ~/src/api." });
   expect(await set("mine")).toMatchObject({ ok: false, error: expect.stringContaining("Code Review Workspace’s agents") });
   await f.store.setAssistantThread(f.key, "other");
@@ -479,7 +479,7 @@ test("Change main thread takes a live thread in the folder and keeps the one bef
 
 test("with Send to thread off, nothing is offered or sent", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store);
   await store.savePreferences({ ...defaultPreferences, knobs: { ...defaultPreferences.knobs, sendToThread: false } }, (await store.getPreferences()).revision);
   expect(await call(h.harness, "getSourceThread", { targetKey: "pr-1" })).toEqual({ thread: null });
@@ -494,7 +494,7 @@ test("with Send to thread off, nothing is offered or sent", async () => {
 
 test("a review whose thread is the plugin's own agent, or with none, has no main thread to send to", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await ownPr(store, { sourceThreadId: null });
   expect(await call(h.harness, "getSourceThread", { targetKey: "pr-1" })).toEqual({ thread: null });
   expect(await call(h.harness, "sendNow", { targetKey: "pr-1", comment: A3 })).toMatchObject({ ok: false, error: expect.stringContaining("no main thread") });
@@ -507,10 +507,10 @@ test("a review whose thread is the plugin's own agent, or with none, has no main
 /** The loop registered on its own, its review agent's turns classified as `asking`. */
 async function agentLoop(asking: Awaited<ReturnType<Classify>>["asking"], threads?: Record<string, T>) {
   const h = host(threads);
-  const store = testStore(h.bb);
+  const store = testStore(h.alia);
   const changed = vi.fn();
   const classify = vi.fn<Classify>(async () => ({ asking, message: { id: "creq_1", text: "fix it", at: 1, senderThreadId: asking === "relayed" ? "thr_orch" : null } }));
-  register({ bb: h.bb, store, changed, classify } as unknown as ServeDeps);
+  register({ alia: h.alia, store, changed, classify } as unknown as ServeDeps);
   await ownPr(store);
   await store.setAssistantThread("pr-1", "agent-1");
   const tool = (input: Record<string, unknown>) => h.harness.behavior.callAgentTool("send_now", input, { threadId: "agent-1" });
@@ -530,18 +530,18 @@ test("send_now from a turn the reviewer didn't start sends nothing", async () =>
 test("send_now with the plugin's own reading of who's asking: an automatic turn sends nothing; your typed message sends", async () => {
   const chat = agentChat("agent");
   const threads = threadsSdk({ coder: { title: "Retry uploads" } });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     ...threads, events: chat.sdk.events, experimental_listAncestors: chat.sdk.experimental_listAncestors,
     get: async ({ threadId }: { threadId: string }) => threadId === "agent" ? { id: "agent", archivedAt: null, deletedAt: null, status: "idle", title: "Review agent: pr-1", environmentId: null } : threads.get({ threadId }),
     // The review agent's chat takes what's sent to it; the main thread, what a Send sends.
     send: async (args: any) => args.threadId === "agent" ? chat.sdk.send(args) : threads.send(args),
   } } as any });
-  const store = await startPlugin(bb);
+  const store = await startPlugin(alia);
   await ownPr(store);
   await store.setAssistantThread("pr-1", "agent");
   const toMain = () => harness.inspection.sdk.callsTo("threads.send").map((c) => c[0] as any).filter((args) => args.threadId === "coder");
   // A turn the plugin started on its own, as for new commits.
-  await sendToAgent(bb, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "The author pushed new commits.", mentions: [] }] }, { kind: "automatic" });
+  await sendToAgent(alia, { threadId: "agent", mode: "queue-if-active", input: [{ type: "text", text: "The author pushed new commits.", mentions: [] }] }, { kind: "automatic" });
   const automatic = await harness.behavior.callAgentTool("send_now", { ...A3 }, { threadId: "agent" });
   expect(toolFailed(automatic)).toBe(true);
   expect(toolText(automatic)).toContain("no one asked for it in this turn");

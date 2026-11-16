@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { experimental_ProviderIcon as ProviderIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon } from "@vesnalia/plugin-sdk/app";
 import type {
   PluginSidebarPullRequest,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -333,7 +333,7 @@ export function RadarHoverCard({
         </div>
       ) : null}
 
-      {/* ---------- Context window: only when BB records usage ---------- */}
+      {/* ---------- Context window: only when VesnALIA records usage ---------- */}
       {context ? (
         <div className="radar-hover-context">
           <div className="radar-hover-context-head">

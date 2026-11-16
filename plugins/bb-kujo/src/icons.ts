@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { experimental_Icon, experimental_useCodeTheme, type PluginAppBuilder } from '@get-bb/plugin-sdk/app';
+import { experimental_Icon, experimental_useCodeTheme, type PluginAppBuilder } from '@vesnalia/plugin-sdk/app';
 import { artwork, iconMap } from './tabler.generated.ts';
 
 
@@ -10,9 +10,9 @@ export function registerTablerIcons(app: PluginAppBuilder): void {
       name,
       component: function KujoIcon({ className }) {
         const { mode, name: theme } = experimental_useCodeTheme();
-        const kujoPrefix = `bb:plugin:bb-kujo:kujo:${mode}`;
+        const kujoPrefix = `alia:plugin:alia-kujo:kujo:${mode}`;
         if (!(theme === kujoPrefix || theme.startsWith(kujoPrefix + ':'))) {
-          // bb explicitly resolves a same-name icon within its override to its builtin.
+          // VesnALIA explicitly resolves a same-name icon within its override to its builtin.
           // This preserves native artwork for other palettes without DOM observation.
           return createElement(experimental_Icon, { name, className });
         }

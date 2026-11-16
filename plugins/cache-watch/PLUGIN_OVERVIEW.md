@@ -25,16 +25,16 @@ Codex, Central Codex, Claude Code, and the separately installed
 [Claude Code Telemetry provider](https://github.com/SergeyZh/bb-plugin-claude-code-telemetry) use provider-specific Standard API reference prices. These
 are estimates, not subscription charges. Claude Code Telemetry exposes individual
 requests and 5-minute/1-hour cache-write lifetimes, priced at exact rates;
-native Claude Code reports turn aggregates. Retained BB events can be
+native Claude Code reports turn aggregates. Retained VesnALIA events can be
 backfilled, but usage missing from the provider/history cannot be recovered.
 
 ## Optional keepalive
 
-Use the Keepalive commands in BB’s palette (Cmd/Ctrl+Shift+P) for direct
+Use the Keepalive commands in VesnALIA’s palette (Cmd/Ctrl+Shift+P) for direct
 control without invoking the LLM. Status and action results appear as notifications.
 
 Use the expanded Cache panel, Prompt cache context card, Cache Watch page,
-`/keepalive start|stop|status`, or `bb cache-watch` to manage paid keepalive for a
+`/keepalive start|stop|status`, or `alia cache-watch` to manage paid keepalive for a
 selected session and a limited duration. Pings run five minutes before estimated
 expiry; unknown or elapsed expiry waits for fresh telemetry. No watch starts automatically.
 Keepalive sends ordinary visible turns asking the agent to reply OK. It can
@@ -43,7 +43,7 @@ Active threads are skipped; stop cancels future and deferred plugin pings.
 
 ## Requirements
 
-Requires BB 0.48 or later with Plugin SDK 0.6.104 or later and an existing
+Requires VesnALIA 0.48 or later with Plugin SDK 0.6.104 or later and an existing
 configured agent provider. No separate API key is needed. Provider access and
 ordinary agent usage remain subject to that provider's billing or allowance.
 This plugin has no native silent-prewarm integration.

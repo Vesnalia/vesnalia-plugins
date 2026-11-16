@@ -1,7 +1,7 @@
 import {
   experimental_presentationDetail as presentationDetail,
   experimental_presentationTitle as presentationTitle,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { emit, requestRuntime } from "./bridge-runtime.ts";
 import {
   approvalPermissionReply,
@@ -91,7 +91,7 @@ export class OpenCodeInteractions {
         "interaction/request",
         {
           providerThreadId: session.providerThreadId,
-          threadId: session.bbThreadId,
+          threadId: session.aliaThreadId,
           turnId: active.providerTurnId,
           payload,
         },
@@ -173,7 +173,7 @@ export class OpenCodeInteractions {
     active.opened.delete(callId);
     active.openQuestions.delete(callId);
     active.settledTools.add(callId);
-    this.emitTimeline(session.bbThreadId, [
+    this.emitTimeline(session.aliaThreadId, [
       {
         kind: "item.close",
         key: itemKey(callId, "tool"),
@@ -262,7 +262,7 @@ export class OpenCodeInteractions {
         "interaction/request",
         {
           providerThreadId: session.providerThreadId,
-          threadId: session.bbThreadId,
+          threadId: session.aliaThreadId,
           turnId: active.providerTurnId,
           payload: { kind: "user_question", questions },
         },

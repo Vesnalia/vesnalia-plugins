@@ -1,7 +1,7 @@
-import { useProviders, useSidebarThreadSplit, useSidebarThreads } from "./bb-sdk";
+import { useProviders, useSidebarThreadSplit, useSidebarThreads } from "./alia-sdk";
 import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from "react";
-import { useRpc, useRealtime, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./contract";
+import { useRpc, useRealtime, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./contract";
 import { PROJECT_ICONS_CHANNEL } from "./realtime-channels";
 import { ThreadHoverCard } from "./components/ThreadHoverCard";
 import { threadDisplayTitle } from "./inbox";
@@ -27,14 +27,14 @@ export function ThreadDetailsTooltip({
 }: {
   thread: PluginSidebarThread;
   disabled: boolean;
-  /** The thread is open in bb. That also looks it up: touch screens never open the card. */
+  /** The thread is open in VesnALIA. That also looks it up: touch screens never open the card. */
   isOpen?: boolean;
   children: ReactElement;
 }) {
   const { providers } = useProviders();
   const provider = providers.find((entry) => entry.id === thread.providerId);
   const { projects, threads } = useSidebarThreads();
-  const { call } = useRpc<typeof bbSidebarRpcContract>();
+  const { call } = useRpc<typeof aliaSidebarRpcContract>();
   const [iconRevision, setIconRevision] = useState(0);
   useRealtime(PROJECT_ICONS_CHANNEL, () => {
     setIconRevision((revision) => revision + 1);
@@ -50,7 +50,7 @@ export function ThreadDetailsTooltip({
   }>({ model: "Loading…", reasoningLevel: "" });
   const visible = open && !disabled;
   const modelLabel = execution.modelDisplayName || execution.model;
-  // Labels come from bb: the model's catalog entry, then the provider's levels.
+  // Labels come from VesnALIA: the model's catalog entry, then the provider's levels.
   const effortLabel =
     execution.reasoningLabel ||
     provider?.reasoningLevels?.find((level) => level.id === execution.reasoningLevel)?.label ||
@@ -227,7 +227,7 @@ export function ThreadDetailsTooltip({
   );
 }
 
-/** bb's link routing opens the subthread; `onOpen` only closes the card. */
+/** VesnALIA's link routing opens the subthread; `onOpen` only closes the card. */
 function SubthreadRow({ thread, onOpen }: { thread: PluginSidebarThread; onOpen: () => void }) {
   const { splitProps } = useSidebarThreadSplit(thread.id);
   const { providers } = useProviders();

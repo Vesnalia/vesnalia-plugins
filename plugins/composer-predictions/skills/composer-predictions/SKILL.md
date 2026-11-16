@@ -1,6 +1,6 @@
 ---
 name: composer-predictions
-description: Inspect, regenerate, or dismiss a thread's Composer Predictions suggestion (the ghost text in an empty message box) with `bb composer-predictions`. Use when the user asks why a suggestion is or isn't showing, wants a fresh one, or wants one cleared.
+description: Inspect, regenerate, or dismiss a thread's Composer Predictions suggestion (the ghost text in an empty message box) with `alia composer-predictions`. Use when the user asks why a suggestion is or isn't showing, wants a fresh one, or wants one cleared.
 ---
 
 # Composer Predictions
@@ -11,21 +11,21 @@ draft. It never sends anything. Each prediction is one request to a hidden
 helper thread, stopped and then archived once its answer is used or the
 conversation moves on. Providers that support archive get that chat archived
 too. After the source conversation moves on, or a prediction is regenerated,
-the plugin deletes the stale BB helper using BB's normal thread deletion.
+the plugin deletes the stale VesnALIA helper using VesnALIA's normal thread deletion.
 Provider sessions can remain archived; permanent provider-side deletion is
 not requested. Cleanup failures are retried on reload. It never posts to the
 user's thread.
 
 ## Commands
 
-Every command takes a thread id (`bb status` shows the current one) and an
+Every command takes a thread id (`alia status` shows the current one) and an
 optional `--json`. Without `--json`, the output is the suggestion text, or the
 status when there is no suggestion.
 
 ```sh
-bb composer-predictions show <thread-id> [--json]        # current state; starts nothing
-bb composer-predictions regenerate <thread-id> [--json]  # discard and predict again
-bb composer-predictions dismiss <thread-id> [--json]     # hide the current suggestion
+alia composer-predictions show <thread-id> [--json]        # current state; starts nothing
+alia composer-predictions regenerate <thread-id> [--json]  # discard and predict again
+alia composer-predictions dismiss <thread-id> [--json]     # hide the current suggestion
 ```
 
 `regenerate` returns at once, usually with `generating`. Run `show` again a
@@ -39,7 +39,7 @@ few seconds later.
 | `generating` | A helper is working on it. |
 | `abstained` | The model found no grounded next message and chose to suggest nothing. |
 | `dismissed` | The user pressed Escape, accepted it, or dismissed it through the CLI. It stays hidden until the conversation changes. |
-| `error` | The prediction failed. `bb plugin logs composer-predictions` has the cause, such as an unavailable model. |
+| `error` | The prediction failed. `alia plugin logs composer-predictions` has the cause, such as an unavailable model. |
 | `idle` | Nothing to predict, or not requested yet. |
 
 `idle` is normal when:
@@ -48,8 +48,8 @@ few seconds later.
   hidden or archived. Your own thread is running during your turn, so `show`
   on it reports `idle` until you finish;
 - the latest record in the conversation is not a completed agent message;
-- the plugin is off (`bb plugin config composer-predictions`);
-- BB or the plugin has restarted and the composer has not asked again yet.
+- the plugin is off (`alia plugin config composer-predictions`);
+- VesnALIA or the plugin has restarted and the composer has not asked again yet.
   Saved suggestions are checked against the current conversation before they
   are shown.
 
@@ -65,6 +65,6 @@ few seconds later.
   Predictions → Prediction model**. Point the user there; there is no CLI for
   it.
 - A provider that cannot approve automatically is still allowed when it can
-  ask. BB then opens the helper beside the conversation and the suggestion
+  ask. VesnALIA then opens the helper beside the conversation and the suggestion
   waits. Answer there, or move the conversation on to cancel it. Providers
   that approve automatically stay hidden and are stopped if they ask.

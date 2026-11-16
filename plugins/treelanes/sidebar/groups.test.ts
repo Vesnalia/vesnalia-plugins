@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildGroups, groupAttention, worktreeKey } from "./groups";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { fixture } from "./test-fixtures";
 const empty = new Map();
 describe("worktree grouping", () => {

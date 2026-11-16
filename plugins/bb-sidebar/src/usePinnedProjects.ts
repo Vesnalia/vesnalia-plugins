@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import type { useSidebarThreads } from "./bb-sdk";
+import type { useSidebarThreads } from "./alia-sdk";
 import { reconcileProjectScope } from "./inbox";
 import { pinnedProjectsCodec } from "./lib/inbox-preference-codecs";
 import { STORAGE_KEYS } from "./lib/storage-keys";

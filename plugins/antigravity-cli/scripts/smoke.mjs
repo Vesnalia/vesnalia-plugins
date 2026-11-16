@@ -5,7 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const cwd = await mkdtemp(join(tmpdir(), 'bb-antigravity-smoke-'));
+const cwd = await mkdtemp(join(tmpdir(), 'alia-antigravity-smoke-'));
 const child = spawn('agy', ['acp', '--disable-telemetry'], { cwd, stdio: ['pipe', 'pipe', 'pipe'], shell: false });
 const pending = new Map();
 let id = 0;
@@ -41,7 +41,7 @@ const timeout = setTimeout(() => { child.kill(); process.exitCode = 1; }, 60000)
 child.on('error', () => { for (const p of pending.values()) p.reject(new Error('Could not launch agy')); });
 child.on('exit', () => { for (const p of pending.values()) p.reject(new Error('ACP exited before completing')); });
 try {
-  const initialized = await request('initialize', { protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'bb-antigravity-smoke', version: '0.1.1' } });
+  const initialized = await request('initialize', { protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'alia-antigravity-smoke', version: '0.1.1' } });
   assert.equal(initialized.protocolVersion, 1);
   if (process.argv.includes('--capabilities')) console.log(JSON.stringify(initialized.agentCapabilities, null, 2));
   const session = await request('session/new', { cwd, mcpServers: [] });

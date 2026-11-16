@@ -4,7 +4,7 @@ import type { EnvironmentProviderInfo, MachineProviderInfo } from "../src/ports"
 import { parseSpec, type Spec } from "../src/spec";
 import { FakeHost, FakePort, GIT_WORKTREE_PROVIDER, makeCtx, seedProject, specToml, type Doc } from "./helpers";
 
-let bb: FakePort;
+let alia: FakePort;
 let host: FakeHost;
 
 const TREES: EnvironmentProviderInfo = {
@@ -18,9 +18,9 @@ const TREES: EnvironmentProviderInfo = {
 };
 
 beforeEach(() => {
-  bb = new FakePort();
+  alia = new FakePort();
   host = new FakeHost();
-  bb.checkout = "/repo";
+  alia.checkout = "/repo";
 });
 
 const spec = (edit?: (doc: Doc) => void): Spec => {
@@ -28,8 +28,8 @@ const spec = (edit?: (doc: Doc) => void): Spec => {
   if (parsed.spec === null) throw new Error(parsed.errors.join("\n"));
   return parsed.spec;
 };
-const errorsOf = async (edit?: (doc: Doc) => void) => reachErrors(await gatherFacts({ bb, host }, specTargets(spec(edit), "proj_1"), "host_1"));
-const report = async () => discoverText(await gatherFacts({ bb, host }, [{ label: "this thread's repository", index: null, bbProjectId: "proj_1", settings: null }], "host_1"));
+const errorsOf = async (edit?: (doc: Doc) => void) => reachErrors(await gatherFacts({ alia, host }, specTargets(spec(edit), "proj_1"), "host_1"));
+const report = async () => discoverText(await gatherFacts({ alia, host }, [{ label: "this thread's repository", index: null, aliaProjectId: "proj_1", settings: null }], "host_1"));
 
 describe("reachErrors", () => {
   it("accepts a GitHub repository with plain worktrees", async () => {
@@ -53,19 +53,19 @@ describe("reachErrors", () => {
   });
 
   it("refuses a spec with no environment while a plugin offers one, and checks a chosen provider's inputs", async () => {
-    bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, TREES];
-    bb.pluginList = [...bb.pluginList, { id: "trees", enabled: true, builtin: false }];
+    alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, TREES];
+    alia.pluginList = [...alia.pluginList, { id: "trees", enabled: true, builtin: false }];
     const [error] = await errorsOf();
-    expect(error).toMatch(/^environment: bb offers Trees \(trees: Attach a thread to a tree\) for the project's repository on this machine, besides its own git worktrees\. Ask the human/u);
+    expect(error).toMatch(/^environment: alia offers Trees \(trees: Attach a thread to a tree\) for the project's repository on this machine, besides its own git worktrees\. Ask the human/u);
     expect(await errorsOf((doc) => (doc.environment = { provider: "git-worktree" }))).toEqual([]);
     expect(await errorsOf((doc) => (doc.environment = { provider: "trees", inputs: { tree: "loom-{branch}" } }))).toEqual([]);
     const [inputs] = await errorsOf((doc) => (doc.environment = { provider: "trees", inputs: { paths: ["a"] } }));
     expect(inputs).toMatch(/^environment\.inputs: /u);
   });
 
-  it("refuses a provider bb does not offer here, or one that is unavailable", async () => {
-    bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...TREES, available: false, unavailableReason: "Only for the shop project." }];
-    expect(await errorsOf((doc) => (doc.environment = { provider: "nope" }))).toEqual(['environment.provider: bb has no environment provider "nope" for the project\'s repository on this machine. Use one of: git-worktree.']);
+  it("refuses a provider VesnALIA does not offer here, or one that is unavailable", async () => {
+    alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, { ...TREES, available: false, unavailableReason: "Only for the shop project." }];
+    expect(await errorsOf((doc) => (doc.environment = { provider: "nope" }))).toEqual(['environment.provider: VesnALIA has no environment provider "nope" for the project\'s repository on this machine. Use one of: git-worktree.']);
     const [unavailable] = await errorsOf((doc) => (doc.environment = { provider: "trees", inputs: { tree: "t" } }));
     expect(unavailable).toContain("is not available for the project's repository on this machine: Only for the shop project.");
   });
@@ -80,18 +80,18 @@ describe("reachErrors", () => {
 
   it("checks a plugin worktree: installed, turned on, and a CLI command of the plugin", async () => {
     const withPlugin = (doc: Doc) => (doc.merge.worktree = { plugin: "trees", command: 'prepare "loom-$LOOM_PROJECT_SLUG"' });
-    expect(await errorsOf(withPlugin)).toEqual(['merge.worktree.plugin: bb has no plugin "trees". Install it, or name another plugin, or drop plugin and give a shell command.']);
-    bb.pluginList = [...bb.pluginList, { id: "trees", enabled: false, builtin: false }];
+    expect(await errorsOf(withPlugin)).toEqual(['merge.worktree.plugin: VesnALIA has no plugin "trees". Install it, or name another plugin, or drop plugin and give a shell command.']);
+    alia.pluginList = [...alia.pluginList, { id: "trees", enabled: false, builtin: false }];
     expect((await errorsOf(withPlugin))[0]).toContain('the plugin "trees" is turned off');
-    bb.pluginList = bb.pluginList.map((plugin) => (plugin.id === "trees" ? { ...plugin, enabled: true } : plugin));
+    alia.pluginList = alia.pluginList.map((plugin) => (plugin.id === "trees" ? { ...plugin, enabled: true } : plugin));
     expect(await errorsOf(withPlugin)).toEqual([]);
-    expect(host.callsTo("exec").at(-1)).toMatchObject({ cwd: "/repo", command: "bb plugin run trees prepare --help" });
+    expect(host.callsTo("exec").at(-1)).toMatchObject({ cwd: "/repo", command: "alia plugin run trees prepare --help" });
     host.execResults.push({ exitCode: 1, output: "unknown command" });
-    expect((await errorsOf(withPlugin))[0]).toMatch(/^merge\.worktree\.command: `bb plugin run trees prepare --help` failed/u);
+    expect((await errorsOf(withPlugin))[0]).toMatch(/^merge\.worktree\.command: `alia plugin run trees prepare --help` failed/u);
   });
 
   it("names each [[repo]] by its index", async () => {
-    bb.addBbProject("proj_web", { host_1: "/src/web" });
+    alia.addAliaProject("proj_web", { host_1: "/src/web" });
     host.remoteList = [{ name: "origin", pushUrls: ["https://review.example.com/web.git"] }];
     host.ghState = "signed_out";
     const multi = spec((doc) => {
@@ -99,7 +99,7 @@ describe("reachErrors", () => {
       doc.ticket[0].repo = "web";
       doc.ticket[1].repo = "api";
     });
-    const errors = reachErrors(await gatherFacts({ bb, host }, specTargets(multi, "proj_1"), "host_1"));
+    const errors = reachErrors(await gatherFacts({ alia, host }, specTargets(multi, "proj_1"), "host_1"));
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/^repo\[1\]\.forge: the repo "api" pushes to/u);
   });
@@ -108,7 +108,7 @@ describe("reachErrors", () => {
 describe("discoverText", () => {
   it("reports every choice as found for a GitHub repository", async () => {
     const text = await report();
-    expect(text).toContain("This thread's repository (bb project proj_1), checkout /repo");
+    expect(text).toContain("This thread's repository (VesnALIA project proj_1), checkout /repo");
     expect(text).toContain("- Remote: found: origin.");
     expect(text).toContain("- Forge for origin: found: gh can open pull requests on github.com.");
     expect(text).toContain("- Merging: found: off: people merge its pull requests. Set merge.forge.auto_merge only when the human asks Loom to merge ready pull requests itself");
@@ -124,8 +124,8 @@ describe("discoverText", () => {
     ];
     host.ghState = "signed_out";
     host.trial = { outcome: "refused", message: "fatal: outside the allowed worktree locations" };
-    bb.environmentProviderList = [GIT_WORKTREE_PROVIDER, TREES];
-    bb.pluginList = [...bb.pluginList, { id: "trees", enabled: true, builtin: false }];
+    alia.environmentProviderList = [GIT_WORKTREE_PROVIDER, TREES];
+    alia.pluginList = [...alia.pluginList, { id: "trees", enabled: true, builtin: false }];
     const text = await report();
     expect(text).toContain("- Remote: ask: there is no remote named origin.");
     expect(text).toContain("- Forge for forge: ask: gh is not signed in to forge.example.com.");
@@ -135,8 +135,8 @@ describe("discoverText", () => {
   });
 
   it("says a repository has no checkout here, with the clone command", async () => {
-    bb.checkout = null;
-    expect(await report()).toContain("- ask: it has no checkout on this machine (host_1). Clone it with `bb project source add proj_1 --clone --machine host_1`");
+    alia.checkout = null;
+    expect(await report()).toContain("- ask: it has no checkout on this machine (host_1). Clone it with `alia project source add proj_1 --clone --machine host_1`");
   });
 });
 
@@ -146,9 +146,9 @@ describe("new machines", () => {
   const onMachine = (environment: Doc) => (doc: Doc) => ((doc.merge = { strategy: "pr", stack: false }), (doc.environment = environment));
 
   beforeEach(() => {
-    bb.machineProviderList = [BOXES];
-    bb.compositionList = [BOXED_TREES];
-    bb.pluginList = [...bb.pluginList, { id: "boxes", enabled: true, builtin: false }];
+    alia.machineProviderList = [BOXES];
+    alia.compositionList = [BOXED_TREES];
+    alia.pluginList = [...alia.pluginList, { id: "boxes", enabled: true, builtin: false }];
   });
 
   it("lists the environments that start each thread on a new machine, and asks for one", async () => {
@@ -158,36 +158,36 @@ describe("new machines", () => {
     expect(text).toContain('  - provider = "git-worktree", machine = { provider = "boxes", inputs = { … } }: Boxes (boxes: A box per thread). Machine inputs schema: {');
     expect(text).not.toContain("  - Trees on boxes (boxed-trees");
     expect(text).toMatch(/- Environment: ask: propose one of the new-machine environments above .*confirm it with the human.*make sure the checks work on that machine/u);
-    expect(bb.callsTo("environmentCompositions")).toEqual([["proj_1"]]);
+    expect(alia.callsTo("environmentCompositions")).toEqual([["proj_1"]]);
   });
 
   it("lists the environments earlier approved projects chose for a repository with the same remote, newest first", async () => {
     const h = makeCtx();
-    h.bb.machineProviderList = [BOXES];
-    h.bb.compositionList = [BOXED_TREES];
-    h.bb.pluginList = [...h.bb.pluginList, { id: "boxes", enabled: true, builtin: false }];
+    h.alia.machineProviderList = [BOXES];
+    h.alia.compositionList = [BOXED_TREES];
+    h.alia.pluginList = [...h.alia.pluginList, { id: "boxes", enabled: true, builtin: false }];
     await seedProject(h, onMachine({ provider: "boxed-trees", machine: { provider: "boxes", inputs: { zones: ["areas/a"] } } }));
-    h.bb.addBbProject("proj_2", { host_1: "/repo2" }, { gitRemoteUrl: "git@github.com:acme/shop.git" });
-    h.bb.addBbProject("proj_3", { host_1: "/repo3" });
-    const facts = await gatherFacts(h.ctx, [{ label: "this thread's repository", index: null, bbProjectId: "proj_2", settings: null }, { label: "another", index: 0, bbProjectId: "proj_3", settings: null }], "host_1");
+    h.alia.addAliaProject("proj_2", { host_1: "/repo2" }, { gitRemoteUrl: "git@github.com:acme/shop.git" });
+    h.alia.addAliaProject("proj_3", { host_1: "/repo3" });
+    const facts = await gatherFacts(h.ctx, [{ label: "this thread's repository", index: null, aliaProjectId: "proj_2", settings: null }, { label: "another", index: 0, aliaProjectId: "proj_3", settings: null }], "host_1");
     const [same, other] = discoverText(facts).split("\n\n");
-    expect(same).toContain('- Earlier picks for this repository\'s remote: provider = "boxed-trees", machine = { provider = "boxes" } in the Loom project csv (`bb loom spec csv` shows it).');
+    expect(same).toContain('- Earlier picks for this repository\'s remote: provider = "boxed-trees", machine = { provider = "boxes" } in the Loom project csv (`alia loom spec csv` shows it).');
     expect(other).not.toContain("Earlier picks");
   });
 
-  it("accepts a machine provider bb has with inputs that fit it, and a composition with its own machine provider", async () => {
+  it("accepts a machine provider VesnALIA has with inputs that fit it, and a composition with its own machine provider", async () => {
     expect(await errorsOf(onMachine({ provider: "git-worktree", machine: { provider: "boxes", inputs: { zones: ["areas/a"] } } }))).toEqual([]);
     expect(await errorsOf(onMachine({ provider: "boxed-trees", machine: { provider: "boxes", inputs: { zones: ["areas/a"] } } }))).toEqual([]);
   });
 
-  it("asks bb for the environments that make their own machine only for a spec that names an environment", async () => {
+  it("asks VesnALIA for the environments that make their own machine only for a spec that names an environment", async () => {
     expect(await errorsOf()).toEqual([]);
-    expect(bb.callsTo("environmentCompositions")).toEqual([]);
-    expect(bb.callsTo("machineProviders")).toEqual([]);
+    expect(alia.callsTo("environmentCompositions")).toEqual([]);
+    expect(alia.callsTo("machineProviders")).toEqual([]);
   });
 
   it("refuses an unknown machine provider, inputs that do not fit it, and a composition without its own machine provider", async () => {
-    expect(await errorsOf(onMachine({ provider: "git-worktree", machine: { provider: "crates" } }))).toEqual(['environment.machine.provider: bb has no machine provider "crates". Use one of: boxes.']);
+    expect(await errorsOf(onMachine({ provider: "git-worktree", machine: { provider: "crates" } }))).toEqual(['environment.machine.provider: VesnALIA has no machine provider "crates". Use one of: boxes.']);
     const [inputs] = await errorsOf(onMachine({ provider: "git-worktree", machine: { provider: "boxes", inputs: { zones: "areas/a" } } }));
     expect(inputs).toMatch(/^environment\.machine\.inputs: zones: .*They do not match the machine provider Boxes \(boxes: A box per thread\)/u);
     const [missing] = await errorsOf(onMachine({ provider: "git-worktree", machine: { provider: "boxes" } }));
@@ -195,6 +195,6 @@ describe("new machines", () => {
     const wrong = 'Trees on boxes (boxed-trees: A tree on a box of its own) starts each thread on a new machine from the machine provider "boxes". Set';
     expect(await errorsOf(onMachine({ provider: "boxed-trees", machine: { provider: "crates" } }))).toEqual([`environment.machine: ${wrong} environment.machine = { provider = "boxes" }, with the inputs it needs.`]);
     expect(await errorsOf(onMachine({ provider: "boxed-trees" }))).toEqual([`environment.machine: ${wrong} environment.machine = { provider = "boxes" }, with the inputs it needs.`]);
-    expect(await errorsOf(onMachine({ provider: "git-worktree", reviewer: { machine: { provider: "crates" } } }))).toEqual(['environment.reviewer.machine.provider: bb has no machine provider "crates". Use one of: boxes.']);
+    expect(await errorsOf(onMachine({ provider: "git-worktree", reviewer: { machine: { provider: "crates" } } }))).toEqual(['environment.reviewer.machine.provider: VesnALIA has no machine provider "crates". Use one of: boxes.']);
   });
 });

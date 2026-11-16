@@ -12,7 +12,7 @@
 // can recognize a thread genuinely read since the snooze began (its read
 // must be strictly later than the mark snoozing itself caused) and consume
 // the snooze without re-alerting.
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 /** The board's Snooze key inside its thread plugin-metadata namespace. */
 export const SNOOZE_METADATA_KEY = "snooze";

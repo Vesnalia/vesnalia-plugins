@@ -1,6 +1,6 @@
 ---
 name: change-gate
-description: Ask the person with the change_gate tool before changing production or shared data, and read past decisions with `bb change-gate log`.
+description: Ask the person with the change_gate tool before changing production or shared data, and read past decisions with `alia change-gate log`.
 ---
 
 # Change Gate

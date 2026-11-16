@@ -16,7 +16,7 @@ beforeEach(() => {
   store = new Store(db, clock.now);
 });
 
-const newProject = (slug = "csv") => ({ slug, name: "CSV export", key: slug.toUpperCase(), bb_project_id: "proj_1" });
+const newProject = (slug = "csv") => ({ slug, name: "CSV export", key: slug.toUpperCase(), alia_project_id: "proj_1" });
 const newTicket = (projectId: number, seq: number, over: Partial<NewTicket> = {}): NewTicket => ({
   project_id: projectId,
   seq,
@@ -571,16 +571,16 @@ describe("project repos", () => {
 });
 
 describe("planning", () => {
-  const session = (thread_id: string) => ({ thread_id, bb_project_id: "proj_1", title: `Plan ${thread_id}` });
+  const session = (thread_id: string) => ({ thread_id, alia_project_id: "proj_1", title: `Plan ${thread_id}` });
 
   it("the migration creates the planning table", () => {
     const columns = (db.prepare("PRAGMA table_info(planning)").all() as Array<{ name: string }>).map((column) => column.name);
-    expect(columns).toEqual(["id", "thread_id", "bb_project_id", "title", "started_at", "ended_at", "end_reason"]);
+    expect(columns).toEqual(["id", "thread_id", "alia_project_id", "title", "started_at", "ended_at", "end_reason"]);
   });
 
   it("adds a session, reads it by thread id, and lists the open ones newest first without the ended ones", () => {
     const first = store.addPlanning(session("thr_p1"));
-    expect(first).toMatchObject({ thread_id: "thr_p1", bb_project_id: "proj_1", title: "Plan thr_p1", started_at: clock.t, ended_at: null, end_reason: null });
+    expect(first).toMatchObject({ thread_id: "thr_p1", alia_project_id: "proj_1", title: "Plan thr_p1", started_at: clock.t, ended_at: null, end_reason: null });
     clock.advance(10);
     store.addPlanning(session("thr_p2"));
     store.addPlanning(session("thr_p3"));

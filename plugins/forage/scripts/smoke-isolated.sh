@@ -5,7 +5,7 @@ set -euo pipefail
 : "${FORAGE_PROJECT_ID:?Supply its zero-turn project ID}"
 : "${FORAGE_THREAD_ID:?Supply its zero-turn thread ID}"
 : "${FORAGE_ZERO_TURN_EVIDENCE:?Supply current zero-turn evidence JSON}"
-[[ -f "$RUN_DIR/config/run-dir" && -x "$RUN_DIR/launchers/isolated-bb.sh" ]] || { echo "Corrected harness is missing" >&2; exit 65; }
+[[ -f "$RUN_DIR/config/run-dir" && -x "$RUN_DIR/launchers/isolated-alia.sh" ]] || { echo "Corrected harness is missing" >&2; exit 65; }
 [[ "$( < "$RUN_DIR/config/run-dir" )" == "$RUN_DIR" ]] || { echo "Harness identity mismatch" >&2; exit 66; }
 node --input-type=module - "$FORAGE_ZERO_TURN_EVIDENCE" "$FORAGE_PROJECT_ID" "$FORAGE_THREAD_ID" <<'JS'
 import { readFileSync } from "node:fs";
@@ -16,11 +16,11 @@ JS
 OUT="$RUN_DIR/evidence/forage-smoke-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 [[ ! -e "$OUT" ]] || { echo "Refusing evidence overwrite" >&2; exit 67; }
 mkdir -p "$OUT"
-BB="$RUN_DIR/launchers/isolated-bb.sh"
-"$BB" check forage status > "$OUT/status.json"
-"$BB" check forage doctor > "$OUT/doctor.json"
-"$BB" check forage bench > "$OUT/bench.json"
-"$BB" check forage sources list --project "$FORAGE_PROJECT_ID" --thread "$FORAGE_THREAD_ID" --input '{"limit":10}' > "$OUT/sources.json"
-"$BB" check forage crawl list --project "$FORAGE_PROJECT_ID" --thread "$FORAGE_THREAD_ID" > "$OUT/jobs.json"
-"$BB" check forage diagnostics > "$OUT/diagnostics.json"
+ALIA="$RUN_DIR/launchers/isolated-alia.sh"
+"$ALIA" check forage status > "$OUT/status.json"
+"$ALIA" check forage doctor > "$OUT/doctor.json"
+"$ALIA" check forage bench > "$OUT/bench.json"
+"$ALIA" check forage sources list --project "$FORAGE_PROJECT_ID" --thread "$FORAGE_THREAD_ID" --input '{"limit":10}' > "$OUT/sources.json"
+"$ALIA" check forage crawl list --project "$FORAGE_PROJECT_ID" --thread "$FORAGE_THREAD_ID" > "$OUT/jobs.json"
+"$ALIA" check forage diagnostics > "$OUT/diagnostics.json"
 printf '%s\n' "$OUT"

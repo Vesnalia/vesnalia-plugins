@@ -1,9 +1,9 @@
-// bb-plugin-lego — frontend entry. A banner above the thread composer shows
+// alia-plugin-lego — frontend entry. A banner above the thread composer shows
 // the live build; the full workbench opens as a side-panel tab; the
 // build-setup interaction replaces the composer while lego_setup_build asks
 // the user how to staff the build. The Lego Build page in the sidebar is the
 // collector's shelf of every finished model.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { BuildPanel } from "./src/ui/BuildPanel";
 import { BuildBanner } from "./src/ui/BuildBanner";
 import { LegoChip } from "./src/ui/LegoChip";

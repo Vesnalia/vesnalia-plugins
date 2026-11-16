@@ -20,7 +20,7 @@ export const KEY = "-----BEGIN OPENSSH PRIVATE KEY-----\nabc\n-----END OPENSSH P
 
 export const VALID = {
   "proxmox-lxc-url": "https://pve.example.com:8006/",
-  "proxmox-lxc-token-id": "bb-box@pve!plugin",
+  "proxmox-lxc-token-id": "alia-box@pve!plugin",
   "proxmox-lxc-token-secret": "s3cret",
   "proxmox-lxc-linux-templates": "9000",
   "proxmox-lxc-bridge": "vmbr1",
@@ -49,7 +49,7 @@ export function disposedOnceTheFileEnds(): <T extends { dispose(): Promise<void>
 
 /** A fresh directory, removed when the test process exits. */
 export function tempDir(prefix: string): string {
-  const dir = mkdtempSync(join(tmpdir(), `bb-box-${prefix}-`));
+  const dir = mkdtempSync(join(tmpdir(), `alia-box-${prefix}-`));
   temporary.push(dir);
   return dir;
 }
@@ -156,7 +156,7 @@ export function windowsWithExpiringPassword(): string {
     `  *Set-Date*) exit 0;;`,
     `  *Resize-Partition*) exit 0;;`,
     `  *Add-Type*) exit 0;;`,
-    `  *"Test-Path -LiteralPath"*bb-box-stream.exe*) exit 3;;`,
+    `  *"Test-Path -LiteralPath"*alia-box-stream.exe*) exit 3;;`,
     `  *) exec sh -c "$1";;`,
     `esac`,
     ``,
@@ -189,7 +189,7 @@ export function lxcWarm(values: Readonly<Record<string, unknown>>): Record<strin
   return Object.fromEntries(Object.entries(kinds).map(([flavour, kind]) => [kind, Number(values[`proxmox-lxc-${flavour}-warm`] ?? 0)]));
 }
 
-/** A kind as BB Box ships it, switched on. */
+/** A kind as VesnALIA Box ships it, switched on. */
 export function shippedKind(id: string): KindSettings {
   const sizes = kindSizes(id);
   return { enabled: true, defaultSize: defaultSize(sizes), presets: presetSizes(sizes) };
@@ -224,15 +224,15 @@ function quote(value: string): string {
 }
 
 /**
- * A stand-in for BB's daemon in a box: a process running a program at
+ * A stand-in for VesnALIA's daemon in a box: a process running a program at
  * `parent`, whose workers each have only the given variables. Workers start
  * in order, so the last is the newest. With `startOn`, they start `seconds`
- * after that file appears, as BB's do a moment after its daemon connects,
+ * after that file appears, as VesnALIA's do a moment after its daemon connects,
  * and this returns without waiting for them. With `parent`, the program is
  * there, so a box can be told of it before the daemon runs. With `agent`,
- * the newest worker starts a process with those variables, as BB's provider
+ * the newest worker starts a process with those variables, as VesnALIA's provider
  * workers start a thread's agent. `start` has it start a process of its
- * own with the given variables, as BB's daemon starts a terminal. Stop it
+ * own with the given variables, as VesnALIA's daemon starts a terminal. Stop it
  * when the test ends.
  */
 export async function fakeDaemon(
@@ -296,7 +296,7 @@ export async function fakeDaemon(
   };
 }
 
-/** A route of BB Box's that a worker's WebSocket connects to, as a RelayHub's or FileRelay's. */
+/** A route of VesnALIA Box's that a worker's WebSocket connects to, as a RelayHub's or FileRelay's. */
 export interface Routed {
   route(url: URL): { onOpen(socket: RelaySocket): void; onMessage(socket: RelaySocket, data: string | Uint8Array): void; onClose(): void };
 }

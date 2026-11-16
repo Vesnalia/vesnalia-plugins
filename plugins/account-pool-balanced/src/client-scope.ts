@@ -3,7 +3,7 @@ import type { AccountRoute } from "./account-egress.js";
 
 // An operator-issued server authority. No request header/body can supply it.
 export const clientAccountScopeSchema = z.object({
-  schema: z.literal("bb-account-pool/client-account-scope/1"),
+  schema: z.literal("alia-account-pool/client-account-scope/1"),
   accountIds: z.array(z.string().uuid()).max(32).transform(ids => [...new Set(ids)].sort()),
   egress: z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),version:z.number().int().positive()}).strict(),
 }).strict();

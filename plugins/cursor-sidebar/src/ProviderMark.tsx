@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { experimental_useProviders as useProviders } from "@get-bb/plugin-sdk/app";
+import { experimental_useProviders as useProviders } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 
 /**
  * The agent provider's logo (Claude, Cursor, Codex, ...) before a thread
- * title, drawn as a tinted mask of the logo bb serves for that provider.
+ * title, drawn as a tinted mask of the logo VesnALIA serves for that provider.
  * Renders nothing while the directory loads or for a provider with no logo.
  */
 export function ProviderMark({ providerId, className }: { providerId: string; className?: string }) {

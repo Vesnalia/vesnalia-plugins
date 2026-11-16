@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const graphRefSchema = z.object({
@@ -78,11 +78,11 @@ export type GitGraphRepositoriesResult = z.infer<
 
 const RECORD_SEPARATOR = "\x1e";
 const FIELD_SEPARATOR = "\x1f";
-const BASE_REF_MARKER = "__BB_GIT_GRAPH_BASE_REF__";
-const BRANCH_REF_MARKER = "__BB_GIT_GRAPH_BRANCH_REF__";
-const SETTINGS_START_MARKER = "__BB_GIT_GRAPH_SETTINGS_START__";
-const SETTINGS_END_MARKER = "__BB_GIT_GRAPH_SETTINGS_END__";
-const REPOSITORY_PATH_MARKER = "__BB_GIT_GRAPH_REPOSITORY_PATH__";
+const BASE_REF_MARKER = "__ALIA_GIT_GRAPH_BASE_REF__";
+const BRANCH_REF_MARKER = "__ALIA_GIT_GRAPH_BRANCH_REF__";
+const SETTINGS_START_MARKER = "__ALIA_GIT_GRAPH_SETTINGS_START__";
+const SETTINGS_END_MARKER = "__ALIA_GIT_GRAPH_SETTINGS_END__";
+const REPOSITORY_PATH_MARKER = "__ALIA_GIT_GRAPH_REPOSITORY_PATH__";
 
 function stripAnsi(value: string): string {
   return value
@@ -179,19 +179,19 @@ function shellQuote(value: string): string {
 }
 
 async function runEnvironmentCommand(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environmentId: string,
   command: string,
   title: string,
 ): Promise<{ output: string; exitCode: number | null }> {
-  const terminal = await bb.sdk.terminals.create({
+  const terminal = await alia.sdk.terminals.create({
     scope: { kind: "environment", environmentId },
     cols: 500,
     rows: 24,
     start: { mode: "shell" },
     title,
   });
-  const completionMarker = `__BB_GIT_GRAPH_DONE_${terminal.id.replace(/\W/g, "_")}__`;
+  const completionMarker = `__ALIA_GIT_GRAPH_DONE_${terminal.id.replace(/\W/g, "_")}__`;
 
   try {
     let session = terminal;
@@ -201,14 +201,14 @@ async function runEnvironmentCommand(
         throw new Error("Git history shell could not be started.");
       }
       await wait(50);
-      session = await bb.sdk.terminals.get({ terminalId: terminal.id });
+      session = await alia.sdk.terminals.get({ terminalId: terminal.id });
     }
 
     if (session.status !== "running") {
       throw new Error("Git history shell timed out while starting.");
     }
 
-    await bb.sdk.terminals.input({
+    await alia.sdk.terminals.input({
       terminalId: terminal.id,
       dataBase64: Buffer.from("stty -echo\n", "utf8").toString("base64"),
     });
@@ -216,10 +216,10 @@ async function runEnvironmentCommand(
 
     const wrappedCommand = [
       command,
-      "bb_git_graph_exit=$?",
-      `printf '\\n${completionMarker}:%s\\n' "$bb_git_graph_exit"`,
+      "alia_git_graph_exit=$?",
+      `printf '\\n${completionMarker}:%s\\n' "$alia_git_graph_exit"`,
     ].join("; ");
-    await bb.sdk.terminals.input({
+    await alia.sdk.terminals.input({
       terminalId: terminal.id,
       dataBase64: Buffer.from(`${wrappedCommand}\n`, "utf8").toString("base64"),
     });
@@ -227,7 +227,7 @@ async function runEnvironmentCommand(
     let nextSeq = 0;
     let collectedOutput = "";
     for (let attempt = 0; attempt < 200; attempt += 1) {
-      const output = await bb.sdk.terminals.output({
+      const output = await alia.sdk.terminals.output({
         terminalId: terminal.id,
         sinceSeq: nextSeq,
         limitChunks: 10_000,
@@ -246,7 +246,7 @@ async function runEnvironmentCommand(
         };
       }
 
-      session = await bb.sdk.terminals.get({ terminalId: terminal.id });
+      session = await alia.sdk.terminals.get({ terminalId: terminal.id });
       if (session.status === "exited" || session.status === "disconnected") {
         throw new Error("Git history shell closed before returning output.");
       }
@@ -255,14 +255,14 @@ async function runEnvironmentCommand(
 
     throw new Error("Git history query timed out.");
   } finally {
-    await bb.sdk.terminals
+    await alia.sdk.terminals
       .close({ terminalId: terminal.id, mode: "force" })
       .catch(() => undefined);
   }
 }
 
 async function runGitLog(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environmentId: string,
   repositoryPath: string,
   offset: number,
@@ -277,7 +277,7 @@ async function runGitLog(
   ].join("; ");
 
   return runEnvironmentCommand(
-    bb,
+    alia,
     environmentId,
     command,
     `Git History Graph: ${repositoryPath.split(/[\\/]/).filter(Boolean).at(-1) ?? repositoryPath}`,
@@ -289,7 +289,7 @@ function repositoryName(repositoryPath: string): string {
 }
 
 async function readAdditionalDirectories(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environmentId: string,
   workspacePath: string,
 ): Promise<string[]> {
@@ -308,7 +308,7 @@ async function readAdditionalDirectories(
     })
     .join("; ");
   const result = await runEnvironmentCommand(
-    bb,
+    alia,
     environmentId,
     command,
     "Git History Graph repository settings",
@@ -329,7 +329,7 @@ async function readAdditionalDirectories(
       directories.push(...(settings.permissions?.additionalDirectories ?? []));
     } catch (error) {
       const message = error instanceof Error ? error.message : "invalid JSON";
-      bb.log.warn(`could not read ${match[1]}: ${message}`);
+      alia.log.warn(`could not read ${match[1]}: ${message}`);
     }
   }
 
@@ -337,7 +337,7 @@ async function readAdditionalDirectories(
 }
 
 async function canonicalizeRepositories(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   environmentId: string,
   workspacePath: string,
   candidates: string[],
@@ -345,15 +345,15 @@ async function canonicalizeRepositories(
   const workspace = shellQuote(workspacePath);
   const candidateArguments = candidates.map(shellQuote).join(" ");
   const command = [
-    `bb_git_graph_workspace=${workspace}`,
-    `for bb_git_graph_candidate in ${candidateArguments}; do`,
-    `case "$bb_git_graph_candidate" in /*) ;; "~") bb_git_graph_candidate="$HOME" ;; "~/"*) bb_git_graph_candidate="$HOME/\${bb_git_graph_candidate#~/}" ;; *) bb_git_graph_candidate="$bb_git_graph_workspace/$bb_git_graph_candidate" ;; esac`,
-    `bb_git_graph_root="$(git -C "$bb_git_graph_candidate" rev-parse --show-toplevel 2>/dev/null)"`,
-    `if [ -n "$bb_git_graph_root" ]; then printf '${REPOSITORY_PATH_MARKER}:%s\\n' "$bb_git_graph_root"; fi`,
+    `alia_git_graph_workspace=${workspace}`,
+    `for alia_git_graph_candidate in ${candidateArguments}; do`,
+    `case "$alia_git_graph_candidate" in /*) ;; "~") alia_git_graph_candidate="$HOME" ;; "~/"*) alia_git_graph_candidate="$HOME/\${alia_git_graph_candidate#~/}" ;; *) alia_git_graph_candidate="$alia_git_graph_workspace/$alia_git_graph_candidate" ;; esac`,
+    `alia_git_graph_root="$(git -C "$alia_git_graph_candidate" rev-parse --show-toplevel 2>/dev/null)"`,
+    `if [ -n "$alia_git_graph_root" ]; then printf '${REPOSITORY_PATH_MARKER}:%s\\n' "$alia_git_graph_root"; fi`,
     "done",
   ].join("; ");
   const result = await runEnvironmentCommand(
-    bb,
+    alia,
     environmentId,
     command,
     "Git History Graph repository discovery",
@@ -369,15 +369,15 @@ async function canonicalizeRepositories(
 }
 
 async function discoverRepositories(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<GitGraphRepositoriesResult> {
-  const thread = await bb.sdk.threads.get({ threadId });
+  const thread = await alia.sdk.threads.get({ threadId });
   if (!thread.environmentId) {
     return { repositories: [], error: "This thread does not have a workspace." };
   }
 
-  const environment = await bb.sdk.environments.get({
+  const environment = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
   });
   if (!environment.isGitRepo || !environment.path) {
@@ -386,12 +386,12 @@ async function discoverRepositories(
 
   try {
     const additionalDirectories = await readAdditionalDirectories(
-      bb,
+      alia,
       environment.id,
       environment.path,
     );
     const repositoryPaths = await canonicalizeRepositories(
-      bb,
+      alia,
       environment.id,
       environment.path,
       [environment.path, ...additionalDirectories],
@@ -411,7 +411,7 @@ async function discoverRepositories(
       error instanceof Error
         ? error.message
         : "repositories could not be loaded";
-    bb.log.warn(`repository discovery failed for ${threadId}: ${message}`);
+    alia.log.warn(`repository discovery failed for ${threadId}: ${message}`);
     return {
       repositories: [
         {
@@ -430,18 +430,18 @@ function graphError(message: string): GitGraphResult {
 }
 
 async function loadGraph(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   limit: number,
   offset = 0,
   requestedRepositoryPath?: string,
 ): Promise<GitGraphResult> {
-  const thread = await bb.sdk.threads.get({ threadId });
+  const thread = await alia.sdk.threads.get({ threadId });
   if (!thread.environmentId) {
     return graphError("This thread does not have a workspace.");
   }
 
-  const environment = await bb.sdk.environments.get({
+  const environment = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
   });
   if (!environment.isGitRepo || !environment.path) {
@@ -451,7 +451,7 @@ async function loadGraph(
   try {
     const repositoryPath = requestedRepositoryPath ?? environment.path;
     const result = await runGitLog(
-      bb,
+      alia,
       environment.id,
       repositoryPath,
       offset,
@@ -490,17 +490,17 @@ async function loadGraph(
       error instanceof Error
         ? error.message
         : "Git history could not be loaded.";
-    bb.log.warn(`graph query failed for ${threadId}: ${message}`);
+    alia.log.warn(`graph query failed for ${threadId}: ${message}`);
     return graphError(message);
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async gitRepositories({ threadId }) {
-      return discoverRepositories(bb, threadId);
+      return discoverRepositories(alia, threadId);
     },
     async gitGraph({
       threadId,
@@ -509,23 +509,23 @@ export default async function plugin(bb: BbPluginApi) {
       repositoryPath,
     }) {
       const cappedLimit = Math.min(limit, 200 - offset);
-      return loadGraph(bb, threadId, cappedLimit, offset, repositoryPath);
+      return loadGraph(alia, threadId, cappedLimit, offset, repositoryPath);
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "git-graph",
-    summary: "Inspect the Git commit graph for a bb thread",
+    summary: "Inspect the Git commit graph for a VesnALIA thread",
     commands: [
       {
         name: "show",
         summary: "Print recent commits for the current thread",
-        usage: "bb git-graph show [limit]",
+        usage: "alia git-graph show [limit]",
       },
     ],
     async run(argv, context) {
       if (!context.threadId) {
-        return { exitCode: 2, stderr: "Run this command from a bb thread." };
+        return { exitCode: 2, stderr: "Run this command from a VesnALIA thread." };
       }
 
       const requested = argv[0] === "show" ? argv[1] : argv[0];
@@ -534,7 +534,7 @@ export default async function plugin(bb: BbPluginApi) {
         return { exitCode: 2, stderr: "Limit must be an integer from 1 to 200." };
       }
 
-      const graph = await loadGraph(bb, context.threadId, limit);
+      const graph = await loadGraph(alia, context.threadId, limit);
       if (graph.error) return { exitCode: 1, stderr: graph.error };
 
       return {
@@ -547,5 +547,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => bb.log.info("disposed"));
+  alia.onDispose(() => alia.log.info("disposed"));
 }

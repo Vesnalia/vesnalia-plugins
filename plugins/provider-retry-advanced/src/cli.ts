@@ -1,4 +1,4 @@
-// Derived from get-bb/bb plugins/provider-retry/src/cli.ts (MIT, desktop-v0.46.1).
+// Derived from get-alia/alia plugins/provider-retry/src/cli.ts (MIT, desktop-v0.46.1).
 // Changes: command name, connectivity recovery, watchdog and follow-up state
 // in `status`, `cancel` also stops recovery of the current failure, new
 // `hold`, `release`, `scan`, `watchdog`.
@@ -7,10 +7,10 @@ import {
   PluginCliError,
   cliCommand,
   defineCli,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginCliContext,
   type PluginCliResult,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   findQueuedRetry,
   listQueuedRetries,
@@ -88,7 +88,7 @@ function requiredThreadId(
   const threadId = requested ?? context.threadId;
   if (threadId === undefined) {
     throw new PluginCliError(
-      `A thread id is required: bb ${CLI_NAME} ${command} <thread-id>`,
+      `A thread id is required: VesnALIA ${CLI_NAME} ${command} <thread-id>`,
       { code: "missing_thread_id", exitCode: 2 },
     );
   }
@@ -103,21 +103,21 @@ function output(json: boolean, value: unknown, text: string): PluginCliResult {
 }
 
 async function sendNow(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   json: boolean,
 ): Promise<PluginCliResult> {
-  const queued = await findQueuedRetry(bb, threadId);
+  const queued = await findQueuedRetry(alia, threadId);
   if (queued === null) {
     throw new PluginCliError(
       `No pending provider retry exists for ${threadId}.`,
       {
         code: "no_pending_retry",
-        hint: `Run \`bb ${CLI_NAME} status\` for the threads with a pending retry.`,
+        hint: `Run \`VesnALIA ${CLI_NAME} status\` for the threads with a pending retry.`,
       },
     );
   }
-  await bb.sdk.threads.queuedMessages.send({
+  await alia.sdk.threads.queuedMessages.send({
     threadId: queued.threadId,
     queuedMessageId: queued.id,
     mode: "auto",
@@ -135,14 +135,14 @@ async function sendNow(
  * A later, different failure on the thread is eligible again.
  */
 async function cancel(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   recovery: TransportRecovery,
   threadId: string,
   json: boolean,
 ): Promise<PluginCliResult> {
-  const queued = await findQueuedRetry(bb, threadId);
+  const queued = await findQueuedRetry(alia, threadId);
   if (queued !== null) {
-    await bb.sdk.threads.queuedMessages.delete({
+    await alia.sdk.threads.queuedMessages.delete({
       threadId: queued.threadId,
       queuedMessageId: queued.id,
     });
@@ -154,7 +154,7 @@ async function cancel(
       `No pending provider retry or failed turn exists for ${threadId}.`,
       {
         code: "no_pending_retry",
-        hint: `Run \`bb ${CLI_NAME} status\` for the threads with a pending retry.`,
+        hint: `Run \`VesnALIA ${CLI_NAME} status\` for the threads with a pending retry.`,
       },
     );
   }
@@ -166,11 +166,11 @@ async function cancel(
 }
 
 export function registerProviderRetryCli(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   recovery: TransportRecovery,
   extras: CliExtras,
 ): void {
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: CLI_NAME,
       summary: "Manage automatic provider and connectivity retries",
@@ -192,7 +192,7 @@ export function registerProviderRetryCli(
             const threadId =
               input.positionals["thread-id"] ?? context.threadId ?? null;
             const queued = await listQueuedRetries(
-              bb,
+              alia,
               threadId === null ? undefined : threadId,
             );
             const report = recovery.lastReport();
@@ -208,7 +208,7 @@ export function registerProviderRetryCli(
                 : !report.enabled
                   ? ["Connectivity recovery is off (setting transportRecovery)."]
                   : !report.armed
-                    ? [`Connectivity recovery is observing only until \`bb ${CLI_NAME} arm\`:`, ...connectivity.map(textRecoveryEntry)]
+                    ? [`Connectivity recovery is observing only until \`VesnALIA ${CLI_NAME} arm\`:`, ...connectivity.map(textRecoveryEntry)]
                   : connectivity.length === 0
                     ? [`Connectivity recovery: nothing waiting (scanned ${new Date(report.at).toISOString()}).`]
                     : [
@@ -251,7 +251,7 @@ export function registerProviderRetryCli(
               context,
               "explain",
             );
-            const diagnostic = await readRetryDiagnostic(bb, threadId);
+            const diagnostic = await readRetryDiagnostic(alia, threadId);
             const held = await recovery.isHeld(threadId);
             if (input.options.json)
               return output(true, { threadId, diagnostic, held }, "");
@@ -275,7 +275,7 @@ export function registerProviderRetryCli(
           options: { json: JSON_OPTION },
           run: (input, context) =>
             cancel(
-              bb,
+              alia,
               recovery,
               requiredThreadId(input.positionals["thread-id"], context, "cancel"),
               input.options.json,
@@ -287,7 +287,7 @@ export function registerProviderRetryCli(
           options: { json: JSON_OPTION },
           run: (input, context) =>
             sendNow(
-              bb,
+              alia,
               requiredThreadId(input.positionals["thread-id"], context, "retry"),
               input.options.json,
             ),

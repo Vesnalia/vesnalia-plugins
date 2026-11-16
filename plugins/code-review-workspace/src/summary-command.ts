@@ -1,17 +1,17 @@
 import { NOT_OWN_REVIEW } from "./review-command";
 import { BODY_LIMIT, firstGuideRefusal } from "./comment-command";
 import { verdictPicked, type Verdict } from "./draft";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { placeFacts } from "./review-places";
 import { reviewNamed } from "./targets";
 import { describeSummary, writeSummary } from "./draft-summary";
 import type { AsyncStore } from "./store-queue";
 
 export const SUMMARY_USAGE = [
-  "usage: bb review summary <review> [--json]",
-  "       bb review summary <review> --body <text> [--suggest APPROVE|COMMENT|REQUEST_CHANGES]",
+  "usage: VesnALIA review summary <review> [--json]",
+  "       VesnALIA review summary <review> --body <text> [--suggest APPROVE|COMMENT|REQUEST_CHANGES]",
   "",
-  "Shows or writes the review summary in a review's local draft in this bb. Nothing is posted to GitHub; the reviewer picks the verdict and submits the draft from Code Review Workspace.",
+  "Shows or writes the review summary in a review's local draft in this VesnALIA. Nothing is posted to GitHub; the reviewer picks the verdict and submits the draft from Code Review Workspace.",
   "  <review>   the review's id (web#12, api:feat-x), a GitHub PR URL, or a review key (pr-…, ref-…)",
   "  --body     the summary, in GitHub Markdown, up to 65,000 characters; quote it for your shell. A summary the reviewer wrote stays theirs",
   "  --suggest  the verdict you'd suggest; the reviewer picks",
@@ -23,11 +23,11 @@ const VERDICTS: readonly string[] = ["APPROVE", "COMMENT", "REQUEST_CHANGES"];
 type CliResult = { exitCode: number; stdout?: string; stderr?: string };
 const usage = (problem: string): CliResult => ({ exitCode: 2, stderr: `${problem}\n${SUMMARY_USAGE}` });
 
-/** `bb review summary …`: show or write a review's summary as an agent. `changed` runs after a successful change.
+/** `alia review summary …`: show or write a review's summary as an agent. `changed` runs after a successful change.
  * `ownReview`, set when a review's own agent runs it, refuses every other review. */
-export async function runSummaryCommand(store: AsyncStore, bb: BbPluginApi, argv: string[], changed: (targetKey: string) => void, ownReview?: string): Promise<CliResult> {
-  // What names a local review by its id, asked of bb before the lock, as every other store call waits on it.
-  const facts = await placeFacts(bb, await store.listReviews());
+export async function runSummaryCommand(store: AsyncStore, alia: AliaPluginApi, argv: string[], changed: (targetKey: string) => void, ownReview?: string): Promise<CliResult> {
+  // What names a local review by its id, asked of VesnALIA before the lock, as every other store call waits on it.
+  const facts = await placeFacts(alia, await store.listReviews());
   return store.exclusive(async (tx) => {
     const positional: string[] = [];
     const values: { body?: string; suggest?: string; json?: string } = {};
@@ -50,7 +50,7 @@ export async function runSummaryCommand(store: AsyncStore, bb: BbPluginApi, argv
     const suggest = values.suggest?.toUpperCase();
     if (suggest !== undefined && !VERDICTS.includes(suggest)) return usage("--suggest is APPROVE, COMMENT, or REQUEST_CHANGES.");
 
-    const named = await reviewNamed(tx, bb, positional[0], facts);
+    const named = await reviewNamed(tx, alia, positional[0], facts);
     if (named && "ambiguous" in named) return { exitCode: 1, stderr: named.ambiguous };
     if (ownReview !== undefined && named?.targetKey !== ownReview) return { exitCode: 2, stderr: NOT_OWN_REVIEW };
     if (!named) return { exitCode: 1, stderr: `No saved review for ${positional[0]}. Pass its id, the PR's URL or the review's key.` };

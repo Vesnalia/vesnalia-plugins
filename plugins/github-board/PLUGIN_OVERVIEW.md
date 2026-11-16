@@ -1,4 +1,4 @@
-A GitHub board inside bb: your issues, draft pull requests, open pull requests and discussions in four
+A GitHub board inside VesnALIA: your issues, draft pull requests, open pull requests and discussions in four
 columns, beside the threads that work on them.
 
 ## What you get
@@ -10,13 +10,13 @@ columns, beside the threads that work on them.
   Update branch button wherever you can push to the repository.
 - A detail panel with the body, comments and images. Images from outside GitHub load only when you ask.
 - Labels added and removed from a right-click menu.
-- Send to chat opens bb's new-thread composer on a card, with a prompt you can set per column and per
-  project, in the bb project that has the repository checked out.
+- Send to chat opens VesnALIA's new-thread composer on a card, with a prompt you can set per column and per
+  project, in the VesnALIA project that has the repository checked out.
 - Add to chat puts the same prompt at the end of a chat's draft, using that chat's project's prompt,
   without sending it. Pick a chat on screen or a recent thread, which opens in the board's place.
 - A thread started from a card shows that card in its Info tab, linked to GitHub.
 
 ## What it needs
 
-bb 0.47 or later, and the GitHub CLI, `gh`, installed and signed in on the machine running the bb
+VesnALIA 0.47 or later, and the GitHub CLI, `gh`, installed and signed in on the machine running the VesnALIA
 server. The board uses that login and stores no token of its own.

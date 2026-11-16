@@ -1,5 +1,5 @@
 #!/bin/bash
-# Host prerequisites for bb-box boxes on a Proxmox host:
+# Host prerequisites for alia-box boxes on a Proxmox host:
 #
 # - the kernel modules Docker inside unprivileged boxes relies on, and tun for
 #   the /dev/net/tun every template binds (050), loaded at every boot (a
@@ -16,8 +16,8 @@ here=$(cd "$(dirname "$0")" && pwd)
 
 # Not br_netfilter: loading it would send every bridged packet on the host's
 # other bridges through iptables.
-cat >/etc/modules-load.d/bb-box.conf <<'EOF'
-# bb-box: modules that Docker inside unprivileged box containers relies on.
+cat >/etc/modules-load.d/alia-box.conf <<'EOF'
+# alia-box: modules that Docker inside unprivileged box containers relies on.
 overlay
 veth
 nf_tables
@@ -33,8 +33,8 @@ xt_tcpudp
 # The TUN device every template binds (050), for Tailscale and other VPNs.
 tun
 EOF
-grep -v '^#' /etc/modules-load.d/bb-box.conf | xargs modprobe -a
-echo "kernel modules: /etc/modules-load.d/bb-box.conf"
+grep -v '^#' /etc/modules-load.d/alia-box.conf | xargs modprobe -a
+echo "kernel modules: /etc/modules-load.d/alia-box.conf"
 
 if [ ! -d /proc/driver/nvidia/gpus ]; then
   echo "no NVIDIA driver loaded: desktops will render on the CPU"
@@ -46,9 +46,9 @@ create=""
 for m in $minors; do create="$create -c $m"; done
 nodes="nvidiactl nvidia-uvm nvidia-uvm-tools nvidia-modeset"
 for m in $minors; do nodes="$nodes nvidia$m"; done
-cat >/etc/systemd/system/bb-box-nvidia-devices.service <<EOF
+cat >/etc/systemd/system/alia-box-nvidia-devices.service <<EOF
 [Unit]
-Description=bb-box: create the NVIDIA device nodes that desktop boxes bind
+Description=alia-box: create the NVIDIA device nodes that desktop boxes bind
 After=systemd-modules-load.service systemd-udevd.service
 Before=pve-guests.service
 
@@ -67,9 +67,9 @@ ExecStartPost=/bin/sh -c 'for n in $nodes; do test -c /dev/\$\$n || { echo "miss
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable --quiet bb-box-nvidia-devices.service
-systemctl restart bb-box-nvidia-devices.service
-echo "NVIDIA device nodes: $nodes (bb-box-nvidia-devices.service)"
+systemctl enable --quiet alia-box-nvidia-devices.service
+systemctl restart alia-box-nvidia-devices.service
+echo "NVIDIA device nodes: $nodes (alia-box-nvidia-devices.service)"
 for gpu in /proc/driver/nvidia/gpus/*; do
   pci=${gpu##*/}
   echo "  GPU $pci: /dev/nvidia$(awk -F: '/^Device Minor/ { gsub(/[ \t]/, "", $2); print $2 }' "$gpu/information"), $(basename "$(readlink -f "/dev/dri/by-path/pci-$pci-card")"), $(basename "$(readlink -f "/dev/dri/by-path/pci-$pci-render")")"

@@ -1,10 +1,10 @@
-// bb-plugin-agent-board — the board data hook.
+// alia-plugin-agent-board — the board data hook.
 //
 // One bounded fetch per invalidation signal: the backend publishes
 // "agent-board-changed" and this hook refetches board_snapshot. No polling.
 // A 1s local ticker drives live elapsed timers between snapshots.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import {
   BOARD_CHANGED_CHANNEL,
   boardChangedPayloadSchema,

@@ -22,7 +22,7 @@ function lines(node: FakeNode, prefix: string): string[] {
 
 function ran(node: FakeNode, args: readonly string[] = ["--once"], env: Readonly<Record<string, string>> = {}): string {
   const result = node.run(args, env);
-  assert.equal(result.status, 0, `bb-box-gpu ${args.join(" ")} failed:\n${result.stderr}`);
+  assert.equal(result.status, 0, `alia-box-gpu ${args.join(" ")} failed:\n${result.stderr}`);
   return result.stderr;
 }
 
@@ -36,21 +36,21 @@ function assertUnchanged(node: FakeNode, before: Map<number, string>): void {
 
 test("writes are off unless gpu.conf, owned by the helper's user alone, says on, and pve-container is a version the release was tested on", () => {
   const cases: { readonly name: string; readonly setup: (node: FakeNode) => void; readonly writes: "on" | "off"; readonly error: RegExp | null }[] = [
-    { name: "no gpu.conf", setup: (node) => rmSync(node.file("etc/bb-box/gpu.conf")), writes: "off", error: /^error no \/etc\/bb-box\/gpu\.conf$/ },
+    { name: "no gpu.conf", setup: (node) => rmSync(node.file("etc/alia-box/gpu.conf")), writes: "off", error: /^error no \/etc\/alia-box\/gpu\.conf$/ },
     { name: "writes off", setup: (node) => node.setHelperConfig(["bbbox"], "off"), writes: "off", error: null },
     { name: "a gpu.conf others may write", setup: (node) => node.setHelperConfig(["bbbox"], "on", 0o666), writes: "off", error: /not owned by this user alone, so writes stay off/ },
     { name: "an untested pve-container", setup: (node) => (node.setHelperConfig(["bbbox"], "on"), node.write("pve-container-version", "6.2.1\n")), writes: "off", error: /pve-container 6\.2\.1 is not a version this release was tested on/ },
-    { name: "a line it cannot read", setup: (node) => node.write("etc/bb-box/gpu.conf", "pools bbbox\nwrites maybe\n"), writes: "off", error: /has a line this release cannot read/ },
+    { name: "a line it cannot read", setup: (node) => node.write("etc/alia-box/gpu.conf", "pools bbbox\nwrites maybe\n"), writes: "off", error: /has a line this release cannot read/ },
     { name: "writes on, tested", setup: (node) => node.setHelperConfig(["bbbox"], "on"), writes: "on", error: null },
   ];
   for (const { name, setup, writes, error } of cases) {
     const node = new FakeNode();
-    if (name === "a line it cannot read") chmodSync(node.file("etc/bb-box/gpu.conf"), 0o600);
+    if (name === "a line it cannot read") chmodSync(node.file("etc/alia-box/gpu.conf"), 0o600);
     setup(node);
     node.guest(200, { box: "bx200", marker: marker("shared", CARD_A, 1) });
     ran(node);
     const helper = lines(node, "helper")[0]!;
-    assert.match(helper, new RegExp(`^helper bb-box-gpu \\S+ protocol 1 writes ${writes} pve-container \\S+ (?:tested|untested)$`), name);
+    assert.match(helper, new RegExp(`^helper alia-box-gpu \\S+ protocol 1 writes ${writes} pve-container \\S+ (?:tested|untested)$`), name);
     if (error) assert.ok(lines(node, "error").some((line) => error.test(line)), `${name}: ${lines(node, "error").join(" | ")}`);
     assert.deepEqual(node.guestWrites(), writes === "on" ? ["lxc 200"] : [], name);
   }
@@ -90,9 +90,9 @@ test("with writes off, no path writes a guest: a request, a yield, a copy's line
   node.guest(210, { box: "bx210", marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "server") });
   node.guest(211, { box: "bx211", marker: marker("whole", CARD_A, 1) });
   node.guest(220, { box: "bx220", name: "calm-reef", marker: marker("shared", CARD_B, 2), lines: cardLines(CARD_B, "server") });
-  node.guest(221, { box: "bx220", name: "calm-reef", hostname: "bb-box-copy-221", marker: marker("shared", CARD_B, 2), lines: cardLines(CARD_B, "server") });
+  node.guest(221, { box: "bx220", name: "calm-reef", hostname: "alia-box-copy-221", marker: marker("shared", CARD_B, 2), lines: cardLines(CARD_B, "server") });
   node.guest(230, { box: "bx230", marker: marker("shared", CARD_B, 1), lines: cardLines(CARD_B, "server") });
-  node.write("var/lib/bb-box-gpu/ledger", JSON.stringify({ protocol: 1, answers: [], guests: { "230": { box: `${INSTALL}/bx230`, answered: 2, claim: { generation: 2, part: "shared", card: A, answer: "granted", at: 1 } } } }));
+  node.write("var/lib/alia-box-gpu/ledger", JSON.stringify({ protocol: 1, answers: [], guests: { "230": { box: `${INSTALL}/bx230`, answered: 2, claim: { generation: 2, part: "shared", card: A, answer: "granted", at: 1 } } } }));
   const vmids = [210, 211, 220, 221, 230];
   const before = snapshot(node, vmids);
   const stderr = ran(node) + ran(node) + ran(node, ["--boot"]);
@@ -113,7 +113,7 @@ test("with writes off, no path writes a guest: a request, a yield, a copy's line
 
   const lost = new FakeNode({ writes: "off", ledger: false });
   lost.guest(240, { box: "bx240", name: "tidy-glade", marker: marker("shared", CARD_A, 3), lines: cardLines(CARD_A, "server"), running: true });
-  lost.guest(241, { box: "bx240", name: "tidy-glade", hostname: "bb-box-copy-241", marker: marker("shared", CARD_A, 3), lines: cardLines(CARD_A, "server") });
+  lost.guest(241, { box: "bx240", name: "tidy-glade", hostname: "alia-box-copy-241", marker: marker("shared", CARD_A, 3), lines: cardLines(CARD_A, "server") });
   const lostBefore = snapshot(lost, [240, 241]);
   ran(lost);
   ran(lost, ["--boot"]);
@@ -128,17 +128,17 @@ test("--help and --version say what the helper is, and an argument it cannot rea
   const node = new FakeNode();
   const help = node.run(["--help"]);
   assert.equal(help.status, 0);
-  assert.match(help.stdout, /^bb-box-gpu 0\.4\.4, protocol 1: the host's GPU helper for bb-box\./);
+  assert.match(help.stdout, /^alia-box-gpu 0\.4\.4, protocol 1: the host's GPU helper for alia-box\./);
   assert.match(help.stdout, /Writes are off\s+unless/);
-  assert.match(help.stdout, /bb-box-gpu --preview\n\s+one pass as writes on would make it, changing nothing/);
-  assert.equal(node.run(["--version"]).stdout, "bb-box-gpu 0.4.4 protocol 1\n");
+  assert.match(help.stdout, /alia-box-gpu --preview\n\s+one pass as writes on would make it, changing nothing/);
+  assert.equal(node.run(["--version"]).stdout, "alia-box-gpu 0.4.4 protocol 1\n");
   const wrong = node.run(["--writes-on"]);
   assert.equal(wrong.status, 2);
   assert.match(wrong.stderr, /cannot read '--writes-on'/);
   assert.deepEqual(node.writes(), []);
 });
 
-test("it leaves alone every guest it must: outside its pools, privileged, a template, running, locked, with pending device changes, malformed or double markers, not BB Box's, unmarked with NVIDIA lines, and an unknown card (section 14)", () => {
+test("it leaves alone every guest it must: outside its pools, privileged, a template, running, locked, with pending device changes, malformed or double markers, not VesnALIA Box's, unmarked with NVIDIA lines, and an unknown card (section 14)", () => {
   const node = new FakeNode({ writes: "on" });
   const ask = marker("shared", CARD_A, 2);
   node.guest(300, { box: "bx300", marker: ask, pool: "elsewhere" });
@@ -171,7 +171,7 @@ test("it leaves alone every guest it must: outside its pools, privileged, a temp
     `claim 305 g2 refused pending ${A}`,
     "claim 306 g0 refused malformed -",
     "claim 307 g0 refused malformed -",
-    `claim 308 g2 refused not-bb-box ${A}`,
+    `claim 308 g2 refused not-alia-box ${A}`,
     "claim 310 g2 refused unknown-card 00000000-1111-4222-8333-444444444444",
     "claim 311 g0 refused malformed -",
     "claim 312 g0 refused malformed -",
@@ -185,7 +185,7 @@ test("it leaves alone every guest it must: outside its pools, privileged, a temp
 
 test("a grant replaces only the current section's NVIDIA and DRM lines, worked out from the card's UUID now: index 0 is /dev/nvidia1 and card2", () => {
   const node = new FakeNode({ writes: "on" });
-  const snapshotSection = { arch: "amd64", hostname: "box-400", dev0: "/dev/nvidia0,mode=0666", dev1: TUN, tags: `bb-box;${marker("shared", CARD_B, 1)}` };
+  const snapshotSection = { arch: "amd64", hostname: "box-400", dev0: "/dev/nvidia0,mode=0666", dev1: TUN, tags: `alia-box;${marker("shared", CARD_B, 1)}` };
   node.guest(400, {
     box: "bx400",
     kind: "linux-desktop",
@@ -331,10 +331,10 @@ test("071 unit 8b: a whole claim yields only the asking install's own stopped sh
   assert.deepEqual(node.lines(824), []);
 });
 
-test("a lost ledger is rebuilt from the guests: matching guests are granted; a stopped copy, a guest whose lines do not match and a whole box whose card a stopped box still has are refused and keep their lines, and BB Box's next request decides them (re-review R3)", () => {
+test("a lost ledger is rebuilt from the guests: matching guests are granted; a stopped copy, a guest whose lines do not match and a whole box whose card a stopped box still has are refused and keep their lines, and VesnALIA Box's next request decides them (re-review R3)", () => {
   const node = new FakeNode({ writes: "on", ledger: false });
   node.guest(900, { box: "bx900", name: "amber-fox", marker: marker("shared", CARD_A, 3), lines: cardLines(CARD_A, "server"), running: true });
-  const copy = { box: "bx900", name: "amber-fox", hostname: "bb-box-copy-901", marker: marker("shared", CARD_A, 3), lines: cardLines(CARD_A, "server") };
+  const copy = { box: "bx900", name: "amber-fox", hostname: "alia-box-copy-901", marker: marker("shared", CARD_A, 3), lines: cardLines(CARD_A, "server") };
   const yielding = { box: "bx903", marker: marker("shared", CARD_B, 1), lines: cardLines(CARD_B, "server") };
   node.guest(901, copy);
   node.guest(902, { box: "bx902", marker: marker("whole", CARD_B, 2), lines: cardLines(CARD_B, "server"), running: true });
@@ -361,12 +361,12 @@ test("a lost ledger is rebuilt from the guests: matching guests are granted; a s
   assert.deepEqual(node.guestWrites(), [], "nor does a later pass, or the boot pass");
   node.mark(902, marker("whole", CARD_B, 3));
   ran(node);
-  assert.ok(claims(node).includes(`claim 902 g3 granted whole ${B}`), "BB Box's next request for the whole box is answered");
+  assert.ok(claims(node).includes(`claim 902 g3 granted whole ${B}`), "VesnALIA Box's next request for the whole box is answered");
   assert.deepEqual(node.lines(903), [], "and the stopped shared box yields to it then");
   assert.deepEqual(node.lines(901), cardLines(CARD_A, "server"), "the copy keeps its lines until it asks");
   node.mark(904, marker("shared", CARD_B, 5));
   ran(node);
-  assert.ok(claims(node).includes(`claim 904 g5 refused whole-taken ${B} 902`), "BB Box's next request is answered");
+  assert.ok(claims(node).includes(`claim 904 g5 refused whole-taken ${B} 902`), "VesnALIA Box's next request is answered");
   assert.deepEqual(node.lines(904), cardLines(CARD_A, "server"), "a refusal changes nothing");
 });
 
@@ -428,8 +428,8 @@ test("a copy naming another box gets no claim and loses its lines; a swap that s
   const node = new FakeNode({ writes: "on" });
   node.guest(1200, { box: "bx1200", name: "lone-pine", marker: marker("shared", CARD_A, 4), lines: cardLines(CARD_A, "server") });
   ran(node);
-  node.guest(1201, { box: "bx1200", name: "lone-pine", hostname: "bb-box-copy-1201", marker: marker("shared", CARD_A, 4), lines: [...cardLines(CARD_A, "server"), TUN] });
-  node.guest(1202, { box: "bx1200", name: "lone-pine", hostname: "bb-box-copy-1202", marker: marker("shared", CARD_A, 5), lines: cardLines(CARD_A, "server"), running: true });
+  node.guest(1201, { box: "bx1200", name: "lone-pine", hostname: "alia-box-copy-1201", marker: marker("shared", CARD_A, 4), lines: [...cardLines(CARD_A, "server"), TUN] });
+  node.guest(1202, { box: "bx1200", name: "lone-pine", hostname: "alia-box-copy-1202", marker: marker("shared", CARD_A, 5), lines: cardLines(CARD_A, "server"), running: true });
   const source = node.text(1200);
   ran(node);
   assert.equal(node.text(1200), source, "the box it names is left as it is");
@@ -489,12 +489,12 @@ test("the boot pass puts each claimed guest's lines right from its card's UUID, 
   assert.equal(node.report(), report, "the boot pass leaves the report to the service");
 });
 
-test("the report: today's BB Box reads its at and gpu lines, it names the helper, the driver, each card, the holders and the answers, says when the card mapping moved since the last boot, and stays under 8,192 characters", () => {
+test("the report: today's VesnALIA Box reads its at and gpu lines, it names the helper, the driver, each card, the holders and the answers, says when the card mapping moved since the last boot, and stays under 8,192 characters", () => {
   const node = new FakeNode({ writes: "off" });
   node.guest(214, { box: "bx214", marker: marker("shared", CARD_A, 8), lines: cardLines(CARD_A, "server"), running: true });
   ran(node);
   const report = node.report();
-  assert.match(report, /^bb-box: each GPU's memory and its claims, from bb-box-gpu on this host\. Do not edit\.\n\n {4}at \d+\n {4}gpu GPU-/);
+  assert.match(report, /^alia-box: each GPU's memory and its claims, from alia-box-gpu on this host\. Do not edit\.\n\n {4}at \d+\n {4}gpu GPU-/);
   const read = parseGpuReport(report)!;
   assert.deepEqual(read.gpus, [
     { uuid: `GPU-${A}`, bus: CARD_A.bus, index: "0", freeMiB: CARD_A.freeMiB, totalMiB: CARD_A.totalMiB },
@@ -503,7 +503,7 @@ test("the report: today's BB Box reads its at and gpu lines, it names the helper
   assert.ok(Math.abs(read.at - Date.now()) < 60_000);
   const body = node.reportLines();
   assert.deepEqual(body.slice(3, 8), [
-    "helper bb-box-gpu 0.4.4 protocol 1 writes off pve-container 6.1.14 tested",
+    "helper alia-box-gpu 0.4.4 protocol 1 writes off pve-container 6.1.14 tested",
     "serves bbbox",
     body.find((line) => line.startsWith("driver "))!,
     `card ${A} pci 0000:21:00.0 minor 1 drm card2 renderD129`,
@@ -528,11 +528,11 @@ test("the report: today's BB Box reads its at and gpu lines, it names the helper
   assert.ok(text.length < 8192, `the report is ${text.length} characters`);
   assert.equal(lines(crowded, "holder").length, 60, "every holder is listed");
   assert.match(crowded.reportLines().at(-1)!, /^omitted \d+ (?:ledger lines|refusals in force|answers)/);
-  assert.deepEqual(lines(crowded, "ledger").filter((line) => line.startsWith("ledger entries ")), ["ledger entries 120"], "the count of ledger entries is always there, so BB Box knows when some are left out");
+  assert.deepEqual(lines(crowded, "ledger").filter((line) => line.startsWith("ledger entries ")), ["ledger entries 120"], "the count of ledger entries is always there, so VesnALIA Box knows when some are left out");
   assert.deepEqual(parseGpuReport(text)!.gpus.length, 2);
 });
 
-test("when nvidia-smi fails, no card is listed and no claim is granted; the report says why, today's BB Box still reads it, and lines already written stay", () => {
+test("when nvidia-smi fails, no card is listed and no claim is granted; the report says why, today's VesnALIA Box still reads it, and lines already written stay", () => {
   const node = new FakeNode({ writes: "on" });
   node.guest(1500, { box: "bx1500", marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "server") });
   ran(node);
@@ -601,7 +601,7 @@ test("the service writes the report on its first pass after a start, though noth
   assert.match(service.output(), /the report written 1 times \(1 on start, 0 for a change, 0 for memory alone, 0 as a heartbeat, 0 after a clock step\)/);
 });
 
-test("the report lists each ledger entry: its box, the generation answered and the claim, so BB Box can ask above it and read a grant exactly (071 unit 4, Opus 1)", () => {
+test("the report lists each ledger entry: its box, the generation answered and the claim, so VesnALIA Box can ask above it and read a grant exactly (071 unit 4, Opus 1)", () => {
   const node = new FakeNode({ writes: "off" });
   node.guest(1800, { box: "bx1800", kind: "linux-desktop", marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
   node.guest(1801, { box: "bx1801", marker: marker("shared", CARD_B, 3), lock: "backup" });
@@ -612,14 +612,14 @@ test("the report lists each ledger entry: its box, the generation answered and t
     `ledger 1800 box ${INSTALL}/bx1800 answered g1 claim g1 shared ${A} granted`,
     `ledger 1801 box ${INSTALL}/bx1801 answered g3 claim none`,
   ]);
-  node.write("var/lib/bb-box-gpu/ledger", JSON.stringify({ protocol: 2, guests: {}, answers: [] }));
+  node.write("var/lib/alia-box-gpu/ledger", JSON.stringify({ protocol: 2, guests: {}, answers: [] }));
   ran(node);
   assert.deepEqual(lines(node, "ledger"), ["ledger unknown"], "with a ledger it cannot read, it says so, rather than list none");
 });
 
-test("a ledger from a newer protocol: the helper acts on nothing and says so, and today's BB Box still reads the report", () => {
+test("a ledger from a newer protocol: the helper acts on nothing and says so, and today's VesnALIA Box still reads the report", () => {
   const node = new FakeNode({ writes: "on" });
-  node.write("var/lib/bb-box-gpu/ledger", JSON.stringify({ protocol: 2, guests: {}, answers: [] }));
+  node.write("var/lib/alia-box-gpu/ledger", JSON.stringify({ protocol: 2, guests: {}, answers: [] }));
   node.guest(1600, { box: "bx1600", marker: marker("shared", CARD_A, 1) });
   ran(node);
   assert.deepEqual(node.guestWrites(), []);
@@ -642,7 +642,7 @@ test("the service answers a marker within about a second, logs each write it wou
     }
     const asked = Date.now();
     node.mark(1700, marker("none", null, 2));
-    while (!existsSync(node.file("var/lib/bb-box-gpu/ledger")) || node.ledger().guests["1700"]?.claim?.generation !== 2) {
+    while (!existsSync(node.file("var/lib/alia-box-gpu/ledger")) || node.ledger().guests["1700"]?.claim?.generation !== 2) {
       assert.ok(Date.now() - asked < 5_000, `no answer to g2 in 5 s:\n${service.output()}`);
       await sleep(20);
     }
@@ -751,7 +751,7 @@ test("the four service probes: a stalled nvidia-smi is started again after 30 s 
   const moving = new FakeNode({ writes: "off" });
   const unsaved = new FakeNode({ writes: "on" });
   unsaved.guest(1900, { box: "bx1900", marker: marker("shared", CARD_A, 1) });
-  mkdirSync(unsaved.file("var/lib/bb-box-gpu/ledger.new"));
+  mkdirSync(unsaved.file("var/lib/alia-box-gpu/ledger.new"));
   const quiet = new FakeNode({ writes: "off" });
   const services = [stalled.start(["--dry-run"]), moving.start(["--dry-run"]), unsaved.start(), quiet.start(["--dry-run"])];
   const begun = Date.now();
@@ -809,7 +809,7 @@ test("when the ledger cannot be saved, the report is still written, naming why (
   const node = new FakeNode({ writes: "on" });
   ran(node);
   const before = node.report();
-  mkdirSync(node.file("var/lib/bb-box-gpu/ledger.new"));
+  mkdirSync(node.file("var/lib/alia-box-gpu/ledger.new"));
   node.guest(1950, { box: "bx1950", marker: marker("shared", CARD_A, 1) });
   const result = node.run();
   assert.equal(result.status, 1, "a one-off pass that could not finish says so");
@@ -821,7 +821,7 @@ test("when the ledger cannot be saved, the report is still written, naming why (
 test("with writes off, recovery stores no strip, yield or whole grant; once writes are on, the helper decides afresh, so a copy whose source has gone keeps its card (Astra 5, Opus 6)", () => {
   const node = new FakeNode({ writes: "off", ledger: false });
   node.guest(2000, { box: "bx2000", name: "amber-fox", marker: marker("shared", CARD_A, 2), lines: cardLines(CARD_A, "server"), running: true });
-  node.guest(2001, { box: "bx2000", name: "amber-fox", hostname: "bb-box-copy-2001", marker: marker("shared", CARD_A, 2), lines: cardLines(CARD_A, "server") });
+  node.guest(2001, { box: "bx2000", name: "amber-fox", hostname: "alia-box-copy-2001", marker: marker("shared", CARD_A, 2), lines: cardLines(CARD_A, "server") });
   node.guest(2002, { box: "bx2002", marker: marker("whole", CARD_B, 1), lines: cardLines(CARD_B, "server"), running: true });
   node.guest(2003, { box: "bx2003", marker: marker("shared", CARD_B, 1), lines: cardLines(CARD_B, "server") });
   ran(node);
@@ -847,8 +847,8 @@ test("with writes off, recovery stores no strip, yield or whole grant; once writ
 test("the report stays under 8,192 characters whatever gpu.conf's pools and the errors say (Astra 6)", () => {
   const node = new FakeNode({ writes: "off" });
   const pools = Array.from({ length: 400 }, (_, index) => `a-pool-with-a-long-name-number-${index}`);
-  node.write("etc/bb-box/gpu.conf", `pools ${pools.join(" ")}\nwrites off\n${"a line it cannot read\n".repeat(50)}`);
-  chmodSync(node.file("etc/bb-box/gpu.conf"), 0o600);
+  node.write("etc/alia-box/gpu.conf", `pools ${pools.join(" ")}\nwrites off\n${"a line it cannot read\n".repeat(50)}`);
+  chmodSync(node.file("etc/alia-box/gpu.conf"), 0o600);
   ran(node);
   const text = node.report();
   assert.ok(text.length < 8_192, `the report is ${text.length} characters`);
@@ -865,12 +865,12 @@ test("--dry-run keeps writes off whatever gpu.conf says, and the units setup-gpu
   ran(node, ["--once", "--dry-run"]);
   assert.deepEqual(node.guestWrites(), []);
   assert.match(lines(node, "helper")[0]!, / writes off /);
-  assert.ok(lines(node, "error").includes("error writes are on in /etc/bb-box/gpu.conf, but this install runs with --dry-run, so writes stay off"));
+  assert.ok(lines(node, "error").includes("error writes are on in /etc/alia-box/gpu.conf, but this install runs with --dry-run, so writes stay off"));
   assert.ok(lines(node, "would").includes(`would 2100 lines ${A} server for request g1`));
   const unit = (name: string) => readFileSync(new URL(`../setup/proxmox-lxc/host/${name}`, import.meta.url), "utf8");
-  assert.match(unit("bb-box-gpu.service"), /^ExecStart=\/usr\/local\/sbin\/bb-box-gpu --dry-run$/m);
-  assert.match(unit("bb-box-gpu-boot.service"), /^ExecStart=\/usr\/local\/sbin\/bb-box-gpu --boot --dry-run$/m);
-  assert.match(unit("bb-box-gpu-boot.service"), /^TimeoutStartSec=45$/m, "the boot pass holds guest autostart for at most 45 s");
+  assert.match(unit("alia-box-gpu.service"), /^ExecStart=\/usr\/local\/sbin\/alia-box-gpu --dry-run$/m);
+  assert.match(unit("alia-box-gpu-boot.service"), /^ExecStart=\/usr\/local\/sbin\/alia-box-gpu --boot --dry-run$/m);
+  assert.match(unit("alia-box-gpu-boot.service"), /^TimeoutStartSec=45$/m, "the boot pass holds guest autostart for at most 45 s");
 });
 
 test("a copy of a box whose own request was refused is still a copy: it gets no claim (Opus 7)", () => {
@@ -954,11 +954,11 @@ test("071 unit 5: --preview shows what the first pass with writes on would do, a
   const guests = snapshot(node, [2300, 2301, 2302]);
   const ledger = readFileSync(node.ledgerPath(), "utf8");
   const report = node.report();
-  const state = readFileSync(node.file("var/lib/bb-box-gpu/host"), "utf8");
+  const state = readFileSync(node.file("var/lib/alia-box-gpu/host"), "utf8");
   const writesBefore = node.writes().length;
   const preview = node.run(["--preview"]);
   assert.equal(preview.status, 0, preview.stderr);
-  assert.match(preview.stdout, /^preview: bb-box-gpu 0\.4\.4 on pve-container 6\.1\.14, as its first pass with writes on would go; nothing was written\n/);
+  assert.match(preview.stdout, /^preview: alia-box-gpu 0\.4\.4 on pve-container 6\.1\.14, as its first pass with writes on would go; nothing was written\n/);
   assert.match(preview.stdout, /^would write CT 2301 for request g1: remove dev0 \/dev\/nvidia1,mode=0666, .*; add \/dev\/nvidia0,mode=0666, .*$/m);
   assert.match(preview.stdout, new RegExp(`^would answer: claim 2301 g1 granted shared ${B}$`, "m"));
   assert.match(preview.stdout, /^preview: writes on would write 1 guest$/m);
@@ -966,7 +966,7 @@ test("071 unit 5: --preview shows what the first pass with writes on would do, a
   assertUnchanged(node, guests);
   assert.equal(readFileSync(node.ledgerPath(), "utf8"), ledger);
   assert.equal(node.report(), report);
-  assert.equal(readFileSync(node.file("var/lib/bb-box-gpu/host"), "utf8"), state);
+  assert.equal(readFileSync(node.file("var/lib/alia-box-gpu/host"), "utf8"), state);
   assert.equal(node.writes().length, writesBefore, "nothing was written, the report VM included");
   assert.deepEqual(node.guestLocks(), [], "no guest's config lock was taken");
 
@@ -1175,7 +1175,7 @@ test("071 unit 5, re-review R3: a lost ledger is rebuilt on no card that a guest
   const boot = new FakeNode({ writes: "on", ledger: false });
   boot.guest(2560, { box: "bx2560", kind: "linux-desktop", marker: marker("shared", CARD_B, 2), lines: cardLines(CARD_A, "desktop") });
   boot.guest(2561, { box: "bx2561", kind: "linux-desktop", marker: marker("whole", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
-  boot.guest(2562, { box: "bx2561", kind: "linux-desktop", hostname: "bb-box-copy-2562", marker: marker("whole", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
+  boot.guest(2562, { box: "bx2561", kind: "linux-desktop", hostname: "alia-box-copy-2562", marker: marker("whole", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
   const stopped = snapshot(boot, [2560, 2561, 2562]);
   ran(boot, ["--boot"]);
   ran(boot);
@@ -1401,14 +1401,14 @@ test("071 unit 5, go review 2 G2: a device node a guest of a card needs that is 
 });
 
 function asked(action: "start" | "stop" | "shutdown" | "delete", box: string | null, generation: number, nonce: string, install = INSTALL): string {
-  return `bb-power.${action}.${install}.${box ?? "-"}.g${generation}.n${nonce}`;
+  return `alia-power.${action}.${install}.${box ?? "-"}.g${generation}.n${nonce}`;
 }
 
 function powered(node: FakeNode): string[] {
   return lines(node, "power");
 }
 
-test("071 unit 5, go review 3 H1: the helper starts, stops, shuts down and deletes a guest BB Box asks it to, under the guest's config lock, with writes on or off, and acts on each request once", () => {
+test("071 unit 5, go review 3 H1: the helper starts, stops, shuts down and deletes a guest VesnALIA Box asks it to, under the guest's config lock, with writes on or off, and acts on each request once", () => {
   for (const writes of ["off", "on"] as const) {
     const node = new FakeNode({ writes });
     node.guest(2700, { box: "bx2700", kind: "linux-desktop", marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
@@ -1442,7 +1442,7 @@ test("071 unit 5, go review 3 H1: the helper starts, stops, shuts down and delet
     ran(node);
     assert.deepEqual(node.powerLog().slice(-2), ["destroy 2700", "removed 2700"], writes);
     assert.ok(!node.exists(2700));
-    assert.deepEqual(powered(node), ["power 2700 n0e0e0e0e delete done"], "the answer outlives the guest, for BB Box to read");
+    assert.deepEqual(powered(node), ["power 2700 n0e0e0e0e delete done"], "the answer outlives the guest, for VesnALIA Box to read");
     assert.equal(node.guestWrites().length, before, `${writes}: no config is written for a power request`);
   }
 });
@@ -1488,14 +1488,14 @@ test("071 unit 5, go review 3 H1: the helper refuses a request for another box, 
   node.ask(2715, asked("start", "bx2715", 1, "3b3b3b3b"));
   ran(node);
   assert.ok(powered(node).includes("power 2715 n3b3b3b3b start refused pending"), "a pending device change, which a start would apply, blocks it");
-  node.ask(2711, "bb-power.start.4kq7.bx2711.g2");
+  node.ask(2711, "alia-power.start.4kq7.bx2711.g2");
   ran(node);
-  assert.ok(!powered(node).some((line) => line.startsWith("power 2711 n") && line.includes(" start done")), "a request not in BB Box's form is not acted on");
+  assert.ok(!powered(node).some((line) => line.startsWith("power 2711 n") && line.includes(" start done")), "a request not in VesnALIA Box's form is not acted on");
   assert.deepEqual(node.powerLog(), []);
 
   node.guest(9100, { box: "bx9100", kind: "linux-desktop", template: true, lines: cardLines(CARD_A, "desktop") });
   node.ask(9100, asked("start", "bx9100", 0, "3c3c3c3c"));
-  node.guest(2716, { tags: ["bb-box", `install.${INSTALL}`], description: "bb-box someone\ninstall zz99\nbox bx2716\n", lines: cardLines(CARD_B, "server"), pool: "team" });
+  node.guest(2716, { tags: ["alia-box", `install.${INSTALL}`], description: "alia-box someone\ninstall zz99\nbox bx2716\n", lines: cardLines(CARD_B, "server"), pool: "team" });
   node.ask(2716, asked("start", "bx2716", 0, "3d3d3d3d", "zz99"));
   ran(node);
   assert.ok(powered(node).includes("power 9100 n3c3c3c3c start refused template"));
@@ -1503,7 +1503,7 @@ test("071 unit 5, go review 3 H1: the helper refuses a request for another box, 
   assert.deepEqual(node.powerLog(), []);
 });
 
-test("071 unit 5, go review 3 H1: a guest replaced at its VMID while BB Box's request waits for the config lock, by another box of the same install carrying the request, is not started, stopped or deleted", async () => {
+test("071 unit 5, go review 3 H1: a guest replaced at its VMID while VesnALIA Box's request waits for the config lock, by another box of the same install carrying the request, is not started, stopped or deleted", async () => {
   for (const action of ["start", "stop", "delete"] as const) {
     for (const writes of ["off", "on"] as const) {
       const node = new FakeNode({ writes });
@@ -1581,7 +1581,7 @@ test("071 unit 5, go review 4 N1: the helper starts, stops and deletes a box wit
 
   const node = new FakeNode({ writes: "off" });
   node.guest(2743, { box: "bx2743", kind: "linux", pending: { dev0: `/dev/nvidia${CARD_A.minor},mode=0666` } });
-  node.guest(2744, { template: true, tags: ["bb-box", `install.${INSTALL}`, "image.daily"], description: "bb-box daily image of linux, built 2026-11-03 from template 9000.\n{}" });
+  node.guest(2744, { template: true, tags: ["alia-box", `install.${INSTALL}`, "image.daily"], description: "alia-box daily image of linux, built 2026-11-03 from template 9000.\n{}" });
   ran(node);
   node.ask(2743, asked("start", "bx2743", 0, "8a8a8a8a"));
   node.ask(2744, asked("start", null, 0, "8b8b8b8b"));
@@ -1649,7 +1649,7 @@ test("071 unit 5, go review 4 N5: a start is refused beside a guest running on i
 });
 
 test("071 unit 5, go review 4 N6: a warm guest's request names its own warm token, so another warm guest of the install carrying it is not acted on", async () => {
-  const warm = (token: string): GuestSpec => ({ description: `bb-box warm desktop\ninstall ${INSTALL}\nwarm ${token}`, tags: ["bb-box", `install.${INSTALL}`, "warm", "template.9001"], marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
+  const warm = (token: string): GuestSpec => ({ description: `alia-box warm desktop\ninstall ${INSTALL}\nwarm ${token}`, tags: ["alia-box", `install.${INSTALL}`, "warm", "template.9001"], marker: marker("shared", CARD_A, 1), lines: cardLines(CARD_A, "desktop") });
   const node = new FakeNode({ writes: "off" });
   node.guest(2770, warm("0123456789ab"));
   ran(node);

@@ -1,11 +1,11 @@
 // Read-only file access for components (Snippet, Logs, Tests, ...). A block
 // names a path; this resolves it inside the reply's own thread: its workspace,
-// its thread storage ("$BB_THREAD_STORAGE/...") or /tmp on the same host.
+// its thread storage ("$ALIA_THREAD_STORAGE/...") or /tmp on the same host.
 // Anything else is refused. Failures are values, never throws.
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export const THREAD_STORAGE_PREFIX = "$BB_THREAD_STORAGE/";
+export const THREAD_STORAGE_PREFIX = "$ALIA_THREAD_STORAGE/";
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 export const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
 
@@ -41,10 +41,10 @@ export function resolveAttempts(
   return ["/tmp", "/private/tmp"].flatMap((tmp) => inside({ path: tmp, hostId }, target));
 }
 
-async function threadRoots(bb: BbPluginApi, threadId: string) {
+async function threadRoots(alia: AliaPluginApi, threadId: string) {
   const [thread, storage] = await Promise.all([
-    bb.sdk.threads.get({ threadId, include: "environment" }),
-    bb.sdk.threads.storageLocation({ threadId }).catch(() => null),
+    alia.sdk.threads.get({ threadId, include: "environment" }),
+    alia.sdk.threads.storageLocation({ threadId }).catch(() => null),
   ]);
   const environment = "environment" in thread ? thread.environment : null;
   return {
@@ -56,10 +56,10 @@ async function threadRoots(bb: BbPluginApi, threadId: string) {
   };
 }
 
-export async function readThreadFile(bb: BbPluginApi, threadId: string, requested: string, maxBytes: number): Promise<FileResult> {
+export async function readThreadFile(alia: AliaPluginApi, threadId: string, requested: string, maxBytes: number): Promise<FileResult> {
   let attempts: { root: Root; target: string }[];
   try {
-    attempts = resolveAttempts(requested, await threadRoots(bb, threadId));
+    attempts = resolveAttempts(requested, await threadRoots(alia, threadId));
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause.message : String(cause) };
   }
@@ -67,7 +67,7 @@ export async function readThreadFile(bb: BbPluginApi, threadId: string, requeste
   let first: FileResult | undefined;
   for (const { root, target } of attempts) {
     try {
-      const result = await bb.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
+      const result = await alia.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
       if (!("content" in result)) {
         first ??= { ok: false, error: "the file could not be read" };
         continue;

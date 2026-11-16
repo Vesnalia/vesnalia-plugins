@@ -1,20 +1,20 @@
-// A local review's diff, read from its folder on whichever machine it's on through bb's Git plugin (`bb git files`,
-// `bb git patch`): committed, uncommitted and untracked changes against the folder's real base, which is, in order:
+// A local review's diff, read from its folder on whichever machine it's on through VesnALIA's Git plugin (`alia git files`,
+// `alia git patch`): committed, uncommitted and untracked changes against the folder's real base, which is, in order:
 // 1. the base of the branch's PR, when it has one, as GitHub diffs it;
-// 2. else the folder's merge base in bb (`mergeBaseBranch`), which bb sets to what a worktree was made from;
+// 2. else the folder's merge base in VesnALIA (`mergeBaseBranch`), which VesnALIA sets to what a worktree was made from;
 // 3. else the branch it was made from (`baseBranch`; nothing reports a branch's upstream);
 // 4. else its default branch.
 // Secret-looking untracked files, binaries and huge diffs stay out of the patch, so out of the store and away from
 // agents, until the reviewer includes them. Tracked (committed or staged) secret-looking files show, flagged.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ensureGitHeaders } from "./patch";
 import { machineStatus } from "./machines";
 import type { FeatureReview } from "./store";
 import { isSecretPath, symlinkTarget, type HiddenFile } from "../lib/folder-files";
 
-export const GIT_PLUGIN = "bb--git";
-type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>>;
+export const GIT_PLUGIN = "alia--git";
+type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>>;
 
 export { flaggedFileNotice, hiddenFileNotice, isSecretPath, type HiddenFile } from "../lib/folder-files";
 
@@ -23,7 +23,7 @@ export type FeatureDiff =
     outcome: "available";
     /** Every shown file's diff, with git headers. */
     patch: string;
-    /** Each changed file's revision, hidden ones too, by path, as bb gave it: an edit to the file changes it. */
+    /** Each changed file's revision, hidden ones too, by path, as VesnALIA gave it: an edit to the file changes it. */
     revisions: Record<string, string>;
     hidden: HiddenFile[];
     /** Committed files that look like secrets: shown, and worth a warning. */
@@ -33,18 +33,18 @@ export type FeatureDiff =
     mergeBaseRef: string;
     /** Why the diff is incomplete, for the review to say; null when it's whole. */
     notice: string | null;
-    /** The branch's PR, as bb's GitHub PR status plugin said; absent for none, or when it couldn't say. */
+    /** The branch's PR, as VesnALIA's GitHub PR status plugin said; absent for none, or when it couldn't say. */
     pr?: FolderPr;
   }
   | FolderUnread;
 
 /**
- * Why a folder wasn't read. offline: its machine isn't connected. gone: bb removed it. paused: it's on another branch
+ * Why a folder wasn't read. offline: its machine isn't connected. gone: VesnALIA removed it. paused: it's on another branch
  * than the review's, `branch` (null for none). unavailable: anything else.
  */
 export type FolderUnread = { outcome: "offline" | "gone" | "unavailable"; message: string } | { outcome: "paused"; branch: string | null; message: string };
 
-/** A folder's branch's PR, as bb's GitHub PR status plugin says it. */
+/** A folder's branch's PR, as VesnALIA's GitHub PR status plugin says it. */
 export type FolderPr = z.infer<typeof folderPr>;
 
 /**
@@ -53,7 +53,7 @@ export type FolderPr = z.infer<typeof folderPr>;
  */
 export const diffFilesHead = (patchHash: string) => `diff:${patchHash}`;
 
-/** bb gives each file's diff up to 512 KB; past this much in all, the rest stay out, as a local diff stops at 64 MB. */
+/** VesnALIA gives each file's diff up to 512 KB; past this much in all, the rest stay out, as a local diff stops at 64 MB. */
 const MAX_PATCH_BYTES = 64 * 1024 * 1024;
 /** Keys the Git plugin takes in one patches call. */
 const PATCH_BATCH = 50;
@@ -79,9 +79,9 @@ const folderPr = z.object({ baseRefName: z.string(), number: z.number().int().op
 const pullRequestsOutput = z.record(z.string(), z.object({ outcome: z.string(), pullRequest: folderPr.optional() }));
 type ChangedFile = Extract<z.infer<typeof filesOutput>, { outcome: "available" }>["files"][number];
 
-/** Call one of bb's Git plugin's RPC methods. */
-export function callGit<T>(bb: BbPluginApi, method: string, input: Parameters<BbPluginApi["sdk"]["plugins"]["callRpc"]>[0]["input"], outputSchema: z.ZodType<T>): Promise<T> {
-  return bb.sdk.plugins.callRpc({ pluginId: GIT_PLUGIN, method, input, outputSchema });
+/** Call one of VesnALIA's Git plugin's RPC methods. */
+export function callGit<T>(alia: AliaPluginApi, method: string, input: Parameters<AliaPluginApi["sdk"]["plugins"]["callRpc"]>[0]["input"], outputSchema: z.ZodType<T>): Promise<T> {
+  return alia.sdk.plugins.callRpc({ pluginId: GIT_PLUGIN, method, input, outputSchema });
 }
 
 const statusOutput = z.object({ outcome: z.string(), workspace: z.object({
@@ -90,50 +90,50 @@ const statusOutput = z.object({ outcome: z.string(), workspace: z.object({
 }).optional() });
 const branchesOutput = z.object({ selectedBranch: z.object({ name: z.string(), kind: z.string() }).nullable() });
 
-/** Whether the folder has commit `sha`: nothing in it is missing from the folder's head. False when bb can't say. */
-export async function folderHas(bb: BbPluginApi, environmentId: string, sha: string): Promise<boolean> {
-  const read = await callGit(bb, "workspaceStatus", { environmentId, mergeBaseBranch: sha }, statusOutput).catch(() => null);
+/** Whether the folder has commit `sha`: nothing in it is missing from the folder's head. False when VesnALIA can't say. */
+export async function folderHas(alia: AliaPluginApi, environmentId: string, sha: string): Promise<boolean> {
+  const read = await callGit(alia, "workspaceStatus", { environmentId, mergeBaseBranch: sha }, statusOutput).catch(() => null);
   return read?.outcome === "available" && read.workspace?.mergeBase?.behindCount === 0;
 }
 
 /**
  * Whether commit `sha` is one of the folder's head's own since `base`, so `base` hasn't it, nor `origin/<base>` where the
- * folder has that, as a local base not fetched since may not. False when bb can't say of `base`.
+ * folder has that, as a local base not fetched since may not. False when VesnALIA can't say of `base`.
  */
-export async function folderHasSince(bb: BbPluginApi, environmentId: string, base: string, sha: string): Promise<boolean> {
-  /** Null when bb has no merge base with `ref`, as for a ref the folder hasn't. */
+export async function folderHasSince(alia: AliaPluginApi, environmentId: string, base: string, sha: string): Promise<boolean> {
+  /** Null when VesnALIA has no merge base with `ref`, as for a ref the folder hasn't. */
   const since = async (ref: string) => {
-    const read = await callGit(bb, "workspaceStatus", { environmentId, mergeBaseBranch: ref }, statusOutput).catch(() => null);
+    const read = await callGit(alia, "workspaceStatus", { environmentId, mergeBaseBranch: ref }, statusOutput).catch(() => null);
     const mergeBase = read?.outcome === "available" ? read.workspace?.mergeBase : null;
     return mergeBase ? !!mergeBase.commits?.some((commit) => commit.sha === sha) : null;
   };
   return await since(base) === true && (base.startsWith("origin/") || await since(`origin/${base}`) !== false);
 }
 
-/** The folder's head commit; null when bb can't say. */
-export async function folderHead(bb: BbPluginApi, environmentId: string): Promise<string | null> {
-  const read = await callGit(bb, "workspaceStatus", { environmentId }, statusOutput).catch(() => null);
+/** The folder's head commit; null when VesnALIA can't say. */
+export async function folderHead(alia: AliaPluginApi, environmentId: string): Promise<string | null> {
+  const read = await callGit(alia, "workspaceStatus", { environmentId }, statusOutput).catch(() => null);
   return read?.outcome === "available" ? read.workspace?.checkout?.headSha ?? null : null;
 }
 
-/** Whether the folder's repo has `branch` locally; null when bb can't say. */
-export async function folderHasBranch(bb: BbPluginApi, environmentId: string, branch: string): Promise<boolean | null> {
-  const read = await callGit(bb, "branches", { environmentId, limit: 1, selectedBranch: branch }, branchesOutput).catch(() => null);
+/** Whether the folder's repo has `branch` locally; null when VesnALIA can't say. */
+export async function folderHasBranch(alia: AliaPluginApi, environmentId: string, branch: string): Promise<boolean | null> {
+  const read = await callGit(alia, "branches", { environmentId, limit: 1, selectedBranch: branch }, branchesOutput).catch(() => null);
   return read?.selectedBranch ? read.selectedBranch.kind === "local" : null;
 }
 
-/** BB answered that the thing asked for doesn’t exist: not that it couldn’t say. */
+/** VesnALIA answered that the thing asked for doesn’t exist: not that it couldn’t say. */
 export const isNotFound = (error: unknown) => (error as { status?: number } | null)?.status === 404 || String(error).includes("HTTP 404");
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 /**
  * What a folder's diff is against, in the order above, or why that's unknown, and the branch's PR when it has one. A
- * folder with no GitHub repo has no PR. When bb can't say whether the branch has one, the base the last read used
+ * folder with no GitHub repo has no PR. When VesnALIA can't say whether the branch has one, the base the last read used
  * (`stored`) stays, so the diff doesn't jump to another base and back.
  */
-export async function featureBase(bb: BbPluginApi, env: Environment, repo: string | null, stored?: string): Promise<{ base: string; pr?: FolderPr } | { message: string }> {
+export async function featureBase(alia: AliaPluginApi, env: Environment, repo: string | null, stored?: string): Promise<{ base: string; pr?: FolderPr } | { message: string }> {
   if (repo) {
-    const prs = await bb.sdk.plugins.callRpc({ pluginId: "bb--github-pr-status", method: "pullRequests", input: { keys: [env.id] }, outputSchema: pullRequestsOutput }).catch(() => null);
+    const prs = await alia.sdk.plugins.callRpc({ pluginId: "alia--github-pr-status", method: "pullRequests", input: { keys: [env.id] }, outputSchema: pullRequestsOutput }).catch(() => null);
     const pr = prs?.[env.id];
     if (pr?.outcome === "available" && pr.pullRequest?.baseRefName) return { base: pr.pullRequest.baseRefName, pr: pr.pullRequest };
     if (pr?.outcome !== "absent") {
@@ -159,18 +159,18 @@ type Opened = { env: Environment; base: string; pr?: FolderPr; offline: () => Fo
  * The folder, ready to read: ready on a connected machine, on the review's `branch` when one's given, and its base;
  * else why it can't be read.
  */
-async function openFolder(bb: BbPluginApi, feature: Pick<FeatureReview, "environmentId" | "machine" | "repo"> & { baseRef?: string; branch?: string; workBranch?: string }): Promise<Opened | FolderUnread> {
+async function openFolder(alia: AliaPluginApi, feature: Pick<FeatureReview, "environmentId" | "machine" | "repo"> & { baseRef?: string; branch?: string; workBranch?: string }): Promise<Opened | FolderUnread> {
   let env: Environment;
   try {
-    env = await bb.sdk.environments.get({ environmentId: feature.environmentId });
+    env = await alia.sdk.environments.get({ environmentId: feature.environmentId });
   } catch (error) {
-    if (isNotFound(error)) return { outcome: "gone", message: "BB removed this folder, so its changes can’t be read." };
+    if (isNotFound(error)) return { outcome: "gone", message: "VesnALIA removed this folder, so its changes can’t be read." };
     return { outcome: "unavailable", message: `Couldn’t read the folder’s changes: ${errorText(error)}` };
   }
-  if (env.status === "destroyed") return { outcome: "gone", message: "BB removed this folder, so its changes can’t be read." };
-  if (env.status === "error") return { outcome: "unavailable", message: "BB couldn’t set up this folder, so its changes can’t be read." };
+  if (env.status === "destroyed") return { outcome: "gone", message: "VesnALIA removed this folder, so its changes can’t be read." };
+  if (env.status === "error") return { outcome: "unavailable", message: "VesnALIA couldn’t set up this folder, so its changes can’t be read." };
   if (env.status !== "ready") return { outcome: "unavailable", message: "The folder is still being set up. Try again in a moment." };
-  const machine = await machineStatus(bb, env.hostId);
+  const machine = await machineStatus(alia, env.hostId);
   const offline = (): FolderUnread => ({ outcome: "offline", message: `${machine?.name ?? feature.machine} is offline. Wake it to see the folder’s latest changes.` });
   if (machine && !machine.connected) return offline();
   // Another branch's changes aren't this review's; a fresh thread's worktree is on a branch of its own, made from it.
@@ -179,7 +179,7 @@ async function openFolder(bb: BbPluginApi, feature: Pick<FeatureReview, "environ
     return { outcome: "paused", branch: env.branchName, message: `The folder is on ${env.branchName ?? "no branch"}, not ${branch}.` };
   }
   // That worktree's own base is the branch it was made from: the review keeps the base it had.
-  const found = feature.workBranch && feature.baseRef ? { base: feature.baseRef } : await featureBase(bb, env, feature.repo, feature.baseRef);
+  const found = feature.workBranch && feature.baseRef ? { base: feature.baseRef } : await featureBase(alia, env, feature.repo, feature.baseRef);
   if ("message" in found) return { outcome: "unavailable", message: found.message };
   return { env, ...found, offline };
 }
@@ -188,16 +188,16 @@ async function openFolder(bb: BbPluginApi, feature: Pick<FeatureReview, "environ
  * Each changed file's revision in the folder now, against its real base, hidden files' too, without reading a diff:
  * what a review compares with the revisions it keeps to say whether the folder changed. With the branch's PR.
  */
-export async function readFeatureRevisions(bb: BbPluginApi, feature: Pick<FeatureReview, "environmentId" | "machine" | "repo"> & { baseRef?: string; branch?: string; workBranch?: string }): Promise<{ outcome: "available"; revisions: Record<string, string>; base: string; pr?: FolderPr } | FolderUnread> {
-  const opened = await openFolder(bb, feature);
+export async function readFeatureRevisions(alia: AliaPluginApi, feature: Pick<FeatureReview, "environmentId" | "machine" | "repo"> & { baseRef?: string; branch?: string; workBranch?: string }): Promise<{ outcome: "available"; revisions: Record<string, string>; base: string; pr?: FolderPr } | FolderUnread> {
+  const opened = await openFolder(alia, feature);
   if ("outcome" in opened) return opened;
   const { env, base, pr } = opened;
   try {
-    const listed = await callGit(bb, "files", { environmentId: env.id, target: { type: "all", mergeBaseBranch: base }, ignoreWhitespace: false }, filesOutput);
+    const listed = await callGit(alia, "files", { environmentId: env.id, target: { type: "all", mergeBaseBranch: base }, ignoreWhitespace: false }, filesOutput);
     if (listed.outcome !== "available") return unreadable(listed);
     return { outcome: "available", revisions: Object.fromEntries(listed.files.map((file) => [file.path, file.revision])), base, ...pr ? { pr } : {} };
   } catch (error) {
-    if ((await machineStatus(bb, env.hostId))?.connected === false) return opened.offline();
+    if ((await machineStatus(alia, env.hostId))?.connected === false) return opened.offline();
     return { outcome: "unavailable", message: `Couldn’t read the folder’s changes: ${errorText(error)}` };
   }
 }
@@ -212,16 +212,16 @@ const unreadable = (result: z.infer<typeof notGit> | z.infer<typeof failure>): F
 /**
  * The folder's diff against its real base, with `include` the hidden files the reviewer chose to see,
  * `feature.baseRef` the base the last read used, if any, and `feature.branch` the branch it must be on, if any. A
- * machine that's asleep, a folder bb removed or on another branch, and any read that fails come back as an outcome with
+ * machine that's asleep, a folder VesnALIA removed or on another branch, and any read that fails come back as an outcome with
  * the message the review shows.
  */
-export async function readFeatureDiff(bb: BbPluginApi, feature: Pick<FeatureReview, "environmentId" | "machine" | "repo"> & { baseRef?: string; branch?: string; workBranch?: string }, include: readonly string[] = []): Promise<FeatureDiff> {
-  const opened = await openFolder(bb, feature);
+export async function readFeatureDiff(alia: AliaPluginApi, feature: Pick<FeatureReview, "environmentId" | "machine" | "repo"> & { baseRef?: string; branch?: string; workBranch?: string }, include: readonly string[] = []): Promise<FeatureDiff> {
+  const opened = await openFolder(alia, feature);
   if ("outcome" in opened) return opened;
   const { env, base, pr, offline } = opened;
 
   try {
-    const listed = await callGit(bb, "files", { environmentId: env.id, target: { type: "all", mergeBaseBranch: base }, ignoreWhitespace: false }, filesOutput);
+    const listed = await callGit(alia, "files", { environmentId: env.id, target: { type: "all", mergeBaseBranch: base }, ignoreWhitespace: false }, filesOutput);
     if (listed.outcome !== "available") return unreadable(listed);
     const { mergeBaseRef } = listed;
     // File reads and stored diffs take it as a fixed commit, never a name that moves.
@@ -245,10 +245,10 @@ export async function readFeatureDiff(bb: BbPluginApi, feature: Pick<FeatureRevi
     const wanted = shown.filter((file) => !patches.has(file.path));
     for (let i = 0; i < wanted.length; i += PATCH_BATCH) {
       const batch = wanted.slice(i, i + PATCH_BATCH).map((file) => ({ file, key: JSON.stringify([env.id, target, false, file.path, file.revision]) }));
-      const read = await callGit(bb, "patches", { keys: batch.map((b) => b.key) }, patchesOutput);
+      const read = await callGit(alia, "patches", { keys: batch.map((b) => b.key) }, patchesOutput);
       for (const { file, key } of batch) {
         const result = read[key];
-        if (!result) return { outcome: "unavailable", message: `Couldn’t read the folder’s changes: BB sent no diff for ${file.path}.` };
+        if (!result) return { outcome: "unavailable", message: `Couldn’t read the folder’s changes: VesnALIA sent no diff for ${file.path}.` };
         if (result.outcome !== "available") return unreadable(result);
         patches.set(file.path, result.patch);
       }
@@ -283,12 +283,12 @@ export async function readFeatureDiff(bb: BbPluginApi, feature: Pick<FeatureRevi
       flagged,
       base,
       mergeBaseRef,
-      notice: listed.truncated ? `This folder has more changed files than BB lists at once, so the review has the first ${listed.files.length}.` : null,
+      notice: listed.truncated ? `This folder has more changed files than VesnALIA lists at once, so the review has the first ${listed.files.length}.` : null,
       ...pr ? { pr } : {},
     };
   } catch (error) {
     // The Git plugin can't reach a machine that went to sleep since it was last seen.
-    if ((await machineStatus(bb, env.hostId))?.connected === false) return offline();
+    if ((await machineStatus(alia, env.hostId))?.connected === false) return offline();
     return { outcome: "unavailable", message: `Couldn’t read the folder’s changes: ${errorText(error)}` };
   }
 }
@@ -299,15 +299,15 @@ export const pathAndFolders = (path: string) => path.split("/").map((_, at, part
 /**
  * The changed link `path` goes through in the folder now, as its diff against the review's base shows it: `path`
  * itself, or the outermost folder above it, that the diff makes a link (new mode 120000), with where it points ("" when
- * BB didn't show it); null for none. A list BB cut short can't say, so that's an error, as is any read that fails.
+ * VesnALIA didn't show it); null for none. A list VesnALIA cut short can't say, so that's an error, as is any read that fails.
  */
-export async function changedLinkNow(bb: BbPluginApi, feature: Pick<FeatureReview, "environmentId" | "mergeBaseRef">, path: string): Promise<{ link: { path: string; target: string } | null } | { error: string }> {
+export async function changedLinkNow(alia: AliaPluginApi, feature: Pick<FeatureReview, "environmentId" | "mergeBaseRef">, path: string): Promise<{ link: { path: string; target: string } | null } | { error: string }> {
   if (!feature.mergeBaseRef) return { error: "the review hasn’t read its folder yet." };
   const target = { type: "all", mergeBaseBranch: feature.mergeBaseRef };
   try {
-    const listed = await callGit(bb, "files", { environmentId: feature.environmentId, target, ignoreWhitespace: false }, filesOutput);
+    const listed = await callGit(alia, "files", { environmentId: feature.environmentId, target, ignoreWhitespace: false }, filesOutput);
     if (listed.outcome !== "available") return { error: unreadable(listed).message };
-    if (listed.truncated) return { error: "BB lists only part of the folder’s changes, so it can’t tell whether this path goes through a link." };
+    if (listed.truncated) return { error: "VesnALIA lists only part of the folder’s changes, so it can’t tell whether this path goes through a link." };
     // A revision is oldMode:oldBlob:newMode:newBlob. Paths compare in any case, as a Mac's folders do.
     const links = new Map(listed.files.filter((changed) => changed.revision.split(":")[2] === "120000").map((changed) => [changed.path.toLowerCase(), changed]));
     const file = pathAndFolders(path).map((at) => links.get(at.toLowerCase())).find((found) => found);
@@ -315,8 +315,8 @@ export async function changedLinkNow(bb: BbPluginApi, feature: Pick<FeatureRevie
     let patch = listed.initialPatches.find((initial) => initial.path === file.path)?.patch;
     if (patch === undefined) {
       const key = JSON.stringify([feature.environmentId, target, false, file.path, file.revision]);
-      const read = (await callGit(bb, "patches", { keys: [key] }, patchesOutput))[key];
-      if (read?.outcome !== "available") return { error: `BB sent no diff for ${file.path}.` };
+      const read = (await callGit(alia, "patches", { keys: [key] }, patchesOutput))[key];
+      if (read?.outcome !== "available") return { error: `VesnALIA sent no diff for ${file.path}.` };
       patch = read.patch.patch;
     }
     return { link: { path: file.path, target: symlinkTarget(patch) ?? "" } };

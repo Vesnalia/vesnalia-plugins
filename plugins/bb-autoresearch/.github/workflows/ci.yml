@@ -44,7 +44,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # `bb plugin build` comes with the bb CLI (npm package bb-app); it needs no running BB server.
-      # Pinned to the oldest BB the plugin supports (package.json engines.bb).
+      # `alia plugin build` comes with the alia CLI (npm package alia-app); it needs no running ALIA server.
+      # Pinned to the oldest ALIA the plugin supports (package.json engines.alia).
       - name: Build
-        run: npx --yes --package bb-app@0.45.0 bb plugin build .
+        run: npx --yes --package alia-app@0.45.0 alia plugin build .

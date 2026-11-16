@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import plugin from "../server.js";
 import { catalogSchema, createRegistry, fetchCatalog, parseSourceInput, starterCatalogJson, type Catalog } from "../src/catalog.js";
@@ -80,8 +80,8 @@ describe("sources", () => {
     expect(parseSourceInput("https://example.test/hooks-catalog.json")).toEqual({ url: "https://example.test/hooks-catalog.json" });
     expect(parseSourceInput("http://127.0.0.1:1234/c.json")).toEqual({ url: "http://127.0.0.1:1234/c.json" });
     expect(parseSourceInput("http://example.test/c.json")).toMatchObject({ error: expect.stringContaining("https") });
-    expect(parseSourceInput("acme/bb-hooks")).toEqual({ url: "https://raw.githubusercontent.com/acme/bb-hooks/HEAD/hooks-catalog.json" });
-    expect(parseSourceInput("acme/bb-hooks@v1.2")).toEqual({ url: "https://raw.githubusercontent.com/acme/bb-hooks/v1.2/hooks-catalog.json" });
+    expect(parseSourceInput("acme/alia-hooks")).toEqual({ url: "https://raw.githubusercontent.com/acme/bb-hooks/HEAD/hooks-catalog.json" });
+    expect(parseSourceInput("acme/alia-hooks@v1.2")).toEqual({ url: "https://raw.githubusercontent.com/acme/bb-hooks/v1.2/hooks-catalog.json" });
     expect(parseSourceInput("starter", { starter: "http://127.0.0.1:1/x" })).toEqual({ url: "http://127.0.0.1:1/x" });
     expect(parseSourceInput("what is this")).toMatchObject({ error: expect.any(String) });
   });
@@ -117,12 +117,12 @@ describe("registry", () => {
   });
 });
 
-describe("bb hooks marketplace (live over loopback)", () => {
+describe("alia hooks marketplace (live over loopback)", () => {
   let server: Server;
   let url = "";
   let served = 0;
   // Start with no catalogs so this test controls the only source.
-  const { bb, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
 
   beforeAll(async () => {
     server = createServer((req, res) => {
@@ -139,7 +139,7 @@ describe("bb hooks marketplace (live over loopback)", () => {
     const address = server.address();
     if (address === null || typeof address === "string") throw new Error("no port");
     url = `http://127.0.0.1:${address.port}/hooks-catalog.json`;
-    await plugin(bb);
+    await plugin(alia);
   });
   afterAll(async () => {
     await harness.lifecycle.dispose();
@@ -209,7 +209,7 @@ describe("bb hooks marketplace (live over loopback)", () => {
     await harness.behavior.runCli(["add", "uses-secret", "--event", "thread.idle", "--command", "printf 'token=%s' {{secret:demo/token}}"]);
     const result = await harness.behavior.runCli(["test", "uses-secret"]);
     expect(result.stdout).toContain("token=tok-1");
-    expect(result.stdout).not.toContain("BB_SECRET");
+    expect(result.stdout).not.toContain("ALIA_SECRET");
     const asJson = JSON.parse((await harness.behavior.runCli(["test", "uses-secret", "--json"])).stdout);
     expect(JSON.stringify(asJson.env)).not.toContain("tok-1");
     expect((await harness.behavior.runCli(["secrets", "remove", "demo/token"])).exitCode).toBe(0);
@@ -218,12 +218,12 @@ describe("bb hooks marketplace (live over loopback)", () => {
 });
 
 describe("marketplace page RPC", () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
   let closeCatalog: (() => Promise<void>) | undefined;
   beforeAll(async () => {
     const served = await serveCatalog(fixtureCatalog(["slack", "block-pattern"]));
     closeCatalog = served.close;
-    await plugin(bb);
+    await plugin(alia);
     const added = await harness.behavior.runCli(["marketplace", "add", served.url]);
     expect(added.exitCode, added.stderr).toBe(0);
   });
@@ -277,9 +277,9 @@ describe("marketplace page RPC", () => {
 });
 
 describe("page-only RPC methods", () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
   beforeAll(async () => {
-    await plugin(bb);
+    await plugin(alia);
   });
   afterAll(async () => {
     await harness.lifecycle.dispose();
@@ -312,12 +312,12 @@ describe("page-only RPC methods", () => {
 });
 
 describe("editing a template hook", () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "hooks", settings: { catalogs: "" } });
   let closeCatalog: (() => Promise<void>) | undefined;
   beforeAll(async () => {
     const served = await serveCatalog(fixtureCatalog(["slack"]));
     closeCatalog = served.close;
-    await plugin(bb);
+    await plugin(alia);
     const added = await harness.behavior.runCli(["marketplace", "add", served.url]);
     expect(added.exitCode, added.stderr).toBe(0);
   });

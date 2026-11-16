@@ -6,7 +6,7 @@ import {
   createFakePluginHost,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, {
   cleanCheckpointArg,
   cleanDocsDir,
@@ -30,9 +30,9 @@ afterEach(async () => {
   Object.assign(timing, realTiming);
 });
 
-/** What BB's SDK throws for an HTTP error reply (BbHttpError). */
+/** What VesnALIA's SDK throws for an HTTP error reply (AliaHttpError). */
 function httpError(status: number, message: string) {
-  return Object.assign(new Error(`HTTP ${status}: ${message}`), { name: "BbHttpError", status });
+  return Object.assign(new Error(`HTTP ${status}: ${message}`), { name: "AliaHttpError", status });
 }
 
 const THREAD_ID = "thr_source";
@@ -54,7 +54,7 @@ interface Options {
   settings?: Record<string, string | boolean>;
   sendFails?: boolean;
   /**
-   * "refused": no reply, nothing created (uncertain). "rejected": BB answers
+   * "refused": no reply, nothing created (uncertain). "rejected": VesnALIA answers
    * 400, nothing created. "lost": created, but the reply is lost.
    */
   spawnFails?: false | "refused" | "rejected" | "lost";
@@ -62,13 +62,13 @@ interface Options {
   spawnStatus?: Thread["status"];
   /** Queued messages on the new thread, e.g. a provider retry. */
   spawnQueued?: number;
-  /** BB removes the new thread right after spawn answers (failed first dispatch). */
+  /** VesnALIA removes the new thread right after spawn answers (failed first dispatch). */
   spawnRemoved?: boolean;
   /** State of the new thread's queued messages ("scheduled" = a pending retry). */
   queueState?: string;
-  /** Runs after BB created the thread but before spawn answers. */
+  /** Runs after VesnALIA created the thread but before spawn answers. */
   duringSpawn?: (id: string) => Promise<void>;
-  /** Runs when spawn is called, before BB creates anything. */
+  /** Runs when spawn is called, before VesnALIA creates anything. */
   beforeSpawn?: () => Promise<void>;
   /** Runs when threads are listed (the plugin's search for a continuation). */
   beforeList?: () => Promise<void>;
@@ -85,7 +85,7 @@ async function loadHost(options: Options = {}) {
   ]);
   const sends: { threadId: string; text: string; mode: string }[] = [];
   const spawns: Record<string, unknown>[] = [];
-  /** Threads spawn created, as BB would list them. */
+  /** Threads spawn created, as VesnALIA would list them. */
   const created = new Map<string, Thread>();
   /** Soft-deleted thread ids: their own routes answer 404. */
   const deleted = new Set<string>();
@@ -120,7 +120,7 @@ async function loadHost(options: Options = {}) {
   });
   const workspacePath =
     options.workspacePath === undefined ? null : options.workspacePath;
-  /** A thread created by this plugin; BB seeds its metadata in the same write. */
+  /** A thread created by this plugin; VesnALIA seeds its metadata in the same write. */
   function addThread(seed: Metadata, status: Thread["status"] = "active", queued = 0, projectId = "proj_test"): string {
     const id = created.size === 0 ? NEXT_ID : `${NEXT_ID}_${created.size + 1}`;
     created.set(id, {
@@ -134,7 +134,7 @@ async function loadHost(options: Options = {}) {
     metadata.set(id, { ...seed });
     return id;
   }
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "context-handoff",
     ...(options.settings ? { settings: options.settings } : {}),
     sdk: {
@@ -149,7 +149,7 @@ async function loadHost(options: Options = {}) {
             Array.from({ length: created.get(threadId)?.queuedMessageCount ?? 0 }, (_, i) => ({ id: `q_${i}`, state: options.queueState ?? "scheduled" })),
         },
         experimental_listPluginMetadata: async ({ threadIds }: { threadIds: string[] }) => ({
-          // Includes archived and deleted threads, as BB documents.
+          // Includes archived and deleted threads, as VesnALIA documents.
           threads: threadIds.filter(id => metadata.has(id)).map(id => ({ threadId: id, metadata: metadata.get(id)! })),
         }),
         list: async (args: { projectId?: string; originPluginId?: string; archived?: boolean; limit?: number; offset?: number }) => {
@@ -160,7 +160,7 @@ async function loadHost(options: Options = {}) {
             (args.originPluginId === undefined || row.originPluginId === args.originPluginId) &&
             (args.archived === undefined || (row.archivedAt !== null) === args.archived));
           const offset = args.offset ?? 0;
-          // BB's list rows carry queuedWork, not queuedMessageCount.
+          // VesnALIA's list rows carry queuedWork, not queuedMessageCount.
           return rows.slice(offset, offset + (args.limit ?? 50)).map(({ queuedMessageCount: _count, ...row }) => row);
         },
         context: async () => {
@@ -212,7 +212,7 @@ async function loadHost(options: Options = {}) {
           await options.duringSpawn?.(id);
           if (failures.spawn === "lost") throw new Error("connection reset");
           if (options.spawnRemoved) deleted.add(id);
-          // BB answers while the new thread is still pending.
+          // VesnALIA answers while the new thread is still pending.
           return { ...created.get(id)!, status: "pending" as const };
         },
         defaultExecutionOptions: async () => {
@@ -232,9 +232,9 @@ async function loadHost(options: Options = {}) {
       },
     },
   } as unknown as Parameters<typeof createFakePluginHost>[0]);
-  await plugin(bb);
+  await plugin(alia);
   disposals.push(() => harness.lifecycle.dispose());
-  /** Delete a thread as BB does once its storage is gone: row and metadata. */
+  /** Delete a thread as VesnALIA does once its storage is gone: row and metadata. */
   function purge(threadId: string) {
     deleted.add(threadId);
     metadata.delete(threadId);
@@ -262,7 +262,7 @@ function ageAttempt(host: Host) {
   host.metadata.get(THREAD_ID)!.handoffOpAt = Date.now() - timing.startHoldMs - 1_000;
 }
 
-/** A thread from start attempt `op` that BB finished creating only now. */
+/** A thread from start attempt `op` that VesnALIA finished creating only now. */
 function lateThread(host: Host, op: string) {
   return host.addThread({ enabled: true, stage: "watching", chainId: THREAD_ID, part: 2, previousThreadId: THREAD_ID, createdByOp: op });
 }
@@ -729,7 +729,7 @@ describe("context-handoff.instructions", () => {
   it("asks a new continuation to confirm its checkpoint until it has", async () => {
     const host = await loadHost();
     const context = (extra: Metadata) => makePluginAgentConfigurationContext({ pluginMetadata: { enabled: true, chainId: "thr_first", part: 2, createdByOp: "op_1", ...extra } });
-    expect((await host.harness.behavior.resolveAgentConfiguration(context({}))).instructions).toContain("bb context-handoff resume");
+    expect((await host.harness.behavior.resolveAgentConfiguration(context({}))).instructions).toContain("alia context-handoff resume");
     expect((await host.harness.behavior.resolveAgentConfiguration(context({ confirmed: true }))).instructions).not.toContain("resume");
   });
 });
@@ -761,7 +761,7 @@ describe("context-handoff.checkpoint", () => {
     const host = await loadHost({ metadata: PREPARING });
     await ready(host);
     const prompt = host.spawns[0]!.prompt as string;
-    expect(prompt).toContain("bb context-handoff resume");
+    expect(prompt).toContain("alia context-handoff resume");
     expect(prompt).not.toContain(CHECKPOINT);
     expect(host.metadata.get(NEXT_ID)).toMatchObject({ previousThreadId: THREAD_ID, createdByOp: host.metadata.get(THREAD_ID)!.handoffOp });
   });
@@ -937,7 +937,7 @@ describe("context-handoff.review-fixes", () => {
     const off = await ready(host);
     expect(output(off)).toContain("Continue in this thread");
     expect(host.metadata.get(THREAD_ID)!.handoffOp).toBeNull();
-    // BB finishes creating the first attempt's thread only now: it cannot take over.
+    // VesnALIA finishes creating the first attempt's thread only now: it cannot take over.
     const late = lateThread(host, op);
     const claim = await resume(host, CHECKPOINT, late);
     expect(claim.exitCode).toBe(1);
@@ -996,7 +996,7 @@ describe("context-handoff.review-fixes", () => {
     expect(await view(host)).toMatchObject({ next: "stalled" });
   });
 
-  it("reports a part BB removed during its start, and frees this thread", async () => {
+  it("reports a part VesnALIA removed during its start, and frees this thread", async () => {
     const host = await loadHost({ metadata: PREPARING, spawnRemoved: true });
     const result = await ready(host);
     expect(result.exitCode).toBe(1);
@@ -1004,7 +1004,7 @@ describe("context-handoff.review-fixes", () => {
     expect(await view(host)).toMatchObject({ stage: "watching", autoHandoff: false });
   });
 
-  it("an archive undone within BB's grace period keeps the handoff", async () => {
+  it("an archive undone within VesnALIA's grace period keeps the handoff", async () => {
     timing.archiveGraceMs = 80;
     const host = await loadHost({ metadata: PREPARING });
     await ready(host);
@@ -1024,10 +1024,10 @@ describe("context-handoff.review-fixes", () => {
     expect(host.metadata.get(NEXT_ID)).toMatchObject({ confirmed: true });
   });
 
-  it("does not wait after BB definitely refused to start the thread", async () => {
+  it("does not wait after VesnALIA definitely refused to start the thread", async () => {
     const host = await loadHost({ metadata: PREPARING, spawnFails: "rejected" });
     const refused = await ready(host);
-    expect(output(refused)).toContain("BB refused to start part 2");
+    expect(output(refused)).toContain("VesnALIA refused to start part 2");
     expect(host.metadata.get(THREAD_ID)!.handoffOp).toBeNull();
     host.failures.spawn = false;
     expect((await ready(host)).stdout).toContain(SUCCESS_MARKER);
@@ -1049,7 +1049,7 @@ describe("context-handoff.review-fixes", () => {
     const host = await loadHost({ metadata: PREPARING, spawnFails: "refused" });
     await ready(host);
     await waitFor(() => host.sends.length > 0, 3_000);
-    expect(host.sends[0]!.text).toContain("Run `bb context-handoff ready` again");
+    expect(host.sends[0]!.text).toContain("Run `alia context-handoff ready` again");
   });
 
   it("refuses to resume a part that has handed off itself", async () => {
@@ -1077,7 +1077,7 @@ describe("context-handoff.review-fixes", () => {
 });
 
 describe("context-handoff.review-round-2", () => {
-  it("a switch turned off while BB creates the part cancels it instead of handing off", async () => {
+  it("a switch turned off while VesnALIA creates the part cancels it instead of handing off", async () => {
     let host!: Host;
     host = await loadHost({ metadata: PREPARING, duringSpawn: async () => {
       await host.harness.behavior.callRpc("set_enabled", { threadId: THREAD_ID, enabled: false });
@@ -1103,7 +1103,7 @@ describe("context-handoff.review-round-2", () => {
     expect((await ready(host)).stdout).toContain(SUCCESS_MARKER);
   });
 
-  it("an archived part cannot confirm during BB's undo window, and can after an undo", async () => {
+  it("an archived part cannot confirm during VesnALIA's undo window, and can after an undo", async () => {
     const host = await loadHost({ metadata: PREPARING });
     await ready(host);
     host.created.set(NEXT_ID, { ...host.created.get(NEXT_ID)!, archivedAt: Date.now() });
@@ -1139,7 +1139,7 @@ describe("context-handoff.review-round-2", () => {
     expect(await view(host)).toMatchObject({ next: "failed" });
   });
 
-  it("waits briefly after a failed first turn for BB to queue its retry", async () => {
+  it("waits briefly after a failed first turn for VesnALIA to queue its retry", async () => {
     timing.errorGraceMs = 400;
     timing.startWaitMs = 400;
     let host!: Host;
@@ -1227,7 +1227,7 @@ describe("context-handoff.review-round-3", () => {
     expect(host.metadata.get(THREAD_ID)).toMatchObject({ nextThreadId: "thr_other" });
   });
 
-  it("a part archived while it starts is not cancelled during BB's undo window", async () => {
+  it("a part archived while it starts is not cancelled during VesnALIA's undo window", async () => {
     timing.archiveGraceMs = 30_000;
     let host!: Host;
     host = await loadHost({ metadata: PREPARING, duringSpawn: async id => {
@@ -1267,7 +1267,7 @@ describe("context-handoff.review-round-3", () => {
     await ready(host);
     await reload(host);
     await waitFor(() => host.sends.length > 0, 3_000);
-    expect(host.sends[0]!.text).toContain("Run `bb context-handoff ready` again");
+    expect(host.sends[0]!.text).toContain("Run `alia context-handoff ready` again");
   });
 
   it("an agent waiting for a reminder is released when the switch is turned off", async () => {
@@ -1501,7 +1501,7 @@ describe("context-handoff.switch-on-review", () => {
     expect(host.sends).toHaveLength(1);
   });
 
-  it("a request ended by the global setting while BB creates the part is not made again", async () => {
+  it("a request ended by the global setting while VesnALIA creates the part is not made again", async () => {
     let host!: Host;
     let starting = false;
     host = await loadHost({ usedTokens: 110_000, metadata: OFF, duringSpawn: async () => {
@@ -1624,7 +1624,7 @@ describe("context-handoff.switch-on-review", () => {
     expect(later.sends[0]!.text).not.toContain("thr_first/");
   });
 
-  it("Off then On while BB creates the part keeps the new request, which then goes out", async () => {
+  it("Off then On while VesnALIA creates the part keeps the new request, which then goes out", async () => {
     let host!: Host;
     let starting = false;
     host = await loadHost({ usedTokens: 110_000, metadata: OFF, duringSpawn: async () => {

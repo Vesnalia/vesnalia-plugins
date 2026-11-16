@@ -6,7 +6,7 @@ import { boxTags, describe } from "../../src/backends/proxmox/owner.ts";
 import type { BoxIdentity } from "../../src/backends/types.ts";
 import { tempDir } from "../helpers.ts";
 
-export const HELPER = new URL("../../setup/proxmox-lxc/host/bb-box-gpu", import.meta.url).pathname;
+export const HELPER = new URL("../../setup/proxmox-lxc/host/alia-box-gpu", import.meta.url).pathname;
 const FAKE_PVE = new URL(".", import.meta.url).pathname;
 const HOLD_LOCK = new URL("./hold-config-lock.pl", import.meta.url).pathname;
 
@@ -80,7 +80,7 @@ export function boxLabels(box: string, name: string, kind = "linux", install = I
 }
 
 export function heldCopyLabels(box: string, install = INSTALL): { description: string; tags: string[] } {
-  return { description: heldCopyDescription(install, { box, snapshot: "snap-1", takenAt: Date.UTC(2026, 9, 30), kept: null, kind: "linux" }), tags: ["bb-box", `install.${install}`, "held-copy", `box.${box}`] };
+  return { description: heldCopyDescription(install, { box, snapshot: "snap-1", takenAt: Date.UTC(2026, 9, 30), kept: null, kind: "linux" }), tags: ["alia-box", `install.${install}`, "held-copy", `box.${box}`] };
 }
 
 function encode(text: string): string {
@@ -143,10 +143,10 @@ export class FakeNode {
   #helper: string;
 
   constructor(options: { readonly cards?: readonly FakeCard[]; readonly writes?: "on" | "off" | null; readonly pools?: readonly string[]; readonly pveContainer?: string; readonly ledger?: boolean; readonly helperVersion?: string } = {}) {
-    for (const dir of ["etc/pve/nodes/pve/lxc", "etc/pve/nodes/pve/qemu-server", "etc/bb-box", "var/lib", "run/fake-pve/running", "bin", "sys/module/nvidia", "proc/sys/kernel/random", "dev/dri/by-path"]) {
+    for (const dir of ["etc/pve/nodes/pve/lxc", "etc/pve/nodes/pve/qemu-server", "etc/alia-box", "var/lib", "run/fake-pve/running", "bin", "sys/module/nvidia", "proc/sys/kernel/random", "dev/dri/by-path"]) {
       mkdirSync(join(this.root, dir), { recursive: true });
     }
-    this.#helper = options.helperVersion === undefined ? HELPER : helperAs(options.helperVersion, join(this.root, "bb-box-gpu-as-released"));
+    this.#helper = options.helperVersion === undefined ? HELPER : helperAs(options.helperVersion, join(this.root, "alia-box-gpu-as-released"));
     for (const node of ["nvidiactl", "nvidia-uvm", "nvidia-uvm-tools", "nvidia-modeset", "dri/card0"]) writeFileSync(join(this.root, "dev", node), "");
     writeFileSync(join(this.root, "sys/module/nvidia/version"), "580.142\n");
     writeFileSync(join(this.root, "pve-container-version"), `${options.pveContainer ?? "6.1.14"}\n`);
@@ -190,16 +190,16 @@ export class FakeNode {
     this.setBoot("boot-1");
     this.setCards(options.cards ?? [CARD_A, CARD_B]);
     if (options.writes !== null) this.setHelperConfig(options.pools ?? [POOL], options.writes ?? "off");
-    writeFileSync(join(this.root, "etc/pve/nodes/pve/qemu-server", `${REPORT_VMID}.conf`), "memory: 16\nname: bb-box-gpu-memory\nonboot: 0\nprotection: 1\n");
+    writeFileSync(join(this.root, "etc/pve/nodes/pve/qemu-server", `${REPORT_VMID}.conf`), "memory: 16\nname: alia-box-gpu-memory\nonboot: 0\nprotection: 1\n");
     writeFileSync(join(this.root, "etc/pve/nodes/pve/qemu-server", "100.conf"), "memory: 2048\nname: something-else\n");
     symlinkSync("nodes/pve/qemu-server", join(this.root, "etc/pve/qemu-server"));
     symlinkSync("nodes/pve/lxc", join(this.root, "etc/pve/lxc"));
     this.#writePools();
-    if (options.ledger !== false) this.write("var/lib/bb-box-gpu/ledger", `${JSON.stringify({ protocol: 1, guests: {}, answers: [] })}\n`);
+    if (options.ledger !== false) this.write("var/lib/alia-box-gpu/ledger", `${JSON.stringify({ protocol: 1, guests: {}, answers: [] })}\n`);
   }
 
   setHelperConfig(pools: readonly string[], writes: "on" | "off", mode = 0o600): void {
-    const file = join(this.root, "etc/bb-box/gpu.conf");
+    const file = join(this.root, "etc/alia-box/gpu.conf");
     writeFileSync(file, `pools ${pools.join(" ")}\nwrites ${writes}\n`);
     chmodSync(file, mode);
   }
@@ -290,7 +290,7 @@ export class FakeNode {
     const byPool = new Map<string, number[]>();
     for (const [vmid, pool] of this.pools) byPool.set(pool, [...(byPool.get(pool) ?? []), vmid]);
     if (!byPool.has(POOL)) byPool.set(POOL, []);
-    const lines = ["user:root@pam:1:0:::root@localhost:::", ...[...byPool].map(([pool, vmids]) => `pool:${pool}:BB Box boxes:${vmids.sort((a, b) => a - b).join(",")}::`)];
+    const lines = ["user:root@pam:1:0:::root@localhost:::", ...[...byPool].map(([pool, vmids]) => `pool:${pool}:ALIA Box boxes:${vmids.sort((a, b) => a - b).join(",")}::`)];
     writeFileSync(join(this.root, "etc/pve/user.cfg"), `${lines.join("\n")}\n`);
   }
 
@@ -312,7 +312,7 @@ export class FakeNode {
 
   ask(vmid: number, request: string | null): void {
     const text = this.text(vmid);
-    const tags = (/^tags: (.*)$/m.exec(text)?.[1] ?? "").split(";").filter((tag) => tag && !tag.startsWith("bb-power."));
+    const tags = (/^tags: (.*)$/m.exec(text)?.[1] ?? "").split(";").filter((tag) => tag && !tag.startsWith("alia-power."));
     const all = [...tags, ...(request ? [request] : [])].join(";");
     writeFileSync(this.configPath(vmid), /^tags: .*$/m.test(text) ? text.replace(/^tags: .*$/m, `tags: ${all}`) : text.replace(/^(unprivileged: .*)$/m, `$1\ntags: ${all}`));
   }
@@ -417,7 +417,7 @@ export class FakeNode {
   }
 
   ledgerPath(): string {
-    return join(this.root, "var/lib/bb-box-gpu/ledger");
+    return join(this.root, "var/lib/alia-box-gpu/ledger");
   }
 
   ledger(): { protocol: number; guests: Record<string, { box?: string | null; answered?: number; claim?: { generation: number; part: string; card: string | null; answer: string }; strip?: { why: string }; proposed_strip?: { why: string } }>; unsettled?: Record<string, { generation: number }>; answers: { vmid: number; generation: number; answer: string; reason?: string }[]; waiting?: Record<string, { nonce: string; at: number }> } {
@@ -429,7 +429,7 @@ export class FakeNode {
   }
 
   runHelperAs(version: string): void {
-    this.#helper = helperAs(version, join(this.root, "bb-box-gpu-as-released"));
+    this.#helper = helperAs(version, join(this.root, "alia-box-gpu-as-released"));
   }
 
   run(args: readonly string[] = ["--once"], env: Readonly<Record<string, string>> = {}): Run {
@@ -472,7 +472,7 @@ function helperAs(version: string, path: string): string {
 
 export function helperConstant(name: string): number {
   const value = new RegExp(`^use constant ${name} => (\\d+);$`, "m").exec(readFileSync(HELPER, "utf8"))?.[1];
-  if (value === undefined) throw new Error(`bb-box-gpu has no constant ${name}`);
+  if (value === undefined) throw new Error(`alia-box-gpu has no constant ${name}`);
   return Number(value);
 }
 

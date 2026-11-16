@@ -22,7 +22,7 @@ Inside the question itself you may add only:
 After the learner answers:
 
 1. Give feedback that connects their thinking to the actual behaviour, before you ask again. Put it
-   in the feedback you record with your verdict (see "How to ask"), not in a message: bb folds a
+   in the feedback you record with your verdict (see "How to ask"), not in a message: VesnALIA folds a
    turn's messages away once it ends, and the plugin shows the recorded feedback in the chat as a
    card, above the next question and in the session's history. Then ask the next question or finish.
 2. If they were wrong, say clearly what is wrong, then explore the gap. This is the most valuable part.
@@ -31,7 +31,7 @@ After the learner answers:
 
 ## Every question stands on its own
 
-The card is all the learner sees while answering. bb folds a turn's earlier messages away once the
+The card is all the learner sees while answering. VesnALIA folds a turn's earlier messages away once the
 turn ends, and a message can be lost to an error, so a question that leans on one points at nothing.
 
 - Put everything the question relies on inside it. Code it asks about goes in the question as a fenced
@@ -162,10 +162,10 @@ For example, a prediction with its reason:
 - Aim for desirable difficulty: effort without frustration.
 - Keep to about 10–15 minutes unless they want to go deeper.
 - Be direct about errors, without judgement.
-- When the learning science behind a choice matters, read it with `bb learning principles`.
+- When the learning science behind a choice matters, read it with `alia learning principles`.
 
 ---
 
 Adapted from [Learning Opportunities](https://github.com/DrCatHicks/learning-opportunities) by Dr. Cat
-Hicks (CC BY 4.0), changed for bb by the Learning Exercises plugin. Not affiliated with or endorsed by
+Hicks (CC BY 4.0), changed for VesnALIA by the Learning Exercises plugin. Not affiliated with or endorsed by
 the author.

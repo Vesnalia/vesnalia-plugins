@@ -1,5 +1,5 @@
 #!/bin/bash
-# bb-box desktop template, run as root inside the CT after customize-base.sh
+# alia-box desktop template, run as root inside the CT after customize-base.sh
 # and before finalize.sh: XFCE on :99 as the box user, Xorg with NVIDIA's
 # driver (or Xtigervnc on the CPU as fallback) served over VNC on port 5900,
 # Selkies' H.264 stream of it on 127.0.0.1:5980 (056), Chrome, Mousepad, Ristretto, Evince, Cua Driver, NVIDIA userspace matching
@@ -80,7 +80,7 @@ for package in $desktop_packages $gpui_packages tigervncserver virtualgl selkies
   [ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null)" = "install ok installed" ] || die "$package is not installed"
 done
 
-install -d -m 0755 /usr/share/bb-box
+install -d -m 0755 /usr/share/alia-box
 if [ "${DESKTOP_GPU:-nvidia}" = none ]; then
   nvidia=none
 elif [ "$arch" != x86_64 ]; then
@@ -95,8 +95,8 @@ fi
 } >"$build/extra-release"
 
 # Xorg on the one GPU the CT can see, with no display attached.
-cat >/etc/X11/bb-box-xorg.conf <<'EOF'
-# bb-box: Xorg with NVIDIA's driver on a virtual screen, for bb-box-display.
+cat >/etc/X11/alia-box-xorg.conf <<'EOF'
+# alia-box: Xorg with NVIDIA's driver on a virtual screen, for alia-box-display.
 Section "ServerFlags"
   Option "AutoAddDevices" "false"
   Option "AutoAddGPU" "false"
@@ -130,17 +130,17 @@ EndSection
 EOF
 
 # The display and session units, both as the box user.
-install -d -m 0755 /usr/local/libexec/bb-box /etc/bb-box
-install -m 0755 "$build/guest/files/display" /usr/local/libexec/bb-box/display
-install -m 0755 "$build/guest/files/vnc-password" /usr/local/libexec/bb-box/vnc-password
-install -m 0755 "$build/guest/files/selkies" /usr/local/libexec/bb-box/selkies
-install -m 0644 "$build/guest/files/chrome-gpu.mjs" /usr/local/libexec/bb-box/chrome-gpu.mjs
-install -m 0644 "$build/guest/files/cua-probe.mjs" /usr/local/libexec/bb-box/cua-probe.mjs
-install -m 0644 "$build/guest/files/selkies-probe.mjs" /usr/local/libexec/bb-box/selkies-probe.mjs
+install -d -m 0755 /usr/local/libexec/alia-box /etc/alia-box
+install -m 0755 "$build/guest/files/display" /usr/local/libexec/alia-box/display
+install -m 0755 "$build/guest/files/vnc-password" /usr/local/libexec/alia-box/vnc-password
+install -m 0755 "$build/guest/files/selkies" /usr/local/libexec/alia-box/selkies
+install -m 0644 "$build/guest/files/chrome-gpu.mjs" /usr/local/libexec/alia-box/chrome-gpu.mjs
+install -m 0644 "$build/guest/files/cua-probe.mjs" /usr/local/libexec/alia-box/cua-probe.mjs
+install -m 0644 "$build/guest/files/selkies-probe.mjs" /usr/local/libexec/alia-box/selkies-probe.mjs
 # Selkies on the GPU path without NvFBC, which never answers on this X screen (#863).
-gcc -O2 -Wall -Werror -shared -fPIC -o /usr/local/lib/bb-box-nofbc.so "$build/guest/files/bb-box-nofbc.c" -ldl ||
-  die "bb-box-nofbc did not build"
-chmod 0644 /usr/local/lib/bb-box-nofbc.so
+gcc -O2 -Wall -Werror -shared -fPIC -o /usr/local/lib/alia-box-nofbc.so "$build/guest/files/alia-box-nofbc.c" -ldl ||
+  die "alia-box-nofbc did not build"
+chmod 0644 /usr/local/lib/alia-box-nofbc.so
 # Text in greyscale, not in the colours of an LCD's subpixels, which Ubuntu
 # turns on: a viewer's screen has its own, and NVENC's 4:2:0 video lost them,
 # softening text to an SSIM of 0.987 against 0.9996 in greyscale (#863).
@@ -155,61 +155,61 @@ cat >/etc/fonts/local.conf <<'EOF'
 EOF
 display_mode=auto
 [ "$nvidia" != none ] || display_mode=cpu
-cat >/etc/bb-box/desktop.env <<EOF
-# bb-box desktop settings, read by bb-box-display.service at each start.
+cat >/etc/alia-box/desktop.env <<EOF
+# alia-box desktop settings, read by alia-box-display.service at each start.
 # DISPLAY_MODE: auto (the GPU if usable, else the CPU), gpu or cpu.
 DISPLAY_MODE=$display_mode
 # auto picks the CPU when the GPU has less free memory than this: enough for
 # Xorg and Chrome's GPU process.
 MIN_FREE_VRAM_MIB=384
-# The CPU path's screen size; the GPU path is fixed by /etc/X11/bb-box-xorg.conf.
+# The CPU path's screen size; the GPU path is fixed by /etc/X11/alia-box-xorg.conf.
 DISPLAY_GEOMETRY=1920x1080
-# VNC_AUTH: password (from /var/lib/bb-box/vnc-password) or none.
+# VNC_AUTH: password (from /var/lib/alia-box/vnc-password) or none.
 VNC_AUTH=password
 EOF
-cat >/etc/systemd/system/bb-box-vnc-password.service <<EOF
+cat >/etc/systemd/system/alia-box-vnc-password.service <<EOF
 [Unit]
-Description=bb-box: make this box's VNC password on first boot
-ConditionPathExists=!/var/lib/bb-box/vnc.passwd
-Before=bb-box-display.service
+Description=alia-box: make this box's VNC password on first boot
+ConditionPathExists=!/var/lib/alia-box/vnc.passwd
+Before=alia-box-display.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/libexec/bb-box/vnc-password $user
+ExecStart=/usr/local/libexec/alia-box/vnc-password $user
 
 [Install]
 WantedBy=multi-user.target
 EOF
-cat >/etc/systemd/system/bb-box-display.service <<EOF
+cat >/etc/systemd/system/alia-box-display.service <<EOF
 [Unit]
-Description=bb-box: display :99 and VNC on port 5900
-After=systemd-user-sessions.service bb-box-vnc-password.service
-Wants=bb-box-vnc-password.service
+Description=alia-box: display :99 and VNC on port 5900
+After=systemd-user-sessions.service alia-box-vnc-password.service
+Wants=alia-box-vnc-password.service
 # Bring the session and Selkies back whenever the display is up again.
-Upholds=bb-box-session.service bb-box-selkies.service
+Upholds=alia-box-session.service alia-box-selkies.service
 
 [Service]
 User=$user
 Group=$user
-EnvironmentFile=-/etc/bb-box/desktop.env
-RuntimeDirectory=bb-box
+EnvironmentFile=-/etc/alia-box/desktop.env
+RuntimeDirectory=alia-box
 RuntimeDirectoryMode=0755
 WorkingDirectory=~
-ExecStart=/usr/local/libexec/bb-box/display
-ExecStartPost=/usr/local/libexec/bb-box/display wait
+ExecStart=/usr/local/libexec/alia-box/display
+ExecStartPost=/usr/local/libexec/alia-box/display wait
 Restart=always
 RestartSec=1
 
 [Install]
 WantedBy=multi-user.target
 EOF
-cat >/etc/systemd/system/bb-box-session.service <<EOF
+cat >/etc/systemd/system/alia-box-session.service <<EOF
 [Unit]
-Description=bb-box: XFCE session on :99
-After=bb-box-display.service user@$uid.service
-Requires=bb-box-display.service
+Description=alia-box: XFCE session on :99
+After=alia-box-display.service user@$uid.service
+Requires=alia-box-display.service
 Wants=user@$uid.service
-PartOf=bb-box-display.service
+PartOf=alia-box-display.service
 
 [Service]
 User=$user
@@ -217,14 +217,14 @@ Group=$user
 WorkingDirectory=~
 # The PATH and variables the box user's commands have, as ~/.local/bin for npm's and uv's commands.
 EnvironmentFile=-/etc/environment
-Environment=DISPLAY=:99 XAUTHORITY=/run/bb-box/Xauthority XDG_RUNTIME_DIR=/run/user/$uid
+Environment=DISPLAY=:99 XAUTHORITY=/run/alia-box/Xauthority XDG_RUNTIME_DIR=/run/user/$uid
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus XDG_SESSION_TYPE=x11
 Environment=XDG_CURRENT_DESKTOP=XFCE XDG_SESSION_DESKTOP=xfce
-EnvironmentFile=-/run/bb-box/display.env
+EnvironmentFile=-/run/alia-box/display.env
 ExecStart=/usr/bin/xfce4-session
 # Cua Driver's daemon lives and dies with the session (and its X connection).
-ExecStartPost=-/usr/bin/systemctl --user restart bb-box-cua-driver.service
-ExecStopPost=-/usr/bin/systemctl --user stop bb-box-cua-driver.service
+ExecStartPost=-/usr/bin/systemctl --user restart alia-box-cua-driver.service
+ExecStopPost=-/usr/bin/systemctl --user stop alia-box-cua-driver.service
 Restart=always
 RestartSec=1
 
@@ -232,42 +232,42 @@ RestartSec=1
 WantedBy=multi-user.target
 EOF
 # Selkies' stream of :99, which starts and stops with the display.
-cat >/etc/systemd/system/bb-box-selkies.service <<EOF
+cat >/etc/systemd/system/alia-box-selkies.service <<EOF
 [Unit]
-Description=bb-box: Selkies' stream of :99 on 127.0.0.1:5980
-After=bb-box-display.service
-Requires=bb-box-display.service
-PartOf=bb-box-display.service
+Description=alia-box: Selkies' stream of :99 on 127.0.0.1:5980
+After=alia-box-display.service
+Requires=alia-box-display.service
+PartOf=alia-box-display.service
 
 [Service]
 User=$user
 Group=$user
 WorkingDirectory=~
-ExecStart=/usr/local/libexec/bb-box/selkies
+ExecStart=/usr/local/libexec/alia-box/selkies
 Restart=always
 RestartSec=1
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable bb-box-vnc-password.service bb-box-display.service bb-box-session.service \
-  bb-box-selkies.service >/dev/null
+systemctl enable alia-box-vnc-password.service alia-box-display.service alia-box-session.service \
+  alia-box-selkies.service >/dev/null
 
-# Everything the box user runs (SSH commands, BB's user services, Cua) lands
+# Everything the box user runs (SSH commands, ALIA's user services, Cua) lands
 # on :99.
-grep -q '^DISPLAY=' /etc/environment || printf 'DISPLAY=:99\nXAUTHORITY=/run/bb-box/Xauthority\n' >>/etc/environment
+grep -q '^DISPLAY=' /etc/environment || printf 'DISPLAY=:99\nXAUTHORITY=/run/alia-box/Xauthority\n' >>/etc/environment
 install -d -m 0755 /etc/environment.d
-printf 'DISPLAY=:99\nXAUTHORITY=/run/bb-box/Xauthority\n' >/etc/environment.d/60-bb-box-display.conf
+printf 'DISPLAY=:99\nXAUTHORITY=/run/alia-box/Xauthority\n' >/etc/environment.d/60-alia-box-display.conf
 # The display path's own settings (see files/display), for login shells and
 # for the box user's SSH commands: bash reads ~/.bashrc for those, so this
 # goes above Ubuntu's early return for non-interactive shells.
-cat >/etc/profile.d/bb-box-display.sh <<'EOF'
-# bb-box: settings for the desktop's current display path.
-if [ -r /run/bb-box/display.env ]; then set -a; . /run/bb-box/display.env; set +a; fi
+cat >/etc/profile.d/alia-box-display.sh <<'EOF'
+# alia-box: settings for the desktop's current display path.
+if [ -r /run/alia-box/display.env ]; then set -a; . /run/alia-box/display.env; set +a; fi
 EOF
 bashrc=/home/$user/.bashrc
-if ! grep -q bb-box-display "$bashrc"; then
-  { echo '. /etc/profile.d/bb-box-display.sh  # bb-box-display'; cat "$bashrc"; } >"$bashrc.new"
+if ! grep -q alia-box-display "$bashrc"; then
+  { echo '. /etc/profile.d/alia-box-display.sh  # alia-box-display'; cat "$bashrc"; } >"$bashrc.new"
   chown "$user:$user" "$bashrc.new"
   mv "$bashrc.new" "$bashrc"
 fi
@@ -305,7 +305,7 @@ cat >/opt/google/chrome/initial_preferences <<'EOF'
 { "distribution": { "require_eula": false } }
 EOF
 install -d -m 0755 /etc/opt/chrome/policies/managed
-cat >/etc/opt/chrome/policies/managed/bb-box-first-run.json <<'EOF'
+cat >/etc/opt/chrome/policies/managed/alia-box-first-run.json <<'EOF'
 {
   "MetricsReportingEnabled": false,
   "DefaultBrowserSettingEnabled": false,
@@ -314,24 +314,24 @@ cat >/etc/opt/chrome/policies/managed/bb-box-first-run.json <<'EOF'
   "SyncDisabled": true
 }
 EOF
-chmod 0644 /opt/google/chrome/initial_preferences /etc/opt/chrome/policies/managed/bb-box-first-run.json
+chmod 0644 /opt/google/chrome/initial_preferences /etc/opt/chrome/policies/managed/alia-box-first-run.json
 # Chrome's sandbox needs namespaces that Docker's default seccomp profile
 # refuses to an unprivileged container, so in a Docker box Chrome runs without
 # it, and without the bar that warns of the flag on every window.
 sandbox=
 if [ "$runtime" = docker ]; then
   sandbox=" --no-sandbox"
-  printf '{\n  "CommandLineFlagSecurityWarningsEnabled": false\n}\n' >/etc/opt/chrome/policies/managed/bb-box-docker.json
-  chmod 0644 /etc/opt/chrome/policies/managed/bb-box-docker.json
+  printf '{\n  "CommandLineFlagSecurityWarningsEnabled": false\n}\n' >/etc/opt/chrome/policies/managed/alia-box-docker.json
+  chmod 0644 /etc/opt/chrome/policies/managed/alia-box-docker.json
   # A Docker host's own AppArmor policy can name /opt/google/chrome/chrome,
   # as Ubuntu's chrome profile does. A box with Docker runs privileged and
   # unconfined, so Chrome took that profile as it started, and its sockets
   # were refused there: no page loaded and DevTools did not start (#596).
   # Chrome lives elsewhere, and its old path is a link, which AppArmor
   # resolves before it matches; the wrapper and apt go through the link.
-  install -d -m 0755 /opt/bb-box
-  mv /opt/google/chrome /opt/bb-box/chrome
-  ln -s /opt/bb-box/chrome /opt/google/chrome
+  install -d -m 0755 /opt/alia-box
+  mv /opt/google/chrome /opt/alia-box/chrome
+  ln -s /opt/alia-box/chrome /opt/google/chrome
 fi
 # Computer use reads web pages through AT-SPI, which Chrome builds only with
 # --force-renderer-accessibility. The diversion covers every way Chrome
@@ -340,18 +340,18 @@ bin=/usr/bin/google-chrome-stable
 dpkg-divert --local --rename --divert "$bin.distrib" --add "$bin" >/dev/null
 # On the CPU display path Chrome would turn off WebGL, WebGPU and compositing
 # for Mesa's software renderer; --ignore-gpu-blocklist keeps them, slowly.
-cat >"$bin.bb-box" <<EOF
+cat >"$bin.alia-box" <<EOF
 #!/bin/sh
-# bb-box: Chrome builds the accessibility tree computer use reads, and keeps
-# WebGL on the CPU display path. Installed over a dpkg diversion by the bb-box
+# alia-box: Chrome builds the accessibility tree computer use reads, and keeps
+# WebGL on the CPU display path. Installed over a dpkg diversion by the alia-box
 # desktop template.
-if [ "\$(cat /run/bb-box/display-mode 2>/dev/null)" = cpu ]; then
+if [ "\$(cat /run/alia-box/display-mode 2>/dev/null)" = cpu ]; then
   exec $bin.distrib --force-renderer-accessibility$sandbox --ignore-gpu-blocklist "\$@"
 fi
 exec $bin.distrib --force-renderer-accessibility$sandbox "\$@"
 EOF
-chmod 0755 "$bin.bb-box"
-mv -f "$bin.bb-box" "$bin"
+chmod 0755 "$bin.alia-box"
+mv -f "$bin.alia-box" "$bin"
 # Chrome also claims images and PDFs; they open in the viewers made for them.
 cat >/etc/xdg/mimeapps.list <<'EOF'
 [Default Applications]
@@ -384,7 +384,7 @@ ln -sfn "$cua/cua-driver" /usr/local/bin/cua-driver
 # Both are in place before Cua first runs.
 grep -q '^CUA_DRIVER_RS_TELEMETRY_ENABLED=' /etc/environment ||
   printf 'CUA_DRIVER_RS_TELEMETRY_ENABLED=false\nCUA_DRIVER_RS_UPDATE_CHECK=false\n' >>/etc/environment
-printf 'CUA_DRIVER_RS_TELEMETRY_ENABLED=false\nCUA_DRIVER_RS_UPDATE_CHECK=false\n' >/etc/environment.d/61-bb-box-cua-driver.conf
+printf 'CUA_DRIVER_RS_TELEMETRY_ENABLED=false\nCUA_DRIVER_RS_UPDATE_CHECK=false\n' >/etc/environment.d/61-alia-box-cua-driver.conf
 for home in /root "/home/$user"; do
   owner=root
   [ "$home" = /root ] || owner=$user
@@ -393,17 +393,17 @@ for home in /root "/home/$user"; do
   chown "$owner:$owner" "$home/.cua-driver/config.json"
 done
 # One daemon per box in the box user's systemd manager, with the desktop's
-# display; bb-box-session starts and stops it. It listens on
+# display; alia-box-session starts and stops it. It listens on
 # ~/.cache/cua-driver/cua-driver.sock, and element references live as long
 # as it does.
-cat >/etc/systemd/user/bb-box-cua-driver.service <<'EOF'
+cat >/etc/systemd/user/alia-box-cua-driver.service <<'EOF'
 [Unit]
-Description=bb-box: Cua Driver daemon for the desktop on :99
+Description=alia-box: Cua Driver daemon for the desktop on :99
 
 [Service]
-Environment=DISPLAY=:99 XAUTHORITY=/run/bb-box/Xauthority
+Environment=DISPLAY=:99 XAUTHORITY=/run/alia-box/Xauthority
 Environment=CUA_DRIVER_RS_TELEMETRY_ENABLED=false CUA_DRIVER_RS_UPDATE_CHECK=false
-EnvironmentFile=-/run/bb-box/display.env
+EnvironmentFile=-/run/alia-box/display.env
 ExecStart=/usr/local/bin/cua-driver serve --no-overlay
 Restart=always
 RestartSec=1
@@ -425,6 +425,6 @@ grep -q "^PATH=\"/home/$user/.cargo/bin:" /etc/environment ||
   sed -i "s|^PATH=\"|PATH=\"/home/$user/.cargo/bin:|" /etc/environment
 grep -q "^PATH=\"/home/$user/.cargo/bin:" /etc/environment || die "could not add cargo to PATH"
 
-install -m 0755 "$build/guest/check-desktop.sh" /usr/local/bin/bb-box-check-desktop
+install -m 0755 "$build/guest/check-desktop.sh" /usr/local/bin/alia-box-check-desktop
 rm -rf /home/*/.config/google-chrome /root/.config/google-chrome
 echo "customize-desktop: done"

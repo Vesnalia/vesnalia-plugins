@@ -67,7 +67,7 @@ export const EVIDENCE = [
       title: p.str("Caption"),
     },
     children: "none",
-    example: `<CompareGrid title="Screens: main against this branch" folders={{ ref: "$BB_THREAD_STORAGE/shots/main", cand: "$BB_THREAD_STORAGE/shots/branch" }} />`,
+    example: `<CompareGrid title="Screens: main against this branch" folders={{ ref: "$ALIA_THREAD_STORAGE/shots/main", cand: "$ALIA_THREAD_STORAGE/shots/branch" }} />`,
     aliases: ["ScreenshotGrid", "VisualRegression", "BeforeAfterGrid", "DiffGrid"],
     heavy: true,
   }),

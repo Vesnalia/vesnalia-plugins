@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { experimental_useSidebarThreadActions } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreadActions } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@/components/ui/coarse-pointer-sizing";
 import { Icon } from "@/components/ui/icon";
@@ -28,7 +28,7 @@ export function ChatRow({
   chat: RowChat;
   /**
    * Archived rows get their own trimmed menu (Unarchive/Delete, no
-   * pin/rename) and render dimmed, but stay clickable — BB keeps archived
+   * pin/rename) and render dimmed, but stay clickable — VesnALIA keeps archived
    * threads readable.
    */
   archived: boolean;
@@ -108,7 +108,7 @@ export function ChatRow({
 
   function doDelete() {
     setMenuOpen(false);
-    // BB's own delete confirmation owns this — it counts child threads
+    // VesnALIA's own delete confirmation owns this — it counts child threads
     // first. The SDK deliberately has no silent delete, so this plugin
     // never builds its own confirmation dialog.
     actions.requestDelete(chat.threadId);

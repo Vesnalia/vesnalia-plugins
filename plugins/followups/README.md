@@ -10,7 +10,7 @@ Follow-up prompts drawn from a thread's last answer, right above its message box
 Pick one for a ready-to-send draft. Nothing is ever sent for you.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.45](https://img.shields.io/badge/bb-%E2%89%A5%200.45-14b8a6)
+![VesnALIA ≥ 0.45](https://img.shields.io/badge/bb-%E2%89%A5%200.45-14b8a6)
 ![Plugin SDK ≥ 0.6.15](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.6.15-0f766e)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Pick one for a ready-to-send draft. Nothing is ever sent for you.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional demo data.
+> The screenshots are real VesnALIA captures populated with fictional demo data.
 
 ## The problem
 
@@ -113,10 +113,10 @@ working. Sending a message clears the banner.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-followups --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-followups --yes
 ```
 
-Follow-ups appear the next time a thread finishes. They use BB's primary
+Follow-ups appear the next time a thread finishes. They use VesnALIA's primary
 default model until you pick one.
 
 <details>
@@ -124,19 +124,19 @@ default model until you pick one.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-followups
-cd bb-plugin-followups
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-followups
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.45+** (Plugin SDK 0.6.15+)
+- VesnALIA **0.45+** (Plugin SDK 0.6.15+)
 - The repository is private, so the installing machine needs GitHub
   credentials with access to it.
-- A provider BB can run models on. Every suggestion and draft is a short run
+- A provider VesnALIA can run models on. Every suggestion and draft is a short run
   on it, and spends its tokens.
 
 ## Where to find it
@@ -145,7 +145,7 @@ bb plugin install path:$PWD --yes
 | --- | --- |
 | **Above the message box** | The **Follow-ups** banner: numbered tiles with their reasons, **Cancel** while a draft is written, **✕** to dismiss, and the cost footer. |
 | **Thread header** | The follow-ups switch for that thread. A slash over the icon means off. |
-| **Settings → Follow-ups model** | BB's provider and model picker, for the model that drafts follow-ups. |
+| **Settings → Follow-ups model** | VesnALIA's provider and model picker, for the model that drafts follow-ups. |
 | **Settings → Installed plugins → Followups** | The plugin's settings. |
 
 ## How it works
@@ -181,7 +181,7 @@ sequenceDiagram
   stopped at once. A late result is dropped.
 - **Workers clean up after themselves.** At most four suggestion workers run
   at once, the rest queue, and each is archived once its output is used or
-  becomes stale. BB forwards the archive to providers that support it.
+  becomes stale. VesnALIA forwards the archive to providers that support it.
   The cleanup sweep deletes old workers, unless you keep a few for debugging.
 
 The full detail, including timings, edge cases and cleanup rules, is in
@@ -212,13 +212,13 @@ The full detail, including timings, edge cases and cleanup rules, is in
 
 ## CLI
 
-`bb followups <command>`. Every command takes `--json`.
+`alia followups <command>`. Every command takes `--json`.
 
 ```sh
-bb followups show <thread-id>       # the stored follow-ups, and what the run cost
-bb followups off <thread-id>        # turn follow-ups off for one thread
-bb followups model                  # which model drafts them
-bb followups cleanup --dry-run      # leftover worker threads it would delete
+alia followups show <thread-id>       # the stored follow-ups, and what the run cost
+alia followups off <thread-id>        # turn follow-ups off for one thread
+alia followups model                  # which model drafts them
+alia followups cleanup --dry-run      # leftover worker threads it would delete
 ```
 
 <details>
@@ -229,8 +229,8 @@ bb followups cleanup --dry-run      # leftover worker threads it would delete
 | `show <thread-id>` | The stored follow-ups, and what the run cost. |
 | `clear <thread-id>` | Clear them. |
 | `on <thread-id>` / `off <thread-id>` | Turn follow-ups on or off for one thread. `on` drafts right away for a finished thread. |
-| `model` | Show the follow-ups model: your saved choice, or BB's primary default. |
-| `model-clear` | Forget the saved choice and use BB's primary default. |
+| `model` | Show the follow-ups model: your saved choice, or VesnALIA's primary default. |
+| `model-clear` | Forget the saved choice and use VesnALIA's primary default. |
 | `cleanup [--dry-run]` | Delete leftover worker threads now. |
 | `regenerate <thread-id>` | Draft a thread's follow-ups again now, and print where the time went. Refuses a thread that is off, still running, or waiting on child threads. If a draft is already running, that one is stopped and this waits for its own run. |
 | `draft <thread-id> <suggestion-id>` | Run the draft step for one follow-up, with the same timing breakdown. |
@@ -239,7 +239,7 @@ bb followups cleanup --dry-run      # leftover worker threads it would delete
 
 </details>
 
-For older Codex worker chats whose BB records were already deleted, run the
+For older Codex worker chats whose VesnALIA records were already deleted, run the
 standalone backfill from this repository:
 
 ```sh
@@ -255,12 +255,12 @@ Use `--json` to inspect every matching ID. This historical backfill is for Codex
 it does not require a plugin reload.
 
 **Agent tools:** none. The bundled [skill](skills/followups/SKILL.md) tells
-agents the banner is yours, to inspect it with `bb followups show` only when
+agents the banner is yours, to inspect it with `alia followups show` only when
 asked, and to leave the model choice to you.
 
 ## Settings
 
-`bb plugin config followups`, or **Settings → Installed plugins → Followups**.
+`alia plugin config followups`, or **Settings → Installed plugins → Followups**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -272,7 +272,7 @@ asked, and to leave the model choice to you.
 | `keepWorkers` | `0` | Finished worker threads to keep, archived, for debugging (0–50). |
 
 The drafting model is chosen under **Settings → Follow-ups model**. With no
-saved choice, BB's primary default model is used; `bb followups model-clear`
+saved choice, VesnALIA's primary default model is used; `alia followups model-clear`
 goes back to it.
 
 </details>
@@ -281,13 +281,13 @@ goes back to it.
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb followups off <thread-id>                    # off for one thread
-bb plugin config followups set enabled false    # off by default; a thread can still opt in
-bb plugin disable followups                     # unload the plugin
-bb plugin enable followups
+alia followups off <thread-id>                    # off for one thread
+alia plugin config followups set enabled false    # off by default; a thread can still opt in
+alia plugin disable followups                     # unload the plugin
+alia plugin enable followups
 ```
 
-`bb plugin remove followups` removes the plugin and its settings.
+`alia plugin remove followups` removes the plugin and its settings.
 
 </details>
 
@@ -298,15 +298,15 @@ npm install
 npm test                           # node:test on the SDK's fake plugin host
 npm run test:worker-prompts         # drafting instructions and text-only plugin lifecycle
 npm run typecheck
-bb plugin build                    # dist/server.js, dist/app.js, dist/app.css
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build                    # dist/server.js, dist/app.js, dist/app.css
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
 server.ts    events, the workers, storage, RPC and the CLI
 app.tsx      the banner, the header switch, and the model settings section
-components/  Button, BB's Icon, and Glyph (Hugeicons drawn directly)
+components/  Button, ALIA's Icon, and Glyph (Hugeicons drawn directly)
 lib/         the banner's per-thread memory, and the cn() class helper
 skills/      the bundled agent skill
 tests/       node:test suites on the SDK's fake plugin host
@@ -328,10 +328,10 @@ prompt comparison without calling a model. Add `--live` to run it through
 Codex with `gpt-6-luna` and low reasoning. The eval records response checks,
 observed tool attempts, wall time, token usage and paired outputs for review.
 See [the eval guide](docs/EVALUATING_PROMPTS.md) for comparisons, output files,
-and the distinction between this controlled replay and a full BB session.
+and the distinction between this controlled replay and a full VesnALIA session.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`.
+`alia.description` in `package.json`.
 
 ## Licence
 

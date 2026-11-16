@@ -58,9 +58,9 @@
      "id": "daaa3f93ec-i1",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md\n+alpha\n+beta\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md\n+alpha\n+beta\n"
       }
      ],
      "status": "pending",
@@ -89,9 +89,9 @@
      "id": "daaa3f93ec-i1",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "add",
-       "diff": "--- /dev/null\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md\n+alpha\n+beta\n"
+       "diff": "--- /dev/null\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md\n+alpha\n+beta\n"
       }
      ],
      "status": "completed",
@@ -120,9 +120,9 @@
      "id": "daaa3f93ec-i2",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "update",
-       "diff": "--- a/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md\n-beta\n+gamma\n"
+       "diff": "--- a/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md\n-beta\n+gamma\n"
       }
      ],
      "status": "pending",
@@ -151,9 +151,9 @@
      "id": "daaa3f93ec-i2",
      "changes": [
       {
-       "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md",
+       "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md",
        "kind": "update",
-       "diff": "--- a/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md\n+++ b/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/bb-plugin-thread-time-machine/probe/notes.md\n-beta\n+gamma\n"
+       "diff": "--- a/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md\n+++ b/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_4trxxtm3n2-1/alia-plugin-thread-time-machine/probe/notes.md\n-beta\n+gamma\n"
       }
      ],
      "status": "completed",

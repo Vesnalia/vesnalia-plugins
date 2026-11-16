@@ -99,7 +99,7 @@ export const targetSchema = z.discriminatedUnion("kind", [
 ]);
 export type Target = z.infer<typeof targetSchema>;
 
-/** The views the plugin's host entry computes with git, rather than bb's Git plugin. */
+/** The views the plugin's host entry computes with git, rather than VesnALIA's Git plugin. */
 export type HostTarget = Extract<Target, { kind: "staged" | "unstaged" | "range" }>;
 
 export function isHostTarget(target: Target): target is HostTarget {
@@ -132,7 +132,7 @@ export const deliverySchema = z
   .object({
     state: deliveryStateSchema,
     sendId: z.string(),
-    /** The bb thread the comments went to. */
+    /** The VesnALIA thread the comments went to. */
     threadId: z.string(),
     sentAt: z.number(),
   })
@@ -154,7 +154,7 @@ export const reviewThreadSchema = z
     severity: severitySchema.nullable(),
     /** The commented lines' text when the thread was made, to find them again after edits. */
     anchorContent: z.string().nullable(),
-    /** The file's revision when the thread was made (bb's Git plugin's), or null when not known. */
+    /** The file's revision when the thread was made (VesnALIA's Git plugin's), or null when not known. */
     fileRevision: z.string().nullable(),
     createdAt: z.number(),
     updatedAt: z.number(),
@@ -167,7 +167,7 @@ export const reviewThreadSchema = z
 export type ReviewThread = z.infer<typeof reviewThreadSchema>;
 
 /**
- * A file's Viewed mark, bb's own (shared with bb's diff panel): `yes` at the file's current
+ * A file's Viewed mark, VesnALIA's own (shared with VesnALIA's diff panel): `yes` at the file's current
  * revision, `changed` when it was marked at an earlier one ("changed since viewed"), `no` otherwise.
  */
 export const viewedSchema = z.enum(["no", "yes", "changed"]);
@@ -184,7 +184,7 @@ export const diffFileSchema = z
     /** `on_demand`: the patch is fetched when the user asks; `too_large`: it is never shown. */
     loadMode: z.enum(["auto", "on_demand", "too_large"]),
     untracked: z.boolean(),
-    /** The file's content revision, as bb's Git plugin gives it; it changes when the file does. */
+    /** The file's content revision, as VesnALIA's Git plugin gives it; it changes when the file does. */
     revision: z.string(),
     viewed: viewedSchema,
     /** The unified patch for this file, when loaded. */
@@ -200,10 +200,10 @@ export type Commit = z.infer<typeof commitSchema>;
 /** diffity's review focus chips; a review run may also get free-form instructions. */
 export const REVIEW_FOCUSES = ["Security", "Performance", "Correctness", "Naming", "Tests", "Types"] as const;
 
-/** The reasoning levels bb's thread spawn takes. */
+/** The reasoning levels VesnALIA's thread spawn takes. */
 export const reasoningLevelSchema = z.enum(["none", "low", "medium", "high", "xhigh", "max", "ultra", "ultracode"]);
 
-/** The provider, model and reasoning a spawned thread runs with, as bb's provider picker gives them. */
+/** The provider, model and reasoning a spawned thread runs with, as VesnALIA's provider picker gives them. */
 export const executionSchema = z
   .object({
     providerId: z.string().min(1).max(128),
@@ -231,7 +231,7 @@ export const runSchema = z
     id: z.string(),
     sessionId: z.string(),
     kind: runKindSchema,
-    /** The run's bb thread; null when it could not be started. */
+    /** The run's VesnALIA thread; null when it could not be started. */
     threadId: z.string().nullable(),
     /** The comment thread a mention run answers. */
     reviewThreadId: z.string().nullable(),
@@ -308,11 +308,11 @@ export const reviewViewSchema = z.discriminatedUnion("ok", [
       mergeBaseRef: z.string().nullable(),
       /** The commit a range view's new side is, which its files are opened at. */
       headRef: z.string().nullable(),
-      /** Whether the view takes bb's Viewed marks (not for the staged, unstaged and range views). */
+      /** Whether the view takes VesnALIA's Viewed marks (not for the staged, unstaged and range views). */
       viewable: z.boolean(),
       /** The pull request the `pr` view reviews. */
       pullRequest: pullDetailsSchema.nullable(),
-      /** The pull request of the workspace's branch, from bb's GitHub PR Status, to offer its review. */
+      /** The pull request of the workspace's branch, from VesnALIA's GitHub PR Status, to offer its review. */
       branchPullRequest: pullRefSchema.extend({ title: z.string() }).strict().nullable(),
       files: z.array(diffFileSchema),
       /** Changed files left out by the ignore patterns. */
@@ -340,7 +340,7 @@ export const reviewSummarySchema = z
     openCount: z.number().int().nonnegative(),
     totalCount: z.number().int().nonnegative(),
     updatedAt: z.number(),
-    /** The bb thread the review opens in: the one whose tab last showed it, else one in its workspace. */
+    /** The VesnALIA thread the review opens in: the one whose tab last showed it, else one in its workspace. */
     threadId: z.string(),
     threadTitle: z.string(),
     projectId: z.string(),
@@ -349,7 +349,7 @@ export const reviewSummarySchema = z
 export type ReviewSummary = z.infer<typeof reviewSummarySchema>;
 
 /**
- * A review no live bb thread can open (every thread of its workspace archived, the workspace itself
+ * A review no live VesnALIA thread can open (every thread of its workspace archived, the workspace itself
  * gone), which the Reviews page leaves out and offers to delete.
  */
 export const orphanReviewSchema = z

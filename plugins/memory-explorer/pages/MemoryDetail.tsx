@@ -7,8 +7,8 @@
 // preference gets Confirm and Discard.
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { RelatedThread, rpcContract } from "../server";
 import {
   ENTITY_TYPES,
@@ -345,7 +345,7 @@ function LocalGraph({
 
 /** Threads whose title names the entity; with the Kanban plugin, its cards and their column. */
 function RelatedThreads({ threads }: { threads: RelatedThread[] }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <section aria-labelledby="memory-related" className="flex flex-col gap-2">
       <h3 id="memory-related" className={cn(TYPE_LABEL, "text-foreground/50")}>

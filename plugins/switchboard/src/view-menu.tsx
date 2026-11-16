@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { SwitchboardSettings, View } from "./settings";
 import { Hint } from "./hint";
 import { portalScopeProps } from "./portal-scope";

@@ -1,6 +1,6 @@
-// `bb skill-manager` registration: maps command names to handlers and
-// declares the help metadata BB renders into the plugin-commands skill.
-import type { BbPluginApi, PluginCliCommandInfo } from "@get-bb/plugin-sdk";
+// `alia skill-manager` registration: maps command names to handlers and
+// declares the help metadata VesnALIA renders into the plugin-commands skill.
+import type { AliaPluginApi, PluginCliCommandInfo } from "@vesnalia/plugin-sdk";
 import { errorMessage } from "../../core";
 import type { SkillService } from "../service";
 import { parseArgs } from "./args";
@@ -37,31 +37,31 @@ const HANDLERS: Record<string, CommandHandler> = {
 };
 
 const COMMANDS: PluginCliCommandInfo[] = [
-  { name: "status", summary: "Skill × agent matrix with sources", usage: "bb skill-manager status [--json]" },
-  { name: "agents", summary: "List agent targets", usage: "bb skill-manager agents [--json]" },
-  { name: "show", summary: "Inspect one skill", usage: "bb skill-manager show <skill> [--json]" },
-  { name: "diff", summary: "Compare an agent copy with the hub", usage: "bb skill-manager diff <skill> <agent>" },
-  { name: "sync", summary: "Install hub skills into agents (link by default)", usage: "bb skill-manager sync <skill>|--all [--to a,b] [--copy|--link] [--force]" },
-  { name: "remove", summary: "Remove a skill from agents", usage: "bb skill-manager remove <skill> --from <a,b> [--force]" },
-  { name: "adopt", summary: "Copy an agent's skill into the hub", usage: "bb skill-manager adopt <skill> --from <agent> [--force] [--link]" },
-  { name: "install", summary: "Install a skill from GitHub, a Git URL, or a folder into the hub", usage: "bb skill-manager install <source> [--to a,b|--all-agents] [--force]" },
-  { name: "list-source", summary: "List the skills a source offers", usage: "bb skill-manager list-source <source>" },
-  { name: "source", summary: "Record where an existing hub skill came from", usage: "bb skill-manager source <skill> <source>" },
-  { name: "resolve-sources", summary: "Find sources for untracked hub skills on skills.sh and record confident matches", usage: "bb skill-manager resolve-sources [--force]" },
-  { name: "check", summary: "Compare tracked skills with upstream", usage: "bb skill-manager check [skill...] [--json]" },
-  { name: "update", summary: "Fetch newer versions into the hub", usage: "bb skill-manager update [skill...] [--force]" },
-  { name: "search", summary: "Search the skills.sh registry", usage: "bb skill-manager search [query] [--page n] [--json]" },
-  { name: "preview", summary: "Print a registry skill's SKILL.md", usage: "bb skill-manager preview <registry-id>" },
-  { name: "cat", summary: "Print a skill's SKILL.md or another file", usage: "bb skill-manager cat <skill> [file] [--from agent]" },
-  { name: "files", summary: "List a skill's files", usage: "bb skill-manager files <skill> [--from agent]" },
-  { name: "tag", summary: "Add tags to a skill", usage: "bb skill-manager tag <skill> <tag...>" },
-  { name: "untag", summary: "Remove tags from a skill", usage: "bb skill-manager untag <skill> <tag...>" },
-  { name: "tags", summary: "List tags, or the skills with one tag", usage: "bb skill-manager tags [tag]" },
-  { name: "doctor", summary: "List problems with fixes", usage: "bb skill-manager doctor [--json]" },
+  { name: "status", summary: "Skill × agent matrix with sources", usage: "alia skill-manager status [--json]" },
+  { name: "agents", summary: "List agent targets", usage: "alia skill-manager agents [--json]" },
+  { name: "show", summary: "Inspect one skill", usage: "alia skill-manager show <skill> [--json]" },
+  { name: "diff", summary: "Compare an agent copy with the hub", usage: "alia skill-manager diff <skill> <agent>" },
+  { name: "sync", summary: "Install hub skills into agents (link by default)", usage: "alia skill-manager sync <skill>|--all [--to a,b] [--copy|--link] [--force]" },
+  { name: "remove", summary: "Remove a skill from agents", usage: "alia skill-manager remove <skill> --from <a,b> [--force]" },
+  { name: "adopt", summary: "Copy an agent's skill into the hub", usage: "alia skill-manager adopt <skill> --from <agent> [--force] [--link]" },
+  { name: "install", summary: "Install a skill from GitHub, a Git URL, or a folder into the hub", usage: "alia skill-manager install <source> [--to a,b|--all-agents] [--force]" },
+  { name: "list-source", summary: "List the skills a source offers", usage: "alia skill-manager list-source <source>" },
+  { name: "source", summary: "Record where an existing hub skill came from", usage: "alia skill-manager source <skill> <source>" },
+  { name: "resolve-sources", summary: "Find sources for untracked hub skills on skills.sh and record confident matches", usage: "alia skill-manager resolve-sources [--force]" },
+  { name: "check", summary: "Compare tracked skills with upstream", usage: "alia skill-manager check [skill...] [--json]" },
+  { name: "update", summary: "Fetch newer versions into the hub", usage: "alia skill-manager update [skill...] [--force]" },
+  { name: "search", summary: "Search the skills.sh registry", usage: "alia skill-manager search [query] [--page n] [--json]" },
+  { name: "preview", summary: "Print a registry skill's SKILL.md", usage: "alia skill-manager preview <registry-id>" },
+  { name: "cat", summary: "Print a skill's SKILL.md or another file", usage: "alia skill-manager cat <skill> [file] [--from agent]" },
+  { name: "files", summary: "List a skill's files", usage: "alia skill-manager files <skill> [--from agent]" },
+  { name: "tag", summary: "Add tags to a skill", usage: "alia skill-manager tag <skill> <tag...>" },
+  { name: "untag", summary: "Remove tags from a skill", usage: "alia skill-manager untag <skill> <tag...>" },
+  { name: "tags", summary: "List tags, or the skills with one tag", usage: "alia skill-manager tags [tag]" },
+  { name: "doctor", summary: "List problems with fixes", usage: "alia skill-manager doctor [--json]" },
 ];
 
-export function registerCli(bb: BbPluginApi, service: SkillService): void {
-  bb.cli.register({
+export function registerCli(alia: AliaPluginApi, service: SkillService): void {
+  alia.cli.register({
     name: "skill-manager",
     summary: "Manage agent skills across Claude Code, Codex, Pi, OpenCode, Gemini and more",
     commands: COMMANDS,

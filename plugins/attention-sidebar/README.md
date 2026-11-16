@@ -1,6 +1,6 @@
 # Attention sidebar
 
-Свой список тредов для сайдбара bb (плагин `attention-sidebar`, слот
+Свой список тредов для сайдбара VesnALIA (плагин `attention-sidebar`, слот
 `app.slots.experimental_threadList`).
 
 Сверху вниз: **Ждут вас** (вопросы `?`, ошибки `!`, готовые `✓` из всех
@@ -15,7 +15,7 @@
   активного треда, свёрнутость в localStorage).
 - `lib/` — чистая логика: `model.ts` (классификация и группировка),
   `avatar.ts`, `time.ts`.
-- `server.ts` — пустой бэкенд: манифест bb требует `bb.server`.
+- `server.ts` — пустой бэкенд: манифест VesnALIA требует `alia.server`.
 - `skills/attention-sidebar/SKILL.md` — что делает плагин и как вернуть стандартный
   список.
 
@@ -25,9 +25,9 @@
 npm install --include=dev
 npm test               # vitest: lib + смоук renderSlot
 npx tsc --noEmit
-bb plugin build
-bb plugin install . --yes
+alia plugin build
+alia plugin install . --yes
 ```
 
 Вернуть стандартный список: Settings → Appearance → Sidebar thread list →
-Thread list, или `bb plugin disable attention-sidebar`.
+Thread list, или `alia plugin disable attention-sidebar`.

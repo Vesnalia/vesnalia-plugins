@@ -19,7 +19,7 @@ display may resize through its backend.
 
 ## Context
 
-The first backend interface was written for Proxmox LXC, where the BB server
+The first backend interface was written for Proxmox LXC, where the VesnALIA server
 reaches every box directly. Reviewing it against Docker, an SSH host pool,
 Tart, a physical Mac and Windows on Proxmox QEMU found these gaps:
 
@@ -35,7 +35,7 @@ Tart, a physical Mac and Windows on Proxmox QEMU found these gaps:
   outside the login session and its Accessibility and Screen Recording
   permissions.
 - `start` and `stop` were required, and real machines cannot do them.
-- Nothing said how bb-box knows a real machine is clean before handing it
+- Nothing said how alia-box knows a real machine is clean before handing it
   out.
 
 ## Decision
@@ -49,7 +49,7 @@ Adopt [Interface v1](../architecture.md#the-backend-interface):
   place.
 - A box has a list of displays, each with the protocol `rfb` or `selkies`.
   The relay answers the box's RFB authentication itself and offers the viewer
-  none, so passwords and tickets stay on the BB server.
+  none, so passwords and tickets stay on the VesnALIA server.
 - Windows starts with RFB through Proxmox's console. RDP is not planned: it
   needs a gateway and a second client, and an RDP login moves the session off
   the console, so you and the agent could not share one desktop.
@@ -59,7 +59,7 @@ Adopt [Interface v1](../architecture.md#the-backend-interface):
 - Real pools get release hooks, a list of members, return to service, and a
   reset generation checked when a machine is claimed.
 - `start` and `stop` are optional, and power can be `unknown`.
-- A kind enrols in BB only when its shell is `sh` on Linux or macOS.
+- A kind enrols in VesnALIA only when its shell is `sh` on Linux or macOS.
 
 ## Consequences
 
@@ -69,5 +69,5 @@ Adopt [Interface v1](../architecture.md#the-backend-interface):
 - The relay parses the RFB handshake as well as client messages. It still
   never decodes pixels.
 - Windows boxes run commands, copy files and stream their desktop, but do not
-  enrol until BB's host app runs on Windows ([BB requests](../bb-requests.md)).
+  enrol until VesnALIA's host app runs on Windows ([VesnALIA requests](../alia-requests.md)).
 - A change to the interface after v1 gets a new decision record.

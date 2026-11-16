@@ -28,7 +28,7 @@ const rowSchema = counters.extend({
 });
 type Row = z.infer<typeof rowSchema>;
 const snapshotSchema = z.object({
-  schema: z.literal('bb-account-pool/traffic-history/1'),
+  schema: z.literal('alia-account-pool/traffic-history/1'),
   startedAt: count, extendedCountersStartedAt: count.optional(), capacityDroppedEvents: count, capacityEvictedBuckets: count, rows: z.array(rowSchema).max(HISTORY_MAX_ROWS),
 });
 const empty = (): Counters => Object.fromEntries(Object.keys(counters.shape).map(k => [k, 0])) as Counters;
@@ -134,7 +134,7 @@ export class TrafficHistory {
   private metadata() {
     this.prune();
     return {
-      schema: 'bb-account-pool/traffic-history/1' as const, startedAt: this.startedAt,
+      schema: 'alia-account-pool/traffic-history/1' as const, startedAt: this.startedAt,
       observedAt: this.now(), extendedCountersStartedAt:this.extendedCountersStartedAt, retentionMs: HISTORY_TTL_MS, bucketMs: HOUR_MS,
       maxRows: HISTORY_MAX_ROWS, maxBytes: HISTORY_MAX_BYTES,
       coverage: 'forward-events-since-start' as const,
@@ -181,7 +181,7 @@ export class TrafficHistory {
     if (this.writing) return this.writing;
     this.prune(); if (!this.dirty) return;
     this.dirty = false;
-    const data = { schema: 'bb-account-pool/traffic-history/1', startedAt: this.startedAt, extendedCountersStartedAt:this.extendedCountersStartedAt,
+    const data = { schema: 'alia-account-pool/traffic-history/1', startedAt: this.startedAt, extendedCountersStartedAt:this.extendedCountersStartedAt,
       capacityDroppedEvents: this.capacityDroppedEvents, capacityEvictedBuckets: this.capacityEvictedBuckets, rows: [...this.rows.values()] };
     this.writing = (async () => {
       try {

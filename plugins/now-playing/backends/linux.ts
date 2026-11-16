@@ -1,5 +1,5 @@
 // Linux: controls any MPRIS player (Spotify, browsers, VLC, Rhythmbox, ...)
-// through `playerctl`. MPRIS lives on the D-Bus session bus, so the bb server
+// through `playerctl`. MPRIS lives on the D-Bus session bus, so the VesnALIA server
 // must run in (or reach) the desktop session that plays the music.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -27,7 +27,7 @@ const FIELDS = [
 const FORMAT = FIELDS.map((field) => `{{${field}}}`).join(SEP);
 
 const MISSING =
-  "Now Playing needs playerctl on the bb server. Install it with your package manager, for example `sudo apt install playerctl`.";
+  "Now Playing needs playerctl on the VesnALIA server. Install it with your package manager, for example `sudo apt install playerctl`.";
 
 const NAMES: Record<string, string> = {
   spotify: "Spotify",

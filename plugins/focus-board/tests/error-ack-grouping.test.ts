@@ -7,7 +7,7 @@ import { staleErrorAckIds } from "../lib/error-ack-metadata";
 // An acknowledged error (lib/error-ack-metadata, key "errorAck") silences
 // the board's error arms of threadState() — status "error",
 // indicator "unread-error"/"queued-failed", queuedWork "failed" — without
-// touching bb's record or the pending-interaction arm, which a real answer
+// touching VesnALIA's record or the pending-interaction arm, which a real answer
 // must settle (lib/interaction-sync.ts).
 
 const NOW = 10 * 24 * 60 * 60 * 1000;

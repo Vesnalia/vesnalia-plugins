@@ -9,13 +9,13 @@ export function useCatchUp(snapshot: GlobalDashboardSnapshot | null) {
   const baselineRef = useRef(baseline); baselineRef.current = baseline;
   function persist(value: Checkpoint) { try { window.localStorage.setItem(CATCH_UP_KEY, JSON.stringify(value)); } catch { /* Usable for this visit even without persistence. */ } }
   useEffect(() => {
-    if (!snapshot || baseline !== null || snapshot.unavailableSources.includes("bb")) return;
+    if (!snapshot || baseline !== null || snapshot.unavailableSources.includes("alia")) return;
     const initial = mergeCheckpoint(null, snapshot); persist(initial); setBaseline(initial);
   }, [snapshot, baseline]);
   useEffect(() => () => {
-    if (latest.current && !latest.current.unavailableSources.includes("bb")) persist(mergeCheckpoint(baselineRef.current, latest.current));
+    if (latest.current && !latest.current.unavailableSources.includes("alia")) persist(mergeCheckpoint(baselineRef.current, latest.current));
   }, []);
   return { changes: snapshot ? catchUpChanges(snapshot, baseline) : [], since: baseline?.at ?? null,
-    markSeen() { if (snapshot && !snapshot.unavailableSources.includes("bb")) { const next = mergeCheckpoint(baseline, snapshot); persist(next); setBaseline(next); } },
+    markSeen() { if (snapshot && !snapshot.unavailableSources.includes("alia")) { const next = mergeCheckpoint(baseline, snapshot); persist(next); setBaseline(next); } },
   };
 }

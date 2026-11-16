@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
-import type { PluginCommandContext, PluginCommandRegistration } from "@get-bb/plugin-sdk/app";
+import type { PluginCommandContext, PluginCommandRegistration } from "@vesnalia/plugin-sdk/app";
 import { translate, type PluginLocale } from "./plugin-locale";
 
 export type TabCommandAction =

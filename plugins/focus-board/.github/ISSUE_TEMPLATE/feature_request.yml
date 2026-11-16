@@ -22,7 +22,7 @@ body:
       description: The version and surface this request is written against, so a reader can tell whether a newer release already covers it.
       placeholder: |
         Focus Board: 1.2.0 (from the About tab)
-        bb: 0.43.2
+        alia: 0.43.2
         OS: macOS 15.2
         Surface: desktop app / browser (name and version)
     validations:

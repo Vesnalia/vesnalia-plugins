@@ -22,7 +22,7 @@ export const BACKOFF_KEEPS: readonly Candidate["trigger"][] = ["commit", "pr-mer
 /** An offer nobody answered is gone after this, seen or not. */
 export const OFFER_TTL_MS = DAY;
 
-/** The thread facts the gate reads; the shape of bb's `ThreadResponse` fields used. */
+/** The thread facts the gate reads; the shape of VesnALIA's `ThreadResponse` fields used. */
 export interface GateThread {
   parentThreadId: string | null;
   originPluginId: string | null;

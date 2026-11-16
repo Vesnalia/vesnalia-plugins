@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join,delimiter} from 'node:path';
 import {createInterface} from 'node:readline';
 
-test('cold start acknowledges BB skills setup, then applies roots before thread/start',async()=>{
+test('cold start acknowledges VesnALIA skills setup, then applies roots before thread/start',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'central-cold-start-'));
  const builtin=join(dir,'builtins');
  const moduleDir=join(builtin,'provider-codex','dist');mkdirSync(moduleDir,{recursive:true});
@@ -40,7 +40,7 @@ test('cold start acknowledges BB skills setup, then applies roots before thread/
  })}
  try{
   await rpc('initialize',{protocolVersion:2,client:{name:'test',version:'1'},grammarVersions:[2,3]});
-  const roots=[{id:'bb-test-skills',path:join(dir,'skills'),skills:[{name:'example',description:'A BB-injected skill'}]}];
+  const roots=[{id:'alia-test-skills',path:join(dir,'skills'),skills:[{name:'example',description:'A ALIA-injected skill'}]}];
   assert.deepEqual(await rpc('skills/configure',{roots}),{ok:true});
   const providerOptions={centralProfile:{id:'codex',displayName:'Codex JetBrains Air',agent:'codex',bridge:'codex',args:[]},centralCommand:'central',builtinPluginsDirectory:builtin};
   const options={permissionMode:'accept-edits',permissionScope:'workspace',approvalReviewer:'user',permissionEscalation:'deny',providerOptions};

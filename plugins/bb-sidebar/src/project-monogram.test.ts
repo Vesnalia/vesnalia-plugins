@@ -3,14 +3,14 @@ import { MONOGRAM_COLOR_COUNT, projectMonogramColor, projectMonogramLetter } fro
 
 describe("projectMonogramLetter", () => {
   it.each([
-    ["bb-sidebar", "S"],
-    ["bb-plugin-tasks", "T"],
+    ["alia-sidebar", "S"],
+    ["alia-plugin-tasks", "T"],
     ["the-app", "A"],
     ["@acme/widgets", "W"],
     ["org/repo-name", "R"],
     ["myProject", "P"],
     ["Sidebar", "S"],
-    ["bb", "B"],
+    ["alia", "B"],
     ["2fa-server", "2"],
     ["ölçüm", "Ö"],
     ["  ", "#"],
@@ -22,7 +22,7 @@ describe("projectMonogramLetter", () => {
 
 describe("projectMonogramColor", () => {
   it("is stable for a name, ignoring case and outer spaces", () => {
-    expect(projectMonogramColor("bb-sidebar")).toBe(projectMonogramColor(" BB-Sidebar "));
+    expect(projectMonogramColor("alia-sidebar")).toBe(projectMonogramColor(" ALIA-Sidebar "));
   });
 
   it("stays inside the palette and spreads similar names", () => {

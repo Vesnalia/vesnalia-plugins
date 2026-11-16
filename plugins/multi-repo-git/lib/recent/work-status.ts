@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 const workIndicators = new Set(["runtime", "working-draft", "workflow", "background-agent", "background-command", "plan-mode", "goal"]);
 

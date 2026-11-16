@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { definePluginApp, useComposer, useRealtime, useRealtimeConnectionState, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useRealtime, useRealtimeConnectionState, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { PredictionState, rpcContract } from "./contract";
 import { mountGhostDecorations, refreshGhost, registerGhost } from "./lib/ghost";
 import { MODEL_CHANGED } from "./lib/channels";

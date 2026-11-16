@@ -4,7 +4,7 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
 import {
@@ -107,7 +107,7 @@ export function ThreadInbox({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* The one control the host has no equivalent for. Everything else in
-          the chrome above — New thread, search — is bb's and stays bb's. */}
+          the chrome above — New thread, search — is VesnALIA's and stays VesnALIA's. */}
       <div className="flex shrink-0 items-center gap-1 px-2 pb-1">
         <Select value={scope} onValueChange={setScope}>
           {/* Ghost trigger: no border, no filled track — it reads as a label

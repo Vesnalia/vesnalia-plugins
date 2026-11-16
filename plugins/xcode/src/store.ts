@@ -162,7 +162,7 @@ export const MIGRATIONS: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS run_bundle_idx ON run (bundle_path) WHERE bundle_path IS NOT NULL`,
 
   // ---- Simulators (frozen) ------------------------------------------------
-  // Spliced in, never interleaved. `bb.storage.migrate` applies statements by
+  // Spliced in, never interleaved. `alia.storage.migrate` applies statements by
   // index across the whole plugin, so the Simulators half cannot own its own
   // array — its statements live in `src/sim/store.ts` for readability and sit
   // here, at this offset, permanently. That array is frozen too: a statement
@@ -174,7 +174,7 @@ export const MIGRATIONS: readonly string[] = [
   // ---- v3: tracked builds on other Macs ------------------------------------
   /**
    * The Mac a run's process lives on, when that is not the machine running
-   * bb. NULL means this machine, which is every run the probe, the log store
+   * VesnALIA. NULL means this machine, which is every run the probe, the log store
    * or the shim ever produced: those sources only see the server's own disk
    * and process table. Set only by `src/remote.ts`, for builds the host
    * worker ran on the thread's own Mac — and it is what keeps the server's
@@ -228,7 +228,7 @@ export const V3_MIGRATIONS_START = 39;
 export const V4_MIGRATIONS_START = 42;
 
 /**
- * Run ids of builds the `bb.host` worker ran for this plugin on another Mac
+ * Run ids of builds the `alia.host` worker ran for this plugin on another Mac
  * (`src/remote.ts`). Those runs are owned there: the probe, the sweeps and the
  * engine's process fold leave them alone, even on the Mac they ran on.
  */

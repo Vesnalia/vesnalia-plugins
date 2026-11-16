@@ -1,6 +1,6 @@
 ---
 name: provider-retry-advanced
-description: "Diagnose automatic retries of BB turns after provider overloads, subscription-window limits and lost connectivity (Provider retry advanced plugin)."
+description: "Diagnose automatic retries of VesnALIA turns after provider overloads, subscription-window limits and lost connectivity (Provider retry advanced plugin)."
 ---
 
 # Provider retry advanced
@@ -24,30 +24,30 @@ restarted) is resumed once the path answers again:
   (`api.anthropic.com` or `chatgpt.com`). An answer below 500 only shows the
   API edge is reachable, not account, quota or Account Pooler health. No
   token, model or usage call. With nothing waiting it makes no network request.
-- A fresh install only observes until `bb provider-retry-advanced arm`, so
+- A fresh install only observes until `alia provider-retry-advanced arm`, so
   threads that must stay paused can be held first.
 - There is no attempt limit and no backoff: a turn that fails again for
   connectivity is resumed again at the next scan once reachable.
-- The retry is core's own (`bb thread retry`): accepted input continues the
+- The retry is core's own (`alia thread retry`): accepted input continues the
   same provider session with "Please continue.", unaccepted input is re-sent,
   and the failed turn's model, effort, tier and permission mode are kept.
   After a lost connection, Claude background work that outlived the failed
   turn, including an ultracode workflow, keeps running in that session.
-- A BB restart (or the machine's host daemon restarting) is different: it
-  kills the Claude Code process and all its background work. BB marks a
+- A VesnALIA restart (or the machine's host daemon restarting) is different: it
+  kills the Claude Code process and all its background work. VesnALIA marks a
   running workflow `stopped`, even on an idle thread. With the setting
   `workflowRecovery` on (off by default), once the thread is idle the plugin
-  sends one agent-only "[bb provider-retry-advanced: interrupted workflow]"
+  sends one agent-only "[VesnALIA provider-retry-advanced: interrupted workflow]"
   message in the same session to check and resume that run with
   `resumeFromRunId`: finished agents come from cache, agents that were
-  mid-step run again. Only workflows a scan saw running; never one BB still
+  mid-step run again. Only workflows a scan saw running; never one VesnALIA still
   shows as running; not background agents or shell commands; withdrawn at
-  dispatch on hold, cancel of the interrupted turn, user stop, BB Workflows
+  dispatch on hold, cancel of the interrupted turn, user stop, VesnALIA Workflows
   workers, or when someone wrote to the thread after the kill.
 - A lost machine is queued natively and dispatches when it reconnects.
 - Not resumed: other failures (auth, billing, quota, a provider's own 5xx,
   overloads), stopped, archived or deleted threads, threads waiting for an
-  approval, BB Workflows runs and workers (the workflow engine owns them),
+  approval, VesnALIA Workflows runs and workers (the workflow engine owns them),
   held threads, a failure whose retry row was cancelled, and a failure a later
   turn superseded. Core enforces archive/delete/stopping/failed-turn/dedupe in
   the retry; the plugin's `message.dispatch` hook refuses or withdraws its own
@@ -61,41 +61,41 @@ Stalled turns and follow-ups (each off by default; on only if the operator set i
 
 - Watchdog: a running turn with no new events for the chosen awake time
   (setting `stallWatchdog`: Off/15/20/30/60 minutes) is stopped and continued
-  once with an agent-only "[bb provider-retry-advanced: stalled turn]"
+  once with an agent-only "[VesnALIA provider-retry-advanced: stalled turn]"
   message. Skipped: pending approval/question, a tool call still running,
-  background work open, held, BB Workflows workers, already restarted once,
+  background work open, held, VesnALIA Workflows workers, already restarted once,
   before `arm`. Sleep of the Mac does not count.
 - Continuation check (`continuationCheck`): after an automatic retry or
   restart, a turn that ends on a short "Продолжу…"/"I'll continue" after at
-  most five tool calls gets one "[bb provider-retry-advanced: continue]"
+  most five tool calls gets one "[VesnALIA provider-retry-advanced: continue]"
   message, unless it waits for you, background work or running child threads.
 - Unfinished request (`unfinishedFollowUp`): a person's message or an
   automation run that failed for connectivity/overload/rate limit and was then
   superseded by system notifications (so core never retried it) is sent back
-  once, as "[bb provider-retry-advanced: unfinished request]", when the thread
+  once, as "[VesnALIA provider-retry-advanced: unfinished request]", when the thread
   is idle and nobody wrote since.
-- A message starting with "[bb provider-retry-advanced" came from this
+- A message starting with "[VesnALIA provider-retry-advanced" came from this
   plugin, not from the user: continue the task, check the state of anything
-  you started first, and resume an interrupted BB workflow with
-  `bb workflows run … --resume <run-id>`. For "interrupted workflow", first
+  you started first, and resume an interrupted VesnALIA workflow with
+  `alia workflows run … --resume <run-id>`. For "interrupted workflow", first
   check the run's status and what its interrupted steps already did, then
   call the Workflow tool with `resumeFromRunId` set to the run id from the
   result of the Workflow call that started it. If the run or its journal is
   gone, say so; do not start the workflow again on your own.
-- Failed BB Workflows runs are not resumed by the plugin (no API to start or
+- Failed VesnALIA Workflows runs are not resumed by the plugin (no API to start or
   resume a run from a plugin); the starting thread resumes them.
 
 ```sh
-bb provider-retry-advanced status [thread-id] [--json]   # pending retries + waiting turns
-bb provider-retry-advanced explain [thread-id] [--json]  # last decision for a thread
-bb provider-retry-advanced retry <thread-id>             # send a pending retry now
-bb provider-retry-advanced cancel <thread-id>            # delete it, stop recovering this failure
-bb provider-retry-advanced hold <thread-id>              # never auto-resume this thread
-bb provider-retry-advanced release <thread-id>           # undo hold and cancel
-bb provider-retry-advanced arm                           # once after install
-bb provider-retry-advanced scan [--json]                 # run the scan now
-bb provider-retry-advanced watchdog [--json]             # run the stalled-turn check now
-bb plugin config provider-retry-advanced set transportRecovery false   # turn recovery off
+alia provider-retry-advanced status [thread-id] [--json]   # pending retries + waiting turns
+alia provider-retry-advanced explain [thread-id] [--json]  # last decision for a thread
+alia provider-retry-advanced retry <thread-id>             # send a pending retry now
+alia provider-retry-advanced cancel <thread-id>            # delete it, stop recovering this failure
+alia provider-retry-advanced hold <thread-id>              # never auto-resume this thread
+alia provider-retry-advanced release <thread-id>           # undo hold and cancel
+alia provider-retry-advanced arm                           # once after install
+alia provider-retry-advanced scan [--json]                 # run the scan now
+alia provider-retry-advanced watchdog [--json]             # run the stalled-turn check now
+alia plugin config provider-retry-advanced set transportRecovery false   # turn recovery off
 ```
 
 Inspect the failed turn before retrying manually; do not create a second

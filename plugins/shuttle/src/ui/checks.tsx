@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { CheckRun, CheckState, ConversationItem, PrDetails, PrView, RunState } from "../contract";
 import { BUTTON_GHOST } from "./common";
 import { isWebUrl, openExternal } from "./data";
@@ -56,7 +56,7 @@ const durationOf = (run: CheckRun) =>
   run.startedAt !== null && run.completedAt !== null && run.completedAt >= run.startedAt ? seconds(run.completedAt - run.startedAt) : null;
 
 function Row({ pr, run, items }: { pr: PrView; run: CheckRun; items: readonly ConversationItem[] }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const look = LOOKS[run.state];
   const item = run.itemId === null ? undefined : items.find((entry) => entry.id === run.itemId);
   const tag = item === undefined ? null : tagOf(pr, item);
@@ -125,7 +125,7 @@ function Legend({ counts }: { counts: NonNullable<ChecksSummary["counts"]> }) {
 
 /** Every check on the head, failing ones first; passed and skipped ones fold. A server that sends no list shows what it does say. */
 export function ChecksPane({ pr, items, details }: { pr: PrView; items: readonly ConversationItem[] | undefined; details: PrDetails | null }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const summary = checksSummary(pr, items, details);
   const list = details?.checks ?? null;
   const loaded = items ?? [];

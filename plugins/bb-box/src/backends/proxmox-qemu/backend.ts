@@ -1,5 +1,5 @@
 // The Proxmox QEMU backend: Windows desktops as VMs. A box is a linked clone
-// of a Windows template that setup/proxmox-qemu/build.sh makes, in bb-box's
+// of a Windows template that setup/proxmox-qemu/build.sh makes, in alia-box's
 // pool, with a VMID from its range and the static address fixed to it. The
 // template is not generalized, so a clone boots as the same installed
 // Windows. Its address reaches Windows in the SMBIOS serial, base64 encoded,
@@ -23,7 +23,7 @@
 //
 // The warm pool keeps hibernated clones at the kind's default size, each
 // filled once Windows' desktop is up. Proxmox refuses a hibernated VM's
-// config changes, tags too, so bb-box marks a warm VM it claims or deletes
+// config changes, tags too, so alia-box marks a warm VM it claims or deletes
 // in memory until the VM resumes or goes. A claim resumes the VM, gives it
 // the box's tags, name and description, waits for SSH and sets the clock.
 
@@ -133,9 +133,9 @@ const GiB = 2 ** 30;
 const SSH_KEY = "ssh-key";
 /** Where the next VMID search starts. */
 const NEXT_VMID = "next-vmid";
-/** The tag and name of a VM bb-box refreshes or tries an image in (054), which no sweep releases. */
+/** The tag and name of a VM alia-box refreshes or tries an image in (054), which no sweep releases. */
 const IMAGE_BOX = "image-box";
-const IMAGE_HOSTNAME = "bb-box-image";
+const IMAGE_HOSTNAME = "alia-box-image";
 /** The tag that names a captured build's image, such as image.standard. */
 const IMAGE_TAG = "image.";
 /** The tag that names a captured build's kind. */
@@ -150,16 +150,16 @@ const TEMPLATE_POLL_MS = 250;
 /** Cua Driver as build.sh pins it (039). A task at logon starts its daemon, elevated, on this named pipe. */
 const CUA_DRIVER: ComputerUse = { driver: "cua", version: "0.30.4", socket: CUA_PIPE };
 /** Where boot.ps1 logs how it set the box's address. */
-const BOOT_LOG = "C:\\bb-box\\boot.log";
-/** Tags of a warm VM: filling while bb-box makes it, warm once it is ready. */
+const BOOT_LOG = "C:\\alia-box\\boot.log";
+/** Tags of a warm VM: filling while alia-box makes it, warm once it is ready. */
 const WARM = "warm";
 const FILLING = "filling";
 /** A warm VM's name until a box claims it. */
-const WARM_NAME = "bb-box-warm";
+const WARM_NAME = "alia-box-warm";
 /** How often a fill checks whether Windows' desktop is up. */
 const DESKTOP_POLL_MS = 1_000;
 
-/** How long a template's answer to whether it has bb-box-stream is kept. */
+/** How long a template's answer to whether it has alia-box-stream is kept. */
 const STREAM_CHECK_MS = 60_000;
 
 const KIND: BoxKind = {
@@ -174,9 +174,9 @@ const KIND: BoxKind = {
     gpu: false,
     features: [],
     command: { transport: "ssh", shell: "powershell", admin: true, inDesktopSession: false, streaming: true },
-    // QEMU's VNC server moves the clipboard only through the SPICE guest agent, which the template lacks, so bb-box
+    // QEMU's VNC server moves the clipboard only through the SPICE guest agent, which the template lacks, so alia-box
     // moves it with Get-Clipboard and Set-Clipboard in the desktop session (#461). A box whose image lacks
-    // bb-box-stream has no video display among its transports, and the viewer falls back to VNC.
+    // alia-box-stream has no video display among its transports, and the viewer falls back to VNC.
     // The cursor as the hardware cursor makes it possible; a box's own video display says it only where its image has it.
     displays: [{ id: "desktop", protocol: "rfb", resizable: true, clipboard: "commands" }, { ...WINDOWS_VIDEO, cursor: "stream" }],
     computerUse: CUA_DRIVER,
@@ -189,9 +189,9 @@ const KIND: BoxKind = {
 /**
  * Linux boxes as VMs (057): a linked clone of an Ubuntu template, with its
  * own kernel, which can load modules and run systemd as on a machine. The
- * template sets its address from the SMBIOS fields bb-box gives each clone,
- * as Windows' boot.ps1 does, and takes bb-box's key for the box user, who
- * may use sudo. It joins BB as other Linux boxes do.
+ * template sets its address from the SMBIOS fields alia-box gives each clone,
+ * as Windows' boot.ps1 does, and takes alia-box's key for the box user, who
+ * may use sudo. It joins VesnALIA as other Linux boxes do.
  */
 const LINUX_KIND: BoxKind = {
   id: "linux",
@@ -267,10 +267,10 @@ const ANDROID_DEVICES_KEPT_MS = 60_000;
 
 /** The guest's VNC server, as in Proxmox LXC's desktops, and the password its desktop writes at boot. */
 const LINUX_VNC_PORT = 5900;
-const LINUX_VNC_PASSWORD_FILE = "/var/lib/bb-box/vnc-password";
+const LINUX_VNC_PASSWORD_FILE = "/var/lib/alia-box/vnc-password";
 /** What the desktop's display service writes once it is up: cpu here. */
-const LINUX_DISPLAY_MODE_FILE = "/run/bb-box/display-mode";
-const LINUX_DISPLAY_REASON_FILE = "/run/bb-box/display-reason";
+const LINUX_DISPLAY_MODE_FILE = "/run/alia-box/display-mode";
+const LINUX_DISPLAY_REASON_FILE = "/run/alia-box/display-reason";
 
 /** A doctor check's stable ID and its name. */
 type Check = readonly [id: CheckId, name: string];
@@ -471,7 +471,7 @@ export class ProxmoxQemuBackend implements Backend {
   });
   readonly #stopping = new AbortController();
   readonly #upkeep = new Upkeep((signal) => this.#topUp(signal));
-  /** Whether each Windows template's image has bb-box-stream (060) and the hardware cursor, and when that was read. */
+  /** Whether each Windows template's image has alia-box-stream (060) and the hardware cursor, and when that was read. */
   readonly #streaming = new Map<number, { has: boolean; cursor: boolean; at: number }>();
   /** Image boxes (054) from before their clone until their capture or removal, which no sweep counts. */
   readonly #imageBoxes = new Set<number>();
@@ -701,7 +701,7 @@ export class ProxmoxQemuBackend implements Backend {
     const vmid = this.#vmid(copy);
     const config = await this.#copyConfig(api, copy, signal);
     if (!config) throw gone(vmid);
-    const madeFor = `bb-box install ${this.#context.installId} box ${label.box} held copy of snapshot ${label.snapshot}`;
+    const madeFor = `alia-box install ${this.#context.installId} box ${label.box} held copy of snapshot ${label.snapshot}`;
     if (!String(config.description ?? "").startsWith(madeFor)) throw new SnapshotFailed(`Guest ${vmid} is not the copy ${PRODUCT} made of snapshot ${label.snapshot}, so ${PRODUCT} does not label it as one.`);
     const template = typeof copy.data?.template === "number" ? copy.data.template : null;
     await disarm(api, vmid, signal);
@@ -772,7 +772,7 @@ export class ProxmoxQemuBackend implements Backend {
     if (!config) return;
     const tags = parseTags(config.tags);
     const box = typeof copy.data?.box === "string" ? copy.data.box : "";
-    const described = typeof config.description === "string" && config.description.startsWith(`bb-box install ${this.#context.installId} box ${box} held copy of snapshot `);
+    const described = typeof config.description === "string" && config.description.startsWith(`alia-box install ${this.#context.installId} box ${box} held copy of snapshot `);
     if (!isHeldCopy(tags) && !isEarlierGuest(tags) && !described) throw new SnapshotFailed(`Guest ${copy.ref} is not a held copy or an earlier guest of box ${box}, so ${PRODUCT} does not delete it as one.`);
     await this.#forget(this.#vmid(copy));
     await api.destroy(this.#vmid(copy), signal);
@@ -903,7 +903,7 @@ export class ProxmoxQemuBackend implements Backend {
 
   kinds(): BoxKind[] {
     const kinds: BoxKind[] = [];
-    // Windows boxes join BB unless the switch is set off (#539).
+    // Windows boxes join VesnALIA unless the switch is set off (#539).
     if (this.#config.templates.length) kinds.push(this.#config.enrol ? { ...KIND, capabilities: { ...KIND.capabilities, enrol: true } } : KIND);
     // KVM where the settings say the host allows nested virtualization (057).
     for (const kind of LINUX_KINDS) {
@@ -934,7 +934,7 @@ export class ProxmoxQemuBackend implements Backend {
           offer = { platform: "android", devices } as DeviceOffer;
           break;
         }
-        whys.push(`Android template ${template} lists no Android devices in its record, so there is none to boot. bb box doctor says why`);
+        whys.push(`Android template ${template} lists no Android devices in its record, so there is none to boot. VesnALIA box doctor says why`);
       }
       const before = JSON.stringify(this.#androidDevices?.offer ?? null);
       this.#androidDevices = { offer, at: Date.now(), why: offer ? null : `${whys.join("; ")}.` };
@@ -948,7 +948,7 @@ export class ProxmoxQemuBackend implements Backend {
   async withheldKinds(kind: string, signal?: AbortSignal): Promise<readonly WithheldKind[]> {
     if (kind !== ANDROID_IMAGE_KIND.id || !this.#config.androidTemplates.length) return [];
     if (!this.#config.kvm) {
-      return [{ kind, why: "Android templates are listed, but KVM in Linux VM boxes is off in Proxmox QEMU's settings, and the Android emulator needs it. bb box doctor says how to turn it on.", passing: false }];
+      return [{ kind, why: "Android templates are listed, but KVM in Linux VM boxes is off in Proxmox QEMU's settings, and the Android emulator needs it. VesnALIA box doctor says how to turn it on.", passing: false }];
     }
     if (this.kinds().some((offered) => offered.id === kind)) return [];
     await this.#readAndroidDevices(signal);
@@ -1537,7 +1537,7 @@ export class ProxmoxQemuBackend implements Backend {
       label: "Desktop, as video",
       open: async () => ({ route: ssh.commandRoute(this.#access(vmid), WINDOWS_STREAM), auth: { type: "none" } }),
     };
-    // QEMU types a person's keys by key on a US layout: a character it would type wrong goes to bb-box-stream.
+    // QEMU types a person's keys by key on a US layout: a character it would type wrong goes to alia-box-stream.
     const stream: OpenStream = (signal) => openRoute(ssh.commandRoute(this.#access(vmid), WINDOWS_STREAM), signal);
     const typing: Display = {
       ...desktop,
@@ -1553,7 +1553,7 @@ export class ProxmoxQemuBackend implements Backend {
   }
 
   /**
-   * Whether a Windows template's image has bb-box-stream, as its record lists OpenH264, and the hardware cursor, as it
+   * Whether a Windows template's image has alia-box-stream, as its record lists OpenH264, and the hardware cursor, as it
    * lists that too. Kept a minute.
    */
   async #streams(template: number): Promise<{ readonly has: boolean; readonly cursor: boolean }> {
@@ -1612,7 +1612,7 @@ export class ProxmoxQemuBackend implements Backend {
         message(error),
         unauthorised
           ? `Check the API token ID and secret in ${PRODUCT}'s settings.`
-          : "Check the API URL, and that BB's server can reach it. Set the TLS fingerprint from the setup guide's token file, or the CA certificate if a private CA signed the API's certificate.",
+          : "Check the API URL, and that VesnALIA's server can reach it. Set the TLS fingerprint from the setup guide's token file, or the CA certificate if a private CA signed the API's certificate.",
       );
       skip(...later);
     }
@@ -1664,7 +1664,7 @@ export class ProxmoxQemuBackend implements Backend {
       const desktopPins = this.#config.linuxDesktopTemplates.length ? (this.#context.images?.pins("linux-desktop") ?? Promise.resolve(null)).catch(() => null) : Promise.resolve(null);
       const android = this.#config.androidTemplates.length > 0;
       const androidPins = android ? (this.#context.images?.pins("android") ?? Promise.resolve(null)).catch(() => null) : Promise.resolve(null);
-      const bbApp = linux || android ? (this.#context.images?.bbApp(signal) ?? Promise.resolve(null)).catch(() => null) : Promise.resolve(null);
+      const aliaApp = linux || android ? (this.#context.images?.aliaApp(signal) ?? Promise.resolve(null)).catch(() => null) : Promise.resolve(null);
       const chromeAmd = linux ? (this.#context.images?.chrome?.("x86_64") ?? Promise.resolve(null)).catch(() => null) : Promise.resolve(null);
       for (const template of this.#allTemplates()) {
         const name = templateCheck(template);
@@ -1688,15 +1688,15 @@ export class ProxmoxQemuBackend implements Backend {
               const kind = this.#kindOf(template);
               pass(name, `VM template ${template} on ${storage}, ${freeGiB} GiB free.`);
               if (kind === ANDROID_IMAGE_KIND) this.#androidDisk(template, storage, freeGiB, { pass, warn });
-              // A Windows image carries no build of BB's app: BB's installer puts it in as a box joins BB. A Linux one does (057).
+              // A Windows image carries no build of VesnALIA's app: VesnALIA's installer puts it in as a box joins VesnALIA. A Linux one does (057).
               const recorded = recordInDescription(String(config.description ?? ""));
               const judged = judgeImage(
                 recorded,
                 kind === ANDROID_IMAGE_KIND
-                  ? { os: "android", pins: await androidPins, bbApp: await bbApp }
+                  ? { os: "android", pins: await androidPins, aliaApp: await aliaApp }
                   : os === "linux"
-                  ? { os, pins: await (kind === LINUX_DESKTOP_KIND ? desktopPins : linuxPins), bbApp: await bbApp, pinChrome: recorded?.arch === "arm64" ? null : await chromeAmd }
-                  : { os, pins: await pins, bbApp: null, joins: this.#config.enrol },
+                  ? { os, pins: await (kind === LINUX_DESKTOP_KIND ? desktopPins : linuxPins), aliaApp: await aliaApp, pinChrome: recorded?.arch === "arm64" ? null : await chromeAmd }
+                  : { os, pins: await pins, aliaApp: null, joins: this.#config.enrol },
                 `Rebuild it with the setup guide's setup/proxmox-qemu/build.sh, as root on ${node}: build.sh ${this.#buildWord(template)} ${template} --replace.`,
               );
               checks.push({ id: `template.${template}.image`, name: `Image of ${name[1]}`, ...judged });
@@ -1763,7 +1763,7 @@ export class ProxmoxQemuBackend implements Backend {
       const keys = await this.#keys();
       if (keys.publicKey) {
         notes.push(`The template must accept this SSH key in C:\\ProgramData\\ssh\\administrators_authorized_keys: ${keys.publicKey}`);
-        // build.sh puts BBBOX_SSH_KEY in the template, so a key bb-box made is one it lacks.
+        // build.sh puts BBBOX_SSH_KEY in the template, so a key alia-box made is one it lacks.
         if (keys.generated) {
           warn(
             SSH_KEY_CHECK,
@@ -1924,7 +1924,7 @@ export class ProxmoxQemuBackend implements Backend {
     return !!config && namesOf(config).box === boxId;
   }
 
-  /** How bb-box and the thread reach a box over SSH. A fresh guest's host key is accepted. */
+  /** How alia-box and the thread reach a box over SSH. A fresh guest's host key is accepted. */
   #access(vmid: number): SshAccess {
     const address = addressFor(this.#config, vmid);
     if (!address) throw new Error(`VMID ${vmid} has no address.`);
@@ -2110,7 +2110,7 @@ export class ProxmoxQemuBackend implements Backend {
         }
         if (!(error instanceof ProxmoxError)) throw error;
         const started = performance.now();
-        // When bb-box cannot read the template, the clone's error stands.
+        // When alia-box cannot read the template, the clone's error stands.
         const state = await this.#templateBack(api, template, deadline, signal).catch(() => null);
         signal.throwIfAborted();
         if (state === null) throw error;
@@ -2169,7 +2169,7 @@ export class ProxmoxQemuBackend implements Backend {
       const [mode = "", reason = ""] = result.stdout.split("\n").map((line) => line.trim());
       if (mode) return { mode, reason };
       if (Date.now() >= deadline) {
-        throw new Error(`The box's desktop did not start: ${LINUX_DISPLAY_MODE_FILE} is missing after ${Math.round(timeoutMs / 1000)} s. Check bb-box-display.service in the Linux desktop template.`);
+        throw new Error(`The box's desktop did not start: ${LINUX_DISPLAY_MODE_FILE} is missing after ${Math.round(timeoutMs / 1000)} s. Check alia-box-display.service in the Linux desktop template.`);
       }
       await sleep(200, signal);
     }
@@ -2180,7 +2180,7 @@ export class ProxmoxQemuBackend implements Backend {
     if (result.exitCode !== 0) throw new Error(`Linux could not set its clock: ${result.stderr.trim() || `exit code ${result.exitCode}.`}`);
   }
 
-  /** Sets Windows' clock from BB's server's. */
+  /** Sets Windows' clock from VesnALIA's server's. */
   async #setClock(vmid: number, signal?: AbortSignal): Promise<void> {
     await setClock(await this.#command(vmid), signal);
   }
@@ -2196,8 +2196,8 @@ export class ProxmoxQemuBackend implements Backend {
       throw new Error(
         `Nothing answered on port ${port} of ${host} within ${seconds(timeoutMs)}. ` +
           (os === "linux"
-            ? "Check that BB's server can reach the boxes' subnet, and how the template set the box's address, in journalctl -u bb-box-boot from the VM's console in Proxmox."
-            : `Check that BB's server can reach the boxes' subnet, and how boot.ps1 set the box's address in ${BOOT_LOG}, from the VM's console in Proxmox.`),
+            ? "Check that VesnALIA's server can reach the boxes' subnet, and how the template set the box's address, in journalctl -u alia-box-boot from the VM's console in Proxmox."
+            : `Check that VesnALIA's server can reach the boxes' subnet, and how boot.ps1 set the box's address in ${BOOT_LOG}, from the VM's console in Proxmox.`),
       );
     }
     const left = Math.max(1_000, deadline - Date.now());
@@ -2349,7 +2349,7 @@ export class ProxmoxQemuBackend implements Backend {
       // template replaced in between retires the VM later, which is safe.
       const build = await templateBuild(api, guests, template, signal);
       const tags = (state: string) => [TAG, install, state, templateTag(template), ...(build ? [`${BUILD}${build}`] : [])];
-      const description = `bb-box warm ${KIND.id}\ninstall ${this.#context.installId}`;
+      const description = `alia-box warm ${KIND.id}\ninstall ${this.#context.installId}`;
       const before = async (id: number) => {
         this.#filling.set(id, template);
         claimed.push(id);
@@ -2427,7 +2427,7 @@ export class ProxmoxQemuBackend implements Backend {
     const step = timed((name, ms) => steps.push({ name, ms }));
     try {
       const guests = await api.listPool(this.#config.proxmox.pool, signal);
-      const description = `bb-box image box: ${label}\ninstall ${this.#context.installId}`;
+      const description = `alia-box image box: ${label}\ninstall ${this.#context.installId}`;
       vmid = await step("clone", () => this.#clone(api, guests, template, IMAGE_HOSTNAME, description, async (id) => void this.#imageBoxes.add(id), signal, () => {}));
       const id = vmid;
       await step("configure", async () => {
@@ -2467,7 +2467,7 @@ export class ProxmoxQemuBackend implements Backend {
     const vmid = Number(box.ref);
     const linux = LINUX_TEMPLATE_KINDS.some((kind) => kind.id === from.kind);
     // Where the refresh writes the record: finalize.sh's on Linux (049), refresh.ps1's on Windows (054).
-    const at = linux ? "/usr/share/bb-box/image.json" : "C:\\bb-box\\image.json";
+    const at = linux ? "/usr/share/alia-box/image.json" : "C:\\alia-box\\image.json";
     const read = await box.command.run(linux ? `cat ${at}` : `Get-Content ${at} -Raw`, { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
     const record = read.exitCode === 0 ? recordFromJson(read.stdout.trim()) : null;
     if (!record) throw new Error(`Image box ${vmid} has no image record in ${at}, which the refresh writes.`);
@@ -2487,7 +2487,7 @@ export class ProxmoxQemuBackend implements Backend {
         ...(typeof source.net0 === "string" ? { net0: source.net0 } : {}),
         smbios1: `uuid=${randomUUID()}`,
         onboot: false,
-        description: `bb-box ${image} image of ${from.kind}, built ${new Date().toISOString().slice(0, 10)} from template ${from.ref}.\n${JSON.stringify(record)}`,
+        description: `alia-box ${image} image of ${from.kind}, built ${new Date().toISOString().slice(0, 10)} from template ${from.ref}.\n${JSON.stringify(record)}`,
         tags: [TAG, installTag(this.#context.installId), `${IMAGE_TAG}${image}`, `${KIND_TAG}${from.kind}`, templateTag(Number(from.ref)), build],
       },
       signal,
@@ -2542,7 +2542,7 @@ export class ProxmoxQemuBackend implements Backend {
     const Os = this.#templateName(target).replace(/ template \d+$/, "");
     if (!storage) throw new Error(`${Os} template ${target} has no boot disk.`);
     const thin = (await api.storageStatus(storage, signal)).type === "lvmthin";
-    const name = typeof old.name === "string" ? old.name : `bb-box-${this.#buildWord(target)}`;
+    const name = typeof old.name === "string" ? old.name : `alia-box-${this.#buildWord(target)}`;
     const pool = this.#config.proxmox.pool;
     const install = installTag(this.#context.installId);
     const guests = await api.listPool(pool, signal);
@@ -2588,7 +2588,7 @@ export class ProxmoxQemuBackend implements Backend {
     } finally {
       this.#reserved.delete(rollback);
     }
-    const first = String(old.description ?? `bb-box ${os} template.`).split("\n")[0]!;
+    const first = String(old.description ?? `alia-box ${os} template.`).split("\n")[0]!;
     const today = new Date().toISOString().slice(0, 10);
     const line = /, (built|refreshed) \d{4}-\d{2}-\d{2}/.test(first) ? first.replace(/, (built|refreshed) \d{4}-\d{2}-\d{2}/, `, refreshed ${today}`) : first;
     const description = `${line}${build.record ? `\n${JSON.stringify(build.record)}` : ""}`;

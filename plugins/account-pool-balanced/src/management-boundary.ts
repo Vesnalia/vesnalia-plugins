@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import type { BbPluginApi, PluginRpcHandlers } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi, PluginRpcHandlers } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { accountPoolRpcContract } from './rpc.js';
 import { ManagementAccess, PoolManagementLocked } from './management-access.js';
@@ -35,7 +35,7 @@ export function managementInvoke(access: ManagementAccess, handlers: Handlers) {
   };
 }
 
-export function registerManagementRpc(bb: Pick<BbPluginApi, 'rpc'>, access: ManagementAccess, handlers: Handlers): void {
+export function registerManagementRpc(alia: Pick<AliaPluginApi, 'rpc'>, access: ManagementAccess, handlers: Handlers): void {
   const invoke = managementInvoke(access, handlers);
   const guarded = Object.fromEntries(Object.entries(handlers).map(([method, handler]) => [method,
     (input: unknown, context?: unknown) => {
@@ -47,8 +47,8 @@ export function registerManagementRpc(bb: Pick<BbPluginApi, 'rpc'>, access: Mana
       return (handler as (input: unknown) => unknown)(input);
     },
   ])) as Handlers;
-  bb.rpc.register(accountPoolRpcContract, guarded);
-  bb.rpc.register(managementRpcContract, {
+  alia.rpc.register(accountPoolRpcContract, guarded);
+  alia.rpc.register(managementRpcContract, {
     'management.unlock': ({ key, scope, ttlSeconds }) => access.unlock(key, scope, ttlSeconds),
     'management.call': async ({ token, method, input }) => {
       try { return { ok: true as const, result: await invoke(token, method, input) }; }
@@ -62,21 +62,21 @@ export function registerManagementRpc(bb: Pick<BbPluginApi, 'rpc'>, access: Mana
 const cliUnlockSchema = managementUnlockSchema.extend({ output: z.string().min(1).max(4096) }).strict();
 const cliExecuteSchema = z.object({ token: z.string().max(256), argv: z.array(z.string()).min(1).max(128) }).strict();
 
-export function managementCli(bb: Pick<BbPluginApi, 'cli' | 'server' | 'pluginId'>, access: ManagementAccess): Pick<BbPluginApi, 'cli' | 'server' | 'pluginId'> {
+export function managementCli(alia: Pick<AliaPluginApi, 'cli' | 'server' | 'pluginId'>, access: ManagementAccess): Pick<AliaPluginApi, 'cli' | 'server' | 'pluginId'> {
   return {
-    server: bb.server, pluginId: bb.pluginId,
+    server: alia.server, pluginId: alia.pluginId,
     cli: { register(registration) {
-      bb.cli.register({
+      alia.cli.register({
         ...registration,
         commands: [...(registration.commands ?? []), {
           name: 'management', summary: 'Use a private, short-lived operator access grant',
-          usage: 'bb pool management <unlock|execute|lock> --request-stdin',
+          usage: 'alia pool management <unlock|execute|lock> --request-stdin',
         }],
         async run(argv, context) {
           try {
             if (argv[0] !== 'management') {
               if ((argv[0] === 'status' || argv[0] === 'readiness') && argv.slice(1).every(arg => arg === '--json')) return { exitCode: 0, stdout: JSON.stringify({ management: 'locked' }) + '\n' };
-              if (argv.length === 0 || argv.includes('--help')) return { exitCode: 0, stdout: 'Pool management requires an operator-issued grant.\nUse: bb pool management <unlock|execute|lock> --request-stdin\nPublic status: bb pool status --json\n' };
+              if (argv.length === 0 || argv.includes('--help')) return { exitCode: 0, stdout: 'Pool management requires an operator-issued grant.\nUse: VesnALIA pool management <unlock|execute|lock> --request-stdin\nPublic status: VesnALIA pool status --json\n' };
               throw new PoolManagementLocked();
             }
             if (argv.length !== 4 || argv[2] !== '--request') throw new Error('Use management <unlock|execute|lock> --request-stdin.');

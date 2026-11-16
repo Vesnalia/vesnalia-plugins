@@ -1,4 +1,4 @@
-// The backends built into bb-box, and the set built from the configuration
+// The backends built into alia-box, and the set built from the configuration
 // document (029), in its order. A backend is built when its fields are
 // valid, whether it is on or off: off stops new boxes only, so the boxes it
 // has keep working. A backend is rebuilt only when its own fields or the
@@ -33,7 +33,7 @@ export function missingBackendWords(type: string): string {
   return `${PRODUCT} has no ${type} backend. Update ${PRODUCT}, or remove this backend.`;
 }
 
-/** What a backend's boxes are, from its ID, which starts with its driver's type (029). Null for a driver bb-box no longer has. */
+/** What a backend's boxes are, from its ID, which starts with its driver's type (029). Null for a driver alia-box no longer has. */
 export function boxForm(backendId: string, drivers: readonly BackendDriver<any>[] = DRIVERS): BoxForm | null {
   const type = backendId.split(":")[0];
   return drivers.find((driver) => driver.type === type)?.form ?? null;
@@ -45,7 +45,7 @@ export function providerFamily(backendId: string, drivers: readonly BackendDrive
   return driver ? (driver.family ?? driver.label) : type;
 }
 
-/** The driver's label for a backend ID, as the settings page names it ("Proxmox LXC"); the ID itself for a driver bb-box no longer has. */
+/** The driver's label for a backend ID, as the settings page names it ("Proxmox LXC"); the ID itself for a driver alia-box no longer has. */
 export function driverLabel(backendId: string, drivers: readonly BackendDriver<any>[] = DRIVERS): string {
   const type = backendId.split(":")[0]!;
   return drivers.find((driver) => driver.type === type)?.label ?? backendId;
@@ -264,7 +264,7 @@ export class Backends {
   readonly #machines: MachineAccess | undefined;
   readonly #images: ImageFacts | undefined;
   readonly #tailnetFetch: TailnetFetch | undefined;
-  readonly #bbUrl: (() => string | null) | undefined;
+  readonly #aliaUrl: (() => string | null) | undefined;
   readonly #threadTitle: ((threadId: string) => Promise<string | null>) | undefined;
   readonly #encoder: KeyedEncoderAccess | undefined;
   #tailnetClient: { readonly made: string; readonly tailnet: Tailnet } | null = null;
@@ -281,17 +281,17 @@ export class Backends {
     /** Says a backend changed a kind's capabilities by itself, so boxes of the kind take them (BackendContext.kindsChanged). */
     kindsChanged?(): void;
     drivers?: readonly BackendDriver<any>[];
-    /** BB machines backends reach through bb-box (042). */
+    /** VesnALIA machines backends reach through alia-box (042). */
     machines?: MachineAccess;
     /** What the doctor judges images by (049). */
     images?: ImageFacts;
     tailnetFetch?: TailnetFetch;
-    bbUrl?: () => string | null;
+    aliaUrl?: () => string | null;
     threadTitle?: (threadId: string) => Promise<string | null>;
     encoder?: KeyedEncoderAccess;
   }) {
     this.#encoder = options.encoder;
-    this.#bbUrl = options.bbUrl;
+    this.#aliaUrl = options.aliaUrl;
     this.#threadTitle = options.threadTitle;
     this.#tailnetFetch = options.tailnetFetch;
     this.#machines = options.machines;
@@ -345,7 +345,7 @@ export class Backends {
         const document = this.#document;
         const backend = document?.backends.find((candidate) => candidate.id === id);
         if (!document || !backend?.enabled || !kindOn(document, kind)) return 0;
-        // Where a stopped box keeps its session, a spare waits stopped: a warm box that is a BB machine already, so it takes a warm one's place (#539).
+        // Where a stopped box keeps its session, a spare waits stopped: a warm box that is a VesnALIA machine already, so it takes a warm one's place (#539).
         const spares = this.get(id)?.keepsSession?.(kind) ? (document.kinds[kind]?.spares ?? 0) : 0;
         return Math.max(0, (backend.warm?.[kind] ?? 0) - spares);
       },
@@ -357,7 +357,7 @@ export class Backends {
         return document && backend ? backendWholeCards(backend, document.general).on : WHOLE_CARDS_BY_DEFAULT;
       },
       tailnet: () => this.tailnet(),
-      ...(this.#bbUrl ? { bbUrl: this.#bbUrl } : {}),
+      ...(this.#aliaUrl ? { aliaUrl: this.#aliaUrl } : {}),
       ...(this.#threadTitle ? { threadTitle: this.#threadTitle } : {}),
       kindsChanged: () => this.#kindsChanged(),
       factsChanged: () => this.#changed(),
@@ -452,7 +452,7 @@ export class Backends {
 
   /**
    * Each backend of the configuration, then each driver without one as off,
-   * so a new install lists every backend bb-box has.
+   * so a new install lists every backend alia-box has.
    */
   statuses(): readonly BackendStatus[] {
     const offered = this.kinds();

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { posix, win32 } from "node:path";
 import { stat } from "node:fs/promises";
 import { assertWorkspaceRelative, buildTree, type ListedPath, type GitState } from "./tree-model";
@@ -93,7 +93,7 @@ function completedFileChanges(rows: readonly unknown[]): ActivePathActivity[] {
   return changes;
 }
 
-export function createServerData(bb: BbPluginApi) {
+export function createServerData(alia: AliaPluginApi) {
   const defaultPrefs: Prefs = {
     locale: "auto",
     showDiff: true, showSize: false, showMtime: false, showFullPath: false, useNerdFontIcons: false, autoCollapse: true,
@@ -102,7 +102,7 @@ export function createServerData(bb: BbPluginApi) {
   };
 
   async function workspace(input: { threadId: string; environmentId: string }): Promise<WorkspaceOutput> {
-    const environment = await bb.sdk.environments.get({ environmentId: input.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: input.environmentId });
     return {
       rootPath: environment.path ?? "",
       hostId: environment.hostId,
@@ -113,7 +113,7 @@ export function createServerData(bb: BbPluginApi) {
 
   async function tree(input: { rootPath: string; hostId: string }): Promise<TreeOutput> {
     if (!input.rootPath) return { entries: [], truncated: false };
-    const result = await bb.sdk.files.listPaths({
+    const result = await alia.sdk.files.listPaths({
       hostId: input.hostId,
       path: input.rootPath,
       includeFiles: true,
@@ -133,12 +133,12 @@ export function createServerData(bb: BbPluginApi) {
   }
 
   async function prefsGet(): Promise<Prefs> {
-    const stored = await bb.storage.kv.get<unknown>("prefs");
+    const stored = await alia.storage.kv.get<unknown>("prefs");
     return prefsSchema.parse({ ...defaultPrefs, ...(stored && typeof stored === "object" ? stored : {}) });
   }
 
   async function prefsSet(input: Prefs): Promise<Prefs> {
-    await bb.storage.kv.set("prefs", input);
+    await alia.storage.kv.set("prefs", input);
     return input;
   }
 
@@ -162,8 +162,8 @@ export function createServerData(bb: BbPluginApi) {
     const changedFolders = new Set<string>();
     const changedStats = new Map<string, DiffStats>();
     try {
-      const git = await bb.sdk.plugins.callRpc({
-        pluginId: "bb--git",
+      const git = await alia.sdk.plugins.callRpc({
+        pluginId: "alia--git",
         method: "files",
         input: {
           environmentId,
@@ -205,7 +205,7 @@ export function createServerData(bb: BbPluginApi) {
   async function treeGit(input: TreeGitInput): Promise<TreeGitOutput> {
     try {
       for (const path of input.paths) assertWorkspaceRelative(path);
-      const environment = await bb.sdk.environments.get({ environmentId: input.environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId: input.environmentId });
       if (environment.path === null) return { gitAvailable: "unavailable", entries: [] };
     } catch {
       return { gitAvailable: "unavailable", entries: [] };
@@ -230,7 +230,7 @@ export function createServerData(bb: BbPluginApi) {
     }
     let environment;
     try {
-      environment = await bb.sdk.environments.get({ environmentId: input.environmentId });
+      environment = await alia.sdk.environments.get({ environmentId: input.environmentId });
     } catch {
       return { outcome: "unavailable", reason: "environment_unavailable" };
     }
@@ -240,7 +240,7 @@ export function createServerData(bb: BbPluginApi) {
     if (!hostPath.isAbsolute(rootPath)) return { outcome: "unavailable", reason: "no_workspace" };
     const path = hostPath.join(rootPath, ...input.path.split("/"));
     try {
-      const read = await bb.sdk.files.read({ hostId: environment.hostId, rootPath, path });
+      const read = await alia.sdk.files.read({ hostId: environment.hostId, rootPath, path });
       if (hostPath.normalize(read.path) !== path) return { outcome: "unavailable", reason: "file_unavailable" };
       if (read.sizeBytes > PREVIEW_MAX_BYTES || read.content.length > PREVIEW_MAX_BYTES) {
         return { outcome: "unavailable", reason: "too_large" };
@@ -258,7 +258,7 @@ export function createServerData(bb: BbPluginApi) {
 
   async function activitySnapshot(input: ActivitySnapshotInput): Promise<ActivitySnapshotOutput> {
     try {
-      const timeline = await bb.sdk.threads.timeline({
+      const timeline = await alia.sdk.threads.timeline({
         threadId: input.threadId,
         includeNestedRows: "true",
         summaryOnly: "false",
@@ -273,7 +273,7 @@ export function createServerData(bb: BbPluginApi) {
   async function listTree(input: ListTreeInput): Promise<ListTreeOutput> {
     let environment;
     try {
-      environment = await bb.sdk.environments.get({ environmentId: input.environmentId });
+      environment = await alia.sdk.environments.get({ environmentId: input.environmentId });
     } catch {
       return { outcome: "unavailable", reason: "environment_unavailable" };
     }
@@ -297,7 +297,7 @@ export function createServerData(bb: BbPluginApi) {
     let listed: ListedPath[];
     let truncated: boolean;
     try {
-      const listing = await bb.sdk.hosts.directory({
+      const listing = await alia.sdk.hosts.directory({
         hostId: environment.hostId,
         path: absoluteDirectory,
       });
@@ -315,7 +315,7 @@ export function createServerData(bb: BbPluginApi) {
       // hosts.directory currently omits dot-directories on some hosts. Augment
       // the direct listing from the path API, which supports hidden entries.
       try {
-        const hidden = await bb.sdk.files.listPaths({
+        const hidden = await alia.sdk.files.listPaths({
           hostId: environment.hostId,
           path: absoluteDirectory,
           includeFiles: true,
@@ -382,7 +382,7 @@ export function createServerData(bb: BbPluginApi) {
   }
 
   async function log(message: string): Promise<null> {
-    bb.log.info(message);
+    alia.log.info(message);
     return null;
   }
 

@@ -1,12 +1,12 @@
 /**
- * "Herald" in bb's thread menu: per thread, Announce, Questions only, Silent,
+ * "Herald" in VesnALIA's thread menu: per thread, Announce, Questions only, Silent,
  * or Default to follow the thread above it and Herald's settings. The choice
  * is stored on the thread by the server (`choices.set`), which also checks it
- * before it announces anything; the menu only shows and changes it. On bb
+ * before it announces anything; the menu only shows and changes it. On VesnALIA
  * 0.48 the same list is in the menu of a sidebar selection, and sets every
- * selected thread at once (`choices.setMany`); bb 0.47 has no such menu.
+ * selected thread at once (`choices.setMany`); VesnALIA 0.47 has no such menu.
  *
- * bb calls `useData` once for the whole app with the threads on screen, so
+ * VesnALIA calls `useData` once for the whole app with the threads on screen, so
  * the choices are read in one batch for the rows not loaded yet, and read
  * again for every row when any choice changes — a thread's choice also
  * decides its workers' — or the connection comes back.
@@ -23,7 +23,7 @@ import {
   type PluginThreadActionDataInput,
   type PluginThreadActionItemInput,
   type PluginThreadActionRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -96,7 +96,7 @@ export function useThreadChoices({ threadIds }: PluginThreadActionDataInput): Th
         // that left the screen is read again when it comes back.
         setInputs((current) => {
           const next = new Map(current);
-          // A thread bb does not know has no choice to show.
+          // A thread VesnALIA does not know has no choice to show.
           for (const threadId of ids) next.set(threadId, answered.get(threadId) ?? NO_CHOICE);
           return next;
         });
@@ -243,7 +243,7 @@ export function threadChoiceItem({ thread, data }: PluginThreadActionItemInput<T
 }
 
 /**
- * "Herald" in the menu of a sidebar selection (bb 0.48): one pick for every
+ * "Herald" in the menu of a sidebar selection (VesnALIA 0.48): one pick for every
  * selected thread. An option is checked only when every thread has it as its
  * own, and the detail names what they announce only when they all agree.
  * Archived threads are left out, as their own menus leave Herald out.

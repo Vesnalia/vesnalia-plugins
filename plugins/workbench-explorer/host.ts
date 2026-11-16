@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./host-contract";
 import { listHostDirectory, removeHostPath, statHostPath } from "./src/host-listing";
 import { searchHostInFiles } from "./src/host-search";

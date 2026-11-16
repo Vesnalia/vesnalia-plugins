@@ -9,14 +9,14 @@
 | `args`                            | `[]`        | JSON array of arguments before `app-server`, passed without a shell                            |
 | `memoryEnabled`                   | `false`     | Allow native ZCode memory in new sessions                                                      |
 | `nativeSearchEnhancementsEnabled` | `false`     | Enable native enhanced find/grep in new sessions                                               |
-| `bbToolsEnabled`                  | `false`     | Enable the bb tool bridge; overrides native CLI MCP server list                                |
-| `automationsEnabled`              | `false`     | Let sessions create scheduled tasks (Cron tools) and run them while bb is open                 |
+| `aliaToolsEnabled`                  | `false`     | Enable the VesnALIA tool bridge; overrides native CLI MCP server list                                |
+| `automationsEnabled`              | `false`     | Let sessions create scheduled tasks (Cron tools) and run them while VesnALIA is open                 |
 | `offPeakTasksEnabled`             | `false`     | Let sessions queue idle-time (off-peak) tasks; runs consume Coding Plan quota                  |
 | `subagents`                       | Empty       | JSON native subagent snapshot; empty inherits native configuration                             |
-| `mcpServers`                      | `[]`        | JSON array of native MCP server definitions; empty inherits CLI settings when bb tools are off |
+| `mcpServers`                      | `[]`        | JSON array of native MCP server definitions; empty inherits CLI settings when VesnALIA tools are off |
 
-Use `node scripts/bb.mjs plugin config zcode set <setting> <value>` from the
-checkout, or `bb plugin config` if the bb CLI is on PATH. Paths must exist on
+Use `node scripts/alia.mjs plugin config zcode set <setting> <value>` from the
+checkout, or `alia plugin config` if the VesnALIA CLI is on PATH. Paths must exist on
 the host running the thread. Settings changes refresh provider registration
 and invalidate model discovery; restart existing sessions to change their
 executable.
@@ -28,9 +28,9 @@ Personal configuration and credentials remain under ZCode's control.
 
 Host environment overrides:
 
-- `BB_ZCODE_EXECUTABLE`: used when no explicit executable setting is present.
-- `BB_ZCODE_NODE_EXECUTABLE`: overrides the Node executable.
-- `BB_CLI`: an explicit bb CLI executable for `scripts/bb.mjs`.
+- `ALIA_ZCODE_EXECUTABLE`: used when no explicit executable setting is present.
+- `ALIA_ZCODE_NODE_EXECUTABLE`: overrides the Node executable.
+- `ALIA_CLI`: an explicit VesnALIA CLI executable for `scripts/alia.mjs`.
 
 ZCode's own configuration environment is inherited. Arguments are passed
 as an argv array; there is no shell interpolation.
@@ -46,9 +46,9 @@ runs schedules itself:
 - Runs dispatch into the session that created the task: the plugin
   cold-resumes the saved native session, applies the saved model and mode,
   and sends the prompt with the native automation marker, so ZCode blocks
-  recursive task creation for that turn. The reply streams into the same bb
+  recursive task creation for that turn. The reply streams into the same VesnALIA
   thread.
-- The scheduler lives in the bridge worker and only runs while bb is open -
+- The scheduler lives in the bridge worker and only runs while VesnALIA is open -
   like ZCode Desktop, schedules do not fire while the app is closed. Runs
   missed while closed are skipped; recurring schedules continue from the
   next occurrence.
@@ -59,7 +59,7 @@ runs schedules itself:
   session's workspace; cross-workspace ids read as unknown. The scheduler
   itself runs every workspace's due tasks.
 - Runs are at-least-once across restarts: a bridge-worker crash between
-  dispatch and run recording can repeat a run after bb restarts.
+  dispatch and run recording can repeat a run after VesnALIA restarts.
 - Cron expressions follow the machine's local timezone. Every session can
   hold at most one task, permanently - matching native semantics.
 
@@ -73,7 +73,7 @@ Enable `offPeakTasksEnabled` to let ZCode sessions queue idle-time tasks
 through the native `OffPeakCreate`/`OffPeakList` tools. Unlike scheduled
 tasks, the queue lives on the Z.ai server: creating a task takes a ticket,
 the plugin polls its status, and when the server marks it ready the task
-runs unattended in this bb:
+runs unattended in this VesnALIA:
 
 - Requires an existing desktop sign-in with an **individual Coding Plan**
   (Z.ai or BigModel); the runs themselves execute through the plan's idle
@@ -82,13 +82,13 @@ runs unattended in this bb:
 - A ready task dispatches into the session that created it with the plan's
   hidden idle-time model: the plugin passes the ticket, plan credentials and
   model per run, and hides `CronCreate`/`OffPeakCreate` for the run so a
-  background task cannot queue more work. The reply streams into the same bb
+  background task cannot queue more work. The reply streams into the same VesnALIA
   thread.
 - When the execution window expires mid-run (server code 3102) the task
   requeues automatically, takes a new ticket and continues the same session
   from where it left off. Three consecutive failures park it as `failed`;
   busy bound threads defer with backoff.
-- Nothing happens while bb is closed - like ZCode Desktop, there is no
+- Nothing happens while VesnALIA is closed - like ZCode Desktop, there is no
   window to miss; polling resumes on the next start. Tasks are
   workspace-scoped in `offpeak.json` (separate from automations, like the
   native tables).
@@ -115,7 +115,7 @@ roster of subagents:
 - The workflow tool family is fail-closed: with the setting off the tools
   are not registered at all, so models never see them.
 - `CreateWorkflow` always asks for approval; the request flows through the
-  normal bb approval flow like any other high-effect tool, with the script
+  normal VesnALIA approval flow like any other high-effect tool, with the script
   text visible in the approval.
 - Runs report back through the same background channel as other native
   background work: when a run completes, its `<task-notification>` wakes the
@@ -123,14 +123,14 @@ roster of subagents:
   process - completed runs stay readable through the native read API after
   the process exits.
 - Workflow subagents use the session's model and consume plan quota while
-  bb is open; the run itself continues only while the CLI process lives
+  VesnALIA is open; the run itself continues only while the CLI process lives
   (closing the thread stops active runs, matching the native terminal
   behavior).
 - The model must load the bundled `dynamic-workflows` skill before
   submitting a script - the native skill gate enforces this and the tool
   error tells the model how.
 
-- The timeline renders the workflow graph natively in bb: the
+- The timeline renders the workflow graph natively in VesnALIA: the
   `CreateWorkflow` row is drawn as a rail with phase stations, subagent
   pills and control-flow arcs (the plugin's own extension item and
   frontend renderer). If upstream truncates the graph the row falls back
@@ -144,7 +144,7 @@ the `causalityGraph` display payload, run reads) is pinned in
 
 Model IDs use `providerId/modelId`; model and reasoning options come from
 ZCode. Unsupported or stale reasoning choices fall back to a native model
-default, as required by bb's bridge contract.
+default, as required by VesnALIA's bridge contract.
 
 The fallback **ZCode models unavailable** entry appears while the catalog is
 unavailable. It does not prove that a provider is authenticated. Likewise,
@@ -155,9 +155,9 @@ Coding Plan label without invented usage numbers.
 
 ## Individual Coding Plan
 
-Sign in to ZCode Desktop on the same machine and OS user that runs bb. Select
+Sign in to ZCode Desktop on the same machine and OS user that runs VesnALIA. Select
 individual Coding Plan (Z.ai or BigModel) and open it once in ZCode so its
-project key exists. Update the plugin and start a new bb session. The plugin
+project key exists. Update the plugin and start a new VesnALIA session. The plugin
 supplies the account catalog and runtime-auth callback expected by ZCode.
 Model names and efforts come from the installed catalog; no effort options
 are invented by the plugin.
@@ -168,11 +168,11 @@ for short-lived project tokens using fixed official account endpoints, checks
 the subscription, and holds those tokens only in memory. It does not create
 API keys or modify desktop credentials. Raw child-protocol recording is disabled
 because authentication replies contain credentials. Signing out or switching
-accounts invalidates the current bb session's credentials.
+accounts invalidates the current VesnALIA session's credentials.
 
 On macOS, the standard ZCode app supplies its builtin catalog and app version.
 Custom installations must supply `ZCODE_BUILTIN_PROVIDER_CONFIG_FILE` and
-`ZCODE_APP_VERSION` in bb's environment. `ZCODE_DATA_BASE_DIR` and
+`ZCODE_APP_VERSION` in VesnALIA's environment. `ZCODE_DATA_BASE_DIR` and
 `ZCODE_CREDENTIAL_SECRET`, when used, must match ZCode. Both builtin and personal
 catalog paths are passed explicitly to keep account-overlay revisions aligned.
 Standalone CLI-only login, Start Plan, and Team plans are outside this version's
@@ -191,7 +191,7 @@ unverified.
 
 ## Attachments, follow-ups and context
 
-Attach local images or files with bb's composer or `bb thread tell --image` /
+Attach local images or files with VesnALIA's composer or `alia thread tell --image` /
 `--file`. Paths must be available on the execution host. Inline image data URLs
 and HTTPS images are supported up to 16 MiB; HTTPS downloads use a deadline and
 reject redirects and URL credentials. Native format/model limits still apply.
@@ -201,14 +201,14 @@ formats are delegated to ZCode and remain unverified.
 Follow-up messages queue in FIFO order and run after the current turn finishes.
 The queue holds up to 32 pending inputs. Stopping/releasing the session clears
 pending follow-ups; queued inputs are not persisted by the bridge across a
-process crash. bb validates expected turn identity; the bridge returns typed
+process crash. VesnALIA validates expected turn identity; the bridge returns typed
 stale-turn recovery when no turn remains active. `/compact` uses the native
 compaction operation. Normal context reporting uses native estimates; billing
 cost is not fabricated.
 
 ## MCP and native runtime preferences
 
-Set `memoryEnabled` or `nativeSearchEnhancementsEnabled` through bb's plugin
+Set `memoryEnabled` or `nativeSearchEnhancementsEnabled` through VesnALIA's plugin
 settings, then start a new session. Both are off by default for compatibility.
 ZCode owns memory storage and behavior; enabling the setting is not proof that
 its extraction/recall cycle has been validated through a production model.
@@ -239,24 +239,24 @@ not exposed by this setting. Existing enabled native plugins and CLI MCP
 configuration remain ZCode-managed; Desktop MCP settings are not automatically
 imported. The setting injects servers at both session creation and resume.
 
-## bb tools and skills
+## VesnALIA tools and skills
 
-Enable `bbToolsEnabled` to make tools selected by bb plugins available through
+Enable `aliaToolsEnabled` to make tools selected by VesnALIA plugins available through
 a private loopback MCP endpoint for each session. It is off by default: ZCode’s
 host-supplied MCP list replaces the native CLI MCP list. When enabled, list any
 additional custom servers in `mcpServers`; native plugin MCP servers still load.
-Names and JSON input schemas come from bb; calls return through bb's tool
+Names and JSON input schemas come from VesnALIA; calls return through VesnALIA's tool
 dispatcher, with the original plugin presentation, text/image results and failure
-status. The `bb-bridge` MCP server name is reserved. Tool selection is fixed at session
-creation and rebuilt on cold resume; bb's denied tools are excluded.
+status. The `alia-bridge` MCP server name is reserved. Tool selection is fixed at session
+creation and rebuilt on cold resume; VesnALIA's denied tools are excluded.
 
 The endpoint binds only to 127.0.0.1, requires a random session credential,
 rejects browser-origin requests and bounds request bodies to 1 MiB. Unknown
 tools and calls outside an active turn fail. Stop, crash and turn settlement
 cancel pending bridge waits and settle their rows. Calls time out after ten
-minutes. Cancellation does not undo effects a bb tool has already performed.
+minutes. Cancellation does not undo effects a VesnALIA tool has already performed.
 
-bb skills are delivered as a model-visible catalog of names, descriptions and
+VesnALIA skills are delivered as a model-visible catalog of names, descriptions and
 absolute SKILL.md paths. ZCode reads applicable files with its native file
 tools; supporting assets stay in the original skill directory. This does not
 register the skills in ZCode's native `Skill` tool catalog. The roots must be
@@ -296,18 +296,18 @@ launch. Empty settings preserve native agent loading; an explicit
 
 The native startup callback is scoped to the supervised session and checked
 against the returned session identity. Child questions and approvals use the
-parent bb session. Nested tool events preserve their parent reference; Bash
-commands use bb's command row with bounded output snapshots and final output.
+parent VesnALIA session. Nested tool events preserve their parent reference; Bash
+commands use VesnALIA's command row with bounded output snapshots and final output.
 A full subagent tree, background-task management, rich diffs and checkpoint UI
 remain outside this release. A background preference in a profile does not
-establish complete bb background-task support.
+establish complete VesnALIA background-task support.
 
 ## Permissions and sessions
 
-| bb mode                 | ZCode mode                                     |
+| VesnALIA mode                 | ZCode mode                                     |
 | ----------------------- | ---------------------------------------------- |
 | Plan composer action    | `plan`                                         |
-| `accept-edits` / `auto` | `build`, with approval decisions handled by bb |
+| `accept-edits` / `auto` | `build`, with approval decisions handled by VesnALIA |
 | `full`                  | `yolo`                                         |
 
 These are agent approval policies, not an OS sandbox. The ZCode CLI runs with
@@ -319,9 +319,9 @@ non-restorable because ZCode does not persist them until a turn starts. Saved
 conversations resume by native session ID; resume failure is reported rather
 than silently replacing the conversation.
 
-bb archive, unarchive and rename actions are bb-local: the native protocol
+VesnALIA archive, unarchive and rename actions are alia-local: the native protocol
 has no title or archive API, ZCode title generation stays off, and names
-live in bb. Clearing a thread goal calls the native `session/goal` clear
+live in VesnALIA. Clearing a thread goal calls the native `session/goal` clear
 action and requires that thread's active session.
 
 ## Troubleshooting
@@ -331,24 +331,24 @@ action and requires that thread's active session.
 | ZCode executable not found       | Set `executable` explicitly and check the host path.                                                |
 | A JavaScript CLI will not start  | Point `nodeExecutable` to Node.js 24+ on that host.                                                 |
 | No usable model appears          | Update the plugin, connect Coding Plan or a personal provider in ZCode, then refresh models.        |
-| Coding Plan authentication fails | Reconnect individual Coding Plan in ZCode Desktop on the same machine, then start a new bb session. |
-| Install cannot connect to bb     | Start bb, or check `BB_SERVER_URL` for a separate instance.                                         |
+| Coding Plan authentication fails | Reconnect individual Coding Plan in ZCode Desktop on the same machine, then start a new VesnALIA session. |
+| Install cannot connect to VesnALIA     | Start VesnALIA, or check `ALIA_SERVER_URL` for a separate instance.                                         |
 | An older session cannot resume   | Check the CLI version and native session data; retain the error and session ID.                     |
 
 ## Build and live checks
 
-`npm run build` uses bb's plugin builder and emits `dist/server.js`,
+`npm run build` uses VesnALIA's plugin builder and emits `dist/server.js`,
 `dist/host.js`, source maps, and SDK metadata. Generated `dist` files are not
-committed. Without the desktop app, `bb-app@0.46.1` can supply the build CLI.
+committed. Without the desktop app, `alia-app@0.46.1` can supply the build CLI.
 
 `npm run test:live` creates an isolated workspace and loopback model server.
 Its processes and listener are closed at the end; the printed temporary
 evidence directory is retained.
 
-For the optional full bb check, install the plugin in a **disposable bb
-instance** and set `BB_SMOKE_SERVER_URL`, `BB_SMOKE_DATA_DIR`, and, if needed,
-`BB_HOST_DAEMON_PORT`. This check changes that instance's ZCode executable
-setting and creates a project/thread. Do not target a normal bb profile.
+For the optional full VesnALIA check, install the plugin in a **disposable VesnALIA
+instance** and set `ALIA_SMOKE_SERVER_URL`, `ALIA_SMOKE_DATA_DIR`, and, if needed,
+`ALIA_HOST_DAEMON_PORT`. This check changes that instance's ZCode executable
+setting and creates a project/thread. Do not target a normal VesnALIA profile.
 
 Upstream contracts:
 [provider API](https://github.com/get-bb/bb/blob/main/docs/provider-plugin-api.md),
@@ -357,10 +357,10 @@ Upstream contracts:
 
 ## Background work, forks and rewind
 
-Use bb's normal **Fork** and edit-message/rewind actions. Each completed native
+Use VesnALIA's normal **Fork** and edit-message/rewind actions. Each completed native
 assistant turn exposes a checkpoint. A fork copies conversation history up to
 that checkpoint into a separate native session, then resumes it with the new
-thread's tools and settings. Forking into another bb environment is supported.
+thread's tools and settings. Forking into another VesnALIA environment is supported.
 The source conversation and workspace files are preserved. A tip fork requires
 an idle conversation with a stable assistant reply; empty/unfinished tips fail.
 
@@ -380,7 +380,7 @@ An idle release checks native work before detaching; use Stop to interrupt the
 session and cancel its owned tasks. This does not add durable scheduling or a
 complete child-session tree.
 
-Provider commands appear in bb's command menu and `bb thread commands`:
+Provider commands appear in VesnALIA's command menu and `alia thread commands`:
 
 | Command                              | Behavior                                                                                                      |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------- |

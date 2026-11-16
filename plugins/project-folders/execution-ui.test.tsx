@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeAll, afterEach, expect, it } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { installTestMatchMedia, setCompactViewport } from "./test-match-media";
 
 let app: Awaited<ReturnType<typeof loadPluginApp>>;
@@ -78,12 +78,12 @@ it("starts a section chat with the provider and model pinned above it", async ()
     { rpc },
   );
   const composer = await waitFor(() =>
-    view.getByTestId("bb-new-thread-composer"),
+    view.getByTestId("alia-new-thread-composer"),
   );
   expect(composer.getAttribute("data-default-provider-id")).toBe("claude-code");
   expect(composer.getAttribute("data-default-model")).toBe("claude-opus-5");
   expect(composer.getAttribute("data-default-reasoning-level")).toBe("high");
-  // Nobody pinned these: BB keeps its own behaviour.
+  // Nobody pinned these: VesnALIA keeps its own behaviour.
   expect(composer.getAttribute("data-default-service-tier")).toBe("");
   expect(composer.getAttribute("data-default-permission-mode")).toBe("");
   expect(JSON.parse(composer.getAttribute("data-default-environment")!)).toEqual(
@@ -111,7 +111,7 @@ it("opens a chat even when the pinned values cannot be read", async () => {
     },
   );
   const composer = await waitFor(() =>
-    view.getByTestId("bb-new-thread-composer"),
+    view.getByTestId("alia-new-thread-composer"),
   );
   expect(composer.getAttribute("data-default-provider-id")).toBe("");
   view.lifecycle.unmount();
@@ -138,7 +138,7 @@ it("starts a section chat in a managed worktree when that is pinned", async () =
     },
   );
   const composer = await waitFor(() =>
-    view.getByTestId("bb-new-thread-composer"),
+    view.getByTestId("alia-new-thread-composer"),
   );
   expect(JSON.parse(composer.getAttribute("data-default-environment")!)).toEqual(
     {
@@ -196,7 +196,7 @@ it("starts a section chat on the pinned machine and that host's folder path", as
     },
   );
   const composer = await waitFor(() =>
-    view.getByTestId("bb-new-thread-composer"),
+    view.getByTestId("alia-new-thread-composer"),
   );
   expect(JSON.parse(composer.getAttribute("data-default-environment")!)).toEqual(
     {
@@ -256,7 +256,7 @@ it("starts a section chat in a managed worktree on the pinned machine", async ()
     },
   );
   const composer = await waitFor(() =>
-    view.getByTestId("bb-new-thread-composer"),
+    view.getByTestId("alia-new-thread-composer"),
   );
   expect(JSON.parse(composer.getAttribute("data-default-environment")!)).toEqual(
     {
@@ -292,7 +292,7 @@ it("starts a section chat on the home host when the pinned machine has no folder
     },
   );
   const composer = await waitFor(() =>
-    view.getByTestId("bb-new-thread-composer"),
+    view.getByTestId("alia-new-thread-composer"),
   );
   expect(JSON.parse(composer.getAttribute("data-default-environment")!)).toEqual(
     {
@@ -313,7 +313,7 @@ it("shows a section where its unpinned model comes from", async () => {
   fireEvent.click(await view.findByRole("tab", { name: "Provider" }));
   await view.findByText("Provider, model and agent");
   expect(view.baseElement.textContent).toContain("from the project");
-  const picker = view.getByTestId("bb-provider-model-picker");
+  const picker = view.getByTestId("alia-provider-model-picker");
   expect(picker.getAttribute("data-disabled")).toBe("true");
   expect(picker.getAttribute("data-routing-id")).toBe("h1");
   view.lifecycle.unmount();
@@ -347,7 +347,7 @@ it("pins an agent on the section and saves it", async () => {
   view.lifecycle.unmount();
 });
 
-it("hides as-in-BB on environment and machine when nothing above pins them", async () => {
+it("hides as-in-ALIA on environment and machine when nothing above pins them", async () => {
   const view = renderSlot(app.navPanels[0]!, { subPath: "" }, { rpc });
   await view.findByText("Project");
   view.getByText("Section").click();
@@ -359,19 +359,19 @@ it("hides as-in-BB on environment and machine when nothing above pins them", asy
   const machineRow = view
     .getByRole("combobox", { name: "Own machine" })
     .closest(".pf-exec-row");
-  expect(envRow?.textContent).not.toContain("as in BB");
-  expect(machineRow?.textContent).not.toContain("as in BB");
+  expect(envRow?.textContent).not.toContain("as in VesnALIA");
+  expect(machineRow?.textContent).not.toContain("as in VesnALIA");
   expect(envRow?.querySelector(".pf-exec-from")).toBeNull();
   expect(machineRow?.querySelector(".pf-exec-from")).toBeNull();
   expect(
     view
       .getByRole("switch", { name: "Own permission mode" })
       .closest(".pf-exec-row")?.textContent,
-  ).toContain("as in BB");
+  ).toContain("as in VesnALIA");
   expect(
     view.getByRole("combobox", { name: "Agent" }).closest(".pf-exec-row")
       ?.textContent,
-  ).toContain("as in BB");
+  ).toContain("as in VesnALIA");
   view.lifecycle.unmount();
 });
 
@@ -494,7 +494,7 @@ it("pins a machine on the section and shows the inherited origin when off", asyn
   view.lifecycle.unmount();
 });
 
-it("labels a pin outside the offered list with its BB name", async () => {
+it("labels a pin outside the offered list with its VesnALIA name", async () => {
   const view = renderSlot(
     app.navPanels[0]!,
     { subPath: "" },
@@ -707,7 +707,7 @@ it("does not argue with the picker about a service tier it dropped", async () =>
   view.lifecycle.unmount();
 });
 
-it("warns that BB's remembered provider cannot run and writes the project setting on request", async () => {
+it("warns that VesnALIA's remembered provider cannot run and writes the project setting on request", async () => {
   const remembered = {
     providerId: "acp-antigravity",
     model: "gemini-3.8-flash",
@@ -723,7 +723,7 @@ it("warns that BB's remembered provider cannot run and writes the project settin
         ...rpc,
         execution_read: (input: { scope: { kind: string } }) => ({
           ...rpc.execution_read(),
-          bb:
+          alia:
             input.scope.kind === "project"
               ? {
                   remembered,
@@ -750,15 +750,15 @@ it("warns that BB's remembered provider cannot run and writes the project settin
   fireEvent.click(await view.findByRole("tab", { name: "Provider" }));
   await view.findByText("Provider, model and agent");
   expect(view.baseElement.textContent).toContain(
-    "Remembered in BB: acp-antigravity · gemini-3.8-flash · high · full.",
+    "Remembered in VesnALIA: acp-antigravity · gemini-3.8-flash · high · full.",
   );
   expect(view.baseElement.textContent).toContain(
     "chats started without an explicit provider will fail",
   );
-  fireEvent.click(view.getByRole("button", { name: "Save to BB" }));
+  fireEvent.click(view.getByRole("button", { name: "Save to VesnALIA" }));
   await waitFor(() =>
     expect(view.baseElement.textContent).toContain(
-      "Saved to BB: chats started without an explicit provider will go here.",
+      "Saved to VesnALIA: chats started without an explicit provider will go here.",
     ),
   );
   expect(

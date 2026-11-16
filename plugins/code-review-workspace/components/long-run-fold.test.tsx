@@ -30,7 +30,7 @@ vi.mock("@pierre/diffs/react", async () => {
   };
 });
 
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import type { FileViewFlags } from "./DiffViewer";
 import { InlineDraftContext, type InlineDraft } from "./InlineDraft";
 import { MOVED_OUT, hunkPatch } from "../lib/diff-fixtures.test-support";

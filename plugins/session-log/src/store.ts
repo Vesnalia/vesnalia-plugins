@@ -5,7 +5,7 @@ import type { ActiveThinking, SessionLogSdk, ThreadEventRow, TimelineResponse, T
 export interface SessionLogSnapshot {
   status: "loading" | "ready" | "error";
   rows: readonly TimelineRow[];
-  /** Input bb gave the agent but left out of the timeline, ordered by seq. */
+  /** Input VesnALIA gave the agent but left out of the timeline, ordered by seq. */
   hidden: readonly HiddenMessage[];
   activeThinking: ActiveThinking | null;
   projectId: string | null;
@@ -14,9 +14,9 @@ export interface SessionLogSnapshot {
   hiddenError: string | null;
 }
 
-// The most bb's thread events endpoint returns at once (THREAD_EVENT_LIST_PAGE_SIZE).
+// The most VesnALIA's thread events endpoint returns at once (THREAD_EVENT_LIST_PAGE_SIZE).
 const EVENT_PAGE_SIZE = 100;
-// bb builds the whole latest window for every refresh, blocking its event loop while it does, so the
+// VesnALIA builds the whole latest window for every refresh, blocking its event loop while it does, so the
 // log waits at least four times as long as the last request took: at most a fifth of the server's time.
 const REQUEST_COST_FACTOR = 4;
 const MAX_REFRESH_INTERVAL_MS = 5_000;
@@ -183,7 +183,7 @@ export function createSessionLogStore(options: {
     const previous = latestWindow;
     if (previous === null) return;
     try {
-      // bb answers with what changed since the window that carried this tag, or with a whole window
+      // VesnALIA answers with what changed since the window that carried this tag, or with a whole window
       // when it no longer holds that one.
       const response = await readChanges(previous.tag);
       if (!isCurrent(requestGeneration)) return;

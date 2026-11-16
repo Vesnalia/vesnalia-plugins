@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createThreadPortActions } from "./thread-ports";
 
 it("routes port actions to the thread's current host and filters ownership", async () => {
@@ -16,20 +16,20 @@ it("routes port actions to the thread's current host and filters ownership", asy
         }
       : { signalled: [3000], skipped: [], failed: [] },
   );
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     experimental_callHostRpc: call,
     sdk: {
       threads: { get: async () => makeThreadResponse({ id: "thr_a", environmentId: "env_a" }) },
       environments: {
         get: async () =>
           ({ id: "env_a", path: "/workspace/a", status: "ready", hostId: "host_a" }) as Awaited<
-            ReturnType<BbPluginApi["sdk"]["environments"]["get"]>
+            ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>
           >,
       },
     },
   });
   try {
-    const actions = createThreadPortActions(bb);
+    const actions = createThreadPortActions(alia);
     const result = await actions.getThreadPorts({ threadId: "thr_a" });
     expect(result).toEqual({
       ports: [{ port: 3000, pid: 100 }],

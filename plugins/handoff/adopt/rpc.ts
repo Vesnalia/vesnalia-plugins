@@ -1,7 +1,7 @@
 // RPC surface of the adopt direction, merged into the plugin's single
 // contract in server.ts. Method names are namespaced under no prefix because
 // they don't collide with the handoff methods.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { listMachines, matchMachine, type Machine } from "../machines";
 import {
@@ -101,14 +101,14 @@ export const adoptRpcShape = {
  * depends on which of the two spellings the frontend sent.
  */
 async function resolveRemoteTarget(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   machineId: string | null | undefined,
 ): Promise<{ remote: Machine | null; error: string | null }> {
   if (!machineId) return { remote: null, error: null };
-  const machines = await listMachines(bb).catch(() => []);
+  const machines = await listMachines(alia).catch(() => []);
   const target = matchMachine(machines, machineId);
   if (!target) return { remote: null, error: `Unknown machine "${machineId}".` };
-  const { primaryHostId } = await bb.sdk.system.config().catch(() => ({ primaryHostId: null }));
+  const { primaryHostId } = await alia.sdk.system.config().catch(() => ({ primaryHostId: null }));
   if (target.id === primaryHostId) return { remote: null, error: null };
   if (!target.connected) {
     return {
@@ -159,10 +159,10 @@ function mapOutcome(outcome: AdoptOutcome): AdoptRpcResult {
   };
 }
 
-export function createAdoptRpcHandlers(bb: BbPluginApi) {
+export function createAdoptRpcHandlers(alia: AliaPluginApi) {
   return {
     async listProjects() {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       return {
         projects: projects.map((project) => {
           const source = project.sources.find((s) => s.isDefault) ?? project.sources[0];
@@ -171,7 +171,7 @@ export function createAdoptRpcHandlers(bb: BbPluginApi) {
       };
     },
     async adoptMachines() {
-      const machines = await listMachines(bb).catch(() => []);
+      const machines = await listMachines(alia).catch(() => []);
       return {
         machines: machines.map((machine) => ({
           id: machine.id,
@@ -190,11 +190,11 @@ export function createAdoptRpcHandlers(bb: BbPluginApi) {
       cwd: string | null;
       machineId?: string;
     }) {
-      const target = await resolveRemoteTarget(bb, machineId);
+      const target = await resolveRemoteTarget(alia, machineId);
       if (target.error) return { cwd: null, sessions: [], error: target.error };
       const resolvedCwd =
         cwd?.trim() ||
-        (projectId ? await resolveProjectCwd(bb, projectId, target.remote?.id) : null);
+        (projectId ? await resolveProjectCwd(alia, projectId, target.remote?.id) : null);
       if (!resolvedCwd) {
         return {
           cwd: null,
@@ -223,7 +223,7 @@ export function createAdoptRpcHandlers(bb: BbPluginApi) {
           error: null,
         };
       }
-      const result = await listRemoteSessionsForDirectory(bb, {
+      const result = await listRemoteSessionsForDirectory(alia, {
         machine: target.remote.id,
         cwd: resolvedCwd,
       });
@@ -258,20 +258,20 @@ export function createAdoptRpcHandlers(bb: BbPluginApi) {
       force?: boolean;
       machineId?: string;
     }) {
-      const target = await resolveRemoteTarget(bb, machineId);
+      const target = await resolveRemoteTarget(alia, machineId);
       if (target.error) return adoptFailure(target.error);
       const trimmedCwd = cwd?.trim() || null;
       let outcome: AdoptOutcome | null = null;
       if (target.remote) {
         if (query?.trim()) {
-          outcome = await performAdoptRemote(bb, {
+          outcome = await performAdoptRemote(alia, {
             machine: target.remote.id,
             query,
             cwd: trimmedCwd,
             force: force ?? false,
           });
         } else if (sessionId) {
-          outcome = await performAdoptRemote(bb, {
+          outcome = await performAdoptRemote(alia, {
             machine: target.remote.id,
             sessionId,
             agent: agent ?? undefined,
@@ -280,9 +280,9 @@ export function createAdoptRpcHandlers(bb: BbPluginApi) {
           });
         }
       } else if (query?.trim()) {
-        outcome = await performAdoptQuery(bb, { query, cwd: trimmedCwd, force: force ?? false });
+        outcome = await performAdoptQuery(alia, { query, cwd: trimmedCwd, force: force ?? false });
       } else if (trimmedCwd) {
-        outcome = await performAdopt(bb, {
+        outcome = await performAdopt(alia, {
           cwd: trimmedCwd,
           sessionId: sessionId ?? undefined,
           agent: agent ?? undefined,

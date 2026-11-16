@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { AboutComputerUse } from "./settings/about";
 import { AgentToolsSettings } from "./settings/agent-tools";
 import { ApproveToolCard } from "./settings/approval";

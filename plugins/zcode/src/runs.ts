@@ -7,7 +7,7 @@ import { record } from "./protocol.js";
 import { workflowRunViewSchema, type WorkflowRunView } from "./runsContract.js";
 
 /**
- * Cross-process run reads for the bb-side surfaces (thread run pane, sidebar
+ * Cross-process run reads for the alia-side surfaces (thread run pane, sidebar
  * hub). `workflows/runs` is served from the persisted journal store, so a
  * short-lived sessionless CLI process can read any workspace's history - the
  * original thread's session is not needed (POC-verified cold read).

@@ -1,23 +1,23 @@
 // The microsandbox backend (053): Linux boxes as libkrun microVMs, run by
-// bb-box's msb on one Linux host with KVM: BB's server, one over ssh://, or
-// a BB machine through bb-box's msb relay (cli.ts). Commands, file copies
+// alia-box's msb on one Linux host with KVM: VesnALIA's server, one over ssh://, or
+// a VesnALIA machine through alia-box's msb relay (cli.ts). Commands, file copies
 // and the desktop's stream all go through `msb exec` (transport.ts), so
-// bb-box needs no network path to a box, as for Docker (031).
+// alia-box needs no network path to a box, as for Docker (031).
 //
-// - msb: bb-box installs the release it pins, checked by SHA-256, in a
+// - msb: alia-box installs the release it pins, checked by SHA-256, in a
 //   folder of its own on the host, the first time it needs it (release.ts).
-// - Images: bb-box never pulls one. It imports each kind's image from
+// - Images: alia-box never pulls one. It imports each kind's image from
 //   Docker on the host, where setup/docker/build.sh builds it, with
 //   `docker save` and `msb load`, and again when Docker's image changes.
 // - Acquire: the box's microVM is named bbbox-<box ID>, so it is claimed
 //   before anything is made. It is made with its owner in its labels, at
 //   its size, with /run a tmpfs, Docker's data on an ext4 disk of its own,
-//   and the network profiles that reach BB's server. Neither `msb create`
+//   and the network profiles that reach VesnALIA's server. Neither `msb create`
 //   nor `msb start` runs the image's command, setup/docker/start, so the
 //   backend starts it through `msb exec` at each boot, and waits for the
-//   /run/bb-box/ready it writes.
+//   /run/alia-box/ready it writes.
 // - Capacity: the host's memory, less a reserve and the memory of the
-//   running bb-box microVMs; its cores; and a most-boxes setting, counting
+//   running alia-box microVMs; its cores; and a most-boxes setting, counting
 //   every install's. msb reserves no memory, so this is what the boxes may
 //   take, not what they hold. An idle box holds far less (#575), so a memory
 //   overcommit above 1 lets the boxes' sizes add up to that many times the
@@ -134,18 +134,18 @@ import {
 /** A box is ready in under a second, a desktop in about one; an import of its image can come first. */
 import { PRODUCT } from "../../brand.ts";
 const READY_TIMEOUT_MS = 60_000;
-const READY_FILE = "/run/bb-box/ready";
+const READY_FILE = "/run/alia-box/ready";
 /** The image's command, which neither `msb create` nor `msb start` runs. */
-const START = "/usr/local/sbin/bb-box-start";
+const START = "/usr/local/sbin/alia-box-start";
 /** On /run, a tmpfs: the image's command was started at this boot. */
-const STARTED = "/run/bb-box-started";
+const STARTED = "/run/alia-box-started";
 /**
  * The guest reports free memory to msb in blocks of 2^order pages, 2 MiB
  * by default, and msb gives the host those blocks back. A busy guest's
  * free memory is in smaller pieces, so at 0 the host gets more of it.
  */
 const REPORTING_ORDER = "/sys/module/page_reporting/parameters/page_reporting_order";
-export const RUN_IN_MEMORY = String.raw`awk '$2 == "/run" { found = 1 } END { exit !found }' /proc/mounts || { held=$(mktemp -d /tmp/bb-box-run.XXXXXX) && cp -a /run/. "$held"/ 2>/dev/null; mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run && cp -a "$held"/. /run/ 2>/dev/null; rm -rf "$held" /run/bb-box /run/bb-box-started /run/bb-box-start.log; }`;
+export const RUN_IN_MEMORY = String.raw`awk '$2 == "/run" { found = 1 } END { exit !found }' /proc/mounts || { held=$(mktemp -d /tmp/alia-box-run.XXXXXX) && cp -a /run/. "$held"/ 2>/dev/null; mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /run && cp -a "$held"/. /run/ 2>/dev/null; rm -rf "$held" /run/alia-box /run/alia-box-started /run/alia-box-start.log; }`;
 export const HOSTNAME_VARIABLE = "BBBOX_HOSTNAME";
 export const OWN_HOSTNAME = String.raw`h=${"$"}{${HOSTNAME_VARIABLE}:-}; [ -z "$h" ] || [ "$(hostname)" = "$h" ] || { hostname "$h"; printf '%s\n' "$h" >/etc/hostname; grep -q "[[:space:]]$h$" /etc/hosts || printf '127.0.1.1\t%s\n' "$h" >>/etc/hosts; }`;
 /** The TUN device, which msb's guest makes root's alone (#595). */
@@ -164,7 +164,7 @@ cached=$(awk '/^Cached:/ { print $2 }' /proc/meminfo)
 sync; echo 3 >/proc/sys/vm/drop_caches; echo 1 >/proc/sys/vm/compact_memory 2>/dev/null
 echo "reclaimed_kib=$cached"`;
 const VNC_PORT = 5900;
-const VNC_PASSWORD_FILE = "/var/lib/bb-box/vnc-password";
+const VNC_PASSWORD_FILE = "/var/lib/alia-box/vnc-password";
 const MiB_PER_GiB = 1024;
 const MiB = 1024 * 1024;
 const PAUSES_FOR_AN_UNKNOWN_TIME: TakePause = { pauses: true, aboutMs: null, basis: null };
@@ -174,12 +174,12 @@ const DID_NOT_PAUSE_MS = 0;
 const ORPHAN_DISK_S = 15 * 60;
 /**
  * The builder microVM's image: Docker's own, with dockerd, pinned by its
- * multi-architecture index's digest, the only image bb-box pulls.
+ * multi-architecture index's digest, the only image alia-box pulls.
  */
 export const BUILDER_IMAGE = "docker:29.1.3-dind@sha256:173f284a4299164772a90f52b373e73e087583c0963f1334c9995f190ef6f3f5";
 /** How long a build may take, and the disk it needs free first, so the host keeps 60 GiB. */
 const BUILD_MS = 90 * 60_000;
-/** How often bb-box asks a detached build whether it has ended, and after how many failed asks in a row it gives up. */
+/** How often alia-box asks a detached build whether it has ended, and after how many failed asks in a row it gives up. */
 const BUILD_POLL_MS = 10_000;
 const BUILD_POLL_MISSES = 6;
 const BUILD_FREE_GIB = 80;
@@ -201,12 +201,12 @@ function setupArchive(setup: string): Promise<Buffer> {
 const ARCH_KEY = "host-arch";
 /** How long the host's facts from the status script serve capacity checks. */
 const FACTS_MS = 60_000;
-/** What a box takes as it starts and joins BB, before the upkeep's reclaim (#575): a new box needs this much available, or its size if less (#557). */
+/** What a box takes as it starts and joins VesnALIA, before the upkeep's reclaim (#575): a new box needs this much available, or its size if less (#557). */
 const START_MIB = 2048;
 
 const MSB_COMMAND: CommandCapability = { transport: "msb", shell: "sh", admin: true, inDesktopSession: false, streaming: true };
 
-/** The bb-box labels on a box's microVM, from its creation. */
+/** The alia-box labels on a box's microVM, from its creation. */
 export const LABELS = {
   backend: "bbbox.backend",
   install: "bbbox.install",
@@ -224,7 +224,7 @@ export const LABELS = {
 } as const;
 
 export interface MsbBackendOptions extends MsbCliOptions {
-  /** bb-box's setup/ folder, which a builder microVM builds images from; the plugin's own by default. */
+  /** alia-box's setup/ folder, which a builder microVM builds images from; the plugin's own by default. */
   readonly setup?: string;
   /** The longest an acquire may take, instead of the kind's. */
   readonly readyTimeoutMs?: number;
@@ -273,7 +273,7 @@ export function parseFacts(stdout: string): HostFacts {
   };
 }
 
-/** A microVM bb-box is making, counted against the host until msb lists it. */
+/** A microVM alia-box is making, counted against the host until msb lists it. */
 interface Placing {
   readonly name: string;
   readonly memoryMiB: number;
@@ -283,7 +283,7 @@ interface HostState {
   readonly facts: HostFacts;
   /** The host's memory available now, read only when the memory overcommit is above 1. */
   readonly availableMiB: number | null;
-  /** Every bb-box microVM on the host, of every install, with its cores and memory. */
+  /** Every alia-box microVM on the host, of every install, with its cores and memory. */
   readonly boxes: readonly { readonly name: string; readonly status: string; readonly cpus: number; readonly memoryMiB: number }[];
 }
 
@@ -300,7 +300,7 @@ export function sandboxName(boxId: string): string {
   return `bbbox-${boxId.replace(/[^A-Za-z0-9_.-]/g, "-")}`;
 }
 
-/** A box's name as a hostname, so the shell prompt and BB's machine name agree with it. */
+/** A box's name as a hostname, so the shell prompt and VesnALIA's machine name agree with it. */
 export function hostnameOf(name: string): string {
   const cleaned = name
     .toLowerCase()
@@ -420,11 +420,11 @@ export function msbKinds(config: MsbConfig, arch: Arch = "x86_64"): BoxKind[] {
   return MSB_KINDS.filter((kind) => config.images[kind] && kinds[kind].capabilities.arch === arch).map((kind) => kinds[kind]);
 }
 
-/** The host for people: a BB machine's name, an ssh:// host, or BB's server. */
+/** The host for people: a VesnALIA machine's name, an ssh:// host, or VesnALIA's server. */
 function hostWords(config: MsbConfig, context: BackendContext): string {
-  if (config.machine) return context.machines?.name(config.machine) ?? `BB machine ${config.machine}`;
+  if (config.machine) return context.machines?.name(config.machine) ?? `VesnALIA machine ${config.machine}`;
   if (config.host) return config.host.slice(6).replace(/^[^@]*@/, "");
-  return "BB's server";
+  return "ALIA's server";
 }
 
 export class MsbBackend implements Backend {
@@ -462,8 +462,8 @@ export class MsbBackend implements Backend {
 
   /**
    * The host's architecture: as its facts last said, else as kept from the
-   * last run, else a Mac's when BB says the machine is one, else this
-   * process's for BB's server, else x86_64.
+   * last run, else a Mac's when VesnALIA says the machine is one, else this
+   * process's for VesnALIA's server, else x86_64.
    */
   get #hostArch(): Arch {
     if (this.#arch) return this.#arch;
@@ -480,7 +480,7 @@ export class MsbBackend implements Backend {
     return this.#config.host ? [this.#host] : [];
   }
 
-  /** A BB machine's OS as BB has it; else the host's, from its facts; Linux until known. */
+  /** A VesnALIA machine's OS as VesnALIA has it; else the host's, from its facts; Linux until known. */
   get hostOs(): GuestOs | null {
     if (this.#config.machine) return this.#context.machines?.platform?.(this.#config.machine) ?? null;
     return this.#facts?.facts.os === "Darwin" ? "macos" : "linux";
@@ -492,7 +492,7 @@ export class MsbBackend implements Backend {
 
   /**
    * Reads the host's facts when its architecture is not known yet, so a
-   * first box on an ssh:// Mac or BB's server finds the arm64 kinds. A host
+   * first box on an ssh:// Mac or VesnALIA's server finds the arm64 kinds. A host
    * that does not answer is left to the call that needs it to say so.
    */
   async #knowArch(signal?: AbortSignal): Promise<void> {
@@ -528,7 +528,7 @@ export class MsbBackend implements Backend {
     return facts;
   }
 
-  /** Installs the pinned msb on the host when it lacks it, once per run of bb-box. */
+  /** Installs the pinned msb on the host when it lacks it, once per run of alia-box. */
   #install(signal?: AbortSignal): Promise<void> {
     this.#installed ??= (async () => {
       const facts = await this.#hostFacts(signal);
@@ -563,7 +563,7 @@ export class MsbBackend implements Backend {
       const imported = await this.#context.storage.get<string>(this.#importedKey(image));
       if (present && (!docker || docker === imported)) return;
       if (!docker) {
-        // No Docker on the host to import it from, as on a Mac: bb-box builds it there, in a microVM of its own.
+        // No Docker on the host to import it from, as on a Mac: alia-box builds it there, in a microVM of its own.
         const building = this.#startBuild(image, kind);
         throw new BackendError(
           "no_capacity",
@@ -594,7 +594,7 @@ export class MsbBackend implements Backend {
   /**
    * Builds `image` on the host, which has no Docker to import it from, as a
    * Mac: in a builder microVM from Docker's own image, pinned by digest, with
-   * Docker inside on a disk of its own, from a copy of bb-box's setup/, with
+   * Docker inside on a disk of its own, from a copy of alia-box's setup/, with
    * setup/docker/build.sh for the host's architecture. Then moves it into msb
    * (`transfer`) and removes the builder. About 10 minutes on a Mac for both
    * images; it needs BUILD_FREE_GIB free.
@@ -607,15 +607,15 @@ export class MsbBackend implements Backend {
   /**
    * Builds `kind`'s image as `tag` in a builder microVM and moves it into
    * msb. `setup` is the setup/ to build from, the plugin's own by default,
-   * or the refresh's copy with the versions it takes (049); `bbUrl` puts
-   * BB's app in the image. `log` gets the build's last lines.
+   * or the refresh's copy with the versions it takes (049); `aliaUrl` puts
+   * VesnALIA's app in the image. `log` gets the build's last lines.
    */
-  async #buildImage(tag: string, kind: MsbKind, options: { setup?: string; bbUrl?: string | null; log?: (line: string) => void; signal?: AbortSignal }): Promise<void> {
+  async #buildImage(tag: string, kind: MsbKind, options: { setup?: string; aliaUrl?: string | null; log?: (line: string) => void; signal?: AbortSignal }): Promise<void> {
     const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(BUILD_MS)]) : AbortSignal.timeout(BUILD_MS);
     const facts = await this.#hostFacts(signal, true);
     const short = this.#buildShort(facts);
     if (short) throw new Error(short);
-    const name = `bb-box-builder-${randomBytes(4).toString("hex")}`;
+    const name = `alia-box-builder-${randomBytes(4).toString("hex")}`;
     this.#builders.add(name);
     const exec = (script: string, options: { stdin?: string; timeoutMs?: number } = {}) =>
       this.#cli.ok(["exec", "--stream", name, "--", "/bin/sh", "-c", script], { timeoutMs: options.timeoutMs ?? 10 * 60_000, signal, stdin: options.stdin });
@@ -643,7 +643,7 @@ export class MsbBackend implements Backend {
       );
       await exec("mkdir -p /build && base64 -d | tar -xz -C /build", { stdin: (await setupArchive(options.setup ?? this.#options.setup ?? setupDir())).toString("base64") });
       const target = kind.includes("desktop") ? "desktop" : "linux";
-      const url = options.bbUrl ? ` --bb-url ${quote(options.bbUrl)}` : "";
+      const url = options.aliaUrl ? ` --alia-url ${quote(options.aliaUrl)}` : "";
       try {
         // Detached, as dockerd: a heavy build has ended msb's exec session while
         // the microVM ran on (053), so short execs follow it to its exit code.
@@ -725,9 +725,9 @@ export class MsbBackend implements Backend {
   }
 
   /**
-   * Image operations (049) on a host without Docker, as a Mac, where bb-box
+   * Image operations (049) on a host without Docker, as a Mac, where alia-box
    * builds the kinds' images itself: each night's refresh builds a new one
-   * in a builder microVM, with BB's app, under a tag of its own; checks a
+   * in a builder microVM, with VesnALIA's app, under a tag of its own; checks a
    * trial box of it; then moves it under the image's name. On a host with
    * Docker, msb imports what Docker's own images become, so they list no
    * builds here.
@@ -748,7 +748,7 @@ export class MsbBackend implements Backend {
     },
   };
 
-  /** The kinds' images that bb-box builds here, as standard builds, and the trial boxes a refresh left. */
+  /** The kinds' images that alia-box builds here, as standard builds, and the trial boxes a refresh left. */
   async #imageList(signal?: AbortSignal): Promise<{ builds: ImageBuild[]; boxes: string[] }> {
     await this.#knowArch(signal);
     const facts = await this.#hostFacts(signal);
@@ -769,12 +769,12 @@ export class MsbBackend implements Backend {
     return { builds, boxes };
   }
 
-  /** A new build of a kind's image, built as `<image>:refresh-<time>` from the refresh's setup/, with BB's app. */
-  async #buildStandard(current: ImageBuild, setup: string, options: { bbUrl: string | null; log: (line: string) => void; signal: AbortSignal }): Promise<ImageBuild> {
+  /** A new build of a kind's image, built as `<image>:refresh-<time>` from the refresh's setup/, with VesnALIA's app. */
+  async #buildStandard(current: ImageBuild, setup: string, options: { aliaUrl: string | null; log: (line: string) => void; signal: AbortSignal }): Promise<ImageBuild> {
     const kind = current.kind as MsbKind;
     if (!current.current || this.#config.images[kind] !== current.ref) throw new Error(`${current.ref} is not a configured image of microsandbox.`);
     const tag = `${current.ref.replace(/:[^:/]*$/, "")}:refresh-${Date.now().toString(36)}`;
-    await this.#buildImage(tag, kind, { setup, bbUrl: options.bbUrl, log: options.log, signal: options.signal });
+    await this.#buildImage(tag, kind, { setup, aliaUrl: options.aliaUrl, log: options.log, signal: options.signal });
     const labels = await this.#cli.imageLabels(tag, options.signal);
     if (!labels) throw new Error(`The build made no image ${tag} in msb.`);
     const record = recordFromJson(labels[LABELS.imageRecord]);
@@ -792,7 +792,7 @@ export class MsbBackend implements Backend {
         [
           "create", build.ref, "--name", name, "--pull", "never", "--quiet",
           "--label", `${LABELS.backend}=microsandbox`, "--label", `${LABELS.imageBox}=${this.#context.installId}`, "--label", `${LABELS.name}=${label.slice(0, 120).replace(/[^\w .:()/-]/g, "-")}`,
-          "--hostname", "bb-box-image", "--cpus", String(cores), "--memory", `${memoryMiB}M`, "--root-disk", `${this.#config.diskGiB}G`,
+          "--hostname", "alia-box-image", "--cpus", String(cores), "--memory", `${memoryMiB}M`, "--root-disk", `${this.#config.diskGiB}G`,
           "--tmpfs", "/run", "--net", this.#config.network, ...docker,
         ],
         { timeoutMs: 120_000, signal },
@@ -858,7 +858,7 @@ export class MsbBackend implements Backend {
     await this.#oom(signal).catch((error) => this.#context.logError("raise the boxes' oom_score_adj", error));
   }
 
-  /** Raises each bb-box microVM's oom_score_adj on a Linux host, so a host that runs out of memory ends a box before BB's daemon (#557). */
+  /** Raises each alia-box microVM's oom_score_adj on a Linux host, so a host that runs out of memory ends a box before VesnALIA's daemon (#557). */
   async #oom(signal?: AbortSignal): Promise<void> {
     const result = await this.#cli.script("oom", [], signal);
     if (result.exitCode !== 0) throw this.#cli.error(`The oom script on ${this.#host}`, result);
@@ -930,7 +930,7 @@ export class MsbBackend implements Backend {
     this.#kind(kind);
     const machine = this.#config.machine;
     if (machine && (await this.#context.machines?.connected(machine)) !== true) {
-      return { ok: false, message: `${this.#host} is offline in BB.`, warm: null, hosts: [{ host: this.#host, ok: false, limits: [] }] };
+      return { ok: false, message: `${this.#host} is offline in VesnALIA.`, warm: null, hosts: [{ host: this.#host, ok: false, limits: [] }] };
     }
     let state: HostState;
     try {
@@ -963,7 +963,7 @@ export class MsbBackend implements Backend {
     const overcommit = this.#overcommit(facts);
     // What the boxes' sizes may add up to, with the reserve: the host's memory at an overcommit of 1.
     const ceiling = Math.floor(overcommit * (facts.memoryMiB - reserve)) + reserve;
-    // Boxes bb-box is still starting have not taken their memory yet.
+    // Boxes alia-box is still starting have not taken their memory yet.
     const starting =
       placing.reduce((sum, other) => sum + Math.min(other.memoryMiB, START_MIB), 0) + Math.min(unplaced.memoryMiB, unplaced.count * START_MIB);
     const need = Math.min(size.memoryMiB, START_MIB);
@@ -1046,7 +1046,7 @@ export class MsbBackend implements Backend {
       return ready;
     } catch (error) {
       await this.#remove(name, box.boxId).catch((cause) => this.#context.logError("release after a failed acquire", cause));
-      // The box's own disk, which bb-box may have made before msb made the box.
+      // The box's own disk, which alia-box may have made before msb made the box.
       await this.#cli.script("undisk", [name]).catch((cause) => this.#context.logError("release after a failed acquire", cause));
       throw error;
     } finally {
@@ -1122,7 +1122,7 @@ export class MsbBackend implements Backend {
    * (050, #595).
    */
   async #launch(name: string, signal?: AbortSignal): Promise<void> {
-    const script = `${RUN_IN_MEMORY}; ${OWN_HOSTNAME}; echo 0 >${REPORTING_ORDER} 2>/dev/null; chmod 0666 ${TUN} 2>/dev/null; [ -e ${STARTED} ] || { : >${STARTED}; setsid -f ${START} >/run/bb-box-start.log 2>&1 </dev/null; }`;
+    const script = `${RUN_IN_MEMORY}; ${OWN_HOSTNAME}; echo 0 >${REPORTING_ORDER} 2>/dev/null; chmod 0666 ${TUN} 2>/dev/null; [ -e ${STARTED} ] || { : >${STARTED}; setsid -f ${START} >/run/alia-box-start.log 2>&1 </dev/null; }`;
     await Promise.all([
       this.#cli.ok(["exec", name, "--", "/bin/sh", "-c", script], { timeoutMs: 30_000, signal }),
       this.#oom(signal).catch((error) => this.#context.logError("raise the boxes' oom_score_adj", error)),
@@ -1326,7 +1326,7 @@ export class MsbBackend implements Backend {
               minSize: MIN_DESKTOP,
             },
     );
-    // No SSH server is reached in a box, so only BB's server reaches it, through msb exec.
+    // No SSH server is reached in a box, so only VesnALIA's server reaches it, through msb exec.
     return { command, displays, access: null };
   }
 
@@ -1344,10 +1344,10 @@ export class MsbBackend implements Backend {
     } catch (error) {
       if (signal?.aborted) throw error;
       const fix = this.#config.machine
-        ? `Check that ${this.#host} is connected in BB.`
+        ? `Check that ${this.#host} is connected in VesnALIA.`
         : this.#config.host
-          ? `Check that the user BB runs as logs in to ${this.#host} over SSH without a prompt.`
-          : "Check that sh runs for the user BB runs as.";
+          ? `Check that the user VesnALIA runs as logs in to ${this.#host} over SSH without a prompt.`
+          : "Check that sh runs for the user VesnALIA runs as.";
       push("microsandbox.host", hostName, "fail", message(error), fix);
     }
     if (facts) {
@@ -1367,12 +1367,12 @@ export class MsbBackend implements Backend {
           `${PRODUCT} installs msb ${MSB_VERSION} there, checked by its SHA-256, with the next box or within a few minutes. It needs curl and tar on the host.`,
         );
 
-      const kvmFix = `Let the user BB runs as on ${this.#host} use /dev/kvm: add it to the kvm group, then restart its services (sudo systemctl restart user@$(id -u).service) so BB's daemon has the group.`;
+      const kvmFix = `Let the user VesnALIA runs as on ${this.#host} use /dev/kvm: add it to the kvm group, then restart its services (sudo systemctl restart user@$(id -u).service) so VesnALIA's daemon has the group.`;
       if (facts.os === "Darwin") {
         if (facts.kvm === "ok") push("microsandbox.kvm", "Hypervisor", "ok", "The Mac's Hypervisor framework is there.");
         else push("microsandbox.kvm", "Hypervisor", "fail", `${this.#host} says the Hypervisor framework is not supported (kern.hv_support), so no box starts.`, "Use a Mac with Apple silicon, not a VM.");
-      } else if (facts.kvm === "ok") push("microsandbox.kvm", "KVM", "ok", "/dev/kvm is there, and BB's user may use it.");
-      else if (facts.kvm === "denied") push("microsandbox.kvm", "KVM", "fail", "/dev/kvm is there, but BB's user may not use it, so no box starts.", kvmFix);
+      } else if (facts.kvm === "ok") push("microsandbox.kvm", "KVM", "ok", "/dev/kvm is there, and VesnALIA's user may use it.");
+      else if (facts.kvm === "denied") push("microsandbox.kvm", "KVM", "fail", "/dev/kvm is there, but VesnALIA's user may not use it, so no box starts.", kvmFix);
       else push("microsandbox.kvm", "KVM", "fail", `${this.#host} has no /dev/kvm, so no box starts.`, "Use a Linux host with KVM: the machine itself, or a VM with nested virtualisation on.");
 
       const overcommit = this.#config.memoryOvercommit;
@@ -1414,7 +1414,7 @@ export class MsbBackend implements Backend {
       const [linuxPins, desktopPins, app, chromeAmd, chromeArm] = await Promise.all([
         this.#context.images?.pins("linux") ?? null,
         this.#context.images?.pins("linux-desktop") ?? null,
-        this.#context.images?.bbApp(signal) ?? null,
+        this.#context.images?.aliaApp(signal) ?? null,
         this.#context.images?.chrome?.("x86_64") ?? null,
         this.#context.images?.chrome?.("arm64") ?? null,
       ]).catch(() => [null, null, null, null, null] as const);
@@ -1442,7 +1442,7 @@ export class MsbBackend implements Backend {
         }
         const imported = await this.#context.storage.get<string>(this.#importedKey(image));
         const recorded = recordFromJson(labels[LABELS.imageRecord]);
-        const judged = judgeImage(recorded, { os: "linux", pins: serves.some((kind) => !kind.includes("desktop")) ? linuxPins : desktopPins, bbApp: app, pinChrome: recorded?.arch === "arm64" ? chromeArm : chromeAmd }, `Build it again on the host with setup/docker/build.sh, and ${PRODUCT} imports it.`);
+        const judged = judgeImage(recorded, { os: "linux", pins: serves.some((kind) => !kind.includes("desktop")) ? linuxPins : desktopPins, aliaApp: app, pinChrome: recorded?.arch === "arm64" ? chromeArm : chromeAmd }, `Build it again on the host with setup/docker/build.sh, and ${PRODUCT} imports it.`);
         const behind = inDocker && imported && inDocker !== imported ? ` Docker has a newer build, which ${PRODUCT} imports within a few minutes.` : "";
         push(id, name, judged.status, `For ${serves.join(", ")} boxes. ${judged.detail}${behind}`, judged.fix);
       }

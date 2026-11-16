@@ -9,7 +9,7 @@ import { hostContract } from "../../src/shared/contracts";
 
 const roots: string[] = [];
 function repo() {
-  const path = mkdtempSync(join(tmpdir(), "bb-diff-tree-git-")); roots.push(path);
+  const path = mkdtempSync(join(tmpdir(), "alia-diff-tree-git-")); roots.push(path);
   execFileSync("git", ["init", "-b", "main", path]);
   git(path, "config", "user.name", "Diff Tree Test"); git(path, "config", "user.email", "diff-tree@example.invalid");
   return path;

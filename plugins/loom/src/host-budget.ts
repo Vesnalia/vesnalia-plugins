@@ -10,7 +10,7 @@ const NETWORK_CALL_MS = 150_000;
 const NETWORK_METHODS: readonly HostMethod[] = ["prCreate", "prState", "prFeedback", "prBatch", "ensureWorktree", "ghStatus", "exportChanges", "prRetarget", "prRequestReview", "prEdit", "prReply"];
 // The calls that list or write trees on the project's checkout (ls-tree, mktree, commit-tree, merge-tree), all of whose steps share the input's indexTimeoutMs, else GIT_INDEX_TIMEOUT_MS.
 const GIT_INDEX_METHODS: readonly HostMethod[] = ["importCommit", "stackBase", "mergeOnto"];
-/** bb's host call cap is 30 minutes; every call stays under it. */
+/** VesnALIA's host call cap is 30 minutes; every call stays under it. */
 const CALL_CAP_MS = 1_770_000;
 // The calls that run git fetch, ls-remote or push, each step limited to the input's networkTimeoutMs (the repo's
 // git_network_timeout_seconds, else GIT_NETWORK_TIMEOUT_MS). prCommit, fetchTip, importCommit, carryStart and landedOn may run

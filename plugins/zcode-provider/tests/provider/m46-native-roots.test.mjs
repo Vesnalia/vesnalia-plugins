@@ -35,7 +35,7 @@ test('M46 native catalogue canonical original files deduplicate aliases, omit pl
 });
 
 test('M46 provider publishes only dynamic native roots and host retains native SDK validators', async () => {
-  assert.equal(host.default, host.experimental_host, 'Installed bb host worker imports the default entry');
+  assert.equal(host.default, host.experimental_host, 'Installed VesnALIA host worker imports the default entry');
   let provider;
   await plugin({ settings: { define: () => ({ get: async () => ({ authMode: 'desktop' }), onChange() {} }) },
     providers: { register: value => { provider = value; } } });

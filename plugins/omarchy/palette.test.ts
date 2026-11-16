@@ -85,7 +85,7 @@ describe("parseOmarchyColors", () => {
 });
 
 describe("buildThemeCss", () => {
-  it("forces both BB client modes onto Omarchy's declared light mode", () => {
+  it("forces both VesnALIA client modes onto Omarchy's declared light mode", () => {
     const css = buildThemeCss(parseOmarchyColors(LIGHT), "smooth");
     expect(css).toContain(":root, .light, .dark");
     expect(css).toContain("color-scheme: light");
@@ -108,7 +108,7 @@ describe("color policy", () => {
     expect(contrastText("#121212")).toBe("#ffffff");
   });
 
-  it("maps accent hue to BB's favicon vocabulary", () => {
+  it("maps accent hue to VesnALIA's favicon vocabulary", () => {
     expect(faviconColor("#3264eb")).toBe("blue");
     expect(faviconColor("#cba6f7")).toBe("purple");
   });

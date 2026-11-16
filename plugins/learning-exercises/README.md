@@ -1,6 +1,6 @@
 # Learning Exercises
 
-A [bb](https://getbb.app) plugin that offers you a short exercise on work you just did with an agent —
+A [VesnALIA](https://getbb.app) plugin that offers you a short exercise on work you just did with an agent —
 after a commit, new files, a schema change or a merged pull request — and runs it in a side thread
 with a real answer card, so you keep learning the code your agents write.
 
@@ -14,7 +14,7 @@ is not affiliated with or endorsed by the author; see [NOTICE.md](NOTICE.md).
   commit, new source files, a schema or interface change, or when the thread's pull request merges,
   a one-line offer appears above the composer: *"Learning: you just committed "Retry turns after a
   rate limit". Want a 10–15 minute exercise on it?"* with **Start**, **Later** and **Not in this
-  thread**. The decision is made from bb's own data (HEAD, the turn's file changes, PR Status), never
+  thread**. The decision is made from VesnALIA's own data (HEAD, the turn's file changes, PR Status), never
   by a model, so offers cost no tokens.
 - **Nothing reaches an agent until you say Start.** The plugin ships no skill and adds no
   instructions or tools to your threads. Only a session you start gets the exercise instructions.
@@ -26,7 +26,7 @@ is not affiliated with or endorsed by the author; see [NOTICE.md](NOTICE.md).
   there are no hints after the question. Your answer and confidence stay in the transcript as your
   own words. What you have typed but not sent is saved as you go, so leaving the thread, a reload or
   another device brings the card back as you left it.
-- **Feedback you can still read.** bb folds a turn's work and earlier messages into "Worked for" when
+- **Feedback you can still read.** VesnALIA folds a turn's work and earlier messages into "Worked for" when
   the turn ends, so feedback written as an ordinary message would vanish from view. The agent hands its
   feedback over with its verdict instead, and the chat shows it as a card, with the verdict, just above
   the last message of that turn: above "I've asked the next question", and above the closing line after
@@ -63,17 +63,17 @@ is not affiliated with or endorsed by the author; see [NOTICE.md](NOTICE.md).
   A file with Windows (CRLF) line endings will not pass `showboat verify`: listings are captured
   without the `\r`, so showboat's output never matches (the plugin's own Verify ignores line endings).
 - **Files open from the question.** File names in a question, its list of files to open, your past
-  answers and an offer are links that open the file in bb, at the line or range the question points to.
-- **Pause and come back.** A paused session — by you, by a 30-minute timeout, or by a bb restart —
+  answers and an offer are links that open the file in VesnALIA, at the line or range the question points to.
+- **Pause and come back.** A paused session — by you, by a 30-minute timeout, or by a VesnALIA restart —
   resumes in its thread, with the open question shown again.
 
 ## Install
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin learning-exercises --tag-prefix learning-exercises/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin learning-exercises --tag-prefix learning-exercises/
 ```
 
-Needs bb 0.48.1 or later, with bb's bundled **Git** plugin on (it reads commits) and, for pull-request
+Needs VesnALIA 0.48.1 or later, with VesnALIA's bundled **Git** plugin on (it reads commits) and, for pull-request
 offers, **GitHub PR Status**.
 
 ## Settings
@@ -117,9 +117,9 @@ project** are listed under the settings, each with Undo.
   plugin cannot tell whose they are.
 - Answers are capped at 20,000 characters; the card says so when you reach it. A form's text fields
   have their own, smaller limits, and a form has at most 24 fields and tables of at most 60 cells.
-- The `bb learning` commands act on the session of the thread they say they come from (`BB_THREAD_ID`);
-  bb gives a plugin command no way to verify that, so they trust it, like everything on your machine
-  that bb trusts. Other plugins cannot change your offers or sessions.
+- The `alia learning` commands act on the session of the thread they say they come from (`ALIA_THREAD_ID`);
+  VesnALIA gives a plugin command no way to verify that, so they trust it, like everything on your machine
+  that VesnALIA trusts. Other plugins cannot change your offers or sessions.
 
 ## How it works
 

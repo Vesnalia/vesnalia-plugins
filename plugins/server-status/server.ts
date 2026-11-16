@@ -1,4 +1,4 @@
-// bb-plugin-server-status — backend: host metrics for the sidebar footer icon
+// alia-plugin-server-status — backend: host metrics for the sidebar footer icon
 // (the ring around it) and for the details panel.
 //
 // One background service polls the host every 5 seconds and keeps a fresh
@@ -10,7 +10,7 @@
 //
 // Everything is read straight from Node: /proc for CPU and memory, statfs for
 // the disk. No dependencies, no shelling out.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { readFileSync, statfsSync } from "node:fs";
 import os from "node:os";
 import { z } from "zod";
@@ -188,8 +188,8 @@ export const rpcContract = defineRpcContract({
 
 // --- plugin -----------------------------------------------------------------
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     diskPath: {
       type: "string",
       label: "Disk mount point",
@@ -239,7 +239,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     // Serves the service's snapshot; the fallback only fires in the first
     // fractions of a second after startup, before the service's first tick.
     state: () => latest ?? snapshot(null),
@@ -247,7 +247,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // One service per server, not per client: every panel reads the same
   // snapshot, so polling cost does not grow with the number of tabs.
-  bb.background.service("metrics", {
+  alia.background.service("metrics", {
     async start(signal) {
       let previous = readCpuSample();
       await sleep(WARMUP_MS, signal);
@@ -261,5 +261,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info(`watching ${cores} cores, disk ${diskPath}, tick ${TICK_MS}ms`);
+  alia.log.info(`watching ${cores} cores, disk ${diskPath}, tick ${TICK_MS}ms`);
 }

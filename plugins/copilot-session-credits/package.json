@@ -1,21 +1,21 @@
 {
-  "name": "bb-plugin-copilot-session-credits",
+  "name": "alia-plugin-copilot-session-credits",
   "version": "0.3.4",
   "license": "MIT",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "copilot",
     "ai-credits"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.48.1",
+    "alia": ">=0.48.1",
     "node": ">=22.19.0",
-    "bbPluginSdk": ">=0.6.104"
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Copilot session credits",
-    "description": "Track reported GitHub Copilot credit usage for each BB thread.",
+    "description": "Track reported GitHub Copilot credit usage for each VesnALIA thread.",
     "branding": {
       "icon": "Coins"
     },
@@ -28,7 +28,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@radix-ui/react-popover": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -42,10 +41,10 @@
     "typescript": "^5.7.0"
   },
   "private": true,
-  "description": "BB plugin: per-session Copilot AI Credits beside the context-window indicator (Pi + Copilot CLI).",
+  "description": "VesnALIA plugin: per-session Copilot AI Credits beside the context-window indicator (Pi + Copilot CLI).",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test:accounting": "node test/accounting-test.mjs",
     "test:host": "npm run build && node test/integration-test.mjs",
     "test:frontend": "node test/frontend-test.mjs",
@@ -53,13 +52,21 @@
     "test": "npm run typecheck && npm run test:accounting && npm run test:host && npm run test:frontend"
   },
   "author": "Lalit Rao",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/copilot-session-credits#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lalitjeevanrao/bb-plugins.git",
-    "directory": "packages/bb-plugin-copilot-session-credits"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/copilot-session-credits"
   },
-  "homepage": "https://github.com/lalitjeevanrao/bb-plugins#readme",
   "bugs": {
-    "url": "https://github.com/lalitjeevanrao/bb-plugins/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

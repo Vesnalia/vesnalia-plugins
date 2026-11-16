@@ -1,16 +1,16 @@
-// bb-plugin-agent-board — realtime invalidation for open boards.
+// alia-plugin-agent-board — realtime invalidation for open boards.
 //
-// Subscribes to BB's public entity stream (bb.sdk.subscribe "thread:changed")
-// and the plugin thread lifecycle events (bb.events.on), decides which
+// Subscribes to VesnALIA's public entity stream (alia.sdk.subscribe "thread:changed")
+// and the plugin thread lifecycle events (alia.events.on), decides which
 // watched roots are stale, and coalesces those decisions into one
-// bb.realtime.publish per debounce window. The frontend reacts by refetching
+// alia.realtime.publish per debounce window. The frontend reacts by refetching
 // board_snapshot — no polling, no content pushed, only invalidation.
 //
 // All registry state is derived cache (which threads each watched root
 // observed last) with a TTL; a plugin reload rebuilds it from scratch.
 
 import { BOARD_CHANGED_CHANNEL } from "../contract/rpc";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
  * Structural view of the public "thread:changed" realtime event. The exact
@@ -157,7 +157,7 @@ export interface WatcherDeps {
   /**
    * Delay of the single bounded terminal-state reconciliation: after a
    * flush that a terminal signal (idle/error/failed/turn-completed)
-   * contributed to, ONE delayed re-publish lets open boards re-read BB state
+   * contributed to, ONE delayed re-publish lets open boards re-read VesnALIA state
    * after any in-flight pre-terminal collect has settled. No polling: one
    * scheduled publish per terminal transition, replaced (never stacked) by
    * a newer terminal flush, cleared on dispose.
@@ -399,7 +399,7 @@ export class BoardWatcher {
     const payload = { roots, ...(global ? { global: true } : {}) };
     this.publish(payload);
     // Bounded terminal-state self-correction: ONE delayed re-publish of the
-    // same payload, so open boards re-read BB after any pre-terminal
+    // same payload, so open boards re-read VesnALIA after any pre-terminal
     // in-flight fetch settled. Terminal threads emit no further signals, so
     // a lost or dropped terminal signal would otherwise leave a board
     // showing RUNNING forever. Never stacks: a newer terminal flush replaces
@@ -445,43 +445,43 @@ export class BoardWatcher {
 }
 
 /** Wire the watcher to the plugin API; returns the unsubscribe handle. */
-export function attachWatcher(bb: BbPluginApi, watcher: BoardWatcher): () => void {
+export function attachWatcher(alia: AliaPluginApi, watcher: BoardWatcher): () => void {
   let unsubscribe = () => {};
-  try { unsubscribe = bb.sdk.subscribe({
+  try { unsubscribe = alia.sdk.subscribe({
     event: "thread:changed",
     callback: (event) => {
       void watcher.handleChanged(event).catch(() => watcher.recordError());
     },
   }); } catch { watcher.markUnavailable(); }
-  // bb.events.on listeners live for the plugin's lifetime (no dispose handle).
-  bb.events.on("thread.created", (payload) => {
+  // alia.events.on listeners live for the plugin's lifetime (no dispose handle).
+  alia.events.on("thread.created", (payload) => {
     void watcher.handleLifecycle(payload.thread, "created").catch(() => watcher.recordError());
   });
-  bb.events.on("thread.active", (payload) => {
+  alia.events.on("thread.active", (payload) => {
     void watcher.handleLifecycle(payload.thread, "active").catch(() => watcher.recordError());
   });
-  bb.events.on("thread.idle", (payload) => {
+  alia.events.on("thread.idle", (payload) => {
     void watcher.handleLifecycle(payload.thread, "idle").catch(() => watcher.recordError());
   });
-  bb.events.on("thread.failed", (payload) => {
+  alia.events.on("thread.failed", (payload) => {
     void watcher.handleLifecycle(payload.thread, "failed").catch(() => watcher.recordError());
   });
-  bb.events.on("thread.archived", (payload) => {
+  alia.events.on("thread.archived", (payload) => {
     void watcher.handleLifecycle(payload.thread, "archived").catch(() => watcher.recordError());
   });
-  bb.events.on("thread.deleted", (payload) => {
+  alia.events.on("thread.deleted", (payload) => {
     void watcher.handleLifecycle(payload.thread, "deleted").catch(() => watcher.recordError());
   });
   // Newer event names may not exist on older runtimes (which throw at
   // registration). Subscribe opportunistically: the thread:changed channel
   // already covers queue and failure transitions.
-  onOptionalLifecycleEvent(bb, "turn.failed", (payload: { threadId: string }) => {
+  onOptionalLifecycleEvent(alia, "turn.failed", (payload: { threadId: string }) => {
     void watcher.handleLifecycle({ id: payload.threadId }, "turn-failed").catch(() => watcher.recordError());
   });
-  onOptionalLifecycleEvent(bb, "message.queued", (payload: { entry: { threadId: string } }) => {
+  onOptionalLifecycleEvent(alia, "message.queued", (payload: { entry: { threadId: string } }) => {
     void watcher.handleLifecycle({ id: payload.entry.threadId }, "other").catch(() => watcher.recordError());
   });
-  onOptionalLifecycleEvent(bb, "message.dispatched", (payload: { entry: { threadId: string } }) => {
+  onOptionalLifecycleEvent(alia, "message.dispatched", (payload: { entry: { threadId: string } }) => {
     void watcher.handleLifecycle({ id: payload.entry.threadId }, "other").catch(() => watcher.recordError());
   });
   return unsubscribe;
@@ -489,14 +489,14 @@ export function attachWatcher(bb: BbPluginApi, watcher: BoardWatcher): () => voi
 
 /** Register a lifecycle event the host may not know; old runtimes skip it. */
 function onOptionalLifecycleEvent<P>(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   name: string,
   handler: (payload: P) => void,
 ): void {
   try {
-    bb.events.on(
-      name as Parameters<typeof bb.events.on>[0],
-      handler as Parameters<typeof bb.events.on>[1],
+    alia.events.on(
+      name as Parameters<typeof alia.events.on>[0],
+      handler as Parameters<typeof alia.events.on>[1],
     );
   } catch {
     // Unknown event on this runtime — thread:changed still delivers it.

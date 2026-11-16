@@ -188,7 +188,7 @@ Takeaways for our aggregator [I]:
 
 ### 5.2 Mechanics
 
-- **Where templates live must survive the build.** `dist/` is gitignored and BB "builds the plugin from source when it installs or updates it" (`.gitignore` comment, [V]), so the repo files are the distribution; headers and notices ship with it. If templates later get inlined into a bundle, comments may be stripped; the root notices file still ships. [I]
+- **Where templates live must survive the build.** `dist/` is gitignored and VesnALIA "builds the plugin from source when it installs or updates it" (`.gitignore` comment, [V]), so the repo files are the distribution; headers and notices ship with it. If templates later get inlined into a bundle, comments may be stripped; the root notices file still ships. [I]
 - **User-visible templates**: if the template editor shows the instructions to the user, a header in the instruction text would be sent to the model. Keep attribution in a separate metadata field (e.g. `source`, `license`, `sourceSha`) plus the file header; strip headers from the prompt at send time. Don't leave "Anthropic"/"OpenAI" names in the model-visible text (trademark hygiene; also avoids a model repeating them in comments) [I].
 - **Compose at send time**: if general = own prompt + borrowed lines, keep borrowed blocks in their own file(s) so the header attributes the file precisely, not the whole prompt.
 - **Re-pin on every re-sync**: if we ever pull upstream updates, update SHA + changes in both header and notices; don't float a branch.

@@ -7,30 +7,30 @@ import {
   experimental_captureBridgeJsonRpcOutput as captureBridgeJsonRpcOutput,
   type CapturedBridgeJsonRpcOutput,
   type CapturedBridgeNotification,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 /**
- * bb injects its own tools per thread; Muse reaches them through the bridge's
- * MCP proxy. This drives the real binary end to end: bb declares a tool, Muse
+ * VesnALIA injects its own tools per thread; Muse reaches them through the bridge's
+ * MCP proxy. This drives the real binary end to end: VesnALIA declares a tool, Muse
  * calls it, the bridge asks the runtime to run it, and the answer has to reach
  * the model.
  *
- *   BB_MUSE_LIVE=1 npx vitest run test/live-tools.test.ts
+ *   ALIA_MUSE_LIVE=1 npx vitest run test/live-tools.test.ts
  */
-const live = process.env.BB_MUSE_LIVE === "1";
+const live = process.env.ALIA_MUSE_LIVE === "1";
 
 const bridge = await import("../src/provider-bridge.js");
 
-const SECRET = "BB-TOOL-OK-4271";
-const TOOL_NAME = "bb_probe_secret";
+const SECRET = "ALIA-TOOL-OK-4271";
+const TOOL_NAME = "alia_probe_secret";
 
 let output: CapturedBridgeJsonRpcOutput;
 let workspaceDir: string;
 let dataDir: string;
 
 beforeAll(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-tools-ws-"));
-  dataDir = mkdtempSync(join(tmpdir(), "bb-muse-tools-data-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-tools-ws-"));
+  dataDir = mkdtempSync(join(tmpdir(), "alia-muse-tools-data-"));
   bridge.experimental_providerBridge.start?.({
     pluginId: "provider-muse",
     dataDir,
@@ -53,7 +53,7 @@ function send(message: Record<string, unknown>): void {
 const transcript: CapturedBridgeNotification[] = [];
 
 /**
- * Answers the bridge's own `item/tool/call` the way bb's runtime would, so the
+ * Answers the bridge's own `item/tool/call` the way VesnALIA's runtime would, so the
  * proxy round trip is exercised rather than mocked.
  */
 function answerToolCalls(): void {
@@ -105,14 +105,14 @@ const FULL_ACCESS = {
 };
 
 it.skipIf(!live)(
-  "lets Muse call a tool bb injected",
+  "lets Muse call a tool VesnALIA injected",
   async () => {
     send({
       id: 1,
       method: "initialize",
       params: {
         protocolVersion: 2,
-        client: { name: "bb", version: "test" },
+        client: { name: "alia", version: "test" },
         grammarVersions: [3, 3],
       },
     });
@@ -128,7 +128,7 @@ it.skipIf(!live)(
           {
             name: TOOL_NAME,
             description:
-              "Returns bb's probe secret. Call this tool when asked for the bb probe secret.",
+              "Returns VesnALIA's probe secret. Call this tool when asked for the VesnALIA probe secret.",
             inputSchema: { type: "object", properties: {} },
           },
         ],

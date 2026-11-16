@@ -1,4 +1,4 @@
-// Text and context feature extraction. Pure; no bb imports.
+// Text and context feature extraction. Pure; no VesnALIA imports.
 
 export interface PostContext {
   /** Post carries a still image. */

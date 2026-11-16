@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import { chmodSync, existsSync, readdirSync, renameSync, rmSync, rmdirSync } from "node:fs";
@@ -49,11 +49,11 @@ const DEFAULT_PORT = 8317;
 const LATEST_CACHE_KEY = "latest-source-revision-v1";
 const LATEST_CACHE_TTL_MS = 3_600_000;
 const CLAUDE_BACKUP_BASE = "claude-settings.json";
-const SERVICE_LABEL = "com.bb.plugin.agent-proxy";
+const SERVICE_LABEL = "com.alia.plugin.agent-proxy";
 /** Labels earlier versions installed. Retired once on initialize so an upgraded
     install keeps exactly one login service. Never derive this from the plugin
     id: a rename or reinstall would orphan the service already on disk. */
-const LEGACY_SERVICE_LABELS = ["com.smsunarto.bb.agent-proxy"] as const;
+const LEGACY_SERVICE_LABELS = ["com.smsunarto.alia.agent-proxy"] as const;
 
 interface LatestCache {
   repo: string;
@@ -236,13 +236,13 @@ export const rpcContract = defineRpcContract({
 // Plugin factory
 // ---------------------------------------------------------------------------
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     autostart: {
       type: "boolean",
       label: "Keep the proxy running as a login service",
       description:
-        "The operating system starts it at login and keeps it running when bb is closed.",
+        "The operating system starts it at login and keeps it running when VesnALIA is closed.",
       default: true,
     },
     port: { type: "string", label: "Proxy listen port", default: String(DEFAULT_PORT) },
@@ -275,12 +275,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function resolveDataDir(): Promise<string> {
     try {
-      const config = await bb.sdk.system.config();
+      const config = await alia.sdk.system.config();
       if (config.dataDir.length > 0) return config.dataDir;
     } catch (error) {
-      bb.log.warn(`Could not read bb data directory from SDK: ${String(error)}`);
+      alia.log.warn(`Could not read VesnALIA data directory from SDK: ${String(error)}`);
     }
-    return process.env.BB_DATA_DIR ?? join(homedir(), ".bb");
+    return process.env.ALIA_DATA_DIR ?? join(homedir(), ".vesnalia");
   }
 
   const homeDir = homedir();
@@ -396,7 +396,7 @@ export default async function plugin(bb: BbPluginApi) {
       reconcileConfigFile(paths.configPath, config);
     } else {
       writeAtomic(paths.configPath, renderInitialConfig(config), 0o600);
-      bb.log.info(`wrote initial core config at ${paths.configPath}`);
+      alia.log.info(`wrote initial core config at ${paths.configPath}`);
     }
     adoptCoreSettings(effective);
   }
@@ -445,11 +445,11 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         await createSupervisor(label).stop();
       } catch (error) {
-        bb.log.warn(`could not stop the legacy login service ${label}: ${String(error)}`);
+        alia.log.warn(`could not stop the legacy login service ${label}: ${String(error)}`);
       }
       rmSync(definitionPath, { force: true });
       retired = true;
-      bb.log.info(`removed the legacy login service ${label} at ${definitionPath}`);
+      alia.log.info(`removed the legacy login service ${label} at ${definitionPath}`);
     }
     return retired;
   }
@@ -523,14 +523,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   supervisor = createSupervisor(SERVICE_LABEL, {
     onChange: (snapshot: SupervisorSnapshot) => {
-      bb.realtime.publish("status", snapshot);
+      alia.realtime.publish("status", snapshot);
     },
     onError: (error: unknown) => {
-      bb.log.error(`service monitor failed: ${String(error)}`);
+      alia.log.error(`service monitor failed: ${String(error)}`);
     },
   });
 
-  bb.background.service("core", {
+  alia.background.service("core", {
     async start(signal) {
       await initialize();
       if (desiredRunning) await startManagedService();
@@ -538,7 +538,7 @@ export default async function plugin(bb: BbPluginApi) {
       await supervisor.monitor(signal);
     },
   });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     acceptingOperations = false;
     pluginAbort.abort(new Error("agent-proxy plugin disposed"));
     await operationTail;
@@ -550,7 +550,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function cachedLatest(source: CoreSource): Promise<LatestCache | null> {
-    const cached = (await bb.storage.kv.get<LatestCache>(LATEST_CACHE_KEY)) ?? null;
+    const cached = (await alia.storage.kv.get<LatestCache>(LATEST_CACHE_KEY)) ?? null;
     return cached?.repo === source.repo && cached.ref === source.ref ? cached : null;
   }
 
@@ -565,7 +565,7 @@ export default async function plugin(bb: BbPluginApi) {
       version: revision.version,
       checkedAt: Date.now(),
     };
-    await bb.storage.kv.set(LATEST_CACHE_KEY, next);
+    await alia.storage.kv.set(LATEST_CACHE_KEY, next);
     return next;
   }
 
@@ -608,21 +608,21 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const installed = await installCore(paths, revision, {
         signal: pluginAbort.signal,
-        onProgress: (stage) => bb.realtime.publish("install", { stage, version: revision.version }),
+        onProgress: (stage) => alia.realtime.publish("install", { stage, version: revision.version }),
         beforeInstall: async () => {
           stoppedForSwap = true;
           await supervisor.stop();
         },
       });
       if (source.repo === configured.repo && source.ref === configured.ref) {
-        await bb.storage.kv.set(LATEST_CACHE_KEY, {
+        await alia.storage.kv.set(LATEST_CACHE_KEY, {
           repo: source.repo,
           ref: source.ref,
           version: revision.version,
           checkedAt: Date.now(),
         } satisfies LatestCache);
       }
-      bb.log.info(`installed CLIProxyAPI ${installed}`);
+      alia.log.info(`installed CLIProxyAPI ${installed}`);
       return installed;
     } finally {
       if (stoppedForSwap && desiredRunning) await startManagedService();
@@ -667,11 +667,11 @@ export default async function plugin(bb: BbPluginApi) {
       next.sourceRepository !== previous.sourceRepository ||
       next.sourceBranch !== previous.sourceBranch;
     if (sourceChanged) {
-      void bb.storage.kv
+      void alia.storage.kv
         .delete(LATEST_CACHE_KEY)
-        .then(() => bb.realtime.publish("status", { sourceChanged: true }))
+        .then(() => alia.realtime.publish("status", { sourceChanged: true }))
         .catch((error: unknown) => {
-          bb.log.error(`failed to clear the source update cache: ${String(error)}`);
+          alia.log.error(`failed to clear the source update cache: ${String(error)}`);
         });
     }
     const runtimeChanged =
@@ -689,7 +689,7 @@ export default async function plugin(bb: BbPluginApi) {
             await supervisor.stop();
             try {
               persistCoreConfig(effective);
-              bb.log.info(`core settings reconciled on port ${effective.port}`);
+              alia.log.info(`core settings reconciled on port ${effective.port}`);
             } finally {
               if (desiredRunning) await startManagedService();
             }
@@ -701,7 +701,7 @@ export default async function plugin(bb: BbPluginApi) {
         }),
       )
       .catch((error: unknown) => {
-        bb.log.error(`failed to apply settings to core config: ${String(error)}`);
+        alia.log.error(`failed to apply settings to core config: ${String(error)}`);
       });
   });
 
@@ -713,7 +713,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function readClaudeSettings(): Promise<{ content: string | null; sha256: string | null }> {
     if (!existsSync(claudeSettingsPath)) return { content: null, sha256: null };
-    const file = await bb.sdk.files.read({ path: claudeSettingsPath });
+    const file = await alia.sdk.files.read({ path: claudeSettingsPath });
     if (file.contentEncoding !== "utf8") {
       throw new Error(`${claudeSettingsPath} is not a text file`);
     }
@@ -724,7 +724,7 @@ export default async function plugin(bb: BbPluginApi) {
     content: string,
     expectedSha256: string | null,
   ): Promise<void> {
-    const saved = await bb.sdk.files.write({
+    const saved = await alia.sdk.files.write({
       path: claudeSettingsPath,
       content,
       expectedSha256,
@@ -777,7 +777,7 @@ export default async function plugin(bb: BbPluginApi) {
   // RPC handlers
   // -------------------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: () => computeStatus(),
     coreLogs: () => ({ lines: supervisor.logs() }),
     async connectivity() {
@@ -804,7 +804,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
     async checkLatest() {
-      await bb.storage.kv.delete(LATEST_CACHE_KEY);
+      await alia.storage.kv.delete(LATEST_CACHE_KEY);
       const latest = await refreshLatest();
       const installed = installedVersion(paths);
       return {
@@ -832,15 +832,15 @@ export default async function plugin(bb: BbPluginApi) {
     sourceSettings: () => sourceSettingsView(),
     async sourceSettingsUpdate({ repository, branch }) {
       const source = normalizeCoreSource(repository, branch);
-      await bb.sdk.plugins.updateSettings({
-        pluginId: bb.pluginId,
+      await alia.sdk.plugins.updateSettings({
+        pluginId: alia.pluginId,
         values: {
           sourceRepository: source.repo,
           sourceBranch: source.ref,
         },
       });
-      await bb.storage.kv.delete(LATEST_CACHE_KEY);
-      bb.realtime.publish("status", { sourceChanged: true });
+      await alia.storage.kv.delete(LATEST_CACHE_KEY);
+      alia.realtime.publish("status", { sourceChanged: true });
       return sourceSettingsView();
     },
 
@@ -948,7 +948,7 @@ export default async function plugin(bb: BbPluginApi) {
             throw error;
           }
           renameSync(paths.claudePendingStatePath, paths.claudeStatePath);
-          bb.log.info(`applied proxy env to ${claudeSettingsPath}`);
+          alia.log.info(`applied proxy env to ${claudeSettingsPath}`);
           return { backupPath };
         }
         writeAtomic(
@@ -956,7 +956,7 @@ export default async function plugin(bb: BbPluginApi) {
           renderCodexConfig(endpointsFor(currentPort).openai),
           0o600,
         );
-        bb.log.info(`generated Codex home at ${paths.codexHomeDir}`);
+        alia.log.info(`generated Codex home at ${paths.codexHomeDir}`);
         return { backupPath: null };
       });
     },
@@ -1000,7 +1000,7 @@ export default async function plugin(bb: BbPluginApi) {
   // CLI
   // -------------------------------------------------------------------------
 
-  bb.cli.register({
+  alia.cli.register({
     name: "agent-proxy",
     summary:
       "Manage the local CLIProxyAPI core (status, lifecycle, endpoints, OAuth, providers, usage)",
@@ -1008,36 +1008,36 @@ export default async function plugin(bb: BbPluginApi) {
       {
         name: "status",
         summary: "Core state, versions, and endpoints",
-        usage: "bb agent-proxy status",
+        usage: "alia agent-proxy status",
       },
-      { name: "start", summary: "Start the proxy core", usage: "bb agent-proxy start" },
-      { name: "stop", summary: "Stop the proxy core", usage: "bb agent-proxy stop" },
-      { name: "restart", summary: "Restart the proxy core", usage: "bb agent-proxy restart" },
+      { name: "start", summary: "Start the proxy core", usage: "alia agent-proxy start" },
+      { name: "stop", summary: "Stop the proxy core", usage: "alia agent-proxy stop" },
+      { name: "restart", summary: "Restart the proxy core", usage: "alia agent-proxy restart" },
       {
         name: "endpoints",
         summary: "Print local endpoint URLs and the local API key",
-        usage: "bb agent-proxy endpoints",
+        usage: "alia agent-proxy endpoints",
       },
       {
         name: "install",
         summary:
           "Build and install the CLIProxyAPI core from the configured source (or another ref)",
-        usage: "bb agent-proxy install [ref]",
+        usage: "alia agent-proxy install [ref]",
       },
       {
         name: "oauth",
         summary: "Run a browser OAuth flow for an account",
-        usage: "bb agent-proxy oauth <claude|codex>",
+        usage: "alia agent-proxy oauth <claude|codex>",
       },
       {
         name: "providers",
         summary: "List configured provider credentials and OAuth auth files",
-        usage: "bb agent-proxy providers",
+        usage: "alia agent-proxy providers",
       },
       {
         name: "usage",
         summary: "Recent request buckets per provider key",
-        usage: "bb agent-proxy usage",
+        usage: "alia agent-proxy usage",
       },
     ],
     async run(argv, ctx) {
@@ -1053,7 +1053,7 @@ export default async function plugin(bb: BbPluginApi) {
               `service definition: ${status.service.definitionPath}`,
               `installed: ${status.installedVersion ?? "not installed"}`,
               `source: ${status.source.repository}#${status.source.branch}`,
-              `latest: ${status.latest?.version ?? "unknown (run: bb agent-proxy install)"}`,
+              `latest: ${status.latest?.version ?? "unknown (run: VesnALIA agent-proxy install)"}`,
               `openai: ${status.endpoints.openai}`,
               `anthropic: ${status.endpoints.anthropic}`,
               `gemini: ${status.endpoints.gemini}`,
@@ -1098,7 +1098,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "oauth": {
             const which = rest[0];
             if (which !== "claude" && which !== "codex") {
-              return { exitCode: 2, stderr: "usage: bb agent-proxy oauth <claude|codex>" };
+              return { exitCode: 2, stderr: "usage: VesnALIA agent-proxy oauth <claude|codex>" };
             }
             const client = await managementClient();
             const { url, state } = await client.authUrl(which === "claude" ? "anthropic" : "codex");
@@ -1143,7 +1143,7 @@ export default async function plugin(bb: BbPluginApi) {
             return {
               exitCode: 2,
               stderr:
-                "usage: bb agent-proxy <status|start|stop|restart|endpoints|install|oauth|providers|usage>\n" +
+                "usage: VesnALIA agent-proxy <status|start|stop|restart|endpoints|install|oauth|providers|usage>\n" +
                 "  status              core state, versions, endpoints\n" +
                 "  start|stop|restart  control the proxy core\n" +
                 "  endpoints           local endpoint URLs + API key\n" +
@@ -1159,7 +1159,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info(
+  alia.log.info(
     `loaded (core ${installedVersion(paths) ?? "not installed"}, source ${initialSource.repository}#${initialSource.branch}, port ${initial.port}, routing ${initial.routingStrategy}, autostart ${String(initial.autostart)})`,
   );
 }

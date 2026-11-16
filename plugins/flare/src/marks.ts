@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { parseRenderPrompt } from "./provider";
 
 // Which companion turn shows which flare, so the Flares tab can draw a divider with the flare's time over its message.
-// bb tells a message metadata component only the message's turn, so this reads it from the companion's own events: a
+// VesnALIA tells a message metadata component only the message's turn, so this reads it from the companion's own events: a
 // turn request carries the prompt (and with it the flare id), and its acceptance names the turn it became.
 
-// bb serves at most 100 events per page.
+// VesnALIA serves at most 100 events per page.
 const PAGE = 100;
 
 interface Cursor {
@@ -18,7 +18,7 @@ export class CompanionMarks {
   private readonly cursors = new Map<string, Cursor>();
   private readonly reading = new Map<string, Promise<ReadonlyMap<string, string>>>();
 
-  constructor(private readonly bb: BbPluginApi) {}
+  constructor(private readonly alia: AliaPluginApi) {}
 
   /** turn id to flare id for every flare the companion has drawn so far. */
   read(companionId: string): Promise<ReadonlyMap<string, string>> {
@@ -33,7 +33,7 @@ export class CompanionMarks {
     const cursor = this.cursors.get(companionId) ?? { afterSeq: 0, requests: new Map<string, string>(), marks: new Map<string, string>() };
     this.cursors.set(companionId, cursor);
     for (;;) {
-      const rows = await this.bb.sdk.threads.events.list({
+      const rows = await this.alia.sdk.threads.events.list({
         threadId: companionId,
         types: ["client/turn/requested", "turn/input/accepted"],
         order: "asc",

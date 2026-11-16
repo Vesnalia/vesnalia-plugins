@@ -10,4 +10,4 @@ Report sensitive vulnerabilities through [GitHub private vulnerability reporting
 
 ## Trust and data boundary
 
-BB plugins run with full trust. Noted reads only artifacts and assets that the user opens. It stores sessions, revisions, and feedback in BB-managed SQLite. Noted writes exports only to the destination passed to `bb noted file --to`. It sends feedback to the selected BB thread and adds no independent telemetry.
+VesnALIA plugins run with full trust. Noted reads only artifacts and assets that the user opens. It stores sessions, revisions, and feedback in ALIA-managed SQLite. Noted writes exports only to the destination passed to `alia noted file --to`. It sends feedback to the selected VesnALIA thread and adds no independent telemetry.

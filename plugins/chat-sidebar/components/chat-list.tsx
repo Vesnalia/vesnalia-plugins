@@ -1,9 +1,9 @@
 // The sidebar thread list, as a messenger: search, folders, and chats.
 //
-// bb keeps the New-thread button, the navigation rail, and the footer; this
-// component owns the scrolling list only. Opening a chat routes through bb's
+// VesnALIA keeps the New-thread button, the navigation rail, and the footer; this
+// component owns the scrolling list only. Opening a chat routes through VesnALIA's
 // own `toThread`, so splits, pane focus, and the mobile drawer behave as in
-// bb's list.
+// VesnALIA's list.
 import {
   Fragment,
   useEffect,
@@ -18,9 +18,9 @@ import {
 import {
   experimental_useProviders,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { DndContext } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -130,7 +130,7 @@ function ChatListView({ activeThreadId, isCompactViewport, onNavigate }: PluginT
   const [folder, setFolderState] = useState<FolderId>(() =>
     readStored<FolderId>(FOLDER_KEY, (raw) => raw as FolderId, "all"),
   );
-  // bb sends the archive in pages and only on request: load it while open.
+  // VesnALIA sends the archive in pages and only on request: load it while open.
   const archiveMode = folder === "archive" && layout.entries.some((entry) => entry.kind === "archive" && !entry.hidden);
   const {
     status,
@@ -140,7 +140,7 @@ function ChatListView({ activeThreadId, isCompactViewport, onNavigate }: PluginT
     experimental_hosts: hosts,
     experimental_archived: archivePages,
   } = experimental_useSidebarThreads(archiveMode ? WITH_ARCHIVE : ACTIVE_ONLY);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { providers } = experimental_useProviders();
   const now = useNow(30_000);
   const [query, setQuery] = useState("");
@@ -152,7 +152,7 @@ function ChatListView({ activeThreadId, isCompactViewport, onNavigate }: PluginT
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(
     () => new Set(readStored(EXPANDED_KEY, parseStringArray, [])),
   );
-  // On phones bb's rail already takes the left edge; tabs unless told otherwise.
+  // On phones VesnALIA's rail already takes the left edge; tabs unless told otherwise.
   const rail = settings.folderLayout === "rail" && !(isCompactViewport && settings.phoneFolderLayout === "tabs");
   const listRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -200,7 +200,7 @@ function ChatListView({ activeThreadId, isCompactViewport, onNavigate }: PluginT
         : [],
     [archiveMode, threads, projects, settings.foldChildren],
   );
-  // "Add to folder" in bb's thread menus reads the folders through this
+  // "Add to folder" in VesnALIA's thread menus reads the folders through this
   // bridge, so it works in the thread header's menu too while the list is up.
   useEffect(() => {
     const rows = new Map<string, Chat>();
@@ -379,7 +379,7 @@ function ChatListView({ activeThreadId, isCompactViewport, onNavigate }: PluginT
         <FolderImagesProvider>
         <div
           className={cn(
-            // bb's scroll area is a flex column: without shrink-0 the list is
+            // VesnALIA's scroll area is a flex column: without shrink-0 the list is
             // squeezed to one screen and the sticky search scrolls away with it.
             "chat-sidebar flex min-h-full shrink-0",
             draggingPin && "select-none",

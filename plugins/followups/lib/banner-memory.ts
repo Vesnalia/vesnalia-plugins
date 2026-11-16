@@ -1,5 +1,5 @@
 // What the follow-ups banner remembers about each thread, kept outside the
-// component. BB rebuilds the message box (when the window is resized past a
+// component. VesnALIA rebuilds the message box (when the window is resized past a
 // breakpoint, say, or the thread is switched away from and back to), and a
 // rebuilt banner is a new component: anything it kept in its own state, such as
 // which tile was drafted, what the draft cost, or which composer text it wrote

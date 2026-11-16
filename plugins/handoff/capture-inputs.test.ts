@@ -18,7 +18,7 @@ const users = (rows: EventRowLike[]) =>
 
 describe("accepted inputs", () => {
   it("keeps an accepted input the provider never echoed (Claude Code)", () => {
-    // Shape of a real bb 0.49 Claude Code thread: no userMessage item at all.
+    // Shape of a real VesnALIA 0.49 Claude Code thread: no userMessage item at all.
     const entries = projectEvents([
       request(1, "creq_1", "Rename the login button to Sign in"),
       { seq: 14, type: "turn/started", data: { providerThreadId: "p1" } },

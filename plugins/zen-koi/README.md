@@ -1,6 +1,6 @@
 # Zen Koi
 
-A quiet pixel-art koi pond for [bb](https://getbb.app). While your agent works,
+A quiet pixel-art koi pond for [VesnALIA](https://getbb.app). While your agent works,
 the pond sits above the chat input and your koi swim under the text you type.
 
 ![Zen Koi: koi swim, a ! shows over the poi, and a koi is scooped into the bowl](screenshots/showcase.gif)
@@ -8,7 +8,7 @@ the pond sits above the chat input and your koi swim under the text you type.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/rejarevaldy/zen-koi.git
+alia plugin install git:https://github.com/rejarevaldy/zen-koi.git
 ```
 
 ## Features
@@ -26,7 +26,7 @@ to change any of these.
 
 ## Data
 
-Your koi and pond settings are stored on your bb server; sound settings stay in
+Your koi and pond settings are stored on your VesnALIA server; sound settings stay in
 your browser. Nothing is sent anywhere else.
 
 ## Develop
@@ -35,7 +35,7 @@ your browser. Nothing is sent anywhere else.
 npm install
 npm test
 npm run typecheck
-bb plugin dev
+alia plugin dev
 ```
 
 Chat-input placement inspired by charpeni's

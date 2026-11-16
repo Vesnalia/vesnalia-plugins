@@ -81,7 +81,7 @@ dialog[data-te-dialog]::backdrop {
   outline: none;
 }
 
-/* The cloned table keeps bb's Tailwind classes (border, px-2 py-1, bg-surface-recessed);
+/* The cloned table keeps alia's Tailwind classes (border, px-2 py-1, bg-surface-recessed);
    these selectors outrank them so the dialog reads as a data grid instead. */
 [data-te-scroller] table {
   width: 100%;

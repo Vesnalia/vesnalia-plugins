@@ -85,7 +85,7 @@ export const presetSnapshotSchema = z
   .object({
     schemaVersion: z.literal(PRESET_SCHEMA_VERSION),
     capturedAt: z.string(),
-    bbVersion: z.string(),
+    aliaVersion: z.string(),
     settings: settingsPresetSchema,
     plugins: z.array(pluginPresetEntrySchema),
     marketplaces: z.array(marketplacePresetEntrySchema),
@@ -231,7 +231,7 @@ const pluginSettingsFileSchema = z
 const metadataFileSchema = z
   .object({
     schemaVersion: z.literal(PRESET_SCHEMA_VERSION),
-    bbVersion: z.string(),
+    aliaVersion: z.string(),
     capturedAt: z.string().optional(),
   })
   .passthrough();
@@ -384,7 +384,7 @@ export async function readPresetSnapshot(repoDir: string): Promise<PresetSnapsho
     presetSnapshotSchema.parse({
       schemaVersion: PRESET_SCHEMA_VERSION,
       capturedAt: metadata.capturedAt ?? "unknown",
-      bbVersion: metadata.bbVersion,
+      aliaVersion: metadata.aliaVersion,
       settings: {
         generalSettings: settings.generalSettings,
         experiments: settings.experiments,
@@ -430,9 +430,9 @@ export async function writePresetSnapshot(
     }),
     writePrettyJson(join(presetDir, "metadata.json"), {
       schemaVersion: PRESET_SCHEMA_VERSION,
-      bbVersion: snapshot.bbVersion,
+      aliaVersion: snapshot.aliaVersion,
       capturedAt: snapshot.capturedAt,
-      managedBy: "bb-plugin-preset-sync",
+      managedBy: "alia-plugin-preset-sync",
     }),
   ]);
 }
@@ -657,8 +657,8 @@ export function buildPullPlan(args: {
     changes.push({
       kind: "general-settings",
       action: "update",
-      target: "BB general settings",
-      summary: "Update BB general settings",
+      target: "VesnALIA general settings",
+      summary: "Update VesnALIA general settings",
       risk: "configuration",
     });
   }
@@ -666,8 +666,8 @@ export function buildPullPlan(args: {
     changes.push({
       kind: "experiments",
       action: "update",
-      target: "BB experiments",
-      summary: "Update BB experiment flags",
+      target: "VesnALIA experiments",
+      summary: "Update VesnALIA experiment flags",
       risk: "configuration",
     });
   }
@@ -690,9 +690,9 @@ export function buildPullPlan(args: {
     });
   }
 
-  if (remote.bbVersion !== local.bbVersion) {
+  if (remote.aliaVersion !== local.aliaVersion) {
     warnings.push(
-      `Preset was captured with BB ${remote.bbVersion}; this machine runs BB ${local.bbVersion}.`,
+      `Preset was captured with VesnALIA ${remote.aliaVersion}; this machine runs VesnALIA ${local.aliaVersion}.`,
     );
   }
 
@@ -846,8 +846,8 @@ export function buildPushChanges(
     changes.push({
       kind: "general-settings",
       action: "update",
-      target: "BB general settings",
-      summary: "Update BB general settings in the preset",
+      target: "VesnALIA general settings",
+      summary: "Update VesnALIA general settings in the preset",
       risk: "configuration",
     });
   }
@@ -855,8 +855,8 @@ export function buildPushChanges(
     changes.push({
       kind: "experiments",
       action: "update",
-      target: "BB experiments",
-      summary: "Update BB experiment flags in the preset",
+      target: "VesnALIA experiments",
+      summary: "Update VesnALIA experiment flags in the preset",
       risk: "configuration",
     });
   }
@@ -878,12 +878,12 @@ export function buildPushChanges(
       risk: "configuration",
     });
   }
-  if (local.bbVersion !== remote.bbVersion) {
+  if (local.aliaVersion !== remote.aliaVersion) {
     changes.push({
       kind: "metadata",
       action: "update",
-      target: "BB version",
-      summary: `Record BB ${local.bbVersion} in preset metadata`,
+      target: "VesnALIA version",
+      summary: `Record VesnALIA ${local.aliaVersion} in preset metadata`,
       risk: "configuration",
     });
   }

@@ -153,7 +153,7 @@ export function QueueView({
   }, [activeTab, refreshNative]);
   usePromptSignal(["native"], { threadId, projectId }, refreshNative);
   // Writes this plugin did not make (the composer queueing a message, an edit
-  // in bb's queue card, a delivery) arrive as bb's own queue change events.
+  // in VesnALIA's queue card, a delivery) arrive as VesnALIA's own queue change events.
   useNativeQueueChanges(threadId, refreshNative, activeTab === "thread");
 
   const filter = useCallback(
@@ -396,7 +396,7 @@ export function QueueView({
     },
   };
 
-  // ---- bb native queue bridge ----
+  // ---- VesnALIA native queue bridge ----
 
   function pushToNative(prompt: PromptDto): void {
     if (threadId === null) return;
@@ -407,7 +407,7 @@ export function QueueView({
             refresh();
             refreshNative();
             if (pushed)
-              toast.success("Moved to bb's queue — sends with the next turn");
+              toast.success("Moved to VesnALIA's queue — sends with the next turn");
             else toast.error(error ?? "Push failed");
           },
         );
@@ -785,7 +785,7 @@ export function QueueView({
                 aria-hidden
               />
               <span className="flex-1 text-xs font-medium text-muted-foreground">
-                In bb's queue — sends automatically
+                In VesnALIA's queue — sends automatically
               </span>
               {nativeItems.length > 1 ? (
                 <Button

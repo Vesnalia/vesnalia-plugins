@@ -2,7 +2,7 @@
 // Everything goes by the attempt record (table attempts): a step is recorded before its action (compare-and-swap `stepAttempt`), the action
 // is repeatable or recognized from facts after a restart, an unknown outcome is never repeated blindly, and the build lock is held until
 // it is proven that no install of this folder is running. Spec: «Rollout», «Rollback», «Disable and enable», «Nothing on top of a running
-// install», «External actions»; bb behavior relied on: source form, merging of install jobs, cancellation, finished jobs kept ~10 minutes.
+// install», «External actions»; VesnALIA behavior relied on: source form, merging of install jobs, cancellation, finished jobs kept ~10 minutes.
 import { randomUUID } from "node:crypto";
 import { rolledBackOnGithub, type Catalog, type PluginFacts } from "./catalog";
 import { errText, type Engine, type HandOverResult } from "./engine";
@@ -39,7 +39,7 @@ export interface Availability {
   adopt: string | null;
 }
 
-/** bb lists for one decision; null — the list did not arrive (the action is then not started). */
+/** VesnALIA lists for one decision; null — the list did not arrive (the action is then not started). */
 interface Live {
   list: InstalledPlugin[] | null;
   jobs: InstallJob[] | null;
@@ -53,7 +53,7 @@ const DIRTY_LIST_MAX = 10;
 const clip = (s: string, max: number) => (s.length > max ? `${s.slice(0, max)}…` : s);
 /**
  * Short poll within a pass on the `locking` and `installed` steps: the lock holder comes up in a fraction of a second, a quick install
- * finishes in seconds — no point waiting for the once-a-minute reconcile. Longer — the next pass (reconcile or a bb event about jobs).
+ * finishes in seconds — no point waiting for the once-a-minute reconcile. Longer — the next pass (reconcile or a VesnALIA event about jobs).
  */
 const POLL_MS = 10_000;
 const POLL_STEP_MS = 500;
@@ -64,7 +64,7 @@ const ADOPT_DIFF_MAX = 2_000_000;
 /** Files that do not touch plugin data: docs, tests. */
 const NOT_CODE = /(^|\/)(docs?|tests?|__tests__)\/|\.(md|txt)$|\.test\.[jt]sx?$|(^|\/)README/i;
 /** Signs of a data change in diff lines: schema SQL, migrations, plugin storage. */
-const DATA_LINE = /\bCREATE\s+(UNIQUE\s+|VIRTUAL\s+|TEMP(ORARY)?\s+)?(TABLE|INDEX|VIEW|TRIGGER)\b|\b(ALTER|DROP)\s+(TABLE|INDEX|VIEW|TRIGGER)\b|\buser_version\b|\bmigrat|bb\.storage\.database/i;
+const DATA_LINE = /\bCREATE\s+(UNIQUE\s+|VIRTUAL\s+|TEMP(ORARY)?\s+)?(TABLE|INDEX|VIEW|TRIGGER)\b|\b(ALTER|DROP)\s+(TABLE|INDEX|VIEW|TRIGGER)\b|\buser_version\b|\bmigrat|alia\.storage\.database/i;
 
 /**
  * Whether the change touched plugin data («Adopt as rolled out»): a changed code file with «migrat» in its path, or an added/removed
@@ -422,7 +422,7 @@ export class Rollout {
   private adoptBlock(f: PluginFacts, p: InstalledPlugin | null): string | null {
     if (f.work) return `work ${f.work.task_key ?? "(being created)"} is open on the plugin — the change goes through it`;
     if (f.row.id === SELF_ID) return "the Workshop itself is not adopted this way — it is installed by hand";
-    if (!p) return "the plugin is not installed in bb";
+    if (!p) return "the plugin is not installed in VesnALIA";
     if (f.row.installed_sha === null) return "the rolled-out commit is unknown — there is nothing to compare the change against";
     const g = f.git;
     if (g === null) return f.gitError !== undefined ? `could not read git: ${f.gitError}` : "no plugin working copy";
@@ -454,7 +454,7 @@ export class Rollout {
           try {
             await this.ports.plugins.disable(pluginId);
           } catch (e) {
-            // The answer was lost, or bb answered «already disabled»: the list decides. The list did not arrive or the plugin is enabled — refuse.
+            // The answer was lost, or VesnALIA answered «already disabled»: the list decides. The list did not arrive or the plugin is enabled — refuse.
             const again = await this.installedPlugin(pluginId).catch(() => undefined);
             if (again === undefined || again?.enabled) throw e;
           }
@@ -470,7 +470,7 @@ export class Rollout {
       if (work) this.store.log(work.id, "rollout", on ? "plugin enabled again" : "plugin disabled", now);
       if (work?.created === 1) await this.engine.reconcile(work.id);
       if (on && (!after?.enabled || (after.state !== "running" && after.state !== "needs-configuration"))) {
-        throw new Error(`the plugin is enabled but not working: ${after ? `${after.state}${after.error ? ` (${after.error})` : ""}` : "it is not in the bb list"}`);
+        throw new Error(`the plugin is enabled but not working: ${after ? `${after.state}${after.error ? ` (${after.error})` : ""}` : "it is not in the VesnALIA list"}`);
       }
     });
   }
@@ -546,7 +546,7 @@ export class Rollout {
   }
 
   /**
-   * Reconcile (once a minute and on bb events about install jobs and the plugin list): running attempts move on by their record, on the
+   * Reconcile (once a minute and on VesnALIA events about install jobs and the plugin list): running attempts move on by their record, on the
    * lock and install steps — with a short poll; for closed `unknown`/`failed` attempts that may still hold the build lock,
    * the lock is released only when the job list has no running job of this folder (the list did not arrive — keep holding).
    */
@@ -733,7 +733,7 @@ export class Rollout {
   }
 
   /**
-   * The work's dependencies go into the working copy before the install (otherwise «Could not resolve "yaml"»): bb builds the plugin from the working copy,
+   * The work's dependencies go into the working copy before the install (otherwise «Could not resolve "yaml"»): VesnALIA builds the plugin from the working copy,
    * while the implementer's `npm ci` ran in the worktree. They are installed by a background process under the build lock the attempt already holds; we wait
    * with a short poll, then — the next reconcile. This attempt's dependency install failed — a failure with the tail of the npm log; one failed earlier — install again.
    */
@@ -771,13 +771,13 @@ export class Rollout {
       return true;
     }
     if (!retry) {
-      // bb returned an already running job for the same source string (someone started an install of this folder by hand): it may have built
+      // VesnALIA returned an already running job for the same source string (someone started an install of this folder by hand): it may have built
       // old files — wait for it to end and start our own install once more, just once.
       if (!this.store.stepAttempt(a.id, "installing", "installing", { foreign_job_id: jobId, known_job_ids: null }, now, { foreign_job_id: null, job_id: null })) return false;
-      this.note(a, "warn", `${attemptNoun(a.kind)}: bb returned the already running job ${jobId} for this folder — waiting for it to end, then installing again`);
+      this.note(a, "warn", `${attemptNoun(a.kind)}: VesnALIA returned the already running job ${jobId} for this folder — waiting for it to end, then installing again`);
       return true;
     }
-    this.close(a, "unknown", `bb again returned the already running job ${jobId} for this folder`);
+    this.close(a, "unknown", `alia again returned the already running job ${jobId} for this folder`);
     return false;
   }
 
@@ -819,7 +819,7 @@ export class Rollout {
     if (!seen) return false; // the job is still running
     const j = seen.job;
     if (j === null) {
-      this.close(a, "unknown", `install job ${a.job_id} vanished from the bb list (bb keeps finished jobs for about 10 minutes; after a server restart they are gone)`);
+      this.close(a, "unknown", `install job ${a.job_id} vanished from the VesnALIA list (VesnALIA keeps finished jobs for about 10 minutes; after a server restart they are gone)`);
       return false;
     }
     this.note(a, j.state === "succeeded" ? "rollout" : "warn", `${attemptNoun(a.kind)}: job ${j.id} finished — ${j.state}${j.error ? ` (${j.error})` : ""}`);
@@ -833,7 +833,7 @@ export class Rollout {
   }
 
   /**
-   * An install enables a disabled plugin (bb behavior): the state is set after every install, also with `want_enabled = 0`.
+   * An install enables a disabled plugin (VesnALIA behavior): the state is set after every install, also with `want_enabled = 0`.
    * The plugin is enabled only after a successful install (or without one): otherwise a failure would bring up the old code of a deliberately disabled plugin.
    */
   private async stateSet(a: AttemptRow): Promise<boolean> {
@@ -867,7 +867,7 @@ export class Rollout {
       parts.push(`job ${a.job_id ?? "—"} — ${a.job_state ?? "?"}${j?.error ? ` (${j.error})` : ""}`);
     }
     if (p === null) {
-      if (installs || a.want_enabled === 1) parts.push("the plugin is not in the bb list");
+      if (installs || a.want_enabled === 1) parts.push("the plugin is not in the VesnALIA list");
     } else if (a.want_enabled === 1) {
       if (!p.enabled) parts.push("the plugin is disabled");
       else if (p.state !== "running" && p.state !== "needs-configuration") parts.push(`the plugin is in state ${p.state}${p.error ? ` (${p.error})` : ""}`);
@@ -984,7 +984,7 @@ export class Rollout {
     return cur && (cur.status === "failed" || cur.status === "unknown") && cur.resolved_at === null ? cur : null;
   }
 
-  /** «Enable» — by `enabled`, not by state: for a disabled plugin without a folder bb reports `missing`. */
+  /** «Enable» — by `enabled`, not by state: for a disabled plugin without a folder VesnALIA reports `missing`. */
   private enableBlock(p: InstalledPlugin | null): string | null {
     if (!p) return "the plugin is not installed";
     return p.enabled ? "the plugin is already enabled" : null;

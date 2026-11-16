@@ -529,7 +529,7 @@ describe('combined view', () => {
     // Nothing is at or over 100%, so a count of 1 proves the pace half ran.
     expect(snapshot.overall.attention).toBe(1);
   });
-  it('reads the plan percentage BB publishes, with no denominator to invent', async () => {
+  it('reads the plan percentage VesnALIA publishes, with no denominator to invent', async () => {
     // The provider reports how much of the plan is gone. That number needs no
     // allowance behind it, which is the whole reason this slot stopped counting
     // tokens: a percentage cannot be wrong about a ceiling it never used.

@@ -1,6 +1,6 @@
 ---
 name: hats
-description: Switch the bb sidebar between named sets of projects ("hats"), or create, rename, re-icon, delete, and fill hats, with the `bb hats` CLI.
+description: Switch the VesnALIA sidebar between named sets of projects ("hats"), or create, rename, re-icon, delete, and fill hats, with the `alia hats` CLI.
 ---
 
 # Hats
@@ -13,15 +13,15 @@ settings page edits hats and their projects.
 
 | Command | Effect |
 | --- | --- |
-| `bb hats status [--json]` | Show hats, their projects, and the current hat (`*`). |
-| `bb hats wear <hat\|none>` | Switch to a hat; `none` shows every project. |
-| `bb hats next` | Switch to the next hat in order. |
-| `bb hats create <name> [icon]` | Create a hat (icon defaults to `star`). |
-| `bb hats rename <hat> <new name>` | Rename a hat. |
-| `bb hats icon <hat> <icon>` | Change a hat's icon; `bb hats icons` lists them. |
-| `bb hats delete <hat>` | Delete a hat. |
-| `bb hats add <hat> <project>` | Add a project to a hat. |
-| `bb hats remove <hat> <project>` | Remove a project from a hat. |
+| `alia hats status [--json]` | Show hats, their projects, and the current hat (`*`). |
+| `alia hats wear <hat\|none>` | Switch to a hat; `none` shows every project. |
+| `alia hats next` | Switch to the next hat in order. |
+| `alia hats create <name> [icon]` | Create a hat (icon defaults to `star`). |
+| `alia hats rename <hat> <new name>` | Rename a hat. |
+| `alia hats icon <hat> <icon>` | Change a hat's icon; `alia hats icons` lists them. |
+| `alia hats delete <hat>` | Delete a hat. |
+| `alia hats add <hat> <project>` | Add a project to a hat. |
+| `alia hats remove <hat> <project>` | Remove a project from a hat. |
 
 Hats and projects match by id, exact name, or a unique part of a name. Quote
 names with spaces.

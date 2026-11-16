@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { definePluginApp, useRpc } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, useRpc } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract } from './contract';
 import type { z } from 'zod';
 import './app.css';
@@ -77,7 +77,7 @@ export function ContextHealth({ threadId }: { threadId: string }) {
         {percent !== null && <progress className={percent >= 90 ? 'ch-high' : ''} value={Math.min(percent, 100)} max={100} aria-label="Context window used" />}
         <p className="ch-muted">{usage ? `${percent !== null && percent >= 90 ? 'Context nearly full' : percent !== null && percent >= 70 ? 'Context is filling up' : 'Room to continue'}` : 'Usage may appear after the next model response.'}</p>
       </div>}
-    {provider === 'codex' && <label className="ch-source-picker">Data source <select aria-label="Context data source" value={source} onChange={e => { setSource(e.target.value as 'shared' | 'codex'); setCategory(null); setQuery(''); setReport(null); setError(null); }}><option value="shared">BB recorded activity (all providers)</option><option value="codex">Codex session detail</option></select></label>}
+    {provider === 'codex' && <label className="ch-source-picker">Data source <select aria-label="Context data source" value={source} onChange={e => { setSource(e.target.value as 'shared' | 'codex'); setCategory(null); setQuery(''); setReport(null); setError(null); }}><option value="shared">VesnALIA recorded activity (all providers)</option><option value="codex">Codex session detail</option></select></label>}
     {report && <>
       <nav className="ch-view-switch" aria-label="Context views">
         <button aria-pressed={view === 'content'} onClick={() => setView('content')}>Recorded content <span>{report.entries.length}</span></button>

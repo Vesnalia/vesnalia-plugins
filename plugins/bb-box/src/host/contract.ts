@@ -1,6 +1,6 @@
-// What bb-box's server asks of its host entry on a BB machine (src/host/access.ts).
+// What alia-box's server asks of its host entry on a VesnALIA machine (src/host/access.ts).
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { REFRESH_MS, snapshotSchema } from "../monitor/snapshot.ts";
 import { lightReadingSchema } from "../monitor/light.ts";
@@ -15,7 +15,7 @@ export const hostContract = defineRpcContract({
     output: lightReadingSchema,
   },
   /**
-   * Keeps a process holding the variables BB gives this call, of which
+   * Keeps a process holding the variables VesnALIA gives this call, of which
    * `names` matter, for the env file's loader. Says whether it started a new
    * one, its process ID, and which of `names` this call did not bring.
    */
@@ -27,7 +27,7 @@ export const hostContract = defineRpcContract({
    * Whether Docker is on the machine: finds it as the docker CLI would, and
    * connects to it and closes. It holds no lease and starts nothing, so the
    * settings list opens a relay only where there is Docker to read (042).
-   * `refused` is set when Docker's socket refused BB's daemon: Docker is
+   * `refused` is set when Docker's socket refused VesnALIA's daemon: Docker is
    * there, but needs fixing.
    */
   docker: {
@@ -39,9 +39,9 @@ export const hostContract = defineRpcContract({
         reason: z.string().nullable(),
         refused: z.boolean().optional(),
         attached: z.boolean().optional(),
-        /** The machine's OS: windows for a Windows PC, whose BB daemon runs in WSL; macos for a Mac; else linux. */
+        /** The machine's OS: windows for a Windows PC, whose VesnALIA daemon runs in WSL; macos for a Mac; else linux. */
         platform: z.enum(["linux", "macos", "windows"]).optional(),
-        /** What first-run setup needs to know of the machine: who BB's daemon runs as and how it restarts, KVM, and free disk. */
+        /** What first-run setup needs to know of the machine: who VesnALIA's daemon runs as and how it restarts, KVM, and free disk. */
         setup: z
           .object({
             hostname: z.string(),
@@ -58,7 +58,7 @@ export const hostContract = defineRpcContract({
       .strict(),
   },
   /**
-   * Opens the Docker API relay (042): a WebSocket out to bb-box's route at
+   * Opens the Docker API relay (042): a WebSocket out to alia-box's route at
    * `path`, with `secret`, whose channels go to Docker on the machine. Says
    * where Docker is.
    */
@@ -67,11 +67,11 @@ export const hostContract = defineRpcContract({
     output: z.object({ endpoint: z.string() }).strict(),
   },
   /**
-   * Runs one of bb-box's msb scripts on the machine (053,
+   * Runs one of alia-box's msb scripts on the machine (053,
    * src/backends/microsandbox/release.ts): install the pinned msb, report on
    * the machine, give Docker's IDs of images there, import one, make, list
    * and remove boxes' Docker disks, move an image from a builder microVM
-   * into msb, or put a build under an image's name. `dir` is bb-box's msb
+   * into msb, or put a build under an image's name. `dir` is alia-box's msb
    * folder, in the plugin's data folder.
    */
   microsandbox: {
@@ -79,18 +79,18 @@ export const hostContract = defineRpcContract({
     output: z.object({ dir: z.string(), exitCode: z.number().int().nullable(), stdout: z.string(), stderr: z.string() }).strict(),
   },
   /**
-   * Opens the msb relay (053): a WebSocket out to bb-box's route at `path`,
-   * with `secret`, each of whose channels is one run of bb-box's msb on the
-   * machine (src/relay/msb.ts). Says where bb-box's msb folder is.
+   * Opens the msb relay (053): a WebSocket out to alia-box's route at `path`,
+   * with `secret`, each of whose channels is one run of alia-box's msb on the
+   * machine (src/relay/msb.ts). Says where alia-box's msb folder is.
    */
   msbRelay: {
     input: z.object({ secret: z.string().regex(/^[0-9a-f]{32}$/), path: z.string().regex(/^\/api\/v1\/plugins\/[^?#]+$/) }).strict(),
     output: z.object({ dir: z.string() }).strict(),
   },
   /**
-   * Copies one file over a WebSocket out to bb-box's route at `path`, with
-   * `secret` (#492): `send` streams `file` to bb-box, `receive` writes what
-   * bb-box streams to it. `file` is absolute, and within `root` when given.
+   * Copies one file over a WebSocket out to alia-box's route at `path`, with
+   * `secret` (#492): `send` streams `file` to alia-box, `receive` writes what
+   * alia-box streams to it. `file` is absolute, and within `root` when given.
    * A received file replaces `file` only when it has `expect`'s size and
    * SHA-256. Answers once this side is done, with the bytes and their SHA-256.
    */

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { SkillsHub, SkillsHubDetail } from "./skills-hub-service";
 import { t, tp, plural, getLang } from "./i18n";
@@ -30,12 +30,12 @@ const PROBLEM_TEXT: Record<string, () => string> = {
   "frontmatter-delimiter": () => t("Шапка SKILL.md должна начинаться строкой ---"),
   "frontmatter-yaml": () => t("Шапка SKILL.md не читается: ошибка YAML"),
   "name-missing": () => t("В шапке нет имени"),
-  "name-invalid": () => t("Имя не подходит BB: только строчные латинские буквы, цифры и дефисы"),
+  "name-invalid": () => t("Имя не подходит ALIA: только строчные латинские буквы, цифры и дефисы"),
   "name-mismatch": () => t("Имя в шапке не совпадает с папкой"),
   "description-missing": () => t("Нет описания"),
   "description-too-long": () => t("Описание длиннее 1024 символов"),
-  "too-big": () => t("Больше 10 МБ — BB не перенесёт в сессию"),
-  "too-many-files": () => t("Больше 1000 файлов — BB не перенесёт в сессию"),
+  "too-big": () => t("Больше 10 МБ — ALIA не перенесёт в сессию"),
+  "too-many-files": () => t("Больше 1000 файлов — ALIA не перенесёт в сессию"),
   "absolute-skill-path": () => t("Ссылается на ~/.agents/skills: в сессии навык лежит в другом месте"),
 };
 
@@ -70,7 +70,7 @@ function label(item: { title: string; titleEn: string }): string {
 
 const SECTION_ICONS: Array<[RegExp, string]> = [
   [/^development|разработ/u, "Code"],
-  [/^bb|агент/u, "Bot"],
+  [/^alia|агент/u, "Bot"],
   [/^marketing|маркет/u, "Target"],
   [/^writing|текст/u, "Edit"],
   [/^design|дизайн/u, "Palette"],
@@ -324,7 +324,7 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
     return (
       <div className="at-card mt-4 p-6 text-sm">
         <p className="font-medium">{t("Папки навыков на хабе нет")}</p>
-        <p className="mt-1 text-muted-foreground">{tp("Ожидалась папка {0} на сервере BB.", hub.root)}</p>
+        <p className="mt-1 text-muted-foreground">{tp("Ожидалась папка {0} на сервере ALIA.", hub.root)}</p>
       </div>
     );
   }
@@ -417,9 +417,9 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
             <span className="text-xs text-muted-foreground">
               {notOnHubTotal > 0
                 ? offerCleanup
-                  ? t("Перенесите их на хаб — тогда BB отдаст их в каждую сессию на любой машине. Потом очистите копии, чтобы не было дублей.")
-                  : t("Перенос копирует навык на хаб — тогда BB отдаст его в каждую сессию на любой машине. Оригинал на машине остаётся.")
-                : t("BB и так отдаёт навыки хаба в каждую сессию — копии на машинах дают дубли.")}
+                  ? t("Перенесите их на хаб — тогда ALIA отдаст их в каждую сессию на любой машине. Потом очистите копии, чтобы не было дублей.")
+                  : t("Перенос копирует навык на хаб — тогда ALIA отдаст его в каждую сессию на любой машине. Оригинал на машине остаётся.")
+                : t("ALIA и так отдаёт навыки хаба в каждую сессию — копии на машинах дают дубли.")}
             </span>
           </div>
           <ul className="mt-2 divide-y divide-border/60">
@@ -688,7 +688,7 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <span className="min-w-0 truncate font-mono text-sm">{skill.name}</span>
-                        {blocking(skill) ? <span className="at-pill at-pill-danger">{t("BB не примет")}</span> : null}
+                        {blocking(skill) ? <span className="at-pill at-pill-danger">{t("ALIA не примет")}</span> : null}
                         {!blocking(skill) && skill.problems.length > 0 ? <span className="at-pill at-pill-warning">{t("замечание")}</span> : null}
                         {skill.review !== null ? <span className="at-pill at-pill-warning">{t("на проверке")}</span> : null}
                       </span>
@@ -845,7 +845,7 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
       </div>
 
       <Dialog open={fileView !== null} onOpenChange={(open) => (open ? null : setFileView(null))}>
-        <DialogContent data-bb-ru-skip="" className="max-w-3xl">
+        <DialogContent data-alia-ru-skip="" className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="font-mono text-sm">{fileView?.path}</DialogTitle>
             <DialogDescription>{selectedRow?.name}</DialogDescription>
@@ -857,7 +857,7 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
       </Dialog>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent data-bb-ru-skip="" className="max-w-md">
+        <DialogContent data-alia-ru-skip="" className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t("Новая категория")}</DialogTitle>
             <DialogDescription>{t("Раздел и подраздел. Если раздел уже есть, подраздел добавится в него.")}</DialogDescription>
@@ -890,7 +890,7 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
       </Dialog>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent data-bb-ru-skip="" className="max-w-md">
+        <DialogContent data-alia-ru-skip="" className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t("Переименовать категорию")}</DialogTitle>
             <DialogDescription>{t("Навыки остаются на месте, меняется только название.")}</DialogDescription>
@@ -916,11 +916,11 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
       </Dialog>
 
       <Dialog open={pullOpen} onOpenChange={setPullOpen}>
-        <DialogContent data-bb-ru-skip="" className="max-w-md">
+        <DialogContent data-alia-ru-skip="" className="max-w-md">
           <DialogHeader>
             <DialogTitle>{tp("Взять в работу: {0}", selectedRow?.name ?? "")}</DialogTitle>
             <DialogDescription>
-              {t("Копия навыка с хаба ляжет в папку на машине. Поправьте её и опубликуйте обратно: bb tools skills-publish <папка>.")}
+              {t("Копия навыка с хаба ляжет в папку на машине. Поправьте её и опубликуйте обратно: VesnALIA tools skills-publish <папка>.")}
             </DialogDescription>
           </DialogHeader>
           <label className="block space-y-1 text-xs font-medium text-muted-foreground">
@@ -960,11 +960,11 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
       </Dialog>
 
       <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
-        <DialogContent data-bb-ru-skip="" className="max-w-md">
+        <DialogContent data-alia-ru-skip="" className="max-w-md">
           <DialogHeader>
             <DialogTitle>{tp("Убрать {0} с хаба?", selectedRow?.name ?? "")}</DialogTitle>
             <DialogDescription>
-              {t("Навык пропадёт из всех сессий BB. Папка уйдёт в архив на хабе, удаление запишется в git — вернуть можно из истории.")}
+              {t("Навык пропадёт из всех сессий ALIA. Папка уйдёт в архив на хабе, удаление запишется в git — вернуть можно из истории.")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -991,7 +991,7 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
       </Dialog>
 
       <Dialog open={cleanup !== null} onOpenChange={(open) => (open ? null : setCleanup(null))}>
-        <DialogContent data-bb-ru-skip="" className="max-w-md">
+        <DialogContent data-alia-ru-skip="" className="max-w-md">
           <DialogHeader>
             <DialogTitle>{tp("Очистить папки навыков на {0}?", cleanup?.hostName ?? "")}</DialogTitle>
             <DialogDescription>
@@ -1008,11 +1008,11 @@ export function SkillsPage({ onAttention, onOpenSettings }: { onAttention?: (cou
           </ul>
           {(cleanup?.notOnHub ?? 0) > 0 ? (
             <p className="text-xs at-text-warning">
-              {tp("{0} из них нет на хабе: после очистки они пропадут из сессий BB (останутся только в архиве). Сначала перенесите их на хаб.", cleanup?.notOnHub ?? 0)}
+              {tp("{0} из них нет на хабе: после очистки они пропадут из сессий ALIA (останутся только в архиве). Сначала перенесите их на хаб.", cleanup?.notOnHub ?? 0)}
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            {t("Вне BB (терминал, codex exec, writer-линии) этих навыков больше не будет.")}
+            {t("Вне VesnALIA (терминал, codex exec, writer-линии) этих навыков больше не будет.")}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCleanup(null)}>{t("Отмена")}</Button>

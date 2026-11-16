@@ -1,16 +1,16 @@
-// The server's side of the host contract. host.ts adds BB's AI-services
+// The server's side of the host contract. host.ts adds VesnALIA's AI-services
 // methods; the server runtime cannot import that SDK subpath, so this file
 // must not either. `configure` is how the server hands the host the API key
 // and chosen models (secret settings never leave the server otherwise).
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const SERVICE_ID = "openrouter-inference";
-/** The value to put in BB_INFERENCE or BB_TRANSCRIPTION; the model segment follows the plugin settings. */
+/** The value to put in ALIA_INFERENCE or ALIA_TRANSCRIPTION; the model segment follows the plugin settings. */
 export const SERVICE_SETTING_VALUE = `${SERVICE_ID}/default`;
 export const DEFAULT_TRANSCRIPTION_MODEL = "openai/gpt-4o-mini-transcribe";
 
-/** BB's AI-service kinds: `inference` for titles and commit messages, `voice` for transcription. */
+/** VesnALIA's AI-service kinds: `inference` for titles and commit messages, `voice` for transcription. */
 export const serviceKindSchema = z.enum(["inference", "voice"]);
 export type ServiceKind = z.infer<typeof serviceKindSchema>;
 

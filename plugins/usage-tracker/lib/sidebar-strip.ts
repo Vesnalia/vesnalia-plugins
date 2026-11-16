@@ -33,9 +33,9 @@ import {
 } from "./sidebar-usage.ts";
 
 const ROOT_ATTRIBUTE = "data-usage-tracker-sidebar";
-const CACHE_KEY = "bb:usage-tracker:sidebar:last-known";
-const PREFERENCES_CACHE_KEY = "bb:usage-tracker:sidebar:enabled-providers";
-const COMPACT_LIMIT_CACHE_KEY = "bb:usage-tracker:sidebar:compact-limit";
+const CACHE_KEY = "alia:usage-tracker:sidebar:last-known";
+const PREFERENCES_CACHE_KEY = "alia:usage-tracker:sidebar:enabled-providers";
+const COMPACT_LIMIT_CACHE_KEY = "alia:usage-tracker:sidebar:compact-limit";
 const AUTO_REFRESH_MS = 5 * 60_000;
 const PREFERENCES_REFRESH_MS = 5_000;
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";

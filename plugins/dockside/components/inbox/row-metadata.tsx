@@ -1,7 +1,7 @@
 import {
   UrlLink,
   type PluginSidebarPullRequest,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { semanticStateToneClass } from "@/lib/attention-state";
 import { pullRequestPresentation } from "@/lib/pull-request-presentation";

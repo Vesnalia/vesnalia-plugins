@@ -44,8 +44,8 @@
 </head>
 <body>
 <div class="frame" id="diagram">
-  <h1>How a BB thread gets its skills with Scoped Skills</h1>
-  <p class="sub">Everything in <span class="mono">~/.bb/skills</span> goes to every thread. Scoped skills go only where their scope matches.</p>
+  <h1>How a VesnALIA thread gets its skills with Scoped Skills</h1>
+  <p class="sub">Everything in <span class="mono">~/.vesnalia/skills</span> goes to every thread. Scoped skills go only where their scope matches.</p>
 
   <div class="grid">
     <div class="box">
@@ -55,9 +55,9 @@
     </div>
     <div class="arrow"></div>
     <div class="box core">
-      <h3>2 · BB resolves the session</h3>
-      <div>For each thread, BB asks every plugin which of <em>its</em> skills to inject.</div>
-      <div class="call mono">bb.agents.configure(ctx)<br><span class="muted">ctx.provider.id · ctx.provider.model</span></div>
+      <h3>2 · VesnALIA resolves the session</h3>
+      <div>For each thread, VesnALIA asks every plugin which of <em>its</em> skills to inject.</div>
+      <div class="call mono">alia.agents.configure(ctx)<br><span class="muted">ctx.provider.id · ctx.provider.model</span></div>
     </div>
     <div class="arrow"></div>
     <div class="box">
@@ -77,19 +77,19 @@
     <div class="box result">
       <h4><span class="dot claude"></span>Claude Code session receives</h4>
       <div class="pills">
-        <span class="pill">local-video-edit</span><span class="pill">hyperframes</span><span class="pill">…every ~/.bb skill</span>
+        <span class="pill">local-video-edit</span><span class="pill">hyperframes</span><span class="pill">…every ~/.vesnalia skill</span>
         <span class="pill scoped">scoped-skills</span>
       </div>
     </div>
     <div class="box result">
       <h4><span class="dot"></span>Codex session receives</h4>
       <div class="pills">
-        <span class="pill">local-video-edit</span><span class="pill">hyperframes</span><span class="pill">…every ~/.bb skill</span>
+        <span class="pill">local-video-edit</span><span class="pill">hyperframes</span><span class="pill">…every ~/.vesnalia skill</span>
         <span class="pill scoped">scoped-skills</span><span class="pill scoped">brandkit</span><span class="pill scoped">imagegen-frontend-web</span><span class="pill scoped">gpt5-prompting</span>
       </div>
     </div>
   </div>
-  <div class="legend"><span>Global skill (~/.bb/skills)</span><span class="s">Scoped skill (selected per thread)</span><span>Library stored in the plugin's SQLite database, written to disk on load</span></div>
+  <div class="legend"><span>Global skill (~/.vesnalia/skills)</span><span class="s">Scoped skill (selected per thread)</span><span>Library stored in the plugin's SQLite database, written to disk on load</span></div>
 </div>
 </body>
 </html>

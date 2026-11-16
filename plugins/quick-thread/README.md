@@ -1,12 +1,12 @@
-# bb-plugin-quick-thread
+# alia-plugin-quick-thread
 
-A BB plugin that opens a floating "new thread" composer from anywhere, without
+A VesnALIA plugin that opens a floating "new thread" composer from anywhere, without
 leaving the thread you are on.
 
 ## What it does
 
 - **Ctrl/Cmd+N** opens a floating dialog over the current thread. It embeds
-  BB's real new-thread composer, so every selection you already use is there:
+  VesnALIA's real new-thread composer, so every selection you already use is there:
   project, environment, provider/model, mentions, and attachments.
 - **Enter** / **Create & open** creates the thread and navigates to it.
 - **Ctrl/Cmd+Enter** / **Run in background** creates the thread, keeps you on
@@ -19,7 +19,7 @@ leaving the thread you are on.
 The dialog is registered as an app overlay (`app.slots.experimental_appOverlay`),
 so it is mounted once per window, outside any route layout, and stays available
 on every screen. The backend takes the composer's `NewThreadRequest` and
-forwards it to `bb.sdk.threads.spawn`, which fills in `origin: "plugin"` /
+forwards it to `alia.sdk.threads.spawn`, which fills in `origin: "plugin"` /
 `originPluginId` so quick-created threads stay attributed to this plugin.
 
 Nothing leaves the machine. The plugin needs no account, API key, or external
@@ -31,16 +31,16 @@ From this directory:
 
 ```sh
 npm install
-bb plugin install .
+alia plugin install .
 ```
 
 After editing sources, reload:
 
 ```sh
-bb plugin reload quick-thread
+alia plugin reload quick-thread
 ```
 
-Or let `bb plugin dev` rebuild and reload on every save.
+Or let `alia plugin dev` rebuild and reload on every save.
 
 ## Development
 
@@ -48,28 +48,28 @@ Or let `bb plugin dev` rebuild and reload on every save.
 - `app.tsx` — frontend entry: wires the overlay and the command-palette row.
 - `components/QuickThreadOverlay.tsx` — the floating dialog and its hotkeys.
 
-Run `bb plugin build` before publishing git/npm installs. It writes
+Run `alia plugin build` before publishing git/npm installs. It writes
 `dist/server.js` + `server.meta.json` and `app.js` / `app.css` /
 `app.meta.json`.
 
 ## Types & API reference
 
-The plugin API ships as the npm package `@get-bb/plugin-sdk`, pinned to an
+The plugin API ships as the npm package `@vesnalia/plugin-sdk`, pinned to an
 exact version in `devDependencies`. After `npm install`, the full surface is
 on disk at:
 
 ```
-node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts      # backend
-node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk-app.d.ts  # frontend
+node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts      # backend
+node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk-app.d.ts  # frontend
 ```
 
-Sync the SDK surface to the running BB:
+Sync the SDK surface to the running VesnALIA:
 
 ```sh
-bb plugin types          # sync this plugin's SDK surface to the running BB
-bb plugin types --check  # CI: fail when it does not match
+alia plugin types          # sync this plugin's SDK surface to the running ALIA
+alia plugin types --check  # CI: fail when it does not match
 ```
 
-Ask BB to write plugins for you: the `bb-plugin-authoring` skill documents
-the whole surface with examples. Confused by the API? Clone the BB repo and
+Ask VesnALIA to write plugins for you: the `alia-plugin-authoring` skill documents
+the whole surface with examples. Confused by the API? Clone the VesnALIA repo and
 read the source: <https://github.com/get-bb/bb>.

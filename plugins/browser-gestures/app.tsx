@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { definePluginApp, type ExperimentalPluginBrowserToolbarActionProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, type ExperimentalPluginBrowserToolbarActionProps } from "@vesnalia/plugin-sdk/app";
 import { cleanupScript, installScript } from "./page-script";
 
 function Gestures({ experimental_page: page }: ExperimentalPluginBrowserToolbarActionProps) {

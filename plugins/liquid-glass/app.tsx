@@ -6,7 +6,7 @@
  * palettes is active, the composer scroll and dock content scripts, and the
  * Settings → Liquid Glass section that changes the appearance.
  */
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import {
   MANAGED_ATTRIBUTES,
@@ -26,7 +26,7 @@ import { DockToggleButton } from "./src/components/DockToggleButton.js";
  * (apps/app/src/lib/themes/index.ts). Observing it is how the content script
  * learns about a theme switch without polling the server.
  */
-export const HOST_THEME_STYLE_ID = "bb-app-theme";
+export const HOST_THEME_STYLE_ID = "alia-app-theme";
 
 type AppearanceReply = Record<string, unknown> & {
   activeThemeId: string | null;
@@ -395,7 +395,7 @@ export default definePluginApp((app) => {
       //    each write and when the server's realtime signal arrives.
       window.addEventListener(APPEARANCE_EVENT, () => void paint(), { signal });
 
-      // 2. The palette switches (Settings, `bb theme set`, another client) —
+      // 2. The palette switches (Settings, `alia theme set`, another client) —
       //    the host rewrites its theme <style>; repaint when that text changes.
       const styleObserver = new MutationObserver(() => void paint());
       const observeThemeStyle = (): boolean => {

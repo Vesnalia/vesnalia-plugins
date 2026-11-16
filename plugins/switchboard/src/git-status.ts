@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { experimental_useRpcKeyedQuery, type PluginRpcContract } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcKeyedQuery, type PluginRpcContract } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import type { Resource } from "./info-data";
 
@@ -15,7 +15,7 @@ const statusRow = z.discriminatedUnion("outcome", [
 ]);
 export type GitStatus = z.infer<typeof statusRow>;
 
-// Read-only subset of bb--git's environment-keyed status; each row compares against its environment's merge base.
+// Read-only subset of alia--git's environment-keyed status; each row compares against its environment's merge base.
 export const gitStatusContract = {
   status: {
     input: z.object({ keys: z.array(z.string().min(1)).min(1).max(200) }),
@@ -45,7 +45,7 @@ export function useGitStatus(environmentId: string | null): Resource<GitStatus> 
     return () => clearTimeout(timer);
   }, [environmentId]);
   const { data, error } = experimental_useRpcKeyedQuery({
-    contract: gitStatusContract, pluginId: "bb--git", method: "status",
+    contract: gitStatusContract, pluginId: "alia--git", method: "status",
     keys: armed !== null && armed === environmentId ? [armed] : [],
   });
   if (environmentId === null) return null;

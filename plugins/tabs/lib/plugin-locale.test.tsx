@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe("plugin locale", () => {
-  it("uses the BB document language, then browser language, with a manual override", () => {
+  it("uses the VesnALIA document language, then browser language, with a manual override", () => {
     expect(resolvePluginLocale("Auto", "ru-RU", "en-US")).toBe("ru");
     expect(resolvePluginLocale("Auto", "en-US", "ru-RU")).toBe("en");
     expect(resolvePluginLocale("Auto", "", "ru-RU")).toBe("ru");
@@ -38,14 +38,14 @@ describe("plugin locale", () => {
   it("keeps publication descriptions in English and uses English README screenshots", async () => {
     const readme = await readFile("README.md", "utf8");
     const overview = await readFile("PLUGIN_OVERVIEW.md", "utf8");
-    for (const text of [manifest.description, manifest.bb.description, readme, overview]) {
+    for (const text of [manifest.description, manifest.alia.description, readme, overview]) {
       const prose = LANGUAGE_OPTIONS.reduce<string>(
         (value, language) => value.replaceAll(language, ""),
         text,
       );
       expect(prose).not.toMatch(/\p{Script=Cyrillic}/u);
     }
-    expect([...manifest.bb.description].length).toBeLessThanOrEqual(140);
+    expect([...manifest.alia.description].length).toBeLessThanOrEqual(140);
     expect([...overview].length).toBeLessThanOrEqual(4000);
     const screenshots = [...readme.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map((match) => match[1]!);
     expect(screenshots.length).toBeGreaterThan(0);

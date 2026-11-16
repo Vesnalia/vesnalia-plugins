@@ -1,9 +1,9 @@
 import { collectThreadEvidence } from "./src/thread-evidence.js";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import {
-  type BbFact,
+  type AliaFact,
   type ConnectionState,
   type DetailResult,
   type PanelNotice,
@@ -171,15 +171,15 @@ import { createKeyedSingleFlight, staleWhileRevalidate } from "./src/performance
  * Wiring only.
  *
  * Everything with a decision in it lives under `src/`, behind an injected
- * dependency, because CI has no Linear workspace, no bb server and no
- * `@bb/plugin-sdk` — so the architecture *is* the test plan. `createPlugin`
+ * dependency, because CI has no Linear workspace, no VesnALIA server and no
+ * `@vesnalia/plugin-sdk` — so the architecture *is* the test plan. `createPlugin`
  * takes the client factory; a test passes one that answers from a fixture and
  * nothing below it opens a socket.
  *
  * The factory must also succeed **offline**. It defines settings, runs
  * migrations, registers surfaces and reads stored values, and it makes no
  * Linear call at all — a flaky connection during an upgrade would otherwise
- * turn into a failed activation, and bb rolls a failed activation back to the
+ * turn into a failed activation, and VesnALIA rolls a failed activation back to the
  * previous plugin version, which then runs old code against the new schema.
  */
 
@@ -220,20 +220,20 @@ const sortPreferenceSchema = z.object({ v: z.literal(1), sort: z.string() });
 const backfilledSchema = z.object({ v: z.literal(1), at: z.number(), issues: z.number() });
 
 export function createPlugin(makeClient: LinearClientFactory = createLinearClient) {
-  return async function linearPlugin(bb: BbPluginApi): Promise<void> {
-    const settings = bb.settings.define(SETTING_DESCRIPTORS);
-    const kv = createVersionedStore(bb.storage.kv);
+  return async function linearPlugin(alia: AliaPluginApi): Promise<void> {
+    const settings = alia.settings.define(SETTING_DESCRIPTORS);
+    const kv = createVersionedStore(alia.storage.kv);
 
     const lifetime = createLifetime({
       log: (level, message) => {
-        bb.log[level](redact(message));
+        alia.log[level](redact(message));
       },
     });
     // A wake can shorten Cold or Warm, but wake never out-polls Hot.
     const syncWake = createWake(10_000);
 
-    const database = bb.storage.database();
-    bb.storage.migrate(database, MIGRATIONS);
+    const database = alia.storage.database();
+    alia.storage.migrate(database, MIGRATIONS);
     const store: Store = createStore(database);
 
     const now = () => Date.now();
@@ -244,7 +244,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * host's `readSecret` is a raw `readFile` with no trim, so a key pasted
      * with a trailing newline persists with one and every request 401s in a
      * way that reads exactly like a revoked key. Never captured into module
-     * scope — a key replaced while bb is running must take effect on the next
+     * scope — a key replaced while VesnALIA is running must take effect on the next
      * request, not the next reload.
      *
      * **Plural, because a Linear personal API key is scoped to one
@@ -346,7 +346,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         state.last = now();
         lifetime.run("publish", () => {
           if (channel === "linear:data") rebuildAllInstructions();
-          bb.realtime.publish(channel, { at: state.last });
+          alia.realtime.publish(channel, { at: state.last });
         });
         return;
       }
@@ -358,7 +358,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         state.last = now();
         lifetime.run("publish", () => {
           if (channel === "linear:data") rebuildAllInstructions();
-          bb.realtime.publish(channel, { at: state.last });
+          alia.realtime.publish(channel, { at: state.last });
         });
       }, PUBLISH_FLOOR_MS - since);
     }
@@ -554,7 +554,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       );
       if (rejected !== undefined) {
         lifetime.run("status", () =>
-          bb.status.needsConfiguration(
+          alia.status.needsConfiguration(
             states.length === 1
               ? "Linear rejected the API key — it may have been revoked. Save a new one in the Linear API key field."
               : `Linear rejected the ${slotLabel(rejected.slot)} — it may have been revoked. Save a new one, or clear the field.`,
@@ -613,7 +613,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * The gate every discovery trigger shares. It used to be
      * `store.teams().length === 0`, which is only true before the FIRST
      * workspace exists — so a second key pasted after that never loaded until
-     * an explicit `bb linear refresh`. Keyed by slot, a fresh key is
+     * an explicit `alia linear refresh`. Keyed by slot, a fresh key is
      * undiscovered no matter how many workspaces are already mirrored.
      */
     async function undiscoveredSlots(): Promise<CredentialSlot[]> {
@@ -810,7 +810,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       );
     }
 
-    /* ── What bb knows that Linear cannot ────────────────────────────────── */
+    /* ── What VesnALIA knows that Linear cannot ────────────────────────────────── */
     /*
      * Which threads are running right now, kept in memory from the six thread
      * lifecycle events. This is the half of the picture linear.app cannot
@@ -818,7 +818,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * grouped by state.
      *
      * In memory rather than in a table because it is per-load truth: a thread
-     * that was running when bb stopped is not running now, and a stale "active"
+     * that was running when VesnALIA stopped is not running now, and a stale "active"
      * row would be a lie the panel could not detect.
      */
     const activeThreads = new Set<string>();
@@ -826,8 +826,8 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     // Every body below touches SQLite, and thread events are fire-and-forget:
     // a throw from a closed database handle (reload mid-turn) lands in the
     // host's dispatch with no plugin frame to catch it — an uncaughtException
-    // that takes the bb server down. `lifetime.run` is the frame.
-    bb.events.on("thread.active", ({ thread }) => {
+    // that takes the VesnALIA server down. `lifetime.run` is the frame.
+    alia.events.on("thread.active", ({ thread }) => {
       activeThreads.add(thread.id);
       lifetime.run("thread-active", () => {
         if (store.threadLink(thread.id) !== null) publish("linear:data");
@@ -840,7 +840,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         await runTransitionForThread(thread.id);
       });
     });
-    bb.events.on("thread.idle", ({ thread }) => {
+    alia.events.on("thread.idle", ({ thread }) => {
       activeThreads.delete(thread.id);
       lifetime.run("thread-idle", () => {
         if (store.threadLink(thread.id) !== null) publish("linear:data");
@@ -856,12 +856,12 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       });
     });
     for (const event of ["thread.failed", "thread.archived", "thread.deleted"] as const) {
-      bb.events.on(event, ({ thread }) => {
+      alia.events.on(event, ({ thread }) => {
         activeThreads.delete(thread.id);
         lifetime.run("thread-gone", () => {
           if (store.threadLink(thread.id) !== null) publish("linear:data");
           // A deleted thread's link is dead weight that the panel would keep
-          // drawing bb-facts from — "a thread is working on this" about a
+          // drawing alia-facts from — "a thread is working on this" about a
           // thread that no longer exists.
           if (event === "thread.deleted") {
             if (evaluations.has(thread.id)) deletedDuringEvaluation.add(thread.id);
@@ -875,9 +875,9 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       });
     }
 
-    function bbFactsFor(issueIds: readonly string[]): Map<string, BbFact> {
-      const facts = new Map<string, BbFact>();
-      // A pull request is the strongest fact bb has about an issue, so it is
+    function aliaFactsFor(issueIds: readonly string[]): Map<string, AliaFact> {
+      const facts = new Map<string, AliaFact>();
+      // A pull request is the strongest fact VesnALIA has about an issue, so it is
       // written first and the thread facts below only fill gaps.
       for (const row of store.prStatesByIssue(issueIds)) {
         if (row.issueId === null) continue;
@@ -900,7 +900,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
 
     /* ── Panel plumbing ──────────────────────────────────────────────────── */
 
-    async function panelDeps(includeBbFacts = false): Promise<PanelDeps> {
+    async function panelDeps(includeAliaFacts = false): Promise<PanelDeps> {
       const values = await settings.get();
       const hasCredential = values.apiKey !== undefined && values.apiKey.trim() !== "";
       const boundTeamIds = expandTeams(
@@ -915,18 +915,18 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         boundTeamIds,
         backfilledTeamIds: await backfilledTeamIds(),
         notice: panelNotice(),
-        ...(includeBbFacts
+        ...(includeAliaFacts
           ? {
               // Every issue that can carry a fact: the ones with a thread, a
               // branch or a pull request on this machine. Taking the most
               // recently updated issues instead left an older issue with a
               // running thread without its fact on a busy team.
-              bbFacts: bbFactsFor(
+              aliaFacts: aliaFactsFor(
                 store
                   .queryIssues({
                     teamIds: boundTeamIds,
                     includeCompleted: true,
-                    withBbWork: true,
+                    withAliaWork: true,
                     sort: "updated",
                     limit: 500,
                   })
@@ -973,7 +973,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       // `includePersonal` defaults to false, and omitting it strands the solo
       // developer who never created a project: every thread of theirs is in
       // the personal project, so every one would be unbound.
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return projects.map((project) => ({
         id: project.id,
         name: project.name,
@@ -1041,8 +1041,8 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
               entry.state.kind === "connected" ? entry.state.viewer.displayName : null,
             keyState:
               entry.state.kind === "connected"
-                ? "ok · teams not read yet — bb linear refresh reads them"
-                : `set · workspace not read yet (${keyState}) — bb linear refresh reads it`,
+                ? "ok · teams not read yet — VesnALIA linear refresh reads them"
+                : `set · workspace not read yet (${keyState}) — VesnALIA linear refresh reads it`,
             teams: null,
             issuesCached: 0,
             projectsCached: 0,
@@ -1162,7 +1162,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         ...(hasKey
           ? {}
           : {
-              fix: "Add it in this plugin's settings (the field is called Linear API key), or run: bb plugin config linear set apiKey <key>",
+              fix: "Add it in this plugin's settings (the field is called Linear API key), or run: VesnALIA plugin config linear set apiKey <key>",
             }),
       });
 
@@ -1183,11 +1183,11 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       }
 
       if (hasKey) {
-        // **Not** a forced recheck. The bb CLI gives a plugin command two
+        // **Not** a forced recheck. The VesnALIA CLI gives a plugin command two
         // seconds, and a forced verify spends a network round trip inside
-        // that — which is how `bb linear doctor` timed out the first time it
+        // that — which is how `alia linear doctor` timed out the first time it
         // met a live workspace. A verification from the last minute is a
-        // perfectly good diagnosis, and `bb linear status` refreshes it.
+        // perfectly good diagnosis, and `alia linear status` refreshes it.
         const state = await connectionState(false);
         checks.push({
           label: "Linear",
@@ -1248,10 +1248,10 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         status: bound.length === 0 ? "warn" : "ok",
         detail:
           bound.length === 0
-            ? "no bb project is bound to a Linear team"
+            ? "no VesnALIA project is bound to a Linear team"
             : `${bound.length} ${pluralize(bound.length, "team", "teams")} bound`,
         ...(bound.length === 0
-          ? { fix: "Bind one from the Linear panel, or run: bb linear bind <TEAM-KEY> --project <id>" }
+          ? { fix: "Bind one from the Linear panel, or run: VesnALIA linear bind <TEAM-KEY> --project <id>" }
           : {}),
       });
 
@@ -1267,7 +1267,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
           : "off — every change to Linear is refused; reads are unaffected",
         ...(writesAllowed(values)
           ? {}
-          : { fix: "To allow changes: bb plugin config linear set allowWrites true" }),
+          : { fix: "To allow changes: VesnALIA plugin config linear set allowWrites true" }),
       });
 
       // The pull-request probe check returns with the write-back automations
@@ -1288,7 +1288,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
 
     /* ── Bindings snapshot ───────────────────────────────────────────────── */
     /*
-     * `bb.agents.configure` and the mention providers are **synchronous** and
+     * `alia.agents.configure` and the mention providers are **synchronous** and
      * run on the thread-start path. Reading bindings from SQLite there would
      * put a query on every thread start, so the table is kept in memory and
      * refreshed whenever it changes.
@@ -1300,14 +1300,14 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      *
      * **Webhooks survive reloads.** `onDispose` takes no reason and cannot
      * distinguish an uninstall from a reload, a disable, an update or a
-     * shutdown — so deleting them there would destroy them on every bb restart
+     * shutdown — so deleting them there would destroy them on every VesnALIA restart
      * and on every plugin update, and re-creating one needs workspace-admin
      * rights most users lack plus a fresh signed self-test. A non-admin's first
      * restart would silently and permanently demote them to polling after they
      * had proved webhooks worked.
      *
      * Deletion happens only on explicit user action: clearing the webhook URL,
-     * `bb linear webhook disable`, or Disconnect.
+     * `alia linear webhook disable`, or Disconnect.
      */
     const webhookIds = new Map<string, string>();
 
@@ -1317,7 +1317,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * In memory on purpose: a probe is only meaningful within the seconds of
      * the `enable` command that sent it, and a nonce that survived a reload
      * would let a stale proof authorise a registration against a URL that no
-     * longer reaches this bb.
+     * longer reaches this VesnALIA.
      */
     const selfTestArrivals = new Set<string>();
     const pendingSelfTests = new Map<string, string>();
@@ -1413,7 +1413,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     /**
      * Resolve an identifier through EVERY configured key, for explicit
      * commands. `refreshIssue` resolves only through the caller's read scope
-     * — right for automatic paths, but `bb linear link OTTO-2222` is a person
+     * — right for automatic paths, but `alia linear link OTTO-2222` is a person
      * naming an exact issue, and refusing to even look it up because its team
      * is not bound or synced yet is how "No readable issue called OTTO-2222"
      * lied about an issue that exists. One fetch per key, cached in the
@@ -1753,7 +1753,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * so the floor has to keep running underneath.
      *
      * **Scope is the binding, not the workspace.** The poller only ever
-     * touches teams bound to at least one bb project, which is what makes the
+     * touches teams bound to at least one VesnALIA project, which is what makes the
      * plugin behave the same for a solo developer with one team and an
      * organisation with forty: cost scales with *bound* teams, and a
      * workspace-wide sweep is never issued.
@@ -1818,7 +1818,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      *  within a quarter of an hour even from deep backoff. */
     const TICK_BACKOFF_CEILING_MS = 900_000;
 
-    bb.background.service("sync", {
+    alia.background.service("sync", {
       async start(signal) {
         let tickNumber = 0;
         let quietTicks = 0;
@@ -1847,7 +1847,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
           }
 
           // Every configured key loads on start, and a key pasted mid-run
-          // loads on the next beat — `bb linear refresh` must never be a
+          // loads on the next beat — `alia linear refresh` must never be a
           // prerequisite for a workspace to exist. Single-flight, and rate
           // limited: a broken second key must not warn once per tick.
           if (
@@ -1934,7 +1934,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
                         { teamIds: group, issuesWatermark, commentsWatermark, tickNumber },
                       );
                     } catch (error) {
-                      // Recorded before anything contains it, or `bb linear
+                      // Recorded before anything contains it, or `alia linear
                       // status` reports "no error" forever while the sync is
                       // failing — the field existed from day one and nothing
                       // ever assigned it. `describeError` is redacted.
@@ -2034,9 +2034,9 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
 
     /*
      * Two schedules. Cron is **server-local time** — the README says "on the
-     * machine running bb" rather than pretending to know a timezone.
+     * machine running VesnALIA" rather than pretending to know a timezone.
      */
-    bb.background.schedule("reconcile", "*/15 * * * *", () => {
+    alia.background.schedule("reconcile", "*/15 * * * *", () => {
       // A hard delete leaves no tombstone, and archiving is invisible to a
       // delta poller unless `includeArchived` is set (it is). This sweep is
       // what catches the rest, within a bounded window.
@@ -2055,7 +2055,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     // in which a colleague's real change to the same issue can be silently
     // swallowed as "this plugin did it". The threshold was never the window;
     // the schedule was.
-    bb.background.schedule("prune", "17 * * * *", async () => {
+    alia.background.schedule("prune", "17 * * * *", async () => {
       lifetime.run("prune", () => {
         // An echo that has outlived any tick interval is a row nobody will
         // ever read again.
@@ -2077,7 +2077,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     });
 
     /* ── Linear upload image proxy ───────────────────────────────────────── */
-    bb.http.route(
+    alia.http.route(
       "GET",
       "/image",
       async (context) => {
@@ -2123,7 +2123,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * write must never become a Linear-side delivery failure: Linear retries at
      * most three times and then disables the webhook, with no replay API.
      */
-    bb.http.route(
+    alia.http.route(
       "POST",
       // The leading slash is required — the host rejects a bare path at
       // registration, and a rejected registration fails the whole reload.
@@ -2175,7 +2175,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         if (!verified.ok) {
           // Deliberately terse and deliberately not logged at warn: an
           // unauthenticated route that logs attacker-controlled text at volume
-          // is its own denial of service, and `bb plugin logs` rotates at 5 MB.
+          // is its own denial of service, and `alia plugin logs` rotates at 5 MB.
           lifetime.log("debug", `Webhook rejected: ${verified.reason}`);
           return new Response("no", { status: verified.reason === "no-secret" ? 503 : 401 });
         }
@@ -2237,7 +2237,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
 
     /**
      * Turn webhooks on for the bound teams — **after** proving the URL reaches
-     * this bb, never before.
+     * this VesnALIA, never before.
      *
      * Registering against an unreachable URL is worse than not registering:
      * Linear retries three times over six hours, disables the webhook, and
@@ -2341,7 +2341,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       if (teamIds.length === 0) {
         return {
           ok: false,
-          text: "No teams are bound yet, and a webhook is scoped to one team. Bind a team first — bb linear bind <TEAM>.\n",
+          text: "No teams are bound yet, and a webhook is scoped to one team. Bind a team first — VesnALIA linear bind <TEAM>.\n",
         };
       }
 
@@ -2413,7 +2413,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       for (const teamId of plan.create) {
         if (deleteFailed.has(teamId)) continue;
         const team = store.team(teamId);
-        const label = `bb (${team?.key ?? teamId})`;
+        const label = `alia (${team?.key ?? teamId})`;
         const signing = newSigningSecret();
         store.putLocalSecret(webhookSecretKey(teamId), signing);
         rememberSecret(signing);
@@ -2455,7 +2455,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       }
 
       const lines = [
-        `Self-test passed — ${url} reaches this bb.`,
+        `Self-test passed — ${url} reaches this VesnALIA.`,
         created.length > 0 ? `Registered for ${created.join(", ")}.` : null,
         plan.keep.length > 0 ? `${String(plan.keep.length)} already registered.` : null,
         failed.length > 0 ? `Could not register: ${failed.join("; ")}` : null,
@@ -2484,7 +2484,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      *  records it reads — two overlapping passes must never happen. */
     let webhookHealthRunning = false;
 
-    bb.background.schedule("webhook-health", "*/5 * * * *", () => {
+    alia.background.schedule("webhook-health", "*/5 * * * *", () => {
       if (webhookIds.size === 0 || webhookHealthRunning) return;
       webhookHealthRunning = true;
       // Detached for the same reason as reconcile: a Linear round trip per
@@ -2583,7 +2583,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       // connected first and may be months old. This is the fix for a company
       // key added to an existing install: without it, the very first poll of
       // the new workspace pulls its entire recent inbox backlog (up to a page)
-      // into bb, unlabelled, and (past 50) re-pulls the same page every tick
+      // into VesnALIA, unlabelled, and (past 50) re-pulls the same page every tick
       // because the cursor can never advance past a full page. Persisted
       // immediately, before the fetch, so the floor holds even if this tick
       // dies.
@@ -2658,14 +2658,14 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
             await deliverToPeer(
               {
                 listPlugins: async () => {
-                  const { plugins } = await bb.sdk.plugins.list();
+                  const { plugins } = await alia.sdk.plugins.list();
                   return plugins.map((entry) => ({
                     id: entry.id,
                     enabled: entry.enabled,
                     status: entry.status,
                   }));
                 },
-                callRpc: (args) => bb.sdk.plugins.callRpc(args as never),
+                callRpc: (args) => alia.sdk.plugins.callRpc(args as never),
                 log: (level, message) => lifetime.log(level, message),
               },
               values.pushPluginId,
@@ -2750,7 +2750,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         now,
         log: (level, message) => lifetime.log(level, message),
         lookupPullRequest: (environmentId) =>
-          lookupPullRequest((args) => bb.sdk.plugins.callRpc(args), environmentId, lookup),
+          lookupPullRequest((args) => alia.sdk.plugins.callRpc(args), environmentId, lookup),
       };
     }
 
@@ -2768,11 +2768,11 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       // consent-off install from paying gh lookups for moves it cannot make.
       if (!writesAllowed(values) || !values.prTransitions) return;
 
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const environmentId = thread.environmentId;
       if (environmentId === null || environmentId === undefined) return;
 
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       const projectId = thread.projectId ?? null;
       const scope = projectId === null ? null : scopeFor(projectId, bindingSnapshot);
 
@@ -2862,7 +2862,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     /* ── Starting a thread from an issue (M8) ────────────────────────────── */
 
     const startDeps: StartDeps = {
-      bb,
+      alia,
       clientForIssue: (issueId) => {
         const issue = store.issue(issueId);
         return issue === null ? primaryClient() : clientForTeam(issue.teamId);
@@ -2957,7 +2957,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       reason: string,
     ): Promise<void> {
       const at = now();
-      const message = `Linked this project to team ${team.key} — ${reason}. Undo: bb linear unbind ${team.key}`;
+      const message = `Linked this project to team ${team.key} — ${reason}. Undo: VesnALIA linear unbind ${team.key}`;
       const workspaceId =
         store.workspaceForTeam(team.id)?.id ?? store.workspace()?.id ?? "autolink";
       const key = `autolink:${projectId}:${team.id}:${String(at)}`;
@@ -2992,14 +2992,14 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
           await deliverToPeer(
             {
               listPlugins: async () => {
-                const { plugins } = await bb.sdk.plugins.list();
+                const { plugins } = await alia.sdk.plugins.list();
                 return plugins.map((entry) => ({
                   id: entry.id,
                   enabled: entry.enabled,
                   status: entry.status,
                 }));
               },
-              callRpc: (args) => bb.sdk.plugins.callRpc(args as never),
+              callRpc: (args) => alia.sdk.plugins.callRpc(args as never),
               log: (level, detail) => lifetime.log(level, detail),
             },
             values.pushPluginId,
@@ -3043,7 +3043,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     }
 
     /**
-     * A thread that no longer exists is an answer, not an incident. bb deletes
+     * A thread that no longer exists is an answer, not an incident. VesnALIA deletes
      * threads routinely and the SDK reports one as HTTP 404 — which the
      * generic lifetime handler was logging at warn, once per lifecycle event
      * that still named the dead thread. Absence comes back as `null` and a
@@ -3054,7 +3054,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         "thread",
         async () => {
           try {
-            return await bb.sdk.threads.get({ threadId });
+            return await alia.sdk.threads.get({ threadId });
           } catch (error) {
             if (error instanceof Error && /\b404\b|not found/i.test(error.message)) {
               lifetime.log("debug", `thread ${threadId} is gone: ${describeError(error)}`);
@@ -3081,10 +3081,10 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      */
     async function userMessagesFor(threadId: string) {
       const work = store.threadWorkState(threadId);
-      // bb 0.49 dropped `afterSequence` from the timeline query and ignores
+      // VesnALIA 0.49 dropped `afterSequence` from the timeline query and ignores
       // it, so the read is the latest page; `collectThreadEvidence` keeps
       // only rows past the durable cursor, which it always did.
-      const timeline = await lifetime.runAsync("timeline", () => bb.sdk.threads.timeline({
+      const timeline = await lifetime.runAsync("timeline", () => alia.sdk.threads.timeline({
         threadId,
       }), null);
       return timeline === null ? { messages: [], afterSequence: work.afterSequence } :
@@ -3115,7 +3115,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       if (environmentId !== null) {
         const environment = await lifetime.runAsync(
           "environment",
-          () => bb.sdk.environments.get({ environmentId }),
+          () => alia.sdk.environments.get({ environmentId }),
           null,
         );
         branchName = environment?.branchName ?? null;
@@ -3226,7 +3226,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       rebuildInstruction(threadId);
     }
 
-    const WORK_INSTRUCTIONS = "Keep this thread's Linear work current: when accepting or resuming a new task, call linear_thread_work with action start; use add for concurrent work, focus when changing attention, finish when work on that issue is finished here, and remove for a mistaken link. Start replaces the active set and keeps history; add preserves other active issues. Do this when taking the next task from a queue too. Read linear_thread_issue at the start of a turn when working on Linear tasks; it includes the current revision. Pass expectedRevision when changing work, and re-read on conflict. A mention, research result, or viewing an issue is not task acceptance. These operations change BB only; update Linear status separately for the specific issue when authorized.";
+    const WORK_INSTRUCTIONS = "Keep this thread's Linear work current: when accepting or resuming a new task, call linear_thread_work with action start; use add for concurrent work, focus when changing attention, finish when work on that issue is finished here, and remove for a mistaken link. Start replaces the active set and keeps history; add preserves other active issues. Do this when taking the next task from a queue too. Read linear_thread_issue at the start of a turn when working on Linear tasks; it includes the current revision. Pass expectedRevision when changing work, and re-read on conflict. A mention, research result, or viewing an issue is not task acceptance. These operations change VesnALIA only; update Linear status separately for the specific issue when authorized.";
 
     function rebuildInstruction(threadId: string): void {
       const view = threadWorkView(threadId, 5);
@@ -3248,7 +3248,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       for (const threadId of instructionCache.keys()) rebuildInstruction(threadId);
     }
 
-    bb.agents.contributeInstructions(({ threadId }) =>
+    alia.agents.contributeInstructions(({ threadId }) =>
       threadId === undefined || threadId === null ? null :
         (instructionCache.get(threadId) ?? WORK_INSTRUCTIONS),
     );
@@ -3307,10 +3307,10 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     }
 
     /**
-     * The explicit link path shared by `bb linear link`, the panel's bind rpc
+     * The explicit link path shared by `alia linear link`, the panel's bind rpc
      * and `linear_thread_bind`: resolve the identifier — mirror first, then
      * the project's scope, then EVERY configured key on demand — and bind
-     * bb-locally. Never writes to Linear. When the issue exists but its team
+     * alia-locally. Never writes to Linear. When the issue exists but its team
      * is outside the project's scope, the refusal names the exact commands
      * that fix it rather than pretending the issue does not exist.
      */
@@ -3371,7 +3371,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       if (issue === null) {
         return {
           ok: false,
-          message: `No issue called ${idOrIdentifier} in any connected workspace. If it was just created, run: bb linear refresh — then retry.`,
+          message: `No issue called ${idOrIdentifier} in any connected workspace. If it was just created, run: VesnALIA linear refresh — then retry.`,
         };
       }
 
@@ -3380,14 +3380,14 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         const workspace = team === null ? null : store.workspaceForTeam(team.id);
         const teamName =
           team === null
-            ? "a team this bb has not read yet (run: bb linear refresh)"
+            ? "a team this VesnALIA has not read yet (run: VesnALIA linear refresh)"
             : `team ${team.key}${workspace === null ? "" : ` in ${workspace.name}`}`;
         const bindHint =
           team === null
             ? ""
             : current.primaryTeamId === null
-              ? ` Bind it first: bb linear bind ${team.key} --project ${projectId} — then rerun: bb linear link ${issue.identifier} (it is cached now, so it links instantly).`
-              : ` Add it to this project first: bb linear bind ${team.key} --project ${projectId} --role write — then rerun: bb linear link ${issue.identifier} (it is cached now, so it links instantly).`;
+              ? ` Bind it first: VesnALIA linear bind ${team.key} --project ${projectId} — then rerun: VesnALIA linear link ${issue.identifier} (it is cached now, so it links instantly).`
+              : ` Add it to this project first: VesnALIA linear bind ${team.key} --project ${projectId} --role write — then rerun: VesnALIA linear link ${issue.identifier} (it is cached now, so it links instantly).`;
         return {
           ok: false,
           message: `${issue.identifier} is on ${teamName}, which this thread's project is not bound to.${bindHint}`,
@@ -3402,7 +3402,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     /**
      * The panel's write rpcs carry no project context, so scope is checked
      * against the union of every binding's write set: the issue's team must be
-     * write-bound by *some* bb project here. The CLI and the agent tools do
+     * write-bound by *some* VesnALIA project here. The CLI and the agent tools do
      * their own per-project checks; this is the equivalent gate for the panel
      * surface, which the audit found had none. Cross-workspace identifier
      * ambiguity is refused rather than resolved to an arbitrary row.
@@ -3436,7 +3436,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       if (!writable.has(issue.teamId)) {
         const team = store.team(issue.teamId);
         return {
-          message: `${issue.identifier} is on ${team?.name ?? "a team"} (${team?.key ?? "?"}), which no bb project here is bound to with write access. Bind it, or work from the workspace that owns it.`,
+          message: `${issue.identifier} is on ${team?.name ?? "a team"} (${team?.key ?? "?"}), which no VesnALIA project here is bound to with write access. Bind it, or work from the workspace that owns it.`,
         };
       }
       return { issue };
@@ -3484,7 +3484,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       });
     }
 
-    bb.rpc.register(serverRpcContract, {
+    alia.rpc.register(serverRpcContract, {
       async status() {
         const states = await slotStates(false);
         return {
@@ -3982,7 +3982,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         // binding should not also cost the local copy and a fresh backfill to
         // undo. (An earlier version of this comment promised a "nightly
         // prune" that never existed — nothing removes an unbound team's
-        // issues except forgetting the workspace or `bb linear forget`.)
+        // issues except forgetting the workspace or `alia linear forget`.)
         return { ok: true, message: null };
       },
 
@@ -4051,7 +4051,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
           return {
             ok: false,
             identifier: null,
-            message: `No bb project here is bound to ${team?.name ?? "that team"} with write access.`,
+            message: `No VesnALIA project here is bound to ${team?.name ?? "that team"} with write access.`,
           };
         }
         if (parentId !== undefined) {
@@ -4363,7 +4363,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
        * refused by listing the candidates rather than by guessing.
        */
       set: async (args) => {
-        const target = await resolveForWrite(args.identifier, args.projectId, "--bb-project");
+        const target = await resolveForWrite(args.identifier, args.projectId, "--alia-project");
         if ("message" in target) return { ok: false, message: target.message };
         const issue = target.issue;
 
@@ -4529,7 +4529,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
           return {
             ok: false,
             message:
-              "No bb project here is bound to a Linear team with write access. Run: bb linear bind <TEAM-KEY> --project <id>",
+              "No VesnALIA project here is bound to a Linear team with write access. Run: VesnALIA linear bind <TEAM-KEY> --project <id>",
           };
         }
 
@@ -4613,7 +4613,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
             ok: false,
             rows: [],
             message:
-              "No bb project is bound to a Linear team. Run: bb linear bind <TEAM-KEY> --project <id>",
+              "No VesnALIA project is bound to a Linear team. Run: VesnALIA linear bind <TEAM-KEY> --project <id>",
           };
         }
 
@@ -4756,7 +4756,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         if (state.kind !== "connected") {
           return {
             ok: false,
-            text: `Not connected — nothing to refresh. Run: bb linear doctor\n`,
+            text: `Not connected — nothing to refresh. Run: VesnALIA linear doctor\n`,
           };
         }
 
@@ -4830,7 +4830,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
                 "Not configured — the plugin polls, which always works.",
                 "",
                 "  Webhooks are an escalation for someone who already runs a public HTTPS",
-                "  endpoint. Creating one also needs a Linear workspace admin, and a bb",
+                "  endpoint. Creating one also needs a Linear workspace admin, and a VesnALIA",
                 "  connect share link will not work: it is session-gated, so Linear's",
                 "  delivery bot gets the sign-in page.",
                 "",
@@ -4841,7 +4841,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
             ok: true,
             text:
               webhookIds.size === 0
-                ? `A URL is set (${url}) but no webhook is registered yet. Run: bb linear webhook enable ${url}\n`
+                ? `A URL is set (${url}) but no webhook is registered yet. Run: VesnALIA linear webhook enable ${url}\n`
                 : `${webhookIds.size} webhook(s) registered, one per bound team. Delivering to ${url}.\n`,
           };
         }
@@ -4867,7 +4867,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
 
         return {
           ok: false,
-          text: "Usage: bb linear webhook status | enable <https-url> | disable\n",
+          text: "Usage: VesnALIA linear webhook status | enable <https-url> | disable\n",
         };
       },
 
@@ -4980,9 +4980,9 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     async function resolveForWrite(
       identifier: string,
       projectId: string | undefined,
-      // The flag that names the bb project. `set` spells it `--bb-project`,
+      // The flag that names the VesnALIA project. `set` spells it `--alia-project`,
       // because its `--project` is the Linear project to move the issue into.
-      projectFlag: "--project" | "--bb-project" = "--project",
+      projectFlag: "--project" | "--alia-project" = "--project",
     ): Promise<{ issue: NonNullable<ReturnType<Store["issue"]>>; team: { name: string } } | { message: string }> {
       const boundProjects = [...new Set(bindingSnapshot.map((row) => row.projectId))];
       const resolved = projectId ?? (boundProjects.length === 1 ? boundProjects[0] : undefined);
@@ -4990,7 +4990,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         return {
           message:
             boundProjects.length === 0
-              ? "No bb project is bound to a Linear team. Bind one first: bb linear bind <TEAM-KEY> --project <id>"
+              ? "No VesnALIA project is bound to a Linear team. Bind one first: VesnALIA linear bind <TEAM-KEY> --project <id>"
               : `More than one project is bound, so name one with ${projectFlag} <id>.`,
         };
       }
@@ -5059,9 +5059,9 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * per thread whether any of them are offered, and an unbound project gets
      * none of them plus one sentence saying why.
      */
-    registerMentionProviders(bb, { store, bindings: () => bindingSnapshot });
+    registerMentionProviders(alia, { store, bindings: () => bindingSnapshot });
 
-    registerTools(bb, {
+    registerTools(alia, {
       store,
       bindings: () => bindingSnapshot,
       // The master consent switch clamps first — with writes disallowed,
@@ -5175,9 +5175,9 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
       now,
     });
 
-    bb.cli.register({
+    alia.cli.register({
       name: "linear",
-      summary: "Linear issues, and the bb threads and pull requests attached to them",
+      summary: "Linear issues, and the VesnALIA threads and pull requests attached to them",
       commands: [...CLI_COMMANDS],
       run: createCliRunner(cliEnvironment),
     });
@@ -5224,7 +5224,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
         cached = null;
         publish("linear:connection");
         // A freshly pasted key's workspace loads now, not on the next manual
-        // `bb linear refresh` — that command must never be a prerequisite.
+        // `alia linear refresh` — that command must never be a prerequisite.
         lastDiscoveryAttemptAt = now();
         lifetime.detach("discover", async () => {
           await discoverOnce();
@@ -5342,7 +5342,7 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
     // Any configured slot counts. Checking only `apiKey` would mark a plugin
     // whose sole key lives in slot 2 as unconfigured forever.
     if (configuredSlots(initialSettings).length === 0) {
-      bb.status.needsConfiguration(NEEDS_CONFIGURATION_MESSAGE);
+      alia.status.needsConfiguration(NEEDS_CONFIGURATION_MESSAGE);
     }
 
     /* ── Dispose ─────────────────────────────────────────────────────────── */
@@ -5356,10 +5356,10 @@ export function createPlugin(makeClient: LinearClientFactory = createLinearClien
      * Nothing user-visible or remote is destroyed here. `onDispose` takes no
      * reason and cannot tell an uninstall from a reload, a disable, an update
      * or a shutdown — so deleting a Linear webhook here would destroy it on
-     * every bb restart, and re-creating one needs workspace-admin rights most
+     * every VesnALIA restart, and re-creating one needs workspace-admin rights most
      * users do not have.
      */
-    bb.onDispose(() => {
+    alia.onDispose(() => {
       lifetime.dispose();
       for (const state of publishers.values()) {
         if (state.timer !== null) clearTimeout(state.timer);

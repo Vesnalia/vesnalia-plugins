@@ -1,4 +1,4 @@
-# Live but unresponsive KiloCode server blocks BB thread startup without bounded recovery
+# Live but unresponsive KiloCode server blocks VesnALIA thread startup without bounded recovery
 
 - **Type:** `bug`
 - **Source:** https://github.com/iamhenry/bb-kilo/issues/3
@@ -6,7 +6,7 @@
 
 ## Original GitHub Issue
 
-A detached KiloCode server can remain alive and retain its lock while temporarily failing health and session RPCs. BB correctly refuses to launch a duplicate server, but thread startup then fails without a bounded recovery path or actionable, stage-specific diagnostics. Users must wait for spontaneous recovery or explicitly reload KiloCode, and naive retries can create duplicate replacement work after the original BB thread and worktree were provisioned.
+A detached KiloCode server can remain alive and retain its lock while temporarily failing health and session RPCs. VesnALIA correctly refuses to launch a duplicate server, but thread startup then fails without a bounded recovery path or actionable, stage-specific diagnostics. Users must wait for spontaneous recovery or explicitly reload KiloCode, and naive retries can create duplicate replacement work after the original VesnALIA thread and worktree were provisioned.
 
 The observed server later recovered without repository or configuration changes. The deeper reason it stopped answering is unknown and is not claimed by this issue.
 
@@ -25,7 +25,7 @@ The safe fix must preserve the live lock and active work, provide one bounded op
 - The plugin never spawns a second detached KiloCode server while a locked server may still be active.
 - Persistent live-but-unresponsive state produces a structured error that distinguishes the failed stage and tells the operator how to recover safely.
 - Automatic recycling, if implemented, occurs only when the server is proven idle; active sessions are never silently terminated.
-- Thread startup is retried at most once after a successful safe recovery, without creating duplicate BB work.
+- Thread startup is retried at most once after a successful safe recovery, without creating duplicate VesnALIA work.
 - Diagnostic logs include stage, elapsed time, and recovery decision but exclude prompts, credentials, and private user content.
 - Tests cover healthy attach, dead-server reclaim, transient slowness, and persistent live-but-unresponsive behavior.
 
@@ -34,22 +34,22 @@ The safe fix must preserve the live lock and active work, provide one bounded op
 ### Happy Path: A transient stall recovers and the thread starts once
 
 Given the locked KiloCode server is alive but temporarily unresponsive
-When the user starts an KiloCode-backed BB thread and the bounded recovery succeeds
-Then the thread starts once without a duplicate server or duplicate BB work
+When the user starts an KiloCode-backed VesnALIA thread and the bounded recovery succeeds
+Then the thread starts once without a duplicate server or duplicate VesnALIA work
 
 ## Gherkin Edge Path
 
 ### Edge Path: A persistent stall fails safely with actionable diagnostics
 
 Given the locked KiloCode server remains alive and unresponsive through the bounded recovery
-When the user starts an KiloCode-backed BB thread
+When the user starts an KiloCode-backed VesnALIA thread
 Then startup fails without terminating active work or spawning another server and identifies the failed stage and safe recovery action
 
 ## Current UX
 
 ### How a user starts an KiloCode-backed thread today
 
-1. User picks **KiloCode** in BB and sends a message. BB issues `thread/start` over the provider bridge.
+1. User picks **KiloCode** in VesnALIA and sends a message. VesnALIA issues `thread/start` over the provider bridge.
 2. The bridge handler calls `ensureClient()` first (`src/bridge.ts:2400-2427`). If a cached client exists it is probed with `client.health()`; on failure the client is dropped and the bridge re-attaches from the lock file (`src/bridge.ts:388-418`).
 3. Re-attach goes through `attachOrSpawn` (`src/bridge.ts:241`, `src/process.ts:281-296`): it reclaims the lock only if the port is proven dead, tries `attachIfHealthy`, and if a leftover lock remains it **throws instead of spawning a second server**.
 4. On success the bridge creates/adopts an KiloCode session, binds it, and answers `providerThreadId` (`src/bridge.ts:2411-2427`); the first prompt then runs via `runPrompt` (`src/bridge.ts:2442-2456`).
@@ -59,25 +59,25 @@ Then startup fails without terminating active work or spawning another server an
 | Stage | What happens | What the user sees | Evidence |
 |---|---|---|---|
 | **Health probe timeout (transient)** | `probePort` uses an 800 ms `AbortSignal.timeout`; a timeout is classified `"slow"`, not `"dead"` — the lock is deliberately kept (`src/process.ts:151-181`). `attachIfHealthy` requires a full `"ok"` answer, so a slow server is not attachable (`src/process.ts:183-196`). | Startup fails with `KiloCode serve on :<port> did not answer in time. Not spawning another.` | `src/process.ts:291-296`; test asserts this exact message and that `spawn` is never called (`tests/process.test.ts:61-78`) |
-| **Health RPC answered but unhealthy** | `client.health()` retries 3× at 800 ms each, then throws `KiloCode serve did not answer health (timed out)` (`src/client.ts:223-247`). `ensureClient` wraps any attach/health/version error through `publicErrorMessage`, which maps abort-timeouts to `KiloCode serve did not answer in time` (`src/bridge.ts:381-386, 409-411`). | The raw error string surfaces as the JSON-RPC error for `thread/start` (`src/bridge.ts:2457-2461`), which BB renders as the failed run. | `src/bridge.ts:2459-2461` |
+| **Health RPC answered but unhealthy** | `client.health()` retries 3× at 800 ms each, then throws `KiloCode serve did not answer health (timed out)` (`src/client.ts:223-247`). `ensureClient` wraps any attach/health/version error through `publicErrorMessage`, which maps abort-timeouts to `KiloCode serve did not answer in time` (`src/bridge.ts:381-386, 409-411`). | The raw error string surfaces as the JSON-RPC error for `thread/start` (`src/bridge.ts:2457-2461`), which VesnALIA renders as the failed run. | `src/bridge.ts:2459-2461` |
 | **Session creation fails after healthy attach** | `createSession` is bounded by `KILO_SETUP_MS = 8_000` (`src/client.ts:145, 248-261`). | Error message like `session.create timed out after 8000ms` — **no stage label, no recovery guidance**; the message is passed through verbatim (`src/bridge.ts:2457-2461`). | `src/client.ts:150-169` |
-| **Prompt fails mid-turn** | `runPrompt` catches and emits a `turn.boundary` delta with `status: "failed"` and the error message (`src/bridge.ts:3509-3519`, `failIssuedTurn` at `src/bridge.ts:491-512`). | BB shows the turn as failed with the message (e.g. `provider 503`); verified in tests (`tests/bridge.test.ts:3761-3806`). | `src/bridge.ts:505-511` |
-| **Serve dies mid-turn** | `serveLost` fails all live turns and emits a `providerRecovery` notification with `kind: "restartRecommended"`, `retryable: true` (`src/bridge.ts:619-630`). | Turn fails; the recovery notification is consumed by BB host chrome, **not by any UI in this plugin** (no in-repo consumer found). | `src/bridge.ts:625-629` |
+| **Prompt fails mid-turn** | `runPrompt` catches and emits a `turn.boundary` delta with `status: "failed"` and the error message (`src/bridge.ts:3509-3519`, `failIssuedTurn` at `src/bridge.ts:491-512`). | VesnALIA shows the turn as failed with the message (e.g. `provider 503`); verified in tests (`tests/bridge.test.ts:3761-3806`). | `src/bridge.ts:505-511` |
+| **Serve dies mid-turn** | `serveLost` fails all live turns and emits a `providerRecovery` notification with `kind: "restartRecommended"`, `retryable: true` (`src/bridge.ts:619-630`). | Turn fails; the recovery notification is consumed by VesnALIA host chrome, **not by any UI in this plugin** (no in-repo consumer found). | `src/bridge.ts:625-629` |
 
 ### What the user can do to recover today (manual only)
 
 1. **Tools → KiloCode settings panel** (registered at `app.tsx:70-75`): shows Binary, Server version, Attach state (`attached`/`spawned`/`down`), Port, version range, serve cwd, plus `probe.error` and `probe.authError` lines (`src/app/settings-section.tsx:57-84`). The probe itself reports the leftover lock's port/pid and the failure message when attach fails (`src/probe.ts:136-152`).
 2. **"Reload KiloCode" button**: calls the `reload` RPC → `handleReload` → `stopServe`, which SIGTERMs the locked process group, escalates to SIGKILL after ~3 s, and removes only the lock that serve still owns (`src/app/settings-section.tsx:86-99`, `src/host-handlers.ts:38-50`, `src/process.ts:106-129`). Result is shown inline: `Reloaded.` or the error (`src/app/settings-section.tsx:95-99`).
-3. **CLI diagnostics**: `bb kilo status` (exit code 1 when `needsConfiguration`, prints binary/server/attach/port/pid/error/serveLog) and `bb kilo logs` (`server.ts:693-782`, `src/host-handlers.ts:52-56`).
-4. **Startup badge**: at plugin start a background probe calls `bb.status.needsConfiguration(...)` with the probe error when configuration is needed (`server.ts:644-661`).
+3. **CLI diagnostics**: `alia kilo status` (exit code 1 when `needsConfiguration`, prints binary/server/attach/port/pid/error/serveLog) and `alia kilo logs` (`server.ts:693-782`, `src/host-handlers.ts:52-56`).
+4. **Startup badge**: at plugin start a background probe calls `alia.status.needsConfiguration(...)` with the probe error when configuration is needed (`server.ts:644-661`).
 
 ### Gaps in current UX (expected behavior with no surface)
 
 - **No bounded automatic recovery.** A transient stall fails immediately on the first `thread/start`; there is no retry window. The only paths are wait for spontaneous recovery or manually Reload (`src/process.ts:291-296`; issue `_ai/task/2026-09-03/live-unresponsive-kilo-recovery/issue.md:9`).
 - **No stage distinction in user-facing errors.** Health-timeout, attach-refusal, and `session.create` timeout all surface as undifferentiated message strings; nothing labels the failed stage (`src/bridge.ts:2457-2461`).
-- **No actionable guidance in the error.** The `did not answer in time` message never mentions the Reload button or `bb kilo status`; the user must discover recovery themselves.
+- **No actionable guidance in the error.** The `did not answer in time` message never mentions the Reload button or `alia kilo status`; the user must discover recovery themselves.
 - **`providerRecovery` / `restartRecommended` has no in-plugin consumer** — it is emitted only when the serve is fully lost (`src/bridge.ts:619-630`), never for the live-but-unresponsive case, and no UI in this repo renders it.
-- **Provisioned state after failure is invisible in the thread.** If `createSession` succeeded before a later failure, an orphan KiloCode session exists and the BB thread/worktree remain, but the error surface does not tell the user the thread is safe to retry without duplicate work (issue.md:9, "naive retries can create duplicate replacement work").
+- **Provisioned state after failure is invisible in the thread.** If `createSession` succeeded before a later failure, an orphan KiloCode session exists and the VesnALIA thread/worktree remain, but the error surface does not tell the user the thread is safe to retry without duplicate work (issue.md:9, "naive retries can create duplicate replacement work").
 
 ## Post-change UX
 
@@ -87,8 +87,8 @@ Intended behavior per the issue's acceptance criteria and Gherkin paths (`_ai/ta
 
 1. User starts an KiloCode-backed thread; the locked server is alive but temporarily unresponsive.
 2. The plugin makes **one bounded recovery attempt** (no unbounded retries, no timeout-only increase — issue.md:24). The live lock is preserved throughout; no second server is ever spawned (issue.md:25; preserved invariant already enforced at `src/process.ts:291-296`).
-3. Recovery succeeds → the thread starts **exactly once**, with no duplicate server and no duplicate BB work (issue.md:28, Happy Path at issue.md:32-38).
-4. Diagnostic logs record stage, elapsed time, and the recovery decision — without prompts, credentials, or private content (issue.md:29). Natural home: the existing serve/debug log surfaces (`src/process.ts:36-49`, `src/bridge.ts:307-309`, surfaced via `bb kilo logs`, `server.ts:757-760`).
+3. Recovery succeeds → the thread starts **exactly once**, with no duplicate server and no duplicate VesnALIA work (issue.md:28, Happy Path at issue.md:32-38).
+4. Diagnostic logs record stage, elapsed time, and the recovery decision — without prompts, credentials, or private content (issue.md:29). Natural home: the existing serve/debug log surfaces (`src/process.ts:36-49`, `src/bridge.ts:307-309`, surfaced via `alia kilo logs`, `server.ts:757-760`).
 
 ### Edge path — persistent stall
 
@@ -97,13 +97,13 @@ Intended behavior per the issue's acceptance criteria and Gherkin paths (`_ai/ta
 3. The error is **structured and stage-labeled** — it distinguishes health, attach, and session-creation failures (issue.md:26) — unlike today's pass-through strings (`src/bridge.ts:2457-2461`).
 4. The error names the **safe operator action**: the existing Tools → KiloCode → Reload KiloCode path (`src/app/settings-section.tsx:86-99`), which is already the only proven-safe recycle because `stopServe` kills only the lock owner and preserves a replacement lock (`src/process.ts:105-129`, tested at `tests/process.test.ts:177-211`).
 5. Automatic recycling, if added, happens **only when the server is proven idle**; active sessions are never silently terminated (issue.md:27). The existing idle-proof primitives (`/session/status` via `runningSessionIdsFromStatus`, `src/session-status.ts:44-63`; `sessionIsRunning`, `src/client.ts`) are the candidates for that proof — the exact proof standard is explicitly deferred to proposal research (issue.md:20).
-6. Retry after successful recovery is **at most once**, preventing duplicate BB work (issue.md:28).
+6. Retry after successful recovery is **at most once**, preventing duplicate VesnALIA work (issue.md:28).
 
 ### UI surfaces needed post-change (currently missing)
 
 - A stage-labeled, action-bearing error string for the persistent-stall case (replaces/augments `publicErrorMessage`, `src/bridge.ts:381-386`).
 - A visible recovery-attempt indicator or warning during the bounded window (candidate: the existing `provider.warning` delta channel, `src/bridge.ts:519-547`).
-- Persistent-failure guidance pointing at Tools → KiloCode (settings panel already shows attach state and probe error, `src/app/settings-section.tsx:57-84`) and `bb kilo status` (`server.ts:724-748`).
+- Persistent-failure guidance pointing at Tools → KiloCode (settings panel already shows attach state and probe error, `src/app/settings-section.tsx:57-84`) and `alia kilo status` (`server.ts:724-748`).
 
 ## Current Behavior
 
@@ -111,14 +111,14 @@ Intended behavior per the issue's acceptance criteria and Gherkin paths (`_ai/ta
 - A slow health response keeps the host-wide lock, fails strict attach, and reaches the existing no-spawn guard; this preserves the server but offers no recovery window (`src/process.ts:151-196,281-296`; [code archaeology](research/code-archaeology.md#33-attachorspawn--the-lockclaimspawn-state-machine-srcprocessts281-406)).
 - Client health is bounded to three 800 ms attempts, while `session.create` gets one 8 second attempt; neither has a recovery decision between failure and the startup error (`src/client.ts:223-261`; [dependency map](research/dependency-map.md#3-data-flow-analysis--startup-threadstart-end-to-end)).
 - Startup errors are message-only JSON-RPC failures, and timeout normalization erases health/attach stage detail (`src/bridge.ts:315-325,381-386,2457-2461`; [code archaeology](research/code-archaeology.md#37-startup-failure-surfacing)).
-- Manual Reload calls `stopServe` without an idle proof; bridge-local active-turn state cannot prove that other BB workers are idle (`src/process.ts:105-129`; `src/host-handlers.ts:38-50`; [dependency map](research/dependency-map.md#8-risks-and-considerations)).
+- Manual Reload calls `stopServe` without an idle proof; bridge-local active-turn state cannot prove that other VesnALIA workers are idle (`src/process.ts:105-129`; `src/host-handlers.ts:38-50`; [dependency map](research/dependency-map.md#8-risks-and-considerations)).
 
 ## Constraints
 
 - Keep the host-wide live lock whenever the port is slow rather than proven dead, and never bypass the existing duplicate-spawn guard (`src/process.ts:51-59,170-196,291-296`; `tests/process.test.ts:61-78`).
 - Bound every wait and recovery attempt; do not replace recovery with a longer timeout (`src/process.ts:16-17,317-322,357-366`; `src/client.ts:145,223-261`).
 - Do not blindly replay `session.create`: the POST has no documented idempotency key, and a timeout is ambiguous ([external signal](research/external-signal.md#3-post-session-has-no-idempotency-mechanism--a-blind-retry-after-an-ambiguous-timeout-can-create-duplicate-sessions)).
-- Retry only before the one `respondResult`; do not re-enter the whole handler or duplicate session binding, identity notifications, responses, or BB work (`src/bridge.ts:2410-2427`; [dependency map](research/dependency-map.md#6-invocation-order-and-cardinality-summary-startup-happy-path)).
+- Retry only before the one `respondResult`; do not re-enter the whole handler or duplicate session binding, identity notifications, responses, or VesnALIA work (`src/bridge.ts:2410-2427`; [dependency map](research/dependency-map.md#6-invocation-order-and-cardinality-summary-startup-happy-path)).
 - Do not automatically stop or reload unless all active work can be proven idle across the host. An unknown or unreachable status is not idle (`src/session-status.ts:37-60`; [dependency map](research/dependency-map.md#8-risks-and-considerations)).
 - Log only stage, elapsed time, bounded recovery decision, and sanitized status/error classes; never prompts, credentials, raw environment, paths, or private user content ([external signal](research/external-signal.md#6-owasp-logging-cheat-sheet-log-event-level-facts-never-sensitive-data-and-sanitize-event-content-against-log-injection)).
 
@@ -175,10 +175,10 @@ The ranking prioritizes the smallest safe diff, existing style, reversibility, a
 
 ### 3. Bounded recovery plus an operator-mediated idle-aware recovery surface
 
-- **Shape:** Implement the bounded, stage-specific bridge recovery from Approach 1, then extend the existing settings/host path to query `session.status` before offering recovery. Automatically recycle only when status conclusively shows all host-wide work idle; when status is busy, retrying, unreachable, or ambiguous, do not kill or reload and instead present an explicit operator action with interruption risk and `bb kilo status` guidance (`src/session-status.ts:37-60`; `src/host-handlers.ts:38-92`; `src/app/settings-section.tsx:40-99`).
+- **Shape:** Implement the bounded, stage-specific bridge recovery from Approach 1, then extend the existing settings/host path to query `session.status` before offering recovery. Automatically recycle only when status conclusively shows all host-wide work idle; when status is busy, retrying, unreachable, or ambiguous, do not kill or reload and instead present an explicit operator action with interruption risk and `alia kilo status` guidance (`src/session-status.ts:37-60`; `src/host-handlers.ts:38-92`; `src/app/settings-section.tsx:40-99`).
 - **Why ranked third:** It offers the strongest guided UX but expands into host contracts and UI even though a stage-specific startup error may be sufficient. It is least reversible and carries the widest safety surface.
 - **Tradeoffs:** Better discoverability and an explicit path out of a persistent stall versus more files, UI/contract work, and an unavoidable fail-closed result when an unresponsive server cannot prove idle. Explicit operator confirmation remains necessary whenever global idle cannot be proven.
-- **Regression probe:** Simulate idle, busy, retrying, unreachable, and replacement-lock races; assert automatic `stopServe` is called only for conclusively all-idle status, never for unknown/active status, never spawns a duplicate server, preserves a racing replacement lock, and never duplicates session creation, identity, response, or BB work (`tests/process.test.ts:177-211`; `src/process.ts:86-129`; [dependency map](research/dependency-map.md#8-risks-and-considerations)).
+- **Regression probe:** Simulate idle, busy, retrying, unreachable, and replacement-lock races; assert automatic `stopServe` is called only for conclusively all-idle status, never for unknown/active status, never spawns a duplicate server, preserves a racing replacement lock, and never duplicates session creation, identity, response, or VesnALIA work (`tests/process.test.ts:177-211`; `src/process.ts:86-129`; [dependency map](research/dependency-map.md#8-risks-and-considerations)).
 - **Maintainer check:** Would a maintainer approve this PR without asking for changes? **Unlikely as the first fix**: it is safe only with strict fail-closed idle proof and adds UI scope beyond the smallest recovery contract.
 
 ## Judge Decision

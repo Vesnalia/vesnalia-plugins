@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   type FakePluginHost,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { KoreyConnection } from "./connection.js";
 import { KoreyOAuth, pkceChallenge, type OAuthCredentials } from "./oauth.js";
 import koreyPlugin from "./server.js";
@@ -20,7 +20,7 @@ function jsonResponse(value: unknown, status = 200): Response {
 function identity() {
   return {
     sub: "42",
-    name: "bb User",
+    name: "VesnALIA User",
     email: "user@example.com",
     korey_user_id: 42,
     korey_organization_id: 7,
@@ -90,7 +90,7 @@ async function loadPlugin(
     agentSkillIds: ["korey"],
     settings,
   });
-  await koreyPlugin(host.bb);
+  await koreyPlugin(host.alia);
   hosts.push(host);
   return host;
 }
@@ -130,7 +130,7 @@ describe("Korey OAuth connection", () => {
     expect(page.status).toBe(200);
     expect(page.headers.get("cache-control")).toBe("no-store");
     expect(await page.text()).toContain(
-      "bb is connected to Korey as bb User in example.",
+      "alia is connected to Korey as VesnALIA User in example.",
     );
     const exchange = form(korey.to("/oauth/token")[0]?.init);
     expect(exchange).toMatchObject({
@@ -147,7 +147,7 @@ describe("Korey OAuth connection", () => {
 
     await expect(host.harness.runCli(["status"])).resolves.toMatchObject({
       exitCode: 0,
-      stdout: "Authenticated as bb User in example with OAuth.",
+      stdout: "Authenticated as VesnALIA User in example with OAuth.",
     });
     expect(bearer(korey.to("/api/v1/me").at(-1))).toBe("Bearer kt_oauth_1");
   });
@@ -203,9 +203,9 @@ describe("Korey OAuth connection", () => {
       ]),
     ).resolves.toMatchObject({
       exitCode: 0,
-      // The plugin loaded without credentials, so bb shows a setup notice.
+      // The plugin loaded without credentials, so VesnALIA shows a setup notice.
       stdout:
-        "Connected to Korey as bb User in example. Run `bb plugin reload korey` to clear the setup notice.",
+        "Connected to Korey as VesnALIA User in example. Run `alia plugin reload korey` to clear the setup notice.",
     });
   });
 
@@ -216,14 +216,14 @@ describe("Korey OAuth connection", () => {
     const page = await callback(host, `code=code-1&state=${state}`);
     expect(page.status).toBe(400);
     expect(await page.text()).toContain(
-      "bb needs permission to read and write your Korey threads.",
+      "alia needs permission to read and write your Korey threads.",
     );
     expect(form(korey.to("/oauth/token/revoke")[0]?.init)).toMatchObject({
       token: "kt_oauth_1",
     });
     await expect(host.harness.runCli(["status"])).resolves.toMatchObject({
       stdout:
-        "Authenticated as bb User in example with a personal access token.",
+        "Authenticated as VesnALIA User in example with a personal access token.",
     });
   });
 
@@ -357,7 +357,7 @@ describe("Korey OAuth connection", () => {
 
     await expect(host.harness.runCli(["status"])).resolves.toMatchObject({
       stdout:
-        "Authenticated as bb User in example with a personal access token.",
+        "Authenticated as VesnALIA User in example with a personal access token.",
     });
     await startLogin(host);
     expect(korey.to("/oauth/register")).toHaveLength(2);
@@ -385,7 +385,7 @@ describe("Korey OAuth connection", () => {
       }),
     ).resolves.toEqual({
       method: "oauth",
-      account: "bb User in example",
+      account: "VesnALIA User in example",
       error: null,
       tokenSaved: false,
     });
@@ -399,7 +399,7 @@ describe("Korey OAuth connection", () => {
     const host = await loadPlugin();
     await expect(host.harness.callRpc("connection.status")).resolves.toEqual({
       method: "token",
-      account: "bb User in example",
+      account: "VesnALIA User in example",
       error: null,
       tokenSaved: true,
     });

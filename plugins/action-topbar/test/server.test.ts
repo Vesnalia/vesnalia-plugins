@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 type ThreadTabsResult = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["tabs"]["get"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["tabs"]["get"]>
 >;
 
-test("projects BB tab state into the compact frontend RPC model", async (t) => {
+test("projects VesnALIA tab state into the compact frontend RPC model", async (t) => {
   const fake = createFakePluginHost({
     pluginId: "action-topbar",
     sdk: {
@@ -40,7 +40,7 @@ test("projects BB tab state into the compact frontend RPC model", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = await fake.harness.behavior.callRpc("listTabs", {
     threadId: "thr_1",
@@ -77,7 +77,7 @@ test("projects BB tab state into the compact frontend RPC model", async (t) => {
   ]);
 });
 
-test("persists a topbar drag reorder through BB's tab revision API", async (t) => {
+test("persists a topbar drag reorder through VesnALIA's tab revision API", async (t) => {
   let state: ThreadTabsResult = {
     revision: 4,
     tabs: [
@@ -93,7 +93,7 @@ test("persists a topbar drag reorder through BB's tab revision API", async (t) =
       {
         id: "recap",
         kind: "plugin-panel",
-        pluginId: "bb-recap",
+        pluginId: "alia-recap",
         actionId: "recap",
         title: "Recap",
         paramsJson: null,
@@ -118,7 +118,7 @@ test("persists a topbar drag reorder through BB's tab revision API", async (t) =
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = (await fake.harness.behavior.callRpc("reorderTabs", {
     activeTabId: "recap",
@@ -142,7 +142,7 @@ test("persists a topbar drag reorder through BB's tab revision API", async (t) =
   ]);
 });
 
-test("closes a topbar tab through BB's tab revision API", async (t) => {
+test("closes a topbar tab through VesnALIA's tab revision API", async (t) => {
   let state: ThreadTabsResult = {
     revision: 8,
     tabs: [
@@ -191,7 +191,7 @@ test("closes a topbar tab through BB's tab revision API", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = (await fake.harness.behavior.callRpc("closeTab", {
     tabId: "terminal",
@@ -254,7 +254,7 @@ test("closes a main-pane terminal without a persisted panel tab", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = (await fake.harness.behavior.callRpc("closeTab", {
     tabId: "action-pane:file-search-result-start-terminal",
@@ -304,7 +304,7 @@ test("does not close a main-pane terminal owned by another thread", async (t) =>
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = (await fake.harness.behavior.callRpc("closeTab", {
     tabId: "action-pane:file-search-result-start-terminal",
@@ -345,7 +345,7 @@ test("bounds host-provided tab labels before returning the RPC projection", asyn
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = (await fake.harness.behavior.callRpc("listTabs", {
     threadId: "thr_1",
@@ -354,7 +354,7 @@ test("bounds host-provided tab labels before returning the RPC projection", asyn
   assert.equal(result.tabs[0]?.label.length, 160);
 });
 
-test("lists the fixed tabs BB 0.48 persists as plugin-fixed", async (t) => {
+test("lists the fixed tabs VesnALIA 0.48 persists as plugin-fixed", async (t) => {
   const fake = createFakePluginHost({
     pluginId: "action-topbar",
     sdk: {
@@ -384,7 +384,7 @@ test("lists the fixed tabs BB 0.48 persists as plugin-fixed", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = await fake.harness.behavior.callRpc("listTabs", {
     threadId: "thr_1",

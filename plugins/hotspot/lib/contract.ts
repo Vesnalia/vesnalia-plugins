@@ -4,7 +4,7 @@
  * `app.tsx` imports only the inferred types (`import type`), so zod never
  * reaches the frontend bundle.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { episodeViewSchema, sampleViewSchema, timelinePointSchema } from "./schemas";
 import { WATCH_REASONS } from "./signals";
@@ -15,7 +15,7 @@ export const RECENT_MS = 60 * 60_000;
 export const RECENT_BUCKETS = 30;
 export type Range = (typeof RANGES)[number];
 
-/** A BB thread id; anything else from the frontend is refused before it reaches the SDK. */
+/** A VesnALIA thread id; anything else from the frontend is refused before it reaches the SDK. */
 export const threadIdSchema = z.string().regex(/^thr_[a-z0-9]{8,64}$/);
 /** A process's pid and start time (lib/procs.ts, ProcessRow.key), as the drill-down's rows carry it. */
 export const processKeySchema = z.string().regex(/^\d{1,10}@[A-Za-z0-9: ]{1,40}$/);

@@ -1,7 +1,7 @@
-// The Save to Lobu review form. bb shows it in place of the thread composer
+// The Save to Lobu review form. VesnALIA shows it in place of the thread composer
 // while lobu_remember (or a Save to Lobu action) waits for the user.
 import { useState } from "react";
-import type { PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginPendingInteractionProps } from "@vesnalia/plugin-sdk/app";
 import {
   type MemoryDraft,
   memoryKinds,

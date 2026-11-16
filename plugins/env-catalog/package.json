@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-env-catalog",
+  "name": "alia-plugin-env-catalog",
   "version": "0.3.3",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Env Catalog",
     "description": "Unified encrypted catalog of API keys, FTP/SFTP, SSH, and logins with agent access on every enrolled machine.",
     "branding": {
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-dialog": "^1.1.19",
@@ -46,8 +45,8 @@
   },
   "description": "Unified encrypted catalog of API keys, FTP/SFTP, SSH, and logins with agent access on every enrolled machine.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "env",
     "secrets",
     "api-keys",
@@ -57,18 +56,27 @@
   ],
   "license": "MIT",
   "author": "Kirill Vechkasov <https://github.com/VKirill>",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VKirill/bb-plugin-env-catalog.git"
-  },
-  "homepage": "https://github.com/VKirill/bb-plugin-env-catalog#readme",
-  "bugs": {
-    "url": "https://github.com/VKirill/bb-plugin-env-catalog/issues"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "npm run typecheck && npm test && npm run build",
     "test": "node --experimental-strip-types --import ./lib/ts-resolve.mjs --test lib/*.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/env-catalog#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/env-catalog"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

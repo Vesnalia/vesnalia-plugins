@@ -3,8 +3,8 @@
 // macroblocks a frame, at the video's 60 frames a second, as H.264's levels
 // bound them by both the largest frame and the macroblocks a second.
 
-/** A viewer's message of the largest frame its browser decodes: `BB_DECODES,<macroblocks>`. */
-export const DECODES_VERB = "BB_DECODES";
+/** A viewer's message of the largest frame its browser decodes: `ALIA_DECODES,<macroblocks>`. */
+export const DECODES_VERB = "ALIA_DECODES";
 
 /** H.264 level 5.2 at 60 frames a second: 2,073,600 macroblocks a second, so 34,560 a frame, as 3840x2304. Safari decodes no more. */
 export const LEVEL_52_MACROBLOCKS = 34_560;

@@ -42,7 +42,7 @@ function Toggle({
       aria-pressed={on}
       title={label}
       onClick={() => onChange(!on)}
-      className={cn("bb-ft-find-toggle", on ? "bb-ft-find-toggle-on" : null)}
+      className={cn("alia-ft-find-toggle", on ? "alia-ft-find-toggle-on" : null)}
     >
       {children}
     </button>
@@ -73,7 +73,7 @@ export function FindBar({
   return (
     <div
       data-no-drag=""
-      className="bb-ft-find absolute right-2 top-2 z-10 flex items-center gap-0.5"
+      className="alia-ft-find absolute right-2 top-2 z-10 flex items-center gap-0.5"
       role="search"
       aria-label="Find in scrollback"
       data-missed={missed ? "" : undefined}
@@ -87,7 +87,7 @@ export function FindBar({
         autoCapitalize="off"
         autoCorrect="off"
         aria-label="Find"
-        className="bb-ft-find-input h-7 border-none bg-transparent px-1.5 shadow-none focus-visible:ring-0"
+        className="alia-ft-find-input h-7 border-none bg-transparent px-1.5 shadow-none focus-visible:ring-0"
         onChange={(event) => onQueryChange(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
@@ -102,7 +102,7 @@ export function FindBar({
       />
       {/* 0/0 for a query nothing matches — silence would read as "still searching". */}
       {searched ? (
-        <span className="bb-ft-find-count" aria-live="polite">
+        <span className="alia-ft-find-count" aria-live="polite">
           {results.count === 0 ? "No results" : `${results.index + 1} of ${results.count}`}
         </span>
       ) : null}
@@ -120,11 +120,11 @@ export function FindBar({
       >
         .*
       </Toggle>
-      <span className="bb-ft-find-rule" aria-hidden="true" />
+      <span className="alia-ft-find-rule" aria-hidden="true" />
       <Button
         variant="ghost"
         size="icon"
-        className="bb-ft-find-button"
+        className="alia-ft-find-button"
         aria-label="Previous match (Shift+Enter)"
         disabled={missed}
         onClick={onPrevious}
@@ -134,7 +134,7 @@ export function FindBar({
       <Button
         variant="ghost"
         size="icon"
-        className="bb-ft-find-button"
+        className="alia-ft-find-button"
         aria-label="Next match (Enter)"
         disabled={missed}
         onClick={onNext}
@@ -144,7 +144,7 @@ export function FindBar({
       <Button
         variant="ghost"
         size="icon"
-        className="bb-ft-find-button"
+        className="alia-ft-find-button"
         aria-label="Close find (Escape)"
         onClick={onClose}
       >

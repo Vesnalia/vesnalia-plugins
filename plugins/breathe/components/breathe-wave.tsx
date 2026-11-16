@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 import { breathAt, drawWave, stardustAt, type Phase, type Timing } from "../lib/breath";
 import { waveColors, type PaletteId } from '../lib/palettes';
 export function BreatheWave({ timing, palette = 'lavender' }: { timing: Timing; palette?: PaletteId }) {

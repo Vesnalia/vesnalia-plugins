@@ -7,7 +7,7 @@ Diff Review follows [diffity](https://github.com/nilbuild/diffity) (read at comm
 
 - `server/prompt.ts` adapts the prompts `src-tauri/prompts/review-feedback.md` and
   `src-tauri/prompts/resolve.md`: their writing rules, rejected-edit rules and per-thread
-  instructions, with `bb diff-review` commands in place of diffity's MCP tools.
+  instructions, with `alia diff-review` commands in place of diffity's MCP tools.
 - `server/run-prompts.ts` adapts `src-tauri/prompts/review.md` and `src-tauri/prompts/thread.md`, for
   AI reviews and answers to @reviewer; `shared/types.ts` keeps diffity's review focus names.
 - `shared/mentions.ts` ports `src/lib/mentions.ts`: which mentions count, outside code (here
@@ -62,5 +62,5 @@ gitignore-style matching. It is licensed under the MIT License; the full text is
 
 ## @pierre/diffs
 
-Diffs are drawn with [`@pierre/diffs`](https://www.npmjs.com/package/@pierre/diffs) (Apache-2.0). bb
+Diffs are drawn with [`@pierre/diffs`](https://www.npmjs.com/package/@pierre/diffs) (Apache-2.0). VesnALIA
 provides it to plugins at run time; it is not part of this plugin's bundle.

@@ -3,12 +3,12 @@
 # prepare-image.sh builds the image. The user has passwordless sudo, as in
 # Cirrus Labs' images. Settings come in the environment:
 #
-#   BBBOX_SSH_PUBLIC_KEY  bb-box's public keys, one per line, which the user accepts
+#   BBBOX_SSH_PUBLIC_KEY  alia-box's public keys, one per line, which the user accepts
 #   CUA_VERSION           Cua Driver release to install, for example 0.30.4
 #   CUA_SHA256            SHA-256 of its darwin-arm64 archive
 #   BLACKHOLE_VERSION     BlackHole 2ch release to install, for example 0.7.1
 #   BLACKHOLE_SHA256      SHA-256 of its package
-#   BB_URL                optional: BB's server URL, to pre-install bb-app
+#   ALIA_URL                optional: ALIA's server URL, to pre-install alia-app
 set -eu
 user=$(id -un)
 home=$HOME
@@ -17,20 +17,20 @@ die() { echo "customize: $*" >&2; exit 1; }
 [ -n "${CUA_VERSION:-}" ] && [ -n "${CUA_SHA256:-}" ] || die "CUA_VERSION and CUA_SHA256 must be set"
 sudo -n true 2>/dev/null || die "$user needs passwordless sudo while the image is built"
 
-# bb-box's key, marked so it is easy to find. SSH takes keys only.
+# alia-box's key, marked so it is easy to find. SSH takes keys only.
 mkdir -p "$home/.ssh" && chmod 700 "$home/.ssh"
 touch "$home/.ssh/authorized_keys" && chmod 600 "$home/.ssh/authorized_keys"
 printf '%s\n' "$BBBOX_SSH_PUBLIC_KEY" | while read -r line; do
   [ -n "$line" ] || continue
   grep -qF "$(echo "$line" | awk '{print $2}')" "$home/.ssh/authorized_keys" || printf '%s\n' "$line" >>"$home/.ssh/authorized_keys"
 done
-printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/100-bb-box.conf >/dev/null
+printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\n' | sudo tee /etc/ssh/sshd_config.d/100-alia-box.conf >/dev/null
 
 # Commands over SSH run in a non-login zsh, which reads only ~/.zshenv: give
 # them the PATH a login shell has, with Homebrew and Node, and Cua Driver's
 # telemetry and update check off for its CLI too.
 cat >"$home/.zshenv" <<'ZSHENV'
-# Added by bb-box: the login PATH, Homebrew and Node for SSH commands, which skip ~/.zprofile.
+# Added by alia-box: the login PATH, Homebrew and Node for SSH commands, which skip ~/.zprofile.
 if [ -x /usr/libexec/path_helper ]; then eval "$(/usr/libexec/path_helper -s)"; fi
 if [ -d /opt/homebrew/bin ]; then
   export HOMEBREW_PREFIX=/opt/homebrew HOMEBREW_CELLAR=/opt/homebrew/Cellar HOMEBREW_REPOSITORY=/opt/homebrew
@@ -46,20 +46,20 @@ defaults -currentHost write com.apple.screensaver idleTime -int 0
 sudo softwareupdate --schedule off >/dev/null 2>&1 || :
 sudo mdutil -a -i off >/dev/null 2>&1 || :
 
-# BB's daemon leaves its lock and PID file after a hard stop; clear them at
+# ALIA's daemon leaves its lock and PID file after a hard stop; clear them at
 # boot so a box that restarts reconnects at once (decision 017).
-sudo tee /Library/LaunchDaemons/dev.bb-box.clear-bb-state.plist >/dev/null <<PLIST
+sudo tee /Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist >/dev/null <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Label</key><string>dev.bb-box.clear-bb-state</string>
+<key>Label</key><string>dev.alia-box.clear-alia-state</string>
 <key>ProgramArguments</key><array><string>/bin/sh</string><string>-c</string>
-<string>rm -rf $home/.bb-machines/*/daemon.lock.lock $home/.bb-machines/*/install-daemon.pid</string></array>
+<string>rm -rf $home/.alia-machines/*/daemon.lock.lock $home/.alia-machines/*/install-daemon.pid</string></array>
 <key>RunAtLoad</key><true/>
 </dict></plist>
 PLIST
-sudo chown root:wheel /Library/LaunchDaemons/dev.bb-box.clear-bb-state.plist
-sudo chmod 0644 /Library/LaunchDaemons/dev.bb-box.clear-bb-state.plist
+sudo chown root:wheel /Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist
+sudo chmod 0644 /Library/LaunchDaemons/dev.alia-box.clear-alia-state.plist
 
 # Cua Driver, pinned by version and SHA-256, its daemon a LaunchAgent in the
 # user's desktop session (decision 015). Telemetry and update checks are off.
@@ -94,7 +94,7 @@ PLIST
 # tart-guest-agent without its clipboard (#911). Cirrus Labs' image runs it as
 # --run-agent, which is --run-vdagent, sharing the clipboard with the Mac, and
 # --run-rpc, which tart exec needs. A box's clipboard is its own: the Mac's is
-# its owner's, and Universal Clipboard links it to their other Macs. bb-box
+# its owner's, and Universal Clipboard links it to their other Macs. alia-box
 # also runs each VM with tart run's --no-clipboard.
 agent=/Library/LaunchAgents/org.cirruslabs.tart-guest-agent.plist
 if [ -f "$agent" ]; then
@@ -141,7 +141,7 @@ cat >"$replayd/ScreenCaptureApprovals.plist" <<'PLIST'
 PLIST
 chmod 600 "$replayd/ScreenCaptureApprovals.plist"
 
-# No "App Background Activity" notices: BB's daemon is added when a box
+# No "App Background Activity" notices: ALIA's daemon is added when a box
 # enrols, and Notification Center keeps an unread notice and shows it again
 # at every login. The user's Background Task Management agent posts them;
 # with it off, background items still load and run. Then the notices kept so
@@ -151,17 +151,17 @@ sqlite3 "$home/Library/Group Containers/group.com.apple.usernoted/db2/db" \
   "delete from app where identifier = 'com.apple.btmnotificationagent';" 2>/dev/null || :
 killall usernoted NotificationCenter 2>/dev/null || :
 
-# BB's host daemon package, where BB's installer looks for it, so enrolment
+# ALIA's host daemon package, where ALIA's installer looks for it, so enrolment
 # skips its download and npm install. A newer server build downloads as usual.
-if [ -n "${BB_URL:-}" ]; then
-  bb_host=$(node -e 'process.stdout.write(new URL(process.argv[1]).host.replace(/[^a-zA-Z0-9.-]/gu, "-"))' "$BB_URL")
-  data_dir=$home/.bb-machines/$bb_host
+if [ -n "${ALIA_URL:-}" ]; then
+  alia_host=$(node -e 'process.stdout.write(new URL(process.argv[1]).host.replace(/[^a-zA-Z0-9.-]/gu, "-"))' "$ALIA_URL")
+  data_dir=$home/.alia-machines/$alia_host
   mkdir -p "$data_dir"
-  curl -fsS -D "$home/bb-app.headers" -o "$home/bb-app.tgz" "${BB_URL%/}/install/bb-app.tgz"
-  digest=$(sed -n 's/^x-bb-artifact-sha256: *\([a-f0-9]\{64\}\).*/\1/Ip' "$home/bb-app.headers" | tr -d '\r' | tail -1)
-  echo "$digest  $home/bb-app.tgz" | shasum -a 256 -c --quiet - || die "bb-app.tgz does not match the server's digest"
-  npm install -g --no-fund --no-audit --allow-scripts=better-sqlite3,node-pty,@parcel/watcher --prefix "$data_dir/npm" "$home/bb-app.tgz"
+  curl -fsS -D "$home/alia-app.headers" -o "$home/alia-app.tgz" "${ALIA_URL%/}/install/alia-app.tgz"
+  digest=$(sed -n 's/^x-alia-artifact-sha256: *\([a-f0-9]\{64\}\).*/\1/Ip' "$home/alia-app.headers" | tr -d '\r' | tail -1)
+  echo "$digest  $home/alia-app.tgz" | shasum -a 256 -c --quiet - || die "alia-app.tgz does not match the server's digest"
+  npm install -g --no-fund --no-audit --allow-scripts=better-sqlite3,node-pty,@parcel/watcher --prefix "$data_dir/npm" "$home/alia-app.tgz"
   (umask 077 && printf '%s\n' "$digest" >"$data_dir/host-artifact.sha256")
-  rm -f "$home/bb-app.tgz" "$home/bb-app.headers"
+  rm -f "$home/alia-app.tgz" "$home/alia-app.headers"
 fi
 echo "customize: done"

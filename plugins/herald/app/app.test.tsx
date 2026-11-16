@@ -2,11 +2,11 @@
 /**
  * The slots render, and the overlay keeps every one of them fed: it reads the
  * list on mount, again on each realtime nudge, and again when the connection
- * comes back. A throwing slot shows as a "plugin crashed" chip in bb, so a
+ * comes back. A throwing slot shows as a "plugin crashed" chip in VesnALIA, so a
  * render here is the cheapest check that none of them throw.
  */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RpcContract } from "../shared/contract";
@@ -39,7 +39,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   // The cross-window claims live in localStorage.
   localStorage.clear();
-  delete (window as { bbDesktop?: unknown }).bbDesktop;
+  delete (window as { aliaDesktop?: unknown }).aliaDesktop;
 });
 
 function entry(overrides: Partial<AttentionEntry> = {}): AttentionEntry {
@@ -102,8 +102,8 @@ describe("Herald's app", () => {
     expect(app.tabs.map((tab) => [tab.id, tab.context.kind, tab.availability, tab.icon])).toEqual([
       ["history", "thread", "action", "herald/megaphone"],
     ]);
-    // The megaphone, its own button in the header on every bb; never a header thread action,
-    // which bb 0.48 folds into one split button with every other plugin's.
+    // The megaphone, its own button in the header on every VesnALIA; never a header thread action,
+    // which VesnALIA 0.48 folds into one split button with every other plugin's.
     expect(app.threadHeaderActions.map((action) => [action.id, action.component])).toEqual([["history", HeraldHeaderToggle]]);
     expect(app.appOverlays).toHaveLength(1);
     expect(app.composerCustomizations[0]?.banners?.map((banner) => banner.id)).toEqual(["summary"]);
@@ -113,7 +113,7 @@ describe("Herald's app", () => {
     ]);
   });
 
-  it("draws bb's own status glyph on each waiting row", async () => {
+  it("draws VesnALIA's own status glyph on each waiting row", async () => {
     const calls = { list: 0 };
     renderSlot<object, RpcContract>({ component: HeraldBridge }, {}, { rpc: rpc(() => [entry({ eventId: "t1:idle:glyph" })], calls) });
     const { container } = renderSlot<object, RpcContract>(
@@ -198,7 +198,7 @@ describe("Herald's app", () => {
 
   it("speaks a new sentence from the overlay alone, with no Herald page open", async () => {
     // The desktop app, showing some other page: only the overlay is mounted.
-    (window as { bbDesktop?: unknown }).bbDesktop = {};
+    (window as { aliaDesktop?: unknown }).aliaDesktop = {};
     let current: AttentionEntry[] = [];
     const calls = { list: 0 };
     const bridge = renderSlot<object, RpcContract>({ component: HeraldBridge }, {}, { rpc: rpc(() => current, calls), pluginId: "herald" });
@@ -265,7 +265,7 @@ describe("Herald's app", () => {
     expect(screen.queryByText("Writing the sentence…")).toBeNull();
   });
 
-  it("opens and closes the thread's Herald tab from the megaphone in the thread header (bb 0.48)", () => {
+  it("opens and closes the thread's Herald tab from the megaphone in the thread header (VesnALIA 0.48)", () => {
     const slot = renderSlot<{ threadId: string }, RpcContract>(
       { component: HeraldHeaderToggle },
       { threadId: "t1" },
@@ -276,7 +276,7 @@ describe("Herald's app", () => {
     expect(HISTORY_TAB).toEqual({ tab: { id: "history", context: { kind: "thread" }, availability: "action" } });
   });
 
-  it("registers the megaphone in the older header slot on every bb, opening the tab by id on bb 0.47", () => {
+  it("registers the megaphone in the older header slot on every VesnALIA, opening the tab by id on VesnALIA 0.47", () => {
     const registered: Array<[string, string, unknown]> = [];
     const slots = {
       experimental_threadAction: (registration: { id: string }) => registered.push(["threadAction", registration.id, null]),
@@ -384,7 +384,7 @@ describe("Herald's app", () => {
 
     fireEvent.click(screen.getByLabelText("Open Docs"));
     expect(page.inspection.navigateCalls).toContainEqual({ method: "toThread", threadId: "t2" });
-    // A thread bb no longer knows is listed, with nothing to open.
+    // A thread VesnALIA no longer knows is listed, with nothing to open.
     expect(screen.getByText("A thread that no longer exists")).toBeTruthy();
     expect(screen.queryByLabelText("Open A thread that no longer exists")).toBeNull();
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { DraftProviderProps } from "./DraftProvider";
 
 afterEach(cleanup);
@@ -80,7 +80,7 @@ test("local review keeps draft notes but never offers GitHub submission", async 
     setReviewPresence: () => ({ ok: true }),
     getDraft: () => ({ draft: { targetKey: "ref-local", verdict: "COMMENT", body: "", comments: [] } }),
   } });
-  await slot.findByText("Local review. Comments and notes stay in this BB installation.");
+  await slot.findByText("Local review. Comments and notes stay in this VesnALIA installation.");
   expect(slot.queryByRole("button", { name: /^Submit to GitHub/ })).toBeNull();
   slot.lifecycle.unmount();
 });

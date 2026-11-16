@@ -1,20 +1,20 @@
 # Beside
 
-An inbox for your bb threads. Threads stay in the order you started them, and
+An inbox for your VesnALIA threads. Threads stay in the order you started them, and
 work you have dealt with moves to a shelf until it has news.
 
-![Beside in the bb sidebar](docs/overview.png)
+![Beside in the VesnALIA sidebar](docs/overview.png)
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/ahkohd/bb-plugin-beside.git
+alia plugin install git:https://github.com/ahkohd/bb-plugin-beside.git
 ```
 
-Then choose Beside in Settings, Appearance, Sidebar. bb's own list comes back
+Then choose Beside in Settings, Appearance, Sidebar. VesnALIA's own list comes back
 if you switch away or disable the plugin.
 
-Beside needs bb 0.46 or later.
+Beside needs VesnALIA 0.46 or later.
 
 ## How it works
 
@@ -29,7 +29,7 @@ The sidebar has five shelves:
 
 A snoozed or settled thread comes back to the Inbox when it finishes, fails or
 asks you something. A muted thread stays muted until you unmute it; if it asks
-you something, the Muted header shows bb's question glyph.
+you something, the Muted header shows VesnALIA's question glyph.
 
 You cannot park a thread that is waiting for your answer, because hiding the
 question would leave the agent stuck. A running thread can be parked.
@@ -39,7 +39,7 @@ the most urgent status among its children.
 
 ## Everyday use
 
-Hover a row to snooze it until tomorrow, settle it, or open bb's thread menu.
+Hover a row to snooze it until tomorrow, settle it, or open VesnALIA's thread menu.
 
 ![Settling and snoozing threads](docs/park.gif)
 
@@ -47,7 +47,7 @@ Open a parent to see its children.
 
 ![Opening a parent's child threads](docs/children.gif)
 
-Drag a pinned thread to reorder it. The order is saved in bb, so bb's own list
+Drag a pinned thread to reorder it. The order is saved in VesnALIA, so VesnALIA's own list
 shows it too.
 
 ![Reordering pinned threads](docs/pins.gif)
@@ -73,7 +73,7 @@ not count as moving on. It only applies to threads you read after switching it
 on.
 
 Auto-archive archives threads that have stayed settled for 1, 3, 7, 14 or 30
-days with no news. It is set to Never by default. It runs on the bb server once
+days with no news. It is set to Never by default. It runs on the VesnALIA server once
 an hour and skips pinned threads and threads that are running or waiting for
 you.
 
@@ -84,7 +84,7 @@ you.
 Decision mode asks a decision model whether news on a snoozed or settled thread
 needs you. When an agent finishes a turn on a parked thread, Beside sends the
 thread's title and the agent's last message to the model. If the message only
-reports routine work, the thread stays on its shelf with bb's unread dot, and
+reports routine work, the thread stays on its shelf with VesnALIA's unread dot, and
 the shelf header shows a dot too.
 
 <img src="docs/decision-sidebar.png" alt="Two settled threads with routine news stay on the Settled shelf with a dot; two threads that need you are back in the Inbox" width="290">
@@ -102,7 +102,7 @@ Under Decision mode, Setup, choose a model:
 - Custom: any System One decision API, such as a self-hosted Liquid d1. Enter
   its endpoint and model name. The API key is optional.
 
-Each model keeps its own key. Keys are stored on the bb server in a file only
+Each model keeps its own key. Keys are stored on the VesnALIA server in a file only
 the server can read, and are never sent back to the browser. Check connection
 sends one test message and shows which model answered and how long it took.
 
@@ -120,7 +120,7 @@ llama-server --model d1-3B-Q8_0.gguf --alias d1-3B --host 0.0.0.0 --port 30001
 
 Choose Custom, enter `localhost:30001` (or the machine's address) and the model
 name `d1-3B`, and leave the key empty. The model must be reachable from the
-machine that runs the bb server.
+machine that runs the VesnALIA server.
 
 ### How much reaches your Inbox
 
@@ -142,22 +142,22 @@ The Try it tab shows what the model would do with a message you paste.
 
 ![Try it tab bringing back a message that asks for approval](docs/decision-try.png)
 
-Mute and Unmute are in bb's thread menu. Muting also turns off the thread's
+Mute and Unmute are in VesnALIA's thread menu. Muting also turns off the thread's
 push notifications, and unmuting puts back the level it had before.
 
 ## Where your data lives
 
-Beside keeps its state in its own database on the bb server: which threads are
+Beside keeps its state in its own database on the VesnALIA server: which threads are
 snoozed, settled or muted, which shelves and parents you collapsed, your
-settings and the last 500 decision model verdicts. Nothing is added to bb's own threads. Your layout follows you to
+settings and the last 500 decision model verdicts. Nothing is added to VesnALIA's own threads. Your layout follows you to
 every device, and uninstalling the plugin removes its state. Beside sends nothing
 anywhere unless you set a decision model endpoint.
 
 ## Limits
 
-- Beside uses bb's experimental plugin APIs, so a bb update can break it.
+- Beside uses VesnALIA's experimental plugin APIs, so a VesnALIA update can break it.
 - Above 150 threads, rows far from view are drawn as simple placeholders and
-  become full rows as you scroll to them, like bb's own list.
+  become full rows as you scroll to them, like VesnALIA's own list.
 
 ## Development
 
@@ -168,7 +168,7 @@ npm run typecheck
 npm run build
 ```
 
-`npm run build` uses the pinned `bb-app` to run `bb plugin build`.
+`npm run build` uses the pinned `alia-app` to run `alia plugin build`.
 
 ## Credits
 

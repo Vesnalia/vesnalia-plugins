@@ -36,7 +36,7 @@ describe("thread event fold", () => {
       requestId: "report", source: "tell", initiator: "system", senderThreadId: null,
       systemMessageKind, systemMessageSubject: { kind: "thread", threadId: "worker",
         outcomes: [{ threadId: "worker", status: systemMessageKind === "child-failed" ? "failed" : "completed" }] },
-      input: [{ type: "text", text: "[bb system]\n\nWorker finished" }],
+      input: [{ type: "text", text: "[VesnALIA system]\n\nWorker finished" }],
     });
     const events = [report, started(2), accepted(3, "report")];
     const state = fold(events);
@@ -183,9 +183,9 @@ describe("thread event fold", () => {
 });
 
 describe("promptTitle", () => {
-  it("skips bb envelopes and markdown markers", () => {
-    expect(promptTitle("[bb message from thread:thr_abc]\n\nShell worker done.")).toBe("Shell worker done.");
-    expect(promptTitle("[bb system]\n\n@thread:thr_x completed:")).toBe("@thread:thr_x completed:");
+  it("skips VesnALIA envelopes and markdown markers", () => {
+    expect(promptTitle("[VesnALIA message from thread:thr_abc]\n\nShell worker done.")).toBe("Shell worker done.");
+    expect(promptTitle("[VesnALIA system]\n\n@thread:thr_x completed:")).toBe("@thread:thr_x completed:");
     expect(promptTitle("## Team context (read first)\nbody")).toBe("Team context (read first)");
     expect(promptTitle("---\n- **Fix** the `build`")).toBe("Fix the build");
     expect(promptTitle("   \n\n")).toBe("");

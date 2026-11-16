@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const gitButlerHostContract = defineRpcContract({
@@ -53,7 +53,7 @@ export function parseGitButlerBranchSummary(stdout: string): GitButlerBranchSumm
   };
 }
 
-/** Prefer a confirmed GitButler label over bb's possibly stale branch metadata. */
+/** Prefer a confirmed GitButler label over VesnALIA's possibly stale branch metadata. */
 export function resolveSidebarBranchLabel(
   branchName: string | null,
   environmentId: string | null,

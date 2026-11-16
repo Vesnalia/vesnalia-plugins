@@ -1,8 +1,8 @@
 import { tailnetHostname } from "../../core/tailnet.ts";
 
 export const METADATA_ADDRESS = "169.254.169.254";
-export const TAILSCALE_KEY_PATH = "/run/bb-box/tailscale-auth-key";
-export const HOST_SETUP_PATH = "/usr/local/sbin/bb-box-host-setup";
+export const TAILSCALE_KEY_PATH = "/run/alia-box/tailscale-auth-key";
+export const HOST_SETUP_PATH = "/usr/local/sbin/alia-box-host-setup";
 
 export function metadataRule(): string {
   return [
@@ -11,7 +11,7 @@ export function metadataRule(): string {
   ].join("; ");
 }
 
-export const LXCFS_KEPT_RUNNING = "/etc/systemd/system/lxcfs.service.d/bb-box-keep-running.conf";
+export const LXCFS_KEPT_RUNNING = "/etc/systemd/system/lxcfs.service.d/alia-box-keep-running.conf";
 
 const LXCFS_SETUP = [
   "command -v lxcfs >/dev/null || { apt-get update -qq && apt-get install -y -qq lxcfs; }",

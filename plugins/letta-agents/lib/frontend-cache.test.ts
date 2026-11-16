@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
-// Exercise the actual module-local pure cache/scheduler without loading BB/React.
+// Exercise the actual module-local pure cache/scheduler without loading ALIA/React.
 function cache() {
   const source = readFileSync(new URL("../app.tsx", import.meta.url), "utf8");
   const start = source.indexOf("let rosterSnapshot:");

@@ -1,8 +1,8 @@
 # Third-party notices
 
-## bb-plugin-t3sidebar
+## alia-plugin-t3sidebar
 
-BB Sidebar includes code adapted from [bb-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), created by Sawyer Hood and released under the MIT License.
+VesnALIA Sidebar includes code adapted from [alia-plugin-t3sidebar](https://github.com/SawyerHood/bb-plugin-t3sidebar), created by Sawyer Hood and released under the MIT License.
 
 Copyright (c) 2026 Michael Yong
 
@@ -14,9 +14,9 @@ The original copyright notice and license terms remain in [LICENSE](LICENSE).
 
 Copyright (c) 2026 T3 Tools Inc.
 
-## bb-plugin-worktree-ports
+## alia-plugin-worktree-ports
 
-Port parsing and workspace attribution are adapted from bb-plugin-worktree-ports.
+Port parsing and workspace attribution are adapted from alia-plugin-worktree-ports.
 
 MIT License
 

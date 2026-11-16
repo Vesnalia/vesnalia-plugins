@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import packageInfo from "../package.json" with { type: "json" };
 
 export const releaseSchema = z.object({
@@ -20,8 +20,8 @@ export const releaseRpc = {
 const HOUR = 3_600_000;
 const IDLE = 5 * 60_000;
 
-export function createPluginUpdates(bb: BbPluginApi, backgroundBusy: () => boolean, now = Date.now) {
-  const db = bb.storage.database();
+export function createPluginUpdates(alia: AliaPluginApi, backgroundBusy: () => boolean, now = Date.now) {
+  const db = alia.storage.database();
   db.exec("CREATE TABLE IF NOT EXISTS plugin_updates (id INTEGER PRIMARY KEY CHECK(id=1), automatic INTEGER NOT NULL DEFAULT 0, next_attempt INTEGER NOT NULL DEFAULT 0)");
   db.prepare("INSERT OR IGNORE INTO plugin_updates (id) VALUES (1)").run();
   const read = () => db.prepare("SELECT automatic, next_attempt FROM plugin_updates WHERE id=1").get() as { automatic: number; next_attempt: number };
@@ -57,13 +57,13 @@ export function createPluginUpdates(bb: BbPluginApi, backgroundBusy: () => boole
     if (checking) return checking;
     checking = (async () => {
       try {
-        const entry = (await bb.sdk.plugins.checkUpdates({ pluginId: bb.pluginId })).find(e => e.id === bb.pluginId);
+        const entry = (await alia.sdk.plugins.checkUpdates({ pluginId: alia.pluginId })).find(e => e.id === alia.pluginId);
         if (!entry) throw new Error("Missing result");
         current = { ...current, outcome: entry.outcome, latestVersion: entry.candidate?.display ?? entry.blocked?.version ?? null,
           candidateVersion: entry.candidate?.version ?? null, checkedAt: now(), error: null };
         return status();
       } catch {
-        current = { ...current, outcome: "unavailable", candidateVersion: null, latestVersion: null, checkedAt: now(), error: "Couldn’t check for updates. Check the BB server’s connection and try again." };
+        current = { ...current, outcome: "unavailable", candidateVersion: null, latestVersion: null, checkedAt: now(), error: "Couldn’t check for updates. Check the VesnALIA server’s connection and try again." };
         return status();
       } finally { checking = null; }
     })();
@@ -81,13 +81,13 @@ export function createPluginUpdates(bb: BbPluginApi, backgroundBusy: () => boole
         throw new Error(latest.error ?? "The available update changed or is blocked. Check for updates again.");
       }
       db.prepare("UPDATE plugin_updates SET next_attempt=? WHERE id=1").run(now() + HOUR);
-      // BB re-resolves the latest compatible release when installing; it does
+      // VesnALIA re-resolves the latest compatible release when installing; it does
       // not support applying a supplied exact candidate. Preserve its rollback.
-      const result = await bb.sdk.plugins.applyUpdate({ pluginId: bb.pluginId });
+      const result = await alia.sdk.plugins.applyUpdate({ pluginId: alia.pluginId });
       // The old runtime can be disposed now. Do not touch storage or SDK here.
       return { outcome: result.outcome, version: result.to?.display ?? null };
     } catch (error) {
-      current.error = error instanceof Error ? error.message : "BB couldn’t complete the update. Check again before retrying.";
+      current.error = error instanceof Error ? error.message : "VesnALIA couldn’t complete the update. Check again before retrying.";
       throw error;
     } finally { current.updating = false; }
   }

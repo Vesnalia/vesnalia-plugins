@@ -561,7 +561,7 @@ export async function scanTokenFiles(options?: {
   }
 
   /**
-   * Transcripts are evidence, not the ledger. Codex prunes old rollouts, bb
+   * Transcripts are evidence, not the ledger. Codex prunes old rollouts, VesnALIA
    * removes a worktree's thread files, a session gets cleared — and until now
    * every one of those silently erased days that had already been counted, so
    * the 30-day total only ever fell. Replay the last parse of anything that has

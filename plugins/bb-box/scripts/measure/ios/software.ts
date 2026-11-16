@@ -20,7 +20,7 @@ const { values: options, positionals } = parseArgs({
     warm: { type: "string", default: "3" },
     width: { type: "string", default: "1206" },
     height: { type: "string", default: "2622" },
-    helper: { type: "string", default: `${process.env.HOME}/h264/bin/bb-box-h264` },
+    helper: { type: "string", default: `${process.env.HOME}/h264/bin/alia-box-h264` },
     encoder: { type: "string", default: "" },
     threads: { type: "string", default: "1" },
     bitrate: { type: "string", default: "8000" },
@@ -274,7 +274,7 @@ async function stream(): Promise<void> {
       mbitPerSecond: +((encoded.reduce((sum, frame) => sum + frame.bytesOut, 0) * 8) / span / 1e6).toFixed(2),
       cores: { companion: cores(cpuBefore.companion, cpuAfter.companion), helper: cores(cpuBefore.helper, cpuAfter.helper), node: +((cpuAfter.node.user + cpuAfter.node.system) / 1e6 / span).toFixed(2) },
       taps: validTaps.length ? { count: taps.length, shown: validTaps.length, median: Math.round(median(validTaps)), p95: Math.round(quantile(validTaps, 0.95)), worst: Math.round(Math.max(...validTaps)) } : taps.length ? { count: taps.length, shown: 0 } : null,
-      encoder: encoderWords.split("\n")[0]?.replace(/^bb-box-h264: /, "") ?? "",
+      encoder: encoderWords.split("\n")[0]?.replace(/^alia-box-h264: /, "") ?? "",
       error: streamError,
     }),
   );
@@ -349,7 +349,7 @@ async function direct(): Promise<void> {
       cores: { helper: cpuBefore === null || cpuAfter === null ? null : +((cpuAfter - cpuBefore) / span).toFixed(2) },
       taps: validTaps.length ? { count: taps.length, shown: validTaps.length, median: Math.round(median(validTaps)), p95: Math.round(quantile(validTaps, 0.95)), worst: Math.round(Math.max(...validTaps)) } : taps.length ? { count: taps.length, shown: 0 } : null,
       unitBytes: { median: median(inside.map((unit) => unit.bytes)), p95: quantile(inside.map((unit) => unit.bytes), 0.95) },
-      encoder: words.split("\n")[0]?.replace(/^bb-box-h264: /, "") ?? "",
+      encoder: words.split("\n")[0]?.replace(/^alia-box-h264: /, "") ?? "",
     }),
   );
 }

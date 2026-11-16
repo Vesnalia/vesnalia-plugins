@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const statusReportSchema = z.object({
@@ -165,11 +165,11 @@ export function recordThreadStatus(
 /** A refresh asked for this soon after the last read returns the stored record. */
 export const RECHECK_AFTER_MS = 10_000;
 
-/** One bounded durable record per thread, shared by every BB window and device. */
-export function createThreadStatus(bb: BbPluginApi, changed: () => void) {
+/** One bounded durable record per thread, shared by every VesnALIA window and device. */
+export function createThreadStatus(alia: AliaPluginApi, changed: () => void) {
   const pending = new Map<string, Promise<unknown>>();
   let disposed = false;
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
   });
   const key = (id: string) => `thread-status:${id}`;
@@ -178,7 +178,7 @@ export function createThreadStatus(bb: BbPluginApi, changed: () => void) {
   const checkedAt = new Map<string, number>();
   const read = async (id: string) => {
     const parsed = threadStatusSchema.safeParse(
-      await bb.storage.kv.get(key(id)),
+      await alia.storage.kv.get(key(id)),
     );
     return parsed.success && parsed.data.threadId === id ? parsed.data : null;
   };
@@ -201,7 +201,7 @@ export function createThreadStatus(bb: BbPluginApi, changed: () => void) {
       const previous = await read(id);
       const reply =
         supplied === undefined
-          ? await bb.sdk.threads.output({ threadId: id }).then(
+          ? await alia.sdk.threads.output({ threadId: id }).then(
               (result) => result.output,
               () => null,
             )
@@ -209,18 +209,18 @@ export function createThreadStatus(bb: BbPluginApi, changed: () => void) {
       if (disposed) return previous;
       const next = recordThreadStatus(id, reply ?? "", previous, Date.now());
       if (next && next !== previous) {
-        await bb.storage.kv.set(key(id), next);
+        await alia.storage.kv.set(key(id), next);
         changed();
       }
       return next;
     });
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) =>
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) =>
     capture(thread.id, lastAssistantText).then(() => {}),
   );
-  bb.events.on("thread.deleted", ({ thread }) =>
+  alia.events.on("thread.deleted", ({ thread }) =>
     serial(thread.id, async () => {
       checkedAt.delete(thread.id);
-      if (!disposed) await bb.storage.kv.delete(key(thread.id));
+      if (!disposed) await alia.storage.kv.delete(key(thread.id));
     }),
   );
   return {

@@ -1,4 +1,4 @@
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
 import type { CollectDeps, Environment } from "./collect";
 import type { ThreadSummary } from "./contract";
 import { mapLimit } from "./limit";
@@ -10,7 +10,7 @@ export interface Collected {
   archivedHidden: number;
 }
 
-type Listed = Awaited<ReturnType<PluginBbSdk["threads"]["list"]>>[number];
+type Listed = Awaited<ReturnType<PluginAliaSdk["threads"]["list"]>>[number];
 type ThreadFields = Pick<Listed, "id" | "title" | "titleFallback" | "parentThreadId" | "archivedAt" | "environmentId" | "status">;
 
 export const FETCH_CONCURRENCY = 8;
@@ -35,7 +35,7 @@ export function summarizeThread(thread: ThreadFields, depth: number, rootThreadI
 }
 
 export async function loadEnvironments(
-  sdk: PluginBbSdk, threads: readonly ThreadSummary[], signal?: AbortSignal,
+  sdk: PluginAliaSdk, threads: readonly ThreadSummary[], signal?: AbortSignal,
 ): Promise<Map<string, Environment>> {
   const environmentIds = [...new Set(threads.flatMap((thread) => (thread.environmentId === null ? [] : [thread.environmentId])))];
   const environments = new Map<string, Environment>();
@@ -46,7 +46,7 @@ export async function loadEnvironments(
   return environments;
 }
 
-async function listAll(sdk: PluginBbSdk, archived: boolean, maxScanned: number, signal?: AbortSignal): Promise<Listed[]> {
+async function listAll(sdk: PluginAliaSdk, archived: boolean, maxScanned: number, signal?: AbortSignal): Promise<Listed[]> {
   const found: Listed[] = [];
   for (let offset = 0; offset < maxScanned; offset += PAGE_SIZE) {
     const page = await sdk.threads.list({ archived, includeHidden: true, limit: PAGE_SIZE, offset, signal });

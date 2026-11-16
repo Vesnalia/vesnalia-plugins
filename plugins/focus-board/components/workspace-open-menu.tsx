@@ -7,10 +7,10 @@
 // The daemon conversation lives server-side (lib/workspace-open.ts via the
 // workspace_open_* RPCs); this component only picks targets and renders.
 // When no local open is possible — no workspace, daemon down, workspace on
-// another host — the control renders nothing, matching how bb's own header
+// another host — the control renders nothing, matching how VesnALIA's own header
 // hides its workspace button without a target.
 import { useCallback, useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import type { rpcContract } from "@/server";
 import { Icon } from "@/components/ui/icon";
@@ -28,7 +28,7 @@ interface WorkspaceOpenMenuProps {
 	/** The thread's app-relative URL for the in-browser and copy-link entries. */
 	threadHref: string;
 	/**
-	 * The pane's "open in the main view" action (bb's pane maximize), offered
+	 * The pane's "open in the main view" action (VesnALIA's pane maximize), offered
 	 * in the dropdown's thread group beside the in-browser entry.
 	 */
 	onMaximize: () => void;
@@ -60,7 +60,7 @@ interface WorkspaceOpenMenuProps {
 export const OPEN_LABEL_MIN_PANE_WIDTH = 560;
 
 /** The app's own workspace-target preference key (workspace-open-target-preference). */
-const WORKSPACE_TARGET_PREFERENCE_KEY = "bb.workspaceOpenTarget";
+const WORKSPACE_TARGET_PREFERENCE_KEY = "alia.workspaceOpenTarget";
 
 function readPreferredTargetId(): string | null {
 	try {
@@ -228,14 +228,14 @@ export function WorkspaceOpenMenu({
 			id: "maximize",
 			label: "Maximize pane",
 			icon: "Maximize2",
-			// bb's own term for opening this pane's thread in the main view.
+			// VesnALIA's own term for opening this pane's thread in the main view.
 			run: onMaximize,
 		},
 		{
 			id: "in-browser",
 			label: "Open in browser",
 			icon: "NewTab",
-			// A raw open on purpose: on the desktop app bb's main-process
+			// A raw open on purpose: on the desktop app VesnALIA's main-process
 			// window guard funnels it to the user's system browser
 			// (shell.openExternal), nowhere near the in-app browser panel
 			// that openUrl() would pick; on the web it is a detached tab.

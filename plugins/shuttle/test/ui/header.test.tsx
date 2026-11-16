@@ -2,7 +2,7 @@ import { formatRoute } from "../../src/ui/route";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor, screen } from "@testing-library/react";
 import { createElement } from "react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { app, callsTo, handlers, mount, pr, setViewport, unmountAll, type Handlers } from "./helpers";
 
 const toasts = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
@@ -99,7 +99,7 @@ describe("Shuttle page header", () => {
     const trigger = slot.getByRole("button", { name: "More sync actions" });
     if (width > 480) fireEvent.keyDown(trigger, { key: "Enter" });
     else fireEvent.click(trigger);
-    fireEvent.click(await screen.findByRole("menuitem", { name: /BB projects/u }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /ALIA projects/u }));
     await waitFor(() => expect(callsTo(slot, "refreshProjects")).toEqual([{}]));
     expect(callsTo(slot, "sync")).toEqual([]);
     setViewport(1440);

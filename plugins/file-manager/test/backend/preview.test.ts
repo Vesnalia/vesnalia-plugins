@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { MAX_TEXT_PREVIEW_BYTES, PREVIEW_TTL_MS } from "../../contract";
 import { isFileManagerError } from "../../src/errors";
@@ -18,14 +18,14 @@ import { initRoot } from "../../src/root";
 let root = "";
 let outside = "";
 
-interface FakeBb {
-  bb: BbPluginApi;
+interface FakeAlia {
+  alia: AliaPluginApi;
   createPreview: ReturnType<typeof vi.fn>;
   warnings: string[];
 }
 
 /** Only the one SDK area src/preview.ts can reach, plus the logger it warns on. */
-function fakeBb(implementation?: () => unknown): FakeBb {
+function fakeAlia(implementation?: () => unknown): FakeAlia {
   const warnings: string[] = [];
   const createPreview = vi.fn(
     implementation ??
@@ -34,10 +34,10 @@ function fakeBb(implementation?: () => unknown): FakeBb {
   return {
     createPreview,
     warnings,
-    bb: {
+    alia: {
       sdk: { files: { createPreview } },
       log: { warn: (message: string) => void warnings.push(message) },
-    } as unknown as BbPluginApi,
+    } as unknown as AliaPluginApi,
   };
 }
 
@@ -66,9 +66,9 @@ afterEach(async () => {
 describe("createPreviewUrl", () => {
   it("mints a URL for a folder under the root and echoes the realpath'ed folder", async () => {
     await mkdir(path.join(root, "photos"));
-    const host = fakeBb();
+    const host = fakeAlia();
 
-    const result = await createPreviewUrl(host.bb, { path: path.join(root, "photos") });
+    const result = await createPreviewUrl(host.alia, { path: path.join(root, "photos") });
 
     expect(result).toEqual({
       baseUrl: "https://bb.test/preview/tok3n",
@@ -82,8 +82,8 @@ describe("createPreviewUrl", () => {
   });
 
   it("resolves the root itself for the empty path", async () => {
-    const host = fakeBb();
-    const result = await createPreviewUrl(host.bb, { path: "" });
+    const host = fakeAlia();
+    const result = await createPreviewUrl(host.alia, { path: "" });
     expect(result.path).toBe(root);
     expect(host.createPreview.mock.calls[0]?.[0]).toMatchObject({ rootPath: root });
   });
@@ -93,9 +93,9 @@ describe("createPreviewUrl", () => {
     // the host decide what the link means, which is not its job to know.
     await mkdir(path.join(root, "real"));
     await symlink(path.join(root, "real"), path.join(root, "alias"));
-    const host = fakeBb();
+    const host = fakeAlia();
 
-    const result = await createPreviewUrl(host.bb, { path: path.join(root, "alias") });
+    const result = await createPreviewUrl(host.alia, { path: path.join(root, "alias") });
 
     expect(result.path).toBe(path.join(root, "real"));
     expect(host.createPreview.mock.calls[0]?.[0]).toMatchObject({
@@ -104,25 +104,25 @@ describe("createPreviewUrl", () => {
   });
 
   it("refuses a folder outside the root without asking the host at all", async () => {
-    const host = fakeBb();
-    await expectCode(createPreviewUrl(host.bb, { path: outside }), "path_escape");
-    await expectCode(createPreviewUrl(host.bb, { path: "/etc" }), "path_escape");
+    const host = fakeAlia();
+    await expectCode(createPreviewUrl(host.alia, { path: outside }), "path_escape");
+    await expectCode(createPreviewUrl(host.alia, { path: "/etc" }), "path_escape");
     expect(host.createPreview).not.toHaveBeenCalled();
   });
 
   it("refuses a symlink that leaves the root", async () => {
     await symlink(outside, path.join(root, "escape"));
-    const host = fakeBb();
-    await expectCode(createPreviewUrl(host.bb, { path: path.join(root, "escape") }), "path_escape");
+    const host = fakeAlia();
+    await expectCode(createPreviewUrl(host.alia, { path: path.join(root, "escape") }), "path_escape");
     expect(host.createPreview).not.toHaveBeenCalled();
   });
 
   it("refuses a missing folder and a file", async () => {
     await writeFile(path.join(root, "a.png"), "not really a png");
-    const host = fakeBb();
-    await expectCode(createPreviewUrl(host.bb, { path: path.join(root, "ghost") }), "not_found");
+    const host = fakeAlia();
+    await expectCode(createPreviewUrl(host.alia, { path: path.join(root, "ghost") }), "not_found");
     await expectCode(
-      createPreviewUrl(host.bb, { path: path.join(root, "a.png") }),
+      createPreviewUrl(host.alia, { path: path.join(root, "a.png") }),
       "not_a_directory",
     );
     expect(host.createPreview).not.toHaveBeenCalled();
@@ -131,11 +131,11 @@ describe("createPreviewUrl", () => {
   it("turns a host that cannot mint previews into one stable code, and warns", async () => {
     // A server too old for the preview transport must read as "no thumbnails",
     // not as a broken plugin — the panel branches on this code.
-    const host = fakeBb(() => {
+    const host = fakeAlia(() => {
       throw new Error("unknown method host.create_file_preview");
     });
 
-    await expectCode(createPreviewUrl(host.bb, { path: "" }), "unsupported");
+    await expectCode(createPreviewUrl(host.alia, { path: "" }), "unsupported");
     expect(host.warnings).toHaveLength(1);
     expect(host.warnings[0]).toContain(root);
   });

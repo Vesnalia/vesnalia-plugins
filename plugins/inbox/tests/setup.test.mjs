@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server.ts';
 
 async function fixture(settings = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: 'inbox', settings });
+  const { alia, harness } = createFakePluginHost({ pluginId: 'inbox', settings });
   harness.inspection.sdk.stub('plugins.updateSettings', async ({ pluginId, values }) => {
     assert.equal(pluginId, 'inbox');
     await harness.behavior.setSettings(values);
     return {};
   });
-  await plugin(bb);
-  return { bb, harness, rpc: (method, input = null) => harness.behavior.callRpc(method, input), dispose: () => harness.lifecycle.dispose() };
+  await plugin(alia);
+  return { alia, harness, rpc: (method, input = null) => harness.behavior.callRpc(method, input), dispose: () => harness.lifecycle.dispose() };
 }
 const preferences = { notifyBlocked:true, notifyFailed:true, notifyFinished:false, toastEnabled:true, desktopEnabled:false, telegramInstant:true, cooldownSeconds:45, quietStart:'', quietEnd:'' };
 
@@ -150,7 +150,7 @@ test('update notices use the host resolver and never apply updates just by check
 });
 
 test('blocked and changed update candidates cannot be applied, and a failed check never claims current', async () => {
-  const f=await fixture();let entry={...update,outcome:'incompatible',blocked:{version:'new',reasons:['Requires newer BB']}};
+  const f=await fixture();let entry={...update,outcome:'incompatible',blocked:{version:'new',reasons:['Requires newer VesnALIA']}};
   f.harness.inspection.sdk.stub('plugins.checkUpdates',async()=>[entry]);
   try {
     assert.equal((await f.rpc('setupCheckUpdates',{force:true})).outcome,'incompatible');
@@ -233,7 +233,7 @@ test('legacy fractional cooldown is normalized and zero can be saved', async () 
 });
 
 test('a delayed reconciliation cannot send with credentials read before disconnect', async t => {
-  const {makeThreadResponse}=await import('@get-bb/plugin-sdk/testing');
+  const {makeThreadResponse}=await import('@vesnalia/plugin-sdk/testing');
   const state=telegramMock(t);const f=await fixture({telegramBotToken:token,telegramChatId:'123'});
   const entered=deferred(),release=deferred();
   const thread=makeThreadResponse({id:'stale',projectId:'p1',title:'Private title',status:'error',runtime:{displayStatus:'error'},latestAttentionAt:100});
@@ -241,8 +241,8 @@ test('a delayed reconciliation cannot send with credentials read before disconne
   try {
     await f.harness.behavior.emitThreadEvent('thread.failed',{thread});await entered.promise;
     await f.rpc('setupTelegramDisconnect');release.resolve();
-    for(let n=0;n<100 && !(await f.bb.storage.kv.get('noti:stale'));n++) await new Promise(r=>setTimeout(r,5));
-    assert.ok(await f.bb.storage.kv.get('noti:stale'),'reconciliation reached delivery bookkeeping');
+    for(let n=0;n<100 && !(await f.alia.storage.kv.get('noti:stale'));n++) await new Promise(r=>setTimeout(r,5));
+    assert.ok(await f.alia.storage.kv.get('noti:stale'),'reconciliation reached delivery bookkeeping');
     assert.equal(state.calls?.filter(c=>c.method==='sendMessage').length ?? 0,0);
   } finally {release.resolve();await f.dispose()}
 });

@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setImmediate } from "node:timers/promises";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createHostClient, registerLiveUpdates } from "../src/live-updates.ts";
 
 test("live producer scopes file invalidation, reconciles on restart and releases its own subscription", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "openspec" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "openspec" });
   harness.sdk.stub("subscribe", () => () => {});
   harness.sdk.stub("environments.get", async () => ({
     id: "env",
@@ -17,16 +17,16 @@ test("live producer scopes file invalidation, reconciles on restart and releases
     name: null,
     branchName: null,
   }));
-  let producer!: Parameters<typeof bb.rpc.experimental_whileWatched>[1];
-  bb.rpc.experimental_whileWatched = (method, handler) => {
+  let producer!: Parameters<typeof alia.rpc.experimental_whileWatched>[1];
+  alia.rpc.experimental_whileWatched = (method, handler) => {
     assert.ok(["changes", "specifications"].includes(method));
     if (method === "changes") producer = handler;
   };
   const invalidations: string[][] = [];
-  bb.rpc.experimental_invalidate = (tags) => {
+  alia.rpc.experimental_invalidate = (tags) => {
     invalidations.push([...tags]);
   };
-  const host = createHostClient(bb);
+  const host = createHostClient(alia);
   const calls: { method: string; input: unknown }[] = [];
   host.call = async (method, input) => {
     calls.push({ method, input });
@@ -42,7 +42,7 @@ test("live producer scopes file invalidation, reconciles on restart and releases
     exited = handler;
     return () => {};
   };
-  registerLiveUpdates(bb, host);
+  registerLiveUpdates(alia, host);
   const first = new AbortController();
   const second = new AbortController();
   const running1 = producer({ input: { environmentId: "env" } }, first.signal);

@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { applyStateChange } from "./lib/history";
 import type { SidebarState } from "./lib/types";
 
@@ -22,8 +22,8 @@ const liveHost = vi.hoisted(() => ({
   loading: false,
   threads: new Array<PluginSidebarThread>(),
 }));
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@get-bb/plugin-sdk/app")>();
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>();
   return {
     ...actual,
     experimental_useSidebarThreads: () => {
@@ -85,9 +85,9 @@ afterEach(() => {
  * cannot silently change what they cover.
  */
 function groupBy(mode: "status" | "project") {
-  window.localStorage.setItem("bb-workspace-sidebar:collapsed-sections:v2", "[]");
-  window.localStorage.setItem("bb-workspace-sidebar:compact-rows:v1", "false");
-  window.localStorage.setItem("bb-workspace-sidebar:group-by:v1", mode);
+  window.localStorage.setItem("alia-workspace-sidebar:collapsed-sections:v2", "[]");
+  window.localStorage.setItem("alia-workspace-sidebar:compact-rows:v1", "false");
+  window.localStorage.setItem("alia-workspace-sidebar:group-by:v1", mode);
 }
 
 const projects = [
@@ -188,12 +188,12 @@ async function mount(options: {
   waitUntilReady?: boolean;
 }) {
   if (options.mode === null) {
-    window.localStorage.setItem("bb-workspace-sidebar:collapsed-sections:v2", "[]");
-    window.localStorage.setItem("bb-workspace-sidebar:compact-rows:v1", "false");
+    window.localStorage.setItem("alia-workspace-sidebar:collapsed-sections:v2", "[]");
+    window.localStorage.setItem("alia-workspace-sidebar:compact-rows:v1", "false");
   } else {
     groupBy(options.mode ?? "project");
   }
-  if (options.compact) window.localStorage.setItem("bb-workspace-sidebar:compact-rows:v1", "true");
+  if (options.compact) window.localStorage.setItem("alia-workspace-sidebar:compact-rows:v1", "true");
   let live = structuredClone(options.sidebarState ?? state);
   const app = await loadPluginApp(() => import("./app"));
   const registration = app.threadLists[0]!;
@@ -271,7 +271,7 @@ describe("ultra sidebar thread list", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(Element.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
     const bounds = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
-      return DOMRect.fromRect({ y: this.classList.contains("bb-ws-scroll") ? 0 : -60, width: 260, height: this.classList.contains("bb-ws-scroll") ? 300 : 40 });
+      return DOMRect.fromRect({ y: this.classList.contains("alia-ws-scroll") ? 0 : -60, width: 260, height: this.classList.contains("alia-ws-scroll") ? 300 : 40 });
     });
     liveHost.enabled = true;
     liveHost.loading = true;
@@ -317,10 +317,10 @@ describe("ultra sidebar thread list", () => {
     Object.defineProperty(Element.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
     Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
-      get() { return this.classList.contains("bb-ws-scroll") ? 300 : 0; },
+      get() { return this.classList.contains("alia-ws-scroll") ? 300 : 0; },
     });
     const bounds = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
-      return DOMRect.fromRect({ y: this.classList.contains("bb-ws-scroll") ? 0 : -60, width: 260, height: this.classList.contains("bb-ws-scroll") ? 300 : 40 });
+      return DOMRect.fromRect({ y: this.classList.contains("alia-ws-scroll") ? 0 : -60, width: 260, height: this.classList.contains("alia-ws-scroll") ? 300 : 40 });
     });
     vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
     try {
@@ -335,7 +335,7 @@ describe("ultra sidebar thread list", () => {
         threads: [...roots, ...descendants],
         sidebarState: { ...state, lifecycle: roots.map(root => ({ threadId: root.id, status: "done", snoozedUntil: null })) },
       });
-      const scroller = slot.container.querySelector<HTMLElement>(".bb-ws-scroll");
+      const scroller = slot.container.querySelector<HTMLElement>(".alia-ws-scroll");
       if (scroller === null) throw new Error("Missing sidebar scroller");
       expect(scroller.clientHeight).toBe(300);
       const done = heading(slot, "Done");
@@ -353,7 +353,7 @@ describe("ultra sidebar thread list", () => {
           expect(wrapper.style.contentVisibility).toBe("");
           expect(wrapper.style.containIntrinsicSize).toBe("");
           expect(list.style.height).toBe("");
-          expect(list.classList.contains("bb-ws-rows-settling")).toBe(false);
+          expect(list.classList.contains("alia-ws-rows-settling")).toBe(false);
         }
       };
       expectFlow(25);
@@ -570,7 +570,7 @@ describe("ultra sidebar thread list", () => {
 
     const row = slot.getByText("t2").closest("[data-sidebar-thread-id]")!;
     fireEvent.click(within(row as HTMLElement).getByLabelText("Pin to the top"));
-    // The pin lives on the host, so bb's own sidebar and this one agree; the
+    // The pin lives on the host, so VesnALIA's own sidebar and this one agree; the
     // list only moves once the host reports the thread back as pinned.
     expect(sidebarActionCalls(slot)).toContainEqual({
       method: "setPinned",
@@ -724,7 +724,7 @@ describe("ultra sidebar thread list", () => {
   });
 
   it("keeps the folder glyph and skips the lookup when project icons are off", async () => {
-    window.localStorage.setItem("bb-workspace-sidebar:project-icons:v1", "false");
+    window.localStorage.setItem("alia-workspace-sidebar:project-icons:v1", "false");
     const slot = await mount({
       threads: [thread({ id: "t1", projectId: "p1" })],
       rpc: {
@@ -745,7 +745,7 @@ describe("ultra sidebar thread list", () => {
     });
   });
 
-  // The highest-value assertion in this suite. bb's thread shortcuts find rows
+  // The highest-value assertion in this suite. VesnALIA's thread shortcuts find rows
   // with a query selector, not React state, so a row that renders without both
   // attributes silently drops out of thread.next/previous and the numbered
   // shortcuts — invisible until someone reaches for the keyboard.
@@ -1014,7 +1014,7 @@ describe("ultra sidebar thread list", () => {
   // The hover actions sit inside the row's anchor. Clicking one must reach the
   // lifecycle RPC and nothing else — not open the thread, not start a rename.
   it.each([false, true])("marks done and snoozes a thread from the row's hover actions, compact=%s", async compact => {
-    window.localStorage.setItem("bb-workspace-sidebar:compact-rows:v1", String(compact));
+    window.localStorage.setItem("alia-workspace-sidebar:compact-rows:v1", String(compact));
     groupBy("project");
     const app = await loadPluginApp(() => import("./app"));
     const slot = renderSlot(
@@ -1093,7 +1093,7 @@ describe("ultra sidebar thread list", () => {
       ],
     });
     await slot.findByText("Alpha");
-    const ghosts = () => slot.container.querySelectorAll(".bb-ws-row-leaving");
+    const ghosts = () => slot.container.querySelectorAll(".alia-ws-row-leaving");
     const rows = (id: string) =>
       slot.container.querySelectorAll(`[data-sidebar-thread-id="${id}"]`);
     expect(ghosts()).toHaveLength(0);
@@ -1103,7 +1103,7 @@ describe("ultra sidebar thread list", () => {
     );
 
     await waitFor(() => expect(ghosts()).toHaveLength(1));
-    // The ghost is a picture of where the thread was, so bb's own row
+    // The ghost is a picture of where the thread was, so VesnALIA's own row
     // shortcuts and this sidebar's reveal must not find a second "t1".
     expect(rows("t1")).toHaveLength(1);
     expect((rows("t1")[0] as HTMLElement).dataset.sidebarBucket).toBe("done");
@@ -1112,7 +1112,7 @@ describe("ultra sidebar thread list", () => {
   });
 
   // The folder and pull-request badges are links. The folder goes through
-  // our server (it has to run `open` somewhere); the PR goes through bb's
+  // our server (it has to run `open` somewhere); the PR goes through VesnALIA's
   // navigate so the desktop app can hand it to the system browser.
   it("links the folder and pull request badges without opening the row", async () => {
     groupBy("project");
@@ -1326,7 +1326,7 @@ describe("ultra sidebar thread list", () => {
     expect(rows).toHaveLength(2);
     expect(slot.container.querySelectorAll("[data-agent-orb]")).toHaveLength(0);
     expect(slot.container.querySelectorAll("[data-text-shimmer]")).toHaveLength(0);
-    expect(slot.getByText("Your turn").closest(".bb-ws-mainline")).not.toBeNull();
+    expect(slot.getByText("Your turn").closest(".alia-ws-mainline")).not.toBeNull();
     // No project headings inside a status bucket — but the rows still name
     // their project, since the heading above them does not.
     expect(slot.queryByLabelText("Collapse Alpha")).toBeNull();
@@ -1445,7 +1445,7 @@ describe("ultra sidebar thread list", () => {
 
   it("drops the project badge when its switch is off", async () => {
     window.localStorage.setItem(
-      "bb-workspace-sidebar:row-details:v1",
+      "alia-workspace-sidebar:row-details:v1",
       JSON.stringify({ project: false }),
     );
     const slot = await mount({
@@ -1699,7 +1699,7 @@ describe("New thread", () => {
   // Ultra Launcher claims the button by cancelling this event (its lib/contract.ts names it).
   const LAUNCHER_OPEN = "ultra-launcher:open";
 
-  it("offers New thread to Ultra Launcher and runs bb's own flow when nothing claims it", async () => {
+  it("offers New thread to Ultra Launcher and runs VesnALIA's own flow when nothing claims it", async () => {
     const offered: Event[] = [];
     const listen = (event: Event) => { offered.push(event); };
     window.addEventListener(LAUNCHER_OPEN, listen);
@@ -1716,7 +1716,7 @@ describe("New thread", () => {
     }
   });
 
-  it("leaves bb's flow alone when Ultra Launcher claims the event", async () => {
+  it("leaves VesnALIA's flow alone when Ultra Launcher claims the event", async () => {
     const claim = (event: Event) => { event.preventDefault(); };
     window.addEventListener(LAUNCHER_OPEN, claim);
     const onNavigate = vi.fn();
@@ -1740,7 +1740,7 @@ describe("compact goal context", () => {
     const line = slot.container.querySelector("[data-thread-modes]")!;
     expect(line.textContent).toContain("Goal");
     expect(line.textContent).toContain("Working");
-    expect(slot.container.querySelector(".bb-ws-title[data-text-shimmer]")?.textContent).toBe("goal-thread");
+    expect(slot.container.querySelector(".alia-ws-title[data-text-shimmer]")?.textContent).toBe("goal-thread");
     expect(slot.inspection.rpcCalls.filter(call => call.method === "threads.goal")).toHaveLength(0);
     fireEvent.click(slot.getByRole("button", { name: "Active goal: details for goal-thread" }));
     expect(await slot.findByText("Make setup reliable")).toBeTruthy();
@@ -1757,7 +1757,7 @@ describe("compact goal context", () => {
     const line = slot.container.querySelector("[data-thread-modes]")!;
     expect(line.textContent).toContain("Goal");
     expect(line.textContent).not.toContain("Your turn");
-    expect(slot.getByText("Your turn").closest(".bb-ws-mainline")).not.toBeNull();
+    expect(slot.getByText("Your turn").closest(".alia-ws-mainline")).not.toBeNull();
     fireEvent.click(slot.getByRole("button", { name: "Active goal: details for waiting-goal" }));
     expect(await slot.findByText("Goal details unavailable. Open the thread to inspect.")).toBeTruthy();
     expect(sidebarActionCalls(slot).filter(call => call.method === "open")).toHaveLength(0);
@@ -1771,7 +1771,7 @@ it("opens real view options from the background menu", async () => {
   fireEvent.contextMenu(surface);
   fireEvent.click(await slot.findByRole("menuitem", { name: "View options…" }));
   expect(await slot.findByText("Show on rows")).toBeTruthy();
-  // Nothing creates a container any more: projects are bb's, not ours.
+  // Nothing creates a container any more: projects are VesnALIA's, not ours.
   fireEvent.keyDown(document.activeElement!, { key: "Escape" });
   fireEvent.contextMenu(surface);
   expect(slot.queryByRole("menuitem", { name: /New workspace/ })).toBeNull();
@@ -1791,14 +1791,14 @@ it.each([false, true])("keeps attention beside the title without tinting rows, c
   expect(row("failed").getAttribute("data-live-tone")).toBeNull();
   expect(within(row("running")).getByText("Working").classList.contains("ws-tone-working")).toBe(true);
   const badge = within(row("waiting")).getByText("Your turn");
-  expect(badge.classList.contains("bb-ws-your-turn")).toBe(true);
-  expect(badge.closest(".bb-ws-mainline")).not.toBeNull();
+  expect(badge.classList.contains("alia-ws-your-turn")).toBe(true);
+  expect(badge.closest(".alia-ws-mainline")).not.toBeNull();
   expect(row("waiting").querySelector("[data-agent-orb]")).toBeNull();
   expect(row("waiting").querySelector("[data-text-shimmer]")).toBeNull();
   expect(within(row("failed")).getByText("Failed").classList.contains("ws-tone-danger")).toBe(true);
   expect(row("quiet").getAttribute("data-live-tone")).toBeNull();
   expect(row("quiet").getAttribute("data-sidebar-bucket")).toBe("in-progress");
-  expect(row("running").querySelector(".bb-ws-title[data-text-shimmer]")).not.toBeNull();
+  expect(row("running").querySelector(".alia-ws-title[data-text-shimmer]")).not.toBeNull();
 });
 
 describe("project context and change counts", () => {
@@ -1857,7 +1857,7 @@ describe("project context and change counts", () => {
       expect(slot?.parentElement).toBe(row.querySelector("[data-thread-summary]"));
       expect(diff.closest("[data-thread-modes]")).toBeNull();
       expect(row.querySelectorAll("[data-thread-diff-slot]")).toHaveLength(1);
-      expect(row.querySelector(".bb-ws-mainline")?.nextElementSibling).toBe(row.querySelector("[data-thread-summary]"));
+      expect(row.querySelector(".alia-ws-mainline")?.nextElementSibling).toBe(row.querySelector("[data-thread-summary]"));
     }
     fireEvent.click(within(progress).getByText("+12"));
     expect(sidebarActionCalls(slot).some(call => call.method === "open")).toBe(true);
@@ -1914,7 +1914,7 @@ describe("project context and change counts", () => {
 
 describe("thread summary actions", () => {
   it.each([false, true])("opens mode details and keeps machines passive with model names hidden in rows, compact=%s", async compact => {
-    window.localStorage.setItem("bb-workspace-sidebar:row-details:v1", JSON.stringify({ model: false }));
+    window.localStorage.setItem("alia-workspace-sidebar:row-details:v1", JSON.stringify({ model: false }));
     const readPlan = vi.fn(() => ({ plan: { mode: "plan", prompt: "Compare upgrade options before implementing.", providerId: "claude-code" } }));
     const readExecution = vi.fn(() => ({ entries: [{ threadId: "planning", model: "gpt-6-astra", reasoningLevel: "medium", permissionMode: "auto", serviceTier: null }] }));
     const slot = await mount({ compact, mode: "status", threads: [thread({
@@ -1927,7 +1927,7 @@ describe("thread summary actions", () => {
     const machine = within(row).getByLabelText("Machine: mbp");
     expect(machine.closest("[data-thread-context]")).toBe(project.closest("[data-thread-context]"));
     expect(machine.closest("[data-thread-summary]")).not.toBeNull();
-    expect(machine.closest(".bb-ws-mainline")).toBeNull();
+    expect(machine.closest(".alia-ws-mainline")).toBeNull();
     expect(readPlan).not.toHaveBeenCalled();
     if (!compact) expect(readExecution).not.toHaveBeenCalled();
     const plan = within(row).getByRole("button", { name: "Plan mode: details for planning" });
@@ -2110,7 +2110,7 @@ describe("sidebar project filter", () => {
   });
 
   it("scopes the schedules in the dock to the projects in the filter", async () => {
-    window.localStorage.setItem("bb-workspace-sidebar:scheduled-expanded:v1", "true");
+    window.localStorage.setItem("alia-workspace-sidebar:scheduled-expanded:v1", "true");
     const entries = projects.map(project => ({ id: project.id, projectId: project.id, projectName: project.name, name: `${project.name} schedule`, enabled: true, trigger: null, nextRunAt: null, lastRunStatus: null, lastRunAt: null, lastError: null, threadId: null, problem: null }));
     const slot = await mount({ mode: "status", threads: [thread({ id: "alpha-thread", projectId: "p1" }), thread({ id: "beta-thread", projectId: "p2" })], rpc: { "scheduledTasks.list": () => ({ availability: "ready", entries }) } });
     expect(await slot.findByText("Alpha schedule")).toBeTruthy();
@@ -2167,7 +2167,7 @@ describe("sidebar project filter", () => {
   });
 
   it("opens the thread that ran a schedule on click, and details from the chevron or right-click", async () => {
-    window.localStorage.setItem("bb-workspace-sidebar:scheduled-expanded:v1", "true");
+    window.localStorage.setItem("alia-workspace-sidebar:scheduled-expanded:v1", "true");
     const entry = { id: "auto-1", projectId: "p1", projectName: "Alpha", name: "Nightly triage", enabled: true,
       trigger: { triggerType: "schedule" as const, cron: "0 9 * * *", timezone: "UTC" }, nextRunAt: Date.now() + 30 * 60_000,
       lastRunStatus: "succeeded", lastRunAt: Date.now() - 2 * 3_600_000, lastError: null, threadId: "run-1", problem: null };
@@ -2200,7 +2200,7 @@ describe("sidebar project filter", () => {
   });
 
   it("deletes a schedule only after a second confirming press", async () => {
-    window.localStorage.setItem("bb-workspace-sidebar:scheduled-expanded:v1", "true");
+    window.localStorage.setItem("alia-workspace-sidebar:scheduled-expanded:v1", "true");
     let entries = [{ id: "auto-1", projectId: "p1", projectName: "Alpha", name: "Old job", enabled: true,
       trigger: { triggerType: "schedule" as const, cron: "0 9 * * *", timezone: "UTC" }, nextRunAt: Date.now() + 3_600_000,
       lastRunStatus: null, lastRunAt: null, lastError: null, threadId: null, problem: null }];
@@ -2226,7 +2226,7 @@ describe("sidebar project filter", () => {
   });
 
   it("shows schedule details on click before the first run, with run and pause actions", async () => {
-    window.localStorage.setItem("bb-workspace-sidebar:scheduled-expanded:v1", "true");
+    window.localStorage.setItem("alia-workspace-sidebar:scheduled-expanded:v1", "true");
     const entry = { id: "auto-1", projectId: "p1", projectName: "Alpha", name: "Nightly triage", enabled: true,
       trigger: { triggerType: "schedule" as const, cron: "0 9 * * *", timezone: "UTC" }, nextRunAt: Date.now() + 3_600_000,
       lastRunStatus: null, lastRunAt: null, lastError: null, threadId: null, problem: null };
@@ -2264,7 +2264,7 @@ describe("sidebar project filter", () => {
   });
 
   it("does not hide the sidebar behind a stored filter for a deleted project", async () => {
-    window.localStorage.setItem("bb-workspace-sidebar:filters:v2", JSON.stringify({ projectIds: ["deleted-project"] }));
+    window.localStorage.setItem("alia-workspace-sidebar:filters:v2", JSON.stringify({ projectIds: ["deleted-project"] }));
     const slot = await mount({ threads: [thread({ id: "alpha-thread", projectId: "p1" }), thread({ id: "beta-thread", projectId: "p2" })] });
     expect(slot.getByText("alpha-thread")).toBeTruthy();
     expect(slot.getByText("beta-thread")).toBeTruthy();

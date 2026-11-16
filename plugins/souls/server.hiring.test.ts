@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   createFakePluginHost, makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext, makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 import { soulSchema, threadSoulStateSchema, type SoulConsent } from "./shared.ts";
 
@@ -12,12 +12,12 @@ const saved = z.object({ soul: soulSchema.nullable() });
 const toolError = z.object({ isError: z.literal(true), content: z.array(z.object({ text: z.string() })) });
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
   harness.inspection.sdk.stub("threads.get", ({ threadId }) => makeThreadResponse({
     id: threadId, status: "idle", parentThreadId: "manager", sourceThreadId: threadId === "side" ? "manager" : null,
   }));
   harness.inspection.sdk.stub("threads.events.list", () => []);
-  await plugin(bb);
+  await plugin(alia);
   const read = async (idOrName: string) => saved.parse(await harness.behavior.callRpc("souls_get", { idOrName })).soul;
   const create = async (name: string, consent: Partial<SoulConsent> = {}) => {
     const soul = saved.parse(await harness.behavior.callRpc("souls_create", { draft: { name }, origin: "manual", ...consent })).soul;

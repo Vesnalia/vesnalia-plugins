@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarSection, PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarSection, PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import type { RpcContract } from "../src/rpc";
 import { leastUsedHue } from "../src/layout";
 import { layoutWriteFakes, sidebarProject, sidebarSection, sidebarThread } from "./fixtures";
@@ -93,7 +93,7 @@ describe("new section", () => {
     expect(document.activeElement!.closest(".sb-group-header")!.classList.contains("sb-flash")).toBe(true);
   });
 
-  it("keeps the draft, read-only, until bb lists the new section", async () => {
+  it("keeps the draft, read-only, until VesnALIA lists the new section", async () => {
     const slot = await mount({ create: async ({ name }) => created("later", name) });
     fireEvent.click(newSectionButton());
     await type("Infra");
@@ -107,7 +107,7 @@ describe("new section", () => {
   it("rejects a taken name inline, and retries a failed create after an edit", async () => {
     let calls = 0;
     const slot = await mount({ create: async ({ name }) => {
-      if (++calls === 1) throw new Error("bb is offline");
+      if (++calls === 1) throw new Error("alia is offline");
       return created("new", name);
     } });
     fireEvent.click(newSectionButton());
@@ -115,7 +115,7 @@ describe("new section", () => {
     expect(screen.getByRole("alert").textContent).toBe("A section named \u201cBeta\u201d already exists");
     expect(sdkCalls(slot, "threadSections.create")).toHaveLength(0);
     await type("Infra");
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("bb is offline"));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("alia is offline"));
     expect(field().readOnly).toBe(false);
     await type("Infra team");
     await waitFor(() => expect(sdkCalls(slot, "threadSections.create").map((call) => call.args[0]))
@@ -148,7 +148,7 @@ describe("new section", () => {
 describe("rename section", () => {
   it("selects the old name, skips unchanged names, and retries after a failed save", async () => {
     let calls = 0;
-    const slot = await mount({ update: async () => { if (++calls === 1) throw new Error("bb is offline"); return {}; } });
+    const slot = await mount({ update: async () => { if (++calls === 1) throw new Error("alia is offline"); return {}; } });
     openSectionMenu(0);
     fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
     await waitFor(() => expect(document.activeElement).toBe(field()));
@@ -161,7 +161,7 @@ describe("rename section", () => {
     await type("Beta");
     expect(screen.getByRole("alert").textContent).toBe("A section named \u201cBeta\u201d already exists");
     await type("Gamma");
-    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("bb is offline"));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("alia is offline"));
     await type("Gamma team");
     await waitFor(() => expect(sdkCalls(slot, "threadSections.update").map((call) => call.args[0])).toEqual([
       { id: "a", name: "Gamma" }, { id: "a", name: "Gamma team" },

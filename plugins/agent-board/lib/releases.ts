@@ -7,7 +7,7 @@ export const CURRENT_RELEASE = {
   highlights: [
     "Reply to questions, review approvals, and inspect failures from Needs Attention.",
     "Catch up on changes, save dashboard views, and review completed work.",
-    "Load earlier BB timeline activity without losing your place.",
+    "Load earlier VesnALIA timeline activity without losing your place.",
     "See available releases and review compatible updates before installing.",
   ],
 };

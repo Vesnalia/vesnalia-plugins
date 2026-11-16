@@ -59,7 +59,7 @@ describe("CompareGrid pairs", () => {
 
   it("names data images and odd paths", () => {
     expect(sourceName("data:image/png;base64,AAAA")).toBe("image");
-    expect(sourceName("$BB_THREAD_STORAGE/shots/a%20b.png")).toBe("a b.png");
+    expect(sourceName("$ALIA_THREAD_STORAGE/shots/a%20b.png")).toBe("a b.png");
     expect(sourceName("C:\\shots\\x.png")).toBe("x.png");
   });
 
@@ -164,7 +164,7 @@ describe("CompareGrid and VideoCompare in the catalog", () => {
   it("a pairs grid checks clean too", () => {
     expect(check(`<CompareGrid sort="name" pairs={[{ ref: "a/home.png", cand: "b/home.png" }, ["a/x.png", "b/x.png", "X"]]} />`).ok).toBe(true);
   });
-  it("keeps every reference section under bb's cap", () => {
+  it("keeps every reference section under VesnALIA's cap", () => {
     for (const s of referenceSections()) expect(s.text.length).toBeLessThanOrEqual(4096);
   });
 });

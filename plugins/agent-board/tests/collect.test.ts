@@ -2,13 +2,13 @@
 // tree caps, delegation enrichment, and error/queued handling — driven
 // through the official fake SDK harness.
 import { beforeEach, describe, expect, it } from "vitest";
-import { createFakeSdk } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { FakeSdkOverrides } from "@get-bb/plugin-sdk/testing";
+import { createFakeSdk } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { FakeSdkOverrides } from "@vesnalia/plugin-sdk/testing";
 import { BoardCollector } from "@/lib/collect";
 
 /** Real sdk arg types (wire DTOs are not exported individually). */
-type ThreadsArea = BbPluginApi["sdk"]["threads"];
+type ThreadsArea = AliaPluginApi["sdk"]["threads"];
 type ListArgsLike = NonNullable<Parameters<ThreadsArea["list"]>[0]>;
 type TimelineArgsLike = NonNullable<Parameters<ThreadsArea["timeline"]>[0]>;
 type StatusArgsLike = NonNullable<Parameters<ThreadsArea["defaultExecutionOptions"]>[0]>;
@@ -122,8 +122,8 @@ function twoThreadOverrides(): FakeSdkOverrides {
 
 function makeCollector(overrides: FakeSdkOverrides) {
   const { sdk, harness } = createFakeSdk({ pluginId: "agent-board", overrides });
-  const bb = { sdk } as unknown as BbPluginApi;
-  return { collector: new BoardCollector(bb, clock), harness };
+  const alia = { sdk } as unknown as AliaPluginApi;
+  return { collector: new BoardCollector(alia, clock), harness };
 }
 
 describe("snapshot assembly", () => {
@@ -284,7 +284,7 @@ describe("lazy execution timeline RPC source", () => {
     (overrides.threads as Record<string, unknown>).timeline = async () => timelineFixture();
     (overrides.threads as Record<string, unknown>).events = { list: async () => { if (++calls === 1) throw Error("offline"); return [{ id: "recovered", seq: 1, createdAt: 1, type: "client/turn/requested", data: { execution: { model: "recovered-model" } } }]; } };
     const { collector } = makeCollector(overrides);
-    const target = { source: "bb" as const, executionKey: "bb:thr_root", threadId: "thr_root" };
+    const target = { source: "alia" as const, executionKey: "alia:thr_root", threadId: "thr_root" };
     const first = await collector.executionTimeline(target);
     expect(first.olderCursor).toBeTruthy();
     const recovered = await collector.executionTimeline({ ...target, cursor: first.olderCursor! });
@@ -292,7 +292,7 @@ describe("lazy execution timeline RPC source", () => {
   });
   it("refuses malformed or cross-thread history cursors before reading source data", async () => {
     const { collector, harness } = makeCollector(twoThreadOverrides());
-    await expect(collector.executionTimeline({ source: "bb", executionKey: "bb:x", threadId: "x", cursor: "not-a-cursor" })).rejects.toThrow("cursor is invalid");
+    await expect(collector.executionTimeline({ source: "alia", executionKey: "alia:x", threadId: "x", cursor: "not-a-cursor" })).rejects.toThrow("cursor is invalid");
     expect(harness.callsTo("threads.timeline")).toHaveLength(0);
   });
   it("continues lifecycle history after the thread-row pages are exhausted", async () => {
@@ -301,21 +301,21 @@ describe("lazy execution timeline RPC source", () => {
     (overrides.threads as Record<string, unknown>).timeline = async () => timelineFixture();
     (overrides.threads as Record<string, unknown>).events = { list: async (input: { beforeSeq?: string }) => input.beforeSeq ? [event(1)] : Array.from({ length: 80 }, (_, i) => event(i + 100)) };
     const { collector } = makeCollector(overrides);
-    const target = { source: "bb" as const, executionKey: "bb:thr_root", threadId: "thr_root" };
+    const target = { source: "alia" as const, executionKey: "alia:thr_root", threadId: "thr_root" };
     const first = await collector.executionTimeline(target);
     const second = await collector.executionTimeline({ ...target, cursor: first.olderCursor! });
     const third = await collector.executionTimeline({ ...target, cursor: second.olderCursor! });
     expect(new Set([...first.events, ...second.events, ...third.events].map(e => e.id)).size).toBe(81);
     expect(third.olderCursor).toBeNull();
   });
-  it("drains a normalized page before advancing the public BB history cursor", async () => {
+  it("drains a normalized page before advancing the public VesnALIA history cursor", async () => {
     const overrides = twoThreadOverrides();
     (overrides.threads as Record<string, unknown>).timeline = async (input: TimelineArgsLike) => {
       if (input.beforeAnchorId) return timelineFixture({ rows: [delegationRow("older", { id: "old", childRef: null, status: "pending", startedAt: 1, createdAt: 1 })], timelinePage: { hasOlderRows: false, olderCursor: null } });
       return timelineFixture({ rows: Array.from({ length: 110 }, (_, i) => delegationRow(String(i), { id: `new-${i}`, childRef: null, status: "pending", startedAt: i + 100, createdAt: i + 100 })), timelinePage: { hasOlderRows: true, olderCursor: { anchorId: "anchor", anchorSeq: 100 } } });
     };
     const { collector, harness } = makeCollector(overrides);
-    const target = { source: "bb" as const, executionKey: "bb:thr_root", threadId: "thr_root" };
+    const target = { source: "alia" as const, executionKey: "alia:thr_root", threadId: "thr_root" };
     const first = await collector.executionTimeline(target);
     expect(first.olderCursor).toBeTruthy();
     const second = await collector.executionTimeline({ ...target, cursor: first.olderCursor! });
@@ -325,11 +325,11 @@ describe("lazy execution timeline RPC source", () => {
     expect(harness.callsTo("threads.timeline").at(-1)?.[0]).toMatchObject({ beforeAnchorId: "anchor", beforeAnchorSeq: "100" });
     expect(fourth.olderCursor).toBeNull();
   });
-  it("adds no collection calls until requested and uses one BB timeline plus one lifecycle tail", async () => {
+  it("adds no collection calls until requested and uses one VesnALIA timeline plus one lifecycle tail", async () => {
     const { collector, harness } = makeCollector(twoThreadOverrides());
     expect(harness.calls).toHaveLength(0);
-    const result = await collector.executionTimeline({ source: "bb", executionKey: "bb:thr_root", threadId: "thr_root" });
-    expect(result.executionKey).toBe("bb:thr_root");
+    const result = await collector.executionTimeline({ source: "alia", executionKey: "alia:thr_root", threadId: "thr_root" });
+    expect(result.executionKey).toBe("alia:thr_root");
     expect(harness.callsTo("threads.timeline")).toHaveLength(1);
     expect(harness.callsTo("threads.events.list")).toHaveLength(1);
     expect(harness.calls).toHaveLength(3); // timeline + lifecycle + optional Fleet
@@ -341,7 +341,7 @@ describe("lazy execution timeline RPC source", () => {
     const overrides = twoThreadOverrides();
     (overrides.threads as Record<string, unknown>).timeline = async () => gate;
     const { collector, harness } = makeCollector(overrides);
-    const input = { source: "bb" as const, executionKey: "bb:thr_root", threadId: "thr_root" };
+    const input = { source: "alia" as const, executionKey: "alia:thr_root", threadId: "thr_root" };
     const first = collector.executionTimeline(input);
     const second = collector.executionTimeline(input);
     release(timelineFixture({ rows: [{ ...delegationRow("thr_child"), status: "completed" }] }));
@@ -365,7 +365,7 @@ describe("lazy execution timeline RPC source", () => {
       return timelineFixture();
     };
     const { collector, harness } = makeCollector(overrides);
-    const input = { source: "bb" as const, executionKey: "bb:thr_root", threadId: "thr_root" };
+    const input = { source: "alia" as const, executionKey: "alia:thr_root", threadId: "thr_root" };
     const stale = collector.executionTimeline(input);
     collector.invalidate();
     releaseFirst(timelineFixture());
@@ -379,7 +379,7 @@ describe("lazy execution timeline RPC source", () => {
     const overrides = twoThreadOverrides();
     (overrides.threads as Record<string, unknown>).timeline = async () => timelineFixture({ rows, timelinePage: { kind: "latest", hasOlderRows: true, returnedSegmentCount: 80, segmentLimit: 80 } });
     const { collector } = makeCollector(overrides);
-    const result = await collector.executionTimeline({ source: "bb", executionKey: "bb:thr_root", threadId: "thr_root", limit: 999 });
+    const result = await collector.executionTimeline({ source: "alia", executionKey: "alia:thr_root", threadId: "thr_root", limit: 999 });
     expect(result.events).toHaveLength(80);
     expect(result.truncated).toBe(true);
   });
@@ -387,10 +387,10 @@ describe("lazy execution timeline RPC source", () => {
   it("bounds the disposable per-execution timeline cache", async () => {
     const { collector, harness } = makeCollector(twoThreadOverrides());
     for (let index = 0; index <= 24; index += 1) {
-      await collector.executionTimeline({ source: "bb", executionKey: `bb:run-${index}`, threadId: `thr_${index}` });
+      await collector.executionTimeline({ source: "alia", executionKey: `alia:run-${index}`, threadId: `thr_${index}` });
     }
     expect(harness.callsTo("threads.timeline")).toHaveLength(25);
-    await collector.executionTimeline({ source: "bb", executionKey: "bb:run-0", threadId: "thr_0" });
+    await collector.executionTimeline({ source: "alia", executionKey: "alia:run-0", threadId: "thr_0" });
     expect(harness.callsTo("threads.timeline")).toHaveLength(26);
   });
 
@@ -398,18 +398,18 @@ describe("lazy execution timeline RPC source", () => {
     const degraded = twoThreadOverrides();
     (degraded.threads as Record<string, unknown>).events = { list: async () => { throw new Error("events offline"); } };
     const { collector } = makeCollector(degraded);
-    await expect(collector.executionTimeline({ source: "bb", executionKey: "bb:thr_root", threadId: "thr_root" })).resolves.toMatchObject({ sourceWarning: "Some lifecycle details are temporarily unavailable." });
+    await expect(collector.executionTimeline({ source: "alia", executionKey: "alia:thr_root", threadId: "thr_root" })).resolves.toMatchObject({ sourceWarning: "Some lifecycle details are temporarily unavailable." });
 
     const unavailable = twoThreadOverrides();
     (unavailable.threads as Record<string, unknown>).timeline = async () => { throw new Error("timeline offline"); };
     const failed = makeCollector(unavailable).collector;
-    await expect(failed.executionTimeline({ source: "bb", executionKey: "bb:thr_root", threadId: "thr_root" })).rejects.toThrow("timeline is unavailable");
+    await expect(failed.executionTimeline({ source: "alia", executionKey: "alia:thr_root", threadId: "thr_root" })).rejects.toThrow("timeline is unavailable");
   });
 
-  it("reports an unavailable optional Redteam source without affecting BB collection", async () => {
+  it("reports an unavailable optional Redteam source without affecting VesnALIA collection", async () => {
     const { collector } = makeCollector(twoThreadOverrides());
     await expect(collector.executionTimeline({ source: "redteam", executionKey: "redteam:missing", scanId: "missing" })).rejects.toThrow("Redteam timeline is unavailable");
-    await expect(collector.executionTimeline({ source: "bb", executionKey: "bb:thr_root", threadId: "thr_root" })).resolves.toMatchObject({ source: "bb" });
+    await expect(collector.executionTimeline({ source: "alia", executionKey: "alia:thr_root", threadId: "thr_root" })).resolves.toMatchObject({ source: "alia" });
   });
 });
 
@@ -575,7 +575,7 @@ describe("watcher feed", () => {
 });
 
 describe("source coexistence", () => {
-  it("merges optional Redteam cards without changing generic BB cards", async () => {
+  it("merges optional Redteam cards without changing generic VesnALIA cards", async () => {
     const overrides = twoThreadOverrides();
     (overrides.threads as Record<string, unknown>).get = async () =>
       thread("thr_root", { parentThreadId: null, status: "active", title: "Root work", projectId: "project-1" });
@@ -603,11 +603,11 @@ describe("source coexistence", () => {
     };
     const { collector } = makeCollector(overrides);
     const snap = await collector.snapshot("thr_root");
-    const bbRoot = snap.cards.find((card) => card.kind === "thread" && card.isRoot)!;
-    expect(bbRoot.source).toBe("bb"); expect(bbRoot.title).toBe("Root work"); expect(bbRoot.status).toBe("running");
+    const aliaRoot = snap.cards.find((card) => card.kind === "thread" && card.isRoot)!;
+    expect(aliaRoot.source).toBe("alia"); expect(aliaRoot.title).toBe("Root work"); expect(aliaRoot.status).toBe("running");
     const redteam = snap.cards.find((card) => card.source === "redteam" && card.phaseId === "code-review")!;
     expect(redteam.status).toBe("running"); expect(redteam.scanId).toBe("scan-1");
-    expect(snap.cards.some((card) => card.source === "bb")).toBe(true); expect(snap.cards.some((card) => card.source === "redteam")).toBe(true);
+    expect(snap.cards.some((card) => card.source === "alia")).toBe(true); expect(snap.cards.some((card) => card.source === "redteam")).toBe(true);
   });
 });
 

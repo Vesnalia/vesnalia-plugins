@@ -1,7 +1,7 @@
-// bb.host entry for bb-plugin-beads: full-trust Node worker that spawns the
+// alia.host entry for alia-plugin-beads: full-trust Node worker that spawns the
 // `bd` (beads) CLI on this machine. The server entry reaches it through the
 // shared contract in contract.ts.
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { spawn } from "node:child_process";
 import { hostContract, hostSignals } from "./contract.js";
 

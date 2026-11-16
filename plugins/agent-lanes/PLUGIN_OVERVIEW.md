@@ -1,4 +1,4 @@
-Lanes shows where every agent is right now. Each bb thread gets a lane, and
+Lanes shows where every agent is right now. Each VesnALIA thread gets a lane, and
 each agent turn is a block that grows towards "now" while it runs. Lines
 between lanes show when one agent started or messaged another.
 
@@ -17,12 +17,12 @@ between lanes show when one agent started or messaged another.
   approve or reject it from the timeline.
 - A **Team lanes** tab beside any thread, showing that thread, the agents
   around it, and the threads it handed work to or from.
-- A `bb lanes now` command that prints what is running and waiting, for you or
+- A `alia lanes now` command that prints what is running and waiting, for you or
   for an agent.
 
 ## How it works
 
-The plugin's server reads bb's thread events and keeps a history of turns in
-the plugin's own storage on your bb server. The page combines that history with
-bb's live thread list, so a lane changes the moment the thread does. Nothing
+The plugin's server reads VesnALIA's thread events and keeps a history of turns in
+the plugin's own storage on your VesnALIA server. The page combines that history with
+VesnALIA's live thread list, so a lane changes the moment the thread does. Nothing
 leaves your machine, and the plugin needs no account or API key.

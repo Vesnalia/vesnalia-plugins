@@ -41,13 +41,13 @@ day 3, so ranking by percent would mislead. Each row carries its own verdict.
 
 | Subscription | Source |
 | --- | --- |
-| Vercel Token Pass | The AI Gateway spend report, read with the key bb already holds |
+| Vercel Token Pass | The AI Gateway spend report, read with the key VesnALIA already holds |
 | OpenCode Go | Its `/usage` endpoint, sampled hourly to build the trend it does not publish |
-| ChatGPT / Codex | BB's own Codex provider, which reads the plan's quota |
+| ChatGPT / Codex | VesnALIA's own Codex provider, which reads the plan's quota |
 | Everything else | A figure you enter, dated to the day you last changed it |
 
 Only two settings are credentials: your Vercel AI Gateway key and your OpenCode key. Both are
-stored in BB's own secret files, never returned to the interface, and never sent anywhere except
+stored in VesnALIA's own secret files, never returned to the interface, and never sent anywhere except
 the provider they belong to.
 
 ## What it will not do
@@ -65,7 +65,7 @@ the provider they belong to.
 1. Add your Vercel AI Gateway key and OpenCode key in the plugin settings.
 2. Check the allowance and renewal day on each slot. They start from a guess based on the
    subscription you picked, so confirm them.
-3. For the Codex slot, enable BB's Codex provider and sign in — `bb plugin enable provider-codex`.
+3. For the Codex slot, enable VesnALIA's Codex provider and sign in — `alia plugin enable provider-codex`.
    Without it that slot reads as unreadable rather than 0%.
 
 Slots 1 and 2 are on unless you switch them off. Slots 3 to 5 are off until you name a

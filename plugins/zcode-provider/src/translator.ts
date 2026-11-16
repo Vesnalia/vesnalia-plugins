@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import type { ThreadDelta } from '@get-bb/plugin-sdk/provider-bridge';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import type { ThreadDelta } from '@vesnalia/plugin-sdk/provider-bridge';
 import { ProtocolError, record, string, integer, boundedWarnings } from './errors.ts';
 import type { Warn } from './errors.ts';
 import type { Snapshot, Row } from './native.ts';
@@ -55,7 +55,7 @@ export class EventTranslator {
   private key(row: Pick<Row, 'rowId' | 'kind'>): string {
     return JSON.stringify([this.sessionId, this.epoch, row.rowId, row.kind]);
   }
-  // A fresh attach observes native history; bb already owns its representation.
+  // A fresh attach observes native history; VesnALIA already owns its representation.
   // This is not a completed-success assertion or an in-flight recovery terminal.
   baseline(snapshot: Snapshot): void {
     if (snapshot.logEpoch !== this.epoch) throw new ProtocolError('translator-epoch-mismatch');
@@ -179,7 +179,7 @@ export class EventTranslator {
           ['pending', 'unknown'].includes(correlation?.status(header.sourceCommandId) ?? '')) {
         this.warn({ code: 'input-acceptance-unconfirmed' }, [generation, turnId]); continue;
       }
-      // Completed history is owned by bb, even under new IDs or shifted native windows.
+      // Completed history is owned by VesnALIA, even under new IDs or shifted native windows.
       if (!existing && !acceptance && ((terminal[String(header.state)] !== undefined || header.state === undefined) || suppressUnaccepted)) {
         if (suppressUnaccepted && header.state === 'running') this.warn({ code: 'unaccepted-turn-suppressed' }, [generation, turnId]);
         continue;

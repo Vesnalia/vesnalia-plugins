@@ -1,13 +1,13 @@
 // The thread a review's Sends go to (src/loop.ts), as its page shows it: Finish's Send and the Main thread tab ask the
 // server for its title, whether it's archived or gone, and its machine; the cards' Send now needs only to know there's one.
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { MainThreadLink } from "../src/loop";
 import type { ReviewLifecycle } from "../src/store";
 import { useKnob } from "./settings";
 
-/** The id of the thread a review's Sends go to: its main thread, or for a review from before 1.8.0, the thread bb review ran in. */
+/** The id of the thread a review's Sends go to: its main thread, or for a review from before 1.8.0, the thread VesnALIA review ran in. */
 export const recipientOf = (review: Pick<ReviewLifecycle, "mainThread" | "sourceThreadId"> | null | undefined): string | null =>
   review?.mainThread?.threadId ?? review?.sourceThreadId ?? null;
 

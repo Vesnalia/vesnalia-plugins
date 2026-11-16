@@ -17,8 +17,8 @@ export interface FileViewFlags {
 // with a nested `.files`; `FileDiff`'s prop is `fileDiff` and the theme lives
 // under `options: { theme }`. (See the original task-14 note.)
 function useTheme() {
-  const darkTheme = document.documentElement.dataset.bbCodeThemeDark;
-  const lightTheme = document.documentElement.dataset.bbCodeThemeLight;
+  const darkTheme = document.documentElement.dataset.aliaCodeThemeDark;
+  const lightTheme = document.documentElement.dataset.aliaCodeThemeLight;
   return darkTheme && lightTheme ? { dark: darkTheme, light: lightTheme } : undefined;
 }
 

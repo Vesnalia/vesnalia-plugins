@@ -1,22 +1,14 @@
 {
-  "name": "bb-plugin-usage-page",
+  "name": "alia-plugin-usage-page",
   "version": "1.2.0",
-  "description": "Usage dashboard for Claude Code, Codex, and Pi sessions in bb.",
+  "description": "Usage dashboard for Claude Code, Codex, and Pi sessions in VesnALIA.",
   "type": "module",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/iamEvanYT/bb-usage-page.git"
-  },
-  "bugs": {
-    "url": "https://github.com/iamEvanYT/bb-usage-page/issues"
-  },
-  "homepage": "https://github.com/iamEvanYT/bb-usage-page#readme",
   "engines": {
-    "bb": ">=0.36",
-    "bbPluginSdk": "^0.4.1"
+    "alia": ">=0.36",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Usage",
     "description": "Track Claude Code, Codex, and Pi token usage and estimated API cost.",
     "branding": {
@@ -39,9 +31,9 @@
     "tsconfig.json"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc -p . --noEmit",
-    "dev": "bb plugin dev"
+    "dev": "alia plugin dev"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.3",
@@ -61,5 +53,22 @@
     "hono": "^4.11.9",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/usage-page#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/usage-page"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

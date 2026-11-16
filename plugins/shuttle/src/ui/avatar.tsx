@@ -1,6 +1,6 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 
-// One colour per person, the same everywhere, from the theme's terminal palette: every bb theme defines
+// One colour per person, the same everywhere, from the theme's terminal palette: every VesnALIA theme defines
 // --ansi-N with a readable --ansi-bg-fg-N to write on it. The greys (0, 7, 8 and 15) are left out.
 const SLOTS = [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14];
 

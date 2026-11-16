@@ -9,7 +9,7 @@ const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const MARKER = new RegExp(`^gpu\\.(?:(none|release)|(shared|whole)\\.(${UUID}))\\.g([1-9][0-9]{0,8})$`);
 const DEVICE_MODE = "0666";
 const MOST_NAMED = 8;
-const HELD_COPY_DESCRIPTION = /^bb-box install \S+ box \S+ held copy of snapshot /;
+const HELD_COPY_DESCRIPTION = /^alia-box install \S+ box \S+ held copy of snapshot /;
 
 export type MarkerPart = GpuPart | "release";
 
@@ -304,9 +304,9 @@ export type DeviceSet = "server" | "desktop";
 
 export function deviceSetOf(tags: readonly string[], description: string): DeviceSet {
   let kind: string | null = null;
-  if (description.startsWith("bb-box ") && !HELD_COPY_DESCRIPTION.test(description)) {
+  if (description.startsWith("alia-box ") && !HELD_COPY_DESCRIPTION.test(description)) {
     kind = /^kind (\S+)$/m.exec(description)?.[1] ?? null;
-    const warm = /^bb-box warm (\S+)$/m.exec(description)?.[1];
+    const warm = /^alia-box warm (\S+)$/m.exec(description)?.[1];
     if (kind === null && warm) kind = `warm-${warm}`;
   }
   const tagged = tags.find((tag) => tag.startsWith("kind."));
@@ -346,7 +346,7 @@ export function sameLines(devices: readonly DeviceLine[], wanted: readonly strin
 }
 
 function installNamed(description: string): string | null {
-  return description.startsWith("bb-box ") && !HELD_COPY_DESCRIPTION.test(description) ? (/^install (\S+)$/m.exec(description)?.[1] ?? null) : null;
+  return description.startsWith("alia-box ") && !HELD_COPY_DESCRIPTION.test(description) ? (/^install (\S+)$/m.exec(description)?.[1] ?? null) : null;
 }
 
 export function boxOf(description: string): string | null {
@@ -357,7 +357,7 @@ export function boxOf(description: string): string | null {
 
 export interface Eligibility {
   readonly installId: string;
-  readonly madeAndRemovedByBbBox: (tags: readonly string[]) => boolean;
+  readonly madeAndRemovedByAliaBox: (tags: readonly string[]) => boolean;
 }
 
 export function ineligibility(look: GuestLook, eligibility: Eligibility): string | null {
@@ -366,7 +366,7 @@ export function ineligibility(look: GuestLook, eligibility: Eligibility): string
   if (isTemplate(look.config)) return "It is a template now, and templates are never marked.";
   if (isHeldCopy(tags) || HELD_COPY_DESCRIPTION.test(description)) return "It is a held copy of a snapshot now, which holds no card.";
   if (isEarlierGuest(tags) || /^earlier guest$/m.test(description)) return "It is an earlier guest now, kept after a restore, which holds no card.";
-  if (eligibility.madeAndRemovedByBbBox(tags)) return `${PRODUCT} is making or removing it now: an image box, or a warm guest being filled or retired.`;
+  if (eligibility.madeAndRemovedByAliaBox(tags)) return `${PRODUCT} is making or removing it now: an image box, or a warm guest being filled or retired.`;
   if (!tags.includes(installTag(eligibility.installId))) return `Its tags no longer name install ${eligibility.installId}, so it is not this install's.`;
   if (installNamed(description) !== eligibility.installId) return `Its description does not name install ${eligibility.installId}, so it is not this install's to the helper.`;
   return null;
@@ -419,7 +419,7 @@ const REFUSALS: Readonly<Record<string, string>> = {
   "not-served": "its pool is not one the helper serves",
   privileged: "it is a privileged container",
   template: "it is a template",
-  "not-bb-box": `its description names no ${PRODUCT} install`,
+  "not-alia-box": `its description names no ${PRODUCT} install`,
   "unknown-card": "the helper does not list its card",
   "card-nodes": "the helper could not find its card's device nodes",
   "no-cards": "nvidia-smi listed no card then",
@@ -461,15 +461,15 @@ export function planMark(guest: MarkCandidate, context: MarkContext): MarkPlan {
   const existing = markerOf(tags);
   if (!devices.length && !raw.length && !pending.length) {
     if (!gpu.length || existing?.part === "none" || existing?.part === "release") return { is: "no-card" };
-    return { is: "refused", why: `It has the tag ${gpu.join(" and ")} and no card's device lines; bb box gpu mark leaves a marker it did not write.`, card: null };
+    return { is: "refused", why: `It has the tag ${gpu.join(" and ")} and no card's device lines; VesnALIA box gpu mark leaves a marker it did not write.`, card: null };
   }
   const ineligible = ineligibility(look, context);
   if (ineligible) return { is: "refused", why: ineligible, card: null };
-  if (config.lock) return { is: "refused", why: `It is locked (${String(config.lock)}). Run bb box gpu mark again once the lock is gone.`, card: null };
+  if (config.lock) return { is: "refused", why: `It is locked (${String(config.lock)}). Run alia box gpu mark again once the lock is gone.`, card: null };
   if (pending.length) {
-    return { is: "refused", why: `It has GPU device lines waiting for its next start (${inWords(pending.map((line) => `${line.key}: ${line.normal}`))}), which the helper refuses to act beside. Run bb box gpu mark again after it restarts.`, card: null };
+    return { is: "refused", why: `It has GPU device lines waiting for its next start (${inWords(pending.map((line) => `${line.key}: ${line.normal}`))}), which the helper refuses to act beside. Run alia box gpu mark again after it restarts.`, card: null };
   }
-  if (pendingDeviceChange(look.pending)) return { is: "refused", why: "It has a device change waiting for its next start, which the helper refuses to act beside. Run bb box gpu mark again after it restarts.", card: null };
+  if (pendingDeviceChange(look.pending)) return { is: "refused", why: "It has a device change waiting for its next start, which the helper refuses to act beside. Run alia box gpu mark again after it restarts.", card: null };
   if (String(config.unprivileged ?? "") !== "1") return { is: "refused", why: "It is a privileged container, which the helper never writes.", card: null };
   if (raw.length) return { is: "refused", why: `It has raw lines for GPU devices (${inWords(raw)}), which the helper does not manage.`, card: null };
   const nowhere = nodesOfNoCard(devices, context.cards);
@@ -490,7 +490,7 @@ export function planMark(guest: MarkCandidate, context: MarkContext): MarkPlan {
   const wholeHolder = otherClaims.find((entry) => entry.claim!.part === "whole") ?? context.holders.find((holder) => holder.card === card.uuid && holder.vmid !== look.vmid && holder.part === "whole");
   if (wholeHolder) return { is: "refused", why: `CT ${wholeHolder.vmid} holds ${cardName(card)} whole, so the helper would refuse it.`, card };
   if (part === "whole") {
-    if (context.wholeTooOld) return { is: "refused", why: `Its box's record says a whole card, which bb box gpu mark does not ask for now: ${context.wholeTooOld.why}. ${context.wholeTooOld.fix}`, card };
+    if (context.wholeTooOld) return { is: "refused", why: `Its box's record says a whole card, which VesnALIA box gpu mark does not ask for now: ${context.wholeTooOld.why}. ${context.wholeTooOld.fix}`, card };
     const others = [...new Set(context.holders.filter((holder) => holder.card === card.uuid && holder.vmid !== look.vmid).map((holder) => holder.vmid))].map((vmid) => `CT ${vmid}`);
     if (others.length) return { is: "refused", why: `Its box's record says a whole card, but ${cardName(card)} is also held by ${inWords(others)}, so the helper would refuse it.`, card };
   }
@@ -506,17 +506,17 @@ export function planMark(guest: MarkCandidate, context: MarkContext): MarkPlan {
   const asked: GpuMarker = { part, card: card.uuid, generation: next };
   if (!gpu.length) return { is: "mark", marker: asked, card, replaces: null, why: entry && entry.answered > 0 ? `The helper answered up to g${entry.answered} for it before, so it is asked with g${next}.` : null };
   if (existing?.part === "release") {
-    if ((entry?.answered ?? 0) < existing.generation) return { is: "refused", why: `The helper has not answered ${gpu[0]}, which releases its claim, yet. Run bb box gpu mark again in a minute.`, card };
+    if ((entry?.answered ?? 0) < existing.generation) return { is: "refused", why: `The helper has not answered ${gpu[0]}, which releases its claim, yet. Run alia box gpu mark again in a minute.`, card };
     return { is: "mark", marker: asked, card, replaces: gpu[0]!, why: `Its claim was released at g${existing.generation}, so it is asked again with g${next}.` };
   }
   if (!existing || existing.part !== part || existing.card !== card.uuid) {
-    return { is: "refused", why: `It already has the tag ${gpu.join(" and ")}, not the marker its lines give, gpu.${part}.${card.uuid}; bb box gpu mark leaves a marker it did not write.`, card };
+    return { is: "refused", why: `It already has the tag ${gpu.join(" and ")}, not the marker its lines give, gpu.${part}.${card.uuid}; VesnALIA box gpu mark leaves a marker it did not write.`, card };
   }
   if (grantedAsAsked(entry?.claim ?? null, existing)) return { is: "marked", marker: existing, card };
   if ((entry?.answered ?? 0) < existing.generation) return { is: "waiting", marker: existing, card };
   const refused = refusalInForce(context.answers, look.vmid, existing);
   if (refused && !CHECKED_BEFORE_ASKING.has(refused.reason)) {
-    return { is: "refused", why: `The helper refused ${gpu[0]} as ${refusalWords(refused.reason, refused.detail)}, which bb box gpu mark cannot check is put right.`, card };
+    return { is: "refused", why: `The helper refused ${gpu[0]} as ${refusalWords(refused.reason, refused.detail)}, which VesnALIA box gpu mark cannot check is put right.`, card };
   }
   const why = refused
     ? `The helper refused ${gpu[0]} as ${refusalWords(refused.reason, refused.detail)}; that is no longer so, so it is asked again.`
@@ -540,12 +540,12 @@ export function planUnmark(look: GuestLook, eligibility: Eligibility, ledger: Re
   const ineligible = ineligibility(look, eligibility);
   if (ineligible) return { is: "refused", why: ineligible, card: null };
   const existing = markerOf(tags);
-  if (gpu.length && (!existing || existing.part === "none")) return { is: "kept", why: `Its tag ${gpu.join(" and ")} is not a marker bb box gpu mark writes, so it stays.` };
+  if (gpu.length && (!existing || existing.part === "none")) return { is: "kept", why: `Its tag ${gpu.join(" and ")} is not a marker VesnALIA box gpu mark writes, so it stays.` };
   if (existing?.part === "release") {
     if ((entry?.answered ?? 0) >= existing.generation && !claimed) return { is: "unmark", marker: gpu[0]! };
     if ((entry?.answered ?? 0) < existing.generation) return { is: "release", marker: existing, replaces: null, asked: true };
   }
-  if (look.config.lock) return { is: "refused", why: `It is locked (${String(look.config.lock)}). Run bb box gpu mark --undo again once the lock is gone.`, card: null };
+  if (look.config.lock) return { is: "refused", why: `It is locked (${String(look.config.lock)}). Run alia box gpu mark --undo again once the lock is gone.`, card: null };
   const next = Math.max(entry?.answered ?? 0, existing?.generation ?? 0) + 1;
   return { is: "release", marker: { part: "release", card: null, generation: next }, replaces: gpu[0] ?? null, asked: false };
 }
@@ -615,15 +615,15 @@ function lastFullReading(lines: HelperLines): CardNodes[] {
 }
 
 export function judgeGpuMigration(lines: HelperLines, guests: readonly MigrationGuest[], seen: Eligibility & { readonly node: string; readonly vmid: number }): GpuHelperVerdict {
-  const journal = `journalctl -u bb-box-gpu on ${seen.node}`;
+  const journal = `journalctl -u alia-box-gpu on ${seen.node}`;
   if (lines.ledgerUnknown) {
     return { status: "fail", detail: `The GPU helper on ${seen.node} reports its ledger as unknown, so ${PRODUCT} cannot show the helper granted each marker as it stands. VM ${seen.vmid}'s report says why in its error lines.`, fix: `Read what it says with ${journal}.` };
   }
   if (!lines.ledgerReported) {
     return {
       status: "fail",
-      detail: `VM ${seen.vmid}'s report has no ledger lines, which bb-box-gpu 0.2.0 and later write, so ${PRODUCT} cannot show the helper granted each marker as it stands.`,
-      fix: `Run host/setup-gpu.sh from this BB Box's setup guide, as root on ${seen.node}.`,
+      detail: `VM ${seen.vmid}'s report has no ledger lines, which alia-box-gpu 0.2.0 and later write, so ${PRODUCT} cannot show the helper granted each marker as it stands.`,
+      fix: `Run host/setup-gpu.sh from this VesnALIA Box's setup guide, as root on ${seen.node}.`,
     };
   }
   if (lines.omitted.length) {
@@ -674,7 +674,7 @@ export function judgeGpuMigration(lines: HelperLines, guests: readonly Migration
   const fixes: string[] = [];
   if (unsettled.ours) {
     problems.push(unsettled.ours);
-    fixes.push("Run bb box gpu mark, which asks again for each of this install's guests; the helper's answer opens the card again.");
+    fixes.push("Run alia box gpu mark, which asks again for each of this install's guests; the helper's answer opens the card again.");
   }
   if (unknown.length) {
     problems.push(`The device lines of ${named(unknown)} name nodes no card in the GPU helper's report has.`);
@@ -682,7 +682,7 @@ export function judgeGpuMigration(lines: HelperLines, guests: readonly Migration
   }
   if (unmarked.length) {
     problems.push(`${unmarked.length === 1 ? "This guest" : `These ${unmarked.length} guests`} of this install ${unmarked.length === 1 ? "has" : "have"} GPU device lines and no marker: ${named(unmarked)}.`);
-    fixes.push("Run bb box gpu mark: it marks each with the card its lines name, or says why it cannot.");
+    fixes.push("Run alia box gpu mark: it marks each with the card its lines name, or says why it cannot.");
   }
   if (would.length) {
     problems.push(`The GPU helper on ${seen.node} would write ${would.length === 1 ? "this guest" : "these guests"} once writes are on: ${named(would.map((line) => `${nameOf(guests.find((guest) => guest.look.vmid === line.vmid)!)}, ${line.words}`))}.`);
@@ -690,11 +690,11 @@ export function judgeGpuMigration(lines: HelperLines, guests: readonly Migration
   }
   if (refused.length) {
     problems.push(`The GPU helper refused the marker of ${named(refused)}.`);
-    fixes.push("Put right what it was refused for, then run bb box gpu mark, which asks again.");
+    fixes.push("Put right what it was refused for, then run alia box gpu mark, which asks again.");
   }
   if (mismatched.length) {
     problems.push(`The GPU helper does not hold the claim the marker asks for: ${named(mismatched)}.`);
-    fixes.push("Run bb box gpu mark, which asks again with the next generation.");
+    fixes.push("Run alia box gpu mark, which asks again with the next generation.");
   }
   if (problems.length) return { status: "fail", detail: problems.join(" "), fix: [...new Set(fixes)].join(" ") };
   const doubts: string[] = [];
@@ -703,9 +703,9 @@ export function judgeGpuMigration(lines: HelperLines, guests: readonly Migration
   if (othersWould.length) doubts.push(`It would write ${named(othersWould.map((vmid) => `CT ${vmid}`))}, which ${othersWould.length === 1 ? "is not a guest" : "are not guests"} of this install's pool.`);
   if (doubts.length) {
     const fix = unsettled.others
-      ? "Run bb box gpu mark on the BB that made each of those guests, which asks again, or take their device lines off by hand while they are stopped."
+      ? "Run alia box gpu mark on the VesnALIA that made each of those guests, which asks again, or take their device lines off by hand while they are stopped."
       : unanswered.length
-        ? "Run bb box doctor again in a minute: the helper answers within seconds."
+        ? "Run alia box doctor again in a minute: the helper answers within seconds."
         : `Find why with ${journal}.`;
     return { status: "warn", detail: doubts.join(" "), fix };
   }

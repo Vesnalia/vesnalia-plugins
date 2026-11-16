@@ -1,4 +1,4 @@
-// BB 0.4.87 has no composer submit middleware. A scoped, full-trust content
+// VesnALIA 0.4.87 has no composer submit middleware. A scoped, full-trust content
 // script decorates only the native send/create request, leaving its pipeline,
 // draft restoration, uploads, mentions, execution tuple and response untouched.
 export type Selection = { roleSlug: string | null; threadId: string | null; projectId: string | null; text: string };

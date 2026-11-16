@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { DEFERRED_UPDATE, NEW_UPDATES, OUT_OF_RANGE_CHANGED, REPORT_CHANGED } from "../src/channels";
 import type { DeferredUpdate, OutOfRangeEntry, ReportSnapshot, UpdateJob } from "../src/contract";
@@ -61,7 +61,7 @@ afterEach(() => {
 });
 
 describe("nav badge", () => {
-  it("counts plugins with updates, leaving 9+ to bb", async () => {
+  it("counts plugins with updates, leaving 9+ to VesnALIA", async () => {
     const { value } = await renderBadge(() => snapshot(12));
     await waitFor(() =>
       expect(value()).toEqual({ count: 12, label: "12 plugins have updates" }),
@@ -192,19 +192,19 @@ describe("out-of-range toasts", () => {
     ],
     [
       "failed",
-      { kind: "failed", error: "Disk full.", command: "bb plugin install p" },
+      { kind: "failed", error: "Disk full.", command: "alia plugin install p" },
       [
         "error",
-        "Updating p and the rollback both failed, so it isn't installed. Disk full. Reinstall with: bb plugin install p",
+        "Updating p and the rollback both failed, so it isn't installed. Disk full. Reinstall with: VesnALIA plugin install p",
         { id: TOAST_ID, duration: Infinity, action: COPY },
       ],
     ],
     [
       "manual",
-      { kind: "manual", reason: "self", command: "bb plugin update p" },
+      { kind: "manual", reason: "self", command: "alia plugin update p" },
       [
         "warning",
-        "p needs a manual update. Run: bb plugin update p",
+        "p needs a manual update. Run: VesnALIA plugin update p",
         { id: TOAST_ID, duration: Infinity, action: COPY },
       ],
     ],
@@ -242,15 +242,15 @@ describe("out-of-range toasts", () => {
   });
 
   it.each<[string, OutOfRangeEntry["result"]]>([
-    ["failed", { kind: "failed", error: "Disk full.", command: "bb plugin install p" }],
-    ["manual", { kind: "manual", reason: "self", command: "bb plugin install p" }],
+    ["failed", { kind: "failed", error: "Disk full.", command: "alia plugin install p" }],
+    ["manual", { kind: "manual", reason: "self", command: "alia plugin install p" }],
   ])("copies the command from a %s toast", async (_kind, result) => {
     const writeText = vi.fn(() => Promise.resolve());
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
     const { moveTo } = await renderQueue([entry("running")]);
     await moveTo([done(result)]);
     await actionOf().onClick();
-    expect(writeText).toHaveBeenCalledWith("bb plugin install p");
+    expect(writeText).toHaveBeenCalledWith("alia plugin install p");
   });
 
   it("moves one toast through every state of a run", async () => {
@@ -427,7 +427,7 @@ describe("out-of-range toasts reusing one id", () => {
     }) as const;
 
   it.each<[string, Partial<OutOfRangeEntry>]>([
-    ["failed", failed("bb plugin install OLD")],
+    ["failed", failed("alia plugin install OLD")],
     [
       "manual",
       {
@@ -464,18 +464,18 @@ describe("out-of-range toasts reusing one id", () => {
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
     const id = "retry-sticky-again";
     const { run, moveTo } = await renderRuns(id);
-    await moveTo(run(1, failed("bb plugin install OLD")));
+    await moveTo(run(1, failed("alia plugin install OLD")));
     await moveTo(run(2));
     await moveTo(run(2, { state: "done", result: { kind: "timed-out" } }));
     let toast = await shown(id);
     expect(toast?.duration).toBe(Infinity);
     expect(toast?.action).toBeUndefined();
     await moveTo(run(3));
-    await moveTo(run(3, failed("bb plugin install NEW")));
+    await moveTo(run(3, failed("alia plugin install NEW")));
     toast = await shown(id);
     expect(toast?.duration).toBe(Infinity);
     await toast!.action!.onClick();
-    expect(writeText).toHaveBeenCalledWith("bb plugin install NEW");
+    expect(writeText).toHaveBeenCalledWith("alia plugin install NEW");
   });
 });
 
@@ -619,7 +619,7 @@ describe("updates page", () => {
     expect(page.getByText("Last checked just now.")).toBeTruthy();
   });
 
-  it("lists plugins bb couldn't check", async () => {
+  it("lists plugins VesnALIA couldn't check", async () => {
     const page = await renderPage({
       report: () => ({
         report: emptyReport,
@@ -642,7 +642,7 @@ describe("updates page", () => {
   });
 
   it.each([
-    ["bb couldn't check one", { updateCheckFailures: [{ id: "agent-board", error: SSL }] }, "agent-board"],
+    ["alia couldn't check one", { updateCheckFailures: [{ id: "agent-board", error: SSL }] }, "agent-board"],
     [
       "a release check failed",
       { report: { ...nothing, releaseCheckFailures: [{ id: "agent-board", error: SSL }] } },

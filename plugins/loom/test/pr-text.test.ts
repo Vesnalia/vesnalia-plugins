@@ -35,7 +35,7 @@ const poll = async () => {
   h.clock.advance(5 * 60_000);
   await pollPullRequests(h.ctx, project());
 };
-const briefs = () => h.bb.callsTo("spawnThread").map(([args]) => `${(args as { prompt: string }).prompt}\n${(args as { detail?: string }).detail ?? ""}`);
+const briefs = () => h.alia.callsTo("spawnThread").map(([args]) => `${(args as { prompt: string }).prompt}\n${(args as { detail?: string }).detail ?? ""}`);
 const PROPOSED = { title: "Add order rows", body: "## Why\nSupport wants CSV exports.\n\n## Deploy\nShips dark." };
 const block = (key = "CSV-1") => `<!-- loom:begin -->\nOpened by Loom for ${key}.\n<!-- loom:end -->`;
 const thread = { key: "thread:PRRT_1:9:abc", kind: "thread" as const, author: "alice", bot: false, body: "alice: The description should say how to roll back.", url: `${URL}#discussion_r9`, state: null, path: "src/model/a.ts", line: 4 };
@@ -96,7 +96,7 @@ describe("the pull request's text as reviewed work", () => {
     await settleReviews(h.ctx);
 
     await ask();
-    const asked = h.bb.sent(worker.thread_id!).at(-1)!;
+    const asked = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(asked).toContain("Loom opens its pull request with the title and description the reviewers approved; write the commit message and hand it in with loom_pr({ commit_message })");
     expect(handInPrText(h.ctx, worker.thread_id!, { commit_message: "Add the order row mapper" })).toContain("Loom opens the pull request now with the title and description the reviewers approved, so end your turn.");
     await queue();
@@ -117,7 +117,7 @@ describe("the pull request's text as reviewed work", () => {
     await handIn(worker, "Third try.", { pr: { body: "Second body" } });
     await approveRound();
     await ask();
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Loom opens its pull request with the title and description the reviewers approved");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Loom opens its pull request with the title and description the reviewers approved");
     handInPrText(h.ctx, worker.thread_id!, { title: "A better title", commit_message: "Subject" });
     await queue();
     expect(h.host.callsTo("prCreate")[0]).toMatchObject({ title: "A better title", body: `Second body\n\n${block()}` });
@@ -128,7 +128,7 @@ describe("the pull request's text as reviewed work", () => {
     await handIn(other, "Done.", { pr: { body: "Only a body" } });
     await approveRound();
     await ask();
-    expect(h.bb.sent(other.thread_id!).at(-1)).toContain("hand it in with loom_pr({ title, commit_message })");
+    expect(h.alia.sent(other.thread_id!).at(-1)).toContain("hand it in with loom_pr({ title, commit_message })");
     expect(() => handInPrText(h.ctx, other.thread_id!, { commit_message: "Subject" })).toThrow("You proposed only a body with loom_submit, so give the title here.");
   });
 
@@ -168,7 +168,7 @@ describe("a fix round that changes the pull request's text", () => {
     expect(ticket().state).toBe("review");
     expect(h.host.callsTo("exec")).toHaveLength(execs);
     expect(h.store.posts(ticket().id).filter((post) => post.kind === "check").at(-1)!.body).toContain("No checks ran: the work is the commit the pull request has");
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("your fix changes only the pull request's proposed text, so no checks ran");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("your fix changes only the pull request's proposed text, so no checks ran");
 
     await spawnReviewers(h.ctx, project(), spec());
     const brief = briefs().at(-1)!;
@@ -179,9 +179,9 @@ describe("a fix round that changes the pull request's text", () => {
     await approve(h.ctx, reviewer.thread_id!, "The rollback is described.");
     await settleReviews(h.ctx);
 
-    const sent = h.bb.sent(worker.thread_id!).length;
+    const sent = h.alia.sent(worker.thread_id!).length;
     await ask();
-    expect(h.bb.sent(worker.thread_id!)).toHaveLength(sent);
+    expect(h.alia.sent(worker.thread_id!)).toHaveLength(sent);
     const pushes = h.host.callsTo("push").length;
     await queue();
     expect(h.host.callsTo("push")).toHaveLength(pushes);
@@ -205,7 +205,7 @@ describe("a fix round that changes the pull request's text", () => {
     expect(ticket().state).toBe("review");
     await approveRound();
     await ask();
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("then sets the title and description you proposed with loom_submit, which the reviewers approved");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("then sets the title and description you proposed with loom_submit, which the reviewers approved");
     expect(handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows, with rollback", commit_message: "Rename" })).toContain("then sets the pull request's new title and description");
     await queue();
     expect(h.host.callsTo("push")).toHaveLength(2);
@@ -217,7 +217,7 @@ describe("a fix round that changes the pull request's text", () => {
   it("posts the text for the human on a forge that cannot edit, and carries on", async () => {
     const worker = await openProposed({ forge: { kind: "command", open: "review open", state: "review state", feedback: "review feedback" } });
     await fixRound({ items: [review] });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("since this forge cannot change the pull request's text, Loom posts it on the ticket for the human to set");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("since this forge cannot change the pull request's text, Loom posts it on the ticket for the human to set");
     await handIn(worker, "Described the rollback.", { change: false, pr: { body: "With rollback" } });
     await spawnReviewers(h.ctx, project(), spec());
     expect(briefs().at(-1)).toContain("This forge cannot change the pull request's text, so once the reviewers approve, Loom posts the proposed text on the ticket for the human to set.");
@@ -272,7 +272,7 @@ describe("a fix round that changes the pull request's text", () => {
   it("asks the worker in a fix round's message to propose the text with loom_submit and to reply with loom_pr_reply, by each item's key", async () => {
     const worker = await openProposed();
     await fixRound({ items: [thread, review] });
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain(`- Review thread on src/model/a.ts:4, last from alice (${URL}#discussion_r9), key \`thread:PRRT_1:9:abc\`:`);
     expect(message).toContain("When the feedback asks for a new title or description, pass pr = { title, body } to loom_submit with what it should read");
     expect(message).toContain("never with the forge's CLI");
@@ -306,7 +306,7 @@ describe("loom_pr_reply", () => {
     const command = await openProposed({ forge: { kind: "command", open: "o", state: "s", feedback: "f" } });
     await fixRound({ items: [thread] });
     await expect(replyToItem(h.ctx, command.thread_id!, { item: thread.key, text: "x" })).rejects.toThrow("Loom cannot reply on this pull request through its forge");
-    expect(h.bb.sent(command.thread_id!).at(-1)).toContain("Loom cannot reply on this pull request through its forge, so say in your loom_submit summary what you would answer");
+    expect(h.alia.sent(command.thread_id!).at(-1)).toContain("Loom cannot reply on this pull request through its forge, so say in your loom_submit summary what you would answer");
   });
 
   it("returns the forge's error and posts it, and a command forge's reply runs its reply command", async () => {

@@ -5,11 +5,11 @@ description: "Configure or troubleshoot the Route plugin tools: route_worker, ro
 
 # Route plugin
 
-The Route plugin gives BB threads three tools for in-turn calls to other agents and models.
+The Route plugin gives VesnALIA threads three tools for in-turn calls to other agents and models.
 
 | Tool | What it does | Backend |
 | --- | --- | --- |
-| `route_worker` | Starts a hidden child thread on another BB harness and model. The child edits files in the same environment. The tool waits for it and returns its final message. | Any BB provider |
+| `route_worker` | Starts a hidden child thread on another VesnALIA harness and model. The child edits files in the same environment. The tool waits for it and returns its final message. | Any VesnALIA provider |
 | `route_ask` | Sends one prompt to another model and returns the text. It cannot edit files. | Any OpenAI-compatible API |
 | `route_decide` | Asks a decision model a choice or yes/no question and returns the ranked options. | Any System One endpoint (for example TypeSafe Jev) |
 
@@ -17,11 +17,11 @@ The plugin has no preset endpoints, keys, or models. A thread gets a tool only a
 
 ## Settings
 
-Show the settings with `bb plugin config route`. Change one with `bb plugin config route set <key> <value>`.
+Show the settings with `alia plugin config route`. Change one with `alia plugin config route set <key> <value>`.
 
 ### route_worker
 
-- `workers`: a JSON array. Each entry has `name`, `provider`, and optional `model`, `reasoningLevel`, and `permissionMode` (`accept-edits`, `auto`, or `full`). The first entry is the default. Get the ids from `bb provider list` and `bb provider models <provider>`.
+- `workers`: a JSON array. Each entry has `name`, `provider`, and optional `model`, `reasoningLevel`, and `permissionMode` (`accept-edits`, `auto`, or `full`). The first entry is the default. Get the ids from `alia provider list` and `alia provider models <provider>`.
 - `workerTimeoutMinutes`: the time limit for one worker. The default is 20.
 
 ```json
@@ -55,6 +55,6 @@ Show the settings with `bb plugin config route`. Change one with `bb plugin conf
 ## Troubleshooting
 
 - A tool is missing: complete its settings, then start a new thread.
-- `route_worker` fails at once: check that the provider and model ids exist with `bb provider models <provider>`.
+- `route_worker` fails at once: check that the provider and model ids exist with `alia provider models <provider>`.
 - `HTTP 401` or `HTTP 403`: check the API key for that tool.
-- Read the plugin log with `bb plugin logs route`.
+- Read the plugin log with `alia plugin logs route`.

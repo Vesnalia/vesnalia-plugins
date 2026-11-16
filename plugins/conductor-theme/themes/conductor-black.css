@@ -2,7 +2,7 @@
 @import url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.css');
 
 /*
- * Conductor Pitch Black Theme for bb
+ * Conductor Pitch Black Theme for alia
  * True native black canvas (#000000) paired with Conductor's warm espresso brown
  * message cards (#2a1e1d), stone borders, Geist typography, and emerald green actions.
  */
@@ -241,7 +241,7 @@
   background-color: #ffffff !important;
 }
 
-.dark .bb-code-highlight.bb-code-highlight {
+.dark .alia-code-highlight.alia-code-highlight {
   --sh-identifier: #ece9e7;
   --sh-sign: #a5a09e;
   --sh-property: #81ddf9;
@@ -253,7 +253,7 @@
   --sh-jsxliterals: #81ddf9;
 }
 
-.light .bb-code-highlight.bb-code-highlight {
+.light .alia-code-highlight.alia-code-highlight {
   --sh-identifier: #2c2826;
   --sh-sign: #756f6c;
   --sh-property: #0550ae;

@@ -1,6 +1,6 @@
 You want a thread to work like a particular colleague: a careful reviewer who
 reads the tests first, or a specialist who knows when to ask for help. Souls
-saves that persona so you can choose it for any BB thread, without maintaining
+saves that persona so you can choose it for any VesnALIA thread, without maintaining
 a separate copy of its instructions each time.
 
 ## What you get
@@ -30,7 +30,7 @@ a separate copy of its instructions each time.
   revisions, restore one as a new revision, or pin a revision for one thread.
 - **Comparisons when requested.** Run a soul against no soul or up to three
   others on the same prompt and project model. The local persona grade starts
-  no runs. `bb souls` and the bundled tools and skill cover the same workflows.
+  no runs. `alia souls` and the bundled tools and skill cover the same workflows.
 
 ## Permissions you control
 
@@ -57,6 +57,6 @@ authorised child work start runs.
 
 ## Requirements
 
-bb 0.44 or later, with Plugin SDK 0.5.29 or later. Personas and task records
-stay in the plugin's SQLite database on your BB server. Public GitHub imports
+VesnALIA 0.44 or later, with Plugin SDK 0.5.29 or later. Personas and task records
+stay in the plugin's SQLite database on your VesnALIA server. Public GitHub imports
 fetch only the chosen file; uploads and pasted definitions need no download.

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { useBbNavigate, useSdk } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useSdk } from "@vesnalia/plugin-sdk/app";
 import { parseChatFileLink, resolveChatFilePath } from "./chat-file-links";
 import { useTranslation } from "./use-translation";
 
 export function ChatFileSurface({ threadId, children }: { threadId: string; children: ReactNode }) {
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { t: tr } = useTranslation();
   const [failed, setFailed] = useState(false);
   const active = useRef<object | null>(null);

@@ -24,7 +24,7 @@ import { MemoryStorage, lxcConfig } from "./helpers.ts";
 const KINDS = ["linux", "linux-desktop", "linux-desktop-cpu", "macos"];
 
 function lxcPart(fields: Record<string, unknown>) {
-  const parsed = parseLxcPart({ id: "proxmox-lxc", hosts: [], fields: { url: "https://pve.example.com:8006", "token-id": "bb-box@pve!plugin", "token-secret": "s3cret", "linux-templates": "9000", ...fields } as never });
+  const parsed = parseLxcPart({ id: "proxmox-lxc", hosts: [], fields: { url: "https://pve.example.com:8006", "token-id": "alia-box@pve!plugin", "token-secret": "s3cret", "linux-templates": "9000", ...fields } as never });
   assert.ok(parsed.ok, JSON.stringify(parsed));
   return parsed.config;
 }
@@ -41,13 +41,13 @@ test("071 unit 15: Proxmox LXC's boxes per card is 4 where never set, and an exp
   assert.equal(lxcConfig({ "proxmox-lxc-boxes-per-card": 0 }).desktop.perGpu, null);
   assert.equal(lxcPart({ "desktops-per-gpu": 0 }).desktop.perGpu, null, "the document's field reads the same");
   assert.equal(lxcPart({}).desktop.perGpu, 4);
-  const refused = parseLxcPart({ id: "proxmox-lxc", hosts: [], fields: { url: "https://pve.example.com:8006", "token-id": "bb-box@pve!plugin", "token-secret": "s3cret", "boxes-per-card": 1.5 } as never });
+  const refused = parseLxcPart({ id: "proxmox-lxc", hosts: [], fields: { url: "https://pve.example.com:8006", "token-id": "alia-box@pve!plugin", "token-secret": "s3cret", "boxes-per-card": 1.5 } as never });
   assert.ok(!refused.ok);
   assert.ok(refused.problems.some((problem) => problem.path === "boxes-per-card"), JSON.stringify(refused.problems));
 });
 
-test("071 unit 15: through the driver, as BB Box builds a backend, an old key that is set is read though the new key has a default, and the new key wins once set", () => {
-  const lxcFields = { url: "https://pve.example.com:8006", "token-id": "bb-box@pve!plugin", "linux-templates": "9000" };
+test("071 unit 15: through the driver, as VesnALIA Box builds a backend, an old key that is set is read though the new key has a default, and the new key wins once set", () => {
+  const lxcFields = { url: "https://pve.example.com:8006", "token-id": "alia-box@pve!plugin", "linux-templates": "9000" };
   const lxc = (fields: Record<string, unknown>) => {
     const parsed = proxmoxLxcDriver.parse(backendPart({ id: "proxmox-lxc", type: "proxmox-lxc", enabled: true, fields: { ...lxcFields, ...fields } as never }, proxmoxLxcDriver, { "proxmox-lxc": { "token-secret": "s3cret" } }));
     assert.ok(parsed.ok, JSON.stringify(parsed));
@@ -70,7 +70,7 @@ test("071 unit 15: through the driver, as BB Box builds a backend, an old key th
 test("071 unit 15: Proxmox LXC's GPU memory a new box needs is a field, 1,024 MiB unset", () => {
   assert.equal(lxcConfig().gpuMemoryMiB, 1024);
   assert.equal(lxcConfig({ "proxmox-lxc-gpu-memory-mib": 4096 }).gpuMemoryMiB, 4096);
-  const refused = parseLxcPart({ id: "proxmox-lxc", hosts: [], fields: { url: "https://pve.example.com:8006", "token-id": "bb-box@pve!plugin", "token-secret": "s3cret", "gpu-memory-mib": -1 } as never });
+  const refused = parseLxcPart({ id: "proxmox-lxc", hosts: [], fields: { url: "https://pve.example.com:8006", "token-id": "alia-box@pve!plugin", "token-secret": "s3cret", "gpu-memory-mib": -1 } as never });
   assert.ok(!refused.ok && refused.problems.some((problem) => problem.path === "gpu-memory-mib"));
 });
 
@@ -130,7 +130,7 @@ test("071 unit 15: a kind's GPU when not asked for is none, shared or whole, onl
   assert.equal(gpuForSpare("none"), "none");
 });
 
-test("071 unit 15: bb box kind set --gpu sets a kind's GPU when not asked for, and refuses a kind with no GPU part", () => {
+test("071 unit 15: VesnALIA box kind set --gpu sets a kind's GPU when not asked for, and refuses a kind with no GPU part", () => {
   const document = documentWith([]);
   const edited = setKind(document, KINDS, "linux", { gpu: "shared" });
   assert.equal(edited.document.kinds.linux?.gpu, "shared");
@@ -143,7 +143,7 @@ function stateOf(document: ConfigDocument): ConfigState {
   return { document, revision: document.revision, defaults: { general: {}, monitor: {}, kinds: { linux: { enabled: true, presets: { small: size, medium: size, large: size }, default: "small", largest: { cores: 16, memoryMiB: 32768, diskGiB: 256 } } } }, kinds: [], drivers: [], backends: [], problems: [], migrated: null, receipts: [], setupDone: null } as unknown as ConfigState;
 }
 
-test("071 unit 15: a kind's page that saves its sizes keeps the kind's GPU, and choosing BB Box's own default stores none", () => {
+test("071 unit 15: a kind's page that saves its sizes keeps the kind's GPU, and choosing VesnALIA Box's own default stores none", () => {
   const state = stateOf(documentWith([], {}, { linux: { gpu: "shared" } }));
   const sized = candidateOf(state, [{ path: "kinds/linux/presets/small/cores", value: plain(3), base: { kind: "value", value: 2 } }]);
   assert.equal(sized.document.kinds.linux?.gpu, "shared");
@@ -162,7 +162,7 @@ test("071 unit 15: the kind's menu lists Whole card only where a backend has who
   assert.deepEqual(kindGpuChoices(off, "whole"), ["none", "shared", "whole"]);
   assert.match(kindGpuWords("linux", "whole", false), /Whole cards are off on every backend, so a box that leaves gpu out is refused/);
   assert.match(kindGpuWords("linux", "whole", true), /Spare boxes of the kind are made shared/);
-  assert.match(kindGpuWords("linux-desktop", "shared", true), /Shared is BB Box's own default for linux-desktop\./);
+  assert.match(kindGpuWords("linux-desktop", "shared", true), /Shared is ALIA Box's own default for linux-desktop\./);
 });
 
 const IN_USE: CardsInUse = {
@@ -199,8 +199,8 @@ test("071 unit 15 gate: a lowered limit names the boxes over it, which keep runn
   assert.deepEqual(view.cards.map((card) => card.over), [0, 1, 0]);
   assert.equal(view.cards[1]!.overWords, "Card 1 has 3 of this install's boxes running, 1 over the limit of 2: amber-fox, lone-pine and calm-reef. They keep running; no new box goes on card 1 until it has room.", "another install's guest is on the card but not in this install's count");
   assert.deepEqual(view.cards[1]!.holders.map((holder) => holder.box), ["bxamber", null, null, null], "a box links to its page only where it is this backend's");
-  assert.equal(view.cards[2]!.outsideMiB, 21_096, "memory in use on a card that holds no box of BB Box's is outside BB Box's boxes");
-  assert.equal(view.cards[0]!.outsideMiB, null, "where BB Box's boxes are on the card, one reading cannot split it");
+  assert.equal(view.cards[2]!.outsideMiB, 21_096, "memory in use on a card that holds no box of VesnALIA Box's is outside VesnALIA Box's boxes");
+  assert.equal(view.cards[0]!.outsideMiB, null, "where VesnALIA Box's boxes are on the card, one reading cannot split it");
   assert.equal(overLimitWords({ index: 0, counted: 2, holders: [] }, 1, "every-install"), "Card 0 has 2 boxes, 1 over the limit of 1. They keep running; no new box goes on card 0 until it has room.");
   const unlimited = settingsCards({ ...IN_USE, limit: null }, "proxmox-lxc", []);
   assert.deepEqual(unlimited.is === "read" ? unlimited.cards.map((card) => [card.over, card.overWords]) : null, [[0, null], [0, null], [0, null]], "no limit: no card is over it");
@@ -245,7 +245,7 @@ function hooks(): AcquireHooks {
 
 function withUserspace(bridge: ClaimsBridge): void {
   const record = JSON.stringify({ contract: 1, image: "standard", kind: "linux", arch: "x86_64", build: "build.20261105-090000-1a2b", built: "2026-11-05T09:00:00Z", os: "Ubuntu 24.04.5 LTS", tools: {}, nvidia: "580.142" });
-  bridge.proxmox.guests.get(9000)!.config.description = `bb-box linux template (NVIDIA 580.142, no card), built 2026-11-05. See /usr/share/bb-box/template-release inside.\n${record}`;
+  bridge.proxmox.guests.get(9000)!.config.description = `alia-box linux template (NVIDIA 580.142, no card), built 2026-11-05. See /usr/share/alia-box/template-release inside.\n${record}`;
 }
 
 test("071 unit 15 gate: Proxmox LXC's cards in use name each card's holders, and the doctor warns of a card over a lowered limit, stopping nothing", async () => {
@@ -295,7 +295,7 @@ test("071 unit 15 gate: turning whole cards off leaves a whole box as it is: its
   assert.deepEqual(started && "claim" in started ? started.claim : null, { card: CARD_A.uuid, part: "whole", generation: 1, answer: "granted" }, "it starts on its card, whole, with no new claim");
 });
 
-test("071 unit 15, live: bb box backend fields gives a new key's value from the key it replaces while it is unset", () => {
+test("071 unit 15, live: VesnALIA box backend fields gives a new key's value from the key it replaces while it is unset", () => {
   const field = { key: "boxes-per-card", ...LXC_FIELDS["boxes-per-card"]! } as never;
   assert.match(fieldLine(field, undefined, 2), / Now: unset, so 2 from desktops-per-gpu, which it replaces\.$/);
   assert.match(fieldLine(field, undefined, undefined), / Now: unset, so 4\.$/);

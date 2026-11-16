@@ -1,7 +1,7 @@
 // Send now on a draft comment's card, and what a Send that warns shows before it goes: someone else's PR, a main thread
-// archived or deleted, or a folder bb removed. The same warning, with its choices, shows in Finish review's Send.
+// archived or deleted, or a folder VesnALIA removed. The same warning, with its choices, shows in Finish review's Send.
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { CommentLocation, DraftComment } from "../src/draft";
@@ -22,12 +22,12 @@ export type Choice = { force: true; thread?: "unarchive" | "fresh" | "fork" };
 export const choiceOf = (offer: Offer): Choice => offer === "anyway" ? { force: true } : { force: true, thread: offer };
 
 /**
- * Watch, a Send's toast action: the thread it went to, beside the review in BB's Main thread tab, or on a phone, held
- * either way, where BB's panel would cover the review anyway, its own page.
+ * Watch, a Send's toast action: the thread it went to, beside the review in VesnALIA's Main thread tab, or on a phone, held
+ * either way, where VesnALIA's panel would cover the review anyway, its own page.
  */
 export function useWatch(targetKey: string): (threadId: string) => { label: string; onClick: () => void } {
   const api = useWorkspaceFor(targetKey);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (threadId) => ({ label: "Watch", onClick: () => api && api.layout.mode === "tablet" ? api.panel.open("main") : navigate.toThread(threadId) });
 }
 
@@ -58,7 +58,7 @@ const LABEL: Record<Exclude<Offer, "anyway">, string> = { unarchive: "Unarchive 
 function choiceLead({ why, thread, folder }: FixerChoice): string {
   if (why === "archived") return `${thread ?? "The main thread"} is archived.`;
   if (why === "deleted") return `${thread ?? "The main thread"} was deleted.`;
-  if (why === "folder-gone") return `BB removed the folder ${folder ?? "it worked in"}.`;
+  if (why === "folder-gone") return `VesnALIA removed the folder ${folder ?? "it worked in"}.`;
   return "No thread is working on this PR.";
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { portScanEnvironments, settledThreadIds } from "./live-threads";
 import type { ThreadLifecycleRow } from "./lifecycle";
 import { idleSidebarThreadFields } from "./test-fixtures";

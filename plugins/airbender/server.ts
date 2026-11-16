@@ -1,4 +1,4 @@
-// bb-plugin-airbender — backend entry.
+// alia-plugin-airbender — backend entry.
 //
 // Where things are: this file reads the settings, wires the pieces together
 // and holds the table of request handlers and the agent tool. The pieces are
@@ -17,7 +17,7 @@
 // folder a thread (or project) works in, creates and changes them, remembers
 // which issue each thread is working on, and gets a folder ready for beads.
 // Issues are read and changed by running `bend`, the Go program in bend/
-// that agents use too (bead-bb-c9l.4); for beads, bend runs the `bd`
+// that agents use too (bead-alia-c9l.4); for beads, bend runs the `bd`
 // command-line tool.
 //
 // Why: beads keeps a repo's issues in a database inside the repo, and the only
@@ -34,7 +34,7 @@
 //   edits its design, acceptance criteria or notes. Setup additionally runs
 //   `bd init` and `bd setup` in a terminal the user can see, and writes
 //   Airbender's rules into the folder's AGENTS.md.
-// - Every issue goes through a workflow to be closed (bead-bb-e2b). The
+// - Every issue goes through a workflow to be closed (bead-alia-e2b). The
 //   step an issue is at is kept on it as a `step:<id>` label. This backend
 //   only runs the workflow: it checks a move, records the step, and starts
 //   the agent on a step that is the agent's. It names no step itself.
@@ -44,8 +44,8 @@
 //   agent answers through two tools: `airbender_set_current` and the workflow
 //   move tool. The plugin never changes git; it only reads which branch a
 //   folder is on.
-// - "Current bead" is BB's knowledge, not beads': which issue a given thread
-//   is working on. It is stored on the thread (BB's per-plugin thread
+// - "Current bead" is VesnALIA's knowledge, not beads': which issue a given thread
+//   is working on. It is stored on the thread (VesnALIA's per-plugin thread
 //   metadata), set either by the user in the tab or by the thread's agent
 //   through the `airbender_set_current` tool. Beads itself is not changed by it.
 // - The tab's list is one `bd list --all`. "Blocked" is worked out from
@@ -54,9 +54,9 @@
 //   a second `bd blocked` call, so the tab always shows one consistent
 //   snapshot. A change reads that list once more before it writes: the
 //   adapter checks there what it is asked to change.
-// - `bd` runs on the machine the BB server runs on. A thread whose folder is
+// - `bd` runs on the machine the VesnALIA server runs on. A thread whose folder is
 //   on another enrolled machine gets an explicit "unavailable" answer instead
-//   of a wrong list (tracked as bead-bb-hl3).
+//   of a wrong list (tracked as bead-alia-hl3).
 // - Problems the user can act on (no beads here, bd not installed, folder on
 //   another machine) are returned as data with a `state`, not thrown, so the
 //   tab can explain them in plain words.
@@ -72,19 +72,19 @@
 //   `parent` per issue; this backend passes it through as `parentId` and the
 //   tab builds the tree. Play on an issue with sub-issues asks the agent to
 //   work on all of them, and finishing it closes all of them
-//   (bead-bb-5qt).
+//   (bead-alia-5qt).
 //
 // Gotchas:
 // - `bd delete` does not rewrite `.beads/last-touched`, so an issue deleted
 //   outside the plugin stays on screen until the next refresh.
 // - `bd show` also rewrites `.beads/last-touched`, so an agent merely reading
 //   an issue causes one harmless reload of open tabs.
-// - The BB server may have a shorter PATH than your shell. If `bd` is not
+// - The VesnALIA server may have a shorter PATH than your shell. If `bd` is not
 //   found by name, a few common install locations are tried; the "bd command"
 //   setting overrides all of that.
 // - Settings are read once per load: reload the plugin after changing one.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
@@ -128,26 +128,26 @@ import { workflowFor } from "./shared/workflows.ts";
  * (watcher, store, workflow runner, setup) and registers the request handlers, the
  * agent tool and the standing instructions for agents.
  *
- * Side effects: registers with BB; restores file watches from before the
+ * Side effects: registers with VesnALIA; restores file watches from before the
  * last reload.
  */
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     bdCommand: {
       type: "string",
       label: "bd command",
       description:
-        "Name or full path of the beads command-line tool. Leave as bd unless BB cannot find it.",
+        "Name or full path of the beads command-line tool. Leave as bd unless VesnALIA cannot find it.",
       default: "bd",
     },
     bendCommand: {
       type: "string",
       label: "bend command",
       description:
-        "Name or full path of bend, the program Airbender reads and changes issues with. Leave as bend unless BB cannot find it.",
+        "Name or full path of bend, the program Airbender reads and changes issues with. Leave as bend unless VesnALIA cannot find it.",
       default: "bend",
     },
-    // Background sizing (bead-bb-zkc). On BB's own page because a tab
+    // Background sizing (bead-alia-zkc). On VesnALIA's own page because a tab
     // cannot open a settings screen of the plugin's; the tab's menu says
     // where these are. Read each time a worker is about to start, so a
     // change here needs no reload.
@@ -162,11 +162,11 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Sizing provider",
       description:
-        "The provider the background agent runs on, as listed by `bb provider list`. Empty uses the project's default.",
+        "The provider the background agent runs on, as listed by `alia provider list`. Empty uses the project's default.",
       default: "claude-code",
     },
-    // The token "Sync with GitHub" hands to beads' own sync (bead-bb-rh3).
-    // A secret: BB keeps it in a file of its own on this computer, never
+    // The token "Sync with GitHub" hands to beads' own sync (bead-alia-rh3).
+    // A secret: VesnALIA keeps it in a file of its own on this computer, never
     // in the repository and never sent to the tab. Not kept the beads way
     // (`bd config set github.token`), which writes .beads/config.yaml, a
     // file that is in git in many repositories.
@@ -185,7 +185,7 @@ export default async function plugin(bb: BbPluginApi) {
         "The model for the background agent; it must belong to the provider above. Haiku is cheap and quick; claude-sonnet-5 judges code better. Empty uses the provider's default.",
       default: "claude-haiku-4-5-20251001",
     },
-    // Conversation titles (bead-bb-du7). Read each time a title is about
+    // Conversation titles (bead-alia-du7). Read each time a title is about
     // to be written, so a change here needs no reload.
     issueTitles: {
       type: "boolean",
@@ -235,14 +235,14 @@ export default async function plugin(bb: BbPluginApi) {
       type: "string",
       label: "Summary titles: command",
       description:
-        "Run with /bin/sh on this computer, with the prompt on stdin. The BB server's PATH may be short: set it in front if needed, e.g. PATH=/opt/homebrew/bin:$PATH gemini -p \"\".",
+        "Run with /bin/sh on this computer, with the prompt on stdin. The VesnALIA server's PATH may be short: set it in front if needed, e.g. PATH=/opt/homebrew/bin:$PATH gemini -p \"\".",
       default: "",
     },
   });
   const { bdCommand, bendCommand } = await settings.get();
 
   // Tried in order until one exists. The extra locations cover installs that
-  // are on a login shell's PATH but not on the BB server's.
+  // are on a login shell's PATH but not on the VesnALIA server's.
   const bdCandidates = [
     bdCommand.trim() || "bd",
     join(homedir(), ".local", "share", "mise", "shims", "bd"),
@@ -263,19 +263,19 @@ export default async function plugin(bb: BbPluginApi) {
     join(homedir(), "go", "bin", "bend"),
     "/usr/local/bin/bend",
   ];
-  const folders = createFolders({ bb, bdCandidates, bendCandidates });
-  const currentBead = createCurrentBead(bb);
-  const { watchFolder } = await createWatcher(bb);
-  const workflowChoice = await createWorkflowChoice(bb);
+  const folders = createFolders({ alia, bdCandidates, bendCandidates });
+  const currentBead = createCurrentBead(alia);
+  const { watchFolder } = await createWatcher(alia);
+  const workflowChoice = await createWorkflowChoice(alia);
   const trackers = createTrackers({
     findBd: folders.findBd,
     findBend: folders.findBend,
     notFoundMessage: folders.BD_NOT_FOUND_MESSAGE,
     bendMessages: folders.BEND_MESSAGES,
-    warn: (line) => bb.log.warn(line),
+    warn: (line) => alia.log.warn(line),
   });
   const store = createStore({
-    bb,
+    alia,
     folders,
     trackers,
     currentBead,
@@ -283,7 +283,7 @@ export default async function plugin(bb: BbPluginApi) {
     workflowChoice,
   });
   const sizing = await createSizing({
-    bb,
+    alia,
     readSettings: async () => {
       const now = await settings.get();
       return {
@@ -298,14 +298,14 @@ export default async function plugin(bb: BbPluginApi) {
     workflowFor: workflowChoice.workflowFor,
   });
   const workTrees = await createWorkTrees({
-    bb,
+    alia,
     mainBranch: folders.mainBranch,
     mainFolder: folders.mainFolder,
     deleteMergedBranch: folders.deleteMergedBranch,
   });
   const workEvents: WorkEvents = {};
   const work = createWork({
-    bb,
+    alia,
     store,
     currentBead,
     workflowChoice,
@@ -318,7 +318,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Autopilot starts issues through `work`, and `work` tells it what
   // happens: each is built first, then the two are joined.
   const autopilot = await createAutopilot({
-    bb,
+    alia,
     store,
     currentBead,
     workflowChoice,
@@ -328,27 +328,27 @@ export default async function plugin(bb: BbPluginApi) {
   workEvents.closed = autopilot.advance;
   workEvents.stuck = autopilot.stuck;
   workEvents.ownerCurrent = autopilot.ownerSteppedIn;
-  const issueSync = createSync({ bb, store, trackers });
+  const issueSync = createSync({ alia, store, trackers });
   const { setupStatus, runSetup } = createSetup({
-    bb,
+    alia,
     folders,
     store,
     bendIn: trackers.bendIn,
     trackerChanged: trackers.forget,
   });
   const github = createGithub({
-    bb,
+    alia,
     folders,
     store,
     readToken: async () => (await settings.get()).githubToken ?? "",
     readBeads: trackers.beadsIssues,
   });
   // Each conversation named after its current issue, or summarised when it
-  // has none (bead-bb-du7). Every way of setting the current issue goes
+  // has none (bead-alia-du7). Every way of setting the current issue goes
   // through currentBead.store, so listening there catches all of them; a
   // finished turn is when an edited issue title or a summary is caught up.
   const titles = createThreadTitles({
-    bb,
+    alia,
     store,
     currentBead,
     beforeRename: async (threadId) => {
@@ -370,25 +370,25 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
   });
-  bb.onDispose(currentBead.listen(titles.issueChanged));
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.onDispose(currentBead.listen(titles.issueChanged));
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     titles.turnEnded(thread.id, lastAssistantText);
   });
   // Conversations whose issue was set before this load are named too. A
-  // few seconds after loading, off the load path: BB's SDK is meant for
+  // few seconds after loading, off the load path: VesnALIA's SDK is meant for
   // after registration, and the tab's first lists come first.
   const reconcileTimer = setTimeout(() => {
     titles.reconcile().catch((cause) => {
-      bb.log.warn(`conversation titles were not caught up: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`conversation titles were not caught up: ${cause instanceof Error ? cause.message : String(cause)}`);
     });
   }, 5_000);
-  bb.onDispose(() => clearTimeout(reconcileTimer));
+  alia.onDispose(() => clearTimeout(reconcileTimer));
 
   // Every handler is one call into a module: what each does, and how it
   // reports a problem, is documented where it is written. All of them
   // answer with data (a state or a message in plain words) and none throws
   // for an expected problem, so the tab has one way to show a failure.
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     issues_list: async (input) => {
       const listed = await store.listIssues(input);
       // Every list a tab asks for is also the moment to see whether an
@@ -502,7 +502,7 @@ export default async function plugin(bb: BbPluginApi) {
       // idle and queues behind a running one.
       if (input.threadId !== null && before !== input.workflow) {
         try {
-          await bb.sdk.threads.send({
+          await alia.sdk.threads.send({
             threadId: input.threadId,
             mode: "auto",
             input: [
@@ -523,7 +523,7 @@ export default async function plugin(bb: BbPluginApi) {
     // Sent from the server, like the play message, rather than through the
     // message box: that way whatever the user has typed there is left alone.
     thread_reply: async ({ threadId, kind }) => {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "auto",
         input: [{ type: "text", mentions: [], text: QUICK_REPLIES[kind] }],
@@ -533,13 +533,13 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // The agent's way to say which issue its thread is working on. A native
-  // tool rather than a `bb` command because agent sandboxes on Linux can block
-  // the local connection a `bb` command needs, which would turn every update
+  // tool rather than a `VesnALIA` command because agent sandboxes on Linux can block
+  // the local connection a `VesnALIA` command needs, which would turn every update
   // into a permission prompt.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: CURRENT_TOOL,
     description:
-      "Tell BB which issue this thread is working on, so the user sees it highlighted in the Airbender tab. Pass an empty id to clear it.",
+      "Tell VesnALIA which issue this thread is working on, so the user sees it highlighted in the Airbender tab. Pass an empty id to clear it.",
     instructions: CURRENT_TOOL_INSTRUCTIONS,
     presentation: {
       label: { pending: "Setting current issue", completed: "Set current issue" },
@@ -582,7 +582,7 @@ export default async function plugin(bb: BbPluginApi) {
   // finished, skip one with a reason, or send its own review back. What it
   // may do is the workflow's decision; a refused move comes back with the
   // reason and what is allowed instead.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: MOVE_TOOL,
     description:
       "Move an issue to the next step of its workflow: report the step you were asked to do as finished, skip it with a reason, or send your own review back. The answer says what comes next.",
@@ -625,7 +625,7 @@ export default async function plugin(bb: BbPluginApi) {
   // How a background sizing worker hands in its sizes (server/sizing.ts).
   // A native tool because a worker's sandbox cannot write to beads; the
   // plugin writes the sizes itself, after checking each one.
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: REPORT_TOOL,
     description:
       "Report the sizes chosen for the issues you were given to size. Call it once, with every issue.",
@@ -651,7 +651,7 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Offer both tools to every thread, whatever its folder holds and
-  // whichever workflow its repository is on (bead-bb-8fm). BB settles a
+  // whichever workflow its repository is on (bead-alia-8fm). VesnALIA settles a
   // thread's tools when its session starts and adds none to a running one,
   // so offering them only where the folder already used beads, and the step
   // tool only on the standard workflow, left agents without them: a thread
@@ -661,7 +661,7 @@ export default async function plugin(bb: BbPluginApi) {
   //
   // The plugin's own sizing workers are the exception: they get the one
   // tool they report with and nothing else, and nobody else gets that one.
-  bb.agents.configure((context) => ({
+  alia.agents.configure((context) => ({
     tools: sizing.isWorker(context.thread.title)
       ? [REPORT_TOOL]
       : [CURRENT_TOOL, MOVE_TOOL],

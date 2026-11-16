@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { threadWithDraft } from "./StatusSlot";
 import { idleSidebarThreadFields, runtimeStatusFor } from "./test-fixtures";
 
@@ -26,7 +26,7 @@ const busy: Record<string, Partial<PluginSidebarThread>> = {
   "background-command": { indicator: "background-command", activity: { ...counts, backgroundCommands: 1 } },
   "plan-mode": { indicator: "plan-mode", activity: { ...counts, planMode: 1 } },
 };
-// Each status with the fields bb derives it from.
+// Each status with the fields VesnALIA derives it from.
 const kept: Record<string, Partial<PluginSidebarThread>> = {
   "unread-error": { indicator: "unread-error", isUnread: true, status: "error" },
   "waiting-for-input": { indicator: "waiting-for-input", hasPendingInteraction: true },
@@ -43,7 +43,7 @@ describe("threadWithDraft", () => {
     }
   });
 
-  it("marks a quiet thread as a draft and a busy one as working with a draft, in bb's words", () => {
+  it("marks a quiet thread as a draft and a busy one as working with a draft, in VesnALIA's words", () => {
     expect(threadWithDraft(thread(), true)).toMatchObject({
       indicator: "draft",
       indicatorLabel: "Thread has unsubmitted draft",
@@ -56,7 +56,7 @@ describe("threadWithDraft", () => {
     }
   });
 
-  // bb's order: failures, raised hands, unread results and queued messages
+  // VesnALIA's order: failures, raised hands, unread results and queued messages
   // all outrank an idle draft.
   it("keeps statuses that outrank a draft", () => {
     for (const fields of Object.values(kept)) {
@@ -65,7 +65,7 @@ describe("threadWithDraft", () => {
     }
   });
 
-  it("takes bb's result for an indicator this build does not know", () => {
+  it("takes VesnALIA's result for an indicator this build does not know", () => {
     const listed = thread({ indicator: "future-kind" as PluginSidebarThread["indicator"], indicatorLabel: "New" });
     expect(threadWithDraft(listed, true)).toMatchObject({
       indicator: "draft",
@@ -85,7 +85,7 @@ describe("threadWithDraft", () => {
     expect(threadWithDraft(listed, true)).toBe(listed);
   });
 
-  // bb's order puts a draft on a working thread above an unread result and a
+  // VesnALIA's order puts a draft on a working thread above an unread result and a
   // failed send; the row still reads "Send failed" from `queuedWork`.
   it("shows working with a draft over an unread result or a failed send on a thread with background work", () => {
     for (const fields of [kept["unread-success"], kept["queued-failed"]]) {

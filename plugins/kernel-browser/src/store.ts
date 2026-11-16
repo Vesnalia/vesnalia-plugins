@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { KernelTarget, TargetOrigin } from "./types.js";
 
 interface TargetRow {
@@ -32,9 +32,9 @@ function toTarget(row: TargetRow): KernelTarget {
   };
 }
 
-export function createTargetStore(bb: BbPluginApi): TargetStore {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createTargetStore(alia: AliaPluginApi): TargetStore {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS targets (
       target_id TEXT PRIMARY KEY,
       thread_id TEXT,

@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import {
   Card,
@@ -402,7 +402,7 @@ export function LiveThroughputSection() {
         <div>
           <CardTitle className="text-base">Live throughput</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
-            Tokens BB has driven in the last {windowMinutes} minutes, as each
+            Tokens VesnALIA has driven in the last {windowMinutes} minutes, as each
             turn reports them
           </p>
         </div>
@@ -508,7 +508,7 @@ export function LiveThroughputSection() {
             ) : (
               <p className="text-sm text-muted-foreground">
                 No tokens reported in the last {windowMinutes} minutes. This
-                section counts work BB drives, so an agent run outside BB does
+                section counts work VesnALIA drives, so an agent run outside VesnALIA does
                 not appear here.
               </p>
             )}

@@ -16,8 +16,8 @@ interface Admitted {
 const seen = vi.hoisted(() => ({ inside: 0, admitted: [] as Admitted[], children: [] as Array<{ file: string; args: string[]; admitted: boolean }> }));
 
 // The real scheduler still admits every call; the wrapper notes what it was asked and whether a child starts inside its turn.
-vi.mock("@get-bb/plugin-sdk/host", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@get-bb/plugin-sdk/host")>();
+vi.mock("@vesnalia/plugin-sdk/host", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@vesnalia/plugin-sdk/host")>();
   const runVcs = actual.experimental_runVcsProcess;
   return {
     ...actual,
@@ -112,7 +112,7 @@ afterAll(() => {
 
 beforeEach(forget);
 
-describe("git through bb's VCS scheduler", () => {
+describe("git through VesnALIA's VCS scheduler", () => {
   it("runs Loom's engine reads at background priority with git's whole argv, -C first, and the call's signal", async () => {
     const repo = makeRepo();
     const { signal } = new AbortController();
@@ -176,7 +176,7 @@ describe("git through bb's VCS scheduler", () => {
   });
 });
 
-describe("gh through bb's VCS scheduler", () => {
+describe("gh through VesnALIA's VCS scheduler", () => {
   let savedPath: string | undefined;
   beforeAll(() => {
     savedPath = process.env.PATH;

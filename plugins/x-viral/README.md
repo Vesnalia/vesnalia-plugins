@@ -1,4 +1,4 @@
-# bb-plugin-x-viral
+# alia-plugin-x-viral
 
 Scores a draft X post against the open-source [X For You algorithm](https://github.com/xai-org/x-algorithm)
 and runs an autoresearch loop (propose edit → rescore → keep if better) to improve it.
@@ -13,7 +13,7 @@ and runs an autoresearch loop (propose edit → rescore → keep if better) to i
 ## Surfaces
 
 - Sidebar page **X Viral**: paste, score, autoresearch, copy the improved version.
-- CLI: `bb x-viral score "<text>" [--image --video --reply --followers N]`, `bb x-viral autoresearch "<text>"`, `bb x-viral weights`.
+- CLI: `alia x-viral score "<text>" [--image --video --reply --followers N]`, `alia x-viral autoresearch "<text>"`, `alia x-viral weights`.
 - Agent tools `x_viral_score` and `x_viral_autoresearch`, plus the `x-viral-autoresearch` skill that drives an LLM outer loop for semantic rewrites.
 
 ## Develop
@@ -22,6 +22,6 @@ and runs an autoresearch loop (propose edit → rescore → keep if better) to i
 npm install --include=dev
 npm test
 npm run typecheck
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```

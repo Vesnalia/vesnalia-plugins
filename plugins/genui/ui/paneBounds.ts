@@ -1,6 +1,6 @@
-// Where a block's full-screen view goes when BB shows threads side by side
+// Where a block's full-screen view goes when VesnALIA shows threads side by side
 // or stacked: over the pane holding the block, not the whole window. Read
-// from BB's split markup (`data-split-pane-id`); if BB renames it, views
+// from VesnALIA's split markup (`data-split-pane-id`); if VesnALIA renames it, views
 // cover the whole window again, as they do with one pane.
 import { type RefObject, useLayoutEffect, useState } from "react";
 
@@ -15,7 +15,7 @@ export interface Bounds {
 }
 
 /**
- * The BB split pane holding `anchor` while `active`, kept current as the
+ * The VesnALIA split pane holding `anchor` while `active`, kept current as the
  * pane is resized or the window changes; null with a single pane (the view
  * fills the window).
  */

@@ -1,4 +1,4 @@
-# bb-plugin-provider-retry-advanced
+# alia-plugin-provider-retry-advanced
 
 <!-- devkit:agents v1 -->
 <!-- managed by devkit v1: edit in https://github.com/neoromantic/devkit/blob/main/agents/AGENTS.shared.md -->
@@ -52,17 +52,17 @@ Use the project section's native commands for checks, offline tests and builds:
 
 ## Project
 
-A server-side BB plugin (TypeScript, Bun for tooling). BB loads `server.ts` through the built
-`dist/server.js`; `dist/` is committed because BB's Git installs need the built artifact.
+A server-side VesnALIA plugin (TypeScript, Bun for tooling). VesnALIA loads `server.ts` through the built
+`dist/server.js`; `dist/` is committed because VesnALIA's Git installs need the built artifact.
 
 - Install: `bun install --frozen-lockfile`
-- Check: `bun run check` (TypeScript 7, as upstream BB)
-- Test: `bun test` (offline; `test/fake-core.ts` restates BB core's retry and dispatch-hook rules)
-- Build: `bun run bundle` (official `bb-app@0.48.0` CLI; then replaces the
+- Check: `bun run check` (TypeScript 7, as upstream VesnALIA)
+- Test: `bun test` (offline; `test/fake-core.ts` restates VesnALIA core's retry and dispatch-hook rules)
+- Build: `bun run bundle` (official `alia-app@0.48.0` CLI; then replaces the
   checkout's absolute path in the source map). Commit `dist/` with every source change; CI does
-  not run BB.
+  not run VesnALIA.
 - `src/retry-policy.ts`, `src/retry-contract.ts`, `src/queued-retries.ts` and `src/diagnostics.ts`
-  are unchanged from upstream BB. Keep them so; record any change in `NOTICE`.
+  are unchanged from upstream VesnALIA. Keep them so; record any change in `NOTICE`.
 - Never retry, send to or stop real threads from tests. Tests use the fake core only.
 
 ### Release
@@ -70,4 +70,4 @@ A server-side BB plugin (TypeScript, Bun for tooling). BB loads `server.ts` thro
 1. Bump `version` in `package.json`, update `CHANGELOG.md` and README in the same PR.
 2. `bun run check && bun test && bun run bundle`; commit the rebuilt `dist/`.
 3. After green `ci` on `main`: tag `vX.Y.Z` and publish a GitHub Release with the changelog entry.
-   BB resolves `git:…@semver:^X.Y.Z` from these tags.
+   VesnALIA resolves `git:…@semver:^X.Y.Z` from these tags.

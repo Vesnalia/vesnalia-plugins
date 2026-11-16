@@ -39,7 +39,7 @@ const failure = (error: unknown, message: string): ConnectionState => error inst
 // Gateway `full` errors report capacity without agent startup retries.
 const MAX_AGENTS = 8;
 
-/** One human connection mirrored to visible panes; one isolated agent connection per bb thread. */
+/** One human connection mirrored to visible panes; one isolated agent connection per VesnALIA thread. */
 export class SessionManager {
   private human?: Session;
   private humanStarting?: Promise<Session>;

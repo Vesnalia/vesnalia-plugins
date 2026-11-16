@@ -2,7 +2,7 @@
 //
 // No component library: the page is a stack of tables and bars, and every
 // colour here is a host theme token (or a default Tailwind utility), so the
-// page follows whatever theme bb is wearing.
+// page follows whatever theme VesnALIA is wearing.
 import type { ReactNode } from "react";
 
 import { DANGER, WARN } from "../lib/limits";

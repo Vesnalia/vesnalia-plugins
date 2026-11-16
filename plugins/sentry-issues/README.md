@@ -1,6 +1,6 @@
-# Sentry Issues for bb
+# Sentry Issues for VesnALIA
 
-Read-only Sentry issue browser for bb. It adds a **Sentry Issues** sidebar
+Read-only Sentry issue browser for VesnALIA. It adds a **Sentry Issues** sidebar
 panel and fetches issues from one or more configured Sentry connections.
 
 ## Showcase
@@ -39,10 +39,10 @@ across accounts or projects.
 
 ```sh
 # From the directory that contains this checkout:
-bb plugin install ./bb-sentry-issues
+alia plugin install ./alia-sentry-issues
 
 # Or, from inside this checkout:
-bb plugin install .
+alia plugin install .
 ```
 
 Use **Edit connection** to add projects later without re-entering the token,
@@ -55,7 +55,7 @@ unavailable.
 **Test connection** validates the token's access to the organization and each
 configured project without returning or logging the token.
 
-Connection metadata is kept in the plugin store, while tokens remain in BB's
+Connection metadata is kept in the plugin store, while tokens remain in VesnALIA's
 protected secret storage; the managed secret backing field in plugin settings
 should not be edited directly. The settings and Issues views show whether a
 connection is not checked, healthy, partially failing, or unavailable,
@@ -87,14 +87,14 @@ fixed height. If an event list or detail endpoint is unavailable, the issue
 page keeps the latest summary and explains the fallback; selecting another
 recent event makes the same bounded detail request when supported.
 
-Triage requires a linked local BB project with a local checkout. The first
+Triage requires a linked local VesnALIA project with a local checkout. The first
 **Triage** action for an issue reopens its persisted linked thread; starting a
-new run is explicitly confirmed and preserves earlier links. Triage uses BB's
+new run is explicitly confirmed and preserves earlier links. Triage uses VesnALIA's
 `accept-edits` permission mode, and the confirmation explains that the host
 must approve filesystem changes. Related threads are stored in SQLite, shown
 on the issue page, and removed with the connection's cached artifacts.
 
-The BB composer also provides a native @ mention provider for cached Sentry
+The VesnALIA composer also provides a native @ mention provider for cached Sentry
 issues. Search is cache-backed to stay within the composer time budget; resolving
 a picked issue refreshes its read-only normalized context when possible and
 passes only bounded redacted data to the agent. No Sentry token is included.

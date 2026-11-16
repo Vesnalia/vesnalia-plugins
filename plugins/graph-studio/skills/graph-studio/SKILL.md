@@ -5,7 +5,7 @@ description: Design, change or run a Graph Studio flow in natural language — "
 
 # Graph Studio from the chat
 
-Graph Studio runs agent graphs: every node is a fresh BB thread (a `member`
+Graph Studio runs agent graphs: every node is a fresh VesnALIA thread (a `member`
 node uses a Crew member's existing thread instead), edges route on results,
 cycles are allowed. The user designs flows **here, in the chat**; the
 studio (panel → Edit, full screen) is where they review and fine-tune.
@@ -49,7 +49,7 @@ studio (panel → Edit, full screen) is where they review and fine-tune.
      sets those. The member keeps its memory across visits and runs, and no
      thread is created. Saving and starting are refused when Crew is not
      installed or the member is unknown in the project — fix the address
-     (`bb crew ps` lists them) rather than switching the node to `agent`.
+     (`alia crew ps` lists them) rather than switching the node to `agent`.
      The template `owner-check-loop` is the pattern (owner builds, check
      returns `verdict`, `fail` loops back, max 3 laps, then a human); clone it
      and replace `my-crew` with the crew's name.
@@ -79,9 +79,9 @@ in later replies — the run stays visible above the composer.
 ## On the command line
 
 ```sh
-bb graph-studio graphs
-bb graph-studio show <graph-id>
-bb graph-studio run <graph-id> "<task>"
-bb graph-studio export <graph-id> > flow.json
-bb graph-studio import flow.json
+alia graph-studio graphs
+alia graph-studio show <graph-id>
+alia graph-studio run <graph-id> "<task>"
+alia graph-studio export <graph-id> > flow.json
+alia graph-studio import flow.json
 ```

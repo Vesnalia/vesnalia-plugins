@@ -13,7 +13,7 @@ test("a run whose request is reached without output is quiet, even when an older
   expect(runResult(events(item(30, "reasoning"), item(29, "agentMessage", ""), request(25), item(10, "agentMessage", "Old")), 40)).toBeNull();
 });
 
-test("REPRO: a legacy manager message, which BB shows as assistant text, is a result; an empty one is not", () => {
+test("REPRO: a legacy manager message, which VesnALIA shows as assistant text, is a result; an empty one is not", () => {
   const manager = (text: string) => ({ type: "system/manager/user_message", createdAt: 30, data: { text } });
   expect(runResult(events(manager("Report"), request(20)), 40)).toBe(30);
   expect(runResult(events(manager(""), request(20)), 40)).toBeNull();
@@ -74,7 +74,7 @@ test("a child without a recorded result is never unread", () => {
   expect(rowAttention(thread, [thread], records()).unread).toBe(false);
 });
 
-test("BB's root unread stays, except for a run proven to write nothing", () => {
+test("VesnALIA's root unread stays, except for a run proven to write nothing", () => {
   const thread = root({ isUnread: true, latestAttentionAt: 500, indicator: "unread-success" });
   expect(rowAttention(thread, [thread], records())).toEqual(state(UNREAD, false, true));
   expect(rowAttention(thread, [thread], records({ threadId: "root", quietAttentionAt: 500 }))).toEqual(state(null, false, false, true));
@@ -86,21 +86,21 @@ test("a failure always shows the cross, with the dot over it when unread", () =>
   expect(rowAttention(thread, [thread], records()).status).toBe(FAILED);
 });
 
-test("busy, waiting and queued glyphs stay BB's; the dot goes over them", () => {
+test("busy, waiting and queued glyphs stay VesnALIA's; the dot goes over them", () => {
   for (const indicator of ["runtime", "waiting-for-input", "workflow", "queued-waiting"] as const) {
     const thread = child({ indicator });
     expect(rowAttention(thread, [thread], records({ resultAt: 200 }))).toEqual(state(null, false, true));
   }
 });
 
-test("REPRO: a collapsed parent's hidden failure is flagged even while BB shows its spinner or question", () => {
+test("REPRO: a collapsed parent's hidden failure is flagged even while VesnALIA shows its spinner or question", () => {
   for (const indicator of ["runtime", "waiting-for-input"] as const) {
     const parent = root({ indicator });
     expect(rowAttention(parent, [parent, child({ status: "error" })], records())).toEqual(state(COLLAPSED_FAILED, true, false, false, { working: 0, waiting: 0, failed: 1 }));
   }
 });
 
-test("REPRO: a hidden child's activity keeps BB's glyph; another child's unread result goes over it", () => {
+test("REPRO: a hidden child's activity keeps VesnALIA's glyph; another child's unread result goes over it", () => {
   for (const indicator of ["workflow", "background-agent", "background-command", "plan-mode", "goal", "runtime", "waiting-for-input"] as const) {
     const parent = root();
     expect(rowAttention(parent, [parent, child(), child({ id: "working", indicator })], records({ resultAt: 200 }))).toEqual(state(null, false, true));

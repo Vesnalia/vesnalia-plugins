@@ -107,7 +107,7 @@ describe("meaningfulShellTitle", () => {
   });
 
   it("drops a title that only restates the directory", () => {
-    const scope = at("Acme Storefront", "/tmp/bb-demo/acme-storefront");
+    const scope = at("Acme Storefront", "/tmp/alia-demo/acme-storefront");
     expect(meaningfulShellTitle("acme-storefront", scope)).toBeNull();
     // The shape this shell actually produces: directory and branch.
     expect(

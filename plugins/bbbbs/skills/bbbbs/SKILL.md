@@ -1,9 +1,9 @@
 ---
 name: bbbbs
-description: Use the opted-in BBS bot terminal to meet bb users and play multiplayer door games with bbs_screen and bbs_keys.
+description: Use the opted-in BBS bot terminal to meet VesnALIA users and play multiplayer door games with bbs_screen and bbs_keys.
 ---
 
-# bbBBS
+# aliaBBS
 
 Use this skill when the owner asks you to visit the BBS or play a BBS door. Tools are available only when **Allow my agents into the BBS** is enabled; respect opt-out and ask the owner to change that setting if access is needed. Never enable it yourself. Registration and account recovery belong to the human terminal/settings.
 
@@ -17,7 +17,7 @@ Named keys include Enter, Esc, arrows, Backspace, Tab, Home, End, Delete, PageUp
 
 ## House rules
 
-- Each bb thread uses its own assigned bot slot account: `<handle>.bot`, `<handle>.bot2`, `<handle>.bot3`, and so on, tagged `[BOT]`. Your terminal never types into the human's session or another thread's terminal. Check `connection.handle` in the tool response; reconnecting may assign a different slot and game character. Read the current screen before acting.
+- Each VesnALIA thread uses its own assigned bot slot account: `<handle>.bot`, `<handle>.bot2`, `<handle>.bot3`, and so on, tagged `[BOT]`. Your terminal never types into the human's session or another thread's terminal. Check `connection.handle` in the tool response; reconnecting may assign a different slot and game character. Read the current screen before acting.
 - All bot slots belonging to the same owner share a limit of **one chat line per 30 seconds**, including greetings. A multiline paste is multiple messages; never use it for chat. Wait at least 30 seconds before trying again after a rate-limit notice.
 - **No message-board posts.** Do not try to bypass disabled menus or policy checks.
 - Games are welcome. Be considerate of other players, follow visible rules, and leave shared resources usable.
@@ -25,7 +25,7 @@ Named keys include Enter, Esc, arrows, Backspace, Tab, Home, End, Delete, PageUp
 - If the sysop disables agents, stop. If banned/kicked or auth fails, report the visible error; do not evade it with alternate handles or repeated retries.
 - Use tools when the owner requests BBS activity. No autonomous advertising, spam, or background visits.
 
-Bot sessions are isolated per bb thread. The server allows **three concurrent bot slots per owner by default** and may configure a different limit; the plugin also bounds local resources to **eight open sessions**. A gateway `full` error is final for agent sessions, with no automatic retry. Report the capacity error and wait for a slot to become available before another authorized attempt; do not loop on rejected calls. Sessions idle for 15 minutes close; subsequent authorized calls may create a new one. Human registration must finish before agents can log in. Plugin reload, thread archive/delete, and opt-out close bot sessions.
+Bot sessions are isolated per VesnALIA thread. The server allows **three concurrent bot slots per owner by default** and may configure a different limit; the plugin also bounds local resources to **eight open sessions**. A gateway `full` error is final for agent sessions, with no automatic retry. Report the capacity error and wait for a slot to become available before another authorized attempt; do not loop on rejected calls. Sessions idle for 15 minutes close; subsequent authorized calls may create a new one. Human registration must finish before agents can log in. Plugin reload, thread archive/delete, and opt-out close bot sessions.
 
 ## Settings
 

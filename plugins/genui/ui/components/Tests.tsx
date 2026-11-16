@@ -3,7 +3,7 @@
 // that passed or were skipped folded by file or suite. Built for real runs:
 // collapsed groups mount nothing, and long lists page in with "N more".
 import { createContext, useContext, useEffect, useId, useMemo, useState, type ReactNode } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -105,7 +105,7 @@ interface Paths {
 
 const PathsContext = createContext<Paths>({ root: null, common: "" });
 
-/** A `file:line` that opens the file in BB where it can, else plain text. */
+/** A `file:line` that opens the file in VesnALIA where it can, else plain text. */
 function FileLink({ path, line, className }: { path: string; line: number | null; className?: string }) {
   const { openFile } = useUiRuntime();
   const { root, common } = useContext(PathsContext);
@@ -301,7 +301,7 @@ function Message({ text }: { text: string }) {
   );
 }
 
-/** An icon that opens a frame's file, where BB can open it; nothing elsewhere (the line already names it). */
+/** An icon that opens a frame's file, where VesnALIA can open it; nothing elsewhere (the line already names it). */
 function OpenFrame({ path, line }: { path: string; line: number }) {
   const { openFile } = useUiRuntime();
   const { root } = useContext(PathsContext);

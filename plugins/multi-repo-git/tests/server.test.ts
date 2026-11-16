@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.js";
 import type { RepositoryStatus, WorkspaceStatus } from "../contract.js";
 
@@ -58,8 +58,8 @@ function repository(
 
 describe("sidebar pagination settings", () => {
   it("accepts a bounded integer page size and rejects invalid settings", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "multi-repo-git" });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "multi-repo-git" });
+    await plugin(alia);
     await harness.behavior.setSettings({ chatsPerPage: 3 });
     for (const chatsPerPage of [0, -1, 1.5, 101]) {
       await expect(harness.behavior.setSettings({ chatsPerPage })).rejects.toThrow();
@@ -71,7 +71,7 @@ describe("sidebar pagination settings", () => {
 describe("workspace sidebar order", () => {
   it("updates the thread-list preferences, includes new children, and is idempotent", async () => {
     let order = ["pinned", "project:project-root", "project:ordinary", "threads"];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "multi-repo-git",
       sdk: {
         projects: { get: async ({ projectId }: { projectId: string }) => project(projectId) },
@@ -88,7 +88,7 @@ describe("workspace sidebar order", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("workspace_link_project", {
       parentProjectId: "project-root", childProjectId: "new-child", relativePath: "frontend",
     });
@@ -104,14 +104,14 @@ describe("workspace sidebar order", () => {
   });
 
   it("still returns relations and logs when preference synchronization fails", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "multi-repo-git",
       sdk: {
         projects: { get: async ({ projectId }: { projectId: string }) => project(projectId) },
         plugins: { callRpc: async () => { throw new Error("thread-list unavailable"); } },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("workspace_link_project", {
       parentProjectId: "project-root", childProjectId: "child", relativePath: "frontend",
     });
@@ -126,7 +126,7 @@ describe("workspace sidebar order", () => {
 describe("server environment routing", () => {
   it("targets only the resolved environment and keeps Git mutations repository-local", async () => {
     const hostCalls: Array<{ method: string; input: unknown; hostId: string }> = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "multi-repo-git",
       sdk: {
         threads: { get: async () => makeThreadResponse({ projectId: "project-root", environmentId: environment.id }) },
@@ -142,8 +142,8 @@ describe("server environment routing", () => {
         throw new Error(`Unexpected host method ${call.method}`);
       },
     });
-    const factory = vi.spyOn(bb.hosts, "experimental_client");
-    await plugin(bb);
+    const factory = vi.spyOn(alia.hosts, "experimental_client");
+    await plugin(alia);
     const clientCall = vi.spyOn(factory.mock.results[0]!.value, "call");
 
     await expect(harness.behavior.callRpc("workspace_status", { threadId: "thread-test" }))
@@ -194,7 +194,7 @@ describe("server environment routing", () => {
 
   it("projects explicit root members into the environment and reports missing members without fallback", async () => {
     let scannedPaths: string[] = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "multi-repo-git",
       sdk: {
         projects: {
@@ -218,7 +218,7 @@ describe("server environment routing", () => {
         throw new Error(`Unexpected host method ${call.method}`);
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("workspace_link_project", {
       parentProjectId: "project-root",
       childProjectId: "project-child",
@@ -253,7 +253,7 @@ describe("server environment routing", () => {
     let threadProjectId = "project-root";
     let scannedPaths: string[] = [];
     const childEnvironment = { ...environment, projectId: "project-child", path: "/work/child" };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "multi-repo-git",
       sdk: {
         projects: { get: async ({ projectId }: { projectId: string }) => project(projectId) },
@@ -269,7 +269,7 @@ describe("server environment routing", () => {
         throw new Error(`Unexpected host method ${call.method}`);
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("workspace_link_project", {
       parentProjectId: "project-root",
       childProjectId: "project-child",
@@ -288,10 +288,10 @@ describe("server environment routing", () => {
   });
 
   it("rejects threads without a workspace", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       sdk: { threads: { get: async () => makeThreadResponse({ environmentId: null }) } },
     });
-    await plugin(bb);
+    await plugin(alia);
     await expect(harness.behavior.callRpc("workspace_status", { threadId: "thread-test" }))
       .rejects.toThrow("no workspace environment");
     await harness.lifecycle.dispose();

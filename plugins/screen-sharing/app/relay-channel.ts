@@ -6,7 +6,7 @@
  *   reads every frame as RFB bytes (a `pong` happens to come out empty);
  * - send a burst of noVNC's messages as one frame, when asked (`gather`).
  *   noVNC sends each message as its own frame — a scroll step is two pointer
- *   events — and over bb's host link every frame the relay gets becomes a
+ *   events — and over VesnALIA's host link every frame the relay gets becomes a
  *   call to the Mac, with a bounded number in flight (shared/limits.ts). One
  *   wheel event's steps go as one frame, so a scroll costs one call per event.
  *

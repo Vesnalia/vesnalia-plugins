@@ -1,4 +1,4 @@
-import { experimental_usePluginId, type ExperimentalBadge, type ExperimentalPageTitle, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, type ExperimentalBadge, type ExperimentalPageTitle, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { AREA_META, INBOX_TAB_LABELS, INSIGHTS_TAB_LABELS, PANEL_PATH, SOURCE_META } from "./constants";
 import { useShuttleQuery } from "./data";
 import { keyLabel } from "./format";
@@ -42,7 +42,7 @@ export function useShuttlePageTitle({ subPath }: PluginNavPanelProps): Experimen
   const crumbs = crumbsOf(route, boardName);
   const key = route.view === "insights" || route.view === "boards" ? null : route.key;
   if (key === null && crumbs.length === 1) return { title: crumbs[0]!.label };
-  // bb draws each breadcrumb at full width, so on a phone a trail runs over the header's buttons; a title is shortened to fit.
+  // VesnALIA draws each breadcrumb at full width, so on a phone a trail runs over the header's buttons; a title is shortened to fit.
   if (phone) return { title: key === null ? crumbs[crumbs.length - 1]!.label : keyLabel(key) };
   const to = (target: Route) => {
     const path = formatRoute(target);

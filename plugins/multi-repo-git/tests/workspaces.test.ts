@@ -50,7 +50,7 @@ describe("workspace project links", () => {
   it.each([
     ["pinned", "projects", "threads"],
     ["pinned", "projects", "project:root", "project:backend", "threads"],
-  ])("replaces the legacy projects aggregate before BB expands it: %j", (...order) => {
+  ])("replaces the legacy projects aggregate before VesnALIA expands it: %j", (...order) => {
     const links = [{ parentProjectId: "root", childProjectId: "backend", position: 0 }];
     const next = arrangeWorkspaceSectionOrder(order, links);
     expect(next).toEqual(["pinned", "project:root", "project:backend", "threads"]);

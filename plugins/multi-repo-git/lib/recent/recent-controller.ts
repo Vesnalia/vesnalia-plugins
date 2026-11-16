@@ -41,7 +41,7 @@ export class RecentController {
       else {
         this.revision++; this.request?.abort();
         if (event.state === "connecting" && !this.hasConnected) this.emit({ status: "loading", rows: [] });
-        else this.emit({ status: "error", rows: [], message: "Disconnected from BB. The list could not be verified." });
+        else this.emit({ status: "error", rows: [], message: "Disconnected from VesnALIA. The list could not be verified." });
       }
     } }));
     this.cleanup.push(this.sdk.subscribe({ event: "thread:changed", callback: event => {

@@ -1,30 +1,30 @@
-// origin(): the Connect status RPC → BB_APP_URL → the loopback origin (DESIGN §C.3, D-bb-16); ownOrigins()
+// origin(): the Connect status RPC → ALIA_APP_URL → the loopback origin (DESIGN §C.3, D-alia-16); ownOrigins()
 // (§C.5). Only a remote answer is cached, so a link is never stale long after Connect comes up.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { asRecord } from "../provider/errors.ts";
 
 const passThrough = { parse: (value: unknown) => value } as never;
 
-export function createOrigin(bb: BbPluginApi, cacheMs = 30_000, now: () => number = Date.now): () => Promise<string | null> {
+export function createOrigin(alia: AliaPluginApi, cacheMs = 30_000, now: () => number = Date.now): () => Promise<string | null> {
   let cached: { at: number; origin: string } | null = null;
   return async () => {
     if (cached && now() - cached.at < cacheMs) return cached.origin;
-    const remote = (await connectOrigin(bb)) ?? appUrlOrigin(bb);
+    const remote = (await connectOrigin(alia)) ?? appUrlOrigin(alia);
     cached = remote ? { at: now(), origin: remote } : null;
-    return remote ?? loopbackOrigin(bb); // DR-29, 04 R6.7: the loopback URL where it reports none
+    return remote ?? loopbackOrigin(alia); // DR-29, 04 R6.7: the loopback URL where it reports none
   };
 }
 
-export async function connectStatus(bb: BbPluginApi): Promise<Record<string, unknown> | null> {
+export async function connectStatus(alia: AliaPluginApi): Promise<Record<string, unknown> | null> {
   try {
-    return asRecord(await bb.sdk.plugins.callRpc({ pluginId: "connect", method: "status", input: null, outputSchema: passThrough }));
+    return asRecord(await alia.sdk.plugins.callRpc({ pluginId: "connect", method: "status", input: null, outputSchema: passThrough }));
   } catch {
     return null; // Connect absent, disabled or unpaired: a normal local-only answer
   }
 }
 
-export async function connectOrigin(bb: BbPluginApi): Promise<string | null> {
-  const status = await connectStatus(bb);
+export async function connectOrigin(alia: AliaPluginApi): Promise<string | null> {
+  const status = await connectStatus(alia);
   return status && status.state === "connected" && typeof status.url === "string" ? originOf(status.url) : null;
 }
 
@@ -34,19 +34,19 @@ export function connectPortShareOrigins(status: Record<string, unknown> | null):
   return (Array.isArray(ports) ? ports : []).map((p) => asRecord(p)?.url).filter((u): u is string => typeof u === "string").map(originOf).filter((o): o is string => o !== null);
 }
 
-export function appUrlOrigin(bb: BbPluginApi): string | null {
-  return originOf(bb.server.experimental_appUrl);
+export function appUrlOrigin(alia: AliaPluginApi): string | null {
+  return originOf(alia.server.experimental_appUrl);
 }
 
-export function loopbackOrigin(bb: BbPluginApi): string | null {
+export function loopbackOrigin(alia: AliaPluginApi): string | null {
   try {
-    return originOf(bb.server.loopbackBaseUrl); // bind-gated: read inside the call, never at load
+    return originOf(alia.server.loopbackBaseUrl); // bind-gated: read inside the call, never at load
   } catch {
     return null;
   }
 }
 
-/** The loopback origin under each name the same server answers to: `127.0.0.1`, `localhost`, `[::1]` (BB-8). */
+/** The loopback origin under each name the same server answers to: `127.0.0.1`, `localhost`, `[::1]` (ALIA-8). */
 export function loopbackAliases(origin: string | null): string[] {
   if (!origin) return [];
   try {
@@ -57,11 +57,11 @@ export function loopbackAliases(origin: string | null): string[] {
   }
 }
 
-export function createOwnOrigins(bb: BbPluginApi): () => Promise<string[]> {
+export function createOwnOrigins(alia: AliaPluginApi): () => Promise<string[]> {
   return async () => {
-    const status = await connectStatus(bb);
+    const status = await connectStatus(alia);
     const connect = status && status.state === "connected" && typeof status.url === "string" ? originOf(status.url) : null;
-    return [...new Set([...loopbackAliases(loopbackOrigin(bb)), appUrlOrigin(bb), connect, ...connectPortShareOrigins(status)].filter((o): o is string => o !== null))];
+    return [...new Set([...loopbackAliases(loopbackOrigin(alia)), appUrlOrigin(alia), connect, ...connectPortShareOrigins(status)].filter((o): o is string => o !== null))];
   };
 }
 

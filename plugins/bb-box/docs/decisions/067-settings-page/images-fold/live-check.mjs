@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:7801";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:7801";
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 mkdirSync(shots, { recursive: true });
 
@@ -25,7 +25,7 @@ async function check(name, run) {
 }
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -33,7 +33,7 @@ async function rpc(method, input = null) {
 
 const browser = await chromium.launch();
 async function open(page, hash) {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   const view = page.locator(hash.startsWith("#backend/") ? "[data-settings-view^='#backend/']" : `[data-settings-view='${hash || "#"}']`);
   const skip = page.getByRole("button", { name: "Skip setup" });
   for (let tries = 0; tries < 3; tries += 1) {

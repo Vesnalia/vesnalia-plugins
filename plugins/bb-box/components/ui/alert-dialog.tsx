@@ -37,7 +37,7 @@ const AlertDialogContent = React.forwardRef<
       ref={ref}
       {...usePortalScopeProps()}
       className={cn(
-        // The motion is BB's own dialogs' (shared-ui's DialogContent): a fade with a slight scale from the centre, 200 ms,
+        // The motion is VesnALIA's own dialogs' (shared-ui's DialogContent): a fade with a slight scale from the centre, 200 ms,
         // and the same on close. shadcn's extra slides (from the left half and the top 48%) are left out: they were a
         // Tailwind v3 workaround for the -50% centring, and on v4's separate `translate` they made the box fly in
         // diagonally. (Their class names are not spelled here: Tailwind scans comments too, and would emit them.)

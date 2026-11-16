@@ -67,7 +67,7 @@ export function AgentToolsSettings() {
     <SectionTooltips>
       <div className="space-y-2">
         <p className="px-3 text-xs leading-relaxed text-muted-foreground">
-          Dedicated tools are offered in every session. Tools reachable through cua_call cost no prompt space until an agent asks for them. Off tools are refused everywhere, cua_call and <code>bb cua call</code> included. This decides what agents are offered; it is not a sandbox for agents that can run a shell.
+          Dedicated tools are offered in every session. Tools reachable through cua_call cost no prompt space until an agent asks for them. Off tools are refused everywhere, cua_call and <code>alia cua call</code> included. This decides what agents are offered; it is not a sandbox for agents that can run a shell.
         </p>
         {unreviewed.length > 0 ? (
           <p className="px-3 text-xs leading-relaxed text-muted-foreground" data-unreviewed-tools>

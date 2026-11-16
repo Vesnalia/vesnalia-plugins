@@ -1,6 +1,6 @@
 /* No rule here depends on a particular width: rows wrap and share space on their own, in a wide panel and on a phone alike. */
 .nf-trigger{box-sizing:border-box;block-size:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--foreground);padding:0 8px;font:inherit;font-size:12px;white-space:nowrap;cursor:pointer}
-/* The panel is a size container only for BB's own Markdown tables, which size themselves in container units; no rule here queries it. */
+/* The panel is a size container only for ALIA's own Markdown tables, which size themselves in container units; no rule here queries it. */
 .nf-panel{container-type:inline-size;min-inline-size:0;color:var(--foreground);font-size:13px;overflow-wrap:break-word}
 .nf-panel :is(button,[role="button"],textarea,input):focus-visible,.nf-trigger:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .nf-top{display:flex;flex-wrap:wrap;align-items:start;gap:8px 12px;padding-block-end:14px;border-block-end:1px solid var(--border-seam)}

@@ -1,12 +1,12 @@
-// Threads: live status of BB threads (project_threads): the reply's thread's
+// Threads: live status of VesnALIA threads (project_threads): the reply's thread's
 // subthreads, or the ids the spec names (only threads of the same project; any
 // other id says it isn't found). Each row says what the thread is doing: its
 // status (an idle parent of running workers waits on them), the question or
 // approval it waits on, and its latest message (two lines, expandable). A row
-// opens the thread in BB. It polls, with backoff, only while visible and while
+// opens the thread in VesnALIA. It polls, with backoff, only while visible and while
 // a thread is running or waiting on running workers.
 import { useMemo, useState } from "react";
-import { experimental_ProviderIcon as ProviderIcon, Markdown, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon, Markdown, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -168,7 +168,7 @@ function ThreadList({ view, now }: { view: ThreadsView; now: number }) {
   );
 }
 
-/** BB's glyph per kind of thing a thread waits on the user for. */
+/** VesnALIA's glyph per kind of thing a thread waits on the user for. */
 const PENDING_ICON: Record<PendingAsk["kind"], string> = {
   question: "MessageQuestion",
   approval: "SecurityCheck",
@@ -185,7 +185,7 @@ const PENDING_VERB: Record<PendingAsk["kind"], string> = {
 };
 
 function ThreadRow({ thread, now }: { thread: ThreadInfo; now: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rise = useEntrance<HTMLLIElement>(RISE);
   const waiting = waitsOnWorkers(thread);
   const tone = waiting ? "info" : statusTone(thread);
@@ -296,7 +296,7 @@ function PendingCard({ pending, now, onOpen }: { pending: PendingAsk; now: numbe
   );
 }
 
-/** The thread's latest message: two lines of plain text; expanded, the message as BB renders it. */
+/** The thread's latest message: two lines of plain text; expanded, the message as VesnALIA renders it. */
 function LatestMessage({ threadId, message, onOpen }: { threadId: string; message: LastMessage; onOpen: () => void }) {
   const [expanded, setExpanded] = usePersistedState(`threads:message:${threadId}`, false, (stored) => (typeof stored === "boolean" ? stored : null));
   const { outer, inner } = useSmoothHeight<HTMLDivElement, HTMLDivElement>();

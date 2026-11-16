@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import hostEntry from "../host";
 import { restrictedGitBin } from "./restricted-git";
@@ -1047,7 +1047,7 @@ describe("ghTransient", () => {
 describe("host entry", () => {
   const harness = experimental_createHostEntryHarness(hostEntry, { experimental_paths: { dataDir: join(tmpdir(), "loom-host-entry-data"), tempDir: tmpdir() } });
 
-  it("lets bb send again only the quick local reads that change nothing, so a new method that writes, or a slow forge read, is not retried", () => {
+  it("lets VesnALIA send again only the quick local reads that change nothing, so a new method that writes, or a slow forge read, is not retried", () => {
     const retryable = Object.entries(hostContract as unknown as Record<string, { experimental_retryable?: boolean }>)
       .filter(([, method]) => method.experimental_retryable === true)
       .map(([name]) => name)
@@ -1579,7 +1579,7 @@ describe("mergeOnto", () => {
   });
 });
 
-describe("a checkout in a subdirectory of its repository, as a bb project in a monorepo is", () => {
+describe("a checkout in a subdirectory of its repository, as a VesnALIA project in a monorepo is", () => {
   const harness = experimental_createHostEntryHarness(hostEntry, { experimental_paths: { dataDir: join(tmpdir(), "loom-host-entry-data"), tempDir: tmpdir() } });
   // As LANE-17 had: the project is areas/infra/routing/nrm, and the ticket and the commit it takes both change a file outside it.
   const monorepo = () => {
@@ -2308,7 +2308,7 @@ describe("carrying a commit to the project's machine: exportChanges, readBlob, i
     return { result, ranges };
   }
 
-  it("exports and imports through a checkout that is a subdirectory of its repository, as a bb project in a monorepo is", async () => {
+  it("exports and imports through a checkout that is a subdirectory of its repository, as a VesnALIA project in a monorepo is", async () => {
     const { clone } = origin();
     const laptop = clone();
     const worker = clone();

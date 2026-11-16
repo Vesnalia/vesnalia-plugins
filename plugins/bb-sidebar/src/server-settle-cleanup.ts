@@ -166,7 +166,7 @@ export function createServerSettleCleanup(
     let stoppedRuntime = false;
     try {
       if (!(await canReclaim())) return { ...EMPTY_RECLAIM };
-      await ctx.bb.sdk.threads.stop({ threadId });
+      await ctx.alia.sdk.threads.stop({ threadId });
       stoppedRuntime = true;
     } catch {
       // A thread with no loaded runtime is the common case, not an error.
@@ -174,7 +174,7 @@ export function createServerSettleCleanup(
     let closedTerminals = 0;
     let keptTerminals = 0;
     try {
-      const { sessions } = await ctx.bb.sdk.terminals.list({
+      const { sessions } = await ctx.alia.sdk.terminals.list({
         scope: { kind: "thread", threadId },
       });
       const plan = planTerminalReclaim(sessions);
@@ -182,7 +182,7 @@ export function createServerSettleCleanup(
       for (const terminalId of plan.close) {
         try {
           if (!(await canReclaim())) break;
-          await ctx.bb.sdk.terminals.close({ terminalId, mode: "if-clean" });
+          await ctx.alia.sdk.terminals.close({ terminalId, mode: "if-clean" });
           closedTerminals += 1;
         } catch {
           // Someone typed into it between the list and the close.
@@ -193,7 +193,7 @@ export function createServerSettleCleanup(
     }
     return { closedTerminals, keptTerminals, stoppedRuntime };
   };
-  ctx.bb.onDispose(() => cleanupPlans.clear());
+  ctx.alia.onDispose(() => cleanupPlans.clear());
 
   const handlers = {
     async previewSettledCleanup({ threadIds }) {
@@ -217,7 +217,7 @@ export function createServerSettleCleanup(
           if (protection) {
             // Say why live terminals stay open. A quiet thread needs no line.
             try {
-              const { sessions } = await ctx.bb.sdk.terminals.list({ scope: { kind: "thread", threadId } });
+              const { sessions } = await ctx.alia.sdk.terminals.list({ scope: { kind: "thread", threadId } });
               const live = sessions.filter(
                 (session) =>
                   session.threadId === threadId && (session.status === "running" || session.status === "starting"),
@@ -247,7 +247,7 @@ export function createServerSettleCleanup(
           }
           const terminalIds: string[] = [];
           try {
-            const { sessions } = await ctx.bb.sdk.terminals.list({ scope: { kind: "thread", threadId } });
+            const { sessions } = await ctx.alia.sdk.terminals.list({ scope: { kind: "thread", threadId } });
             terminalIds.push(
               ...sessions
                 .filter(
@@ -330,7 +330,7 @@ export function createServerSettleCleanup(
           const plannedThread = plannedById.get(threadId)!;
           if (plannedThread.terminalIds.length > 0) {
             try {
-              const { sessions } = await ctx.bb.sdk.terminals.list({ scope: { kind: "thread", threadId } });
+              const { sessions } = await ctx.alia.sdk.terminals.list({ scope: { kind: "thread", threadId } });
               const current = new Map(sessions.map((session) => [session.id, session]));
               for (const terminalId of plannedThread.terminalIds) {
                 const latestWorkspace = await threadPortActions.getThreadWorkspace({ threadId });
@@ -364,7 +364,7 @@ export function createServerSettleCleanup(
                   continue;
                 }
                 try {
-                  await ctx.bb.sdk.terminals.close({ terminalId, mode: "force" });
+                  await ctx.alia.sdk.terminals.close({ terminalId, mode: "force" });
                   result.closedTerminals += 1;
                 } catch (error) {
                   result.failed.push({

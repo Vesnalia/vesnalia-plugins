@@ -85,7 +85,7 @@ describe("bot profile", () => {
     expect((await harness.behavior.fetchHttp("GET", "/bot/avatar-preview")).status).toBe(400);
   });
 
-  it("bb meetings bot shows and changes the profile; --avatar reads a file on the server machine", async () => {
+  it("alia meetings bot shows and changes the profile; --avatar reads a file on the server machine", async () => {
     const { harness, fake } = await load();
     const shown = await harness.behavior.runCli(["bot"]);
     expect(shown.stdout).toContain("Bot name: Notetaker");

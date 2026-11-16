@@ -120,7 +120,7 @@ export async function startFixture(): Promise<Fixture> {
 }
 
 const CHROME_CANDIDATES = [
-  process.env.BB_BROWSER_TOOLS_CHROME,
+  process.env.ALIA_BROWSER_TOOLS_CHROME,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "/Applications/Chromium.app/Contents/MacOS/Chromium",
   "/usr/bin/google-chrome",
@@ -134,6 +134,6 @@ export function chromeExecutablePath(): string {
     if (existsSync(candidate)) return candidate;
   }
   throw new Error(
-    "Chrome is required for browser integration tests (set BB_BROWSER_TOOLS_CHROME to its executable)",
+    "Chrome is required for browser integration tests (set ALIA_BROWSER_TOOLS_CHROME to its executable)",
   );
 }

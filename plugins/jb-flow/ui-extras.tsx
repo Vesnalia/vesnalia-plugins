@@ -6,8 +6,8 @@ import { inWorkspace } from "./workspaces";
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
-import { experimental_useSidebarThreads as useSidebarThreads, useBbNavigate, useComposers, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { JsonValue, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads as useSidebarThreads, useAliaNavigate, useComposers, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { JsonValue, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { PrStatus } from "./prs";
 import { PR_ATTENTION_RANK } from "./palette-model";
 import type { FlowState, rpcContract } from "./server";
@@ -51,7 +51,7 @@ export function prGlyph(pr: Pick<ThreadPr, "state">): GlyphName {
 
 export const attentionLabel = (attention: string) => attention.replace(/_/g, " ");
 
-/** Merges the plugin's created-PR list with bb's branch PR, worst first. */
+/** Merges the plugin's created-PR list with VesnALIA's branch PR, worst first. */
 export function threadPrs(
   created: readonly PrStatus[] | undefined,
   branch: { number: number; title: string; url: string; state: string; attention: string } | null,
@@ -413,7 +413,7 @@ export function HeaderStatusStrip({
   branchPr: Parameters<typeof threadPrs>[1];
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const now = useNow();
   if (state === null) return null;
   const prs = threadPrs(state.threadPrs[threadId], branchPr);
@@ -560,7 +560,7 @@ export function YourMoveSection({ lead = null }: { lead?: ReactNode } = {}) {
   const selectedWorkspace = useSelectedWorkspace();
   const { threads: workspaceThreads } = useSidebarThreads();
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [items, setItems] = useState<Array<{ threadId: string; title: string; since: number; ask: string }> | null>(null);
   const [showAll, setShowAll] = useState(false);
   const load = useCallback(() => {
@@ -637,7 +637,7 @@ const shortAge = (ms: number) => {
   return hours < 24 ? `${hours}h` : `${Math.round(hours / 24)}d`;
 };
 
-// BB hands homepage sections the project from the URL, which is null on the
+// VesnALIA hands homepage sections the project from the URL, which is null on the
 // global New Thread page. The project picked in the composer lives in the
 // new-thread composer's scope.
 function useComposeProject(fallback: string | null): string | null {

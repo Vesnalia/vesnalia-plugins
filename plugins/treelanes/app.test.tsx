@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   loadPluginApp,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { STAGES } from "./workflow";
 
 describe("Board panel", () => {
@@ -63,7 +63,7 @@ describe("Board panel", () => {
       await slot.findByRole("button", { name: "Root work" }),
     );
 
-    const chat = await slot.findByTestId("bb-thread-chat");
+    const chat = await slot.findByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe("thread-root");
     expect(chat.getAttribute("data-variant")).toBe("compact");
 
@@ -84,7 +84,7 @@ describe("Board panel", () => {
     });
 
     fireEvent.click(slot.getByRole("button", { name: "Close thread panel" }));
-    expect(slot.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(slot.queryByTestId("alia-thread-chat")).toBeNull();
 
     fireEvent.click(
       slot.getByRole("button", { name: "Review changes in board-worktree" }),
@@ -96,7 +96,7 @@ describe("Board panel", () => {
     expect(
       JSON.parse(
         window.localStorage.getItem(
-          "bb.thread.fixedPanelTabsState-thread-child-1",
+          "alia.thread.fixedPanelTabsState-thread-child-1",
         ) ?? "null",
       ),
     ).toMatchObject({
@@ -291,7 +291,7 @@ describe("Board panel", () => {
       },
     );
 
-    const composer = await pageSlot.findByTestId("bb-new-thread-composer");
+    const composer = await pageSlot.findByTestId("alia-new-thread-composer");
     expect(composer.getAttribute("data-default-project-id")).toBe("project-one");
     expect(composer.getAttribute("data-default-provider-id")).toBe(
       "claude-code",
@@ -303,10 +303,10 @@ describe("Board panel", () => {
       JSON.stringify({ type: "reuse", environmentId: "environment-one" }),
     );
 
-    fireEvent.change(pageSlot.getByTestId("bb-new-thread-composer-input"), {
+    fireEvent.change(pageSlot.getByTestId("alia-new-thread-composer-input"), {
       target: { value: "Review this worktree" },
     });
-    fireEvent.click(pageSlot.getByTestId("bb-new-thread-composer-submit"));
+    fireEvent.click(pageSlot.getByTestId("alia-new-thread-composer-submit"));
 
     await waitFor(() =>
       expect(pageSlot.inspection.rpcCalls).toContainEqual({

@@ -1,5 +1,5 @@
 import { memo, useId } from "react";
-import { UrlLink, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { GUIDE_STOPPED, type ReviewItem } from "../lib/review-state";
 import { Skeleton } from "./ui/skeleton";
 import { Icon } from "./ui/icon";
@@ -71,7 +71,7 @@ export const ReviewSkeleton = memo(function ReviewSkeleton({ review, onBack, onS
 ReviewSkeleton.displayName = "ReviewSkeleton";
 
 function BuildingGuide({ review, onBack, onStop, stopping }: { review: ReviewItem; onBack: () => void; onStop?: () => void; stopping: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pinnable = useThreadListReviews() === true;
   return (
     <div className="@container/skeleton flex h-full min-h-0 min-w-0 flex-col bg-background">
@@ -106,7 +106,7 @@ function BuildingGuide({ review, onBack, onStop, stopping }: { review: ReviewIte
  * failed when it's known, and the way on: Try again, or Back to your reviews when `primary` is "back", and the PR on GitHub.
  * A guide you stopped says "Guide stopped", with Build the guide; one waiting for its writer's machine says so.
  */
-export const ReviewError = memo(function ReviewError({ review, title = "Couldn’t build the guide", message = "The guide writer stopped before it finished. Check your coding agent in BB’s Settings, then try again.", onRetry, onBack, busy = false, primary = "retry" }: {
+export const ReviewError = memo(function ReviewError({ review, title = "Couldn’t build the guide", message = "The guide writer stopped before it finished. Check your coding agent in VesnALIA’s Settings, then try again.", onRetry, onBack, busy = false, primary = "retry" }: {
   review?: ReviewItem;
   title?: string;
   message?: string;
@@ -115,7 +115,7 @@ export const ReviewError = memo(function ReviewError({ review, title = "Couldn�
   busy?: boolean;
   primary?: "retry" | "back";
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pinnable = useThreadListReviews() === true;
   // You stopped its guide: nothing went wrong, and building it is the way on.
   const stopped = review?.status === "error" && review.guideError?.text === GUIDE_STOPPED;

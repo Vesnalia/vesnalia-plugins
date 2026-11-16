@@ -1,17 +1,17 @@
-// bb-plugin-agent-roles — backend entry.
+// alia-plugin-agent-roles — backend entry.
 //
 // Roles are reusable specialist profiles: instructions plus a default
 // provider/model/reasoning/permission tuple. Teams are DAGs of role nodes; a
-// team run starts every node whose inputs are done, as ordinary BB threads,
+// team run starts every node whose inputs are done, as ordinary VesnALIA threads,
 // feeding input outputs into the node's prompt. All
-// state lives in this plugin's SQLite database; threads are plain BB threads
+// state lives in this plugin's SQLite database; threads are plain VesnALIA threads
 // parented to the invoking thread when there is one.
 //
-// Surfaces: the Agent roles page (app.tsx), the `bb role` CLI (what agents
+// Surfaces: the Agent roles page (app.tsx), the `alia role` CLI (what agents
 // use), and the skill in skills/agent-roles.
 import { randomUUID } from "node:crypto";
 import { watch as fsWatch, type FSWatcher } from "node:fs";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   PERMISSION_MODES,
@@ -26,7 +26,7 @@ import {
 } from "./shared";
 import {
   ROLE_LABEL_PREFIX,
-  makeBbTasksRunner,
+  makeAliaTasksRunner,
   makeTaskOps,
   makeTasksCli,
   resolveAgentsDir,
@@ -376,10 +376,10 @@ const SEED_TEAMS: z.input<typeof teamInputSchema>[] = [
 // Plugin
 // ---------------------------------------------------------------------------
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     syncEnabled: { type: "boolean", label: "Sync Claude agents and Tasks presets", description: "Opt in to reading and writing local agent files and Tasks presets.", default: false },
     stepTimeoutMinutes: {
       type: "number",
@@ -396,7 +396,7 @@ export default async function plugin(bb: BbPluginApi) {
     syncIntervalSeconds: {
       type: "number",
       label: "Sync interval (seconds)",
-      description: "How often to reconcile roles with the agents directory and Tasks presets. 0 disables the periodic sync (manual `bb role sync` still works).",
+      description: "How often to reconcile roles with the agents directory and Tasks presets. 0 disables the periodic sync (manual `alia role sync` still works).",
       default: 30,
     },
     syncDefaultProvider: { type: "string", label: "Preset default provider", description: "Used for a role that inherits its provider.", default: "claude-code" },
@@ -406,15 +406,15 @@ export default async function plugin(bb: BbPluginApi) {
     tasksProject: {
       type: "string",
       label: "Tasks project for role jobs",
-      description: "Prefix or id of the Tasks project where `bb role spawn` files its jobs. Empty = the first Tasks project.",
+      description: "Prefix or id of the Tasks project where `alia role spawn` files its jobs. Empty = the first Tasks project.",
       default: "",
     },
-    bbBinary: { type: "string", label: "bb CLI path", description: "Leave empty to use $BB_CLI or the app bundle. The Tasks plugin is reached through `bb tasks preset`.", default: "" },
+    aliaBinary: { type: "string", label: "VesnALIA CLI path", description: "Leave empty to use $ALIA_CLI or the app bundle. The Tasks plugin is reached through `alia tasks preset`.", default: "" },
   });
 
   // ------------------------------------------------------------------ storage
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS roles (
        id TEXT PRIMARY KEY,
        slug TEXT NOT NULL UNIQUE,
@@ -539,7 +539,7 @@ export default async function plugin(bb: BbPluginApi) {
   function findRole(ref: string): Role | null {
     return roleBySlug(ref) ?? getRole(ref) ?? listRoles().find((r) => r.name.toLowerCase() === ref.trim().toLowerCase()) ?? null;
   }
-  const publishRoles = () => bb.realtime.publish(ROLES_CHANGED, { at: Date.now() });
+  const publishRoles = () => alia.realtime.publish(ROLES_CHANGED, { at: Date.now() });
 
   function createRole(input: z.infer<typeof roleInputSchema>): Role {
     if (roleBySlug(input.slug)) throw new Error(`Role slug "${input.slug}" already exists`);
@@ -624,14 +624,14 @@ export default async function plugin(bb: BbPluginApi) {
   // Seed once, on an empty database.
   if (listRoles().length === 0) {
     for (const r of SEED_ROLES) createRole(roleInputSchema.parse(r));
-    bb.log.info("seeded default roles");
+    alia.log.info("seeded default roles");
   }
   if (listTeams().length === 0) {
     try {
       for (const t of SEED_TEAMS) createTeam(teamInputSchema.parse(t));
-      bb.log.info("seeded default teams");
+      alia.log.info("seeded default teams");
     } catch (cause) {
-      bb.log.warn(`default teams not seeded: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`default teams not seeded: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
   }
 
@@ -677,7 +677,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const s = await settings.get();
       if (!s.syncEnabled) return { at: Date.now(), actions: [], problems: [], agentsDir: "" };
-      const tasks = makeTasksCli(makeBbTasksRunner({ serverUrl: () => bb.server.loopbackBaseUrl, bbBinary: String(s.bbBinary ?? "") }));
+      const tasks = makeTasksCli(makeAliaTasksRunner({ serverUrl: () => alia.server.loopbackBaseUrl, aliaBinary: String(s.aliaBinary ?? "") }));
       const report = await runSync({
         agentsDir: resolveAgentsDir(String(s.agentsDir ?? "")),
         defaults: {
@@ -689,14 +689,14 @@ export default async function plugin(bb: BbPluginApi) {
         roles: roleSide,
         store: syncStore,
         tasks,
-        log: (m) => bb.log.info(`sync ${m}`),
+        log: (m) => alia.log.info(`sync ${m}`),
       });
-      for (const p of report.problems) bb.log.warn(`sync: ${p}`);
+      for (const p of report.problems) alia.log.warn(`sync: ${p}`);
       lastSync = report;
       return report;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      bb.log.warn(`sync failed: ${message}`);
+      alia.log.warn(`sync failed: ${message}`);
       lastSync = { at: Date.now(), actions: [], problems: [message], agentsDir: "" };
       return lastSync;
     } finally {
@@ -706,7 +706,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   let agentsWatcher: FSWatcher | null = null;
-  bb.background.service("sync", {
+  alia.background.service("sync", {
     async start(signal) {
       // First reconciliation shortly after load, then periodic polling (the
       // Tasks plugin has no change events we can subscribe to) plus a
@@ -720,9 +720,9 @@ export default async function plugin(bb: BbPluginApi) {
         const dir = resolveAgentsDir(String(current.agentsDir ?? ""));
         try {
           agentsWatcher = fsWatch(dir, { persistent: false }, () => scheduleSync(600));
-          agentsWatcher.on("error", (cause) => bb.log.warn(`agents watcher: ${cause.message}`));
+          agentsWatcher.on("error", (cause) => alia.log.warn(`agents watcher: ${cause.message}`));
         } catch (cause) {
-          bb.log.warn(`agents watcher not started: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`agents watcher not started: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       };
       // The directory may not exist until the first sync creates it.
@@ -747,7 +747,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ------------------------------------------------------------------ spawning
   // The role's instructions never travel in the chat: they are injected as
-  // hidden dynamic instructions (bb.agents.configure) keyed by the thread's
+  // hidden dynamic instructions (alia.agents.configure) keyed by the thread's
   // plugin metadata, so the first message is just the task.
   const threadStmts = {
     insert: db.prepare(`INSERT OR REPLACE INTO role_threads (thread_id, role_slug, task_key, last_report_hash, created_at) VALUES (?, ?, ?, NULL, ?)`),
@@ -759,7 +759,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function spawnRole(input: z.infer<typeof spawnInputSchema>): Promise<string> {
     const role = findRole(input.roleSlug);
-    if (!role) throw new Error(`No role "${input.roleSlug}". Run "bb role list".`);
+    if (!role) throw new Error(`No role "${input.roleSlug}". Run "alia role list".`);
     const title = input.title ?? `[${role.name}] ${input.taskKey ? input.taskKey + " · " : ""}${input.prompt.split("\n")[0]!.slice(0, 80)}`;
     const tuple =
       role.providerId && role.model
@@ -775,14 +775,14 @@ export default async function plugin(bb: BbPluginApi) {
       ...(input.parentThreadId ? { parentThreadId: input.parentThreadId } : {}),
       ...(input.hidden ? { visibility: "hidden" } : {}),
       pluginMetadata: { roleId: role.id, roleSlug: role.slug, roleName: role.name, roleColor: role.color, taskKey: input.taskKey },
-    } as unknown as Parameters<typeof bb.sdk.threads.spawn>[0];
-    const thread = await bb.sdk.threads.spawn(args);
+    } as unknown as Parameters<typeof alia.sdk.threads.spawn>[0];
+    const thread = await alia.sdk.threads.spawn(args);
     threadStmts.insert.run(thread.id, role.slug, input.taskKey, Date.now());
     return thread.id;
   }
 
-  const INSTRUCTION_BUDGET = 3900; // bb truncates configure() instructions at 4096 chars
-  bb.agents.configure((ctx) => {
+  const INSTRUCTION_BUDGET = 3900; // VesnALIA truncates configure() instructions at 4096 chars
+  alia.agents.configure((ctx) => {
     const slug = typeof ctx.pluginMetadata.roleSlug === "string" ? ctx.pluginMetadata.roleSlug : roleThread(ctx.thread.id)?.role_slug;
     const role = slug ? roleBySlug(slug) : null;
     if (!role) return { tools: [], skills: ["agent-roles"] };
@@ -791,20 +791,20 @@ export default async function plugin(bb: BbPluginApi) {
       `# Your role: ${role.name}`,
       role.description ? role.description : "",
       "",
-      `Begin your first reply with this exact line so BB renders your role card: ::agent-role{slug="${role.slug}"}`,
-      taskKey ? `You are working on task ${taskKey}. Read it with \`bb tasks show ${taskKey}\`; your final answer is posted there as a comment automatically.` : "",
+      `Begin your first reply with this exact line so VesnALIA renders your role card: ::agent-role{slug="${role.slug}"}`,
+      taskKey ? `You are working on task ${taskKey}. Read it with \`alia tasks show ${taskKey}\`; your final answer is posted there as a comment automatically.` : "",
       "",
     ].join("\n");
     let body = role.instructions;
     if (head.length + body.length > INSTRUCTION_BUDGET) {
-      bb.log.warn(`role ${role.slug}: instructions exceed the ${INSTRUCTION_BUDGET}-char budget and were truncated for thread ${ctx.thread.id}`);
+      alia.log.warn(`role ${role.slug}: instructions exceed the ${INSTRUCTION_BUDGET}-char budget and were truncated for thread ${ctx.thread.id}`);
       body = body.slice(0, INSTRUCTION_BUDGET - head.length - 20) + "\n[…truncated]";
     }
     return { tools: [], skills: ["agent-roles"], instructions: head + body };
   });
 
   // ------------------------------------------------------------------ role jobs in Tasks
-  const tasksRunner = async () => makeBbTasksRunner({ serverUrl: () => bb.server.loopbackBaseUrl, bbBinary: String((await settings.get()).bbBinary ?? "") });
+  const tasksRunner = async () => makeAliaTasksRunner({ serverUrl: () => alia.server.loopbackBaseUrl, aliaBinary: String((await settings.get()).aliaBinary ?? "") });
   const taskOps = async () => makeTaskOps(await tasksRunner());
 
   async function resolveTasksProject(explicit: string | null): Promise<string> {
@@ -812,14 +812,14 @@ export default async function plugin(bb: BbPluginApi) {
     const configured = String((await settings.get()).tasksProject ?? "").trim();
     if (configured) return configured;
     const projects = await (await taskOps()).projects();
-    if (!projects.length) throw new Error("No Tasks project exists yet. Create one in Tasks or run: bb tasks project create");
+    if (!projects.length) throw new Error("No Tasks project exists yet. Create one in Tasks or run: VesnALIA tasks project create");
     return projects[0]!.prefix;
   }
 
   /** File the request as a Tasks record labelled with the role; no thread yet. */
   async function createRoleTask(roleSlug: string, prompt: string, project: string | null): Promise<{ key: string; title: string }> {
     const role = findRole(roleSlug);
-    if (!role) throw new Error(`No role "${roleSlug}". Run "bb role list".`);
+    if (!role) throw new Error(`No role "${roleSlug}". Run "alia role list".`);
     const ops = await taskOps();
     const proj = await resolveTasksProject(project);
     const label = ROLE_LABEL_PREFIX + role.slug;
@@ -841,7 +841,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!slug) throw new Error(`Task ${input.taskKey} has no role label (${ROLE_LABEL_PREFIX}<slug>).`);
     const prompt = detail.task.description?.trim() || detail.task.title;
     const threadId = await spawnRole({ roleSlug: slug, prompt, projectId: input.projectId, environmentId: input.environmentId, parentThreadId: input.parentThreadId, hidden: false, taskKey: detail.task.key });
-    try { await ops.attach(detail.task.key, threadId); } catch (cause) { bb.log.warn(`attach ${detail.task.key}: ${cause instanceof Error ? cause.message : String(cause)}`); }
+    try { await ops.attach(detail.task.key, threadId); } catch (cause) { alia.log.warn(`attach ${detail.task.key}: ${cause instanceof Error ? cause.message : String(cause)}`); }
     if (detail.task.status === "backlog" || detail.task.status === "todo") {
       try { await ops.setStatus(detail.task.key, "in_progress"); } catch { /* status is cosmetic */ }
     }
@@ -867,7 +867,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // When a role thread goes idle, its answer lands on the task as one comment.
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     const row = roleThread(thread.id);
     if (!row?.task_key || !lastAssistantText?.trim()) return;
     const text = lastAssistantText.replace(/^::agent-role\{[^}]*\}\s*$/m, "").trim();
@@ -880,7 +880,7 @@ export default async function plugin(bb: BbPluginApi) {
       await ops.comment(row.task_key, `**${roleBySlug(row.role_slug)?.name ?? row.role_slug}** (thread ${thread.id}):\n\n${body}`);
       threadStmts.setReport.run(hash, thread.id);
     } catch (cause) {
-      bb.log.warn(`report to ${row.task_key}: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`report to ${row.task_key}: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
   });
 
@@ -914,7 +914,7 @@ export default async function plugin(bb: BbPluginApi) {
       VALUES (@id, @teamId, @teamName, @projectId, @environmentId, @parentThreadId, @task, 'running', @now)`),
     finish: db.prepare(`UPDATE team_runs SET status=@status, output=@output, error=@error, finished_at=@now WHERE id=@id`),
     delete: db.prepare(`DELETE FROM team_runs WHERE id = ?`),
-    markInterrupted: db.prepare(`UPDATE team_runs SET status='interrupted', error='bb restarted while the run was in progress', finished_at=? WHERE status='running'`),
+    markInterrupted: db.prepare(`UPDATE team_runs SET status='interrupted', error='VesnALIA restarted while the run was in progress', finished_at=? WHERE status='running'`),
     steps: db.prepare(`SELECT * FROM team_run_steps WHERE run_id = ? ORDER BY stage_index, member_index`),
     insertStep: db.prepare(`INSERT INTO team_run_steps (id, run_id, node_id, stage_index, stage_title, member_index, role_slug, role_name, status)
       VALUES (@id, @runId, @nodeId, @stageIndex, @stageTitle, @memberIndex, @roleSlug, @roleName, 'pending')`),
@@ -927,7 +927,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!r) return null;
     return { ...toRun(r), steps: (runStmts.steps.all(id) as StepRow[]).map(toStep) };
   };
-  const publishRuns = () => bb.realtime.publish(RUNS_CHANGED, { at: Date.now() });
+  const publishRuns = () => alia.realtime.publish(RUNS_CHANGED, { at: Date.now() });
 
   // Anything still "running" when the factory runs was orphaned by a restart.
   runStmts.markInterrupted.run(Date.now());
@@ -956,9 +956,9 @@ export default async function plugin(bb: BbPluginApi) {
     // Give the dispatcher a moment to move the thread out of "pending".
     await sleep(4000, signal);
     while (!signal.aborted) {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status === "idle") {
-        const { output } = await bb.sdk.threads.output({ threadId });
+        const { output } = await alia.sdk.threads.output({ threadId });
         return output ?? "";
       }
       if (thread.status === "error") throw new Error(`Thread ${threadId} ended in error`);
@@ -1043,7 +1043,7 @@ export default async function plugin(bb: BbPluginApi) {
       runStmts.cancelPendingSteps.run(Date.now(), run.id);
       const partial = [...outputs.keys()].map(labelled).join("\n\n");
       runStmts.finish.run({ id: run.id, status: cancelled ? "cancelled" : "failed", output: partial || null, error: cancelled ? null : firstError, now: Date.now() });
-      bb.log.warn(`team run ${run.id} ${cancelled ? "cancelled" : "failed"}: ${firstError}`);
+      alia.log.warn(`team run ${run.id} ${cancelled ? "cancelled" : "failed"}: ${firstError}`);
     } finally {
       controllers.delete(run.id);
       publishRuns();
@@ -1052,7 +1052,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   function startRun(input: z.infer<typeof startRunInputSchema>): TeamRun {
     const team = findTeam(input.teamSlug);
-    if (!team) throw new Error(`No team "${input.teamSlug}". Run "bb role teams".`);
+    if (!team) throw new Error(`No team "${input.teamSlug}". Run "alia role teams".`);
     assertGraph(team.nodes);
     const layers = graphLayers(team.nodes);
     const id = newId("trun");
@@ -1088,7 +1088,7 @@ export default async function plugin(bb: BbPluginApi) {
     let environmentId: string | null = null;
     if (ctx.threadId) {
       try {
-        const t = await bb.sdk.threads.get({ threadId: ctx.threadId });
+        const t = await alia.sdk.threads.get({ threadId: ctx.threadId });
         projectId ??= t.projectId;
         environmentId = t.environmentId ?? null;
       } catch { /* thread gone — fall through */ }
@@ -1098,7 +1098,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ------------------------------------------------------------------ RPC
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     roles_list: () => ({ roles: listRoles() }),
     roles_create: (input) => createRole(input),
     roles_update: ({ id, ...patch }) => updateRole(id, patch),
@@ -1120,7 +1120,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { ok: true as const };
     },
     context_projects: async () => {
-      const result = await bb.sdk.projects.list();
+      const result = await alia.sdk.projects.list();
       const list = (Array.isArray(result) ? result : (result as { projects?: unknown[] }).projects ?? []) as Array<{ id: string; name: string }>;
       return { projects: list.map((p) => ({ id: p.id, name: p.name })) };
     },
@@ -1132,7 +1132,7 @@ export default async function plugin(bb: BbPluginApi) {
       let taskKey: string | null = roleThread(threadId)?.task_key ?? null;
       if (!slug) {
         try {
-          const meta = (await bb.sdk.threads.getPluginMetadata({ threadId })) as Record<string, unknown>;
+          const meta = (await alia.sdk.threads.getPluginMetadata({ threadId })) as Record<string, unknown>;
           if (typeof meta.roleSlug === "string") slug = meta.roleSlug;
           if (typeof meta.taskKey === "string") taskKey = meta.taskKey;
         } catch { /* not a role thread */ }
@@ -1155,28 +1155,28 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // ------------------------------------------------------------------ agent instructions
-  bb.agents.contributeInstructions(() => {
+  alia.agents.contributeInstructions(() => {
     const roles = listRoles();
     if (roles.length === 0) return null;
-    return `Specialist agent roles (${roles.map((r) => r.slug).join(", ")}): \`bb role spawn <role> --prompt "..."\` files a Tasks job for that role (no thread yet; the user can open a chat from it), \`bb role spawn ... --thread --parent-self\` starts the specialist thread right away, \`bb role chat <TASK-KEY> --parent-self\` opens a thread for an existing job, and \`bb role run <team> --task "..."\` runs a multi-agent team. Role instructions are injected into the specialist thread automatically. See the agent-roles skill.`;
+    return `Specialist agent roles (${roles.map((r) => r.slug).join(", ")}): \`alia role spawn <role> --prompt "..."\` files a Tasks job for that role (no thread yet; the user can open a chat from it), \`alia role spawn ... --thread --parent-self\` starts the specialist thread right away, \`alia role chat <TASK-KEY> --parent-self\` opens a thread for an existing job, and \`alia role run <team> --task "..."\` runs a multi-agent team. Role instructions are injected into the specialist thread automatically. See the agent-roles skill.`;
   });
 
   // ------------------------------------------------------------------ CLI
   const usage = [
     "Usage:",
-    "  bb role list [--json]                         roles",
-    "  bb role show <role>                           full instructions",
-    "  bb role spawn <role> --prompt <text> [--tasks-project <prefix>]   file a Tasks job for the role (no thread)",
-    "  bb role spawn <role> --prompt <text> --thread [--parent-self | --parent <threadId>] [--project <id>] [--title <t>] [--hidden] [--wait]",
-    "  bb role chat <TASK-KEY> [--parent-self] [--project <id>] [--wait]  open a thread for a role job",
-    "  bb role tasks [--json]                        open role jobs",
-    "  bb role teams [--json]                        team templates",
-    "  bb role run <team> --task <text> [--parent-self] [--project <id>] [--hidden] [--wait]",
-    "  bb role runs [--json]                         recent team runs",
-    "  bb role status <runId> [--json]               run progress, per-step threads and outputs",
-    "  bb role cancel <runId>",
-    "  bb role sync [--json]                         reconcile roles ↔ ~/.claude/agents ↔ Tasks presets now",
-    "  bb role sync --status [--json]                last sync report",
+    "  VesnALIA role list [--json]                         roles",
+    "  VesnALIA role show <role>                           full instructions",
+    "  VesnALIA role spawn <role> --prompt <text> [--tasks-project <prefix>]   file a Tasks job for the role (no thread)",
+    "  VesnALIA role spawn <role> --prompt <text> --thread [--parent-self | --parent <threadId>] [--project <id>] [--title <t>] [--hidden] [--wait]",
+    "  VesnALIA role chat <TASK-KEY> [--parent-self] [--project <id>] [--wait]  open a thread for a role job",
+    "  VesnALIA role tasks [--json]                        open role jobs",
+    "  VesnALIA role teams [--json]                        team templates",
+    "  VesnALIA role run <team> --task <text> [--parent-self] [--project <id>] [--hidden] [--wait]",
+    "  VesnALIA role runs [--json]                         recent team runs",
+    "  VesnALIA role status <runId> [--json]               run progress, per-step threads and outputs",
+    "  VesnALIA role cancel <runId>",
+    "  VesnALIA role sync [--json]                         reconcile roles ↔ ~/.claude/agents ↔ Tasks presets now",
+    "  VesnALIA role sync --status [--json]                last sync report",
     "",
     "Create and edit roles/teams on the Agent roles page (sidebar).",
   ].join("\n");
@@ -1197,21 +1197,21 @@ export default async function plugin(bb: BbPluginApi) {
   }
   const str = (v: string | true | undefined) => (typeof v === "string" ? v : undefined);
 
-  bb.cli.register({
+  alia.cli.register({
     name: "role",
     summary: "Specialist agent roles and multi-agent teams: spawn a role thread or run a team on a task",
     commands: [
-      { name: "list", summary: "List roles", usage: "bb role list [--json]" },
-      { name: "show", summary: "Show a role's instructions", usage: "bb role show <role>" },
-      { name: "spawn", summary: "File a Tasks job for a role (or --thread to start a thread now)", usage: "bb role spawn <role> --prompt <text> [--thread] [--parent-self] [--project <id>] [--title <t>] [--hidden] [--wait]" },
-      { name: "chat", summary: "Open a thread for a role job", usage: "bb role chat <TASK-KEY> [--parent-self] [--project <id>] [--wait]" },
-      { name: "tasks", summary: "List open role jobs", usage: "bb role tasks [--json]" },
-      { name: "teams", summary: "List team templates", usage: "bb role teams [--json]" },
-      { name: "run", summary: "Run a team on a task", usage: "bb role run <team> --task <text> [--parent-self] [--project <id>] [--hidden] [--wait]" },
-      { name: "runs", summary: "List recent team runs", usage: "bb role runs [--json]" },
-      { name: "status", summary: "Show a team run", usage: "bb role status <runId> [--json]" },
-      { name: "cancel", summary: "Cancel a team run", usage: "bb role cancel <runId>" },
-      { name: "sync", summary: "Reconcile roles with Claude agent files and Tasks presets", usage: "bb role sync [--status] [--json]" },
+      { name: "list", summary: "List roles", usage: "alia role list [--json]" },
+      { name: "show", summary: "Show a role's instructions", usage: "alia role show <role>" },
+      { name: "spawn", summary: "File a Tasks job for a role (or --thread to start a thread now)", usage: "alia role spawn <role> --prompt <text> [--thread] [--parent-self] [--project <id>] [--title <t>] [--hidden] [--wait]" },
+      { name: "chat", summary: "Open a thread for a role job", usage: "alia role chat <TASK-KEY> [--parent-self] [--project <id>] [--wait]" },
+      { name: "tasks", summary: "List open role jobs", usage: "alia role tasks [--json]" },
+      { name: "teams", summary: "List team templates", usage: "alia role teams [--json]" },
+      { name: "run", summary: "Run a team on a task", usage: "alia role run <team> --task <text> [--parent-self] [--project <id>] [--hidden] [--wait]" },
+      { name: "runs", summary: "List recent team runs", usage: "alia role runs [--json]" },
+      { name: "status", summary: "Show a team run", usage: "alia role status <runId> [--json]" },
+      { name: "cancel", summary: "Cancel a team run", usage: "alia role cancel <runId>" },
+      { name: "sync", summary: "Reconcile roles with Claude agent files and Tasks presets", usage: "alia role sync [--status] [--json]" },
     ],
     async run(argv, ctx) {
       const { positional, flags } = parseFlags(argv);
@@ -1245,12 +1245,12 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "spawn": {
             const role = rest[0] ? findRole(rest[0]) : null;
-            if (!role) return fail(`No role "${rest[0] ?? ""}". Run "bb role list".`);
+            if (!role) return fail(`No role "${rest[0] ?? ""}". Run "alia role list".`);
             const prompt = str(flags.get("prompt"));
             if (!prompt) return fail("--prompt is required");
             if (!flags.has("thread")) {
               const task = await createRoleTask(role.slug, prompt, str(flags.get("tasks-project")) ?? null);
-              return reply(task, `Filed ${task.key} for ${role.name}. Open a chat with: bb role chat ${task.key}\n::task{key="${task.key}"}`);
+              return reply(task, `Filed ${task.key} for ${role.name}. Open a chat with: VesnALIA role chat ${task.key}\n::task{key="${task.key}"}`);
             }
             const { projectId, environmentId } = await contextFor(ctx, str(flags.get("project")));
             const threadId = await spawnRole({ roleSlug: role.slug, prompt, projectId, environmentId, parentThreadId: parentFor(), title: str(flags.get("title")), hidden: flags.has("hidden"), taskKey: str(flags.get("task")) ?? null });
@@ -1259,10 +1259,10 @@ export default async function plugin(bb: BbPluginApi) {
               const output = await awaitThread(threadId, signal, Math.max(1, Number(stepTimeoutMinutes) || 45) * 60_000);
               return reply({ threadId, output }, output);
             }
-            return reply({ threadId }, `Spawned ${role.name} thread ${threadId}. Wait with: bb thread wait ${threadId}; read with: bb thread output ${threadId}`);
+            return reply({ threadId }, `Spawned ${role.name} thread ${threadId}. Wait with: VesnALIA thread wait ${threadId}; read with: VesnALIA thread output ${threadId}`);
           }
           case "chat": {
-            if (!rest[0]) return fail("Task key is required, e.g. bb role chat TEST-3");
+            if (!rest[0]) return fail("Task key is required, e.g. VesnALIA role chat TEST-3");
             const { projectId, environmentId } = await contextFor(ctx, str(flags.get("project")));
             const threadId = await chatRoleTask({ taskKey: rest[0], projectId, environmentId, parentThreadId: parentFor() });
             if (flags.has("wait")) {
@@ -1270,7 +1270,7 @@ export default async function plugin(bb: BbPluginApi) {
               const output = await awaitThread(threadId, signal, Math.max(1, Number(stepTimeoutMinutes) || 45) * 60_000);
               return reply({ threadId, output }, output);
             }
-            return reply({ threadId }, `Opened thread ${threadId} for ${rest[0]}. Wait with: bb thread wait ${threadId}`);
+            return reply({ threadId }, `Opened thread ${threadId} for ${rest[0]}. Wait with: VesnALIA thread wait ${threadId}`);
           }
           case "tasks": {
             const { tasks, project } = await listRoleTasks();
@@ -1282,7 +1282,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "run": {
             const team = rest[0] ? findTeam(rest[0]) : null;
-            if (!team) return fail(`No team "${rest[0] ?? ""}". Run "bb role teams".`);
+            if (!team) return fail(`No team "${rest[0] ?? ""}". Run "alia role teams".`);
             const task = str(flags.get("task"));
             if (!task) return fail("--task is required");
             const { projectId, environmentId } = await contextFor(ctx, str(flags.get("project")));
@@ -1295,7 +1295,7 @@ export default async function plugin(bb: BbPluginApi) {
               }
               return fail("interrupted");
             }
-            return reply(run, `Started team run ${run.id} (${team.name}). Check: bb role status ${run.id}`);
+            return reply(run, `Started team run ${run.id} (${team.name}). Check: VesnALIA role status ${run.id}`);
           }
           case "runs": {
             const runs = (runStmts.list.all(30) as RunRow[]).map(toRun);
@@ -1328,11 +1328,11 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     if (syncTimer) clearTimeout(syncTimer);
     agentsWatcher?.close();
     for (const c of controllers.values()) c.abort();
     controllers.clear();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

@@ -7,8 +7,8 @@
 // choice is a view preference, so it stays in the browser and not in beads.
 //
 // Gotchas:
-// - The storage key keeps the name "bb-plugin-airbender:filters:<path>", and
-//   still reads the older "bb-plugin-beads:..." key, so nobody loses a saved
+// - The storage key keeps the name "alia-plugin-airbender:filters:<path>", and
+//   still reads the older "alia-plugin-beads:..." key, so nobody loses a saved
 //   filter.
 
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +17,7 @@ import type { Filters, GroupBy } from "./issue-model.ts";
 
 /**
  * Filters for one folder, remembered in the browser's local storage so they
- * survive closing the tab and reloading BB.
+ * survive closing the tab and reloading VesnALIA.
  *
  * @param path Folder the tab is showing; null while it is not known yet, in
  *   which case nothing is read or saved.
@@ -25,11 +25,11 @@ import type { Filters, GroupBy } from "./issue-model.ts";
  *   anything unexpected falls back to "no filters".
  */
 export function useFilters(path: string | null) {
-  const key = path === null ? null : `bb-plugin-airbender:filters:${path}`;
+  const key = path === null ? null : `alia-plugin-airbender:filters:${path}`;
   // The key the filters were saved under before the plugin was renamed;
   // read when nothing is saved under the new one, so the remembered filters
   // survive the rename.
-  const legacyKey = path === null ? null : `bb-plugin-beads:filters:${path}`;
+  const legacyKey = path === null ? null : `alia-plugin-beads:filters:${path}`;
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   useEffect(() => {
     if (key === null) return;

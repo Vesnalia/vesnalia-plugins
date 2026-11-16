@@ -12,7 +12,7 @@ import {
 
 type EventType = (typeof FRAME_TYPES)[number] | (typeof DELTA_TYPES)[number];
 
-/** The slice of `bb.sdk.threads` the loader uses (a fake in tests). */
+/** The slice of `alia.sdk.threads` the loader uses (a fake in tests). */
 export interface ThreadsReader {
   events: {
     list(args: {

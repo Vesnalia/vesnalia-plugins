@@ -5,7 +5,7 @@
 // work — as our own copy of the reference look. No import or runtime
 // dependency on the sibling plugin; the only shared thing is @xyflow/react
 // itself (an independent dependency of this plugin, see package.json) and
-// the BB theme's own CSS variables, the same tokens components/crew-topology.tsx
+// the VesnALIA theme's own CSS variables, the same tokens components/crew-topology.tsx
 // already draws with.
 import { useLayoutEffect, useMemo, type CSSProperties } from "react";
 import { Controls, Handle, MiniMap, Position, ReactFlow, ReactFlowProvider, useReactFlow, type ColorMode, type Edge, type EdgeProps, type Node, type NodeProps } from "@xyflow/react";

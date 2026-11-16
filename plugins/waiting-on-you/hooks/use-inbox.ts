@@ -5,7 +5,7 @@ import {
   useRpc,
   useSdk,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "@/server";
 import {
   applyPatch,
@@ -113,7 +113,7 @@ export function useInboxSettings() {
 }
 
 /**
- * When each waiting thread asked its question. bb's `latestAttentionAt` only
+ * When each waiting thread asked its question. VesnALIA's `latestAttentionAt` only
  * moves on status changes, and a thread stays "active" while it waits on an
  * answer, so the question's own `createdAt` is the honest time.
  */

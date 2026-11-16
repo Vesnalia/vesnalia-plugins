@@ -38,7 +38,7 @@ test("only the latest three comments, each on one line", () => {
   assert.match(brief, /- Christa, 2026-10-04: Still broken on iOS/);
 });
 
-test("the brief stays under bb's instruction limit however long the task is", () => {
+test("the brief stays under VesnALIA's instruction limit however long the task is", () => {
   const long = { ...base, notes: "word ".repeat(5000), comments: base.comments.map((c) => ({ ...c, text: "x".repeat(5000) })) };
   const brief = taskBrief(long);
   assert.ok(brief.length <= MAX_BRIEF_CHARS, String(brief.length));

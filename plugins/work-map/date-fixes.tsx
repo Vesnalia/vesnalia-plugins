@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { localDay } from "./model";
 import type { MapTask, rpcContract } from "./server";
 import type { SettleInput, Settlement } from "./settlement-contract";

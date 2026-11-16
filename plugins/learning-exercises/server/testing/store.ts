@@ -1,4 +1,4 @@
-/** A `LearningStore` over an in-memory SQLite with every migration applied, as bb would. */
+/** A `LearningStore` over an in-memory SQLite with every migration applied, as VesnALIA would. */
 import Database from "better-sqlite3";
 
 import { readSettings, type LearningSettings } from "../settings";

@@ -49,7 +49,7 @@ for (const file of palettes) {
     const strip = compact.match(/html\[data-lg-home\] \[data-testid="app-layout-content-shell"\] \{([^}]+)\}/);
     assert.ok(strip, "home-scoped safe-area strip rule present");
     assert.match(strip[1], /background-position: bottom/);
-    assert.match(strip[1], /background-size: 100% var\(--bb-safe-area-bottom, env\(safe-area-inset-bottom, 0px\)\)/);
+    assert.match(strip[1], /background-size: 100% var\(--alia-safe-area-bottom, env\(safe-area-inset-bottom, 0px\)\)/);
     assert.match(strip[1], /var\(--lg-home-dock-a, max\(var\(--lg-chrome-a, 0\.72\), var\(--glass-pane-a\)\)\)/);
 
     // The list fades out before the host clips it, so no bright row ends in

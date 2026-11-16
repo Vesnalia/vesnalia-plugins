@@ -13,7 +13,7 @@ import {
   useRealtime,
   useRpc,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { BODY_MAX, PLUGIN_ID, SIGNAL_CHANNEL } from "./shared";
 
@@ -47,11 +47,11 @@ function isSignalForThread(payload: unknown, threadId: string): boolean {
   );
 }
 
-// "cli" marks a note written by `bb note` rather than by you in the panel.
+// "cli" marks a note written by `alia note` rather than by you in the panel.
 // Since agents can invoke that command, provenance stays visible.
 function roleLabel(role: string): string {
   if (role === "user") return "You";
-  if (role === "cli") return "via bb note";
+  if (role === "cli") return "via VesnALIA note";
   return "Agent";
 }
 

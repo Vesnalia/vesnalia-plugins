@@ -32,7 +32,7 @@ function isInside(child: string, parent: string): boolean {
  * Where `cwd` sits as Claude places a project: itself, and — inside a linked
  * git worktree — the same spot in the main checkout. Claude keys a project by
  * its main checkout, so a plugin installed for a repository applies in every
- * worktree of it; bb runs most threads in worktrees, so without this a
+ * worktree of it; VesnALIA runs most threads in worktrees, so without this a
  * project's plugin skills would vanish from every one of them.
  */
 async function projectPlacesOf(cwd: string): Promise<string[]> {

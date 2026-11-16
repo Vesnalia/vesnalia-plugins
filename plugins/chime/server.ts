@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   EVENT_KINDS,
@@ -44,11 +44,11 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-async function loadConfig(bb: BbPluginApi): Promise<ChimeConfig> {
-  return normalizeConfig(await bb.storage.kv.get<Partial<ChimeConfig>>("config"));
+async function loadConfig(alia: AliaPluginApi): Promise<ChimeConfig> {
+  return normalizeConfig(await alia.storage.kv.get<Partial<ChimeConfig>>("config"));
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   const broker = new EventBroker();
   const seenInteractionsByThread = new Map<string, Set<string>>();
   const scanningThreads = new Set<string>();
@@ -65,7 +65,7 @@ export default async function plugin(bb: BbPluginApi) {
       config.eventSounds[notification.kind],
       config.volume,
     ).catch((error: unknown) => {
-      bb.log.warn(`server playback failed: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`server playback failed: ${error instanceof Error ? error.message : String(error)}`);
     }),
   );
 
@@ -74,7 +74,7 @@ export default async function plugin(bb: BbPluginApi) {
     thread: { id: string; projectId: string },
     interactionId?: string,
   ): Promise<void> {
-    const config = await loadConfig(bb);
+    const config = await loadConfig(alia);
     if (!config.enabled || !config.eventEnabled[kind] || config.mutedProjectIds.includes(thread.projectId)) {
       return;
     }
@@ -94,8 +94,8 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       do {
         pendingRescans.delete(threadId);
-        const interactions = await bb.sdk.threads.interactions.list({ threadId });
-        const thread = await bb.sdk.threads.get({ threadId });
+        const interactions = await alia.sdk.threads.interactions.list({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         const previouslySeen = seenInteractionsByThread.get(threadId) ?? new Set<string>();
         const pendingIds = new Set<string>();
         for (const interaction of interactions) {
@@ -114,53 +114,53 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.events.on("thread.active", ({ thread }) => publishChimeNotification("started", thread));
-  bb.events.on("thread.idle", async ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => publishChimeNotification("started", thread));
+  alia.events.on("thread.idle", async ({ thread }) => {
     try {
-      const events = await bb.sdk.threads.events.list({ threadId: thread.id, limit: "30" });
+      const events = await alia.sdk.threads.events.list({ threadId: thread.id, limit: "30" });
       await publishChimeNotification(classifyIdleEvent(events), thread);
     } catch (error) {
-      bb.log.warn(`cancellation detection failed; using completion: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`cancellation detection failed; using completion: ${error instanceof Error ? error.message : String(error)}`);
       await publishChimeNotification("completed", thread);
     }
   });
-  bb.events.on("thread.failed", ({ thread }) => publishChimeNotification("failed", thread));
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.failed", ({ thread }) => publishChimeNotification("failed", thread));
+  alia.events.on("thread.archived", ({ thread }) => {
     seenInteractionsByThread.delete(thread.id);
   });
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     seenInteractionsByThread.delete(thread.id);
   });
 
-  const unsubscribe = bb.sdk.subscribe({
+  const unsubscribe = alia.sdk.subscribe({
     event: "thread:changed",
     callback: (event) => {
       if (!event.id || !event.changes.includes("interactions-changed")) return;
       void scanPendingInteractions(event.id).catch((error: unknown) => {
-        bb.log.warn(`interaction scan failed: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.warn(`interaction scan failed: ${error instanceof Error ? error.message : String(error)}`);
       });
     },
   });
-  bb.onDispose(unsubscribe);
-  bb.onDispose(() => serverStorm.dispose());
+  alia.onDispose(unsubscribe);
+  alia.onDispose(() => serverStorm.dispose());
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getConfig() {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return {
-        config: await loadConfig(bb),
+        config: await loadConfig(alia),
         projects: projects.map(({ id, name }) => ({ id, name })),
         serverPlaybackAvailable,
       };
     },
     async updateConfig(input) {
       const config = normalizeConfig(input);
-      await bb.storage.kv.set("config", config);
+      await alia.storage.kv.set("config", config);
       return { config };
     },
     async previewServer({ soundId }) {
       if (!serverPlaybackAvailable) return { ok: false, error: "Server playback requires macOS and /usr/bin/afplay." };
-      const config = await loadConfig(bb);
+      const config = await loadConfig(alia);
       try {
         await playServerSound(soundId, config.volume);
         return { ok: true, error: null };
@@ -170,24 +170,24 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route("GET", "/events", async (context) => {
+  alia.http.route("GET", "/events", async (context) => {
     const afterText = context.req.query("after") ?? "0";
     const after = /^\d+$/.test(afterText) ? Number(afterText) : 0;
     const result = broker.after(after);
-    return context.json({ ...result, config: await loadConfig(bb) });
+    return context.json({ ...result, config: await loadConfig(alia) });
   });
 
-  bb.http.route("GET", "/presence", (context) => {
+  alia.http.route("GET", "/presence", (context) => {
     const clientId = context.req.query("client");
     if (clientId) clientPresence.update(clientId, context.req.query("visibleThread") || null);
     return new Response(null, { status: 204 });
   });
 
   for (const soundId of SOUND_IDS) {
-    bb.http.route("GET", `/sound-${soundId}`, () => new Response(new Uint8Array(readSoundAsset(soundId)), {
+    alia.http.route("GET", `/sound-${soundId}`, () => new Response(new Uint8Array(readSoundAsset(soundId)), {
       headers: { "content-type": "audio/wav", "cache-control": "public, max-age=31536000, immutable" },
     }));
   }
 
-  bb.log.info(`loaded; server playback ${serverPlaybackAvailable ? "available" : "unavailable"}`);
+  alia.log.info(`loaded; server playback ${serverPlaybackAvailable ? "available" : "unavailable"}`);
 }

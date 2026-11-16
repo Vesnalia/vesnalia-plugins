@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { renderSlot } from "./test-slot";
 import { inbox, defaultSidebarSettings, thread, listProps, loadInboxApp } from "./test-inbox";
 
@@ -9,7 +9,7 @@ vi.mock("sonner", async () => (await import("./test-inbox")).sonnerMock());
 
 await loadInboxApp();
 
-const projects = [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }];
+const projects = [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }];
 const card = (title: string) => screen.getByRole("link", { name: title }).closest("[data-parent-card]") as HTMLElement;
 const folded = (title: string) => card(title).classList.contains("h-8");
 
@@ -99,7 +99,7 @@ describe("Compact all threads", () => {
     await waitFor(() => expect(acknowledged).toEqual(["woke"]));
   });
 
-  // bb numbers compact cards and shelf rows too; each announces the key it shows.
+  // VesnALIA numbers compact cards and shelf rows too; each announces the key it shows.
   it("announces the jump key on compact cards and shelf rows", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: {

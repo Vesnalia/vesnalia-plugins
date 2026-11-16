@@ -5,7 +5,7 @@ created: 2026-09-27
 updated: 2026-10-19
 status: active
 confidence: medium
-tags: [bb-plugin, overview, project-folders]
+tags: [alia-plugin, overview, project-folders]
 sources:
   - package.json
   - server.ts
@@ -23,31 +23,31 @@ sources:
 ---
 # Projects & Sections — Overview
 
-TL;DR: Projects & Sections adds a folder-backed hierarchy of sections and chats to BB projects, with controls for chat creation, rules, execution defaults, archives, device copies, appearance, session context, automatic archiving of quiet chats and opt-in cache keepalive for pinned Claude chats (`package.json:9-17`, `server.ts:682-737`, `auto-archive.ts:92-110`, `cache-keepalive.ts:202-229`).
+TL;DR: Projects & Sections adds a folder-backed hierarchy of sections and chats to VesnALIA projects, with controls for chat creation, rules, execution defaults, archives, device copies, appearance, session context, automatic archiving of quiet chats and opt-in cache keepalive for pinned Claude chats (`package.json:9-17`, `server.ts:682-737`, `auto-archive.ts:92-110`, `cache-keepalive.ts:202-229`).
 
 ## What it is
 
-This repository is a BB plugin named **Projects & Sections**. Its package manifest points BB to a server entry, a React app entry and a host entry; BB and the Plugin SDK minimum versions are declared in the `engines` field (`package.json:5-17`).
+This repository is a VesnALIA plugin named **Projects & Sections**. Its package manifest points VesnALIA to a server entry, a React app entry and a host entry; VesnALIA and the Plugin SDK minimum versions are declared in the `engines` field (`package.json:5-17`).
 
-BB remains responsible for projects, threads, environments and host connections. The plugin stores section metadata and configuration in BB plugin storage, and calls BB SDK methods for thread operations and remote file access (`server.ts:703-737`, `server.ts:1785-1793`, `host.ts:7-16`).
+VesnALIA remains responsible for projects, threads, environments and host connections. The plugin stores section metadata and configuration in VesnALIA plugin storage, and calls VesnALIA SDK methods for thread operations and remote file access (`server.ts:703-737`, `server.ts:1785-1793`, `host.ts:7-16`).
 
 The product has three main parts: the app renders the section tree and management settings (`app.tsx:1-70`); the plugin server owns RPC handlers, state and lifecycle integration (`server.ts:194-647`, `server.ts:650-809`); the host entry performs local filesystem operations on the selected machine (`host.ts:7-16`). Supporting modules implement archives, section removal, move journals, rule templates, execution defaults, session policies, preferences, full backups, automatic chat archiving, cache keepalive and chat-history exports (`archive.ts:50-72`, `section-remove.ts:48-79`, `execution.ts:3-12`, `backup.ts:7-19`, `auto-archive.ts:113-189`, `cache-keepalive.ts:202-229`).
 
 ## Stack
 
 - TypeScript with ES modules (`package.json:2-4`).
-- BB Plugin SDK `0.4.104` for development and BB `>=0.43.0` / SDK `>=0.4.84` engine requirements (`package.json:4-7`, `package.json:26-28`).
+- VesnALIA Plugin SDK `0.4.104` for development and VesnALIA `>=0.43.0` / SDK `>=0.4.84` engine requirements (`package.json:4-7`, `package.json:26-28`).
 - React `^19.3.0` and Zod `^4.3.6` (`package.json:19-25`, `package.json:50-52`).
-- Vitest `^5.0.0` for tests and the BB CLI for builds (`package.json:80-84`).
-- BB-managed SQLite storage and host file APIs (`server.ts:703-737`, `host.ts:7-16`).
+- Vitest `^5.0.0` for tests and the VesnALIA CLI for builds (`package.json:80-84`).
+- ALIA-managed SQLite storage and host file APIs (`server.ts:703-737`, `host.ts:7-16`).
 
 ## Quick start
 
-From the repository root, run `npm ci`, then `npm run typecheck`, `npm test`, and `npm run build` (`package.json:80-84`). Installation and BB configuration are in [Deployment](deployment.md).
+From the repository root, run `npm ci`, then `npm run typecheck`, `npm test`, and `npm run build` (`package.json:80-84`). Installation and VesnALIA configuration are in [Deployment](deployment.md).
 
 ## Where to look next
 
-- [Architecture](architecture.md) — plugin parts and BB integration.
+- [Architecture](architecture.md) — plugin parts and VesnALIA integration.
 - [API](api.md) — RPC operations, cross-plugin section listing, host operations and CLI commands.
 - [Data model](data-model.md) — stored tables, keys, ownership and cleanup.
 - [Features](features/project-tree.md) — user-facing behavior by capability.

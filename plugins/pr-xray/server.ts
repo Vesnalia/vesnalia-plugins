@@ -1,6 +1,6 @@
 // PR X-ray backend: GitHub access, hidden analysis workers, comment storage,
-// fix threads, the `bb pr-xray` CLI and the agent tools.
-import { type BbPluginApi, PluginCliError, cliCommand, defineCli } from "@get-bb/plugin-sdk";
+// fix threads, the `alia pr-xray` CLI and the agent tools.
+import { type AliaPluginApi, PluginCliError, cliCommand, defineCli } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { rpcContract } from "./shared/contract";
 import { parsePrRef, prRefKey, prRefToSubPath, REVIEW_PANEL_PATH } from "./shared/pr-ref";
@@ -22,8 +22,8 @@ export type { rpcContract };
 const PR_CACHE_MS = 20_000;
 const SKIP_TRUST_PROMPTS_KEY = "skipTrustPrompts";
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     githubToken: {
       type: "string",
       label: "GitHub token",
@@ -45,16 +45,16 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const store = createStore(bb);
+  const store = createStore(alia);
   const github = createGithub(async () => (await settings.get()).githubToken as string | undefined);
-  const models = createModels(bb);
+  const models = createModels(alia);
   const skipTrustPrompts = async () => {
-    const stored = await bb.storage.kv.get(SKIP_TRUST_PROMPTS_KEY);
+    const stored = await alia.storage.kv.get(SKIP_TRUST_PROMPTS_KEY);
     return stored === true;
   };
-  const comments = createComments({ bb, store, github, models, loadPr });
+  const comments = createComments({ alia, store, github, models, loadPr });
   const analysis = createAnalysis({
-    bb,
+    alia,
     store,
     github,
     models,
@@ -78,13 +78,13 @@ export default async function plugin(bb: BbPluginApi) {
   }
   const invalidate = (ref: PrRef) => prCache.delete(prRefKey(ref));
 
-  const chat = createChat({ bb, models, loadPr, analysisFor: (ref) => store.latestCompletedAnalysis(ref) });
-  bb.onDispose(() => chat.dispose());
-  removeFilesWhenArchived(bb);
+  const chat = createChat({ alia, models, loadPr, analysisFor: (ref) => store.latestCompletedAnalysis(ref) });
+  alia.onDispose(() => chat.dispose());
+  removeFilesWhenArchived(alia);
 
   function reviewLink(ref: PrRef): string {
-    const path = `/plugins/${bb.pluginId}/${REVIEW_PANEL_PATH}/${prRefToSubPath(ref)}`;
-    const base = bb.server.experimental_appUrl;
+    const path = `/plugins/${alia.pluginId}/${REVIEW_PANEL_PATH}/${prRefToSubPath(ref)}`;
+    const base = alia.server.experimental_appUrl;
     return base ? `${base.replace(/\/$/u, "")}${path}` : path;
   }
 
@@ -115,7 +115,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (tag) tags.set(comment.databaseId, tag);
       }
     }
-    const fix = await fixDiffComments(bb, pr, threads, tags, scope);
+    const fix = await fixDiffComments(alia, pr, threads, tags, scope);
     // The agent is already running, so a failed resolve (e.g. a token without write access) only leaves the thread open.
     await Promise.allSettled(
       threads.map((thread) =>
@@ -127,7 +127,7 @@ export default async function plugin(bb: BbPluginApi) {
     return fix;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async "review.get"({ ref, fresh }) {
       const pr = await loadPr(ref, fresh === true);
       store.touchReview(ref, pr.title, pr.url);
@@ -280,7 +280,7 @@ export default async function plugin(bb: BbPluginApi) {
         const tab = graph && diagramTab(graph, comment.diagramId);
         if (tab) titles.set(tab.id, tab.title);
       }
-      return fixDiagramComments(bb, pr, open, titles);
+      return fixDiagramComments(alia, pr, open, titles);
     },
     async "chat.get"({ ref }) {
       return { threadId: await chat.get(ref) };
@@ -313,8 +313,8 @@ export default async function plugin(bb: BbPluginApi) {
       return { skipTrustPrompts: skip };
     },
     async "settings.setSkipTrustPrompts"({ skip }) {
-      if (skip) await bb.storage.kv.set(SKIP_TRUST_PROMPTS_KEY, true);
-      else await bb.storage.kv.delete(SKIP_TRUST_PROMPTS_KEY);
+      if (skip) await alia.storage.kv.set(SKIP_TRUST_PROMPTS_KEY, true);
+      else await alia.storage.kv.delete(SKIP_TRUST_PROMPTS_KEY);
       return { ok: true };
     },
     async "settings.setModel"({ purpose, selection }) {
@@ -325,7 +325,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- agent tools -------------------------------------------------------------
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: REVIEW_TOOL,
     description:
       "Open a GitHub pull request in PR X-ray and return a link to the review page, where the user can start the grouped-diff and visual analysis. Use when the user asks to review or x-ray a PR.",
@@ -354,14 +354,14 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Worker tools are offered only to the workers that need them.
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const instructions = chatInstructions(context.pluginMetadata);
     return { tools: agentTools(context.pluginMetadata.role), skills: [], ...(instructions ? { instructions } : {}) };
   });
 
   // ---- CLI -----------------------------------------------------------------------
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "pr-xray",
       summary: "PR X-ray: grouped, visual PR self-review and the comments it records",
@@ -439,7 +439,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }
 
 function parseSince(value: string): string | null {

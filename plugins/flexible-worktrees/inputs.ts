@@ -9,7 +9,7 @@ const location = z.object({
 }).strict().optional();
 
 export const inputsSchema = z.discriminatedUnion("target", [
-  /** Create a branch. Blank branch uses BB's suggested name; blank base uses the remote's default branch. */
+  /** Create a branch. Blank branch uses VesnALIA's suggested name; blank base uses the remote's default branch. */
   z.object({ target: z.literal("new"), branch: name, base: name, remote: name, location }).strict(),
   /** Work on a branch by name: attaches its worktree, checks it out, or fetches and tracks it. */
   z.object({
@@ -30,7 +30,7 @@ const fetchSchema = z.object({ remote: z.string(), from: z.string(), into: z.str
 export const planSchema = z.object({
   action: z.enum(["attach", "new-branch", "local-branch", "track-remote", "detached"]),
   source: z.string(),
-  /** Canonical destination. In previews, names BB assigns at launch appear as `<automatic …>` placeholders. */
+  /** Canonical destination. In previews, names VesnALIA assigns at launch appear as `<automatic …>` placeholders. */
   path: z.string(),
   /** Local branch to create or check out; empty for attach and detached. */
   branch: z.string(),

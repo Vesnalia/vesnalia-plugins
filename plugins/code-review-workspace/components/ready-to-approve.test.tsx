@@ -2,7 +2,7 @@
 // Needs review's Ready to approve: what your other threads asked to approve, merge or close, waiting for your click.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import type { Turn } from "../lib/turn";
 

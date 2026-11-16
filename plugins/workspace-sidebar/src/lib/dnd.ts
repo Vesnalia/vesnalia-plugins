@@ -19,7 +19,7 @@ import {
 export const ENGAGE_PX = 6;
 
 /**
- * Sideways travel that hands the gesture to bb instead. The host's
+ * Sideways travel that hands the gesture to VesnALIA instead. The host's
  * drag-to-split engages once the pointer leaves the sidebar to the right, so
  * a press that heads that way before it has moved ENGAGE_PX down is not ours.
  */

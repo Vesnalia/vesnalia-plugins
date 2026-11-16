@@ -1,28 +1,28 @@
 ---
 type: Contract
 title: Протокол provider bridge
-description: Инварианты JSON-RPC моста между агентом и runtime bb — транспорт, грамматика дельт v3, жизненный цикл turn/item, recovery hints.
+description: Инварианты JSON-RPC моста между агентом и runtime VesnALIA — транспорт, грамматика дельт v3, жизненный цикл turn/item, recovery hints.
 status: stable
 stale_after: 2027-01-20T00:00:00Z
-tags: [bb, provider, bridge, protocol, contract]
+tags: [VesnALIA, provider, bridge, protocol, contract]
 generated: { by: kimi-code/k3, at: "2026-10-20T10:52:46Z" }
 verified: { by: kimi-code/k3, at: "2026-10-20T10:52:46Z" }
 sources:
   - id: bridge-protocol
     resource: https://github.com/get-bb/bb/blob/e0f6fda5a02332bd4eb44183542a57f34f3263d7/docs/provider-bridge-protocol.md
-    title: The bb Provider Bridge Protocol
-    author: team:get-bb
+    title: The VesnALIA Provider Bridge Protocol
+    author: team:get-alia
   - id: echo-provider
     resource: https://github.com/get-bb/bb/tree/e0f6fda5a02332bd4eb44183542a57f34f3263d7/examples/plugins/echo-provider
     title: examples/plugins/echo-provider — эталонный минимальный провайдер
-    author: team:get-bb
+    author: team:get-alia
 ---
 
 # Разделение труда
 
 **Bridge знает диалект провайдера; runtime знает таймлайн.** Bridge парсит трафик своего агента в узкую грамматику семантических дельт (`thread/delta`); ассемблер дельт в runtime владеет всеми инвариантами таймлайна — mint id, жизненный цикл turn/item, порядок.[^bridge-protocol]
 
-Bridge — это экспорт `experimental_providerBridge` из `bb.host`-артефакта плагина (через `experimental_defineProviderBridge` из `@get-bb/plugin-sdk/provider-bridge`), а не самостоятельная программа: бутстрап демона владеет argv, `dataDir`/`tempDir`, фреймингом stdin и сигналами. **Импорт модуля не должен ничего запускать.**[^bridge-protocol]
+Bridge — это экспорт `experimental_providerBridge` из `alia.host`-артефакта плагина (через `experimental_defineProviderBridge` из `@vesnalia/plugin-sdk/provider-bridge`), а не самостоятельная программа: бутстрап демона владеет argv, `dataDir`/`tempDir`, фреймингом stdin и сигналами. **Импорт модуля не должен ничего запускать.**[^bridge-protocol]
 
 # Транспорт
 
@@ -42,7 +42,7 @@ Bridge — это экспорт `experimental_providerBridge` из `bb.host`-а
 
 | Идентификатор | Кто mint'ит |
 |---|---|
-| `threadId` | сервер bb (для провайдера opaque, эхо verbatim) |
+| `threadId` | сервер VesnALIA (для провайдера opaque, эхо verbatim) |
 | `providerThreadId` | провайдер; durable handle сессии, возвращается из `thread/start`/`resume`/`fork`; никогда не из per-process счётчика |
 | turn ids и item ids на `ThreadEvent` | **только ассемблер runtime** — ни провайдер, ни bridge |
 
@@ -60,7 +60,7 @@ Bridge передаёт provider-native id как vouched join-ключи на �
 - Один streaming-диалект: `item.textDelta { key, channel, text }` / `item.textClose`; каналы — `agentMessage`, `reasoningText`, `reasoningSummary`, `plan`. Батчинг текстовых дельт — политика ассемблера (50 мс окно), bridge шлёт текст по мере поступления.[^bridge-protocol]
 - Один usage-диалект: `usage { total, last, modelContextWindow }`; контекстный метр — отдельная дельта `contextWindow` (может нести `cost` и `snapshot`).[^bridge-protocol]
 - Extension kinds `"<pluginId>/<name>"`: дельта `extension` (payload обязан нести `presentation`) и thread-scoped `extension.state` (latest snapshot wins). Сервер валидирует payload при ingest; несоответствие персистится как `provider/unhandled`, никогда не дропается.[^bridge-protocol]
-- bb-инъецированные инструменты приходят в `dynamicTools[]` на `thread/start`/`resume`/`fork` со своей presentation; bridge штампует её (и `server: "bb"`) на `item.open`/`item.close` каждого вызова.[^bridge-protocol]
+- alia-инъецированные инструменты приходят в `dynamicTools[]` на `thread/start`/`resume`/`fork` со своей presentation; bridge штампует её (и `server: "alia"`) на `item.open`/`item.close` каждого вызова.[^bridge-protocol]
 
 # Recovery hints — типизированные, не текстовые
 
@@ -74,12 +74,12 @@ Bridge передаёт provider-native id как vouched join-ключи на �
 
 - Минимальный эталон: `examples/plugins/echo-provider` (декларация + bridge + conformance-тесты, только публичный SDK).[^echo-provider]
 - Самый большой рабочий пример: `plugins/provider-codex/src/bridge/bridge.ts`.[^bridge-protocol]
-- Для ACP-агентов — готовый кит `@get-bb/plugin-sdk/provider-bridge/acp` с диалектами `acp`, `cursor`, `grok`, `omp`, `opencode`.
+- Для ACP-агентов — готовый кит `@vesnalia/plugin-sdk/provider-bridge/acp` с диалектами `acp`, `cursor`, `grok`, `omp`, `opencode`.
 
 # Связанные документы
 
 - [Декларация провайдера](/contracts/provider-declaration.md)
 - [Проверка изменений плагина](/runbooks/verify-plugin-change.md)
 
-[^bridge-protocol]: The bb Provider Bridge Protocol
+[^bridge-protocol]: The VesnALIA Provider Bridge Protocol
 [^echo-provider]: examples/plugins/echo-provider

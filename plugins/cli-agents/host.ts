@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./contract";
 import { discover, executable } from "./adapters/discovery";
 import { codexInstructions } from "./adapters/codex";

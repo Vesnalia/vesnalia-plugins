@@ -14,7 +14,7 @@ function made(s: Store, id: string, o: Partial<NewWork> = {}) {
 }
 const version = { iteration: 1, headSha: "a", dirty: false, contextSha: "s", techSha: null, tzSha: null };
 
-const seen = (s: Store, id: string, now = 1) => s.upsertSeen({ id, name: id.toUpperCase(), dir: `/srv/plugins/bb-plugin-${id}`, source: `path:/srv/plugins/bb-plugin-${id}` }, now);
+const seen = (s: Store, id: string, now = 1) => s.upsertSeen({ id, name: id.toUpperCase(), dir: `/srv/plugins/alia-plugin-${id}`, source: `path:/srv/plugins/alia-plugin-${id}` }, now);
 const attemptOf = (id: string, plugin: string, o: Partial<Parameters<Store["addAttempt"]>[0]> = {}): Parameters<Store["addAttempt"]>[0] => ({
   id, plugin_id: plugin, work_id: null, kind: "enter", before_sha: "a", target_sha: "b", migrations: 0, was_installed: 1, was_enabled: 1, want_enabled: 1, started_at: 10, ...o,
 });
@@ -222,7 +222,7 @@ describe("Store: plugins", () => {
     expect(s.plugin("hello")).toBeNull();
     seen(s, "hello", 10);
     expect(s.plugin("hello")).toEqual({
-      id: "hello", name: "HELLO", dir: "/srv/plugins/bb-plugin-hello", source: "path:/srv/plugins/bb-plugin-hello", project_id: null,
+      id: "hello", name: "HELLO", dir: "/srv/plugins/alia-plugin-hello", source: "path:/srv/plugins/alia-plugin-hello", project_id: null,
       installed_sha: null, current_attempt: null, last_state: null, last_enabled: null, state_at: null, list_failed_at: null,
       first_seen: 10, last_seen: 10, gone_reason: null,
       gh_remote: null, gh_ahead: null, gh_behind: null, gh_checked_at: null, gh_error: null, gh_rolled: 0, hidden_at: null,
@@ -275,7 +275,7 @@ describe("Store: plugins", () => {
     s.setLastState("tags", { state: "running", enabled: true }, 10);
     s.setLastState("tags", null, 15);
     s.setNotInstalled("tags", 20);
-    expect(s.plugin("tags")).toMatchObject({ last_state: null, last_enabled: null, state_at: 20, list_failed_at: null, gone_reason: null, installed_sha: "abc", source: "path:/srv/plugins/bb-plugin-tags" });
+    expect(s.plugin("tags")).toMatchObject({ last_state: null, last_enabled: null, state_at: 20, list_failed_at: null, gone_reason: null, installed_sha: "abc", source: "path:/srv/plugins/alia-plugin-tags" });
   });
 });
 

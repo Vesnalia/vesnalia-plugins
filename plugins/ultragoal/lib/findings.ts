@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { verifyAttribution, type CommitResolver } from "./attribution.js";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { GoalFinding, GoalFindingStatus } from "../contract.js";
 
 interface FindingRow {
@@ -62,7 +62,7 @@ export function findingRegistrationCliMessage(
     // command would have proved the defect gone.
     const gate = hasCheck
       ? ""
-      : ` No --check was supplied, so nothing gates its completion; re-file the command with 'bb ultragoal item ${fixItemId} --check "<cmd>"' if one exists.`;
+      : ` No --check was supplied, so nothing gates its completion; re-file the command with 'VesnALIA ultragoal item ${fixItemId} --check "<cmd>"' if one exists.`;
     return `Finding ${findingId} registered; fix slice ${fixItemId} assigned by the scheduler.${gate}`;
   }
   return `Finding ${findingId} queued without a fix slice: remediation capacity is full; UltraGoal will assign it automatically.`;
@@ -116,8 +116,8 @@ function newId(): string {
   return `fnd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function createFindingStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export function createFindingStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   const byThread = db.prepare(
     "SELECT * FROM goal_findings WHERE thread_id = ? ORDER BY created_at ASC, id ASC",
   );

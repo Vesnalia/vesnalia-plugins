@@ -11,7 +11,7 @@ const LEGACY_PREFIX = "codex-sidebar:";
 const CURRENT_PREFIX = "radar-sidebar:";
 
 /**
- * Keys that were retired when nav placement moved to BB's own server-synced
+ * Keys that were retired when nav placement moved to VesnALIA's own server-synced
  * UI preferences. They are deleted rather than carried over.
  */
 const RETIRED = new Set([

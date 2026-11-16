@@ -1,7 +1,7 @@
 /*
- * bb-plugin-notes live markdown editor — decoration classes.
+ * alia-plugin-notes live markdown editor — decoration classes.
  *
- * All colors come from bb theme tokens (CSS custom properties) so light and
+ * All colors come from alia theme tokens (CSS custom properties) so light and
  * dark both work without a `.dark` variant. Sizes are em-based so they track
  * `--bbnotes-editor-font-size`.
  */

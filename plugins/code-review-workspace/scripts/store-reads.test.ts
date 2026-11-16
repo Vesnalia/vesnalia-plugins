@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import { canonical, dumpDatabase, storeEntities, tableChecksums } from "./store-reads";
 import { queueStore } from "../src/store-queue";
@@ -20,8 +20,8 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 
 /** A snapshot of a store with a review whose reads write: its patch's hash is missing, and its rows are under a renamed file's old path. */
 async function snapshot(): Promise<string> {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = queueStore(createStore(bb));
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = queueStore(createStore(alia));
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "o/r", status: "ready", createdAt: 1, headSha: "h1" });
   await store.setLifecycle("pr-1", { pinnedAt: 5 });
   await store.savePatch("pr-1", RENAMED);
@@ -34,7 +34,7 @@ async function snapshot(): Promise<string> {
   await store.setGenerationWorker("pr-1", id, "worker-1");
   await store.setAssistantThread("pr-1", "thread-1");
   await store.ignoreDiscovery("pr-2");
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   db.prepare(`UPDATE patches SET hash=NULL`).run();
   const dir = mkdtempSync(join(tmpdir(), "store-reads-test-"));
   dirs.push(dir);

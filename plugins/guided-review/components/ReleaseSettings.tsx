@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { ReleaseStatus } from "../src/plugin-updates";
 import { Button } from "./ui/button";
@@ -8,7 +8,7 @@ const descriptions: Record<ReleaseStatus["outcome"], string> = {
   unchecked: "Check for a compatible release.",
   current: "You’re on the latest compatible release.",
   "update-available": "A compatible release is available.",
-  incompatible: "A newer release needs a newer BB or Node version. Update your BB server, then check again.",
+  incompatible: "A newer release needs a newer VesnALIA or Node version. Update your VesnALIA server, then check again.",
   pinned: "This is a local or pinned installation. Marketplace installations can follow compatible releases.",
   unavailable: "Updates could not be resolved. Check your connection and try again.",
 };
@@ -29,10 +29,10 @@ export function ReleaseSettings({ clientId, disabled, onUpdatingChange }: { clie
       else if (action === "toggle" && status) setStatus(await rpc.call("setAutomaticUpdates", { enabled: !status.automatic }));
       else if (status?.candidateVersion) {
         const result = await rpc.call("applyPluginUpdate", { clientId, candidateVersion: status.candidateVersion });
-        if (result.outcome === "rolled-back") setError("The update failed and BB restored the previous version. Check for updates before retrying.");
+        if (result.outcome === "rolled-back") setError("The update failed and VesnALIA restored the previous version. Check for updates before retrying.");
         else { setMessage(result.outcome === "updated" ? `Updated${result.version ? ` to ${result.version}` : ""}. Reopen Guided Review to load it.` : "Already on the latest compatible release."); await rpc.call("getReleaseStatus", null).then(setStatus).catch(() => {}); }
       }
-    } catch (error) { setError(error instanceof Error ? error.message : "Couldn’t complete the update. Your reviews stay saved in BB."); }
+    } catch (error) { setError(error instanceof Error ? error.message : "Couldn’t complete the update. Your reviews stay saved in VesnALIA."); }
     finally { setBusy(""); if (action === "update") onUpdatingChange?.(false); }
   }
   return <section aria-label="Plugin updates" className="space-y-4 border-t border-border pt-5">
@@ -44,7 +44,7 @@ export function ReleaseSettings({ clientId, disabled, onUpdatingChange }: { clie
       <a className="self-center text-xs text-muted-foreground underline underline-offset-4" href="https://github.com/notpritam/bb-plugin-guided-review/releases" target="_blank" rel="noreferrer">Release notes</a>
     </div>
     {disabled && <p className="text-xs text-muted-foreground">Save or discard your settings edits before updating.</p>}
-    <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 size-4 accent-current" checked={status?.automatic ?? false} disabled={!status || !!busy || (status.outcome === "pinned" && !status.automatic)} onChange={() => void perform("toggle")} /><span><span className="font-medium">Update automatically when idle</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Off by default. Checks hourly after five idle minutes, once all review and Settings pages are closed. Installs the latest compatible release through BB; saved reviews, drafts, notes, and preferences stay in place.</span></span></label>
+    <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 size-4 accent-current" checked={status?.automatic ?? false} disabled={!status || !!busy || (status.outcome === "pinned" && !status.automatic)} onChange={() => void perform("toggle")} /><span><span className="font-medium">Update automatically when idle</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Off by default. Checks hourly after five idle minutes, once all review and Settings pages are closed. Installs the latest compatible release through VesnALIA; saved reviews, drafts, notes, and preferences stay in place.</span></span></label>
     {(error || status?.error) && <p role="alert" className="text-sm text-destructive">{error || status?.error}</p>}
     {message && <p role="status" className="text-sm">{message}</p>}
   </section>;
@@ -63,14 +63,14 @@ export function SetupReadiness() {
   useEffect(() => { void check(); }, [rpc]);
   return <section aria-label="Setup" className="space-y-3 border-t border-border pt-5">
     <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-semibold">Ready to review</h2><Button variant="ghost" size="sm" disabled={busy} onClick={() => void check()}>{busy ? "Checking…" : "Check setup"}</Button></div>
-    <p className="text-sm text-muted-foreground">Connect GitHub on the machine running BB, then paste a PR link. Guides use your BB agent and its normal usage allowance.</p>
+    <p className="text-sm text-muted-foreground">Connect GitHub on the machine running VesnALIA, then paste a PR link. Guides use your VesnALIA agent and its normal usage allowance.</p>
     {setup && <ul className="space-y-2 text-sm">
-      <li>{setup.githubCli ? "GitHub CLI installed" : "Install GitHub CLI on the BB server."}</li>
-      <li>{setup.account ? <>GitHub account: <strong>@{setup.account}</strong></> : <>Sign in on the BB server: <code className="break-all text-xs">gh auth login --hostname github.com</code></>}</li>
-      <li>{setup.agentAvailable === true ? "BB agent available" : setup.agentAvailable === false ? "Connect an agent provider in BB Settings before generating a guide." : "Couldn’t verify the agent provider. Check BB Settings."}</li>
-      {setup.projectAvailable !== true && <li>{setup.projectAvailable === false ? "Add a BB project before starting a review." : "Couldn’t verify the BB project. Check your project list."}</li>}
+      <li>{setup.githubCli ? "GitHub CLI installed" : "Install GitHub CLI on the VesnALIA server."}</li>
+      <li>{setup.account ? <>GitHub account: <strong>@{setup.account}</strong></> : <>Sign in on the VesnALIA server: <code className="break-all text-xs">gh auth login --hostname github.com</code></>}</li>
+      <li>{setup.agentAvailable === true ? "VesnALIA agent available" : setup.agentAvailable === false ? "Connect an agent provider in VesnALIA Settings before generating a guide." : "Couldn’t verify the agent provider. Check VesnALIA Settings."}</li>
+      {setup.projectAvailable !== true && <li>{setup.projectAvailable === false ? "Add a VesnALIA project before starting a review." : "Couldn’t verify the VesnALIA project. Check your project list."}</li>}
     </ul>}
-    <p className="text-xs leading-relaxed text-muted-foreground">Use your own BB installation for your own GitHub identity. On a shared installation, account selection and saved reviews are shared. The selected account must have access to the PR repository.</p>
+    <p className="text-xs leading-relaxed text-muted-foreground">Use your own VesnALIA installation for your own GitHub identity. On a shared installation, account selection and saved reviews are shared. The selected account must have access to the PR repository.</p>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </section>;
 }

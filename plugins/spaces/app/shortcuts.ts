@@ -9,7 +9,7 @@ function isMacPlatform(): boolean {
 }
 
 /**
- * Label for the Control+Alt+N default, formatted like bb's own shortcut
+ * Label for the Control+Alt+N default, formatted like VesnALIA's own shortcut
  * hints: "⌃ ⌥ 1" on macOS, "Ctrl + Alt + 1" on Windows and Linux.
  */
 export function spaceShortcutLabel(index: number): string | null {

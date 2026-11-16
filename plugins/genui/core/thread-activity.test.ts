@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { lastMessage, MESSAGE_CHARS, pendingAsk, previewText, threadActivityLabel, workersByParent } from "./thread-activity";
 
-/** A provider interaction as BB's threads.interactions.list returns it (SDK `ProviderPendingInteraction`). */
+/** A provider interaction as VesnALIA's threads.interactions.list returns it (SDK `ProviderPendingInteraction`). */
 function provider(payload: object, overrides: object = {}) {
   return {
     id: "pi_1",
@@ -39,7 +39,7 @@ describe("lastMessage", () => {
 
 describe("previewText", () => {
   it("reads a real status report as one plain line", () => {
-    // The start of a thread output (bb thread output thr_d9k2e7sq5b).
+    // The start of a thread output (VesnALIA thread output thr_d9k2e7sq5b).
     const output =
       "Fixed and live: `main` = `production` = `822e987`, Worker `8aae65f1`, smoke 17/17.\n\n**Cause** (not the palette): `flowerFragment` flipped the [normal](https://x.dev/a).";
     expect(previewText(output)).toBe(
@@ -102,12 +102,12 @@ describe("pendingAsk", () => {
       text: "Plan Build on the Mac Install",
     });
     expect(
-      approval({ kind: "tool_use", itemId: "i", tool: "WebFetch", presentation: { icon: { glyph: "Globe" }, label: { pending: "Fetching docs.bb.dev", completed: "Fetched" } } }),
-    ).toMatchObject({ action: "Approve using WebFetch", text: "Fetching docs.bb.dev" });
+      approval({ kind: "tool_use", itemId: "i", tool: "WebFetch", presentation: { icon: { glyph: "Globe" }, label: { pending: "Fetching docs.alia.dev", completed: "Fetched" } } }),
+    ).toMatchObject({ action: "Approve using WebFetch", text: "Fetching docs.alia.dev" });
   });
 
   it("reads a real plugin request (the secrets plugin's form)", () => {
-    // A row of BB's pending_interactions table, as the SDK returns it.
+    // A row of VesnALIA's pending_interactions table, as the SDK returns it.
     const ask = pendingAsk([
       {
         id: "pi_s",

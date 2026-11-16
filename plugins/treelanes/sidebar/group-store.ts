@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { noInput } from "../rpc-input";
 
@@ -32,8 +32,8 @@ export const groupDefinitions = {
 };
 
 export function groupStore(
-  bb: BbPluginApi,
-  db: ReturnType<BbPluginApi["storage"]["database"]>,
+  alia: AliaPluginApi,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
   preferredMains: () => MainThread[],
 ) {
   db.exec(`CREATE TABLE IF NOT EXISTS worktree_mains (
@@ -68,7 +68,7 @@ export function groupStore(
       };
     },
     async saveMain(input: z.infer<typeof groupDefinitions.saveMain.input>) {
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: input.threadId });
       if (
         thread.projectId !== input.projectId ||
         thread.environmentId !== input.environmentId ||
@@ -77,10 +77,10 @@ export function groupStore(
         thread.visibility === "hidden"
       )
         throw new Error("Choose a visible thread in this worktree.");
-      const environment = await bb.sdk.environments.get({
+      const environment = await alia.sdk.environments.get({
         environmentId: input.environmentId,
       });
-      // Match BB's workspace display kind. A managed worktree has this kind
+      // Match VesnALIA's workspace display kind. A managed worktree has this kind
       // before provisioning discovers its Git files.
       if (
         environment.workspaceProvisionType !== "managed-worktree" &&
@@ -101,7 +101,7 @@ export function groupStore(
         return true;
       });
       const ok = change();
-      bb.realtime.publish("groups", {});
+      alia.realtime.publish("groups", {});
       return { ok };
     },
     async saveGroupOrder({
@@ -113,7 +113,7 @@ export function groupStore(
         );
         groupIds.forEach((key, index) => put.run(key, index));
       })();
-      bb.realtime.publish("groups", {});
+      alia.realtime.publish("groups", {});
       return { ok: true };
     },
   };

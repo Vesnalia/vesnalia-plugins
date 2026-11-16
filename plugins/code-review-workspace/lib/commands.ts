@@ -1,8 +1,8 @@
-// Code Review Workspace's commands in BB's command palette. A command's run gets no RPC and no navigation, so it posts here, and
-// the handler that BB's always-mounted app overlay runs (components/NeedsReviewSidebar.tsx) does the work.
+// Code Review Workspace's commands in VesnALIA's command palette. A command's run gets no RPC and no navigation, so it posts here, and
+// the handler that VesnALIA's always-mounted app overlay runs (components/NeedsReviewSidebar.tsx) does the work.
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { experimental_usePluginId, useBbNavigate, useRpc, type PluginCommandContext } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useAliaNavigate, useRpc, type PluginCommandContext } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { parsePrLink } from "./pr-link";
 import { needsOrder, reviewState, type ReviewItem } from "./review-state";
@@ -48,7 +48,7 @@ export function switchTarget({ threadId }: Pick<PluginCommandContext, "threadId"
 let handler: ((command: PaletteCommand) => void) | null = null;
 let paletteCommands = true;
 
-/** Commands in BB's command palette, the knob, as the overlay last loaded it: on until it loads. */
+/** Commands in VesnALIA's command palette, the knob, as the overlay last loaded it: on until it loads. */
 export function setPaletteCommands(on: boolean) { paletteCommands = on; }
 
 /** Whether the palette lists the commands: the knob is on, and an overlay is there to handle them, which hosts without app overlays never have. */
@@ -61,7 +61,7 @@ export const SWITCH_KEY = { key: ".", mod: true, shift: true } as const;
 const switchKeyLabel = () => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘⇧." : "Ctrl+Shift+.";
 
 /**
- * A go-to control's tooltip, with the switch's default key while the palette lists it. BB doesn't tell a plugin a key
+ * A go-to control's tooltip, with the switch's default key while the palette lists it. VesnALIA doesn't tell a plugin a key
  * you bound instead.
  */
 export function switchHint(label: string): string {
@@ -76,7 +76,7 @@ export async function readClipboard(): Promise<string | null> {
 /** Handles the palette's commands while mounted: lists reviews, starts one, and opens the panel. */
 export function usePaletteCommands() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   useEffect(() => { installedAs = pluginId; }, [pluginId]);
   useEffect(() => {

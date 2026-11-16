@@ -54,7 +54,7 @@ test("a host is claimed in storage before its server is asked for, named for the
   assert.equal(claimedBeforeCreate, true);
   assert.equal(host.state, "ready");
   assert.equal(host.serverName, serverNameFor("inst1", host.hostId));
-  assert.match(host.serverName, /^bb-box-hz-inst1-[a-z0-9]{8}$/);
+  assert.match(host.serverName, /^alia-box-hz-inst1-[a-z0-9]{8}$/);
   const [server] = api.servers.values();
   assert.equal(server!.status, "running");
   assert.deepEqual(server!.labels, { [LABEL.install]: "inst1", [LABEL.host]: host.hostId, [LABEL.role]: "host", [LABEL.image]: "b1" });
@@ -159,21 +159,21 @@ test("the sweep never deletes a server a record claims, however old, nor one in 
 test("the sweep adopts the install's unclaimed host, as after lost storage, and deletes another unclaimed server of the install past the grace, never another install's or one made by hand", async () => {
   const { api, process } = world();
   const raw = new Hetzner({ token: FAKE_HETZNER_TOKEN, fetch: api.fetch, sleep: async () => {} });
-  const lost = await raw.createServer({ name: "bb-box-inst1-lost0001", serverType: "cpx42", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: { [LABEL.install]: "inst1", [LABEL.host]: "lost0001", [LABEL.role]: "host" } });
-  const stray = await raw.createServer({ name: "bb-box-inst1-stray001", serverType: "cpx42", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: { [LABEL.install]: "inst1", [LABEL.role]: "image-build" } });
-  await raw.createServer({ name: "bb-box-other-h1", serverType: "cpx42", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: { [LABEL.install]: "other", [LABEL.host]: "h1", [LABEL.role]: "host" } });
+  const lost = await raw.createServer({ name: "alia-box-inst1-lost0001", serverType: "cpx42", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: { [LABEL.install]: "inst1", [LABEL.host]: "lost0001", [LABEL.role]: "host" } });
+  const stray = await raw.createServer({ name: "alia-box-inst1-stray001", serverType: "cpx42", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: { [LABEL.install]: "inst1", [LABEL.role]: "image-build" } });
+  await raw.createServer({ name: "alia-box-other-h1", serverType: "cpx42", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: { [LABEL.install]: "other", [LABEL.host]: "h1", [LABEL.role]: "host" } });
   await raw.createServer({ name: "docker-host-made-by-hand", serverType: "cpx32", location: "nbg1", imageNameOrSnapshotId: "ubuntu-24.04", labels: {} });
   const hosts = process();
-  assert.deepEqual((await hosts.unclaimedServers()).map((each) => each.name).sort(), ["bb-box-inst1-lost0001", "bb-box-inst1-stray001"]);
+  assert.deepEqual((await hosts.unclaimedServers()).map((each) => each.name).sort(), ["alia-box-inst1-lost0001", "alia-box-inst1-stray001"]);
   const first = await hosts.sweep();
-  assert.deepEqual(first.adoptedHosts, ["bb-box-inst1-lost0001"]);
+  assert.deepEqual(first.adoptedHosts, ["alia-box-inst1-lost0001"]);
   assert.deepEqual(first.deletedUnclaimedServers, [], "not within the grace");
   const adopted = await hosts.record("lost0001");
   assert.deepEqual([adopted?.state, adopted?.serverId, adopted?.answeredAtMs], ["ready", lost.server.id, null]);
   api.advanceClock(PAST_GRACE);
-  assert.deepEqual((await hosts.sweep()).deletedUnclaimedServers, ["bb-box-inst1-stray001"]);
+  assert.deepEqual((await hosts.sweep()).deletedUnclaimedServers, ["alia-box-inst1-stray001"]);
   assert.equal(api.servers.has(stray.server.id), false);
-  assert.deepEqual([...api.servers.values()].map((each) => each.name).sort(), ["bb-box-inst1-lost0001", "bb-box-other-h1", "docker-host-made-by-hand"]);
+  assert.deepEqual([...api.servers.values()].map((each) => each.name).sort(), ["alia-box-inst1-lost0001", "alia-box-other-h1", "docker-host-made-by-hand"]);
   assert.ok(api.calls.filter((call) => call.method === "GET" && call.path === "/servers").every((call) => call.query.label_selector?.startsWith("bbbox-install=inst1")), "every list keeps to the install");
 });
 

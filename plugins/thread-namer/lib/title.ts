@@ -1,7 +1,7 @@
 /**
  * Building the naming prompt and turning an agent's answer into a title.
  *
- * Kept free of the plugin api so both halves can be tested without a bb
+ * Kept free of the plugin api so both halves can be tested without a VesnALIA
  * server: everything here is a pure function over strings.
  */
 

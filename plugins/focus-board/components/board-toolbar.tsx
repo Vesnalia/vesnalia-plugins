@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { RefObject } from "react";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -255,7 +255,7 @@ function MultiSelectDropdown({
         }}
       >
             {/* Search bar: long option lists only. Sticky so it stays put
-                while the rows scroll, like bb's model picker. */}
+                while the rows scroll, like VesnALIA's model picker. */}
             {searchable ? (
               <div className="sticky top-0 z-10 -mx-1 mb-1 border-b border-border bg-popover px-2 pb-1.5 pt-0.5">
                 <div className="flex items-center gap-1.5">
@@ -893,7 +893,7 @@ export function BoardToolbar({
         thread count is board metadata and rides at the row's end with the
         filters, not with the button. New thread opens the board composer
         (components/new-thread-modal, whose header carries the maximize
-        hand-off to bb's main new-thread view). */
+        hand-off to VesnALIA's main new-thread view). */
     <button
       type="button"
       onClick={onNewThread}

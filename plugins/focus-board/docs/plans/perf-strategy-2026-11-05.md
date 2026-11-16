@@ -16,11 +16,11 @@ modeled sidebar fetch) and the client profile (pure client cost).
 
 | Rank | Cost | Evidence (baseline) | Who pays it |
 |---|---|---|---|
-| 1 | The serial per-thread metadata scans inside the four `*_list` server handlers (`link_list`, `pin_parks_list`, `error_acks_list`, `snooze_list` — each `bb.sdk.threads.list({})` then one awaited `threads.getPluginMetadata` hop per row; `done_list` hops per done id via its index) | modeled `fanInWindow` 368→677→1076ms at 100→300→500 cards; the four scans are modeled at N×1.5ms each, all parallel-issued, and the board render contends with them | server (bb's plugin process) at every board open and every mounted panel |
+| 1 | The serial per-thread metadata scans inside the four `*_list` server handlers (`link_list`, `pin_parks_list`, `error_acks_list`, `snooze_list` — each `alia.sdk.threads.list({})` then one awaited `threads.getPluginMetadata` hop per row; `done_list` hops per done id via its index) | modeled `fanInWindow` 368→677→1076ms at 100→300→500 cards; the four scans are modeled at N×1.5ms each, all parallel-issued, and the board render contends with them | server (VesnALIA's plugin process) at every board open and every mounted panel |
 | 2 | The post-paint mutation churn: after the board's cards are in the DOM, the page keeps mutating for ~400-513ms (client profile `settleTail`; modeled profile's negative numbers say the modeled fan-in's tail changes nothing visible, so this churn is the client profile's own) | client `settleTail` 400 / 443 / 513ms at the three scales | client, after first paint — the operator sees a board that "looks loaded" but keeps repainting |
 | 3 | The board's first commit + card DOM, ~linear in cards | client `firstCommit`/`firstCard` 186-303ms across scales; TBT 80-300ms; one commit renders every card (no staged render) | client, before first paint |
 | 4 | The bridge round trips themselves and the duplicated `threads.list({})` scans (five list handlers × one full host scan each) | the modeled profile's `rpcLatency=8` knob: the ten parallel round trips overlap, so their wall is ~one trip; the scans are Rank 1's shape | server + bridge |
-| 5 | Module graph evaluation | client `appEval` 53-117ms | client, once per bb panel opening |
+| 5 | Module graph evaluation | client `appEval` 53-117ms | client, once per VesnALIA panel opening |
 
 The mounted RPC names and their refetch shapes (from `app.tsx`'s mount
 effects, lines ~503-910): the nine lists + `pulse_rates` fire in parallel
@@ -85,7 +85,7 @@ ride a later effect and are excluded from the fan-in on purpose.
   ten `rpc.call`s; a single aggregate RPC serving the same nine lists +
   sweep config (pulse stays its own poll — its cadence and demand lease are
   load-independent) replaces the mount fan-out with ONE bridge trip and ONE
-  `bb.sdk.threads.list({})` scan shared by every list handler that wants
+  `alia.sdk.threads.list({})` scan shared by every list handler that wants
   one.
 - **Mechanism**: `server.ts` gains `board_state_get` returning each list's
   existing payload (same zod shapes, composed); the mount effect calls it

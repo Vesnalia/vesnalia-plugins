@@ -2,7 +2,7 @@
 // cited sources and entity cards. Pure logic lives in ./structure/logic.ts; styles in structure.css.
 import { useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { defineComponent } from "@openuidev/react-lang";
-import { Markdown, experimental_Diff as BbDiff, experimental_copyToClipboard, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_Diff as AliaDiff, experimental_copyToClipboard, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { ArrowUpRight, Building2, ChevronRight, Link2, MapPin, Package, User } from "lucide-react";
 import { z } from "zod/v4";
 import { Button, LoadedView, Skeleton, clamp, cx, fmt, useStreaming } from "./kit";
@@ -247,7 +247,7 @@ const Diff = defineComponent({
           </span>
         </figcaption>
         {/* A half-written patch misparses: draw it once the block is complete. */}
-        {streaming ? <Skeleton lines={4} /> : patch.trim() === "" ? null : <BbDiff patch={patch} path={path} overflow="wrap" />}
+        {streaming ? <Skeleton lines={4} /> : patch.trim() === "" ? null : <AliaDiff patch={patch} path={path} overflow="wrap" />}
       </figure>
     );
   },
@@ -279,9 +279,9 @@ function Picture({ loaded, alt, height = 180 }: { loaded: Loaded<string>; alt: s
   );
 }
 
-/** Opens http(s) through BB (its browser preference); keeps the href for copy and modified clicks. */
+/** Opens http(s) through VesnALIA (its browser preference); keeps the href for copy and modified clicks. */
 function WebLink({ url, className, children }: { url: URL; className?: string; children: ReactNode }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const open = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (navigate.openUrl(url.href)) event.preventDefault();
@@ -533,7 +533,7 @@ const sourceItem = z.union([z.string(), z.object({ url: z.string(), title: z.str
 
 const Sources = defineComponent({
   name: "Sources",
-  description: "Numbered list of cited web pages, matching [1], [2] in the text; opens them in BB's browser.",
+  description: "Numbered list of cited web pages, matching [1], [2] in the text; opens them in VesnALIA's browser.",
   props: z.object({ links: z.array(sourceItem) }),
   component: ({ props }) => {
     const links = (Array.isArray(props.links) ? props.links : []).map((item) =>

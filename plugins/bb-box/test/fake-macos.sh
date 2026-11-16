@@ -468,7 +468,7 @@ case $tool in
         [ -r "$2" ] || { echo "security: Error reading infile $2: Permission denied" >&2; exit 1; }
         echo identity >"$R$4"
         ;;
-      find-identity) [ -s "$R$4" ] && printf '  1) F26BFAF6B29A8AFCF02CD1EC3DBE7E68864E1F4E "bb-box local code signing"\n' ;;
+      find-identity) [ -s "$R$4" ] && printf '  1) F26BFAF6B29A8AFCF02CD1EC3DBE7E68864E1F4E "alia-box local code signing"\n' ;;
       list-keychains)
         list=$F/keychains/$(id -u)
         mkdir -p "$F/keychains"

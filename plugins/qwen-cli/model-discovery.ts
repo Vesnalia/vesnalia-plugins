@@ -81,7 +81,7 @@ const publishedEnv = new Set<string>();
 process.once("exit", () => { for (const dir of directories) rmSync(dir, { recursive: true, force: true }); });
 
 // The SDK strips ELECTRON_RUN_AS_NODE from every spawned agent env, so a proxy launched
-// with an Electron process.execPath would boot the GUI on desktop bb and exit 0 instantly.
+// with an Electron process.execPath would boot the GUI on desktop VesnALIA and exit 0 instantly.
 // Prefer a plain node binary from PATH when this host worker runs inside Electron.
 let runnerCache: string | undefined;
 export function nodeRunner(): string {
@@ -170,7 +170,7 @@ export async function prepareModelOverlay(request: Settings): Promise<Settings> 
         if (typeof value === "string") childEnv[key] = value;
       }
     }
-    // When the host worker runs as an Electron binary (Windows desktop bb), spawning process.execPath
+    // When the host worker runs as an Electron binary (Windows desktop VesnALIA), spawning process.execPath
     // bootstraps the GUI unless ELECTRON_RUN_AS_NODE is set; the child then exits 0 instantly.
     if (process.env.ELECTRON_RUN_AS_NODE) childEnv.ELECTRON_RUN_AS_NODE = "1";
     delete overlay.env;
@@ -178,7 +178,7 @@ export async function prepareModelOverlay(request: Settings): Promise<Settings> 
     for (const models of Object.values(providers) as any[]) {
       if (!Array.isArray(models)) continue;
       for (const model of models) if (typeof model.apiKey === "string") {
-        const name = `BB_QWEN_OVERLAY_KEY_${index++}`;
+        const name = `ALIA_QWEN_OVERLAY_KEY_${index++}`;
         childEnv[name] = model.apiKey; delete model.apiKey; model.envKey = name;
       }
     }
@@ -193,7 +193,7 @@ export async function prepareModelOverlay(request: Settings): Promise<Settings> 
     let files = overlays.get(identity);
     if (!files) {
       files = (async () => {
-        dir = await mkdtemp(join(tmpdir(), "bb-qwen-models-"));
+        dir = await mkdtemp(join(tmpdir(), "alia-qwen-models-"));
         const path = join(dir, "settings.json");
         await writeFile(path, JSON.stringify(overlay), { mode: 0o600 });
         // Guard the SDK's legacy fallback too: Qwen otherwise persists session/set_model.

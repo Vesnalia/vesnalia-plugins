@@ -11,7 +11,7 @@ in [README](../README.md#compatibility) was accepted on 5 November; no new level
 registration or successful automatic-compaction claim is added.
 
 29 October 2026: the owner accepted M5.4 and its cheap post-Stop continuation.
-The exact bb 0.48.0 / installed SDK 0.6.94 / Desktop 3.16.3 / CLI 0.17.0 /
+The exact VesnALIA 0.48.0 / installed SDK 0.6.94 / Desktop 3.16.3 / CLI 0.17.0 /
 Node 24.22.0 tuple is registered as level1 alongside the old combination.
 Ordinary recovery after active Stop and a fresh startup without the unchecked
 warning passed. [Current identities](M5.4-artifacts.json). Successful automatic
@@ -26,14 +26,14 @@ alone does not establish level1. On 26 October 2026 the owner accepted audit 2,
 the final live series and the blank-page Notion read; the exact combination is
 now registered as level1. See the compatibility table in [README](../README.md).
 
-Run from the repository with the host Node supported by bb:
+Run from the repository with the host Node supported by VesnALIA:
 
 ```sh
 node scripts/provider/compat-level0.mjs
-node scripts/provider/compat-level0.mjs --bb /path/bb.app --zcode /path/ZCode.app --registry compat/touchpoints.json
+node scripts/provider/compat-level0.mjs --alia /path/alia.app --zcode /path/ZCode.app --registry compat/touchpoints.json
 ```
 
-The defaults are `/Applications/bb.app` and `/Applications/ZCode.app`.
+The defaults are `/Applications/alia.app` and `/Applications/ZCode.app`.
 The tool reads physical bundle files and packed/unpacked ASAR entries. It does
 not start an app, CLI, login, model or network request. JSON stdout reports each
 anchor, affected source files and the function's failure consequence. Exit codes:
@@ -49,7 +49,7 @@ All semantic anchors of a point are required. An anchor may list explicit
 `file` or at least one alternative. These locations are OR alternatives;
 they are not independent mandatory anchors. JSON records every attempted path
 and `matchedFile`, and fails when none contains the required text.
-SDK anchors use bb's shipped artifacts,
+SDK anchors use VesnALIA's shipped artifacts,
 not the repository's pinned npm package. Bundled-away export names are replaced
 with observable schema keys; generic/indirect evidence is marked weak.
 Paths in `code` name product or development files, not upstream symbol offsets.
@@ -80,28 +80,28 @@ mapped to their current equivalents (`native.ts`, `translator.ts`, `runtime.ts`)
 
 | Historical source | Registry groups covering its dependencies |
 |---|---|
-| M1 / M2 | zcode-v4, framing, rows, hydration, env, builtin, config-env, runtime-headers, credentials, credential-cipher, interactions, mcp-ready; sdk-bridge, delta; bb-artifact, shutdown, host-node, persistent-data |
-| M3 / M4.1 | zcode-background, hydration, rows; sdk-delta, bb-shutdown, plugin-checkpoints |
-| M4.2 / KNOWLEDGE | All transport/auth/continuation/SDK/lifecycle groups above; bb-version, sdk-version; zcode-desktop-version |
-| M4.3 | zcode-credentials, credential-cipher, builtin, runtime-headers, login, unsupported-plans; bb-secrets, sdk-health |
+| M1 / M2 | zcode-v4, framing, rows, hydration, env, builtin, config-env, runtime-headers, credentials, credential-cipher, interactions, mcp-ready; sdk-bridge, delta; alia-artifact, shutdown, host-node, persistent-data |
+| M3 / M4.1 | zcode-background, hydration, rows; sdk-delta, alia-shutdown, plugin-checkpoints |
+| M4.2 / KNOWLEDGE | All transport/auth/continuation/SDK/lifecycle groups above; alia-version, sdk-version; zcode-desktop-version |
+| M4.3 | zcode-credentials, credential-cipher, builtin, runtime-headers, login, unsupported-plans; alia-secrets, sdk-health |
 | M4.4 / M4.4.1 | zcode-helper, layout, personal-config, catalogue, model-bootstrap; sdk-roots-schema |
 | M4.4.2 / M4.5 | sdk-mentions, zcode-attachment, mcp-ready |
-| M4.6 / M4.6.1 | zcode-personal-config, catalogue, env; sdk-host, roots-schema, warning; bb-roots-cache, settings |
-| M4.6.2 | zcode-plugin-discovery, registry, project-view, env, hydration; sdk-roots-schema; bb-settings |
+| M4.6 / M4.6.1 | zcode-personal-config, catalogue, env; sdk-host, roots-schema, warning; alia-roots-cache, settings |
+| M4.6.2 | zcode-plugin-discovery, registry, project-view, env, hydration; sdk-roots-schema; alia-settings |
 | M4.6.3 | zcode-env, plugin-registry, official-manifest, plugin-discovery, project-view, plugin-guard, trust; sdk-host |
 | M4.6.4 and continuation | sdk-steer, zcode-steer, official-manifest, plugin-guard, rows, attachment, hydration |
 | M4.7 | sdk-mentions, steer, roots-schema; zcode-catalogue, resident-skills, skill-tool, custom-command, steer |
 | M4.7.1 | sdk-compact, warning, mentions, steer; zcode-compact |
-| M4.8 | bb-subagents-setting, sdk-delegation; zcode-subagents, child-model, runtime-headers, background; existing mentions/steer/compact points |
-| M4.9.1 | bb-version, sdk-version, artifact; sdk-bridge, delta, host |
-| M4.9.2 | zcode-service-error, error-codes, business-errors, rows; sdk-health; bb-retry |
-| M4.9.3 | zcode-desktop-version, layout, helper, credentials, login, unsupported-plans; bb-version; sdk-health |
-| M4.9.4 | zcode-desktop-version, layout, helper; bb-persistent-data, version, sdk-version, settings; sdk-health, warning; plugin-checkpoints |
-| M4.9.5 | zcode-production, observer, hydration, cua; bb-settings, persistent-data, version; plugin-checkpoints |
-| M4.9.6a / M4.9.6b | zcode-catalogue, resident-skills, desktop-version, layout; sdk-reasoning; bb-secrets, roots-cache; three interception groups and plugin-checkpoints |
+| M4.8 | alia-subagents-setting, sdk-delegation; zcode-subagents, child-model, runtime-headers, background; existing mentions/steer/compact points |
+| M4.9.1 | alia-version, sdk-version, artifact; sdk-bridge, delta, host |
+| M4.9.2 | zcode-service-error, error-codes, business-errors, rows; sdk-health; alia-retry |
+| M4.9.3 | zcode-desktop-version, layout, helper, credentials, login, unsupported-plans; alia-version; sdk-health |
+| M4.9.4 | zcode-desktop-version, layout, helper; alia-persistent-data, version, sdk-version, settings; sdk-health, warning; plugin-checkpoints |
+| M4.9.5 | zcode-production, observer, hydration, cua; alia-settings, persistent-data, version; plugin-checkpoints |
+| M4.9.6a / M4.9.6b | zcode-catalogue, resident-skills, desktop-version, layout; sdk-reasoning; alia-secrets, roots-cache; three interception groups and plugin-checkpoints |
 
 M4.9.2's response injector depends on mitmproxy only inside the development
-stand. It is not a bb/SDK/ZCode release dependency; it is covered by the existing
+stand. It is not a alia/SDK/ZCode release dependency; it is covered by the existing
 stand tooling checks. Other plugin-owned records (binding, translator and
 background versions, application-path and data-maintenance notices) depend on
 host data lifetime, not an upstream schema; `plugin-checkpoints` explicitly

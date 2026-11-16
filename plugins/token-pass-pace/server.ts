@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
+import { defineRpcContract, type AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { createCollector } from './collector.js';
 import { TOKEN_PASS_ALLOWANCE_USD, TOKEN_PASS_PERIOD_START_DAY } from './pass.js';
@@ -27,8 +27,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     tokenpassEnabled: { type: 'boolean', label: 'Track Vercel Token Pass', default: true },
     tokenpassApiKey: {
       type: 'string',
@@ -52,7 +52,7 @@ export default function plugin(bb: BbPluginApi) {
 
   const collector = createCollector();
   settings.onChange(() => collector.invalidate());
-  bb.onDispose(() => collector.dispose());
+  alia.onDispose(() => collector.dispose());
 
   const number = (values: Record<string, unknown>, key: string, fallback: number) => {
     const value = values[key];
@@ -70,7 +70,7 @@ export default function plugin(bb: BbPluginApi) {
     }, refresh);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getPace: async ({ refresh }) => measure(refresh),
   });
 }

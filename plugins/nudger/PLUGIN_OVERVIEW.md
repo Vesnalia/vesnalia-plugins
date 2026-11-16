@@ -15,7 +15,7 @@ Only the first gets a nudge. Each thread's banner shows what Nudger decided, and
 
 Jev is TypeSafe's System One model. It writes no text: it answers typed questions with a probability for every option and a confidence score. Nudger sends the last reply with five fixed questions: is anything blocking, is the work finished, does the reply ask you for something, who acts next, and what's at stake.
 
-Nudger acts only when Jev is confident. A nudge needs at least 90% confidence that the work is unfinished and nothing blocks it, and a reply that asks you for anything is never continued. A failed call, a rejected key or an unreadable answer never becomes a blind nudge. Every decision is kept for up to 30 days with Jev's answers and the reason, so you can see why Nudger nudged or held back (`bb nudger decisions` exports them).
+Nudger acts only when Jev is confident. A nudge needs at least 90% confidence that the work is unfinished and nothing blocks it, and a reply that asks you for anything is never continued. A failed call, a rejected key or an unreadable answer never becomes a blind nudge. Every decision is kept for up to 30 days with Jev's answers and the reason, so you can see why Nudger nudged or held back (`alia nudger decisions` exports them).
 
 ## Set up
 
@@ -31,6 +31,6 @@ Nudger acts only when Jev is confident. A nudge needs at least 90% confidence th
 
 ## Privacy and cost
 
-Jev sees only the last reply of a stopped thread, sent over HTTPS to TypeSafe, never the rest of the conversation. A reply can still quote code or secrets, so use Nudger only for work you may share with TypeSafe. TypeSafe bills Jev per input token ($0.042 per million); the Nudger page shows your estimated spend. Decisions stay in BB's local plugin storage on your machine.
+Jev sees only the last reply of a stopped thread, sent over HTTPS to TypeSafe, never the rest of the conversation. A reply can still quote code or secrets, so use Nudger only for work you may share with TypeSafe. TypeSafe bills Jev per input token ($0.042 per million); the Nudger page shows your estimated spend. Decisions stay in VesnALIA's local plugin storage on your machine.
 
-Requires BB 0.46 or newer. Source and details: [github.com/ComicBit/bb-plugin-nudger](https://github.com/ComicBit/bb-plugin-nudger). More about Jev: [docs.typesafe.ai](https://docs.typesafe.ai/introduction).
+Requires VesnALIA 0.46 or newer. Source and details: [github.com/ComicBit/bb-plugin-nudger](https://github.com/ComicBit/bb-plugin-nudger). More about Jev: [docs.typesafe.ai](https://docs.typesafe.ai/introduction).

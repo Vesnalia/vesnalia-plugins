@@ -225,7 +225,7 @@ describe("decorateVerifiedInlineCodeLinks", () => {
     expect(decoratedCodePath(chat.querySelector("code")!)).toBe("notes.md");
   });
 
-  it("matches the exact markup observed in the live bb 0.44.0 pane", async () => {
+  it("matches the exact markup observed in the live VesnALIA 0.44.0 pane", async () => {
     // Shapes captured from the running app: agent-message markdown renders
     // as <p class="mb-2"> inside [data-markdown-preview] > .group/message,
     // with plain <code class="rounded bg-muted/70 ..."> spans. The real
@@ -238,7 +238,7 @@ describe("decorateVerifiedInlineCodeLinks", () => {
         "single logical line. Committed as " +
         '<code class="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-xs">' +
         "8811dd9c</code>.</p>" +
-        '<pre><code class="bb-code-highlight">const x = 1</code></pre></div>',
+        '<pre><code class="alia-code-highlight">const x = 1</code></pre></div>',
     );
     const exists = checker(
       new Map([["docs/rfcs/rfc-support-triage-process.md", true]]),

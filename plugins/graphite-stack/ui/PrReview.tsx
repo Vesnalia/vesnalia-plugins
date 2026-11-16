@@ -1,7 +1,7 @@
 // Pull request review threads and the pending review. Every GitHub write is
 // explicit. An unknown outcome blocks a retry until the user checks GitHub.
 import { useEffect, useRef, useState } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { PendingReview } from "../contract";
 import type { PrSourceStatus, PrSummary, PrThread, ReviewEvent } from "../lib/model";
 import { Button } from "@/components/ui/button";
@@ -282,12 +282,12 @@ export function FinishReview({
       onPending(response.pending);
       const text =
         response.outcome === "posted"
-          ? "GitHub has the review. BB cleared the pending comments."
+          ? "GitHub has the review. VesnALIA cleared the pending comments."
           : response.outcome === "not-posted"
             ? "GitHub does not have the review. Your comments are kept, and you can submit again."
             : response.outcome === "nothing"
               ? "No submission is waiting for a check."
-              : (response.message ?? "BB could not check GitHub. Try again later.");
+              : (response.message ?? "VesnALIA could not check GitHub. Try again later.");
       setResult({ tone: response.outcome === "error" ? "danger" : response.outcome === "posted" ? "success" : "warning", text });
       onChanged();
     } catch (cause) {
@@ -332,7 +332,7 @@ export function FinishReview({
       </div>
       {unavailable ? (
         <Notice icon="Lock">
-          {unavailable} BB keeps these pending comments. Submit them when the pull request is available.
+          {unavailable} VesnALIA keeps these pending comments. Submit them when the pull request is available.
         </Notice>
       ) : null}
       {submission ? (

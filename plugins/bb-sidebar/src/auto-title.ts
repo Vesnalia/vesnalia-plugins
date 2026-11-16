@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { type createTitleRegenerator, PermanentTitleError } from "./regenerate-title";
 
-// Give BB's native title request time to settle before recovery. BB also skips
+// Give VesnALIA's native title request time to settle before recovery. VesnALIA also skips
 // first prompts shorter than five words, which still need a sidebar title.
 const RECOVERY_DELAY_MS = 10_000;
 const MAX_CONCURRENT_RECOVERIES = 2;
@@ -17,8 +17,8 @@ export const AUTO_TITLE_RECOVERY_MIGRATION = `CREATE TABLE IF NOT EXISTS title_r
  * failure releases the claim so a later thread event can try again; a permanent
  * failure, or the last allowed attempt, keeps it. Failure counts live in memory.
  */
-export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: ReturnType<typeof createTitleRegenerator>) {
-  const db = bb.storage.database();
+export function createAutoTitleRecovery(alia: AliaPluginApi, regenerateTitle: ReturnType<typeof createTitleRegenerator>) {
+  const db = alia.storage.database();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const queued = new Set<string>();
   const running = new Set<string>();
@@ -43,7 +43,7 @@ export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: Return
 
   async function recover(threadId: string) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (
         disposed ||
         thread.title !== null ||
@@ -52,7 +52,7 @@ export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: Return
         thread.deletedAt !== null
       )
         return;
-      const { selections } = await bb.sdk.system.aiServices();
+      const { selections } = await alia.sdk.system.aiServices();
       if (disposed || deleted.has(threadId) || selections["thread-title"].mode === "off") return;
       if (claim.run(threadId).changes === 0) return;
       try {
@@ -64,7 +64,7 @@ export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: Return
       }
     } catch (error) {
       if (!disposed)
-        bb.log.info(
+        alia.log.info(
           `Automatic title recovery did not complete for ${threadId}: ${error instanceof Error ? error.message : String(error)}`,
         );
     }
@@ -84,7 +84,7 @@ export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: Return
   }
 
   // Hidden threads, such as other plugins' helpers, are never named.
-  const onThread = ({ thread }: { thread: Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>> }) => {
+  const onThread = ({ thread }: { thread: Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>> }) => {
     if (
       disposed ||
       thread.title !== null ||
@@ -105,9 +105,9 @@ export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: Return
     timer.unref?.();
     timers.set(thread.id, timer);
   };
-  bb.events.on("thread.active", onThread);
-  bb.events.on("thread.idle", onThread);
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.active", onThread);
+  alia.events.on("thread.idle", onThread);
+  alia.events.on("thread.deleted", ({ thread }) => {
     if (running.has(thread.id)) deleted.add(thread.id);
     clearTimeout(timers.get(thread.id));
     timers.delete(thread.id);
@@ -115,7 +115,7 @@ export function createAutoTitleRecovery(bb: BbPluginApi, regenerateTitle: Return
     failures.delete(thread.id);
     release.run(thread.id);
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     for (const timer of timers.values()) clearTimeout(timer);
     timers.clear();

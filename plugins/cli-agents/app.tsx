@@ -5,7 +5,7 @@ import {
   useComposer,
   useComposerView,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import * as Popover from "@radix-ui/react-popover";
 import type { rpcContract, Catalog, Target } from "./contract";
 import { readTarget, composerProvider } from "./lib/composer-target";
@@ -45,7 +45,7 @@ function AgentPicker() {
       try {
         for (const p of ["claude-code", "acp-opencode", "codex"]) {
           const stored = sessionStorage.getItem(
-            `bb.cli-agents.selected:${projectId}:${p}`,
+            `alia.cli-agents.selected:${projectId}:${p}`,
           );
           if (stored) return stored;
         }
@@ -148,7 +148,7 @@ function AgentPicker() {
     let active = true;
     try {
       const stored = sessionStorage.getItem(
-        `bb.cli-agents.selected:${target.projectId}:${target.providerId}`,
+        `alia.cli-agents.selected:${target.projectId}:${target.providerId}`,
       );
       if (stored !== null) setSelected(stored);
     } catch {}
@@ -164,12 +164,12 @@ function AgentPicker() {
           try {
             if (agentId) {
               sessionStorage.setItem(
-                `bb.cli-agents.selected:${target.projectId}:${target.providerId}`,
+                `alia.cli-agents.selected:${target.projectId}:${target.providerId}`,
                 agentId,
               );
             } else {
               sessionStorage.removeItem(
-                `bb.cli-agents.selected:${target.projectId}:${target.providerId}`,
+                `alia.cli-agents.selected:${target.projectId}:${target.providerId}`,
               );
             }
           } catch {}
@@ -235,7 +235,7 @@ function AgentPicker() {
       setSelected(agentId);
       try {
         sessionStorage.setItem(
-          `bb.cli-agents.selected:${target.projectId}:${target.providerId}`,
+          `alia.cli-agents.selected:${target.projectId}:${target.providerId}`,
           agentId,
         );
       } catch {}
@@ -258,7 +258,7 @@ function AgentPicker() {
     setSelected("");
     try {
       sessionStorage.removeItem(
-        `bb.cli-agents.selected:${target.projectId}:${target.providerId}`,
+        `alia.cli-agents.selected:${target.projectId}:${target.providerId}`,
       );
     } catch {}
     try {

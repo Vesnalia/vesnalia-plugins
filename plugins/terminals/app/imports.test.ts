@@ -1,6 +1,6 @@
 /**
  * The app bundle must not import `shared/contract.ts` at run time: that file
- * imports `defineRpcContract` from the SDK root, which bb provides to the
+ * imports `defineRpcContract` from the SDK root, which VesnALIA provides to the
  * server bundle only, and a git install (production dependencies only) has no
  * copy to bundle — the build fails there and nowhere else.
  */

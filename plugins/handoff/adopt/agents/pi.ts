@@ -132,7 +132,7 @@ async function discover(root: string, options: { cwd?: string; prefix?: string }
 export const piAdapter: AgentAdapter = {
   id: "pi",
   label: "Pi",
-  bbProviderId: "pi",
+  aliaProviderId: "pi",
 
   async list(cwd: string, home = os.homedir()): Promise<SessionSummary[]> {
     const root = piSessionsRoot(home);

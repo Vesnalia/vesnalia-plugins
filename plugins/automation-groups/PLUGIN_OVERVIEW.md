@@ -1,6 +1,6 @@
 ## Organize scheduled work
 
-Group BB automations into named folders. Search across projects, move automations between groups, and pause, resume or run a group together. Inspect execution history, errors and agent transcripts from the detail view.
+Group VesnALIA automations into named folders. Search across projects, move automations between groups, and pause, resume or run a group together. Inspect execution history, errors and agent transcripts from the detail view.
 
 ## Requirements and data
 

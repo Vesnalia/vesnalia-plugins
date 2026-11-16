@@ -1,9 +1,9 @@
-// bb-plugin-memory-explorer — the frontend entry.
+// alia-plugin-memory-explorer — the frontend entry.
 //
-// One sidebar page, Memory, at /plugins/memory-explorer/memory: BB memory as
-// a table and a graph (pages/MemoryPage.tsx). BB loads this bundle and reads
+// One sidebar page, Memory, at /plugins/memory-explorer/memory: VesnALIA memory as
+// a table and a graph (pages/MemoryPage.tsx). VesnALIA loads this bundle and reads
 // its default export; don't import this file directly.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { MemoryPage } from "./pages/MemoryPage";
 
 export default definePluginApp((app) => {

@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -95,7 +95,7 @@ function BoxesOptions() {
             <RowNote note={instant.note(defaultKey)} className="px-4 pb-3" />
           </div>
           <DraftNumberRow draft={draft} path="general/boxesPerThread" label="Boxes per thread" description="The most boxes one thread may hold at once. 0 means no limit." />
-          <AtOnceSwitch label="Boxes join BB as machines" description="Threads and terminals can then use a box, with the thread's credentials." settingKey={switchKey.general("enrol")} path="general/enrol" value={general.enrol} onChange={(on) => void instant.run(writes.general(state, "enrol", on, "Boxes join BB as machines"))} />
+          <AtOnceSwitch label="Boxes join VesnALIA as machines" description="Threads and terminals can then use a box, with the thread's credentials." settingKey={switchKey.general("enrol")} path="general/enrol" value={general.enrol} onChange={(on) => void instant.run(writes.general(state, "enrol", on, "Boxes join VesnALIA as machines"))} />
           <AtOnceSwitch
             label="Linux desktops as video"
             description="X11 desktops drawn by the CPU show as video: drags follow closely, and it stays smooth on a slow connection. Every viewer can go back with Show as VNC in its menu."
@@ -145,7 +145,7 @@ function ImagesOptions() {
       nightly={
         <AtOnceSwitch
           label="Rebuild each night"
-          description="At 03:00 on BB's server, BB Box rebuilds the standard images that are due, and replaces each only when its trial box passes. After a BB update, it refreshes the Linux images within the hour."
+          description="At 03:00 on VesnALIA's server, VesnALIA Box rebuilds the standard images that are due, and replaces each only when its trial box passes. After a VesnALIA update, it refreshes the Linux images within the hour."
           settingKey={switchKey.general("nightlyImages")}
           path="general/nightlyImages"
           value={general.nightlyImages}
@@ -233,7 +233,7 @@ function DevicesOptions() {
                     key={kind.id}
                     rowKey={`devices-${kind.id}`}
                     valueId={`settings-devices-${kind.id}`}
-                    icon={<Icon name="bb-box/phone" className="size-4" aria-hidden />}
+                    icon={<Icon name="alia-box/phone" className="size-4" aria-hidden />}
                     title={`Spare ${kindName(state.kinds, kind)} boxes`}
                     value={spares ? plural(spares, "spare") : "None, as by default"}
                     onClick={() => nav.go({ page: "kind", id: kind.id }, `devices-${kind.id}`)}
@@ -292,7 +292,7 @@ function MonitorOptions() {
         <Rows>
           <AtOnceSwitch
             label="Machine status"
-            description="Machine status in BB's sidebar footer, for BB's server, your machines and every box. Off, nothing of the Monitor runs: no machine status, sampling, background monitoring, box history or Mac sensors helper."
+            description="Machine status in VesnALIA's sidebar footer, for VesnALIA's server, your machines and every box. Off, nothing of the Monitor runs: no machine status, sampling, background monitoring, box history or Mac sensors helper."
             settingKey={enabledKey}
             path="monitor/enabled"
             value={monitor.enabled}
@@ -303,8 +303,8 @@ function MonitorOptions() {
             }
           />
           <DraftNumberRow draft={draft} path="monitor/refreshIntervalSeconds" label="Refresh every" unit="s" unitWord="seconds" description="Seconds between readings while machine status is open, 2 to 60." disabled={!on} />
-          <AtOnceSwitch label="Background monitoring" description="Checks BB's server's CPU and memory every 30 seconds while nobody looks, and keeps logs for bb box monitor logs." settingKey={switchKey.monitor("backgroundMonitoring")} path="monitor/backgroundMonitoring" value={monitor.backgroundMonitoring} disabled={!on} onChange={(value) => void instant.run(writes.monitor(state, "backgroundMonitoring", value, "Background monitoring"))} />
-          <AtOnceSwitch label="Pressure notifications" description="With background monitoring on, a toast in BB when CPU or memory stays high for a minute, and when it recovers." settingKey={switchKey.monitor("pressureNotifications")} path="monitor/pressureNotifications" value={monitor.pressureNotifications} disabled={!on} onChange={(value) => void instant.run(writes.monitor(state, "pressureNotifications", value, "Pressure notifications"))} />
+          <AtOnceSwitch label="Background monitoring" description="Checks VesnALIA's server's CPU and memory every 30 seconds while nobody looks, and keeps logs for VesnALIA box monitor logs." settingKey={switchKey.monitor("backgroundMonitoring")} path="monitor/backgroundMonitoring" value={monitor.backgroundMonitoring} disabled={!on} onChange={(value) => void instant.run(writes.monitor(state, "backgroundMonitoring", value, "Background monitoring"))} />
+          <AtOnceSwitch label="Pressure notifications" description="With background monitoring on, a toast in VesnALIA when CPU or memory stays high for a minute, and when it recovers." settingKey={switchKey.monitor("pressureNotifications")} path="monitor/pressureNotifications" value={monitor.pressureNotifications} disabled={!on} onChange={(value) => void instant.run(writes.monitor(state, "pressureNotifications", value, "Pressure notifications"))} />
           <AtOnceSwitch
             label="Keep each box's history"
             description="Reads every running box once a minute, lightly, and keeps 24 hours by the minute and 7 days by the hour, for the 1 h, 24 h and 7 d of a box's page. Off, nothing is read in the background; a box's page still reads it live while open, and what was kept stays until it ages out."
@@ -331,11 +331,11 @@ const OPTION_TITLES: Readonly<Record<string, string>> = { boxes: "Boxes", images
 
 const OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   boxes: "What a thread gets, how many, and what every box has.",
-  images: "What new boxes start from: BB Box's standard images, and your projects' own.",
+  images: "What new boxes start from: VesnALIA Box's standard images, and your projects' own.",
   snapshots: "How many snapshots a box holds, how full a host's storage may get, and what paid snapshots may cost.",
   devices: "iOS and Android devices in boxes.",
-  network: "How machines BB Box makes reach BB.",
-  monitor: "Machine status in BB's sidebar.",
+  network: "How machines VesnALIA Box makes reach VesnALIA.",
+  monitor: "Machine status in VesnALIA's sidebar.",
   configuration: "The configuration as one file, and its revisions.",
 };
 
@@ -362,7 +362,7 @@ export function OptionPage({ id }: { id: string }) {
 export function viewTitle(state: ReturnType<typeof useSettings>["state"], view: SettingsView): string {
   switch (view.page) {
     case "overview":
-      return "BB Box settings";
+      return "VesnALIA Box settings";
     case "backend": {
       const config = state.document.backends.find((backend) => backend.id === view.id);
       return config ? backendLabel(state, config) : "Not here";
@@ -420,7 +420,7 @@ export function TopRow() {
         ) : null}
         <button type="button" onClick={nav.toOverview} className={`inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-muted-foreground hover:text-foreground ${back ? "" : "-ml-1 px-1"} ${FOCUS_RING}`}>
           {back ? null : <Icon name="ChevronLeft" className="size-3.5" aria-hidden />}
-          BB Box settings
+          VesnALIA Box settings
         </button>
         <span className="text-subtle-foreground" aria-hidden>
           ›

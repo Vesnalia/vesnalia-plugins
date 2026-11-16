@@ -1,6 +1,6 @@
 ---
 name: kimi-code
-description: Operating constraints of the Kimi Code agent provider in bb — install, sign-in, models, thinking levels, and permission modes on local and enrolled hosts.
+description: Operating constraints of the Kimi Code agent provider in VesnALIA — install, sign-in, models, thinking levels, and permission modes on local and enrolled hosts.
 ---
 
 # Kimi Code provider
@@ -14,7 +14,7 @@ installed on that host.
 - Kimi Code CLI on the machine: <https://github.com/MoonshotAI/kimi-code>
   (`curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash`).
 - Sign-in on the same machine: `kimi login` (device-code flow). A thread that
-  fails auth surfaces bb's typed `authRequired` state; sign in on the host and
+  fails auth surfaces VesnALIA's typed `authRequired` state; sign in on the host and
   retry.
 
 ## Per-session options
@@ -30,9 +30,9 @@ picker maps onto kimi's thinking levels: Low / High / Max.
   appear in the composer's `/` menu from the live session.
 - kimi's mode selector (Default / Plan / Auto / YOLO) is published as the
   session's `mode` option and sits in the composer footer; pick Plan there or
-  use bb's `/plan` composer action for read-only planning.
-- bb's own permission modes still gate approvals on top: `accept-edits`
-  auto-approves workspace file edits, `full` approves everything. bb's
+  use VesnALIA's `/plan` composer action for read-only planning.
+- VesnALIA's own permission modes still gate approvals on top: `accept-edits`
+  auto-approves workspace file edits, `full` approves everything. VesnALIA's
   `auto` mode is not offered — the ACP bridge cannot enforce it.
 
 ## Limits
@@ -40,13 +40,13 @@ picker maps onto kimi's thinking levels: Low / High / Max.
 - Video input is not available through ACP (the handshake advertises image
   only); audio is not supported by kimi itself.
 - Fork is disabled (`fork: "none"`): kimi ≥ 2.3.0 locks each session to its
-  owning process, and bb forks by asking a new kimi process to fork the
+  owning process, and VesnALIA forks by asking a new kimi process to fork the
   still-live source session, which kimi rejects ("This session is in use by
   another Kimi Code process"). Re-enable only when kimi allows cross-process
   forks of live sessions.
 - Thread archive and rename are not mirrored into kimi sessions.
 - MCP servers come from kimi's own configuration (`/mcp-config`, config.toml),
-  not from bb.
+  not from VesnALIA.
 
 ## Quota exhaustion
 
@@ -58,4 +58,4 @@ plugin guards this: while a window is 100% used, a new turn fails immediately
 with a typed rate-limit error naming the spent window and its reset time
 (check the usage windows on the provider card). The guard reads the same
 usage endpoint as the maintenance panel, fails open when the endpoint is
-unreachable or stale, and `BB_KIMI_QUOTA_GATE=0` turns it off.
+unreachable or stale, and `ALIA_KIMI_QUOTA_GATE=0` turns it off.

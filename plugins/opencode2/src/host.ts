@@ -3,7 +3,7 @@ import {
   experimental_defineHostEntry,
   experimental_filterResolvedNativeRoots,
   experimental_nativeRootsHostContract,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import {
   modelSummarySchema,
   opencodeHostContract,
@@ -14,7 +14,7 @@ import {
   OPENCODE_LOGIN_COMMAND,
   providerHealth,
 } from "./host/maintenance.ts";
-import { syncBbToolsRule } from "./host/opencode-config.ts";
+import { syncAliaToolsRule } from "./host/opencode-config.ts";
 import { openCodeServer } from "./host/opencode-server.ts";
 import { shutdownBridge } from "./host/provider-bridge.ts";
 import { nativeSkillRoots } from "./host/opencode-requests.ts";
@@ -74,9 +74,9 @@ export {
   toolFailureError,
 } from "./host/prompt.ts";
 export {
-  addBbToolsRule,
-  removeBbToolsRule,
-  syncBbToolsRule,
+  addAliaToolsRule,
+  removeAliaToolsRule,
+  syncAliaToolsRule,
 } from "./host/opencode-config.ts";
 export { experimental_providerBridge } from "./host/provider-bridge.ts";
 export { sessionFromParams } from "./host/session-manager.ts";
@@ -107,7 +107,7 @@ export default experimental_defineHostEntry({
     ...experimental_nativeRootsHostContract,
   },
   handlers: {
-    // BB lists these directories in the composer for OpenCode threads, so
+    // VesnALIA lists these directories in the composer for OpenCode threads, so
     // skills OpenCode found on its own (~/.agents/skills, ~/.claude/skills,
     // project and config roots) can be invoked with /name.
     async resolveNativeRoots(input, context) {
@@ -143,7 +143,7 @@ export default experimental_defineHostEntry({
     async getStatus(_input, context) {
       openCodeServer.setDataDir(context.experimental_paths.dataDir);
       const cwd = process.cwd();
-      // Report OpenCode itself even while the BB provider is switched off.
+      // Report OpenCode itself even while the VesnALIA provider is switched off.
       const [health, installation] = await Promise.all([
         providerHealth(
           {
@@ -171,10 +171,10 @@ export default experimental_defineHostEntry({
     async setModelSettings(input, context) {
       openCodeServer.setDataDir(context.experimental_paths.dataDir);
       await openCodeServer.writeModelSettings(input);
-      // Best-effort: a config we cannot edit only leaves BB tools visible
+      // Best-effort: a config we cannot edit only leaves VesnALIA tools visible
       // to OpenCode's own sessions, where calling them is refused anyway.
-      await syncBbToolsRule(
-        input.hideBbToolsOutsideBb !== false,
+      await syncAliaToolsRule(
+        input.hideAliaToolsOutsideAlia !== false,
         undefined,
         join(context.experimental_paths.dataDir, "opencode2-config-edit.json"),
       )

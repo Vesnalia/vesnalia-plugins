@@ -6,8 +6,8 @@
 
 ## How it works
 
-The plugin watches BB's experimental panel-tabs API. When the last closable tab of the current panel disappears, it asks the panel controller to close the panel. Tab closing is unchanged. It makes no network calls and stores nothing.
+The plugin watches VesnALIA's experimental panel-tabs API. When the last closable tab of the current panel disappears, it asks the panel controller to close the panel. Tab closing is unchanged. It makes no network calls and stores nothing.
 
 ## Limits
 
-It follows BB's reported panel tabs and can only hide the panel through the controller. The API is experimental, so a future BB release may need a plugin update.
+It follows VesnALIA's reported panel tabs and can only hide the panel through the controller. The API is experimental, so a future VesnALIA release may need a plugin update.

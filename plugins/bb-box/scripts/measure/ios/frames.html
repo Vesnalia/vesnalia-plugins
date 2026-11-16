@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><style id="bb-theme"></style><style>html,body{margin:0;background:var(--background,#222);font-family:system-ui,sans-serif;overflow:hidden}#stage{position:relative;width:100vw;height:100vh}</style></head><body><div id="stage"></div>
+<!doctype html><html><head><meta charset="utf-8"><style id="alia-theme"></style><style>html,body{margin:0;background:var(--background,#222);font-family:system-ui,sans-serif;overflow:hidden}#stage{position:relative;width:100vw;height:100vh}</style></head><body><div id="stage"></div>
 <script type="module">
 import "./client.js";
 const q = new URLSearchParams(location.search);
@@ -8,7 +8,7 @@ window.theme = (name) => {
   document.documentElement.classList.toggle("light", name === "light");
 };
 window.theme(q.get("theme") ?? "dark");
-await fetch(THEME_URL).then((response) => response.text()).then((css) => (document.getElementById("bb-theme").textContent = css.replace(/@theme(?:\s+inline)?\s*\{/g, ":root {"))).catch(() => undefined);
+await fetch(THEME_URL).then((response) => response.text()).then((css) => (document.getElementById("alia-theme").textContent = css.replace(/@theme(?:\s+inline)?\s*\{/g, ":root {"))).catch(() => undefined);
 const MODELS = {
   "iPhone 18 Pro": { platform: "ios", screens: { only: [1206, 2622] } },
   "iPhone 17": { platform: "ios", screens: { only: [1206, 2622] } },
@@ -69,7 +69,7 @@ function state(power = { is: "booted", awake: true }) {
   const geometry = { generation, physical: current.physical, content: current.content, video: { width: sideways ? h : w, height: sideways ? w : h }, ...(known.form === "foldable" ? { screen: screenName } : {}) };
   const settings = { appearance: { known: false, why: "" } };
   if (known.platform === "ios") return { platform: "ios", model, power, geometry, settings, at: Date.now() };
-  return { platform: "android", form: known.form, model, power, geometry, ...(known.form === "foldable" ? { posture: { known: true, value: current.posture, at: Date.now(), by: "bb-box" } } : {}), settings, at: Date.now() };
+  return { platform: "android", form: known.form, model, power, geometry, ...(known.form === "foldable" ? { posture: { known: true, value: current.posture, at: Date.now(), by: "alia-box" } } : {}), settings, at: Date.now() };
 }
 function picture() {
   const screenName = known.form === "foldable" ? (current.posture === "closed" ? "outer" : "inner") : "only";

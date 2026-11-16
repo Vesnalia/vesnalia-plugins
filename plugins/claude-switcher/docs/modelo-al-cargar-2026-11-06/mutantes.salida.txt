@@ -10,7 +10,7 @@ MUERE      S6 coste · lee también los proyectos con modelo guardado · server.
 MUERE      S7 espera · el rescate no espera a la lectura en curso · server.test.ts 'the first rescue waits for the read under way' · Tests  1 failed | 790 skipped (791)
 MUERE      S7 espera · la espera no tiene tope · server.test.ts 'a read that never answers holds neither a turn' · Tests  1 failed | 790 skipped (791)
 MUERE      S7 espera · el aviso de la espera se repite en cada refresco · server.test.ts 'a read that never answers holds neither a turn' · Tests  1 failed | 790 skipped (791)
-MUERE      S8 degradado · una lectura fallida no se cuenta ni se avisa · server.test.ts 'a read of bb that fails is said once' · Tests  1 failed | 790 skipped (791)
+MUERE      S8 degradado · una lectura fallida no se cuenta ni se avisa · server.test.ts 'a read of VesnALIA that fails is said once' · Tests  1 failed | 790 skipped (791)
 MUERE      S8 degradado · una lista de hilos fallida no avisa · server.test.ts 'a list of threads that fails is said once' · Tests  1 failed | 790 skipped (791)
 MUERE      S8 degradado · una lista de hilos fallida deja al rescate esperando · server.test.ts 'a list of threads that fails is said once' · Tests  1 failed | 790 skipped (791)
 MUERE      S9 archivados (Codex r1-r2 MLC-001) · los hilos archivados no cuentan · server.test.ts 'an archived thread counts' · Tests  1 failed | 790 skipped (791)

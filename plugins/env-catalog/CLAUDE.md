@@ -3,7 +3,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **bb-plugin-env-catalog** (950 symbols, 1774 relationships, 84 execution flows).
+This project is indexed by GitNexus as **alia-plugin-env-catalog** (950 symbols, 1774 relationships, 84 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
@@ -27,10 +27,10 @@ This project is indexed by GitNexus as **bb-plugin-env-catalog** (950 symbols, 1
 
 | Resource | Use for |
 | --- | --- |
-| `gitnexus://repo/bb-plugin-env-catalog/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/bb-plugin-env-catalog/clusters` | All functional areas |
-| `gitnexus://repo/bb-plugin-env-catalog/processes` | All execution flows |
-| `gitnexus://repo/bb-plugin-env-catalog/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/alia-plugin-env-catalog/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/alia-plugin-env-catalog/clusters` | All functional areas |
+| `gitnexus://repo/alia-plugin-env-catalog/processes` | All execution flows |
+| `gitnexus://repo/alia-plugin-env-catalog/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

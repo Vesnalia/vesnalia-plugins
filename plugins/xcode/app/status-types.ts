@@ -51,7 +51,7 @@ export type RunDto = {
   testSkipped: number | null;
   branch: string | null;
   worktree: string | null;
-  /** The enrolled Mac a remote build ran on; null for the machine running bb. */
+  /** The enrolled Mac a remote build ran on; null for the machine running VesnALIA. */
   hostName: string | null;
   workerCount: number | null;
   // Imported, not re-spelled: this union had drifted from `src/types.ts` and

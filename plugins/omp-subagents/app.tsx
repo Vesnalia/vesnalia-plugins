@@ -1,4 +1,4 @@
-// bb-plugin-omp-subagents — the BB frontend.
+// alia-plugin-omp-subagents — the VesnALIA frontend.
 //
 // Surfaces:
 //  * A thread-header chip on every OMP thread: live subagent count + popover
@@ -40,14 +40,14 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   experimental_Diff as Diff,
   experimental_THREAD_ACTION_GROUPS,
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_useSidebarThreads,
   Markdown,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import type {
@@ -82,8 +82,8 @@ function RosterFeed() {
   }, [connection]);
 
   // A subagent that ended in failure: say so, wherever the user is.
-  const navigate = useBbNavigate();
-  const { threadId: viewedThreadId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { threadId: viewedThreadId } = useAliaContext();
   const viewed = useRef(viewedThreadId);
   viewed.current = viewedThreadId;
   useEffect(
@@ -133,7 +133,7 @@ function formatCost(cost: number | null): string {
   return `$${cost < 1 ? cost.toFixed(3) : cost.toFixed(2)}`;
 }
 
-// ---- Status glyph: bb's own vocabulary -------------------------------------
+// ---- Status glyph: VesnALIA's own vocabulary -------------------------------------
 
 // ---- Header chip -------------------------------------------------------------
 
@@ -180,7 +180,7 @@ function HeaderChip({
   isCompactViewport: boolean;
 }) {
   const { roster } = useRoster(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const agents = roster?.agents ?? [];
   const running = agents.filter((agent) => agent.status === "running").length;
 
@@ -436,7 +436,7 @@ function OutputView({ threadId, agentId }: { threadId: string; agentId: string }
   );
 }
 
-/** Send a message through BB; with `agentId` the OMP main agent forwards it to that subagent. */
+/** Send a message through VesnALIA; with `agentId` the OMP main agent forwards it to that subagent. */
 function MessageBox({
   threadId,
   agentId,
@@ -592,7 +592,7 @@ function TranscriptPanel({
         {agent.status === "failed" && agent.error !== null ? (
           <p
             role="alert"
-            className="mt-2 line-clamp-4 rounded-md border border-border px-2 py-1.5 text-xs text-[color:var(--bb-omp-tone-error)]"
+            className="mt-2 line-clamp-4 rounded-md border border-border px-2 py-1.5 text-xs text-[color:var(--alia-omp-tone-error)]"
           >
             {agent.error}
           </p>
@@ -668,7 +668,7 @@ function HubPanel({
   const { roster, error, loading } = useRoster(targetThreadId);
   const [selectedId, setSelectedId] = useState<string | null>(hubParams.agentId);
   const [requestedFilter, setFilter] = useState<AgentStatus | "all">("all");
-  // bb hands one mounted panel the params of whichever hub tab is shown.
+  // VesnALIA hands one mounted panel the params of whichever hub tab is shown.
   useEffect(() => {
     setSelectedId(hubParams.agentId);
   }, [targetThreadId, hubParams.agentId]);
@@ -766,7 +766,7 @@ function HubPanel({
         ) : (
           <div className="space-y-1">
             {error !== null ? (
-              <p role="alert" className="px-1 text-2xs text-[color:var(--bb-omp-tone-error)]">
+              <p role="alert" className="px-1 text-2xs text-[color:var(--alia-omp-tone-error)]">
                 Refresh failed: {error}
               </p>
             ) : null}
@@ -786,7 +786,7 @@ function HubPanel({
         threadId={targetThreadId}
         agentId={null}
         placeholder="Message the OMP session…"
-        hint="Sends through BB: starts a turn when idle, steers when running."
+        hint="Sends through VesnALIA: starts a turn when idle, steers when running."
       />
     </div>
   );
@@ -796,8 +796,8 @@ function HubPanel({
 
 function SessionsPage() {
   const rpc = useRpc<typeof rpcContract>();
-  const context = useBbContext();
-  const navigate = useBbNavigate();
+  const context = useAliaContext();
+  const navigate = useAliaNavigate();
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -979,7 +979,7 @@ export default definePluginApp((app) => {
     id: "timeline-strip",
     mount(context) {
       startTimelineStrip(context.signal);
-      // Older bb clients lack the row-status setter: feature-detect it.
+      // Older VesnALIA clients lack the row-status setter: feature-detect it.
       if (context.experimental_setThreadRowStatus !== undefined) {
         syncRowStatuses(
           rosterStore,

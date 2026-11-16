@@ -1,10 +1,10 @@
 import { test, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 
 function store() {
-  const { bb } = createFakePluginHost({ pluginId: "guided-review" });
-  return createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "guided-review" });
+  return createStore(alia);
 }
 
 test("review round-trips and lists newest first", () => {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   changeRequestRowSchema,
   OPEN_CHANGE_REQUEST_EVENT,
@@ -373,7 +373,7 @@ test("only a missing plugin, a missing method or a disabled plugin counts as Pul
   assert.equal(absent(rpcError("handler_error", 500, 'unknown plugin "pull-requests"')), false);
   assert.equal(absent("timeout"), false);
   assert.equal(absent(null), false);
-  assert.equal(pluginAbsent(rpcError("handler_error", 404, 'unknown plugin "bb--github-pr-status"'), "bb--github-pr-status"), true);
+  assert.equal(pluginAbsent(rpcError("handler_error", 404, 'unknown plugin "alia--github-pr-status"'), "alia--github-pr-status"), true);
 });
 
 test("copy link keeps an operational failure distinct from a missing Pull Requests plugin", async () => {
@@ -414,7 +414,7 @@ test("GitHub's absent answer never establishes absence on a forge Pull Requests 
   assert.deepEqual(resolveRequest(row<ChangeRequestRow>({ outcome: "absent", provider: null }), row({ outcome: "absent" })), { kind: "absent", provider: null });
 });
 
-test("delayed BB branch metadata shows nothing until the sidebar and Pull Requests agree on the branch", () => {
+test("delayed VesnALIA branch metadata shows nothing until the sidebar and Pull Requests agree on the branch", () => {
   const forNew: ChangeRequestRow = { outcome: "available", changeRequest: mergeRequest({}, 2), environmentBranch: "new" };
   assert.deepEqual(resolveRequest(row(forNew), MISSING, "old"), { kind: "loading" });
   assert.equal(available(resolveRequest(row(forNew), MISSING, "new")).label, "!2");

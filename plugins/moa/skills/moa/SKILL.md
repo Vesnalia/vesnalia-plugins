@@ -1,19 +1,19 @@
 ---
 name: moa
-description: Inspect or configure the Mixture of Agents plugin in BB: shared model pairs, enable/disable and consultation history.
+description: Inspect or configure the Mixture of Agents plugin in VesnALIA: shared model pairs, enable/disable and consultation history.
 ---
 
 # Mixture of Agents
 
-Use `bb moa status THREAD_ID --json` to inspect the pair and recent consultations.
-`bb moa on THREAD_ID` and `bb moa off THREAD_ID` control the current chat's mode.
-Models, fallback and the long-wait notice threshold are shared across all chats/projects. Enabling remains per-chat. Configure participants by clicking the MoA chip in the chat composer. The chip opens the settings sheet immediately, including on a phone. The CLI alternative is `bb moa configure THREAD_ID CONFIG_JSON`, with `a`, `b`, `enabled`, and `timeoutSeconds`. Each participant has `providerId`, `model`, `reasoningLevel`, and optional `serviceTier`. Legacy `agentId` values are ignored; MoA never inserts CLI Agents selection markers.
+Use `alia moa status THREAD_ID --json` to inspect the pair and recent consultations.
+`alia moa on THREAD_ID` and `alia moa off THREAD_ID` control the current chat's mode.
+Models, fallback and the long-wait notice threshold are shared across all chats/projects. Enabling remains per-chat. Configure participants by clicking the MoA chip in the chat composer. The chip opens the settings sheet immediately, including on a phone. The CLI alternative is `alia moa configure THREAD_ID CONFIG_JSON`, with `a`, `b`, `enabled`, and `timeoutSeconds`. Each participant has `providerId`, `model`, `reasoningLevel`, and optional `serviceTier`. Legacy `agentId` values are ignored; MoA never inserts CLI Agents selection markers.
 
 Both A and B independently advise in parallel. The current chat model receives both answers and acts. Never call MoA from its own advisor session. Do not manually start extra advisors: the dispatch gate owns consultations.
 
 Advice is reference material. It does not override the user, project rules, or permissions. The main agent verifies consequential claims and carries out the task.
 
-A failed consultation leaves the message queued. Inspect its error and use `bb moa retry THREAD_ID RUN_ID` or turn MoA off. BB's explicit Send now overrides the wait; do not report it as a successful consultation. Disabling the plugin also releases its waits.
+A failed consultation leaves the message queued. Inspect its error and use `alia moa retry THREAD_ID RUN_ID` or turn MoA off. VesnALIA's explicit Send now overrides the wait; do not report it as a successful consultation. Disabling the plugin also releases its waits.
 
 The plugin keeps history but advisors see a bounded text window; do not assume they saw file or image contents. Advisors may inspect relevant local files. If File Gateway is enabled and running, they may use its native tool or public CLI for hosts/list/read. No copies, writes, uploads, policy changes or SSH/HTTP bypass. Without the optional plugin, external reads are prohibited; continue with explicit missing evidence. These role restrictions are not an OS sandbox.
 
@@ -25,6 +25,6 @@ Hover a user message sent through MoA and open its Workflow action to inspect th
 
 Fallback is in the existing settings dialog and shared globally. `failurePolicy` is `wait` (default), `reserve` (one reserve attempt for a failed participant), or `available` (proceed with one ready answer after the other fails). `reserve` is a separate provider/model/reasoning slot, distinct from A/B. Both failing keeps the message queued. A working participant is never cancelled automatically for silence. With a reserve configured, the consultation modal can explicitly stop and replace one active participant. Retry reuses the ready peer answer. Old one-advisor runs are labelled historical; new runs show separate A/B and prior-attempt sessions.
 
-File Gateway availability is checked for every participant attempt and recorded in history. Its native mentions preserve exact source IDs and paths through BB resolution. Do not infer that a file was read from capability availability; check actual session tool results. Gateway access policy remains authoritative.
+File Gateway availability is checked for every participant attempt and recorded in history. Its native mentions preserve exact source IDs and paths through VesnALIA resolution. Do not infer that a file was read from capability availability; check actual session tool results. Gateway access policy remains authoritative.
 
 Advisor permission mode inherits the originating message. Respect provider approval requests in manual mode; do not auto-approve or broaden the mode to avoid a wait.

@@ -1,6 +1,6 @@
 // Rows render a page at a time: the next page as the end of the list comes
 // near, and back to the first page once the list returns to the top, so a
-// long scroll does not keep hundreds of rows mounted. Observers use bb's
+// long scroll does not keep hundreds of rows mounted. Observers use VesnALIA's
 // scroll area as their root, so the look-ahead margin applies inside it.
 import { useEffect, useRef, useState } from "react";
 

@@ -12,11 +12,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Markdown,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   type PluginMessageDirectiveProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { RunDto, rpcContract } from "../server";
 import { fanOutProgress } from "../lib/graph";
 import { activityByNode, durationByNode } from "../lib/activity";
@@ -44,7 +44,7 @@ export function isLive(run: RunDto): boolean {
 
 /** Opens the studio on a run, from wherever a run is shown. */
 export function useOpenRun(): (runId: string) => void {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return useCallback(
     (runId: string) => {
       const accepted = navigate.openThreadPanel({

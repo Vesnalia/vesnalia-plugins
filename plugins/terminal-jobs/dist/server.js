@@ -132,7 +132,7 @@ function decodeOutcomeArtifact(content) {
 }
 
 // src/host-contract.ts
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 // node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -14764,7 +14764,7 @@ function displayedPath(path2, max = 1e3) {
 }
 function formatCompletion(job) {
   const terminal = job.terminalId ?? "unknown";
-  const status2 = bounded(job.lastBbStatus ?? "unknown", 256);
+  const status2 = bounded(job.lastAliaStatus ?? "unknown", 256);
   const exitCode = job.exitCode === null ? "unknown" : String(job.exitCode);
   const closeReason = bounded(job.closeReason ?? "unknown", 256);
   let outcome;
@@ -14783,9 +14783,9 @@ function formatCompletion(job) {
   const mandatory = [
     job.marker,
     `Terminal: ${terminal}`,
-    `BB status: ${status2}; exit: ${exitCode}; close reason: ${closeReason}`,
+    `VesnALIA status: ${status2}; exit: ${exitCode}; close reason: ${closeReason}`,
     `Runner outcome: ${outcome}`,
-    `Status: bb terminal-job show ${job.jobId} --json`
+    `Status: VesnALIA terminal-job show ${job.jobId} --json`
   ];
   const optional2 = [
     `Terminal job completed: ${bounded(job.title, 1e3)}`,
@@ -14809,11 +14809,11 @@ function formatCompletion(job) {
   return message;
 }
 var TerminalJobService = class {
-  constructor(bb, store) {
-    this.bb = bb;
+  constructor(alia, store) {
+    this.alia = alia;
     this.store = store;
   }
-  bb;
+  alia;
   store;
   recoverReservations(serviceToken, now = Date.now()) {
     return this.store.recoverForeignReservations(serviceToken, now);
@@ -14853,7 +14853,7 @@ var TerminalJobService = class {
     if (!job.launchPath) throw new Error(`preparing job ${job.jobId} has no launch path`);
     let content;
     try {
-      const file2 = await this.bb.sdk.files.read({
+      const file2 = await this.alia.sdk.files.read({
         hostId: job.hostId,
         rootPath: job.artifactRoot,
         path: job.launchPath
@@ -14914,13 +14914,13 @@ var TerminalJobService = class {
   }
   async pollTerminal(job, now) {
     try {
-      const terminal = await this.bb.sdk.terminals.get({ terminalId: job.terminalId });
+      const terminal = await this.alia.sdk.terminals.get({ terminalId: job.terminalId });
       if (terminal.status === "exited") {
         return this.store.update(
           job.jobId,
           {
             terminalState: "exited",
-            lastBbStatus: terminal.status,
+            lastAliaStatus: terminal.status,
             exitCode: terminal.exitCode,
             closeReason: terminal.closeReason,
             lastObservationError: null,
@@ -14933,7 +14933,7 @@ var TerminalJobService = class {
       return this.store.update(
         job.jobId,
         {
-          lastBbStatus: terminal.status,
+          lastAliaStatus: terminal.status,
           lastObservationError: null,
           observedAt: now
         },
@@ -14971,7 +14971,7 @@ var TerminalJobService = class {
     }
     if (!job.outcomePath) throw new Error(`run job ${job.jobId} has no outcome path`);
     try {
-      const file2 = await this.bb.sdk.files.read({
+      const file2 = await this.alia.sdk.files.read({
         hostId: job.hostId,
         rootPath: job.artifactRoot,
         path: job.outcomePath
@@ -15038,14 +15038,14 @@ var TerminalJobService = class {
     const reserved = this.store.reserveDelivery(job.jobId, serviceToken, now);
     if (!reserved) return;
     try {
-      const response = await this.bb.sdk.threads.send({
+      const response = await this.alia.sdk.threads.send({
         threadId: reserved.ownerThreadId,
         mode: reserved.deliveryMode === "steer" ? "steer-if-active" : "queue-if-active",
         input: [{ type: "text", text: formatCompletion(reserved), mentions: [] }]
       });
       const delivery = response.delivery;
       if (!["sent", "queued", "deferred"].includes(String(delivery))) {
-        throw new Error("BB accepted a thread send without a recognized delivery result");
+        throw new Error("VesnALIA accepted a thread send without a recognized delivery result");
       }
       this.store.completeDelivery(
         reserved.jobId,
@@ -15225,7 +15225,7 @@ function status(job) {
     terminal: {
       id: job.terminalId,
       state: job.terminalState,
-      bbStatus: job.lastBbStatus,
+      aliaStatus: job.lastAliaStatus,
       exitCode: job.exitCode,
       closeReason: job.closeReason,
       lastError: job.lastObservationError,
@@ -15291,7 +15291,7 @@ function compact(job) {
 function skippedText(skipped) {
   return skipped.map((item) => `skipped ${item.jobId}: ${item.error}`).join("\n");
 }
-async function resolveScope(bb, parsed, ctx) {
+async function resolveScope(alia, parsed, ctx) {
   const threadFlag = parsed.options.get("--thread");
   const environmentFlag = parsed.options.get("--environment");
   const machineFlag = parsed.options.get("--machine");
@@ -15315,7 +15315,7 @@ async function resolveScope(bb, parsed, ctx) {
   }
   if (environmentFlag !== void 0) {
     const environmentId = safeText(environmentFlag, "--environment");
-    const environment2 = await bb.sdk.environments.get({ environmentId, signal: ctx.signal });
+    const environment2 = await alia.sdk.environments.get({ environmentId, signal: ctx.signal });
     return {
       scope: { kind: "environment", environmentId },
       hostId: environment2.hostId,
@@ -15327,9 +15327,9 @@ async function resolveScope(bb, parsed, ctx) {
   safeText(threadId, "--thread");
   const ownerThreadId = explicitOwner ?? ctx.threadId ?? threadId;
   safeText(ownerThreadId, "notification owner");
-  const thread = await bb.sdk.threads.get({ threadId, signal: ctx.signal });
+  const thread = await alia.sdk.threads.get({ threadId, signal: ctx.signal });
   if (!thread.environmentId) throw new CliError(`thread ${threadId} has no environment`);
-  const environment = await bb.sdk.environments.get({
+  const environment = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
     signal: ctx.signal
   });
@@ -15370,14 +15370,14 @@ function prunePathError(job) {
   return null;
 }
 var TerminalJobCli = class {
-  constructor(bb, store, wake, runnerHost, generationToken) {
-    this.bb = bb;
+  constructor(alia, store, wake, runnerHost, generationToken) {
+    this.alia = alia;
     this.store = store;
     this.wake = wake;
     this.runnerHost = runnerHost;
     this.generationToken = generationToken;
   }
-  bb;
+  alia;
   store;
   wake;
   runnerHost;
@@ -15415,7 +15415,7 @@ var TerminalJobCli = class {
     if (parsed.positionals.length > 0) throw new CliError(`unexpected argument: ${parsed.positionals[0]}`);
     const title = safeText(required2(parsed.options, "--title"), "--title");
     const artifactRoot = absolutePath(required2(parsed.options, "--artifact-root"), "--artifact-root");
-    const resolved = await resolveScope(this.bb, parsed, ctx);
+    const resolved = await resolveScope(this.alia, parsed, ctx);
     const mode = deliveryMode(parsed.options.get("--delivery"));
     let readiness;
     try {
@@ -15452,7 +15452,7 @@ var TerminalJobCli = class {
     });
     let terminal;
     try {
-      terminal = await this.bb.sdk.terminals.create({
+      terminal = await this.alia.sdk.terminals.create({
         cols: 120,
         rows: 30,
         scope: terminalScope(resolved.scope),
@@ -15481,7 +15481,7 @@ var TerminalJobCli = class {
     job = this.store.update(jobId, {
       terminalId: terminal.id,
       terminalState: terminal.status === "exited" ? "exited" : "observing",
-      lastBbStatus: terminal.status,
+      lastAliaStatus: terminal.status,
       exitCode: terminal.status === "exited" ? terminal.exitCode : null,
       closeReason: terminal.status === "exited" ? terminal.closeReason : null,
       observedAt,
@@ -15496,7 +15496,7 @@ var TerminalJobCli = class {
     const terminalId = safeText(parsed.positionals[0], "TERMINAL_ID");
     const ownerThreadId = safeText(required2(parsed.options, "--notify-thread"), "--notify-thread");
     const logPath = absolutePath(required2(parsed.options, "--log"), "--log");
-    const terminal = await this.bb.sdk.terminals.get({ terminalId, signal: ctx.signal });
+    const terminal = await this.alia.sdk.terminals.get({ terminalId, signal: ctx.signal });
     let scope;
     if (terminal.threadId) scope = { kind: "thread", threadId: terminal.threadId };
     else if (terminal.environmentId) scope = { kind: "environment", environmentId: terminal.environmentId };
@@ -15519,7 +15519,7 @@ var TerminalJobCli = class {
       outcomePath: null,
       terminalId,
       terminalState: terminal.status === "exited" ? "exited" : "observing",
-      lastBbStatus: terminal.status,
+      lastAliaStatus: terminal.status,
       outcomeState: terminal.status === "exited" ? "not-applicable" : "unchecked"
     });
     if (terminal.status === "exited") {
@@ -15588,7 +15588,7 @@ var TerminalJobCli = class {
       try {
         if (job.source === "run") {
           try {
-            await this.bb.sdk.files.remove({
+            await this.alia.sdk.files.remove({
               hostId: job.hostId,
               rootPath: job.artifactRoot,
               path: job.jobDirectory,
@@ -15640,12 +15640,12 @@ var TerminalJobCli = class {
   }
   help() {
     return `Usage:
-  bb terminal-job run --title TITLE [scope] --artifact-root ABSOLUTE_PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]
-  bb terminal-job watch TERMINAL_ID --notify-thread THREAD --log ABSOLUTE_PATH [--delivery queue|steer] [--json]
-  bb terminal-job show JOB_ID [--json]
-  bb terminal-job list [--limit N] [--json]
-  bb terminal-job prune --older-than-days N [--limit N] [--delete] [--json]
-  bb terminal-job retry-notification JOB_ID [--json]
+  VesnALIA terminal-job run --title TITLE [scope] --artifact-root ABSOLUTE_PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]
+  VesnALIA terminal-job watch TERMINAL_ID --notify-thread THREAD --log ABSOLUTE_PATH [--delivery queue|steer] [--json]
+  VesnALIA terminal-job show JOB_ID [--json]
+  VesnALIA terminal-job list [--limit N] [--json]
+  VesnALIA terminal-job prune --older-than-days N [--limit N] [--delete] [--json]
+  VesnALIA terminal-job retry-notification JOB_ID [--json]
 `;
   }
 };
@@ -15694,7 +15694,7 @@ var JOB_MIGRATIONS = [
     outcome_path TEXT,
     terminal_id TEXT,
     terminal_state TEXT NOT NULL CHECK (terminal_state IN ('preparing', 'observing', 'exited', 'launch_ambiguous', 'unavailable')),
-    last_bb_status TEXT,
+    last_alia_status TEXT,
     exit_code INTEGER,
     close_reason TEXT,
     last_observation_error TEXT,
@@ -15813,7 +15813,7 @@ function decodeJob(value) {
     outcomePath: nullableText2(value, "outcome_path"),
     terminalId: nullableText2(value, "terminal_id"),
     terminalState: enumValue(value, "terminal_state", TERMINAL_STATES),
-    lastBbStatus: nullableText2(value, "last_bb_status"),
+    lastAliaStatus: nullableText2(value, "last_alia_status"),
     exitCode: nullableInteger(value, "exit_code"),
     closeReason: nullableText2(value, "close_reason"),
     lastObservationError: nullableText2(value, "last_observation_error"),
@@ -15848,10 +15848,10 @@ var JobStore = class _JobStore {
   }
   db;
   logDecodeError;
-  static open(bb) {
-    const db = bb.storage.database();
-    bb.storage.migrate(db, JOB_MIGRATIONS);
-    return new _JobStore(db, (message) => bb.log.error(message));
+  static open(alia) {
+    const db = alia.storage.database();
+    alia.storage.migrate(db, JOB_MIGRATIONS);
+    return new _JobStore(db, (message) => alia.log.error(message));
   }
   decodeRows(rows, operation, quarantine) {
     const jobs = [];
@@ -15883,13 +15883,13 @@ var JobStore = class _JobStore {
           job_id, marker, source, schema_version, owner_thread_id, delivery_mode,
           title, scope_kind, scope_json, host_id, argv_json, created_at,
           artifact_root, job_directory, launch_path, log_path, outcome_path,
-          terminal_id, terminal_state, last_bb_status, outcome_state,
+          terminal_id, terminal_state, last_alia_status, outcome_state,
           delivery_state, updated_at
         ) VALUES (
           @jobId, @marker, @source, 1, @ownerThreadId, @deliveryMode,
           @title, @scopeKind, @scopeJson, @hostId, @argvJson, @createdAt,
           @artifactRoot, @jobDirectory, @launchPath, @logPath, @outcomePath,
-          @terminalId, @terminalState, @lastBbStatus, @outcomeState,
+          @terminalId, @terminalState, @lastAliaStatus, @outcomeState,
           'pending', @createdAt
         )
       `).run({
@@ -15899,7 +15899,7 @@ var JobStore = class _JobStore {
       scopeJson: JSON.stringify(job.scope),
       argvJson: JSON.stringify(job.argv),
       terminalId: job.terminalId ?? null,
-      lastBbStatus: job.lastBbStatus ?? null
+      lastAliaStatus: job.lastAliaStatus ?? null
     });
     return this.get(job.jobId);
   }
@@ -15978,7 +15978,7 @@ var JobStore = class _JobStore {
     const columns = {
       terminalId: "terminal_id",
       terminalState: "terminal_state",
-      lastBbStatus: "last_bb_status",
+      lastAliaStatus: "last_alia_status",
       exitCode: "exit_code",
       closeReason: "close_reason",
       lastObservationError: "last_observation_error",
@@ -16082,62 +16082,62 @@ function createWakeSignal() {
     }
   };
 }
-function terminalJobsPlugin(bb) {
-  const store = JobStore.open(bb);
-  const service = new TerminalJobService(bb, store);
+function terminalJobsPlugin(alia) {
+  const store = JobStore.open(alia);
+  const service = new TerminalJobService(alia, store);
   const wakeSignal = createWakeSignal();
   const generationToken = `generation_${randomUUID3()}`;
-  const runnerHost = bb.hosts.experimental_client({ contract: terminalJobHostContract });
+  const runnerHost = alia.hosts.experimental_client({ contract: terminalJobHostContract });
   const cli = new TerminalJobCli(
-    bb,
+    alia,
     store,
     () => wakeSignal.wake(),
     runnerHost,
     generationToken
   );
-  bb.cli.register({
+  alia.cli.register({
     name: "terminal-job",
     summary: "Run and inspect durable terminal jobs.",
     commands: [
       {
         name: "run",
-        summary: "Run a command in a durable BB terminal.",
-        usage: "bb terminal-job run --title TITLE [scope] --artifact-root PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]"
+        summary: "Run a command in a durable VesnALIA terminal.",
+        usage: "alia terminal-job run --title TITLE [scope] --artifact-root PATH [--delivery queue|steer] [--json] -- COMMAND [ARG...]"
       },
       {
         name: "watch",
         summary: "Register an existing terminal without recovering scrollback.",
-        usage: "bb terminal-job watch TERMINAL_ID --notify-thread THREAD --log PATH [--delivery queue|steer] [--json]"
+        usage: "alia terminal-job watch TERMINAL_ID --notify-thread THREAD --log PATH [--delivery queue|steer] [--json]"
       },
       {
         name: "show",
         summary: "Show durable job status without command arguments.",
-        usage: "bb terminal-job show JOB_ID [--json]"
+        usage: "alia terminal-job show JOB_ID [--json]"
       },
       {
         name: "list",
         summary: "List recent terminal jobs without command arguments.",
-        usage: "bb terminal-job list [--limit N] [--json]"
+        usage: "alia terminal-job list [--limit N] [--json]"
       },
       {
         name: "prune",
         summary: "Preview or delete old settled job data.",
-        usage: "bb terminal-job prune --older-than-days N [--limit N] [--delete] [--json]"
+        usage: "alia terminal-job prune --older-than-days N [--limit N] [--delete] [--json]"
       },
       {
         name: "retry-notification",
         summary: "Retry an abandoned or waiting completion notice.",
-        usage: "bb terminal-job retry-notification JOB_ID [--json]"
+        usage: "alia terminal-job retry-notification JOB_ID [--json]"
       }
     ],
     run(argv, ctx) {
       return cli.run(argv, ctx);
     }
   });
-  bb.background.service("reconciler", {
+  alia.background.service("reconciler", {
     start: createServiceLoop(service, store, (delay, signal) => wakeSignal.wait(delay, signal))
   });
-  bb.log.info("Terminal jobs loaded");
+  alia.log.info("Terminal jobs loaded");
 }
 export {
   terminalJobsPlugin as default

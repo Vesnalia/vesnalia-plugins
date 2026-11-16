@@ -1,9 +1,9 @@
 // Resize, for a box in the Box panel and one of your machines in settings' Machines (061): a preset or cores, memory and disk
 // within the kind's largest, each part's way as the box's backend changes it, and the room on its host, checked as the person
 // chooses. Live parts change at once. A part that needs a restart asks first, in the record's words, and threads working on the
-// box are named before it goes ahead anyway. Refusals show plainly, in bb-box's own words.
+// box are named before it goes ahead anyway. Refusals show plainly, in alia-box's own words.
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { BoxDialog, DialogButton } from "./box-dialog.tsx";
 import { CopyLine } from "./first-run.tsx";
@@ -176,7 +176,7 @@ function askedHere(boxId: string, resize: ResizeView): boolean {
 /**
  * How a box's last resize went, on its row, until two minutes after it ended: for a panel that reloaded while the dialog
  * waited, as for a deploy, or a resize an agent made. Quiet while `dialogOpen`, and for a resize this page's dialog asked for,
- * which said how it went. BB's panel can mount a row more than once, so each mount says it again within those minutes.
+ * which said how it went. VesnALIA's panel can mount a row more than once, so each mount says it again within those minutes.
  */
 export function useResizeNote(box: BoxView, dialogOpen: boolean): { readonly text: string; readonly failed: boolean } | null {
   const last = box.lastResize ?? null;
@@ -561,8 +561,8 @@ export function ResizeDialog({ box, threadId, at = "size", monitorId = null, onC
 }
 
 function DoneEffect({ words }: { words: string }) {
-  const commands = words.match(/bb concurrency-limit host \S+ \S+/g) ?? [];
-  const sentence = (words.split("To raise the limit now:")[0] ?? words).trim().replaceAll("bb-box", PRODUCT);
+  const commands = words.match(/alia concurrency-limit host \S+ \S+/g) ?? [];
+  const sentence = (words.split("To raise the limit now:")[0] ?? words).trim().replaceAll("alia-box", PRODUCT);
   return (
     <div className="space-y-2 text-xs leading-snug">
       <p>{sentence}</p>

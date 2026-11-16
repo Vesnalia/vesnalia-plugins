@@ -11,10 +11,10 @@
  * (a → b → a) is broken by drawing the earliest member as a root, so no
  * thread is ever dropped by a cycle. Native parent ids are never rewritten.
  *
- * Derived from bb-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
+ * Derived from alia-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
  * see THIRD-PARTY-NOTICES.md at the repository root.
  */
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { ThreadShelf } from "./lifecycle";
 import { siblingScope } from "./thread-order";
 
@@ -205,7 +205,7 @@ function orderedMembers(
 
 /**
  * Group visible threads into sections by native project membership. Every
- * known project gets a section in BB's own order, including empty ones. A
+ * known project gets a section in VesnALIA's own order, including empty ones. A
  * thread whose project is unknown gets its own section keyed by that id, so
  * two unrelated unknown projects never share a heading.
  *

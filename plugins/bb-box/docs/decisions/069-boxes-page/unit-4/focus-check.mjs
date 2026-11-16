@@ -19,9 +19,9 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 page.setDefaultTimeout(20_000);
 await skipSetup(page);
 
-await check("reason", "a box stopped outside bb-box says Unexpected stop on its line, with the warning mark", async () => {
+await check("reason", "a box stopped outside alia-box says Unexpected stop on its line, with the warning mark", async () => {
   if (docker(["inspect", "-f", "{{.State.Running}}", container]) === "true") docker(["stop", container]);
-  const stopped = await waitFor(async () => (await rpc("allBoxes")).find((each) => each.box.id === entry.box.id && each.box.stopped)?.box, "bb-box to see the stop", 6 * 60_000);
+  const stopped = await waitFor(async () => (await rpc("allBoxes")).find((each) => each.box.id === entry.box.id && each.box.stopped)?.box, "alia-box to see the stop", 6 * 60_000);
   await page.goto(`${boxes}/threads`);
   const row = page.locator("[data-resource-row]", { hasText: name }).first();
   await waitFor(async () => (await row.locator("[data-row-line]").textContent()).includes("Unexpected stop"), "Unexpected stop on the line", 30_000);

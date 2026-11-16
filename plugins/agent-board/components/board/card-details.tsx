@@ -1,8 +1,8 @@
-// bb-plugin-agent-board — expandable details block shared by board cards and
+// alia-plugin-agent-board — expandable details block shared by board cards and
 // the focus hero: a bounded, reasoning-free recent-activity tail fetched
 // lazily on first expansion via the public board_activity RPC.
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { BoardActivity, rpcContract } from "@/contract/rpc";
 
 export function CardDetails({ threadId }: { threadId: string }) {

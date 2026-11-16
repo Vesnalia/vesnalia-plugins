@@ -189,8 +189,8 @@ test("a script too long for Windows' command line goes to a file in the box firs
   const entries = log();
   assert.equal(entries.length, 2);
   assert.ok(entries.every((entry) => entry.command.length < 4_000), "the script is not on the command line");
-  const name = /'(bb-box-[0-9a-f]{16}\.ps1)'/.exec(entries[0]!.command)![1];
-  assert.equal(/'(bb-box-[0-9a-f]{16}\.ps1)'/.exec(entries[1]!.command)![1], name);
+  const name = /'(alia-box-[0-9a-f]{16}\.ps1)'/.exec(entries[0]!.command)![1];
+  assert.equal(/'(alia-box-[0-9a-f]{16}\.ps1)'/.exec(entries[1]!.command)![1], name);
   assert.deepEqual(readdirSync(join(home("192.0.2.31"), "tmp")), [], "the staged script is deleted before it runs");
 
   const output: string[] = [];
@@ -235,7 +235,7 @@ test("a command spawned on a Windows box runs in PowerShell, with its stdin and 
   await assert.rejects(ssh.spawn(at("192.0.2.34"), `: ${"x".repeat(40_000)}`, undefined, "windows"), (error: unknown) => error instanceof SshError && /could not start: .*Connection refused/.test(error.message));
 });
 
-/** A sh stand-in for PowerShell that writes and reads files as BB Box's Windows file copies do, and runs any other script with sh. */
+/** A sh stand-in for PowerShell that writes and reads files as VesnALIA Box's Windows file copies do, and runs any other script with sh. */
 const FILES = String.raw`p=$(printf '%s' "$1" | sed -n "1s/^try{\$p=\$ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath('\(.*\)');if(\[IO.Directory\].*/\1/p" | sed "s/''/'/g")
 sum() { printf '%s %s' "$(sha256sum < "$p" | cut -d' ' -f1)" "$(wc -c < "$p" | tr -d ' ')"; }
 case "$1" in
@@ -305,7 +305,7 @@ test("a Windows box's copy gives the file's size and SHA-256 from the same Power
   assert.equal(await linux.readFileSummed("x", { maxBytes: 10 }), null);
 });
 
-test("commands to one box share a connection that BB Box opens once", async () => {
+test("commands to one box share a connection that VesnALIA Box opens once", async () => {
   const { ssh, log, dir } = fakeSsh({ share: true });
   const box = at("192.0.2.20");
   const results = await Promise.all([1, 2, 3].map((n) => ssh.run(box, `echo ${n}`)));
@@ -401,7 +401,7 @@ test("a box that cannot be reached gets no shared connection for 5 s, and SSH's 
   await ssh.dispose();
 });
 
-/** The sockets of the shared connections BB Box opened to `target`, in order. */
+/** The sockets of the shared connections VesnALIA Box opened to `target`, in order. */
 function sockets(entries: ReturnType<ReturnType<typeof fakeSsh>["log"]>, target: string): string[] {
   return entries
     .filter((entry) => entry.control === "master" && entry.target === target)
@@ -434,7 +434,7 @@ test("a command that times out retires its shared connection, and forget and dis
   await ssh.forget(box);
   assert.deepEqual(closed().sort(), [...paths].sort(), "forget closes the retired connection too");
 
-  // A connection retired by a write that timed out is closed when BB Box stops.
+  // A connection retired by a write that timed out is closed when VesnALIA Box stops.
   const other = at("192.0.2.27");
   await ssh.run(other, "true");
   await assert.rejects(ssh.writeFile(other, "f", new Uint8Array(), { timeoutMs: 1 }), /timed out/);
@@ -557,7 +557,7 @@ test("output a background process writes after the script's shell exits is not w
 test("a script that prints the command lines in the box, as ps aux does, runs to its end", async () => {
   const line = new CommandLine({ argv: (script) => ["sh", "-c", script] });
   const result = await line.run('echo one; ps -o args= -p "$PPID"; echo two; exit 3', { timeoutMs: 10_000 });
-  assert.match(result.stdout, /^one\n.*bb_box_status.*\ntwo\n$/s, "the wrapper's own command line is output, not its end");
+  assert.match(result.stdout, /^one\n.*alia_box_status.*\ntwo\n$/s, "the wrapper's own command line is output, not its end");
   assert.equal(result.exitCode, 3);
 });
 
@@ -584,7 +584,7 @@ test("a timeout ends a run whose command line exited while something it started 
 test("generateKeyPair makes an ed25519 key", async () => {
   const pair = await generateKeyPair();
   assert.match(pair.privateKey, /^-----BEGIN OPENSSH PRIVATE KEY-----\n/);
-  assert.match(pair.publicKey, /^ssh-ed25519 \S+ bb-box$/);
+  assert.match(pair.publicKey, /^ssh-ed25519 \S+ alia-box$/);
 });
 
 test("a disposed Ssh opens no shared connection, so no socket comes into its folder after it closes its own (F-14)", async () => {
@@ -618,7 +618,7 @@ test("a disposed key file makes no folder again, so a backend's late task cannot
   const share = await keys.shareDir();
   await keys.dispose();
   assert.equal(existsSync(share), false);
-  await assert.rejects(keys.shareDir(), /bb-box is stopping, so it opens no new SSH connection/);
+  await assert.rejects(keys.shareDir(), /alia-box is stopping, so it opens no new SSH connection/);
   await assert.rejects(keys.path("key"), SshError);
   await assert.rejects(keys.knownHosts(["192.0.2.5 ssh-ed25519 AAAA"]), SshError);
 });
@@ -688,7 +688,7 @@ test("the key file is private and yields its public key", async () => {
   assert.equal(statSync(path).mode & 0o777, 0o600);
   assert.equal(await keys.path(readFileSync(join(dir, "k"), "utf8")), path);
   const pub = await publicKey(path);
-  assert.match(pub!, /^ssh-ed25519 \S+ bb-box$/);
+  assert.match(pub!, /^ssh-ed25519 \S+ alia-box$/);
   assert.equal(pub!.split(" ")[1], readFileSync(join(dir, "k.pub"), "utf8").split(" ")[1]);
   const known = await keys.knownHosts(["192.0.2.5 ssh-ed25519 AAAA", ""]);
   assert.equal(readFileSync(known, "utf8"), "192.0.2.5 ssh-ed25519 AAAA\n");

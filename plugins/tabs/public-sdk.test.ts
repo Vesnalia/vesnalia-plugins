@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 describe("Public SDK boundary", () => {
   it("rejects private SDK APIs and dependencies outside the runtime allowlist", () => {
@@ -17,7 +17,7 @@ describe("Public SDK boundary", () => {
     // Development-only imports are allowed only in these exact files, not in plugin code.
     const developmentImports: Record<string, string[]> = {
       "eslint.config.mjs": ["@eslint/js", "typescript-eslint", "eslint-plugin-react-hooks"],
-      "test-utils.ts": ["@get-bb/plugin-sdk/testing", "@get-bb/plugin-sdk/testing/app"],
+      "test-utils.ts": ["@vesnalia/plugin-sdk/testing", "@vesnalia/plugin-sdk/testing/app"],
     };
     expect(result.privateDependencies).toEqual([]);
     expect(

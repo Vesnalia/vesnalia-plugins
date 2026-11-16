@@ -16,13 +16,13 @@ sources:
   - settings-page.tsx
 ---
 # Agent Tools deployment
-The package manifest declares the BB server, host, and app entry points; its build script invokes the BB plugin CLI (`package.json:25-37`, `package.json:74-76`).
+The package manifest declares the VesnALIA server, host, and app entry points; its build script invokes the VesnALIA plugin CLI (`package.json:25-37`, `package.json:74-76`).
 
 ## Prerequisites
 
 - Node.js with npm for the lockfile install and scripts (`package.json:74-78`).
-- BB `>=0.43` and plugin SDK `>=0.4.87` (`package.json:21-24`).
-- BB CLI available for plugin build and runtime commands (`package.json:74-76`, `server.ts:2143-2255`).
+- VesnALIA `>=0.43` and plugin SDK `>=0.4.87` (`package.json:21-24`).
+- VesnALIA CLI available for plugin build and runtime commands (`package.json:74-76`, `server.ts:2143-2255`).
 
 ## Install and build
 
@@ -43,32 +43,32 @@ The package manifest declares the BB server, host, and app entry points; its bui
    npm test
    ```
 
-3. Build the BB plugin:
+3. Build the VesnALIA plugin:
 
-   The manifest build script invokes `bb plugin build` (`package.json:74-76`).
+   The manifest build script invokes `alia plugin build` (`package.json:74-76`).
 
    ```sh
-   bb plugin build .
+   alia plugin build .
    ```
 
 4. Install the path plugin and reload the registered plugin:
 
    ```sh
-   bb plugin install .
-   bb plugin reload agent-tools
+   alia plugin install .
+   alia plugin reload agent-tools
    ```
 
-5. Verify the live behavior changed by the build. Use `bb tools status`, `bb tools plan`, or `bb tools scan --json`; the plugin registers these commands and their handlers (`server.ts:2393-2408`, `server.ts:2535-2543`, `server.ts:2594-2603`).
+5. Verify the live behavior changed by the build. Use `alia tools status`, `alia tools plan`, or `alia tools scan --json`; the plugin registers these commands and their handlers (`server.ts:2393-2408`, `server.ts:2535-2543`, `server.ts:2594-2603`).
 
 ## Managed hub installation
 
-The canonical development checkout is separate from the hub’s managed Git installation. Confirm its source with `bb plugin list --json`: `git:https://github.com/VKirill/bb-plugin-agent-tools.git@semver:^0.2.0`. After typecheck, tests, and `bb plugin build .`, commit and push `origin main`, publish a new `vX.Y.Z` tag and GitHub Release, then run `bb plugin update agent-tools --yes` and `bb plugin reload agent-tools`. Confirm the version and status, then check the affected UI and CLI scenarios. Do not replace this source with a local path installation or use the path-plugin rsync helper.
+The canonical development checkout is separate from the hub’s managed Git installation. Confirm its source with `alia plugin list --json`: `git:https://github.com/VKirill/bb-plugin-agent-tools.git@semver:^0.2.0`. After typecheck, tests, and `alia plugin build .`, commit and push `origin main`, publish a new `vX.Y.Z` tag and GitHub Release, then run `alia plugin update agent-tools --yes` and `alia plugin reload agent-tools`. Confirm the version and status, then check the affected UI and CLI scenarios. Do not replace this source with a local path installation or use the path-plugin rsync helper.
 
 A failed managed activation rolls back automatically. For a functional rollback, restore the previous release’s affected files in a new fix commit on main, build and publish it, then update the same managed source. Keep configuration and skill data intact; this release adds no data migration.
 
 ## Configure
 
-Open `bb plugin config agent-tools` for MetaMCP URL, secret API key, namespace list, and the skills classifier provider/model/project and schedule settings (`server.ts:492-542`). The Settings page controls classifier provider, model, project, automatic classification, and whether machine-copy cleanup is offered (`settings-page.tsx:100-199`). Scheduled MCP sync is stored separately in BB KV and defaults to off; its sweep branch runs only when enabled (`server.ts:576-578`, `server.ts:2292-2312`). The hourly sweep refreshes machine skill counts and starts classification when enabled; it does not fan out skills to machine folders (`server.ts:2302-2312`).
+Open `alia plugin config agent-tools` for MetaMCP URL, secret API key, namespace list, and the skills classifier provider/model/project and schedule settings (`server.ts:492-542`). The Settings page controls classifier provider, model, project, automatic classification, and whether machine-copy cleanup is offered (`settings-page.tsx:100-199`). Scheduled MCP sync is stored separately in VesnALIA KV and defaults to off; its sweep branch runs only when enabled (`server.ts:576-578`, `server.ts:2292-2312`). The hourly sweep refreshes machine skill counts and starts classification when enabled; it does not fan out skills to machine folders (`server.ts:2302-2312`).
 
 ## Rollback
 
@@ -77,8 +77,8 @@ The repository does not define a rollback script or plugin data migration (`pack
 ## Troubleshooting
 
 - If `npm ci` fails, confirm that the repository lockfile is present (`package-lock.json:1`) and inspect the declared dependency scripts (`package.json:38-78`).
-- If BB refuses the build, check the declared BB and SDK minimums (`package.json:21-24`).
-- If a host does not appear in scan results, the scan targets only hosts BB marks connected (`server.ts:603-612`).
+- If VesnALIA refuses the build, check the declared VesnALIA and SDK minimums (`package.json:21-24`).
+- If a host does not appear in scan results, the scan targets only hosts VesnALIA marks connected (`server.ts:603-612`).
 - Classifier and cleanup settings are read when the skills service uses them; Settings page edits persist through `settings.experimental_set` (`server.ts:543-560`).
 - If a CLI config is not editable, inspect its detected `writable` and warning fields; JSONC comments make a config read-only (`contract.ts:21-33`, `host.ts:802-813`).
 

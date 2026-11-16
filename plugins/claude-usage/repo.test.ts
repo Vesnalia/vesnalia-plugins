@@ -1,4 +1,4 @@
-// Release guard: bb installs this plugin with a full `git clone`, so every branch and tag ships with
+// Release guard: VesnALIA installs this plugin with a full `git clone`, so every branch and tag ships with
 // every release. README media is a GitHub attachment (dragged into the README on github.com), never git.
 import { test } from "node:test";
 import assert from "node:assert/strict";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { AgentChoice, ModelCatalog, WorkModels, workshopContract } from "../contract";
 import { EFFORTS, GROUP_TITLE } from "../agent-models";
 import { errCls, field } from "./common";
@@ -67,8 +67,8 @@ function ModelSelect({ catalog, c, set, onlyClaude, aria }: { catalog: ModelCata
 }
 
 /**
- * The work's agent models — chosen before the start, as in bb's new-thread dialog: model and reasoning level per stage group,
- * the orchestrator, the Implementation subagents and the reviewers (0–2). The list comes from bb; if it does not arrive, the defaults stay.
+ * The work's agent models — chosen before the start, as in VesnALIA's new-thread dialog: model and reasoning level per stage group,
+ * the orchestrator, the Implementation subagents and the reviewers (0–2). The list comes from VesnALIA; if it does not arrive, the defaults stay.
  */
 export function ModelsPicker({ value, onChange }: { value: WorkModels | null; onChange: (m: WorkModels) => void }) {
   const rpc = useRpc<typeof workshopContract>();

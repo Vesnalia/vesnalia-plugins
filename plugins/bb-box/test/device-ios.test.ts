@@ -941,12 +941,12 @@ describe("the iOS driver, against a fake simctl and a fake idb_companion", () =>
       return state.platform === "ios" ? state.settings : null!;
     };
     const first = (await settings()).appearance;
-    assert.ok(first.known && first.value === "light" && first.by === "bb-box", "read as the server attached");
+    assert.ok(first.known && first.value === "light" && first.by === "alia-box", "read as the server attached");
 
     await driver.control({ action: "appearance", to: "dark" }, signal(), agent);
     assert.equal(simulator.appearance, "dark");
     const dark = (await settings()).appearance;
-    assert.ok(dark.known && dark.value === "dark" && dark.by === "bb-box");
+    assert.ok(dark.known && dark.value === "dark" && dark.by === "alia-box");
 
     await driver.control({ action: "text_size", to: "small" }, signal(), agent);
     assert.equal(simulator.contentSize, "small");
@@ -1007,7 +1007,7 @@ describe("the iOS driver, against a fake simctl and a fake idb_companion", () =>
     simulator.calls.length = 0;
     await again.driver.attach(setup.target, AbortSignal.timeout(20_000));
     const kept = await again.driver.readBack();
-    assert.ok(kept.platform === "ios" && kept.settings.location.set?.latitude === 51.5, "the location BB Box set is kept across a restart");
+    assert.ok(kept.platform === "ios" && kept.settings.location.set?.latitude === 51.5, "the location VesnALIA Box set is kept across a restart");
     assert.ok(simulator.calls.includes(`location ${UDID} set 51.5,-0.12`), "and set again on the device");
     again.driver.close();
   });
@@ -1075,7 +1075,7 @@ describe("the iOS driver, against a fake simctl and a fake idb_companion", () =>
   });
 
   function fakeSoftwareEncoder(home: string): { readonly helper: string; readonly log: string } {
-    const helper = join(home, "bb-box-h264");
+    const helper = join(home, "alia-box-h264");
     const fake = fileURLToPath(new URL("./fake-simulator-h264.ts", import.meta.url));
     writeFileSync(helper, `#!/bin/sh\nexec "${process.execPath}" "${fake}" "$@"\n`);
     chmodSync(helper, 0o755);
@@ -1220,7 +1220,7 @@ describe("the iOS driver, against a fake simctl and a fake idb_companion", () =>
   });
 });
 
-describe("an ios box in BB Box's words", () => {
+describe("an ios box in VesnALIA Box's words", () => {
   const offer = {
     platform: "ios",
     devices: [

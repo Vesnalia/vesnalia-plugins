@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as Popover from "@radix-ui/react-popover";
-import {definePluginApp, experimental_usePluginId, experimental_Icon as Icon, type PluginThreadHeaderActionProps} from "@get-bb/plugin-sdk/app";
+import {definePluginApp, experimental_usePluginId, experimental_Icon as Icon, type PluginThreadHeaderActionProps} from "@vesnalia/plugin-sdk/app";
 import {ResponsiveDrawerShell} from "./components/ui/responsive-overlay";
 import {usePortalScopeProps} from "./lib/portal-scope";
 import {createWidthStore,isPreset,isWidth,MIN_WIDTH,MAX_WIDTH,type WidthStore,type WidthMode} from "./width-state";
@@ -11,7 +11,7 @@ let store: WidthStore | undefined;
 function getStore(pluginId:string) {
   return store ??= createWidthStore(pluginId,()=>window.localStorage,window);
 }
-const names:Record<WidthMode,string>={native:"bb default",reading:"Reading",wide:"Wide",fill:"Fill"};
+const names:Record<WidthMode,string>={native:"alia default",reading:"Reading",wide:"Wide",fill:"Fill"};
 
 function WidthControl({threadId,isCompactViewport}:PluginThreadHeaderActionProps) {
   const pluginId=experimental_usePluginId();
@@ -79,15 +79,15 @@ function WidthControl({threadId,isCompactViewport}:PluginThreadHeaderActionProps
       <div className="cw-scale"><span>{MIN_WIDTH} px</span><span>{MAX_WIDTH} px</span></div>
     </div>}
     <p className="cw-hint" id={id+"-hint"} aria-live="polite">
-      {!binding?"This conversation layout is not supported. bb's layout is unchanged.":
+      {!binding?"This conversation layout is not supported. VesnALIA's layout is unchanged.":
         adjustable&&invalid?"Enter a whole number from "+MIN_WIDTH+" to "+MAX_WIDTH+" px.":
         snapshot.persistence==="unavailable"?"Not saved on this device. Changes work for this session.":
         prefs.mode==="fill"?"Uses the available pane width. Your saved presets are kept.":
-        prefs.mode==="native"?"Using bb's layout. Your saved presets are kept.":
+        prefs.mode==="native"?"Using VesnALIA's layout. Your saved presets are kept.":
         available>0&&width!==null&&width>available?"Fits this pane · "+width+" px stays saved.":
         "Remembered for "+names[prefs.mode]+" on this device."}
     </p>
-    <button type="button" className="cw-native" aria-pressed={prefs.mode==="native"} onClick={()=>{editing.current=false;state.cancel();state.select("native");}}>Use bb default</button>
+    <button type="button" className="cw-native" aria-pressed={prefs.mode==="native"} onClick={()=>{editing.current=false;state.cancel();state.select("native");}}>Use VesnALIA default</button>
   </div>;
 
   if(isCompactViewport) return <><span className="cw-root">{React.cloneElement(button,{"aria-expanded":open,"aria-haspopup":"dialog",onClick:()=>changeOpen(!open)})}</span>

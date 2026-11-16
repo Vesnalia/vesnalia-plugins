@@ -1,9 +1,9 @@
 # Third-party notices
 
-folder-browser.tsx adapts the layout and inline folder creation interaction from BB apps/app/src/components/dialogs/RemotePathBrowser.tsx (BB 0.43.1).
+folder-browser.tsx adapts the layout and inline folder creation interaction from VesnALIA apps/app/src/components/dialogs/RemotePathBrowser.tsx (VesnALIA 0.43.1).
 
-Vendored UI components, hooks and utilities derive from BB shared-ui and the BB plugin scaffold.
-The companion patch in docs/bb-native-thread-relocation.patch modifies BB core sources under the same MIT license.
+Vendored UI components, hooks and utilities derive from VesnALIA shared-ui and the VesnALIA plugin scaffold.
+The companion patch in docs/alia-native-thread-relocation.patch modifies VesnALIA core sources under the same MIT license.
 
 MIT License
 

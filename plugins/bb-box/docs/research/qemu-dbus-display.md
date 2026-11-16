@@ -1,7 +1,7 @@
 # Windows on a Mac: QEMU's D-Bus display (#885)
 
 A spike, on 22 October 2026, on a Mac with Apple silicon, with QEMU 11.1.1 as
-bb-box runs it (from Nix, with GLib 2.88), and a `windows-arm64-desktop` box
+alia-box runs it (from Nix, with GLib 2.88), and a `windows-arm64-desktop` box
 of the image built on 19 October. The prototype is
 [`qemu-dbus-display/listener.c`](qemu-dbus-display/listener.c), a throwaway C
 program on GLib's GDBus. Build it with
@@ -43,7 +43,7 @@ makes. Windows still flushes about 36 times a second while Edge draws 64.
 The cap is probably the virtio-gpu display driver's, as the change in
 QEMU's display path did not lift it; this spike did not find out more.
 
-## What it means for bb-box-stream's qemu mode
+## What it means for alia-box-stream's qemu mode
 
 - **Frames.**
   - Map the scanout's file descriptor.
@@ -57,8 +57,8 @@ QEMU's display path did not lift it; this spike did not find out more.
 - **The pointer.**
   - Windows' display driver draws the pointer into the picture: moves give
     56x46 updates, and QEMU sent `MouseSet` only once, with the pointer off.
-    So the video shows the pointer without bb-box-stream.exe's report.
-  - Where the pointer is can still come from the input bb-box sends, and the
+    So the video shows the pointer without alia-box-stream.exe's report.
+  - Where the pointer is can still come from the input alia-box sends, and the
     picture shows moves Windows makes itself.
 - **Input.** Keys and the pointer can go through D-Bus. There is then no need
   to send input through VNC to keep its refresh fast. VNC stays for noVNC
@@ -78,7 +78,7 @@ QEMU's display path did not lift it; this spike did not find out more.
 
 - **Saved warm VMs.** They were saved with `-display none`. Restoring one
   with `-display dbus` was not tried. If it fails, warm VMs are retired once
-  on the upgrade, as bb-box already does when QEMU's version changes.
+  on the upgrade, as alia-box already does when QEMU's version changes.
 - **A QEMU update.** `org.qemu.Display1` has been stable since QEMU 7, but
   `ScanoutMap` on macOS depends on QEMU's shareable surfaces. A conformance
   check on the fake QEMU, and one live check after each QEMU update, should
@@ -98,7 +98,7 @@ to 36 a second, short of 60. The larger gains:
 
 The work:
 
-1. A Swift peer-to-peer D-Bus client in bb-box-stream: authentication,
+1. A Swift peer-to-peer D-Bus client in alia-box-stream: authentication,
    marshalling of the few messages, and file descriptors.
 2. The listener: `ScanoutMap` and `UpdateMap` copied into the encoder's
    buffers, and new sessions at mode changes.

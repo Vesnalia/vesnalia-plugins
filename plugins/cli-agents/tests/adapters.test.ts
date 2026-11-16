@@ -107,12 +107,12 @@ describe("composer routing", () => {
   const storage = (values: Record<string, string>) => ({
     getItem: (k: string) => values[k] ?? null,
   });
-  it("ignores the CLI another bb window left in shared storage", () => {
+  it("ignores the CLI another VesnALIA window left in shared storage", () => {
     const target = readTarget(
       "p",
       storage({
-        "bb.promptbox.provider": "claude-code",
-        "bb.promptbox.machine-p-1": "host_a",
+        "alia.promptbox.provider": "claude-code",
+        "alia.promptbox.machine-p-1": "host_a",
       }),
       { providerId: "acp-opencode", hostId: "host_b" },
     );
@@ -121,8 +121,8 @@ describe("composer routing", () => {
   });
   it("follows the CLI shown in this composer over any remembered one", () => {
     const remembered = storage({
-      "bb.promptbox.provider": "claude-code",
-      "bb.promptbox.machine-p-1": "host_a",
+      "alia.promptbox.provider": "claude-code",
+      "alia.promptbox.machine-p-1": "host_a",
     });
     expect(readTarget("p", remembered, null, "codex")?.providerId).toBe(
       "codex",
@@ -158,15 +158,15 @@ describe("composer routing", () => {
   });
   it("rejects missing machines and unresolved new worktrees", () => {
     expect(
-      readTarget("p", storage({ "bb.promptbox.provider": "codex" })),
+      readTarget("p", storage({ "alia.promptbox.provider": "codex" })),
     ).toBeNull();
     expect(
       readTarget(
         "p",
         storage({
-          "bb.promptbox.provider": "claude-code",
-          "bb.promptbox.machine-p-1": "host_a",
-          "bb.promptbox.environment-p-1": "provider:worktree",
+          "alia.promptbox.provider": "claude-code",
+          "alia.promptbox.machine-p-1": "host_a",
+          "alia.promptbox.environment-p-1": "provider:worktree",
         }),
       ),
     ).toBeNull();

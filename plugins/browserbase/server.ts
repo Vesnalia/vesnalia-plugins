@@ -1,8 +1,8 @@
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginAgentToolContext,
   PluginAgentToolResult,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { CallToolResultSchema, type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -60,7 +60,7 @@ function formatResult(result: CallToolResult, key: string): PluginAgentToolResul
 async function connectHosted(key: string, signal: AbortSignal): Promise<Connection> {
   const url = new URL("https://mcp.browserbase.com/mcp");
   url.searchParams.set("browserbaseApiKey", key);
-  const client = new Client({ name: "bb-plugin-browserbase", version: "0.1.0" });
+  const client = new Client({ name: "alia-plugin-browserbase", version: "0.1.0" });
   const transport = new StreamableHTTPClientTransport(url);
   // Protocol/transport errors may contain a credential-bearing URL.
   client.onerror = () => {};
@@ -76,8 +76,8 @@ async function connectHosted(key: string, signal: AbortSignal): Promise<Connecti
 
 // The connector argument permits isolated tests without creating paid sessions.
 export function createBrowserbasePlugin(connect: Connector = connectHosted) {
-  return function browserbase(bb: BbPluginApi) {
-    const settings = bb.settings.define({
+  return function browserbase(alia: AliaPluginApi) {
+    const settings = alia.settings.define({
       apiKey: { type: "string", label: "Browserbase API key", secret: true },
     });
     const sessions = new Map<string, Session>();
@@ -106,10 +106,10 @@ export function createBrowserbasePlugin(connect: Connector = connectHosted) {
           name: "end", arguments: state.id ? { sessionId: state.id } : {},
         }, CallToolResultSchema, { timeout: 3_000, signal: AbortSignal.timeout(3_000) });
         if (result.isError || ("content" in result && failed(result as CallToolResult))) {
-          bb.log.warn("Browserbase session cleanup failed; check Sessions in the Browserbase dashboard.");
+          alia.log.warn("Browserbase session cleanup failed; check Sessions in the Browserbase dashboard.");
         }
       } catch {
-        bb.log.warn("Browserbase session cleanup could not be confirmed; check Sessions in the Browserbase dashboard.");
+        alia.log.warn("Browserbase session cleanup could not be confirmed; check Sessions in the Browserbase dashboard.");
       } finally { await state.client.close().catch(() => {}); }
     }
 
@@ -164,13 +164,13 @@ export function createBrowserbasePlugin(connect: Connector = connectHosted) {
     }
 
     function register<S extends z.ZodType<Record<string, unknown>>>(name: ToolName, description: string, parameters: S) {
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: `browserbase_${name}`, description, parameters,
         execute: (args, ctx) => execute(name, args, ctx),
       });
     }
     const instruction = z.string().trim().min(1).max(12_000);
-    register("start", "Create or reuse the browser session owned by this BB thread.", z.object({}).strict());
+    register("start", "Create or reuse the browser session owned by this VesnALIA thread.", z.object({}).strict());
     register("navigate", "Navigate this thread's browser to an HTTP or HTTPS URL.", z.object({
       url: z.url().max(8_192).refine((value) => ["http:", "https:"].includes(new URL(value).protocol), "Use an HTTP or HTTPS URL."),
     }).strict());
@@ -180,14 +180,14 @@ export function createBrowserbasePlugin(connect: Connector = connectHosted) {
     register("end", "Close this thread's browser session when finished.", z.object({}).strict());
 
     for (const event of ["thread.archived", "thread.deleted"] as const) {
-      bb.events.on(event, async ({ thread }) => {
+      alia.events.on(event, async ({ thread }) => {
         await serialized(thread.id, async () => {
           const state = sessions.get(thread.id);
           if (state) await cleanup(thread.id, state);
         });
       });
     }
-    bb.onDispose(async () => {
+    alia.onDispose(async () => {
       lifecycle.abort();
       await Promise.allSettled([...sessions].map(([id, state]) => cleanup(id, state)));
     });

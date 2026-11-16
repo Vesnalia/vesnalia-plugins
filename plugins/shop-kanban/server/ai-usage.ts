@@ -1,7 +1,7 @@
 // Shopify AI proxy spend for the signed-in user, read from the proxy's own per-user counter
-// (GET https://proxy.shopify.ai/apis/proxy/v1/usage.json), so it covers every tool on the proxy, not just bb threads.
+// (GET https://proxy.shopify.ai/apis/proxy/v1/usage.json), so it covers every tool on the proxy, not just VesnALIA threads.
 //
-// Auth: a personal proxy key. One from the environment (SHOPIFY_PROXY_KEY / PI_PROXY_API_KEY) when the bb server has
+// Auth: a personal proxy key. One from the environment (SHOPIFY_PROXY_KEY / PI_PROXY_API_KEY) when the VesnALIA server has
 // it; otherwise minted like the proxy's own CLIs do: a gcloud identity token exchanged at /hmac/personal.
 //
 // Only Shopify credentials ever leave the machine: an environment key must be a Shopify proxy key, and a token is
@@ -9,7 +9,7 @@
 
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { AiUsage } from "./schema";
 import { errorMessage } from "./text";
 
@@ -77,7 +77,7 @@ async function gcloudIdentityToken(): Promise<string> {
     if (!SHOPIFY_ACCOUNT.test(account)) break;
     const token = await run(bin, ["auth", "print-identity-token"]);
     if (token) return token;
-    throw new Error("No gcloud identity token. Run `gcloud auth login` on the bb machine.");
+    throw new Error("No gcloud identity token. Run `gcloud auth login` on the VesnALIA machine.");
   }
   throw new NoShopifyAccount("No Shopify account: sign gcloud in with your shopify.com account, or set SHOPIFY_PROXY_KEY.");
 }
@@ -159,7 +159,7 @@ function toUsage(body: UsageResponse, sampledAt: number): AiUsage {
   };
 }
 
-export function createAiUsage(bb: BbPluginApi) {
+export function createAiUsage(alia: AliaPluginApi) {
   let key: Key | null = null;
   let envKeyRejected = false;
   let cached: { at: number; value: AiUsage; ttl: number } | null = null;
@@ -198,7 +198,7 @@ export function createAiUsage(bb: BbPluginApi) {
         .catch((error: unknown): AiUsage => {
           const message = errorMessage(error);
           ttl = error instanceof NoShopifyAccount ? NO_ACCOUNT_CACHE_MS : ERROR_CACHE_MS;
-          if (!(error instanceof NoShopifyAccount)) bb.log.warn(`ai usage read failed: ${message}`);
+          if (!(error instanceof NoShopifyAccount)) alia.log.warn(`ai usage read failed: ${message}`);
           // Keep the last good figures, flagged with the error, so a blip doesn't blank the chip.
           const last = cached?.value;
           return last

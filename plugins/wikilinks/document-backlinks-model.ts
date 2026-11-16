@@ -4,7 +4,7 @@
 import type {
   ExperimentalLiveFileTarget,
   PluginFileOpenerSource,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { HoverPreviewBacklink } from "./hover-preview.js";
 
 export const VAULT_GRAPH_PLUGIN_ID = "vault-graph";

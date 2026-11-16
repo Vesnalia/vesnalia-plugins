@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   executeTerminationResultSchema,
   preparedTerminationSchema,
@@ -14,7 +14,7 @@ import plugin, {
 } from "../server.ts";
 
 type HostRecord = Awaited<
-  ReturnType<BbPluginApi["sdk"]["hosts"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["hosts"]["list"]>
 >[number];
 
 function hostRecord(
@@ -93,7 +93,7 @@ test("listProcesses routes only to the explicit enrolled connected host", async 
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const result = processListResultSchema.parse(
     await fake.harness.behavior.callRpc("listProcesses", {
@@ -130,7 +130,7 @@ test("identical overlapping process polls are coalesced", async (t) => {
     experimental_callHostRpc: () => hostCall,
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   const input = { hostId: "host-alpha", sortBy: "memory", limit: 50 } as const;
 
   const first = fake.harness.behavior.callRpc("listProcesses", input);
@@ -156,7 +156,7 @@ test("termination preparation waits behind one active poll on the same host", as
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const list = fake.harness.behavior.callRpc("listProcesses", {
     hostId: "host-alpha",
@@ -194,7 +194,7 @@ test("offline and unknown hosts never start a host worker", async (t) => {
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   assert.deepEqual(
     await fake.harness.behavior.callRpc("listProcesses", {
@@ -235,7 +235,7 @@ test("prepare issues a one-use challenge and execute consumes it before dispatch
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const prepared = preparedTerminationSchema.parse(
     await fake.harness.behavior.callRpc("prepareProcessTermination", {
@@ -298,7 +298,7 @@ test("execute reports known preflight failure before dispatch and unknown transp
     },
   });
   t.after(() => fake.harness.lifecycle.dispose());
-  await plugin(fake.bb);
+  await plugin(fake.alia);
 
   const first = preparedTerminationSchema.parse(
     await fake.harness.behavior.callRpc("prepareProcessTermination", {

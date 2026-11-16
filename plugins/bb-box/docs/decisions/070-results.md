@@ -7,9 +7,9 @@ unit keeps to its own section.
 
 On 2 November 2026, with the close-out's two units, 070 is built as far as
 it goes. Units 12 and 13 are left for later, not built, as a decision of
-their own. What is live is in bb-box's code and was checked live on a
-separate BB, but for microsandbox on a Mac: there the evidence is the
-probe's 29 of 29 through bb-box's exact commands, and the lead smoke-tests
+their own. What is live is in alia-box's code and was checked live on a
+separate VesnALIA, but for microsandbox on a Mac: there the evidence is the
+probe's 29 of 29 through alia-box's exact commands, and the lead smoke-tests
 production's microsandbox on the Mac after merge. Some of the rest waits
 for a production step, said on its line.
 
@@ -38,11 +38,11 @@ Left for later, not built:
 
 Known gaps, in plain words:
 
-- **Restores of boxes threads run on stay off** until BB holds every turn
+- **Restores of boxes threads run on stay off** until VesnALIA holds every turn
   (gate G17): "Send now" can still start a turn on a box being stopped for
   a restore (request 39). A person's and an agent's restores of other
   boxes work.
-- **A fork made outside bb-box keeps its source's identity.** bb-box's own
+- **A fork made outside alia-box keeps its source's identity.** alia-box's own
   forks always reset. A copy made with a provider's own tools, such as a
   fork in boat.dev's dashboard, gets its source's identity value, so its
   reset does not run.
@@ -57,7 +57,7 @@ Known gaps, in plain words:
 - **ZFS restores of Linux VMs stay off.** Proxmox LXC boxes restore on ZFS
   since [086](086-proxmox-lxc-boxes-restore-on-zfs-in-zfss-order.md), with
   G4 run on a test ZFS pool; see [ZFS restores on Proxmox LXC](#zfs-restores-on-proxmox-lxc).
-- **A snapshot of a stopped Tart box forks only if bb-box stopped it** and
+- **A snapshot of a stopped Tart box forks only if alia-box stopped it** and
   it has not run since.
 - **The identity reset is off on a backend until it is armed** in
   `general.identityResetBackends`; until then its snapshots neither fork
@@ -72,7 +72,7 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
 ### What changed
 
 - **The record and `snapshots.db`.** `snapshots.db` is a file of its own
-  beside bb-box's database, attached as `box-log.db` is, with its own
+  beside alia-box's database, attached as `box-log.db` is, with its own
   migrations, write-ahead log and a 64 MB cap. It holds two tables: the
   snapshots, with every field of section 1's record, and their operations,
   with every field of section 6's. Records and operations are never
@@ -82,8 +82,8 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
   no rebuild. An existing `snapshots.db` that cannot be opened fails
   closed: no ledger takes its place, every snapshot change is refused, the
   box sweep keeps every leftover guest, and the doctor fails. Only where
-  there is no such file and BB's handle refuses to attach one do the
-  records live in bb-box's own database; they move into `snapshots.db` the
+  there is no such file and VesnALIA's handle refuses to attach one do the
+  records live in alia-box's own database; they move into `snapshots.db` the
   first time it attaches. `src/plugin/snapshot-store.ts`,
   `src/plugin/attached-files.ts`.
 - **The rules**, pure and tested on a set clock, in `src/core/snapshot.ts`:
@@ -97,7 +97,7 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
   judging with a reason for each one skipped.
 - **Pins are the operations.** A snapshot is pinned while an operation that
   names it is `running` or `unknown`; nothing else pins. So pins end with
-  their operation by construction, and an operation bb-box cannot confirm
+  their operation by construction, and an operation alia-box cannot confirm
   keeps its pin.
 - **Operations, on the box's queue.** `Boxes.inTurn` runs a snapshot
   operation on the box's `#chain` with its start, stop, resize and release.
@@ -112,23 +112,23 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
     before the backend is asked. A memory take checks and reserves the
     storage the plan says its memory goes to, at the size the plan says.
     The operation records `submitting` just before the provider is asked,
-    and the provider's task just after it answers, before bb-box waits.
+    and the provider's task just after it answers, before alia-box waits.
     The record is `ready` only when the backend confirms it complete and
     its task succeeded; `failed` when the backend says nothing is held;
     `incomplete` when part of it is, or its task failed; and stays
-    `taking`, its operation `unknown`, when bb-box cannot tell.
+    `taking`, its operation `unknown`, when alia-box cannot tell.
   - A delete checks `eligible` at the moment of the change, on the box's
     queue, then records `deleting` and its operation before the backend is
     asked. A failed or lost record is removed with no call to the backend.
   - A request ID is the caller's own, bound to its box, kind and
     arguments. A repeat returns the same operation, also once its snapshot
-    is gone and after bb-box restarts; a reuse for anything else is refused
+    is gone and after alia-box restarts; a reuse for anything else is refused
     ("Request ID "r" was used already, for another take or delete. Make a
     new one for this.") and changes nothing. The check runs again inside
     the transaction that writes the operation, so the same request on two
     boxes at once makes one take and refuses the other.
-  - Operations run as bb-box's own, under its stop signal, not the caller's.
-- **Restart recovery.** At start, and at each sweep for operations bb-box
+  - Operations run as alia-box's own, under its stop signal, not the caller's.
+- **Restart recovery.** At start, and at each sweep for operations alia-box
   could not confirm, `recover` lists each backend's snapshots once and
   reads each operation's provider task. An operation that reached
   `submitting` with no task recorded has its task looked up by its guest,
@@ -139,7 +139,7 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
     provider (never taken again);
   - a delete is done if the snapshot is gone, finished if it never began,
     and the record put back if its task failed;
-  - a task still running, a task bb-box cannot read, a whole snapshot with
+  - a task still running, a task alia-box cannot read, a whole snapshot with
     no task to confirm it, and a task Proxmox no longer has for a snapshot
     that is absent each leave the operation `unknown`, pinned, with why.
 - **The reconcile**, at each sweep, before the box sweep: a failed listing
@@ -148,27 +148,27 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
   listing brings them back `ready`. A record missing from a successful
   listing is `lost` only when a second listing 10 minutes later still lacks
   it. An `incomplete` record whose snapshot is gone is removed, logged as
-  outside bb-box. A labelled snapshot with no record gets one again: by no
-  one bb-box knows, named by its time; as kept when its label carries a
+  outside alia-box. A labelled snapshot with no record gets one again: by no
+  one alia-box knows, named by its time; as kept when its label carries a
   keep date not passed; as found on its host when its box is gone, deleted
   after 7 days. A snapshot whose record changed after the listing began, a
   release's removal included, is left for the next listing. Housekeeping
   removes failed records after 24 hours and lost ones after 7 days, and
   deletes kept snapshots past their date and room-sweep candidates past
   92%, each through `eligible` at the moment of the change.
-- **The box sweep keeps guests that hold snapshots bb-box keeps.** Before
+- **The box sweep keeps guests that hold snapshots alia-box keeps.** Before
   it releases a guest no box records, it asks the snapshots' ledger: a
   guest holding a found, kept or pinned snapshot stays, and the sweep
   reports it as "Guests kept for the snapshots they hold". With
   `snapshots.db` unreadable, it keeps every such guest.
 - **A box's end.** A released box's snapshots go with it (Proxmox deletes
-  them with the guest), each logged "by bb-box: its box was released", and
+  them with the guest), each logged "by alia-box: its box was released", and
   each removal is a settled operation, so a listing that began before the
   release records none of them again; a forgotten box's stay,
   `unavailable` and marked gone; a kept one stays, marked gone.
 - **Removing a backend** that holds snapshots is refused in the
-  configuration's check, naming how many, their size and price; `bb box
-  snapshot forget <backend> --yes` drops bb-box's records of them.
+  configuration's check, naming how many, their size and price; `alia box
+  snapshot forget <backend> --yes` drops alia-box's records of them.
 - **The backend interface**: `Snapshotting`, `SnapshotPlan` (with a
   physical storage key, and where a memory snapshot goes and what it
   adds), `snapshotting`, `planSnapshots`, `snapshot`, `deleteSnapshot`,
@@ -176,8 +176,8 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
   and `SnapshotIncomplete` for what a backend knows it left.
   `src/backends/types.ts`.
 - **Proxmox**, shared by LXC and QEMU in
-  `src/backends/proxmox/snapshotting.ts`: a snapshot is `bb<id>`, labelled
-  `bb-box install <install> box <box> snapshot <id>`, with ` kept
+  `src/backends/proxmox/snapshotting.ts`: a snapshot is `alia<id>`, labelled
+  `alia-box install <install> box <box> snapshot <id>`, with ` kept
   <yyyy-mm-dd>` once kept. The plan reads the guest's config, the status of
   each disk's storage, the token's rights on the pool (kept a minute) and,
   for LVM-thin, the metadata of the storage's own thin pool, found through
@@ -190,7 +190,7 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
   the box and the snapshot, and refuses otherwise; a part-made snapshot is
   deleted with `force`. A locked guest is refused: while a task runs on it,
   "try again when it ends"; with none, the host's `pct unlock <vmid>`; when
-  bb-box cannot read its tasks, the unlock only "if no task is running".
+  alia-box cannot read its tasks, the unlock only "if no task is running".
   The listing reads each guest of this install's boxes, and calls a
   part-made snapshot whose guest has a task running, or whose tasks cannot
   be read, "in progress", not incomplete. Proxmox LXC offers disk
@@ -200,16 +200,16 @@ Built on 30 October 2026, on main `9e7f9b6b` (unit 0 included).
   migration is kept as it was (a test pins its hash), and a new one
   rebuilds the table so that it allows every kind 070 names, keeping every
   event.
-- **Words.** `box_list` and `bb box kinds` say each offer's snapshots
-  ("Snapshots: its disk, while it runs."); `box_status` and `bb box status`
+- **Words.** `box_list` and `alia box kinds` say each offer's snapshots
+  ("Snapshots: its disk, while it runs."); `box_status` and `alia box status`
   say the box's, naming only those the caller may see and counting all of
   them against the 5 ("Snapshots: 4 of 5: ..., and 3 you cannot see"). The
   doctor has a Snapshots section for `snapshots.db`.
-- **The CLI**: `bb box snapshot take <box> [--name] [--note] [--memory]
+- **The CLI**: `alia box snapshot take <box> [--name] [--note] [--memory]
   [--request]`, `list [<box>] [--all] [--kept] [--json]`, `delete <box>
   <snapshot> [--request]`, `forget <backend> --yes`, and, only with
-  `BB_BOX_LIVE_CHECKS=1`, `hold-next --at planned|task` for the restart
-  checks. `bb box sweep` runs the snapshots' sweep first.
+  `ALIA_BOX_LIVE_CHECKS=1`, `hold-next --at planned|task` for the restart
+  checks. `alia box sweep` runs the snapshots' sweep first.
 - **Docs**: the guide's [Snapshots](../guide/snapshots.md) page, the
   reference regenerated, and 070's [Decided during unit
   1a](070-snapshots.md#decided-during-unit-1a).
@@ -253,7 +253,7 @@ matters:
   an orphan deleted after 7 days only), the box sweep keeping a guest that
   holds snapshots, a forgotten box, agents' sight and deletes, `box_status`
   counting every snapshot, a `snapshots.db` that is unwritable, or exists
-  and cannot be opened, records moving into it from bb-box's database,
+  and cannot be opened, records moving into it from alia-box's database,
   pruning, and the box log's migrations (the first one's hash pinned).
 - `test/proxmox-lxc-snapshots.test.ts`, 13: labels; the offer; the plan's
   storage, its own thin pool's metadata, and refusals (storage, lock with
@@ -265,7 +265,7 @@ matters:
   delete cleans up); failed takes; a guest that is gone; a delete checking
   the label; the listing (other installs' and hand-made snapshots left out,
   a keep date, a part-made snapshot whose task still runs is in progress).
-- `test/plugin.test.ts`, one more: `bb box snapshot take`, `list`, `delete`
+- `test/plugin.test.ts`, one more: `alia box snapshot take`, `list`, `delete`
   and `forget` through the plugin, `box_list` and `box_status` words,
   another thread seeing nothing, and the doctor's Snapshots section.
 
@@ -277,46 +277,46 @@ bulk keep and rename of the target, and the room sweep's candidates
 checked again at the moment of deletion. They run live once those units
 exist.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`
-only, in a Proxmox LXC box. bb-box installed from this branch with `bb
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`
+only, in a Proxmox LXC box. alia-box installed from this branch with `VesnALIA
 plugin install path:`. The lead gave it a Proxmox LXC backend and a Proxmox
 QEMU one with the production token, their own VMIDs and addresses, and a
 Linux template each; its install ID keeps production's guests and these
 apart. Its log on the first start: "Opened snapshots.db, attached to
-bb-box's database: ran 4 migrations." `bb box doctor`: "[ok] Snapshots: The
+alia-box's database: ran 4 migrations." `alia box doctor`: "[ok] Snapshots: The
 token may take, delete and restore snapshots on /pool/bbbox. local-lvm
 (LVM-thin) restores any snapshot." and "[ok] Snapshots' records: ...
-snapshots.db, attached to bb-box's database: 0 snapshots, 0 operations not
+snapshots.db, attached to alia-box's database: 0 snapshots, 0 operations not
 settled, 40 KB used."
 
-All through `bb box`, on a Linux LXC box of a thread. In the words quoted
+All through `alia box`, on a Linux LXC box of a thread. In the words quoted
 below, the node's name is written pve-1, as 070 writes it.
 
 | Check | Result |
 | --- | --- |
-| Take, with a name and a note | ready in 0.3 s as bb-box timed it, 0.8 s for the command |
+| Take, with a name and a note | ready in 0.3 s as alia-box timed it, 0.8 s for the command |
 | Take again with the same name | "before the migration (2)" |
 | Take with no name | "Fri 05:53", the server's time |
-| List | each with its ID, state, time, "by a bb box command", disk, size unknown; "3 of 5 for this box" |
+| List | each with its ID, state, time, "by a VesnALIA box command", disk, size unknown; "3 of 5 for this box" |
 | A sixth | refused: "Box calm-island holds 5 snapshots, the most a box may. Delete one first: ..." naming all five |
 | Delete by name, and by ID | 0.6 s for the command; "it freed what it no longer shared with its box" |
 | A repeated request, sent twice at once | one snapshot: one answer "Took snapshot", the other "was asked for with that request already. It is ready." |
 | Two takes at once | both ready, one after the other |
-| A take and a release at once | the release was asked during the take, waited, and released the box after it; the box log: release-asked 29.901, snapshot-taken 30.111, released 31.933, snapshot-deleted "by bb-box: its box was released" 31.935 |
-| bb-box restarted (`bb plugin reload`) after a take's Proxmox task began (`hold-next --at task`) | at the next start the take was ready, logged "confirmed after bb-box restarted" |
-| bb-box restarted after a take was recorded, before Proxmox was asked | failed: "bb-box restarted before the take began, and pve-1 has no such snapshot"; never taken again |
-| bb-box restarted after a delete's task began | gone at the next start, logged "confirmed after bb-box restarted" |
-| bb-box restarted after a delete was recorded, before Proxmox was asked | finished at the next start: gone |
+| A take and a release at once | the release was asked during the take, waited, and released the box after it; the box log: release-asked 29.901, snapshot-taken 30.111, released 31.933, snapshot-deleted "by alia-box: its box was released" 31.935 |
+| alia-box restarted (`alia plugin reload`) after a take's Proxmox task began (`hold-next --at task`) | at the next start the take was ready, logged "confirmed after alia-box restarted" |
+| alia-box restarted after a take was recorded, before Proxmox was asked | failed: "alia-box restarted before the take began, and pve-1 has no such snapshot"; never taken again |
+| alia-box restarted after a delete's task began | gone at the next start, logged "confirmed after alia-box restarted" |
+| alia-box restarted after a delete was recorded, before Proxmox was asked | finished at the next start: gone |
 
-Each restart's command ended with "bb-box is stopping. (restarting)".
+Each restart's command ended with "alia-box is stopping. (restarting)".
 
 **G1.** The lead ran [`live-root.sh`](070-snapshots/unit-1a/live-root.sh)
 as root on the node: it waited for a `vzsnapshot` task on the box's VMID,
 matched by its UPID and its worker's title, and SIGKILLed that one worker.
-The take then said: "bb-box could not finish snapshot "killed" of box
+The take then said: "alia-box could not finish snapshot "killed" of box
 calm-island: Proxmox left it part-made (snapstate prepare): unexpected
 status. Part of it is left on pve-1: delete it to finish the clean-up
 there." It listed as `incomplete`, and stayed so through a sweep. Its
@@ -325,28 +325,28 @@ delete the snapshot. Run `pct unlock 3240` on pve-1, then delete it
 again." The box still answered commands. After the lead's `unlock`, the
 delete finished Proxmox's clean-up: "Deleted snapshot "killed" ...".
 
-**G2.** `iptables` in the BB's box dropped every packet to the Proxmox
+**G2.** `iptables` in the VesnALIA's box dropped every packet to the Proxmox
 API's port from 05:59:53 to 06:59:55 UTC. The first sweep after it, at
 06:03:06, made all three of calm-island's snapshots `unavailable`,
-logged once each, with the backend's words: "bb-box could not list Proxmox
+logged once each, with the backend's words: "alia-box could not list Proxmox
 LXC on pve-1's snapshots: Proxmox GET /cluster/resources failed (0):
 cannot reach the Proxmox API: Connect Timeout Error". A list every 10
 minutes showed them still `unavailable`, none `lost`, for the hour. 47 s
 after the API came back, the sweep had them `ready` again, the kept one
-still kept. During the hour, `bb box backend remove proxmox-lxc --yes` was
+still kept. During the hour, `alia box backend remove proxmox-lxc --yes` was
 refused: "Backend proxmox-lxc has 1 box, so it cannot be removed or
 renamed. Turn it off and release them first." and "Backend proxmox-lxc
 holds 3 snapshots on pve-1, an unknown size, at no charge, so it cannot
-be removed or renamed. Delete them first, or forget them with bb box
-snapshot forget proxmox-lxc: bb-box then drops its records of them, and
+be removed or renamed. Delete them first, or forget them with VesnALIA box
+snapshot forget proxmox-lxc: alia-box then drops its records of them, and
 they may still exist there and be billed." (Those words now give the
-backend's error alone, without "bb-box could not list ...", which
+backend's error alone, without "alia-box could not list ...", which
 repeated what `unavailable` says.)
 
 **G3.** The lead added a keep date to one snapshot's label with the same
-script (`keep-label`). bb-box was disabled, `snapshots.db` deleted, and
-bb-box enabled again. Within 20 s the sweep had found all three snapshots
-again, by "someone bb-box has no record of", named by their times, the
+script (`keep-label`). alia-box was disabled, `snapshots.db` deleted, and
+alia-box enabled again. Within 20 s the sweep had found all three snapshots
+again, by "someone alia-box has no record of", named by their times, the
 labelled one "kept until 2026-11-30", and deleted none. The failed record
 of the earlier restart, which held nothing on Proxmox, was not found again,
 as there was nothing to find.
@@ -365,10 +365,10 @@ tests, except where the table says it is deferred.
 | A release during a listing could give its snapshots a ghost "found" record and a false lost | Opus 1a-4 | Each removal at a release is a settled operation, which the reconcile's check sees | "a release during a sweep's listing leaves no ghost record and no false lost" |
 | Thin metadata was skipped silently with no pool or several | Opus 1a-5 | The storage's thin pool is found from its settings; when it cannot be read, the plan says why, and the doctor warns with the token's missing rights | "thin metadata is read from the storage's own thin pool; when it cannot be, the plan and the doctor say so" |
 | `ready` did not need the task to succeed, in a take and in recovery | Opus 1a-6, Astra 3 | Both are needed; a failed task with a whole-looking snapshot is `incomplete`, with its words | "a take is ready only when its task succeeded", and its Proxmox twin |
-| Recovery took an unreadable task, or a missing task with an absent snapshot, as an ending, released the pin, and said the take never began; task-list errors read as an empty list; the gap between the request and its task being recorded was not covered | Opus 1a-7, Astra 3 | Each of these stays `unknown` and pinned, with why; a `submitting` step is recorded before the request, and a task not yet recorded is found by guest, type and time, skipping tasks other operations hold; a part-made snapshot whose guest's tasks cannot be read is in progress | "after a restart, a take whose task Proxmox no longer has", "a task bb-box cannot read", "the gap between asking the provider and recording its task" |
-| A forgotten box's snapshots said "its backend is not in bb-box's settings"; `box_status` counted only what the caller sees | Opus 1a-8 | "its box was forgotten while bb-box had no working backend for it"; every snapshot counts against the 5, and only the visible are named | "box_status counts every snapshot against the limit" |
+| Recovery took an unreadable task, or a missing task with an absent snapshot, as an ending, released the pin, and said the take never began; task-list errors read as an empty list; the gap between the request and its task being recorded was not covered | Opus 1a-7, Astra 3 | Each of these stays `unknown` and pinned, with why; a `submitting` step is recorded before the request, and a task not yet recorded is found by guest, type and time, skipping tasks other operations hold; a part-made snapshot whose guest's tasks cannot be read is in progress | "after a restart, a take whose task Proxmox no longer has", "a task alia-box cannot read", "the gap between asking the provider and recording its task" |
+| A forgotten box's snapshots said "its backend is not in alia-box's settings"; `box_status` counted only what the caller sees | Opus 1a-8 | "its box was forgotten while alia-box had no working backend for it"; every snapshot counts against the 5, and only the visible are named | "box_status counts every snapshot against the limit" |
 | The box sweep destroyed a gone box's guest with found or kept snapshots at its second sweep | Astra 1 | The snapshots' sweep runs first; the box sweep keeps a guest holding a found, kept or pinned snapshot, and every guest when the ledger is unreadable | "the sweeps together: a gone box's guest holding a found snapshot is kept by the box sweep", "with snapshots.db unreadable, the box sweep keeps every leftover guest" |
-| An existing `snapshots.db` that could not be opened silently became an empty ledger in bb-box's database | Astra 2 | It fails closed; the fallback is only for a handle that attaches nothing and no file; its records move into `snapshots.db` once it attaches | "an existing snapshots.db that cannot be opened fails closed", "records kept in bb-box's database while its handle refused to attach move into snapshots.db" |
+| An existing `snapshots.db` that could not be opened silently became an empty ledger in alia-box's database | Astra 2 | It fails closed; the fallback is only for a handle that attaches nothing and no file; its records move into `snapshots.db` once it attaches | "an existing snapshots.db that cannot be opened fails closed", "records kept in alia-box's database while its handle refused to attach move into snapshots.db" |
 | A delete chose the snapshot by name alone | Astra 4 | The label must name this install, the box and the snapshot, or nothing is deleted | "a delete checks the snapshot's own label before it deletes" |
 | `mayAct` let an agent restore or fork a kept snapshot on its own box, and see its picture | Astra 6 | What an agent may see is decided first, then a kept snapshot is the person's for everything but seeing it | `snapshot-rules.test.ts`: "a kept snapshot is the person's first" |
 | An operation's receipt was pruned 30 days after it ended, even when its snapshot went today | Astra 7 | Kept 30 days from the removal of its last snapshot | "an operation's receipt lasts 30 days from the removal of its last snapshot" |
@@ -376,8 +376,8 @@ tests, except where the table says it is deferred.
 
 ### Live again, after the reviews
 
-A fresh `npx bb-app` set up as before, with bb-box from this branch after
-the fixes, and the lead's two Proxmox backends. All through `bb box`, on
+A fresh `npx alia-app` set up as before, with alia-box from this branch after
+the fixes, and the lead's two Proxmox backends. All through `alia box`, on
 Linux LXC boxes of a thread. The node's name is written pve-1.
 
 | Check | Result |
@@ -386,14 +386,14 @@ Linux LXC boxes of a thread. The node's name is written pve-1.
 | G9: the same request on two boxes at once | one took; the other: "Request ID "live-both" was used already, for another take or delete. Make a new one for this." (`reused_request`); the doctor stayed ok |
 | G9: the request reused for a take with another name, and for a delete | both refused with those words |
 | G9: a delete, the same delete again, and again after a restart | deleted once; each repeat answered with the first delete, and the take's request after the restart with the take. Those answers named the operation; they now say "Snapshot <id> of box <box> was deleted already, with that request." |
-| `snapshots.db` replaced, while bb-box was off, by a file that is not a database | fails closed: the doctor "[fail] Snapshots' records: ... its existing snapshots.db cannot be opened: file is not a database."; a take refused, "So bb-box takes no snapshot until it can."; no records listed and nothing written over the file. With the real file back, every record was there. The doctor's words then said bb-box's handle refused to attach the file, which is not what happened; they now name the file alone |
+| `snapshots.db` replaced, while alia-box was off, by a file that is not a database | fails closed: the doctor "[fail] Snapshots' records: ... its existing snapshots.db cannot be opened: file is not a database."; a take refused, "So alia-box takes no snapshot until it can."; no records listed and nothing written over the file. With the real file back, every record was there. The doctor's words then said alia-box's handle refused to attach the file, which is not what happened; they now name the file alone |
 | G1 again: the lead's script killed the take's worker | `incomplete` with the same words, still so after a sweep; its delete and a new take refused with `pct unlock 3240`; after the lead's unlock, the delete finished |
-| A backup (`vzdump`) of the box running, holding its lock | take: "bb-box cannot take a snapshot of box green-cedar now: Proxmox is running a backup on guest 3240, which holds its lock (backup). Try again when it ends."; delete: the same reason, and the snapshot stayed `ready`; no unlock advice |
-| The box sweep and a gone box's guest holding a found snapshot | the box's thread archived and its record removed while BB was off, so its guest was left over with a snapshot the reconcile found again; three sweeps in a row each "Guests kept for the snapshots they hold: 1", logged "Kept guest 3242 of box ...: it holds a snapshot bb-box keeps: found and kept 7 days."; once that snapshot was deleted, the next sweep removed the guest |
-| G3 again: `snapshots.db` deleted while bb-box was off | within 21 s all three found by "someone bb-box has no record of", the labelled one "kept until 2026-11-30", the gone box's "found on pve-1, not in bb-box's records"; none deleted |
-| A take held after its task began, then bb-box restarted with the Proxmox API cut | through the restart the take stayed "being taken" and pinned, its operation unsettled, the other three `unavailable`; once the API was back, one sweep made all four `ready` |
+| A backup (`vzdump`) of the box running, holding its lock | take: "alia-box cannot take a snapshot of box green-cedar now: Proxmox is running a backup on guest 3240, which holds its lock (backup). Try again when it ends."; delete: the same reason, and the snapshot stayed `ready`; no unlock advice |
+| The box sweep and a gone box's guest holding a found snapshot | the box's thread archived and its record removed while VesnALIA was off, so its guest was left over with a snapshot the reconcile found again; three sweeps in a row each "Guests kept for the snapshots they hold: 1", logged "Kept guest 3242 of box ...: it holds a snapshot alia-box keeps: found and kept 7 days."; once that snapshot was deleted, the next sweep removed the guest |
+| G3 again: `snapshots.db` deleted while alia-box was off | within 21 s all three found by "someone alia-box has no record of", the labelled one "kept until 2026-11-30", the gone box's "found on pve-1, not in alia-box's records"; none deleted |
+| A take held after its task began, then alia-box restarted with the Proxmox API cut | through the restart the take stayed "being taken" and pinned, its operation unsettled, the other three `unavailable`; once the API was back, one sweep made all four `ready` |
 
-At the end bb-box listed no box and no snapshot, and its sweep no leftover
+At the end alia-box listed no box and no snapshot, and its sweep no leftover
 guest; the lead deleted the stopped backup's partial file.
 
 ### Known limit: thin pool metadata
@@ -401,9 +401,9 @@ guest; the lead deleted the stopped backup's partial file.
 The token cannot read a thin pool's metadata use: `GET
 /nodes/<node>/disks/lvmthin` needs `Sys.Audit` on `/`, a read of the whole
 cluster, which `host/setup-token.sh` does not give and the owner will not
-grant. So on LVM-thin bb-box does not keep 070's rule that a take is
+grant. So on LVM-thin alia-box does not keep 070's rule that a take is
 refused past 80% of thin metadata. The take goes on, and the doctor warns:
-"bb-box cannot read local-lvm's thin metadata (...), so a take checks the
+"alia-box cannot read local-lvm's thin metadata (...), so a take checks the
 pool's data use but not that its metadata is under 80% full.", fix
 "Reading a thin pool's metadata takes Sys.Audit on /, a read of the whole
 cluster, which host/setup-token.sh does not give. Watch the pool's metadata
@@ -420,7 +420,7 @@ after its snapshots, while a take adds almost no data at the time. A pool
 can fill its metadata with its data well under 85%, and that stops every
 guest on the pool, as full data would.
 
-At 1a's scale it is enough: a box holds at most 5 snapshots, and bb-box
+At 1a's scale it is enough: a box holds at most 5 snapshots, and alia-box
 takes them only when asked. It is not enough on its own once agents take
 snapshots (unit 5) and boxes keep many for weeks (unit 8). Until the right
 is given, the pool's metadata should be watched on the host (`lvs` gives
@@ -463,13 +463,13 @@ Built on 30 October 2026, on unit 1a.
   `vmstatestorage`, or else among its disks' storages, a shared one first
   and a file-based one before others. The state volume is twice the VM's
   memory and 500 MiB, which the take checks and reserves on that storage.
-  Where the choice depends on an order bb-box cannot know, or a storage's
+  Where the choice depends on an order alia-box cannot know, or a storage's
   settings cannot be read, a memory take is refused with why; a disk take
   is not affected. `--memory` sends `vmstate`; the snapshot holds the disk
   and memory when Proxmox lists it with its state. A part-made take or a
   locked VM names `qm unlock <vmid>`.
 - A stopped Proxmox QEMU box is suspended to disk, so its take is refused:
-  "bb-box cannot take a snapshot of box fond-fjord now: a stopped Proxmox
+  "alia-box cannot take a snapshot of box fond-fjord now: a stopped Proxmox
   QEMU box is kept suspended to disk, so start it first."
 - The guide's Snapshots page names Proxmox QEMU's Linux boxes.
 
@@ -495,26 +495,26 @@ VM naming `qm unlock`; every disk's storage; the memory target and its
 size, shared first, and refused when ambiguous or unreadable; the stopped
 VM's words and the pool's storage key.
 
-### On a separate BB
+### On a separate VesnALIA
 
-The same BB as unit 1a, bb-box installed again from this branch, the lead's
-Proxmox QEMU backend with a Linux template, all through `bb box`, on a
+The same VesnALIA as unit 1a, alia-box installed again from this branch, the lead's
+Proxmox QEMU backend with a Linux template, all through `alia box`, on a
 Linux VM of 2 cores and 4 GiB:
 
 | Check | Result |
 | --- | --- |
-| `bb box kinds` | "Snapshots: on Proxmox LXC on pve-1, its disk, while it runs; on Proxmox QEMU on pve-1, its disk, or its disk and memory, while it runs." |
-| Take, disk only | ready in 0.7 s as bb-box timed it, 1.1 s for the command |
+| `alia box kinds` | "Snapshots: on Proxmox LXC on pve-1, its disk, while it runs; on Proxmox QEMU on pve-1, its disk, or its disk and memory, while it runs." |
+| Take, disk only | ready in 0.7 s as alia-box timed it, 1.1 s for the command |
 | Take with `--memory` | ready in 1.7 s, 2.1 s for the command; "it holds its disk and memory" |
-| List, and `bb box status` | each with what it holds; "Snapshots: 2 of 5: ..." |
+| List, and `alia box status` | each with what it holds; "Snapshots: 2 of 5: ..." |
 | The VM after the memory snapshot | answered at once, on the same boot (`uptime -s` unchanged) |
 | Delete both | 0.8 s for the command; "it freed what it no longer shared with its box" |
-| bb-box restarted after a memory take's task began | ready at the next start, "disk and memory" |
-| `snapshots.db` deleted while bb-box was off | all three found again on enable, two "disk and memory", one "disk"; none deleted |
+| alia-box restarted after a memory take's task began | ready at the next start, "disk and memory" |
+| `snapshots.db` deleted while alia-box was off | all three found again on enable, two "disk and memory", one "disk"; none deleted |
 | A take of the stopped VM | refused: "Guest 3250 is suspended to disk. Start the box first." (now in words about the box, above) |
 | A record for a snapshot the VM does not have, written into `snapshots.db` beside the real ones | missing at the first listing after it, 07:49:09, still `ready`; `lost` at 08:01:18, at the first listing 10 minutes after, logged as `snapshot-lost` with the words: "not on Proxmox" (snnotonproxmox): pve-1 no longer has it.; the real three untouched |
 
-After the reviews, on the second separate BB, a Linux VM of 2 cores and 4
+After the reviews, on the second separate VesnALIA, a Linux VM of 2 cores and 4
 GiB: a take with `--memory` was ready in 1.8 s, 2.2 s for the command, "it
 holds its disk and memory"; a disk take in 0.7 s; both listed with what they hold, "2 of 5 for
 this box", and deleted.
@@ -529,40 +529,40 @@ re-reviews](#after-the-re-reviews) say what each changed.
 
 ### What changed
 
-- **The guest program**, `bb-box-identity`
-  (`setup/proxmox-lxc/template/guest/bb-box-identity.sh`), version 2.
+- **The guest program**, `alia-box-identity`
+  (`setup/proxmox-lxc/template/guest/alia-box-identity.sh`), version 2.
   `customize-base.sh` installs it at `/usr/local/sbin`, so every Linux image
-  bb-box builds has it: the Proxmox LXC templates (Linux, desktops, Wayland),
+  alia-box builds has it: the Proxmox LXC templates (Linux, desktops, Wayland),
   Proxmox QEMU's Linux and Android images, Tart's Linux images, boat.dev's
   template, and the Docker images that Docker, Hetzner, Namespace and
   microsandbox boxes run. It turns the reset on only when the build sets
   `BOX_IDENTITY_RESET=on`, which only the checked builds do (Rollout, step
   2). Its commands: `boot`, `settle`, `wait`, `write`, `enable`, `disable`,
   `unarm`, `status` and `version`.
-- **The marker**, `/etc/bb-box/identity`: a first line `bb-box identity 1`,
+- **The marker**, `/etc/alia-box/identity`: a first line `alia-box identity 1`,
   then the box's ID, the source, and either one `mac` line for each of the
   backend's interfaces or one `value` line. A second file,
-  `/var/lib/bb-box/identity-armed`, is written after the marker and says a
+  `/var/lib/alia-box/identity-armed`, is written after the marker and says a
   marker was written here. `finalize.sh` removes both, and the list of
   resets, so no template, refresh or bake carries them.
-- **The boot unit**, which `bb-box-identity enable` writes where systemd
-  runs: `bb-box-identity.service`, with no default dependencies, after
+- **The boot unit**, which `alia-box-identity enable` writes where systemd
+  runs: `alia-box-identity.service`, with no default dependencies, after
   `local-fs.target`, before `network-pre.target` and the services it gates.
   A drop-in makes each of them require it and start after it:
   `systemd-networkd`, `NetworkManager`, `ssh`, `ssh.socket`, `tailscaled`,
-  `user@.service` (the box user's manager, which runs BB's daemon),
-  `docker`, `docker.socket`, `containerd`, `bb-box-docker-containers`, and
+  `user@.service` (the box user's manager, which runs VesnALIA's daemon),
+  `docker`, `docker.socket`, `containerd`, `alia-box-docker-containers`, and
   the desktop's display, session, VNC, Selkies and device firewall. So if
   the check fails, none of them start: it fails closed. It refuses a manual
   stop, which would stop them too. A second unit,
-  `bb-box-identity-settle.service`, runs `settle` after it, and `ssh` and
+  `alia-box-identity-settle.service`, runs `settle` after it, and `ssh` and
   `tailscaled` require it too; a drop-in for the box user's
-  `bb-host-daemon-*` units, BB's daemon, makes each run `bb-box-identity
+  `alia-host-daemon-*` units, VesnALIA's daemon, makes each run `alia-box-identity
   wait %n` before it starts. When the boot could not tell, these wait while
   `settle` keeps looking (below); otherwise they go on at once.
-- **Docker's image** has no systemd. `bb-box-start` runs `bb-box-identity
+- **Docker's image** has no systemd. `alia-box-start` runs `alia-box-identity
   boot --value "$BBBOX_IDENTITY"` before it starts anything; if that fails,
-  it exits, starts nothing and never writes `/run/bb-box/ready`.
+  it exits, starts nothing and never writes `/run/alia-box/ready`.
 - **What the marker records**, by backend and kind (`identitySource` in
   `src/backends/types.ts`):
 
@@ -570,11 +570,11 @@ re-reviews](#after-the-re-reviews) say what each changed.
   | --- | --- | --- |
   | Proxmox LXC, `linux` | `eth` | the MAC addresses of the interfaces named `ethN`, as `netN` makes them |
   | Proxmox QEMU, `linux` | `device` | the MAC addresses of the interfaces with a device under `/sys/class/net/<name>/device` |
-  | Docker, `linux` | `value` | `BBBOX_IDENTITY`, which bb-box sets on each guest when it makes it: the box's ID |
+  | Docker, `linux` | `value` | `BBBOX_IDENTITY`, which alia-box sets on each guest when it makes it: the box's ID |
   | The other Linux kinds, Tart, microsandbox, Hetzner, Namespace, boat.dev | none until checked | microsandbox, Hetzner and Namespace boxes get `BBBOX_IDENTITY`, unused |
   | macOS, Windows, iOS, the SSH host pool | none | |
 
-  bb-box writes markers only on the backends in
+  alia-box writes markers only on the backends in
   `general.identityResetBackends`, empty by default.
 - **The comparison at boot.** No marker and no armed record: kept, nothing
   to compare. A marker that is unreadable on a box that had one: reset. If
@@ -585,43 +585,43 @@ re-reviews](#after-the-re-reviews) say what each changed.
   new one of the backend's with none of the marker's: a copy, reset.
   Otherwise it waits, in 150 loops of 0.2 s, then lets the boot go on
   removing nothing (`boot=unknown`): the network, Docker, the desktop and
-  logins start, while SSH, Tailscale and BB's daemon wait for `settle`,
+  logins start, while SSH, Tailscale and VesnALIA's daemon wait for `settle`,
   which looks again every 2 s and decides as above once the cards are
-  there. `wait` lets BB's daemon start once the boot is decided, unless its
+  there. `wait` lets VesnALIA's daemon start once the boot is decided, unless its
   machine is named in a reset. A value is compared as it is.
 - **The reset**, in order, each step's failure failing the boot: first
-  `/var/lib/bb-box/identity-reset-pending`, written and synced, with the
+  `/var/lib/alia-box/identity-reset-pending`, written and synced, with the
   time, why and the host IDs it will remove, so a reset cut short is
   resumed at the next boot with them; the Tailscale state; in each folder
-  under the box user's and root's `~/.bb-machines`, and those set aside,
+  under the box user's and root's `~/.alia-machines`, and those set aside,
   every file at its top (`auth.json`, `config.json`, `host-id`, locks,
-  ports) but the app's digest, and its `logs`, then BB's daemon's user
-  units; the access file `~/.config/bb-box/env`; new SSH host keys (ed25519
+  ports) but the app's digest, and its `logs`, then VesnALIA's daemon's user
+  units; the access file `~/.config/alia-box/env`; new SSH host keys (ed25519
   and ECDSA when none are left); a new machine ID; then journald restarts
-  so the boot's logs go under it. BB's installed app and the threads'
+  so the boot's logs go under it. VesnALIA's installed app and the threads'
   folders stay. It writes a marker for the copy's own interfaces, with no
   box, so the next boot does not reset again and a copy of the copy does,
   or unarms the box when it has no card of the backend's to write; adds the
-  pending line to `/var/lib/bb-box/identity-resets`; and only then removes
+  pending line to `/var/lib/alia-box/identity-resets`; and only then removes
   the pending record.
-- **bb-box writes the marker when a box is first ready**, on a backend in
+- **alia-box writes the marker when a box is first ready**, on a backend in
   `general.identityResetBackends`, after a project image's script and
   before the box is ready, and records that it did on the box
   (`identityMarkedAt`); only such boxes are ever checked for a reset, through the box's command
-  transport, as `sudo bb-box-identity write --box <id> --source <source>`.
+  transport, as `sudo alia-box-identity write --box <id> --source <source>`.
   It takes about 60 to 80 ms, shown as `identity` in the box's timings. For
-  `value`, the guest writes the value its own boot saw, never one bb-box
+  `value`, the guest writes the value its own boot saw, never one alia-box
   passes, so a marker always matches the next boot. An image without the
   program, or a write the guest refuses, is logged ("Wrote no identity
   marker in box amber-fox, so a copy of it would not reset, and its
   snapshots cannot be forked: its image has no identity reset.") and the
   box is ready as before. `src/core/identity.ts`, `src/core/boxes.ts`.
-- **`forkSafe` at each take.** Before a take is recorded, bb-box runs
-  `bb-box-identity status` in the box. `forkSafe` is its version when this
+- **`forkSafe` at each take.** Before a take is recorded, alia-box runs
+  `alia-box-identity status` in the box. `forkSafe` is its version when this
   boot's check ran, the box is armed and the marker matches what the box has
   now; otherwise null, as for a stopped box or one that does not answer
   within 10 s. It is on the record from the start, so a restart keeps it.
-  `bb box snapshot list` says of a Linux snapshot without it "not
+  `alia box snapshot list` says of a Linux snapshot without it "not
   fork-safe: amber-fox had no working identity reset when it was taken".
   `src/core/snapshots.ts`.
 - **Docs**: the guide's [Snapshots](../guide/snapshots.md#a-copy-of-a-box-gives-up-its-identity)
@@ -642,7 +642,7 @@ in an earlier run, and passed 3 of 3 alone; this unit does not touch it.
   everything at three boots; on Proxmox LXC the marker holds `eth0` only,
   and `docker0`, a `br-` bridge, a `veth` and `tailscale0` change nothing
   over three boots; new MAC addresses reset every item of 070's table once,
-  keep the threads' files and BB's app, and the next boot keeps; on a VM
+  keep the threads' files and VesnALIA's app, and the next boot keeps; on a VM
   only cards with a device count, and a bridge carrying the card's address
   does not; a card that appears 0.6 s late is waited for, and one that never
   appears resets after the wait; a missing marker on an armed box, a wrong
@@ -662,39 +662,39 @@ in an earlier run, and passed 3 of 3 alone; this unit does not touch it.
 - `test/microsandbox.test.ts` and `test/plugin.test.ts`: the variable at
   create, and the list's words.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and ports,
-started with `env -i`, in a Proxmox LXC box; bb-box installed from this
-branch with `bb plugin install path:`. The lead built two test templates
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and ports,
+started with `env -i`, in a Proxmox LXC box; alia-box installed from this
+branch with `alia plugin install path:`. The lead built two test templates
 from this branch's `setup/`, for it only: Proxmox LXC Linux 3243
 (`build.20261030-162241-8e67`) and Proxmox QEMU Linux 3252
 (`build.20261030-161532-7c81`), and gave it a backend for each, with the
 production token and its own VMIDs and addresses. Its Docker backend ran on
-the box itself, with images built from this branch by `bb box setup
-docker` (4 min). Boxes were "your machines" of that BB; the node's name is
+the box itself, with images built from this branch by `alia box setup
+docker` (4 min). Boxes were "your machines" of that VesnALIA; the node's name is
 written pve-1.
 
 | Check | Result |
 | --- | --- |
-| The marker at first ready | written on each: `identity 78 ms` (LXC), `58 ms` (QEMU), `74 ms` (Docker) in the timings; LXC `source eth`, one `mac`; QEMU `source device`, `enp6s18`'s; Docker `source value`, the box's ID. The first boot said "kept: bb-box has written no identity marker here", as it ran before bb-box wrote one |
-| The order, `systemd-analyze critical-chain`, LXC 3243 | `bb-box-identity.service @299ms +82ms`, then `network-pre.target @382ms`, then `systemd-networkd`; `ssh` after `basic.target @471ms`; `user@1000` at 544 ms; `systemctl show` gives each of `systemd-networkd`, `ssh`, `user@1000` and `tailscaled` both `Requires=` and `After=` it |
-| The order, QEMU 3252 | `bb-box-identity.service @640ms +28ms`, then `network-pre.target @841ms`, then `systemd-networkd +73ms`; the journal: the check, then networkd, ssh and `user@1000` |
+| The marker at first ready | written on each: `identity 78 ms` (LXC), `58 ms` (QEMU), `74 ms` (Docker) in the timings; LXC `source eth`, one `mac`; QEMU `source device`, `enp6s18`'s; Docker `source value`, the box's ID. The first boot said "kept: alia-box has written no identity marker here", as it ran before alia-box wrote one |
+| The order, `systemd-analyze critical-chain`, LXC 3243 | `alia-box-identity.service @299ms +82ms`, then `network-pre.target @382ms`, then `systemd-networkd`; `ssh` after `basic.target @471ms`; `user@1000` at 544 ms; `systemctl show` gives each of `systemd-networkd`, `ssh`, `user@1000` and `tailscaled` both `Requires=` and `After=` it |
+| The order, QEMU 3252 | `alia-box-identity.service @640ms +28ms`, then `network-pre.target @841ms`, then `systemd-networkd +73ms`; the journal: the check, then networkd, ssh and `user@1000` |
 | The order, Docker's image | no systemd: the box's log shows the check as its start's first line at each start |
 | A take | `forkSafe: 1` on QEMU and LXC; the list adds no words |
-| A plain Proxmox clone, LXC | the lead ran `pct clone 3240 3290 --snapname <bb-box's snapshot> --full 1`, then `onboot 0`, no tags, `link_down=1`, outside the pool. The clone had a new MAC address (`bc:24:11:f5:88:c0` for `bc:24:11:fb:91:2c`) and reset at its first boot, at 16:33:26.188, before networkd (.313), ssh (.390), `user@1000` (.410) and tailscaled (.533). Host ID `host_22r4p9imps` gone, credentials, daemon unit and access file gone, new machine ID and SSH host key (`9A4o3Ycd...` for `2QIu6UxB...`), Tailscale state emptied and made again by tailscaled, threads' folders kept. After a reboot: `boot=kept`, one line in the resets |
-| A plain Proxmox clone, QEMU | `qm clone 3250 3291 --snapname <bb-box's snapshot> --full 1`, the same settings: new MAC, `source=device`, the same results; host ID `host_5tau2iwvbh` removed. Its `journalctl` found no files: template 3252 predates the journald restart, which the LXC template had |
+| A plain Proxmox clone, LXC | the lead ran `pct clone 3240 3290 --snapname <alia-box's snapshot> --full 1`, then `onboot 0`, no tags, `link_down=1`, outside the pool. The clone had a new MAC address (`bc:24:11:f5:88:c0` for `bc:24:11:fb:91:2c`) and reset at its first boot, at 16:33:26.188, before networkd (.313), ssh (.390), `user@1000` (.410) and tailscaled (.533). Host ID `host_22r4p9imps` gone, credentials, daemon unit and access file gone, new machine ID and SSH host key (`9A4o3Ycd...` for `2QIu6UxB...`), Tailscale state emptied and made again by tailscaled, threads' folders kept. After a reboot: `boot=kept`, one line in the resets |
+| A plain Proxmox clone, QEMU | `qm clone 3250 3291 --snapname <alia-box's snapshot> --full 1`, the same settings: new MAC, `source=device`, the same results; host ID `host_5tau2iwvbh` removed. Its `journalctl` found no files: template 3252 predates the journald restart, which the LXC template had |
 | Three restarts with Docker containers running and Tailscale's interface | LXC and QEMU, each with a Docker network, two containers with `--restart always` and tailscaled running (no login, see below), rebooted from inside three times: `boot=kept` each time; host ID, credentials, machine ID, SSH host key, Tailscale state and access file unchanged; `docker0`, `br-*`, `veth*` and `tailscale0` up each time |
-| Three restarts of a Docker box | stopped and started through bb-box three times, with Docker in it running two containers: `boot=kept`, identity unchanged; its `eth0` had a new MAC address each time (`3e:22:aa:...`, `b2:f1:42:...`, `9a:8b:18:...`), which is why Docker boxes compare a value |
-| A spare claimed and renamed, then restarted | spare fresh-acorn (`bx6shhmycajhqm`, `host_br4uth6acm`) claimed in 11 ms as renamed-spare: the same box ID, marker and host ID, its hostname and BB machine renamed; rebooted: `boot=kept`, `host_br4uth6acm` connected |
+| Three restarts of a Docker box | stopped and started through alia-box three times, with Docker in it running two containers: `boot=kept`, identity unchanged; its `eth0` had a new MAC address each time (`3e:22:aa:...`, `b2:f1:42:...`, `9a:8b:18:...`), which is why Docker boxes compare a value |
+| A spare claimed and renamed, then restarted | spare fresh-acorn (`bx6shhmycajhqm`, `host_br4uth6acm`) claimed in 11 ms as renamed-spare: the same box ID, marker and host ID, its hostname and VesnALIA machine renamed; rebooted: `boot=kept`, `host_br4uth6acm` connected |
 
-At the end the separate BB's sweep found no leftover guest; the snapshots,
+At the end the separate VesnALIA's sweep found no leftover guest; the snapshots,
 boxes and Proxmox backends were removed and its box released; the lead
 destroyed the clones and keeps the test templates to delete.
 
 On production's templates, with the unit installed into a box by the
 branch's `customize-base.sh` lines, and the marker written by hand as
-bb-box would: a Proxmox LXC desktop box (check `@164ms +44ms`, then
+alia-box would: a Proxmox LXC desktop box (check `@164ms +44ms`, then
 `network-pre.target @209ms`, then the display, ssh and `user@1000`) and a
 Tart Linux VM on arm64 (its card named at 59.125 s, the check from 59.406 to
 59.629, networkd at 60.197, ssh at 60.295), each rebooted with `boot=kept`.
@@ -703,7 +703,7 @@ The LXC GPU and Wayland desktops, Android and boat were not checked.
 **Tailscale, with a real node.** In the checks above tailscaled ran without
 a login, so `tailscale0` and its state were there and its state was `{}`
 (sha256 `44136fa3...`). Then, with the owner's approval, the lead minted one
-auth key (single use, ephemeral, preauthorized, `tag:bb-box`, an hour) into
+auth key (single use, ephemeral, preauthorized, `tag:alia-box`, an hour) into
 a file in neat-fern, a production Proxmox LXC box with the unit installed
 from this branch; it joined the tailnet with it once, and the file was
 deleted. The lead cloned it with `pct snapshot` and `pct clone`, as above.
@@ -714,16 +714,16 @@ SSH host key. The source kept its node, its state (`333f403e...`), its
 host ID and machine ID, and stayed `Running` on the tailnet. It was then
 logged out and released.
 
-**A reset of one of bb-box's own boxes.** On production, a thread's Linux
+**A reset of one of alia-box's own boxes.** On production, a thread's Linux
 box with the unit installed was given a marker naming another MAC address
-and rebooted: it reset as a clone does, and within about 4 minutes bb-box
-listed it "not enrolled ... until it is released". On a fresh separate BB
+and rebooted: it reset as a clone does, and within about 4 minutes alia-box
+listed it "not enrolled ... until it is released". On a fresh separate VesnALIA
 the same happened to one of its machines: the sweep found the machine
-disconnected and ran BB's bootstrap again with its old key, which failed in
+disconnected and ran VesnALIA's bootstrap again with its old key, which failed in
 a box with no credentials, and the sweep's handling of that failure dropped
-the box's enrolment; BB kept the old machine, disconnected. Had BB removed
-the machine, bb-box would have released the box, as it does for one of
-your machines whose machine is removed in BB. The lead's answer: a reset
+the box's enrolment; VesnALIA kept the old machine, disconnected. Had VesnALIA removed
+the machine, alia-box would have released the box, as it does for one of
+your machines whose machine is removed in VesnALIA. The lead's answer: a reset
 must never cost a box. See [After the lead's answers](#after-the-leads-answers).
 
 ### Rollout
@@ -732,13 +732,13 @@ The reviews asked for a switch, so the rollout is staged, and each stage can
 be undone on its own.
 
 1. **Merge.** No box gets a marker: `general.identityResetBackends` is
-   empty, so bb-box writes none, and an unarmed box never resets. bb-box
+   empty, so alia-box writes none, and an unarmed box never resets. alia-box
    checks for a reset only in a box it armed, so nothing else changes
    either. Docker boxes made from then on carry `BBBOX_IDENTITY`, unused
    until their backend is turned on. As for any change to
    `setup/proxmox-lxc/template` or `setup/docker`, Hetzner's host images,
    Namespace's Linux images and boat.dev's template are built again by
-   bb-box at their next use (`boat/templates.ts` now names the program among
+   alia-box at their next use (`boat/templates.ts` now names the program among
    the files its build reads); none of them turns the unit on.
 2. **Rebuild the images.** Every Linux image gets the program. Only the
    builds that were checked turn the unit on (`BOX_IDENTITY_RESET=on`):
@@ -749,9 +749,9 @@ be undone on its own.
    desktop images, Tart's Linux images and boat.dev's template. Each is
    turned on in its build only once checked as G14 says.
 3. **Turn it on, one backend at a time**, after one new box of it is
-   checked (`identity` in its timings; `sudo bb-box-identity status` says
+   checked (`identity` in its timings; `sudo alia-box-identity status` says
    `enabled=yes`, `armed=yes`, and `boot=kept` after a reboot):
-   `bb box option set general.identityResetBackends=proxmox-lxc`, then
+   `alia box option set general.identityResetBackends=proxmox-lxc`, then
    adding `proxmox-qemu`, then each Docker backend. microsandbox, Hetzner,
    Namespace and Tart offer no source yet, so naming them does nothing.
    Before Proxmox LXC or Proxmox QEMU goes in, boot its rebuilt Linux image
@@ -764,93 +764,93 @@ be undone on its own.
    G14 runs above were of version 1 of the program. Step 3 ran on 31
    October: see "Rollout step 3" below; both templates need version 5.
 4. **A box made before** keeps working as it does: it has no marker, so it
-   never resets, and its snapshots say "not fork-safe". bb-box arms a box
+   never resets, and its snapshots say "not fork-safe". alia-box arms a box
    only at its first ready, so turning a backend on arms no running box.
 5. **Going back.** Take the backend out of `identityResetBackends`: new
    boxes get no marker. A box already armed keeps its check; unarm it
-   through bb-box with `bb box run <box> 'sudo bb-box-identity unarm'`. Do
-   not mask or disable `bb-box-identity.service` by hand: the network, SSH,
+   through alia-box with `alia box run <box> 'sudo alia-box-identity unarm'`. Do
+   not mask or disable `alia-box-identity.service` by hand: the network, SSH,
    Docker, the desktop and the box user's manager require it. A box whose
    reset failed has no network or SSH; reach it with `pct enter`, `qm
    terminal` or the console, and either fix what failed and reboot, which
-   resumes the reset, or run `bb-box-identity disable` and reboot.
-6. **Watch** `/var/lib/bb-box/identity-resets`, empty in every box that is
+   resumes the reset, or run `alia-box-identity disable` and reboot.
+6. **Watch** `/var/lib/alia-box/identity-resets`, empty in every box that is
    not a copy, and the doctor's Identity resets section, empty unless one
-   of bb-box's own boxes reset.
+   of alia-box's own boxes reset.
 
 ### After the lead's answers
 
-**A reset never costs a box.** bb-box reads a box's
-`/var/lib/bb-box/identity-resets`, and when a line there names the box's own
-BB machine, it keeps the box and enrols it again as a new BB machine. It
+**A reset never costs a box.** alia-box reads a box's
+`/var/lib/alia-box/identity-resets`, and when a line there names the box's own
+VesnALIA machine, it keeps the box and enrols it again as a new VesnALIA machine. It
 does so wherever that machine's loss would show (`src/plugin/enrol.ts`):
 
-- a reconnect, after bb-box starts a box and at each sweep for a box whose
-  machine BB shows disconnected, which would otherwise run BB's bootstrap
+- a reconnect, after alia-box starts a box and at each sweep for a box whose
+  machine VesnALIA shows disconnected, which would otherwise run VesnALIA's bootstrap
   again with the old key;
-- the sweep's handling of a machine BB no longer has, which would otherwise
+- the sweep's handling of a machine VesnALIA no longer has, which would otherwise
   forget the box's enrolment;
-- BB's removal of the machine, which would otherwise release one of your
-  machines; and when bb-box cannot read the box's record then, as when it
+- VesnALIA's removal of the machine, which would otherwise release one of your
+  machines; and when alia-box cannot read the box's record then, as when it
   does not answer, it keeps the box too, says so in its log, and leaves
   removing it to the person;
-- the enrolment of a box the sweep restored, whose machine BB still has.
+- the enrolment of a box the sweep restored, whose machine VesnALIA still has.
 
 It records the reset on the box, logs `identity-reset` in its box log,
-removes the old machine from BB, so its credentials no longer work, enrols
+removes the old machine from VesnALIA, so its credentials no longer work, enrols
 the box as a new machine, counting the enrolment's time from then, writes
 its own marker in the box again, and logs `enrolled-again`. A failed
 enrolment is tried again at each sweep. The doctor has a section, Identity
 resets, with a check for each such box: a warning once it is enrolled
 again, naming both machines, and a failure until then. A box whose record
 names another machine, as one copied from another box would, or none is
-left as it was; a clone made outside bb-box is not in its records, so
-bb-box never enrols it. The box log gains the two kinds in a migration of
+left as it was; a clone made outside alia-box is not in its records, so
+alia-box never enrols it. The box log gains the two kinds in a migration of
 its own, which keeps every event.
 
 Tests, in `test/plugin.test.ts`: a thread's box whose own reset took its
 machine, at a sweep: the old machine deleted, then a new one made and
 bootstrapped, never a reconnect of the old one; the box log's two events
 and their words; the doctor's warning; and no second action at the next
-sweep. One of your machines whose machine BB removes after its reset: kept,
+sweep. One of your machines whose machine VesnALIA removes after its reset: kept,
 named as before, enrolled again, never released; and one that does not
 answer: kept, not enrolled. A record naming another machine: the box's own
 machine reconnects as after any reboot, nothing is deleted, and one of your
-machines whose machine BB removes is still released (036). An enrolment
+machines whose machine VesnALIA removes is still released (036). An enrolment
 again that fails: tried again at the next sweep, the doctor failing with
 why until it works, then warning.
 
-**Live, on a fresh separate BB** (`npx bb-app` 0.48.1, no account, bb-box
+**Live, on a fresh separate VesnALIA** (`npx alia-app` 0.48.1, no account, alia-box
 from this branch, its Docker backend with images built from it), one of its
 machines, keep-two (`host_3sa2732699`): its marker's value changed by hand
-as root in the box, then the box restarted from outside bb-box, at
+as root in the box, then the box restarted from outside alia-box, at
 17:28:17. It reset at that start. The next sweep found it at 17:31:00 and
 logged `identity-reset` ("Box keep-two reset its identity at 2026-10-30
-17:28:18 UTC, as the value bb-box set on this guest is not the marker's.
-BB's machine host_3sa2732699 went with it, so bb-box enrols the box again
-as a new BB machine, and keeps it."); at 17:31:02 `enrolled-again` ("Box
-keep-two joined BB again as machine host_xz43czk3qi, in place of
-host_3sa2732699, 2 s after bb-box found its identity reset."). BB listed
-only `host_xz43czk3qi`, connected; `bb box list` said "enrolled as a BB
+17:28:18 UTC, as the value alia-box set on this guest is not the marker's.
+VesnALIA's machine host_3sa2732699 went with it, so alia-box enrols the box again
+as a new VesnALIA machine, and keeps it."); at 17:31:02 `enrolled-again` ("Box
+keep-two joined VesnALIA again as machine host_xz43czk3qi, in place of
+host_3sa2732699, 2 s after alia-box found its identity reset."). VesnALIA listed
+only `host_xz43czk3qi`, connected; `alia box list` said "enrolled as a VesnALIA
 machine in 1.9 s"; the box kept its name, record and owner, answered
 commands with its access file, had the new host ID, and its marker named
 the box again (`status`: `boot=reset marker=matches armed=yes
 box=bx7xnqt7yhhemj`). The doctor:
 
 ```
-Identity resets: Boxes of bb-box's whose identity reset at a boot, which bb-box keeps and enrols again as new BB machines.
-  [warn] Identity reset of keep-two: Box keep-two reset its identity at 2026-10-30 17:28:18 UTC, as the value bb-box set on this guest is not the marker's, and BB's machine host_3sa2732699 went with it. bb-box kept the box and enrolled it again, at 2026-10-30 17:31:02 UTC, as BB machine host_xz43czk3qi.
-        Fix: A box that is not a copy of another should never reset: see /var/lib/bb-box/identity-resets and journalctl -u bb-box-identity in the box.
+Identity resets: Boxes of alia-box's whose identity reset at a boot, which alia-box keeps and enrols again as new ALIA machines.
+  [warn] Identity reset of keep-two: Box keep-two reset its identity at 2026-10-30 17:28:18 UTC, as the value alia-box set on this guest is not the marker's, and ALIA's machine host_3sa2732699 went with it. alia-box kept the box and enrolled it again, at 2026-10-30 17:31:02 UTC, as ALIA machine host_xz43czk3qi.
+        Fix: A box that is not a copy of another should never reset: see /var/lib/alia-box/identity-resets and journalctl -u alia-box-identity in the box.
 ```
 
-An earlier run of the same check, before bb-box wrote the marker again and
+An earlier run of the same check, before alia-box wrote the marker again and
 timed the enrolment from the reset, behaved the same otherwise (keep-me,
 `host_t3v95jev38` for `host_4g2ax4tru9`, 2 s).
 
 The case that released a box before: another of its machines, keep-three
 (`host_uwahzewcjm`), reset the same way at 21:57:34, and 4 s later its
-machine was removed in BB (`bb host remove host_uwahzewcjm --yes`), before
-any sweep. BB called bb-box's provider, which read the box's record: at
+machine was removed in VesnALIA (`alia host remove host_uwahzewcjm --yes`), before
+any sweep. VesnALIA called alia-box's provider, which read the box's record: at
 21:57:39 `identity-reset`, at 21:57:41 `enrolled-again` as
 `host_j2s53vjk7e`, connected. The box was kept, with its name and owner,
 and not released.
@@ -865,27 +865,27 @@ fix was made. A third commit answers them.
 | Finding | From | Fix | Tests |
 | --- | --- | --- | --- |
 | A card added, removed, renamed or late reset a box that was not a copy, and a renamed or late card reset it at every boot; the wait followed the wall clock | Astra 1, Opus 1 | Kept when any of the marker's MAC addresses is on any card, whatever its name. Reset only once the cards are known (udev settled, or no udev, as in a container) and a new one of the backend's is there with none of the marker's. Otherwise it waits, counted in loops of 0.2 s, then boots as it is, resetting nothing, and logs that it could not tell (`boot=unknown`, not fork-safe). A reset with no card of the backend's to write a marker for unarms the box | `identity-reset.test.ts`: added, one of two removed, renamed (three boots), a VM's second card; a late card; no card: unknown, nothing erased; a copy whose card has no `eth` name unarms |
-| A reset deleted host IDs before any record of them; a later failure, retried, recorded `none`; a receipt that could not be written still counted as done | Astra 2 | `identity-reset-pending`, with the original host IDs, written and synced before anything is removed; resumed at the next boot with those IDs; done only once the marker, the receipt and the pending file's removal succeed; a failure fails the boot | a failure after BB's credentials went, then the next boot: the original host ID in the receipt; a receipt that cannot be written fails the boot, and the next finishes it |
+| A reset deleted host IDs before any record of them; a later failure, retried, recorded `none`; a receipt that could not be written still counted as done | Astra 2 | `identity-reset-pending`, with the original host IDs, written and synced before anything is removed; resumed at the next boot with those IDs; done only once the marker, the receipt and the pending file's removal succeed; a failure fails the boot | a failure after VesnALIA's credentials went, then the next boot: the original host ID in the receipt; a receipt that cannot be written fails the boot, and the next finishes it |
 | `cat ... ; exit 0` turned an unreadable record into no reset, which released one of your machines | Astra 3 | The record is absent, read or unreadable; only a read record without the machine, or one absent, is no reset; unreadable is a check kept on the box | `plugin.test.ts`: a record that is not a readable file keeps the box |
-| A failed delete of the old machine left the box `enrolling` with it; BB gave the old machine back for the box's key | Astra 4, Opus 3 | Recovery is resumable steps on the box's record: the reset found, the old machine removed and BB's removal confirmed (asked again at each sweep), then the enrolment, then done. A re-enrolment that BB answers with the old machine fails, and the next sweep removes it again. The fake BB now gives a new machine a new ID | a delete refused twice: off, never `enrolling`, the doctor failing, then a new machine, `host-<box>-2` |
-| A box that did not answer when BB removed its machine was kept, and never looked at again; the host-deleted event forgot without checking | Astra 5, Opus 4 | The removed machine is kept on the box as a check, which the doctor warns of; at each sweep, once the box answers, bb-box reads its record: a reset of that machine enrols it again, none releases one of your machines (036). Enrolment is cleared only if the box still names that machine, compared in the same write. BB's host-deleted event takes the same path | one of your machines that does not answer: kept, warned of, then released once it answers with no reset |
-| Docker's containers and the desktop started after a failed reset | Astra 6 | Docker, containerd, `docker.socket`, `bb-box-docker-containers`, and the desktop's display, session, VNC, Selkies and device firewall also require the unit | `enable` writes each requirement; live below |
-| Root's set-aside BB folders and daemon units were left | Astra 7 | Cleared as the box user's are | a reset with root's set-aside `auth.json` and unit |
-| A reset found on a thread's own machine (New box, 033) deleted it, which releases the box and its worktree | Opus 2 | Only machines bb-box's own enrolment made are removed and enrolled again. For a thread's machine bb-box records the reset and the doctor fails it, naming the thread and how to recover its work | a New box machine: no delete, no create, no bootstrap, the doctor failing with the thread |
-| The rollout could not be staged | Opus 5 | `general.identityResetBackends`, empty by default: bb-box writes markers only on the backends named, and checks for a reset only in boxes it armed (`identityMarkedAt` on the box). Images turn the unit on only where checked. `bb-box-identity unarm` | engine tests: markers off for a backend, and an image with the reset off; a box never armed is released as before |
+| A failed delete of the old machine left the box `enrolling` with it; VesnALIA gave the old machine back for the box's key | Astra 4, Opus 3 | Recovery is resumable steps on the box's record: the reset found, the old machine removed and VesnALIA's removal confirmed (asked again at each sweep), then the enrolment, then done. A re-enrolment that VesnALIA answers with the old machine fails, and the next sweep removes it again. The fake VesnALIA now gives a new machine a new ID | a delete refused twice: off, never `enrolling`, the doctor failing, then a new machine, `host-<box>-2` |
+| A box that did not answer when VesnALIA removed its machine was kept, and never looked at again; the host-deleted event forgot without checking | Astra 5, Opus 4 | The removed machine is kept on the box as a check, which the doctor warns of; at each sweep, once the box answers, alia-box reads its record: a reset of that machine enrols it again, none releases one of your machines (036). Enrolment is cleared only if the box still names that machine, compared in the same write. VesnALIA's host-deleted event takes the same path | one of your machines that does not answer: kept, warned of, then released once it answers with no reset |
+| Docker's containers and the desktop started after a failed reset | Astra 6 | Docker, containerd, `docker.socket`, `alia-box-docker-containers`, and the desktop's display, session, VNC, Selkies and device firewall also require the unit | `enable` writes each requirement; live below |
+| Root's set-aside VesnALIA folders and daemon units were left | Astra 7 | Cleared as the box user's are | a reset with root's set-aside `auth.json` and unit |
+| A reset found on a thread's own machine (New box, 033) deleted it, which releases the box and its worktree | Opus 2 | Only machines alia-box's own enrolment made are removed and enrolled again. For a thread's machine alia-box records the reset and the doctor fails it, naming the thread and how to recover its work | a New box machine: no delete, no create, no bootstrap, the doctor failing with the thread |
+| The rollout could not be staged | Opus 5 | `general.identityResetBackends`, empty by default: alia-box writes markers only on the backends named, and checks for a reset only in boxes it armed (`identityMarkedAt` on the box). Images turn the unit on only where checked. `alia-box-identity unarm` | engine tests: markers off for a backend, and an image with the reset off; a box never armed is released as before |
 | Copies that keep their MAC addresses | Opus 6 | Noted for units 8 and 9 below | |
 | What a reset leaves | Opus 7 | Listed below | |
 | The snapshot's words claimed a reason | Opus 8 | "not fork-safe: amber-fox had no working identity reset when it was taken" | engine and plugin tests |
-| G14's unchecked templates | Astra, lead | Program installed, unit off, and no source in bb-box, until each is checked (Rollout, step 2) | build scripts' settings tested |
+| G14's unchecked templates | Astra, lead | Program installed, unit off, and no source in alia-box, until each is checked (Rollout, step 2) | build scripts' settings tested |
 
 **Live, the gates.** systemd booting in a Docker container on a test box,
 with the branch's program turned on and stand-in units named `docker`,
-`containerd` and `bb-box-display` beside the real `ssh` and
+`containerd` and `alia-box-display` beside the real `ssh` and
 `systemd-networkd`. Three restarts: `boot=kept`, every service up, the host
 ID kept. A copy (the marker given another MAC address) with `ssh-keygen`
 made to fail: `boot=failed`, the unit failed, and the journal said
 "Dependency failed for" `docker.service`, `containerd.service`,
-`bb-box-display.service`, `ssh.service`, `ssh.socket` and
+`alia-box-display.service`, `ssh.service`, `ssh.socket` and
 `systemd-networkd.service`, all inactive; the pending record held
 `host_systemd_source`. With `ssh-keygen` back, the next boot resumed it:
 `boot=reset`, every service up, new host keys, the receipt naming
@@ -893,25 +893,25 @@ made to fail: `boot=failed`, the unit failed, and the journal said
 run of this check found that a resumed reset made no host keys when the
 failed attempt had removed them; it now makes ed25519 and ECDSA keys then.
 
-**Live, the recovery, on a fresh separate BB** (`npx bb-app` 0.48.1, no
-account, bb-box from this commit, its Docker backend with images built from
+**Live, the recovery, on a fresh separate VesnALIA** (`npx alia-app` 0.48.1, no
+account, alia-box from this commit, its Docker backend with images built from
 it):
 
 - With `general.identityResetBackends` empty, a new machine, before-switch,
   got no marker (no `identity` in its timings; `status`: `armed=no`). Set to
   its Docker backend, the next, keep-four, got one in 70 ms.
 - keep-four (`host_429bg4tra4`): its marker's value changed by hand as root,
-  then the box restarted from outside bb-box at 22:40:00, when it reset. At
+  then the box restarted from outside alia-box at 22:40:00, when it reset. At
   22:42:21 the sweep logged `identity-reset`, removed the old machine and
-  waited for BB to confirm it, and at 22:42:23 `enrolled-again`: "joined BB
+  waited for VesnALIA to confirm it, and at 22:42:23 `enrolled-again`: "joined VesnALIA
   again as machine host_r2jb8bi8ra, in place of host_429bg4tra4, 2 s after
-  bb-box found its identity reset". BB listed only `host_r2jb8bi8ra`,
-  connected; `bb box list` said "enrolled as a BB machine in 1.7 s"; its
+  alia-box found its identity reset". VesnALIA listed only `host_r2jb8bi8ra`,
+  connected; `alia box list` said "enrolled as a VesnALIA machine in 1.7 s"; its
   marker named the box again (`boot=reset marker=matches armed=yes
   box=bxvuyjp5nw2x6r`); the doctor warned, naming both machines.
 - quiet-one, armed, stopped, then its machine `host_36s3i2wtye` removed in
-  BB: kept, stopped, and the doctor warned "BB no longer has machine
-  host_36s3i2wtye of box quiet-one ... and bb-box could not read whether the
+  VesnALIA: kept, stopped, and the doctor warned "VesnALIA no longer has machine
+  host_36s3i2wtye of box quiet-one ... and alia-box could not read whether the
   box's identity reset (Box quiet-one is stopped. Start it first.), so it
   keeps the box." Started, the next sweep read no reset in it and released
   it, as 036 does, at 22:45:31.
@@ -919,17 +919,17 @@ it):
 **For units 8 and 9.** These copies keep their MAC addresses, so they would
 not reset: `pct restore` without `--unique`, a disk copied into a new VM, a
 `docker commit` with its environment, and a `tart clone` that keeps the
-source's MAC address. Every copy bb-box makes must have new MAC addresses
+source's MAC address. Every copy alia-box makes must have new MAC addresses
 (`--unique`, `tart set --random-mac`), and G14's unit 7 and unit 9 checks
 should test that.
 
 **What a reset leaves, as section 9 accepts:** every folder under
-`~/.bb-machines/<server>/` but `logs` (`plugins/*/host-data`, providers'
-`bridge-data`, `runtime`, `thread-storage`), `/var/lib/bb-box/vnc-password`,
-the hostname, bb-box's authorized key, and the box user's own SSH keys and
+`~/.alia-machines/<server>/` but `logs` (`plugins/*/host-data`, providers'
+`bridge-data`, `runtime`, `thread-storage`), `/var/lib/alia-box/vnc-password`,
+the hostname, alia-box's authorized key, and the box user's own SSH keys and
 cloud credentials. No plugin's host data was checked for a credential of
 the machine itself. The unit does not require ifupdown's
-`networking.service`: bb-box's images use systemd-networkd. The journald
+`networking.service`: alia-box's images use systemd-networkd. The journald
 restart was checked on Proxmox LXC and on a production QEMU box, not on
 Tart.
 
@@ -941,10 +941,10 @@ for all of them, each with a regression test.
 
 | Finding | From | Fix | Tests |
 | --- | --- | --- | --- |
-| A stale "absent" read of a box's record could release it after another check had recorded its reset meanwhile: the conditional update did nothing, but the release went on | Astra 1 | A box's identity decisions run one at a time in the enrolment. Before a read bb-box notes the box's reset and enrolment state; the release happens only when one update finds that state unchanged, no recovery pending and the machine still named, and only then | `plugin.test.ts`: a read held while another path records the reset, then answering "absent": not released, then enrolled again |
+| A stale "absent" read of a box's record could release it after another check had recorded its reset meanwhile: the conditional update did nothing, but the release went on | Astra 1 | A box's identity decisions run one at a time in the enrolment. Before a read alia-box notes the box's reset and enrolment state; the release happens only when one update finds that state unchanged, no recovery pending and the machine still named, and only then | `plugin.test.ts`: a read held while another path records the reset, then answering "absent": not released, then enrolled again |
 | A card added and booted never became an anchor, so removing the first card later reset a working box | Astra 2 | After a boot that matched, the box's current cards of the backend's are added to the marker | `identity-reset.test.ts`: LXC and a VM, a card added, booted, the first removed: kept; a copy of such a box still resets |
-| An unknown boot let a copy start BB's daemon, Tailscale and SSH with its source's identity, and nothing looked again | Astra 3 | Unknown removes nothing and lets the boot go on, but SSH and Tailscale wait for the settle unit, and BB's daemon for `wait`; `settle` looks every 2 s and resets or keeps once the cards are there; `wait` keeps a removed machine's daemon from ever starting | a copy whose card comes after the wait: held, then reset, its daemon refused; the box's own card late: kept, its daemon started; no card: nothing removed, SSH and the daemon still waiting; `wait`'s rules |
-| BB's removal of a machine after its box's reset waited up to 2 minutes for the recovery it started | Opus a | That path records the reset and starts the recovery without waiting | `plugin.test.ts`: BB holds the machine removing until `remove` returns; it returns at once, and the box is enrolled again once BB is done |
+| An unknown boot let a copy start VesnALIA's daemon, Tailscale and SSH with its source's identity, and nothing looked again | Astra 3 | Unknown removes nothing and lets the boot go on, but SSH and Tailscale wait for the settle unit, and VesnALIA's daemon for `wait`; `settle` looks every 2 s and resets or keeps once the cards are there; `wait` keeps a removed machine's daemon from ever starting | a copy whose card comes after the wait: held, then reset, its daemon refused; the box's own card late: kept, its daemon started; no card: nothing removed, SSH and the daemon still waiting; `wait`'s rules |
+| VesnALIA's removal of a machine after its box's reset waited up to 2 minutes for the recovery it started | Opus a | That path records the reset and starts the recovery without waiting | `plugin.test.ts`: VesnALIA holds the machine removing until `remove` returns; it returns at once, and the box is enrolled again once VesnALIA is done |
 | A real copy can boot as its source when udev never settles | Opus b | Now held by `settle` rather than let through; for unit 7, `boot=unknown` is not a reset | |
 | G14 ran on version 1 | Opus c | The rollout's step 3 now asks for G14 again on rebuilt LXC and QEMU images before either backend goes into `identityResetBackends` | |
 
@@ -954,8 +954,8 @@ host ID only up to its first underscore; and two other pipes that could
 fail the same way are now plain loops.
 
 **Live, in a systemd container** on a test box, with the branch's program
-turned on, stand-ins named `docker` and `bb-box-display`, and a lingering
-box user with a stand-in BB daemon unit (`bb-host-daemon-...-host_systemd_source`):
+turned on, stand-ins named `docker` and `alia-box-display`, and a lingering
+box user with a stand-in VesnALIA daemon unit (`alia-host-daemon-...-host_systemd_source`):
 a normal boot and a restart with the marker written: `kept`, every service
 and the daemon up. Then the box was stopped, disconnected from its network
 and started with no card: after the 30 s wait, `boot=unknown`, the host ID
@@ -966,7 +966,7 @@ daemon waiting in its start step. Then a network was connected, giving the
 box a new card as a copy gets: `settle` reset it ("none of the marker's MAC
 addresses (02:42:ac:11:00:aa) is on this box's interfaces
 (c2:3d:fa:9e:3b:28)"), SSH started, and the daemon failed its start step:
-"BB machine host_systemd_source went with this box's identity reset, so its
+"VesnALIA machine host_systemd_source went with this box's identity reset, so its
 daemon does not start". `multi-user.target` waits while SSH does, as it
 wants SSH; logins do not.
 
@@ -974,8 +974,8 @@ wants SSH; logins do not.
 
 On 31 October 2026 the lead rebuilt production's templates from main with
 version 2 of the program: Proxmox LXC 9800 (`build.20261031-015802-ee19`)
-and Proxmox QEMU 9806 (`build.20261031-015944-13b3`). A separate BB (a
-fresh `npx bb-app` 0.48.1 with no account, bb-box from main `b8088de6`) had
+and Proxmox QEMU 9806 (`build.20261031-015944-13b3`). A separate VesnALIA (a
+fresh `npx alia-app` 0.48.1 with no account, alia-box from main `b8088de6`) had
 a backend on each, with their own VMIDs and addresses. Each template's
 program was main's file, byte for byte, with both units enabled and 16
 drop-ins.
@@ -983,20 +983,20 @@ drop-ins.
 | Check | Proxmox LXC | Proxmox QEMU |
 | --- | --- | --- |
 | Unarmed: boot and order | pass: `boot=unarmed`; the check `@159ms +17ms`, then `network-pre.target @177ms`, networkd, ssh and `user@1000` | pass: the check after udev's coldplug, `@505ms +25ms`, then `network-pre.target @627ms`, networkd, ssh and `user@1000` |
-| Unarmed: requirements | pass: networkd, ssh, `ssh.socket`, `user@1000`, Docker, `docker.socket`, containerd and `bb-box-docker-containers` each require the check and start after it; ssh the settle unit too | pass, the same |
+| Unarmed: requirements | pass: networkd, ssh, `ssh.socket`, `user@1000`, Docker, `docker.socket`, containerd and `alia-box-docker-containers` each require the check and start after it; ssh the settle unit too | pass, the same |
 | Unarmed: three restarts with Docker and tailscaled (no login) | pass: `unarmed`, nothing changed | pass |
 | Unarmed: a take | pass: "not fork-safe: lxc-u had no working identity reset when it was taken" | |
 | Naming both backends arms no running box | pass: the unarmed box restarted `unarmed` | |
 | Armed: the marker at first ready | pass: `identity 41 ms`, `source eth` | pass: `identity 44 ms`, `source device` |
 | Armed: the order | pass: `kept` in 36 ms, before `network-pre`, networkd, ssh, `user@1000`, containerd, tailscaled and Docker; settle before ssh and tailscaled | pass: after udev's coldplug, 84 ms with `udevadm settle`, then the same order |
 | Armed: three restarts with Docker and a tailnet node logged in with a single-use ephemeral key | pass: `kept` each time; host ID, credentials, machine ID, SSH key, Tailscale state and node key, access file unchanged; Tailscale `Running` | pass |
-| Armed: a stop and start through bb-box | pass, the same | no boot: bb-box's stop suspends a VM to disk, so its start resumes the same boot and no check runs |
+| Armed: a stop and start through alia-box | pass, the same | no boot: alia-box's stop suspends a VM to disk, so its start resumes the same boot and no check runs |
 | A take | pass: `forkSafe: 2` | pass: `forkSafe: 2` |
 | A plain clone, by the lead, `link_down=1` | pass: reset at its first start, before networkd, ssh, `user@1000` and tailscaled; host ID, credentials, daemon unit and access file gone; new machine ID and SSH key; Tailscale state `{}`; threads' folder and containers kept; after a reboot `kept`, one reset | pass, the same |
-| The source after its clone | pass: unchanged, BB machine connected, Tailscale `Running` | pass |
-| A spare claimed, renamed and restarted | pass: claimed in 12 ms with the same box ID, marker and host ID; its access file rewritten for its owner; after a restart `kept`, its renamed BB machine connected | not run: one VMID |
+| The source after its clone | pass: unchanged, VesnALIA machine connected, Tailscale `Running` | pass |
+| A spare claimed, renamed and restarted | pass: claimed in 12 ms with the same box ID, marker and host ID; its access file rewritten for its owner; after a restart `kept`, its renamed VesnALIA machine connected | not run: one VMID |
 | A card added and booted, then the first removed, then put back | pass: the marker gained `eth1`'s MAC; `kept` with only `eth1`; `kept` with `eth0` back | pass, with `qm reboot`, a cold start each time |
-| A late card: started with no card, then its own card put back | **fail**: a false reset | pass: `boot=unknown` at 55 s, the host ID kept, ssh and tailscaled waiting; once the card was back, `kept`, ssh, tailscaled and BB's daemon started |
+| A late card: started with no card, then its own card put back | **fail**: a false reset | pass: `boot=unknown` at 55 s, the host ID kept, ssh and tailscaled waiting; once the card was back, `kept`, ssh, tailscaled and VesnALIA's daemon started |
 
 **The failure.** With no card, the LXC box's check waited 30 s and ended
 `unknown`, as it should. Its network and Docker then started, and Docker made
@@ -1009,8 +1009,8 @@ da:35:57:32:58:35 fe:63:50:f4:f1:cd)". On a VM only cards with a device
 count, so Docker's interfaces never did. The unit tests' no-card settle, and
 the systemd container's, never added Docker's interfaces.
 
-**What bb-box did.** As built: it logged `identity-reset`, removed
-`host_eai95mipb8` from BB, waited for BB to confirm, and enrolled the box
+**What alia-box did.** As built: it logged `identity-reset`, removed
+`host_eai95mipb8` from VesnALIA, waited for VesnALIA to confirm, and enrolled the box
 again as `host_dvmjmz6nbv` 2 s after it found the reset (`enrolled-again`).
 It wrote the box's marker again, so the box is armed, and the doctor names it
 under Identity resets. It kept the box. The reset cost its tailnet node.
@@ -1024,7 +1024,7 @@ its box had the fix.
 
 **Tests.** `identity-reset.test.ts`: on LXC and on a VM, a box with no card
 past the wait is held while Docker's and Tailscale's interfaces appear, both
-at boot and in settle; nothing is removed, SSH and BB's daemon still wait,
+at boot and in settle; nothing is removed, SSH and VesnALIA's daemon still wait,
 `status` says `incomplete`, and it is kept once its card is back. A copy whose
 card has no `eth` name is held; one whose marker is gone and has no `eth` card
 still resets and unarms. Both fail on version 2, the first with the live
@@ -1037,15 +1037,15 @@ message.
 | Check | Proxmox LXC | Proxmox QEMU |
 | --- | --- | --- |
 | A plain clone, by the lead | pass: reset at its first start, `host_dvmjmz6nbv` removed, before networkd, ssh, `user@1000` and tailscaled | |
-| A copy whose new card comes late: a clone started with no card, given a new one after 45 s | pass: at 45 s `boot=unknown`, the host ID still there, Docker up with its bridge and veths, ssh and tailscaled waiting, BB's daemon waiting; once the card came, `settle` reset it and refused the copied machine's daemon; after a reboot `kept` | |
-| A late card on the box itself | pass: `boot=unknown` at 45 s with Docker up, ssh and tailscaled waiting, the host ID unchanged; once its own card was back, `kept`, then ssh, tailscaled and BB's daemon started | pass: the same at 55 s |
+| A copy whose new card comes late: a clone started with no card, given a new one after 45 s | pass: at 45 s `boot=unknown`, the host ID still there, Docker up with its bridge and veths, ssh and tailscaled waiting, VesnALIA's daemon waiting; once the card came, `settle` reset it and refused the copied machine's daemon; after a reboot `kept` | |
+| A late card on the box itself | pass: `boot=unknown` at 45 s with Docker up, ssh and tailscaled waiting, the host ID unchanged; once its own card was back, `kept`, then ssh, tailscaled and VesnALIA's daemon started | pass: the same at 55 s |
 
 The templates still hold version 2, so neither backend goes into
 `identityResetBackends` until 9800 and 9806 are rebuilt with the fix, and
-`bb-box-identity version` in a new box says so: version 5, below.
+`alia-box-identity version` in a new box says so: version 5, below.
 
 Afterwards the snapshots, boxes and both backends were removed from the
-separate BB, its box released, and the lead destroyed the clones. One
+separate VesnALIA, its box released, and the lead destroyed the clones. One
 spare was released before it was claimed, by setting the spares to 0
 first; the claim was done again in the right order.
 
@@ -1159,12 +1159,12 @@ Two consequences, plainly:
 
 - **A card renamed from `eth`** on LXC, such as with `pct set --net0
   name=lan0,...`, is no card, so the box is held as unknown, removing
-  nothing, until it has its name again. bb-box always names its cards `eth0`.
+  nothing, until it has its name again. alia-box always names its cards `eth0`.
 - **The remaining limit.** A veth that the box makes, names `eth` and a
   number, keeps off any bridge, and whose peer it moves into another
   namespace is a card by this rule. With the box's own card missing, it
   resets the box. Unit 2's recovery then keeps the box and enrols it again as
-  a new BB machine, so the cost is the box's BB machine, tailnet node and
+  a new VesnALIA machine, so the cost is the box's VesnALIA machine, tailnet node and
   access file, not the box.
 
 **Tests.** The test guest now gives the program a fake `ip` that prints the
@@ -1215,10 +1215,10 @@ The lead deleted the snapshot and destroyed the clones.
 
 - **"Missing on a box that had one"** is the armed record. 070 resets when
   the marker is missing; with that alone, a new image's first boot, before
-  bb-box writes the marker, and every boot of a box made before markers,
+  alia-box writes the marker, and every boot of a box made before markers,
   would reset.
-- **Docker** compares a value bb-box sets in the environment at create, the
-  box's ID; microsandbox, Hetzner and Namespace boxes get it too, but bb-box
+- **Docker** compares a value alia-box sets in the environment at create, the
+  box's ID; microsandbox, Hetzner and Namespace boxes get it too, but alia-box
   arms none of them until each is checked. Docker gives a container a new
   MAC address at each start (3 of 3 measured), so a MAC address would reset
   a Docker box at every restart. There the check runs before anything in the
@@ -1230,10 +1230,10 @@ The lead deleted the snapshot and destroyed the clones.
   a MAC address is not measured (its files are another worker's, and its
   boxes are paid). Unit 11 settles its source.
 - **After a reset** the unit writes the copy's own marker, with no box, so
-  it does not reset again at its next boot. bb-box writes the box's own
+  it does not reset again at its next boot. alia-box writes the box's own
   marker again only after it enrols one of its own boxes again; a fork's
   first contact is unit 7's.
-- **bb-box's authorized key** stays: it is the template's, and a fork's own
+- **alia-box's authorized key** stays: it is the template's, and a fork's own
   key is unit 7's.
 - **The machine ID**: the reset writes a new one after systemd started, so
   systemd itself keeps the copied one until the next boot; journald is
@@ -1266,7 +1266,7 @@ included), and rebased onto `b8088de6`. The lead's answers are in 070's
   1. It refuses what the plan refuses, with the plan's words: a lock (with
      the host's command), ZFS (off), a target that is not ready, is on an
      earlier guest ("only forked") or is another box's, a box that is not
-     running or stopped, and a box whose last restore bb-box could not
+     running or stopped, and a box whose last restore alia-box could not
      confirm.
   2. The guard (below).
   3. In one transaction on `snapshots.db`: the undo's record (`taking`) and
@@ -1285,7 +1285,7 @@ included), and rebased onto `b8088de6`. The lead's answers are in 070's
   7. The start, during which, once the box answers and before the backend
      runs any command of its own, the access file is written and checked
      by its SHA-256; then the size read back from the guest, the labels
-     again (`relabel`), and BB's machine started again as a start does
+     again (`relabel`), and VesnALIA's machine started again as a start does
      (commands wait for it; the restore does not). The guard is read again
      before the stop and before the rollback.
   8. `restored`, with the time of each part: "in 4.4 s (stop 1.1 s, undo
@@ -1295,15 +1295,15 @@ included), and rebased onto `b8088de6`. The lead's answers are in 070's
 - **The box while it restores** carries a `restoring` mark. Commands,
   starts, stops and resizes are refused with "Box amber-fox is being
   restored to snapshot ...", and the box sweep leaves it alone, so it is
-  never taken as stopped or started outside bb-box. A restore always ends
+  never taken as stopped or started outside alia-box. A restore always ends
   with the box running; one of a stopped box starts it.
-- **The guard** reads, through the plugin, the threads on the box's BB
-  machine (`threadsOn`), whether a person holds its desktop, and BB
+- **The guard** reads, through the plugin, the threads on the box's VesnALIA
+  machine (`threadsOn`), whether a person holds its desktop, and VesnALIA
   terminals open on it. A box with a thread on it, working or idle, or the
   box the caller's thread runs on, is refused for everyone, `--force`
   included, naming the threads: execution machines' restores stay off
   (G17). Control and terminals refuse an agent, and refuse the person
-  unless `--force`, which `restore-asked` then records. When bb-box cannot
+  unless `--force`, which `restore-asked` then records. When alia-box cannot
   tell which threads run there, or whether a terminal is open, it refuses.
 - **Agents.** `mayAct` already let an agent restore its own thread's
   boxes only. An agent cannot pass `--no-undo` or `--force`, and unit 4's
@@ -1317,12 +1317,12 @@ included), and rebased onto `b8088de6`. The lead's answers are in 070's
   guest, type and time if its UPID was never recorded; a held copy that is
   not a template is deleted and made again, never trusted; a half-made new
   guest of a swap is deleted and made again; a swap that wrote the record
-  goes on to disarm the old guest. What bb-box cannot tell stays `unknown`,
+  goes on to disarm the old guest. What alia-box cannot tell stays `unknown`,
   pinned, with the box marked and stopped, and the doctor says so.
 - **Locks.** A guest Proxmox left locked refuses a restore and a take with
   the host's command, and the doctor's Snapshots section now has a check
   for each box with snapshots whose guest is locked (`snapshots.locked.<box>`)
-  and each restore bb-box could not confirm (`snapshots.restore.<box>`).
+  and each restore alia-box could not confirm (`snapshots.restore.<box>`).
 - **ZFS's order: held copies, swaps and earlier guests.** Built for
   Proxmox LXC and QEMU, and off: ZFS restores are refused. A switch for
   live checks only (Decided during unit 3) runs it on LVM-thin:
@@ -1349,27 +1349,27 @@ included), and rebased onto `b8088de6`. The lead's answers are in 070's
     sweep while an operation uses them, and go with their last snapshot
     or their box's release, each removal recorded as a settled operation
     so a listing that began before records none of them again.
-- **Restores made outside bb-box** (`outsideRestores`, at each sweep):
+- **Restores made outside alia-box** (`outsideRestores`, at each sweep):
   `vzrollback` and `qmrollback` tasks on this install's guests since the
-  last look, read from the node's task list, not started by bb-box (no
+  last look, read from the node's task list, not started by alia-box (no
   operation names their UPID). `restored-outside` when one ended OK, after
-  which bb-box reads the size back, writes the labels again, and when the
-  box runs, its access file, and starts its BB machine; `restore-outside-failed`
-  with what bb-box then found; `restore-outside-running` once, then its
+  which alia-box reads the size back, writes the labels again, and when the
+  box runs, its access file, and starts its VesnALIA machine; `restore-outside-failed`
+  with what alia-box then found; `restore-outside-running` once, then its
   end at a later sweep. Each is recorded as a settled operation, so it is
   logged once, also after a restart. A listed task with no end time is
   read from its own status: the list gives a running one `status` RUNNING.
 - **The box log** gains `restore-asked`, `restored`, `restore-failed`,
   `restored-outside`, `restore-outside-failed`, `restore-outside-running`
   and `held-copy-made`, which its store already allowed.
-- **The CLI**: `bb box snapshot restore <box> <snapshot> --replace
+- **The CLI**: `alia box snapshot restore <box> <snapshot> --replace
   [--no-undo] [--force] [--request] [--json]`, and `--check`, which says
   what the restore would do (its undo, with time and space; a swap and
   what stays on the earlier guest; the size it goes back to; what it would
   end) and refuses what it would refuse, changing nothing: the plan first,
-  as 070 asks of every command; with `BB_BOX_LIVE_CHECKS=1`,
+  as 070 asks of every command; with `ALIA_BOX_LIVE_CHECKS=1`,
   `hold-next` gains `stopped`, `copied`, `undo`, `rolled-back`, `adopted`
-  and `started`, and `bb box snapshot zfs-order <backend> on|off`. The list
+  and `started`, and `alia box snapshot zfs-order <backend> on|off`. The list
   says "a held copy, guest 3240" and "on amber-fox's earlier guest 3241:
   fork only".
 - **Proxmox LXC's start** reports its parts (boot, network, ssh), as QEMU's
@@ -1404,7 +1404,7 @@ or changed tests, each on a set clock where time matters:
   rollback and the start; one before anything changed; an unconfirmed
   rollback unknown and pinned, the box marked, its start refused, the sweep
   leaving it alone, the doctor's check, then settled); a repeated request;
-  G13 (bb-box's own rollback not logged as outside; two OK, a failed one
+  G13 (alia-box's own rollback not logged as outside; two OK, a failed one
   and a running one, each once, the running one's end after a restart);
   ZFS's order (the newest only; the held copy disarmed and a template; the
   swap with the box's identity; the earlier guest fork only and kept by the
@@ -1426,18 +1426,18 @@ or changed tests, each on a set clock where time matters:
 - `test/snapshots.test.ts`: its world moved to `test/snapshot-world.ts` for
   both files; the reused request's words.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`
-only, in a Proxmox LXC box; bb-box installed from this branch with `bb
-plugin install path:`, and BB's machine access set to direct with the
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`
+only, in a Proxmox LXC box; alia-box installed from this branch with `VesnALIA
+plugin install path:`, and VesnALIA's machine access set to direct with the
 box's address, so boxes enrol without an account. The lead gave it a
 Proxmox LXC and a Proxmox QEMU backend, on LVM-thin, with production's
 templates and their own VMIDs and addresses, and ran each root step from
 [`proxmox-root.sh`](070-snapshots/unit-3/proxmox-root.sh) after reading
 it; the script acts only on the given VMIDs whose guests carry the
-install's tag. Boxes were machines of the person's, made with `bb box
+install's tag. Boxes were machines of the person's, made with `alia box
 machines add`. The node is written pve-1.
 
 **Restores by rollback** (`rest-lxc` on Proxmox LXC, 2 cores, 4 GiB, 16 GiB;
@@ -1446,40 +1446,40 @@ machines add`. The node is written pve-1.
 | Check | Result |
 | --- | --- |
 | G4, LXC: three snapshots, a file written after the last, restore to the oldest | the file said "one"; the undo "before the restore at 00:32" was ready 1.5 s after `restore-asked`; restoring the undo then brought back the file written after the last snapshot, before the stop |
-| A restore's time, LXC | 4.4 s as bb-box timed it (stop 1.1 s, undo 0.3 s, rollback 0.4 s, start 2.3 s, access 0.2 s), 5.1 s for the command, to a snapshot taken while stopped (an undo) |
-| Proxmox's start after a rollback, LXC | 44 to 46 s for Proxmox's own start task (vzstart 00:39:06 to 00:39:50, 00:42:56 to 00:43:41, 00:46:14 to 00:46:58) when the snapshot was taken while the container ran; 1.4 to 2.5 s when taken while it was stopped; 1.8 and 2.1 s for a plain stop and start. The task log says only "TASK OK". bb-box waits for it, so such a restore takes about 47 s |
+| A restore's time, LXC | 4.4 s as alia-box timed it (stop 1.1 s, undo 0.3 s, rollback 0.4 s, start 2.3 s, access 0.2 s), 5.1 s for the command, to a snapshot taken while stopped (an undo) |
+| Proxmox's start after a rollback, LXC | 44 to 46 s for Proxmox's own start task (vzstart 00:39:06 to 00:39:50, 00:42:56 to 00:43:41, 00:46:14 to 00:46:58) when the snapshot was taken while the container ran; 1.4 to 2.5 s when taken while it was stopped; 1.8 and 2.1 s for a plain stop and start. The task log says only "TASK OK". alia-box waits for it, so such a restore takes about 47 s |
 | G4, QEMU: the same | the oldest back; its undo brought back the later file; 9.9 s (stop 0.2 s, undo 0.3 s, rollback 0.5 s, start 8.9 s, access 0.1 s) |
-| A memory snapshot, QEMU | taken with `--memory` while a `sleep` ran; the restore took 2.6 s, and the VM came back running: its uptime went on from the take, the `sleep` was there, and BB listed the machine connected |
-| G8, the check said it first, LXC: a take at 4 GiB, a live resize to 6 GiB, a BB terminal open | `--check --force`: "... It goes back to 2 cores, 4 GiB memory, 16 GiB disk, as it was then; it has 2 cores, 6 GiB memory, 16 GiB disk now. It would also end what is on it now: a BB terminal is open on it. ... Nothing changed." The restore then did that, and `bb box status` said 4 GiB |
-| G8, size, QEMU | memory resized from 4 to 6 GiB with a restart after a take; the restore said "Its size went back from 2 cores, 6 GiB memory, 16 GiB disk to 2 cores, 4 GiB memory, 16 GiB disk, as it was then", and `free` and `bb box status` said 4 GiB |
-| A restore across a disk's growth, LXC | refused at first, as 070 said. Then measured with a rollback by root across a growth from 16 to 18 GiB: Proxmox put back `size=16G`, `df` said 16G, the container started, and its file was the snapshot's. bb-box now allows it; a later restore said "... 18 GiB disk to ..., 16 GiB disk, as it was then" |
-| G8, access first, LXC and QEMU | a systemd path unit in the box logged each change of the access file with the time and whether a sentinel line was in it. A line was added after the last bb-box command, a snapshot taken, the box restored: after its boot (LXC at 1793409785), the file changed once, at 1.9 s, without the sentinel, the same second as bb-box's SSH session to it began; QEMU's the same, 4.6 s after its boot. bb-box records that step before the labels and BB's machine |
-| G5, a BB terminal open on the box | "Restoring box rest-lxc to "guard" would end what is on it now: a BB terminal is open on it. Restore anyway with --force. bb-box changed nothing." With `--force` it restored, and `restore-asked` ended "restored anyway, though a BB terminal is open on it." |
-| G5, a thread on the box (in a project on it, and the terminal) | "Box rest-lxc is a box threads run on: "Stay idle; a test of bb-box's restore guard." (working) runs on it. A restore would take their worktrees, uncommitted files and sessions there with it, and bb-box does not restore such a box yet ...", also with `--force`. After the thread was archived, only the terminal was named |
-| G6, LXC: `hold-next` at stopped, undo, rolled-back and started, then `bb plugin reload bb-box` | each restore finished at the next start, logged "... after bb-box restarted", with the right file; the doctor said 0 operations not settled |
+| A memory snapshot, QEMU | taken with `--memory` while a `sleep` ran; the restore took 2.6 s, and the VM came back running: its uptime went on from the take, the `sleep` was there, and VesnALIA listed the machine connected |
+| G8, the check said it first, LXC: a take at 4 GiB, a live resize to 6 GiB, a VesnALIA terminal open | `--check --force`: "... It goes back to 2 cores, 4 GiB memory, 16 GiB disk, as it was then; it has 2 cores, 6 GiB memory, 16 GiB disk now. It would also end what is on it now: a VesnALIA terminal is open on it. ... Nothing changed." The restore then did that, and `alia box status` said 4 GiB |
+| G8, size, QEMU | memory resized from 4 to 6 GiB with a restart after a take; the restore said "Its size went back from 2 cores, 6 GiB memory, 16 GiB disk to 2 cores, 4 GiB memory, 16 GiB disk, as it was then", and `free` and `alia box status` said 4 GiB |
+| A restore across a disk's growth, LXC | refused at first, as 070 said. Then measured with a rollback by root across a growth from 16 to 18 GiB: Proxmox put back `size=16G`, `df` said 16G, the container started, and its file was the snapshot's. alia-box now allows it; a later restore said "... 18 GiB disk to ..., 16 GiB disk, as it was then" |
+| G8, access first, LXC and QEMU | a systemd path unit in the box logged each change of the access file with the time and whether a sentinel line was in it. A line was added after the last alia-box command, a snapshot taken, the box restored: after its boot (LXC at 1793409785), the file changed once, at 1.9 s, without the sentinel, the same second as alia-box's SSH session to it began; QEMU's the same, 4.6 s after its boot. alia-box records that step before the labels and VesnALIA's machine |
+| G5, a VesnALIA terminal open on the box | "Restoring box rest-lxc to "guard" would end what is on it now: a VesnALIA terminal is open on it. Restore anyway with --force. alia-box changed nothing." With `--force` it restored, and `restore-asked` ended "restored anyway, though a VesnALIA terminal is open on it." |
+| G5, a thread on the box (in a project on it, and the terminal) | "Box rest-lxc is a box threads run on: "Stay idle; a test of alia-box's restore guard." (working) runs on it. A restore would take their worktrees, uncommitted files and sessions there with it, and alia-box does not restore such a box yet ...", also with `--force`. After the thread was archived, only the terminal was named |
+| G6, LXC: `hold-next` at stopped, undo, rolled-back and started, then `alia plugin reload alia-box` | each restore finished at the next start, logged "... after alia-box restarted", with the right file; the doctor said 0 operations not settled |
 | G6, QEMU: held after the rollback of a stopped box | finished after the restart in 13 s; started, 4 GiB, 0 operations not settled |
-| G7, LXC: the lead left 3242 locked (rollback) | take: "Proxmox LXC on pve-1 left box rest-lxc locked (rollback), so it takes no snapshot. Run `pct unlock 3242` on pve-1."; restore: "... so bb-box restores nothing. Run `pct unlock 3242` on pve-1."; the doctor: "[fail] rest-lxc locked: ... Fix: Run `pct unlock 3242` on pve-1." |
+| G7, LXC: the lead left 3242 locked (rollback) | take: "Proxmox LXC on pve-1 left box rest-lxc locked (rollback), so it takes no snapshot. Run `pct unlock 3242` on pve-1."; restore: "... so alia-box restores nothing. Run `pct unlock 3242` on pve-1."; the doctor: "[fail] rest-lxc locked: ... Fix: Run `pct unlock 3242` on pve-1." |
 | G7, QEMU: 3250 locked | the same three, with `qm unlock 3250` |
-| G13, LXC: root's `pct rollback` twice to one snapshot, then one refused by a lock, between sweeps | the next sweep logged two `restored-outside` ("Proxmox's task UPID:...:vzrollback:3242:root@pam:, by root@pam, at ..., ended OK ...") and one `restore-outside-failed` ("failed: CT is locked (backup). bb-box then found it stopped.") |
-| G13, LXC: a rollback held on Proxmox's config lock for 10 s, with bb-box sweeping every 5 s | the first try logged it as failed with "RUNNING": the task list gives a running task that status. Fixed: a task with no end time is read from its own status. Then: `restore-outside-running` at 00:55:35, and at 00:55:46 `restore-outside-failed`: "can't lock file '/run/lock/lxc/pve-config-3242.lock' - got timeout" |
-| G13, QEMU: root's `qm rollback` of the running VM | `restored-outside` at the next sweep, "bb-box wrote its labels again, writes its access file when it next starts" (Proxmox left it stopped) |
-| G10, the undo's price, QEMU, with a made-up $0.1 a day and one paid snapshot held | "bb-box would take an undo of box zfs-vm before restoring it. It would bring snapshots held on Proxmox QEMU on pve-1 to about $6.00 a month, past your ceiling of $5.00. ... Or restore without an undo, with --no-undo." The box stayed ready, and nothing was logged; `--no-undo` restored |
+| G13, LXC: root's `pct rollback` twice to one snapshot, then one refused by a lock, between sweeps | the next sweep logged two `restored-outside` ("Proxmox's task UPID:...:vzrollback:3242:root@pam:, by root@pam, at ..., ended OK ...") and one `restore-outside-failed` ("failed: CT is locked (backup). alia-box then found it stopped.") |
+| G13, LXC: a rollback held on Proxmox's config lock for 10 s, with alia-box sweeping every 5 s | the first try logged it as failed with "RUNNING": the task list gives a running task that status. Fixed: a task with no end time is read from its own status. Then: `restore-outside-running` at 00:55:35, and at 00:55:46 `restore-outside-failed`: "can't lock file '/run/lock/lxc/pve-config-3242.lock' - got timeout" |
+| G13, QEMU: root's `qm rollback` of the running VM | `restored-outside` at the next sweep, "alia-box wrote its labels again, writes its access file when it next starts" (Proxmox left it stopped) |
+| G10, the undo's price, QEMU, with a made-up $0.1 a day and one paid snapshot held | "alia-box would take an undo of box zfs-vm before restoring it. It would bring snapshots held on Proxmox QEMU on pve-1 to about $6.00 a month, past your ceiling of $5.00. ... Or restore without an undo, with --no-undo." The box stayed ready, and nothing was logged; `--no-undo` restored |
 
 **ZFS's order, under the live-check switch, on LVM-thin**:
 
 | Check | Result |
 | --- | --- |
-| An older snapshot | "Live checks run ZFS's order on Proxmox LXC on pve-1: as on ZFS, bb-box restores only the newest snapshot there, and "one" has 6 newer ones. Delete them yourself first. bb-box never deletes newer snapshots to make a rollback possible." |
+| An older snapshot | "Live checks run ZFS's order on Proxmox LXC on pve-1: as on ZFS, alia-box restores only the newest snapshot there, and "one" has 6 newer ones. Delete them yourself first. alia-box never deletes newer snapshots to make a rollback possible." |
 | The newest, LXC | a held copy of the stopped box into 3240 in 9.6 s, then the rollback: 58 s in all, Proxmox's start 45 s (the snapshot was taken running) |
 | The held copy, `pct config 3240` (by the lead) | `template: 1`, `onboot: 0`, `link_down=1`, its own MAC, tags `held-copy` and `snapshot.<id>` |
-| Its undo, a swap, LXC (`--no-undo`: the backend had 3 VMIDs) | 11 s (stop 1.1 s, swap 8.0 s, start 2.2 s): a new guest 3241 from the copy, with the box's MAC `bc:24:11:30:f1:13`, `onboot: 1`, link up, the address of its own VMID (.251; the box's record, its commands and `hostname -I` all said so), the same BB machine and host ID, connected, and the file from before the restore. The old guest 3242: `onboot: 0`, `link_down=1`, a new MAC, tag `earlier-guest`; its snapshots listed "on rest-lxc's earlier guest 3242: fork only" |
+| Its undo, a swap, LXC (`--no-undo`: the backend had 3 VMIDs) | 11 s (stop 1.1 s, swap 8.0 s, start 2.2 s): a new guest 3241 from the copy, with the box's MAC `bc:24:11:30:f1:13`, `onboot: 1`, link up, the address of its own VMID (.251; the box's record, its commands and `hostname -I` all said so), the same VesnALIA machine and host ID, connected, and the file from before the restore. The old guest 3242: `onboot: 0`, `link_down=1`, a new MAC, tag `earlier-guest`; its snapshots listed "on rest-lxc's earlier guest 3242: fork only" |
 | QEMU, the same | held copy into 3252 in 7.5 s; the swap in 6.5 s onto 3250 with the box's MAC `bc:24:11:68:ac:73` and SMBIOS UUID, from .253 to .252; the old guest 3251 with a new MAC and UUID, links down, `onboot: 0`; the copy a template with its own UUID. A clone of a held copy always gets the address of its own VMID, never the copy's |
-| G6 and G16: `hold-next --at copied`, so the restore stopped after its clone, before the copy was disarmed or a template | `pct config 3240` then: no `template` line, link up, `onboot: 0`. After `bb plugin reload bb-box`: "Deleted guest 3240, the undo's copy for the restore of box rest-lxc: bb-box restarted before it was a template, so it is not trusted. bb-box makes it again from the stopped box." It was made again in 7.5 s, as a template, disarmed, and the restore finished |
-| G16: the remade copy adopted for the same box | the file written just before the stop, BB's `auth.json` and `host-id` from the enrolment at 00:32, the same MAC; BB listed the same machine, connected |
+| G6 and G16: `hold-next --at copied`, so the restore stopped after its clone, before the copy was disarmed or a template | `pct config 3240` then: no `template` line, link up, `onboot: 0`. After `alia plugin reload alia-box`: "Deleted guest 3240, the undo's copy for the restore of box rest-lxc: alia-box restarted before it was a template, so it is not trusted. alia-box makes it again from the stopped box." It was made again in 7.5 s, as a template, disarmed, and the restore finished |
+| G16: the remade copy adopted for the same box | the file written just before the stop, VesnALIA's `auth.json` and `host-id` from the enrolment at 00:32, the same MAC; VesnALIA listed the same machine, connected |
 | G6: `hold-next --at adopted`, after the swap's new guest was made, then a restart | a sweep during the hold released nothing; after the restart the swap finished: the new guest, the same MAC and machine, the copy's file |
 | An old guest with no snapshot left on it | was left behind; fixed: such a guest is now deleted at the end of the swap. The lead destroyed the one left |
-| G16 and G6 on a box made from the rebuilt template (unit 2's program, version 2, its unit enabled, the box armed, its marker matching) | a restore in ZFS's order (held copy 3242, then the rollback: `boot=kept` after); its undo, a swap held after the new guest started, then a restart: finished at the next start, onto 3240, at .250, with the same MAC `bc:24:11:d5:98:ca` and BB host ID, connected, and `boot=kept marker=matches`: no reset |
-| G16: that box's earlier guest 3241, started by hand (`pct start` by the lead) | `pct config`: `onboot: 0`, `link_down=1`, MAC `BC:24:11:CF:0F:C8`, tag `earlier-guest`. Started, it reset: "none of the marker's MAC addresses (bc:24:11:d5:98:ca) is on this box's interfaces (bc:24:11:cf:0f:c8)", removing BB's host ID; its journal, read with the guest stopped and mounted: the check began at 02:04:40.413, decided at .474 and finished at .608, then systemd-networkd at .643, ssh at .688, the box user's manager at .756; eth0 stayed down |
+| G16 and G6 on a box made from the rebuilt template (unit 2's program, version 2, its unit enabled, the box armed, its marker matching) | a restore in ZFS's order (held copy 3242, then the rollback: `boot=kept` after); its undo, a swap held after the new guest started, then a restart: finished at the next start, onto 3240, at .250, with the same MAC `bc:24:11:d5:98:ca` and VesnALIA host ID, connected, and `boot=kept marker=matches`: no reset |
+| G16: that box's earlier guest 3241, started by hand (`pct start` by the lead) | `pct config`: `onboot: 0`, `link_down=1`, MAC `BC:24:11:CF:0F:C8`, tag `earlier-guest`. Started, it reset: "none of the marker's MAC addresses (bc:24:11:d5:98:ca) is on this box's interfaces (bc:24:11:cf:0f:c8)", removing VesnALIA's host ID; its journal, read with the guest stopped and mounted: the check began at 02:04:40.413, decided at .474 and finished at .608, then systemd-networkd at .643, ssh at .688, the box user's manager at .756; eth0 stayed down |
 | Release of that box | its earlier guest 3241 and held copy 3242 went at the next sweep |
 | Release of a box with a held copy and an earlier guest (QEMU) | the next sweep deleted both, each snapshot logged "it went with its held copy, guest 3252" and "... its box's earlier guest, guest 3251". A second sweep running at the same time had listed the copy before it went, and recorded it again as found: fixed, each such removal is now a settled operation, as unit 1a's are, and a test holds a listing open across it |
 
@@ -1495,20 +1495,20 @@ the stricter fix where the two overlapped.
 
 | Finding | From | Fix | Tests |
 | --- | --- | --- | --- |
-| Recovery at `undo-ready` rolled back although the undo had been deleted outside bb-box | Astra 1 | Before recovery goes on to the rollback or the swap, it checks the undo is still there and whole: a snapshot in a fresh listing, a held copy still a template. If not, the undo is marked lost and the box starts again as it was | "recovery does not roll back once its undo is gone" |
+| Recovery at `undo-ready` rolled back although the undo had been deleted outside alia-box | Astra 1 | Before recovery goes on to the rollback or the swap, it checks the undo is still there and whole: a snapshot in a fresh listing, a held copy still a template. If not, the undo is marked lost and the box starts again as it was | "recovery does not roll back once its undo is gone" |
 | A restart at `adopt-claimed` left `guests.new` naming the undo's held copy, which recovery then deleted as a half-made guest; `adoptCopy` failing before its claim did the same; `deleteCopy` would destroy any guest of the box | Astra 2, Opus 1 | The undo's copy is recorded on the undo's own record, never in `guests`; `adopt-claimed` clears `guests.new` in the same write; a half-made new guest is discarded through `release` only if it is not the box's guest and no snapshot record lives on it; `deleteCopy` destroys only a guest tagged as a held copy or an earlier guest of exactly that box, or described as a held copy of it | "a swap with an undo cut short at adopt-claimed", "a swap whose new guest cannot be made", "a swap cut short at adopt-task", and `deleteCopy` refusing a box's own guest |
 | Rollback recovery could take the undo's UPID, still on the operation, or an outside rollback just before the request, for the rollback's | Astra 3 | Each step that begins a provider task clears the last one's in the same write, and records its own time (`step_at`, a new column); the lookup by guest, type and time starts from that step's time, takes only tasks of the token's own user, and stays unknown when two tasks could be the step's | "keeps no earlier task", "not confirmed by another user's rollback", "two tasks ... leave it unknown", and the backend's user filter |
 | The guard was read only while planning | Astra 4 | It is read again before the stop and before the rollback or swap, in recovery too. A thread found then refuses the restore for everyone; a person in control or a terminal refuses it unless the person's `--force` covered that very loss, which the operation records. Refused before the stop, nothing changed; after it, the box starts again as it was | "the guard is read again before the stop, before the rollback, and before recovery goes on" |
 | A held copy was made of a box without a working identity reset, and an undo took the target's `forkSafe` | Astra 5, Opus 3 | `forkSafe` is read from the box while it runs, before the stop, and is the undo's; ZFS's order is refused without it, unless the person restores without an undo | "a held copy needs the box's identity reset now, and an undo's forkSafe is the disk it holds" |
 | A lock a running backup held refused a take but not a restore | Astra 6 | The plan's restore is `none`, with "Try again when it ends", for any lock without an unlock fix | the backend's "a lock a running backup holds refuses a restore" |
-| `role` "machine" refused a box with no thread left on it | Astra 7 | Only threads on the box's BB machine now, or the caller's thread running on it, as the owner answered | "a box that was a thread's own machine, with no thread on it now, may be restored" |
-| A take went ahead during a restore bb-box could not confirm | Astra 8 | Takes are refused, as restores, starts, stops and resizes are, while a restore holds the box or is unsettled | "no take while a restore bb-box could not confirm holds the box" |
+| `role` "machine" refused a box with no thread left on it | Astra 7 | Only threads on the box's VesnALIA machine now, or the caller's thread running on it, as the owner answered | "a box that was a thread's own machine, with no thread on it now, may be restored" |
+| A take went ahead during a restore alia-box could not confirm | Astra 8 | Takes are refused, as restores, starts, stops and resizes are, while a restore holds the box or is unsettled | "no take while a restore alia-box could not confirm holds the box" |
 | A GPU desktop's start ran a command before the access file was written; the words claimed nothing ran with the old file | Astra 9 | A backend's `start` takes a hook it calls once the box answers, before any command of its own; the restore writes the access file there. The words now say that what the box started at boot may have read the old file | "the access file is written once the box answers, before the backend runs any command of its own" |
 | ZFS's order made the held copy a second time after a restart at `rollback-submitting` | Opus 2 | Recovery resumes after the held copy (`copy-ready`) when the undo is one | "ZFS's order cut short at rollback-submitting ... makes no second one" |
 | Older undos went before the rollback succeeded; `--check` did not name them | Opus 4 | Undos past two go only once the restore is done; `--check` names the one that would | "older undos go only once the restore is done" |
-| A restoring mark could outlive its operation and hold the box for good | Opus 5 | At each sweep, a mark whose operation is no longer unsettled, or unknown to bb-box, is cleared and logged | "a restoring mark never outlives its operation" |
+| A restoring mark could outlive its operation and hold the box for good | Opus 5 | At each sweep, a mark whose operation is no longer unsettled, or unknown to alia-box, is cleared and logged | "a restoring mark never outlives its operation" |
 | A held copy restored by a swap whatever the switch said | Opus 6 | Swaps stay behind the live-check switch until such restores are checked on ZFS | "a held copy is restored by a swap only while the live-check switch is on" |
-| Words: `--check` on a swap that deletes an old guest with nothing on it; "Run it again without --check"; "Check its status in a few seconds" for a restore bb-box could not confirm | Opus 7 | `--check` says the old guest is deleted, and with no undo that nothing then holds the box as it is; "with --replace instead of --check"; the box's words point to `bb box doctor` and `bb box sweep` | |
+| Words: `--check` on a swap that deletes an old guest with nothing on it; "Run it again without --check"; "Check its status in a few seconds" for a restore alia-box could not confirm | Opus 7 | `--check` says the old guest is deleted, and with no undo that nothing then holds the box as it is; "with --replace instead of --check"; the box's words point to `alia box doctor` and `alia box sweep` | |
 | Restarts mid-task and swaps with an undo were not tested | Opus 8 | Tests for an undo's task running, then OK, and failed; a rollback's task OK and failed; a copy's task begun; an adoption's task begun; a swap whose earlier guest cannot be disarmed at once; a swap with its own undo | `test/restore-recovery.test.ts` |
 
 The fake provider now does a task's work before it reports the task, as
@@ -1519,47 +1519,47 @@ copy on the same kind of box: `npx tsc` passes, and the reference is
 current; the node suite ran 3,093 tests, 2,805 passed, 0 failed, 288
 skipped; vitest ran 384, all passed.
 
-**The fixed paths, live**, on a third separate BB set up as above, with the
+**The fixed paths, live**, on a third separate VesnALIA set up as above, with the
 same backends, VMIDs 3240 to 3242 and 3250 to 3251, and
 `general.identityResetBackends` on for both. Each box was made from the
-rebuilt templates and armed (`bb-box-identity status`: version 2, `armed=yes`,
+rebuilt templates and armed (`alia-box-identity status`: version 2, `armed=yes`,
 the box's ID):
 
 | Check | Result |
 | --- | --- |
 | A rollback restore, LXC, with a line added to the box's access file before the take | 47 s (stop 1.1 s, undo 0.3 s, rollback 0.4 s, start 44 s, access 0.6 s); the file was the snapshot's, and the access file had no such line: the start's hook wrote it |
-| `hold-next --at undo`, then `bb plugin reload bb-box` | recovery found the undo still there, read the guard again, rolled back and started: "restored ... in 50 s (rollback 0.4 s, start 45 s, access 0.5 s) after bb-box restarted", with the snapshot's file |
+| `hold-next --at undo`, then `alia plugin reload alia-box` | recovery found the undo still there, read the guard again, rolled back and started: "restored ... in 50 s (rollback 0.4 s, start 45 s, access 0.5 s) after alia-box restarted", with the snapshot's file |
 | ZFS's order on an armed LXC box | `--check`: "copy it in full, stopped, as its undo ...: a held copy that cannot start, about 38 s, up to 17 GB on local-lvm". The restore: 56 s (stop 1.5 s, undo 8.1 s, rollback 0.8 s, start 45 s, access 0.4 s), its undo a held copy, guest 3242; `boot=kept` after |
-| Its undo as a swap (`--no-undo`), held once the clone's task began (`hold-next --at task`), then a restart | Proxmox's clone was still running at the restart, so recovery left the restore unconfirmed; the next sweep, 3 minutes later, deleted the half-made guest 3240 (vzdestroy 02:57:56), cloned it again from 3242 (vzclone 02:54:49, then 02:57:56) and swapped: "restored ... in 198 s (swap 7.5 s, start 1.7 s, access 0.4 s) after bb-box restarted; no undo". The box at .250, its MAC `bc:24:11:cb:2b:b9` and box ID the same, `boot=kept`: no reset; the file from before the restore; the target's copy 3242 untouched; "one" listed on the earlier guest 3241, fork only. The deletion logged nothing: it now logs "Deleted guest 3240, the new guest part made for the restore of box ..." |
+| Its undo as a swap (`--no-undo`), held once the clone's task began (`hold-next --at task`), then a restart | Proxmox's clone was still running at the restart, so recovery left the restore unconfirmed; the next sweep, 3 minutes later, deleted the half-made guest 3240 (vzdestroy 02:57:56), cloned it again from 3242 (vzclone 02:54:49, then 02:57:56) and swapped: "restored ... in 198 s (swap 7.5 s, start 1.7 s, access 0.4 s) after alia-box restarted; no undo". The box at .250, its MAC `bc:24:11:cb:2b:b9` and box ID the same, `boot=kept`: no reset; the file from before the restore; the target's copy 3242 untouched; "one" listed on the earlier guest 3241, fork only. The deletion logged nothing: it now logs "Deleted guest 3240, the new guest part made for the restore of box ..." |
 | Deleting "one", the earlier guest's last snapshot | "The earlier guest 3241 of box re-zfs is deleted: its last snapshot went." |
-| ZFS's order again, held after the held copy (`hold-next --at undo`), then a restart | recovery checked the copy 3241 was still a template, rolled back and started: "restored ... in 56 s ... after bb-box restarted". One clone only (vzclone 02:59:36 to 02:59:43), so no second copy |
+| ZFS's order again, held after the held copy (`hold-next --at undo`), then a restart | recovery checked the copy 3241 was still a template, rolled back and started: "restored ... in 56 s ... after alia-box restarted". One clone only (vzclone 02:59:36 to 02:59:43), so no second copy |
 | `pct config` of both held copies (by the lead) | `template: 1`, `onboot: 0`, `link_down=1`, their own MACs, tags `held-copy`, `install.<id>`, `box.<id>` and `snapshot.<id>`. Each keeps the address its box had when copied, inert behind its link; a guest made from it gets its own VMID's |
 | A rollback restore, QEMU, the same access check | 10 s (stop 0.2 s, undo 0.3 s, rollback 0.5 s, start 8.9 s, access 0.4 s); the file was the snapshot's, no such line in the access file, `boot=kept` |
 | Proxmox's start after a rollback | its own vzstart task took 44 to 45 s each time (02:44:54 to 02:45:38, 02:47:51 to 02:48:35, 02:59:45 to 03:00:30), and 1 s for the guest made from a held copy (02:58:04 to 02:58:05) |
-| Removing both machines | every snapshot went with its box, and both held copies with the box's records ("it went with its held copy, guest 3242"); `bb box snapshot list --all` then said "There are no snapshots." |
+| Removing both machines | every snapshot went with its box, and both held copies with the box's records ("it went with its held copy, guest 3242"); `alia box snapshot list --all` then said "There are no snapshots." |
 
 ### Gates
 
 | Gate | Result |
 | --- | --- |
-| G4 storage-rollback | **Passed on LVM-thin, LXC and QEMU**: the plan reads the storage; a restore to the oldest of three with its undo, nothing written before the stop lost. **ZFS's order passed under the live-check switch on LVM-thin, LXC and QEMU**: an older target refused with the words, the newest restored after its held copy, every newer snapshot still there; its undo a swap onto a new guest with the box's MAC addresses (and SMBIOS UUID on QEMU), `onboot` set and links up, the same BB host ID with no reset, the old guest an earlier guest whose snapshots list fork only; a restart while the copy was not yet a template and after the new guest was made; release deleting both. **Not proved**: Proxmox's own refusal on ZFS (no ZFS node), and expiry, which needs Keep (unit 8). ZFS restores stay off |
-| G5 restore-guard | **Passed** for a thread on the box (refused for everyone, `--force` included, naming it) and a BB terminal (refused, then restored with `--force`, which the log records). A person holding the desktop is tested only in `test/restore.test.ts`: the separate BB's backends offer no desktop. The agent's refusal is tested there too; its tool is unit 5's, the person's dialog unit 6's |
+| G4 storage-rollback | **Passed on LVM-thin, LXC and QEMU**: the plan reads the storage; a restore to the oldest of three with its undo, nothing written before the stop lost. **ZFS's order passed under the live-check switch on LVM-thin, LXC and QEMU**: an older target refused with the words, the newest restored after its held copy, every newer snapshot still there; its undo a swap onto a new guest with the box's MAC addresses (and SMBIOS UUID on QEMU), `onboot` set and links up, the same VesnALIA host ID with no reset, the old guest an earlier guest whose snapshots list fork only; a restart while the copy was not yet a template and after the new guest was made; release deleting both. **Not proved**: Proxmox's own refusal on ZFS (no ZFS node), and expiry, which needs Keep (unit 8). ZFS restores stay off |
+| G5 restore-guard | **Passed** for a thread on the box (refused for everyone, `--force` included, naming it) and a VesnALIA terminal (refused, then restored with `--force`, which the log records). A person holding the desktop is tested only in `test/restore.test.ts`: the separate VesnALIA's backends offer no desktop. The agent's refusal is tested there too; its tool is unit 5's, the person's dialog unit 6's |
 | G6 restart-recovery | **Passed** on LXC after the stop, the undo, the rollback and the start; on QEMU after the rollback; in ZFS's order after the clone and after the swap's new guest was made. Each finished, nothing was released as a leftover, and no operation stayed unsettled. One that cannot be confirmed stays unknown and pinned, in the tests. After the reviews, again on LXC after the undo, in ZFS's order after the held copy, and during a swap's clone: the half-made guest deleted and made again at the next sweep |
 | G7 lock-words | **Passed** on LXC and QEMU in the CLI's take and restore and in the doctor. The page and the tool come with units 6 and 5 and use the same words |
 | G8 access-first | **Passed** on LXC and QEMU, as measured above, and the memory read back across a resize on QEMU, the disk across a growth on LXC |
 | G9 serialised-and-eligible, restore's part | the undo sequences in the tests (two undos; the oldest undo restored keeps its target; a kept undo stays); live, every restore replaced the oldest undo past two, never its own target |
 | G10 ceiling-rate, the undo's part | **Passed** live on a made-up price: refused before the box stopped, and restored without it |
-| G13 outside-restore | **Passed** on LXC and QEMU: two restores to one snapshot, a failed one and a running one, between and across sweeps, each logged once by its status. A snapshot taken by hand (`pct snapshot`) logged nothing, as it is not bb-box's; one of bb-box's deleted by hand (`pct delsnapshot`, 01:46:47) was logged `snapshot-lost` at 01:57:00, at the listing 10 minutes after the first that missed it, as unit 1a does. Without a task, bb-box claims no restore |
-| G16 held-copy-inert | **Passed**: each held copy a template, disarmed, in `pct config` and `qm config`; each earlier guest with `onboot` 0, links down and a MAC that is not the box's; a copy cut short before its template deleted and made again, and the remade copy adopted for the same box with its files, credentials and host ID. On a box made from the rebuilt template, with unit 2's program (version 2) armed: after its swap the new guest's check said `boot=kept`, with the box's MAC and host ID, so no reset ran; its earlier guest, started by hand by the lead, reset (the check decided at 02:04:40.474 and finished at .608) before systemd-networkd (.643), ssh (.688) and the box user's manager (.756), removed BB's host ID, and kept its link down. **Not proved**: the node's reboot, as no node can be rebooted; it is a condition before ZFS restores or unit 8's Keep are turned on |
+| G13 outside-restore | **Passed** on LXC and QEMU: two restores to one snapshot, a failed one and a running one, between and across sweeps, each logged once by its status. A snapshot taken by hand (`pct snapshot`) logged nothing, as it is not alia-box's; one of alia-box's deleted by hand (`pct delsnapshot`, 01:46:47) was logged `snapshot-lost` at 01:57:00, at the listing 10 minutes after the first that missed it, as unit 1a does. Without a task, alia-box claims no restore |
+| G16 held-copy-inert | **Passed**: each held copy a template, disarmed, in `pct config` and `qm config`; each earlier guest with `onboot` 0, links down and a MAC that is not the box's; a copy cut short before its template deleted and made again, and the remade copy adopted for the same box with its files, credentials and host ID. On a box made from the rebuilt template, with unit 2's program (version 2) armed: after its swap the new guest's check said `boot=kept`, with the box's MAC and host ID, so no reset ran; its earlier guest, started by hand by the lead, reset (the check decided at 02:04:40.474 and finished at .608) before systemd-networkd (.643), ssh (.688) and the box user's manager (.756), removed VesnALIA's host ID, and kept its link down. **Not proved**: the node's reboot, as no node can be rebooted; it is a condition before ZFS restores or unit 8's Keep are turned on |
 
 ### Choices and deviations
 
 - **`restore-asked` is logged when the restore is recorded**, before the
   stop, not at step 6, so the log shows the ask before the box stops. A
   restore refused before then logs nothing, as nothing changed.
-- **The restore does not wait for BB's machine to come back.** It starts
-  BB's daemon again as `box_start` does, and commands wait for it. On the
-  separate BB, without an account, the wait for the thread's variables
+- **The restore does not wait for VesnALIA's machine to come back.** It starts
+  VesnALIA's daemon again as `box_start` does, and commands wait for it. On the
+  separate VesnALIA, without an account, the wait for the thread's variables
   added 30 s to every restore.
 - **A restore across a disk's growth is allowed** after measuring it
   (Decided during unit 3).
@@ -1573,15 +1573,15 @@ the box's ID):
 - **A restore of a stopped box starts it**, as step 7 says, so the access
   file is written at once.
 - **Proxmox LXC's start now reports its parts** (boot, network, ssh),
-  which `bb box status` shows under Last start, as QEMU's did.
+  which `alia box status` shows under Last start, as QEMU's did.
 - **A restore cut short while its provider's task still runs waits for
   the next sweep**, up to 3 minutes: recovery leaves it unconfirmed, the
-  box marked, and settles it once the task has ended. `bb box sweep`
+  box marked, and settles it once the task has ended. `alia box sweep`
   checks at once.
 - **An outside restore is set straight once.** On LXC the lead locked the
-  guest at once after, and setting it straight failed on the lock; bb-box
+  guest at once after, and setting it straight failed on the lock; alia-box
   says so in the log and does not try again. The access file is written
-  by bb-box's next command anyway.
+  by alia-box's next command anyway.
 
 ### Conditions and open questions
 
@@ -1620,7 +1620,7 @@ included), and rebased onto `7652147b`. The lead's answers to this unit's questi
   deletes 7 points above it (`roomThresholds`), so the defaults are as
   before: 85, 80 and 92. The housekeeping times stay fixed: 24 hours for a
   failed record, 7 days for a lost or found one, 10 minutes before a
-  missing one is lost. `bb box status`, `box_status`, `bb box snapshot take`
+  missing one is lost. `alia box status`, `box_status`, `alia box snapshot take`
   and `list` say "of N" with the setting.
 - **The ceiling.** One rule, `ceilingVerdict` in
   `src/core/snapshot-cost.ts`, admits a take, an undo, a Keep, a renewal
@@ -1629,7 +1629,7 @@ included), and rebased onto `7652147b`. The lead's answers to this unit's questi
   snapshot, so they are refused while the rate is past it. The rate is
   every paid snapshot the provider holds, being taken included, times its
   daily price, times 30; cents are compared, so the words never say "$5.00
-  past $5.00". A price bb-box does not know is admitted for the person and
+  past $5.00". A price alia-box does not know is admitted for the person and
   refused for an agent. Unit 4 wires the take, in the same transaction as
   the limit and the room, so takes at once cannot pass it together. The
   refusal: "It would bring snapshots held on boat.dev to about $5.04 a
@@ -1657,12 +1657,12 @@ included), and rebased onto `7652147b`. The lead's answers to this unit's questi
 - **Import** and the receipts name each snapshot setting; a refused value
   lands on its field (`general.snapshots.ceilings.<id>` on that backend's
   ceiling).
-- **The CLI**: `bb box option set general.snapshots.perBox=<n>` and
+- **The CLI**: `alia box option set general.snapshots.perBox=<n>` and
   `general.snapshots.roomPercent=<n>`. Ceilings are set on the page or in
   the configuration file.
-- **For live checks only**, with `BB_BOX_LIVE_CHECKS=1`: `bb box snapshot
+- **For live checks only**, with `ALIA_BOX_LIVE_CHECKS=1`: `alia box snapshot
   fake-price <backend> <dollars a day | off>` gives snapshots taken from
-  then on a made-up price, until bb-box restarts, so the ceiling can be
+  then on a made-up price, until alia-box restarts, so the ceiling can be
   checked where no backend charges.
 - **Docs**: the guide's [Snapshots](../guide/snapshots.md) page has a
   Settings section.
@@ -1701,16 +1701,16 @@ keeps the month's spend. The undo (unit 3), Keep, renewal, held copy and
 bulk Keep (unit 8) do not exist yet: their admission is the same rule,
 tested for each in `snapshot-cost.test.ts`, and their units prove it live.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` (latest) with no account, its own data folder and
-ports, started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`
-only, in a Proxmox LXC box. bb-box installed from this branch with `bb
+A fresh `npx alia-app` (latest) with no account, its own data folder and
+ports, started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`
+only, in a Proxmox LXC box. alia-box installed from this branch with `VesnALIA
 plugin install path:`. First start: "Opened snapshots.db, attached to
-bb-box's database: ran 8 migrations." The lead gave it a Proxmox LXC
+alia-box's database: ran 8 migrations." The lead gave it a Proxmox LXC
 backend with its own VMIDs and addresses and a Linux template on LVM-thin.
 Each setting was changed on the page in headless Chromium, with Save; the
-takes are `bb box snapshot` on a machine of the person's. The node's name
+takes are `alia box snapshot` on a machine of the person's. The node's name
 is written pve-1 below.
 
 | Check | Result |
@@ -1719,7 +1719,7 @@ is written pve-1 below.
 | Room set to 50% | "pve-1's storage local-lvm is 54% full, and your settings take no snapshot past 50%: a full thin pool stops every box there. Delete snapshots or release boxes on it first, or raise the limit in Settings, Snapshots." |
 | Room back to 85% | stored nothing (the default); the same take ready, "3 of 5" |
 | A made-up price of $0.056 a day, the ceiling at its default | two paid takes ready; the third refused: "It would bring snapshots held on Proxmox LXC on pve-1 to about $5.04 a month, past your ceiling of $5.00. ..." The page: "$0.056 a day for each snapshot. Held now: 2 snapshots, about $3.36 a month." |
-| Ceiling lowered to 3 on the page | the row adds, in amber, "The rate held is past this ceiling: bb-box refuses new paid snapshots, undos, Keep and renewals there until you raise it or delete some. It deletes none by itself."; the overview's row is amber; the next take refused at "$5.04 a month, past your ceiling of $3.00"; after `bb box sweep` both snapshots are still listed |
+| Ceiling lowered to 3 on the page | the row adds, in amber, "The rate held is past this ceiling: alia-box refuses new paid snapshots, undos, Keep and renewals there until you raise it or delete some. It deletes none by itself."; the overview's row is amber; the next take refused at "$5.04 a month, past your ceiling of $3.00"; after `alia box sweep` both snapshots are still listed |
 | Find | "snapshot limit": Snapshots per box first; "storage full": the room; "snapshot ceiling": "Paid snapshots on Proxmox LXC (...)", "$3.00 a month" |
 | The month's spend, at a made-up $30 a day, ceiling 1,000 | the charge ran 182.0 s from the snapshot's capture to its delete; after the delete the page said "Held now: 0 snapshots ... Spent this month so far, deleted ones included: $0.06" |
 | Clean-up | every snapshot deleted, the machines removed, the price and settings back to their defaults |
@@ -1779,14 +1779,14 @@ unit 5](070-snapshots.md#decided-during-unit-5).
   and a task such as a backup holding the guest's lock. The Proxmox plan
   says the latter as `busy`. Agents get "This holds only for now, not for
   good"; "unsupported" is kept for what the box cannot do.
-- **The form**, through `bb.ui.requestInput`: `box_restore` asks the engine
+- **The form**, through `alia.ui.requestInput`: `box_restore` asks the engine
   to restore; when the route is the form, the engine refuses with
   `needs_yes` and the plan it would carry out (`YesNeeded`), and the tool
   opens the form in the thread (renderer `restore`, `src/app/restore-form.tsx`,
   registered with `pendingInteraction`). The form says what goes, the undo
   that is always taken, the size the box goes back to, what the backend
   leaves out, and on the box the thread runs on, that its session goes back
-  too. It says an answer is "a yes given in this thread". On a yes, bb-box
+  too. It says an answer is "a yes given in this thread". On a yes, alia-box
   holds every new turn on the box, waits up to a minute for turns there to
   end, then restores the snapshot the form named, by its ID, as its own
   work, not under the tool's signal. The yes is bound to a digest of the
@@ -1796,38 +1796,38 @@ unit 5](070-snapshots.md#decided-during-unit-5).
   on any route. The form agrees to what goes only on a box threads run on;
   with agents' own restores off, a person's desktop control or a terminal
   refuses the restore before any form, as it does without one. Cancel and a timeout answer the agent;
-  a stop of the thread, a BB restart and bb-box stopping answer it as an
-  error, which BB only steers in.
+  a stop of the thread, a VesnALIA restart and alia-box stopping answer it as an
+  error, which VesnALIA only steers in.
 - **The yes on the record.** The operation keeps the yes (thread, title,
   time, plan), and `restore-asked` and `restored` end "on a yes given in
   "Asks" (thr_...)".
-- **The turn hold**, `src/plugin/turn-hold.ts`, on BB's `message.dispatch`
-  hook: a message for a thread on a box that bb-box restores waits, with
-  "bb-box is restoring box dev-desk, the machine this thread runs on. This
+- **The turn hold**, `src/plugin/turn-hold.ts`, on VesnALIA's `message.dispatch`
+  hook: a message for a thread on a box that alia-box restores waits, with
+  "alia-box is restoring box dev-desk, the machine this thread runs on. This
   message waits until the box is ready again." It holds from a form's yes,
   and from a restore's record by any route, until the box is ready, also
-  after bb-box restarts, as it reads the boxes' restoring marks. When a
-  hold ends, bb-box asks BB to try the held messages again
-  (`recheck`), and each wait also asks BB to try again in 15 s (`sendAt`),
-  as the live check found a recheck BB did not act on.
+  after alia-box restarts, as it reads the boxes' restoring marks. When a
+  hold ends, alia-box asks VesnALIA to try the held messages again
+  (`recheck`), and each wait also asks VesnALIA to try again in 15 s (`sendAt`),
+  as the live check found a recheck VesnALIA did not act on.
 - **Checks for a running turn**: before the stop, just after it, and before
   the rollback. One found stops the restore: before the stop with nothing
   changed, after it by starting the box again as it was.
 - **Restores of boxes threads run on stay off** (`MACHINE_RESTORES_SHIP`),
   as G17 did not pass (below). For live checks only, with
-  `BB_BOX_LIVE_CHECKS=1`, `bb box snapshot machine-restores on|off` changes
-  that until bb-box restarts, and `bb box snapshot hold-next` gains
+  `ALIA_BOX_LIVE_CHECKS=1`, `alia box snapshot machine-restores on|off` changes
+  that until alia-box restarts, and `alia box snapshot hold-next` gains
   `--at checked` (after the last check, before the stop) and `--seconds`.
 - **Settings**: the agents' two switches are on the Snapshots page, under
   Agents, saved at once as 067's switches are, and in Find.
-- **`bb box option`** sets `general.snapshots.ceilings.<backend>`, in whole
+- **`alia box option`** sets `general.snapshots.ceilings.<backend>`, in whole
   cents, refusing a backend that is not there, and the two switches;
   `option list` shows a ceiling row for each backend.
 - **Words**: the skill's Snapshots section (when to take one, restore
   rather than undo by hand, delete your own, try again, the form and ending
-  the turn, never answer bb-box's forms); the guide's Agents' snapshots
+  the turn, never answer alia-box's forms); the guide's Agents' snapshots
   section; the reference regenerated; requests 38 and 39 in
-  [bb-requests](../bb-requests.md).
+  [alia-requests](../alia-requests.md).
 
 ### Tests
 
@@ -1855,11 +1855,11 @@ or changed tests, each on a set clock where time matters:
   terminal; agreement by thread ID; an orphan ceiling unset; the turn
   hold's release and its words for an unconfirmed restore; an agent's own
   box restored at once.
-- `test/plugin.test.ts`, 5 new: the four tools through BB's fake host,
+- `test/plugin.test.ts`, 5 new: the four tools through VesnALIA's fake host,
   with G12's guesses from another thread; the form's cancel, a wrong
   answer, a changed plan and the yes; the hold on `message.dispatch` from
-  the yes until ready, its words within BB's 200 characters, `sendAt` and
-  the recheck; `bb box option` for ceilings and the switches; a failed
+  the yes until ready, its words within VesnALIA's 200 characters, `sendAt` and
+  the recheck; `alia box option` for ceilings and the switches; a failed
   workspace lookup showing only what the agent took.
 - `test/app.test.tsx`, 2 new: the switches and Find; the form's words,
   focus on Cancel and its answer.
@@ -1867,18 +1867,18 @@ or changed tests, each on a set clock where time matters:
   off now ask through the form; `mayAct` lets an agent restore what it took
   on a box it runs on; unit 4's page test no longer expects no switches.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` (latest) with no account, its own data folder and
-ports, started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`,
-in a Proxmox LXC box, with bb-box installed from this branch
+A fresh `npx alia-app` (latest) with no account, its own data folder and
+ports, started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`,
+in a Proxmox LXC box, with alia-box installed from this branch
 ([`live-setup.sh`](070-snapshots/unit-5/live-setup.sh)). The lead gave it a
 Proxmox LXC backend with production's template on LVM-thin and its own
-VMIDs. dev-desk was a machine of the person's (`bb box machines add`), and
+VMIDs. dev-desk was a machine of the person's (`alia box machines add`), and
 the thread "Asks" ran on it, on a scripted ACP agent
-([`acp-agent.mjs`](070-snapshots/unit-5/acp-agent.mjs)) that calls bb-box's
+([`acp-agent.mjs`](070-snapshots/unit-5/acp-agent.mjs)) that calls alia-box's
 tools as an agent would and runs shell commands in its own process. Forms
-were answered in BB's app, in headless Chromium
+were answered in VesnALIA's app, in headless Chromium
 ([`form.mjs`](070-snapshots/unit-5/form.mjs)). The node is written pve-1.
 
 **G11, the form** (restores of boxes threads run on turned on with the
@@ -1886,19 +1886,19 @@ live-check switch):
 
 | Check | Result |
 | --- | --- |
-| Off (the default): `box_restore` of dev-desk | refused: "Box dev-desk is a box threads run on: "Asks" (working) runs on it. ... bb-box does not restore such a box yet ... bb-box changed nothing." No form |
-| On: `box_restore` of dev-desk | the form opened; the agent got BB's own notice, "The request is shown to the user. A successful result will arrive separately. Do not ask again or assume an answer. ..." The form named "Asks" with its worktree, files and session, said the thread's session goes back too, and named the undo |
-| Cancel in the app | "bb-box did not restore box dev-desk: ... Nothing changed." reached the thread as a message and started a turn; the file written after the snapshot stayed |
+| Off (the default): `box_restore` of dev-desk | refused: "Box dev-desk is a box threads run on: "Asks" (working) runs on it. ... alia-box does not restore such a box yet ... alia-box changed nothing." No form |
+| On: `box_restore` of dev-desk | the form opened; the agent got VesnALIA's own notice, "The request is shown to the user. A successful result will arrive separately. Do not ask again or assume an answer. ..." The form named "Asks" with its worktree, files and session, said the thread's session goes back too, and named the undo |
+| Cancel in the app | "alia-box did not restore box dev-desk: ... Nothing changed." reached the thread as a message and started a turn; the file written after the snapshot stayed |
 | A stop of the thread | the form went, nothing was restored, and nothing more reached the thread |
-| BB's server restarted (its process killed, BB's supervisor started it again) | the form went, nothing was restored |
+| VesnALIA's server restarted (its process killed, VesnALIA's supervisor started it again) | the form went, nothing was restored |
 | Restore in the app | restored with its undo first: `restore-asked`, the undo in 0.3 s, `restored` in 47 s (stop 1.2 s, undo 0.3 s, rollback 0.4 s, start 45 s, access 0.5 s), each "on a yes given in "Asks" (thr_...)"; the file written after the snapshot was gone; the result started a turn on the restored box, in a fresh session |
-| A BB terminal opened on dev-desk after the form, then Restore | nothing restored; the form came again, `changed`, adding "a BB terminal is open on it" |
-| No room for the undo (room set to 50%, the pool 53% full) | refused before any form: "bb-box would take an undo of box dev-desk before restoring it, and pve-1's storage local-lvm is 53% full ...", with "This holds only for now"; nothing changed |
+| A VesnALIA terminal opened on dev-desk after the form, then Restore | nothing restored; the form came again, `changed`, adding "a VesnALIA terminal is open on it" |
+| No room for the undo (room set to 50%, the pool 53% full) | refused before any form: "alia-box would take an undo of box dev-desk before restoring it, and pve-1's storage local-lvm is 53% full ...", with "This holds only for now"; nothing changed |
 | "Agents may restore their own boxes" off, on the agent's own box bold-cloud | the form, "Settings turn agents' own restores off"; Restore in the app restored it with its undo, "on a yes given in "Asks"" |
-| Timeout | after 10 minutes BB ended the form (`interrupted`, reason `timeout`); the agent was told "nobody answered the form within 10 minutes. Nothing changed.", and the box was as it was |
-| The asking agent answers its own form: `bb thread interactions list --self --json`, then `bb thread interactions respond <id> --self --value '{"restore":true,"plan":"..."}'` | `bb` was on the agent's path, and the list gave it the form's whole payload, plan included. BB said "Interaction ... answered". bb-box restored bold-cloud with its undo and logged it "on a yes given in "Asks" (thr_...)", word for word as for the app. BB's own record of the form says `plugin_submitted`, with nothing of who answered. Recorded in request 38 |
+| Timeout | after 10 minutes VesnALIA ended the form (`interrupted`, reason `timeout`); the agent was told "nobody answered the form within 10 minutes. Nothing changed.", and the box was as it was |
+| The asking agent answers its own form: `alia thread interactions list --self --json`, then `alia thread interactions respond <id> --self --value '{"restore":true,"plan":"..."}'` | `alia` was on the agent's path, and the list gave it the form's whole payload, plan included. VesnALIA said "Interaction ... answered". alia-box restored bold-cloud with its undo and logged it "on a yes given in "Asks" (thr_...)", word for word as for the app. VesnALIA's own record of the form says `plugin_submitted`, with nothing of who answered. Recorded in request 38 |
 
-**G12**: a second thread on the same BB, "Guesses", given the first
+**G12**: a second thread on the same VesnALIA, "Guesses", given the first
 thread's snapshot IDs and names: `box_snapshots` of the first thread's box
 said it has no such box; of dev-desk, which it also runs on, "No
 snapshots, and 4 you cannot see"; `box_snapshot_delete` and `box_restore`
@@ -1908,17 +1908,17 @@ tested above.
 
 **G17, the turn hold.** Each case restored dev-desk by the person's
 command, with a live-check hold at the step named, and a message to "Asks"
-during it; "Send now" is `bb thread queue send`
+during it; "Send now" is `alia thread queue send`
 ([`g17.sh`](070-snapshots/unit-5/g17.sh), sampling the box, the thread,
 its queue and the machine each second).
 
 | Case | Result |
 | --- | --- |
-| A message while dev-desk is held stopped | at first BB refused it: "The "bb-box" plugin's message.dispatch hook failed: returned an invalid decision: reason Too big: expected string to have <=200 characters". Fixed to a shorter reason; then it was queued, "waiting on bb-box", and ran on the restored box only after it was ready |
-| "Send now" while the box is stopped | BB refused it: "This message cannot be sent yet: the "dev-desk" host is not ready" (HTTP 409); it stayed queued. bb-box's recheck when the restore ended did not send it, as BB had tried it seconds before, at the machine's reconnection; fixed with `sendAt`, it ran 23 s after the box was ready |
-| "Send now" after the last check, before the stop (held 25 s at `checked`) | **the turn started** on the running box; bb-box's stop then interrupted it ("Thread interrupted because the host daemon disconnected"); the check after the stop found it, and bb-box started the box again: "a turn runs on it now ... Nothing on its disk changed, and bb-box started box dev-desk again as it was." No disk was replaced under a turn, but a turn ran on a box bb-box was stopping |
-| "Send now" while the restored box reconnects (held 25 s at `started`) | BB's daemon on dev-desk had reconnected by itself during the boot, so the turn started about 25 s before bb-box called the box ready. The rollback was done and the access file written; the steps left (reading the size, Proxmox's labels, BB's reconnect) did not interrupt it. It did not wait, but no disk changed under it |
-| bb-box restarted mid-restore (`bb plugin reload bb-box`, held at `stopped`) with a message held | the message stayed held through the reload; bb-box finished the restore from the step it reached and the message ran when the box was ready. BB's orphan sweep releasing held rows was not seen in a reload this short |
+| A message while dev-desk is held stopped | at first VesnALIA refused it: "The "alia-box" plugin's message.dispatch hook failed: returned an invalid decision: reason Too big: expected string to have <=200 characters". Fixed to a shorter reason; then it was queued, "waiting on alia-box", and ran on the restored box only after it was ready |
+| "Send now" while the box is stopped | VesnALIA refused it: "This message cannot be sent yet: the "dev-desk" host is not ready" (HTTP 409); it stayed queued. alia-box's recheck when the restore ended did not send it, as VesnALIA had tried it seconds before, at the machine's reconnection; fixed with `sendAt`, it ran 23 s after the box was ready |
+| "Send now" after the last check, before the stop (held 25 s at `checked`) | **the turn started** on the running box; alia-box's stop then interrupted it ("Thread interrupted because the host daemon disconnected"); the check after the stop found it, and alia-box started the box again: "a turn runs on it now ... Nothing on its disk changed, and alia-box started box dev-desk again as it was." No disk was replaced under a turn, but a turn ran on a box alia-box was stopping |
+| "Send now" while the restored box reconnects (held 25 s at `started`) | VesnALIA's daemon on dev-desk had reconnected by itself during the boot, so the turn started about 25 s before alia-box called the box ready. The rollback was done and the access file written; the steps left (reading the size, Proxmox's labels, VesnALIA's reconnect) did not interrupt it. It did not wait, but no disk changed under it |
+| alia-box restarted mid-restore (`alia plugin reload alia-box`, held at `stopped`) with a message held | the message stayed held through the reload; alia-box finished the restore from the step it reached and the message ran when the box was ready. VesnALIA's orphan sweep releasing held rows was not seen in a reload this short |
 
 ### After the reviews
 
@@ -1930,38 +1930,38 @@ except where it says otherwise.
 | Finding | From | Fix | Tests |
 | --- | --- | --- | --- |
 | A yes given while the route was the form could restore another snapshot after a rename and a settings change, as the tool looked the name up again and a direct route skipped the plan's check | Astra 1 | The restore after a yes names the snapshot by the ID the form showed, and a yes is checked against the plan on any route; a stale one restores nothing | `snapshot-agents.test.ts`: "a yes is checked against the plan wherever the restore's route now goes" |
-| When BB could not say where the thread runs, its own box counted as one it does not run on, showing the person's and other threads' snapshots | Astra 2, Opus 4 | One check, `runsOnBox`, for the snapshot tools and `box_status`: a failed lookup counts as running on it | `plugin.test.ts`: "when bb-box cannot tell where the thread runs ..." |
+| When VesnALIA could not say where the thread runs, its own box counted as one it does not run on, showing the person's and other threads' snapshots | Astra 2, Opus 4 | One check, `runsOnBox`, for the snapshot tools and `box_status`: a failed lookup counts as running on it | `plugin.test.ts`: "when alia-box cannot tell where the thread runs ..." |
 | With agents' own restores off, the form let an agent past a person's desktop control or a terminal, which the direct route refuses | Opus 1 | The form agrees to what goes only on a box threads run on; on the settings route, control and terminals refuse as before | "with agents' restores off, the form does not let an agent past ..."; live, below |
 | The limit never replaced an agent's snapshot on one of the person's machines, as such snapshots are the person's by owner | Astra 5, Opus 2 | The limit goes by who took it: an agent's, unkept, not an undo; the room sweep still spares the person's | "an agent's take past the limit on one of the person's machines ..."; the 1a rule test; live, below |
-| A restart between a take and its replacement left the box over its limit | Astra 4 | The take's operation records the snapshot it replaces and stays unsettled until it is gone; recovery finishes it | "a take that was to replace one past the limit finishes the replacement after bb-box restarts" |
+| A restart between a take and its replacement left the box over its limit | Astra 4 | The take's operation records the snapshot it replaces and stays unsettled until it is gone; recovery finishes it | "a take that was to replace one past the limit finishes the replacement after alia-box restarts" |
 | What goes was agreed by its words, so a new thread with the same title counted as agreed | Opus 3 | Each loss has a key, a thread's by its ID, and the operation keeps the keys; the plan's digest hashes the keys and the box's snapshots, so a new snapshot asks again too | "what goes is agreed by each thread's ID ..."; the plugin's changed plan is now a snapshot taken meanwhile |
-| A form's hold that ended with no restore on the box did not ask BB to send the held messages | Opus 5 | `release` asks BB at once when no restore marks the box | "the turn hold asks BB again when a form's hold ends ..." |
-| A restore bb-box could not confirm held the machine's messages with words that said it was restoring | Opus 6 | The hold stays, and says "bb-box could not confirm its restore of box ..., so this message waits. bb box doctor says why." | the same test |
+| A form's hold that ended with no restore on the box did not ask VesnALIA to send the held messages | Opus 5 | `release` asks VesnALIA at once when no restore marks the box | "the turn hold asks VesnALIA again when a form's hold ends ..." |
+| A restore alia-box could not confirm held the machine's messages with words that said it was restoring | Opus 6 | The hold stays, and says "alia-box could not confirm its restore of box ..., so this message waits. VesnALIA box doctor says why." | the same test |
 | `try_again` for a full storage, which does not clear by itself | Opus 7 | Kept, as the brief asks, with a hint that it works once what it names changes, such as snapshots deleted, and not to retry in a loop | |
-| A ceiling for a backend that is gone could not be unset | Opus 8 | The backend is checked only when setting one | "bb box option unsets a ceiling whose backend is gone" |
-| A refusal after a yes came back as an error, which BB only steers in, so an agent that had ended its turn would not hear it | Opus 9 | It comes back as a plain result, which starts a turn | |
+| A ceiling for a backend that is gone could not be unset | Opus 8 | The backend is checked only when setting one | "alia box option unsets a ceiling whose backend is gone" |
+| A refusal after a yes came back as an error, which VesnALIA only steers in, so an agent that had ended its turn would not hear it | Opus 9 | It comes back as a plain result, which starts a turn | |
 | Words: the tool's description and the skill said a box threads run on goes through the form; the guide said an agent restores only its thread's own snapshots on its own box | Opus | Both now say such restores are off for now; the guide gives section 3's row | |
-| The form waits on the asking thread's own turn | Astra 3 | Not changed: live, BB's notice ended the asking turn and the thread was idle (`bb thread show`) while the form waited, and every yes from the app restored | |
+| The form waits on the asking thread's own turn | Astra 3 | Not changed: live, VesnALIA's notice ended the asking turn and the thread was idle (`alia thread show`) while the form waited, and every yes from the app restored | |
 | A name taken by a snapshot the agent cannot see gives its new one " (2)", which tells it the name exists | Astra 6 | Not changed: names are unique per box in `snapshots.db`. Recorded below | |
 
-Live again, with bb-box reinstalled from the fixed commit on the same
-separate BB:
+Live again, with alia-box reinstalled from the fixed commit on the same
+separate VesnALIA:
 
 | Check | Result |
 | --- | --- |
-| Agents' own restores off, a BB terminal open on the agent's own box | refused before any form: "Restoring box bold-cloud to "one" would end what is on it now: a BB terminal is open on it. Ask the person to end it first ..." |
+| Agents' own restores off, a VesnALIA terminal open on the agent's own box | refused before any form: "Restoring box bold-cloud to "one" would end what is on it now: a VesnALIA terminal is open on it. Ask the person to end it first ..." |
 | The same, the terminal closed, Restore in the app | restored with its undo, "It was restored on a yes given in this thread." |
-| Snapshots per box set to 2 on dev-desk, which held the agent's "before the upgrade" and a command's "g17 base" | the agent's take "limit check" was ready, and "The box was at its limit of 2, so bb-box deleted the oldest snapshot an agent of this thread took and nobody kept: "before the upgrade"." The command's stayed |
+| Snapshots per box set to 2 on dev-desk, which held the agent's "before the upgrade" and a command's "g17 base" | the agent's take "limit check" was ready, and "The box was at its limit of 2, so alia-box deleted the oldest snapshot an agent of this thread took and nobody kept: "before the upgrade"." The command's stayed |
 
-At the end bb-box on the separate BB listed no box and no snapshot.
+At the end alia-box on the separate VesnALIA listed no box and no snapshot.
 
 ### Gates
 
 | Gate | Result |
 | --- | --- |
-| G11 form | **Passed** with the live-check switch on: the form, cancel, a stop of the thread, a BB restart, the yes from the app with its undo, a changed loss list, no room for an undo, and the agent's own box with its restores off, each as the gate says, and the timeout. The asking agent's own answer is taken as a yes, as 070 expected, and recorded |
+| G11 form | **Passed** with the live-check switch on: the form, cancel, a stop of the thread, a VesnALIA restart, the yes from the app with its undo, a changed loss list, no room for an undo, and the agent's own box with its restores off, each as the gate says, and the timeout. The asking agent's own answer is taken as a yes, as 070 expected, and recorded |
 | G12 permissions | **Passed** live and in the tests, pictures apart (unit 6) |
-| G17 turns held | **Not passed**: "Send now" after the last check and before the stop runs a turn on a box being stopped. So restores of boxes threads run on ship off, as 070 and the lead say, until BB can hold a machine against "Send now" (request 39) |
+| G17 turns held | **Not passed**: "Send now" after the last check and before the stop runs a turn on a box being stopped. So restores of boxes threads run on ship off, as 070 and the lead say, until VesnALIA can hold a machine against "Send now" (request 39) |
 
 ### Choices and deviations
 
@@ -1975,13 +1975,13 @@ At the end bb-box on the separate BB listed no box and no snapshot.
 - **A check just after the stop** besides 070's checks before the stop and
   before the rollback; it is what caught G17's third case.
 - **The hold's reason** names the box but not the snapshot, to keep within
-  BB's 200 characters.
+  VesnALIA's 200 characters.
 - **`box_snapshots` has no `pictures` parameter** until unit 6; `box_fork`
   comes with unit 7.
 - **A memory snapshot with agents' memory restores off is refused**, not
   asked for through the form.
 - **The form's restore by the asking agent's own answer** cannot be told
-  from the person's; bb-box says "a yes given in the thread" everywhere, as
+  from the person's; alia-box says "a yes given in the thread" everywhere, as
   070 says.
 
 ### Known limits
@@ -1993,13 +1993,13 @@ At the end bb-box on the separate BB listed no box and no snapshot.
 
 ### Conditions and open questions
 
-- **Restores of boxes threads run on** need BB to hold a machine against
+- **Restores of boxes threads run on** need VesnALIA to hold a machine against
   "Send now" (request 39) before G17 can pass.
 - **An actor for a yes given in a thread**, so the undo's record says it
   too, needs new rows in `snapshots.db` and the box log's store; worth it
-  with request 38, when BB can say who answered.
-- **BB's recheck** did not send a held message that BB had re-tried
-  seconds earlier; bb-box relies on `sendAt` 15 s ahead.
+  with request 38, when VesnALIA can say who answered.
+- **VesnALIA's recheck** did not send a held message that VesnALIA had re-tried
+  seconds earlier; alia-box relies on `sendAt` 15 s ahead.
 
 ## Unit 6: the box page's Snapshots card
 
@@ -2017,7 +2017,7 @@ Built on 31 October 2026 on main `e55c35f4` (units 0 to 4 included), and rebased
   screen. The footer says what snapshots hold and that they go with the
   box. A box whose backend has none says so, with no Take snapshot.
 - **Its data comes with the page.** `boxPage` gains `snapshots`, built in
-  `src/plugin/snapshot-card.ts` from bb-box's records, so the card is laid
+  `src/plugin/snapshot-card.ts` from alia-box's records, so the card is laid
   out in the page's first frame and nothing in it moves when data comes.
   What a take would refuse now (the lock with the host's command, the
   token's rights, the limit, the room, the ceiling) is read from the
@@ -2043,10 +2043,10 @@ Built on 31 October 2026 on main `e55c35f4` (units 0 to 4 included), and rebased
   It says the size the box goes back to, and on a swap what stays on the
   earlier guest.
 - **Notices**, with 069's: while a restore runs, which part it is at
-  (bb-box now signals the page at each part); after it, for 24 hours,
+  (alia-box now signals the page at each part); after it, for 24 hours,
   "Restored at 04:15 to "one", taken today at 04:01, by you. Undo restores
   "before the restore at 04:15"", with Undo… and Dismiss (remembered in
-  the browser); and a restore bb-box could not confirm, with Check now,
+  the browser); and a restore alia-box could not confirm, with Check now,
   which settles snapshot operations as the sweep does. A polite live region
   says the restore's progress and result.
 - **Rename…, Note…, Copy ID and Delete…** in each row's menu.
@@ -2056,8 +2056,8 @@ Built on 31 October 2026 on main `e55c35f4` (units 0 to 4 included), and rebased
   box. Delete says what it frees ("Frees what it no longer shares with
   snap-lxc." on LVM-thin), whether it was kept, and whose undo it is.
 - **Pictures.** At each take, and for a restore's undo before the box
-  stops, bb-box keeps a picture of the screen of a box that has one: a
-  JPEG at most 320 px on its longest side, quality 70, encoded by bb-box
+  stops, alia-box keeps a picture of the screen of a box that has one: a
+  JPEG at most 320 px on its longest side, quality 70, encoded by alia-box
   (`src/core/jpeg.ts`, baseline with halved colour; no new dependency).
   A desktop's comes from its computer-use driver (`Computer.screenPicture`,
   read-only, which works while a person holds the desktop), a device's from
@@ -2072,14 +2072,14 @@ Built on 31 October 2026 on main `e55c35f4` (units 0 to 4 included), and rebased
 - **The pictures setting** comes onto Settings, Snapshots, in a Pictures
   group, as a switch that saves at once, and into Find. The configuration
   reference no longer says "Not used yet" for it.
-- **The guard counts bb-box's own terminals.** A terminal opened from a
-  box's page is bb-box's, not BB's, and a restore ends it too; the guard
-  counted only BB's. It now counts both, so the dialog, the CLI and the
+- **The guard counts alia-box's own terminals.** A terminal opened from a
+  box's page is alia-box's, not VesnALIA's, and a restore ends it too; the guard
+  counted only VesnALIA's. It now counts both, so the dialog, the CLI and the
   box log name it.
 - **RPC**: `snapshot.takeCheck`, `take`, `restoreCheck`, `restore`,
   `delete`, `rename`, `note`, `picture` and `settle`, each as the person.
   A change answers once done, or after 3 s with `pending` while it goes on
-  as bb-box's own operation; the page follows it through the box's changed
+  as alia-box's own operation; the page follows it through the box's changed
   signal.
 - **Keyboard and focus.** Each dialog starts on its safe choice: Cancel in
   Restore and Delete, Close when refused, the name in Take snapshot and
@@ -2093,11 +2093,11 @@ In the same commit, at the lead's request, outside unit 6's own scope (a commit 
 - **The restore flushes the box's writes before its hard stop.** On
   Proxmox QEMU the hard stop dropped what the guest had not written to its
   disk yet, so a restore's undo could miss the last seconds before it.
-  Before the stop, bb-box now runs `sync` in the box over its command
+  Before the stop, alia-box now runs `sync` in the box over its command
   transport (Write-VolumeCache on Windows), for at most 15 s. If that
   fails, the restore stops before the box does unless the person accepts
   an undo that may miss the last writes (see After the review, 3). The
-  QEMU guest agent's freeze and thaw are not used: no bb-box path reaches
+  QEMU guest agent's freeze and thaw are not used: no alia-box path reaches
   the guest agent yet, and `sync` alone was enough live (below).
 
 ### Tests
@@ -2134,12 +2134,12 @@ does not touch, and passed 3 times in 3 when its file ran alone.
   notices, Undo… and Check now; Delete, Rename and Note with focus; the
   pictures switch and Find. Unit 4's tests now expect the pictures switch.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`
-only, in a Proxmox LXC box, with BB's machine access direct so boxes
-enrol. bb-box installed from this branch with `bb plugin install path:`.
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`
+only, in a Proxmox LXC box, with VesnALIA's machine access direct so boxes
+enrol. alia-box installed from this branch with `alia plugin install path:`.
 The lead gave it a Proxmox LXC and a Proxmox QEMU backend on LVM-thin with
 the CPU desktop templates. Two machines of the person's: `snap-lxc` (LXC,
 2 cores, 4 GiB) and `snap-vm` (QEMU, the same). The page was driven in
@@ -2157,11 +2157,11 @@ headless Chromium with the keyboard only, by the scripts in
 | Restore of a memory snapshot, QEMU | 32 s to the notice; the file said "one"; "snap-vm comes back running, as it was then, with the credentials its apps held then" |
 | The undo after a restore, QEMU, before the flush | a file written just before the restore, without `sync`, was missing after its undo; with `sync` first it was there |
 | The same, after the flush | `echo nosync > ~/f1`, a restore at once, then its undo: `f1` said "nosync", on QEMU and on LXC; the undo had no note |
-| A guarded restore, LXC: two threads on its BB machine (a no-model ACP agent, one holding its turn, one idle), a person holding its desktop in another tab, and a terminal open from its page | the dialog refused with focus on Close and no Restore button, naming "Fix the sign-in flow is working on snap-lxc: ...", "Write the API guide is idle on snap-lxc: ...", "A person has control of its desktop." and "A terminal is open on it." |
-| The same with the threads archived | "Also goes:" the control and the terminal; "Restore snap-lxc anyway" restored in 53 s; `restore-asked`: "... restored anyway, though a person holds control of its desktop, and a BB terminal is open on it."; the desktop's control went back to the agent |
+| A guarded restore, LXC: two threads on its VesnALIA machine (a no-model ACP agent, one holding its turn, one idle), a person holding its desktop in another tab, and a terminal open from its page | the dialog refused with focus on Close and no Restore button, naming "Fix the sign-in flow is working on snap-lxc: ...", "Write the API guide is idle on snap-lxc: ...", "A person has control of its desktop." and "A terminal is open on it." |
+| The same with the threads archived | "Also goes:" the control and the terminal; "Restore snap-lxc anyway" restored in 53 s; `restore-asked`: "... restored anyway, though a person holds control of its desktop, and a VesnALIA terminal is open on it."; the desktop's control went back to the agent |
 | 390 px | the header's actions on a row of their own under the name; row actions always shown; tiles 48 by 30 |
 
-Before the guard counted bb-box's own terminals, the first guarded run
+Before the guard counted alia-box's own terminals, the first guarded run
 named the threads and the control but not the page's terminal, and the
 restore ended it: that run found the gap fixed above.
 
@@ -2175,7 +2175,7 @@ the picture, are in the unit's thread storage, not in the repository.
   does not say "unless kept" yet, and rows have no Fork button or Keep…
   item: no dead controls.
 - **The viewer's last frame is not used for pictures.** 070 asks for it
-  when a viewer was open within 10 s; bb-box's server has no decoded frame
+  when a viewer was open within 10 s; alia-box's server has no decoded frame
   (the browser decodes them), so every desktop picture comes from the
   computer-use driver, which reads the screen while a person holds it.
 - **No toast when the person is not on the box's page.** The page's
@@ -2185,8 +2185,8 @@ the picture, are in the unit's thread storage, not in the repository.
   says what each holds: the card's heading says it once.
 - **A restore's notice can be dismissed**, as the prototype has it; the
   choice is kept in the browser.
-- **Resizing the window across BB's narrow layout** remounts BB's panel,
-  which closes an open dialog and focuses the page's heading. That is BB's
+- **Resizing the window across VesnALIA's narrow layout** remounts VesnALIA's panel,
+  which closes an open dialog and focuses the page's heading. That is VesnALIA's
   layout, not the card's; it showed in the screenshots, which open each
   dialog after resizing.
 
@@ -2208,7 +2208,7 @@ version.
    new preview, which the dialog shows with "What the restore would do or
    end changed since this dialog read it". The core refuses, with what
    came since, a loss beyond those accepted ("Since you looked, more would
-   go with box ...: 2 BB terminals are open on it."), so a terminal opened
+   go with box ...: 2 VesnALIA terminals are open on it."), so a terminal opened
    between the server's check and the restore's own is refused too.
 2. **The guard is read again after the flush**, right before the stop. A
    thread that came during the flush stops the restore before the box
@@ -2281,13 +2281,13 @@ rebased onto `aa192bdf`. What was decided while building it is in 070's
   its origin (`fork`: the operation, the snapshot, the source and its MAC
   addresses), checked against the thread's box limit, the name and the
   backend's room, and made through the acquire path. Its copy runs on the
-  source box's queue. Then bb-box starts it with the backend's `start`, and
+  source box's queue. Then alia-box starts it with the backend's `start`, and
   **checks it before it is ready** (`forkVerdict`, `src/core/identity.ts`),
-  through the backend's own command transport, so before bb-box writes any
+  through the backend's own command transport, so before alia-box writes any
   access file there: the identity reset's status, the marker's MAC
-  addresses, BB's folders under `/home/*` and `/root`, the access files,
+  addresses, VesnALIA's folders under `/home/*` and `/root`, the access files,
   Tailscale's state, the machine ID and the SSH host keys. Only then does it
-  write the fork's own marker, call it ready and enrol it as a new BB
+  write the fork's own marker, call it ready and enrol it as a new VesnALIA
   machine. A fork that fails the check is released and fails, saying why
   and "nothing of it acts as (source)". `boot=unknown` and a pending reset
   are looked at again every 2 s for a minute.
@@ -2305,9 +2305,9 @@ rebased onto `aa192bdf`. What was decided while building it is in 070's
 - **`box_fork`** (`box`, `snapshot`, `name`): into the agent's own thread;
   with no snapshot it takes one of the box now, "for a fork", first. It
   answers as `box_acquire` does, with the fork's origin among its facts.
-- **The CLI**: `bb box snapshot fork <box> <snapshot> [--as-machine]
+- **The CLI**: `alia box snapshot fork <box> <snapshot> [--as-machine]
   [--name <name>] [--check] [--request <id>] [--json]`; with
-  `BB_BOX_LIVE_CHECKS=1`, `hold-next --at forked` holds a fork after its
+  `ALIA_BOX_LIVE_CHECKS=1`, `hold-next --at forked` holds a fork after its
   copy is re-armed, before its first start.
 - **The page.** Each row of the Snapshots card has Fork after Restore, in
   the row's menu as Fork… below 640 px, off with why where the snapshot
@@ -2329,9 +2329,9 @@ and conformance ones); vitest ran 414, all passed. The node suite includes
 the docs, site and reference checks; they ran again on the last docs.
 
 - `test/forks.test.ts`, 7, through `Boxes` and the fake provider, whose
-  forks copy the snapshot's files and run the real `bb-box-identity` on a
+  forks copy the snapshot's files and run the real `alia-box-identity` on a
   root of their own with a new MAC address: a fork resets, is checked, gets
-  its own marker and the snapshot's file, and its source keeps its BB
+  its own marker and the snapshot's file, and its source keeps its VesnALIA
   machine, marker, machine ID and keys; a fork given its source's name, as
   one of your machines, after the same name was refused in the thread; the
   snapshot pinned while the copy runs and free after; the take's hashes on
@@ -2361,15 +2361,15 @@ The test box's `better-sqlite3` binary, installed while npm 11 held back
 install scripts, crashed at the end of files that use it, on `origin/main`
 too; with the build from another box of the same image, every file ran.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and ports,
-started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`, in a
-Proxmox LXC box, with bb-box installed from this branch
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and ports,
+started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`, in a
+Proxmox LXC box, with alia-box installed from this branch
 ([`live-setup.sh`](070-snapshots/unit-7/live-setup.sh)) and
-`general.identityResetBackends` set to both Proxmox backends on that BB
+`general.identityResetBackends` set to both Proxmox backends on that VesnALIA
 only. The lead lent it a Proxmox LXC backend (template 9800, and 9803, a
-CPU desktop from before unit 2, without `bb-box-identity`) and a Proxmox
+CPU desktop from before unit 2, without `alia-box-identity`) and a Proxmox
 QEMU backend (template 9806, and 9807), on LVM-thin, with the production
 token and 12 VMIDs and addresses of their own. Both Linux templates carry
 version 5 of the identity reset. An agent's thread ran on the scripted ACP
@@ -2382,21 +2382,21 @@ pve-1.
 | Check | Result |
 | --- | --- |
 | The take | the agent's `box_snapshot` of its LXC box gentle-acorn (armed, `boot=unarmed` at its first boot, before its marker): `forkSafe` 5, and the record held the SHA-256 of its machine ID and of its two host keys, as read in the box |
-| `box_fork`, LXC | the agent forked "set up" into fair-comet, ready 15 s after the call (copy and start 12 s): at its first boot the reset ran at 09:07:12.163, before systemd-networkd (.174) and ssh (.264): "removed BB's machine credentials and host ID (host_u4mqv4jcdv), the thread's access file and the tailnet node; made new SSH host keys and a new machine ID". bb-box's check passed and wrote its marker (its own MAC, its own box). The fork had the snapshot's file, a new machine ID and new host keys (none of the take's hashes), and joined BB as host_g2az9ezrmi |
-| The source's host ID | BB's server log has one "Session opened" for host_u4mqv4jcdv, at 09:05:38, never replaced, through every fork of it; each fork had a session of its own |
-| A fork given its source's name, LXC | `bb box snapshot fork gentle-acorn "set up" --as-machine --name gentle-acorn`: ready in 13 s, `boot=reset`, the same file, BB machine host_4eb9mavc7e; BB listed two machines named gentle-acorn, each with its own host ID, both connected, and the source's still had its one session |
+| `box_fork`, LXC | the agent forked "set up" into fair-comet, ready 15 s after the call (copy and start 12 s): at its first boot the reset ran at 09:07:12.163, before systemd-networkd (.174) and ssh (.264): "removed VesnALIA's machine credentials and host ID (host_u4mqv4jcdv), the thread's access file and the tailnet node; made new SSH host keys and a new machine ID". alia-box's check passed and wrote its marker (its own MAC, its own box). The fork had the snapshot's file, a new machine ID and new host keys (none of the take's hashes), and joined VesnALIA as host_g2az9ezrmi |
+| The source's host ID | VesnALIA's server log has one "Session opened" for host_u4mqv4jcdv, at 09:05:38, never replaced, through every fork of it; each fork had a session of its own |
+| A fork given its source's name, LXC | `alia box snapshot fork gentle-acorn "set up" --as-machine --name gentle-acorn`: ready in 13 s, `boot=reset`, the same file, VesnALIA machine host_4eb9mavc7e; VesnALIA listed two machines named gentle-acorn, each with its own host ID, both connected, and the source's still had its one session |
 | `--check` | "Forking ... would make one of your machines, with 2 cores, 4 GiB memory, 16 GiB disk, as the snapshot holds. ... Nothing changed." |
-| QEMU, from a memory snapshot | src-vm (`boot=unarmed`, armed) with `sleep 9999` running, taken `--memory`; vm-fork ready in 22 s: the reset at 09:12:02.718, before networkd (.730) and ssh (.852); a fresh boot (up 0 minutes), no `sleep 9999`, a new SMBIOS UUID; its own BB machine. The source's second session, at 09:11:50, replaced its first after the memory snapshot's pause, 12 s before the fork booted |
+| QEMU, from a memory snapshot | src-vm (`boot=unarmed`, armed) with `sleep 9999` running, taken `--memory`; vm-fork ready in 22 s: the reset at 09:12:02.718, before networkd (.730) and ssh (.852); a fresh boot (up 0 minutes), no `sleep 9999`, a new SMBIOS UUID; its own VesnALIA machine. The source's second session, at 09:11:50, replaced its first after the memory snapshot's pause, 12 s before the fork booted |
 | QEMU, from a disk snapshot | a file written just before the take, one flushed, and one written after `sync`: all three in the fork |
 | `onboot` and links (`proxmox-root.sh config`, by the lead) | the forks 3171, 3172, 3175 (LXC) and 3177 (QEMU): `onboot: 1`, no `link_down`, MAC addresses of their own, their own addresses, their own box's tags; 3177 a new SMBIOS UUID |
-| A first boot that says unknown, QEMU | held after its copy (`hold-next --at forked`); the lead removed its card at 09:16:59, bb-box started it at 09:17:26; its check said at 09:18:06 "not knowing yet whether this box is a copy ... It removes nothing", and SSH stayed down; bb-box showed it starting. The lead put the same card back at 09:18:42; `settle` reset it at 09:18:42.80, SSH started at .93, bb-box's check ran at 09:18:43.59 and wrote the marker at .64, and only then was it ready, 116 s after the request |
-| An image without the unit | old-desk, from template 9803, has no `bb-box-identity`; its snapshot listed "not fork-safe: old-desk had no working identity reset when it was taken", and the fork was refused before anything was copied: "old-desk had no working identity reset when "old image" was taken, so bb-box does not fork it: ..." |
-| A restart mid-fork | held after its copy at .184, then `bb plugin reload bb-box`: the copy was deleted, made again at .185 (copy 12.6 s) and checked, ready 32.5 s after the request; 0 operations not settled. The CLI that waited on it answered "is acquiring", as the reload ended its wait |
+| A first boot that says unknown, QEMU | held after its copy (`hold-next --at forked`); the lead removed its card at 09:16:59, alia-box started it at 09:17:26; its check said at 09:18:06 "not knowing yet whether this box is a copy ... It removes nothing", and SSH stayed down; alia-box showed it starting. The lead put the same card back at 09:18:42; `settle` reset it at 09:18:42.80, SSH started at .93, alia-box's check ran at 09:18:43.59 and wrote the marker at .64, and only then was it ready, 116 s after the request |
+| An image without the unit | old-desk, from template 9803, has no `alia-box-identity`; its snapshot listed "not fork-safe: old-desk had no working identity reset when it was taken", and the fork was refused before anything was copied: "old-desk had no working identity reset when "old image" was taken, so alia-box does not fork it: ..." |
+| A restart mid-fork | held after its copy at .184, then `alia plugin reload alia-box`: the copy was deleted, made again at .185 (copy 12.6 s) and checked, ready 32.5 s after the request; 0 operations not settled. The CLI that waited on it answered "is acquiring", as the reload ended its wait |
 | The page, 1,440 px, keyboard only | gentle-acorn's page: Fork reached in 14 Tab presses, focus on the name, the default "In (thread)", Enter on Fork: the new box's page opened 0.9 s later, starting; jolly-tundra was ready in 11.5 s, its facts "Forked from gentle-acorn, "set up" (today 09:06)" |
 | The page, 390 px, keyboard only | src-vm's page: the row's menu, a sheet at that width, reached in 13 Tab presses, then Fork…; the dialog on the name, "It becomes one of your machines."; the new box's page 0.9 s after Enter; page-fork ready in 19 s, with its origin in its facts |
 | Permissions | a second thread's agent: `box_fork` of the first thread's box said "This thread has no box "gentle-acorn""; the first thread's agent of one of your machines: "This thread has no box "src-vm"" |
 
-Afterwards every box and snapshot of the separate BB was released or
+Afterwards every box and snapshot of the separate VesnALIA was released or
 deleted, and the lead's `leftovers` listed no guest of the install in the
 lent VMIDs.
 
@@ -2404,7 +2404,7 @@ lent VMIDs.
 
 | Gate | Result |
 | --- | --- |
-| G14 fork-identity, unit 7's part | **Passed** on Proxmox LXC and QEMU: each fork reset at its first boot before its network, SSH and BB's daemon, also one given its source's name; each started with `onboot` set and its links up; the source's host ID never had a second connection from a fork; a snapshot from an image without the unit refused to fork; a fork whose first boot said unknown was not handed over until it reset, on QEMU and, after the changes above, on LXC. One LXC late-card run before those changes took its source's address, which cut the source off BB for 40 s and made it open a session of its own again; a fork that holds its source's address is now refused, and version 6 keeps a late card from taking it. A logged-in tailnet node was not part of these checks: unit 2 proved the reset removes one, and the check refuses a fork whose Tailscale state still holds a node |
+| G14 fork-identity, unit 7's part | **Passed** on Proxmox LXC and QEMU: each fork reset at its first boot before its network, SSH and VesnALIA's daemon, also one given its source's name; each started with `onboot` set and its links up; the source's host ID never had a second connection from a fork; a snapshot from an image without the unit refused to fork; a fork whose first boot said unknown was not handed over until it reset, on QEMU and, after the changes above, on LXC. One LXC late-card run before those changes took its source's address, which cut the source off VesnALIA for 40 s and made it open a session of its own again; a fork that holds its source's address is now refused, and version 6 keeps a late card from taking it. A logged-in tailnet node was not part of these checks: unit 2 proved the reset removes one, and the check refuses a fork whose Tailscale state still holds a node |
 
 ### Choices and deviations
 
@@ -2418,7 +2418,7 @@ lent VMIDs.
 - **A fork has the snapshot's size**; no larger size is offered.
 - **The copy runs on the source box's queue**, so its take, restore, stop
   and release wait for it.
-- **bb-box's authorized key** is the template's on Proxmox, the same in
+- **alia-box's authorized key** is the template's on Proxmox, the same in
   every box of an install, so a fork's is as much its own as any box's.
   Keys a person or agent added to `authorized_keys` come with the disk.
 - **The copy's time is an upper bound**: 2.4 s for each GiB of the disk,
@@ -2428,18 +2428,18 @@ lent VMIDs.
 ### Takes flush first
 
 The live check found that a fork of a QEMU memory snapshot lacked what the
-VM had not written to its disk: vm-fork's reset found no BB machine to
+VM had not written to its disk: vm-fork's reset found no VesnALIA machine to
 remove, as the source's credentials, written 18 s before the take, were not
 yet on its disk. Proxmox saves memory instead of freezing the file system,
 and a fork starts from the disk only. At the lead's request:
 
-- **Before a take of a running box**, bb-box runs `sync` in it, as unit 6's
+- **Before a take of a running box**, alia-box runs `sync` in it, as unit 6's
   restore does before its stop, with the same helper and 15 s limit, on
   Proxmox LXC and QEMU, disk only and with memory alike. A stopped box has
   nothing to flush.
 - **A flush that fails or times out stops nothing.** The take goes ahead,
   and its record keeps why (`unflushed`, a new column in `snapshots.db`, by
-  migration). The take's answer says "bb-box could not flush the box's
+  migration). The take's answer says "alia-box could not flush the box's
   writes to its disk before it (why), so it may miss what was written in
   the last seconds before it"; the list and the page's row say "may miss
   its last writes"; `--check`, the Fork dialog, the fork's answer and
@@ -2452,11 +2452,11 @@ and memory, and none for a stopped box; a failed flush, the take ready
 and its record, answer and list words; a flush that never answers holds a
 take 15 s at most. In `test/forks.test.ts`: the words of `--check`, the
 fork's answer and `fork-asked` for an unflushed snapshot. Two unit 1a tests
-that restarted bb-box 20 ms into a take now wait for the take's hold, as
+that restarted alia-box 20 ms into a take now wait for the take's hold, as
 the flush comes first.
 
-Live, on a second separate BB set up as the first, with the same lent
-backends: src-vm (Proxmox QEMU, armed) joined BB, whose credentials were
+Live, on a second separate VesnALIA set up as the first, with the same lent
+backends: src-vm (Proxmox QEMU, armed) joined VesnALIA, whose credentials were
 written at 09:59:30.82 (`host-id`) and 09:59:30.86 (`auth.json`); a file
 was written at 09:59:32, and the memory snapshot taken at once, ready in
 2.0 s, flushed (no `unflushed`). Its fork vm-fork was ready in 15 s; its
@@ -2473,7 +2473,7 @@ Proxmox LXC as on QEMU (`start` takes how long to wait; only a fork's first
 start asks for more). Then the live check of it found a fork that took its
 source's address, and two more changes answer that.
 
-**Live, on the second separate BB** (src-lxc a Proxmox LXC machine of the
+**Live, on the second separate VesnALIA** (src-lxc a Proxmox LXC machine of the
 person's, armed, at .180; the lead ran
 [`proxmox-root.sh`](070-snapshots/unit-7/proxmox-root.sh) `card-late`,
 which takes a held fork's card off before its first start and puts it back
@@ -2481,15 +2481,15 @@ which takes a held fork's card off before its first start and puts it back
 
 | Run | Result |
 | --- | --- |
-| First try, 3171 | the script acted on the clone while Proxmox still held `lock: create`, as a full clone copies its source's `onboot: 1` at once, and `pct set` failed on the lock; nothing changed, and that fork started with its card. The script now waits for no lock and for net0 to stay the same for 5 s, which is bb-box's re-arm done |
-| The wait, 3172 | started at 10:51:33 with no card; its check said "not knowing yet" after 30 s; the card came back at 10:52:50; `settle` reset it at 10:52:51.34, removing `host_w8h3gy9iwv`, src-lxc's copied machine, and refusing that machine's daemon; ssh at .37; bb-box's start waited 76.8 s for the network and handed it over, ready, joined as its own machine. **But** it held .180, src-lxc's address, beside its own .182: with no card at its start, Proxmox wrote no network file, so the copy kept its source's; when the card was hot-plugged, systemd-networkd brought up .180 before Proxmox wrote the fork's own file, at 10:52:50.877. src-lxc's daemon logged "Server heartbeat acknowledgements stopped; reconnecting" at 10:53:25 and was connected again at 10:53:37, a session of its own: BB's server shows that session from src-lxc, and the fork's copied daemon never started. src-lxc was back on .180 once the fork was released |
-| The guard, 3173 | the check before ready now reads the fork's global IPv4 addresses and refuses a fork that holds its source's address (the source's address is kept on the fork's origin). The same run: refused at 11:04:48, 3 s after the card came back, "bb-box did not hand fork lxc-late3 over: it holds src-lxc's address .180, so it would take what is sent to src-lxc. bb-box released it"; src-lxc kept its session, and its daemon logged nothing then |
-| Version 6, 3174 | `bb-box-identity` version 6 installed by hand in src-lxc, then a snapshot (`forkSafe` 6). At 11:14:28 the fork's boot said "not knowing yet" and "held its network settings ( eth0.network ) aside while it cannot tell whether it is a copy"; the card came back at 11:15:12; the reset at 11:15:13 removed src-lxc's machine; the fork held only .184 (the lead read lo and eth0 .184 alone 20 s later, and bb-box's check found no .180), and was handed over, ready, waiting 76.8 s for its network. src-lxc kept the session it had since 10:53:37, and its daemon logged no disconnect |
+| First try, 3171 | the script acted on the clone while Proxmox still held `lock: create`, as a full clone copies its source's `onboot: 1` at once, and `pct set` failed on the lock; nothing changed, and that fork started with its card. The script now waits for no lock and for net0 to stay the same for 5 s, which is alia-box's re-arm done |
+| The wait, 3172 | started at 10:51:33 with no card; its check said "not knowing yet" after 30 s; the card came back at 10:52:50; `settle` reset it at 10:52:51.34, removing `host_w8h3gy9iwv`, src-lxc's copied machine, and refusing that machine's daemon; ssh at .37; alia-box's start waited 76.8 s for the network and handed it over, ready, joined as its own machine. **But** it held .180, src-lxc's address, beside its own .182: with no card at its start, Proxmox wrote no network file, so the copy kept its source's; when the card was hot-plugged, systemd-networkd brought up .180 before Proxmox wrote the fork's own file, at 10:52:50.877. src-lxc's daemon logged "Server heartbeat acknowledgements stopped; reconnecting" at 10:53:25 and was connected again at 10:53:37, a session of its own: VesnALIA's server shows that session from src-lxc, and the fork's copied daemon never started. src-lxc was back on .180 once the fork was released |
+| The guard, 3173 | the check before ready now reads the fork's global IPv4 addresses and refuses a fork that holds its source's address (the source's address is kept on the fork's origin). The same run: refused at 11:04:48, 3 s after the card came back, "alia-box did not hand fork lxc-late3 over: it holds src-lxc's address .180, so it would take what is sent to src-lxc. alia-box released it"; src-lxc kept its session, and its daemon logged nothing then |
+| Version 6, 3174 | `alia-box-identity` version 6 installed by hand in src-lxc, then a snapshot (`forkSafe` 6). At 11:14:28 the fork's boot said "not knowing yet" and "held its network settings ( eth0.network ) aside while it cannot tell whether it is a copy"; the card came back at 11:15:12; the reset at 11:15:13 removed src-lxc's machine; the fork held only .184 (the lead read lo and eth0 .184 alone 20 s later, and alia-box's check found no .180), and was handed over, ready, waiting 76.8 s for its network. src-lxc kept the session it had since 10:53:37, and its daemon logged no disconnect |
 
-**Version 6 of the identity program** (`bb-box-identity.sh`). On Proxmox
+**Version 6 of the identity program** (`alia-box-identity.sh`). On Proxmox
 LXC, when a boot cannot tell yet whether the box is a copy, the program
 moves the `eth` cards' network files (`/etc/systemd/network/ethN.network`)
-aside, to `/run/bb-box-identity/held-network`, before systemd-networkd
+aside, to `/run/alia-box-identity/held-network`, before systemd-networkd
 starts. A card added later then gets its settings only from Proxmox's
 hot-plug, which writes them. Once `settle` decides, a copy drops the held
 files, and the box itself gets them back if Proxmox wrote none. The reset
@@ -2497,7 +2497,7 @@ alone would be too late: networkd applies a file the moment the card
 appears, before `settle` looks again. A VM's address comes from its SMBIOS
 at each boot, so nothing is held there. Templates 9800 and 9806 carry
 version 5, so the LXC template needs a rebuild before production has this;
-until then bb-box's check refuses such a fork. A take now records
+until then alia-box's check refuses such a fork. A take now records
 `forkSafe` 6 on a box with the new program.
 
 Tests: `test/identity-reset.test.ts`, 2: an LXC copy started without its
@@ -2517,7 +2517,7 @@ passed. The docs, site and reference checks ran again on the last docs.
 Rebased onto main `812f78dc` (069 unit 4), in a fresh copy: `npx tsc`
 passes and the reference is current; the node suite ran 3,196 tests, 2,908
 passed, 0 failed, 288 skipped; vitest ran 423, all passed.
-The second separate BB's boxes, forks and snapshots were removed, and the
+The second separate VesnALIA's boxes, forks and snapshots were removed, and the
 lead's `leftovers` found no guest of its install.
 
 ### After the reviews
@@ -2526,11 +2526,11 @@ Two reviews read the three commits above: Astra asked for eight fixes and
 Opus for two, with three more to follow. All of them are in. Where they
 changed what is written above, this section is what holds now.
 
-**A clone cannot start until bb-box arms it.** The first request after
+**A clone cannot start until alia-box arms it.** The first request after
 Proxmox's clone task ends sets `onboot` 0 and every link down
-(`disarm`, `src/backends/proxmox/forks.ts`). bb-box then gives the copy
+(`disarm`, `src/backends/proxmox/forks.ts`). alia-box then gives the copy
 its new MAC addresses, its own address and, on QEMU, its new SMBIOS UUID,
-each with its link still down. Before the first start, bb-box brings the
+each with its link still down. Before the first start, alia-box brings the
 links up (`armFork("network")`). It sets `onboot` 1 only after the check
 before ready passes (`armFork("boot")`). A held copy for a restore is
 disarmed by the same first request, before its labels. A reboot of the
@@ -2539,14 +2539,14 @@ node before the check passed would leave the fork stopped.
 **Known limit: the gap before the disarm.** A full clone copies the
 snapshot's `onboot: 1` and its source's network settings at once, while
 Proxmox holds the clone's lock. The lock goes as the task ends, and
-bb-box's disarm lands one task poll (50 ms) and two requests later. A
+alia-box's disarm lands one task poll (50 ms) and two requests later. A
 hookscript could close that gap, but the lead chose not to add one, for
 these reasons:
 
 - the lock covers the whole copy
 - a node that reboots inside the gap starts the copy with a MAC address
   of its own, so its first boot resets it
-- bb-box's recovery deletes a half-made fork when it starts again
+- alia-box's recovery deletes a half-made fork when it starts again
 
 [The node-side sampling](#the-combined-live-recheck) found the gap under
 217 ms, with one 0.1 s sample in it.
@@ -2559,7 +2559,7 @@ them, which raced Proxmox's own write. Version 7:
 - holds the copied `ethN.network` files at the boot's first look, before
   it waits, when the box has no `eth` card and none of the marker's MAC
   addresses on any interface (`ip -j link`, so a renamed card counts)
-- holds them in `/var/lib/bb-box/held-network`, flushed to disk, so a
+- holds them in `/var/lib/alia-box/held-network`, flushed to disk, so a
   restart before `settle` decides loses nothing: the next boot's decision
   puts them back for the box itself if Proxmox wrote none, or drops them
   for a copy
@@ -2570,7 +2570,7 @@ them, which raced Proxmox's own write. Version 7:
   start, or for the box itself with a renamed card that carries its
   marker's address
 
-Template builds remove `/var/lib/bb-box/held-network` (`finalize.sh`).
+Template builds remove `/var/lib/alia-box/held-network` (`finalize.sh`).
 
 **Each backend forks only from a version known safe.** An offer now says
 `forkSafeFrom`: 7 on Proxmox LXC, as earlier versions can bring up a
@@ -2595,12 +2595,12 @@ ready refuses a fork whose reset reports an older version.
   are never taken as a reset.
 - The marker must match and be armed, and the reset enabled.
 
-**A failed clean-up is not hidden.** When bb-box cannot delete a failed
+**A failed clean-up is not hidden.** When alia-box cannot delete a failed
 fork's guest, for example while Proxmox still holds its clone lock, it
-stops the guest, keeps it on the box's record and says so: "bb-box could
+stops the guest, keeps it on the box's record and says so: "alia-box could
 not delete its guest (VMID) yet (why), so it stopped it. It tries again at
 each sweep, and never hands the fork over." The operation stays unknown,
-with "Its guest (VMID) is not deleted yet; bb-box tries again at each
+with "Its guest (VMID) is not deleted yet; alia-box tries again at each
 sweep", and keeps its pin. The sweep deletes the guest later and then
 settles the operation. Recovery after a restart leaves such a box for the
 sweep.
@@ -2613,7 +2613,7 @@ first checks the box as a fork of it would be checked:
 - the box's identity reset now, against the backend's minimum version
 
 Only then does it take "for a fork". If the fork is still refused after
-the take, bb-box deletes that snapshot and says so. The take's words,
+the take, alia-box deletes that snapshot and says so. The take's words,
 including an older snapshot evicted at the box's limit, are passed on.
 
 **Names and kept snapshots.**
@@ -2657,17 +2657,17 @@ skipped; vitest ran 423, all passed. The node suite includes the docs, site
 and reference checks; they ran again on the last docs.
 
 [`proxmox-root.sh`](070-snapshots/unit-7/proxmox-root.sh) changed with
-these fixes. `card-late` now waits for the fork as bb-box holds it:
+these fixes. `card-late` now waits for the fork as alia-box holds it:
 stopped, no lock, `onboot` not set, net0's link down. It takes how long to
 wait after the start, and puts net0 back with its link up. The new `sample`
-reads the clone's config every 0.1 s until bb-box's arm. Both take several
+reads the clone's config every 0.1 s until alia-box's arm. Both take several
 VMIDs, as a fork's VMID is not known ahead. Before the live run, both ran
 against a fake `/etc/pve` and `pct` on a box: `sample` passed a 20 ms gap
 and caught a 600 ms one.
 
 ### The combined live recheck
 
-On the second separate BB, with this build and the same lent backends.
+On the second separate VesnALIA, with this build and the same lent backends.
 src-lxc was a new Proxmox LXC machine of the person's, at .185, with
 version 7 installed by hand. Its snapshot "v7" was recorded `forkSafe` 7,
 flushed, with its identity hashes. The lead ran two commands of
@@ -2675,7 +2675,7 @@ flushed, with its identity hashes. The lead ran two commands of
 after reading it:
 
 - `sample`, started before the fork: it read the new guest's config from
-  `/etc/pve` every 0.1 s, with whether it ran, until bb-box's arm
+  `/etc/pve` every 0.1 s, with whether it ran, until alia-box's arm
 - `card-late`, with 10 s: it took the held fork's card off and put it back,
   link up, 11 s into its first boot, inside the boot's 30 s wait
 
@@ -2686,27 +2686,27 @@ forked`) and became VMID 3170, at .180.
 | --- | --- |
 | 12:20:50.067 | the clone's config appeared: `lock: create`, `onboot: 1`, link up, as the snapshot held |
 | 12:20:57.603 to .712 | the lock went: the last locked sample, then one with `onboot: 1`, no lock, link up, stopped |
-| 12:20:57.812 | bb-box held the fork; the hold comes after the disarm and the addressing |
+| 12:20:57.812 | alia-box held the fork; the hold comes after the disarm and the addressing |
 | 12:20:57.820 | the next sample: `onboot: 0`, link down |
 | 12:21:08.208 | card-late removed net0 (the fork's own MAC address and .180, `link_down=1`) |
 | 12:23:57.995 | the fork ran, with no card, `onboot: 0` |
-| 12:23:58.876 | the boot's first look: "held its network settings ( eth0.network ) aside in /var/lib/bb-box/held-network, as it started with no card of its own" |
+| 12:23:58.876 | the boot's first look: "held its network settings ( eth0.network ) aside in /var/lib/alia-box/held-network, as it started with no card of its own" |
 | 12:24:09.229 | "this box is a copy, so it resets its identity": the card came during card-late's `pct set`, which returned at .282 with net0 back, link up |
 | 12:24:09.347 | the reset removed `host_zhgynaepxa`, src-lxc's copied machine, and made new host keys and a new machine ID |
 | 12:24:09.425 | systemd-networkd started, configuring eth0 with Proxmox's file for the fork |
 | 12:24:09.507 | ssh started |
-| 12:24:09.8 | bb-box's check passed (30 ms) and wrote the fork's marker |
+| 12:24:09.8 | alia-box's check passed (30 ms) and wrote the fork's marker |
 | 12:24:09.840 | `onboot: 1`, the arm, the first sample with it and no lock since .712 |
-| 12:24:11.604 | joined BB as `host_f63v89a5ig`, ready 200 s after the request (180 s of it the hold; network 10.8 s) |
+| 12:24:11.604 | joined VesnALIA as `host_f63v89a5ig`, ready 200 s after the request (180 s of it the hold; network 10.8 s) |
 
 | Check | Result |
 | --- | --- |
 | The hold from the first look | 0.9 s into the boot, with no card, 10.4 s before the card came |
-| The reset before the network | at .347, before networkd (.425), ssh (.507) and BB's daemon (12:24:10.49) |
-| Addresses | lo and eth0 .180 only; `eth0.network` said .180; `/var/lib/bb-box/held-network` gone; `boot=reset`, version 7, the marker naming the fork's own box |
-| The source | src-lxc kept .185 and its one session, opened at 12:17:03.497; BB's server shows no other session and no close for its host ID, and its daemon logged no disconnect |
-| No start before the arm | `onboot: 0` from .820 until the arm at 12:24:09.840, after the check passed; links down until bb-box brought them up for the start |
-| The gap | one sample, at 12:20:57.712, had `onboot: 1` with no lock: the known limit above. The samples put the gap after .603 and before .820, so under 217 ms, and bb-box's hold at .812 agrees. Its expected width is one task poll, 50 ms, and two requests. The lead accepted it |
+| The reset before the network | at .347, before networkd (.425), ssh (.507) and VesnALIA's daemon (12:24:10.49) |
+| Addresses | lo and eth0 .180 only; `eth0.network` said .180; `/var/lib/alia-box/held-network` gone; `boot=reset`, version 7, the marker naming the fork's own box |
+| The source | src-lxc kept .185 and its one session, opened at 12:17:03.497; VesnALIA's server shows no other session and no close for its host ID, and its daemon logged no disconnect |
+| No start before the arm | `onboot: 0` from .820 until the arm at 12:24:09.840, after the check passed; links down until alia-box brought them up for the start |
+| The gap | one sample, at 12:20:57.712, had `onboot: 1` with no lock: the known limit above. The samples put the gap after .603 and before .820, so under 217 ms, and alia-box's hold at .812 agrees. Its expected width is one task poll, 50 ms, and two requests. The lead accepted it |
 
 The fork's file from the take was there. Afterwards src-lxc and lxc-v7
 were removed with their snapshot.
@@ -2719,9 +2719,9 @@ in. Each probe is now a regression test, and each test fails on the
 commit before these fixes.
 
 **A restart during a fork's first start keeps its guest** (Astra 5). When
-bb-box stopped while a fork was starting, the fork's record dropped its
-guest, which went on running. After the restart, bb-box copied the
-snapshot again beside it. Now bb-box leaves a fork's record as it is when
+alia-box stopped while a fork was starting, the fork's record dropped its
+guest, which went on running. After the restart, alia-box copied the
+snapshot again beside it. Now alia-box leaves a fork's record as it is when
 it stops, guest included. After the restart, it makes the copy again only
 once the old guest is deleted. On Proxmox, the backend disarms the old
 guest, deletes it, and checks that it is gone. If it cannot delete it, it
@@ -2752,7 +2752,7 @@ but a snapshot the take evicted does not come back.
 
 **An abandoned clone is disarmed before each delete** (Opus's follow-up).
 A fork can fail, be released or be cut off by a restart while Proxmox
-still holds its clone lock. bb-box now disarms the clone, `onboot` 0 and
+still holds its clone lock. alia-box now disarms the clone, `onboot` 0 and
 every link down, before each attempt to delete it:
 
 - in the backend's own clean-up after a failed or cut-short copy
@@ -2761,18 +2761,18 @@ every link down, before each attempt to delete it:
   at each sweep after
 
 A Proxmox request waits up to 120 s for a lock, so the disarm lands as soon
-as the clone task ends. If the lock outlasts that, bb-box skips that
+as the clone task ends. If the lock outlasts that, alia-box skips that
 delete, which would wait on the same lock, and tries again at the next
 sweep. The disarm finds a fork's clone by its description, which names
 the fork from the clone's start: the clone's copied tags name its source
-until bb-box labels it.
+until alia-box labels it.
 
 Tests, 5:
 
 - `test/forks.test.ts`:
   - the real check script with a failing grep, `sha256sum` and `sed`:
     each item unreadable, and the fork refused
-  - bb-box stopping during a fork's first start, then recovery: the guest
+  - alia-box stopping during a fork's first start, then recovery: the guest
     kept on the record, and deleted before the copy is made again
   - room and a taken name refused before `box_fork`'s take, with both
     snapshots still there at the limit
@@ -2791,7 +2791,7 @@ covers.
 ### Conditions and open questions
 
 - **Rebuild the LXC template with version 7** of the identity program
-  before arming Proxmox LXC. Until then no LXC snapshot forks: bb-box
+  before arming Proxmox LXC. Until then no LXC snapshot forks: alia-box
   forks Proxmox LXC boxes only from version 7. A snapshot keeps the
   version it was taken under, so snapshots from before the rebuild never
   fork on LXC. The QEMU template forks from version 5 and needs the
@@ -2818,7 +2818,7 @@ lead's answers are in 070's [Decided during unit 8](070-snapshots.md#decided-dur
   backend that keeps past a release, and with a fork plan that is `ok`.
   Otherwise it is refused, and the row's Keep… is off, with 070's words:
   "Taken before old-desk's image had the identity reset: "old image" could
-  not be forked after a release, so bb-box does not keep it." The check
+  not be forked after a release, so alia-box does not keep it." The check
   says what keeping costs and warns, without refusing, when a release
   would find no room or VMID for the held copy at today's size. Keep and
   renewal pass the ceiling's rule (`keep`, `renew`). Each change is
@@ -2840,7 +2840,7 @@ lead's answers are in 070's [Decided during unit 8](070-snapshots.md#decided-dur
   write, holding the disk only. The copy's tags carry the box, the
   snapshot, its time, its keep date, the box's kind and its reset version.
   `held-copy-made` is logged. If a copy cannot be made, the release stops
-  and deletes nothing: "Release did not finish: bb-box could not copy
+  and deletes nothing: "Release did not finish: alia-box could not copy
   "roomy", which you kept: ...". With `snapshots.db` unreadable, the
   release reads the provider's labels and stops while any says kept.
 - **Keep's recovery check.** An unsettled `hold-copy` operation is finished
@@ -2854,13 +2854,13 @@ lead's answers are in 070's [Decided during unit 8](070-snapshots.md#decided-dur
   off, at the person's word, then the release goes on. The box's menu and
   your machines' Remove offer it, with Release again, once a release
   stopped for a copy (`releaseHeldForKept` on the box's view); the CLI's
-  `bb box release` and `bb box machines remove` take `--delete-kept`.
+  `alia box release` and `alia box machines remove` take `--delete-kept`.
 - **Forks of held copies**: any held copy that is a template forks, by a
   full clone of the template (`forkByFullClone` with `from: "held-copy"`);
   a kept snapshot of a released box forks as one of the person's machines,
   from the tab or the CLI. `guestIdentity` reads a held copy's config.
 - **Expiry**: the sweep deletes a kept snapshot after its date, held copy
-  and all, as a delete by bb-box, "its keep ended", never while an
+  and all, as a delete by alia-box, "its keep ended", never while an
   operation pins it. A living box's kept snapshot goes the same way.
 - **The owner's answers**: found snapshots are no longer deleted after 7
   days (`remove-found` is gone); a found one that its box comes back for
@@ -2872,7 +2872,7 @@ lead's answers are in 070's [Decided during unit 8](070-snapshots.md#decided-dur
   also when the sweep retries a release that a locked clone stopped.
 - **The Snapshots tab**, `src/app/snapshots-tab.tsx` with its data from
   `snapshots.tab` (`src/plugin/snapshots-tab.ts`): a third tab after
-  Machines and Threads, with its count, at `/plugins/bb-box/desktop/snapshots`;
+  Machines and Threads, with its count, at `/plugins/alia-box/desktop/snapshots`;
   the line under the tabs and what needs the person in amber; a card per
   box, a released box marked so; search, filters with counts (where, holds,
   taken by, kept, undos, goes within 7 days), sort, and Select with bulk
@@ -2884,12 +2884,12 @@ lead's answers are in 070's [Decided during unit 8](070-snapshots.md#decided-dur
 - **RPC**: `snapshot.keepCheck`, `snapshot.keep`, `snapshot.unkeep`;
   delete, rename, note, picture, forkCheck and fork also take a released
   box's snapshot.
-- **The CLI**: `bb box snapshot keep <box> <snapshot> [--days|--until]
+- **The CLI**: `alia box snapshot keep <box> <snapshot> [--days|--until]
   [--check]` and `unkeep`; `fork`, `keep`, `unkeep` and `delete` find a
   released box's snapshot by its box's ID, without a thread.
 - **Settings**: "Keep keeps a snapshot for", 30 days, 1 to 365, under a
   Keep group on the Snapshots page, in Find and in the overview's row
-  ("5 per box · kept 30 days · ..."), and `bb box option set
+  ("5 per box · kept 30 days · ..."), and `alia box option set
   general.snapshots.keepDays`.
 - **Docs**: the guide's [Keeping a snapshot](../guide/snapshots.md#keeping-a-snapshot),
   [A held copy](../guide/snapshots.md#a-held-copy) and
@@ -2944,39 +2944,39 @@ tests, each on a set clock where time matters:
   search, Select and bulk Keep with what it skips; Release and delete what
   you kept. Unit 4's page tests now expect the keep length.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i`, `HOME`, `PATH` and `BB_BOX_LIVE_CHECKS=1`, in
-a Proxmox LXC box, with bb-box installed from this branch
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i`, `HOME`, `PATH` and `ALIA_BOX_LIVE_CHECKS=1`, in
+a Proxmox LXC box, with alia-box installed from this branch
 ([unit 7's live-setup.sh](070-snapshots/unit-7/live-setup.sh)). The lead
 lent it a Proxmox LXC backend (template 9800, and 9803 without the
 identity reset; VMIDs 3170 to 3181) and a Proxmox QEMU backend (9806, and
 9804 for Windows; 3182 to 3189), on LVM-thin, with the production token,
-and `general.identityResetBackends` was set to both on that BB only. Boxes
+and `general.identityResetBackends` was set to both on that VesnALIA only. Boxes
 were machines of the person's. The node is written pve-1. Root steps were
 read-only, by the lead, with unit 7's
 [`proxmox-root.sh`](070-snapshots/unit-7/proxmox-root.sh).
 
 | Check | Result |
 | --- | --- |
-| Keep, LXC and QEMU, after a file was written and a take | `--check` said "If keep-lxc is released, bb-box first copies this snapshot in full into a template that cannot start: up to about 38 s, and about 2.8 GB, at most 17 GB, on pve-1's local-lvm until 2026-11-30, at no charge."; on the VM "up to 17 GB", as Proxmox gives no disk use for VMs. Kept until 2026-11-30 |
-| G15, release, QEMU | held copy into 3183, then the guest deleted; 9.3 s for `bb box machines remove`. Listed "its box was released 2026-10-31 · a held copy, guest 3183" |
-| G15, release, LXC, first try | stopped, deleting nothing: "Proxmox LXC on pve-1 did not make guest 3171 a template". Proxmox's template call for a container answers before its worker ends, so bb-box read the config too soon; the part-made copy was deleted. Fixed: `templateCopy` waits until Proxmox lists the template (QEMU's call ends with it). A second try, with a mistake of mine in that fix, stopped the same way and deleted nothing |
+| Keep, LXC and QEMU, after a file was written and a take | `--check` said "If keep-lxc is released, alia-box first copies this snapshot in full into a template that cannot start: up to about 38 s, and about 2.8 GB, at most 17 GB, on pve-1's local-lvm until 2026-11-30, at no charge."; on the VM "up to 17 GB", as Proxmox gives no disk use for VMs. Kept until 2026-11-30 |
+| G15, release, QEMU | held copy into 3183, then the guest deleted; 9.3 s for `alia box machines remove`. Listed "its box was released 2026-10-31 · a held copy, guest 3183" |
+| G15, release, LXC, first try | stopped, deleting nothing: "Proxmox LXC on pve-1 did not make guest 3171 a template". Proxmox's template call for a container answers before its worker ends, so alia-box read the config too soon; the part-made copy was deleted. Fixed: `templateCopy` waits until Proxmox lists the template (QEMU's call ends with it). A second try, with a mistake of mine in that fix, stopped the same way and deleted nothing |
 | G15, release, LXC, after the fix | held copy into 3173 at the next sweep, then the guest deleted |
 | G16, the held copies' configs (lead, read only) | 3173 and 3183: `template: 1`, `onboot: 0`, `link_down=1`, MAC addresses of their own, tags `held-copy`, `kept.2026-11-30`, `reset.7`, `snapshot.<id>`; 3183 a new SMBIOS UUID. 3173 still carries its source's `ip=` in net0, inert behind its link and as a template; a fork from it gets its own VMID's address, which the check before ready requires |
-| G15, restart BB, then fork | BB's whole server stopped and started again; both kept snapshots still listed on their held copies. LXC fork ready in 11 s, QEMU in 16 s, each one of your machines; each read "written before the take", not the line written after it; `boot=reset`, its reset removing keep-lxc's copied BB machine |
-| G16, restart before the template, LXC | `hold-next --at copied`, then a release: held after the clone (3176, not a template); `bb plugin reload bb-box` at 14:28:13; at 14:28:15 "Deleted guest 3176, the held copy of snapshot ... : it was not a template yet after bb-box restarted, so it is not trusted. bb-box makes it again from the snapshot."; made again as 3177 by 14:28:27; the release then finished |
+| G15, restart VesnALIA, then fork | VesnALIA's whole server stopped and started again; both kept snapshots still listed on their held copies. LXC fork ready in 11 s, QEMU in 16 s, each one of your machines; each read "written before the take", not the line written after it; `boot=reset`, its reset removing keep-lxc's copied VesnALIA machine |
+| G16, restart before the template, LXC | `hold-next --at copied`, then a release: held after the clone (3176, not a template); `alia plugin reload alia-box` at 14:28:13; at 14:28:15 "Deleted guest 3176, the held copy of snapshot ... : it was not a template yet after alia-box restarted, so it is not trusted. alia-box makes it again from the snapshot."; made again as 3177 by 14:28:27; the release then finished |
 | G16, the same, QEMU | 3186 deleted, made again as 3187, the release finished |
-| G15, too little room | "Refuse new snapshots when a host's storage is past" set to 50 (the pool was about 54% full): Keep's `--check` warned "At today's size, a release would not finish: ... it would be 55% full, past your settings' 50%."; the release stopped with the same words and deleted nothing; `bb box machines remove --delete-kept` then released it with its snapshot |
-| G15, before the identity reset | a box from 9803: "Taken before old-desk's image had the identity reset: "old image" could not be forked after a release, so bb-box does not keep it." |
+| G15, too little room | "Refuse new snapshots when a host's storage is past" set to 50 (the pool was about 54% full): Keep's `--check` warned "At today's size, a release would not finish: ... it would be 55% full, past your settings' 50%."; the release stopped with the same words and deleted nothing; `alia box machines remove --delete-kept` then released it with its snapshot |
+| G15, before the identity reset | a box from 9803: "Taken before old-desk's image had the identity reset: "old image" could not be forked after a release, so alia-box does not keep it." |
 | G15, Windows | a Windows desktop on QEMU: "Proxmox QEMU on pve-1 takes no snapshots of its windows-desktop boxes.", so there is nothing to keep there; released |
-| Keep dates in labels | bb-box disabled, `snapshots.db` deleted, enabled: all 9 kept snapshots found again as kept with their dates, 4 held copies and 5 snapshots of living boxes; the held copies with `forkSafe` 7 from their tags |
+| Keep dates in labels | alia-box disabled, `snapshots.db` deleted, enabled: all 9 kept snapshots found again as kept with their dates, 4 held copies and 5 snapshots of living boxes; the held copies with `forkSafe` 7 from their tags |
 | A held copy found again forks | the copies above, made before held copies carried the box's kind, came back with kind and system unknown, so their fork was refused as not Linux. Fixed (the `kind.` tag, and the system from the backend's offer of that kind); a new one, found again the same way, forked: ready in 9.7 s, the file from before the take, `boot=reset` |
 | G9, a restore's target in the tab's bulk actions | a restore held after its stop: bulk Delete and bulk Keep each skipped its target with ""restore target" is in use by the restore that began at 14:44 UTC."; the restore then finished |
 | The page and the tab, keyboard only, 1,440 and 390 px | [keep-page.mjs](070-snapshots/unit-8/keep-page.mjs). Box page, 1,440: the row's menu in 23 Tab presses, Keep… by the arrows, focus on the date (30 Nov), kept 1.7 s after Enter, focus back on the menu's button. 390: the menu a sheet, 17 Tab presses, Keep… by Tab, kept 1.3 s after Enter, focus back. Tab, 1,440: Select in 30 Tab presses, the row's checkbox by Space, the bar's Keep…, the dialog listing the snapshot's cost, kept. 390: Select in 12 presses, the same. Row actions always shown at 390 px, Fork in the menu |
 
-At the end every machine, held copy and snapshot of the separate BB was
+At the end every machine, held copy and snapshot of the separate VesnALIA was
 released or deleted, and the lead's `leftovers` listed no guest in 3170 to
 3189.
 
@@ -2988,8 +2988,8 @@ not in the repository: they show the test node's name.
 
 | Gate | Result |
 | --- | --- |
-| G15 keep-lasts | **Passed** on Proxmox LXC and QEMU: Keep, release, a restart of BB, then a fork from the kept snapshot read the file written before the take; with too little room the release stopped and deleted nothing; Keep refused, with why, on a snapshot taken before the identity reset. On a Windows box there is no snapshot to keep: Windows boxes take none in this build, and the offer for them is `no` |
-| G16 held-copy-inert | **Passed except the node's reboot**: `pct config` and `qm config` (by the lead) show each held copy a template, `onboot` 0, links down and its own MAC, the QEMU one a new SMBIOS UUID; bb-box restarted after a clone and before its template, on LXC and QEMU: the copy deleted and made again from the snapshot, and the release finished. The remade copy's files were read through a fork (G15's), whose reset ran. **Not proved**: the node's reboot, as no node is rebooted; unit 3's earlier-guest checks stand |
+| G15 keep-lasts | **Passed** on Proxmox LXC and QEMU: Keep, release, a restart of VesnALIA, then a fork from the kept snapshot read the file written before the take; with too little room the release stopped and deleted nothing; Keep refused, with why, on a snapshot taken before the identity reset. On a Windows box there is no snapshot to keep: Windows boxes take none in this build, and the offer for them is `no` |
+| G16 held-copy-inert | **Passed except the node's reboot**: `pct config` and `qm config` (by the lead) show each held copy a template, `onboot` 0, links down and its own MAC, the QEMU one a new SMBIOS UUID; alia-box restarted after a clone and before its template, on LXC and QEMU: the copy deleted and made again from the snapshot, and the release finished. The remade copy's files were read through a fork (G15's), whose reset ran. **Not proved**: the node's reboot, as no node is rebooted; unit 3's earlier-guest checks stand |
 | G9 serialised-and-eligible, Keep's part | live: a restore's target skipped by bulk Delete and bulk Keep, named; expiry held by a fork's pin, in the tests. Rename of a pinned target was proved in unit 6 |
 
 ### Choices and deviations
@@ -3006,7 +3006,7 @@ not in the repository: they show the test node's name.
   use, which the token cannot read. The ceiling is not checked at release,
   as the copy replaces its snapshot in the rate. After the reviews it also
   counts and makes reservations, and fails closed.
-- **Expiry is a delete by bb-box** ("its keep ended"), not an operation
+- **Expiry is a delete by alia-box** ("its keep ended"), not an operation
   of kind `expire`, so it shares the delete's recovery.
 - **A released box's kept snapshot is not unkept**: kept longer or deleted.
 - **The tab's rows reuse the box page's**, with what a row holds and its
@@ -3023,7 +3023,7 @@ not in the repository: they show the test node's name.
   kept. Labels written from now on carry the version, so a living box's
   snapshot found again forks.
 - **Expiry was not run live**: its date cannot be brought forward on a live
-  BB; the tests run it on a set clock.
+  VesnALIA; the tests run it on a set clock.
 - **The leftover guest of an ended thread with a kept snapshot** was run in
   the tests only: it needs a box record lost while its thread ends.
 - **Thin metadata** is still not read (unit 1a's limit), so a held copy's
@@ -3049,7 +3049,7 @@ regression test for each.
 | The clone waited at most 180 s, so a disk over about 75 GiB never copied, and each retry cloned again | Opus 1 | The clone's wait is 3 times the plan's estimate, at least 180 s (`cloneWaitMs`), for every full clone, held copies and forks of them included; `waitTask` waits that long in the same run | "review: a clone's wait grows with its disk ..." |
 | The bulk dialog checked again on every render, and sent `[]` once the selection emptied | Opus 3 | The IDs are frozen when the dialog opens | "the bulk dialog checks the snapshots chosen when it opened, once ..." |
 | "Release anyway" and "Remove anyway" dropped "delete what you kept" | Opus 4 | The in-use state keeps `deleteKept` and passes it on | "Release and delete what you kept, then Release anyway ..." |
-| The machine left BB before the copies were made | Opus 7 | The release makes the copies first, then takes the machine out of BB | "a release leaves BB's machine list only once its kept snapshots are copied" |
+| The machine left VesnALIA before the copies were made | Opus 7 | The release makes the copies first, then takes the machine out of VesnALIA | "a release leaves VesnALIA's machine list only once its kept snapshots are copied" |
 | A leftover guest of an ended thread was judged by the records alone | Opus 8 | It is kept while a snapshot's label says kept and the records do not, or while the labels cannot be read; a backend that takes no snapshots has none to read | "a leftover guest of an ended thread whose label says kept ...", and plugin.test's restored-box test |
 | "Keep 30 more days…" counted from today; Select changed its name while pressed; the tab was blank while loading or after an error | Opus 9 | Renewal adds the days to the keep date; Select keeps its name with `aria-pressed`; the tab says "Reading the snapshots…" and shows the error | "a keep date: ... a renewal by default adds the days to the keep date", the app's bulk test, "the Snapshots tab says it is reading them until its answer comes" |
 | Test gaps: a restart while the clone task runs, after the record moved, inside `holdKeptOn` | Opus | Tests for each | "a restart while the copy's task still runs ...", "a restart after the record moved to its held copy ...", "a leftover guest ... stays until the records agree" |
@@ -3059,32 +3059,32 @@ the release tried to delete the part-made copy while Proxmox was still
 cloning it. The copy's config did not exist yet, so the delete counted as
 done and the operation was settled. The clone then finished with its
 source box's tags, and after the box's release the sweep restored it as a
-box, `bb-box-copy-3171`. Two fixes, each with tests that fail without
+box, `alia-box-copy-3171`. Two fixes, each with tests that fail without
 them:
 
 - A copy that fails while its task may still run stays unsettled, and the
   sweep deletes the part-made copy only once the task ends.
-- A guest named `bb-box-copy-<vmid>` is listed as naming no box, so it is
+- A guest named `alia-box-copy-<vmid>` is listed as naming no box, so it is
   released as a leftover once no operation uses it, never restored.
 
 The tests are "a release whose copy outlasts its wait while the provider
 still makes it ...", and on each Proxmox backend, "a held copy cut short
 before its own labels ... never one to restore".
 
-**Live, after the fixes**, on a new separate BB set up as before, with the
-same backends and VMIDs, armed on that BB only:
+**Live, after the fixes**, on a new separate VesnALIA set up as before, with the
+same backends and VMIDs, armed on that VesnALIA only:
 
 | Check | Result |
 | --- | --- |
 | Clone wait, test build (no 180 s floor, least wait 1 s), estimate factor 0 | LXC and QEMU releases stopped and deleted nothing: "Proxmox TASK vzclone ... failed (504): task did not finish in time." |
 | The same, factor 3 (3 × 16 GiB × 2.4 s = 115 s) | both releases finished, held copies made in 9.5 s and 6.4 s; a fork from the LXC copy was ready in 8.9 s, with the file from before the take and `boot=reset` |
-| The same, factor 0, after the fix above | each release stopped: "Proxmox LXC on pve-1 may still be making its copy, guest 3175, so bb-box deletes that copy only once the task ends, at a later sweep."; the operations stayed unknown with their reservations; the sweep deleted each part-made copy once its task ended; nothing was restored as a box. With factor 3, the sweep finished both releases |
-| Room: "Refuse new snapshots when a host's storage is past" lowered to 55 on the test BB, with the pool about 54.7% full; two LXC boxes of 40 GiB, each with a 12 GiB file made by `fallocate`, so each copy is about 16 GB | the first release, held after its record (`hold-next --at planned`), reserved 15,716,274,176 bytes on its `hold-copy` operation; the second was refused: "pve-1's storage local-lvm has 3536 GB free, beside 16 GB that snapshots and copies being made there hold, and with the held copy, about 16 GB, it would be 55.1% full, past your settings' 55%."; the first then finished, and its reservation ended |
-| Proxmox's API cut (`iptables` on the test BB), the setting back at 85 | the release stopped: "bb-box could not read where it would be copied, so it deleted nothing: ... cannot reach the Proxmox API"; the rule was then removed |
-| The machine while a release stopped for a copy | still listed by `bb host list` as connected; gone once the copy was made |
+| The same, factor 0, after the fix above | each release stopped: "Proxmox LXC on pve-1 may still be making its copy, guest 3175, so alia-box deletes that copy only once the task ends, at a later sweep."; the operations stayed unknown with their reservations; the sweep deleted each part-made copy once its task ended; nothing was restored as a box. With factor 3, the sweep finished both releases |
+| Room: "Refuse new snapshots when a host's storage is past" lowered to 55 on the test VesnALIA, with the pool about 54.7% full; two LXC boxes of 40 GiB, each with a 12 GiB file made by `fallocate`, so each copy is about 16 GB | the first release, held after its record (`hold-next --at planned`), reserved 15,716,274,176 bytes on its `hold-copy` operation; the second was refused: "pve-1's storage local-lvm has 3536 GB free, beside 16 GB that snapshots and copies being made there hold, and with the held copy, about 16 GB, it would be 55.1% full, past your settings' 55%."; the first then finished, and its reservation ended |
+| Proxmox's API cut (`iptables` on the test VesnALIA), the setting back at 85 | the release stopped: "alia-box could not read where it would be copied, so it deleted nothing: ... cannot reach the Proxmox API"; the rule was then removed |
+| The machine while a release stopped for a copy | still listed by `alia host list` as connected; gone once the copy was made |
 
-The threshold was lowered on the test BB only, rather than filling the
-shared pool. At the end the BB had no snapshot, box or unsettled
+The threshold was lowered on the test VesnALIA only, rather than filling the
+shared pool. At the end the VesnALIA had no snapshot, box or unsettled
 operation, and the lead's `leftovers` listed no guest in 3170 to 3189.
 
 After the fixes, on this unit's two commits over main `cf84a20a`, in a
@@ -3103,20 +3103,20 @@ pass now.
 | Finding | From | Fix | Tests |
 | --- | --- | --- | --- |
 | After records loss, a rebuilt, empty `snapshots.db` is healthy. If the reconcile then failed, a release found no kept record and deleted the guest, kept snapshot and all | Astra B1 (P1) | Every release lists its guest's own snapshots (`snapshotsOn`, one call on Proxmox) before it deletes anything. It stops, deleting nothing, when it cannot read them, or when a label says kept and the records do not, until the sweep has recorded it | "re-review B1: after records loss, every release reads its guest's own labels ...", and on Proxmox LXC "a release's label check lists one guest's own snapshots ..." |
-| A clone slower than its wait, which ended well, was deleted and cloned again at every retry | Astra B2, Opus N2 | bb-box waits for the same task across retries. Once it ends well, the copy is labelled (`labelCopy`, split out of `copySnapshot`), disarmed and made a template, if its wait ran out in this run. A copy left by a restart is still deleted and made again, as G16 proved | "re-review B2: a clone slower than its wait that ends well ...", and the rewritten "a release whose copy outlasts its wait ..." |
+| A clone slower than its wait, which ended well, was deleted and cloned again at every retry | Astra B2, Opus N2 | alia-box waits for the same task across retries. Once it ends well, the copy is labelled (`labelCopy`, split out of `copySnapshot`), disarmed and made a template, if its wait ran out in this run. A copy left by a restart is still deleted and made again, as G16 proved | "re-review B2: a clone slower than its wait that ends well ...", and the rewritten "a release whose copy outlasts its wait ..." |
 | A retry whose submission answer was lost could take the previous clone's task, settle the operation and drop its reservation while the new clone ran | Astra B3 (P1) | Each copy attempt records its start and task (`attempts`, a new column in an appended migration). Recovery looks from this attempt's start only, skips every earlier attempt's task, and stays unsettled while more than one could be its own. Proxmox lists a clone's task under its source's VMID only, so the target VMID cannot be matched from the list | "re-review B3: a copy made again after a restart ..." |
 | "Release and delete what you kept" did not clear an untrusted held copy, though the words offered it | Opus N1 | A stop that taking the keeps off cannot get past (`ReleaseWaits`) no longer offers it, in the words or the menu: an untrusted held copy, a copy still being made, labels that cannot be read, or labels the records do not have yet. An untrusted copy's words say to delete that snapshot | "review 2: a release refuses while a kept snapshot's held copy is not a template ..." |
 
-**Live**, on a new separate BB set up as before, with the same backends
-(VMIDs 3180 to 3189), armed on that BB only:
+**Live**, on a new separate VesnALIA set up as before, with the same backends
+(VMIDs 3180 to 3189), armed on that VesnALIA only:
 
 | Check | Result |
 | --- | --- |
-| B1: a kept snapshot's record deleted from the test BB's `snapshots.db`, then a release at once | stopped: "Box b1-lxc's label on Proxmox LXC on pve-1 says snapshot ... is kept until 2026-11-30, and bb-box's records do not say so yet, so it deleted nothing."; the machine stayed in BB; the sweep found the snapshot from its label, and the release then made its held copy |
-| B1: Proxmox's API cut (`iptables` on the test BB) during a release | stopped: "bb-box could not read the labels of box b3-lxc's snapshots on Proxmox LXC on pve-1, so it cannot tell whether one is kept, and deleted nothing"; "Release and delete what you kept" not offered |
-| B2: test build with a 1 s clone wait, LXC and QEMU | each release stopped while Proxmox copied ("bb-box waits for that task, and makes the copy a template once it ends well"); at the sweep the same copies, 3181 and 3186, became the held copies, one attempt each, with no second clone and nothing restored as a box; forks from both read the file from before the take, `boot=reset` |
+| B1: a kept snapshot's record deleted from the test VesnALIA's `snapshots.db`, then a release at once | stopped: "Box b1-lxc's label on Proxmox LXC on pve-1 says snapshot ... is kept until 2026-11-30, and alia-box's records do not say so yet, so it deleted nothing."; the machine stayed in VesnALIA; the sweep found the snapshot from its label, and the release then made its held copy |
+| B1: Proxmox's API cut (`iptables` on the test VesnALIA) during a release | stopped: "alia-box could not read the labels of box b3-lxc's snapshots on Proxmox LXC on pve-1, so it cannot tell whether one is kept, and deleted nothing"; "Release and delete what you kept" not offered |
+| B2: test build with a 1 s clone wait, LXC and QEMU | each release stopped while Proxmox copied ("alia-box waits for that task, and makes the copy a template once it ends well"); at the sweep the same copies, 3181 and 3186, became the held copies, one attempt each, with no second clone and nothing restored as a box; forks from both read the file from before the take, `boot=reset` |
 
-At the end that BB had no snapshot, box or unsettled operation, and the
+At the end that VesnALIA had no snapshot, box or unsettled operation, and the
 lead's `leftovers` listed no guest in 3170 to 3189.
 
 After these fixes, on this unit's three commits over main `cf84a20a`, in
@@ -3160,7 +3160,7 @@ against a state saved under another macOS build or Tart. Decisions are in
   `providerTask`, `findTasks`, `powerOff`, `rollbackSnapshot`,
   `labelKept`, `guestIdentity`, `forkSnapshot`, `armFork` and `disarmFork`.
   All are POSIX sh scripts on the Mac, as the rest of the backend's are.
-- **Where a snapshot lives.** In `bb-box-snapshots`, beside Tart's `vms`
+- **Where a snapshot lives.** In `alia-box-snapshots`, beside Tart's `vms`
   folder where `~/.tart` leads, as `<snapshot>/vm/`, an APFS copy (`cp -c`)
   of the VM folder's files, and `<snapshot>/label`: the install, box, VM,
   snapshot, time, what it holds, the Mac's macOS build and Tart version at
@@ -3185,14 +3185,14 @@ against a state saved under another macOS build or Tart. Decisions are in
 - **The guard**: the plan and the rollback refuse a snapshot with saved
   memory whose label names another macOS build or Tart than the Mac's now,
   and say to fork it.
-- **macOS's identity reset** (`setup/tart/guest/bb-box-identity-macos.sh`,
+- **macOS's identity reset** (`setup/tart/guest/alia-box-identity-macos.sh`,
   version 2): the Linux program's commands and status lines, so core reads
-  both alike. bb-box installs it in each macOS VM at acquire, beside the
+  both alike. alia-box installs it in each macOS VM at acquire, beside the
   name and the grants (`src/backends/tart/identity.ts`), only in a
   `VirtualMac`, with its LaunchDaemon, and runs its `boot` once there, so a
   new box is `unarmed` until core writes its marker. Its marker names the
-  MAC addresses of the `AppleVirtIONetwork` cards. A copy resets: BB's
-  machine files under `/Users/*/.bb-machines`, BB's LaunchAgents
+  MAC addresses of the `AppleVirtIONetwork` cards. A copy resets: VesnALIA's
+  machine files under `/Users/*/.alia-machines`, VesnALIA's LaunchAgents
   `app.getbb.host-daemon.*`, the access file and the SSH host keys; it
   records a login before it decided as `raced`.
 - **Forks** copy the snapshot's files but `state.vzvmsave` into a VM of the
@@ -3267,11 +3267,11 @@ On a Proxmox LXC box, on a git checkout of the branch rebased on main:
 failed, 288 skipped, the docs, site and reference checks among them; then
 vitest, 443 of 443 in 5 files. `npm run reference` changed nothing more.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i` and `BB_BOX_LIVE_CHECKS=1`, in a Proxmox LXC
-box, bb-box installed from this branch with `bb plugin install path:`.
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i` and `ALIA_BOX_LIVE_CHECKS=1`, in a Proxmox LXC
+box, alia-box installed from this branch with `alia plugin install path:`.
 The lead gave it a Tart backend of its own install on the production Tart
 Mac, with that backend's SSH key put in the box as a file, which was
 deleted once the backend was added; warm VMs off, the desktop kind off,
@@ -3279,24 +3279,24 @@ deleted once the backend was added; warm VMs off, the desktop kind off,
 macOS 27.0.1, Tart 2.40.1, its VMs on an external volume of its own,
 with 1,533 GiB free by `df` at the first take. Another thread held a
 macOS VM there, so this unit ran one macOS VM at a time. Boxes were
-machines of the person's, `macos`, 6 cores and 16 GiB. As in unit 11, a BB
-with no account cannot make them BB machines, so the BB machine was stood
-in for by a random host ID in `~/.bb-machines/live-check/host-id` and a
+machines of the person's, `macos`, 6 cores and 16 GiB. As in unit 11, a VesnALIA
+with no account cannot make them VesnALIA machines, so the VesnALIA machine was stood
+in for by a random host ID in `~/.alia-machines/live-check/host-id` and a
 LaunchAgent `app.getbb.host-daemon.live-check-host_gate.plist`; a process
 writing a counter each second, from `launchctl submit`, showed memory.
 
 | Check | Result |
 | --- | --- |
-| Acquire | ready in 19.2 s: identity reset installed 1.8 s, marker 0.3 s. `bb-box-identity status`: version 2, `boot=unarmed`, `marker=matches`, `armed=yes`; the marker names `en0`'s MAC address only |
-| Take, running | 11 s as bb-box timed it, 12.0 s for the command: suspend, copy, resume. "it holds its disk and memory ... Size: 89 GB, some shared with its box. Price: no charge." The counter process, PID 983, ran on |
+| Acquire | ready in 19.2 s: identity reset installed 1.8 s, marker 0.3 s. `alia-box-identity status`: version 2, `boot=unarmed`, `marker=matches`, `armed=yes`; the marker names `en0`'s MAC address only |
+| Take, running | 11 s as alia-box timed it, 12.0 s for the command: suspend, copy, resume. "it holds its disk and memory ... Size: 89 GB, some shared with its box. Price: no charge." The counter process, PID 983, ran on |
 | Restore | 13 s: stop (suspend) 4.0, undo 0.2, rollback (the copy put back) 0.2, start (resume) 7.8, access 0.1 s. `work.txt` back to "before"; PID 983 running, its counter back at 110, as at the take, from 128; the host ID file the same |
 | Undo | 14 s: stop 3.9, undo 0.2, rollback 0.2, start 9.4, access 0.1 s. `work.txt` "after"; PID 983 at 131, from where the restore suspended it |
-| Fork | the source suspended first (4.9 s), then forked as one of the person's machines: ready in 15 s, 16.2 s for the command, after core's check before ready. In the fork: booted 00:36:55, reset at 00:37:00, the console login at 00:37, `raced=no`; the host ID file and the BB LaunchAgent gone; a new SSH host key (`97b91907...` for `d0413a31...`), a new hardware UUID (`BBBB2925-...` for `C3396674-...`); its marker names its own MAC address and no box; named gate-fork; `work.txt` "before"; no counter process; an access file of its own (another SHA-256) |
+| Fork | the source suspended first (4.9 s), then forked as one of the person's machines: ready in 15 s, 16.2 s for the command, after core's check before ready. In the fork: booted 00:36:55, reset at 00:37:00, the console login at 00:37, `raced=no`; the host ID file and the VesnALIA LaunchAgent gone; a new SSH host key (`97b91907...` for `d0413a31...`), a new hardware UUID (`BBBB2925-...` for `C3396674-...`); its marker names its own MAC address and no box; named gate-fork; `work.txt` "before"; no counter process; an access file of its own (another SHA-256) |
 | The source after its fork | started (resumed) in 7.1 s: the same host ID file, LaunchAgent, hardware UUID and SSH host key, PID 983 still running, `boot=unarmed`, `marker=matches` |
 | Keep | 1.0 s, the date on the snapshot's label. `--check`: "If gate-mac is released, it stays where it is until 2026-12-01." Release 1.9 s: the two undos deleted with the box, the kept one listed "kept until 2026-11-02 · its box was released" |
 | Fork of the kept snapshot after the release | ready in 16 s, one of the person's machines: `boot=reset`, `raced=no`, a new hardware UUID, no host ID file, `work.txt` "before" |
-| Another volume | the lead pointed `bb-box-snapshots` at a 1 GB APFS disk image on the Mac. The take: refused in 0.9 s, before anything stopped: "bb-box cannot take a snapshot of box vol-mac now: the snapshots folder on mac1 is on another volume than its VMs, where a copy would be a full copy of the whole VM." The box ran on, uptime unbroken |
-| Clean up | every machine released, the kept snapshot deleted, a sweep, then: no snapshots, no machines, no boxes, the doctor counting only other installs' VMs. On the Mac, the lead counted 0 snapshot folders, 0 owner files of this install and 0 VMs of its; the disk image detached and deleted. The test backend removed from the separate BB |
+| Another volume | the lead pointed `alia-box-snapshots` at a 1 GB APFS disk image on the Mac. The take: refused in 0.9 s, before anything stopped: "alia-box cannot take a snapshot of box vol-mac now: the snapshots folder on mac1 is on another volume than its VMs, where a copy would be a full copy of the whole VM." The box ran on, uptime unbroken |
+| Clean up | every machine released, the kept snapshot deleted, a sweep, then: no snapshots, no machines, no boxes, the doctor counting only other installs' VMs. On the Mac, the lead counted 0 snapshot folders, 0 owner files of this install and 0 VMs of its; the disk image detached and deleted. The test backend removed from the separate VesnALIA |
 
 Found live, and fixed with a test each:
 
@@ -3336,7 +3336,7 @@ Found live, and fixed with a test each:
 
 - A take of a running macOS box suspends it for about 11 s, while the box
   still shows as ready: its desktop and commands wait.
-- If bb-box stops during a take of a running macOS box, the box stays
+- If alia-box stops during a take of a running macOS box, the box stays
   suspended: the take is settled at the next start, and the person starts
   the box.
 - Each kept or undo copy grows as its box changes, up to the VM's disk and
@@ -3367,13 +3367,13 @@ amended commit, each with a test on the fake Mac that fails before it:
 | Finding | What changed | Test |
 | --- | --- | --- |
 | A restore cut short between its two renames left no VM, then a release left a whole hidden VM (Opus 1, Astra 2, Opus 6) | The journal says `copying`, then `swapping` just before the first rename, with the shell's PID and start time and an attempt token per restore. Reading the box's power or task, its start and its release put back the snapshot's whole copy or the VM's own folder; a live restore holds the start and the release, and makes the power read "stopped"; the VM's state is read again just before the swap; a release deletes `.restore-`, `.replaced-` and `.fork-` folders; a PID with another start time is dead. A restore that did not happen is reported as such, and core starts the box again as it was | "cut short between its two renames", "cut short while it copied", "put right when it starts or its power is read", "a release deletes what a restore or a fork cut short left", "each restore has its own attempt" |
-| A login during the reset went unrecorded, and nothing stopped the source's credentials acting (Opus 4, Astra 1) | The Mac cleans the fork's disk before its first boot, with the guards the lead set after three probes on the Tart Mac: the fork's own image only, its container from its own store, the Data volume by role, never the Mac's container. The in-guest reset reads the console user before and after its removals and records a race only while BB's identity was on the disk | "a fork's disk loses its source's BB machine ... before its first boot", "a fork whose disk would mount from the Mac's own container ... is refused", "records a race when someone logs in while it removes BB's machine", and, from the recheck, "a login during the reset of a disk that holds nothing of BB's ... is no race" |
+| A login during the reset went unrecorded, and nothing stopped the source's credentials acting (Opus 4, Astra 1) | The Mac cleans the fork's disk before its first boot, with the guards the lead set after three probes on the Tart Mac: the fork's own image only, its container from its own store, the Data volume by role, never the Mac's container. The in-guest reset reads the console user before and after its removals and records a race only while VesnALIA's identity was on the disk | "a fork's disk loses its source's VesnALIA machine ... before its first boot", "a fork whose disk would mount from the Mac's own container ... is refused", "records a race when someone logs in while it removes VesnALIA's machine", and, from the recheck, "a login during the reset of a disk that holds nothing of VesnALIA's ... is no race" |
 | The label took the Mac's build at the copy, not at the suspend (Opus 3, Astra 3) | Each suspend notes the build and Tart beside the VM; the take copies that note; unknown provenance refuses; the start just after a restore never cold-boots | "memory saved before a macOS update is labelled with the build that saved it", "the start just after a restore never boots the VM from its disk" |
 | Same volume is no clone, and the reserve was checked after the suspend (Astra 4) | Copies go through `clonefile`, refused rather than made in full; the plan and the take check the room before any suspend | "a copy APFS cannot clone is refused", "refused ... before the suspend" |
 | A take whose resume failed said "taken, ready" (Opus 2, Astra 5) | The backend says why it did not resume; core marks the box stopped, with why, in the answer and the log | "a take whose box does not resume says the box is stopped", "a take whose box did not resume after it leaves the box stopped" |
 | A fork over a VM already there kept its source's MAC and serial (Opus 5) | Refused | "a fork is never made over a VM that is there already" |
 | A Mac without `diskutil image attach` (the lead's answer) | No macOS forks there, and no Keep, as a kept snapshot could not fork after the release; the plan and the scrub say why, naming macOS 27; the doctor's "macOS forks on <mac>" warns. No `hdiutil` path: recorded in 070 as a follow-up | "a Mac whose diskutil cannot attach a disk image makes no macOS forks" |
-| Words (Astra 6, Opus 7) | The restore's dialog, undo label and CLI follow the backend's capture: "suspend it, which saves its memory", an undo "with its memory, so undoing brings it back running"; one sentence for another volume; "does not restore it" for another Tart; the guides say kept snapshots stay on the Mac after bb-box is removed | "the restore's words follow the backend", app "where the backend suspends the box, the restore dialog says its undo is taken suspended" |
+| Words (Astra 6, Opus 7) | The restore's dialog, undo label and CLI follow the backend's capture: "suspend it, which saves its memory", an undo "with its memory, so undoing brings it back running"; one sentence for another volume; "does not restore it" for another Tart; the guides say kept snapshots stay on the Mac after alia-box is removed | "the restore's words follow the backend", app "where the backend suspends the box, the restore dialog says its undo is taken suspended" |
 
 Run against the reviewed commit with only the tests and fakes swapped in,
 23 of the 35 tests in the two files failed, every new one but the last
@@ -3389,7 +3389,7 @@ repair's variables are its own now.
 
 #### Live recheck
 
-On a new separate BB, the same second install on the production Tart Mac,
+On a new separate VesnALIA, the same second install on the production Tart Mac,
 one macOS VM at a time, 16 GiB:
 
 | Check | Result |
@@ -3399,12 +3399,12 @@ one macOS VM at a time, 16 GiB:
 | Restore | 15 s: suspend 6.4, undo 0.4, copy back 0.3, resume 7.8, access 0.1 s; `work.txt` "before"; the counter process, PID 964, back to 12 from at least 13. The guard let it through, as its memory's note named the Mac's build |
 | Undo | `work.txt` "after", the counter on from where the restore suspended it |
 | `--check` words | "suspend it, which saves its memory: it is never stopped hard"; "a snapshot of it suspended, with its memory, so undoing brings it back running as it is now"; "put the snapshot's copy in its place, and resume it" |
-| Fork, source suspended first | ready in 28 s, 15 s in unit 9's check, the Mac's cleaning of its disk included. Its reset found "BB machines removed: none": the stand-in host ID and BB LaunchAgent were already gone before it booted; new SSH host key and hardware UUID; `raced=no`. The source came back unchanged |
-| Keep, release, fork of the kept snapshot | the first try refused the fork, and released it: its reset (version 3) saw a login during its removals and recorded a race, although the Mac had already cleaned the disk. So version 4 records a race only while BB's identity is still on the disk. On a new box with version 4: kept, released, forked in 28 s, `boot=reset`, `raced=no`, nothing of BB's on its disk |
-| Clean up | every machine released and snapshot deleted, a sweep; the backend removed. The lead checked the Mac: `bb-box-snapshots` holds an empty `.rollbacks` only; no owner file, run note or `/tmp` mount point of this install's; no disk image of this install's attached |
+| Fork, source suspended first | ready in 28 s, 15 s in unit 9's check, the Mac's cleaning of its disk included. Its reset found "VesnALIA machines removed: none": the stand-in host ID and VesnALIA LaunchAgent were already gone before it booted; new SSH host key and hardware UUID; `raced=no`. The source came back unchanged |
+| Keep, release, fork of the kept snapshot | the first try refused the fork, and released it: its reset (version 3) saw a login during its removals and recorded a race, although the Mac had already cleaned the disk. So version 4 records a race only while VesnALIA's identity is still on the disk. On a new box with version 4: kept, released, forked in 28 s, `boot=reset`, `raced=no`, nothing of VesnALIA's on its disk |
+| Clean up | every machine released and snapshot deleted, a sweep; the backend removed. The lead checked the Mac: `alia-box-snapshots` holds an empty `.rollbacks` only; no owner file, run note or `/tmp` mount point of this install's; no disk image of this install's attached |
 
 The interrupted restore and the failed resume were not provoked live: a
-shell cannot be stopped between two renames from bb-box, and the second VM
+shell cannot be stopped between two renames from alia-box, and the second VM
 slot was another thread's. The fake Mac covers both.
 
 ## Unit 10: microsandbox
@@ -3417,7 +3417,7 @@ unit 10](070-snapshots.md#decided-during-unit-10).
 
 ### What `msb` 0.7.7 does
 
-Probed before building, with the release bb-box pins, in a Proxmox QEMU
+Probed before building, with the release alia-box pins, in a Proxmox QEMU
 Linux box with nested KVM (8 cores, 16 GiB), by
 [microsandbox-unit-10.sh](../research/box-snapshots/microsandbox-unit-10.sh)
 ([output](../research/box-snapshots/microsandbox-unit-10-results.txt)):
@@ -3461,15 +3461,15 @@ Linux box with nested KVM (8 cores, 16 GiB), by
   box's hostname from `BBBOX_HOSTNAME`.
 - **The fork** restores the snapshot's disk only (`--disk-only` for a
   memory snapshot) under the fork's own name, labels and identity value; a
-  part-made sandbox of that name with no bb-box labels is removed first.
-- **New boxes get a Docker disk of `msb`'s own.** bb-box no longer makes a
+  part-made sandbox of that name with no alia-box labels is removed first.
+- **New boxes get a Docker disk of `msb`'s own.** alia-box no longer makes a
   Docker disk file or a template of one; a box made before keeps its file
   and works as before, and takes no snapshot, saying why.
 - **Only with `msb` 0.7.7**: every snapshot operation is refused with any
   other, and a new doctor check, `microsandbox.snapshots`, says so.
 - **Core**: `dependsOn` from the backend at each take, undo and reconcile,
   cleared from a child when its parent is deleted, and shown as "after ..."
-  on a row and "taken after ..." in `bb box snapshot list`; the fork check
+  on a row and "taken after ..." in `alia box snapshot list`; the fork check
   reads a value marker (`forkValue`) and, where an image has no `ip`,
   addresses from `hostname -I`; a value-source box is fork-safe without SSH
   host keys; a kept snapshot of a released box forks from the snapshot on a
@@ -3484,7 +3484,7 @@ New: `test/microsandbox-snapshots.test.ts` (13 tests, `msb`'s recorded
 answers from the probes, a set clock, and the fake msb, which now models
 `msb`'s snapshots as the probes found them: parents, heads, `--force`, a
 restore that keeps no settings, and `--full` refused beside a host's disk
-file), among them one through bb-box's own `Snapshots` and `Boxes`: take,
+file), among them one through alia-box's own `Snapshots` and `Boxes`: take,
 restore, undo, delete a parent, keep, release and a fork check of the kept
 snapshot. One app test (the row's "after"). Changed: the microsandbox
 tests for the owned Docker disk, a box made before, and the launch script.
@@ -3499,34 +3499,34 @@ box's own UTC clock at 01:17, 3 app tests failed, the same 3 on main
 "yesterday" of one 26 hours before, which is not so between midnight and
 about 02:00. That is not this unit's to fix.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i` and `BB_BOX_LIVE_CHECKS=1`
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i` and `ALIA_BOX_LIVE_CHECKS=1`
 ([live-setup.sh](070-snapshots/unit-10/live-setup.sh)), in the same QEMU
-box, bb-box installed from this branch with `bb plugin install path:`, and a
-microsandbox backend on BB's server, the box itself, with
+box, alia-box installed from this branch with `alia plugin install path:`, and a
+microsandbox backend on VesnALIA's server, the box itself, with
 `bbbox/linux:1` built from this branch by `setup/docker/build.sh linux` and
 `general.identityResetBackends=microsandbox`, then the steps of
 [live-gates.sh](070-snapshots/unit-10/live-gates.sh), run one at a time. No
 credentials were needed.
-Boxes were machines of the person's, and joined BB as machines. Times are
-bb-box's own, from its record or the CLI's answer.
+Boxes were machines of the person's, and joined VesnALIA as machines. Times are
+alia-box's own, from its record or the CLI's answer.
 
 | Check | Result |
 | --- | --- |
-| A box | ready in 14.7 s (importing the image 12.7 s, create 1.5 s), a BB machine 12.8 s later; identity marker 0.3 s, version 7, `source value`; Docker on `/dev/vdc`, `msb`'s own disk |
+| A box | ready in 14.7 s (importing the image 12.7 s, create 1.5 s), a VesnALIA machine 12.8 s later; identity marker 0.3 s, version 7, `source value`; Docker on `/dev/vdc`, `msb`'s own disk |
 | Take with memory | 1.8 s, 2.1 GB; a counter process in the box ran on through it. The first try was "not fork-safe": the image has no SSH host keys (fixed, below) |
 | Take, disk | 1.1 s, 149 MB; listed "taken after" the memory snapshot |
 | Delete a parent | the memory snapshot, which the disk one was taken after: 0.39 s, with `--force`; the child then restored |
-| Restore, memory | 2.08 s and, again, 2.03 s. The counter process (the same PID) was running and counting, `work.txt` "before", Docker's images as then, one microVM, the same host ID `host_qga2n8kqq9`; BB's daemon connected again 5.5 s after the restore began. The first try left the machine disconnected: the new microVM had `msb`'s default network, which does not reach BB's private address (fixed, below) |
-| Undo, disk | 2.41 s: `work.txt` "after", no counter, `boot=kept` (the check ran, no reset), `/run` in memory and the hostname set by bb-box, the same host ID; the daemon connected 1.3 s after the box was ready. A box keeps two undos: the oldest was deleted |
-| Fork of the memory snapshot | ready in 1.9 s, a new BB machine `host_9bh7fxzjny` 2.9 s later; the source stayed `host_qga2n8kqq9`, connected. The counter's PID was not running and its file stood still; every process was 12 s old. `boot=reset`, "the value bb-box set on this guest is not the marker's; BB machines removed: host_qga2n8kqq9"; a new machine ID and new SSH host keys; its own marker and hostname; Docker's images came with it. The first try was refused, as the image has no `ip` to read addresses, and released (fixed, below) |
+| Restore, memory | 2.08 s and, again, 2.03 s. The counter process (the same PID) was running and counting, `work.txt` "before", Docker's images as then, one microVM, the same host ID `host_qga2n8kqq9`; VesnALIA's daemon connected again 5.5 s after the restore began. The first try left the machine disconnected: the new microVM had `msb`'s default network, which does not reach VesnALIA's private address (fixed, below) |
+| Undo, disk | 2.41 s: `work.txt` "after", no counter, `boot=kept` (the check ran, no reset), `/run` in memory and the hostname set by alia-box, the same host ID; the daemon connected 1.3 s after the box was ready. A box keeps two undos: the oldest was deleted |
+| Fork of the memory snapshot | ready in 1.9 s, a new VesnALIA machine `host_9bh7fxzjny` 2.9 s later; the source stayed `host_qga2n8kqq9`, connected. The counter's PID was not running and its file stood still; every process was 12 s old. `boot=reset`, "the value alia-box set on this guest is not the marker's; VesnALIA machines removed: host_qga2n8kqq9"; a new machine ID and new SSH host keys; its own marker and hostname; Docker's images came with it. The first try was refused, as the image has no `ip` to read addresses, and released (fixed, below) |
 | Keep | "If msb-src is released, it stays where it is until 2026-12-01." |
 | Release | 0.73 s; its two undos were deleted from `msb`, the kept snapshot stayed |
-| Fork of the kept snapshot after the release | ready in 2.0 s, a new BB machine `host_ye5wb5pe7g`, `boot=reset`. The first try was refused, as core forked a released box only from a held copy (fixed, below) |
-| A box made before | made by `origin/main`'s bb-box (`cacc1dcb`) in the same BB, its Docker disk a host's file; then under this branch: Take refused, "It was made before bb-box could snapshot a box's Docker disk: ..."; a stop and start, a resize to 3 cores with a restart in 1.7 s, its Docker image still there, its BB machine connected; its release removed its disk file |
-| Clean up | every box released; every snapshot deleted; `msb ls` and `msb snapshot list` empty for bb-box's `msb` and the probes'; no keep file; BB stopped |
+| Fork of the kept snapshot after the release | ready in 2.0 s, a new VesnALIA machine `host_ye5wb5pe7g`, `boot=reset`. The first try was refused, as core forked a released box only from a held copy (fixed, below) |
+| A box made before | made by `origin/main`'s alia-box (`cacc1dcb`) in the same VesnALIA, its Docker disk a host's file; then under this branch: Take refused, "It was made before alia-box could snapshot a box's Docker disk: ..."; a stop and start, a resize to 3 cores with a restart in 1.7 s, its Docker image still there, its VesnALIA machine connected; its release removed its disk file |
+| Clean up | every box released; every snapshot deleted; `msb ls` and `msb snapshot list` empty for alia-box's `msb` and the probes'; no keep file; VesnALIA stopped |
 
 ### Found live, and fixed
 
@@ -3573,11 +3573,11 @@ tests below failed.
 
 | Finding | Fix | Test |
 | --- | --- | --- |
-| Astra 1 (high): a restored box's start wrote its access file and recorded the step `access`, past `starting`, before the box's own start command ran. bb-box restarting there left recovery to skip the start, mark the box ready, and delete the old guest | an access file written within a start keeps the restore's record at `starting`, so recovery starts the box again, and the old guest is deleted only after; its time is still said as `access`. A hold for live checks, `answered`, stops a restore at that moment | "070 unit 10 review (Astra 1): bb-box restarting after a restore's new microVM took its access file ..." |
+| Astra 1 (high): a restored box's start wrote its access file and recorded the step `access`, past `starting`, before the box's own start command ran. alia-box restarting there left recovery to skip the start, mark the box ready, and delete the old guest | an access file written within a start keeps the restore's record at `starting`, so recovery starts the box again, and the old guest is deleted only after; its time is still said as `access`. A hold for live checks, `answered`, stops a restore at that moment | "070 unit 10 review (Astra 1): alia-box restarting after a restore's new microVM took its access file ..." |
 | Astra 2: the version guard read the host's facts, kept for a minute, so an `msb` changed meanwhile could still `--force` a delete | a take, a restore, a fork, Keep and a delete each run `msb --version` first, and a delete again right before `--force` | "... (Astra 2): msb changed under a running backend is read again before every change ..." |
-| Opus 1: snapshots were offered on a Mac host, where nothing was measured | refused there with "bb-box takes no snapshots of microsandbox boxes on a Mac yet: what they rest on, such as each snapshot holding its own data, was measured on Linux only", and the doctor's Snapshots check warns; a follow-up in 070 | "... (Opus 1): on a Mac host microsandbox boxes take no snapshots yet ..." |
+| Opus 1: snapshots were offered on a Mac host, where nothing was measured | refused there with "alia-box takes no snapshots of microsandbox boxes on a Mac yet: what they rest on, such as each snapshot holding its own data, was measured on Linux only", and the doctor's Snapshots check warns; a follow-up in 070 | "... (Opus 1): on a Mac host microsandbox boxes take no snapshots yet ..." |
 | Opus 2: a restore put back the snapshot's disk size when the box's had grown since | the larger of the two, as a fork does | "... (Opus 2): a restore keeps the box's disk when it has grown ..." |
-| Opus 3: the probe and the live script did not cover all the results claim | the reviewer's checks A to C are in the probe, and passed on a fresh box ([output](../research/box-snapshots/microsandbox-unit-10-results.txt)): a running sandbox restored from a snapshot, the snapshot and the source then deleted, the same before and after a restart; a capture of it naming the deleted snapshot as its parent, restoring the same after its own parent went with `--force`; a parent removed with `--force` while a sandbox restored from it runs, the same after a restart. [live-gates.sh](070-snapshots/unit-10/live-gates.sh) now takes a disk snapshot and deletes a parent; "A box made before" was run by hand, as the table above says, as it needs `origin/main`'s bb-box | |
+| Opus 3: the probe and the live script did not cover all the results claim | the reviewer's checks A to C are in the probe, and passed on a fresh box ([output](../research/box-snapshots/microsandbox-unit-10-results.txt)): a running sandbox restored from a snapshot, the snapshot and the source then deleted, the same before and after a restart; a capture of it naming the deleted snapshot as its parent, restoring the same after its own parent went with `--force`; a parent removed with `--force` while a sandbox restored from it runs, the same after a restart. [live-gates.sh](070-snapshots/unit-10/live-gates.sh) now takes a disk snapshot and deletes a parent; "A box made before" was run by hand, as the table above says, as it needs `origin/main`'s alia-box | |
 | Opus 4: the old Docker disk template folder was never removed, and was counted | the upkeep's sweep of Docker disks removes it, and the status script no longer counts it | "... (Opus 4): the upkeep removes the Docker disk template ..." |
 
 On a fresh Proxmox QEMU box with nested KVM (8 cores, 16 GiB, Node 24.21),
@@ -3590,21 +3590,21 @@ unit does not touch, and G4's wording in `test/restore.test.ts`, which the
 Astra 1 fix had changed: the in-start access is timed as `access` again, and
 both passed after.
 
-The live recheck, on a separate BB as before (`npx bb-app` 0.48.1, no
-account, `BB_BOX_LIVE_CHECKS=1`, bb-box from this commit, microsandbox on
+The live recheck, on a separate VesnALIA as before (`npx alia-app` 0.48.1, no
+account, `ALIA_BOX_LIVE_CHECKS=1`, alia-box from this commit, microsandbox on
 the box itself), with [live-gates.sh](070-snapshots/unit-10/live-gates.sh)
 and [live-interrupt.sh](070-snapshots/unit-10/live-interrupt.sh):
 
 | Check | Result |
 | --- | --- |
 | Take with memory, take of the disk | 5.1 s and 1.3 s from the command line |
-| Restore, memory | 3.6 s; the counter process running, `work.txt` "before", the same host ID, one microVM; BB's daemon connected again 7.0 s after the restore began |
+| Restore, memory | 3.6 s; the counter process running, `work.txt` "before", the same host ID, one microVM; VesnALIA's daemon connected again 7.0 s after the restore began |
 | Undo, disk | 3.1 s; `work.txt` "after", `boot=kept`, the same host ID; the daemon connected 4.4 s after it began |
-| A restore interrupted after the new microVM took its access file | held there with `hold-next --at answered`: the new microVM had its access file and no ready file, the old one was stopped. bb-box restarted (`bb plugin reload`); recovery (`bb box sweep`, 0.64 s) started the same new microVM, which ran its start command and said it was ready, with `work.txt` "before", `boot=kept`, its BB machine connected, and only then deleted the old one. One microVM was left |
+| A restore interrupted after the new microVM took its access file | held there with `hold-next --at answered`: the new microVM had its access file and no ready file, the old one was stopped. alia-box restarted (`alia plugin reload`); recovery (`alia box sweep`, 0.64 s) started the same new microVM, which ran its start command and said it was ready, with `work.txt` "before", `boot=kept`, its VesnALIA machine connected, and only then deleted the old one. One microVM was left |
 | Fork of the memory snapshot | 2.6 s; no process of its source |
 | Delete a parent | 0.40 s |
 | Keep, release, fork of the kept snapshot | 0.45 s, 1.1 s, 2.9 s; the fork `boot=reset` with a new host ID |
-| Clean up | every box released, every snapshot deleted, `msb ls` and `msb snapshot list` empty for bb-box's `msb` and the probe's, no keep file, BB stopped, the box released |
+| Clean up | every box released, every snapshot deleted, `msb ls` and `msb snapshot list` empty for alia-box's `msb` and the probe's, no keep file, VesnALIA stopped, the box released |
 
 ## Unit 11: boat.dev's saved snapshots
 
@@ -3630,7 +3630,7 @@ restore and no Keep. Forks and Keep wait for unit 11b, as the lead decided
   sandbox deployed from a saved snapshot no labels, whatever the request
   says, and labels cannot be set later (found live, below). So
   `adoptSnapshot` deploys it into a staging sandbox named
-  `bb-box:restoring:<box>:<token>`, waits until it runs, stops it (boat's
+  `alia-box:restoring:<box>:<token>`, waits until it runs, stops it (boat's
   stop takes its last capture), forks it with the box's labels and a token
   of its own (`bbbox-guest`), and deletes the staging sandbox. The staging
   sandbox is on the claimed guest's record from the moment it exists, so a
@@ -3656,7 +3656,7 @@ restore and no Keep. Forks and Keep wait for unit 11b, as the lead decided
   those past them"; the tab's line "boat.dev $0.00 a month held (3 of the
   10 the plan includes used)"; the restore dialog and `--check` say the new
   guest and the starts it costs; Keep and fork say why not yet.
-- **Live checks**: `bb box snapshot fake-included <backend> <count>`.
+- **Live checks**: `alia box snapshot fake-included <backend> <count>`.
 - Sizes below 1 GB are said in MB in core's words, as the app says them,
   not "0.0 GB".
 - Docs: the boat guide's Snapshots section and clean-up check; the
@@ -3679,31 +3679,31 @@ is current (`node scripts/reference.ts --check`); the node suite ran
 3,292 tests, 3,004 passed, 0 failed, 288 skipped; vitest ran 442, all
 passed.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i` and `BB_BOX_LIVE_CHECKS=1`, in a Proxmox LXC
-box, bb-box installed from this branch with `bb plugin install path:`, and
-the boat backend added with `bb box backend add boat --secret api-key=...
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i` and `ALIA_BOX_LIVE_CHECKS=1`, in a Proxmox LXC
+box, alia-box installed from this branch with `alia plugin install path:`, and
+the boat backend added with `alia box backend add boat --secret api-key=...
 --secrets-file`, from a key file `box_copy` put in the box. The account is
 on boat's `standard` tier, plan `box_20`, with 10 saved snapshots
 included and none held at the start. Boxes were machines of the person's.
-As 068 found, a BB with no account cannot make boat boxes BB machines
-("Sign in to your bb account to use bb connect"), so "the same machine"
+As 068 found, a VesnALIA with no account cannot make boat boxes VesnALIA machines
+("Sign in to your VesnALIA account to use VesnALIA connect"), so "the same machine"
 was checked by a stand-in: a random host ID written to
-`~/.bb-machines/live-check/host-id` before the take.
+`~/.alia-machines/live-check/host-id` before the take.
 
 | Check | Result |
 | --- | --- |
 | Template, first box | this install built its own `linux` template: the box was ready in 620 s, most of it the build; a later box in 22.5 s (fork 0.4, ready 4.2, ssh 13.6, settle 4.0 s) |
 | Take, running box | 17 s on the first box, 132 s on the second (boat's fresh capture). "Price: $0.056 a day past the plan's 10." |
-| Restore, first try | failed and found the bug above: the deployed sandbox had `labels: {}`, so bb-box took it for gone and left the box stopped. A probe deploy with labels only, and a `PATCH` with labels, confirmed boat drops them; both probe sandboxes deleted. The box's release then deleted its two saved snapshots, and the unlabelled sandbox was deleted by hand |
+| Restore, first try | failed and found the bug above: the deployed sandbox had `labels: {}`, so alia-box took it for gone and left the box stopped. A probe deploy with labels only, and a `PATCH` with labels, confirmed boat drops them; both probe sandboxes deleted. The box's release then deleted its two saved snapshots, and the unlabelled sandbox was deleted by hand |
 | `--check` | "stop it ...; take its undo ..., a snapshot of it stopped, about 70 s, at $0.056 a day; make it a new guest from that snapshot ...: boat counts 2 starts: 12 of 12 left this minute, at no charge within the plan's starts" |
 | Restore, after the fix | 53 s: stop 2.0, undo 6.6, swap 22, start 22, access 0.2 s. `work.txt` back to "before"; the host ID file's SHA-256 the same (`940f1fbf...`), a new boot ID; the old sandbox and the staging one deleted; the new sandbox labelled with the box and its token |
 | Undo | restoring "before the restore at 18:58": 176 s: stop 13, undo 97, swap 54, start 11 s; `work.txt` "after", the same host ID |
 | The undo's cost in downtime | the box is stopped from the stop to the start: 53 and 176 s here, of which the undo's save was 6.6 and 97 s |
-| Keep | "bb-box keeps only a snapshot it can fork after its box's release, and boat.dev boxes have no identity reset yet, so a fork of one could act as its source, and bb-box forks none until they have one. So it does not keep "before the change"." |
-| Fork | "bb-box does not fork "before the change": boat.dev boxes have no identity reset yet, ..." |
+| Keep | "alia-box keeps only a snapshot it can fork after its box's release, and boat.dev boxes have no identity reset yet, so a fork of one could act as its source, and alia-box forks none until they have one. So it does not keep "before the change"." |
+| Fork | "alia-box does not fork "before the change": boat.dev boxes have no identity reset yet, ..." |
 | Ceiling | ceiling 1, `fake-included boat 0`: "It would bring snapshots held on boat.dev to about $6.72 a month, past your ceiling of $1.00. It would be saved snapshot 4 there, and the plan includes 0. ..." Boat still listed 3 |
 | Settings and the tab | after a sweep: `paid` `{ count: 3, monthly: 0, ceiling: 1, past: false, included: { included: 10, used: 3 } }`; the tab's line "boat.dev $0.00 a month held (3 of the 10 the plan includes used)" |
 | Delete | "Deleted snapshot "before the change" ...: it freed 1 MB." |
@@ -3728,15 +3728,15 @@ identity source has to fit:
   So nothing of the sandbox's own runs before its network: section 9's
   `Before=network-pre.target` cannot hold there.
 - The address, the SSH host key and the hostname come from boat and change
-  at every resume; the MAC addresses are boat's, not bb-box's, so they
+  at every resume; the MAC addresses are boat's, not alia-box's, so they
   cannot be the marker's value.
 - boat keeps no labels on a deploy from a saved snapshot, and labels
   cannot change; a fork keeps the labels it is given. Per-sandbox `env`
   and create-time `files` (under `/home/user` or `/tmp`, written once, at
-  the first start) are the ways bb-box could set a value on each guest;
+  the first start) are the ways alia-box could set a value on each guest;
   neither was probed in this unit.
-- bb-box's own daemon and Tailscale are started by bb-box over SSH on
-  boat, and BB's daemon by a user unit after hydration, so a reset that
+- alia-box's own daemon and Tailscale are started by alia-box over SSH on
+  boat, and VesnALIA's daemon by a user unit after hydration, so a reset that
   runs when boat starts the enabled services again, before those, may be
   enough; G14 on boat has to show it.
 
@@ -3751,9 +3751,9 @@ identity source has to fit:
 - **Forks and Keep on boat wait for unit 11b** (decided during unit 11).
   So "Keep and its price until the keep date" was not checked live; Keep's
   refusal was.
-- **"The same BB machine after"** was checked by the box's record (the
+- **"The same VesnALIA machine after"** was checked by the box's record (the
   same box ID and name, a guest reference with the new token) and a
-  stand-in host ID file, as this BB cannot enrol boat boxes.
+  stand-in host ID file, as this VesnALIA cannot enrol boat boxes.
 - **The ceiling's refusal live** needed `fake-included`, as the plan's 10
   included snapshots make any take within them free, and the brief allowed
   3 at once.
@@ -3775,7 +3775,7 @@ tests passed.
 | Astra 2, Opus 2: the old sandbox was deleted before the new one started | the old guest stays, stopped, until the new one has started and taken its access file; a new guest that does not start is deleted, confirmed, and the old one started again, or neither if it cannot be confirmed | "Astra 2: the old guest stays until the new one starts ..." and "... starts neither" |
 | Opus 2: a failed staging delete threw away a restore that worked | once the copy is claimed, a failed staging delete is logged and the guest keeps the staging ID; boat's upkeep deletes staging sandboxes whose copy runs a box, or no restore has used for an hour; a release deletes its own sandbox whatever the staging delete does | "Opus 2: a deployed sandbox that cannot be deleted once its copy runs the box ..." |
 | Astra 3, Opus 1: a lost create answer, or a restart, left the staging sandbox unknown; recovery at `adopt-submitting` waited for a task boat cannot give | the staging sandbox's name (box and token) is on the claimed guest before boat is asked; release and recovery find it by that name, unlabelled; recovery without a task discards and goes on | "Opus 1 and Astra 3: a deployed sandbox whose create answer was lost ..."; "Opus 5 and Astra 3: a restore cut short at its new guest ..." |
-| Astra 4, Opus 3: two takes close together could both pass the ceiling | the bill names what boat lists; every snapshot bb-box holds that boat does not list yet counts beside it, taken or still taking | "Astra 4 and Opus 3: a snapshot boat has not listed yet counts ..." |
+| Astra 4, Opus 3: two takes close together could both pass the ceiling | the bill names what boat lists; every snapshot alia-box holds that boat does not list yet counts beside it, taken or still taking | "Astra 4 and Opus 3: a snapshot boat has not listed yet counts ..." |
 | Astra 5, Opus 6: an unread bill fell back to this install's records | the whole account, as last read, at full price; with no bill read since the start, no paid take, undo or Keep; a snapshot found again keeps its backend's price | "Astra 5 and Opus 6: an unread bill counts the account ..."; "Astra 5: a snapshot found again ... keeps its backend's price" |
 | Astra 6: a release with lost records, and an ended thread's leftover, left saved snapshots | every release lists the box's saved snapshots from boat, deletes them, records or not, and lists again to confirm; an ended thread's leftover the same, before its guest goes; a record a release left is deleted at the next sweep; a living box's old guest takes none | the two "Astra 6" tests |
 | Astra 7: a failed save whose delete failed was treated as holding nothing | it is incomplete, still counted, and a delete by its ID finishes it | "Astra 7: a failed save whose clean-up fails ..." |
@@ -3790,8 +3790,8 @@ current; the node suite ran 3,304 tests, 3,016 passed, 0 failed, 288
 skipped; vitest ran 442, all passed.
 
 
-The live recheck, on a separate BB as before (`npx bb-app` 0.48.1, no
-account, `BB_BOX_LIVE_CHECKS=1`, bb-box from this commit, the same paid
+The live recheck, on a separate VesnALIA as before (`npx alia-app` 0.48.1, no
+account, `ALIA_BOX_LIVE_CHECKS=1`, alia-box from this commit, the same paid
 account):
 
 | Check | Result |
@@ -3832,7 +3832,7 @@ that fails on `8bb7987d` and passes now.
 
 The happy path of take, restore and release did not change: these fixes
 act only when a staging delete fails, an access file cannot be written, a
-bill cannot be read, starts run short, or bb-box restarts mid-rollback.
+bill cannot be read, starts run short, or alia-box restarts mid-rollback.
 So no new live check was run.
 
 On a Proxmox LXC box, in a copy whose git tree is this commit's
@@ -3869,19 +3869,19 @@ uptime unbroken), so nothing started again. And boat.dev gives every new
 machine its own machine ID and SSH host keys, and the host key it reports
 to pin is the one in those files: a fork's were not its source's. So on
 boat.dev the reset leaves both to boat.dev; renewing the keys would break
-bb-box's pinned SSH.
+alia-box's pinned SSH.
 
 ### What changed
 
-- **The guest program, version 8** (`bb-box-identity.sh`), for every
+- **The guest program, version 8** (`alia-box-identity.sh`), for every
   image. `enable --value-file <path>` reads the value from a file, with a
   strict pattern for a box ID, never sourcing it; at a boot of an armed
   box it waits up to 30 s for the value, then compares as before, so a
   missing value counts as a copy. `enable --machine-from-provider` leaves
   the SSH host keys and machine ID to the provider in a reset, and says
-  so. `wait` holds BB's daemon while the reset is on and no check has run
+  so. `wait` holds VesnALIA's daemon while the reset is on and no check has run
   on this machine. Both options live in
-  `/usr/local/lib/bb-box/identity-options`; a plain `enable`, as every
+  `/usr/local/lib/alia-box/identity-options`; a plain `enable`, as every
   other image runs, writes none, so Proxmox's and Docker's boots are as
   they were. `customize-base.sh` passes them from the build's settings.
 - **boat.dev's `linux` template turns the reset on** with
@@ -3889,14 +3889,14 @@ bb-box's pinned SSH.
   `BOX_IDENTITY_MACHINE=provider` (`buildEnvFor`), and the template's
   fingerprint covers those settings, so a change to them rebuilds it.
   Desktop and Android templates keep it off.
-- **Every sandbox bb-box makes for a box carries `BBBOX_IDENTITY`**, the
+- **Every sandbox alia-box makes for a box carries `BBBOX_IDENTITY`**, the
   box's ID: the fork from the template, a restore's deployed sandbox and
   its copy, and a fork's two, with the fork's own ID. A resume passes
   none, so boat.dev keeps it. `identitySource` is `value` for `linux`.
-- **bb-box waits for the check before the box user**: at each acquire and
-  start, as boat.dev's user, it reads `bb-box-identity status` until the
+- **alia-box waits for the check before the box user**: at each acquire and
+  start, as boat.dev's user, it reads `alia-box-identity status` until the
   boot says `kept`, `unarmed` or `reset` (or `off` on an image without
-  the reset), starts `bb-box-identity-settle.service` itself 10 s on,
+  the reset), starts `alia-box-identity-settle.service` itself 10 s on,
   and fails the start on `failed`. Only then does it give the box user
   its key and SSH in, join the tailnet and write the access file.
 - **Forks** (`forkSnapshot`): as a restore does, it deploys the saved
@@ -3932,7 +3932,7 @@ where it calls boat.dev:
 
 - `test/identity-reset.test.ts`, 7 for version 8: the options and their
   refusals; a boat.dev box kept at three boots on new machines with the
-  file's value, not the boot's argument; a fork's value resetting BB's
+  file's value, not the boot's argument; a fork's value resetting VesnALIA's
   machine, the access file and the tailnet node and leaving the host keys
   and machine ID; a missing value waited for, then a reset; values that
   are not box IDs; `wait` holding while no check has run, and not when the
@@ -3962,30 +3962,30 @@ passes, and the reference is current (`node scripts/reference.ts
 3,353 tests, 3,065 passed, 0 failed, 288 skipped; vitest ran 443, all
 passed.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and
-ports, started with `env -i` and `BB_BOX_LIVE_CHECKS=1`, in a Proxmox LXC
-box, bb-box from this branch with `bb plugin install path:`, the boat
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and
+ports, started with `env -i` and `ALIA_BOX_LIVE_CHECKS=1`, in a Proxmox LXC
+box, alia-box from this branch with `alia plugin install path:`, the boat
 backend added with `--secrets-file` from a key file `box_copy` put in the
-box, and `general.identityResetBackends=boat` in that BB only. Boxes were
-machines of the person's. As this BB cannot make boat.dev boxes BB
-machines, a stand-in BB machine folder, `~/.bb-machines/live-check`, with
+box, and `general.identityResetBackends=boat` in that VesnALIA only. Boxes were
+machines of the person's. As this VesnALIA cannot make boat.dev boxes VesnALIA
+machines, a stand-in VesnALIA machine folder, `~/.alia-machines/live-check`, with
 a random `host-id` and an `auth.json`, and a Tailscale state with a
 profile, were written in the source before the take; the access file was
-bb-box's own.
+alia-box's own.
 
 | Check | Result |
 | --- | --- |
 | Template, first box | this install built its own `linux` template in 6 minutes; the box was ready in 402 s (fork 0.5, ready 4.5, ssh 12.0 with the check, settle 4.2 s), its marker `value` its box ID, written in 83 ms |
-| The order | the check finished at 00:48:49.824, when boat.dev's agent started the enabled units; bb-box read it at 00:48:54.199; the box user's first login 00:48:54.799; `user@1001` 00:48:55.191 |
+| The order | the check finished at 00:48:49.824, when boat.dev's agent started the enabled units; alia-box read it at 00:48:54.199; the box user's first login 00:48:54.799; `user@1001` 00:48:55.191 |
 | Stop and start | 8 and 2 s; boat.dev gave back the same machine (the same boot ID), so no check ran; the same host ID |
 | Resize, `small` to `medium` | 82 s, a new machine (new boot ID, machine ID and host key, boat.dev's); `boot=kept`, the same host ID, credentials, access file and tailnet state |
 | Take | 144 s, a fresh capture; `forkSafe` 8 |
 | Restore swap | 178 s, a new sandbox; `boot=kept`, the same host ID; `work.txt` back to "before". The undo was deleted at once |
-| Fork | ready in 34 s (start 14.5, check 0.4 s): the staging sandbox reset at 00:57:03 and removed `host_317bc0fa833d`; on the fork the host ID, credentials and tailnet state were gone, the machine ID and host key new, the marker its own; bb-box wrote its own access file at 00:57:44. The source was untouched |
+| Fork | ready in 34 s (start 14.5, check 0.4 s): the staging sandbox reset at 00:57:03 and removed `host_317bc0fa833d`; on the fork the host ID, credentials and tailnet state were gone, the machine ID and host key new, the marker its own; alia-box wrote its own access file at 00:57:44. The source was untouched |
 | Keep | `--check`: "If src-boat is released, it stays where it is until 2026-12-01, at $0.056 a day past the plan's 10"; kept until 2026-11-03 |
-| Release, then BB restarted | the source removed in 1 s; its kept snapshot listed under it, released; BB's server stopped and started again |
+| Release, then VesnALIA restarted | the source removed in 1 s; its kept snapshot listed under it, released; VesnALIA's server stopped and started again |
 | Fork of the kept snapshot | ready in 30 s (check 99 ms): the staging sandbox was stopped part way through its reset, and the fork's first boot resumed it from its pending record ("resuming the reset that began at 00:58:58"), `boot=reset`, the source's host ID removed |
 | Clean-up | the kept snapshot deleted, both forks removed, the backend removed, this install's template deleted through boat.dev's API; boat.dev then listed only the three templates of another install that were there before, and no saved snapshots |
 
@@ -4010,21 +4010,21 @@ probe's for 3 minutes, the live check's for 8 and its undo for 3.
 ### Choices and deviations
 
 - **Not before the network on boat.dev.** Section 9's order cannot hold
-  there; bb-box gates what it controls (the box user's SSH, Tailscale, the
-  access file) on the check, and BB's daemon waits by its own unit.
+  there; alia-box gates what it controls (the box user's SSH, Tailscale, the
+  access file) on the check, and VesnALIA's daemon waits by its own unit.
 - **The reset leaves the SSH host keys and machine ID to boat.dev**,
   which makes both new on every machine.
 - **A stop and start on boat.dev** came back on the same machine, as
   boat.dev keeps one a while after a stop, so the check did not run
   again; the resize and the restore swap showed a new machine kept.
-- **The keep date lives in bb-box's storage for the backend**, not on
+- **The keep date lives in alia-box's storage for the backend**, not on
   boat.dev, which has no labels for saved snapshots.
 - **Docker's words are as they were**: a missing value still says "the
-  value bb-box set on this guest is not the marker's".
+  value alia-box set on this guest is not the marker's".
 
 ### Known limit
 
-- **A copy made outside bb-box keeps its source's identity.** boat.dev
+- **A copy made outside alia-box keeps its source's identity.** boat.dev
   gives a fork made in its dashboard or API its source's value, so it
   does not reset. The guides say so in plain words.
 
@@ -4049,10 +4049,10 @@ the fixes add.
 
 | Finding | Fix | Test |
 | --- | --- | --- |
-| Astra 1, Opus 4: a slow start wiped a good box's identity after 30 s | only a value that differs is a copy; a value not there yet holds the box as unknown, removing nothing, while SSH, Tailscale and BB's daemon wait, and `settle` reads the file again every 2 s; bb-box's start waits, and fails after 5 minutes with why | "version 8, boat: a value missing from the file never counts the box as a copy ..." |
-| Opus 4: a box that reset with no marker stayed unarmed, and the words named interfaces | the unarm names `BBBOX_IDENTITY`; at the box's next start bb-box writes the marker again, on a value-source backend that is armed, only after a reset (`boot=reset`, marker missing), never for a box unarmed by hand or a Proxmox box | "version 8, boat: a box that reset with no value ..."; "Opus 4: a value-source box that a reset left with no marker ..." |
+| Astra 1, Opus 4: a slow start wiped a good box's identity after 30 s | only a value that differs is a copy; a value not there yet holds the box as unknown, removing nothing, while SSH, Tailscale and VesnALIA's daemon wait, and `settle` reads the file again every 2 s; alia-box's start waits, and fails after 5 minutes with why | "version 8, boat: a value missing from the file never counts the box as a copy ..." |
+| Opus 4: a box that reset with no marker stayed unarmed, and the words named interfaces | the unarm names `BBBOX_IDENTITY`; at the box's next start alia-box writes the marker again, on a value-source backend that is armed, only after a reset (`boot=reset`, marker missing), never for a box unarmed by hand or a Proxmox box | "version 8, boat: a box that reset with no value ..."; "Opus 4: a value-source box that a reset left with no marker ..." |
 | Astra 2, Opus 5: a fork joined the tailnet and let the box user in before core's check | a boat fork starts only as far as its identity check (`startForForkCheck`), as boat.dev's `user`, and refuses a boot of `unarmed` or `off`; core reads the check through `forkCheckCommand`, as that user; the box user's SSH, settle and the tailnet join run only at `armFork("boot")`, after the check; the access file comes after | "Astra 2 and Opus 5: a fork starts only as far as its identity check ..." (boat) and "... core checks it through the backend's own check command ..." (core) |
-| Opus 3: with a plain `enable`, `wait` held BB's daemon when no check had run | `wait` holds on no result only with a value file, so Proxmox's `wait` is version 7's | "version 8 on Proxmox: with a plain enable, wait goes on at once ..." |
+| Opus 3: with a plain `enable`, `wait` held VesnALIA's daemon when no check had run | `wait` holds on no result only with a value file, so Proxmox's `wait` is version 7's | "version 8 on Proxmox: with a plain enable, wait goes on at once ..." |
 | Opus 1: removing the backend left saved snapshots costing | a save that removes a backend whose snapshots live on its provider lists the provider's snapshots of this install first, kept or not, and refuses, naming them and how to delete them, or refuses if it cannot list them; only such a save asks the provider; the boat guide's "Turn it off" says so | "Opus 1: a backend whose snapshots live on its provider cannot be removed ..." |
 | Astra 4, Opus 2: Keep dates could be lost | every change to the backend's record of saved snapshots goes through one queue; a name is cleared only when boat.dev answers that it has no saved snapshot by that name; a list answer with no array is an error, and changes nothing | "Astra 4 and Opus 2: Keep dates go through one queue ..." |
 | Astra 3: upkeep deleted a fork's staging sandbox while the fork was made | upkeep skips a staging sandbox this process is still using, and counts one as done only when its copy exists, labelled with its box and token | "Astra 3: upkeep never deletes a fork's staging sandbox ..." |
@@ -4064,17 +4064,17 @@ check" for its start up to the check, and a start of any boat box says it
 before "ssh". So a short live recheck of a fork, a Keep and a release was
 run, below.
 
-The live recheck, on a separate BB as before (`npx bb-app` 0.48.1, no
-account, `BB_BOX_LIVE_CHECKS=1`, bb-box from this commit, boat armed in
-that BB only):
+The live recheck, on a separate VesnALIA as before (`npx alia-app` 0.48.1, no
+account, `ALIA_BOX_LIVE_CHECKS=1`, alia-box from this commit, boat armed in
+that VesnALIA only):
 
 | Check | Result |
 | --- | --- |
 | Template, first box | this install built its own `linux` template; boat.dev's machine was slow (a load of 15 while it installed packages), so the box was ready in 1,243 s; the box's marker its own value |
 | Take | 128 s; `forkSafe` 8 |
-| Fork | ready in 224 s, most of it boat.dev's capture of the staging sandbox as it stopped (start 13.2, of which identity check 4.1, check 0.3 s); the fork reset at its first boot (`boot=reset`, the stand-in host ID removed); the order: boat.dev's `user` in at 02:25:27.202, the reset finished at 02:25:30.164, bb-box's gate and core's check read it as `user` at 02:25:30.227 and 02:25:30.415, the box user's first login at 02:25:30.941 and its manager at 02:25:31.315; the fork's own access file written at 02:25:44 |
+| Fork | ready in 224 s, most of it boat.dev's capture of the staging sandbox as it stopped (start 13.2, of which identity check 4.1, check 0.3 s); the fork reset at its first boot (`boot=reset`, the stand-in host ID removed); the order: boat.dev's `user` in at 02:25:27.202, the reset finished at 02:25:30.164, alia-box's gate and core's check read it as `user` at 02:25:30.227 and 02:25:30.415, the box user's first login at 02:25:30.941 and its manager at 02:25:31.315; the fork's own access file written at 02:25:44 |
 | Keep, then release | kept until 2026-11-03; the source removed in 1 s, the kept snapshot listed under it, released |
-| Removing the backend | refused twice, naming the snapshot: by its record, and by boat.dev's list ("Backend boat has 1 snapshot on its provider's account, kept or not, ... "before-change" ... kept until 2026-11-03"); with its records forgotten (`bb box snapshot forget`), still refused by boat.dev's list, by its saved name and keep date; once it was deleted, removed |
+| Removing the backend | refused twice, naming the snapshot: by its record, and by boat.dev's list ("Backend boat has 1 snapshot on its provider's account, kept or not, ... "before-change" ... kept until 2026-11-03"); with its records forgotten (`alia box snapshot forget`), still refused by boat.dev's list, by its saved name and keep date; once it was deleted, removed |
 | Clean-up | the fork removed, the saved snapshot deleted, this install's template deleted; boat.dev then listed only the three templates of another install, and no saved snapshots |
 
 What it cost, from boat.dev's figures: the wallet went from $14.47 to
@@ -4109,8 +4109,8 @@ with its file (27 of 27); vitest ran 444, all passed.
 Unit 10 turned microsandbox snapshots off on a Mac host, as what they rest
 on was measured on Linux only. This measures it on a Mac and turns them on
 there, with the version guard kept. On the way it found that `msb` refuses
-a snapshot's ID whenever its home is reached through a link, which bb-box's
-own wrapper does on Linux too, so bb-box now names each snapshot by its
+a snapshot's ID whenever its home is reached through a link, which alia-box's
+own wrapper does on Linux too, so alia-box now names each snapshot by its
 group and member. Decisions are in 070, [Decided during the
 close-out](070-snapshots.md#decided-during-the-close-out).
 
@@ -4119,14 +4119,14 @@ close-out](070-snapshots.md#decided-during-the-close-out).
 Unit 10's probe could not run on a Mac as it was: it needs GNU `date`,
 `mkfs.ext4` and `python3`. [microsandbox-mac.sh](../research/box-snapshots/microsandbox-mac.sh)
 runs on a Mac and on Linux. It downloads its own `msb` 0.7.7, checks its
-SHA-256 against bb-box's pin, and runs it with an `MSB_HOME` of its own,
-never bb-box's `msb` or home. It needs no sudo, `python3` or `osascript`,
+SHA-256 against alia-box's pin, and runs it with an `MSB_HOME` of its own,
+never alia-box's `msb` or home. It needs no sudo, `python3` or `osascript`,
 prints no paths or names, and on exit removes every sandbox and snapshot it
 made, then its folder. It runs unit 10's checks and the reviewers' checks A
-to C, adds the memory checks, and check E, bb-box's own commands.
+to C, adds the memory checks, and check E, alia-box's own commands.
 
 The lead ran it on the production Mac host, as its user, in `/tmp`, on the
-same volume as bb-box's `msb` folder: macOS 27.0.1, Apple M4 Max, 128 GiB,
+same volume as alia-box's `msb` folder: macOS 27.0.1, Apple M4 Max, 128 GiB,
 APFS on the internal SSD, 340 GiB free. Each version passed first on a
 nested-KVM Proxmox QEMU Linux box. Five runs:
 
@@ -4134,9 +4134,9 @@ nested-KVM Proxmox QEMU Linux box. Five runs:
 | --- | --- | --- |
 | 1 | 12 passed, 3 failed | The data checks held: a chain of three restored byte for byte with both parents removed with `--force`, and checks A to C. The 3 failures measured nothing: the counter process never started on the Mac, and `--disk-only` printed no reason |
 | 2 | 13 passed, 3 failed, 1 skipped | The cause was a terminal, not `msb`: from an interactive shell `msb exec` gave the sandbox a PTY, so every read ended in a carriage return ("x\r" is not "x"), and the PTY's hangup ended the counter. Run 2's script under a PTY on Linux (`script -qec`) gave the same pattern |
-| 3 | 17 of 17 | With `msb exec --no-tty` and stdin from `/dev/null`, as bb-box runs `msb`. But its clean-up, which removes snapshots by ID, left 5 on the Mac and none on Linux |
-| 4 | 19 passed, 3 failed | Removal by ID, as bb-box's delete did, failed on the Mac: "snapshot identity <ID> has 2 local copies; use group:member or an explicit artifact path" |
-| 5 | 29 of 29 | Check E: bb-box's own commands by group and member (create with `--group` and `--label`, inspect, restore, `restore --disk-only` as a fork does, head, remove with `--force` of a parent, remove of an old head once another is head, remove of the last one after its sandboxes went, then nothing listed), once with `MSB_HOME` through a link and once through its real path. By ID, inspect failed through the link and worked through the real path |
+| 3 | 17 of 17 | With `msb exec --no-tty` and stdin from `/dev/null`, as alia-box runs `msb`. But its clean-up, which removes snapshots by ID, left 5 on the Mac and none on Linux |
+| 4 | 19 passed, 3 failed | Removal by ID, as alia-box's delete did, failed on the Mac: "snapshot identity <ID> has 2 local copies; use group:member or an explicit artifact path" |
+| 5 | 29 of 29 | Check E: alia-box's own commands by group and member (create with `--group` and `--label`, inspect, restore, `restore --disk-only` as a fork does, head, remove with `--force` of a parent, remove of an old head once another is head, remove of the last one after its sandboxes went, then nothing listed), once with `MSB_HOME` through a link and once through its real path. By ID, inspect failed through the link and worked through the real path |
 
 Run 5 on the Mac ([output](../research/box-snapshots/microsandbox-mac-results.txt)),
 times from the probe's own clock: a take with memory 0.78 s and of the disk
@@ -4153,11 +4153,11 @@ reached through one. Where `msb`'s home is a link, `msb` indexes each
 snapshot under the link's path and the real one, and then refuses to pick
 one by ID in `snapshot inspect`, `restore` and `remove`. Reproduced on
 Linux the moment `MSB_HOME` is a link; by group and member all three work.
-bb-box's wrapper reaches a home longer than 57 bytes through
-`/tmp/bb-box-msb-<uid>`, as for a BB machine's own data folder, so a Linux
+alia-box's wrapper reaches a home longer than 57 bytes through
+`/tmp/alia-box-msb-<uid>`, as for a VesnALIA machine's own data folder, so a Linux
 host with a long folder took snapshots before this that it could not
 restore, fork or delete, and a release of such a box stopped at its
-snapshots. bb-box's size read of a snapshot (`inspect`) failed there too,
+snapshots. alia-box's size read of a snapshot (`inspect`) failed there too,
 and fell back to the box's size.
 
 ### What changed
@@ -4168,10 +4168,10 @@ and fell back to the box's size.
   `msb --version` first.
 - **A snapshot is named by its group and member** (`groupMember`,
   `bbbox-<box ID>:<name>`) in `snapshot inspect`, `restore`, which forks
-  use too, and `remove`, and when a new head is chosen. bb-box's own files
+  use too, and `remove`, and when a new head is chosen. alia-box's own files
   (keep dates, sizes) stay keyed by the ID.
 - **Docs**: the snapshots guide and the microsandbox guide say Linux hosts
-  and Macs; the architecture says why bb-box names snapshots so; the probe
+  and Macs; the architecture says why alia-box names snapshots so; the probe
   and its Mac output are in the research folder; 070's decisions.
 
 ### Tests
@@ -4182,7 +4182,7 @@ the Mac did when its home is reached through a link (`homeThroughLink`):
 - "a Mac host's microsandbox boxes take and delete snapshots, as the probe
   on a Mac measured, and the doctor says so; another msb is still
   refused", in place of unit 10's test of the refusal;
-- "where msb's home is reached through a link ... bb-box names each by
+- "where msb's home is reached through a link ... alia-box names each by
   group and member to inspect, restore, fork and delete it": two snapshots,
   a restore, a fork, the parent deleted with `--force`, the last deleted,
   and no `msb` call with an ID.
@@ -4197,31 +4197,31 @@ scripts/reference.ts --check`); the node suite ran 3,494 tests, 3,175
 passed, 0 failed, 319 skipped; vitest ran 445, all passed, with
 `TZ=Pacific/Auckland`.
 
-### On a separate BB
+### On a separate VesnALIA
 
 The lead keeps a second microsandbox install off the owner's Mac, so the
-live check through bb-box ran on Linux, through the link: a fresh `npx
-bb-app` 0.48.1 with no account and `BB_BOX_LIVE_CHECKS=1` in a nested-KVM
-Proxmox QEMU box (8 cores, 16 GiB), bb-box from this branch, microsandbox
-on BB's server, with `HOME` long enough that `msb`'s home is 81 bytes, so
-bb-box reached it through `/tmp/bb-box-msb-1000`
+live check through alia-box ran on Linux, through the link: a fresh `npx
+alia-app` 0.48.1 with no account and `ALIA_BOX_LIVE_CHECKS=1` in a nested-KVM
+Proxmox QEMU box (8 cores, 16 GiB), alia-box from this branch, microsandbox
+on VesnALIA's server, with `HOME` long enough that `msb`'s home is 81 bytes, so
+alia-box reached it through `/tmp/alia-box-msb-1000`
 ([live-linked-home.sh](070-snapshots/close-out/live-linked-home.sh), which
 runs unit 10's own [live-setup.sh](070-snapshots/unit-10/live-setup.sh) and
 [live-gates.sh](070-snapshots/unit-10/live-gates.sh) unchanged). Boxes were
-machines of the person's and joined BB as machines. Times are bb-box's own.
+machines of the person's and joined VesnALIA as machines. Times are alia-box's own.
 
 | Check | Result |
 | --- | --- |
 | A box | ready in 235 s, most of it importing the image into a new `msb` home; `boot=unarmed`, its own marker |
 | Take with memory, take of the disk | 3.4 s and 0.71 s |
-| Restore, memory | 2.7 s: the counter process running, the same host ID, one microVM; BB's daemon connected again 6.8 s after the restore began |
-| Fork of the memory snapshot | 2.8 s, a new BB machine; `boot=reset`, "BB machines removed" naming the source's host ID; no process of its source; new SSH host keys |
+| Restore, memory | 2.7 s: the counter process running, the same host ID, one microVM; VesnALIA's daemon connected again 6.8 s after the restore began |
+| Fork of the memory snapshot | 2.8 s, a new VesnALIA machine; `boot=reset`, "VesnALIA machines removed" naming the source's host ID; no process of its source; new SSH host keys |
 | Undo, disk | 2.5 s; `boot=kept`, the same host ID; the daemon connected 3.7 s after it began |
 | Take a parent and its child, delete the parent | 0.68, 0.69 and 0.38 s |
 | Keep, release | 0.38 s and 0.89 s; the kept snapshot listed after the release |
 | Fork of the kept snapshot after the release | 2.3 s, `boot=reset`, a new host ID |
 | Clean up | every box released, every snapshot deleted: "There are no snapshots", `msb ls` "No sandboxes found", `msb snapshot list` "No snapshots indexed", no keep file; the link in place throughout |
-| Main's bb-box, in the same BB, through the same link | `origin/main`'s bb-box (`b15fe055`) installed from a checkout; the release of a box holding one snapshot stopped: "bb-box could not confirm the delete of snapshot ... msb snapshot remove failed: exit code 1. It checks again at its next sweep". With this branch's bb-box installed again, the sweep finished that release; `msb` then listed no sandboxes and no snapshots |
+| Main's alia-box, in the same VesnALIA, through the same link | `origin/main`'s alia-box (`b15fe055`) installed from a checkout; the release of a box holding one snapshot stopped: "alia-box could not confirm the delete of snapshot ... msb snapshot remove failed: exit code 1. It checks again at its next sweep". With this branch's alia-box installed again, the sweep finished that release; `msb` then listed no sandboxes and no snapshots |
 
 ### After merge
 
@@ -4240,15 +4240,15 @@ close-out](070-snapshots.md#decided-during-the-close-out).
 ### What the live check found first
 
 - **The image had the reset off.** `prepare-linux-image.sh` installs
-  `bb-box-identity` through `customize-base.sh`, which turns it on only with
+  `alia-box-identity` through `customize-base.sh`, which turns it on only with
   `BOX_IDENTITY_RESET=on`, and the script never set it. So no Tart Linux box
-  was fork-safe, whatever bb-box offered. It sets it now for the plain image.
+  was fork-safe, whatever alia-box offered. It sets it now for the plain image.
 - **A stopped take was never fork-safe.** With the image fixed, the first
   live fork was refused: "tl-src had no working identity reset when
   'before' was taken". Core reads fork-safety from inside a ready box at
   each take, and Tart takes a Linux box only while it is stopped. A macOS
   box taken while stopped had the same gap. The fake Mac's tests had passed
-  `forkSafe` in by hand, so they missed it. bb-box's own stop now reads it.
+  `forkSafe` in by hand, so they missed it. alia-box's own stop now reads it.
 
 ### What changed
 
@@ -4267,16 +4267,16 @@ close-out](070-snapshots.md#decided-during-the-close-out).
   the plain image and off with `--desktop`.
 - **Core**: where a backend's snapshots are taken from a stopped box
   (`readsForkSafetyAtStop`: it forks, and its snapshots are `stopped-only`
-  or `suspends`), bb-box's stop reads the reset from inside the box just
+  or `suspends`), alia-box's stop reads the reset from inside the box just
   before it stops it, and keeps it on the box's record (`stopForkSafety`)
   once the stop has succeeded, with the stopped guest's mark; any write of
   the record in another state than stopped, or with a restore under way,
   drops it. A take of a stopped box uses it while the mark is the same
   (since the reviews, below). The fork and Keep refusals of a
   snapshot that is not fork-safe, there, add `STOPPED_ANOTHER_WAY`: "A
-  snapshot of a stopped box is fork-safe only when bb-box stopped the box,
+  snapshot of a stopped box is fork-safe only when alia-box stopped the box,
   as it reads the identity reset just before its stop: start the box, stop
-  it with bb-box and take the snapshot again."
+  it with alia-box and take the snapshot again."
 - **Docs**: the snapshots guide (the offer table, which images have the
   reset on, the stop rule), the Tart guide's Snapshots section, 070.
 
@@ -4287,12 +4287,12 @@ close-out](070-snapshots.md#decided-during-the-close-out).
   its own with a new MAC address ... nothing to clean on the Mac", with
   `diskutil` unable to attach; "a Linux VM's snapshot taken before its box
   had the identity reset does not fork ... a Linux desktop forks none"; and
-  one through bb-box's own `Boxes` and `Snapshots` with the real Linux reset
+  one through alia-box's own `Boxes` and `Snapshots` with the real Linux reset
   program in a test root, reached through the fake Mac's guest: core writes
-  the marker at acquire, bb-box's stop reads version 8, the stopped take
+  the marker at acquire, alia-box's stop reads version 8, the stopped take
   records it, the plan offers the fork, Keep takes it, and a box stopped
-  outside bb-box takes a snapshot that is not fork-safe.
-- `test/beside-snapshots.test.ts`: in core, bb-box's stop reads the reset
+  outside alia-box takes a snapshot that is not fork-safe.
+- `test/beside-snapshots.test.ts`: in core, alia-box's stop reads the reset
   where snapshots suspend the box, a stopped take uses it and keeps, a
   start forgets it, a box stopped another way takes one that neither keeps
   nor forks, with the words; where snapshots are taken live, the stop reads
@@ -4310,11 +4310,11 @@ this commit with the done note: `npx tsc` passes and the reference is
 current; the node suite ran 3,499 tests, 3,180 passed, 0 failed, 319
 skipped; vitest ran 445, all passed, with `TZ=Pacific/Auckland`.
 
-### On a separate BB
+### On a separate VesnALIA
 
-A fresh `npx bb-app` 0.48.1 with no account, its own data folder and ports,
-`env -i` and `BB_BOX_LIVE_CHECKS=1`, in a Proxmox LXC box, bb-box installed
-from this branch with `bb plugin install path:`, by
+A fresh `npx alia-app` 0.48.1 with no account, its own data folder and ports,
+`env -i` and `ALIA_BOX_LIVE_CHECKS=1`, in a Proxmox LXC box, alia-box installed
+from this branch with `alia plugin install path:`, by
 [tart-linux-setup.sh](070-snapshots/close-out/tart-linux-setup.sh). The
 lead gave it a Tart backend of its own install on the production Tart Mac,
 as in unit 9, with that backend's SSH key put in the box as a file, deleted
@@ -4326,23 +4326,23 @@ VM was touched.
 The image was built from this branch's `prepare-linux-image.sh` on the Mac
 as its user, under a name of its own, from the base the production image
 names, already cached, so nothing was pulled, renamed or pruned (070, the
-close-out's decisions say why not bb-box's own image build): 2 minutes 24
+close-out's decisions say why not alia-box's own image build): 2 minutes 24
 seconds, 4.7 GB; its box-user checks passed, and the doctor read it as a
 standard image build.
 
-As in unit 9, a BB with no account cannot make the boxes BB machines, so
-the BB machine was stood in for by a random host ID in
-`~/.bb-machines/live-check/host-id`, and the tailnet node by a file in
+As in unit 9, a VesnALIA with no account cannot make the boxes VesnALIA machines, so
+the VesnALIA machine was stood in for by a random host ID in
+`~/.alia-machines/live-check/host-id`, and the tailnet node by a file in
 `/var/lib/tailscale`. The steps are
 [tart-linux-gates.sh](070-snapshots/close-out/tart-linux-gates.sh). Times
 are the CLI's.
 
 | Check | Result |
 | --- | --- |
-| A box | ready in 4.8 s by bb-box's timings, identity marker 65 ms; 15.9 s for the command, the rest its first try to join a BB it cannot reach; `bb-box-identity status`: version 8, on, `boot=unarmed`, `marker=matches`, armed, `source=device`; its unit is ordered before `ssh`, `ssh.socket`, `systemd-networkd`, `tailscaled` and the box user's `user@` |
+| A box | ready in 4.8 s by alia-box's timings, identity marker 65 ms; 15.9 s for the command, the rest its first try to join a VesnALIA it cannot reach; `alia-box-identity status`: version 8, on, `boot=unarmed`, `marker=matches`, armed, `source=device`; its unit is ordered before `ssh`, `ssh.socket`, `systemd-networkd`, `tailscaled` and the box user's `user@` |
 | Stop, take stopped, start | 16.1 s, 0.7 s and 4.2 s |
 | Restore, undo | 20.8 s and 21.1 s, each a shutdown, the copy put back and a boot: `work.txt` "before", then "after"; the same host ID, machine ID and SSH host key; `boot=kept` |
-| Fork, as one of the person's machines | ready in 4.6 s (5.5 s for the command), after core's check before ready. In the fork: `boot=reset`, "none of the marker's MAC addresses (0e:ac:...) is on this box's interfaces (1e:de:...); BB machines removed: <the stand-in host ID>"; no host ID file, no Tailscale state; a new machine ID and SSH host key; its own marker and hostname; `work.txt` "before". The order in its boot: the reset done at 1.45 s, `systemd-networkd` active at 1.55 s, `ssh` at 1.58 s and the box user's `user@1002` at 1.66 s, which is ordered after it |
+| Fork, as one of the person's machines | ready in 4.6 s (5.5 s for the command), after core's check before ready. In the fork: `boot=reset`, "none of the marker's MAC addresses (0e:ac:...) is on this box's interfaces (1e:de:...); VesnALIA machines removed: <the stand-in host ID>"; no host ID file, no Tailscale state; a new machine ID and SSH host key; its own marker and hostname; `work.txt` "before". The order in its boot: the reset done at 1.45 s, `systemd-networkd` active at 1.55 s, `ssh` at 1.58 s and the box user's `user@1002` at 1.66 s, which is ordered after it |
 | The source after its fork | unchanged: the same host ID, Tailscale state, machine ID, SSH host key and MAC address, `boot=kept`, `marker=matches` |
 | Keep, release | 0.6 s; the source released in 1.2 s, its kept snapshot listed after |
 | Fork of the kept snapshot after the release | ready in 4.6 s (5.4 s for the command): `boot=reset`, no host ID file, a new machine ID and SSH host key, `work.txt` "before" |
@@ -4353,16 +4353,16 @@ are the CLI's.
 - A box from a Tart Linux image prepared before this unit has the reset
   off, so its snapshots neither fork nor keep until the image is refreshed
   and the box made again.
-- A box stopped other than by bb-box, shut down from inside or by the Mac,
-  takes snapshots that neither fork nor keep, until bb-box starts and stops
+- A box stopped other than by alia-box, shut down from inside or by the Mac,
+  takes snapshots that neither fork nor keep, until alia-box starts and stops
   it.
 - A Linux fork's disk is not cleaned on the Mac, as a macOS fork's is: it
   relies on systemd's order, measured above, and on its source's reset
   having been on at the take.
-- bb-box's stop of a Tart box now waits for the reading first, a moment
+- alia-box's stop of a Tart box now waits for the reading first, a moment
   when the box answers and up to 10 s when it does not, and then reads the
   stopped VM's mark on the Mac.
-- A Tart box stopped by bb-box whose VM folder is touched while it is
+- A Tart box stopped by alia-box whose VM folder is touched while it is
   stopped, by `tart set` say, also loses its reading: it fails closed.
 
 ### After the reviews
@@ -4373,8 +4373,8 @@ before it:
 
 | Finding | What changed | Test |
 | --- | --- | --- |
-| Astra's high, Opus 2: a reading survived a start and stop outside bb-box between sweeps, and a failed stop observed as stopped kept it | The reading is kept only once bb-box's stop has succeeded, with the backend's mark of the stopped guest (`stoppedMark`), and a take uses it only while the mark is the same. On Tart the mark is each VM file's modification time and size (`config.json`, `nvram.bin`, `disk.img`, `state.vzvmsave`), read on the Mac; a run writes them, as the firmware writes the NVRAM at each boot. A backend with no mark keeps no reading | "a box bb-box stopped that then ran outside bb-box ... is not fork-safe", "a stop that failed, though the guest stopped, keeps no reading", and the fake Mac test, whose fake `tart run` now touches `nvram.bin` |
-| Opus 1, Astra's low: an older image's box was told to stop it with bb-box, which cannot help | A reading that found the reset off or missing is kept as such; a snapshot records why it is not fork-safe (`forkSafeWhy`, a new column in `snapshots.db`); `reset-off` refusals say "refresh the Linux image and make the box again" (or, for macOS, "make the box again"), and only `unread` ones say to stop it with bb-box | "a box whose reset was off when bb-box stopped it ... refresh the Linux image", and unit 8's Keep tests in core and the CLI, whose box has no reset program, now expect those words |
+| Astra's high, Opus 2: a reading survived a start and stop outside alia-box between sweeps, and a failed stop observed as stopped kept it | The reading is kept only once alia-box's stop has succeeded, with the backend's mark of the stopped guest (`stoppedMark`), and a take uses it only while the mark is the same. On Tart the mark is each VM file's modification time and size (`config.json`, `nvram.bin`, `disk.img`, `state.vzvmsave`), read on the Mac; a run writes them, as the firmware writes the NVRAM at each boot. A backend with no mark keeps no reading | "a box alia-box stopped that then ran outside alia-box ... is not fork-safe", "a stop that failed, though the guest stopped, keeps no reading", and the fake Mac test, whose fake `tart run` now touches `nvram.bin` |
+| Opus 1, Astra's low: an older image's box was told to stop it with alia-box, which cannot help | A reading that found the reset off or missing is kept as such; a snapshot records why it is not fork-safe (`forkSafeWhy`, a new column in `snapshots.db`); `reset-off` refusals say "refresh the Linux image and make the box again" (or, for macOS, "make the box again"), and only `unread` ones say to stop it with alia-box | "a box whose reset was off when alia-box stopped it ... refresh the Linux image", and unit 8's Keep tests in core and the CLI, whose box has no reset program, now expect those words |
 | Opus 3: an in-place restore left stopped kept the reading of the earlier disk | Any write of the box's record with a restore under way drops the reading | "a restore drops the stopped box's reading as it begins" |
 
 Run against the rebased commit's sources with only these tests and fakes
@@ -4400,7 +4400,7 @@ production arms already, and forks one box to check.
 
 ### What the smoke test found
 
-After merge, a Tart Linux box was stopped through bb-box, a snapshot taken
+After merge, a Tart Linux box was stopped through alia-box, a snapshot taken
 (fork-safe) and a fork made. The fork came up on the source's recorded
 address, and core's check refused it: "it holds <source>'s address ..., so
 it would take what is sent to <source>". While the source is stopped it
@@ -4408,22 +4408,22 @@ holds no address, so the refusal was false.
 
 ### The cause, as measured
 
-On a separate BB with a Tart backend of its own install on the production
+On a separate VesnALIA with a Tart backend of its own install on the production
 Tart Mac (macOS 27.0.1, Tart 2.40.1), from production's refreshed
-`bb-box-linux` image, cloned by name and not changed. One VM of this
+`alia-box-linux` image, cloned by name and not changed. One VM of this
 install's ran at a time. bootpd's lease lines were read for this install's
 VMs' MAC addresses only.
 
 | Step | Measured |
 | --- | --- |
 | The source, running | 192.168.64.5. systemd 255 (255.4-1ubuntu8.18). Its lease file: `CLIENTID=01f6839d58e72c`, `01` and its MAC address, not a DUID from its machine ID; `LIFETIME=1h`. bootpd: `identifier=1,f6:83:9d:58:e7:2c`, lease to 1 hour on |
-| bb-box's stop | networkd logged "DHCP lease lost" as it stopped: it sent a release (`SendRelease` is on by default). bootpd kept the entry, with its lease ending at the moment of the stop |
+| alia-box's stop | networkd logged "DHCP lease lost" as it stopped: it sent a release (`SendRelease` is on by default). bootpd kept the entry, with its lease ending at the moment of the stop |
 | A fork, the source stopped | a new MAC address, 5a:b8:...; bootpd gave it 192.168.64.5, with `identifier=1,5a:b8:...`, its own. Core refused it, as in production, and released it |
-| The source started again | it got 192.168.64.6, as the refused fork's lease was still live, and bb-box's record still said 192.168.64.5: a Tart start returned no address, so core kept the old one |
+| The source started again | it got 192.168.64.6, as the refused fork's lease was still live, and alia-box's record still said 192.168.64.5: a Tart start returned no address, so core kept the old one |
 
 So the fork took nothing of its source's: its MAC address and DHCP client ID
 were its own, and the address was free. The reset ran before networkd: in
-the fork, `bb-box-identity.service` finished at 1.52 s and networkd had its
+the fork, `alia-box-identity.service` finished at 1.52 s and networkd had its
 lease at 1.69 s.
 
 ### What changed
@@ -4468,8 +4468,8 @@ one failure, on main too: "a box whose restore was cut short is put right
 
 ### Live
 
-On a separate BB with bb-box from this change, a Tart backend of its own
-install on the production Tart Mac, production's `bb-box-linux` cloned by
+On a separate VesnALIA with alia-box from this change, a Tart backend of its own
+install on the production Tart Mac, production's `alia-box-linux` cloned by
 name, one VM of the install's at a time. bootpd's lines were read for the
 install's VMs' MAC addresses only.
 
@@ -4483,7 +4483,7 @@ The first commit was run as two scripts:
 | The fork's record | its own address, 192.168.64.6, once its first start returned it (a second fork, 4.8 s) |
 | The fork stopped, the source started | bootpd gave the source 192.168.64.6 again, recorded so |
 
-The amended commit, on a new separate BB, by
+The amended commit, on a new separate VesnALIA, by
 [tart-stopped-source-fork.sh](070-snapshots/close-out/tart-stopped-source-fork.sh)
 as it stands:
 
@@ -4493,14 +4493,14 @@ as it stands:
 | Stop, take | 1.1 s and 0.8 s; bootpd's lease ended at the stop |
 | Fork, the source stopped | ready in 4.6 s (5.4 s for the command), on 192.168.64.2, the source's last address, client ID `01ca4bbea8bdad`, its own; it records that address; its reset done at 1.42 s, its lease at 1.59 s |
 | The fork stopped, the source started | 4.4 s; it records 192.168.64.2, the address it holds; its last boot ended "DHCP lease lost" |
-| Clean up | both machines removed, no snapshots, a sweep; the test backend removed. On the Mac, no owner file or snapshot of this install's, and `bb-box-linux` untouched |
+| Clean up | both machines removed, no snapshots, a sweep; the test backend removed. On the Mac, no owner file or snapshot of this install's, and `alia-box-linux` untouched |
 
 Every command of that run went to the address the Mac gave the VM, as a
 connection no longer falls back.
 
 ### macOS forks on Tart
 
-bb-box stops a macOS box by suspending it. A suspended VM sends no release,
+alia-box stops a macOS box by suspending it. A suspended VM sends no release,
 and its lease runs on, an hour on this Mac. Within that hour a fork gets
 another address, as unit 9 measured with its source suspended. After it,
 bootpd may give the fork the suspended source's address, which the source
@@ -4518,11 +4518,11 @@ resumes with: the check refuses that fork. Not run live here.
   source's start, stop and take wait for it.
 - Two VMs that ask with the same client ID get one binding from bootpd.
   Where the snapshot holds no client ID to compare, a source started after
-  its fork's handover could get the fork's address. The images bb-box
+  its fork's handover could get the fork's address. The images alia-box
   builds use `01` and the MAC address, which a fork changes.
 - The fork's DHCP request names its source's hostname, as the fork is
   renamed after its first boot: bootpd's entry for the fork says
-  `name=tl-src`. bb-box reads nothing of it.
+  `name=tl-src`. alia-box reads nothing of it.
 
 ## ZFS restores on Proxmox LXC
 
@@ -4558,8 +4558,8 @@ bxsnapshotbox1 of install test." Each passes with the change.
 
 ### The live run
 
-On a separate BB with no account, bb-box from this branch, started with
-`BB_BOX_LIVE_CHECKS=1`, its identity reset armed for a Proxmox LXC backend
+On a separate VesnALIA with no account, alia-box from this branch, started with
+`ALIA_BOX_LIVE_CHECKS=1`, its identity reset armed for a Proxmox LXC backend
 of its own install. The backend used a copy of the Linux template on a
 test ZFS pool (40 GB, `zfspool`) on one Proxmox VE node, and 5 VMIDs.
 
@@ -4567,21 +4567,21 @@ test ZFS pool (40 GB, `zfspool`) on one Proxmox VE node, and 5 VMIDs.
 | --- | --- |
 | A Linux box of 16 GiB | its root disk on the ZFS pool (`findmnt`: `zfs`), identity reset armed |
 | Take A, write B, take C, write "after C" | both ready in 0.1 to 0.2 s |
-| Restore A, with and without `--check` | "pve1's storage tank is ZFS, which restores only the newest snapshot, and "A" has 1 newer one. Fork "A" instead, or delete the newer one yourself first. BB Box never deletes newer snapshots to make a restore possible, and changed nothing." The box kept running, from the same boot, the file read "after C", and A and C were both listed |
+| Restore A, with and without `--check` | "pve1's storage tank is ZFS, which restores only the newest snapshot, and "A" has 1 newer one. Fork "A" instead, or delete the newer one yourself first. VesnALIA Box never deletes newer snapshots to make a restore possible, and changed nothing." The box kept running, from the same boot, the file read "after C", and A and C were both listed |
 | `--check` of C | "copy it in full, stopped, as its undo ...: a held copy that cannot start, about 38 s, up to 17 GB on tank" |
-| Restore C, held after the copy's clone and before it was a template, then BB restarted | recovery deleted the copy ("bb-box restarted before it was a template, so it is not trusted"), made it again in 7.7 s, rolled back in 0.4 s and started the box in 1.9 s. The file read B |
-| Undo it, held after the new guest was made, then BB restarted | finished 7 s after the restart: the box on a new guest, the file "after C", A and C listed "on its earlier guest: fork only" |
-| The box joined BB, then take D and restore it, held once the copy's clone task had begun, then BB restarted | recovery deleted that copy, made it again in 8.1 s, rolled back in 0.6 s and started in 2.0 s. The file read D; the BB machine was the same, and connected |
-| Undo it, held once the new guest's clone task had begun, then BB restarted | before the fix: unconfirmed, as above, the box stopped and pinned. With the fix installed, the next sweep deleted the half-made guest, made it again and finished: the file "after D" |
-| The same undo again with the fix from the start, held once the clone task had begun, then BB restarted | finished 18 s after the restart (swap 7.5 s, start 2.6 s): the half-made guest deleted and made again, the old guest, which held no snapshot, deleted. 0 operations unsettled |
-| Identity after each swap | the same box ID, name, BB machine and host ID, connected; the same MAC address and SSH host keys (their SHA-256 as the snapshots recorded them); `bb-box-identity: kept: the identity marker of box ... matches`, so no reset ran |
+| Restore C, held after the copy's clone and before it was a template, then VesnALIA restarted | recovery deleted the copy ("alia-box restarted before it was a template, so it is not trusted"), made it again in 7.7 s, rolled back in 0.4 s and started the box in 1.9 s. The file read B |
+| Undo it, held after the new guest was made, then VesnALIA restarted | finished 7 s after the restart: the box on a new guest, the file "after C", A and C listed "on its earlier guest: fork only" |
+| The box joined VesnALIA, then take D and restore it, held once the copy's clone task had begun, then VesnALIA restarted | recovery deleted that copy, made it again in 8.1 s, rolled back in 0.6 s and started in 2.0 s. The file read D; the VesnALIA machine was the same, and connected |
+| Undo it, held once the new guest's clone task had begun, then VesnALIA restarted | before the fix: unconfirmed, as above, the box stopped and pinned. With the fix installed, the next sweep deleted the half-made guest, made it again and finished: the file "after D" |
+| The same undo again with the fix from the start, held once the clone task had begun, then VesnALIA restarted | finished 18 s after the restart (swap 7.5 s, start 2.6 s): the half-made guest deleted and made again, the old guest, which held no snapshot, deleted. 0 operations unsettled |
+| Identity after each swap | the same box ID, name, VesnALIA machine and host ID, connected; the same MAC address and SSH host keys (their SHA-256 as the snapshots recorded them); `alia-box-identity: kept: the identity marker of box ... matches`, so no reset ran |
 | Release | the box's guest went at once; its earlier guest and both held copies at the next tidy, 2 min 20 s later, each with its event. No boxes or snapshots left, and the sweep found no leftovers |
 
 Found, not changed:
 
 - **A swap gives the box a new machine ID.** Proxmox clears a clone's
   `/etc/machine-id`, so the new guest writes one at its first boot. The
-  box's SSH host keys, BB machine and host ID stay, and its identity reset
+  box's SSH host keys, VesnALIA machine and host ID stay, and its identity reset
   does not run. This is so on every storage, as every swap is a clone.
 - **The box's address follows its VMID** on a backend that gives each VMID
   its own address, so it changes at each swap.

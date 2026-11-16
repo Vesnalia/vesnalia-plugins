@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDataTransferVerticalIcon, ComputerIcon, CpuIcon, GpuIcon, HardDriveIcon, RamMemoryIcon, VideoReplayIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";

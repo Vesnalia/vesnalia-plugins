@@ -1,23 +1,23 @@
-# Mockup of a plugin section in bb's look (the «Mockup» stage)
+# Mockup of a plugin section in VesnALIA's look (the «Mockup» stage)
 
 The mockup is what the owner sees before development: they correct it in words, approve it, and the plugin is then
-built to it. So the mockup must look like bb, not like "just a web page": the same font, colours, sizes and density.
+built to it. So the mockup must look like VesnALIA, not like "just a web page": the same font, colours, sizes and density.
 
 ## File
 
 - `docs/workshop/<KEY>/mockup/index.html` — one self-contained HTML file: styles and scripts inside, no external
-  fonts, libraries or network requests (it is opened in bb's chat and in a browser via `file://`).
-- At the top of the page — the mockup's own bar (not part of bb): the plugin name, a screen switcher, a
+  fonts, libraries or network requests (it is opened in VesnALIA's chat and in a browser via `file://`).
+- At the top of the page — the mockup's own bar (not part of VesnALIA): the plugin name, a screen switcher, a
   «Desktop / Phone» switcher (phone — a frame 390px wide) and the note «Mockup — sample data».
-- In a window narrower than 720px the mockup opens in the «Phone» view by itself (check `innerWidth` on load): bb's
+- In a window narrower than 720px the mockup opens in the «Phone» view by itself (check `innerWidth` on load): VesnALIA's
   chat previews the mockup about 430px wide, where the desktop layout gets squashed. The switcher still works as usual.
 - Screens are sections of the page, switched without a reload (`hidden` on the inactive ones). Every screen and
   state from the spec is its own switcher item: «List», «Card», «Empty», «Error», «Confirmation…».
 - The screenshots `desktop.png` and `phone.png` sit next to it, taken from this file.
 
-## bb's look — theme variables from bb 0.46 CSS (light theme)
+## VesnALIA's look — theme variables from VesnALIA 0.46 CSS (light theme)
 
-These are the actual values from bb 0.46's `app/dist/assets/index-*.css` (`:root`). Browsers understand `oklch()` and
+These are the actual values from VesnALIA 0.46's `app/dist/assets/index-*.css` (`:root`). Browsers understand `oklch()` and
 `color-mix()` — put them into the mockup as they are, not "by eye".
 
 ```css
@@ -37,11 +37,11 @@ These are the actual values from bb 0.46's `app/dist/assets/index-*.css` (`:root
 }
 ```
 
-- Density: 8–12px paddings, buttons and fields 28px high, table rows 28–32px — bb is dense, not a landing page.
+- Density: 8–12px paddings, buttons and fields 28px high, table rows 28–32px — VesnALIA is dense, not a landing page.
 - Error / success / attention — by text colour (`#dc2626` / `#16a34a` / `#b45309`), no full-width fills.
 - Draw the light theme; add a dark one only if the owner asks for it.
 
-## bb window layout
+## VesnALIA window layout
 
 ```
 ┌────┬───────────────────┬──────────────────────────────────────────────┐

@@ -48,7 +48,7 @@ describe("data files", () => {
 });
 
 describe("prompt", () => {
-  it("keeps every section under bb's 4,096-character cap", () => {
+  it("keeps every section under VesnALIA's 4,096-character cap", () => {
     expect(mainInstructions("eager").length).toBeLessThanOrEqual(SECTION_LIMIT);
     expect(CODE_WORK_INSTRUCTIONS.length).toBeLessThanOrEqual(SECTION_LIMIT);
     for (const s of referenceSections()) expect(s.text.length, s.tool).toBeLessThanOrEqual(SECTION_LIMIT);

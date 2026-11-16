@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-clickable-local-link",
+  "name": "alia-plugin-clickable-local-link",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Clickable Local Link",
     "description": "On macOS, a click on a chat link to a local document or folder opens it in its app or in Finder.",
     "branding": {
@@ -22,7 +22,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -34,19 +33,32 @@
   "description": "On macOS, a click on a chat link to a local document or folder opens it in its app or in Finder.",
   "license": "MIT",
   "author": "Sergey Kalachev",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/meanwhile17/bb-plugin-clickable-local-link.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "links",
     "finder",
     "macos"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "node --test --experimental-strip-types test/*.test.ts"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/clickable-local-link#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/clickable-local-link"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

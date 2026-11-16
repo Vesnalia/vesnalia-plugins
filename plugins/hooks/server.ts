@@ -1,11 +1,11 @@
-// bb-plugin-hooks — custom hooks for BB.
+// alia-plugin-hooks — custom hooks for VesnALIA.
 //
-// Users define hooks (a shell command or a webhook URL bound to a BB event)
-// in the `hooks` setting or with `bb hooks add`. Observe-only lifecycle
+// Users define hooks (a shell command or a webhook URL bound to a VesnALIA event)
+// in the `hooks` setting or with `alia hooks add`. Observe-only lifecycle
 // events fan out to matching hooks after the fact; the `message.dispatch`
 // checkpoint runs matching gate hooks and acts on their answer.
 import { execFileSync } from "node:child_process";
-import type { BbPluginApi, MessageDispatchHookContext, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CATALOG_MIGRATIONS, createCatalogCache, createRegistry, fetchCatalog, parseSourceInput, type CatalogRecord } from "./src/catalog.js";
 import { removeHook, useTemplate } from "./src/actions.js";
@@ -38,13 +38,13 @@ const CHANGED = "hooks-changed";
 /** Total time the dispatch handler may spend; core fails the attempt at 10 s. */
 const DISPATCH_BUDGET_MS = 8_500;
 
-/** Absolute path to `bb` for command hooks, when this process can see one. */
-function resolveBbCli(): string | null {
-  const fromEnv = process.env.BB_CLI?.trim();
+/** Absolute path to `VesnALIA` for command hooks, when this process can see one. */
+function resolveAliaCli(): string | null {
+  const fromEnv = process.env.ALIA_CLI?.trim();
   if (fromEnv) return fromEnv;
   try {
     const bin = process.platform === "win32" ? "where.exe" : "which";
-    const found = execFileSync(bin, ["bb"], { encoding: "utf8", timeout: 1_000, windowsHide: true })
+    const found = execFileSync(bin, ["alia"], { encoding: "utf8", timeout: 1_000, windowsHide: true })
       .split(/\r?\n/)
       .map((line) => line.trim())
       .find((line) => line !== "");
@@ -59,13 +59,13 @@ const hooksSettingSchema = z.string().superRefine((value, ctx) => {
   if ("error" in parsed) ctx.addIssue({ code: "custom", message: parsed.error });
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     hooks: {
       type: "string",
       label: "Advanced: hooks as JSON",
       description:
-        "The raw list behind the Hooks page, for copying, pasting or version control. Manage hooks on the Hooks page or with `bb hooks` instead of editing this by hand.",
+        "The raw list behind the Hooks page, for copying, pasting or version control. Manage hooks on the Hooks page or with `alia hooks` instead of editing this by hand.",
       experimental_multiline: true,
       experimental_schema: hooksSettingSchema,
       default: "[]",
@@ -87,28 +87,28 @@ export default async function plugin(bb: BbPluginApi) {
     webhookSecret: {
       type: "string",
       label: "Webhook signing secret",
-      description: "When set, url hooks carry x-bb-hooks-signature (HMAC-SHA256 of `<timestamp>.<body>`).",
+      description: "When set, url hooks carry x-alia-hooks-signature (HMAC-SHA256 of `<timestamp>.<body>`).",
       secret: true,
     },
     catalogs: {
       type: "string",
       label: "Marketplace catalogs",
-      description: "One per line: an https URL of a hooks-catalog.json, or a GitHub owner/repo. `bb hooks marketplace add` writes here too.",
+      description: "One per line: an https URL of a hooks-catalog.json, or a GitHub owner/repo. `alia hooks marketplace add` writes here too.",
       experimental_multiline: true,
-      default: "MacHatter1/bb-hooks-marketplace",
+      default: "MacHatter1/alia-hooks-marketplace",
     },
     shareInstalls: {
       type: "select",
       label: "Share anonymous install counts",
       description:
-        "Counts installs from the BB Hooks Marketplace catalog only. When on, each new install from it sends the template id and version, and nothing else. ask: BB asks on your first such install.",
+        "Counts installs from the VesnALIA Hooks Marketplace catalog only. When on, each new install from it sends the template id and version, and nothing else. ask: VesnALIA asks on your first such install.",
       options: [...SHARE_INSTALLS],
       default: "ask",
     },
     secretsKey: {
       type: "string",
       label: "Secrets encryption key",
-      description: "Generated automatically; encrypts values stored by `bb hooks secrets`. Changing it makes existing secrets unreadable.",
+      description: "Generated automatically; encrypts values stored by `alia hooks secrets`. Changing it makes existing secrets unreadable.",
       secret: true,
     },
   });
@@ -120,12 +120,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   function notify(kind: string): void {
     try {
-      bb.realtime.publish(CHANGED, { kind });
+      alia.realtime.publish(CHANGED, { kind });
     } catch (cause) {
-      bb.log.debug(`realtime publish failed: ${(cause as Error).message}`);
+      alia.log.debug(`realtime publish failed: ${(cause as Error).message}`);
     }
   }
-  const rawStore = createHookStore(settings, (message) => bb.log.warn(`hooks setting ignored: ${message}`));
+  const rawStore = createHookStore(settings, (message) => alia.log.warn(`hooks setting ignored: ${message}`));
   const store: HookStore = {
     ...rawStore,
     async upsert(hook) {
@@ -146,11 +146,11 @@ export default async function plugin(bb: BbPluginApi) {
   };
   const initial = await store.list();
   const invalid = store.lastError();
-  if (invalid !== null) bb.log.warn(`no hooks are active until the hooks setting is fixed: ${invalid}`);
-  else bb.log.info(`loaded ${initial.length} hook${initial.length === 1 ? "" : "s"}`);
+  if (invalid !== null) alia.log.warn(`no hooks are active until the hooks setting is fixed: ${invalid}`);
+  else alia.log.info(`loaded ${initial.length} hook${initial.length === 1 ? "" : "s"}`);
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [...HISTORY_MIGRATIONS, ...SECRET_MIGRATIONS, ...CATALOG_MIGRATIONS]);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [...HISTORY_MIGRATIONS, ...SECRET_MIGRATIONS, ...CATALOG_MIGRATIONS]);
   const history = createHistoryStore(db);
 
   let secretsKey = current.secretsKey;
@@ -194,7 +194,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const line of sourceLines()) {
       const parsed = parseSourceInput(line, aliases());
       if ("url" in parsed && !urls.includes(parsed.url)) urls.push(parsed.url);
-      else if ("error" in parsed) bb.log.warn(`catalogs setting: ${parsed.error}`);
+      else if ("error" in parsed) alia.log.warn(`catalogs setting: ${parsed.error}`);
     }
     return urls;
   }
@@ -215,12 +215,12 @@ export default async function plugin(bb: BbPluginApi) {
     } else {
       const message = result.status === "error" ? result.message : "not modified but nothing cached";
       record = { url, name: previous?.name ?? null, etag: previous?.etag ?? null, fetchedAt: previous?.fetchedAt ?? null, catalog: previous?.catalog ?? null, error: message };
-      bb.log.warn(`catalog ${url}: ${message}`);
+      alia.log.warn(`catalog ${url}: ${message}`);
     }
     try {
       catalogCache.put(record);
     } catch (cause) {
-      bb.log.debug(`catalog cache write skipped: ${(cause as Error).message}`);
+      alia.log.debug(`catalog cache write skipped: ${(cause as Error).message}`);
       return record;
     }
     notify("catalogs");
@@ -269,7 +269,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (input === undefined) return refreshAll();
       const parsed = parseSourceInput(input, aliases());
       if ("error" in parsed) return parsed;
-      if (!configuredUrls().includes(parsed.url)) return { error: `"${input}" is not a configured catalog. Run "bb hooks marketplace list".` };
+      if (!configuredUrls().includes(parsed.url)) return { error: `"${input}" is not a configured catalog. Run "alia hooks marketplace list".` };
       return [await refreshUrl(parsed.url)];
     },
     async validate(input) {
@@ -281,7 +281,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   };
 
-  bb.background.service("catalog-refresh", {
+  alia.background.service("catalog-refresh", {
     async start(signal) {
       await refreshAll(signal);
       while (!signal.aborted) {
@@ -305,15 +305,15 @@ export default async function plugin(bb: BbPluginApi) {
 
   function serverUrl(): string | null {
     try {
-      return bb.server.loopbackBaseUrl;
+      return alia.server.loopbackBaseUrl;
     } catch {
       return null;
     }
   }
 
-  const bbCli = resolveBbCli();
+  const aliaCli = resolveAliaCli();
 
-  /** Exactly what a hook receives: the JSON payload and the BB_* environment. */
+  /** Exactly what a hook receives: the JSON payload and the ALIA_* environment. */
   function buildDelivery(hook: HookDefinition, prepared: PreparedEvent, startedAt: number): { payload: Record<string, unknown>; env: Record<string, string> } {
     const url = serverUrl();
     return {
@@ -326,9 +326,9 @@ export default async function plugin(bb: BbPluginApi) {
       },
       env: {
         ...prepared.env,
-        BB_HOOK_ID: hook.id,
-        ...(url === null ? {} : { BB_SERVER_URL: url }),
-        ...(bbCli === null ? {} : { BB_CLI: bbCli }),
+        ALIA_HOOK_ID: hook.id,
+        ...(url === null ? {} : { ALIA_SERVER_URL: url }),
+        ...(aliaCli === null ? {} : { ALIA_CLI: aliaCli }),
       },
     };
   }
@@ -350,9 +350,9 @@ export default async function plugin(bb: BbPluginApi) {
     const decision = isGateEvent(hook.event) ? decide(hook, outcome).decision : null;
     record(hook, prepared, outcome, decision, startedAt, options.label);
     if (outcome.status !== "ok") {
-      bb.log.warn(`hook "${hook.id}" (${prepared.event}) ${outcome.status}: ${outcome.error ?? "unknown"}${outcome.stderr.trim() === "" ? "" : ` — ${outcome.stderr.trim().slice(0, 300)}`}`);
+      alia.log.warn(`hook "${hook.id}" (${prepared.event}) ${outcome.status}: ${outcome.error ?? "unknown"}${outcome.stderr.trim() === "" ? "" : ` — ${outcome.stderr.trim().slice(0, 300)}`}`);
     } else {
-      bb.log.debug(`hook "${hook.id}" (${prepared.event}) ok in ${outcome.durationMs} ms`);
+      alia.log.debug(`hook "${hook.id}" (${prepared.event}) ok in ${outcome.durationMs} ms`);
     }
     return outcome;
   }
@@ -376,7 +376,7 @@ export default async function plugin(bb: BbPluginApi) {
       history.prune(current.historyLimit);
       notify("history");
     } catch (cause) {
-      bb.log.warn(`could not record hook run: ${(cause as Error).message}`);
+      alia.log.warn(`could not record hook run: ${(cause as Error).message}`);
     }
   }
 
@@ -387,7 +387,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function lookupThread(threadId: string): Promise<ThreadFacts | null> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return {
         id: thread.id,
         projectId: thread.projectId,
@@ -399,12 +399,12 @@ export default async function plugin(bb: BbPluginApi) {
         environmentId: thread.environmentId,
       };
     } catch (cause) {
-      bb.log.debug(`could not load thread ${threadId} for hook payload: ${(cause as Error).message}`);
+      alia.log.debug(`could not load thread ${threadId} for hook payload: ${(cause as Error).message}`);
       return null;
     }
   }
 
-  const EXECUTION_VARS = /BB_(MODEL|REASONING_LEVEL|SERVICE_TIER|PERMISSION_MODE)\b/;
+  const EXECUTION_VARS = /ALIA_(MODEL|REASONING_LEVEL|SERVICE_TIER|PERMISSION_MODE)\b/;
 
   /**
    * The triggering thread's current execution settings, for hooks that
@@ -413,11 +413,11 @@ export default async function plugin(bb: BbPluginApi) {
    */
   async function executionEnv(threadId: string): Promise<Record<string, string>> {
     try {
-      const options = await bb.sdk.threads.defaultExecutionOptions({ threadId });
+      const options = await alia.sdk.threads.defaultExecutionOptions({ threadId });
       if (options === null) return {};
-      return { BB_MODEL: options.model, BB_REASONING_LEVEL: options.reasoningLevel, BB_SERVICE_TIER: options.serviceTier, BB_PERMISSION_MODE: options.permissionMode };
+      return { ALIA_MODEL: options.model, ALIA_REASONING_LEVEL: options.reasoningLevel, ALIA_SERVICE_TIER: options.serviceTier, ALIA_PERMISSION_MODE: options.permissionMode };
     } catch (cause) {
-      bb.log.debug(`could not load execution options for ${threadId}: ${(cause as Error).message}`);
+      alia.log.debug(`could not load execution options for ${threadId}: ${(cause as Error).message}`);
       return {};
     }
   }
@@ -452,11 +452,11 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function listen<E extends ObserveEvent>(event: E): void {
-    bb.events.on(event, (payload) => handleObserve(event, payload));
+    alia.events.on(event, (payload) => handleObserve(event, payload));
   }
   for (const event of OBSERVE_EVENTS) listen(event);
 
-  bb.experimental_hooks.on("message.dispatch", async (ctx: MessageDispatchHookContext) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx: MessageDispatchHookContext) => {
     const deadline = Date.now() + DISPATCH_BUDGET_MS;
     try {
       const hooks = await activeHooks("message.dispatch");
@@ -473,7 +473,7 @@ export default async function plugin(bb: BbPluginApi) {
           const outcome: RunOutcome = { status: "timeout", exitCode: null, httpStatus: null, stdout: "", stderr: "", durationMs: 0, error: "dispatch budget exhausted" };
           decision = decide(hook, outcome).decision;
           record(hook, prepared, outcome, decision, startedAt);
-          bb.log.warn(`hook "${hook.id}" skipped: dispatch budget exhausted by earlier gate hooks`);
+          alia.log.warn(`hook "${hook.id}" skipped: dispatch budget exhausted by earlier gate hooks`);
         } else {
           const outcome = await execute(hook, prepared, {
             runner: gateRunner,
@@ -482,7 +482,7 @@ export default async function plugin(bb: BbPluginApi) {
           decision = decide(hook, outcome).decision;
         }
         if (decision.action === "reject") {
-          bb.log.info(`hook "${hook.id}" rejected dispatch on ${ctx.thread.id}: ${decision.message}`);
+          alia.log.info(`hook "${hook.id}" rejected dispatch on ${ctx.thread.id}: ${decision.message}`);
           return decision;
         }
         if (decision.action === "wait") {
@@ -494,7 +494,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { action: "proceed" };
     } catch (cause) {
       // Never throw: core would fail the user's message with this plugin named.
-      bb.log.error(`message.dispatch hooks failed, letting the message through: ${(cause as Error).message}`);
+      alia.log.error(`message.dispatch hooks failed, letting the message through: ${(cause as Error).message}`);
       return { action: "proceed" };
     }
   });
@@ -520,12 +520,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
     report(body) {
       void sendInstallReport(body).then((sent) => {
-        if (!sent) bb.log.debug(`install count for ${body.catalog}/${body.template} was not accepted`);
+        if (!sent) alia.log.debug(`install count for ${body.catalog}/${body.template} was not accepted`);
       });
     },
   };
   const actionDeps = { store, secrets, registry, stats };
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async overview() {
       const hooks = await store.list();
       const usage = new Map<string, number>();
@@ -595,14 +595,14 @@ export default async function plugin(bb: BbPluginApi) {
     secret_remove: ({ name }) => ({ removed: secrets.remove(name) }),
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "hooks",
-    summary: "Create custom hooks: run a shell command or webhook on BB thread events, or gate message dispatch",
+    summary: "Create custom hooks: run a shell command or webhook on VesnALIA thread events, or gate message dispatch",
     commands: CLI_COMMANDS,
     run: createCliRun({ store, history, secrets, registry, marketplace, stats, test }),
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     observeRunner.dispose();
     gateRunner.dispose();
   });

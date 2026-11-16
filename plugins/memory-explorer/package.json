@@ -1,26 +1,22 @@
 {
-  "name": "bb-plugin-memory-explorer",
+  "name": "alia-plugin-memory-explorer",
   "version": "0.2.3",
   "type": "module",
-  "description": "See what your agents remember: BB memory as a searchable table and a zoomable link graph, with a detail drawer for each memory.",
+  "description": "See what your agents remember: VesnALIA memory as a searchable table and a zoomable link graph, with a detail drawer for each memory.",
   "license": "MIT",
   "author": "David Asensio Cañas",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/d-asensio/bb-plugin-memory-explorer.git"
-  },
   "scripts": {
     "test": "node scripts/test.mjs",
     "typecheck": "tsc -p tsconfig.json",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Memory Explorer",
-    "description": "See what your agents remember: BB memory as a searchable table and a zoomable link graph, with a detail drawer for each memory.",
+    "description": "See what your agents remember: VesnALIA memory as a searchable table and a zoomable link graph, with a detail drawer for each memory.",
     "branding": {
       "icon": "Brain"
     },
@@ -31,7 +27,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -55,5 +50,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/memory-explorer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/memory-explorer"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

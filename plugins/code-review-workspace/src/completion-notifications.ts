@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { AsyncStore } from "./store-queue";
 import { identityIn, placeFacts } from "./review-places";
@@ -17,17 +17,17 @@ interface Pending {
   /** The turn alert's event id in Needs You, when it isn't `turn:<signal>`, as for a snooze's wake. */
   eventId?: string;
 }
-const managers = new WeakMap<BbPluginApi, ReturnType<typeof createNotifications>>();
-export function completionNotifications(bb: BbPluginApi, store: AsyncStore) {
-  let manager = managers.get(bb);
-  if (!manager) { manager = createNotifications(bb, store); managers.set(bb, manager); }
+const managers = new WeakMap<AliaPluginApi, ReturnType<typeof createNotifications>>();
+export function completionNotifications(alia: AliaPluginApi, store: AsyncStore) {
+  let manager = managers.get(alia);
+  if (!manager) { manager = createNotifications(alia, store); managers.set(alia, manager); }
   return manager;
 }
 
 /** The inbox item Needs You keeps for a review. */
 const activityId = (targetKey: string) => `activity:code-review-workspace:${encodeURIComponent(targetKey)}`;
 
-function createNotifications(bb: BbPluginApi, store: AsyncStore) {
+function createNotifications(alia: AliaPluginApi, store: AsyncStore) {
   let disposed = false;
   let flushing: Promise<void> | undefined;
   let dirty = false;
@@ -39,7 +39,7 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
     storageTail = next.then(() => {}, () => {});
     return next;
   }
-  bb.onDispose(() => { disposed = true; });
+  alia.onDispose(() => { disposed = true; });
 
   /** Whether an outcome still describes the review and its alert is on: a newer generation or turn replaces it. Read through `reader`, the store or a block's tx. */
   async function current(reader: AsyncStore, record: Pending, checkStatus = true): Promise<boolean> {
@@ -55,21 +55,21 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
 
   async function capable(): Promise<boolean> {
     // Optional dependency. Older Needs You installs do not support durable activity.
-    return !!await bb.sdk.plugins.callRpc({ pluginId: "inbox", method: "activityCapabilities", input: null,
+    return !!await alia.sdk.plugins.callRpc({ pluginId: "inbox", method: "activityCapabilities", input: null,
       outputSchema: z.object({ version: z.literal(1) }) }).catch(() => null);
   }
 
   async function drain() {
-    const keys = await bb.storage.kv.list(PREFIX);
+    const keys = await alia.storage.kv.list(PREFIX);
     if (!keys.length || disposed) return;
     // Expire the outbox even when the optional recipient stays uninstalled.
     const liveKeys: string[] = [];
     await locked(async () => {
       for (const key of keys) {
         if (disposed) return;
-        const record = await bb.storage.kv.get<Pending>(key);
+        const record = await alia.storage.kv.get<Pending>(key);
         if (!record) continue;
-        if (!await current(store, record, false)) await bb.storage.kv.delete(key);
+        if (!await current(store, record, false)) await alia.storage.kv.delete(key);
         else liveKeys.push(key);
       }
     });
@@ -78,10 +78,10 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
     for (const key of liveKeys) {
       if (disposed) return;
       const record = await locked(async () => {
-        const pending = await bb.storage.kv.get<Pending>(key);
+        const pending = await alia.storage.kv.get<Pending>(key);
         if (!pending || disposed) return null;
         if (!await current(store, pending)) {
-          await bb.storage.kv.delete(key);
+          await alia.storage.kv.delete(key);
           return null;
         }
         return pending;
@@ -96,10 +96,10 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
       });
       if (read === null) continue;
       // The review's id leads, as in its window's title: "api#4512 · Fix login race".
-      const title = identityIn(await placeFacts(bb, read.all), read.all, read.meta, read.guideTitle).line.slice(0, 240);
+      const title = identityIn(await placeFacts(alia, read.all), read.all, read.meta, read.guideTitle).line.slice(0, 240);
       const body = record.kind === "turn" ? (record.body ?? "It’s your turn to review.")
         : record.status === "ready" ? "Your guide is ready. Open it to start reviewing." : "The guide couldn’t be generated. Open the review to try again.";
-      const result = await bb.sdk.plugins.callRpc({ pluginId: "inbox", method: "publishActivity", input: {
+      const result = await alia.sdk.plugins.callRpc({ pluginId: "inbox", method: "publishActivity", input: {
         sourceId: "code-review-workspace", sourceName: "Code Review Workspace", entityId: record.targetKey,
         eventId: (record.kind === "turn" ? record.eventId ?? `turn:${record.generationId}` : record.generationId).slice(0, 128),
         occurredAt: record.occurredAt, projectId: record.projectId,
@@ -109,7 +109,7 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
       if (disposed) return;
       // A newer outcome may have queued while this RPC was in flight.
       if (result) await locked(async () => {
-        if ((await bb.storage.kv.get<Pending>(key))?.generationId === record.generationId) await bb.storage.kv.delete(key);
+        if ((await alia.storage.kv.get<Pending>(key))?.generationId === record.generationId) await alia.storage.kv.delete(key);
       });
     }
   }
@@ -124,11 +124,11 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
     await locked(async () => {
       const key = `${PREFIX}${record.targetKey}`;
       const clockKey = `needs-you:clock:${record.targetKey}`;
-      const previous = await bb.storage.kv.get<number>(clockKey);
+      const previous = await alia.storage.kv.get<number>(clockKey);
       if (disposed || !await current(store, { ...record, occurredAt: Date.now() }, false)) return;
       const occurredAt = Math.max(Date.now(), (previous ?? 0) + 1);
-      await bb.storage.kv.set(clockKey, occurredAt);
-      await bb.storage.kv.set(key, { ...record, occurredAt });
+      await alia.storage.kv.set(clockKey, occurredAt);
+      await alia.storage.kv.set(key, { ...record, occurredAt });
       dirty = true;
     });
     await flush();
@@ -140,8 +140,8 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
     /** Drop a deleted review's queued outcome and ordering clock. */
     forget(targetKey: string): Promise<void> {
       return locked(async () => {
-        await bb.storage.kv.delete(`${PREFIX}${targetKey}`);
-        await bb.storage.kv.delete(`needs-you:clock:${targetKey}`);
+        await alia.storage.kv.delete(`${PREFIX}${targetKey}`);
+        await alia.storage.kv.delete(`needs-you:clock:${targetKey}`);
       });
     },
     async queue(record: Omit<Pending, "occurredAt" | "kind" | "body">) {
@@ -159,9 +159,9 @@ function createNotifications(bb: BbPluginApi, store: AsyncStore) {
     /** You acted on the review: clear its inbox item and anything queued for it. */
     async dismiss(targetKey: string): Promise<void> {
       if (disposed) return;
-      await locked(() => bb.storage.kv.delete(`${PREFIX}${targetKey}`));
+      await locked(() => alia.storage.kv.delete(`${PREFIX}${targetKey}`));
       if (!await capable() || disposed) return;
-      await bb.sdk.plugins.callRpc({ pluginId: "inbox", method: "dismissActivity", input: { id: activityId(targetKey), attentionAt: Date.now() },
+      await alia.sdk.plugins.callRpc({ pluginId: "inbox", method: "dismissActivity", input: { id: activityId(targetKey), attentionAt: Date.now() },
         outputSchema: z.object({ ok: z.boolean() }) }).catch(() => null);
     },
   };

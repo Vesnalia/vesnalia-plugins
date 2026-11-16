@@ -13,7 +13,7 @@
 // produces — the proof that there is one drag pipeline, not two.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { resolveTouchDragSource, TOUCH_DRAG_ARMED_ATTR } from "../components/touch-hold-drag";

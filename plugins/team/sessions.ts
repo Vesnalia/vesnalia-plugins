@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type ReplacementInput = {
   projectId: string;
@@ -12,7 +12,7 @@ export type ReplacementInput = {
    * initial prompt held by Team in the core queue. Full role metadata (including
    * `teamRetired: false`) is applied only at the switch step.
    */
-  spawnArgs: Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0];
+  spawnArgs: Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0];
   /** Initial prompt queued once at spawn and released only after the switch. */
   prompt: string;
   /** Keep the old thread (unbound) instead of archiving it. */
@@ -90,12 +90,12 @@ export function replacementKey(
 
 /** Read a persisted replacement intent from KV. */
 export async function readReplacementIntent(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
   team: string,
   role: string,
 ): Promise<ReplacementIntent | null> {
-  const raw = await bb.storage.kv.get(replacementKey(projectId, team, role));
+  const raw = await alia.storage.kv.get(replacementKey(projectId, team, role));
   return parseIntent(raw);
 }
 
@@ -103,7 +103,7 @@ const ROLE_METADATA_KEYS = ["teamRole", "teamName", "teamNotifyOn"];
 const ROLE_RETIRED_KEY = "teamRetired";
 
 export async function replaceSession(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: ReplacementInput,
 ): Promise<ReplacementResult> {
   const canonicalKey = activeSessionKey(
@@ -113,8 +113,8 @@ export async function replaceSession(
   );
   const intentKey = replacementKey(input.projectId, input.team, input.role);
 
-  const canonicalThreadId = await kvGetString(bb.storage.kv, canonicalKey);
-  const storedIntent = await bb.storage.kv.get(intentKey);
+  const canonicalThreadId = await kvGetString(alia.storage.kv, canonicalKey);
+  const storedIntent = await alia.storage.kv.get(intentKey);
   const parsedIntent = parseIntent(storedIntent);
 
   const { oldThreadId, intent, isRetry } = resolveState(
@@ -126,7 +126,7 @@ export async function replaceSession(
   // A previous spawn attempt is unresolved: never auto-respawn.
   if (intent?.stage === "spawn_uncertain") {
     throw new ReplacementError(
-      `Spawn attempt for role ${input.role} is unresolved; inspect BB for a possibly-created thread and reset the intent manually`,
+      `Spawn attempt for role ${input.role} is unresolved; inspect VesnALIA for a possibly-created thread and reset the intent manually`,
       "spawn_uncertain",
     );
   }
@@ -135,7 +135,7 @@ export async function replaceSession(
   if (intent?.stage === "complete") {
     if (intent.delivery === "uncertain") {
       throw new ReplacementError(
-        `Prompt delivery to ${intent.newThreadId} is uncertain; run bb team resume`,
+        `Prompt delivery to ${intent.newThreadId} is uncertain; run alia team resume`,
         "delivery_uncertain",
       );
     }
@@ -149,13 +149,13 @@ export async function replaceSession(
 
   if (intent?.stage === "prompting" && intent.delivery === "uncertain") {
     throw new ReplacementError(
-      `Prompt delivery to ${intent.newThreadId} is uncertain; run bb team resume`,
+      `Prompt delivery to ${intent.newThreadId} is uncertain; run alia team resume`,
       "delivery_uncertain",
     );
   }
 
   // ── Preflight ──
-  const oldThread = await bb.sdk.threads.get({ threadId: oldThreadId });
+  const oldThread = await alia.sdk.threads.get({ threadId: oldThreadId });
 
   // Retries that already archived the old thread (or were asked to keep it)
   // may find it archived; accept that and only enforce constraints on live old.
@@ -195,7 +195,7 @@ export async function replaceSession(
   // Activity and pending interactions come from threads.list, which survives
   // idle status; archived threads are excluded from the list.
   if (!oldThread.archivedAt) {
-    const list = await bb.sdk.threads.list({
+    const list = await alia.sdk.threads.list({
       threadIds: [oldThreadId],
       projectId: input.projectId,
     });
@@ -229,14 +229,14 @@ export async function replaceSession(
     }
   }
 
-  const descendants = await bb.sdk.threads.experimental_listDescendants({
+  const descendants = await alia.sdk.threads.experimental_listDescendants({
     threadIds: [oldThreadId],
   });
   const row = descendants.threads.find((t) => t.threadId === oldThreadId);
   const descendantIds = row?.descendantIds ?? [];
   if (descendantIds.length > 0) {
     const descDetails = await Promise.all(
-      descendantIds.map((id) => bb.sdk.threads.get({ threadId: id })),
+      descendantIds.map((id) => alia.sdk.threads.get({ threadId: id })),
     );
     const owned = descDetails.filter(
       (t) => t.lifecycleOwnerThreadId === oldThreadId,
@@ -263,7 +263,7 @@ export async function replaceSession(
     startedAt: now,
   };
   if (!intent) {
-    await bb.storage.kv.set(intentKey, currentIntent);
+    await alia.storage.kv.set(intentKey, currentIntent);
   } else if (isRetry) {
     currentIntent.resumed = true;
   }
@@ -278,9 +278,9 @@ export async function replaceSession(
       pluginMetadata: _pluginMetadata,
       ...base
     } = spawnBase;
-    const spawnArgs: Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0] = {
+    const spawnArgs: Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0] = {
       ...(base as Omit<
-        Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0],
+        Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0],
         "input" | "prompt" | "pluginMetadata"
       >),
       input: [{ type: "text", text: input.prompt, mentions: [] }],
@@ -294,18 +294,18 @@ export async function replaceSession(
 
     // Write ahead: a process exit during spawn must not create a second session.
     currentIntent.stage = "spawn_uncertain";
-    await bb.storage.kv.set(intentKey, currentIntent);
+    await alia.storage.kv.set(intentKey, currentIntent);
     try {
-      const fresh = await bb.sdk.threads.spawn(spawnArgs);
+      const fresh = await alia.sdk.threads.spawn(spawnArgs);
       newThreadId = fresh.id;
       currentIntent.newThreadId = newThreadId;
       currentIntent.stage = "spawning";
-      await bb.storage.kv.set(intentKey, currentIntent);
+      await alia.storage.kv.set(intentKey, currentIntent);
     } catch (error) {
       currentIntent.stage = "spawn_uncertain";
-      await bb.storage.kv.set(intentKey, currentIntent);
+      await alia.storage.kv.set(intentKey, currentIntent);
       throw new ReplacementError(
-        `Spawn attempt for role ${input.role} is uncertain; a thread may have been created in BB. Cause: ${(error as Error).message}`,
+        `Spawn attempt for role ${input.role} is uncertain; a thread may have been created in VesnALIA. Cause: ${(error as Error).message}`,
         "spawn_uncertain",
         { cause: error },
       );
@@ -317,7 +317,7 @@ export async function replaceSession(
     await input.beforeSwitch();
   }
 
-  const oldBeforeSwitch = await bb.sdk.threads.get({ threadId: oldThreadId });
+  const oldBeforeSwitch = await alia.sdk.threads.get({ threadId: oldThreadId });
   if (!oldBeforeSwitch.archivedAt) {
     if (
       oldBeforeSwitch.status !== "idle" &&
@@ -331,14 +331,14 @@ export async function replaceSession(
   }
 
   // ── Switch ──
-  const fresh = await bb.sdk.threads.get({ threadId: newThreadId });
+  const fresh = await alia.sdk.threads.get({ threadId: newThreadId });
   if (fresh.environmentId !== input.environmentId) {
     throw new ReplacementError(
       "Fresh session has not attached to the original environment",
       "fresh_environment_mismatch",
     );
   }
-  if (!(await isPreparedReplacement(bb, fresh, input.prompt, 5000))) {
+  if (!(await isPreparedReplacement(alia, fresh, input.prompt, 5000))) {
     throw new ReplacementError(
       `Fresh thread ${newThreadId} must be waiting on its single Team-held handoff prompt`,
       "fresh_not_idle",
@@ -346,7 +346,7 @@ export async function replaceSession(
   }
 
   if (currentIntent.stage === "spawning") {
-    const descendants2 = await bb.sdk.threads.experimental_listDescendants({
+    const descendants2 = await alia.sdk.threads.experimental_listDescendants({
       threadIds: [oldThreadId],
     });
     const row2 = descendants2.threads.find((t) => t.threadId === oldThreadId);
@@ -355,11 +355,11 @@ export async function replaceSession(
     let reparented = 0;
     if (childIds.length > 0) {
       const children = await Promise.all(
-        childIds.map((id) => bb.sdk.threads.get({ threadId: id })),
+        childIds.map((id) => alia.sdk.threads.get({ threadId: id })),
       );
       for (const child of children) {
         if (child.parentThreadId === oldThreadId && child.id !== newThreadId) {
-          await bb.sdk.threads.update({
+          await alia.sdk.threads.update({
             threadId: child.id,
             parentThreadId: newThreadId,
           });
@@ -369,20 +369,20 @@ export async function replaceSession(
     }
     currentIntent.reparented = reparented;
 
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId: newThreadId,
       set: {
         ...(input.spawnArgs.pluginMetadata ?? {}),
         [ROLE_RETIRED_KEY]: false,
         teamReplacement: false,
       } as NonNullable<
-        Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0]["pluginMetadata"]
+        Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0]["pluginMetadata"]
       >,
     });
 
-    await bb.storage.kv.set(canonicalKey, newThreadId);
+    await alia.storage.kv.set(canonicalKey, newThreadId);
 
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId: oldThreadId,
       set: { [ROLE_RETIRED_KEY]: true },
       remove: ROLE_METADATA_KEYS,
@@ -393,13 +393,13 @@ export async function replaceSession(
     }
 
     currentIntent.stage = "switching";
-    await bb.storage.kv.set(intentKey, currentIntent);
+    await alia.storage.kv.set(intentKey, currentIntent);
   }
 
   // ── Archive old ──
   if (currentIntent.stage === "switching") {
     if (!input.keep) {
-      const oldBeforeArchive = await bb.sdk.threads.get({
+      const oldBeforeArchive = await alia.sdk.threads.get({
         threadId: oldThreadId,
       });
       if (oldBeforeArchive.archivedAt) {
@@ -413,12 +413,12 @@ export async function replaceSession(
           "old_active_before_archive",
         );
       } else {
-        await bb.sdk.threads.archive({ threadId: oldThreadId });
+        await alia.sdk.threads.archive({ threadId: oldThreadId });
       }
     }
 
     currentIntent.stage = "prompting";
-    await bb.storage.kv.set(intentKey, currentIntent);
+    await alia.storage.kv.set(intentKey, currentIntent);
   }
 
   // ── Release the queued prompt via recheck ──
@@ -429,12 +429,12 @@ export async function replaceSession(
     currentIntent.delivery = "sent";
     currentIntent.stage = "complete";
     currentIntent.completedAt = Date.now();
-    await bb.storage.kv.set(intentKey, currentIntent);
+    await alia.storage.kv.set(intentKey, currentIntent);
     try {
-      await bb.experimental_hooks.recheck("message.dispatch");
+      await alia.experimental_hooks.recheck("message.dispatch");
     } catch (error) {
       throw new ReplacementError(
-        `Role switched, but the queued prompt on ${newThreadId} could not be released; run bb team resume`,
+        `Role switched, but the queued prompt on ${newThreadId} could not be released; run alia team resume`,
         "release_failed",
         { cause: error },
       );
@@ -451,8 +451,8 @@ export async function replaceSession(
 
 /** A pending status is safe only when the core queue proves Team holds its sole request. */
 export async function isPreparedReplacement(
-  bb: BbPluginApi,
-  thread: Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>,
+  alia: AliaPluginApi,
+  thread: Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>,
   expectedPrompt?: string,
   waitMs = 0,
 ): Promise<boolean> {
@@ -464,11 +464,11 @@ export async function isPreparedReplacement(
       current.activeBackgroundAgentCount > 0
     )
       return false;
-    const queue = await bb.sdk.threads.queuedMessages.list({
+    const queue = await alia.sdk.threads.queuedMessages.list({
       threadId: current.id,
     });
     const item = queue[0];
-    if (queue.length > 1 || (item && item.originPluginId !== bb.pluginId))
+    if (queue.length > 1 || (item && item.originPluginId !== alia.pluginId))
       return false;
     const textMatches =
       !!item &&
@@ -477,18 +477,18 @@ export async function isPreparedReplacement(
       (expectedPrompt === undefined ||
         item.content[0]!.text === expectedPrompt);
     if (item?.state === "waiting" && item.waitingOn?.kind === "plugin") {
-      return item.waitingOn.pluginId === bb.pluginId && textMatches;
+      return item.waitingOn.pluginId === alia.pluginId && textMatches;
     }
     // The core can return spawn before its dispatcher has recorded the wait.
     // Wait only for this existing request; never create or resend anything.
     if (Date.now() >= deadline || (item && !textMatches)) return false;
     await new Promise((resolve) => setTimeout(resolve, 100));
-    current = await bb.sdk.threads.get({ threadId: current.id });
+    current = await alia.sdk.threads.get({ threadId: current.id });
   }
 }
 
 async function kvGetString(
-  kv: BbPluginApi["storage"]["kv"],
+  kv: AliaPluginApi["storage"]["kv"],
   key: string,
 ): Promise<string | null> {
   const value = await kv.get(key);

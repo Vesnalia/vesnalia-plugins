@@ -1,7 +1,7 @@
 /**
- * Which provider ids get a mark. bb reads registrations once, at
+ * Which provider ids get a mark. VesnALIA reads registrations once, at
  * `setup`, so the ids come from a localStorage cache that the overlay keeps
- * in sync with the server's assignments, plus the providers bb ships.
+ * in sync with the server's assignments, plus the providers VesnALIA ships.
  * A new id therefore needs one app reload on each device.
  */
 import { PROVIDER_ID_PATTERN } from "../shared/contract";

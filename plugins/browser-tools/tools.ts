@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import type { z } from "zod";
 import {
   BrowserToolError,
@@ -75,8 +75,8 @@ function actionText(result: ActionWithSnapshot): string {
   return `Action succeeded, but the follow-up snapshot failed (${detail}). Take a fresh snapshot before the next action.`;
 }
 
-function register<TInput>(bb: BbPluginApi, config: ToolConfig<TInput>): string {
-  bb.agents.registerTool({
+function register<TInput>(alia: AliaPluginApi, config: ToolConfig<TInput>): string {
+  alia.agents.registerTool({
     name: config.name,
     description: config.description,
     instructions: config.instructions,
@@ -108,10 +108,10 @@ export type BrowserToolsRegistration = {
  * parses, presents, and delegates to the session manager.
  */
 export function registerBrowserTools(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   manager: SessionManager,
 ): BrowserToolsRegistration {
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     enableEvaluate: {
       type: "boolean",
       label: "Enable trusted browser_evaluate",
@@ -133,12 +133,12 @@ export function registerBrowserTools(
   const names: string[] = [];
 
   names.push(
-    register<BrowserOpenInput>(bb, {
+    register<BrowserOpenInput>(alia, {
       name: "browser_open",
       instructions:
         "You can control a real browser with the native browser_* tools. Use them when the task calls for testing a local web app, reproducing UI bugs, verifying interactions, inspecting a website, or checking screenshots and browser diagnostics. Read the browser-tools skill before your first browser action, then start with browser_open and use the returned snapshot refs. No separate browser automation setup is needed. Capability is not authorization: follow the user's scope and repository rules, obtain required approval for consequential actions or personal-tab access, and let the user enter credentials manually.",
       description:
-        "Open a browser session on a BB desktop automation tab and return the session id plus an initial accessibility snapshot. An existing tabId can be handed off (allowPersonal only with explicit user authorization); browser_open cannot combine tabId and url.",
+        "Open a browser session on a VesnALIA desktop automation tab and return the session id plus an initial accessibility snapshot. An existing tabId can be handed off (allowPersonal only with explicit user authorization); browser_open cannot combine tabId and url.",
       parameters: browserOpenInputSchema,
       pending: "Opening browser session",
       completed: "Opened browser session",
@@ -155,7 +155,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserNavigateInput>(bb, {
+    register<BrowserNavigateInput>(alia, {
       name: "browser_navigate",
       description:
         "Navigate the session's tab to an http(s) URL or about:blank and return a fresh snapshot. Waits for DOMContentLoaded only, which does not prove the application finished loading.",
@@ -169,7 +169,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserSnapshotInput>(bb, {
+    register<BrowserSnapshotInput>(alia, {
       name: "browser_snapshot",
       description:
         "Take a fresh accessibility snapshot of the current page. Refs are versioned to this snapshot; any earlier ref becomes invalid.",
@@ -183,7 +183,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserClickInput>(bb, {
+    register<BrowserClickInput>(alia, {
       name: "browser_click",
       description:
         "Click the element for a ref from the current snapshot. One attempt only; returns the outcome and a single post-action snapshot. Never retried automatically.",
@@ -197,7 +197,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserTypeInput>(bb, {
+    register<BrowserTypeInput>(alia, {
       name: "browser_type",
       description:
         "Replace or append text in the element for a ref. Does not submit the form; use browser_press for Enter. Never type credentials or secrets.",
@@ -211,7 +211,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserPressInput>(bb, {
+    register<BrowserPressInput>(alia, {
       name: "browser_press",
       description:
         "Press a supported key or modifier combination, such as Enter, Tab, or Control+Enter.",
@@ -225,7 +225,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserScreenshotInput>(bb, {
+    register<BrowserScreenshotInput>(alia, {
       name: "browser_screenshot",
       description:
         "Capture a bounded JPEG of the viewport (or the full page) and return it as an image with its true pixel dimensions.",
@@ -250,7 +250,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserEvaluateInput>(bb, {
+    register<BrowserEvaluateInput>(alia, {
       name: "browser_evaluate",
       description:
         "Run trusted JavaScript in the page and return a bounded JSON value. Disabled unless the plugin setting enables it. Not read-only and not a sandbox; never use it to bypass approvals or manufacture application state.",
@@ -273,7 +273,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserConsoleInput>(bb, {
+    register<BrowserConsoleInput>(alia, {
       name: "browser_console",
       description:
         "Read bounded console, page-error, and HTTP/transport diagnostics since a cursor. Reading does not drain the buffer.",
@@ -299,7 +299,7 @@ export function registerBrowserTools(
   );
 
   names.push(
-    register<BrowserCloseInput>(bb, {
+    register<BrowserCloseInput>(alia, {
       name: "browser_close",
       description:
         "Close the browser session and release control. The tab and its login are retained unless closeTab is explicitly true for a plugin-created tab; borrowed or personal tabs are never closed.",
@@ -325,7 +325,7 @@ export function registerBrowserTools(
     return evaluateEnabled ? [...names] : names.filter((name) => name !== "browser_evaluate");
   };
 
-  bb.agents.configure((context) => ({
+  alia.agents.configure((context) => ({
     tools: selection(context),
     skills: selection(context).length > 0 ? ["browser-tools"] : [],
   }));

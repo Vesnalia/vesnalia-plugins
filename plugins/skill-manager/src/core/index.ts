@@ -1,5 +1,5 @@
 // Public surface of the core library: pure filesystem and git logic with no
-// BB dependency. The server, CLI, and tests import from here.
+// VesnALIA dependency. The server, CLI, and tests import from here.
 export {
   DEFAULT_AGENTS,
   DEFAULT_HUB,

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createWorkspaceStorage } from "./workspace-storage";
 import { exampleWorkspaces } from "./workspaces.fixtures";
 import {
@@ -71,16 +71,16 @@ describe("workspace membership", () => {
 });
 
 it("persists defaults and overrides through reload, serializes concurrent edits, and removes grouping without altering threads", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     sdk: {
       projects: { list: async () => projects },
       threads: { get: async ({ threadId }) => makeThreadResponse({ id: threadId }) },
     },
   });
-  let store = createWorkspaceStorage(bb, () => {});
+  let store = createWorkspaceStorage(alia, () => {});
   // A new install has no workspaces until the user adds some.
   expect((await store.read()).workspaces).toEqual([]);
-  await bb.storage.kv.set("workspaces", initial.workspaces);
+  await alia.storage.kv.set("workspaces", initial.workspaces);
   expect((await store.read()).workspaces).toEqual(initial.workspaces);
   const [acme, globex] = initial.workspaces;
   await Promise.all([

@@ -33,7 +33,7 @@ describe("migrateLegacyPreferences", () => {
   });
 
   it("deletes retired keys instead of migrating them", () => {
-    // Nav placement moved to BB's server-synced UI preferences.
+    // Nav placement moved to VesnALIA's server-synced UI preferences.
     localStorage.setItem(`${LEGACY}nav-pinned:v1`, '["a"]');
     localStorage.setItem(`${LEGACY}nav-hidden:v1`, '["b"]');
 

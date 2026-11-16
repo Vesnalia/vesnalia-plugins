@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { piSessionSlug } from "../adopt/agents/pi";
 import { buildListScript, findRemoteSession, parseListOutput, readRemoteSession, REMOTE_AGENTS, shellQuote } from "../adopt/remote";
@@ -109,8 +109,8 @@ describe("remote Pi sessions", () => {
       "--11111111--/2026-10-01T10-00-00-000Z_unrelated.jsonl",
       "--example--/11111111.txt",
     ]);
-    const bb = { sdk: { files: { list } } } as unknown as BbPluginApi;
-    const found = await findRemoteSession({ bb, hostId: "remote", hostName: "Mini", home: HOME }, "11111111", "pi");
+    const alia = { sdk: { files: { list } } } as unknown as AliaPluginApi;
+    const found = await findRemoteSession({ alia, hostId: "remote", hostName: "Mini", home: HOME }, "11111111", "pi");
     expect(found.map((session) => session.sessionId)).toEqual([id, "11111111-other"]);
     expect(found.every((session) => session.agent === "pi")).toBe(true);
   });
@@ -125,8 +125,8 @@ describe("remote Pi sessions", () => {
       { type: "message", id: "new", parentId: "u", message: { role: "assistant", content: [{ type: "text", text: "Current branch" }] } },
     ].map((row) => JSON.stringify(row)).join("\n");
     const read = vi.fn(async () => ({ content: Buffer.from(raw).toString("base64"), contentEncoding: "base64" }));
-    const bb = { sdk: { files: { list, read } } } as unknown as BbPluginApi;
-    const ctx = { bb, hostId: "host_remote", hostName: "Mini", home: HOME };
+    const alia = { sdk: { files: { list, read } } } as unknown as AliaPluginApi;
+    const ctx = { alia, hostId: "host_remote", hostName: "Mini", home: HOME };
     const found = await findRemoteSession(ctx, id, "pi");
     expect(found).toHaveLength(1);
     expect(list).toHaveBeenCalledWith(expect.objectContaining({ path: `${HOME}/.pi/agent/sessions`, query: id }));

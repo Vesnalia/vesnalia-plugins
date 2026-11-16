@@ -55,7 +55,7 @@ Bind the native window once with `cua_get_browser_state({pid, window_id})`,
 then act through `cua_browser_click`, `cua_browser_type`,
 `cua_browser_navigate`, and `cua_browser_pointer` using the returned
 `target_id`, `tab_id`, and `ref`. Refs expire on the next snapshot. Attaching
-to a signed-in profile needs a grant the user configures outside bb; if the
+to a signed-in profile needs a grant the user configures outside VesnALIA; if the
 driver refuses, say so instead of retrying.
 
 ## Readiness and errors

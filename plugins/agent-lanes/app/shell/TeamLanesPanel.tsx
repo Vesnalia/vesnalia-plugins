@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { TimelineProps } from "../../shared/view";
 import { LanesPane } from "./LanesPane";
 

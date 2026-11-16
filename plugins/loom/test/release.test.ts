@@ -1,4 +1,4 @@
-import { makeTurnFailedEvent } from "@get-bb/plugin-sdk/testing";
+import { makeTurnFailedEvent } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { settleChecks, submit } from "../src/checks";
 import type { ThreadRow } from "../src/db/store";
@@ -36,7 +36,7 @@ const poll = async () => {
   await pollPullRequests(h.ctx, project());
 };
 const release = () => releaseIdleWorkers(h.ctx, project(), spec());
-const spawned = () => h.bb.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
+const spawned = () => h.alia.callsTo("spawnThread").map(([args]) => args as SpawnArgs);
 const changesRequested = { items: [{ key: "review:1:a", kind: "review" as const, author: "alice", bot: false, body: "Rename the column.", url: null, state: "changes_requested", path: null, line: null }] };
 
 /** CSV-1's pull request is open, and its worker sits idle in a clean worktree at the reviewed commit. */
@@ -47,20 +47,20 @@ async function openPr(more: Doc = {}): Promise<ThreadRow> {
   handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows", body: "Why.", commit_message: "Add the order row mapper" });
   await queue();
   expect(ticket()).toMatchObject({ state: "pr_open", pr_url: URL });
-  h.bb.threads.get(worker.thread_id!)!.status = "idle";
+  h.alia.threads.get(worker.thread_id!)!.status = "idle";
   return row(worker.id);
 }
 
-/** Released, and bb has since torn the environment down. */
+/** Released, and VesnALIA has since torn the environment down. */
 async function released(more: Doc = {}): Promise<ThreadRow> {
   const worker = await openPr(more);
   await release();
   expect(isReleased(row(worker.id))).toBe(true);
-  h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+  h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
   return row(worker.id);
 }
 
-/** The worktree bb restores holds the worker's branch as the released one had it. */
+/** The worktree VesnALIA restores holds the worker's branch as the released one had it. */
 function restoredWorktree(worker: ThreadRow): string {
   const path = `/wt/${row(worker.id).environment_id}`;
   h.host.worktrees.set(path, { ...h.host.worktree(`/wt/${worker.environment_id}`) });
@@ -71,7 +71,7 @@ describe("releasing the worker of an open pull request", () => {
   it("archives the idle worker's thread, keeps it as the ticket's worker, and frees its environment", async () => {
     const worker = await openPr();
     await release();
-    expect(h.bb.callsTo("archive")).toContainEqual([worker.thread_id]);
+    expect(h.alia.callsTo("archive")).toContainEqual([worker.thread_id]);
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "released", released_at: h.clock.t });
     expect(ticket()).toMatchObject({ state: "pr_open", worker_thread_id: worker.thread_id, environment_id: null });
     expect(h.store.posts(ticket().id).at(-1)).toMatchObject({ kind: "system", body: RELEASED_TEXT });
@@ -97,12 +97,12 @@ describe("releasing the worker of an open pull request", () => {
     const worker = await openPr({ release_workers: false });
     await release();
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null });
-    expect(h.bb.callsTo("archive")).not.toContainEqual([worker.thread_id]);
+    expect(h.alia.callsTo("archive")).not.toContainEqual([worker.thread_id]);
   });
 
   it("follows merge.release_workers in a version approved after the project started, either way", async () => {
     const worker = await openPr();
-    const propose = (value: boolean) => h.projects.propose({ toml: specToml((doc) => (doc.merge = { strategy: "pr", release_workers: value })), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    const propose = (value: boolean) => h.projects.propose({ toml: specToml((doc) => (doc.merge = { strategy: "pr", release_workers: value })), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     expect(await propose(false)).toMatchObject({ pending: true, version: 2 });
     await h.projects.approve("csv", "human", 2);
     await release();
@@ -116,7 +116,7 @@ describe("releasing the worker of an open pull request", () => {
 
   it("keeps a worker that is busy, waits on the human, has a fix round on its way, or has work beyond the reviewed commit", async () => {
     const worker = await openPr();
-    const thread = h.bb.threads.get(worker.thread_id!)!;
+    const thread = h.alia.threads.get(worker.thread_id!)!;
     const worktree = h.host.worktree(`/wt/${worker.environment_id}`);
     const kept = async () => {
       await release();
@@ -125,9 +125,9 @@ describe("releasing the worker of an open pull request", () => {
     thread.status = "active";
     await kept();
     thread.status = "idle";
-    h.bb.waiting.add(worker.thread_id!);
+    h.alia.waiting.add(worker.thread_id!);
     await kept();
-    h.bb.waiting.clear();
+    h.alia.waiting.clear();
     h.store.updateTicket(ticket().id, { handback_json: JSON.stringify({ thread: worker.thread_id, text: { summary: "s", detail: "d" } }) });
     await kept();
     h.store.updateTicket(ticket().id, { handback_json: null });
@@ -153,14 +153,14 @@ describe("bringing the worker back for a fix round", () => {
     h.host.feedback.set(URL, changesRequested);
     await poll();
 
-    expect(h.bb.callsTo("unarchive")).toEqual([[worker.thread_id]]);
-    expect(h.bb.callsTo("restoreEnvironment")).toEqual([[worker.thread_id]]);
+    expect(h.alia.callsTo("unarchive")).toEqual([[worker.thread_id]]);
+    expect(h.alia.callsTo("restoreEnvironment")).toEqual([[worker.thread_id]]);
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null, environment_id: "env_r1" });
     expect(ticket()).toMatchObject({ state: "working", pr_rounds: 1, worker_thread_id: worker.thread_id, environment_id: "env_r1" });
     expect(h.store.posts(ticket().id).at(-1)!.body).toBe(`The worker's thread is back, with a new environment on its branch ${ticket().branch}.`);
 
     await deliverHandBacks(h.ctx, project().id);
-    const message = h.bb.sent(worker.thread_id!).at(-1)!;
+    const message = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(message).toContain(RESTORED_NOTE);
     expect(message).toContain("Rename the column.");
     expect(spawned().filter((args) => args.metadata.role === "worker")).toHaveLength(1);
@@ -184,29 +184,29 @@ describe("bringing the worker back for a fix round", () => {
 
   it("waits for a restore that is still running: no message, no nudge, until the environment is ready", async () => {
     const worker = await released();
-    h.bb.restoreResult = "provisioning";
+    h.alia.restoreResult = "provisioning";
     h.host.feedback.set(URL, changesRequested);
     await poll();
     expect(isWaking(row(worker.id))).toBe(true);
     await deliverHandBacks(h.ctx, project().id);
     await onWorkerIdle(h.ctx, row(worker.id));
     await onTurnFailed(h.ctx, makeTurnFailedEvent({ threadId: worker.thread_id!, requestId: "req_1" }));
-    expect(h.bb.sent(worker.thread_id!).filter((text) => text.includes("Rename the column") || text.includes("your turn ended"))).toEqual([]);
+    expect(h.alia.sent(worker.thread_id!).filter((text) => text.includes("Rename the column") || text.includes("your turn ended"))).toEqual([]);
     expect(row(worker.id).state).toBe("active");
 
-    h.bb.environments.get("env_r1")!.status = "ready";
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.environments.get("env_r1")!.status = "ready";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     await advanceWakes(h.ctx, project().id);
     await deliverHandBacks(h.ctx, project().id);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Rename the column.");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Rename the column.");
   });
 
-  it("uses the environment as it is when the thread comes back before bb tore it down", async () => {
+  it("uses the environment as it is when the thread comes back before VesnALIA tore it down", async () => {
     const worker = await openPr();
     await release();
     h.host.feedback.set(URL, changesRequested);
     await poll();
-    expect(h.bb.callsTo("restoreEnvironment")).toEqual([]);
+    expect(h.alia.callsTo("restoreEnvironment")).toEqual([]);
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null, environment_id: worker.environment_id });
   });
 
@@ -218,12 +218,12 @@ describe("bringing the worker back for a fix round", () => {
     expect(ticket()).toMatchObject({ state: "working", pr_rounds: 1 });
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null });
     await deliverHandBacks(h.ctx, project().id);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Please also rename the header.");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Please also rename the header.");
   });
 
   it("waits and tries again when the restore fails, then hands the round to a new worker after four failures in a row", async () => {
     const worker = await released();
-    h.bb.restoreResult = new Error("the provider is out of room");
+    h.alia.restoreResult = new Error("the provider is out of room");
     h.host.feedback.set(URL, changesRequested);
     await poll();
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "released" });
@@ -231,32 +231,32 @@ describe("bringing the worker back for a fix round", () => {
     expect(waitOf(ticket())).toMatchObject({ role: "worker", tries: 1, reason: "the provider is out of room" });
     expect(h.store.posts(ticket().id).at(-1)!.body).toBe("Could not bring the worker's environment back: the provider is out of room. Loom tries again in 1m; after 4 failures in a row a new worker takes over from the branch.");
     await advanceWakes(h.ctx, project().id);
-    expect(h.bb.callsTo("restoreEnvironment")).toHaveLength(1);
+    expect(h.alia.callsTo("restoreEnvironment")).toHaveLength(1);
 
     for (let n = 0; n < 3; n++) {
       h.clock.advance(waitOf(ticket())!.until - h.clock.t);
       await advanceWakes(h.ctx, project().id);
     }
-    expect(h.bb.callsTo("restoreEnvironment")).toHaveLength(4);
+    expect(h.alia.callsTo("restoreEnvironment")).toHaveLength(4);
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "gone" });
     expect(ticket()).toMatchObject({ state: "queued", worker_thread_id: null, handback_json: null, failures: 0 });
 
     const next = await startWorker(h);
     expect(next.thread_id).not.toBe(worker.thread_id);
     const brief = spawned().at(-1)!.prompt;
-    expect(brief).toContain(`read the newest with \`bb thread log ${worker.thread_id} --all\``);
+    expect(brief).toContain(`read the newest with \`alia thread log ${worker.thread_id} --all\``);
     expect(brief).toContain("Rename the column.");
     expect(spawned().at(-1)!.baseBranch).toBe(ticket().branch);
   });
 
   it("shows the wait on the board while the worker cannot come back, and not once it is back", async () => {
     const worker = await released();
-    h.bb.restoreResult = new SpawnUnavailableError("No free slot.");
+    h.alia.restoreResult = new SpawnUnavailableError("No free slot.");
     h.host.feedback.set(URL, changesRequested);
     await poll();
     const card = () => boardCards(h.store.tickets(project().id), h.store.threadsForProject(project().id), spec()).find((each) => each.key === "CSV-1")!;
     expect(card().startWait).toMatchObject({ role: "worker", reason: "No free slot.", unavailable: true });
-    h.bb.restoreResult = "ready";
+    h.alia.restoreResult = "ready";
     h.clock.advance(waitOf(ticket())!.until - h.clock.t);
     await advanceWakes(h.ctx, project().id);
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null });
@@ -265,7 +265,7 @@ describe("bringing the worker back for a fix round", () => {
 
   it("waits for a provider that says it is unavailable, counting nothing, and blocks the ticket after an hour", async () => {
     const worker = await released();
-    h.bb.restoreResult = new SpawnUnavailableError("No free slot.");
+    h.alia.restoreResult = new SpawnUnavailableError("No free slot.");
     h.host.feedback.set(URL, changesRequested);
     await poll();
     for (let n = 0; n < 6; n++) {
@@ -285,29 +285,29 @@ describe("bringing the worker back for a fix round", () => {
 
   it("treats a restore whose provisioning failed as a failed restore", async () => {
     const worker = await released();
-    h.bb.restoreResult = "provisioning";
+    h.alia.restoreResult = "provisioning";
     h.host.feedback.set(URL, changesRequested);
     await poll();
-    h.bb.threads.get(worker.thread_id!)!.status = "error";
-    h.bb.environments.get("env_r1")!.status = "error";
-    h.bb.systemErrors.set(worker.thread_id!, { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
+    h.alia.threads.get(worker.thread_id!)!.status = "error";
+    h.alia.environments.get("env_r1")!.status = "error";
+    h.alia.systemErrors.set(worker.thread_id!, { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
     await advanceWakes(h.ctx, project().id);
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "released" });
     expect(waitOf(ticket())).toMatchObject({ reason: "No free slot." });
   });
 
-  it("hands the round to a new worker at once when bb cannot restore the environment, or the thread is gone", async () => {
+  it("hands the round to a new worker at once when VesnALIA cannot restore the environment, or the thread is gone", async () => {
     let worker = await released();
-    h.bb.restorable = false;
+    h.alia.restorable = false;
     h.host.feedback.set(URL, changesRequested);
     await poll();
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "gone" });
     expect(ticket()).toMatchObject({ state: "queued", worker_thread_id: null });
-    expect(h.store.posts(ticket().id).at(-1)!.body).toContain("The worker's thread cannot come back with an environment (bb cannot restore its environment)");
+    expect(h.store.posts(ticket().id).at(-1)!.body).toContain("The worker's thread cannot come back with an environment (VesnALIA cannot restore its environment)");
 
     h = makeCtx();
     worker = await released();
-    h.bb.threads.delete(worker.thread_id!);
+    h.alia.threads.delete(worker.thread_id!);
     h.host.feedback.set(URL, changesRequested);
     await poll();
     expect(ticket()).toMatchObject({ state: "queued", worker_thread_id: null });
@@ -317,19 +317,19 @@ describe("bringing the worker back for a fix round", () => {
     const e = makeEngine();
     h = e;
     const worker = await released();
-    h.bb.restoreResult = "provisioning";
+    h.alia.restoreResult = "provisioning";
     h.host.feedback.set(URL, changesRequested);
     await poll();
     expect(isWaking(row(worker.id))).toBe(true);
-    h.bb.threads.get(worker.thread_id!)!.archivedAt = 5;
+    h.alia.threads.get(worker.thread_id!)!.archivedAt = 5;
     await e.engine.reconcile();
     expect(isWaking(row(worker.id))).toBe(true);
-    h.bb.threads.get(worker.thread_id!)!.archivedAt = null;
-    const stops = h.bb.callsTo("stop").length;
+    h.alia.threads.get(worker.thread_id!)!.archivedAt = null;
+    const stops = h.alia.callsTo("stop").length;
     await e.engine.pause("csv", "human", true);
-    expect(h.bb.callsTo("stop").slice(stops).map(([id]) => id)).not.toContain(worker.thread_id);
+    expect(h.alia.callsTo("stop").slice(stops).map(([id]) => id)).not.toContain(worker.thread_id);
     await e.engine.resume("csv", "human");
-    expect(h.bb.sent(worker.thread_id!).filter((text) => text.includes("The project resumed"))).toEqual([]);
+    expect(h.alia.sent(worker.thread_id!).filter((text) => text.includes("The project resumed"))).toEqual([]);
   });
 });
 
@@ -343,16 +343,16 @@ describe("bringing the worker back to catch a stacked pull request up", () => {
     const worker = await reachApproved(h, "CSV-2");
     await queue();
     expect(ticket("CSV-2").state).toBe("pr_open");
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     await release();
     expect(isReleased(row(worker.id))).toBe(true);
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
     return row(worker.id);
   }
 
   it("does not release a worker whose branch must catch up, and wakes a released one when it must, with no message", async () => {
     const worker = await stackedAndReleased();
-    const sent = h.bb.sent(worker.thread_id!).length;
+    const sent = h.alia.sent(worker.thread_id!).length;
     h.store.updateTicket(ticket("CSV-1").id, { pushed_sha: "sq7" });
     await release();
     await wakeForRestacks(h.ctx, project(), spec());
@@ -363,7 +363,7 @@ describe("bringing the worker back to catch a stacked pull request up", () => {
     expect(h.host.callsTo("mergeOnto").at(-1)).toMatchObject({ ref: "sq7" });
     expect(h.host.callsTo("resetHard").at(-1)).toMatchObject({ worktree: "/wt/env_r1" });
     expect(ticket("CSV-2")).toMatchObject({ state: "pr_open", head_sha: "lm1" });
-    expect(h.bb.sent(worker.thread_id!)).toHaveLength(sent);
+    expect(h.alia.sent(worker.thread_id!)).toHaveLength(sent);
     // Caught up, the worker is released again.
     expect(h.host.worktree("/wt/env_r1").head).toBe("lm1");
     await release();
@@ -378,12 +378,12 @@ describe("bringing the worker back to catch a stacked pull request up", () => {
     h.host.execResults = [{ exitCode: 1, output: "Cannot find module 'vitest'" }];
     await queue();
     expect(ticket("CSV-2")).toMatchObject({ state: "working", check_failures: 0 });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain(RESTORED_NOTE);
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain(RESTORED_NOTE);
   });
 
   it("hands the catch-up to a new worker when the thread cannot come back", async () => {
     const worker = await stackedAndReleased();
-    h.bb.restorable = false;
+    h.alia.restorable = false;
     h.store.updateTicket(ticket("CSV-1").id, { pushed_sha: "sq7" });
     await wakeForRestacks(h.ctx, project(), spec());
     expect(row(worker.id).end_reason).toBe("gone");
@@ -404,7 +404,7 @@ describe("a stacked pull request sent back as it is", () => {
     const row0 = await reachApproved(h, "CSV-2");
     await queue();
     expect(ticket("CSV-2").state).toBe("pr_open");
-    h.bb.threads.get(row0.thread_id!)!.status = "idle";
+    h.alia.threads.get(row0.thread_id!)!.status = "idle";
     if (worker === "released") {
       await release();
       expect(isReleased(row(row0.id))).toBe(true);
@@ -412,8 +412,8 @@ describe("a stacked pull request sent back as it is", () => {
     await blockTicket(h.ctx, ticket("CSV-2"), { reason: "A status no fix can clear", needs: "", actor: "human" });
     expect(ticket("CSV-2")).toMatchObject({ state: "blocked", worker_thread_id: null });
     expect(row(row0.id)).toMatchObject({ state: "ended", end_reason: worker === "released" ? "released" : "blocked" });
-    expect(h.bb.threads.get(row0.thread_id!)!.archivedAt).not.toBeNull();
-    h.bb.environments.get(row0.environment_id!)!.status = "destroyed";
+    expect(h.alia.threads.get(row0.thread_id!)!.archivedAt).not.toBeNull();
+    h.alia.environments.get(row0.environment_id!)!.status = "destroyed";
     h.host.refs.set(`refs/heads/${ticket("CSV-2").branch}`, ticket("CSV-2").head_sha!);
     expect(await again()).toMatchObject({ state: "pr_open", worker_thread_id: row0.thread_id, environment_id: null });
     expect(isReleased(row(row0.id))).toBe(true);
@@ -425,7 +425,7 @@ describe("a stacked pull request sent back as it is", () => {
       const kept = await sentBack(worker);
       h.store.updateTicket(ticket("CSV-1").id, { pushed_sha: "sq7" });
       await wakeForRestacks(h.ctx, project(), spec());
-      expect(h.bb.callsTo("unarchive")).toContainEqual([kept.thread_id]);
+      expect(h.alia.callsTo("unarchive")).toContainEqual([kept.thread_id]);
       expect(row(kept.id)).toMatchObject({ state: "active", released_at: null, environment_id: "env_r1" });
       restoredWorktree(kept);
       await queue();
@@ -451,9 +451,9 @@ describe("a stacked pull request sent back as it is", () => {
     });
   }
 
-  it("hands the catch-up to a new worker from the branch when bb cannot restore the thread", async () => {
+  it("hands the catch-up to a new worker from the branch when VesnALIA cannot restore the thread", async () => {
     const kept = await sentBack("ended");
-    h.bb.restorable = false;
+    h.alia.restorable = false;
     h.store.updateTicket(ticket("CSV-1").id, { pushed_sha: "sq7" });
     await wakeForRestacks(h.ctx, project(), spec());
     expect(row(kept.id).end_reason).toBe("gone");
@@ -466,7 +466,7 @@ describe("a stacked pull request sent back as it is", () => {
     h.host.feedback.set("https://github.com/acme/shop/pull/2", changesRequested);
     await poll();
     expect(ticket("CSV-2")).toMatchObject({ state: "working", pr_rounds: 1, worker_thread_id: kept.thread_id });
-    expect(h.bb.callsTo("unarchive")).toContainEqual([kept.thread_id]);
+    expect(h.alia.callsTo("unarchive")).toContainEqual([kept.thread_id]);
     expect(row(kept.id)).toMatchObject({ state: "active", released_at: null, environment_id: "env_r1" });
   });
 
@@ -490,7 +490,7 @@ describe("a stacked ticket sent back to review after an approval", () => {
   const stackedPr = (doc: Doc) => (doc.merge = { strategy: "pr", describe: "loom" });
   const findings = [{ severity: "blocking" as const, title: "Column name", detail: "Rename the total column." }];
 
-  /** CSV-2 is back in review after bb refused its reviewer and the human approved v2, its worker's thread kept as a released worker whose environment is gone. */
+  /** CSV-2 is back in review after VesnALIA refused its reviewer and the human approved v2, its worker's thread kept as a released worker whose environment is gone. */
   async function sentBackToReview(): Promise<ThreadRow> {
     const e = makeEngine();
     h = e;
@@ -498,16 +498,16 @@ describe("a stacked ticket sent back to review after an approval", () => {
     await reachApproved(h, "CSV-1");
     await queue();
     const worker = await reachReview(h, "CSV-2");
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null);
     await spawnReviewers(h.ctx, project(), spec());
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     await h.projects.propose({ toml: specToml((doc) => {
       stackedPr(doc);
       doc.agents.max_workers = 3;
-    }), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    }), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await e.engine.approve("csv", "human", 2);
     expect(ticket("CSV-2")).toMatchObject({ state: "review", worker_thread_id: worker.thread_id });
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
     return row(worker.id);
   }
 
@@ -524,9 +524,9 @@ describe("a stacked ticket sent back to review after an approval", () => {
     const worker = await sentBackToReview();
     await changesAsked();
     expect(ticket("CSV-2")).toMatchObject({ state: "working", worker_thread_id: worker.thread_id, handback_json: null });
-    expect(h.bb.callsTo("unarchive")).toContainEqual([worker.thread_id]);
+    expect(h.alia.callsTo("unarchive")).toContainEqual([worker.thread_id]);
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null, environment_id: "env_r1" });
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain(RESTORED_NOTE);
     expect(sent).toContain("Rename the total column.");
   });
@@ -539,13 +539,13 @@ describe("a stacked ticket sent back to review after an approval", () => {
     await blockTicket(h.ctx, ticket("CSV-2"), { reason: "Wait for the API review", needs: "", actor: "human" });
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "blocked" });
     h.host.refs.set(`refs/heads/${ticket("CSV-2").branch}`, ticket("CSV-2").head_sha!);
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
     expect(await requeueTicket(h.ctx, "CSV-2", { note: "", actor: "human", author: "human", review: true })).toMatchObject({ state: "review", worker_thread_id: worker.thread_id });
 
     await changesAsked();
     expect(ticket("CSV-2")).toMatchObject({ state: "working", worker_thread_id: worker.thread_id });
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null, environment_id: "env_r1" });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Rename the total column.");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Rename the total column.");
   });
 
   it("still hands the findings to a new worker when the human archived the worker's thread", async () => {
@@ -559,7 +559,7 @@ describe("a stacked ticket sent back to review after an approval", () => {
 
     await changesAsked("CSV-1");
     expect(ticket("CSV-1")).toMatchObject({ state: "queued", worker_thread_id: null });
-    expect(h.bb.callsTo("unarchive")).not.toContainEqual([worker.thread_id]);
+    expect(h.alia.callsTo("unarchive")).not.toContainEqual([worker.thread_id]);
   });
 
   it("keeps its newest worker thread, so the merge queue can bring it back to catch up once the pull request is open and its dependency changes", async () => {
@@ -569,15 +569,15 @@ describe("a stacked ticket sent back to review after an approval", () => {
     await reachApproved(h, "CSV-1");
     await queue();
     const worker = await reachReview(h, "CSV-2");
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null);
     await spawnReviewers(h.ctx, project(), spec());
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     expect(ticket("CSV-2")).toMatchObject({ state: "blocked", worker_thread_id: null });
     expect(row(worker.id)).toMatchObject({ state: "ended", end_reason: "blocked" });
     await h.projects.propose({ toml: specToml((doc) => {
       stackedPr(doc);
       doc.agents.max_workers = 3;
-    }), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    }), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
 
     expect(await e.engine.approve("csv", "human", 2)).toMatchObject({ applied: "pending", backToReview: ["CSV-2"] });
     expect(ticket("CSV-2")).toMatchObject({ state: "review", worker_thread_id: worker.thread_id, environment_id: null });
@@ -591,10 +591,10 @@ describe("a stacked ticket sent back to review after an approval", () => {
     await queue();
     expect(ticket("CSV-2")).toMatchObject({ state: "pr_open", pr_base: ticket("CSV-1").pr_branch, worker_thread_id: worker.thread_id });
 
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
     h.store.updateTicket(ticket("CSV-1").id, { pushed_sha: "sq7" });
     await wakeForRestacks(h.ctx, project(), spec());
-    expect(h.bb.callsTo("unarchive")).toContainEqual([worker.thread_id]);
+    expect(h.alia.callsTo("unarchive")).toContainEqual([worker.thread_id]);
     expect(row(worker.id)).toMatchObject({ state: "active", released_at: null, environment_id: "env_r1" });
     restoredWorktree(worker);
     await queue();
@@ -611,20 +611,20 @@ describe("a stacked ticket sent back to review after an approval", () => {
     await reachApproved(h, "CSV-1");
     await queue();
     const worker = await reachReview(h, "CSV-2");
-    h.bb.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "reviewer" ? new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude") : null);
     await spawnReviewers(h.ctx, project(), spec());
-    h.bb.spawnError = null;
+    h.alia.spawnError = null;
     await h.projects.propose({ toml: specToml((doc) => {
       stackedPr(doc);
       doc.agents.max_workers = 3;
-    }), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    }), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await e.engine.approve("csv", "human", 2);
     await spawnReviewers(h.ctx, project(), spec());
     const reviewer = h.store.threads({ ticketId: ticket("CSV-2").id, role: "reviewer" }).at(-1)!;
     checkOutHead(h, reviewer);
     await approve(h.ctx, reviewer.thread_id!, "Looks good");
     await settleReviews(h.ctx);
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
     h.store.updateTicket(ticket("CSV-1").id, { pushed_sha: "sq7" });
 
     await queue();
@@ -646,7 +646,7 @@ describe("releasing a worker on a machine of its own", () => {
     await askForPrTexts(h.ctx, project(), spec());
     handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows", body: "Why.", commit_message: "Add the order row mapper" });
     await queue();
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     expect(ticket()).toMatchObject({ state: "pr_open", head_sha: "home1", head_tree: "c1" });
     expect(h.host.worktree(`/wt/${worker.environment_id}`).head).toBe("c1");
     await release();
@@ -659,13 +659,13 @@ describe("releasing a worker on a machine of its own", () => {
     await askForPrTexts(h.ctx, project(), spec());
     handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows", body: "Why.", commit_message: "Add the order row mapper" });
     await queue();
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     await release();
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
-    h.bb.restorable = false;
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.restorable = false;
     h.host.feedback.set(URL, changesRequested);
     await poll();
     expect(ticket()).toMatchObject({ state: "queued", worker_thread_id: null });
-    expect(h.store.posts(ticket().id).at(-1)!.body).toBe("The worker's thread cannot come back with an environment (bb cannot restore its environment), so a new worker takes over from the work Loom brought home; it can read the earlier worker's conversation.");
+    expect(h.store.posts(ticket().id).at(-1)!.body).toBe("The worker's thread cannot come back with an environment (VesnALIA cannot restore its environment), so a new worker takes over from the work Loom brought home; it can read the earlier worker's conversation.");
   });
 });

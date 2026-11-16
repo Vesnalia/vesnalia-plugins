@@ -1,27 +1,27 @@
-import type { BbPluginApi, PluginThreadEventName } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginThreadEventName } from "@vesnalia/plugin-sdk";
 import { WIP_LIMIT_MAX, type WipLimitView } from "./schema";
 import { isRunningSelf, type LiveThread } from "./status";
 import type { ThreadReader } from "./threads";
 
 // Working limit: at most `limit` cards working at once. A card is the board's: a visible, non-archived top-level
 // thread with its descendants rolled up. It holds a slot while it or a descendant has a turn in progress and nobody
-// waits on the user (isWorking's rule), so Blocked cards hold none. Every message passes bb's `message.dispatch`
-// checkpoint; one that would start a card that isn't working while `limit` cards are waits as a queued row, and bb
+// waits on the user (isWorking's rule), so Blocked cards hold none. Every message passes VesnALIA's `message.dispatch`
+// checkpoint; one that would start a card that isn't working while `limit` cards are waits as a queued row, and VesnALIA
 // sends it once a slot frees. Work inside a working card (steers, follow-ups, child threads) proceeds: the card already holds its slot,
 // and holding a child its parent waits on would stall the card. The user's Send now on a queued row skips the
-// checkpoint by bb's design.
+// checkpoint by VesnALIA's design.
 
 const LIMIT_KEY = "wip-limit-v1";
 /**
- * A card let through this recently counts as working before its thread shows it: bb flips an idle thread a follow-up
+ * A card let through this recently counts as working before its thread shows it: VesnALIA flips an idle thread a follow-up
  * reaches to active only after the checkpoint's lock releases, so the next message decided could miss it. The grace
  * ends early once that thread frees its slot (a turn can finish before any later message is decided).
  */
 const ADMITTED_MS = 15_000;
-/** While messages wait, ask bb to try them again this often: a slot can free without a thread event (a background task ending). */
+/** While messages wait, ask VesnALIA to try them again this often: a slot can free without a thread event (a background task ending). */
 const RECHECK_MS = 30_000;
 /**
- * bb's re-attempt walk skips a row it re-queued under a second ago, so a recheck right after another one can miss a
+ * VesnALIA's re-attempt walk skips a row it re-queued under a second ago, so a recheck right after another one can miss a
  * freed slot; each freeing event asks again once this long after the last one.
  */
 const TRAILING_RECHECK_MS = 1_500;
@@ -35,22 +35,22 @@ const FREEING_EVENTS = [
   "experimental_thread.parentChanged",
 ] as const satisfies readonly PluginThreadEventName[];
 
-export function createWipLimit(bb: BbPluginApi, reader: ThreadReader, onChange: () => void) {
+export function createWipLimit(alia: AliaPluginApi, reader: ThreadReader, onChange: () => void) {
   let limit: number | null = null;
-  const loaded = bb.storage.kv
+  const loaded = alia.storage.kv
     .get<unknown>(LIMIT_KEY)
     .then((value) => {
       // Anything but a whole number in range (unset, or corrupt) means no limit.
       limit = typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= WIP_LIMIT_MAX ? value : null;
     })
-    .catch((error: unknown) => bb.log.warn(`reading the working limit failed: ${String(error)}`));
+    .catch((error: unknown) => alia.log.warn(`reading the working limit failed: ${String(error)}`));
   /** Card (root thread) id → when, and to which thread in it, a message was let through. */
   const admitted = new Map<string, { at: number; threadId: string }>();
   /** Queued rows held by this plugin: row id → thread id. */
   const waiting = new Map<string, string>();
 
   function recheck() {
-    void bb.experimental_hooks.recheck("message.dispatch").catch(() => undefined);
+    void alia.experimental_hooks.recheck("message.dispatch").catch(() => undefined);
   }
 
   /** Cards working now: root thread ids whose tree has a turn in progress while the root waits on nobody. */
@@ -75,7 +75,7 @@ export function createWipLimit(bb: BbPluginApi, reader: ThreadReader, onChange: 
     return { byId, rootOf, working };
   }
 
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
     if (ctx.attempt === "join-turn") return { action: "proceed" };
     await loaded;
     const max = limit;
@@ -103,23 +103,23 @@ export function createWipLimit(bb: BbPluginApi, reader: ThreadReader, onChange: 
   });
 
   function track(entry: { id: string; threadId: string; waitingOn: { kind: string; pluginId?: string } | null }) {
-    const ours = entry.waitingOn?.kind === "plugin" && entry.waitingOn.pluginId === bb.pluginId;
+    const ours = entry.waitingOn?.kind === "plugin" && entry.waitingOn.pluginId === alia.pluginId;
     const changed = ours !== waiting.has(entry.id);
     if (ours) waiting.set(entry.id, entry.threadId);
     else waiting.delete(entry.id);
     if (changed) onChange();
   }
-  bb.events.on("message.queued", ({ entry }) => track(entry));
-  bb.events.on("message.dispatched", ({ entry }) => track({ ...entry, waitingOn: null }));
-  bb.events.on("message.cancelled", ({ entry }) => track({ ...entry, waitingOn: null }));
+  alia.events.on("message.queued", ({ entry }) => track(entry));
+  alia.events.on("message.dispatched", ({ entry }) => track({ ...entry, waitingOn: null }));
+  alia.events.on("message.cancelled", ({ entry }) => track({ ...entry, waitingOn: null }));
   const forgetThread = ({ thread }: { thread: { id: string } }) => {
     for (const [id, threadId] of waiting) if (threadId === thread.id) waiting.delete(id);
   };
-  bb.events.on("thread.archived", forgetThread);
-  bb.events.on("thread.deleted", forgetThread);
+  alia.events.on("thread.archived", forgetThread);
+  alia.events.on("thread.deleted", forgetThread);
   let trailing: ReturnType<typeof setTimeout> | undefined;
   for (const event of FREEING_EVENTS) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       for (const [id, entry] of admitted) if (entry.threadId === thread.id) admitted.delete(id);
       if (waiting.size === 0) return;
       recheck();
@@ -142,7 +142,7 @@ export function createWipLimit(bb: BbPluginApi, reader: ThreadReader, onChange: 
     isWaiting: (threadId: string): boolean => [...waiting.values()].includes(threadId),
     async setLimit(next: number | null): Promise<WipLimitView> {
       await loaded;
-      await bb.storage.kv.set(LIMIT_KEY, next);
+      await alia.storage.kv.set(LIMIT_KEY, next);
       limit = next;
       onChange();
       // A higher limit or none lets held messages go now; a lower one holds only new starts, never working threads.

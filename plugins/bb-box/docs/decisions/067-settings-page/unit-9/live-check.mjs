@@ -3,15 +3,15 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_BB_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
 const shots = process.env.LIVE_SHOTS ?? join(process.cwd(), "shots");
 const runs = Number(process.env.LIVE_RUNS ?? 3);
 const chosen = process.argv.slice(2);
 mkdirSync(shots, { recursive: true });
 
-const APPLY = "**/api/v1/plugins/bb-box/rpc/config.apply";
-const GET = "**/api/v1/plugins/bb-box/rpc/config.get";
+const APPLY = "**/api/v1/plugins/alia-box/rpc/config.apply";
+const GET = "**/api/v1/plugins/alia-box/rpc/config.get";
 const CLIENT_ID = "tailnet:client-id";
 const CLIENT_SECRET = "tailnet:client-secret";
 
@@ -30,7 +30,7 @@ function gate() {
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -51,9 +51,9 @@ async function elsewhere(change) {
 const withGeneral = (patch) => (document) => ({ ...document, general: { ...document.general, ...patch } });
 
 function storedSecret(key) {
-  const db = new DatabaseSync(join(dataDir, "bb.db"), { readOnly: true });
+  const db = new DatabaseSync(join(dataDir, "alia.db"), { readOnly: true });
   try {
-    const row = db.prepare("select value from plugin_kv where plugin_id = 'bb-box' and key = 'config/secrets'").get();
+    const row = db.prepare("select value from plugin_kv where plugin_id = 'alia-box' and key = 'config/secrets'").get();
     return (row ? JSON.parse(row.value) : {})["@general"]?.[key];
   } finally {
     db.close();
@@ -109,7 +109,7 @@ let onboardingSkipped = false;
 const heading = (page, title) => page.locator("[data-page-heading]").filter({ hasText: new RegExp(`^${title}`) });
 
 async function open(page, hash, title) {
-  const url = `${base}/settings/plugins/bb-box${hash}`;
+  const url = `${base}/settings/plugins/alia-box${hash}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   if (!onboardingSkipped) {
     const skip = page.getByRole("button", { name: "Skip setup" });
@@ -126,7 +126,7 @@ async function open(page, hash, title) {
 
 async function leaveBySidebar(page) {
   await page.getByRole("link", { name: "General", exact: true }).first().click();
-  await page.waitForURL((url) => !url.pathname.includes("/plugins/bb-box"));
+  await page.waitForURL((url) => !url.pathname.includes("/plugins/alia-box"));
 }
 
 const tailnetBar = (page) => page.getByRole("region", { name: "Save the tailnet" });
@@ -177,7 +177,7 @@ const checks = {
     await open(page, "#option/network", "Network");
     const before = await stored();
     await page.getByRole("radio", { name: "Yes, with a Tailscale OAuth client" }).check();
-    await page.getByRole("textbox", { name: "Tags" }).fill("tag:bb-box, tag:ci-check");
+    await page.getByRole("textbox", { name: "Tags" }).fill("tag:alia-box, tag:ci-check");
     await setSecret(page, "OAuth client ID", `made-up-id-${run}`);
     const pending = await barSays(tailnetBar(page), /^3 changes to the tailnet not saved/);
     await tailnetBar(page).getByRole("button", { name: "Save", exact: true }).click();
@@ -203,7 +203,7 @@ const checks = {
     await secretInput(page, "OAuth client secret").press("Enter");
     const saved = await barSays(tailnetBar(page), /^Saved\./);
     const now = await stored();
-    expect(JSON.stringify(now.document.general.tailnet?.tags) === JSON.stringify(["tag:bb-box", "tag:ci-check"]), `the tags stored: ${JSON.stringify(now.document.general.tailnet)}`);
+    expect(JSON.stringify(now.document.general.tailnet?.tags) === JSON.stringify(["tag:alia-box", "tag:ci-check"]), `the tags stored: ${JSON.stringify(now.document.general.tailnet)}`);
     expect(now.document.general.tailnet?.mode === "oauth", "the choice stored");
     expect(storedSecret(CLIENT_ID) === `made-up-id-${run}` && storedSecret(CLIENT_SECRET) === `made-up-secret-${run}`, "both credentials stored, in one save");
     expect(now.revision === before.revision + 1, `one revision for the whole form: ${before.revision} to ${now.revision}`);
@@ -221,7 +221,7 @@ const checks = {
     await withTailnet(run);
     const { page } = await tab();
     await open(page, "#option/network", "Network");
-    await page.getByRole("radio", { name: "No: BB is reached without one" }).check();
+    await page.getByRole("radio", { name: "No: VesnALIA is reached without one" }).check();
     const warning = (await page.getByText("Saving No deletes the saved OAuth client ID and secret.").textContent()).trim();
     expect(storedSecret(CLIENT_SECRET) === `made-up-secret-${run}`, "nothing is deleted before Save");
     await tailnetBar(page).getByRole("button", { name: "Save", exact: true }).click();

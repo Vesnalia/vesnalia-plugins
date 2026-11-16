@@ -19,13 +19,13 @@ sources:
 ---
 # Gotchas
 
-TL;DR: MoA holds messages at BB’s dispatch boundary, but BB can still bypass the wait. A long-wait threshold is informational, persisted state is not automatically pruned, and advisor role restrictions are instructions rather than an operating-system sandbox. (server.ts:113-153, server.ts:229-255, prompts.ts:4-5)
+TL;DR: MoA holds messages at VesnALIA’s dispatch boundary, but VesnALIA can still bypass the wait. A long-wait threshold is informational, persisted state is not automatically pruned, and advisor role restrictions are instructions rather than an operating-system sandbox. (server.ts:113-153, server.ts:229-255, prompts.ts:4-5)
 
 ## Critical
 
 ### Send now can bypass consultation
 
-**Problem:** If BB dispatches a queued message without the MoA reference, the run is recorded as `bypassed` and active advisor work is stopped. (server.ts:527-533)
+**Problem:** If VesnALIA dispatches a queued message without the MoA reference, the run is recorded as `bypassed` and active advisor work is stopped. (server.ts:527-533)
 **Risk:** The acting model may answer without either advisor reviewing the request. (server.ts:527-533)
 **Workaround:** Treat `bypassed` as a distinct outcome in history; retry only when the message remains queued and the run is failed. (server.ts:419-429)
 
@@ -36,7 +36,7 @@ TL;DR: MoA holds messages at BB’s dispatch boundary, but BB can still bypass t
 ### Advisor read-only rules are prompt instructions
 
 **Problem:** `ADVISOR_PROMPT` prohibits edits, installs, configuration changes, tests, and unrelated services, but the restriction is expressed as role instructions. Provider permissions are inherited from the original message. (prompts.ts:2-9, server.ts:209-218)
-**Risk:** The prompt itself does not create an operating-system sandbox; the worker’s effective tools depend on BB and provider permissions.
+**Risk:** The prompt itself does not create an operating-system sandbox; the worker’s effective tools depend on VesnALIA and provider permissions.
 **Workaround:** Preserve the originating permission mode and inspect actual session activity for evidence of reads or actions. (server.ts:209-218, audit.ts:53-70)
 
 `prompts.ts:2-9`
@@ -65,7 +65,7 @@ TL;DR: MoA holds messages at BB’s dispatch boundary, but BB can still bypass t
 
 **Problem:** The compact viewport trigger blurs the keyboard and toggles the overlay from its click handler. (components/ui/responsive-overlay.tsx:178-186)
 **Risk:** Replacing it with a nested or mouse-down controlled button can lose the first tap on mobile.
-**Workaround:** Keep the composer control inside BB’s dialog trigger path and verify compact-device behavior when changing it. (app.tsx:109-123, composer-toggle.tsx:5-32)
+**Workaround:** Keep the composer control inside VesnALIA’s dialog trigger path and verify compact-device behavior when changing it. (app.tsx:109-123, composer-toggle.tsx:5-32)
 
 `components/ui/responsive-overlay.tsx:157-225`
 

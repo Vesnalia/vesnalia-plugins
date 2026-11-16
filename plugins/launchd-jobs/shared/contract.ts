@@ -5,7 +5,7 @@
  * it imports `defineRpcContract` from the SDK root, which only the server
  * bundle has.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { HealthSchema, HostChoiceSchema } from "./channels";

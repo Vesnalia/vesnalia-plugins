@@ -55,7 +55,7 @@ export interface FakeDockerHost {
   withoutForkHold(image: string): void;
 }
 
-const IDENTITY_SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/bb-box-identity.sh", import.meta.url));
+const IDENTITY_SCRIPT = fileURLToPath(new URL("../setup/proxmox-lxc/template/guest/alia-box-identity.sh", import.meta.url));
 const IMAGE_MACHINE_ID = "0123456789abcdef0123456789abcdef";
 const IMAGE_HOST_KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIimagekey image";
 
@@ -69,11 +69,11 @@ function writeIn(root: string, path: string, text: string, mode?: number): void 
 }
 
 function imageWithIdentityReset(root: string, version: number): void {
-  writeIn(root, "usr/local/sbin/bb-box-identity", identityAtVersion(version), 0o755);
+  writeIn(root, "usr/local/sbin/alia-box-identity", identityAtVersion(version), 0o755);
   writeIn(root, "etc/machine-id", `${IMAGE_MACHINE_ID}\n`);
   writeIn(root, "etc/ssh/ssh_host_ed25519_key", "private\n");
   writeIn(root, "etc/ssh/ssh_host_ed25519_key.pub", `${IMAGE_HOST_KEY}\n`);
-  const enabled = spawnSync("bash", [join(root, "usr/local/sbin/bb-box-identity"), "enable", "--no-unit"], { env: { ...process.env, BBBOX_IDENTITY_ROOT: root }, encoding: "utf8" });
+  const enabled = spawnSync("bash", [join(root, "usr/local/sbin/alia-box-identity"), "enable", "--no-unit"], { env: { ...process.env, BBBOX_IDENTITY_ROOT: root }, encoding: "utf8" });
   assert.equal(enabled.status, 0, `the image's build turned the reset on: ${enabled.stderr}`);
 }
 

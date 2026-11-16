@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { PLUGIN_SLUG, TOOL_PREFIX } from "../brand";
 import type { BoardTask } from "./schema";
@@ -29,10 +29,10 @@ export function withoutToolHelp(text: string): string {
   return text.split(`\n---\n${TOOL_HELP_LEAD} `)[0].trim();
 }
 
-export function registerAgentTools(bb: BbPluginApi, { spawnTask }: Pick<BoardApi, "spawnTask">) {
-  bb.agents.registerTool({
+export function registerAgentTools(alia: AliaPluginApi, { spawnTask }: Pick<BoardApi, "spawnTask">) {
+  alia.agents.registerTool({
     name: TOOLS.spawnTask,
-    description: "Spawn a new BB thread on the Kanban board, usually as a child of the current thread.",
+    description: "Spawn a new VesnALIA thread on the Kanban board, usually as a child of the current thread.",
     instructions:
       "Call only when the user asks for a separate thread. Choose a shortName that describes the whole thread's goal. The board adds a 1-2 word bracketed category prefix and titles child threads parent > child, so keep names short. The board follows the thread's live state; nothing needs reporting back.",
     presentation: { label: { pending: "Spawning Kanban thread", completed: "Spawned Kanban thread" }, icon: { glyph: "Bot" } },
@@ -47,10 +47,10 @@ export function registerAgentTools(bb: BbPluginApi, { spawnTask }: Pick<BoardApi
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TOOLS.createTheoryTasks,
     description:
-      "For an investigation thread, spawn one independent BB thread per theory so separate agents can try different solutions.",
+      "For an investigation thread, spawn one independent VesnALIA thread per theory so separate agents can try different solutions.",
     instructions:
       "Call only when the user asks to split an investigation into theory threads. Each theory needs a shortName that describes that theory thread's overall goal; the board adds a 1-2 word bracketed category prefix. The board follows each thread's live state; nothing needs reporting back.",
     presentation: { label: { pending: "Spawning theory threads", completed: "Spawned theory threads" }, icon: { glyph: "Lightbulb" } },
@@ -93,11 +93,11 @@ export function registerAgentTools(bb: BbPluginApi, { spawnTask }: Pick<BoardApi
 
   // Offered in every thread with no standing instructions: the board reads live thread state, so an agent spawns
   // board threads only when the user asks.
-  bb.agents.configure(() => ({ tools: Object.values(TOOLS), skills: [PLUGIN_SLUG] }));
+  alia.agents.configure(() => ({ tools: Object.values(TOOLS), skills: [PLUGIN_SLUG] }));
 }
 
-export function registerCli(bb: BbPluginApi, { listBoard, spawnTask, removeTask, parkTask }: BoardApi) {
-  const cli = `bb ${PLUGIN_SLUG}`;
+export function registerCli(alia: AliaPluginApi, { listBoard, spawnTask, removeTask, parkTask }: BoardApi) {
+  const cli = `alia ${PLUGIN_SLUG}`;
   const commands = [
     { name: "list", summary: "List threads on the Kanban board", usage: `${cli} list [--json]` },
     { name: "add", summary: "Spawn a thread on the Kanban board", usage: `${cli} add <short-name> -- <prompt> [--json]` },
@@ -106,9 +106,9 @@ export function registerCli(bb: BbPluginApi, { listBoard, spawnTask, removeTask,
     { name: "remove", summary: "Archive/remove a thread from the board", usage: `${cli} remove <thread-id> [--json]` },
   ];
   const usage = ["Usage:", ...commands.map((command) => `  ${command.usage}`)].join("\n");
-  bb.cli.register({
+  alia.cli.register({
     name: PLUGIN_SLUG,
-    summary: "Manage the Kanban board of BB threads",
+    summary: "Manage the Kanban board of VesnALIA threads",
     commands,
     async run(argv: string[]) {
       const json = argv.includes("--json");

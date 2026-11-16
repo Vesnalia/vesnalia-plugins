@@ -18,7 +18,7 @@ const fira = F("@fontsource/fira-code/files/fira-code-latin-500-normal.woff");
 const block = (sel) => { const i = CSS.indexOf(`\n${sel} {`) + 1; return CSS.slice(i, CSS.indexOf("}", i)); };
 const tok = (txt, name) => { const m = txt.match(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, "i")); if (!m) throw new Error(name); return m[1]; };
 const MODE = {};
-for (const [mode, sel, code] of [["dark", ".dark", ".dark .bb-code-highlight.bb-code-highlight"], ["light", ":root, .light", ".light .bb-code-highlight.bb-code-highlight"]]) {
+for (const [mode, sel, code] of [["dark", ".dark", ".dark .alia-code-highlight.alia-code-highlight"], ["light", ":root, .light", ".light .alia-code-highlight.alia-code-highlight"]]) {
   const b = block(sel), c = block(code), t = (n) => tok(b, n);
   MODE[mode] = {
     canvas: t("canvas"), sidebar: t("sidebar"), popover: t("popover"), secondary: t("secondary"), accentFill: t("accent"),

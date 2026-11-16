@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 import { OrientationService } from "./orientation";
@@ -7,9 +7,9 @@ import { FakePorts } from "./testing/fake-ports";
 import { memoryOrientationStore, settingsWith } from "./testing/store";
 
 function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
   const { orientations } = memoryOrientationStore();
-  registerOrientationTools(bb, new OrientationService(new FakePorts(), orientations, () => settingsWith()));
+  registerOrientationTools(alia, new OrientationService(new FakePorts(), orientations, () => settingsWith()));
   return { harness };
 }
 

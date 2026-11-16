@@ -1,4 +1,4 @@
-import { cliCommand, defineCli, type PluginCliCommand } from "@get-bb/plugin-sdk";
+import { cliCommand, defineCli, type PluginCliCommand } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { type ForageRuntime, type ForageContext, type OperationResult } from "./operations.ts";
 import { deleteScopeConfirmation, deleteSourceConfirmation, sourceScopeSchema } from "./contract.ts";
@@ -114,7 +114,7 @@ export function createCli(runtime: ForageRuntime) {
    const s = await scope(options, ctx.signal);
    if (query.includeRestricted && (s.kind !== "thread" || !query.sourceIds?.length || !await runtime.allowRestrictedThreadCapture())) throw new Error("Restricted export requires explicitly selected sources and enabled restricted thread capture.");
    for (const id of query.sourceIds ?? []) if (!await visible(s, id)) throw new Error("SOURCE_NOT_VISIBLE");
-   return output({ path: `/api/v1/plugins/forage/http/sources-export?request=${encodeURIComponent(JSON.stringify({ scope: s, ...query }))}`, authentication: "Open the local-auth plugin HTTP route on the connected BB server. No server filesystem path is exposed.", format: "application/x-ndjson", scopeKey: sourceScopeKey(s) });
+   return output({ path: `/api/v1/plugins/forage/http/sources-export?request=${encodeURIComponent(JSON.stringify({ scope: s, ...query }))}`, authentication: "Open the local-auth plugin HTTP route on the connected VesnALIA server. No server filesystem path is exposed.", format: "application/x-ndjson", scopeKey: sourceScopeKey(s) });
   } catch (error) { return failure(error); }
  } });
  return defineCli({ name: "forage", summary: "Scoped web research, durable sources and bounded crawl jobs; zero model turns", commands });

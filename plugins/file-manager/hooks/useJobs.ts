@@ -6,7 +6,7 @@
 // reload, which forgets every job and answers `{ job: null }` — that is the
 // signal to stop tracking and refetch the directory).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 
 import { JOB_CHANNEL, jobSchema, type Job } from "../contract";
 import { useFmRpc } from "../lib/fm-rpc";

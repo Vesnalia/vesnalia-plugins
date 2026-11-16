@@ -4,7 +4,7 @@
 // message for a follow-up the user clicked. Run with `npm test`.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { modelStubs, sleep, until } from "./helpers.mjs";
 
@@ -12,7 +12,7 @@ const OUTPUT = '[{"label": "Add a test", "why": "The fix shipped untested"}]';
 const OLD_OUTPUT = '[{"label": "An outdated idea", "why": "From the previous answer"}]';
 
 /**
- * A fake BB whose worker threads run until the test finishes them (or after `autoMs`), so a test
+ * A fake VesnALIA whose worker threads run until the test finishes them (or after `autoMs`), so a test
  * can act while a worker is still going. `world.workers` holds each worker's prompt, status and
  * output; `world.stops` records every stop with its time.
  */
@@ -71,7 +71,7 @@ async function boot({ tree = { t1: { status: "idle" } }, autoMs = null } = {}) {
       ...modelStubs(() => world.modelsGate),
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const rpc = (name, input) => host.harness.callRpc(name, input);
   return {
     world, tree, finish, rpc,

@@ -4,7 +4,7 @@
 // the body through components/panel-bus.ts rather than React context. Every
 // button dispatches synchronously inside the click handler, which is what
 // keeps the panel's hidden <input type="file"> click a real user gesture.
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 
 import { Button } from "./ui/button";
 import {

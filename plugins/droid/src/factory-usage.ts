@@ -66,7 +66,7 @@ export async function collectFactoryUsage(options: {
         const identity = identitySchema.safeParse(await identityResponse.json());
         if (identity.success) accountKey = `factory:organization:${identity.data.orgId}:user:${identity.data.userId}`;
       }
-    } catch { /* Unknown accounts stay separate in BB's usage panel. */ }
+    } catch { /* Unknown accounts stay separate in VesnALIA's usage panel. */ }
     return {
       accountKey, observedAt: Date.now(),
       usage: { status: "ok", accountEmail: credential.email, planLabel: null, plan: null, windows },

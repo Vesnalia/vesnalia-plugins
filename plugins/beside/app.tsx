@@ -1,4 +1,4 @@
-// Beside — an inbox-style replacement for bb's sidebar thread
+// Beside — an inbox-style replacement for VesnALIA's sidebar thread
 // list, and the reference example for `app.slots.experimental_threadList`.
 //
 // The idea it is built around: the list NEVER re-orders itself. Threads sort
@@ -7,7 +7,7 @@
 import {
   definePluginApp,
   experimental_THREAD_ACTION_GROUPS,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./src/components/Icon";
 import { toast } from "sonner";
 import { muteThread, PushLevelError, unmuteThread } from "./src/muting";

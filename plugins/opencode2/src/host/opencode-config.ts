@@ -6,8 +6,8 @@ import { DYNAMIC_MCP_SERVER_PREFIX } from "./opencode-requests.ts";
 
 /**
  * OpenCode attaches MCP servers to a directory, so its own sessions (TUI,
- * web) in a BB workspace would list every BB thread's tool server. One deny
- * rule in OpenCode's global config hides them there; BB sessions override it
+ * web) in a VesnALIA workspace would list every VesnALIA thread's tool server. One deny
+ * rule in OpenCode's global config hides them there; VesnALIA sessions override it
  * with a later session-level allow for their own server.
  *
  * The edit is textual so the rest of the user's file (formatting, comments,
@@ -15,7 +15,7 @@ import { DYNAMIC_MCP_SERVER_PREFIX } from "./opencode-requests.ts";
  * existing top-level `permissions` array (last match wins, so it must come
  * last), or a `permissions` key holding only this rule is added.
  */
-export const BB_TOOLS_RULE = `{ "action": "${DYNAMIC_MCP_SERVER_PREFIX}*", "resource": "*", "effect": "deny" }`;
+export const ALIA_TOOLS_RULE = `{ "action": "${DYNAMIC_MCP_SERVER_PREFIX}*", "resource": "*", "effect": "deny" }`;
 
 const RULE_PATTERN = new RegExp(
   `\\{\\s*"action"\\s*:\\s*"${DYNAMIC_MCP_SERVER_PREFIX}\\*"\\s*,\\s*"resource"\\s*:\\s*"\\*"\\s*,\\s*"effect"\\s*:\\s*"deny"\\s*\\}`,
@@ -123,7 +123,7 @@ function lineIndent(text: string, index: number) {
 }
 
 /** Insert the rule; returns the new text, or undefined when unchanged. */
-export function addBbToolsRule(text: string): string | undefined {
+export function addAliaToolsRule(text: string): string | undefined {
   if (RULE_PATTERN.test(text)) return undefined;
   const parsed = scan(text);
   if (!parsed) throw new Error("OpenCode config is not valid JSON");
@@ -133,7 +133,7 @@ export function addBbToolsRule(text: string): string | undefined {
     const last = previousSignificant(text, close);
     const empty = last === open;
     const separator = empty || text[last] === "," ? "" : ",";
-    const item = `\n${keyIndent}  ${BB_TOOLS_RULE}`;
+    const item = `\n${keyIndent}  ${ALIA_TOOLS_RULE}`;
     const before = text.slice(0, last + 1) + separator + item;
     // Keep whatever followed the last element (newline + indent) before `]`.
     const tail = text.slice(last + 1, close);
@@ -146,7 +146,7 @@ export function addBbToolsRule(text: string): string | undefined {
   const last = previousSignificant(text, parsed.rootClose);
   const emptyRoot = text[last] === "{";
   const gap = text.slice(last + 1, parsed.rootClose);
-  const entry = `\n  "permissions": [\n    ${BB_TOOLS_RULE}\n  ]`;
+  const entry = `\n  "permissions": [\n    ${ALIA_TOOLS_RULE}\n  ]`;
   return (
     text.slice(0, last + 1) +
     (emptyRoot || text[last] === "," ? "" : ",") +
@@ -157,7 +157,7 @@ export function addBbToolsRule(text: string): string | undefined {
 }
 
 /** Remove the rule (and a `permissions` key it alone occupies). */
-export function removeBbToolsRule(text: string): string | undefined {
+export function removeAliaToolsRule(text: string): string | undefined {
   const match = RULE_PATTERN.exec(text);
   if (!match) return undefined;
   const start = match.index;
@@ -210,7 +210,7 @@ type EditRecord = { path: string; before: string; after: string };
  * added. Removing the rule restores that text byte-for-byte when the file
  * is untouched since; if the user edited it meanwhile, only the rule is cut.
  */
-export async function syncBbToolsRule(
+export async function syncAliaToolsRule(
   enabled: boolean,
   path = globalConfigPath(),
   statePath?: string,
@@ -226,14 +226,14 @@ export async function syncBbToolsRule(
   const record = statePath ? await readRecord(statePath) : undefined;
   let next: string | undefined;
   if (enabled) {
-    next = addBbToolsRule(text ?? "{}\n");
+    next = addAliaToolsRule(text ?? "{}\n");
     if (next === undefined) return "unchanged";
   } else {
     if (text === undefined) return "unchanged";
     next =
       record && record.path === path && record.after === text
         ? record.before
-        : removeBbToolsRule(text);
+        : removeAliaToolsRule(text);
     if (next === undefined || next === text) return "unchanged";
   }
   if (enabled && statePath)
@@ -246,10 +246,10 @@ export async function syncBbToolsRule(
       } satisfies EditRecord),
     );
   if (!enabled && next === "" && record?.before === "") {
-    // The file did not exist before BB created it.
+    // The file did not exist before VesnALIA created it.
     await rm(path, { force: true });
   } else {
-    const temp = `${path}.bb-${process.pid}.tmp`;
+    const temp = `${path}.alia-${process.pid}.tmp`;
     await writeFile(temp, next, { mode });
     await rename(temp, path);
   }

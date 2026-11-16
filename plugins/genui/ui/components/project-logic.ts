@@ -1,7 +1,7 @@
 // Pure pieces of the Project components (projectKit.tsx and friends): the
 // polling schedule and the +/− proportion blocks.
 
-/** First wait before a live component asks BB again. */
+/** First wait before a live component asks VesnALIA again. */
 export const POLL_START_MS = 4_000;
 
 /** Longest wait between polls. */
@@ -33,7 +33,7 @@ export function ratioBlocks(additions: number, deletions: number): { added: numb
   return { added, removed: colored - added, neutral: RATIO_BLOCKS - colored };
 }
 
-/** The answer's content without when it was read, so two reads compare equal when BB's state didn't change. */
+/** The answer's content without when it was read, so two reads compare equal when VesnALIA's state didn't change. */
 export function answerSignature(answer: unknown): string {
   return JSON.stringify(answer, (key, value: unknown) => (key === "fetchedAt" || key === "takenAt" ? undefined : value));
 }

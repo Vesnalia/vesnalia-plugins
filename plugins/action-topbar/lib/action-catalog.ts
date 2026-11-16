@@ -3,12 +3,12 @@ export interface ActionDescriptor {
   label: string;
 }
 
-export const ACTION_CATALOG_STORAGE_KEY = "bb:action-topbar:catalog";
+export const ACTION_CATALOG_STORAGE_KEY = "alia:action-topbar:catalog";
 
 export const SEEDED_ACTIONS: readonly ActionDescriptor[] = [
   { id: "file-search-result-open-browser", label: "Open browser" },
   { id: "file-search-result-start-terminal", label: "Start terminal" },
-  { id: "plugin-action:bb-recap:recap", label: "Recap" },
+  { id: "plugin-action:alia-recap:recap", label: "Recap" },
   { id: "plugin-action:file-manager:file-manager", label: "File Manager" },
   { id: "plugin-action:filetree:files", label: "Files" },
   { id: "plugin-action:git-history:history", label: "Git History" },

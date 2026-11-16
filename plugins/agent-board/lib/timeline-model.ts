@@ -1,4 +1,4 @@
-// Generic execution-timeline normalization for public BB timeline/event rows.
+// Generic execution-timeline normalization for public VesnALIA timeline/event rows.
 // This module deliberately consumes only presentation-safe, allowlisted fields.
 // It never reads activeThinking, reasoning events, tool output, stdout/stderr,
 // file contents, user prompts, system/developer text, or raw event JSON.
@@ -14,7 +14,7 @@ import {
   publicUpdatePreview,
   redactOperationalText,
 } from "./board-model";
-import type { ThreadEventRow, TimelineResponse } from "./bb-source";
+import type { ThreadEventRow, TimelineResponse } from "./alia-source";
 import { compareTimelinePosition, type TimelinePosition } from "./timeline-pagination";
 
 type UnknownRecord = Record<string, unknown>;
@@ -24,7 +24,7 @@ export interface TimelineCandidate extends TimelineEvent {
   sortSequence: number;
 }
 
-export interface NormalizeBbTimelineInput {
+export interface NormalizeAliaTimelineInput {
   executionKey: string;
   threadId: string;
   timeline: TimelineResponse;
@@ -207,7 +207,7 @@ function makeCandidate(
 /** Deterministic chronological de-duplication; distinct source rows stay distinct. */
 export function finalizeTimeline(
   executionKey: string,
-  source: "bb" | "redteam",
+  source: "alia" | "redteam",
   candidates: readonly TimelineCandidate[],
   options: {
     active: boolean;
@@ -251,7 +251,7 @@ export function finalizeTimeline(
   };
 }
 
-function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<TimelineCandidate, "executionKey" | "source" | "threadId">): TimelineCandidate[] {
+function lifecycleCandidates(input: NormalizeAliaTimelineInput, base: Pick<TimelineCandidate, "executionKey" | "source" | "threadId">): TimelineCandidate[] {
   const out: TimelineCandidate[] = [];
   for (const event of input.lifecycleEvents ?? []) {
     const eventRecord = event as unknown as UnknownRecord;
@@ -263,7 +263,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
     const sequence = epoch(eventRecord.seq) ?? 0;
     const common = {
       executionKey: input.executionKey,
-      source: "bb" as const,
+      source: "alia" as const,
       threadId: input.threadId,
       timestamp: at,
       model: null,
@@ -291,7 +291,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
           : null;
         out.push(makeCandidate(base, {
           ...common,
-          id: `bb:${input.threadId}:interaction:${interactionId}:requested`,
+          id: `alia:${input.threadId}:interaction:${interactionId}:requested`,
           fingerprint: `interaction:${family}:${interactionId}:requested`,
           kind: family === "approval" ? "approval-requested" : "question-requested",
           status: "waiting",
@@ -303,7 +303,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
       } else if (state === "resolved") {
         out.push(makeCandidate(base, {
           ...common,
-          id: `bb:${input.threadId}:interaction:${interactionId}:resolved`,
+          id: `alia:${input.threadId}:interaction:${interactionId}:resolved`,
           fingerprint: `interaction:${family}:${interactionId}:resolved`,
           kind: "resumed",
           status: "resolved",
@@ -320,7 +320,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
       if (state === "active") {
         out.push(makeCandidate(base, {
           ...common,
-          id: `bb:${input.threadId}:provisioning:${provisioningId}:waiting`,
+          id: `alia:${input.threadId}:provisioning:${provisioningId}:waiting`,
           fingerprint: `provisioning:${provisioningId}:waiting`,
           kind: "waiting",
           status: "waiting",
@@ -331,7 +331,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
       } else if (state === "completed") {
         out.push(makeCandidate(base, {
           ...common,
-          id: `bb:${input.threadId}:provisioning:${provisioningId}:resumed`,
+          id: `alia:${input.threadId}:provisioning:${provisioningId}:resumed`,
           fingerprint: `provisioning:${provisioningId}:resumed`,
           kind: "resumed",
           status: "resolved",
@@ -345,7 +345,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
     if (type === "system/thread/interrupted") {
       out.push(makeCandidate(base, {
         ...common,
-        id: `bb:${input.threadId}:event:${id}:interrupted`,
+        id: `alia:${input.threadId}:event:${id}:interrupted`,
         fingerprint: `event:${id}:interrupted`,
         kind: "execution-interrupted",
         status: "interrupted",
@@ -364,7 +364,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
       if (model === null) continue;
       out.push(makeCandidate(base, {
         ...common,
-        id: `bb:${input.threadId}:event:${id}:model`,
+        id: `alia:${input.threadId}:event:${id}:model`,
         fingerprint: `model:${model}`,
         kind: "model-selected",
         status: "running",
@@ -380,7 +380,7 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
       if (model === null) continue;
       out.push(makeCandidate(base, {
         ...common,
-        id: `bb:${input.threadId}:event:${id}:model`,
+        id: `alia:${input.threadId}:event:${id}:model`,
         fingerprint: `model:${model}`,
         kind: "model-selected",
         status: "running",
@@ -394,9 +394,9 @@ function lifecycleCandidates(input: NormalizeBbTimelineInput, base: Pick<Timelin
   return out;
 }
 
-/** Normalize one public BB timeline response into source-independent events. */
-export function normalizeBbTimeline(input: NormalizeBbTimelineInput): NormalizedTimeline {
-  const base = { executionKey: input.executionKey, source: "bb" as const, threadId: input.threadId };
+/** Normalize one public VesnALIA timeline response into source-independent events. */
+export function normalizeAliaTimeline(input: NormalizeAliaTimelineInput): NormalizedTimeline {
+  const base = { executionKey: input.executionKey, source: "alia" as const, threadId: input.threadId };
   const rows = flattenRows(input.timeline.rows);
   const candidates = lifecycleCandidates(input, base);
   for (const event of input.extraEvents ?? []) candidates.push({ ...event, fingerprint: event.id, sortSequence: event.sourceMetadata?.sequence ?? 0 });
@@ -427,7 +427,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
       if (summary === null) continue;
       const turnId = text(row.turnId) ?? id;
       candidates.push(makeCandidate(base, {
-        id: `bb:${input.threadId}:row:${id}:update`,
+        id: `alia:${input.threadId}:row:${id}:update`,
         fingerprint: `public:${turnId}:${summary}`,
         sortSequence: sequence,
         timestamp: epoch(row.createdAt) ?? startedAt,
@@ -449,7 +449,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
       const turnId = text(row.turnId) ?? id;
       const completedAt = epoch(row.completedAt);
       candidates.push(makeCandidate(base, {
-        id: `bb:${input.threadId}:turn:${turnId}:start`,
+        id: `alia:${input.threadId}:turn:${turnId}:start`,
         fingerprint: `turn:${turnId}:start`,
         sortSequence: sequence,
         timestamp: startedAt,
@@ -469,7 +469,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
       const kind = terminalKind(terminalStatus, "execution");
       if (completedAt !== null && kind !== null) {
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:turn:${turnId}:terminal`,
+          id: `alia:${input.threadId}:turn:${turnId}:terminal`,
           fingerprint: `turn:${turnId}:terminal`,
           sortSequence: sequence,
           timestamp: completedAt,
@@ -491,7 +491,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
     if (row.kind === "system") {
       if (row.systemKind === "reconnect") {
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:system:${id}:resumed`,
+          id: `alia:${input.threadId}:system:${id}:resumed`,
           fingerprint: `system:${id}:resumed`,
           sortSequence: sequence,
           timestamp: epoch(row.createdAt) ?? startedAt,
@@ -522,7 +522,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
       if (pending) {
         const question = Array.isArray(row.questions) ? record(row.questions[0]) : null;
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:interaction:${interactionId}:requested`,
+          id: `alia:${input.threadId}:interaction:${interactionId}:requested`,
           fingerprint: `interaction:${family}:${interactionId}:requested`,
           sortSequence: sequence,
           timestamp: startedAt,
@@ -544,7 +544,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
           (family === "question" && row.lifecycle === "answered"))
       ) {
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:interaction:${interactionId}:resolved`,
+          id: `alia:${input.threadId}:interaction:${interactionId}:resolved`,
           fingerprint: `interaction:${family}:${interactionId}:resolved`,
           sortSequence: sequence,
           timestamp: completedAt,
@@ -566,7 +566,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
 
     if (workKind === "plan-steps") {
       candidates.push(makeCandidate(base, {
-        id: `bb:${input.threadId}:row:${id}:phase-start`, fingerprint: `row:${id}:phase-start`, sortSequence: sequence,
+        id: `alia:${input.threadId}:row:${id}:phase-start`, fingerprint: `row:${id}:phase-start`, sortSequence: sequence,
         timestamp: startedAt, kind: "phase-start", status: "running", title: "Planning started",
         summary: null, model: null, toolName: null, target: null, phase: "Planning", durationMs: null,
         attentionType: null, sourceMetadata: metadata,
@@ -574,7 +574,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
       const kind = terminalKind(terminalStatus, "phase");
       if (completedAt !== null && kind !== null) {
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:row:${id}:phase-terminal`, fingerprint: `row:${id}:phase-terminal`, sortSequence: sequence,
+          id: `alia:${input.threadId}:row:${id}:phase-terminal`, fingerprint: `row:${id}:phase-terminal`, sortSequence: sequence,
           timestamp: completedAt, kind, status: terminalStatus,
           title: terminalStatus === "completed" ? "Planning completed" : "Planning failed",
           summary: presentationDetail(row), model: null, toolName: null, target: null, phase: "Planning",
@@ -590,14 +590,14 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
       const title = safeTitle(row.description, "Delegated task");
       if (childRef === null) {
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:row:${id}:delegation`, fingerprint: `row:${id}:delegation`, sortSequence: sequence,
+          id: `alia:${input.threadId}:row:${id}:delegation`, fingerprint: `row:${id}:delegation`, sortSequence: sequence,
           timestamp: startedAt, kind: "delegation", status: "running", title: "Delegated task",
           summary: title, model: null, toolName: safeText(row.toolName, 100), target: null, phase: null,
           durationMs: null, attentionType: null, sourceMetadata: metadata,
         }));
       } else {
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:row:${id}:child-start`, fingerprint: `row:${id}:child-start`, sortSequence: sequence,
+          id: `alia:${input.threadId}:row:${id}:child-start`, fingerprint: `row:${id}:child-start`, sortSequence: sequence,
           timestamp: startedAt, kind: "child-start", status: "running", title: "Child started",
           summary: title, model: null, toolName: null, target: null, phase: null, durationMs: null,
           attentionType: null, sourceMetadata: metadata,
@@ -606,7 +606,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
         if (completedAt !== null && kind !== null) {
           const summary = publicUpdatePreview(text(row.output));
           candidates.push(makeCandidate(base, {
-            id: `bb:${input.threadId}:row:${id}:child-terminal`, fingerprint: `row:${id}:child-terminal`, sortSequence: sequence,
+            id: `alia:${input.threadId}:row:${id}:child-terminal`, fingerprint: `row:${id}:child-terminal`, sortSequence: sequence,
             timestamp: completedAt, kind, status: terminalStatus,
             title: terminalStatus === "completed" ? "Child completed" : terminalStatus === "interrupted" ? "Child interrupted" : "Child failed",
             summary: summary ?? title, model: null, toolName: null, target: null, phase: null,
@@ -633,7 +633,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
         if (model !== null && !seenModels.has(model)) {
           seenModels.add(model);
           candidates.push(makeCandidate(base, {
-            id: `bb:${input.threadId}:workflow:${agentKey}:model`, fingerprint: `model:${model}`, sortSequence: sequence,
+            id: `alia:${input.threadId}:workflow:${agentKey}:model`, fingerprint: `model:${model}`, sortSequence: sequence,
             timestamp: agentStarted, kind: "model-selected", status: "running", title: "Model selected",
             summary: null, model, toolName: null, target: null, phase: safeText(agent.phaseTitle, 120),
             durationMs: null, attentionType: null, sourceMetadata: metadata,
@@ -641,7 +641,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
         }
         const agentTitle = safeTitle(agent.label, "Child agent");
         candidates.push(makeCandidate(base, {
-          id: `bb:${input.threadId}:workflow:${agentKey}:start`, fingerprint: `workflow:${agentKey}:start`, sortSequence: sequence,
+          id: `alia:${input.threadId}:workflow:${agentKey}:start`, fingerprint: `workflow:${agentKey}:start`, sortSequence: sequence,
           timestamp: agentStarted, kind: "child-start", status: "running", title: "Child started",
           summary: agentTitle, model, toolName: null, target: null, phase: safeText(agent.phaseTitle, 120),
           durationMs: null, attentionType: null, sourceMetadata: metadata,
@@ -652,7 +652,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
         const kind = terminalKind(agentStatus, "child");
         if (agentCompleted !== null && kind !== null) {
           candidates.push(makeCandidate(base, {
-            id: `bb:${input.threadId}:workflow:${agentKey}:terminal`, fingerprint: `workflow:${agentKey}:terminal`, sortSequence: sequence,
+            id: `alia:${input.threadId}:workflow:${agentKey}:terminal`, fingerprint: `workflow:${agentKey}:terminal`, sortSequence: sequence,
             timestamp: agentCompleted, kind, status: agentStatus,
             title: agentStatus === "completed" ? "Child completed" : "Child failed",
             summary: safeText(agent.resultPreview ?? agent.error ?? agentTitle, BOARD_LIMITS.timelineSummaryChars),
@@ -668,7 +668,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
     const toolName = workKind === "command" ? "command" : workKind === "tool" ? safeText(row.toolName, 100) : safeText(workKind, 100);
     const target = targetForWork(row);
     candidates.push(makeCandidate(base, {
-      id: `bb:${input.threadId}:row:${id}:tool-start`, fingerprint: `row:${id}:tool-start`, sortSequence: sequence,
+      id: `alia:${input.threadId}:row:${id}:tool-start`, fingerprint: `row:${id}:tool-start`, sortSequence: sequence,
       timestamp: startedAt, kind: "tool-start", status: "running", title: `${label} started`,
       summary: null, model: null, toolName, target, phase: null, durationMs: null,
       attentionType: null, sourceMetadata: metadata,
@@ -676,7 +676,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
     const kind = terminalKind(terminalStatus, "tool");
     if (completedAt !== null && kind !== null) {
       candidates.push(makeCandidate(base, {
-        id: `bb:${input.threadId}:row:${id}:tool-terminal`, fingerprint: `row:${id}:tool-terminal`, sortSequence: sequence,
+        id: `alia:${input.threadId}:row:${id}:tool-terminal`, fingerprint: `row:${id}:tool-terminal`, sortSequence: sequence,
         timestamp: completedAt, kind, status: terminalStatus,
         title: terminalStatus === "completed" ? `${label} completed` : terminalStatus === "interrupted" ? `${label} interrupted` : `${label} failed`,
         summary: terminalStatus === "failed" ? presentationDetail(row) : null,
@@ -692,7 +692,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
     (row.kind === "turn" || row.kind === "work") &&
     (row.status === "pending" || row.taskStatus === "running" || row.lifecycle === "pending" || row.lifecycle === "waiting"),
   );
-  // During provisioning, BB can publish the resolved turn request before the
+  // During provisioning, VesnALIA can publish the resolved turn request before the
   // first turn row exists. Treat that bounded startup window as active until
   // a later terminal execution event proves otherwise, so the open UI keeps
   // following realtime invalidations and the collector uses its active TTL.
@@ -714,7 +714,7 @@ export function normalizeBbTimeline(input: NormalizeBbTimelineInput): Normalized
   );
   const active = rowActive || latestRequestedAt > latestTerminalAt;
   const page = record(input.timeline.timelinePage);
-  return finalizeTimeline(input.executionKey, "bb", candidates, {
+  return finalizeTimeline(input.executionKey, "alia", candidates, {
     active,
     limit: input.limit,
     sourceTruncated: page?.hasOlderRows === true || input.lifecycleTruncated === true,

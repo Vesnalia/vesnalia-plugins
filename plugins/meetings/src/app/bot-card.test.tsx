@@ -3,8 +3,8 @@
 // browser-side avatar preparation (crop/scale on a canvas, size checks).
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { EnvReport } from "../shared/contract";
 import type { BotProfile } from "../shared/rpc-contract";
 import { AVATAR_MAX_BYTES, AvatarImageError, prepareAvatar } from "./avatar-image";
@@ -147,7 +147,7 @@ describe("bot card", () => {
     const preview = await within(section).findByRole("img", { name: "Камера бота: аватар и имя «Протоколист»" });
     expect(callsTo(slot, "bot.setAvatar")).toEqual([{ imageBase64: TINY_PNG_BASE64, mimeType: "image/png" }]);
     expect(preview.getAttribute("src")).toBe(
-      "/api/v1/plugins/meetings/http/bot/avatar-preview?v=5&name=%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%D0%B8%D1%81%D1%82",
+      "/api/v1/plugins/meetings/http/bot/avatar-preview?v=5&name=%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%ALIA%D0%B8%D1%81%D1%82",
     );
     expect(within(section).getByRole("button", { name: "Заменить аватар" })).toBeTruthy();
     expect(within(section).getByText(/Бот включает камеру/)).toBeTruthy();

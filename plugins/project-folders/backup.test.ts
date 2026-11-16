@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import {
   BACKUP_KIND,
@@ -40,7 +40,7 @@ async function setup() {
       environments: { list: async () => [] },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return h;
 }
 
@@ -49,7 +49,7 @@ describe("backup payload", () => {
     expect(() => parseBackup({})).toThrow(/backup/i);
     expect(() =>
       parseBackup({
-        kind: "bb-project-folders-preferences",
+        kind: "alia-project-folders-preferences",
         version: 1,
         prefs: defaultPrefs,
         items: {},
@@ -63,7 +63,7 @@ describe("full backup export and import", () => {
     const h = await setup();
     try {
       const call = h.harness.behavior.callRpc;
-      const db = h.bb.storage.database();
+      const db = h.alia.storage.database();
       const section = (await call("create", {
         projectId: "p1",
         folderId: null,
@@ -193,7 +193,7 @@ describe("full backup export and import", () => {
         call("backup_import", { backup: { kind: "nope" }, mode: "replace" }),
       ).rejects.toThrow(/backup/i);
 
-      const db = h.bb.storage.database();
+      const db = h.alia.storage.database();
       db.prepare("INSERT OR REPLACE INTO project_moves VALUES (?,?)").run(
         "m1",
         JSON.stringify({
@@ -280,12 +280,12 @@ describe("full backup export and import", () => {
         true,
       );
 
-      h.bb.storage.database().prepare("DELETE FROM folders").run();
+      h.alia.storage.database().prepare("DELETE FROM folders").run();
       const restored = await run(["restore", "backup.json"]);
       expect(restored.exitCode).toBe(0);
       expect(
         (
-          h.bb.storage
+          h.alia.storage
             .database()
             .prepare("SELECT id FROM folders WHERE id=?")
             .get(section.id) as { id: string }

@@ -46,7 +46,7 @@ function setup(
     },
     getTerminal: async (terminalId) => state.sessions.get(terminalId) ?? null,
     renameTerminal: async (terminalId, title) => {
-      if (options.retitleFails) throw new Error("bb refused the title");
+      if (options.retitleFails) throw new Error("alia refused the title");
       state.titles.push([terminalId, title]);
     },
     closeTerminal: async (terminalId) => {
@@ -102,7 +102,7 @@ describe("open", () => {
     expect(state.published).toBe(0);
   });
 
-  it("drops the tab again when bb cannot start its shell", async () => {
+  it("drops the tab again when VesnALIA cannot start its shell", async () => {
     const { state, service } = setup({ createFails: true });
     await expect(service.open({ hostId: "mini", cols: 80, rows: 24 })).rejects.toThrow(/did not answer/);
     expect(state.tabs).toEqual([]);
@@ -121,7 +121,7 @@ describe("open", () => {
     await expect.poll(() => holdCreates.length).toBe(MAX_TABS - 1);
     for (const release of holdCreates.splice(0)) release();
     await Promise.all(filling);
-    // Both clients press + with one place left; bb is slow, so neither shell exists when the other checks.
+    // Both clients press + with one place left; VesnALIA is slow, so neither shell exists when the other checks.
     const racing = [service.open({ hostId: "mini", cols: 80, rows: 24 }), service.open({ hostId: "mini", cols: 80, rows: 24 })];
     const settled = Promise.allSettled(racing);
     await expect.poll(() => holdCreates.length).toBe(1);
@@ -132,7 +132,7 @@ describe("open", () => {
     expect(state.sessions.size).toBe(MAX_TABS);
   });
 
-  it("lists a tab bb has not made the shell of yet as opening, and as ended once that has taken too long", async () => {
+  it("lists a tab VesnALIA has not made the shell of yet as opening, and as ended once that has taken too long", async () => {
     const holdCreates: (() => void)[] = [];
     const { state, service } = setup({ holdCreates });
     const opening = service.open({ hostId: "mini", cols: 80, rows: 24 });
@@ -146,7 +146,7 @@ describe("open", () => {
     await opening;
   });
 
-  it("ends the shell of a tab closed while bb was still opening it", async () => {
+  it("ends the shell of a tab closed while VesnALIA was still opening it", async () => {
     const holdCreates: (() => void)[] = [];
     const { state, service } = setup({ holdCreates });
     const opening = service.open({ hostId: "mini", cols: 80, rows: 24 });
@@ -177,7 +177,7 @@ describe("close", () => {
     expect(state.tabs).toEqual([]);
   });
 
-  it("removes the tab of a session bb no longer knows", async () => {
+  it("removes the tab of a session VesnALIA no longer knows", async () => {
     const { state, service } = setup();
     await service.open({ hostId: "mini", cols: 80, rows: 24 });
     state.sessions.delete("term_1");
@@ -200,7 +200,7 @@ describe("close", () => {
 });
 
 describe("rename", () => {
-  it("stores the trimmed name, tells every client, and gives bb's terminal the same title", async () => {
+  it("stores the trimmed name, tells every client, and gives VesnALIA's terminal the same title", async () => {
     const { state, service } = setup();
     await service.open({ hostId: "mini", cols: 80, rows: 24 });
     await service.open({ hostId: "mini", cols: 80, rows: 24 });
@@ -245,7 +245,7 @@ describe("rename", () => {
     await expect(service.rename("term_9", "logs")).rejects.toThrow(/closed/);
   });
 
-  it("keeps the name when bb refuses the terminal's title", async () => {
+  it("keeps the name when VesnALIA refuses the terminal's title", async () => {
     const { state, service } = setup({ retitleFails: true });
     await service.open({ hostId: "mini", cols: 80, rows: 24 });
     await service.rename("term_1", "logs");
@@ -308,7 +308,7 @@ describe("move", () => {
   });
 });
 
-describe("a tab closed before bb has made its shell", () => {
+describe("a tab closed before VesnALIA has made its shell", () => {
   async function closedWhileOpening() {
     const holdCreates: (() => void)[] = [];
     const setupResult = setup({ holdCreates });
@@ -319,7 +319,7 @@ describe("a tab closed before bb has made its shell", () => {
     return { ...setupResult, holdCreates, opening };
   }
 
-  it("is remembered until bb has the shell, which is then ended", async () => {
+  it("is remembered until VesnALIA has the shell, which is then ended", async () => {
     const { state, service, holdCreates } = await closedWhileOpening();
     expect(state.tabs).toEqual([]);
     expect(state.closing).toEqual([{ terminalId: "term_1", createdAt: 1_000 }]);
@@ -333,14 +333,14 @@ describe("a tab closed before bb has made its shell", () => {
     expect(state.closing).toEqual([]);
   });
 
-  it("is forgotten once bb has taken too long to have made it", async () => {
+  it("is forgotten once VesnALIA has taken too long to have made it", async () => {
     const { state, service } = await closedWhileOpening();
     state.now += OPENING_GRACE_MS;
     expect(await service.settleClosing()).toBe(false);
     expect(state.closing).toEqual([]);
   });
 
-  it("is kept when bb cannot end the shell yet", async () => {
+  it("is kept when VesnALIA cannot end the shell yet", async () => {
     const holdCreates: (() => void)[] = [];
     const options = { holdCreates, closeFails: false };
     const { state, service } = setup(options);
@@ -348,7 +348,7 @@ describe("a tab closed before bb has made its shell", () => {
     opening.catch(() => undefined);
     await expect.poll(() => holdCreates.length).toBe(1);
     await service.close("term_1");
-    // bb makes the shell, but its machine stops answering before it can be ended.
+    // VesnALIA makes the shell, but its machine stops answering before it can be ended.
     state.sessions.set("term_1", { id: "term_1", status: "running", exitCode: null });
     options.closeFails = true;
     expect(await service.settleClosing()).toBe(true);
@@ -359,7 +359,7 @@ describe("a tab closed before bb has made its shell", () => {
     expect(state.sessions.get("term_1")?.status).toBe("exited");
   });
 
-  it("needs no record for a tab whose shell bb already has", async () => {
+  it("needs no record for a tab whose shell VesnALIA already has", async () => {
     const { state, service } = setup();
     await service.open({ hostId: "mini", cols: 80, rows: 24 });
     await service.close("term_1");
@@ -377,7 +377,7 @@ describe("list", () => {
     state.sessions.get("term_1")!.status = "disconnected";
     Object.assign(state.sessions.get("term_2")!, { status: "exited", exitCode: 0 });
     state.sessions.delete("term_3");
-    // bb no longer knows term_3, and it is past the time a new tab gets to open.
+    // VesnALIA no longer knows term_3, and it is past the time a new tab gets to open.
     state.now += OPENING_GRACE_MS;
     const tabs = await service.list();
     expect(tabs.map((tab) => [tab.terminalId, tab.status, tab.exitCode])).toEqual([

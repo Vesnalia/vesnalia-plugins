@@ -2,7 +2,7 @@
  * The seams between the two halves of this plugin.
  *
  * Every assertion here stands for a way the merge landed the whole plugin in
- * `error` at install time, where the failure is one line in `bb plugin list`
+ * `error` at install time, where the failure is one line in `alia plugin list`
  * and nothing at all loads — not the tracker, not the simulators. They are
  * cheap to assert and expensive to rediscover.
  */
@@ -15,13 +15,13 @@ import { CLI_COMMANDS as SIM_VERBS } from "../../src/sim/cli.js";
 import { rpcContract } from "../../src/contract.js";
 import { rpcContract as simulatorContract } from "../../src/sim/contract.js";
 
-/** bb's own validator, reproduced from the registration error message. */
+/** VesnALIA's own validator, reproduced from the registration error message. */
 const CLI_NAME = /^[a-z0-9-]+$/;
 const RPC_NAME = /^[a-zA-Z0-9_-]+$/;
 
 describe("the two halves share one plugin", () => {
   it("keeps every migration at the index installed databases applied it at", () => {
-    // `bb.storage.migrate` applies by index. The simulator statements were
+    // `alia.storage.migrate` applies by index. The simulator statements were
     // appended at offset 30 when the halves merged, the tracker's v3
     // (`run.host_id`) after them at 39, and v4 (roots keyed by machine) at
     // 42. Every block is frozen where it is; anything new goes at the very
@@ -51,7 +51,7 @@ describe("the two halves share one plugin", () => {
   });
 
   it("has no settings key in both halves", () => {
-    // `bb.settings.define` is one call, and the halves are spread into it. A
+    // `alia.settings.define` is one call, and the halves are spread into it. A
     // shared key would silently give one half the other's value.
     const tracker = new Set([
       "scanIntervalSeconds",
@@ -75,7 +75,7 @@ describe("the two halves share one plugin", () => {
     }
   });
 
-  it("gives every CLI command a name bb will accept", () => {
+  it("gives every CLI command a name VesnALIA will accept", () => {
     // `sim devices` is not a legal command name — a space fails the validator
     // and lands the plugin in `error`, which is why the simulator verbs are
     // mounted behind one `sim` entry instead of registered individually.

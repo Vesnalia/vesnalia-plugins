@@ -305,7 +305,7 @@ export function PromptRow({
             {actions.onPush !== null ? (
               <DropdownMenuItem onSelect={() => actions.onPush?.(prompt)}>
                 <Icon name="ChevronsUp" className="size-4" aria-hidden />
-                Push to bb queue
+                Push to VesnALIA queue
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem onSelect={() => actions.onSaveAsSnippet(prompt)}>
@@ -633,7 +633,7 @@ export function SnippetRow({
 }
 
 // ---------------------------------------------------------------------------
-// bb's own queue
+// VesnALIA's own queue
 // ---------------------------------------------------------------------------
 
 export function NativeQueueRow({

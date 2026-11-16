@@ -1,4 +1,4 @@
-import { Markdown, ThreadTitle, definePluginApp, useBbContext, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { Markdown, ThreadTitle, definePluginApp, useAliaContext, useAliaNavigate, useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { rpcContract } from "./server";
 import { MAX_TEXT, STRINGS, lastSent, type Lang } from "./i18n.ts";
@@ -67,7 +67,7 @@ function useFeed(threadId: string | null) {
   return useSyncExternalStore(subscribe, () => (threadId ? stores.get(threadId)?.data : null) ?? EMPTY);
 }
 
-// A BB feed row is a wrapper with data-timeline-row-id. In the plain feed the row leaves the flow.
+// A VesnALIA feed row is a wrapper with data-timeline-row-id. In the plain feed the row leaves the flow.
 // In the virtual feed (20+ rows) the rows sit in [data-timeline-virtual-spacer] and the virtualizer measures each one:
 // it drops a zero height and keeps the old one, so display:none there leaves a gap. The row shrinks to 1px instead.
 function hideCss(ids: string[]) {
@@ -81,7 +81,7 @@ function hideCss(ids: string[]) {
 
 // App overlay: hides rows of the main feed unless the "hide" setting is off. The button sits in the thread header because openThreadPanel works only inside a thread surface.
 function Overlay() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const { hideIds, hide, stale } = useFeed(threadId);
   return hide && !stale && hideIds.length > 0 ? <style>{hideCss(hideIds)}</style> : null;
 }
@@ -92,7 +92,7 @@ const seenListeners = new Set<() => void>();
 const subscribeSeen = (listener: () => void) => { seenListeners.add(listener); return () => { seenListeners.delete(listener); }; };
 
 function Trigger({ threadId }: { threadId: string }) {
-  const { openThreadPanel } = useBbNavigate();
+  const { openThreadPanel } = useAliaNavigate();
   const { items, seenAt, lang } = useFeed(threadId);
   const local = useSyncExternalStore(subscribeSeen, () => seenLocal.get(threadId) ?? 0);
   if (!items.length || !lang) return null;
@@ -161,7 +161,7 @@ function Snippet({ text }: { text: string }) {
 }
 
 function Card({ item, fresh, t, textOf }: { item: Item; fresh: boolean; t: Strings; textOf: (text: string) => string }) {
-  const { toThread } = useBbNavigate();
+  const { toThread } = useAliaNavigate();
   const [open, setOpen] = useState(false);
   const tone = toneOf(item.kind);
   // A tool notice carries the tool's name as its badge.
@@ -233,12 +233,12 @@ const whenText = (date: Date, t: Strings) => {
   const time = date.toLocaleTimeString(t.locale, { hour: "2-digit", minute: "2-digit" });
   return date.toDateString() === new Date().toDateString() ? time : `${date.toLocaleDateString(t.locale, { day: "numeric", month: "short" })} ${time}`;
 };
-// The server answered and said no: the message was certainly not sent. BB's client marks such an error with the
-// HTTP status and BB's own answer body. Anything else — a dropped connection, a timeout, a gateway's page instead
-// of BB's answer — leaves the outcome unknown.
+// The server answered and said no: the message was certainly not sent. VesnALIA's client marks such an error with the
+// HTTP status and VesnALIA's own answer body. Anything else — a dropped connection, a timeout, a gateway's page instead
+// of VesnALIA's answer — leaves the outcome unknown.
 const refused = (error: unknown) => {
   const info = error as { name?: unknown; status?: unknown; body?: unknown } | null;
-  return info?.name === "BbHttpError" && typeof info.status === "number" && typeof info.body === "object" && info.body !== null;
+  return info?.name === "AliaHttpError" && typeof info.status === "number" && typeof info.body === "object" && info.body !== null;
 };
 // How long to wait before asking the peer's feed about a message whose outcome is unknown.
 const CONFIRM_MS = 1500;
@@ -264,8 +264,8 @@ function ThreadRow({ group, count, t, textOf, onOpen }: { group: Group; count: n
 }
 
 // The field under a conversation. The message goes to the peer thread with the user's own session, the same way
-// BB's composer sends it. With the note on, a short notice then goes to this thread's agent under the [notify:You]
-// header, so it lands in the tab and not in the feed. BB has no delivery without a turn: the note starts the agent's turn.
+// VesnALIA's composer sends it. With the note on, a short notice then goes to this thread's agent under the [notify:You]
+// header, so it lands in the tab and not in the feed. VesnALIA has no delivery without a turn: the note starts the agent's turn.
 function Reply({ threadId, peerId, title, t, onSent }: { threadId: string; peerId: string; title: string; t: Strings; onSent: (message: Sent) => void }) {
   const sdk = useSdk();
   const { call } = useRpc<typeof rpcContract>();
@@ -283,8 +283,8 @@ function Reply({ threadId, peerId, title, t, onSent }: { threadId: string; peerI
     setError("");
     const send = (to: string, content: string) => sdk.threads.send({ threadId: to, mode: "auto", input: [{ type: "text", text: content, mentions: [] }] });
     const since = Date.now();
-    // A failed request is not always an undelivered message: the answer may have been lost after BB accepted it.
-    // BB has no idempotency key, so a repeat would be a second message and a second turn. When the outcome is
+    // A failed request is not always an undelivered message: the answer may have been lost after VesnALIA accepted it.
+    // VesnALIA has no idempotency key, so a repeat would be a second message and a second turn. When the outcome is
     // unknown, the peer's feed is asked whether the message is there; if it is not found either, the user is told
     // to look before repeating, and nothing is repeated here.
     let failure: unknown = null;
@@ -361,7 +361,7 @@ function Feed({ threadId }: { threadId: string }) {
   const { items, seenAt, lang, marker = "" } = data;
   const textOf = useMemo(() => stripOf(marker), [marker]);
   const [filter, setFilter] = useState<string>("all");
-  // BB hides the right panel without unmounting the tab: "open" means "visible on screen".
+  // VesnALIA hides the right panel without unmounting the tab: "open" means "visible on screen".
   const root = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -447,7 +447,7 @@ function Feed({ threadId }: { threadId: string }) {
 
 // Slot titles are fixed at registration, so they are English; the tab itself is titled in the chosen language when it opens.
 // The tab uses a public slot and is registered first and always. Hiding rows and the header button use experimental
-// slots: each is registered only if this BB has it, so a BB without one still gets the tab (from the panel's "+" menu).
+// slots: each is registered only if this VesnALIA has it, so a VesnALIA without one still gets the tab (from the panel's "+" menu).
 export default definePluginApp(app => {
   const slots: Partial<typeof app.slots> = app.slots;
   app.slots.threadPanelAction({ id: "feed", title: STRINGS.en.title, icon: "Bell", component: Panel, run: ({ openPanel }) => { openPanel({ title: STRINGS[lastLang].title }); } });

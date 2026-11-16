@@ -4,61 +4,61 @@ Date: 2026-09-03 · Status: **findings ready for review; no dashboard implementa
 
 ## Method & environment
 
-- Read the installed `bb-plugin-authoring` skill (all relevant references: backend SDK/events/foundation, frontend registration/core slots/API indexes, testing).
-- Scaffolded this plugin (`bb plugin new agent-board`) and ran `bb plugin types`, which pins
-  `@get-bb/plugin-sdk@0.4.34` — the **authoritative contract for the installed BB 0.41.0**.
+- Read the installed `alia-plugin-authoring` skill (all relevant references: backend SDK/events/foundation, frontend registration/core slots/API indexes, testing).
+- Scaffolded this plugin (`alia plugin new agent-board`) and ran `alia plugin types`, which pins
+  `@vesnalia/plugin-sdk@0.4.34` — the **authoritative contract for the installed VesnALIA 0.41.0**.
   All signatures below were read from
-  `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (17,341 lines) and
-  `bb-plugin-sdk-app.d.ts`.
-- Cross-checked against live, read-only data (`bb thread list --json`) and the installed
-  `bb-plugin-redteam@0.7.1` source.
-- The local `get-bb/bb` checkout at `/home/user/bb` is 0.40.0 (older than installed 0.41.0),
+  `node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts` (17,341 lines) and
+  `alia-plugin-sdk-app.d.ts`.
+- Cross-checked against live, read-only data (`alia thread list --json`) and the installed
+  `alia-plugin-redteam@0.7.1` source.
+- The local `get-alia/alia` checkout at `/home/user/alia` is 0.40.0 (older than installed 0.41.0),
   so it was used only as background, never as the contract.
-- Baseline build verified: `bb plugin build` passes on the untouched scaffold.
+- Baseline build verified: `alia plugin build` passes on the untouched scaffold.
 
-**Contract rule applied throughout:** only `@get-bb/plugin-sdk`, `@get-bb/plugin-sdk/app`,
-`@get-bb/plugin-sdk/testing*` public exports, `bb.*` plugin API surfaces, and the bound
-`bb.sdk`. No `@bb/*` private packages, no `bb.db` access, no monkey-patching.
+**Contract rule applied throughout:** only `@vesnalia/plugin-sdk`, `@vesnalia/plugin-sdk/app`,
+`@vesnalia/plugin-sdk/testing*` public exports, `alia.*` plugin API surfaces, and the bound
+`alia.sdk`. No `@alia-core/*` private packages, no `alia.db` access, no monkey-patching.
 `experimental_scanPublicSdkOnly` will enforce this in tests.
 
 ## Feature matrix
 
 | Feature | Supported? | Public API / source |
 | --- | --- | --- |
-| Thread status | **Yes** | `bb.sdk.threads.get/list` → `ThreadResponse.status` (`active\|error\|idle\|pending\|starting\|stopping`) + `runtime.displayStatus` (adds `waiting-for-host`, `host-reconnecting`, `provisioning`) + per-row `activity` counts |
+| Thread status | **Yes** | `alia.sdk.threads.get/list` → `ThreadResponse.status` (`active\|error\|idle\|pending\|starting\|stopping`) + `runtime.displayStatus` (adds `waiting-for-host`, `host-reconnecting`, `provisioning`) + per-row `activity` counts |
 | Parent/child threads | **Yes** | `ThreadResponse.parentThreadId`; `threads.list({ parentThreadId })` (recursive descent for grandchildren); parent timeline system rows `child-completed/failed/interrupted/needs-attention` with subject `threadId`/`threadName`; `thread:changed` change kinds incl. `parent-changed` |
-| Provider per thread | **Yes** | `ThreadResponse.providerId`; friendly names via `experimental_useProviders()` (frontend, host cache) / `bb.sdk.providers.list()` (backend) |
+| Provider per thread | **Yes** | `ThreadResponse.providerId`; friendly names via `experimental_useProviders()` (frontend, host cache) / `alia.sdk.providers.list()` (backend) |
 | Model per thread | **Yes, indirect** | `threads.defaultExecutionOptions({ threadId })` → `ResolvedThreadExecutionOptions { model, reasoningLevel, permissionMode, serviceTier }`; workflow agents carry `model` directly. **Not on `ThreadResponse`** (see Gaps G1) |
-| Explicit plan steps | **Yes** | `threads.timeline` → `pendingTodos.items` `{ id, status: completed\|in_progress\|pending, text, updatedAt, sourceSeq }`; timeline `planSteps` work rows (steps with `active\|completed\|failed\|pending`); events `turn/plan/updated`, `item/plan/delta`; `bb.sdk.status.get({threadId})` also returns `pendingTodos` |
+| Explicit plan steps | **Yes** | `threads.timeline` → `pendingTodos.items` `{ id, status: completed\|in_progress\|pending, text, updatedAt, sourceSeq }`; timeline `planSteps` work rows (steps with `active\|completed\|failed\|pending`); events `turn/plan/updated`, `item/plan/delta`; `alia.sdk.status.get({threadId})` also returns `pendingTodos` |
 | Delegation descriptions | **Yes** | timeline `delegation` items `{ background, childRef, label, status: completed\|failed\|interrupted\|pending, summary }`; events `item/delegation/progress`, `item/delegation/completed` |
 | Current / latest activity | **Yes** | `threads.timeline` work rows (each with `status`, `startedAt`, `completedAt`, host `presentation` labels); workflow agents' `lastToolName`, `lastToolSummary`, `lastProgressAt`; incremental `threads.events.list({ afterSeq, types })` |
 | Tool activity | **Yes** | timeline work-row kinds: `commandExecution`, `toolCall`, `fileChange`, `webSearch`, `webFetch`, `imageView`, `fileRead`, `search`, `planSteps`, `backgroundTask`, `delegation`, `workflow`, `approval`, `question`, `extension` — all with status + presentation |
 | Subagent final output | **Yes** | `threads.output({ threadId })` (last assistant text); `thread.idle` event payload carries `lastAssistantText` for free; delegation `summary`; workflow agents' `resultPreview` |
 | Failed / interrupted / waiting | **Yes** | `status: "error"`; `turn.failed` event (ids, `errorInfo`, `rateLimits`, `attemptNumber`); row status `interrupted`; command/tool rows `approvalStatus: "waiting_for_approval"`; `threads.interactions.list` (pending interactions); `threads.queuedMessages.list` / `queue.list` (waiting rows with `waitingOn`) |
-| Workflow-style subagents (BB's own) | **Yes** | `threads.timeline` → `activeWorkflows[]` / `activeBackgroundCommands[]` each with `workflow: { agents: [{ label, model, state: queued\|running\|done\|failed\|skipped, phaseTitle, promptPreview, resultPreview, lastToolName, lastToolSummary, startedAt, queuedAt, durationMs, tokens, toolCalls, error }], phases: [{ index, title }] }` — this is the exact dataset behind BB's kanban-style workflow UI |
+| Workflow-style subagents (VesnALIA's own) | **Yes** | `threads.timeline` → `activeWorkflows[]` / `activeBackgroundCommands[]` each with `workflow: { agents: [{ label, model, state: queued\|running\|done\|failed\|skipped, phaseTitle, promptPreview, resultPreview, lastToolName, lastToolSummary, startedAt, queuedAt, durationMs, tokens, toolCalls, error }], phases: [{ index, title }] }` — this is the exact dataset behind VesnALIA's kanban-style workflow UI |
 | Overall parent progress | **Yes** | timeline `goal` `{ objective, status: active\|paused\|budgetLimited\|complete, tokensUsed, tokenBudget, timeUsedSeconds }`; `pendingTodos` progress; `contextWindowUsage` |
-| Realtime updates | **Yes** | Backend: `bb.sdk.subscribe({ event: "thread:changed", threadId? })` → `{ changes[], metadata: { statusChange { status, runtime, activity { activeWorkflowCount, activeBackgroundAgentCount, … } }, eventTypes[], hasPendingInteraction } }` + `bb.events.on` six lifecycle events (`thread.created/active/idle/failed/archived/deleted`, `message.queued/dispatched`, `turn.failed`). Frontend: `useRealtime(channel, handler)` + `useRealtimeConnectionState()`. Sanctioned pattern: backend subscribes → `bb.realtime.publish(channel, payload)` → frontend refetches via RPC (no aggressive polling) |
-| Open underlying thread | **Yes** | `useBbNavigate().toThread(threadId)`; `experimental_useSidebarThreadActions().open(id, { split })`; backend `threads.open` targets the pane |
+| Realtime updates | **Yes** | Backend: `alia.sdk.subscribe({ event: "thread:changed", threadId? })` → `{ changes[], metadata: { statusChange { status, runtime, activity { activeWorkflowCount, activeBackgroundAgentCount, … } }, eventTypes[], hasPendingInteraction } }` + `alia.events.on` six lifecycle events (`thread.created/active/idle/failed/archived/deleted`, `message.queued/dispatched`, `turn.failed`). Frontend: `useRealtime(channel, handler)` + `useRealtimeConnectionState()`. Sanctioned pattern: backend subscribes → `alia.realtime.publish(channel, payload)` → frontend refetches via RPC (no aggressive polling) |
+| Open underlying thread | **Yes** | `useAliaNavigate().toThread(threadId)`; `experimental_useSidebarThreadActions().open(id, { split })`; backend `threads.open` targets the pane |
 | Thread-scoped board surface | **Yes** | `app.slots.threadPanelAction` — **core (non-experimental) slot**: an "Agent Board" action in the thread right-panel Actions list, opening a closable panel tab whose component receives `{ threadId, params }`; `layout: "flush"` fits app-like content. (Panel params persist across reloads; identical params refocus the tab.) |
 | Global active-work view (Phase 3) | **Yes** | `app.slots.navPanel` plugin page; `threads.list()` across projects (+ `includeHidden`), `threads.listRunning()`, `threads.count({ groupBy })`; `experimental_useSidebarThreads()` live host cache |
 | Embed full thread transcript in details | **Yes** | host `ThreadChat` component (`variant: "compact" \| "timeline"`) — read-only timeline variant exists |
-| Theme-native UI | **Yes** | host token classes only; the plugin Tailwind pass emits default-theme utilities; dark/light inherited from BB |
+| Theme-native UI | **Yes** | host token classes only; the plugin Tailwind pass emits default-theme utilities; dark/light inherited from VesnALIA |
 
 ## API gaps & designed degradation
 
 - **G1 — model not on `ThreadResponse`.** Closest supported: `threads.defaultExecutionOptions`
   per thread (N+1 calls) and per-workflow-agent `model`. v1 caches resolved models per thread id
-  with TTL + refresh on status change. *BB API gap to potentially request later: model on thread
+  with TTL + refresh on status change. *VesnALIA API gap to potentially request later: model on thread
   DTO/list rows or a bulk execution-options call.*
 - **G2 — realtime carries change *signals*, not content.** `thread:changed` tells us *what kind*
   of things changed (`events-appended` + `eventTypes[]`, `status-changed` …) but not the payload.
   Designed behavior: signal → bounded refetch (`threads.timeline` with `segmentLimit`, latest
   page; `threads.events.list({ afterSeq })` for incremental activity). This is the sanctioned
   invalidate-and-refetch pattern; it is not raw polling because it is event-driven.
-- **G3 — Redteam's internal agents are not BB threads.** `bb-plugin-redteam@0.7.1` runs its own
-  agent loop over Ollama Fleet RPC and spawns **no** BB child threads. Agent Board (v1, generic)
-  will show the parent BB thread that launched a scan (when launched from a thread), any ordinary
-  BB child threads, workflows, and queued work — but *not* Redteam's internal phases. Closest
+- **G3 — Redteam's internal agents are not VesnALIA threads.** `alia-plugin-redteam@0.7.1` runs its own
+  agent loop over Ollama Fleet RPC and spawns **no** VesnALIA child threads. Agent Board (v1, generic)
+  will show the parent VesnALIA thread that launched a scan (when launched from a thread), any ordinary
+  VesnALIA child threads, workflows, and queued work — but *not* Redteam's internal phases. Closest
   supported public data for an optional later integration: Redteam's own RPC `scan_get`/
   `scan_list` (phase, status, findings). Per project rules, v1 takes **no** Redteam dependency.
 - **G4 — `delegation.childRef` → thread-id mapping unverified.** Almost certainly the child
@@ -69,8 +69,8 @@ Date: 2026-09-03 · Status: **findings ready for review; no dashboard implementa
   chain-of-thought surfacing), v1 derives "current activity" only from work rows, `lastTool*`,
   plan steps, and delegation summaries. This is a policy decision, not an API gap.
 - **G6 — no server-side push of timeline *content* to plugins.** Same as G2; documented for the
-  "do not persist what BB can reconstruct" rule: the board keeps only volatile normalized state
-  in memory (plus small kv caches like resolved models), rebuilt from `bb.sdk` on load and on
+  "do not persist what VesnALIA can reconstruct" rule: the board keeps only volatile normalized state
+  in memory (plus small kv caches like resolved models), rebuilt from `alia.sdk` on load and on
   signals.
 
 ## Thread hierarchy handling (confirmed)
@@ -85,18 +85,18 @@ Date: 2026-09-03 · Status: **findings ready for review; no dashboard implementa
 ## Proposed v1 architecture
 
 ```
-BB thread lifecycle / entity changes
-   bb.sdk.subscribe({event:"thread:changed"})      (invalidation + activity deltas)
-   bb.events.on("thread.*","message.queued", …)    (lifecycle announcements)
+ALIA thread lifecycle / entity changes
+   alia.sdk.subscribe({event:"thread:changed"})      (invalidation + activity deltas)
+   alia.events.on("thread.*","message.queued", …)    (lifecycle announcements)
         │
         ▼
 Backend (server.ts + lib/)
    board-state.ts      in-memory normalized tree; parent/child association;
                        status/timestamps; plan steps; delegation items; activity tail;
                        bounded output previews; model cache (G1)
-   collect.ts          read-side fan-out over bb.sdk.threads (get/list/timeline/output/
+   collect.ts          read-side fan-out over alia.sdk.threads (get/list/timeline/output/
                        defaultExecutionOptions/events.list) with segmentLimit + afterSeq
-   signals.ts          coalescing + bb.realtime.publish("agent-board-changed", {rootThreadId})
+   signals.ts          coalescing + alia.realtime.publish("agent-board-changed", {rootThreadId})
    rpc contract        schema-validated (zod) via defineRpcContract:
                        board_snapshot { threadId } → normalized board for thread + descendants
                        board_activity { threadId } → latest activity tail (paged)
@@ -107,7 +107,7 @@ React frontend (app.tsx + components/)
    Header: thread/project, provider+model, elapsed, running/waiting/complete/failed counts
    Columns: PLAN/QUEUED · ACTIVE AGENTS · OUTPUTS/DONE
    Cards: status chip, title/task, provider·model, elapsed, latest activity, output preview,
-          "Open thread" (useBbNavigate().toThread), expandable details (ThreadChat timeline
+          "Open thread" (useAliaNavigate().toThread), expandable details (ThreadChat timeline
           variant for full transcript in Phase 2/3)
    Phase 3: navPanel global view reusing the same components
 ```
@@ -115,15 +115,15 @@ React frontend (app.tsx + components/)
 ### Planned file structure (v1)
 
 ```
-bb-plugin-agent-board/
-├─ package.json               (manifest: bb.server, bb.app; engines pinned by bb plugin types)
+alia-plugin-agent-board/
+├─ package.json               (manifest: alia.server, alia.app; engines pinned by alia plugin types)
 ├─ server.ts                  factory: settings, rpc, events, subscribe, realtime, dispose
 ├─ app.tsx                    definePluginApp: threadPanelAction (+ Phase 3 navPanel)
 ├─ contract/
 │  └─ rpc.ts                  shared zod RPC contract + board DTO schemas (single source)
 ├─ lib/
 │  ├─ board-state.ts          normalization: ThreadResponse/timeline/delegation → board nodes
-│  ├─ collect.ts              bounded bb.sdk fan-out + model cache
+│  ├─ collect.ts              bounded alia.sdk fan-out + model cache
 │  └─ signals.ts              coalesced realtime publish
 ├─ components/
 │  ├─ Board.tsx               layout + header + columns
@@ -134,7 +134,7 @@ bb-plugin-agent-board/
 │  └─ useBoard.ts             useRpc + useRealtime + reconnect reconcile
 ├─ tests/
 │  ├─ board-state.test.ts     normalization: hierarchy, status mapping, transitions (vitest,
-│  │                          @get-bb/plugin-sdk/testing + createFakeSdk overrides)
+│  │                          @vesnalia/plugin-sdk/testing + createFakeSdk overrides)
 │  ├─ server.test.ts          RPC validation, event → signal flow, reload/dispose
 │  ├─ app.test.tsx            card transitions via renderSlot (testing/app)
 │  └─ public-sdk-scan.test.ts experimental_scanPublicSdkOnly guard
@@ -154,8 +154,8 @@ bb-plugin-agent-board/
 
 ## Scaffold status (allowed by Phase 0)
 
-- `bb-plugin-agent-board/` created via `bb plugin new`; `npm install` + `bb plugin types`
-  (SDK 0.4.34) + `bb plugin build` all pass. Content is still the untouched todo example —
+- `alia-plugin-agent-board/` created via `alia plugin new`; `npm install` + `alia plugin types`
+  (SDK 0.4.34) + `alia plugin build` all pass. Content is still the untouched todo example —
   **no dashboard code written yet**, per the stop-and-report instruction.
 - Not installed/enabled, nothing committed, no GitHub/publish actions taken.
 
@@ -165,4 +165,4 @@ bb-plugin-agent-board/
    button opening the same panel — both possible; header action is experimental, panel action
    is core).
 2. Confirm G5 policy: exclude any reasoning/"thinking" text from the board (recommended).
-3. Confirm no persistence beyond small caches (G6) — board state rebuilt from BB on load.
+3. Confirm no persistence beyond small caches (G6) — board state rebuilt from VesnALIA on load.

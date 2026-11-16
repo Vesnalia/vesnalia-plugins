@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type CapturedPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type CapturedPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { phaseCard, phaseExecution, phaseSnapshot } from "./vnext-fixtures";
 import { CURRENT_RELEASE } from "../lib/releases";
 import { BOARD_CHANGED_CHANNEL } from "../contract/rpc";
@@ -13,12 +13,12 @@ function mount(options: Parameters<typeof renderSlot>[2] = {}) {
 }
 describe("Phase 1 dashboard interactions", () => {
   it("surfaces native collection failures without calling the source live", async () => {
-    const slot = mount({ rpc: { global_dashboard: () => phaseSnapshot({ active: [], unavailableSources: ["bb"] }) } });
-    await slot.findByText("Native BB observation is unavailable. Refresh to retry; optional sources may still report.");
+    const slot = mount({ rpc: { global_dashboard: () => phaseSnapshot({ active: [], unavailableSources: ["alia"] }) } });
+    await slot.findByText("Native VesnALIA observation is unavailable. Refresh to retry; optional sources may still report.");
     expect(slot.getByRole("alert")).toBeTruthy(); slot.unmount();
   });
   it("filters/group sessions and keeps actionable attention visible", async () => {
-    const attention = { id: "a", executionKey: "a", type: "failed" as const, status: "open" as const, title: "Urgent failure", message: "Review failure", firstObservedAt: 10, updatedAt: 20, threadId: "thread", source: "bb" as const };
+    const attention = { id: "a", executionKey: "a", type: "failed" as const, status: "open" as const, title: "Urgent failure", message: "Review failure", firstObservedAt: 10, updatedAt: 20, threadId: "thread", source: "alia" as const };
     const b = phaseExecution("Task B", { projectId: "proj-b", projectName: "Project B", card: phaseCard({ title: "Task B", providerId: "grok", providerLabel: "Grok" }) });
     const slot = mount({ rpc: { global_dashboard: () => phaseSnapshot({ active: [phaseExecution("Task A"), b], attention: [attention] }) } });
     await slot.findByText("Task B");
@@ -37,7 +37,7 @@ describe("Phase 1 dashboard interactions", () => {
   it("collapses empty attention and expands on actionable change", async () => {
     let result = phaseSnapshot(); const slot = mount({ rpc: { global_dashboard: () => result } });
     await slot.findByText("Task A"); expect(slot.container.querySelector("[data-empty-attention]")?.className).not.toContain("py-4");
-    result = phaseSnapshot({ attention: [{ id: "a", executionKey: "a", type: "action-required", status: "open", title: "Approval", message: "Approve tool", firstObservedAt: 10, updatedAt: 20, threadId: "thread", source: "bb" }] });
+    result = phaseSnapshot({ attention: [{ id: "a", executionKey: "a", type: "action-required", status: "open", title: "Approval", message: "Approve tool", firstObservedAt: 10, updatedAt: 20, threadId: "thread", source: "alia" }] });
     await slot.behavior.emitRealtime(BOARD_CHANGED_CHANNEL, { roots: [], global: true }); await slot.findByText("Approve tool"); expect(slot.container.querySelector("[data-empty-attention]")).toBeNull(); slot.unmount();
   });
   it("shows watcher errors independently of transport and recovers on reconnect", async () => {

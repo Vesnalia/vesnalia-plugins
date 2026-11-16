@@ -36,7 +36,7 @@ describe("project icon paths", () => {
 
   it("builds one scoped route per project and revision", () => {
     expect(projectIconUrl("proj one", 3)).toBe(
-      "/api/v1/plugins/bb-sidebar/http/project-icon?projectId=proj+one&revision=3",
+      "/api/v1/plugins/alia-sidebar/http/project-icon?projectId=proj+one&revision=3",
     );
   });
 });

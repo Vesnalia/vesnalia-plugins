@@ -4,7 +4,7 @@
 // what can be done about it there: get the agent going on its step, or make
 // one of the user's moves (approve, send back, skip, accept).
 //
-// Why: every issue goes through a workflow to be closed (bead-bb-e2b).
+// Why: every issue goes through a workflow to be closed (bead-alia-e2b).
 // Before this, "Define" was a special button, play always started from the
 // beginning, and finishing was a third, separate button. Now there is one
 // place that asks the workflow what the issue's step offers and draws it.
@@ -19,10 +19,10 @@
 //   button's and is kept.
 // - Which workflow is in force comes from the repository's choice, handed
 //   down by WorkflowProvider. On the simple workflow there is none, and
-//   everything in this file draws nothing (bead-bb-8j6).
+//   everything in this file draws nothing (bead-alia-8j6).
 // - An issue's size (S, M, L: how many of the steps it takes) is shown
 //   here too, once it has one: a small dropdown beside the step, where the
-//   user corrects the agent's choice (bead-bb-4mb). An issue nobody has
+//   user corrects the agent's choice (bead-alia-4mb). An issue nobody has
 //   sized shows nothing (the user: "If it's not there, I'm not showing");
 //   it can be given one from the row's menu or inside the opened issue.
 // - A move that needs a reason (send back, skip) is not made on the click:
@@ -83,7 +83,7 @@ function canAct(actions: IssueActions, issue: Issue): boolean {
     issue.status !== CLOSED_STATUS &&
     (actions.currentBeadId === null || actions.currentBeadId === issue.id) &&
     // An issue of an epic that has a branch is worked only in a folder on
-    // that branch (bead-bb-ty5.2); see Elsewhere for what is shown instead.
+    // that branch (bead-alia-ty5.2); see Elsewhere for what is shown instead.
     actions.placeOf(issue).elsewhere === null
   );
 }
@@ -144,11 +144,11 @@ export function StateTag({ issue }: { issue: Issue }) {
  * the word "worktree" with the small fir, beside its step, as the way to
  * that conversation. Nothing for any other issue.
  *
- * The user asked for it (bead-bb-ty5.2): "Can we show that the epic is
+ * The user asked for it (bead-alia-ty5.2): "Can we show that the epic is
  * opened on a different work tree in a parallel conversation? Has a tag
  * somewhere in epic?" It began as a boxed tag, with a second one, "branch",
  * for an epic that holds a branch in a folder. The user found the boxes
- * "too similar to a button" (bead-bb-ty5.3): the branch now stands on the
+ * "too similar to a button" (bead-alia-ty5.3): the branch now stands on the
  * tab's top line, beside the folder, and this one is plain underlined
  * text, which reads as the link it is. In the epic's own conversation, and
  * where it is drawn outside the tab (an issue's card above the message
@@ -286,14 +286,14 @@ export function useMenuMoves(issue: Issue): WorkflowMove[] {
  * branch": "both icons should have a play button, but the one with branch
  * will have also two dots and small arrow". No icon set has it.
  *
- * The first version took "play" from BB's own icons and drew only the
+ * The first version took "play" from VesnALIA's own icons and drew only the
  * second; the user saw at once that the two triangles were in different
  * hands. A name this does not know gets the plain triangle.
  *
- * "define" is the icon of the Define step's button (bead-bb-0xy): a page
+ * "define" is the icon of the Define step's button (bead-alia-0xy): a page
  * with two written lines, Tabler Icons' "file-description" outline. The
  * user asked only that it differ from the play triangle and left the
- * choice open. Drawn here, not taken from BB's icons by name: a name BB
+ * choice open. Drawn here, not taken from VesnALIA's icons by name: a name VesnALIA
  * does not have draws its fallback, a lightning bolt, without any error.
  */
 export function MoveIcon({
@@ -316,7 +316,7 @@ export function MoveIcon({
     >
       {name === "epic-branch" ? (
         <>
-          {/* Starting an epic in a branch of its own (bead-bb-ty5.2): a
+          {/* Starting an epic in a branch of its own (bead-alia-ty5.2): a
               branch alone, with no play triangle, so that it does not read
               as "start this issue". Tabler Icons' "git-branch" outline.
               The user's choice ("just a branch icon"), after first taking
@@ -454,7 +454,7 @@ export function SizeTag({
  *
  * Where the step's moves have icons and `icons` is set, they are drawn as
  * a group of icon buttons instead: at a step that has not started, the two
- * ways to start (bead-bb-jqn.1).
+ * ways to start (bead-alia-jqn.1).
  *
  * @param className Extra classes, for the row's spacing.
  */
@@ -493,7 +493,7 @@ export function WorkflowButton({
     const { run } = actions;
     if (run === null) return null;
     // Not on the thread's current issue while its agent is at work
-    // (bead-bb-dtf): the agent is then doing this very step, and "Implement"
+    // (bead-alia-dtf): the agent is then doing this very step, and "Implement"
     // beside it asked for what was already happening. Once the agent is
     // idle the button is back, so a step that stalled can be started again.
     if (actions.agentBusy && actions.currentBeadId === issue.id) return null;
@@ -625,8 +625,8 @@ export function WorkflowMoves({
           >
             {/* A move that has an icon shows it here too, before its
                 words, like the buttons beside it (the user's request,
-                bead-bb-o3d). A little smaller than on a row, to match the
-                size this row of buttons gives BB's own icons. */}
+                bead-alia-o3d). A little smaller than on a row, to match the
+                size this row of buttons gives VesnALIA's own icons. */}
             {move.icon === undefined ? null : (
               <MoveIcon name={move.icon} className="size-3.5" />
             )}

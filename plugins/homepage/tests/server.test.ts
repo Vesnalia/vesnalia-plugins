@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.js";
 
 describe("project renaming", () => {
-  it("trims the name and updates the project through the BB SDK", async () => {
-    const { bb, harness } = createFakePluginHost({
+  it("trims the name and updates the project through the VesnALIA SDK", async () => {
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: {
@@ -20,7 +20,7 @@ describe("project renaming", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     await expect(
       harness.behavior.callRpc("renameProject", {
@@ -34,8 +34,8 @@ describe("project renaming", () => {
   });
 
   it("rejects an empty project name", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     await expect(
       harness.behavior.callRpc("renameProject", {
@@ -48,8 +48,8 @@ describe("project renaming", () => {
 
 describe("pinned projects", () => {
   it("persists pin order and drops unpinned projects", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     await expect(harness.behavior.callRpc("listPinnedProjects")).resolves.toEqual({
       projectIds: [],
@@ -71,12 +71,12 @@ describe("pinned projects", () => {
   });
 
   it("normalizes malformed stored project IDs", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    await bb.storage.kv.set(
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    await alia.storage.kv.set(
       "pinned-projects",
       ["a", "", 42, "a", null, "b"],
     );
-    plugin(bb);
+    plugin(alia);
 
     await expect(harness.behavior.callRpc("listPinnedProjects")).resolves.toEqual({
       projectIds: ["a", "b"],
@@ -86,8 +86,8 @@ describe("pinned projects", () => {
 
 describe("project groups", () => {
   it("creates, renames, assigns, and deletes synced groups", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     await expect(harness.behavior.callRpc("listProjectGroups")).resolves.toEqual({
       groups: [],
@@ -136,8 +136,8 @@ describe("project groups", () => {
   });
 
   it("rejects assignments to a missing group", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     await expect(
       harness.behavior.callRpc("setProjectGroup", {
@@ -148,8 +148,8 @@ describe("project groups", () => {
   });
 
   it("persists group order while preserving groups omitted by a stale client", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     const first = await harness.behavior.callRpc("createProjectGroup", {
       name: "First",
@@ -173,8 +173,8 @@ describe("project groups", () => {
   });
 
   it("serializes concurrent group creation without losing writes", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     await Promise.all(
       Array.from({ length: 20 }, (_, index) =>
@@ -196,8 +196,8 @@ describe("project groups", () => {
 
 describe("hidden projects", () => {
   it("persists hidden projects and resets them", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     await expect(harness.behavior.callRpc("listHiddenProjects")).resolves.toEqual({
       projectIds: [],
@@ -231,8 +231,8 @@ describe("hidden projects", () => {
 
 describe("project icon route", () => {
   it("declares configurable homepage behavior", () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
 
     expect(harness.inspection.registrations.settingsDescriptors.rankingMode).toBeUndefined();
     expect(
@@ -251,14 +251,14 @@ describe("project icon route", () => {
   });
 
   it("serves a declared project icon with private caching and browser hardening", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: {
           files: async () => ({ files: [], truncated: false }),
           fileContent: async ({ path }) => {
             if (path === "package.json") {
-              const content = JSON.stringify({ bb: { branding: { icon: "./icons/project.svg" } } });
+              const content = JSON.stringify({ alia: { branding: { icon: "./icons/project.svg" } } });
               return {
                 content,
                 contentEncoding: "utf8" as const,
@@ -280,7 +280,7 @@ describe("project icon route", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const response = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=project-1");
     expect(response.status).toBe(200);
@@ -291,9 +291,9 @@ describe("project icon route", () => {
     expect(await response.text()).toContain("<svg");
   });
 
-  it("returns a named BB glyph through RPC without treating it as an image", async () => {
+  it("returns a named VesnALIA glyph through RPC without treating it as an image", async () => {
     let searches = 0;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: {
@@ -304,7 +304,7 @@ describe("project icon route", () => {
           fileContent: async ({ path }) => {
             if (path !== "package.json") throw new Error("not found");
             const content = JSON.stringify({
-              bb: { branding: { icon: "GridView" } },
+              alia: { branding: { icon: "GridView" } },
             });
             return {
               content,
@@ -316,7 +316,7 @@ describe("project icon route", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     await expect(
       harness.behavior.callRpc("getProjectArtwork", { projectId: "project-1" }),
@@ -332,7 +332,7 @@ describe("project icon route", () => {
 
   it("tries the next ranked candidate when the first file is unreadable", async () => {
     const reads: string[] = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: {
@@ -360,7 +360,7 @@ describe("project icon route", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const response = await harness.behavior.fetchHttp("GET", "/project-icon?projectId=project-1");
     expect(response.status).toBe(200);
@@ -370,7 +370,7 @@ describe("project icon route", () => {
   });
 
   it("returns bounded errors for missing input and missing icons", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: {
@@ -381,7 +381,7 @@ describe("project icon route", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const invalid = await harness.behavior.fetchHttp("GET", "/project-icon");
     expect(invalid.status).toBe(400);
@@ -397,7 +397,7 @@ describe("project icon route", () => {
     const manifestGate = new Promise<void>((resolve) => {
       releaseManifest = resolve;
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: {
@@ -406,7 +406,7 @@ describe("project icon route", () => {
             if (path === "package.json") {
               manifestReads += 1;
               await manifestGate;
-              const content = JSON.stringify({ bb: { branding: { icon: "icon.png" } } });
+              const content = JSON.stringify({ alia: { branding: { icon: "icon.png" } } });
               return {
                 content,
                 contentEncoding: "utf8" as const,
@@ -424,7 +424,7 @@ describe("project icon route", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const first = harness.behavior.fetchHttp("GET", "/project-icon?projectId=project-1");
     const second = harness.behavior.fetchHttp("GET", "/project-icon?projectId=project-1");
@@ -446,14 +446,14 @@ describe("project app opening context", () => {
       { hostId: "other", path: "/other", isDefault: false },
       { hostId: "default", path: "/default", isDefault: true },
     ] : [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         projects: { get: vi.fn().mockResolvedValue({ sources }) },
         system: { config: vi.fn().mockResolvedValue({ localHelperPorts: [1234] }) },
       },
     });
-    plugin(bb);
+    plugin(alia);
     await expect(harness.behavior.callRpc("getProjectOpenContext", { projectId: "project-1" }))
       .resolves.toEqual({
         source: hasSources ? { hostId: "default", path: "/default" } : null,
@@ -521,8 +521,8 @@ describe("checkout status", () => {
   }
 
   it("declares checkout status settings", () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "homepage" });
-    plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "homepage" });
+    plugin(alia);
     expect(harness.inspection.registrations.settingsDescriptors).toMatchObject({
       showWorkspaceStatus: { type: "boolean", default: true },
       workspaceRefresh: {
@@ -542,13 +542,13 @@ describe("checkout status", () => {
             failure: { code: "path_not_found", message: "Path is gone", workspacePath: "/x" },
           },
     );
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         environments: {
           list: vi.fn(async () => [
             environment({ id: "alpha-checkout" }),
-            environment({ id: "alpha-worktree", isWorktree: true, branchName: "bb/feature" }),
+            environment({ id: "alpha-worktree", isWorktree: true, branchName: "alia/feature" }),
             environment({ id: "alpha-old", environmentProviderId: null, updatedAt: 99 }),
             environment({ id: "beta-missing", projectId: "beta", environmentProviderId: null }),
             environment({ id: "gamma-provisioning", projectId: "gamma", status: "provisioning" }),
@@ -558,7 +558,7 @@ describe("checkout status", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const first = await harness.behavior.callRpc("getProjectWorkspaceStatuses", {
       projectIds: ["alpha", "beta", "gamma", "delta", "unknown"],
@@ -595,7 +595,7 @@ describe("checkout status", () => {
   });
 
   it("lists a project's ready worktrees with their own status", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         environments: {
@@ -604,21 +604,21 @@ describe("checkout status", () => {
             environment({
               id: "alpha-wt-clean",
               isWorktree: true,
-              branchName: "bb/clean",
+              branchName: "alia/clean",
               environmentProviderId: "git-worktree",
               updatedAt: 5,
             }),
             environment({
               id: "alpha-wt-dirty",
               isWorktree: true,
-              branchName: "bb/dirty",
+              branchName: "alia/dirty",
               environmentProviderId: "git-worktree",
               updatedAt: 9,
             }),
             environment({
               id: "alpha-wt-gone",
               isWorktree: true,
-              branchName: "bb/gone",
+              branchName: "alia/gone",
               status: "destroyed",
               lifecycle: { phase: "destroyed", retireAt: null, teardown: null },
             }),
@@ -626,15 +626,15 @@ describe("checkout status", () => {
           ]),
           status: vi.fn(async ({ environmentId }: { environmentId: string }) =>
             environmentId === "alpha-wt-dirty"
-              ? availableStatus({ branch: "bb/dirty", files: 1, insertions: 3, deletions: 0 })
+              ? availableStatus({ branch: "alia/dirty", files: 1, insertions: 3, deletions: 0 })
               : environmentId === "alpha-wt-clean"
-                ? availableStatus({ branch: "bb/clean" })
+                ? availableStatus({ branch: "alia/clean" })
                 : { outcome: "not_applicable", reason: "non_git_environment", message: "Not git" },
           ),
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const result = await harness.behavior.callRpc("listProjectWorktrees", {
       projectId: "alpha",
@@ -644,17 +644,17 @@ describe("checkout status", () => {
       "alpha-wt-clean",
     ]);
     expect(result.worktrees[0]).toMatchObject({
-      branch: "bb/dirty",
+      branch: "alia/dirty",
       status: { kind: "available", changes: { files: 1, insertions: 3, deletions: 0 } },
     });
     expect(result.worktrees[1]).toMatchObject({
-      branch: "bb/clean",
+      branch: "alia/clean",
       status: { kind: "available", changes: { files: 0 } },
     });
   });
 
   it("reports a failed status read as unavailable instead of failing the page", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "homepage",
       sdk: {
         environments: {
@@ -665,7 +665,7 @@ describe("checkout status", () => {
         },
       },
     });
-    plugin(bb);
+    plugin(alia);
 
     const result = await harness.behavior.callRpc("getProjectWorkspaceStatuses", {
       projectIds: ["alpha"],

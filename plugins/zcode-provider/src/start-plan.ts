@@ -8,8 +8,8 @@ import { tokenRequest } from './project-token.ts';
 import type { ReadOnlyAuth } from './auth.ts';
 import { AuthError } from './auth.ts';
 import { ProjectTokenError } from './project-token.ts';
-import type { ProviderUsage } from '@get-bb/plugin-sdk/provider-bridge';
-import { providerUsageSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import type { ProviderUsage } from '@vesnalia/plugin-sdk/provider-bridge';
+import { providerUsageSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 
 export interface StartEntitlement { modelIds: string[]; validUntil: number }
 export interface StartBalance { entitlement?: StartEntitlement; granted?: boolean; validUntil?: number; usage: ProviderUsage }
@@ -89,7 +89,7 @@ export function startBalance(value: unknown, nativeIds: string[], now = Date.now
   const usage: ProviderUsage = expired ? { status: 'expired' }
     : invalidAmount ? error('Start Plan token amount unavailable or unsupported; check ZCode Desktop.')
     : windows.length ? { status: 'ok', accountEmail: null, planLabel: current.length ? 'Start Plan' : pendingLabel, windows }
-    // bb 0.48.1 resource collection discards error measurements (and their text).
+    // VesnALIA 0.48.1 resource collection discards error measurements (and their text).
     // Empty buckets distinguish a known grant awaiting a reported balance
     // from a measured absence. Neither state fabricates amounts or models.
     : { status: 'ok', accountEmail: null, planLabel: pending ? pendingLabel

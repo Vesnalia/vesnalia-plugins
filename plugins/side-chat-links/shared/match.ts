@@ -1,6 +1,6 @@
 // Finds which message of the main thread a side chat was started from.
 //
-// bb does not record the source message of a side chat. The only trace is the
+// VesnALIA does not record the source message of a side chat. The only trace is the
 // quoted text the Side chat plugin gives the agent as context, so the message
 // is found by comparing that quote with the main thread's messages.
 

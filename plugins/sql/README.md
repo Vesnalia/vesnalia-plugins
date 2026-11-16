@@ -1,6 +1,6 @@
-# bb-plugin-sql
+# alia-plugin-sql
 
-SQLTools-style Postgres panel for [bb](https://get-bb.dev): manage connections,
+SQLTools-style Postgres panel for [VesnALIA](https://get-bb.dev): manage connections,
 browse schemas/tables, and run SQL from a panel or agent tools.
 
 > **0.6 schema completion.** In the Query editor: type after `FROM`/`SELECT` or
@@ -8,7 +8,7 @@ browse schemas/tables, and run SQL from a panel or agent tools.
 > Enter keeps a newline; Esc closes. After `FROM`/`JOIN`, accepting a table
 > inserts a short alias (`trade t`, `trade_role_person trp`).
 >
-> **0.6.1 query session.** Editor SQL and result tabs survive switching bb tabs
+> **0.6.1 query session.** Editor SQL and result tabs survive switching VesnALIA tabs
 > (restored from the plugin server session; SQL also survives plugin restart).
 >
 > **0.6.2 all databases.** Like DBeaver’s “Show all databases”: browse every DB
@@ -23,19 +23,19 @@ browse schemas/tables, and run SQL from a panel or agent tools.
 From a local checkout:
 
 ```bash
-bb plugin install ~/code/9-Tools/bb-plugin-sql --yes && bb plugin reload sql
+alia plugin install ~/code/9-Tools/alia-plugin-sql --yes && alia plugin reload sql
 ```
 
 For live reload while developing:
 
 ```bash
-cd ~/code/9-Tools/bb-plugin-sql && bb plugin install . --yes && bb plugin dev
+cd ~/code/9-Tools/alia-plugin-sql && alia plugin install . --yes && alia plugin dev
 ```
 
 Once published to GitHub (semver tags):
 
 ```bash
-bb plugin install git:https://github.com/yazydzhi/bb-plugin-sql.git@^0.1.0
+alia plugin install git:https://github.com/yazydzhi/bb-plugin-sql.git@^0.1.0
 ```
 
 ## Usage
@@ -94,7 +94,7 @@ Setup checklist:
   `<dataDir>/plugins/sql/secrets/passwords.json` — **not** in SQLite and **not**
   returned over RPC. Existing installs migrate passwords out of `data.db` on
   first load of **0.3**.
-- Optional SSL CA / client cert / key paths are read from the bb host filesystem
+- Optional SSL CA / client cert / key paths are read from the VesnALIA host filesystem
   when connecting.
 - Agent `sql_query` results are framed as untrusted data and truncated (~24k
   chars) so large cells cannot blow up the model context.

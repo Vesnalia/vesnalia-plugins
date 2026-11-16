@@ -1,9 +1,9 @@
-// Boat sandboxes (boat.dev) as bb machines.
+// Boat sandboxes (boat.dev) as VesnALIA machines.
 //
 // A new machine is a Boat sandbox, from Boat's stock image or a saved snapshot you
-// prepare (tools, logins, bb-app pre-installed, repos pre-cloned). bb's own bootstrap
+// prepare (tools, logins, alia-app pre-installed, repos pre-cloned). VesnALIA's own bootstrap
 // then enrolls it. Put the slow work in the snapshot and create is: make sandbox, bootstrap.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { Boat, boatExecutor } from "./boat.ts";
 
 const PROVIDER_ID = "boat";
@@ -38,10 +38,10 @@ const parseProjectSizes = (raw: string) =>
       .filter(([k, v]) => k && v)
       .map(([k, v]) => [k.toLowerCase(), v] as [string, string]),
   );
-const boxName = (key: string) => `bb ${key}`.slice(0, 120);
+const boxName = (key: string) => `alia ${key}`.slice(0, 120);
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     apiKey: { type: "string", label: "Boat API key", secret: true },
     snapshot: {
       type: "string",
@@ -96,28 +96,28 @@ export default async function plugin(bb: BbPluginApi) {
   async function sizeFor(c: Config, key: string, signal: AbortSignal) {
     if (c.projectSizes.size === 0 || !key.startsWith("thr_")) return c.size;
     try {
-      const thread = await bb.sdk.threads.get({ threadId: key, signal });
-      const project = await bb.sdk.projects.get({ projectId: thread.projectId, signal });
+      const thread = await alia.sdk.threads.get({ threadId: key, signal });
+      const project = await alia.sdk.projects.get({ projectId: thread.projectId, signal });
       return c.projectSizes.get(project.id.toLowerCase()) ?? c.projectSizes.get(project.name.toLowerCase()) ?? c.size;
     } catch (err) {
-      bb.log.warn(`Using the default size; could not read the project for ${key}: ${message(err)}`);
+      alia.log.warn(`Using the default size; could not read the project for ${key}: ${message(err)}`);
       return c.size;
     }
   }
 
   const idleKey = (hostId: string) => `idle/${hostId}`;
-  const bump = (hostId: string) => bb.storage.kv.set(idleKey(hostId), Date.now());
+  const bump = (hostId: string) => alia.storage.kv.set(idleKey(hostId), Date.now());
 
   async function bootstrap(boat: Boat, r: Resource, report: { step(t: string): void; log(t: string): void }, signal: AbortSignal) {
     const t0 = Date.now();
-    report.step("Connecting the bb daemon…");
-    const { hostId } = await bb.experimental_machines.bootstrap({ key: r.key, executor: boatExecutor(boat, r.boxId), report, signal });
+    report.step("Connecting the VesnALIA daemon…");
+    const { hostId } = await alia.experimental_machines.bootstrap({ key: r.key, executor: boatExecutor(boat, r.boxId), report, signal });
     report.log(`Daemon connected in ${Math.round((Date.now() - t0) / 1000)} s`);
     await bump(hostId);
     return hostId;
   }
 
-  bb.experimental_machines.register({
+  alia.experimental_machines.register({
     id: PROVIDER_ID,
     displayName: "Boat",
     description: "Run threads on Boat sandboxes.",
@@ -188,7 +188,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         const { boat } = await mustConfig();
         await boat.delete((resource as unknown as Resource).boxId, signal);
-        await bb.storage.kv.delete(idleKey(hostId));
+        await alia.storage.kv.delete(idleKey(hostId));
         return { status: "removed" };
       } catch (err) {
         signal.throwIfAborted();
@@ -197,7 +197,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.experimental_environments.register({
+  alia.experimental_environments.register({
     id: "boat",
     displayName: "Boat sandbox",
     description: "A new Boat sandbox for this thread, with its own Git worktree.",
@@ -207,39 +207,39 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // Idle tracking: thread activity and terminal input keep a machine awake.
-  bb.events.on("experimental_thread.events", async ({ thread }) => {
+  alia.events.on("experimental_thread.events", async ({ thread }) => {
     if ((thread.status !== "starting" && thread.status !== "active") || thread.environmentId === null) return;
-    await bump((await bb.sdk.environments.get({ environmentId: thread.environmentId })).hostId);
+    await bump((await alia.sdk.environments.get({ environmentId: thread.environmentId })).hostId);
   });
-  bb.events.on("experimental_terminal.input", async ({ terminal }) => bump(terminal.hostId));
+  alia.events.on("experimental_terminal.input", async ({ terminal }) => bump(terminal.hostId));
 
   // Every minute: suspend idle machines, and keep Boat's auto-stop ahead of active ones.
-  bb.background.schedule("boat-idle", "* * * * *", async () => {
+  alia.background.schedule("boat-idle", "* * * * *", async () => {
     const c = await config();
     if ("error" in c) return;
     const now = Date.now();
-    for (const host of await bb.sdk.hosts.list()) {
+    for (const host of await alia.sdk.hosts.list()) {
       if (host.machineProviderId !== PROVIDER_ID || host.lifecycle.phase !== "active") continue;
       try {
         const busy =
-          (await bb.sdk.threads.count({ hostId: host.id, status: "starting" })).total +
-          (await bb.sdk.threads.count({ hostId: host.id, status: "active" })).total;
-        const last = await bb.storage.kv.get<number>(idleKey(host.id));
+          (await alia.sdk.threads.count({ hostId: host.id, status: "starting" })).total +
+          (await alia.sdk.threads.count({ hostId: host.id, status: "active" })).total;
+        const last = await alia.storage.kv.get<number>(idleKey(host.id));
         if (busy > 0 || last === undefined) await bump(host.id);
         else if (c.idleMinutes > 0 && now - last > c.idleMinutes * MINUTE) {
-          await bb.sdk.hosts.experimental_suspend({ hostId: host.id });
-          bb.log.info(`Suspended idle Boat machine ${host.id}`);
+          await alia.sdk.hosts.experimental_suspend({ hostId: host.id });
+          alia.log.info(`Suspended idle Boat machine ${host.id}`);
           continue;
         }
-        const r = (await bb.experimental_machines.getResource(host.id)) as unknown as Resource | null;
+        const r = (await alia.experimental_machines.getResource(host.id)) as unknown as Resource | null;
         const box = r && (await c.boat.get(r.boxId));
         if (box?.archiveAfter && Date.parse(box.archiveAfter) - now < TTL_MARGIN_MS) await c.boat.setTtl(box.id, c.ttlSeconds);
       } catch (err) {
-        if (!isMachineBusy(err)) bb.log.warn(`Boat idle check for ${host.id} failed: ${message(err)}`);
+        if (!isMachineBusy(err)) alia.log.warn(`Boat idle check for ${host.id} failed: ${message(err)}`);
       }
     }
   });
 
   const c = await config();
-  if ("error" in c) bb.status.needsConfiguration(c.error);
+  if ("error" in c) alia.status.needsConfiguration(c.error);
 }

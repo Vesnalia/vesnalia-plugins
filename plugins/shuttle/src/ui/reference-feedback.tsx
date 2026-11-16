@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { PANEL_PATH } from "./constants";
 import { formatRoute } from "./route";
 import { toast } from "sonner";
@@ -46,7 +46,7 @@ export function ReferenceFeedback({ id, url, onDone, showTriage = true }: { id: 
 
 export function ReferencePopoverFooter({ id, onDone }: { id: string; onDone(): void }) {
   const reference = useShuttleQuery("reference", { id });
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const manage = () => {
     navigate.toPluginPanel(PANEL_PATH, { subPath: formatRoute({ view: "insights", tab: "references", reference: id }) });
     onDone();

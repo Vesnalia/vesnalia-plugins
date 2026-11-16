@@ -1,25 +1,25 @@
 // server/work-trees.ts — conversations opened for one issue in a work tree.
 //
 // What: opens a new top-level conversation for an issue in a work tree that
-// BB makes, remembers that it did, and closes everything up when the issue
-// has landed: archives the conversation, has BB remove the work tree, and
+// VesnALIA makes, remembers that it did, and closes everything up when the issue
+// has landed: archives the conversation, has VesnALIA remove the work tree, and
 // deletes the branch.
 //
 // Why: the user wants several issues worked at once, each in its own work
-// tree and its own conversation (bead-bb-ak0). Of three ways to leave
+// tree and its own conversation (bead-alia-ak0). Of three ways to leave
 // things after a landing they chose the one that closes everything: "I'm
 // choosing option A. Let's close it. If you want to keep chatting, you
 // need to open a separate chat manually."
 //
 // Design notes (what trying it showed, see the issue's comments):
 // - A work tree asked for with the main branch as its base is cut from the
-//   LOCAL main branch. BB names the tree's branch itself, from the
+//   LOCAL main branch. VesnALIA names the tree's branch itself, from the
 //   conversation's title and id; that name is kept.
-// - BB refuses to remove a work tree while its conversation is in the
+// - VesnALIA refuses to remove a work tree while its conversation is in the
 //   sidebar, stopped or not. It removes it once the conversation is
 //   archived (which leaves it readable). So the order is fixed: wait for
 //   the agent's last turn to end, archive, ask for the removal.
-// - BB leaves the local branch behind, and the agent cannot delete it:
+// - VesnALIA leaves the local branch behind, and the agent cannot delete it:
 //   git will not delete a branch a work tree still holds, and the tree
 //   only goes after the agent's conversation is archived. So this file
 //   deletes it, once the tree is gone, and only after git confirms that
@@ -28,24 +28,24 @@
 // - Which conversations are the plugin's own is kept in its storage, so a
 //   reload in the middle of an issue does not lose it.
 //
-// - A conversation can also be opened for an epic (bead-bb-ty5.2): all of
+// - A conversation can also be opened for an epic (bead-alia-ty5.2): all of
 //   its issues are then worked there, one at a time. Nothing differs here
 //   except that the epic's id is what is remembered, so the closing up
 //   happens when the epic itself lands, not when one of its issues does;
 //   `branchOf` lets the caller record the tree's branch on the epic.
 //
 // - The new conversation gets the Airbender tab among its side tabs (the
-//   user: "In the new chat, I want [the Airbender] tab to be open"): BB
+//   user: "In the new chat, I want [the Airbender] tab to be open"): VesnALIA
 //   keeps each conversation's tabs and lets a plugin write them. Whether
-//   BB then shows the panel open on it is up to the app; the tab also asks
-//   BB to open it after the jump (app/panel.tsx).
+//   VesnALIA then shows the panel open on it is up to the app; the tab also asks
+//   VesnALIA to open it after the jump (app/panel.tsx).
 //
 // Gotchas:
 // - Closing up happens after the answer to the agent has gone back, and
 //   takes a while; a failure in it is logged and leaves things in place
 //   (a conversation, a folder or a merged branch), never half-removed work.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /** What is remembered about one conversation the plugin opened. */
 interface Opened {
@@ -59,7 +59,7 @@ interface Opened {
 const PANEL_ACTION = "issues";
 const PANEL_TITLE = "Airbender";
 
-/** The two tabs BB gives every conversation, as it stores them. */
+/** The two tabs VesnALIA gives every conversation, as it stores them. */
 const DEFAULT_TABS = [
   { id: "thread-info:thread-info:none", kind: "thread-info" },
   { id: "git-diff:git-diff:none", kind: "git-diff" },
@@ -92,19 +92,19 @@ const reason = (cause: unknown) =>
  * Side effects: one read of the plugin's storage now.
  */
 export async function createWorkTrees({
-  bb,
+  alia,
   mainBranch,
   mainFolder,
   deleteMergedBranch,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   mainBranch: (path: string) => Promise<string | null>;
   mainFolder: (path: string) => Promise<string | null>;
   deleteMergedBranch: (path: string, branch: string) => Promise<string | null>;
 }) {
   /** Conversation id -> what it was opened for. */
   const opened = new Map<string, Opened>();
-  const saved = await bb.storage.kv.get<unknown>(OPENED_KEY).catch(() => undefined);
+  const saved = await alia.storage.kv.get<unknown>(OPENED_KEY).catch(() => undefined);
   if (typeof saved === "object" && saved !== null) {
     for (const [threadId, entry] of Object.entries(saved)) {
       const { beadId, home } = (entry ?? {}) as Partial<Opened>;
@@ -114,9 +114,9 @@ export async function createWorkTrees({
     }
   }
   const save = () =>
-    bb.storage.kv
+    alia.storage.kv
       .set(OPENED_KEY, Object.fromEntries(opened))
-      .catch((cause) => bb.log.warn("could not save work tree conversations: " + cause));
+      .catch((cause) => alia.log.warn("could not save work tree conversations: " + cause));
 
   /**
    * Opens a conversation for an issue in a fresh work tree and starts its
@@ -143,22 +143,22 @@ export async function createWorkTrees({
   }): Promise<{ threadId: string } | { message: string }> {
     try {
       let projectId = from.projectId;
-      // BB wants to be told which machine the work tree is made on: the
+      // VesnALIA wants to be told which machine the work tree is made on: the
       // one the asking conversation's folder is on, or, from the
       // new-thread screen, the one the project's default folder is on.
       let hostId: string | null = null;
       if (from.threadId !== null) {
-        const asking = await bb.sdk.threads.get({ threadId: from.threadId });
+        const asking = await alia.sdk.threads.get({ threadId: from.threadId });
         projectId = asking.projectId;
         if (asking.environmentId !== null) {
           hostId = (
-            await bb.sdk.environments.get({ environmentId: asking.environmentId })
+            await alia.sdk.environments.get({ environmentId: asking.environmentId })
           ).hostId;
         }
       }
       if (projectId === null) return { message: "Pick a project first." };
       if (hostId === null) {
-        const project = await bb.sdk.projects.get({ projectId });
+        const project = await alia.sdk.projects.get({ projectId });
         hostId =
           project.sources.find((source) => source.isDefault)?.hostId ?? null;
       }
@@ -174,7 +174,7 @@ export async function createWorkTrees({
             "This folder's main branch could not be found, so there is nothing to cut a work tree from.",
         };
       }
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         environment: {
           type: "host",
@@ -184,7 +184,7 @@ export async function createWorkTrees({
             baseBranch: { kind: "named", name: base },
           },
         },
-        // BB names the work tree's branch after this title.
+        // VesnALIA names the work tree's branch after this title.
         title: `${beadId}: ${title}`.slice(0, 120),
         prompt,
       });
@@ -209,21 +209,21 @@ export async function createWorkTrees({
    */
   async function addTab(threadId: string): Promise<void> {
     try {
-      const { revision, tabs } = await bb.sdk.threads.tabs.get({ threadId });
-      const id = `plugin-panel:${encodeURIComponent(`${bb.pluginId}:${PANEL_ACTION}:`)}:none`;
+      const { revision, tabs } = await alia.sdk.threads.tabs.get({ threadId });
+      const id = `plugin-panel:${encodeURIComponent(`${alia.pluginId}:${PANEL_ACTION}:`)}:none`;
       if (tabs.some((tab) => tab.id === id)) return;
-      await bb.sdk.threads.tabs.update({
+      await alia.sdk.threads.tabs.update({
         threadId,
         expectedRevision: revision,
         tabs: [
-          // A conversation nobody has opened yet has no tabs stored, and BB
+          // A conversation nobody has opened yet has no tabs stored, and VesnALIA
           // only fills in its own two (Info and Diff) while that is so.
           // Writing ours alone would leave the conversation without them.
           ...(tabs.length === 0 ? DEFAULT_TABS : tabs),
           {
             kind: "plugin-panel",
             id,
-            pluginId: bb.pluginId,
+            pluginId: alia.pluginId,
             actionId: PANEL_ACTION,
             title: PANEL_TITLE,
             paramsJson: null,
@@ -231,29 +231,29 @@ export async function createWorkTrees({
         ],
       });
     } catch (cause) {
-      bb.log.warn(`the Airbender tab could not be added to ${threadId}: ${reason(cause)}`);
+      alia.log.warn(`the Airbender tab could not be added to ${threadId}: ${reason(cause)}`);
     }
   }
 
   /**
-   * The branch of a work tree conversation, which BB names itself. Asked
+   * The branch of a work tree conversation, which VesnALIA names itself. Asked
    * for right after the conversation is opened, when the tree may not be
    * there yet, so it is tried for a while.
    *
-   * @returns The branch, or null when BB did not name one in time.
-   * Side effects: read requests to BB, up to about a minute.
+   * @returns The branch, or null when VesnALIA did not name one in time.
+   * Side effects: read requests to VesnALIA, up to about a minute.
    */
   async function branchOf(threadId: string): Promise<string | null> {
     for (let attempt = 0; attempt < 20; attempt += 1) {
       try {
-        const { environmentId } = await bb.sdk.threads.get({ threadId });
+        const { environmentId } = await alia.sdk.threads.get({ threadId });
         if (environmentId !== null) {
           const branch =
-            (await bb.sdk.environments.get({ environmentId })).branchName ?? null;
+            (await alia.sdk.environments.get({ environmentId })).branchName ?? null;
           if (branch !== null && branch !== "") return branch;
         }
       } catch (cause) {
-        bb.log.warn(`work tree branch of ${threadId} not read yet: ${reason(cause)}`);
+        alia.log.warn(`work tree branch of ${threadId} not read yet: ${reason(cause)}`);
       }
       await pause(REMOVAL_POLL_MS);
     }
@@ -287,7 +287,7 @@ export async function createWorkTrees({
     const entry = opened.get(threadId);
     if (entry === undefined || entry.beadId !== beadId) return;
     void closeUp(threadId, entry).catch((cause) =>
-      bb.log.warn(`closing up work tree conversation ${threadId} failed: ${reason(cause)}`),
+      alia.log.warn(`closing up work tree conversation ${threadId} failed: ${reason(cause)}`),
     );
   }
 
@@ -295,28 +295,28 @@ export async function createWorkTrees({
   async function closeUp(threadId: string, entry: Opened): Promise<void> {
     // The agent is still in the turn that reported the last step: let it
     // finish what it is saying to the user.
-    await bb.sdk.threads
+    await alia.sdk.threads
       .wait({ threadId, status: "idle", timeoutMs: LAST_TURN_MS })
-      .catch((cause) => bb.log.warn("work tree last turn wait ended: " + cause));
-    const thread = await bb.sdk.threads.get({ threadId });
+      .catch((cause) => alia.log.warn("work tree last turn wait ended: " + cause));
+    const thread = await alia.sdk.threads.get({ threadId });
     const environmentId = thread.environmentId;
     let branch: string | null = null;
     if (environmentId !== null) {
-      branch = (await bb.sdk.environments.get({ environmentId })).branchName ?? null;
+      branch = (await alia.sdk.environments.get({ environmentId })).branchName ?? null;
     }
-    await bb.sdk.threads.archive({ threadId });
+    await alia.sdk.threads.archive({ threadId });
     opened.delete(threadId);
     void save();
     if (environmentId === null) return;
-    // BB may need a moment after archiving before it lets the tree go.
+    // VesnALIA may need a moment after archiving before it lets the tree go.
     let asked = false;
     for (let attempt = 0; attempt < 5 && !asked; attempt += 1) {
       try {
-        await bb.sdk.environments.delete({ environmentId });
+        await alia.sdk.environments.delete({ environmentId });
         asked = true;
       } catch (cause) {
         if (attempt === 4) {
-          bb.log.warn(`work tree of ${threadId} could not be removed: ${reason(cause)}`);
+          alia.log.warn(`work tree of ${threadId} could not be removed: ${reason(cause)}`);
           return;
         }
         await pause(REMOVAL_POLL_MS);
@@ -331,7 +331,7 @@ export async function createWorkTrees({
       problem = await deleteMergedBranch(entry.home, branch);
       if (problem === null) return;
     }
-    bb.log.warn(`branch ${branch} was left in ${entry.home}: ${problem}`);
+    alia.log.warn(`branch ${branch} was left in ${entry.home}: ${problem}`);
   }
 
   return { open, branchOf, threadFor, isOurs, landed };

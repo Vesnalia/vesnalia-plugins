@@ -1,10 +1,10 @@
 # 103: Results
 
-Measured on 14 November 2026 on Namespace Macs: Apple M5 Pro (Virtual), 4 cores, macOS 26.3.1, Xcode 26.1.1 with iOS 17.5, 18.6, 26.0, 26.1 and 26.2. BB Box 0.2.4.
+Measured on 14 November 2026 on Namespace Macs: Apple M5 Pro (Virtual), 4 cores, macOS 26.3.1, Xcode 26.1.1 with iOS 17.5, 18.6, 26.0, 26.1 and 26.2. VesnALIA Box 0.2.4.
 
 ## The fault, reproduced
 
-| Step | What BB Box recorded |
+| Step | What VesnALIA Box recorded |
 | --- | --- |
 | A `macos` box on Namespace, kept a few minutes | The iOS Simulator with all five runtimes; video by its hardware H.264 encoder |
 | A fresh `macos` box, released 1 s after it was ready | "No iOS Simulator (Xcode 26.1.1 has no iOS runtime); video by software (OpenH264), as it has no hardware H.264 encoder". `ios` left Namespace's kinds, and the doctor said no shared iOS host could start |
@@ -15,7 +15,7 @@ The hardware encoder in the bad report was not measured, not "no": that Mac was 
 
 | Measured | First `simctl list runtimes` | Answer |
 | --- | --- | --- |
-| BB Box's own probe on a fresh Mac, started about 15 s after boot | still running 34 s after boot | five runtimes |
+| VesnALIA Box's own probe on a fresh Mac, started about 15 s after boot | still running 34 s after boot | five runtimes |
 | A list 11 s after a restart | 4 s | five runtimes |
 | The probe before this change, started as soon as Namespace's guest agent ran after a restart | the whole probe took 7 s | five runtimes; hardware encoder |
 | The probe after this change, started the same way, its encoder check built afresh | the whole probe took 18 s, with no list again | five runtimes; hardware encoder |

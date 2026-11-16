@@ -1,11 +1,11 @@
 import { toast } from "sonner";
 import type {
   ExperimentalTabReference, PluginCommandRegistration, PluginThreadActionRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { ExpandedPreference } from "./preference";
 
 export const LOG_ACTION_ID = "log";
-// Declared in package.json (bb.branding.experimental_icons) as ./icons/logs.svg.
+// Declared in package.json (alia.branding.experimental_icons) as ./icons/logs.svg.
 export const LOG_ICON = "session-log/logs";
 export const LOG_TAB: ExperimentalTabReference & { availability: "action" } = {
   id: LOG_ACTION_ID, context: { kind: "thread" }, availability: "action",
@@ -30,7 +30,7 @@ export function onPanelFocusRequest(listener: () => void): () => void {
   return () => { focusListeners.delete(listener); };
 }
 
-/** The thread header's labelled Session log button, for a bb that no longer draws plugin icon buttons there. */
+/** The thread header's labelled Session log button, for a VesnALIA that no longer draws plugin icon buttons there. */
 export const headerAction: PluginThreadActionRegistration = {
   id: "open-log",
   title: "Session log",

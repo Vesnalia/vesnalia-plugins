@@ -1,4 +1,4 @@
-// Pure model parsing and resolution. No bb dependencies, so tests import it directly.
+// Pure model parsing and resolution. No VesnALIA dependencies, so tests import it directly.
 
 export interface RawModel {
   id: string;

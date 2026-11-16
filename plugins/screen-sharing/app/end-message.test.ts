@@ -7,12 +7,12 @@ const closed = (code: number, reason = "") => ({ close: { code, reason }, securi
 
 describe("endMessage", () => {
   it("says why the server ended a session", () => {
-    expect(endMessage(closed(CloseCode.idle))).toBe("Closed after 30 minutes with nothing passing between bb and the Mac.");
+    expect(endMessage(closed(CloseCode.idle))).toBe("Closed after 30 minutes with nothing passing between VesnALIA and the Mac.");
     expect(endMessage(closed(CloseCode.maxAge))).toBe("Closed after 8 hours, the longest a session lasts.");
-    expect(endMessage(closed(CloseCode.closedByUser))).toBe("Closed from bb with Close all.");
+    expect(endMessage(closed(CloseCode.closedByUser))).toBe("Closed from VesnALIA with Close all.");
     expect(endMessage(closed(CloseCode.stopping))).toBe("Closed because the Screen Sharing plugin stopped or reloaded.");
-    // bb closes a plugin's sockets itself, before the plugin's own close reaches them.
-    expect(endMessage(closed(CloseCode.bbPluginReloaded, "Plugin reloaded or disabled"))).toBe(
+    // VesnALIA closes a plugin's sockets itself, before the plugin's own close reaches them.
+    expect(endMessage(closed(CloseCode.aliaPluginReloaded, "Plugin reloaded or disabled"))).toBe(
       "Closed because the Screen Sharing plugin stopped or reloaded.",
     );
   });
@@ -21,7 +21,7 @@ describe("endMessage", () => {
     expect(endMessage(closed(CloseCode.failed, "cannot reach Screen Sharing (ECONNREFUSED)"))).toBe(
       "Cannot reach Screen Sharing (ECONNREFUSED).",
     );
-    expect(endMessage(closed(CloseCode.policy, "expired ticket"))).toBe("bb refused the session (expired ticket). Try again.");
+    expect(endMessage(closed(CloseCode.policy, "expired ticket"))).toBe("alia refused the session (expired ticket). Try again.");
   });
 
   it("puts a refused sign-in first", () => {

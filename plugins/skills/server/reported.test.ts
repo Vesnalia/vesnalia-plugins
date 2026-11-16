@@ -24,7 +24,7 @@ describe("selectReported", () => {
     expect(selectReported([{ ...outline, origin: "builtin" }], []).skills[0]?.origin).toBe("builtin");
   });
 
-  // bb's list has nulls where the provider gave nothing; the browser draws strings.
+  // VesnALIA's list has nulls where the provider gave nothing; the browser draws strings.
   test("reads a missing description or argument hint as empty", () => {
     const bare = { ...outline, description: null, argumentHint: null };
     expect(selectReported([bare], []).skills).toEqual([

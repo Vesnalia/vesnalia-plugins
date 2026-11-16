@@ -33,7 +33,7 @@ export const countWords = defineMessages(
   {
     comments: (n: number) => `${n} comment${n === 1 ? "" : "s"}`,
     page: (kind: DocKind) => (kind === "presentation" ? "Slide" : "Page"),
-    /** The button beside the address bar of bb's browser (ui/web-review.tsx). */
+    /** The button beside the address bar of VesnALIA's browser (ui/web-review.tsx). */
     reviewButton: "Review",
     pin: (n: number) => `Comment ${n}`,
   },
@@ -103,8 +103,8 @@ const SERVER_ERRORS_RU: [RegExp, (match: RegExpExecArray) => string][] = [
     (m) => `Таблица весит ${m[1]} МБ, файлы этого формата показываются до ${m[2]} МБ. Сохраните её как .xlsx.`,
   ],
   [
-    /^Pages need poppler-utils on the bb server \(pdfinfo, pdftoppm, pdftotext\)\.$/,
-    () => "Для страниц нужен poppler-utils на сервере bb (pdfinfo, pdftoppm, pdftotext).",
+    /^Pages need poppler-utils on the alia server \(pdfinfo, pdftoppm, pdftotext\)\.$/,
+    () => "Для страниц нужен poppler-utils на сервере alia (pdfinfo, pdftoppm, pdftotext).",
   ],
   [/^This PDF has no pages\.$/, () => "В этом PDF нет страниц."],
   [

@@ -1,7 +1,7 @@
 /**
  * The prompt an agent thread starts with when the user clicks the robot on an
  * item, and the parser for the "Ready: …" line it ends with. Kept out of
- * server.ts so tests can import it without the bb SDK.
+ * server.ts so tests can import it without the VesnALIA SDK.
  */
 import type { SkillRef } from "./skills";
 import type { PulseItem } from "../types";

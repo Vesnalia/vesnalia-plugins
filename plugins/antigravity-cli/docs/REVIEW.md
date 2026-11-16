@@ -8,6 +8,6 @@ Reviewed the provider declaration, host entry, tests, smoke script, manifest, lo
 - npm audit reported zero known vulnerabilities at verification time. This is not a guarantee against unknown vulnerabilities or an independent audit of upstream code.
 - MIT applies to this project's original source. The dependency SDK declares MIT; other dependencies and Google's service retain their own terms.
 
-Verified on Windows: TypeScript check, launch-policy regression test, BB build and plugin reload, live model/mode discovery, and native ACP initialize/session/new/prompt against the installed signed-in CLI. The prompt returned the requested marker without tool access.
+Verified on Windows: TypeScript check, launch-policy regression test, VesnALIA build and plugin reload, live model/mode discovery, and native ACP initialize/session/new/prompt against the installed signed-in CLI. The prompt returned the requested marker without tool access.
 
-Public source metadata, Git-source installation, and the BB Community marketplace listing (`antigravity-cli`) are published. Validation outside Windows (macOS and Linux) remains open.
+Public source metadata, Git-source installation, and the VesnALIA Community marketplace listing (`antigravity-cli`) are published. Validation outside Windows (macOS and Linux) remains open.

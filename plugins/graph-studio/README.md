@@ -1,6 +1,6 @@
 # Graph Studio
 
-Build agent graphs that may contain **cycles**, run them against real BB
+Build agent graphs that may contain **cycles**, run them against real VesnALIA
 threads, and watch them execute on a live canvas.
 
 ![Graph Studio editor](../docs/screenshots/graph-studio-create.png)
@@ -8,15 +8,15 @@ threads, and watch them execute on a live canvas.
 ![Graph Studio run in the chat](../docs/screenshots/graph-studio-chat.png)
 
 ```sh
-bb graph-studio graphs [search]
-bb graph-studio show harness-arc
-bb graph-studio run evaluator-optimizer "Write the onboarding text for new colleagues"
-bb graph-studio status <run-id>
+alia graph-studio graphs [search]
+alia graph-studio show harness-arc
+alia graph-studio run evaluator-optimizer "Write the onboarding text for new colleagues"
+alia graph-studio status <run-id>
 ```
 
 ## Where it sits
 
-| | BB `workflows` (built-in) | Harness | **Graph Studio** |
+| | VesnALIA `workflows` (built-in) | Harness | **Graph Studio** |
 |---|---|---|---|
 | Authored as | JS script | fixed 5 phases | data, edited in the UI |
 | Cycles | no | one hidden rewind | **yes, first-class** |
@@ -32,9 +32,9 @@ to send work back".
 ## Division of labour
 
 **LangGraph owns** state, edges, cycles, and checkpointing.
-**BB owns** execution — threads, worktrees, providers, permissions.
+**VesnALIA owns** execution — threads, worktrees, providers, permissions.
 
-A node is never a model call. It is *spawn a BB thread, wait for it to go idle,
+A node is never a model call. It is *spawn a VesnALIA thread, wait for it to go idle,
 put its last message into the state*. Workers therefore appear in the sidebar,
 inherit the parent thread's environment, and run on your existing provider
 subscriptions — no separate API keys.
@@ -44,7 +44,7 @@ subscriptions — no separate API keys.
 A graph is JSON, not code:
 
 - **Nodes** — `agent` (spawns a thread), `dialog` (spawns a thread that may
-  ask back), `member` (hands the step to a persistent [Crew](../bb-plugin-crew)
+  ask back), `member` (hands the step to a persistent [Crew](../alia-plugin-crew)
   member), `human` (pauses for you), `subgraph` (embeds another graph),
   `note`. Each has a prompt with `{{input}}`, `{{node_id}}`,
   `{{node_id.field}}` and `{{item}}` placeholders, plus a `maxVisits` cycle
@@ -64,7 +64,7 @@ A graph is JSON, not code:
 Every graph also carries an `example`: a real task it is meant for, in plain
 words. The name says what a graph does and the description says how — neither
 answers "what do I type into it". The example fills the placeholder in the task
-field and builds the ready-made `bb graph-studio run <id> "<task>"` line that
+field and builds the ready-made `alia graph-studio run <id> "<task>"` line that
 sits next to a copy button in the library and the editor.
 
 ## Shipped templates
@@ -198,7 +198,7 @@ Why this needed declared fields first: without them there would be no reliable
 source for the list — you would have to parse prose and would be back in the
 "not good *enough*" trap.
 
-The limits are deliberately tight, because every entry is its own BB thread:
+The limits are deliberately tight, because every entry is its own VesnALIA thread:
 
 - `maxFanOut` (default 12) caps the branches; what is dropped goes into the log.
 - An empty list is not a broken contract but a legitimate "nothing to do" — the
@@ -246,8 +246,8 @@ outstanding. Completed nodes do not run again — their results come from the
 checkpoint. Changes to the graph take effect immediately.
 
 ```sh
-bb graph-studio checkpoints <run-id>
-bb graph-studio rerun <run-id> <checkpoint-id>
+alia graph-studio checkpoints <run-id>
+alia graph-studio rerun <run-id> <checkpoint-id>
 ```
 
 In the panel: "Resume from a step", under the graph.
@@ -364,7 +364,7 @@ version from its next step.
 
 ### Combining with Crew
 
-Graph Studio describes a flow that ends; [Crew](../bb-plugin-crew) is a team
+Graph Studio describes a flow that ends; [Crew](../alia-plugin-crew) is a team
 that stays. They work in both directions:
 
 - **A graph step on a crew member.** A `member` node names `member@crew` and
@@ -387,7 +387,7 @@ service tier its worker runs on; left unset it inherits from the parent thread
 as before. The point is concrete: in the development templates the plan node
 wants a strong model and the test-run node does not need one.
 
-The four fields are **one** decision, not four — BB only honours a model
+The four fields are **one** decision, not four — VesnALIA only honours a model
 together with the provider it belongs to. `nodeExecution()` is the single place
 that judges what counts as a complete selection, and the validator rejects a
 half-filled node instead of letting it look routed and quietly run on the
@@ -396,7 +396,7 @@ inherited model.
 Two checks, because they answer two different questions. The validator checks
 the *shape*, live in the editor. At run start, `unknownModels` checks
 *existence* against the model catalogue of the environment the run inherits. An
-imported graph can name a model this machine does not have, and BB would fall
+imported graph can name a model this machine does not have, and VesnALIA would fall
 back to the inherited one — a silent downgrade where cost and capability differ
 and nothing says so. The run aborts instead. Deliberately asymmetric:
 fail-closed on a real mismatch, fail-open when the catalogue itself cannot be
@@ -404,12 +404,12 @@ read.
 
 The selection is visible in three places, because an invisible assignment
 explains nothing later: a badge in the editor's node header, the short name on
-the node in the canvas, and `model: provider/model` in `bb graph-studio show`.
+the node in the canvas, and `model: provider/model` in `alia graph-studio show`.
 
 ### Duration and token use per node
 
 What makes the model choice decidable in the first place. Usage is read in
-`onNodeFinish` from BB's `thread/tokenUsage/updated` event — newest first,
+`onNodeFinish` from VesnALIA's `thread/tokenUsage/updated` event — newest first,
 limit 1, because those events carry the *running total* and summing them would
 give a multiple. Deliberately not live: polling a running thread every superstep
 buys a number nobody can act on yet.
@@ -423,7 +423,7 @@ shared by CLI and panel: two renderings of the same number drift.
 
 ### What a node is doing, while it does it
 
-A node spends its minutes inside `awaitThread`, waiting for a BB worker to go
+A node spends its minutes inside `awaitThread`, waiting for a VesnALIA worker to go
 idle. LangGraph has nothing to say in that time — it emits one event per node,
 and that event is "finished" — so the signs of life come from the worker
 thread instead:
@@ -437,12 +437,12 @@ thread instead:
   that corner from `max n×` while the node runs and gives it back afterwards.
 - **An activity line** under the node: `threads.events.list` with
   `item/started`, newest first, limit 1, polled every 3 s for running nodes
-  only. `lib/activity.ts` turns the event into one line — BB's own
+  only. `lib/activity.ts` turns the event into one line — VesnALIA's own
   `presentation.label` plus its `title`, so the canvas and the thread describe
-  the same moment the same way. Items BB marks `suppress` are skipped, and the
+  the same moment the same way. Items VesnALIA marks `suppress` are skipped, and the
   types that arrive with no presentation at all (`agentMessage`,
   `commandExecution`) get their own wording. The shapes are measured from
-  `bb thread log --json`, not inferred from the SDK types: the types put the
+  `alia thread log --json`, not inferred from the SDK types: the types put the
   specific part of a line in `detail` and do not list those two types for
   `item/started` at all.
 
@@ -457,7 +457,7 @@ does not.
 
 ## Skills instead of hand-written rules
 
-An agent node can name **BB skills** instead of (or alongside) its prompt:
+An agent node can name **VesnALIA skills** instead of (or alongside) its prompt:
 
 ```json
 { "id": "critic", "label": "Review", "skills": ["code-review"], "prompt": "…" }
@@ -469,13 +469,13 @@ disclosure, so no context ballast. The editor offers the skills available in
 the project.
 
 **Limit:** the SDK only lets a plugin configure its *own* manifest skills via
-`bb.agents.configure`. Foreign skills therefore cannot be attached hard — they
+`alia.agents.configure`. Foreign skills therefore cannot be attached hard — they
 are named and loaded by the worker. Same effect in practice, but it is an
 instruction, not a guarantee.
 
 ## Tools for the calling agent
 
-An agent in a BB thread can drive Graph Studio directly:
+An agent in a VesnALIA thread can drive Graph Studio directly:
 `graph_studio_graphs` (list the library), `graph_studio_describe` (one graph
 with its nodes, edges and the validator's findings), `graph_studio_run` and
 `graph_studio_status`. The run takes the parent thread and project from the
@@ -488,16 +488,16 @@ produced.
 
 ## Stored centrally, shareable as a file
 
-Graphs live in `~/.bb/plugins/graph-studio/data.db`, **without** a project
+Graphs live in `~/.vesnalia/plugins/graph-studio/data.db`, **without** a project
 reference: built once, available everywhere. Only *runs* carry `project_id`
 and `thread_id`.
 
 To get a graph into a repo, versioned and shareable:
 
 ```sh
-bb graph-studio export my-graph > .bb/graphs/my-graph.graph.json
-bb graph-studio import .bb/graphs/my-graph.graph.json [--overwrite]
-bb graph-studio delete my-graph
+alia graph-studio export my-graph > .vesnalia/graphs/my-graph.graph.json
+alia graph-studio import .vesnalia/graphs/my-graph.graph.json [--overwrite]
+alia graph-studio delete my-graph
 ```
 
 The file format is a versioned envelope (`{ version, graph }`) without
@@ -514,15 +514,15 @@ quietly finding nothing. That matters for subgraph references, which store a
 ## Durability
 
 Runs are checkpointed into the plugin's own SQLite database
-(`lib/checkpointer.ts`, a `BaseCheckpointSaver` over `bb.storage.database()` —
+(`lib/checkpointer.ts`, a `BaseCheckpointSaver` over `alia.storage.database()` —
 no native module in the bundle). A plugin reload resumes `running` rows from
 their last checkpoint instead of re-running finished nodes.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/sajov/bb-plugins.git \
-  --subdirectory bb-plugin-graph-studio
+alia plugin install git:https://github.com/sajov/bb-plugins.git \
+  --subdirectory alia-plugin-graph-studio
 ```
 
 The Work templates need Matt Pocock's skills. Without them a worker is told to
@@ -544,10 +544,10 @@ npm install --include=dev --cache "$TMPDIR/npm-cache"
 npm run typecheck
 npm test
 npm run build
-bb plugin install . --yes     # first time; afterwards: bb plugin reload graph-studio
+alia plugin install . --yes     # first time; afterwards: alia plugin reload graph-studio
 ```
 
-Requires BB >= 0.42 and Plugin SDK >= 0.4.47.
+Requires VesnALIA >= 0.42 and Plugin SDK >= 0.4.47.
 
 ## License
 

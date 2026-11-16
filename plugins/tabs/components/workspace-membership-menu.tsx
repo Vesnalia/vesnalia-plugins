@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk";
 import type { rpcContract } from "../server";
 import type { TabEntry } from "../lib/tabs-model";
 import { stateRevisionSchema, WORKSPACE_MEMBERSHIPS_CHANGED_CHANNEL } from "../lib/workspaces";
@@ -99,7 +99,7 @@ export function WorkspaceMembershipOptions({
   return (
     <>
       {snapshot === null && error === null ? (
-        <ContextMenu.Item className="bb-chat-tab-context-menu-item" disabled>
+        <ContextMenu.Item className="alia-chat-tab-context-menu-item" disabled>
           {t("Loading tabs…")}
         </ContextMenu.Item>
       ) : null}
@@ -108,18 +108,18 @@ export function WorkspaceMembershipOptions({
         return (
           <ContextMenu.CheckboxItem
             key={workspace.id}
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             checked={workspace.included}
             disabled={pending}
             onSelect={(event) => event.preventDefault()}
             onCheckedChange={(checked) => void setIncluded(workspace.id, checked === true)}
           >
-            <span className="bb-chat-tabs-membership-check">
+            <span className="alia-chat-tabs-membership-check">
               <ContextMenu.ItemIndicator>
                 <Icon name="Check" aria-hidden />
               </ContextMenu.ItemIndicator>
             </span>
-            <span className="bb-chat-tabs-membership-name" title={label}>
+            <span className="alia-chat-tabs-membership-name" title={label}>
               {label}
             </span>
           </ContextMenu.CheckboxItem>
@@ -127,11 +127,11 @@ export function WorkspaceMembershipOptions({
       })}
       {error === null ? null : (
         <>
-          <div className="bb-chat-tabs-membership-error" role="alert">
+          <div className="alia-chat-tabs-membership-error" role="alert">
             {error}
           </div>
           <ContextMenu.Item
-            className="bb-chat-tab-context-menu-item"
+            className="alia-chat-tab-context-menu-item"
             disabled={pending}
             onSelect={(event) => {
               event.preventDefault();

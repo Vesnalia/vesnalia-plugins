@@ -4,7 +4,7 @@
 import { byAgent } from "../core/box-log.ts";
 import { inSlot, noDesktopRefusal, SHARED_MACOS_WORDS } from "../core/device-host.ts";
 import { toolsForPurposes } from "./purposes.ts";
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { createHash } from "node:crypto";
 import { posix, win32 } from "node:path";
 import { Readable } from "node:stream";
@@ -27,24 +27,24 @@ import { DRAIN_MS, Detached, Drain, Restarted } from "./drain.ts";
 import { ANDROID_ID_FIRST_BOOT_WORDS } from "../core/device-settings.ts";
 import { wantsDevice, type ClaimSwitch } from "./devices.ts";
 import { captionDeviceRecording, deviceClipWords, fetchedWords, readyClipFfmpeg, recordsDevice, startDeviceRecording, stopDeviceRecording, type DeviceRecordDeps } from "./record-device.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { snapshotStatusLine } from "./snapshot-words.ts";
 import { adminText, boxDetail, deviceLines, devicesText, joinAgainWords, placementText, kindResizeText, kindSnapshotText, resizeText, dockerText, boxLine, boxSize, draftText, idleWords, imagesText, next, startingWords, tryText, type KindView } from "./views.ts";
 
 /** Output kept per stream; beyond it, the head and tail are kept. */
 import { PRODUCT } from "../brand.ts";
 export const RUN_OUTPUT_BYTES = 32 * 1024;
-/** Largest file box_copy moves through BB's file API; a larger one streams through the worker on the thread's machine (#492). */
+/** Largest file box_copy moves through VesnALIA's file API; a larger one streams through the worker on the thread's machine (#492). */
 export const COPY_MAX_BYTES = 16 * 1024 * 1024;
 const RUN_TIMEOUT_S = 10 * 60;
 /**
- * How long box_run waits for a command (#486). BB ends a tool call at about
+ * How long box_run waits for a command (#486). VesnALIA ends a tool call at about
  * five minutes with "terminated", without telling the plugin, so box_run
  * returns before then, and the command goes on as a job (#414). A Windows
  * command in the desktop session, which has no job yet, is stopped then.
  */
 export const RUN_WAIT_MS = 270_000;
-/** How long box_run waits, after a command lost its box, to see whether bb-box is stopping for a deploy (#415). */
+/** How long box_run waits, after a command lost its box, to see whether alia-box is stopping for a deploy (#415). */
 const LOST_BOX_MS = 10_000;
 const TOOL_JOIN_WAIT_MS = 2 * 60_000;
 const RUN_TIMEOUT_MAX_S = 60 * 60;
@@ -102,7 +102,7 @@ export function seenByAgent(box: BoxRecord): BoxRecord {
   return { ...box, error: errorForAgent(box) };
 }
 
-/** box_run's answer when bb-box restarted while its command ran: `sure` when bb-box stopped it itself (#405). */
+/** box_run's answer when alia-box restarted while its command ran: `sure` when alia-box stopped it itself (#405). */
 function restarted(box: BoxRecord, job: string, sure: boolean, jobless: boolean): PluginAgentToolResult {
   const text =
     jobless
@@ -111,7 +111,7 @@ function restarted(box: BoxRecord, job: string, sure: boolean, jobless: boolean)
   return { content: [{ type: "text", text }], isError: true };
 }
 
-export async function runsOnBox(app: Pick<BbBox, "workspace">, threadId: string, box: Pick<BoxRecord, "enrol">, signal?: AbortSignal): Promise<boolean> {
+export async function runsOnBox(app: Pick<AliaBox, "workspace">, threadId: string, box: Pick<BoxRecord, "enrol">, signal?: AbortSignal): Promise<boolean> {
   if (!box.enrol.hostId) return false;
   try {
     return (await app.workspace(threadId, signal)).hostId === box.enrol.hostId;
@@ -121,7 +121,7 @@ export async function runsOnBox(app: Pick<BbBox, "workspace">, threadId: string,
 }
 
 export function thread(threadId: string | undefined): string {
-  if (!threadId) throw new BoxError("unsupported", `${PRODUCT} tools work only inside a BB thread.`);
+  if (!threadId) throw new BoxError("unsupported", `${PRODUCT} tools work only inside a VesnALIA thread.`);
   return threadId;
 }
 
@@ -152,7 +152,7 @@ function pathsOf(root: string | null): typeof posix {
   return root && /^(?:[A-Za-z]:[\\/]|\\\\)/.test(root) ? win32 : posix;
 }
 
-/** BB's file API takes absolute paths: a relative one is under the workspace's directory. */
+/** VesnALIA's file API takes absolute paths: a relative one is under the workspace's directory. */
 export function workspacePath(root: string | null, path: string): string {
   const paths = pathsOf(root);
   if (paths.isAbsolute(path)) return paths.normalize(path);
@@ -160,10 +160,10 @@ export function workspacePath(root: string | null, path: string): string {
   return paths.resolve(root, path);
 }
 
-/** How a path names the thread's storage folder: `$BB_THREAD_STORAGE` or `${BB_THREAD_STORAGE}` first, as an agent's shell would expand it. */
-const STORAGE_PREFIX = /^\$(?:\{BB_THREAD_STORAGE\}|BB_THREAD_STORAGE)(?=$|[\\/])/;
+/** How a path names the thread's storage folder: `$ALIA_THREAD_STORAGE` or `${ALIA_THREAD_STORAGE}` first, as an agent's shell would expand it. */
+const STORAGE_PREFIX = /^\$(?:\{ALIA_THREAD_STORAGE\}|ALIA_THREAD_STORAGE)(?=$|[\\/])/;
 
-/** A file of the thread's own, for BB's file API: its host, its absolute path and the folder BB keeps it within. */
+/** A file of the thread's own, for VesnALIA's file API: its host, its absolute path and the folder VesnALIA keeps it within. */
 export interface ThreadFile {
   readonly hostId: string;
   readonly path: string;
@@ -186,7 +186,7 @@ export function storageFile(path: string, storage: { hostId: string; path: strin
   return inside.startsWith("..") || paths.isAbsolute(inside) ? null : { hostId: storage.hostId, path: full, rootPath: storage.path, stored: true };
 }
 
-/** Whether BB's file API refused a file for its size: it takes a file whole, up to 25 MB (#485, BB request 20). */
+/** Whether VesnALIA's file API refused a file for its size: it takes a file whole, up to 25 MB (#485, VesnALIA request 20). */
 function refusedForSize(error: unknown): boolean {
   return /\b413\b|exceeds the \d+ ?MB limit/.test(error instanceof Error ? error.message : String(error));
 }
@@ -214,7 +214,7 @@ function bytes(content: string, encoding: "base64" | "utf8"): Uint8Array {
 }
 
 /** Waits for an acquire to finish, up to the kind's ready timeout. Null when it has not finished. */
-export async function ready(app: BbBox, box: BoxRecord, signal: AbortSignal): Promise<BoxRecord | null> {
+export async function ready(app: AliaBox, box: BoxRecord, signal: AbortSignal): Promise<BoxRecord | null> {
   const timeoutMs = app.boxes.kinds().find((kind) => kind.id === box.kind)?.readyTimeoutMs ?? 5 * 60_000;
   let timer: NodeJS.Timeout | undefined;
   const waited = new Promise<null>((resolve) => {
@@ -236,7 +236,7 @@ const FORM_PLURAL: Record<string, string> = { VM: "VMs", LXC: "LXC containers", 
 const DEVICE_BOOT_WAIT_MS = 120_000;
 const DEVICE_POLL_MS = 250;
 
-function deviceText(app: BbBox, box: BoxRecord): string {
+function deviceText(app: AliaBox, box: BoxRecord): string {
   const view = app.devices.view(box.id);
   const state = view.is === "connected" ? view.state : null;
   const server =
@@ -251,7 +251,7 @@ function deviceText(app: BbBox, box: BoxRecord): string {
   return lines.length ? `\n${lines.join("\n")}` : "";
 }
 
-async function deviceBooted(app: BbBox, box: BoxRecord, signal: AbortSignal, after: "booted" | "came back" = "booted"): Promise<string> {
+async function deviceBooted(app: AliaBox, box: BoxRecord, signal: AbortSignal, after: "booted" | "came back" = "booted"): Promise<string> {
   if (!wantsDevice(box)) return "";
   const began = Date.now();
   const model = box.askedDevice ?? box.capabilities.device!.devices[0].model;
@@ -295,7 +295,7 @@ const IN_BOX_USERS_SESSION = 'sudo launchctl asuser "$(id -u)" sudo -u "$(id -un
 export function ownProcessHint(backend: string, program: string): string {
   const provider = backend.split(":")[0];
   if (provider === "namespace") return `Start it through launchd in the box user's session, as ${IN_BOX_USERS_SESSION} launchctl submit -l <label> -o <log> -- ${program} <arguments>, so that it is its own responsible process and its grants apply; remove it the same way with launchctl remove <label>. box_run's commands on Namespace run outside that session, so launchctl submit alone fails.`;
-  if (provider === "ssh-pool") return `Run it through bb-box-own, as bb-box-own ${program} <arguments>, so that it is its own responsible process and its grants apply.`;
+  if (provider === "ssh-pool") return `Run it through alia-box-own, as alia-box-own ${program} <arguments>, so that it is its own responsible process and its grants apply.`;
   return `Start it through launchd from a box_run command with desktop true, as launchctl submit -l <label> -o <log> -- ${program} <arguments>, so that it is its own responsible process and its grants apply; launchctl remove <label> when it is done.`;
 }
 
@@ -403,7 +403,7 @@ function runsOnRefusal(box: BoxRecord, action: "release" | "stop"): BoxError {
 
 /** Why the box this thread runs on is not restarted from here (061): the restart would end the call that asked for it. */
 function runsOnRestartRefusal(box: BoxRecord): BoxError {
-  const command = box.threadId === OPERATOR ? `bb box machines resize ${box.name} --restart` : `bb box resize ${box.name} --thread ${box.threadId} --restart`;
+  const command = box.threadId === OPERATOR ? `alia box machines resize ${box.name} --restart` : `alia box resize ${box.name} --thread ${box.threadId} --restart`;
   return new BoxError(
     "needs_restart",
     `Resizing box ${box.name} needs a restart, which would end this thread's session on it. Ask the user to resize it with ${command} and the size, from a terminal elsewhere, which restarts it; the thread's session comes back once it is up.`,
@@ -422,14 +422,14 @@ export const boxParam = z.string().min(1).describe("The box's name or ID, from b
 /** A Mac box's grants, for box_status (058). */
 const GRANT_BLOCK_WORDS: Readonly<Record<GrantBlock, string>> = {
   "sip-on": "System Integrity Protection is on",
-  "unknown-database": "its TCC database has columns BB Box does not know, as a newer macOS may have",
+  "unknown-database": "its TCC database has columns VesnALIA Box does not know, as a newer macOS may have",
 };
 
 export function grantsText(grants: BoxGrants): string {
   const listed = grants.grants.map((grant) => `${grant.permission} to ${grant.client}${grant.target ? ` (for ${grant.target})` : ""}`);
   const signing =
     grants.signingIdentity === false
-      ? '\nSigning identity: missing, so codesign -s "bb-box local code signing" fails in this box. Tell the Mac\'s operator: its helper could not make it.'
+      ? '\nSigning identity: missing, so codesign -s "alia-box local code signing" fails in this box. Tell the Mac\'s operator: its helper could not make it.'
       : "";
   if (grants.blockedBy) return `\nmacOS permissions: box_grant cannot grant them on this Mac, as ${GRANT_BLOCK_WORDS[grants.blockedBy]}.${signing}`;
   return `\nmacOS permissions granted with box_grant: ${listed.length ? listed.join(", ") : "none"}.${signing}`;
@@ -441,7 +441,7 @@ export function gpuParameter(wholeCards: boolean) {
         .enum(["none", "shared", "whole"])
         .optional()
         .describe(
-          "The box's GPU: none; shared, one card other boxes may share; or whole, a card to itself, on which bb-box places no other box, where its provider has whole cards on. Left out: the kind's GPU when not asked for, which box_list gives; shared for linux-desktop and none for linux unless the user changed it. Only linux and linux-desktop take one, where a provider has cards; box_list says which do, the room on each card, and whether whole cards are on.",
+          "The box's GPU: none; shared, one card other boxes may share; or whole, a card to itself, on which alia-box places no other box, where its provider has whole cards on. Left out: the kind's GPU when not asked for, which box_list gives; shared for linux-desktop and none for linux unless the user changed it. Only linux and linux-desktop take one, where a provider has cards; box_list says which do, the room on each card, and whether whole cards are on.",
         )
     : z
         .enum(["none", "shared"])
@@ -470,7 +470,7 @@ export function resizeParameters(wholeCards: boolean) {
     memory_gib: z.number().int().positive().optional().describe("Memory in GiB: at least 2 for a Linux box. Left out, the box keeps its own."),
     disk_gib: z.number().int().positive().optional().describe("Root disk in GiB, which only grows. Left out, the box keeps its own."),
     gpu: resizeGpuParameter(wholeCards),
-    restart: z.boolean().optional().describe("Allow a restart, which ends everything running in the box, where a part needs one. Defaults to false: bb-box then changes nothing and says so."),
+    restart: z.boolean().optional().describe("Allow a restart, which ends everything running in the box, where a part needs one. Defaults to false: alia-box then changes nothing and says so."),
     check: z.boolean().optional().describe("Only say what the resize would change, how, and whether there is room. Defaults to false."),
   });
 }
@@ -490,7 +490,7 @@ export function acquireParameters(wholeCards: boolean) {
     cores: z.number().int().positive().optional().describe("Cores, for a custom size. Parts you leave out come from the preset."),
     memory_gib: z.number().int().positive().optional().describe("Memory in GiB, for a custom size: at least 2 for a Linux box."),
     disk_gib: z.number().int().positive().optional().describe("Root disk in GiB, for a custom size. Presets keep the kind's own disk."),
-    wait: z.boolean().optional().describe("Wait until the box answers, and up to 20 s more while it becomes a BB machine. Defaults to true."),
+    wait: z.boolean().optional().describe("Wait until the box answers, and up to 20 s more while it becomes a VesnALIA machine. Defaults to true."),
     on: z
       .union([z.string().min(1), z.array(z.string().min(1))])
       .optional()
@@ -499,7 +499,7 @@ export function acquireParameters(wholeCards: boolean) {
       .string()
       .min(1)
       .optional()
-      .describe('The image the box starts from, from box_list: a project\'s image by name, or "standard" for bb-box\'s own. Leave it out for this project\'s image for the kind, or the standard one.'),
+      .describe('The image the box starts from, from box_list: a project\'s image by name, or "standard" for alia-box\'s own. Leave it out for this project\'s image for the kind, or the standard one.'),
     device: z
       .string()
       .min(1)
@@ -556,14 +556,14 @@ export function sceneWords(plan: ClipPlan): string[] {
   ];
 }
 
-export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: number; runWaitMs?: number } = {}): void {
-  const registerTool = toolsForPurposes(bb);
+export function registerTools(alia: AliaPluginApi, app: AliaBox, options: { drainMs?: number; runWaitMs?: number } = {}): void {
+  const registerTool = toolsForPurposes(alia);
   const runWaitMs = options.runWaitMs ?? RUN_WAIT_MS;
   const { boxes } = app;
 
   /**
    * Copies a file from a box to the thread's workspace or storage folder:
-   * whole through BB's file API up to COPY_MAX_BYTES, else streamed through
+   * whole through VesnALIA's file API up to COPY_MAX_BYTES, else streamed through
    * the thread's machine, which keeps it only if its size and SHA-256 match
    * the box's (#492).
    */
@@ -603,7 +603,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
     const arrived = sumOf(small.result.data);
     const inBox = small.result.sum;
     if (!sameSum(arrived, inBox)) throw new Error(`The copy of ${from} did not arrive whole: the box has ${summed(inBox)}, and ${summed(arrived)} came. Nothing was written. Try again.`);
-    await bb.sdk.files.write({
+    await alia.sdk.files.write({
       hostId: target.hostId,
       path: target.path,
       rootPath: target.rootPath,
@@ -616,10 +616,10 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
   // Registered after the core's hooks, so it runs first, while boxes and
   // backends still work (#405).
   const drain = new Drain();
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     const began = Date.now();
     const { running, stopped } = await drain.close(options.drainMs ?? DRAIN_MS);
-    if (running) bb.log.info(`Stopping, ${PRODUCT} waited ${((Date.now() - began) / 1000).toFixed(2)} s for ${running} box_run ${running === 1 ? "command" : "commands"}, and stopped ${stopped}, which go on as jobs.`);
+    if (running) alia.log.info(`Stopping, ${PRODUCT} waited ${((Date.now() - began) / 1000).toFixed(2)} s for ${running} box_run ${running === 1 ? "command" : "commands"}, and stopped ${stopped}, which go on as jobs.`);
   });
 
   registerTool({
@@ -627,7 +627,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
     description:
       "Get a fresh box for this thread: a Linux or macOS computer for commands, builds, tests, servers or Docker, away from the thread's own machine. It starts in seconds and stays until you release it or the thread ends.",
     instructions:
-      "bb-box: use box_acquire when you need a clean machine, root (box_list says which kinds give it), Docker, or to run what you would not run on the thread's machine. Release a box with box_release when you are done; a thread's boxes go when it is archived or deleted.",
+      "alia-box: use box_acquire when you need a clean machine, root (box_list says which kinds give it), Docker, or to run what you would not run on the thread's machine. Release a box with box_release when you are done; a thread's boxes go when it is archived or deleted.",
     presentation: { label: { pending: "Acquiring a box", completed: "Acquired a box" } },
     parameters: acquireParameters(true),
     async execute({ kind, size, cores, memory_gib, disk_gib, wait, on, image, device, slim, gpu, dedicated, shared }, { threadId, projectId, signal }) {
@@ -651,7 +651,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
           return `Acquiring box ${box.name} (${box.kind}${asked ? `, ${describeSize(asked)}` : ""}).${next(`Call box_status with box "${box.name}" to see when it is ready.`)}`;
         }
         const settled = await ready(app, box, signal);
-        // Not ready when the kind's wait ran out, or bb-box restarted first.
+        // Not ready when the kind's wait ran out, or alia-box restarted first.
         if (!settled || isAcquiring(settled)) {
           return `${startingWords(settled ?? box, !!settled && boxes.stopping)}${next(`Call box_status with box "${box.name}" to see when it is ready.`)}`;
         }
@@ -692,7 +692,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
             ? `Kinds:\n${kinds.map((kind) => `- ${kind.id}: ${kind.label}${kind.gpu ? " (GPU)" : ""}. ${kind.description} Sizes: ${kindSizesText(kind)}. ${[adminText(kind), dockerText(kind), kindResizeText(kind), kindSnapshotText(kind)].filter(Boolean).join(" ")} On: ${offersText(kind)}.${placementText(kind)}${devicesText(kind)}${gpuRoomText(kind, kinds)}${gpuPartsText(kind)}${cardReachText(kind)}${imagesText(images, kind.id)}`).join("\n")}`
             : boxes.kinds().length
               ? NONE_SERVES_THREAD
-              : "No backend is set up, so there are no kinds. With the user's go-ahead, bb box setup docker sets up Docker on the machine that runs BB, as the Box panel's first run does; or the user sets a backend up in BB Box's settings.",
+              : "No backend is set up, so there are no kinds. With the user's go-ahead, VesnALIA box setup docker sets up Docker on the machine that runs VesnALIA, as the Box panel's first run does; or the user sets a backend up in VesnALIA Box's settings.",
         );
         if (withheld.length) lines.push(`Kinds you cannot acquire now:\n${withheld.map((kind) => `- ${kind.kind}: ${kind.label}. ${kind.words}`).join("\n")}`);
         const hints = list.length
@@ -707,7 +707,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
 
   registerTool({
     name: "box_status",
-    description: "Show one box: its state, kind, address, whether it is a BB machine, and how long it took to start and to become one.",
+    description: "Show one box: its state, kind, address, whether it is a VesnALIA machine, and how long it took to start and to become one.",
     presentation: { label: { pending: "Checking a box", completed: "Checked a box" } },
     parameters: z.object({ box: boxParam }),
     async execute({ box: ref }, { threadId, signal }) {
@@ -744,7 +744,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
   registerTool({
     name: "box_grant",
     description:
-      "Grant a program in a macOS box macOS permissions, such as Accessibility or Screen Recording, with no prompt. On Tart's and Namespace's macOS boxes, and on Macs of the SSH host pool with SIP off; Linux, Windows and shared boxes refuse. The program must be the box user's, or an app in /Applications, and signed: sign it with the box's identity, codesign -s \"bb-box local code signing\", so a rebuild keeps the grant; on Namespace, run codesign in the box user's session, through sudo launchctl asuser \"$(id -u)\" sudo -u \"$(id -un)\". Commands box_run runs have the microphone and camera already, except on Namespace.",
+      "Grant a program in a macOS box macOS permissions, such as Accessibility or Screen Recording, with no prompt. On Tart's and Namespace's macOS boxes, and on Macs of the SSH host pool with SIP off; Linux, Windows and shared boxes refuse. The program must be the box user's, or an app in /Applications, and signed: sign it with the box's identity, codesign -s \"alia-box local code signing\", so a rebuild keeps the grant; on Namespace, run codesign in the box user's session, through sudo launchctl asuser \"$(id -u)\" sudo -u \"$(id -un)\". Commands box_run runs have the microphone and camera already, except on Namespace.",
     presentation: { label: { pending: "Granting permissions", completed: "Granted permissions" } },
     parameters: z.object({
       box: boxParam,
@@ -779,7 +779,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
 
   /** A command still running when box_run stopped waiting (#486): it goes on as a job, with its output so far. */
   const detached = async (owner: string, box: BoxRecord, job: string, signal: AbortSignal): Promise<PluginAgentToolResult> => {
-    const head = `The command still runs in box ${box.name} after ${Math.round(runWaitMs / 1000)} s, and goes on there as job ${job}: BB ends a tool call at about five minutes, so box_run returns before then.`;
+    const head = `The command still runs in box ${box.name} after ${Math.round(runWaitMs / 1000)} s, and goes on there as job ${job}: VesnALIA ends a tool call at about five minutes, so box_run returns before then.`;
     const so = await boxes.job(owner, box.id, job, { signal, maxOutputBytes: RUN_OUTPUT_BYTES }).catch(() => null);
     // It may have ended as box_run stopped waiting: then that is its result.
     if (so?.job?.state === "ended") return `${outputText(`Exit code ${so.job.exitCode} in box ${box.name}, as job ${job}.`, so.job)}${next("Run more with box_run.")}`;
@@ -803,7 +803,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
         .max(RUN_TIMEOUT_MAX_S)
         .optional()
         .describe(
-          `Seconds before the command, and everything it started, is stopped. Defaults to ${RUN_TIMEOUT_S}. box_run returns when the script's shell exits, or after ${RUN_WAIT_MS / 1000} s, as BB ends a tool call at about five minutes: a command still running then goes on as a job for box_job, except a Windows one in the desktop session, which is stopped then. Start a server in the background with its output redirected, so it keeps working after that: nohup <cmd> >server.log 2>&1 &, or on Windows Start-Detached { <cmd> } server.log`,
+          `Seconds before the command, and everything it started, is stopped. Defaults to ${RUN_TIMEOUT_S}. box_run returns when the script's shell exits, or after ${RUN_WAIT_MS / 1000} s, as VesnALIA ends a tool call at about five minutes: a command still running then goes on as a job for box_job, except a Windows one in the desktop session, which is stopped then. Start a server in the background with its output redirected, so it keeps working after that: nohup <cmd> >server.log 2>&1 &, or on Windows Start-Detached { <cmd> } server.log`,
         ),
       stdin: z.string().optional().describe("Text to send to the command's standard input."),
       desktop: z.boolean().optional().describe("Run in the box's desktop session so it can open windows. Desktop boxes only."),
@@ -838,18 +838,18 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
         const hints = !result.timedOut
           ? [`Run more with box_run, or copy results out with box_copy (direction from_box).`]
           : cut
-            ? [`BB ends a tool call at about five minutes, so box_run stops a Windows command in the desktop session after ${Math.round(runWaitMs / 1000)} s, as it has no job. Start a long one with Start-Detached { <cmd> } job.log, then read job.log with box_run.`]
+            ? [`VesnALIA ends a tool call at about five minutes, so box_run stops a Windows command in the desktop session after ${Math.round(runWaitMs / 1000)} s, as it has no job. Start a long one with Start-Detached { <cmd> } job.log, then read job.log with box_run.`]
             : [`Give timeout_seconds more time, or start a long job in the background with ${background} and check on it.`];
         return result.exitCode === 0 && !result.timedOut
           ? `${text}${next(...hints)}`
           : { content: [{ type: "text", text: `${text}${next(...hints)}` }], isError: result.timedOut };
       } catch (error) {
-        // A box that stops answering as bb-box starts stopping, as a Docker box on a BB machine does at a deploy, when BB stops
-        // bb-box's worker and the relay before it aborts the call (#415): the command may go on there as a job.
+        // A box that stops answering as alia-box starts stopping, as a Docker box on a VesnALIA machine does at a deploy, when VesnALIA stops
+        // alia-box's worker and the relay before it aborts the call (#415): the command may go on there as a job.
         if (target && !target.jobless && error instanceof BoxError && error.code === "unreachable" && (await drain.stoppingWithin(signal, LOST_BOX_MS))) {
           return restarted(target.box, job, false, false);
         }
-        // A command that fails while bb-box stops may go on too.
+        // A command that fails while alia-box stops may go on too.
         const stopping = drain.closed && !(error instanceof BoxError && error.code === "restarting");
         if (target && error instanceof Detached) return detached(target.owner, target.box, job, signal);
         if (target && (error instanceof Restarted || stopping)) return restarted(target.box, job, error instanceof Restarted, !!target.jobless);
@@ -888,7 +888,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
   registerTool({
     name: "box_copy",
     description:
-      `Copy one file, of any size, between this thread's workspace or its storage folder ($BB_THREAD_STORAGE) and a box. Every copy's size and SHA-256 are checked at both ends, and one that does not match fails. A file over 16 MiB streams through ${PRODUCT}'s worker on the thread's machine. A relative path on this side is under the workspace; a path under the storage folder, absolute or starting with $BB_THREAD_STORAGE/, is there. A relative box path, or one starting with ~/, is under the box user's home. Tar a directory first.`,
+      `Copy one file, of any size, between this thread's workspace or its storage folder ($ALIA_THREAD_STORAGE) and a box. Every copy's size and SHA-256 are checked at both ends, and one that does not match fails. A file over 16 MiB streams through ${PRODUCT}'s worker on the thread's machine. A relative path on this side is under the workspace; a path under the storage folder, absolute or starting with $ALIA_THREAD_STORAGE/, is there. A relative box path, or one starting with ~/, is under the box user's home. Tar a directory first.`,
     presentation: { label: { pending: "Copying a file", completed: "Copied a file" } },
     parameters: z.object({
       box: boxParam,
@@ -900,24 +900,24 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
       try {
         const id = thread(threadId);
         const { owner, box: found } = await app.resolve(id, ref, signal);
-        // A file in the thread's storage folder (#482), else in the workspace. BB is asked for the folder only for a path that may be in it.
+        // A file in the thread's storage folder (#482), else in the workspace. VesnALIA is asked for the folder only for a path that may be in it.
         const local = async (path: string): Promise<ThreadFile> => {
           const mayBeStored = STORAGE_PREFIX.test(path) || posix.isAbsolute(path) || win32.isAbsolute(path);
           const stored = mayBeStored ? storageFile(path, await app.threadStorage(id, signal)) : null;
           if (stored) return stored;
-          if (STORAGE_PREFIX.test(path)) throw new Error(`BB gives no storage folder for this thread, so ${path} is nowhere. Give a path in the workspace.`);
+          if (STORAGE_PREFIX.test(path)) throw new Error(`VesnALIA gives no storage folder for this thread, so ${path} is nowhere. Give a path in the workspace.`);
           const workspace = await app.workspace(id, signal);
           return { hostId: workspace.hostId, path: workspacePath(workspace.path, path), rootPath: workspace.path ?? undefined, stored: false };
         };
         if (direction === "to_box") {
           const source = await local(from);
           const target = boxPath(to ?? pathsOf(source.rootPath ?? null).basename(source.path));
-          const file = await bb.sdk.files.read({ hostId: source.hostId, path: source.path, rootPath: source.rootPath, signal }).catch((error: unknown) => {
+          const file = await alia.sdk.files.read({ hostId: source.hostId, path: source.path, rootPath: source.rootPath, signal }).catch((error: unknown) => {
             if (refusedForSize(error)) return null;
             throw error;
           });
           if (file) {
-            if (!("content" in file)) throw new Error(`BB did not return the contents of ${source.path}.`);
+            if (!("content" in file)) throw new Error(`VesnALIA did not return the contents of ${source.path}.`);
             const data = bytes(file.content, file.contentEncoding);
             const sent = sumOf(data);
             const { box, result: written } = await boxes.reach(
@@ -934,7 +934,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
             if (!sameSum(sent, written)) throw new Error(`The copy of ${source.path} did not arrive whole: ${summed(sent)} went, and ${target} in the box has ${summed(written)}. Copy it again.`);
             return `Copied ${source.path} (${summed(sent)}) to ${target} in box ${box.name}.${next(`Use it with box_run (box "${box.name}").`)}`;
           }
-          // Too large for BB's file API: the worker on the file's machine streams it to a part file in the box, which replaces the target once the two SHA-256s match (#492).
+          // Too large for VesnALIA's file API: the worker on the file's machine streams it to a part file in the box, which replaces the target once the two SHA-256s match (#492).
           const { box, result } = await boxes.reach(
             owner,
             found.id,
@@ -1057,7 +1057,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
             : `Captioned the result: ${passed ? "✓" : "✗"} ${text}${next(`Call box_record with action "step" for the next check, or "stop" for the clip.`)}`;
         }
         const storage = await app.threadStorage(id, signal);
-        if (!storage) throw new BoxError("unsupported", "BB gives no storage folder for this thread, so there is nowhere to put the clip.");
+        if (!storage) throw new BoxError("unsupported", "VesnALIA gives no storage folder for this thread, so there is nowhere to put the clip.");
         const times = speed ?? 1;
         const noRecording = { content: [{ type: "text" as const, text: `Box ${found.name} has no recording.${next(`Call box_record with box "${found.name}" and action "start" to begin one.`)}` }], isError: true };
         const runLong = (script: string, maxOutputBytes = 256 * 1024) => boxes.run(owner, found.id, script, { timeoutMs: 240_000, signal, session, maxOutputBytes, waitForEnrolment: false });
@@ -1104,7 +1104,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
           const file = (path: string): ThreadFile => ({ hostId: folder.hostId, path: paths.join(folder.path, path), rootPath: folder.path, stored: true });
           await fromBox(owner, found.id, `${RECORD_DIR}/clip.mp4`, file(`${name}.mp4`), signal);
           const page = file(`${name}.html`);
-          await bb.sdk.files.write({ hostId: page.hostId, path: page.path, rootPath: page.rootPath, content: Buffer.from(html).toString("base64"), contentEncoding: "base64", createParents: true });
+          await alia.sdk.files.write({ hostId: page.hostId, path: page.path, rootPath: page.rootPath, content: Buffer.from(html).toString("base64"), contentEncoding: "base64", createParents: true });
         };
         const copyBegan = Date.now();
         await put(storage);
@@ -1133,7 +1133,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
         const took = onDevice ? "" : ` ${timingWords(timings, (Date.now() - stopBegan) / 1000)}`;
         const steps = made.captions === false ? " The box could not draw the step captions, so the clip has none." : "";
         const limit = made.ended === "limit" ? ` It reached the ${RECORD_LIMIT_S / 60}-minute limit and ended by itself.` : "";
-        const where = `The MP4 is in this thread's storage folder: $BB_THREAD_STORAGE/${name}.mp4${copied ? `, and in the storage folder of its parent thread${copied === 1 ? "" : `s, ${copied} of them`}` : ""}.`;
+        const where = `The MP4 is in this thread's storage folder: $ALIA_THREAD_STORAGE/${name}.mp4${copied ? `, and in the storage folder of its parent thread${copied === 1 ? "" : `s, ${copied} of them`}` : ""}.`;
         const directive = `::inline-vis{source="thread-storage" file="${name}.html" height="${previewFrameHeight(made.size, chapters.length)}"}`;
         const shows = copied ? "this thread and in its parent threads, which have a copy, so a parent can pass the line on" : "this thread only";
         return `Recorded box ${found.name}${onDevice ? "'s device" : ""}: ${parts.join(", ")}.${limit}${deviceWords}${steps}${took} ${where}${next(`To show it in the thread, put this line on its own in your reply, outside any code block. It shows the clip in ${shows}:\n${directive}`)}`;
@@ -1164,12 +1164,12 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
 
   registerTool({
     name: "box_start",
-    description: "Start a stopped box again, with its disk as it was, and wait up to 20 s more while it reconnects as a BB machine.",
+    description: "Start a stopped box again, with its disk as it was, and wait up to 20 s more while it reconnects as a VesnALIA machine.",
     presentation: { label: { pending: "Starting a box", completed: "Started a box" } },
     parameters: z.object({ box: boxParam }),
     async execute({ box: ref }, { threadId, signal }) {
       try {
-        // Its BB machine reconnects after the start; box_run would wait for that anyway.
+        // Its VesnALIA machine reconnects after the start; box_run would wait for that anyway.
         const { owner, box: found } = await app.resolve(thread(threadId), ref, signal);
         const box = await boxes.enrolled(await boxes.start(owner, found.id, signal, byAgent(thread(threadId))), signal);
         const back = await deviceBooted(app, box, signal, "came back");
@@ -1183,8 +1183,8 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
   registerTool({
     name: "box_enrol",
     description:
-      "Add a ready box that could not join BB, or is not a BB machine, to BB again, so threads can run on it. BB's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the BB daemon of a machine that BB no longer has. A box whose machine BB still has is left as it is, and recorded as a BB machine.",
-    presentation: { label: { pending: "Adding a box to BB", completed: "Added a box to BB" } },
+      "Add a ready box that could not join VesnALIA, or is not a VesnALIA machine, to VesnALIA again, so threads can run on it. VesnALIA's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the VesnALIA daemon of a machine that VesnALIA no longer has. A box whose machine VesnALIA still has is left as it is, and recorded as a VesnALIA machine.",
+    presentation: { label: { pending: "Adding a box to VesnALIA", completed: "Added a box to VesnALIA" } },
     parameters: z.object({ box: boxParam }),
     async execute({ box: ref }, { threadId, signal }) {
       try {
@@ -1194,7 +1194,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
         if (!said.failed) return said.text;
         return { content: [{ type: "text", text: `${said.text}${next(`${PRODUCT} tries again by itself when the failure can pass. Call box_enrol again to try at once.`)}` }], isError: true };
       } catch (error) {
-        return failure(error, "Adding the box to BB");
+        return failure(error, "Adding the box to VesnALIA");
       }
     },
   });
@@ -1232,7 +1232,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
   registerTool({
     name: "box_thread",
     description:
-      "Start a child thread on a box, as a BB machine, in this thread's project, with the task as its prompt. It works in a worktree of the project's repository on the box, cloned there once, and is archived with this thread.",
+      "Start a child thread on a box, as a VesnALIA machine, in this thread's project, with the task as its prompt. It works in a worktree of the project's repository on the box, cloned there once, and is archived with this thread.",
     presentation: { label: { pending: "Starting a thread on a box", completed: "Started a thread on a box" } },
     parameters: z.object({
       box: boxParam,
@@ -1244,7 +1244,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
         const id = thread(threadId);
         const box = await boxes.get(id, ref);
         const child = await app.startThread({ threadId: id, box: box.id, prompt, title, signal });
-        return `Started thread ${child} on box ${box.name}.${next(`It reports back like any child thread; bb thread show ${child} shows its progress.`)}`;
+        return `Started thread ${child} on box ${box.name}.${next(`It reports back like any child thread; VesnALIA thread show ${child} shows its progress.`)}`;
       } catch (error) {
         return failure(error, "Starting a thread on the box");
       }
@@ -1278,7 +1278,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
     description:
       "Draft a project image's script (049) from the project's own files, for you to finish, try with box_image_try and register with box_image_set. Read these from the repository and pass each one's path and text: " +
       ".devcontainer/devcontainer.json (or .devcontainer.json, or one in a subfolder of .devcontainer) and the Dockerfile it names; a Dockerfile; .tool-versions; mise.toml; .nvmrc or .node-version; .python-version; rust-toolchain.toml or rust-toolchain; flake.nix with flake.lock, or shell.nix. " +
-      `It returns a script for .bb/box-setup.sh, each part commented with the file it came from, a check for .bb/box-check.sh, and what it could not translate. The script runs as root on ${PRODUCT}'s standard Ubuntu 24.04 image, with no checkout of the repository: what needs one, such as npm ci, stays in the thread. ` +
+      `It returns a script for .vesnalia/box-setup.sh, each part commented with the file it came from, a check for .vesnalia/box-check.sh, and what it could not translate. The script runs as root on ${PRODUCT}'s standard Ubuntu 24.04 image, with no checkout of the repository: what needs one, such as npm ci, stays in the thread. ` +
       "With `box`, it also reads what a Linux box of this thread has that its image had not, for a box someone set up by hand: packages, package sources, npm globals, mise's tools, the Rust toolchain, uv tools, and what is new in /usr/local, /opt and ~/.local/bin.",
     presentation: { label: { pending: "Drafting the image's script", completed: "Drafted the image's script" } },
     parameters: z.object({
@@ -1312,15 +1312,15 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
   registerTool({
     name: "box_image_try",
     description:
-      "Try a project image's script as a build runs it (049), before box_image_set: in a new box of the kind's current standard image, on a backend that builds images, the script runs as root with BB_BOX_IMAGE, BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH, then the check as the box user, then finalizing, which empties /tmp, /var/tmp and the caches. " +
+      "Try a project image's script as a build runs it (049), before box_image_set: in a new box of the kind's current standard image, on a backend that builds images, the script runs as root with ALIA_BOX_IMAGE, ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH, then the check as the box user, then finalizing, which empties /tmp, /var/tmp and the caches. " +
       "A box of the build then runs the check again and the kind's own check. It returns each check's result, the time and the build's last 200 lines, and removes the boxes and the build, unless keep is true, when a box of it stays for you to look inside. " +
       "Each try starts from a clean standard image, as a build does, so fix the script and try again until every check passes. It can take as long as the script, plus about a minute.",
     presentation: { label: { pending: "Trying the image's script", completed: "Tried the image's script" } },
     parameters: z.object({
       kind: z.string().min(1).describe('The Linux kind to try it on, such as "linux". box_list shows the kinds.'),
-      script: z.string().min(1).describe("The script's text, run as root, as in .bb/box-setup.sh."),
-      check: z.string().optional().describe("The check's text, run as the box user, as in .bb/box-check.sh: it should fail when the script did not do its work."),
-      name: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).optional().describe('The image\'s name, which the script reads as BB_BOX_IMAGE. "try" when left out.'),
+      script: z.string().min(1).describe("The script's text, run as root, as in .vesnalia/box-setup.sh."),
+      check: z.string().optional().describe("The check's text, run as the box user, as in .vesnalia/box-check.sh: it should fail when the script did not do its work."),
+      name: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).optional().describe('The image\'s name, which the script reads as ALIA_BOX_IMAGE. "try" when left out.'),
       on: z.string().optional().describe("A backend's ID from box_list, such as proxmox-lxc. The first that builds the kind's images when left out."),
       keep: z.boolean().optional().describe("Keep a box of what it built, to look inside with box_run: of the build, or of the build box as a failing script left it. It is this thread's box until you release it."),
     }),
@@ -1349,7 +1349,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
     name: "box_image_set",
     description:
       "Set this thread's project's image (049): a shell script run as root on the standard image of its kinds, so the project's boxes start with what it needs, such as a language's toolchain. " +
-      "Pass the files' text: commit them in the repository as .bb/box-setup.sh and .bb/box-check.sh, and give their paths. The script runs in a booted box with the network, on any Linux backend, and reads BB_BOX_IMAGE, BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH where it must differ. It gets none of the project's secrets. " +
+      "Pass the files' text: commit them in the repository as .vesnalia/box-setup.sh and .vesnalia/box-check.sh, and give their paths. The script runs in a booted box with the network, on any Linux backend, and reads ALIA_BOX_IMAGE, ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH where it must differ. It gets none of the project's secrets. " +
       "Setting it changes every new box of those kinds in the project, so ask the user first unless they asked for it.",
     presentation: { label: { pending: "Setting the project's image", completed: "Set the project's image" } },
     parameters: z.object({
@@ -1358,13 +1358,13 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
       script: z.string().min(1).describe("The script's text, run as root."),
       check: z.string().optional().describe("A check's text, run as the box user after the script, such as `cargo --version`: the image fails when it fails."),
       bake: z.enum(["auto", "always", "never"]).optional().describe("auto (the default) builds it ahead once two boxes started within 14 days; always keeps a build; never runs the script at each start."),
-      script_path: z.string().optional().describe("The script's path in the repository, such as .bb/box-setup.sh."),
-      check_path: z.string().optional().describe("The check's path in the repository, such as .bb/box-check.sh."),
+      script_path: z.string().optional().describe("The script's path in the repository, such as .vesnalia/box-setup.sh."),
+      check_path: z.string().optional().describe("The check's path in the repository, such as .vesnalia/box-check.sh."),
     }),
     async execute({ name, kinds, script, check, bake, script_path: scriptPath, check_path: checkPath }, { threadId }) {
       try {
         const project = await app.projectOf(thread(threadId));
-        if (!project) throw new BoxError("unsupported", "This thread has no BB project, so it has no project's image to set.");
+        if (!project) throw new BoxError("unsupported", "This thread has no VesnALIA project, so it has no project's image to set.");
         // Another project's image of the name is theirs to change.
         const current = app.configuration.exported().images?.[name];
         if (current && !current.projects.includes(project)) {
@@ -1383,7 +1383,7 @@ export function registerTools(bb: BbPluginApi, app: BbBox, options: { drainMs?: 
           const why = result.reason === "problems" ? result.problems.map((problem) => problem.message).join(" ") : "The configuration kept changing.";
           return { content: [{ type: "text", text: `The image was not saved: ${why}${next("Fix what it says and call box_image_set again.")}` }], isError: true };
         }
-        return `Set image ${name} for ${kinds.join(", ")} boxes in this thread's project.${next("Tell the user what changed. bb box image list shows the project's images, and bb box image remove removes one.")}`;
+        return `Set image ${name} for ${kinds.join(", ")} boxes in this thread's project.${next("Tell the user what changed. VesnALIA box image list shows the project's images, and VesnALIA box image remove removes one.")}`;
       } catch (error) {
         return failure(error, "Setting the project's image");
       }

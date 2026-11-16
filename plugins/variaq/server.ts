@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import crypto from "node:crypto";
 import { comparisonTypeSchema, type ComparisonType, problemFamilySchema, type ProblemFamily, campaignDefinitionSchema, campaignPlanDataSchema, campaignRunDataSchema, campaignListItemSchema, analyzeQuerySchema, reportFormatsSchema, type CampaignDefinition } from "./lib/schema.js";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { PluginError, checkVariaqVersion, generateProblemArgv, parseJsonOutput, parseKeyValue, parseSolvers, probeCapabilities, quantumSupportNote, requireSuccess, resolveConfig, runVariaqJson, runVariaqStrict, solverSupportsFamily, statusFromCapabilities } from "./lib/runner.js";
 import type { ResolvedConfig, VariaqSettings, CompareQuantumEnvelopeData, BenchmarkEnvelopeData, ReproduceEnvelopeData, ProblemGenerateData, SolveEnvelopeData, FamilyGenerateInput, VariaqSolver, CampaignPlanEnvelopeData, CampaignRunEnvelopeData, CampaignListEnvelopeData, CampaignShowEnvelopeData, AnalyzeEnvelopeData, ReportCampaignEnvelopeData } from "./lib/runner.js";
 
@@ -12,26 +12,26 @@ const SOLVERS = ["exact", "heuristic", "qaoa", "cudaq-cpu", "cudaq-gpu"] as cons
 const VARIAQ_SOLVERS = SOLVERS;
 const solverEnum = z.enum(SOLVERS);
 
-const USAGE = `bb variaq — Run VariaQ classical/quantum experiments from bb
+const USAGE = `alia variaq — Run VariaQ classical/quantum experiments from VesnALIA
 
-  bb variaq status [--json]
-  bb variaq version [--json]
-  bb variaq problem-generate FAMILY [--nodes N] [--edge-probability P] [--task-count T] [--resource-count R] [--candidate-count C] [--partition-count K] --seed S [--json]
-  bb variaq problem-import <json-content-or-path> [--output PATH] [--json]
-  bb variaq problem-show <problem-id> [--json]
-  bb variaq solve <problem-id> --solver <${SOLVERS.join("|")}> [--seed S] [--param KEY=VALUE ...] [--json]
-  bb variaq benchmark <problem-id> [--solvers a,b] [--repeats N] [--seed S] [--json]
-  bb variaq compare-quantum <problem-id> [--p N] [--repeats N] [--json]
-  bb variaq campaign-plan <campaign-json-content> [--json]
-  bb variaq campaign-run <campaign-json-content> [--max-runs N] [--override-max-runs] [--json]
-  bb variaq campaigns [--limit N] [--json]
-  bb variaq campaign <campaign-id> [--json]
-  bb variaq analyze-runs [--run-id ID ...] [--group-by KEY ...] [--filter KEY=VALUE ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]
-  bb variaq analyze-campaign <campaign-id> [--group-by KEY ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]
-  bb variaq report-campaign <campaign-id> --output-dir DIR --formats f1,f2 [--group-by KEY ...] [--scaling-x METRIC] [--plots] [--overwrite] [--json]
-  bb variaq runs [--limit N] [--json]
-  bb variaq run <run-id> [--json]
-  bb variaq reproduce <run-id> [--json]
+  VesnALIA variaq status [--json]
+  VesnALIA variaq version [--json]
+  VesnALIA variaq problem-generate FAMILY [--nodes N] [--edge-probability P] [--task-count T] [--resource-count R] [--candidate-count C] [--partition-count K] --seed S [--json]
+  VesnALIA variaq problem-import <json-content-or-path> [--output PATH] [--json]
+  VesnALIA variaq problem-show <problem-id> [--json]
+  VesnALIA variaq solve <problem-id> --solver <${SOLVERS.join("|")}> [--seed S] [--param KEY=VALUE ...] [--json]
+  VesnALIA variaq benchmark <problem-id> [--solvers a,b] [--repeats N] [--seed S] [--json]
+  VesnALIA variaq compare-quantum <problem-id> [--p N] [--repeats N] [--json]
+  VesnALIA variaq campaign-plan <campaign-json-content> [--json]
+  VesnALIA variaq campaign-run <campaign-json-content> [--max-runs N] [--override-max-runs] [--json]
+  VesnALIA variaq campaigns [--limit N] [--json]
+  VesnALIA variaq campaign <campaign-id> [--json]
+  VesnALIA variaq analyze-runs [--run-id ID ...] [--group-by KEY ...] [--filter KEY=VALUE ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]
+  VesnALIA variaq analyze-campaign <campaign-id> [--group-by KEY ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]
+  VesnALIA variaq report-campaign <campaign-id> --output-dir DIR --formats f1,f2 [--group-by KEY ...] [--scaling-x METRIC] [--plots] [--overwrite] [--json]
+  VesnALIA variaq runs [--limit N] [--json]
+  VesnALIA variaq run <run-id> [--json]
+  VesnALIA variaq reproduce <run-id> [--json]
 
 Campaign tools are read-only (plan/analyze) or execute solver runs (run).
 Reports create files under the configured report output directory.
@@ -42,10 +42,10 @@ problem families are reported dynamically by VariaQ capabilities. CUDA-Q
 solvers require VariaQ's 'cudaq' extra; GPU backends additionally need a
 working NVIDIA toolchain.`;
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // All four path settings default to "" = auto-discover. Resolved per call and
   // never persisted, so this source stays environment-agnostic and reusable.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     pythonPath: {
       type: "string",
       label: "Python interpreter",
@@ -553,13 +553,13 @@ export default async function plugin(bb: BbPluginApi) {
     if (!validated.success) {
       throw new PluginError(
         `Invalid analyze-runs input: ${minimizeZodIssue(validated.error)}`,
-        "Run `bb variaq analyze-runs --help` for usage.",
+        "Run `alia variaq analyze-runs --help` for usage.",
       );
     }
     if (validated.data.compare !== undefined) {
       throw new PluginError(
         "VariaQ analyze runs does not accept comparison selectors.",
-        "Use variaq_analyze_campaign or bb variaq analyze-campaign for comparisons, including paired_solvers on VariaQ 0.8.x.",
+        "Use variaq_analyze_campaign or VesnALIA variaq analyze-campaign for comparisons, including paired_solvers on VariaQ 0.8.x.",
       );
     }
     const argv = buildAnalyzeArgv("runs", validated.data);
@@ -575,7 +575,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!validated.success) {
       throw new PluginError(
         `Invalid analyze-campaign input: ${minimizeZodIssue(validated.error)}`,
-        "Run `bb variaq analyze-campaign --help` for usage.",
+        "Run `alia variaq analyze-campaign --help` for usage.",
       );
     }
     const fullQuery = validated.data;
@@ -662,68 +662,68 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ----------------------------------------------------------------- CLI --
 
-  bb.cli.register({
+  alia.cli.register({
     name: "variaq",
-    summary: "Run VariaQ classical/quantum experiments from bb",
+    summary: "Run VariaQ classical/quantum experiments from VesnALIA",
     commands: [
-      { name: "status", summary: "Show VariaQ install, solver, and CUDA-Q capabilities", usage: "bb variaq status [--json]" },
-      { name: "version", summary: "Show the VariaQ CLI version", usage: "bb variaq version [--json]" },
+      { name: "status", summary: "Show VariaQ install, solver, and CUDA-Q capabilities", usage: "alia variaq status [--json]" },
+      { name: "version", summary: "Show the VariaQ CLI version", usage: "alia variaq version [--json]" },
       {
         name: "problem-generate",
         summary: "Generate a deterministic problem in a generic family",
-        usage: "bb variaq problem-generate FAMILY --seed S [family-specific options] [--json]",
+        usage: "alia variaq problem-generate FAMILY --seed S [family-specific options] [--json]",
       },
       {
         name: "problem-import",
         summary: "Import a problem artifact JSON string into VariaQ",
-        usage: "bb variaq problem-import <json-content> [--output PATH] [--json]",
+        usage: "alia variaq problem-import <json-content> [--output PATH] [--json]",
       },
-      { name: "problem-show", summary: "Show a saved problem as JSON", usage: "bb variaq problem-show <problem-id> [--json]" },
+      { name: "problem-show", summary: "Show a saved problem as JSON", usage: "alia variaq problem-show <problem-id> [--json]" },
       {
         name: "solve",
         summary: "Run one solver on a problem and persist the run",
-        usage: `bb variaq solve <problem-id> --solver <${SOLVERS.join("|")}> [--seed S] [--param KEY=VALUE ...] [--json]`,
+        usage: `alia variaq solve <problem-id> --solver <${SOLVERS.join("|")}> [--seed S] [--param KEY=VALUE ...] [--json]`,
       },
       {
         name: "benchmark",
         summary: "Compare solvers on one problem",
-        usage: "bb variaq benchmark <problem-id> [--solvers a,b] [--repeats N] [--seed S] [--json]",
+        usage: "alia variaq benchmark <problem-id> [--solvers a,b] [--repeats N] [--seed S] [--json]",
       },
       {
         name: "compare-quantum",
         summary: "Run matched Qiskit/CUDA-Q QAOA comparison on a family supported by the selected quantum solvers",
-        usage: "bb variaq compare-quantum <problem-id> [--p N] [--repeats N] [--json]",
+        usage: "alia variaq compare-quantum <problem-id> [--p N] [--repeats N] [--json]",
       },
       {
         name: "campaign-plan",
         summary: "Preview a campaign without executing any solver runs",
-        usage: "bb variaq campaign-plan <campaign-json-content> [--json]",
+        usage: "alia variaq campaign-plan <campaign-json-content> [--json]",
       },
       {
         name: "campaign-run",
         summary: "Execute a campaign: generates problems and runs all configured solvers",
-        usage: "bb variaq campaign-run <campaign-json-content> [--max-runs N] [--override-max-runs] [--json]",
+        usage: "alia variaq campaign-run <campaign-json-content> [--max-runs N] [--override-max-runs] [--json]",
       },
-      { name: "campaigns", summary: "List stored campaigns", usage: "bb variaq campaigns [--limit N] [--json]" },
-      { name: "campaign", summary: "Show a stored campaign definition", usage: "bb variaq campaign <campaign-id> [--json]" },
+      { name: "campaigns", summary: "List stored campaigns", usage: "alia variaq campaigns [--limit N] [--json]" },
+      { name: "campaign", summary: "Show a stored campaign definition", usage: "alia variaq campaign <campaign-id> [--json]" },
       {
         name: "analyze-runs",
         summary: "Analyze a bounded set of stored experiment runs",
-        usage: "bb variaq analyze-runs [--run-id ID ...] [--group-by KEY ...] [--filter KEY=VALUE ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]",
+        usage: "alia variaq analyze-runs [--run-id ID ...] [--group-by KEY ...] [--filter KEY=VALUE ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]",
       },
       {
         name: "analyze-campaign",
         summary: "Analyze all runs belonging to a campaign",
-        usage: "bb variaq analyze-campaign <campaign-id> [--group-by KEY ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]",
+        usage: "alia variaq analyze-campaign <campaign-id> [--group-by KEY ...] [--scaling-x METRIC] [--include-failed] [--include-unavailable] [--compare COMPARISON] [--json]",
       },
       {
         name: "report-campaign",
         summary: "Generate JSON/CSV/Markdown (optionally plots) report files for a campaign",
-        usage: "bb variaq report-campaign <campaign-id> --output-dir DIR --formats f1,f2 [--group-by KEY ...] [--scaling-x METRIC] [--plots] [--overwrite] [--json]",
+        usage: "alia variaq report-campaign <campaign-id> --output-dir DIR --formats f1,f2 [--group-by KEY ...] [--scaling-x METRIC] [--plots] [--overwrite] [--json]",
       },
-      { name: "runs", summary: "List recent experiment runs", usage: "bb variaq runs [--limit N] [--json]" },
-      { name: "run", summary: "Show one experiment run as JSON", usage: "bb variaq run <run-id> [--json]" },
-      { name: "reproduce", summary: "Reproduce a durable experiment run", usage: "bb variaq reproduce <run-id> [--json]" },
+      { name: "runs", summary: "List recent experiment runs", usage: "alia variaq runs [--limit N] [--json]" },
+      { name: "run", summary: "Show one experiment run as JSON", usage: "alia variaq run <run-id> [--json]" },
+      { name: "reproduce", summary: "Reproduce a durable experiment run", usage: "alia variaq reproduce <run-id> [--json]" },
     ],
 
     async run(argv) {
@@ -739,7 +739,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "problem-generate": {
             const family = args[0];
             if (family === undefined || family.startsWith("--")) {
-              throw new PluginError("Missing problem family.", "Usage: bb variaq problem-generate <maxcut|assignment|subset-selection|graph-partition> ...");
+              throw new PluginError("Missing problem family.", "Usage: VesnALIA variaq problem-generate <maxcut|assignment|subset-selection|graph-partition> ...");
             }
             if (!problemFamilySchema.safeParse(family).success) {
               throw new PluginError(`Unknown problem family: ${family}`, "Valid families: maxcut, assignment, subset-selection, graph-partition");
@@ -796,7 +796,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "solve": {
             const problem = args[0];
             if (problem === undefined || problem.startsWith("--")) {
-              throw new PluginError("Missing problem id.", "Usage: bb variaq solve <problem-id> --solver <solver>");
+              throw new PluginError("Missing problem id.", "Usage: VesnALIA variaq solve <problem-id> --solver <solver>");
             }
             const opts = readOptions(args.slice(1));
             const params = collectRepeated(args.slice(1), "--param").map((kv) => parseKeyValue(kv, "--param"));
@@ -810,7 +810,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "benchmark": {
             const problem = args[0];
             if (problem === undefined || problem.startsWith("--")) {
-              throw new PluginError("Missing problem id.", "Usage: bb variaq benchmark <problem-id>");
+              throw new PluginError("Missing problem id.", "Usage: VesnALIA variaq benchmark <problem-id>");
             }
             const opts = readOptions(args.slice(1));
             return opBenchmark({
@@ -823,7 +823,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "compare-quantum": {
             const problem = args[0];
             if (problem === undefined || problem.startsWith("--")) {
-              throw new PluginError("Missing problem id.", "Usage: bb variaq compare-quantum <problem-id>");
+              throw new PluginError("Missing problem id.", "Usage: VesnALIA variaq compare-quantum <problem-id>");
             }
             const opts = readOptions(args.slice(1));
             return opCompareQuantum({
@@ -903,7 +903,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "reproduce":
             return opReproduce(requiredPositional(args, "run-id"));
           default:
-            throw new PluginError(`Unknown command: ${command}`, "Run `bb variaq` for usage.");
+            throw new PluginError(`Unknown command: ${command}`, "Run `alia variaq` for usage.");
         }
       }
 
@@ -915,7 +915,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         const value = await dispatch(command, clean.slice(1));
         // Propagate VariaQ's own non-zero exit (solver failure, timeout, lookup
-        // error) as a non-zero bb exit even on the human-readable path.
+        // error) as a non-zero VesnALIA exit even on the human-readable path.
         if (
           typeof value === "object" &&
           value !== null &&
@@ -954,7 +954,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ----------------------------------------------------------- agent tools --
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_status",
     description:
       "Report the detected VariaQ installation, per-solver availability, and CUDA-Q capability (version, qpp-cpu, nvidia) from the live environment.",
@@ -970,7 +970,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_version",
     description: "Show the installed VariaQ CLI version and verify the plugin can reach VariaQ.",
     instructions: "Use variaq_version to confirm which VariaQ and python the plugin resolved.",
@@ -989,7 +989,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_problem_generate",
     description:
       "Generate a deterministic VariaQ problem in one of the generic problem families (maxcut, assignment, subset-selection, graph-partition) and return its problem id.",
@@ -1031,7 +1031,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_problem_show",
     description: "Show a saved VariaQ problem (id, family, objective sense, opaque IDs, and family-specific data) as JSON.",
     instructions: "Use variaq_problem_show to inspect a problem before solving it.",
@@ -1048,7 +1048,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_problem_import",
     description: "Import a VariaQ problem artifact (JSON content) into the configured problems directory and return the persisted problem.",
     instructions: "Use variaq_problem_import to bring an externally prepared VariaQ problem artifact into the VariaQ store. Pass the full JSON document as content, not a filesystem path. The artifact must declare a valid family and schema_version.",
@@ -1066,7 +1066,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_solve",
     description:
       "Run one VariaQ solver on a generic problem and persist the run. Returns the run id plus the full run record (objective, gap, solution, backend metrics).",
@@ -1096,7 +1096,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_benchmark",
     description: "Compare several VariaQ solvers on one generic problem. Returns run ids and the VariaQ comparison structure.",
     instructions: "Use variaq_benchmark to compare exact vs heuristic vs qaoa (and cudaq-* when available) on the same problem.",
@@ -1121,7 +1121,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_compare_quantum",
     description:
       "Run VariaQ's matched Qiskit/CUDA-Q QAOA comparison on a problem family supported by the selected quantum solvers. Returns the per-solver run records and the matched comparison structure.",
@@ -1142,7 +1142,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_campaign_plan",
     description: "Plan a VariaQ campaign without executing any solver runs. Returns requested run counts, solver breakdown, and max-run warnings.",
     instructions: "Use variaq_campaign_plan to preview a campaign before running it. Campaign plan is non-executing and safe. If the plan warns about exceeding the default run maximum, decide whether to reduce the campaign or explicitly pass maxRuns + overrideMaxRuns to variaq_campaign_run.",
@@ -1157,7 +1157,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_campaign_run",
     description: "Execute a VariaQ campaign: generate problem instances and run the configured solvers. This can run many solver invocations.",
     instructions: "Use variaq_campaign_run after planning. Always prefer to call variaq_campaign_plan first. The tool respects VariaQ's max-run guard; campaigns that exceed the default maximum require an explicit maxRuns value and overrideMaxRuns=true. The plugin does not orchestrate solvers or bypass VariaQ's safety guard.",
@@ -1176,7 +1176,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_campaign_list",
     description: "List stored VariaQ campaigns (campaign_id, name, family, created_at).",
     instructions: "Use variaq_campaign_list to discover campaigns before analyzing or reporting on one.",
@@ -1193,7 +1193,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_campaign_show",
     description: "Show a stored VariaQ campaign definition by id.",
     instructions: "Use variaq_campaign_show to inspect the full definition of a stored campaign before analyzing or reproducing it.",
@@ -1210,7 +1210,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_analyze_runs",
     description: "Analyze a bounded set of stored VariaQ experiment runs. Read-only; does not execute solvers or modify runs.",
     instructions: "Use variaq_analyze_runs to compute VariaQ-derived quality, feasibility, timing, resource, and scaling summaries over run IDs. Analysis is read-only and returns VariaQ's AnalysisResult directly. Comparison selectors require variaq_analyze_campaign; VariaQ analyze runs has no --compare contract.",
@@ -1225,7 +1225,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_analyze_campaign",
     description: "Analyze all runs belonging to a VariaQ campaign. Read-only; does not execute solvers or modify runs.",
     instructions: "Use variaq_analyze_campaign to compute VariaQ-derived quality, feasibility, timing, resource, and scaling summaries for a stored campaign. Analysis is read-only. compare=paired_solvers requires a verified VariaQ 0.8.x stable release or the tested 0.8.0rc1 candidate and preserves its pairing, null reasons and timing scopes.",
@@ -1242,7 +1242,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_report_campaign",
     description: "Generate JSON/CSV/Markdown (and optional plots) report files for a VariaQ campaign. This tool writes files under the configured report output directory.",
     instructions: "Use variaq_report_campaign to produce persistent report artifacts from a stored campaign. Reports derive from stored runs, preserve source_run_ids, and are written under the configured reportOutputDir. The outputDir argument is resolved relative to that root and cannot escape it. compare=paired_solvers requires a verified VariaQ 0.8.x stable release or the tested 0.8.0rc1 candidate and includes per-run, pair and repeat CSV artifacts.",
@@ -1274,7 +1274,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_runs_list",
     description: "List recent VariaQ experiment runs (run_id, problem, solver, status, objective, timing).",
     instructions: "Use variaq_runs_list to see recent experiment runs before inspecting one in detail.",
@@ -1291,7 +1291,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_run_show",
     description: "Show one VariaQ experiment run by id, including result, solution, environment, and solver config.",
     instructions: "Use variaq_run_show with a run_id from variaq_solve/variaq_benchmark/variaq_runs_list to get the full run record.",
@@ -1308,7 +1308,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "variaq_run_reproduce",
     description: "Reproduce a durable VariaQ experiment run by id and return the new run record.",
     instructions: "Use variaq_run_reproduce to re-execute a recorded run with its stored configuration.",
@@ -1325,7 +1325,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("VariaQ plugin loaded.");
+  alia.log.info("VariaQ plugin loaded.");
 }
 
 // ------------------------------------------------------------ CLI helpers --

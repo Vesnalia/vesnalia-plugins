@@ -37,7 +37,7 @@ it("reloads colors after a missed signal and reconnection", async () => {
     {},
     { rpc: { getProjectColors: () => ({ colors }) }, realtimeConnectionState: "connected" },
   );
-  const style = () => screen.getByTestId("name").style.getPropertyValue("--bb-sidebar-project");
+  const style = () => screen.getByTestId("name").style.getPropertyValue("--alia-sidebar-project");
   await waitFor(() => expect(style()).toBe("#123456"));
   const loads = () => slot.inspection.rpcCalls.filter((c) => c.method === "getProjectColors").length;
   expect(loads()).toBe(1);
@@ -63,10 +63,10 @@ it("older color replies cannot overwrite the newest refresh", async () => {
   );
   await slot.behavior.emitRealtime("project-colors", {});
   await waitFor(() =>
-    expect(screen.getByTestId("name").style.getPropertyValue("--bb-sidebar-project")).toBe("#abcdef"),
+    expect(screen.getByTestId("name").style.getPropertyValue("--alia-sidebar-project")).toBe("#abcdef"),
   );
   await act(async () => {
     older.resolve({ colors: { p1: "#123456" } });
   });
-  expect(screen.getByTestId("name").style.getPropertyValue("--bb-sidebar-project")).toBe("#abcdef");
+  expect(screen.getByTestId("name").style.getPropertyValue("--alia-sidebar-project")).toBe("#abcdef");
 });

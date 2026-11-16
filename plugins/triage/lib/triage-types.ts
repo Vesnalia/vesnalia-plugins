@@ -1,4 +1,4 @@
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 
 /** Shapes mirrored from the plugin server's RPC contract. */
 

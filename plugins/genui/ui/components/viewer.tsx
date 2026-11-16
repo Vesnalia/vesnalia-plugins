@@ -22,7 +22,7 @@ import {
   type SyntheticEvent,
 } from "react";
 import { createPortal, flushSync } from "react-dom";
-import { experimental_usePluginId } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ export interface Viewable {
   readonly caption: string | null;
   /** Under the caption: a found photo's credit. */
   readonly credit?: ReactNode;
-  /** A file of the thread, which the viewer offers to open in BB. */
+  /** A file of the thread, which the viewer offers to open in VesnALIA. */
   readonly path?: string;
 }
 
@@ -103,12 +103,12 @@ interface GestureEvent extends UIEvent {
 }
 
 /**
- * Attributes that keep BB's mobile sidebar and side-panel swipes off an
- * element: BB's swipe recognizers skip touches that start inside them. Every
+ * Attributes that keep VesnALIA's mobile sidebar and side-panel swipes off an
+ * element: VesnALIA's swipe recognizers skip touches that start inside them. Every
  * surface a finger drags or pinches needs them, or a sideways pan (or the
  * outer finger of a pinch) opens a panel instead.
  */
-export const NO_BB_SWIPE = { "data-no-sidebar-swipe": "", "data-no-secondary-panel-swipe": "" } as const;
+export const NO_ALIA_SWIPE = { "data-no-sidebar-swipe": "", "data-no-secondary-panel-swipe": "" } as const;
 
 /**
  * Pan and zoom of `surface`'s content. The caller says where the pane is and
@@ -312,7 +312,7 @@ export function usePanZoom(surface: HTMLElement | null, options: PanZoomOptions)
     };
 
     const touch = { passive: false } as const;
-    for (const [name, value] of Object.entries(NO_BB_SWIPE)) surface.setAttribute(name, value);
+    for (const [name, value] of Object.entries(NO_ALIA_SWIPE)) surface.setAttribute(name, value);
     surface.addEventListener("touchstart", onTouchStart, touch);
     surface.addEventListener("touchmove", onTouchMove, touch);
     surface.addEventListener("touchend", onTouchEnd);
@@ -340,7 +340,7 @@ export function usePanZoom(surface: HTMLElement | null, options: PanZoomOptions)
       surface.removeEventListener("wheel", onWheel);
       surface.removeEventListener("gesturestart", onGestureStart);
       surface.removeEventListener("gesturechange", onGestureChange);
-      for (const name of Object.keys(NO_BB_SWIPE)) surface.removeAttribute(name);
+      for (const name of Object.keys(NO_ALIA_SWIPE)) surface.removeAttribute(name);
     };
   }, [surface, show]);
 
@@ -457,7 +457,7 @@ const stop = (event: SyntheticEvent) => event.stopPropagation();
  * The full-screen shell: a top bar (`status`, `actions`, close), the pane and
  * an optional footer. Closed by Escape, the close button or a tap on the
  * shell itself; focus stays inside while open and the page under it doesn't
- * scroll. With threads side by side (or stacked) in BB it covers the pane the
+ * scroll. With threads side by side (or stacked) in VesnALIA it covers the pane the
  * block is in, and the rest of the window dims and closes it on a tap.
  * Portaled to the body with the plugin's scope attributes so its styles
  * still apply. `onKeyDown` sees keys first and takes one by preventing its
@@ -535,10 +535,10 @@ export function FullScreen({
     // click or key in here must not toggle a row, close a panel or pick a pin there.
     <div
       {...motion}
-      data-bb-plugin={pluginId}
-      data-bb-plugin-root=""
-      data-bb-portaled-overlay=""
-      data-bb-image-preview-ignore=""
+      data-alia-plugin={pluginId}
+      data-alia-plugin-root=""
+      data-alia-portaled-overlay=""
+      data-alia-image-preview-ignore=""
       style={{ pointerEvents: "auto" }}
       onClick={stop}
       onDoubleClick={stop}

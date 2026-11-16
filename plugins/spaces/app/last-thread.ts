@@ -2,18 +2,18 @@
 //
 // While a space is active, the thread the user opens is remembered for that
 // space if it belongs there (its project is in the space, or in no space).
-// Switching spaces — from the menu, a shortcut, the palette or `bb space` —
+// Switching spaces — from the menu, a shortcut, the palette or `alia space` —
 // opens the new space's remembered thread, if it still exists and is not
 // archived. Remembered threads live in this browser's local storage.
 import { useEffect, useRef } from "react";
 import {
   experimental_useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaContext,
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import type { SpacesState } from "../server";
 
-const STORAGE_KEY = "bb-spaces.lastThreads";
+const STORAGE_KEY = "alia-spaces.lastThreads";
 
 type LastThreads = Record<string, string>;
 
@@ -46,8 +46,8 @@ function inSpace(state: SpacesState, spaceId: string, projectId: string) {
 }
 
 export function useLastThreadPerSpace(state: SpacesState | null) {
-  const { threadId, projectId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId, projectId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const { threads } = experimental_useSidebarThreads();
   const activeSpaceId = state?.activeSpaceId ?? null;
 

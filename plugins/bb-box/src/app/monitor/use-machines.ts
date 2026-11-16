@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { Contract, Machine } from "../../plugin/contract.ts";
 import { SERVER_MACHINE } from "./use-snapshot.ts";
 
-const SELECTED_MACHINE_KEY = "bb-box:monitor:machine";
+const SELECTED_MACHINE_KEY = "alia-box:monitor:machine";
 const LIST_ATTEMPTS = 4;
 const LIST_RETRY_MS = 1000;
 
@@ -15,7 +15,7 @@ function readSelectedMachine(): string {
   }
 }
 
-const MACHINES_CACHE_KEY = "bb-box:monitor:machines";
+const MACHINES_CACHE_KEY = "alia-box:monitor:machines";
 
 function readCachedMachines(): Machine[] | null {
   try {

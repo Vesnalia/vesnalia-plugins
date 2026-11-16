@@ -1,11 +1,11 @@
 /**
- * The board's data: `fleet.load` through bb's shared query cache. bb reads it again when the server
+ * The board's data: `fleet.load` through VesnALIA's shared query cache. VesnALIA reads it again when the server
  * invalidates the `fleet` tag (on every change it sees, and every `refreshSeconds` while some board is
  * open, see `server.ts`), and after a dropped connection comes back; it shares one read between the
  * components that ask for it. A disabled read (a hidden tab) is not watched, so it costs nothing until it
  * is enabled again, and is then read afresh.
  */
-import { experimental_useRpcQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef } from "react";
 
 import { rpcContract } from "../shared/contract";

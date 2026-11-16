@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** Extend the Guided Review plugin with the best-in-class in-bb review features: reply to / resolve existing PR review threads, CI status, chapter risk flags, and re-review on new commits — plus the `gitRef` pass-through fix. (No HTML export or share service — explicitly out of scope.)
+**Goal:** Extend the Guided Review plugin with the best-in-class in-alia review features: reply to / resolve existing PR review threads, CI status, chapter risk flags, and re-review on new commits — plus the `gitRef` pass-through fix. (No HTML export or share service — explicitly out of scope.)
 
 **Architecture:** Builds directly on the Phase 1 plugin. New `gh` builders (structured checks, GraphQL review threads + resolve, PR head SHA), two new store columns (head SHA + cwd) for re-review, new RPC methods, a generation tweak (risk + authoritative gitRef), and panel additions (CI badge, risk badges, a threads panel with reply/resolve, and a "new commits → re-review" banner).
 
-**Tech Stack:** Same as Phase 1 — TypeScript, `@get-bb/plugin-sdk`, Zod, React/Tailwind (host tokens), `@pierre/diffs`, `gh` (REST + GraphQL), vitest.
+**Tech Stack:** Same as Phase 1 — TypeScript, `@vesnalia/plugin-sdk`, Zod, React/Tailwind (host tokens), `@pierre/diffs`, `gh` (REST + GraphQL), vitest.
 
 **Spec:** `docs/superpowers/specs/2026-08-24-guided-review-design.md` (§11 Phase 2)
 
@@ -17,8 +17,8 @@
 - Store migrations are APPEND-ONLY (never edit/reorder shipped statements). Current store has 5 migrate statements (last = `ALTER TABLE reviews ADD COLUMN project_id TEXT`); Phase 2 appends more.
 - RPC results must be strict JSON (no `undefined`-valued keys — round-trip store objects through `JSON.parse(JSON.stringify(...))` as the existing read handlers do).
 - New rpc-contract methods use `.strict()` inputs. Panel calls only via `useRpc`. Host token classes only in UI. Test files import `{ test, expect }` (and `vi` where mocking) from `"vitest"`.
-- Verify SDK/`gh` shapes against reality (`gh ... --help`, `node_modules/@get-bb/plugin-sdk/bundled-types/*.d.ts`); adapt provisional code to typecheck.
-- `bb.agents.configure` is already registered once (Phase 1) — do NOT add a second `configure`.
+- Verify SDK/`gh` shapes against reality (`gh ... --help`, `node_modules/@vesnalia/plugin-sdk/bundled-types/*.d.ts`); adapt provisional code to typecheck.
+- `alia.agents.configure` is already registered once (Phase 1) — do NOT add a second `configure`.
 
 ## File Structure (changes)
 
@@ -139,7 +139,7 @@ Write each test first (RED), implement, GREEN. Commit: `feat: gh builders + pars
 - `ReviewMeta` gains `headSha?: string`, `cwd?: string`.
 - `rerunReview(deps, targetKey): Promise<{ ok: boolean; error?: string }>` — re-fetches the diff for a stored review, re-saves the patch, sets status `generating`, re-kicks `generateGuide`.
 
-- [ ] **Step 1: `src/store.ts` — append two migrations + fields.** Append to the `bb.storage.migrate` array (as the last two statements, after the `project_id` ALTER):
+- [ ] **Step 1: `src/store.ts` — append two migrations + fields.** Append to the `alia.storage.migrate` array (as the last two statements, after the `project_id` ALTER):
 
 ```ts
 `ALTER TABLE reviews ADD COLUMN head_sha TEXT`,
@@ -157,14 +157,14 @@ Add `headSha?: string; cwd?: string;` to `ReviewMeta`. In `saveReview`, add `hea
 - [ ] **Step 4: `src/rereview.ts` — reusable re-run.** It resolves the stored target back into a fetch and re-kicks generation. Consumes the same `Deps` shape as `runReviewCommand`.
 
 ```ts
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 import { ensureGitHeaders } from "./patch";
 import { generateGuide } from "./generate";
 import { ghPrDiffArgs, ghPrHeadArgs, gitDiffArgs } from "./gh";
 
 interface Deps {
-  bb: BbPluginApi; store: Store;
+  alia: AliaPluginApi; store: Store;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
 
@@ -180,7 +180,7 @@ export async function rerunReview(deps: Deps, targetKey: string): Promise<{ ok: 
     const head = await deps.gh.runGh(ghPrHeadArgs(m.number, m.repo));
     if (head.code === 0) { try { m.headSha = JSON.parse(head.stdout).headRefOid; } catch { /* keep old */ } }
   } else if (m.gitRef) {
-    if (!m.cwd) return { ok: false, error: "Local-ref re-review needs the original working dir; re-run `bb review` in the terminal." };
+    if (!m.cwd) return { ok: false, error: "Local-ref re-review needs the original working dir; re-run `alia review` in the terminal." };
     const diff = await deps.gh.runGit(gitDiffArgs(m.gitRef), { cwd: m.cwd });
     if (diff.code !== 0) return { ok: false, error: diff.stderr || "git diff failed" };
     patch = diff.stdout;
@@ -191,7 +191,7 @@ export async function rerunReview(deps: Deps, targetKey: string): Promise<{ ok: 
 
   deps.store.savePatch(targetKey, ensureGitHeaders(patch));
   deps.store.saveReview({ ...m, status: "generating" });
-  void generateGuide(deps.bb, deps.store, targetKey, m.projectId).catch(() => deps.store.setStatus(targetKey, "error"));
+  void generateGuide(deps.alia, deps.store, targetKey, m.projectId).catch(() => deps.store.setStatus(targetKey, "error"));
   return { ok: true };
 }
 ```
@@ -256,12 +256,12 @@ async checkForUpdates({ targetKey }) {
   return { hasNewCommits: !!m.headSha && head.headRefOid !== m.headSha, current: head.headRefOid, stored: m.headSha };
 },
 async rereview({ targetKey }) {
-  return rerunReview({ bb, store, gh: { runGh, runGit } }, targetKey);
+  return rerunReview({ alia, store, gh: { runGh, runGit } }, targetKey);
 },
 ```
 Import the new gh builders + `parseChecks`/`parseReviewThreads` + `rerunReview` at top of server.ts.
 
-- [ ] **Step 3: `src/rpc-phase2.test.ts`** — via `createFakePluginHost` + `vi.mock("./gh")`. Seed a PR review with `createStore(bb)`. Assert: `getChecks` returns a structured bucket; `getReviewThreads` returns parsed threads; `resolveThread`/`replyToThread` return `{ok:true}` and the mock was called with the right args; `checkForUpdates` returns `hasNewCommits:true` when the mocked head differs from the stored `headSha`.
+- [ ] **Step 3: `src/rpc-phase2.test.ts`** — via `createFakePluginHost` + `vi.mock("./gh")`. Seed a PR review with `createStore(alia)`. Assert: `getChecks` returns a structured bucket; `getReviewThreads` returns parsed threads; `resolveThread`/`replyToThread` return `{ok:true}` and the mock was called with the right args; `checkForUpdates` returns `hasNewCommits:true` when the mocked head differs from the stored `headSha`.
 
 Commit: `feat: phase 2 rpc (checks, threads, reply/resolve, updates, rereview)`.
 
@@ -303,13 +303,13 @@ Use relative imports and host token classes (match existing components). `useRpc
 
 - [ ] **Step 5: Wire into `ReviewWorkspace.tsx`.** Fetch `getChecks` (pass to ReviewHeader) alongside the existing loads. Add `<RereviewBanner targetKey=… />` under the header. Add a toggle/tab in the right pane (or below the diff) to show `<ThreadsPanel targetKey=… />`. Keep the chapter/diff/draft flow intact.
 
-- [ ] **Step 6: Verify** — `npx tsc --noEmit` clean, `npm test` green (add at least a ThreadsPanel render test with mocked rpc returning one thread and asserting a reply call), `bb plugin build` succeeds. Commit: `feat: CI badge, risk badges, threads panel, re-review banner`.
+- [ ] **Step 6: Verify** — `npx tsc --noEmit` clean, `npm test` green (add at least a ThreadsPanel render test with mocked rpc returning one thread and asserting a reply call), `alia plugin build` succeeds. Commit: `feat: CI badge, risk badges, threads panel, re-review banner`.
 
 ---
 
 ## Task 6: Integration verify + docs
 
-- [ ] Full `npm test` + `npx tsc --noEmit` + `bb plugin build` + `bb plugin reload guided-review`.
+- [ ] Full `npm test` + `npx tsc --noEmit` + `alia plugin build` + `alia plugin reload guided-review`.
 - [ ] Update `README.md`: move the Phase 2 items from "Roadmap" to features; note thread reply/resolve, CI, risk flags, re-review.
 - [ ] Update the spec §11: mark Phase 2 delivered.
 - [ ] Commit: `docs: phase 2 complete`.

@@ -1,4 +1,4 @@
-// bb-plugin-ios-simulator — frontend entry.
+// alia-plugin-ios-simulator — frontend entry.
 //
 // Three surfaces: the iOS Simulator tab in a thread's side panel, an
 // invisible app-wide overlay that opens that tab when an agent attaches a
@@ -6,11 +6,11 @@
 import { useEffect, useState } from "react";
 import {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { DeviceConsentForm } from "@/components/device-consent";
 import { SimulatorPanel } from "@/components/simulator-panel";
 import { AndroidPanel } from "@/components/android-panel";
@@ -51,7 +51,7 @@ function SimulatorWorkspace(props: PluginThreadPanelProps) {
 }
 
 function OpenSimulatorPanel() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <span title="Open Simulator" className="inline-flex">
       <Button
@@ -68,8 +68,8 @@ function OpenSimulatorPanel() {
 }
 
 function AutoOpenSimulatorPanel() {
-  const { threadId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId } = useAliaContext();
+  const navigate = useAliaNavigate();
   useRealtime("attached", (payload) => {
     const signal = payload as { threadId?: unknown } | null;
     if (!signal || typeof signal.threadId !== "string" || signal.threadId !== threadId) return;

@@ -27,14 +27,14 @@ export function hashScript(os: GuestOs, path: string): string {
 export function writeScript(os: GuestOs, path: string): string {
   if (os === "windows") return writePartScript(path);
   return (
-    `p=${quote(path)}; t="$p.bb-box-part"; [ ! -d "$p" ] || { printf '%s is a directory.\\n' "$p" >&2; exit 1; }; ` +
+    `p=${quote(path)}; t="$p.alia-box-part"; [ ! -d "$p" ] || { printf '%s is a directory.\\n' "$p" >&2; exit 1; }; ` +
     `mkdir -p -- "$(dirname -- "$p")" && cat > "$t" || exit 1; ${PRINT_SUM}`
   );
 }
 
 export function settleScript(os: GuestOs, path: string, keep: boolean): string {
   if (os === "windows") return settlePartScript(path, keep);
-  return keep ? `mv -f -- ${quote(`${path}.bb-box-part`)} ${quote(path)}` : `rm -f -- ${quote(`${path}.bb-box-part`)}`;
+  return keep ? `mv -f -- ${quote(`${path}.alia-box-part`)} ${quote(path)}` : `rm -f -- ${quote(`${path}.alia-box-part`)}`;
 }
 
 export function parseSum(text: string): FileSum | null {

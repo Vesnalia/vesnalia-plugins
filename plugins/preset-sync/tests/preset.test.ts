@@ -21,7 +21,7 @@ function snapshot(overrides: Partial<PresetSnapshot> = {}): PresetSnapshot {
   return {
     schemaVersion: 1,
     capturedAt: "2026-09-04T00:00:00.000Z",
-    bbVersion: "0.41.0",
+    aliaVersion: "0.41.0",
     settings: {
       generalSettings: {
         defaultProviderId: null,
@@ -63,7 +63,7 @@ describe("preset safety", () => {
     expect(isPortableInstallSource("path:/tmp/plugin")).toBe(false);
     expect(isPortableInstallSource("/tmp/plugin")).toBe(false);
     expect(isPortableInstallSource("../../plugin")).toBe(false);
-    expect(isPortableInstallSource("plugin@bb-community")).toBe(true);
+    expect(isPortableInstallSource("plugin@alia-community")).toBe(true);
     expect(
       isPortableInstallSource("git:https://github.com/example/plugin.git@main"),
     ).toBe(true);
@@ -73,12 +73,12 @@ describe("preset safety", () => {
     expect(
       settingSafetyIssue("options", JSON.stringify({ apiToken: "should-not-leak" })),
     ).toBe("credential-like data");
-    expect(parseCatalogInstallSource("bb-sidebar@bb-community")).toEqual({
-      entryId: "bb-sidebar",
-      marketplace: "bb-community",
+    expect(parseCatalogInstallSource("alia-sidebar@alia-community")).toEqual({
+      entryId: "alia-sidebar",
+      marketplace: "alia-community",
     });
-    expect(parseCatalogInstallSource("bb-sidebar")).toEqual({
-      entryId: "bb-sidebar",
+    expect(parseCatalogInstallSource("alia-sidebar")).toEqual({
+      entryId: "alia-sidebar",
     });
     expect(
       parseCatalogInstallSource("git:https://github.com/example/plugin.git@main"),
@@ -90,7 +90,7 @@ describe("preset safety", () => {
       plugins: [{ id: "local-only", install: "builtin:local-only", enabled: true }],
     });
     const remote = snapshot({
-      plugins: [{ id: "shared", install: "shared@bb-community", enabled: true }],
+      plugins: [{ id: "shared", install: "shared@alia-community", enabled: true }],
     });
     const plan = buildPullPlan({
       repository: "https://github.com/example/preset.git",

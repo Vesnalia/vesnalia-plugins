@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { boxTitleBadges, EmptyPanel, IconButton, RowTitle, StatusDot, systemName, deviceModelOf } from "@/src/app/common.tsx";
@@ -15,7 +15,7 @@ import { rowLine, shortSpan, type Line } from "./words";
 
 type Tab = "threads" | "machines";
 
-const TAB_KEY = "bb-box-prototype:boxes-tab";
+const TAB_KEY = "alia-box-prototype:boxes-tab";
 const LAST_ACTIVE = "active" as SortKey;
 
 Object.assign(SORT_WORDS as Record<string, string>, { [LAST_ACTIVE]: "Last active" });
@@ -241,7 +241,7 @@ export function BoxesList({ opening }: { opening: Tab | null }) {
           onSelect={choose}
         />
         <div className="flex shrink-0 items-center gap-1.5">
-          <IconButton label="BB Box settings" icon="Settings" className="size-8" onClick={() => go({ page: "settings", section: "" })} />
+          <IconButton label="VesnALIA Box settings" icon="Settings" className="size-8" onClick={() => go({ page: "settings", section: "" })} />
           <Button type="button" variant="secondary" size="sm" className="h-8" onClick={() => store.say("New box opens the form, as today.")}>
             <Icon name="Plus" className="size-4" aria-hidden />
             New box
@@ -258,7 +258,7 @@ export function BoxesList({ opening }: { opening: Tab | null }) {
             if (memory) memory.scrollTop = event.currentTarget.scrollTop;
           }}
         >
-          {tab === "machines" && !machines.length ? <EmptyPanel>You have no machines. New box adds one: a box of your own that shows in BB's machine list.</EmptyPanel> : null}
+          {tab === "machines" && !machines.length ? <EmptyPanel>You have no machines. New box adds one: a box of your own that shows in VesnALIA's machine list.</EmptyPanel> : null}
           {tab === "threads" && !threaded.length ? <EmptyPanel>No thread has a box.</EmptyPanel> : null}
           {narrowed && listed.length && !rows.length ? <EmptyPanel>No boxes match.</EmptyPanel> : null}
           {tab === "machines" && rows.length ? (

@@ -1,6 +1,6 @@
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 import type { AnimationEvent } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { unhandledIndicator } from "./child-status";
 import { StillThreadStatusGlyph } from "./StillThreadStatusGlyph";
@@ -12,7 +12,7 @@ import { useThreadLimit } from "./RateLimits";
 import "./working-pulse.css";
 
 /**
- * This plugin's status glyphs, matching bb's own sidebar shape for shape: the
+ * This plugin's status glyphs, matching VesnALIA's own sidebar shape for shape: the
  * red circle-x for a failure, the circle-question for a raised hand, and a dot
  * for a finished thread you have not read.
  *
@@ -21,10 +21,10 @@ import "./working-pulse.css";
  * the two lists sit in the same window, and a user who switches between them
  * should not have to learn a second vocabulary.
  *
- * Live work is where this list departs from bb, on purpose. bb spins a
+ * Live work is where this list departs from VesnALIA, on purpose. VesnALIA spins a
  * spinner and shines the activity glyphs forever. In Chromium any running
  * animation redraws the window at the display's refresh rate, and on a 120 Hz
- * Mac that kept bb's renderer, GPU process and WindowServer near a full core
+ * Mac that kept VesnALIA's renderer, GPU process and WindowServer near a full core
  * for as long as a thread worked, however small the glyph. A slower spin or a
  * stepped one still cost a third of that, and a spinner held still reads as
  * frozen. So live work gets a pulse in a box, which says "running" without
@@ -34,11 +34,11 @@ import "./working-pulse.css";
  * which costs a few points of a core instead of a full one. The activity
  * glyphs keep their shapes and hold still. The working tone and
  * "Working · 5m" carry the rest, and a spinner never said whether an agent was
- * alive anyway. See get-bb/bb#7233.
+ * alive anyway. See get-alia/alia#7233.
  *
- * An indicator this sidebar has no shape for, such as a kind bb ships after
- * this build, is drawn with bb's own glyph, held still: bb adds kinds over
- * time, and users must not lose a status bb would show them.
+ * An indicator this sidebar has no shape for, such as a kind VesnALIA ships after
+ * this build, is drawn with VesnALIA's own glyph, held still: VesnALIA adds kinds over
+ * time, and users must not lose a status VesnALIA would show them.
  */
 
 /**
@@ -47,9 +47,9 @@ import "./working-pulse.css";
  * all change in the same frames.
  */
 export function syncWorkingPulse(event: AnimationEvent<HTMLElement>) {
-  if (event.animationName !== "bb-sidebar-working-pulse") return;
+  if (event.animationName !== "alia-sidebar-working-pulse") return;
   for (const animation of event.currentTarget.getAnimations()) {
-    if ("animationName" in animation && animation.animationName === "bb-sidebar-working-pulse") {
+    if ("animationName" in animation && animation.animationName === "alia-sidebar-working-pulse") {
       animation.startTime = 0;
     }
   }
@@ -74,7 +74,7 @@ export function StatusGlyph({
       return <Icon name="CircleQuestion" aria-label={aria} className={cn(shared, statusToneClass(indicator))} />;
     case "runtime":
       return (
-        <span className="bb-sidebar-working-pulse inline-flex shrink-0" onAnimationStart={syncWorkingPulse}>
+        <span className="alia-sidebar-working-pulse inline-flex shrink-0" onAnimationStart={syncWorkingPulse}>
           <Icon name="Working" aria-label={aria} className={cn(shared, statusToneClass(indicator))} />
         </span>
       );
@@ -91,7 +91,7 @@ export function StatusGlyph({
       return <Icon name="Edit" aria-label={aria} className={cn(shared, statusToneClass(indicator))} />;
     case "unread-success":
       // The notification dot, in a box the size of every other glyph, the way
-      // bb centers its own trailing indicators. Right-aligned on its own, a
+      // VesnALIA centers its own trailing indicators. Right-aligned on its own, a
       // 5px dot would sit ~4px off the column the icons share.
       return (
         <span aria-label={aria} className={cn("flex items-center justify-center", shared, statusToneClass(indicator))}>
@@ -100,7 +100,7 @@ export function StatusGlyph({
       );
     case "queued-failed":
     case "queued-waiting":
-      // bb's own glyphs: the sidebar has no shape of its own for a queued send.
+      // VesnALIA's own glyphs: the sidebar has no shape of its own for a queued send.
       return <HostIndicatorGlyph indicator={indicator} label={aria} className={shared} />;
     case "none":
       return null;
@@ -110,7 +110,7 @@ export function StatusGlyph({
 }
 
 /**
- * bb's glyph for an indicator this sidebar does not draw itself, held still
+ * VesnALIA's glyph for an indicator this sidebar does not draw itself, held still
  * like every other glyph here and sized to the same box.
  */
 function HostIndicatorGlyph({

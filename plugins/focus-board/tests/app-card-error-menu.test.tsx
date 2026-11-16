@@ -14,7 +14,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-vi.mock("@get-bb/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
+vi.mock("@vesnalia/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
 
 import "../app";
 import {
@@ -149,7 +149,7 @@ describe("an errored card's context menu (issue #405)", () => {
     );
   });
 
-  it("a refused retry surfaces bb's reason on the board's notice banner", async () => {
+  it("a refused retry surfaces VesnALIA's reason on the board's notice banner", async () => {
     const Component = registeredNavPanel.component;
     if (Component === undefined) throw new Error("app-fake-sdk: no nav panel registered");
     stubRetryFailure("thread is stopping");

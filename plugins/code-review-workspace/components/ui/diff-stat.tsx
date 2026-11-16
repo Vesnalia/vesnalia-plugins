@@ -2,7 +2,7 @@ import { cn } from "../../lib/utils";
 
 const BLOCKS = 5;
 
-/** Additions and deletions, with bb's five-block size bar. */
+/** Additions and deletions, with VesnALIA's five-block size bar. */
 export function DiffStat({ add, del, className }: { add: number; del: number; className?: string }) {
   const total = add + del;
   const filled = total ? Math.min(BLOCKS, Math.max(1, Math.ceil(Math.log10(total + 1) * 2))) : 0;

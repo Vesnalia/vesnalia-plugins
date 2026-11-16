@@ -10,7 +10,7 @@ function roots(source: string): UiNode[] {
   return evaluate(result.program, initialState(result.program)).roots;
 }
 
-/** The markdown with BB's answers given per request. */
+/** The markdown with VesnALIA's answers given per request. */
 function markdown(source: string, answer: (request: ProjectRequest) => ProjectResult): string {
   const nodes = roots(source);
   const answers = new Map(projectRequests(nodes).map((request) => [projectRequestKey(request), answer(request)] as const));
@@ -29,7 +29,7 @@ describe("toMarkdown: project components", () => {
   });
 
   it("says where the data is when nothing was read, and why props are unusable", () => {
-    expect(toMarkdown(roots(`Changes()`))).toBe("_The changes in this thread's checkout: open the reply in BB to see them._");
+    expect(toMarkdown(roots(`Changes()`))).toBe("_The changes in this thread's checkout: open the reply in VesnALIA to see them._");
     expect(toMarkdown(roots(`Changes("HEAD~1")`))).toBe(
       '_(error: Changes target must be omitted, "uncommitted" or a commit sha, not "HEAD~1")_',
     );

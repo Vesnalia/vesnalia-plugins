@@ -1,12 +1,12 @@
-See your Kimi Code membership quota inside BB, next to the usage of your other providers.
+See your Kimi Code membership quota inside VesnALIA, next to the usage of your other providers.
 
 ## What you get
 
-- **Kimi Code** alongside Codex/Claude in the BB server machine's usage card,
+- **Kimi Code** alongside Codex/Claude in the VesnALIA server machine's usage card,
   without switching to a separate source. It includes three windows: the rolling
   5-hour window, the monthly coding limit, and the monthly total limit, each
   with the percentage used and the reset time.
-- A `bb kimi-quota` command for the terminal and for agents, with a `--json`
+- A `alia kimi-quota` command for the terminal and for agents, with a `--json`
   option for scripts.
 
 ## How it works
@@ -20,6 +20,6 @@ cached for one minute between panel refreshes.
 ## Requirements
 
 The Kimi Code CLI must be installed and logged in on the machine that runs the
-BB server, and your Kimi membership must include Kimi Code. The plugin follows
+VesnALIA server, and your Kimi membership must include Kimi Code. The plugin follows
 the CLI region (`api.kimi.com` for mainland China accounts, `api.kimi.ai` for
 overseas accounts).

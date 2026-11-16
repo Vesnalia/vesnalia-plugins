@@ -1,17 +1,17 @@
 # Running Code Review Workspace
 
-Notes for whoever runs the BB server Code Review Workspace is installed on. The guide's [Updates](guide.md#updates) and [Data and access](guide.md#data-and-access) cover what a reviewer needs.
+Notes for whoever runs the VesnALIA server Code Review Workspace is installed on. The guide's [Updates](guide.md#updates) and [Data and access](guide.md#data-and-access) cover what a reviewer needs.
 
 ## Updates
 
 For the backed-up stable-to-`main` canary switch and recovery, follow the [main canary runbook](beta-releases/runbook.md).
 
-- **Settings → Plugin updates** checks for a compatible release and offers **Update now**. **Update automatically when idle** is off by default; on, the plugin checks hourly after five idle minutes, and updates only with every Code Review Workspace and Settings page closed and no generation, save, or submission in progress. BB handles failed-install rollback.
-- `bb plugin update code-review-workspace` also updates it. Close the plugin's pages first, since BB's external update command does not use the in-plugin activity guard.
+- **Settings → Plugin updates** checks for a compatible release and offers **Update now**. **Update automatically when idle** is off by default; on, the plugin checks hourly after five idle minutes, and updates only with every Code Review Workspace and Settings page closed and no generation, save, or submission in progress. VesnALIA handles failed-install rollback.
+- `alia plugin update code-review-workspace` also updates it. Close the plugin's pages first, since VesnALIA's external update command does not use the in-plugin activity guard.
 - Installs from a Git range, such as `^1.0.0`, follow its compatible releases (1.x). Local directories and exact tags are pinned and do not receive automatic updates.
-- 1.8.0 needs BB 0.48.0 or later (plugin SDK 0.6.79+). On an older BB, Plugin updates says a newer release needs a newer BB: update the BB server, then check again.
-- Changing a local installation to a Git source is a separate migration: this BB version requires removing the old source first, which can clear plugin data. Do not remove an existing installation just to obtain updates; keep its data and arrange a backup/migration with the BB operator. Fresh installs from a Git range are ready for normal updates.
-- An interrupted browser connection can leave an editing session protected. If the updater still asks you to close pages after they are all closed, save any work elsewhere and reload the plugin through BB. Editing sessions intentionally never expire while a laptop might still hold unsaved text.
+- 1.8.0 needs VesnALIA 0.48.0 or later (plugin SDK 0.6.79+). On an older VesnALIA, Plugin updates says a newer release needs a newer VesnALIA: update the VesnALIA server, then check again.
+- Changing a local installation to a Git source is a separate migration: this VesnALIA version requires removing the old source first, which can clear plugin data. Do not remove an existing installation just to obtain updates; keep its data and arrange a backup/migration with the VesnALIA operator. Fresh installs from a Git range are ready for normal updates.
+- An interrupted browser connection can leave an editing session protected. If the updater still asks you to close pages after they are all closed, save any work elsewhere and reload the plugin through VesnALIA. Editing sessions intentionally never expire while a laptop might still hold unsaved text.
 
 ## How often GitHub is read
 
@@ -25,7 +25,7 @@ For the backed-up stable-to-`main` canary switch and recovery, follow the [main 
 
 ## Writes to GitHub
 
-- Every write, a Submit, a reply or resolve you click, and what the review agent posts, goes through one line on the BB server: one at a time, each at least a second after the last.
+- Every write, a Submit, a reply or resolve you click, and what the review agent posts, goes through one line on the VesnALIA server: one at a time, each at least a second after the last.
 - A write GitHub rate-limits waits as long as GitHub asks, or a minute, doubling, and tries again up to three times; the writes behind it wait too. A wait over 5 minutes is refused instead, saying how long.
 - A write the page waits on that can't start within 20 seconds is refused at once, and never posts later. Submit runs once and is never retried.
 - A write that takes over 5 minutes is stopped and not retried, as it may have posted.
@@ -38,47 +38,47 @@ For the backed-up stable-to-`main` canary switch and recovery, follow the [main 
 
 ## Storage and sharing
 
-- Review metadata, patches, generated guides, drafts, and settings are in the plugin's database: SQLite, the plugin's `data.db` in this BB installation, by default, or Postgres (see [Storage backends](#storage-backends)). The plugin's BB settings and a few small key-value rows, `storage:owner` among them, stay in BB's own database either way. See [Removing the plugin](#removing-the-plugin) for what `bb plugin remove` deletes.
-- Reviews of PRs merged or closed for 30 days drop their stored diff to save space; opening one reads the diff from GitHub again. A folder's review archived for 30 days after BB removed its folder, with no comments, drops its diff too, for good.
+- Review metadata, patches, generated guides, drafts, and settings are in the plugin's database: SQLite, the plugin's `data.db` in this VesnALIA installation, by default, or Postgres (see [Storage backends](#storage-backends)). The plugin's VesnALIA settings and a few small key-value rows, `storage:owner` among them, stay in VesnALIA's own database either way. See [Removing the plugin](#removing-the-plugin) for what `alia plugin remove` deletes.
+- Reviews of PRs merged or closed for 30 days drop their stored diff to save space; opening one reads the diff from GitHub again. A folder's review archived for 30 days after VesnALIA removed its folder, with no comments, drops its diff too, for good.
 - Each Send keeps a copy of the diff it went with, for **Since your last Send** and the check of its fixes: a review keeps its last 20 Sends, and any a comment still names. **Agent activity** keeps the last 100 entries.
-- Git and `gh` run on the BB server, with its `gh` credentials. Switching the GitHub account in the plugin switches `gh` for everything on the server, other agents and terminals included. With **Let the review agent act when you ask** on, the default, the review agent posts with them too, when you ask.
-- A folder's review reads the folder on whichever machine it's on, through BB's Git plugin; the plugin runs no git there, and a push comes from the thread working in it. **Review changes** above a thread's message box reads only the Git status BB's Changed files already reads, and reads the diff when you click it on a folder with no review yet. A thread's **Review** tab reads no git.
-- A shared BB server uses shared server credentials and plugin storage; it is not a multi-tenant review service. Each reviewer should use their own BB installation.
+- Git and `gh` run on the VesnALIA server, with its `gh` credentials. Switching the GitHub account in the plugin switches `gh` for everything on the server, other agents and terminals included. With **Let the review agent act when you ask** on, the default, the review agent posts with them too, when you ask.
+- A folder's review reads the folder on whichever machine it's on, through VesnALIA's Git plugin; the plugin runs no git there, and a push comes from the thread working in it. **Review changes** above a thread's message box reads only the Git status VesnALIA's Changed files already reads, and reads the diff when you click it on a folder with no review yet. A thread's **Review** tab reads no git.
+- A shared VesnALIA server uses shared server credentials and plugin storage; it is not a multi-tenant review service. Each reviewer should use their own VesnALIA installation.
 
 ## Storage backends
 
-From 1.3.0 the reviews can be kept in Postgres instead of SQLite. Both hold the same tables and answer the same; nothing in the panel, the agents, or `bb review` differs.
+From 1.3.0 the reviews can be kept in Postgres instead of SQLite. Both hold the same tables and answer the same; nothing in the panel, the agents, or `alia review` differs.
 
-- **SQLite**, the default: `data.db` in the plugin's data directory (`~/.bb/plugins/code-review-workspace/`), through BB's own SQLite. Nothing to set up.
-- **Postgres**: the same tables in a schema of a Postgres database, reached over one connection from the BB server. Choose it to keep the reviews off the BB server's disk, in a database that's backed up with others. It was tested on Postgres 18, and rehearsed on BB 0.46.1.
-- **Which one serves** depends on two things that must agree: the `storageBackend` setting, and the `storage:owner` marker in BB's key-value rows, which names the backend holding the reviews. An install from before 1.3.0 has no marker, which means SQLite. Only `bb review storage migrate` and `export-sqlite --replace-data-db` change the marker, once their copy checks out. While the two disagree, the plugin is in [maintenance](#maintenance-mode); it never falls back to the other backend.
-- **Storage settings apply when the plugin loads.** Changing one logs "Storage settings changed: they apply once the plugin reloads"; `bb plugin reload code-review-workspace` applies them.
+- **SQLite**, the default: `data.db` in the plugin's data directory (`~/.vesnalia/plugins/code-review-workspace/`), through VesnALIA's own SQLite. Nothing to set up.
+- **Postgres**: the same tables in a schema of a Postgres database, reached over one connection from the VesnALIA server. Choose it to keep the reviews off the VesnALIA server's disk, in a database that's backed up with others. It was tested on Postgres 18, and rehearsed on VesnALIA 0.46.1.
+- **Which one serves** depends on two things that must agree: the `storageBackend` setting, and the `storage:owner` marker in VesnALIA's key-value rows, which names the backend holding the reviews. An install from before 1.3.0 has no marker, which means SQLite. Only `alia review storage migrate` and `export-sqlite --replace-data-db` change the marker, once their copy checks out. While the two disagree, the plugin is in [maintenance](#maintenance-mode); it never falls back to the other backend.
+- **Storage settings apply when the plugin loads.** Changing one logs "Storage settings changed: they apply once the plugin reloads"; `alia plugin reload code-review-workspace` applies them.
 - **Very long paths:** Postgres caps a key at about 2.7 KB, after compression, and a changed file's path is in the keys of its viewed mark, its draft comments and its discussions. On Postgres, marking such a file viewed, commenting on it or asking about it fails, and changes nothing; a reviewed PR's paths are far shorter. `migrate` stops on one, and changes nothing ("… Nothing was changed.").
 - **Speed:** each store call is a round trip to Postgres. In the rehearsal, at about 1.3 ms a round trip, the heaviest call, opening a review with a 15.6 MB diff, took about 37 ms (17 ms on SQLite), and other calls 2–17 ms.
 
 ### Setting up Postgres
 
-1. Make a login role with a SCRAM password (Postgres's default `password_encryption`; `require` signs in only with SCRAM), and a database it owns, or one it can create schemas in. The plugin holds one connection, and a `bb review storage` command one more while it runs, so allow at least 2:
+1. Make a login role with a SCRAM password (Postgres's default `password_encryption`; `require` signs in only with SCRAM), and a database it owns, or one it can create schemas in. The plugin holds one connection, and a `alia review storage` command one more while it runs, so allow at least 2:
 
    ```sql
    CREATE ROLE code_review_workspace LOGIN CONNECTION LIMIT 5 PASSWORD '…';
    CREATE DATABASE code_review_workspace OWNER code_review_workspace;
    ```
 
-   `bb review storage migrate` makes the schema (`postgresSchema`) if it's missing, and the tables in it. A schema that exists already needs to be the role's, or one it can create tables in. Once the reviews are in Postgres, the plugin doesn't make a schema: one that holds no reviews, as after a typo in `postgresSchema` or a `postgresUrl` naming another database, is reported as needs-configuration ("… schema "…" holds none: check postgresUrl and postgresSchema"), and nothing is served until the settings are fixed and the plugin reloads. If the schema itself is gone, see [When the schema is lost](#when-the-schema-is-lost).
-2. Set the [settings](#postgres-settings) on the BB server, `storageBackend` last. Read the password into a variable, so it stays out of your shell's history:
+   `alia review storage migrate` makes the schema (`postgresSchema`) if it's missing, and the tables in it. A schema that exists already needs to be the role's, or one it can create tables in. Once the reviews are in Postgres, the plugin doesn't make a schema: one that holds no reviews, as after a typo in `postgresSchema` or a `postgresUrl` naming another database, is reported as needs-configuration ("… schema "…" holds none: check postgresUrl and postgresSchema"), and nothing is served until the settings are fixed and the plugin reloads. If the schema itself is gone, see [When the schema is lost](#when-the-schema-is-lost).
+2. Set the [settings](#postgres-settings) on the VesnALIA server, `storageBackend` last. Read the password into a variable, so it stays out of your shell's history:
 
    ```sh
-   bb plugin config code-review-workspace set postgresUrl postgres://code_review_workspace@db.example.internal:5432/code_review_workspace
-   read -rs pw && bb plugin config code-review-workspace set postgresPassword -- "$pw"; unset pw
-   bb plugin config code-review-workspace set storageBackend postgres
+   alia plugin config code-review-workspace set postgresUrl postgres://code_review_workspace@db.example.internal:5432/code_review_workspace
+   read -rs pw && alia plugin config code-review-workspace set postgresPassword -- "$pw"; unset pw
+   alia plugin config code-review-workspace set storageBackend postgres
    ```
 
-   While `bb plugin config … set postgresPassword` runs, the password is an argument of its process, which anyone who can list the server's processes sees for that moment; BB's CLI has no way to read it from standard input. Set it from a session no one else shares.
+   While `alia plugin config … set postgresPassword` runs, the password is an argument of its process, which anyone who can list the server's processes sees for that moment; VesnALIA's CLI has no way to read it from standard input. Set it from a session no one else shares.
 
-3. Run `bb plugin reload code-review-workspace`. The reviews are still in SQLite, so the plugin goes into maintenance, which stops every write.
-4. Run `bb review storage migrate` from a terminal on the BB server. It copies the reviews, checks the copy, and marks Postgres as holding them.
-5. Run `bb plugin reload code-review-workspace` again. `bb review storage status` says `state: serving`.
+3. Run `alia plugin reload code-review-workspace`. The reviews are still in SQLite, so the plugin goes into maintenance, which stops every write.
+4. Run `alia review storage migrate` from a terminal on the VesnALIA server. It copies the reviews, checks the copy, and marks Postgres as holding them.
+5. Run `alia plugin reload code-review-workspace` again. `alia review storage status` says `state: serving`.
 
 Take a [backup](#backups) of `data.db` first. `migrate` leaves `data.db` as it was, so it is the way back until the plugin writes to Postgres; see [Rolling back to SQLite](#rolling-back-to-sqlite).
 
@@ -87,9 +87,9 @@ Take a [backup](#backups) of `data.db` first. `migrate` leaves `data.db` as it w
 | Setting | Default | What it is |
 |---|---|---|
 | `storageBackend` | `sqlite` | `sqlite` or `postgres`: where the reviews are kept. |
-| `postgresUrl` | none | `postgres://user@host:port/database`. It takes **no password and no query parameters**: a URL with either is refused, and the message names the setting to use instead. `sslmode` and the like in a URL are refused rather than read, since pg would take a URL's `sslmode=require` as `verify-full`. The plugin passes every connection setting itself, so PG* environment variables (`PGHOST`, `PGSSLMODE`, …) don't change them; pg still reads only `PGBINARY`, `PGCLIENT_ENCODING` and `PGREPLICATION`, which a BB server doesn't set. |
-| `postgresPassword` | none | The role's password, kept as a BB secret. Needed with `postgres`. If the role's password changes, set it again and reload. |
-| `postgresSchema` | `code_review_workspace` | The schema the tables are in. `bb review storage migrate` creates it if it's missing; the plugin never does. Two installs sharing a database need a schema each. |
+| `postgresUrl` | none | `postgres://user@host:port/database`. It takes **no password and no query parameters**: a URL with either is refused, and the message names the setting to use instead. `sslmode` and the like in a URL are refused rather than read, since pg would take a URL's `sslmode=require` as `verify-full`. The plugin passes every connection setting itself, so PG* environment variables (`PGHOST`, `PGSSLMODE`, …) don't change them; pg still reads only `PGBINARY`, `PGCLIENT_ENCODING` and `PGREPLICATION`, which a VesnALIA server doesn't set. |
+| `postgresPassword` | none | The role's password, kept as a VesnALIA secret. Needed with `postgres`. If the role's password changes, set it again and reload. |
+| `postgresSchema` | `code_review_workspace` | The schema the tables are in. `alia review storage migrate` creates it if it's missing; the plugin never does. Two installs sharing a database need a schema each. |
 | `postgresSsl` | `require` | `verify-full`, `require`, or `disable`; see [TLS](#tls). |
 | `postgresCaPem` | none | PEM certificates that `verify-full` checks the server's certificate against; without it, Node's CAs. Refused with the other modes. |
 
@@ -104,67 +104,67 @@ No message or log line the plugin writes shows the password, or the URL as set; 
 | `disable` | none | the password exchange alone | SCRAM never sends the password, but everything else is in the clear, and a server asking for cleartext or MD5 gets the password or its hash. For local development only. |
 
 - `require` behaves like libpq's `sslmode=require channel_binding=require`. It needs the role's password stored as SCRAM, not MD5, and Postgres 11 or later over TLS.
-- `require` survives the server's CA changing and needs no certificate on the BB server. A man in the middle can't sign in or read the traffic, but one who skips the certificate check can collect a SCRAM proof and guess passwords against it offline, so give the role a long random password.
+- `require` survives the server's CA changing and needs no certificate on the VesnALIA server. A man in the middle can't sign in or read the traffic, but one who skips the certificate check can collect a SCRAM proof and guess passwords against it offline, so give the role a long random password.
 - `verify-full` breaks when the server's CA changes and `postgresCaPem` isn't updated; CloudNativePG, for one, renews its CA every 90 days.
 
 ### Single writer
 
 One plugin instance writes to a schema at a time.
 
-- The plugin takes a Postgres advisory lock for its schema when it opens its storage, and takes it again on each new connection before anything runs on it. Another BB using the same database and schema waits up to 30 s for it, then reports "Another Code Review Workspace holds the writer lock on Postgres schema …", and keeps trying.
+- The plugin takes a Postgres advisory lock for its schema when it opens its storage, and takes it again on each new connection before anything runs on it. Another VesnALIA using the same database and schema waits up to 30 s for it, then reports "Another Code Review Workspace holds the writer lock on Postgres schema …", and keeps trying.
 - A reload hands over without overlap: the old instance closes its connection, and its lock, before the new one opens. For about half a second, until the new instance has opened its store, the panel's calls fail and a page loading then shows "Couldn’t open the review session. The plugin may be updating. Try again." On SQLite there is no such gap.
-- A connection whose BB went silent is ended by the server's TCP keepalive after about 25 s, and its lock with it.
+- A connection whose VesnALIA went silent is ended by the server's TCP keepalive after about 25 s, and its lock with it.
 
 ### Maintenance mode
 
-In maintenance the plugin registers `bb review` and nothing else: no panel calls, agent tools, events, or background work, and agents get no tools. Only `bb review storage` answers; every other `bb review` command fails with the reason, and the panel can't open. `bb plugin list` shows the plugin as needs-configuration, with the reason:
+In maintenance the plugin registers `alia review` and nothing else: no panel calls, agent tools, events, or background work, and agents get no tools. Only `alia review storage` answers; every other `alia review` command fails with the reason, and the panel can't open. `alia plugin list` shows the plugin as needs-configuration, with the reason:
 
-- "…storage is set to Postgres, but its reviews are in SQLite. Run bb review storage migrate…", or set `storageBackend` back to `sqlite` and reload.
-- "…storage is set to SQLite, but its reviews are in Postgres…": set `storageBackend` back to `postgres` and reload, or run `bb review storage export-sqlite --replace-data-db`.
+- "…storage is set to Postgres, but its reviews are in SQLite. Run alia review storage migrate…", or set `storageBackend` back to `sqlite` and reload.
+- "…storage is set to SQLite, but its reviews are in Postgres…": set `storageBackend` back to `postgres` and reload, or run `alia review storage export-sqlite --replace-data-db`.
 - "…can't use Postgres: …": a Postgres setting is missing or refused. Fix it and reload.
 - "…marked as kept in …, which this version doesn't know": a newer version moved the reviews; update the plugin.
 
-The panel shows only "Couldn’t open the review session. The plugin may be updating. Try again."; `bb review storage status` says why.
+The panel shows only "Couldn’t open the review session. The plugin may be updating. Try again."; `alia review storage status` says why.
 
-On Postgres the plugin also starts with only `bb review storage` answering, while it opens its storage (`state: opening`): normally well under a second. If Postgres can't be reached, it keeps trying, after 1 s and then twice as long each time up to a minute, and serves once it gets through, with no reload. A wrong password, a refused TLS sign-in, a missing database or permission, or the writer lock still held is reported as needs-configuration at once; Postgres simply being out of reach, or a statement timing out or waiting on a lock, only after a minute, so a BB that starts before its database, or a moment's lock, doesn't need attention. **BB keeps a needs-configuration status until the next reload**, even once the plugin serves; the message says so.
+On Postgres the plugin also starts with only `alia review storage` answering, while it opens its storage (`state: opening`): normally well under a second. If Postgres can't be reached, it keeps trying, after 1 s and then twice as long each time up to a minute, and serves once it gets through, with no reload. A wrong password, a refused TLS sign-in, a missing database or permission, or the writer lock still held is reported as needs-configuration at once; Postgres simply being out of reach, or a statement timing out or waiting on a lock, only after a minute, so a VesnALIA that starts before its database, or a moment's lock, doesn't need attention. **VesnALIA keeps a needs-configuration status until the next reload**, even once the plugin serves; the message says so.
 
-### Moving the reviews: `bb review storage`
+### Moving the reviews: `alia review storage`
 
-Run these on the BB server, from a terminal. `migrate` and `export-sqlite` refuse to run from a BB thread (when `BB_THREAD_ID` is set), so an agent can't start them on its own; `status` and `verify` answer anywhere. One storage command runs at a time, and a reload or a dropped CLI connection stops one before it commits anything.
+Run these on the VesnALIA server, from a terminal. `migrate` and `export-sqlite` refuse to run from a VesnALIA thread (when `ALIA_THREAD_ID` is set), so an agent can't start them on its own; `status` and `verify` answer anywhere. One storage command runs at a time, and a reload or a dropped CLI connection stops one before it commits anything.
 
-- **`bb review storage status`**: the configured backend (`storageBackend`), the one holding the reviews (`storage:owner`), the state (`serving`, `opening`, or `maintenance`), and what's wrong, if anything.
-- **`bb review storage verify`**: compares every table's rows, row counts, and each next id in `data.db` and in Postgres, and prints a line per table, `same` or `DIFFERENT`. It exits 0 when everything is the same and 1 otherwise, and changes nothing. It runs in any state; while the plugin serves, it says the serving side may have moved on, and after a move it differs as soon as the plugin writes.
-- **`bb review storage migrate`**: in maintenance, with `storageBackend` set to `postgres` and the reviews in SQLite. It brings `data.db` up to date as a load would, takes the writer lock, and copies the reviews to Postgres in one transaction, then compares every table on both sides before it commits, and marks the owner `postgres` after. It prints a line per table with its rows and time. Before copying, it checks, and reports together:
+- **`alia review storage status`**: the configured backend (`storageBackend`), the one holding the reviews (`storage:owner`), the state (`serving`, `opening`, or `maintenance`), and what's wrong, if anything.
+- **`alia review storage verify`**: compares every table's rows, row counts, and each next id in `data.db` and in Postgres, and prints a line per table, `same` or `DIFFERENT`. It exits 0 when everything is the same and 1 otherwise, and changes nothing. It runs in any state; while the plugin serves, it says the serving side may have moved on, and after a move it differs as soon as the plugin writes.
+- **`alia review storage migrate`**: in maintenance, with `storageBackend` set to `postgres` and the reviews in SQLite. It brings `data.db` up to date as a load would, takes the writer lock, and copies the reviews to Postgres in one transaction, then compares every table on both sides before it commits, and marks the owner `postgres` after. It prints a line per table with its rows and time. Before copying, it checks, and reports together:
   - text with bytes that aren't UTF-8, which Postgres can't hold (a NUL character, which Postgres's text can't hold either, is copied as U+FFFD, as the plugin has stored it on both backends since 1.4.1, and checked as such);
   - integers beyond ±2^53, or a value of the wrong type for its column;
   - SQLite's or Postgres's tables from another version of the plugin;
   - a schema that already holds reviews.
 
   Nothing is written if any check fails, or if anything fails mid-copy ("… Nothing was changed."): fix what it lists and run it again. If Postgres already holds exactly SQLite's reviews, as when the copy committed but the marker couldn't be written, it only marks the owner: "Postgres already holds an identical, checked copy; only the owner was switched". A schema holding other reviews is refused, with the tables that differ; drop its tables or choose a new `postgresSchema`. There is no overwrite option.
-- **`bb review storage export-sqlite`**: in maintenance, with the reviews in Postgres. It writes a new `data-export-<UTC time>.db` beside `data.db`, a copy of `data.db` whose reviews are Postgres's, checked against Postgres, and changes nothing else. A name already taken gets `-2`, `-3`, ….
+- **`alia review storage export-sqlite`**: in maintenance, with the reviews in Postgres. It writes a new `data-export-<UTC time>.db` beside `data.db`, a copy of `data.db` whose reviews are Postgres's, checked against Postgres, and changes nothing else. A name already taken gets `-2`, `-3`, ….
   - **`--replace-data-db`**, with `storageBackend` set to `sqlite`, then backs `data.db` up to `data-backup-<UTC time>.db`, replaces its reviews with the copy's in one transaction, checked before it commits, and marks the owner `sqlite`.
 - After `migrate` or `export-sqlite --replace-data-db`, reload the plugin to serve from the other backend; the command says so.
 
-On the rehearsal's copy of a production `data.db` (47 reviews, 864 rows, 50 MB), `migrate` took about 1.1 s, `export-sqlite --replace-data-db` 0.9 s, and `verify` 0.3 s; BB's memory rose by about 150 MB during `migrate` and fell back after.
+On the rehearsal's copy of a production `data.db` (47 reviews, 864 rows, 50 MB), `migrate` took about 1.1 s, `export-sqlite --replace-data-db` 0.9 s, and `verify` 0.3 s; VesnALIA's memory rose by about 150 MB during `migrate` and fell back after.
 
 ### Backups
 
-- **SQLite:** copy `data.db` with SQLite's backup API or `VACUUM INTO`, never with `cp` while BB runs, which misses what is still in its write-ahead log. `bb plugin update` also snapshots `data.db`, and restores it when an update fails within its 30 s check.
-- **Postgres:** back up the database as you do others, or the plugin's schema alone, with `pg_dump --schema=code_review_workspace`. BB's update snapshot doesn't cover Postgres.
-- **Either way,** the `storage:owner` marker and the storage settings are in BB's own database, with BB's backups.
-- `export-sqlite` and its `--replace-data-db` backup leave files about the size of `data.db` in the plugin's data directory, readable as the BB process's umask allows, and nothing deletes them. They hold every review: delete them, or `chmod 600` them, once they're no longer needed.
+- **SQLite:** copy `data.db` with SQLite's backup API or `VACUUM INTO`, never with `cp` while VesnALIA runs, which misses what is still in its write-ahead log. `alia plugin update` also snapshots `data.db`, and restores it when an update fails within its 30 s check.
+- **Postgres:** back up the database as you do others, or the plugin's schema alone, with `pg_dump --schema=code_review_workspace`. VesnALIA's update snapshot doesn't cover Postgres.
+- **Either way,** the `storage:owner` marker and the storage settings are in VesnALIA's own database, with VesnALIA's backups.
+- `export-sqlite` and its `--replace-data-db` backup leave files about the size of `data.db` in the plugin's data directory, readable as the VesnALIA process's umask allows, and nothing deletes them. They hold every review: delete them, or `chmod 600` them, once they're no longer needed.
 
 ### Rolling back to SQLite
 
 ```sh
-bb plugin config code-review-workspace set storageBackend sqlite
-bb plugin reload code-review-workspace          # maintenance: the reviews are in Postgres
-bb review storage export-sqlite --replace-data-db
-bb plugin reload code-review-workspace          # serving from SQLite, with what was written on Postgres
+alia plugin config code-review-workspace set storageBackend sqlite
+alia plugin reload code-review-workspace          # maintenance: the reviews are in Postgres
+alia review storage export-sqlite --replace-data-db
+alia plugin reload code-review-workspace          # serving from SQLite, with what was written on Postgres
 ```
 
 - **Export before you go back.** `data.db` stays as it was at the move to Postgres. Setting `storageBackend` to `sqlite` alone doesn't serve it, since the owner is still Postgres; but 1.2.0 or older reads `data.db` without asking, and would silently serve the reviews as they were at the move.
-- **1.3.0 adds no SQLite migrations,** so 1.2.0 reads an exported `data.db` as its own. BB has no downgrade in place for a Git install: remove the plugin (which deletes its settings and password) and install `@v1.2.0`, which pins it. To return, remove it and install `@^1.0.0` again, and set the storage settings again.
+- **1.3.0 adds no SQLite migrations,** so 1.2.0 reads an exported `data.db` as its own. VesnALIA has no downgrade in place for a Git install: remove the plugin (which deletes its settings and password) and install `@v1.2.0`, which pins it. To return, remove it and install `@^1.0.0` again, and set the storage settings again.
 - **Postgres keeps its copy** after an export. Moving to Postgres again needs a schema without reviews, or one holding exactly SQLite's: drop the old schema's tables, or set a new `postgresSchema`.
 - A table whose `sqlite_sequence` had no row comes back from Postgres with a row holding its last id. SQLite hands out the same next id either way.
 
@@ -172,7 +172,7 @@ bb plugin reload code-review-workspace          # serving from SQLite, with what
 
 If the reviews are in Postgres and their schema is gone, because the database was recreated or the schema was dropped, the plugin reports "… holds none: check postgresUrl and postgresSchema" and serves nothing. `migrate` refuses, since `storage:owner` says the reviews are in Postgres already, and `export-sqlite` has no tables to copy. There are two ways out:
 
-- **Restore the schema** from your [backup](#backups), for example with `pg_restore` or `psql` from the `pg_dump`, as the plugin's role or with its tables owned by it. Then run `bb plugin reload code-review-workspace`.
+- **Restore the schema** from your [backup](#backups), for example with `pg_restore` or `psql` from the `pg_dump`, as the plugin's role or with its tables owned by it. Then run `alia plugin reload code-review-workspace`.
 - **Start over with no reviews.** Make the schema and an empty migrations table as the plugin's role, then reload. The plugin sees a schema it made, and makes its tables, empty:
 
   ```sql
@@ -186,19 +186,19 @@ If the reviews are in Postgres and their schema is gone, because the database wa
 
 | What happens | What the plugin does |
 |---|---|
-| Postgres restarts, crashes, or fails over while the plugin serves | It logs "Lost the connection to Postgres: …". The call in flight fails, and nothing is retried, since a write might have committed. The next call connects again, and the plugin serves again by itself. A guide, a feedback check, a discussion or an ask that was finishing then can stay in progress until the next review-state pass, once a minute: a guide left generating fails, saying "The guide's run ended, but its end couldn't be saved. Try again.", and a check, discussion or ask asked for at least two minutes before, whose assistant has stopped, stops waiting. A Submit or Send that GitHub took says so: Submit (or Send) again without changing the draft to finish recording it, and it isn't posted again. A draft changed first is a new review or reply, and posts; the comments GitHub already has leave it first. When bb's key-value store refused the note of what GitHub took, the plugin keeps it in memory only and the message says not to reload: a reload forgets it, and the next Submit or Send posts it again. |
+| Postgres restarts, crashes, or fails over while the plugin serves | It logs "Lost the connection to Postgres: …". The call in flight fails, and nothing is retried, since a write might have committed. The next call connects again, and the plugin serves again by itself. A guide, a feedback check, a discussion or an ask that was finishing then can stay in progress until the next review-state pass, once a minute: a guide left generating fails, saying "The guide's run ended, but its end couldn't be saved. Try again.", and a check, discussion or ask asked for at least two minutes before, whose assistant has stopped, stops waiting. A Submit or Send that GitHub took says so: Submit (or Send) again without changing the draft to finish recording it, and it isn't posted again. A draft changed first is a new review or reply, and posts; the comments GitHub already has leave it first. When VesnALIA's key-value store refused the note of what GitHub took, the plugin keeps it in memory only and the message says not to reload: a reload forgets it, and the next Submit or Send posts it again. |
 | The network to Postgres drops packets | A call in flight fails after 35 s ("Query read timeout"), and later calls fail on connecting: one after up to 10 s ("timeout expired"), then the calls waiting behind it, and any for a second after, at once, and so on with the pause doubling up to 15 s. It recovers by itself. |
-| Postgres can't be reached at a reload or BB's start | Only `bb review storage` answers until it can; see [Maintenance mode](#maintenance-mode). Reload to try at once. |
+| Postgres can't be reached at a reload or VesnALIA's start | Only `alia review storage` answers until it can; see [Maintenance mode](#maintenance-mode). Reload to try at once. |
 | Postgres dies during `migrate` or `export-sqlite` | "… Nothing was changed.": the copy is rolled back or deleted, and the owner stays. Run it again once Postgres is back. |
 
 ### Removing the plugin
 
-Before removing, copy `data.db`, and the `data-export-…` and `data-backup-…` files beside it, off the server if you may want them: another BB version may delete them with the plugin.
+Before removing, copy `data.db`, and the `data-export-…` and `data-backup-…` files beside it, off the server if you may want them: another VesnALIA version may delete them with the plugin.
 
-`bb plugin remove code-review-workspace` never touches Postgres: the schema, its tables, the role, and the database stay until you drop them. It deletes the plugin's settings, the Postgres password among them. BB 0.46 kept `data.db`, the export and backup files beside it, and the key-value rows, `storage:owner` included, and BB may still. Installed again, with the reviews still marked as in Postgres, the plugin then starts in maintenance until the storage settings are set again.
+`alia plugin remove code-review-workspace` never touches Postgres: the schema, its tables, the role, and the database stay until you drop them. It deletes the plugin's settings, the Postgres password among them. VesnALIA 0.46 kept `data.db`, the export and backup files beside it, and the key-value rows, `storage:owner` included, and VesnALIA may still. Installed again, with the reviews still marked as in Postgres, the plugin then starts in maintenance until the storage settings are set again.
 
 ## Logs
 
-`bb plugin logs code-review-workspace` shows the plugin's log, including why a guide failed and, after a move from Guided Review, "Brought in the reviews from guided-review".
+`alia plugin logs code-review-workspace` shows the plugin's log, including why a guide failed and, after a move from Guided Review, "Brought in the reviews from guided-review".
 
-On Postgres it also shows "Lost the connection to Postgres: …" and "Could not open Code Review Workspace's Postgres storage: …", and each `bb review storage` command's progress lines.
+On Postgres it also shows "Lost the connection to Postgres: …" and "Could not open Code Review Workspace's Postgres storage: …", and each `alia review storage` command's progress lines.

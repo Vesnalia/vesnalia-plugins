@@ -4,7 +4,7 @@ import {
   experimental_Diff as Diff,
   experimental_FileLink as FileLink,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type {
   DiffResult,
@@ -107,7 +107,7 @@ function LegacyWorktreeNotice({ sets }: { sets: LegacyWorktreeSet[] }) {
       </summary>
       <p className="mt-2 text-muted-foreground">
         These paths were created by an older plugin version. They are read-only
-        here and BB will not clean them up. Inspect and reconcile them manually.
+        here and VesnALIA will not clean them up. Inspect and reconcile them manually.
       </p>
       <ul className="mt-2 space-y-2">
         {sets.map((set) => (
@@ -222,11 +222,11 @@ function FileRow({
 function unavailableGuidance(repository: RepositoryStatus): string {
   switch (repository.unavailableReason) {
     case "missing":
-      return "Configure the root project to materialize this explicit member through a submodule, .bb-env-setup.sh, or .worktreeinclude.";
+      return "Configure the root project to materialize this explicit member through a submodule, .alia-env-setup.sh, or .worktreeinclude.";
     case "not_repository":
       return "The configured path exists but is not a Git repository root. Fix the project setup or workspace member path.";
     case "outside_workspace":
-      return "The configured path does not resolve safely inside this BB environment.";
+      return "The configured path does not resolve safely inside this VesnALIA environment.";
     default:
       return "The repository cannot be inspected in this environment. Check project provisioning and host access.";
   }
@@ -367,7 +367,7 @@ function SourceControlContent({ threadId }: { threadId: string }) {
         <div>
           <p className="text-sm font-medium">Source Control</p>
           <p className="text-[11px] text-muted-foreground">
-            Explicit repositories in this BB environment
+            Explicit repositories in this VesnALIA environment
           </p>
         </div>
         <Button

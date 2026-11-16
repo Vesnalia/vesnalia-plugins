@@ -11,14 +11,14 @@ const base = readFileSync(join(root, "src/theme/base.css"), "utf8");
 const chat = readFileSync(join(root, "src/theme/chat.css"), "utf8");
 const integrations = readFileSync(join(root, "src/theme/integrations.css"), "utf8");
 
-test("generated theme is base + chat and fits BB's theme limit", () => {
+test("generated theme is base + chat and fits VesnALIA's theme limit", () => {
   assert.ok(css.includes(base.trimEnd()));
   assert.ok(css.includes(chat.trimEnd()));
   assert.ok(css.includes(integrations.trimEnd()));
   assert.ok(Buffer.byteLength(css) < 256_000);
 });
 
-test("palette blocks stay first so BB tooling reads them", () => {
+test("palette blocks stay first so VesnALIA tooling reads them", () => {
   const body = css.replace(/\/\*[\s\S]*?\*\//g, "").trimStart();
   assert.match(body, /^:root,\s*\.light\s*\{/);
   assert.match(css, /\n\.dark\s*\{/);
@@ -64,7 +64,7 @@ test("desktop sidebar targets the real group markup; inset height fits the paren
   );
   assert.doesNotMatch(
     desktopBlocks,
-    /\[data-sidebar="inset"\]\s*\{[^}]*--bb-shell-height/,
+    /\[data-sidebar="inset"\]\s*\{[^}]*--alia-shell-height/,
   );
 });
 
@@ -210,11 +210,11 @@ test("desktop top row pins a compact New project button after New thread", () =>
   );
   assert.match(
     desktopBlocks,
-    /\[data-sidebar-navigation-item="__bb__\/new-thread"\] > button[\s\S]*width: auto/,
+    /\[data-sidebar-navigation-item="__alia__\/new-thread"\] > button[\s\S]*width: auto/,
   );
   assert.match(
     desktopBlocks,
-    /\[data-sidebar-navigation-item="__bb__\/new-thread"\] > button[\s\S]*margin-left: auto/,
+    /\[data-sidebar-navigation-item="__alia__\/new-thread"\] > button[\s\S]*margin-left: auto/,
   );
   assert.doesNotMatch(
     desktopBlocks,
@@ -291,7 +291,7 @@ test("desktop right panel tab row aligns with the page header card", () => {
   );
   assert.match(
     desktopBlocks,
-    /#thread-detail-secondary-panel > aside > div > div:first-child\s*\{[^}]*height: calc\(var\(--bb-app-chrome-row-height, 48px\) - var\(--pk-gap-card\)\)/,
+    /#thread-detail-secondary-panel > aside > div > div:first-child\s*\{[^}]*height: calc\(var\(--alia-app-chrome-row-height, 48px\) - var\(--pk-gap-card\)\)/,
   );
   assert.match(
     desktopBlocks,
@@ -358,7 +358,7 @@ test("desktop top row, surface wrappers, and resize handle hide overlap artifact
   );
 });
 
-test("macOS framed window drops BB's own frame lip and gray sidebar card", () => {
+test("macOS framed window drops VesnALIA's own frame lip and gray sidebar card", () => {
   const desktop = base.slice(0, base.indexOf("/* ── Page header"));
   assert.match(
     desktop,
@@ -389,7 +389,7 @@ test("phone shell rules keep literal radii", () => {
   assert.match(mobile, /border-radius: 18px;/);
 });
 
-test("usage card escapes the footer clip on BB 0.47+ markup (sidebar-footer-body)", () => {
+test("usage card escapes the footer clip on VesnALIA 0.47+ markup (sidebar-footer-body)", () => {
   assert.match(
     css,
     /:root \[data-sidebar="sidebar"\] \[data-testid="sidebar-footer-body"\]:has\(\.usage-tracker-sidebar__details\)\s*\{\s*clip-path:\s*none/,
@@ -401,10 +401,10 @@ test("usage card escapes the footer clip on BB 0.47+ markup (sidebar-footer-body
 });
 
 
-test("macOS app (BB 0.47): panel reaches the window top, header stays the theme card", () => {
+test("macOS app (VesnALIA 0.47): panel reaches the window top, header stays the theme card", () => {
   assert.match(
     css,
-    /\[data-framed\]:not\(\[data-framed="false"\]\) \[data-sidebar="inset"\] \{\s*margin-top: calc\(-1 \* var\(--bb-window-title-bar-height, 0px\)\);/,
+    /\[data-framed\]:not\(\[data-framed="false"\]\) \[data-sidebar="inset"\] \{\s*margin-top: calc\(-1 \* var\(--alia-window-title-bar-height, 0px\)\);/,
   );
   assert.match(
     css,
@@ -416,7 +416,7 @@ test("macOS app (BB 0.47): panel reaches the window top, header stays the theme 
   );
   assert.match(
     css,
-    /\[class\*="-mr-\[calc\(var\(--bb-panel-chrome-padding\)"\] \{\s*margin-right: 0;/,
+    /\[class\*="-mr-\[calc\(var\(--alia-panel-chrome-padding\)"\] \{\s*margin-right: 0;/,
   );
 });
 
@@ -441,7 +441,7 @@ test("sidebar body block fits its column beside the rail (cards keep their inset
     css,
     /\[data-testid="nav-rail-sidebar-body"\] > div:has\(> \[data-testid="app-sidebar-body"\]\) \{\s*left: 0;\s*width: auto !important;/,
   );
-  assert.doesNotMatch(css, /--bb-sidebar-control-icon-size: 20px/);
+  assert.doesNotMatch(css, /--alia-sidebar-control-icon-size: 20px/);
 });
 
 test("the Lane Pilot icon is lit only when Lane Pilot or an agent is on (data-lp-agent), not for the off label", () => {
@@ -453,6 +453,6 @@ test("the Lane Pilot icon is lit only when Lane Pilot or an agent is on (data-lp
 
 test("rail navigation keeps one icon column: toggle moves with the rail, collapsed panel fits the rail", () => {
   assert.match(css, /:root:has\(\[data-testid="app-nav-rail"\]\) \[data-testid="app-sidebar-trigger-overlay"\] \{\s*translate: var\(--pk-gap\) 0;/);
-  assert.match(css, /\[data-collapsible="rail"\]\[data-side="left"\] > \[data-sidebar="panel"\] \{[^}]*width: calc\(var\(--pk-gap\) \+ var\(--bb-sidebar-control-size\) \+ 2 \* var\(--bb-sidebar-rail-padding\)\);/);
-  assert.match(css, /--bb-sidebar-rail-padding: 6px;/);
+  assert.match(css, /\[data-collapsible="rail"\]\[data-side="left"\] > \[data-sidebar="panel"\] \{[^}]*width: calc\(var\(--pk-gap\) \+ var\(--alia-sidebar-control-size\) \+ 2 \* var\(--alia-sidebar-rail-padding\)\);/);
+  assert.match(css, /--alia-sidebar-rail-padding: 6px;/);
 });

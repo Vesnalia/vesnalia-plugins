@@ -5,12 +5,12 @@ import {
   experimental_resolveExecutablePath as resolveExecutablePath,
   sanitizeInheritedChildProcessEnv,
   withoutBridgeRuntimeEnv,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import type { OpenCodeRecord } from "./types.ts";
 
 type RecordValue = OpenCodeRecord;
 
-const BB_INSTRUCTIONS_ENTRY = "bb.provider.instructions";
+const ALIA_INSTRUCTIONS_ENTRY = "alia.provider.instructions";
 
 /**
  * Location-scoped OpenCode resources take a deep-object `location` query
@@ -21,9 +21,9 @@ export function locationQuery(cwd: string) {
   return `location[directory]=${encodeURIComponent(cwd)}`;
 }
 
-export const DYNAMIC_MCP_SERVER_PREFIX = "bb_opencode2_";
+export const DYNAMIC_MCP_SERVER_PREFIX = "alia_opencode2_";
 
-/** Per-session name of the MCP server that exposes BB dynamic tools. */
+/** Per-session name of the MCP server that exposes VesnALIA dynamic tools. */
 export function dynamicMcpServerName(providerThreadId: string) {
   return `${DYNAMIC_MCP_SERVER_PREFIX}${createHash("sha256").update(providerThreadId).digest("hex").slice(0, 20)}`;
 }
@@ -48,16 +48,16 @@ export function dynamicMcpRemovalRequest(serverName: string, cwd: string) {
 }
 
 /**
- * Session instruction entries are the documented beta mechanism for BB
- * instructions. The endpoint has no append/replace selector, so a BB
+ * Session instruction entries are the documented beta mechanism for VesnALIA
+ * instructions. The endpoint has no append/replace selector, so a VesnALIA
  * `replace` mode cannot be represented exactly. Empty instructions remove
- * the entry so a resumed session does not keep stale BB guidance.
+ * the entry so a resumed session does not keep stale VesnALIA guidance.
  */
 export function sessionInstructionsRequest(
   sessionId: string,
   instructions: string,
 ) {
-  const path = `/api/experimental/session/${encodeURIComponent(sessionId)}/instructions/entries/${BB_INSTRUCTIONS_ENTRY}`;
+  const path = `/api/experimental/session/${encodeURIComponent(sessionId)}/instructions/entries/${ALIA_INSTRUCTIONS_ENTRY}`;
   if (!instructions) return { path, init: { method: "DELETE" } };
   return {
     path,
@@ -73,7 +73,7 @@ export type PermissionRule = {
 
 // OpenCode evaluates the agent ruleset and then the session ruleset, and the
 // last matching rule wins. v2's `build` agent allows every action, so without
-// session rules OpenCode never asks and BB's permission modes do nothing.
+// session rules OpenCode never asks and VesnALIA's permission modes do nothing.
 const ACCEPT_EDITS_ALLOWED_ACTIONS = [
   "read",
   "list",
@@ -89,12 +89,12 @@ const ACCEPT_EDITS_ALLOWED_ACTIONS = [
 ];
 
 /**
- * Translate BB's permission mode into an OpenCode session ruleset.
+ * Translate VesnALIA's permission mode into an OpenCode session ruleset.
  *
  * - `accept-edits` asks for everything except reads, searches, and edits.
- * - `auto` and `full` keep the agent's own rules; BB answers any remaining
+ * - `auto` and `full` keep the agent's own rules; VesnALIA answers any remaining
  *   ask automatically (see automaticPermissionReply).
- * - BB dynamic tools are approved by BB itself, so their MCP server is
+ * - VesnALIA dynamic tools are approved by VesnALIA itself, so their MCP server is
  *   always allowed instead of prompting twice.
  * - Disabled native subagents are denied outright, which OpenCode reports to
  *   the model as a tool error instead of interrupting the turn.
@@ -120,7 +120,7 @@ export function sessionPermissionRules(input: {
     rules.push({ action: "*", resource: "*", effect: "allow" });
   }
   // OpenCode registers MCP servers per directory, not per session, so every
-  // OpenCode thread in a checkout sees every other thread's BB tool server.
+  // OpenCode thread in a checkout sees every other thread's VesnALIA tool server.
   // Hide them all (a deny removes the tools from the model's catalog), then
   // allow this session's own server. MCP permission actions are
   // `<server>_<tool>`, and rules match globs with the last match winning.
@@ -161,13 +161,13 @@ export function sessionRenameRequest(sessionId: string, title: string) {
 }
 
 /**
- * BB-spawned agents (e.g. Codex via its bridge child process) inherit the
- * host PATH, which BB augments with its own binary directory, so `bb` works
+ * ALIA-spawned agents (e.g. Codex via its bridge child process) inherit the
+ * host PATH, which VesnALIA augments with its own binary directory, so `VesnALIA` works
  * in their shells. OpenCode shells run under the shared background service
- * instead, whose environment is fixed at service start and may predate BB.
+ * instead, whose environment is fixed at service start and may predate VesnALIA.
  * The session environment endpoint replaces the shell environment. Each
- * session therefore receives a credential-filtered host environment, BB's
- * explicit per-session envVars, and a PATH that includes `bb`.
+ * session therefore receives a credential-filtered host environment, VesnALIA's
+ * explicit per-session envVars, and a PATH that includes `VesnALIA`.
  */
 const SENSITIVE_ENVIRONMENT_KEY =
   /(?:^|_)(?:API_?KEY|AUTH|CREDENTIALS?|PRIVATE_?KEY|PASSWORD|SECRET|TOKEN)(?:$|_)/i;
@@ -183,7 +183,7 @@ export function isSensitiveEnvironmentKey(key: string): boolean {
 export function sessionEnvironmentVariables(input: {
   hostEnv: NodeJS.ProcessEnv;
   bridgeEnvVars?: Record<string, string>;
-  bbBinDir?: string;
+  aliaBinDir?: string;
 }): Record<string, string> {
   const base = withoutBridgeRuntimeEnv(
     sanitizeInheritedChildProcessEnv({ env: input.hostEnv }),
@@ -194,16 +194,16 @@ export function sessionEnvironmentVariables(input: {
       variables[key] = value;
     }
   }
-  // BB passes these values explicitly for this provider session, so they are
+  // VesnALIA passes these values explicitly for this provider session, so they are
   // trusted configuration rather than incidental host-process credentials.
   for (const [key, value] of Object.entries(input.bridgeEnvVars ?? {})) {
     if (typeof value === "string") variables[key] = value;
   }
-  if (input.bbBinDir) {
+  if (input.aliaBinDir) {
     const entries = (variables.PATH ?? "")
       .split(delimiter)
       .filter((entry) => entry.length > 0);
-    if (!entries.includes(input.bbBinDir)) entries.unshift(input.bbBinDir);
+    if (!entries.includes(input.aliaBinDir)) entries.unshift(input.aliaBinDir);
     variables.PATH = entries.join(delimiter);
   }
   return variables;
@@ -219,9 +219,9 @@ export function sessionEnvironmentRequest(
   };
 }
 
-export async function resolveBbBinDir(): Promise<string | undefined> {
+export async function resolveAliaBinDir(): Promise<string | undefined> {
   try {
-    const executable = await resolveExecutablePath("bb");
+    const executable = await resolveExecutablePath("alia");
     return executable ? dirname(executable) : undefined;
   } catch {
     return undefined;
@@ -229,7 +229,7 @@ export async function resolveBbBinDir(): Promise<string | undefined> {
 }
 
 /**
- * BB rewind retains *through* a provider checkpoint, while OpenCode's fork
+ * VesnALIA rewind retains *through* a provider checkpoint, while OpenCode's fork
  * and revert APIs take a *before* boundary (exclude the given message).
  * Checkpoints are user message IDs, and a turn is user + following assistant
  * messages. To retain through checkpoint C, fork/revert before the next *user*
@@ -313,7 +313,7 @@ export function revertTargetRetainingThrough(
 }
 
 /**
- * Skill roots for BB's composer, derived from the SKILL.md files OpenCode
+ * Skill roots for VesnALIA's composer, derived from the SKILL.md files OpenCode
  * discovered: each skill lives at `<root>/<name>/SKILL.md`. Built-in skills
  * (no file on disk) are skipped; roots inside the workspace are `project`.
  */

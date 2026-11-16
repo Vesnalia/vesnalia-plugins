@@ -3,7 +3,7 @@
 // its expanded view; the thread context card (Mac) adds the full override.
 
 import { useEffect, useState } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import {
   CONTEXT_LIMIT_MAX_TOKENS,
   CONTEXT_LIMIT_MIN_TOKENS,

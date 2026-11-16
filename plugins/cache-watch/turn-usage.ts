@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
-type Event = Awaited<ReturnType<BbPluginApi['sdk']['threads']['events']['list']>>[number];
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
+type Event = Awaited<ReturnType<AliaPluginApi['sdk']['threads']['events']['list']>>[number];
 type Report = Extract<Event, { type: 'thread/tokenUsage/updated' }>;
 type Counts = Report['data']['tokenUsage']['total'];
 

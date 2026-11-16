@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost, makeMessageDispatchHookContext } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeMessageDispatchHookContext } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 test("dispatch blocks attachment secrets, preserves text checks and handles read failures", async () => {
@@ -8,7 +8,7 @@ test("dispatch blocks attachment secrets, preserves text checks and handles read
   let content = "safe file";
   let fail = false;
   let reads = 0;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "token-guard",
     sdk: { projects: { attachments: { read: async ({ projectId }) => {
       assert.equal(projectId, "project-test");
@@ -18,7 +18,7 @@ test("dispatch blocks attachment secrets, preserves text checks and handles read
     } } } },
   });
   try {
-    await plugin(bb);
+    await plugin(alia);
     const hook = harness.registrations.hooks["message.dispatch"]!;
     const context = makeMessageDispatchHookContext({ project: { id: "project-test" }, input: {
       text: "проверь файл", blocks: [{ type: "localFile", path: "uploads/file.txt" }],
@@ -42,9 +42,9 @@ test("dispatch blocks attachment secrets, preserves text checks and handles read
 });
 
 test("disabled guard does not register a dispatch hook", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "token-guard", settings: { enabled: false } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "token-guard", settings: { enabled: false } });
   try {
-    await plugin(bb);
+    await plugin(alia);
     assert.equal(harness.registrations.hooks["message.dispatch"], null);
   } finally { await harness.lifecycle.dispose(); }
 });

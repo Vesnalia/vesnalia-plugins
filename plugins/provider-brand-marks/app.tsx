@@ -1,15 +1,15 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 /**
- * bb draws every provider mark as a monochrome CSS mask on a
+ * VesnALIA draws every provider mark as a monochrome CSS mask on a
  * `<span data-provider-logo="/api/v1/system/providers/<id>/logo?h=<hash>">`
  * that paints itself with Tailwind's `bg-current`. When the provider plugin
- * declares `strings.iconTint`, bb wraps that span in a
+ * declares `strings.iconTint`, VesnALIA wraps that span in a
  * `<span data-provider-icon-tint="<id>">` carrying an inline `color`.
  *
  * Both are internal DOM details rather than a public API, so every selector
- * here matches on the URL *prefix* (the `?h=` hash changes whenever bb swaps
- * a logo file) and the whole stylesheet degrades to a no-op if bb ever stops
+ * here matches on the URL *prefix* (the `?h=` hash changes whenever VesnALIA swaps
+ * a logo file) and the whole stylesheet degrades to a no-op if VesnALIA ever stops
  * emitting these attributes — CSS that matches nothing changes nothing.
  */
 const LOGO_URL_PREFIX = "/api/v1/system/providers/";
@@ -37,7 +37,7 @@ const MONOCHROME_PROVIDERS: readonly string[] = ["acp-cursor"];
 /** CSS custom property holding a provider's origin colour. */
 const brandVar = (providerId: string) => `--pbm-brand-${providerId}`;
 
-/** Both surfaces bb may use for one provider: the mask span and the tint hull. */
+/** Both surfaces VesnALIA may use for one provider: the mask span and the tint hull. */
 const selectorsFor = (providerId: string) => ({
   logo: `[data-provider-logo^="${LOGO_URL_PREFIX}${providerId}/logo"]`,
   tint: `[data-provider-icon-tint="${providerId}"]`,
@@ -45,7 +45,7 @@ const selectorsFor = (providerId: string) => ({
 
 /**
  * Fit a brand colour to the active palette without knowing anything about it:
- * keep the hue, pull chroma back toward the muted end most bb palettes sit at,
+ * keep the hue, pull chroma back toward the muted end most VesnALIA palettes sit at,
  * and pin lightness to a value that clears WCAG's 3:1 non-text contrast bar on
  * both a light and a dark canvas. Relative colour syntax does this per-repaint,
  * so it follows theme switches with no JavaScript.
@@ -55,7 +55,7 @@ const tuned = (providerId: string) =>
   `min(calc(c * var(--pbm-chroma-scale)), var(--pbm-chroma-cap)) h)`;
 
 /**
- * Community plugins that draw their own provider marks instead of using bb's
+ * Community plugins that draw their own provider marks instead of using VesnALIA's
  * logo mask. Each exposes custom properties, so pointing those at the same
  * tuned colours keeps the usage surfaces from disagreeing with the rest of the
  * app. Every selector here is inert when the plugin is not installed.
@@ -64,7 +64,7 @@ const tuned = (providerId: string) =>
  * either side of ours depending on mount order.
  */
 function buildCompanionPluginRules(): string {
-  // iamEvanYT/bb-usage-page. One property drives both the mark and that
+  // iamEvanYT/alia-usage-page. One property drives both the mark and that
   // provider's chart series, so recolouring the mark recolours the series too.
   const usagePage = [
     "html .usage-page {",
@@ -76,7 +76,7 @@ function buildCompanionPluginRules(): string {
     `.usage-page svg path[fill="#D97757" i] { fill: ${tuned("claude-code")} !important; }`,
   ];
 
-  // MateoCerquetella/bb-plugins usage-tracker. Only Claude gets a brand colour
+  // MateoCerquetella/alia-plugins usage-tracker. Only Claude gets a brand colour
   // upstream; the others fall back to a neutral mark.
   const usageTracker = [
     "html .usage-tracker-sidebar {",
@@ -101,7 +101,7 @@ function buildStylesheet(): string {
   const brandRules = Object.keys(BRAND_COLORS)
     .map((providerId) => {
       const { logo, tint } = selectorsFor(providerId);
-      // `!important` is needed on the tint hull to beat bb's inline `color`,
+      // `!important` is needed on the tint hull to beat VesnALIA's inline `color`,
       // and is kept on the mask for symmetry with it.
       return (
         `${logo} { background-color: ${tuned(providerId)} !important; }\n` +
@@ -119,7 +119,7 @@ function buildStylesheet(): string {
   }).join("\n");
 
   return [
-    "/* Provider Brand Marks — injected by the bb plugin of the same name.",
+    "/* Provider Brand Marks — injected by the VesnALIA plugin of the same name.",
     "   Every value below is a custom property, so a theme can override any",
     "   single provider colour or the whole tuning without forking this. */",
     ":root {",
@@ -146,11 +146,11 @@ export default definePluginApp((app) => {
     id: "brand-marks",
     mount({ pluginId }) {
       // Relative colour syntax carries the whole feature. Without it the rules
-      // would compute to nothing useful, so leave bb's own colours alone.
+      // would compute to nothing useful, so leave VesnALIA's own colours alone.
       if (!CSS.supports("color", "oklch(from #000 l c h)")) return;
 
       const style = document.createElement("style");
-      style.dataset.bbPlugin = pluginId;
+      style.dataset.aliaPlugin = pluginId;
       style.textContent = buildStylesheet();
       document.head.append(style);
 

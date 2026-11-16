@@ -1,4 +1,4 @@
-// Plugin UI language. bb gives plugins no locale, so it is a plugin setting.
+// Plugin UI language. VesnALIA gives plugins no locale, so it is a plugin setting.
 
 export const LANGUAGES = ["en", "ru"] as const;
 export type Lang = (typeof LANGUAGES)[number];

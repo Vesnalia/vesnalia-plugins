@@ -1,7 +1,7 @@
 // bug bash F1: GitHub took a review or reply, then the store failed before recording it. The page heard a failure,
 // kept the draft, and the retry posted it to GitHub a second time.
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const gh = vi.hoisted(() => ({
   /** Runs as GitHub takes the POST, before gh answers. */
@@ -67,8 +67,8 @@ function failing(store: AsyncStore, down: () => boolean): AsyncStore {
 }
 
 test("a review GitHub took that the store couldn't record is recorded by the next Submit, after a reload too, without posting it again", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
@@ -76,35 +76,35 @@ test("a review GitHub took that the store couldn't record is recorded by the nex
   const { comments, body, verdict } = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  const first = await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", comments, { body, verdict });
+  const first = await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", comments, { body, verdict });
   expect(first).toEqual({ ok: false, error: "GitHub has your review (https://github.com/acme/web/pull/1#r1), but it couldn't be recorded here: Connection terminated unexpectedly. Submit again without changing the draft to finish recording it: it won't be posted again." });
   down = false;
   expect((await store.getDraft("pr-1")).comments).toHaveLength(1);
   // A reload's submitter has only what kv kept.
-  const second = await createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", comments, { body, verdict });
+  const second = await createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", comments, { body, verdict });
   expect(second).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r1" });
   expect(gh.posts).toHaveLength(1);
   expect(await store.getDraft("pr-1")).toMatchObject({ comments: [], body: "" });
   expect(await store.getReview("pr-1")).toMatchObject({ submittedVerdict: "COMMENT", submittedReviewId: "R1", submittedAt: expect.any(Number) });
-  expect(await bb.storage.kv.list("posted-review:")).toEqual([]);
+  expect(await alia.storage.kv.list("posted-review:")).toEqual([]);
 }, 15_000);
 
 // Review round 2, NIT 1: on the head the review was for, a draft changed since got the generic "Your draft comments
 // changed" message, not that GitHub already has the comments it took out.
 test("a draft changed since a review GitHub took wasn't recorded is checked again, not taken for the posted one, and the Submit that takes out the posted comments says so", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
   const posted = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 2, side: "RIGHT", body: "and this" });
-  const submit = async () => { const shown = await store.getDraft("pr-1"); return createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown); };
+  const submit = async () => { const shown = await store.getDraft("pr-1"); return createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown); };
   // The posted comment is recorded and leaves the draft, and nothing is posted.
   expect(await submit()).toEqual({ ok: false, error: "GitHub already has 1 of these comments, from your review of sha123 (https://github.com/acme/web/pull/1#r1), so it was taken out of your draft. Check the draft, then submit again." });
   expect((await store.getDraft("pr-1")).comments.map((c) => c.body)).toEqual(["and this"]);
@@ -116,8 +116,8 @@ test("a draft changed since a review GitHub took wasn't recorded is checked agai
 // Review round 3, NIT A: on the head the review was for, a Submit whose record took out only the summary GitHub has
 // said the generic "Your review summary or verdict changed", not that GitHub already has it.
 test("a Submit whose record takes only the summary GitHub has out of the draft says so and posts nothing", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
@@ -125,11 +125,11 @@ test("a Submit whose record takes only the summary GitHub has out of the draft s
   const posted = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit, please" });
-  const submit = async () => { const shown = await store.getDraft("pr-1"); return createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown); };
+  const submit = async () => { const shown = await store.getDraft("pr-1"); return createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown); };
   expect(await submit()).toEqual({ ok: false, error: "GitHub already has your summary and verdict, from your review of sha123 (https://github.com/acme/web/pull/1#r1), so they were taken out of your draft. Check the draft, then submit again." });
   expect(gh.posts).toHaveLength(1);
   expect(await store.getDraft("pr-1")).toMatchObject({ comments: [{ body: "nit, please" }], body: "", verdict: "COMMENT" });
@@ -138,51 +138,51 @@ test("a Submit whose record takes only the summary GitHub has out of the draft s
 }, 15_000);
 
 test("a Submit of comments edited since a review GitHub took with no summary wasn't recorded posts them", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
   const posted = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit, please" });
   const shown = await store.getDraft("pr-1");
-  expect(await createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r2" });
+  expect(await createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r2" });
   expect(gh.posts).toHaveLength(2);
 }, 15_000);
 
 test("a reply GitHub took whose draft the store couldn't clear is finished by the next Send of it, after a reload too, without posting it again", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1 });
   await store.setReplyDraft("pr-1", "T1", "Fixed?", "reviewer");
   let down = false;
   let posts = 0;
   const post = async () => { posts++; down = true; return { ok: true as const }; };
-  expect(await postDraftedReply(postReceipts(bb.storage.kv), failing(store, () => down), "pr-1", "T1", "Fixed?", post)).toEqual({
+  expect(await postDraftedReply(postReceipts(alia.storage.kv), failing(store, () => down), "pr-1", "T1", "Fixed?", post)).toEqual({
     ok: false, error: "GitHub has your reply, but it couldn't be recorded here: Connection terminated unexpectedly. Send again without changing the draft to finish recording it: it won't be posted again.",
   });
   down = false;
-  expect(await postDraftedReply(postReceipts(bb.storage.kv), store, "pr-1", "T1", "Fixed?", post)).toEqual({ ok: true });
+  expect(await postDraftedReply(postReceipts(alia.storage.kv), store, "pr-1", "T1", "Fixed?", post)).toEqual({ ok: true });
   expect(posts).toBe(1);
   expect((await store.listReplyDrafts("pr-1")).size).toBe(0);
   // For 15 minutes, a Send of the same text, from a page that gave up waiting on the first or a deliberate repeat, isn't
   // posted: it says GitHub already has it, and leaves its draft to change.
   await store.setReplyDraft("pr-1", "T1", "Fixed?", "reviewer");
-  expect(await postDraftedReply(postReceipts(bb.storage.kv), store, "pr-1", "T1", "Fixed?", post)).toEqual({ ok: true, alreadyPosted: true });
+  expect(await postDraftedReply(postReceipts(alia.storage.kv), store, "pr-1", "T1", "Fixed?", post)).toEqual({ ok: true, alreadyPosted: true });
   expect(posts).toBe(1);
   expect((await store.listReplyDrafts("pr-1")).size).toBe(1);
   // Other text posts; so does the same text, after that.
-  expect(await postDraftedReply(postReceipts(bb.storage.kv), store, "pr-1", "T1", "Fixed, thanks", post)).toEqual({ ok: true });
+  expect(await postDraftedReply(postReceipts(alia.storage.kv), store, "pr-1", "T1", "Fixed, thanks", post)).toEqual({ ok: true });
   expect(posts).toBe(2);
   vi.useFakeTimers({ toFake: ["Date"] });
   try {
     vi.setSystemTime(Date.now() + 15 * 60_000);
-    expect(await postDraftedReply(postReceipts(bb.storage.kv), store, "pr-1", "T1", "Fixed, thanks", post)).toEqual({ ok: true });
+    expect(await postDraftedReply(postReceipts(alia.storage.kv), store, "pr-1", "T1", "Fixed, thanks", post)).toEqual({ ok: true });
     expect(posts).toBe(3);
   } finally { vi.useRealTimers(); }
 }, 15_000);
@@ -190,14 +190,14 @@ test("a reply GitHub took whose draft the store couldn't clear is finished by th
 // Review round 1, BLOCKING 2: a record that saved the submitted state but failed to clear the draft was taken for
 // finished, so the next Submit dropped the receipt and left the draft, which the Submit after it posted again.
 test("a review whose record saved the submitted state but not the cleared draft is finished by the next Submit, and never posted twice", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
   await store.setVerdict("pr-1", "COMMENT", "A nit.");
   const shown = await store.getDraft("pr-1");
-  const submit = (on: AsyncStore) => createReviewSubmitter(on, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown);
+  const submit = (on: AsyncStore) => createReviewSubmitter(on, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown);
   const halfRecorded = failingCall(store, "clearSubmittedDraft");
   for (let attempt = 0; attempt < 2; attempt++) expect(await submit(halfRecorded)).toMatchObject({ ok: false, error: expect.stringContaining("GitHub has your review") });
   expect(await store.getReview("pr-1")).toMatchObject({ submittedReviewId: "R1" });
@@ -216,28 +216,28 @@ async function rebuilt(store: AsyncStore, head: string) {
 // Review round 1, BLOCKING 1: a receipt Submit never came back for outlived the diff it was for, and the same approval
 // of the new head returned the old review's link without posting.
 test("a review GitHub took on an earlier head doesn't stop the same approval of the new head from posting", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.setVerdict("pr-1", "APPROVE");
   const approval = { body: "", verdict: "APPROVE" as const };
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", [], approval)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", [], approval)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   await rebuilt(store, "sha456");
-  expect(await createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", [], approval)).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r2" });
+  expect(await createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", [], approval)).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r2" });
   expect(gh.posts).toHaveLength(2);
   expect(gh.payloads.map((p) => JSON.parse(p).commit_id)).toEqual(["sha123", "sha456"]);
   expect(await store.getReview("pr-1")).toMatchObject({ submittedVerdict: "APPROVE", submittedHeadSha: "sha456", submittedReviewId: "R2" });
-  expect(await bb.storage.kv.list("posted-review:")).toEqual([]);
+  expect(await alia.storage.kv.list("posted-review:")).toEqual([]);
 }, 15_000);
 
 test("comments GitHub took on an earlier head leave the draft, and the Submit that takes them out says so and posts nothing", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
@@ -245,12 +245,12 @@ test("comments GitHub took on an earlier head leave the draft, and the Submit th
   const posted = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   await rebuilt(store, "sha456");
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 2, side: "RIGHT", body: "and this" });
-  const submit = async () => { const shown = await store.getDraft("pr-1"); return createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown); };
+  const submit = async () => { const shown = await store.getDraft("pr-1"); return createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown); };
   expect(await submit()).toEqual({ ok: false, error: "GitHub already has 1 of these comments, from your review of sha123 (https://github.com/acme/web/pull/1#r1), so it was taken out of your draft. Check the draft, then submit again." });
   expect(gh.posts).toHaveLength(1);
   expect(await store.getDraft("pr-1")).toMatchObject({ comments: [{ body: "and this" }], body: "A nit.", verdict: "COMMENT" });
@@ -261,8 +261,8 @@ test("comments GitHub took on an earlier head leave the draft, and the Submit th
 // Review round 2, NIT 2: a file renamed in the new commits moved the posted comment to its new path, where the match
 // that takes posted comments out of the draft missed it, so it stayed in the draft to be posted again.
 test("a comment GitHub took on an earlier head leaves the draft though the new commits renamed its file", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   const before = "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1,2 @@\n one\n+two\n";
   const renamed = "diff --git a/a.ts b/b.ts\nsimilarity index 90%\nrename from a.ts\nrename to b.ts\n--- a/a.ts\n+++ b/b.ts\n@@ -1 +1,2 @@\n one\n+two\n";
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
@@ -272,7 +272,7 @@ test("a comment GitHub took on an earlier head leaves the draft though the new c
   const posted = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   // Rebuilt for the new head as rebuildReview does: the comment follows its line into the new diff.
@@ -281,7 +281,7 @@ test("a comment GitHub took on an earlier head leaves the draft though the new c
   await store.rebaseDraftComments("pr-1", await reanchorDraft(store, "pr-1", before, renamed));
   const shown = await store.getDraft("pr-1");
   expect(shown.comments).toMatchObject([{ file: "b.ts", line: 2, body: "nit" }]);
-  expect(await createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual({ ok: false, error: "GitHub already has 1 of these comments, from your review of sha123 (https://github.com/acme/web/pull/1#r1), so it was taken out of your draft. Check the draft, then submit again." });
+  expect(await createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual({ ok: false, error: "GitHub already has 1 of these comments, from your review of sha123 (https://github.com/acme/web/pull/1#r1), so it was taken out of your draft. Check the draft, then submit again." });
   expect(gh.posts).toHaveLength(1);
   expect(await store.getDraft("pr-1")).toMatchObject({ comments: [], body: "A nit." });
 }, 15_000);
@@ -300,18 +300,18 @@ async function refuse(sql: ReturnType<typeof testSql>, event: "INSERT" | "DELETE
 
 /** The plugin serving pr-1, with a reply GitHub took on thread T1 whose draft couldn't be cleared. */
 async function replyNotRecorded(body: string) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   const send = () => call("replyToThread", { targetKey: "pr-1", inReplyTo: 11, body, threadId: "T1", account: "casey" });
   expect(await call("saveReplyDraft", { targetKey: "pr-1", threadId: "T1", body })).toEqual({ ok: true });
-  const allow = await refuse(testSql(bb), "DELETE", "reply_drafts");
+  const allow = await refuse(testSql(alia), "DELETE", "reply_drafts");
   expect(await send()).toMatchObject({ ok: false, error: expect.stringContaining("GitHub has your reply") });
   await allow();
   expect(gh.posts).toHaveLength(1);
-  return { bb, call, send };
+  return { alia, call, send };
 }
 
 test("a reply GitHub took whose draft is discarded doesn't stop the same text, drafted and sent again, from posting", async () => {
@@ -324,9 +324,9 @@ test("a reply GitHub took whose draft is discarded doesn't stop the same text, d
 
 test("a reply GitHub took is forgotten once its draft is saved with other text or cleared, and kept while it's saved unchanged", async () => {
   for (const [saved, kept] of [["Thanks!", true], ["Thanks, fixed.", false], ["", false]] as const) {
-    const { bb, call } = await replyNotRecorded("Thanks!");
+    const { alia, call } = await replyNotRecorded("Thanks!");
     expect(await call("saveReplyDraft", { targetKey: "pr-1", threadId: "T1", body: saved })).toEqual({ ok: true });
-    expect((await bb.storage.kv.list("posted-reply:")).length).toBe(kept ? 1 : 0);
+    expect((await alia.storage.kv.list("posted-reply:")).length).toBe(kept ? 1 : 0);
     gh.posts.length = 0;
   }
 }, 30_000);
@@ -335,9 +335,9 @@ test("a reply GitHub took is forgotten once its draft is saved with other text o
 // a trailing newline, or \r\n for \n, dropped the receipt and the next Send posted the reply again.
 test("a reply GitHub took is kept while its draft is saved differing only in line endings or the whitespace around it, and never posted twice", async () => {
   for (const [sent, saved] of [["Thanks!", "Thanks!\n"], ["Thanks!\r\nCasey", "Thanks!\nCasey\r\n"], ["Thanks!\nCasey", "  Thanks!\r\nCasey"]] as const) {
-    const { bb, call } = await replyNotRecorded(sent);
+    const { alia, call } = await replyNotRecorded(sent);
     expect(await call("saveReplyDraft", { targetKey: "pr-1", threadId: "T1", body: saved })).toEqual({ ok: true });
-    expect((await bb.storage.kv.list("posted-reply:")).length).toBe(1);
+    expect((await alia.storage.kv.list("posted-reply:")).length).toBe(1);
     // The page sends the saved draft trimmed.
     expect(await call("replyToThread", { targetKey: "pr-1", inReplyTo: 11, body: saved.trim(), threadId: "T1", account: "casey" })).toEqual({ ok: true });
     expect(gh.posts).toHaveLength(1);
@@ -347,9 +347,9 @@ test("a reply GitHub took is kept while its draft is saved differing only in lin
 
 // Review round 3, NIT C: two Sends of one reply at once, from two tabs, both found no receipt and both posted.
 test("a second Send of a reply while the first is still sending is refused, and the reply is posted once", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   const send = () => call("replyToThread", { targetKey: "pr-1", inReplyTo: 11, body: "Thanks!", threadId: "T1", account: "casey" });
@@ -368,8 +368,8 @@ test("a second Send of a reply while the first is still sending is refused, and 
 });
 
 test("a review GitHub took is recorded, not posted again, when its summary and comments are saved differing only in line endings or the whitespace around them", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "A nit:\r\nrename it." });
@@ -377,28 +377,28 @@ test("a review GitHub took is recorded, not posted again, when its summary and c
   const posted = await store.getDraft("pr-1");
   let down = false;
   gh.onPost = async () => { down = true; };
-  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
+  expect(await createReviewSubmitter(failing(store, () => down), runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", posted.comments, posted)).toMatchObject({ ok: false });
   down = false;
   gh.onPost = async () => {};
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "A nit:\nrename it.\n" });
   await store.setVerdict("pr-1", "COMMENT", "Looks fine\r\napart from the nit.\n");
   const shown = await store.getDraft("pr-1");
-  expect(await createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r1" });
+  expect(await createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r1" });
   expect(gh.posts).toHaveLength(1);
   expect(await store.getDraft("pr-1")).toMatchObject({ comments: [], body: "" });
 }, 15_000);
 
 // The receipt is kept in memory only when kv refuses it, and a reload would forget it: every message about it says so.
 test("a receipt kv refused is kept in memory, and each failed record of it says not to reload, until it's recorded", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  vi.spyOn(bb.storage.kv, "set").mockRejectedValue(new Error("kv is unavailable"));
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  vi.spyOn(alia.storage.kv, "set").mockRejectedValue(new Error("kv is unavailable"));
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
   await store.setReplyDraft("pr-1", "T1", "Fixed?", "reviewer");
   const { comments, body, verdict } = await store.getDraft("pr-1");
-  const receipts = postReceipts(bb.storage.kv);
+  const receipts = postReceipts(alia.storage.kv);
   let down = false;
   gh.onPost = async () => { down = true; };
   const submit = () => createReviewSubmitter(failing(store, () => down), runGh, receipts)("pr-1", undefined, "casey", comments, { body, verdict });
@@ -417,18 +417,18 @@ test("a receipt kv refused is kept in memory, and each failed record of it says 
 
 // Review round 2, NIT 3: a receipt kv couldn't read was taken for none, so Submit or Send posted what GitHub may have.
 test("Submit and Send refuse, posting nothing, while kv can't say whether GitHub already has the review or reply", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
   const shown = await store.getDraft("pr-1");
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   expect(await call("saveReplyDraft", { targetKey: "pr-1", threadId: "T1", body: "Thanks!" })).toEqual({ ok: true });
-  vi.spyOn(bb.storage.kv, "get").mockRejectedValue(new Error("kv is unavailable"));
+  vi.spyOn(alia.storage.kv, "get").mockRejectedValue(new Error("kv is unavailable"));
   const unchecked = { ok: false, error: "Couldn't check whether GitHub already has this; try again." };
-  expect(await createReviewSubmitter(store, runGh, postReceipts(bb.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual(unchecked);
+  expect(await createReviewSubmitter(store, runGh, postReceipts(alia.storage.kv))("pr-1", undefined, "casey", shown.comments, shown)).toEqual(unchecked);
   expect(await call("replyToThread", { targetKey: "pr-1", inReplyTo: 11, body: "Thanks!", threadId: "T1", account: "casey" })).toEqual(unchecked);
   expect(gh.posts).toHaveLength(0);
   expect((await store.getDraft("pr-1")).comments).toHaveLength(1);
@@ -441,9 +441,9 @@ test("Submit and Send refuse, posting nothing, while kv can't say whether GitHub
 // Review round 3, NIT B: GitHub took the review and it was recorded, then saving what Submit keeps of it failed, so the
 // page heard a failure.
 test("a Submit GitHub took and recorded says so though saving the diff it reviewed fails, and doesn't post again", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1, headSha: "sha123" });
   await store.savePatch("pr-1", PATCH);
   await store.upsertDraftComment("pr-1", { file: "a.ts", line: 1, side: "RIGHT", body: "nit" });
@@ -451,7 +451,7 @@ test("a Submit GitHub took and recorded says so though saving the diff it review
   const { comments, body, verdict } = await store.getDraft("pr-1");
   const call = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<any>;
   const { revision } = await call("getReviewBundle", { targetKey: "pr-1" });
-  await refuse(testSql(bb), "INSERT", "review_snapshots");
+  await refuse(testSql(alia), "INSERT", "review_snapshots");
   const submit = () => call("submitReview", { targetKey: "pr-1", revision, account: "casey", comments, body, verdict });
   expect(await submit()).toEqual({ ok: true, url: "https://github.com/acme/web/pull/1#r1" });
   expect(await store.getDraft("pr-1")).toMatchObject({ comments: [], body: "" });
@@ -474,8 +474,8 @@ async function servedThroughProxy() {
   const seed = storeOn(seeding);
   await seed.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", headSha: "sha123", base: "main", status: "ready", createdAt: 1 });
   await seed.savePatch("pr-1", PATCH);
-  const { bb, harness } = await host(settings);
-  await plugin(bb);
+  const { alia, harness } = await host(settings);
+  await plugin(alia);
   harness.behavior.runService("storage");
   await opened(harness);
   let current = harness;

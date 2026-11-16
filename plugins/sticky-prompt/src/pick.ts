@@ -2,7 +2,7 @@
 //
 // Pure so it can be tested without a DOM. The caller reads the top-level
 // timeline in DOM order: mounted rows with their on-screen box, the spacers
-// BB puts where it has unmounted rows (it windows long threads), and breaks:
+// VesnALIA puts where it has unmounted rows (it windows long threads), and breaks:
 // user messages on screen that the outline does not list yet.
 
 export type Entry =
@@ -36,7 +36,7 @@ export interface PickInput {
   /**
    * Row id to the id of the user message it falls under, or null for rows
    * before the first one. Filled while rows are mounted together with their
-   * message, read once BB unmounts that message. Keyed by id, not position,
+   * message, read once VesnALIA unmounts that message. Keyed by id, not position,
    * so it survives outline refreshes; an id the outline does not list marks
    * the row as under an unlisted message. Mutated.
    */
@@ -146,7 +146,7 @@ export function pick(input: PickInput): PickResult {
   let fallback = false;
   if (candidate === undefined) {
     // Nothing known about this row. If no spacer and no user message follows
-    // it, it is in the last turn: BB always keeps the newest row mounted.
+    // it, it is in the last turn: VesnALIA always keeps the newest row mounted.
     const rest = entries.slice(topIndex + 1);
     const contiguousToEnd = rest.every(
       (entry) => entry.kind === "row" && !indexById.has(entry.id),
@@ -182,7 +182,7 @@ export function pick(input: PickInput): PickResult {
   }
 
   // A turn that fits on screen needs no pin: its message and the end of its
-  // reply can be seen together. A message or an end BB has unmounted is far
+  // reply can be seen together. A message or an end VesnALIA has unmounted is far
   // away, so the turn is long.
   const chosenId = outlineIds[chosen];
   const start = entries.findIndex((entry) => entry.kind === "row" && entry.id === chosenId);

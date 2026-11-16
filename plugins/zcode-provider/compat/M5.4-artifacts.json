@@ -3,20 +3,20 @@
   "status": "checked level1; owner accepted M5.4 and authorized registration after successful cheap post-Stop continuation",
   "runtimeRevision": "7a4aa89",
   "tuple": {
-    "bb": "0.48.0",
+    "alia": "0.48.0",
     "installedSdk": "0.6.94",
     "declaredSdk": "0.6.79",
     "desktop": "3.16.3",
     "cli": "0.17.0",
     "runtimeSha256": "97490d0f06a7a225d54d47817acf4b4859cdb268b59f2490caaeda982bef063a",
     "builtinSha256": "361b778f89496a37540d23a9d309efe6cb8fc97d557119cefbffc67df2f93998",
-    "bbArtifactSha256": "0e5c47dd6dc47a59a4ccf8cb4fe6411df04ab99f536eacd5f4b0990d81ff0bf6",
+    "aliaArtifactSha256": "0e5c47dd6dc47a59a4ccf8cb4fe6411df04ab99f536eacd5f4b0990d81ff0bf6",
     "sdkArtifactSha256": "c98d4ebaf5f9605df8ea4cf18d5097cb59b8e0f197c3156e33c29bc257b0f4bf",
     "platform": "darwin",
     "arch": "arm64",
     "node": "24.22.0"
   },
-  "bbArtifacts": [
+  "aliaArtifacts": [
     {
       "file": "Contents/Resources/app.asar/node_modules/bb-app/package.json",
       "size": 2775,

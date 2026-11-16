@@ -1,15 +1,15 @@
 import {
-  experimental_Icon as BbIcon,
+  experimental_Icon as AliaIcon,
   experimental_ThreadActionsContextMenu as ThreadActionsContextMenu,
   experimental_ThreadActionsMenu as ThreadActionsMenu,
   experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest,
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
   experimental_useThreadActions as useThreadActions,
-  useBbNavigate,
+  useAliaNavigate,
   type PluginSidebarPullRequest,
   type PluginSidebarThread,
   type PluginThreadActionsTriggerProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   useCallback,
   useRef,
@@ -48,12 +48,12 @@ interface HoverButton {
 const NO_QUICK_ACTIONS: readonly string[] = [];
 
 const ROW_CLASS =
-  "bb-sidebar-hover-actions-row group/thread-row relative flex w-full cursor-pointer items-center gap-2 rounded-md text-sm transition-none h-[var(--bb-sidebar-row-height)] max-md:pointer-coarse:h-[var(--bb-sidebar-row-height-coarse)]";
+  "alia-sidebar-hover-actions-row group/thread-row relative flex w-full cursor-pointer items-center gap-2 rounded-md text-sm transition-none h-[var(--alia-sidebar-row-height)] max-md:pointer-coarse:h-[var(--alia-sidebar-row-height-coarse)]";
 
 const ROW_INTERACTIVE_CLASS =
-  "bb-sidebar-accent-row hover:bg-sidebar-accent hover:text-sidebar-accent-foreground has-[[data-state=open]]:bg-sidebar-accent";
+  "alia-sidebar-accent-row hover:bg-sidebar-accent hover:text-sidebar-accent-foreground has-[[data-state=open]]:bg-sidebar-accent";
 
-const ROW_SELECTED_CLASS = "bb-sidebar-selected-row bg-state-active";
+const ROW_SELECTED_CLASS = "alia-sidebar-selected-row bg-state-active";
 
 const TRAILING_SLOT_CLASS =
   "relative h-7 w-7 shrink-0 max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9";
@@ -86,7 +86,7 @@ function hoverActionsInsetStyle(
     BUTTON_WIDTH_SPACING * buttonsBeyondSlot +
     (hasPullRequest ? PULL_REQUEST_WIDTH_SPACING : 0);
   return {
-    "--bb-sidebar-hover-actions-inset": `calc(var(--spacing) * ${inset})`,
+    "--alia-sidebar-hover-actions-inset": `calc(var(--spacing) * ${inset})`,
   } as CSSProperties;
 }
 
@@ -171,7 +171,7 @@ function renderMenuTrigger(props: PluginThreadActionsTriggerProps) {
         event.stopPropagation();
       }}
     >
-      <BbIcon name="MoreHorizontal" className={BUTTON_ICON_CLASS} />
+      <AliaIcon name="MoreHorizontal" className={BUTTON_ICON_CLASS} />
     </button>
   );
 }
@@ -230,7 +230,7 @@ function RowPlaceholder({
   listItemRef?: (element: HTMLElement | null) => void;
   onNavigate: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const title = threadDisplayTitle(thread);
   return (
     <li ref={listItemRef} className="list-none" data-row-placeholder="">
@@ -274,7 +274,7 @@ function RealizedSidebarRow({
 }: SidebarRowProps & {
   listItemRef?: (element: HTMLElement | null) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { splitProps, layout } = useSidebarThreadSplit(thread.id);
   const { pullRequest } = useSidebarThreadPullRequest(thread.id);
   const actionTarget = toThreadActionTarget(thread);
@@ -304,7 +304,7 @@ function RealizedSidebarRow({
     ...quickActions.map((entry) => ({
       key: entry.key,
       label: entry.action.label,
-      icon: <BbIcon name={entry.action.icon} className={BUTTON_ICON_CLASS} />,
+      icon: <AliaIcon name={entry.action.icon} className={BUTTON_ICON_CLASS} />,
       disabled: entry.action.disabled,
       onActivate: () => void entry.action.run(),
     })),
@@ -323,7 +323,7 @@ function RealizedSidebarRow({
           className={cn(
             ROW_CLASS,
             isActive ? ROW_SELECTED_CLASS : ROW_INTERACTIVE_CLASS,
-            !isActive && layout !== null && "bb-sidebar-open-in-split-row",
+            !isActive && layout !== null && "alia-sidebar-open-in-split-row",
             muted && !isActive
               ? "text-muted-foreground"
               : "text-sidebar-foreground",
@@ -339,7 +339,7 @@ function RealizedSidebarRow({
             />
           ) : null}
           <span
-            className="bb-sidebar-hover-actions-inset relative flex min-w-0 flex-1 items-center self-stretch"
+            className="alia-sidebar-hover-actions-inset relative flex min-w-0 flex-1 items-center self-stretch"
             style={hoverActionsInsetStyle(
               hoverButtons.length + 1,
               pullRequest !== null,
@@ -407,7 +407,7 @@ function RealizedSidebarRow({
                   "ml-1",
                   childToggle.collapsed
                     ? "pointer-events-auto"
-                    : "bb-sidebar-hover-actions",
+                    : "alia-sidebar-hover-actions",
                   CHILD_TOGGLE_CLASS,
                 )}
               >
@@ -432,13 +432,13 @@ function RealizedSidebarRow({
             <span className={TRAILING_SLOT_CLASS}>
               <span
                 data-sidebar-hover-actions-open={hoverActionsOpen}
-                className="bb-sidebar-hover-actions-fade pointer-events-none absolute inset-0 flex items-center justify-center"
+                className="alia-sidebar-hover-actions-fade pointer-events-none absolute inset-0 flex items-center justify-center"
               >
                 {trailing}
               </span>
               <div
                 data-sidebar-hover-actions-open={hoverActionsOpen}
-                className="bb-sidebar-hover-actions absolute inset-y-0 right-0 z-10 flex items-center justify-end gap-0.5 [@media(hover:none)]:hidden"
+                className="alia-sidebar-hover-actions absolute inset-y-0 right-0 z-10 flex items-center justify-end gap-0.5 [@media(hover:none)]:hidden"
               >
                 {pullRequest ? (
                   <PullRequestLink pullRequest={pullRequest} />

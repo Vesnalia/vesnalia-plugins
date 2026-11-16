@@ -1,17 +1,17 @@
-// bb-plugin-model-favicons — a BB plugin backend entry.
+// alia-plugin-model-favicons — a VesnALIA plugin backend entry.
 //
-// bb renders one icon per provider (never per model), so this plugin stores a
+// VesnALIA renders one icon per provider (never per model), so this plugin stores a
 // provider id -> mark id mapping and the frontend draws the matching inline
 // SVG for each provider.
 //
-// One store in bb.storage.kv serves three surfaces:
+// One store in alia.storage.kv serves three surfaces:
 //   - the Model Favicons page (app.tsx, over RPC),
-//   - the `bb model-favicons` CLI command (below),
+//   - the `alia model-favicons` CLI command (below),
 //   - the skill in skills/model-favicons/SKILL.md that tells agents how to use
 //     that command.
 // A write from any surface publishes a realtime signal so every open page
 // refetches.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** The mark ids the plugin can draw. Kept in sync with lib/provider-marks.ts. */
@@ -51,16 +51,16 @@ const ICONS_CHANGED = "icons-changed";
 
 const STORAGE_KEY = "icon-overrides";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   async function readOverrides(): Promise<Overrides> {
-    return (await bb.storage.kv.get<Overrides>(STORAGE_KEY)) ?? {};
+    return (await alia.storage.kv.get<Overrides>(STORAGE_KEY)) ?? {};
   }
   async function writeOverrides(overrides: Overrides): Promise<void> {
-    await bb.storage.kv.set(STORAGE_KEY, overrides);
+    await alia.storage.kv.set(STORAGE_KEY, overrides);
     // Ephemeral broadcast to every connected client; nothing is persisted.
-    bb.realtime.publish(ICONS_CHANGED, overrides);
+    alia.realtime.publish(ICONS_CHANGED, overrides);
   }
 
   async function setOverride(providerId: string, mark: (typeof MARK_IDS)[number]): Promise<Overrides> {
@@ -78,39 +78,39 @@ export default async function plugin(bb: BbPluginApi) {
     return next;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     icons_list: async () => ({ overrides: await readOverrides() }),
     icons_set: async ({ providerId, mark }) => setOverride(providerId, mark),
     icons_reset: async ({ providerId }) => resetOverride(providerId),
   });
 
-  // The `bb model-favicons` command: what agents (and you) use from a shell.
-  // Parsing argv is plugin-owned; `commands` is metadata BB renders into help
+  // The `alia model-favicons` command: what agents (and you) use from a shell.
+  // Parsing argv is plugin-owned; `commands` is metadata VesnALIA renders into help
   // and the generated plugin-commands skill without running plugin code.
   const usage = [
     "Usage:",
-    "  bb model-favicons list [--json]",
-    "  bb model-favicons set <provider-id> <mark> [--json]",
-    "  bb model-favicons reset <provider-id> [--json]",
+    "  VesnALIA model-favicons list [--json]",
+    "  VesnALIA model-favicons set <provider-id> <mark> [--json]",
+    "  VesnALIA model-favicons reset <provider-id> [--json]",
     "",
     "Marks:",
     ...MARK_IDS.map((mark) => `  ${mark}`),
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "model-favicons",
-    summary: "Manage custom provider icons for bb",
+    summary: "Manage custom provider icons for VesnALIA",
     commands: [
-      { name: "list", summary: "List the icon overrides", usage: "bb model-favicons list [--json]" },
+      { name: "list", summary: "List the icon overrides", usage: "alia model-favicons list [--json]" },
       {
         name: "set",
         summary: "Set the icon for a provider",
-        usage: "bb model-favicons set <provider-id> <mark> [--json]",
+        usage: "alia model-favicons set <provider-id> <mark> [--json]",
       },
       {
         name: "reset",
         summary: "Drop a provider's icon override",
-        usage: "bb model-favicons reset <provider-id> [--json]",
+        usage: "alia model-favicons reset <provider-id> [--json]",
       },
     ],
     async run(argv) {
@@ -130,7 +130,7 @@ export default async function plugin(bb: BbPluginApi) {
           const overrides = await readOverrides();
           const text =
             Object.keys(overrides).length === 0
-              ? "No overrides. bb's own logos are in use."
+              ? "No overrides. VesnALIA's own logos are in use."
               : Object.entries(overrides)
                   .map(([providerId, mark]) => `${providerId}  ${mark}`)
                   .join("\n");
@@ -161,7 +161,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Cleanup on reload/disable/shutdown; hooks run LIFO. The sanctioned place
   // to clear timers and close connections.
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

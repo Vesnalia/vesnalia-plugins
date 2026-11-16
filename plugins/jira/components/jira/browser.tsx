@@ -39,8 +39,8 @@ const LIST_SPLIT_MIN_WIDTH = 960;
 const BOARD_SPLIT_MIN_WIDTH = 1280;
 const SEARCH_DEBOUNCE_MS = 300;
 const ALL_PROJECTS = "__all__";
-const QUERY_STORAGE_KEY = "bb-plugin-jira:query";
-const LAYOUT_STORAGE_KEY = "bb-plugin-jira:layout";
+const QUERY_STORAGE_KEY = "alia-plugin-jira:query";
+const LAYOUT_STORAGE_KEY = "alia-plugin-jira:layout";
 
 type Layout = "list" | "board";
 
@@ -128,25 +128,25 @@ export function JiraBrowser({
   selectedKey,
   onSelect,
   compact = false,
-  bbProjectId = null,
+  aliaProjectId = null,
 }: {
   selectedKey: string | null;
   onSelect: (key: string | null) => void;
   /** Thread side panel: no split, tighter chrome. */
   compact?: boolean;
   /**
-   * The BB project the browser is opened in (a thread's side panel). When it
+   * The VesnALIA project the browser is opened in (a thread's side panel). When it
    * is linked to Jira projects, issues are limited to them unless the user
    * switches to all projects. Null on the global Jira page.
    */
-  bbProjectId?: string | null;
+  aliaProjectId?: string | null;
 }) {
   const { status } = useJiraStatus();
   const [storedQuery, setQuery] = useState<IssueQuery>(readStoredQuery);
-  const link = useProjectLink(bbProjectId);
+  const link = useProjectLink(aliaProjectId);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
-  useEffect(() => setShowAllProjects(false), [bbProjectId]);
+  useEffect(() => setShowAllProjects(false), [aliaProjectId]);
   const scopeKeys = link.keys.length > 0 && !showAllProjects ? link.keys : [];
   // A remembered project outside the linked scope does not apply here.
   const query: IssueQuery =
@@ -249,7 +249,7 @@ export function JiraBrowser({
           compact={compact}
           wide={wide}
           scope={{
-            inProject: bbProjectId !== null,
+            inProject: aliaProjectId !== null,
             linkedKeys: link.keys,
             showAll: showAllProjects,
             setShowAll: setShowAllProjects,
@@ -314,14 +314,14 @@ export function JiraBrowser({
         open={linksOpen}
         onOpenChange={setLinksOpen}
         jiraProjects={projects}
-        onlyProjectId={bbProjectId}
+        onlyProjectId={aliaProjectId}
       />
     </div>
   );
 }
 
 interface ScopeProps {
-  /** Opened inside a BB project (thread side panel). */
+  /** Opened inside a VesnALIA project (thread side panel). */
   inProject: boolean;
   linkedKeys: string[];
   showAll: boolean;
@@ -396,7 +396,7 @@ function Toolbar({
         {scope.inProject ? <ScopeControl scope={scope} onLinks={onLinks} /> : null}
         <div className="flex-1" />
         {scope.inProject ? null : (
-          <Button size="sm" variant="ghost" onClick={onLinks} aria-label="Link BB projects to Jira projects">
+          <Button size="sm" variant="ghost" onClick={onLinks} aria-label="Link VesnALIA projects to Jira projects">
             <Icon name="Plug02" className="size-4" />
             {compact ? null : "Project links"}
           </Button>
@@ -599,7 +599,7 @@ function ScopeControl({ scope, onLinks }: { scope: ScopeProps; onLinks: () => vo
           type="button"
           role="radio"
           aria-checked={!scope.showAll}
-          title={`Only issues in ${scope.linkedKeys.join(", ")}, linked to this BB project`}
+          title={`Only issues in ${scope.linkedKeys.join(", ")}, linked to this VesnALIA project`}
           className={cn(
             "min-w-0 truncate rounded px-2 py-0.5 font-mono text-xs transition-colors",
             !scope.showAll ? "bg-state-active text-foreground" : "text-muted-foreground hover:text-foreground",

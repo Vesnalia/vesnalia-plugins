@@ -24,8 +24,8 @@ export const EVENT_KINDS = [
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 export const ACTION_KINDS = [
-  "bb.review",
-  "bb.agent",
+  "alia.review",
+  "alia.agent",
   "github.comment",
   "github.review",
   "github.label",
@@ -38,7 +38,7 @@ export function isIssueEvent(kind: EventKind): boolean {
 }
 
 export function supportsIssueEvents(action: ActionKind): boolean {
-  return action !== "bb.review" && action !== "github.review";
+  return action !== "alia.review" && action !== "github.review";
 }
 
 export const CONDITION_FIELDS = [
@@ -66,7 +66,7 @@ export const JOB_STATUSES = [
 ] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
-export const DEFAULT_AUTOMATION_LABEL = "bb-automation";
+export const DEFAULT_AUTOMATION_LABEL = "alia-automation";
 
 export interface AutomationRepository {
   /** Canonical lower-case owner/name. */
@@ -239,7 +239,7 @@ export const STARTER_RULES: AutomationRule[] = [
     repos: [],
     filters: { draft: false },
     conditionGroups: [],
-    actions: ["bb.review", "github.review"],
+    actions: ["alia.review", "github.review"],
     actionParameters: { bodyTemplate: "{{review}}" },
     approvalRequired: true,
   },
@@ -300,14 +300,14 @@ export const ACTION_LABELS: Record<
     parameter: keyof RuleActionParameters | null;
   }
 > = {
-  "bb.review": {
-    label: "BB agent review",
-    description: "Start a GitHub+ review thread in an isolated BB worktree and wait for its findings.",
+  "alia.review": {
+    label: "VesnALIA agent review",
+    description: "Start a GitHub+ review thread in an isolated VesnALIA worktree and wait for its findings.",
     parameter: "reviewPrompt",
   },
-  "bb.agent": {
+  "alia.agent": {
     label: "Run agent",
-    description: "Run your instructions with the event context in an isolated BB worktree.",
+    description: "Run your instructions with the event context in an isolated VesnALIA worktree.",
     parameter: "agentPrompt",
   },
   "github.comment": {
@@ -327,7 +327,7 @@ export const ACTION_LABELS: Record<
   },
   "checkout.update": {
     label: "Update local checkout",
-    description: "Fast-forward the base branch in the attached BB project checkout.",
+    description: "Fast-forward the base branch in the attached VesnALIA project checkout.",
     parameter: "targetBranch",
   },
 };

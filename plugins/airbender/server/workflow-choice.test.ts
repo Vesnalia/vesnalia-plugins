@@ -7,7 +7,7 @@
 // a reload.
 //
 // Why: the user's rule is that a work tree continues its repository's
-// workflow (bead-bb-8j6). The tracing reads git's files by hand, which is
+// workflow (bead-alia-8j6). The tracing reads git's files by hand, which is
 // the part most likely to be wrong.
 //
 // Design notes: the repositories are built as plain files in a temporary
@@ -17,7 +17,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { standardWorkflow } from "../shared/standard-workflow.ts";
 import { createWorkflowChoice, repositoryKey } from "./workflow-choice.ts";
 
@@ -45,8 +45,8 @@ function repository(name: string, relative = false) {
   return { main, tree };
 }
 
-/** The part of BB this module uses: a key-value store, kept in `data`. */
-function fakeBb(data = new Map<string, unknown>(), failing = false) {
+/** The part of VesnALIA this module uses: a key-value store, kept in `data`. */
+function fakeAlia(data = new Map<string, unknown>(), failing = false) {
   return {
     storage: {
       kv: {
@@ -57,7 +57,7 @@ function fakeBb(data = new Map<string, unknown>(), failing = false) {
         },
       },
     },
-  } as unknown as BbPluginApi;
+  } as unknown as AliaPluginApi;
 }
 
 test("a work tree has the same key as its repository", () => {
@@ -85,7 +85,7 @@ test("a folder outside git, or with unreadable git files, is its own key", () =>
 test("a repository is on standard until it chooses, and its work trees follow", async () => {
   const { main, tree } = repository("follow");
   const other = repository("other");
-  const choice = await createWorkflowChoice(fakeBb());
+  const choice = await createWorkflowChoice(fakeAlia());
   assert.equal(choice.idFor(main), "standard");
   assert.equal(choice.workflowFor(tree), standardWorkflow);
   await choice.set(tree, "simple");
@@ -101,19 +101,19 @@ test("a repository is on standard until it chooses, and its work trees follow", 
 test("a choice survives a reload, and junk in storage is ignored", async () => {
   const { main } = repository("reload");
   const data = new Map<string, unknown>();
-  await (await createWorkflowChoice(fakeBb(data))).set(main, "simple");
-  assert.equal((await createWorkflowChoice(fakeBb(data))).idFor(main), "simple");
+  await (await createWorkflowChoice(fakeAlia(data))).set(main, "simple");
+  assert.equal((await createWorkflowChoice(fakeAlia(data))).idFor(main), "simple");
   const junk = new Map<string, unknown>([
     ["workflowChoices", { [repositoryKey(main)]: "kanban" }],
   ]);
-  assert.equal((await createWorkflowChoice(fakeBb(junk))).idFor(main), "standard");
+  assert.equal((await createWorkflowChoice(fakeAlia(junk))).idFor(main), "standard");
   const wrong = new Map<string, unknown>([["workflowChoices", "simple"]]);
-  assert.equal((await createWorkflowChoice(fakeBb(wrong))).idFor(main), "standard");
+  assert.equal((await createWorkflowChoice(fakeAlia(wrong))).idFor(main), "standard");
 });
 
 test("a choice that cannot be saved is not taken", async () => {
   const { main } = repository("failing");
-  const choice = await createWorkflowChoice(fakeBb(new Map(), true));
+  const choice = await createWorkflowChoice(fakeAlia(new Map(), true));
   await assert.rejects(choice.set(main, "simple"), /disk full/u);
   assert.equal(choice.idFor(main), "standard");
 });

@@ -21,7 +21,7 @@ Object.assign(globalThis, {
 });
 Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
 const { act, fireEvent, waitFor } = await import("@testing-library/react");
-const { loadPluginApp, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+const { loadPluginApp, renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
 const app = await loadPluginApp(() => import("../app.tsx"));
 const task = (id: number, status = "running") => ({ task_id: id, status, pid: 123, command: "true", started_at: new Date().toISOString(), ended_at: null, exit_code: null, signal: null, log_path: "/tmp/log" });
 const detail = (id: number, output: string, status = "running") => ({ task: task(id, status), tail: { output, earlier: false, total_bytes: output.length, next_cursor: output.length } });
@@ -78,7 +78,7 @@ test("Clear finished confirms, clears finished tasks and keeps running tasks", a
     assert.ok(actions.classList.contains("opacity-100"));
     assert.ok(clearFinished.classList.contains("text-xs"));
     assert.ok(clearFinished.classList.contains("hover:bg-state-hover"));
-    assert.ok(clearFinished.closest("[data-bb-plugin-root]"));
+    assert.ok(clearFinished.closest("[data-alia-plugin-root]"));
     assert.ok(clearFinished.querySelector("[data-icon-root]")?.classList.contains("size-[16px]"));
     fireEvent.click(clearFinished);
     await slot.findByRole("heading", { name: "Clear 2 finished tasks?" });

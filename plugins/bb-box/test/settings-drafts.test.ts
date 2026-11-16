@@ -105,7 +105,7 @@ class Server {
         if (fault.lose) throw new Error("The connection closed.");
         const sent = fault.twice ? await Promise.all([this.#apply(request), this.#apply(request)]) : [await this.#apply(request)];
         await fault.after?.();
-        if (fault.drop && sent[0]!.ok) throw new Error("BB Box saved this and dropped its reply, as a live check asked.");
+        if (fault.drop && sent[0]!.ok) throw new Error("VesnALIA Box saved this and dropped its reply, as a live check asked.");
         return sent[0]!;
       },
       read: async () => {
@@ -165,7 +165,7 @@ function setRefresh(seconds: number) {
   return (document: ConfigDocument) => withMonitor(document, { refreshIntervalSeconds: seconds });
 }
 
-test("a form's edit is saved with an operation ID, BB Box's receipt lists it, and the draft is cleared", async () => {
+test("a form's edit is saved with an operation ID, VesnALIA Box's receipt lists it, and the draft is cleared", async () => {
   const { registry, server } = await started();
   registry.set(MONITOR_PART, "monitor/refreshIntervalSeconds", plain("12"));
   assert.equal(registry.changeCount(MONITOR_PART), 1);
@@ -531,11 +531,11 @@ test("a switch is saved with its receipt; refusals, three refusals in a row and 
 
   server.faults.push({ lose: true });
   assert.deepEqual(await registry.runInstant(switchWrite(latest(), "monitor/enabled", plain(false), "Machine status")), { kind: "unconfirmed" });
-  assert.match(registry.instant("monitor/enabled").note!.text, /^Not confirmed: BB Box did not reply \(The connection closed\), and has no receipt for this change\. Machine status is true now, at revision \d+\.$/);
+  assert.match(registry.instant("monitor/enabled").note!.text, /^Not confirmed: ALIA Box did not reply \(The connection closed\), and has no receipt for this change\. Machine status is true now, at revision \d+\.$/);
 
   server.faults.push({ drop: true });
   assert.deepEqual(await registry.runInstant(switchWrite(latest(), "monitor/enabled", plain(false), "Machine status")), { kind: "saved", revision: server.stored().revision });
-  assert.match(registry.instant("monitor/enabled").note!.text, /BB Box did not reply, and its receipt for this change confirms it/);
+  assert.match(registry.instant("monitor/enabled").note!.text, /ALIA Box did not reply, and its receipt for this change confirms it/);
 
   registry.observe(await server.elsewhere((document) => withGeneral(document, { video: false })));
   const already = await registry.runInstant(switchWrite(latest(), "general/video", plain(false), "Linux desktops as video"));
@@ -771,7 +771,7 @@ test("the tailnet's choice, tags and OAuth client save together: refused part wa
   const { registry, server } = await started();
   const before = server.stored().revision;
   registry.set(NETWORK_PART, tailnetPath("mode"), plain("oauth"));
-  registry.set(NETWORK_PART, tailnetPath("tags"), plain("tag:bb-box,  tag:ci tag:ci"));
+  registry.set(NETWORK_PART, tailnetPath("tags"), plain("tag:alia-box,  tag:ci tag:ci"));
   registry.set(NETWORK_PART, tailnetPath("clientId"), { kind: "secret", text: "made-up-id" });
   await registry.save(NETWORK_PART);
   const refused = registry.part(NETWORK_PART);
@@ -786,7 +786,7 @@ test("the tailnet's choice, tags and OAuth client save together: refused part wa
   await registry.save(NETWORK_PART);
   assert.equal(registry.part(NETWORK_PART).outcome?.kind, "saved");
   assert.equal(registry.part(NETWORK_PART).edits.size, 0);
-  assert.deepEqual(server.stored().general.tailnet, { mode: "oauth", tags: ["tag:bb-box", "tag:ci"] });
+  assert.deepEqual(server.stored().general.tailnet, { mode: "oauth", tags: ["tag:alia-box", "tag:ci"] });
   assert.equal(tailnetSecret(server, TAILNET_CLIENT_ID), "made-up-id");
   assert.equal(tailnetSecret(server, TAILNET_CLIENT_SECRET), "made-up-secret");
   assert.equal(server.arrived.length, 2);

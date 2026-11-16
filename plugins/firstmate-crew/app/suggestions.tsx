@@ -8,13 +8,13 @@
  * suggestion. Hidden when there is nothing to suggest.
  *
  * Bringing the thread into view is `toThread`, and the board is a panel on that same thread, so on a wide
- * layout the chat is already beside it. bb 0.45 gives a plugin no way to close a thread's side panel, so
+ * layout the chat is already beside it. VesnALIA 0.45 gives a plugin no way to close a thread's side panel, so
  * on a phone the board stays open over the chat; the card going away is what shows the send landed.
  *
  * A card cuts a long label to one line and its prompt to two. A chevron beside the trash, shown only when
  * something is cut, opens the whole suggestion below the card, wrapped and selectable, without sending it.
  */
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Icon } from "../components/ui/icon";
@@ -34,7 +34,7 @@ export function Suggestions({
   onChanged: () => void;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const mate = useMateSender();
   // Removals outlive this list: a tab switch can unmount it while a request is out. See ./suggestion-removals.
   useSyncExternalStore(suggestionRemovals.subscribe, suggestionRemovals.version);

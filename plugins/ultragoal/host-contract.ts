@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /**
@@ -58,7 +58,7 @@ export const hostContract = defineRpcContract({
   /**
    * Does this branch still add anything the base lacks?
    *
-   * bb reports a failed squash as `HTTP 502: git merge --squash <branch>
+   * VesnALIA reports a failed squash as `HTTP 502: git merge --squash <branch>
    * failed` and does not pass git's own words through, so matching the message
    * for "already up to date" — which is what 0.25.3 did — can never work. Only
    * the repository can answer, so ask it.

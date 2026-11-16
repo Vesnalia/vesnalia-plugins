@@ -25,5 +25,5 @@ THIS SOFTWARE.
 
 ## shadcn/ui components
 
-The files in `components/ui/` are vendored from BB's plugin component
+The files in `components/ui/` are vendored from VesnALIA's plugin component
 registry, which is based on [shadcn/ui](https://ui.shadcn.com) (MIT).

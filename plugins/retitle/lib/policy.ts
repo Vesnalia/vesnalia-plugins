@@ -1,5 +1,5 @@
 // When the plugin renames a thread automatically, and which model it uses.
-// These functions are pure, so the tests can run them without a bb server.
+// These functions are pure, so the tests can run them without a VesnALIA server.
 
 /** Labels shown in the settings, and the mode each one selects. */
 export const AUTO_MODES = {
@@ -35,7 +35,7 @@ export type Decision = { rename: true } | { rename: false; reason: string };
 /**
  * Decide if a thread that just went idle gets a new title.
  *
- * bb writes a title from the first message, and that title cannot be told
+ * VesnALIA writes a title from the first message, and that title cannot be told
  * apart from a typed one. So the first rename replaces any title. After that,
  * the plugin renames only when `renameEveryMessages` is more than 0, and only
  * while the title is still the one it wrote. A changed title means that the

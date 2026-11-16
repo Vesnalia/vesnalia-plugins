@@ -16,7 +16,7 @@ import {
   useSdk,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { SidebarActions } from "./SidebarActions";
@@ -138,7 +138,7 @@ import { useSidebarFooterHeight } from "./sidebar-footer-height";
 const COLLAPSED_ROW_EXIT_MS = 220;
 
 /**
- * Project-grouped thread list. BB's projects are the only containers, the
+ * Project-grouped thread list. VesnALIA's projects are the only containers, the
  * native personal container is shown as Chats, and settled threads sit in one
  * collapsed section under the thread list rather than a shelf per project.
  */
@@ -180,7 +180,7 @@ export function CursorSidebar({ activeThreadId: routedThreadId, onNavigate }: Pl
   const rpc = useRpc<typeof cursorSidebarRpcContract>();
   const projectIcons = useProjectIcons();
 
-  // "Today +" opens BB's native composer with the personal project selected —
+  // "Today +" opens VesnALIA's native composer with the personal project selected —
   // the projectless "Don't work in a project" mode. Naming it explicitly
   // overrides the remembered root-compose project so a new thread never lands
   // in whatever project was last used.
@@ -249,7 +249,7 @@ export function CursorSidebar({ activeThreadId: routedThreadId, onNavigate }: Pl
   const collapsedGroups = usePersistentIds(COLLAPSED_GROUPS_KEY);
   // Top-level group headings (Pinned, projects, Chats) default open; these sets
   // hold the folded ones and are device preferences, not shared state.
-  const topGroupCollapsed = usePersistentIds("bb-plugin-cursor-sidebar:collapsed-top-groups:v1");
+  const topGroupCollapsed = usePersistentIds("alia-plugin-cursor-sidebar:collapsed-top-groups:v1");
   const collapsedSections = usePersistentIds(COLLAPSED_SECTIONS_KEY);
   const folderStore = useThreadSections();
   const knownFolderIds = useMemo(
@@ -1497,8 +1497,8 @@ export function CursorSidebar({ activeThreadId: routedThreadId, onNavigate }: Pl
           onClose={() => setCreatingProject(false)}
           onCreated={(project) => {
             actions.openNewThread({
-              ...(project.linkedBbProjectId === null ? {} : { projectId: project.linkedBbProjectId }),
-              initialPrompt: `Lead the ${project.prefix} project: run \`bb projects lead ${project.prefix}\`, read its board, and ask me what we are building.`,
+              ...(project.linkedAliaProjectId === null ? {} : { projectId: project.linkedAliaProjectId }),
+              initialPrompt: `Lead the ${project.prefix} project: run \`alia projects lead ${project.prefix}\`, read its board, and ask me what we are building.`,
               focusPrompt: true,
             });
             onNavigate();
@@ -1588,8 +1588,8 @@ export function CursorSidebar({ activeThreadId: routedThreadId, onNavigate }: Pl
                           nestTarget={board.leadThreadId !== null && board.leadThreadId === nestTargetId}
                           hoverDisabled={drag.state !== null}
                           hoverThreads={() =>
-                            board.bbProjectId
-                              ? rawThreads.filter((thread) => thread.projectId === board.bbProjectId)
+                            board.aliaProjectId
+                              ? rawThreads.filter((thread) => thread.projectId === board.aliaProjectId)
                               : board.leadThreadId
                                 ? visible.filter((thread) => familyRootOfId(thread.id) === board.leadThreadId)
                                 : []
@@ -1821,7 +1821,7 @@ function ManagerMenuInner({
             removeManager(board.id).then(
               () => {
                 toast.success(`${board.name} no longer has a manager`, {
-                  description: "The thread is back in your normal list. Set one again with bb projects lead.",
+                  description: "The thread is back in your normal list. Set one again with VesnALIA projects lead.",
                 });
                 onRemoved();
               },
@@ -1953,7 +1953,7 @@ function ProjectBoardRow({
     <ProjectHoverCard
       disabled={hoverDisabled || renaming}
       name={board.name}
-      projectId={board.bbProjectId}
+      projectId={board.aliaProjectId}
       boardId={board.id}
       icon={icon ?? null}
       personal={false}

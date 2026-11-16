@@ -3,11 +3,11 @@ import { join } from "node:path";
 export type JsonObject = Record<string, unknown>;
 export type CustomAgent = JsonObject & { id?: unknown; command?: unknown; env?: unknown };
 
-// The ACP adapters whose `customAgents` setting can carry Droid. bb 0.46
-// shipped the rebuilt adapter as the opt-in `bb--provider-acp-next`, which
-// disabled `provider-acp` when enabled; from bb 0.47 the rebuilt adapter is
+// The ACP adapters whose `customAgents` setting can carry Droid. VesnALIA 0.46
+// shipped the rebuilt adapter as the opt-in `alia--provider-acp-next`, which
+// disabled `provider-acp` when enabled; from VesnALIA 0.47 the rebuilt adapter is
 // `provider-acp` itself. At most one of these answers a settings read.
-export const ACP_PLUGIN_IDS = ["bb--provider-acp-next", "provider-acp"] as const;
+export const ACP_PLUGIN_IDS = ["alia--provider-acp-next", "provider-acp"] as const;
 export type AcpPluginId = (typeof ACP_PLUGIN_IDS)[number];
 
 export const PROFILE = {
@@ -24,10 +24,10 @@ export const PROFILE = {
     user: [".factory/skills", ".agents/skills", ".agent/skills"],
     project: [".factory/skills", ".agents/skills", ".agent/skills"],
   },
-  // bb's permission modes as Droid exec launch flags. These are exec options,
+  // VesnALIA's permission modes as Droid exec launch flags. These are exec options,
   // so insertAfterArgs: 1 places them after `exec` rather than before it.
   // "full" is Droid's own skip-all-checks switch. "accept-edits" maps to
-  // `--auto low` (file creation/modification, no system changes). bb's default
+  // `--auto low` (file creation/modification, no system changes). VesnALIA's default
   // "auto" mode adds nothing, so every request comes through ACP as before.
   permissionCli: {
     full: ["--skip-permissions-unsafe"],
@@ -35,14 +35,14 @@ export const PROFILE = {
     insertAfterArgs: 1,
   },
   // Droid's ACP session exposes a `reasoning_effort` select (category
-  // thought_level), so bb sets effort over ACP. A launch flag would not work:
-  // bb puts reasoning flags before `exec`, where Droid starts its TUI instead.
+  // thought_level), so VesnALIA sets effort over ACP. A launch flag would not work:
+  // VesnALIA puts reasoning flags before `exec`, where Droid starts its TUI instead.
   nativeReasoning: {
     configId: "reasoning_effort",
     supportedLevels: ["none", "low", "medium", "high", "xhigh", "max"],
     defaultLevel: "medium",
   },
-  installHint: "Install and authenticate Factory Droid, then run `bb plugin reload droid`.",
+  installHint: "Install and authenticate Factory Droid, then run `alia plugin reload droid`.",
 } as const;
 
 // Droid keeps its login under ~/.factory in one of these files, depending on
@@ -151,12 +151,12 @@ export function managedAgent(binary: string, existing?: CustomAgent, factoryApiK
     },
   };
   delete agent.logo;
-  // bb prefers reasoningCli over nativeReasoning and prepends its flag before
+  // VesnALIA prefers reasoningCli over nativeReasoning and prepends its flag before
   // `exec`, which launches Droid's TUI and breaks the ACP session.
   delete agent.reasoningCli;
   if (env) agent.env = env;
   else delete agent.env;
-  // bb 0.40 requires modelCli.listArgs when modelCli is present. Droid has no
+  // VesnALIA 0.40 requires modelCli.listArgs when modelCli is present. Droid has no
   // list-models command; ACP session discovery supplies the catalog instead.
   if (!isObject(agent.modelCli) || !Array.isArray(agent.modelCli.listArgs)) {
     delete agent.modelCli;

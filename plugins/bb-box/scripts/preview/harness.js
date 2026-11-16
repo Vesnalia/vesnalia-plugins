@@ -1,4 +1,4 @@
-// A preview of bb-box's built panels outside BB: the built bundle, BB's
+// A preview of alia-box's built panels outside VesnALIA: the built bundle, VesnALIA's
 // theme and a fake of the plugin SDK's app runtime with fixtures. Serve the
 // repository root and open scripts/preview/index.html#<scene>[&light].
 // scripts/preview/shoot.sh renders every scene with headless Chrome.
@@ -19,18 +19,18 @@ const [React, ReactDOMClient, ReactDOM, jsxRuntime, radixAlertDialog, radixDropd
   import("https://esm.sh/tailwind-merge@3.4.0"),
   import("https://esm.sh/class-variance-authority@0.7.1"),
 ]);
-// BB's toaster: the host gives plugins sonner's toast, and mounts one Toaster for the app (AppToaster).
+// VesnALIA's toaster: the host gives plugins sonner's toast, and mounts one Toaster for the app (AppToaster).
 const sonner = await import(`https://esm.sh/sonner@1.7.4?${deps}`);
 const h = React.createElement;
 
-// BB's theme: its token blocks apply as they are, and its Tailwind @theme
+// VesnALIA's theme: its token blocks apply as they are, and its Tailwind @theme
 // blocks become :root rules so the utilities' var(--color-*) resolve.
 const THEME_URL = "https://raw.githubusercontent.com/get-bb/bb/desktop-v0.44.0/apps/web/src/components/ui/theme.css";
 const themeCss = await fetch(THEME_URL).then((response) => response.text());
-// Tailwind's preflight, which BB's app carries and a plugin bundle does not.
+// Tailwind's preflight, which VesnALIA's app carries and a plugin bundle does not.
 const PREFLIGHT_URL = "https://unpkg.com/tailwindcss@4.1.13/preflight.css";
-document.getElementById("bb-base").textContent = `@layer base {\n${await fetch(PREFLIGHT_URL).then((response) => response.text())}\n}`;
-document.getElementById("bb-theme").textContent = themeCss.replace(/@theme(?:\s+inline)?\s*\{/g, ":root {");
+document.getElementById("alia-base").textContent = `@layer base {\n${await fetch(PREFLIGHT_URL).then((response) => response.text())}\n}`;
+document.getElementById("alia-theme").textContent = themeCss.replace(/@theme(?:\s+inline)?\s*\{/g, ":root {");
 
 const ICONS = {
   Plus: '<path d="M12 5v14M5 12h14"/>',
@@ -64,14 +64,14 @@ const ICONS = {
   Zap: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   Terminal: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
 };
-// The plugin's own glyphs, as package.json declares them: stroked in BB's style, or filled (the provider marks from Simple Icons).
+// The plugin's own glyphs, as package.json declares them: stroked in VesnALIA's style, or filled (the provider marks from Simple Icons).
 const assets = {};
 for (const name of ["monitor", "server", "terminal", "icon", "laptop", "plug", "proxmox", "docker"]) {
   const svg = await fetch(`/assets/${name}.svg`).then((response) => response.text());
   assets[name] = { body: svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, ""), filled: /<svg[^>]*fill="currentColor"/.test(svg) };
 }
 function Icon({ name, className, fallback = "Zap", ...rest }) {
-  const own = typeof name === "string" && name.startsWith("bb-box/") ? assets[name.slice("bb-box/".length)] : null;
+  const own = typeof name === "string" && name.startsWith("alia-box/") ? assets[name.slice("alia-box/".length)] : null;
   const body = own?.body ?? ICONS[name] ?? ICONS[fallback] ?? ICONS.Zap;
   return h("svg", {
     ...rest,
@@ -207,17 +207,17 @@ const pluginSdkApp = {
     return slots;
   },
   experimental_Icon: Icon,
-  experimental_usePluginId: () => "bb-box",
-  // One client for every render, as BB's own useRpc gives: a new one each render re-ran every effect that depends on it, as the
+  experimental_usePluginId: () => "alia-box",
+  // One client for every render, as VesnALIA's own useRpc gives: a new one each render re-ran every effect that depends on it, as the
   // desktop tab's claim of its session, which reconnected at once whenever its connection ended.
   useRpc: () => rpcClient,
   useRealtime() {},
   useRealtimeConnectionState: () => "connected",
-  useBbNavigate: () => ({ openThreadPanel: log("openThreadPanel"), openUrl: log("openUrl"), toThread: log("toThread"), toPluginPanel: log("toPluginPanel"), toCompose: log("toCompose") }),
+  useAliaNavigate: () => ({ openThreadPanel: log("openThreadPanel"), openUrl: log("openUrl"), toThread: log("toThread"), toPluginPanel: log("toPluginPanel"), toCompose: log("toCompose") }),
   useSdk: () => ({ threads: { get: async ({ threadId }) => ({ title: scene.threads?.[threadId] ?? threadId }) } }),
   UrlLink: ({ href, children, ...rest }) => h("a", { href, ...rest }, children),
   useSettings: () => ({ values: {}, isLoading: false }),
-  useBbContext: () => ({ projectId: null, threadId: null }),
+  useAliaContext: () => ({ projectId: null, threadId: null }),
 };
 function log(method) {
   return (...args) => {
@@ -225,7 +225,7 @@ function log(method) {
     return true;
   };
 }
-globalThis.__bbPluginRuntime = {
+globalThis.__aliaPluginRuntime = {
   react: React,
   reactDom: ReactDOM,
   reactDomClient: ReactDOMClient,
@@ -278,15 +278,15 @@ const slot =
       ? slots.navPanels[0]
       : slots.threadPanelActions.find((action) => action.id === scene.slot);
 root.className = slot.layout === "flush" ? "flush" : scene.slot === "boxes-page" ? "" : "padded";
-// BB's title bar over a nav page, as PluginPanelHeader draws it: the icon and title on the left, the panel's
-// headerContent on the right, then BB's own buttons (two dim placeholders here).
+// VesnALIA's title bar over a nav page, as PluginPanelHeader draws it: the icon and title on the left, the panel's
+// headerContent on the right, then VesnALIA's own buttons (two dim placeholders here).
 if (scene.slot === "boxes-page") {
   chrome.className = "titlebar";
-  chrome.innerHTML = `<span class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.8 7.2 12 11.8l8.2-4.6M12 11.8v9.5"/></svg>${slot.title}</span><span class="spacer"></span><span class="header-content" data-bb-plugin="bb-box"></span><span class="bb-button">×</span><span class="bb-button">▢</span>`;
+  chrome.innerHTML = `<span class="title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.8 7.2 12 11.8l8.2-4.6M12 11.8v9.5"/></svg>${slot.title}</span><span class="spacer"></span><span class="header-content" data-alia-plugin="alia-box"></span><span class="alia-button">×</span><span class="alia-button">▢</span>`;
   if (slot.headerContent) ReactDOMClient.createRoot(chrome.querySelector(".header-content")).render(h(slot.headerContent, { subPath: scene.props?.subPath ?? "" }));
 }
-// BB's Toaster, as AppToaster mounts it: at the bottom right, in BB's theme. Inside the frame, which holds fixed elements, so a
-// toast shows where BB's would over a panel on the right of its window.
+// VesnALIA's Toaster, as AppToaster mounts it: at the bottom right, in VesnALIA's theme. Inside the frame, which holds fixed elements, so a
+// toast shows where VesnALIA's would over a panel on the right of its window.
 if (scene.toaster) {
   frame.style.transform = "translateZ(0)";
   const toaster = document.createElement("div");

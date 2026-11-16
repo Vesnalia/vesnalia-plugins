@@ -228,7 +228,7 @@ const pluginToken = getPluginToken;
 
 const ghosttyWasmObjectUrl = createRetryablePromiseCache(async () => {
   const response = await fetch(GHOSTTY_WASM_URL, {
-    headers: { "x-bb-plugin-token": await pluginToken() },
+    headers: { "x-alia-plugin-token": await pluginToken() },
     signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) {
@@ -265,7 +265,7 @@ export async function loadNerdFont(
 
   const pending = (async () => {
     const response = await fetch(NERD_FONT_URL, {
-      headers: { "x-bb-plugin-token": await pluginToken() },
+      headers: { "x-alia-plugin-token": await pluginToken() },
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
@@ -578,7 +578,7 @@ export function WtermRenderer({
       );
       if (!text) return;
 
-      // BB owns copy handlers around plugin surfaces. Stop the event at the
+      // VesnALIA owns copy handlers around plugin surfaces. Stop the event at the
       // terminal boundary so it cannot serialize the surrounding message row.
       event.preventDefault();
       event.stopPropagation();
@@ -703,7 +703,7 @@ export function WtermRenderer({
       ) {
         return;
       }
-      // BB animates panel maximize/restore for 220ms. Keep Wterm's local grid
+      // VesnALIA animates panel maximize/restore for 220ms. Keep Wterm's local grid
       // responsive, but send only the settled PTY size so TUIs do not paint a
       // series of intermediate SIGWINCH frames over the changing grid.
       resizeTimerRef.current = window.setTimeout(() => {

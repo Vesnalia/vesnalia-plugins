@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { MeetingAnalysis, SummaryTemplate } from "../shared/analysis";
 
 afterEach(cleanup);
@@ -92,7 +92,7 @@ describe("expanded meeting features", () => {
     const button = await screen.findByRole("button", { name: "Разобрать встречу" });
     await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(button);
-    await screen.findByText(/Разбор выполняет агент BB/);
+    await screen.findByText(/Разбор выполняет агент ALIA/);
     expect(calls(slot, "meetings.analyze")).toEqual([{ id: MEETING_ID, templateId: "executive" }]);
     expect(screen.queryByRole("tab", { name: "Итоги" })).toBeNull();
     expect(calls(slot, "meetings.saveInsights")).toEqual([]);

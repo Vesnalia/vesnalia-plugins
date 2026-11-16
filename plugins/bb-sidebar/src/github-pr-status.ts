@@ -1,10 +1,10 @@
 // The bundled GitHub PR Status plugin owns pull request data for each
 // environment's checked-out branch. Its `pullRequests` method is a keyed read:
 // environment ids in, one row per id out. These are the fields the sidebar
-// reads; `bb plugin rpc inspect bb--github-pr-status pullRequests` prints the
+// reads; `alia plugin rpc inspect alia--github-pr-status pullRequests` prints the
 // full schema.
 
-export const GITHUB_PR_STATUS_PLUGIN_ID = "bb--github-pr-status";
+export const GITHUB_PR_STATUS_PLUGIN_ID = "alia--github-pr-status";
 
 /** `pullRequests` accepts at most this many environment ids per call. */
 export const MAX_PULL_REQUEST_KEYS = 200;

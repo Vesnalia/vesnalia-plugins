@@ -2,7 +2,7 @@
 const OMP_TINT = "#f84fcc";
 
 /**
- * bb's omp mark (provider-acp/icons/omp.svg). bb only draws it for its shipped omp agent; a
+ * VesnALIA's omp mark (provider-acp/icons/omp.svg). VesnALIA only draws it for its shipped omp agent; a
  * provider-acp `customAgents` entry with id `omp` replaces that agent under the same provider id
  * and gets a generic glyph. The fill sits on the path, so the host's text color classes don't
  * override the tint.

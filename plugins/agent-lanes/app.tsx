@@ -1,11 +1,11 @@
 // Lanes: where every agent is right now. A live timeline with one lane per
-// bb thread, one block per agent turn growing into "now", hand-offs drawn
+// VesnALIA thread, one block per agent turn growing into "now", hand-offs drawn
 // between threads, and approvals answered on the block.
 //
 // app/shell/** owns registration, data, grouping, and chrome; the timeline
 // engine draws the lanes themselves.
 import type { ComponentType } from "react";
-import { definePluginApp, type PluginNavPanelProps, type PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, type PluginNavPanelProps, type PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { TimelineProps } from "./shared/view";
 import { LanesHeaderContent, LanesSidebarAccessory } from "./app/shell/components/HeaderContent";
 import { LanesPane } from "./app/shell/LanesPane";
@@ -30,7 +30,7 @@ function HeaderContent(_props: PluginNavPanelProps) {
   );
 }
 
-// Declared in the manifest (bb.branding.experimental_icons) so the sidebar can
+// Declared in the manifest (alia.branding.experimental_icons) so the sidebar can
 // draw it before this bundle loads.
 const LANES_ICON = "agent-lanes/lanes";
 

@@ -1,5 +1,5 @@
 // Who owns each changed file, by the repo's CODEOWNERS (a PR's base branch, a local review's new side), matched as GitHub does.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ReviewMeta } from "./store";
 import { ghErrorMessage, type runGh, type runGit } from "./gh";
 import { gitFile, localRevs, readFeatureFile, workingTreeFile, type Read } from "./file-contents";
@@ -94,7 +94,7 @@ const CACHE_SIZE = 64;
  * The repo's CODEOWNERS: "" when it has none. A PR reads it at its base branch's tip, all three places in one
  * GraphQL call; a local review at the diff's new side.
  */
-export async function readCodeowners(gh: { runGh: typeof runGh; runGit: typeof runGit; bb?: BbPluginApi }, review: ReviewMeta): Promise<Read> {
+export async function readCodeowners(gh: { runGh: typeof runGh; runGit: typeof runGit; alia?: AliaPluginApi }, review: ReviewMeta): Promise<Read> {
   if (review.kind === "pr") {
     if (!review.repo || !review.number || !review.headSha) return { text: "" };
     const key = `${review.repo}#${review.number}@${review.headSha}`;
@@ -116,7 +116,7 @@ export async function readCodeowners(gh: { runGh: typeof runGh; runGit: typeof r
   }
   if (review.feature) {
     for (const path of CODEOWNERS_PATHS) {
-      const read = await readFeatureFile(gh.bb, review.feature, "new", path);
+      const read = await readFeatureFile(gh.alia, review.feature, "new", path);
       if ("text" in read || !read.missing) return read;
     }
     return { text: "" };
@@ -133,7 +133,7 @@ export async function readCodeowners(gh: { runGh: typeof runGh; runGit: typeof r
 
 /** Each changed file with owners, and whether you or a team you're on is one of them. */
 export async function codeOwners(
-  gh: { runGh: typeof runGh; runGit: typeof runGit; bb?: BbPluginApi },
+  gh: { runGh: typeof runGh; runGit: typeof runGit; alia?: AliaPluginApi },
   review: ReviewMeta,
   paths: readonly string[],
   viewer: () => Promise<{ login: string | null; teams: ReadonlySet<string> }>,

@@ -1,13 +1,13 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-type Queue = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["queuedMessages"]["list"]>>;
+type Queue = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["queuedMessages"]["list"]>>;
 type Entry = Queue[number];
 
 export const CHILD_BATCH_WAIT_REASON = "Preparing queued updates from the same child for one delivery.";
 
 /** Group the original durable rows; never copy, send or delete their contents. */
 export function childMessageQueue(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   enabled: (threadId: string) => Promise<boolean>,
 ) {
   let disposed = false;
@@ -15,7 +15,7 @@ export function childMessageQueue(
   const dirty = new Set<string>();
 
   function owned(entry: Entry): boolean {
-    return entry.waitingOn?.kind === "plugin" && entry.waitingOn.pluginId === bb.pluginId;
+    return entry.waitingOn?.kind === "plugin" && entry.waitingOn.pluginId === alia.pluginId;
   }
 
   function eligible(entry: Entry): boolean {
@@ -43,7 +43,7 @@ export function childMessageQueue(
     }
     const parents = new Map(await Promise.all(
       [...new Set(window.map((entry) => entry.senderThreadId!))].map(async (sender) =>
-        [sender, (await bb.sdk.threads.get({ threadId: sender })).parentThreadId] as const,
+        [sender, (await alia.sdk.threads.get({ threadId: sender })).parentThreadId] as const,
       ),
     ));
     if (disposed) return [];
@@ -52,7 +52,7 @@ export function childMessageQueue(
       if (parents.get(entry.senderThreadId!) !== threadId) break;
       if (compatible(first, entry)) selected.push(entry);
     }
-    // BB's boundary operation clears all trailing group edges. Preserve any
+    // VesnALIA's boundary operation clears all trailing group edges. Preserve any
     // existing group outside this batch instead of silently splitting it.
     const ids = new Set(selected.map((entry) => entry.id));
     if (entries.some((entry, index) => entry.groupWithNext &&
@@ -65,7 +65,7 @@ export function childMessageQueue(
     attempts: for (let attempt = 0; attempt < 3 && !disposed; attempt++) {
       try {
         if (!await enabled(threadId) || disposed) return changed;
-        let entries = await bb.sdk.threads.queuedMessages.list({ threadId });
+        let entries = await alia.sdk.threads.queuedMessages.list({ threadId });
         const selected = await batch(threadId, entries);
         if (selected.length < 2 || disposed) return changed;
         const firstId = selected[0]!.id;
@@ -78,7 +78,7 @@ export function childMessageQueue(
           }
           if (entries[index]?.id === selected[index]!.id) continue;
           if (!await enabled(threadId) || disposed) return changed;
-          entries = await bb.sdk.threads.queuedMessages.reorder({
+          entries = await alia.sdk.threads.queuedMessages.reorder({
             threadId,
             queuedMessageId: selected[index]!.id,
             previousQueuedMessageId: selected[index - 1]!.id,
@@ -96,7 +96,7 @@ export function childMessageQueue(
           return changed;
         }
         if (!await enabled(threadId) || disposed) return changed;
-        await bb.sdk.threads.queuedMessages.setGroupBoundary({
+        await alia.sdk.threads.queuedMessages.setGroupBoundary({
           threadId,
           expectedGroupedPrefixQueuedMessageIds: prefix.map((entry) => entry.id),
           groupBoundaryQueuedMessageId: prefix[prefix.length - 1]!.id,
@@ -104,7 +104,7 @@ export function childMessageQueue(
         return true;
       } catch (cause) {
         if (attempt === 2 && !disposed) {
-          bb.log.warn(`child message grouping failed for ${threadId}: ${String(cause)}`);
+          alia.log.warn(`child message grouping failed for ${threadId}: ${String(cause)}`);
         }
       }
     }
@@ -122,7 +122,7 @@ export function childMessageQueue(
         dirty.delete(threadId);
         changed = await group(threadId) || changed;
       } while (!disposed && dirty.has(threadId));
-      if (changed && !disposed) bb.experimental_hooks.recheck("message.dispatch");
+      if (changed && !disposed) alia.experimental_hooks.recheck("message.dispatch");
     })().finally(() => jobs.delete(threadId));
     jobs.set(threadId, job);
     return job;
@@ -134,11 +134,11 @@ export function childMessageQueue(
     async defer(threadId: string, claimed: Queue): Promise<boolean> {
       if (disposed || claimed.length === 0 || claimed.some((entry) => !eligible(entry))) return false;
       // A single preparatory retry closes the claim-vs-group race. If the SDK
-      // stays unavailable, let BB deliver the original rows rather than wedge
+      // stays unavailable, let VesnALIA deliver the original rows rather than wedge
       // the queue indefinitely. Active-turn holds still apply independently.
       if (claimed.some((entry) => entry.waitingOn?.kind === "plugin" &&
         entry.waitingOn.reason.includes(CHILD_BATCH_WAIT_REASON))) return false;
-      const pending = await bb.sdk.threads.queuedMessages.list({ threadId });
+      const pending = await alia.sdk.threads.queuedMessages.list({ threadId });
       const ids = new Set(claimed.map((entry) => entry.id));
       const selected = await batch(threadId, [...claimed, ...pending.filter((entry) => !ids.has(entry.id))]);
       return selected.length > claimed.length && claimed.every((entry, index) => selected[index]?.id === entry.id);

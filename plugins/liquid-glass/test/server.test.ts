@@ -2,7 +2,7 @@ import { mkdtemp, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import plugin from "../server.js";
@@ -10,7 +10,7 @@ import { DEFAULT_APPEARANCE } from "../src/appearance.js";
 
 /** The plugin, its fake host, and the kv the row is really written to. */
 async function bootWith(stored?: unknown) {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "liquid-glass",
     sdk: {
       theme: {
@@ -19,9 +19,9 @@ async function bootWith(stored?: unknown) {
       },
     },
   });
-  if (stored !== undefined) await bb.storage.kv.set("appearance", stored);
-  await plugin(bb);
-  return { bb, harness };
+  if (stored !== undefined) await alia.storage.kv.set("appearance", stored);
+  await plugin(alia);
+  return { alia, harness };
 }
 
 async function boot(stored?: unknown) {
@@ -75,7 +75,7 @@ describe("getAppearance", () => {
       wallpaperBlur: 0,
       dim: 0.15,
     };
-    const { bb, harness: oldHarness } = await bootWith(stored);
+    const { alia, harness: oldHarness } = await bootWith(stored);
     const result = (await oldHarness.behavior.callRpc("getAppearance", null)) as Record<
       string,
       unknown
@@ -86,7 +86,7 @@ describe("getAppearance", () => {
     expect(result).not.toHaveProperty("paneGlass");
 
     // The rewritten row is the migrated one, not the row that was read.
-    const persisted = await bb.storage.kv.get<Record<string, unknown>>("appearance");
+    const persisted = await alia.storage.kv.get<Record<string, unknown>>("appearance");
     expect(persisted).toMatchObject({ wallpaperBlur: 12, paneOpacity: 0.23 });
     expect(persisted).not.toHaveProperty("paneBlur");
     expect(persisted).not.toHaveProperty("paneGlass");
@@ -297,7 +297,7 @@ describe("the wallpaper route", () => {
   });
 });
 
-describe("the bb liquid-glass command", () => {
+describe("the VesnALIA liquid-glass command", () => {
   it("shows, sets, resets, and lists presets", async () => {
     const show = await harness.behavior.runCli(["show"]);
     expect(show.exitCode).toBe(0);

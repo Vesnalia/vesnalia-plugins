@@ -13,7 +13,7 @@ export function validAgentId(value: string): string {
   return value;
 }
 /**
- * A stored BB thread reference. The saved-chat keys are plugin KV rows, i.e.
+ * A stored VesnALIA thread reference. The saved-chat keys are plugin KV rows, i.e.
  * mutable state on disk, and the value crosses into the RPC boundary and then
  * into a link the sidebar matches against live thread IDs. A malformed or stale
  * value must never be able to widen a dot's scope, so it is constrained here

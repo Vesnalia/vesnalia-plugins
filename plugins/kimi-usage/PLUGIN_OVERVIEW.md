@@ -1,6 +1,6 @@
 ## What you get
 
-A Kimi Code plan has no usage source in bb: the Provider usage view reads
+A Kimi Code plan has no usage source in VesnALIA: the Provider usage view reads
 OpenCode Go, Claude Code and a few other subscriptions through their own
 collectors, and Kimi is not among them. The plan's 5-hour window and monthly
 quota stay invisible until you visit the vendor's site.
@@ -20,18 +20,18 @@ hardcoded to a vendor host: the base URL comes from that config.
 ## When it stays quiet
 
 The row appears only when the Kimi Code ACP provider is installed, enabled and
-available in bb, because without that provider there is no subscription to
+available in VesnALIA, because without that provider there is no subscription to
 meter. A host whose login has expired drops out of the panel instead of showing
-an empty row; `bb kimi-usage show` still reports that host as `expired`, so the
+an empty row; `alia kimi-usage show` still reports that host as `expired`, so the
 reason is not lost.
 
 ## Command
 
-`bb kimi-usage show [--host <id>] [--json]` prints the same windows per host and
+`alia kimi-usage show [--host <id>] [--json]` prints the same windows per host and
 forces a fresh measurement.
 
 ## Requirements
 
 The Kimi Code CLI signed in on the host (`kimi login`), the Kimi Code ACP
-provider enabled in bb, and bb 0.49 or newer. The plugin refreshes the token
+provider enabled in VesnALIA, and VesnALIA 0.49 or newer. The plugin refreshes the token
 itself but cannot repair a rejected refresh token: that needs a new login.

@@ -61,7 +61,7 @@ function output(seq: number, value: string) {
 beforeEach(() => {
   FakeWebSocket.instances = [];
   vi.stubGlobal("window", {
-    location: { host: "bb.test", protocol: "https:" },
+    location: { host: "alia.test", protocol: "https:" },
   });
   vi.stubGlobal("WebSocket", FakeWebSocket);
 });

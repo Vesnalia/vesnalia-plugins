@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The plugin detail page's configuration section: the Appearance rows are
-// mirrored from the settings modal onto bb's configuration page, holding
+// mirrored from the settings modal onto VesnALIA's configuration page, holding
 // their own state and writing the same localStorage keys the modal writes —
 // a presentational mirror, never a second store.
 import { afterEach, describe, expect, it, vi } from "vitest";

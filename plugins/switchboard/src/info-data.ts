@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { PluginBrowserBbSdk, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { InfoCardMode } from "./settings";
 import { resetGitStatus } from "./git-status";
 import type { ExecutionOptions, Interactions, Outline, Usage } from "./info-format";
@@ -75,7 +75,7 @@ export function useCached<T>(loader: Loader<T> | null): Resource<T> | null {
   return entry.key === key ? entry.resource : peek<T>(key);
 }
 
-export function infoLoaders(sdk: PluginBrowserBbSdk, thread: PluginSidebarThread, mode: Exclude<InfoCardMode, "off">): InfoLoaders {
+export function infoLoaders(sdk: PluginBrowserAliaSdk, thread: PluginSidebarThread, mode: Exclude<InfoCardMode, "off">): InfoLoaders {
   const threadId = thread.id;
   return {
     options: { key: `options:${threadId}`, delayMs: 0, prefetch: true,

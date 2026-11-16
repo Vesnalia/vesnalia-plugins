@@ -1,6 +1,6 @@
 import { threadDeltaSchema, threadDeltaNotificationParamsSchema, providerRecoveryNotificationSchema,
-  jsonRpcEnvelopeSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import type { ThreadDelta } from '@get-bb/plugin-sdk/provider-bridge';
+  jsonRpcEnvelopeSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import type { ThreadDelta } from '@vesnalia/plugin-sdk/provider-bridge';
 import { EventTranslator } from './translator.ts';
 import { ProtocolError, integer, string } from './errors.ts';
 import type { Warn } from './errors.ts';

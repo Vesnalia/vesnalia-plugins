@@ -1,7 +1,7 @@
 // What the Tart backend runs on a Mac for Windows boxes, whose VMs QEMU runs
 // on Apple's Hypervisor framework (046), and the parsers for what it prints.
 // As host.ts's scripts, they run in /bin/sh over SSH as the Mac's user,
-// install nothing, and keep their state under ~/.bb-box, readable by the
+// install nothing, and keep their state under ~/.alia-box, readable by the
 // host user only:
 //
 // - qemu/images/<image>/<build>/: the builds of a Windows image, each with
@@ -84,7 +84,7 @@ build_in_use() {
  * fd 4. QEMU takes one QMP client at a time, so a second script waits for
  * the first.
  */
-const LIBRARY = String.raw`q="$HOME/.bb-box/qemu"
+const LIBRARY = String.raw`q="$HOME/.alia-box/qemu"
 # A write to a QMP connection that QEMU closed fails, rather than ending the script.
 trap '' PIPE
 nc=/usr/bin/nc; [ -x "$nc" ] || nc=nc
@@ -128,7 +128,7 @@ qmp_close() { exec 3>&- 4<&-; kill "$qnc" 2>/dev/null; wait "$qnc" 2>/dev/null; 
 signal_pid() { case $2 in '' | 0 | *[!0-9]*) return 1 ;; esac; kill "-$1" "$2" 2>/dev/null; }
 # Whether VM $1's video bridge runs (qemu-video.ts, #865): the PID in its video.pid, and the process there a bridge.
 qvideo() {
-  _p=$(cat "$q/vms/$1/video.pid" 2>/dev/null) && [ -n "$_p" ] && ps -ww -p "$_p" -o command= 2>/dev/null | grep -q '/bb-box-stream-[0-9a-f]* qemu '
+  _p=$(cat "$q/vms/$1/video.pid" 2>/dev/null) && [ -n "$_p" ] && ps -ww -p "$_p" -o command= 2>/dev/null | grep -q '/alia-box-stream-[0-9a-f]* qemu '
 }
 # Ends VM $1's video bridge by that PID only: the Mac is its owner's.
 qvideostop() {
@@ -310,13 +310,13 @@ export type QemuDisplay = "none" | "dbus";
  * kept (host.ts).
  *
  * The display "dbus", the default, adds QEMU's D-Bus display, peer to peer,
- * which bb-box-stream reads the desktop from (#885), where this QEMU has it,
+ * which alia-box-stream reads the desktop from (#885), where this QEMU has it,
  * as its `-display help` says; VNC stays. A display is no part of a saved
  * state, so a state saved under either restores under either.
  */
 export function qemuStartScript(vm: string, waitSeconds: number, display: QemuDisplay = "dbus"): string {
   return qemu(String.raw`vm=${quote(vm)}; v="$q/vms/$vm"
-if rollback_running "$vm"; then echo "BB Box is putting a snapshot in the place of $vm on the Mac, so it does not start it until that has ended." >&2; exit 1; fi
+if rollback_running "$vm"; then echo "VesnALIA Box is putting a snapshot in the place of $vm on the Mac, so it does not start it until that has ended." >&2; exit 1; fi
 heal_rollback "$vm" "$v" || { [ $? = ${TURN_NOT_TAKEN} ] || echo "The folder of $vm is missing after a restore cut short, and the Mac has nothing whole to put back." >&2; exit 1; }
 [ -f "$v/config" ] || { echo "There is no VM $vm." >&2; exit 1; }
 if qrunning "$vm"; then echo running; exit 0; fi
@@ -414,7 +414,7 @@ ${SAVE}echo stopped
 }
 
 /**
- * Saves a warm VM bb-box has filled, once it is ready (SAVE), and marks it
+ * Saves a warm VM alia-box has filled, once it is ready (SAVE), and marks it
  * warm. Prints "warm", or "gone" when its owner file no longer says it is
  * filling.
  */
@@ -513,7 +513,7 @@ export function qemuDiscardScript(vm: string): string {
 export function qemuDeleteScript(vm: string, installId: string, boxId: string | null): string {
   return qemu(String.raw`vm=${quote(vm)}; v="$q/vms/$vm"
 if [ -f "$d/owners/$vm" ] && ! mine "$vm" ${quote(installId)} ${quote(boxId ?? "")}; then echo gone; exit 0; fi
-if rollback_running "$vm"; then echo "BB Box is putting a snapshot in the place of $vm on the Mac, so it deletes it once that has ended." >&2; exit 1; fi
+if rollback_running "$vm"; then echo "VesnALIA Box is putting a snapshot in the place of $vm on the Mac, so it deletes it once that has ended." >&2; exit 1; fi
 heal_rollback "$vm" "$v" || :
 if qrunning "$vm"; then
   pid=$(cat "$v/pid"); signal_pid TERM "$pid"

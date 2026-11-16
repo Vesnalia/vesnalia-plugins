@@ -1,7 +1,7 @@
 /**
  * Server state. Every write goes through one of these functions, which
  * the RPC handlers and the CLI share; each write ends with `onChange`, which
- * the plugin wires to `bb.rpc.experimental_invalidate(["icons"])`.
+ * the plugin wires to `alia.rpc.experimental_invalidate(["icons"])`.
  *
  * KV layout:
  *   assignments              { "agent:<providerId>": Assignment }
@@ -9,7 +9,7 @@
  *   sets/<setId>             { name, icons: { <iconId>: { name, bytes } } }
  *   icons/<setId>/<iconId>   SvgNode
  */
-import { experimental_PluginRpcRefusal as Refusal, type PluginKvStorage } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal as Refusal, type PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { isBuiltinIcon } from "../shared/builtin-icons";
 import {
   iconRef,

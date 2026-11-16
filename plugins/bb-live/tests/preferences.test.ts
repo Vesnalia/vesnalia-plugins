@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPreferences, preferencesPatchSchema } from "../src/preferences";
 
 test("legacy preferences migrate once, exclude secrets, and survive reload", async () => {
   let reads = 0;
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-live",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-live",
     sdk: {
       plugins: {
         getSettings: async () => {
@@ -30,13 +30,13 @@ test("legacy preferences migrate once, exclude secrets, and survive reload", asy
     },
   });
   try {
-    const prefs = await createPreferences(bb);
+    const prefs = await createPreferences(alia);
     assert.equal(prefs.get().voice, "cedar");
     assert.equal(prefs.get().routerModel, "custom-model");
     assert.equal(prefs.get().operatorModel, "custom-operator");
     assert.equal(prefs.get().transcriptRetentionDays, 14);
     assert.ok(
-      !JSON.stringify(await bb.storage.kv.get("preferences.v1")).includes(
+      !JSON.stringify(await alia.storage.kv.get("preferences.v1")).includes(
         "sk-secret",
       ),
     );
@@ -48,7 +48,7 @@ test("legacy preferences migrate once, exclude secrets, and survive reload", asy
       }),
       prefs.update({ spokenProgress: "verbose" }),
     ]);
-    const reloaded = await createPreferences(bb);
+    const reloaded = await createPreferences(alia);
     assert.equal(reloaded.get().voice, "ash");
     assert.equal(reloaded.get().voicePrompt, "Keep it brief.");
     assert.equal(reloaded.get().opening, "");
@@ -61,8 +61,8 @@ test("legacy preferences migrate once, exclude secrets, and survive reload", asy
 });
 
 test("a failed migration does not save defaults over previous choices", async () => {
-  const { bb, harness } = createFakePluginHost({
-    pluginId: "bb-live",
+  const { alia, harness } = createFakePluginHost({
+    pluginId: "alia-live",
     sdk: {
       plugins: {
         getSettings: async () => {
@@ -72,8 +72,8 @@ test("a failed migration does not save defaults over previous choices", async ()
     },
   });
   try {
-    await assert.rejects(createPreferences(bb), /unavailable/);
-    assert.equal(await bb.storage.kv.get("preferences.v1"), undefined);
+    await assert.rejects(createPreferences(alia), /unavailable/);
+    assert.equal(await alia.storage.kv.get("preferences.v1"), undefined);
   } finally {
     await harness.lifecycle.dispose();
   }

@@ -131,7 +131,7 @@ describe("listDir", () => {
     expect(shown.entries.find((entry) => entry.name === ".secret")?.isHidden).toBe(true);
   });
 
-  it("hides .bb-file-manager at the root in both modes, and only at the root", async () => {
+  it("hides .alia-file-manager at the root in both modes, and only at the root", async () => {
     await mkdir(path.join(root, STAGING_DIR_NAME));
     await mkdir(path.join(root, "sub"));
     await mkdir(path.join(root, "sub", STAGING_DIR_NAME));
@@ -301,7 +301,7 @@ describe("searchDir", () => {
   });
 
   // §8.8: the mention provider asks for a short list under a wall-clock
-  // budget, because bb drops its answer after 2s and an abandoned walk would
+  // budget, because VesnALIA drops its answer after 2s and an abandoned walk would
   // otherwise keep reading directories nobody is waiting for.
   it("stops at `limit` matches and reports the rest as truncated", async () => {
     const result = await searchDir({

@@ -400,7 +400,7 @@ describe("auto review", () => {
     expect(h.shuttle.activity().filter((e) => e.kind === "auto_failed")).toHaveLength(1);
   });
 
-  it("waits while bb has no machine for a review, tries again at each sync, and gives up after an hour", async () => {
+  it("waits while VesnALIA has no machine for a review, tries again at each sync, and gives up after an hour", async () => {
     const h = harness();
     await h.shuttle.sync();
     h.clock.now += 60_000;

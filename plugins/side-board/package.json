@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-side-board",
+  "name": "alia-plugin-side-board",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Side Board",
     "description": "See every question, bug and todo your agent raises in a side panel, numbered Q1/B1/T1, added and closed automatically.",
     "branding": {
@@ -21,7 +21,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -48,15 +47,28 @@
     "vaul": "^1.1.2",
     "vitest": "^5.0.5"
   },
-  "description": "A side panel of the questions, bugs and todos your agent raises \u2014 added and closed automatically, in every bb thread.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/devnoo/bb-side-board.git"
-  },
+  "description": "A side panel of the questions, bugs and todos your agent raises — added and closed automatically, in every VesnALIA thread.",
   "license": "MIT",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/side-board#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/side-board"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

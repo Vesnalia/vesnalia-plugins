@@ -35,7 +35,7 @@ export function isExecutable(path: string): boolean {
     a partial file. Adapted from plugins/amp/lib/provision.ts. */
 export function writeAtomic(path: string, content: string | Buffer, mode?: number): void {
   ensureDir(dirname(path));
-  const tmp = `${path}.bb-plugin-agent-proxy-${process.pid}-${randomUUID()}.tmp`;
+  const tmp = `${path}.alia-plugin-agent-proxy-${process.pid}-${randomUUID()}.tmp`;
   try {
     writeFileSync(tmp, content, mode === undefined ? undefined : { mode });
     renameSync(tmp, path);

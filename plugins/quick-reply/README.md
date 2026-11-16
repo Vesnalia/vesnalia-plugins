@@ -1,4 +1,4 @@
-# Quick Reply for BB
+# Quick Reply for VesnALIA
 
 **Give your agent quick feedback by clicking on which lines you agree and disagree with.**
 
@@ -55,8 +55,8 @@ and code block. Headings and horizontal rules get no controls. A list item
 with a nested list is one line for its own text; the nested items are lines
 of their own.
 
-Marks are saved in this BB window's local storage per thread, so switching
-threads, scrolling and reloading BB keep them. Marks untouched for 30 days
+Marks are saved in this VesnALIA window's local storage per thread, so switching
+threads, scrolling and reloading VesnALIA keep them. Marks untouched for 30 days
 are dropped.
 
 ## How it works
@@ -68,34 +68,34 @@ are dropped.
 | `lib/marks.ts` | The marks store, shared by the content script and the bar, kept in localStorage. |
 | `lib/format.ts` | Builds the message sent to the agent. |
 | `lib/icons.ts` | The four toolbar icons, from [Tabler Icons](https://tabler.io/icons) (MIT). |
-| `app.tsx` | Registers the content script and the bar above the message box (a composer banner), which sends through BB's composer API. |
-| `app.css` | Styles, built from BB's theme variables. |
-| `server.ts` | Empty backend, required by BB. |
+| `app.tsx` | Registers the content script and the bar above the message box (a composer banner), which sends through VesnALIA's composer API. |
+| `app.css` | Styles, built from VesnALIA's theme variables. |
+| `server.ts` | Empty backend, required by VesnALIA. |
 
-### Depends on BB's page layout
+### Depends on VesnALIA's page layout
 
-BB has no plugin slot inside ordinary replies, so the content script reads
-the chat page directly. It relies on three things observed on bb 0.46:
+VesnALIA has no plugin slot inside ordinary replies, so the content script reads
+the chat page directly. It relies on three things observed on VesnALIA 0.46:
 
 - each timeline row has `data-timeline-row-id`, and agent messages contain
   `:assistant:` in it, after the thread id and a `:`;
 - a reply's Markdown is inside `[data-markdown-preview]`;
 - the chat scroll area is `[data-page-scroll-viewport]`.
 
-If a BB update changes these, the controls stop appearing. Nothing else
-breaks, and saved marks are kept. Sending uses BB's official composer API and
+If a VesnALIA update changes these, the controls stop appearing. Nothing else
+breaks, and saved marks are kept. Sending uses VesnALIA's official composer API and
 is not affected.
 
 ## Install
 
-From BB's plugin store: search for **Quick Reply**. Or from a terminal:
+From VesnALIA's plugin store: search for **Quick Reply**. Or from a terminal:
 
 ```
-bb plugin install git:https://github.com/mturilin/bb-plugin-quick-reply.git
+alia plugin install git:https://github.com/mturilin/bb-plugin-quick-reply.git
 ```
 
-Requires BB 0.46 or later. Nothing else to install, no account, no external
-service: marks stay in your BB window until you send them, and the only thing
+Requires VesnALIA 0.46 or later. Nothing else to install, no account, no external
+service: marks stay in your VesnALIA window until you send them, and the only thing
 that leaves is the message you send to your own agent.
 
 ## Development
@@ -104,8 +104,8 @@ that leaves is the message you send to your own agent.
 npm install
 npm test            # unit tests (node --test, happy-dom)
 npm run typecheck
-bb plugin build
-bb plugin install . # once; afterwards: bb plugin reload quick-reply
+alia plugin build
+alia plugin install . # once; afterwards: alia plugin reload quick-reply
 ```
 
 ## License

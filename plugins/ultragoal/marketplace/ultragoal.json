@@ -1,7 +1,7 @@
 {
   "id": "ultragoal",
   "displayName": "UltraGoal",
-  "description": "Runs provider-neutral durable agent goals with scheduled workers and verification. Requires BB >=0.39 and Plugin SDK >=0.4.8. It makes no direct network requests; local provider-store reads, base-branch squash-merges, and managed worktree and branch cleanup are off by default and require explicit consent.",
+  "description": "Runs provider-neutral durable agent goals with scheduled workers and verification. Requires VesnALIA >=0.39 and Plugin SDK >=0.4.8. It makes no direct network requests; local provider-store reads, base-branch squash-merges, and managed worktree and branch cleanup are off by default and require explicit consent.",
   "icon": "Target",
   "tags": [
     "agents",

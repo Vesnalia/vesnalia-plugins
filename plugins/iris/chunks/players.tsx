@@ -1,5 +1,5 @@
 // VideoPlayer and AudioPlayer (chunk "assets"). Rules live in core/players.ts.
-// Media streams from a bb preview URL with byte ranges (chunks/file-access.ts);
+// Media streams from a VesnALIA preview URL with byte ranges (chunks/file-access.ts);
 // the controls are Iris's own so they follow the theme. Without a thread the
 // gallery plays a bundled clip (video) or a synthesized one (audio).
 

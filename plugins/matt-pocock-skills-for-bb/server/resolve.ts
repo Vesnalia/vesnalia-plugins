@@ -87,7 +87,7 @@ export function resolveSkills(
 ): ResolvedSkill[] {
   return resolveSkillSelections(catalog, global, project, catalogState).map(selection => ({
     ...selection,
-    bbName: null, outcome: "unknown", active: false,
+    aliaName: null, outcome: "unknown", active: false,
     reason: selection.active ? "off-scan" : selection.reason,
     conflict: {
       projectId: "unscanned",

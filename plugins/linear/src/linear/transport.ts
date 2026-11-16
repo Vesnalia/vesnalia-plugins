@@ -205,7 +205,7 @@ export function createTransport(
    * work yields first; the person's click yields last — the same rule the
    * governor follows, applied to the lane instead of to the cadence.
    *
-   * Found live: `bb linear doctor` timed out against the bb CLI's own
+   * Found live: `alia linear doctor` timed out against the VesnALIA CLI's own
    * two-second budget because its request had queued behind the first
    * backfill. Everything looked healthy; the command just never answered.
    */

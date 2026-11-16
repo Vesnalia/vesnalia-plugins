@@ -1,4 +1,4 @@
-// bb-box: print Chrome's GPU status from the DevTools protocol (SystemInfo.getInfo).
+// alia-box: print Chrome's GPU status from the DevTools protocol (SystemInfo.getInfo).
 // usage: node chrome-gpu.mjs [port]   (Chrome started with --remote-debugging-port)
 const port = process.argv[2] ?? "9222";
 const deadline = Date.now() + 20000;

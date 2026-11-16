@@ -3,7 +3,7 @@
 // draft, yours or the agent's, inside its card. Replies a 0.5 tab kept in sessionStorage move there once.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import type { FeedbackView } from "../lib/feedback";

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { REPLY_SEED_PREFIX } from "./shared/match";
 
@@ -41,7 +41,7 @@ async function setup(scenario: Scenario) {
   const threads = Object.keys(scenario.quotes).map((id, index) =>
     sideChatThread(id, 100 + index),
   );
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "side-chat-links",
     sdk: {
       threads: {
@@ -86,7 +86,7 @@ async function setup(scenario: Scenario) {
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   const list = async () =>
     (
       (await harness.behavior.callRpc("listSideChats", {
@@ -98,7 +98,7 @@ async function setup(scenario: Scenario) {
 
 describe("renameSideChat", () => {
   async function setupRename(thread: ReturnType<typeof makeThreadResponse>) {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "side-chat-links",
       sdk: {
         threads: {
@@ -107,7 +107,7 @@ describe("renameSideChat", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     return harness;
   }
 

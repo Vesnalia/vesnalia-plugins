@@ -188,7 +188,7 @@ function kindOf(status: number, code: string): BoatErrorKind {
 }
 
 const WORDS: Readonly<Record<string, string>> = {
-  unauthorized: "boat refused the API key: it is wrong, has expired or was revoked. Make a new key in boat's dashboard and set it in BB Box's settings.",
+  unauthorized: "boat refused the API key: it is wrong, has expired or was revoked. Make a new key in boat's dashboard and set it in VesnALIA Box's settings.",
   billing_required: "boat wants a payment before it starts more sandboxes. Pay in boat's dashboard, or use another backend.",
   limit_reached: "the boat plan's sandboxes at once are all in use. Release a boat box, or raise the plan.",
   trial_compute_limit_reached: "the boat trial's 25 hours of compute are used up. Make a payment to end the trial, or use another backend.",

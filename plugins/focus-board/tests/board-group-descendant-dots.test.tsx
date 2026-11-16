@@ -14,7 +14,7 @@
 // the middle tier rather than inventing a fourth.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { buildColumns } from "../components/grouping";
 import { DOT_PULSE_ATTR, DOT_PULSE_STYLE_ID } from "../components/dot-pulse";

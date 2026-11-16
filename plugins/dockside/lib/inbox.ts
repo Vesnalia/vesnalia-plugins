@@ -1,7 +1,7 @@
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
 export interface ThreadFamily {
   root: PluginSidebarThread;
@@ -38,7 +38,7 @@ export function threadDisplayTitle(thread: PluginSidebarThread): string {
   return fallback ? fallback : "Untitled thread";
 }
 
-/** Every live-work signal bb exposes for a sidebar row. */
+/** Every live-work signal VesnALIA exposes for a sidebar row. */
 export function threadIsWorking(thread: PluginSidebarThread): boolean {
   const { activity } = thread;
   return (
@@ -86,7 +86,7 @@ export function filterByProject(
  *
  * A parent that is not in `threads` (parked, archived, filtered, or deleted)
  * cannot own a visible row, so its child becomes a root instead of vanishing.
- * Project order comes from bb; roots keep the inbox's static creation order,
+ * Project order comes from VesnALIA; roots keep the inbox's static creation order,
  * with the user's pinned roots first.
  */
 export function groupThreadsByProject(
@@ -217,7 +217,7 @@ function visibleRootOf(
  * Archived threads never belong in the inbox — except the ones this plugin
  * parked, which it archives itself.
  *
- * Settling a thread archives it in bb, so leaving the flag alone to decide
+ * Settling a thread archives it in VesnALIA, so leaving the flag alone to decide
  * visibility would empty the settled shelf the instant anything landed on it.
  * A parked row is the plugin saying "I put it there", and that outranks the
  * archive it set.

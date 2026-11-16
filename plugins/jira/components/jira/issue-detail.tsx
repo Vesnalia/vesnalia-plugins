@@ -7,9 +7,9 @@ import {
   Markdown,
   UrlLink,
   experimental_ProviderModelPicker as ProviderModelPicker,
-  useBbNavigate,
+  useAliaNavigate,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type {
   AgentTargets,
@@ -467,7 +467,7 @@ function FieldRow({ label, children }: { label: string; children: ReactNode }) {
 
 function FieldsPanel({ detail, currentUser }: { detail: JiraIssueDetail; currentUser: JiraUser | null }) {
   const { issue } = detail;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <div className="space-y-3">
       <StatusControl detail={detail} />
@@ -930,7 +930,7 @@ function DeleteIssueDialog({
   );
 }
 
-/** Unresolved: bb's picker fills in its own default provider and model. */
+/** Unresolved: VesnALIA's picker fills in its own default provider and model. */
 const UNPICKED_EXECUTION: ExperimentalProviderModelPickerValue = {
   providerId: "",
   model: "",
@@ -938,7 +938,7 @@ const UNPICKED_EXECUTION: ExperimentalProviderModelPickerValue = {
 };
 
 /**
- * The thread starts in the BB project linked to the issue's Jira project.
+ * The thread starts in the VesnALIA project linked to the issue's Jira project.
  * With several linked projects the user picks one; with none, they pick any
  * project and, by default, link it so the next send goes straight there.
  */
@@ -952,11 +952,11 @@ function SendToAgentDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const rpc = useJiraRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [targets, setTargets] = useState<AgentTargets | null>(null);
-  const [bbProjectId, setBbProjectId] = useState("");
+  const [aliaProjectId, setAliaProjectId] = useState("");
   const [linkProject, setLinkProject] = useState(true);
   const [worktree, setWorktree] = useState(false);
   const [hostId, setHostId] = useState("");
@@ -965,17 +965,17 @@ function SendToAgentDialog({
   const [execution, setExecution] = useState<ExperimentalProviderModelPickerValue | null>(null);
 
   useEffect(() => {
-    if (!open || bbProjectId.length === 0) return;
+    if (!open || aliaProjectId.length === 0) return;
     let live = true;
     setExecution(null);
-    rpc.call("executionDefaults", { bbProjectId }).then(
+    rpc.call("executionDefaults", { aliaProjectId }).then(
       (defaults) => live && setExecution(defaults ?? UNPICKED_EXECUTION),
       () => live && setExecution(UNPICKED_EXECUTION),
     );
     return () => {
       live = false;
     };
-  }, [rpc, open, bbProjectId]);
+  }, [rpc, open, aliaProjectId]);
 
   useEffect(() => {
     if (!open) return;
@@ -985,7 +985,7 @@ function SendToAgentDialog({
       (next) => {
         if (!live) return;
         setTargets(next);
-        setBbProjectId(next.linked.length === 1 ? (next.linked[0]?.bbProjectId ?? "") : "");
+        setAliaProjectId(next.linked.length === 1 ? (next.linked[0]?.aliaProjectId ?? "") : "");
       },
       (error: unknown) => live && toast.error(errorText(error)),
     );
@@ -994,29 +994,29 @@ function SendToAgentDialog({
     };
   }, [rpc, open, issue.key]);
 
-  const linkedIds = new Set(targets?.linked.map((project) => project.bbProjectId) ?? []);
-  const chosenIsLinked = linkedIds.has(bbProjectId);
-  const others = targets?.all.filter((project) => !linkedIds.has(project.bbProjectId)) ?? [];
+  const linkedIds = new Set(targets?.linked.map((project) => project.aliaProjectId) ?? []);
+  const chosenIsLinked = linkedIds.has(aliaProjectId);
+  const others = targets?.all.filter((project) => !linkedIds.has(project.aliaProjectId)) ?? [];
   // Each project is checked out on its own machines, so a machine picked for
   // one project means nothing for the next.
-  const hosts = targets?.all.find((project) => project.bbProjectId === bbProjectId)?.hosts ?? [];
+  const hosts = targets?.all.find((project) => project.aliaProjectId === aliaProjectId)?.hosts ?? [];
   const chosenHostOffline = hosts.some((host) => host.hostId === hostId && !host.connected);
   // Models come from the machine the thread will run on.
   const runsOn = hosts.some((host) => host.hostId === hostId)
     ? hostId
     : (hosts.find((host) => host.isDefault)?.hostId ?? hosts[0]?.hostId);
   const chooseProject = (next: string) => {
-    setBbProjectId(next);
+    setAliaProjectId(next);
     setHostId("");
   };
 
   const send = () => {
-    if (bbProjectId.length === 0 || busy) return;
+    if (aliaProjectId.length === 0 || busy) return;
     setBusy(true);
     rpc
       .call("sendToAgent", {
         key: issue.key,
-        bbProjectId,
+        aliaProjectId,
         note,
         linkProject: !chosenIsLinked && linkProject,
         worktree,
@@ -1044,7 +1044,7 @@ function SendToAgentDialog({
         </DialogHeader>
 
         <div className="grid gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">BB project</span>
+          <span className="text-xs font-medium text-muted-foreground">VesnALIA project</span>
           {targets === null ? (
             <Skeleton className="h-9 w-full" />
           ) : targets.linked.length === 1 && chosenIsLinked ? (
@@ -1060,13 +1060,13 @@ function SendToAgentDialog({
               </button>
             </div>
           ) : (
-            <Select value={bbProjectId || undefined} onValueChange={chooseProject}>
-              <SelectTrigger aria-label="BB project">
+            <Select value={aliaProjectId || undefined} onValueChange={chooseProject}>
+              <SelectTrigger aria-label="VesnALIA project">
                 <SelectValue
                   placeholder={
                     targets.linked.length > 1
                       ? `${targets.linked.length} projects are linked to ${targets.jiraProjectKey} — pick one`
-                      : "Choose a BB project"
+                      : "Choose a VesnALIA project"
                   }
                 />
               </SelectTrigger>
@@ -1075,7 +1075,7 @@ function SendToAgentDialog({
                   <SelectGroup>
                     <SelectLabel>Linked to {targets.jiraProjectKey}</SelectLabel>
                     {targets.linked.map((project) => (
-                      <SelectItem key={project.bbProjectId} value={project.bbProjectId}>
+                      <SelectItem key={project.aliaProjectId} value={project.aliaProjectId}>
                         {project.name}
                       </SelectItem>
                     ))}
@@ -1085,7 +1085,7 @@ function SendToAgentDialog({
                   <SelectGroup>
                     {targets.linked.length > 0 ? <SelectLabel>Other projects</SelectLabel> : null}
                     {others.map((project) => (
-                      <SelectItem key={project.bbProjectId} value={project.bbProjectId}>
+                      <SelectItem key={project.aliaProjectId} value={project.aliaProjectId}>
                         {project.name}
                       </SelectItem>
                     ))}
@@ -1096,10 +1096,10 @@ function SendToAgentDialog({
           )}
           {targets !== null && targets.linked.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No BB project is linked to {targets.jiraProjectKey} yet.
+              No VesnALIA project is linked to {targets.jiraProjectKey} yet.
             </p>
           ) : null}
-          {bbProjectId.length > 0 && targets !== null && !chosenIsLinked ? (
+          {aliaProjectId.length > 0 && targets !== null && !chosenIsLinked ? (
             <label className="mt-1 flex items-center gap-2 text-sm">
               <Checkbox checked={linkProject} onCheckedChange={(checked) => setLinkProject(checked === true)} />
               Link {targets.jiraProjectKey} to this project
@@ -1133,7 +1133,7 @@ function SendToAgentDialog({
           </div>
         ) : null}
 
-        {bbProjectId.length > 0 ? (
+        {aliaProjectId.length > 0 ? (
           <div className="grid gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">Model</span>
             {execution === null ? (
@@ -1178,7 +1178,7 @@ function SendToAgentDialog({
           <Button variant="ghost" disabled={busy} onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button disabled={busy || bbProjectId.length === 0 || chosenHostOffline} onClick={send}>
+          <Button disabled={busy || aliaProjectId.length === 0 || chosenHostOffline} onClick={send}>
             {busy ? "Starting…" : "Start chat"}
           </Button>
         </DialogFooter>

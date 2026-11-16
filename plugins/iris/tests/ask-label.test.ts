@@ -5,7 +5,7 @@ describe("iris_ask labels", () => {
   it("keeps a short title whole", () => {
     expect(askLabels("Pick a theme")).toEqual({ pending: "Waiting: Pick a theme", completed: "Answered: Pick a theme" });
   });
-  it("fits a long title inside bb's label limit, cut at a word", () => {
+  it("fits a long title inside VesnALIA's label limit, cut at a word", () => {
     const title = "The ten new pets pages are ready to review: should I make the other 140 pages in exactly this style";
     expect(title.length).toBe(99);
     const { pending, completed } = askLabels(title);

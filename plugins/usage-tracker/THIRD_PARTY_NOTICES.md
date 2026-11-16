@@ -8,12 +8,12 @@ licensed; the common license text is included at the end.
 
 ---
 
-## bb — `get-bb/bb`
+## VesnALIA — `get-alia/alia`
 
 MIT License, Copyright (c) 2026 Michael Yong.
 
 The OpenAI, Claude, Grok Build, and OpenCode brand-mark geometry in
-`lib/provider-marks.ts` is lifted from bb's provider icon components.
+`lib/provider-marks.ts` is lifted from VesnALIA's provider icon components.
 
 Source: <https://github.com/get-bb/bb>
 
@@ -54,7 +54,7 @@ Source: <https://github.com/colinhacks/zod>
 
 ## Not shipped here
 
-React and `@get-bb/plugin-sdk` are provided by bb at run time and are not
+React and `@vesnalia/plugin-sdk` are provided by VesnALIA at run time and are not
 bundled in this package.
 
 ---

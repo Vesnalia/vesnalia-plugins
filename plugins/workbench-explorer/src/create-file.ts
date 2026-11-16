@@ -1,4 +1,4 @@
-import type { BbPluginApi, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../host-contract";
 import { resolveUnderRoot, toRelativePath } from "./paths";
 import { resolveRoot } from "./roots";
@@ -21,7 +21,7 @@ export type CreateFileResult =
  * Uses listDirectory(showSkipped) so dotfiles in the target folder are seen.
  */
 export async function createFile(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   host: ExperimentalHostClient<typeof hostContract>,
   input: CreateFileInput,
 ): Promise<CreateFileResult> {
@@ -80,7 +80,7 @@ export async function createFile(
   }
 
   try {
-    const result = await bb.sdk.files.write({
+    const result = await alia.sdk.files.write({
       hostId: root.hostId,
       path: absolute,
       rootPath: root.rootPath,

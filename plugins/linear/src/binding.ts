@@ -1,13 +1,13 @@
 /**
- * The binding ladder: which Linear issue is this bb thread working on?
+ * The binding ladder: which Linear issue is this VesnALIA thread working on?
  *
  * Five rungs, strongest first, and the strength ordering is the design:
  *
- *   1. **An existing link** — a spawn, a manual `bb linear link`, or a rung
+ *   1. **An existing link** — a spawn, a manual `alia linear link`, or a rung
  *      below that already persisted. Ground truth; never re-litigated here.
  *      A later user message naming a *different* issue never re-binds — it
  *      surfaces as an alternate the user can act on.
- *   2. **The branch name** — Linear generated it (`gitBranchFormat`), bb
+ *   2. **The branch name** — Linear generated it (`gitBranchFormat`), VesnALIA
  *      checked it out, and the mirror indexes it. Deterministic, auto-binds.
  *   2.5 **An issue key in a hand-edited branch** — when the branch no longer
  *      byte-matches Linear's stored branch name, its explicit key still names
@@ -20,8 +20,8 @@
  *      caller enforces the provenance; this file documents the contract.
  *      The first key in the opening message wins; every other in-scope key
  *      the user named becomes an alternate suggestion.
- *   3.5 **An issue key in the thread's title** — never binds, because a bb
- *      title's authorship is unknowable: bb generates titles from model
+ *   3.5 **An issue key in the thread's title** — never binds, because a VesnALIA
+ *      title's authorship is unknowable: VesnALIA generates titles from model
  *      output and agents rename threads. A key there is a strong *suggestion*.
  *   4. **A fuzzy title match** — never binds. It becomes a *suggestion* the
  *      user confirms with one click, because a wrong binding combined with
@@ -69,7 +69,7 @@ export interface LadderInput {
   /** User-authored texts only, the opening message first. */
   readonly userMessages: readonly LadderMessage[];
   /** The thread title, for the key-suggestion and fuzzy rungs. Titles never
-   *  bind: bb generates them from model output. */
+   *  bind: VesnALIA generates them from model output. */
   readonly title: string | null;
 }
 
@@ -223,7 +223,7 @@ export function resolveBinding(deps: LadderDeps, input: LadderInput): LadderOutc
     };
   }
 
-  // Rung 3.5 — a key in the title. Suggestion only: bb titles are generated
+  // Rung 3.5 — a key in the title. Suggestion only: VesnALIA titles are generated
   // from model output and agents rename threads, so a title's authorship is
   // unknowable — exactly the text that must never bind on its own.
   if (input.title !== null && input.title !== "") {

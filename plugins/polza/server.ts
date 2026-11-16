@@ -1,9 +1,9 @@
-// bb-plugin-polza — server entry (runs inside the bb server).
+// alia-plugin-polza — server entry (runs inside the VesnALIA server).
 //
 // Owns the Polza sign-in (OAuth PKCE), the API key (a secret setting), the
 // model whitelist, balance lookups, and the `polza` provider declaration. The
 // bridge that drives Claude Code lives in src/host.ts and runs on the host.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { PolzaAccountClient, SIGNED_OUT_ACCOUNT, type PolzaAccount } from "./src/polza/account.js";
 import {
@@ -36,8 +36,8 @@ const optionalSlug = z
     message: "Expected a <vendor>/<model> slug or an empty value",
   });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     apiKey: {
       type: "string",
       label: "Polza API key",
@@ -131,14 +131,14 @@ export default async function plugin(bb: BbPluginApi) {
   };
   const selectedModels = () => parsePolzaModelList(current.models);
   const callbackUrl = () =>
-    `${bb.server.loopbackBaseUrl.replace(/\/+$/u, "")}/api/v1/plugins/${bb.pluginId}/http${OAUTH_CALLBACK_PATH}`;
+    `${alia.server.loopbackBaseUrl.replace(/\/+$/u, "")}/api/v1/plugins/${alia.pluginId}/http${OAUTH_CALLBACK_PATH}`;
 
   const account = new PolzaAccountClient({ baseUrl, apiKey });
   const catalog = createPolzaCatalogMemo({ ttlMs: CATALOG_TTL_MS });
-  const login = new PolzaOAuthLogin({ baseUrl, callbackUrl, appName: "bb" });
+  const login = new PolzaOAuthLogin({ baseUrl, callbackUrl, appName: "alia" });
 
   function publishChanged(): void {
-    bb.realtime.publish(POLZA_CHANGED_CHANNEL, { at: new Date().toISOString() });
+    alia.realtime.publish(POLZA_CHANGED_CHANNEL, { at: new Date().toISOString() });
   }
 
   async function status(refresh = false): Promise<PolzaStatus> {
@@ -146,7 +146,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       accountState = await account.get(refresh);
     } catch (error) {
-      bb.log.warn(`account lookup failed: ${String(error)}`);
+      alia.log.warn(`account lookup failed: ${String(error)}`);
       accountState = {
         ...SIGNED_OUT_ACCOUNT,
         signedIn: apiKey() !== null,
@@ -171,7 +171,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
     account.invalidate();
     publishChanged();
-    bb.log.info(`signed in to Polza${firstSignIn ? " (starter models applied)" : ""}`);
+    alia.log.info(`signed in to Polza${firstSignIn ? " (starter models applied)" : ""}`);
   }
 
   async function completeLogin(input: { code: string; state: string | null }): Promise<void> {
@@ -180,9 +180,9 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // Browser callback of the PKCE flow. Reachable only when the browser can
-  // open the bb server's loopback address; the settings page offers pasting
+  // open the VesnALIA server's loopback address; the settings page offers pasting
   // the code for every other setup. `state` ties the request to our session.
-  bb.http.route(
+  alia.http.route(
     "GET",
     OAUTH_CALLBACK_PATH,
     async (c) => {
@@ -190,7 +190,7 @@ export default async function plugin(bb: BbPluginApi) {
       const state = url.searchParams.get("state");
       const expected = login.pendingState();
       if (expected === null || state !== expected) {
-        return html(page("Sign-in link is stale", "Start the sign-in again from bb → Settings → Plugins → Polza."), 400);
+        return html(page("Sign-in link is stale", "Start the sign-in again from VesnALIA → Settings → Plugins → Polza."), 400);
       }
       const error = url.searchParams.get("error");
       if (error) {
@@ -206,15 +206,15 @@ export default async function plugin(bb: BbPluginApi) {
         await completeLogin({ code, state });
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
-        bb.log.warn(`oauth callback failed: ${message}`);
+        alia.log.warn(`oauth callback failed: ${message}`);
         return html(page("Sign-in failed", escapeHtml(message)), 400);
       }
-      return html(page("Signed in to Polza", "You can close this tab and return to bb."), 200);
+      return html(page("Signed in to Polza", "You can close this tab and return to VesnALIA."), 200);
     },
     { auth: "none" },
   );
 
-  bb.rpc.register(polzaRpcContract, {
+  alia.rpc.register(polzaRpcContract, {
     "status.get": (input) => status(input?.refresh === true),
     "login.start": () => {
       const started = login.start();
@@ -257,7 +257,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Non-secret routing facts for the bridge's sessionless requests
   // (`model/list` sees them as `envVars`). Changing them changes the bridge
   // fingerprint, so the cached picker list is rebuilt.
-  bb.providers.experimental_contributeEnv(POLZA_PROVIDER_ID, () => [
+  alia.providers.experimental_contributeEnv(POLZA_PROVIDER_ID, () => [
     {
       name: POLZA_ENV.baseUrl,
       value: baseUrl(),
@@ -271,11 +271,11 @@ export default async function plugin(bb: BbPluginApi) {
     {
       name: POLZA_ENV.signedIn,
       value: apiKey() === null ? "0" : "1",
-      reason: "Whether a Polza key is configured on the bb server",
+      reason: "Whether a Polza key is configured on the VesnALIA server",
     },
   ]);
 
-  bb.providers.register({
+  alia.providers.register({
     id: POLZA_PROVIDER_ID,
     displayName: "Polza",
     icon: "./icons/polza.svg",
@@ -310,7 +310,7 @@ export default async function plugin(bb: BbPluginApi) {
     extensionKinds: {
       [POLZA_COST_STATE_NAME]: { state: polzaCostStateSchema },
     },
-    env: { passthrough: ["BB_CLAUDE_CODE_EXECUTABLE"] },
+    env: { passthrough: ["ALIA_CLAUDE_CODE_EXECUTABLE"] },
     models: { scope: "host" },
     deriveProviderOptions(context) {
       const key = apiKey();
@@ -339,15 +339,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "polza",
     summary: "Polza provider: sign-in status, balance and picker models",
     commands: [
-      { name: "status", summary: "Account, balance and key limit", usage: "bb polza status [--json]" },
+      { name: "status", summary: "Account, balance and key limit", usage: "alia polza status [--json]" },
       {
         name: "models",
         summary: "Models offered in the picker; `set` replaces them",
-        usage: "bb polza models [--json] | bb polza models set <slug> [<slug>…]",
+        usage: "alia polza models [--json] | VesnALIA polza models set <slug> [<slug>…]",
       },
     ],
     async run(argv) {
@@ -377,12 +377,12 @@ export default async function plugin(bb: BbPluginApi) {
       }
       return {
         exitCode: 1,
-        stderr: "Usage:\n  bb polza status [--json]\n  bb polza models [--json]\n  bb polza models set <slug> [<slug>…]",
+        stderr: "Usage:\n  VesnALIA polza status [--json]\n  VesnALIA polza models [--json]\n  VesnALIA polza models set <slug> [<slug>…]",
       };
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     login.cancel();
   });
 }
@@ -423,7 +423,7 @@ function escapeHtml(text: string): string {
 }
 
 function page(title: string, body: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)} · Polza for bb</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)} · Polza for VesnALIA</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font:16px/1.5 -apple-system,system-ui,sans-serif;background:#0f1115;color:#e6e6e6;display:grid;place-items:center;min-height:100vh;margin:0}
 main{max-width:28rem;padding:2rem;border:1px solid #2a2f3a;border-radius:12px;background:#161a22}h1{font-size:1.25rem;margin:0 0 .5rem}p{margin:0;color:#b5bcc9}</style></head>

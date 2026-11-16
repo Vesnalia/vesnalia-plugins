@@ -4,7 +4,7 @@ import { assertCompatibility } from "../scripts/check-sdk-compat.mjs";
 
 const expected = {
   sdkVersion: "0.4.34",
-  builtWith: { bbVersion: "0.41.0", pluginSdkVersion: "0.4.34" },
+  builtWith: { aliaVersion: "0.41.0", pluginSdkVersion: "0.4.34" },
 };
 
 describe("published SDK compatibility gate", () => {
@@ -21,8 +21,8 @@ describe("published SDK compatibility gate", () => {
     expect(() =>
       assertCompatibility("0.4.34", {
         ...expected,
-        builtWith: { bbVersion: "0.42.0", pluginSdkVersion: "0.4.34" },
+        builtWith: { aliaVersion: "0.42.0", pluginSdkVersion: "0.4.34" },
       }),
-    ).toThrow("expected BB 0.41.0");
+    ).toThrow("expected VesnALIA 0.41.0");
   });
 });

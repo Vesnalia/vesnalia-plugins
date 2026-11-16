@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 
 /**
  * Sidebar-thread fields no test here varies: an idle, visible, unpinned,
@@ -21,9 +21,9 @@ export const idleSidebarThreadFields = {
 } satisfies Partial<PluginSidebarThread>;
 
 /**
- * The `runtimeStatus` behind the status a test gives a thread. bb derives
+ * The `runtimeStatus` behind the status a test gives a thread. VesnALIA derives
  * the indicator from `runtimeStatus`, and the sidebar's display rule reads
- * it through bb's status resolver, so a thread a test marks as running with
+ * it through VesnALIA's status resolver, so a thread a test marks as running with
  * `indicator: "runtime"` or an in-flight `status` also runs by this field.
  * An explicit `runtimeStatus` wins.
  */

@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentConfigurationContext } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentConfigurationContext } from "@vesnalia/plugin-sdk";
 import { createStore } from "./store";
 import plugin from "../server";
 
@@ -14,8 +14,8 @@ const patch = `diff --git a/a.ts b/a.ts
 
 async function host() {
   const h = createFakePluginHost({ pluginId: "guided-review" });
-  await plugin(h.bb);
-  const store = createStore(h.bb); // same pluginId → same DB the factory's tools read
+  await plugin(h.alia);
+  const store = createStore(h.alia); // same pluginId → same DB the factory's tools read
   store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, status: "generating", createdAt: 1 });
   store.savePatch("pr-1", patch);
   const generationId = store.beginGeneration("pr-1");
@@ -122,7 +122,7 @@ function baseConfigContext(pluginId: string | null, threadTitle: string | null =
 
 test("agents.configure exposes tools/skill only to this plugin's own generation thread", async () => {
   const h = createFakePluginHost({ pluginId: "guided-review", agentSkillIds: ["guided-review-generate"] });
-  await plugin(h.bb);
+  await plugin(h.alia);
 
   const mine = await h.harness.behavior.resolveAgentConfiguration(
     baseConfigContext("guided-review", "Generate guide: pr-1"),

@@ -1,4 +1,4 @@
-// One service behind the CLI and the RPC, so `bb crew apply` and the panel
+// One service behind the CLI and the RPC, so `alia crew apply` and the panel
 // can never behave differently. Pure over its dependencies.
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
@@ -48,7 +48,7 @@ export type DeleteThreadResult = {
 };
 export type DeleteResult = { crew: string; threads: DeleteThreadResult[]; rows: Record<string, number>; warnings: string[] };
 
-/** `bb crew delete` said no; `blockers` name what a `--force` would override (empty = not overridable). */
+/** `alia crew delete` said no; `blockers` name what a `--force` would override (empty = not overridable). */
 export class DeleteRefused extends Error {
   constructor(
     message: string,
@@ -65,7 +65,7 @@ export type ServiceDeps = {
   port: ThreadPort;
   /** Provider catalogue for the unknown-model warning; null skips the check. */
   catalog?: () => Promise<Catalog | null>;
-  /** Known skill names (global, project, BB global) for the unknown-skill warning; null skips the check. */
+  /** Known skill names (global, project, VesnALIA global) for the unknown-skill warning; null skips the check. */
   skills?: (projectId: string) => Promise<SkillsCatalog | null>;
   /** Graph Studio's RPC bridge (BBP-30) for the unknown-graph warning and crew_graph_run; null disables both. */
   graphsRpc?: GraphsRpc | null;
@@ -81,10 +81,10 @@ export type ServiceDeps = {
   git?: GitBackend;
   /** Git for worktrees on other hosts (BBP-14); defaults to the "not available" stub. */
   remoteGit?: RemoteGitFactory;
-  /** The BB Tasks plugin; null = `done`/`comment:` dependencies and labels are not checked. */
+  /** The VesnALIA Tasks plugin; null = `done`/`comment:` dependencies and labels are not checked. */
   tasks?: TasksPort | null;
-  /** BB's thread limit, if it can be read (see lib/capacity.ts). */
-  bbLimit?: () => Promise<number | null>;
+  /** VesnALIA's thread limit, if it can be read (see lib/capacity.ts). */
+  aliaLimit?: () => Promise<number | null>;
   /** Ids for work items, channel posts, merge requests, snapshots and handovers. */
   newShortId?: (prefix: "wi" | "cm" | "mr" | "snap" | "ho") => string;
 };
@@ -113,7 +113,7 @@ export function createCrewService(deps: ServiceDeps) {
   };
   const models = createCrewModels(deps.store);
   const store = deps.store;
-  const limit = () => readLimit(store, deps.bbLimit ?? null);
+  const limit = () => readLimit(store, deps.aliaLimit ?? null);
   const delivery = createDelivery({
     store,
     port: deps.port,
@@ -163,7 +163,7 @@ export function createCrewService(deps: ServiceDeps) {
       const staleQuestion = await closeHumanQuestionIfTaskDone(crew, member);
       return {
         mergeRequest: open
-          ? `Merge request ${open.id} (${open.state}): ${open.branch} → ${open.base}${open.reason ? ` — ${open.reason}` : ""}. bb crew approve ${open.id} | bb crew reject ${open.id}`
+          ? `Merge request ${open.id} (${open.state}): ${open.branch} → ${open.base}${open.reason ? ` — ${open.reason}` : ""}. VesnALIA crew approve ${open.id} | VesnALIA crew reject ${open.id}`
           : null,
         escalated: queue.escalatedToHuman(member).length,
         ...(staleQuestion ? { humanQuestion: null } : {}),
@@ -219,7 +219,7 @@ export function createCrewService(deps: ServiceDeps) {
     return { problems, limit: line.text };
   }
 
-  /** BB picks worktree branch names, so apply reads each member's branch back and keeps it. */
+  /** VesnALIA picks worktree branch names, so apply reads each member's branch back and keeps it. */
   async function recordEnvironments(crew: CrewRow): Promise<void> {
     for (const member of store.listMembers(crew.id)) await integration.locate(member, true).catch(() => null);
   }
@@ -245,7 +245,7 @@ export function createCrewService(deps: ServiceDeps) {
     channel,
     integration,
     dependencies,
-    /** The BB Tasks plugin, for callers that need more than `dependencies`' own facade (e.g. the overview's label-task edges, BBP-84). */
+    /** The VesnALIA Tasks plugin, for callers that need more than `dependencies`' own facade (e.g. the overview's label-task edges, BBP-84). */
     tasks: deps.tasks ?? null,
     flush,
     log,
@@ -275,7 +275,7 @@ export function createCrewService(deps: ServiceDeps) {
           },
         });
       },
-      /** bb crew stop: cancel every open run of this crew via graph-studio's stopRun. Best-effort. */
+      /** VesnALIA crew stop: cancel every open run of this crew via graph-studio's stopRun. Best-effort. */
       async cancelOpen(crewId: string): Promise<number> {
         if (!deps.graphsRpc) return 0;
         let cancelled = 0;
@@ -290,7 +290,7 @@ export function createCrewService(deps: ServiceDeps) {
         }
         return cancelled;
       },
-      /** bb crew delete --threads delete: every worker thread any run of this crew ever spawned. BB does not delete these on its own (they are not parented under the member's thread). */
+      /** VesnALIA crew delete --threads delete: every worker thread any run of this crew ever spawned. VesnALIA does not delete these on its own (they are not parented under the member's thread). */
       async workerThreadIds(crewId: string): Promise<string[]> {
         if (!deps.graphsRpc) return [];
         const ids: string[] = [];
@@ -422,7 +422,7 @@ export function createCrewService(deps: ServiceDeps) {
     async delete(crew: CrewRow, options: { threads?: DeleteThreadsMode; force?: boolean } = {}): Promise<DeleteResult> {
       const mode = options.threads ?? "archive";
       if (crew.status !== "stopped") {
-        throw new DeleteRefused(`Crew ${crew.name} is ${crew.status}; run \`bb crew stop ${crew.name}\` first.`);
+        throw new DeleteRefused(`Crew ${crew.name} is ${crew.status}; run \`alia crew stop ${crew.name}\` first.`);
       }
       const warnings: string[] = [];
       const blockers = service.deleteBlockers(crew);
@@ -435,7 +435,7 @@ export function createCrewService(deps: ServiceDeps) {
       const bound = [...store.crewThreads(crew.id)].sort((a, b) => Number(a.lead) - Number(b.lead));
       const done = new Set<string>();
       const results: DeleteThreadResult[] = [];
-      /** Depth-first, so BB never deletes a parent whose children would be orphaned. */
+      /** Depth-first, so VesnALIA never deletes a parent whose children would be orphaned. */
       async function deleteTree(threadId: string): Promise<number> {
         let count = 0;
         for (const child of await deps.port.children(threadId)) {
@@ -482,7 +482,7 @@ export function createCrewService(deps: ServiceDeps) {
         );
       }
       // BBP-31: graph run worker threads are graph-studio's own threads, not
-      // BB children of the member's thread, so `deleteTree` above never finds
+      // VesnALIA children of the member's thread, so `deleteTree` above never finds
       // them — look them up and delete them explicitly.
       if (mode === "delete") {
         const workerThreads = await service.graphs.workerThreadIds(crew.id).catch(() => []);

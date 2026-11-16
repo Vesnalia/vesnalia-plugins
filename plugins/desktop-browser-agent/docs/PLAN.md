@@ -1,7 +1,7 @@
 # Plan: Desktop & Browser Agent rebuild
 
 Starting point: `068c7ef` (unreleased 0.2.0, built against Cua Driver 0.28.2).
-Plugin id `computer-use`, package `bb-plugin-computer-use`.
+Plugin id `computer-use`, package `alia-plugin-computer-use`.
 
 ## Why the rebuild
 
@@ -17,14 +17,14 @@ Plugin id `computer-use`, package `bb-plugin-computer-use`.
 
 ## Facts this design relies on
 
-Checked against bb 0.46.1 (`start-server.js`) and Cua Driver 0.36.0 on
+Checked against VesnALIA 0.46.1 (`start-server.js`) and Cua Driver 0.36.0 on
 2026-10-16.
 
 | Fact | Evidence |
 | --- | --- |
 | `configure()` parameter overrides are only shape-checked: object root, JSON-serializable, ≤ 128 KiB, no recursive `$ref`. Not checked for narrowing. | `normalizePluginAgentToolParameters` |
-| `bb.agents.registerTool` works after plugin load (only guarded by `assertLive`), and `resolveAgentConfiguration` re-reads every plugin's tool list per resolution, so a late registration reaches the next session. Undocumented; the SDK docs say "statically registered". | `registerTool`, `collectAgentTools` |
-| A plugin can reload itself through `bb.sdk.plugins.reload({ pluginId })`. Fallback if late registration ever stops working. | SDK `PluginsArea.reload` |
+| `alia.agents.registerTool` works after plugin load (only guarded by `assertLive`), and `resolveAgentConfiguration` re-reads every plugin's tool list per resolution, so a late registration reaches the next session. Undocumented; the SDK docs say "statically registered". | `registerTool`, `collectAgentTools` |
+| A plugin can reload itself through `alia.sdk.plugins.reload({ pluginId })`. Fallback if late registration ever stops working. | SDK `PluginsArea.reload` |
 | The only complete source of the macOS tool list is the driver binary's MCP `tools/list`. It needs no TCC permission and answers in about 1 s. | Compared on 0.36.0: binary 60 tools; `libs/cua-driver/contract/manifest.json` 29 tools (portable subset, missing macOS-only properties such as `pid`, `window_id`); TS SDK has no schemas. |
 | Each driver tool carries `annotations` (read-only, destructive, idempotent, open-world) and `risk.class` r0–r3. `risk.class` measures data sensitivity (screenshots are r3), not danger: `run_script` is r1. | `tools/list` on 0.36.0 |
 | The installer pins a version with `CUA_DRIVER_RS_VERSION`. Stable tags are `cua-driver-rs-vX.Y.Z`; GitHub marks them all "Pre-release" by convention. | `_install-rust.sh` |
@@ -36,7 +36,7 @@ Checked against bb 0.46.1 (`start-server.js`) and Cua Driver 0.36.0 on
 
 - On first connection to a machine, read `tools/list` and cache it in kv under
   `catalog:<hostId>`, with the driver version it came from.
-- Register one bb tool per driver tool (`cua_<name>`) with a permissive schema
+- Register one VesnALIA tool per driver tool (`cua_<name>`) with a permissive schema
   (`{type: "object", additionalProperties: true}`); `configure()` hands each
   session the driver's exact schema for that machine. The driver stays the only
   validator.
@@ -66,7 +66,7 @@ Three tiers, decided by the plugin, not by `risk.class`:
 ### 3. Drift detection without scheduled jobs on the user's Mac
 
 - **In the plugin:** on connect, diff the live `tools/list` against the
-  snapshot this release was tested with. `bb cua status` and the settings page
+  snapshot this release was tested with. `alia cua status` and the settings page
   show "Driver 0.37.0 is untested: +2 tools, `browser_click` changed, −`zoom`";
   agents get a one-line note.
 - **In CI (public repo, free runners):** a daily Linux job checks for a new
@@ -86,7 +86,7 @@ Three tiers, decided by the plugin, not by `risk.class`:
 
 ### 5. Skill
 
-- Keep `skills/cua-computer-use/SKILL.md` as a short bb-specific layer on top
+- Keep `skills/cua-computer-use/SKILL.md` as a short alia-specific layer on top
   of the upstream Cua Driver skill pack: tool prefix, `run_steps` first, the
   exposure policy, and stop-and-ask rules for sending or deleting. The pack is
   read by hand when the skill is refreshed (0.3.0 was rewritten from the 0.36

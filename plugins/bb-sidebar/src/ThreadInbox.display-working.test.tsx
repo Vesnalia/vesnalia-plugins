@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { renderSlot } from "./test-slot";
 import {
   defaultSidebarSettings,
@@ -18,10 +18,10 @@ vi.mock("sonner", async () => (await import("./test-inbox")).sonnerMock());
 
 await loadInboxApp();
 
-const projects = [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }];
+const projects = [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }];
 const ci = { icon: "Loading", label: "Waiting for CI", tone: "running" } as const;
 const note = { icon: "Bell", label: "Has a note" } as const;
-// bb sets `indicator` from these: neither one is working by bb's rule.
+// VesnALIA sets `indicator` from these: neither one is working by VesnALIA's rule.
 const offline = { status: "active", runtimeStatus: "waiting-for-host", indicator: "none" } as const;
 const unstarted = { status: "pending", runtimeStatus: "pending", indicator: "none" } as const;
 

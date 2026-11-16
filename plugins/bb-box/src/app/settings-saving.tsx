@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -208,7 +208,7 @@ function outcomeWords(outcome: Outcome, draft: Draft): string {
   switch (outcome.kind) {
     case "saved": {
       const head = outcome.lostReply
-        ? `Saved at revision ${outcome.revision}. The reply was lost; BB Box's receipt for this save confirms it.`
+        ? `Saved at revision ${outcome.revision}. The reply was lost; VesnALIA Box's receipt for this save confirms it.`
         : outcome.rebased
           ? `Saved at revision ${outcome.revision}, on top of a change made elsewhere.`
           : "Saved.";
@@ -227,10 +227,10 @@ function outcomeWords(outcome: Outcome, draft: Draft): string {
       return "Not saved: the configuration changed three times while saving. Your changes are still here.";
     case "expired":
       return draft.changes
-        ? "Save not confirmed: this save is older than the receipts BB Box keeps, so it is not sent again. Your changes are still here, checked against what is saved now."
-        : "Save not confirmed: this save is older than the receipts BB Box keeps. What is saved now matches your changes.";
+        ? "Save not confirmed: this save is older than the receipts VesnALIA Box keeps, so it is not sent again. Your changes are still here, checked against what is saved now."
+        : "Save not confirmed: this save is older than the receipts VesnALIA Box keeps. What is saved now matches your changes.";
     case "unsendable":
-      return "Save not confirmed: BB Box has no receipt for it yet. What you pasted was not kept when the page reloaded, so it cannot be sent again: paste it again, then save.";
+      return "Save not confirmed: VesnALIA Box has no receipt for it yet. What you pasted was not kept when the page reloaded, so it cannot be sent again: paste it again, then save.";
   }
 }
 
@@ -243,8 +243,8 @@ export const SAVE_WORDS: SaveWords = {
   again: "Save again",
   saving: "Saving…",
   rebasing: "Someone saved first. Checking your changes against theirs…",
-  looking: "Save not confirmed: BB Box did not reply. Looking for this save's receipt…",
-  unconfirmed: "Save not confirmed: BB Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which BB Box applies at most once.",
+  looking: "Save not confirmed: VesnALIA Box did not reply. Looking for this save's receipt…",
+  unconfirmed: "Save not confirmed: VesnALIA Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which VesnALIA Box applies at most once.",
   discard: DISCARD_WORDS,
   pending: (draft) => `${changesWords(draft.changes)} to ${draft.what} not saved`,
   conflicts: conflictWords,

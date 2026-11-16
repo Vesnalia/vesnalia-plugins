@@ -9,13 +9,13 @@ const sidebar = (lang: string, labels: string[]) => [{
 }];
 
 export default defineConfig({
-  title: 'ZCode for BB',
-  description: 'ZCode CLI/ACP integration and plan quotas for BB.',
-  base: process.env.DOCS_BASE || '/bb-plugin-zcode/',
+  title: 'ZCode for VesnALIA',
+  description: 'ZCode CLI/ACP integration and plan quotas for VesnALIA.',
+  base: process.env.DOCS_BASE || '/alia-plugin-zcode/',
   srcExclude: ['verification/**', 'skill/**', 'native-control.md', 'usage.md', 'README.md'],
   cleanUrls: false,
   lastUpdated: true,
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${process.env.DOCS_BASE || '/bb-plugin-zcode/'}logo.svg` }]],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${process.env.DOCS_BASE || '/alia-plugin-zcode/'}logo.svg` }]],
   locales: {
     en: {
       label: 'English', lang: 'en', link: '/en/',
@@ -25,12 +25,12 @@ export default defineConfig({
         outline: { label: 'On this page' },
         docFooter: { prev: 'Previous', next: 'Next' },
         lastUpdated: { text: 'Updated' },
-        footer: { message: 'Apache-2.0 · Based on VKirill/bb-plugin-zcode', copyright: 'ZCode for BB · Community integration' }
+        footer: { message: 'Apache-2.0 · Based on VKirill/alia-plugin-zcode', copyright: 'ZCode for VesnALIA · Community integration' }
       }
     },
     ru: {
       label: 'Русский', lang: 'ru', link: '/ru/',
-      description: 'Интеграция ZCode CLI/ACP и квоты планов в BB.',
+      description: 'Интеграция ZCode CLI/ACP и квоты планов в VesnALIA.',
       themeConfig: {
         nav: [{ text: 'Руководство', link: '/ru/' }, { text: 'Установка', link: '/ru/installation' }],
         sidebar: sidebar('ru', ru),
@@ -40,7 +40,7 @@ export default defineConfig({
         darkModeSwitchLabel: 'Оформление', lightModeSwitchTitle: 'Светлая тема', darkModeSwitchTitle: 'Тёмная тема',
         sidebarMenuLabel: 'Меню', returnToTopLabel: 'Наверх',
         langMenuLabel: 'Изменить язык', skipToContentLabel: 'К содержимому',
-        footer: { message: 'Apache-2.0 · На основе VKirill/bb-plugin-zcode', copyright: 'ZCode для BB · Независимая интеграция' }
+        footer: { message: 'Apache-2.0 · На основе VKirill/alia-plugin-zcode', copyright: 'ZCode для ALIA · Независимая интеграция' }
       }
     }
   },

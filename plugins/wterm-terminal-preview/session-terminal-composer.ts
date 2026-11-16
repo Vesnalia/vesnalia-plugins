@@ -22,7 +22,7 @@ export function initialPanelParams(hostParams: unknown): TerminalParams | null {
 	return hasTerminalParams(hostParams) ? hostParams : null;
 }
 
-const LAST_TERMINAL_STORAGE_PREFIX = "bb.wterm-terminal-preview";
+const LAST_TERMINAL_STORAGE_PREFIX = "alia.wterm-terminal-preview";
 
 export function terminalStorageKey(threadId: string): string {
 	return `${LAST_TERMINAL_STORAGE_PREFIX}.${threadId}`;
@@ -75,7 +75,7 @@ export function revealSessionTerminalPanel({
 		experimental_primarySurface: true,
 	});
 	if (!opened) {
-		throw new Error("This BB view could not switch to the session terminal.");
+		throw new Error("This VesnALIA view could not switch to the session terminal.");
 	}
 }
 

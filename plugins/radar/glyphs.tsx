@@ -1,4 +1,4 @@
-// Inline lucide-style glyphs: bb's host icon set is curated, so plugin-specific
+// Inline lucide-style glyphs: VesnALIA's host icon set is curated, so plugin-specific
 // icons are drawn here instead of resolved by name.
 const PATHS: Record<string, string[]> = {
   pr: ["M6 3v12", "M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M18 9v3a3 3 0 0 1-3 3H6"],

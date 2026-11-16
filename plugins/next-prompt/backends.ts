@@ -1,13 +1,13 @@
 // Lean model calls. Each takes the system prompt and transcript and resolves
 // to the raw reply text; next-prompt-core reads it in server.ts. Providers other
-// than Claude Code and Codex run as hidden bb worker threads in server.ts.
+// than Claude Code and Codex run as hidden VesnALIA worker threads in server.ts.
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SUGGESTION_DEFAULTS } from "./vendor/next-prompt-core.ts";
 
-/** A choice from bb's provider/model picker. */
+/** A choice from VesnALIA's provider/model picker. */
 export interface ModelSelection {
 	providerId: string;
 	model: string;
@@ -15,7 +15,7 @@ export interface ModelSelection {
 	serviceTier?: string;
 }
 
-/** Used until a model is picked; bb's own default model is too heavy to run after every turn. */
+/** Used until a model is picked; VesnALIA's own default model is too heavy to run after every turn. */
 export const DEFAULT_SELECTION: ModelSelection = {
 	providerId: "claude-code",
 	model: "claude-sonnet-5-5",
@@ -39,7 +39,7 @@ export interface CompletionRequest {
 }
 
 const MAX_OUTPUT_CHARS = 1_000_000;
-/** bb reasoning level → `claude --effort`. Low is absent: it turns thinking off instead. */
+/** VesnALIA reasoning level → `claude --effort`. Low is absent: it turns thinking off instead. */
 const CLAUDE_EFFORTS: Record<string, string> = {
 	medium: "medium",
 	high: "high",
@@ -47,7 +47,7 @@ const CLAUDE_EFFORTS: Record<string, string> = {
 	ultracode: "max",
 	max: "max",
 };
-/** bb reasoning level → codex `model_reasoning_effort`, whose highest value is xhigh. */
+/** VesnALIA reasoning level → codex `model_reasoning_effort`, whose highest value is xhigh. */
 const CODEX_EFFORTS: Record<string, string> = {
 	minimal: "minimal",
 	low: "low",
@@ -130,7 +130,7 @@ export async function completeWithCodex(
 	selection: ModelSelection,
 	request: CompletionRequest,
 ): Promise<string> {
-	const dir = await mkdtemp(join(tmpdir(), "bb-next-prompt-"));
+	const dir = await mkdtemp(join(tmpdir(), "alia-next-prompt-"));
 	try {
 		const outFile = join(dir, "last-message.txt");
 		const effort = Object.hasOwn(CODEX_EFFORTS, selection.reasoningLevel) ? CODEX_EFFORTS[selection.reasoningLevel] : "low";

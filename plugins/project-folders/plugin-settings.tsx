@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { rpcContract } from "./server";
 import { LanguagePicker, t } from "./i18n";
 import { Button } from "./components/ui/button";
@@ -57,7 +57,7 @@ const meta = (section: SettingsSection) =>
     autoArchive: {
       icon: "Clock",
       title: t("Автоархив чатов"),
-      hint: t("Убирать в архив BB чаты, в которых давно ничего не происходит."),
+      hint: t("Убирать в архив ALIA чаты, в которых давно ничего не происходит."),
     },
     appearance: {
       icon: "Palette",
@@ -320,7 +320,7 @@ export function AutoArchiveSettings() {
       <SettingsGroup
         title={t("Автоархив чатов")}
         hint={t(
-          "Закреплённые, работающие, ждущие ответа и вложенные чаты не трогаются. Проверка раз в час; чат можно вернуть из архива BB.",
+          "Закреплённые, работающие, ждущие ответа и вложенные чаты не трогаются. Проверка раз в час; чат можно вернуть из архива ALIA.",
         )}
       >
         <SettingRow
@@ -386,7 +386,7 @@ export function SettingsNav({
   onChange: (section: SettingsSection) => void;
   variant: "rail" | "side";
 }) {
-  // Session context rules need an experimental BB core; hide them elsewhere.
+  // Session context rules need an experimental VesnALIA core; hide them elsewhere.
   const sessionPolicyAvailable = useSessionPolicyAvailable();
   return (
     <ul className={`pf-snav pf-snav-${variant}`} role="list">
@@ -450,7 +450,7 @@ export function SettingsPane({
         <SettingsGroup
           title={t("По умолчанию для новых чатов")}
           hint={t(
-            "Действует, пока проект или раздел не задал своё. Выключенная группа оставляет обычный выбор BB.",
+            "Действует, пока проект или раздел не задал своё. Выключенная группа оставляет обычный выбор ALIA.",
           )}
         >
           <ExecutionSettings />
@@ -460,7 +460,7 @@ export function SettingsPane({
         <SettingsGroup
           title={t("По умолчанию для всех проектов")}
           hint={t(
-            "Действует, пока проект или раздел не задал своё. Группа «Наследовать» оставляет обычную загрузку BB.",
+            "Действует, пока проект или раздел не задал своё. Группа «Наследовать» оставляет обычную загрузку ALIA.",
           )}
         >
           <SessionPolicyEditor scope={{ kind: "global" }} />
@@ -486,7 +486,7 @@ export function SettingsPane({
 
 /**
  * Stand-alone settings with their own section rail, for the plugin page in
- * BB settings. The management page places `SettingsNav` in its tree sidebar.
+ * VesnALIA settings. The management page places `SettingsNav` in its tree sidebar.
  */
 export function PluginSettings({ archive }: { archive: ReactNode }) {
   const [section, setSection] = useState<SettingsSection>("list");

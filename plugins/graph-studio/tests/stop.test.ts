@@ -9,7 +9,7 @@
 // reload honours a stop that was requested but not finished, instead of
 // resurrecting the run.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import graphStudio from "../server";
 import { END_NODE, START_NODE, graphSchema } from "../lib/graph";
 
@@ -46,7 +46,7 @@ const humanGate = graphSchema.parse({
 });
 
 /**
- * The `bb.sdk` surface a run touches, with the one interesting part left to
+ * The `alia.sdk` surface a run touches, with the one interesting part left to
  * the caller: `threads.wait`. Everything else is a static answer, because
  * none of it is what these tests are about.
  */
@@ -117,7 +117,7 @@ describe("stopping a run", () => {
       ),
     });
     open.push(host);
-    graphStudio(host.bb);
+    graphStudio(host.alia);
 
     const runId = await startRun(host, singleAgent("stop-1"));
     await vi.waitFor(async () => {
@@ -177,7 +177,7 @@ describe("stopping a run", () => {
       ),
     });
     open.push(host);
-    graphStudio(host.bb);
+    graphStudio(host.alia);
 
     const runId = await startRun(host, singleAgent("stop-2"));
     await vi.waitFor(async () => {
@@ -207,7 +207,7 @@ describe("stopping a run", () => {
       sdk: sdkStubs(async () => ({})),
     });
     open.push(host);
-    graphStudio(host.bb);
+    graphStudio(host.alia);
 
     const runId = await startRun(host, humanGate);
     await waitForStatus(host, runId, "waiting-human");
@@ -230,7 +230,7 @@ describe("a stop across a reload", () => {
       pluginId: "graph-studio",
       sdk: sdkStubs(() => new Promise(() => {})),
     });
-    graphStudio(host.bb);
+    graphStudio(host.alia);
 
     const runId = await startRun(host, singleAgent("stop-3"));
     await vi.waitFor(async () => {

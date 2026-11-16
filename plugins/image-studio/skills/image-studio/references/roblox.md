@@ -6,7 +6,7 @@ The game's **GUI** and **Characters** are its own linked projects: `image_studio
 
 ## Tool
 
-`image_studio_roblox` (or `bb image-studio roblox generate --mode … --prompt "…"` in a hidden thread). Runs at once, no Send form, always Muse Image on fal.ai.
+`image_studio_roblox` (or `alia image-studio roblox generate --mode … --prompt "…"` in a hidden thread). Runs at once, no Send form, always Muse Image on fal.ai.
 
 | mode | prompt | result in `image-studio/roblox/<game>/<tab>/<id>-<label>/` |
 |---|---|---|
@@ -48,4 +48,4 @@ Text: only what the prompt gives in quotes is written (titles on icons and thumb
 
 Skybox: Muse draws a 4:1 horizon; the plugin tiles it, splits it into the four sides (turning right: Ft → Rt → Bk → Lf) and fades the top and bottom into one sky and one ground colour, which are the Up and Dn faces — so the seams match whichever way Roblox turns Up and Dn. Look at it in Studio once; the horizon band is the strong part.
 
-Look of the game: `bb image-studio roblox project --theme "…" --tags simulator,cartoon --notes "…"`; approved art as a reference: `bb image-studio roblox ref --image <path or gallery id>`; list: `bb image-studio roblox projects`.
+Look of the game: `alia image-studio roblox project --theme "…" --tags simulator,cartoon --notes "…"`; approved art as a reference: `alia image-studio roblox ref --image <path or gallery id>`; list: `alia image-studio roblox projects`.

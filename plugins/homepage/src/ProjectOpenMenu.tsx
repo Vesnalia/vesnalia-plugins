@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server.js";
 import { discoverProjectApps, openProjectInApp, type ProjectOpenApps } from "./project-open.js";
 import { APP_ICONS } from "./app-icons.js";
@@ -53,7 +53,7 @@ export function ProjectOpenMenu({ projectId, itemClassName, onError }: {
         <span>Open in</span><span aria-hidden="true">›</span>
       </ContextMenu.SubTrigger>
       <ContextMenu.Portal>
-        <ContextMenu.SubContent data-bb-plugin="homepage" className="z-50 min-w-[12rem] max-w-sm rounded-md border border-border bg-card p-1 shadow-md">
+        <ContextMenu.SubContent data-alia-plugin="homepage" className="z-50 min-w-[12rem] max-w-sm rounded-md border border-border bg-card p-1 shadow-md">
           {typeof state === "string" ? (
             <ContextMenu.Item disabled className={itemClassName}>{state}</ContextMenu.Item>
           ) : state.targets.length === 0 ? (

@@ -27,7 +27,7 @@ export function tintColor(tint: SpaceTint): string {
   return `oklch(68% 0.15 ${SPACE_TINTS[tint]})`;
 }
 
-const STYLE_ID = "bb-spaces-tint";
+const STYLE_ID = "alia-spaces-tint";
 /** Share of the tint (%) in each sidebar token, per mode. */
 const STRENGTH: Record<"light" | "dark", Record<string, number>> = {
   light: { "--sidebar": 5, "--sidebar-accent": 7, "--sidebar-border": 6 },
@@ -45,7 +45,7 @@ const TEXT_CHROMA: Record<string, number> = {
 };
 const TEXT_TOKENS = Object.keys(TEXT_CHROMA);
 
-/** Where the text tint applies: bb's sidebar and the Edit Spaces list. */
+/** Where the text tint applies: VesnALIA's sidebar and the Edit Spaces list. */
 export const SIDEBAR_SCOPE_ATTR = "data-spaces-sidebar";
 const TEXT_SCOPE = `[data-sidebar="sidebar"], [${SIDEBAR_SCOPE_ATTR}]`;
 

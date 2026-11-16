@@ -432,7 +432,7 @@ export class Engine implements CreationEngine {
     return kickoff(w, stageOf(6), round, liveCheckPrompt(w, round, this.liveAttempt(w, attemptId), { needsConfiguration: this.needsConfiguration(w) }));
   }
 
-  /** The plugin came up and is waiting for settings (the last confirmed state in bb). */
+  /** The plugin came up and is waiting for settings (the last confirmed state in VesnALIA). */
   protected needsConfiguration(w: WorkRow): boolean {
     return this.store.plugin(w.plugin_id)?.last_state === "needs-configuration";
   }
@@ -1087,7 +1087,7 @@ export class Engine implements CreationEngine {
     this.ports.changed(r.id);
   }
 
-  /** Archive the threads of a finished work (bb removes the worktree by itself); if not everything worked — reconcile will retry. */
+  /** Archive the threads of a finished work (VesnALIA removes the worktree by itself); if not everything worked — reconcile will retry. */
   protected async cleanup(w: Ready): Promise<void> {
     let ok = true;
     for (const r of this.store.runs(w.id)) {
@@ -1267,7 +1267,7 @@ export class Engine implements CreationEngine {
   }
 
   /**
-   * GitHub as the source of truth. If the plugin has no `origin` — create the repository (`<owner>/bb-plugin-<id>`, private) and publish main
+   * GitHub as the source of truth. If the plugin has no `origin` — create the repository (`<owner>/alia-plugin-<id>`, private) and publish main
    * with its whole history; every new work branch commit is published (the exact commit to the branch, without `--force`); from
    * Implementation on — a PR from the branch into main. Every push goes through the publication gate (`publish`): a repository that is not
    * private or not the owner's, something like a key in the new commits, or an incomplete scan — nothing is pushed. The verdict on the work
@@ -1288,9 +1288,9 @@ export class Engine implements CreationEngine {
       const policy = this.publishPolicy();
       let remote = await this.ports.github.remote(dir);
       if (!remote) {
-        remote = await this.ports.github.ensureRepo(policy.owner, `bb-plugin-${w.plugin_id}`, `bb plugin ${w.plugin_id}`);
+        remote = await this.ports.github.ensureRepo(policy.owner, `alia-plugin-${w.plugin_id}`, `alia plugin ${w.plugin_id}`);
         await this.ports.github.setRemote(dir, remote);
-        // Only main: branches of other worktrees (bb/*) are not needed on GitHub. If a repository with this name already existed with a
+        // Only main: branches of other worktrees (alia/*) are not needed on GitHub. If a repository with this name already existed with a
         // different history, git's refusal ("non-fast-forward") goes to the journal in words below.
         const main = (await this.ports.git.facts(dir)).head;
         if (main) {

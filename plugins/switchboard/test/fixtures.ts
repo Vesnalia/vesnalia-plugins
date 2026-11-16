@@ -1,4 +1,4 @@
-import type { PluginSidebarProject, PluginSidebarSection, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarSection, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { HueId, SortMode } from "../src/layout";
 
 export const layoutWriteFakes = {

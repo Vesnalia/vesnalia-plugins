@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import {
   machineLabel,
@@ -86,7 +86,7 @@ async function setup(agents: AgentStubs = {}) {
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return { ...h, rpcCalls };
 }
 const call = (h: Awaited<ReturnType<typeof setup>>) =>
@@ -247,7 +247,7 @@ describe("execution inheritance", () => {
     expect(offeredMachineIds("h1", ["h2"])).toEqual(["h1", "h2"]);
     expect(offeredMachineIds(null, ["h2"])).toEqual(["h2"]);
   });
-  it("labels a known host with its BB name and an unknown one with the fallback", () => {
+  it("labels a known host with its VesnALIA name and an unknown one with the fallback", () => {
     const known = [
       { id: "h1", name: "Mac" },
       { id: "h2", name: "OVH" },

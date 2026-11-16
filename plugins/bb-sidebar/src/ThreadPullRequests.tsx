@@ -1,7 +1,7 @@
-import { useEnvironmentPullRequest } from "./bb-sdk";
+import { useEnvironmentPullRequest } from "./alia-sdk";
 import { useEffect, useId, useState } from "react";
-import { UrlLink, useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract, ThreadPullRequest } from "./contract";
+import { UrlLink, useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract, ThreadPullRequest } from "./contract";
 import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
 import { mergeThreadPullRequests, pullRequestStatusLabel, pullRequestToneClass } from "./pull-request-display";
@@ -13,7 +13,7 @@ import { mergeThreadPullRequests, pullRequestStatusLabel, pullRequestToneClass }
  */
 export function ThreadPullRequestDetails({ thread }: { thread: PluginSidebarThread }) {
   const pullRequest = useEnvironmentPullRequest(thread.environment?.id ?? null);
-  const { call } = useRpc<typeof bbSidebarRpcContract>();
+  const { call } = useRpc<typeof aliaSidebarRpcContract>();
   const [history, setHistory] = useState<readonly ThreadPullRequest[]>([]);
   const [expanded, setExpanded] = useState(false);
   const listId = useId();

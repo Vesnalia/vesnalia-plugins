@@ -4,7 +4,7 @@
  * in localStorage across reloads.
  */
 
-const STORAGE_KEY = "bb-plugin-terminals:selected-tab";
+const STORAGE_KEY = "alia-plugin-terminals:selected-tab";
 
 /** The tab to show: the wanted one while it is open, else the last tab, else none. */
 export function resolveSelection(tabIds: readonly string[], wanted: string | null): string | null {

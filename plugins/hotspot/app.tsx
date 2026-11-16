@@ -1,4 +1,4 @@
-// bb-plugin-hotspot — frontend entry.
+// alia-plugin-hotspot — frontend entry.
 //
 // Four surfaces, all reading the server over RPC and refreshing on its
 // realtime signals: the Hotspot page (verdict, timeline, hot spells and their
@@ -11,7 +11,7 @@
 // sample is stored.
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { definePluginApp, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Episode, Range, Timeline, rpcContract } from "./lib/contract";
 import { FooterIndicator } from "@/components/footer-indicator";
@@ -21,7 +21,7 @@ import { MonitorButton, useOpenMonitor } from "@/components/monitor-button";
 import { TimelineChart } from "@/components/timeline-chart";
 import { useStatus, useWatchLease } from "@/hooks/use-status";
 import { CULPRIT_PROCS, bytesText, thermalLabel } from "./lib/labels";
-import { bbTotalTitle, clockText, cpuText, dayClockText, durationText, pct } from "./lib/present";
+import { aliaTotalTitle, clockText, cpuText, dayClockText, durationText, pct } from "./lib/present";
 import { EPISODE_OPENED, type EpisodeOpenedSignal, SAMPLED } from "./lib/signals";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -64,7 +64,7 @@ function episodeFromSubPath(subPath: string): number | null {
 /* ------------------------------------------------------------------ */
 
 function EpisodeDetail({ episode, intervalMs }: { episode: Episode; intervalMs: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // Idle threads that only made the top five on a quiet sample are noise.
   const culprits = episode.culprits
     .filter((culprit, index) => index < 3 || culprit.cpuSum / Math.max(1, episode.samples) >= 0.5)
@@ -74,7 +74,7 @@ function EpisodeDetail({ episode, intervalMs }: { episode: Episode; intervalMs: 
   return (
     <div className="border-t border-border bg-muted/30 px-3 py-2 text-sm sm:px-4">
       {culprits.length === 0 ? (
-        <p className="py-1.5 text-muted-foreground">No BB thread was busy during this hot spell.</p>
+        <p className="py-1.5 text-muted-foreground">No VesnALIA thread was busy during this hot spell.</p>
       ) : (
         <ol>
           {culprits.map((culprit, index) => (
@@ -112,7 +112,7 @@ function EpisodeDetail({ episode, intervalMs }: { episode: Episode; intervalMs: 
       )}
       {others.length === 0 ? null : (
         <p className="px-1 pt-1 pb-1.5 text-xs text-muted-foreground">
-          Also busy outside BB:{" "}
+          Also busy outside VesnALIA:{" "}
           {others.map((other) => `${other.name} avg ${pct(other.cpuSum / Math.max(1, episode.samples))}`).join(" · ")}
         </p>
       )}
@@ -174,7 +174,7 @@ function EpisodeList({
                   </span>
                 </span>
                 <span className="block min-w-0 truncate text-xs text-muted-foreground sm:flex-1 sm:text-sm sm:text-foreground">
-                  {top === null ? "No BB thread to blame" : threadLabel(top)}
+                  {top === null ? "No VesnALIA thread to blame" : threadLabel(top)}
                 </span>
               </span>
               <span className="flex shrink-0 flex-col items-end gap-0.5 text-xs text-muted-foreground sm:w-36 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
@@ -272,11 +272,11 @@ function HotspotPage({ subPath }: { subPath: string }) {
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs">
                 <p className="min-w-0 flex-1 text-muted-foreground">
                   Checked {clockText(latest.at)}
-                  {latest.bb == null ? null : (
+                  {latest.alia == null ? null : (
                     <>
                       {" · "}
-                      <span title={bbTotalTitle(latest.bb)} className="tabular-nums">
-                        BB total {cpuText(latest.bb.cpu)} CPU, {bytesText(latest.bb.memBytes)}
+                      <span title={aliaTotalTitle(latest.alia)} className="tabular-nums">
+                        VesnALIA total {cpuText(latest.alia.cpu)} CPU, {bytesText(latest.alia.memBytes)}
                       </span>
                     </>
                   )}{" "}
@@ -332,7 +332,7 @@ function HotspotPage({ subPath }: { subPath: string }) {
         <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
           A hot spell starts after three readings in a row with thermal pressure above nominal or CPU at the hot line,
           and ends after three normal ones. Thread CPU is a share of the whole Mac: the CPU time its processes used
-          since the previous reading, every few seconds while BB is on screen. The chart and hot spells use one
+          since the previous reading, every few seconds while VesnALIA is on screen. The chart and hot spells use one
           sample a minute. Memory is what Activity Monitor calls Memory Used (app, wired and compressed);
           it turns amber or red only when macOS reports memory pressure.
         </p>
@@ -367,14 +367,14 @@ function isEpisodeOpenedSignal(value: unknown): value is EpisodeOpenedSignal {
 
 /** Mounted once per window; turns the server's signal into a host toast. */
 function HotspotToaster() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   useRealtime(EPISODE_OPENED, (payload) => {
     if (!isEpisodeOpenedSignal(payload)) return;
     const top = payload.top;
     toast.warning("Your Mac is running hot", {
       description:
         top === null
-          ? `Since ${clockText(payload.startAt)}. No BB thread is the main cause.`
+          ? `Since ${clockText(payload.startAt)}. No VesnALIA thread is the main cause.`
           : `Since ${clockText(payload.startAt)}, mostly from ${threadLabel(top)}.`,
       action:
         top === null

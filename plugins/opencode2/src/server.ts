@@ -1,8 +1,8 @@
-// BB provider registration for OpenCode v2.
+// VesnALIA provider registration for OpenCode v2.
 //
 // The host bridge talks to OpenCode's local v2 HTTP API. This file only owns
-// provider metadata and keeps process/API details out of the BB server runtime.
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+// provider metadata and keeps process/API details out of the VesnALIA server runtime.
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   opencodeHostContract,
   opencodeSettingsRpcContract,
@@ -14,15 +14,15 @@ import { normalizeModelSettings } from "./model-settings.ts";
 const PROVIDER_ID = "opencode2";
 const SETTINGS_KEY = "model-settings";
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   let modelSettings = normalizeModelSettings(
-    await bb.storage.kv.get(SETTINGS_KEY),
+    await alia.storage.kv.get(SETTINGS_KEY),
   );
-  const host = bb.hosts.experimental_client({ contract: opencodeHostContract });
+  const host = alia.hosts.experimental_client({ contract: opencodeHostContract });
   const syncedSettings = new Map<string, string>();
 
   async function connectedHostIds(signal?: AbortSignal) {
-    return (await bb.sdk.hosts.list({ signal }))
+    return (await alia.sdk.hosts.list({ signal }))
       .filter((item) => item.status === "connected")
       .map((item) => item.id);
   }
@@ -66,7 +66,7 @@ export default async function plugin(bb: BbPluginApi) {
       !signal?.aborted &&
       results.some((result) => result.status === "rejected")
     ) {
-      bb.log.warn(
+      alia.log.warn(
         "Could not sync OpenCode model settings to every connected host",
       );
     }
@@ -89,7 +89,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function getStatus() {
-    const hosts = (await bb.sdk.hosts.list()).filter(
+    const hosts = (await alia.sdk.hosts.list()).filter(
       (item) => item.status === "connected",
     );
     const results = await Promise.all(
@@ -112,20 +112,20 @@ export default async function plugin(bb: BbPluginApi) {
     return { hosts: results };
   }
 
-  bb.rpc.register(opencodeSettingsRpcContract, {
+  alia.rpc.register(opencodeSettingsRpcContract, {
     getSettings: () => modelSettings,
     listModels,
     getStatus,
     async saveSettings(next) {
       modelSettings = normalizeModelSettings(next);
-      await bb.storage.kv.set(SETTINGS_KEY, modelSettings);
+      await alia.storage.kv.set(SETTINGS_KEY, modelSettings);
       await syncSettings();
-      bb.realtime.publish("settings-changed", modelSettings);
+      alia.realtime.publish("settings-changed", modelSettings);
       return modelSettings;
     },
   });
 
-  bb.background.service("sync-model-settings", {
+  alia.background.service("sync-model-settings", {
     async start(signal) {
       while (!signal.aborted) {
         await syncSettings(undefined, signal);
@@ -145,7 +145,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.providers.register({
+  alia.providers.register({
     id: PROVIDER_ID,
     displayName: "OpenCode v2",
     icon: "./icons/opencode.svg",
@@ -180,10 +180,10 @@ export default async function plugin(bb: BbPluginApi) {
         "ultra",
       ],
     },
-    // BB's plan mode is not offered; `plan` is an OpenCode agent picked through
+    // VesnALIA's plan mode is not offered; `plan` is an OpenCode agent picked through
     // the `agent` session option instead.
     composerActions: [],
-    // OpenCode discovers skills in more places than BB scans by default;
+    // OpenCode discovers skills in more places than VesnALIA scans by default;
     // the host entry answers with the roots OpenCode actually uses.
     experimental_resolvesNativeRoots: true,
     // Settings reach every session and turn command as providerOptions, so a
@@ -191,5 +191,5 @@ export default async function plugin(bb: BbPluginApi) {
     deriveProviderOptions: () => ({ modelSettings }),
   });
 
-  bb.log.info("registered OpenCode v2 provider");
+  alia.log.info("registered OpenCode v2 provider");
 }

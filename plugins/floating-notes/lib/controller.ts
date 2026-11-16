@@ -1,6 +1,6 @@
 // A tiny external store for everything that drives the floating surfaces from
 // outside React: the sidebar footer button (host-rendered, no component), the
-// global shortcuts, the bb-tree bridge, and the composer's plus-menu.
+// global shortcuts, the alia-tree bridge, and the composer's plus-menu.
 //
 // The thread registry is the visibility bridge for pinned stickies and the
 // scratchpad target: the thread-header action's data hook receives the ids of
@@ -29,7 +29,7 @@ export interface ControllerState {
   visibleThreads: readonly VisibleThread[];
   /**
    * A thread the user asked to jump to. The content script cannot call
-   * useBbNavigate, so it posts the request here and the mounted bb-tree
+   * useAliaNavigate, so it posts the request here and the mounted alia-tree
    * bridge (the app overlay) executes and consumes it.
    */
   navigateRequest: { threadId: string; seq: number } | null;
@@ -47,7 +47,7 @@ let state: ControllerState = {
 };
 
 let navigateSeq = 0;
-/** Mounted bb-tree bridges able to execute a navigation request. */
+/** Mounted alia-tree bridges able to execute a navigation request. */
 let navigators = 0;
 
 const listeners = new Set<Listener>();
@@ -97,7 +97,7 @@ export const controller = {
 
   // ------------------------------------------------------------ threads
   /**
-   * Replace the on-screen thread set. `focusedThreadId` (bb's current route
+   * Replace the on-screen thread set. `focusedThreadId` (VesnALIA's current route
    * thread) goes first; the rest keep the order they were first seen in,
    * newest first, so capture targets the thread the user just opened.
    */
@@ -133,7 +133,7 @@ export const controller = {
   },
 
   // --------------------------------------------------------- navigation
-  /** A bb-tree bridge mounted; it executes navigation requests until disposed. */
+  /** A alia-tree bridge mounted; it executes navigation requests until disposed. */
   registerNavigator(): () => void {
     navigators += 1;
     return () => {

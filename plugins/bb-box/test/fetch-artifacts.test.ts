@@ -24,7 +24,7 @@ const sha256 = (text: string) => createHash("sha256").update(text).digest("hex")
 
 /** The script in a layout of its own, with pins for files in `upstream`. */
 function world(files: Record<string, string>) {
-  const root = mkdtempSync(join(tmpdir(), "bb-box-fetch-"));
+  const root = mkdtempSync(join(tmpdir(), "alia-box-fetch-"));
   dirs.push(root);
   const upstream = join(root, "upstream");
   mkdirSync(join(root, "template"), { recursive: true });
@@ -44,7 +44,7 @@ function world(files: Record<string, string>) {
   const run = (art: string) => {
     const ran = spawnSync("bash", [join(root, "template", "fetch-artifacts.sh"), join(root, art), "linux", "x86_64"], {
       encoding: "utf8",
-      env: { ...process.env, BBBOX_ENV: "/nonexistent", BBBOX_BB_URL: "", BBBOX_ARTIFACT_CACHE: cache },
+      env: { ...process.env, BBBOX_ENV: "/nonexistent", BBBOX_ALIA_URL: "", BBBOX_ARTIFACT_CACHE: cache },
     });
     assert.equal(ran.status, 0, ran.stderr);
     return ran.stdout;
@@ -96,7 +96,7 @@ test("only the Wayland desktop fetches the Ubuntu 26.04 pins, which the X11 desk
   const fetched = (kind: string, art: string) => {
     const ran = spawnSync("bash", [join(w.root, "template", "fetch-artifacts.sh"), w.art(art), kind, "x86_64"], {
       encoding: "utf8",
-      env: { ...process.env, BBBOX_ENV: "/nonexistent", BBBOX_BB_URL: "", BBBOX_ARTIFACT_CACHE: "" },
+      env: { ...process.env, BBBOX_ENV: "/nonexistent", BBBOX_ALIA_URL: "", BBBOX_ARTIFACT_CACHE: "" },
     });
     assert.equal(ran.status, 0, ran.stderr);
     return readdirSync(w.art(art)).sort();
@@ -134,7 +134,7 @@ test("a download that stalls is retried, then fails within its stall limits, nam
     const ran = await runAsync(join(w.root, "template", "fetch-artifacts.sh"), [w.art("art"), "linux", "x86_64"], {
       ...process.env,
       BBBOX_ENV: "/nonexistent",
-      BBBOX_BB_URL: "",
+      BBBOX_ALIA_URL: "",
       BBBOX_ARTIFACT_CACHE: "",
       BBBOX_DOWNLOAD_STALL_SECONDS: "1",
     });

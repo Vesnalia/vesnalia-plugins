@@ -62,7 +62,7 @@ export function run(command: string, args: readonly string[], options: RunOption
       child = spawn(executable, [...args], {
         cwd: options.cwd,
         // Native helpers and third-party binaries do not need provider,
-        // tunnel, or plugin credentials from the long-lived bb server.
+        // tunnel, or plugin credentials from the long-lived VesnALIA server.
         env: options.env ?? curatedChildEnv(process.env),
         stdio: [options.stdin === undefined ? "ignore" : "pipe", "pipe", "pipe"],
       });

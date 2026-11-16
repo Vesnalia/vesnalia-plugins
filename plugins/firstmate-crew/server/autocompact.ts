@@ -4,12 +4,12 @@
  * `server.ts` calls `checkAutoCompact` from its own service, once a minute.
  *
  * A thread is compacted when its rule is on, it is at rest (`isAtRest`), its context holds more than
- * `minTokens` tokens, and it has been idle long enough: until its prompt cache expired when bb says when
+ * `minTokens` tokens, and it has been idle long enough: until its prompt cache expired when VesnALIA says when
  * that is (`ContextUsage.cacheExpiresAt`), else `idleMinutes` after its last turn ended (the
- * `turn/completed` event's time in bb's event log, so a restart neither resets nor fakes the clock). Each
+ * `turn/completed` event's time in VesnALIA's event log, so a restart neither resets nor fakes the clock). Each
  * attempt leaves a mark in the store naming the turn that began the idle stretch, written before the
- * request goes to bb, and a marked thread is left alone until it has run a turn of its own since:
- * compaction is itself a turn, so that takes two turns after the mark when bb accepted the request, and
+ * request goes to VesnALIA, and a marked thread is left alone until it has run a turn of its own since:
+ * compaction is itself a turn, so that takes two turns after the mark when VesnALIA accepted the request, and
  * one when it refused it. Stale or
  * estimated usage therefore cannot loop, and a mark that cannot be written stops the compaction.
  *
@@ -118,11 +118,11 @@ export interface AutoCompactDeps {
   now: () => number;
   log: Log;
   failures: FailureLog;
-  /** Aborted when the service stops: nothing is sent to bb after it, though an attempt already sent is recorded. */
+  /** Aborted when the service stops: nothing is sent to VesnALIA after it, though an attempt already sent is recorded. */
   signal: AbortSignal;
 }
 
-/** What one check did: the thread it asked bb to compact, and whether bb accepted. */
+/** What one check did: the thread it asked VesnALIA to compact, and whether VesnALIA accepted. */
 export interface AutoCompaction {
   threadId: string;
   role: AutoCompactRole;
@@ -141,7 +141,7 @@ export interface Due {
   lastTurn: TurnEnd;
   usage: ContextUsage;
   idleMinutes: number;
-  /** What said the thread had been idle long enough: bb's cache deadline, or the idle-minutes setting. */
+  /** What said the thread had been idle long enough: VesnALIA's cache deadline, or the idle-minutes setting. */
   deadline: "cache" | "setting";
 }
 
@@ -171,7 +171,7 @@ async function ranTurnSinceMark(deps: AssessDeps, threadId: string, mark: Compac
 
 /**
  * The thread's case for compaction now, or null when it has none. Cheapest reads first; the context is
- * read before the idle time is judged, because it may carry bb's own deadline.
+ * read before the idle time is judged, because it may carry VesnALIA's own deadline.
  */
 async function assess(deps: AssessDeps, candidate: Candidate): Promise<Due | null> {
   const { thread, rule } = candidate;
@@ -199,7 +199,7 @@ async function assess(deps: AssessDeps, candidate: Candidate): Promise<Due | nul
 /** The case for a compaction, for the log: its size, its idle time, and what said that was long enough. */
 export function dueText(due: Due): string {
   const estimate = due.usage.estimated ? " (estimated)" : "";
-  const deadline = due.deadline === "cache" ? ", past bb's prompt-cache deadline" : "";
+  const deadline = due.deadline === "cache" ? ", past VesnALIA's prompt-cache deadline" : "";
   return `${due.usage.usedTokens.toLocaleString("en-US")} tokens${estimate}, idle ${due.idleMinutes} minutes${deadline}`;
 }
 
@@ -230,7 +230,7 @@ async function compact(deps: AutoCompactDeps, candidate: Candidate, mateId: stri
   if (state === null || !stillAboard(candidate, mateId, storedMateId, state) || !isAtRest(state)) return null;
   const lastTurn = await threads.lastTurnEnd(id, signal);
   if (lastTurn?.seq !== due.lastTurn.seq) return null;
-  // A message sent meanwhile may have asked bb to compact first (`compact-first.ts`): its mark names
+  // A message sent meanwhile may have asked VesnALIA to compact first (`compact-first.ts`): its mark names
   // this same idle stretch.
   if ((await store.compactionMark(id))?.afterSeq === due.lastTurn.seq) return null;
 
@@ -261,7 +261,7 @@ async function compact(deps: AutoCompactDeps, candidate: Candidate, mateId: stri
     try {
       await store.setCompactionMark(id, { ...mark, ok: false });
     } catch (error) {
-      log.warn(`Autocompact could not note that bb refused to compact ${id}, so it waits for two turns instead of one: ${errorText(error)}`);
+      log.warn(`Autocompact could not note that VesnALIA refused to compact ${id}, so it waits for two turns instead of one: ${errorText(error)}`);
     }
   }
   return { threadId: id, role: candidate.role, usage: due.usage, idleMinutes: due.idleMinutes, ok };

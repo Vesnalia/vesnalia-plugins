@@ -1,4 +1,4 @@
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { accountPoolRpcContract, createRpcHandlers } from "./rpc.js";
 
@@ -15,7 +15,7 @@ function fixture() {
   const host = createFakePluginHost({ pluginId: "account-pool-balanced" });
   const openBrowser = vi.fn(async (_input: { accountId: string; url?: string }) => ({ opened: true as const }));
   const unused = {} as never;
-  host.bb.rpc.register(accountPoolRpcContract, createRpcHandlers(unused, unused, unused, unused, undefined, undefined, openBrowser));
+  host.alia.rpc.register(accountPoolRpcContract, createRpcHandlers(unused, unused, unused, unused, undefined, undefined, openBrowser));
   disposals.push(() => host.harness.lifecycle.dispose());
   return { call: (input: unknown) => host.harness.behavior.callRpc("browser.open", input), openBrowser };
 }

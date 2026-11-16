@@ -11,7 +11,7 @@ import {
   useRealtimeConnectionState,
   useRpc,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef } from "react";
 
 import type { RpcContract } from "../shared/contract";

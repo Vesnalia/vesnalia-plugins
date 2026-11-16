@@ -42,7 +42,7 @@ export interface ReclaimContext {
   nowMs: number;
   staleDays: number;
   dockerEnabled: boolean;
-  /** Worktree paths BB still has a live thread for; those are left alone. */
+  /** Worktree paths VesnALIA still has a live thread for; those are left alone. */
   liveWorktrees: Set<string>;
   log: (message: string) => void;
 }
@@ -213,7 +213,7 @@ function makeCandidate(
 }
 
 /* ------------------------------------------------------------------ */
-/* 1. node_modules in BB worktrees                                     */
+/* 1. node_modules in VesnALIA worktrees                                     */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -227,16 +227,16 @@ const worktreeModules: Reclaimer = {
   id: "worktree-modules",
   title: "Dependencies in agent worktrees",
   description:
-    "node_modules inside BB worktrees. Reinstallable, and worktrees for live threads are skipped.",
+    "node_modules inside VesnALIA worktrees. Reinstallable, and worktrees for live threads are skipped.",
   risk: "rebuildable",
   caution: null,
   async detect(context) {
-    const worktreeRoot = join(context.home, ".bb", "worktrees");
+    const worktreeRoot = join(context.home, ".vesnalia", "worktrees");
     if (!insideRoots(worktreeRoot, context.roots)) {
-      return emptyGroup(worktreeModules, "~/.bb/worktrees is not an authorized root.");
+      return emptyGroup(worktreeModules, "~/.vesnalia/worktrees is not an authorized root.");
     }
     if (!(await exists(worktreeRoot))) {
-      return emptyGroup(worktreeModules, "No BB worktree directory on this machine.");
+      return emptyGroup(worktreeModules, "No VesnALIA worktree directory on this machine.");
     }
 
     const rows = context.store.findByNames(["node_modules"], { roots: [worktreeRoot], minBytes: 1 });
@@ -277,7 +277,7 @@ const staleModules: Reclaimer = {
   risk: "rebuildable",
   caution: null,
   async detect(context) {
-    const worktreeRoot = join(context.home, ".bb", "worktrees");
+    const worktreeRoot = join(context.home, ".vesnalia", "worktrees");
     const rows = context.store.findByNames(["node_modules"], {
       roots: context.roots,
       minBytes: 10 * 1024 * 1024,
@@ -678,7 +678,7 @@ export function defaultRoots(home = homedir()): string[] {
     join(home, "Developer"),
     join(home, "Projects"),
     join(home, "code"),
-    join(home, ".bb", "worktrees"),
+    join(home, ".vesnalia", "worktrees"),
     join(home, "Library", "Caches"),
     join(home, "Library", "Developer"),
     join(home, ".npm"),

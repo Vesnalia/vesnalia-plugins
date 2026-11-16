@@ -33,7 +33,7 @@ import {
 } from "./release.ts";
 
 const GH_HEADERS = {
-  "User-Agent": "bb-plugin-agent-proxy",
+  "User-Agent": "alia-plugin-agent-proxy",
   Accept: "application/vnd.github+json",
 };
 export type InstallStage =

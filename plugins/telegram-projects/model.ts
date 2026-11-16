@@ -23,7 +23,7 @@ export type Project = { id: string; name: string };
 export type Tracker = {
   id: string;
   name: string;
-  linkedBbProjectId: string | null;
+  linkedAliaProjectId: string | null;
 };
 export type Topic = {
   key: string;
@@ -36,7 +36,7 @@ export type Topic = {
 };
 export type Event = {
   agencyTopicId?: number;
-  /** BB thread reports (kind thread_*): who did what and where. */
+  /** VesnALIA thread reports (kind thread_*): who did what and where. */
   thread?: import("./events").ThreadCard & { threadId: string };
   /** Summary mode: the card waits for a hidden worker thread, then falls back to the full reply. */
   summary?: {
@@ -154,7 +154,7 @@ export function ingest(
   tasks: Task[],
   now = Date.now(),
 ) {
-  if (!tracker.linkedBbProjectId) return;
+  if (!tracker.linkedAliaProjectId) return;
   const baseline = store.get<boolean>("baseline:" + tracker.id);
   store.atomic(() => {
     for (const task of tasks) {
@@ -168,7 +168,7 @@ export function ingest(
         for (const kind of changes(old, task)) {
           const e: Event = {
             id: `${task.id}:${task.updatedAt}:${kind}:${task.agentsWorking}`,
-            projectId: tracker.linkedBbProjectId!,
+            projectId: tracker.linkedAliaProjectId!,
             taskId: task.id,
             key: task.key,
             title: task.title,

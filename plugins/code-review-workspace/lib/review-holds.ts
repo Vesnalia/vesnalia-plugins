@@ -1,4 +1,4 @@
-// BB can mount a review's new workspace while the old one is still there (lib/remount.ts), so what a workspace forgets
+// VesnALIA can mount a review's new workspace while the old one is still there (lib/remount.ts), so what a workspace forgets
 // of its review as it goes, in state shared by review, waits until no other workspace shows the review.
 const holds = new Map<string, number>();
 

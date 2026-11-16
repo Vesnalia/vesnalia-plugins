@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { definePluginApp, experimental_useAppPanel, useBbContext } from "@get-bb/plugin-sdk/app";
-import type { ExperimentalThreadTabProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_useAppPanel, useAliaContext } from "@vesnalia/plugin-sdk/app";
+import type { ExperimentalThreadTabProps } from "@vesnalia/plugin-sdk/app";
 import { FileTreeView } from "./src/components/FileTreeSection";
 
 export function DynamicFileTreeTab(props: ExperimentalThreadTabProps) {
@@ -31,7 +31,7 @@ function DynamicRefreshIcon({ className }: { className?: string }) {
 
 const autoOpenedThreads = new Set<string>();
 function DynamicFileTreeAutoOpen() {
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const panel = experimental_useAppPanel();
   useEffect(() => {
     if (!threadId || autoOpenedThreads.has(threadId)) return;

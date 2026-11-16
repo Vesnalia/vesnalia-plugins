@@ -1,11 +1,11 @@
-# bb-plugin-command-code
+# alia-plugin-command-code
 
-Run [Command Code](https://commandcode.ai/docs) (`cmd`) as a first-class agent provider inside [BB](https://github.com/get-bb/bb).
+Run [Command Code](https://commandcode.ai/docs) (`cmd`) as a first-class agent provider inside [VesnALIA](https://github.com/get-bb/bb).
 
 Command Code has no Agent Client Protocol server of its own, so this repo ships two things:
 
-1. **`command-code-acp`** — an ACP agent that drives `cmd -p --output-format json`. Usable by any ACP client (BB, Zed, JetBrains, Neovim), not just BB.
-2. **The BB plugin** — registers `command-code` as a provider and points BB's built-in ACP bridge at that adapter.
+1. **`command-code-acp`** — an ACP agent that drives `cmd -p --output-format json`. Usable by any ACP client (VesnALIA, Zed, JetBrains, Neovim), not just VesnALIA.
+2. **The VesnALIA plugin** — registers `command-code` as a provider and points VesnALIA's built-in ACP bridge at that adapter.
 
 ## Install
 
@@ -16,19 +16,19 @@ Both steps are needed: the plugin declares the provider, the adapter is what act
 npm i -g command-code
 
 # 2. The ACP adapter (puts `command-code-acp` on PATH)
-npm i -g github:aqidd/bb-plugin-command-code
+npm i -g github:aqidd/alia-plugin-command-code
 
-# 3. The BB plugin
-bb plugin install git:https://github.com/aqidd/bb-plugin-command-code
+# 3. The ALIA plugin
+alia plugin install git:https://github.com/aqidd/bb-plugin-command-code
 ```
 
 Then start a thread:
 
 ```bash
-bb thread spawn --provider command-code --prompt "explain this repo"
+alia thread spawn --provider command-code --prompt "explain this repo"
 ```
 
-The provider stays hidden in BB's picker until `command-code-acp` is on the machine's `PATH` (`experimental_visibility: "installed"`), so step 2 is not optional.
+The provider stays hidden in VesnALIA's picker until `command-code-acp` is on the machine's `PATH` (`experimental_visibility: "installed"`), so step 2 is not optional.
 
 ## Settings
 
@@ -49,7 +49,7 @@ Error: Tool "shell_command" requires permissions. Use --yolo
 commands in print mode.
 ```
 
-and with `--yolo` everything runs unsupervised. There is no third option, so **BB's per-tool approval prompts do not apply to this provider.** The choice is exposed once, as the setting above, rather than pretended per call.
+and with `--yolo` everything runs unsupervised. There is no third option, so **VesnALIA's per-tool approval prompts do not apply to this provider.** The choice is exposed once, as the setting above, rather than pretended per call.
 
 If that is too coarse for your workspace, turn the setting off and use the provider for read-only review work.
 
@@ -74,7 +74,7 @@ Multi-turn context works by resuming: `cmd -p` is one-shot, so each ACP prompt s
 
 Models and reasoning effort are ACP session config options: a `model` select from `cmd --list-models`, and a `thought_level` select holding only the selected model's `--effort` levels, read from the `models.md` cmd bundles (GLM 5.3 Flash: low, high, max). Models with no declared efforts run at their own default.
 
-## Using the adapter without BB
+## Using the adapter without VesnALIA
 
 ```bash
 command-code-acp            # ACP over stdio, read-only
@@ -90,16 +90,16 @@ command-code-acp --model zai-org/glm-5.3 --effort high
 npm install
 npm test          # node:test, no network, no cmd needed
 npm run typecheck
-npm run build     # bb plugin build
-bb plugin install .
+npm run build     # alia plugin build
+alia plugin install .
 ```
 
 ## Known gaps
 
 - No per-tool permission prompts (upstream limitation, above).
-- Context usage only: the adapter sends ACP `usage_update` after every model request, so BB's context meter fills in, but BB's ACP bridge has no token or cost totals to report into.
-- `fork: "none"` — Command Code cannot clone a session, so BB's thread fork and edit-past-message are unavailable.
-- Images reach vision-capable models indirectly: BB passes a local image as its on-disk path (the adapter downloads image URLs to a temp file first) and the model opens it with `read_file`, one extra tool call. Audio is not forwarded.
+- Context usage only: the adapter sends ACP `usage_update` after every model request, so VesnALIA's context meter fills in, but VesnALIA's ACP bridge has no token or cost totals to report into.
+- `fork: "none"` — Command Code cannot clone a session, so VesnALIA's thread fork and edit-past-message are unavailable.
+- Images reach vision-capable models indirectly: VesnALIA passes a local image as its on-disk path (the adapter downloads image URLs to a temp file first) and the model opens it with `read_file`, one extra tool call. Audio is not forwarded.
 
 ## License
 

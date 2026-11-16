@@ -6,7 +6,7 @@ function galleryFile(path: string): string {
   return readFileSync(new URL(`../gallery/${path}`, import.meta.url), "utf8");
 }
 
-/** A gallery example as `bb genui render` prints it, with the files it Loads. */
+/** A gallery example as `alia genui render` prints it, with the files it Loads. */
 function markdown(source: string): string {
   const result = compile(source);
   if (result.program === null) throw new Error(formatDiagnostics(result.diagnostics));

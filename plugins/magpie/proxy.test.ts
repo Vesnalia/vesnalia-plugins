@@ -76,7 +76,7 @@ test("all API paths preserve bytes and protocol headers, while replacing credent
         "x-api-key": "client-secret",
         cookie: "session=private",
         "x-forwarded-for": "10.0.0.1",
-        "x-bb-machine-token": "machine-secret",
+        "x-alia-machine-token": "machine-secret",
         "anthropic-version": "2023-06-01",
         session_id: "test-session",
         "x-session-affinity": "pi-session",
@@ -95,7 +95,7 @@ test("all API paths preserve bytes and protocol headers, while replacing credent
     assert.equal(entry.headers["anthropic-version"], "2023-06-01");
     assert.equal(entry.headers.session_id, "test-session");
     assert.equal(entry.headers["x-session-affinity"], "pi-session");
-    for (const name of ["cookie", "x-forwarded-for", "x-bb-machine-token"]) {
+    for (const name of ["cookie", "x-forwarded-for", "x-alia-machine-token"]) {
       assert.equal(entry.headers[name], undefined);
     }
   }
@@ -178,16 +178,16 @@ test("native Codex token header takes precedence over its own login credential",
   });
   t.after(() => proxy.dispose());
   await (await proxy.handle(
-    request({ authorization: "Bearer original-codex-login", "x-bb-account-pool-token": token }),
+    request({ authorization: "Bearer original-codex-login", "x-alia-account-pool-token": token }),
     "/v1/responses",
     "codex",
   )).text();
   await (await proxy.handle(request(), "/v1/messages", "claude")).text();
   assert.equal(seen[0].authorization, "Bearer magpie-codex");
-  assert.equal(seen[0]["user-agent"], "codex/bb-magpie");
-  assert.equal(seen[0]["x-bb-account-pool-token"], undefined);
+  assert.equal(seen[0]["user-agent"], "codex/alia-magpie");
+  assert.equal(seen[0]["x-alia-account-pool-token"], undefined);
   assert.equal(seen[1].authorization, "Bearer magpie-claude");
-  assert.equal(seen[1]["user-agent"], "claude/bb-magpie");
+  assert.equal(seen[1]["user-agent"], "claude/alia-magpie");
 });
 
 test("stream data arrives before completion and reader cancellation closes upstream", async (t) => {

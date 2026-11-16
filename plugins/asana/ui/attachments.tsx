@@ -1,10 +1,10 @@
-// Attachments: thumbnails that open in bb's lightbox, and downloadable files.
+// Attachments: thumbnails that open in VesnALIA's lightbox, and downloadable files.
 import { useCallback, useState } from "react";
 import {
   UrlLink,
   experimental_ImageLightbox as ImageLightbox,
   experimental_usePluginId as usePluginId,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Attachment } from "../server";
 import { Icon } from "@/components/ui/icon";
 
@@ -24,7 +24,7 @@ export function formatSize(bytes: number | null): string | null {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Image thumbnails that open in bb's lightbox. */
+/** Image thumbnails that open in VesnALIA's lightbox. */
 export function ImageStrip({ images, captions = false }: { images: Attachment[]; captions?: boolean }) {
   const attachmentUrl = useAttachmentUrl();
   const [open, setOpen] = useState<number | null>(null);

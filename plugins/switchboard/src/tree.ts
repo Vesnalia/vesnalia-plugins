@@ -1,4 +1,4 @@
-import type { PluginSidebarSection, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarSection, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { defaultHue, type GroupKey, type HueId, type Layout } from "./layout";
 import { EMPTY_COUNTS, rowState, worstState, type RowState, type StateCounts } from "./status";
 import { isSnoozed, isStale, sortRoots } from "./triage";

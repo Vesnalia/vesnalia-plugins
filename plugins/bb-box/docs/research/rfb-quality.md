@@ -22,7 +22,7 @@ Windows on a Mac was measured again once its QEMU ran with `lossy=on`
   from the screen's by more than 8.
 - The Linux desktops were Proxmox LXC boxes with 4 cores, at 1920x1080,
   with the viewer in the same box. macOS (2048x1536) and Windows on arm64
-  (1280x800) ran on a Mac, viewed from BB's server through SSH. Windows on
+  (1280x800) ran on a Mac, viewed from VesnALIA's server through SSH. Windows on
   Proxmox was not measured, as its console needs a ticket from the API. It
   is QEMU's VNC server too.
 

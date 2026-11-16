@@ -5,7 +5,7 @@ created: 2026-09-27
 updated: 2026-10-01
 status: active
 confidence: high
-tags: [architecture, bb-plugin, runtime]
+tags: [architecture, alia-plugin, runtime]
 sources:
   - server.ts
   - app.tsx
@@ -16,32 +16,32 @@ sources:
 
 # Env Catalog Architecture
 
-TL;DR: The BB host loads a server module that owns RPC, agent tools, CLI commands, encryption, and SQLite; a React plugin app calls the RPC contract and subscribes to catalog-change events (`server.ts:152-212`, `server.ts:562-599`, `app.tsx:1030-1041`).
+TL;DR: The VesnALIA host loads a server module that owns RPC, agent tools, CLI commands, encryption, and SQLite; a React plugin app calls the RPC contract and subscribes to catalog-change events (`server.ts:152-212`, `server.ts:562-599`, `app.tsx:1030-1041`).
 
 ## Parts and connections
 
 ```mermaid
 C4Container
-  title Env Catalog on the BB host
-  Person(agent, "BB agent", "Uses credential tools")
-  Person(operator, "Operator", "Uses the BB page or CLI")
-  System_Boundary(host, "BB host") {
-    Container(server, "Plugin server", "TypeScript / BB Plugin SDK", "Registers RPC, tools, CLI; validates and encrypts credentials")
-    Container(app, "Plugin app", "React / BB Plugin SDK", "Navigation page and pending-request form")
-    ContainerDb(db, "BB plugin database", "SQLite", "env_variables table")
+  title Env Catalog on the ALIA host
+  Person(agent, "ALIA agent", "Uses credential tools")
+  Person(operator, "Operator", "Uses the ALIA page or CLI")
+  System_Boundary(host, "ALIA host") {
+    Container(server, "Plugin server", "TypeScript / ALIA Plugin SDK", "Registers RPC, tools, CLI; validates and encrypts credentials")
+    Container(app, "Plugin app", "React / ALIA Plugin SDK", "Navigation page and pending-request form")
+    ContainerDb(db, "ALIA plugin database", "SQLite", "env_variables table")
     Container(key, "Plugin key file", "master.key", "32-byte AES key")
   }
   Rel(agent, server, "Agent tools")
   Rel(operator, app, "Page interaction")
   Rel(operator, server, "CLI commands")
   Rel(app, server, "Typed RPC")
-  Rel(server, db, "BB storage API")
+  Rel(server, db, "ALIA storage API")
   Rel(server, key, "Read or create")
 ```
 
-The server initializes a plugin-specific directory under `experimental_dataDir` or `~/.bb`, creates or loads `master.key`, and obtains its database through `bb.storage.database()` (`server.ts:155-173`, `server.ts:199-212`).
+The server initializes a plugin-specific directory under `experimental_dataDir` or `~/.vesnalia`, creates or loads `master.key`, and obtains its database through `alia.storage.database()` (`server.ts:155-173`, `server.ts:199-212`).
 
-The UI registers a navigation slot and a pending-interaction renderer; both use BB app APIs (`app.tsx:1030-1041`). The UI calls the same `rpcContract` that the server registers (`server.ts:56-128`, `server.ts:562-599`, `app.tsx:366-394`).
+The UI registers a navigation slot and a pending-interaction renderer; both use VesnALIA app APIs (`app.tsx:1030-1041`). The UI calls the same `rpcContract` that the server registers (`server.ts:56-128`, `server.ts:562-599`, `app.tsx:366-394`).
 
 ## Building blocks
 
@@ -62,7 +62,7 @@ The RPC handler calls `saveVariable`, which normalizes the name, packs and valid
 
 ### Secure request
 
-`env_request` asks BB to render a pending interaction. The app validates the payload, collects masked credential fields, validates the response, and submits it. The server persists each entry via `saveVariable` (`server.ts:786-859`, `server.ts:861-959`, `app.tsx:894-1008`). See [Secure requests](features/secure-requests.md).
+`env_request` asks VesnALIA to render a pending interaction. The app validates the payload, collects masked credential fields, validates the response, and submits it. The server persists each entry via `saveVariable` (`server.ts:786-859`, `server.ts:861-959`, `app.tsx:894-1008`). See [Secure requests](features/secure-requests.md).
 
 ### `EnvCatalogPage`
 
@@ -89,7 +89,7 @@ This renderer validates pending-interaction payloads and creates form state once
 2. For `secret`, it trims the entered value and stops on empty input or a value above `MAX_SECRET_BYTES`; valid values become secret entries (`app.tsx:940-951`).
 3. For FTP, SSH, or login, it converts the form fields into structured access and appends an entry (`app.tsx:952-971`).
 4. It validates the assembled entries against `envRequestResponseSchema`. Invalid response data shows a validation error without calling `submit` (`app.tsx:973-977`).
-5. Valid data sets the busy state and calls BB's `submit`; rejection becomes a visible form error, and `finally` clears busy (`app.tsx:978-985`).
+5. Valid data sets the busy state and calls VesnALIA's `submit`; rejection becomes a visible form error, and `finally` clears busy (`app.tsx:978-985`).
 
 | Mode / condition | Result |
 |---|---|
@@ -100,14 +100,14 @@ This renderer validates pending-interaction payloads and creates form state once
 
 ### `plugin` startup
 
-1. Logs startup, chooses `bb.server.experimental_dataDir` or falls back to `$HOME/.bb` (and `~/.bb` if `HOME` is unset), then creates `plugins/env-catalog` recursively (`server.ts:152-160`).
+1. Logs startup, chooses `alia.server.experimental_dataDir` or falls back to `$HOME/.vesnalia` (and `~/.vesnalia` if `HOME` is unset), then creates `plugins/env-catalog` recursively (`server.ts:152-160`).
 2. Reads `master.key` if present. A 32-byte key is reused; a key of another length is replaced with 32 random bytes. If absent, a random 32-byte key is created. New writes request mode `0600` (`server.ts:162-173`).
-3. Obtains the database through `bb.storage.database()` and migrates in the `env_variables` table and service index (`server.ts:199-212`).
+3. Obtains the database through `alia.storage.database()` and migrates in the `env_variables` table and service index (`server.ts:199-212`).
 4. Checks the migrated columns and adds `kind TEXT NOT NULL DEFAULT 'secret'` only when the column is missing (`server.ts:214-221`).
 
 | Startup condition | Outcome / failure |
 |---|---|
-| `experimental_dataDir` is set | Uses that path as the BB data directory (`server.ts:155-159`). |
+| `experimental_dataDir` is set | Uses that path as the VesnALIA data directory (`server.ts:155-159`). |
 | Key absent or wrong length | Generates and writes a replacement key; an existing encrypted catalog then has no matching key if the old key was wrong length (`server.ts:162-172`). |
 | Key is exactly 32 bytes | Loads and reuses it (`server.ts:162-169`). |
 | Database lacks `kind` | Adds the column with legacy rows defaulted to `secret` (`server.ts:214-221`). |
@@ -123,7 +123,7 @@ This renderer validates pending-interaction payloads and creates form state once
 
 **Encryption:** values use AES-256-GCM with a random 12-byte IV and stored authentication tag; the master key is a separate file (`server.ts:162-196`). See [Data model](data-model.md).
 
-**Authorization:** RPC, app slots, agent tools, and CLI register through BB Plugin SDK. This plugin source contains no credential-specific user or role check (`server.ts:562-599`, `server.ts:601-959`, `server.ts:1046-1087`).
+**Authorization:** RPC, app slots, agent tools, and CLI register through VesnALIA Plugin SDK. This plugin source contains no credential-specific user or role check (`server.ts:562-599`, `server.ts:601-959`, `server.ts:1046-1087`).
 
 **Failures:** RPC or CLI errors propagate from validation and storage operations; the UI catches request errors and places the message in page state (`app.tsx:373-375`, `app.tsx:455-477`). A declined secure request returns a cancelled result without saving (`server.ts:942-949`).
 

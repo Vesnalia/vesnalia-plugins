@@ -1,16 +1,16 @@
 # Obsidian at Home
 
-A community BB plugin for working with connected Markdown notes alongside your agents. Independent project; not affiliated with or endorsed by Obsidian. Obsidian itself is not required.
+A community VesnALIA plugin for working with connected Markdown notes alongside your agents. Independent project; not affiliated with or endorsed by Obsidian. Obsidian itself is not required.
 
 ## Install and start
 
-Requires BB 0.41 or later and Plugin SDK 0.4.34 or later. Install the tagged release:
+Requires VesnALIA 0.41 or later and Plugin SDK 0.4.34 or later. Install the tagged release:
 
 ```sh
-bb plugin install git:https://github.com/classicrob/obsidian-at-home.git@semver:^0.1.0
+alia plugin install git:https://github.com/classicrob/obsidian-at-home.git@semver:^0.1.0
 ```
 
-Open a BB thread whose workspace contains your Markdown notes. In **Settings → File openers**, select **Obsidian at Home** for Markdown if another editor is pinned. Open a note, hover a link, or type `[[` in the thread composer to find another note.
+Open a VesnALIA thread whose workspace contains your Markdown notes. In **Settings → File openers**, select **Obsidian at Home** for Markdown if another editor is pinned. Open a note, hover a link, or type `[[` in the thread composer to find another note.
 
 The public name is Obsidian at Home; its stable plugin ID remains `wikilinks`. Existing integrations and settings use that ID. Release artifacts are included, so installing the Git release does not require building the editor yourself.
 
@@ -34,7 +34,7 @@ and the rich editor prepare in the background. Clicking ordinary document text
 switches to the warmed editor at that location. Changes autosave to the actual
 file after a short idle delay. While a note remains open, external edits from
 agents or other apps are detected within about half a second and replace the
-rendered preview in place; returning focus to BB also triggers an immediate
+rendered preview in place; returning focus to VesnALIA also triggers an immediate
 check.
 
 YAML frontmatter is shown as document properties and preserved byte-for-byte
@@ -44,8 +44,8 @@ offers **Reload** or an explicit **Overwrite** instead of silently losing work.
 Wikilink syntax collapses to its readable label while idle and reappears when
 the caret enters it.
 
-Editor links use BB's native file navigation, while chat links resolve against
-the thread workspace or host and open the same BB editor.
+Editor links use VesnALIA's native file navigation, while chat links resolve against
+the thread workspace or host and open the same VesnALIA editor.
 Hovering a resolved link shows a theme-aware rendered Markdown excerpt after a
 short intent delay. The hover preview omits YAML frontmatter, stays open while
 the pointer is over it, and includes an **Open note** action for semantic zoom
@@ -69,7 +69,7 @@ reverse-link index is built only for this explicit gesture and cached briefly
 for subsequent backlink hovers.
 
 Deliberate hover navigation is recorded as a thinking trail in the plugin's
-BB-managed SQLite database. A preview qualifies after 450 ms, immediately on
+ALIA-managed SQLite database. A preview qualifies after 450 ms, immediately on
 scroll or interaction, or immediately when clicked. Recursive previews retain
 their parent edges, so returning to an earlier card and taking another path is
 stored as a branch. The trail is committed two seconds after the whole hover
@@ -96,7 +96,7 @@ update. Choosing a result replaces that complete wikilink span.
 Every open note ends with a **Linked mentions** section, like Obsidian's
 "Backlinks in document" setting. It sits below the content inside the same
 scroll container, so it scrolls with the note in both preview and editing
-modes. Backlinks are grouped by source (note, canvas, or BB thread, with a
+modes. Backlinks are grouped by source (note, canvas, or VesnALIA thread, with a
 small kind label), and each occurrence shows its heading breadcrumb and the
 context line with the `[[wikilink]]` to this note highlighted. Note and canvas
 titles are the same hover-previewing links used elsewhere (hover for an
@@ -119,7 +119,7 @@ shows "No backlinks yet". The vault-graph side panel keeps working alongside it.
 
 Turn the section off with the `documentBacklinks` plugin setting
 (Extensions → Plugins → Obsidian at Home, or
-`bb plugin config wikilinks set documentBacklinks false`).
+`alia plugin config wikilinks set documentBacklinks false`).
 
 Supported forms:
 
@@ -127,7 +127,7 @@ Supported forms:
 - `[[Note name|Visible alias]]`
 - `[[folder/Note name]]`
 - `[[Note name#Heading]]` (opens the note; heading scrolling is not yet part of
-  BB's file-opener contract)
+  VesnALIA's file-opener contract)
 - `[[Canvas name.tldraw]]`
 - `[Visible label](folder/Canvas%20name.tldraw)`
 - `[Visible label](Note name.md)`
@@ -147,7 +147,7 @@ npm install --include=dev
 npm test
 npm run typecheck
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
 After installation, choose **Obsidian at Home** for Markdown under
@@ -155,9 +155,9 @@ After installation, choose **Obsidian at Home** for Markdown under
 
 ## Data and network behavior
 
-Notes remain Markdown files on the selected BB host. Edits write to those files through BB's file API. Thinking trails are recorded automatically during qualifying note-preview navigation and stored in BB-managed plugin SQLite storage. They contain note labels and file targets, parent relationships, timestamps, dwell time, and interactions. The agent tool can query recent trails across threads, optionally filtered by note. Retrieved trail information becomes part of that agent's context; the engagement score is a heuristic, not a statement of agreement.
+Notes remain Markdown files on the selected VesnALIA host. Edits write to those files through VesnALIA's file API. Thinking trails are recorded automatically during qualifying note-preview navigation and stored in ALIA-managed plugin SQLite storage. They contain note labels and file targets, parent relationships, timestamps, dwell time, and interactions. The agent tool can query recent trails across threads, optionally filtered by note. Retrieved trail information becomes part of that agent's context; the engagement score is a heuristic, not a statement of agreement.
 
-Hovering a website link makes an HTTP(S) request from the BB server to that site. The preview does not use your browser's signed-in session or execute the site's scripts. Requests have time and size limits, reject local/private destinations at URL validation, and validate redirects. No separate account, API key, or analytics service is required.
+Hovering a website link makes an HTTP(S) request from the VesnALIA server to that site. The preview does not use your browser's signed-in session or execute the site's scripts. Requests have time and size limits, reject local/private destinations at URL validation, and validate redirects. No separate account, API key, or analytics service is required.
 
 ## License
 

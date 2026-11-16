@@ -1,8 +1,8 @@
 /**
  * Every browser audio global Herald touches: the `<audio>` element, the Web
- * Speech API, and which bb client this is.
+ * Speech API, and which VesnALIA client this is.
  *
- * The bb app is web React everywhere — the desktop app is Electron, and the
+ * The VesnALIA app is web React everywhere — the desktop app is Electron, and the
  * mobile app is a native shell around the same web app in a WebView — so the
  * same two engines exist on every client. What differs is when a page may
  * make a sound: Electron plays unprompted; a browser tab and the mobile
@@ -12,15 +12,15 @@
 import type { SpeechPlatform } from "../shared/settings";
 
 /**
- * Which bb client this is, read the way bb's own push-notifications plugin
- * reads it: the desktop shell exposes `window.bbDesktop`, the mobile shell a
- * `window.bb.native` bridge, and a browser tab neither.
+ * Which VesnALIA client this is, read the way VesnALIA's own push-notifications plugin
+ * reads it: the desktop shell exposes `window.aliaDesktop`, the mobile shell a
+ * `window.alia.native` bridge, and a browser tab neither.
  */
 export function speechPlatform(): SpeechPlatform {
   if (typeof window === "undefined") return "browser";
-  if ("bbDesktop" in window) return "desktop";
-  const bb = (window as { bb?: unknown }).bb;
-  if (typeof bb === "object" && bb !== null && "native" in bb) return "mobile";
+  if ("aliaDesktop" in window) return "desktop";
+  const alia = (window as { alia?: unknown }).alia;
+  if (typeof alia === "object" && alia !== null && "native" in alia) return "mobile";
   return "browser";
 }
 

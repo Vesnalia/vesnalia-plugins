@@ -368,9 +368,9 @@ describe("authored office blueprints", () => {
     );
   });
 
-  test("builds restrained BB-following and neutral environment palettes", () => {
+  test("builds restrained ALIA-following and neutral environment palettes", () => {
     const following = buildDetailedOfficeLayout({
-      appearance: "follow-bb",
+      appearance: "follow-alia",
       mode: "light",
       accentHue: 292,
       accentSaturation: 80,
@@ -404,20 +404,20 @@ describe("authored office blueprints", () => {
     expect(neutral.furniture).toEqual(following.furniture);
   });
 
-  test("derives office appearance and accent from BB theme colors", () => {
-    expect(parseOfficeAppearance("Follow BB")).toBe("follow-bb");
+  test("derives office appearance and accent from VesnALIA theme colors", () => {
+    expect(parseOfficeAppearance("Follow VesnALIA")).toBe("follow-alia");
     expect(parseOfficeAppearance("Neutral")).toBe("neutral");
     expect(parseOfficeAppearance("Original")).toBe("original");
-    expect(officeVisualThemeFromRgb("follow-bb", "dark", 66, 135, 245)).toEqual(
+    expect(officeVisualThemeFromRgb("follow-alia", "dark", 66, 135, 245)).toEqual(
       {
-        appearance: "follow-bb",
+        appearance: "follow-alia",
         mode: "dark",
         accentHue: 217,
         accentSaturation: 90,
       },
     );
     expect(
-      officeVisualThemeFromRgb("follow-bb", "light", 128, 128, 128),
+      officeVisualThemeFromRgb("follow-alia", "light", 128, 128, 128),
     ).toMatchObject({ accentHue: 0, accentSaturation: 0 });
   });
 

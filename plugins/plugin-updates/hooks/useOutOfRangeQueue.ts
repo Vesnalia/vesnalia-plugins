@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { OUT_OF_RANGE_CHANGED } from "../src/channels";
 import type { OutOfRangeEntry, rpcContract } from "../src/contract";
 

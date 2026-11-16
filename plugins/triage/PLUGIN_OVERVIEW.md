@@ -12,13 +12,13 @@ Each card opens its linked conversation.
 - Optionally show cards and linked sessions in the sidebar.
 
 Assigned agents report progress and completion through `triage_move_task`.
-Use `bb triage list`, `bb triage show`, and `bb triage move` from the CLI.
+Use `alia triage list`, `alia triage show`, and `alia triage move` from the CLI.
 
 ## Requirements
 
-Requires BB 0.42+ with a compatible Plugin SDK 0.4.47 runtime and a configured
+Requires VesnALIA 0.42+ with a compatible Plugin SDK 0.4.47 runtime and a configured
 agent provider. Provider accounts and usage charges apply. No separate Triage
-account is needed. Cards and updates stay in BB's plugin-owned SQLite database.
+account is needed. Cards and updates stay in VesnALIA's plugin-owned SQLite database.
 
-Scheduled work runs while BB and Triage are running; overdue tasks are picked
+Scheduled work runs while VesnALIA and Triage are running; overdue tasks are picked
 up when they resume. Browser notifications require permission.

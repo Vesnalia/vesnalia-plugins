@@ -52,7 +52,7 @@ test('M1 actual prepare/attach pending recovery: ' + fault, async () => {
       const identity = output.find(m => m.method === 'thread/identity').params.providerThreadId;
       assert.ok(identity); assert.ok(output.some(m => m.method === 'error' && m.params.providerThreadId === identity));
       assert.ok((await rpc('thread/start', start)).error); assert.equal(creates, 1);
-      const binding = JSON.parse(readFileSync(join(api.sessionDataDir(runtime.root(), root, start.threadId), 'bb-binding.json'), 'utf8'));
+      const binding = JSON.parse(readFileSync(join(api.sessionDataDir(runtime.root(), root, start.threadId), 'alia-binding.json'), 'utf8'));
       assert.equal(fault === 'bind' ? binding.creationPending : binding.nativeSessionId === identity, true);
       await assert.rejects(prepare(root, api.executionOptions(options), { threadId: start.threadId }), /no create fallback/);
       assert.equal(inputs, 0);

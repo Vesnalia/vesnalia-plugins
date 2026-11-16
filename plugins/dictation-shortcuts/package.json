@@ -1,23 +1,21 @@
 {
-  "name": "bb-plugin-dictation-shortcuts",
+  "name": "alia-plugin-dictation-shortcuts",
   "version": "0.2.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46.1",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46.1",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Dictation Shortcuts",
-    "description": "Hold Space to dictate with BB native voice input; Enter finishes, Escape cancels, with button and modifier hints.",
+    "description": "Hold Space to dictate with VesnALIA native voice input; Enter finishes, Escape cancels, with button and modifier hints.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -30,12 +28,25 @@
   "scripts": {
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "license": "MIT",
   "author": "Artur Karapetyan",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/dictation-shortcuts#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/architawr/bb-plugin-dictation-shortcuts.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/dictation-shortcuts"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

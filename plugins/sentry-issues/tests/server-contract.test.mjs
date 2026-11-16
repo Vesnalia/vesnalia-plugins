@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.ts";
 
 let hostNumber = 0;
@@ -50,8 +50,8 @@ async function loadHost({
   });
   globalThis.fetch = (input, init) => fetchResponse(new URL(input), init);
   try {
-    await host.bb.storage.kv.set("sentry-connections", connections);
-    await plugin(host.bb);
+    await host.alia.storage.kv.set("sentry-connections", connections);
+    await plugin(host.alia);
     return {
       host,
       cleanup: async () => {
@@ -153,7 +153,7 @@ test("bounds cached issue details per project", async () => {
         issueId: "issue-" + index,
       });
     }
-    const db = loaded.host.bb.storage.database();
+    const db = loaded.host.alia.storage.database();
     const row = db.prepare(
       "SELECT COUNT(*) AS count FROM issue_details WHERE connection_id = 'work' AND project_slug = 'web'",
     ).get();
@@ -262,7 +262,7 @@ test("disposes the registered sync service and storage handles", async () => {
     await service.done;
     assert.equal(service.controller.signal.aborted, true);
     assert.throws(
-      () => loaded.host.bb.storage.database(),
+      () => loaded.host.alia.storage.database(),
       /stale API handle/u,
     );
   } finally {
@@ -338,9 +338,9 @@ test("serves bounded mention and triage context before removing every artifact",
       connectionId: "work",
       confirmation: "REMOVE",
     });
-    assert.deepEqual(await host.bb.storage.kv.get("sentry-connections"), []);
+    assert.deepEqual(await host.alia.storage.kv.get("sentry-connections"), []);
     assert.equal(host.harness.inspection.sdk.callsTo("plugins.updateSettings").at(-1)[0].values.connectionTokens, "{}");
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     for (const table of ["issue_snapshots", "issue_details", "connection_health", "triage_thread_links"]) {
       assert.equal(db.prepare("SELECT COUNT(*) AS count FROM " + table).get().count, 0);
     }

@@ -10,7 +10,7 @@
  * downward.
  */
 import { useCallback, useEffect, useState } from "react";
-import { useBbContext, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import type { rpcContract } from "../../src/sim/wire";
@@ -29,8 +29,8 @@ interface Row {
 
 export function ActivityBanner() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
-  const { threadId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { threadId } = useAliaContext();
   const [rows, setRows] = useState<Row[]>([]);
   // Dismissal is optimistic: the row goes now, and the RPC is fired without
   // awaiting. A banner that lingers while a round trip completes reads as a

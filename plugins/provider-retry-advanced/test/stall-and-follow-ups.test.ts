@@ -6,7 +6,7 @@
 // and was superseded four seconds later by a child-failed notification, so it
 // was never retried.
 import { describe, expect, it } from "bun:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "../server.js";
 import { NUDGE_TAG, STALL_TAG, UNFINISHED_TAG } from "../src/continuations.js";
 import { looksLikeOnlyAPromise } from "../src/follow-ups.js";
@@ -24,7 +24,7 @@ async function setup(options: { armed?: boolean } = {}) {
     now: () => core.now,
     monotonic: () => mono,
     wait: async () => {},
-  })(host.bb);
+  })(host.alia);
   // All three are off by default; these tests turn them on, as an operator would.
   await host.harness.setSettings({ stallWatchdog: "20 minutes", continuationCheck: true, unfinishedFollowUp: true });
   core.hook = (context) => host.harness.registrations.hooks["message.dispatch"]!(context as never);
@@ -133,7 +133,7 @@ describe("stalled-turn watchdog", () => {
     expect(t.stops()).toEqual([]);
   });
 
-  it("never touches a turn waiting for the user, running a tool or background work, held, owned by BB Workflows", async () => {
+  it("never touches a turn waiting for the user, running a tool or background work, held, owned by VesnALIA Workflows", async () => {
     const t = await setup();
     running(t.core, "thr_approval");
     t.core.setThread("thr_approval", { hasPendingInteraction: true });
@@ -168,7 +168,7 @@ describe("stalled-turn watchdog", () => {
   it("only reports before arm", async () => {
     const t = await setup({ armed: false });
     running(t.core, "thr_new");
-    expect(entry(await t.awake(20), "thr_new")?.reason).toBe("not-armed (run: bb provider-retry-advanced arm)");
+    expect(entry(await t.awake(20), "thr_new")?.reason).toBe("not-armed (run: VesnALIA provider-retry-advanced arm)");
     expect(t.stops()).toEqual([]);
   });
 
@@ -311,14 +311,14 @@ describe("unfinished request follow-up", () => {
   async function supersededAutomation(t: Awaited<ReturnType<typeof setup>>, id: string, accepted = true) {
     t.core.addThread({ id, providerId: "codex" });
     t.core.startTurn(id, {
-      input: [{ type: "text", text: "[bb automation due:auto_review]\n\nReload registry and review the zone.", mentions: [] }],
+      input: [{ type: "text", text: "[VesnALIA automation due:auto_review]\n\nReload registry and review the zone.", mentions: [] }],
       execution: CODEX_HIGH,
       accepted,
     });
     t.core.failTurn(id, FAILURES.codexPooler);
     await t.failed(id, FAILURES.codexPooler, accepted);
     t.core.startTurn(id, {
-      input: [{ type: "text", text: "[bb system]\n\n@thread:thr_child failed.", mentions: [] }],
+      input: [{ type: "text", text: "[VesnALIA system]\n\n@thread:thr_child failed.", mentions: [] }],
       execution: CODEX_HIGH,
       initiator: "system",
     });
@@ -343,19 +343,19 @@ describe("unfinished request follow-up", () => {
     const t = await setup();
     await supersededAutomation(t, "thr_door", false);
     await t.idle("thr_door", "Ок.");
-    expect(lastInput(t.core, "thr_door")[0]!.text).toContain("The request was:\n\n[bb automation due:auto_review]");
+    expect(lastInput(t.core, "thr_door")[0]!.text).toContain("The request was:\n\n[VesnALIA automation due:auto_review]");
   });
 
   it("does nothing when the failure was retried and finished, or a person wrote after it", async () => {
     const t = await setup();
     // Retried by connectivity recovery and finished; a notification came after.
     t.core.addThread({ id: "thr_retried", providerId: "codex" });
-    t.core.startTurn("thr_retried", { input: [{ type: "text", text: "[bb automation due:auto_x]", mentions: [] }], execution: CODEX_HIGH });
+    t.core.startTurn("thr_retried", { input: [{ type: "text", text: "[VesnALIA automation due:auto_x]", mentions: [] }], execution: CODEX_HIGH });
     t.core.failTurn("thr_retried", FAILURES.codexPooler);
     await t.failed("thr_retried", FAILURES.codexPooler);
     await t.host.harness.runCli(["scan"]);
     t.core.reply("thr_retried", "Сделано.");
-    t.core.startTurn("thr_retried", { input: [{ type: "text", text: "[bb system] child done", mentions: [] }], execution: CODEX_HIGH, initiator: "system" });
+    t.core.startTurn("thr_retried", { input: [{ type: "text", text: "[VesnALIA system] child done", mentions: [] }], execution: CODEX_HIGH, initiator: "system" });
     await t.idle("thr_retried", "Принял.");
 
     // Superseded, but then Sergey wrote a new message himself.
@@ -373,14 +373,14 @@ describe("unfinished request follow-up", () => {
     t.core.startTurn("thr_auth", { input: [{ type: "text", text: "task", mentions: [] }], execution: OPUS_ULTRACODE });
     t.core.failTurn("thr_auth", FAILURES.unauthorized);
     await t.failed("thr_auth", FAILURES.unauthorized);
-    t.core.startTurn("thr_auth", { input: [{ type: "text", text: "[bb system] note", mentions: [] }], execution: OPUS_ULTRACODE, initiator: "system" });
+    t.core.startTurn("thr_auth", { input: [{ type: "text", text: "[VesnALIA system] note", mentions: [] }], execution: OPUS_ULTRACODE, initiator: "system" });
     await t.idle("thr_auth", "Ок.");
 
     t.core.addThread({ id: "thr_sys", providerId: "codex" });
-    t.core.startTurn("thr_sys", { input: [{ type: "text", text: "[bb system] child failed", mentions: [] }], execution: CODEX_HIGH, initiator: "system" });
+    t.core.startTurn("thr_sys", { input: [{ type: "text", text: "[VesnALIA system] child failed", mentions: [] }], execution: CODEX_HIGH, initiator: "system" });
     t.core.failTurn("thr_sys", FAILURES.codexPooler);
     await t.failed("thr_sys", FAILURES.codexPooler);
-    t.core.startTurn("thr_sys", { input: [{ type: "text", text: "[bb system] child completed", mentions: [] }], execution: CODEX_HIGH, initiator: "system" });
+    t.core.startTurn("thr_sys", { input: [{ type: "text", text: "[VesnALIA system] child completed", mentions: [] }], execution: CODEX_HIGH, initiator: "system" });
     await t.idle("thr_sys", "Ок.");
 
     expect(t.sends()).toEqual([]);

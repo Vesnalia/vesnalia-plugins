@@ -1,4 +1,4 @@
-// Turning bb's prompt-history rows into minable prompts.
+// Turning VesnALIA's prompt-history rows into minable prompts.
 
 import type { HistoryPrompt } from "./suggest";
 
@@ -19,7 +19,7 @@ export interface HistoryEntryLike {
   }[];
 }
 
-/** One bb prompt-history row -> zero or one minable prompt. */
+/** One VesnALIA prompt-history row -> zero or one minable prompt. */
 export function toHistoryPrompt(entry: HistoryEntryLike): HistoryPrompt[] {
   const texts: string[] = [];
   for (const part of entry.input) {

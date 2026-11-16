@@ -1,8 +1,8 @@
-// Reports on the comments you sent (src/reports.ts): bb review report and bb review ready from any thread, the review
+// Reports on the comments you sent (src/reports.ts): VesnALIA review report and VesnALIA review ready from any thread, the review
 // Ready to re-review only once every comment out is reported or ready ran, never on idle alone, one Check fixes the
 // plugin starts per Send, unattended, and what a restart missed read again.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn(async () => ({ stdout: "", stderr: "no GitHub here", code: 1 })));
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh }));
@@ -18,18 +18,18 @@ import { assess, startVerification } from "./verification";
 import { toolText } from "./fake-host.test-support";
 import { defaultPreferences } from "./preferences";
 import type { AsyncStore } from "./store-queue";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 const LINES = ["a", "b", "c", "d", "e", "f"];
 const PATCH = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -0,0 +1,6 @@", ...LINES.map((l) => `+const ${l} = 1;`)].join("\n");
 const AT = LINES.map((_, i) => ({ file: "src/a.ts", line: i + 1, side: "RIGHT" as const }));
 
-/** What the main thread was asked, as bb's events have it: its requests, newest last. */
+/** What the main thread was asked, as VesnALIA's events have it: its requests, newest last. */
 type Requested = { createdAt: number; data: { input: Array<{ text: string }> } };
 interface Coder { busy: boolean; status: string; queue: string[]; queued: Map<string, Requested["data"]["input"]>; requests: Requested[]; archivedAt: number | null; reply: string }
 
 /**
- * A BB with the review's main thread, `coder`, its subagent `sub`, and the review agent's chat, `agent`. The main thread
+ * A VesnALIA with the review's main thread, `coder`, its subagent `sub`, and the review agent's chat, `agent`. The main thread
  * queues what's sent while it's busy, and keeps what it takes as requests; its last reply is `reply`.
  */
 function threadsSdk(chat: ReturnType<typeof agentChat>, state: Coder) {
@@ -68,12 +68,12 @@ function host() {
   const chat = agentChat("agent");
   const state: Coder = { busy: false, status: "idle", queue: [], queued: new Map(), requests: [], archivedAt: null, reply: "Renamed a; left the rest." };
   const published: any[] = [];
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: {
     threads: threadsSdk(chat, state),
     plugins: { callRpc: inbox(published) },
     projects: { defaultExecutionOptions: async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" }) },
   } as any });
-  return { bb, harness, chat, state, published };
+  return { alia, harness, chat, state, published };
 }
 
 /** A local review of /repo, main...feature, whose main thread is `coder`, with six comments, all sent in Send 1. */
@@ -90,15 +90,15 @@ async function sentSix(h: ReturnType<typeof host>, store: AsyncStore) {
 const cli = (h: { harness: ReturnType<typeof host>["harness"] }, threadId: string | undefined, ...argv: string[]) => h.harness.behavior.runCli(argv, { ...threadId ? { threadId } : {}, projectId: "p1" });
 const turnOf = async (h: { harness: ReturnType<typeof host>["harness"] }) => ((await h.harness.behavior.callRpc("listReviews", null)) as any).reviews.find((review: any) => review.targetKey === "ref-1").turn;
 const agentMessages = (h: ReturnType<typeof host>) => h.chat.events.filter((event) => event.type === "client/turn/requested");
-const classify = (bb: BbPluginApi) => createClassifier(bb, (id) => id === "agent");
+const classify = (alia: AliaPluginApi) => createClassifier(alia, (id) => id === "agent");
 
-test("bb review report, from any thread, records the claim it names, attributed, and says which review and how many are reported", async () => {
+test("alia review report, from any thread, records the claim it names, attributed, and says which review and how many are reported", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   // The main thread's subagent reports for it.
-  expect(await cli(h, "sub", "report", "c1", "done", "--note", "Renamed it.", "--commit", "ABC1234")).toEqual({ exitCode: 0, stdout: "Reported c1 done on repo:feature. 1 of 6 reported. Report the rest, then run `bb review ready`.", stderr: "" });
-  expect(await cli(h, "coder", "report", "c2", "declined", "--note", "Out of scope.")).toMatchObject({ exitCode: 0, stdout: "Reported c2 declined on repo:feature. 2 of 6 reported. Report the rest, then run `bb review ready`." });
+  expect(await cli(h, "sub", "report", "c1", "done", "--note", "Renamed it.", "--commit", "ABC1234")).toEqual({ exitCode: 0, stdout: "Reported c1 done on repo:feature. 1 of 6 reported. Report the rest, then run `alia review ready`.", stderr: "" });
+  expect(await cli(h, "coder", "report", "c2", "declined", "--note", "Out of scope.")).toMatchObject({ exitCode: 0, stdout: "Reported c2 declined on repo:feature. 2 of 6 reported. Report the rest, then run `alia review ready`." });
   const { comments } = await store.getDraft("ref-1");
   expect(comments[0]!.claim).toEqual({ outcome: "done", note: "Renamed it.", commit: "abc1234", threadId: "sub", at: expect.any(Number) });
   expect(comments[1]!.claim).toMatchObject({ outcome: "declined", note: "Out of scope.", threadId: "coder" });
@@ -110,13 +110,13 @@ test("bb review report, from any thread, records the claim it names, attributed,
 
 test("an unknown id names the comments sent, the calling thread's review first; bad arguments say how; a review's own agent can't report", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   expect(await cli(h, "coder", "report", "c99", "done")).toEqual({ exitCode: 1, stdout: "", stderr: "No sent comment has the id c99. Comments sent: c1, c2, c3, c4, c5, c6 on repo:feature." });
-  expect(await cli(h, "coder", "report", "c1", "maybe")).toMatchObject({ exitCode: 2, stderr: expect.stringMatching(/^maybe isn't done or declined\.\nusage: bb review report/) });
+  expect(await cli(h, "coder", "report", "c1", "maybe")).toMatchObject({ exitCode: 2, stderr: expect.stringMatching(/^maybe isn't done or declined\.\nusage: alia review report/) });
   expect(await cli(h, "coder", "report", "c1")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("Give the comment's id and done or declined.") });
   expect(await cli(h, "coder", "report", "c1", "done", "--commit", "main")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("main isn't a commit's SHA.") });
-  expect(await cli(h, "coder", "report", "--help")).toMatchObject({ exitCode: 0, stdout: expect.stringContaining("usage: bb review report <id> done|declined") });
+  expect(await cli(h, "coder", "report", "--help")).toMatchObject({ exitCode: 0, stdout: expect.stringContaining("usage: VesnALIA review report <id> done|declined") });
   expect(await cli(h, "agent", "report", "c1", "done")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("A review's own agent can't report on fixes") });
   expect(await cli(h, "agent", "ready")).toMatchObject({ exitCode: 2, stderr: expect.stringContaining("A review's own agent can't report on fixes") });
   expect((await store.getDraft("ref-1")).comments.every((comment) => !comment.claim)).toBe(true);
@@ -124,7 +124,7 @@ test("an unknown id names the comments sent, the calling thread's review first; 
 
 test("the main thread going idle with 1 of 6 reported isn't Ready: the review waits on it, 1 of 6 reported, and nothing is checked", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   expect(await turnOf(h)).toMatchObject({ group: "waiting", reason: "fixes-sent", label: "0 of 6 reported" });
   await cli(h, "coder", "report", "c1", "done");
@@ -148,7 +148,7 @@ test("the main thread going idle with 1 of 6 reported isn't Ready: the review wa
 
 test("every comment reported makes it Ready to re-review, with exactly one Check fixes, which the plugin started, so unattended; the alert waits for it and names the review", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   for (const id of ["c1", "c2", "c3", "c4", "c5"]) await cli(h, "coder", "report", id, "done");
   expect(agentMessages(h)).toEqual([]);
@@ -160,7 +160,7 @@ test("every comment reported makes it Ready to re-review, with exactly one Check
   expect(review.sends![0]).toMatchObject({ readyAt: expect.any(Number), checkedAt: expect.any(Number) });
   expect(review.verifyingSince).toEqual(expect.any(Number));
   expect(review.verifyingFixes).toBe(true);
-  expect((await classify(h.bb)("agent")).asking).toBe("unattended");
+  expect((await classify(h.alia)("agent")).asking).toBe("unattended");
   // What it's asked to check, for the agent only: each comment against its Send, and the main thread's last reply, fenced.
   const context = (agentMessages(h)[0]!.data.input as any[]).map((part) => part.text).join("\n");
   expect(context).toContain("The reviewer sent 6 comments to the main thread");
@@ -182,12 +182,12 @@ test("every comment reported makes it Ready to re-review, with exactly one Check
   expect(agentMessages(h)).toHaveLength(1);
 });
 
-test("bb review ready, from the main thread's subagent, makes it Ready with what's reported; with two reviews waiting, it asks which", async () => {
+test("alia review ready, from the main thread's subagent, makes it Ready with what's reported; with two reviews waiting, it asks which", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   await cli(h, "coder", "report", "c1", "done");
-  expect(await cli(h, undefined, "ready")).toMatchObject({ exitCode: 1, stderr: "No review's comments are waiting on this thread. Pass the review: bb review ready <review>." });
+  expect(await cli(h, undefined, "ready")).toMatchObject({ exitCode: 1, stderr: "No review's comments are waiting on this thread. Pass the review: VesnALIA review ready <review>." });
   expect(await cli(h, "sub", "ready")).toEqual({ exitCode: 0, stdout: "Sent repo:feature back to the reviewer to re-review: 1 of 6 reported.", stderr: "" });
   await vi.waitFor(() => expect(agentMessages(h)).toHaveLength(1));
   expect(await turnOf(h)).toMatchObject({ group: "needs", reason: "fixes-ready", label: "Ready to re-review" });
@@ -198,18 +198,18 @@ test("bb review ready, from the main thread's subagent, makes it Ready with what
   await store.upsertDraftComment("ref-2", { ...AT[0]!, body: "Here too." });
   await h.harness.behavior.callRpc("sendToSourceThread", { targetKey: "ref-2", comments: [AT[0]] });
   await h.harness.behavior.callRpc("sendToSourceThread", { targetKey: "ref-1", comments: [AT[1]] });
-  expect(await cli(h, "coder", "ready")).toMatchObject({ exitCode: 2, stderr: "Comments from 2 reviews wait on this thread: repo:other, repo:feature. Pass one: bb review ready <review>." });
+  expect(await cli(h, "coder", "ready")).toMatchObject({ exitCode: 2, stderr: "Comments from 2 reviews wait on this thread: repo:other, repo:feature. Pass one: VesnALIA review ready <review>." });
   expect(await cli(h, "coder", "ready", "ref-2")).toMatchObject({ exitCode: 0, stdout: "Sent repo:other back to the reviewer to re-review: 0 of 1 reported." });
 });
 
 test("a clicked Check now asks the review agent as you; the check infers what the main thread didn't report, marked, and never over its report", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   await cli(h, "coder", "report", "c1", "done", "--note", "Renamed.");
   expect(await h.harness.behavior.callRpc("checkFixes", { targetKey: "ref-1" })).toEqual({ ok: true });
   await vi.waitFor(() => expect(agentMessages(h)).toHaveLength(1));
-  expect((await classify(h.bb)("agent")).asking).toBe("direct");
+  expect((await classify(h.alia)("agent")).asking).toBe("direct");
   // A clicked check isn't the one the plugin runs once ready.
   expect((await store.getReview("ref-1"))!.sends![0]!.checkedAt).toBeUndefined();
   const listed = toolText(await h.harness.behavior.callAgentTool("list_feedback", {}, { threadId: "agent" }));
@@ -240,7 +240,7 @@ test("a clicked Check now asks the review agent as you; the check infers what th
 
 test("Check now with nothing out, or the re-review check off, says so and asks nothing", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "ref-1", kind: "ref", gitRef: "main...feature", status: "ready", createdAt: 1, projectId: "p1", cwd: "/repo" });
   expect(await h.harness.behavior.callRpc("checkFixes", { targetKey: "ref-1" })).toEqual({ ok: false, error: "No comments are out with the main thread to check." });
   await store.setLifecycle("ref-1", { sourceThreadId: "coder" });
@@ -258,7 +258,7 @@ test("Check now with nothing out, or the re-review check off, says so and asks n
 
 test("a Send again clears the comment's old report: it waits for a new one", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   await cli(h, "coder", "report", "c1", "done");
   // Edited after its report, it's open again; sent again, its report is the new Send's to make.
@@ -273,7 +273,7 @@ test("a Send again clears the comment's old report: it waits for a new one", asy
 test("archived or deleted, the main thread won't report the rest: they're back with you, with no alert or check; unarchived, it's idle", async () => {
   const h = host();
   h.state.busy = true;
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   await cli(h, "coder", "report", "c1", "done");
   expect((await store.getReview("ref-1"))!.sends![0]).toMatchObject({ queued: "q1" });
@@ -304,7 +304,7 @@ async function restarted(first: ReturnType<typeof host>, ready: (store: AsyncSto
   next.harness.inspection.sdk.stub("threads.experimental_listAncestors" as any, (async ({ threadIds }: { threadIds: string[] }) => ({ threads: threadIds.map((id) => ({ threadId: id, ancestorIds: [] })) })) as any);
   next.harness.inspection.sdk.stub("plugins.callRpc", inbox(first.published) as any);
   next.harness.inspection.sdk.stub("projects.defaultExecutionOptions", (async () => ({ providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" })) as any);
-  const store = await startPlugin(next.bb);
+  const store = await startPlugin(next.alia);
   // Nothing read it yet; the review-state service does as it starts.
   expect((await store.getReview("ref-1"))!.sends![0]).toMatchObject({ queued: "q1" });
   const service = next.harness.runService("review-state");
@@ -317,7 +317,7 @@ async function restarted(first: ReturnType<typeof host>, ready: (store: AsyncSto
 test("a restart in between: the main thread that took the Send and went idle while the plugin was down is read again", async () => {
   const first = host();
   first.state.busy = true;
-  const store = await startPlugin(first.bb);
+  const store = await startPlugin(first.alia);
   await sentSix(first, store);
   await cli(first, "coder", "report", "c1", "done");
   expect((await store.getReview("ref-1"))!.sends![0]).toMatchObject({ queued: "q1" });
@@ -338,7 +338,7 @@ test("a restart in between: the main thread that took the Send and went idle whi
 test("a restart in between: a Send deleted from the queue while the plugin was down never went, so its comments are open again", async () => {
   const first = host();
   first.state.busy = true;
-  const store = await startPlugin(first.bb);
+  const store = await startPlugin(first.alia);
   await sentSix(first, store);
   // While the plugin is down, you delete the queued message: the thread never gets it.
   first.state.busy = false;
@@ -351,7 +351,7 @@ test("a restart in between: a Send deleted from the queue while the plugin was d
 
 test("a GitHub thread sent from your own PR keeps its report on the review (S5), and counts toward Ready", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 12, title: "Retry uploads", author: "me", headSha: "abc1234", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("pr-1", { ownPr: true, sourceThreadId: "coder", sends: [{ n: 1, at: 1, threadId: "coder", ids: ["c9"] }], threadSends: { PRRT_1: { id: "c9", sendN: 1 } } });
   expect(await cli(h, "coder", "report", "c9", "done", "--note", "Replied and fixed.")).toMatchObject({ exitCode: 0, stdout: "Reported c9 done on web#12. That was the last one: the review goes back to the reviewer to re-review." });
@@ -364,7 +364,7 @@ test("a GitHub thread sent from your own PR keeps its report on the review (S5),
 test("a Check fixes that can't start is put back for a later try, and the alert comes at once", async () => {
   const h = host();
   h.harness.inspection.sdk.stub("projects.defaultExecutionOptions", (async () => null) as any);
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   // No review agent yet, and none to start it on.
   await store.clearAssistantThread("ref-1");
@@ -377,24 +377,24 @@ test("a Check fixes that can't start is put back for a later try, and the alert 
   expect(agentMessages(h)).toEqual([]);
 });
 
-test("a thread bb can't place is refused, failing closed; a shell outside any thread may report", async () => {
+test("a thread VesnALIA can't place is refused, failing closed; a shell outside any thread may report", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   h.harness.inspection.sdk.stub("threads.experimental_listAncestors" as any, (async () => { throw new Error("offline"); }) as any);
-  expect(await cli(h, "sub", "report", "c1", "done")).toEqual({ exitCode: 1, stdout: "", stderr: "bb couldn't say which threads this one was started from, so nothing was done. Try again in a moment." });
+  expect(await cli(h, "sub", "report", "c1", "done")).toEqual({ exitCode: 1, stdout: "", stderr: "alia couldn't say which threads this one was started from, so nothing was done. Try again in a moment." });
   expect(await cli(h, "sub", "ready")).toMatchObject({ exitCode: 1, stderr: expect.stringContaining("Try again in a moment") });
   expect((await store.getDraft("ref-1")).comments[0]!.claim).toBeUndefined();
   expect(await cli(h, undefined, "report", "c1", "done")).toMatchObject({ exitCode: 0, stdout: expect.stringMatching(/^Reported c1 done on repo:feature\./) });
   expect((await store.getDraft("ref-1")).comments[0]!.claim).toMatchObject({ outcome: "done", threadId: null });
 });
 
-test("bb review ready says who finished: the main thread, another thread by its title, or the command line", async () => {
+test("alia review ready says who finished: the main thread, another thread by its title, or the command line", async () => {
   const h = host();
   h.harness.inspection.sdk.stub("threads.get" as any, (async ({ threadId }: { threadId: string }) => threadId === "other"
     ? { id: "other", title: "Release checklist", titleFallback: null, archivedAt: null, deletedAt: null, status: "idle", queuedMessageCount: 0, visibility: "visible" }
     : threadsSdk(h.chat, h.state).get({ threadId })) as any);
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   await cli(h, "coder", "report", "c1", "done");
   expect(await cli(h, "other", "ready", "repo:feature")).toMatchObject({ exitCode: 0, stdout: "Sent repo:feature back to the reviewer to re-review: 1 of 6 reported." });
@@ -417,7 +417,7 @@ test("bb review ready says who finished: the main thread, another thread by its 
 
 test("ready with nothing out says so and changes nothing; an unknown review names the ones with comments out; a report after Ready doesn't ask for ready again", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await sentSix(h, store);
   expect(await cli(h, "coder", "ready", "web#9")).toEqual({ exitCode: 1, stdout: "", stderr: "No review web#9. Reviews with comments out: repo:feature. Give its id as the message that sent you its comments names it, or its key." });
   await cli(h, "coder", "report", "c1", "done");
@@ -432,7 +432,7 @@ test("ready with nothing out says so and changes nothing; an unknown review name
 
 test("an inferred claim never replaces a report that came while the check ran, on a GitHub thread too", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 12, title: "Retry uploads", author: "me", headSha: "abc1234", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("pr-1", { ownPr: true, sourceThreadId: "coder", sends: [{ n: 1, at: 1, threadId: "coder", ids: ["c9"] }], threadSends: { PRRT_1: { id: "c9", sendN: 1 } } });
   // The check read the review before the report landed.
@@ -446,14 +446,14 @@ test("an inferred claim never replaces a report that came while the check ran, o
 
 test("a check of your feedback, as on a re-request, reads no sent comments and infers no claims; Check fixes waits while the agent answers you", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 12, title: "Retry uploads", author: "dana", headSha: "abc1234", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("pr-1", { ownPr: false, sourceThreadId: "coder", submittedAt: 5, submittedVerdict: "REQUEST_CHANGES", submittedHeadSha: "abc1234" });
   await store.savePatch("pr-1", PATCH);
   await store.setAssistantThread("pr-1", "agent");
   await store.upsertDraftComment("pr-1", { ...AT[0]!, body: "Fix it." });
   expect(await h.harness.behavior.callRpc("sendToSourceThread", { targetKey: "pr-1", comments: [AT[0]], force: true })).toMatchObject({ ok: true });
-  expect(await startVerification(h.bb, store, "pr-1", "the author re-requested the reviewer's review", "automatic")).toBe(true);
+  expect(await startVerification(h.alia, store, "pr-1", "the author re-requested the reviewer's review", "automatic")).toBe(true);
   const context = (agentMessages(h)[0]!.data.input as any[]).map((part) => part.text).join("\n");
   expect(context).not.toContain("comment to the main thread");
   expect((await store.getReview("pr-1"))!.verifyingFixes ?? null).toBeNull();
@@ -469,7 +469,7 @@ test("a check of your feedback, as on a re-request, reads no sent comments and i
 
 test("on your own PR, the thread you sent a teammate's thread and review summary to reports each by its id, which makes it Ready, checked once, then the alert", async () => {
   const h = host();
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 12, title: "Retry uploads", author: "me", head: "retry-uploads", headSha: "a".repeat(40), status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("pr-1", { ownPr: true, sourceThreadId: "coder", prConversation: [{ id: "PRR_9", kind: "review", author: "dana", bot: false, state: "CHANGES_REQUESTED", body: "Can you add tests?", at: 5, url: null, waiting: true }] });
   await store.savePatch("pr-1", PATCH);
@@ -482,7 +482,7 @@ test("on your own PR, the thread you sent a teammate's thread and review summary
   expect(sent).toContain("c1 · @dana's comment on `src/a.ts:2`");
   expect(sent).toContain("c2 · @dana's review summary, which requested changes");
   expect((await store.getReview("pr-1"))!.fixes).toMatchObject({ sent: 2, reported: 0 });
-  expect(await cli(h, "coder", "report", "c1", "done", "--note", "Renamed it.")).toMatchObject({ exitCode: 0, stdout: "Reported c1 done on web#12. 1 of 2 reported. Report the rest, then run `bb review ready`." });
+  expect(await cli(h, "coder", "report", "c1", "done", "--note", "Renamed it.")).toMatchObject({ exitCode: 0, stdout: "Reported c1 done on web#12. 1 of 2 reported. Report the rest, then run `alia review ready`." });
   expect(await cli(h, "coder", "report", "c2", "done", "--note", "Added tests.")).toMatchObject({ exitCode: 0, stdout: expect.stringContaining("That was the last one") });
   const review = (await store.getReview("pr-1"))!;
   expect(review.threadSends).toEqual({ PRRT_1: { id: "c1", sendN: 1, claim: expect.objectContaining({ outcome: "done", note: "Renamed it.", threadId: "coder" }) }, PRR_9: { id: "c2", sendN: 1, claim: expect.objectContaining({ note: "Added tests." }) } });

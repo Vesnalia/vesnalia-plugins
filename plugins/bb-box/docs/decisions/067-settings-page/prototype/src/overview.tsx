@@ -17,7 +17,7 @@ export function Overview() {
   return (
     <div className="space-y-7">
       <h2 tabIndex={-1} data-page-heading className="sr-only">
-        BB Box settings
+        VesnALIA Box settings
       </h2>
       {usable ? (
         <>
@@ -137,7 +137,7 @@ function BackendRow({ backend, instant }: { backend: BackendConfig; instant: Ret
           <span className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm font-medium text-foreground">
             <span className="min-w-0 truncate">{backend.label ?? driver.label}</span>
             {qualifier ? <Badge>{qualifier}</Badge> : null}
-            {live?.bbMachine ? <Badge>BB machine</Badge> : null}
+            {live?.aliaMachine ? <Badge>VesnALIA machine</Badge> : null}
             {drafts.includes(`backends/${backend.id}`) ? <Badge tone="warn">Unsaved changes</Badge> : null}
           </span>
           <StateLine id={stateId} className="mt-0.5" tone={state.tone} words={state.words} items={state.items} />
@@ -163,7 +163,7 @@ function Backends() {
   const store = useStore();
   const nav = useNav();
   const instant = useInstant();
-  const spare = DOCKER_MACHINES.filter((machine) => machine.docker && !machine.fault && !store.doc.backends.some((backend) => backend.fields.host === `bb:${machine.id}`));
+  const spare = DOCKER_MACHINES.filter((machine) => machine.docker && !machine.fault && !store.doc.backends.some((backend) => backend.fields.host === `alia:${machine.id}`));
   return (
     <Section
       title="Backends"
@@ -317,12 +317,12 @@ function Options() {
             trailing={
               <>
                 <SavedTick show={instant.saved === "monitor"} />
-                <Switch aria-label="Monitor: machine status in BB's sidebar" checked={monitorOn} disabled={instant.pending === "monitor"} onCheckedChange={(enabled) => void instant.run("monitor", [["monitor/enabled", enabled]], "The Monitor")} />
+                <Switch aria-label="Monitor: machine status in VesnALIA's sidebar" checked={monitorOn} disabled={instant.pending === "monitor"} onCheckedChange={(enabled) => void instant.run("monitor", [["monitor/enabled", enabled]], "The Monitor")} />
               </>
             }
           />
           <NavRow rowKey="option-configuration" icon={<Icon name="Settings" className="size-4" aria-hidden />} title="Configuration" value={`Revision ${store.doc.revision}`} onClick={() => go("configuration")} />
-          <NavRow rowKey="machines" icon={<Icon name="Desktop" className="size-4" aria-hidden />} title="Your machines" value="On the Boxes page, Machines tab" external onClick={() => window.dispatchEvent(new CustomEvent("bb-open", { detail: "machines" }))} />
+          <NavRow rowKey="machines" icon={<Icon name="Desktop" className="size-4" aria-hidden />} title="Your machines" value="On the Boxes page, Machines tab" external onClick={() => window.dispatchEvent(new CustomEvent("alia-open", { detail: "machines" }))} />
         </Rows>
       </Card>
       {store.monitorChanged ? <ReloadNote /> : null}
@@ -333,9 +333,9 @@ function Options() {
 export function ReloadNote() {
   return (
     <p role="status" className="flex flex-wrap items-center gap-2 px-1 text-xs text-muted-foreground">
-      The sidebar's machine status changes when BB next loads.
+      The sidebar's machine status changes when VesnALIA next loads.
       <button type="button" className="cursor-pointer rounded-sm text-foreground underline underline-offset-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" onClick={() => window.location.reload()}>
-        Reload BB now
+        Reload VesnALIA now
       </button>
     </p>
   );
@@ -385,7 +385,7 @@ function FirstRun({ usable }: { usable: boolean }) {
   const [checking, setChecking] = useState(false);
   const { firstRun, serverDocker } = store;
   const unfinishedBackends = store.doc.backends.filter((backend) => backendState(store.doc, backend, store.live[backend.id]).status === "unfinished");
-  const others = DOCKER_MACHINES.filter((machine) => machine.docker && !machine.fault && machine.name !== "bb-1").slice(0, 1);
+  const others = DOCKER_MACHINES.filter((machine) => machine.docker && !machine.fault && machine.name !== "alia-1").slice(0, 1);
   const checkAgain = (
     <Button
       type="button"
@@ -419,45 +419,45 @@ function FirstRun({ usable }: { usable: boolean }) {
     );
   } else if (firstRun.state === "built") {
     card = (
-      <FirstRunCard title="Docker on this machine is ready" action={<Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => window.dispatchEvent(new CustomEvent("bb-open", { detail: "new-thread" }))}>Start a thread</Button>}>
-        BB Box makes Linux boxes on bb-1 now. Ask for one in a thread, or with New box on the Boxes page. Add more backends for desktops, Macs or Windows.
+      <FirstRunCard title="Docker on this machine is ready" action={<Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => window.dispatchEvent(new CustomEvent("alia-open", { detail: "new-thread" }))}>Start a thread</Button>}>
+        VesnALIA Box makes Linux boxes on alia-1 now. Ask for one in a thread, or with New box on the Boxes page. Add more backends for desktops, Macs or Windows.
       </FirstRunCard>
     );
   } else if (serverDocker === "missing") {
     card = (
-      <FirstRunCard title="bb-1 has no Docker" action={checkAgain}>
-        bb-1, where BB runs, has no Docker. Install it, then check again:
+      <FirstRunCard title="alia-1 has no Docker" action={checkAgain}>
+        alia-1, where VesnALIA runs, has no Docker. Install it, then check again:
         <CopyLine line="curl -fsSL https://get.docker.com | sh" />
-        {others.length ? <p className="mt-2">Or use a BB machine that has Docker: {others[0]!.name} has Docker {others[0]!.docker}. <button type="button" className="text-foreground underline underline-offset-2" onClick={() => nav.go({ page: "add" })}>Use {others[0]!.name}</button></p> : null}
+        {others.length ? <p className="mt-2">Or use a VesnALIA machine that has Docker: {others[0]!.name} has Docker {others[0]!.docker}. <button type="button" className="text-foreground underline underline-offset-2" onClick={() => nav.go({ page: "add" })}>Use {others[0]!.name}</button></p> : null}
       </FirstRunCard>
     );
   } else if (serverDocker === "permission") {
     card = (
-      <FirstRunCard title="BB cannot use Docker on bb-1" action={checkAgain}>
-        bb-1 has Docker 29.8, but BB's user there cannot use it. Add the user to the docker group, then restart BB so it takes effect:
-        <CopyLine line="sudo usermod -aG docker bb" />
-        <CopyLine line="npx bb-app stop && npx bb-app" />
+      <FirstRunCard title="VesnALIA cannot use Docker on alia-1" action={checkAgain}>
+        alia-1 has Docker 29.8, but VesnALIA's user there cannot use it. Add the user to the docker group, then restart VesnALIA so it takes effect:
+        <CopyLine line="sudo usermod -aG docker VesnALIA" />
+        <CopyLine line="npx alia-app stop && npx alia-app" />
       </FirstRunCard>
     );
   } else if (serverDocker === "disk") {
     card = (
-      <FirstRunCard title="Not enough disk on bb-1" action={checkAgain}>
-        The Linux image needs about 10 GB free to build, and bb-1 has 9 GB. Free some, then check again:
+      <FirstRunCard title="Not enough disk on alia-1" action={checkAgain}>
+        The Linux image needs about 10 GB free to build, and alia-1 has 9 GB. Free some, then check again:
         <CopyLine line="docker builder prune" />
       </FirstRunCard>
     );
   } else {
     card = (
-      <FirstRunCard title="Use Docker on this machine" action={<Button type="button" size="sm" className="h-8 shrink-0" onClick={store.useDocker}>Use Docker on bb-1</Button>}>
-        bb-1, where BB runs, has Docker 29.8. BB Box builds its Linux image there, usually in 5 to 12 min, then makes Linux boxes in seconds.
+      <FirstRunCard title="Use Docker on this machine" action={<Button type="button" size="sm" className="h-8 shrink-0" onClick={store.useDocker}>Use Docker on alia-1</Button>}>
+        alia-1, where VesnALIA runs, has Docker 29.8. VesnALIA Box builds its Linux image there, usually in 5 to 12 min, then makes Linux boxes in seconds.
       </FirstRunCard>
     );
   }
   return (
-    <section className="space-y-3" aria-label="Set up BB Box">
+    <section className="space-y-3" aria-label="Set up VesnALIA Box">
       {usable ? null : (
         <div>
-          <PageHeadingLite>Set up BB Box</PageHeadingLite>
+          <PageHeadingLite>Set up VesnALIA Box</PageHeadingLite>
           <p className="mt-0.5 text-xs leading-snug text-subtle-foreground">Boxes are computers for your threads. Choose where they run; you can add more places later.</p>
         </div>
       )}

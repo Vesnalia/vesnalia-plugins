@@ -87,7 +87,7 @@ function TimePicker({
 
   return (
     <div
-      className="bb-time-picker"
+      className="alia-time-picker"
       role="group"
       aria-label={ariaLabel}
       aria-invalid={invalid || undefined}
@@ -102,13 +102,13 @@ function TimePicker({
         disabled={disabled}
         aria-label="Hour"
         aria-invalid={invalid || undefined}
-        className="bb-time-picker-field"
+        className="alia-time-picker-field"
         onFocus={(event) => event.currentTarget.select()}
         onChange={(event) => setHourDraft(event.target.value)}
         onBlur={() => commit()}
         onKeyDown={commitOnEnter}
       />
-      <span className="bb-time-picker-separator" aria-hidden="true">:</span>
+      <span className="alia-time-picker-separator" aria-hidden="true">:</span>
       <Input
         type="number"
         inputMode="numeric"
@@ -119,7 +119,7 @@ function TimePicker({
         disabled={disabled}
         aria-label="Minute"
         aria-invalid={invalid || undefined}
-        className="bb-time-picker-field"
+        className="alia-time-picker-field"
         onFocus={(event) => event.currentTarget.select()}
         onChange={(event) => setMinuteDraft(event.target.value)}
         onBlur={() => commit()}
@@ -131,7 +131,7 @@ function TimePicker({
         value={parts.period}
         options={PERIOD_OPTIONS}
         onValueChange={(period) => commit(period)}
-        className="bb-time-picker-period"
+        className="alia-time-picker-period"
       />
     </div>
   );

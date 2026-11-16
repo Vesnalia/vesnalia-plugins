@@ -1,10 +1,10 @@
 // Attention detection + ranking for the Inbox plugin.
 //
-// Concept borrowed from bb-plugin-attention (Shane Logsdon, MIT): snapshot every
+// Concept borrowed from alia-plugin-attention (Shane Logsdon, MIT): snapshot every
 // visible thread that wants the user and rank error > blocked > finished. We add
 // dismissal (snooze) filtering and reuse the snapshot for both the panel and the
 // notification dispatcher.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type AttentionKind = "error" | "blocked" | "finished";
 
@@ -28,10 +28,10 @@ export interface Snapshot {
 }
 
 type ThreadDto = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>
 >[number];
 type Interaction = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["interactions"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["interactions"]["list"]>
 >[number];
 
 // Errors first, then a live block, then retained finished work.
@@ -57,7 +57,7 @@ function interactionMeta(interaction: Interaction): {
 } {
   const payload = interaction.payload;
   if (payload.kind === "user_question") {
-    const prompt = payload.questions[0]?.prompt ?? "Answer a question in bb";
+    const prompt = payload.questions[0]?.prompt ?? "Answer a question in VesnALIA";
     return { label: "Question for you", detail: prompt };
   }
   if (payload.kind === "plugin") {
@@ -131,13 +131,13 @@ export interface SnapshotOptions {
 }
 
 export async function buildSnapshot(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: SnapshotOptions = {},
 ): Promise<Snapshot> {
   const { projectId, dismissed, includeFinished = true } = options;
   const threads: ThreadDto[] = [];
   for (let offset = 0; ; offset += THREAD_PAGE_SIZE) {
-    const page = await bb.sdk.threads.list({
+    const page = await alia.sdk.threads.list({
       projectId: projectId ?? undefined,
       archived: false,
       limit: THREAD_PAGE_SIZE,
@@ -160,10 +160,10 @@ export async function buildSnapshot(
     ) {
       try {
         pending = (
-          await bb.sdk.threads.interactions.list({ threadId: thread.id })
+          await alia.sdk.threads.interactions.list({ threadId: thread.id })
         ).find((item) => item.status === "pending");
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `interactions lookup failed for ${thread.id}: ${
             error instanceof Error ? error.message : String(error)
           }`,
@@ -171,13 +171,13 @@ export async function buildSnapshot(
       }
     }
 
-    const record = await bb.storage.kv.get<FinishedRecord>(`${FINISHED_PREFIX}${thread.id}`);
+    const record = await alia.storage.kv.get<FinishedRecord>(`${FINISHED_PREFIX}${thread.id}`);
     const retained = record && Number.isFinite(record.attentionAt) && record.attentionAt > 0 ? record : undefined;
     let classified = classify(thread, pending);
     let attentionAt = thread.latestAttentionAt;
     if (classified?.kind === "finished") {
       if (retained?.attentionAt !== attentionAt) {
-        await bb.storage.kv.set(`${FINISHED_PREFIX}${thread.id}`, { attentionAt } satisfies FinishedRecord);
+        await alia.storage.kv.set(`${FINISHED_PREFIX}${thread.id}`, { attentionAt } satisfies FinishedRecord);
       }
     } else if (!classified && retained) {
       // A read receipt or another running turn does not clear completed work.

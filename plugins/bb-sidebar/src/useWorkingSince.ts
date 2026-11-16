@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   EMPTY_WORKING_SINCE,
   readWorkingSince,
@@ -22,7 +22,7 @@ export function useWorkingSinceContext(): WorkingSince {
 /**
  * Track when each thread in the list started its current run of work.
  *
- * Only a loaded list is evidence that a thread stopped: while bb is still
+ * Only a loaded list is evidence that a thread stopped: while VesnALIA is still
  * loading, or after a failed load, the list is empty or stale, and
  * reconciling against it would clear every stamp, so a reload would restart
  * every "Working · 5m" from zero.

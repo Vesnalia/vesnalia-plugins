@@ -100,7 +100,7 @@ test("an issue closes only once its work is in git, which needs the user's accep
     ),
   ];
   // And, for an epic whose issues were worked on its own branch, from the
-  // step it waits in: the user's Close & merge (bead-bb-ty5.2).
+  // step it waits in: the user's Close & merge (bead-alia-ty5.2).
   assert.deepEqual(from("commit-merge").sort(), ["apply", "on-branch"]);
   assert.deepEqual(from("commit").sort(), ["apply", "user-review"]);
   // Either way it is the user's doing: their button, or their words quoted.
@@ -457,8 +457,8 @@ test("on a row the two starts are icons; the branch one only on the main branch,
 
 test("the branch is named from the issue's id and a short form of its title", () => {
   assert.equal(
-    branchName({ id: "bead-bb-2oy", title: "have maximize button on all issues" }),
-    "bead-bb-2oy-have-maximize-button-on-all-issues",
+    branchName({ id: "bead-alia-2oy", title: "have maximize button on all issues" }),
+    "bead-alia-2oy-have-maximize-button-on-all-issues",
   );
   // Odd characters go; accents are flattened; case is lowered.
   assert.equal(

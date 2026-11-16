@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { act, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { flowOf, memberKeyOf, messageFlows, recentFlowIds, RECENT_MS, shortAddress, timeline } from "../lib/comms";
 import type { CrewDto, MemberDto, MessageDto, OverviewDto } from "../server";
 
@@ -186,7 +186,7 @@ const backend = (messages: MessageDto[], calls: unknown[] = []) => ({
   getActivity: () => ({ members: [] }),
   listMessages: (input: unknown) => (calls.push(input), { messages }),
   rowStatuses: () => ({ rows: [], needsYou: 0 }),
-  projectOverview: () => ({ crews: [{ name: "trio", status: "running", summary: "", task: null, branch: null, behind: 0, merge: null, needsYou: 0, members: [] }], leadLinks: [], dependencies: [], threads: { limit: null, source: "bb", running: null, members: 0 } }),
+  projectOverview: () => ({ crews: [{ name: "trio", status: "running", summary: "", task: null, branch: null, behind: 0, merge: null, needsYou: 0, members: [] }], leadLinks: [], dependencies: [], threads: { limit: null, source: "alia", running: null, members: 0 } }),
   listChannel: () => ({ posts: [] }),
   listWork: () => ({ items: [] }),
   openMembers: () => ({ opened: [], error: null }),

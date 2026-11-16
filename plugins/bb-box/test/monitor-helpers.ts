@@ -1,6 +1,6 @@
 import type { TestContext } from "node:test";
-import { defineCli } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { defineCli } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { MONITOR_DEFAULTS, type MonitorConfig } from "../src/core/document.ts";
 import { monitorCommands } from "../src/plugin/monitor-cli.ts";
 import { startMonitor, type MonitorDeps } from "../src/plugin/monitor.ts";
@@ -37,13 +37,13 @@ export function testDeps(overrides: Partial<MonitorDeps> = {}): MonitorDeps {
 
 export async function startTestMonitor(t: TestContext, options: { config?: Partial<MonitorConfig>; deps?: Partial<MonitorDeps> } = {}) {
   let config: MonitorConfig = { ...MONITOR_DEFAULTS, ...options.config };
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-box" });
-  const monitor = startMonitor(bb, testDeps({ settings: () => config, ...options.deps }));
-  bb.cli.register(defineCli({ name: "box", summary: "Boxes for BB threads.", commands: monitorCommands(bb, monitor) }));
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-box" });
+  const monitor = startMonitor(alia, testDeps({ settings: () => config, ...options.deps }));
+  alia.cli.register(defineCli({ name: "box", summary: "Boxes for VesnALIA threads.", commands: monitorCommands(alia, monitor) }));
   t.after(() => harness.lifecycle.dispose());
   const setConfig = (patch: Partial<MonitorConfig>) => {
     config = { ...config, ...patch };
     monitor.configure(config);
   };
-  return { bb, harness, monitor, setConfig };
+  return { alia, harness, monitor, setConfig };
 }

@@ -4,7 +4,7 @@ import type {
   ExperimentalDesktopBrowserLease,
   ExperimentalDesktopBrowserScope,
   ExperimentalDesktopBrowsersArea,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
 type DesktopArea = ExperimentalDesktopBrowsersArea;
 type InstancesResult = Awaited<ReturnType<DesktopArea["listInstances"]>>;
@@ -42,7 +42,7 @@ type Subscription = {
  */
 export class FakeDesktop implements ExperimentalDesktopBrowsersArea {
   instances: { instanceId: string; generation: string; label: string }[] = [
-    { instanceId: "inst_1", generation: "gen_1", label: "BB window 1" },
+    { instanceId: "inst_1", generation: "gen_1", label: "VesnALIA window 1" },
   ];
   tabs = new Map<string, FakeTab>();
   leases = new Map<string, { tabIds: string[]; expiresAt: number; scope: ExperimentalDesktopBrowserScope }>();

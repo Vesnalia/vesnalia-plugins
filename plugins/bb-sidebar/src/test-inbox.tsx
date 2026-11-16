@@ -1,8 +1,8 @@
 import { afterEach, vi } from "vitest";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { renderSlot } from "./test-slot";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { deferred, idleSidebarThreadFields, runtimeStatusFor } from "./test-fixtures";
 import type { SidebarProvider } from "./ProviderGlyph";
 
@@ -60,7 +60,7 @@ Object.defineProperty(Document.prototype, "elementFromPoint", {
   value: vi.fn(),
 });
 
-// Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
+// Load through the harness so the plugin's `@vesnalia/plugin-sdk/app` import binds
 // to the test runtime; importing the component directly would bind it to an
 // empty runtime first.
 import type { RowContextMenu as RowContextMenuType } from "./RowContextMenu";
@@ -127,7 +127,7 @@ export function thread(overrides: Partial<PluginSidebarThread> = {}): PluginSide
   return {
     ...idleSidebarThreadFields,
     runtimeStatus: runtimeStatusFor(overrides),
-    // Confirmed pins carry keys in canonical BB; explicit null models a provisional pin.
+    // Confirmed pins carry keys in canonical VesnALIA; explicit null models a provisional pin.
     ...(overrides.isPinned ? { pinnedAt: 100, pinSortKey: `U${String(nextPinnedKey++).padStart(6, "0")}U` } : {}),
     id: "thr_1",
     projectId: "proj_1",
@@ -202,7 +202,7 @@ export const listProps = {
   Original: () => null,
 };
 
-/** Top-level row links. Child rows are links too, but bb's shortcuts skip them. */
+/** Top-level row links. Child rows are links too, but VesnALIA's shortcuts skip them. */
 export function rowLinks(scope: HTMLElement = document.body) {
   return within(scope)
     .getAllByRole("link")
@@ -211,7 +211,7 @@ export function rowLinks(scope: HTMLElement = document.body) {
 
 export function render(
   threads: PluginSidebarThread[],
-  projects = [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+  projects = [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
 ) {
   return renderSlot(inbox, listProps, {
     sidebarThreads: { status: "ready", threads, projects },

@@ -82,8 +82,8 @@ export function usedViaLabel(prompt: PromptDto): string {
       return "scheduled send";
     case "cross-thread":
       return "sent to another thread";
-    case "bb-queue":
-      return "moved to bb's queue";
+    case "alia-queue":
+      return "moved to VesnALIA's queue";
     case "tool":
       return "used by the agent";
     default:

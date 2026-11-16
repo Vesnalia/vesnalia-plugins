@@ -1,15 +1,15 @@
 // Sticky Prompt backend: the settings, and a diagnostic command. The bar
 // itself lives in app.tsx and reads threads through the frontend SDK with
 // the user's own session.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { userRowOf } from "./src/message";
 import { findSender, senderFromPreview, seqFromId } from "./src/senders";
 import { imageSourcesOf } from "./src/thumbs";
 
 const USAGE = [
   "Usage:",
-  "  bb sticky-prompt senders <thread-id> [--last <n>]",
-  "  bb sticky-prompt images <thread-id> [--last <n>]",
+  "  VesnALIA sticky-prompt senders <thread-id> [--last <n>]",
+  "  VesnALIA sticky-prompt images <thread-id> [--last <n>]",
 ].join("\n");
 const MAX_LAST = 30;
 const MAX_IMAGE_LINES = 40;
@@ -22,8 +22,8 @@ function reason(error: unknown): string {
   return oneLine(error instanceof Error ? error.message : String(error), 120);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Pin your message to the top of the chat",
@@ -33,15 +33,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
     includeOtherSenders: {
       type: "boolean",
-      label: "Also pin messages from agents and BB",
+      label: "Also pin messages from agents and VesnALIA",
       description:
-        "Messages from other threads, agents and BB system notices are pinned as well as yours.",
+        "Messages from other threads, agents and VesnALIA system notices are pinned as well as yours.",
       default: false,
     },
   });
 
   async function senders(threadId: string, last: number): Promise<string[]> {
-    const outline = await bb.sdk.threads.conversationOutline({ threadId, role: "user" });
+    const outline = await alia.sdk.threads.conversationOutline({ threadId, role: "user" });
     const lines = [`thread ${threadId}: ${outline.items.length} user messages`];
     lines.push("sender  how      pinned  id  preview");
     for (const item of outline.items.slice(-last)) {
@@ -51,7 +51,7 @@ export default async function plugin(bb: BbPluginApi) {
         how = "lookup";
         try {
           who = await findSender(
-            (seq) => bb.sdk.threads.message({ threadId, seq, before: 0, after: 0 }),
+            (seq) => alia.sdk.threads.message({ threadId, seq, before: 0, after: 0 }),
             item.id,
           );
         } catch (error) {
@@ -67,21 +67,21 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function images(threadId: string, last: number): Promise<string[]> {
-    const outline = await bb.sdk.threads.conversationOutline({ threadId, role: "user" });
+    const outline = await alia.sdk.threads.conversationOutline({ threadId, role: "user" });
     const withImages = outline.items.filter((item) => (item.attachmentSummary?.imageCount ?? 0) > 0);
     const lines = [
       `thread ${threadId}: ${outline.items.length} user messages, ${withImages.length} with images`,
     ];
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     let omitted = 0;
     for (const item of withImages.slice(-last)) {
       const seq = seqFromId(item.id);
       const row =
         seq === undefined
           ? null
-          : userRowOf(await bb.sdk.threads.message({ threadId, seq, before: 0, after: 0 }), item.id);
+          : userRowOf(await alia.sdk.threads.message({ threadId, seq, before: 0, after: 0 }), item.id);
       if (row === null) {
-        lines.push(`  ${item.id}: BB did not return this message`);
+        lines.push(`  ${item.id}: VesnALIA did not return this message`);
         continue;
       }
       const sources = imageSourcesOf(row.attachments);
@@ -96,7 +96,7 @@ export default async function plugin(bb: BbPluginApi) {
           continue;
         }
         try {
-          const file = await bb.sdk.projects.attachments.read({
+          const file = await alia.sdk.projects.attachments.read({
             projectId: thread.projectId,
             path: source.path,
           });
@@ -110,19 +110,19 @@ export default async function plugin(bb: BbPluginApi) {
     return lines;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "sticky-prompt",
     summary: "Diagnose the Sticky Prompt plugin",
     commands: [
       {
         name: "senders",
         summary: "Show who sent a thread's newest user messages, and whether the bar would pin them",
-        usage: "bb sticky-prompt senders <thread-id> [--last <n>]",
+        usage: "alia sticky-prompt senders <thread-id> [--last <n>]",
       },
       {
         name: "images",
         summary: "Read the images of a thread's newest user messages the way the bar loads its thumbnails",
-        usage: "bb sticky-prompt images <thread-id> [--last <n>]",
+        usage: "alia sticky-prompt images <thread-id> [--last <n>]",
       },
     ],
     async run(argv) {

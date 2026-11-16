@@ -31,11 +31,11 @@ interface T { title: string; archivedAt?: number | null; environmentId?: string 
 const ROUTES: Route[] = ["send", "later", "rest", "send-now", "agent", "start-fresh", "after-start", "fork", "unarchive", "pick", "fix-new"];
 
 const folder = { environmentId: "env1", hostId: "host_max", machine: "MaxBook", path: "/Users/me/src/web", branch: "retry-uploads", baseRef: "main", repo: "acme/web" };
-const rehomed = { ...folder, environmentId: "env_fix1", path: "/Users/me/.bb/worktrees/env_fix1", workBranch: "bb/env_fix1" };
+const rehomed = { ...folder, environmentId: "env_fix1", path: "/Users/me/.vesnalia/worktrees/env_fix1", workBranch: "alia/env_fix1" };
 const coder = { threadId: "coder", environmentId: "env_old", origin: "adopted" as const, since: 1 };
-const fixer1 = { threadId: "fixer1", environmentId: "env_fix1", origin: "fresh" as const, since: 2, branch: "bb/env_fix1", fixer: fixerRecord };
+const fixer1 = { threadId: "fixer1", environmentId: "env_fix1", origin: "fresh" as const, since: 2, branch: "alia/env_fix1", fixer: fixerRecord };
 
-/** Each state: the review, its lifecycle, and the threads BB has. */
+/** Each state: the review, its lifecycle, and the threads VesnALIA has. */
 const STATES: Record<State, { key: string; review: Partial<ReviewMeta>; lifecycle: ReviewLifecycle; threads: Record<string, T>; branches?: Record<string, string> }> = {
   "local-folder": { key: "br-1", review: { kind: "ref", gitRef: "retry-uploads", repo: undefined, number: undefined, head: undefined, headSha: undefined }, threads: { coder: { title: "Retry uploads", environmentId: "env1" } },
     lifecycle: { feature: folder, mainThread: { ...coder, environmentId: "env1" }, sourceThreadId: "coder" } },
@@ -55,7 +55,7 @@ const STATES: Record<State, { key: string; review: Partial<ReviewMeta>; lifecycl
     lifecycle: { ownPr: true, mainThread: { threadId: "fixer2", environmentId: null, origin: "fresh", since: 2, fixer: fixerRecord }, sourceThreadId: "fixer2", sends: [{ n: 1, at: 2, threadId: "fixer2", ids: [] }] } },
   // Two fixers, the first open still: Change main thread can pick it again.
   "own-two-fixers": { key: "pr-1", review: {}, threads: { fixer1: { title: "Fixes 1", environmentId: "env_fix1" }, fixer2: { title: "Fixes 2", environmentId: "env_fix2" } },
-    lifecycle: { ownPr: true, mainThread: { threadId: "fixer2", environmentId: "env_fix2", origin: "fresh", since: 3, branch: "bb/env_fix2", fixer: fixerRecord }, implementers: [fixer1], sourceThreadId: "fixer2", sends: [{ n: 1, at: 2, threadId: "fixer1", ids: [] }, { n: 2, at: 3, threadId: "fixer2", ids: [] }] } },
+    lifecycle: { ownPr: true, mainThread: { threadId: "fixer2", environmentId: "env_fix2", origin: "fresh", since: 3, branch: "alia/env_fix2", fixer: fixerRecord }, implementers: [fixer1], sourceThreadId: "fixer2", sends: [{ n: 1, at: 2, threadId: "fixer1", ids: [] }, { n: 2, at: 3, threadId: "fixer2", ids: [] }] } },
   "teammate-none": { key: "pr-1", review: { author: "per" }, threads: {}, lifecycle: { ownPr: false } },
 };
 
@@ -132,7 +132,7 @@ const TABLE: Record<State, Record<Route, Cell>> = {
   },
 };
 
-/** A BB in `state`, the plugin started on it, the review saved, and how to see what each route did. */
+/** A VesnALIA in `state`, the plugin started on it, the review saved, and how to see what each route did. */
 async function inState(state: State) {
   const s = STATES[state];
   const threads: Record<string, T> = structuredClone(s.threads);
@@ -140,8 +140,8 @@ async function inState(state: State) {
   let spawned = 0;
   let forked = 0;
   const env = (id: string) => ({
-    id, hostId: "host_max", path: `/Users/me/${id === "env1" ? "src/web" : `.bb/worktrees/${id}`}`, status: "ready", isGitRepo: true,
-    branchName: s.branches?.[id] ?? (id === "env1" ? "retry-uploads" : `bb/${id}`), mergeBaseBranch: "main", baseBranch: null, defaultBranch: "main", projectId: "p1",
+    id, hostId: "host_max", path: `/Users/me/${id === "env1" ? "src/web" : `.vesnalia/worktrees/${id}`}`, status: "ready", isGitRepo: true,
+    branchName: s.branches?.[id] ?? (id === "env1" ? "retry-uploads" : `alia/${id}`), mergeBaseBranch: "main", baseBranch: null, defaultBranch: "main", projectId: "p1",
     workspaceProvisionType: id === "env1" || id === "env_old" ? "unmanaged" : "managed-worktree",
   });
   const h = folderHost({ files: [] }, {
@@ -174,7 +174,7 @@ async function inState(state: State) {
       list: async () => [{ id: "p1", kind: "standard", gitRemoteUrl: "git@github.com:acme/web.git" }],
     },
   });
-  const store = await startPlugin(h.bb);
+  const store = await startPlugin(h.alia);
   await store.saveReview({ targetKey: s.key, kind: "pr", repo: "acme/web", number: 12, title: "Retry uploads", author: "me", head: "retry-uploads", headSha: SHA, status: "ready", createdAt: 1, projectId: "p1", ...s.review } as ReviewMeta);
   await store.setLifecycle(s.key, { prConversation: [], ...s.lifecycle });
   await store.savePatch(s.key, PATCH);

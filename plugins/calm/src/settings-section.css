@@ -30,7 +30,7 @@
 .calm-tip-main { color: var(--foreground); font-weight: 600; }
 /* The strip's layers: a faint ambient glow, the pixel canvas scaled up
    crisply, and page text for labels. The glow has no edges: it spans the
-   whole chat pane (bb's scrolling pane clips it at the pane's own edges), rises gently
+   whole chat pane (alia's scrolling pane clips it at the pane's own edges), rises gently
    from nothing at the top to its peak just above the ground line and fades
    to nothing again below it, with no side fades, so it reads as atmosphere. */
 .calm-sky { position: absolute; top: calc(-1 * var(--calm-sky-reach, 32px)); bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%); pointer-events: none; }
@@ -63,8 +63,8 @@
 /* The canvas and labels stay clipped to the strip while it eases open or shut;
    the sky may reach a little above it. */
 .calm-clip { position: absolute; inset: 0; overflow: hidden; }
-/* BB's prompt fade darkens the page above an open scene. Let the scene
-   meet the thread background directly; closed strips keep BB's usual fade. */
+/* ALIA's prompt fade darkens the page above an open scene. Let the scene
+   meet the thread background directly; closed strips keep ALIA's usual fade. */
 [data-overflow-fade="above"][data-overflow-fade-tone="background"]:has(~ * .calm-strip[data-open="true"]) {
   background: none;
 }
@@ -90,7 +90,7 @@
 .calm-head-row .calm-head-art { height: 12px; }
 .calm-head-dim { color: var(--muted-foreground); }
 .calm-head-error { margin: 0; font-size: 12px; color: var(--destructive, #d33); }
-/* The scene grid: two columns in bb's settings pane, four on a wide page. */
+/* The scene grid: two columns in alia's settings pane, four on a wide page. */
 .calm-heading-row { display: flex; justify-content: space-between; gap: 8px; margin-top: -8px; flex-wrap: wrap; align-items: center; }
 .calm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 @container (min-width: 760px) { .calm-grid { grid-template-columns: repeat(4, 1fr); } }

@@ -1,11 +1,11 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const commandInput = z.string().trim().min(1).max(200);
 const threadIdInput = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 /** An omp session id (a UUID), as its transcript file names carry it. */
 export const sessionIdInput = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
-/** A Pi session's bb provider thread id, limited to what bb's bridge keeps as is when it names the transcript. */
+/** A Pi session's VesnALIA provider thread id, limited to what VesnALIA's bridge keeps as is when it names the transcript. */
 export const piSessionIdInput = z.string().regex(/^[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}$/);
 /**
  * What a session spent, in USD. `estimated` is the part of `amount` for replies saved without a price, priced at
@@ -128,7 +128,7 @@ export const hostContract = defineRpcContract({
     output: spendsOutput,
   },
   /**
-   * What Pi sessions spent, read from the transcripts bb's Pi bridge keeps on this host, in USD. Sessions without
+   * What Pi sessions spent, read from the transcripts VesnALIA's Pi bridge keeps on this host, in USD. Sessions without
    * a transcript here are left out.
    */
   pi_spend: {

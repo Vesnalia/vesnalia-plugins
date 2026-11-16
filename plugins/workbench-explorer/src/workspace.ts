@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { RootChoice, WorkspaceResult } from "../shared";
 import { registerRoot } from "./roots";
 
@@ -11,21 +11,21 @@ function expandHome(input: string): string {
 }
 
 export async function workspaceForThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
   treeRoot?: string,
 ): Promise<WorkspaceResult> {
-  const thread = await bb.sdk.threads.get({ threadId });
+  const thread = await alia.sdk.threads.get({ threadId });
   if (thread.environmentId === null) {
     return { ok: false, reason: "no_environment" };
   }
-  const environment = await bb.sdk.environments.get({
+  const environment = await alia.sdk.environments.get({
     environmentId: thread.environmentId,
   });
   if (environment.path === null || environment.path === "") {
     return { ok: false, reason: "no_checkout" };
   }
-  // BB represents a general, non-project conversation with its internal
+  // VesnALIA represents a general, non-project conversation with its internal
   // personal project id. Only those scratch threads should browse the shared
   // Documents folder; every real project remains rooted in its own checkout.
   const usePersonalRoot = treeRoot !== undefined && thread.projectId === "proj_personal";
@@ -51,15 +51,15 @@ export async function workspaceForThread(
  * prompt is sent.
  */
 export async function workspaceForProject(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
   treeRoot?: string,
 ): Promise<WorkspaceResult> {
-  // The root composer supplies BB's implicit personal-project id. It is not
+  // The root composer supplies VesnALIA's implicit personal-project id. It is not
   // available through `projects.get`; the SDK requires `includePersonal` for
   // that metadata. Looking up every selected project this way keeps both new
   // project threads and projectless/personal compose on the same code path.
-  const projectsIncludingPersonal = await bb.sdk.projects.list({ includePersonal: true });
+  const projectsIncludingPersonal = await alia.sdk.projects.list({ includePersonal: true });
   const project = projectsIncludingPersonal.find((candidate) => candidate.id === projectId);
   if (project === undefined) return { ok: false, reason: "no_checkout" };
   const usePersonalRoot = treeRoot !== undefined && project.kind === "personal";
@@ -106,18 +106,18 @@ export async function workspaceForProject(
   };
 }
 
-/** Roots offered by the window-wide tree. IDs name durable BB records, never client paths. */
+/** Roots offered by the window-wide tree. IDs name durable VesnALIA records, never client paths. */
 export async function listRootChoices(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   input: { currentThreadId: string | null; pinnedThreadId: string | null },
   treeRoot?: string,
 ): Promise<RootChoice[]> {
-  const projects = await bb.sdk.projects.list({ includePersonal: true });
+  const projects = await alia.sdk.projects.list({ includePersonal: true });
   const choices: RootChoice[] = [];
   for (const project of projects) {
     if (project.kind === "personal") {
       if (treeRoot === undefined) continue;
-      const resolved = await workspaceForProject(bb, project.id, treeRoot);
+      const resolved = await workspaceForProject(alia, project.id, treeRoot);
       if (resolved.ok) {
         choices.push({ id: `personal:${project.id}`, label: `${project.name} · ${resolved.workspace.rootPath}`, projectId: project.id, workspace: resolved.workspace });
       }
@@ -143,7 +143,7 @@ export async function listRootChoices(
   const threadIds = new Set([input.currentThreadId, input.pinnedThreadId].filter((id): id is string => id !== null));
   for (const threadId of threadIds) {
     try {
-      const resolved = await workspaceForThread(bb, threadId);
+      const resolved = await workspaceForThread(alia, threadId);
       if (resolved.ok) {
         choices.unshift({
           id: `thread:${threadId}`,
@@ -153,7 +153,7 @@ export async function listRootChoices(
         });
       }
     } catch (cause) {
-      bb.log.warn(`Could not load file-explorer root for thread ${threadId}: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`Could not load file-explorer root for thread ${threadId}: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
   }
   return choices;

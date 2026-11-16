@@ -5,8 +5,8 @@ import { fileIdentity } from './compatibility.ts';
 import { readDiscovery, discoveryScope } from './discovery-cache.ts';
 import { tokenRequest } from './project-token.ts';
 import type { TokenRequest } from './project-token.ts';
-import { providerUsageSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import type { ProviderUsage } from '@get-bb/plugin-sdk/provider-bridge';
+import { providerUsageSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import type { ProviderUsage } from '@vesnalia/plugin-sdk/provider-bridge';
 
 export type CodingMeasurement = { observedAt: number | null; usage: ProviderUsage };
 const authSources = new Map<string, ReadOnlyAuth>();

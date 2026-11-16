@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { kindTemplate, skillId } from "./task-kinds";
 import { taskContextSchema } from "./stage-evidence";
@@ -27,8 +27,8 @@ function oldData() {
     return new Database(join(dataDir, "plugins", id, "data.db"));
   };
   const board = open("workflow-board");
-  board.exec(`CREATE TABLE _bb_migrations (id INTEGER PRIMARY KEY, hash TEXT);
-    INSERT INTO _bb_migrations VALUES (0, 'old');
+  board.exec(`CREATE TABLE _alia_migrations (id INTEGER PRIMARY KEY, hash TEXT);
+    INSERT INTO _alia_migrations VALUES (0, 'old');
     CREATE TABLE worktree_cards (environment_id TEXT PRIMARY KEY, stage TEXT NOT NULL, note TEXT, updated_at INTEGER NOT NULL);
     INSERT INTO worktree_cards VALUES ('env-one', 'quality', 'Imported note', 42);`);
   board.close();
@@ -48,11 +48,11 @@ async function start(dataDir: string) {
     list: async () => [thread] as never, get: async () => thread as never,
   }, projects: { list: async () => [] } } });
   cleanup.push(() => host.harness.lifecycle.dispose());
-  await plugin(host.bb);
-  return { ...host.harness, db: host.bb.storage.database() };
+  await plugin(host.alia);
+  return { ...host.harness, db: host.alia.storage.database() };
 }
 
-describe("bb treelanes import", () => {
+describe("alia treelanes import", () => {
   it("keeps an old Saved Task readable and moves its skill IDs to Treelanes", async () => {
     const { dataDir, open } = oldData();
     const task = { outcome: "Build the change", scope: ["src/a.ts"], decisions: [], requiredChecks: ["npm test"],

@@ -164,7 +164,7 @@ function runCodexAppServerRequest(
       method: "initialize",
       params: {
         clientInfo: {
-          name: "bb-usage-tracker",
+          name: "alia-usage-tracker",
           title: "Usage Tracker",
           version: "0.1.6",
         },

@@ -2,7 +2,7 @@ import { projectDisplayName } from "./project-name";
 
 /**
  * The project + checkout facts a thread contributes to the thread pane's
- * composer-context fallback row. bb's own thread page shows this context
+ * composer-context fallback row. VesnALIA's own thread page shows this context
  * ("Project · environment · branch") in the compose area, but the embedded
  * `ThreadChat` the SDK hands plugin panels renders none of it on a narrow
  * pane (it never receives a compact summary), so the pane paints its own
@@ -24,7 +24,7 @@ export interface PaneContextInfo {
 
 /**
  * Builds the pane's context facts from a sidebar thread row, or null when
- * the thread has no environment: bb itself shows no context row for those
+ * the thread has no environment: VesnALIA itself shows no context row for those
  * threads on the page either, so the pane stays quiet rather than
  * inventing a "No project · nothing" line for them.
  */

@@ -2,9 +2,9 @@ import type { DayTotal } from '../ledger.js';
 import type { SourceResult } from './types.js';
 
 /**
- * Codex usage, read from the provider BB already talks to.
+ * Codex usage, read from the provider VesnALIA already talks to.
  *
- * `bb.sdk.system.usageLimits()` asks every registered provider that advertises
+ * `alia.sdk.system.usageLimits()` asks every registered provider that advertises
  * the `usage` capability for its own quota, and returns a record keyed by
  * provider id. For Codex the answer comes from `chatgpt.com/backend-api/wham/
  * usage` — the same endpoint the Codex client itself reads — so the percentage
@@ -28,12 +28,12 @@ export type ProviderUsage =
   | { status: 'error'; message: string };
 
 /**
- * What BB knows about the Codex provider itself, as opposed to its quota.
+ * What VesnALIA knows about the Codex provider itself, as opposed to its quota.
  *
  * `usageLimits` answers "how much is left", and answers it only once a provider
  * is installed and signed in. When it answers nothing, this record is what
  * separates the three reasons why — and each one has a different fix. The
- * install and sign-in actions both live on BB's Providers settings page, which
+ * install and sign-in actions both live on VesnALIA's Providers settings page, which
  * this plugin cannot drive, so naming the state is as far as it can go.
  */
 export type ProviderState = {
@@ -48,13 +48,13 @@ export type ProviderState = {
 };
 
 /**
- * Where BB reports these states. Note it is not where they are fixed: the
+ * Where VesnALIA reports these states. Note it is not where they are fixed: the
  * Providers page shows "signed out" and offers no sign-in control, because
  * signing in runs the CLI itself.
  */
 const PROVIDERS_PAGE = 'Settings → Providers';
 
-/** The CLI's own download page, as BB's provider advertises it. */
+/** The CLI's own download page, as VesnALIA's provider advertises it. */
 const INSTALL_URL = 'https://developers.openai.com/codex/cli';
 
 /**
@@ -100,7 +100,7 @@ export function readCodexUsage(
     return {
       ok: false,
       reason: 'unavailable',
-      hint: `BB's Codex provider could not read your quota: ${usage.message}`,
+      hint: `VesnALIA's Codex provider could not read your quota: ${usage.message}`,
     };
   }
   if (usage.status !== 'ok') return { ok: false, reason: 'unavailable' };
@@ -141,25 +141,25 @@ export function readCodexUsage(
 /**
  * One sentence naming what to do about a provider that cannot be read.
  *
- * Every branch points at BB's Providers page, because installing the CLI and
+ * Every branch points at VesnALIA's Providers page, because installing the CLI and
  * signing in both live there and neither is something this plugin is allowed to
  * do on the user's behalf. The states are kept distinct: "not installed" and
  * "signed out" look identical from the quota call and need different clicks.
  */
 function setupHint(provider: ProviderState | null | undefined): string {
   if (!provider) {
-    // BB lists a provider only once it registers, and the Codex provider
+    // VesnALIA lists a provider only once it registers, and the Codex provider
     // registers only when its CLI is present. So an absent entry means the
     // setup is incomplete — but not which part: the provider may be disabled,
     // or enabled with no CLI installed. Naming both is the honest answer, since
     // this plugin cannot see the difference and either one is fixed in the
     // same place.
-    return 'BB is not reporting ChatGPT / Codex usage. Enable the Codex provider in '
+    return 'VesnALIA is not reporting ChatGPT / Codex usage. Enable the Codex provider in '
       + `${PROVIDERS_PAGE}, then install its CLI from ${INSTALL_URL} and run `
       + '`codex` in a terminal to sign in.';
   }
   switch (provider.status) {
-    // Signing in is a terminal action, not a settings one. BB's Providers page
+    // Signing in is a terminal action, not a settings one. VesnALIA's Providers page
     // reports this state and offers no sign-in control; the provider's own copy
     // says "run `codex` on the machine to sign in", and an earlier version of
     // these hints sent the user to a page with no button on it.
@@ -176,8 +176,8 @@ function setupHint(provider: ProviderState | null | undefined): string {
         + `${provider.minimumSupportedVersion ? ` ${provider.minimumSupportedVersion}` : ''}. Update it in ${PROVIDERS_PAGE}.`;
     case 'unknown':
       return provider.statusMessage
-        ? `BB could not read the Codex provider: ${provider.statusMessage}`
-        : `BB could not read the Codex provider. Check ${PROVIDERS_PAGE}.`;
+        ? `VesnALIA could not read the Codex provider: ${provider.statusMessage}`
+        : `VesnALIA could not read the Codex provider. Check ${PROVIDERS_PAGE}.`;
     default:
       return `ChatGPT / Codex is not reporting usage. Check ${PROVIDERS_PAGE}.`;
   }

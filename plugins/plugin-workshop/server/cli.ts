@@ -1,4 +1,4 @@
-// `bb plugin-workshop list | show <id|KEY>` — read only. The CLI has no handoffs, rollbacks or installs: those happen only on the owner's buttons in the panel.
+// `alia plugin-workshop list | show <id|KEY>` — read only. The CLI has no handoffs, rollbacks or installs: those happen only on the owner's buttons in the panel.
 import type { Board, PluginView, WorkView } from "../contract";
 import type { Api } from "./api";
 import { COLUMNS, pos, stageOf } from "./stages";
@@ -13,7 +13,7 @@ export interface CliResult {
 const COLUMN_TITLE = new Map(COLUMNS.map((c) => [c.key, c.title] as const));
 const COLUMN_ORDER = new Map(COLUMNS.map((c, i) => [c.key, i] as const));
 
-const stateText = (c: { bbState: string; stateStale: boolean }) => `${c.bbState}${c.stateStale ? " (stale)" : ""}`;
+const stateText = (c: { aliaState: string; stateStale: boolean }) => `${c.aliaState}${c.stateStale ? " (stale)" : ""}`;
 /** The stage number shown to people — its place in the work's order («Mockup» is 4th), not the stage's own number. */
 const place = (no: number) => pos(no) + 1;
 const workText = (w: NonNullable<Board["plugins"][number]["work"]>) => `${w.key ?? "(creating)"} ${place(w.stage)}. ${stageOf(w.stage).title} · ${w.state}${w.stale ? " · stale" : ""}`;
@@ -28,7 +28,7 @@ export function renderList(board: Board): string {
 }
 
 const short = (s: string | null) => (s ? s.slice(0, 7) : "—");
-/** An attempt's error can be long (git or bb output): the text shows the first 500 characters, `--json` has all of it. */
+/** An attempt's error can be long (git or VesnALIA output): the text shows the first 500 characters, `--json` has all of it. */
 const ERROR_MAX = 500;
 const clip = (s: string) => ([...s].length > ERROR_MAX ? `${[...s].slice(0, ERROR_MAX).join("")}…` : s);
 
@@ -74,7 +74,7 @@ export async function runCli(argv: string[], d: { api: Api; store: Store }): Pro
     return { exitCode: 0, stdout: json ? JSON.stringify(board, null, 2) : renderList(board) };
   }
   if (sub === "show") {
-    if (!arg) return { exitCode: 1, stderr: "a plugin id or a work key is required: bb plugin-workshop show <id|KEY>\n" };
+    if (!arg) return { exitCode: 1, stderr: "a plugin id or a work key is required: VesnALIA plugin-workshop show <id|KEY>\n" };
     // First the plugin id (exact match), then a work — by its id or by the task key.
     if (d.store.plugin(arg)) {
       const view = await d.api.plugin(arg);

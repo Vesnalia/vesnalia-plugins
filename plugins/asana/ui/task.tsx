@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Markdown,
   experimental_copyToClipboard as copyToClipboard,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { CustomField, rpcContract, TaskDetail, TaskTime } from "../server";
 import { toast } from "sonner";
 import { formatAgo } from "../due";
@@ -78,7 +78,7 @@ export function useTaskDetail(gid: string) {
       .finally(() => setRefreshing(false));
   }, [rpc, gid]);
   // Stay current while the task is on screen: on returning to the window,
-  // when a write anywhere in bb changes tasks, and every 2 minutes.
+  // when a write anywhere in VesnALIA changes tasks, and every 2 minutes.
   useRealtime("tasks-changed", () => void reload());
   useEffect(() => {
     const onVisible = () => {
@@ -212,7 +212,7 @@ export function TaskMoreMenu({
   offerStartThread: boolean;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const link = useThreadLink(threadId);
   const startThread = useStartThread(detail);
   const linkedHere = threadId !== undefined && link?.taskGid === detail.gid;
@@ -285,7 +285,7 @@ export function TaskDetailView({
   const now = useNow();
   const threads = useTaskThreads(gid);
   const link = useThreadLink(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const articleRef = useRef<HTMLElement>(null);
   // Two columns once the view is wide enough for a details rail.
   const wide = useElementWidth(articleRef) >= 820;

@@ -22,5 +22,5 @@ export function useRpc<T>() {
 export function useRealtime() {}
 export function useRealtimeConnectionState() { return "connected"; }
 export function useSettings() { return { values: {}, isLoading: false }; }
-export function useBbContext() { return { projectId: null, threadId: null }; }
-export function useBbNavigate() { return {}; }
+export function useAliaContext() { return { projectId: null, threadId: null }; }
+export function useAliaNavigate() { return {}; }

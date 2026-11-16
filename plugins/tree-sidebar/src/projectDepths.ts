@@ -1,4 +1,4 @@
-// How deep each project sits, for the content script that indents bb's picker.
+// How deep each project sits, for the content script that indents VesnALIA's picker.
 //
 // The sidebar knows every project's depth and the picker's content script needs
 // it, and both run in the same bundle, so the sidebar publishes the mapping here

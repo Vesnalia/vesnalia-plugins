@@ -9,21 +9,21 @@ Re-runs the agent on a thread without typing a user message.
 
 ## From a terminal or agent shell
 
-Run inside a BB thread (it defaults to the current thread):
+Run inside a VesnALIA thread (it defaults to the current thread):
 
 ```
-bb nudge
+alia nudge
 ```
 
 Target another thread, override the idle-thread nudge text, or explain a retry:
 
 ```
-bb nudge thr_abc123
-bb nudge thr_abc123 --message "Keep going."
-bb nudge thr_abc123 --reason "transient provider overload" --json
+alia nudge thr_abc123
+alia nudge thr_abc123 --message "Keep going."
+alia nudge thr_abc123 --reason "transient provider overload" --json
 ```
 
-## From the BB app
+## From the VesnALIA app
 
 With an empty draft the Play (Nudge) button replaces send in the composer:
 press it to keep the agent going without typing. As soon as you type, the
@@ -33,10 +33,10 @@ running and outside a thread.
 ## What it does
 
 - Errored thread: retries the failed turn by reference, exactly like
-  `bb thread retry`. No new user bubble appears.
+  `alia thread retry`. No new user bubble appears.
 - Idle thread: starts a turn with a hidden continuation (no user bubble).
 - Busy thread (active, starting, stopping, pending): refused with an error.
   Wait until the thread settles, then nudge again.
 
-Prefer `bb nudge` over sending a bare "continue" message yourself: on a
+Prefer `alia nudge` over sending a bare "continue" message yourself: on a
 failed turn the retry continues provider-side state instead of asking twice.

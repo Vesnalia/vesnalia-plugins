@@ -67,7 +67,7 @@ export class RedteamActivePoller {
         if (result.changed) this.deps.changedGlobal?.();
         this.globalActive = result.active;
       }).catch(() => {
-        // Optional source failures never affect BB work; the page's slow
+        // Optional source failures never affect VesnALIA work; the page's slow
         // discovery refresh will reconcile availability.
       }).finally(() => { this.globalInflight = false; });
       tasks.push(task);

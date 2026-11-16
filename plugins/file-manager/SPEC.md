@@ -1,63 +1,63 @@
 # File Manager — Implementation Spec (v0.1.0)
 
-Frozen implementation contract for `bb-plugin-file-manager`. Written so that a
+Frozen implementation contract for `alia-plugin-file-manager`. Written so that a
 BACKEND engineer, a FRONTEND engineer and a PACKAGING engineer can work in
 parallel without talking to each other. Everything in this document is derived
-from verified bb 0.39.0 / `@get-bb/plugin-sdk` 0.4.8 sources; unverified items
+from verified VesnALIA 0.39.0 / `@vesnalia/plugin-sdk` 0.4.8 sources; unverified items
 are collected in §14 (Open questions & risks) and must not block work.
 
 | Fact | Value | Where it comes from |
 | --- | --- | --- |
-| Package name | `bb-plugin-file-manager` | `package.json` |
-| Plugin id (derived) | `file-manager` | `derivePluginId()` strips the `bb-plugin-` prefix |
+| Package name | `alia-plugin-file-manager` | `package.json` |
+| Plugin id (derived) | `file-manager` | `derivePluginId()` strips the `alia-plugin-` prefix |
 | Panel route | `/plugins/file-manager/files/*` | navPanel `path: "files"` |
 | RPC base | `POST /api/v1/plugins/file-manager/rpc/<method>` | `apps/server/src/routes/plugins.ts:610` |
 | HTTP base | `/api/v1/plugins/file-manager/http/<path>` (exact match, no params) | `plugin-service.ts:1925-1932` |
 | Token endpoint | `POST /api/v1/plugins/file-manager/token` body `{}` | `routes/plugins.ts:526-547` |
 | Hard root | `/home/coder` (realpath'ed once at load) | product requirement |
 | Server runtime | Node v24.18.0, single ext4 mount for `/` and `/home/coder` | measured on host `VIPServer` |
-| Enrolled machines | exactly one (`host_3nt6p5jbbg`, VIPServer) = the bb server itself | `bb machine list` |
+| Enrolled machines | exactly one (`host_3nt6p5jbbg`, VIPServer) = the VesnALIA server itself | `alia machine list` |
 
 ---
 
 ## 1. Architecture decision
 
-**Decision: the backend is a plain `bb.server` factory that uses `node:fs` /
-`node:fs/promises` directly. Byte transfer goes through `bb.http.route`
-(streamed). Metadata goes through `bb.rpc`. No `bb.host` entry. No use of
-`bb.sdk.files`.**
+**Decision: the backend is a plain `alia.server` factory that uses `node:fs` /
+`node:fs/promises` directly. Byte transfer goes through `alia.http.route`
+(streamed). Metadata goes through `alia.rpc`. No `alia.host` entry. No use of
+`alia.sdk.files`.**
 
 Justification (each point is a verified blocker for the alternatives):
 
-1. **`bb.sdk.files` cannot carry the payloads this product requires.**
+1. **`alia.sdk.files` cannot carry the payloads this product requires.**
    `read` throws `file_too_large` above 25 MB (10 MB for images) and `write`
    caps at 25 MB (`apps/host-daemon/src/command-handlers/file-read.ts:15-16,
    318-322`; `file-write.ts:105-127`). Content travels as a base64/utf8 *string*
    inside JSON over the host WS-RPC with `COMMAND_TIMEOUT_MS = 30_000`
    (`apps/server/src/constants.ts:1`). Multi-GB is impossible by construction.
-2. **`bb.sdk.files.list` cannot render this UI.** It returns only
+2. **`alia.sdk.files.list` cannot render this UI.** It returns only
    `{ name, path }` — no `sizeBytes`, no `modifiedAtMs`
-   (`bb-plugin-sdk.d.ts:12467-12484`). `bb.sdk.hosts.directory` additionally
+   (`alia-plugin-sdk.d.ts:12467-12484`). `alia.sdk.hosts.directory` additionally
    *skips* dotfiles and `node_modules` (`host-files.ts:127-183`), which makes the
    required "hidden files" toggle and the size/mtime columns unimplementable.
 3. **`createPreview` is not a download path.** Its GET route calls the same
    `host.read_file` (25 MB cap, whole file in memory, no `Range`)
    (`apps/server/src/routes/files.ts:352-416`).
-4. **`bb.host` buys nothing today and costs correctness.** A `bb.host` entry
+4. **`alia.host` buys nothing today and costs correctness.** A `alia.host` entry
    exists to run code *on an enrolled machine* — but the only enrolled machine
-   *is* the bb server (`/home/coder/.bb/host-id` = `host_3nt6p5jbbg`, the same
+   *is* the VesnALIA server (`/home/coder/.vesnalia/host-id` = `host_3nt6p5jbbg`, the same
    box that serves 127.0.0.1:38886), and the host daemon exposes no streaming
    file API at all. SKILL.md's multi-machine rule
-   (`bb-plugin-authoring/SKILL.md:931-941`) is explicitly scoped to CLI `run`,
+   (`alia-plugin-authoring/SKILL.md:931-941`) is explicitly scoped to CLI `run`,
    where a path argument names the *invoking* machine's disk. Our paths come
    from a browser panel talking to *this* server, so `node:fs` is the correct
    read of that rule: "`node:fs` remains correct for genuinely server-local
    data". First-party precedent: the `tasks` plugin stores and serves attachment
    blobs with `node:fs/promises` (`plugins/tasks/attachments/index.ts:1`), and
    `docs` uses `node:fs.watch` directly (`plugins/docs/server.ts:1-2`).
-5. **`bb.http.route` is a genuine streaming boundary.** Request bodies arrive as
+5. **`alia.http.route` is a genuine streaming boundary.** Request bodies arrive as
    `Readable.toWeb(incoming)` (`@hono/node-server` in
-   `bb-app/server/dist/start-server.js:283300-283369`) and streamed `Response`
+   `alia-app/server/dist/start-server.js:283300-283369`) and streamed `Response`
    bodies are piped chunk-by-chunk without buffering
    (`host-policy.ts:724-781`, test `plugin-wire.test.ts:66-86`). Handlers run
    in-process with the real Hono `Context` (`plugin-service.ts:1938`).
@@ -70,7 +70,7 @@ Justification (each point is a verified blocker for the alternatives):
 **Multi-machine escape hatch (design, not v0.1 work):** every path in the RPC
 contract is an absolute string plus an implicit "primary host". If a second
 machine is ever enrolled, add an optional `hostId` field to the contract and
-move `src/fsops.ts` behind an interface with a `bb.host` implementation. Nothing
+move `src/fsops.ts` behind an interface with a `alia.host` implementation. Nothing
 in the frontend changes. Do not build this now.
 
 ### 1.1 Auth decision (this is the trap that shapes everything)
@@ -84,7 +84,7 @@ in the frontend changes. Do not build this now.
   with the comment *"Upload accepts a raw request body and therefore uses token
   auth"*. The frontend fetches the token once per session from
   `POST /api/v1/plugins/file-manager/token` (that route is origin-gated only)
-  and sends `x-bb-plugin-token`.
+  and sends `x-alia-plugin-token`.
   *Rejected alternative:* sending binary bytes while lying `content-type:
   application/json` (the guard only string-compares the header). It works, but it
   is a policy bypass with no precedent in the codebase. **Do not do it.**
@@ -98,17 +98,17 @@ in the frontend changes. Do not build this now.
 
 ```json
 {
-  "name": "bb-plugin-file-manager",
+  "name": "alia-plugin-file-manager",
   "version": "0.1.0",
-  "description": "Browse, upload, download and organize files under /home/coder from a bb sidebar panel.",
+  "description": "Browse, upload, download and organize files under /home/coder from a alia sidebar panel.",
   "license": "MIT",
   "type": "module",
-  "keywords": ["bb-plugin", "files", "file-manager", "uploads"],
+  "keywords": ["alia-plugin", "files", "file-manager", "uploads"],
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.8"
   },
-  "bb": {
+  "alia": {
     "name": "File Manager",
     "description": "Browse, upload, download, move, rename and extract files under /home/coder in a full-page panel.",
     "branding": {
@@ -119,11 +119,11 @@ in the frontend changes. Do not build this now.
   },
   "files": ["dist", "server.ts", "app.tsx", "contract.ts", "src", "components", "hooks", "lib", "assets", "README.md"],
   "scripts": {
-    "build": "env -u BB_CLI bb plugin build .",
-    "dev": "bb plugin dev .",
+    "build": "env -u ALIA_CLI alia plugin build .",
+    "dev": "alia plugin dev .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts",
-    "types:check": "env -u BB_CLI bb plugin types --check .",
+    "types:check": "env -u ALIA_CLI alia plugin types --check .",
     "check": "npm run types:check && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
@@ -138,7 +138,7 @@ in the frontend changes. Do not build this now.
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
+    "@vesnalia/plugin-sdk": "0.4.8",
     "@radix-ui/react-context-menu": "^2.3.3",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-dropdown-menu": "^2.1.20",
@@ -167,7 +167,7 @@ Rules that produced this split (do not "tidy" it):
   `dependencies`, because git installs run `npm install --omit=dev --ignore-scripts`
   (`managed-plugin-artifacts.ts:155-180`).
 * Packages the host shims at runtime are **never** bundled and belong in
-  `devDependencies`: `react`, `react-dom`, `sonner`, `vaul`, `@get-bb/plugin-sdk/app`
+  `devDependencies`: `react`, `react-dom`, `sonner`, `vaul`, `@vesnalia/plugin-sdk/app`
   and the *portalled* radix families
   (`alert-dialog, context-menu, dialog, dropdown-menu, hover-card, menubar,
   navigation-menu, popover, select, tooltip`) — `build-plugin-app.ts:62-84`.
@@ -175,8 +175,8 @@ Rules that produced this split (do not "tidy" it):
   → they must stay in `dependencies`.
 * `better-sqlite3`, `hono`, `@types/*` are devDependencies only to satisfy type
   references inside the SDK `.d.ts` under `skipLibCheck: false`.
-* `cron-parser` is a runtime import of `@get-bb/plugin-sdk/testing` — without it
-  `import("@get-bb/plugin-sdk/testing")` fails with `ERR_MODULE_NOT_FOUND`.
+* `cron-parser` is a runtime import of `@vesnalia/plugin-sdk/testing` — without it
+  `import("@vesnalia/plugin-sdk/testing")` fails with `ERR_MODULE_NOT_FOUND`.
 
 ---
 
@@ -229,7 +229,7 @@ so that `useRpc<typeof fileManagerContract>()` and the CLI both see one source.
 // contract.ts — frozen wire contract between the File Manager backend and panel.
 // Any change here is a breaking change: bump the plugin version and update both
 // sides in the same commit.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /* ------------------------------------------------------------------ */
@@ -248,7 +248,7 @@ export const TOKEN_URL = `/api/v1/plugins/${PLUGIN_ID}/token`;
 export const UPLOAD_CHUNK_URL = `${HTTP_BASE}/upload/chunk`;
 export const DOWNLOAD_URL = `${HTTP_BASE}/download`;
 
-/** Realtime channels published with bb.realtime.publish(channel, payload). */
+/** Realtime channels published with alia.realtime.publish(channel, payload). */
 export const FS_CHANNEL = "fs";
 export const JOB_CHANNEL = "job";
 
@@ -257,7 +257,7 @@ export const MAX_LIST_ENTRIES = 5000;
 export const MAX_SEARCH_RESULTS = 500;
 export const MAX_SEARCH_DEPTH = 8;
 /** Directory that holds in-flight upload parts; always hidden from listings. */
-export const STAGING_DIR_NAME = ".bb-file-manager";
+export const STAGING_DIR_NAME = ".alia-file-manager";
 
 export const UPLOAD_ID_PATTERN = /^[0-9a-f]{32}$/u;
 export const MIN_CHUNK_BYTES = 4 * 1024 * 1024;
@@ -593,7 +593,7 @@ export const fileManagerContract = defineRpcContract({
   /**
    * Persists panel preferences. The frontend cannot write settings
    * (`useSettings()` is read-only), so this method proxies to
-   * bb.sdk.plugins.updateSettings.
+   * alia.sdk.plugins.updateSettings.
    */
   savePreferences: {
     input: z.strictObject({
@@ -653,7 +653,7 @@ body: {}
 ```
 
 Cache the promise; on any `401` from route 1, drop the cache and retry once
-(the token can be rotated by `bb plugin token file-manager --rotate`).
+(the token can be rotated by `alia plugin token file-manager --rotate`).
 
 ### 5.2 Route 1 — `POST /http/upload/chunk` (auth: `token`)
 
@@ -664,7 +664,7 @@ Cache the promise; on any `401` from route 1, drop the cache and retry once
 | `uploadId` | string | must match `/^[0-9a-f]{32}$/` |
 | `offset` | integer | `Number.isSafeInteger`, `>= 0`, must equal the current staged size |
 
-**Headers:** `x-bb-plugin-token: <token>` (required). `content-type` is
+**Headers:** `x-alia-plugin-token: <token>` (required). `content-type` is
 irrelevant on a token route — send `application/octet-stream`.
 **Body:** raw bytes of `file.slice(offset, offset + chunkSize)`.
 
@@ -707,16 +707,16 @@ finally: lockedUploads.delete(uploadId)
   idempotent, append mode would double-write a retried chunk.
 * On abort do **not** delete the part file — the surviving byte count is what
   makes resume work; answer `499` with the real size.
-* Do not touch `bb.storage`, `bb.log` or any other `bb.*` handle inside the
-  streaming section: a `bb plugin reload` only drains in-flight handlers for
+* Do not touch `alia.storage`, `alia.log` or any other `alia.*` handle inside the
+  streaming section: a `alia plugin reload` only drains in-flight handlers for
   5 s (`plugin-runtime.ts:321`) and then disposes plugin resources under you.
   Raw `node:fs` descriptors are unaffected.
 
 **Temp-file strategy**
 
 ```
-<ROOT>/.bb-file-manager/uploads/<uploadId>.part      staged bytes
-<ROOT>/.bb-file-manager/uploads/<uploadId>.json      session metadata
+<ROOT>/.alia-file-manager/uploads/<uploadId>.part      staged bytes
+<ROOT>/.alia-file-manager/uploads/<uploadId>.json      session metadata
 ```
 
 * Created by `uploadCreate` (`open(part, "w")` → zero-length file, then close).
@@ -724,14 +724,14 @@ finally: lockedUploads.delete(uploadId)
   verified), so `uploadFinish` commits with one atomic `rename`. If `rename`
   fails with `EXDEV`, fall back to `copyFile` + `unlink` and report progress via
   the `fs` channel only at the end.
-* `<ROOT>/.bb-file-manager` is filtered out of every listing unconditionally
+* `<ROOT>/.alia-file-manager` is filtered out of every listing unconditionally
   (even with hidden files shown).
 * Session JSON: `{ uploadId, dirPath, relativeDir, fileName, sizeBytes,
   lastModifiedMs, sessionKey, createdAtMs }`. `sessionKey =
   sha256(dirPath + "\0" + relativeDir + "\0" + fileName + "\0" + sizeBytes +
   "\0" + lastModifiedMs)` — `uploadCreate` scans existing sessions for a match
   to resume across page reloads.
-* GC: `bb.background.schedule("upload-gc", "17 * * * *", …)` removes sessions
+* GC: `alia.background.schedule("upload-gc", "17 * * * *", …)` removes sessions
   whose `.part` mtime is older than 24 h. Also runs once at load.
 
 **Resume protocol (client side, normative)**
@@ -824,7 +824,7 @@ Everything below is the only sanctioned way to turn user input into a path.
 ```
 CONSTANTS
   ROOT            = realpath("/home/coder")          // computed once
-  STAGING         = ROOT + "/.bb-file-manager"
+  STAGING         = ROOT + "/.alia-file-manager"
 
 assertInside(p):
     if p === ROOT: return p
@@ -885,7 +885,7 @@ Rules that follow from the algorithm — all of them are testable:
 1. **`realpath` always precedes the prefix test.** A symlink `/home/coder/x → /etc`
    fails `assertInside` because `realpath("/home/coder/x") === "/etc"`. A naive
    `startsWith` on the raw string would have let it through. This mirrors what
-   the bb host daemon does (`file-write.ts:66-104`, `path-mutations.ts:33-140`).
+   the VesnALIA host daemon does (`file-write.ts:66-104`, `path-mutations.ts:33-140`).
 2. **Deletes, moves, renames never follow the final symlink** (`resolveLink`),
    so removing a link removes the link, not its target. The *parent chain* is
    still realpath'ed, so a symlinked ancestor cannot be used to escape.
@@ -896,7 +896,7 @@ Rules that follow from the algorithm — all of them are testable:
    `escapesRoot: true`. Entries with `escapesRoot: true` are rendered greyed out,
    are not navigable, and every backend method rejects them anyway (step 1).
 4. **Hidden files** = `name.startsWith(".")`. Filtered only when
-   `showHidden === false`. `.bb-file-manager` at the root is filtered
+   `showHidden === false`. `.alia-file-manager` at the root is filtered
    **always**, in both modes.
 5. **The root itself can never be deleted, renamed or moved**: `resolveLink`
    on `ROOT` yields `parentReal = "/home"` → `assertInside("/home")` throws.
@@ -927,7 +927,7 @@ Rules that follow from the algorithm — all of them are testable:
 ### 7.1 Settings descriptors (backend, `src/settings.ts`)
 
 ```ts
-const settings = bb.settings.define({
+const settings = alia.settings.define({
   startFolder: {
     type: "string",
     label: "Start folder",
@@ -977,8 +977,8 @@ Notes that are contract, not taste:
   values.
 * `PluginSettingsHandle` has **only** `get()` and `onChange()` — no writer.
   The panel therefore persists changes through `savePreferences`, which calls
-  `bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values })`.
-  `bb.sdk` is bind-gated: read it inside the handler, never at factory top level.
+  `alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values })`.
+  `alia.sdk` is bind-gated: read it inside the handler, never at factory top level.
 * `settings.onChange((next) => { current = next; })` keeps the in-process cache
   fresh; saving settings does **not** reload the plugin.
 * `startFolder` is validated on every read: `resolveExisting` + `isDirectory()`;
@@ -989,12 +989,12 @@ Notes that are contract, not taste:
 
 ### 7.2 Storage
 
-* `bb.storage.kv` — one row, `bookmarks:v1` (§8.11). Unused in v0.1: settings
+* `alia.storage.kv` — one row, `bookmarks:v1` (§8.11). Unused in v0.1: settings
   covered everything persistent until the bookmark list, which is an ordered
   list of records and has no descriptor type to live in. The 256 KB per-value
   cap is what sets `MAX_BOOKMARKS`.
-* `bb.storage.database()` — **not used** in v0.1. Upload sessions live in
-  sidecar JSON files precisely so the chunk handler never touches a `bb.*`
+* `alia.storage.database()` — **not used** in v0.1. Upload sessions live in
+  sidecar JSON files precisely so the chunk handler never touches a `alia.*`
   handle that a reload can close under it.
 * In-memory only: `Map<jobId, Job>` and `Set<uploadId>` (chunk lock). Both are
   reset on reload; `jobStatus` on an unknown id returns `{ job: null }` and the
@@ -1003,8 +1003,8 @@ Notes that are contract, not taste:
 ### 7.3 Realtime
 
 ```ts
-bb.realtime.publish("fs", { paths: ["/home/coder/x"], reason: "upload" });
-bb.realtime.publish("job", job);
+alia.realtime.publish("fs", { paths: ["/home/coder/x"], reason: "upload" });
+alia.realtime.publish("job", job);
 ```
 
 Publish `fs` after every successful mutation, with the **directories** that
@@ -1054,7 +1054,7 @@ components/dialogs/ConfirmDeleteDialog.tsx FRONTEND
 components/dialogs/ExtractDialog.tsx      FRONTEND
 components/dialogs/PropertiesDialog.tsx   FRONTEND  §8.10: one path in full, or a summary of a selection
 components/dialogs/FolderPickerDialog.tsx FRONTEND  own folder browser (native picker is macOS-only)
-components/dialogs/FileViewerDialog.tsx  FRONTEND  §8.12: the file itself, when this surface has no bb preview panel
+components/dialogs/FileViewerDialog.tsx  FRONTEND  §8.12: the file itself, when this surface has no alia preview panel
 components/ArchiveContents.tsx            FRONTEND  §8.13: an archive's contents as a tree (viewer and file opener)
 hooks/useDirectory.ts                     FRONTEND  listDir + realtime refetch + sort/filter memo
 hooks/useSelection.ts                     FRONTEND  anchor/range/toggle logic
@@ -1082,7 +1082,7 @@ lib/errors.ts                             FRONTEND  parseRpcError → { code, me
 * `useRealtime("job", …)` feeds `useJobs`; a finished extract triggers a refetch.
 * Loading: skeleton rows (never a spinner-only screen). Errors: `ErrorBanner`.
 * Wrap RPC failures locally — a throw inside the slot component disables the
-  plugin's UI for the whole session until `bb plugin reload`.
+  plugin's UI for the whole session until `alia plugin reload`.
 
 ### 8.2 Mouse interactions
 
@@ -1094,18 +1094,18 @@ lib/errors.ts                             FRONTEND  parseRpcError → { code, me
 | click on the checkbox cell | toggle without clearing others; anchor moves |
 | click on empty table space | clear selection |
 | double click on a directory | navigate into it (`toPluginPanel`) |
-| double click on a file | open it in bb's preview panel, or in the built-in viewer when this surface has none (§8.2.1) |
+| double click on a file | open it in VesnALIA's preview panel, or in the built-in viewer when this surface has none (§8.2.1) |
 | double click on an archive | open `ExtractDialog` |
 | double click on a row with `escapesRoot` | no-op + toast "Link points outside /home/coder" |
 
 #### 8.2.1 Opening a file (v0.7, reworked in v0.8)
 
-Double-click (and `Enter`, and the row menu's **Open**) hand the file to bb's
+Double-click (and `Enter`, and the row menu's **Open**) hand the file to VesnALIA's
 own preview panel through
-`useBbNavigate().experimental_openFilePreview({ target: { kind: "host",
+`useAliaNavigate().experimental_openFilePreview({ target: { kind: "host",
 hostId, path }, location: null })`, so it opens as a tab beside the manager.
-bb addresses a live file by host id, which is why `getState` carries
-`primaryHostId` — `bb.sdk.system.config()` on the backend, resolved once and
+VesnALIA addresses a live file by host id, which is why `getState` carries
+`primaryHostId` — `alia.sdk.system.config()` on the backend, resolved once and
 remembered.
 
 Three ways that call answers `false`: no `primaryHostId` (an older server, or
@@ -1115,7 +1115,7 @@ for the same reason a slot component never throws — it takes the plugin's
 whole UI down.
 
 **All three end in the built-in viewer (§8.12), not in a download.** That
-correction is the whole of v0.8. bb wires `openFilePreview` into exactly two
+correction is the whole of v0.8. VesnALIA wires `openFilePreview` into exactly two
 surfaces — the thread split view and the right-hand plugin panel host — so the
 third answer was not an edge case at all: on the sidebar's own full-page File
 Manager, *every* file answered `false`, and every double-click quietly put a
@@ -1139,7 +1139,7 @@ content to render, and the bytes are the only thing that can be handed over.
 | `↑` / `↓` | move focus; with `Shift` extend the selection |
 | `Home` / `End` | first / last row |
 | `Enter` | open (directory) or download (file) |
-| `Space` | quick look: open the focused file in bb's preview panel (§8.9) |
+| `Space` | quick look: open the focused file in VesnALIA's preview panel (§8.9) |
 | `Backspace`, `Alt+←` | go to parent |
 | `F2` | rename (single selection only) |
 | `Alt+Enter` | properties of the selection, or of the current folder (§8.10) |
@@ -1185,7 +1185,7 @@ when the event target is an `input`, `textarea` or `[contenteditable]`.
   not reimplemented per surface.
 * On a draggable row, `dragstart`:
   `dataTransfer.effectAllowed = "move"`,
-  `setData("application/x-bb-file-manager", JSON.stringify(selectedPaths))`,
+  `setData("application/x-alia-file-manager", JSON.stringify(selectedPaths))`,
   plus a `text/plain` fallback of newline-joined paths. If the dragged row is
   not in the current selection, select it first.
 * Valid targets: directory rows, the `..` row, breadcrumb segments.
@@ -1234,14 +1234,14 @@ resume-after-reload works because `uploadCreate` matches the session key.
 
 ### 8.8 Mentions and the composer (v0.7)
 
-bb's own attachment picker uploads from the machine the **browser** runs on.
-This plugin owns the other machine — the one bb itself runs on — so a file
+VesnALIA's own attachment picker uploads from the machine the **browser** runs on.
+This plugin owns the other machine — the one VesnALIA itself runs on — so a file
 under the hard root reaches an agent as an **@-mention**, not as an upload.
 
 **The provider (`src/mentions.ts`, host-rendered, no frontend involved).**
 
 ```ts
-bb.ui.registerMentionProvider({ id: MENTION_PROVIDER_ID, label: MENTION_PROVIDER_LABEL, search, resolve });
+alia.ui.registerMentionProvider({ id: MENTION_PROVIDER_ID, label: MENTION_PROVIDER_LABEL, search, resolve });
 ```
 
 `MENTION_PROVIDER_ID` (`"file"`) and `MENTION_PROVIDER_LABEL` (`"Files"`) live
@@ -1254,7 +1254,7 @@ at send time. `triggers` is omitted — `@` is the default, and claiming `#` or
   files excluded, directories and root-escaping links dropped, at most 20 rows
   of `{ id: <absolute path>, title: <name>, subtitle: "~/relative/path" }`. An
   empty query returns nothing rather than walking the home folder to answer
-  "everything". bb time-boxes the handler at **2s** and treats failure as an
+  "everything". VesnALIA time-boxes the handler at **2s** and treats failure as an
   empty list, so nothing throws — and `searchDir` grew two optional inputs for
   this caller: `limit` (stop after N matches) and `budgetMs` (a wall clock, so
   an answer the host has already dropped stops costing the disk).
@@ -1309,11 +1309,11 @@ from.
 
 Two answers to one question — *what is actually in this file?* — that the panel
 could not give before: a grid that shows the images instead of naming them, and
-a keystroke that opens the focused row in bb's preview panel.
+a keystroke that opens the focused row in VesnALIA's preview panel.
 
 **Quick look — `Space`.** Bound in `handleKeyDown` below the `isTypingTarget`
 guard, so typing a space in the filter or in the path bar is untouched. It runs
-exactly the path a double-click runs — `showEntry`, i.e. bb's preview panel
+exactly the path a double-click runs — `showEntry`, i.e. VesnALIA's preview panel
 where there is one and the built-in viewer where there is not (§8.2.1, §8.12)
 — and differs from `Enter` in two ways, each deliberate:
 
@@ -1366,7 +1366,7 @@ pointing at the focused tile, and tiles are `role="option"` with
 — the tree meanings they carry in the list have nothing to act on here.
 
 **Thumbnails.** `createPreviewUrl` (RPC, `src/preview.ts`) clamps a folder with
-`resolveExistingDir` and hands it to `bb.sdk.files.createPreview({ rootPath,
+`resolveExistingDir` and hands it to `alia.sdk.files.createPreview({ rootPath,
 ttlMs: PREVIEW_TTL_MS })`; the panel appends each entry's name to the returned
 `baseUrl`, one URL-encoded segment at a time (`lib/preview.ts#previewUrl`).
 
@@ -1445,7 +1445,7 @@ Symlinks are not followed (a link to an ancestor would loop forever) and the
 staging directory is skipped (§6 rule 4); hidden entries *are* counted, because
 a folder's size includes its dot-files.
 
-bb's RPC has no abort channel, so a dialog closed mid-walk cannot call the walk
+VesnALIA's RPC has no abort channel, so a dialog closed mid-walk cannot call the walk
 off. It retires the ticket the answer would land on — every reply carries the
 ticket it was asked under — and the 5 s budget bounds what is left running.
 
@@ -1459,7 +1459,7 @@ neither is added up and the dialog says so.
 One `startFolder` is one folder; people work in several. A bookmark is a
 `{ path, name }` pair — an absolute folder plus the label the menu shows.
 
-**Storage.** One `bb.storage.kv` row, `bookmarks:v1`, holding the array in
+**Storage.** One `alia.storage.kv` row, `bookmarks:v1`, holding the array in
 order (`src/bookmarks.ts`). It is server-side on purpose, unlike the
 last-folder memory of PATHBAR-SPEC §1: that is one browser profile's memory of
 a moment, this is a decision about this machine's folders and belongs to the
@@ -1532,10 +1532,10 @@ bookmark is a place to go and a file is not one.
 ### 8.12 The built-in viewer (v0.8)
 
 `components/dialogs/FileViewerDialog.tsx` — what shows a file when this surface
-has no bb preview panel to delegate to.
+has no VesnALIA preview panel to delegate to.
 
 **Why it exists.** §8.2.1 delegated to `experimental_openFilePreview` and, on a
-`false`, downloaded. bb provides that capability from exactly two places — the
+`false`, downloaded. VesnALIA provides that capability from exactly two places — the
 thread split view and the right-hand plugin panel host — and from a default of
 `() => false` everywhere else. The sidebar's own full-page File Manager is one
 of the "everywhere else", so on the surface the panel is most used from, *no*
@@ -1544,7 +1544,7 @@ file ever opened: every double-click and every row-menu Open put a copy in
 correcting the call site would have: the surface has no preview panel to open
 into, so the panel has to be one.
 
-bb's panel still wins wherever it exists (`showEntry` asks it first). It sits
+VesnALIA's panel still wins wherever it exists (`showEntry` asks it first). It sits
 *beside* the manager and survives navigation, which a modal cannot.
 
 **Two transports, split by what the renderer needs** — and since v0.9 a third
@@ -1556,9 +1556,9 @@ for archives, whose table of contents is what is worth showing (§8.13).
 | `pdf` | same | `<iframe>` |
 | video (`mp4 m4v webm ogv mov`) | same | `<video controls>` |
 | audio (`mp3 wav ogg oga m4a aac flac opus weba`) | same | `<audio controls>` |
-| `md` / `markdown` / `mdx` | `readTextFile` | bb's `Markdown`, with a **Source** toggle |
+| `md` / `markdown` / `mdx` | `readTextFile` | VesnALIA's `Markdown`, with a **Source** toggle |
 | an archive (`entry.archiveFormat`, v0.9) | `listArchive` | the contents tree of §8.13 |
-| everything else | `readTextFile` | bb's `experimental_SourceCode` |
+| everything else | `readTextFile` | VesnALIA's `experimental_SourceCode` |
 
 The URL half is the gallery's transport (§8.9) reused unchanged — folder-rooted,
 one mint per folder, bytes that never enter JS. The string half is new, and it
@@ -1600,7 +1600,7 @@ is what made the action visible at all.
 
 **Why.** Before v0.9 an archive had exactly one answer in this plugin:
 extract it. Quick look on a `.zip` ended in "No preview for this kind of
-file", and a `.zip` link in a chat message opened bb's own preview, which has
+file", and a `.zip` link in a chat message opened VesnALIA's own preview, which has
 nothing to show for one. Deciding whether to extract — and where to — needs
 the contents first.
 
@@ -1612,8 +1612,8 @@ the contents first.
 | "Preview + location" opener (§10.2) | a plain click on an archive link in a message | switches the tab to the reveal with `extractOnReveal`: the file manager opens on the archive's folder, selects it, and opens `ExtractDialog` on it |
 
 Double-click, `Enter` and **Open** still open `ExtractDialog` (§8.2.1). On a
-surface with bb's preview panel, `Space` hands the archive to that panel as it
-hands any file (§8.2.1); bb then opens it with the first matching file opener,
+surface with VesnALIA's preview panel, `Space` hands the archive to that panel as it
+hands any file (§8.2.1); VesnALIA then opens it with the first matching file opener,
 which is this plugin's "Preview + location" — the same tree. There is no
 second extraction path anywhere: both surfaces end in the existing dialog, job
 and tray, and "Extract…" is only offered when the listing says `extractable`
@@ -1667,7 +1667,7 @@ leading `/` kept as a folder named `/` (`memberSegments` on the server,
 tree agree). Control characters render as their Unicode pictures (`␊`), so a
 newline in a name is visible rather than collapsed.
 
-**Bounds.** The RPC waits and bb cannot cancel a request, so:
+**Bounds.** The RPC waits and VesnALIA cannot cancel a request, so:
 
 | Bound | Default | On hit |
 | --- | --- | --- |
@@ -1715,7 +1715,7 @@ panel's own tree. States: loading, error ("Could not read this archive", or
 ## 9. Visual & theming rules
 
 The Tailwind pass emits **default-theme utilities only**, wrapped in
-`@scope ([data-bb-plugin="file-manager"], [data-bb-plugin-root]:not([data-bb-plugin]))`.
+`@scope ([data-alia-plugin="file-manager"], [data-alia-plugin-root]:not([data-alia-plugin]))`.
 Custom `@theme` colors, hand-written `oklch(...)` and hard-coded greys are
 forbidden — they will not follow the user's palette.
 
@@ -1760,7 +1760,7 @@ text-muted-foreground`, icons `size-4`. Use `@container` queries (the panel can
 be narrow) and hide the `size`/`modified` columns below `@md`.
 
 **Portals:** every `Dialog`, `DropdownMenu`, `ContextMenu`, `Tooltip` must carry
-`usePortalScopeProps()` on its portalled content. The vendored `@bb/*`
+`usePortalScopeProps()` on its portalled content. The vendored `@alia-core/*`
 components already do this; if you hand-roll Radix, spread it yourself —
 otherwise the plugin stylesheet cannot reach the portal (it is `@scope`d) and
 Electron may route clicks into the window drag region.
@@ -1782,9 +1782,9 @@ silently degrade to `Zap`.
 
 ## 10. Nav panel registration (verbatim)
 
-`app.tsx`, bottom of file. `icon: "FolderOpen"` is confirmed present in bb
+`app.tsx`, bottom of file. `icon: "FolderOpen"` is confirmed present in VesnALIA
 0.39.0's `ICON_MAP` (`Folder02Icon`) and in the shipped app bundle.
-`bb.branding.icon` in `package.json` **overrides** this on compact surfaces, so
+`alia.branding.icon` in `package.json` **overrides** this on compact surfaces, so
 both must say `FolderOpen` (§2).
 
 ```tsx
@@ -1807,9 +1807,9 @@ is mounted and closing the panel unmounts it, which would strand tree state.
 
 ### 10.1 Panel-tab registration (v0.5)
 
-The same file manager also opens as a tab in bb's right-hand panel, from
+The same file manager also opens as a tab in VesnALIA's right-hand panel, from
 "New tab" → Actions (beside Start terminal and Start side chat). Two
-registrations, because bb keeps the two launchers apart:
+registrations, because VesnALIA keeps the two launchers apart:
 
 ```tsx
 app.slots.threadPanelAction({
@@ -1825,7 +1825,7 @@ app.slots.experimental_newThreadPanelAction({ /* the same, on New thread */ });
 `layout: "flush"` because the body owns its own scrolling and needs a definite
 height for the listing; `run` is omitted because nothing has to be resolved
 before the tab opens. Neither `threadId` nor `projectId` is read: the root is
-the home folder of whoever runs bb, not a thread or a project.
+the home folder of whoever runs VesnALIA, not a thread or a project.
 
 One body serves both surfaces. `FileManagerSurface` takes two props instead of
 reading the route itself:
@@ -1849,7 +1849,7 @@ rows can never stay hidden behind a control that is off screen.
 
 ### 10.2 File openers — "show me where this file is" (v0.6)
 
-Right-clicking a file link in a rendered message gives bb's own menu: *Open
+Right-clicking a file link in a rendered message gives VesnALIA's own menu: *Open
 in …*, *Open with built-in preview*, one *Open with `<title>`* row per matching
 `fileOpener`, *Copy file path*, *Copy file name*. The chosen opener renders as
 a tab in the side panel — the surface a reveal wants. So two registrations:
@@ -1859,10 +1859,10 @@ app.slots.fileOpener({ id: "preview",  title: "Preview + location", extensions, 
 app.slots.fileOpener({ id: "location", title: "File location",      extensions, component: FileLocationOpener });
 ```
 
-**Order is load-bearing.** bb matches an opener by exact extension (no
+**Order is load-bearing.** VesnALIA matches an opener by exact extension (no
 wildcards) and, absent a Settings → *File openers* pin, uses the FIRST
 registration that matches for every automatic open — a plain click included.
-So `preview` is registered first and renders the `Original` prop (bb's own
+So `preview` is registered first and renders the `Original` prop (VesnALIA's own
 preview) under one 40px strip naming the folder and carrying an *Open location*
 button. `location` is only ever reached from the context menu, and opens the
 file manager directly.
@@ -1871,16 +1871,16 @@ file manager directly.
 config, data, code, web, images, audio, video, archives, fonts and binaries.
 Documents are deliberately excluded (v0.9): `pdf`, `doc`, `docx`, `xls`,
 `xlsx`, `ppt`, `pptx`, `odt`, `ods`, `odp` and `rtf` belong to the pdf-viewer
-plugin, which renders them. bb's automatic pick is the first matching opener
+plugin, which renders them. VesnALIA's automatic pick is the first matching opener
 in plugin-id order and `file-manager` sorts before `pdf-viewer`, so claiming
-any of them here would shadow the viewer with a strip over bb's `Original`,
+any of them here would shadow the viewer with a strip over VesnALIA's `Original`,
 which cannot render an office file at all. `epub`, Apple's `pages`,
 `numbers` and `key`, and `csv`/`tsv` stay claimed — the viewer does not read
-them. A name with no extension (`Makefile`, `LICENSE`) is unreachable: bb's own
+them. A name with no extension (`Makefile`, `LICENSE`) is unreachable: VesnALIA's own
 `getFileExtension` returns null and the menu renders no opener rows at all, for
 any plugin.
 
-**An archive link is drawn, not delegated (v0.9).** bb's `Original` has
+**An archive link is drawn, not delegated (v0.9).** VesnALIA's `Original` has
 nothing to show for an archive, so when `detectArchiveFormat` (shared in
 contract.ts) recognises the link's name, `FilePreviewOpener` renders the
 §8.13 contents under the same strip instead. It resolves the link with
@@ -1915,7 +1915,7 @@ unfolds the compact filter).
 
 ### 10.3 Thread workspace — the folder a thread's code lives in (v0.7)
 
-`threadPanelAction` is the one surface bb names a thread for, so it is the one
+`threadPanelAction` is the one surface VesnALIA names a thread for, so it is the one
 surface that can offer a jump into that thread's checkout. `FileManagerTab`
 forwards its `threadId` into `FileManagerSurface` as a fourth optional prop;
 every other surface (the nav panel, the New thread launcher, both file openers)
@@ -1942,11 +1942,11 @@ because both questions end at one clamped absolute path) answers
 | checkout outside the root | realpath'ed dir | `false` | `outside_root` |
 
 **None of the three "no"s is a throw.** They are ordinary states of a healthy
-bb and the toolbar renders each of them differently; a rejection would flatten
+VesnALIA and the toolbar renders each of them differently; a rejection would flatten
 all three into one toast. `path` is non-null exactly when a real directory is
 there, `outside_root` included — reporting where it is beats saying nothing.
-Only a thread bb itself cannot answer for rejects. The clamp is applied to the
-realpath, never to the string bb handed over, so a symlink inside the root that
+Only a thread VesnALIA itself cannot answer for rejects. The clamp is applied to the
+realpath, never to the string VesnALIA handed over, so a symlink inside the root that
 lands outside it comes back `outside_root` rather than passing the prefix test.
 
 **The panel asks once, on mount** (`hooks/useThreadWorkspace.ts`), not on
@@ -1970,7 +1970,7 @@ starting is enough to flash the empty state at the user.
 
 The jump itself goes through `navigateTo`, the same call every other folder
 move uses — a second navigation path would be a second set of bugs. A lookup
-that *failed* keeps the button live, because "bb did not answer" is not "there
+that *failed* keeps the button live, because "alia did not answer" is not "there
 is nowhere to go": the click retries once, and only then becomes a toast.
 
 **Opening there without the click (v0.9.1).** `openThreadWorkspace` — a
@@ -2010,12 +2010,12 @@ tests are plain node; frontend tests need `// @vitest-environment jsdom` as the
 first line plus the `matchMedia` / `scrollIntoView` stubs in the setup file.
 
 **BACKEND — `test/backend/*.test.ts`** (`createFakePluginHost` from
-`@get-bb/plugin-sdk/testing`; each test builds a real temp tree with `mkdtemp`)
+`@vesnalia/plugin-sdk/testing`; each test builds a real temp tree with `mkdtemp`)
 
 | File | Must cover |
 | --- | --- |
 | `paths.test.ts` | `resolveExisting` rejects `/etc`, `../..`, `~/..%2f`, a symlink to `/etc`, and a symlink *inside* root to `/tmp`; accepts root itself; `validateName` rejects `""`, `.`, `..`, `a/b`, `\0`, 300-byte names |
-| `listing.test.ts` | size/mtime present; hidden filtering both ways; `.bb-file-manager` hidden in both modes; symlink rows get `isSymlink`, `targetKind`, `escapesRoot`; truncation flag at `MAX_LIST_ENTRIES`; `volume` present |
+| `listing.test.ts` | size/mtime present; hidden filtering both ways; `.alia-file-manager` hidden in both modes; symlink rows get `isSymlink`, `targetKind`, `escapesRoot`; truncation flag at `MAX_LIST_ENTRIES`; `volume` present |
 | `mutations.test.ts` | createFolder/rename/delete/move/copy happy paths; `exists`, `not_empty`, `destination_inside_source`, `path_escape` in `failed[]`; deleting a symlink removes the link only; `fs` signal published with the right dirs |
 | `uploads.test.ts` | create→chunk→finish writes exact bytes; wrong offset → 409 with `expected`; resume after a partial chunk; duplicate `uploadCreate` resumes the same session; `conflict: "rename"` produces `name (1).ext`; abort removes both sidecar files; GC drops stale sessions |
 | `http.test.ts` | **`registrations.httpRoutes` contains `{ method:"POST", path:"/upload/chunk", auth:"token" }`** (the fake host records auth but does not enforce it — this assertion is the only guard against regressing to `local`, which would 415 in production); download returns exact bytes, `content-type: application/octet-stream`, correct `content-disposition` incl. `filename*=UTF-8''` for a Cyrillic name; `Range: bytes=2-5` → 206 + `content-range`; `Range: bytes=999-` → 416; directory path → 404; escaping path → 403 |
@@ -2036,23 +2036,23 @@ first line plus the `matchMedia` / `scrollIntoView` stubs in the setup file.
 | `selection.test.tsx` | click / ctrl-click / shift-click / `Ctrl+A` / `Escape` produce the expected selections |
 | `menus.test.tsx` | right-click on a file shows Download/Rename/Cut/Copy/Delete; Delete opens the confirm dialog when `confirmOnDelete`, calls `deleteEntries` when confirmed; coarse-pointer selection (compact or wide) disables native row/tile dragging and exposes the responsive drawer; a compact fine-pointer window shows the bar and stays draggable; desktop remains draggable; desktop and touch action IDs and disabled states stay in parity |
 | `uploads.test.tsx` | dropping two `File`s calls `uploadCreate` twice and posts chunks in order (stub `XMLHttpRequest`); a 409 response resumes from `expected`; the tray shows percentages |
-| `viewer.test.tsx` | §8.12: markdown renders through bb's `Markdown` and toggles to `experimental_SourceCode`; every other text file goes straight to the source viewer, including one with no extension; an image / PDF / video / audio hangs off the folder's preview URL with its name percent-encoded and never calls `readTextFile`; `unsupported` renders the download offer while `permission_denied` renders a failure; a host that *does* take the preview never opens the dialog at all |
+| `viewer.test.tsx` | §8.12: markdown renders through VesnALIA's `Markdown` and toggles to `experimental_SourceCode`; every other text file goes straight to the source viewer, including one with no extension; an image / PDF / video / audio hangs off the folder's preview URL with its name percent-encoded and never calls `readTextFile`; `unsupported` renders the download offer while `permission_denied` renders a failure; a host that *does* take the preview never opens the dialog at all |
 | `archive-viewer.test.tsx` | §8.13 in the panel: `Space` on an archive shows its tree (never `readTextFile`); folders first by name with the lone top folder open; click and arrow keys open and close folders; the summary line, the lock and the link target; the truncated, damaged, timed-out, empty, failed and unsupported states; Extract… swaps the viewer for `ExtractDialog` and starts `extractArchive`, and is absent when not `extractable`; a double click still extracts; a previewing host still gets the archive |
 | `archive-tree.test.ts` | §8.13, pure: implied folders, folders first, numeric case-blind order, an explicit folder merged into its implied one, duplicate files kept, `..` and `/` shown as folders, the lone-folder chain opened, the row cap, control characters made visible |
-| `openers.test.tsx` | §10.2: registration order and titles; the claimed set, with `pdf` and every office format left to the pdf-viewer; the reveal, glob pre-filter and refusal; bb's preview in a scrolling flex frame; v0.9: an archive link shows its contents under the strip (resolve, then list), Extract… reveals it with `ExtractDialog` open, Open location only reveals, a missing archive says so, any other name keeps `Original` with no request |
+| `openers.test.tsx` | §10.2: registration order and titles; the claimed set, with `pdf` and every office format left to the pdf-viewer; the reveal, glob pre-filter and refusal; VesnALIA's preview in a scrolling flex frame; v0.9: an archive link shows its contents under the strip (resolve, then list), Extract… reveals it with `ExtractDialog` open, Open location only reveals, a missing archive says so, any other name keeps `Original` with no request |
 | `bookmarks.test.tsx` | §8.11: the star lights up for a bookmarked folder and toggles `addBookmark` / `removeBookmark`; the list navigates through `navigateTo`; a missing row is marked and removes itself; the rename dialog sends `renameBookmark`; both context menus toggle; the compact chrome keeps the star and moves the list into the overflow; the 51st is refused client-side |
 
 ### 11.2 Shell smoke tests (copy-pasteable)
 
 ```bash
-cd /home/coder/.bb/personal-workspaces/env_85kdqqyirz/bb-plugin-file-manager
+cd /home/coder/.vesnalia/personal-workspaces/env_85kdqqyirz/alia-plugin-file-manager
 npm install
-bb plugin install . --yes          # --yes is mandatory in a non-TTY shell
-bb plugin list --json | jq '.plugins[] | select(.id=="file-manager")
+alia plugin install . --yes          # --yes is mandatory in a non-TTY shell
+alia plugin list --json | jq '.plugins[] | select(.id=="file-manager")
   | {status, statusDetail, hasApp:.app.hasApp, compatible:.app.bundle.compatible, jsUrl:.app.bundle.jsUrl}'
 # expect: status "running", statusDetail null, hasApp true, compatible true
 
-BASE="$BB_SERVER_URL"   # http://127.0.0.1:38886
+BASE="$ALIA_SERVER_URL"   # http://127.0.0.1:38886
 ID=file-manager
 
 # 1. headless proof the sidebar entry is registered (the server itself knows
@@ -2075,7 +2075,7 @@ curl -sS -X POST "$BASE/api/v1/plugins/$ID/rpc/listDir" \
 # expect ok:false, message starting with "path_escape: "
 
 # 4. token + chunked upload of a 200 MiB file (the real path)
-TOKEN=$(bb plugin token $ID --json | jq -r .token)
+TOKEN=$(alia plugin token $ID --json | jq -r .token)
 head -c 209715200 /dev/urandom > /tmp/fm-big.bin
 UP=$(curl -sS -X POST "$BASE/api/v1/plugins/$ID/rpc/uploadCreate" \
   -H 'content-type: application/json' \
@@ -2085,7 +2085,7 @@ OFF=0; CH=$((16*1024*1024))
 while [ $OFF -lt 209715200 ]; do
   dd if=/tmp/fm-big.bin bs=1 skip=$OFF count=$CH status=none 2>/dev/null > /tmp/fm-chunk.bin || true
   curl -sS -X POST "$BASE/api/v1/plugins/$ID/http/upload/chunk?uploadId=$UID_&offset=$OFF" \
-    -H "x-bb-plugin-token: $TOKEN" -H 'content-type: application/octet-stream' \
+    -H "x-alia-plugin-token: $TOKEN" -H 'content-type: application/octet-stream' \
     --data-binary @/tmp/fm-chunk.bin | jq -c .
   OFF=$((OFF+CH))
 done
@@ -2116,12 +2116,12 @@ curl -sS -D - -o /dev/null -H 'Accept-Encoding: gzip' \
 curl -sS -X POST "$BASE/api/v1/plugins/$ID/rpc/deleteEntries" \
   -H 'content-type: application/json' \
   -d '{"paths":["/home/coder/fm-big.bin"],"recursive":false}' | jq
-bb plugin logs $ID -n 50
+alia plugin logs $ID -n 50
 ```
 
-Dev loop: `bb plugin dev` (rebuilds `dist/app.js` and reloads on save, 300 ms
+Dev loop: `alia plugin dev` (rebuilds `dist/app.js` and reloads on save, 300 ms
 debounce, ignores `dist/ node_modules/ .git/`). A path install also rebuilds the
-frontend automatically on `bb plugin reload` when any source file's mtime is
+frontend automatically on `alia plugin reload` when any source file's mtime is
 newer than `dist/app.js`. The backend is always loaded from source — no build
 needed for `server.ts` edits.
 
@@ -2131,7 +2131,7 @@ needed for `server.ts` edits.
 
 Files that must exist in the plugin repository:
 
-- [ ] `package.json` exactly as §2 (real `bb.description`, `branding.icon: "FolderOpen"`, `bb.app` present)
+- [ ] `package.json` exactly as §2 (real `alia.description`, `branding.icon: "FolderOpen"`, `alia.app` present)
 - [ ] `README.md` — what it does, install, settings table, **security section**
       (hard root `/home/coder`, `realpath` clamping, token-gated upload route,
       local-auth download route), screenshot
@@ -2139,8 +2139,8 @@ Files that must exist in the plugin repository:
 - [ ] `.gitignore` — must keep `dist/` and `node_modules/` out (already correct)
 - [ ] `assets/icon.svg` *(optional)* — only if a custom glyph is wanted; must be
       a namespaced `<svg>` root **without** an `<?xml …?>` prolog or DOCTYPE
-      (bb's sanitizer rejects those). Otherwise keep the named icon.
-- [ ] no `dist/` committed (bb builds git installs itself)
+      (VesnALIA's sanitizer rejects those). Otherwise keep the named icon.
+- [ ] no `dist/` committed (VesnALIA builds git installs itself)
 - [ ] every runtime import in `dependencies` (git installs run
       `npm install --omit=dev --ignore-scripts`)
 - [ ] public GitHub repo, annotated tag `v0.1.0` pushed **before** opening the PR
@@ -2153,7 +2153,7 @@ Marketplace entry `entries/file-manager.json` in a fork of
 {
   "id": "file-manager",
   "displayName": "File Manager",
-  "description": "Browse, upload, download, move, rename and extract files under /home/coder from a full-page bb panel, with chunked resumable uploads for multi-gigabyte files.",
+  "description": "Browse, upload, download, move, rename and extract files under /home/coder from a full-page alia panel, with chunked resumable uploads for multi-gigabyte files.",
   "icon": "FolderOpen",
   "tags": ["host-access", "files", "uploads", "downloads", "interface"],
   "author": { "name": "<ASK THE USER>", "github": "xMinor-1", "url": "https://github.com/xMinor-1" },
@@ -2166,9 +2166,9 @@ Marketplace entry `entries/file-manager.json` in a fork of
 * **Do not add an `engines` field** — the entry schema is strict and rejects it,
   even though two SKILL.md files still show it (verified: the registry build
   fails with `must NOT have additional properties`).
-* The first tag that matches bb's curated category vocabulary decides the Browse
+* The first tag that matches VesnALIA's curated category vocabulary decides the Browse
   section — `host-access` first is deliberate.
-* `id` must equal the id bb derives from the package name (`file-manager`), or
+* `id` must equal the id VesnALIA derives from the package name (`file-manager`), or
   installs are refused.
 * Validate locally before the PR: `npm ci && npm run check` inside the
   marketplace clone; PR title `Add plugin entry: file-manager`.
@@ -2188,12 +2188,12 @@ to edit another stream's file, stop and raise it — do not edit.
 | `package.json` | §2 verbatim |
 | `tsconfig.json` | §3 verbatim |
 | `contract.ts` | §4 verbatim — **frozen**, nobody else edits it |
-| `components.json` | copy from `/tmp/bbscaffoldprobe/bb-plugin-probe/components.json` (registry ref `desktop-v0.39.0`) |
-| `components/ui/{button,card,dialog,input,icon,motion,coarse-pointer-sizing,overlay-trigger,responsive-overlay}.tsx` | copy from `/tmp/bbscaffoldprobe/bb-plugin-probe/components/ui/` |
+| `components.json` | copy from `/tmp/bbscaffoldprobe/alia-plugin-probe/components.json` (registry ref `desktop-v0.39.0`) |
+| `components/ui/{button,card,dialog,input,icon,motion,coarse-pointer-sizing,overlay-trigger,responsive-overlay}.tsx` | copy from `/tmp/bbscaffoldprobe/alia-plugin-probe/components/ui/` |
 | `components/ui/hooks/{use-compact-viewport.tsx,use-media-query.ts}` | same source |
 | `hooks/useBrowserDimmingModal.ts`, `lib/utils.ts`, `lib/portal-scope.ts` | same source |
-| `components/ui/{context-menu,menu-item-hover,dropdown-menu,table,checkbox,tooltip,separator}.tsx` | `npx shadcn add @bb/context-menu @bb/dropdown-menu @bb/table @bb/checkbox @bb/tooltip @bb/separator` (needs network). **Offline fallback**: extract `files[0].content` from `…/bb-main/packages/plugin-registry/r/<name>.json` — e.g. `node -e 'const j=require("<r>/table.json");require("fs").writeFileSync("components/ui/table.tsx",j.files[0].content)'` |
-| `vitest.config.ts` | plain `defineConfig` from `vitest/config` (**not** the monorepo helper): `{ test: { name:"bb-plugin-file-manager", setupFiles:["./vitest.setup.ts"], include:["test/**/*.test.{ts,tsx}"], exclude:["node_modules/**","dist/**"], testTimeout: 20_000 } }` |
+| `components/ui/{context-menu,menu-item-hover,dropdown-menu,table,checkbox,tooltip,separator}.tsx` | `npx shadcn add @alia-core/context-menu @alia-core/dropdown-menu @alia-core/table @alia-core/checkbox @alia-core/tooltip @alia-core/separator` (needs network). **Offline fallback**: extract `files[0].content` from `…/alia-main/packages/plugin-registry/r/<name>.json` — e.g. `node -e 'const j=require("<r>/table.json");require("fs").writeFileSync("components/ui/table.tsx",j.files[0].content)'` |
+| `vitest.config.ts` | plain `defineConfig` from `vitest/config` (**not** the monorepo helper): `{ test: { name:"alia-plugin-file-manager", setupFiles:["./vitest.setup.ts"], include:["test/**/*.test.{ts,tsx}"], exclude:["node_modules/**","dist/**"], testTimeout: 20_000 } }` |
 | `vitest.setup.ts` | `configure({ asyncUtilTimeout: 8000 })` + `matchMedia` stub + `scrollIntoView` stub (copy from `plugins/tasks/vitest.setup.ts`) |
 | `README.md` | rewrite: features, install, settings, security, dev loop |
 | `assets/icon.svg` | optional, §12 rules |
@@ -2208,7 +2208,7 @@ and `app.tsx` still in place) must pass before handing off.
 | `server.ts` | factory only: resolve `ROOT`, build settings, register rpc + http + schedule + dispose; re-export `fileManagerContract` |
 | `src/root.ts` | `ROOT`, `assertInside`, `validateName`, `normalize`, `resolveExisting`, `resolveLink`, `resolveNew`, `assertNotInsideSelf` (§6) |
 | `src/errors.ts` | `FileManagerError(code, message)` → `Error("<code>: <message>")`, `mapNodeError(err)` (ENOENT→not_found, EACCES/EPERM→permission_denied, ENOTEMPTY→not_empty, EEXIST→exists, EXDEV→cross_device, ENOSPC→no_space) |
-| `src/settings.ts` | descriptors (§7.1), cached values, `onChange`, `savePreferences` via `bb.sdk.plugins.updateSettings`, `chunkSizeBytes` |
+| `src/settings.ts` | descriptors (§7.1), cached values, `onChange`, `savePreferences` via `alia.sdk.plugins.updateSettings`, `chunkSizeBytes` |
 | `src/listing.ts` | `listDir`, `statPath`, `searchDir`, entry mapping, archive detection, `statfs` volume info |
 | `src/mutations.ts` | `createFolder`, `renameEntry`, `deleteEntries`, `moveEntries`, `copyEntries`, conflict policies, `uniqueName()` (`name (1).ext`), EXDEV fallback via `fs.cp` + `rm` |
 | `src/uploads.ts` | session sidecars, `uploadCreate/Status/Finish/Abort`, chunk lock set, `writeChunk()`, GC sweep |
@@ -2217,7 +2217,7 @@ and `app.tsx` still in place) must pass before handing off.
 | `src/archive-parse.ts` | v0.9, §8.13: pure name decoding (UTF-8 / CP866), zip record mapping, the tar and 7z line parsers, `LineSplitter`, `ListingCollector` |
 | `src/jobs.ts` | in-memory job map, `publishJob`, `jobStatus`, `jobCancel` |
 | `src/http-routes.ts` | route 1 (`token`) and route 2 (`local`) exactly as §5 |
-| `src/rpc.ts` | `bb.rpc.register(fileManagerContract, handlers)` wiring only |
+| `src/rpc.ts` | `alia.rpc.register(fileManagerContract, handlers)` wiring only |
 | `src/signals.ts` | `publishFs(paths, reason)` |
 | `test/backend/*.test.ts` | §11.1 |
 
@@ -2247,7 +2247,7 @@ Frontend contract assumptions it may rely on without asking:
 1. PACKAGING lands `package.json`, `tsconfig.json`, `contract.ts`, vendored UI.
 2. BACKEND and FRONTEND start in parallel against `contract.ts`.
 3. FRONTEND stubs RPC with `renderSlot({ rpc: … })` until the backend lands.
-4. First joint checkpoint: `bb plugin install . --yes` + smoke tests 1–3.
+4. First joint checkpoint: `alia plugin install . --yes` + smoke tests 1–3.
 5. Second checkpoint: upload/download smoke tests 4–7.
 
 ---
@@ -2276,24 +2276,24 @@ Frontend contract assumptions it may rely on without asking:
    (`--quoting-style`, `--full-time`). BSD tar has neither option, so there
    the listing would fail with tar's own message — unverified, as no BSD tar
    is installed here.
-6. **A `bb plugin reload` during a large download can dispose plugin resources
+6. **A `alia plugin reload` during a large download can dispose plugin resources
    under the live stream** (the drain window is 5 s and a streamed `Response`
    returns immediately). Mitigation is already in the spec: hold nothing but a
    raw fd inside the stream.
 7. **`fs.rename` across filesystems (`EXDEV`)** cannot happen today (single ext4
    mount) but the fallback is specified because a future bind-mount under
    `/home/coder` would silently break moves and upload commits.
-8. **`bb connect` tunnel limits are unknown.** If the panel is driven remotely
+8. **`alia connect` tunnel limits are unknown.** If the panel is driven remotely
    through getbb.app rather than loopback, the proxy may impose its own body or
    duration limits; adaptive chunk sizing is the mitigation.
 9. **`author.name` for the marketplace entry is `Foma`** — decided by the owner
    and applied across every entry and `LICENSE` in this repository.
-10. **`npx shadcn add @bb/*` needs network** to `raw.githubusercontent.com` at
+10. **`npx shadcn add @alia-core/*` needs network** to `raw.githubusercontent.com` at
     tag `desktop-v0.39.0`; the offline extraction fallback in §13 is the
     supported path if that tag or the network is unavailable.
 
 ### Explicitly out of scope for v0.1 (do not build)
 
 Folder download as an archive, archive *creation*, file preview/editing,
-trash/undo, permissions editing, multi-host support, `bb file-manager` CLI
+trash/undo, permissions editing, multi-host support, `alia file-manager` CLI
 subcommand, drag-out to the OS, thumbnails, and a persistent operation history.

@@ -12,7 +12,7 @@ try {
   page.on("console", (message) => {
     if (
       message.type() === "error" &&
-      /\[plugin:bb-sidebar\]|is not a function|ReferenceError|TypeError/.test(message.text())
+      /\[plugin:alia-sidebar\]|is not a function|ReferenceError|TypeError/.test(message.text())
     ) {
       errors.push(message.text());
     }

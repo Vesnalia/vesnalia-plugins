@@ -11,12 +11,12 @@ export const RECIPES: Recipe[] = [
   {
     name: "A status card that follows a file",
     text: `For work that runs a while (a migration, a fleet, a release): keep the card in a file and rewrite the file as things change. The person sees the newest version without a new message.
-1. Write the card's markup to $BB_THREAD_STORAGE/status.iris (Iris markup, with or without the \`\`\` lines).
-2. Show it inline: put \`::iris{file="$BB_THREAD_STORAGE/status.iris"}\` on its own line in your reply. It re-reads the file every 3 s while it shows.
-3. Keep it in view while the chat scrolls on: iris_pin with file "$BB_THREAD_STORAGE/status.iris" (or \`bb iris pin $BB_THREAD_STORAGE/status.iris --id status\`). Pinning again with the same id replaces it; iris_unpin when the work is done.
+1. Write the card's markup to $ALIA_THREAD_STORAGE/status.iris (Iris markup, with or without the \`\`\` lines).
+2. Show it inline: put \`::iris{file="$ALIA_THREAD_STORAGE/status.iris"}\` on its own line in your reply. It re-reads the file every 3 s while it shows.
+3. Keep it in view while the chat scrolls on: iris_pin with file "$ALIA_THREAD_STORAGE/status.iris" (or \`alia iris pin $ALIA_THREAD_STORAGE/status.iris --id status\`). Pinning again with the same id replaces it; iris_unpin when the work is done.
 4. Rewrite the file at each step. Numbers that change by the second go in a JSON file the card loads inside <Card state="live">, so the card file only changes when the shape does.
 \`\`\`iris
-<let p={load("$BB_THREAD_STORAGE/progress.json", {fallback: {done: 0, total: 6}})} />
+<let p={load("$ALIA_THREAD_STORAGE/progress.json", {fallback: {done: 0, total: 6}})} />
 <Card title="Logging migration" state="live">
   <Progress label="Services moved" value={p.done} max={p.total} />
   <Status items={[
@@ -50,7 +50,7 @@ For layouts, put a <Mockup> or an <Image> in each Variant instead of Swatches.`,
   },
   {
     name: "Changing a card the person already has",
-    text: `To show another scenario in a card already in the thread (a slider, a pick, a field), set its inputs instead of sending a new card: iris_cards lists the thread's cards with an id (message#index) and what is set; iris_card_set with {card: "<id>", values: {seats: 20}} sets them (or \`bb iris set <id> seats=20\`). Use the id: a card's # shifts once older cards leave the list. Each value must be a <state> the card declares and keep its type. An open card redraws at once.`,
+    text: `To show another scenario in a card already in the thread (a slider, a pick, a field), set its inputs instead of sending a new card: iris_cards lists the thread's cards with an id (message#index) and what is set; iris_card_set with {card: "<id>", values: {seats: 20}} sets them (or \`alia iris set <id> seats=20\`). Use the id: a card's # shifts once older cards leave the list. Each value must be a <state> the card declares and keep its type. An open card redraws at once.`,
   },
 ];
 

@@ -28,7 +28,7 @@ describe("projectInitials", () => {
   it("skips leading emoji and non-letters", () => {
     expect(projectInitials("🚀 rocket-launch")).toBe("RL");
     expect(projectInitials("2024-отчёт")).toBe("ОТ");
-    expect(projectInitials("#bb")).toBe("BB");
+    expect(projectInitials("#alia")).toBe("ALIA");
   });
 
   it("skips words without letters", () => {

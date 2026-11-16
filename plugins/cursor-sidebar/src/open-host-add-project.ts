@@ -1,5 +1,5 @@
 /**
- * Open bb's own Add project dialog. Plugins have no SDK for it; the sidebar
+ * Open VesnALIA's own Add project dialog. Plugins have no SDK for it; the sidebar
  * sits under the host provider that owns `openCreateDialog`, so we walk the
  * React tree from a mounted node until we find that function.
  */

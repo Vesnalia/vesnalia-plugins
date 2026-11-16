@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs } from "../lib/knobs";
 import { patchReviewState } from "../lib/panel-state";
@@ -71,7 +71,7 @@ function handlers(review: Record<string, unknown> = {}, rpc: Record<string, unkn
   };
 }
 
-/** The review's page, and BB's title bar as the host renders it, apart from the page, with the panel's headerContent. */
+/** The review's page, and VesnALIA's title bar as the host renders it, apart from the page, with the panel's headerContent. */
 async function renderReview({ review, rpc, titleBar = true, panel }: { review?: Record<string, unknown>; rpc?: Record<string, unknown>; titleBar?: boolean; panel?: { openTab: () => boolean } } = {}) {
   patchReviewState("pr-42", { activeId: "c1" });
   const app = await loadPluginApp(() => import("../app"));
@@ -83,7 +83,7 @@ async function renderReview({ review, rpc, titleBar = true, panel }: { review?: 
   return { page, bar, band };
 }
 
-test("BB's title bar shows an open review's commands, and none on Settings (the list's are in list-title-bar.test)", async () => {
+test("VesnALIA's title bar shows an open review's commands, and none on Settings (the list's are in list-title-bar.test)", async () => {
   const app = await loadPluginApp(() => import("../app"));
   const { TitleBarControls } = await import("./TitleBarControls");
   expect(app.navPanels[0]!.headerContent).toBe(TitleBarControls);
@@ -115,10 +115,10 @@ test("the title bar's commands fit the pane: labeled from 1000px, shorter below,
   page.lifecycle.unmount(); bar!.lifecycle.unmount(); restores.splice(0).forEach((restore) => restore());
   fakeSize(800, 1200);
   ({ bar, page } = await renderReview());
-  // Mid-width, Ask agent, with its key and BB's tab, goes to its icon first (Main thread ↗ keeps its label: below).
+  // Mid-width, Ask agent, with its key and VesnALIA's tab, goes to its icon first (Main thread ↗ keeps its label: below).
   expect(await text(bar)).toEqual(["", "", "Finish· 2"]);
   page.lifecycle.unmount(); bar!.lifecycle.unmount(); restores.splice(0).forEach((restore) => restore());
-  // Finish review too is its icon and count, where "Finish · 2" left BB's crumbs no room.
+  // Finish review too is its icon and count, where "Finish · 2" left VesnALIA's crumbs no room.
   fakeSize(844, 390);
   ({ bar, page } = await renderReview());
   expect(await text(bar)).toEqual(["", "", "2"]);
@@ -135,12 +135,12 @@ test("the title bar's commands fit the pane: labeled from 1000px, shorter below,
   expect(bar!.container.innerHTML).toBe("");
 });
 
-test("beside BB's side panel on a desktop, a 560px review keeps its commands in BB's title bar; Ask agent is pressed while its tab shows, and closes it", async () => {
+test("beside VesnALIA's side panel on a desktop, a 560px review keeps its commands in VesnALIA's title bar; Ask agent is pressed while its tab shows, and closes it", async () => {
   fakeSize(560, 952, [1440, 1000]);
   const { bar, page } = await renderReview();
   const commands = within(await bar!.findByRole("group", { name: "Review commands" }));
   const ask = commands.getByRole("button", { name: "Ask agent" });
-  // Icons, leaving BB's crumbs their room.
+  // Icons, leaving VesnALIA's crumbs their room.
   expect(ask.textContent).toBe("");
   // Not a phone's dock.
   expect(page.queryByRole("button", { name: /^pr-42, Chapters:/ })).toBeNull();
@@ -173,7 +173,7 @@ test("Ask agent on a file opens the agent's first message empty, naming no file"
   tab.lifecycle.unmount();
 });
 
-test("Ask agent in full screen leaves it, as BB's side panel is outside it, though its tab showed before", async () => {
+test("Ask agent in full screen leaves it, as VesnALIA's side panel is outside it, though its tab showed before", async () => {
   fakeSize(1400, 900);
   fakeFullscreen();
   const { bar, page, band } = await renderReview({ panel: { openTab: () => true } });
@@ -191,7 +191,7 @@ test("Ask agent in full screen leaves it, as BB's side panel is outside it, thou
   tab.lifecycle.unmount();
 });
 
-test("where BB's panel declines the tab, Ask agent says it isn't available here", async () => {
+test("where VesnALIA's panel declines the tab, Ask agent says it isn't available here", async () => {
   fakeSize(1400, 900);
   const { bar } = await renderReview();
   fireEvent.click(await bar!.findByRole("button", { name: "Ask agent" }));
@@ -222,7 +222,7 @@ test("Main thread ↗ always shows its ↗, keeps its label mid-width, and says 
   await bar!.findByRole("tooltip", { name: "Show main thread beside review" });
 });
 
-test("where BB's title bar takes the commands the band doesn't show them; where it doesn't, the band does, after a moment", async () => {
+test("where VesnALIA's title bar takes the commands the band doesn't show them; where it doesn't, the band does, after a moment", async () => {
   fakeSize(1400, 900);
   // Time runs as it does, but the title bar's wait passes at once.
   vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -264,7 +264,7 @@ test("a local review's Finish review counts the open comments Send would send, w
   commands = within(await bar!.findByRole("group", { name: "Review commands" }));
   expect((await commands.findByRole("button", { name: "Finish review" })).textContent).toBe("Finish review");
   page.lifecycle.unmount(); bar!.lifecycle.unmount(); restores.splice(0).forEach((restore) => restore());
-  // Beside BB's side panel, its icon and count, its name unchanged; with none open, its icon.
+  // Beside VesnALIA's side panel, its icon and count, its name unchanged; with none open, its icon.
   fakeSize(560, 952, [1440, 1000]);
   ({ bar, page } = await renderReview({ review: local, rpc: { getDraft: () => ({ draft: { targetKey: "pr-42", verdict: "COMMENT", body: "", comments }, stale: [] }) } }));
   commands = within(await bar!.findByRole("group", { name: "Review commands" }));

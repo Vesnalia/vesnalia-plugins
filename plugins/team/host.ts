@@ -1,4 +1,4 @@
-// The Team plugin's singular `bb.host` entry (manifest: bb.host).
+// The Team plugin's singular `alia.host` entry (manifest: alia.host).
 //
 // Runs on the daemon of the host that holds a project's canonical checkout
 // and exposes exactly three operations (see host-contract.ts):
@@ -29,7 +29,7 @@ import { isAbsolute, join } from "node:path";
 import {
   experimental_defineHostEntry,
   experimental_sanitizeInheritedChildProcessEnv,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import { hostContract } from "./host-contract";
 
 const BD_TIMEOUT_MS = 60_000;

@@ -1,7 +1,7 @@
 # Scheduled Jobs (launchd-jobs)
 
 Shell commands on your Mac on a cron schedule or a fixed interval, run by launchd — so they run whether
-or not bb is open. Ported from
+or not VesnALIA is open. Ported from
 [`paseo-plugins/launchd-jobs`](https://github.com/gpambrozio/paseo-plugins/tree/main/launchd-jobs), and
 it picks up the jobs that plugin made, history and all.
 
@@ -21,27 +21,27 @@ with how long each took and how it exited, and the tail of its log.
   notification when a job starts failing*; off by default). It names the job, its Mac and the exit code
   — "Backup failed on Mac mini" — and arrives once: nothing more while the job keeps failing, and a new
   one after it has run successfully again, or after you opened it, and then fails. Jobs already failing
-  when you turn it on are not announced, and reloading the plugin or restarting bb does not repeat any.
-  It goes through bb's own Push notifications, so it reaches the web, desktop and mobile channels you
+  when you turn it on are not announced, and reloading the plugin or restarting VesnALIA does not repeat any.
+  It goes through VesnALIA's own Push notifications, so it reaches the web, desktop and mobile channels you
   have turned on there.
 - **Settings**, the gear at the top of the page, opens the plugin's settings.
-- With more than one Mac connected to bb, a picker at the top chooses whose jobs you see. It starts on
-  the Mac running the bb server.
+- With more than one Mac connected to VesnALIA, a picker at the top chooses whose jobs you see. It starts on
+  the Mac running the VesnALIA server.
 
 It is a front for launchd, not a scheduler of its own: the plists in `~/Library/LaunchAgents` are the
 source of truth, and the page reads them back every time.
 
 ## What you need
 
-- bb 0.47 or later. On bb 0.44 to 0.46, install with `@^0.1.0` instead of `@^0.3.0`.
-- For the push notification, bb 0.48.1 or later with Push notifications turned on. Without them the
+- VesnALIA 0.47 or later. On VesnALIA 0.44 to 0.46, install with `@^0.1.0` instead of `@^0.3.0`.
+- For the push notification, VesnALIA 0.48.1 or later with Push notifications turned on. Without them the
   setting does nothing and the plugin logs it once; everything else works.
 - macOS, on the Mac whose jobs you manage. On any other machine the page says the plugin is macOS only.
 
 ## Install
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@^0.3.0' --plugin launchd-jobs --tag-prefix launchd-jobs/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@^0.3.0' --plugin launchd-jobs --tag-prefix launchd-jobs/
 ```
 
 The page is **Scheduled jobs** in the sidebar; the palette has *Scheduled jobs: open launchd jobs*.
@@ -76,12 +76,12 @@ matches, launchd only when *both* do. The preview says "(both must match)".
 
 ### When it fires, and when it does not
 
-- **bb closed**: the job runs. launchd does not know bb exists.
+- **VesnALIA closed**: the job runs. launchd does not know VesnALIA exists.
 - **Mac asleep at the scheduled time**: launchd runs the job once when the Mac wakes. Several missed
   times collapse into one run.
 - **Mac off, or you logged out**: the run is missed. LaunchAgents belong to your login session.
 - **Job disabled**: launchd remembers that across reboots until you enable it again.
-- **bb quits while you are saving a job**: the job may be left **Not loaded**, and the page says so.
+- **VesnALIA quits while you are saving a job**: the job may be left **Not loaded**, and the page says so.
   Press **Enable**, or save it again, to load it. A job that is already running is never affected.
 
 ## Runs and logs
@@ -90,8 +90,8 @@ Every run appends to the job's log — a start line, the command's output, and a
 record to its history. The page shows the last twenty runs and the last 64 KB of the log. A log is
 rotated once it passes 1 MB, and the history keeps its last two hundred runs.
 
-Jobs made here keep those files in bb's data folder for this plugin
-(`~/.bb/plugins/launchd-jobs/host-data/` on the Mac running the bb server).
+Jobs made here keep those files in VesnALIA's data folder for this plugin
+(`~/.vesnalia/plugins/launchd-jobs/host-data/` on the Mac running the VesnALIA server).
 
 ## Coming from the Paseo plugin
 
@@ -116,7 +116,7 @@ delete the plists by hand and run `launchctl bootout gui/$UID/<label>` for each.
 - The failing count only knows about runs that finished badly. A job launchd has quietly stopped
   scheduling — shown as **Not loaded** — is not counted, because finding that out means asking launchd
   about every job once a minute.
-- The count covers the Mac running the bb server, and any other Mac once you have opened its jobs here
+- The count covers the Mac running the VesnALIA server, and any other Mac once you have opened its jobs here
   and it has some. It is checked about once a minute, so it can be a minute behind, and so can the push
   notification.
 - What launchd reports — whether a job is running, its process id, its spawn count — comes from

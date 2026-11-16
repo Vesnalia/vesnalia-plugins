@@ -4,7 +4,7 @@ import { formatClock, formatRelativeCompact, pluralize } from "../format.js";
 import type { SyncProfile } from "../settings.js";
 
 /**
- * `bb linear status` and `bb linear doctor`, as a projection.
+ * `alia linear status` and `alia linear doctor`, as a projection.
  *
  * The report is data and this file turns it into text, which means the same
  * assertions cover the terminal that cover the panel — and it means a
@@ -212,7 +212,7 @@ export function renderStatus(report: StatusReport): string {
       : `\n\n${connection.message}`;
   const hint =
     connection.kind === "no-credential"
-      ? "\n\n  Add your Linear API key in this plugin's settings, or run:\n    bb plugin config linear set apiKey <key>"
+      ? "\n\n  Add your Linear API key in this plugin's settings, or run:\n    VesnALIA plugin config linear set apiKey <key>"
       : "";
 
   return `${connectionHeadline(connection)}\n${body}${problem}${hint}\n`;

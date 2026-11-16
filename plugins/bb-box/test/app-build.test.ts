@@ -1,10 +1,10 @@
 import "./check-test-machine.mjs";
-// The panels build as BB's frontend build builds them (#941): BB gives the
+// The panels build as VesnALIA's frontend build builds them (#941): VesnALIA gives the
 // app its own copies of the packages below, and resolves anything else from
 // the plugin's dependencies, without its devDependencies. The server SDK,
-// @get-bb/plugin-sdk, is one of those, so a value that src/app imports from a
-// file that imports the server SDK failed BB's build, while CI's, with every
-// package installed, passed. This test resolves as BB's build does, and names
+// @vesnalia/plugin-sdk, is one of those, so a value that src/app imports from a
+// file that imports the server SDK failed VesnALIA's build, while CI's, with every
+// package installed, passed. This test resolves as VesnALIA's build does, and names
 // each import it cannot resolve and the chain of files that leads to it.
 
 import assert from "node:assert/strict";
@@ -16,15 +16,15 @@ import { rolldown } from "rolldown";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** The packages BB's app gives a plugin's app at load time, from BB 0.46.0's plugin build. */
-export const BB_PROVIDES = new Set([
+/** The packages VesnALIA's app gives a plugin's app at load time, from VesnALIA 0.46.0's plugin build. */
+export const ALIA_PROVIDES = new Set([
   "react",
   "react-dom",
   "react-dom/client",
   "react/jsx-runtime",
   "react/jsx-dev-runtime",
-  "@get-bb/plugin-sdk/app",
-  "@bb/plugin-sdk/app",
+  "@vesnalia/plugin-sdk/app",
+  "@vesnalia/plugin-sdk/app",
   "@pierre/diffs",
   "@pierre/diffs/react",
   "@radix-ui/react-alert-dialog",
@@ -42,9 +42,9 @@ export const BB_PROVIDES = new Set([
   "clsx",
   "tailwind-merge",
   "class-variance-authority",
-  "@bb/shared-ui/icon",
-  "@bb/shared-ui/question-form-host",
-  "@bb/shared-ui/voice-input-textarea",
+  "@alia-core/shared-ui/icon",
+  "@alia-core/shared-ui/question-form-host",
+  "@alia-core/shared-ui/voice-input-textarea",
 ]);
 
 function packageOf(specifier: string): string {
@@ -52,20 +52,20 @@ function packageOf(specifier: string): string {
   return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0]!;
 }
 
-/** The imports of `entry` that BB's frontend build could not resolve, each with the files that lead to it. */
+/** The imports of `entry` that VesnALIA's frontend build could not resolve, each with the files that lead to it. */
 export async function unresolvable(entry: string, dependencies: ReadonlySet<string>): Promise<string[]> {
   const importers = new Map<string, string>();
   const problems: { importer: string; specifier: string }[] = [];
   const bundle = await rolldown({
     input: entry,
     logLevel: "silent",
-    // BB's build follows the plugin's tsconfig paths, such as @/components.
+    // VesnALIA's build follows the plugin's tsconfig paths, such as @/components.
     tsconfig: join(ROOT, "tsconfig.json"),
     plugins: [
       {
-        name: "as-bb-builds",
+        name: "as-alia-builds",
         async resolveId(specifier, importer) {
-          if (BB_PROVIDES.has(specifier)) return { id: specifier, external: true };
+          if (ALIA_PROVIDES.has(specifier)) return { id: specifier, external: true };
           // A package's own imports are its dependencies', which install with it.
           if (!importer || specifier.startsWith(".") || specifier.startsWith("/") || importer.includes("/node_modules/")) return null;
           const resolved = specifier.startsWith("node:") ? null : await this.resolve(specifier, importer, { skipSelf: true });
@@ -95,17 +95,17 @@ export async function unresolvable(entry: string, dependencies: ReadonlySet<stri
   });
 }
 
-test("the panels build as BB's frontend build builds them: src/app imports no value that leads to a server-only module (#941)", async () => {
-  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { bb: { app: string }; dependencies: Record<string, string> };
-  const problems = await unresolvable(join(ROOT, pkg.bb.app), new Set(Object.keys(pkg.dependencies)));
+test("the panels build as VesnALIA's frontend build builds them: src/app imports no value that leads to a server-only module (#941)", async () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { alia: { app: string }; dependencies: Record<string, string> };
+  const problems = await unresolvable(join(ROOT, pkg.alia.app), new Set(Object.keys(pkg.dependencies)));
   assert.deepEqual(
     problems,
     [],
-    `BB's frontend build cannot resolve these, as BB gives a plugin's app only its own packages and the plugin's dependencies, not its devDependencies or Node's modules:\n${problems.join("\n")}\nImport only types from such a file (import type), or move the value the app needs into a file that imports nothing server-only.`,
+    `VesnALIA's frontend build cannot resolve these, as VesnALIA gives a plugin's app only its own packages and the plugin's dependencies, not its devDependencies or Node's modules:\n${problems.join("\n")}\nImport only types from such a file (import type), or move the value the app needs into a file that imports nothing server-only.`,
   );
 });
 
 test("the check names an app's value import from a file that imports the server SDK, with the files that lead to it", async () => {
   const problems = await unresolvable(join(ROOT, "test", "fixtures", "app-imports", "entry.tsx"), new Set(["zod"]));
-  assert.deepEqual(problems, ['test/fixtures/app-imports/entry.tsx -> test/fixtures/app-imports/contract.ts imports "@get-bb/plugin-sdk"']);
+  assert.deepEqual(problems, ['test/fixtures/app-imports/entry.tsx -> test/fixtures/app-imports/contract.ts imports "@vesnalia/plugin-sdk"']);
 });

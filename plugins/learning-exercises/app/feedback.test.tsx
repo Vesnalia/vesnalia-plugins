@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 /**
  * The agent's feedback in the chat (thr_9fuduh4nry): a card above the last message of the turn that
- * recorded it, which is what bb leaves in view once the turn folds into "Worked for".
+ * recorded it, which is what VesnALIA leaves in view once the turn folds into "Worked for".
  */
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import type { ExperimentalMessageMetadataProps } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import type { ExperimentalMessageMetadataProps } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { RpcContract } from "../shared/contract";
@@ -27,7 +27,7 @@ function assistant(id: string, turnId: string | null, createdAt: number): Messag
   return { id, threadId: THREAD, createdAt, turnId, role: "assistant" };
 }
 
-/** The tool result bb delivers as a system message, which starts the agent's next turn. */
+/** The tool result VesnALIA delivers as a system message, which starts the agent's next turn. */
 function prompt(id: string, turnId: string, createdAt: number): Message {
   return { id, threadId: THREAD, createdAt, turnId, role: "user", initiator: "system" };
 }
@@ -77,7 +77,7 @@ describe("the feedback card in the chat", () => {
     const waiting = renderMessage(assistant("a2", "turn_2", 200), rpc);
     await waitFor(() => expect(waiting.cards()).toEqual(["Feedback on question 1"]));
     expect(feedbackMessage.cards()).toEqual([]);
-    // The turn ends: bb folds its earlier message into "Worked for", and only the last one stays.
+    // The turn ends: VesnALIA folds its earlier message into "Worked for", and only the last one stays.
     feedbackMessage.unmount();
     expect(waiting.cards()).toEqual(["Feedback on question 1"]);
     // Expanding the fold shows the earlier message again; the card stays on the last one, once.
@@ -106,7 +106,7 @@ describe("the feedback card in the chat", () => {
     expect(right.cards()).toEqual(["Feedback on question 1"]);
   });
 
-  it("survives a reload: it is drawn from the stored feedback and bb's turn ids, not from what this page saw", async () => {
+  it("survives a reload: it is drawn from the stored feedback and VesnALIA's turn ids, not from what this page saw", async () => {
     const reads: string[] = [];
     const rpc = backend([card(7, "turn_8", "Kept.")], reads);
     // A fresh page shows only the folded turn's last message; nothing from before the reload is needed.

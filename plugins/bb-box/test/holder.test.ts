@@ -1,11 +1,11 @@
 import "./check-test-machine.mjs";
-// How BB Box's server calls its host entry to hold the thread's access on a
+// How VesnALIA Box's server calls its host entry to hold the thread's access on a
 // box (src/plugin/holder.ts), and the host entry itself (src/host/access.ts).
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { spawn } from "node:child_process";
 import { holderCommand } from "../src/host/access.ts";
 import { hostEntry } from "../src/host/entry.ts";
@@ -74,11 +74,11 @@ test("a machine's access is held with one call, called again after 30 s or for o
 
   await settle();
   assert.equal(w.sessions.get("term_old")?.status, "exited");
-  assert.equal(w.sessions.get("term_mine")?.status, "running", "only BB Box's own terminal is closed");
+  assert.equal(w.sessions.get("term_mine")?.status, "running", "only VesnALIA Box's own terminal is closed");
   assert.deepEqual(w.errors, []);
 });
 
-test("after 30 s a command goes on while BB Box calls again, but waits for a call for other names or after the worker ended", async () => {
+test("after 30 s a command goes on while VesnALIA Box calls again, but waits for a call for other names or after the worker ended", async () => {
   const w = world();
   await w.holders.ensure("host_a", ["GH_TOKEN"]);
   w.advance(30_000);
@@ -114,7 +114,7 @@ test("after 30 s a command goes on while BB Box calls again, but waits for a cal
   assert.deepEqual(w.errors, ["access holder", "access holder"]);
 });
 
-test("a call that fails is logged, commands go on, BB Box calls again after 2 s, and the old terminal stays until a call works", async () => {
+test("a call that fails is logged, commands go on, VesnALIA Box calls again after 2 s, and the old terminal stays until a call works", async () => {
   const w = world();
   w.fail("the worker did not answer");
   await w.holders.ensure("host_a", ["GH_TOKEN"]);
@@ -130,7 +130,7 @@ test("a call that fails is logged, commands go on, BB Box calls again after 2 s,
   assert.equal(w.sessions.get("term_old")?.status, "exited");
 });
 
-test("a machine BB does not show connected yet, as a new box's is for its first commands, is no error and is said once", async () => {
+test("a machine VesnALIA does not show connected yet, as a new box's is for its first commands, is no error and is said once", async () => {
   const w = world();
   w.fail("Host is not connected");
   await w.holders.ensure("host_a", ["GH_TOKEN"]);
@@ -139,7 +139,7 @@ test("a machine BB does not show connected yet, as a new box's is for its first 
   assert.equal(w.calls.length, 2, "called again 2 s later");
   assert.deepEqual(w.errors, []);
   assert.equal(w.logs.length, 1);
-  assert.match(w.logs[0]!, /^BB's machine host_a was not connected yet/);
+  assert.match(w.logs[0]!, /^ALIA's machine host_a was not connected yet/);
   w.fail(null);
   w.advance(2_000);
   await w.holders.ensure("host_a", ["GH_TOKEN"]);
@@ -188,7 +188,7 @@ test("the host entry holds a process with the call's variables, kept until they 
   const saved = process.env.BBBOX_TEST_TOKEN;
   t.after(() => (saved === undefined ? delete process.env.BBBOX_TEST_TOKEN : (process.env.BBBOX_TEST_TOKEN = saved)));
 
-  // BB's worker puts the daemon's current variables in process.env for each call.
+  // VesnALIA's worker puts the daemon's current variables in process.env for each call.
   process.env.BBBOX_TEST_TOKEN = "value-one";
   const first = await harness.experimental_call("access", { names: ["BBBOX_TEST_TOKEN"] });
   assert.equal(first.started, true);
@@ -210,7 +210,7 @@ test("the host entry holds a process with the call's variables, kept until they 
   assert.equal(harness.experimental_getRetainedWorkerLeaseCount(), 0);
 });
 
-test("a call that brings no GH_TOKEN, as on a new machine BB has not given it yet, is made again after 2 s, then every 30 s once it does", async () => {
+test("a call that brings no GH_TOKEN, as on a new machine VesnALIA has not given it yet, is made again after 2 s, then every 30 s once it does", async () => {
   let clock = 1_000_000;
   let missing: string[] = ["GH_TOKEN"];
   const calls: number[] = [];

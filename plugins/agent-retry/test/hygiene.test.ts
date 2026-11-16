@@ -3,7 +3,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 
 const packageRoot = path.resolve(import.meta.dirname, "..");
 const manifest = JSON.parse(
@@ -15,7 +15,7 @@ const manifest = JSON.parse(
   license: string;
   repository: { url: string };
   engines: Record<string, string>;
-  bb: {
+  alia: {
     name: string;
     description: string;
     branding: { icon?: string; logo?: unknown };
@@ -59,37 +59,37 @@ describe("public SDK surface", () => {
 describe("manifest", () => {
   it("identifies the plugin the way the marketplace will", () => {
     expect(derivePluginId(manifest.name)).toBe("agent-retry");
-    expect(manifest.bb.name).toBe("Agent Retry");
-    expect(manifest.bb.name.length).toBeLessThanOrEqual(24);
+    expect(manifest.alia.name).toBe("Agent Retry");
+    expect(manifest.alia.name.length).toBeLessThanOrEqual(24);
   });
 
   it("carries a one-sentence hook short enough for a browse card", () => {
-    expect(manifest.bb.description).toBe(manifest.description);
-    expect(manifest.bb.description.length).toBeGreaterThan(40);
-    expect(manifest.bb.description.length).toBeLessThanOrEqual(140);
-    expect(manifest.bb.description).not.toMatch(
+    expect(manifest.alia.description).toBe(manifest.description);
+    expect(manifest.alia.description.length).toBeGreaterThan(40);
+    expect(manifest.alia.description.length).toBeLessThanOrEqual(140);
+    expect(manifest.alia.description).not.toMatch(
       /powerful|seamless|easy|simple|fast|best|modern|beautiful|robust|intuitive/iu,
     );
     // The hook must stand alone in a two-line clamp, so it is one sentence.
-    expect(manifest.bb.description.match(/\.\s|\.[^.]*$/gu)?.length ?? 0).toBe(1);
+    expect(manifest.alia.description.match(/\.\s|\.[^.]*$/gu)?.length ?? 0).toBe(1);
   });
 
   it("declares identity, an icon, a server entry, and engine ranges", () => {
-    expect(manifest.bb.branding.icon).toBeTruthy();
-    expect(manifest.bb.server).toBe("./server.ts");
-    expect(manifest.bb.app).toBeUndefined();
-    expect(manifest.engines.bb).toBeTruthy();
-    expect(manifest.engines.bbPluginSdk).toBeTruthy();
+    expect(manifest.alia.branding.icon).toBeTruthy();
+    expect(manifest.alia.server).toBe("./server.ts");
+    expect(manifest.alia.app).toBeUndefined();
+    expect(manifest.engines.alia).toBeTruthy();
+    expect(manifest.engines.aliaPluginSdk).toBeTruthy();
     expect(manifest.license).toBe("MIT");
     expect(manifest.repository.url).toContain("github.com/euanguo/bb-plugin-agent-retry");
-    expect(manifest.bb.skills).toEqual(["skills"]);
+    expect(manifest.alia.skills).toEqual(["skills"]);
   });
 
   it("keeps zod as the only runtime dependency", () => {
     expect(Object.keys(manifest.dependencies)).toEqual(["zod"]);
     // Anything the build or the tests need stays out of the runtime install,
     // which is what a git install performs.
-    expect(manifest.devDependencies["@get-bb/plugin-sdk"]).toBeTruthy();
+    expect(manifest.devDependencies["@vesnalia/plugin-sdk"]).toBeTruthy();
   });
 });
 
@@ -125,7 +125,7 @@ describe("shipped documents", () => {
     expect(skill).toMatch(/^---\nname: agent-retry\n/u);
     expect(skill).toMatch(/description: "/u);
     for (const command of ["status", "log", "explain", "simulate", "cancel", "retry"]) {
-      expect(skill).toContain(`bb agent-retry ${command}`);
+      expect(skill).toContain(`alia agent-retry ${command}`);
     }
     expect(skill).toContain("advancedJson");
   });
@@ -133,7 +133,7 @@ describe("shipped documents", () => {
   it("keeps the overview and the hook on the same claim", () => {
     // Both must mention the two things a user decides on: any failure, and a
     // growing wait.
-    for (const text of [manifest.bb.description, overview]) {
+    for (const text of [manifest.alia.description, overview]) {
       expect(text).toMatch(/fail/iu);
       expect(text).toMatch(/backoff|wait/iu);
     }
@@ -151,7 +151,7 @@ describe("privacy", () => {
       const text = readFileSync(file, "utf8");
       if (/\/Users\/[a-z]/iu.test(text)) offenders.push(`${file}: home path`);
       if (/gho_|ghp_|sk-[A-Za-z0-9]{16}/u.test(text)) offenders.push(`${file}: token`);
-      // Strip npm scopes before looking for an address, so `@get-bb/plugin-sdk`
+      // Strip npm scopes before looking for an address, so `@vesnalia/plugin-sdk`
       // and `@types/node` cannot read as one.
       if (/[\w.+-]+@[\w-]+\.[a-z]{2,}/iu.test(text.replace(/@[\w-]+\//gu, ""))) {
         offenders.push(`${file}: email`);

@@ -1,7 +1,7 @@
 // Starts a language server the first time a Python or TS/JS file opens in this
 // workbench, one per language, and stops them all when the workbench closes.
 import { useEffect, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import type { Monaco } from "./monaco";
 import type { Documents } from "./use-documents";

@@ -5,7 +5,7 @@ import { dirname, delimiter, isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { parseDocument } from "yaml";
-import { bbNameSchema, catalogSchema, type Catalog } from "../shared/catalog.ts";
+import { aliaNameSchema, catalogSchema, type Catalog } from "../shared/catalog.ts";
 
 /** Works from both the source entry and dist/server.js; never depends on cwd. */
 export async function findPluginRoot(start = dirname(fileURLToPath(import.meta.url))): Promise<string> {
@@ -16,7 +16,7 @@ export async function findPluginRoot(start = dirname(fileURLToPath(import.meta.u
       if (pkg.name === mirrorConfig.identity.packageName) return directory;
     } catch { /* Continue toward the root. */ }
     const parent = dirname(directory);
-    if (parent === directory) throw new Error("Cannot locate matt-pocock-skills-for-bb package.json");
+    if (parent === directory) throw new Error("Cannot locate matt-pocock-skills-for-alia package.json");
     directory = parent;
   }
 }
@@ -41,7 +41,7 @@ export async function loadRuntimeNote(path: string): Promise<string | null> {
 }
 
 const registrationSchema = z.object({
-  name: bbNameSchema,
+  name: aliaNameSchema,
   description: z.string().min(1).max(1024).refine(value => value.trim().length > 0),
   "disable-model-invocation": z.boolean().optional(),
 });

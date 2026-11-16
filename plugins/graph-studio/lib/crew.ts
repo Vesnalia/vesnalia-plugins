@@ -4,7 +4,7 @@
 //
 // Crew is optional. Graph Studio does not depend on it at build time — the
 // contract is repeated here as zod schemas and reached through
-// `bb.sdk.plugins.callRpc` — and a graph without member nodes never calls it.
+// `alia.sdk.plugins.callRpc` — and a graph without member nodes never calls it.
 // A graph *with* member nodes, however, must not run without it: the one
 // wrong outcome is a member node that quietly becomes a fresh thread, so
 // every failure here is an error with a sentence a person can act on.
@@ -55,7 +55,7 @@ export const crewSchemas = {
 
 type Method = keyof typeof crewSchemas;
 
-/** Narrow on purpose: `bb.sdk.plugins.callRpc` in production, a fake in tests. */
+/** Narrow on purpose: `alia.sdk.plugins.callRpc` in production, a fake in tests. */
 export type CallRpc = <T>(args: {
   pluginId: string;
   method: string;

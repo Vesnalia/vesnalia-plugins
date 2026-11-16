@@ -25,7 +25,7 @@ import type { WorkItem, WorkStatusOption } from '../contract.ts';
 
 function item(overrides: Partial<WorkItem> = {}): WorkItem {
   return {
-    bbProjectId: 'proj_a',
+    aliaProjectId: 'proj_a',
     locator: '1',
     key: '#1',
     title: 'Task',

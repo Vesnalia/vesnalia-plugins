@@ -1,12 +1,12 @@
-# bb-plugin-now-playing
+# alia-plugin-now-playing
 
-A bb plugin that controls the music player on the bb server from a small
+A VesnALIA plugin that controls the music player on the VesnALIA server from a small
 panel in the sidebar footer. It works on macOS, Linux, and Windows.
 
 - `server.ts` — exposes the player RPC methods (`player_state`,
   `player_control`, `player_artwork`), the appearance methods
   (`appearance_get`, `appearance_set`), the `app` setting, and the
-  `bb music` CLI command. It picks a backend for the server's platform.
+  `alia music` CLI command. It picks a backend for the server's platform.
 - `backends/macos.ts` — runs JavaScript for Automation
   (`osascript -l JavaScript`) against Spotify or Music. Music library artwork
   comes from AppleScript as raw bytes; the server shrinks it with `sips` and
@@ -24,30 +24,30 @@ panel in the sidebar footer. It works on macOS, Linux, and Windows.
   section on the plugin's settings page. The panel polls the player once a
   second while it is open and the page is visible.
 - `ui/styles/` — the seven player styles: Default, Minimal, Cover, Hi-Fi,
-  Terminal, Pocket, and bb-amp. The style and the accent colors are stored
-  in the plugin's key-value storage, so every bb window shows the same look.
-- `ui/theme.ts` — reads bb's canvas, ink, and primary colors and mixes the
+  Terminal, Pocket, and alia-amp. The style and the accent colors are stored
+  in the plugin's key-value storage, so every VesnALIA window shows the same look.
+- `ui/theme.ts` — reads VesnALIA's canvas, ink, and primary colors and mixes the
   style colors from them, so each style fits light and dark themes. An
   accent that does not reach 4.5:1 contrast on its surface is adjusted.
 - `styles.css` and `fonts.css` — the skin CSS and three pixel fonts
   (Silkscreen, VT323, Doto; SIL OFL 1.1, see `assets/fonts/OFL.txt`). The
   fonts are embedded as data URLs, so they load with no network call. Run
   `npm run fonts` after you change a file in `assets/fonts`.
-- `skills/now-playing/SKILL.md` — tells agents how to use `bb music`.
+- `skills/now-playing/SKILL.md` — tells agents how to use `alia music`.
 - `assets/music.svg` — the plugin icon and the footer glyph (`now-playing/music`).
 
 ## Install
 
 ```
-bb plugin install git:https://github.com/chrisabra-co/bb-plugin-now-playing.git@^0.3.0
+alia plugin install git:https://github.com/chrisabra-co/bb-plugin-now-playing.git@^0.3.0
 ```
 
 ## Requirements
 
-- macOS: Spotify (desktop app) or Apple Music. bb needs Automation
+- macOS: Spotify (desktop app) or Apple Music. VesnALIA needs Automation
   permission for each app. macOS asks on the first call. To change it later,
   open System Settings → Privacy & Security → Automation.
-- Linux: `playerctl` (for example `sudo apt install playerctl`). The bb
+- Linux: `playerctl` (for example `sudo apt install playerctl`). The VesnALIA
   server must reach the desktop session's D-Bus. If
   `DBUS_SESSION_BUS_ADDRESS` is not set, the server tries
   `/run/user/<uid>/bus`.
@@ -58,6 +58,6 @@ bb plugin install git:https://github.com/chrisabra-co/bb-plugin-now-playing.git@
 
 ```
 npm install --include=dev
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 ```

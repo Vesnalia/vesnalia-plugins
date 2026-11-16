@@ -9,8 +9,8 @@ vi.mock("./db/pg", async (original) => {
 });
 
 import { connect, createServer, type Server, type Socket } from "node:net";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makePluginAgentConfigurationContext, type FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makePluginAgentConfigurationContext, type FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { pgSql, type PgSql } from "./db/pg";
 import { migratePg, PG_MIGRATIONS } from "./db/pg-migrations";
@@ -58,9 +58,9 @@ function postgresSettings(overrides: { port?: number; password?: string } = {}) 
 /** A host whose storage:owner says its reviews are in Postgres, as migrate leaves it, in a schema migrate made, unless `unmigrated`. */
 async function host(settings: Record<string, string>, sdk?: object, unmigrated = false) {
   if (!unmigrated) await migratePg(connection(settings.postgresSchema!), settings.postgresSchema!);
-  const { bb, harness } = createFakePluginHost({ pluginId: PLUGIN, settings, ...(sdk ? { sdk } : {}) });
-  await bb.storage.kv.set(STORAGE_OWNER_KEY, "postgres");
-  return { bb, harness };
+  const { alia, harness } = createFakePluginHost({ pluginId: PLUGIN, settings, ...(sdk ? { sdk } : {}) });
+  await alia.storage.kv.set(STORAGE_OWNER_KEY, "postgres");
+  return { alia, harness };
 }
 
 function registered(harness: FakePluginHarness) {
@@ -79,7 +79,7 @@ async function pluginConnections(admin: PgSql, schema: string) {
   return (await admin.get<{ n: number }>("SELECT count(*) AS n FROM pg_stat_activity WHERE application_name = ?", [`crw-p10 ${schema}`]))!.n;
 }
 
-const sqliteHasReviews = (bb: BbPluginApi) => !!bb.storage.database().prepare("SELECT 1 FROM sqlite_master WHERE name = 'reviews'").get();
+const sqliteHasReviews = (alia: AliaPluginApi) => !!alia.storage.database().prepare("SELECT 1 FROM sqlite_master WHERE name = 'reviews'").get();
 
 /** Wait for the storage service to open the store: the plugin's tools are registered once it has. */
 async function opened(harness: FakePluginHarness) {
@@ -89,11 +89,11 @@ async function opened(harness: FakePluginHarness) {
 describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
   test("a future ledger reports an update is needed and never opens the Store or changes the ledger", async () => {
     const { schema, settings } = postgresSettings();
-    const { bb, harness } = await host(settings);
+    const { alia, harness } = await host(settings);
     const sql = connection(schema);
     await sql.run(`INSERT INTO crw_migrations (id, statement_hash, applied_at) VALUES (?, 'future', 1)`, [PG_MIGRATIONS.length]);
     const before = await sql.all(`SELECT * FROM crw_migrations ORDER BY id`);
-    await plugin(bb);
+    await plugin(alia);
     try {
       harness.behavior.runService("storage");
       await vi.waitFor(() => expect(harness.inspection.needsConfigurationMessages).toHaveLength(1));
@@ -108,8 +108,8 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
 
   test("opened at activation, the store serves the tools, RPC handlers and events, writes to Postgres, never to SQLite, and lets the writer lock go on dispose", async () => {
     const { schema, settings } = postgresSettings();
-    const { bb, harness } = await host(settings);
-    await plugin(bb);
+    const { alia, harness } = await host(settings);
+    await plugin(alia);
     expect(registered(harness)).toEqual({ tools: 0, rpc: 0, events: 0 });
     expect(harness.inspection.registrations.agentConfigurationProvider!(yourThread)).toEqual({ tools: [], skills: [] });
     harness.behavior.runService("storage");
@@ -128,7 +128,7 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
     const admin = connection(schema);
     expect(JSON.parse((await admin.get<{ value: string }>("SELECT value FROM review_preferences"))!.value)).toMatchObject({ assistantInstructions: "Be brief." });
     expect(await harness.behavior.runCli(["list", "--json"])).toMatchObject({ exitCode: 0 });
-    expect(sqliteHasReviews(bb)).toBe(false);
+    expect(sqliteHasReviews(alia)).toBe(false);
     expect(await pluginConnections(admin, schema)).toBe(1);
 
     await harness.lifecycle.dispose();
@@ -141,12 +141,12 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
   // tables and served as an empty review list, while the reviews sat in the schema used until then.
   test("a schema migrate didn't make isn't served or made: needsConfiguration says to check postgresUrl and postgresSchema", async () => {
     const { schema, settings } = postgresSettings();
-    const { bb, harness } = await host(settings, undefined, true);
-    await plugin(bb);
+    const { alia, harness } = await host(settings, undefined, true);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await vi.waitFor(() => {
       expect(harness.inspection.needsConfigurationMessages).toEqual([
-        `Code Review Workspace can't open its Postgres storage: storage:owner says the reviews are in Postgres, but schema "${schema}" holds none: check postgresUrl and postgresSchema, then reload. It keeps trying, and serves once it gets through; this status stays until the plugin reloads (bb plugin reload code-review-workspace).`,
+        `Code Review Workspace can't open its Postgres storage: storage:owner says the reviews are in Postgres, but schema "${schema}" holds none: check postgresUrl and postgresSchema, then reload. It keeps trying, and serves once it gets through; this status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace).`,
       ]);
     }, { timeout: 5_000, interval: 50 });
     expect(registered(harness)).toEqual({ tools: 0, rpc: 0, events: 0 });
@@ -157,11 +157,11 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
   // Review round 1, NIT 4: docs/operations.md's way to start over when the schema holding the reviews is lost.
   test("a schema lost and made again with an empty crw_migrations by hand, as the operations guide says, is served with no reviews", async () => {
     const { schema, settings } = postgresSettings();
-    const { bb, harness } = await host(settings, undefined, true);
+    const { alia, harness } = await host(settings, undefined, true);
     const admin = connection("public");
     await admin.run(`CREATE SCHEMA ${schema}`);
     await admin.run(`CREATE TABLE ${schema}.crw_migrations (id INTEGER PRIMARY KEY, statement_hash TEXT NOT NULL, applied_at BIGINT NOT NULL)`);
-    await plugin(bb);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await opened(harness);
     expect(harness.inspection.needsConfigurationMessages).toEqual([]);
@@ -174,12 +174,12 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
     const { schema, settings } = postgresSettings();
     const holder = connection(schema);
     await holder.lockWriter();
-    const { bb, harness } = await host(settings);
-    await plugin(bb);
+    const { alia, harness } = await host(settings);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await vi.waitFor(() => {
       expect(harness.inspection.needsConfigurationMessages).toEqual([
-        `Code Review Workspace can't open its Postgres storage: Another Code Review Workspace holds the writer lock on Postgres schema "${schema}" (waited 0.4 s). Stop the other BB using this schema, or give this one a schema of its own (postgresSchema). It keeps trying, and serves once it gets through; this status stays until the plugin reloads (bb plugin reload code-review-workspace).`,
+        `Code Review Workspace can't open its Postgres storage: Another Code Review Workspace holds the writer lock on Postgres schema "${schema}" (waited 0.4 s). Stop the other VesnALIA using this schema, or give this one a schema of its own (postgresSchema). It keeps trying, and serves once it gets through; this status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace).`,
       ]);
     }, { timeout: 5_000, interval: 50 });
     expect(registered(harness)).toEqual({ tools: 0, rpc: 0, events: 0 });
@@ -187,26 +187,26 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
     await holder.end();
     await opened(harness);
     expect((await harness.behavior.runCli(["storage", "status"])).stdout).toBe("storageBackend: postgres\nstorage:owner: postgres\nstate: serving");
-    expect(harness.inspection.logEntries).toContainEqual({ level: "info", message: "Code Review Workspace's Postgres storage is open. Its needs-configuration status stays until the plugin reloads (bb plugin reload code-review-workspace)." });
+    expect(harness.inspection.logEntries).toContainEqual({ level: "info", message: "Code Review Workspace's Postgres storage is open. Its needs-configuration status stays until the plugin reloads (VesnALIA plugin reload code-review-workspace)." });
     await harness.lifecycle.dispose();
   });
 
-  test("out of reach at activation, as after a power cut BB came back from first, it serves once Postgres comes up, without needsConfiguration", async () => {
+  test("out of reach at activation, as after a power cut VesnALIA came back from first, it serves once Postgres comes up, without needsConfiguration", async () => {
     // A port nothing listens on, until a proxy to the test's Postgres opens on it.
     const free = createServer();
     await new Promise<void>((resolve) => free.listen(0, "127.0.0.1", resolve));
     const port = (free.address() as { port: number }).port;
     await new Promise<void>((resolve) => free.close(() => resolve()));
     const { settings } = postgresSettings({ port });
-    const { bb, harness } = await host(settings);
-    await plugin(bb);
+    const { alia, harness } = await host(settings);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await vi.waitFor(() => {
       expect(harness.inspection.logEntries.map((entry) => entry.message)).toContainEqual(expect.stringMatching(/^Could not open Code Review Workspace's Postgres storage: .*ECONNREFUSED.*\. Trying again in 1 s\.$/));
     }, { timeout: 5_000, interval: 20 });
     expect(registered(harness)).toEqual({ tools: 0, rpc: 0, events: 0 });
-    // bug bash F8: bb review answered only pg's bare message, which said nothing of Postgres or of opening it.
-    expect(await harness.behavior.runCli(["list"])).toEqual({ exitCode: 1, stdout: "", stderr: expect.stringMatching(/^Code Review Workspace is opening its Postgres storage \(latest try: .*ECONNREFUSED.*\)\. Try again in a moment; bb review storage status says more\.$/) });
+    // bug bash F8: VesnALIA review answered only pg's bare message, which said nothing of Postgres or of opening it.
+    expect(await harness.behavior.runCli(["list"])).toEqual({ exitCode: 1, stdout: "", stderr: expect.stringMatching(/^Code Review Workspace is opening its Postgres storage \(latest try: .*ECONNREFUSED.*\)\. Try again in a moment; alia review storage status says more\.$/) });
 
     const target = new URL(testPgUrl!);
     const sockets = new Set<Socket>();
@@ -226,8 +226,8 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
   // bug bash F9: Node's message, which suggests running Node with --use-system-ca, was passed on as it was.
   test("verify-full against a certificate no CA it trusts signed names postgresCaPem in needsConfiguration", async () => {
     const { settings } = postgresSettings();
-    const { bb, harness } = await host({ ...settings, postgresSsl: "verify-full" });
-    await plugin(bb);
+    const { alia, harness } = await host({ ...settings, postgresSsl: "verify-full" });
+    await plugin(alia);
     harness.behavior.runService("storage");
     await vi.waitFor(() => expect(harness.inspection.needsConfigurationMessages).toHaveLength(1), { timeout: 5_000, interval: 20 });
     const [message] = harness.inspection.needsConfigurationMessages;
@@ -239,8 +239,8 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
   test("a wrong password is told to needsConfiguration at once, without the URL or password", async () => {
     const password = "not-the-password-p10";
     const { settings } = postgresSettings({ password });
-    const { bb, harness } = await host(settings);
-    await plugin(bb);
+    const { alia, harness } = await host(settings);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await vi.waitFor(() => { expect(harness.inspection.needsConfigurationMessages).toHaveLength(1); }, { timeout: 5_000, interval: 20 });
     const [message] = harness.inspection.needsConfigurationMessages;
@@ -256,8 +256,8 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
 
   test("a reload's factory leaves Postgres to the instance still serving, and the new one, opened once that one has gone, finds what it wrote", async () => {
     const { schema, settings } = postgresSettings();
-    const { bb, harness } = await host(settings);
-    await plugin(bb);
+    const { alia, harness } = await host(settings);
+    await plugin(alia);
     harness.behavior.runService("storage");
     await opened(harness);
     const { preferences, revision } = await harness.behavior.callRpc("getPreferences", null) as { preferences: object; revision: number };
@@ -266,7 +266,7 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
     let duringFactory: { connections: number; oldServes: unknown } | undefined;
     const next = await harness.lifecycle.reload(async (replacement) => {
       await plugin(replacement);
-      // BB disposes the old instance only once this factory has returned.
+      // VesnALIA disposes the old instance only once this factory has returned.
       duringFactory = { connections: await pluginConnections(admin, schema), oldServes: await harness.behavior.callRpc("getPreferences", null) };
     });
     expect(duringFactory).toEqual({ connections: 1, oldServes: expect.objectContaining({ preferences: expect.objectContaining({ assistantInstructions: "Written before the reload." }) }) });
@@ -290,13 +290,13 @@ describe.skipIf(!testPgUrl)("the plugin on Postgres storage", () => {
     // The startup sweep of reviews waiting on their assistants asks for the assistant's queue, and is answered after the dispose.
     let answer: (queue: Array<{ id: string }>) => void = () => {};
     const asked = vi.fn();
-    const { bb, harness } = await host(settings, {
+    const { alia, harness } = await host(settings, {
       threads: { queuedMessages: { list: () => { asked(); return new Promise((resolve) => { answer = resolve; }); } } },
     });
     const unhandled = vi.fn();
     process.on("unhandledRejection", unhandled);
     try {
-      await plugin(bb);
+      await plugin(alia);
       harness.behavior.runService("storage");
       await opened(harness);
       await vi.waitFor(() => { expect(asked).toHaveBeenCalled(); }, { timeout: 5_000, interval: 20 });

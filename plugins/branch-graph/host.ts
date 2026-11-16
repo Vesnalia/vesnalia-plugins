@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from '@get-bb/plugin-sdk/host';
+import { experimental_defineHostEntry } from '@vesnalia/plugin-sdk/host';
 import { execFileSync } from 'node:child_process';
 import { isAbsolute, resolve } from 'node:path';
 import { statSync } from 'node:fs';

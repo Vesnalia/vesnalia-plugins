@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
-import type { PluginRpcClient, PluginRpcHandlers } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
+import type { PluginRpcClient, PluginRpcHandlers } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import {
   classifyJobStatus,
   countDiffLines,
@@ -316,13 +316,13 @@ describe("rpc contract", () => {
   });
 
   it("rejects invalid method inputs and outputs at runtime", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "gitlab-contract",
     });
     const contract = defineRpcContract({
       startReview: gitlabRpcContract.startReview,
     });
-    bb.rpc.register(contract, {
+    alia.rpc.register(contract, {
       startReview() {
         return { threadId: "" };
       },

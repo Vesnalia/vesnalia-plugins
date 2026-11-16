@@ -1,9 +1,9 @@
-// The pump between one xterm instance and one bb terminal session.
+// The pump between one xterm instance and one VesnALIA terminal session.
 //
-// The fast path is the socket bb's own terminal panel uses (lib/socket.ts):
+// The fast path is the socket VesnALIA's own terminal panel uses (lib/socket.ts):
 // keystrokes go up it as they are typed and output is pushed down it as the pty
 // writes, so an echo costs one network round trip and nothing more. When that
-// socket is not on offer — an older bb, a proxy that refuses the upgrade — the
+// socket is not on offer — an older VesnALIA, a proxy that refuses the upgrade — the
 // pump falls back to the plugin RPC, where output is a sequence-numbered buffer
 // it has to poll: fast while bytes are moving, backing off to a slow heartbeat
 // when the shell is quiet. While it polls it keeps trying the socket every 30 s,
@@ -24,7 +24,7 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { TabStatus } from "./tabs";
 import {
@@ -71,12 +71,12 @@ const SOCKET_MAX_FAILURES = 3;
 const SOCKET_PROBE_MS = 30_000;
 /** A socket that stayed attached this long was working; its drop is not a failure. */
 const SOCKET_STABLE_MS = 5000;
-/** What bb's own terminal keeps, so scrollback depth matches between the two. */
+/** What VesnALIA's own terminal keeps, so scrollback depth matches between the two. */
 const SCROLLBACK_LINES = 10_000;
-/** Matches bb's terminal, whose wide-glyph widths come from Unicode 11. */
+/** Matches VesnALIA's terminal, whose wide-glyph widths come from Unicode 11. */
 const UNICODE_VERSION = "11";
 /** The bundled fallback in fonts/nerd-symbols.css. */
-const SYMBOL_FAMILY = '"BB FT Nerd Symbols"';
+const SYMBOL_FAMILY = '"VesnALIA FT Nerd Symbols"';
 /** A Private Use Area sample, so unicode-range actually matches when loading. */
 const SYMBOL_SAMPLE = "\ue0a0";
 /** Under this a drag is a tap, not a scroll. */
@@ -147,7 +147,7 @@ export interface PumpOptions {
    * window showed a menu; when it did not, the platform's own one is left be.
    */
   onContextMenu?: (x: number, y: number) => boolean;
-  /** Clipboard writer; bb's own when the host offers it. */
+  /** Clipboard writer; VesnALIA's own when the host offers it. */
   copyText?: (text: string) => void;
   /** Match counts from an active search: null when the search is cleared. */
   onSearchResults?: (results: { index: number; count: number } | null) => void;
@@ -185,7 +185,7 @@ export class TerminalPump {
   private resizeObserver: ResizeObserver | null = null;
   /** iOS IME candidates xterm drops; see late-ime-input.ts. */
   private lateImeInput: { dispose: () => void } | null = null;
-  /** No socket to be had: no WebSocket here, or a bb (0.35) that cannot resume one. */
+  /** No socket to be had: no WebSocket here, or a VesnALIA (0.35) that cannot resume one. */
   private socketUnsupported = typeof WebSocket === "undefined";
   private transport: Transport = this.socketUnsupported ? "poll" : "socket";
   private socket: TerminalSocket | null = null;
@@ -248,7 +248,7 @@ export class TerminalPump {
       cursorBlink: true,
       convertEol: true,
       scrollback: SCROLLBACK_LINES,
-      // Unicode 11 widths need the proposed API surface, same as bb's terminal.
+      // Unicode 11 widths need the proposed API surface, same as VesnALIA's terminal.
       allowProposedApi: true,
       // Trim the default row gap; the window is small and vertical space is
       // the scarcest thing in it.
@@ -260,8 +260,8 @@ export class TerminalPump {
     this.terminal.loadAddon(
       new WebLinksAddon((event, uri) => {
         event.preventDefault();
-        // A content script has no bb router to hand this to, so it goes to the
-        // browser the same way bb's own external-link path ends up.
+        // A content script has no VesnALIA router to hand this to, so it goes to the
+        // browser the same way VesnALIA's own external-link path ends up.
         window.open(uri, "_blank", "noopener,noreferrer");
       }),
     );
@@ -386,7 +386,7 @@ export class TerminalPump {
 
   /**
    * Refit whenever the box actually changes, not only when the window commits a
-   * drag. A font-size change, the tab strip wrapping, or the bb window itself
+   * drag. A font-size change, the tab strip wrapping, or the VesnALIA window itself
    * resizing all move this container without any gesture the window hears about,
    * and an unfitted xterm reports stale cols/rows to the pty.
    */
@@ -715,7 +715,7 @@ export class TerminalPump {
   /**
    * WebGL is best-effort: a failed construction, a refused context, or a driver
    * that later drops the context all fall back to the DOM renderer rather than
-   * leaving a dead canvas. Mirrors what bb's own terminal does.
+   * leaving a dead canvas. Mirrors what VesnALIA's own terminal does.
    */
   private loadWebglRenderer(): void {
     // Without WebGL2 the addon fails inside open(), outside this try, as an
@@ -827,8 +827,8 @@ export class TerminalPump {
   ): void {
     if (this.socket !== socket || this.disposed) return;
     if (info.replayStartSeq === null) {
-      // bb 0.35: attach cannot resume from a seq, so every reconnect would
-      // replay from wherever the server chose. Polling handles that bb fine.
+      // VesnALIA 0.35: attach cannot resume from a seq, so every reconnect would
+      // replay from wherever the server chose. Polling handles that VesnALIA fine.
       this.socketUnsupported = true;
       this.fallBackToPolling();
       return;
@@ -940,7 +940,7 @@ export class TerminalPump {
 
   /**
    * The socket is not working here; poll over RPC, and try the socket again
-   * now and then in case it was only down for a while (a bb restart, a phone
+   * now and then in case it was only down for a while (a VesnALIA restart, a phone
    * changing networks).
    */
   private fallBackToPolling(): void {
@@ -1062,7 +1062,7 @@ export class TerminalPump {
     this.resizeTimer = window.setTimeout(() => {
       this.resizeTimer = null;
       if (this.disposed) return;
-      // Over RPC even when the socket is up. bb lets only the session's most
+      // Over RPC even when the socket is up. VesnALIA lets only the session's most
       // recently attached socket resize it, so with the same tab open on a
       // phone and a laptop, a socket resize from the other one is dropped and
       // its lines wrap at the wrong width. The RPC resize always lands.

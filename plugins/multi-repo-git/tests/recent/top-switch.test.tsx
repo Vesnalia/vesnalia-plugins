@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 import { mountModeTargets, RECENT_PROVIDER, WORKSPACES_PROVIDER } from "../../lib/recent/top-switch.js";
 
 const cleanups: (() => void)[] = [];
@@ -25,7 +25,7 @@ async function controls(initial = WORKSPACES_PROVIDER) {
   });
   const app = await loadPluginApp(() => import("../../app.js"));
   const slot = renderSlot(app.appOverlays.find(item => item.id === "sidebar-view-switch")!, {}, {
-    sdk: { system: { uiPreferences: { list, set: set as PluginBrowserBbSdk["system"]["uiPreferences"]["set"] } }, subscribe: ((args: any) => {
+    sdk: { system: { uiPreferences: { list, set: set as PluginBrowserAliaSdk["system"]["uiPreferences"]["set"] } }, subscribe: ((args: any) => {
       listeners.add(args.callback); return () => { listeners.delete(args.callback); };
     }) as any },
   });

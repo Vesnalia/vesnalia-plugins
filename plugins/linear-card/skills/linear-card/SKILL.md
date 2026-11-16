@@ -28,9 +28,9 @@ exact state (for example QA is orange in TRA).
 ## Settings
 
 - `apiKey` (secret): Linear personal API key. Set with
-  `bb plugin config linear-card set apiKey <key>`.
-- **Projects** (settings page section): one checkbox per BB project. The chip appears
+  `alia plugin config linear-card set apiKey <key>`.
+- **Projects** (settings page section): one checkbox per VesnALIA project. The chip appears
   only in checked projects. Stored as project ids in plugin kv (`enabled-projects`).
 
-The explorer's Linear team is remembered per BB project; a workspace with one team
+The explorer's Linear team is remembered per VesnALIA project; a workspace with one team
 uses it automatically.

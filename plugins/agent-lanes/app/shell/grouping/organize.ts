@@ -1,7 +1,7 @@
 // Rows for the timeline: which lanes exist, in which groups, nested how, in
 // which order. Pure so every rule here is unit tested.
 //
-// The grouping mirrors bb's own sidebar (plugins/thread-list):
+// The grouping mirrors VesnALIA's own sidebar (plugins/thread-list):
 // - Children follow their root into its project or section; machine,
 //   environment, and provider modes group each thread by its own attribute,
 //   so a child on another machine starts a tree of its own there.
@@ -14,7 +14,7 @@
 //
 // Within a group, siblings sort by the most urgent lane in their subtree:
 // needs-you first, then running, then most recent activity.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { GroupRow, LaneRow, Row } from "../../../shared/view";
 import { formatModelLabel } from "../model-label";
 import {

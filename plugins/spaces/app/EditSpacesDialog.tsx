@@ -195,7 +195,7 @@ export function EditSpacesDialog({
         </DialogHeader>
 
         <div className="flex min-h-80 gap-4">
-          {/* Styled like bb's sidebar, so it shows the space's tint too. */}
+          {/* Styled like VesnALIA's sidebar, so it shows the space's tint too. */}
           <div
             {...{ [SIDEBAR_SCOPE_ATTR]: "" }}
             className="flex w-48 shrink-0 flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-1.5 text-sidebar-foreground">

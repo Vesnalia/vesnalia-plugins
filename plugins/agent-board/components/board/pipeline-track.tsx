@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — the focus view's pipeline / progress track.
+// alia-plugin-agent-board — the focus view's pipeline / progress track.
 //
 // Truthful discrete state only (completed / active / pending / failed /
 // interrupted / skipped) — never a fabricated percentage. The signal sweep

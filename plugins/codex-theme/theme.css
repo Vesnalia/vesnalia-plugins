@@ -1,16 +1,16 @@
-/* Codex Theme for bb: https://github.com/steveafrost/bb-theme-codex
+/* Codex Theme for alia: https://github.com/steveafrost/bb-theme-codex
 
-   This file is the "Codex" theme and the source for "Codex (BB colors)".
-   theme-bb.css is generated from it by `npm run build:themes`, which swaps each
-   `@region` below for the block of the same name in palettes/bb.css. Edit this
-   file, never theme-bb.css.
+   This file is the "Codex" theme and the source for "Codex (ALIA colors)".
+   theme-alia.css is generated from it by `npm run build:themes`, which swaps each
+   `@region` below for the block of the same name in palettes/alia.css. Edit this
+   file, never theme-alia.css.
 
    Optional changes (centered welcome, filled nav icons, ...) are off unless the
    matching plugin setting adds its data-codex-* attribute to <html>; see
    options.ts. */
 
 /* @region palette */
-/* Catppuccin (bb built-in) with ChatGPT/Codex fonts */
+/* Catppuccin (alia built-in) with ChatGPT/Codex fonts */
 :root, .light {
   /* Anchors: Base / Text */
   --canvas: #eff1f5;
@@ -127,12 +127,12 @@ body {
 }
 @media not ((width <= 767px) and (pointer: coarse)) {
   :root {
-    --text-base: 0.875rem;          /* 14px (bb default 15px) */
+    --text-base: 0.875rem;          /* 14px (alia default 15px) */
     --text-base--line-height: 1.5;  /* 21px */
   }
 }
 
-/* bb's .font-normal utility forces 400 on chat/sidebar; Codex renders UI at 430 */
+/* alia's .font-normal utility forces 400 on chat/sidebar; Codex renders UI at 430 */
 :root, .light, .dark { --font-weight-normal: 430; }
 
 /* Codex chat text stays 14px. Keep editable text large enough on touch
@@ -151,12 +151,12 @@ body {
 }
 
 /* Codex electron renders UI chrome (sidebar, headers, tool rows) at --font-ui-size = 14px
-   and secondary/code text at 13px. Shift bb's sm/xs scale up one step to match. */
+   and secondary/code text at 13px. Shift alia's sm/xs scale up one step to match. */
 @media not ((width <= 767px) and (pointer: coarse)) {
   :root, .light, .dark {
-    --text-sm: 0.875rem;                    /* 14px (bb 13px) */
+    --text-sm: 0.875rem;                    /* 14px (alia 13px) */
     --text-sm--line-height: calc(1.25 / .875); /* 20px */
-    --text-xs: 0.8125rem;                   /* 13px (bb 12px) */
+    --text-xs: 0.8125rem;                   /* 13px (alia 12px) */
     --text-xs--line-height: calc(1.125 / .8125); /* 18px */
   }
 }
@@ -164,25 +164,25 @@ body {
 /* Codex sidebar section labels ("Pinned", "Projects") use the same 14px as rows */
 [data-sidebar="group-label"] { font-size: 0.875rem; }
 
-/* Codex left rail: bb draws rail glyphs at 16px (20px on touch) inside 24px
+/* Codex left rail: alia draws rail glyphs at 16px (20px on touch) inside 24px
    buttons with a 6px gap, which reads tighter and smaller than the Codex rail.
-   Glyphs go up 12.5% to 18px; --bb-sidebar-control-size grows the button (and
+   Glyphs go up 12.5% to 18px; --alia-sidebar-control-size grows the button (and
    so the hover/active pill behind the glyph) to 34px; the rail row gap tightens
-   from 6px to 4px. The rail column itself follows --bb-sidebar-control-size,
-   so it stays concentric. Custom theme CSS is unlayered, so these win over bb's
+   from 6px to 4px. The rail column itself follows --alia-sidebar-control-size,
+   so it stays concentric. Custom theme CSS is unlayered, so these win over alia's
    @layer base defaults for both pointer and touch sizes.
-   Rail column width = control size + 2 * --bb-sidebar-rail-padding. bb's 12px
+   Rail column width = control size + 2 * --alia-sidebar-rail-padding. alia's 12px
    padding would make the 34px rail 58px wide; 9px sets it to 52px, a touch
-   wider than bb's stock 48px. The 34px button gives a larger hover/active pill. */
+   wider than alia's stock 48px. The 34px button gives a larger hover/active pill. */
 :root {
-  --bb-sidebar-control-icon-size: 18px;
-  --bb-sidebar-control-size: 34px;
-  --bb-sidebar-rail-padding: 9px;
+  --alia-sidebar-control-icon-size: 18px;
+  --alia-sidebar-control-size: 34px;
+  --alia-sidebar-rail-padding: 9px;
 }
 @media (width < 48rem) and (pointer: coarse) {
   :root {
-    --bb-sidebar-control-icon-size: 22.5px;
-    --bb-sidebar-control-size: 44px;
+    --alia-sidebar-control-icon-size: 22.5px;
+    --alia-sidebar-control-size: 44px;
   }
 }
 
@@ -195,7 +195,7 @@ body {
 
 /* @region text-tiers */
 /* Text colours: Codex chrome-theme tiers. Codex derives every text tier from its ink
-   colour (Catppuccin Text, same as bb's --ink) as alpha steps, using its contrast curve:
+   colour (Catppuccin Text, same as alia's --ink) as alpha steps, using its contrast curve:
    dark contrast 71 -> 1.0767, light default 45 -> 0.45.
    secondary = .65 + .1*c, tertiary = .45 + .1*c; sidebar rows render at 85%. */
 :root, .light {
@@ -220,7 +220,7 @@ body {
 /* Codex section labels ("Pinned", "Projects") use the tertiary tier */
 [data-sidebar="group-label"] { color: var(--subtle-foreground); }
 
-/* Codex does not fade settled tool/activity rows; bb dims them to 40% */
+/* Codex does not fade settled tool/activity rows; alia dims them to 40% */
 span.inline-flex.opacity-40:has(.text-subtle-foreground),
 div.rounded-md.text-muted-foreground.opacity-40 { opacity: 1; }
 .ProseMirror p.is-editor-empty::before { color: var(--codex-placeholder); opacity: 1; }
@@ -241,7 +241,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* ---------------------------------------------------------------------------
    Hide the composer bottom bar (environment chip + "new thread in this
    environment" button + context-window usage ring).
-   bb has no built-in setting for this; custom theme CSS is the supported hook.
+   alia has no built-in setting for this; custom theme CSS is the supported hook.
    The "Show the bar under the composer" setting (data-codex-composer-footer)
    brings the bar back without the "New thread in this environment" button.
    --------------------------------------------------------------------------- */
@@ -386,7 +386,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   margin: 0 !important;
 }
 
-/* Refine BB's existing floating-menu animations. The positioning wrapper keeps
+/* Refine ALIA's existing floating-menu animations. The positioning wrapper keeps
    control of placement; only the inner surface fades and settles by 2px. */
 [data-radix-popper-content-wrapper] > :is([role="menu"], [role="dialog"], [role="listbox"])[data-state] {
   --tw-enter-scale: 1 !important;
@@ -490,7 +490,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   opacity: 0.8 !important;
 }
 
-/* Menu icons inherit row color; bb controls opacity to hide unchecked marks. */
+/* Menu icons inherit row color; alia controls opacity to hide unchecked marks. */
 :is([data-radix-menu-content], [data-radix-dropdown-menu-content], [data-radix-context-menu-content], [role="menu"])
   :is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]) :is([data-icon-root], svg) {
   color: inherit !important;
@@ -609,7 +609,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* ---------------------------------------------------------------------------
    Mobile: a notification must never lock the screen.
 
-   bb mounts Sonner's toaster as a fixed <ol> with pointer-events: auto. The
+   alia mounts Sonner's toaster as a fixed <ol> with pointer-events: auto. The
    offsets above pin both vertical edges with !important, which stretches that
    layer to the full height of the viewport. Because it sits at z-index
    999999999, taps anywhere on screen land on the layer instead of the app -
@@ -634,7 +634,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   }
 
   [data-sonner-toaster][data-y-position="top"] {
-    top: calc(env(safe-area-inset-top) + var(--bb-app-chrome-row-height) + 16px) !important;
+    top: calc(env(safe-area-inset-top) + var(--alia-app-chrome-row-height) + 16px) !important;
   }
 
   [data-sonner-toaster][data-y-position="bottom"] {
@@ -661,8 +661,8 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   }
 }
 
-/* Custom BB toasts (.bb-app-toast): outer <li> is purely a transparent wrapper */
-[data-sonner-toast].bb-app-toast,
+/* Custom ALIA toasts (.alia-app-toast): outer <li> is purely a transparent wrapper */
+[data-sonner-toast].alia-app-toast,
 [data-sonner-toast]:not([data-styled="true"]) {
   border: none !important;
   background: transparent !important;
@@ -670,8 +670,8 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   padding: 0 !important;
 }
 
-/* The actual toast card (inner div of .bb-app-toast): single clean border, 16px radius */
-[data-sonner-toast].bb-app-toast > div,
+/* The actual toast card (inner div of .alia-app-toast): single clean border, 16px radius */
+[data-sonner-toast].alia-app-toast > div,
 [data-sonner-toast]:not([data-styled="true"]) > div {
   border-radius: 16px !important;
   background-color: var(--popover) !important;
@@ -681,7 +681,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   overflow: hidden !important;
 }
 
-:root:not(.dark) [data-sonner-toast].bb-app-toast > div,
+:root:not(.dark) [data-sonner-toast].alia-app-toast > div,
 :root:not(.dark) [data-sonner-toast]:not([data-styled="true"]) > div {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
 }
@@ -701,7 +701,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 }
 
 /* Stacked/background toasts also get 16px radius */
-:where([data-sonner-toast].bb-app-toast[data-expanded="false"][data-front="false"]),
+:where([data-sonner-toast].alia-app-toast[data-expanded="false"][data-front="false"]),
 [data-sonner-toast][data-front="false"],
 [data-sonner-toast][data-front="false"] > div {
   border-radius: 16px !important;
@@ -808,12 +808,12 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 }
 
 /* ---------------------------------------------------------------------------
-   Keep markdown tables inside the message column. bb widens the table wrapper
+   Keep markdown tables inside the message column. alia widens the table wrapper
    with inline styles (up to 1100px, offset to centre on the column); wide
    tables scroll horizontally inside the column instead and fade at the right
    edge until the last column is reached. Click-to-expand comes from the
-   bb-plugin-table-expand plugin. Matches bb <= 0.46 (div.my-2.flex) and 0.47+.
-   Table containment and the fade are by Jaryd Diamond (bb-codex).
+   alia-plugin-table-expand plugin. Matches alia <= 0.46 (div.my-2.flex) and 0.47+.
+   Table containment and the fade are by Jaryd Diamond (alia-codex).
    --------------------------------------------------------------------------- */
 [data-markdown-preview] div:has(> div.overflow-x-auto > table) {
   width: 100% !important;
@@ -857,10 +857,10 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* ---------------------------------------------------------------------------
    Optional: instant sidebar (no open/close or disclosure animation).
    Applies only while the plugin setting adds data-codex-instant-sidebar to <html>.
-   From Jaryd Diamond's bb-codex.
+   From Jaryd Diamond's alia-codex.
    --------------------------------------------------------------------------- */
 /* Make the sidebar's thread/group disclosure arrows change instantly. */
-:root[data-codex-instant-sidebar] [data-bb-plugin="thread-list"] button[aria-expanded] .transition-transform {
+:root[data-codex-instant-sidebar] [data-alia-plugin="thread-list"] button[aria-expanded] .transition-transform {
   transition: none !important;
 }
 
@@ -882,7 +882,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* An expanded section renders its rows in a `.mt-1` sibling of the label; an
    empty one leaves that div empty. Collapsed sections drop the div, so they keep
    their header. Hide only the section, never its [data-sidebar-windowed-item]
-   wrapper or an ancestor: bb windows the list with an IntersectionObserver on
+   wrapper or an ancestor: alia windows the list with an IntersectionObserver on
    that wrapper, and display:none there makes it unmount, stop matching, remount,
    and flash. The wrapper collapses to 0px and stays observed. The group's
    space-y margin is dropped so hidden sections leave no gap. */
@@ -896,26 +896,26 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* ---------------------------------------------------------------------------
    Optional: Codex thread status (blue unread dot, ring spinner).
    Applies only while the plugin setting adds data-codex-thread-status to <html>.
-   From Jaryd Diamond's bb-codex.
+   From Jaryd Diamond's alia-codex.
    --------------------------------------------------------------------------- */
 /* Codex-style thread status: a blue unread dot and a continuous loading ring. */
-:root[data-codex-thread-status] [data-bb-plugin="thread-list"] {
-  --bb-thread-completed: #2277cc;
+:root[data-codex-thread-status] [data-alia-plugin="thread-list"] {
+  --alia-thread-completed: #2277cc;
 }
 
-:root.dark[data-codex-thread-status] [data-bb-plugin="thread-list"] {
-  --bb-thread-completed: #6bb5fa;
+:root.dark[data-codex-thread-status] [data-alia-plugin="thread-list"] {
+  --alia-thread-completed: #6bb5fa;
 }
 
-:root[data-codex-thread-status] [data-bb-plugin="thread-list"] [aria-label="Unread thread succeeded"] {
+:root[data-codex-thread-status] [data-alia-plugin="thread-list"] [aria-label="Unread thread succeeded"] {
   width: 8px !important;
   height: 8px !important;
   border-radius: 50% !important;
-  background-color: var(--bb-thread-completed) !important;
+  background-color: var(--alia-thread-completed) !important;
   opacity: 1 !important;
 }
 
-:root[data-codex-thread-status] [data-bb-plugin="thread-list"] [data-icon-root][aria-label="Thread working"] {
+:root[data-codex-thread-status] [data-alia-plugin="thread-list"] [data-icon-root][aria-label="Thread working"] {
   box-sizing: border-box;
   width: 14px !important;
   height: 14px !important;
@@ -929,13 +929,13 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
   animation-duration: 900ms !important;
 }
 
-/* Retain the accessible status label and BB's rotation while hiding the spokes. */
-:root[data-codex-thread-status] [data-bb-plugin="thread-list"] [data-icon-root][aria-label="Thread working"] > * {
+/* Retain the accessible status label and ALIA's rotation while hiding the spokes. */
+:root[data-codex-thread-status] [data-alia-plugin="thread-list"] [data-icon-root][aria-label="Thread working"] > * {
   visibility: hidden !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root[data-codex-thread-status] [data-bb-plugin="thread-list"] [data-icon-root][aria-label="Thread working"] {
+  :root[data-codex-thread-status] [data-alia-plugin="thread-list"] [data-icon-root][aria-label="Thread working"] {
     animation: none !important;
   }
 }
@@ -943,7 +943,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* ---------------------------------------------------------------------------
    Optional: thread outline on the left.
    Applies only while the plugin setting adds data-codex-outline-left to <html>.
-   From Jaryd Diamond's bb-codex.
+   From Jaryd Diamond's alia-codex.
    --------------------------------------------------------------------------- */
 /* Keep the outline in its own chat pane, and open its menu toward the messages. */
 :root[data-codex-outline-left] [data-scroll-overlay]:has([data-thread-toc]) {
@@ -960,7 +960,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 /* ---------------------------------------------------------------------------
    Optional: filled, high-contrast icon for the selected rail item.
    Applies only while the plugin setting adds data-codex-filled-nav-icons to <html>.
-   From Jaryd Diamond's bb-codex.
+   From Jaryd Diamond's alia-codex.
    --------------------------------------------------------------------------- */
 /* Highlight selected navigation; only closed shapes receive a fill. */
 :root[data-codex-filled-nav-icons] [data-testid="app-nav-rail"] button[aria-current="page"] {
@@ -1017,9 +1017,9 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
 }
 
 /* ---------------------------------------------------------------------------
-   Optional: centered BB welcome on the new-thread screen (with app.tsx/app.css).
+   Optional: centered ALIA welcome on the new-thread screen (with app.tsx/app.css).
    Applies only while the plugin setting adds data-codex-welcome to <html>.
-   From Jaryd Diamond's bb-codex.
+   From Jaryd Diamond's alia-codex.
    --------------------------------------------------------------------------- */
 /* The native compact/mobile layout already docks its composer above the keyboard. */
 @media (min-width: 768px) and (min-height: 480px) {
@@ -1052,7 +1052,7 @@ span.inline-flex.min-w-0.max-w-full.items-center.opacity-40 { opacity: 1; }
     margin: 0 !important;
   }
 
-  :root[data-codex-welcome] [id="plugin-homepage:codex-theme:welcome"] > [data-bb-plugin] {
+  :root[data-codex-welcome] [id="plugin-homepage:codex-theme:welcome"] > [data-alia-plugin] {
     width: 100%;
     min-width: 0;
   }

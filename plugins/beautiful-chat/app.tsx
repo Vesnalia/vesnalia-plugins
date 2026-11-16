@@ -1,9 +1,9 @@
-// bb-plugin-beautiful-chat — restyles BB's native chat in BeautifulUI's design
+// alia-plugin-beautiful-chat — restyles VesnALIA's native chat in BeautifulUI's design
 // language. Styling lives in app.css, switched per feature by attributes on
 // <html> that mirror the plugin settings; this overlay renders nothing.
 import "./app.css";
 import { useEffect } from "react";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 import { rootAttributes } from "./settings";
 import { registerCoinsWorklet } from "./coins-worklet";
 import { mountSpatialTooltips } from "./spatial-tooltip";

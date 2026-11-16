@@ -1,5 +1,5 @@
-// Normal-mode keys for bb, active while focus is outside a text field.
-// bb's composer already blurs itself on Esc, so Esc then a key below works.
+// Normal-mode keys for VesnALIA, active while focus is outside a text field.
+// VesnALIA's composer already blurs itself on Esc, so Esc then a key below works.
 //
 //   f        hints: type a label to click or focus an element
 //   j / k    scroll down / up
@@ -66,7 +66,7 @@ type KeyInput = Pick<KeyboardEvent, "key" | "altKey" | "metaKey" | "ctrlKey" | "
  * Normal-mode routing without DOM access. `lastG` is the timestamp of a
  * pending first `g` (0 = none); any other key except a bare modifier cancels
  * it. `typing` = focus is in a text field or a typeahead popup. `handled` =
- * the key belongs to bbium and must not reach bb or the page. A key in
+ * the key belongs to bbium and must not reach VesnALIA or the page. A key in
  * `disabled` is not ours: it passes through untouched.
  */
 export function routeKey(
@@ -106,7 +106,7 @@ function isTyping(e: KeyboardEvent): boolean {
 type EditorBox = { isProseMirror: boolean; inColumn: boolean; bottom: number };
 
 /**
- * Index of the composer among visible editors. bb's composer is a ProseMirror
+ * Index of the composer among visible editors. VesnALIA's composer is a ProseMirror
  * editor, so it beats a terminal textarea. Then an editor in the column where
  * the user last worked wins, so side-by-side panes focus their own composer.
  * Then the lowest one: inline message editors sit above the thread composer.
@@ -198,7 +198,7 @@ export function createKeys(): Keys {
     if (e.isTrusted) cancelPin();
   }
 
-  // Capture phase on window so bb's own shortcuts never see these keystrokes.
+  // Capture phase on window so VesnALIA's own shortcuts never see these keystrokes.
   const opts = { capture: true, signal: listeners.signal };
   window.addEventListener("keydown", onKeyDown, opts);
   document.addEventListener("pointerdown", onPointerDown, opts);

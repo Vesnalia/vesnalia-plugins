@@ -1,12 +1,12 @@
 # External client account scope
 
 An operator may narrow an external project-bound credential using
-`bb pool client add <name> --project <project-id> --output <new-private-file> --account-scope-json <json>`.
+`alia pool client add <name> --project <project-id> --output <new-private-file> --account-scope-json <json>`.
 The JSON contains authority metadata, never a credential:
 
 ```json
 {
-  "schema": "bb-account-pool/client-account-scope/1",
+  "schema": "alia-account-pool/client-account-scope/1",
   "accountIds": ["11111111-1111-4111-8111-111111111111"],
   "egress": {"id": "dedicated-vpn", "version": 1}
 }

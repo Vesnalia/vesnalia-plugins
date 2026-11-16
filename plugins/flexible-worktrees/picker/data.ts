@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PluginRpcClient } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcClient } from "@vesnalia/plugin-sdk/app";
 import { inputsSchema, type Choices, type Inputs, type LiveBranches, type Preview, type Pulls } from "../inputs";
 import type { rpcContract } from "../server";
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import { findTimeline, mountedRows, prefersReducedMotion, rankOfRow, rowById, type Timeline } from "./dom";
 import { ARRIVED_PX, JUMP_EASE, PIN_ROW_HEIGHT, bandAt, jumpOffset, jumpStep, lastAtOrAbove, searchStep, type Message, type TurnStatus } from "./model";
@@ -13,11 +13,11 @@ import { COUNTER_ROOM, setCounterRoom, useCounterRoom, useTabVisible } from "./v
  * drawn bottom edge is about 38px down, so this leaves it ~10px of clearance.
  */
 const LANDING = PIN_ROW_HEIGHT;
-/** The corner radius of BB's own message bubble; the bar lifts its top corners by this much. */
+/** The corner radius of VesnALIA's own message bubble; the bar lifts its top corners by this much. */
 const RADIUS = 12;
 /**
  * The timeline column's own 16px side padding: the bar is exactly as wide as the
- * text, so it lines up with it at every window width. BB's TOC strip sits at the
+ * text, so it lines up with it at every window width. VesnALIA's TOC strip sits at the
  * vertical middle of the right edge, not at the top, so it does not meet the bar.
  */
 const SIDE_ROOM = 16;
@@ -110,7 +110,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
   const counter = options.showPosition && roomForCounter && options.halves !== "reply";
   const tally = useOutline(threadId, counter, active, newestUser(index));
 
-  // Park the row in the scroller and keep it parked. BB can rebuild the scroller or its frame under a
+  // Park the row in the scroller and keep it parked. VesnALIA can rebuild the scroller or its frame under a
   // thread (a layout change), so each of them and the few boxes above is watched for children added or
   // removed (no subtree: a streaming reply does not wake it), and the bar attaches again when it is gone.
   useEffect(() => {
@@ -179,7 +179,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
   /**
    * Scroll the row to its landing, steering by where the row is *now*.
    *
-   * A single `scrollTo` aims at where the row was when it started, and BB moves
+   * A single `scrollTo` aims at where the row was when it started, and VesnALIA moves
    * the row on the way: rows mount and unmount as the scroll passes, and their
    * measured heights replace estimates, so the row ends up somewhere else and the
    * page visibly corrects itself afterwards. Instead each frame closes a share of
@@ -239,7 +239,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
           step = searchStep(target.rank, here, scroller.clientHeight);
         }
         const before = scroller.scrollTop;
-        // BB's scroll keeper (0.48) writes a scroll it cannot explain back to the
+        // VesnALIA's scroll keeper (0.48) writes a scroll it cannot explain back to the
         // bottom while it is attached there; a wheel event on the scroller marks the
         // next 150ms as the reader's input, so it follows the jump and detaches.
         scroller.dispatchEvent(new WheelEvent("wheel", { bubbles: true }));
@@ -288,7 +288,7 @@ export function PinnedTurns({ threadId }: { threadId: string }) {
   );
 }
 
-/** BB's message bubble ink, made opaque: `--surface-recessed` is translucent and lets the text beneath through. */
+/** VesnALIA's message bubble ink, made opaque: `--surface-recessed` is translucent and lets the text beneath through. */
 const MESSAGE_INK = "var(--surface-recessed-solid)";
 /**
  * The reply has no bubble in the timeline, so its half sits between the chat

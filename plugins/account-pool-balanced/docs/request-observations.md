@@ -1,12 +1,12 @@
 # Bounded request observations
 
-Account Pooler 0.4.35 adds `bb pool observations --json`, a local BB CLI inspection command. It does not contact providers, refresh quotas, select accounts or change policy. There is no new public HTTP endpoint. Use the existing BB CLI authorization; treat the output as private operational metadata.
+Account Pooler 0.4.35 adds `alia pool observations --json`, a local VesnALIA CLI inspection command. It does not contact providers, refresh quotas, select accounts or change policy. There is no new public HTTP endpoint. Use the existing VesnALIA CLI authorization; treat the output as private operational metadata.
 
 The journal starts with authenticated requests that passed the hub's admission guards and reached `forward`. Invalid tokens, pre-forward refusals, model catalog/auxiliary quota calls, and specialized routes that bypass `forward` are outside coverage. It cannot reconstruct incidents before installation. Records correlate only what the server actually knows:
 
 - A pool-generated random request ID identifies one logical forwarding operation. Its `attempt` is zero until the first upstream attempt, then increments on every upstream fetch, including retries to the same account. It is not a caller-supplied or upstream request ID.
 - `clientHash` is a truncated SHA-256 of the authenticated context's host/client identifier, never of a token. For a machine's project/thread credentials this is the machine identity; for external credentials it is the external client identity. Labels, names, emails, token values and provider-side session identifiers are never recorded. Correlate with known authenticated contexts; the hash is not proof of a human identity.
-- `projectId` and `threadId` come exclusively from the authenticated token context and must match canonical BB ID shapes; otherwise null. External clients often have no thread binding. Body/header session IDs are never interpreted as BB thread IDs.
+- `projectId` and `threadId` come exclusively from the authenticated token context and must match canonical VesnALIA ID shapes; otherwise null. External clients often have no thread binding. Body/header session IDs are never interpreted as VesnALIA thread IDs.
 - `model` is an exact allowlisted request model ID; unfamiliar aliases remain null. `modelFamily` is the adapter's existing classification, not proof of an upstream selected model. No request text or response model headers are logged.
 - `accountId` is the selected account's internal UUID. `inFlight` is the total upstream count; `accountInFlight` is the selected account's count at that observation. Attempt events follow increment; stream-end events follow decrement. These are instantaneous counters, not a provider concurrency quota.
 
@@ -47,7 +47,7 @@ Codex `upstream` events may additionally contain `codexQuota`, observed at the e
 
 `maxConcurrentRequestsPerAccount` is a server setting, default **2**, valid integers
 1–32. It applies independently to each selected account and to every provider's
-forwarded inference/RPC route, across native BB hosts and issued external clients.
+forwarded inference/RPC route, across native VesnALIA hosts and issued external clients.
 It limits requests, not open threads. A slot remains occupied through stream end,
 cancel or error, not merely until response headers arrive. Quota collectors and
 OAuth calls retain their existing separate coalescing/ownership; they do not use
@@ -88,7 +88,7 @@ Respect provider cooldowns and observe natural traffic before adjusting it.
 
 ## Bounded hourly traffic history (0.4.48)
 
-`bb pool history --json` inspects independently persisted hourly counters for up to
+`alia pool history --json` inspects independently persisted hourly counters for up to
 fourteen days. The existing `observations` output includes a compact `history` summary across all retained buckets; the
 short event ring remains unchanged. Both commands are local authorized inspection,
 not new public endpoints. No provider, quota or model calls are made.
@@ -140,7 +140,7 @@ Actual 429/auth/queue failures are reasons to investigate under existing policy,
 not authorization to disable, reroute or rotate an account automatically.
 
 
-History transport is paginated independently from storage. `bb pool history
+History transport is paginated independently from storage. `alia pool history
 --offset 0 --limit 100 --json` returns at most 100 detail rows by default; `limit`
 is a strict integer 1–200 and `offset` is 0–8,192. `totalRows`, `offset`, `limit`,
 `nextOffset` and `rowsTruncated` describe the page, separately from the persistent
@@ -157,7 +157,7 @@ actual timestamps of upstream 429, upstream auth errors and queue failures over
 ALL buckets, never just the first page. It has no detail `rows` array. The existing
 monitor uses these actual latest timestamps within its recent observation window;
 large counts alone cannot make stale failures current. Output remains below the
-BB one-MiB CLI limit at admitted capacity; persisted data limits remain unchanged.
+VesnALIA one-MiB CLI limit at admitted capacity; persisted data limits remain unchanged.
 
 
 ## Claude service-error continuity and authorization refresh evidence (0.4.49)

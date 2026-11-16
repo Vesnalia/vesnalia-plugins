@@ -1,8 +1,8 @@
-// What the plugin registers with BB: its RPC methods, agent tools, CLI subcommands, event listeners, services and
+// What the plugin registers with VesnALIA: its RPC methods, agent tools, CLI subcommands, event listeners, services and
 // schedules, and the tools each kind of thread gets. Moving code between the server's modules changes none of it.
 import { test, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { PluginAgentConfigurationContext } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { PluginAgentConfigurationContext } from "@vesnalia/plugin-sdk";
 import { startPlugin } from "./plugin-store.test-support";
 import { merge, SUBCOMMANDS } from "./server-modules";
 
@@ -22,8 +22,8 @@ const context = (threadId: string, pluginId: string | null = "code-review-worksp
 }) as PluginAgentConfigurationContext;
 
 test("the plugin registers the same RPC methods, tools, CLI subcommands, listeners, services and schedules", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace", "code-review-workspace-generate"] });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace", "code-review-workspace-generate"] });
+  const store = await startPlugin(alia);
   const registered = harness.inspection.registrations;
 
   expect([...registered.rpcMethods].sort()).toMatchInlineSnapshot(`
@@ -202,47 +202,47 @@ test("the plugin registers the same RPC methods, tools, CLI subcommands, listene
         {
           "name": "review",
           "summary": "Review this thread's folder, or a PR or ref",
-          "usage": "bb review [<pr-url | owner/repo#n | pr-number | git-ref> [--base <ref>]] [--context <text>] [--name <text>]",
+          "usage": "alia review [<pr-url | owner/repo#n | pr-number | git-ref> [--base <ref>]] [--context <text>] [--name <text>]",
         },
         {
           "name": "comment",
           "summary": "List, add, edit, or delete a review's local draft comments; never posts to GitHub",
-          "usage": "bb review comment <list | add | edit | delete> <review> [<file>:<line>] [--side LEFT|RIGHT] [--code <text>] [--body <text>] [--severity <severity>] [--evidence <text>] [--pre-existing] [--json]",
+          "usage": "alia review comment <list | add | edit | delete> <review> [<file>:<line>] [--side LEFT|RIGHT] [--code <text>] [--body <text>] [--severity <severity>] [--evidence <text>] [--pre-existing] [--json]",
         },
         {
           "name": "summary",
           "summary": "Show or write a review's local review summary and suggested verdict; never posts to GitHub",
-          "usage": "bb review summary <review> [--json] | [--body <text> [--suggest APPROVE|COMMENT|REQUEST_CHANGES]]",
+          "usage": "alia review summary <review> [--json] | [--body <text> [--suggest APPROVE|COMMENT|REQUEST_CHANGES]]",
         },
         {
           "name": "list",
           "summary": "List your reviews, in Needs review's order, with whose turn it is",
-          "usage": "bb review list [--json]",
+          "usage": "alia review list [--json]",
         },
         {
           "name": "ask",
           "summary": "Send a message to a review's agent, relayed from this thread, starting the agent if needed",
-          "usage": "bb review ask <review> <text>",
+          "usage": "alia review ask <review> <text>",
         },
         {
           "name": "approve",
           "summary": "Line PRs' approvals up in Needs review for the reviewer's click; never posts",
-          "usage": "bb review approve <review…> [--body <text>]",
+          "usage": "alia review approve <review…> [--body <text>]",
         },
         {
           "name": "report",
           "summary": "Say what you did with a comment the reviewer sent you, done or declined, or which commit Push pushes",
-          "usage": "bb review report <id> done|declined [--note <text>] [--commit <sha>] | --commit <sha>",
+          "usage": "alia review report <id> done|declined [--note <text>] [--commit <sha>] | --commit <sha>",
         },
         {
           "name": "ready",
           "summary": "Say you've finished with the comments the reviewer sent you, for them to re-review",
-          "usage": "bb review ready [<review>]",
+          "usage": "alia review ready [<review>]",
         },
         {
           "name": "storage",
           "summary": "Show where the reviews are kept, and move them between SQLite and Postgres",
-          "usage": "bb review storage <status | verify | migrate | export-sqlite [--replace-data-db]>",
+          "usage": "alia review storage <status | verify | migrate | export-sqlite [--replace-data-db]>",
         },
       ],
       "name": "review",
@@ -351,31 +351,31 @@ test("the plugin registers the same RPC methods, tools, CLI subcommands, listene
   `);
 });
 
-test("BB's RPC discovery lists what other plugins call, reviews.v1.status and reviewThreadChanges, and none of the panel's methods", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace", "code-review-workspace-generate"] });
-  const register = vi.spyOn(bb.rpc, "register");
-  await startPlugin(bb);
+test("VesnALIA's RPC discovery lists what other plugins call, reviews.v1.status and reviewThreadChanges, and none of the panel's methods", async () => {
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", agentSkillIds: ["code-review-workspace", "code-review-workspace-generate"] });
+  const register = vi.spyOn(alia.rpc, "register");
+  await startPlugin(alia);
   const published = register.mock.calls.filter(([, , options]) => options?.experimental_discoverable);
   expect(published.map(([contract]) => Object.keys(contract).sort())).toEqual([["reviewThreadChanges", "reviews.v1.status"]]);
   expect(register.mock.calls.flatMap(([contract]) => Object.keys(contract)).filter((name) => name === "reviewThreadChanges")).toHaveLength(1);
 });
 
-test("bb review runs a subcommand by its own name only: a name every object has is a ref to review", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await startPlugin(bb);
+test("alia review runs a subcommand by its own name only: a name every object has is a ref to review", async () => {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await startPlugin(alia);
   for (const name of ["constructor", "toString", "__proto__"]) {
     // As git answers for any revision this checkout doesn't have.
     expect(await harness.behavior.runCli([name], { projectId: "p1", cwd: process.cwd() })).toEqual({ exitCode: 1, stdout: "", stderr: `fatal: bad revision '${name}'\n` });
   }
 });
 
-test("each subcommand bb review's help lists, but review and storage, runs from a module, never as a ref to review", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await startPlugin(bb);
+test("each subcommand VesnALIA review's help lists, but review and storage, runs from a module, never as a ref to review", async () => {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await startPlugin(alia);
   for (const { name } of SUBCOMMANDS.filter(({ name }) => name !== "review" && name !== "storage")) {
     for (const argv of [[name], [name, "--help"]]) {
       const result = await harness.behavior.runCli(argv, { projectId: "p1", cwd: process.cwd() });
-      expect(result.stderr, `bb review ${argv.join(" ")}`).not.toMatch(/bad revision|bb review failed/);
+      expect(result.stderr, `alia review ${argv.join(" ")}`).not.toMatch(/bad revision|alia review failed/);
     }
   }
 });

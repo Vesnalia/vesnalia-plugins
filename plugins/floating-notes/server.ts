@@ -1,15 +1,15 @@
-// bb-plugin-notes — server. SQLite-backed floating notes: FTS5 search (LIKE
+// alia-plugin-notes — server. SQLite-backed floating notes: FTS5 search (LIKE
 // fallback), thread scratchpads, daily/inbox notes, image attachments, @note
-// mentions, a `bb notes` CLI, and agent tools. The RPC surface lives in
+// mentions, a `alia notes` CLI, and agent tools. The RPC surface lives in
 // lib/contract.ts; every mutation runs through a serialize mutex and publishes
 // a realtime "changed" signal after commit.
 import { randomUUID } from "node:crypto";
 // fs/promises, deliberately: export/import walk every note/file in one CLI
-// call, and plugins run in-process — a sync loop here blocks the whole bb
+// call, and plugins run in-process — a sync loop here blocks the whole VesnALIA
 // server for its duration (perf-watch traced a 79s handler to exactly that).
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   noteColorSchema,
@@ -120,8 +120,8 @@ function newId(): string {
   return randomUUID().replace(/-/g, "").slice(0, 10);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     shortcutEnabled: {
       type: "boolean",
       label: "Toggle window with Ctrl+'",
@@ -152,9 +152,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
-    // 0–1: the shipped v1 statements. bb.storage.migrate keys migrations by
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
+    // 0–1: the shipped v1 statements. alia.storage.migrate keys migrations by
     // statement index, so these two must stay byte-identical forever.
     `CREATE TABLE IF NOT EXISTS notes (
       id TEXT PRIMARY KEY,
@@ -235,18 +235,18 @@ export default async function plugin(bb: BbPluginApi) {
       INSERT INTO notes_fts (notes_fts, rowid, title, body, tags) VALUES ('delete', old.rowid, old.title, old.body, old.tags);
       INSERT INTO notes_fts (rowid, title, body, tags) VALUES (new.rowid, new.title, new.body, new.tags);
     END`);
-    if ((await bb.storage.kv.get<boolean>(FTS_REBUILT_KEY)) !== true) {
+    if ((await alia.storage.kv.get<boolean>(FTS_REBUILT_KEY)) !== true) {
       db.prepare(`INSERT INTO notes_fts (notes_fts) VALUES ('rebuild')`).run();
-      await bb.storage.kv.set(FTS_REBUILT_KEY, true);
+      await alia.storage.kv.set(FTS_REBUILT_KEY, true);
     }
   } catch (error) {
     ftsAvailable = false;
-    bb.log.warn(
+    alia.log.warn(
       `FTS5 unavailable, using LIKE search: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 
-  const notifyChanged = () => bb.realtime.publish("notes", { kind: "changed" });
+  const notifyChanged = () => alia.realtime.publish("notes", { kind: "changed" });
   settings.onChange(() => notifyChanged());
 
   // Trash is a grace period, not an archive: purge anything trashed over 30
@@ -262,7 +262,7 @@ export default async function plugin(bb: BbPluginApi) {
     const purged = db
       .prepare(`DELETE FROM notes WHERE trashed_at IS NOT NULL AND trashed_at < ?`)
       .run(cutoff).changes;
-    if (purged > 0) bb.log.info(`Purged ${purged} note(s) from trash (30-day retention)`);
+    if (purged > 0) alia.log.info(`Purged ${purged} note(s) from trash (30-day retention)`);
   }
 
   // Serializes every mutation (floating-terminal lesson: overlapping
@@ -404,7 +404,7 @@ export default async function plugin(bb: BbPluginApi) {
   //
   // A scratchpad, a pinned sticky, or a captured note is bound to a thread;
   // the UI has to say WHICH one or every scratchpad reads as "Scratchpad".
-  // Titles resolve through bb.sdk.threads.get behind a short cache.
+  // Titles resolve through alia.sdk.threads.get behind a short cache.
 
   const THREAD_TITLE_TTL_MS = 60_000;
   const PROJECT_TTL_MS = 5 * 60_000;
@@ -425,7 +425,7 @@ export default async function plugin(bb: BbPluginApi) {
   const refreshProjects = async (now: number): Promise<void> => {
     if (now - projectsFetchedAt < PROJECT_TTL_MS) return;
     try {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const next = new Map<string, string>();
       for (const project of projects) next.set(project.id, project.name);
       projectNameCache = next;
@@ -460,7 +460,7 @@ export default async function plugin(bb: BbPluginApi) {
       needsProjects ? refreshProjects(now) : Promise.resolve(),
       ...[...wanted].map(async (threadId) => {
         try {
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           threadTitleCache.set(threadId, { title: thread.title ?? null, at: now });
         } catch {
           // Dead thread: remember the miss so we don't retry every list call.
@@ -596,7 +596,7 @@ export default async function plugin(bb: BbPluginApi) {
     const originThreadId = input.originThreadId ?? null;
     if (originThreadId !== null && originProjectId === null) {
       try {
-        const thread = await bb.sdk.threads.get({ threadId: originThreadId });
+        const thread = await alia.sdk.threads.get({ threadId: originThreadId });
         originProjectId = thread.projectId ?? null;
       } catch {
         // Origin stamping is best-effort; a dead thread id is not an error.
@@ -983,7 +983,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- RPC -----------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listNotes: async (input) => ({
       notes: await withScope(listNotes(input)),
       tags: tagCounts(),
@@ -1032,7 +1032,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---- @note mentions: FTS-backed search, body-as-markdown context ---------
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "note",
     label: "Notes",
     search({ query }) {
@@ -1056,7 +1056,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  // ---- bb notes CLI --------------------------------------------------------
+  // ---- VesnALIA notes CLI --------------------------------------------------------
 
   const noteTable = (notes: ListedNote[], withSnippet = false): string =>
     alignColumns(
@@ -1175,7 +1175,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const cliUsage = [
-    "Usage: bb notes <command>",
+    "Usage: VesnALIA notes <command>",
     "  list [--tag t] [--trash] [--limit n]    List notes (pinned first)",
     "  search <query>                          Full-text search",
     "  show <id>                               Print a note (id prefixes ok)",
@@ -1191,26 +1191,26 @@ export default async function plugin(bb: BbPluginApi) {
     "  import <dir>                            Create/update notes from markdown files",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "notes",
     summary:
       "Floating markdown notes (list, search, add, append, tag, pin, trash, daily, scratchpad)",
     commands: [
-      { name: "list", summary: "List notes (pinned first)", usage: "bb notes list [--tag t] [--trash] [--limit n]" },
-      { name: "search", summary: "Full-text search over notes", usage: "bb notes search <query>" },
-      { name: "show", summary: "Print one note's body and metadata", usage: "bb notes show <id>" },
-      { name: "add", summary: "Create a note from the given text", usage: "bb notes add <text…> [--tags a,b]" },
-      { name: "append", summary: "Append text to an existing note", usage: "bb notes append <id> <text…>" },
-      { name: "tag", summary: "Add (+tag) or remove (-tag) tags on a note", usage: "bb notes tag <id> <+tag|-tag>…" },
-      { name: "pin", summary: "Toggle a note's pinned state", usage: "bb notes pin <id>" },
-      { name: "trash", summary: "Move a note to the trash (recoverable)", usage: "bb notes trash <id>" },
-      { name: "restore", summary: "Restore a note from the trash", usage: "bb notes restore <id>" },
-      { name: "purge", summary: "Permanently delete a trashed note", usage: "bb notes purge <id>" },
-      { name: "empty-trash", summary: "Permanently delete everything in the trash", usage: "bb notes empty-trash" },
-      { name: "daily", summary: "Print today's daily note (created on demand)", usage: "bb notes daily" },
-      { name: "scratchpad", summary: "Print a thread's scratchpad note (created on demand)", usage: "bb notes scratchpad [threadId]" },
-      { name: "export", summary: "Write every non-trashed note (and attachments) to a directory as markdown", usage: "bb notes export <dir>" },
-      { name: "import", summary: "Create or update notes from a directory of markdown files", usage: "bb notes import <dir>" },
+      { name: "list", summary: "List notes (pinned first)", usage: "alia notes list [--tag t] [--trash] [--limit n]" },
+      { name: "search", summary: "Full-text search over notes", usage: "alia notes search <query>" },
+      { name: "show", summary: "Print one note's body and metadata", usage: "alia notes show <id>" },
+      { name: "add", summary: "Create a note from the given text", usage: "alia notes add <text…> [--tags a,b]" },
+      { name: "append", summary: "Append text to an existing note", usage: "alia notes append <id> <text…>" },
+      { name: "tag", summary: "Add (+tag) or remove (-tag) tags on a note", usage: "alia notes tag <id> <+tag|-tag>…" },
+      { name: "pin", summary: "Toggle a note's pinned state", usage: "alia notes pin <id>" },
+      { name: "trash", summary: "Move a note to the trash (recoverable)", usage: "alia notes trash <id>" },
+      { name: "restore", summary: "Restore a note from the trash", usage: "alia notes restore <id>" },
+      { name: "purge", summary: "Permanently delete a trashed note", usage: "alia notes purge <id>" },
+      { name: "empty-trash", summary: "Permanently delete everything in the trash", usage: "alia notes empty-trash" },
+      { name: "daily", summary: "Print today's daily note (created on demand)", usage: "alia notes daily" },
+      { name: "scratchpad", summary: "Print a thread's scratchpad note (created on demand)", usage: "alia notes scratchpad [threadId]" },
+      { name: "export", summary: "Write every non-trashed note (and attachments) to a directory as markdown", usage: "alia notes export <dir>" },
+      { name: "import", summary: "Create or update notes from a directory of markdown files", usage: "alia notes import <dir>" },
     ],
     async run(argv, ctx) {
       const [command, ...rest] = argv;
@@ -1246,7 +1246,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "search": {
             const query = rest.join(" ").trim();
             if (!query)
-              return { exitCode: 1, stderr: "Usage: bb notes search <query>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA notes search <query>" };
             const notes = listNotes({ query, limit: 50 });
             return {
               exitCode: 0,
@@ -1255,7 +1255,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "show": {
             if (!rest[0])
-              return { exitCode: 1, stderr: "Usage: bb notes show <id>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA notes show <id>" };
             return { exitCode: 0, stdout: showNote(resolveId(rest[0])) };
           }
           case "add": {
@@ -1267,7 +1267,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (!body)
               return {
                 exitCode: 1,
-                stderr: "Usage: bb notes add <text…> [--tags a,b]",
+                stderr: "Usage: VesnALIA notes add <text…> [--tags a,b]",
               };
             const note = await api.createNote({
               body,
@@ -1283,7 +1283,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (!id || !text)
               return {
                 exitCode: 1,
-                stderr: "Usage: bb notes append <id> <text…>",
+                stderr: "Usage: VesnALIA notes append <id> <text…>",
               };
             const note = await api.appendToNote(id, text);
             return { exitCode: 0, stdout: `Appended to ${note.id}: ${note.title}` };
@@ -1293,7 +1293,7 @@ export default async function plugin(bb: BbPluginApi) {
             if (!id || ops.length === 0 || ops.some((op) => !/^[+-]./.test(op)))
               return {
                 exitCode: 1,
-                stderr: "Usage: bb notes tag <id> <+tag|-tag>…",
+                stderr: "Usage: VesnALIA notes tag <id> <+tag|-tag>…",
               };
             const note = resolveId(id);
             let tags = [...note.tags];
@@ -1311,7 +1311,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "pin": {
             if (!rest[0])
-              return { exitCode: 1, stderr: "Usage: bb notes pin <id>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA notes pin <id>" };
             const note = resolveId(rest[0]);
             const updated = await api.updateNote({
               id: note.id,
@@ -1325,7 +1325,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "trash":
           case "restore": {
             if (!rest[0])
-              return { exitCode: 1, stderr: `Usage: bb notes ${command} <id>` };
+              return { exitCode: 1, stderr: `Usage: VesnALIA notes ${command} <id>` };
             const note = await api.setTrashed(rest[0], command === "trash");
             return {
               exitCode: 0,
@@ -1334,7 +1334,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "purge": {
             if (!rest[0])
-              return { exitCode: 1, stderr: "Usage: bb notes purge <id>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA notes purge <id>" };
             const note = resolveId(rest[0]);
             await api.purgeNote(note.id);
             return { exitCode: 0, stdout: `Purged ${note.id} permanently.` };
@@ -1362,7 +1362,7 @@ export default async function plugin(bb: BbPluginApi) {
               return {
                 exitCode: 1,
                 stderr:
-                  "Usage: bb notes scratchpad <threadId> (no thread in this context)",
+                  "Usage: VesnALIA notes scratchpad <threadId> (no thread in this context)",
               };
             const { note, created } = await api.scratchpad({
               threadId,
@@ -1376,7 +1376,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "export": {
             const dirArg = rest[0];
             if (!dirArg)
-              return { exitCode: 1, stderr: "Usage: bb notes export <dir>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA notes export <dir>" };
             const dir = isAbsolute(dirArg)
               ? dirArg
               : resolve(ctx.cwd ?? process.cwd(), dirArg);
@@ -1420,7 +1420,7 @@ export default async function plugin(bb: BbPluginApi) {
           case "import": {
             const dirArg = rest[0];
             if (!dirArg)
-              return { exitCode: 1, stderr: "Usage: bb notes import <dir>" };
+              return { exitCode: 1, stderr: "Usage: VesnALIA notes import <dir>" };
             const dir = isAbsolute(dirArg)
               ? dirArg
               : resolve(ctx.cwd ?? process.cwd(), dirArg);
@@ -1499,7 +1499,7 @@ export default async function plugin(bb: BbPluginApi) {
   const stripSentinels = (text: string): string =>
     text.replace(/[\u0001\u0002]/g, "");
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "notes_search",
     description:
       "Search the user's notes. Returns matches as JSON (id, title, snippet, tags, updatedAt). Omit query to list recent notes.",
@@ -1534,7 +1534,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "notes_read",
     description:
       "Read one of the user's notes in full by id (unique id prefixes accepted). Returns JSON.",
@@ -1555,7 +1555,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "notes_write",
     description:
       "Create or update one of the user's notes. Omit id to create (body required). With id: body replaces the note, or is appended when append=true; tags replaces the tag set; pinned toggles pinning.",
@@ -1615,7 +1615,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "notes_trash",
     description:
       "Move one of the user's notes to the trash (recoverable). Never permanently deletes.",
@@ -1626,7 +1626,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "notes_scratchpad",
     description:
       "Read the thread's scratchpad note, or append text to it when append is provided. Defaults to the current thread.",
@@ -1664,5 +1664,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("notes plugin loaded");
+  alia.log.info("notes plugin loaded");
 }

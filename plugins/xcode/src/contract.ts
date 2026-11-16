@@ -5,7 +5,7 @@
  * its zod dependency are erased from the app bundle.
  */
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export { XCODE_CHANNEL } from "./channel";
@@ -61,11 +61,11 @@ const runSchema = z.object({
   detailed: z.boolean(),
   branch: z.string().nullable(),
   worktree: z.string().nullable(),
-  /** bb thread whose environment this build ran in, when attributable. */
+  /** VesnALIA thread whose environment this build ran in, when attributable. */
   threadId: z.string().nullable(),
   /** The enrolled Mac a remote build ran on; null for this machine. */
   hostId: z.string().nullable(),
-  /** That Mac's name, when bb knows it. */
+  /** That Mac's name, when VesnALIA knows it. */
   hostName: z.string().nullable(),
   /** Friendly destination ("iPhone 16 · iOS 26.0"), raw spec preserved above. */
   destinationLabel: z.string().nullable(),

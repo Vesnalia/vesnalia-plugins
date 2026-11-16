@@ -1,6 +1,6 @@
-# Next Prompt for bb
+# Next Prompt for VesnALIA
 
-A [bb](https://getbb.app) plugin that predicts the instructions you are likely
+A [VesnALIA](https://getbb.app) plugin that predicts the instructions you are likely
 to type next, after each finished turn in a thread, and shows up to three of
 them, best first, as numbered cards above the composer:
 
@@ -9,7 +9,7 @@ them, best first, as numbered cards above the composer:
 ```
 
 With the `display` setting set to `ghost`, the best one appears as grey text
-inside the empty composer, where bb's placeholder usually is; `both` shows the
+inside the empty composer, where VesnALIA's placeholder usually is; `both` shows the
 cards and the grey text.
 
 Click a card to put its text in the draft, or press **Tab** or **→** in the
@@ -30,7 +30,7 @@ Dismissing them, or a new turn, takes the unedited text out again.
 Suggestions are display-only. The plugin writes nothing into the thread or the
 agent's context, and a new turn, a failure, archiving or deleting the thread
 discards the current suggestions. Until then they survive a plugin reload or a
-bb restart, and so does a dismissal: an unchanged conversation gets neither a
+VesnALIA restart, and so does a dismissal: an unchanged conversation gets neither a
 new request nor the dismissed suggestions back.
 
 The prompt, the transcript excerpt and the reply checks come from
@@ -51,7 +51,7 @@ Tool calls, commands and their output are never sent. Hidden threads, child
 threads (their parent agent writes the next message), threads with queued
 messages, threads whose last turn failed, and parents with child threads that
 are queued, starting or running (a parent usually runs again when its children
-report back, and gets a suggestion then) get no suggestion; `bb next-prompt
+report back, and gets a suggestion then) get no suggestion; `alia next-prompt
 suggest` still works on any idle thread.
 
 What to suggest is the prompt's decision. The model answers with JSON,
@@ -67,22 +67,22 @@ request; any change makes a new one.
 
 ## Model
 
-Pick the provider and model under Settings → Plugins → Next Prompt with bb's
-own provider/model picker, or with `bb next-prompt model`. With no saved
-choice, suggestions use Claude Code's `claude-sonnet-5-5` at low reasoning; bb's
+Pick the provider and model under Settings → Plugins → Next Prompt with VesnALIA's
+own provider/model picker, or with `alia next-prompt model`. With no saved
+choice, suggestions use Claude Code's `claude-sonnet-5-5` at low reasoning; VesnALIA's
 own default model is usually too heavy to run after every turn.
 
 The picked provider decides how a request runs:
 
 | Provider | What runs |
 | --- | --- |
-| Claude Code | `claude -p` on the bb server with the picked model, and no tools, MCP servers, setting sources, skills or session file. At low reasoning thinking is off; a higher level passes `--effort` and lets the model think. |
+| Claude Code | `claude -p` on the VesnALIA server with the picked model, and no tools, MCP servers, setting sources, skills or session file. At low reasoning thinking is off; a higher level passes `--effort` and lets the model think. |
 | Codex | `codex exec` with the picked model and reasoning effort, in an empty temporary directory, ignoring user config and rules, in a read-only sandbox. |
-| Any other (pi, ACP agents) | A hidden bb worker thread in the source thread's project and environment, with the least permissive permission mode the provider supports. It is archived and stopped after each attempt. It carries the provider's full agent setup, so it is slower and larger. |
+| Any other (pi, ACP agents) | A hidden VesnALIA worker thread in the source thread's project and environment, with the least permissive permission mode the provider supports. It is archived and stopped after each attempt. It carries the provider's full agent setup, so it is slower and larger. |
 
 The Claude Code and Codex paths use the CLI's own login, so they bill to the
 Claude or ChatGPT subscription and need no API key. The CLI must be logged in
-on the machine that runs the bb server.
+on the machine that runs the VesnALIA server.
 
 To send every request to an HTTP API instead, set `apiFormat` to `anthropic`
 (`POST <base>/v1/messages`) or `openai` (`POST <base>/chat/completions`), with
@@ -106,12 +106,12 @@ CLI startup; the rest are single end-to-end runs:
 ## Settings
 
 Change them under Settings → Plugins → Next Prompt, or with
-`bb plugin config next-prompt set <key> <value>`. The model is set with the
+`alia plugin config next-prompt set <key> <value>`. The model is set with the
 picker above it, not here.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `enabled` | `true` | Suggest automatically after each turn. `bb next-prompt suggest` works either way. |
+| `enabled` | `true` | Suggest automatically after each turn. `alia next-prompt suggest` works either way. |
 | `display` | `cards` | `cards`: numbered cards above the composer. `ghost`: the best suggestion as grey text inside the empty composer, dismissed with Esc. `both`: cards and grey text. Applies at once. |
 | `cardClick` | `insert` | `insert` puts a clicked card's text in the draft. `send` sends it at once. |
 | `prefillBest` | `false` | With `display` set to `both`, puts the best suggestion in the empty composer as real text. Nothing is sent. |
@@ -119,26 +119,26 @@ picker above it, not here.
 | `apiBaseUrl` | empty | Empty means `https://api.anthropic.com` for `anthropic`; required for `openai`. |
 | `apiModel` | empty | Model for the HTTP API. |
 | `apiKey` | unset | Secret. `x-api-key` for `anthropic`, Bearer token for `openai`. |
-| `claudePath`, `codexPath` | `claude`, `codex` | Executables, resolved on the bb server's `PATH`. |
+| `claudePath`, `codexPath` | `claude`, `codex` | Executables, resolved on the VesnALIA server's `PATH`. |
 | `timeoutSeconds` | `60` | Per request, including a worker thread's start. |
 | `maxContextChars` | `10000` | Transcript budget. |
 
 ## CLI
 
 ```sh
-bb next-prompt show [thread-id] [--json]      # current suggestions, one per line
-bb next-prompt suggest [thread-id] [--json]   # generate now for an idle thread
-bb next-prompt context [thread-id]            # the transcript a request would send
-bb next-prompt status [--json]                # model route and the last outcomes
-bb next-prompt model [<provider>/<model>[@<reasoning>] | reset]
+alia next-prompt show [thread-id] [--json]      # current suggestions, one per line
+alia next-prompt suggest [thread-id] [--json]   # generate now for an idle thread
+alia next-prompt context [thread-id]            # the transcript a request would send
+alia next-prompt status [--json]                # model route and the last outcomes
+alia next-prompt model [<provider>/<model>[@<reasoning>] | reset]
 ```
 
 `model` with no argument prints the route, such as
 `claude-code/claude-sonnet-5-5 @ low via claude -p (default)`. Set one with,
-for example, `bb next-prompt model codex/gpt-6-luna@low`; the reasoning level
+for example, `alia next-prompt model codex/gpt-6-luna@low`; the reasoning level
 defaults to `low`. `reset` returns to the default.
 
-Inside a bb thread the thread id defaults to the current thread. With `--json`,
+Inside a VesnALIA thread the thread id defaults to the current thread. With `--json`,
 `show` and `suggest` give the list as `texts`.
 `status` lists why recent requests showed nothing: `none` (the model chose
 silence), `filtered` (a reply that failed the checks, with its text), `timed
@@ -150,13 +150,13 @@ result and the answer's length, and always asks the model.
 
 ## Install
 
-Requires bb 0.45 or later.
+Requires VesnALIA 0.45 or later.
 
 ```sh
-bb plugin install git:https://github.com/CrazyCoder/bb-plugin-next-prompt.git@^0.4.0
+alia plugin install git:https://github.com/CrazyCoder/bb-plugin-next-prompt.git@^0.4.0
 ```
 
-bb installs the newest `0.4.x` release, and `bb plugin update next-prompt`
+VesnALIA installs the newest `0.4.x` release, and `alia plugin update next-prompt`
 moves to newer releases in that range. The first suggestion appears after the
 next turn that finishes in a visible thread.
 
@@ -164,11 +164,11 @@ From a clone, for development:
 
 ```sh
 npm install
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
-After editing the source, run `bb plugin build && bb plugin reload next-prompt`.
+After editing the source, run `alia plugin build && alia plugin reload next-prompt`.
 
 ## Develop
 

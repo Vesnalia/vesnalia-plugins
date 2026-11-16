@@ -1,11 +1,11 @@
 /**
- * bb's activity-row vocabulary, ported.
+ * VesnALIA's activity-row vocabulary, ported.
  *
  * A tracked build is the same kind of object as a running background command
  * or a workflow run, so it should look like one rather than inventing a
  * parallel visual language. This is a faithful port of
- * `packages/shared-ui/src/components/ui/activity-row-styles.ts` in the bb
- * repo, which `@bb/shared-ui` exports to builtin plugins but not to external
+ * `packages/shared-ui/src/components/ui/activity-row-styles.ts` in the VesnALIA
+ * repo, which `@alia-core/shared-ui` exports to builtin plugins but not to external
  * ones — we bundle our own Tailwind, so the class strings are copied instead
  * of imported.
  *

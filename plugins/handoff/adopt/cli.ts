@@ -1,6 +1,6 @@
-// `bb handoff adopt …` — the CLI surface of the adopt direction: continue an
-// external agent session (Claude Code, Codex, Gemini CLI) as a bb thread.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// `alia handoff adopt …` — the CLI surface of the adopt direction: continue an
+// external agent session (Claude Code, Codex, Gemini CLI) as a VesnALIA thread.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { deriveHomeDir } from "../capture";
 import { REASONING_LEVELS, type ReasoningLevel } from "../handoff";
 import {
@@ -59,17 +59,17 @@ function formatAge(ms: number): string {
   return `${Math.round(hours / 24)}d ago`;
 }
 
-export const ADOPT_HELP = `bb handoff adopt — continue an external agent session as a bb thread
+export const ADOPT_HELP = `alia handoff adopt — continue an external agent session as a VesnALIA thread
 
 Supports Claude Code, Codex, Gemini CLI, OpenCode, and Pi sessions.
 
 Usage:
-  bb handoff adopt <session-id | resume command>
+  VesnALIA handoff adopt <session-id | resume command>
       Paste an id, an id prefix, or a whole resume command like
       "claude --resume <id>" — located across every agent's session store.
 
-  bb handoff adopt <session-id> --machine <host name or id> [--home <path>] [--cwd <path>]
-  bb handoff adopt --machine <host> --cwd <path>
+  VesnALIA handoff adopt <session-id> --machine <host name or id> [--home <path>] [--cwd <path>]
+  VesnALIA handoff adopt --machine <host> --cwd <path>
       Adopt a session that lives on another enrolled machine; the thread runs
       on that machine in the session's directory. With --cwd and no id, the
       newest session for that directory over there is adopted. All five agents
@@ -77,19 +77,19 @@ Usage:
       OpenCode need --cwd (or an exact id) since their ids are not in a path.
       --home overrides the remote home directory when it can't be derived.
 
-  bb handoff adopt list [--cwd <path>] [--agent <name>] [--limit <n>] [--json]
-  bb handoff adopt list --machine <host> --cwd <path>
+  VesnALIA handoff adopt list [--cwd <path>] [--agent <name>] [--limit <n>] [--json]
+  VesnALIA handoff adopt list --machine <host> --cwd <path>
       List adoptable sessions for a directory (newest first, all agents).
       With --machine, lists what is adoptable in that directory over there.
 
-  bb handoff adopt session [<session-id>] [options]
-      Create a bb thread that continues a session. Defaults to the newest
+  VesnALIA handoff adopt session [<session-id>] [options]
+      Create a VesnALIA thread that continues a session. Defaults to the newest
       session for the directory across all agents. Options:
         --cwd <path>             Session working directory (default: invoking cwd)
         --agent <name>           Only consider one agent: claude | codex | gemini | opencode | pi
-        --project <id>           Target bb project (default: match cwd, else create)
+        --project <id>           Target VesnALIA project (default: match cwd, else create)
         --title <title>          Thread title
-        --thread-provider <id>   bb provider for the new thread (default: same
+        --thread-provider <id>   VesnALIA provider for the new thread (default: same
                                  family as the session; gemini falls back to
                                  claude-code)
         --model <model>          Model override for the new thread
@@ -101,19 +101,19 @@ Usage:
         --json                   Machine-readable output
 
 Notes:
-  Without --machine, sessions are read from the machine running the bb server.
+  Without --machine, sessions are read from the machine running the VesnALIA server.
   Run it from inside a live session's directory (or have the agent run it) —
   the newest session for that directory is the one you're in.`;
 
-// One entry: bb rejects command names containing a space, so the `list` /
+// One entry: VesnALIA rejects command names containing a space, so the `list` /
 // `session` subcommands live in the usage line (and in full in the skill).
 export const adoptCommandSpecs = [
   {
     name: "adopt",
     summary:
-      "Adopt a session that ran outside bb (Claude Code, Codex, Gemini CLI, OpenCode, Pi) — on this machine or any enrolled one — as a bb thread; `adopt list` shows what is adoptable",
+      "Adopt a session that ran outside VesnALIA (Claude Code, Codex, Gemini CLI, OpenCode, Pi) — on this machine or any enrolled one — as a VesnALIA thread; `adopt list` shows what is adoptable",
     usage:
-      "bb handoff adopt [<session-id | resume command>] [--cwd <path>] [--agent claude|codex|gemini|opencode|pi] [--machine <host>] [--home <path>] [--effort <level>] [--force] [--dry-run] [--json]  |  bb handoff adopt list [--machine <host>] [--cwd <path>] [--limit <n>]",
+      "alia handoff adopt [<session-id | resume command>] [--cwd <path>] [--agent claude|codex|gemini|opencode|pi] [--machine <host>] [--home <path>] [--effort <level>] [--force] [--dry-run] [--json]  |  VesnALIA handoff adopt list [--machine <host>] [--cwd <path>] [--limit <n>]",
   },
 ];
 
@@ -126,23 +126,23 @@ type CliResult = { exitCode: number; stdout?: string; stderr?: string };
 
 /**
  * The enrolled machine the invoking thread runs on, when it is NOT the machine
- * whose disk local adoption reads (the bb server's own host). Local store
- * reads happen on the server, but an agent may run `bb handoff adopt` from a
+ * whose disk local adoption reads (the VesnALIA server's own host). Local store
+ * reads happen on the server, but an agent may run `alia handoff adopt` from a
  * thread living on another machine — its cwd names a path over THERE, so "the
  * newest session for this directory" means that machine's disk, not this one's.
  */
 async function remoteInvokingHost(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string | null | undefined,
 ): Promise<string | null> {
   if (!threadId) return null;
   try {
     // deno-lint-ignore no-explicit-any
-    const thread = (await bb.sdk.threads.get({ threadId })) as any;
+    const thread = (await alia.sdk.threads.get({ threadId })) as any;
     if (!thread.environmentId) return null;
     const [environment, config] = await Promise.all([
-      bb.sdk.environments.get({ environmentId: thread.environmentId }),
-      bb.sdk.system.config(),
+      alia.sdk.environments.get({ environmentId: thread.environmentId }),
+      alia.sdk.system.config(),
     ]);
     const hostId = environment.hostId ?? null;
     const primaryHostId = config.primaryHostId ?? null;
@@ -152,9 +152,9 @@ async function remoteInvokingHost(
   }
 }
 
-/** Run `bb handoff adopt <argv…>` (argv excludes the "adopt" token). */
+/** Run `alia handoff adopt <argv…>` (argv excludes the "adopt" token). */
 export async function runAdoptCli(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   argv: string[],
   ctx: AdoptCliContext,
 ): Promise<CliResult> {
@@ -165,7 +165,7 @@ export async function runAdoptCli(
   let command = first;
   let rest = restArgs;
   if (command !== "list" && command !== "session") {
-    // `bb handoff adopt <id | resume command>` shorthand for `… adopt session`,
+    // `alia handoff adopt <id | resume command>` shorthand for `… adopt session`,
     // and the id-less forms that say where to look instead (--machine/--cwd).
     // Probing goes through the flag parser so a flag's VALUE is never mistaken
     // for a pasted session id.
@@ -192,7 +192,7 @@ export async function runAdoptCli(
   let autoRemoteCwd: string | null = null;
   let remoteHostHint: string | null = null;
   if (!machine && ctx.threadId) {
-    remoteHostHint = await remoteInvokingHost(bb, ctx.threadId);
+    remoteHostHint = await remoteInvokingHost(alia, ctx.threadId);
     if (remoteHostHint && cwdBased) {
       machine = remoteHostHint;
       autoRemoteCwd = ctx.cwd ?? null;
@@ -218,10 +218,10 @@ export async function runAdoptCli(
       if (!remoteCwd) {
         return {
           exitCode: 1,
-          stderr: `Listing sessions on another machine needs the directory there: bb handoff adopt list --machine ${machine} --cwd <path>`,
+          stderr: `Listing sessions on another machine needs the directory there: VesnALIA handoff adopt list --machine ${machine} --cwd <path>`,
         };
       }
-      const result = await listRemoteSessionsForDirectory(bb, {
+      const result = await listRemoteSessionsForDirectory(alia, {
         machine,
         cwd: remoteCwd,
         home: remoteHome(),
@@ -248,7 +248,7 @@ export async function runAdoptCli(
       });
       return {
         exitCode: 0,
-        stdout: `Sessions for ${listing.cwd} on ${listing.machine} (newest first):\n${lines.join("\n")}${listing.error ? `\n\n${listing.error}` : ""}\n\nAdopt one with: bb handoff adopt <session-id> --machine ${machine} --cwd ${listing.cwd}`,
+        stdout: `Sessions for ${listing.cwd} on ${listing.machine} (newest first):\n${lines.join("\n")}${listing.error ? `\n\n${listing.error}` : ""}\n\nAdopt one with: VesnALIA handoff adopt <session-id> --machine ${machine} --cwd ${listing.cwd}`,
       };
     }
     const collected = await collectSessions(cwd!, flags.values.get("agent"));
@@ -267,7 +267,7 @@ export async function runAdoptCli(
     });
     return {
       exitCode: 0,
-      stdout: `Sessions for ${cwd} (newest first):\n${lines.join("\n")}\n\nAdopt one with: bb handoff adopt <session-id>`,
+      stdout: `Sessions for ${cwd} (newest first):\n${lines.join("\n")}\n\nAdopt one with: VesnALIA handoff adopt <session-id>`,
     };
   }
 
@@ -293,11 +293,11 @@ export async function runAdoptCli(
   if (machine && !positionalQuery && !remoteCwd) {
     return {
       exitCode: 1,
-      stderr: `Adopting from another machine needs a session id, or --cwd <path> for its newest session: bb handoff adopt <id> --machine ${machine}`,
+      stderr: `Adopting from another machine needs a session id, or --cwd <path> for its newest session: VesnALIA handoff adopt <id> --machine ${machine}`,
     };
   }
   const outcome = machine
-    ? await performAdoptRemote(bb, {
+    ? await performAdoptRemote(alia, {
         machine,
         ...(positionalQuery
           ? { query: agentFlag ? `${agentFlag} ${positionalQuery}` : positionalQuery }
@@ -308,13 +308,13 @@ export async function runAdoptCli(
         ...shared,
       })
     : positionalQuery
-      ? await performAdoptQuery(bb, {
+      ? await performAdoptQuery(alia, {
           query: agentFlag ? `${agentFlag} ${positionalQuery}` : positionalQuery,
           cwd: flags.values.get("cwd") ?? null,
           contextCwd: ctx.cwd ?? null,
           ...shared,
         })
-      : await performAdopt(bb, { cwd: cwd!, agent: agentFlag, ...shared });
+      : await performAdopt(alia, { cwd: cwd!, agent: agentFlag, ...shared });
 
   if (!outcome.ok) {
     const matchLines = outcome.matches
@@ -322,11 +322,11 @@ export async function runAdoptCli(
       .join("\n");
     const hint =
       outcome.code === "already-adopted"
-        ? `\nOpen it with: bb thread open ${outcome.existingThreadId}\nPass --force to adopt it again.`
+        ? `\nOpen it with: VesnALIA thread open ${outcome.existingThreadId}\nPass --force to adopt it again.`
         : outcome.code === "not-found" && !machine
           ? remoteHostHint
-            ? `\nSession ids are looked up on the bb server machine, but this thread runs on another machine — try: bb handoff adopt ${positionalQuery} --machine ${remoteHostHint}`
-            : `\nRun: bb handoff adopt list --cwd ${cwd}`
+            ? `\nSession ids are looked up on the VesnALIA server machine, but this thread runs on another machine — try: VesnALIA handoff adopt ${positionalQuery} --machine ${remoteHostHint}`
+            : `\nRun: VesnALIA handoff adopt list --cwd ${cwd}`
           : matchLines
             ? `\n${matchLines}`
             : "";
@@ -361,10 +361,10 @@ export async function runAdoptCli(
     };
   }
   const warning = ctx.threadId
-    ? "\nNote: you ran this from inside a bb thread — the adopted copy is a separate thread.\n"
+    ? "\nNote: you ran this from inside a VesnALIA thread — the adopted copy is a separate thread.\n"
     : "";
   return {
     exitCode: 0,
-    stdout: `Adopted ${plan.agentLabel} session ${plan.sessionId} → thread ${outcome.threadId}\n  project:  ${plan.projectName}${plan.createdProject ? " (newly created for this directory)" : ""}\n  provider: ${plan.providerId}${plan.providerNote}\n  title:    ${plan.title}${warning}\nOpen it: bb thread open ${outcome.threadId}`,
+    stdout: `Adopted ${plan.agentLabel} session ${plan.sessionId} → thread ${outcome.threadId}\n  project:  ${plan.projectName}${plan.createdProject ? " (newly created for this directory)" : ""}\n  provider: ${plan.providerId}${plan.providerNote}\n  title:    ${plan.title}${warning}\nOpen it: VesnALIA thread open ${outcome.threadId}`,
   };
 }

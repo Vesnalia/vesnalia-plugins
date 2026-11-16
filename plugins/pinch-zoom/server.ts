@@ -7,15 +7,15 @@
  * These are shared by every device; the pinched text size itself stays per device.
  * The frontend reads them live with `useSettings()`; the server never uses the values, so no reload is needed after a change.
  */
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default function pinchZoom(bb: BbPluginApi) {
-  bb.settings.define({
+export default function pinchZoom(alia: AliaPluginApi) {
+  alia.settings.define({
     scope: {
       type: "select",
       label: "What text size changes",
       description:
-        "Chat, composer and terminal (the default) leaves the sidebar, headers and the rest of bb at their normal size. Whole app scales every part of bb.",
+        "Chat, composer and terminal (the default) leaves the sidebar, headers and the rest of VesnALIA at their normal size. Whole app scales every part of VesnALIA.",
       options: ["content", "app"],
       experimental_optionLabels: {
         content: "Chat, composer and terminal only",
@@ -35,9 +35,9 @@ export default function pinchZoom(bb: BbPluginApi) {
       type: "number",
       label: "Terminal size relative to text",
       description:
-        "Multiplies bb's 12px terminal font by the text size and this value; 1.25 at 100% text gives 15px. Allowed range 0.5 to 2. Pinching over a terminal fine-tunes it further on that device.",
+        "Multiplies VesnALIA's 12px terminal font by the text size and this value; 1.25 at 100% text gives 15px. Allowed range 0.5 to 2. Pinching over a terminal fine-tunes it further on that device.",
       default: 1,
     },
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

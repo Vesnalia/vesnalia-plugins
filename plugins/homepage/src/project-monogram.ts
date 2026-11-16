@@ -1,12 +1,12 @@
-/** Palette order matches bb-sidebar and project-monogram.css. */
+/** Palette order matches alia-sidebar and project-monogram.css. */
 export const MONOGRAM_COLOR_COUNT = 8;
 
 /**
  * Leading words that many project names share. Skipped while another word
- * follows, so `bb-sidebar` and `bb-plugin-tasks` read as S and T rather than
+ * follows, so `alia-sidebar` and `alia-plugin-tasks` read as S and T rather than
  * a column of identical Bs.
  */
-const GENERIC_WORDS = new Set(["bb", "plugin", "the", "my"]);
+const GENERIC_WORDS = new Set(["alia", "plugin", "the", "my"]);
 
 function words(name: string): string[] {
   // An npm scope or a path prefix says where the project lives, not what it is.

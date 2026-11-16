@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { Label, PrView } from "../../src/contract";
 import { formatRoute } from "../../src/ui/route";
 import { app, CAN_ALL, callsTo, find, handlers, lastNavigation, mine, mount, next, overview, page, pr, setViewport, unmountAll, type Handlers } from "./helpers";
@@ -70,7 +70,7 @@ describe("on a phone", () => {
     fireEvent.click(view.querySelector<HTMLElement>("[data-phone-actions] [data-next='review']")!);
     const sheet = await screen.findByRole("dialog", { name: "Start an AI review of deploy-v2#88" });
     expect(slot.container.contains(sheet)).toBe(false);
-    expect(sheet.closest("[data-bb-plugin='shuttle'][data-bb-plugin-root]")).not.toBeNull();
+    expect(sheet.closest("[data-alia-plugin='shuttle'][data-alia-plugin-root]")).not.toBeNull();
     fireEvent.click(within(sheet).getByRole("button", { name: "Start" }));
     await waitFor(() => expect(callsTo(slot, "review")).toEqual([{ key: second.key, presetId: "standard" }]));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -136,7 +136,7 @@ describe("history", () => {
 });
 
 describe("the PR panel's width", () => {
-  const STORED = "bb-plugin-shuttle:panel-width";
+  const STORED = "alia-plugin-shuttle:panel-width";
   const frameOf = async (slot: Awaited<ReturnType<typeof layoutPage>>["slot"], selector: string) => (await find(slot.container, selector)).closest<HTMLElement>("[data-panel-frame]")!;
 
   it("drags wider from the panel's left edge, is remembered, and a double-click puts the default back", async () => {
@@ -199,7 +199,7 @@ describe("in a narrow window", () => {
     expect(lastNavigation(slot)).toEqual({ method: "toPluginPanel", path: "shuttle", options: { subPath: "insights" } });
   });
 
-  it("slides the PR over the list, and Escape closes it without reaching bb", async () => {
+  it("slides the PR over the list, and Escape closes it without reaching VesnALIA", async () => {
     setViewport(1000);
     const { slot } = await layoutPage(selected(first.key));
     const overlay = await find(slot.container, "[data-overlay]");

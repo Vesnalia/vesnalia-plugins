@@ -1,4 +1,4 @@
-# 029: Configuration is one checked document in bb-box's storage
+# 029: Configuration is one checked document in alia-box's storage
 
 Status: accepted, 1 October 2026. Partly supersedes
 [027](027-a-kind-says-when-it-has-a-desktop.md): how the settings keys from
@@ -11,27 +11,27 @@ it holds the tailnet and its key.
 
 ## Context
 
-bb-box's configuration is BB plugin settings today: flat keys that each
-driver declares, such as `proxmox-lxc-url`. BB shows them as generic fields
-on bb-box's page in Tools, and cannot group or hide them. The operator asked
+alia-box's configuration is VesnALIA plugin settings today: flat keys that each
+driver declares, such as `proxmox-lxc-url`. VesnALIA shows them as generic fields
+on alia-box's page in Tools, and cannot group or hide them. The operator asked
 for a real settings page: a part per backend with a guided setup, switches
 for backends and kinds, the presets per kind from
 [028](028-a-box-size-is-chosen-when-it-is-made.md), and a check that a
 configuration works before it is saved. Configuration is also scripted
-today, by writing BB settings, so it must work without the browser.
+today, by writing VesnALIA settings, so it must work without the browser.
 
-What BB gives a plugin:
+What VesnALIA gives a plugin:
 
-- Declared settings. A string can be `secret: true`: BB keeps it in a 0600
-  file in the plugin's data directory, never in bb.db, and never sends it to
+- Declared settings. A string can be `secret: true`: VesnALIA keeps it in a 0600
+  file in the plugin's data directory, never in alia.db, and never sends it to
   the browser. The settings handle reads and writes declared keys only, and
   gives a key's declared default when it is unset.
-- A `settingsSection`, bb-box's own component on the same page, shown beside
+- A `settingsSection`, alia-box's own component on the same page, shown beside
   any declared settings.
-- Plugin storage: JSON values of up to 256 KB in bb.db, or the plugin's own
-  SQLite file. bb-box keeps its install ID and the SSH key it generates
+- Plugin storage: JSON values of up to 256 KB in alia.db, or the plugin's own
+  SQLite file. alia-box keeps its install ID and the SSH key it generates
   there already.
-- `bb plugin remove` deletes a plugin's settings, secrets and storage alike.
+- `alia plugin remove` deletes a plugin's settings, secrets and storage alike.
 
 An operator may have several Docker hosts, or several Macs for Tart, that
 are set up alike, and one Proxmox host. Each backend has one instance today,
@@ -48,24 +48,24 @@ is too small for every preset.
 
 ### Where it lives
 
-- bb-box's configuration is one JSON document in its plugin storage, with a
-  schema version and a revision. Only bb-box's RPC and CLI write it, and
-  every write is checked first. bb-box declares no BB settings once the
-  document exists, so its page in Tools shows only bb-box's own section.
+- alia-box's configuration is one JSON document in its plugin storage, with a
+  schema version and a revision. Only alia-box's RPC and CLI write it, and
+  every write is checked first. alia-box declares no VesnALIA settings once the
+  document exists, so its page in Tools shows only alia-box's own section.
 - The document holds what the operator set. A value left out takes the
-  default bb-box ships, so a later release's default reaches it.
+  default alia-box ships, so a later release's default reaches it.
 - Secrets, such as the Proxmox API token secret and SSH private keys, are in
   plugin storage under a key of their own, apart from the document. They are
   write-only: the page and the CLI say only whether each is set.
-- Who can read them: anyone who can read bb.db, which is BB's OS user, root,
-  any plugin in BB's server, and anyone with a copy of bb.db, such as a
-  backup. BB's secret settings differ only in that last point. bb-box's
+- Who can read them: anyone who can read alia.db, which is VesnALIA's OS user, root,
+  any plugin in VesnALIA's server, and anyone with a copy of alia.db, such as a
+  backup. VesnALIA's secret settings differ only in that last point. alia-box's
   generated SSH key is kept this way already.
-- Secrets do not stay as BB's secret settings, because each would be a field
-  on the page outside bb-box's section: a second place to set it, which
+- Secrets do not stay as VesnALIA's secret settings, because each would be a field
+  on the page outside alia-box's section: a second place to set it, which
   skips the check. Declared keys are also fixed when the plugin loads, so
   they cannot follow a list of backends. If an install needs secrets out of
-  bb.db later, they can move to the plugin's own SQLite file without
+  alia.db later, they can move to the plugin's own SQLite file without
   changing the page or the CLI.
 
 ### Backends and their hosts
@@ -83,7 +83,7 @@ is too small for every preset.
   such as two Proxmox hosts that are not one cluster. The first backend of a
   type keeps the type as its ID, so box records, backend storage
   (`backend/<id>/`) and guests stay as they are. Another is `<type>:<name>`,
-  with a name of lower-case letters, digits and `-`. bb-box builds one
+  with a name of lower-case letters, digits and `-`. alia-box builds one
   backend per type at first; the document allows more.
 - A backend's or host's name cannot change, and it cannot be removed, while
   it has boxes. Turn it off and release them first.
@@ -153,26 +153,26 @@ is too small for every preset.
 
 ### The CLI
 
-- `bb box config show` prints the configuration, and `--json` prints the
+- `alia box config show` prints the configuration, and `--json` prints the
   document, with each secret as `{"set": true}` or `{"set": false}`. That is
-  the export: keep it to set bb-box up again after `bb plugin remove`. It
+  the export: keep it to set alia-box up again after `alia plugin remove`. It
   holds no secret, so it is safe to print, keep and share.
-- `bb box config check <file> [--test]` and `bb box config apply <file>` do
+- `alia box config check <file> [--test]` and `alia box config apply <file>` do
   what the RPC does, with the document in the file. A revision in the file
   must be the current one; a file without one, or a store without a
-  document, is applied over what is there. The command runs in BB's server,
+  document, is applied over what is there. The command runs in VesnALIA's server,
   so the file is read on that machine.
 
-### Moving from BB's settings
+### Moving from VesnALIA's settings
 
 On the first start of the version that brings the document, if there is no
-document, bb-box builds it from BB's settings:
+document, alia-box builds it from VesnALIA's settings:
 
 - Each key's value, reading a key from before 027 where its new key is unset
   (027). A value equal to its declared default is left out.
-- Each kind's sizes come from the `box-sizes` setting (028), read as bb-box
+- Each kind's sizes come from the `box-sizes` setting (028), read as alia-box
   reads it then: an earlier kind ID counts where the current one has no
-  entry, and an entry with a mistake, which bb-box already ignores, is left
+  entry, and an entry with a mistake, which alia-box already ignores, is left
   out. The copy below keeps the setting as it was.
 - 028 moved Proxmox LXC's cores, memory and disk per flavour into
   `box-sizes` once, as the default preset's size for the flavour's kinds.
@@ -184,28 +184,28 @@ document, bb-box builds it from BB's settings:
   was, if any of its keys was set. Its boxes, storage and guests carry over,
   and no guest is touched. A new install starts with no backends.
 - The secrets are written first, then a copy of the non-secret values
-  BB's settings gave, then the document at revision 1. The document marks
-  the move as done, so it happens once, and a failed write leaves BB's
+  VesnALIA's settings gave, then the document at revision 1. The document marks
+  the move as done, so it happens once, and a failed write leaves VesnALIA's
   settings as they were for the next start to try again.
 - The copy is kept in plugin storage under
-  `config/migrated-from-bb-settings`, with the time of the move and the
-  bb-box version that made it, so a value that moved wrongly can be
-  compared with what it was. `bb box config migrated` prints it, and
-  `--remove` removes it. `bb box config show` mentions it until then.
+  `config/migrated-from-alia-settings`, with the time of the move and the
+  alia-box version that made it, so a value that moved wrongly can be
+  compared with what it was. `alia box config migrated` prints it, and
+  `--remove` removes it. `alia box config show` mentions it until then.
   Secrets are not copied: they exist on their hosts.
-- Then bb-box clears the old values from BB's settings, so no second copy of
+- Then alia-box clears the old values from VesnALIA's settings, so no second copy of
   a secret is left, and marks them cleared in plugin storage. It declares
   the old keys only until that mark is there, so a start cut short after
   the document is written clears them on the next start. Clearing them
-  must not reconfigure the backends: once the document exists, BB's
+  must not reconfigure the backends: once the document exists, VesnALIA's
   settings never drive them.
 
 ## Consequences
 
-- One place sets everything, and every write is checked. bb-box's page in
+- One place sets everything, and every write is checked. alia-box's page in
   Tools shows only its own section from the next start.
 - Drivers change shape. Their settings become fields named within the
-  backend, in the shape of BB's setting descriptors with a group
+  backend, in the shape of VesnALIA's setting descriptors with a group
   (`connection`, `credentials`, `boxes` or `advanced`), shown in the order
   they are declared, plus fields per host for a backend with hosts.
   `parse` reads the backend's part of the document and gives each problem
@@ -213,8 +213,8 @@ document, bb-box builds it from BB's settings:
   the page renders their fields.
 - Core changes: an off backend stays built, hosts and kinds get switches,
   and the registry's order comes from the document.
-- Backends that land before the document declare BB settings as today, and
+- Backends that land before the document declare VesnALIA settings as today, and
   the move reads their keys too.
-- After `bb plugin remove`, the export sets bb-box up again, and the secrets
+- After `alia plugin remove`, the export sets alia-box up again, and the secrets
   are given again, in the file or on the page. Going back to a version
-  before this one needs BB's settings set again.
+  before this one needs VesnALIA's settings set again.

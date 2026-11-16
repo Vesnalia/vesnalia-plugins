@@ -13,7 +13,7 @@ function fakeWindow(pathname = "/plugins/model-pricing/pricing"): HistoryWindow 
 }
 
 describe("openPluginSettings", () => {
-  it("pushes the route bb's own openSettings uses and tells the router", () => {
+  it("pushes the route VesnALIA's own openSettings uses and tells the router", () => {
     const win = fakeWindow();
     expect(openPluginSettings(win, "model-pricing")).toBe(true);
     expect(win.pushes).toHaveLength(1);

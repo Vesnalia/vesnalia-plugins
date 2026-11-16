@@ -76,7 +76,7 @@ describe("work models", () => {
     expect(s.ports.threads.get(s.store.pilot(s.id)!.thread_id!)).toMatchObject({ providerId: "claude-code", model: "claude-fable-5-1", reasoningLevel: "max" });
   });
 
-  test("a choice is checked against bb's list; labels come from bb; a default passes even when its provider does not answer", async () => {
+  test("a choice is checked against VesnALIA's list; labels come from VesnALIA; a default passes even when its provider does not answer", async () => {
     const s = setup();
     const catalog = { providers: await s.ports.modelCatalog() };
     expect(checkModels(DEFAULT_MODELS, catalog).problems).toEqual([]);
@@ -85,7 +85,7 @@ describe("work models", () => {
     ]);
     expect(checkModels({ ...DEFAULT_MODELS, check: { ...DEFAULT_MODELS.check, effort: "ultra" } }, catalog).problems).toEqual(["Verification and Rollout: claude-opus-5-5 has no effort level ultra"]);
     expect(checkModels({ ...DEFAULT_MODELS, subagents: { providerId: "codex", model: "gpt-6-astra", effort: null, label: "x" } }, catalog).problems[0]).toContain("Implementation subagents — Claude models only");
-    // The label comes from bb's list, not from the form.
+    // The label comes from VesnALIA's list, not from the form.
     expect(checkModels({ ...DEFAULT_MODELS, docs: { ...DEFAULT_MODELS.docs, label: "<script>" } }, catalog).models.docs.label).toBe("Opus 5.5");
     // Codex returned no models (login expired): the default reviewer passes, a hand-picked one does not.
     const noCodex = { providers: catalog.providers.map((p) => (p.id === "codex" ? { ...p, models: [], error: "auth_required" } : p)) };
@@ -96,7 +96,7 @@ describe("work models", () => {
     // No list at all — only the defaults.
     expect(checkModels(DEFAULT_MODELS, null).problems).toEqual([]);
     expect(checkModels({ ...DEFAULT_MODELS, docs: { ...DEFAULT_MODELS.docs, model: "claude-sonnet-5-5" } }, null).problems).toEqual([
-      "Documents (Context, Feasibility, Spec, Mockup): the bb model list did not arrive — only the default is allowed right now",
+      "Documents (Context, Feasibility, Spec, Mockup): the VesnALIA model list did not arrive — only the default is allowed right now",
     ]);
   });
 

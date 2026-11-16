@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { experimental_VoiceInputTextarea as VoiceInputTextarea } from "@get-bb/plugin-sdk/app";
+import { experimental_VoiceInputTextarea as VoiceInputTextarea } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
@@ -206,7 +206,7 @@ export function CommentCard({
         disabled={busy}
         placeholder="Add a comment"
         // 16px on phones keeps iOS from zooming in when the field is focused.
-        // Our padding outranks the room bb reserves for its voice controls, so
+        // Our padding outranks the room VesnALIA reserves for its voice controls, so
         // keep the microphone clear here: on the right while idle, and a row
         // below the text while the recording controls span the field.
         className={cn(

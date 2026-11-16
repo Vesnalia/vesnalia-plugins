@@ -1,25 +1,25 @@
 // content.ts — puts agree / disagree / tell-me-more / comment controls on each
 //   line of agent replies.
 //
-// What: a BB content script that finds agent replies in the chat, marks each
+// What: a VesnALIA content script that finds agent replies in the chat, marks each
 //   reviewable line, shows a small floating toolbar on the line under the
 //   pointer, and a floating comment box when the comment button is pressed.
 // Why: the user wants to react to long agent output line by line, in place,
 //   without copying text and without the agent knowing a tool is involved.
-//   BB offers no slot inside ordinary replies, so this works on the page.
+//   VesnALIA offers no slot inside ordinary replies, so this works on the page.
 // Design notes:
-//   - BB's own elements get only `data-lr-*` attributes. React leaves
-//     attributes it does not manage alone, so this cannot break BB's
+//   - VesnALIA's own elements get only `data-lr-*` attributes. React leaves
+//     attributes it does not manage alone, so this cannot break VesnALIA's
 //     rendering. Every visible control lives in one layer appended to
 //     <body>, positioned over the chat with `position: fixed`.
 //   - Votes and comments on a line are painted with CSS from those attributes
 //     (a colored edge, the comment text via `::after attr()`), so marks stay
-//     visible without inserting nodes into BB's tree.
+//     visible without inserting nodes into VesnALIA's tree.
 //   - Agent replies are rows whose `data-timeline-row-id` contains
 //     ":assistant:"; the thread id is the part before the first ":". Both
-//     were observed on bb 0.46 and are not a published API: if a BB update
+//     were observed on VesnALIA 0.46 and are not a published API: if a VesnALIA update
 //     changes them, the controls stop appearing and nothing else breaks.
-//   - BB's timeline unloads rows far from the viewport and re-renders replies
+//   - VesnALIA's timeline unloads rows far from the viewport and re-renders replies
 //     while they stream, so a MutationObserver re-scans (debounced). Marks
 //     are keyed by line text, not by element, and survive this.
 // Gotchas:
@@ -27,7 +27,7 @@
 //     painting does not re-trigger it. Changes inside our own layer are
 //     ignored.
 //   - Everything created here is removed when the signal aborts (plugin
-//     reload, disable, or BB shutdown).
+//     reload, disable, or VesnALIA shutdown).
 
 import { createIcon, type IconName } from "./lib/icons.ts";
 import { extractUnits, occurrences } from "./lib/lines.ts";
@@ -114,10 +114,10 @@ function button(
 }
 
 /**
- * Install the line controls into the BB window.
+ * Install the line controls into the VesnALIA window.
  *
  * @param signal - aborted when the plugin frontend is replaced or stopped.
- * Pre-conditions: runs in the BB app page with `document.body` present.
+ * Pre-conditions: runs in the VesnALIA app page with `document.body` present.
  * Post-conditions (side effects): appends one layer element to <body>; adds
  *   `data-lr-*` attributes to lines of agent replies; adds document and
  *   window listeners and a MutationObserver. All of it is undone by the
@@ -299,7 +299,7 @@ export function mountLineControls(signal: AbortSignal): () => void {
    * Put the toolbar beside the active line: right of the reply when there is
    * room inside the chat viewport, otherwise over the reply's right edge.
    *
-   * Inside the reply, the toolbar must not cover BB's own controls in the
+   * Inside the reply, the toolbar must not cover VesnALIA's own controls in the
    * line. A code block's header holds a "Copy code" button in its top-right
    * corner, exactly where the toolbar lands, so the toolbar steps left of any
    * button or link it would overlap (found by `shiftClearOf`).
@@ -333,7 +333,7 @@ export function mountLineControls(signal: AbortSignal): () => void {
 
   /**
    * Move a toolbar placed at (`left`, `top`) leftwards until it overlaps none
-   * of the clickable elements inside `line` (BB's copy buttons, links).
+   * of the clickable elements inside `line` (VesnALIA's copy buttons, links).
    *
    * Returns the new left edge; unchanged when nothing is in the way.
    */
@@ -462,7 +462,7 @@ export function mountLineControls(signal: AbortSignal): () => void {
   }
 
   function onEditorKey(event: KeyboardEvent) {
-    // Keep BB's own shortcuts from seeing keys typed into the comment box.
+    // Keep VesnALIA's own shortcuts from seeing keys typed into the comment box.
     event.stopPropagation();
     if (event.key === "Escape") {
       event.preventDefault();
@@ -486,7 +486,7 @@ export function mountLineControls(signal: AbortSignal): () => void {
   const listen = { capture: true, passive: true } as const;
   document.addEventListener("pointerover", onPointerOver, listen);
   document.addEventListener("pointerdown", onPointerDown, listen);
-  // Not passive: a click on a comment is consumed so BB does not also act on it.
+  // Not passive: a click on a comment is consumed so VesnALIA does not also act on it.
   document.addEventListener("click", onClick, { capture: true });
   document.addEventListener("scroll", positionAll, listen);
   window.addEventListener("resize", positionAll, listen);

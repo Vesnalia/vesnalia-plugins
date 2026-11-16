@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The thread context card section: context panel, compact button, override.
 
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { CARD_SECTION_GROUP } from "../app";

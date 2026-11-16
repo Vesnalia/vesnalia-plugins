@@ -14,7 +14,7 @@ import {
   experimental_useSidebarThreadActions,
   useSidebarSplitLayout,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
 import type { Row, RowDensity, TimelineProps, Viewport } from "../../shared/view";

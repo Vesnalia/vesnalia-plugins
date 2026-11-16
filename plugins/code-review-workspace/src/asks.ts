@@ -5,7 +5,7 @@ import type { Ask, ReviewMeta } from "./store";
 import { isSummary, sameLocation, SUMMARY_AT, type CommentLocation } from "./draft";
 import type { AsyncStore } from "./store-queue";
 
-/** An ask whose turn's end bb never reported gives way after this. */
+/** An ask whose turn's end VesnALIA never reported gives way after this. */
 export const ASK_LIFETIME = 30 * 60_000;
 
 /** Dig deeper's ask, on the chapter `deepDive`: one at a time per review. */

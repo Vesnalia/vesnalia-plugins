@@ -151,13 +151,13 @@ test('never forwards CLI diagnostics, malformed envelopes or oversized stdout to
   }
 });
 
-test('standalone process uses BB_CLI without SDK dependencies, shell interpolation or stdout diagnostics', async () => {
+test('standalone process uses ALIA_CLI without SDK dependencies, shell interpolation or stdout diagnostics', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'meetings-mcp-cli-'));
   try {
-    const mockCli = join(directory, 'bb');
+    const mockCli = join(directory, 'alia');
     await writeFile(mockCli, `#!${process.execPath}\nlet input=''; process.stdin.setEncoding('utf8'); process.stdin.on('data',c=>input+=c); process.stdin.on('end',()=>{const v=JSON.parse(input); const r=v.request; process.stderr.write('private diagnostic\\n'); if(process.argv.slice(2).join(' ')!=='meetings api --request-stdin --json') process.exit(3); process.stdout.write(JSON.stringify({ok:true,action:'mcp',jsonrpc:'2.0',id:r.id,result:{echo:r.params?.arguments?.question}})+'\\n');});\n`);
     await chmod(mockCli, 0o700);
-    const child = spawn(process.execPath, [fileURLToPath(new URL('./stdio.mjs', import.meta.url))], { env: { ...process.env, BB_CLI: mockCli }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [fileURLToPath(new URL('./stdio.mjs', import.meta.url))], { env: { ...process.env, ALIA_CLI: mockCli }, stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = '', stderr = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.on('data', chunk => { stderr += chunk; });

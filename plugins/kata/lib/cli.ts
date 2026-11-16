@@ -1,4 +1,4 @@
-// `bb kata …`: the declarative CLI (defineCli). Parsing, help, and the
+// `alia kata …`: the declarative CLI (defineCli). Parsing, help, and the
 // `--json` error envelope come from the SDK; this file maps parsed values
 // onto lib/kata-service.ts and formats bounded output.
 import {
@@ -7,7 +7,7 @@ import {
   cliCommand,
   defineCli,
   type PluginCliRegistration,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   boundText,
   detailJson,
@@ -79,9 +79,9 @@ function toCliError(error: unknown): never {
   if (error instanceof KataApiError) {
     const hint =
       error.status === 404
-        ? "Check the ref and --project; `bb kata list` or `bb kata search <query>` finds issues."
+        ? "Check the ref and --project; `alia kata list` or `alia kata search <query>` finds issues."
         : error.code === "validation" && /close|evidence|message too short/iu.test(error.message)
-          ? "If the work is not actually complete, do not close: `bb kata label <ref> add needs-review` and comment what remains."
+          ? "If the work is not actually complete, do not close: `alia kata label <ref> add needs-review` and comment what remains."
           : undefined;
     throw new PluginCliError(`kata: ${error.message}`, { code: `kata_${error.code}`, ...(hint ? { hint } : {}) });
   }
@@ -149,9 +149,9 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
   const requireThread = (ctx: Ctx, thread: string | undefined, cmd: string) => {
     const id = thread ?? ctx.threadId;
     if (!id) {
-      throw new PluginCliError("no thread: run this inside a bb thread", {
+      throw new PluginCliError("no thread: run this inside a VesnALIA thread", {
         code: "thread_required",
-        hint: `Add \`--thread <thr_id>\`, e.g. \`bb kata ${cmd} --thread thr_abc123\`.`,
+        hint: `Add \`--thread <thr_id>\`, e.g. \`alia kata ${cmd} --thread thr_abc123\`.`,
       });
     }
     return id;
@@ -169,7 +169,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
       "Talks to the kata daemon directly. The project comes from --project, a qualified ref (project#abc4), or the thread's .kata.toml binding. Close only verified work, always with a message; otherwise label needs-review and comment. Never delete issues.",
     commands: {
       projects: cliCommand({
-        summary: "List kata projects: included in the viewer, bound bb projects",
+        summary: "List kata projects: included in the viewer, bound VesnALIA projects",
         options: { json: jsonOption },
         run: ({ options }) => safe(async () => {
           const projects = await service.projects();
@@ -208,7 +208,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         },
         constraints: [{ kind: "at-most-one", options: ["owner", "unowned"] }],
         run: ({ options }, ctx) => safe(async () => {
-          const result = await service.list(scopeOf(options, ctx, "bb kata list"), {
+          const result = await service.list(scopeOf(options, ctx, "alia kata list"), {
             status: options.status as "open" | "closed" | "all",
             ...(options.priority === undefined ? {} : { priority: options.priority }),
             labels: options.label,
@@ -235,7 +235,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         },
         constraints: [{ kind: "at-most-one", options: ["owner", "unowned"] }],
         run: ({ options }, ctx) => safe(async () => {
-          const result = await service.ready(scopeOf(options, ctx, "bb kata ready"), {
+          const result = await service.ready(scopeOf(options, ctx, "alia kata ready"), {
             labels: options.label,
             ...(options.owner === undefined ? {} : { owner: options.owner }),
             unowned: options.unowned,
@@ -256,7 +256,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         },
         run: ({ options, positionals }, ctx) => safe(async () => {
           const q = positionals.query.join(" ");
-          const { project, hits } = await service.search(scopeOf(options, ctx, `bb kata search ${JSON.stringify(q)}`), q, options.limit);
+          const { project, hits } = await service.search(scopeOf(options, ctx, `alia kata search ${JSON.stringify(q)}`), q, options.limit);
           if (options.json) {
             return json({
               project,
@@ -273,7 +273,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         positionals: [refPositional],
         options: { project: projectOption, json: jsonOption },
         run: ({ options, positionals }, ctx) => safe(async () => {
-          const d = await service.show(scopeOf(options, ctx, `bb kata show ${positionals.ref}`), positionals.ref);
+          const d = await service.show(scopeOf(options, ctx, `alia kata show ${positionals.ref}`), positionals.ref);
           return options.json ? json(detailJson(d)) : out(formatDetail(d));
         }),
       }),
@@ -305,7 +305,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
           }
           const text = await body(options, ctx);
           const d = await service.create(
-            scopeOf(options, ctx, "bb kata create \"<title>\""),
+            scopeOf(options, ctx, "alia kata create \"<title>\""),
             {
               title: positionals.title.join(" "),
               ...(text === undefined ? {} : { body: text }),
@@ -328,7 +328,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         options: { project: projectOption, json: jsonOption },
         run: ({ options, positionals }, ctx) => safe(async () => {
           const d = await service.setPriority(
-            scopeOf(options, ctx, `bb kata priority ${positionals.ref} ${positionals.priority}`),
+            scopeOf(options, ctx, `alia kata priority ${positionals.ref} ${positionals.priority}`),
             positionals.ref,
             parsePriority(positionals.priority),
           );
@@ -352,7 +352,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         ],
         run: ({ options, positionals }, ctx) => safe(async () => {
           const text = await body(options, ctx);
-          const d = await service.edit(scopeOf(options, ctx, `bb kata edit ${positionals.ref}`), positionals.ref, {
+          const d = await service.edit(scopeOf(options, ctx, `alia kata edit ${positionals.ref}`), positionals.ref, {
             ...(options.title === undefined ? {} : { title: options.title }),
             ...(text === undefined ? {} : { body: text }),
           });
@@ -375,11 +375,11 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
           if ((inline === undefined) === (fromOptions === undefined)) {
             throw new PluginCliError("pass the comment as text or with --body-file, not both or neither", {
               code: "missing_required",
-              hint: `e.g. \`bb kata comment ${positionals.ref} "what changed"\` or \`--body-file notes.md\`.`,
+              hint: `e.g. \`alia kata comment ${positionals.ref} "what changed"\` or \`--body-file notes.md\`.`,
             });
           }
           const d = await service.comment(
-            scopeOf(options, ctx, `bb kata comment ${positionals.ref}`),
+            scopeOf(options, ctx, `alia kata comment ${positionals.ref}`),
             positionals.ref,
             (inline ?? fromOptions)!,
           );
@@ -400,11 +400,11 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
           if (op !== "add" && op !== "rm") {
             throw new PluginCliError(`expected add or rm, got ${JSON.stringify(positionals.op)}`, {
               code: "invalid_value",
-              hint: `e.g. \`bb kata label ${positionals.ref} add needs-review\`.`,
+              hint: `e.g. \`alia kata label ${positionals.ref} add needs-review\`.`,
             });
           }
           const d = await service.label(
-            scopeOf(options, ctx, `bb kata label ${positionals.ref} ${op} ${positionals.label}`),
+            scopeOf(options, ctx, `alia kata label ${positionals.ref} ${op} ${positionals.label}`),
             positionals.ref,
             op,
             positionals.label,
@@ -446,7 +446,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
               : options["duplicate-of"] !== undefined
                 ? "duplicate"
                 : "superseded";
-          const result = await service.close(scopeOf(options, ctx, `bb kata close ${positionals.ref}`), positionals.ref, {
+          const result = await service.close(scopeOf(options, ctx, `alia kata close ${positionals.ref}`), positionals.ref, {
             reason,
             ...(options.message === undefined ? {} : { message: options.message }),
             ...(reason === "duplicate" ? { target: options["duplicate-of"]! } : {}),
@@ -467,7 +467,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         positionals: [refPositional],
         options: { project: projectOption, json: jsonOption },
         run: ({ options, positionals }, ctx) => safe(async () =>
-          mutationResult(await service.reopen(scopeOf(options, ctx, `bb kata reopen ${positionals.ref}`), positionals.ref), options.json),
+          mutationResult(await service.reopen(scopeOf(options, ctx, `alia kata reopen ${positionals.ref}`), positionals.ref), options.json),
         ),
       }),
 
@@ -477,7 +477,7 @@ export function buildKataCli(deps: KataCliDeps): PluginCliRegistration {
         options: { project: projectOption, thread: threadOption, json: jsonOption },
         run: ({ options, positionals }, ctx) => safe(async () => {
           const threadId = requireThread(ctx, options.thread, `link ${positionals.ref}`);
-          const { link, title } = await service.link(threadId, scopeOf(options, ctx, `bb kata link ${positionals.ref}`), positionals.ref);
+          const { link, title } = await service.link(threadId, scopeOf(options, ctx, `alia kata link ${positionals.ref}`), positionals.ref);
           return options.json ? json({ threadId, link, title }) : out(`linked ${threadId} to ${link.qualifiedId}  ${title}`);
         }),
       }),

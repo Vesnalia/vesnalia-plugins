@@ -16,8 +16,8 @@ const patch = "diff --git a/src/a.ts b/src/a.ts\nindex 1..2 100644\n--- a/src/a.
 async function setUp(files: FolderFile[], options: { throws?: string; feature?: FeatureReview; answers?: Folder["answers"] } = {}) {
   runGh.mockImplementation(async (args: string[]) => ({ stdout: args[1] === "user" ? "me\n" : "[]", stderr: "", code: 0 }));
   const host = folderHost({ files, throws: options.throws, answers: options.answers });
-  await plugin(host.bb);
-  const store = testStore(host.bb);
+  await plugin(host.alia);
+  const store = testStore(host.alia);
   await store.saveReview({ targetKey: "br-1", kind: "ref", title: "Snooze checks", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("br-1", { feature: options.feature ?? feature });
   await store.savePatch("br-1", patch);
@@ -47,7 +47,7 @@ test("a file the folder no longer matches, a binary, an asleep machine, and a re
   expect(await asleep.harness.behavior.callRpc("getFileContents", { targetKey: "br-1", file: "src/a.ts" })).toEqual({ ok: false, error: "Couldn’t read src/a.ts from MaxBook: Host request timed out" });
   const changed = await setUp([], { answers: { fileSide: () => ({ outcome: "moved", file: "src/a.ts" }) } });
   expect(await changed.harness.behavior.callRpc("getFileContents", { targetKey: "br-1", file: "src/a.ts" })).toEqual({ ok: false, error: expect.stringMatching(/^Couldn’t read src\/a\.ts from MaxBook: /) });
-  expect(await readFeatureFile(undefined, feature, "new", "src/a.ts")).toEqual({ error: "Couldn’t read src/a.ts: BB’s Git plugin isn’t reachable from here." });
+  expect(await readFeatureFile(undefined, feature, "new", "src/a.ts")).toEqual({ error: "Couldn’t read src/a.ts: VesnALIA’s Git plugin isn’t reachable from here." });
   const unread = await setUp([], { feature: { ...feature, mergeBaseRef: undefined } });
   expect(await unread.harness.behavior.callRpc("getFileContents", { targetKey: "br-1", file: "src/a.ts" })).toEqual({ ok: false, error: "This review hasn’t read its folder’s changes yet." });
   expect(unread.calls).toEqual([]);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useComposerView, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposerView, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Annotation, ReviewDraft, rpcContract } from "../contract";
 import { reviewEditorStore } from "../lib/editor-store";

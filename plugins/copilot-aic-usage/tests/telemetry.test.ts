@@ -98,7 +98,7 @@ describe("incremental JSONL", () => {
 });
 
 describe("exact identity selection", () => {
-  it("selects the latest BB identity across resets, never the newest filesystem directory", () => {
+  it("selects the latest VesnALIA identity across resets, never the newest filesystem directory", () => {
     expect(
       selectSession([
         { seq: 4, data: { providerThreadId: sessionA } },

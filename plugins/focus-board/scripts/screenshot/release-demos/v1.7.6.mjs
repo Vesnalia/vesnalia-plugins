@@ -5,7 +5,7 @@
  * opens the dialog from the toolbar, activates the New project option under
  * the composer, types a name into the inline field, and creates — the field
  * closes and the dialog returns to its resting row, exactly the write the
- * unit suite proves in jsdom. The composer's project picker is bb's host
+ * unit suite proves in jsdom. The composer's project picker is VesnALIA's host
  * compose surface, which the harness has no host for, so the picker seed is
  * filmed where the board CAN show the outcome: the dialog closes and the
  * toolbar's Project filter lists the created "Side quest" project, the same

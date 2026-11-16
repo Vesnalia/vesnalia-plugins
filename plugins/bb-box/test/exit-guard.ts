@@ -47,7 +47,7 @@ process.once("exit", () => {
   const left = foldersThisProcessLeft();
   if (!left.length) return;
   for (const dir of left) rmSync(dir, { recursive: true, force: true });
-  process.stderr.write(`This test file left ${left.length} of BB Box's temporary folders that nothing disposed: ${left.join(", ")}. Dispose what made them, as BB Box does when it stops.\n`);
+  process.stderr.write(`This test file left ${left.length} of VesnALIA Box's temporary folders that nothing disposed: ${left.join(", ")}. Dispose what made them, as VesnALIA Box does when it stops.\n`);
   process.exitCode = 1;
 });
 

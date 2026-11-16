@@ -13,7 +13,7 @@ const { values } = parseArgs({ options: { simulator: { type: "string" }, scale: 
 const log = process.env.FAKE_H264_LOG;
 if (log) appendFileSync(log, `${process.pid} simulator ${values.simulator} scale ${values.scale}\n`);
 if (process.env.FAKE_H264_FAILS) {
-  process.stderr.write(`bb-box-h264: ${process.env.FAKE_H264_FAILS}\n`);
+  process.stderr.write(`alia-box-h264: ${process.env.FAKE_H264_FAILS}\n`);
   process.exit(2);
 }
 const scale = Number(values.scale) / 1000;
@@ -34,7 +34,7 @@ function unit(data: Uint8Array, key: boolean): Buffer {
   return Buffer.concat([head, Buffer.from(data)]);
 }
 
-process.stderr.write("bb-box-h264: x264 0.165, source b35605ace3ddf7c1a5d67a2eb553f034aef41d55, 8000 kbit/s, 1 thread\n");
+process.stderr.write("alia-box-h264: x264 0.165, source b35605ace3ddf7c1a5d67a2eb553f034aef41d55, 8000 kbit/s, 1 thread\n");
 process.stdout.write(unit(annexB(spsOfSize(width, height), PPS, IDR), true));
 const timer = setInterval(() => process.stdout.write(unit(annexB(DELTA), false)), 30);
 process.stdin.on("data", (bytes: Buffer) => {

@@ -1,5 +1,5 @@
 // Search over the chat list. Enter opens the first match, ArrowDown moves
-// into the list, Escape clears (and only then lets the key through to bb).
+// into the list, Escape clears (and only then lets the key through to VesnALIA).
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { useT } from "./chat-context";

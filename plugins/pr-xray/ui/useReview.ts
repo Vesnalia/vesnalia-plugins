@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ReviewGet, rpcContract } from "../shared/contract";
 import type { PrRef } from "../shared/schema";
 import { prRefKey } from "../shared/pr-ref";

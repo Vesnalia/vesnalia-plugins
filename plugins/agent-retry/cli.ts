@@ -1,4 +1,4 @@
-// agent-retry — the `bb agent-retry` command.
+// agent-retry — the `alia agent-retry` command.
 //
 // Everything an operator needs to trust or tune the policy: what it is doing
 // right now, what it decided in the past, what it would decide for a failure
@@ -8,8 +8,8 @@ import {
   PluginCliError,
   cliCommand,
   defineCli,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { resolvePolicy, type RetrySettings } from "./config.js";
 import {
   computeDelayMs,
@@ -131,11 +131,11 @@ function scheduleLines(policy: RetryPolicy, count: number): string[] {
 }
 
 export function registerCli(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   settings: RetrySettings,
   store: Store,
 ): void {
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "agent-retry",
       summary: "Inspect and control automatic retries of failed turns",
@@ -143,8 +143,8 @@ export function registerCli(
         "Retries a failed turn with a growing backoff, for any failure the " +
         "provider reports — including ones with no structured error info. " +
         "Configure it under Settings → Installed plugins, or with " +
-        "`bb plugin config agent-retry`.",
-      // A bad invocation is a usage error, and every other `bb` command says
+        "`alia plugin config agent-retry`.",
+      // A bad invocation is a usage error, and every other `VesnALIA` command says
       // so with exit 2.
       usageErrorExitCode: 2,
       commands: {
@@ -156,7 +156,7 @@ export function registerCli(
               await resolvePolicy(settings);
             const since = Date.now() - 24 * 60 * 60 * 1000;
             const counts = store.countsSince(since);
-            const pending = await listPendingRetries(bb, store);
+            const pending = await listPendingRetries(alia, store);
             if (input.options.json) {
               return {
                 exitCode: 0,
@@ -454,11 +454,11 @@ export function registerCli(
                 `no queued retry recorded for ${threadId}`,
                 {
                   code: "no_queued_retry",
-                  hint: "Run `bb agent-retry status` for threads with a pending retry.",
+                  hint: "Run `alia agent-retry status` for threads with a pending retry.",
                 },
               );
             }
-            const rows = await bb.sdk.threads.queuedMessages.list({ threadId });
+            const rows = await alia.sdk.threads.queuedMessages.list({ threadId });
             const row = rows.find(
               (entry) =>
                 entry.id === recorded.queuedMessageId &&
@@ -473,7 +473,7 @@ export function registerCli(
                 },
               );
             }
-            await bb.sdk.threads.queuedMessages.delete({
+            await alia.sdk.threads.queuedMessages.delete({
               threadId,
               queuedMessageId: row.id,
             });
@@ -501,7 +501,7 @@ export function registerCli(
             },
             reason: {
               type: "string",
-              default: "Manual retry (bb agent-retry retry)",
+              default: "Manual retry (VesnALIA agent-retry retry)",
               description: "Shown verbatim on the queued row",
             },
             json: JSON_OPTION,
@@ -513,9 +513,9 @@ export function registerCli(
               input.options["send-at"] === undefined
                 ? null
                 : Date.now() + input.options["send-at"];
-            let result: Awaited<ReturnType<typeof bb.sdk.threads.retry>>;
+            let result: Awaited<ReturnType<typeof alia.sdk.threads.retry>>;
             try {
-              result = await bb.sdk.threads.retry({
+              result = await alia.sdk.threads.retry({
                 threadId,
                 reason,
                 ...(sendAt === null ? {} : { sendAt }),
@@ -531,15 +531,15 @@ export function registerCli(
                   code: "retry_refused",
                   hint:
                     "The thread must be in error with a failed turn, and it " +
-                    "may already hold one queued retry. Check `bb thread show " +
-                    `${threadId}", and \`bb agent-retry status\`.`,
+                    "may already hold one queued retry. Check `alia thread show " +
+                    `${threadId}", and \`alia agent-retry status\`.`,
                 },
               );
             }
             // A queued manual retry is an ordinary pending retry, so record it:
             // `status` should list it and `cancel` should be able to drop it.
             if (result.delivery === "queued") {
-              const thread = await readThread(bb, threadId);
+              const thread = await readThread(alia, threadId);
               store.record({
                 at: Date.now(),
                 threadId,
@@ -592,11 +592,11 @@ function serialisePolicy(policy: RetryPolicy): unknown {
 
 /** Best-effort thread facts for a decision this command records by hand. */
 async function readThread(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   threadId: string,
 ): Promise<{ projectId: string; providerId: string } | null> {
   try {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     return { projectId: thread.projectId, providerId: thread.providerId };
   } catch {
     return null;
@@ -616,7 +616,7 @@ interface PendingRetry {
  * whether they are still there.
  */
 async function listPendingRetries(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   store: Store,
 ): Promise<PendingRetry[]> {
   const recent = store.list({ action: "retry", limit: 200 });
@@ -629,7 +629,7 @@ async function listPendingRetries(
     const recorded = store.latestQueuedRetry(row.threadId);
     if (recorded?.queuedMessageId == null) continue;
     try {
-      const rows = await bb.sdk.threads.queuedMessages.list({
+      const rows = await alia.sdk.threads.queuedMessages.list({
         threadId: row.threadId,
       });
       const stillQueued = rows.some(

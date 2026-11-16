@@ -1,8 +1,8 @@
-// "New box" in BB's new-thread screen (033): the kind, size and image of the
-// box a new thread starts on. BB saves the choice with the thread's machine
-// and passes it to bb-box's "bb-box-new" machine provider.
+// "New box" in VesnALIA's new-thread screen (033): the kind, size and image of the
+// box a new thread starts on. VesnALIA saves the choice with the thread's machine
+// and passes it to alia-box's "alia-box-new" machine provider.
 
-import { experimental_Icon as Icon, useBbContext, useRpc, type PluginMachineProviderInputsProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaContext, useRpc, type PluginMachineProviderInputsProps } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -29,14 +29,14 @@ function chosen(value: unknown): Choice | null {
 
 export function NewBoxInputs({ value, onChange }: PluginMachineProviderInputsProps) {
   const rpc = useRpc<Contract>();
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   const [kinds, setKinds] = useState<KindView[] | null>(null);
   const [images, setImages] = useState<ImageOptionView[]>([]);
   const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     rpc.call("kinds", null).then(
-      // A Windows box cannot be a thread's new box: BB adds its machine with its installer for Linux and macOS only (#539).
+      // A Windows box cannot be a thread's new box: VesnALIA adds its machine with its installer for Linux and macOS only (#539).
       (all) => live && setKinds(all.filter((kind) => kind.enrol && kind.os !== "windows")),
       (error: unknown) => live && setProblem(error instanceof Error ? error.message : String(error)),
     );

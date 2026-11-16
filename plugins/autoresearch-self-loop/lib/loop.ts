@@ -319,7 +319,7 @@ export async function runExperiment(
   if (!rt.get(co)?.active) {
     throw new Refusal(
       "Autoresearch is not running for this checkout.",
-      "Start the loop from the Autoresearch panel or with `bb autoresearch start`.",
+      "Start the loop from the Autoresearch panel or with `alia autoresearch start`.",
     );
   }
   const view = await readSession(co);

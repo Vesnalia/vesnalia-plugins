@@ -62,7 +62,7 @@ describe("the keyboard contract", () => {
   });
 
   it("never swallows a host shortcut", () => {
-    // Command-K belongs to bb, not to the device.
+    // Command-K belongs to VesnALIA, not to the device.
     expect(key({ key: "k", metaKey: true })).toEqual({ kind: "ignore" });
     expect(key({ key: "c", ctrlKey: true })).toEqual({ kind: "ignore" });
   });

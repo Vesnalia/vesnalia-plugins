@@ -11,7 +11,7 @@ import type { IssueRow } from "../store/rows.js";
  * question faster than the browser tab you already have open.
  *
  * These five buckets answer five questions the browser tab **cannot answer at
- * all**, because only bb knows about threads, worktrees and pull requests.
+ * all**, because only VesnALIA knows about threads, worktrees and pull requests.
  * They are ordered by what you would do next, and the order is the whole
  * design: the top of this list should be the next thing you touch.
  *
@@ -37,7 +37,7 @@ export interface WorkingBucket {
 }
 
 export interface WorkingFacts {
-  /** Issue ids with a live bb thread. */
+  /** Issue ids with a live VesnALIA thread. */
   readonly running: ReadonlySet<string>;
   /** Issue ids with any thread at all, running or not. */
   readonly threaded: ReadonlySet<string>;
@@ -53,7 +53,7 @@ export interface WorkingFacts {
 }
 
 /**
- * bb's own resolved attention values that mean *somebody is waiting on you or
+ * VesnALIA's own resolved attention values that mean *somebody is waiting on you or
  * on this*.
  *
  * Borrowed rather than minted, and deliberately not every value: `none`,
@@ -111,7 +111,7 @@ export function selectWorkingSet(
     {
       id: "running",
       label: "Running",
-      emptyHint: "No bb thread is running on one of these issues right now.",
+      emptyHint: "No VesnALIA thread is running on one of these issues right now.",
       issueIds: take((issue) => facts.running.has(issue.id)),
     },
     {
@@ -137,7 +137,7 @@ export function selectWorkingSet(
        * work is demonstrably happening on this machine. **And an issue you are
        * assigned that is in a started state qualifies too** — which is the
        * single most common thing there is: somebody moves an issue to In
-       * Progress in Linear and has not opened bb yet. Requiring a branch meant
+       * Progress in Linear and has not opened VesnALIA yet. Requiring a branch meant
        * that issue appeared in no bucket at all, so the Working set answered
        * "nothing needs you right now" while the thing you had just started
        * sat invisible.

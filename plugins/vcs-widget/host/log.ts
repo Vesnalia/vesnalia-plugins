@@ -122,7 +122,7 @@ export async function commitDetails(context: ActionContext, input: { sha: string
 
 /**
  * One file's patch inside a commit, against its first parent (the empty tree
- * for the initial commit), plus both complete sides so bb's viewer can expand
+ * for the initial commit), plus both complete sides so VesnALIA's viewer can expand
  * context. `oldPath` joins the pathspec, or a rename would look like an add.
  */
 export async function commitPatch(

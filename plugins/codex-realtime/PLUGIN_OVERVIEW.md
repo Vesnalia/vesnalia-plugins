@@ -1,5 +1,5 @@
 Voice Mode normally needs an OpenAI API key, billed separately from your ChatGPT plan. This plugin
-lets it use the ChatGPT sign-in that the Codex CLI already keeps on the machine running the bb server,
+lets it use the ChatGPT sign-in that the Codex CLI already keeps on the machine running the VesnALIA server,
 so your voice chats run on your ChatGPT subscription instead.
 
 ## What you get
@@ -7,7 +7,7 @@ so your voice chats run on your ChatGPT subscription instead.
 - Voice Mode voice chats with no OpenAI API key. Voice Mode stays on its default Connection: auto
   setting and picks this plugin up by itself.
 - A Realtime model setting, gpt-realtime-2.1 to begin with.
-- A list of the plugins allowed to use your sign-in: only Voice Mode to begin with. The bb app, the
+- A list of the plugins allowed to use your sign-in: only Voice Mode to begin with. The VesnALIA app, the
   command line and agents in threads never receive it.
 
 ## What it never does
@@ -27,6 +27,6 @@ so your voice chats run on your ChatGPT subscription instead.
 
 ## What you need
 
-- bb 0.46 or later and Voice Mode 0.1.9 or later.
-- The Codex CLI, signed in with Sign in with ChatGPT, on the machine running the bb server.
+- VesnALIA 0.46 or later and Voice Mode 0.1.9 or later.
+- The Codex CLI, signed in with Sign in with ChatGPT, on the machine running the VesnALIA server.
 - A ChatGPT plan that includes Codex.

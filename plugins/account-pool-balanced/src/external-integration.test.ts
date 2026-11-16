@@ -3,11 +3,11 @@ import { expect, it } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createAccountPoolPlugin } from "./management-test-fixture.js";
 
-it("BB CLI provisions an external client that shares the pool and can be revoked", async () => {
-  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "bb-external-"));
+it("VesnALIA CLI provisions an external client that shares the pool and can be revoked", async () => {
+  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "alia-external-"));
   const host = createFakePluginHost({ pluginId: "account-pool-balanced", dataDir, sdk: { hosts: { list: async () => [] }, system: { providerStates: async () => ({ providers: [] }) } } });
   const seen: string[] = [];
   let connected = false;
@@ -15,7 +15,7 @@ it("BB CLI provisions an external client that shares the pool and can be revoked
     seen.push(new Headers(init?.headers).get("x-api-key") ?? "");
     return Response.json({ content: [{ type: "text", text: "ok" }] });
   };
-  await createAccountPoolPlugin({vpnPayload:async timestamp=>vpnProof(timestamp,connected?'connected':'disconnected'),fetch:upstreamFetch,fetchIpv4:upstreamFetch})(host.bb);
+  await createAccountPoolPlugin({vpnPayload:async timestamp=>vpnProof(timestamp,connected?'connected':'disconnected'),fetch:upstreamFetch,fetchIpv4:upstreamFetch})(host.alia);
   const service = host.harness.behavior.runService("hub");
   try {
     await host.harness.behavior.callRpc("account.add", { provider: "claude", source: { kind: "api-key", apiKey: "synthetic-upstream-key" }, label: "fixture", priority: 0 });
@@ -24,13 +24,13 @@ it("BB CLI provisions an external client that shares the pool and can be revoked
     expect(added.exitCode).toBe(0);
     const token = (await fs.readFile(file, "utf8")).trim();
     expect(added.stdout).not.toContain(token);
-    // Status prunes departed BB hosts; external clients must survive it.
+    // Status prunes departed VesnALIA hosts; external clients must survive it.
     await host.harness.behavior.runCli(["status"]);
     const request = () => host.harness.behavior.fetchHttp("POST", "/v1/messages", { headers: { "x-api-key": token, "content-type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet", max_tokens: 10, messages: [{ role: "user", content: "test" }] }) });
     const blocked = await request();
     expect(blocked.status).toBe(503);
     expect(blocked.headers.get("retry-after")).toBe("10");
-    expect(blocked.headers.get("x-bb-pool-error")).toBe("VPN_REQUIRED");
+    expect(blocked.headers.get("x-alia-pool-error")).toBe("VPN_REQUIRED");
     expect(seen).toEqual([]);
     connected = true;
     const result = await request();

@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
 import { BoxDialog, DialogButton, useDialogAction } from "./box-dialog.tsx";
 import { Button } from "@/components/ui/button";
@@ -89,7 +89,7 @@ function importWords(ready: boolean, current: ImportCheck | null, text: string |
   const outcome = (outcome: Outcome, draft: Draft): string => {
     switch (outcome.kind) {
       case "saved": {
-        const head = outcome.lostReply ? `Applied at revision ${outcome.revision}. The reply was lost; BB Box's receipt for this import confirms it.` : outcome.rebased ? `Applied at revision ${outcome.revision}, on top of a change made elsewhere.` : "Applied.";
+        const head = outcome.lostReply ? `Applied at revision ${outcome.revision}. The reply was lost; VesnALIA Box's receipt for this import confirms it.` : outcome.rebased ? `Applied at revision ${outcome.revision}, on top of a change made elsewhere.` : "Applied.";
         const since = outcome.changedElsewhere.length ? ` Since then, changed elsewhere: ${outcome.changedElsewhere.join(", ")}.` : "";
         return `${head}${since}${newer(draft)}`;
       }
@@ -104,9 +104,9 @@ function importWords(ready: boolean, current: ImportCheck | null, text: string |
       case "exhausted":
         return `Not applied: the configuration changed three times while applying.${kept(draft)}`;
       case "expired":
-        return changesOf(draft) ? "Not confirmed: this import is older than the receipts BB Box keeps, so it is not sent again. Check it again against what is saved now." : "Not confirmed: this import is older than the receipts BB Box keeps. What is saved now matches it.";
+        return changesOf(draft) ? "Not confirmed: this import is older than the receipts VesnALIA Box keeps, so it is not sent again. Check it again against what is saved now." : "Not confirmed: this import is older than the receipts VesnALIA Box keeps. What is saved now matches it.";
       case "unsendable":
-        return "Not confirmed: BB Box has no receipt for this import yet. What you pasted was not kept when the page reloaded, so it cannot be sent again: paste it again, then check and apply it.";
+        return "Not confirmed: VesnALIA Box has no receipt for this import yet. What you pasted was not kept when the page reloaded, so it cannot be sent again: paste it again, then check and apply it.";
     }
   };
   const conflicts = (count: number) => `${count === 1 ? "A setting the import changes was" : `${count} settings the import changes were`} changed elsewhere after you checked it. Choose for each, then apply.`;
@@ -124,8 +124,8 @@ function importWords(ready: boolean, current: ImportCheck | null, text: string |
     again: "Apply again",
     saving: "Applying…",
     rebasing: "Someone saved first. Checking the import's changes against theirs…",
-    looking: "Not confirmed: BB Box did not reply. Looking for this import's receipt…",
-    unconfirmed: "Not confirmed: BB Box has no receipt for this import yet. Your text is still here. Applying again resends the same request, which BB Box applies at most once.",
+    looking: "Not confirmed: VesnALIA Box did not reply. Looking for this import's receipt…",
+    unconfirmed: "Not confirmed: VesnALIA Box has no receipt for this import yet. Your text is still here. Applying again resends the same request, which VesnALIA Box applies at most once.",
     discard: "Closes the import and forgets the text you pasted. Nothing is applied.",
     pending,
     conflicts,
@@ -265,11 +265,11 @@ function CheckResult({ draft, current, text }: { draft: ImportDraft; current: Im
           Not checked: {outcome.reason} Your text is still here; check it again.
         </p>
       ) : null}
-      {outcome?.kind === "unread" ? <ProblemList tone="bad" title="BB Box cannot read this file as its configuration, so nothing was compared. Fix these, then check it again:" items={problemWords(outcome.problems)} /> : null}
+      {outcome?.kind === "unread" ? <ProblemList tone="bad" title="VesnALIA Box cannot read this file as its configuration, so nothing was compared. Fix these, then check it again:" items={problemWords(outcome.problems)} /> : null}
       {outcome?.kind === "read" ? (
         <>
           <ProblemList tone="bad" title="Apply waits until these are fixed in the file:" items={outcome.blockers} />
-          <ProblemList tone="warn" title="BB Box's checks found these problems. A problem in a backend that is off is saved with it; any other stops Apply:" items={problemWords(outcome.problems)} />
+          <ProblemList tone="warn" title="VesnALIA Box's checks found these problems. A problem in a backend that is off is saved with it; any other stops Apply:" items={problemWords(outcome.problems)} />
           <ProblemList tone="info" title="Not in the file, so not set. Give each in the file, or on its page after:" items={outcome.unset} />
         </>
       ) : null}
@@ -395,7 +395,7 @@ function ExportRow() {
     const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `bb-box-revision-${state.revision}.json`;
+    link.download = `alia-box-revision-${state.revision}.json`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   };
@@ -405,7 +405,7 @@ function ExportRow() {
         label="Export"
         description={
           <>
-            The whole configuration at revision {state.revision} as JSON, as <code className="whitespace-nowrap font-mono">bb box config show --json</code> prints it. It has no secret in it: each shows only as set or not.
+            The whole configuration at revision {state.revision} as JSON, as <code className="whitespace-nowrap font-mono">alia box config show --json</code> prints it. It has no secret in it: each shows only as set or not.
           </>
         }
       >
@@ -434,11 +434,11 @@ function ExportRow() {
           Download
         </Button>
       </SettingRow>
-      {copied === "failed" ? <RowNote note="The browser did not let the page copy it. Use Download, or bb box config show --json." className="px-4 pb-3" /> : null}
+      {copied === "failed" ? <RowNote note="The browser did not let the page copy it. Use Download, or VesnALIA box config show --json." className="px-4 pb-3" /> : null}
       <div className="px-4 pb-3 text-xs leading-snug text-subtle-foreground">
         {secrets.length ? (
           <>
-            <p>To set BB Box up from it, give {secrets.length === 1 ? "this secret" : `these ${secrets.length} secrets`} again, in the file in place of {'{"set": true}'} or on their pages after:</p>
+            <p>To set VesnALIA Box up from it, give {secrets.length === 1 ? "this secret" : `these ${secrets.length} secrets`} again, in the file in place of {'{"set": true}'} or on their pages after:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               {secrets.map((secret, index) => (
                 <li key={index}>
@@ -474,14 +474,14 @@ function MovedCopyRow() {
     let note: CopyRemoval["note"];
     try {
       const result = await rpc.call("config.migrated.remove", null);
-      note = { text: result.removed ? "Removed the copy of BB's earlier settings." : "There was no copy left to remove: it was removed elsewhere.", tone: "info" };
+      note = { text: result.removed ? "Removed the copy of VesnALIA's earlier settings." : "There was no copy left to remove: it was removed elsewhere.", tone: "info" };
     } catch (caught) {
       const reason = reasonAfterColon(message(caught).replace(/\.+$/, ""));
       try {
         const after = await rpc.call("config.get", null);
-        note = after.migrated ? { text: `The copy was not removed: ${reason}. It is still kept; try again.`, tone: "bad" } : { text: "Removed the copy of BB's earlier settings. BB Box did not reply, and the configuration shows it gone.", tone: "info" };
+        note = after.migrated ? { text: `The copy was not removed: ${reason}. It is still kept; try again.`, tone: "bad" } : { text: "Removed the copy of VesnALIA's earlier settings. VesnALIA Box did not reply, and the configuration shows it gone.", tone: "info" };
       } catch {
-        note = { text: `Not confirmed: BB Box did not reply (${reason}), and the configuration could not be read again. Reload the page to see whether the copy is kept.`, tone: "bad" };
+        note = { text: `Not confirmed: VesnALIA Box did not reply (${reason}), and the configuration could not be read again. Reload the page to see whether the copy is kept.`, tone: "bad" };
       }
     }
     await refresh().catch(() => {});
@@ -496,8 +496,8 @@ function MovedCopyRow() {
       {copy ? (
         <SettingRow
           path={COPY_BUTTON}
-          label="Settings moved from BB"
-          description={`BB Box kept a copy of BB's own settings for it when it moved them into this configuration, ${ago(copy.at, Date.now())}, so a value that moved wrongly can be compared. It holds no secret. bb box config migrated shows it.`}
+          label="Settings moved from VesnALIA"
+          description={`VesnALIA Box kept a copy of VesnALIA's own settings for it when it moved them into this configuration, ${ago(copy.at, Date.now())}, so a value that moved wrongly can be compared. It holds no secret. VesnALIA box config migrated shows it.`}
         >
           <Button type="button" variant="outline" size="sm" className="h-7" data-draft-path={COPY_BUTTON} disabled={removal.removing} onClick={() => setAsking(true)}>
             {removal.removing ? <Icon name="Loading" className="animate-spin" aria-hidden /> : null}
@@ -512,7 +512,7 @@ function MovedCopyRow() {
       ) : null}
       <BoxDialog
         open={asking}
-        title="Remove the copy of BB's earlier settings?"
+        title="Remove the copy of VesnALIA's earlier settings?"
         busy={action.busy}
         refused={action.refused}
         onClose={action.close}
@@ -534,9 +534,9 @@ function MovedCopyRow() {
         }
       >
         <div className="space-y-2">
-          <p>BB Box made it {copy ? ago(copy.at, Date.now()) : ""}, when it moved BB's settings into this configuration. Everything in it is in the configuration now, and nothing reads it.</p>
+          <p>VesnALIA Box made it {copy ? ago(copy.at, Date.now()) : ""}, when it moved VesnALIA's settings into this configuration. Everything in it is in the configuration now, and nothing reads it.</p>
           <p>
-            Once removed it cannot be got back. To keep a record first, run <code className="rounded-sm bg-muted px-1 py-0.5 font-mono text-xs text-foreground">bb box config migrated --json</code>.
+            Once removed it cannot be got back. To keep a record first, run <code className="rounded-sm bg-muted px-1 py-0.5 font-mono text-xs text-foreground">alia box config migrated --json</code>.
           </p>
         </div>
       </BoxDialog>
@@ -561,10 +561,10 @@ export function ConfigurationOptions() {
   const outcome = draft.entry.outcome;
   const result = !editing && outcome && (outcome.kind === "saved" || outcome.kind === "already" || outcome.kind === "expired") ? importWords(false, null, null).outcome(outcome, draft) : null;
   const commands: readonly (readonly [string, string])[] = [
-    ["bb box config show --json > bb-box.json", "Export it"],
-    ["bb box config check bb-box.json --test", "Check a file, and run each backend's checks against it"],
-    ["bb box config apply bb-box.json", "Save a file as the whole configuration"],
-    ...(state.migrated ? ([["bb box config migrated", "Show the copy of BB's earlier settings; --remove removes it"]] as const) : []),
+    ["alia box config show --json > alia-box.json", "Export it"],
+    ["alia box config check alia-box.json --test", "Check a file, and run each backend's checks against it"],
+    ["alia box config apply alia-box.json", "Save a file as the whole configuration"],
+    ...(state.migrated ? ([["alia box config migrated", "Show the copy of VesnALIA's earlier settings; --remove removes it"]] as const) : []),
   ];
   return (
     <div className="space-y-6">
@@ -574,7 +574,7 @@ export function ConfigurationOptions() {
             {null}
           </SettingRow>
           <ExportRow />
-          <SettingRow path={OPEN_IMPORT} label="Import" description="Apply a JSON file to this configuration. BB Box checks it and lists what it changes, before and after, before anything is applied.">
+          <SettingRow path={OPEN_IMPORT} label="Import" description="Apply a JSON file to this configuration. VesnALIA Box checks it and lists what it changes, before and after, before anything is applied.">
             <Button
               type="button"
               variant="outline"

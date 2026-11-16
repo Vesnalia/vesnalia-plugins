@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 
 // Gates expose the exact await boundary without sleeps or production test hooks.
@@ -52,7 +52,7 @@ if (args[2] === "node" && args[3] === "-e") {
     },
   });
   // Exercise the official host's temporary SQLite lifecycle, not a live DB.
-  host.bb.storage.database().exec("CREATE TABLE regression_fixture (id INTEGER PRIMARY KEY)");
+  host.alia.storage.database().exec("CREATE TABLE regression_fixture (id INTEGER PRIMARY KEY)");
   return {
     ...host,
     readAdapter: () => ({ values: { customAgents } }),
@@ -65,12 +65,12 @@ if (args[2] === "node" && args[3] === "-e") {
 
 async function savedHost(overrides: Parameters<typeof makeThreadResponse>[0] = {}) {
   const host = createFakePluginHost({ pluginId: "letta-agents", settings: { dockerExecutable: "/nonexistent/letta-test", container: "letta" }, sdk: { threads: { get: async () => makeThreadResponse({ id: "thr_savedchat01", providerId: "acp-letta-existing", ...overrides }) } } });
-  await host.bb.storage.kv.set("roster:v2", { source: "/nonexistent/letta-test:letta", roster: { agents: [{ id: "agent-id", name: "Test", description: null, avatarVersion: 1 }], fetchedAt: Date.now() } });
-  await host.bb.storage.kv.set("provider-source:v2", "/nonexistent/letta-test:letta:ws://127.0.0.1:4500");
-  await host.bb.storage.kv.set("provider-identities:v2", { "agent-id": "letta-existing" });
-  await host.bb.storage.kv.set("provider-aliases:v2", { "agent-id": ["acp-letta-existing"] });
-  await host.bb.storage.kv.set("chat-id:agent-id", "thr_savedchat01");
-  await plugin(host.bb);
+  await host.alia.storage.kv.set("roster:v2", { source: "/nonexistent/letta-test:letta", roster: { agents: [{ id: "agent-id", name: "Test", description: null, avatarVersion: 1 }], fetchedAt: Date.now() } });
+  await host.alia.storage.kv.set("provider-source:v2", "/nonexistent/letta-test:letta:ws://127.0.0.1:4500");
+  await host.alia.storage.kv.set("provider-identities:v2", { "agent-id": "letta-existing" });
+  await host.alia.storage.kv.set("provider-aliases:v2", { "agent-id": ["acp-letta-existing"] });
+  await host.alia.storage.kv.set("chat-id:agent-id", "thr_savedchat01");
+  await plugin(host.alia);
   // Join the non-blocking initial sync before disposing this fixture. Cached-chat
   // RPCs otherwise finish before execFile's ENOENT settles, racing abort at teardown.
   await host.harness.behavior.runSchedule("roster-refresh");
@@ -79,34 +79,34 @@ async function savedHost(overrides: Parameters<typeof makeThreadResponse>[0] = {
 
 test("successful spawn survives failed chat KV persistence and sequential retry creates only one thread", async () => {
   const host = await successfulHost();
-  const { bb, harness } = host;
-  const set = bb.storage.kv.set.bind(bb.storage.kv);
+  const { alia, harness } = host;
+  const set = alia.storage.kv.set.bind(alia.storage.kv);
   try {
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.runSchedule("roster-refresh");
     assert.equal(harness.inspection.logEntries.filter(entry => entry.level === "info").length, 1);
     let failures = 0;
-    bb.storage.kv.set = async (key, value) => {
+    alia.storage.kv.set = async (key, value) => {
       if (key === "chat-id:agent-id" && failures++ === 0) throw new Error("injected KV failure after spawn");
       return set(key, value);
     };
     await assert.rejects(harness.behavior.callRpc("chat_start", { agentId: "agent-id" }));
     assert.equal(harness.inspection.sdk.callsTo("threads.spawn").length, 1);
-    assert.equal(await bb.storage.kv.get("chat-id:agent-id"), undefined);
+    assert.equal(await alia.storage.kv.get("chat-id:agent-id"), undefined);
     // Deliberately sequential: the first single-flight promise has rejected.
     assert.deepEqual(await harness.behavior.callRpc("chat_start", { agentId: "agent-id" }), { threadId: "thr_createdchat1" });
     assert.equal(harness.inspection.sdk.callsTo("threads.spawn").length, 1);
     assert.deepEqual(harness.inspection.sdk.callsTo("threads.get"), [[{ threadId: "thr_createdchat1" }]]);
-    assert.equal(await bb.storage.kv.get("chat-id:agent-id"), "thr_createdchat1");
+    assert.equal(await alia.storage.kv.get("chat-id:agent-id"), "thr_createdchat1");
   } finally {
-    bb.storage.kv.set = set;
+    alia.storage.kv.set = set;
     await host.dispose();
   }
 });
 
 test("generation change during second adapter read prevents stale ACP update and automatically resynchronizes", async () => {
   const host = await successfulHost();
-  const { bb, harness } = host;
+  const { alia, harness } = host;
   const secondRead = gate(), releaseOld = gate(), newRead = gate(), releaseNew = gate();
   let reads = 0;
   harness.inspection.sdk.stub("plugins.getSettings", async () => {
@@ -116,7 +116,7 @@ test("generation change during second adapter read prevents stale ACP update and
     return host.readAdapter();
   });
   try {
-    await plugin(bb);
+    await plugin(alia);
     const initial = harness.behavior.runSchedule("roster-refresh");
     await within(secondRead.promise);
     await harness.behavior.setSettings({ allowUnrestricted: true });
@@ -125,7 +125,7 @@ test("generation change during second adapter read prevents stale ACP update and
     // No RPC/schedule triggers the next generation: the settings listener must.
     await within(newRead.promise);
     assert.equal(harness.inspection.sdk.callsTo("plugins.updateSettings").length, 0);
-    assert.equal(await bb.storage.kv.get("roster:v2"), undefined);
+    assert.equal(await alia.storage.kv.get("roster:v2"), undefined);
     assert.equal(harness.inspection.logEntries.filter(entry => entry.level === "info").length, 0);
     releaseNew.resolve();
     await harness.behavior.runSchedule("roster-refresh");
@@ -143,12 +143,12 @@ test("generation change during second adapter read prevents stale ACP update and
 for (const pausedKey of ["provider-source:v2", "provider-identities:v2", "provider-aliases:v2", "roster:v2"]) {
   test(`generation change during ${pausedKey} write never marks old generation ready and automatically synchronizes again`, async () => {
     const host = await successfulHost();
-    const { bb, harness } = host;
+    const { alia, harness } = host;
     const writeReached = gate(), releaseWrite = gate(), newRead = gate(), releaseNew = gate();
-    const set = bb.storage.kv.set.bind(bb.storage.kv);
+    const set = alia.storage.kv.set.bind(alia.storage.kv);
     const writes: string[] = [];
     let paused = false, reads = 0;
-    bb.storage.kv.set = async (key, value) => {
+    alia.storage.kv.set = async (key, value) => {
       writes.push(key);
       await set(key, value);
       if (key === pausedKey && !paused) {
@@ -160,7 +160,7 @@ for (const pausedKey of ["provider-source:v2", "provider-identities:v2", "provid
       return host.readAdapter();
     });
     try {
-      await plugin(bb);
+      await plugin(alia);
       const initial = harness.behavior.runSchedule("roster-refresh");
       await within(writeReached.promise);
       const oldWrites = [...writes];
@@ -194,7 +194,7 @@ for (const pausedKey of ["provider-source:v2", "provider-identities:v2", "provid
     } finally {
       releaseWrite.resolve(); releaseNew.resolve();
       await harness.behavior.runSchedule("roster-refresh");
-      bb.storage.kv.set = set;
+      alia.storage.kv.set = set;
       await host.dispose();
     }
   });
@@ -209,19 +209,19 @@ test("agents_list exposes the saved chat so the sidebar can scope an agent's dot
 });
 
 test("a malformed saved-chat KV value is reported as null, never as a scope", async () => {
-  const { bb, harness } = await savedHost();
+  const { alia, harness } = await savedHost();
   try {
     // A stale or hand-edited KV row must not reach the sidebar as a link target.
-    await bb.storage.kv.set("chat-id:agent-id", "../../etc/passwd");
+    await alia.storage.kv.set("chat-id:agent-id", "../../etc/passwd");
     const result = await harness.behavior.callRpc("agents_list", null) as { agents: { chatThreadId: string | null }[] };
     assert.deepEqual(result.agents.map(agent => agent.chatThreadId), [null]);
   } finally { await harness.lifecycle.dispose(); }
 });
 
 test("chat_start still rejects a malformed saved-chat KV value before spawning", async () => {
-  const { bb, harness } = await savedHost();
+  const { alia, harness } = await savedHost();
   try {
-    await bb.storage.kv.set("chat-id:agent-id", "not-a-thread");
+    await alia.storage.kv.set("chat-id:agent-id", "not-a-thread");
     const threadId = await (async () => {
       try { return (await harness.behavior.callRpc("chat_start", { agentId: "agent-id" }) as { threadId: string }).threadId; }
       catch { return "rejected"; }
@@ -235,7 +235,7 @@ test("chat_start still rejects a malformed saved-chat KV value before spawning",
 test("agents_list reports a null saved chat when none was ever created", async () => {
   const host = await successfulHost();
   try {
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.runSchedule("roster-refresh");
     const result = await host.harness.behavior.callRpc("agents_list", null) as { agents: { chatThreadId: string | null }[] };
     assert.deepEqual(result.agents.map(agent => agent.chatThreadId), [null]);
@@ -276,14 +276,14 @@ test("uncertain saved lookup never creates replacement", async () => {
 
 for (const key of ["roster:v2", "provider-source:v2"]) {
   test(`saved conversation cannot resume from a mismatched source: ${key}`, async () => {
-    const { bb, harness } = await savedHost();
+    const { alia, harness } = await savedHost();
     try {
       if (key === "roster:v2") {
-        const cached = await bb.storage.kv.get<{ source: string; roster: unknown }>(key);
+        const cached = await alia.storage.kv.get<{ source: string; roster: unknown }>(key);
         assert.ok(cached);
-        await bb.storage.kv.set(key, { ...cached, source: "/different/source:letta" });
+        await alia.storage.kv.set(key, { ...cached, source: "/different/source:letta" });
       } else {
-        await bb.storage.kv.set(key, "/different/source:letta:ws://127.0.0.1:4500");
+        await alia.storage.kv.set(key, "/different/source:letta:ws://127.0.0.1:4500");
       }
       await assert.rejects(harness.behavior.callRpc("chat_start", { agentId: "agent-id" }), /Letta container command failed/);
       assert.equal(harness.inspection.sdk.callsTo("threads.get").length, 0);
@@ -294,8 +294,8 @@ for (const key of ["roster:v2", "provider-source:v2"]) {
 }
 
 test("cold subprocess failure rejects safely, preserves ACP configuration and never spawns", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "letta-agents", settings: { dockerExecutable: "/nonexistent/letta-test-SENSITIVE_SECRET", container: "letta" } });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "letta-agents", settings: { dockerExecutable: "/nonexistent/letta-test-SENSITIVE_SECRET", container: "letta" } });
+  await plugin(alia);
   try {
     await assert.rejects(harness.behavior.callRpc("agents_list", null), (error: Error) => {
       assert.ok(error.message.includes("withheld")); assert.ok(!error.message.includes("SENSITIVE_SECRET")); return true;

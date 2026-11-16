@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeAll, afterEach, expect, it } from "vitest";
 import { fireEvent, cleanup } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { installTestMatchMedia } from "./test-match-media";
 import { defaultPrefs } from "./preferences";
 

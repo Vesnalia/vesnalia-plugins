@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import {afterEach,expect,test} from 'vitest';
 import {fireEvent,cleanup,waitFor} from '@testing-library/react';
-import {loadPluginApp,renderSlot} from '@get-bb/plugin-sdk/testing/app';
+import {loadPluginApp,renderSlot} from '@vesnalia/plugin-sdk/testing/app';
 import {decodeReference} from '../explorer-contract.js';
 HTMLElement.prototype.scrollIntoView=()=>{};
 HTMLElement.prototype.hasPointerCapture=()=>false;

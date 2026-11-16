@@ -151,7 +151,7 @@ export function createDevinAdapter(): ProviderAdapter {
     inboundToken: devinMachineToken,
     async importAccount() { throw new Error("Add Devin with a PAT via --api-key-stdin."); },
     parseRequest(body, headers) {
-      const clientSession = headers.get("x-bb-devin-session");
+      const clientSession = headers.get("x-alia-devin-session");
       const clientAuthorization = headers.get("authorization");
       const affinityId = clientSession !== null && /^[A-Za-z0-9_-]{8,128}$/u.test(clientSession)
         ? `cli:${clientSession}`

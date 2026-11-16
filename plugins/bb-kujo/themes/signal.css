@@ -58,7 +58,7 @@
   border-block-start: 1px solid var(--kujo-border);
 }
 :root [data-sidebar="menu-button"][data-active="true"],
-:root .bb-sidebar-selected-row {
+:root .alia-sidebar-selected-row {
   border-radius: 0;
   box-shadow: inset 2px 0 var(--kujo-interactive);
 }
@@ -67,7 +67,7 @@
   background-size: 48px 48px;
 }
 /* Owned viewport-edge strip. Background glitches above survive without JS. */
-:root .bb-kujo-signal {
+:root .alia-kujo-signal {
   display: block !important;
   position: fixed;
   inset: 0 0 auto;
@@ -79,7 +79,7 @@
   z-index: 1;
   opacity: .28;
 }
-:root .bb-kujo-signal > span {
+:root .alia-kujo-signal > span {
   display: block;
   width: 160px;
   height: 2px;
@@ -94,23 +94,23 @@
   99.42% { transform: translateX(-1px); opacity: .4; }
   99.83% { transform: translateX(0); opacity: .22; }
 }
-:root .bb-kujo-signal[data-paused="true"] > span,
-:root:has(.bb-kujo-signal[data-paused="true"]) :is([data-sidebar="sidebar"], [id="root-compose-main-panel"])::after { animation-play-state: paused; }
+:root .alia-kujo-signal[data-paused="true"] > span,
+:root:has(.alia-kujo-signal[data-paused="true"]) :is([data-sidebar="sidebar"], [id="root-compose-main-panel"])::after { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce), (max-width: 767px), (pointer: coarse) {
-  :root .bb-kujo-signal { display: none !important; }
-  :root .bb-kujo-signal > span,
+  :root .alia-kujo-signal { display: none !important; }
+  :root .alia-kujo-signal > span,
   :root :is([data-sidebar="sidebar"], [id="root-compose-main-panel"])::after { animation: none; opacity: 0; }
 }
 @media (forced-colors: active) {
-  :root .bb-kujo-signal { display: none !important; }
+  :root .alia-kujo-signal { display: none !important; }
   :root :is([data-sidebar="sidebar"], [id="root-compose-main-panel"], [data-thread-window])::before,
   :root :is([data-sidebar="sidebar"], [id="root-compose-main-panel"])::after { display: none; }
   :root [id="root-compose-main-panel"], :root [data-sidebar="sidebar"] { background-image: none; }
 }
 
-/* Static product signature; no invented workspace status or replaced bb labels. */
+/* Static product signature; no invented workspace status or replaced alia labels. */
 :root [data-sidebar="sidebar"] > .shrink-0:first-child::before {
-  content: "KUJO // BB";
+  content: "KUJO // ALIA";
   display: block;
   flex: 0 0 auto;
   margin-inline-end: auto;

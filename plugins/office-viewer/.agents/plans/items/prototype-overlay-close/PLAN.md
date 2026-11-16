@@ -1,6 +1,6 @@
 # Prototype: tidy the side-pane overlay close button
 
-Owner screenshot: in a narrow BB panel the left pane opens as an overlay, and its close «×» (src/studio/prototype/shell.tsx ≈ line 58, and the right one ≈ line 75) is a tiny shadowed text button absolutely positioned on top of the «Страницы | Структура» tabs — it overlaps the «Структура» tab and looks crooked.
+Owner screenshot: in a narrow VesnALIA panel the left pane opens as an overlay, and its close «×» (src/studio/prototype/shell.tsx ≈ line 58, and the right one ≈ line 75) is a tiny shadowed text button absolutely positioned on top of the «Страницы | Структура» tabs — it overlaps the «Структура» tab and looks crooked.
 
 Fix in shell.tsx (and the pane headers if needed):
 1. Remove the absolutely positioned «×» buttons. Give each overlay a proper header row inside the pane: the existing tab strip on the left, and on the right a ghost icon button (size-7, rounded-md, `Icon name="Cancel01"` or the registry's close/X icon at size-4, muted foreground, hover bg-muted, aria-label/tooltip «Закрыть панель» / «Close panel»), vertically centred with the tabs; tabs get `min-w-0` and do not run under the button.

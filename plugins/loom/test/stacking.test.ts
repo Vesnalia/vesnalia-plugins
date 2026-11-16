@@ -29,7 +29,7 @@ const pr = (edit?: (doc: Doc) => void) => (doc: Doc) => {
   edit?.(doc);
 };
 const outcomes = (key: string) => h.store.posts(ticketOf(h, key).id).flatMap((post) => (JSON.parse(post.data_json) as { outcome?: string }).outcome ?? []);
-const lastSpawn = () => h.bb.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
+const lastSpawn = () => h.alia.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
 const URL1 = "https://github.com/acme/shop/pull/1";
 
 /** CSV-1's pull request is open at sq1. */
@@ -90,7 +90,7 @@ describe("starting on an open pull request", () => {
     const posts = h.store.posts(ticketOf(h, "CSV-3").id).filter((post) => post.kind === "system");
     expect(posts.map((post) => post.body)).toEqual(["Loom cannot start CSV-3 on its dependencies' pull requests: CSV-1 and CSV-2 conflict with each other in src/shared.ts. It starts once one of them changes or merges."]);
 
-    const e = new (await import("../src/engine")).Engine({ store: h.store, bb: h.bb, now: h.clock.now, host: h.host, projects: h.projects });
+    const e = new (await import("../src/engine")).Engine({ store: h.store, alia: h.alia, now: h.clock.now, host: h.host, projects: h.projects });
     await (e as unknown as { spawnReady(id: number): Promise<void> }).spawnReady(project().id);
     expect(ticketOf(h, "CSV-3").state).toBe("queued");
     expect(h.host.callsTo("stackBase")).toHaveLength(1);
@@ -109,7 +109,7 @@ describe("a stacked ticket's review and pull request", () => {
     const states = h.host.callsTo("worktreeState").filter((input) => input.worktree === `/wt/${ticketOf(h, "CSV-2").environment_id}`);
     expect(states.map((input) => input.base)).toContain("sq1");
     expect(h.host.callsTo("diff").at(-1)).toMatchObject({ base: "sq1" });
-    const reviewerBrief = (h.bb.callsTo("spawnThread").at(-1)![0] as SpawnArgs).prompt;
+    const reviewerBrief = (h.alia.callsTo("spawnThread").at(-1)![0] as SpawnArgs).prompt;
     expect(reviewerBrief).toContain("## Stacked work");
 
     await queue();
@@ -297,7 +297,7 @@ describe("catching up with the dependency", () => {
 
     expect(ticketOf(h, "CSV-2")).toMatchObject({ state: "working", check_failures: 0 });
     expect(h.host.callsTo("push")).toHaveLength(pushes);
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("Loom could not bring your branch up to date with CSV-1's pull request");
     expect(sent).toContain("git merge --no-edit loom/csv/csv-2-stack");
     expect(h.host.stackBranches.get("loom/csv/csv-2-stack")).toBe("sq7");
@@ -312,7 +312,7 @@ describe("catching up with the dependency", () => {
     const ticket = ticketOf(h, "CSV-2");
     expect(ticket).toMatchObject({ state: "working", check_failures: 1 });
     expect(stackOf(ticket)).toMatchObject({ deps: { "CSV-1": "sq7" } });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Loom merged CSV-1's pull request into your branch, and then the check \"npm test\" exited with 1");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Loom merged CSV-1's pull request into your branch, and then the check \"npm test\" exited with 1");
   });
 
   it("does not catch up while the worker is gone", async () => {
@@ -560,7 +560,7 @@ describe("a dependency in another repo", () => {
     await noteUpstreamChanges(h.ctx, project(), spec());
     const notes = h.store.posts(ticketOf(h, "CSV-2").id).filter((post) => post.kind === "system");
     expect(notes.map((post) => post.body)).toEqual([`CSV-1's pull request ${URL1} has a new commit, sq5. Check that CSV-2's work still fits it.`]);
-    expect(h.bb.sent(row.thread_id!).at(-1)).toContain("CSV-1's pull request https://github.com/acme/shop/pull/1 has a new commit, sq5");
+    expect(h.alia.sent(row.thread_id!).at(-1)).toContain("CSV-1's pull request https://github.com/acme/shop/pull/1 has a new commit, sq5");
     expect(stackOf(ticketOf(h, "CSV-2"))!.cross).toEqual({ "CSV-1": "sq5" });
   });
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import koreyPlugin from "./server.js";
 import {
   KoreyClient,
@@ -49,8 +49,8 @@ async function loadHost() {
     settings: { apiToken: "mock-only-token" },
     agentSkillIds: ["korey"],
   });
-  await koreyPlugin(host.bb);
-  setLinkedMapping(host.bb.storage.database(), "thread-test", threadId);
+  await koreyPlugin(host.alia);
+  setLinkedMapping(host.alia.storage.database(), "thread-test", threadId);
   return host;
 }
 
@@ -132,11 +132,11 @@ describe("Korey response recovery", () => {
     });
     const host = await loadHost();
     hosts.push(host);
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     const operation = createOperation(db, {
       operationId: "korey-00000000-0000-4000-8000-000000000001",
       requestHash: "a".repeat(64),
-      bbThreadId: "thread-test",
+      aliaThreadId: "thread-test",
       action: "change",
       storyId: null,
       instruction: "An already dispatched change",
@@ -313,7 +313,7 @@ describe("Korey response recovery", () => {
       prompt: "Make this mocked change and verify it",
     });
     const operations = listOperations(
-      host.bb.storage.database(),
+      host.alia.storage.database(),
       "thread-test",
       100,
     );

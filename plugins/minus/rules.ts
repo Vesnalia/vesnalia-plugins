@@ -1,6 +1,6 @@
-// Each rule becomes one boolean setting, grouped by the area of bb it belongs to.
+// Each rule becomes one boolean setting, grouped by the area of VesnALIA it belongs to.
 // When on, its selectors get display:none and its css is added (collapseToolCalls and collapseQueue have neither: see group-tools.ts, collapse-queue.ts).
-// Selectors target bb's own aria labels and data attributes, verified against bb 0.47.
+// Selectors target VesnALIA's own aria labels and data attributes, verified against VesnALIA 0.47.
 type Rule = { key: string; label: string; selectors: readonly string[]; css?: string };
 
 const OPEN_IN = 'button[aria-label^="Open workspace in"],button[aria-label="Choose another app to open workspace"]';
@@ -11,11 +11,11 @@ export const AREAS: readonly { title: string; rules: readonly Rule[] }[] = [
     rules: [
       {
         // macOS desktop frames the workbench as a card: an 8px lip on the sides and bottom,
-        // rounded corners from --bb-frame-card-radius and an SVG mask with a fixed 8px radius.
+        // rounded corners from --alia-frame-card-radius and an SVG mask with a fixed 8px radius.
         key: "hideWindowFrame",
         label: "Remove padding and rounded corners around the workbench (macOS app)",
         selectors: [],
-        css: ":root{--bb-frame-window-lip:0px!important;--bb-frame-card-radius:0px!important;--bb-window-card-mask:none!important;--bb-window-card-mask-square-left:none!important}[data-framed]{--bb-window-frame-lip:0px!important;--bb-window-frame-leading-lip:0px!important}",
+        css: ":root{--alia-frame-window-lip:0px!important;--alia-frame-card-radius:0px!important;--alia-window-card-mask:none!important;--alia-window-card-mask-square-left:none!important}[data-framed]{--alia-window-frame-lip:0px!important;--alia-window-frame-leading-lip:0px!important}",
       },
     ],
   },
@@ -204,7 +204,7 @@ export const AREAS: readonly { title: string; rules: readonly Rule[] }[] = [
   },
 ];
 
-// bb's flat declarative settings form, replaced on this plugin's page by the grouped section.
+// VesnALIA's flat declarative settings form, replaced on this plugin's page by the grouped section.
 const FLAT_FORM = (pluginId: string) =>
   [
     `[data-resource-detail-section="configuration"]:has(> [data-testid="plugin-detail-${pluginId}"]) > :not([data-testid])`,

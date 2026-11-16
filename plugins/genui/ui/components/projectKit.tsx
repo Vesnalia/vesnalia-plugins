@@ -1,4 +1,4 @@
-// Shared by the components that read the reply's thread's state from BB
+// Shared by the components that read the reply's thread's state from VesnALIA
 // (Changes, Commits, PullRequest, Threads): the RPC query with its cache,
 // snapshot refresh and visible-only polling, the panel frame, the freshness
 // line and the one-line states.
@@ -52,7 +52,7 @@ export type Query<T> =
   | { readonly status: "loading" }
   | { readonly status: "ready"; readonly answer: T; readonly refreshing: boolean };
 
-/** The last answer per query key, so a block BB remounts (scrolling, reloads of the timeline) shows it at once. */
+/** The last answer per query key, so a block VesnALIA remounts (scrolling, reloads of the timeline) shows it at once. */
 const lastAnswers = new Map<string, unknown>();
 
 function failed(cause: unknown): ProjectFailure {
@@ -60,7 +60,7 @@ function failed(cause: unknown): ProjectFailure {
 }
 
 /**
- * One read of BB state through the plugin's RPCs. `read(refresh)` asks the
+ * One read of VesnALIA state through the plugin's RPCs. `read(refresh)` asks the
  * backend; `refresh` replaces a kept snapshot. While `live(answer)` holds and
  * the component is `visible`, the read repeats with backoff (project-logic
  * pollDelay). A refresh that fails keeps what is shown and says why.
@@ -154,7 +154,7 @@ export const EXACT_TIME = new Intl.DateTimeFormat(undefined, { dateStyle: "full"
 /**
  * When what is shown was read: "as of 10:42" for a kept snapshot (it no
  * longer follows the checkout), "updated 2 min ago" for live state, with a
- * Refresh that reads BB again.
+ * Refresh that reads VesnALIA again.
  */
 export function Freshness({
   at,
@@ -173,7 +173,7 @@ export function Freshness({
   const label = stored ? `as of ${(sameDay ? CLOCK : DAY_CLOCK).format(at)}` : `updated ${relativeTime(at, now)}`;
   return (
     <span className="ml-auto flex shrink-0 items-center gap-0.5 text-[11px] leading-4 text-muted-foreground">
-      <time dateTime={new Date(at).toISOString()} title={`${stored ? "Saved with this reply" : "Read from BB"} ${EXACT_TIME.format(at)}`} className="tabular-nums">
+      <time dateTime={new Date(at).toISOString()} title={`${stored ? "Saved with this reply" : "Read from VesnALIA"} ${EXACT_TIME.format(at)}`} className="tabular-nums">
         {label}
       </time>
       <button
@@ -222,7 +222,7 @@ export function NeedsThread({ icon, children }: { icon: string; children: ReactN
   );
 }
 
-/** Placeholder rows while BB answers. */
+/** Placeholder rows while VesnALIA answers. */
 export function LoadingRows({ label, rows = 3 }: { label: string; rows?: number }) {
   return (
     <div role="status" aria-label={label} className="flex flex-col gap-2.5 px-3 py-3">
@@ -256,7 +256,7 @@ export function ShowAll({ count, noun, onClick }: { count: number; noun: string;
   );
 }
 
-/** A failure BB reported, in the panel body. */
+/** A failure VesnALIA reported, in the panel body. */
 export function FailureLine({ failure }: { failure: ProjectFailure }) {
   return (
     <QuietLine icon={failure.reason === "not-git" || failure.reason === "no-environment" ? "FolderUnknown" : "AlertCircle"} className="px-3 py-2.5">

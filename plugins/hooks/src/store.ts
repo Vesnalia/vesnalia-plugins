@@ -1,6 +1,6 @@
 // Hook definitions live in the plugin's `hooks` setting (a JSON array), so
-// they are editable from Settings → Installed plugins, `bb plugin config`,
-// and the `bb hooks` CLI alike. Run history lives in the plugin database.
+// they are editable from Settings → Installed plugins, `alia plugin config`,
+// and the `alia hooks` CLI alike. Run history lives in the plugin database.
 import type Database from "better-sqlite3";
 import { parseHooksJson, serializeHooks, type HookDefinition } from "./definitions.js";
 import type { RunOutcome } from "./runner.js";
@@ -26,7 +26,7 @@ export interface HookStore {
 export function createHookStore(settings: HooksSettings, onInvalid: (message: string) => void): HookStore {
   let cache: HookDefinition[] | null = null;
   let error: string | null = null;
-  // One write at a time. The Hooks page and `bb hooks` both mutate this list.
+  // One write at a time. The Hooks page and `alia hooks` both mutate this list.
   let tail: Promise<unknown> = Promise.resolve();
 
   function adopt(raw: string): HookDefinition[] {

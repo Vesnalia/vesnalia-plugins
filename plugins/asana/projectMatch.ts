@@ -1,4 +1,4 @@
-// Suggests which bb project an Asana project belongs to, by name.
+// Suggests which VesnALIA project an Asana project belongs to, by name.
 // Dependency-free so the server and tests share it. Suggestions are only
 // used once the user confirms them; learned and confirmed mappings win.
 
@@ -20,8 +20,8 @@ function containsRun(haystack: string[], needle: string[]): boolean {
 }
 
 /**
- * The bb project whose name best matches an Asana project name, or null when
- * none matches or the best match is a tie. A bb project matches when its
+ * The VesnALIA project whose name best matches an Asana project name, or null when
+ * none matches or the best match is a tie. A VesnALIA project matches when its
  * words appear in order in the Asana name ("riverside-beyond" in "Riverside
  * Beyond: Website Development"), or when its initials are a word of the
  * Asana name ("crescent-harbor-films" for "CHF Support").

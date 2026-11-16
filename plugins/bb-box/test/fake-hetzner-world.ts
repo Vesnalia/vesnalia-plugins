@@ -35,7 +35,7 @@ export function hetznerWorld(hostFacts: Record<string, unknown> = {}, prepare: (
       prepare(host);
       dockerHosts.set(record.hostId, host);
     }
-    return new DockerCli(`unix:///run/bb-box/hetzner/${record.hostId}.sock`, host.binary, async () => {});
+    return new DockerCli(`unix:///run/alia-box/hetzner/${record.hostId}.sock`, host.binary, async () => {});
   };
   const backend = (config: HetznerConfig = hetznerConfig(), storage: BackendStorage = new MemoryStorage(), installId = "test", options: Partial<HetznerBackendOptions> = {}, context: Partial<BackendContext> = {}) =>
     new HetznerBackend(config, { ...testContext(storage, installId, { id: "hetzner" }), ...context }, {

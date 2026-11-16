@@ -8,7 +8,7 @@ export function NoticeSections({
   updateCheckFailures = [],
 }: {
   report: Report;
-  /** Plugins bb couldn't check for updates. */
+  /** Plugins VesnALIA couldn't check for updates. */
   updateCheckFailures?: PluginCheckFailure[];
 }) {
   return (
@@ -25,7 +25,7 @@ export function NoticeSections({
       {report.blocked.length === 0 ? null : (
         <Section title="Blocked by engine ranges">
           {report.blocked.map((item) => (
-            // One plugin can have two: bb's candidate and one outside the range.
+            // One plugin can have two: VesnALIA's candidate and one outside the range.
             <Row key={`${item.id}@${item.version}`} id={item.id}>
               {item.version}: {item.reasons.join("; ")}
             </Row>

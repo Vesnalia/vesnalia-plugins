@@ -1,19 +1,15 @@
 {
-  "name": "bb-plugin-voice-mode",
+  "name": "alia-plugin-voice-mode",
   "version": "0.1.15",
   "type": "module",
   "private": true,
-  "description": "Talk to a bb thread hands-free: full-duplex, interruptible realtime voice that hands work to the thread's agent.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/steveafrost/bb-plugin-voice-mode.git"
-  },
+  "description": "Talk to a VesnALIA thread hands-free: full-duplex, interruptible realtime voice that hands work to the thread's agent.",
   "license": "MIT",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Voice Mode",
     "description": "Start a hands-free voice chat from an empty composer. The voice model hands work to the thread's agent and tells you when it's done; talk over it any time to interrupt.",
     "branding": {
@@ -29,7 +25,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -41,11 +36,28 @@
     "vitest": "^4.1.11"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/voice-mode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/voice-mode"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

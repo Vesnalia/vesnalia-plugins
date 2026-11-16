@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { LIMITS, createCli, type Limits } from "./cli.js";
 import { createHostRunner } from "./host-runner.js";
 import { hostContract } from "./contract.js";
@@ -15,13 +15,13 @@ const anything = { "~standard": { version: 1 as const, vendor: "syns", validate:
  * process and opens no file; the Runner it hands the rest is the call to the
  * host half on the session's machine.
  */
-export default function synsPlugin(bb: BbPluginApi, limits: Limits = LIMITS): void {
-  const settings = bb.settings.define({
+export default function synsPlugin(alia: AliaPluginApi, limits: Limits = LIMITS): void {
+  const settings = alia.settings.define({
     synsPath: { type: "string", label: "Syns executable", description: "Absolute path of the syns executable, when it is not on PATH or in ~/.cargo/bin, ~/.local/bin, /usr/local/bin or /opt/homebrew/bin." },
     agentInstructions: { type: "boolean", label: "Tell agents about syns.*", description: "Whether the plugin declares its instruction fragment to Thread Pages. The methods and the guide stay either way.", default: true },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
   const runner = createHostRunner(
     (method, input, options) => host.call(method, input as never, options),
@@ -29,9 +29,9 @@ export default function synsPlugin(bb: BbPluginApi, limits: Limits = LIMITS): vo
   );
 
   const cli = createCli(runner, limits);
-  const invoke = createDispatch({ cli, log: bb.log });
+  const invoke = createDispatch({ cli, log: alia.log });
 
-  bb.rpc.register(
+  alia.rpc.register(
     { threadPagesContributions: { input: anything, output: anything }, threadPagesInvoke: { input: anything, output: anything }, threadPagesPageScript: { input: anything, output: anything } },
     {
       threadPagesContributions: async () => buildDeclaration(METHODS, { agentInstructions: (await settings.get()).agentInstructions !== false }),

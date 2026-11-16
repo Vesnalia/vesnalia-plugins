@@ -59,7 +59,7 @@ export function fnv1a(input: string): number {
 
 /**
  * Ten hues, each a darker tone for light themes and a lighter one for dark
- * themes. bb sets `color-scheme` on `.light` / `.dark`, so `light-dark()`
+ * themes. VesnALIA sets `color-scheme` on `.light` / `.dark`, so `light-dark()`
  * follows the active theme.
  */
 const HUES = [25, 55, 85, 135, 165, 200, 240, 275, 310, 345] as const;

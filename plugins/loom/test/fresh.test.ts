@@ -88,7 +88,7 @@ describe("counting how far an open pull request is behind its base", () => {
     h.host.scripted.behindBase = [{ outcome: "unavailable", message: "git fetch from origin failed: offline", transient: "network" }];
     await count();
     expect(behind()).toBeUndefined();
-    expect(h.bb.callsTo("log").at(-1)).toEqual(["warn", "Could not count how far csv's open pull requests are behind origin/main: git fetch from origin failed: offline"]);
+    expect(h.alia.callsTo("log").at(-1)).toEqual(["warn", "Could not count how far csv's open pull requests are behind origin/main: git fetch from origin failed: offline"]);
     expect(project().state).toBe("running");
     h.clock.advance(60_000);
     await count();
@@ -256,14 +256,14 @@ describe("refreshing an open pull request", () => {
     expect(ticket()).toMatchObject({ state: "working", check_failures: 0, pushed_sha: "sq1" });
     expect(h.host.callsTo("push")).toHaveLength(pushes);
     expect(lastPost().body).toBe("Merging origin/main into CSV-1's branch conflicted in: src/model/a.ts.");
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("Loom could not bring your branch up to date with origin/main");
     expect(sent).toContain("src/model/a.ts");
   });
 
   it("keeps a worker whose pull request is due, and brings a released one back first", async () => {
     const worker = await openPr();
-    h.bb.threads.get(worker.thread_id!)!.status = "idle";
+    h.alia.threads.get(worker.thread_id!)!.status = "idle";
     h.host.behind.set("sq1", 6_000);
     h.host.remoteBase = "base001";
     await count();
@@ -275,7 +275,7 @@ describe("refreshing an open pull request", () => {
     await count();
     await releaseIdleWorkers(h.ctx, project(), spec());
     expect(isReleased(row(worker.id))).toBe(true);
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
 
     h.host.behind.set("sq1", 6_000);
     h.clock.advance(30 * 60_000);

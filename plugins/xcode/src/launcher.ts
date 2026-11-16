@@ -1,7 +1,7 @@
 /**
  * Where a tracked build runs, and the one door every surface uses to start it.
  *
- * `bb xcode run`, `bb xcode run --wait` and `xcode_build` used to spawn
+ * `alia xcode run`, `alia xcode run --wait` and `xcode_build` used to spawn
  * xcodebuild in the server process unconditionally, and refused a thread
  * whose checkout lived on another enrolled Mac, because every check below
  * read the server's disk. Now the thread's environment decides: a checkout on

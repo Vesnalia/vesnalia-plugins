@@ -1,12 +1,12 @@
 // Everything the plugin fetches from the web, behind the one `webLookups`
 // setting: photo search (Wikimedia Commons), Wikipedia lead photos, place
 // names to coordinates (Photon), map tiles (OpenStreetMap) and the https
-// images a UI shows. All of it runs here, in the BB server, rather than in
+// images a UI shows. All of it runs here, in the VesnALIA server, rather than in
 // the page: the setting is a real switch, model-written URLs can't make the
 // user's browser call hosts on their own network, nothing depends on the
 // page's CSP, and one cache serves every client. Results are values; nothing
 // here throws to the caller.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type Database from "better-sqlite3";
 import { CACHE_MIGRATIONS, WebCache, type CacheEntry } from "./cache";
 import { findWikiPhoto, foundImageSchema, pickImage, searchUrl, wikiPhotoSchema, type FoundImage, type WikiPhoto } from "./commons";
@@ -33,7 +33,7 @@ export const WEB_SETTINGS = {
     type: "boolean",
     label: "Web lookups",
     description:
-      "Lets inline UI fetch from the web, through this BB server. ImageSearch and Gallery searches send their search words to Wikimedia Commons (commons.wikimedia.org) and load the photo from upload.wikimedia.org. Map sends the names of places given without coordinates to Photon (photon.komoot.io), loads map tiles from OpenStreetMap (tile.openstreetmap.org), and asks Wikipedia (en.wikipedia.org) and Commons for the lead photo of places that name a Wikipedia article. Images given as https links are fetched from the site in the link. Each request names this plugin in its User-Agent; the service sees this machine's IP address and that request, and nothing else is sent: no cookies, thread text or account details. Answers are cached in this plugin's database. Off: nothing is fetched, and those components say so.",
+      "Lets inline UI fetch from the web, through this VesnALIA server. ImageSearch and Gallery searches send their search words to Wikimedia Commons (commons.wikimedia.org) and load the photo from upload.wikimedia.org. Map sends the names of places given without coordinates to Photon (photon.komoot.io), loads map tiles from OpenStreetMap (tile.openstreetmap.org), and asks Wikipedia (en.wikipedia.org) and Commons for the lead photo of places that name a Wikipedia article. Images given as https links are fetched from the site in the link. Each request names this plugin in its User-Agent; the service sees this machine's IP address and that request, and nothing else is sent: no cookies, thread text or account details. Answers are cached in this plugin's database. Off: nothing is fetched, and those components say so.",
     default: true,
   },
 } as const;
@@ -92,13 +92,13 @@ export interface WebLookups {
   isOn(): boolean;
 }
 
-export function createWebLookups(bb: BbPluginApi): WebLookups {
-  const settings = bb.settings.define(WEB_SETTINGS);
+export function createWebLookups(alia: AliaPluginApi): WebLookups {
+  const settings = alia.settings.define(WEB_SETTINGS);
   let migrated: Database.Database | null = null;
   const cache = new WebCache(() => {
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     if (db !== migrated) {
-      bb.storage.migrate(db, [...CACHE_MIGRATIONS]);
+      alia.storage.migrate(db, [...CACHE_MIGRATIONS]);
       migrated = db;
     }
     return db;
@@ -119,7 +119,7 @@ export function createWebLookups(bb: BbPluginApi): WebLookups {
     try {
       return cache.get(key);
     } catch (cause) {
-      bb.log.warn(`web cache read failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`web cache read failed: ${cause instanceof Error ? cause.message : String(cause)}`);
       return null;
     }
   }
@@ -128,7 +128,7 @@ export function createWebLookups(bb: BbPluginApi): WebLookups {
     try {
       write();
     } catch (cause) {
-      bb.log.warn(`web cache write failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+      alia.log.warn(`web cache write failed: ${cause instanceof Error ? cause.message : String(cause)}`);
     }
   }
 

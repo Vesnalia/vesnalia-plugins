@@ -13,7 +13,7 @@
       "id": "RS-005",
       "severity": "medium",
       "path": "server.ts:7748",
-      "evidence": "Sigue abierto el defecto reconocido en la disposición RS-005: un turno corre en A, su proyecto pasa a B y, mientras el plugin está apagado, termina y empieza otro turno del mismo hilo en B. startedBefore se acepta únicamente por threadId y cuenta el nuevo turno en A, dejando B aparentemente libre. El comentario documenta el fallo, pero no lo evita. Además, latestTurn (6645–6660) ya obtiene requestId y retryAttempt del registro de bb.",
+      "evidence": "Sigue abierto el defecto reconocido en la disposición RS-005: un turno corre en A, su proyecto pasa a B y, mientras el plugin está apagado, termina y empieza otro turno del mismo hilo en B. startedBefore se acepta únicamente por threadId y cuenta el nuevo turno en A, dejando B aparentemente libre. El comentario documenta el fallo, pero no lo evita. Además, latestTurn (6645–6660) ya obtiene requestId y retryAttempt del registro de VesnALIA.",
       "fix": "Persiste una identidad de solicitud/intento junto con la cuenta y valida que corresponde al turno actual antes de reutilizarla. Aprovecha el registro que consulta latestTurn; ante una identidad distinta, aplica el fallback del proyecto. Cubre el cambio de turno durante una recarga."
     }
   ],

@@ -29,14 +29,14 @@ resolves a permission prompt or any other kind of pending interaction.
 
 ## Settings
 
-Two, under Settings → Auto Answer, or through `bb plugin config auto-answer`:
+Two, under Settings → Auto Answer, or through `alia plugin config auto-answer`:
 
 - **Auto-apply answers** — on by default; turn the countdown off entirely.
 - **Countdown** — 4 seconds by default, anywhere from 1 to 120.
 
-`bb auto-answer status` prints both.
+`alia auto-answer status` prints both.
 
 ## Requirements
 
 None. No account, no external service, no network access, and nothing to install
-beside BB itself.
+beside VesnALIA itself.

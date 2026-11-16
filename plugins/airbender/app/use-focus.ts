@@ -3,7 +3,7 @@
 // What: a hook that remembers, per conversation, the one issue whose
 // sub-issues the tab shows in place of the whole list ("epic mode").
 //
-// Why: with a large epic its sub-issues are the working list (bead-bb-ha9).
+// Why: with a large epic its sub-issues are the working list (bead-alia-ha9).
 // The user's rule is that the focus is only a way of looking ("you just
 // cosmetically show only the issues inside the epic"), that it belongs to
 // the conversation, and that it is remembered.
@@ -23,7 +23,7 @@
 //   by the panel from the issue list, with focusBlock in issue-model.ts.
 //
 // - It also remembers the epic last left, so the tab can offer the way
-//   back in (bead-bb-fmg). What the two values become on entering, leaving
+//   back in (bead-alia-fmg). What the two values become on entering, leaving
 //   and dismissing is focusAfter in issue-model.ts, where it is tested.
 //
 // Gotchas:
@@ -38,11 +38,11 @@ import type { Scope } from "./use-issues.ts";
 
 /** Where a conversation's focused epic is kept in local storage. */
 const threadKey = (threadId: string) =>
-  `bb-plugin-airbender:focus:thread:${threadId}`;
+  `alia-plugin-airbender:focus:thread:${threadId}`;
 
 /**
  * Puts another conversation into epic mode on an epic, before it is opened
- * (bead-bb-ty5.2: an epic started in a work tree gets a conversation of its
+ * (bead-alia-ty5.2: an epic started in a work tree gets a conversation of its
  * own, which opens zoomed in on it).
  *
  * Side effects: writes that conversation's memory in local storage; a
@@ -74,7 +74,7 @@ export function useFocus(scope: Scope) {
     scope.threadId !== null
       ? threadKey(scope.threadId)
       : scope.projectId !== null
-        ? `bb-plugin-airbender:focus:project:${scope.projectId}`
+        ? `alia-plugin-airbender:focus:project:${scope.projectId}`
         : null;
   // The epic last left, kept beside the focus, under a key of its own.
   const lastKey = key === null ? null : `${key}:last`;

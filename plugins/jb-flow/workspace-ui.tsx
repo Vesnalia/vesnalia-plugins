@@ -4,13 +4,13 @@ import {
   experimental_SidebarNavigationIcon as SidebarNavigationIcon,
   experimental_useSidebarNavigationSplit as useNavigationSplit,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useSdk,
   useSettings,
   type ExperimentalSidebarNavigationItem,
   type ExperimentalSidebarNavigationProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   inWorkspace,
   pluginInWorkspace,
@@ -53,7 +53,7 @@ function NavItem({
 }) {
   const { actions, activeItemId } = useSidebarNavigation();
   const split = useNavigationSplit(item.id);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <button
       type="button"
@@ -106,8 +106,8 @@ function WorkspaceTopBarInner({ flow, snoozeInfo }: { flow: (NowFlow & SnoozeInf
   const { state, ready, error, refresh } = useWorkspaces();
   const selected = useSelectedWorkspace();
   const { threads, projects } = useSidebarThreads();
-  const context = useBbContext();
-  const navigate = useBbNavigate();
+  const context = useAliaContext();
+  const navigate = useAliaNavigate();
   const tabsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     window.dispatchEvent(
@@ -335,8 +335,8 @@ export function useWorkspaceSwipe() {
   const { state, ready } = useWorkspaces();
   const selected = useSelectedWorkspace();
   const { threads, projects } = useSidebarThreads();
-  const context = useBbContext();
-  const navigate = useBbNavigate();
+  const context = useAliaContext();
+  const navigate = useAliaNavigate();
   const track = useMemo(() => createSwipeTracker(), []);
   return useCallback(
     (event: ReactWheelEvent<HTMLElement>) => {
@@ -353,7 +353,7 @@ export function useWorkspaceSwipe() {
   );
 }
 
-/** With Workspaces off, BB's own navigation renders unchanged. */
+/** With Workspaces off, VesnALIA's own navigation renders unchanged. */
 export function WorkspaceNavigation(props: ExperimentalSidebarNavigationProps) {
   const { values } = useSettings();
   if (values?.workspaces !== true) {
@@ -381,7 +381,7 @@ function WorkspaceNavigationInner(
   const scoped = items.filter(
     (item) =>
       pluginInWorkspace(item.pluginId, selected, state) &&
-      // bb's own rail still lists the panel (a panel can't hide itself); this list can.
+      // VesnALIA's own rail still lists the panel (a panel can't hide itself); this list can.
       (catchUpOn || !isCatchUpPanel(item)),
   );
   return (
@@ -434,7 +434,7 @@ function WorkspaceNavigationInner(
 export function WorkspaceRouteBridge() {
   const { state, ready } = useWorkspaces();
   const selected = useSelectedWorkspace();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const { threads } = useSidebarThreads();
   const previous = useRef<{ id: string; owner: string | null } | null>(null);
   useEffect(() => {

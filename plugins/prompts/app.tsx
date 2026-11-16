@@ -1,4 +1,4 @@
-// bb-plugin-prompts — frontend entry.
+// alia-plugin-prompts — frontend entry.
 //
 // Surfaces:
 // - Composer actions: a queue pill (badge = pending count) and a snippets
@@ -11,7 +11,7 @@
 // - Nav panel: the manager, with every queue and the snippet library.
 //
 // Queue prompts consume on inject (undo restores); snippets never consume.
-import { definePluginApp, useBbContext } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaContext } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { ArmedBanner, QueueButton, SnippetsButton } from "./app/composer";
 import { QuickReplies } from "./app/quick-replies";
@@ -26,7 +26,7 @@ import {
 
 /** The side-panel tab: the same view, minus the composer it would insert into. */
 function QueuePanel({ threadId }: { threadId: string }) {
-  const { projectId } = useBbContext();
+  const { projectId } = useAliaContext();
   return (
     <QueueView
       threadId={threadId}

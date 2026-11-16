@@ -2,7 +2,7 @@
  * A draft of a project image's script from the project's own files (049),
  * for an agent to finish: each part says the file it came from, and what
  * the draft could not translate is listed for the agent and commented in
- * the script. The script runs as root on bb-box's standard Ubuntu image,
+ * the script. The script runs as root on alia-box's standard Ubuntu image,
  * with no checkout of the repository, so what needs the workspace stays in
  * the thread.
  *
@@ -20,9 +20,9 @@ export interface DraftFile {
 }
 
 export interface Draft {
-  /** The script, for .bb/box-setup.sh. */
+  /** The script, for .vesnalia/box-setup.sh. */
   readonly script: string;
-  /** A check of what it installed, for .bb/box-check.sh. */
+  /** A check of what it installed, for .vesnalia/box-check.sh. */
   readonly check: string;
   /** What the draft left to the agent, a line each. */
   readonly gaps: readonly string[];
@@ -124,11 +124,11 @@ class Builder {
  * is the mark: what is newer was made in the box.
  */
 export const SCAN_SCRIPT = String.raw`set -u
-mark=/usr/share/bb-box/image.json
+mark=/usr/share/alia-box/image.json
 [ -e "$mark" ] || { echo "== no-record"; exit 0; }
 newer() { find "$@" -mindepth 1 -maxdepth 1 -newer "$mark" 2>/dev/null | sort; }
 echo "== packages"
-[ -r /usr/share/bb-box/template-packages.tsv ] && comm -13 <(cut -f1 /usr/share/bb-box/template-packages.tsv | sed 's/:.*//' | sort -u) <(apt-mark showmanual 2>/dev/null | sed 's/:.*//' | sort -u)
+[ -r /usr/share/alia-box/template-packages.tsv ] && comm -13 <(cut -f1 /usr/share/alia-box/template-packages.tsv | sed 's/:.*//' | sort -u) <(apt-mark showmanual 2>/dev/null | sed 's/:.*//' | sort -u)
 echo "== sources"
 for f in $(newer /etc/apt/sources.list.d); do echo "# $f"; grep -v '^\s*#' "$f" | sed '/^\s*$/d'; done
 echo "== local"
@@ -143,8 +143,8 @@ echo "== rust"
 echo "== uv"
 command -v uv >/dev/null && uv tool list 2>/dev/null | sed -n 's/^\([A-Za-z0-9_.-]*\) v.*/\1/p'
 echo "== home-bin"
-# Not BB's own CLI, which enrolment writes there, nor uv's tools, nor npm's links for its globals.
-newer ~/.local/bin | while read -r p; do case $(readlink -f "$p") in "$HOME"/.local/bin/bb | "$HOME"/.bb-machines/* | "$HOME"/.local/share/uv/* | "$HOME"/.local/lib/node_modules/*) ;; *) echo "$p" ;; esac; done
+# Not VesnALIA's own CLI, which enrolment writes there, nor uv's tools, nor npm's links for its globals.
+newer ~/.local/bin | while read -r p; do case $(readlink -f "$p") in "$HOME"/.local/bin/alia | "$HOME"/.alia-machines/* | "$HOME"/.local/share/uv/* | "$HOME"/.local/lib/node_modules/*) ;; *) echo "$p" ;; esac; done
 exit 0
 `;
 
@@ -184,7 +184,7 @@ function scanned(b: Builder, from: string, scan: Map<string, string[]>): void {
     b.checks.push("cargo --version");
   }
   const uv = scan.get("uv") ?? [];
-  if (uv.length) b.user.push(`# uv tools installed in ${from}.`, `sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'`, ...uv.map((tool) => `uv tool install ${quote(tool)}`), "BB_BOX_AS_USER");
+  if (uv.length) b.user.push(`# uv tools installed in ${from}.`, `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'`, ...uv.map((tool) => `uv tool install ${quote(tool)}`), "ALIA_BOX_AS_USER");
   const local = scan.get("local") ?? [];
   const homeBin = scan.get("home-bin") ?? [];
   const known = new Set(uv);
@@ -295,7 +295,7 @@ function devcontainer(b: Builder, from: string, config: Record<string, unknown>)
       b.checks.push("cargo --version");
     } else {
       const args = Object.entries(options).map(([key, value]) => quote(`${key}=${String(value)}`));
-      b.root.push(`# From ${from}.`, ["bb-box-feature", quote(ref), ...args].join(" "));
+      b.root.push(`# From ${from}.`, ["alia-box-feature", quote(ref), ...args].join(" "));
     }
   }
   for (const key of ["containerEnv", "remoteEnv"] as const) {
@@ -331,7 +331,7 @@ function dockerfile(b: Builder, file: DraftFile): void {
   for (const { keyword, args } of stage) {
     if (keyword === "RUN") {
       const command = args.startsWith("[") ? execForm(args) : args;
-      lines.push(asUser ? `sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'\n${command}\nBB_BOX_AS_USER` : command);
+      lines.push(asUser ? `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'\n${command}\nBB_BOX_AS_USER` : command);
     } else if (keyword === "ENV" || keyword === "ARG") {
       for (const [key, value] of pairs(args)) {
         if (value === undefined) {
@@ -441,9 +441,9 @@ function rustup(channel: string, components: readonly string[], targets: readonl
   const args = [`--profile ${profile}`, `--default-toolchain ${quote(channel)}`, ...components.map((one) => `-c ${quote(one)}`), ...targets.map((one) => `-t ${quote(one)}`)];
   return [
     `# Rust, from ${from}, for the box user, with cargo and rustc on its PATH.`,
-    `sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'`,
+    `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'`,
     `curl -fsSL https://sh.rustup.rs | sh -s -- -y --no-modify-path ${args.join(" ")}`,
-    "BB_BOX_AS_USER",
+    "ALIA_BOX_AS_USER",
     'path_first "$BOX_HOME/.cargo/bin"',
   ];
 }
@@ -455,24 +455,24 @@ function nix(b: Builder, flake: DraftFile | null, lock: DraftFile | null, shell:
   if (flake && !lock) b.gap(flake.path, "flake.lock was not given, so the dev shell takes its inputs as they are on the day of the build: pass the lock too.");
   const copies = [flake, lock, shell].filter((file): file is DraftFile => !!file);
   const marker = (file: DraftFile) => {
-    let tag = "BB_BOX_FILE";
+    let tag = "ALIA_BOX_FILE";
     while (file.text.includes(tag)) tag += "_";
     return tag;
   };
   b.after.push(
     `# Nix for the box user, and the dev shell of ${from} built once, from copies in this script.`,
     'install -d -m 0755 -o "$BOX_USER" /nix',
-    `sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'`,
+    `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'`,
     "curl -fsSL https://nixos.org/nix/install | sh -s -- --no-daemon",
     "mkdir -p ~/.config/nix && echo 'experimental-features = nix-command flakes' >>~/.config/nix/nix.conf",
-    "BB_BOX_AS_USER",
+    "ALIA_BOX_AS_USER",
     'path_first "$BOX_HOME/.nix-profile/bin"',
-    "install -d -m 0755 /opt/bb-box-image/nix",
-    ...copies.flatMap((file) => [`cat >/opt/bb-box-image/nix/${base(file.path)} <<'${marker(file)}'`, file.text.replace(/\n$/, ""), marker(file)]),
-    'chown -R "$BOX_USER" /opt/bb-box-image/nix',
+    "install -d -m 0755 /opt/alia-box-image/nix",
+    ...copies.flatMap((file) => [`cat >/opt/alia-box-image/nix/${base(file.path)} <<'${marker(file)}'`, file.text.replace(/\n$/, ""), marker(file)]),
+    'chown -R "$BOX_USER" /opt/alia-box-image/nix',
     flake
-      ? 'sudo -iu "$BOX_USER" "$BOX_HOME/.nix-profile/bin/nix" develop /opt/bb-box-image/nix --command true'
-      : 'sudo -iu "$BOX_USER" "$BOX_HOME/.nix-profile/bin/nix-shell" /opt/bb-box-image/nix/shell.nix --run true',
+      ? 'sudo -iu "$BOX_USER" "$BOX_HOME/.nix-profile/bin/nix" develop /opt/alia-box-image/nix --command true'
+      : 'sudo -iu "$BOX_USER" "$BOX_HOME/.nix-profile/bin/nix-shell" /opt/alia-box-image/nix/shell.nix --run true',
   );
   b.gap(from, "Nix is installed for the box user alone, with no daemon, as boxes may have no systemd; in the thread, run `nix develop` in its checkout.");
   b.checks.push("nix --version");
@@ -485,7 +485,7 @@ function render(b: Builder): { script: string; check: string } {
   const script: string[] = [
     "#!/bin/bash",
     `# A project image's script (049): ${PRODUCT} runs it as root on its standard Ubuntu 24.04`,
-    "# image, with BB_BOX_IMAGE, BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH. There is no",
+    "# image, with ALIA_BOX_IMAGE, ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH. There is no",
     "# checkout of the repository: what needs one stays in the thread.",
     "# Drafted by box_image_draft; try it with box_image_try.",
     "set -euo pipefail",
@@ -504,10 +504,10 @@ function render(b: Builder): { script: string; check: string } {
     script.push(
       "",
       "# mise for the box user's tools, its shims first on the PATH.",
-      `sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'`,
+      `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'`,
       "curl -fsSL https://mise.run | sh",
       ...mise.map(([tool, { version, from }]) => `~/.local/bin/mise use --global ${quote(`${tool}@${version}`)}  # ${from}`),
-      "BB_BOX_AS_USER",
+      "ALIA_BOX_AS_USER",
       'path_first "$BOX_HOME/.local/share/mise/shims"',
     );
     for (const [tool] of mise) b.checks.push(VERSION_COMMANDS[tool] ?? `mise which ${tool}`);
@@ -519,10 +519,10 @@ function render(b: Builder): { script: string; check: string } {
       "",
       b.used.length ? `# The standard image has what ${b.used.join(", ")} ${b.used.length === 1 ? "asks" : "ask"} for. Add what else the project needs, for example:` : "# Nothing was found to draft from. Fill in what the project needs, for example:",
       "# apt-get install -y --no-install-recommends <packages>",
-      "# bb-box-feature ghcr.io/devcontainers/features/<feature>:1 <option>=<value>",
-      `# sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'`,
+      "# alia-box-feature ghcr.io/devcontainers/features/<feature>:1 <option>=<value>",
+      `# sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'`,
       "# curl -fsSL https://mise.run | sh && ~/.local/bin/mise use --global node@22",
-      "# BB_BOX_AS_USER",
+      "# ALIA_BOX_AS_USER",
     );
   }
   const checks = [...new Set(b.checks)];

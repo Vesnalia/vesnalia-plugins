@@ -1,5 +1,5 @@
 // Exactly one active-only loop, independent of job/parent count. Idle discovery
-// belongs to the existing global 20-second refresh and ordinary BB changes.
+// belongs to the existing global 20-second refresh and ordinary VesnALIA changes.
 export class FleetActivePoller {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inflight = false;

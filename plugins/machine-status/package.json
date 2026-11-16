@@ -1,16 +1,16 @@
 {
-  "name": "bb-plugin-machine-status",
+  "name": "alia-plugin-machine-status",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
-  "bb": {
+  "alia": {
     "name": "Machine Status",
-    "description": "Shows connected machines' battery, memory, and storage status in the BB interface.",
+    "description": "Shows connected machines' battery, memory, and storage status in the VesnALIA interface.",
     "branding": {
       "icon": "./icons/battery.svg",
       "experimental_icons": {
@@ -26,7 +26,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -53,7 +52,24 @@
     "vaul": "^1.1.2"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/machine-status#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/machine-status"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

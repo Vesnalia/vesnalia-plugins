@@ -1,6 +1,6 @@
 import type { SidebarProviderId } from "./preferences.ts";
 
-/** Provider brand-mark geometry lifted from get-bb/bb (MIT). */
+/** Provider brand-mark geometry lifted from get-alia/alia (MIT). */
 export interface ProviderMarkPath {
   d: string;
   fillOpacity?: number;

@@ -1,7 +1,7 @@
-// Draws Radar's unseen-item count on its nav-rail button. bb does not mount
+// Draws Radar's unseen-item count on its nav-rail button. VesnALIA does not mount
 // navPanel sidebar accessories yet, so this decorates the rail from a content
 // script and polls the plugin's local `badge` route (in-memory, cheap).
-import type { PluginContentScriptContext } from "@get-bb/plugin-sdk/app";
+import type { PluginContentScriptContext } from "@vesnalia/plugin-sdk/app";
 
 const BUTTON = 'nav button[aria-label="Radar"]';
 const ATTR = "data-radar-badge";

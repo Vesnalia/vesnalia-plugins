@@ -4,7 +4,7 @@
 // it; Send for all that wait; Not pushed yet, from the compare menu, its page; and Branch kept.
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { toast } from "sonner";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
@@ -56,7 +56,7 @@ async function renderReview(review: Record<string, unknown>, rpc: Record<string,
   patchReviewState(review.targetKey as string, { activeId: "c1" });
   const app = await loadPluginApp(() => import("../app"));
   const calls = handlers(review, rpc);
-  // BB's panel takes the tabs the page opens.
+  // VesnALIA's panel takes the tabs the page opens.
   const page = renderSlot(app.navPanels[0]!, { subPath: review.targetKey as string }, { rpc: calls as any, sidebarThreads: { threads: [] } as any, experimental_panel: { openTab: () => true } });
   await page.findByTestId("filediff");
   return { app, page, rpc: calls };
@@ -122,8 +122,8 @@ test("Send in Needs you takes everything on GitHub waiting for you, and a sent o
 });
 
 test("Not pushed yet, from the compare menu, opens its page after the chapters, not the Main thread tab, which has the chat alone", async () => {
-  const getNotPushed = vi.fn(async () => ({ state: "available", patch: "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1,2 @@\n aa\n+retry()\n", base: SHA, onReviewHead: true, branch: "bb/fixes-thr_x", machine: "MaxBook", threadId: "fresh", hidden: [{ path: ".env", reason: "secret" }], notice: null, views: [] }));
-  const fixer = { ...ownPr, mainThread: { threadId: "fresh", environmentId: "env_fix", origin: "fresh", since: 1, branch: "bb/fixes-thr_x" } };
+  const getNotPushed = vi.fn(async () => ({ state: "available", patch: "diff --git a/src/a.ts b/src/a.ts\n--- a/src/a.ts\n+++ b/src/a.ts\n@@ -1 +1,2 @@\n aa\n+retry()\n", base: SHA, onReviewHead: true, branch: "alia/fixes-thr_x", machine: "MaxBook", threadId: "fresh", hidden: [{ path: ".env", reason: "secret" }], notice: null, views: [] }));
+  const fixer = { ...ownPr, mainThread: { threadId: "fresh", environmentId: "env_fix", origin: "fresh", since: 1, branch: "alia/fixes-thr_x" } };
   const { app, page, rpc } = await renderReview(fixer, { getNotPushed, getSourceThread: () => ({ thread: { threadId: "fresh", title: "Fixes for web#12", state: "open", machine: "MaxBook" } }) });
   fireEvent.click(await page.findByRole("button", { name: /^Show changes: / }));
   const menu = within(await page.findByRole("menu", { name: "Show changes" }));
@@ -149,7 +149,7 @@ test("Not pushed yet, from the compare menu, opens its page after the chapters, 
 
 test("with Send to thread off, Not pushed yet still opens from the compare menu, and there's no Main thread tab", async () => {
   const getNotPushed = vi.fn(async () => ({ state: "none", message: "Nothing waiting." }));
-  const fixer = { ...ownPr, mainThread: { threadId: "fresh", environmentId: "env_fix", origin: "fresh", since: 1, branch: "bb/fixes-thr_x" } };
+  const fixer = { ...ownPr, mainThread: { threadId: "fresh", environmentId: "env_fix", origin: "fresh", since: 1, branch: "alia/fixes-thr_x" } };
   const off = { getPreferences: () => ({ preferences: { ...defaultPreferences, knobs: { ...defaultPreferences.knobs, sendToThread: false } }, revision: 0 }) };
   const { app, page } = await renderReview(fixer, { getNotPushed, ...off });
   fireEvent.click(await page.findByRole("button", { name: /^Show changes: / }));
@@ -177,14 +177,14 @@ test("Branch kept names a removed fixer's branch, with its delete command to cop
   const dismissKeptBranch = vi.fn(async () => ({ ok: true }));
   const writeText = vi.fn(async () => {});
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
-  const { page } = await renderReview({ ...ownPr, keptBranches: [{ branch: "bb/fixes-thr_x", machine: "MaxBook", path: "/Users/me/src/web", at: now }] }, { dismissKeptBranch });
+  const { page } = await renderReview({ ...ownPr, keptBranches: [{ branch: "alia/fixes-thr_x", machine: "MaxBook", path: "/Users/me/src/web", at: now }] }, { dismissKeptBranch });
   const notice = await page.findByRole("status", { name: "Branch kept" });
   // Where it is, and what -D throws away.
-  expect(notice.textContent).toContain("Branch kept: bb/fixes-thr_x on MaxBook. The fixer’s folder is gone, but its branch is still in ~/src/web. To delete it, run git branch -D bb/fixes-thr_x. This also deletes any commits on it that aren’t on GitHub.");
-  fireEvent.click(within(notice).getByRole("button", { name: "Copy git branch -D bb/fixes-thr_x" }));
-  await waitFor(() => expect(writeText).toHaveBeenCalledWith("git branch -D bb/fixes-thr_x"));
-  fireEvent.click(within(notice).getByRole("button", { name: "Got it: bb/fixes-thr_x" }));
-  await waitFor(() => expect(dismissKeptBranch).toHaveBeenCalledWith({ targetKey: "pr-12", branch: "bb/fixes-thr_x" }));
+  expect(notice.textContent).toContain("Branch kept: alia/fixes-thr_x on MaxBook. The fixer’s folder is gone, but its branch is still in ~/src/web. To delete it, run git branch -D alia/fixes-thr_x. This also deletes any commits on it that aren’t on GitHub.");
+  fireEvent.click(within(notice).getByRole("button", { name: "Copy git branch -D alia/fixes-thr_x" }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith("git branch -D alia/fixes-thr_x"));
+  fireEvent.click(within(notice).getByRole("button", { name: "Got it: alia/fixes-thr_x" }));
+  await waitFor(() => expect(dismissKeptBranch).toHaveBeenCalledWith({ targetKey: "pr-12", branch: "alia/fixes-thr_x" }));
   page.lifecycle.unmount();
 });
 

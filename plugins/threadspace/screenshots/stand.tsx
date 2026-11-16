@@ -6,7 +6,7 @@ import { Icon } from "../src/icons";
 import { ThreadIndicator } from "../src/ThreadIndicator";
 import { resolveThreadStatus } from "../src/threadStatus";
 import { InterfaceLanguageProvider } from "../src/i18n";
-import type { PluginSidebarThread, PluginSidebarProject } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
 import type { ProjectAppearance } from "../src/preferences";
 import "../src/notion.css";
 import "../src/mobile.css";

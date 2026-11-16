@@ -1,5 +1,5 @@
 // @vitest-environment node
-// The integration merge over the real host operations and a real git repository, with only bb and the workers' side faked.
+// The integration merge over the real host operations and a real git repository, with only VesnALIA and the workers' side faked.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -85,7 +85,7 @@ async function setup(edit: (doc: Doc) => void): Promise<string> {
   await seedProject(h, edit);
   await reachApproved(h);
   h.store.updateTicket(ticketOf(h, "CSV-1").id, { head_sha: reviewed });
-  h.bb.checkout = repo;
+  h.alia.checkout = repo;
   useRealLoomWorktrees();
   return reviewed;
 }
@@ -190,8 +190,8 @@ describe("the integration merge against a real repository", () => {
 
     h = makeCtx();
     await seedRepoProject(h, (doc) => (doc.repo[1].after_merge = ["test -f api.txt"]));
-    h.bb.checkouts.set("proj_web", { host_1: web });
-    h.bb.checkouts.set("proj_api", { host_1: api });
+    h.alia.checkouts.set("proj_web", { host_1: web });
+    h.alia.checkouts.set("proj_api", { host_1: api });
     await reachApproved(h, "CSV-1");
     await reachApproved(h, "CSV-2");
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { head_sha: webReviewed });
@@ -223,8 +223,8 @@ describe("the integration merge against a real repository", () => {
 
     h = makeCtx();
     await seedRepoProject(h, (doc) => (doc.repo[1].after_merge = [`test -f api.txt && git rev-parse HEAD >> ${checked}`]));
-    h.bb.checkouts.set("proj_web", { host_1: web });
-    h.bb.checkouts.set("proj_api", { host_1: api });
+    h.alia.checkouts.set("proj_web", { host_1: web });
+    h.alia.checkouts.set("proj_api", { host_1: api });
     await reachApproved(h, "CSV-1");
     await reachApproved(h, "CSV-2");
     h.store.updateTicket(ticketOf(h, "CSV-1").id, { head_sha: webReviewed });

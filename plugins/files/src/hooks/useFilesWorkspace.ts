@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useBbContext, useRpc } from "@bb/plugin-sdk/app";
-import type { PluginFileOpenerSource } from "@bb/plugin-sdk/app";
+import { useAliaContext, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginFileOpenerSource } from "@vesnalia/plugin-sdk/app";
 import type { filesRpcContract } from "../../server";
 import { parentPath } from "../tree-order";
 
@@ -53,7 +53,7 @@ export interface TabState extends WorkspaceFileIdentity {
   saveState: SaveState;
 }
 
-const WORKSPACE_STORAGE_PREFIX = "bb-plugin-files:workspace:";
+const WORKSPACE_STORAGE_PREFIX = "alia-plugin-files:workspace:";
 const MAX_RESTORED_TABS = 20;
 const MAX_WORKSPACE_PATH_LENGTH = 4_096;
 const FILES_PLUGIN_HTTP_BASE = "/api/v1/plugins/files";
@@ -106,7 +106,7 @@ async function uploadFile(
   });
   const response = await fetch(`${FILES_PLUGIN_HTTP_BASE}/http/upload?${query}`, {
     method: "POST",
-    headers: { "x-bb-plugin-token": token },
+    headers: { "x-alia-plugin-token": token },
     body: file,
   });
   const json: unknown = await response.json().catch(() => null);
@@ -200,7 +200,7 @@ function saveStoredWorkspace(source: WorkspaceFileIdentity["source"], state: Sto
 }
 
 export function useFilesWorkspace(initialPath: string | null = null) {
-  const context = useBbContext();
+  const context = useAliaContext();
   const rpc = useRpc<typeof filesRpcContract>();
   const threadId = context.threadId ?? "";
   // Environment identity is resolved by the server for every RPC. Persisted

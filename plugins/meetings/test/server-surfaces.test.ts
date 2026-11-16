@@ -205,11 +205,11 @@ describe("mock meeting page", () => {
     expect(bad.exitCode).toBe(1);
     expect(bad.stdout).toContain("Selftest FAILED");
     expect(bad.stdout).toContain("Problem:   the bot never got into the mock meeting");
-    expect(bad.stdout).toContain("Logs: bb meetings logs mtg_");
+    expect(bad.stdout).toContain("Logs: VesnALIA meetings logs mtg_");
   });
 });
 
-describe("bb meetings CLI", () => {
+describe("alia meetings CLI", () => {
   it("joins with masked output and schedules with --at", async () => {
     const { harness } = await load({ now: () => T0 });
     const now = await harness.behavior.runCli(["join", ZOOM_URL]);
@@ -297,7 +297,7 @@ describe("bb meetings CLI", () => {
     const page1 = await harness.behavior.runCli(["transcript", id, "--limit", "2"]);
     expect(page1.stdout.startsWith("# Планёрка\n")).toBe(true);
     expect(page1.stdout).toContain("**[00:00:00] Анна:** Реплика номер 0");
-    expect(page1.stderr).toContain(`Next page: bb meetings transcript ${id} --from 2`);
+    expect(page1.stderr).toContain(`Next page: VesnALIA meetings transcript ${id} --from 2`);
     const page2 = await harness.behavior.runCli(["transcript", id, "--from", "2", "--limit", "2", "--format", "txt"]);
     expect(page2.stdout.startsWith("[00:00:08] Анна: Реплика номер 2")).toBe(true);
     expect(page2.stderr).toContain("--from 4 --format txt");
@@ -331,11 +331,11 @@ describe("bb meetings CLI", () => {
     const refused = await harness.behavior.runCli(["delete", id]);
     expect(refused.exitCode).toBe(1);
     expect(refused.stderr).toContain("without --yes");
-    expect(refused.stderr).toContain(`bb meetings delete ${id} --yes`);
+    expect(refused.stderr).toContain(`alia meetings delete ${id} --yes`);
 
     const missing = await harness.behavior.runCli(["show", "mtg_nonexistent00", "--json"]);
     expect(missing.exitCode).toBe(1);
-    expect(JSON.parse(missing.stdout)).toMatchObject({ ok: false, error: { code: "not_found", hint: "List meetings with: bb meetings list" } });
+    expect(JSON.parse(missing.stdout)).toMatchObject({ ok: false, error: { code: "not_found", hint: "List meetings with: VesnALIA meetings list" } });
 
     expect((await harness.behavior.runCli(["delete", id, "--yes"])).stdout).toContain(`Deleted ${id}`);
   });
@@ -353,7 +353,7 @@ describe("bb meetings CLI", () => {
     const login = await harness.behavior.runCli(["zoom-login"]);
     expect(login.stdout).toContain("https://bb.example/plugins/meetings/meetings");
     const setup = await harness.behavior.runCli(["setup", "--force"]);
-    expect(setup.stdout).toContain("Follow progress: bb meetings doctor");
+    expect(setup.stdout).toContain("Follow progress: VesnALIA meetings doctor");
     expect(hostCalls(harness, "env.setup")[0]?.input).toMatchObject({ force: true });
   });
 });
@@ -570,7 +570,7 @@ describe("HTTP routes", () => {
   });
 });
 
-describe("bb meetings api (external agents)", () => {
+describe("alia meetings api (external agents)", () => {
   const api = async (loaded: Loaded, request: unknown) => {
     const result = await loaded.harness.behavior.runCli(["api", "--request", JSON.stringify(request), "--json"]);
     return { ...result, body: result.exitCode === 0 ? (JSON.parse(result.stdout) as Record<string, any>) : null };

@@ -2,7 +2,7 @@
 import type {
   PluginComposerScope,
   PluginRealtimeConnectionState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { DAY_ZONE } from "./pace.js";
 import { CLAUDE_CODE_PROVIDER } from "./switch.js";
 
@@ -165,14 +165,14 @@ export function windowForecast(
 
 /**
  * The wait before retry number `attempt` (from 0) of a read the screen
- * needs: soon at first, then once a minute while bb stays busy.
+ * needs: soon at first, then once a minute while VesnALIA stays busy.
  */
 export function retryDelayMs(attempt: number): number {
   return [2_000, 5_000, 15_000, 30_000][attempt] ?? 60_000;
 }
 
 /**
- * Whether bb's realtime connection, `previous` at the view's last look and
+ * Whether VesnALIA's realtime connection, `previous` at the view's last look and
  * `next` now, is back after it was down: its signals are ephemeral (SDK
  * 0.6.15, useRealtimeConnectionState), so one sent meanwhile is lost and a
  * view that reads on them reads again (Sol B2-R2-004). So too after a first
@@ -210,7 +210,7 @@ export function newestFirst<T>() {
 /**
  * Whether a read asked for a project is done: its own answer is shown, or the
  * newer list shown in its place has the project. Otherwise it is asked again
- * (askForProject); a project bb does not list is not asked for again.
+ * (askForProject); a project VesnALIA does not list is not asked for again.
  */
 export function projectRead(
   sent: { projects: readonly { id: string }[] },
@@ -358,7 +358,7 @@ export interface SeatsLike {
   running: number;
   reserved: number;
   queued: ReadonlyArray<{ threadId: string; title: string | null }>;
-  /** Seats held from outside bb (`reserve`). */
+  /** Seats held from outside VesnALIA (`reserve`). */
   external?: ReadonlyArray<{ id: string; until: number }>;
 }
 
@@ -443,7 +443,7 @@ const LIST_NAME = 10;
 const LIST_LINE = 60;
 
 /**
- * `bb claude-switcher list` as text: one aligned line per account of at
+ * `alia claude-switcher list` as text: one aligned line per account of at
  * most 60 characters (`ses`, `sem` but on a Team seat, the preferred
  * model, `agotada hasta …` when a window is full, LOCKED), then the
  * projects by account. The pace of each window is in `--json` only.

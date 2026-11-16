@@ -23,7 +23,7 @@ describe("shelf render isolation", () => {
       sidebarThreads: {
         status: "ready",
         threads: [observedThread("active", "Active work"), observedThread("parked", "Parked work"), ...settled],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => ({

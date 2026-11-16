@@ -20,7 +20,7 @@ function makeScopes(): ThreadScopes {
       threadId: "th_app",
       projectId: "proj_1",
       environmentId: "env_1",
-      path: "/Users/me/.bb/worktrees/env_app/App",
+      path: "/Users/me/.vesnalia/worktrees/env_app/App",
       hostId: null,
       branch: "feature/login",
       active: true,
@@ -55,7 +55,7 @@ describe("ThreadScopes.threadFor", () => {
   it("attributes a cwd under a scoped worktree", () => {
     expect(
       makeScopes().threadFor({
-        cwd: "/Users/me/.bb/worktrees/env_app/App",
+        cwd: "/Users/me/.vesnalia/worktrees/env_app/App",
       }),
     ).toBe("th_app");
   });
@@ -86,7 +86,7 @@ describe("ThreadScopes.threadFor", () => {
         threadId: "th_side",
         projectId: "proj_1",
         environmentId: "env_1",
-        path: "/Users/me/.bb/worktrees/env_app/App",
+        path: "/Users/me/.vesnalia/worktrees/env_app/App",
         hostId: null,
         branch: "feature/login",
         active: false,
@@ -94,7 +94,7 @@ describe("ThreadScopes.threadFor", () => {
       NOW + 1,
     );
     expect(
-      scopes.threadFor({ cwd: "/Users/me/.bb/worktrees/env_app/App/Sub" }),
+      scopes.threadFor({ cwd: "/Users/me/.vesnalia/worktrees/env_app/App/Sub" }),
     ).toBe("th_app");
   });
 
@@ -130,7 +130,7 @@ describe("ThreadScopes.threadFor", () => {
 describe("runMatchesScope", () => {
   const scope = {
     threadId: "th_app",
-    path: "/Users/me/.bb/worktrees/env_app/App",
+    path: "/Users/me/.vesnalia/worktrees/env_app/App",
     hostId: null,
     branch: "feature/login",
   };
@@ -234,16 +234,16 @@ describe("Store.attributeRunsToThread", () => {
 describe("scopeFilter", () => {
   const scope = {
     threadId: "thr_mine",
-    path: "/Users/v/.bb/worktrees/env_mine/indexed",
+    path: "/Users/v/.vesnalia/worktrees/env_mine/indexed",
     hostId: null,
     branch: "feature",
   };
   const foreign = {
     threadId: "thr_other",
-    cwd: "/Users/v/.bb/worktrees/env_other/indexed",
+    cwd: "/Users/v/.vesnalia/worktrees/env_other/indexed",
     container: null,
-    root: "/Users/v/.bb/worktrees/env_other/indexed/ios/App/.build/DerivedData",
-    branch: "bb/other-branch",
+    root: "/Users/v/.vesnalia/worktrees/env_other/indexed/ios/App/.build/DerivedData",
+    branch: "alia/other-branch",
     worktree: "indexed",
     hostId: null,
   };

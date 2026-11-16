@@ -1,4 +1,4 @@
-// BB remounts timeline rows while a run streams (with the Cursor provider, several
+// VesnALIA remounts timeline rows while a run streams (with the Cursor provider, several
 // times per tool call), and a remounted element starts its CSS animations from frame
 // 0, so shimmers and loaders visibly jump back. Pinning every looping animation to
 // the document clock means a remounted copy resumes exactly where the old one was.

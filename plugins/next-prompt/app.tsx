@@ -14,7 +14,7 @@ import {
 	useSettings,
 	type ExperimentalProviderModelPickerValue,
 	type PluginComposerApi,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { CARD_GAP_PX, fitCount } from "./cards.ts";
 import { paintGhost } from "./ghost.ts";
 import { SUGGESTION_CHANGED } from "./shared.ts";
@@ -29,7 +29,7 @@ const REARM_DELAY_MS = 300;
 const EXPANDED_KEY = "next-prompt:cards-expanded";
 /** The cards row's padding and dismiss button. */
 const ROW_CHROME_PX = 56;
-/** bb's own icon button, as on its dismiss controls. */
+/** VesnALIA's own icon button, as on its dismiss controls. */
 const ICON_BUTTON =
 	"flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground";
 const EMPTY_DRAFT = { text: "", mentions: [] };
@@ -371,7 +371,7 @@ type PickerSelection = { selection: ExperimentalProviderModelPickerValue; config
 function describeExecution(providerId: string): string {
 	if (providerId === "claude-code") return "Runs claude -p with no tools, MCP servers or settings. Low reasoning turns thinking off, the fastest choice.";
 	if (providerId === "codex") return "Runs codex exec in an empty directory, ignoring your Codex config.";
-	return "Runs as a hidden bb worker thread with this provider's full agent setup, so each suggestion is slower and larger.";
+	return "Runs as a hidden VesnALIA worker thread with this provider's full agent setup, so each suggestion is slower and larger.";
 }
 
 function ModelSettings() {

@@ -19,12 +19,12 @@
 //
 // (see prime-agent dist/modes/acp/acp-events.js; namespace from acp-meta.js)
 //
-// The dialect maps them onto bb deltas:
+// The dialect maps them onto VesnALIA deltas:
 //   subagents    -> delegation items (like the grok dialect's spawn_subagent)
 //   compaction   -> context.compacted
 //   goal         -> extension.state "provider-codex/goal" (the app's goal UI
 //                   reads exactly this kind; native goal delta is an upstream
-//                   bb conversation)
+//                   VesnALIA conversation)
 //   refinement   -> extension item "prime-agent-acp/refinement"
 //   agentMessage -> extension item "prime-agent-acp/agent-message"
 //   autonomous   -> extension.state "prime-agent-acp/autonomous" plus an item
@@ -35,9 +35,9 @@
 //   cwd          -> session/new response meta stashed per thread, flushed as a
 //                   one-shot "prime-agent-acp/cwd" item on the first in-turn
 //                   session info update
-//   heartbeatsChanged -> no-op, bb has no provider-agnostic heartbeat surface
+//   heartbeatsChanged -> no-op, VesnALIA has no provider-agnostic heartbeat surface
 //
-// Intentionally ignored prime-agent meta fields (no bb surface, no action):
+// Intentionally ignored prime-agent meta fields (no VesnALIA surface, no action):
 //   terminalQuiescenceExpected: transient prompt-boundary marker tied to
 //                   turn settlement; the completion update already puts the
 //                   quiescence counters into the autonomous payload.
@@ -54,7 +54,7 @@ var PRIME_AGENT_META_NAMESPACE = "ai.primeintellect.prime-agent";
 // the plugin that registered it (extensionOwnershipProblem). So the native
 // banner is unreachable for this plugin by design; we emit our own kind (the
 // state is stored thread-scoped, latest-wins) plus visible transition items.
-// A generalized goal kind is an upstream bb conversation.
+// A generalized goal kind is an upstream VesnALIA conversation.
 var PRIME_AGENT_GOAL_EXTENSION_KIND = "prime-agent-acp/goal";
 var PRIME_AGENT_SUBAGENT_CHILD_REF_PREFIX = "prime-agent:";
 var PRIME_AGENT_SUBAGENT_ITEM_KEY_PREFIX = "prime-agent-subagent-";
@@ -395,7 +395,7 @@ function primeAgentSessionInfoActions(update, context) {
 // optional on-disk path, decoded byte length) and applied-diff counts as
 // namespaced `_meta` on the ipython tool_call_update. ACP has no rich-output
 // channel for tool results, so surface them as readable lines appended to the
-// cell's aggregated output in bb (full image rendering would need an
+// cell's aggregated output in VesnALIA (full image rendering would need an
 // imageView-capable dialect hook, which the SDK bridge does not offer yet).
 function primeAgentFormatBytes(bytes) {
   if (bytes < 1024) {

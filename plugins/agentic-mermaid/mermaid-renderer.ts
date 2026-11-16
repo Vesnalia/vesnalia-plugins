@@ -1,31 +1,31 @@
-// Replaces bb's Mermaid renderer with agentic-mermaid.
+// Replaces VesnALIA's Mermaid renderer with agentic-mermaid.
 //
-// bb has no plugin slot for fenced ```mermaid blocks. Its chat Markdown lazily
+// VesnALIA has no plugin slot for fenced ```mermaid blocks. Its chat Markdown lazily
 // imports one hashed Mermaid ESM module (`/assets/mermaid.core-<hash>.js`) and
 // calls `default.render(id, source)` for every diagram, injecting the returned
 // SVG string. ES modules are singletons per URL, so importing that same URL here
-// yields the object bb uses; swapping its `render` replaces rendering everywhere
-// while bb keeps its own chrome (source toggle, pan/zoom dialog, render cache).
+// yields the object VesnALIA uses; swapping its `render` replaces rendering everywhere
+// while VesnALIA keeps its own chrome (source toggle, pan/zoom dialog, render cache).
 //
 // Families agentic-mermaid draws worse than stock (gitGraph), families it does
-// not support, and any render error fall through to bb's original `render`.
-// Diagrams bb drew before this plugin loaded are upgraded by stock-diagrams.ts.
+// not support, and any render error fall through to VesnALIA's original `render`.
+// Diagrams VesnALIA drew before this plugin loaded are upgraded by stock-diagrams.ts.
 import type { renderMermaidSVGAsync } from "agentic-mermaid/browser/lazy";
 import { RENDERER_ROUTE } from "./renderer-route";
 import { upgradeStockDiagrams } from "./stock-diagrams";
 
-/** Families that stay on bb's stock renderer even though agentic-mermaid parses them. */
+/** Families that stay on VesnALIA's stock renderer even though agentic-mermaid parses them. */
 const STOCK_FAMILIES: Record<string, true> = { gitgraph: true };
 
 const MERMAID_CORE = /mermaid\.core-[\w-]+\.js/;
 const MARKDOWN_PREVIEW = /markdown-preview-[\w-]+\.js/;
-/** Ids bb passes to `render` (`bb-mermaid-<useId>-<n>`); anything else is not a safe CSS selector. */
+/** Ids VesnALIA passes to `render` (`alia-mermaid-<useId>-<n>`); anything else is not a safe CSS selector. */
 const SAFE_ID = /^[A-Za-z][\w-]*$/;
 
-// Every color reads bb's design tokens, so theme and light/dark switches recolor
+// Every color reads VesnALIA's design tokens, so theme and light/dark switches recolor
 // rendered diagrams without a re-render. All optional roles are pinned: the SVG
 // stylesheet reads var(--muted)/var(--border)/var(--surface)/var(--line) as
-// overrides, and bb's own tokens of those names would otherwise cascade in.
+// overrides, and VesnALIA's own tokens of those names would otherwise cascade in.
 // Values land in a style="" attribute, so they must not contain double quotes.
 const SURFACE = "var(--surface-recessed-solid, var(--background))";
 const RENDER_OPTIONS = {
@@ -58,7 +58,7 @@ function diagramKeyword(source: string): string {
 }
 
 /**
- * Resolve the URL of the Mermaid module bb imports. Its hash changes every bb
+ * Resolve the URL of the Mermaid module VesnALIA imports. Its hash changes every VesnALIA
  * release, so read it from the chunk that imports it: the markdown-preview chunk,
  * which the app entry references.
  */
@@ -142,7 +142,7 @@ function isRendererModule(value: unknown): value is RendererModule {
   );
 }
 
-/** Plugin-side renderer: agentic-mermaid's scoped SVG, or `null` when bb's stock renderer should draw it. */
+/** Plugin-side renderer: agentic-mermaid's scoped SVG, or `null` when VesnALIA's stock renderer should draw it. */
 export type AgenticRender = (id: string, text: string) => Promise<string | null>;
 
 function createAgenticRender(rendererUrl: string): AgenticRender {
@@ -156,9 +156,9 @@ function createAgenticRender(rendererUrl: string): AgenticRender {
       const svg = await rendererModule.renderMermaidSVGAsync(text, { ...RENDER_OPTIONS, idPrefix: `${id}-` });
       return scopeSvg(svg, id);
     } catch (error) {
-      // Unsupported family (sankey, block, kanban, ...) or a parse error: bb's
+      // Unsupported family (sankey, block, kanban, ...) or a parse error: VesnALIA's
       // renderer either draws it or shows its own error state.
-      console.debug(`[agentic-mermaid] using bb's renderer (${family || "unknown"}): ${String(error)}`);
+      console.debug(`[agentic-mermaid] using VesnALIA's renderer (${family || "unknown"}): ${String(error)}`);
       return null;
     }
   };
@@ -167,10 +167,10 @@ function createAgenticRender(rendererUrl: string): AgenticRender {
 export async function installAgenticMermaid(pluginId: string, signal: AbortSignal): Promise<(() => void) | undefined> {
   const coreUrl = await findMermaidCoreUrl(signal);
   if (!coreUrl) {
-    console.warn("[agentic-mermaid] could not locate bb's Mermaid module; leaving the stock renderer in place");
+    console.warn("[agentic-mermaid] could not locate VesnALIA's Mermaid module; leaving the stock renderer in place");
     return undefined;
   }
-  // Runtime-selected specifier: the hashed URL differs per bb release.
+  // Runtime-selected specifier: the hashed URL differs per VesnALIA release.
   const coreModule: unknown = await import(/* @vite-ignore */ coreUrl.href);
   if (signal.aborted || !isMermaidModule(coreModule)) return undefined;
   const mermaid = coreModule.default;

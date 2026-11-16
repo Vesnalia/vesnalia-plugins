@@ -1,5 +1,5 @@
 import { memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type MutableRefObject } from "react";
-import { useRpc, useRealtime, useRealtimeConnectionState, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime, useRealtimeConnectionState, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { panelDeclined, panelMissing, useAppPanel } from "../lib/app-panel";
 import { Toaster, toast } from "sonner";
 import type { SelectedLineRange } from "@pierre/diffs";
@@ -11,7 +11,7 @@ import { baselineOf, computeTurn, type TurnReason } from "../lib/turn";
 import { sendBaselineOf, sendOf } from "../lib/send-baseline";
 import { notRunReason } from "../lib/trust";
 import { cn } from "../lib/utils";
-import { experimental_useCodeTheme } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme } from "@vesnalia/plugin-sdk/app";
 import { getCommentsFolded, getGithubThreadsInCode, getHideWhitespace, getNavOpen, getNavView, getNavWidth, getPanelWidth, getReviewState, getWrapLines, patchReviewState, setCommentsFolded, setGithubThreadsInCode, setHideWhitespace, setNavOpen as saveNavOpen, setNavView, setNavWidth as saveNavWidth, setPanelWidth as savePanelWidth, setWrapLines, type NavView, type PanelView, type SideView } from "../lib/panel-state";
 import { NOT_PUSHED_PAGE, OVERVIEW, WorkspaceProvider, type WorkspaceApi } from "../lib/workspace-context";
 import { currentFileOf, publishReviewTitle, setCurrentFile as storeCurrentFile, takeAskedComment, takeAskedNotPushed, useAskedComment, useAskedNotPushed, useCurrentFile, useReviewInUse, useTabShown } from "../lib/workspace-store";
@@ -108,7 +108,7 @@ function newViews(shown: Map<string, FileViewFlags>, read: Map<string, FileViewF
 /** How long a comment asked for from a thread's page waits for the review's page to show it. */
 const ASKED_COMMENT_MS = 30_000;
 
-/** About as tall as the message box of BB's chat at the bottom of its side panel, with the row under it. */
+/** About as tall as the message box of VesnALIA's chat at the bottom of its side panel, with the row under it. */
 const CHAT_BOX_HEIGHT = 200;
 
 /** Where you're typing in the review `targetKey`, if you are: in its chapters (Find in review), its side panel, or elsewhere. */
@@ -145,7 +145,7 @@ function DraftReload({ reconnects }: { reconnects: number }) {
 
 /**
  * The diff a workspace last showed, which a reload with the same revision doesn't have sent again, nor the workspace that
- * takes its place as BB remounts the page when its layout switches.
+ * takes its place as VesnALIA remounts the page when its layout switches.
  */
 let shownPatch: { targetKey: string; revision: string; patch: string } | null = null;
 
@@ -160,7 +160,7 @@ const changedFiles = (files: Iterable<FileInterdiff>) => [...files].filter((file
 
 export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { targetKey: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const codeTheme = experimental_useCodeTheme();
   const [preferences, setPreferences] = useState<{ preferences: ReviewPreferences; revision: number } | null>(null);
   const diffLayout = preferences?.preferences.diffLayout ?? defaultPreferences.diffLayout;
@@ -193,7 +193,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
   // A remounted workspace is putting its line back, or waiting to: that line, not what's at the code's top meanwhile, is
   // the place.
   const restoringPlace = useRef(false);
-  // What the workspace this one took the place of had open, typed, showed and focused, as BB remounts the page when its
+  // What the workspace this one took the place of had open, typed, showed and focused, as VesnALIA remounts the page when its
   // layout switches (lib/remount.ts); null for a review opened as usual. Read once, as it mounts.
   const [carry] = useState(() => carried(targetKey));
   const carriedPlace = useRef(carry?.place ?? null);
@@ -251,13 +251,13 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
   const [navOverlay, setNavOverlay] = useState(carry?.navOverlay ?? false);
   const [navWidth, setNavWidth] = useState(getNavWidth);
   const [panelWidth, setPanelWidth] = useState(getPanelWidth);
-  // The panel's view, which opens again only where it can dock. The agent and the main thread are BB's tabs instead.
+  // The panel's view, which opens again only where it can dock. The agent and the main thread are VesnALIA's tabs instead.
   const [panelView, setPanelView] = useState<SideView | null>(persisted.panel === "agent" || persisted.panel === "main" ? null : persisted.panel ?? null);
   const [panelOverlay, setPanelOverlay] = useState(carry?.panelOverlay ?? false);
   const [commentsTab, setCommentsTab] = useState<CommentsTab>("drafts");
   // Comments was to open as the review opened, but couldn't beside the code: the "need you" pill offers it instead.
   const [pill, setPill] = useState(false);
-  // Comments to open as the review opens, on this tab: decided once the workspace has its own size, as BB's pane can be
+  // Comments to open as the review opens, on this tab: decided once the workspace has its own size, as VesnALIA's pane can be
   // narrower than the window, all there is to measure before the workspace renders.
   const [opening, setOpening] = useState<CommentsTab | null>(null);
   // Where you're typing: a phone's fold or rotation keeps that side open, over the code if it must, and hides the side
@@ -299,7 +299,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
       // it does while a remounted workspace puts its place back, the focus with it.
       keep(targetKey, scrollBox.current?.contains(active) && !restoringPlace.current ? { focus, place: linePlace(scrollBox.current) } : { focus });
     };
-    // Gone from the workspace, not with it: as BB remounts the page, the old one's focus goes with its nodes.
+    // Gone from the workspace, not with it: as VesnALIA remounts the page, the old one's focus goes with its nodes.
     const left = () => setTimeout(() => { if (rootEl.isConnected && !rootEl.contains(document.activeElement)) keep(targetKey, { focus: null }); });
     const events = ["focusin", "keyup", "input", "pointerup", "select"] as const;
     events.forEach((type) => rootEl.addEventListener(type, note));
@@ -366,17 +366,17 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
     showNav();
     requestAnimationFrame(() => rootRef.current?.querySelector<HTMLInputElement>("[data-find-box]")?.focus());
   }, [showNav]);
-  // The review agent and the main thread are tabs in BB's own side panel (components/PanelTabs.tsx); held in a ref, as
-  // BB doesn't say its controller keeps its identity, which would publish the workspace again on every render.
+  // The review agent and the main thread are tabs in VesnALIA's own side panel (components/PanelTabs.tsx); held in a ref, as
+  // VesnALIA doesn't say its controller keeps its identity, which would publish the workspace again on every render.
   const panelNow = useAppPanel();
   const appPanel = useRef(panelNow);
   appPanel.current = panelNow;
   const closePanel = useCallback(() => { setPanelView(null); setPanelOverlay(false); }, []);
-  // The main thread's id, for a client without BB's side panel, which opens the thread itself instead.
+  // The main thread's id, for a client without VesnALIA's side panel, which opens the thread itself instead.
   const mainThreadRef = useRef<string | null>(null);
   /**
-   * Show BB's tab, leaving full screen, which BB's panel is outside, and closing the review's own panel where it's over
-   * the code. A client without BB's panel (BB's 0.47.1 desktop app) opens the thread in a split instead.
+   * Show VesnALIA's tab, leaving full screen, which VesnALIA's panel is outside, and closing the review's own panel where it's over
+   * the code. A client without VesnALIA's panel (VesnALIA's 0.47.1 desktop app) opens the thread in a split instead.
    */
   const openTab = useCallback((tab: "agent" | "main") => {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -395,14 +395,14 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
     }
     void rpc.call("getConversation", { targetKey }).then(({ threadId }) => threadId ? navigate.toThread(threadId, { split: true }) : panelMissing(), panelMissing);
   }, [closePanel, navigate, rpc, targetKey]);
-  // One overlay at a time: BB's title bar, outside the dimmed workspace, can open the panel over the chapters.
+  // One overlay at a time: VesnALIA's title bar, outside the dimmed workspace, can open the panel over the chapters.
   const openPanel = useCallback((view: PanelView) => {
     if (view === "agent" || view === "main") { openTab(view); return; }
     setPanelView(view);
     setPanelOverlay(!layoutRef.current.panelCanDock);
     setNavOverlay(false);
   }, [openTab]);
-  // BB's tabs only open from here: their buttons close BB's panel themselves (components/TitleBarControls.tsx).
+  // VesnALIA's tabs only open from here: their buttons close VesnALIA's panel themselves (components/TitleBarControls.tsx).
   const togglePanel = useCallback((view: PanelView) => view !== "agent" && view !== "main" && shownPanelRef.current === view ? closePanel() : openPanel(view), [openPanel, closePanel]);
   const openComments = useCallback((tab: CommentsTab) => { setCommentsTab(tab); openPanel("comments"); }, [openPanel]);
   // The draft shows its box or chat: Comments, unless the draft is showing already, in Finish or Comments' Drafts.
@@ -417,9 +417,9 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
     if (layoutRef.current.panel === "overlay") closePanel();
   }, [closePanel]);
   const fullscreen = isFullscreen || covering;
-  // BB's own layout switches here: its toasts sit at the top of a narrower window.
+  // VesnALIA's own layout switches here: its toasts sit at the top of a narrower window.
   const wideWindow = useMediaQuery("(min-width: 768px)");
-  // With the agent's or the main thread's chat beside the review, BB's toasts at the window's bottom right would cover
+  // With the agent's or the main thread's chat beside the review, VesnALIA's toasts at the window's bottom right would cover
   // its message box: they sit above it while either shows.
   // For Switch between review and main thread: the pane you work in.
   useReviewInUse(targetKey, rootEl);
@@ -814,7 +814,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
   });
   // A local review's folder: changed, on another branch, offline or gone, and who else works there; a PR's, what's not pushed yet.
   const featureNotices = useFeatureNotices(targetKey, review, load, activeId === NOT_PUSHED_PAGE ? null : () => setActiveId(NOT_PUSHED_PAGE), () => openComments("feedback"));
-  // A fixer's branch, once BB removed its folder.
+  // A fixer's branch, once VesnALIA removed its folder.
   const branchKept = useBranchKeptNotices(targetKey, review, load);
 
   // Track browser fullscreen state so the toggle icon/label stays correct.
@@ -1263,7 +1263,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
     else onSelectFile(next.chapter, next.file);
   }, [targetKey, sections, activeId, activeFiles, views, onSelectFile, notReached]);
   const chapterId = activeSection?.id as string | undefined;
-  // The question goes to BB's Review agent tab, through the workspace store, which opens with it.
+  // The question goes to VesnALIA's Review agent tab, through the workspace store, which opens with it.
   const ask = useCallback((context: AgentMessageContext, quote?: string) => {
     setInjection({ context, nonce: Date.now(), ...(quote ? { quote } : {}) });
     openPanel("agent");
@@ -1325,7 +1325,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
     const restoring = restoringPlace.current;
     scrollSaveTimer.current = setTimeout(() => {
       patchReviewState(targetKey, { scrollTop: value });
-      // Under a phone's sheet the code is inert, and gone with the workspace (BB remounting the page) it isn't laid out:
+      // Under a phone's sheet the code is inert, and gone with the workspace (VesnALIA remounting the page) it isn't laid out:
       // what's at its top can't be read, and the place stays the one it was.
       if (!restoring && box.isConnected && !box.closest("[inert]")) keep(targetKey, { place: linePlace(box) });
     }, 200);
@@ -1543,7 +1543,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
       const key = typed === "Escape" || shortcutsRef.current ? typed : null;
       const root = rootRef.current;
       const target = event.target as Element;
-      // Its commands in BB's title bar are the review's too: closing what one of them opened gives it the focus.
+      // Its commands in VesnALIA's title bar are the review's too: closing what one of them opened gives it the focus.
       const commands = target.closest?.("[data-review-commands]")?.getAttribute("data-review-commands") === targetKey;
       if (!root || (target !== document.body && !root.contains(target) && !commands)) return;
       // An Esc a menu or tooltip already took is theirs.
@@ -1556,7 +1556,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [targetKey]);
 
-  // Which review this is, for BB's title bar and the window's title, whatever the page shows.
+  // Which review this is, for VesnALIA's title bar and the window's title, whatever the page shows.
   const identity = useMemo(() => review ? reviewIdentity(review, guide?.title) : null, [review, guide?.title]);
   const api = useMemo((): WorkspaceApi | null => guide ? {
     targetKey, review: review ?? { targetKey }, guide, sections, activeId, go: selectChapter, layout,
@@ -1737,8 +1737,8 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
       <StepBar hidden={!!lineSel} pill={pill} />
       <SelectionBar lines={lineSel} phone={sheet} onComment={() => commentOnLines()} onAskLines={askAboutLines} onClear={() => setLineSel(null)} />
       <ShortcutsHelp open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
-      {/* In full screen the workspace is over the page, BB's toaster under it: sonner is BB's, so a toaster of its own
-          here shows the same toasts, Undo's among them, where BB's does: at the top under 768px wide. */}
+      {/* In full screen the workspace is over the page, VesnALIA's toaster under it: sonner is VesnALIA's, so a toaster of its own
+          here shows the same toasts, Undo's among them, where VesnALIA's does: at the top under 768px wide. */}
       {fullscreen && <Toaster theme={codeTheme.mode} position={wideWindow ? "bottom-right" : "top-center"} />}
     </div>
     </CompactViewportOverrideProvider>

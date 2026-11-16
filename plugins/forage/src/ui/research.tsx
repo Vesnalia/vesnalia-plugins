@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
  experimental_usePluginId as usePluginId, experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery, useSdk,
  type ExperimentalThreadActionTabProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { deleteScopeConfirmation } from "../contract.ts";
 import type { ThreadScope } from "../research/activity.ts";
 import type { ThreadPolicy } from "../research/policy.ts";
@@ -175,7 +175,7 @@ function Footer({ scope }: { scope: ThreadScope }) {
  </div>;
 }
 
-// bb remounts a tab when the window crosses the compact breakpoint; keep each thread's place for the session.
+// VesnALIA remounts a tab when the window crosses the compact breakpoint; keep each thread's place for the session.
 const places = new Map<string, { view: View; side: "sources" | "crawls"; drill: Drill | null }>();
 export const resetResearchPlaces = () => places.clear();
 function usePlace<K extends "view" | "side" | "drill">(key: string, field: K, initial: (typeof places extends Map<string, infer P> ? P : never)[K]) {

@@ -1,5 +1,5 @@
 // The engine: a control loop that works every running project, the human's commands on the engine's state, and
-// the handlers for bb's thread events. Behavior lives in workers.ts, checks.ts and triage.ts; this wires it together.
+// the handlers for VesnALIA's thread events. Behavior lives in workers.ts, checks.ts and triage.ts; this wires it together.
 import { confirmMerge, maintainFinalReviews, type SeenHead } from "./auto-merge";
 import { finalThreadEvent } from "./final-review";
 import { resumeCheckingTickets } from "./checks";
@@ -85,7 +85,7 @@ export class Engine {
     const signature = () => this.settings().commentSignature ?? COMMENT_SIGNATURE;
     this.ctx = {
       store: deps.store,
-      bb: deps.bb,
+      alia: deps.alia,
       now: deps.now,
       host: deps.host,
       kick: () => this.kick(),
@@ -100,7 +100,7 @@ export class Engine {
   }
 
   private warn(what: string, error: unknown): void {
-    if (!this.disposed) this.ctx.bb.log("warn", `${what}: ${errText(error)}`);
+    if (!this.disposed) this.ctx.alia.log("warn", `${what}: ${errText(error)}`);
   }
 
   // ---------------------------------------------------------------- the control loop
@@ -236,10 +236,10 @@ export class Engine {
   }
 
   private async refreshTokens(project: ProjectRow): Promise<void> {
-    const { store, bb, now } = this.ctx;
+    const { store, alia, now } = this.ctx;
     for (const row of store.threads({ projectId: project.id, states: ["active"] })) {
       if (row.thread_id === null || (row.tokens_at !== null && now() - row.tokens_at <= TOKEN_REFRESH_MS)) continue;
-      const tokens = await bb.threadTokens(row.thread_id).catch(() => null);
+      const tokens = await alia.threadTokens(row.thread_id).catch(() => null);
       store.updateThread(row.id, { tokens: tokens ?? row.tokens, tokens_at: now() });
     }
   }
@@ -287,12 +287,12 @@ export class Engine {
 
   /** After a restart: adopt or roll back half-made spawns, end rows and planning conversations whose thread is gone, finish endings, check again, and run merges left in merging again. */
   async reconcile(): Promise<{ adopted: number; rolledBack: number; rechecked: number }> {
-    const { store, bb } = this.ctx;
+    const { store, alia } = this.ctx;
     let adopted = 0;
     let rolledBack = 0;
     for (const row of store.threads({ states: ["spawning"] })) {
       if (row.role === "planner") continue;
-      const threadId = row.thread_id ?? (row.spawn_token === null ? null : await bb.findSpawnedThread(row.spawn_token));
+      const threadId = row.thread_id ?? (row.spawn_token === null ? null : await alia.findSpawnedThread(row.spawn_token));
       if (threadId === null) {
         if (row.role === "reviewer") await reviewerStartFailed(this.ctx, row, { kind: "failed", message: "The plugin restarted before the reviewer started." });
         else await failSpawn(this.ctx, row, { kind: "failed", message: "The plugin restarted before the worker started." });
@@ -305,13 +305,13 @@ export class Engine {
     for (const row of store.threads({ states: ["active"] })) {
       // A worker coming back from a release is archived until advanceWakes unarchives it.
       if (row.thread_id === null || row.released_at !== null) continue;
-      const thread = await bb.getThread(row.thread_id);
+      const thread = await alia.getThread(row.thread_id);
       if (thread !== null && thread.archivedAt === null && thread.deletedAt === null) continue;
       if (row.role === "planner") this.projects.threadGone(row.thread_id, "deleted");
       else await endThread(this.ctx, row, "gone", { commit: row.role === "worker", ...(row.role === "worker" ? {} : { move: null }) });
     }
     for (const session of store.openPlanning()) {
-      const thread = await bb.getThread(session.thread_id);
+      const thread = await alia.getThread(session.thread_id);
       if (thread === null || thread.archivedAt !== null || thread.deletedAt !== null) this.projects.planningGone(session.thread_id, "gone");
     }
     for (const row of store.threads({ states: ["ending"] })) await resumeEnding(this.ctx, row);
@@ -325,8 +325,8 @@ export class Engine {
   }
 
   private async adopt(row: ThreadRow, threadId: string): Promise<void> {
-    const { store, bb, now } = this.ctx;
-    const thread = await bb.getThread(threadId);
+    const { store, alia, now } = this.ctx;
+    const thread = await alia.getThread(threadId);
     const environmentId = thread?.environmentId ?? null;
     const worker = row.role === "worker";
     store.tx(() => {
@@ -351,10 +351,10 @@ export class Engine {
 
   /**
    * Approves the draft or the pending version. A pending version also requeues the tickets whose worker never started,
-   * sends the tickets whose reviewer bb refused back to review, and tells the planner.
+   * sends the tickets whose reviewer VesnALIA refused back to review, and tells the planner.
    */
   async approve(slug: string, actor: string, version?: number, opts: { skipReview?: boolean } = {}): Promise<Approved> {
-    const { store, bb } = this.ctx;
+    const { store, alia } = this.ctx;
     const waiting = store.projectBySlug(slug);
     if (waiting !== null && opts.skipReview !== true) {
       const refusal = approvalRefusal(slug, specReviewStatus(store, waiting), waiting.state !== "draft");
@@ -378,7 +378,7 @@ export class Engine {
     const stillBlocked = store.tickets(project.id, ["blocked"]).map((ticket) => ticket.key);
     const planner = store.threads({ projectId: project.id, role: "planner", states: ["active"] })[0];
     if (planner?.thread_id != null) {
-      await bb
+      await alia
         .send(planner.thread_id, approvedText({ slug, version: result.version, requeued, backToReview: sentBack, stillBlocked }))
         .catch((error) => this.warn(`tell ${planner.thread_id} about the approval`, error));
     }
@@ -429,7 +429,7 @@ export class Engine {
       for (const row of this.ctx.store.threads({ projectId: project.id, role: "worker", states: ["active"] })) {
         // A worker coming back from a release runs no turn; stopping it would stop its restore.
         if (row.released_at !== null) continue;
-        await this.ctx.bb.stop(row.thread_id!).catch((error) => this.warn(`stop ${row.thread_id}`, error));
+        await this.ctx.alia.stop(row.thread_id!).catch((error) => this.warn(`stop ${row.thread_id}`, error));
       }
     }
     this.kick();
@@ -437,16 +437,16 @@ export class Engine {
   }
 
   async resume(slug: string, actor: string): Promise<ProjectRow> {
-    const { store, bb, now } = this.ctx;
+    const { store, alia, now } = this.ctx;
     const project = await this.projects.resume(slug, actor);
     for (const row of store.threads({ projectId: project.id, role: "worker", states: ["active"] })) {
       const ticket = row.ticket_id === null ? null : store.ticket(row.ticket_id);
       // A hand-back not sent yet is the worker's next turn, which the tick sends once it has a worker slot.
       if (ticket?.state !== "working" || row.released_at !== null || ticket.handback_json !== null) continue;
       store.updateThread(row.id, { clock_at: now() });
-      const thread = await bb.getThread(row.thread_id!).catch(() => null);
+      const thread = await alia.getThread(row.thread_id!).catch(() => null);
       if (thread !== null && ["active", "starting", "pending"].includes(thread.status)) continue;
-      await bb.send(row.thread_id!, resumeText(ticket.key, heldCheckResult(store.posts(ticket.id)))).catch((error) => this.warn(`resume ${row.thread_id}`, error));
+      await alia.send(row.thread_id!, resumeText(ticket.key, heldCheckResult(store.posts(ticket.id)))).catch((error) => this.warn(`resume ${row.thread_id}`, error));
     }
     await resumePrAsks(this.ctx, project.id);
     this.kick();
@@ -490,7 +490,7 @@ export class Engine {
   async block(key: string, reason: string, actor: string): Promise<TicketRow> {
     const blocked = await this.whileNoMergeRuns(key, "block", async () => {
       const ticket = this.ctx.store.ticketByKey(key);
-      if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${key}.`, "Run `bb loom tickets <slug>` to see the ticket keys.");
+      if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${key}.`, "Run `alia loom tickets <slug>` to see the ticket keys.");
       const text = reason.trim();
       if (text === "") throw new LoomError("loom_invalid_input", "The block reason is empty.");
       if (!canMoveTicket(ticket.state, "blocked")) throw new LoomError("loom_invalid_state", `${key} is ${ticket.state}; it cannot be blocked.`);
@@ -556,9 +556,9 @@ export class Engine {
   /** The human's `report --send`: queues a finished project's record for the done hook again. */
   sendRecord(slug: string): ProjectRow {
     const project = this.projects.require(slug);
-    if (project.state !== "done") throw new LoomError("loom_invalid_state", `Project ${slug} is ${project.state}; only a finished project's record goes to the done hook.`, `Print the record with \`bb loom report ${slug}\`.`);
+    if (project.state !== "done") throw new LoomError("loom_invalid_state", `Project ${slug} is ${project.state}; only a finished project's record goes to the done hook.`, `Print the record with \`alia loom report ${slug}\`.`);
     if (this.settings().doneHook.trim() === "") {
-      throw new LoomError("loom_invalid_state", "No done hook is set, so there is nowhere to send the record.", "Set one in Loom's settings, or with `bb plugin config loom set doneHook '<command>'`.");
+      throw new LoomError("loom_invalid_state", "No done hook is set, so there is nowhere to send the record.", "Set one in Loom's settings, or with `alia plugin config loom set doneHook '<command>'`.");
     }
     const row = this.ctx.store.record(project.id);
     if (row?.state === "summarizing" || row?.state === "sending") throw new LoomError("loom_invalid_state", `The record of ${slug} is being sent now; the feed says when it is done.`);
@@ -572,7 +572,7 @@ export class Engine {
    * when that is not sent yet (it waits for a worker slot); on a blocked ticket, the planner does.
    */
   async humanPost(key: string, body: string, parentId?: number): Promise<PostRow> {
-    const { store, bb } = this.ctx;
+    const { store, alia } = this.ctx;
     const post = this.projects.post(key, { body, parentId, author: "human" });
     const ticket = store.ticketByKey(key)!;
     if (await humanFixRound(this.ctx, ticket, post)) return post;
@@ -580,9 +580,9 @@ export class Engine {
     const message = { summary: `[loom] Reply on ${key} from the human`, detail: `${post.body}${where}` };
     const to = replyRecipient(store, ticket);
     if (to?.role === "planner") {
-      await bb.send(to.threadId, blockedReplyText(key, `${post.body}${where}`)).catch((error) => this.warn(`reply to ${to.threadId}`, error));
+      await alia.send(to.threadId, blockedReplyText(key, `${post.body}${where}`)).catch((error) => this.warn(`reply to ${to.threadId}`, error));
     } else if (!holdForWorker(store, ticket, message) && to?.role === "worker") {
-      await bb.send(to.threadId, message).catch((error) => this.warn(`reply to ${to.threadId}`, error));
+      await alia.send(to.threadId, message).catch((error) => this.warn(`reply to ${to.threadId}`, error));
     }
     this.kick();
     return post;
@@ -590,18 +590,18 @@ export class Engine {
 
   /** The human's message to a planner from the Loom page: sent to its thread as their own words, and kept for the Planner page. */
   async messagePlanner(threadId: string, text: string): Promise<void> {
-    const { store, bb } = this.ctx;
+    const { store, alia } = this.ctx;
     const row = store.threadByThreadId(threadId);
     const planning = store.planning(threadId);
     const live = (row?.role === "planner" && row.state === "active") || (row === null && planning !== null && planning.ended_at === null);
     if (!live) throw new LoomError("loom_invalid_state", "This thread is not a live Loom planner, so there is no one to message.");
     const body = text.trim();
     if (body === "") throw new LoomError("loom_invalid_input", "The message is empty.");
-    await bb.send(threadId, body);
+    await alia.send(threadId, body);
     store.addPlannerLog({ thread_id: threadId, author: "human", text: body }, row?.project_id ?? null);
   }
 
-  // ---------------------------------------------------------------- bb's events
+  // ---------------------------------------------------------------- VesnALIA's events
 
   /** `lastText` is the turn's last assistant text, which the Planner page shows for a planner thread. */
   async onThreadIdle(threadId: string, lastText: string | null = null): Promise<void> {

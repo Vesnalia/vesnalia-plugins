@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { runGh } from "./gh";
 import { queueStore, type AsyncStore } from "./store-queue";
 import { startPlugin } from "./plugin-store.test-support";
@@ -18,8 +18,8 @@ const patch = [
 ].join("\n");
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = await startPlugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = await startPlugin(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");
@@ -32,7 +32,7 @@ async function host() {
 
 test("the assistant adds comments to its own review's local draft, and nothing reaches GitHub", async () => {
   const { store, add, error, signals } = await host();
-  expect(await add({ file: "a.ts", line: 3, code: "  const c = b * 2; ", body: " Can this overflow? " })).toBe("Added a draft comment on a.ts:3. It stays in bb until the reviewer submits the review.");
+  expect(await add({ file: "a.ts", line: 3, code: "  const c = b * 2; ", body: " Can this overflow? " })).toBe("Added a draft comment on a.ts:3. It stays in VesnALIA until the reviewer submits the review.");
   expect(error(await add({ file: "a.ts", line: 2, side: "LEFT", code: "const b = 2;", body: "Why change b?" }))).toBeNull();
   expect((await store.getDraft("pr-1")).comments).toEqual([
     { file: "a.ts", line: 3, side: "RIGHT", author: "agent", body: "Can this overflow?" },

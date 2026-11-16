@@ -3,14 +3,14 @@
 // Run with `npm test`.
 import assert from "node:assert/strict";
 import test, { mock } from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { modelStubs, sleep, until } from "./helpers.mjs";
 
 const WORKER_OUTPUT = '[{"label": "Add a test", "why": "The fix shipped untested"}]';
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-/** A fake BB holding a tree of threads: `tree` maps id -> { parent, status, visibility }. */
+/** A fake VesnALIA holding a tree of threads: `tree` maps id -> { parent, status, visibility }. */
 async function boot(tree, { listFails = false, beforeWorkerOutput = () => {} } = {}) {
   const world = { tree, metadata: {}, spawned: 0, listCalls: [], getLog: [], listFails };
   const row = (id) =>
@@ -54,7 +54,7 @@ async function boot(tree, { listFails = false, beforeWorkerOutput = () => {} } =
       ...modelStubs(),
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const shown = (id = "captain") => host.harness.callRpc("followups_get", { threadId: id });
   return {
     world, host, row, shown,
@@ -247,7 +247,7 @@ test("a child that starts working while the answer is being drafted keeps the fo
   await w.dispose();
 });
 
-test("`bb followups regenerate` refuses a thread that is waiting on child threads", async () => {
+test("`alia followups regenerate` refuses a thread that is waiting on child threads", async () => {
   const w = await boot(captainWith(["kid", "active"]));
   const result = await w.host.harness.runCli(["regenerate", "captain"]);
   assert.equal(result.exitCode, 1);

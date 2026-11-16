@@ -1,18 +1,18 @@
-// A review agent's chat as bb's events give it to the plugin (`threads.events.list`): each message a request, and bb
+// A review agent's chat as VesnALIA's events give it to the plugin (`threads.events.list`): each message a request, and VesnALIA
 // taking it into a turn, a new one unless it joins the running one. What the plugin sends or spawns lands in it too,
-// marks and all, as bb would deliver it.
+// marks and all, as VesnALIA would deliver it.
 import { expect } from "vitest";
 
 type Part = { type: "text"; text: string; mentions?: unknown[]; visibility?: "agent-only" };
 export interface Said {
   parts?: Part[];
   at?: number;
-  /** The thread that relayed it, as `bb thread tell` sets it. */
+  /** The thread that relayed it, as `alia thread tell` sets it. */
   sender?: string | null;
   source?: "spawn" | "tell";
   initiator?: "user" | "agent" | "system";
   systemMessageKind?: string;
-  /** false: still pending, as a steer bb hasn't taken yet. */
+  /** false: still pending, as a steer VesnALIA hasn't taken yet. */
   accepted?: boolean;
   /** Taken into the running turn, as a message typed while the agent works, or a tool's result arriving: not a new turn. */
   joins?: boolean;
@@ -22,7 +22,7 @@ export function agentChat(threadId = "agent") {
   let seq = 0;
   const events: Array<{ id: string; seq: number; threadId: string; createdAt: number; type: string; scope: { kind: string; turnId?: string }; data: Record<string, unknown> }> = [];
   let turns = 0;
-  /** Each thread's ancestors, as bb lists them: none unless a test says; null, a thread bb leaves out, as unknown. */
+  /** Each thread's ancestors, as VesnALIA lists them: none unless a test says; null, a thread VesnALIA leaves out, as unknown. */
   const ancestors: Record<string, string[] | null> = {};
   /** The messages queued behind a busy agent, by their queue id, until dispatched. */
   const queue = new Map<string, Part[]>();
@@ -66,7 +66,7 @@ export function agentChat(threadId = "agent") {
       queue.delete(id);
       return { id, threadId, content };
     },
-    /** bb's threads.send, threads.spawn and threads.events, for createFakePluginHost's sdk.threads. */
+    /** VesnALIA's threads.send, threads.spawn and threads.events, for createFakePluginHost's sdk.threads. */
     sdk: {
       send: async (args: { threadId: string; input: Part[] }) => {
         if (!busy) { push({ parts: args.input }); return { ok: true, delivery: "sent" }; }

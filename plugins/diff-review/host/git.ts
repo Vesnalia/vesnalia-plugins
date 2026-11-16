@@ -1,5 +1,5 @@
 /**
- * Git in a checkout on the host: the diffs bb's Git plugin does not give (staged, unstaged, ranges),
+ * Git in a checkout on the host: the diffs VesnALIA's Git plugin does not give (staged, unstaged, ranges),
  * and a pull request fetched for review. Every command runs `git` with fixed arguments and the
  * revisions the contract allowed, with a timeout and a capped output. The only write is that fetch,
  * into the plugin's own refs (`refs/diff-review/…`): no branch, index or working-tree file changes.

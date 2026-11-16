@@ -2,8 +2,8 @@
 // pinned commands plus every script in the root package.json, each with
 // run/stop and live status, and a settings editor for pinned commands.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { JsonValue } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { JsonValue } from "@vesnalia/plugin-sdk/app";
 import type { DevRun, RepoCommand, RepoScript } from "./repo-commands";
 import type { rpcContract } from "./server";
 import { Input } from "@/components/ui/input";
@@ -288,7 +288,7 @@ export function RepoCommandsSettings() {
   return (
     <div className="jf-settings space-y-3 text-sm">
       <p className="text-muted-foreground">
-        Buttons shown in a thread's side panel under "Repo commands", keyed by BB project name.
+        Buttons shown in a thread's side panel under "Repo commands", keyed by VesnALIA project name.
         Give a command several slots (e.g. <code>pnpm dev</code>, <code>pnpm dev:2</code>) so
         parallel worktrees each pick one whose ports are free.
       </p>
@@ -309,7 +309,7 @@ export function RepoCommandsSettings() {
       <Input id="jf-command-project"
         value={project}
         onChange={(event) => setProject(event.target.value)}
-        placeholder="BB project name, e.g. my-app"
+        placeholder="VesnALIA project name, e.g. my-app"
         aria-label="Project name"
         className="h-8 w-full rounded-md border border-border bg-transparent px-2 text-sm"
       />

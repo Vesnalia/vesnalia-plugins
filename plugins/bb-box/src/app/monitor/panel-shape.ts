@@ -13,7 +13,7 @@ const MAX_TAILSCALE_ROWS = 4;
 
 
 function storageKey(machineId: string): string {
-  return `bb-box:monitor:shape:${machineId}`;
+  return `alia-box:monitor:shape:${machineId}`;
 }
 
 export function hasGpuReadings(snapshot: MonitorSnapshot): boolean {
@@ -47,7 +47,7 @@ export function rememberPanelShape(machineId: string, shape: PanelShape): void {
 }
 
 function cardsKey(boxId: string): string {
-  return `bb-box:activity:gpu-cards:${boxId}`;
+  return `alia-box:activity:gpu-cards:${boxId}`;
 }
 
 export function rememberedGpuCards(boxId: string): number | null {

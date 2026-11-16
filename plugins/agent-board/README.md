@@ -1,6 +1,6 @@
 # Agent Board
 
-Live execution observability for BB. See what agents are doing, which models
+Live execution observability for VesnALIA. See what agents are doing, which models
 and tools they use, which workers are running, what needs attention, and what
 just completed.
 
@@ -10,16 +10,16 @@ Screenshots show the real plugin UI with clearly labeled synthetic data.
 
 ## Install
 
-- **BB Marketplace:** [Agent Board on getbb.app](https://getbb.app/marketplace/agent-board)
+- **VesnALIA Marketplace:** [Agent Board on getbb.app](https://getbb.app/marketplace/agent-board)
 - **GitHub:** source, releases, and issues live in this repo
 
-If Agent Board is useful, a GitHub star helps other BB users find the
+If Agent Board is useful, a GitHub star helps other VesnALIA users find the
 project outside the marketplace.
 
 ## Why Agent Board
 
 Task management records what should happen. Orchestration starts and coordinates
-work. Agent Board observes execution through supported BB APIs and optional
+work. Agent Board observes execution through supported VesnALIA APIs and optional
 public plugin contracts. A Kanban board is one view of that work; automatic
 focus and the global dashboard offer other views of the same bounded state.
 
@@ -29,13 +29,13 @@ focus and the global dashboard offer other views of the same bounded state.
 - **Single-Agent Focus:** activity and discrete lifecycle state for one execution.
 - **Multi-Agent Kanban:** live state for concurrent agents and workers.
 - **Needs Attention:** structured waiting/failure states and persistent dismissal.
-- **Execution Timeline:** page through retained BB operational history while keeping your place.
+- **Execution Timeline:** page through retained VesnALIA operational history while keeping your place.
 - **Activity freshness:** recent or quiet public reporting without inferring a stall.
 - **Completion summaries:** outcomes, results, failures and agent-reported checks.
 - **Filters and grouping:** project, repository, provider and status over visible work.
 - **Monitoring health:** connection, successful refresh and watcher status.
 - **What's New:** version highlights with persistent dismissal and later viewing.
-- Native BB threads, workflows, delegations, models and tools.
+- Native VesnALIA threads, workflows, delegations, models and tools.
 - Optional Ollama Fleet and Redteam observation.
 - Mobile layouts, keyboard controls, and reduced-motion support.
 
@@ -50,23 +50,23 @@ and the distinction between fixture media and live runtime evidence.
 
 ## Install from Git
 
-Install the current compatible release line with BB:
+Install the current compatible release line with VesnALIA:
 
 ```sh
-bb plugin install git:https://github.com/aaronphifer/bb-plugin-agent-board.git@^0.7.0
+alia plugin install git:https://github.com/aaronphifer/bb-plugin-agent-board.git@^0.7.0
 ```
 
-BB's managed Git installer installs runtime dependencies and builds the frontend
+VesnALIA's managed Git installer installs runtime dependencies and builds the frontend
 and server from source. Git releases intentionally omit `dist/`. A local path
 install uses your existing dependencies; prepare a checkout with:
 
 ```sh
 npm ci
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
-Neither Fleet nor Redteam is required. Declared compatibility is BB >=0.40 and
+Neither Fleet nor Redteam is required. Declared compatibility is VesnALIA >=0.40 and
 SDK >=0.4.21; the development SDK is pinned to 0.4.34. See the honest
 [compatibility matrix](RELEASE_AUDIT.md), including historical runtime evidence.
 See [compatibility and upgrade notes](docs/upgrade-0.7.0.md) and
@@ -80,22 +80,22 @@ a **Multi-Agent** view for independent active executions or concurrent Fleet wor
 the current model, tools, public progress updates, and lifecycle state.
 **Needs Attention** collects structured approvals, input requests, and failures.
 Open **Timeline** for start, model, tool, public-update and terminal events;
-**Load earlier activity** reads earlier retained BB history incrementally. Dismiss attention items after
+**Load earlier activity** reads earlier retained VesnALIA history incrementally. Dismiss attention items after
 review; dismissal changes presentation state, not the underlying execution.
 
 ```sh
-bb agent-board show <thread-id>
-bb agent-board show <thread-id> --json
+alia agent-board show <thread-id>
+alia agent-board show <thread-id> --json
 ```
 
 ## Ollama Fleet Integration
 
 **Optional: [Ollama Fleet >=0.6.0](https://github.com/aaronphifer/bb-plugin-ollama-fleet)**
 enables live visibility into delegated local jobs. Agent Board calls `fleet_observability_snapshot`
-through public `bb.sdk.plugins.callRpc`, validates a local wire schema, and
+through public `alia.sdk.plugins.callRpc`, validates a local wire schema, and
 maps safe metadata into its execution model. It imports no Fleet code.
 
-Jobs with exact origin linkage nest under their BB parent. Jobs without origin
+Jobs with exact origin linkage nest under their VesnALIA parent. Jobs without origin
 appear independently. Actual model/server state comes from Fleet. Linked
 workers do not replace the parent's model or inflate global execution counts.
 Missing, disabled, old, malformed, failed, or truncated sources are handled
@@ -106,12 +106,12 @@ without making Fleet a requirement. Raw prompts/answers never become public upda
 **Optional (private / optional).** Visitors cannot install or access a private Redteam repository from this README. Redteam must expose public `observability_snapshot` schema version 1.
 Agent Board uses a local schema, imports no Redteam modules, and shows real phases,
 models, tools and bounded operation metadata when supplied. Source failure is
-isolated from native BB observation; source capabilities vary.
+isolated from native VesnALIA observation; source capabilities vary.
 
 ## Privacy / Security
 
-Agent Board uses supported public BB plugin APIs, never direct BB database
-access or private `@bb/*` imports. It excludes hidden reasoning/thinking and raw
+Agent Board uses supported public VesnALIA plugin APIs, never direct VesnALIA database
+access or private `@alia-core/*` imports. It excludes hidden reasoning/thinking and raw
 Fleet prompts/results. Each timeline request and activity snapshot is bounded; previews are truncated
 and common credential forms redacted. This is defense in depth: public assistant
 updates, task titles, paths and configured names can still contain private content.
@@ -119,12 +119,12 @@ Only share screenshots after reviewing them.
 
 Attention dismissal is persisted presentation state. Collection caches are
 bounded and disposable. Optional integrations fail gracefully. Plugins run with
-BB's trust. See [SECURITY.md](SECURITY.md).
+VesnALIA's trust. See [SECURITY.md](SECURITY.md).
 
 ## Architecture
 
 ```text
-BB source ────────┐
+ALIA source ────────┐
 Redteam source ───┼─> normalized execution model ─> UI
 Fleet source ────┘
 ```
@@ -143,10 +143,10 @@ This is a bounded latest view, not a persistent history database.
 
 ## Known Limitations
 
-- The current public BB plugin SDK does not expose a supported system/push notification delivery API.
+- The current public VesnALIA plugin SDK does not expose a supported system/push notification delivery API.
   Agent Board intentionally does not implement unsupported browser push/service-worker hacks.
 - Fleet worker visibility requires Fleet >=0.6.0; no integration is mandatory.
-- Earlier timeline history depends on BB retention; Fleet and Redteam expose bounded snapshots.
+- Earlier timeline history depends on VesnALIA retention; Fleet and Redteam expose bounded snapshots.
 - Fleet has no token stream or attempt-history API; observation never invents those details.
 - Physical Android release verification remains separate from automated DOM tests.
 
@@ -154,7 +154,7 @@ This is a bounded latest view, not a persistent history database.
 
 Historical 0.7.0 development is documented in [vnext launch/testing](docs/vnext-testing.md),
 [design](docs/vnext-design.md) and [release convention](docs/release-convention.md).
-Use a separate BB data directory and ports for development; keep your stable
+Use a separate VesnALIA data directory and ports for development; keep your stable
 installation untouched. See the current [release notes](RELEASE_NOTES.md).
 See [dependency assessment](docs/dependency-security-0.7.0.md) and the PR
 Release validation checks before approving a merge.
@@ -163,7 +163,7 @@ Release validation checks before approving a merge.
 npm ci
 npm test
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md), and
@@ -178,4 +178,4 @@ Author page: [getbb.app/marketplace/author/aaronphifer](https://getbb.app/market
 own [notices and licenses](THIRD_PARTY_NOTICES.md).
 ## Daily workflow improvements
 
-Version 0.7.1 adds specific attention actions, completion review evidence, expandable observed agents, a catch-up digest, saved views, earlier timeline paging, subtle visual polish, and an update-available card using BB’s eligible-update installer. See [daily monitoring and update behavior](docs/daily-workflow.md) for limits, browser persistence and delivery to existing installations.
+Version 0.7.1 adds specific attention actions, completion review evidence, expandable observed agents, a catch-up digest, saved views, earlier timeline paging, subtle visual polish, and an update-available card using VesnALIA’s eligible-update installer. See [daily monitoring and update behavior](docs/daily-workflow.md) for limits, browser persistence and delivery to existing installations.

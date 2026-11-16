@@ -5,7 +5,7 @@ export const NO_SEARCH_ATTRIBUTE = "data-sl-nosearch";
 
 export interface SearchMatch {
   entryId: string;
-  // Null when the row matched on text it does not render as plain DOM, such as bb's diff viewer.
+  // Null when the row matched on text it does not render as plain DOM, such as VesnALIA's diff viewer.
   range: Range | null;
 }
 

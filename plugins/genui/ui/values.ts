@@ -79,7 +79,7 @@ export function nodes(value: Value | undefined): UiNode[] {
 
 export type Tone = "neutral" | "good" | "warn" | "bad" | "info";
 
-/** BB's timeline accent (a muted blue in the stock themes), else the primary ink. */
+/** VesnALIA's timeline accent (a muted blue in the stock themes), else the primary ink. */
 export const ACCENT = "var(--color-timeline-accent,var(--primary))";
 
 /** Text color per tone; neutral inherits. */

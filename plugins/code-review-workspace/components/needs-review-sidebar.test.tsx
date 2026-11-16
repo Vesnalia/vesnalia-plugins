@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { Turn } from "../lib/turn";
 import { defaultPreferences } from "../src/preferences";
 import { computeTurn } from "../lib/turn";
@@ -9,16 +9,16 @@ import { shortNames } from "./NeedsReviewSidebar";
 
 afterEach(() => { cleanup(); document.body.innerHTML = ""; localStorage.clear(); vi.useRealTimers(); });
 
-/** BB's thread list as it draws its groups: wrappers in a container, each holding a group under its label; Pinned's header doesn't stick. */
+/** VesnALIA's thread list as it draws its groups: wrappers in a container, each holding a group under its label; Pinned's header doesn't stick. */
 function threadList(pinned: "open" | "collapsed" | "none" = "open") {
   const rows = pinned === "open" ? `<div class="mt-1"><div data-sidebar-sticky-section data-testid="pinned-rows"><div>Per's PR's</div><div>Docs PR</div></div></div>` : "";
-  document.body.insertAdjacentHTML("beforeend", `<div data-bb-plugin-root data-bb-plugin="thread-list"><div data-testid="groups">
+  document.body.insertAdjacentHTML("beforeend", `<div data-alia-plugin-root data-alia-plugin="thread-list"><div data-testid="groups">
     ${pinned === "none" ? "" : `<div><div data-sidebar-sticky-group data-sidebar-sticky-header="false"><div data-sidebar="group-label">Pinned</div>${rows}</div></div>`}
     <div data-sidebar-visibility-group="threads"><div data-sidebar-sticky-group><div data-sidebar="group-label">Threads</div></div></div>
   </div></div>`);
   return document.querySelector<HTMLElement>('[data-testid="groups"]')!;
 }
-/** A pinned BB thread, so BB draws its Pinned group. */
+/** A pinned VesnALIA thread, so VesnALIA draws its Pinned group. */
 const pinnedThread = { id: "thr-1", title: "Per's PR's", isPinned: true, isArchived: false, isHidden: false } as any;
 
 const hour = 3_600_000;
@@ -40,7 +40,7 @@ async function renderSidebar(list: unknown[] = reviews, threads: unknown[] = [pi
   return renderSlot(overlay, {}, { rpc: { listReviews: () => ({ reviews: list }), pinReview: () => ({ ok: true }), getPreferences: () => settings() }, sidebarThreads: { status, threads: threads as any } });
 }
 
-test("Needs review goes last in BB's thread list, below Threads, with only the reviews waiting on you, in the tab's order", async () => {
+test("Needs review goes last in VesnALIA's thread list, below Threads, with only the reviews waiting on you, in the tab's order", async () => {
   const groups = threadList();
   const slot = await renderSidebar();
   const section = await within(document.body).findByRole("region", { name: "Needs review" });
@@ -82,12 +82,12 @@ test("a row's tooltip says where the PR is, why it's yours and for how long, as 
   const pin = within(document.body).getByRole("button", { name: "Pin Direct request" });
   // Touch and screen readers get no tooltip, so the row says where and why in words too.
   expect(within(document.body).getByRole("link", { name: /Direct request/, description: "acme/web#1, Requested by @alice" })).toBe(row);
-  // A screen that can't hover keeps its rows clear, as BB's own are; the review's menu pins it.
+  // A screen that can't hover keeps its rows clear, as VesnALIA's own are; the review's menu pins it.
   expect(pin.className.split(" ")).toEqual(expect.arrayContaining(["[@media(hover:hover)]:opacity-0", "group-hover/row:opacity-100", "[@media(hover:none)]:hidden"]));
   slot.lifecycle.unmount();
 });
 
-test("a row shows its review agent's status with BB's glyph where BB's rows show a thread's, giving way to the pin on hover; a guide being built spins", async () => {
+test("a row shows its review agent's status with VesnALIA's glyph where VesnALIA's rows show a thread's, giving way to the pin on hover; a guide being built spins", async () => {
   threadList();
   const slot = await renderSidebar([{ ...reviews[2], agentStatus: { indicator: "unread-success", unread: true } }, { ...reviews[3], status: "generating" }, reviews[0]]);
   const row = await within(document.body).findByRole("link", { name: /Direct request/ });
@@ -227,7 +227,7 @@ test("with nothing waiting on you there's no group, and it appears when a review
   const overlay = app.appOverlays.find((registration) => registration.id === "needs-review")!;
   const slot = renderSlot(overlay, {}, { rpc: { listReviews: () => ({ reviews: list }), getPreferences: () => settings() } });
   await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "listReviews")).toBe(true));
-  // Out of BB's list altogether while empty.
+  // Out of VesnALIA's list altogether while empty.
   expect(groups.children).toHaveLength(2);
   expect(within(document.body).queryByRole("region", { name: "Needs review" })).toBeNull();
   list = reviews;
@@ -240,7 +240,7 @@ test("with nothing waiting on you there's no group, and it appears when a review
   slot.lifecycle.unmount();
 });
 
-test("without BB's thread list it shows nowhere", async () => {
+test("without VesnALIA's thread list it shows nowhere", async () => {
   const slot = await renderSidebar();
   await waitFor(() => expect(slot.inspection.rpcCalls.some((call) => call.method === "listReviews")).toBe(true));
   expect(within(document.body).queryByRole("region", { name: "Needs review" })).toBeNull();
@@ -260,7 +260,7 @@ test("how long each has waited keeps up while the page stays open", async () => 
 
 const pinnedReview = { ...reviews[2], pinnedAt: Date.now() - hour };
 
-test("a pinned review sits in BB's Pinned group after its threads, and leaves Needs review", async () => {
+test("a pinned review sits in VesnALIA's Pinned group after its threads, and leaves Needs review", async () => {
   threadList();
   const slot = await renderSidebar([pinnedReview, reviews[3]]);
   const pinnedRows = document.querySelector<HTMLElement>('[data-testid="pinned-rows"]')!;
@@ -288,7 +288,7 @@ test("Pin moves a review into Pinned at once, and Unpin moves it back", async ()
   slot.lifecycle.unmount();
 });
 
-test("collapsing BB's Pinned hides pinned reviews with its threads", async () => {
+test("collapsing VesnALIA's Pinned hides pinned reviews with its threads", async () => {
   threadList("collapsed");
   const slot = await renderSidebar([pinnedReview, reviews[3]]);
   await within(document.body).findByRole("region", { name: "Needs review" });
@@ -296,7 +296,7 @@ test("collapsing BB's Pinned hides pinned reviews with its threads", async () =>
   slot.lifecycle.unmount();
 });
 
-test("with no pinned thread, BB draws no Pinned, so pinned reviews get one of their own, first", async () => {
+test("with no pinned thread, VesnALIA draws no Pinned, so pinned reviews get one of their own, first", async () => {
   const groups = threadList("none");
   const slot = await renderSidebar([pinnedReview, reviews[3]], []);
   const pinned = await within(document.body).findByRole("region", { name: "Pinned" });
@@ -308,7 +308,7 @@ test("with no pinned thread, BB draws no Pinned, so pinned reviews get one of th
   slot.lifecycle.unmount();
 });
 
-test("pinned reviews wait for BB's threads to load, so a Pinned of their own doesn't flash up", async () => {
+test("pinned reviews wait for VesnALIA's threads to load, so a Pinned of their own doesn't flash up", async () => {
   threadList("none");
   const slot = await renderSidebar([pinnedReview, reviews[3]], [], "loading");
   await within(document.body).findByRole("region", { name: "Needs review" });
@@ -326,7 +326,7 @@ test("an archived review leaves Pinned", async () => {
   slot.lifecycle.unmount();
 });
 
-test("turned off in Settings, nothing goes into BB's list and no review is listed; turned back on, it comes back", async () => {
+test("turned off in Settings, nothing goes into VesnALIA's list and no review is listed; turned back on, it comes back", async () => {
   const groups = threadList();
   let enabled = false;
   const app = await loadPluginApp(() => import("../app"));
@@ -362,7 +362,7 @@ test("Settings turns reviews in the thread list off, saying why someone would", 
   const slot = renderSlot({ component: ReviewSettings }, {}, { rpc: { setReviewPresence: () => ({ ok: true }), getPreferences: () => record, savePreferences: save } });
   const toggle = await slot.findByRole("checkbox", { name: /Show reviews in the thread list/ }) as HTMLInputElement;
   expect(toggle.checked).toBe(true);
-  expect(toggle.closest("label")!.textContent).toContain("If a BB update makes that list misbehave");
+  expect(toggle.closest("label")!.textContent).toContain("If a VesnALIA update makes that list misbehave");
   fireEvent.click(toggle);
   fireEvent.click(slot.getByRole("button", { name: "Save settings" }));
   await slot.findByText("Settings saved");

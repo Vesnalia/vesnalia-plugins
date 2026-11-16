@@ -1,4 +1,4 @@
-import { createFakePluginHost, makeThreadResponse, type ExperimentalFakeHostRpcCall } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse, type ExperimentalFakeHostRpcCall } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 import { BrowserToolError, type SessionRecord, type SnapshotPayload } from "./contracts.js";
 import { SessionManager } from "./sessions.js";
@@ -102,7 +102,7 @@ function makeRig(options: { idleMs?: number } = {}) {
         throw new Error(`unhandled host method ${call.method}`);
     }
   };
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "browser-tools",
     sdk: {
       experimental_desktopBrowsers: {
@@ -124,7 +124,7 @@ function makeRig(options: { idleMs?: number } = {}) {
     experimental_callHostRpc: driver,
   });
   harness.sdk.stub("threads.get", async () => makeThreadResponse({ id: THREAD }));
-  const manager = new SessionManager(bb, {
+  const manager = new SessionManager(alia, {
     operationBudgetMs: 2_000,
     navigateBudgetMs: 2_000,
     readyTimeoutMs: 1_000,
@@ -132,7 +132,7 @@ function makeRig(options: { idleMs?: number } = {}) {
     cleanupRetryDelaysMs: [10, 10, 10],
   });
   manager.markReady();
-  return { bb, harness, desktop, manager, hostCalls, impls };
+  return { alia, harness, desktop, manager, hostCalls, impls };
 }
 
 const expectCode = async (promise: Promise<unknown>, code: string) => {
@@ -148,7 +148,7 @@ const expectCode = async (promise: Promise<unknown>, code: string) => {
 describe("SessionManager", () => {
   it("opens a session with one ref-counted watcher and no hot-path KV writes", async () => {
     const rig = makeRig();
-    const setSpy = vi.spyOn(rig.bb.storage.kv, "set");
+    const setSpy = vi.spyOn(rig.alia.storage.kv, "set");
     const opened = await rig.manager.open({ allowPersonal: false }, THREAD, signal());
     expect(opened.session.borrowed).toBe(false);
     expect(rig.desktop.activeSubscriptions).toBe(1);
@@ -227,7 +227,7 @@ describe("SessionManager", () => {
     }
     {
       const rig = makeRig();
-      const setSpy = vi.spyOn(rig.bb.storage.kv, "set").mockRejectedValueOnce(new Error("disk"));
+      const setSpy = vi.spyOn(rig.alia.storage.kv, "set").mockRejectedValueOnce(new Error("disk"));
       await expect(rig.manager.open({ allowPersonal: false }, THREAD, signal())).rejects.toThrow();
       setSpy.mockRestore();
       expect(rig.desktop.closedTabs).toHaveLength(0);
@@ -330,7 +330,7 @@ describe("SessionManager", () => {
   it("does not let a stale generation stop a replacement session", async () => {
     const rig = makeRig();
     const first = await rig.manager.open({ allowPersonal: false }, THREAD, signal());
-    rig.desktop.instances = [{ instanceId: INSTANCE, generation: "gen_2", label: "BB window 1" }];
+    rig.desktop.instances = [{ instanceId: INSTANCE, generation: "gen_2", label: "VesnALIA window 1" }];
     const second = await rig.manager.open(
       { instanceId: INSTANCE, allowPersonal: false },
       THREAD,
@@ -386,7 +386,7 @@ describe("SessionManager", () => {
       },
       cleanup: { hostConnectionClosed: false, leaseReleased: false, tabClosed: false },
     };
-    await rig.bb.storage.kv.set(`sessions/${THREAD}/${record.id}`, record);
+    await rig.alia.storage.kv.set(`sessions/${THREAD}/${record.id}`, record);
     const oldRecord: SessionRecord = {
       ...record,
       id: "s_old",
@@ -395,14 +395,14 @@ describe("SessionManager", () => {
       cleanup: { hostConnectionClosed: true, leaseReleased: true, tabClosed: false },
       desktop: null,
     };
-    await rig.bb.storage.kv.set(`sessions/${THREAD}/${oldRecord.id}`, oldRecord);
+    await rig.alia.storage.kv.set(`sessions/${THREAD}/${oldRecord.id}`, oldRecord);
 
     await rig.manager.reconcile();
     expect(rig.desktop.leases.size).toBe(0);
     expect(rig.desktop.closedTabs).toEqual([]);
     expect(rig.hostCalls.map((call) => call.method)).toContain("close");
-    expect(await rig.bb.storage.kv.get(`sessions/${THREAD}/${oldRecord.id}`)).toBeUndefined();
-    const updated = (await rig.bb.storage.kv.get(`sessions/${THREAD}/${record.id}`)) as SessionRecord;
+    expect(await rig.alia.storage.kv.get(`sessions/${THREAD}/${oldRecord.id}`)).toBeUndefined();
+    const updated = (await rig.alia.storage.kv.get(`sessions/${THREAD}/${record.id}`)) as SessionRecord;
     expect(updated.phase).toBe("stopped");
     expect(updated.cleanup.hostConnectionClosed).toBe(true);
     expect(updated.cleanup.leaseReleased).toBe(true);
@@ -557,9 +557,9 @@ describe("SessionManager", () => {
   it.each(["thread", "dispose"])("R2 fences final persistence on %s stop", async (kind) => {
     const rig = makeRig();
     const gate = deferred<void>();
-    const original = rig.bb.storage.kv.set.bind(rig.bb.storage.kv);
+    const original = rig.alia.storage.kv.set.bind(rig.alia.storage.kv);
     let writes = 0;
-    vi.spyOn(rig.bb.storage.kv, "set").mockImplementation(async (...args) => {
+    vi.spyOn(rig.alia.storage.kv, "set").mockImplementation(async (...args) => {
       if (++writes === 3) await gate.promise;
       return original(...args);
     });
@@ -577,8 +577,8 @@ describe("SessionManager", () => {
     expect(await rig.manager.list(THREAD)).toEqual([]);
     expect(rig.desktop.activeSubscriptions).toBe(0);
     expect(rig.desktop.leases.size).toBe(0);
-    const keys = await rig.bb.storage.kv.list("sessions/");
-    const record = await rig.bb.storage.kv.get(keys[0]!) as SessionRecord;
+    const keys = await rig.alia.storage.kv.list("sessions/");
+    const record = await rig.alia.storage.kv.get(keys[0]!) as SessionRecord;
     expect(record.phase).toBe("stopped");
     expect(record.cleanup.leaseReleased).toBe(true);
   });
@@ -619,13 +619,13 @@ describe("SessionManager", () => {
     expect(stopped).toBe(false);
     gate.resolve();
     await Promise.all([stopping, rejected]);
-    const keys = await rig.bb.storage.kv.list("sessions/");
-    const record = await rig.bb.storage.kv.get(keys[0]!) as SessionRecord;
+    const keys = await rig.alia.storage.kv.list("sessions/");
+    const record = await rig.alia.storage.kv.get(keys[0]!) as SessionRecord;
     expect(record.desktop?.leaseId).not.toBe("");
     expect(record.cleanup.leaseReleased).toBe(false);
     await rig.manager.dispose();
     rig.desktop.releaseError = null;
-    const restarted = new SessionManager(rig.bb);
+    const restarted = new SessionManager(rig.alia);
     await restarted.reconcile();
     expect(rig.desktop.leases.size).toBe(0);
     expect(rig.desktop.closedTabs).toEqual([]);
@@ -638,7 +638,7 @@ describe("SessionManager", () => {
     rig.desktop.desktopReleaseError = new Error("desktop offline");
     await rig.manager.close({ closeTab: false }, THREAD, signal());
     await new Promise(resolve => setTimeout(resolve, 40));
-    const record = await rig.bb.storage.kv.get(`sessions/${THREAD}/${opened.session.sessionId}`) as SessionRecord;
+    const record = await rig.alia.storage.kv.get(`sessions/${THREAD}/${opened.session.sessionId}`) as SessionRecord;
     expect(rig.desktop.leases.size).toBe(0);
     expect(rig.desktop.tabs.get(opened.session.tabId)?.control).not.toBeNull();
     expect(record.cleanup.leaseReleased).toBe(false);
@@ -648,12 +648,12 @@ describe("SessionManager", () => {
   it("R5 accounts for 64 unresolved startup records", async () => {
     const rig = makeRig();
     const opened = await rig.manager.open({ allowPersonal: false }, THREAD, signal());
-    const seed = await rig.bb.storage.kv.get(`sessions/${THREAD}/${opened.session.sessionId}`) as SessionRecord;
+    const seed = await rig.alia.storage.kv.get(`sessions/${THREAD}/${opened.session.sessionId}`) as SessionRecord;
     await rig.manager.close({ closeTab: false }, THREAD, signal());
     rig.impls.set("close", () => { throw new Error("offline"); });
     for (let i = 0; i < 64; i++) {
       const record = { ...seed, id: `s_prior_${i}`, threadId: `thr_prior_${i}`, cleanup: { ...seed.cleanup } };
-      await rig.bb.storage.kv.set(`sessions/${record.threadId}/${record.id}`, record);
+      await rig.alia.storage.kv.set(`sessions/${record.threadId}/${record.id}`, record);
     }
     await rig.manager.reconcile();
     await expectCode(rig.manager.open({ allowPersonal: false }, THREAD, signal()), "SESSION_LIMIT");
@@ -697,7 +697,7 @@ describe("SessionManager", () => {
     await new Promise(resolve => setTimeout(resolve, 40));
     await rig.manager.dispose();
     rig.impls.delete("close");
-    const restarted = new SessionManager(rig.bb);
+    const restarted = new SessionManager(rig.alia);
     await restarted.reconcile();
     expect(rig.desktop.closedTabs).toEqual([]);
     await restarted.dispose();
@@ -707,14 +707,14 @@ describe("SessionManager", () => {
     const rig = makeRig();
     const opened = await rig.manager.open({ allowPersonal: false }, THREAD, signal());
     const key = `sessions/${THREAD}/${opened.session.sessionId}`;
-    const seed = await rig.bb.storage.kv.get(key) as SessionRecord;
+    const seed = await rig.alia.storage.kv.get(key) as SessionRecord;
     await rig.manager.dispose();
     seed.desktop!.pendingClose = true;
-    await rig.bb.storage.kv.set(key, seed);
-    const restarted = new SessionManager(rig.bb, { cleanupRetryDelaysMs: [10] });
+    await rig.alia.storage.kv.set(key, seed);
+    const restarted = new SessionManager(rig.alia, { cleanupRetryDelaysMs: [10] });
     await restarted.reconcile();
     await new Promise(resolve => setTimeout(resolve, 40));
-    expect((await rig.bb.storage.kv.get(key) as SessionRecord).desktop?.pendingClose).toBe(false);
+    expect((await rig.alia.storage.kv.get(key) as SessionRecord).desktop?.pendingClose).toBe(false);
     expect(rig.desktop.closedTabs).toEqual([]);
     await restarted.dispose();
   });
@@ -732,8 +732,8 @@ describe("SessionManager", () => {
     expect(stopped).toBe(false);
     gate.resolve();
     await Promise.all([stopping, rejected]);
-    const keys = await rig.bb.storage.kv.list("sessions/");
-    const record = await rig.bb.storage.kv.get(keys[0]!) as SessionRecord;
+    const keys = await rig.alia.storage.kv.list("sessions/");
+    const record = await rig.alia.storage.kv.get(keys[0]!) as SessionRecord;
     expect(record.desktop?.tabId).toBe([...rig.desktop.tabs.keys()][0]);
     expect(rig.desktop.closedTabs).toEqual([]);
     expect(rig.desktop.calls).not.toContain("acquireControl");
@@ -742,12 +742,12 @@ describe("SessionManager", () => {
   it("R5 retains cleanup evidence through failed storage writes and retries persistence", async () => {
     const rig = makeRig();
     const opened = await rig.manager.open({ allowPersonal: false }, THREAD, signal());
-    const spy = vi.spyOn(rig.bb.storage.kv, "set").mockRejectedValue(new Error("storage offline"));
+    const spy = vi.spyOn(rig.alia.storage.kv, "set").mockRejectedValue(new Error("storage offline"));
     await rig.manager.close({ closeTab: false }, THREAD, signal());
     expect(rig.harness.logEntries.some(entry => entry.message.includes("could not be persisted"))).toBe(true);
     spy.mockRestore();
     const key = `sessions/${THREAD}/${opened.session.sessionId}`;
-    await vi.waitFor(async () => expect((await rig.bb.storage.kv.get(key) as SessionRecord).phase).toBe("stopped"));
+    await vi.waitFor(async () => expect((await rig.alia.storage.kv.get(key) as SessionRecord).phase).toBe("stopped"));
     await rig.manager.dispose();
   });
 

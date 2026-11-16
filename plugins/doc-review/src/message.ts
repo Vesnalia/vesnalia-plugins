@@ -1,7 +1,7 @@
 // The message an agent receives: one block per comment with its place in the
 // file, the quoted text, the requested change, and the conversation so far
 // when the user answers in a comment's thread, followed by how to report back
-// through `bb doc-review`.
+// through `alia doc-review`.
 import path from "node:path";
 import {
   anchorLabel,
@@ -51,7 +51,7 @@ function kindHint(kind: DocKind): string {
     case "pdf":
       return "Page numbers are 1-based. If this PDF is generated from a source file (Markdown, HTML, PPTX, …), edit the source and regenerate the PDF; otherwise say what you cannot change.";
     case "web":
-      return "These comments are on a live site opened in bb's browser, not on a file. Each one names its page. Find the code that renders each place (the route, component, or template) by the quoted text or the element's HTML, edit it, and get the change onto that site the way this project ships it; say so if you cannot. Selectors describe the rendered page and can differ from the source's structure.";
+      return "These comments are on a live site opened in VesnALIA's browser, not on a file. Each one names its page. Find the code that renders each place (the route, component, or template) by the quoted text or the element's HTML, edit it, and get the change onto that site the way this project ships it; say so if you cannot. Selectors describe the rendered page and can differ from the source's structure.";
     case "html":
       return "This is an HTML page as the browser rendered it. Edit the file itself, or the template or script that generates it and regenerate it; find each place by the quoted text or the element's HTML. Selectors describe the rendered page and can differ from the source's structure.";
   }
@@ -198,10 +198,10 @@ export function buildHandoffMessage(input: {
     );
   }
   lines.push(
-    `When a comment is done, close it with a one-line note: \`bb ${CLI_NAME} resolve <id> --note "what changed"\`.`,
+    `When a comment is done, close it with a one-line note: \`VesnALIA ${CLI_NAME} resolve <id> --note "what changed"\`.`,
   );
   lines.push(
-    `If you cannot apply one or need an answer first, reply instead: \`bb ${CLI_NAME} reply <id> --note "question or reason"\`.`,
+    `If you cannot apply one or need an answer first, reply instead: \`VesnALIA ${CLI_NAME} reply <id> --note "question or reason"\`.`,
   );
   return lines.join("\n");
 }

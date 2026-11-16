@@ -20,7 +20,7 @@ export async function draftsOut(tx: Store, review: ReviewMeta): Promise<Array<Dr
 
 /**
  * Count what's out with the thread that fixes the review's comments again, with what the review agent's check found of
- * each, in the caller's block, and make the review Ready to re-review when the thread asks: `ready` (bb review ready),
+ * each, in the caller's block, and make the review Ready to re-review when the thread asks: `ready` (VesnALIA review ready),
  * or a `report` that leaves nothing out unreported, `by` whoever ran ready. Each Send waiting then is ready; with nothing
  * out, none is. Returns whether it became ready now; null for a review that sent nothing.
  */

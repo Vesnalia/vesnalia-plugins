@@ -4,7 +4,7 @@
 // that changes emphasised. Updating or fixing is a message the user sends;
 // nothing runs from here.
 import { useContext, useId, useMemo, useState, type ReactNode } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {

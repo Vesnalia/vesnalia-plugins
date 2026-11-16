@@ -1,21 +1,21 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   PREFERENCES_KV_KEY,
   preferencesRpcContract,
 } from "./lib/preferences-rpc.js";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.rpc.register(preferencesRpcContract, {
+export default function plugin(alia: AliaPluginApi) {
+  alia.rpc.register(preferencesRpcContract, {
     async getPreferences() {
-      const stored = await bb.storage.kv.get<Record<string, unknown>>(
+      const stored = await alia.storage.kv.get<Record<string, unknown>>(
         PREFERENCES_KV_KEY,
       );
       return { preferences: stored ?? null };
     },
     async setPreferences({ preferences }) {
-      await bb.storage.kv.set(PREFERENCES_KV_KEY, preferences);
+      await alia.storage.kv.set(PREFERENCES_KV_KEY, preferences);
       return { ok: true as const };
     },
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

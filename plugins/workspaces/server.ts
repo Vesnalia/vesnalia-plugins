@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { baseRefSchema, DEFAULT_BASE_REF, EXPANSION_ERROR_MAX_CHARS, MAX_BASE_REFS, expansionApprovalResponseSchema, workspaceDraftSchema } from "./src/contracts";
 import { hostContract } from "./src/host-contract";
@@ -105,14 +105,14 @@ function deriveSessionName(prompt: string): string {
   return firstLine.trim().replace(/\s+/g, " ").slice(0, 80);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const database = bb.storage.database();
-  bb.storage.migrate(database, WORKSPACE_MIGRATIONS);
+export default async function plugin(alia: AliaPluginApi) {
+  const database = alia.storage.database();
+  alia.storage.migrate(database, WORKSPACE_MIGRATIONS);
   const store = new WorkspaceStore(database);
-  const host = bb.hosts.experimental_client({ contract: hostContract });
-  const changed = () => bb.realtime.publish(WORKSPACES_CHANGED, { at: Date.now() });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
+  const changed = () => alia.realtime.publish(WORKSPACES_CHANGED, { at: Date.now() });
 
-  function toProjectRecord(project: Awaited<ReturnType<typeof bb.sdk.projects.create>>): ProjectRecord {
+  function toProjectRecord(project: Awaited<ReturnType<typeof alia.sdk.projects.create>>): ProjectRecord {
     return {
       id: project.id,
       name: project.name,
@@ -121,7 +121,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function allProjects() {
-    const rows = await bb.sdk.projects.list();
+    const rows = await alia.sdk.projects.list();
     return rows.map((project) => ({
       id: project.id, name: project.name, gitRemoteUrl: project.gitRemoteUrl,
       sources: project.sources.map((source) => ({ id: source.id, hostId: source.hostId, path: source.path, isDefault: source.isDefault })),
@@ -140,7 +140,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const projectIds = new Set((await projects()).map((project) => project.id));
     for (const repository of draft.repositories) {
-      if (!projectIds.has(repository.projectId)) throw new Error(`BB project ${repository.projectId} was not found`);
+      if (!projectIds.has(repository.projectId)) throw new Error(`VesnALIA project ${repository.projectId} was not found`);
     }
   }
 
@@ -150,21 +150,21 @@ export default async function plugin(bb: BbPluginApi) {
     ensureAnchor: (hostId: string) => host.call("ensure_anchor", {}, { hostId }),
     getProject: async (id: string) => {
       try {
-        return toProjectRecord(await bb.sdk.projects.get({ projectId: id }));
+        return toProjectRecord(await alia.sdk.projects.get({ projectId: id }));
       } catch {
         return null;
       }
     },
     listProjects: async () => (await allProjects()).map((project) => ({ id: project.id, name: project.name, sources: project.sources })),
-    createProject: async (input: { name: string; source: { type: "local_path"; hostId: string; path: string } }) => toProjectRecord(await bb.sdk.projects.create(input)),
-    addSource: async (projectId: string, input: { type: "local_path"; hostId: string; path: string }) => { await bb.sdk.projects.sources.add({ projectId, ...input }); },
-    updateProjectName: async (projectId: string, name: string) => { await bb.sdk.projects.update({ projectId, name }); },
+    createProject: async (input: { name: string; source: { type: "local_path"; hostId: string; path: string } }) => toProjectRecord(await alia.sdk.projects.create(input)),
+    addSource: async (projectId: string, input: { type: "local_path"; hostId: string; path: string }) => { await alia.sdk.projects.sources.add({ projectId, ...input }); },
+    updateProjectName: async (projectId: string, name: string) => { await alia.sdk.projects.update({ projectId, name }); },
   };
 
   try {
     await renameStoredWorkspaceProject(workspaceProjectDeps);
   } catch (cause) {
-    bb.log.warn(`Workspaces could not rename its legacy synthetic project: ${cause instanceof Error ? cause.message : String(cause)}`);
+    alia.log.warn(`Workspaces could not rename its legacy synthetic project: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
 
   async function workspaceProject(hostId: string): Promise<string> {
@@ -177,7 +177,7 @@ export default async function plugin(bb: BbPluginApi) {
     requestApproval: async (payload, signal) => {
       const session = store.getSession(payload.sessionId);
       if (!session.threadId) throw new Error("Session thread is unavailable");
-      const response = await bb.ui.requestInput({
+      const response = await alia.ui.requestInput({
         threadId: session.threadId,
         rendererId: "workspace-add-repository",
         title: `Add ${payload.repositoryAlias} to ${payload.workspaceName}?`,
@@ -191,7 +191,7 @@ export default async function plugin(bb: BbPluginApi) {
     publishChanged: async () => { changed(); },
     reportError: ({ operation, sessionId, error }) => {
       const context = JSON.stringify({ operation, sessionId: sessionId.slice(0, 200), error: error.slice(0, 1_000) });
-      bb.log.error(`Workspaces notification failed: ${context}`);
+      alia.log.error(`Workspaces notification failed: ${context}`);
     },
   });
 
@@ -214,7 +214,7 @@ export default async function plugin(bb: BbPluginApi) {
     for (const result of results) {
       if (!result.error) continue;
       errors.set(result.sessionId, sanitizeReconciliationError(result.error));
-      bb.log.warn(`Workspaces session reconciliation failed: ${JSON.stringify({ sessionId: result.sessionId.slice(0, 200), error: result.error.slice(0, 1_000) })}`);
+      alia.log.warn(`Workspaces session reconciliation failed: ${JSON.stringify({ sessionId: result.sessionId.slice(0, 200), error: result.error.slice(0, 1_000) })}`);
     }
     return errors;
   }
@@ -228,7 +228,7 @@ export default async function plugin(bb: BbPluginApi) {
     return store.listSessions().map((session) => ({ ...session, error: errors.get(session.id) ?? session.error }));
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "workspace_add_repository",
     description: "Request another repository from this thread's saved multi-repository workspace.",
     instructions: "Use only when the task requires a workspace repository that is not already in session.json. Explain the concrete dependency in reason.",
@@ -252,7 +252,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const storedSession = store.getSessionByThreadId(context.thread.id);
     // spawn can resolve first-dispatch configuration before returning the thread ID.
     const bootstrap = context.project.id === store.getWorkspaceProjectId()
@@ -270,7 +270,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     dashboard: async () => {
       const errors = await reconcileActiveSessionsForListing();
       return { workspaces: store.list(true), sessions: sessionsWithReconciliationErrors(errors), projects: await projects() };
@@ -299,7 +299,7 @@ export default async function plugin(bb: BbPluginApi) {
       const available = new Map((await allProjects()).map((project) => [project.id, project]));
       const resolved = selected.map((repository) => {
         const project = available.get(repository.projectId);
-        if (!project) throw new Error(`BB project ${repository.projectId} was not found`);
+        if (!project) throw new Error(`VesnALIA project ${repository.projectId} was not found`);
         const source = project.sources.find((candidate) => candidate.hostId === hostId && candidate.isDefault)
           ?? project.sources.find((candidate) => candidate.hostId === hostId);
         if (!source) throw new Error(`${project.name} has no source on the selected host`);
@@ -325,7 +325,7 @@ export default async function plugin(bb: BbPluginApi) {
           branch: repository.branch, worktreePath: repository.worktreePath,
         })));
         session = store.updateSession(session.id, { rootPath: prepared.rootPath });
-        const thread = await bb.sdk.threads.spawn({
+        const thread = await alia.sdk.threads.spawn({
           projectId: workspaceOwnerProjectId,
           environment: { type: "host", hostId, workspace: { type: "unmanaged", path: prepared.rootPath } },
           prompt, title: `${workspace.name} · ${sessionName}`, visibility: "visible",
@@ -341,10 +341,10 @@ export default async function plugin(bb: BbPluginApi) {
       let threadTitleUpdated = false;
       if (session.threadId) {
         try {
-          await bb.sdk.threads.update({ threadId: session.threadId, title: `${session.workspaceName} · ${session.name}` });
+          await alia.sdk.threads.update({ threadId: session.threadId, title: `${session.workspaceName} · ${session.name}` });
           threadTitleUpdated = true;
         } catch (cause) {
-          bb.log.warn(`Workspaces renamed a session locally but could not update its thread title: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`Workspaces renamed a session locally but could not update its thread title: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }
       changed();
@@ -394,7 +394,7 @@ export default async function plugin(bb: BbPluginApi) {
       const available = new Map((await projects()).map((project) => [project.id, project]));
       const repositories = projectIds.map((projectId) => {
         const project = available.get(projectId);
-        if (!project) throw new Error(`BB project ${projectId} was not found`);
+        if (!project) throw new Error(`VesnALIA project ${projectId} was not found`);
         const source = project.sources.find((candidate) => candidate.hostId === hostId && candidate.isDefault)
           ?? project.sources.find((candidate) => candidate.hostId === hostId);
         if (!source) throw new Error(`${project.name} has no source on the selected host`);
@@ -404,13 +404,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const usage = ["Usage:", "  bb workspaces list [--json]", "  bb workspaces show <workspace-id> [--json]", "  bb workspaces sessions [--json]"].join("\n");
-  bb.cli.register({
+  const usage = ["Usage:", "  VesnALIA workspaces list [--json]", "  VesnALIA workspaces show <workspace-id> [--json]", "  VesnALIA workspaces sessions [--json]"].join("\n");
+  alia.cli.register({
     name: "workspaces", summary: "List multi-repository workspaces and sessions",
     commands: [
-      { name: "list", summary: "List workspaces", usage: "bb workspaces list [--json]" },
-      { name: "show", summary: "Show one workspace", usage: "bb workspaces show <workspace-id> [--json]" },
-      { name: "sessions", summary: "List workspace sessions", usage: "bb workspaces sessions [--json]" },
+      { name: "list", summary: "List workspaces", usage: "alia workspaces list [--json]" },
+      { name: "show", summary: "Show one workspace", usage: "alia workspaces show <workspace-id> [--json]" },
+      { name: "sessions", summary: "List workspace sessions", usage: "alia workspaces sessions [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json"); const args = argv.filter((arg) => arg !== "--json");
@@ -424,5 +424,5 @@ export default async function plugin(bb: BbPluginApi) {
       return { exitCode: args[0] === undefined || args[0] === "help" || args[0] === "--help" ? 0 : 1, stdout: usage };
     },
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

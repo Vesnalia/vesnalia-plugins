@@ -4,7 +4,7 @@ Status: accepted, 30 September 2026.
 
 ## Context
 
-bb-box will be open-sourced once it has been used daily for months. Removing
+alia-box will be open-sourced once it has been used daily for months. Removing
 private details later is error-prone, and an outside reader should be able to
 use every document.
 

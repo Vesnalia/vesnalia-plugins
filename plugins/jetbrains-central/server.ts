@@ -1,18 +1,18 @@
-import type { BbPluginApi, PluginProviderDeclaration } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginProviderDeclaration } from "@vesnalia/plugin-sdk";
 import { defaults, parseProfiles } from "./profiles.js";
 import { providerMarks } from "./artwork.js";
 import { registerUsage } from "./usage-server.js";
 
-export default async function central(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function central(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     showCreditsInBanner: { type: "boolean", label: "Show credits in banner", default: true },
     centralCommand: { type: "string", label: "Central executable", default: "central" },
-    builtinPluginsDirectory: { type: "string", label: "BB built-in plugins directory (optional)", default: "" },
+    builtinPluginsDirectory: { type: "string", label: "VesnALIA built-in plugins directory (optional)", default: "" },
     profiles: { type: "string", label: "Work provider profiles (JSON)", experimental_multiline: true, default: JSON.stringify(defaults, null, 2) },
   });
   const values = await settings.get();
   const profiles = parseProfiles(JSON.parse(values.profiles));
-  registerUsage(bb, values.centralCommand, new Set(profiles.map(profile => `central-${profile.id}`)));
+  registerUsage(alia, values.centralCommand, new Set(profiles.map(profile => `central-${profile.id}`)));
   for (const profile of profiles) {
     const codex = profile.bridge === "codex";
     const claude = profile.bridge === "claude-code";
@@ -40,7 +40,7 @@ export default async function central(bb: BbPluginApi) {
       },
       deriveProviderOptions: () => ({ providerSubagentsEnabled: false, memoryEnabled: false }),
     };
-    bb.providers.register(declaration);
+    alia.providers.register(declaration);
   }
-  bb.log.info("Central work providers registered. Personal providers are unchanged.");
+  alia.log.info("Central work providers registered. Personal providers are unchanged.");
 }

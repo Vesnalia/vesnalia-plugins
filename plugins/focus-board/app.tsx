@@ -5,13 +5,13 @@ import {
   experimental_useProviders,
   experimental_useSidebarThreadActions,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   useSdk,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { findTicketRefs, forgejoItemBase, resolveRepoSlug } from "./lib/tickets";
 import { MOUNT_SETTLE_CEILING_MS, scheduleIdleCallback } from "./lib/idle-callback";
 import {
@@ -20,7 +20,7 @@ import {
   parseLinkedIssues,
   type ThreadLink,
 } from "./lib/link-metadata";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 import { installHostLinkGlue } from "./components/host-link-glue";
 import { FocusBoardAppIcon } from "./components/ui/icon";
 import type { rpcContract } from "./server";
@@ -360,7 +360,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   const pluginId = experimental_usePluginId();
   const actions = experimental_useSidebarThreadActions();
   const { providers } = experimental_useProviders();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   const sdk = useSdk();
   // Host-declared plugin settings (the detail page's config panel), reactive.
@@ -507,7 +507,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   // The ack's ride ends when the thread's status leaves "error" — a new turn
   // started, so the next error must claim attention fresh and cannot inherit
   // an acknowledgment given to an earlier one (issue #157). The board owns
-  // the sweep (bb never watches turns): drop the ids that went stale from
+  // the sweep (VesnALIA never watches turns): drop the ids that went stale from
   // the local set and clear their records; the clear publishes the ack
   // signal, which refetches in every other open board.
   useEffect(() => {
@@ -767,7 +767,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   /**
    * The mount's ONE round trip (issue #424). Six of the nine mount lists each
    * walked every live thread on the server and read its plugin-metadata
-   * namespace, and fired together those walks serialize on bb's bridge: the
+   * namespace, and fired together those walks serialize on VesnALIA's bridge: the
    * fan-in cost the SUM of six passes (~2s on a 358-thread workspace, measured
    * on the live board), so the readiness gate's 400ms ceiling was the active
    * path on every real mount and the board painted before the metadata landed.
@@ -1005,7 +1005,7 @@ function BoardPage({ subPath }: { subPath: string }) {
     parseParentLaneOrderStored(readStored(PARENT_LANE_ORDER_KEY, ["recency", "project"], "recency")),
   );
   // Collapsed family cards and the idle-children filter are deliberate-toggle
-  // sets that now live on the bb server (one plugin KV row, lib/family-state),
+  // sets that now live on the VesnALIA server (one plugin KV row, lib/family-state),
   // not in browser localStorage: the same fold and hide read on every window
   // AND every machine. Both start empty and hydrate from `family_state_list`
   // just below; each set only ever records deliberate toggles, so an id absent
@@ -1160,7 +1160,7 @@ function BoardPage({ subPath }: { subPath: string }) {
     setMotionFollow(follow);
     setMotionPacing(pacing);
   }, []);
-  // Cross-window propagation (the storage listener): a second bb window's
+  // Cross-window propagation (the storage listener): a second VesnALIA window's
   // panel is a second document over the same localStorage, and its writes
   // fire a `storage` event reaching every document but its own. The wallpaper
   // document hydrates wholesale through its normal parser and the group-box
@@ -1260,7 +1260,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   const paneCoversRef = useRef(false);
   paneCoversRef.current = paneCoversBoard;
   // The open pane lives in the panel's URL subPath (`t/<threadId>`), not in
-  // component state, so bb's back arrow, a reload, and deep links all land on
+  // component state, so VesnALIA's back arrow, a reload, and deep links all land on
   // the pane the user left. The ref mirrors the last pushed thread id; sync
   // and push use it to tell an external route change from an echo of our own.
   const paneThreadId = paneThreadIdFromSubPath(subPath);
@@ -1646,10 +1646,10 @@ function BoardPage({ subPath }: { subPath: string }) {
   // Deliberate-toggle sets: state is the UI's source of truth, the mount
   // run repairs a corrupt stored list once (repairStoredList), and every
   // local mutation writes its one-id delta against the stored list as it
-  // stands at that instant (toggleStoredSetId), so a concurrent bb window's
+  // stands at that instant (toggleStoredSetId), so a concurrent VesnALIA window's
   // unrelated fold survives. There is deliberately NO state-driven whole-set
   // write-back effect: one built from possibly stale state is exactly what
-  // erased another bb window's fold (issue #245). This path now covers the
+  // erased another VesnALIA window's fold (issue #245). This path now covers the
   // per-GROUP box fold only — the per-FAMILY fold and idle-hide sets moved to
   // the server row above (lib/family-state).
   useEffect(() => {
@@ -1699,7 +1699,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   );
   // The collapsed group boxes keep the localStorage write discipline: a local
   // toggle updates this window's state and writes its one-id delta against
-  // the stored list (a concurrent bb window's fold survives), the mount run
+  // the stored list (a concurrent VesnALIA window's fold survives), the mount run
   // repairs a corrupt stored list once, and a remote window's toggle hydrates
   // through the storage listener above. This per-GROUP fold is a deliberate
   // non-goal of the family-state move (see the pull request).
@@ -1792,11 +1792,11 @@ function BoardPage({ subPath }: { subPath: string }) {
     [groupBy, filter, projects, filterOptions, persistFilter],
   );
   // The board card's label for a thread's project (lib/project-name): rows
-  // from the sidebar's project list render their real name; bb's personal
-  // project and unresolvable ids render "No project" — the term bb's own
+  // from the sidebar's project list render their real name; VesnALIA's personal
+  // project and unresolvable ids render "No project" — the term VesnALIA's own
   // New-thread picker uses for that state, so the board-card label and the
   // composer's picker name the same project state alike. The composer's
-  // label text itself lives in bb core (get-bb/bb#5340).
+  // label text itself lives in VesnALIA core (get-alia/alia#5340).
   const projectNameFor = useCallback(
     (projectId: string) =>
       projectDisplayName(projectId, {
@@ -2371,7 +2371,7 @@ function BoardPage({ subPath }: { subPath: string }) {
     : (sidebarThreads.find((thread) => thread.id === filter.familyRootId)?.displayTitle ??
       "Unknown family");
   // The board's own new-thread composer: a modal over the board and pane, so
-  // composing never leaves the surface and bb's new-thread window stays out
+  // composing never leaves the surface and VesnALIA's new-thread window stays out
   // of the way. The nonce re-focuses the composer editor on every open.
   const [newThreadOpen, setNewThreadOpen] = useState(false);
   const [composerFocusRequest, setComposerFocusRequest] = useState(0);
@@ -2570,7 +2570,7 @@ function BoardPage({ subPath }: { subPath: string }) {
       cancelled = true;
     };
   }, [newThreadOpen, newThreadGroupId, threads, groupAssignments, sdk]);
-  // Expand ("maximize") the board composer into bb's main new-thread view:
+  // Expand ("maximize") the board composer into VesnALIA's main new-thread view:
   // the seeds and the composer's stored prompt text ride along, the main
   // view focuses the prompt, and the board's own draft is KEPT — a maximize
   // is a close, not a spawn (lib/compose-maximize). A child preset cannot
@@ -2693,7 +2693,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   // history entry and the back arrow walks back through the cards the user
   // opened — reopening a trail of panes they lost track of. Closing replaces
   // instead, so × / Escape do not multiply entries. A failed push (host route
-  // owner unavailable — older bb, exotic embeds) falls back to the pane still
+  // owner unavailable — older VesnALIA, exotic embeds) falls back to the pane still
   // opening locally, which keeps the board usable without URL state.
   const openThreadCard = useCallback(
     (threadId: string) => {
@@ -2721,7 +2721,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   // current rows — live sidebar threads first, then the archived list — and
   // routing splits on what the board knows: a listed thread opens in the
   // pane (the surface the operator is already on), an unlisted one goes to
-  // bb's main thread view (any thread id works there), and a project chip
+  // VesnALIA's main thread view (any thread id works there), and a project chip
   // opens that project. The memo keeps the pane's decoration effect from
   // re-firing on unrelated rerenders; unknown labels paint the raw id and
   // fill in on the next scan when the rows catch up.
@@ -2825,7 +2825,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   }, [navigate]);
 
   // The URL is the source of truth for the pane. A subPath change that our
-  // own push did not cause — bb's back arrow, a shared deep link, a reload —
+  // own push did not cause — VesnALIA's back arrow, a shared deep link, a reload —
   // must move the pane, including closing it. The pushed-id ref identifies
   // echoes: a push is only settled once the subPath prop actually carries the
   // pushed id, so a dropped push (route owner said no) leaves no stale marker
@@ -2894,16 +2894,16 @@ function BoardPage({ subPath }: { subPath: string }) {
         source: {
           type: "local_path",
           hostId: host.id,
-          path: `~/bb-projects/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+          path: `~/alia-projects/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
         },
       });
     },
     [sdk],
   );
 
-  // The dialog's New project button first follows bb's TYPICAL flow: the
+  // The dialog's New project button first follows VesnALIA's TYPICAL flow: the
   // native folder picker on the board's single connected persistent host
-  // (the plugin cannot read bb's own client-host id, so one persistent
+  // (the plugin cannot read VesnALIA's own client-host id, so one persistent
   // host is the only honest pick target — lib/project-create-flow), the
   // project named after the picked folder. The modal treats { id: null }
   // as a cancelled pick (rest) and a throw as "picker unavailable": it
@@ -3430,7 +3430,7 @@ function BoardPage({ subPath }: { subPath: string }) {
   const dismissFamilyStateSaveError = useCallback(() => setFamilyStateSaveError(null), []);
 
   // Park reconciliation over the same native cross-surface feed
-  // (`sdk.subscribe`, "thread:changed"): EVERY pin write — bb's sidebar,
+  // (`sdk.subscribe`, "thread:changed"): EVERY pin write — VesnALIA's sidebar,
   // another panel instance, the CLI — publishes `pin-state-changed`, which
   // closes the one gap a park marker alone cannot see. A pin that some other
   // writer takes back supersedes the parked value; without this, a later
@@ -3527,7 +3527,7 @@ function BoardPage({ subPath }: { subPath: string }) {
     }
   }, [applyUnreadStateEffects, sdk]);
 
-  // The one-step browser-tab reveal (issue #17): bb's reveal only opens
+  // The one-step browser-tab reveal (issue #17): VesnALIA's reveal only opens
   // the side panel when the OWNING thread is already focused, and answers
   // {ok:true} even when it no-ops silently — unusable from the board, where
   // the owning thread is by definition not focused. The orchestrator
@@ -3552,11 +3552,11 @@ function BoardPage({ subPath }: { subPath: string }) {
       }
       if (result.discovered.length === 0) {
         setBrowserNotice({
-          message: `No controlled browser tab belongs to "${thread.displayTitle}" — start one with bb browser-automation.`,
+          message: `No controlled browser tab belongs to "${thread.displayTitle}" — start one with VesnALIA browser-automation.`,
         });
         return;
       }
-      // No completion banner on purpose: bb gives no observable success
+      // No completion banner on purpose: VesnALIA gives no observable success
       // signal (list_tabs' `presentation` is a recorded creation
       // attribute, not live visibility — 2026-10-06 poll evidence), so
       // the plugin claims nothing; the opened side panel IS the
@@ -3615,7 +3615,7 @@ function BoardPage({ subPath }: { subPath: string }) {
             });
           },
           openInBrowser: () => {
-            // A raw open on purpose: on the desktop app bb's main-process
+            // A raw open on purpose: on the desktop app VesnALIA's main-process
             // window guard denies the popup and funnels the http(s) URL to
             // the user's system browser (shell.openExternal), which is the
             // destination "Open in browser" names. openUrl() was tried for
@@ -3679,7 +3679,7 @@ function BoardPage({ subPath }: { subPath: string }) {
             // the thread's most recent turn, the one whose failure put it in
             // error), delivered or queued on exactly the same terms as a
             // send. A refusal surfaces on the board's notice banner with
-            // bb's reason, the same shape the browser-reveal failure takes:
+            // VesnALIA's reason, the same shape the browser-reveal failure takes:
             // the click never reads as one the board ignored. Nothing to
             // write locally: the dispatch's own host updates re-lane the
             // card when the retry lands.
@@ -3691,7 +3691,7 @@ function BoardPage({ subPath }: { subPath: string }) {
             // Optimistic local ack: the card settles out of Needs you in the
             // same commit (dot, accent, lane). The RPC records it (metadata
             // "errorAck") so the ack survives reloads, and its publish
-            // refetches every other open board. bb's own thread view keeps
+            // refetches every other open board. VesnALIA's own thread view keeps
             // the error; only the board's attention claim lifts (issue #157).
             // The entry reads "Ignore error" now (issue #405) — a rename of
             // what the acknowledgment does, not a change of it.
@@ -3734,7 +3734,7 @@ function BoardPage({ subPath }: { subPath: string }) {
           openGroupPicker: () => setGroupDialogFor(thread.id),
           makeTopLevel: () => {
             // The drop-onto gesture's undo: detach from the family.
-            // Failure mirrors the neighbors — silent — because bb's
+            // Failure mirrors the neighbors — silent — because VesnALIA's
             // own action errors ride the host toast, and a missed
             // detach write leaves the card exactly as it rendered.
             void rpc
@@ -4209,7 +4209,7 @@ function BoardPage({ subPath }: { subPath: string }) {
 
 export default definePluginApp((app) => {
   // The brand mark joins the host's app-wide icon registry under the name
-  // "FocusBoard", so every host-rendered surface that takes a `BbIconName`
+  // "FocusBoard", so every host-rendered surface that takes a `AliaIconName`
   // — the sidebar nav row and the pane's title-bar tab — can draw the same
   // mark the manifest's branding.icon shows on the Tools pages, instead of
   // the Columns2 placeholder this registration used to hardcode.
@@ -4223,7 +4223,7 @@ export default definePluginApp((app) => {
     icon: "FocusBoard",
     path: PANEL_PATH,
     // The pane's thread arrives through the `subPath` prop (`t/<id>`), so
-    // the open pane participates in browser history — bb's back arrow
+    // the open pane participates in browser history — VesnALIA's back arrow
     // reopens the pane state the user left, and deep links restore it.
     component: BoardPage,
   });
@@ -4234,7 +4234,7 @@ export default definePluginApp((app) => {
   // "configuration" noun on purpose: the board's own gear opens the settings
   // modal, and two gears named settings with two destinations was the
   // ambiguity the sync design killed (docs/plans settings-surface-sync).
-  // bb's sidebar entry context menu is host-owned with no plugin extension
+  // VesnALIA's sidebar entry context menu is host-owned with no plugin extension
   // point, so this footer gear is the plugin's own shortcut to the
   // configuration panel.
   app.slots.sidebarFooterAction({
@@ -4252,7 +4252,7 @@ export default definePluginApp((app) => {
     id: "appearance",
     title: "Appearance",
     description:
-      "Card animations, motion, and wallpaper. These follow this browser, not bb's settings store.",
+      "Card animations, motion, and wallpaper. These follow this browser, not VesnALIA's settings store.",
     component: AppearanceSettingsSection,
   });
   // The host paints its own ExternalLink glyph inside linkified anchors

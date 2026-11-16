@@ -1,12 +1,12 @@
 ---
 name: captains-deck
-description: Drive the Captain's Deck kanban board with the `bb deck` CLI. Use when charting new work, starting or finishing a task, raising a decision for the captain, or when asked what is underway, waiting on the captain, awaiting merge, or landed.
+description: Drive the Captain's Deck kanban board with the `alia deck` CLI. Use when charting new work, starting or finishing a task, raising a decision for the captain, or when asked what is underway, waiting on the captain, awaiting merge, or landed.
 ---
 
 # Captain's Deck
 
 The Captain's Deck is the captain's board for work the first mate runs. The
-board only projects state; the first mate owns it through `bb deck`. The
+board only projects state; the first mate owns it through `alia deck`. The
 captain answers open decisions on the board and the answer arrives in the
 first mate's thread as an agent-only note.
 
@@ -17,24 +17,24 @@ no board.
 
 | Moment | Command |
 | --- | --- |
-| Work is agreed or charted, no worker started | `bb deck chart --title "<title>" [--brief "<one line>"] [--kind ship\|scout] [--project <id>] [--bot <name>]` |
-| A worker thread actually starts | `bb deck start <task-id> --thread <thread-id>` |
-| A real captain decision is needed | `bb deck ask <task-id> --question "<question>" --option "<label> :: <one-line detail>" --option "<label> :: <detail>" [--recommend <number\|label>] [--context "<why now>"]` |
-| A short status belongs on the card | `bb deck note <task-id> --text "<one line>"` |
-| PR is ready and needs review/merge | `bb deck merge <task-id> --pr <url>` |
-| Work landed | `bb deck land <task-id>` |
-| Work failed | `bb deck fail <task-id> --reason "<what failed>"` |
-| Task no longer relevant | `bb deck remove <task-id>` |
+| Work is agreed or charted, no worker started | `alia deck chart --title "<title>" [--brief "<one line>"] [--kind ship\|scout] [--project <id>] [--bot <name>]` |
+| A worker thread actually starts | `alia deck start <task-id> --thread <thread-id>` |
+| A real captain decision is needed | `alia deck ask <task-id> --question "<question>" --option "<label> :: <one-line detail>" --option "<label> :: <detail>" [--recommend <number\|label>] [--context "<why now>"]` |
+| A short status belongs on the card | `alia deck note <task-id> --text "<one line>"` |
+| PR is ready and needs review/merge | `alia deck merge <task-id> --pr <url>` |
+| Work landed | `alia deck land <task-id>` |
+| Work failed | `alia deck fail <task-id> --reason "<what failed>"` |
+| Task no longer relevant | `alia deck remove <task-id>` |
 
-`bb deck list` shows every card with its id; add `--json` when the output
-drives code. `bb deck show <task-id>` prints the brief, note, open decision,
-and earlier calls. `bb deck bearings` prints the fleet digest — Charted Next,
+`alia deck list` shows every card with its id; add `--json` when the output
+drives code. `alia deck show <task-id>` prints the brief, note, open decision,
+and earlier calls. `alia deck bearings` prints the fleet digest — Charted Next,
 Underway, Captain's Call, Awaiting Merge, and Recently Landed — and is what a
 standup or a scheduled sweep should read.
 
 ## Rules
 
-1. Run `bb deck list` before changing anything; never guess a task id.
+1. Run `alia deck list` before changing anything; never guess a task id.
 2. Chart work when it is accepted, and start the card in the same dispatch
    when a worker exists — do not leave running work in Charted Next.
 3. Only open a Captain's Call when the captain genuinely has to choose: scope

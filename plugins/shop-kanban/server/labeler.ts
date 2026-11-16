@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { HARNESS_NOTICE, LABEL_PROMPT_VERSION, LABEL_SYSTEM, SUMMARY_PROMPT_VERSION, THREAD_MENTION, hashText, labelPrompt, parseLabel } from "./labels";
 import type { LabelView, LiveThread, ThreadDetails } from "./status";
@@ -7,7 +7,7 @@ import { coalesced, errorMessage, jobQueue, parseRecord, safe, throttledLog } fr
 
 // Model-written card labels: a small model on the thread's host writes the "[category] intent" title and a
 // summary of the latest interaction. Labels are stored in KV, refreshed in the background with bounded
-// concurrency, and the card title is mirrored onto the bb thread title until the user renames it.
+// concurrency, and the card title is mirrored onto the VesnALIA thread title until the user renames it.
 
 const LABELS_KEY = "labels-v2";
 const LABEL_CONCURRENCY = 2;
@@ -16,7 +16,7 @@ const LABEL_TIMEOUT_MS = 12_000;
 const RETRY_MS = 10 * 60_000;
 /** The same log line is written at most once per this interval. */
 const LOG_INTERVAL_MS = 60 * 60_000;
-/** Let bb's own titler finish on brand-new threads before taking over. */
+/** Let VesnALIA's own titler finish on brand-new threads before taking over. */
 const TITLE_SETTLE_MS = 60_000;
 
 const cardLabelSchema = z.object({
@@ -26,7 +26,7 @@ const cardLabelSchema = z.object({
   summarySig: z.string(),
   summary: z.string().nullable(),
   needsInput: z.boolean().nullable(),
-  /** Title the board last wrote to the bb thread, to tell our renames from the user's. */
+  /** Title the board last wrote to the VesnALIA thread, to tell our renames from the user's. */
   appliedTitle: z.string().optional(),
   /** The title our last rename replaced; seeing it again just means a stale snapshot. */
   replacedTitle: z.string().nullable().optional(),
@@ -62,8 +62,8 @@ function userWords(messages: (string | null)[]): string {
 }
 
 /** `onChange` is called (debounced) whenever a label update should re-render the board. */
-export function createLabeler(bb: BbPluginApi, onChange: () => void) {
-  const settings = bb.settings.define({
+export function createLabeler(alia: AliaPluginApi, onChange: () => void) {
+  const settings = alia.settings.define({
     labelerCommand: {
       type: "string",
       label: "Labeler command",
@@ -85,7 +85,7 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
     return { command, models };
   };
 
-  const host = hostClient(bb);
+  const host = hostClient(alia);
   let labels: Promise<Labels> | null = null;
   let labelsWrite: Promise<void> = Promise.resolve();
   const labelQueue = jobQueue(LABEL_CONCURRENCY);
@@ -100,7 +100,7 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
   const failures = new Map<string, { at: number; sig: string }>();
   const changedSoon = coalesced(onChange, 400);
   let enabled = true;
-  const logQuietly = throttledLog(bb, LOG_INTERVAL_MS);
+  const logQuietly = throttledLog(alia, LOG_INTERVAL_MS);
 
   void settings.get().then((values) => (enabled = config(values).models.length > 0), () => {});
   settings.onChange((next) => {
@@ -112,14 +112,14 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
 
   /** One shared promise, so concurrent first loads mutate and persist the same record. Bad entries are dropped. */
   function load(): Promise<Labels> {
-    labels ??= safe(() => bb.storage.kv.get<unknown>(LABELS_KEY)).then((raw) => parseRecord(raw, cardLabelSchema));
+    labels ??= safe(() => alia.storage.kv.get<unknown>(LABELS_KEY)).then((raw) => parseRecord(raw, cardLabelSchema));
     return labels;
   }
 
   function persist() {
     labelsWrite = labelsWrite.then(async () => {
       try {
-        await bb.storage.kv.set(LABELS_KEY, await load());
+        await alia.storage.kv.set(LABELS_KEY, await load());
       } catch (error) {
         logQuietly(`saving thread labels failed: ${errorMessage(error)}`);
       }
@@ -133,7 +133,7 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
   async function complete(hostId: string, system: string, prompt: string, timeoutMs: number): Promise<string> {
     const { command, models } = config(await settings.get());
     if (models.length === 0) throw new Error("Labeler is turned off in settings.");
-    // The host tries each model in turn; bb's default 30s call timeout would cut that short.
+    // The host tries each model in turn; VesnALIA's default 30s call timeout would cut that short.
     const result = await host.call(
       "complete",
       { command, system, prompt, models, timeoutMs },
@@ -149,7 +149,7 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
   }
 
   /**
-   * Keep the bb sidebar title equal to the card title. A title that differs from the one we
+   * Keep the VesnALIA sidebar title equal to the card title. A title that differs from the one we
    * last applied means someone renamed the thread by hand: respect it from then on.
    */
   function syncThreadTitle(thread: LiveThread, title: string, all: Labels) {
@@ -165,7 +165,7 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
     renaming.add(thread.id);
     void (async () => {
       try {
-        await bb.sdk.threads.update({ threadId: thread.id, title });
+        await alia.sdk.threads.update({ threadId: thread.id, title });
         // The label may have been forgotten (thread archived) while the rename was in flight.
         const latest = all[thread.id];
         if (latest) all[thread.id] = { ...latest, appliedTitle: title, replacedTitle: thread.title };
@@ -180,9 +180,9 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
   }
 
   async function relabel(thread: LiveThread, details: ThreadDetails, running: boolean, job: LabelJob, all: Labels) {
-    const hostId = thread.hostId ?? (await connectedHostId(bb));
+    const hostId = thread.hostId ?? (await connectedHostId(alia));
     try {
-      if (!hostId) throw new Error("No connected bb host to run the labeler on.");
+      if (!hostId) throw new Error("No connected VesnALIA host to run the labeler on.");
       const board = boardIds.flatMap((id) => {
         const label = id === thread.id ? undefined : all[id];
         return label?.category && label.intent ? [`[${label.category}] ${label.intent}`] : [];
@@ -191,10 +191,10 @@ export function createLabeler(bb: BbPluginApi, onChange: () => void) {
       // Too little to name the thread from: let the agent's last finished reply say what it is working on.
       const thin = userWords([details.firstUserPrompt, ...details.userPrompts]).length < THIN_USER_TEXT;
       // While the agent works, its last reply answers an earlier message; it only stands in for missing user text.
-      const output = running && !thin ? null : (details.output ?? (thin ? await safe(async () => (await bb.sdk.threads.output({ threadId: thread.id })).output) : null));
+      const output = running && !thin ? null : (details.output ?? (thin ? await safe(async () => (await alia.sdk.threads.output({ threadId: thread.id })).output) : null));
       const mentioned = [...new Set(Array.from(userText.matchAll(THREAD_MENTION), (match) => match[1]))].slice(0, 5);
       const mentionTitles = Object.fromEntries(
-        (await Promise.all(mentioned.map(async (id) => [id, (await safe(() => bb.sdk.threads.get({ threadId: id })))?.title]))).filter(
+        (await Promise.all(mentioned.map(async (id) => [id, (await safe(() => alia.sdk.threads.get({ threadId: id })))?.title]))).filter(
           (entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== "",
         ),
       );

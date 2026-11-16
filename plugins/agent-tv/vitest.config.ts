@@ -1,5 +1,5 @@
 // Vitest config for a standalone plugin: the only thing needed beyond the
-// defaults is the "@/" alias the plugin's tsconfig (and `bb plugin build`)
+// defaults is the "@/" alias the plugin's tsconfig (and `alia plugin build`)
 // already uses for its vendored components.
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";

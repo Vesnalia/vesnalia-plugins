@@ -1,10 +1,10 @@
 // Beside backend — the settled / snoozed store.
 //
-// This state lives in the plugin's own SQLite database, never on bb's thread.
+// This state lives in the plugin's own SQLite database, never on VesnALIA's thread.
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes its state with it.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   SETTINGS_CHANNEL,
@@ -157,7 +157,7 @@ interface LifecycleDbRow {
 
 const threadIdSchema = z.object({ threadId: z.string().trim().min(1) });
 
-export const bbSidebarRpcContract = defineRpcContract({
+export const aliaSidebarRpcContract = defineRpcContract({
   listLifecycle: {
     input: z.object({}),
     output: z.object({
@@ -361,9 +361,9 @@ export const bbSidebarRpcContract = defineRpcContract({
 /** Channel the frontend re-reads on. */
 export const LIFECYCLE_CHANNEL = "lifecycle";
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, migrations);
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, migrations);
 
   const readAll = (): StoredLifecycleRow[] =>
     (
@@ -403,14 +403,14 @@ export default function plugin(bb: BbPluginApi) {
       row.snoozedAt,
       row.mutedAt,
     );
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId: row.threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId: row.threadId });
   };
 
   const clear = (threadId: string): void => {
     db.prepare(`DELETE FROM thread_lifecycle WHERE thread_id = ?`).run(
       threadId,
     );
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
   };
 
   const readLayoutSet = (set: LayoutSetName): string[] | null => {
@@ -427,7 +427,7 @@ export default function plugin(bb: BbPluginApi) {
       `INSERT INTO layout_sets (set_name, items) VALUES (?, ?)
        ON CONFLICT(set_name) DO UPDATE SET items = excluded.items`,
     ).run(set, JSON.stringify([...new Set(items)].slice(-MAX_LAYOUT_ITEMS)));
-    bb.realtime.publish(LAYOUT_CHANNEL, { set });
+    alia.realtime.publish(LAYOUT_CHANNEL, { set });
   };
 
   const readSettleOnReadSince = (): number | null => {
@@ -479,12 +479,12 @@ export default function plugin(bb: BbPluginApi) {
     }
   };
 
-  type ListedThread = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  type ListedThread = Awaited<ReturnType<typeof alia.sdk.threads.list>>[number];
 
   const listUnarchivedThreads = async (): Promise<ListedThread[]> => {
     const threads: ListedThread[] = [];
     for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         archived: false,
         includeHidden: true,
         limit: LIST_PAGE_SIZE,
@@ -553,7 +553,7 @@ export default function plugin(bb: BbPluginApi) {
       }
       const current = readRow(row.threadId);
       if (current?.settledAt !== row.settledAt) continue;
-      const result = await bb.sdk.threads
+      const result = await alia.sdk.threads
         .archive({ threadId: row.threadId })
         .catch(() => null);
       if (result === null) continue;
@@ -564,7 +564,7 @@ export default function plugin(bb: BbPluginApi) {
     return archived;
   };
 
-  bb.background.schedule("auto-archive-settled", "17 * * * *", async () => {
+  alia.background.schedule("auto-archive-settled", "17 * * * *", async () => {
     await archiveLongSettledThreads();
   });
 
@@ -597,7 +597,7 @@ export default function plugin(bb: BbPluginApi) {
       }
     });
     insert(rows);
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadIds: rows.length });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadIds: rows.length });
   };
 
   let lastDecisionError: string | null = null;
@@ -781,7 +781,7 @@ export default function plugin(bb: BbPluginApi) {
       `DELETE FROM decisions WHERE rowid NOT IN
          (SELECT rowid FROM decisions ORDER BY decided_at DESC LIMIT ?)`,
     ).run(MAX_DECISION_LOG);
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
   };
 
   const judgeNews = async (
@@ -828,7 +828,7 @@ export default function plugin(bb: BbPluginApi) {
     recordVerdict(thread.id, title, attentionAt, verdict, detail);
   };
 
-  bb.rpc.register(bbSidebarRpcContract, {
+  alia.rpc.register(aliaSidebarRpcContract, {
     async getDecisionConfig() {
       return publicDecisionConfig();
     },
@@ -856,7 +856,7 @@ export default function plugin(bb: BbPluginApi) {
       }
       writeSettingValue("decisionProvider", provider);
       lastDecisionError = null;
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
       return publicDecisionConfig();
     },
     async setDecisionLimits({ provider, limits }) {
@@ -864,7 +864,7 @@ export default function plugin(bb: BbPluginApi) {
         `decisionLimits:${provider}`,
         limits === null ? null : JSON.stringify(limits),
       );
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
       return publicDecisionConfig();
     },
     async checkDecisionConnection() {
@@ -985,7 +985,7 @@ export default function plugin(bb: BbPluginApi) {
         }
       });
       restore();
-      bb.realtime.publish(LIFECYCLE_CHANNEL, { threadIds: entries.length });
+      alia.realtime.publish(LIFECYCLE_CHANNEL, { threadIds: entries.length });
       return { ok: true };
     },
     async exportState() {
@@ -1065,9 +1065,9 @@ export default function plugin(bb: BbPluginApi) {
         }
       });
       load();
-      bb.realtime.publish(LIFECYCLE_CHANNEL, {});
-      bb.realtime.publish(LAYOUT_CHANNEL, {});
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(LIFECYCLE_CHANNEL, {});
+      alia.realtime.publish(LAYOUT_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
       return { ok: true };
     },
     async getSettings() {
@@ -1087,7 +1087,7 @@ export default function plugin(bb: BbPluginApi) {
            ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
         ).run(String(days));
       }
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
       return { autoArchiveSettledDays: readAutoArchiveDays() };
     },
     async setSettleOnRead({ enabled }) {
@@ -1103,7 +1103,7 @@ export default function plugin(bb: BbPluginApi) {
           `DELETE FROM settings WHERE key = 'settleOnReadSince'`,
         ).run();
       }
-      bb.realtime.publish(SETTINGS_CHANNEL, {});
+      alia.realtime.publish(SETTINGS_CHANNEL, {});
       return { settleOnReadSince: readSettleOnReadSince() };
     },
     async getLayout() {
@@ -1198,15 +1198,15 @@ export default function plugin(bb: BbPluginApi) {
 
   // A deleted thread must not leave a row behind that would park a future
   // thread reusing the id, and stale rows accumulate otherwise.
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     forgetThread(thread.id);
   });
 
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.archived", ({ thread }) => {
     forgetThread(thread.id);
   });
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     void judgeNews(thread, lastAssistantText).catch(() => undefined);
   });
 }

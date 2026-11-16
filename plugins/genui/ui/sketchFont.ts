@@ -3,7 +3,7 @@
 // ready before the diagram renders. A slow or failed load stops waiting after
 // a moment; the fallback handwriting fonts in SKETCH_FONT_FAMILY take over.
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 /** The glyphs in assets/fonts/Excalifont-Regular-latin.woff2 (Excalidraw's Latin subset). */

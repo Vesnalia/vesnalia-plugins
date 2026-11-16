@@ -16,6 +16,6 @@ After each result, the plugin makes one model call to write the row's summary. A
 
 ## Requirements
 
-- BB 0.43 or later, with Plugin SDK 0.4.87 or later.
-- A Codex login (`codex login`, with a ChatGPT account or an OpenAI API key) on the machine that runs the BB server, for the summaries. Without it, each row shows the first sentence of the agent's latest message instead.
+- VesnALIA 0.43 or later, with Plugin SDK 0.4.87 or later.
+- A Codex login (`codex login`, with a ChatGPT account or an OpenAI API key) on the machine that runs the VesnALIA server, for the summaries. Without it, each row shows the first sentence of the agent's latest message instead.
 - Two sidebar sections and one manager thread. Set their IDs in the plugin settings.

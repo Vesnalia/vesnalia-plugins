@@ -1,8 +1,8 @@
-// The bb.host artifact BB ships to hosts.
+// The alia.host artifact VesnALIA ships to hosts.
 //
 // It runs the published ACP bridge kit (which launches adapter/acp.mjs, the
 // command named in the provider registration, and speaks ACP over its stdio)
-// plus bb's sessionless maintenance probes. The generic ACP dialect carries
+// plus VesnALIA's sessionless maintenance probes. The generic ACP dialect carries
 // no maintenance hooks, so on its own it would answer `provider/usage` with
 // `{supported:false}` and `provider/health` with the version of the *launch*
 // command — the adapter here, and plain `node` on a checkout that lost its
@@ -11,30 +11,30 @@
 // with the resolved kilo binary's own version (adapter/maintenance.mjs).
 //
 // On top of that passthrough, host.ts does two interceptions that make
-// checkpoint rewind (`bb thread edit-message`) and checkpoint fork work —
+// checkpoint rewind (`alia thread edit-message`) and checkpoint fork work —
 // the registry contract lives in adapter/checkpoint.mjs:
 //
 //  1. OUTGOING (patched `process.stdout.write`, string chunks, single-line
 //     JSON): the bundled ACP bridge hardcodes its initialize handshake to
 //     `capabilities.fork: "tip"`, while our registration says `checkpoint`,
-//     and bb takes the effective value as the MINIMUM of the two — so without
-//     the patch bb refuses checkpoint rewind before it ever reaches us. We
+//     and VesnALIA takes the effective value as the MINIMUM of the two — so without
+//     the patch VesnALIA refuses checkpoint rewind before it ever reaches us. We
 //     rewrite `"tip"` → `"checkpoint"` in the handshake result, and stamp
 //     `providerCheckpointId` onto outgoing `thread/delta` `turn.boundary`
 //     deltas that lack one, from the adapter's on-disk state registry
-//     (`<bbThreadId>.json` → `<sessionId>#<userCount>`). Without a non-null
-//     checkpoint on the completed turn preceding an edited message, bb
+//     (`<aliaThreadId>.json` → `<sessionId>#<userCount>`). Without a non-null
+//     checkpoint on the completed turn preceding an edited message, VesnALIA
 //     answers `409: This earlier provider turn has no editable history
 //     checkpoint` — which stays the honest answer while the adapter's count
 //     is `seeded:false`.
 //
-//  2. INCOMING (interceptIncoming): bb's rewind "prepare" sends `thread/fork`
+//  2. INCOMING (interceptIncoming): VesnALIA's rewind "prepare" sends `thread/fork`
 //     with `sourceProviderCheckpointId` and a staging thread id containing
 //     `:rewind:`. The bridge would reject that (-32003), and even if it
 //     didn't, it would start a staging session we'd then have to leak-free.
 //     We resolve the checkpoint against the registry, mint a staged record,
 //     and answer the prepare DIRECTLY with `{providerThreadId: stagedId}` —
-//     no bridge session. The real work happens later when bb starts the
+//     no bridge session. The real work happens later when VesnALIA starts the
 //     replacement thread with `sourceProviderThreadId = stagedId` (a plain
 //     tip fork): an adapter consumes the staged record via `session/fork`
 //     (kilo export → truncate to the checkpoint's count → rewrite ids →
@@ -49,8 +49,8 @@ import {
   createBridgeIo,
   experimental_defineProviderBridge,
   experimental_readCliVersion,
-} from "@get-bb/plugin-sdk/provider-bridge";
-import { experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
+} from "@vesnalia/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 import {
   parseCheckpoint,
@@ -67,7 +67,7 @@ import { healthFor, healthResult, usageResult } from "./adapter/maintenance.mjs"
 // uses, so answers and rewrites travel on one stream.
 const { sendResult, sendError } = createBridgeIo();
 
-// Ask the resolved binary itself, so the version bb shows is Kilo Code's —
+// Ask the resolved binary itself, so the version VesnALIA shows is Kilo Code's —
 // not Node's, which is what a `node <adapter>` launch would report.
 async function answerHealth(id: string | number) {
   try {
@@ -85,17 +85,17 @@ async function answerHealth(id: string | number) {
 
 // ---------------------------------------------------------------------------
 // shared state registry (mirror of adapter/acp.mjs): one JSON file per id
-// under BB_KILO_STATE_DIR. The adapter learns the dir from its launch env
+// under ALIA_KILO_STATE_DIR. The adapter learns the dir from its launch env
 // (server.ts pins it into acpLaunchSpec.env); the host process does not
 // inherit that, so we learn it from any request that carries the launch spec,
 // falling back to the same default both sides agree on.
 // ---------------------------------------------------------------------------
-const STATE_DIR_ENV = "BB_KILO_STATE_DIR";
+const STATE_DIR_ENV = "ALIA_KILO_STATE_DIR";
 
 let stateDirOverride: string | null = null;
 const stateDir = (): string => stateDirOverride ?? stateDirFrom(process.env);
 
-// Pull BB_KILO_STATE_DIR out of `options.providerOptions.acpLaunchSpec.env`
+// Pull ALIA_KILO_STATE_DIR out of `options.providerOptions.acpLaunchSpec.env`
 // whenever a request carries the launch spec (thread/start, thread/fork,
 // model/list, …). Runs before any interception that reads the registry.
 const learnStateDir = (parsed: any): void => {
@@ -170,7 +170,7 @@ const interceptIncoming = (parsed: any): boolean => {
       // instead of blaming fork support.
       sendError(
         parsed.id,
-        -32003, // FORK_CHECKPOINT_UNSUPPORTED — bb surfaces this to the edit command
+        -32003, // FORK_CHECKPOINT_UNSUPPORTED — VesnALIA surfaces this to the edit command
         `The Kilo Code session registry has no record of checkpoint "${parsed.params.sourceProviderCheckpointId}"; its conversation cannot be recovered, so this rewind cannot run.`,
       );
       return true;
@@ -193,7 +193,7 @@ const interceptIncoming = (parsed: any): boolean => {
         // prepareThreadRewind only stores providerThreadId and hands it back
         // later as forkSourceProviderThreadId; answering here means no
         // staging session is ever started. The staged record is consumed
-        // (and deleted) by session/fork when bb starts the replacement
+        // (and deleted) by session/fork when VesnALIA starts the replacement
         // thread, or cleaned up by thread/discard if the edit is abandoned.
         sendResult(parsed.id, { providerThreadId: stagedId });
         return true;
@@ -218,7 +218,7 @@ const interceptIncoming = (parsed: any): boolean => {
     const record = readState(stateDir(), parsed.params.providerThreadId);
     if (record !== null && record.kind === "staged") {
       // Unconsumed staged rewind/fork (edit abandoned or already consumed) —
-      // drop it, then forward: the bridge answers {ok:true} as bb expects.
+      // drop it, then forward: the bridge answers {ok:true} as VesnALIA expects.
       removeState(stateDir(), parsed.params.providerThreadId);
     }
   }

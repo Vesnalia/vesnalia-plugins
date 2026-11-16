@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { AgentMode, PrView } from "../contract";
 import { useActions } from "./actions";
 import { BUTTON, BUTTON_PRIMARY, Choice, Dialog, ErrorNote, FIELD, LABEL, Segmented, ServerBadge } from "./common";
@@ -61,7 +61,7 @@ export function ProjectSelect({ projects, value, onChange, error = null }: { pro
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <label htmlFor={id} className="text-xs text-muted-foreground">Project</label>
         <button type="button" className={`${BUTTON} min-h-9 max-sm:min-h-11`} disabled={refresh.isPending} aria-label={refresh.isPending ? "Refreshing projects" : "Refresh projects"}
-          title="Reload BB projects and repository matches only; keeps your review choices" onClick={() => void reload()}>
+          title="Reload VesnALIA projects and repository matches only; keeps your review choices" onClick={() => void reload()}>
           <Icon name="ArrowReloadHorizontal" className={`size-3.5 ${refresh.isPending ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden />
           {refresh.isPending ? "Refreshing…" : "Refresh projects"}
         </button>
@@ -76,14 +76,14 @@ export function ProjectSelect({ projects, value, onChange, error = null }: { pro
         ))}
       </select>
       <div id={`${id}-status`} role="status" className="mt-1.5 text-xs text-muted-foreground">
-        {refresh.isPending ? "Reading BB projects…" : projects === undefined ? "Loading projects…" : `${projects.projects.length} projects${refreshedAt === null ? "" : ` · updated ${ago(refreshedAt)}`}`}
+        {refresh.isPending ? "Reading VesnALIA projects…" : projects === undefined ? "Loading projects…" : `${projects.projects.length} projects${refreshedAt === null ? "" : ` · updated ${ago(refreshedAt)}`}`}
       </div>
       {unavailable && <ErrorNote>Selected project is no longer available. Choose another project, or let Shuttle pick.</ErrorNote>}
       {refreshError !== null && <ErrorNote>Could not refresh projects: {refreshError}. Your previous list and choices are unchanged.</ErrorNote>}
       {error !== null && refreshError === null && <ErrorNote>Could not list projects: {messageOf(error)}</ErrorNote>}
       {projects?.suggested === null && value === "" && error === null && refreshError === null && (
         <div role="status" className="mt-2 border-l-2 border-warning-text bg-surface-attention p-2.5 text-xs text-foreground">
-          No matching BB project. Pick one, or refresh after adding the repository in BB.
+          No matching VesnALIA project. Pick one, or refresh after adding the repository in VesnALIA.
         </div>
       )}
     </div>
@@ -92,7 +92,7 @@ export function ProjectSelect({ projects, value, onChange, error = null }: { pro
 
 export function LinkDialog({ request, onClose }: { request: LinkRequest; onClose(): void }) {
   const { pr } = request;
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { writes } = useActions();
   const link = useShuttleMutation("link");
   const newThread = useShuttleMutation("newThread");

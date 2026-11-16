@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -28,23 +28,23 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded tinted sidebar");
+export default function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded tinted sidebar");
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async gitStats({ environmentIds }) {
       const uniqueIds = [...new Set(environmentIds)];
       const entries = await Promise.all(
         uniqueIds.map(async (environmentId) => {
           try {
-            const result = await bb.sdk.environments.diffFiles({
+            const result = await alia.sdk.environments.diffFiles({
               environmentId,
               target: "uncommitted",
             });
             if (result.outcome !== "available") return [environmentId, null];
             return [environmentId, shortGitStat(result.shortstat)];
           } catch (error) {
-            bb.log.debug(
+            alia.log.debug(
               `could not read git status for ${environmentId}: ${String(error)}`,
             );
             return [environmentId, null];
@@ -58,8 +58,8 @@ export default function plugin(bb: BbPluginApi) {
       const entries = await Promise.all(
         uniqueIds.map(async (threadId) => {
           try {
-            const thread = await bb.sdk.threads.get({ threadId });
-            const options = await bb.sdk.threads.defaultExecutionOptions({
+            const thread = await alia.sdk.threads.get({ threadId });
+            const options = await alia.sdk.threads.defaultExecutionOptions({
               threadId,
             });
             return [
@@ -70,7 +70,7 @@ export default function plugin(bb: BbPluginApi) {
               },
             ];
           } catch (error) {
-            bb.log.debug(
+            alia.log.debug(
               `could not read model for ${threadId}: ${String(error)}`,
             );
             return [
@@ -90,10 +90,10 @@ export default function plugin(bb: BbPluginApi) {
       const entries = await Promise.all(
         uniqueIds.map(async (threadId) => {
           try {
-            const thread = await bb.sdk.threads.get({ threadId });
+            const thread = await alia.sdk.threads.get({ threadId });
             return [threadId, thread.runtime?.displayStatus ?? null];
           } catch (error) {
-            bb.log.debug(
+            alia.log.debug(
               `could not read status for ${threadId}: ${String(error)}`,
             );
             return [threadId, null];

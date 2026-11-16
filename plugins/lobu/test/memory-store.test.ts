@@ -31,7 +31,7 @@ describe("briefFor", () => {
     expect(briefFor({ projectName: "Acme", linkedWorkspace: null, pins: [], learned: [] })).toBeNull();
   });
 
-  test("puts pins first and stays inside bb's instruction limit", () => {
+  test("puts pins first and stays inside VesnALIA's instruction limit", () => {
     const long = "word ".repeat(400);
     const learned = Array.from({ length: 30 }, (_, i) => record({ eventId: i + 10, title: `Learned ${i}`, content: long }));
     const pins = [{ eventId: null, workspace: "me", title: "Pinned note", content: "Pinned body", url: null, pinnedAt: 1 }];

@@ -1,4 +1,4 @@
-import type { AcpToolCallUpdateEvent } from "@get-bb/plugin-sdk/provider-bridge/acp-next";
+import type { AcpToolCallUpdateEvent } from "@vesnalia/plugin-sdk/provider-bridge/acp-next";
 
 // kimi acp streams tool call arguments as cumulative JSON snapshots in the ACP
 // content text until an in_progress update carries rawInput with

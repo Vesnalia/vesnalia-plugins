@@ -10,7 +10,7 @@ Every message, command, file change and error an agent recorded, in order.<br>
 Pin two moments and see every file change between them as real diffs.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-0ea5e9)
+![VesnALIA ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-0ea5e9)
 ![Plugin SDK ≥ 0.5.9](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.5.9-0f766e)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Pin two moments and see every file change between them as real diffs.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional demo data.
+> The screenshots are real VesnALIA captures populated with fictional demo data.
 
 ## The problem
 
@@ -35,7 +35,7 @@ touched, or where it went wrong.
 
 Thread Time Machine turns the thread's recorded events into a filmstrip. You
 drag to any moment, read exactly what happened there, and compare any two
-moments as diffs. It reads the history BB already keeps, so it works on
+moments as diffs. It reads the history VesnALIA already keeps, so it works on
 threads that ran before you installed it.
 
 |  | Without Thread Time Machine | With Thread Time Machine |
@@ -101,7 +101,7 @@ sub-agents, compactions, stops, edits and forks.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-thread-time-machine --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-thread-time-machine --yes
 ```
 
 That's it. **Time Machine** appears in the left sidebar.
@@ -111,36 +111,36 @@ That's it. **Time Machine** appears in the left sidebar.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-thread-time-machine
-cd bb-plugin-thread-time-machine
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-thread-time-machine
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.43+** (Plugin SDK 0.5.9+)
+- VesnALIA **0.43+** (Plugin SDK 0.5.9+)
 
 ## Where to find it
 
 | Where | What |
 | --- | --- |
 | **Sidebar → Time Machine** | Pick a thread (or type the id of a hidden one), scrub, inspect, pin and compare. |
-| **`bb thread-time-machine dump`** | The same history as a condensed text timeline, for terminals and agents. |
+| **`alia thread-time-machine dump`** | The same history as a condensed text timeline, for terminals and agents. |
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  E[(BB thread events)] -->|threads.events.list<br>100 a page, newest first| S[server.ts]
+  E[(ALIA thread events)] -->|threads.events.list<br>100 a page, newest first| S[server.ts]
   S -->|build frames<br>src/frames.ts| F[frames]
   F -->|RPC| P[Time Machine panel]
-  F --> C[bb thread-time-machine dump]
+  F --> C[alia thread-time-machine dump]
   T[thread:changed] -->|realtime| P
 ```
 
-- **Reads BB's own history.** Events come from `threads.events.list`,
+- **Reads VesnALIA's own history.** Events come from `threads.events.list`,
   filtered to the types the plugin uses, paged newest first up to 40,000
   events. Nothing is stored and nothing leaves your machine.
 - **One frame per item.** Providers record work as item lifecycle events
@@ -161,7 +161,7 @@ flowchart LR
 
 - 🔒 **Read-only.** It never sends, edits, stops or forks a thread.
 - 🏠 **Local.** No account, API key or external service; it reads the event
-  history BB already keeps.
+  history VesnALIA already keeps.
 
 What a frame can show is limited to what the provider records. Codex stores
 reasoning encrypted, and Pi (for edits), Muse Code and some Cursor edits store
@@ -171,9 +171,9 @@ source thread, which holds the earlier history.
 ## CLI
 
 ```sh
-bb thread-time-machine dump <thread-id>              # condensed timeline, newest 200 frames
-bb thread-time-machine dump <thread-id> --limit 50   # fewer frames
-bb thread-time-machine dump <thread-id> --json       # frames as JSON
+alia thread-time-machine dump <thread-id>              # condensed timeline, newest 200 frames
+alia thread-time-machine dump <thread-id> --limit 50   # fewer frames
+alia thread-time-machine dump <thread-id> --json       # frames as JSON
 ```
 
 ```
@@ -212,9 +212,9 @@ use `dump` to summarise what a thread did over a long session.
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
@@ -237,7 +237,7 @@ It scrubs home paths, the username, emails and tokens; add
 `--redact <text>` for anything else private.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`.
+`alia.description` in `package.json`.
 
 ## Licence
 

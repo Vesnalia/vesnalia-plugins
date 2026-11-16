@@ -22,10 +22,10 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useComposers,
   type PluginComposerApi,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { BoardItem, ColumnId, PromptSettings } from "../shared/board";
@@ -146,7 +146,7 @@ export function AddToChatControl({
   );
 }
 
-/** The bb projects whose checkout is the card's repository, so their threads lead the menu. */
+/** The VesnALIA projects whose checkout is the card's repository, so their threads lead the menu. */
 function useCardProjectIds(item: BoardItem): ReadonlySet<string> {
   const rpc = useBoardRpc();
   const [ids, setIds] = useState<ReadonlySet<string>>(NO_PROJECTS);
@@ -178,7 +178,7 @@ export function AddToChatButton({
 }) {
   const composers = useComposers();
   const { status, threads, projects } = experimental_useSidebarThreads();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const cardProjectIds = useCardProjectIds(item);
   const pending = useSyncExternalStore(pendingAdds.subscribe, pendingAdds.current, pendingAdds.current);
   // The same templates the Send to chat dialog reads, kept current by the same realtime push.

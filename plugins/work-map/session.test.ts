@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk";
 
 const request: NewThreadRequest = {
   projectId: "proj_test",
@@ -50,7 +50,7 @@ async function setup() {
       },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   return {
     ...fake,
     spawn,
@@ -100,7 +100,7 @@ describe("user-created sessions", () => {
   });
   it("finishes a recovered task attachment without spawning a second session", async () => {
     const f = await setup();
-    await f.bb.storage.kv.set(`session:${requestId}`, {
+    await f.alia.storage.kv.set(`session:${requestId}`, {
       threadId: "thr_created",
       taskId: "task1",
       attachmentError: "Attachment has not completed.",
@@ -126,10 +126,10 @@ describe("user-created sessions", () => {
       requestId,
       request,
     });
-    const receipt = await first.bb.storage.kv.get(`session:${requestId}`);
+    const receipt = await first.alia.storage.kv.get(`session:${requestId}`);
     await first.harness.lifecycle.dispose();
     const next = await setup();
-    await next.bb.storage.kv.set(`session:${requestId}`, receipt);
+    await next.alia.storage.kv.set(`session:${requestId}`, receipt);
     expect(
       await next.harness.behavior.callRpc("createSession", {
         requestId,

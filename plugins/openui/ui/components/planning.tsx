@@ -979,7 +979,7 @@ e = Estimate([
   Choice: `root = Stack([c])
 c = Choice([
   ChoiceOption("A · Fence Drop", ["Code is typed, and each block it describes slams out of it", "Ends on a click that becomes the user's next message"], "launch-film/directions/a.png", ["128 BPM", "20 s"], true),
-  ChoiceOption("B · Thread in Space", ["A bb thread in 3D; the camera dives through real blocks", "Lands on the line Replies you can click"], "launch-film/directions/b.png", ["120 BPM", "20 s"]),
+  ChoiceOption("B · Thread in Space", ["A VesnALIA thread in 3D; the camera dives through real blocks", "Lands on the line Replies you can click"], "launch-film/directions/b.png", ["120 BPM", "20 s"]),
   ChoiceOption("C · Slot Wall", ["Rows of blocks spin and stop on every beat", "The jumpiest of the three"], "launch-film/directions/c.png", ["132 BPM", "20 s"])
 ], "Which direction should the launch film take?", "Mix two, or describe your own")`,
   Acceptance: `root = Stack([a])

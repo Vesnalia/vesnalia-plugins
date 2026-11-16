@@ -1,6 +1,6 @@
-// The list's part in bb's thread action registry (bb 0.46+).
+// The list's part in VesnALIA's thread action registry (VesnALIA 0.46+).
 //
-// bb draws every thread menu (the thread header's, a row's right-click menu,
+// VesnALIA draws every thread menu (the thread header's, a row's right-click menu,
 // the long-press drawer on phones) from one registry, and this plugin adds to
 // it in two ways:
 //
@@ -8,13 +8,13 @@
 //   show in the thread header's menu. Registrations run outside the list, so
 //   the list publishes what they need (folders, rows, the editor, the
 //   translator) to a small store here while it is mounted; with the list
-//   closed they hide. bb's own "Move to section" only appears while its own
+//   closed they hide. VesnALIA's own "Move to section" only appears while its own
 //   list is in its chronological mode, which this list replaces.
 // - The rest of the row menu's own items (sub-agents, a project's colour, a
 //   new chat in the project, reading a folded row) belong to the list alone
 //   and go in as inline items of its menu.
 //
-// Icons in bb's menus are names, so the colour dots and status dots the old
+// Icons in VesnALIA's menus are names, so the colour dots and status dots the old
 // menu drew are registered as icons under this plugin's namespace.
 import { useMemo, useSyncExternalStore } from "react";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ import {
   type PluginSidebarThread,
   type PluginThreadActionRegistration,
   type PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { customEntry, hasFilters, MAX_CUSTOM_FOLDERS, type FolderEntry, type FolderLayout, type FolderRule } from "@/lib/folders";
 import type { Translator } from "@/lib/i18n";
@@ -34,7 +34,7 @@ import { matchesRule, type Chat } from "@/lib/model";
 import { PALETTE, swatch, type ColorId } from "@/lib/colors";
 import type { Lane } from "@/lib/status";
 
-/** The fields bb's own actions read, from a sidebar thread. */
+/** The fields VesnALIA's own actions read, from a sidebar thread. */
 export function toActionTarget(thread: PluginSidebarThread): PluginThreadActionTarget {
   return {
     id: thread.id,
@@ -183,7 +183,7 @@ function useSectionData(): SectionData | null {
   return useMemo(() => (t === undefined || sections.length === 0 ? null : { t, sections }), [t, sections]);
 }
 
-/** File a root chat under one of bb's sections, or take it out. Hidden while there are none. */
+/** File a root chat under one of VesnALIA's sections, or take it out. Hidden while there are none. */
 export const moveToSectionAction: PluginThreadActionRegistration<SectionData | null> = {
   id: "move-to-section",
   title: "Move to section",

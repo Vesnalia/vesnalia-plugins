@@ -8,7 +8,7 @@
  * so an unsupported dimension (repository identity, per-thread CI counts, PR
  * state, source taxonomy, archived inclusion) is absent rather than faked.
  */
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { SidebarView } from "./server";
 import { AGE_GROUPS, bucketForTimestamp, type AgeGroup } from "./age-groups";
 import type { DisplayRow } from "./forest";
@@ -348,7 +348,7 @@ export interface EnvironmentIdentity {
 }
 
 /**
- * A directory name, not a BB environment/thread id. Personal workspaces often
+ * A directory name, not a VesnALIA environment/thread id. Personal workspaces often
  * use a raw `thr_`/`env_` id as the environment name; that is never grouped as
  * a heading.
  */
@@ -358,7 +358,7 @@ export function usableEnvironmentLabel(value: string | null | undefined): string
   return trimmed;
 }
 
-/** A project option in the filter menu: the native BB project id and its label. */
+/** A project option in the filter menu: the native VesnALIA project id and its label. */
 export interface ProjectIdentity {
   id: string;
   label: string;
@@ -368,7 +368,7 @@ export interface ProjectIdentity {
 export const NO_PROJECT_KEY = "__no_project__";
 
 /**
- * The native BB project a thread belongs to. Projected sidebar threads carry
+ * The native VesnALIA project a thread belongs to. Projected sidebar threads carry
  * the real id on `nativeProjectId`; a raw feed already has it on `projectId`.
  * A blank one is a real "no project", never a made-up id.
  */

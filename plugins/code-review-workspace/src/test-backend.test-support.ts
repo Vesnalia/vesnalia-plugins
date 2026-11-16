@@ -7,7 +7,7 @@ import { dropPgTestSchemas, pgTestSql, testPgUrl } from "./db/pg-test.test-suppo
 vi.mock("./store", async (original) => {
   const actual = await original<typeof import("./store")>();
   if (!testPgUrl) return actual;
-  return { ...actual, createStore: (bb: Parameters<typeof actual.createStore>[0]) => actual.storeOn(pgTestSql(bb)) };
+  return { ...actual, createStore: (alia: Parameters<typeof actual.createStore>[0]) => actual.storeOn(pgTestSql(alia)) };
 });
 
 afterEach(dropPgTestSchemas);

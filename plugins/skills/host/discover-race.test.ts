@@ -47,7 +47,7 @@ const { discoverSkills, readDiscoveredSkill } = await import("./discover");
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-race-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-race-"));
 });
 
 test("read serves the bytes discovery validated, not a file swapped in after", async () => {

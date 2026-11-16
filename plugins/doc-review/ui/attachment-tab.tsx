@@ -1,9 +1,9 @@
-// The Doc Review tab for files attached in the chat. bb opens an attachment's
+// The Doc Review tab for files attached in the chat. VesnALIA opens an attachment's
 // chip in its own preview, so this tab lists the thread's attached files and
 // opens the chosen one for review: a copy in the thread's storage, made by
 // the server (src/attachments.ts), shown by the same view as any file.
 import { useCallback, useEffect, useState } from "react";
-import type { JsonValue, PluginFileOpenerSource } from "@get-bb/plugin-sdk/app";
+import type { JsonValue, PluginFileOpenerSource } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { defineMessages, LanguageSwitch, messagesNow, useMessages } from "@/lib/i18n";

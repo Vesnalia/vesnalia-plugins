@@ -1,5 +1,5 @@
-// bb-plugin-graph-studio — frontend entry.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// alia-plugin-graph-studio — frontend entry.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { GraphStudioPanel } from "./components/graph-studio-panel";
 import { GraphStudioRunBanner } from "./components/run-banner";
 import { GraphRunCard } from "./components/run-card";

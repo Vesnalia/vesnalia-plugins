@@ -1,7 +1,7 @@
 // Optional Redteam adapter. This module owns the public wire schema and is the
 // only Agent Board code that knows the Redteam RPC shape. React sees only
 // normalized BoardCards.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { BoardActivityFeed, BoardActivityFeedEntry, BoardCard, BoardCardStatus, ExecutionTimeline } from "../contract/rpc";
 import { BOARD_LIMITS, columnForStatus, previewText, redactOperationalText } from "./board-model";
@@ -383,13 +383,13 @@ export function normalizeRedteamGlobalSnapshot(snapshot: RedteamWireSnapshot): R
 }
 
 export class RedteamBoardSource {
-  private readonly bb: BbPluginApi; private readonly now: () => number;
+  private readonly alia: AliaPluginApi; private readonly now: () => number;
   private readonly cache = new Map<string, CacheEntry>(); private readonly inflight = new Map<string, { promise: Promise<RedteamBoardResult>; generation: number }>(); private readonly last = new Map<string, RedteamBoardResult>();
   private globalCache: CacheEntry | null = null;
   private globalInflight: { promise: Promise<RedteamGlobalResult>; generation: number } | null = null;
   private globalLast: RedteamGlobalResult | null = null;
   private generation = 0;
-  constructor(bb: BbPluginApi, now: () => number = () => Date.now()) { this.bb = bb; this.now = now; }
+  constructor(alia: AliaPluginApi, now: () => number = () => Date.now()) { this.alia = alia; this.now = now; }
 
   async collect(projectId: string | null, options?: { fresh?: boolean }): Promise<RedteamBoardResult> {
     if (!projectId) return { cards: [], active: false, partial: false, fingerprint: null, activityFeeds: [] };
@@ -405,7 +405,7 @@ export class RedteamBoardSource {
 
   private async load(projectId: string, generation: number): Promise<RedteamBoardResult> {
     try {
-      const raw = await this.bb.sdk.plugins.callRpc({ pluginId: REDTEAM_PLUGIN_ID, method: SNAPSHOT_METHOD, input: { projectId, limit: BOARD_LIMITS.redteamMaxScans }, outputSchema: redteamObservabilityWireSchema });
+      const raw = await this.alia.sdk.plugins.callRpc({ pluginId: REDTEAM_PLUGIN_ID, method: SNAPSHOT_METHOD, input: { projectId, limit: BOARD_LIMITS.redteamMaxScans }, outputSchema: redteamObservabilityWireSchema });
       const snapshot = redteamObservabilityWireSchema.parse(raw);
       const result = normalizeRedteamSnapshot(snapshot);
       if (this.generation === generation) {
@@ -413,7 +413,7 @@ export class RedteamBoardSource {
       }
       return result;
     } catch {
-      // Optional dependency: absent, disabled, old, malformed, or temporarily unavailable never breaks the BB source.
+      // Optional dependency: absent, disabled, old, malformed, or temporarily unavailable never breaks the VesnALIA source.
       return { cards: [], active: this.last.get(projectId)?.active ?? false, partial: false, fingerprint: this.last.get(projectId)?.fingerprint ?? null, activityFeeds: this.last.get(projectId)?.activityFeeds ?? [] };
     }
   }
@@ -439,7 +439,7 @@ export class RedteamBoardSource {
 
   private async loadGlobal(generation: number): Promise<RedteamGlobalResult> {
     try {
-      const raw = await this.bb.sdk.plugins.callRpc({
+      const raw = await this.alia.sdk.plugins.callRpc({
         pluginId: REDTEAM_PLUGIN_ID,
         method: SNAPSHOT_METHOD,
         input: { limit: BOARD_LIMITS.redteamMaxScans },

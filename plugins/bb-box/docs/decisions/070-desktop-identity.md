@@ -36,7 +36,7 @@ the history of the earlier Tart and boat.dev decisions.
 
 ## What differs from a server reset
 
-The shared reset still removes BB's copied host identity and credentials,
+The shared reset still removes VesnALIA's copied host identity and credentials,
 the access file and Tailscale state. It renews the machine ID and SSH host
 keys unless the provider supplies them, as boat.dev does.
 
@@ -63,7 +63,7 @@ All workloads ran on disposable Linux boxes, not the coordination machine.
 | `npm run typecheck` | passed |
 | node suite, through `npm test` | 3,362 passed, 335 skipped, no failures or cancellations; 3,697 cases, 295.36 s |
 | Vitest, through `npm test` | 462 passed in 5 files, 52.31 s |
-| `bb plugin build` on the separate BB | passed; existing SDK version and retired-API warnings remain |
+| `alia plugin build` on the separate VesnALIA | passed; existing SDK version and retired-API warnings remain |
 | Docker X11 and Wayland image targets | both exported bootable images with reset version 9 enabled; final record-labelling rebuilds were not completed |
 | real SQLite migration and record round trip | passed, including old rows, updates, reopen and mismatch words |
 | identity reset and backend contract tests | passed for the enabled builds, desktop data, service ordering, GPU admission, facts and both refusal audiences |
@@ -77,23 +77,23 @@ so the final run kept its log and exit status on the box.
 
 ## Live proof and limits
 
-A fresh signed-out BB ran in a Docker box, with its own home, data folder
-and ports. It installed bb-box from the bundle's `close-out/desktop-identity`
+A fresh signed-out VesnALIA ran in a Docker box, with its own home, data folder
+and ports. It installed alia-box from the bundle's `close-out/desktop-identity`
 branch, resolved to implementation commit `3379bebe2643`. The later
 review follow-up changes documentation and non-Linux GPU display only.
 
 Both the X11 and Wayland CPU desktops forked as new containers from their
-running source's disk. The source's marker was written by bb-box, not by
+running source's disk. The source's marker was written by alia-box, not by
 hand. The delivered guest script was copied into both disposable sources
 before the copy, to align them with its final bytes. The enabled switch
 came from the built images, not a hand-written marker or an in-place
 change to the switch. Each copy booted with version 9, `boot=reset`, a
 matching marker and no pending reset. Before enrolment it held neither
-its source's BB credentials nor its access file.
+its source's VesnALIA credentials nor its access file.
 
 For each pair, machine ID and SSH host keys differed, the encrypted test
 keyring's bytes matched, and the source's before and after identity
-records matched in full. The copy enrolled as a different BB host while
+records matched in full. The copy enrolled as a different VesnALIA host while
 the source stayed connected as its original host. Wayland's addresses and
 MACs were checked as different too.
 
@@ -127,16 +127,16 @@ input-to-display latency measurements.
 
 Docker has no snapshot API. Its proof uses a paused `docker commit` of a
 running desktop and a new container with a new identity value. Ownership
-labels are cleared so the test BB does not treat the copy as an unrecorded
-guest of its source. BB's manual provider enrols the copy through a private
+labels are cleared so the test VesnALIA does not treat the copy as an unrecorded
+guest of its source. VesnALIA's manual provider enrols the copy through a private
 command passed on stdin. No credential is printed or included in evidence.
 This proves the guest reset and desktop startup, not Docker snapshot tools
 or capture of Docker's separate data volume. With no account configured,
 Tailscale state removal was checked in the guest-script tests, not on a
 live tailnet.
 
-The test BB used direct machine access through its Docker bridge. Its
-initial default asked for a Connect account; only the test BB's settings
+The test VesnALIA used direct machine access through its Docker bridge. Its
+initial default asked for a Connect account; only the test VesnALIA's settings
 were changed. A file-URL browser fixture did not prove persisted storage,
 so the final fixture used HTTP and was closed and reopened before the
 copy. Test helpers were kept outside `/tmp`, which startup or enrolment
@@ -187,31 +187,31 @@ Android images which track the same shared guest inputs or boat.dev's
 combined template fingerprint may also become due. Their reset remains
 off. This change does not make Windows or macOS images due.
 
-Use `bb box images list` to resolve the actual image IDs and due reasons.
+Use `alia box images list` to resolve the actual image IDs and due reasons.
 Existing boxes and snapshots do not acquire version 9 when an image is
 rebuilt. Make new desktop boxes and take new snapshots. Old snapshots
 retain their refusal and its reason.
 
 ## Exact checks for the lead
 
-Run these on a separate test BB with its own authorised pool and VMID
+Run these on a separate test VesnALIA with its own authorised pool and VMID
 range. Use the established unit 6 node procedure. Do not write identity
 markers by hand.
 
 1. Import the bundle and install `close-out/desktop-identity` on the test
-   BB. Keep its account, data folder, backend configuration and guests
+   VesnALIA. Keep its account, data folder, backend configuration and guests
    separate from production. Resolve image IDs with
-   `bb box images list --json`. Build each affected test template with
-   `bb box images build <backend/ref> --pinned --try`. After its trial
-   passes, use `bb box images build <backend/ref> --pinned` to replace
+   `alia box images list --json`. Build each affected test template with
+   `alia box images build <backend/ref> --pinned --try`. After its trial
+   passes, use `alia box images build <backend/ref> --pinned` to replace
    only the test image.
 2. Confirm that `general.identityResetBackends` includes the test backend.
    Make new GPU, CPU and Wayland desktops from the rebuilt images. In
-   each guest, run `sudo bb-box-identity version` and
-   `sudo bb-box-identity status`: version 9, enabled, a matching armed
+   each guest, run `sudo alia-box-identity version` and
+   `sudo alia-box-identity status`: version 9, enabled, a matching armed
    marker, no pending reset, and its own box ID are required.
 3. On the node, for each test guest, run
-   `pct exec "$vmid" -- systemd-analyze verify /etc/systemd/system/bb-box-identity.service /etc/systemd/system/bb-box-identity-settle.service`.
+   `pct exec "$vmid" -- systemd-analyze verify /etc/systemd/system/alia-box-identity.service /etc/systemd/system/alia-box-identity-settle.service`.
    Read `Requires` and `After` with `systemctl show` for the display,
    session, VNC, Selkies and `user@1000.service`, where present. Verify
    that the desktop waits for the settle service, not just the first
@@ -220,12 +220,12 @@ markers by hand.
    from decision 070: no desktop or user daemon starts before a decision.
 4. Seed a Chrome HTTP-origin profile marker and an encrypted test keyring.
    Close and reopen Chrome once to prove the marker reached disk. Take
-   a snapshot with `bb box snapshot take <box> --name desktop-ready`.
+   a snapshot with `alia box snapshot take <box> --name desktop-ready`.
    Fork it once with GPU none and once with shared, using the unit 6
    commands or tools. Each fork must pass the normal identity check,
-   with no hand-written marker, and become a different BB machine.
+   with no hand-written marker, and become a different VesnALIA machine.
 5. Keep both source and fork running. Compare hashes of their machine IDs
-   and SSH public host keys, their BB host IDs and addresses. The source
+   and SSH public host keys, their VesnALIA host IDs and addresses. The source
    must keep its identity and one connection. Exercise the fork's
    desktop, Chrome data, keyring unlock, Cua input, VNC and Selkies.
    For the GPU path, confirm the intended card and Xorg renderer too.
@@ -235,7 +235,7 @@ markers by hand.
    repeat the desktop and identity checks.
 7. On the test storage which requires a held-copy undo, restore a desktop
    with its undo enabled. Verify that the undo really is a held copy,
-   and that a same-box restore keeps the current BB identity and current
+   and that a same-box restore keeps the current VesnALIA identity and current
    GPU claim. Exercise the desktop again. Repeat the unit 6 swap,
    earlier-guest, interrupted-copy and claim-recovery checks.
 8. Fill only the test card capacity. Exercise both an agent's `box_fork`
@@ -246,7 +246,7 @@ markers by hand.
 9. Use a snapshot with a genuinely older NVIDIA userspace, or a dedicated
    test template containing it, to show the restore mismatch warning.
    Do not change the node's driver. Confirm that the stored part, card,
-   index and userspace survive a BB restart. Older records must still
+   index and userspace survive a VesnALIA restart. Older records must still
    say GPU not recorded. Confirm that a GPU-less fork shows no source
    card in its facts, including after inventory reconciliation.
 10. Re-run the unit 6 claim checks, including `gpu.<card>.whole`. Remove
@@ -255,7 +255,7 @@ markers by hand.
     the lead's separate action after approval.
 
 For QEMU, repeat the guest checks through `qm` and SSH rather than `pct`.
-For Tart, stop through BB before taking a Linux desktop snapshot. For
+For Tart, stop through VesnALIA before taking a Linux desktop snapshot. For
 microsandbox and boat.dev, repeat the existing saved-snapshot fork and
 restore flows with a fresh desktop image and check its identity value.
 

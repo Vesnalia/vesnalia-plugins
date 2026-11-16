@@ -7,16 +7,16 @@ import {
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   experimental_usePluginId,
   experimental_useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   ExperimentalPageTitle,
   PluginNavPanelProps,
   PluginRpcResult,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { emptyTotals, PHASES } from "./breakdown.js";
 import { formatSubPath, parseSubPath, TRACES_PATH, type Screen } from "./routes.js";
 import type { rpcContract } from "./server.js";
@@ -147,13 +147,13 @@ function agoLabel(at: number, now: number): string {
 }
 
 function useOpen() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (threadId: string | null, screen?: Screen) =>
     navigate.toPluginPanel(TRACES_PATH, { subPath: formatSubPath(threadId, screen) });
 }
 
 // ---------------------------------------------------------------------------
-// Sidebar: every thread, by project, the way bb's own list reads.
+// Sidebar: every thread, by project, the way VesnALIA's own list reads.
 
 interface Node {
   thread: PluginSidebarThread;
@@ -300,7 +300,7 @@ export function TracesSidebar({ subPath }: PluginNavPanelProps) {
   };
 
   return (
-    // bb's sidebar scrolls and pads this; the search and the toggles stay in view.
+    // VesnALIA's sidebar scrolls and pads this; the search and the toggles stay in view.
     <div className="flex flex-col text-sm">
       <div className="sticky top-0 z-10 flex flex-col gap-1 bg-sidebar pt-1 pb-1">
         <input
@@ -829,7 +829,7 @@ export function TracesPage({ subPath }: PluginNavPanelProps) {
 /** The page header's actions: jump to the conversation behind the trace. */
 export function TracesHeader({ subPath }: PluginNavPanelProps) {
   const { threadId } = parseSubPath(subPath);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (!threadId) return null;
   return (
     <ToolButton onClick={() => navigate.toThread(threadId)} title="Open the conversation">

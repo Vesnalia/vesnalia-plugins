@@ -2,7 +2,7 @@
 // machine filter. Cached briefly: state_get runs on every change.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { listLiveThreads } from "./thread-list";
 
@@ -13,7 +13,7 @@ export const machinesSchema = z.object({
   threadHosts: z.record(z.string(), z.string()),
   /** Environment id → host id, so a new thread resolves before the next refresh. */
   environmentHosts: z.record(z.string(), z.string()),
-  /** The machine BB itself runs on (this host daemon's id). */
+  /** The machine VesnALIA itself runs on (this host daemon's id). */
   localHostId: z.string().nullable(),
 });
 export type Machines = z.infer<typeof machinesSchema>;
@@ -22,16 +22,16 @@ const CACHE_MS = 30_000;
 
 export function readLocalHostId(dataDir: string): string | null {
   try {
-    // bb's data dir, not ~/.bb: a second instance (or a dev build) has its own.
+    // VesnALIA's data dir, not ~/.alia: a second instance (or a dev build) has its own.
     return readFileSync(join(dataDir, "host-id"), "utf8").trim() || null;
   } catch {
     return null;
   }
 }
 
-export function createMachines(bb: BbPluginApi) {
+export function createMachines(alia: AliaPluginApi) {
   let cached: { at: number; value: Machines } | null = null;
-  const localHostId = readLocalHostId(bb.server.experimental_dataDir);
+  const localHostId = readLocalHostId(alia.server.experimental_dataDir);
   let inflight: Promise<Machines> | null = null;
   function read(): Promise<Machines> {
     if (cached && Date.now() - cached.at < CACHE_MS) return Promise.resolve(cached.value);
@@ -39,9 +39,9 @@ export function createMachines(bb: BbPluginApi) {
   }
   async function load(): Promise<Machines> {
     const [threads, environments, hosts] = await Promise.all([
-      listLiveThreads(bb),
-      bb.sdk.environments.list(),
-      bb.sdk.hosts.list(),
+      listLiveThreads(alia),
+      alia.sdk.environments.list(),
+      alia.sdk.hosts.list(),
     ]);
     const envHost = new Map(environments.map((environment) => [environment.id, environment.hostId]));
     const threadHosts: Record<string, string> = {};

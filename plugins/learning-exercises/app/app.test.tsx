@@ -4,8 +4,8 @@
  * the card's submissions, the Learning tab, and the thread menu's choice.
  */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { experimental_FileLink as FileLink, type MarkdownProps } from "@get-bb/plugin-sdk/app";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { experimental_FileLink as FileLink, type MarkdownProps } from "@vesnalia/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { rpcContract, type RpcContract } from "../shared/contract";
@@ -18,13 +18,13 @@ import { LEARNING_FIXED_TAB, LEARNING_ON_DEMAND_TAB, LearningOnDemandTab, Learni
 import { offersItem } from "./thread-action";
 
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }) }));
-// The harness's Markdown drops `experimental_document`; this one shows what bb would resolve links against.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@get-bb/plugin-sdk/app")>();
+// The harness's Markdown drops `experimental_document`; this one shows what VesnALIA would resolve links against.
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>();
   return {
     ...actual,
     Markdown: (props: MarkdownProps) => (
-      <div data-testid="bb-markdown" className={props.className} data-document={props.experimental_document === undefined ? "none" : JSON.stringify(props.experimental_document)}>
+      <div data-testid="alia-markdown" className={props.className} data-document={props.experimental_document === undefined ? "none" : JSON.stringify(props.experimental_document)}>
         {props.content}
       </div>
     ),
@@ -252,7 +252,7 @@ describe("the exercise card", () => {
     expect(screen.getByRole("status").textContent).toContain("Answers stop here");
   });
 
-  it("every button is a plain button, so none submits bb's composer form", () => {
+  it("every button is a plain button, so none submits VesnALIA's composer form", () => {
     renderCard();
     for (const button of screen.getAllByRole("button")) expect(button.getAttribute("type")).toBe("button");
   });
@@ -508,7 +508,7 @@ describe("file references", () => {
     ]);
   });
 
-  it("resolves Markdown against a file at the workspace root, and leaves bb's own routing without a workspace", () => {
+  it("resolves Markdown against a file at the workspace root, and leaves VesnALIA's own routing without a workspace", () => {
     expect(markdownDocument(workspace)).toEqual(document);
     expect(markdownDocument(null)).toBeUndefined();
     expect(markdownDocument(undefined)).toBeUndefined();
@@ -527,7 +527,7 @@ describe("file references", () => {
       maxQuestions: 8,
     };
     const slot = renderSlot({ component: ExerciseCard }, { interaction: { id: "pint_1", threadId: "thr_fork", title: "Question 1", payload, createdAt: 1, expiresAt: null }, submit: vi.fn(async () => {}), cancel: vi.fn(async () => {}) });
-    const question = screen.getByTestId("bb-markdown");
+    const question = screen.getByTestId("alia-markdown");
     expect(question.textContent).toBe(payload.question);
     expect(documentOf(question)).toEqual(document);
     for (const name of payload.files) fireEvent.click(screen.getByRole("link", { name }));
@@ -538,10 +538,10 @@ describe("file references", () => {
     ]);
   });
 
-  it("a card an earlier build opened, with no workspace, keeps bb's own routing", () => {
+  it("a card an earlier build opened, with no workspace, keeps VesnALIA's own routing", () => {
     const payload = { sessionId: "ses_1", ordinal: 1, type: "trace", question: "Q?", files: [], environmentId: null, topic: "t", maxQuestions: 8 };
     renderSlot({ component: ExerciseCard }, { interaction: { id: "pint_1", threadId: "thr_fork", title: "Question 1", payload, createdAt: 1, expiresAt: null }, submit: vi.fn(async () => {}), cancel: vi.fn(async () => {}) });
-    expect(screen.getByTestId("bb-markdown").getAttribute("data-document")).toBe("none");
+    expect(screen.getByTestId("alia-markdown").getAttribute("data-document")).toBe("none");
   });
 
   it("the settled row resolves the question in the card's workspace", () => {
@@ -552,7 +552,7 @@ describe("file references", () => {
       thread: { id: "t", providerId: null },
       Original: () => <span>original</span>,
     } as never);
-    expect(documentOf(screen.getByTestId("bb-markdown"))).toEqual(document);
+    expect(documentOf(screen.getByTestId("alia-markdown"))).toEqual(document);
   });
 
   it("the tab's session history shows each question as Markdown in the session's workspace", async () => {
@@ -567,7 +567,7 @@ describe("file references", () => {
       sidebarThreads: { status: "ready", threads: [sidebarThread()] },
     });
     fireEvent.click(await screen.findByRole("button", { expanded: false }));
-    const question = await screen.findByTestId("bb-markdown");
+    const question = await screen.findByTestId("alia-markdown");
     expect(question.textContent).toBe("Open `calc.py:12`.");
     expect(documentOf(question)).toEqual(document);
   });
@@ -622,13 +622,13 @@ describe("the agent's reply between questions (thread thr_f6iewpgi7a)", () => {
     const summary = screen.getByText("Feedback on question 1");
     const details = summary.closest("details")!;
     expect(details.open).toBe(true);
-    const [reply, question] = screen.getAllByTestId("bb-markdown");
+    const [reply, question] = screen.getAllByTestId("alia-markdown");
     expect(reply!.textContent).toBe(feedback);
     expect(details.contains(reply!)).toBe(true);
     expect(question!.textContent).toBe("When does the map jump back?");
     expect(reply!.compareDocumentPosition(question!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(reply!.getAttribute("data-document")).toBe(question!.getAttribute("data-document"));
-    // It folds away on request, and its toggle is not a button that could submit bb's composer form.
+    // It folds away on request, and its toggle is not a button that could submit VesnALIA's composer form.
     fireEvent.click(summary);
     for (const button of screen.getAllByRole("button")) expect(button.getAttribute("type")).toBe("button");
   });
@@ -639,7 +639,7 @@ describe("the agent's reply between questions (thread thr_f6iewpgi7a)", () => {
     cleanup();
     renderCard(payload);
     expect(screen.queryByText(/question 1/)).toBeNull();
-    expect(screen.getAllByTestId("bb-markdown")).toHaveLength(1);
+    expect(screen.getAllByTestId("alia-markdown")).toHaveLength(1);
   });
 
   it("the tab keeps every reply: the open session's questions so far, and a finished session's history", async () => {

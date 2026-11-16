@@ -1,16 +1,16 @@
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin from "../server.js";
 
 function host(delivery: "sent" | "queued" | "deferred" = "queued") {
   const get = vi.fn(async ({ threadId }: { threadId: string }) => makeThreadResponse({ id: threadId, title: "Build worker" }));
-  const storageLocation = vi.fn(async () => ({ hostId: "host-sender", storageRootPath: "/Users/pixexid/.bb/thread-storage/thread-sender" }));
+  const storageLocation = vi.fn(async () => ({ hostId: "host-sender", storageRootPath: "/Users/pixexid/.vesnalia/thread-storage/thread-sender" }));
   const send = vi.fn(async () => ({ ok: true as const, delivery }));
   const fixture = createFakePluginHost({
     pluginId: "operator-inbox",
     sdk: { threads: { get, send, storageLocation } },
   });
-  plugin(fixture.bb);
+  plugin(fixture.alia);
   return { ...fixture, get, send, storageLocation };
 }
 
@@ -80,7 +80,7 @@ describe("Operator Inbox backend", () => {
     await fixture.harness.lifecycle.dispose();
   });
 
-  it("uses only threads.send and records BB acceptance without provider-consumption claims", async () => {
+  it("uses only threads.send and records VesnALIA acceptance without provider-consumption claims", async () => {
     const fixture = host("deferred");
     await storeMessage(fixture);
 
@@ -121,7 +121,7 @@ it("derives file context only from the stored sender and rejects missing/foreign
   const input = { projectId: "project-a", messageId: 1 };
   await expect(fixture.harness.behavior.callRpc("messageFileContext", input)).resolves.toEqual({
     hostId: "host-sender", environmentId: "env-sender", workspacePath: environment.path,
-    threadId: "thread-sender", storageRootPath: "/Users/pixexid/.bb/thread-storage/thread-sender",
+    threadId: "thread-sender", storageRootPath: "/Users/pixexid/.vesnalia/thread-storage/thread-sender",
   });
   expect(fixture.get).toHaveBeenLastCalledWith({ threadId: "thread-sender", include: "environment" });
   expect(fixture.storageLocation).toHaveBeenLastCalledWith({ threadId: "thread-sender" });

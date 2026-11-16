@@ -1,8 +1,8 @@
 /**
- * The sessions of this bb window, one per Mac, kept outside React so they
+ * The sessions of this VesnALIA window, one per Mac, kept outside React so they
  * outlive the page.
  *
- * bb unmounts the Screen Sharing page whenever the user opens something else,
+ * VesnALIA unmounts the Screen Sharing page whenever the user opens something else,
  * but keeps this module loaded for the life of the window. The session — the
  * relay's WebSocket, noVNC's client and the element noVNC draws into — lives
  * here; the page only lends that element a place on screen while it is open
@@ -13,8 +13,8 @@
  * detached, input suspended, as a session does while the page is closed.
  *
  * The session still ends on Disconnect, on Close all and the server's own
- * limits (the relay closes the socket), when the plugin reloads (bb closes the
- * socket), when the relay stops answering pings with its socket left open (bb
+ * limits (the relay closes the socket), when the plugin reloads (VesnALIA closes the
+ * socket), when the relay stops answering pings with its socket left open (VesnALIA
  * restarting behind the getbb.app tunnel; liveness.ts), when the window goes
  * away, and after `SESSION_LIMITS.idleMinutes` without a key, click, touch,
  * wheel or pointer movement on the screen — which a detached, unseen screen
@@ -63,7 +63,7 @@ type KeyboardLockNavigator = Navigator & { keyboard?: { lock?: (codes?: string[]
 
 /**
  * Whether "Full screen" can do anything here: Keyboard Lock (Chromium —
- * Chrome, Edge, bb's Electron desktop app) plus the Fullscreen API it needs.
+ * Chrome, Edge, VesnALIA's Electron desktop app) plus the Fullscreen API it needs.
  * Safari and Firefox have no Keyboard Lock.
  */
 export function canGoFullScreen(): boolean {
@@ -138,7 +138,7 @@ export class ScreenSessionStore {
   private clipboard: ClipboardSync | null = null;
   /**
    * The user name typed at sign-in, and nothing else of it: the clipboard
-   * reaches only the account bb runs as on the Mac, and this says whether it
+   * reaches only the account VesnALIA runs as on the Mac, and this says whether it
    * is that one. Forgotten when the session ends.
    */
   private signedInAs: string | null = null;
@@ -419,7 +419,7 @@ export class ScreenSessionStore {
    * "Full screen": puts `target` (the page) in full screen and locks the
    * keyboard to it, the strongest capture a page gets. On a Mac that passes
    * the shortcuts the browser or app would otherwise keep (⌘W, ⌘Q, ⌘T, Esc in
-   * Chrome; Esc in bb's desktop app) — never the ones macOS keeps (⌘Tab,
+   * Chrome; Esc in VesnALIA's desktop app) — never the ones macOS keeps (⌘Tab,
    * ⌘Space, Mission Control): Chromium has no system keyboard hook on macOS.
    * It ends when full screen ends (holding Esc, in Chromium), and with every
    * other way input ends.
@@ -499,7 +499,7 @@ export class ScreenSessionStore {
     if (this.snapshot.clipboardAccess !== null) this.set({ clipboardAccess: null });
     this.stopFullScreen();
     // Before noVNC lets go of its canvas: a button held as the session ends would leave noVNC's
-    // pointer capture — a full-window overlay — over bb.
+    // pointer capture — a full-window overlay — over VesnALIA.
     this.releaseHeldInput();
     const rfb = this.rfb;
     const socket = this.socket;

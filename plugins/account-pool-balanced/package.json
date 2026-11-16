@@ -1,16 +1,16 @@
 {
-  "name": "bb-plugin-account-pool-balanced",
+  "name": "alia-plugin-account-pool-balanced",
   "version": "0.4.87",
   "private": true,
   "type": "module",
-  "description": "Balance provider accounts, track quotas and switch to reserve accounts for BB agents.",
+  "description": "Balance provider accounts, track quotas and switch to reserve accounts for VesnALIA agents.",
   "engines": {
-    "bb": ">=0.46.1",
-    "bbPluginSdk": ">=0.6.49 <0.7.0"
+    "alia": ">=0.46.1",
+    "aliaPluginSdk": ">=0.6.49 <0.7.0"
   },
-  "bb": {
+  "alia": {
     "name": "OXI Account Pool",
-    "description": "Balance provider accounts, track quotas and switch to reserve accounts for BB agents.",
+    "description": "Balance provider accounts, track quotas and switch to reserve accounts for VesnALIA agents.",
     "branding": {
       "icon": "Layers"
     },
@@ -19,7 +19,7 @@
     "app": "./app.tsx"
   },
   "scripts": {
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "pool": "tsx src/standalone/cli.ts"
@@ -36,7 +36,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "^0.4.94",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-tooltip": "^1.2.8",
@@ -59,13 +58,21 @@
     "vitest": "^4.1.1"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.94"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/account-pool-balanced#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OXI-717/bb-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/account-pool-balanced"
   },
-  "homepage": "https://github.com/OXI-717/bb-plugins",
   "bugs": {
-    "url": "https://github.com/OXI-717/bb-plugins/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

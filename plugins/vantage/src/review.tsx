@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   experimental_Icon as Icon, experimental_ThreadActionsMenu as ThreadActionsMenu, experimental_ThreadStatusGlyph as ThreadStatusGlyph,
-  experimental_copyToClipboard, useBbNavigate, useSdk, type PluginSidebarThread, type PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+  experimental_copyToClipboard, useAliaNavigate, useSdk, type PluginSidebarThread, type PluginThreadActionTarget,
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Commit, CommitFilesInput, CommitFilesOutput, FileChange, Overview, PatchScope, ReviewMarks, ThreadSummary, Worktree } from "./contract";
 import { composeReview, useComments, type Comment, type CommentStore } from "./comments";
@@ -50,7 +50,7 @@ export interface ReviewProps {
   onMessage(): void;
   onCompare(path: string): void;
   onSent(): void;
-  // Shows the whole branch against the base bb records, or goes back to counting only its threads' work.
+  // Shows the whole branch against the base VesnALIA records, or goes back to counting only its threads' work.
   onWhole?(whole: boolean): unknown;
   // The thread tab puts its own Changes and Chat switch here.
   toolbar?: ReactNode;
@@ -360,7 +360,7 @@ export function Review(props: ReviewProps) {
   } = props;
   const { worktree } = row;
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const view = useShared(diffView);
   const wrap = useShared(diffWrap);
   const hide = useShared(hideReviewed);
@@ -480,7 +480,7 @@ export function Review(props: ReviewProps) {
         ? openHostTerminal(sdk, navigate, { hostId: ref.hostId, path: worktree.root, title })
         : openWorktreeTerminal(sdk, navigate, { threadId: currentThreadId!, path: worktree.root, title });
     opening.then(
-      (opened) => { if (!opened) toast.error("bb could not show the terminal"); },
+      (opened) => { if (!opened) toast.error("alia could not show the terminal"); },
       (error: unknown) => { toast.error(`Could not start a terminal: ${errorMessage(error)}`); },
     );
   };
@@ -631,7 +631,7 @@ export function Review(props: ReviewProps) {
         {!own && row.live.sidebar !== null && (
           <ThreadActionsMenu thread={threadTarget(row.live.sidebar)} align="end"
             trigger={(triggerProps) => (
-              <button {...triggerProps} aria-label="Thread actions" title="bb's thread menu: stop, archive and more" className={`${triggerProps.className ?? ""} ${BUTTON} px-1.5`}>
+              <button {...triggerProps} aria-label="Thread actions" title="VesnALIA's thread menu: stop, archive and more" className={`${triggerProps.className ?? ""} ${BUTTON} px-1.5`}>
                 <Icon name="MoreHorizontal" className="size-3.5" aria-hidden />
               </button>
             )} />

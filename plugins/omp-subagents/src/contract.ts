@@ -1,7 +1,7 @@
-// bb-plugin-omp-subagents — shared schemas, the bb.host RPC contract, and the
+// alia-plugin-omp-subagents — shared schemas, the alia.host RPC contract, and the
 // host signal set. One schema source feeds the host contract, the server RPC
 // (frontend), and the frontend's type-only import.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // ---- Shared shapes --------------------------------------------------------
@@ -70,7 +70,7 @@ export const sessionSummarySchema = z.object({
   dir: z.string(),
   sessionUuid: z.string(),
   sessionFile: z.string(),
-  /** The bb thread mapped to this OMP session; null when unmapped. */
+  /** The VesnALIA thread mapped to this OMP session; null when unmapped. */
   threadId: z.string().nullable(),
   title: z.string().nullable(),
   lastModifiedAt: z.number().nullable(),
@@ -85,10 +85,10 @@ export type AgentSummary = z.infer<typeof agentSummarySchema>;
 export type TranscriptEntry = z.infer<typeof transcriptEntrySchema>;
 export type SessionSummary = z.infer<typeof sessionSummarySchema>;
 
-// ---- bb.host contract ------------------------------------------------------
+// ---- alia.host contract ------------------------------------------------------
 //
 // The host owns every read of the OMP session tree on the machine that holds
-// it. `artifactsDir` is an absolute path the server entry resolved from a bb
+// it. `artifactsDir` is an absolute path the server entry resolved from a VesnALIA
 // thread; `sessionsRoot` is the machine's `~/.omp/agent/sessions`.
 
 export const agentIdSchema = z

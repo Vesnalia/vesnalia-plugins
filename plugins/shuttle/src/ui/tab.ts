@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { defineContract } from "../define-contract";
-import { experimental_useAppPanel } from "@get-bb/plugin-sdk/app";
+import { experimental_useAppPanel } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 import { PANEL_ACTION_ID } from "./constants";
 
@@ -12,11 +12,11 @@ export const tabParams = (threadId: string) => ({ threadId });
 export function useOpenShuttleTab() {
   const panel = experimental_useAppPanel();
   return (threadId: string) => {
-    if (!panel.openTab({ tab: SHUTTLE_TAB, params: tabParams(threadId) })) toast.error("bb could not open the Shuttle tab here");
+    if (!panel.openTab({ tab: SHUTTLE_TAB, params: tabParams(threadId) })) toast.error("alia could not open the Shuttle tab here");
   };
 }
 
-export const GITHUB_PR_STATUS = "bb--github-pr-status";
+export const GITHUB_PR_STATUS = "alia--github-pr-status";
 
 /** The part of GitHub PR Status's contract Shuttle reads: the PR of each environment's branch. */
 export const githubPrStatus = defineContract({

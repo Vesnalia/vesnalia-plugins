@@ -7,8 +7,8 @@ import { callsTo, config, handlers, mount, page, pr, unmountAll, type Handlers }
 afterEach(unmountAll);
 
 describe("review projects", () => {
-  it("refreshes BB projects beside the picker and keeps the note and explicit project choice", async () => {
-    let projects = { projects: [{ id: "prj_bb", name: "bb" }], suggested: "prj_bb" };
+  it("refreshes VesnALIA projects beside the picker and keeps the note and explicit project choice", async () => {
+    let projects = { projects: [{ id: "prj_alia", name: "alia" }], suggested: "prj_alia" };
     const slot = mount(ReviewDialog, { pr: pr(), presets: config().presets, onClose() {} }, handlers({
       projects: () => projects,
       refreshProjects: () => {
@@ -17,15 +17,15 @@ describe("review projects", () => {
       },
     }));
     const picker = slot.getByRole("combobox", { name: "Project" }) as HTMLSelectElement;
-    await waitFor(() => expect(picker.value).toBe("prj_bb"));
-    fireEvent.change(picker, { target: { value: "prj_bb" } });
+    await waitFor(() => expect(picker.value).toBe("prj_alia"));
+    fireEvent.change(picker, { target: { value: "prj_alia" } });
     const note = slot.getByRole("textbox", { name: "Note for the reviewer" }) as HTMLTextAreaElement;
     fireEvent.change(note, { target: { value: "Keep this note" } });
     fireEvent.click(slot.getByRole("button", { name: "Refresh projects" }));
     await waitFor(() => expect(callsTo(slot, "refreshProjects")).toEqual([{}]));
     await slot.behavior.experimental_invalidateRpc(["projects"], "shuttle");
     await waitFor(() => expect(picker.options).toHaveLength(3));
-    expect(picker.value).toBe("prj_bb");
+    expect(picker.value).toBe("prj_alia");
     expect(note.value).toBe("Keep this note");
     expect(callsTo(slot, "refreshProjects")).toEqual([{}]);
     expect(callsTo(slot, "sync")).toEqual([]);
@@ -61,7 +61,7 @@ describe("review projects", () => {
   it.each(["automatic", "manual"])("requires a new choice when a new-thread project disappears after %s refresh", async (mode) => {
     const pull = pr();
     let projects = { projects: [{ id: "chosen", name: "Chosen project" }, { id: "suggested", name: "Suggested project" }], suggested: "suggested" };
-    const { slot } = await page("pr/github/get-bb/bb/4411", {
+    const { slot } = await page("pr/github/get-alia/alia/4411", {
       detail: () => ({ pr: pull, events: [], body: null, draft: null, drafts: 0 }),
       projects: () => projects,
       newThread: () => ({ threadId: "thr_new" }),
@@ -91,16 +91,16 @@ describe("review projects", () => {
   it("shows loading and failure inline without losing the previous project list", async () => {
     let reject!: (error: Error) => void;
     const pending = new Promise<never>((_resolve, no) => { reject = no; });
-    const slot = mount(ProjectSelect, { projects: { projects: [{ id: "prj_bb", name: "bb" }], suggested: null }, value: "prj_bb", onChange() {} }, handlers({ refreshProjects: () => pending }));
+    const slot = mount(ProjectSelect, { projects: { projects: [{ id: "prj_alia", name: "alia" }], suggested: null }, value: "prj_alia", onChange() {} }, handlers({ refreshProjects: () => pending }));
     fireEvent.click(slot.getByRole("button", { name: "Refresh projects" }));
     await waitFor(() => expect((slot.getByRole("button", { name: "Refreshing projects" }) as HTMLButtonElement).disabled).toBe(true));
-    reject(new Error("BB unavailable"));
-    expect(await slot.findByText(/Could not refresh projects: BB unavailable/u)).toBeTruthy();
-    expect((slot.getByRole("combobox", { name: "Project" }) as HTMLSelectElement).value).toBe("prj_bb");
+    reject(new Error("VesnALIA unavailable"));
+    expect(await slot.findByText(/Could not refresh projects: ALIA unavailable/u)).toBeTruthy();
+    expect((slot.getByRole("combobox", { name: "Project" }) as HTMLSelectElement).value).toBe("prj_alia");
     expect((slot.getByRole("button", { name: "Refresh projects" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("updates an open project's picker and suggestion when BB projects change", async () => {
+  it("updates an open project's picker and suggestion when VesnALIA projects change", async () => {
     const pull = pr();
     let projects: ReturnType<Handlers["projects"]> = { projects: [], suggested: null };
     const slot = mount(ReviewDialog, { pr: pull, presets: config().presets, onClose() {} }, handlers({

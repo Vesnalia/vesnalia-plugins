@@ -1,11 +1,11 @@
 ---
 name: markdown-pro
-description: Write Markdown files (.md reports, plans, checklists, docs) that render well in the Markdown PRO editor — callouts, collapsible details, Mermaid, LaTeX, directory trees, ASCII box maps, task lists, status tables, footnotes, YAML properties, and foldable HTML template regions (`<!-- name:start -->` / `<!-- name:end -->`). Use when creating or restructuring a Markdown document for the user to read or edit in BB.
+description: Write Markdown files (.md reports, plans, checklists, docs) that render well in the Markdown PRO editor — callouts, collapsible details, Mermaid, LaTeX, directory trees, ASCII box maps, task lists, status tables, footnotes, YAML properties, and foldable HTML template regions (`<!-- name:start -->` / `<!-- name:end -->`). Use when creating or restructuring a Markdown document for the user to read or edit in VesnALIA.
 ---
 
 # Markdown PRO
 
-The user opens `.md` files in BB with Markdown PRO: a formatted, editable view. Everything below renders visually and is saved back byte-for-byte, so prefer these constructs over ad-hoc formatting.
+The user opens `.md` files in VesnALIA with Markdown PRO: a formatted, editable view. Everything below renders visually and is saved back byte-for-byte, so prefer these constructs over ad-hoc formatting.
 
 ## Document header
 
@@ -33,9 +33,9 @@ tags: [release, backend]
 ## Status and references
 
 - Status words PASS, FAIL, DONE, TODO, WIP, BLOCKED, SKIPPED and ✅ ❌ ⚠️ render as colored badges; a table cell containing only a status (also `done`, `in progress`, `готово`, `ошибка`) becomes a badge.
-- BB thread ids (`thr_…`) and task keys (`ABC-12`) become clickable links. Write them plainly, not in backticks.
+- VesnALIA thread ids (`thr_…`) and task keys (`ABC-12`) become clickable links. Write them plainly, not in backticks.
 - Link files relative to the document (`[plan](../plan.md)`, `src/app.ts:42`); links open on the same machine.
-- A chat message is not a document, so nothing is relative to: BB resolves the path from the thread's root — its Git root, else the section folder. Give the whole path from that root (`docs/operating-model.md`, not `operating-model.md`), keep it whole on repeat mentions, and never reuse a path that is only valid inside a skill file (`references/memory.md`). A file outside that root has no working relative form — link it absolutely.
+- A chat message is not a document, so nothing is relative to: VesnALIA resolves the path from the thread's root — its Git root, else the section folder. Give the whole path from that root (`docs/operating-model.md`, not `operating-model.md`), keep it whole on repeat mentions, and never reuse a path that is only valid inside a skill file (`references/memory.md`). A file outside that root has no working relative form — link it absolutely.
 
 ## Code, diagrams, math
 
@@ -62,7 +62,7 @@ Body is normal Markdown. Another tool can replace everything between the two com
 Also recognized: `<!-- BEGIN name -->` / `<!-- END name -->` and `<!-- #region name -->` / `<!-- #endregion -->`.
 
 - You may introduce a new pair with a kebab-case key (`owner:purpose`) when you own the slice.
-- Keep existing markers byte-for-byte (`<!-- bb-project-folders:agents:start -->` and its matching `:end`). Do not rename, wrap, or “pretty-print” them.
+- Keep existing markers byte-for-byte (`<!-- alia-project-folders:agents:start -->` and its matching `:end`). Do not rename, wrap, or “pretty-print” them.
 - A lone `<!-- note -->` is a compact marker for a one-line hint. Do not invent a `:start` without a matching `:end`.
 - Reader-facing expand/collapse still uses `<details>`, not these comments.
 

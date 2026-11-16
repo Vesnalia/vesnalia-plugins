@@ -4,7 +4,7 @@
  * the real one, on port 5900.
  */
 import { connect } from "node:net";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 
 import { MAX_CHUNK_BYTES, hostContract, hostSignals } from "../shared/host-contract";
 import { Pasteboard } from "./pasteboard";
@@ -65,7 +65,7 @@ export function createHostEntry(options: HostEntryOptions) {
         }),
       open: async ({ sessionId }, context) => {
         watchLifecycle(context.lifecycle.signal);
-        // Taken while the call is live, as bb requires; the relay releases it when the session ends.
+        // Taken while the call is live, as VesnALIA requires; the relay releases it when the session ends.
         const lease = context.experimental_retainWorker();
         await relay.open(
           sessionId,

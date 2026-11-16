@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ function useStandardImagesOnFocus(): { readonly images: readonly StandardImage[]
 
 export function FindSettings({ wide = false }: { wide?: boolean }) {
   const { state, nav } = useSettings();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [query, setQuery] = useState(() => keptQuery);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);

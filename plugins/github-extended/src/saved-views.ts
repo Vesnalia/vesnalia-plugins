@@ -7,10 +7,10 @@ export interface SavedView {
 
 export type SavedViews = Record<SavedViewTab, SavedView[]>;
 
-export const SAVED_VIEWS_KEY = "bb-plugin-github-extended:saved-views";
+export const SAVED_VIEWS_KEY = "alia-plugin-github-extended:saved-views";
 
-export const QUERY_STATE_KEY = "bb-plugin-github-extended:queries";
-export const LEGACY_QUERY_KEY = "bb-plugin-github-extended:query";
+export const QUERY_STATE_KEY = "alia-plugin-github-extended:queries";
+export const LEGACY_QUERY_KEY = "alia-plugin-github-extended:query";
 export const DEFAULT_QUERY = "is:open ";
 
 export type QueryState = Record<SavedViewTab, string>;

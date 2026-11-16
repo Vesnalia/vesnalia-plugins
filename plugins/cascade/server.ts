@@ -1,4 +1,4 @@
-// bb-plugin-cascade — scrollable-tiling thread layout, niri style.
+// alia-plugin-cascade — scrollable-tiling thread layout, niri style.
 //
 // The backend is deliberately thin. It owns three things:
 //   1. The *index* — the row/column metadata for the strip.
@@ -7,8 +7,8 @@
 //
 // It deliberately does NOT proxy thread content: the frontend renders the
 // host's own `ThreadChat`, which loads and streams its own timeline.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
-import type { NewThreadRequest } from "@get-bb/plugin-sdk/app";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { NewThreadRequest } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 
 const LAYOUT_KEY = "layout";
@@ -19,9 +19,9 @@ const THREAD_LIMIT = 400;
 
 /**
  * The composer's resolved `NewThreadRequest`, arriving over HTTP — the one
- * genuinely unknowable boundary here. A structural check narrows it; bb's own
+ * genuinely unknowable boundary here. A structural check narrows it; VesnALIA's own
  * `threads.spawn` re-validates every field against the real create-thread
- * schema, so this deliberately does not restate bb's enums (they would drift).
+ * schema, so this deliberately does not restate VesnALIA's enums (they would drift).
  */
 function isNewThreadRequest(value: unknown): value is NewThreadRequest {
   if (typeof value !== "object" || value === null) return false;
@@ -46,7 +46,7 @@ function isNewThreadRequest(value: unknown): value is NewThreadRequest {
 }
 
 const newThreadRequestSchema = z.custom<NewThreadRequest>(isNewThreadRequest, {
-  message: "Expected a NewThreadRequest from the bb composer",
+  message: "Expected a NewThreadRequest from the VesnALIA composer",
 });
 
 const namedSchema = z.object({ id: z.string(), name: z.string() });
@@ -160,25 +160,25 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function readLayout(): Promise<Layout> {
-    const stored = await bb.storage.kv.get<unknown>(LAYOUT_KEY);
+    const stored = await alia.storage.kv.get<unknown>(LAYOUT_KEY);
     const parsed = layoutSchema.safeParse(stored);
     return parsed.success ? parsed.data : DEFAULT_LAYOUT;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     // The whole index in four parallel reads. Every grouping key, the status
     // dot, the branch tag, and the unread mark come from `ThreadListEntry`
     // itself — the strip never fans out per thread.
     async index() {
       const [sections, projects, hosts, threads] = await Promise.all([
-        bb.sdk.threadSections.list(),
-        bb.sdk.projects.list({ includePersonal: true }),
-        bb.sdk.hosts.list().catch(() => []),
+        alia.sdk.threadSections.list(),
+        alia.sdk.projects.list({ includePersonal: true }),
+        alia.sdk.hosts.list().catch(() => []),
         // Filter server-side: archived threads are not columns, and the
         // default list already excludes hidden threads such as side chats.
-        bb.sdk.threads.list({
+        alia.sdk.threads.list({
           archived: false,
           limit: THREAD_LIMIT,
         }),
@@ -217,23 +217,23 @@ export default async function plugin(bb: BbPluginApi) {
 
     async setLayout(patch) {
       const next = { ...(await readLayout()), ...patch };
-      await bb.storage.kv.set(LAYOUT_KEY, next);
+      await alia.storage.kv.set(LAYOUT_KEY, next);
       return next;
     },
 
     async moveThread({ threadId, sectionId }) {
-      await bb.sdk.threads.update({ threadId, sectionId });
+      await alia.sdk.threads.update({ threadId, sectionId });
       return { ok: true as const };
     },
 
     async setPinned({ threadId, pinned }) {
-      if (pinned) await bb.sdk.threads.pin({ threadId });
-      else await bb.sdk.threads.unpin({ threadId });
+      if (pinned) await alia.sdk.threads.pin({ threadId });
+      else await alia.sdk.threads.unpin({ threadId });
       return { ok: true as const };
     },
 
     async reorderPinned({ threadId, previousThreadId, nextThreadId }) {
-      await bb.sdk.threads.reorderPinned({
+      await alia.sdk.threads.reorderPinned({
         threadId,
         previousThreadId,
         nextThreadId,
@@ -242,12 +242,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async archiveThread({ threadId }) {
-      await bb.sdk.threads.archive({ threadId });
+      await alia.sdk.threads.archive({ threadId });
       return { ok: true as const };
     },
 
     async unarchiveThread({ threadId }) {
-      await bb.sdk.threads.unarchive({ threadId });
+      await alia.sdk.threads.unarchive({ threadId });
       return { ok: true as const };
     },
 
@@ -256,27 +256,27 @@ export default async function plugin(bb: BbPluginApi) {
       // mode, environment, and prompt; we only add where it lands. `spawn`
       // fills in origin: "plugin" + originPluginId, which is exactly why the
       // creation happens here rather than inside the composer component.
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         ...request,
         ...(sectionId ? { sectionId } : {}),
         ...(parentThreadId ? { parentThreadId } : {}),
       });
-      if (pinned) await bb.sdk.threads.pin({ threadId: thread.id });
+      if (pinned) await alia.sdk.threads.pin({ threadId: thread.id });
       return { threadId: thread.id };
     },
 
     async createSection({ name }) {
-      const section = await bb.sdk.threadSections.create({ name });
+      const section = await alia.sdk.threadSections.create({ name });
       return { id: section.id, name: section.name };
     },
 
     async renameSection({ id, name }) {
-      await bb.sdk.threadSections.update({ id, name });
+      await alia.sdk.threadSections.update({ id, name });
       return { ok: true as const };
     },
 
     async deleteSection({ id }) {
-      await bb.sdk.threadSections.delete({ id });
+      await alia.sdk.threadSections.delete({ id });
       return { ok: true as const };
     },
   });
@@ -289,18 +289,18 @@ export default async function plugin(bb: BbPluginApi) {
   // continuously, and each refetch costs four SDK round-trips — but the index
   // only carries titles, status dots, and grouping keys, so a second of
   // staleness is invisible. Leading-edge, so the first change is prompt.
-  bb.background.service("index-watch", {
+  alia.background.service("index-watch", {
     async start(signal) {
       let timer: ReturnType<typeof setTimeout> | null = null;
       const publish = () => {
         if (timer) return;
-        bb.realtime.publish("index", { at: Date.now() });
+        alia.realtime.publish("index", { at: Date.now() });
         timer = setTimeout(() => {
           timer = null;
         }, 1000);
       };
 
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "thread:changed",
         callback: publish,
       });
@@ -319,5 +319,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("cascade loaded");
+  alia.log.info("cascade loaded");
 }

@@ -55,10 +55,10 @@ const normalize = ${normalizeGrokBillingSource};
   const authPath = process.env.GROK_AUTH_PATH || path.join(process.env.GROK_HOME || path.join(require('node:os').homedir(), '.grok'), 'auth.json');
   let store;
   try { store = JSON.parse(fs.readFileSync(authPath, 'utf8')); }
-  catch (e) { if (e.code === 'ENOENT') { console.log('__BB_USAGE_ERROR__:no-grok-credential'); return; } throw new Error('Grok auth file could not be read or was invalid JSON.'); }
+  catch (e) { if (e.code === 'ENOENT') { console.log('__ALIA_USAGE_ERROR__:no-grok-credential'); return; } throw new Error('Grok auth file could not be read or was invalid JSON.'); }
   // Only first-party production scopes: never forward third-party IdP credentials.
   const auth = store['https://auth.x.ai::b1a00492-073a-47ea-816f-4c329264a828'] || store['https://accounts.x.ai/sign-in'];
-  if (!auth || auth.auth_mode === 'api_key') { console.log('__BB_USAGE_ERROR__:no-grok-credential'); return; }
+  if (!auth || auth.auth_mode === 'api_key') { console.log('__ALIA_USAGE_ERROR__:no-grok-credential'); return; }
   if (typeof auth.key !== 'string' || !auth.key || typeof auth.user_id !== 'string' || !auth.user_id) throw new Error('Grok login credential is invalid. Run grok login.');
   let response;
   try { response = await fetch('https://cli-chat-proxy.grok.com/v1/billing?format=credits', {
@@ -70,11 +70,11 @@ const normalize = ${normalizeGrokBillingSource};
   while (true) { const part = await reader.read(); if (part.done) break; body += Buffer.from(part.value).toString('utf8'); if (body.length > 262144) { await reader.cancel(); throw new Error('Grok billing response was too large.'); } }
   let payload; try { payload = JSON.parse(body); } catch { throw new Error('Grok billing response was not valid JSON.'); }
   const windows = normalize(payload);
-  if (!windows.length) { console.log('__BB_USAGE_ERROR__:no-grok-plan'); return; }
+  if (!windows.length) { console.log('__ALIA_USAGE_ERROR__:no-grok-plan'); return; }
   const accountIdentity = crypto.createHash('sha256').update(JSON.stringify([auth.user_id, auth.team_id || null, auth.principal_id || null])).digest('hex');
-  console.log('__BB_USAGE_BEGIN__');
+  console.log('__ALIA_USAGE_BEGIN__');
   console.log(JSON.stringify({ accountIdentity, windows }));
-  console.log('__BB_USAGE_END__:0');
-})().catch(e => { console.log('__BB_USAGE_ERROR__:' + e.message); process.exitCode = 1; });`;
-  return `set +x; if ! command -v node >/dev/null 2>&1; then printf '%s\\n' '__BB_USAGE_ERROR__:Node.js is required to collect Grok limits.'; exit 127; fi; node -e '${script.replace(/'/g, `'\\''`)}'`;
+  console.log('__ALIA_USAGE_END__:0');
+})().catch(e => { console.log('__ALIA_USAGE_ERROR__:' + e.message); process.exitCode = 1; });`;
+  return `set +x; if ! command -v node >/dev/null 2>&1; then printf '%s\\n' '__ALIA_USAGE_ERROR__:Node.js is required to collect Grok limits.'; exit 127; fi; node -e '${script.replace(/'/g, `'\\''`)}'`;
 }

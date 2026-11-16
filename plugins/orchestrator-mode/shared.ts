@@ -83,7 +83,7 @@ export type ServiceTier = (typeof SERVICE_TIERS)[number];
 
 /**
  * Execution overrides for a spawned worker. An absent field is not "no value",
- * it is "inherit": the thread is spawned without it and BB resolves the
+ * it is "inherit": the thread is spawned without it and VesnALIA resolves the
  * project's remembered default, then the provider catalog default.
  *
  * The block is forwarded to `threads.spawn` together with an
@@ -131,7 +131,7 @@ export const PINNED_DELEGATION_FIELDS = ["model", "provider", "reasoning"] as co
 /**
  * Whether an orchestrator may start a provider's own subagents. `read-only` is
  * the default: only launch-bound proof of a reading definition could permit
- * one. BB currently exposes no such proof, so unverified launches remain work.
+ * one. VesnALIA currently exposes no such proof, so unverified launches remain work.
  * `all` stops judging them at all; `none` refuses every one of them.
  */
 export const ORCHESTRATOR_SUBAGENT_POLICIES = ["read-only", "all", "none"] as const;
@@ -146,7 +146,7 @@ export const ORCHESTRATOR_SUBAGENT_POLICY_DESCRIPTIONS: Record<
   string
 > = {
   "read-only":
-    "Read-only requires launch-specific proof of a reading definition and its capabilities. BB does not expose that proof yet, so native launches remain unverified work; delegate through the plugin instead.",
+    "Read-only requires launch-specific proof of a reading definition and its capabilities. VesnALIA does not expose that proof yet, so native launches remain unverified work; delegate through the plugin instead.",
   all: "All allows identified subagents, including editing agents, within existing user and parent authority. Unidentified tools receive no exemption, and no additional permissions are granted.",
   none: "None keeps the orchestrator from starting any subagent at all: every unit goes to a worker through `orchestrator_delegate`.",
 };
@@ -168,7 +168,7 @@ export const WORKER_SUBAGENT_POLICY_DESCRIPTIONS: Record<WorkerSubagentPolicy, s
 };
 
 /**
- * The instruction a blocked scope injects into its workers. BB plugins cannot
+ * The instruction a blocked scope injects into its workers. VesnALIA plugins cannot
  * remove a provider's own subagent tool, so the rule is told, not enforced: the
  * worker is the one who has to keep the brief whole.
  */
@@ -189,7 +189,7 @@ yourself, say so in your result instead of splitting it.`;
 export function subagentsOf(row: WorkRowLike, providerId?: string): string[] | null {
   if (row.kind !== "work") return null;
   if (row.workKind === "delegation") {
-    // BB 0.46.1 normalises Codex's toolName to `delegation`; the provider's
+    // VesnALIA 0.46.1 normalises Codex's toolName to `delegation`; the provider's
     // fixed presentation labels retain the action. Titles/prompts are not used.
     if (providerId === "codex" || providerId === "codex-work") {
       const label = row.presentation?.label;
@@ -205,7 +205,7 @@ export function subagentsOf(row: WorkRowLike, providerId?: string): string[] | n
     const named = typeof type === "string" ? type.trim() : "";
     if (named !== "") return [named];
     // Native Claude launches carry the type only in presentation.detail on
-    // BB 0.46.1. This recovers identity, not permission: the classifier still
+    // VesnALIA 0.46.1. This recovers identity, not permission: the classifier still
     // cannot treat this name as resolved-definition or capability evidence.
     if (providerId === "claude-code" && typeof row.presentation?.detail === "string") {
       const match = /^([^\r\n·]+?) agent(?: · model [^\r\n]+)?$/.exec(row.presentation.detail);
@@ -260,7 +260,7 @@ export interface WorkerModelOption {
 
 /**
  * The provider/model catalog this plugin offers for workers, read from the same
- * `bb.sdk.providers` source the new-thread composer's pickers use. An empty
+ * `alia.sdk.providers` source the new-thread composer's pickers use. An empty
  * catalog means the read failed: nothing is offered and nothing is validated.
  */
 export interface WorkerCatalog {
@@ -271,12 +271,12 @@ export interface WorkerCatalog {
 /**
  * The thread-metadata mirror of the plugin's authoritative state.
  *
- * `bb.agents.configure` is synchronous and its only per-thread input is
+ * `alia.agents.configure` is synchronous and its only per-thread input is
  * `context.pluginMetadata`, so the enabled flag has to be readable there. The
  * copy in this plugin's own KV store stays the source of truth and is rewritten
  * onto the thread at every dispatch admission, which runs before the turn does.
  */
-// A type alias, not an interface: BB's `JsonObject` needs an implicit index
+// A type alias, not an interface: VesnALIA's `JsonObject` needs an implicit index
 // signature, which only object-literal type aliases get.
 type OrchestratorMirror = {
   /** True while this thread must orchestrate instead of working. */
@@ -563,7 +563,7 @@ function scanCommandLine(text: string): { unquoted: string; live: string; segmen
 const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 
 /**
- * Programs that only look at things. `git` and `bb` are checked against their
+ * Programs that only look at things. `git` and `VesnALIA` are checked against their
  * subcommands separately, because both can also mutate.
  */
 const READ_ONLY_PROGRAMS: ReadonlySet<string> = new Set([
@@ -629,7 +629,7 @@ const READ_ONLY_PROGRAMS: ReadonlySet<string> = new Set([
 const PLAUSIBLE_PROGRAMS: ReadonlySet<string> = new Set([
   ...READ_ONLY_PROGRAMS,
   // Mutating programs an agent runs, by hand or through a script.
-  "bb",
+  "alia",
   "git",
   "gh",
   "glab",
@@ -1008,20 +1008,20 @@ function gitHelpIsSafe(rest: readonly string[]): boolean {
 }
 
 /**
- * `bb` subcommands that only report, with no second token to check.
- * Deliberately short: `bb thread`, `bb plugin` and `bb workflows` can all start
+ * `VesnALIA` subcommands that only report, with no second token to check.
+ * Deliberately short: `alia thread`, `alia plugin` and `alia workflows` can all start
  * work, and an orchestrator has `orchestrator_delegate` for that anyway.
  */
-const READ_ONLY_BB_SUBCOMMANDS: ReadonlySet<string> = new Set(["status", "guide"]);
+const READ_ONLY_ALIA_SUBCOMMANDS: ReadonlySet<string> = new Set(["status", "guide"]);
 
 /**
- * `bb <area> <verb>` pairs that only read. Kept as a table because the areas
- * themselves are mixed: `bb plugin list` reports, `bb plugin install` changes
- * the machine. `bb orchestrator-mode status` is read-only but `on`/`off` would
+ * `VesnALIA <area> <verb>` pairs that only read. Kept as a table because the areas
+ * themselves are mixed: `alia plugin list` reports, `alia plugin install` changes
+ * the machine. `alia orchestrator-mode status` is read-only but `on`/`off` would
  * let a thread switch off its own leash, so only `status` is listed.
  */
-const READ_ONLY_BB_VERBS: Record<string, ReadonlySet<string>> = {
-  // `rpc` is deliberately absent: `bb plugin rpc call <plugin> <operation>` runs a
+const READ_ONLY_ALIA_VERBS: Record<string, ReadonlySet<string>> = {
+  // `rpc` is deliberately absent: `alia plugin rpc call <plugin> <operation>` runs a
   // plugin's own operation, which this module cannot model and which is how a
   // mutating call reads as a read.
   plugin: new Set(["list", "logs", "source", "search", "outdated"]),
@@ -1043,7 +1043,7 @@ const READ_ONLY_BB_VERBS: Record<string, ReadonlySet<string>> = {
   "orchestrator-mode": new Set(["status"]),
 };
 
-/** `bb skill`/`bb skills` verbs that change the catalog rather than read it. */
+/** `alia skill`/`alia skills` verbs that change the catalog rather than read it. */
 const MUTATING_SKILL_VERBS: ReadonlySet<string> = new Set(["update", "remove", "install"]);
 
 /** Asking for help or a version never changes anything. */
@@ -1220,7 +1220,7 @@ const FIND_PATTERN_OPTIONS: ReadonlySet<string> = new Set([
  * True when one command in a line only reads.
  *
  * The rule, in order. The program must be one this file models — an allowlisted
- * read-only program, or `git`, `bb` or `env` — because an unmodelled program is
+ * read-only program, or `git`, `VesnALIA` or `env` — because an unmodelled program is
  * work whatever its arguments: `--help` does not launder `rm -rf x --help`, an
  * unknown tool, or a wrapper. Then the program must carry no flag the table
  * records as a write or a runner, and only then may a read flag such as
@@ -1257,8 +1257,8 @@ function isReadOnlySegment(segment: string): boolean {
     if (!gitHelpIsSafe(args)) return isReadOnlyGitSegment(args);
     return HELP_OR_VERSION.test(segment) || isReadOnlyGitSegment(args);
   }
-  // `bb plugin new --help` reports, `bb plugin install x` does not.
-  if (name === "bb") return HELP_OR_VERSION.test(segment) || isReadOnlyBbSegment(args);
+  // `alia plugin new --help` reports, `alia plugin install x` does not.
+  if (name === "alia") return HELP_OR_VERSION.test(segment) || isReadOnlyAliaSegment(args);
   if (name === "env") return isReadOnlyEnvSegment(args);
   if (!READ_ONLY_PROGRAMS.has(name)) return false;
   const mutating = MUTATING_PROGRAM_FLAGS[name];
@@ -1298,16 +1298,16 @@ function isReadOnlyEnvSegment(rest: readonly string[]): boolean {
   return program === undefined || isReadOnlySegment(rest.slice(index).join(" "));
 }
 
-function isReadOnlyBbSegment(rest: readonly string[]): boolean {
+function isReadOnlyAliaSegment(rest: readonly string[]): boolean {
   const area = rest[0];
   if (area === undefined) return true;
   if (area.startsWith("-")) return false;
-  if (READ_ONLY_BB_SUBCOMMANDS.has(area)) return true;
+  if (READ_ONLY_ALIA_SUBCOMMANDS.has(area)) return true;
   if (area === "skill" || area === "skills") {
     const verb = rest[1];
     return verb === undefined || !MUTATING_SKILL_VERBS.has(verb);
   }
-  const verbs = READ_ONLY_BB_VERBS[area];
+  const verbs = READ_ONLY_ALIA_VERBS[area];
   if (verbs === undefined) return false;
   const verb = rest[1];
   return verb !== undefined && verbs.has(verb);
@@ -1315,7 +1315,7 @@ function isReadOnlyBbSegment(rest: readonly string[]): boolean {
 
 /** Only an explicit, recorded worker target makes a follow-up delegation. */
 function isWorkerFollowup(segment: string, workerThreadIds: readonly string[]): boolean {
-  const match = /^(?:\S*\/)?bb\s+thread\s+(?:tell|message)\s+(?:'([A-Za-z0-9_-]+)'|"([A-Za-z0-9_-]+)"|([A-Za-z0-9_-]+))(?=\s|$)/.exec(segment);
+  const match = /^(?:\S*\/)?alia\s+thread\s+(?:tell|message)\s+(?:'([A-Za-z0-9_-]+)'|"([A-Za-z0-9_-]+)"|([A-Za-z0-9_-]+))(?=\s|$)/.exec(segment);
   const target = match?.[1] ?? match?.[2] ?? match?.[3];
   return target !== undefined && workerThreadIds.includes(target);
 }
@@ -1347,7 +1347,7 @@ function isDelegationCommand(
 ): boolean {
   // Ordinary shell quoting only; quoted heredoc bodies are literal message data.
   const delegates = (part: string) =>
-    /^(?:\S*\/)?bb\s+orchestrator-mode\s+delegate(?:\s|$)/.test(part) ||
+    /^(?:\S*\/)?alia\s+orchestrator-mode\s+delegate(?:\s|$)/.test(part) ||
     isWorkerFollowup(part, workerThreadIds);
   const segments: string[] = [];
   let segment = "";
@@ -1437,7 +1437,7 @@ export function classifyRow(
   // what the orchestrator started with it.
   const started = subagentsOf(row, providerId);
   if (started !== null) {
-    // BB exposes neither the resolved definition/capabilities at launch nor a
+    // VesnALIA exposes neither the resolved definition/capabilities at launch nor a
     // definition revision. Names can be overridden; context snapshots are
     // cached telemetry. Until launch-bound proof exists, read-only cannot
     // safely exempt even a familiar reading role. `all` is an explicit opt-in.
@@ -1529,7 +1529,7 @@ export const CONTRACT_PRESET_DESCRIPTIONS: Record<ContractPresetId, string> = {
  */
 export const EXTRA_INSTRUCTION_LIMIT = 370;
 
-/** `bb.agents.configure` truncates the dynamic instructions at this many characters. */
+/** `alia.agents.configure` truncates the dynamic instructions at this many characters. */
 export const INSTRUCTION_LIMIT = 4096;
 
 /** One reminder line, so a long file path cannot crowd out the contract it corrects. */
@@ -1595,7 +1595,7 @@ function workerBudget(config: WorkerConfig | undefined): string {
 }
 
 /**
- * The orchestrator contract injected through `bb.agents.configure`.
+ * The orchestrator contract injected through `alia.agents.configure`.
  *
  * Hard cap: `configure` truncates dynamic instructions at 4096 characters, so
  * this must stay comfortably under it. `shared.test.ts` asserts the budget.
@@ -1660,7 +1660,7 @@ export function buildInstructions(input: InstructionInput): string {
       ? `\n\n   Start no subagents of your own: every unit goes through \`${DELEGATE_TOOL}\`.`
       : input.subagents === "all"
         ? `\n\n   Subagents: all, including editing agents, are allowed within existing user\n   and parent authorisation. This grants no additional tools or permissions.`
-        : `\n\n   Subagents: read-only, with verified definition and capabilities. BB lacks\n   launch-specific proof, so native launches remain unverified work; use\n   \`${DELEGATE_TOOL}\` instead.`;
+        : `\n\n   Subagents: read-only, with verified definition and capabilities. VesnALIA lacks\n   launch-specific proof, so native launches remain unverified work; use\n   \`${DELEGATE_TOOL}\` instead.`;
 
   /**
    * What the contract says about whose model a worker runs on. A pinned scope —
@@ -1719,11 +1719,11 @@ ${workspaceRule}
 2. Give each unit a self-contained brief: goal, context, constraints and
    definition of done. A worker cannot see this conversation.
 3. Delegate with \`${DELEGATE_TOOL}\`; if unavailable, use
-   \`bb orchestrator-mode delegate --task 'complete brief'\`.
+   \`alia orchestrator-mode delegate --task 'complete brief'\`.
    Quote briefs safely; \`--no-wait\` fans out independent units. A resumed session
    may retain its original tool list.
 ${pinLine}${reviewStep}
-   Send corrections with \`bb thread tell <worker-id> ...\` (alias \`message\`) to
+   Send corrections with \`alia thread tell <worker-id> ...\` (alias \`message\`) to
    recorded workers; safely quoted messages or quoted stdin heredocs are delegation.
 5. Synthesise results and what remains. Link worker ids so the user can open them.
 
@@ -1735,7 +1735,7 @@ tool that changes something, stop and delegate.${subagentRule}
 ## Choosing the worker's model
 
 ${modelBudget} Ids come from
-\`bb provider list\` and \`bb provider models <provider>\`, both read-only.
+\`alia provider list\` and \`alia provider models <provider>\`, both read-only.
 
 ${extraBudget(extra)}## If you cannot delegate
 
@@ -1745,14 +1745,14 @@ user to turn it off in the composer.${reminderBlock(lines)}`;
 
   const whole = render(reminderLines);
   if (whole.length <= INSTRUCTION_LIMIT) return whole;
-  // BB cuts the dynamic block at the ceiling and the tail is what disappears, so the reminders are trimmed here
+  // VesnALIA cuts the dynamic block at the ceiling and the tail is what disappears, so the reminders are trimmed here
   // instead: the contract has to arrive whole, and the newest reminders are the ones worth keeping.
   for (let keep = reminderLines.length - 1; keep >= 0; keep -= 1) {
     const candidate = render(reminderLines.slice(reminderLines.length - keep));
     if (candidate.length <= INSTRUCTION_LIMIT) return candidate;
   }
   // Nothing left to give up but the project-rules append, so it is clamped by what the
-  // fixed sections left behind. Returning the unclamped block would hand BB more than it
+  // fixed sections left behind. Returning the unclamped block would hand VesnALIA more than it
   // keeps, and it cuts the tail — which is the part that says what to do when delegation
   // is impossible. A slicing fallback survives only if the fixed sections alone exceed the
   // ceiling, which the budget test measures with the longest model id the catalog holds.
@@ -1863,7 +1863,7 @@ export function buildNudge(violations: readonly Violation[], enforcement: Enforc
       ? " The turn was stopped, so any change you made mid-flight may be incomplete."
       : "";
   const missingTool =
-    `\n\nIf \`${DELEGATE_TOOL}\` is unavailable, use \`bb orchestrator-mode delegate --task 'complete brief'\` instead. It runs the same delegation action. Resuming a session may retain its original tools; no context reset is needed for this CLI route.`;
+    `\n\nIf \`${DELEGATE_TOOL}\` is unavailable, use \`alia orchestrator-mode delegate --task 'complete brief'\` instead. It runs the same delegation action. Resuming a session may retain its original tools; no context reset is needed for this CLI route.`;
   return `Orchestrator mode caught you doing the work yourself:${stopped}
 
 ${acts}

@@ -49,7 +49,7 @@ function matchesQuery(entry: TemplateEntry, query: string): boolean {
 
 type View = "grid" | "list";
 type Sort = "recommended" | "name" | "source";
-const VIEW_KEY = "bb-hooks:marketplace-view";
+const VIEW_KEY = "alia-hooks:marketplace-view";
 
 function readView(): View {
   try {
@@ -458,7 +458,7 @@ function WhatItRuns({ entry }: { entry: TemplateEntry }) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        {template.command !== undefined ? "A /bin/sh script on the machine that hosts BB. " : "An HTTPS request BB sends itself; no shell runs. "}
+        {template.command !== undefined ? "A /bin/sh script on the machine that hosts VesnALIA. " : "An HTTPS request VesnALIA sends itself; no shell runs. "}
         {entry.source === "bundled" ? "Bundled with the plugin." : `From the "${entry.source}" catalog: read it before installing.`}
       </p>
       <Code>{lines.join("\n")}</Code>
@@ -701,7 +701,7 @@ function TemplateDialog({ entry, mode, onClose, onInstalled }: { entry: Template
                   <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
                     <Checkbox checked={share} onCheckedChange={(value) => setShare(value === true)} className="mt-0.5" />
                     <span>
-                      Share an anonymous install count with the <strong>{COUNTED_CATALOG.label}</strong>: this template's id and version, and nothing else. BB remembers your answer; change it in the Hooks settings.
+                      Share an anonymous install count with the <strong>{COUNTED_CATALOG.label}</strong>: this template's id and version, and nothing else. VesnALIA remembers your answer; change it in the Hooks settings.
                     </span>
                   </label>
                 ) : null}
@@ -709,7 +709,7 @@ function TemplateDialog({ entry, mode, onClose, onInstalled }: { entry: Template
                   <label className="flex cursor-pointer items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs">
                     <Checkbox checked={trusted} onCheckedChange={(value) => setTrusted(value === true)} className="mt-0.5" />
                     <span>
-                      This hook comes from the <strong>{entry.source}</strong> catalog and will run on the machine hosting BB. I have read <button type="button" className="underline underline-offset-2" onClick={() => setTab("runs")}>what it runs</button> and trust it.
+                      This hook comes from the <strong>{entry.source}</strong> catalog and will run on the machine hosting VesnALIA. I have read <button type="button" className="underline underline-offset-2" onClick={() => setTab("runs")}>what it runs</button> and trust it.
                     </span>
                   </label>
                 ) : null}

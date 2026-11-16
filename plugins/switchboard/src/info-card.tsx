@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactElement, type ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import type { PluginBrowserBbSdk, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { keyboardFocusOnly } from "./hint";
 import { portalScopeProps } from "./portal-scope";
 import { infoLoaders, prefetchInfo } from "./info-data";
@@ -12,10 +12,10 @@ const OPEN_DELAY_MS = 300;
 const SKIP_DELAY_MS = 500;
 const PREFETCH_DELAY_MS = 120;
 
-interface InfoCardSettings { mode: InfoCardMode; sdk: PluginBrowserBbSdk | null; isSuppressed(): boolean }
+interface InfoCardSettings { mode: InfoCardMode; sdk: PluginBrowserAliaSdk | null; isSuppressed(): boolean }
 const InfoCardContext = createContext<InfoCardSettings>({ mode: "off", sdk: null, isSuppressed: () => true });
 
-export function InfoCardProvider({ mode, sdk, isSuppressed, children }: { mode: InfoCardMode; sdk: PluginBrowserBbSdk;
+export function InfoCardProvider({ mode, sdk, isSuppressed, children }: { mode: InfoCardMode; sdk: PluginBrowserAliaSdk;
   isSuppressed(): boolean; children: ReactNode }): ReactElement {
   const value = useMemo(() => ({ mode, sdk, isSuppressed }), [mode, sdk, isSuppressed]);
   return <Tooltip.Provider delayDuration={OPEN_DELAY_MS} skipDelayDuration={SKIP_DELAY_MS} disableHoverableContent>
@@ -36,7 +36,7 @@ export function InfoCard(props: InfoCardProps): ReactElement {
 }
 
 function InfoCardRoot({ thread, state, projectName, stale, now, children, mode, sdk, isSuppressed }: InfoCardProps & {
-  mode: Exclude<InfoCardMode, "off">; sdk: PluginBrowserBbSdk; isSuppressed(): boolean }) {
+  mode: Exclude<InfoCardMode, "off">; sdk: PluginBrowserAliaSdk; isSuppressed(): boolean }) {
   const [open, setOpen] = useState(false);
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelPrefetch = () => {

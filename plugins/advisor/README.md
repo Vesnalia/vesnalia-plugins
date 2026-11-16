@@ -1,10 +1,10 @@
 # Advisor
 
-> A persistent, independent reviewer for bb coding threads.
+> A persistent, independent reviewer for VesnALIA coding threads.
 
 [![CI](https://github.com/salemsayed/bb-plugin-advisor/actions/workflows/ci.yml/badge.svg)](https://github.com/salemsayed/bb-plugin-advisor/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![bb ≥ 0.49.0](https://img.shields.io/badge/bb-%E2%89%A5%200.49.0-8b5cf6.svg)](#install)
+[![VesnALIA ≥ 0.49.0](https://img.shields.io/badge/bb-%E2%89%A5%200.49.0-8b5cf6.svg)](#install)
 
 <p align="center">
   <img src="./docs/media/advisor-hero.svg" alt="Advisor — an independent reviewer on every coding thread" width="100%" />
@@ -16,7 +16,7 @@ reviewer runs in its own hidden thread with its own context, remembers what it
 has already flagged, and escalates when the same defect comes back. A review
 that cannot run reports as *unavailable*, never as approval.
 
-Advisor is a bb port of the advisor from
+Advisor is a VesnALIA port of the advisor from
 [oh-my-pi](https://github.com/can1357/oh-my-pi) — the design is theirs. See
 [Credits](#credits).
 
@@ -27,7 +27,7 @@ Advisor is a bb port of the advisor from
 ## Why
 
 An agent grading its own work has every incentive to pass it. Advisor adds an
-outside opinion without changing bb core:
+outside opinion without changing VesnALIA core:
 
 - **Independent.** Reviews run in a separate, hidden reviewer thread — a
   different context, optionally a different model per machine, spawned into the
@@ -55,7 +55,7 @@ Advisor reviews a thread through three complementary paths:
    Actionable late findings are sent to the agent when its next turn starts.
    A turn that already ran the tool is not reviewed again after it goes idle.
    A turn that ends while child threads it started are still running is not
-   reviewed on its own: waiting for them is the correct next step, and bb
+   reviewed on its own: waiting for them is the correct next step, and VesnALIA
    wakes the agent when they report. Advisor reviews the turn that ends once
    they have finished. Routine turns, with no tool calls or edits and a
    short answer, are skipped by default; the next review covers everything
@@ -85,18 +85,18 @@ Advice older than 24 hours is retired rather than sent stale.
 
 ## Install
 
-Requires bb ≥ 0.49.0 and plugin SDK ≥ 0.6.132. bb 0.47.1 to 0.48.x keep Advisor 0.1.9; older bb releases keep Advisor 0.1.4.
+Requires VesnALIA ≥ 0.49.0 and plugin SDK ≥ 0.6.132. VesnALIA 0.47.1 to 0.48.x keep Advisor 0.1.9; older VesnALIA releases keep Advisor 0.1.4.
 
 From GitHub:
 
 ```sh
-bb plugin install git:https://github.com/salemsayed/bb-plugin-advisor.git@main
+alia plugin install git:https://github.com/salemsayed/bb-plugin-advisor.git@main
 ```
 
 From a local checkout:
 
 ```sh
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
 ## Configure
@@ -131,7 +131,7 @@ corrective turns, including a correction from a review already in progress.
 An agent session that still has the review tool receives an explicit skipped
 review response when it calls the tool while the thread is off.
 
-BB fixes an agent session's tools and instructions when it builds that session,
+VesnALIA fixes an agent session's tools and instructions when it builds that session,
 so switching Advisor on in an existing thread takes effect in stages:
 
 - Post-turn reviews start with the next completed turn.
@@ -139,7 +139,7 @@ so switching Advisor on in an existing thread takes effect in stages:
   because the session's own instructions cannot change. If that turn finishes
   before the agent reads it, the agent acknowledges it in a short follow-up
   turn.
-- The `advisor_review` tool reaches the agent only once BB rebuilds its session.
+- The `advisor_review` tool reaches the agent only once VesnALIA rebuilds its session.
   A Claude Code thread picks it up after its runtime restarts; a Codex session
   keeps its original tool list even when resumed.
 
@@ -152,15 +152,15 @@ inside that thread. Use `follow` to clear its override and track the global
 setting again:
 
 ```sh
-bb advisor enable [thread-id]
-bb advisor disable [thread-id]
-bb advisor follow [thread-id]
+alia advisor enable [thread-id]
+alia advisor disable [thread-id]
+alia advisor follow [thread-id]
 ```
 
 ### Reviewer model, per machine
 
 The model section loads the live provider/model catalog independently from
-every connected bb machine. Selections are stored by stable host id, not as
+every connected VesnALIA machine. Selections are stored by stable host id, not as
 one global model string. Each machine selection includes a reasoning level
 populated from that model's live supported-reasoning metadata; choosing
 "Model default" tracks the model's reported default.
@@ -215,8 +215,8 @@ turn. Some plugin threads are never reviewed, whatever the settings:
   started the workflow.
 
 Your own hidden threads are not reviewed. A thread's own Advisor
-switch still wins: `bb advisor enable <thread>` turns a plugin thread on even
-while the setting is off, and `bb advisor disable <thread>` turns one off.
+switch still wins: `alia advisor enable <thread>` turns a plugin thread on even
+while the setting is off, and `alia advisor disable <thread>` turns one off.
 
 ### Auto-continue on late findings (off by default)
 
@@ -378,7 +378,7 @@ the timeout does not help. A retry can still pass when the reviewer works from
 the supplied transcript instead of running commands.
 
 A thread that is archived or deleted before or during its review is not a
-failed review. bb archives the reviewer with the thread, so the review cannot
+failed review. VesnALIA archives the reviewer with the thread, so the review cannot
 finish, and Advisor records the run as `skipped` with the reason
 `thread-archived` or `thread-deleted` instead of unavailable. No incident is
 filed, and the thread's history is unchanged. This is common for automation
@@ -392,7 +392,7 @@ moves, the reviewer is respawned rather than left inspecting the old checkout.
 
 A reviewer is replaced after 10 reviews of the same thread. Each review resends
 the reviewer's whole conversation to the model, so the tokens a review costs
-grow with every round: on one bb install's 690 reviews over two days, the
+grow with every round: on one VesnALIA install's 690 reviews over two days, the
 first review of a reviewer averaged 179,000 tokens and the 11th and later
 averaged 573,000. The new reviewer gets the full instructions and timeline,
 the thread's open findings and the user's decisions, which is all the state a
@@ -402,15 +402,15 @@ is still finishing another review of the same thread is not replaced until
 that review ends.
 
 The reviewer's permission mode is negotiated per review against what the
-provider actually advertises, narrowest first. bb briefly offered a `readonly`
-mode and removed it again, so on current bb the narrowest mode a reviewer can
+provider actually advertises, narrowest first. VesnALIA briefly offered a `readonly`
+mode and removed it again, so on current VesnALIA the narrowest mode a reviewer can
 be spawned in is `accept-edits`, and a provider that offers nothing narrower
 than `auto` is reported as unable to host a reviewer. The preference stays a
 list rather than a pinned value: once an SDK publishes a narrower mode, adding
 it to `ADVISOR_PERMISSION_MODE_PREFERENCE` in `server.ts` is the whole change.
 
 A session spawned under a mode that is no longer the negotiated one is retired
-rather than reused — including a session left over from a bb that still had
+rather than reused — including a session left over from a VesnALIA that still had
 `readonly` — so the reviewer never stays pinned to a mode the host can no
 longer validate.
 
@@ -421,16 +421,16 @@ transient outage therefore neither disables reviews nor silently widens them.
 ## Inspect
 
 ```sh
-bb advisor status [thread-id]
-bb advisor reviews [thread-id] [--json]
-bb plugin logs advisor -f
+alia advisor status [thread-id]
+alia advisor reviews [thread-id] [--json]
+alia plugin logs advisor -f
 ```
 
 ### Usage ledger
 
 Every review run is recorded in the `advisor_review_runs` table of the
 plugin database, one row per run: reviewed, unavailable, and skipped by the
-completed-turn schedule. `bb advisor reviews` lists a thread's recent runs
+completed-turn schedule. `alia advisor reviews` lists a thread's recent runs
 after its findings, `--json` prints both, and the `reviewLedger` RPC returns
 runs for one thread or all of them (`{ "threadId"?, "since"?, "limit"? }`,
 newest first).
@@ -461,7 +461,7 @@ usage it had already spent.
 
 A plugin that ends a thread's life, such as a scheduler that archives its
 worker when a run ends, can wait for Advisor's review of the last turn with the
-`turnReview` RPC (`bb plugin rpc call advisor turnReview`). Input
+`turnReview` RPC (`alia plugin rpc call advisor turnReview`). Input
 `{ "threadId", "since"? }`, where `since` is a millisecond timestamp, usually
 when the turn ended. It answers:
 
@@ -479,13 +479,13 @@ thread's next turn.
 ## Security and trust
 
 > [!IMPORTANT]
-> Like every bb plugin, Advisor is full-trust code: its server runs inside
-> your bb server, not in a sandbox, with access to the plugin SDK, its own
+> Like every VesnALIA plugin, Advisor is full-trust code: its server runs inside
+> your VesnALIA server, not in a sandbox, with access to the plugin SDK, its own
 > database, and thread orchestration. Read the source before installing —
 > this repository is small on purpose.
 
 The reviewer itself is constrained by the negotiated permission mode, with an
-important caveat: current bb has no read-only permission mode, so the reviewer
+important caveat: current VesnALIA has no read-only permission mode, so the reviewer
 runs in `accept-edits` and **can write to the workspace**. Read-only review is
 a behavioural boundary here, not an enforced one — the reviewer is instructed
 to use read-only operations and runs in the narrowest mode available, but it is
@@ -496,8 +496,8 @@ still be assessed by that provider.
 ## Development
 
 Requires Node 22.19 or later (Node 22, 24 or 26). The build uses the locked
-BB 0.49.1-nightly.43076974886.1 builder and SDK 0.6.140, independently of the
-desktop BB version.
+VesnALIA 0.49.1-nightly.43076974886.1 builder and SDK 0.6.140, independently of the
+desktop VesnALIA version.
 
 ```sh
 npm ci
@@ -509,10 +509,10 @@ The GitHub Actions workflow runs the same typecheck, test, build, and package
 checks on pushes to `main` and on pull requests.
 
 Every build checks the SDK and runtime shim dependency pins with
-`bb plugin types --check`, then verifies the generated bundles' builder and
+`alia plugin types --check`, then verifies the generated bundles' builder and
 SDK versions. It also rejects obsolete `types/` and `vendor/` directories.
-When updating the toolchain, update `bb-app`, run that version's
-`bb plugin types` to sync the SDK and shim declarations, then refresh
+When updating the toolchain, update `alia-app`, run that version's
+`alia plugin types` to sync the SDK and shim declarations, then refresh
 `package-lock.json` with `npm install` and run the checks above.
 
 ## Credits
@@ -520,8 +520,8 @@ When updating the toolchain, update `bb-app`, run that version's
 The advisor concept — a persistent second model that reviews the primary
 agent's work, holds findings across turns, and injects advice back into the
 conversation — originates in [oh-my-pi](https://github.com/can1357/oh-my-pi)
-by can1357. This plugin is a re-implementation of that design on bb's plugin
-surface; the ideas are omp's, the bb-specific code is new.
+by can1357. This plugin is a re-implementation of that design on VesnALIA's plugin
+surface; the ideas are omp's, the alia-specific code is new.
 
 The completed-turn schedule, incremental review evidence and usage ledger
 adapt later oh-my-pi advisor work: reviewing every Nth update while keeping

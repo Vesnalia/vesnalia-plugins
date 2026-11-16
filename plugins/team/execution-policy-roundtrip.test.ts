@@ -23,7 +23,7 @@ roles:
         - provider: codex
           model: gpt-4
 `;
-    const config = parseTeamConfig(yaml, ".bb/teams/main.yaml", t);
+    const config = parseTeamConfig(yaml, ".vesnalia/teams/main.yaml", t);
     const lead = config.roles[0]!;
     expect(lead.executionPolicy).toBeDefined();
     expect(lead.executionPolicy!.noAdditionalCost).toBe(true);
@@ -61,7 +61,7 @@ roles:
       },
       "main",
     );
-    const configFile = files.find((f) => f.rel === ".bb/teams/main.yaml")!;
+    const configFile = files.find((f) => f.rel === ".vesnalia/teams/main.yaml")!;
     const raw = loadYaml(configFile.content) as Record<string, unknown>;
     const roles = raw.roles as Array<Record<string, unknown>>;
     const policy = roles[0]!.executionPolicy as Record<string, unknown>;
@@ -82,7 +82,7 @@ roles:
   - name: lead
     provider: codex
 `;
-    const config = parseTeamConfig(yaml, ".bb/teams/main.yaml", t);
+    const config = parseTeamConfig(yaml, ".vesnalia/teams/main.yaml", t);
     expect(config.roles[0]!.executionPolicy).toBeUndefined();
   });
 

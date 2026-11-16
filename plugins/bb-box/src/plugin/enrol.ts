@@ -1,48 +1,48 @@
-// Boxes as BB machines (decision 014). bb-box registers a machine provider
+// Boxes as VesnALIA machines (decision 014). alia-box registers a machine provider
 // and enrols a ready box by creating a machine keyed by the box ID. The
-// provider's create runs BB's bootstrap through the box's command transport,
-// as the box user. Releasing a box removes its machine first. After bb-box
+// provider's create runs VesnALIA's bootstrap through the box's command transport,
+// as the box user. Releasing a box removes its machine first. After alia-box
 // starts a stopped box, or when the sweep finds a ready box's machine
-// disconnected, bootstrap runs again with the same key to start BB's daemon
+// disconnected, bootstrap runs again with the same key to start VesnALIA's daemon
 // (017), on a Mac after unloading the daemon's LaunchAgent if launchd loaded
 // it at login and the bootstrap fails for that (#416). A box the sweep
 // restores from its guest enrols again with the same key once it runs and
-// answers, and BB gives back the machine it still has for it (025, 026). A
+// answers, and VesnALIA gives back the machine it still has for it (025, 026). A
 // spare's machine is named "<name> (spare)" until an acquire claims the box,
 // which gives it the box's name (032).
 //
-// Plugins can read the names of BB's machine variables but not their values;
-// BB gives the values, and GH_TOKEN, to its daemon in the box. Commands in a
-// Linux box source ~/.config/bb-box/env, which bb-box writes before each
+// Plugins can read the names of VesnALIA's machine variables but not their values;
+// VesnALIA gives the values, and GH_TOKEN, to its daemon in the box. Commands in a
+// Linux box source ~/.config/alia-box/env, which alia-box writes before each
 // command it runs: the box's identity, and a loader that takes those
 // variables from the daemon's process as the command starts. Once the daemon
 // connects, the box's ~/.bashrc sources the file too, for the thread's own
 // SSH commands, git takes GitHub credentials from gh, and git fetches
 // GitHub's SSH URLs over HTTPS.
 //
-// Setting up that access runs alongside BB's bootstrap, which touches
-// neither ~/.bashrc nor git's settings. bb-box asks BB about the machine
-// every 500 ms, and every 100 ms once bootstrap has returned, since BB shows
-// the machine connected soon after. BB starts the daemon's workers, which
+// Setting up that access runs alongside VesnALIA's bootstrap, which touches
+// neither ~/.bashrc nor git's settings. alia-box asks VesnALIA about the machine
+// every 500 ms, and every 100 ms once bootstrap has returned, since VesnALIA shows
+// the machine connected soon after. VesnALIA starts the daemon's workers, which
 // carry the variables, a moment after that, so the enrolment ends once the
-// box's commands find GH_TOKEN, which BB can give a new machine some seconds
+// box's commands find GH_TOKEN, which VesnALIA can give a new machine some seconds
 // after its other variables, or 30 s later, and the box's first command has
-// them. BB's daemon can stop meanwhile, as when the box runs out of memory,
-// so bb-box then asks BB again: the enrolment fails, and says why, if BB
+// them. VesnALIA's daemon can stop meanwhile, as when the box runs out of memory,
+// so alia-box then asks VesnALIA again: the enrolment fails, and says why, if VesnALIA
 // does not show the machine connected within 30 s of that, or of bootstrap
-// returning (#286). A reconnect waits in the same way for BB to show the
+// returning (#286). A reconnect waits in the same way for VesnALIA to show the
 // machine connected again, then for such a worker.
 // Each enrolment logs how long its steps took.
 
-import type { MachineExecutor, PluginMachineProviderDeclaration } from "@get-bb/plugin-sdk";
+import type { MachineExecutor, PluginMachineProviderDeclaration } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { BoxError, OPERATOR, describeError, machineName, type BoxRecord, type Boxes } from "../core/boxes.ts";
 import { ACCESS_CHECK_EXITS, accessCheck, accessSetup, accessSetupMs } from "../core/in-box.ts";
 import type { CommandTransport } from "../transports/types.ts";
 import { quote } from "../transports/process.ts";
 import type { BackendStorage, DaemonKeptByHost } from "../backends/types.ts";
-import { bbServerFolder } from "../backends/tart/device-host.ts";
-import { daemonStarting, endThreadProcesses, hideBbConsoles, runWindowsCommand, windowsFailure } from "./enrol-windows.ts";
+import { aliaServerFolder } from "../backends/tart/device-host.ts";
+import { daemonStarting, endThreadProcesses, hideAliaConsoles, runWindowsCommand, windowsFailure } from "./enrol-windows.ts";
 import { abortable } from "../core/abortable.ts";
 import { LINUX_LEAST_MEMORY_GIB, formatMiB } from "../core/sizes.ts";
 import { readIdentityResets, resetThatRemoved, type IdentityReset } from "../core/identity.ts";
@@ -64,14 +64,14 @@ function recoveryPending(box: BoxRecord): boolean {
   return !!box.identityReset && box.identityReset.enrolledAgainAt === null;
 }
 
-export const MACHINE_PROVIDER_ID = "bb-box";
+export const MACHINE_PROVIDER_ID = "alia-box";
 
 export interface JoinAgain {
   readonly is: "joined" | "joining" | "trying";
   readonly box: BoxRecord;
 }
 
-type MachineInBb = "live" | "adding" | "gone";
+type MachineInAlia = "live" | "adding" | "gone";
 
 const GONE_PHASES = new Set(["removing", "removed", "destroying", "destroyed", "failed"]);
 
@@ -85,12 +85,12 @@ function joiningNow(box: BoxRecord): boolean {
 }
 
 /**
- * BB's manual provider, which makes Windows boxes' machines (#539):
- * only its machines have a Windows enrolment command. bb-box owns their
- * lifecycle itself, as BB calls no provider of bb-box's for them.
+ * VesnALIA's manual provider, which makes Windows boxes' machines (#539):
+ * only its machines have a Windows enrolment command. alia-box owns their
+ * lifecycle itself, as VesnALIA calls no provider of alia-box's for them.
  */
 const MANUAL_PROVIDER_ID = "manual";
-/** Where bb-box keeps each manual machine it made, by machine ID, with its box, so none outlives its box. */
+/** Where alia-box keeps each manual machine it made, by machine ID, with its box, so none outlives its box. */
 const MANUAL_PREFIX = "manual-machine/";
 /** How long a manual machine may name no box before the sweep takes it for a leftover: an enrolment records it on the box first. */
 const MANUAL_GRACE_MS = 10 * 60_000;
@@ -98,52 +98,52 @@ const MANUAL_GRACE_MS = 10 * 60_000;
 interface ManualMachine {
   readonly boxId: string;
   readonly at: number;
-  /** When bb-box asked BB to remove it, while BB has not finished. */
+  /** When alia-box asked VesnALIA to remove it, while VesnALIA has not finished. */
   readonly removing?: number;
-  /** Logged as stuck in BB's removal. */
+  /** Logged as stuck in VesnALIA's removal. */
   readonly stuck?: boolean;
 }
 
-/** What BB's bootstrap says on a Mac where launchd has its daemon's LaunchAgent loaded already (#416). */
+/** What VesnALIA's bootstrap says on a Mac where launchd has its daemon's LaunchAgent loaded already (#416). */
 const LOADED = /Bootstrap failed: 5: Input\/output error/;
 
 /**
- * Removes a Linux box's pre-installed BB app when BB's server has another
+ * Removes a Linux box's pre-installed VesnALIA app when VesnALIA's server has another
  * build of it and the box's root is an overlay, as on microsandbox and
- * Docker (#701). BB's installer then installs the server's build into an
+ * Docker (#701). VesnALIA's installer then installs the server's build into an
  * empty prefix, in about 3 s. Replacing the image's copy in place took npm
  * about 43 s on microsandbox and 19 s on Docker, as overlayfs cannot rename
  * a directory of the image's layer, so npm copies each file it moves. The
- * old app's digest is the one BB's installer wrote, and the server's is in
+ * old app's digest is the one VesnALIA's installer wrote, and the server's is in
  * the package's headers; a box that cannot tell keeps its app.
  */
-export function removeStaleApp(bbUrl: string): string {
+export function removeStaleApp(aliaUrl: string): string {
   return `/bin/sh -c ${quote(String.raw`[ "$(stat -f -c %T / 2>/dev/null)" = overlayfs ] || exit 0
-want=$(curl -fsSI --max-time 10 ${quote(`${bbUrl.replace(/\/+$/, "")}/install/bb-app.tgz`)} | tr -d '\r' | sed -n 's/^x-bb-artifact-sha256: *\([a-f0-9]\{64\}\)$/\1/Ip' | tail -n 1)
+want=$(curl -fsSI --max-time 10 ${quote(`${aliaUrl.replace(/\/+$/, "")}/install/alia-app.tgz`)} | tr -d '\r' | sed -n 's/^x-alia-artifact-sha256: *\([a-f0-9]\{64\}\)$/\1/Ip' | tail -n 1)
 [ -n "$want" ] || exit 0
-for d in "$HOME"/.bb-machines/*/; do
-  [ -d "$d/npm/lib/node_modules/bb-app" ] || continue
-  [ "$(cat "$d/host-artifact.sha256" 2>/dev/null)" = "$want" ] || rm -rf "$d/npm/lib/node_modules/bb-app"
+for d in "$HOME"/.alia-machines/*/; do
+  [ -d "$d/npm/lib/node_modules/alia-app" ] || continue
+  [ "$(cat "$d/host-artifact.sha256" 2>/dev/null)" = "$want" ] || rm -rf "$d/npm/lib/node_modules/alia-app"
 done
 `)}`;
 }
 
-export function keepDaemonPortScript(bbUrl: string, port: number): string {
-  return `/bin/sh -c ${quote(`umask 077 && d="$HOME/.bb-machines/"${quote(bbServerFolder(bbUrl))} && mkdir -p "$d" && printf '%s\\n' ${port} > "$d/host-daemon-port"`)}`;
+export function keepDaemonPortScript(aliaUrl: string, port: number): string {
+  return `/bin/sh -c ${quote(`umask 077 && d="$HOME/.alia-machines/"${quote(aliaServerFolder(aliaUrl))} && mkdir -p "$d" && printf '%s\\n' ${port} > "$d/host-daemon-port"`)}`;
 }
 
 /**
- * Sets aside BB's data for any machine but `keep` in a Linux or macOS box,
- * as a restored box has from the machine BB removed: BB's installer refuses
+ * Sets aside VesnALIA's data for any machine but `keep` in a Linux or macOS box,
+ * as a restored box has from the machine VesnALIA removed: VesnALIA's installer refuses
  * a data folder that belongs to another machine. It stops that machine's
  * daemon, a systemd user unit or a LaunchAgent, and moves its folder to
- * ~/.bb-machines/.set-aside/<folder>-<machine>, keeping its threads' files.
+ * ~/.alia-machines/.set-aside/<folder>-<machine>, keeping its threads' files.
  * Prints each folder it moved. In /bin/sh, as the box user's zsh fails a
  * glob that matches nothing.
  */
 export function setAsideOtherMachines(keep: string | null): string {
   return `/bin/sh -c ${quote(String.raw`keep=${quote(keep ?? "")}
-for d in "$HOME"/.bb-machines/*/; do
+for d in "$HOME"/.alia-machines/*/; do
   d=$(dirname "$d/.")
   id=$(cat "$d/host-id" 2>/dev/null)
   [ -n "$id" ] && [ "$id" != "$keep" ] || continue
@@ -154,15 +154,15 @@ for d in "$HOME"/.bb-machines/*/; do
       rm -f "$p"
     done
   else
-    for u in "$HOME"/.config/systemd/user/bb-host-daemon-*-"$id".service; do
+    for u in "$HOME"/.config/systemd/user/alia-host-daemon-*-"$id".service; do
       [ -f "$u" ] || continue
       systemctl --user disable --now "$(basename "$u")" >/dev/null 2>&1
       rm -f "$u"
     done
     systemctl --user daemon-reload >/dev/null 2>&1
   fi
-  mkdir -p "$HOME/.bb-machines/.set-aside" || exit 1
-  to="$HOME/.bb-machines/.set-aside/$(basename "$d")-$id"
+  mkdir -p "$HOME/.alia-machines/.set-aside" || exit 1
+  to="$HOME/.alia-machines/.set-aside/$(basename "$d")-$id"
   rm -rf "$to"
   mv "$d" "$to" || exit 1
   echo "$d $id"
@@ -171,7 +171,7 @@ done
 }
 
 /**
- * Unloads BB's daemon's LaunchAgent for machine `hostId` in the box user's
+ * Unloads VesnALIA's daemon's LaunchAgent for machine `hostId` in the box user's
  * session, and waits up to 10 s for it to go, as `launchctl bootstrap` fails
  * the same way while it is going (#416). In /bin/sh, as the box user's zsh
  * fails a glob that matches nothing.
@@ -192,7 +192,7 @@ done
 `)}`;
 }
 
-/** The parts of BB's host API enrolment uses. */
+/** The parts of VesnALIA's host API enrolment uses. */
 export interface HostApi {
   experimental_create(args: { machineProviderId: string; key: string; inputs: { boxId: string } | null; wait: false }): Promise<HostState>;
   get(args: { hostId: string; signal?: AbortSignal }): Promise<HostState>;
@@ -218,27 +218,27 @@ interface Progress {
 
 export interface EnrolmentDeps {
   readonly boxes: Boxes;
-  /** bb-box's storage, for the manual machines it made (#539). */
+  /** alia-box's storage, for the manual machines it made (#539). */
   readonly kv: BackendStorage;
   readonly hosts: () => HostApi;
   bootstrap(request: { key: string; executor: MachineExecutor; report: Progress; signal: AbortSignal }): Promise<{ hostId: string }>;
   logError(operation: string, error: unknown): void;
   log?(message: string): void;
-  /** BB's server URL, to tell whether a box's pre-installed app is the server's build (#701). */
-  bbUrl?(): string | null;
-  /** How long an enrolment may take before bb-box gives up on it. */
+  /** VesnALIA's server URL, to tell whether a box's pre-installed app is the server's build (#701). */
+  aliaUrl?(): string | null;
+  /** How long an enrolment may take before alia-box gives up on it. */
   readonly timeoutMs?: number;
-  /** How often to ask BB about the machine, until bootstrap returns. */
+  /** How often to ask VesnALIA about the machine, until bootstrap returns. */
   readonly pollMs?: number;
   /** How often to ask once bootstrap has returned. */
   readonly fastPollMs?: number;
   /** How long to wait, once the machine connects, for a worker with the thread's variables. */
   readonly variablesWaitMs?: number;
-  /** How long a Windows box's daemon may take to connect by itself, as BB's logon entry starts it after a boot, before bb-box runs BB's reconnect (#917). */
+  /** How long a Windows box's daemon may take to connect by itself, as VesnALIA's logon entry starts it after a boot, before alia-box runs VesnALIA's reconnect (#917). */
   readonly logonWaitMs?: number;
-  /** How long to wait before asking BB again to add a box, when BB does not know bb-box's machine provider yet. */
+  /** How long to wait before asking VesnALIA again to add a box, when VesnALIA does not know alia-box's machine provider yet. */
   readonly providerRetryMs?: number;
-  /** How long a release waits for BB to finish removing a Windows box's manual machine (#539). */
+  /** How long a release waits for VesnALIA to finish removing a Windows box's manual machine (#539). */
   readonly manualRemoveMs?: number;
   readonly joinWaitsMs?: readonly number[];
   readonly joinAlarm?: JoinAlarm;
@@ -258,10 +258,10 @@ interface Reach {
 const ACCESS_SETUP_TIMEOUT_MS = 60_000;
 const ACCESS_CHECK_TIMEOUT_MS = 10_000;
 const VARIABLES_POLL_MS = 250;
-/** How many times bb-box asks BB to add a box while BB does not know its machine provider: about 30 s by default (#285). */
+/** How many times alia-box asks VesnALIA to add a box while VesnALIA does not know its machine provider: about 30 s by default (#285). */
 const PROVIDER_TRIES = 6;
 
-/** BB's answer while it does not know bb-box's machine provider, as for some seconds while the plugin restarts. */
+/** VesnALIA's answer while it does not know alia-box's machine provider, as for some seconds while the plugin restarts. */
 function isUnknownProvider(error: unknown): boolean {
   return error instanceof Error && /\bUnknown machine provider\b/i.test(error.message);
 }
@@ -275,7 +275,7 @@ function waited(ms: number): string {
 function lowMemory(box: BoxRecord): string {
   const memoryMiB = (box.guest?.size ?? box.size)?.memoryMiB;
   if (memoryMiB === undefined || memoryMiB >= LINUX_LEAST_MEMORY_GIB * 1024) return "";
-  return ` The box has ${formatMiB(memoryMiB)} memory: with less than ${LINUX_LEAST_MEMORY_GIB} GiB it can run out of memory as it becomes a BB machine.`;
+  return ` The box has ${formatMiB(memoryMiB)} memory: with less than ${LINUX_LEAST_MEMORY_GIB} GiB it can run out of memory as it becomes a VesnALIA machine.`;
 }
 
 /** A box's enrolment once its machine is gone: off, unless it failed to join, which keeps its reason. */
@@ -289,7 +289,7 @@ function sh(value: string): string {
 
 const RETIRE_AGAIN_MS = 60_000;
 
-/** Runs BB's installer commands in the box, as the box user, through its command transport. */
+/** Runs VesnALIA's installer commands in the box, as the box user, through its command transport. */
 export function executor(transport: CommandTransport, phases?: Phases, environment: Readonly<Record<string, string>> = {}): MachineExecutor {
   const assignments = Object.entries(environment).map(([name, value]) => `${name}=${sh(value)}`);
   const prefix = assignments.length ? ["env", ...assignments] : [];
@@ -304,7 +304,7 @@ export function executor(transport: CommandTransport, phases?: Phases, environme
         onOutput: (chunk) => onOutput(decoder.decode(chunk, { stream: true })),
       });
       phases?.mark("installed");
-      // 124 is what timeout(1) exits with; BB reports the exit code with the output's tail.
+      // 124 is what timeout(1) exits with; VesnALIA reports the exit code with the output's tail.
       return { exitCode: result.exitCode ?? (result.timedOut ? 124 : 137) };
     },
   };
@@ -328,11 +328,11 @@ interface Step {
 
 /** The steps of an enrolment. The log lists them in the order they start. */
 const STEPS: readonly Step[] = [
-  { end: "requested", after: [], label: "asking BB", alongside: true },
-  { end: "called", after: [], label: `BB calling ${PRODUCT}'s create` },
+  { end: "requested", after: [], label: "asking VesnALIA", alongside: true },
+  { end: "called", after: [], label: `VesnALIA calling ${PRODUCT}'s create` },
   { end: "prepared", after: ["called"], label: "reaching the box" },
-  { end: "install", after: ["prepared"], label: "BB preparing the enrolment" },
-  { end: "installed", after: ["install"], label: "BB's installer in the box" },
+  { end: "install", after: ["prepared"], label: "VesnALIA preparing the enrolment" },
+  { end: "installed", after: ["install"], label: "VesnALIA's installer in the box" },
   {
     end: "accessed",
     after: ["access"],
@@ -344,16 +344,16 @@ const STEPS: readonly Step[] = [
       { end: "accessed", after: ["env"], label: "running the script" },
     ],
   },
-  { end: "bootstrapped", after: ["installed"], label: "BB waiting for the daemon" },
-  { end: "connected", after: ["bootstrapped"], label: "BB showing the machine connected" },
+  { end: "bootstrapped", after: ["installed"], label: "VesnALIA waiting for the daemon" },
+  { end: "connected", after: ["bootstrapped"], label: "VesnALIA showing the machine connected" },
   { end: "accessed", after: ["connected"], label: "waiting for the access setup", optional: true },
   { end: "variables", after: ["connected", "accessed"], label: "waiting for a worker with the thread's variables", optional: true },
   { end: "enrolled", after: ["connected", "accessed", "variables"], label: "finishing" },
 ];
 
 /**
- * What an enrolment's time counts from: the box being ready, bb-box
- * resuming the enrolment after a restart, or bb-box finding a box the sweep
+ * What an enrolment's time counts from: the box being ready, alia-box
+ * resuming the enrolment after a restart, or alia-box finding a box the sweep
  * restored running and answering.
  */
 export type EnrolSince = "ready" | "resumed" | "restored" | "reset" | "retry";
@@ -419,7 +419,7 @@ export class Phases {
   }
 }
 
-/** BB's answer to a reconnect of a machine it shows connected: HTTP 409. */
+/** VesnALIA's answer to a reconnect of a machine it shows connected: HTTP 409. */
 function isConflict(error: unknown): boolean {
   const { status } = (error ?? {}) as { status?: unknown };
   return status === 409 || /\bHTTP 409\b|doesn't need reconnecting/i.test(error instanceof Error ? error.message : "");
@@ -441,7 +441,7 @@ export class Enrolment {
   readonly #manualRemoveMs: number;
   /** Boxes whose enrolment this process is following. */
   readonly #following = new Set<string>();
-  /** Boxes whose BB daemon this process is starting again. */
+  /** Boxes whose VesnALIA daemon this process is starting again. */
   readonly #reconnecting = new Set<string>();
   readonly #recovering = new Set<string>();
   readonly #trying = new Set<string>();
@@ -460,7 +460,7 @@ export class Enrolment {
     this.#timeoutMs = deps.timeoutMs ?? 5 * 60_000;
     this.#pollMs = deps.pollMs ?? 500;
     this.#fastPollMs = deps.fastPollMs ?? 100;
-    // BB can give a new machine GH_TOKEN some seconds after it connects.
+    // VesnALIA can give a new machine GH_TOKEN some seconds after it connects.
     this.#variablesWaitMs = deps.variablesWaitMs ?? 30_000;
     this.#logonWaitMs = deps.logonWaitMs ?? 90_000;
     this.#providerRetryMs = deps.providerRetryMs ?? 6_000;
@@ -507,19 +507,19 @@ export class Enrolment {
     return AbortSignal.any([signal, this.#stopping.signal]);
   }
 
-  /** The machine provider BB calls to create and remove a box's machine. */
+  /** The machine provider VesnALIA calls to create and remove a box's machine. */
   provider(): PluginMachineProviderDeclaration<z.ZodObject<{ boxId: z.ZodString }>> {
     const boxes = this.#deps.boxes;
     return {
       id: MACHINE_PROVIDER_ID,
-      displayName: "bb-box",
+      displayName: "alia-box",
       description: `A box an agent or the ${PRODUCT} panel acquired. ${PRODUCT} adds it when the box is ready.`,
       icon: "Box",
       inputs: z.object({ boxId: z.string().min(1) }),
       create: async ({ inputs, key, checkpoint, report, signal }) => {
         const box = await boxes.find(inputs.boxId);
         if (!box || box.state !== "ready") {
-          return { status: "failed", message: `Box ${box?.name ?? inputs.boxId} is not ready, so it cannot become a BB machine.` };
+          return { status: "failed", message: `Box ${box?.name ?? inputs.boxId} is not ready, so it cannot become a VesnALIA machine.` };
         }
         const phases = this.#phases.get(box.id);
         phases?.mark("called");
@@ -528,9 +528,9 @@ export class Enrolment {
           const reach = await this.#reach(box);
           const transport = reach.command;
           phases?.mark("prepared");
-          report.step(`Installing BB in box ${box.name}`);
-          const bbUrl = box.capabilities.os === "windows" ? null : this.#deps.bbUrl?.();
-          if (bbUrl) await transport.run(removeStaleApp(bbUrl), { timeoutMs: 30_000, signal }).catch((error) => this.#deps.logError("remove a stale BB app", error));
+          report.step(`Installing VesnALIA in box ${box.name}`);
+          const aliaUrl = box.capabilities.os === "windows" ? null : this.#deps.aliaUrl?.();
+          if (aliaUrl) await transport.run(removeStaleApp(aliaUrl), { timeoutMs: 30_000, signal }).catch((error) => this.#deps.logError("remove a stale VesnALIA app", error));
           if (box.capabilities.os !== "windows") await this.#setAside(box, transport, signal);
           await this.#keepDaemonPort(box, reach, signal);
           await this.#deps.bootstrap({ key, executor: executor(transport, phases, reach.daemonKeptByHost?.installerEnvironment), report, signal });
@@ -538,16 +538,16 @@ export class Enrolment {
           phases?.mark("bootstrapped");
           return { status: "created", name: machineName(box), resource: { boxId: box.id } };
         } catch (error) {
-          if (this.#isStopping(error) || signal.aborted) return { status: "failed", message: `${PRODUCT} stopped while it installed BB in box ${box.name}; its next run installs it again.` };
+          if (this.#isStopping(error) || signal.aborted) return { status: "failed", message: `${PRODUCT} stopped while it installed VesnALIA in box ${box.name}; its next run installs it again.` };
           const described = describeError(error, `Enrolling box ${box.name}`);
           const message = plainJoinFailure(described);
           if (message !== described) this.#deps.log?.(described);
-          // Kept on the box, so its row says why: BB removes the machine next, and that removal must not leave the box looking fine.
+          // Kept on the box, so its row says why: VesnALIA removes the machine next, and that removal must not leave the box looking fine.
           await boxes.update(box, (current) => ({ enrol: { state: "failed", hostId: current.enrol.hostId, error: message } })).catch(() => null);
           return { status: "failed", message };
         }
       },
-      // The box is bb-box's, and outlives its machine: removing the machine leaves the box running.
+      // The box is alia-box's, and outlives its machine: removing the machine leaves the box running.
       reconcileCleanup: async () => ({ status: "removed" }),
       remove: async (removal) => {
         const boxId = (removal.resource as { boxId?: unknown }).boxId;
@@ -555,7 +555,7 @@ export class Enrolment {
         const box = await this.#deps.boxes.find(boxId);
         const named = (removal as { hostId?: unknown }).hostId;
         const machine = typeof named === "string" ? named : (box?.enrol.hostId ?? null);
-        if (box && machine) await this.#machineGone(box, machine, { removedInBb: true });
+        if (box && machine) await this.#machineGone(box, machine, { removedInAlia: true });
         else if (box) await this.#off(boxId);
         return { status: "removed" };
       },
@@ -563,51 +563,51 @@ export class Enrolment {
   }
 
   /**
-   * BB creates a new machine for the box only when it has none: data another
+   * VesnALIA creates a new machine for the box only when it has none: data another
    * machine left, as in a box the sweep restored after its machine was
-   * removed, is set aside first, so BB's installer takes the box.
+   * removed, is set aside first, so VesnALIA's installer takes the box.
    */
   async #setAside(box: BoxRecord, transport: CommandTransport, signal: AbortSignal): Promise<void> {
     const keep = (await this.#deps.boxes.find(box.id))?.enrol.hostId ?? null;
     const result = await transport.run(setAsideOtherMachines(keep), { timeoutMs: 60_000, signal });
-    if (result.exitCode !== 0) throw new Error(`BB's data from another machine in box ${box.name} could not be set aside: ${result.stderr.trim() || `exit ${result.exitCode}`}`);
+    if (result.exitCode !== 0) throw new Error(`VesnALIA's data from another machine in box ${box.name} could not be set aside: ${result.stderr.trim() || `exit ${result.exitCode}`}`);
     for (const line of result.stdout.split("\n").filter(Boolean)) {
       const [folder, machine] = line.split(" ");
-      this.#deps.log?.(`Box ${box.name} had BB's data for machine ${machine}, which is not its machine now: set aside ${folder} in ~/.bb-machines/.set-aside, and stopped its daemon.`);
+      this.#deps.log?.(`Box ${box.name} had VesnALIA's data for machine ${machine}, which is not its machine now: set aside ${folder} in ~/.alia-machines/.set-aside, and stopped its daemon.`);
     }
   }
 
   /**
-   * BB's bootstrap of a machine BB has already, to start its daemon again.
+   * VesnALIA's bootstrap of a machine VesnALIA has already, to start its daemon again.
    * After a Mac boots, launchd has the daemon's LaunchAgent loaded already,
-   * from the login, and BB's `launchctl bootstrap` fails for it: bb-box
+   * from the login, and VesnALIA's `launchctl bootstrap` fails for it: alia-box
    * unloads it then and runs the bootstrap once more (#416).
    */
   async #keepDaemonPort(box: BoxRecord, reach: Reach, signal: AbortSignal): Promise<void> {
     const port = reach.daemonKeptByHost?.daemonPort ?? null;
-    const bbUrl = this.#deps.bbUrl?.() ?? null;
-    if (port === null || !bbUrl) return;
-    const kept = await reach.command.run(keepDaemonPortScript(bbUrl, port), { timeoutMs: 30_000, signal });
-    if (kept.exitCode !== 0) throw new Error(`Could not give BB's daemon in box ${box.name} its slot's port ${port}: ${kept.stderr.trim() || `exit code ${kept.exitCode}`}`);
+    const aliaUrl = this.#deps.aliaUrl?.() ?? null;
+    if (port === null || !aliaUrl) return;
+    const kept = await reach.command.run(keepDaemonPortScript(aliaUrl, port), { timeoutMs: 30_000, signal });
+    if (kept.exitCode !== 0) throw new Error(`Could not give VesnALIA's daemon in box ${box.name} its slot's port ${port}: ${kept.stderr.trim() || `exit code ${kept.exitCode}`}`);
   }
 
   async #bootstrapAgain(box: BoxRecord, hostId: string, reach: Reach, request: Parameters<EnrolmentDeps["bootstrap"]>[0]): Promise<void> {
     const transport = reach.command;
     if (box.capabilities.os === "windows") {
-      // BB's daemon runs on through a suspend, and its logon starts it after
-      // a boot. BB refuses a reconnect while it shows the machine connected.
+      // VesnALIA's daemon runs on through a suspend, and its logon starts it after
+      // a boot. VesnALIA refuses a reconnect while it shows the machine connected.
       if ((await this.#deps.hosts().get({ hostId })).status === "connected") return;
-      // After a boot BB's logon entry starts the daemon, and a resumed box's daemon connects again by itself: BB's
-      // reconnect command meanwhile could start a second supervisor beside it (#917). So bb-box waits for that first.
+      // After a boot VesnALIA's logon entry starts the daemon, and a resumed box's daemon connects again by itself: VesnALIA's
+      // reconnect command meanwhile could start a second supervisor beside it (#917). So alia-box waits for that first.
       const starting = await daemonStarting(transport, hostId, { timeoutMs: 30_000, signal: request.signal }).catch((error: unknown) => {
-        this.#deps.logError("look for BB's daemon in a Windows box", error);
+        this.#deps.logError("look for VesnALIA's daemon in a Windows box", error);
         return null;
       });
       if (starting && (await this.#connectedWithin(hostId, this.#logonWaitMs, request.signal))) {
-        this.#deps.log?.(`BB's daemon in box ${box.name} connected by itself, ${starting === "logon" ? "started by its logon" : "as it ran already"}, so bb-box started no other.`);
+        this.#deps.log?.(`VesnALIA's daemon in box ${box.name} connected by itself, ${starting === "logon" ? "started by its logon" : "as it ran already"}, so alia-box started no other.`);
         return;
       }
-      // BB's reconnect command, in its Windows form (#539).
+      // VesnALIA's reconnect command, in its Windows form (#539).
       const reconnect = await this.#deps
         .hosts()
         .experimental_reconnect({ hostId, signal: request.signal })
@@ -616,9 +616,9 @@ export class Enrolment {
           throw error;
         });
       if (!reconnect) return;
-      if (!reconnect.windowsCommand) throw new Error(`BB gave no Windows command to start BB's daemon in box ${box.name} again.`);
+      if (!reconnect.windowsCommand) throw new Error(`VesnALIA gave no Windows command to start VesnALIA's daemon in box ${box.name} again.`);
       const result = await runWindowsCommand(transport, reconnect.windowsCommand, { timeoutMs: this.#timeoutMs, signal: request.signal });
-      if (result.exitCode !== 0) throw new Error(windowsFailure(`Starting BB's daemon in box ${box.name} again`, result));
+      if (result.exitCode !== 0) throw new Error(windowsFailure(`Starting VesnALIA's daemon in box ${box.name} again`, result));
       return;
     }
     await this.#keepDaemonPort(box, reach, request.signal);
@@ -626,7 +626,7 @@ export class Enrolment {
       await this.#deps.bootstrap(request);
     } catch (error) {
       if (box.capabilities.os !== "macos" || reach.daemonKeptByHost || !LOADED.test(error instanceof Error ? error.message : String(error))) throw error;
-      this.#deps.log?.(`BB's daemon in box ${box.name} was loaded already, as after a boot: unloading it, and running BB's bootstrap again.`);
+      this.#deps.log?.(`VesnALIA's daemon in box ${box.name} was loaded already, as after a boot: unloading it, and running VesnALIA's bootstrap again.`);
       const unloaded = await transport.run(unloadMacDaemon(hostId), { timeoutMs: 30_000, signal: request.signal });
       if (unloaded.exitCode !== 0) throw error;
       await this.#deps.bootstrap(request);
@@ -635,30 +635,30 @@ export class Enrolment {
   }
 
   /**
-   * Enrols a Windows box (#539) as the manual machine bb-box made
+   * Enrols a Windows box (#539) as the manual machine alia-box made
    * for it: names the machine after the box, then runs the machine's
    * enrolment command, in its Windows form, in the box user's desktop
-   * session, where BB's daemon has to run. BB's installer names the machine
+   * session, where VesnALIA's daemon has to run. VesnALIA's installer names the machine
    * after the computer, so #follow names it again once it connects.
    */
   async #enrolWindows(box: BoxRecord, hostId: string, phases: Phases): Promise<void> {
     await this.#rename(box, hostId);
     const enrolment = await this.#deps.hosts().experimental_getEnrollmentCommand({ hostId });
-    if (!enrolment?.windowsCommand) throw new Error(`BB gave no Windows enrolment command for box ${box.name}'s machine ${hostId}.`);
+    if (!enrolment?.windowsCommand) throw new Error(`VesnALIA gave no Windows enrolment command for box ${box.name}'s machine ${hostId}.`);
     const transport = await this.#transport(box);
     phases.mark("install");
     const result = await runWindowsCommand(transport, enrolment.windowsCommand, { timeoutMs: this.#timeoutMs, signal: this.#untilStopping(AbortSignal.timeout(this.#timeoutMs)) });
     phases.mark("installed");
-    if (result.exitCode !== 0) throw new Error(windowsFailure(`BB's Windows installer in box ${box.name}`, result));
+    if (result.exitCode !== 0) throw new Error(windowsFailure(`VesnALIA's Windows installer in box ${box.name}`, result));
     phases.mark("bootstrapped");
   }
 
-  /** Names the box's BB machine after the box, as a spare that stops to wait says it does (#539). */
+  /** Names the box's VesnALIA machine after the box, as a spare that stops to wait says it does (#539). */
   async rename(box: BoxRecord): Promise<void> {
     if (box.enrol.hostId) await this.#rename(box, box.enrol.hostId);
   }
 
-  /** Names the box's machine in BB after the box. Nothing fails without it, so it only logs an error. */
+  /** Names the box's machine in VesnALIA after the box. Nothing fails without it, so it only logs an error. */
   async #rename(box: BoxRecord, hostId: string): Promise<void> {
     await this.#deps
       .hosts()
@@ -683,7 +683,7 @@ export class Enrolment {
   }
 
   /**
-   * Makes a ready box a BB machine and waits until its daemon connects.
+   * Makes a ready box a VesnALIA machine and waits until its daemon connects.
    * `since` "resumed" follows an enrolment a restart interrupted, and
    * "restored" enrols a box the sweep restored, once it answers. Never throws.
    */
@@ -700,7 +700,7 @@ export class Enrolment {
     try {
       if (!(await this.#oneTry(box, phases, since, outcome))) return;
       await this.#afterTry(box.id).catch((error) => {
-        if (!this.#isStopping(error)) this.#deps.logError("plan the next try to add a box to BB", error);
+        if (!this.#isStopping(error)) this.#deps.logError("plan the next try to add a box to VesnALIA", error);
       });
     } finally {
       this.#following.delete(box.id);
@@ -728,7 +728,7 @@ export class Enrolment {
         if (!host) return false;
         if (since === "reset" && host.id === box.identityReset?.machine) {
           await this.#deps.boxes.update(box, (latest) => (latest.identityReset ? { identityReset: { ...latest.identityReset, retiredAt: null } } : {}));
-          throw new Error(`BB gave back machine ${host.id}, which the identity reset left, so ${PRODUCT} removes it again at its next sweep before it enrols the box`);
+          throw new Error(`VesnALIA gave back machine ${host.id}, which the identity reset left, so ${PRODUCT} removes it again at its next sweep before it enrols the box`);
         }
         phases.mark("requested");
         const recorded = await this.#deps.boxes.update(box, () => ({ enrol: { state: "enrolling", hostId: host.id, error: null } }));
@@ -738,14 +738,14 @@ export class Enrolment {
           return false;
         }
         current = recorded;
-        // The thread's access needs only the machine's ID, so on Windows too it is set up while BB's installer runs,
+        // The thread's access needs only the machine's ID, so on Windows too it is set up while VesnALIA's installer runs,
         // which takes most of a minute there, not once it has.
         if (box.capabilities.os === "windows") {
           access = this.#setUpAccess(current, phases);
           await this.#enrolWindows(current, host.id, phases);
         }
-        // BB still had the box's machine, as for a box the sweep restored,
-        // and its daemon is not running. BB does not create the machine
+        // VesnALIA still had the box's machine, as for a box the sweep restored,
+        // and its daemon is not running. VesnALIA does not create the machine
         // again, so bootstrap with the same key starts the daemon.
         if (box.capabilities.os !== "windows" && host.lifecycle.phase === "active" && host.status !== "connected") {
           const found = await this.#resetThatRemoved(current, host.id);
@@ -769,7 +769,7 @@ export class Enrolment {
     } catch (error) {
       if (this.#isStopping(error)) return false;
       this.#deps.logError("enrol", error);
-      // A Windows box's manual machine is bb-box's to remove: none may stay in BB's list (#539).
+      // A Windows box's manual machine is alia-box's to remove: none may stay in VesnALIA's list (#539).
       const manual = box.capabilities.os === "windows" ? (await this.#deps.boxes.find(box.id))?.enrol.hostId : null;
       if (manual) await this.#remove(manual).catch((removal) => this.#deps.logError("enrol", removal));
       await this.#deps.boxes
@@ -784,8 +784,8 @@ export class Enrolment {
   }
 
   /**
-   * Asks BB to add the box as a machine. While the plugin restarts, BB can
-   * say for some seconds that it knows no such machine provider, so bb-box
+   * Asks VesnALIA to add the box as a machine. While the plugin restarts, VesnALIA can
+   * say for some seconds that it knows no such machine provider, so alia-box
    * asks again then. Null when the box was released meanwhile.
    */
   async #create(box: BoxRecord): Promise<HostState | null> {
@@ -799,7 +799,7 @@ export class Enrolment {
         return await this.#deps.hosts().experimental_create({ machineProviderId: MACHINE_PROVIDER_ID, key: box.id, inputs: { boxId: box.id }, wait: false });
       } catch (error) {
         if (!isUnknownProvider(error) || attempt >= PROVIDER_TRIES) throw error;
-        this.#deps.log?.(`Enrolling box ${box.name}: BB does not know bb-box's machine provider yet, as while the plugin restarts. Asking again in ${this.#providerRetryMs / 1000} s, ${PROVIDER_TRIES - attempt} more times at most.`);
+        this.#deps.log?.(`Enrolling box ${box.name}: VesnALIA does not know alia-box's machine provider yet, as while the plugin restarts. Asking again in ${this.#providerRetryMs / 1000} s, ${PROVIDER_TRIES - attempt} more times at most.`);
       }
       await Promise.race([new Promise((resolve) => setTimeout(resolve, this.#providerRetryMs)), this.#stopped]);
       this.#stopping.signal.throwIfAborted();
@@ -809,7 +809,7 @@ export class Enrolment {
   }
 
   /**
-   * Waits for BB to show the machine connected, and still connected once
+   * Waits for VesnALIA to show the machine connected, and still connected once
    * the waits for the box's access end. `access` is the access setup
    * running alongside.
    */
@@ -830,13 +830,13 @@ export class Enrolment {
         if (current.capabilities.os === "windows") await this.#rename(current, hostId);
         await access;
         await this.#variables(current, "the machine connected", connected, phases);
-        // BB's daemon can stop during the waits, as when the box runs out of
-        // memory, so bb-box asks BB again before it records the box enrolled (#286).
+        // VesnALIA's daemon can stop during the waits, as when the box runs out of
+        // memory, so alia-box asks VesnALIA again before it records the box enrolled (#286).
         waitsEnded = this.#now();
         continue;
       }
       if (phase === "active" && host.status === "connected") {
-        // BB may have removed the machine during the waits, and the box is then not enrolled.
+        // VesnALIA may have removed the machine during the waits, and the box is then not enrolled.
         // A resumed enrolment's own time is only its last part, so the box shows none.
         const enrolled = await this.#deps.boxes.update(box, (latest) =>
           latest.enrol.hostId !== hostId
@@ -850,7 +850,7 @@ export class Enrolment {
         if (enrolled?.enrol.hostId !== hostId) return;
         phases.mark("enrolled");
         this.#deps.log?.(phases.line(enrolled.name));
-        if (current.joinTries) this.#deps.log?.(`Box ${enrolled.name} joined BB at its ${tryWords(current.joinTries.failed)}.`);
+        if (current.joinTries) this.#deps.log?.(`Box ${enrolled.name} joined VesnALIA at its ${tryWords(current.joinTries.failed)}.`);
         return;
       }
       if (phases.since === "resumed" && phase === "removing") {
@@ -858,30 +858,30 @@ export class Enrolment {
         continue;
       }
       if (phases.since === "resumed" && phase === "destroyed") {
-        this.#deps.log?.(`BB removed box ${current.name}'s machine while bb-box restarted, as when a restart ended BB's installer in it; bb-box adds the box again.`);
+        this.#deps.log?.(`VesnALIA removed box ${current.name}'s machine while alia-box restarted, as when a restart ended VesnALIA's installer in it; alia-box adds the box again.`);
         await this.#deps.boxes.update(box, () => ({ enrol: { state: "enrolling", hostId: null, error: null } }));
         return "start over";
       }
       if (phase === "destroyed" || phase === "removing") {
-        const reason = plainJoinFailure(host.lifecycle.message ?? "BB removed the machine before it connected.");
+        const reason = plainJoinFailure(host.lifecycle.message ?? "VesnALIA removed the machine before it connected.");
         await this.#deps.boxes.update(box, () => ({ enrol: { state: "failed", hostId: null, error: reason } }));
         return;
       }
       if (this.#now() > deadline) {
-        const reason = `BB did not finish adding the box as a machine within ${Math.round(this.#timeoutMs / 60_000)} minutes.${host.lifecycle.message ? ` ${host.lifecycle.message}` : ""}`;
+        const reason = `VesnALIA did not finish adding the box as a machine within ${Math.round(this.#timeoutMs / 60_000)} minutes.${host.lifecycle.message ? ` ${host.lifecycle.message}` : ""}`;
         await this.#deps.boxes.update(box, () => ({ enrol: { state: "failed", hostId, error: reason } }));
         return;
       }
-      // Once BB's daemon has started, or has connected and the waits ended,
-      // BB shows the machine connected within a second or so. If it does not
+      // Once VesnALIA's daemon has started, or has connected and the waits ended,
+      // VesnALIA shows the machine connected within a second or so. If it does not
       // within as long as an enrolment waits for the variables, the daemon
-      // stopped, and the box is not a BB machine (#286).
+      // stopped, and the box is not a VesnALIA machine (#286).
       const from = waitsEnded ?? phases.marks.get("bootstrapped");
       if (from !== undefined && this.#now() - from > this.#variablesWaitMs) {
         const reason =
           (waitsEnded !== undefined
-            ? `BB's daemon in box ${current.name} stopped soon after it connected, and BB did not show the machine connected again within ${waited(this.#variablesWaitMs)}.`
-            : `BB's daemon in box ${current.name} started, but BB did not show the machine connected within ${waited(this.#variablesWaitMs)}.`) + lowMemory(current);
+            ? `VesnALIA's daemon in box ${current.name} stopped soon after it connected, and VesnALIA did not show the machine connected again within ${waited(this.#variablesWaitMs)}.`
+            : `VesnALIA's daemon in box ${current.name} started, but VesnALIA did not show the machine connected within ${waited(this.#variablesWaitMs)}.`) + lowMemory(current);
         this.#deps.log?.(reason);
         await this.#deps.boxes.update(box, () => ({ enrol: { state: "failed", hostId, error: reason } }));
         return;
@@ -892,7 +892,7 @@ export class Enrolment {
 
   /**
    * Makes the box's shells and git use the thread's access. It needs only
-   * the machine's ID, so it runs while BB installs its daemon. A failure
+   * the machine's ID, so it runs while VesnALIA installs its daemon. A failure
    * leaves the box enrolled.
    */
   async #setUpAccess(box: BoxRecord, phases: Phases): Promise<void> {
@@ -922,10 +922,10 @@ export class Enrolment {
 
   /**
    * Waits, once the machine connects, until the box's commands find a worker
-   * of BB's daemon with the thread's variables, which BB starts a moment
+   * of VesnALIA's daemon with the thread's variables, which VesnALIA starts a moment
    * later. The wait counts from `connected`, and `since` says what happened
-   * then. A box with no names to take, or in which bb-box finds no daemon,
-   * does not wait, nor one whose machine BB removes. A failure leaves the
+   * then. A box with no names to take, or in which alia-box finds no daemon,
+   * does not wait, nor one whose machine VesnALIA removes. A failure leaves the
    * box enrolled.
    */
   async #variables(box: BoxRecord, since: string, connected: number, phases?: Phases): Promise<void> {
@@ -943,7 +943,7 @@ export class Enrolment {
           throw new Error(`Looking for the thread's variables in box ${box.name} exited with ${result.exitCode ?? "no code"}: ${result.stderr.trim()}`);
         }
         if (this.#now() >= deadline) {
-          this.#deps.log?.(`BB's daemon in box ${box.name} had no process with the thread's GH_TOKEN ${waited(this.#variablesWaitMs)} after ${since}. Its commands take it once one has.`);
+          this.#deps.log?.(`VesnALIA's daemon in box ${box.name} had no process with the thread's GH_TOKEN ${waited(this.#variablesWaitMs)} after ${since}. Its commands take it once one has.`);
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, VARIABLES_POLL_MS));
@@ -955,7 +955,7 @@ export class Enrolment {
     }
   }
 
-  /** Removes a box's machine from BB, before its release. */
+  /** Removes a box's machine from VesnALIA, before its release. */
   async unenrol(box: BoxRecord): Promise<void> {
     if (!box.enrol.hostId) return;
     if (box.capabilities.os === "windows") await this.#endThreads(box);
@@ -964,9 +964,9 @@ export class Enrolment {
 
   /**
    * Ends the processes of threads in a Windows box before its machine is
-   * removed (#539). A thread's agent, and the worker of BB's daemon that runs
+   * removed (#539). A thread's agent, and the worker of VesnALIA's daemon that runs
    * it, work in the thread's worktree, and Windows does not remove a folder
-   * a process works in: BB's teardown of the worktree failed with EBUSY, and
+   * a process works in: VesnALIA's teardown of the worktree failed with EBUSY, and
    * the machine stayed "removing" once the box was gone. Best effort: a box
    * that does not answer, as a stopped one, is removed as before.
    */
@@ -976,18 +976,18 @@ export class Enrolment {
       const { command } = await this.#deps.boxes.transports({ ...box, state: "ready" });
       if (!command) return;
       const ended = await endThreadProcesses(command, { timeoutMs: 60_000 });
-      if (ended) this.#deps.log?.(`Ended ${ended} processes of threads in box ${box.name} before its BB machine's removal, so that BB can remove their worktrees.`);
+      if (ended) this.#deps.log?.(`Ended ${ended} processes of threads in box ${box.name} before its VesnALIA machine's removal, so that VesnALIA can remove their worktrees.`);
     } catch (error) {
       this.#deps.logError("end the threads' processes", error);
     }
   }
 
   /**
-   * Removes a machine from BB. BB's delete of a manual machine returns
-   * before BB has removed it: BB first tears down the threads' environments
-   * on it, which needs the machine. So for one, bb-box waits up to `waitMs`
-   * for BB to finish, as the box must not go first, and keeps its record of
-   * the machine until BB no longer has it (#539).
+   * Removes a machine from VesnALIA. VesnALIA's delete of a manual machine returns
+   * before VesnALIA has removed it: VesnALIA first tears down the threads' environments
+   * on it, which needs the machine. So for one, alia-box waits up to `waitMs`
+   * for VesnALIA to finish, as the box must not go first, and keeps its record of
+   * the machine until VesnALIA no longer has it (#539).
    */
   async #remove(hostId: string, waitMs = this.#manualRemoveMs): Promise<void> {
     const key = `${MANUAL_PREFIX}${hostId}`;
@@ -1004,7 +1004,7 @@ export class Enrolment {
     else await this.#stillRemoving(hostId, { ...made, removing }, left);
   }
 
-  /** Waits up to `waitMs` for BB to no longer have machine `hostId`. Null once it has not; otherwise what BB says of it. */
+  /** Waits up to `waitMs` for VesnALIA to no longer have machine `hostId`. Null once it has not; otherwise what VesnALIA says of it. */
   async #removing(hostId: string, waitMs: number): Promise<string | null> {
     const deadline = this.#now() + waitMs;
     for (;;) {
@@ -1022,28 +1022,28 @@ export class Enrolment {
     }
   }
 
-  /** Keeps the record of a manual machine BB is still removing, and logs it once BB has taken longer than a release waits. */
+  /** Keeps the record of a manual machine VesnALIA is still removing, and logs it once VesnALIA has taken longer than a release waits. */
   async #stillRemoving(hostId: string, made: ManualMachine & { removing: number }, left: string): Promise<void> {
     const stuck = this.#now() - made.removing >= this.#manualRemoveMs;
     if (stuck && !made.stuck) {
       this.#deps.log?.(
-        `BB has not finished removing machine ${hostId}, a manual machine bb-box made for a Windows box, ${Math.round((this.#now() - made.removing) / 1000)} s after bb-box asked: ${left}. bb-box keeps its record, and its sweep looks again.`,
+        `VesnALIA has not finished removing machine ${hostId}, a manual machine alia-box made for a Windows box, ${Math.round((this.#now() - made.removing) / 1000)} s after alia-box asked: ${left}. alia-box keeps its record, and its sweep looks again.`,
       );
     }
     await this.#deps.kv.set(`${MANUAL_PREFIX}${hostId}`, { ...made, stuck: made.stuck || stuck } satisfies ManualMachine);
   }
 
   /**
-   * Removes each manual machine bb-box made whose box is gone, or whose box
+   * Removes each manual machine alia-box made whose box is gone, or whose box
    * no longer names it once an enrolment has had time to (#539), and
-   * forgets one BB no longer has.
+   * forgets one VesnALIA no longer has.
    */
   async #sweepManual(signal?: AbortSignal): Promise<void> {
     for (const key of await this.#deps.kv.list(MANUAL_PREFIX)) {
       if (signal?.aborted) return;
       const hostId = key.slice(MANUAL_PREFIX.length);
       const made = await this.#deps.kv.get<ManualMachine>(key);
-      // One bb-box asked BB to remove: forgotten once BB no longer has it.
+      // One alia-box asked VesnALIA to remove: forgotten once VesnALIA no longer has it.
       if (made?.removing) {
         const left = await this.#removing(hostId, 0).catch((error) => (this.#deps.logError("sweep manual machines", error), "unknown"));
         if (left === null) await this.#deps.kv.delete(key);
@@ -1054,17 +1054,17 @@ export class Enrolment {
       const gone = !box || box.state === "releasing" || box.state === "gone" || box.state === "failed";
       const unnamed = !!box && box.enrol.hostId !== hostId && this.#now() - (made?.at ?? 0) > MANUAL_GRACE_MS;
       if (!made || gone || unnamed) {
-        this.#deps.log?.(`Removing BB machine ${hostId}, a manual machine bb-box made for a Windows box: ${box ? `box ${box.name} no longer uses it` : "its box is gone"}.`);
+        this.#deps.log?.(`Removing VesnALIA machine ${hostId}, a manual machine alia-box made for a Windows box: ${box ? `box ${box.name} no longer uses it` : "its box is gone"}.`);
         await this.#remove(hostId, 0).catch((error) => this.#deps.logError("sweep manual machines", error));
       }
     }
   }
 
   /**
-   * Starts BB's daemon again after bb-box started a stopped box: bootstrap
-   * with the same key. Returns once BB shows the machine connected again and
+   * Starts VesnALIA's daemon again after alia-box started a stopped box: bootstrap
+   * with the same key. Returns once VesnALIA shows the machine connected again and
    * the box's commands have the thread's variables, or the waits for them
-   * end. A box whose machine BB removed meanwhile is left unenrolled.
+   * end. A box whose machine VesnALIA removed meanwhile is left unenrolled.
    */
   async reconnect(box: BoxRecord, stop?: AbortSignal): Promise<void> {
     const hostId = box.enrol.hostId;
@@ -1079,12 +1079,12 @@ export class Enrolment {
       // Its own time limit, or the plugin stopping, whichever comes first.
       const signal = stop ? AbortSignal.any([this.#untilStopping(AbortSignal.timeout(this.#timeoutMs)), stop]) : this.#untilStopping(AbortSignal.timeout(this.#timeoutMs));
       try {
-        // A thread's own box joined BB under the thread's key; any other under its own ID.
+        // A thread's own box joined VesnALIA under the thread's key; any other under its own ID.
         const key = box.role === "machine" ? box.threadId : box.id;
         await this.#bootstrapAgain(box, hostId, reach, { key, executor: executor(reach.command, undefined, reach.daemonKeptByHost?.installerEnvironment), report: QUIET, signal });
       } catch (error) {
         await this.#deps.boxes.update(box, (current) =>
-          current.enrol.hostId !== hostId ? {} : { enrol: { ...current.enrol, error: describeError(error, "Reconnecting the box's BB machine") } },
+          current.enrol.hostId !== hostId ? {} : { enrol: { ...current.enrol, error: describeError(error, "Reconnecting the box's VesnALIA machine") } },
         );
         throw error;
       }
@@ -1101,22 +1101,22 @@ export class Enrolment {
   }
 
   /**
-   * Hides the windows of BB's daemon's consoles on a Windows box's desktop,
-   * which BB starts in front, so a person's first keys go to them and a
-   * Ctrl+C could stop the daemon, until BB starts them hidden (bb-requests
+   * Hides the windows of VesnALIA's daemon's consoles on a Windows box's desktop,
+   * which VesnALIA starts in front, so a person's first keys go to them and a
+   * Ctrl+C could stop the daemon, until VesnALIA starts them hidden (alia-requests
    * 27). After an enrolment and each reconnect. Never throws.
    */
   async #hideConsoles(box: BoxRecord): Promise<void> {
     try {
       const transport = await this.#transport(box);
-      const { consoles, hidden } = await hideBbConsoles(transport, { timeoutMs: 60_000 });
-      if (hidden) this.#deps.log?.(`Hid ${hidden} of BB's ${consoles} console ${consoles === 1 ? "window" : "windows"} on box ${box.name}'s desktop (bb-requests 27).`);
+      const { consoles, hidden } = await hideAliaConsoles(transport, { timeoutMs: 60_000 });
+      if (hidden) this.#deps.log?.(`Hid ${hidden} of VesnALIA's ${consoles} console ${consoles === 1 ? "window" : "windows"} on box ${box.name}'s desktop (alia-requests 27).`);
     } catch (error) {
-      this.#deps.logError("hide BB's console windows", error);
+      this.#deps.logError("hide VesnALIA's console windows", error);
     }
   }
 
-  /** Whether BB shows machine `hostId` connected within `ms`. */
+  /** Whether VesnALIA shows machine `hostId` connected within `ms`. */
   async #connectedWithin(hostId: string, ms: number, signal?: AbortSignal): Promise<boolean> {
     const deadline = this.#now() + ms;
     for (;;) {
@@ -1129,8 +1129,8 @@ export class Enrolment {
 
   /**
    * After an acquire claims a spare (032): gives its machine the box's name,
-   * and says whether BB shows the machine disconnected, so bb-box starts
-   * BB's daemon again.
+   * and says whether VesnALIA shows the machine disconnected, so alia-box starts
+   * VesnALIA's daemon again.
    */
   async claimed(box: BoxRecord): Promise<boolean> {
     const hostId = box.enrol.hostId;
@@ -1142,7 +1142,7 @@ export class Enrolment {
   }
 
   /**
-   * Waits for BB to show a box's machine connected after its daemon started
+   * Waits for VesnALIA to show a box's machine connected after its daemon started
    * again, for as long as an enrolment waits for the variables. Returns when
    * it did, or null.
    */
@@ -1154,7 +1154,7 @@ export class Enrolment {
       if (host.lifecycle.phase !== "active") return null;
       if (host.status === "connected") return this.#now();
       if (this.#now() >= deadline) {
-        this.#deps.log?.(`BB did not show box ${box.name}'s machine connected ${waited(this.#variablesWaitMs)} after its daemon started again.`);
+        this.#deps.log?.(`VesnALIA did not show box ${box.name}'s machine connected ${waited(this.#variablesWaitMs)} after its daemon started again.`);
         return null;
       }
       await new Promise((resolve) => setTimeout(resolve, this.#fastPollMs));
@@ -1162,11 +1162,11 @@ export class Enrolment {
   }
 
   /**
-   * Part of the sweep: starts BB's daemon again in each ready, enrolled box
-   * that BB shows disconnected, as after a reboot bb-box did not start, such
-   * as the host's (017). A machine BB no longer has leaves its box unenrolled.
+   * Part of the sweep: starts VesnALIA's daemon again in each ready, enrolled box
+   * that VesnALIA shows disconnected, as after a reboot alia-box did not start, such
+   * as the host's (017). A machine VesnALIA no longer has leaves its box unenrolled.
    */
-  /** Starts BB's daemon again in each enrolled box whose machine BB shows disconnected. Ends at once when `signal` aborts, as when the plugin stops. */
+  /** Starts VesnALIA's daemon again in each enrolled box whose machine VesnALIA shows disconnected. Ends at once when `signal` aborts, as when the plugin stops. */
   async sweep(signal?: AbortSignal): Promise<void> {
     if (signal?.aborted) return;
     await this.#sweepManual(signal).catch((error) => this.#deps.logError("sweep manual machines", error));
@@ -1187,7 +1187,7 @@ export class Enrolment {
           await this.reconnect(box, signal);
         } catch (error) {
           if (signal?.aborted) return;
-          if (isNotFound(error)) await this.#machineGone(box, box.enrol.hostId!, { removedInBb: false });
+          if (isNotFound(error)) await this.#machineGone(box, box.enrol.hostId!, { removedInAlia: false });
           else this.#deps.logError("reconnect", error);
         }
       }),
@@ -1228,7 +1228,7 @@ export class Enrolment {
     return "recover";
   }
 
-  async #machineGone(box: BoxRecord, machine: string, options: { readonly removedInBb: boolean }): Promise<void> {
+  async #machineGone(box: BoxRecord, machine: string, options: { readonly removedInAlia: boolean }): Promise<void> {
     if (box.identityReset?.machine === machine) {
       void this.#recover(box.id);
       return;
@@ -1236,7 +1236,7 @@ export class Enrolment {
     if ((await this.#identityTurn(box.id, () => this.#decideMachineGone(box.id, machine, options))) === "recover") void this.#recover(box.id);
   }
 
-  async #decideMachineGone(boxId: string, machine: string, options: { readonly removedInBb: boolean }): Promise<"recover" | null> {
+  async #decideMachineGone(boxId: string, machine: string, options: { readonly removedInAlia: boolean }): Promise<"recover" | null> {
     const box = await this.#deps.boxes.find(boxId);
     if (!box) return null;
     if (recoveryPending(box)) return box.identityReset!.machine === machine ? "recover" : null;
@@ -1256,11 +1256,11 @@ export class Enrolment {
     const decided = await this.#deps.boxes.update(box, (current) => {
       const named = current.enrol.hostId === machine || (current.enrol.hostId === null && current.removedMachineToCheck?.machine === machine);
       if (identityState(current) !== seen || recoveryPending(current) || !named) return {};
-      // One of your machines lives as its BB machine (036): removing that in BB removes the box.
-      release = options.removedInBb && current.threadId === OPERATOR && current.state !== "releasing" && current.enrol.state !== "failed";
+      // One of your machines lives as its VesnALIA machine (036): removing that in VesnALIA removes the box.
+      release = options.removedInAlia && current.threadId === OPERATOR && current.state !== "releasing" && current.enrol.state !== "failed";
       return { enrol: current.enrol.hostId === machine ? gone(current.enrol) : current.enrol, removedMachineToCheck: null };
     });
-    if (release && decided) await this.#deps.boxes.release(OPERATOR, decided.id, "its BB machine was removed in BB");
+    if (release && decided) await this.#deps.boxes.release(OPERATOR, decided.id, "its VesnALIA machine was removed in VesnALIA");
     return null;
   }
 
@@ -1268,7 +1268,7 @@ export class Enrolment {
     const check = box.removedMachineToCheck;
     if (!check) return;
     try {
-      if ((await this.#identityTurn(box.id, () => this.#decideMachineGone(box.id, check.machine, { removedInBb: true }))) === "recover") void this.#recover(box.id);
+      if ((await this.#identityTurn(box.id, () => this.#decideMachineGone(box.id, check.machine, { removedInAlia: true }))) === "recover") void this.#recover(box.id);
     } catch (error) {
       if (!this.#isStopping(error)) this.#deps.logError("check a removed machine for an identity reset", error);
     }
@@ -1309,13 +1309,13 @@ export class Enrolment {
       await this.#deps.hosts().delete({ hostId: machine });
     } catch (error) {
       if (!isNotFound(error)) {
-        this.#deps.logError("remove the BB machine an identity reset left", error);
+        this.#deps.logError("remove the VesnALIA machine an identity reset left", error);
         return false;
       }
     }
     const left = await this.#removing(machine, this.#manualRemoveMs).catch((error: unknown) => (error instanceof Error ? error.message : String(error)));
     if (left === null) return true;
-    this.#deps.log?.(`BB has not finished removing machine ${machine}, which an identity reset left: ${left}. bb-box asks again at its next sweep, and enrols the box as a new machine only once it has.`);
+    this.#deps.log?.(`VesnALIA has not finished removing machine ${machine}, which an identity reset left: ${left}. alia-box asks again at its next sweep, and enrols the box as a new machine only once it has.`);
     return false;
   }
 
@@ -1349,8 +1349,8 @@ export class Enrolment {
     const after = when ?? `${PRODUCT} gave up, ${waitWords(now - since)} after the first failure of this round.`;
     this.#deps.log?.(
       planned.gaveUp
-        ? `Box ${settled.name} did not join BB after ${failed} ${failed === 1 ? "try" : "tries"}${planned.setup ? `, and no box on ${settled.backendLabel} reaches BB` : verdict === "others joined" ? `, while other boxes on ${settled.backendLabel} joined` : ""}: ${found.sentence} ${after}`
-        : `Box ${settled.name} did not join BB at try ${failed} of ${JOIN_TRIES}: ${found.sentence} ${after}`,
+        ? `Box ${settled.name} did not join VesnALIA after ${failed} ${failed === 1 ? "try" : "tries"}${planned.setup ? `, and no box on ${settled.backendLabel} reaches VesnALIA` : verdict === "others joined" ? `, while other boxes on ${settled.backendLabel} joined` : ""}: ${found.sentence} ${after}`
+        : `Box ${settled.name} did not join VesnALIA at try ${failed} of ${JOIN_TRIES}: ${found.sentence} ${after}`,
     );
   }
 
@@ -1360,9 +1360,9 @@ export class Enrolment {
   }
 
   async joinAgain(box: BoxRecord): Promise<JoinAgain> {
-    if (box.role === "machine") throw new BoxError("unsupported", `Box ${box.name} is a thread's own machine, which BB adds itself, so ${PRODUCT} cannot add it to BB again.`);
-    if (!box.capabilities.enrol) throw new BoxError("unsupported", `A ${box.kindLabel} box cannot become a BB machine.`);
-    if (box.state !== "ready") throw new BoxError("not_ready", `Box ${box.name} is ${box.state}, and only a ready box can join BB. ${PRODUCT} does not start a box to add it to BB: start it first.`);
+    if (box.role === "machine") throw new BoxError("unsupported", `Box ${box.name} is a thread's own machine, which VesnALIA adds itself, so ${PRODUCT} cannot add it to VesnALIA again.`);
+    if (!box.capabilities.enrol) throw new BoxError("unsupported", `A ${box.kindLabel} box cannot become a VesnALIA machine.`);
+    if (box.state !== "ready") throw new BoxError("not_ready", `Box ${box.name} is ${box.state}, and only a ready box can join VesnALIA. ${PRODUCT} does not start a box to add it to VesnALIA: start it first.`);
     if (box.enrol.state === "enrolled") return { is: "joined", box };
     if (this.isTrying(box.id) || joiningNow(box)) return { is: "joining", box };
     const known = namedMachine(box);
@@ -1407,7 +1407,7 @@ export class Enrolment {
     return marked;
   }
 
-  async #machineInBb(hostId: string): Promise<MachineInBb> {
+  async #machineInAlia(hostId: string): Promise<MachineInAlia> {
     try {
       const host = await this.#deps.hosts().get({ hostId });
       if (GONE_PHASES.has(host.lifecycle.phase)) return "gone";
@@ -1418,8 +1418,8 @@ export class Enrolment {
     }
   }
 
-  async #keptAsMachine(box: BoxRecord, hostId: string): Promise<MachineInBb> {
-    const found = await this.#machineInBb(hostId);
+  async #keptAsMachine(box: BoxRecord, hostId: string): Promise<MachineInAlia> {
+    const found = await this.#machineInAlia(hostId);
     if (found !== "live") return found;
     const kept = await this.#deps.boxes.update(box, (current) =>
       current.state !== "ready" || current.enrol.state === "enrolled" ? {} : { enrol: { state: "enrolled", hostId, error: null }, joinTries: null },
@@ -1427,7 +1427,7 @@ export class Enrolment {
     if (kept?.enrol.state === "enrolled" && kept.enrol.hostId === hostId) {
       this.#nextTries.get(box.id)?.();
       this.#nextTries.delete(box.id);
-      this.#deps.log?.(`Box ${kept.name}'s machine ${hostId} is in BB, so bb-box records the box as a BB machine and neither removes that machine nor adds the box again.`);
+      this.#deps.log?.(`Box ${kept.name}'s machine ${hostId} is in VesnALIA, so alia-box records the box as a VesnALIA machine and neither removes that machine nor adds the box again.`);
     }
     return found;
   }
@@ -1440,10 +1440,10 @@ export class Enrolment {
       if (!box || !failedBeforeTries(box) || !(await this.#deps.boxes.enrols(box))) return;
       const known = namedMachine(box);
       if (known && (await this.#keptAsMachine(box, known)) !== "gone") return;
-      this.#deps.log?.(`Box ${box.name} could not join BB and had no tries planned, as a box that failed before bb-box tried such failures again: bb-box plans them now.`);
+      this.#deps.log?.(`Box ${box.name} could not join VesnALIA and had no tries planned, as a box that failed before alia-box tried such failures again: alia-box plans them now.`);
       await this.#afterTry(boxId);
     } catch (error) {
-      if (!this.#isStopping(error)) this.#deps.logError("plan tries to add a box to BB", error);
+      if (!this.#isStopping(error)) this.#deps.logError("plan tries to add a box to VesnALIA", error);
     } finally {
       this.#trying.delete(boxId);
     }
@@ -1474,10 +1474,10 @@ export class Enrolment {
         !dueToJoin(current, this.#now()) ? {} : { enrol: { state: "enrolling", hostId: null, error: null }, joinTries: { ...current.joinTries!, next: null, machine: null } },
       );
       if (!trying?.joinTries || trying.joinTries.next !== null) return;
-      this.#deps.log?.(`Adding box ${trying.name} to BB again, ${tryWords(trying.joinTries.failed)}.`);
+      this.#deps.log?.(`Adding box ${trying.name} to VesnALIA again, ${tryWords(trying.joinTries.failed)}.`);
       await this.enrol(trying, { since });
     } catch (error) {
-      if (!this.#isStopping(error)) this.#deps.logError("try again to add a box to BB", error);
+      if (!this.#isStopping(error)) this.#deps.logError("try again to add a box to VesnALIA", error);
     } finally {
       this.#trying.delete(boxId);
     }
@@ -1486,11 +1486,11 @@ export class Enrolment {
   async machineDeleted(hostId: string): Promise<void> {
     await this.#deps.kv.delete(`${MANUAL_PREFIX}${hostId}`);
     for (const box of await this.#deps.boxes.all()) {
-      if (box.enrol.hostId === hostId || box.identityReset?.machine === hostId) await this.#machineGone(box, hostId, { removedInBb: false });
+      if (box.enrol.hostId === hostId || box.identityReset?.machine === hostId) await this.#machineGone(box, hostId, { removedInAlia: false });
     }
   }
 
-  /** BB removed a machine, for example from its Machines page: its box is no longer enrolled. */
+  /** VesnALIA removed a machine, for example from its Machines page: its box is no longer enrolled. */
   async forgetHost(hostId: string): Promise<void> {
     await this.#deps.kv.delete(`${MANUAL_PREFIX}${hostId}`);
     for (const box of await this.#deps.boxes.all()) {

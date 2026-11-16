@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 // Derive fixtures from the public timeline API, including all response fields.
-type Timeline = Extract<Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["timeline"]>>, { rows: unknown }>;
+type Timeline = Extract<Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["timeline"]>>, { rows: unknown }>;
 function timeline(threadId: string, status: "pending" | "completed" = "pending"): Timeline {
   const base = { createdAt: 1, startedAt: 1, sourceSeqStart: 1, sourceSeqEnd: 2, threadId, turnId: "turn_1" };
   return {
@@ -34,8 +34,8 @@ function setup() {
 
 describe("activity snapshot and realtime bridge", () => {
   it("normalizes a nested full timeline through the snapshot RPC", async () => {
-    const { bb, harness } = setup();
-    await plugin(bb);
+    const { alia, harness } = setup();
+    await plugin(alia);
     expect(await harness.behavior.callRpc("activity_snapshot", { threadId: "thread_1" })).toEqual({
       available: true, activities: [{ activityId: "read_thread_1", path: "src/app.ts", kind: "read", status: "pending" }],
     });
@@ -45,23 +45,23 @@ describe("activity snapshot and realtime bridge", () => {
   });
 
   it("returns unavailable instead of throwing when timeline fails", async () => {
-    const { bb, harness, fail } = setup();
-    await plugin(bb);
+    const { alia, harness, fail } = setup();
+    await plugin(alia);
     fail();
     expect(await harness.behavior.callRpc("activity_snapshot", { threadId: "thread_1" })).toEqual({ available: false, activities: [] });
     expect(harness.inspection.sdk.callsTo("threads.timeline")).toHaveLength(1);
   });
 
   it("distinguishes an available empty snapshot after completion", async () => {
-    const { bb, harness, complete } = setup();
-    await plugin(bb);
+    const { alia, harness, complete } = setup();
+    await plugin(alia);
     complete();
     expect(await harness.behavior.callRpc("activity_snapshot", { threadId: "thread_1" })).toEqual({ available: true, activities: [] });
   });
 
   it("publishes thread-specific snapshots and sequence numbers for client filtering", async () => {
-    const { bb, harness } = setup();
-    await plugin(bb);
+    const { alia, harness } = setup();
+    await plugin(alia);
     for (const [id, sequence] of [["thread_1", 10], ["thread_2", 20]] as const) {
       expect(await harness.behavior.emitThreadEvent("experimental_thread.events", { thread: makeThreadResponse({ id }), sequence })).toEqual({ errors: [] });
     }
@@ -74,12 +74,12 @@ describe("activity snapshot and realtime bridge", () => {
   });
 
   it.each([false, true])("contains publisher failure and attempts cleanup (fallback throws=%s)", async (fallbackThrows) => {
-    const { bb, harness } = setup();
-    await plugin(bb);
+    const { alia, harness } = setup();
+    await plugin(alia);
     const thread = makeThreadResponse({ id: "thread_1" });
     await harness.behavior.emitThreadEvent("experimental_thread.events", { thread, sequence: 1 });
-    const publish = bb.realtime.publish.bind(bb.realtime);
-    const publisher = vi.spyOn(bb.realtime, "publish")
+    const publish = alia.realtime.publish.bind(alia.realtime);
+    const publisher = vi.spyOn(alia.realtime, "publish")
       .mockImplementationOnce(() => { throw new Error("publisher offline"); })
       .mockImplementationOnce((channel, payload) => {
         if (fallbackThrows) throw new Error("fallback offline");
@@ -107,8 +107,8 @@ describe("activity snapshot and realtime bridge", () => {
   });
 
   it("publishes empty cleanup and unavailable fallback instead of leaving stale activity", async () => {
-    const { bb, harness, complete, fail } = setup();
-    await plugin(bb);
+    const { alia, harness, complete, fail } = setup();
+    await plugin(alia);
     const thread = makeThreadResponse({ id: "thread_1" });
     await harness.behavior.emitThreadEvent("experimental_thread.events", { thread, sequence: 1 });
     complete();

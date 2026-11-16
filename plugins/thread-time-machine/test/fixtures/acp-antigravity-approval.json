@@ -41,7 +41,7 @@
      "id": "da7f7610c6-i6",
      "tool": "search",
      "arguments": {
-      "directory_path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/scripts"
+      "directory_path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/scripts"
      },
      "status": "pending",
      "presentation": {
@@ -68,7 +68,7 @@
      "id": "da7f7610c6-i6",
      "tool": "search",
      "arguments": {
-      "directory_path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/scripts"
+      "directory_path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/scripts"
      },
      "status": "completed",
      "result": "List scripts dir",
@@ -95,7 +95,7 @@
      "type": "commandExecution",
      "id": "da7f7610c6-i7",
      "command": "git status",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground",
      "status": "pending",
      "approvalStatus": null,
      "presentation": {
@@ -179,7 +179,7 @@
     "item": {
      "type": "fileRead",
      "id": "da7f7610c6-i3",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/todo.js",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/todo.js",
      "status": "interrupted",
      "presentation": {
       "label": {
@@ -203,7 +203,7 @@
     "item": {
      "type": "fileRead",
      "id": "da7f7610c6-i4",
-     "path": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/README.md",
+     "path": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground/README.md",
      "status": "interrupted",
      "presentation": {
       "label": {
@@ -228,7 +228,7 @@
      "type": "commandExecution",
      "id": "da7f7610c6-i7",
      "command": "git status",
-     "cwd": "/Users/dev/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground",
+     "cwd": "/Users/dev/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_75nvspqwjb-1/rewind-playground",
      "status": "interrupted",
      "approvalStatus": null,
      "presentation": {

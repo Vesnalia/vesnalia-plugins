@@ -1,21 +1,16 @@
 {
-  "name": "bb-plugin-zen-koi",
+  "name": "alia-plugin-zen-koi",
   "version": "0.6.3",
   "private": true,
   "description": "A quiet pixel-art koi pond above the chat input while the thread's agent works.",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "koi",
     "zen",
     "pixel-art",
     "calm"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/rejarevaldy/zen-koi#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rejarevaldy/zen-koi.git"
-  },
   "type": "module",
   "files": [
     "dist",
@@ -34,15 +29,15 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "node --experimental-strip-types --no-warnings --test koi.test.ts sukui.test.ts server.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Zen Koi",
     "description": "A quiet pixel-art koi pond above the chat input while the thread's agent works.",
     "branding": {
@@ -61,10 +56,26 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/zen-koi#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/zen-koi"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-btrfs-cow",
+  "name": "alia-plugin-btrfs-cow",
   "version": "0.1.2",
   "type": "module",
   "description": "Run a thread in a copy-on-write reflink copy of the project checkout (Btrfs, XFS)",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.53"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.53"
   },
-  "bb": {
+  "alia": {
     "name": "CoW copy",
     "description": "Run a thread in a copy-on-write reflink copy of the project checkout (Btrfs, XFS)",
     "branding": {
@@ -17,16 +17,16 @@
     "host": "./host.ts"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.4.53",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -34,9 +34,13 @@
     "vitest": "^4.1.1"
   },
   "license": "MIT",
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/btrfs-cow#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SawyerHood/sawyer-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/btrfs-cow"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

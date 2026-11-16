@@ -13,7 +13,7 @@ setup, whichever agent provider the thread uses.
 - **Fork from here with files**: a new thread that continues from that
   point in a new worktree whose files are exactly as they were.
 - A checkpoint count in the thread header, palette commands, and
-  `bb rewind` (`list`, `diff`, `restore`, `undo`, `checkpoint`, `fork`, …).
+  `alia rewind` (`list`, `diff`, `restore`, `undo`, `checkpoint`, `fork`, …).
 - Agent tools `rewind_checkpoint` and `rewind_list`. There is no restore
   tool: restoring stays your call.
 

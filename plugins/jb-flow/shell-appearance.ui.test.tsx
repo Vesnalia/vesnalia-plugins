@@ -4,7 +4,7 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { mountShellAppearance } from "./shell-appearance";
 
 afterEach(() => {

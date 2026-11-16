@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, hostSignals, type Location } from "./contract";
 
 const TS = ["npx", "--yes", "-p", "typescript", "-p", "typescript-language-server", "typescript-language-server", "--stdio"];

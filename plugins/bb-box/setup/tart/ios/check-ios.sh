@@ -1,7 +1,7 @@
 #!/bin/sh
 set -u
 
-share=/usr/local/share/bb-box
+share=/usr/local/share/alia-box
 devices=$share/ios/devices.tsv
 boot_limit_s=${BOOT_LIMIT_S:-60}
 settle_s=${SETTLE_S:-60}
@@ -84,13 +84,13 @@ keyboard_defaults_hold() {
 software_stream() {
   udid=$1
   out=$(mktemp -d)
-  (sleep 2) | /usr/local/bin/bb-box-h264 --simulator "$udid" --scale 333 >"$out/units" 2>"$out/said"
+  (sleep 2) | /usr/local/bin/alia-box-h264 --simulator "$udid" --scale 333 >"$out/units" 2>"$out/said"
   status=$?
   bytes=$(wc -c <"$out/units" | tr -d ' ')
   said=$(grep -v 'kbit/s' "$out/said" | tail -n 1)
   rm -rf "$out"
-  [ "$status" = 0 ] && [ "$bytes" -gt 17 ] || { echo "bb-box-h264 sent ${bytes:-0} bytes of the device's screen${said:+: $said}"; return 1; }
-  echo "bb-box-h264 encoded $bytes bytes of its framebuffer in 2 s"
+  [ "$status" = 0 ] && [ "$bytes" -gt 17 ] || { echo "alia-box-h264 sent ${bytes:-0} bytes of the device's screen${said:+: $said}"; return 1; }
+  echo "alia-box-h264 encoded $bytes bytes of its framebuffer in 2 s"
 }
 
 pixels_match() {
@@ -231,7 +231,7 @@ sys.exit(0 if took <= limit and passed else 1)
 ' "$log" "$launch_limit_s"
 }
 
-helper=/usr/local/libexec/bb-box/device-host
+helper=/usr/local/libexec/alia-box/device-host
 data=/System/Volumes/Data
 
 slot_uids_only_carried() {
@@ -269,7 +269,7 @@ carried_slots_ready() {
   echo "bbd-i1 and bbd-i2 ready, each with its own seeded device, shut down"
 }
 
-slot_clipboard="/usr/local/libexec/bb-box/slot-clipboard"
+slot_clipboard="/usr/local/libexec/alia-box/slot-clipboard"
 
 as_slot() { (cd / && sudo -n launchctl asuser "$(id -u "$user")" sudo -n -H -u "$user" -- perl -e 'alarm shift; exec @ARGV' "$simctl_most_s" xcrun simctl "$@"); }
 
@@ -300,17 +300,17 @@ carried_slot_keyboard_holds() {
 }
 
 held_ports="3000 4200 5000 5173 8000 8080 8081 19000"
-host_state=/var/db/bb-box/host
+host_state=/var/db/alia-box/host
 
 daemons_written_not_loaded() {
-  for label in app.bb-box.device-host app.bb-box.device-host.ports; do
+  for label in app.alia-box.device-host app.alia-box.device-host.ports; do
     sudo -n test -s "$host_state/$label.plist" || { echo "device-host install did not write $label's plist"; return 1; }
     ! sudo -n launchctl print "system/$label" >/dev/null 2>&1 || { echo "launchd has $label loaded before init"; return 1; }
     [ ! -e "/Library/LaunchDaemons/$label.plist" ] || { echo "$label is in /Library/LaunchDaemons before init"; return 1; }
   done
-  listed=$(sudo -n plutil -extract ProgramArguments json -o - "$host_state/app.bb-box.device-host.ports.plist" | python3 -I -c 'import json, sys; print(" ".join(json.load(sys.stdin)[2:]))')
+  listed=$(sudo -n plutil -extract ProgramArguments json -o - "$host_state/app.alia-box.device-host.ports.plist" | python3 -I -c 'import json, sys; print(" ".join(json.load(sys.stdin)[2:]))')
   [ "$listed" = "$held_ports" ] || { echo "the held ports' plist lists $listed, not $held_ports"; return 1; }
-  echo "app.bb-box.device-host and its held ports written for init, and not loaded"
+  echo "app.alia-box.device-host and its held ports written for init, and not loaded"
 }
 
 held_ports_free() {
@@ -330,10 +330,10 @@ check "carried slots" carried_slots_ready
 check "slot uids" slot_uids_only_carried
 check "slot clipboard" carried_slot_clipboard_works
 check "slot keyboard" carried_slot_keyboard_holds
-check "disabled.plist kept" sh -c 'ls /usr/local/share/bb-box/ios/*.disabled.plist'
-check "bb-box-h264" /usr/local/bin/bb-box-h264 --version
+check "disabled.plist kept" sh -c 'ls /usr/local/share/alia-box/ios/*.disabled.plist'
+check "alia-box-h264" /usr/local/bin/alia-box-h264 --version
 check "idb_companion" /usr/local/bin/idb_companion --version
-check "idb_companion's notice" sh -c 'ls /usr/local/share/bb-box/notices/idb_companion-*-LICENSE'
+check "idb_companion's notice" sh -c 'ls /usr/local/share/alia-box/notices/idb_companion-*-LICENSE'
 check "device hub not running" sh -c '! pgrep -x DeviceHub >/dev/null || { echo "Device Hub runs"; exit 1; }; echo "Device Hub is not running"'
 list=$(ls "$share"/ios/ios-*.txt 2>/dev/null | head -n 1)
 [ -n "$list" ] || fail "slimming list" "the image has no slimming list in $share/ios"

@@ -7,7 +7,7 @@ from: LAVA BONK! (Roblox/lava-arena), эксперименты в живом Ble
 # ТЗ: Image Studio — текстуры по развёртке модели и чертежи для моделирования
 
 > [!NOTE]
-> Всё ниже проверено руками 27.10.2026 на двух моделях (стопка стилизованных глыб, огненная швабра) через Image Studio (Muse, режим `roblox decal` с картинками-референсами) и живой Blender 5.2 через MCP. Картинки экспериментов: `/Users/vechkasov/Documents/Мои проекты/Roblox/lava-arena/.bb/chats/thr_vgdyg342s5/artifacts/tex-by-uv/`. Скрипт подготовки болванок: `Roblox/lava-arena/scripts/tex_guide.py`.
+> Всё ниже проверено руками 27.10.2026 на двух моделях (стопка стилизованных глыб, огненная швабра) через Image Studio (Muse, режим `roblox decal` с картинками-референсами) и живой Blender 5.2 через MCP. Картинки экспериментов: `/Users/vechkasov/Documents/Мои проекты/Roblox/lava-arena/.vesnalia/chats/thr_vgdyg342s5/artifacts/tex-by-uv/`. Скрипт подготовки болванок: `Roblox/lava-arena/scripts/tex_guide.py`.
 
 ## 1. Зачем
 

@@ -8,7 +8,7 @@ import {
   type PluginProvidersState,
   type PluginSidebarThread,
   type PluginSidebarThreadsState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { LANES_CHANGED, type BlockDetail, type LaneBlock, type LaneHandoff, type LanesChangedSignal } from "../../../shared/model";
 import type { rpcContract } from "../../../shared/rpc";
@@ -224,7 +224,7 @@ export function useLanesData({ since, threadIds }: LanesDataOptions): LanesData 
       );
       try {
         const result = await rpc.call("lanes_decide", { threadId: block.threadId, interactionId, decision });
-        if (!result.ok) throw new Error(result.message ?? "bb did not accept the answer.");
+        if (!result.ok) throw new Error(result.message ?? "alia did not accept the answer.");
       } catch (cause) {
         setOverrides((current) => {
           const next = new Map(current);

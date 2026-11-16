@@ -1,7 +1,7 @@
 /**
- * A thread's permalink: the URL that opens it in bb.
+ * A thread's permalink: the URL that opens it in VesnALIA.
  *
- * bb routes a thread at `/projects/:projectId/threads/:threadId`, except in the
+ * VesnALIA routes a thread at `/projects/:projectId/threads/:threadId`, except in the
  * personal project, which has no `/projects/:id` surface and routes at
  * `/threads/:threadId`. Both rules live here, alongside the reverse — reading a
  * thread's id back out of a path — because the two surfaces that copy a link
@@ -9,14 +9,14 @@
  * content script has the address bar and reads one.
  *
  * Everything is relative to an origin the caller supplies, which is always
- * `window.location.origin`: whatever address bb is being viewed at. In the
- * desktop app that is `http://127.0.0.1:<port>`, over `bb connect` it is the
+ * `window.location.origin`: whatever address VesnALIA is being viewed at. In the
+ * desktop app that is `http://127.0.0.1:<port>`, over `alia connect` it is the
  * tunnel's hostname, and on a LAN it is the machine's address. Copying the
  * origin the user is already on is what makes a pasted link work for whoever
  * they paste it to.
  */
 
-/** bb's singleton personal project, whose threads route without a project. */
+/** VesnALIA's singleton personal project, whose threads route without a project. */
 const PERSONAL_PROJECT_ID = "proj_personal";
 
 /** Thread ids are prefixed, which is what makes a path recognisable as one. */
@@ -40,9 +40,9 @@ export function threadPermalink(origin: string, thread: ThreadRef): string {
 }
 
 /**
- * The thread a bb URL points at, or null when it points at anything else.
+ * The thread a VesnALIA URL points at, or null when it points at anything else.
  *
- * Takes a whole URL or a bare path, and ignores a query and hash: bb hangs
+ * Takes a whole URL or a bare path, and ignores a query and hash: VesnALIA hangs
  * panel selection off the query (`?panel=files`), and a permalink should open
  * the thread rather than reproduce the sender's open panel.
  */
@@ -66,7 +66,7 @@ export function threadIdFromUrl(url: string): string | null {
 }
 
 /**
- * The permalink for a bb URL that is already on a thread.
+ * The permalink for a VesnALIA URL that is already on a thread.
  *
  * The route in the address bar is the canonical one, so the link is that URL
  * with its query and hash dropped. Null when the URL is not a thread's.

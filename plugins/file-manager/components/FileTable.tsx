@@ -1,6 +1,6 @@
 // components/FileTable.tsx — header row, sort affordances, skeleton and body.
 //
-// A real <table> (the vendored @bb/table parts) minus its own scroll wrapper:
+// A real <table> (the vendored @alia-core/table parts) minus its own scroll wrapper:
 // the panel owns the scroll container (§9), so the header can be `sticky` to
 // it. Multi-select is click-driven only — no rubber band — which keeps the
 // row a clean drag source (§8.4).

@@ -1,7 +1,7 @@
 import {
-  useComposer, useBbNavigate, useSettings,
+  useComposer, useAliaNavigate, useSettings,
   experimental_useSidebarThreads,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { navigationThreads, neighbor, titleFor, statusFor, updateGesture, swipeDirection, type Gesture } from "../../lib/mobile-navigation";
 import { Icon } from "../ui/icon";
@@ -16,7 +16,7 @@ function Navigator({ threadId }: { threadId: string }) {
   const colors = useProjectColors();
   const settings = useSettings();
   const preferences = resolveDocksidePreferences(settings.values);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
   const gesture = useRef<Gesture | null>(null);
@@ -93,7 +93,7 @@ function Navigator({ threadId }: { threadId: string }) {
         <strong className="tg-title" title={label}>{label}</strong>
       </span>
       {state.status === "error"
-        ? <button className="tg-retry" type="button" title="Reload BB to retry loading threads"
+        ? <button className="tg-retry" type="button" title="Reload VesnALIA to retry loading threads"
             onPointerDown={event => event.stopPropagation()}
             onKeyDown={event => event.stopPropagation()}
             onClick={() => window.location.reload()}>Reload</button>

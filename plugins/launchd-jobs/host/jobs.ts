@@ -22,8 +22,8 @@ import { JobSchema, type FailingJob, type Job, type JobList, type JobSpec, type 
  * map of slugs to display names and the failures the user has seen.
  *
  * Everything runs on the **Mac whose jobs these are**, inside the host entry
- * bb starts on that machine. That is where the LaunchAgents live and where the
- * jobs fire, whether or not bb is open.
+ * VesnALIA starts on that machine. That is where the LaunchAgents live and where the
+ * jobs fire, whether or not VesnALIA is open.
  *
  * Every job names its own data directory in its plist (`DIR_VARIABLE`), and
  * its runner, log and history are read from there. That is how jobs the Paseo
@@ -125,7 +125,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 export const RUNNER_SCRIPT = [
   "#!/bin/zsh",
-  "# Written by the launchd-jobs bb plugin; rewritten whenever a job is saved.",
+  "# Written by the launchd-jobs VesnALIA plugin; rewritten whenever a job is saved.",
   `# launchd runs it as: runner.sh <slug> <command>, with ${DIR_VARIABLE} set.`,
   "set -u",
   "zmodload zsh/datetime",

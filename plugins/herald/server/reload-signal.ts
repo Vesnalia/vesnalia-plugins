@@ -5,8 +5,8 @@
  * old one has closed and flushed its storage, it says so here, and the new one
  * reads storage again.
  *
- * Both instances run in the bb server's one process, so the channel is an
- * `EventTarget` on `globalThis`, keyed by plugin id. Should bb ever run them
+ * Both instances run in the VesnALIA server's one process, so the channel is an
+ * `EventTarget` on `globalThis`, keyed by plugin id. Should VesnALIA ever run them
  * apart, the signal simply never arrives and nothing is worse than before.
  */
 const DRAINED = "drained";
@@ -16,7 +16,7 @@ interface DrainedDetail {
 }
 
 function channel(pluginId: string): EventTarget {
-  const key = Symbol.for(`bb-plugin:${pluginId}:reload-signal`);
+  const key = Symbol.for(`alia-plugin:${pluginId}:reload-signal`);
   const holder = globalThis as Record<symbol, EventTarget | undefined>;
   holder[key] ??= new EventTarget();
   return holder[key];

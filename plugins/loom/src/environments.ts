@@ -1,4 +1,4 @@
-// Where workers and reviewers run: today's managed git worktree, or a bb environment provider the spec names, with
+// Where workers and reviewers run: today's managed git worktree, or a VesnALIA environment provider the spec names, with
 // Loom's {branch} and {base} placeholders filled in for each thread.
 import { z } from "zod";
 import type { EnvironmentProviderInfo, SpawnArgs } from "./ports";
@@ -7,7 +7,7 @@ import type { MachineSpec } from "./spec";
 
 const PLACEHOLDER = /\{([a-z_]+)\}/g;
 const KNOWN = new Set(["branch", "base"]);
-// bb's managed-worktree workspace is the git-worktree provider, so naming it without inputs keeps today's spawn.
+// VesnALIA's managed-worktree workspace is the git-worktree provider, so naming it without inputs keeps today's spawn.
 const GIT_WORKTREE = "git-worktree";
 // What a propose-time check fills in; both satisfy every ref pattern a provider is likely to have.
 const SAMPLE = { branch: "loom/sample/key-1", base: "origin/main" };
@@ -94,7 +94,7 @@ export function spawnEnvironment(repo: RepoSettings, values: { branch: string; b
   if (environment === null || (environment.provider === GIT_WORKTREE && environment.inputs === undefined && environment.machine === undefined)) return undefined;
   const filled = (inputs: Record<string, unknown> | undefined) => (inputs === undefined ? null : fillInputs(inputs, values));
   const { machine } = environment;
-  // bb refuses git-worktree without inputs; this is the base the managed worktree starts from.
+  // VesnALIA refuses git-worktree without inputs; this is the base the managed worktree starts from.
   const inputs = environment.provider === GIT_WORKTREE && environment.inputs === undefined ? { branch: { kind: "named", name: values.base } } : filled(environment.inputs);
   return { providerId: environment.provider, inputs, ...(machine === undefined ? {} : { machine: { providerId: machine.provider, inputs: filled(machine.inputs) } }) };
 }
@@ -124,7 +124,7 @@ export function inputsProblems(at: string, provider: InputsOwner, inputs: Record
   try {
     schema = z.fromJSONSchema(provider.inputs as Parameters<typeof z.fromJSONSchema>[0]);
   } catch {
-    // A schema zod cannot read is still checked by bb when it starts the thread.
+    // A schema zod cannot read is still checked by VesnALIA when it starts the thread.
     return [];
   }
   const parsed = schema.safeParse(fillInputs(inputs, SAMPLE));

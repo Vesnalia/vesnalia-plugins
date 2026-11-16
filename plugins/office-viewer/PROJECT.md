@@ -20,7 +20,7 @@ sources:
 
 ## Identity
 
-- BB file opener plugin; package entry points: `app.tsx`, `server.ts` (`package.json`). [Overview](docs/overview.md)
+- VesnALIA file opener plugin; package entry points: `app.tsx`, `server.ts` (`package.json`). [Overview](docs/overview.md)
 - Architecture and service boundaries: [Architecture](docs/architecture.md).
 - Recorded architectural rationale: [Decisions](docs/decisions.md).
 
@@ -34,13 +34,13 @@ sources:
 
 - Resolve files using opener source context; workspace paths are constrained to root (`src/server/locate.ts:49-56`; `src/server/locate.ts:91-133`). [Gotchas](docs/gotchas.md)
 - Spreadsheet save concurrency: [Spreadsheet editing](docs/features/spreadsheets.md) (`server.ts:548-569`).
-- Studio prototype, slide and paint documents are separate thread-scoped files persisted through RPC to BB thread storage (`src/studio/prototype/builder.tsx:1270-1303`; `src/studio/slides/editor.tsx:96-125`; `src/studio/paint/paint.tsx:98-118`). [Studio](docs/features/studio.md)
+- Studio prototype, slide and paint documents are separate thread-scoped files persisted through RPC to VesnALIA thread storage (`src/studio/prototype/builder.tsx:1270-1303`; `src/studio/slides/editor.tsx:96-125`; `src/studio/paint/paint.tsx:98-118`). [Studio](docs/features/studio.md)
 - Opened formats and editable formats differ; read-only modes live in each feature page. [Feature reference](docs/features/office-documents.md)
 
 ## Conventions
 
 - TypeScript ES modules; React JSX; `@/*` aliases map to project root (`tsconfig.json:1-23`).
-- File openers and Studio tools call the typed BB RPC contract in `server.ts:69-321`.
+- File openers and Studio tools call the typed VesnALIA RPC contract in `server.ts:69-321`.
 - Feature behavior and limits: [Spreadsheets](docs/features/spreadsheets.md), [Office documents](docs/features/office-documents.md), [PDF](docs/features/pdf.md), [HTML layout](docs/features/html-layout.md), [Media](docs/features/media.md).
 - Studio tool behavior: [Studio](docs/features/studio.md).
 
@@ -56,7 +56,7 @@ sources:
 - `npm test`
 - `npm run typecheck`
 - `npm run build` (`package.json`)
-- `bb plugin install .`
+- `alia plugin install .`
 
 Detailed setup: [Deployment](docs/deployment.md).
 

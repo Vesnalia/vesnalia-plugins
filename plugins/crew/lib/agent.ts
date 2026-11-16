@@ -5,7 +5,7 @@
 // `configure` accepts a thread only when the metadata names a member whose
 // *current* binding is this very thread, and the tools look the caller up by
 // `ctx.threadId` in `member_bindings` without reading metadata at all.
-import type { BbPluginApi, PluginAgentConfiguration, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentConfiguration, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { formatChannelLine } from "./channel";
 import { AddressError, messagingRules, type Sender } from "./delivery";
@@ -87,7 +87,7 @@ function resolved(service: CrewService, crew: CrewRow, member: MemberRow) {
 /**
  * The durable instruction handed to `agents.configure`: address, role, a
  * summary of the inherited instructions, and the messaging rules — always
- * within BB's 4096 characters (d.ts:21444). The summary is what gets cut; the
+ * within VesnALIA's 4096 characters (d.ts:21444). The summary is what gets cut; the
  * full text is one `crew_whoami` away.
  */
 export function agentInstructions(service: CrewService, crew: CrewRow, member: MemberRow): string {
@@ -155,7 +155,7 @@ export type Confirm = (threadId: string, request: { title: string; kind: "remove
 
 const LEAD_ONLY = "Only the lead of the crew changes the team.";
 
-export function registerAgentTools(bb: BbPluginApi, service: CrewService, options: { confirm?: Confirm } = {}): void {
+export function registerAgentTools(alia: AliaPluginApi, service: CrewService, options: { confirm?: Confirm } = {}): void {
   const store = service.ctx.store;
   const me = (threadId: string) => service.memberOfThread(threadId);
   const guard = async (run: () => Promise<PluginAgentToolResult>): Promise<PluginAgentToolResult> => {
@@ -167,7 +167,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
     }
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_whoami",
     description: "Your crew identity: address, crew, role, full inherited instructions and the messaging rules.",
     parameters: z.object({}),
@@ -186,7 +186,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_peers",
     description: "The members of your crew with role, activity and links; for leads also the leads of other crews you may reach.",
     parameters: z.object({}),
@@ -229,7 +229,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       .optional()
       .describe('to "human" only: info = status report, no answer expected; question (default) = you need an answer and wait on the human\'s list'),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_send",
     description:
       'Send a message to a crew member, a group, the whole crew or the human ("human"). Reply to a message with reply_to set to its msg id. To the human, use kind "info" for status reports and kind "question" only when you need an answer.',
@@ -253,7 +253,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_broadcast",
     description: "Send one message to every member of your crew, or of one group. The copies share one chain.",
     parameters: z.object({
@@ -277,7 +277,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_inbox",
     description: "Recent messages sent to you, newest last, with id, sender, subject and status.",
     parameters: z.object({ limit: z.number().int().min(1).max(50).optional() }),
@@ -305,7 +305,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
     return value;
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_channel_post",
     description: "Post to your crew's channel. Wakes nobody, except members you mention as @member-key.",
     parameters: z.object({ body: z.string().min(1).max(20_000), topic: z.string().max(80).optional() }),
@@ -320,7 +320,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_channel_read",
     description: "Read your crew's channel, oldest first. since: ISO time or epoch ms; topic filters by topic.",
     parameters: z.object({ since: z.string().max(40).optional(), topic: z.string().max(80).optional(), limit: z.number().int().min(1).max(100).optional() }),
@@ -334,7 +334,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_work_create",
     description: "Create a work item in your crew's queue. owner: member key (optional); tier p0 (urgent) … p3; due: ISO time.",
     parameters: z.object({
@@ -343,7 +343,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       owner: z.string().max(64).optional(),
       tier: z.enum(TIERS).optional(),
       due: z.string().max(40).optional(),
-      task: z.string().max(40).optional().describe("BB task key this item refers to"),
+      task: z.string().max(40).optional().describe("VesnALIA task key this item refers to"),
     }),
     presentation: { label: { pending: "Creating work item", completed: "Created work item" }, icon: { glyph: "ListPlus" } },
     execute: (params, ctx) =>
@@ -364,7 +364,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_work_claim",
     description: "Claim a work item: you own it now, follow-ups stop while it is not overdue.",
     parameters: z.object({ id: z.string().min(1).max(64) }),
@@ -372,7 +372,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
     execute: (params, ctx) => withSelf(async (self) => formatWorkItem(work.claim(self.crew, actor(self), params.id), addressOf))(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_work_handoff",
     description: "Hand a work item to another member with a note; it waits for their claim.",
     parameters: z.object({ id: z.string().min(1).max(64), to: z.string().min(1).max(64), note: z.string().max(4000).default("") }),
@@ -381,7 +381,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       withSelf(async (self) => formatWorkItem(await flushAfter(await work.handoff(self.crew, actor(self), params.id, params.to, params.note)), addressOf))(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_work_done",
     description: "Close a work item as done, with a closure note.",
     parameters: z.object({ id: z.string().min(1).max(64), note: z.string().max(4000).default("") }),
@@ -389,7 +389,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
     execute: (params, ctx) => withSelf(async (self) => formatWorkItem(work.done(self.crew, actor(self), params.id, params.note), addressOf))(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_work_fail",
     description: "Close a work item as failed, with the reason.",
     parameters: z.object({ id: z.string().min(1).max(64), reason: z.string().min(1).max(4000) }),
@@ -397,7 +397,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
     execute: (params, ctx) => withSelf(async (self) => formatWorkItem(work.fail(self.crew, actor(self), params.id, params.reason), addressOf))(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_work_list",
     description: "Open work items of your crew (mine: only yours; all: closed ones too).",
     parameters: z.object({ mine: z.boolean().optional(), all: z.boolean().optional() }),
@@ -409,7 +409,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_directory",
     description: "All crews of the project: task, status, branch, lead, open dependencies, merge request.",
     parameters: z.object({}),
@@ -422,7 +422,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_deliver",
     description: "Lead only: ask to merge your crew branch into main. The human (or the integrator, on green checks) merges.",
     parameters: z.object({}),
@@ -443,7 +443,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_merges",
     description: "Integrator: merge requests of the project that wait.",
     parameters: z.object({}),
@@ -456,7 +456,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_merge",
     description: "Integrator: run the crew's checks and merge the request into main if they are green; otherwise it goes back to the human.",
     parameters: z.object({ id: z.string().min(1).max(64) }),
@@ -471,7 +471,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_rebase",
     description: "Rebase your worktree's branch onto main. On conflict the rebase is aborted and you are put on the human's list.",
     parameters: z.object({}),
@@ -487,7 +487,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_handover_note",
     description:
       "Hand your shift over: pass a brief for your successor (state, open work, next steps). A new thread takes over your address once your turn ends; the brief reaches it as a work item. Messages to you are held meanwhile.",
@@ -500,7 +500,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: GRAPH_TOOL_NAME,
     description: "Run one of this member's allowed graphs (crew.yaml's graphs:) to completion and return its result. Blocks until the run finishes, fails, is stopped, or times out.",
     parameters: z.object({ graph: z.string().min(1).max(64), input: z.string().min(1).max(8000) }),
@@ -537,7 +537,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
   const results = (lines: { result: string; address: string; threadId: string | null; shift: number | null; detail: string | null }[]) =>
     lines.map((line) => `${line.result} ${line.address} ${line.threadId ?? "-"}${line.shift !== null ? ` shift ${line.shift}` : ""}${line.detail ? ` (${line.detail})` : ""}`).join("\n");
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_add_member",
     description: "Lead only: add a member to your crew (the crew file changes, then apply spawns its thread). permissions full asks the human first.",
     parameters: z.object({
@@ -554,7 +554,7 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       leadOnly(async (self) => {
         let confirmFull = false;
         if (params.permissions === "full") {
-          if (!options.confirm) return failure("permissions: full needs the human's confirmation, which is not available here. Ask the human to run bb crew add-member … --confirm-full.");
+          if (!options.confirm) return failure("permissions: full needs the human's confirmation, which is not available here. Ask the human to run alia crew add-member … --confirm-full.");
           confirmFull = await options.confirm(ctx.threadId, {
             kind: "full-permissions",
             title: `Add ${params.group}-${params.id} with full permissions?`,
@@ -567,14 +567,14 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_remove_member",
     description: "Lead only: remove a member from your crew. Asks the human first; the thread is archived, never deleted.",
     parameters: z.object({ member: z.string().min(1).max(64).describe("member key, e.g. dev-review") }),
     presentation: { label: { pending: "Removing crew member", completed: "Removed crew member" }, icon: { glyph: "UserMinus" } },
     execute: (params, ctx) =>
       leadOnly(async (self) => {
-        if (!options.confirm) return failure("Removing a member needs the human's confirmation, which is not available here. Ask the human to run bb crew remove-member.");
+        if (!options.confirm) return failure("Removing a member needs the human's confirmation, which is not available here. Ask the human to run alia crew remove-member.");
         const confirmed = await options.confirm(ctx.threadId, {
           kind: "remove-member",
           title: `Remove ${params.member} from crew ${self.crew.name}?`,
@@ -586,20 +586,20 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_reset",
     description: "Lead only: start a new shift for a member. mode clear: same thread, context cleared; new: a fresh thread, the old one archived.",
     parameters: z.object({ member: z.string().min(1).max(64), mode: z.enum(["clear", "new"]).default("clear") }),
     presentation: { label: { pending: "Resetting crew member", completed: "Reset crew member" }, icon: { glyph: "RotateCcw" } },
     execute: (params, ctx) =>
       leadOnly(async (self) => {
-        if (params.member === self.member.key) return failure("A reset of yourself would end this turn; ask the human (bb crew reset) or hand over with crew_handover_note.");
+        if (params.member === self.member.key) return failure("A reset of yourself would end this turn; ask the human (VesnALIA crew reset) or hand over with crew_handover_note.");
         const result = await service.lifecycle.reset(self.crew, params.member, params.mode);
         return bounded(results([result]));
       })(params, ctx),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "crew_status",
     description: "Lead only: every member of your crew with shift, activity, Needs you, open work, held messages and context usage.",
     parameters: z.object({}),
@@ -621,5 +621,5 @@ export function registerAgentTools(bb: BbPluginApi, service: CrewService, option
       })(params, ctx),
   });
 
-  bb.agents.configure((context) => configureFor(service, context));
+  alia.agents.configure((context) => configureFor(service, context));
 }

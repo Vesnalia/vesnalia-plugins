@@ -1,9 +1,9 @@
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { CatchUpChange } from "@/lib/catch-up";
 import { Button } from "@/components/ui/button";
 
 export function CatchUpSummary({ changes, onSeen }: { changes: CatchUpChange[]; onSeen: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (!changes.length) return null;
   return <section aria-label="Since you last checked" className="mt-3 rounded-lg border border-primary/25 bg-card p-3">
     <div className="flex flex-wrap items-center gap-2"><h2 className="flex-1 text-xs font-semibold">Since you last checked</h2><Button size="sm" variant="ghost" onClick={onSeen}>Mark seen</Button></div>

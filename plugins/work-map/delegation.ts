@@ -98,13 +98,13 @@ You are the orchestrator. You do not do these tasks yourself. You read them, con
 1. Read every task in full first: its description, its comments and any attached session history. Start nothing until you have read all of them.
 2. Map the connections. Name which tasks are duplicates, which overlap, which depend on another finishing first, which share context worth working out once, and what order makes the later ones easier. Merge what is really one piece of work; sequence what has an order.
 3. Post that plan as your first message: the order you chose and why.
-4. Run each task as a child thread of yourself, attached to that task, so both the map and the task show who is working. Two steps, because a task dispatch cannot set a parent: spawn the child under yourself (\`bb thread spawn --parent-self\`), then attach that thread to its task (\`bb tasks attach <task> --thread <id>\`, or the Tasks API). Check both sides before you rely on it: the child appears under you, and it appears on its task.
+4. Run each task as a child thread of yourself, attached to that task, so both the map and the task show who is working. Two steps, because a task dispatch cannot set a parent: spawn the child under yourself (\`alia thread spawn --parent-self\`), then attach that thread to its task (\`alia tasks attach <task> --thread <id>\`, or the Tasks API). Check both sides before you rely on it: the child appears under you, and it appears on its task.
 5. Brief each child in full: the task, the cross-task context you found, what done means for it, the two end states below and the exact words that mark one of them, and the same limits you work under. A child left to guess its finish line stops early. Tell it to reply with a short result, not a transcript.
-6. Keep at most ${ORCHESTRATOR_LIMIT} children running at once. That is a hard cap, not a target. Before every spawn, list your children (\`bb thread list --parent-thread <your thread id> --json\`) and count the ones whose status is not idle; if that count is already ${ORCHESTRATOR_LIMIT}, wait for one of them (\`bb thread wait <id>\`) and only then spawn. Keep going until every task has an end.
-7. Read each child's reported result, not its whole transcript. Check that result against what the task actually asked for. Where it falls short, re-brief that child once with what is missing; if the second result still falls short, accept the limit and say so. Once you have read a child's final result, archive it (\`bb thread archive <id>\`): a finished child left open is noise on the owner's screen.
-8. End every task in one of exactly two states, never between them: done, with a comment recording the decision and its evidence; or back in Review (\`bb tasks update <task> --status in_review\`), with one comment that starts with the words "${NEEDS_YOU}" and says in one line what the owner has to do and why you could not. A task back in Review is finished for you: never re-brief or re-run it.
+6. Keep at most ${ORCHESTRATOR_LIMIT} children running at once. That is a hard cap, not a target. Before every spawn, list your children (\`alia thread list --parent-thread <your thread id> --json\`) and count the ones whose status is not idle; if that count is already ${ORCHESTRATOR_LIMIT}, wait for one of them (\`alia thread wait <id>\`) and only then spawn. Keep going until every task has an end.
+7. Read each child's reported result, not its whole transcript. Check that result against what the task actually asked for. Where it falls short, re-brief that child once with what is missing; if the second result still falls short, accept the limit and say so. Once you have read a child's final result, archive it (\`alia thread archive <id>\`): a finished child left open is noise on the owner's screen.
+8. End every task in one of exactly two states, never between them: done, with a comment recording the decision and its evidence; or back in Review (\`alia tasks update <task> --status in_review\`), with one comment that starts with the words "${NEEDS_YOU}" and says in one line what the owner has to do and why you could not. A task back in Review is finished for you: never re-brief or re-run it.
 9. When every task has an end, create exactly one task in this area, in Review, with the title given below and the real counts filled in. Its description is the owner's whole summary: first "Closed without you (N)" with one line of evidence per task, then the tasks that need them, grouped by what they have to do (a quick call, a small fix before shipping, a rewrite or let go), each with its "${NEEDS_YOU}" line, then your own recommendation where you have one. Before creating it, list the area's open tasks; if one with that exact title already exists, update its description instead of creating a second.
-10. Then archive every child you have not archived yet, post a final message naming that review task's key, and archive yourself (\`bb thread archive --self\`) as your last act. Nothing you started stays open.
+10. Then archive every child you have not archived yet, post a final message naming that review task's key, and archive yourself (\`alia thread archive --self\`) as your last act. Nothing you started stays open.
 
 You and every child stop and do NOT act if the work would:
 ${HARD_STOPS}
@@ -158,9 +158,9 @@ export function blockedReason(
   if (action === "snooze") return item.snoozedUntil ? "already snoozed" : null;
   if (action === "unsnooze") return item.snoozedUntil ? null : "not snoozed";
   if (action !== "delegate") return null;
-  // Dispatch needs a bb project to start the agent in. Saying so here is the
+  // Dispatch needs a VesnALIA project to start the agent in. Saying so here is the
   // difference between a disabled act with a reason and a failed click.
-  if (!item.bbProjectId) return "project not linked to a bb project";
+  if (!item.aliaProjectId) return "project not linked to a VesnALIA project";
   if (isOrchestratorReport(item.title))
     return "an orchestrator's report is for you to read";
   if (hasAgent(item)) return "an agent is already running on it";

@@ -17,7 +17,7 @@
    A provider's own 500, auth, billing, quota and overload errors do not
    count. A turn interrupted because the server lost the thread's machine
    counts too: `host-connection-lost`, or `host-daemon-restarted` (the
-   machine came back with a new daemon, for example after a BB update).
+   machine came back with a new daemon, for example after a VesnALIA update).
 3. For the providers those turns need it sends one HEAD request to
    `https://api.anthropic.com/v1/messages` or
    `https://chatgpt.com/backend-api/codex/responses`, without credentials.
@@ -26,7 +26,7 @@
    Account Pooler health, and it is not a model, token or usage call.
 4. If reachable, it re-reads the thread (status, archive, pending approval,
    hold, cancel) and asks core to retry the failed
-   turn (`bb.sdk.threads.retry`, the same as `bb thread retry`). Core
+   turn (`alia.sdk.threads.retry`, the same as `alia thread retry`). Core
    continues accepted input in the same provider session with
    "Please continue.", re-sends input the provider never accepted, and keeps
    the failed turn's model, reasoning effort, service tier and permission
@@ -53,8 +53,8 @@ for. Until that chain has been read — right after a load or a new failure —
 the retry waits; it never runs on an unknown state.
 
 Stopping a thread that has already failed releases its runtime but leaves it
-in `error` with the same failed turn. BB records no stop for it: the most it
-leaves is a background task marked `stopped`, which BB also writes for other
+in `error` with the same failed turn. VesnALIA records no stop for it: the most it
+leaves is a background task marked `stopped`, which VesnALIA also writes for other
 interruptions, so it does not mean the user stopped the thread. Such a thread
 is still recovered; hold or cancel it instead. A stop while the turn is still
 running is recorded as `manual-stop` and is never recovered.
@@ -62,7 +62,7 @@ running is recorded as `manual-stop` and is never recovered.
 These are separate checks, not one transaction. A hold or stop that arrives
 after the hook let an attempt through does not undo it: that turn runs, and
 you stop it like any other. A user's explicit Send-now on a queued row skips
-the hook, as BB designs it. For connectivity recovery nothing
+the hook, as VesnALIA designs it. For connectivity recovery nothing
 is stored except the explain diagnostics, holds and cancels; the failed turn
 itself is the source of truth, so a restart or reinstall picks up where it
 was. Workflows noticed running are stored as described below.
@@ -76,7 +76,7 @@ was. Workflows noticed running are stored as described below.
   withdraws the thread's queued retries this plugin created (connectivity,
   overload or limit), and blocks new ones.
 - A failure superseded by a later turn on the same thread.
-- BB Workflows runs and their hidden workers (BB's Workflows plugin, `bb
+- VesnALIA Workflows runs and their hidden workers (VesnALIA's Workflows plugin, `VesnALIA
   workflows`): the workflow engine retries, replays and retires its own
   workers, and resuming a run is its decision. Only Claude Code's own
   in-session workflows (below) are continued.
@@ -102,7 +102,7 @@ connection dropped has an unknown outcome: the transcript and tool results
 are preserved, but no plugin can guarantee exactly-once side effects for it.
 
 This holds only while the Claude Code process lives, as when the provider
-was unreachable. A BB restart or update, or a restart of the machine's host
+was unreachable. A VesnALIA restart or update, or a restart of the machine's host
 daemon, ends that process and everything running in it.
 
 ## Workflows a restart killed
@@ -136,7 +136,7 @@ core's close does not.
    stays and `status` shows `workflow-origin-unknown`. With nothing killed
    and unresumed, the note is dropped.
 3. It drops the note and withdraws a queued message when the thread is held,
-   a BB Workflows worker, archived or deleted, when the user stopped it
+   a VesnALIA Workflows worker, archived or deleted, when the user stopped it
    (`manual-stop`), when the failed turn chain the workflows ran under was
    cancelled (`cancel`, or deleting its retry row; only the workflows that
    chain started), or when a person or
@@ -166,24 +166,24 @@ can reuse a run's journal when asked to resume by id: completed agents may
 return cached results and interrupted agents may run again. The agent may
 decide otherwise, the journal may be gone, and re-run agents repeat their
 side effects. Evidence is synthetic fixtures and a historical incident;
-no real BB crash test was performed. This is a request to resume, not a
+no real VesnALIA crash test was performed. This is a request to resume, not a
 guarantee.
 
 Not covered: background agents and shell commands the restart killed, a
 workflow that started less than a scan before the restart or while the
-plugin was off, and a workflow BB still shows as running after its process
+plugin was off, and a workflow VesnALIA still shows as running after its process
 died (no evidence that it is dead, so nothing is sent).
 
 
 ## Compatibility
 
-- BB 0.46.1 or later, plugin SDK 0.6.49. Runs on the BB server.
+- VesnALIA 0.46.1 or later, plugin SDK 0.6.49. Runs on the VesnALIA server.
 - Uses public plugin SDK calls only: `threads.list`, `threads.send`,
   `threads.get`, `threads.events.list`, `threads.interactions.list`,
   `threads.queue.list`, `threads.queuedMessages.delete/send`,
-  `threads.retry`, `bb.background.service`, `bb.events.on`, `bb.cli`,
-  `bb.storage.kv`.
-- The probe runs from the BB server. With a remote machine the provider call
+  `threads.retry`, `alia.background.service`, `alia.events.on`, `alia.cli`,
+  `alia.storage.kv`.
+- The probe runs from the VesnALIA server. With a remote machine the provider call
   may leave from that machine, so a server-side probe is an approximation
   there; a turn that fails again is resumed again at the next scan.
 
@@ -194,16 +194,16 @@ died (no evidence that it is dead, so nothing is sent).
 bun install --frozen-lockfile
 bun run check   # TypeScript 7, as upstream
 bun test        # bun:test, includes the upstream tests ported from vitest
-bun run bundle   # official bb-app 0.48.0; build SDK 0.6.94
+bun run bundle   # official alia-app 0.48.0; build SDK 0.6.94
 ```
 
-The package checks against SDK 0.6.49; the build uses BB 0.48.0's pinned
-esbuild 0.28.1 and emits SDK 0.6.94 metadata. The declared BB minimum remains
+The package checks against SDK 0.6.49; the build uses VesnALIA 0.48.0's pinned
+esbuild 0.28.1 and emits SDK 0.6.94 metadata. The declared VesnALIA minimum remains
 0.46.1; build metadata alone does not prove that minimum's managed install.
 
-`test/fake-core.ts` reimplements the parts of BB core's retry path the plugin
+`test/fake-core.ts` reimplements the parts of VesnALIA core's retry path the plugin
 relies on (from `turn-retry.ts`, `turn-failed.ts` and the `message.dispatch`
-pass of bb 0.46.1), so the tests check behavior against core's rules rather
+pass of VesnALIA 0.46.1), so the tests check behavior against core's rules rather
 than against the plugin. It is not core: it has no admission lock, no claimed
 rows and no provider, so it cannot prove concurrency guarantees.
 `test/review-cases.test.ts` keeps the independent review's failing cases.

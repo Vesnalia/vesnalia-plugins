@@ -6,7 +6,7 @@ Phase 3 adds an automatic single-agent focus mode on top of the normalized board
 
 `lib/focus-model.ts` is a pure, source-free view model: `buildFocusModel(snapshot) → FocusModel | null`. It returns a model only when the board contains exactly one linked active execution.
 
-Grouping (documented in the module header): active cards are those with status running/starting/waiting. Cards link into one execution through (a) `parentKey`, (b) thread `parentThreadId` → an active parent thread card, and (c) Redteam cards sharing a `scanId`. BB and Redteam never merge. Focus renders only when exactly one linked group contains at least one hero-eligible card (thread, workflow-agent, delegation, phase, or operation — plan steps are never heroes).
+Grouping (documented in the module header): active cards are those with status running/starting/waiting. Cards link into one execution through (a) `parentKey`, (b) thread `parentThreadId` → an active parent thread card, and (c) Redteam cards sharing a `scanId`. VesnALIA and Redteam never merge. Focus renders only when exactly one linked group contains at least one hero-eligible card (thread, workflow-agent, delegation, phase, or operation — plan steps are never heroes).
 
 The hero is the group's deepest active execution, most recently active, with a stable key tie-break. Supporting cards (plan steps, sibling agents, Redteam phases) become pipeline nodes; the pipeline renders only when at least two truthful nodes exist. Recent activity is a bounded, newest-first feed; `completed`, `upNext`, `other`, and `otherAttention` classify the remaining cards. No duplicated collection logic: the model consumes only the existing `BoardCard` contract plus the new `activityFeeds` array.
 
@@ -14,7 +14,7 @@ The hero is the group's deepest active execution, most recently active, with a s
 
 `contract/rpc.ts` adds optional, nullable `parentThreadId`, `sequence`, and `groupKey` on cards and `activityFeeds: [{ key, entries: [{ id, label, detail, at, kind }] }]` on the snapshot. All fields are additive and optional — old snapshots and clients stay compatible.
 
-- `lib/bb-source.ts` tags thread cards with `parentThreadId`, plan steps with `groupKey: "plan:{threadId}"` + list `sequence`, and workflow agents with `groupKey: "workflow:{threadId}:{itemId}"` + agent index. `recentActivityFeed(threadId, rows)` builds a bounded, newest-first, reasoning-free feed from the same safe work rows as card activity.
+- `lib/alia-source.ts` tags thread cards with `parentThreadId`, plan steps with `groupKey: "plan:{threadId}"` + list `sequence`, and workflow agents with `groupKey: "workflow:{threadId}:{itemId}"` + agent index. `recentActivityFeed(threadId, rows)` builds a bounded, newest-first, reasoning-free feed from the same safe work rows as card activity.
 - `lib/redteam-source.ts` tags phase cards with `groupKey: "redteam:{scanId}"` + the canonical phase order and builds `scanActivityFeed(scan)` with truthful labels (tool name, or `model`/`agent` for inference/agent-loop kinds).
 - `lib/collect.ts` merges thread feeds (only for live-observed threads) and Redteam feeds into the snapshot.
 
@@ -34,7 +34,7 @@ All motion is restrained CSS driven by state changes only, defined in `app.css`:
 
 There are no requestAnimationFrame loops and no new polling; the two one-shot animation cleanup timeouts (550 ms, 300 ms) are the only timers added. Both `@media (prefers-reduced-motion: reduce)` and `[data-motion="reduced"]` (rendered from `matchMedia`, defaulting safe when unavailable) disable every animation; the live strip becomes a static state and the connector signal is hidden. State is never encoded in color or motion alone: glyphs, status chips, and text carry it. Buttons are keyboard-usable and there is no aggressive `aria-live`.
 
-## Live BB 0.40 / SDK 0.4.21 observations
+## Live VesnALIA 0.40 / SDK 0.4.21 observations
 
 Authorized scans on project `example-project` (`/home/user`), static mode, local Ollama models.
 
@@ -48,6 +48,6 @@ Authorized scans on project `example-project` (`/home/user`), static mode, local
 
 ## Tests
 
-123 pre-existing tests all pass unchanged in behavior; the suite grew to 193 tests across 11 files, adding: focus-model unit tests (grouping, hero selection, pipeline derivation, feed bounding, section classification), bb-source/redteam-source/collect tests for the new fields and feeds, jsdom UI tests for focus rendering, mode switches via realtime, hero actions, failure visibility, and a dedicated reduced-motion file that stubs `window.matchMedia` (jsdom-safe).
+123 pre-existing tests all pass unchanged in behavior; the suite grew to 193 tests across 11 files, adding: focus-model unit tests (grouping, hero selection, pipeline derivation, feed bounding, section classification), alia-source/redteam-source/collect tests for the new fields and feeds, jsdom UI tests for focus rendering, mode switches via realtime, hero actions, failure visibility, and a dedicated reduced-motion file that stubs `window.matchMedia` (jsdom-safe).
 
-`npm run typecheck`, `bb plugin build`, and the public-SDK-only import scan all pass. Version bumped 0.2.0 → 0.3.0.
+`npm run typecheck`, `alia plugin build`, and the public-SDK-only import scan all pass. Version bumped 0.2.0 → 0.3.0.

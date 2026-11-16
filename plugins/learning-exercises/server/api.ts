@@ -102,7 +102,7 @@ export class LearningApi {
   async feedbackCards({ threadId }: Input<"feedbackCards">): Promise<Output<"feedbackCards">> {
     const { ports, store } = this.deps;
     const cards = store.feedbackCards(threadId);
-    // Most threads ran no session: they cost one query and no bb read.
+    // Most threads ran no session: they cost one query and no VesnALIA read.
     if (cards.length === 0) return { cards: [] };
     const workspace = await workspaceOf(ports, threadId);
     return { cards: cards.map((card) => ({ ...card, workspace })) };

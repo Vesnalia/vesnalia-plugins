@@ -1,4 +1,4 @@
-import { experimental_ProviderIcon as ProviderIcon } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon } from "@vesnalia/plugin-sdk/app";
 import type { ProviderInfo } from "../data/useLanesData";
 
 export function initials(name: string): string {

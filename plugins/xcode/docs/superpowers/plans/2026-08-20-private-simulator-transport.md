@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove every simulator-specific public exposure path while preserving remote simulator use inside the main bb panel and bounding the remaining long-lived HTTP connections.
+**Goal:** Remove every simulator-specific public exposure path while preserving remote simulator use inside the main VesnALIA panel and bounding the remaining long-lived HTTP connections.
 
-**Architecture:** Delete the standalone viewer and bb Connect shared-port integration. Keep the filtered capture child on loopback, send remote video through the existing same-origin plugin proxy, and use a small reusable permit gate for `/stream` and `/presence`.
+**Architecture:** Delete the standalone viewer and VesnALIA Connect shared-port integration. Keep the filtered capture child on loopback, send remote video through the existing same-origin plugin proxy, and use a small reusable permit gate for `/stream` and `/presence`.
 
-**Tech Stack:** TypeScript, React, Node HTTP streams, bb Plugin SDK, Zod 4, Vitest.
+**Tech Stack:** TypeScript, React, Node HTTP streams, VesnALIA Plugin SDK, Zod 4, Vitest.
 
 ## Global Constraints
 
@@ -201,7 +201,7 @@ Expected: both files pass.
 
 - [x] **Step 1: Replace public-exposure documentation with the private transport invariant**
 
-Document that remote panels use the main bb origin, the helper remains loopback-only, the two long-lived routes are capped, and same-user originless callers remain a bb-core trust boundary.
+Document that remote panels use the main VesnALIA origin, the helper remains loopback-only, the two long-lived routes are capped, and same-user originless callers remain a alia-core trust boundary.
 
 - [x] **Step 2: Run stale-surface scans**
 
@@ -220,7 +220,7 @@ Run:
 
 ```sh
 npm run check
-bb plugin build .
+alia plugin build .
 npm audit --omit=dev
 npm pack --dry-run --json
 ```

@@ -5,8 +5,8 @@ import { DatabaseSync } from "node:sqlite";
 import {
   agentResult,
   agentStart,
-  bb,
-  bbMay,
+  alia,
+  aliaMay,
   closeMenu,
   boxes,
   containerOf,
@@ -88,8 +88,8 @@ const goPage = async (box, ...rest) => {
   await heading(page);
 };
 const atPath = (path) => waitFor(async () => pathOf(page) === path, `the path ${path}`, 15_000).then(() => true);
-const boxPath = (box, ...rest) => ["/plugins/bb-box/desktop/box", box.id, ...rest].join("/");
-const listPath = "/plugins/bb-box/desktop";
+const boxPath = (box, ...rest) => ["/plugins/alia-box/desktop/box", box.id, ...rest].join("/");
+const listPath = "/plugins/alia-box/desktop";
 const dialog = () => page.getByRole("alertdialog");
 const view = async (box) => (await rpc("boxPage", { box: box.id })).box;
 const stateIs = (box, state) => waitFor(async () => (await view(box))?.state === state, `${box.name} ${state}`, 120_000);
@@ -177,13 +177,13 @@ if (section("entries")) {
     expect((await historyLength(page)) === before, "a replace, not a push");
     return "replaced with the page";
   });
-  await check("entry", "an old path with from-settings: its back arrow is a link to BB Box settings", async () => {
+  await check("entry", "an old path with from-settings: its back arrow is a link to VesnALIA Box settings", async () => {
     await page.goto(`${boxes}/operator/${M.id}/terminal/from-settings`);
-    const back = page.getByRole("link", { name: "Back to BB Box settings" });
+    const back = page.getByRole("link", { name: "Back to VesnALIA Box settings" });
     await back.waitFor();
-    expect((await back.getAttribute("href")) === "/settings/plugins/bb-box", "its href");
+    expect((await back.getAttribute("href")) === "/settings/plugins/alia-box", "its href");
     await back.click();
-    await atPath("/settings/plugins/bb-box");
+    await atPath("/settings/plugins/alia-box");
     return "settings";
   });
 }
@@ -279,10 +279,10 @@ if (section("g8")) {
     if (reload) await page.reload();
     await page.getByRole("button", { name: `Back to ${M.name}` }).click();
     await atPath(boxPath(M, "from-settings"));
-    const back = page.getByRole("navigation", { name: "Where you are" }).getByRole("link", { name: "Back to BB Box settings" });
-    expect((await back.textContent()).includes("BB Box settings"), "the trail names settings");
+    const back = page.getByRole("navigation", { name: "Where you are" }).getByRole("link", { name: "Back to VesnALIA Box settings" });
+    expect((await back.textContent()).includes("VesnALIA Box settings"), "the trail names settings");
     await back.click();
-    await atPath("/settings/plugins/bb-box");
+    await atPath("/settings/plugins/alia-box");
   };
   await check("G8", "settings, a machine's page, Terminal and back: the page, then settings", async () => {
     await settingsChain(false);
@@ -373,7 +373,7 @@ async function expectAsks(where) {
 if (section("g3")) {
   await settle();
   line("## G3 and G6: Stop, Start and a failed stop from the page");
-  await check("G6", "a stop that fails says so, with what bb-box then saw, said once by the page's one announcer", async () => {
+  await check("G6", "a stop that fails says so, with what alia-box then saw, said once by the page's one announcer", async () => {
     await goPage(A);
     const announcer = page.locator("[data-announcer]");
     expect((await announcer.getAttribute("aria-live")) === "polite", "a polite announcer");
@@ -459,13 +459,13 @@ if (section("g3")) {
 if (section("start")) {
   await settle();
   line("## A start that fails");
-  await check("review 6", "a failed stop goes from the page once the box is stopped outside bb-box", async () => {
+  await check("review 6", "a failed stop goes from the page once the box is stopped outside alia-box", async () => {
     await goPage(F);
     flag("stop-fails");
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await page.getByRole("region", { name: /^Stop failed / }).waitFor({ timeout: 60_000 });
     docker(["stop", containerOf(F.id)]);
-    bb(["box", "sweep"]);
+    alia(["box", "sweep"]);
     await stateIs(F, "stopped");
     await page.locator("h1 + p").getByText("Stopped", { exact: true }).waitFor();
     expect(!(await page.getByRole("region", { name: /^Stop failed / }).count()), "no Stop failed beside Stopped");
@@ -473,7 +473,7 @@ if (section("start")) {
     await stateIs(F, "ready");
     return `header: ${await page.locator("h1 + p").textContent()}`;
   });
-  await check("G6", "a start that fails says so, with what bb-box then saw, and Start again starts it", async () => {
+  await check("G6", "a start that fails says so, with what alia-box then saw, and Start again starts it", async () => {
     await goPage(F);
     await page.getByRole("button", { name: "Stop", exact: true }).click();
     await stateIs(F, "stopped");
@@ -483,7 +483,7 @@ if (section("start")) {
     await notice.waitFor({ timeout: 60_000 });
     const words = await notice.textContent();
     expect(/cgroup is frozen/.test(words), "the backend's words");
-    expect(/(It is still stopped \(checked .+\)\.|bb-box could not confirm its state\.)/.test(words), words);
+    expect(/(It is still stopped \(checked .+\)\.|alia-box could not confirm its state\.)/.test(words), words);
     expect(!/still stopped/.test(words) || /still stopped \(checked /.test(words), "never claims still stopped without an observation");
     await shoot("start-failed");
     await notice.getByRole("button", { name: "Start again" }).click();
@@ -505,7 +505,7 @@ if (section("release")) {
     await notice.waitFor({ timeout: 60_000 });
     const words = await notice.textContent();
     expect(/device or resource busy/.test(words), "the backend's words");
-    expect(/bb-box keeps its record until a release is confirmed/.test(words), words);
+    expect(/alia-box keeps its record until a release is confirmed/.test(words), words);
     await shoot("release-unfinished");
     await threadsTab();
     const row = page.locator("[data-resource-row]", { hasText: B.name }).first();
@@ -524,11 +524,11 @@ if (section("release")) {
     await shoot("released");
     return await page.getByText(/^Released /).textContent();
   });
-  await check("release", "the released box's link after a reload and after a restart of bb-box", async () => {
+  await check("release", "the released box's link after a reload and after a restart of alia-box", async () => {
     await page.reload();
     await page.getByText(`${B.name} was released`).waitFor();
-    bb(["plugin", "reload", "bb-box"]);
-    await waitFor(async () => (await rpc("allBoxes")) !== null, "bb-box back");
+    alia(["plugin", "reload", "alia-box"]);
+    await waitFor(async () => (await rpc("allBoxes")) !== null, "alia-box back");
     await page.goto(pageUrl(B));
     await page.getByText(`${B.name} was released`).waitFor({ timeout: 30_000 });
     return await page.getByText(/^Released /).textContent();
@@ -544,14 +544,14 @@ if (section("reach")) {
     flag("exec-hangs");
     writeFileSync(join(home, "flags", "exec-hangs"), container);
     try {
-      bbMay(["box", "run", D.name, "true", "--thread", thread, "--timeout-seconds", "15"]);
+      aliaMay(["box", "run", D.name, "true", "--thread", thread, "--timeout-seconds", "15"]);
       await waitFor(async () => (await view(D)).reach?.is === "not-answering", "not answering", 60_000);
       await goPage(D);
       await page.locator("h1 + p").getByText("Not answering", { exact: true }).waitFor();
       const notice = page.getByRole("region", { name: `${D.name} does not answer` });
       const words = await notice.textContent();
       expect(/You can still stop, start or release it: those go through /.test(words), words);
-      expect(/bb-box checks again in \d/.test(words), words);
+      expect(/alia-box checks again in \d/.test(words), words);
       await shoot("not-answering");
       const stop = page.getByRole("button", { name: "Stop", exact: true });
       expect(!(await stop.isDisabled()), "Stop enabled");
@@ -587,7 +587,7 @@ if (section("reach")) {
   await check("G20", "a backend whose listing fails turns off Stop, Start, Resize and New thread, saying why in words, until it lists again", async () => {
     flag("listing-fails");
     try {
-      bbMay(["box", "sweep"]);
+      aliaMay(["box", "sweep"]);
       await waitFor(async () => (await view(A)).reach?.is === "backend-silent", "the backend silent", 60_000);
       await goPage(A);
       await page.locator("h1 + p").getByText("Not checked", { exact: true }).waitFor();
@@ -608,7 +608,7 @@ if (section("reach")) {
       await closeMenu(page);
       expect(!(await page.locator("[data-resource-row]", { hasText: A.name }).first().getByRole("button", { name: "Stop", exact: true }).count()), "no quick Stop");
       rmSync(join(home, "flags", "listing-fails"), { force: true });
-      bbMay(["box", "sweep"]);
+      aliaMay(["box", "sweep"]);
       await waitFor(async () => (await view(A)).reach?.is === "answers", "the backend back", 60_000);
       await goPage(A);
       expect(!(await page.getByRole("button", { name: "Stop", exact: true }).isDisabled()), "Stop back");
@@ -620,10 +620,10 @@ if (section("reach")) {
 }
 
 function editConfig(change) {
-  const db = new DatabaseSync(join(home, "bbdata", "bb.db"), { timeout: 10_000 });
+  const db = new DatabaseSync(join(home, "bbdata", "alia.db"), { timeout: 10_000 });
   try {
-    const read = (key) => db.prepare("SELECT value FROM plugin_kv WHERE plugin_id = 'bb-box' AND key = ?").get(key)?.value ?? null;
-    const write = (key, value) => db.prepare("UPDATE plugin_kv SET value = ?, updated_at = ? WHERE plugin_id = 'bb-box' AND key = ?").run(value, Date.now(), key);
+    const read = (key) => db.prepare("SELECT value FROM plugin_kv WHERE plugin_id = 'alia-box' AND key = ?").get(key)?.value ?? null;
+    const write = (key, value) => db.prepare("UPDATE plugin_kv SET value = ?, updated_at = ? WHERE plugin_id = 'alia-box' AND key = ?").run(value, Date.now(), key);
     const kept = { document: read("config/document"), saved: read("config/saved") };
     const next = change(kept);
     if (next.document !== null) write("config/document", next.document);
@@ -634,13 +634,13 @@ function editConfig(change) {
   }
 }
 
-async function withBbBoxOff(task) {
-  bb(["plugin", "disable", "bb-box"]);
+async function withAliaBoxOff(task) {
+  alia(["plugin", "disable", "alia-box"]);
   try {
     return task();
   } finally {
-    bb(["plugin", "enable", "bb-box"]);
-    await waitFor(async () => Array.isArray(await rpc("allBoxes")), "bb-box back", 60_000);
+    alia(["plugin", "enable", "alia-box"]);
+    await waitFor(async () => Array.isArray(await rpc("allBoxes")), "alia-box back", 60_000);
   }
 }
 
@@ -650,7 +650,7 @@ if (section("removed")) {
   const keptFile = join(home, "live-results", `${label}-config.json`);
   let kept = null;
   await check("G20", "a box whose backend is not in settings: the notice, and no Stop, Start, Resize or New thread, each saying why", async () => {
-    kept = await withBbBoxOff(() =>
+    kept = await withAliaBoxOff(() =>
       editConfig(({ document, saved }) => {
         const doc = JSON.parse(document);
         const record = JSON.parse(saved);
@@ -664,7 +664,7 @@ if (section("removed")) {
     await page.locator("h1 + p").getByText("Not checked", { exact: true }).waitFor();
     const notice = page.getByRole("region", { name: "Its backend is not in settings" });
     const words = await notice.textContent();
-    expect((await notice.getByRole("link", { name: "Open BB Box settings" }).getAttribute("href")) === "/settings/plugins/bb-box", "Open BB Box settings");
+    expect((await notice.getByRole("link", { name: "Open VesnALIA Box settings" }).getAttribute("href")) === "/settings/plugins/alia-box", "Open VesnALIA Box settings");
     const stop = page.getByRole("button", { name: "Stop", exact: true });
     expect(await stop.isDisabled(), "Stop disabled");
     const reasons = await page.locator("[data-off-reasons]").textContent();
@@ -691,26 +691,26 @@ if (section("removed")) {
     const asked = await dialog().textContent();
     await dialog().getByRole("button", { name: "Forget", exact: true }).click();
     await page.getByText(`${F.name} was forgotten`).waitFor({ timeout: 30_000 });
-    const words = await page.getByText(/^bb-box removed its record/).textContent();
+    const words = await page.getByText(/^alia-box removed its record/).textContent();
     expect(!/released/i.test(words), "never released");
     await shoot("forgotten");
     const running = docker(["inspect", "--format", "{{.State.Running}}", container]);
     expect(running === "true", "its container still runs");
     return `asked: ${asked.replace(/Cancel.*$/, "")} | page: ${words} | container running: ${running}`;
   });
-  await check("G5 words", "the forgotten box's link after a reload and after a restart of bb-box", async () => {
+  await check("G5 words", "the forgotten box's link after a reload and after a restart of alia-box", async () => {
     await page.reload();
     await page.getByText(`${F.name} was forgotten`).waitFor();
-    bb(["plugin", "reload", "bb-box"]);
-    await waitFor(async () => Array.isArray(await rpc("allBoxes")), "bb-box back");
+    alia(["plugin", "reload", "alia-box"]);
+    await waitFor(async () => Array.isArray(await rpc("allBoxes")), "alia-box back");
     await page.goto(pageUrl(F));
     await page.getByText(`${F.name} was forgotten`).waitFor({ timeout: 30_000 });
-    return await page.getByText(/^bb-box removed its record/).textContent();
+    return await page.getByText(/^alia-box removed its record/).textContent();
   });
   if (kept) {
     const container = containerOf(F.id);
     if (container) docker(["rm", "-f", container]);
-    await withBbBoxOff(() => editConfig(() => kept));
+    await withAliaBoxOff(() => editConfig(() => kept));
     await waitFor(async () => (await view(A)).reach?.is === "answers", "the backend back", 60_000).catch(() => null);
     line(`- removed ${F.name}'s container by hand, then restored the configuration, so the sweep has no guest of it to restore`);
   }

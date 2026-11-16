@@ -1,5 +1,5 @@
 /**
- * A sample for eyeballing the bb Monokai code theme. Nothing imports it; it
+ * A sample for eyeballing the VesnALIA Monokai code theme. Nothing imports it; it
  * exists to be looked at, in the diff viewer or the file preview.
  *
  * What each hue should land on, measured against this file:
@@ -86,4 +86,4 @@ const version = "0.40.0";
 const [major = 0, minor = 0] = SEMVER.exec(version)?.slice(1, 3).map(Number) ?? [];
 const supported = major === 0 && minor >= 38;
 
-console.log(`bb ${version} — code theme ${supported ? "supported" : "unavailable"}`);
+console.log(`VesnALIA ${version} — code theme ${supported ? "supported" : "unavailable"}`);

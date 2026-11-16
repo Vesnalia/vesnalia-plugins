@@ -9,7 +9,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type FakeSdkOverrides,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { giteaRpcContract, pullCiStatus } from "./server";
 
 type TeaCall = {
@@ -134,7 +134,7 @@ async function start(
     },
   });
   cleanups.push(() => host.harness.lifecycle.dispose());
-  await plugin(host.bb);
+  await plugin(host.alia);
   return { host, calls };
 }
 
@@ -575,7 +575,7 @@ it("reuses repository discovery across list requests", async () => {
     },
   });
   cleanups.push(() => host.harness.lifecycle.dispose());
-  await plugin(host.bb);
+  await plugin(host.alia);
   await status(host);
   await listItems(host, {});
   await listItems(host, { state: "closed" });
@@ -859,7 +859,7 @@ it("reports a missing tea executable as a readiness problem", async () => {
     sdk: { projects: { list: async () => [] } },
   });
   cleanups.push(() => host.harness.lifecycle.dispose());
-  await plugin(host.bb);
+  await plugin(host.alia);
   const result = await host.harness.behavior.callRpc("status", null);
   expect(result).toMatchObject({
     state: "unavailable",
@@ -869,7 +869,7 @@ it("reports a missing tea executable as a readiness problem", async () => {
   expect(result).not.toHaveProperty("login");
 });
 
-it("exposes the validated read and write handlers through bb gitea commands", async () => {
+it("exposes the validated read and write handlers through VesnALIA gitea commands", async () => {
   const { host, calls } = await start(({ endpoint }) => {
     const path = endpoint.split("?")[0]!;
     if (path.endsWith("/issues/4"))
@@ -1180,7 +1180,7 @@ it("finds a legacy thread key when the repository casing differs", async () => {
   const { host } = await start(
     diffApi(rawFiles, () => ({ raw: rawDiff }), () => pullJson()),
   );
-  await host.bb.storage.kv.set("thread:Acme/Widgets:9", "legacy-thread");
+  await host.alia.storage.kv.set("thread:Acme/Widgets:9", "legacy-thread");
 
   await expect(conversation(host)).resolves.toMatchObject({
     threadId: "legacy-thread",
@@ -2058,7 +2058,7 @@ it("lists authored pull requests and starts one hidden pinned auto-fixer for con
     "tea pulls --login work --repo acme/widgets --comments 42",
   );
   await expect(enable(host, { repo: "ops/api", number: 7 })).rejects.toThrow(
-    "no BB project has a checkout",
+    "no VesnALIA project has a checkout",
   );
   await expect(autoFixerStatus(host)).resolves.toMatchObject({
     status: "watching",
@@ -2189,7 +2189,7 @@ it("starts automatic auto-fixers from a live pull request list rather than the r
 it("fails an unconfirmed marker and resumes the retained thread on retry", async () => {
   const { host } = await startAutoFixers();
   await enable(host, pr42);
-  await idle(host, "BB_GITEA_AUTO_FIX: MERGED");
+  await idle(host, "ALIA_GITEA_AUTO_FIX: MERGED");
   await expect(autoFixerStatus(host)).resolves.toMatchObject({
     status: "failed",
     error:
@@ -2238,7 +2238,7 @@ it("fails an unconfirmed marker and resumes the retained thread on retry", async
 it("replaces a retired auto-fixer workspace before retrying", async () => {
   const { host, patchThread } = await startAutoFixers();
   await enable(host, pr42);
-  await idle(host, "BB_GITEA_AUTO_FIX: FAILED");
+  await idle(host, "ALIA_GITEA_AUTO_FIX: FAILED");
   patchThread("auto-fixer-1", { canRestoreEnvironment: true });
   await rpc(host, "retryAutoFixer", pr42);
   expect(host.harness.sdk.callsTo("threads.spawn")).toHaveLength(2);
@@ -2252,9 +2252,9 @@ it("replaces a retired auto-fixer workspace before retrying", async () => {
 it("replaces a legacy auto-fixer on another host without deleting its thread", async () => {
   const { host } = await startAutoFixers();
   await enable(host, pr42);
-  await idle(host, "BB_GITEA_AUTO_FIX: FAILED");
+  await idle(host, "ALIA_GITEA_AUTO_FIX: FAILED");
   const old = await autoFixerStatus(host);
-  await host.bb.storage.kv.set("auto-fixer:acme/widgets#42", {
+  await host.alia.storage.kv.set("auto-fixer:acme/widgets#42", {
     ...old,
     hostId: undefined,
   });
@@ -2360,7 +2360,7 @@ it("retains sessions across a restart and reconciles threads that settled while 
   await enable(host, pr42);
   await enable(host, { repo: "acme/widgets", number: 44 });
   settle("acme/widgets#42", false);
-  state.output = "BB_GITEA_AUTO_FIX: CLOSED";
+  state.output = "ALIA_GITEA_AUTO_FIX: CLOSED";
   state.threads.set("auto-fixer-1", { status: "idle" });
   state.threads.set("auto-fixer-2", { archivedAt: 1 });
 
@@ -2403,7 +2403,7 @@ it("reports Gitea API failures without spawning or guessing a terminal state", a
   gitea.pullFailure = null;
   await enable(host, pr42);
   gitea.pullFailure = 500;
-  await idle(host, "BB_GITEA_AUTO_FIX: CLOSED");
+  await idle(host, "ALIA_GITEA_AUTO_FIX: CLOSED");
   await expect(autoFixerStatus(host)).resolves.toMatchObject({
     status: "failed",
     error:
@@ -2411,7 +2411,7 @@ it("reports Gitea API failures without spawning or guessing a terminal state", a
   });
 });
 
-it("exposes Auto-fix and native Auto-merge through bb gitea commands", async () => {
+it("exposes Auto-fix and native Auto-merge through VesnALIA gitea commands", async () => {
   const { host, calls } = await startAutoFixers();
   const cli = (argv: string[]) => host.harness.behavior.runCli(argv);
   await expect(cli(["automation-defaults"])).resolves.toMatchObject({
@@ -2570,7 +2570,7 @@ it.each(["watching", "needs_you", "failed"])("stops a legacy %s merge agent on s
   const { host, calls } = await startAutoFixers();
   await enable(host, pr42);
   const current = await autoFixerStatus(host);
-  await host.bb.storage.kv.set("auto-fixer:acme/widgets#42", {
+  await host.alia.storage.kv.set("auto-fixer:acme/widgets#42", {
     ...current, status, policy: { fix: false, merge: true },
     ...(status === "needs_you" ? { note: "waiting" } : {}),
     ...(status === "failed" ? { error: "failed", cleanupPending: false } : {}),
@@ -2645,7 +2645,7 @@ it("lets an explicit enable win over background cleanup that read the session ea
 it("discards an idle observation from before the auto-fixer was turned off and on again", async () => {
   const { host, state } = await startAutoFixers();
   await enable(host, pr42);
-  state.output = "BB_GITEA_AUTO_FIX: NEEDS_YOU";
+  state.output = "ALIA_GITEA_AUTO_FIX: NEEDS_YOU";
   state.threads.set("auto-fixer-1", { status: "idle" });
   let release!: () => void;
   state.outputGate = new Promise((resolve) => {
@@ -2683,7 +2683,7 @@ it("finishes settling an auto-fixer before Retry resumes it", async () => {
     state.onStop = null;
     await stopGate;
   };
-  const settling = idle(host, "BB_GITEA_AUTO_FIX: NEEDS_YOU");
+  const settling = idle(host, "ALIA_GITEA_AUTO_FIX: NEEDS_YOU");
   await vi.waitFor(() =>
     expect(host.harness.sdk.callsTo("threads.stop")).toHaveLength(1),
   );
@@ -2723,7 +2723,7 @@ it.each([false, true])("ignores legacy bulk merge preferences on startup (auto-f
   const preferences = giteaRpcContract.getAutoFixerPreferences.output.parse(
     await rpc(host, "getAutoFixerPreferences"),
   );
-  await host.bb.storage.kv.set("auto-fixer-preferences", {
+  await host.alia.storage.kv.set("auto-fixer-preferences", {
     ...preferences, autoFix, autoMerge: true,
   });
   const restarted = await host.harness.lifecycle.reload(plugin);
@@ -2776,8 +2776,8 @@ it("replaces a closed auto-fixer once Gitea reports the pull request reopened", 
   await enable(host, pr44);
   settle("acme/widgets#42", false);
   settle("acme/widgets#44", false);
-  await idle(host, "BB_GITEA_AUTO_FIX: CLOSED", "auto-fixer-1");
-  await idle(host, "BB_GITEA_AUTO_FIX: CLOSED", "auto-fixer-2");
+  await idle(host, "ALIA_GITEA_AUTO_FIX: CLOSED", "auto-fixer-1");
+  await idle(host, "ALIA_GITEA_AUTO_FIX: CLOSED", "auto-fixer-2");
   await expect(autoFixerStatus(host)).resolves.toMatchObject({
     status: "archived", outcome: "closed",
     actions: [],
@@ -3117,7 +3117,7 @@ it("reports a stopped auto-fixer as inactive even when the pull request changed"
  it.each([true, false])("archives needs-you sessions after external PR closure (merged=%s), retrying failed cleanup", async (merged) => {
   const { host, settle, state } = await startAutoFixers();
   await enable(host, pr42);
-  await idle(host, "Blocked. BB_GITEA_AUTO_FIX: NEEDS_YOU");
+  await idle(host, "Blocked. ALIA_GITEA_AUTO_FIX: NEEDS_YOU");
   settle("acme/widgets#42", merged);
   state.archiveFailures = 1;
   const service = host.harness.behavior.runService("auto-fixers");

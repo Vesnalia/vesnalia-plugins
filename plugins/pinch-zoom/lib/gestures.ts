@@ -3,14 +3,14 @@
  * Content script: turns pinch/zoom gestures into text-size changes.
  *
  * Routing: a pinch that starts over a terminal (`.xterm`) changes the terminal text size; a pinch anywhere else changes the app text size.
- * Pinches inside dialogs are left alone, because bb's image lightbox and Mermaid diagram viewer use pinch for their own pan/zoom.
+ * Pinches inside dialogs are left alone, because VesnALIA's image lightbox and Mermaid diagram viewer use pinch for their own pan/zoom.
  *
  * Input sources, one per platform:
- * - Safari / iOS / bb on iPhone: `gesturestart`/`gesturechange`/`gestureend` (also stops Safari's page zoom).
- * - Chromium, Electron (bb desktop) trackpad pinch and ctrl+mouse wheel: `wheel` with `ctrlKey`.
+ * - Safari / iOS / VesnALIA on iPhone: `gesturestart`/`gesturechange`/`gestureend` (also stops Safari's page zoom).
+ * - Chromium, Electron (VesnALIA desktop) trackpad pinch and ctrl+mouse wheel: `wheel` with `ctrlKey`.
  * - Android / other touch browsers without GestureEvent: two-finger `touchmove`.
  *
- * Listeners sit on `document` in the capture phase: after bb's window-capture pan-zoom handlers (so we can honor their `defaultPrevented`), before xterm's own wheel handling.
+ * Listeners sit on `document` in the capture phase: after VesnALIA's window-capture pan-zoom handlers (so we can honor their `defaultPrevented`), before xterm's own wheel handling.
  *
  * FNXC:PinchZoom 2026-11-13-13:11:
  * The scope setting picks what text scaling resizes: the whole app (root font size) or only chat, composer and terminal (CSS `zoom` on the chat timeline and composer).
@@ -49,8 +49,8 @@ const TERMINAL_REFIT_DELAY_MS = 140;
 const INDICATOR_HIDE_DELAY_MS = 900;
 /**
  * FNXC:PinchZoom 2026-11-13-13:11:
- * bb DOM hooks for "chat only" scaling, found in bb 0.49: the thread timeline row list and every prompt box (follow-up and new-thread composers).
- * `data-scroll-attached` was rejected: bb only sets it while the transcript is pinned to the bottom.
+ * VesnALIA DOM hooks for "chat only" scaling, found in VesnALIA 0.49: the thread timeline row list and every prompt box (follow-up and new-thread composers).
+ * `data-scroll-attached` was rejected: VesnALIA only sets it while the transcript is pinned to the bottom.
  */
 const TIMELINE_SELECTOR = '[data-timeline-row-list="top-level"]';
 const COMPOSER_SELECTOR = "form[data-promptbox]";
@@ -102,7 +102,7 @@ function createIndicator(): {
     show(text) {
       if (node === null) {
         node = document.createElement("div");
-        node.setAttribute("data-bb-plugin", "pinch-zoom");
+        node.setAttribute("data-alia-plugin", "pinch-zoom");
         node.setAttribute("role", "status");
         node.setAttribute("aria-live", "polite");
         // px sizes on purpose: the indicator must not grow with the text scale it reports.
@@ -149,7 +149,7 @@ export function mountPinchZoom(signal: AbortSignal): () => void {
   let refitTimer: ReturnType<typeof setTimeout> | null = null;
   let applied: { scales: AppliedScales; terminalPx: number } | null = null;
   const zoomStyle = document.createElement("style");
-  zoomStyle.setAttribute("data-bb-plugin", "pinch-zoom");
+  zoomStyle.setAttribute("data-alia-plugin", "pinch-zoom");
   document.head.appendChild(zoomStyle);
   /** True while a gesture is in progress, so terminal PTY resizes wait for it to settle. */
   let gestureActive = false;
@@ -174,7 +174,7 @@ export function mountPinchZoom(signal: AbortSignal): () => void {
   /**
    * FNXC:PinchZoom 2026-11-13-16:35:
    * Base chat and composer font sizes, measured with the plugin's zoom rules switched off so the result never feeds back into itself.
-   * They only change with bb's responsive breakpoints, so they are re-measured on resize and when a composer gains focus, not on every gesture frame.
+   * They only change with VesnALIA's responsive breakpoints, so they are re-measured on resize and when a composer gains focus, not on every gesture frame.
    */
   let bases: { chatPx: number; composerPx: number } | null = null;
   const minComposerPx = isIos() ? IOS_MIN_COMPOSER_PX : 0;
@@ -232,7 +232,7 @@ export function mountPinchZoom(signal: AbortSignal): () => void {
 
   apply(getZoomSnapshot());
   const unsubscribe = subscribeZoom(apply);
-  // Breakpoint changes alter bb's base sizes; a focused composer may be one that mounted after the last measurement.
+  // Breakpoint changes alter VesnALIA's base sizes; a focused composer may be one that mounted after the last measurement.
   let resizeTimer: ReturnType<typeof setTimeout> | null = null;
   window.addEventListener(
     "resize",
@@ -255,13 +255,13 @@ export function mountPinchZoom(signal: AbortSignal): () => void {
   const initialMeasureTimer = setTimeout(remeasure, 1500);
   watchOtherWindows(signal);
 
-  // New terminals mount at bb's default 12px; bring them to the chosen size.
+  // New terminals mount at VesnALIA's default 12px; bring them to the chosen size.
   const observer = new MutationObserver((records) => {
     const size = currentTerminalPx();
     for (const record of records) {
       for (const node of record.addedNodes) {
         if (node instanceof HTMLElement && node.classList.contains("xterm")) {
-          // terminal.open() appends .xterm before bb's first fit; wait a frame.
+          // terminal.open() appends .xterm before VesnALIA's first fit; wait a frame.
           requestAnimationFrame(() => applyTerminalFontSize(node, size, true));
         }
       }

@@ -3,7 +3,7 @@ export type SampleName = typeof sampleNames[number];
 export type Sample = { name: SampleName; bytes: ArrayBuffer; size: number };
 const MAX_FILE = 1024 * 1024;
 const MAX_PACK = 4 * MAX_FILE;
-const DB_NAME = 'bb-plugin-typewriter-local-sounds-v1';
+const DB_NAME = 'alia-plugin-typewriter-local-sounds-v1';
 
 export function validateWav(name: string, bytes: ArrayBuffer): Sample {
   const match = /^(key2?|space|delete|enter)\.wav$/i.exec(name);

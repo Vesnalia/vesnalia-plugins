@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { decodeOutcomeArtifact, type OutcomeArtifact } from "./artifacts.js";
 
 export const TERMINAL_STATES = [
@@ -33,7 +33,7 @@ export type Scope =
   | { kind: "environment"; environmentId: string }
   | { kind: "machine"; hostId: string; cwd: string | null };
 
-type Database = ReturnType<BbPluginApi["storage"]["database"]>;
+type Database = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 export interface Job {
   jobId: string;
@@ -54,7 +54,7 @@ export interface Job {
   outcomePath: string | null;
   terminalId: string | null;
   terminalState: TerminalState;
-  lastBbStatus: string | null;
+  lastAliaStatus: string | null;
   exitCode: number | null;
   closeReason: string | null;
   lastObservationError: string | null;
@@ -109,7 +109,7 @@ export const JOB_MIGRATIONS = [
     outcome_path TEXT,
     terminal_id TEXT,
     terminal_state TEXT NOT NULL CHECK (terminal_state IN ('preparing', 'observing', 'exited', 'launch_ambiguous', 'unavailable')),
-    last_bb_status TEXT,
+    last_alia_status TEXT,
     exit_code INTEGER,
     close_reason TEXT,
     last_observation_error TEXT,
@@ -253,7 +253,7 @@ function decodeJob(value: unknown): Job {
     outcomePath: nullableText(value, "outcome_path"),
     terminalId: nullableText(value, "terminal_id"),
     terminalState: enumValue(value, "terminal_state", TERMINAL_STATES),
-    lastBbStatus: nullableText(value, "last_bb_status"),
+    lastAliaStatus: nullableText(value, "last_alia_status"),
     exitCode: nullableInteger(value, "exit_code"),
     closeReason: nullableText(value, "close_reason"),
     lastObservationError: nullableText(value, "last_observation_error"),
@@ -301,7 +301,7 @@ export interface NewJob {
   outcomePath: string | null;
   terminalId?: string | null;
   terminalState: TerminalState;
-  lastBbStatus?: string | null;
+  lastAliaStatus?: string | null;
   outcomeState: OutcomeState;
 }
 
@@ -311,10 +311,10 @@ export class JobStore {
     private readonly logDecodeError: (message: string) => void = () => {},
   ) {}
 
-  static open(bb: BbPluginApi): JobStore {
-    const db = bb.storage.database();
-    bb.storage.migrate(db, JOB_MIGRATIONS);
-    return new JobStore(db, (message) => bb.log.error(message));
+  static open(alia: AliaPluginApi): JobStore {
+    const db = alia.storage.database();
+    alia.storage.migrate(db, JOB_MIGRATIONS);
+    return new JobStore(db, (message) => alia.log.error(message));
   }
 
   private decodeRows(
@@ -355,13 +355,13 @@ export class JobStore {
           job_id, marker, source, schema_version, owner_thread_id, delivery_mode,
           title, scope_kind, scope_json, host_id, argv_json, created_at,
           artifact_root, job_directory, launch_path, log_path, outcome_path,
-          terminal_id, terminal_state, last_bb_status, outcome_state,
+          terminal_id, terminal_state, last_alia_status, outcome_state,
           delivery_state, updated_at
         ) VALUES (
           @jobId, @marker, @source, 1, @ownerThreadId, @deliveryMode,
           @title, @scopeKind, @scopeJson, @hostId, @argvJson, @createdAt,
           @artifactRoot, @jobDirectory, @launchPath, @logPath, @outcomePath,
-          @terminalId, @terminalState, @lastBbStatus, @outcomeState,
+          @terminalId, @terminalState, @lastAliaStatus, @outcomeState,
           'pending', @createdAt
         )
       `)
@@ -372,7 +372,7 @@ export class JobStore {
         scopeJson: JSON.stringify(job.scope),
         argvJson: JSON.stringify(job.argv),
         terminalId: job.terminalId ?? null,
-        lastBbStatus: job.lastBbStatus ?? null,
+        lastAliaStatus: job.lastAliaStatus ?? null,
       });
     return this.get(job.jobId)!;
   }
@@ -488,7 +488,7 @@ export class JobStore {
     const columns: Record<string, string> = {
       terminalId: "terminal_id",
       terminalState: "terminal_state",
-      lastBbStatus: "last_bb_status",
+      lastAliaStatus: "last_alia_status",
       exitCode: "exit_code",
       closeReason: "close_reason",
       lastObservationError: "last_observation_error",

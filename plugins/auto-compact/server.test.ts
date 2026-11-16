@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { usagePercent } from "./server";
 
 const THREAD_ID = "thr_test1";
@@ -32,7 +32,7 @@ async function loadHost(
       compactCalls.push(args.threadId);
       return { ok: true as const };
     });
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "auto-compact",
     sdk: {
       threads: {
@@ -41,7 +41,7 @@ async function loadHost(
       },
     },
   });
-  await plugin(bb);
+  await plugin(alia);
   return { harness, compactCalls };
 }
 

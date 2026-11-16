@@ -8,8 +8,8 @@ export const excluded = [
   '.monaco-editor', '.cm-editor', '.xterm', '.tiptap', '.ProseMirror',
   '[data-markdown-preview]', '[data-message-seq]', '[data-message-column]',
   '[data-sidebar-thread-id]', '[data-thread-toc]', '[data-raw-thread-id]',
-  '.bb-thread-title', '[data-sidebar-sticky-tier="label"] span[title]',
-  '[data-sent-message-inline-editor-host]', '[data-bb-zh-skip]', '[translate="no"]',
+  '.alia-thread-title', '[data-sidebar-sticky-tier="label"] span[title]',
+  '[data-sent-message-inline-editor-host]', '[data-alia-zh-skip]', '[translate="no"]',
 ].join(',');
 const normalize = (value: string) => value.replace(/\s+/g, ' ').trim();
 const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

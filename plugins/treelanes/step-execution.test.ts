@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   resolveStepExecution,
   stepExecutionSchema,
 } from "./step-execution";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
 const provider = (id: string, available = true) => ({
   id,

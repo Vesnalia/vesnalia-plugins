@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { FocusStrip as RawFocusStrip } from "./shell/FocusStrip";
 import { SettingsContext } from "../lib/settings";
 import { defaultPreferences } from "../src/preferences";

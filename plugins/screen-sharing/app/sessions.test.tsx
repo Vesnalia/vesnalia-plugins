@@ -5,7 +5,7 @@
  * Sharing page itself is on screen.
  */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { SESSIONS_CHANGED, type SessionInfo } from "../shared/channels";

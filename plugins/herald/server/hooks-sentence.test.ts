@@ -29,7 +29,7 @@ const events: EventsPort = {
     return false;
   },
   async interactionPending() {
-    if (lookupFails) throw new Error("bb is away");
+    if (lookupFails) throw new Error("alia is away");
     if (lookupGate !== null) return lookupGate;
     return !answered;
   },
@@ -178,7 +178,7 @@ describe("hooks with a model-written sentence", () => {
     answered = false;
   });
 
-  it("drops a question, unspoken, when bb cannot say whether it is still pending", async () => {
+  it("drops a question, unspoken, when VesnALIA cannot say whether it is still pending", async () => {
     lookupFails = true;
     const w = heldWriter();
     const { hooks, store, log, remembered } = setup(w.write);
@@ -188,11 +188,11 @@ describe("hooks with a model-written sentence", () => {
     lookupFails = false;
     expect(store.get("t1")).toBeNull();
     expect(remembered).not.toHaveBeenCalled();
-    expect(log.lines.some((line) => line.startsWith("warn:") && line.includes("bb is away"))).toBe(true);
+    expect(log.lines.some((line) => line.startsWith("warn:") && line.includes("alia is away"))).toBe(true);
     expect([...hooks.inFlightEventIds()]).toEqual([]);
   });
 
-  it("lands nothing when unloaded while it was asking bb about the question", async () => {
+  it("lands nothing when unloaded while it was asking VesnALIA about the question", async () => {
     let answer: (pending: boolean) => void = () => {};
     lookupGate = new Promise<boolean>((resolve) => (answer = resolve));
     const w = heldWriter();

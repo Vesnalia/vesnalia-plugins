@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { ThreadChat } from "@get-bb/plugin-sdk/app";
+import { ThreadChat } from "@vesnalia/plugin-sdk/app";
 import { RememberThreadPermission } from "../permission-composers";
 import { ChatFileSurface } from "../chat-file-surface";
 import { followChatBottom } from "../chat-scroll";

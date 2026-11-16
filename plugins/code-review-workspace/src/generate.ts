@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { stopFocusRunIn } from "./focus-run";
 import { completionNotifications } from "./completion-notifications";
 import { defaultPreferences, guidePreferencesPrompt, reReviewCheckPrompt, spawnExecution, type ReviewPreferences } from "./preferences";
@@ -18,49 +18,49 @@ import type { AsyncStore } from "./store-queue";
 /** Starts a guide-writing worker's title; `agents.configure` grants it the guide tools by it. */
 export const GUIDE_WORKER_TITLE = "Generate guide: ";
 
-const preparedListeners = new WeakMap<BbPluginApi, (targetKey: string) => void>();
+const preparedListeners = new WeakMap<AliaPluginApi, (targetKey: string) => void>();
 /** Told when a guide's automatic follow-up (the review or the feedback check) has started or can't. */
-export function onPrepared(bb: BbPluginApi, listener: (targetKey: string) => void) { preparedListeners.set(bb, listener); }
+export function onPrepared(alia: AliaPluginApi, listener: (targetKey: string) => void) { preparedListeners.set(alia, listener); }
 
-const active = new WeakMap<BbPluginApi, Set<AbortController>>();
-const failures = new WeakMap<BbPluginApi, Map<string, AbortController>>();
-/** thread.failed: a guide worker that failed ends its generation now, instead of at the wait's timeout, saying `error`, BB's why. */
-export function guideWorkerFailed(bb: BbPluginApi, threadId: string, error?: string | null) { failures.get(bb)?.get(threadId)?.abort(error || undefined); }
+const active = new WeakMap<AliaPluginApi, Set<AbortController>>();
+const failures = new WeakMap<AliaPluginApi, Map<string, AbortController>>();
+/** thread.failed: a guide worker that failed ends its generation now, instead of at the wait's timeout, saying `error`, VesnALIA's why. */
+export function guideWorkerFailed(alia: AliaPluginApi, threadId: string, error?: string | null) { failures.get(alia)?.get(threadId)?.abort(error || undefined); }
 /**
  * Each running generation, by its id: told when generate_review_guide accepts its guide, why it last refused one, and
  * whether the reviewer stopped it; and whether it asked for sinceReview, as a re-review does.
  */
-const generations = new WeakMap<BbPluginApi, Map<string, Generation>>();
+const generations = new WeakMap<AliaPluginApi, Map<string, Generation>>();
 interface Generation { accepted: AbortController; rejection?: string; stopped?: boolean; sinceReview?: boolean }
 /** generate_review_guide accepted generation `generationId`'s guide: its run finishes now, not when the worker's turn ends. */
-export function guideAccepted(bb: BbPluginApi, generationId: string) { generations.get(bb)?.get(generationId)?.accepted.abort(); }
+export function guideAccepted(alia: AliaPluginApi, generationId: string) { generations.get(alia)?.get(generationId)?.accepted.abort(); }
 /** generate_review_guide refused generation `generationId`'s guide, saying `text`: the worker is reminded of it, and the reviewer told. */
-export function guideRejected(bb: BbPluginApi, generationId: string, text: string) {
-  const generation = generations.get(bb)?.get(generationId);
+export function guideRejected(alia: AliaPluginApi, generationId: string, text: string) {
+  const generation = generations.get(alia)?.get(generationId);
   if (generation) generation.rejection = text;
 }
 /** The reviewer stopped generation `generationId`: until it's finalized, generate_review_guide refuses its guide. */
-export function guideStopped(bb: BbPluginApi, generationId: string): boolean { return !!generations.get(bb)?.get(generationId)?.stopped; }
+export function guideStopped(alia: AliaPluginApi, generationId: string): boolean { return !!generations.get(alia)?.get(generationId)?.stopped; }
 /** Whether generation `generationId` asked for the guide's sinceReview: a first guide's is dropped, as there's no review to be since. */
-export function guideAsksSinceReview(bb: BbPluginApi, generationId: string): boolean { return !!generations.get(bb)?.get(generationId)?.sinceReview; }
+export function guideAsksSinceReview(alia: AliaPluginApi, generationId: string): boolean { return !!generations.get(alia)?.get(generationId)?.sinceReview; }
 
 // Each wait lasts up to WAIT_STEP; a worker still working is waited for again, up to a cap that grows with the diff.
 const WAIT_STEP = 600_000;
 const workerActive = (status: string) => status === "starting" || status === "active" || status === "pending";
 const waitCap = (patchBytes: number) => Math.min(60 * 60_000, WAIT_STEP + Math.ceil(patchBytes / 10_000) * 60_000);
-export function hasGuideGenerations(bb: BbPluginApi) { return (active.get(bb)?.size ?? 0) > 0; }
-export function stopGuideGenerations(bb: BbPluginApi) {
-  for (const controller of active.get(bb) ?? []) controller.abort();
+export function hasGuideGenerations(alia: AliaPluginApi) { return (active.get(alia)?.size ?? 0) > 0; }
+export function stopGuideGenerations(alia: AliaPluginApi) {
+  for (const controller of active.get(alia) ?? []) controller.abort();
 }
 
 /** Each review's running generation, which the reviewer can stop: `stop` says whether it did, `done` resolves once it's finalized. */
-const stoppable = new WeakMap<BbPluginApi, Map<string, { stop(): boolean; done: Promise<void> }>>();
+const stoppable = new WeakMap<AliaPluginApi, Map<string, { stop(): boolean; done: Promise<void> }>>();
 /**
  * Stop the review's running guide, once it's finalized: "restored" when a rebuild got its previous guide back,
  * "stopped" when a first guide ended without one, null when nothing was running or its guide was already accepted.
  */
-export async function stopGuide(bb: BbPluginApi, store: AsyncStore, targetKey: string): Promise<"restored" | "stopped" | null> {
-  const run = stoppable.get(bb)?.get(targetKey);
+export async function stopGuide(alia: AliaPluginApi, store: AsyncStore, targetKey: string): Promise<"restored" | "stopped" | null> {
+  const run = stoppable.get(alia)?.get(targetKey);
   if (!run?.stop()) return null;
   await run.done;
   return (await store.getReview(targetKey))?.status === "ready" ? "restored" : "stopped";
@@ -74,37 +74,37 @@ export const GUIDE_UNFINISHED = "The guide's run ended, but its end couldn't be 
  * ended: each gets its earlier guide back, as at a reload (interruptGenerations), and says why. A run is in stoppable
  * from the turn that begins it, which saves the review generating, until it has ended.
  */
-export async function failUnfinishedGuides(bb: BbPluginApi, store: AsyncStore): Promise<void> {
+export async function failUnfinishedGuides(alia: AliaPluginApi, store: AsyncStore): Promise<void> {
   const failed = await store.exclusive(async (tx) => {
     const failed: string[] = [];
     for (const review of await tx.listReviews()) {
-      if (review.status !== "generating" || stoppable.get(bb)?.has(review.targetKey) || !await tx.interruptGeneration(review.targetKey)) continue;
+      if (review.status !== "generating" || stoppable.get(alia)?.has(review.targetKey) || !await tx.interruptGeneration(review.targetKey)) continue;
       await tx.setLifecycle(review.targetKey, { guideError: { at: Date.now(), text: GUIDE_UNFINISHED } });
       failed.push(review.targetKey);
     }
     return failed;
   });
   for (const targetKey of failed) {
-    bb.log.warn(`The guide for ${targetKey} was left generating with no run to finish it; it failed.`);
-    bb.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
+    alia.log.warn(`The guide for ${targetKey} was left generating with no run to finish it; it failed.`);
+    alia.realtime.publish(`review:${targetKey}`, { ts: Date.now() });
   }
-  if (failed.length) bb.realtime.publish("reviews", { ts: Date.now() });
+  if (failed.length) alia.realtime.publish("reviews", { ts: Date.now() });
 }
 
 /** Why a guide can't start now: the guide writer's machine is offline or removed. */
-export async function guideWriterUnavailable(bb: BbPluginApi, store: AsyncStore): Promise<string | null> {
-  return machineUnavailable(bb, (await store.getPreferences()).preferences.guideAgent, "guide writer");
+export async function guideWriterUnavailable(alia: AliaPluginApi, store: AsyncStore): Promise<string | null> {
+  return machineUnavailable(alia, (await store.getPreferences()).preferences.guideAgent, "guide writer");
 }
 
 /**
  * The writer's permission mode on the project's defaults. Not the project's, as its tools need no shell or edits:
- * accept-edits where the project's provider runs in it, else auto, whose approvals bb reviews itself, so the hidden
+ * accept-edits where the project's provider runs in it, else auto, whose approvals VesnALIA reviews itself, so the hidden
  * writer waits on no one. Unset, so the project's own, when the provider runs in neither or can't be read.
  * Pass `known` when the defaults are already read.
  */
-export async function guideWriterMode(bb: BbPluginApi, projectId: string, known?: { providerId: string }): Promise<{ permissionMode?: "accept-edits" | "auto"; executionInputSources?: { permissionMode: "explicit" } }> {
+export async function guideWriterMode(alia: AliaPluginApi, projectId: string, known?: { providerId: string }): Promise<{ permissionMode?: "accept-edits" | "auto"; executionInputSources?: { permissionMode: "explicit" } }> {
   try {
-    const [defaults, providers] = await Promise.all([known ?? bb.sdk.projects.defaultExecutionOptions({ projectId }), bb.sdk.providers.list()]);
+    const [defaults, providers] = await Promise.all([known ?? alia.sdk.projects.defaultExecutionOptions({ projectId }), alia.sdk.providers.list()]);
     const modes = providers.find((provider) => provider.id === defaults?.providerId)?.capabilities.permissionModes ?? [];
     const mode = (["accept-edits", "auto"] as const).find((candidate) => modes.includes(candidate));
     return mode ? { permissionMode: mode, executionInputSources: { permissionMode: "explicit" } } : {};
@@ -135,7 +135,7 @@ export function buildGenerationPrompt(targetKey: string, generationId?: string, 
  * `notify: false` leaves the Needs You alert to the turn that started this re-review.
  */
 export async function generateGuide(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   store: AsyncStore,
   targetKey: string,
   projectId: string,
@@ -143,7 +143,7 @@ export async function generateGuide(
   options: { notify?: boolean; unattended?: boolean } = {},
 ): Promise<void> {
   // A reload disposed the store before the start's turn came; the next factory finds nothing begun.
-  const run = await store.exclusive((tx) => beginGuide(bb, tx, store, targetKey, projectId, options)).catch(() => null);
+  const run = await store.exclusive((tx) => beginGuide(alia, tx, store, targetKey, projectId, options)).catch(() => null);
   await run?.();
 }
 
@@ -154,7 +154,7 @@ export async function generateGuide(
  * `notify: false` leaves the Needs You alert to the turn that started this re-review.
  */
 export async function beginGuide(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   tx: AsyncStore,
   store: AsyncStore,
   targetKey: string,
@@ -162,17 +162,17 @@ export async function beginGuide(
   /** unattended: started with no click from you, so it doesn't approve agents on the PR's head. */
   options: { notify?: boolean; unattended?: boolean } = {},
 ): Promise<() => Promise<void>> {
-  await stopFocusRunIn(bb, tx, targetKey, "stopped", true);
+  await stopFocusRunIn(alia, tx, targetKey, "stopped", true);
   let generationId: string | undefined;
   let workerId: string | undefined;
-  let threads: BbPluginApi["sdk"]["threads"] | undefined;
+  let threads: AliaPluginApi["sdk"]["threads"] | undefined;
   const controller = new AbortController();
   const generation: Generation = { accepted: new AbortController() };
   const accepted = generation.accepted;
   /** Why the guide failed, for the reviewer. */
   let failure: string | undefined;
-  const runs = active.get(bb) ?? new Set<AbortController>();
-  active.set(bb, runs);
+  const runs = active.get(alia) ?? new Set<AbortController>();
+  active.set(alia, runs);
   runs.add(controller);
   /** The reviewer stopped it (stopGuide), unlike a plugin reload's abort. */
   let stopped = false;
@@ -182,8 +182,8 @@ export async function beginGuide(
     stop: () => { if (accepted.signal.aborted || controller.signal.aborted) return false; stopped = generation.stopped = true; controller.abort(); return true; },
     done: new Promise<void>((resolve) => { finished = resolve; }),
   };
-  const byReview = stoppable.get(bb) ?? new Map<string, typeof run>();
-  stoppable.set(bb, byReview);
+  const byReview = stoppable.get(alia) ?? new Map<string, typeof run>();
+  stoppable.set(alia, byReview);
   byReview.set(targetKey, run);
   let begun: { preferences: ReviewPreferences; earlier: { guide: Guide | null; reviewed: boolean } } | { error: unknown };
   try {
@@ -197,13 +197,13 @@ export async function beginGuide(
     generation.sinceReview = earlier.reviewed;
     // The writer this generation replaces can still run commands: as a former writer, only on its own review.
     const replaced = await tx.generationWorker(targetKey);
-    if (replaced) void recordFormerWorker(bb, replaced, targetKey, "writer");
+    if (replaced) void recordFormerWorker(alia, replaced, targetKey, "writer");
     generationId = await tx.beginGeneration(targetKey);
     await tx.setLifecycle(targetKey, { guideError: null });
-    const running = generations.get(bb) ?? new Map<string, typeof generation>();
-    generations.set(bb, running);
+    const running = generations.get(alia) ?? new Map<string, typeof generation>();
+    generations.set(alia, running);
     running.set(generationId, generation);
-    threads = bb.sdk.threads;
+    threads = alia.sdk.threads;
     begun = { preferences: (await tx.getPreferences()).preferences, earlier };
   } catch (error) {
     begun = { error };
@@ -214,11 +214,11 @@ export async function beginGuide(
       if ("error" in begun) throw begun.error;
       const { preferences, earlier } = begun;
       const title = `${GUIDE_WORKER_TITLE}${targetKey}`;
-      const placement = await agentPlacement(bb, preferences.guideAgent, projectId);
-      const execution = preferences.guideAgent ? spawnExecution(preferences.guideAgent) : await guideWriterMode(bb, projectId);
+      const placement = await agentPlacement(alia, preferences.guideAgent, projectId);
+      const execution = preferences.guideAgent ? spawnExecution(preferences.guideAgent) : await guideWriterMode(alia, projectId);
       const id = generationId!;
-      const worker = await spawningFor(bb, title, targetKey, async () => {
-        const worker = await bb.sdk.threads.spawn({
+      const worker = await spawningFor(alia, title, targetKey, async () => {
+        const worker = await alia.sdk.threads.spawn({
           ...placement,
           prompt: buildGenerationPrompt(targetKey, id, preferences, earlier),
           title,
@@ -231,15 +231,15 @@ export async function beginGuide(
           return await tx.generationOf(worker.id);
         });
         // A generation replaced while this writer spawned has no row to hold it, and its successor never saw it.
-        if (holder !== targetKey) void recordFormerWorker(bb, worker.id, targetKey, "writer");
+        if (holder !== targetKey) void recordFormerWorker(alia, worker.id, targetKey, "writer");
         return worker;
       });
       workerId = worker.id;
       const failed = new AbortController();
-      const watched = failures.get(bb) ?? new Map<string, AbortController>();
-      failures.set(bb, watched);
+      const watched = failures.get(alia) ?? new Map<string, AbortController>();
+      failures.set(alia, watched);
       watched.set(worker.id, failed);
-      /** The writer's thread failed, and why, if BB said: what the reviewer reads, not the wait's abort. */
+      /** The writer's thread failed, and why, if VesnALIA said: what the reviewer reads, not the wait's abort. */
       const writerFailed = () => new Error(`the guide writer failed${typeof failed.signal.reason === "string" ? `: ${failed.signal.reason}` : ""}`);
       try {
         const deadline = Date.now() + waitCap((await store.patch(targetKey)).length);
@@ -274,11 +274,11 @@ export async function beginGuide(
       }
     } catch (error) {
       // spawn/wait failed — fall through and finalize as error below. The log
-      // carries the reason, such as a custom agent bb can no longer start, and the guide's last rejection.
+      // carries the reason, such as a custom agent VesnALIA can no longer start, and the guide's last rejection.
       if (!controller.signal.aborted) {
         const reason = (error instanceof Error ? error.message : String(error)).replace(/\.$/, "");
         failure = generation.rejection ? `Its last guide wasn't accepted:\n${generation.rejection}` : `${reason.charAt(0).toUpperCase()}${reason.slice(1)}.`;
-        bb.log.warn(`Guide generation for ${targetKey} failed: ${String(error)}${generation.rejection ? `. Its last guide wasn't accepted:\n${generation.rejection}` : ""}`);
+        alia.log.warn(`Guide generation for ${targetKey} failed: ${String(error)}${generation.rejection ? `. Its last guide wasn't accepted:\n${generation.rejection}` : ""}`);
       }
     } finally {
       if (workerId && threads) {
@@ -303,44 +303,44 @@ export async function beginGuide(
         const restored = stopped && putBack;
         await tx.setStatus(targetKey, ok || restored ? "ready" : "error");
         await tx.setLifecycle(targetKey, { guideError: ok || restored ? null : stopped ? { at: Date.now(), text: GUIDE_STOPPED } : failure ? { at: Date.now(), text: failure } : null });
-        bb.realtime.publish(`review:${targetKey}`, { status: ok || restored ? "ready" : "error" });
-        bb.realtime.publish("reviews", { ts: Date.now() });
+        alia.realtime.publish(`review:${targetKey}`, { status: ok || restored ? "ready" : "error" });
+        alia.realtime.publish("reviews", { ts: Date.now() });
         // A review you already reviewed gets its feedback checked; a new one, the automatic review.
         const review = await tx.getReview(targetKey);
         // An untrusted author's check waits for your click; the automatic review gates itself.
         const preferences = (await tx.getPreferences()).preferences;
         const trusted = !!review && mayRunUnattended(review, preferences, review.headSha);
-        if (ok && review && baselineOf(review).at && !trusted && reReviewCheckPrompt(preferences)) await skipRun(bb, tx, targetKey, "check", review.headSha ?? null);
+        if (ok && review && baselineOf(review).at && !trusted && reReviewCheckPrompt(preferences)) await skipRun(alia, tx, targetKey, "check", review.headSha ?? null);
         return { ok, before, review, trusted };
       });
       if (!outcome) return;
       const { ok, before, review, trusted } = outcome;
       // The review's assistant reads the new guide when its runtime restarts.
-      if (ok) void refreshAssistants(bb, store, [targetKey]).catch((error) => bb.log.warn(`Could not restart the idle review assistant of ${targetKey}: ${String(error)}`));
-      const checking = ok && !!review && !!baselineOf(review).at && trusted && await startVerification(bb, store, targetKey, "the guide was rebuilt for the PR's new commits", "automatic");
+      if (ok) void refreshAssistants(alia, store, [targetKey]).catch((error) => alia.log.warn(`Could not restart the idle review assistant of ${targetKey}: ${String(error)}`));
+      const checking = ok && !!review && !!baselineOf(review).at && trusted && await startVerification(alia, store, targetKey, "the guide was rebuilt for the PR's new commits", "automatic");
       const newCommits = before && review?.headSha && before !== review.headSha ? { from: before, to: review.headSha } : undefined;
-      if (ok && !checking && !(review && baselineOf(review).at)) await startAutomaticReview(bb, store, targetKey, newCommits).catch(async (error) => {
+      if (ok && !checking && !(review && baselineOf(review).at)) await startAutomaticReview(alia, store, targetKey, newCommits).catch(async (error) => {
         return store.exclusive(async (tx) => {
-          bb.log.warn(`The automatic review of ${targetKey} didn't start: ${String(error)}`);
+          alia.log.warn(`The automatic review of ${targetKey} didn't start: ${String(error)}`);
           // One that couldn't start a conversation waits for Run review, saying why; Run review is the retry. One that would
           // have waited for your click anyway, as startAutomaticReview decides after the conversation, says that instead.
           const own = review?.ownPr === true && typeof review.foreignHeadOwner !== "string";
           const held = !!review && !own && !trusted;
-          if (!await tx.getAssistantThread(targetKey)) await skipRun(bb, tx, targetKey, "review", review?.headSha ?? null, held ? undefined : error instanceof Error ? error.message : String(error));
+          if (!await tx.getAssistantThread(targetKey)) await skipRun(alia, tx, targetKey, "review", review?.headSha ?? null, held ? undefined : error instanceof Error ? error.message : String(error));
         });
       });
       if (!checking) await store.setLifecycle(targetKey, { preparedAt: Date.now() });
-      preparedListeners.get(bb)?.(targetKey);
-      if (!controller.signal.aborted && options.notify !== false) await completionNotifications(bb, store).queue({
+      preparedListeners.get(alia)?.(targetKey);
+      if (!controller.signal.aborted && options.notify !== false) await completionNotifications(alia, store).queue({
         targetKey, generationId: id, projectId, status: ok ? "ready" : "error",
       });
     } catch (error) {
       // A plugin reload can dispose storage/realtime while a worker is finishing: the next factory marks interrupted
       // runs as errors without reusing a guide, so that's expected. A storage failure leaves it to failUnfinishedGuides.
-      if (stopped || !controller.signal.aborted) bb.log.warn(`Could not record the end of the guide run for ${targetKey}: ${String(error)}`);
+      if (stopped || !controller.signal.aborted) alia.log.warn(`Could not record the end of the guide run for ${targetKey}: ${String(error)}`);
     } finally {
       runs.delete(controller);
-      if (generationId) generations.get(bb)?.delete(generationId);
+      if (generationId) generations.get(alia)?.delete(generationId);
       if (byReview.get(targetKey) === run) byReview.delete(targetKey);
       finished();
     }

@@ -1,7 +1,7 @@
 // Sync: crew file ↔ threads (§3.3). `plan` reads, `apply` acts, `stop` halts.
 //
 // Both walk the members in topological order (lead first) and give every
-// member an honest result — nothing is restarted silently. All BB access goes
+// member an honest result — nothing is restarted silently. All VesnALIA access goes
 // through the ThreadPort, all state through the Store, so the functions run
 // unchanged against the fakes in tests.
 import { messagingRules } from "./delivery";
@@ -384,7 +384,7 @@ export async function spawnMember(
   journal.done(opId, thread.id);
   store.bind(row.id, thread.id, shift);
 
-  // Verify what BB actually chose (§6). Provider comes back on the thread,
+  // Verify what VesnALIA actually chose (§6). Provider comes back on the thread,
   // the model only through defaultExecutionOptions.
   const mismatches: string[] = [];
   if (thread.providerId !== member.provider) mismatches.push(`provider is ${thread.providerId}, wanted ${member.provider}`);
@@ -399,7 +399,7 @@ export async function spawnMember(
     result: "spawned",
     threadId: thread.id,
     shift,
-    detail: model === null ? "model not verifiable: BB did not report it" : null,
+    detail: model === null ? "model not verifiable: VesnALIA did not report it" : null,
   };
 }
 
@@ -468,7 +468,7 @@ export type MemberView = {
   threadId: string | null;
   thread: "present" | "archived" | "missing";
   status: string | null;
-  /** What BB reports for the live thread — the check behind "provider/model as in the file". */
+  /** What VesnALIA reports for the live thread — the check behind "provider/model as in the file". */
   actualProvider: string | null;
   actualModel: string | null;
 };

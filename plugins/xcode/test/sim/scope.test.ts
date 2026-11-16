@@ -4,7 +4,7 @@ import { composeScopeKey, normalizeOriginUrl, toSubPath } from "../../src/sim/sc
 /**
  * The scope key is the single most consequential identity in this plugin.
  *
- * bb creates a per-thread git worktree, so every thread's environment has a
+ * VesnALIA creates a per-thread git worktree, so every thread's environment has a
  * different checkout path. A path-keyed scope mints a fresh key per worktree,
  * finds no baseline, and reports all 148 previews as `added` on every run,
  * forever — and `manifest_ran AND frame_count = expected_count` does not catch

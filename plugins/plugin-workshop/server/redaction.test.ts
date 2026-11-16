@@ -16,7 +16,7 @@ describe("the store keeps diagnostic text redacted", () => {
   test("journal, errors, reasons, notes, the autopilot's report and the scan verdict", () => {
     const s = memoryStore();
     s.addWork({ id: "w1", plugin_id: "hello", kind: "rework", tasks_project_id: "tp1", host_id: "h1", title: "T", request: "R", created_at: 1 });
-    s.upsertSeen({ id: "hello", name: "hello", dir: "/p/bb-plugin-hello", source: null }, 1);
+    s.upsertSeen({ id: "hello", name: "hello", dir: "/p/alia-plugin-hello", source: null }, 1);
     s.log("w1", "warn", `npm: auth ${OPENAI_KEY} rejected`, 1);
     s.beginOp("op", "w1", "spawn", null, 1);
     s.failOp("op", `spawn failed: ${GITHUB_TOKEN}`, 2);

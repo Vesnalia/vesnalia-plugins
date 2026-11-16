@@ -31,13 +31,13 @@ Also bump package.json to 0.6.32 (patch only) and add a CHANGELOG entry.
 - **P2.** Action row overflow: 7 buttons (project) / up to 9 (section), mixed outline and ghost, wraps to 2–4 lines. Section «Правила» button duplicates the «Правила» tab; «Изменить путь» duplicates the folder button.
 - **P3.** «Удалить» is a plain ghost button next to «Рабочие копии»; the tree menu does it right (separator + destructive last).
 - **P4.** ~45px dead space under the AGENTS.md textarea (stacked `.pf-field` margin 18px + `.pf-rules` margin 8px 0 16px + `.pf-file-editors` padding); textarea clipped at max-height 240px with `field-sizing: fixed`. «Свои правила» 4-row and «Стартовое поручение» 3-row empty textareas with no placeholders.
-- **P5.** «Куда применять» sits below «Свои правила» with `margin: -8px 0 14px`, reads as belonging to «Стартовое поручение»; in «Свой файл» mode it is disabled and forced to «В сессии BB» with no explanation. Note «Плагин не вписывает в эти файлы ничего…» names files before any file is shown. Project «Свой шаблон» note points to a button that lives in plugin settings.
+- **P5.** «Куда применять» sits below «Свои правила» with `margin: -8px 0 14px`, reads as belonging to «Стартовое поручение»; in «Свой файл» mode it is disabled and forced to «В сессии VesnALIA» with no explanation. Note «Плагин не вписывает в эти файлы ничего…» names files before any file is shown. Project «Свой шаблон» note points to a button that lives in plugin settings.
 - **P6.** Action sets/order differ between card, group card and tree menu. Tree row `⋯` aria-label «Действия чата: {name}» is wrong for a folder menu (`app.tsx` ~3445).
 - **P7.** Below ~420px the action row wraps 3–4 lines and pushes tabs off screen.
 
 ## 2. Target layout
 
-Principles: pill segmented = choose a value (host, rules mode) — unchanged BB-native `.pf-tabs`. Underline tabs = navigate card pages (Правила / Провайдер / Контекст сессии). Two primary actions plus `⋯`; everything else in one menu in the tree-menu order, «Удалить» last after a separator in destructive style. Textareas start small and grow. No unexplained disabled controls. One save bar per tab.
+Principles: pill segmented = choose a value (host, rules mode) — unchanged ALIA-native `.pf-tabs`. Underline tabs = navigate card pages (Правила / Провайдер / Контекст сессии). Two primary actions plus `⋯`; everything else in one menu in the tree-menu order, «Удалить» last after a separator in destructive style. Textareas start small and grow. No unexplained disabled controls. One save bar per tab.
 
 ### Wide (card ≥ 560px)
 ```
@@ -53,7 +53,7 @@ Principles: pill segmented = choose a value (host, rules mode) — unchanged BB-
 │ ┌ AGENTS.md · MAC Mini ─────────────────────────────── [⌄ Развернуть] ┐ │
 │ │ … ~11 lines, bottom fade …                                           │ │
 │ └──────────────────────────────────────────────────────────────────────┘ │
-│ Свои правила (?)                    Куда применять [В сессии BB      ⌄] │
+│ Свои правила (?)                    Куда применять [В сессии ALIA      ⌄] │
 │ [ Например: отвечай по-русски, коммиты — по Conventional Commits    ]    │  ← 2 rows, grows
 │ Стартовое поручение (?)                                                  │
 │ [ Например: запусти скилл и пришли текущие задачи                   ]    │
@@ -62,12 +62,12 @@ Principles: pill segmented = choose a value (host, rules mode) — unchanged BB-
 ⋯ project: Переименовать, Оформление, Скрыть из дерева/Показать…, Рабочие копии, Новая группа, ───, Удалить (red)
 ⋯ section: Переименовать, Оформление, Скрыть/Показать…, Переместить в группу… (if targets), Изменить путь, Новая группа, ───, Удалить (red)
 ```
-In «Свой файл» mode the select is replaced by muted static text `Куда применять: только в сессии BB` with a Help.
+In «Свой файл» mode the select is replaced by muted static text `Куда применять: только в сессии ALIA` with a Help.
 
 ### Narrow (card < 560px)
 Title + `⋯` on line 1; «Новый чат» «Новый раздел» on line 2, never wrapping further; host and nav tabs scroll horizontally inside themselves; AGENTS.md expand button icon-only; «Куда применять» drops under the «Свои правила» label; save bar sticky at the bottom when dirty.
 
-### Keep exactly as BB native
+### Keep exactly as VesnALIA native
 `.pf-tabs`/`.pf-tab` pill look for host switch and rules mode; `Input` + outline icon `Button` path control; `Help` bubble; `Button` variants from `components/ui/button.tsx`; `DropdownMenu*` from `components/ui/dropdown-menu.tsx` with `variant="destructive"` for delete; `.pf-card` frame; existing tokens only (`--border`, `--muted-foreground`, `--state-hover`, `--destructive`). No new colours, fonts, shadows.
 
 ## 3. Change list
@@ -97,7 +97,7 @@ Title + `⋯` on line 1; «Новый чат» «Новый раздел» on li
 
 ### R4. Rules fields — `agents-apply.tsx` `RuleFields` (238–387) (card **and** dialog)
 - «Свои правила» label row: `<div className="pf-agents-labelrow">` with label + Help left and the «Куда применять» control right (move `<label className="pf-agents-target">` above the textarea). CSS `.pf-agents-labelrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px }`; `.pf-agents-target { margin: 0 }`.
-- Manual mode: render `<span className="pf-agents-target pf-agents-fixed">{t("Куда применять")}: {t("только в сессии BB")}<Help text={t("В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из BB.")} /></span>` instead of the disabled select. `.pf-agents-fixed { color: var(--muted-foreground); font-weight: 400 }`.
+- Manual mode: render `<span className="pf-agents-target pf-agents-fixed">{t("Куда применять")}: {t("только в сессии ALIA")}<Help text={t("В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из ALIA.")} /></span>` instead of the disabled select. `.pf-agents-fixed { color: var(--muted-foreground); font-weight: 400 }`.
 - «Свои правила» and «Стартовое поручение»: `rows={2}`, class `pf-rules-grow`; `.pf-rules-grow { field-sizing: content; min-height: calc(2lh + 22px); max-height: 320px; resize: vertical; margin: 6px 0 14px }`; placeholders from R7.
 - «Свой шаблон» template textareas: `pf-rules-grow`, `rows={3}`.
 
@@ -119,11 +119,11 @@ Title + `⋯` on line 1; «Новый чат» «Новый раздел» on li
 | Manual-mode note (`RuleFields`) | «Плагин не вписывает в эти файлы ничего: ни шаблон, ни свои правила.» → «Файлы ведёте вы: плагин не дописывает в них ни шаблон, ни свои правила.» |
 | Project «Свой шаблон» note (`app.tsx` ~4455) | «…и по кнопке «Применить к существующим разделам».» → «…и по кнопке «Применить к существующим разделам» в настройках плагина.» |
 | Section «Свой шаблон» note | point to the same plugin-settings button (applies to all sections), not «для этого раздела» |
-| «Куда применять» option | «И туда и туда» → «В файл и в сессию BB» |
+| «Куда применять» option | «И туда и туда» → «В файл и в сессию VesnALIA» |
 | New | «Другие действия» — EN "More actions" |
 | New | «Развернуть» / «Свернуть» — EN "Expand" / "Collapse" (reuse if present) |
-| New | «только в сессии BB» — EN "BB sessions only" |
-| New help | «В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из BB.» |
+| New | «только в сессии VesnALIA» — EN "VesnALIA sessions only" |
+| New help | «В режиме «Свой файл» плагин не пишет в файлы, поэтому свои правила действуют только в сессиях, запущенных из VesnALIA.» |
 | New placeholder | «Например: отвечай по-русски, коммиты — по Conventional Commits» |
 | New placeholder | «Например: запусти скилл и пришли текущие задачи» |
 | Tree `⋯` aria-label (~3445) | «Действия чата: {name}» → «Действия: {name}» (key «Действия», EN "Actions") |

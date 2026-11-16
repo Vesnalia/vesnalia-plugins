@@ -7,8 +7,8 @@ import type {
   WorkStatusOption
 } from '../contract.js';
 
-export type ExternalWorkItem = Omit<WorkItem, 'bbProjectId'>;
-export type ExternalWorkItemDetail = Omit<WorkItemDetail, 'bbProjectId'>;
+export type ExternalWorkItem = Omit<WorkItem, 'aliaProjectId'>;
+export type ExternalWorkItemDetail = Omit<WorkItemDetail, 'aliaProjectId'>;
 export type ExternalWorkStatusOption = WorkStatusOption;
 
 export interface ExternalWorkItemCreateInput {

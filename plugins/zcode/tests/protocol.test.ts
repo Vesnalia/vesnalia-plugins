@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import {
   baseModelId,
   modelContextWindow,
@@ -30,7 +30,7 @@ const snapshot: Snapshot = {
     },
   },
 };
-it("supplies the native reasoning default when bb sends a placeholder or unknown value", () => {
+it("supplies the native reasoning default when VesnALIA sends a placeholder or unknown value", () => {
   expect(
     modelForTurn(snapshot, "api/model", "none")?.options?.reasoningLevel,
   ).toBe("disabled");
@@ -121,7 +121,7 @@ it("runs context-budget variants on the base model with the variant's reasoning"
     "model",
   );
 });
-it.each(["model-256k", "org/model-256k", "model-bb-context-256k"])(
+it.each(["model-256k", "org/model-256k", "model-alia-context-256k"])(
   "preserves the canonical native model ID %s",
   (modelId) => {
     const native: Snapshot = {
@@ -198,8 +198,8 @@ it("passes executable arguments as an argv array without a shell", () => {
 it("only imports public SDK surfaces and declared dependencies", async () => {
   // Beyond the SDK's fixed allowlist: cron-parser computes automation
   // schedules in src/automations.ts, and app.tsx imports react hooks at
-  // runtime - the bb app bundle build shims react from the shared plugin
-  // runtime (globalThis.__bbPluginRuntime.react), never from node_modules.
+  // runtime - the VesnALIA app bundle build shims react from the shared plugin
+  // runtime (globalThis.__aliaPluginRuntime.react), never from node_modules.
   const scan = await experimental_scanPublicSdkOnly(process.cwd(), {
     allow: [/^cron-parser$/u, /^react$/u],
   });

@@ -1,4 +1,4 @@
-// bb-plugin-omp-subagents — the shared per-thread roster store.
+// alia-plugin-omp-subagents — the shared per-thread roster store.
 //
 // One module instance serves every consumer in the bundle: the header chip, the
 // Hub panel, the transcript panel and each timeline strip (the content script

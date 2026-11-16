@@ -1,14 +1,14 @@
-// bb-plugin-github — GitHub issues & pull requests inside BB.
+// alia-plugin-github — GitHub issues & pull requests inside VesnALIA.
 //
 // Auth rides on the GitHub CLI: if `gh auth status` passes, the plugin
-// works. Repos are discovered from BB project sources (each local checkout's
+// works. Repos are discovered from VesnALIA project sources (each local checkout's
 // `origin` remote) plus an optional extraRepos setting. A background service
 // syncs open + recently-closed issues/PRs into the plugin's SQLite cache;
 // the frontend panel and mention providers read that cache, while
 // mutations (comment, create, close/reopen, assign, label) and detail views go
 // straight through `gh`.
 import { execFile } from "node:child_process";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   AUTOMATION_CHANNEL,
@@ -31,7 +31,7 @@ const CLOSED_PR_PAGE = 30;
 
 const GH_HINT =
   "Install the GitHub CLI (https://cli.github.com) and run `gh auth login`, " +
-  "then `bb plugin reload github-extended`.";
+  "then `alia plugin reload github-extended`.";
 const REPO_ACCESS_UNAVAILABLE = "Repository access unavailable";
 
 const repoNamePattern = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\/[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$/;
@@ -460,7 +460,7 @@ interface ThreadLink {
   createdAt: string;
 }
 
-interface BbProjectSummary {
+interface AliaProjectSummary {
   id: string;
   sources?: Array<{ type: string; path: string; hostId?: string }>;
 }
@@ -1049,20 +1049,20 @@ export async function fetchRepoDependabotAlerts(
   return parseDependabotAlerts(raw, repo);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     extraRepos: {
       type: "string",
       label: "Extra repositories",
       description:
-        'Comma-separated "owner/repo" list to track in addition to repos discovered from BB projects.',
+        'Comma-separated "owner/repo" list to track in addition to repos discovered from VesnALIA projects.',
       default: "",
     },
     defaultProject: {
       type: "project",
-      label: "Default BB project",
+      label: "Default VesnALIA project",
       description:
-        "Where agent threads spawn for repos that are not attached to a BB project.",
+        "Where agent threads spawn for repos that are not attached to a VesnALIA project.",
     },
     automationDryRun: {
       type: "boolean",
@@ -1188,7 +1188,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // ------------------------------------------------------------------
-  // Repo discovery: BB project sources → git origin → owner/repo.
+  // Repo discovery: VesnALIA project sources → git origin → owner/repo.
   // ------------------------------------------------------------------
   let repoCache: {
     repos: DiscoveredRepoInfo[];
@@ -1242,7 +1242,7 @@ export default async function plugin(bb: BbPluginApi) {
     let projectHostIds = lastKnownProjectHostIds;
     let projectDiscoveryOk = true;
     try {
-      const projects = (await bb.sdk.projects.list()) as unknown as BbProjectSummary[];
+      const projects = (await alia.sdk.projects.list()) as unknown as AliaProjectSummary[];
       projectListSucceeded = true;
       projectHostIds = new Map();
       reportedDiscoveryFailures.delete("project-list");
@@ -1294,7 +1294,7 @@ export default async function plugin(bb: BbPluginApi) {
             projectDiscoveryOk = false;
             const message = error instanceof Error ? error.message : String(error);
             if (reportedDiscoveryFailures.get(path) !== message) {
-              bb.log.warn(`git remote discovery failed: ${message}`);
+              alia.log.warn(`git remote discovery failed: ${message}`);
               reportedDiscoveryFailures.set(path, message);
             }
             discoveredSources[index] = null;
@@ -1318,7 +1318,7 @@ export default async function plugin(bb: BbPluginApi) {
       projectDiscoveryOk = false;
       const message = error instanceof Error ? error.message : String(error);
       if (reportedDiscoveryFailures.get("project-list") !== message) {
-        bb.log.warn(`project discovery failed: ${message}`);
+        alia.log.warn(`project discovery failed: ${message}`);
         reportedDiscoveryFailures.set("project-list", message);
       }
     }
@@ -1337,7 +1337,7 @@ export default async function plugin(bb: BbPluginApi) {
     ignoredExtraRepos = parsedExtraRepos.ignored;
     const ignoredKey = ignoredExtraRepos.join("\u0000");
     if (ignoredKey !== lastIgnoredExtraReposKey && ignoredExtraRepos.length > 0) {
-      bb.log.warn(
+      alia.log.warn(
         `ignoring ${ignoredExtraRepos.length} extraRepos entries that are not "owner/repo": ${ignoredExtraRepos.join(", ")}`,
       );
       lastIgnoredExtraReposKey = ignoredKey;
@@ -1366,7 +1366,7 @@ export default async function plugin(bb: BbPluginApi) {
           persistenceCleanup!(repos, projectDiscoveryOk, trackingChanged, cleanupGeneration),
         );
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `persistence cleanup failed: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -1435,8 +1435,8 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------------
   // SQLite cache of open issues + PRs across tracked repos.
   // ------------------------------------------------------------------
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS items (
        repo TEXT NOT NULL,
        number INTEGER NOT NULL,
@@ -1824,7 +1824,7 @@ export default async function plugin(bb: BbPluginApi) {
     const result = syncAllQueue.then(async () => {
       const started = syncDepth === 0;
       syncDepth += 1;
-      if (started) bb.realtime.publish("data-changed", { syncing: true });
+      if (started) alia.realtime.publish("data-changed", { syncing: true });
       try {
         return await operation();
       } finally {
@@ -1872,7 +1872,7 @@ export default async function plugin(bb: BbPluginApi) {
       } else {
         retryable = true;
       }
-      bb.log.warn(`sync failed for ${repo}: ${message}`);
+      alia.log.warn(`sync failed for ${repo}: ${message}`);
     }
 
     if (!accessRevoked) {
@@ -1887,13 +1887,13 @@ export default async function plugin(bb: BbPluginApi) {
         errors.push(`Dependabot: ${message}`);
         if (isKnownDependabotUnavailable(error)) {
           if (reportedDependabotFailures.get(repo) !== message) {
-            bb.log.warn(`Dependabot sync failed for ${repo}: ${message}`);
+            alia.log.warn(`Dependabot sync failed for ${repo}: ${message}`);
             reportedDependabotFailures.set(repo, message);
           }
         } else {
           reportedDependabotFailures.delete(repo);
           retryable = true;
-          bb.log.warn(`Dependabot sync failed for ${repo}: ${message}`);
+          alia.log.warn(`Dependabot sync failed for ${repo}: ${message}`);
         }
       }
     }
@@ -2025,7 +2025,7 @@ export default async function plugin(bb: BbPluginApi) {
       db.prepare("UPDATE items SET labels = ? WHERE repo = ? AND kind = ? AND number = ?")
         .run(JSON.stringify(patch.labels), repo, kind, number);
     }
-    bb.realtime.publish("data-changed", {});
+    alia.realtime.publish("data-changed", {});
   }
 
   async function syncAllUnsafe(force = false): Promise<{ repos: number; items: number }> {
@@ -2065,7 +2065,7 @@ export default async function plugin(bb: BbPluginApi) {
     const currentRepos = await discoverRepos(true);
     const after = snapshot();
     if (before !== after) {
-      bb.realtime.publish("data-changed", { items: total });
+      alia.realtime.publish("data-changed", { items: total });
     }
     if (
       repoSetKey(currentRepos) !== initialRepoSet ||
@@ -2079,13 +2079,13 @@ export default async function plugin(bb: BbPluginApi) {
       );
     }
     if (repos.length > 0) {
-      await bb.storage.kv.set("sync-cursor", {
+      await alia.storage.kv.set("sync-cursor", {
         lastSyncedAt: new Date().toISOString(),
         repos: repos.length,
         items: total,
       });
     }
-    bb.log.info(`synced ${total} item(s) across ${repos.length} repo(s)`);
+    alia.log.info(`synced ${total} item(s) across ${repos.length} repo(s)`);
     return { repos: repos.length, items: total };
   }
 
@@ -2099,7 +2099,7 @@ export default async function plugin(bb: BbPluginApi) {
   // trouble) is retried here with backoff: the host would otherwise stop the
   // service for good when it crashes during activation. Every other error
   // is a real fault and surfaces to the host unchanged.
-  bb.background.service("sync", {
+  alia.background.service("sync", {
     async start(signal) {
       abortSync = signal;
       let failures = 0;
@@ -2117,7 +2117,7 @@ export default async function plugin(bb: BbPluginApi) {
               SYNC_RETRY_BASE_MS * 2 ** (failures - 1),
               SYNC_INTERVAL_MS,
             );
-            bb.log.warn(
+            alia.log.warn(
               `sync failed (retry in ${Math.round(delayMs / 1000)}s): ${
                 error instanceof Error ? error.message : String(error)
               }`,
@@ -2149,9 +2149,9 @@ export default async function plugin(bb: BbPluginApi) {
     await checkAuth();
   } catch (error) {
     if (isNeedsConfigurationError(error)) {
-      bb.status.needsConfiguration(error.message);
+      alia.status.needsConfiguration(error.message);
     } else if (isGhUnavailableError(error)) {
-      bb.log.warn(error.message);
+      alia.log.warn(error.message);
     } else {
       throw error;
     }
@@ -2222,12 +2222,12 @@ export default async function plugin(bb: BbPluginApi) {
     assertTrackedRepoSnapshot(parsed.data.repo, expectedGeneration);
     await withLinkWriteLock(async () => {
       assertTrackedRepoSnapshot(parsed.data.repo, expectedGeneration);
-      const existing = storedLinks(await bb.storage.kv.get<unknown>(key), keyInfo);
+      const existing = storedLinks(await alia.storage.kv.get<unknown>(key), keyInfo);
       const next = existing.some((entry) => entry.threadId === parsed.data.threadId)
         ? existing
         : [...existing, parsed.data];
-      await bb.storage.kv.set(key, next);
-      bb.realtime.publish("links-changed", { key });
+      await alia.storage.kv.set(key, next);
+      alia.realtime.publish("links-changed", { key });
     });
   }
 
@@ -2244,12 +2244,12 @@ export default async function plugin(bb: BbPluginApi) {
     authorizedRepos: ReadonlySet<string>,
   ): Promise<Record<string, ThreadLink[]>> {
     return withLinkWriteLock(async () => {
-      const keys = await bb.storage.kv.list("link:");
+      const keys = await alia.storage.kv.list("link:");
       const result: Record<string, ThreadLink[]> = {};
       for (const key of keys) {
         const keyInfo = parseLinkKey(key);
         if (keyInfo === null || !authorizedRepos.has(keyInfo.repo)) continue;
-        const links = storedLinks(await bb.storage.kv.get<unknown>(key), keyInfo);
+        const links = storedLinks(await alia.storage.kv.get<unknown>(key), keyInfo);
         if (links.length === 0) continue;
         const normalizedKey = `${keyInfo.kind}:${keyInfo.repo}#${keyInfo.number}`;
         const existing = result[normalizedKey] ?? [];
@@ -2270,12 +2270,12 @@ export default async function plugin(bb: BbPluginApi) {
       db.prepare("DELETE FROM repo_sync_health WHERE repo = ?").run(repo);
     })();
     await withLinkWriteLock(async () => {
-      for (const key of await bb.storage.kv.list("link:")) {
+      for (const key of await alia.storage.kv.list("link:")) {
         const keyInfo = parseLinkKey(key);
-        if (keyInfo?.repo === repo) await bb.storage.kv.delete(key);
+        if (keyInfo?.repo === repo) await alia.storage.kv.delete(key);
       }
     });
-    await bb.storage.kv.delete("sync-cursor");
+    await alia.storage.kv.delete("sync-cursor");
   }
 
   async function pruneUntrackedPersistence(
@@ -2307,25 +2307,25 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (expectedGeneration !== discoveryGeneration) return;
     await withLinkWriteLock(async () => {
-      for (const key of await bb.storage.kv.list("link:")) {
+      for (const key of await alia.storage.kv.list("link:")) {
         if (expectedGeneration !== discoveryGeneration) return;
         const keyInfo = parseLinkKey(key);
         if (keyInfo === null || !tracked.has(keyInfo.repo)) {
-          await bb.storage.kv.delete(key);
+          await alia.storage.kv.delete(key);
           continue;
         }
-        const raw = await bb.storage.kv.get<unknown>(key);
+        const raw = await alia.storage.kv.get<unknown>(key);
         const links = storedLinks(raw, keyInfo);
         if (links.length === 0) {
-          if (raw !== undefined) await bb.storage.kv.delete(key);
+          if (raw !== undefined) await alia.storage.kv.delete(key);
         } else if (!Array.isArray(raw) || links.length !== raw.length) {
-          await bb.storage.kv.set(key, links);
+          await alia.storage.kv.set(key, links);
         }
       }
     });
     if (expectedGeneration !== discoveryGeneration) return;
     if (trackingChanged || staleRepos.length > 0) {
-      await bb.storage.kv.delete("sync-cursor");
+      await alia.storage.kv.delete("sync-cursor");
     }
   }
 
@@ -2337,7 +2337,7 @@ export default async function plugin(bb: BbPluginApi) {
   function isolatedAgentEnvironment(tracked: DiscoveredRepoInfo, projectId: string) {
     const hostId = tracked.hostId ?? repoCache?.projectHostIds.get(projectId) ?? lastKnownProjectHostIds.get(projectId) ?? null;
     if (hostId === null) {
-      throw new Error(`No host is available for BB project ${projectId}. Add a local checkout to the project and retry.`);
+      throw new Error(`No host is available for VesnALIA project ${projectId}. Add a local checkout to the project and retry.`);
     }
     return {
       type: "host" as const,
@@ -2361,7 +2361,7 @@ export default async function plugin(bb: BbPluginApi) {
     const projectId = tracked.projectId ?? defaultProject;
     if (!projectId) {
       throw new Error(
-        `No BB project is attached to ${repo}. Create a project whose checkout has ` +
+        `No VesnALIA project is attached to ${repo}. Create a project whose checkout has ` +
           "that origin remote, or set the defaultProject plugin setting.",
       );
     }
@@ -2425,7 +2425,7 @@ export default async function plugin(bb: BbPluginApi) {
       kind === "pr"
         ? isolatedAgentEnvironment(tracked, projectId)
         : { type: "project-default" as const };
-    const thread = (await bb.sdk.threads.spawn({
+    const thread = (await alia.sdk.threads.spawn({
       projectId,
       environment,
       title: `${ref}: ${kind === "pr" ? "Pull request review" : "Issue work"}`.slice(0, 120),
@@ -2443,18 +2443,18 @@ export default async function plugin(bb: BbPluginApi) {
       }, prepared.generation);
     } catch (error) {
       try {
-        await bb.sdk.threads.delete({
+        await alia.sdk.threads.delete({
           threadId: thread.id,
           childThreadsConfirmed: false,
         });
       } catch (cleanupError) {
-        bb.log.warn(
+        alia.log.warn(
           `could not remove orphaned thread ${thread.id}: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
         );
       }
       throw error;
     }
-    bb.log.info(`spawned thread ${thread.id} for ${kind} ${ref}`);
+    alia.log.info(`spawned thread ${thread.id} for ${kind} ${ref}`);
     return { threadId: thread.id };
     });
   }
@@ -2532,8 +2532,8 @@ export default async function plugin(bb: BbPluginApi) {
   // ------------------------------------------------------------------
   const automation = createAutomationEngine({
     db,
-    log: bb.log,
-    publish: (payload) => bb.realtime.publish(AUTOMATION_CHANNEL, payload),
+    log: alia.log,
+    publish: (payload) => alia.realtime.publish(AUTOMATION_CHANNEL, payload),
     gh,
     git,
     ensureGhReady: checkAuth,
@@ -2551,9 +2551,9 @@ export default async function plugin(bb: BbPluginApi) {
             const { threadId } = await spawnOnItem("pr", repo, number, instructions);
             return { id: threadId };
           },
-          wait: (args) => bb.sdk.threads.wait(args),
-          output: (args) => bb.sdk.threads.output(args),
-          stop: (args) => bb.sdk.threads.stop(args),
+          wait: (args) => alia.sdk.threads.wait(args),
+          output: (args) => alia.sdk.threads.output(args),
+          stop: (args) => alia.sdk.threads.stop(args),
         },
         { signal },
       ),
@@ -2567,10 +2567,10 @@ export default async function plugin(bb: BbPluginApi) {
               const { defaultProject } = await settings.get();
               const projectId = tracked.projectId ?? defaultProject;
               if (!projectId) {
-                throw new Error(`No BB project is attached to ${event.repo}. Attach its project or set the defaultProject plugin setting.`);
+                throw new Error(`No VesnALIA project is attached to ${event.repo}. Attach its project or set the defaultProject plugin setting.`);
               }
               signal.throwIfAborted();
-              const thread = await bb.sdk.threads.spawn({
+              const thread = await alia.sdk.threads.spawn({
                 projectId,
                 environment: isolatedAgentEnvironment(tracked, projectId),
                 title: `${event.repo}: ${ruleName}`.slice(0, 120),
@@ -2600,9 +2600,9 @@ export default async function plugin(bb: BbPluginApi) {
                   await addLinkUnsafe({ kind: event.issueNumber !== undefined ? "issue" : "pr", repo: event.repo, number, threadId: thread.id, createdAt: new Date().toISOString() }, prepared.generation);
                 } catch (error) {
                   try {
-                    await bb.sdk.threads.stop({ threadId: thread.id });
+                    await alia.sdk.threads.stop({ threadId: thread.id });
                   } catch (stopError) {
-                    bb.log.warn(`could not stop unlinked automation thread ${thread.id}: ${stopError instanceof Error ? stopError.message : String(stopError)}`);
+                    alia.log.warn(`could not stop unlinked automation thread ${thread.id}: ${stopError instanceof Error ? stopError.message : String(stopError)}`);
                   }
                   throw error;
                 }
@@ -2610,21 +2610,21 @@ export default async function plugin(bb: BbPluginApi) {
               return { id: thread.id };
             });
           },
-          wait: (args) => bb.sdk.threads.wait(args),
-          output: (args) => bb.sdk.threads.output(args),
-          stop: (args) => bb.sdk.threads.stop(args),
+          wait: (args) => alia.sdk.threads.wait(args),
+          output: (args) => alia.sdk.threads.output(args),
+          stop: (args) => alia.sdk.threads.stop(args),
         },
         { signal },
       ),
   });
   automationEngine = automation;
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "github_extended_create_rule",
     description:
       "Create one GitHub+ automation rule (issue, pull-request, CI, or base-branch events → conditions → actions) for a tracked GitHub repository. New rules start disabled and approval-gated.",
     instructions:
-      "Omit repo to target the GitHub repository attached to the current BB project. Keep enabled false and approvalRequired true unless the user explicitly asks otherwise.",
+      "Omit repo to target the GitHub repository attached to the current VesnALIA project. Keep enabled false and approvalRequired true unless the user explicitly asks otherwise.",
     presentation: {
       label: {
         pending: "Creating GitHub+ automation rule",
@@ -2640,22 +2640,22 @@ export default async function plugin(bb: BbPluginApi) {
       return `Created ${rule.enabled ? "enabled" : "disabled"} rule "${rule.name}" for ${repository.repo}; approval ${rule.approvalRequired ? "required" : "not required"}.${enablement}`;
     },
   });
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: ["github_extended_create_rule"],
     skills: ["github-automation"],
   }));
 
-  bb.background.service("automation-poller", {
+  alia.background.service("automation-poller", {
     start: (signal) => automation.runPoller(signal),
   });
-  bb.background.service("automation-worker", {
+  alia.background.service("automation-worker", {
     start: (signal) => automation.runWorker(signal),
   });
 
   // ------------------------------------------------------------------
   // rpc — the frontend data plane.
   // ------------------------------------------------------------------
-  bb.rpc.register(githubRpcContract, {
+  alia.rpc.register(githubRpcContract, {
     /** () → auth/sync status for the panel banner. */
     async status() {
       if (statusInFlight !== null) return await statusInFlight;
@@ -2665,7 +2665,7 @@ export default async function plugin(bb: BbPluginApi) {
         } catch {
           // ghState/ghAuthError already carry the failure
         }
-        const cursor = await bb.storage.kv.get<{
+        const cursor = await alia.storage.kv.get<{
           lastSyncedAt: string;
           repos: number;
           items: number;
@@ -2712,17 +2712,17 @@ export default async function plugin(bb: BbPluginApi) {
           throw ghUnavailable(`repository tracking changed during refresh for ${repo}; retry`);
         }
         if (result.retryable) {
-          bb.realtime.publish("data-changed", { items: result.items });
+          alia.realtime.publish("data-changed", { items: result.items });
           throw ghUnavailable(result.error ?? `sync failed for ${repo}`);
         }
         if (repos.length === 1) {
-          await bb.storage.kv.set("sync-cursor", {
+          await alia.storage.kv.set("sync-cursor", {
             lastSyncedAt: new Date().toISOString(),
             repos: 1,
             items: result.items,
           });
         }
-        bb.realtime.publish("data-changed", { items: result.items });
+        alia.realtime.publish("data-changed", { items: result.items });
         return { repos: 1, items: result.items };
       });
     },
@@ -2735,13 +2735,13 @@ export default async function plugin(bb: BbPluginApi) {
           withRepoWriteLock(repo, async () => {
             const tracked = assertTrackedRepoSnapshot(prepared.info.repo, prepared.generation);
             if (tracked.projectId !== null) {
-              throw new Error(`Repository ${repo} is attached to a BB project and cannot be removed here`);
+              throw new Error(`Repository ${repo} is attached to a VesnALIA project and cannot be removed here`);
             }
             await withSettingsWriteLock(async () => {
               const { extraRepos } = await settings.get();
               const next = parseExtraRepos(extraRepos).repos.filter((entry) => entry !== repo);
-              await bb.sdk.plugins.updateSettings({
-                pluginId: bb.pluginId,
+              await alia.sdk.plugins.updateSettings({
+                pluginId: alia.pluginId,
                 values: { extraRepos: next.join(",") },
               });
               discoveryGeneration += 1;
@@ -2749,7 +2749,7 @@ export default async function plugin(bb: BbPluginApi) {
             });
             await deleteRepositoryPersistence(repo);
             repoCache = null;
-            bb.realtime.publish("data-changed", {});
+            alia.realtime.publish("data-changed", {});
             return { ok: true as const };
           }),
         ),
@@ -2765,8 +2765,8 @@ export default async function plugin(bb: BbPluginApi) {
             const { extraRepos } = await settings.get();
             const current = parseExtraRepos(extraRepos).repos;
             if (!current.includes(repo)) {
-              await bb.sdk.plugins.updateSettings({
-                pluginId: bb.pluginId,
+              await alia.sdk.plugins.updateSettings({
+                pluginId: alia.pluginId,
                 values: { extraRepos: [...current, repo].join(",") },
               });
               discoveryGeneration += 1;
@@ -2775,7 +2775,7 @@ export default async function plugin(bb: BbPluginApi) {
           }),
         );
         await syncAllUnsafe(true);
-        bb.realtime.publish("data-changed", {});
+        alia.realtime.publish("data-changed", {});
         return { ok: true as const };
       });
     },
@@ -3157,16 +3157,16 @@ export default async function plugin(bb: BbPluginApi) {
       return { ok: true };
     },
 
-    /** { threadId } → the PR most relevant to a BB thread: the thread's own
+    /** { threadId } → the PR most relevant to a VesnALIA thread: the thread's own
         environment PR (the branch the agent pushed) first, else a PR this
         thread was spawned to review. Null when neither exists. */
     async pullForThread({ threadId }) {
       try {
-        const thread = (await bb.sdk.threads.get({ threadId })) as unknown as {
+        const thread = (await alia.sdk.threads.get({ threadId })) as unknown as {
           environmentId?: string | null;
         };
         if (thread?.environmentId) {
-          const result = await bb.sdk.environments.pullRequest({
+          const result = await alia.sdk.environments.pullRequest({
             environmentId: thread.environmentId,
           });
           const url = result.outcome === "available" ? result.pullRequest.url : null;
@@ -3219,7 +3219,7 @@ export default async function plugin(bb: BbPluginApi) {
         const number = match !== null ? Number(match[1]) : null;
         try {
           replaceRepoRows(input.repo, await fetchRepoItems(gh, input.repo));
-          bb.realtime.publish("data-changed", {});
+          alia.realtime.publish("data-changed", {});
         } catch {
           // creation succeeded; the next scheduled sync will pick it up
         }
@@ -3242,7 +3242,7 @@ export default async function plugin(bb: BbPluginApi) {
       const tracked = await verifyRepoWrite(prepared);
       const { defaultProject } = await settings.get();
       const projectId = tracked.projectId ?? defaultProject;
-      if (!projectId) throw new Error(`No BB project is attached to ${repo}. Attach a project or set the defaultProject plugin setting.`);
+      if (!projectId) throw new Error(`No VesnALIA project is attached to ${repo}. Attach a project or set the defaultProject plugin setting.`);
       const environment = isolatedAgentEnvironment(tracked, projectId);
       return { projectId, hostId: environment.hostId };
     },
@@ -3362,7 +3362,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "issue",
     label: "GitHub issues",
     triggers: ["@", "#"],
@@ -3374,7 +3374,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "pr",
     label: "GitHub pull requests",
     triggers: ["@", "#"],
@@ -3387,32 +3387,32 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // ------------------------------------------------------------------
-  // CLI: `bb github-extended …` for agents and terminals.
+  // CLI: `alia github-extended …` for agents and terminals.
   // ------------------------------------------------------------------
   const USAGE = [
     "Usage:",
-    "  bb github-extended repos              List tracked repositories",
-    "  bb github-extended issues [repo]      List cached open issues",
-    "  bb github-extended prs [repo]         List cached open pull requests",
-    "  bb github-extended sync               Refresh the cache from GitHub now",
-    "  bb github-extended rules              List automation rules",
-    "  bb github-extended jobs               List recent automation events and jobs",
-    "  bb github-extended poll               Poll GitHub for automation events now",
-    "  bb github-extended approve <job>      Approve a job waiting for approval",
+    "  VesnALIA github-extended repos              List tracked repositories",
+    "  VesnALIA github-extended issues [repo]      List cached open issues",
+    "  VesnALIA github-extended prs [repo]         List cached open pull requests",
+    "  VesnALIA github-extended sync               Refresh the cache from GitHub now",
+    "  VesnALIA github-extended rules              List automation rules",
+    "  VesnALIA github-extended jobs               List recent automation events and jobs",
+    "  VesnALIA github-extended poll               Poll GitHub for automation events now",
+    "  VesnALIA github-extended approve <job>      Approve a job waiting for approval",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "github-extended",
     summary: "Browse tracked GitHub repos, issues, PRs, and automation",
     commands: [
-      { name: "repos", summary: "List tracked repositories", usage: "bb github-extended repos" },
-      { name: "issues", summary: "List cached open issues", usage: "bb github-extended issues [owner/repo]" },
-      { name: "prs", summary: "List cached open pull requests", usage: "bb github-extended prs [owner/repo]" },
-      { name: "sync", summary: "Refresh the cache from GitHub now", usage: "bb github-extended sync" },
-      { name: "rules", summary: "List automation rules", usage: "bb github-extended rules" },
-      { name: "jobs", summary: "List recent automation events and jobs", usage: "bb github-extended jobs" },
-      { name: "poll", summary: "Poll GitHub for automation events now", usage: "bb github-extended poll" },
-      { name: "approve", summary: "Approve a job waiting for approval", usage: "bb github-extended approve <job>" },
+      { name: "repos", summary: "List tracked repositories", usage: "alia github-extended repos" },
+      { name: "issues", summary: "List cached open issues", usage: "alia github-extended issues [owner/repo]" },
+      { name: "prs", summary: "List cached open pull requests", usage: "alia github-extended prs [owner/repo]" },
+      { name: "sync", summary: "Refresh the cache from GitHub now", usage: "alia github-extended sync" },
+      { name: "rules", summary: "List automation rules", usage: "alia github-extended rules" },
+      { name: "jobs", summary: "List recent automation events and jobs", usage: "alia github-extended jobs" },
+      { name: "poll", summary: "Poll GitHub for automation events now", usage: "alia github-extended poll" },
+      { name: "approve", summary: "Approve a job waiting for approval", usage: "alia github-extended approve <job>" },
     ],
     async run(argv) {
       const [sub, arg] = argv;
@@ -3456,7 +3456,7 @@ export default async function plugin(bb: BbPluginApi) {
             repos: new Set(repos.map(({ repo }) => repo)),
           });
           if (items.length === 0) {
-            return { exitCode: 0, stdout: "Nothing cached. Run `bb github-extended sync` first." };
+            return { exitCode: 0, stdout: "Nothing cached. Run `alia github-extended sync` first." };
           }
           return {
             exitCode: 0,

@@ -2,27 +2,27 @@
 
 *2026-09-29 · reported as "sometimes clicking in the chat near the bottom of
 the chat pane (but above the user input box) causes the chat to jump up a
-half-page or so" · investigated against bb 0.44.0*
+half-page or so" · investigated against VesnALIA 0.44.0*
 
 "Jump up a half-page" is the transcript content moving up the screen — the
 view is being yanked back to the newest message by an amount equal to
 whatever the reader had scrolled up. The jump is a programmatic scrollTop
-write by bb's host scroll shell, not a click handler of ours.
+write by VesnALIA's host scroll shell, not a click handler of ours.
 
 ## TL;DR
 
-This is a bug in bb's host-side `bottom-anchor` scroll manager (the scroll
+This is a bug in VesnALIA's host-side `bottom-anchor` scroll manager (the scroll
 shell that backs `ThreadChat`), not in focus-board code. The pane's chat is
 an embedded host component and the SDK exposes no way to reach into that
 manager's state, so the clean fix is upstream; the write-up below is ready
-to hand over to the bb app side as-is. Meanwhile the pane ships a defensive
+to hand over to the VesnALIA app side as-is. Meanwhile the pane ships a defensive
 revert for the click path: `components/chat-jump-guard.ts` (snapshots the
 scroll position on transcript clicks and undoes a clamp-to-bottom landing
 within ~200ms — see "Plugin-side options" below for the boundaries).
 
 ## Reproduction
 
-`node scripts/probe-chat-click-jump.mjs` (against the running bb app; needs a
+`node scripts/probe-chat-click-jump.mjs` (against the running VesnALIA app; needs a
 board card with a multi-page-long transcript — "Hattrick: scaffolding…" and
 "Humanize AI-generated text" both surfaced it). Steps: open the pane, wheel
 the transcript up ~500px, click near the bottom of the transcript.
@@ -41,13 +41,13 @@ at <restoreLayoutEffect> (page-shell-B24TvAJg.js)
 at commitLayoutEffects (react-dom)
 ```
 
-The same click in bb's **main** thread view did *not* jump (short
+The same click in VesnALIA's **main** thread view did *not* jump (short
 transcript) — the mechanism depends on transcript length and a pending
 capture (see below), which is why the bug reads as "sometimes".
 
 ## The mechanism (verified in the runtime bundle)
 
-bb's page shell keeps a chat transcript pinned to the bottom with a custom
+VesnALIA's page shell keeps a chat transcript pinned to the bottom with a custom
 scroll manager (the element with the `scroll-bottom-anchor` /
 `scroll-bottom-anchor-content` classes; `overflow-anchor: none` disables
 native scroll anchoring while pinned, and the JS takes over). Reading the
@@ -106,7 +106,7 @@ component — a black box internally — so the plugin has no access to the
 scroll context (`captureScrollAnchor`, `scrollToBottom`, …); there is no
 supported way to clear or validate the stale capture from a plugin.
 
-## Suggested upstream fixes (bb app, page-shell)
+## Suggested upstream fixes (VesnALIA app, page-shell)
 
 Any one of these would kill the mechanism; they compose:
 
@@ -130,7 +130,7 @@ Any one of these would kill the mechanism; they compose:
 
 Decided: ship a **defensive revert guard** (`components/chat-jump-guard.ts`,
 wired in `ThreadPane` under `components/thread-pane.tsx`, unit-covered in
-`tests/chat-jump-guard.test.ts`) until bb ships the page-shell fix — at
+`tests/chat-jump-guard.test.ts`) until VesnALIA ships the page-shell fix — at
 which point this module should be deleted.
 
 Its boundaries, and why each one exists:
@@ -164,10 +164,10 @@ would be reverted — rare, and the pill one click away.
 
 ## Repro script
 
-`scripts/probe-chat-click-jump.mjs` — drives the live bb UI headlessly,
+`scripts/probe-chat-click-jump.mjs` — drives the live VesnALIA UI headlessly,
 performs the exact gesture (wheel up, click above the composer), and captures
 the bogus scrollTop write with its calling stack. Not wired into `npm test`;
-it is an operator tool, needs a running bb server and a chrome binary.
+it is an operator tool, needs a running VesnALIA server and a chrome binary.
 ## Update 2026-09-30, later — on-demand repro + mechanism discrimination
 
 The investigation child (`thr_a3spka7tq4`) rebuilt the trigger and
@@ -222,7 +222,7 @@ What stands and where the report now goes:
 - **The shipped guard (`components/chat-jump-guard.ts`) does not cover the
   operator's scenario**: its arm requires the reader ≥96px scrolled up, an
   at-bottom reader leaves it inert. It remains in place as a defense for
-  the captured clamp-down variant until this investigation closes or bb
+  the captured clamp-down variant until this investigation closes or VesnALIA
   ships the fix; this section supersedes the mechanism summary above.
 
 ## Update 2026-10-02 — adversarial review round (child `thr_cexdxfbnaj`)
@@ -267,7 +267,7 @@ had crashed with the daemon restart and nobody resumed them):
   (13234 of max 13234). No cement, no fighting the shell. Pill
   non-misfire re-verified (host re-pin from 640 px up, guard silent).
 - Note for anyone re-verifying: the served host bundle changed identity
-  mid-investigation (bb's own app updated; page-shell-B24TvAJg.js is now
+  mid-investigation (VesnALIA's own app updated; page-shell-B24TvAJg.js is now
   bottom-anchored-scroll-body-BCoAmb30.js with renamed symbols). The
   recorded stacks are valid artifacts of their runs; the SHA-pinned
   source still matches.
@@ -275,16 +275,16 @@ had crashed with the daemon restart and nobody resumed them):
 Guard commits: `915c85c` (settle-listener suppression, superseded) and
 `e58b232` + `ee6fbc9` (pointerdown-capture baseline; the working form;
 dev merge `2ec8ef8`, suite 660 green). Issue for the host defect:
-get-bb/bb#4793.
+get-alia/alia#4793.
 
 ## Update 2026-11-04 — the guard retires; the mechanism is gone from 0.48.1
 
 The pane-parity audit's Gap 10 sweep probed the guard's premise against the
-installed bb 0.48.1 and retired the guard (the pane-parity cleanup PR,
+installed VesnALIA 0.48.1 and retired the guard (the pane-parity cleanup PR,
 audit Gap 10). Three lines of evidence:
 
-- **Upstream closed the defect.** get-bb/bb#4793 closed on 2026-10-06, and
-  bb #5951 ("Give the timeline's reading position one owner so scrolling
+- **Upstream closed the defect.** get-alia/alia#4793 closed on 2026-10-06, and
+  VesnALIA #5951 ("Give the timeline's reading position one owner so scrolling
   stops jumping", 2026-10-22, in 0.48.0) rewrote the shell around
   `ScrollPositionKeeper`: the pending-capture no-dependency layout effect
   and its `scrollTop + (scrollHeight − capture.scrollHeight)` arithmetic
@@ -302,5 +302,5 @@ audit Gap 10). Three lines of evidence:
   `tests/chat-jump-guard.test.ts` are deleted, and the pane's chat
   click-capture forwards only its own link/decoration handling. The jump
   probe stays as the regression check; if a yank ever reappears against a
-  future bb, re-run it before reaching for a plugin-side guard again.
+  future VesnALIA, re-run it before reaching for a plugin-side guard again.
 

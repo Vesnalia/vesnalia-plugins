@@ -1,11 +1,11 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from "react";
 import {
   experimental_Icon as Icon, experimental_InfoList as InfoList, experimental_InfoListRow as InfoListRow, experimental_InfoSection as InfoSection,
-  experimental_ThreadContextCardRow as CardRow, experimental_useAppPanel, experimental_usePanelTabs, useBbNavigate,
+  experimental_ThreadContextCardRow as CardRow, experimental_useAppPanel, experimental_usePanelTabs, useAliaNavigate,
   type ExperimentalThreadContextCardProps, type ExperimentalThreadContextSegmentInput, type ExperimentalThreadContextSegmentProps,
   type ExperimentalThreadInfoProps, type ExperimentalThreadRowMetadataDataInput, type ExperimentalThreadRowMetadataProps,
   type PluginThreadActionRegistration, useRealtime,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { createArchivedPreference } from "./archived-preference";
 import { Hint } from "./hint";
@@ -21,7 +21,7 @@ import { useSession } from "./session";
 import { useRows, type RowsData } from "./use-rows";
 
 const archivedPreference = createArchivedPreference(window, "panel");
-// Vantage's own icon, declared in package.json, so bb draws it on its rail, tab strip and menus even while the app loads.
+// Vantage's own icon, declared in package.json, so VesnALIA draws it on its rail, tab strip and menus even while the app loads.
 export const VANTAGE_ICON = "vantage/vantage";
 // The most child worktrees the composer's list and the thread context card show; the tab has the rest.
 const SHOWN = 3;
@@ -45,15 +45,15 @@ function useTree(threadId: string | null): { data: RowsData; loading: boolean } 
   return { data, loading: snapshot.overview === null };
 }
 
-// Its child threads' worktrees, not the thread's own checkout: that one is what bb's changes segment already shows.
+// Its child threads' worktrees, not the thread's own checkout: that one is what VesnALIA's changes segment already shows.
 const childRows = (data: RowsData, threadId: string): Row[] => data.rows.filter((row) => row.threadId !== threadId && row.bucket !== "archived");
 // The thread's own worktree, when it changed something.
 const ownRow = (data: RowsData, threadId: string): Row | null => data.rows.find((row) => row.threadId === threadId) ?? null;
 
 const sharedPaths = (rows: readonly Row[]): string[] => [...new Set(rows.flatMap((row) => row.overlaps.map((overlap) => overlap.path)))];
 
-// Above the composer whenever the thread or a child thread changed something. It shows with bb's thread context card too:
-// a plugin cannot tell whether bb has the card on screen or tucked behind its header button, so hiding the segment would
+// Above the composer whenever the thread or a child thread changed something. It shows with VesnALIA's thread context card too:
+// a plugin cannot tell whether VesnALIA has the card on screen or tucked behind its header button, so hiding the segment would
 // leave a thread with no summary whenever the card is unpinned or the pane is narrow.
 export function useSegmentVisible(input: Pick<ExperimentalThreadContextSegmentInput, "threadId">): boolean {
   const { data } = useTree(input.threadId);
@@ -63,17 +63,17 @@ export function useSegmentVisible(input: Pick<ExperimentalThreadContextSegmentIn
 function useOpenTab() {
   const panel = experimental_useAppPanel();
   return (threadId: string, key?: string) => {
-    // Set first, so a tab that mounts on this call finds it; cleared when bb declines, so a later visit does not jump to it.
+    // Set first, so a tab that mounts on this call finds it; cleared when VesnALIA declines, so a later visit does not jump to it.
     if (key !== undefined) panelSelection.set({ threadId, key, at: Date.now() });
     if (!panel.openTab({ tab: { id: PANEL_ACTION_ID, context: { kind: "thread" }, availability: "action" } })) {
       if (key !== undefined) panelSelection.set(null);
-      toast.error("bb could not open the Vantage tab");
+      toast.error("alia could not open the Vantage tab");
     }
   };
 }
 
 function useCompare(threadId: string) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return () => navigate.toPluginPanel("vantage", {
     subPath: formatRoute({ target: { kind: "tree", threadId }, view: "overlaps", selectedKey: null, focus: null }),
   });
@@ -95,7 +95,7 @@ function LineCounts({ additions, deletions }: { additions: number; deletions: nu
   return <span className="whitespace-nowrap font-mono text-[11px] tabular-nums"><span className="text-diff-added">+{additions}</span> <span className="text-diff-removed">−{deletions}</span></span>;
 }
 
-// Words that take only the row's spare room and give it back first, as bb's own segments' labels do; a narrow composer hides them.
+// Words that take only the row's spare room and give it back first, as VesnALIA's own segments' labels do; a narrow composer hides them.
 function Words({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <span data-promptbox-hide-compact="" className="grid min-w-0 grid-cols-[minmax(0,max-content)]">
@@ -218,13 +218,13 @@ export function SegmentDetails(props: ExperimentalThreadContextSegmentProps) {
   return <LiveThreadsProvider><SegmentDetailsView {...props} /></LiveThreadsProvider>;
 }
 
-// The card's counterpart of the segment: the same child worktrees, most urgent first, beside bb's own rows.
+// The card's counterpart of the segment: the same child worktrees, most urgent first, beside VesnALIA's own rows.
 function CardSectionView({ threadId }: Pick<ExperimentalThreadContextCardProps, "threadId">) {
   const { data, loading } = useTree(threadId);
   const open = useOpenTab();
   const compare = useCompare(threadId);
   const rows = urgentFirst(childRows(data, threadId));
-  // bb leaves the section out while it renders nothing.
+  // VesnALIA leaves the section out while it renders nothing.
   if (loading || rows.length === 0) return null;
   const shared = sharedPaths(rows);
   const shown = rows.slice(0, SHOWN);
@@ -301,7 +301,7 @@ export function rowLines(overview: Overview | null): RowLines {
   return lines;
 }
 
-// bb calls this once for the whole sidebar: one overview of every recent thread serves every row.
+// VesnALIA calls this once for the whole sidebar: one overview of every recent thread serves every row.
 export function useRowLines(_input: ExperimentalThreadRowMetadataDataInput): RowLines {
   const { store, snapshot } = useSession("sidebar", ALL, false);
   useRealtime("vantage:settings", () => { store?.refresh(); });
@@ -325,7 +325,7 @@ export function RowLineItem({ thread, data }: ExperimentalThreadRowMetadataProps
 
 const VANTAGE_TAB = { id: PANEL_ACTION_ID, context: { kind: "thread" as const }, availability: "action" as const };
 
-// bb's labelled header button, for a bb that no longer draws plugin components in the thread header.
+// VesnALIA's labelled header button, for a VesnALIA that no longer draws plugin components in the thread header.
 export const headerAction: PluginThreadActionRegistration = {
   id: "open",
   title: "Vantage",
@@ -337,7 +337,7 @@ export const headerAction: PluginThreadActionRegistration = {
     label: "Vantage",
     icon: VANTAGE_ICON,
     run: () => {
-      if (!experimental_panel.openTab({ tab: VANTAGE_TAB })) toast.error("bb could not open the Vantage tab");
+      if (!experimental_panel.openTab({ tab: VANTAGE_TAB })) toast.error("alia could not open the Vantage tab");
     },
   }),
 };
@@ -354,7 +354,7 @@ export function VantageHeaderButton({ isCompactViewport }: HeaderButtonProps) {
   if (isCompactViewport) return null;
   const toggle = () => {
     if (showing) panel.close();
-    else if (!panel.openTab({ tab: VANTAGE_TAB })) toast.error("bb could not open the Vantage tab");
+    else if (!panel.openTab({ tab: VANTAGE_TAB })) toast.error("alia could not open the Vantage tab");
   };
   return (
     <Hint label={showing ? "Hide Vantage" : "Vantage: what this thread and its child threads changed"}>

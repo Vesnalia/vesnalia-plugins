@@ -1,26 +1,17 @@
 {
-  "name": "@gpambrozio/bb-plugin-diff-review",
+  "name": "@gpambrozio/alia-plugin-diff-review",
   "version": "0.5.1",
   "license": "MIT",
   "author": "gpambrozio (https://github.com/gpambrozio)",
-  "homepage": "https://github.com/gpambrozio/bb-plugins/tree/main/diff-review#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gpambrozio/bb-plugins.git",
-    "directory": "diff-review"
-  },
-  "bugs": {
-    "url": "https://github.com/gpambrozio/bb-plugins/issues"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.94"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.94"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "server.ts",
@@ -41,7 +32,7 @@
     "!**/*.test.ts",
     "!**/*.test.tsx"
   ],
-  "bb": {
+  "alia": {
     "name": "Diff Review",
     "description": "Comment on a thread's changes line by line, then send the comments to its agent, which fixes the code and answers each one.",
     "branding": {
@@ -58,7 +49,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "1.5.1",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -91,5 +81,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "5.0.5"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/diff-review#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/diff-review"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

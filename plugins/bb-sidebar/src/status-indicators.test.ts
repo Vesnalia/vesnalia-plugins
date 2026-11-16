@@ -2,8 +2,8 @@
 import { cleanup, render } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk/app";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { isKnownIndicator, KNOWN_INDICATORS } from "./child-status";
 import { StatusGlyph } from "./StatusGlyph";
 import { statusToneClass } from "./StatusSlot";
@@ -16,7 +16,7 @@ afterEach(cleanup);
 type Unlisted = Exclude<PluginSidebarThreadIndicator, (typeof KNOWN_INDICATORS)[number]>;
 const everyIndicatorListed: [Unlisted] extends [never] ? true : Unlisted = true;
 
-/** A kind bb could ship after this build. */
+/** A kind VesnALIA could ship after this build. */
 const futureKind = "future-kind" as PluginSidebarThreadIndicator;
 
 const glyphFor = (indicator: PluginSidebarThreadIndicator, label: string | null = "Status") =>
@@ -36,16 +36,16 @@ describe("indicators", () => {
     expect(glyphFor("none").firstElementChild).toBeNull();
   });
 
-  it.each(["queued-failed", "queued-waiting"] as const)("draws bb's own glyph for %s", (indicator) => {
+  it.each(["queued-failed", "queued-waiting"] as const)("draws VesnALIA's own glyph for %s", (indicator) => {
     const container = glyphFor(indicator, "A queued message");
     expect(container.querySelector(`[data-thread-status-glyph="${indicator}"]`)).not.toBeNull();
     expect(container.querySelector('[aria-label="A queued message"]')).not.toBeNull();
   });
 
-  it("draws bb's glyph, held still, for a kind this build does not know", () => {
+  it("draws VesnALIA's glyph, held still, for a kind this build does not know", () => {
     const container = glyphFor(futureKind, "Thread is doing something new");
     expect(container.querySelector('[data-thread-status-glyph="future-kind"]')).not.toBeNull();
-    expect(container.querySelector(".bb-sidebar-still")).not.toBeNull();
+    expect(container.querySelector(".alia-sidebar-still")).not.toBeNull();
     expect(container.querySelector('[role="img"][aria-label="Thread is doing something new"]')).not.toBeNull();
   });
 

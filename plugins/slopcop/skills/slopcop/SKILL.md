@@ -1,11 +1,11 @@
 ---
 name: slopcop
-description: Configure automated GitHub issue and PR rules with the `bb slopcop` CLI. Use for new-issue listeners, pull-request reviews, rule changes, author restrictions, match checks, and shadow results.
+description: Configure automated GitHub issue and PR rules with the `alia slopcop` CLI. Use for new-issue listeners, pull-request reviews, rule changes, author restrictions, match checks, and shadow results.
 ---
 
 # SlopCop — automated GitHub issue and PR rules
 
-A **rule** watches one GitHub repo and dispatches a BB agent for matching pull
+A **rule** watches one GitHub repo and dispatches a VesnALIA agent for matching pull
 requests or new issues. Configure rules from the CLI on the user's behalf.
 
 ## Safety defaults — do not loosen without being asked
@@ -29,10 +29,10 @@ A rule needs a repo AND an agent configuration (`--project` at minimum), or it
 cannot dispatch:
 
 ```sh
-bb slopcop rules add \
+alia slopcop rules add \
   --name security-sweep \
   --repo owner/repo \
-  --project <bb-project-name> \
+  --project <alia-project-name> \
   --model claude-opus-5 \
   --paths "src/auth/**,src/payments/**" \
   --base main \
@@ -58,28 +58,28 @@ sidebar organization and raise no unread or notification attention. Right for a
 rule that fires often. Default is `--visible`, so a new rule is watchable while
 you tune it.
 
-Set a default BB section for all new review threads with a section name or ID:
+Set a default VesnALIA section for all new review threads with a section name or ID:
 
 ```sh
-bb plugin config slopcop set defaultThreadSection "Automated reviews"
+alia plugin config slopcop set defaultThreadSection "Automated reviews"
 ```
 
 Clear `defaultThreadSection` to create review threads without a section. A run
 fails with an explicit error if the configured section no longer exists.
 
-Permission modes are BB's own: `full`, `auto` (default), `accept-edits`. There
+Permission modes are VesnALIA's own: `full`, `auto` (default), `accept-edits`. There
 is no read-only mode, which is why the trust gate is the real protection.
 
 ## Inspecting and debugging
 
 ```sh
-bb slopcop rules                       # list rules
-bb slopcop status                      # gh auth, watched repos, poll interval
-bb slopcop check <rule> <number> [--issue]
-bb slopcop runs [--rule <r>] [--json]  # recent runs and their status
-bb slopcop show [run-id]               # the review body a run produced
-bb slopcop dispatch <rule> <number> [--issue] [--force]
-bb slopcop rules edit|enable|disable|rm <rule>
+alia slopcop rules                       # list rules
+alia slopcop status                      # gh auth, watched repos, poll interval
+alia slopcop check <rule> <number> [--issue]
+alia slopcop runs [--rule <r>] [--json]  # recent runs and their status
+alia slopcop show [run-id]               # the review body a run produced
+alia slopcop dispatch <rule> <number> [--issue] [--force]
+alia slopcop rules edit|enable|disable|rm <rule>
 ```
 
 `check` is the right tool for "why didn't SlopCop review my PR?" — it reports

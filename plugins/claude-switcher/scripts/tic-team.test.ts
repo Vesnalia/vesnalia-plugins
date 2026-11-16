@@ -194,10 +194,10 @@ describe("tic-team.mjs ejecutado", () => {
     });
     await writeFile(join(dir, "health.json"), health);
     await writeFile(join(dir, "list.json"), list);
-    const bb = join(dir, "bb-falso");
+    const alia = join(dir, "alia-falso");
     await writeFile(
-      bb,
-      `#!/bin/sh\necho "$2" >> "${dir}/bb-orden.txt"\ncase "$2" in health) cat "${dir}/health.json";; list) cat "${dir}/list.json";; *) exit 9;; esac\n`,
+      alia,
+      `#!/bin/sh\necho "$2" >> "${dir}/alia-orden.txt"\ncase "$2" in health) cat "${dir}/health.json";; list) cat "${dir}/list.json";; *) exit 9;; esac\n`,
     );
     const cl = join(dir, "claude-falso");
     await writeFile(
@@ -208,7 +208,7 @@ describe("tic-team.mjs ejecutado", () => {
         claude,
       ].join("\n"),
     );
-    await chmod(bb, 0o755);
+    await chmod(alia, 0o755);
     await chmod(cl, 0o755);
     const correr = async (extra: Record<string, string> = {}) => {
       try {
@@ -216,7 +216,7 @@ describe("tic-team.mjs ejecutado", () => {
           cwd: dir,
           env: {
             ...process.env,
-            BB_CLI: bb,
+            ALIA_CLI: alia,
             TIC_CLAUDE: cl,
             CLAUDECODE: "1",
             CLAUDE_CONFIG_DIR: "/cuenta/de-quien-lo-lanza",
@@ -343,7 +343,7 @@ describe("tic-team.mjs ejecutado", () => {
   it("pide la lista de cuentas antes que la salud", async () => {
     const { dir, correr } = await preparar(OK);
     expect((await correr()).code).toBe(0);
-    expect((await readFile(join(dir, "bb-orden.txt"), "utf8")).trim().split("\n")).toEqual([
+    expect((await readFile(join(dir, "alia-orden.txt"), "utf8")).trim().split("\n")).toEqual([
       "list",
       "health",
     ]);

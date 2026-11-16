@@ -1,4 +1,4 @@
-import { experimental_killProcessesWithCwdUnder } from "@get-bb/plugin-sdk/host";
+import { experimental_killProcessesWithCwdUnder } from "@vesnalia/plugin-sdk/host";
 import { access, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { currentBranch, git, hasLocalBranch, readRepositoryState } from "./git.js";

@@ -19,9 +19,9 @@
 /*
  * Thread Page loader. The app lives in this session's Syns repository under .page/, not here.
  * This file reads .page/index.html and the local stylesheets and scripts it names, all at one
- * version, through the Syns bb plugin (syns.*); applies the styles, puts the body in place and
+ * version, through the Syns VesnALIA plugin (syns.*); applies the styles, puts the body in place and
  * runs the scripts in document order. Anything else the app needs from .page/ it reads itself
- * through syns.*, because a relative URL here points at bb storage, not at the repository.
+ * through syns.*, because a relative URL here points at VesnALIA storage, not at the repository.
  * Nothing in this file knows what the app is: copy it as it is.
  */
 (async function () {
@@ -34,7 +34,7 @@
   // passed with every later invoke. The kernel throws a TypeError for one that is absolute, holds
   // . or .., empty segments, a backslash or a control character, or is too long or too deep.
   const setScope = async function (path) {
-    if (typeof tp.setScope !== "function") throw new Error("this bb's Thread Pages has no setScope");
+    if (typeof tp.setScope !== "function") throw new Error("this VesnALIA's Thread Pages has no setScope");
     await tp.setScope(path || null);
   };
   // A reference is local unless it has a scheme (https:, data:), starts with // or is a #fragment.
@@ -67,10 +67,10 @@
     return out;
   };
 
-  if (!tp) { say("This is a bb Thread Page loader. It works only when bb serves it as a session's page."); return; }
+  if (!tp) { say("This is a VesnALIA Thread Page loader. It works only when VesnALIA serves it as a session's page."); return; }
   const ctx = await call("context.get");
   if (!ctx.capabilities.some(function (c) { return c.method === "syns.readMany"; })) {
-    say("This page loads its app from the session's Syns repository, but the Syns bb plugin is not installed or not enabled on this bb. Enable the syns plugin, then reload.");
+    say("This page loads its app from the session's Syns repository, but the Syns VesnALIA plugin is not installed or not enabled on this VesnALIA. Enable the syns plugin, then reload.");
     return;
   }
   // ---- tool.html: the only lines that differ from the canonical loader ----
@@ -81,7 +81,7 @@
   if (!folder) { say("Open a placed tool as tool.html#<its folder>, such as tool.html#clients/vela/q3-board."); return; }
   try { await setScope(folder); }
   catch (e) {
-    say(e instanceof TypeError ? "\u201c" + folder + "\u201d is not a folder inside this session's folder." : "This bb's Thread Pages cannot give a page a folder of its own: " + (e && e.message || e));
+    say(e instanceof TypeError ? "\u201c" + folder + "\u201d is not a folder inside this session's folder." : "This VesnALIA's Thread Pages cannot give a page a folder of its own: " + (e && e.message || e));
     return;
   }
   window.addEventListener("hashchange", function () { location.reload(); });

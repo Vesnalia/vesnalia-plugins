@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { defaultTabAppearance, readTabAppearance } from "./lib/tab-appearance";
 import { createTabsTestHost as createFakePluginHost, withTabsRpcTypes } from "./test-utils";
@@ -13,7 +13,7 @@ afterEach(async () => {
 async function loadPlugin() {
   const host = createFakePluginHost({ pluginId: "tabs" });
   loadedHosts.push(host);
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -54,7 +54,7 @@ describe("Chat Tabs", () => {
     ]);
     const host = createFakePluginHost({ pluginId: "tabs", sdk: { threads: { list } } });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect((await host.harness.behavior.callRpc("tabs_list", null)).sidechatActivity).toEqual({
       generation: 1,
       revision: 2,
@@ -116,7 +116,7 @@ describe("Chat Tabs", () => {
     const list = vi.fn(() => page);
     const host = createFakePluginHost({ pluginId: "tabs", sdk: { threads: { list } } });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const request = host.harness.behavior.callRpc("tabs_list", null);
     await vi.waitFor(() => expect(list).toHaveBeenCalledTimes(1));
     await host.harness.behavior.emitThreadEvent("thread.active", { thread: child });
@@ -142,7 +142,7 @@ describe("Chat Tabs", () => {
     const list = vi.fn(async () => [child]);
     let host = createFakePluginHost({ pluginId: "tabs", sdk: { threads: { list } } });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const initial = (await host.harness.behavior.callRpc("tabs_list", null)).sidechatActivity;
     expect(initial).toEqual({ generation: 1, revision: 1, sourceThreadIds: ["parent"] });
     list.mockResolvedValue([]);
@@ -183,7 +183,7 @@ describe("Chat Tabs", () => {
     list.mockResolvedValueOnce(idle);
     const host = createFakePluginHost({ pluginId: "tabs", sdk: { threads: { list } } });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect(
       (await host.harness.behavior.callRpc("tabs_list", null)).sidechatActivity?.sourceThreadIds,
     ).toEqual([]);
@@ -215,7 +215,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const candidate = { threadId: child.id, projectId: child.projectId, title: child.title! };
     await host.harness.behavior.callRpc("tabs_open", candidate);
     await host.harness.behavior.callRpc("tabs_history_visit", candidate);
@@ -350,7 +350,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const candidate = { threadId: "thr_favorite", projectId: "proj_api", title: "Favorite" };
     await host.harness.behavior.callRpc("tabs_sync_activity", { threads: [candidate] });
     await host.harness.behavior.callRpc("tabs_set_favorite", {
@@ -528,7 +528,7 @@ describe("Chat Tabs", () => {
       sdk: { projects: { list: projects }, threads: { list } },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const result = await host.harness.behavior.callRpc("tabs_search", { query: "офис" });
     expect(result.candidates.map((item) => item.threadId)).toEqual(["thr_project"]);
     expect(result.candidates[0]?.projectName).toBe("Офис CRM");
@@ -564,7 +564,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect(
       (await host.harness.behavior.callRpc("tabs_search", { query: "login" })).candidates.map(
         (item) => item.threadId,
@@ -597,7 +597,7 @@ describe("Chat Tabs", () => {
       sdk: { threads: { list }, projects: { list: async () => [] } },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     await expect(
       host.harness.behavior.setSettings({ searchArchivedChats: true }),
     ).resolves.toBeUndefined();
@@ -626,7 +626,7 @@ describe("Chat Tabs", () => {
     expect(list).toHaveBeenCalledTimes(3);
   });
 
-  it("searches titles beyond plugin history and the first BB page, caches only metadata, and excludes unavailable chats", async () => {
+  it("searches titles beyond plugin history and the first VesnALIA page, caches only metadata, and excludes unavailable chats", async () => {
     const title = "Обновить систему до версии 0.43.3 — office";
     const page = Array.from({ length: 200 }, (_, i) =>
       makeThreadResponse({ id: `thr_page_${i}`, title: "Unrelated chat" }),
@@ -646,7 +646,7 @@ describe("Chat Tabs", () => {
       sdk: { threads: { list }, projects: { list: async () => [] } },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const result = await host.harness.behavior.callRpc("tabs_search", { query: "43" });
     expect(result.candidates).toEqual([
       { threadId: "thr_office", projectId: "proj_office", title },
@@ -667,8 +667,8 @@ describe("Chat Tabs", () => {
   it("keeps static setting labels and descriptions in English without Russian duplicates", async () => {
     const host = createFakePluginHost({ pluginId: "tabs" });
     loadedHosts.push(host);
-    const define = vi.spyOn(host.bb.settings, "define");
-    await plugin(host.bb);
+    const define = vi.spyOn(host.alia.settings, "define");
+    await plugin(host.alia);
     const schema = define.mock.calls[0]?.[0];
     expect(schema).toBeDefined();
     for (const setting of Object.values(schema!)) {
@@ -906,7 +906,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     await expect(
       host.harness.behavior.callRpc("tabs_resolve_current", {
         threadId: "thr_open",
@@ -941,7 +941,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     for (const [threadId, title] of [
       ["thr_legacy_archived", "Old archive"],
@@ -982,7 +982,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     await host.harness.behavior.callRpc("tabs_open", {
       threadId: "thr_unknown",
@@ -1058,7 +1058,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     await host.harness.behavior.callRpc("tabs_open", {
       threadId: "thr_system_all",
@@ -1123,7 +1123,7 @@ describe("Chat Tabs", () => {
       },
     });
     loadedHosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("tabs_open", {
       threadId: "thr_shared",
       projectId: "proj_api",

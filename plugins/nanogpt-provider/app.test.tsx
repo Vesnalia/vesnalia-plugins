@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { nanoGptSettingsContract } from "./src/settings-contract.js";
 import { NANO_GPT_PROVIDER_ID, SETTINGS_POPUP_ID } from "./src/provider-id.js";
 
@@ -203,7 +203,7 @@ describe("the settings popup", () => {
     expect(input.value).toBe("");
   });
 
-  it("is not a <form>, because bb mounts it inside the composer's own form", async () => {
+  it("is not a <form>, because VesnALIA mounts it inside the composer's own form", async () => {
     const view = renderPopup();
     await view.findByPlaceholderText("sk-...");
     expect(view.container.querySelector("form")).toBeNull();

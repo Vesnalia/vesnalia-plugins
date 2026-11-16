@@ -1,14 +1,14 @@
 import { access, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, hostSignals } from "./contract.js";
 import { parseOmarchyColors } from "./palette.js";
 
-const HOOK_NAME = "90-bb-omarchy";
+const HOOK_NAME = "90-alia-omarchy";
 const HOOK = `#!/bin/bash
 set -eu
-state_root="\${XDG_STATE_HOME:-$HOME/.local/state}/bb-omarchy"
+state_root="\${XDG_STATE_HOME:-$HOME/.local/state}/alia-omarchy"
 mkdir -p "$state_root"
 temporary="$state_root/theme.name.$$"
 printf '%s\\n' "\${1:-unknown}" > "$temporary"
@@ -30,7 +30,7 @@ function paths(): Paths {
   return {
     omarchyRoot,
     current: join(omarchyRoot, "current"),
-    integrationState: join(stateHome, "bb-omarchy"),
+    integrationState: join(stateHome, "alia-omarchy"),
     hook: join(configHome, "omarchy", "hooks", "theme-set.d", HOOK_NAME),
   };
 }

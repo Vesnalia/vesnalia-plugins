@@ -6,11 +6,11 @@
 
 ### Automate thread events. Gate messages on your terms.
 
-Run shell commands or call webhooks when BB events happen.<br>
+Run shell commands or call webhooks when VesnALIA events happen.<br>
 Control message dispatch and inspect hook runs from one place.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-4f46e5)
+![VesnALIA ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-4f46e5)
 ![Plugin SDK ≥ 0.5.9](https://img.shields.io/badge/plugin%20SDK-%E2%89%A5%200.5.9-9333ea)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,11 +25,11 @@ Control message dispatch and inspect hook runs from one place.
 <br>
 
 > [!NOTE]
-> Screenshots are real BB captures populated with fictional demo data.
+> Screenshots are real VesnALIA captures populated with fictional demo data.
 
 ## The problem
 
-Without Hooks, you have to connect BB events to your own scripts and keep those integrations in sync. Messages also go straight to the agent unless you build a separate dispatch gate.
+Without Hooks, you have to connect VesnALIA events to your own scripts and keep those integrations in sync. Messages also go straight to the agent unless you build a separate dispatch gate.
 
 Hooks gives you one place to create, test and manage those automations.
 
@@ -45,7 +45,7 @@ Hooks gives you one place to create, test and manage those automations.
 <tr>
 <td width="50%" valign="top">
 
-### 🪝 React to BB events
+### 🪝 React to VesnALIA events
 
 Run shell commands or send HTTP requests when threads start, finish, fail, need you, or change state.
 
@@ -77,7 +77,7 @@ Store credentials separately from hook definitions. Commands receive secrets as 
 <tr>
 <td valign="top">
 
-### 🧭 Manage hooks in BB
+### 🧭 Manage hooks in VesnALIA
 
 Browse the marketplace, edit and test installed hooks, manage catalog sources and secrets, and inspect recent runs from the Hooks page.
 
@@ -86,7 +86,7 @@ Browse the marketplace, edit and test installed hooks, manage catalog sources an
 
 ### 🤖 Work from the CLI or an agent
 
-Use `bb hooks` in a terminal. The bundled skills help agents create hooks from a request, test them and explain the result.
+Use `alia hooks` in a terminal. The bundled skills help agents create hooks from a request, test them and explain the result.
 
 </td>
 </tr>
@@ -107,31 +107,31 @@ Use `bb hooks` in a terminal. The bundled skills help agents create hooks from a
 
 ## Templates
 
-Installing the plugin does not install any hooks. The default `catalogs` setting subscribes to [MacHatter1/bb-hooks-marketplace](https://github.com/MacHatter1/bb-hooks-marketplace). The Hooks page groups those templates by category, shows the author, and scores performance and security out of 100. The letter uses the usual scale: **A+** is 97–100, then A, A-, B+, B, B-, and so on down to F.
+Installing the plugin does not install any hooks. The default `catalogs` setting subscribes to [MacHatter1/alia-hooks-marketplace](https://github.com/MacHatter1/bb-hooks-marketplace). The Hooks page groups those templates by category, shows the author, and scores performance and security out of 100. The letter uses the usual scale: **A+** is 97–100, then A, A-, B+, B, B-, and so on down to F.
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-hooks --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-hooks --yes
 ```
 
-This repository is private. Git installs need GitHub credentials on the machine running BB.
+This repository is private. Git installs need GitHub credentials on the machine running VesnALIA.
 
 <details>
 <summary><b>Install from a local clone</b></summary>
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-hooks.git
-cd bb-plugin-hooks
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-hooks
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.43+** (runtime SDK **0.4.87+**; development pin **0.5.9**)
+- VesnALIA **0.43+** (runtime SDK **0.4.87+**; development pin **0.5.9**)
 - Node.js and npm for a local build
 
 ## Where to find it
@@ -141,13 +141,13 @@ bb plugin install path:$PWD --yes
 | **Sidebar → Hooks** | Browse templates, manage installed hooks and catalogs, store secrets, and read the reference. |
 | **Composer → + → Create a hook** | Describe what you want; a new thread opens with the bundled `create-hook` skill. |
 | **Settings → Installed plugins → Hooks** | Inspect or edit the hooks JSON setting. |
-| **Terminal or agent** | Run `bb hooks` to manage, test and inspect hooks. |
+| **Terminal or agent** | Run `alia hooks` to manage, test and inspect hooks. |
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  E["BB event"] --> M{"Hooks enabled and filters match?"}
+  E["ALIA event"] --> M{"Hooks enabled and filters match?"}
   M -- No --> X["No hook runs"]
   M -- Observe --> O["Run matching hooks"]
   O --> T["Shell command or HTTP POST"]
@@ -160,28 +160,28 @@ flowchart LR
   D -- Wait --> W["Queue the message"]
 ```
 
-- **One shared definition.** The Hooks page, settings and `bb hooks` all manage the same hook list.
-- **Runs on the BB server.** Commands receive event JSON on stdin; webhooks get a JSON POST, with an optional body template. Commands do not run inside the thread's environment.
+- **One shared definition.** The Hooks page, settings and `alia hooks` all manage the same hook list.
+- **Runs on the VesnALIA server.** Commands receive event JSON on stdin; webhooks get a JSON POST, with an optional body template. Commands do not run inside the thread's environment.
 - **Filter and bound runs.** Match by project, provider, title or text. Hooks without a custom timeout default to 30 seconds; the maximum is 10 minutes, and dispatch gates are capped at 8 seconds.
 - **Choose the gate outcome.** Exit codes `0`, `2` and `3` mean proceed, reject and wait. A JSON decision on the last output line is also supported; errors proceed by default unless you set `onError`.
 
 ## Privacy and control
 
-- 🖥️ **Commands run with the BB server's access.** They run on the machine hosting BB, as its user; review commands and catalog templates before installing them.
+- 🖥️ **Commands run with the VesnALIA server's access.** They run on the machine hosting VesnALIA, as its user; review commands and catalog templates before installing them.
 - 🔑 **Secrets stay out of hook definitions.** Values are encrypted with AES-256-GCM in the plugin database and resolved only when a hook runs. Run history and test output redact those values.
 - 🌐 **You choose the plugin's HTTP destinations.** URL hooks send event JSON to the endpoint you configure. Shell commands run with the server user's access and can make their own network requests. Configured catalogs are fetched by the server; catalog templates require confirmation before installation.
 - ⏱️ **Gate hooks have a time limit.** Each gate run is capped at 8 seconds so it cannot hold message dispatch indefinitely.
-- 📊 **Install counts are opt-in, and only for the BB Hooks Marketplace.** BB asks before sending any, then reports only the template id and version of each new install from that catalog. Installs from other catalogs are never reported. Change your answer with `bb hooks marketplace stats on|off`.
+- 📊 **Install counts are opt-in, and only for the VesnALIA Hooks Marketplace.** VesnALIA asks before sending any, then reports only the template id and version of each new install from that catalog. Installs from other catalogs are never reported. Change your answer with `alia hooks marketplace stats on|off`.
 
 ## CLI
 
 ```sh
-bb hooks templates
-bb hooks use desktop-notify
-bb hooks list
-bb hooks add no-prod --event message.dispatch --command 'echo "Production needs a human." >&2; exit 2'
-bb hooks test no-prod
-bb hooks history --limit 20
+alia hooks templates
+alia hooks use desktop-notify
+alia hooks list
+alia hooks add no-prod --event message.dispatch --command 'echo "Production needs a human." >&2; exit 2'
+alia hooks test no-prod
+alia hooks history --limit 20
 ```
 
 <details>
@@ -194,7 +194,7 @@ bb hooks history --limit 20
 | `templates [<template>] [--search <text>] [--json]` | Search templates or show one. |
 | `use <template> [--set key=value]… [--id id] [--event event]… [--project id] [--provider id] [--title regex] [--text regex] [--disabled] [--yes]` | Create hooks from a template. Catalog templates require `--yes`. |
 | `marketplace list\|add <src>\|remove <src>\|refresh [src]\|search <text>\|validate <src>\|init [--name catalog]` | Manage and validate catalog sources. |
-| `marketplace stats [on\|off\|ask]` | Show or change whether new installs from the BB Hooks Marketplace are reported to its install counter. |
+| `marketplace stats [on\|off\|ask]` | Show or change whether new installs from the VesnALIA Hooks Marketplace are reported to its install counter. |
 | `secrets list\|set <name> <value>\|remove <name>` | Manage encrypted secrets. |
 | `show <id>` | Show a hook as JSON. |
 | `add <id> --event <event> (--command <shell> \| --url <url>) [--project id] [--provider id] [--title regex] [--text regex] [--timeout ms] [--cwd dir] [--header k=v]… [--on-error proceed\|reject\|wait] [--description text] [--disabled]` | Create a hook. |
@@ -207,11 +207,11 @@ bb hooks history --limit 20
 
 </details>
 
-**Agent access:** BB registers the `bb hooks` CLI for agents. The bundled [hooks skill](skills/hooks/SKILL.md) documents events and commands; [create-hook](skills/create-hook/SKILL.md) guides an agent from a request through a tested hook.
+**Agent access:** VesnALIA registers the `alia hooks` CLI for agents. The bundled [hooks skill](skills/hooks/SKILL.md) documents events and commands; [create-hook](skills/create-hook/SKILL.md) guides an agent from a request through a tested hook.
 
 ## Settings
 
-Configure with `bb plugin config hooks`, or **Settings → Installed plugins → Hooks**.
+Configure with `alia plugin config hooks`, or **Settings → Installed plugins → Hooks**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -223,8 +223,8 @@ Configure with `bb plugin config hooks`, or **Settings → Installed plugins →
 | `historyLimit` | `200` | Number of runs to keep; `0` disables history. Range: 0–10,000. |
 | `maxConcurrent` | `8` | Maximum concurrent observe-hook runs; applies after reload. Range: 1–64. |
 | `webhookSecret` | unset | Optional HMAC-SHA256 signing secret for webhook requests. |
-| `catalogs` | `MacHatter1/bb-hooks-marketplace` | Catalog sources, one per line. The plugin refreshes them periodically. |
-| `shareInstalls` | `ask` | Whether to report new BB Hooks Marketplace installs to its install counter: `ask` (BB asks on the first one), `on` or `off`. |
+| `catalogs` | `MacHatter1/alia-hooks-marketplace` | Catalog sources, one per line. The plugin refreshes them periodically. |
+| `shareInstalls` | `ask` | Whether to report new VesnALIA Hooks Marketplace installs to its install counter: `ask` (VesnALIA asks on the first one), `on` or `off`. |
 | `secretsKey` | generated on first load | Encryption key for stored secrets. Changing it makes existing secrets unreadable. |
 
 </details>
@@ -235,9 +235,9 @@ Configure with `bb plugin config hooks`, or **Settings → Installed plugins →
 Use the switch in the Hooks page to pause runs while keeping the plugin enabled. To disable or remove the plugin:
 
 ```sh
-bb plugin disable hooks
-bb plugin enable hooks
-bb plugin remove hooks
+alia plugin disable hooks
+alia plugin enable hooks
+alia plugin remove hooks
 ```
 
 </details>
@@ -248,9 +248,9 @@ bb plugin remove hooks
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev
 ```
 
 ```text
@@ -265,7 +265,7 @@ docs/       README logo
 
 **Tests** cover definitions, template rendering, catalog behaviour, secret storage, the runner and server event handling with a fake plugin host.
 
-`PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with `bb.description` in `package.json`.
+`PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with `alia.description` in `package.json`.
 
 ## Licence
 

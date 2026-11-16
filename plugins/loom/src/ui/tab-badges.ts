@@ -38,7 +38,7 @@ export const acknowledged = (acked: readonly string[], items: readonly string[])
 
 /**
  * The badge of each tab that needs the human. `unviewed` counts the files of a project ready to land that the human has
- * not marked viewed; `plannerWaiting` is bb's word that the planner's thread has an interaction waiting on the human.
+ * not marked viewed; `plannerWaiting` is VesnALIA's word that the planner's thread has an interaction waiting on the human.
  */
 export function tabBadges(view: ProjectView, unviewed: number | null = null, plannerWaiting = false): Partial<Record<BadgeTab, TabBadge>> {
   const { overview, spec } = view;

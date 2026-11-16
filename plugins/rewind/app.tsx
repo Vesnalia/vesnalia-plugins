@@ -1,12 +1,12 @@
-// Rewind — frontend entry. Compiled by `bb plugin build`; React and the SDK
-// app module come from BB at runtime.
+// Rewind — frontend entry. Compiled by `alia plugin build`; React and the SDK
+// app module come from VesnALIA at runtime.
 //
 // Surfaces: "Rewind to here" on every chat message, the Checkpoints thread
 // panel, a checkpoint count in the thread header, a note banner above the
 // message box after a restore, and two palette commands.
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { PANEL_ACTION_ID } from "./src/constants";
 import { type Rpc, useRewindRpc } from "./src/ui/data";
 import { HeaderButton } from "./src/ui/HeaderButton";

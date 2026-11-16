@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { experimental_useAppPanel } from "@get-bb/plugin-sdk/app";
+import { experimental_useAppPanel } from "@vesnalia/plugin-sdk/app";
 import type { Commit, WorkspaceStatus } from "../contract";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -58,7 +58,7 @@ export function GraphView({
   environmentId: string;
   workspace: WorkspaceStatus | null;
   signal: number;
-  /** Shows a commit in Treehouse's own tabs; without it commits open as bb tabs. */
+  /** Shows a commit in Treehouse's own tabs; without it commits open as VesnALIA tabs. */
   onOpenCommit?: (params: CommitParams) => void;
   /** The open commit tab's id (its params as JSON), highlighted in the graph. */
   activeCommit?: string | null;

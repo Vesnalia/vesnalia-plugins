@@ -15,7 +15,7 @@ sources:
 ---
 # Chat list and activity
 
-The sidebar groups BB chats by project and section, then draws forks and child chats below their parent. Relationships are read from BB; the plugin never reparents chats. The implementation is in [chat-tree.ts](../../chat-tree.ts) and [app.tsx](../../app.tsx).
+The sidebar groups VesnALIA chats by project and section, then draws forks and child chats below their parent. Relationships are read from VesnALIA; the plugin never reparents chats. The implementation is in [chat-tree.ts](../../chat-tree.ts) and [app.tsx](../../app.tsx).
 
 ## Branches and ordering
 
@@ -59,4 +59,4 @@ Manual chat placement overrides the environment's section. Returning a chat to i
 - [nested-chats.test.tsx](../../nested-chats.test.tsx): real click handlers, fold persistence, navigation, row budgets, explicit expansion, attention labels, a 20,000-chat chain, menus and dragging.
 - Existing thread-row, mobile, display, placement and localization tests cover shared behavior.
 
-Live browser checks are required for CSS, hit targets, responsive layout and compatibility with the running BB shell; jsdom does not establish those results.
+Live browser checks are required for CSS, hit targets, responsive layout and compatibility with the running VesnALIA shell; jsdom does not establish those results.

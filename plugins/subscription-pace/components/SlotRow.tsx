@@ -33,7 +33,7 @@ const STATUS_COPY: Record<SlotSnapshot['status'], { label: string; detail: strin
 const SOURCE_COPY: Record<SlotSnapshot['source'], string> = {
   'vercel-gateway': 'AI Gateway balance',
   'opencode-usage': 'OpenCode usage endpoint',
-  'codex-usage': "BB's Codex provider",
+  'codex-usage': "VesnALIA's Codex provider",
   manual: 'Figure you entered',
 };
 

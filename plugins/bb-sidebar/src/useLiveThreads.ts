@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { portScanEnvironments, settledThreadIds } from "./live-threads";
 import type { PortScanScope } from "./OpenPorts";
 import type { LifecycleRows } from "./useLifecycleRows";

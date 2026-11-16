@@ -25,7 +25,7 @@ async function withServer(handler, run) {
   }
 }
 
-test("a data: image URL is saved to disk and rewritten to BB's on-disk form", async () => {
+test("a data: image URL is saved to disk and rewritten to VesnALIA's on-disk form", async () => {
   const dir = await mkdtemp(join(tmpdir(), "img-test-"));
   const text = `[image attachment: data:image/png;base64,${PNG.toString("base64")}]`;
   const match = ON_DISK.exec(await localizeImageUrls(text, { dir }));

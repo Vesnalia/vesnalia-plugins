@@ -28,7 +28,7 @@ export interface NextStepInput {
   triage: boolean;
   /** The blocked tickets whose worker never started. */
   startFailed: string[];
-  /** The blocked tickets whose reviewer bb refused to start. */
+  /** The blocked tickets whose reviewer VesnALIA refused to start. */
   reviewRefused: string[];
   /** The automatic spec review of the draft or the pending version; left out, there is none to wait for. */
   specReview?: SpecReviewStatus;
@@ -40,8 +40,8 @@ const list = (keys: readonly string[]) => (keys.length <= 1 ? keys.join("") : `$
 function approvalMoves(input: NextStepInput, why: boolean): string[] {
   const { startFailed, reviewRefused } = input;
   return [
-    ...(startFailed.length === 0 ? [] : [`queues ${list(startFailed)} again${why ? `, because bb never started ${its(startFailed.length, "worker")}` : ""}`]),
-    ...(reviewRefused.length === 0 ? [] : [`sends ${list(reviewRefused)} back to review${why ? `, because bb refused to start ${its(reviewRefused.length, "reviewer")}` : ""}`]),
+    ...(startFailed.length === 0 ? [] : [`queues ${list(startFailed)} again${why ? `, because VesnALIA never started ${its(startFailed.length, "worker")}` : ""}`]),
+    ...(reviewRefused.length === 0 ? [] : [`sends ${list(reviewRefused)} back to review${why ? `, because VesnALIA refused to start ${its(reviewRefused.length, "reviewer")}` : ""}`]),
   ];
 }
 
@@ -98,7 +98,7 @@ function landStep(overview: ProjectOverview): NextStep {
  * stage, a pending version in the project's own stage (`pending`).
  */
 function reviewStep(slug: string, version: number, review: SpecReviewStatus | undefined, pending: { stage: number } | null = null): NextStep | null {
-  const override = `bb loom approve ${slug}${pending === null ? "" : ` --version ${version}`} --skip-review`;
+  const override = `alia loom approve ${slug}${pending === null ? "" : ` --version ${version}`} --skip-review`;
   const stage = pending?.stage ?? 0;
   switch (review?.kind) {
     case "reviewing":

@@ -39,7 +39,7 @@ const COLUMNS: BoardColumn[] = ["queue", "wip", "done", "parked"];
 
 /**
  * Accent text per hue: the -500 shade on dark, -700 on light, where -500 is too faint to read (about 2:1 on
- * white). light-dark() follows the nearest bb theme scope (its .light/.dark classes set color-scheme), so the
+ * white). light-dark() follows the nearest VesnALIA theme scope (its .light/.dark classes set color-scheme), so the
  * selected card, drawn in the opposite theme, gets the right shade too.
  */
 export const ACCENT_TEXT = {
@@ -155,7 +155,7 @@ export function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-/** Unread unless bb says it was read, or the user just opened it from the board. */
+/** Unread unless VesnALIA says it was read, or the user just opened it from the board. */
 export function isUnread(task: BoardTask, readLocally: ReadonlySet<string>): boolean {
   return task.unread && !readLocally.has(task.threadId);
 }

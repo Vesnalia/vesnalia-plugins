@@ -9,7 +9,7 @@
  * ends by itself when renewals stop.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 
 import { LOG_CHANGED, LogChangedSchema } from "../shared/channels";
 import type { RpcContract } from "../shared/contract";

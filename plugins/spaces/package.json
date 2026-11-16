@@ -1,25 +1,21 @@
 {
-  "name": "bb-plugin-spaces",
+  "name": "alia-plugin-spaces",
   "version": "0.4.1",
-  "description": "Arc-style spaces for the bb sidebar.",
+  "description": "Arc-style spaces for the VesnALIA sidebar.",
   "license": "MIT",
   "author": "Siarhei Tarasenka (https://github.com/tarasenko-by)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tarasenko-by/bb-plugin-spaces.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "spaces",
     "sidebar",
     "projects"
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Spaces",
     "description": "Switch the sidebar between Work and Personal sets of projects, like spaces in Arc.",
     "branding": {
@@ -37,7 +33,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -62,5 +57,22 @@
     "tailwind-merge": "^3.7.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/spaces#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/spaces"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,13 +1,13 @@
-Cursor Sidebar replaces BB's thread list with a port of Cursor's sidebar.
+Cursor Sidebar replaces VesnALIA's thread list with a port of Cursor's sidebar.
 Chats nest under their parent, pinned chats gather in one block, and you group them by project, update, status, environment or not at all.
 Agents can set a project's icon from a shell; everything else is for people.
 
 ## For agents
 
-### CLI: `bb cursor-sidebar icon`
+### CLI: `alia cursor-sidebar icon`
 
 ```
-bb cursor-sidebar icon <set <file.png> | glyph <Name|--list> | clear | get> [--project <id|name>]
+alia cursor-sidebar icon <set <file.png> | glyph <Name|--list> | clear | get> [--project <id|name>]
 ```
 
 | Subcommand | Does | Output (stdout, plain text) |
@@ -15,7 +15,7 @@ bb cursor-sidebar icon <set <file.png> | glyph <Name|--list> | clear | get> [--p
 | `get` | Shows the project's icon | `<project name>: folder (default)`, `glyph <Name> (<colour>)`, `uploaded image`, `emoji <e>`, `monogram <text> (<colour>)` or `unrecognised value "<raw>"` |
 | `glyph <Name>` | Sets a built-in glyph, matched case-insensitively | `<project name>: icon set to <Name>.` |
 | `glyph --list` | Lists the glyph names, one per line. Needs no project | the names |
-| `set <file.png>` | Stores a PNG as the icon. The path is read on the BB server's machine, relative to the caller's working directory | `<project name>: icon set from <absolute path>.` |
+| `set <file.png>` | Stores a PNG as the icon. The path is read on the VesnALIA server's machine, relative to the caller's working directory | `<project name>: icon set from <absolute path>.` |
 | `clear` | Goes back to the folder | `<project name>: icon reset to the folder.` |
 
 - `--project` (or `-p`) takes a project id or a case-insensitive name. Without it the calling thread's project is used. Two projects with the same name are refused; pass the id.
@@ -24,14 +24,14 @@ bb cursor-sidebar icon <set <file.png> | glyph <Name|--list> | clear | get> [--p
 - There is no `--json` option.
 
 ```sh
-bb cursor-sidebar icon glyph Rocket
-bb cursor-sidebar icon set ./icon.png --project "Website Redesign"
-bb cursor-sidebar icon get
+alia cursor-sidebar icon glyph Rocket
+alia cursor-sidebar icon set ./icon.png --project "Website Redesign"
+alia cursor-sidebar icon get
 ```
 
 ### Agent tools and MCP
 
-None of its own. Through BB's MCP server, the `run` tool can run the CLI above.
+None of its own. Through VesnALIA's MCP server, the `run` tool can run the CLI above.
 
 ### RPC (plugin id `cursor-sidebar`)
 
@@ -51,10 +51,10 @@ The app's own surface; other plugins may call it with `sdk.plugins.callRpc`. Inp
 | `deleteThreadSection` | `{ id }` | `{ updatedThreadCount }` |
 | `setThreadSection` | `{ threadIds (1-500), sectionId \| null }` | `{ updated: string[], failed: string[] }` |
 | `setThreadParent` | `{ threadId, parentThreadId \| null }` | `{ threadId, parentThreadId }` |
-| `deleteNativeProject` | `{ projectId }` | `{ ok: true }`. Deletes the BB project and its icon |
+| `deleteNativeProject` | `{ projectId }` | `{ ok: true }`. Deletes the VesnALIA project and its icon |
 | `listWorkspaces` | `{ environmentIds (max 100) }` | `{ workspaces: { environmentId, path, name, hostId }[] }` |
 | `listWorkspaceTabs` | `{ threadIds (max 100) }` | `{ available, threads: { threadId, workspaceId, workspaceName }[] }`. `available` is false without the Workspaces plugin |
-| `transcript` | `{ threadId }` (`thr_...`) | `{ text }`, from `bb thread log <id> --all --format minimal` |
+| `transcript` | `{ threadId }` (`thr_...`) | `{ text }`, from `alia thread log <id> --all --format minimal` |
 | `primaryHost` | `{}` | `{ hostId \| null }` |
 | `cloudHosts` | `{}` | `{ hostIds: string[] }` |
 
@@ -77,13 +77,13 @@ await sdk.plugins.callRpc({
 
 - Tasks (`tasks`): `listProjects`, `listAllTasks`, `createProject`.
 - Projects (`projects`): `listLeads`, `getMeta`, `listIcons`, `setIcon`, `setLead`, for board rows and their icons. Without Projects there are no board rows.
-- Pull Requests (`pull-requests`): `changeRequests` for the pull and merge request marks. Without it the sidebar asks GitHub PR Status (`bb--github-pr-status`) alone.
-- BB's git plugin (`bb--git`): `status`, for the row's git facts.
+- Pull Requests (`pull-requests`): `changeRequests` for the pull and merge request marks. Without it the sidebar asks GitHub PR Status (`alia--github-pr-status`) alone.
+- VesnALIA's git plugin (`alia--git`): `status`, for the row's git facts.
 - Workspaces (`workspaces`), when it runs: thread metadata, so a workspace's chats nest under its first chat.
 
 ### Storage
 
-SQLite in the plugin's data directory: `sidebar_view`, `project_icon`, `thread_order`, `thread_order_revision`, `thread_lifecycle` and `project_visibility`. Native projects, pins and folders stay in BB.
+SQLite in the plugin's data directory: `sidebar_view`, `project_icon`, `thread_order`, `thread_order_revision`, `thread_lifecycle` and `project_visibility`. Native projects, pins and folders stay in VesnALIA.
 
 ## Reference
 
@@ -103,7 +103,7 @@ One fixed row sits above the list: the project switcher on the left and the view
 
 ### Rows
 
-A row can show its project icon, a status glyph and a metadata line. When a chat has working child chats, its age becomes a small accent pill with their count. Every row shares one left edge, with icons in one 14 px column. Child chats sit under their parent with no indent and a small corner arrow before the age; the pull request and provider marks sit there too. The header, the thread list and the footer sit 4 px further in from the sidebar's left edge than BB's own (`--cs-left-extra` in `app.css`).
+A row can show its project icon, a status glyph and a metadata line. When a chat has working child chats, its age becomes a small accent pill with their count. Every row shares one left edge, with icons in one 14 px column. Child chats sit under their parent with no indent and a small corner arrow before the age; the pull request and provider marks sit there too. The header, the thread list and the footer sit 4 px further in from the sidebar's left edge than VesnALIA's own (`--cs-left-extra` in `app.css`).
 
 ### The view menu
 
@@ -128,17 +128,17 @@ A warning mark on the menu button means a view change has not reached the server
 
 ### Project switcher
 
-It reads **All projects**, one project's name, or **N projects**. Click it for every project and **New project…**, which opens BB's Add project dialog. Picking one project narrows every grouping, and under Projects grouping it drops that project's heading. While one project is picked, the menu also offers **Set icon…**.
+It reads **All projects**, one project's name, or **N projects**. Click it for every project and **New project…**, which opens VesnALIA's Add project dialog. Picking one project narrows every grouping, and under Projects grouping it drops that project's heading. While one project is picked, the menu also offers **Set icon…**.
 
 ### Project icons
 
-Open the picker from a project heading's right-click or Actions menu (**Set icon…**), the switcher, or a chat row's right-click menu (**Set project icon…**). It is a port of Cursor's picker, shared with Projects (`@wy3z/bb-suite/project-icon/picker`): search, Cursor's ten colours, Cursor's icon grid with **No icon** first, and an image button to upload or paste a PNG, shrunk to 64 px. Emoji and monogram icons saved by an earlier picker still show, but the picker no longer makes them. Board rows wear the board's own icon from Projects.
+Open the picker from a project heading's right-click or Actions menu (**Set icon…**), the switcher, or a chat row's right-click menu (**Set project icon…**). It is a port of Cursor's picker, shared with Projects (`@wy3z/alia-suite/project-icon/picker`): search, Cursor's ten colours, Cursor's icon grid with **No icon** first, and an image button to upload or paste a PNG, shrunk to 64 px. Emoji and monogram icons saved by an earlier picker still show, but the picker no longer makes them. Board rows wear the board's own icon from Projects.
 
-The icons also replace BB's folder in the composer: the project label under the prompt box, the project button on the New thread screen and its picker. BB has no project icon field, so these are matched by project name.
+The icons also replace VesnALIA's folder in the composer: the project label under the prompt box, the project button on the New thread screen and its picker. VesnALIA has no project icon field, so these are matched by project name.
 
 ### Workers under a project lead
 
-Clicking a worker under a project lead opens it as a tab of the lead, the same way the Projects board does, so the lead's side panel stays. Ctrl or Cmd-click still opens a split. Clicking the lead's own row brings back the lead's tab, and while a worker tab shows, only the worker's row is highlighted (not the lead's or its board row). Without a Projects build that shows lead tabs, worker rows open on their own route. Other top-level chats, and children with no lead above them, open as usual. This uses `@wy3z/bb-suite/thread-tabs`, shared with Projects.
+Clicking a worker under a project lead opens it as a tab of the lead, the same way the Projects board does, so the lead's side panel stays. Ctrl or Cmd-click still opens a split. Clicking the lead's own row brings back the lead's tab, and while a worker tab shows, only the worker's row is highlighted (not the lead's or its board row). Without a Projects build that shows lead tabs, worker rows open on their own route. Other top-level chats, and children with no lead above them, open as usual. This uses `@wy3z/alia-suite/thread-tabs`, shared with Projects.
 
 ### Mobile
 
@@ -160,11 +160,11 @@ With the Workspaces plugin running, a workspace's chats nest under its first cha
 
 ### Navigation
 
-The plugin adds two sidebar navigation layouts, **Cursor** (`cursor-sidebar/cursor`) and **Compact** (`cursor-sidebar/compact`). BB uses the first one a plugin adds unless you have picked one, so the sidebar uses Cursor after install, and a note above the list says so until dismissed. Cursor lists the destinations as rows. Compact puts Search in the header and other destinations behind a **Plugins** button in the footer.
+The plugin adds two sidebar navigation layouts, **Cursor** (`cursor-sidebar/cursor`) and **Compact** (`cursor-sidebar/compact`). VesnALIA uses the first one a plugin adds unless you have picked one, so the sidebar uses Cursor after install, and a note above the list says so until dismissed. Cursor lists the destinations as rows. Compact puts Search in the header and other destinations behind a **Plugins** button in the footer.
 
 ### Requirements
 
-BB 0.49 or newer, with plugin SDK 0.6.132 or newer. No account or external service.
+VesnALIA 0.49 or newer, with plugin SDK 0.6.132 or newer. No account or external service.
 
 ---
 

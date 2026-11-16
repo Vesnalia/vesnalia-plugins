@@ -11,7 +11,7 @@ import {
   // has to be aliased before it can be rendered as a component.
   experimental_ProviderIcon as ProviderIcon,
   experimental_useSidebarThreadSplit,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import {
   HoverCard,
@@ -85,7 +85,7 @@ function ParkButton({
           onActivate();
         }}
         className={cn(
-          "bb-ws-row-action flex h-5 shrink-0 items-center gap-1 rounded text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-md:pointer-coarse:h-9 max-md:pointer-coarse:min-w-9 max-md:pointer-coarse:justify-center",
+          "alia-ws-row-action flex h-5 shrink-0 items-center gap-1 rounded text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-md:pointer-coarse:h-9 max-md:pointer-coarse:min-w-9 max-md:pointer-coarse:justify-center",
           text === undefined ? "px-0.5" : "px-1",
         )}
       >
@@ -188,7 +188,7 @@ export const ThreadRow = memo(function ThreadRow({
   const [draftTitle, setDraftTitle] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // bb owns the drag-out-to-split gesture. It listens on pointerdown, our
+  // VesnALIA owns the drag-out-to-split gesture. It listens on pointerdown, our
   // sortable handle on mousedown, so both see the press; the sensor's
   // sideways tolerance is what keeps a split drag from also being a reorder.
   const split = experimental_useSidebarThreadSplit(thread.id);
@@ -276,7 +276,7 @@ export const ThreadRow = memo(function ThreadRow({
 
   const needsAttention =
     status?.tone === "needs-you" || status?.tone === "problem";
-  // The turn itself ended in an error (not a PR problem): bb can re-run it.
+  // The turn itself ended in an error (not a PR problem): VesnALIA can re-run it.
   const failed = thread.indicator === "unread-error";
   const hasPrOutcome = pullRequest?.state === "closed" || pullRequest?.state === "merged";
   const showRowStatus =
@@ -364,7 +364,7 @@ export const ThreadRow = memo(function ThreadRow({
     >
       {isRoot ? <RowDropDecor kind="thread" refId={thread.id} /> : null}
       {draftTitle === null && selection.active && (
-        <span className="bb-ws-checkbox-gutter flex w-[26px] shrink-0 justify-center pt-2"
+        <span className="alia-ws-checkbox-gutter flex w-[26px] shrink-0 justify-center pt-2"
           onPointerDown={event => event.stopPropagation()}
           onMouseDown={event => event.stopPropagation()}>
           <Checkbox aria-label={`Select ${title}`} checked={selection.selected.has(thread.id)}
@@ -379,7 +379,7 @@ export const ThreadRow = memo(function ThreadRow({
         pullRequestUrl={pullRequest?.url ?? null}
         onRename={() => setDraftTitle(title)}
       >
-        {/* Both data-sidebar-* attributes are a host contract: bb's thread
+        {/* Both data-sidebar-* attributes are a host contract: VesnALIA's thread
             shortcuts find rows by query selector, not by React state. */}
         <a
           href="#"
@@ -429,7 +429,7 @@ export const ThreadRow = memo(function ThreadRow({
             if (!selection.active) setDraftTitle(title);
           }}
           className={cn(
-            "bb-ws-row group/row flex min-w-0 flex-1 flex-col gap-0.5 rounded-md py-1 pr-2 text-sm transition-colors",
+            "alia-ws-row group/row flex min-w-0 flex-1 flex-col gap-0.5 rounded-md py-1 pr-2 text-sm transition-colors",
             "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
             isActive && "bg-accent text-foreground",
             split.layout !== null && !isActive && "bg-accent/30",
@@ -444,7 +444,7 @@ export const ThreadRow = memo(function ThreadRow({
             {/* Reserve the hover buttons' height even while the status is shown. */}
             <span
               className={cn(
-                "bb-ws-mainline relative flex w-full items-center gap-1.5",
+                "alia-ws-mainline relative flex w-full items-center gap-1.5",
                 compact ? "min-h-6" : "min-h-5",
               )}
             >
@@ -523,7 +523,7 @@ export const ThreadRow = memo(function ThreadRow({
                 {draftTitle === null ? (
                   orb !== null ? (
                     <TextShimmer
-                      className="bb-ws-title min-w-0 flex-1 truncate font-medium"
+                      className="alia-ws-title min-w-0 flex-1 truncate font-medium"
                       duration={2}
                     >
                       {title}
@@ -531,7 +531,7 @@ export const ThreadRow = memo(function ThreadRow({
                   ) : (
                     <span
                       className={cn(
-                        "bb-ws-title min-w-0 flex-1 truncate",
+                        "alia-ws-title min-w-0 flex-1 truncate",
                         // The title is the thing being scanned for; everything else
                         // on the row is support.
                         isActive || thread.isUnread
@@ -566,7 +566,7 @@ export const ThreadRow = memo(function ThreadRow({
 
               {needsInput ? (
                 <RowTip label={thread.indicatorLabel ?? "Waiting on an approval or an answer"}>
-                  <span className="bb-ws-your-turn inline-flex shrink-0 items-center whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-semibold leading-4">
+                  <span className="alia-ws-your-turn inline-flex shrink-0 items-center whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-semibold leading-4">
                     Your turn
                   </span>
                 </RowTip>

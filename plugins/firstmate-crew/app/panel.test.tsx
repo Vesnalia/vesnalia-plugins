@@ -5,7 +5,7 @@
  * worker's card again with nothing lost.
  */
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Fleet } from "../shared/types";

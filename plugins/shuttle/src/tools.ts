@@ -1,5 +1,5 @@
 // Agent tools. Names start with shuttle_ so they never collide with PR Desk's while both run.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CONCERN_KINDS } from "./config";
 import { errText } from "./ctx";
@@ -29,8 +29,8 @@ const boardKeysLine = (label: string, keys: string[], empty: string) => {
   return `${label}: ${shown.join(", ")}${more}`;
 };
 
-export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
-  bb.agents.registerTool({
+export function registerTools(alia: AliaPluginApi, shuttle: Shuttle): void {
+  alia.agents.registerTool({
     name: "shuttle_link",
     description:
       "Link a pull request to this thread in Shuttle, on any server Shuttle knows. A thread can own several PRs (link each one, for example every PR of a stack). As owner, the thread becomes the PR's agent: Shuttle sends it the PR's new reviews, comments and failed checks (on the user's own PRs from the moment you link it, unless watch is false). A PR has one agent, so an earlier owner stays linked for reference.",
@@ -42,14 +42,14 @@ export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
     }),
     execute: ({ pr: query, role, watch }, tool) => run(async () => prDetail(await shuttle.link(query, tool.threadId, role ?? "owner", watch))),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_unlink",
     description: "Remove a pull request's link to this thread in Shuttle. The thread stops receiving its reviews.",
     presentation: { label: { pending: "Unlinking pull request", completed: "Unlinked pull request" } },
     parameters: z.object({ pr }),
     execute: ({ pr: query }, tool) => run(async () => prDetail(await shuttle.unlink(query, tool.threadId))),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_prs",
     description: "Shuttle's view of the pull requests linked to this thread (state, checks, review decision, agent, what happens next, unsent review items), or of one PR in detail, fetched fresh from its server.",
     presentation: { label: { pending: "Checking pull requests", completed: "Checked pull requests" } },
@@ -63,35 +63,35 @@ export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
         return prList(shuttle.threadPrs(tool.threadId).prs, "No pull request is linked to this thread. Link one with shuttle_link.");
       }),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_boards",
     description: "Find Shuttle boards by name, optionally including archived boards or filtering by a member PR key.",
     presentation: { label: { pending: "Checking boards", completed: "Checked boards" } },
     parameters: z.object({ query: z.string().max(200).optional(), archived: z.enum(["exclude", "include", "only"]).optional(), key: boardKey }),
     execute: ({ query, archived, key }) => run(() => boardList(shuttle.boards({ query, archived, key }).boards.slice(0, 50), "No board matches that filter.")),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_board",
     description: "Inspect one Shuttle board: its summary, saved PRs with live status, and recent board activity.",
     presentation: { label: { pending: "Checking board", completed: "Checked board" } },
     parameters: z.object({ id: boardId }),
     execute: ({ id }) => run(() => boardDetailText(shuttle.board(id), { prLimit: 20, activityLimit: 10 })),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_board_create",
     description: "Create a Shuttle board, optionally seeding it with explicit PR links or keys. This does not claim PR ownership, change agents or alter feedback delivery.",
     presentation: { label: { pending: "Creating board", completed: "Created board" } },
     parameters: z.object({ name: boardName, description: boardDescription, prs: boardPrsOptional }),
     execute: ({ name, description, prs }, tool) => run(async () => boardDetailText(await shuttle.boardCreate({ name, description, prs }, tool.threadId), { prLimit: 10, activityLimit: 5 })),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_board_update",
     description: "Rename, describe, archive or restore a Shuttle board by id.",
     presentation: { label: { pending: "Updating board", completed: "Updated board" } },
     parameters: z.object({ id: boardId, name: boardName.optional(), description: boardDescription, archived: z.boolean().optional() }),
     execute: ({ id, name, description, archived }, tool) => run(() => boardLine(shuttle.boardUpdate({ id, name, description, archived }, tool.threadId).board)),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_board_add",
     description: "Add explicit PR links or keys to a Shuttle board by id. Adding is idempotent, and it never changes PR ownership, agents or feedback delivery.",
     presentation: { label: { pending: "Adding pull requests to board", completed: "Added pull requests to board" } },
@@ -102,7 +102,7 @@ export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
         return [boardLine(out.board), boardKeysLine("Added", out.added, "none"), boardKeysLine("Already present", out.alreadyPresent, "none")].join("\n");
       }),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_board_remove",
     description: "Remove explicit PR links or keys from a Shuttle board by id. Removing is idempotent and does not affect the PR anywhere else.",
     presentation: { label: { pending: "Removing pull requests from board", completed: "Removed pull requests from board" } },
@@ -113,7 +113,7 @@ export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
         return [boardLine(out.board), boardKeysLine("Removed", out.removed, "none")].join("\n");
       }),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_review_draft",
     description:
       "Hand your finished review of someone else's pull request to Shuttle as a draft: a summary, the verdict you suggest, each finding with its file and line, and optional notes for the user alone. The user reads it in Shuttle, picks what to post and posts it as themselves; nothing is posted by this tool, and the notes never are. Call it again to replace the draft.",
@@ -188,7 +188,7 @@ export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
         return `Saved a draft of ${out.findings} finding${out.findings === 1 ? "" : "s"} for ${out.pr.key}${kept}. The user chooses what to post from Shuttle; do not post it yourself.`;
       }),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_review_done",
     description:
       "Tell Shuttle your review of someone else's pull request is over without a draft for the user, or that you could not finish it (failed). Shuttle stops showing the PR as under review and shows your note to the user. Not needed after shuttle_review_draft, which ends the review by itself, and not needed while you wait on child threads such as critics: a turn that ends does not end the review.",
@@ -204,7 +204,7 @@ export function registerTools(bb: BbPluginApi, shuttle: Shuttle): void {
         return `Shuttle counts the review of ${view.key} as ${failed ? "not finished" : "finished without a draft"}, and shows your note to the user.`;
       }),
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shuttle_feedback_done",
     description:
       "Tell Shuttle what you did with review feedback it sent you on a pull request, by the [ref …] on each item: fixed (give the commit), replied, declined, or question when you need the user's decision. The user sees it beside each comment in Shuttle.",

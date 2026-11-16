@@ -1,6 +1,6 @@
-// bb-box's msb on the backend's host, as a command line on BB's server
-// (053): bin/msb in bb-box's msb folder on BB's server, the same over
-// ssh://, or bb-box's msb client for a BB machine, which its host entry runs
+// alia-box's msb on the backend's host, as a command line on VesnALIA's server
+// (053): bin/msb in alia-box's msb folder on VesnALIA's server, the same over
+// ssh://, or alia-box's msb client for a VesnALIA machine, which its host entry runs
 // there (src/relay/msb.ts). Each gives the run's stdin, stdout, stderr and
 // exit status as its own, so the transport and the backend use plain
 // command lines, as Docker's do (031). The scripts of release.ts run the
@@ -32,7 +32,7 @@ export interface ScriptResult {
 }
 
 /** What says the host itself could not be reached, so nothing was done there. */
-const UNREACHABLE = /bb-box could not run msb on the BB machine|ssh: |Connection (refused|closed|timed out)|Could not resolve hostname|Permission denied \(publickey/i;
+const UNREACHABLE = /alia-box could not run msb on the ALIA machine|ssh: |Connection (refused|closed|timed out)|Could not resolve hostname|Permission denied \(publickey/i;
 /** What msb says of a sandbox or image it does not have. */
 export const NOT_FOUND = /not found/i;
 
@@ -47,7 +47,7 @@ export class MsbError extends Error {
 }
 
 export interface MsbCliOptions {
-  /** bb-box's msb folder on BB's server, for a backend with no host. */
+  /** alia-box's msb folder on VesnALIA's server, for a backend with no host. */
   readonly dir?: string;
   /** The ssh client for an ssh:// host. */
   readonly ssh?: string;
@@ -69,7 +69,7 @@ export interface RunOptions {
 }
 
 export class MsbCli {
-  /** ssh://user@host, bb:<machine>, or null for BB's server. */
+  /** ssh://user@host, VesnALIA:<machine>, or null for VesnALIA's server. */
   readonly host: string | null;
   readonly #machine: string | null;
   readonly #machines: MachineAccess | undefined;
@@ -81,13 +81,13 @@ export class MsbCli {
     this.#machine = machine;
     this.#machines = machines;
     this.#options = options;
-    this.#dir = options.dir ?? join(homedir(), ".local", "share", "bb-box", "microsandbox");
+    this.#dir = options.dir ?? join(homedir(), ".local", "share", "alia-box", "microsandbox");
   }
 
   #access() {
     const machine = this.#machine!;
     const access = this.#machines?.msb?.(machine);
-    if (!access) throw new MsbError(`${PRODUCT} reaches BB machine ${machine} only when it runs in BB.`, true);
+    if (!access) throw new MsbError(`${PRODUCT} reaches VesnALIA machine ${machine} only when it runs in VesnALIA.`, true);
     return access;
   }
 
@@ -95,13 +95,13 @@ export class MsbCli {
   argv(args: readonly string[], options: { readonly tty?: boolean } = {}): [string, ...string[]] {
     if (this.#machine) return this.#access().argv(args, options);
     if (this.host) {
-      const remote = `exec "$HOME/.local/share/bb-box/microsandbox/bin/msb" ${args.map(quote).join(" ")}`;
+      const remote = `exec "$HOME/.local/share/alia-box/microsandbox/bin/msb" ${args.map(quote).join(" ")}`;
       return [this.#options.ssh ?? "ssh", "-o", "BatchMode=yes", options.tty ? "-tt" : "-T", ...sshTarget(this.host), remote];
     }
     return [join(this.#dir, "bin", "msb"), ...args];
   }
 
-  /** Makes the host ready to use: for a BB machine, its msb relay. Throws an MsbError when it cannot. */
+  /** Makes the host ready to use: for a VesnALIA machine, its msb relay. Throws an MsbError when it cannot. */
   async prepare(signal?: AbortSignal): Promise<void> {
     if (!this.#machine) return;
     try {
@@ -130,7 +130,7 @@ export class MsbCli {
     return new MsbError(`${action} failed: ${said || `exit code ${result.exitCode}`}`, UNREACHABLE.test(said));
   }
 
-  /** Runs one of bb-box's scripts on the host. */
+  /** Runs one of alia-box's scripts on the host. */
   async script(name: MsbScript, args: readonly string[] = [], signal?: AbortSignal): Promise<ScriptResult> {
     if (this.#options.script) return this.#options.script(name, args, signal);
     if (this.#machine) {
@@ -143,8 +143,8 @@ export class MsbCli {
     }
     const timeoutMs = name === "import" || name === "transfer" || name === "retag" ? 30 * 60_000 : name === "install" ? 10 * 60_000 : 60_000;
     const command = this.host
-      ? [this.#options.ssh ?? "ssh", "-o", "BatchMode=yes", "-T", ...sshTarget(this.host), `sh -c ${quote(msbScript(name))} bb-box-msb ${args.map(quote).join(" ")}`]
-      : ["sh", "-c", msbScript(name), "bb-box-msb", ...args];
+      ? [this.#options.ssh ?? "ssh", "-o", "BatchMode=yes", "-T", ...sshTarget(this.host), `sh -c ${quote(msbScript(name))} alia-box-msb ${args.map(quote).join(" ")}`]
+      : ["sh", "-c", msbScript(name), "alia-box-msb", ...args];
     return this.#spawn(command as [string, ...string[]], { timeoutMs, signal }, this.host ? {} : { BBBOX_MSB_DIR: this.#dir }, `msb script ${name}`);
   }
 

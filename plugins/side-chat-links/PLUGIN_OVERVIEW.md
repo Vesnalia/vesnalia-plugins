@@ -9,7 +9,7 @@ See which messages have side chats, and get back to them.
 
 ## How it works
 
-Side chats come from bb's bundled Side chat plugin. They are hidden forks of the thread, and bb does not record which message a side chat was started from. This plugin finds the message by comparing the text the side chat quotes with the thread's messages:
+Side chats come from VesnALIA's bundled Side chat plugin. They are hidden forks of the thread, and VesnALIA does not record which message a side chat was started from. This plugin finds the message by comparing the text the side chat quotes with the thread's messages:
 
 - A side chat started with **Reply in side chat** on a message links to that message.
 - A side chat started from selected text links to the message that contains the text.
@@ -17,7 +17,7 @@ Side chats come from bb's bundled Side chat plugin. They are hidden forks of the
 
 A side chat you opened but never wrote in gets no icon. A name is saved as the title of the side chat's own thread. **Reply in side chat** still opens the bundled plugin's own tab for a new side chat; clicking the icon closes that tab and shows the side chat in the message's own tab.
 
-The icon stays visible under the message through a small style override of bb's own markup. If a bb release changes that markup, the icon shows only on hover, like the other buttons under a message.
+The icon stays visible under the message through a small style override of VesnALIA's own markup. If a VesnALIA release changes that markup, the icon shows only on hover, like the other buttons under a message.
 
 In the macOS desktop app, the plugin also puts the close button of every panel tab back to its normal size, which fixes a tall hover highlight.
 

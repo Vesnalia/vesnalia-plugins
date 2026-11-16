@@ -1,15 +1,15 @@
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginCliContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { agyHostContract } from "./contract.js";
 import { FALLBACK_DIST, detectTarget, probeLocal, runInstall, type InstallResult } from "./install.js";
 
 const PROVIDER_ID = "acp-antigravity";
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // Installs run on each host, so ~ expands per host and binaries are found via PATH.
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     installDir: {
       type: "string",
       label: "Install directory for the ACP server",
@@ -45,10 +45,10 @@ export default async function plugin(bb: BbPluginApi) {
   function buildLaunchSpec(currentSettings: typeof saved) {
     const env: Record<string, string> = {};
     if (currentSettings.defaultModel?.trim()) {
-      env.BB_ANTIGRAVITY_DEFAULT_MODEL = currentSettings.defaultModel.trim();
+      env.ALIA_ANTIGRAVITY_DEFAULT_MODEL = currentSettings.defaultModel.trim();
     }
     if (currentSettings.defaultReasoningEffort?.trim()) {
-      env.BB_ANTIGRAVITY_DEFAULT_REASONING = currentSettings.defaultReasoningEffort.trim();
+      env.ALIA_ANTIGRAVITY_DEFAULT_REASONING = currentSettings.defaultReasoningEffort.trim();
     }
     return {
       displayName: "Google Antigravity",
@@ -66,7 +66,7 @@ export default async function plugin(bb: BbPluginApi) {
       providerRegistration.dispose();
     }
     const launch = buildLaunchSpec(currentSettings);
-    providerRegistration = bb.providers.register({
+    providerRegistration = alia.providers.register({
       id: PROVIDER_ID,
       displayName: "Google Antigravity",
       family: "acp",
@@ -124,45 +124,45 @@ export default async function plugin(bb: BbPluginApi) {
     registerProvider(next);
   });
 
-  const host = bb.hosts.experimental_client({ contract: agyHostContract });
+  const host = alia.hosts.experimental_client({ contract: agyHostContract });
 
 
 
-  bb.cli.register({
+  alia.cli.register({
     name: "google-antigravity-acp",
     summary: "Inspect and install the Google Antigravity ACP provider",
     commands: [
       {
         name: "status",
         summary: "Show the ACP server binary location and provider id",
-        usage: "bb google-antigravity-acp status [--machine <id-or-name>] [--json]",
+        usage: "alia google-antigravity-acp status [--machine <id-or-name>] [--json]",
       },
       {
         name: "install",
         summary:
           "Install the Antigravity ACP server on a machine: downloads the official zip, extracts it, links the binaries onto PATH, sets the sandbox helper path. Windows PATH mutation only with --update-path",
         usage:
-          "bb google-antigravity-acp install [--machine <id-or-name>] [--force] [--install-dir <path>] [--bin-dir <path>] [--from <url-or-zip>] [--update-path] [--json]",
+          "alia google-antigravity-acp install [--machine <id-or-name>] [--force] [--install-dir <path>] [--bin-dir <path>] [--from <url-or-zip>] [--update-path] [--json]",
       },
     ],
     async run(argv, ctx) {
       const cmd = argv[0];
-      if (cmd === "install") return installCmd(bb, argv.slice(1), ctx);
-      return statusCmd(bb, argv.slice(1), ctx);
+      if (cmd === "install") return installCmd(alia, argv.slice(1), ctx);
+      return statusCmd(alia, argv.slice(1), ctx);
     },
   });
 
   // ---- commands -----------------------------------------------------------
 
   async function statusCmd(
-    bb: BbPluginApi,
+    alia: AliaPluginApi,
     argv: string[],
     ctx: PluginCliContext,
   ): Promise<{ exitCode: number; stdout: string }> {
     const json = argv.includes("--json");
     const machine = flagValue(argv, "--machine");
     const current = await settings.get();
-    const target = await resolveTarget(bb, ctx, machine);
+    const target = await resolveTarget(alia, ctx, machine);
     let probe;
     if (target.hostId && !target.error) {
       try {
@@ -190,8 +190,8 @@ export default async function plugin(bb: BbPluginApi) {
       ready: probe.ok,
       hint:
         probe.ok
-          ? "Ready. The provider appears in `bb provider list` when the bridge health probe passes."
-          : probe.error ?? "Not installed. Run `bb google-antigravity-acp install`.",
+          ? "Ready. The provider appears in `alia provider list` when the bridge health probe passes."
+          : probe.error ?? "Not installed. Run `alia google-antigravity-acp install`.",
     };
     return {
       exitCode: 0,
@@ -213,7 +213,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function installCmd(
-    bb: BbPluginApi,
+    alia: AliaPluginApi,
     argv: string[],
     ctx: PluginCliContext,
   ): Promise<{ exitCode: number; stdout: string; stderr?: string }> {
@@ -228,7 +228,7 @@ export default async function plugin(bb: BbPluginApi) {
     const installDir = installDirFlag ?? (current.installDir?.trim() || "~/.local/opt/agy-acp-server");
     const binDir = binDirFlag ?? (current.binDir?.trim() || "~/.local/bin");
 
-    const target = await resolveTarget(bb, ctx, machine);
+    const target = await resolveTarget(alia, ctx, machine);
     if (target.error) return finish(json, null, target.error);
 
     let result: InstallResult;
@@ -264,7 +264,7 @@ export default async function plugin(bb: BbPluginApi) {
     ];
     for (const note of result.notes) lines.push(`  - ${note}`);
     lines.push("");
-    lines.push("Next: `bb google-antigravity-acp status`, then `bb provider list` (the provider appears once the health probe passes).");
+    lines.push("Next: `alia google-antigravity-acp status`, then `alia provider list` (the provider appears once the health probe passes).");
 
     return finish(json, result, null, lines.join("\n"));
   }
@@ -278,21 +278,21 @@ function flagValue(argv: string[], flag: string): string | undefined {
 }
 
 async function resolveTarget(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   ctx: PluginCliContext,
   machine: string | undefined,
 ): Promise<{ hostId: string | null; label: string; error?: string }> {
   if (machine) {
-    const hosts = await bb.sdk.hosts.list({ signal: ctx.signal });
+    const hosts = await alia.sdk.hosts.list({ signal: ctx.signal });
     const hit = hosts.find((h) => h.id === machine || h.name === machine);
-    if (!hit) return { hostId: null, label: "", error: `Machine '${machine}' not found. See \`bb machine list\`.` };
+    if (!hit) return { hostId: null, label: "", error: `Machine '${machine}' not found. See \`alia machine list\`.` };
     return { hostId: hit.id, label: hit.name };
   }
   if (ctx.threadId) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId: ctx.threadId, signal: ctx.signal });
+      const thread = await alia.sdk.threads.get({ threadId: ctx.threadId, signal: ctx.signal });
       if (thread.environmentId) {
-        const env = await bb.sdk.environments.get({ environmentId: thread.environmentId, signal: ctx.signal });
+        const env = await alia.sdk.environments.get({ environmentId: thread.environmentId, signal: ctx.signal });
         return { hostId: env.hostId, label: `environment ${thread.environmentId} on ${env.hostId}` };
       }
     } catch {

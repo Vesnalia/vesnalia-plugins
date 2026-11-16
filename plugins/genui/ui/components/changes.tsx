@@ -1,9 +1,9 @@
-// Changes: the files changed in the reply's thread's checkout, read from BB
-// (project_changes), each opening BB's own diff viewer. What a reply first
+// Changes: the files changed in the reply's thread's checkout, read from VesnALIA
+// (project_changes), each opening VesnALIA's own diff viewer. What a reply first
 // showed is kept per block, so an old reply keeps meaning what it meant; a
 // commit's changes never change and are read live.
 import { useId, useState, type ReactNode } from "react";
-import { experimental_Diff as HostDiff, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as HostDiff, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -282,7 +282,7 @@ function FileList({ threadId, target, view }: { threadId: string; target: Change
         {collapsed ? <ShowAll count={view.files.length} noun="files" onClick={() => setExpanded(true)} /> : null}
         {view.listTruncated ? (
           <QuietLine icon="Info" className="border-t border-border/60 px-3 py-2">
-            {view.stored ? "BB listed, or this snapshot kept, only part of the changed files." : "BB listed only part of the changed files."}
+            {view.stored ? "VesnALIA listed, or this snapshot kept, only part of the changed files." : "VesnALIA listed only part of the changed files."}
           </QuietLine>
         ) : null}
       </div>
@@ -430,12 +430,12 @@ function FileDiff({
   stored: boolean;
 }) {
   if (file.diff === "binary") return <DiffNote icon="File">Binary file: there is no text diff to show.</DiffNote>;
-  if (file.diff === "too-large") return <DiffNote icon="Info">BB doesn't show this diff: the file is too large.</DiffNote>;
+  if (file.diff === "too-large") return <DiffNote icon="Info">VesnALIA doesn't show this diff: the file is too large.</DiffNote>;
   if (patch !== null) return <PatchView patch={patch} />;
   if (!livePatches) {
     return (
       <DiffNote icon="Info">
-        {stored ? "This diff was too large to keep with the snapshot. Refresh to see the current one." : "BB sent no diff for this file."}
+        {stored ? "This diff was too large to keep with the snapshot. Refresh to see the current one." : "VesnALIA sent no diff for this file."}
       </DiffNote>
     );
   }
@@ -459,7 +459,7 @@ function PatchView({ patch }: { patch: FilePatch }) {
       <DiffFrame>
         <HostDiff patch={patch.patch} path={patch.path} overflow="scroll" />
       </DiffFrame>
-      {patch.truncated ? <DiffNote icon="Info">BB shortened this diff; open the file for all of it.</DiffNote> : null}
+      {patch.truncated ? <DiffNote icon="Info">VesnALIA shortened this diff; open the file for all of it.</DiffNote> : null}
     </>
   );
 }
@@ -473,5 +473,5 @@ function LivePatch({ threadId, target, path }: { threadId: string; target: Chang
   const answer = query.answer;
   if (!answer.ok) return <DiffNote icon="AlertCircle">{answer.message}</DiffNote>;
   const patch = answer.patches.find((candidate) => candidate.path === path);
-  return patch === undefined ? <DiffNote icon="Info">BB has no diff for this file any more.</DiffNote> : <PatchView patch={patch} />;
+  return patch === undefined ? <DiffNote icon="Info">VesnALIA has no diff for this file any more.</DiffNote> : <PatchView patch={patch} />;
 }

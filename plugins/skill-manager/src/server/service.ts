@@ -1,6 +1,6 @@
 // Operations shared by the RPC handlers and the CLI commands. Each method
 // loads a fresh Config, performs one action, and announces the change.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   adoptSkill,
   checkUpdates,
@@ -36,7 +36,7 @@ export type SyncOutcome = OpResult & { skill: string };
 
 export class SkillService {
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly context: Context,
   ) {}
 
@@ -76,7 +76,7 @@ export class SkillService {
     const t0 = Date.now();
     const config = await this.load();
     const [tagMap, tags, registry] = await Promise.all([this.context.tags.all(), this.context.tags.summary(), this.context.readRegistry()]);
-    this.bb.log.debug(`status: scan ${Date.now() - t0}ms`);
+    this.alia.log.debug(`status: scan ${Date.now() - t0}ms`);
     // Registry lookups and source resolution can take seconds; run them after
     // replying and announce when they change something.
     this.enrichInBackground(config);
@@ -100,11 +100,11 @@ export class SkillService {
         const changed = JSON.stringify(registry) !== JSON.stringify(before);
         const resolved = await this.autoResolveSources(config, registry);
         const recorded = resolved.some((result) => result.outcome === "recorded");
-        this.bb.log.debug(`enrich: registry ${Date.now() - t0}ms, changed=${changed}, recorded=${recorded}`);
+        this.alia.log.debug(`enrich: registry ${Date.now() - t0}ms, changed=${changed}, recorded=${recorded}`);
         // setSource already announced for each recorded skill; announce once more for figure changes.
         if (changed && !recorded) this.context.announce();
       } catch (cause) {
-        this.bb.log.warn(`enrich failed: ${errorMessage(cause)}`);
+        this.alia.log.warn(`enrich failed: ${errorMessage(cause)}`);
       } finally {
         this.enriching = false;
       }
@@ -133,7 +133,7 @@ export class SkillService {
         continue;
       }
       try {
-        const detail = await this.bb.sdk.skills.registry.detail({ source: stat.source, skillId: row.name });
+        const detail = await this.alia.sdk.skills.registry.detail({ source: stat.source, skillId: row.name });
         const remote = detail.files?.find((file) => file.path === "SKILL.md" || file.path.endsWith("/SKILL.md"))?.contents ?? "";
         const local = readFile(row.hubPath, "SKILL.md").content;
         const verdict = sameSkill(local, remote);
@@ -321,7 +321,7 @@ export class SkillService {
   }
 
   async registrySearch(query: string | undefined, page: number | undefined): Promise<{ skills: RegistrySkillResponse[]; hasMore: boolean; page: number }> {
-    const result = await this.bb.sdk.skills.registry.search({ query, page, perPage: 20 });
+    const result = await this.alia.sdk.skills.registry.search({ query, page, perPage: 20 });
     return {
       skills: result.skills.map((skill) => ({
         id: skill.id,
@@ -340,8 +340,8 @@ export class SkillService {
   }
 
   async registryDetail(id: string): Promise<{ files: Array<{ path: string; contents: string }> }> {
-    const skill = await this.bb.sdk.skills.registry.get({ registrySkillId: id });
-    const detail = await this.bb.sdk.skills.registry.detail({ source: skill.source, skillId: skill.skillId });
+    const skill = await this.alia.sdk.skills.registry.get({ registrySkillId: id });
+    const detail = await this.alia.sdk.skills.registry.detail({ source: skill.source, skillId: skill.skillId });
     return { files: detail.files ?? [] };
   }
 }

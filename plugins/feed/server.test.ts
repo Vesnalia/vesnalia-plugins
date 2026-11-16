@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginAgentConfigurationContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   createFakePluginHost,
   makeQueueEntry,
   makeThreadResponse,
   makeTurnFailedEvent,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.js";
 
 // Summary calls read the Codex login; a missing one makes every call fail without network access.
@@ -16,18 +16,18 @@ process.env.CODEX_HOME = "/nonexistent/feed-test-codex-home";
 import { SCHEMA_STATEMENTS as INITIAL_SCHEMA_STATEMENTS } from "./store.js";
 
 type ThreadListEntry = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["list"]>
 >[number];
 type ThreadEventRow = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>
 >[number];
 type TerminalSession = Awaited<
-  ReturnType<BbPluginApi["sdk"]["terminals"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["terminals"]["list"]>
 >["sessions"][number];
 type RunningThread = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["listRunning"]>
+  ReturnType<AliaPluginApi["sdk"]["threads"]["listRunning"]>
 >[number];
-type SdkSubscription = Parameters<BbPluginApi["sdk"]["subscribe"]>[0];
+type SdkSubscription = Parameters<AliaPluginApi["sdk"]["subscribe"]>[0];
 type ThreadChangedSubscription = Extract<
   SdkSubscription,
   { event: "thread:changed" }
@@ -121,7 +121,7 @@ function terminalSession(
 
 function terminalChanges(): {
   emit(threadId: string): void;
-  subscribe: BbPluginApi["sdk"]["subscribe"];
+  subscribe: AliaPluginApi["sdk"]["subscribe"];
 } {
   let callback: ThreadChangedSubscription["callback"] | null = null;
   return {
@@ -190,18 +190,18 @@ const FULL_SETTINGS = {
 async function configuredHost(options: {
   settings?: Record<string, string>;
   managerThreadId?: string;
-  get?: BbPluginApi["sdk"]["threads"]["get"];
-  list?: (args: Parameters<BbPluginApi["sdk"]["threads"]["list"]>[0]) => Promise<ThreadListEntry[]>;
-  running?: BbPluginApi["sdk"]["threads"]["listRunning"];
-  send?: BbPluginApi["sdk"]["threads"]["send"];
-  events?: (args: Parameters<BbPluginApi["sdk"]["threads"]["events"]["list"]>[0]) => Promise<ThreadEventRow[]>;
-  terminals?: BbPluginApi["sdk"]["terminals"]["list"];
-  subscribe?: BbPluginApi["sdk"]["subscribe"];
-  archive?: BbPluginApi["sdk"]["threads"]["archive"];
-  update?: BbPluginApi["sdk"]["threads"]["update"];
-  clearContext?: BbPluginApi["sdk"]["threads"]["clearContext"];
-  interactions?: BbPluginApi["sdk"]["threads"]["interactions"]["list"];
-  queuedMessages?: BbPluginApi["sdk"]["threads"]["queuedMessages"]["list"];
+  get?: AliaPluginApi["sdk"]["threads"]["get"];
+  list?: (args: Parameters<AliaPluginApi["sdk"]["threads"]["list"]>[0]) => Promise<ThreadListEntry[]>;
+  running?: AliaPluginApi["sdk"]["threads"]["listRunning"];
+  send?: AliaPluginApi["sdk"]["threads"]["send"];
+  events?: (args: Parameters<AliaPluginApi["sdk"]["threads"]["events"]["list"]>[0]) => Promise<ThreadEventRow[]>;
+  terminals?: AliaPluginApi["sdk"]["terminals"]["list"];
+  subscribe?: AliaPluginApi["sdk"]["subscribe"];
+  archive?: AliaPluginApi["sdk"]["threads"]["archive"];
+  update?: AliaPluginApi["sdk"]["threads"]["update"];
+  clearContext?: AliaPluginApi["sdk"]["threads"]["clearContext"];
+  interactions?: AliaPluginApi["sdk"]["threads"]["interactions"]["list"];
+  queuedMessages?: AliaPluginApi["sdk"]["threads"]["queuedMessages"]["list"];
 } = {}) {
   const parents = new Map<string, string | null>();
   const parentOf = (threadId: string) => parents.has(threadId) ? parents.get(threadId)! : (threadId === "manager-1" ? null : "manager-1");
@@ -253,7 +253,7 @@ async function configuredHost(options: {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -686,7 +686,7 @@ describe("queue discovery and snapshots", () => {
 
   it("silently rejects the action guard when no manager is configured", async () => {
     const host = createFakePluginHost({ pluginId: "feed" });
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     await expect(
       host.harness.behavior.callRpc("canOpen", {
@@ -696,7 +696,7 @@ describe("queue discovery and snapshots", () => {
     expect(host.harness.inspection.sdk.callsTo("threads.get")).toEqual([]);
   });
 
-  it("rejects another surface and fails explicitly on an unknown BB tuple", async () => {
+  it("rejects another surface and fails explicitly on an unknown VesnALIA tuple", async () => {
     const host = await configuredHost({
       list: async () => [listEntry("child-1", { status: "paused" as never })],
     });
@@ -709,7 +709,7 @@ describe("queue discovery and snapshots", () => {
       host.harness.behavior.callRpc("queueSnapshot", {
         surfaceThreadId: "manager-1",
       }),
-    ).rejects.toThrow("Unsupported BB thread status: paused");
+    ).rejects.toThrow("Unsupported VesnALIA thread status: paused");
   });
 });
 
@@ -727,7 +727,7 @@ describe("read-only queue command", () => {
   it("rejects other callers and invalid flags", async () => {
     const host = await configuredHost();
     expect((await host.harness.behavior.runCli(["show"], { threadId: "other" })).exitCode).toBe(1);
-    expect(await host.harness.behavior.runCli(["show", "--write"], { threadId: "manager-1" })).toEqual({ exitCode: 2, stdout: "", stderr: "Usage: bb feed show [--json]\n" });
+    expect(await host.harness.behavior.runCli(["show", "--write"], { threadId: "manager-1" })).toEqual({ exitCode: 2, stdout: "", stderr: "Usage: VesnALIA feed show [--json]\n" });
   });
 });
 
@@ -750,7 +750,7 @@ describe("manager context clear", () => {
     const message = (sent[0]![0] as { input: Array<{ text: string }> }).input[0]!.text;
     expect(message).toBe(
       "[feed] Your context was cleared. Load the feed skill and follow it. This thread is already bound, so skip the Bind step.\n\n" +
-      "Run `bb feed show`, then run `bb thread history manager-1 --limit 5` to read the user's 5 most recent messages. Reply in one line that you are ready.",
+      "Run `alia feed show`, then run `alia thread history manager-1 --limit 5` to read the user's 5 most recent messages. Reply in one line that you are ready.",
     );
   });
 
@@ -821,7 +821,7 @@ describe("inline replies", () => {
     ).rejects.toThrow(/rpc input validation failed/i);
     expect(host.harness.inspection.sdk.callsTo("threads.send")).toEqual([]);
   });
-  it("does not publish a reply when BB rejects the send", async () => {
+  it("does not publish a reply when VesnALIA rejects the send", async () => {
     const host = await configuredHost({
       send: async () => {
         throw new Error("Provider unavailable");
@@ -876,7 +876,7 @@ describe("manager marks", () => {
 
   it("returns one exact JSON result shape for expected tool outcomes", async () => {
     const unconfigured = createFakePluginHost({ pluginId: "feed" });
-    await plugin(unconfigured.bb);
+    await plugin(unconfigured.alia);
     await expect(
       unconfigured.harness.behavior.callAgentTool(
         "feed_mark",
@@ -1054,10 +1054,10 @@ describe("row actions, configuration, and invalidation", () => {
       settings: { managerThreadId: "manager-1" },
       sdk: { threads: { get: async ({ threadId }) => makeThreadResponse({ id: threadId }) } },
     });
-    const database = host.bb.storage.database();
-    host.bb.storage.migrate(database, INITIAL_SCHEMA_STATEMENTS.slice(0, 2));
+    const database = host.alia.storage.database();
+    host.alia.storage.migrate(database, INITIAL_SCHEMA_STATEMENTS.slice(0, 2));
     database.prepare("INSERT INTO queue_annotations (thread_id, user_managed) VALUES (?, 1)").run("old-child");
-    await plugin(host.bb);
+    await plugin(host.alia);
     const tables = (database
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
       .all() as Array<{ name: string }>)
@@ -1106,7 +1106,7 @@ describe("row actions, configuration, and invalidation", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect(host.harness.inspection.needsConfigurationMessages.at(-1)).toMatch(
       /archived, deleted, or missing/,
     );
@@ -1131,7 +1131,7 @@ describe("row actions, configuration, and invalidation", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     expect(host.harness.inspection.needsConfigurationMessages.at(-1)).toMatch(
       /archived, deleted, or missing/,
@@ -1147,7 +1147,7 @@ describe("row actions, configuration, and invalidation", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
     expect(host.harness.inspection.needsConfigurationMessages).toEqual([
       "Set managerThreadId, userManagedSectionId, childrenSectionId in the Feed plugin settings.",
     ]);
@@ -1192,7 +1192,7 @@ describe("row actions, configuration, and invalidation", () => {
         },
       },
     });
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     expect(host.harness.inspection.needsConfigurationMessages).toEqual([]);
     await expect(

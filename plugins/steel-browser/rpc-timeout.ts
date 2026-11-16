@@ -6,7 +6,7 @@ class RpcTimeoutError extends Error {}
 export function boundedRpc<T>(operation: Promise<T>, method: string, timeoutMs = RPC_TIMEOUT_MS): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => reject(new RpcTimeoutError(
-      `BB did not respond to Steel ${method} within ${timeoutMs / 1000}s. `
+      `VesnALIA did not respond to Steel ${method} within ${timeoutMs / 1000}s. `
       + "The request may still finish on the server. Refresh to check its status before trying again.",
     )), timeoutMs);
     operation.then(

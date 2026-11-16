@@ -2,8 +2,8 @@
  * Extensions the Files panel offers to open for other surfaces.
  *
  * Text, code, Markdown, and Excalidraw are what this plugin edits better than
- * BB's preview. Binary and media formats stay with BB's own preview, which is
- * lighter and already correct for them. BB accepts lowercase extensions
+ * VesnALIA's preview. Binary and media formats stay with VesnALIA's own preview, which is
+ * lighter and already correct for them. VesnALIA accepts lowercase extensions
  * without the dot, and keeps rendering the first applicable opener unless the
  * user pins this one under Settings → Files.
  */

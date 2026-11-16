@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { PokemonPreferences, rpcContract } from "../server";
 
 const motionDisabled: PokemonPreferences = { showEvolutionAnimations: false, bounceCompanionWhileRunning: false };

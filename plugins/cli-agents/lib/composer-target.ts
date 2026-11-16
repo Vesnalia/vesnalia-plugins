@@ -1,9 +1,9 @@
 import type { Target } from "../contract";
-/** BB 0.43 remembered-selection contract. Read only, never writes native keys.
- * The CLI comes from the provider chip bb renders in this very composer, so the
+/** VesnALIA 0.43 remembered-selection contract. Read only, never writes native keys.
+ * The CLI comes from the provider chip VesnALIA renders in this very composer, so the
  * list can never disagree with what the user sees; remembered keys are only a
  * fallback before that chip is mounted. Those keys are read from sessionStorage
- * alone, because the localStorage copy is shared with every other bb window.
+ * alone, because the localStorage copy is shared with every other VesnALIA window.
  * There is currently no public composer hook exposing machine/provider selection.
  */
 export function readTarget(
@@ -16,7 +16,7 @@ export function readTarget(
   const read = (key: string) => session.getItem(key) ?? "";
   const providerId =
     composerProviderId ||
-    read("bb.promptbox.provider") ||
+    read("alia.promptbox.provider") ||
     defaults?.providerId ||
     "";
   if (
@@ -27,9 +27,9 @@ export function readTarget(
     return null;
   const suffix = `-${encodeURIComponent(projectId)}-1`;
   const hostId =
-    read("bb.promptbox.machine" + suffix) || defaults?.hostId || "";
+    read("alia.promptbox.machine" + suffix) || defaults?.hostId || "";
   if (!hostId || !hostId.startsWith("host_")) return null;
-  const env = read("bb.promptbox.environment" + suffix);
+  const env = read("alia.promptbox.environment" + suffix);
   if (
     env.startsWith("provider:") &&
     !["provider:project-checkout"].includes(env)
@@ -43,7 +43,7 @@ export function readTarget(
   };
 }
 /** Provider id of the composer this element sits in, or "" when not rendered yet.
- * bb draws a generic icon for a CLI without a logo (Antigravity); every supported
+ * VesnALIA draws a generic icon for a CLI without a logo (Antigravity); every supported
  * CLI has one, so a mounted chip without a logo is reported as "unknown".
  */
 export function composerProvider(element: Element | null): string {

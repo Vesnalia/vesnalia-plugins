@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-test("rich and source editors follow BB typography unless overridden", () => {
+test("rich and source editors follow VesnALIA typography unless overridden", () => {
   const rich = readFileSync(new URL("./rich.tsx", import.meta.url), "utf8");
   const source = readFileSync(new URL("./editor.tsx", import.meta.url), "utf8");
   for (const css of [rich, source]) {

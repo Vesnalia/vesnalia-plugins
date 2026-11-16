@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { rpcContract } from "../../server.js";
 import { RANGES, type Appearance } from "../appearance.js";
 import {
   APPEARANCE_EVENT,
-  readBbThemeMode,
-  writeBbThemeMode,
-  type BbThemeMode,
+  readAliaThemeMode,
+  writeAliaThemeMode,
+  type AliaThemeMode,
 } from "../theme-mode.js";
 import { ActionButton, Row, Segmented, Slider, Toggle } from "./rows.js";
 import { ComposerDockRow, ContextMeterRow } from "./ComposerDockRow.js";
@@ -21,7 +21,7 @@ import { ThemeCards } from "./colours/ThemeCards.js";
 import { WallpaperCards } from "./colours/WallpaperCards.js";
 import { WallpaperFilterControls } from "./colours/WallpaperFilterControls.js";
 
-const THEME_MODES: ReadonlyArray<{ value: BbThemeMode; label: string }> = [
+const THEME_MODES: ReadonlyArray<{ value: AliaThemeMode; label: string }> = [
   { value: "system", label: "System" },
   { value: "dark", label: "Dark" },
   { value: "light", label: "Light" },
@@ -35,7 +35,7 @@ type AppearanceState = Appearance & {
 export function AppearanceSection() {
   const rpc = useRpc<typeof rpcContract>();
   const [appearance, setAppearance] = useState<AppearanceState | null>(null);
-  const [mode, setMode] = useState<BbThemeMode>(() => readBbThemeMode());
+  const [mode, setMode] = useState<AliaThemeMode>(() => readAliaThemeMode());
 
   const load = useCallback(async () => {
     try {
@@ -117,7 +117,7 @@ export function AppearanceSection() {
         <Row label="Follow the system" description="Switch palette with the OS.">
           <Segmented label="Follow the system" value={mode} options={THEME_MODES} onChange={(next) => {
             setMode(next);
-            writeBbThemeMode(next);
+            writeAliaThemeMode(next);
           }} />
         </Row>
         <ShellTintPicker appearance={appearance} light={light} onChange={apply} />

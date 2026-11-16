@@ -8,7 +8,7 @@ function fake(options: { sections?: Sections; inSection?: Record<string, string[
   const data = new Map<string, unknown>();
   const listeners = new Map<string, (payload: { thread: { id: string } }) => unknown>();
   let failSections = options.failSections ?? false;
-  const bb = {
+  const alia = {
     storage: {
       kv: {
         get: async <T,>(key: string) => data.get(key) as T | undefined,
@@ -30,7 +30,7 @@ function fake(options: { sections?: Sections; inSection?: Record<string, string[
     events: { on: (event: string, listener: (payload: { thread: { id: string } }) => unknown) => void listeners.set(event, listener) },
   };
   let changes = 0;
-  const store = createNowStore(bb as never, () => void changes++);
+  const store = createNowStore(alia as never, () => void changes++);
   return {
     store,
     emit: (event: string, id: string) => listeners.get(event)?.({ thread: { id } }),

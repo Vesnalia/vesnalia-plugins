@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import server from "../server";
 import { SNOOZE_METADATA_KEY } from "../lib/snooze";
 
@@ -26,9 +26,9 @@ function idleThread(id: string, daysAgo: number) {
   return makeThreadResponse({ id, updatedAt: NOW - daysAgo * DAY_MS });
 }
 
-describe("bb focus-board sweep", () => {
+describe("alia focus-board sweep", () => {
   let harness: FakePluginHarness;
-  let bb: BbPluginApi;
+  let alia: AliaPluginApi;
   let metadata: Map<string, Record<string, unknown>>;
   let listedThreads: ReturnType<typeof makeThreadResponse>[];
   let archived: string[];
@@ -70,13 +70,13 @@ describe("bb focus-board sweep", () => {
       },
     });
     harness = host.harness;
-    bb = host.bb;
-    await server(bb);
+    alia = host.alia;
+    await server(alia);
   }
 
   /** Seed the legacy KV row (imported on demand inside the sweep). */
   async function storeLegacy(ids: string[]): Promise<void> {
-    await bb.storage.kv.set("done-thread-ids", ids);
+    await alia.storage.kv.set("done-thread-ids", ids);
   }
 
   afterEach(async () => {
@@ -476,7 +476,7 @@ describe("bb focus-board sweep", () => {
 
       // The declared settings write the way the host's settings save does
       // (the plugin CLI no longer carries config commands; the door is
-      // `bb plugin config focus-board` or the modal's Behavior tab):
+      // `alia plugin config focus-board` or the modal's Behavior tab):
       // switching the unit and count moves the threshold to 12 hours, and
       // the one-day-old thread is now eligible.
       await harness.behavior.setSettings({ idleArchiveUnit: "hours", idleArchiveValue: 12 });

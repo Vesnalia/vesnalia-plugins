@@ -4,7 +4,7 @@ Status: accepted, 8 November 2026. The recursive initial tree and left-hand plac
 
 ## Context
 
-[074](074-a-box-has-a-files-view.md) took the behaviour of [bb-plugin-files-editor](https://github.com/abdoutelb/bb-plugin-files-editor) and built a different view from bb-box's components. That was the wrong cut. The view should look and work like that plugin. The reading and writing stay as 074 decided: the box user's own files, through the box's command transport.
+[074](074-a-box-has-a-files-view.md) took the behaviour of [alia-plugin-files-editor](https://github.com/abdoutelb/bb-plugin-files-editor) and built a different view from alia-box's components. That was the wrong cut. The view should look and work like that plugin. The reading and writing stay as 074 decided: the box user's own files, through the box's command transport.
 
 ## Decision
 
@@ -19,11 +19,11 @@ Changed:
 - The data source. The plugin's workspace calls are the box file calls from 074. The tree is `files.names` for the folder in the path bar. Opening is `files.read`. A file past the size limit can show its first 256 KB with `files.readRange`, and that slice cannot be saved. Saving is `files.write` with the hash guard. Search is `files.search`. [076](076-the-files-view-can-create-rename-and-delete.md) adds create, rename and delete to the view. This record had left them off the view, because the plugin has no such buttons.
 - The workspace picker is a path bar. It opens at the box user's home. There is no project picker and no worktree picker. The folder button returns home. The up arrow opens the folder above.
 - It still opens from the Files button on the box's row, on its page, and in the Files tab.
-- Glyph colours use BB's theme tokens: foreground, warning text, destructive text, success, subtle foreground and muted foreground. The plugin's palette classes are not used.
+- Glyph colours use VesnALIA's theme tokens: foreground, warning text, destructive text, success, subtle foreground and muted foreground. The plugin's palette classes are not used.
 - Names that start with a dot stay hidden until the eye is selected. The plugin showed them at first.
-- The right-click menu on a tab is drawn by the panel. bb-box does not ship the context-menu package the plugin uses.
-- BB's own icon is used. The plugin's copies of button, input, dialog, checkbox and overlay were not needed: this view's controls are the same plain buttons the plugin draws, and bb-box already has the icon.
-- The path handed to BB's source view still ends in the real file name. A version sits in the directory in front of that name, so a reload shows the new text, and the colours still see the extension.
+- The right-click menu on a tab is drawn by the panel. alia-box does not ship the context-menu package the plugin uses.
+- VesnALIA's own icon is used. The plugin's copies of button, input, dialog, checkbox and overlay were not needed: this view's controls are the same plain buttons the plugin draws, and alia-box already has the icon.
+- The path handed to VesnALIA's source view still ends in the real file name. A version sits in the directory in front of that name, so a reload shows the new text, and the colours still see the extension.
 
 ## Consequences
 

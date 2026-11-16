@@ -5,7 +5,7 @@
  * again after a reconnect, because a publish sent while disconnected is gone.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useBbNavigate, useRealtime, useRealtimeConnectionState, useRpc, type ExperimentalBadge } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRealtimeConnectionState, useRpc, type ExperimentalBadge } from "@vesnalia/plugin-sdk/app";
 
 import { SESSIONS_CHANGED, SessionListSchema, type SessionInfo } from "../shared/channels";
 import type { RpcContract } from "../shared/contract";
@@ -122,7 +122,7 @@ function liveLabel(count: number): string {
 
 /**
  * The sidebar entry's badge while any session is open, on any device: LIVE in
- * lists, a dot on the icon-only rail, the count in the tooltip. A hook bb calls
+ * lists, a dot on the icon-only rail, the count in the tooltip. A hook VesnALIA calls
  * in the plugin's scope (`experimental_useBadge`), not a component.
  */
 export function useLiveBadge(): ExperimentalBadge | null {
@@ -133,14 +133,14 @@ export function useLiveBadge(): ExperimentalBadge | null {
 }
 
 /**
- * A pill in the corner of every bb window while any session is open — from
+ * A pill in the corner of every VesnALIA window while any session is open — from
  * this window or another device — so a forgotten one is hard to miss and one
  * press away from closed.
  */
 export function LiveSessionsOverlay() {
   const sessions = useSessions();
   const pageOpen = useIsPageOpen();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { closeAll, closing } = useCloseAll();
   if (sessions.length === 0 || pageOpen) return null;
   return (

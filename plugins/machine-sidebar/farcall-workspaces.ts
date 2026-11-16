@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { FarcallRow } from "./farcall-contract";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 type Environment = Awaited<ReturnType<Sdk["environments"]["list"]>>[number];
 export type WorkspaceEnvironment = Pick<Environment, "id" | "hostId" | "path" | "isWorktree" | "branchName" | "status">;
 type Workspace = FarcallRow["workspace"];

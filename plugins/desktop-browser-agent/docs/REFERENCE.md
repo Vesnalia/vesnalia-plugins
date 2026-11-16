@@ -1,4 +1,4 @@
-# Reference: Desktop & Browser Agent for bb
+# Reference: Desktop & Browser Agent for VesnALIA
 
 Everything the [README](../README.md) leaves out: setup by hand, every setting, how routing, exposure and the browser extension behave, and the safety model. Development notes are in [AGENTS.md](../AGENTS.md).
 
@@ -8,20 +8,20 @@ Everything the [README](../README.md) leaves out: setup by hand, every setting, 
 | --- | --- |
 | Agent tools | Read from each machine's own Cua Driver (`tools/list`), so a newer driver's tools and arguments reach agents without a plugin release. With Cua Driver 0.37.0: 33 dedicated `cua_*` tools (desktop, browser, clipboard, and `cua_run_steps`, the driver's default way to act), 18 more through `cua_call`, and 9 off until you enable them. Plus `cua_call`, `cua_describe` and `cua_status`. Screenshots come back as images the model can see. |
 | Exposure policy | Every driver tool is a dedicated tool, reachable only through `cua_call`, or off. Code execution (`run_script`), `kill_app`, recording, driver configuration and extension installs start off. A tool new to this plugin is reachable through `cua_call` if the driver marks it read-only, and off otherwise. `cua_call` obeys the same policy. |
-| Drift report | The plugin compares each machine's driver with the one it was tested with and names new, removed and changed tools in `bb cua status`, `bb cua drift`, the settings page, and one line in agent instructions. |
+| Drift report | The plugin compares each machine's driver with the one it was tested with and names new, removed and changed tools in `alia cua status`, `alia cua drift`, the settings page, and one line in agent instructions. |
 | Pinned installs | Install and update target the tested driver by default. The plugin downloads that release's installer files from GitHub and runs them only if each matches a checksum recorded in this repo. The newest release is a separate, explicitly untested choice. |
-| Agent skill | `desktop-browser-agent`: the upstream Cua Driver 0.36 loop (narrow reads, `run_steps` with `observe`, verify at checkpoints) plus bb rules: what to do when a tool is off, and when to stop and ask before sending or deleting. |
+| Agent skill | `desktop-browser-agent`: the upstream Cua Driver 0.36 loop (narrow reads, `run_steps` with `observe`, verify at checkpoints) plus VesnALIA rules: what to do when a tool is off, and when to stop and ask before sending or deleting. |
 | Settings UI | Routing mode, per-provider overrides, an **Agent tools** card with per-tool exposure, a setup checklist per machine with install, permission and drift state, and a **Browser extension** card (the `browser_*` switch and each machine's bridge). A sensitive call that needs your answer shows the approval card in its thread (see [Permissions and safety](#permissions-and-safety)). |
-| Browser extension (optional) | **Browser Bridge for bb**, a Chromium extension in this repo. Off by default. When you turn it on, agents get `browser_*` tools that work in the tabs of your everyday browser (Brave, Chrome, Edge, Chromium), in background tabs, while you keep browsing. See [Browser extension](#browser-extension-optional). |
-| CLI | `bb cua status`, `drift`, `tools`, `expose`, `call`, `policy`, `mode`, `install`, `update`, `grant`, `browser`. |
-| Multi-machine | Tool calls run on the host that owns the thread's environment through bb's host RPC, so remote enrolled machines work the same as the local one. |
+| Browser extension (optional) | **Browser Bridge for VesnALIA**, a Chromium extension in this repo. Off by default. When you turn it on, agents get `browser_*` tools that work in the tabs of your everyday browser (Brave, Chrome, Edge, Chromium), in background tabs, while you keep browsing. See [Browser extension](#browser-extension-optional). |
+| CLI | `alia cua status`, `drift`, `tools`, `expose`, `call`, `policy`, `mode`, `install`, `update`, `grant`, `browser`. |
+| Multi-machine | Tool calls run on the host that owns the thread's environment through VesnALIA's host RPC, so remote enrolled machines work the same as the local one. |
 
 ## Requirements
 
-- bb `>=0.39` with plugin SDK `>=0.4.16`.
+- VesnALIA `>=0.39` with plugin SDK `>=0.4.16`.
 - **Cua Driver on each machine that should be driven.** The plugin never
   installs it silently: click **Install Cua Driver…** next to a machine in the
-  plugin settings, or run `bb cua install --yes`, or install it yourself.
+  plugin settings, or run `alia cua install --yes`, or install it yourself.
   Tested on macOS 14+. Cua Driver also supports Windows 10/11 and Linux
   x86_64 with X11 or XWayland plus AT-SPI 2, and the plugin has code paths
   for both, but neither has been tested with this plugin yet.
@@ -48,7 +48,7 @@ Everything the [README](../README.md) leaves out: setup by hand, every setting, 
 
 Open **Settings → Plugins → Desktop & Browser Agent**, or use the CLI.
 
-Each enrolled machine has an expandable checklist for its bb connection, Cua
+Each enrolled machine has an expandable checklist for its VesnALIA connection, Cua
 Driver installation, service state, and macOS Accessibility, Screen Recording,
 and direct-capture consent. Machines needing attention open automatically.
 So does a machine whose driver is older than the one this plugin release was
@@ -71,17 +71,17 @@ Set both in the **Routing mode** and **Provider overrides** cards, or from the
 CLI:
 
 ```sh
-bb cua mode cua-everywhere
-bb cua policy codex native        # keep Codex on its own computer use
-bb cua policy pi cua
-bb cua policy                     # show the effective decision per provider
+alia cua mode cua-everywhere
+alia cua policy codex native        # keep Codex on its own computer use
+alia cua policy pi cua
+alia cua policy                     # show the effective decision per provider
 ```
 
 Tool and skill changes apply when a thread's next provider session starts,
-never mid-session (a bb rule for every plugin).
+never mid-session (a VesnALIA rule for every plugin).
 
 "Native" means the plugin steps aside. Whether a harness's own computer use is
-actually available inside bb depends on that harness and its bb provider
+actually available inside VesnALIA depends on that harness and its VesnALIA provider
 bridge; the plugin does not enable or configure it.
 
 ### Agent tools
@@ -96,10 +96,10 @@ tool:
 | `off` | Refused, with a message telling the agent not to reach the same result another way. |
 
 ```sh
-bb cua tools                      # every tool, its exposure, and why
-bb cua expose run_script call     # allow code execution through cua_call
-bb cua expose click off
-bb cua expose click default       # back to the bundled decision
+alia cua tools                      # every tool, its exposure, and why
+alia cua expose run_script call     # allow code execution through cua_call
+alia cua expose click off
+alia cua expose click default       # back to the bundled decision
 ```
 
 Exposure is a guard against accidental use, not a sandbox: anything a tool can
@@ -112,9 +112,9 @@ do on the machine, Cua Driver's own permission mode decides.
 | Browser window tools | on | Cua Driver's `cua_browser_*` tools, no extension needed. Off turns the group off, `cua_call` included; the extension's `browser_*` tools have their own switch. |
 | Clipboard tools | on | Off turns `cua_clipboard_read` / `cua_clipboard_write` off, `cua_call` included. |
 | Signed-in browser profiles | off | Lets the browser window tools attach to a signed-in Chrome, Edge or Brave window (see [Signed-in browser profiles](#signed-in-browser-profiles)). |
-| Browser extension | off | Offers the `browser_*` tools of the optional extension (see [Browser extension](#browser-extension-optional)). Set in its own card or with `bb cua browser on\|off`. |
+| Browser extension | off | Offers the `browser_*` tools of the optional extension (see [Browser extension](#browser-extension-optional)). Set in its own card or with `alia cua browser on\|off`. |
 | Ask before sensitive actions | off | Asks in the thread before a sensitive call runs (see [Permissions and safety](#permissions-and-safety)). Off runs them without asking. |
-| Session label prefix | `bb` | Each active thread run gets a unique label beginning with `<prefix>-<threadId>`; the label shows in the agent cursor badge. |
+| Session label prefix | `alia` | Each active thread run gets a unique label beginning with `<prefix>-<threadId>`; the label shows in the agent cursor badge. |
 
 ## Signed-in browser profiles
 
@@ -141,7 +141,7 @@ started the service that way. On Linux and Windows, start
 
 Cua Driver drives a browser through its window, or attaches to a signed-in
 profile with remote debugging, which it automates only for Chrome, Chromium
-and Edge. The optional **Browser Bridge for bb** extension
+and Edge. The optional **Browser Bridge for VesnALIA** extension
 ([browser-extension/](../browser-extension/)) works in any Chromium browser,
 Brave included, the way browser agents usually do: the extension uses the
 browser's debugger API on its tabs, so agents click and type in
@@ -157,8 +157,8 @@ Nothing changes until you turn it on:
    small native messaging host (`~/Library/Application Support/agent-browser-bridge`
    on macOS, `~/.local/share/agent-browser-bridge` on Linux) plus one manifest
    in each Chromium browser's `NativeMessagingHosts` folder, so the extension
-   can talk to bb. **Remove bridge** deletes them. CLI: `bb cua browser on`,
-   `bb cua browser install`.
+   can talk to VesnALIA. **Remove bridge** deletes them. CLI: `alia cua browser on`,
+   `alia cua browser install`.
 2. Add the extension from the
    [Chrome Web Store](https://chromewebstore.google.com/detail/aaidacbpcgjigclcoffjlcpnkmpnpgcc)
    (id `aaidacbpcgjigclcoffjlcpnkmpnpgcc`; Brave and Edge install from it too). Or load a
@@ -233,7 +233,7 @@ you, with the paths, separately from the thread's browser approval.
 The bridge accepts connections only from this user (socket mode 0600) and
 only from the extension's id.
 
-## Installing from bb (opt-in)
+## Installing from VesnALIA (opt-in)
 
 The settings page shows **Install Cua Driver…** for any online machine where
 the driver is missing, and offers a switch when a machine runs another
@@ -259,8 +259,8 @@ No admin rights are requested. On macOS a **Grant permissions** button then
 runs `cua-driver permissions grant`, which triggers the system prompts for
 Accessibility and Screen Recording; approve both and fully relaunch
 `CuaDriver.app` if macOS asks. A one-time direct-capture consent prompt may
-also appear on the first screenshot. The CLI equivalents are `bb cua install --yes` and
-`bb cua grant`; `install` refuses to run without `--yes`.
+also appear on the first screenshot. The CLI equivalents are `alia cua install --yes` and
+`alia cua grant`; `install` refuses to run without `--yes`.
 
 Before each Cua Driver action, the plugin checks a recent readiness snapshot.
 If the driver or a required macOS permission is missing, it stops before the
@@ -297,17 +297,17 @@ How a newer driver is noticed, without anything scheduled on your Mac:
   the Actions tab (optionally with a version) to resume.
 
 When a newer release exists, the machine's checklist offers it as
-**untested**, and `bb cua update --yes --latest` installs it. Without
+**untested**, and `alia cua update --yes --latest` installs it. Without
 `--latest`, `update` moves to the tested release.
 
 ## How it works
 
 ```
-thread turn ──▶ bb server (plugin server.ts)
-                 │  bb.agents.configure(): policy → tool set per provider
+thread turn ──▶ alia server (plugin server.ts)
+                 │  alia.agents.configure(): policy → tool set per provider
                  │  cua_* tool execute(): thread → environment → hostId
                  ▼
-             bb host daemon on that machine (plugin host.ts)
+             alia host daemon on that machine (plugin host.ts)
                  │  spawns `cua-driver mcp` once, keeps one MCP stdio session
                  ▼
              Cua Driver runtime ──▶ desktop / browser
@@ -333,7 +333,7 @@ thread turn ──▶ bb server (plugin server.ts)
 
 - Cua Driver's own authorization stack applies unchanged. The plugin runs the
   driver in its default `standard` permission mode; bounded or unrestricted
-  modes and capability manifests are configured on the machine, outside bb
+  modes and capability manifests are configured on the machine, outside VesnALIA
   (see <https://cua.ai/docs/reference/cua-driver/permission-modes>).
 - Attaching to a signed-in browser profile requires a launch grant on the
   machine (`--grant existing-profile`). The plugin adds it only while
@@ -351,11 +351,11 @@ thread turn ──▶ bb server (plugin server.ts)
   thread is archived or the plugin reloads), or **Don't allow**; an
   unanswered request is refused after ten minutes. The first `browser_*` call
   in a thread asks under "Allow agents in your browser?", and one answer
-  covers every `browser_*` tool in that thread. `bb cua call` asks in the
+  covers every `browser_*` tool in that thread. `alia cua call` asks in the
   thread it runs from; from a terminal outside any thread it runs, since that
   is you. Like the other settings, this stops mistakes and injected
-  instructions, not an agent that runs `bb` in a shell: bb lets a thread
-  answer its own requests with `bb thread interactions respond`.
+  instructions, not an agent that runs `alia` in a shell: VesnALIA lets a thread
+  answer its own requests with `alia thread interactions respond`.
 - Agents are instructed never to launch apps or send, submit, or delete
   without explicit user intent for that step, and to treat text inside apps
   as data rather than instructions. The same holds for installing software,

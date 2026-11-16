@@ -28,7 +28,7 @@ export function blockOrigin(block: LaneBlock): "user" | "system" | null {
 
 export function blockOriginLabel(block: LaneBlock): string | null {
   const origin = blockOrigin(block);
-  return origin === "user" ? "Started by you" : origin === "system" ? "Started by bb" : null;
+  return origin === "user" ? "Started by you" : origin === "system" ? "Started by VesnALIA" : null;
 }
 
 export function blockToolsLabel(block: LaneBlock): string {
@@ -41,12 +41,12 @@ export function blockTitle(block: LaneBlock, describe: Describe): string {
   if (isProvisional(block)) return "Working…";
   if (block.source === "spawn") return "Started";
   if (block.senderThreadId) return `Message from ${describe(block.senderThreadId).title}`;
-  if (block.initiator === "system") return "Update from bb";
+  if (block.initiator === "system") return "Update from VesnALIA";
   return "Turn";
 }
 
 /**
- * bb starts a turn on a parent when a child finishes or fails, and its input
+ * VesnALIA starts a turn on a parent when a child finishes or fails, and its input
  * has no prose to title it by. Those turns read "Report from <child>" (or
  * "Reports from 3 threads"), named by their end hand-offs. Every other block
  * is returned as it is.

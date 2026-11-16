@@ -7,12 +7,12 @@ import { z } from "zod";
 import {
   providerUsageResultSchema,
   threadDeltaNotificationParamsSchema,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   experimental_assembleCapturedThreadEvents,
   experimental_runBridgeConformance,
   experimental_formatConformanceReport,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import host, {
   helperRoute,
   makeAutoBridge,
@@ -179,7 +179,7 @@ async function harness(ask: JevAsk = async () => jev, completeTurns = false) {
   async function start(model = "auto") {
     const answer = await response(
       send("thread/start", {
-        threadId: "bb-thread",
+        threadId: "alia-thread",
         cwd: directory,
         options: { ...options, model },
         instructionMode: "replace",
@@ -198,7 +198,7 @@ async function harness(ask: JevAsk = async () => jev, completeTurns = false) {
   }
   const turn = (autoId: string, clientRequestId = "creq_abcdefghij") =>
     send("turn/start", {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: autoId,
       input: [{ type: "text", text: "Say hello.", mentions: [] }],
       clientRequestId,
@@ -291,19 +291,19 @@ test("persists native identity and resumes through the original provider", async
   await h.response(h.turn(id));
   await h.response(
     h.send("thread/stop", {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: id,
       intent: "release",
       activeTurnId: null,
     }),
   );
-  const saved = await readAutoSession(h.directory, "bb-thread");
+  const saved = await readAutoSession(h.directory, "alia-thread");
   assert.equal(saved?.nativeId, "native-123");
   assert.equal(saved?.route?.model, "gpt-6-luna");
   assert.equal(saved?.revision, "creq_abcdefghij");
   const answer = await h.response(
     h.send("thread/resume", {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: id,
       cwd: h.directory,
       options,
@@ -334,7 +334,7 @@ test("forwards native tool calls with synthetic identity and returns the native 
     id: 22,
     method: "item/tool/call",
     params: {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: "native-123",
       tool: "auto_plan",
       arguments: {},
@@ -379,7 +379,7 @@ test("cancels routing and queued turns before native startup", async () => {
   await new Promise((resolve) => setImmediate(resolve));
   await h.response(
     h.send("thread/stop", {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: id,
       intent: "interrupt",
       activeTurnId: null,
@@ -400,7 +400,7 @@ test("release emits no fabricated turn boundary", async () => {
   const before = h.messages.length;
   await h.response(
     h.send("thread/stop", {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: id,
       intent: "release",
       activeTurnId: null,
@@ -424,12 +424,12 @@ test("steering and helper completion reports preserve the plan revision and do n
   await h.response(h.turn(id));
   const reply = await h.response(
     h.send("turn/steer", {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       providerThreadId: id,
       input: [
         {
           type: "text",
-          text: "[bb system]\n\nA helper completed its task.",
+          text: "[VesnALIA system]\n\nA helper completed its task.",
           mentions: [],
         },
       ],
@@ -440,7 +440,7 @@ test("steering and helper completion reports preserve the plan revision and do n
   );
   assert.equal(reply.error, undefined);
   assert.equal(asks, 1);
-  const saved = await readAutoSession(h.directory, "bb-thread");
+  const saved = await readAutoSession(h.directory, "alia-thread");
   assert.equal(saved?.revision, "creq_abcdefghij");
   assert.equal(saved?.turnCount, 1);
   h.bridge.onClose?.();
@@ -457,12 +457,12 @@ test("background completion and failure reports preserve the active plan after t
   for (const status of ["completed", "failed"]) {
     const reply = await h.response(
       h.send("turn/start", {
-        threadId: "bb-thread",
+        threadId: "alia-thread",
         providerThreadId: id,
         input: [
           {
             type: "text",
-            text: `[bb system]\n\n@thread:thr_k2abc234 ${status}:\nThe helper report.`,
+            text: `[VesnALIA system]\n\n@thread:thr_k2abc234 ${status}:\nThe helper report.`,
             mentions: [],
           },
         ],
@@ -473,7 +473,7 @@ test("background completion and failure reports preserve the active plan after t
     assert.equal(reply.error, undefined);
   }
   assert.equal(asks, 1);
-  const saved = await readAutoSession(h.directory, "bb-thread");
+  const saved = await readAutoSession(h.directory, "alia-thread");
   assert.equal(saved?.revision, "creq_abcdefghij");
   assert.equal(saved?.turnCount, 1);
   assert.deepEqual(saved?.delegation, {
@@ -565,7 +565,7 @@ test("host RPC reads the bridge-data sibling and ignores corrupt saved files", a
     await readFile(join(h.directory, "sessions", `${id}.json`)),
   );
   const result = await host.handlers.getSession(
-    { threadId: "bb-thread" },
+    { threadId: "alia-thread" },
     {
       experimental_paths: { dataDir: hostDir, tempDir: directory },
       signal: new AbortController().signal,
@@ -601,7 +601,7 @@ test("native options retain every permission mode without upgrading access", () 
   );
 });
 
-test("passes the published BB provider bridge conformance kit", async () => {
+test("passes the published VesnALIA provider bridge conformance kit", async () => {
   const h = await harness(async () => jev, true);
   let drained = 0;
   const report = await experimental_runBridgeConformance({
@@ -719,7 +719,7 @@ test("plan and helper rows name each step's model from the routed plan", async (
   });
   await host.handlers.notePlan(
     {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       plan: [
         step(1, "Read README.md", "main"),
         step(2, "Read releases.csv", "helper"),
@@ -747,12 +747,12 @@ test("plan and helper rows name each step's model from the routed plan", async (
         jsonrpc: "2.0",
         method: "thread/delta",
         params: {
-          threadId: "bb-thread",
+          threadId: "alia-thread",
           deltas: [
             {
               kind,
               key: { providerItemId: id },
-              item: { type: "tool", server: "bb", tool: name, args },
+              item: { type: "tool", server: "alia", tool: name, args },
               presentation: {
                 label: { pending: "Running", completed: "Ran" },
                 icon: { glyph: "Toolbox" },
@@ -810,7 +810,7 @@ test("the bridge keeps the latest usage report a native turn sends", async () =>
     jsonrpc: "2.0",
     method: "thread/delta",
     params: {
-      threadId: "bb-thread",
+      threadId: "alia-thread",
       deltas: [
         {
           kind: "provider.rateLimits",

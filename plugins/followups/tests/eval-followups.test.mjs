@@ -60,10 +60,10 @@ test("historical source's worker hook with no instructions stays distinct from c
   // A minimal old-revision fixture exercises capture's public host path without
   // copying today's instructions into the older session.
   await writeFile(path.join(dir, "package.json"), '{"type":"module"}');
-  await writeFile(path.join(dir, "server.ts"), `export default async function plugin(bb) {
-    bb.agents.configure(() => ({ tools: [], skills: [] }));
-    bb.events.on('thread.idle', async () => {
-      await bb.sdk.threads.spawn({ projectId:'project', title:'Historical worker', prompt:'Historical production prompt', pluginMetadata:{worker:true} });
+  await writeFile(path.join(dir, "server.ts"), `export default async function plugin(VesnALIA) {
+    alia.agents.configure(() => ({ tools: [], skills: [] }));
+    alia.events.on('thread.idle', async () => {
+      await alia.sdk.threads.spawn({ projectId:'project', title:'Historical worker', prompt:'Historical production prompt', pluginMetadata:{worker:true} });
     });
   }`);
   const old = await captureCase(dir, offer, config), current = await captureCase(repoRoot, offer, config);

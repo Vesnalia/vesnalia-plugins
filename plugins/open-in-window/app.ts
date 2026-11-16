@@ -1,4 +1,4 @@
-// bb-plugin-open-in-window — frontend entry.
+// alia-plugin-open-in-window — frontend entry.
 //
 // Adds "Open in new window" to every thread actions menu: the "..." menu on a
 // sidebar row, its right-click menu, the thread header's menu, and the phone
@@ -7,12 +7,12 @@
 import {
   definePluginApp,
   experimental_THREAD_ACTION_GROUPS,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
-/** bb serves threads of the personal project at /threads/<id>. */
+/** VesnALIA serves threads of the personal project at /threads/<id>. */
 const PERSONAL_PROJECT_ID = "proj_personal";
 
-/** The absolute URL bb routes to the thread, the same one "Copy link" copies. */
+/** The absolute URL VesnALIA routes to the thread, the same one "Copy link" copies. */
 export function threadUrl(
   thread: { id: string; projectId: string },
   origin: string,
@@ -46,7 +46,7 @@ export default definePluginApp((app) => {
     title: "Open in new window",
     icon: "AppWindow",
     group: experimental_THREAD_ACTION_GROUPS.open,
-    // After bb's Open in split (10) and Copy link (20).
+    // After VesnALIA's Open in split (10) and Copy link (20).
     order: 25,
     item: ({ thread }) => ({
       label: "Open in new window",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { countDiff, createLiveActivityCollector } from "./live-activity";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const activityEvent = (type: "item/started" | "item/completed", id: string, item: Record<string, unknown>) => ({
   id: `event-${type}-${id}`,
@@ -23,7 +23,7 @@ describe("live file activity", () => {
         ] }),
       ] } },
     } });
-    const collector = createLiveActivityCollector(host.bb);
+    const collector = createLiveActivityCollector(host.alia);
     const result = await collector.sync({ id: "thread_1", parentThreadId: null });
 
     expect(result.files).toEqual(expect.arrayContaining([
@@ -46,7 +46,7 @@ describe("live file activity", () => {
         activityEvent("item/started", "patch-file-tree", { type: "commandExecution", cwd: "/workspace/project", command: "apply_patch <<'PATCH'\n*** Update File: /workspace/project/plugins/dynamic-file-tree/src/components/FileTreeSection.tsx\nPATCH" }),
       ] } },
     } });
-    const result = await createLiveActivityCollector(host.bb).sync({ id: "thread_1", parentThreadId: null, environmentId: "env_1" });
+    const result = await createLiveActivityCollector(host.alia).sync({ id: "thread_1", parentThreadId: null, environmentId: "env_1" });
     expect(result.files).toEqual(expect.arrayContaining([
       expect.objectContaining({ path: "README.md", kind: "read" }),
       expect.objectContaining({ path: "plugins/dynamic-file-tree/src/components/FileTreeSection.tsx", kind: "write" }),
@@ -69,7 +69,7 @@ describe("live file activity", () => {
       ] } },
     } });
 
-    const result = await createLiveActivityCollector(host.bb).sync({ id: "thread_1", parentThreadId: null });
+    const result = await createLiveActivityCollector(host.alia).sync({ id: "thread_1", parentThreadId: null });
 
     expect(result.files).toEqual([
       expect.objectContaining({ path: "src/active.ts", kind: "read" }),

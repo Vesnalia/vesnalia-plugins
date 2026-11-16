@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { threadId, sessionA, sessionB, liveUsage } from "./fixtures";
 
@@ -46,7 +46,7 @@ function setup(
       return liveUsage();
     },
   });
-  plugin(fake.bb);
+  plugin(fake.alia);
   disposers.push(() => fake.harness.lifecycle.dispose());
   return {
     ...fake,

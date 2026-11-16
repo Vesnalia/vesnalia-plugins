@@ -1,4 +1,4 @@
-// bb-plugin-github-actions — the GitHub Actions page in the BB sidebar and the
+// alia-plugin-github-actions — the GitHub Actions page in the VesnALIA sidebar and the
 // matching tab in a thread's side panel.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -6,10 +6,10 @@ import {
   definePluginApp,
   experimental_copyToClipboard,
   UrlLink,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   DispatchInput,
   Job,
@@ -57,7 +57,7 @@ type Filter = "active" | "failed" | "all";
 
 const FAILED = ["failure", "timed_out", "startup_failure", "action_required"];
 const LOG_POLL_MS = 3000;
-const LAST_TARGETS_KEY = "bb-plugin-github-actions:last-targets";
+const LAST_TARGETS_KEY = "alia-plugin-github-actions:last-targets";
 const DEFAULT_FAILURE_NOTE =
   "This CI/CD run failed. Please find the cause and how to fix it.";
 
@@ -1195,7 +1195,7 @@ function RunRow({
   onChanged: () => void;
   onRunAgain: (target: RunTarget) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
@@ -1623,7 +1623,7 @@ function ActionsView({ currentThreadId }: { currentThreadId: string | null }) {
             ) : repos.length === 0 ? (
               <div className="p-4">
                 <EmptyState icon="FolderGit" title="No repositories to watch">
-                  Add a GitHub remote to a BB project, or list repositories in the plugin settings.
+                  Add a GitHub remote to a VesnALIA project, or list repositories in the plugin settings.
                 </EmptyState>
               </div>
             ) : visible.length === 0 ? (

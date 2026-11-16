@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { nextDelayMs } from "../src/cadence";
 import type { ScannedPort } from "../src/contract";
@@ -17,7 +17,7 @@ const ENVIRONMENTS: Record<string, Record<string, unknown>> = {
     hostId: "host_1",
     path: "/w/env_a/repo",
     name: null,
-    branchName: "bb/feature",
+    branchName: "alia/feature",
     projectId: "proj_1",
     status: "ready",
   },
@@ -26,7 +26,7 @@ const ENVIRONMENTS: Record<string, Record<string, unknown>> = {
     hostId: "host_2",
     path: "/w/env_b/repo",
     name: null,
-    branchName: "bb/quiet",
+    branchName: "alia/quiet",
     projectId: "proj_1",
     status: "ready",
   },
@@ -76,9 +76,9 @@ function host(
   });
 }
 
-describe("bb ports list", () => {
+describe("alia ports list", () => {
   it("groups ports under the worktree that owns them, naming every thread's branch", async () => {
-    const { bb, harness } = host(({ method }) => {
+    const { alia, harness } = host(({ method }) => {
       if (method !== "scan") throw new Error(`unexpected ${method}`);
       return {
         ports: [port({ port: 3000, label: "Frontend" })],
@@ -86,7 +86,7 @@ describe("bb ports list", () => {
         dockerError: null,
       };
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.runCli(["list", "--json"]);
     expect(result.exitCode).toBe(0);
@@ -103,14 +103,14 @@ describe("bb ports list", () => {
 
   it("asks each machine about its own worktrees only", async () => {
     const calls: { hostId?: string; roots: unknown }[] = [];
-    const { bb, harness } = host((call) => {
+    const { alia, harness } = host((call) => {
       calls.push({
         hostId: call.hostId,
         roots: (call.input as { roots: unknown }).roots,
       });
       return { ports: [], scannedAt: 1, dockerError: null };
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.runCli(["list"]);
 
     expect(calls).toHaveLength(2);
@@ -124,14 +124,14 @@ describe("bb ports list", () => {
 
   it("passes the ignore settings through as parsed values", async () => {
     const inputs: Record<string, unknown>[] = [];
-    const { bb, harness } = host(
+    const { alia, harness } = host(
       (call) => {
         inputs.push(call.input as Record<string, unknown>);
         return { ports: [], scannedAt: 1, dockerError: null };
       },
       { ignorePorts: "5432, 7687", ignoreProcesses: "Spotify rapportd", includeDocker: false },
     );
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.runCli(["list"]);
 
     expect(inputs[0]).toMatchObject({
@@ -142,11 +142,11 @@ describe("bb ports list", () => {
   });
 
   it("reports a machine that could not be scanned instead of hiding it", async () => {
-    const { bb, harness } = host(({ hostId }) => {
+    const { alia, harness } = host(({ hostId }) => {
       if (hostId === "host_2") throw new Error("lsof: command not found");
       return { ports: [port({ port: 3000 })], scannedAt: 1, dockerError: null };
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const snapshot = JSON.parse((await harness.behavior.runCli(["list", "--json"])).stdout ?? "{}");
     expect(snapshot.errors).toEqual([
@@ -156,7 +156,7 @@ describe("bb ports list", () => {
   });
 
   it("lists app ports first, then services and internal listeners under headings", async () => {
-    const { bb, harness } = host(() => ({
+    const { alia, harness } = host(() => ({
       ports: [
         port({ port: 8080, processName: "anton" }),
         port({
@@ -172,11 +172,11 @@ describe("bb ports list", () => {
       scannedAt: 1,
       dockerError: null,
     }));
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["list"]);
     expect(result.stdout).toBe(
       [
-        "bb/feature  (/w/env_a/repo)",
+        "alia/feature  (/w/env_a/repo)",
         "  8080   http://localhost:8080  anton",
         "  service:",
         "  5432   http://localhost:5432  docker/repo-postgres-1",
@@ -187,8 +187,8 @@ describe("bb ports list", () => {
   });
 
   it("says so plainly when nothing is listening", async () => {
-    const { bb, harness } = host(() => ({ ports: [], scannedAt: 1, dockerError: null }));
-    await plugin(bb);
+    const { alia, harness } = host(() => ({ ports: [], scannedAt: 1, dockerError: null }));
+    await plugin(alia);
     const result = await harness.behavior.runCli(["list"]);
     expect(result.stdout).toBe("No listening ports in any workspace.");
   });
@@ -197,7 +197,7 @@ describe("bb ports list", () => {
 describe("the scanner service", () => {
   it("only signals clients when what is listening actually changed", async () => {
     let ports: ScannedPort[] = [port({ port: 3000 })];
-    const { bb, harness } = host(
+    const { alia, harness } = host(
       ({ hostId }) => ({
         ports: hostId === "host_1" ? ports : [],
         scannedAt: 1,
@@ -207,7 +207,7 @@ describe("the scanner service", () => {
         scanIntervalSec: 1,
       },
     );
-    await plugin(bb);
+    await plugin(alia);
 
     const service = harness.behavior.runService("port-scanner");
     await vi.waitFor(() => expect(harness.realtimeSignals.length).toBe(1));
@@ -224,16 +224,16 @@ describe("the scanner service", () => {
   });
 });
 
-describe("bb ports release", () => {
+describe("alia ports release", () => {
   it("routes to the machine holding that worktree", async () => {
     const calls: { method: string; hostId?: string; input: unknown }[] = [];
-    const { bb, harness } = host((call) => {
+    const { alia, harness } = host((call) => {
       calls.push(call);
       return call.method === "scan"
         ? { ports: [], scannedAt: 1, dockerError: null }
         : { released: true, detail: "sent SIGTERM to node (42)" };
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.runCli(["release", "env_b", "3000"]);
     expect(result.exitCode).toBe(0);
@@ -248,8 +248,8 @@ describe("bb ports release", () => {
   });
 
   it("refuses an environment it does not know", async () => {
-    const { bb, harness } = host(() => ({ ports: [], scannedAt: 1, dockerError: null }));
-    await plugin(bb);
+    const { alia, harness } = host(() => ({ ports: [], scannedAt: 1, dockerError: null }));
+    await plugin(alia);
     const result = await harness.behavior.runCli(["release", "env_zz", "3000"]);
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("unknown environment env_zz");
@@ -258,13 +258,13 @@ describe("bb ports release", () => {
 
 describe("cross-machine attribution", () => {
   it("ignores ports a machine reports for a worktree it was not asked about", async () => {
-    const { bb, harness } = host(({ hostId }) => ({
+    const { alia, harness } = host(({ hostId }) => ({
       // host_2 wrongly answers for env_a, which lives on host_1.
       ports: [port({ port: hostId === "host_1" ? 3000 : 9999 })],
       scannedAt: 1,
       dockerError: null,
     }));
-    await plugin(bb);
+    await plugin(alia);
 
     const snapshot = JSON.parse((await harness.behavior.runCli(["list", "--json"])).stdout ?? "{}");
     expect(snapshot.groups).toHaveLength(1);
@@ -282,14 +282,14 @@ describe("scan cadence", () => {
 
   it("answers the card from a fresh scan only when the last one is stale", async () => {
     let scans = 0;
-    const { bb, harness } = host(
+    const { alia, harness } = host(
       () => {
         scans += 1;
         return { ports: [port({ port: 3000 })], scannedAt: 1, dockerError: null };
       },
       { scanIntervalSec: 1 },
     );
-    await plugin(bb);
+    await plugin(alia);
 
     // Nothing scanned yet, so the first read scans both machines.
     await harness.behavior.callRpc("ports_snapshot", null);

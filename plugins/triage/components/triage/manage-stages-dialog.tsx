@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import {

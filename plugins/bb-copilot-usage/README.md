@@ -1,10 +1,10 @@
-# GitHub Copilot Usage for BB
+# GitHub Copilot Usage for VesnALIA
 
-Adds GitHub Copilot AI-credit or premium-request usage to BB's Provider Usage panel.
+Adds GitHub Copilot AI-credit or premium-request usage to VesnALIA's Provider Usage panel.
 
 ## Requirements
 
-- BB 0.43 or newer.
+- VesnALIA 0.43 or newer.
 - GitHub Copilot CLI installed and authenticated (`copilot login`).
 - `tmux`, which provides the terminal emulation required by Copilot's interactive `/usage` display.
 
@@ -13,5 +13,5 @@ The plugin launches the local authenticated CLI, reads its visible `/usage` scre
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/defacid/bb-copilot-usage.git
+alia plugin install git:https://github.com/defacid/bb-copilot-usage.git
 ```

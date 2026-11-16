@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 import {
   UrlLink,
   type ExperimentalLiveFileTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   decodeLocalMarkdownPath,
   decodeWikilinkUrl,

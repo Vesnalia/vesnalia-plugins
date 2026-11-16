@@ -275,7 +275,7 @@ const T = {
     modelOut: (model: string, when: string) =>
       when === "" ? `sin ${model}` : `sin ${model} hasta ${when}`,
     threads: (used: number, of: number) => `${used} de ${of} hilos`,
-    outside: (n: number) => `${n} fuera de bb`,
+    outside: (n: number) => `${n} fuera de VesnALIA`,
     waiting: (n: number) => `${n} esperando`,
     noLogin: "sin sesión iniciada",
     locked: "bloqueada por el proveedor",
@@ -311,7 +311,7 @@ const T = {
     modelOut: (model: string, when: string) =>
       when === "" ? `no ${model}` : `no ${model} until ${when}`,
     threads: (used: number, of: number) => `${used} of ${of} threads`,
-    outside: (n: number) => `${n} outside bb`,
+    outside: (n: number) => `${n} outside VesnALIA`,
     waiting: (n: number) => `${n} waiting`,
     noLogin: "not logged in",
     locked: "locked by the provider",

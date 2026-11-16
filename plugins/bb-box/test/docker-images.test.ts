@@ -1,5 +1,5 @@
 import "./check-test-machine.mjs";
-// Building BB Box's images on a BB machine that hosts Docker boxes (src/plugin/docker-images.ts, 042).
+// Building VesnALIA Box's images on a VesnALIA machine that hosts Docker boxes (src/plugin/docker-images.ts, 042).
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -11,12 +11,12 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { dockerImageBuilding } from "../src/backends/docker/building.ts";
 import { prepareDigest } from "../src/backends/images.ts";
-import { BUILD_FREE_GB, DockerImages, bbAppDigest, imageStep, outdated, type DockerImagesDeps, type ImageBuild } from "../src/plugin/docker-images.ts";
+import { BUILD_FREE_GB, DockerImages, aliaAppDigest, imageStep, outdated, type DockerImagesDeps, type ImageBuild } from "../src/plugin/docker-images.ts";
 import { tempDir } from "./helpers.ts";
 
 function world(more: Partial<DockerImagesDeps> & { staleImages?: string[]; exit?: number | null; lines?: string[] } = {}) {
   const runs: { args: readonly string[]; host: string | undefined }[] = [];
-  /** The digest of BB's app each stale check was given. */
+  /** The digest of VesnALIA's app each stale check was given. */
   const apps: (string | null)[] = [];
   const changes: string[] = [];
   let release!: () => void;
@@ -81,7 +81,7 @@ test("a machine with every image it needs builds nothing, and one that lacks one
   assert.deepEqual(wayland.runs.map((each) => each.args), [["desktop-wayland"]]);
 });
 
-test("with BB's URL, the images have BB's app, and one with another build of it is built again (#95)", async () => {
+test("with VesnALIA's URL, the images have VesnALIA's app, and one with another build of it is built again (#95)", async () => {
   const digest = "a".repeat(64);
   const asked: string[] = [];
   const url = "https://bb.example.com";
@@ -94,60 +94,60 @@ test("with BB's URL, the images have BB's app, and one with another build of it 
   const built = await current.images.ensure("host_a");
   assert.deepEqual(asked, [url]);
   assert.deepEqual([built.state, built.targets], ["built", ["linux"]]);
-  assert.deepEqual(current.runs, [{ args: ["--bb-url", url, "linux"], host: "unix:///tmp/relay/host_a.sock" }]);
+  assert.deepEqual(current.runs, [{ args: ["--alia-url", url, "linux"], host: "unix:///tmp/relay/host_a.sock" }]);
 
   const errors: string[] = [];
   for (const appDigest of [async () => null, async () => Promise.reject(new Error("fetch failed"))]) {
     const silent = world({ appUrl: () => url, appDigest, staleImages: ["bbbox/linux:1"], logError: (operation) => errors.push(operation) });
     silent.release();
     await silent.images.ensure("host_a");
-    assert.deepEqual(silent.apps, [null, null], "a server that gives no digest: BB's app does not count");
+    assert.deepEqual(silent.apps, [null, null], "a server that gives no digest: VesnALIA's app does not count");
     assert.deepEqual(silent.runs.map((each) => each.args), [["linux"]], "and the images are built without it");
   }
-  assert.deepEqual(errors, ["BB's app digest"]);
+  assert.deepEqual(errors, ["VesnALIA's app digest"]);
 
   const unasked: string[] = [];
   const none = world({ appDigest: async (from) => (unasked.push(from), digest), staleImages: ["bbbox/linux:1"] });
   none.release();
   await none.images.ensure("host_a");
-  assert.deepEqual([unasked, none.apps, none.runs.map((each) => each.args)], [[], [null, null], [["linux"]]], "BB with no URL");
+  assert.deepEqual([unasked, none.apps, none.runs.map((each) => each.args)], [[], [null, null], [["linux"]]], "VesnALIA with no URL");
 });
 
-test("an image is outdated with no record or an older contract, or with another build of BB's app when BB gives one (#95, 049)", () => {
+test("an image is outdated with no record or an older contract, or with another build of VesnALIA's app when VesnALIA gives one (#95, 049)", () => {
   const app = "b".repeat(64);
   const labels = (record: Record<string, unknown> | null) => ({
     "bbbox.image-version": "1",
     ...(record ? { "bbbox.image-record": JSON.stringify({ contract: 1, kind: "linux", build: "build.x", built: "2026-10-03T00:00:00Z", ...record }) } : {}),
   });
-  assert.equal(outdated(labels({ bbApp: app }), app), false);
-  assert.equal(outdated(labels({ bbApp: "c".repeat(64) }), app), true);
-  assert.equal(outdated(labels({ bbApp: null }), app), true, "built without BB's app");
-  assert.equal(outdated(labels({ bbApp: null }), null), false, "BB gives no digest");
-  assert.equal(outdated(labels({ bbApp: app, contract: 0 }), app), true, "an older contract");
+  assert.equal(outdated(labels({ aliaApp: app }), app), false);
+  assert.equal(outdated(labels({ aliaApp: "c".repeat(64) }), app), true);
+  assert.equal(outdated(labels({ aliaApp: null }), app), true, "built without VesnALIA's app");
+  assert.equal(outdated(labels({ aliaApp: null }), null), false, "VesnALIA gives no digest");
+  assert.equal(outdated(labels({ aliaApp: app, contract: 0 }), app), true, "an older contract");
   assert.equal(outdated(labels(null), app), true, "built before records");
 });
 
-test("BB's app digest comes from the header of a HEAD request, as build.sh reads it (#95)", async () => {
+test("VesnALIA's app digest comes from the header of a HEAD request, as build.sh reads it (#95)", async () => {
   const digest = "d".repeat(64);
   const seen: string[] = [];
   const server = createServer((request, response) => {
     seen.push(`${request.method} ${request.url}`);
-    if (request.url === "/install/bb-app.tgz") response.setHeader("x-bb-artifact-sha256", digest);
+    if (request.url === "/install/alia-app.tgz") response.setHeader("x-alia-artifact-sha256", digest);
     response.end();
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   try {
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-    assert.equal(await bbAppDigest(`${url}/`), digest);
-    assert.equal(await bbAppDigest(`${url}/other`), null, "none in the answer");
-    assert.deepEqual(seen, ["HEAD /install/bb-app.tgz", "HEAD /other/install/bb-app.tgz"]);
+    assert.equal(await aliaAppDigest(`${url}/`), digest);
+    assert.equal(await aliaAppDigest(`${url}/other`), null, "none in the answer");
+    assert.deepEqual(seen, ["HEAD /install/alia-app.tgz", "HEAD /other/install/alia-app.tgz"]);
   } finally {
     server.close();
     server.closeAllConnections();
   }
 });
 
-test("a build that fails says why from its last lines, an install with no build.sh says so, and an image BB Box does not build is named", async () => {
+test("a build that fails says why from its last lines, an install with no build.sh says so, and an image VesnALIA Box does not build is named", async () => {
   const failing = world({ staleImages: ["bbbox/linux:1", "bbbox/linux-desktop:1"], exit: 1, lines: ["#7 ERROR: failed to fetch snapshot.ubuntu.com", "ERROR: failed to solve"] });
   failing.release();
   const failed = await failing.images.ensure("host_a");
@@ -157,12 +157,12 @@ test("a build that fails says why from its last lines, an install with no build.
 
   const scriptless = world({ staleImages: ["bbbox/linux:1"], script: null });
   scriptless.release();
-  assert.equal((await scriptless.images.ensure("host_a")).detail, "This install of BB Box has no setup/docker/build.sh to build the images with.");
+  assert.equal((await scriptless.images.ensure("host_a")).detail, "This install of VesnALIA Box has no setup/docker/build.sh to build the images with.");
 
   const own = world({ images: () => ["example/linux:custom"] });
   own.release();
   const named = await own.images.ensure("host_a");
-  assert.deepEqual([named.state, named.detail], ["built", "BB Box does not build example/linux:custom; load it on the machine."]);
+  assert.deepEqual([named.state, named.detail], ["built", "VesnALIA Box does not build example/linux:custom; load it on the machine."]);
   assert.deepEqual(own.runs, []);
 });
 
@@ -189,7 +189,7 @@ const WAYLAND_FREE_GB = 18;
 /**
  * Runs build.sh with a docker that says `freeGB` is free, or fails its check
  * with `error`, builds nothing, and reads `record` from an image's
- * /usr/share/bb-box/image.json, and a curl that gives `digest` as BB's app's,
+ * /usr/share/alia-box/image.json, and a curl that gives `digest` as VesnALIA's app's,
  * gives none ("none"), or fails ("fail").
  */
 function buildWith(freeGB: number, args: readonly string[] = [], error?: string, digest = "none", record = '{"contract":1,"kind":"linux"}', extra: { readonly imageError?: string; readonly startError?: string; readonly script?: string } = {}) {
@@ -210,7 +210,7 @@ case "$cmd" in
     ;;
   create)
     case "$*" in
-      *bb-box-df*)
+      *alia-box-df*)
         if [ -n "\${FAKE_ERROR:-}" ]; then echo "$FAKE_ERROR" >&2; exit 125; fi
         ;;
       *)
@@ -227,7 +227,7 @@ case "$cmd" in
     dest=$2
     base=\${src##*/}
     case "$src" in
-      *bb-box-df*)
+      *alia-box-df*)
         if [ -n "\${FAKE_ERROR:-}" ]; then echo "$FAKE_ERROR" >&2; exit 125; fi
         {
           echo 'Filesystem     1024-blocks    Used Available Capacity Mounted on'
@@ -236,7 +236,7 @@ case "$cmd" in
         ;;
       *image.json*)
         if [ -z "$FAKE_RECORD" ]; then
-          echo "Error response from daemon: Could not find the file /usr/share/bb-box/image.json in container c0" >&2
+          echo "Error response from daemon: Could not find the file /usr/share/alia-box/image.json in container c0" >&2
           exit 1
         fi
         printf '%s\\n' "$FAKE_RECORD" >"$dest/$base"
@@ -257,7 +257,7 @@ esac
 printf '%s\\n' "$*" >>'${log}.curl'
 [ "$FAKE_DIGEST" != fail ] || exit 22
 printf 'HTTP/2 200 \\r\\n'
-[ "$FAKE_DIGEST" = none ] || printf 'x-bb-artifact-sha256: %s\\r\\n' "$FAKE_DIGEST"
+[ "$FAKE_DIGEST" = none ] || printf 'x-alia-artifact-sha256: %s\\r\\n' "$FAKE_DIGEST"
 printf 'content-length: 1191955\\r\\n\\r\\n'
 `,
   );
@@ -270,7 +270,7 @@ printf 'content-length: 1191955\\r\\n\\r\\n'
   return {
     status: result.status,
     stderr: result.stderr,
-    checks: calls.filter((call) => call.startsWith("create ") && call.includes("bb-box-df")),
+    checks: calls.filter((call) => call.startsWith("create ") && call.includes("alia-box-df")),
     builds,
     labelled: calls.filter((call) => call.includes("bbbox.image-record=")),
     reads: calls.filter((call) => call.startsWith("create ") && call.includes("bbbox/")),
@@ -287,7 +287,7 @@ test("build.sh does not start with less disk free than the build needs, and says
   assert.equal(short.stderr, "The Docker host has 35 GB of disk free, and building 3 images needs about 36 GB. Free some, for example with docker builder prune, then build again.\n");
   assert.deepEqual(short.built, []);
   assert.equal(short.checks.length, 1);
-  assert.match(short.checks[0]!, /^create --platform linux\/amd64 --network none --entrypoint sh ubuntu:24\.04@sha256:[0-9a-f]{64} -c df -Pk \/ > \/tmp\/bb-box-df$/, "from the Dockerfile's base image, copied out, not attached");
+  assert.match(short.checks[0]!, /^create --platform linux\/amd64 --network none --entrypoint sh ubuntu:24\.04@sha256:[0-9a-f]{64} -c df -Pk \/ > \/tmp\/alia-box-df$/, "from the Dockerfile's base image, copied out, not attached");
   assert.deepEqual(short.attached, []);
 
   const enough = buildWith(BUILD_FREE_GB);
@@ -325,7 +325,7 @@ test("build.sh labels each image with its own record, and stops at an image with
   const none = buildWith(BUILD_FREE_GB, ["linux", "desktop"], undefined, "none", "");
   assert.deepEqual(
     [none.status, none.stderr, none.built, none.labelled],
-    [1, "Error response from daemon: Could not find the file /usr/share/bb-box/image.json in container c0\n", ["linux"], []],
+    [1, "Error response from daemon: Could not find the file /usr/share/alia-box/image.json in container c0\n", ["linux"], []],
   );
 });
 
@@ -369,23 +369,23 @@ test("build.sh reports Docker's own error when it cannot create a container to r
   assert.deepEqual(start.built, ["linux"]);
 });
 
-test("build.sh with BB's URL passes on the digest of BB's app that the server gives, and stops when it gives none (#95)", () => {
+test("build.sh with VesnALIA's URL passes on the digest of VesnALIA's app that the server gives, and stops when it gives none (#95)", () => {
   const digest = "e".repeat(64);
   const url = "https://bb.example.com/";
-  const app = buildWith(BUILD_FREE_GB, ["--bb-url", url, "linux"], undefined, digest);
+  const app = buildWith(BUILD_FREE_GB, ["--alia-url", url, "linux"], undefined, digest);
   assert.equal(app.status, 0, app.stderr);
   assert.deepEqual(app.curls, ["-fsSI --max-time 30 https://bb.example.com/install/bb-app.tgz"]);
   assert.equal(app.builds.length, 1);
-  assert.ok(app.builds[0]!.includes(` --build-arg BB_URL=${url} --build-arg BB_APP_SHA256=${digest} `), app.builds[0]);
+  assert.ok(app.builds[0]!.includes(` --build-arg ALIA_URL=${url} --build-arg ALIA_APP_SHA256=${digest} `), app.builds[0]);
 
   const none = buildWith(BUILD_FREE_GB, ["linux"], undefined, digest);
   assert.deepEqual(none.curls, [], "no URL, no request");
-  assert.ok(none.builds[0]!.includes(" --build-arg BB_URL= --build-arg BB_APP_SHA256= "), none.builds[0]);
+  assert.ok(none.builds[0]!.includes(" --build-arg ALIA_URL= --build-arg ALIA_APP_SHA256= "), none.builds[0]);
 
-  const down = buildWith(BUILD_FREE_GB, ["--bb-url", url], undefined, "fail");
-  assert.deepEqual([down.status, down.stderr, down.built, down.checks], [1, `build.sh could not reach BB's server at ${url} for its app.\n`, [], []]);
-  const silent = buildWith(BUILD_FREE_GB, ["--bb-url", url]);
-  assert.deepEqual([silent.status, silent.stderr, silent.built], [1, `BB's server at ${url} gave no digest for its app.\n`, []]);
+  const down = buildWith(BUILD_FREE_GB, ["--alia-url", url], undefined, "fail");
+  assert.deepEqual([down.status, down.stderr, down.built, down.checks], [1, `build.sh could not reach VesnALIA's server at ${url} for its app.\n`, [], []]);
+  const silent = buildWith(BUILD_FREE_GB, ["--alia-url", url]);
+  assert.deepEqual([silent.status, silent.stderr, silent.built], [1, `VesnALIA's server at ${url} gave no digest for its app.\n`, []]);
 });
 
 test("build.sh --arch arm64 builds the arm64 linux and desktop images for linux/arm64, and no Wayland desktop (053)", () => {

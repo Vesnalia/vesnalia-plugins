@@ -1,7 +1,7 @@
 import { memo, type CSSProperties } from "react";
 import {
   Markdown, UrlLink, experimental_Diff as Diff, experimental_Icon as Icon,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { formatDuration, previewLines, type LogEntry, type TurnStats } from "./entries";
 import type { SessionLogSettings, TimeFormat } from "./settings";
 

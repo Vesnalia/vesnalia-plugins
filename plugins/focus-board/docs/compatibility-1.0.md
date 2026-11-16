@@ -5,7 +5,7 @@ the line where the surfaces below stop changing without a major bump.
 
 ## Frozen at 1.0.0
 
-### CLI (`bb focus-board …`)
+### CLI (`alia focus-board …`)
 
 The command set and everything an operator or an agent can script against:
 
@@ -17,17 +17,17 @@ The command set and everything an operator or an agent can script against:
 | `snooze set <when> <id>… / clear <id>…` | `+<N>m\|h\|d\|w` or a future timestamp; invalid input exits 1 |
 | `autotitle availability \| prompt \| probe --thread-id <id>` | diagnostics unchanged in semantics |
 | `sweep [--ids <id>…] [--confirm]` | dry-run default, exit 1; `--json` reports `archived` and `markedDone` separately |
-| `sweep thresholds` | the declared settings edit through `bb plugin config focus-board` (host-validated); the plugin CLI carries no config commands (see Breaking changes) |
+| `sweep thresholds` | the declared settings edit through `alia plugin config focus-board` (host-validated); the plugin CLI carries no config commands (see Breaking changes) |
 
 Every command keeps accepting `--json`. Output is additive-safe: new fields
 may appear, existing fields never change shape or meaning without a major
 bump. Removing or renaming a command is a major bump. Recorded exception
-(2026-10-10, operator ruling in thread thr_2vjgvw98xc): `bb focus-board
+(2026-10-10, operator ruling in thread thr_2vjgvw98xc): `alia focus-board
 config show|set` retired in 1.2.x ahead of the next major — the commands
-duplicated the declared-settings door `bb plugin config focus-board`, and
+duplicated the declared-settings door `alia plugin config focus-board`, and
 the board's settings modal covers the thresholds too.
 
-### Stored state (server side, via `bb.storage.kv` and per-thread plugin metadata)
+### Stored state (server side, via `alia.storage.kv` and per-thread plugin metadata)
 
 | Store | Key | Record |
 |---|---|---|
@@ -46,7 +46,7 @@ idempotent re-runs) is the pattern.
 
 ### localStorage preferences (client side)
 
-- `focus-board:groupBy`, `focus-board:filter`, `focus-board:search`, `focus-board:nestChildren`, `focus-board:collapsedFamilies`, `focus-board:parentLaneOrder`, `focus-board:paneWidth`, `focus-board:lastSeenVersion`, `focus-board:lastSeenUnreleased`, and `bb.workspaceOpenTarget` keep their names and value shapes. Two consequences of the 0.3.1 plugin-rename lesson stand from 1.0.0 onward:
+- `focus-board:groupBy`, `focus-board:filter`, `focus-board:search`, `focus-board:nestChildren`, `focus-board:collapsedFamilies`, `focus-board:parentLaneOrder`, `focus-board:paneWidth`, `focus-board:lastSeenVersion`, `focus-board:lastSeenUnreleased`, and `alia.workspaceOpenTarget` keep their names and value shapes. Two consequences of the 0.3.1 plugin-rename lesson stand from 1.0.0 onward:
 
 - Renaming any of these keys is a breaking change. A rename needs a
   read-both migration in the same release that ships it.
@@ -59,7 +59,7 @@ idempotent re-runs) is the pattern.
 `snooze-changed` `{ threadId }` keep their names and payload shapes.
 Additive fields only.
 
-### Plugin RPC contract (`bb.rpc.register` in `server.ts`)
+### Plugin RPC contract (`alia.rpc.register` in `server.ts`)
 
 Every method in `rpcContract` is zod-contracted and frozen for shape and
 semantics: `done_list`, `done_set`, `pin_parks_list`, `pin_park_set`,
@@ -82,8 +82,8 @@ it (such as the autotitle service probe).
 
 ## Host and SDK range
 
-- Engines stay `bb >= 0.43` with plugin SDK `>= 0.5.9` in 1.x; the devDependency SDK version tracks bb's current stable per release.
-- The plugin leans on host surfaces that are still marked experimental upstream (the workspace file preview among them). A plugin 1.0.0 cannot promise what bb has not: compatibility is verified against a named bb version per release, noted by that release's changelog section, and the embedded pane is re-checked against every new bb stable before the plugin's next cut. The chat-click-jump guard exists precisely because bb host updates can change embedded behavior with no plugin-side change (see `docs/chat-click-jump-2026-09-29.md`).
+- Engines stay `alia >= 0.43` with plugin SDK `>= 0.5.9` in 1.x; the devDependency SDK version tracks VesnALIA's current stable per release.
+- The plugin leans on host surfaces that are still marked experimental upstream (the workspace file preview among them). A plugin 1.0.0 cannot promise what VesnALIA has not: compatibility is verified against a named VesnALIA version per release, noted by that release's changelog section, and the embedded pane is re-checked against every new VesnALIA stable before the plugin's next cut. The chat-click-jump guard exists precisely because VesnALIA host updates can change embedded behavior with no plugin-side change (see `docs/chat-click-jump-2026-09-29.md`).
 
 ## Breaking changes
 

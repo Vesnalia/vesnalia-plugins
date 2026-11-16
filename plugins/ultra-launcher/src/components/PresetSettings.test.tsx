@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
-import type { ExperimentalProviderModelPickerProps } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerProps } from "@vesnalia/plugin-sdk/app";
 import { PresetSettings, PresetSettingsOverlay } from "./PresetSettings";
 import { EDIT_PRESETS_EVENT, type PresetState } from "../lib/presets";
 import { mockViewport } from "../../test/viewport";
@@ -21,7 +21,7 @@ vi.mock("../hooks/usePresets", () => ({
     reload: vi.fn(),
   }),
 }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   experimental_Icon: () => null,
   experimental_useProviders: () => ({ providers: [{ id: "codex" }] }),
   experimental_ProviderIcon: () => null,

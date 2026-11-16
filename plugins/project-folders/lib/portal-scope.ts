@@ -1,18 +1,18 @@
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 export function usePortalScopeProps(): {
-  "data-bb-portaled-overlay": "";
-  "data-bb-plugin-root"?: "";
-  "data-bb-plugin"?: string;
-  "data-bb-ru-skip": "";
+  "data-alia-portaled-overlay": "";
+  "data-alia-plugin-root"?: "";
+  "data-alia-plugin"?: string;
+  "data-alia-ru-skip": "";
 } {
   const pluginId =
-    typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
+    typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : undefined;
   return {
-    "data-bb-portaled-overlay": "",
-    "data-bb-plugin-root": "",
-    // The plugin localizes itself; BB-wide DOM translators must leave it alone.
-    "data-bb-ru-skip": "",
-    ...(pluginId !== undefined ? { "data-bb-plugin": pluginId } : {}),
+    "data-alia-portaled-overlay": "",
+    "data-alia-plugin-root": "",
+    // The plugin localizes itself; ALIA-wide DOM translators must leave it alone.
+    "data-alia-ru-skip": "",
+    ...(pluginId !== undefined ? { "data-alia-plugin": pluginId } : {}),
   };
 }

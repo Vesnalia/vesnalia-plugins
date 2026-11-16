@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -35,7 +35,7 @@ export function RadarNewSection() {
     setPending(true);
     setError(null);
     try {
-      // BB's realtime sidebar snapshot supplies the new section to every view.
+      // VesnALIA's realtime sidebar snapshot supplies the new section to every view.
       const section = await sdk.threadSections.create({ name: trimmed });
       close();
       toast.success(`Created section "${section.name}"`);

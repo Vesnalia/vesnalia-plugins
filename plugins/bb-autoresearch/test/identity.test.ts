@@ -131,9 +131,9 @@ describe("[git] identity: the engine", () => {
       const tid = `thr_w${port.spawned.length + 1}`;
       port.spawned.push(args);
       const path = join(root, tid);
-      sh(repo, "worktree", "add", "-q", "-b", `bb/${tid}`, path, args.baseBranch);
+      sh(repo, "worktree", "add", "-q", "-b", `alia/${tid}`, path, args.baseBranch);
       port.threads.set(tid, { id: tid, status: "active", archivedAt: null, deletedAt: null, environmentId: `env_${tid}`, metadata: { ...args.metadata } });
-      port.envs.set(`env_${tid}`, { id: `env_${tid}`, hostId: "host_test", path, branchName: `bb/${tid}` });
+      port.envs.set(`env_${tid}`, { id: `env_${tid}`, hostId: "host_test", path, branchName: `alia/${tid}` });
       return { threadId: tid, environmentId: `env_${tid}` };
     };
     port.addThread("thr_study");

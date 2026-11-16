@@ -2,7 +2,7 @@
  * The whole server against the SDK's fake host, with a temporary Codex login.
  * Nothing here reads the real ~/.codex/auth.json or talks to OpenAI.
  */
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -24,7 +24,7 @@ async function load(options: { login?: string | null; settings?: Record<string, 
   if (options.login !== null) codexHome.write(options.login ?? chatgptLogin(fakeToken(NOW + 48 * HOUR)));
   const host = createFakePluginHost({ pluginId: "codex-realtime", settings: options.settings ?? {} });
   cleanup.push(() => host.harness.lifecycle.dispose());
-  await createPlugin({ authPath: codexHome.authPath, now: () => NOW })(host.bb);
+  await createPlugin({ authPath: codexHome.authPath, now: () => NOW })(host.alia);
   const call = (input: unknown, caller = VOICE_MODE) => host.harness.behavior.callRpc("realtimeConnection", input, caller);
   return { host, codexHome, call };
 }
@@ -98,7 +98,7 @@ describe("realtimeConnection", () => {
     await expect(call({})).rejects.toThrow(/not valid JSON.*codex login/su);
   });
 
-  it("never hands the token to the bb app or the CLI", async () => {
+  it("never hands the token to the VesnALIA app or the CLI", async () => {
     const { call } = await load();
     await expect(call({}, { experimental_caller: { kind: "client" } } as never)).rejects.toThrow(/only to another plugin/u);
   });

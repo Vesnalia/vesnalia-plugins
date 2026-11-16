@@ -1,5 +1,5 @@
 // Bundles content/ into server/content.generated.ts, so the server half needs no file access to find
-// the session brief and PRINCIPLES.md: `bb plugin build` bundles one script and the plugin's own
+// the session brief and PRINCIPLES.md: `alia plugin build` bundles one script and the plugin's own
 // directory is not on offer at run time. Run with `npm run gen:content` after any change under content/.
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";

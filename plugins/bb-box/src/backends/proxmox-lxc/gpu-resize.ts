@@ -139,7 +139,7 @@ export function noSharedCardRefusal(node: string, box: PlanBox, blocks: readonly
   const agent = cardsWords(blocks, namer, "agent", asking);
   const own = agentChoices(blocks, namer, asking, "keep it with no GPU");
   return {
-    person: `No card on ${node} can take a shared GPU for ${box.name} now${person.length ? `: ${person.join("; ")}` : ""}. Release a box on a card, keep it with no GPU, or raise the boxes per card in BB Box's settings.`,
+    person: `No card on ${node} can take a shared GPU for ${box.name} now${person.length ? `: ${person.join("; ")}` : ""}. Release a box on a card, keep it with no GPU, or raise the boxes per card in VesnALIA Box's settings.`,
     agent: `Not resized: no card on ${node} can take a shared GPU for ${box.name} now${agent.length ? `: ${agent.join("; ")}` : ""}. ${own} ${PRODUCT} changed nothing.`,
   };
 }
@@ -153,7 +153,7 @@ export function helperNotReadyRefusal(node: string, box: PlanBox, why: string, f
 
 export function unmarkedRefusal(box: PlanBox): GpuRefusal {
   return {
-    person: `${capitalised(box.name)} has a card's device lines and no GPU marker, so ${PRODUCT} does not know which claim it holds. Run bb box gpu mark, then resize it again.`,
+    person: `${capitalised(box.name)} has a card's device lines and no GPU marker, so ${PRODUCT} does not know which claim it holds. Run alia box gpu mark, then resize it again.`,
     agent: `Not resized: ${box.name} has a card's device lines and no GPU marker, so ${PRODUCT} does not know which claim it holds. Ask the user. ${PRODUCT} changed nothing.`,
   };
 }
@@ -163,5 +163,5 @@ export function startFirstRefusal(box: PlanBox, driver: string): GpuRefusal {
 }
 
 export function noDriverRefusal(node: string, box: PlanBox): GpuRefusal {
-  return helperNotReadyRefusal(node, box, `its GPU helper reports no NVIDIA driver, so ${PRODUCT} cannot tell which userspace a card needs`, "Run bb box doctor.");
+  return helperNotReadyRefusal(node, box, `its GPU helper reports no NVIDIA driver, so ${PRODUCT} cannot tell which userspace a card needs`, "Run alia box doctor.");
 }

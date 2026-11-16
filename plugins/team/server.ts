@@ -1,13 +1,13 @@
 import { verifyQuotaBoundary } from "./checkpoint";
 import { ResourceControl, resourcePolicySchema, withResourceResults, confirmedQuota, type ResourceOwner, type ResourceSummary } from "./resource-control";
 import { executionPolicySchema, withExecutionProfile, type ExecutionFallbackSelection } from "./execution-policy";
-// bb-plugin-team — role-based agent teams for a project.
+// alia-plugin-team — role-based agent teams for a project.
 //
 // A project may hold several teams; each team is a lead plus executors,
-// configured in .bb/teams/<team>.yaml (the v0.1 file .bb/team.yaml is read as
+// configured in .vesnalia/teams/<team>.yaml (the v0.1 file .vesnalia/team.yaml is read as
 // team "main"). Team configs stay out of git until versioning is turned on.
 //
-// Commands (bb team --help): init, create, list, add-role, version, tell,
+// Commands (VesnALIA team --help): init, create, list, add-role, version, tell,
 // task add|list|update|done|remove, report, doctor, replace, stop, pause,
 // resume, status, retitle, template list|show|save|delete.
 //
@@ -23,9 +23,9 @@ import {
   defineCli,
   defineRpcContract,
   experimental_PluginRpcRefusal,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginMentionItem,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { dump as dumpYaml, load as loadYaml } from "js-yaml";
 import { z } from "zod";
 import { createHash } from "node:crypto";
@@ -172,7 +172,7 @@ export function teamMetadata(
 
 /**
  * The pause hook decision. Held while the thread is paused: agent and system
- * traffic, and every message this plugin relays (bb team tell / task --send /
+ * traffic, and every message this plugin relays (VesnALIA team tell / task --send /
  * the panel). A human typing straight into the thread is never held.
  */
 export function pauseDecision(
@@ -314,7 +314,7 @@ export const rpcContract = defineRpcContract({
       language: z.enum(["en", "ru"]),
     }),
   },
-  /** Spawn the team's missing roles (bb team create). */
+  /** Spawn the team's missing roles (VesnALIA team create). */
   teamSpawn: {
     input: z.object({ projectId: projectIdSchema, team: teamSchema }).strict(),
     output: z.object({ spawned: z.number() }),
@@ -327,7 +327,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ projectId: projectIdSchema, team: teamSchema, role: z.string().min(1).max(100), expectedThreadId: z.string().min(1).max(200) }).strict(),
     output: sessionViewSchema,
   },
-  /** Stop a role's running threads (bb team stop <role>). */
+  /** Stop a role's running threads (VesnALIA team stop <role>). */
   stop: {
     input: z.object({ projectId: projectIdSchema, team: teamSchema, role: z.string().min(1).max(100) }).strict(),
     output: z.object({ stopped: z.number() }),
@@ -490,18 +490,18 @@ export const rpcContract = defineRpcContract({
 
 /* ──────────────────────── Plugin ──────────────────────── */
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   /*
    * Settings, two-phase: `language` is defined first and read from the same
    * settings store (load-safe inside the factory), then the rest register with
    * RU-only or EN-only labels. The SDK has no runtime metadata update and
-   * `bb.sdk.plugins.getSettings` 404s until the factory has run, so the label
+   * `alia.sdk.plugins.getSettings` 404s until the factory has run, so the label
    * language is fixed at load; switching language shows new native labels
-   * after `bb plugin reload team` (surfaced as reloadHint in editorSettings).
+   * after `alia plugin reload team` (surfaced as reloadHint in editorSettings).
    */
-  const languageSettings = bb.settings.define({
+  const languageSettings = alia.settings.define({
     language: languageSettingDescriptor(),
   });
   let nativeLang = "en" as "en" | "ru";
@@ -510,7 +510,7 @@ export default async function plugin(bb: BbPluginApi) {
   } catch {
     // settings unavailable at load — English until the first command
   }
-  const generalSettings = bb.settings.define(generalSettingDescriptors(nativeLang));
+  const generalSettings = alia.settings.define(generalSettingDescriptors(nativeLang));
 
   /** Combined view of both handles — the same settings store, split only by key. */
   type SettingsValues = {
@@ -569,7 +569,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const publishChange = (projectId: string): void => {
     try {
-      bb.realtime.publish("team-changed", { projectId });
+      alia.realtime.publish("team-changed", { projectId });
     } catch {
       // no connected clients / server not bound yet
     }
@@ -578,8 +578,8 @@ export default async function plugin(bb: BbPluginApi) {
   /* ── Scope: project + team ── */
 
   const allTeams = async (workspace: Workspace, scan?: ThreadScan): Promise<string[]> => {
-    const configured = await listConfiguredTeams(bb, workspace);
-    const fromThreads = teamsWithThreads(scan ?? (await scanTeamThreads(bb, workspace.projectId)));
+    const configured = await listConfiguredTeams(alia, workspace);
+    const fromThreads = teamsWithThreads(scan ?? (await scanTeamThreads(alia, workspace.projectId)));
     return [...new Set([...configured, ...fromThreads])].sort();
   };
 
@@ -596,7 +596,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (threadId) {
       try {
         const mark = readTeamMark(
-          (await bb.sdk.threads.getPluginMetadata({ threadId })) as Record<string, unknown>,
+          (await alia.sdk.threads.getPluginMetadata({ threadId })) as Record<string, unknown>,
         );
         if (mark) return mark.team;
       } catch {
@@ -614,14 +614,14 @@ export default async function plugin(bb: BbPluginApi) {
     ctx: { projectId?: string; cwd?: string; threadId?: string },
     t: Strings,
   ): Promise<Scope> => {
-    const workspace = await resolveWorkspace(bb, options.project, ctx.projectId, t, ctx);
+    const workspace = await resolveWorkspace(alia, options.project, ctx.projectId, t, ctx);
     const team = await pickTeam(workspace, options.team, ctx.threadId, t);
     return { ...workspace, team };
   };
 
   const scopeFor = async (projectId: string, team: string, t: Strings): Promise<Scope> => {
     core.assertTeamName(team);
-    const workspace = await resolveWorkspace(bb, projectId, undefined, t, {});
+    const workspace = await resolveWorkspace(alia, projectId, undefined, t, {});
     return { ...workspace, team };
   };
 
@@ -640,17 +640,17 @@ export default async function plugin(bb: BbPluginApi) {
 
   const versionState = async (scope: Scope, legacy: boolean) => {
     const layout = teamLayout(scope.team, legacy);
-    const ignore = await readFileOrNull(bb, scope, layout.ignoreFile);
-    const root = await readFileOrNull(bb, scope, ".gitignore");
+    const ignore = await readFileOrNull(alia, scope, layout.ignoreFile);
+    const root = await readFileOrNull(alia, scope, ".gitignore");
     const blocked = root !== null && gitIgnoresBB(root);
     return { layout, blocked, versioned: !blocked && isVersioned(ignore, layout.ignoreEntries) };
   };
 
   const setVersioned = async (scope: Scope, legacy: boolean, versioned: boolean) => {
     const layout = teamLayout(scope.team, legacy);
-    const ignore = await readFileOrNull(bb, scope, layout.ignoreFile);
+    const ignore = await readFileOrNull(alia, scope, layout.ignoreFile);
     await writeWorkspaceFile(
-      bb,
+      alia,
       scope,
       layout.ignoreFile,
       setVersionedContent(ignore, layout.ignoreEntries, versioned),
@@ -665,19 +665,19 @@ export default async function plugin(bb: BbPluginApi) {
 
   /* Generator selection: one standalone kv setting, separate from role models. */
   const readGeneratorSelection = async (): Promise<GeneratorSelection | null> =>
-    parseGeneratorSelection(await bb.storage.kv.get(GENERATOR_SELECTION_KV_KEY));
+    parseGeneratorSelection(await alia.storage.kv.get(GENERATOR_SELECTION_KV_KEY));
   const writeGeneratorSelection = async (
     selection: GeneratorSelection | null,
   ): Promise<void> => {
     if (selection === null) {
-      await bb.storage.kv.delete(GENERATOR_SELECTION_KV_KEY);
+      await alia.storage.kv.delete(GENERATOR_SELECTION_KV_KEY);
       return;
     }
-    await bb.storage.kv.set(GENERATOR_SELECTION_KV_KEY, selection);
+    await alia.storage.kv.set(GENERATOR_SELECTION_KV_KEY, selection);
   };
 
   const readUserTemplates = async (): Promise<TeamTemplate[]> => {
-    const raw = await bb.storage.kv.get<unknown[]>(TEMPLATES_KEY);
+    const raw = await alia.storage.kv.get<unknown[]>(TEMPLATES_KEY);
     if (!Array.isArray(raw)) return [];
     return raw.flatMap((item) => {
       const parsed = templateSchema.safeParse(item);
@@ -691,7 +691,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const clean = templateSchema.parse(template);
     const list = (await readUserTemplates()).filter((tpl) => tpl.id !== clean.id);
-    await bb.storage.kv.set(TEMPLATES_KEY, [...list, clean]);
+    await alia.storage.kv.set(TEMPLATES_KEY, [...list, clean]);
   };
   const deleteUserTemplate = async (id: string, m: Messages): Promise<void> => {
     if (builtinTemplates("en").some((tpl) => tpl.id === id)) {
@@ -710,7 +710,7 @@ export default async function plugin(bb: BbPluginApi) {
       const err = m.templateNotFound(id);
       throw new PluginCliError(err.message, { code: "template_not_found", hint: err.hint });
     }
-    await bb.storage.kv.set(
+    await alia.storage.kv.set(
       TEMPLATES_KEY,
       list.filter((tpl) => tpl.id !== id),
     );
@@ -746,7 +746,7 @@ export default async function plugin(bb: BbPluginApi) {
       let prompt: string | undefined;
       if (role.prompt || role.promptFile) {
         try {
-          prompt = await loadRolePrompt(bb, workspace, role, role.name === lead.name, lang, t);
+          prompt = await loadRolePrompt(alia, workspace, role, role.name === lead.name, lang, t);
         } catch {
           prompt = undefined;
         }
@@ -781,19 +781,19 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<string[]> => {
     const existing: string[] = [];
     for (const file of files) {
-      if ((await readFileOrNull(bb, scope, file.rel)) !== null) existing.push(file.rel);
+      if ((await readFileOrNull(alia, scope, file.rel)) !== null) existing.push(file.rel);
     }
     if (existing.length > 0 && !force) {
       const err = t.scaffoldExists(existing.join(", "));
       throw new PluginCliError(err.message, { code: "scaffold_exists", hint: err.hint });
     }
-    for (const file of files) await writeWorkspaceFile(bb, scope, file.rel, file.content);
+    for (const file of files) await writeWorkspaceFile(alia, scope, file.rel, file.content);
     return files.map((file) => file.rel);
   };
 
   /* ── Work packages: one kv store per project team ── */
 
-  const tracker = createTaskTracker(bb, {
+  const tracker = createTaskTracker(alia, {
     defaultTracker: async () => (await settings.get()).defaultTracker === "builtin" ? "builtin" : "beads",
     publish: publishChange,
   });
@@ -830,10 +830,10 @@ export default async function plugin(bb: BbPluginApi) {
       const current=await tracker.getConfig(workspace);
       const effective=kind ?? ((await settings.get()).defaultTracker==="builtin"?"builtin":"beads");
       if(current.kind===effective){await tracker.setConfig(workspace,kind);publishChange(workspace.projectId);return;}
-      const scan = await scanTeamThreads(bb, workspace.projectId);
+      const scan = await scanTeamThreads(alia, workspace.projectId);
       if (scan.rows.some(row => RUNNING.includes(row.status))) throw new PluginCliError("Stop or finish active team work before changing the project tracker", {code: "role_busy"});
       for(const row of scan.rows.filter(row=>!row.helper)) {
-        if(await bb.storage.kv.get(sessionTaskKey({...workspace,team:row.team},row.threadId))!==undefined) throw new PluginCliError("Save final checkpoints and replace completed role sessions before changing trackers; old execution references stay in their original tracker",{code:"session_consumed"});
+        if(await alia.storage.kv.get(sessionTaskKey({...workspace,team:row.team},row.threadId))!==undefined) throw new PluginCliError("Save final checkpoints and replace completed role sessions before changing trackers; old execution references stay in their original tracker",{code:"session_consumed"});
       }
       for (const team of await allTeams(workspace, scan)) {
         const scope = {...workspace, team};
@@ -860,44 +860,44 @@ export default async function plugin(bb: BbPluginApi) {
   const pauseKey = (scope: Scope) => `paused:${scope.projectId}:${scope.team}`;
   const pausedThreads = new Set<string>();
   const readPause = async (scope: Scope): Promise<PauseState | null> =>
-    (await bb.storage.kv.get<PauseState>(pauseKey(scope))) ?? null;
+    (await alia.storage.kv.get<PauseState>(pauseKey(scope))) ?? null;
   try {
-    for (const key of await bb.storage.kv.list("paused:")) {
-      const state = await bb.storage.kv.get<PauseState>(key);
+    for (const key of await alia.storage.kv.list("paused:")) {
+      const state = await alia.storage.kv.get<PauseState>(key);
       for (const id of state?.threadIds ?? []) pausedThreads.add(id);
     }
   } catch (error) {
-    bb.log.warn(`pause state not restored: ${(error as Error).message}`);
+    alia.log.warn(`pause state not restored: ${(error as Error).message}`);
   }
 
   const resourceOwner = async (threadId:string):Promise<ResourceOwner|null> => {
-    let id=threadId;const seen=new Set<string>();let first:Awaited<ReturnType<typeof bb.sdk.threads.get>>|null=null;
+    let id=threadId;const seen=new Set<string>();let first:Awaited<ReturnType<typeof alia.sdk.threads.get>>|null=null;
     let mark:ReturnType<typeof readTeamMark>=null;let bound:TaskId|undefined;let ownerThreadId=threadId;
     for(let depth=0;depth<20&&!seen.has(id);depth++){
-      seen.add(id);const thread=await bb.sdk.threads.get({threadId:id});first??=thread;
-      const meta=await bb.sdk.threads.getPluginMetadata({threadId:id}) as Record<string,unknown>;
+      seen.add(id);const thread=await alia.sdk.threads.get({threadId:id});first??=thread;
+      const meta=await alia.sdk.threads.getPluginMetadata({threadId:id}) as Record<string,unknown>;
       mark??=readTeamMark(meta);
-      if(mark){bound=await bb.storage.kv.get<TaskId>(`session-task:${thread.projectId}:${mark.team}:${id}`);if(bound!==undefined){ownerThreadId=id;break;}if(!mark.helper){ownerThreadId=id;break;}}
+      if(mark){bound=await alia.storage.kv.get<TaskId>(`session-task:${thread.projectId}:${mark.team}:${id}`);if(bound!==undefined){ownerThreadId=id;break;}if(!mark.helper){ownerThreadId=id;break;}}
       if(!thread.parentThreadId)break;id=thread.parentThreadId;
     }
     if(!mark||!first)return null;
     let hostId:string|null=null;
-    if(first.environmentId)hostId=(await bb.sdk.environments.get({environmentId:first.environmentId})).hostId;
+    if(first.environmentId)hostId=(await alia.sdk.environments.get({environmentId:first.environmentId})).hostId;
     return {projectId:first.projectId,team:mark.team,role:mark.role,taskId:bound??null,ownerThreadId,hostId};
   };
-  const resources=new ResourceControl(bb,resourceOwner,publishChange);
+  const resources=new ResourceControl(alia,resourceOwner,publishChange);
 
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
-    const meta = await bb.sdk.threads.getPluginMetadata({threadId:ctx.thread.id}) as Record<string,unknown>;
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
+    const meta = await alia.sdk.threads.getPluginMetadata({threadId:ctx.thread.id}) as Record<string,unknown>;
     if (meta.teamReplacement === true) return {action:"wait" as const,reason:"Team is preparing this replacement session; the initial prompt stays queued until the role switch completes."};
     const mark=readTeamMark(meta);
     if (mark && !mark.helper) {
-      const replacement=await readReplacementIntent(bb,ctx.thread.projectId,mark.team,mark.role);
+      const replacement=await readReplacementIntent(alia,ctx.thread.projectId,mark.team,mark.role);
       if (replacement && replacement.newThreadId===ctx.thread.id && replacement.stage!=="complete") return {action:"wait" as const,reason:"Team is finishing the role switch before releasing this session."};
     }
-    const canonical=mark&&!mark.helper?await bb.storage.kv.get<string>(`active-session:${ctx.thread.projectId}:${mark.team}:${mark.role}`):null;
-    if (meta.teamRetired === true || (canonical && canonical!==ctx.thread.id)) return {action:"wait" as const,reason:"This session was replaced. Address the current role using bb team tell <role>."};
-    const paused=pauseDecision(ctx.thread.id,{initiator:ctx.initiator,originPluginId:ctx.originPluginId},bb.pluginId,pausedThreads,messages(currentLang).pauseWaitReason);
+    const canonical=mark&&!mark.helper?await alia.storage.kv.get<string>(`active-session:${ctx.thread.projectId}:${mark.team}:${mark.role}`):null;
+    if (meta.teamRetired === true || (canonical && canonical!==ctx.thread.id)) return {action:"wait" as const,reason:"This session was replaced. Address the current role using VesnALIA team tell <role>."};
+    const paused=pauseDecision(ctx.thread.id,{initiator:ctx.initiator,originPluginId:ctx.originPluginId},alia.pluginId,pausedThreads,messages(currentLang).pauseWaitReason);
     if(paused.action!=="proceed")return paused;
     return resources.admit(ctx);
   });
@@ -908,14 +908,14 @@ export default async function plugin(bb: BbPluginApi) {
     let configError: string | null = null;
     let configLead: string | null = null;
     try {
-      loaded = await readTeamConfig(bb, scope, scope.team, t);
+      loaded = await readTeamConfig(alia, scope, scope.team, t);
       configLead = core.semanticChecks(loaded.config, t).lead.name;
     } catch (error) {
       if ((error as PluginCliError).code !== "config_missing") {
         configError = (error as Error).message;
       }
     }
-    const scan = await scanTeamThreads(bb, scope.projectId);
+    const scan = await scanTeamThreads(alia, scope.projectId);
     const rows = roleThreadsOf(scan, scope.team);
     const helpers = helpersOf(scan, scope.team);
     const lead = configLead ?? inferLeadRole(rows);
@@ -926,8 +926,8 @@ export default async function plugin(bb: BbPluginApi) {
     if(!await resources.notice(scope,`${role}:${reason}`))return;
     const {t}=await loadLang();const {rows,lead}=await teamContext(scope,t);
     const target=lead&&lead!==role?rows.get(lead)?.[0]:null;if(!target)return;
-    const text=currentLang==="ru"?`[team] Ресурсы/продолжение ${role} требуют решения: ${reason}. Смотри ресурсы Team или bb team report; не обходи блокировку новой задачей/тредом.`:`[team] ${role} needs a resource/continuation decision: ${reason}. Inspect Team resources or bb team report; do not bypass the hold with another task/thread.`;
-    try{await bb.sdk.threads.send({originPluginId:bb.pluginId,threadId:target.threadId,mode:"queue-if-active",input:[{type:"text",text,mentions:[]}]});}catch{bb.log.warn("Team resource notice could not be delivered; it remains visible in the resource panel");}
+    const text=currentLang==="ru"?`[team] Ресурсы/продолжение ${role} требуют решения: ${reason}. Смотри ресурсы Team или VesnALIA team report; не обходи блокировку новой задачей/тредом.`:`[team] ${role} needs a resource/continuation decision: ${reason}. Inspect Team resources or VesnALIA team report; do not bypass the hold with another task/thread.`;
+    try{await alia.sdk.threads.send({originPluginId:alia.pluginId,threadId:target.threadId,mode:"queue-if-active",input:[{type:"text",text,mentions:[]}]});}catch{alia.log.warn("Team resource notice could not be delivered; it remains visible in the resource panel");}
   };
 
   const pause = async (scope: Scope, t: Strings): Promise<{ count: number; already: boolean }> => {
@@ -938,7 +938,7 @@ export default async function plugin(bb: BbPluginApi) {
       ...[...rows.entries()].filter(([role]) => role !== lead).flatMap(([, list]) => list),
       ...[...helpers.entries()].filter(([role]) => role !== lead).flatMap(([, list]) => list),
     ].map((row) => row.threadId);
-    await bb.storage.kv.set(pauseKey(scope), { threadIds, atMs: Date.now() } satisfies PauseState);
+    await alia.storage.kv.set(pauseKey(scope), { threadIds, atMs: Date.now() } satisfies PauseState);
     for (const id of threadIds) pausedThreads.add(id);
     publishChange(scope.projectId);
     return { count: threadIds.length, already: false };
@@ -947,10 +947,10 @@ export default async function plugin(bb: BbPluginApi) {
   const resume = async (scope: Scope): Promise<number | null> => withScopeLock(scope, async () => {
     const existing = await readPause(scope);
     if (existing) {
-      await bb.storage.kv.delete(pauseKey(scope));
+      await alia.storage.kv.delete(pauseKey(scope));
       for (const id of existing.threadIds) pausedThreads.delete(id);
     }
-    await bb.experimental_hooks.recheck("message.dispatch");
+    await alia.experimental_hooks.recheck("message.dispatch");
     const {t} = await loadLang();
     const {rows} = await teamContext(scope,t);
     for (const role of rows.keys()) {
@@ -986,15 +986,15 @@ export default async function plugin(bb: BbPluginApi) {
         const err = t.tellRoleNotFound(wantedRole);
         throw new PluginCliError(err.message, { code: "role_not_found", hint: err.hint });
       }
-      if (list.length !== 1) throw new PluginCliError("Role has several sessions; select its canonical session with bb team replace --thread", {code:"thread_ambiguous"});
+      if (list.length !== 1) throw new PluginCliError("Role has several sessions; select its canonical session with VesnALIA team replace --thread", {code:"thread_ambiguous"});
       for (const row of list) targets.push([wantedRole, row]);
     }
     const sent: Array<{ role: string; threadId: string }> = [];
     const failed: Array<{ role: string; error: string }> = [];
     for (const [role, row] of targets) {
       try {
-        await bb.sdk.threads.send({
-          originPluginId: bb.pluginId,
+        await alia.sdk.threads.send({
+          originPluginId: alia.pluginId,
           ...(senderThreadId && senderThreadId !== row.threadId ? { senderThreadId } : {}),
           threadId: row.threadId,
           mode: "auto",
@@ -1014,55 +1014,55 @@ export default async function plugin(bb: BbPluginApi) {
   const sessionTaskKey = (scope: Scope, threadId: string) => `session-task:${scope.projectId}:${scope.team}:${threadId}`;
   const checkpointRefKey = (scope: Scope, role: string) => `checkpoint-ref:${scope.projectId}:${scope.team}:${role}`;
   const assertRoleAvailable = async (scope: Scope, role: string) => {
-    const pending = await bb.storage.kv.get<{stage?: string}>(`replacement:${scope.projectId}:${scope.team}:${role}`);
+    const pending = await alia.storage.kv.get<{stage?: string}>(`replacement:${scope.projectId}:${scope.team}:${role}`);
     if (pending && pending.stage !== "complete") {
-      throw new PluginCliError(`Role ${role} has an unfinished session replacement; repeat bb team replace ${role} before sending work`, { code: "replacement_pending" });
+      throw new PluginCliError(`Role ${role} has an unfinished session replacement; repeat VesnALIA team replace ${role} before sending work`, { code: "replacement_pending" });
     }
   };
   const deliverPackage = async (scope: Scope, task: TeamTask, target: TeamThreadRow, lead: string | null, senderThreadId?: string) => {
     await assertRoleAvailable(scope, task.role);
     const key = executionKey(scope, task.id);
-    const prior = await bb.storage.kv.get<{ delivery: string }>(key);
+    const prior = await alia.storage.kv.get<{ delivery: string }>(key);
     if (prior) throw new PluginCliError(`Task ${task.id} already has a delivery record (${prior.delivery}); inspect its thread before sending another message`, { code: "delivery_exists" });
-    const assigned = await bb.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
+    const assigned = await alia.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
     if (assigned !== undefined && assigned !== null && assigned !== task.id) throw new PluginCliError("This session already executed another package; replace it before starting the next",{code:"session_consumed"});
-    await bb.storage.kv.set(sessionTaskKey(scope,target.threadId),task.id);
+    await alia.storage.kv.set(sessionTaskKey(scope,target.threadId),task.id);
     const record = { taskId: task.id, role: task.role, threadId: target.threadId, environmentId: target.environmentId, atMs: Date.now(), delivery: "sending" };
-    await bb.storage.kv.set(key, record);
+    await alia.storage.kv.set(key, record);
     try {
       const { m } = await loadLang();
-      await bb.sdk.threads.send({
-        originPluginId: bb.pluginId,
+      await alia.sdk.threads.send({
+        originPluginId: alia.pluginId,
         ...(senderThreadId && senderThreadId !== target.threadId ? { senderThreadId } : {}),
         threadId: target.threadId, mode: "auto",
         input: [{type: "text", text: m.taskBody(task.id, task.title, [task.note,task.criteria && `Acceptance criteria: ${task.criteria}`,task.priority !== undefined && `Priority: ${task.priority}`,task.dependencies?.length && `Dependencies: ${task.dependencies.join(", ")}`,task.decisions && `Decisions: ${task.decisions}`,task.result && `Result: ${task.result}`].filter(Boolean).join("\n\n") || null, lead), mentions: []}],
       });
     } catch (error) {
-      await bb.storage.kv.set(key, {...record, delivery: "uncertain", error: (error as Error).message});
+      await alia.storage.kv.set(key, {...record, delivery: "uncertain", error: (error as Error).message});
       throw error;
     }
-    await bb.storage.kv.set(key, {...record, delivery: "sent"});
+    await alia.storage.kv.set(key, {...record, delivery: "sent"});
   };
   const notifyRework = async (scope: Scope, task: TeamTask, target: TeamThreadRow, decision: AcceptanceDecision) => {
     const ref = createHash("sha256").update(JSON.stringify(decision)).digest("hex");
     const key = `review-feedback:${scope.projectId}:${scope.team}:${task.id}:${ref}`;
-    const previous = await bb.storage.kv.get<{delivery: string}>(key);
+    const previous = await alia.storage.kv.get<{delivery: string}>(key);
     if (previous) {
       if (previous.delivery !== "sent") throw new PluginCliError("Rework is recorded, but earlier delivery is uncertain; inspect the employee thread before sending another message", {code:"review_delivery_uncertain"});
       return;
     }
     const record = {taskId:task.id, threadId:target.threadId, delivery:"uncertain"};
-    await bb.storage.kv.set(key, record);
+    await alia.storage.kv.set(key, record);
     const {lang} = await loadLang();
     const text = lang === "ru"
       ? `[team] Задача #${task.id} возвращена на доработку. Замечание: ${decision.reason}\nПродолжай эту же задачу в текущем окружении; не создавай новый пакет или worktree. После исправления сохрани checkpoint и подай новый --review отчёт.`
       : `[team] Task #${task.id} needs rework. Remark: ${decision.reason}\nContinue this same task in the current environment; do not create another package or worktree. Save a checkpoint and submit a new --review report after fixing it.`;
     try {
-      await bb.sdk.threads.send({originPluginId:bb.pluginId,threadId:target.threadId,mode:"queue-if-active",input:[{type:"text",text,mentions:[]}]});
+      await alia.sdk.threads.send({originPluginId:alia.pluginId,threadId:target.threadId,mode:"queue-if-active",input:[{type:"text",text,mentions:[]}]});
     } catch {
       throw new PluginCliError(lang === "ru" ? "Возврат сохранён, но доставка замечания не подтверждена. Проверьте тред сотрудника; автоматического повтора нет." : "Rework is recorded, but remark delivery is uncertain. Inspect the employee thread; it will not be resent automatically.", {code:"review_delivery_uncertain"});
     }
-    await bb.storage.kv.set(key, {...record, delivery:"sent"});
+    await alia.storage.kv.set(key, {...record, delivery:"sent"});
   };
 
   // Called with the project lock held. Task readiness belongs to the tracker.
@@ -1078,7 +1078,7 @@ export default async function plugin(bb: BbPluginApi) {
     if ((rows.get(role)?.length ?? 0)>1) throw new PluginCliError("Role has several sessions",{code:"thread_ambiguous"});
     const target = rows.get(role)?.[0];
     if (!target || RUNNING.includes(target.status)) return;
-    if (await bb.storage.kv.get(sessionTaskKey(scope,target.threadId)) !== undefined) return;
+    if (await alia.storage.kv.get(sessionTaskKey(scope,target.threadId)) !== undefined) return;
     const {task} = await tracker.update(scope, next.id, {status: "in-progress"});
     await deliverPackage(scope, task, target, lead);
   };
@@ -1097,7 +1097,7 @@ export default async function plugin(bb: BbPluginApi) {
       const target = rows.get(input.role)?.[0];
       if (input.send && !target) {const err=m.taskNoThread(input.role);throw new PluginCliError(err.message, {code: "role_not_found",hint:err.hint});}
       const busy = busyTasks(await readTasks(scope), input.role);
-      const consumed = target ? await bb.storage.kv.get(sessionTaskKey(scope,target.threadId)) : undefined;
+      const consumed = target ? await alia.storage.kv.get(sessionTaskKey(scope,target.threadId)) : undefined;
       const send = input.send && target && consumed === undefined && busy.length === 0 && !RUNNING.includes(target.status) && !(await readPause(scope));
       const task = await tracker.add(scope, {...input, status: send ? "in-progress" : "todo"});
       let sentTo: string | null = null, sendError: string | null = null;
@@ -1142,7 +1142,7 @@ export default async function plugin(bb: BbPluginApi) {
     let mark: ReturnType<typeof readTeamMark> = null;
     try {
       mark = readTeamMark(
-        (await bb.sdk.threads.getPluginMetadata({ threadId: callerThreadId })) as Record<string, unknown>,
+        (await alia.sdk.threads.getPluginMetadata({ threadId: callerThreadId })) as Record<string, unknown>,
       );
     } catch (error) {
       refuseUnverified(error);
@@ -1152,7 +1152,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (mark.team !== scope.team) return { caller: "executor", callerRole: null };
     let threadProjectId: string | undefined;
     try {
-      threadProjectId = (await bb.sdk.threads.get({ threadId: callerThreadId })).projectId;
+      threadProjectId = (await alia.sdk.threads.get({ threadId: callerThreadId })).projectId;
     } catch (error) {
       refuseUnverified(error);
     }
@@ -1186,7 +1186,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (patch.status === "in-progress" && previous.status === "todo") {
         const {rows}=await teamContext(scope,t);const target=rows.get(previous.role)?.[0];
         if (target) {
-          const assigned = await bb.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
+          const assigned = await alia.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
           const rework = assigned === id && latestDecision(previous.review)?.decision === "changes-requested";
           if (assigned !== undefined && !rework) throw new PluginCliError("Replace the completed role session before starting another package",{code:"session_consumed"});
         }
@@ -1238,7 +1238,7 @@ export default async function plugin(bb: BbPluginApi) {
         reworkTarget = candidates[0];
         if (!reworkTarget && patch.status === "in-progress") throw new PluginCliError("The employee has no session for rework",{code:"role_not_found"});
         if (reworkTarget) {
-          const assigned = await bb.storage.kv.get<TaskId>(sessionTaskKey(scope,reworkTarget.threadId));
+          const assigned = await alia.storage.kv.get<TaskId>(sessionTaskKey(scope,reworkTarget.threadId));
           if (assigned != null && assigned !== id) throw new PluginCliError("This employee session belongs to another task; resolve its assignment before requesting rework",{code:"session_consumed"});
         }
       }
@@ -1267,12 +1267,12 @@ export default async function plugin(bb: BbPluginApi) {
       const {rows, lead} = await teamContext(scope, t);
       if (patch.status === "review" || previous.status === "in-progress" || previous.status === "review") {
         const target=rows.get(previous.role)?.[0];
-        if (target && await bb.storage.kv.get(sessionTaskKey(scope,target.threadId)) === undefined) await bb.storage.kv.set(sessionTaskKey(scope,target.threadId),id);
+        if (target && await alia.storage.kv.get(sessionTaskKey(scope,target.threadId)) === undefined) await alia.storage.kv.set(sessionTaskKey(scope,target.threadId),id);
       }
       if (patch.status === "in-progress" && previous.status === "todo") {
         const target = rows.get(result.task.role)?.[0];
         if (!target || RUNNING.includes(target.status)) throw new PluginCliError("Task activated but role thread is not idle; inspect the task before retry", {code: "role_busy"});
-        const assigned = await bb.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
+        const assigned = await alia.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
         const decision = latestDecision(result.task.review);
         if (assigned === id && decision?.decision === "changes-requested") await notifyRework(scope, result.task, target, decision);
         else await deliverPackage(scope, result.task, target, lead);
@@ -1287,7 +1287,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (patch.status === "review" && previous.status !== "review" && lead && lead !== result.task.role) {
         const target = rows.get(lead)?.[0];
-        if (target) await bb.sdk.threads.send({originPluginId: bb.pluginId, threadId: target.threadId, mode: "auto", input: [{type:"text", text:`[team] ${result.task.role}: task ${id} ready for acceptance. ${result.task.title}`, mentions:[]}]});
+        if (target) await alia.sdk.threads.send({originPluginId: alia.pluginId, threadId: target.threadId, mode: "auto", input: [{type:"text", text:`[team] ${result.task.role}: task ${id} ready for acceptance. ${result.task.title}`, mentions:[]}]});
       }
       // A repeated close (done→done, dropped→done) is idempotent: no second
       // wake of the queue, no duplicate auto-continue.
@@ -1312,7 +1312,7 @@ export default async function plugin(bb: BbPluginApi) {
     if ((status !== "done" && status !== "dropped") || !callerThreadId) return;
     let mark: ReturnType<typeof readTeamMark> = null;
     try {
-      mark = readTeamMark((await bb.sdk.threads.getPluginMetadata({ threadId: callerThreadId })) as Record<string, unknown>);
+      mark = readTeamMark((await alia.sdk.threads.getPluginMetadata({ threadId: callerThreadId })) as Record<string, unknown>);
     } catch {
       return;
     }
@@ -1326,7 +1326,7 @@ export default async function plugin(bb: BbPluginApi) {
   /* ── Session continuation: shared handler (bbt-er6.4) ── */
 
   /**
-   * Shared continuation handler for `bb team replace` and the acceptance
+   * Shared continuation handler for `alia team replace` and the acceptance
    * auto-continue: validates the agent-saved checkpoint, switches the role to
    * a fresh session in the same environment through the durable replacement
    * intent, records execution history, then dispatches the next ready
@@ -1342,14 +1342,14 @@ export default async function plugin(bb: BbPluginApi) {
     const { lang, t, m } = await loadLang();
     const pending = options.pending ?? null;
     const settingsValues = await settings.get();
-    const { config } = await readTeamConfig(bb, scope, scope.team, t);
+    const { config } = await readTeamConfig(alia, scope, scope.team, t);
     const { lead, roles } = core.semanticChecks(config, t);
     const configuredRole = roles.find((r) => r.name === roleName);
     if (!configuredRole) {
       const err = m.taskRoleUnknown(roleName);
       throw new PluginCliError(err.message, { code: "role_not_found", hint: err.hint });
     }
-    const oldMeta=await bb.sdk.threads.getPluginMetadata({threadId:oldThreadId}) as Record<string,unknown>;
+    const oldMeta=await alia.sdk.threads.getPluginMetadata({threadId:oldThreadId}) as Record<string,unknown>;
     const configuredExecution=JSON.stringify([configuredRole.provider,configuredRole.model,configuredRole.reasoningLevel,configuredRole.serviceTier]);
     const savedSelection=oldMeta.teamExecution as ExecutionFallbackSelection|undefined;
     const stillApproved=savedSelection&&configuredRole.executionPolicy?.fallbacks.some(c=>JSON.stringify(c)===JSON.stringify(savedSelection));
@@ -1357,26 +1357,26 @@ export default async function plugin(bb: BbPluginApi) {
     const quotaApproved=pendingQuota?.selection&&configuredRole.executionPolicy?.fallbacks.some(c=>JSON.stringify(c)===JSON.stringify(pendingQuota.selection));
     const execution=options.execution??(quotaApproved?pendingQuota!.selection!:oldMeta.teamConfiguredExecution===configuredExecution&&stillApproved?savedSelection:undefined);
     const role=core.roleSchema.parse({...configuredRole,...(execution?{provider:execution.provider,model:execution.model,reasoningLevel:execution.reasoningLevel,serviceTier:execution.serviceTier}:{})});
-    const old = await bb.sdk.threads.get({ threadId: oldThreadId });
-    const ref = await bb.storage.kv.get<{taskId:TaskId}>(checkpointRefKey(scope, roleName));
-    if (!ref) throw new PluginCliError(`Role ${roleName} needs a saved task checkpoint: bb team checkpoint <id> --file <json>`, {code: "checkpoint_missing"});
+    const old = await alia.sdk.threads.get({ threadId: oldThreadId });
+    const ref = await alia.storage.kv.get<{taskId:TaskId}>(checkpointRefKey(scope, roleName));
+    if (!ref) throw new PluginCliError(`Role ${roleName} needs a saved task checkpoint: VesnALIA team checkpoint <id> --file <json>`, {code: "checkpoint_missing"});
     const checkpoint = workCheckpointSchema.parse(await tracker.readCheckpoint(scope, ref.taskId));
     if (checkpoint.threadId !== old.id || checkpoint.role !== roleName || checkpoint.taskId !== ref.taskId) throw new PluginCliError("Checkpoint belongs to a different task session", {code: "checkpoint_stale"});
     const store = await readTasks(scope);
     const busy = busyTasks(store, roleName);
     if (busy.some(task => task.id !== checkpoint.taskId)) throw new PluginCliError("Checkpoint must describe the role current package", {code: "checkpoint_stale"});
     if (!pending && RUNNING.includes(old.status)) throw new PluginCliError("Finish the active operation before replacing the session", {code: "role_busy"});
-    await verifyCheckpoint(bb, checkpoint);
+    await verifyCheckpoint(alia, checkpoint);
     if(execution){
-      const catalog=await bb.sdk.providers.models({environmentId:checkpoint.environmentId,providerId:execution.provider});
+      const catalog=await alia.sdk.providers.models({environmentId:checkpoint.environmentId,providerId:execution.provider});
       const model=catalog.models.find(m=>m.model===execution.model||m.id===execution.model);
       if(catalog.modelLoadError||!catalog.providers.some(p=>p.id===execution.provider&&p.available)||!model||
         execution.reasoningLevel&&!model.supportedReasoningEfforts.some(r=>r.reasoningEffort===execution.reasoningLevel)||
         execution.serviceTier&&!model.supportedServiceTiers?.some(tier=>tier.id===execution.serviceTier))throw new PluginCliError("The approved backup selection is no longer available; no default substitution was made",{code:"backup_unavailable"});
     }
 
-    await validateProviders(bb, [role], t);
-    const scan = await scanTeamThreads(bb, scope.projectId);
+    await validateProviders(alia, [role], t);
+    const scan = await scanTeamThreads(alia, scope.projectId);
     const rows = roleThreadsOf(scan, scope.team);
     const isLead = role.name === lead.name;
     const roleThreads = new Map<string,string>();
@@ -1388,16 +1388,16 @@ export default async function plugin(bb: BbPluginApi) {
     // with the old checkpoint/session binding — refuse before any spawn.
     if (priorTask.role !== roleName) throw new PluginCliError(`Checkpoint task ${checkpoint.taskId} is assigned to role ${priorTask.role}, not ${roleName}; the package cannot continue in this session`,{code:"task_reassigned"});
     const continuing = priorTask.status === "in-progress" || priorTask.status === "review" || priorTask.status === "todo";
-    const rawPrompt = withExecutionProfile(await loadRolePrompt(bb, scope, role, isLead, lang, t),isLead ? config.roles : [role],lang);
+    const rawPrompt = withExecutionProfile(await loadRolePrompt(alia, scope, role, isLead, lang, t),isLead ? config.roles : [role],lang);
     const taskLines = listTasks(store, {role:roleName}).map(task=>`- #${task.id} ${task.title} [${task.status}]`).join("\n");
     const prompt = core.applyPlaceholders(rawPrompt, {workspace:scope,leadThreadId,roleThreads,teamVars:config.vars,teamName:scope.team}, t)
       + (execution?`\nActual execution uses the explicitly approved backup: ${JSON.stringify(execution)}. Configured primary remains unchanged.`:"")
       + m.replaceHandoff(`@thread:${old.id}`,JSON.stringify(checkpoint,null,2),taskLines)
       + (continuing ? `\nThis is a task handoff, not initial setup. Resume checkpoint nextAction for task ${checkpoint.taskId} now. If it is in review, wait for lead acceptance. Do not pick another package; other packages remain queued.` : "\nThe checkpoint task is already accepted or cancelled. Do not execute it again. Confirm readiness and wait for the next queued assignment.")
-      + `\nRoute messages by role: bb team tell <role> --message-file -. The lead role is ${lead.name}. Earlier direct thread addresses are superseded.`;
+      + `\nRoute messages by role: VesnALIA team tell <role> --message-file -. The lead role is ${lead.name}. Earlier direct thread addresses are superseded.`;
     const defaults = config.defaults ?? {};
-    const sectionId = settingsValues.teamSection ? await ensureSection(bb,teamSectionName(t,scope.team),[strings("en"),strings("ru")].map(x=>teamSectionName(x,scope.team))) : null;
-    const result = await replaceSession(bb, {
+    const sectionId = settingsValues.teamSection ? await ensureSection(alia,teamSectionName(t,scope.team),[strings("en"),strings("ru")].map(x=>teamSectionName(x,scope.team))) : null;
+    const result = await replaceSession(alia, {
       projectId:scope.projectId, team:scope.team, role:roleName,
       oldThreadId:old.id, environmentId:checkpoint.environmentId,
       keep: pending?.keep ?? options.keep ?? false,
@@ -1414,23 +1414,23 @@ export default async function plugin(bb: BbPluginApi) {
       beforeSwitch: async () => {
         const saved = workCheckpointSchema.parse(await tracker.readCheckpoint(scope,ref.taskId));
         if (JSON.stringify(saved) !== JSON.stringify(checkpoint)) throw new PluginCliError("Checkpoint changed during replacement",{code:"checkpoint_stale"});
-        await verifyCheckpoint(bb,checkpoint);
+        await verifyCheckpoint(alia,checkpoint);
       },
       afterSwitch: async (newThreadId) => {
         const key = executionKey(scope,checkpoint.taskId);
-        const prior = await bb.storage.kv.get<Record<string,unknown>>(key);
+        const prior = await alia.storage.kv.get<Record<string,unknown>>(key);
         const base = {taskId:checkpoint.taskId,role:roleName,environmentId:checkpoint.environmentId,path:checkpoint.path,branch:checkpoint.branch,commit:checkpoint.commit,checkpointAtMs:checkpoint.atMs};
         const historyKey = `session:${scope.projectId}:${scope.team}:${checkpoint.taskId}:${old.id}`;
-        if (!(await bb.storage.kv.get(historyKey))) await bb.storage.kv.set(historyKey,{...base,threadId:old.id,nextThreadId:newThreadId,atMs:Date.now()});
+        if (!(await alia.storage.kv.get(historyKey))) await alia.storage.kv.set(historyKey,{...base,threadId:old.id,nextThreadId:newThreadId,atMs:Date.now()});
         if (continuing) {
-          await bb.storage.kv.set(key,{...prior,...base,threadId:newThreadId,delivery:"continuation"});
-          await bb.storage.kv.set(sessionTaskKey(scope,newThreadId),checkpoint.taskId);
+          await alia.storage.kv.set(key,{...prior,...base,threadId:newThreadId,delivery:"continuation"});
+          await alia.storage.kv.set(sessionTaskKey(scope,newThreadId),checkpoint.taskId);
         }
         await resources.bindSwitch(scope,old.id,newThreadId);
         const pauseState = await readPause(scope);
         if (pauseState?.threadIds.includes(old.id)) {
           const threadIds = pauseState.threadIds.map(id=>id===old.id?newThreadId:id);
-          await bb.storage.kv.set(pauseKey(scope),{...pauseState,threadIds});
+          await alia.storage.kv.set(pauseKey(scope),{...pauseState,threadIds});
           pausedThreads.delete(old.id);pausedThreads.add(newThreadId);
         }
       },
@@ -1442,14 +1442,14 @@ export default async function plugin(bb: BbPluginApi) {
       for (const [name,list] of rows) {
         if (name===roleName) continue;
         for (const executor of list) {
-          try {await bb.sdk.threads.send({originPluginId:bb.pluginId,threadId:executor.threadId,mode:"queue-if-active",input:[{type:"text",text:`Team routing changed: the lead is now ${result.newThreadId}. Disregard earlier direct lead thread addresses; report through bb team tell ${lead.name} --message-file -. Task results and decisions belong in the selected tracker.`,mentions:[]}]});}
-          catch(error){bb.log.warn(`Lead replaced; routing notice to ${name} failed: ${(error as Error).message}`);}
+          try {await alia.sdk.threads.send({originPluginId:alia.pluginId,threadId:executor.threadId,mode:"queue-if-active",input:[{type:"text",text:`Team routing changed: the lead is now ${result.newThreadId}. Disregard earlier direct lead thread addresses; report through VesnALIA team tell ${lead.name} --message-file -. Task results and decisions belong in the selected tracker.`,mentions:[]}]});}
+          catch(error){alia.log.warn(`Lead replaced; routing notice to ${name} failed: ${(error as Error).message}`);}
         }
       }
     }
     if (!isLead && leadThreadId) {
-      try { await bb.sdk.threads.send({originPluginId:bb.pluginId,threadId:leadThreadId,mode:"queue-if-active",input:[{type:"text",text:m.replaceLeadNotice(roleName,`@thread:${result.oldThreadId}`,`@thread:${result.newThreadId}`),mentions:[]}]}); }
-      catch(error) {bb.log.warn(`Session replaced; lead notice failed: ${(error as Error).message}`);}
+      try { await alia.sdk.threads.send({originPluginId:alia.pluginId,threadId:leadThreadId,mode:"queue-if-active",input:[{type:"text",text:m.replaceLeadNotice(roleName,`@thread:${result.oldThreadId}`,`@thread:${result.newThreadId}`),mentions:[]}]}); }
+      catch(error) {alia.log.warn(`Session replaced; lead notice failed: ${(error as Error).message}`);}
     }
     return { result, continuing, kept: Boolean(pending?.keep ?? options.keep) };
   };
@@ -1496,14 +1496,14 @@ export default async function plugin(bb: BbPluginApi) {
   }
   const autoContinueKey = (scope: Scope, role: string) => `auto-continue:${scope.projectId}:${scope.team}:${role}`;
   const readAutoContinue = async (scope: Scope, role: string): Promise<AutoContinueRecord | null> =>
-    (await bb.storage.kv.get<AutoContinueRecord>(autoContinueKey(scope, role))) ?? null;
+    (await alia.storage.kv.get<AutoContinueRecord>(autoContinueKey(scope, role))) ?? null;
   const writeAutoContinue = async (scope: Scope, role: string, record: AutoContinueRecord): Promise<void> => {
-    await bb.storage.kv.set(autoContinueKey(scope, role), record);
+    await alia.storage.kv.set(autoContinueKey(scope, role), record);
   };
   const autoContinueRoles = async (scope: Scope): Promise<string[]> => {
     const prefix = `auto-continue:${scope.projectId}:${scope.team}:`;
     const roles: string[] = [];
-    for (const key of await bb.storage.kv.list(prefix)) roles.push(key.slice(prefix.length));
+    for (const key of await alia.storage.kv.list(prefix)) roles.push(key.slice(prefix.length));
     return roles;
   };
 
@@ -1518,7 +1518,7 @@ export default async function plugin(bb: BbPluginApi) {
     const list = rows.get(role);
     if (!list || list.length !== 1) return; // missing or ambiguous: a human decides
     const thread = list[0]!;
-    if ((await bb.storage.kv.get<TaskId>(sessionTaskKey(scope, thread.threadId))) !== taskId) return; // session not consumed by this package
+    if ((await alia.storage.kv.get<TaskId>(sessionTaskKey(scope, thread.threadId))) !== taskId) return; // session not consumed by this package
     const existing = await readAutoContinue(scope, role);
     if (existing?.stage === "failed" && existing.taskId === taskId) return; // no automatic restart after an unclear failure
     const now = Date.now();
@@ -1534,12 +1534,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   const notifyAutoContinueCheckpoint = async (role: string, threadId: string, taskId: TaskId): Promise<void> => {
     try {
-      await bb.sdk.threads.send({
-        originPluginId: bb.pluginId, threadId, mode: "queue-if-active",
-        input: [{type: "text", text: (await loadLang()).lang === "ru" ? `[team] Запрошена передача сессии. Сохрани содержательный checkpoint задачи ${taskId}: bb team checkpoint ${taskId} --file <абсолютный-json-путь>. JSON: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Укажи только фактически сделанное и проверенное. Не начинай другую задачу. Заверши текущую операцию; Team дождётся безопасной границы, сохранит окружение и передаст состояние новой сессии.` : `[team] Session handoff requested. Save a fresh checkpoint now: bb team checkpoint ${taskId} --file <absolute-json-path>. JSON: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Record only actual work and checks. Do not start another package. Finish the current operation; Team will wait for a safe boundary and preserve your environment for the next session.`, mentions: []}],
+      await alia.sdk.threads.send({
+        originPluginId: alia.pluginId, threadId, mode: "queue-if-active",
+        input: [{type: "text", text: (await loadLang()).lang === "ru" ? `[team] Запрошена передача сессии. Сохрани содержательный checkpoint задачи ${taskId}: VesnALIA team checkpoint ${taskId} --file <абсолютный-json-путь>. JSON: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Укажи только фактически сделанное и проверенное. Не начинай другую задачу. Заверши текущую операцию; Team дождётся безопасной границы, сохранит окружение и передаст состояние новой сессии.` : `[team] Session handoff requested. Save a fresh checkpoint now: VesnALIA team checkpoint ${taskId} --file <absolute-json-path>. JSON: goal, criteria[], progress, decisions[{what,why}], checks[{what,result}], blockers[], nextAction, files[]. Record only actual work and checks. Do not start another package. Finish the current operation; Team will wait for a safe boundary and preserve your environment for the next session.`, mentions: []}],
       });
     } catch (error) {
-      bb.log.warn(`auto-continue: checkpoint request to ${role} failed: ${(error as Error).message}`);
+      alia.log.warn(`auto-continue: checkpoint request to ${role} failed: ${(error as Error).message}`);
       throw error;
     }
   };
@@ -1547,12 +1547,12 @@ export default async function plugin(bb: BbPluginApi) {
   const notifyAutoContinueFailed = async (role: string, leadThreadId: string | null, taskId: TaskId, code: string, message: string): Promise<void> => {
     if (!leadThreadId) return; // the snapshot/doctor error state still surfaces it
     try {
-      await bb.sdk.threads.send({
-        originPluginId: bb.pluginId, threadId: leadThreadId, mode: "queue-if-active",
-        input: [{type: "text", text: `[team] Auto-continue of role ${role} stopped after package #${taskId}: [${code}] ${message}. The completed session is kept. Inspect bb team doctor, then bb team replace ${role} --dry-run before retrying; nothing is respawned automatically.`, mentions: []}],
+      await alia.sdk.threads.send({
+        originPluginId: alia.pluginId, threadId: leadThreadId, mode: "queue-if-active",
+        input: [{type: "text", text: `[team] Auto-continue of role ${role} stopped after package #${taskId}: [${code}] ${message}. The completed session is kept. Inspect VesnALIA team doctor, then VesnALIA team replace ${role} --dry-run before retrying; nothing is respawned automatically.`, mentions: []}],
       });
     } catch (error) {
-      bb.log.warn(`auto-continue: failure notice to the lead failed: ${(error as Error).message}`);
+      alia.log.warn(`auto-continue: failure notice to the lead failed: ${(error as Error).message}`);
     }
   };
 
@@ -1573,7 +1573,7 @@ export default async function plugin(bb: BbPluginApi) {
       return current;
     };
     const notifyCheckpointWait = async (threadId?: string) => {
-      const target = threadId ?? await bb.storage.kv.get<string>(activeSessionKey(scope.projectId, scope.team, role));
+      const target = threadId ?? await alia.storage.kv.get<string>(activeSessionKey(scope.projectId, scope.team, role));
       if (target) await notifyAutoContinueCheckpoint(role, target, record.taskId);
     };
     const fail = async (code: string, message: string) => {
@@ -1589,25 +1589,25 @@ export default async function plugin(bb: BbPluginApi) {
       const { rows, lead } = await teamContext(scope, t);
       if (role === lead && record.reason !== "context") {
         // never replace the lead automatically on package acceptance
-        await bb.storage.kv.delete(autoContinueKey(scope, role));
+        await alia.storage.kv.delete(autoContinueKey(scope, role));
         return;
       }
       const list = rows.get(role);
       if (!list || list.length !== 1) return; // ambiguous or gone: wait for a human
       const thread = list[0]!;
-      const intent = await readReplacementIntent(bb, scope.projectId, scope.team, role);
+      const intent = await readReplacementIntent(alia, scope.projectId, scope.team, role);
       if (
-        (await bb.storage.kv.get<TaskId>(sessionTaskKey(scope, thread.threadId))) !== record.taskId ||
+        (await alia.storage.kv.get<TaskId>(sessionTaskKey(scope, thread.threadId))) !== record.taskId ||
         (typeof record.originThreadId === "string" && record.originThreadId !== thread.threadId)
       ) {
         if (intent && intent.stage !== "complete") {
-          if (record.stage !== "failed") await fail("replacement_unfinished", `Role binding changed before replacement finished (stage ${intent.stage}); resume bb team replace ${role} to finish the existing intent`);
+          if (record.stage !== "failed") await fail("replacement_unfinished", `Role binding changed before replacement finished (stage ${intent.stage}); resume VesnALIA team replace ${role} to finish the existing intent`);
           return;
         }
         // The session was already replaced or freed by hand — also clears a
         // failed record after manual recovery, even when a context rotation
         // continues the same taskId in the new session.
-        await bb.storage.kv.delete(autoContinueKey(scope, role));
+        await alia.storage.kv.delete(autoContinueKey(scope, role));
         return;
       }
       if (record.stage === "failed") return; // keep the explicit error; no auto-retry
@@ -1617,7 +1617,7 @@ export default async function plugin(bb: BbPluginApi) {
         // Never respawn automatically: surface the durable-intent recovery.
         await fail(
           intent.stage === "spawn_uncertain" ? "spawn_uncertain" : "replacement_unfinished",
-          `session replacement is unfinished (stage ${intent.stage}); retry bb team replace ${role} to resume the durable intent, or --abort before the switch`,
+          `session replacement is unfinished (stage ${intent.stage}); retry VesnALIA team replace ${role} to resume the durable intent, or --abort before the switch`,
         );
         return;
       }
@@ -1645,13 +1645,13 @@ export default async function plugin(bb: BbPluginApi) {
       if (await readPause(scope)) return; // resume() retries
       // A substantive checkpoint must come from the agent. Missing or stale →
       // explicit wait plus a notification; never a fabricated checkpoint.
-      const ref = await bb.storage.kv.get<{taskId: TaskId}>(checkpointRefKey(scope, role));
+      const ref = await alia.storage.kv.get<{taskId: TaskId}>(checkpointRefKey(scope, role));
       let checkpointFresh = false;
       if (ref && ref.taskId === record.taskId) {
         try {
           const checkpoint = workCheckpointSchema.parse(await tracker.readCheckpoint(scope, ref.taskId));
           if (checkpoint.taskId === record.taskId && checkpoint.threadId === thread.threadId && checkpoint.role === role) {
-            await verifyCheckpoint(bb, checkpoint);
+            await verifyCheckpoint(alia, checkpoint);
             checkpointFresh = true;
           }
         } catch (error) {
@@ -1673,13 +1673,13 @@ export default async function plugin(bb: BbPluginApi) {
       }
       // Safe boundary: never interrupt running work, queued messages,
       // pending interactions or background operations; thread.idle retries.
-      const live = await bb.sdk.threads.get({threadId: thread.threadId});
+      const live = await alia.sdk.threads.get({threadId: thread.threadId});
       if (RUNNING.includes(live.status) || live.queuedMessageCount > 0 || live.activeBackgroundAgentCount > 0) {
         await save({stage: "awaiting-safe-boundary", notifiedStage: null});
         return;
       }
       await continueRoleSession(scope, role, thread.threadId, {keep: false});
-      await bb.storage.kv.delete(autoContinueKey(scope, role));
+      await alia.storage.kv.delete(autoContinueKey(scope, role));
       publishChange(scope.projectId);
     } catch (error) {
       // Everything the machine could not classify — including tracker, host,
@@ -1713,7 +1713,7 @@ export default async function plugin(bb: BbPluginApi) {
   const CONTEXT_ROTATION_THRESHOLD = 0.8;
 
   /**
-   * Arm an explicit context-rotation request (bb team checkpoint --rotate):
+   * Arm an explicit context-rotation request (VesnALIA team checkpoint --rotate):
    * the current open package continues in a fresh session once the thread
    * reaches a safe boundary. Works for executors and for the lead. The
    * caller's own active turn is never stopped — the machine only replaces
@@ -1721,13 +1721,13 @@ export default async function plugin(bb: BbPluginApi) {
    * role gets "replaced".
    */
   const armContextRotation = async (scope: Scope, role: string, taskId: TaskId, originThreadId: string, t: Strings): Promise<"requested" | "replaced"> => {
-    const intent = await readReplacementIntent(bb, scope.projectId, scope.team, role);
+    const intent = await readReplacementIntent(alia, scope.projectId, scope.team, role);
     if (intent && intent.stage !== "complete") {
       throw new PluginCliError("A session replacement is already in progress; the checkpoint is saved — retry --rotate after it completes", { code: "replacement_pending" });
     }
     const existing = await readAutoContinue(scope, role);
     if (existing?.stage === "failed") {
-      throw new PluginCliError(`Auto-continue of role ${role} failed earlier (${existing.errorCode}); recover with bb team replace ${role} --dry-run before requesting rotation`, { code: "auto_continue_failed" });
+      throw new PluginCliError(`Auto-continue of role ${role} failed earlier (${existing.errorCode}); recover with VesnALIA team replace ${role} --dry-run before requesting rotation`, { code: "auto_continue_failed" });
     }
     const now = Date.now();
     await writeAutoContinue(scope, role, {
@@ -1747,11 +1747,11 @@ export default async function plugin(bb: BbPluginApi) {
     if (list.length !== 1) return { ...view, blockedReason: list.length ? "multiple_sessions" : "no_session" };
     const thread = list[0]!;
     view.threadId = thread.threadId;
-    const canonical = await bb.storage.kv.get<string>(activeSessionKey(scope.projectId, scope.team, role));
+    const canonical = await alia.storage.kv.get<string>(activeSessionKey(scope.projectId, scope.team, role));
     if (canonical && canonical !== thread.threadId) return { ...view, blockedReason: "session_changed" };
-    try { view.context = contextView((await bb.sdk.threads.context({ threadId: thread.threadId })).usage); } catch { /* Unsupported provider is not a role failure. */ }
+    try { view.context = contextView((await alia.sdk.threads.context({ threadId: thread.threadId })).usage); } catch { /* Unsupported provider is not a role failure. */ }
     const request = await readAutoContinue(scope, role);
-    const intent = await readReplacementIntent(bb, scope.projectId, scope.team, role);
+    const intent = await readReplacementIntent(alia, scope.projectId, scope.team, role);
     if (request) {
       view.phase = request.stage === "failed" ? "error" : request.stage;
       view.reason = request.reason ?? "accepted";
@@ -1762,7 +1762,7 @@ export default async function plugin(bb: BbPluginApi) {
       view.blockedReason = "replacement_pending";
     }
     if (request?.stage === "failed") view.blockedReason = "failed";
-    const linked = await bb.storage.kv.get<TaskId>(sessionTaskKey(scope, thread.threadId));
+    const linked = await alia.storage.kv.get<TaskId>(sessionTaskKey(scope, thread.threadId));
     view.taskId = linked ?? null;
     if (linked == null) { view.blockedReason ??= "no_task"; return view; }
     let task: TeamTask | undefined;
@@ -1771,14 +1771,14 @@ export default async function plugin(bb: BbPluginApi) {
     if (!task) { view.blockedReason ??= "no_task"; return view; }
     if (task.role !== role) { view.blockedReason ??= "task_reassigned"; return view; }
     if ((task.status === "done" || task.status === "dropped") && view.reason === "context") view.reason = "accepted";
-    const ref = await bb.storage.kv.get<{ taskId: TaskId }>(checkpointRefKey(scope, role));
+    const ref = await alia.storage.kv.get<{ taskId: TaskId }>(checkpointRefKey(scope, role));
     if (ref) {
       view.checkpoint = "stale";
       if (ref.taskId === linked) {
         try {
           const checkpoint = workCheckpointSchema.parse(await tracker.readCheckpoint(scope, linked));
           if (checkpoint.threadId === thread.threadId && checkpoint.role === role && checkpoint.taskId === linked) {
-            await verifyCheckpoint(bb, checkpoint);
+            await verifyCheckpoint(alia, checkpoint);
             view.checkpoint = "ready";
           }
         } catch (error) {
@@ -1801,7 +1801,7 @@ export default async function plugin(bb: BbPluginApi) {
    */
   const maybeArmContextRotation = async (scope: Scope, role: string, meta: Record<string, unknown>, threadId: string, t: Strings): Promise<boolean> => {
     if (meta.teamRetired === true || meta.teamReplacement === true) return false;
-    const linked = await bb.storage.kv.get<TaskId>(sessionTaskKey(scope, threadId));
+    const linked = await alia.storage.kv.get<TaskId>(sessionTaskKey(scope, threadId));
     if (linked === undefined || linked === null) return false; // no linked package: never invent one
     const store = await readTasks(scope);
     const task = store.tasks.find(item => item.id === linked);
@@ -1812,7 +1812,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!list || list.length !== 1 || list[0]!.threadId !== threadId) return false; // not the canonical session
     let usage: { estimated: boolean; modelContextWindow: number; usedTokens: number; snapshot?: { estimated: boolean; contextWindowTokens: number; usedTokens: number } } | null = null;
     try {
-      usage = (await bb.sdk.threads.context({ threadId })).usage;
+      usage = (await alia.sdk.threads.context({ threadId })).usage;
     } catch {
       return false; // unsupported API: no automation, no error surfaced
     }
@@ -1835,7 +1835,7 @@ export default async function plugin(bb: BbPluginApi) {
   // plugin restart; their event triggers may have fired while it was down.
   try {
     const { t } = await loadLang();
-    for (const key of await bb.storage.kv.list("auto-continue:")) {
+    for (const key of await alia.storage.kv.list("auto-continue:")) {
       const parts = key.split(":");
       const projectId = parts[1]!, team = parts[2]!, role = parts.slice(3).join(":");
       if (!projectId || !team || !role) continue;
@@ -1843,11 +1843,11 @@ export default async function plugin(bb: BbPluginApi) {
         const scope = await scopeFor(projectId, team, t);
         await withScopeLock(scope, async () => { await runAutoContinue(scope, role, t); });
       } catch (error) {
-        bb.log.warn(`auto-continue restore for ${key} failed: ${(error as Error).message}`);
+        alia.log.warn(`auto-continue restore for ${key} failed: ${(error as Error).message}`);
       }
     }
   } catch (error) {
-    bb.log.warn(`auto-continue restore failed: ${(error as Error).message}`);
+    alia.log.warn(`auto-continue restore failed: ${(error as Error).message}`);
   }
 
   const taskOutput = (
@@ -1896,7 +1896,7 @@ export default async function plugin(bb: BbPluginApi) {
   ) => {
     let thread;
     try {
-      thread = await bb.sdk.threads.get({ threadId });
+      thread = await alia.sdk.threads.get({ threadId });
     } catch {
       throw new PluginCliError(t.threadNotFound(roleName, threadId), { code: "thread_not_found" });
     }
@@ -1929,7 +1929,7 @@ export default async function plugin(bb: BbPluginApi) {
     options: { only?: string[] } = {},
   ) => {
     const settingsValues = await settings.get();
-    const loaded = await readTeamConfig(bb, scope, scope.team, t);
+    const loaded = await readTeamConfig(alia, scope, scope.team, t);
     const { config, source } = loaded;
     const { lead, roles } = core.semanticChecks(config, t);
     // The tracker database must exist before the team starts working: prepare
@@ -1937,8 +1937,8 @@ export default async function plugin(bb: BbPluginApi) {
     await tracker.prepare(scope);
     const defaults = config.defaults ?? {};
     const wanted = (role: Role) => !options.only || options.only.includes(role.name) || role.name === lead.name;
-    await validateProviders(bb, roles.filter((r) => !r.threadId && wanted(r)), t);
-    const scan = await scanTeamThreads(bb, scope.projectId);
+    await validateProviders(alia, roles.filter((r) => !r.threadId && wanted(r)), t);
+    const scan = await scanTeamThreads(alia, scope.projectId);
     const existingRows = roleThreadsOf(scan, scope.team);
     const existing = new Map(
       [...existingRows.entries()].map(([role, list]) => [role, list.map((row) => row.threadId)]),
@@ -1952,7 +1952,7 @@ export default async function plugin(bb: BbPluginApi) {
     const plan: PlanEntry[] = [];
     for (const configuredRole of roles) {
       const role = {...configuredRole};
-      const canonical = await bb.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${role.name}`);
+      const canonical = await alia.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${role.name}`);
       if (canonical && existing.get(role.name)?.includes(canonical)) delete role.threadId;
       if (!wanted(role)) continue;
       const already = existing.get(role.name);
@@ -1962,13 +1962,13 @@ export default async function plugin(bb: BbPluginApi) {
       }
       plan.push({
         role,
-        environment: await resolveEnvironment(bb, scope, roleEnvironmentSpec(role, config), t),
-        prompt: withExecutionProfile(await loadRolePrompt(bb, scope, role, role.name === lead.name, lang, t),role.name===lead.name ? config.roles : [role],lang),
+        environment: await resolveEnvironment(alia, scope, roleEnvironmentSpec(role, config), t),
+        prompt: withExecutionProfile(await loadRolePrompt(alia, scope, role, role.name === lead.name, lang, t),role.name===lead.name ? config.roles : [role],lang),
       });
     }
 
     const sectionId = settingsValues.teamSection
-      ? await ensureSection(bb, teamSectionName(t, scope.team), [strings("en"), strings("ru")].map((x) => teamSectionName(x, scope.team)))
+      ? await ensureSection(alia, teamSectionName(t, scope.team), [strings("en"), strings("ru")].map((x) => teamSectionName(x, scope.team)))
       : null;
     const roleThreads = new Map<string, string>();
     for (const [role, ids] of existing) if (ids[0]) roleThreads.set(role, ids[0]);
@@ -2003,7 +2003,7 @@ export default async function plugin(bb: BbPluginApi) {
       // one retry after a short delay clears it.
       for (let attempt = 1; ; attempt += 1) {
         try {
-          const thread = await bb.sdk.threads.spawn(spawnArgs);
+          const thread = await alia.sdk.threads.spawn(spawnArgs);
           return { threadId: thread.id, providerId: thread.providerId };
         } catch (error) {
           if (attempt >= 2) {
@@ -2018,12 +2018,12 @@ export default async function plugin(bb: BbPluginApi) {
     const adoptRole = async (entry: PlanEntry, parentThreadId: string | undefined) => {
       const id = entry.role.threadId!;
       const thread = await adoptableThread(scope, entry.role.name, id, scan, t, m);
-      await bb.sdk.threads.updatePluginMetadata({
+      await alia.sdk.threads.updatePluginMetadata({
         threadId: id,
         set: teamMetadata(entry.role, scope.team),
       });
       const title = await threadTitle(scope, entry.role.title ?? entry.role.name, scan);
-      await bb.sdk.threads.update({
+      await alia.sdk.threads.update({
         threadId: id,
         title,
         ...(parentThreadId && thread.parentThreadId !== parentThreadId ? { parentThreadId } : {}),
@@ -2057,14 +2057,14 @@ export default async function plugin(bb: BbPluginApi) {
       if (entry.role.name === lead.name || !needsWork(entry)) continue;
       await upsert(entry, leadThreadId ?? undefined);
     }
-    // Re-link existing executor threads that lost their lead (bb team doctor warns about them).
+    // Re-link existing executor threads that lost their lead (VesnALIA team doctor warns about them).
     let relinked = 0;
     if (leadThreadId && !options.only) {
       for (const [role, list] of existingRows) {
         if (role === lead.name) continue;
         for (const row of list) {
           if (row.parentThreadId === leadThreadId) continue;
-          await bb.sdk.threads.update({ threadId: row.threadId, parentThreadId: leadThreadId });
+          await alia.sdk.threads.update({ threadId: row.threadId, parentThreadId: leadThreadId });
           relinked += 1;
         }
       }
@@ -2085,8 +2085,8 @@ export default async function plugin(bb: BbPluginApi) {
         t.rosterLines.notify,
         t.rosterLines.next,
       ].join("\n");
-      await bb.sdk.threads.send({
-        originPluginId: bb.pluginId,
+      await alia.sdk.threads.send({
+        originPluginId: alia.pluginId,
         threadId: leadThreadId,
         mode: "queue-if-active",
         input: [{ type: "text", text: roster, mentions: [] }],
@@ -2106,10 +2106,10 @@ export default async function plugin(bb: BbPluginApi) {
     m: Messages,
     spawn: boolean,
   ) => {
-    const loaded = await readTeamConfig(bb, scope, scope.team, t);
-    const scan = await scanTeamThreads(bb, scope.projectId);
+    const loaded = await readTeamConfig(alia, scope, scope.team, t);
+    const scan = await scanTeamThreads(alia, scope.projectId);
     if (input.threadId) await adoptableThread(scope, input.name, input.threadId, scan, t, m);
-    if (input.provider && !input.threadId) await validateProviders(bb, [input], t);
+    if (input.provider && !input.threadId) await validateProviders(alia, [input], t);
 
     const layout = teamLayout(scope.team, loaded.legacy);
     const entry: Record<string, unknown> = { name: input.name };
@@ -2126,19 +2126,19 @@ export default async function plugin(bb: BbPluginApi) {
       entry.threadId = input.threadId;
     } else if (input.prompt) {
       const rel = `${layout.promptDir}/${input.name}.md`;
-      await writeWorkspaceFile(bb, scope, rel, `${input.prompt.trim()}\n`);
+      await writeWorkspaceFile(alia, scope, rel, `${input.prompt.trim()}\n`);
       entry.promptFile = rel;
     }
 
     // The exists-check and the append must be atomic: two concurrent roleAdd
     // calls would otherwise both pass the check and one role would be lost.
     const rewritten = await withScopeLock(scope, async () => {
-      const current = await readTeamConfig(bb, scope, scope.team, t);
+      const current = await readTeamConfig(alia, scope, scope.team, t);
       if (current.config.roles.some((role) => role.name === input.name)) {
         const err = m.roleExists(input.name, scope.team);
         throw new PluginCliError(err.message, { code: "role_exists", hint: err.hint });
       }
-      const raw = (await readFileOrNull(bb, scope, current.source)) ?? "";
+      const raw = (await readFileOrNull(alia, scope, current.source)) ?? "";
       let rewritten = false;
       let next: string;
       if (current.source.endsWith(".json")) {
@@ -2155,7 +2155,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
       }
       core.parseTeamConfig(next, current.source, t); // never write a config that does not parse
-      await writeWorkspaceFile(bb, scope, current.source, next);
+      await writeWorkspaceFile(alia, scope, current.source, next);
       return rewritten;
     });
     let threadId: string | null = null;
@@ -2179,17 +2179,17 @@ export default async function plugin(bb: BbPluginApi) {
     // The exists-check and the file writes must be atomic: two concurrent
     // creates would otherwise both pass the check and write/spawn twice.
     const written = await withScopeLock(scope, async () => {
-      const teams = await listConfiguredTeams(bb, scope);
+      const teams = await listConfiguredTeams(alia, scope);
       if (teams.includes(scope.team) && !options.force) {
         const err = m.teamExists(scope.team);
         throw new PluginCliError(err.message, { code: "team_exists", hint: err.hint });
       }
-      await validateProviders(bb, template.roles.filter((r) => r.enabled !== false), t);
+      await validateProviders(alia, template.roles.filter((r) => r.enabled !== false), t);
       // Prepare the tracker storage before any files are written or threads
       // spawned, so a fresh team never starts against a missing database.
       await tracker.prepare(scope);
       // Without a checkout environment the roles start in the project default one.
-      const checkouts = await bb.sdk.environments
+      const checkouts = await alia.sdk.environments
         .list({ projectId: scope.projectId, environmentProviderId: "project-checkout" })
         .catch(() => []);
       const files = teamFilesFromTemplate(lang, template, scope.team, {
@@ -2268,8 +2268,8 @@ export default async function plugin(bb: BbPluginApi) {
     const resourceSummary=withResourceResults(await resources.inspect(scope),store.tasks);
     const withExecutionState: SnapshotRole[] = [];
     for (const role of roles) {
-      const intent = await readReplacementIntent(bb, scope.projectId, scope.team, role.name);
-      const autoRaw = await bb.storage.kv.get<{taskId?: TaskId; stage?: AutoContinueStage; errorCode?: string | null; error?: string | null; reason?: string; updatedAtMs?: number}>(autoContinueKey(scope, role.name));
+      const intent = await readReplacementIntent(alia, scope.projectId, scope.team, role.name);
+      const autoRaw = await alia.storage.kv.get<{taskId?: TaskId; stage?: AutoContinueStage; errorCode?: string | null; error?: string | null; reason?: string; updatedAtMs?: number}>(autoContinueKey(scope, role.name));
       let executionState = deriveExecutionState({
         role: role.name,
         tasks: role.tasks,
@@ -2305,7 +2305,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   };
 
-  /* ── bb team doctor ── */
+  /* ── VesnALIA team doctor ── */
 
   const runDoctor = async (scope: Scope, lang: Language, t: Strings, m: Messages) => {
     const checks: DoctorCheck[] = [];
@@ -2337,7 +2337,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (lead) {
         const spawned = roles.filter((role) => !role.threadId);
         try {
-          await validateProviders(bb, spawned, t);
+          await validateProviders(alia, spawned, t);
           add(
             m.check.providers,
             "ok",
@@ -2349,7 +2349,7 @@ export default async function plugin(bb: BbPluginApi) {
         let envFailures = 0;
         for (const role of spawned) {
           try {
-            await resolveEnvironment(bb, scope, roleEnvironmentSpec(role, config), t);
+            await resolveEnvironment(alia, scope, roleEnvironmentSpec(role, config), t);
           } catch (error) {
             envFailures += 1;
             add(m.check.environments, "fail", `${role.name}: ${describe(error)}`);
@@ -2360,7 +2360,7 @@ export default async function plugin(bb: BbPluginApi) {
         let varWarnings = 0;
         for (const role of spawned) {
           try {
-            const text = await loadRolePrompt(bb, scope, role, role.name === lead.name, lang, t);
+            const text = await loadRolePrompt(alia, scope, role, role.name === lead.name, lang, t);
             for (const name of unknownVars(text, config.vars)) {
               varWarnings += 1;
               add(m.check.vars, "warn", m.doctorUnknownVar(role.name, name));
@@ -2373,13 +2373,13 @@ export default async function plugin(bb: BbPluginApi) {
         if (promptFailures === 0) add(m.check.prompts, "ok", m.doctorOk);
         if (varWarnings === 0 && config.vars) add(m.check.vars, "ok", Object.keys(config.vars).join(", "));
         for (const role of roles.filter((r) => r.threadId)) {
-          const canonical=await bb.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${role.name}`);
+          const canonical=await alia.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${role.name}`);
           if (canonical && rows.get(role.name)?.some(row=>row.threadId===canonical)) {
             add(m.check.adopted,"ok",`${role.name}: ${canonical} (current session overrides initial threadId)`);
             continue;
           }
           try {
-            const thread = await bb.sdk.threads.get({ threadId: role.threadId! });
+            const thread = await alia.sdk.threads.get({ threadId: role.threadId! });
             if (thread.projectId !== scope.projectId) {
               add(m.check.adopted, "fail", t.threadWrongProject(role.name, role.threadId!));
             } else if (thread.archivedAt !== null) {
@@ -2421,17 +2421,17 @@ export default async function plugin(bb: BbPluginApi) {
         if (threadWarnings === 0) add(m.check.threads, "ok", m.doctorOk);
       }
     }
-    for (const key of await bb.storage.kv.list(`review-feedback:${scope.projectId}:${scope.team}:`)) {
-      const delivery = await bb.storage.kv.get<{taskId:TaskId,threadId:string,delivery:string}>(key);
+    for (const key of await alia.storage.kv.list(`review-feedback:${scope.projectId}:${scope.team}:`)) {
+      const delivery = await alia.storage.kv.get<{taskId:TaskId,threadId:string,delivery:string}>(key);
       if (delivery && delivery.delivery !== "sent") add("review feedback", "fail", `#${delivery.taskId}: remark delivery is uncertain; inspect ${delivery.threadId} before resending`);
     }
-    for (const key of await bb.storage.kv.list(`replacement:${scope.projectId}:${scope.team}:`)) {
-      const pending=await bb.storage.kv.get<{stage?:string;oldThreadId?:string;newThreadId?:string;delivery?:string}>(key);
+    for (const key of await alia.storage.kv.list(`replacement:${scope.projectId}:${scope.team}:`)) {
+      const pending=await alia.storage.kv.get<{stage?:string;oldThreadId?:string;newThreadId?:string;delivery?:string}>(key);
       if (pending && (pending.stage!=="complete" || pending.delivery==="uncertain")) add("session replacement","fail",`${key.split(":").at(-1)}: ${JSON.stringify(pending)}; inspect replace --dry-run --json; retry after a partial switch, or --abort before switching`);
     }
     for (const role of await autoContinueRoles(scope)) {
       const record = await readAutoContinue(scope, role);
-      if (record?.stage === "failed") add("auto-continue","fail",`${role}: package #${record.taskId} [${record.errorCode}] ${record.error ?? ""}; the completed session is kept; inspect, then bb team replace ${role} --dry-run`);
+      if (record?.stage === "failed") add("auto-continue","fail",`${role}: package #${record.taskId} [${record.errorCode}] ${record.error ?? ""}; the completed session is kept; inspect, then VesnALIA team replace ${role} --dry-run`);
     }
     if ((await readPause(scope)) !== null) add(m.check.threads, "warn", m.doctorPaused);
     return checks;
@@ -2446,7 +2446,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<void> => {
     let meta: Record<string, unknown>;
     try {
-      meta = (await bb.sdk.threads.getPluginMetadata({ threadId: thread.id })) as Record<string, unknown>;
+      meta = (await alia.sdk.threads.getPluginMetadata({ threadId: thread.id })) as Record<string, unknown>;
     } catch {
       return;
     }
@@ -2468,7 +2468,7 @@ export default async function plugin(bb: BbPluginApi) {
           await runAutoContinue(scope, mark.role, t);
           return;
         }
-        const intent = await readReplacementIntent(bb, scope.projectId, scope.team, mark.role);
+        const intent = await readReplacementIntent(alia, scope.projectId, scope.team, mark.role);
         if (!intent || intent.stage === "complete") await dispatchNextPackage(scope, mark.role, t);
       });
     }
@@ -2486,8 +2486,8 @@ export default async function plugin(bb: BbPluginApi) {
       kind === "idle"
         ? m.notifyIdle(mark.role, thread.id, excerpt(detail))
         : m.notifyError(mark.role, thread.id, excerpt(detail, 300));
-    await bb.sdk.threads.send({
-      originPluginId: bb.pluginId,
+    await alia.sdk.threads.send({
+      originPluginId: alia.pluginId,
       threadId: target.threadId,
       mode: kind === "error" ? "auto" : "queue-if-active",
       input: [{ type: "text", text, mentions: [] }],
@@ -2499,7 +2499,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!thread.parentThreadId) return;
     let parentMeta: Record<string, unknown>;
     try {
-      parentMeta = (await bb.sdk.threads.getPluginMetadata({ threadId: thread.parentThreadId })) as Record<
+      parentMeta = (await alia.sdk.threads.getPluginMetadata({ threadId: thread.parentThreadId })) as Record<
         string,
         unknown
       >;
@@ -2509,12 +2509,12 @@ export default async function plugin(bb: BbPluginApi) {
     const mark = readTeamMark(parentMeta);
     if (!mark) return;
     const own = readTeamMark(
-      (await bb.sdk.threads.getPluginMetadata({ threadId: thread.id })) as Record<string, unknown>,
+      (await alia.sdk.threads.getPluginMetadata({ threadId: thread.id })) as Record<string, unknown>,
     );
-    if (own) return; // spawned by bb team itself
-    const ownMeta = await bb.sdk.threads.getPluginMetadata({threadId:thread.id}) as Record<string,unknown>;
+    if (own) return; // spawned by VesnALIA team itself
+    const ownMeta = await alia.sdk.threads.getPluginMetadata({threadId:thread.id}) as Record<string,unknown>;
     if (ownMeta.teamReplacement === true) return;
-    await bb.sdk.threads.updatePluginMetadata({
+    await alia.sdk.threads.updatePluginMetadata({
       threadId: thread.id,
       set: { teamName: mark.team, teamHelperOf: mark.role },
     });
@@ -2522,7 +2522,7 @@ export default async function plugin(bb: BbPluginApi) {
       const scope = { projectId: thread.projectId, team: mark.team } as Scope;
       const state = await readPause(scope);
       if (state) {
-        await bb.storage.kv.set(pauseKey(scope), { ...state, threadIds: [...state.threadIds, thread.id] });
+        await alia.storage.kv.set(pauseKey(scope), { ...state, threadIds: [...state.threadIds, thread.id] });
         pausedThreads.add(thread.id);
       }
     }
@@ -2540,7 +2540,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (RUNNING.includes(thread.status)) return; // only idle candidates
     let meta: Record<string, unknown>;
     try {
-      meta = (await bb.sdk.threads.getPluginMetadata({ threadId: thread.id })) as Record<string, unknown>;
+      meta = (await alia.sdk.threads.getPluginMetadata({ threadId: thread.id })) as Record<string, unknown>;
     } catch {
       return;
     }
@@ -2554,21 +2554,21 @@ export default async function plugin(bb: BbPluginApi) {
     });
   };
 
-  bb.events.on("turn.failed",async failure=>{
+  alia.events.on("turn.failed",async failure=>{
     const owner=await resourceOwner(failure.threadId);if(!owner)return;
     const {t}=await loadLang();const scope=await scopeFor(owner.projectId,owner.team,t);
-    const {config}=await readTeamConfig(bb,scope,scope.team,t);
+    const {config}=await readTeamConfig(alia,scope,scope.team,t);
     const role=config.roles.find(r=>r.name===owner.role);
     // Helpers count against their task but never replace the owner's session.
     const configuredCandidates=owner.ownerThreadId===failure.threadId?role?.executionPolicy?.fallbacks??[]:[];
     const candidates:ExecutionFallbackSelection[]=[];
     if(confirmedQuota(failure)&&configuredCandidates.length){
-      const old=await bb.sdk.threads.get({threadId:failure.threadId});
-      const catalogs=new Map<string,Awaited<ReturnType<typeof bb.sdk.providers.models>>|null>();
+      const old=await alia.sdk.threads.get({threadId:failure.threadId});
+      const catalogs=new Map<string,Awaited<ReturnType<typeof alia.sdk.providers.models>>|null>();
       if(old.environmentId)for(const candidate of configuredCandidates){
         if(candidate.provider===old.providerId)continue; // Exhausted provider/account scope.
         if(!catalogs.has(candidate.provider)){
-          try{catalogs.set(candidate.provider,await bb.sdk.providers.models({environmentId:old.environmentId,providerId:candidate.provider}));}catch{catalogs.set(candidate.provider,null);}
+          try{catalogs.set(candidate.provider,await alia.sdk.providers.models({environmentId:old.environmentId,providerId:candidate.provider}));}catch{catalogs.set(candidate.provider,null);}
         }
         const catalog=catalogs.get(candidate.provider);const model=catalog?.models.find(m=>m.model===candidate.model||m.id===candidate.model);
         if(!catalog||catalog.modelLoadError||!catalog.providers.some(p=>p.id===candidate.provider&&p.available)||!model)continue;
@@ -2583,15 +2583,15 @@ export default async function plugin(bb: BbPluginApi) {
       try{
         const store=await readTasks(scope);const task=store.tasks.find(t=>t.id===plan.taskId);
         if(!task||task.role!==owner.role||!["todo","in-progress"].includes(task.status))throw new PluginCliError("Quota handoff needs the same unfinished assigned task",{code:"task_reassigned"});
-        const unfinished=await readReplacementIntent(bb,scope.projectId,scope.team,owner.role);
+        const unfinished=await readReplacementIntent(alia,scope.projectId,scope.team,owner.role);
         if(unfinished&&unfinished.stage!=="complete")throw new PluginCliError("Existing replacement is unfinished; inspect/resume it manually",{code:"replacement_pending"});
         const chosen=plan.selection!;
-        const ref=await bb.storage.kv.get<{taskId:TaskId}>(checkpointRefKey(scope,owner.role));
+        const ref=await alia.storage.kv.get<{taskId:TaskId}>(checkpointRefKey(scope,owner.role));
         if(!ref)throw new PluginCliError("A saved task checkpoint is required for automatic quota handoff",{code:"checkpoint_missing"});
         const parsed=workCheckpointSchema.safeParse(await tracker.readCheckpoint(scope,ref.taskId));
         if(!parsed.success)throw new PluginCliError("The saved checkpoint is invalid",{code:"checkpoint_invalid"});
         if(parsed.data.threadId!==failure.threadId||parsed.data.taskId!==plan.taskId)throw new PluginCliError("Checkpoint belongs to another task/session",{code:"checkpoint_stale"});
-        await verifyQuotaBoundary(bb,failure,parsed.data);
+        await verifyQuotaBoundary(alia,failure,parsed.data);
         // No call to the exhausted model: the existing handler verifies its
         // saved checkpoint and Git fingerprint, or refuses without spawning.
         await resources.authorizeFallback(scope,failure.requestId);
@@ -2603,71 +2603,71 @@ export default async function plugin(bb: BbPluginApi) {
       }
     });
   });
-  bb.events.on("message.cancelled",({entry})=>resources.cancelled(entry.threadId,entry.id));
-  bb.events.on("thread.active",({thread})=>resources.watch(thread.id));
-  bb.events.on("message.queued",async({entry})=>{
+  alia.events.on("message.cancelled",({entry})=>resources.cancelled(entry.threadId,entry.id));
+  alia.events.on("thread.active",({thread})=>resources.watch(thread.id));
+  alia.events.on("message.queued",async({entry})=>{
     await resources.queued(entry.threadId,entry.id,entry.payload?.kind==="retry");
-    if(entry.waitingOn?.kind==="plugin"&&entry.waitingOn.pluginId===bb.pluginId&&entry.waitingOn.reason.startsWith("Team resources:")){
+    if(entry.waitingOn?.kind==="plugin"&&entry.waitingOn.pluginId===alia.pluginId&&entry.waitingOn.reason.startsWith("Team resources:")){
       const owner=await resourceOwner(entry.threadId);if(owner){const {t}=await loadLang();const scope=await scopeFor(owner.projectId,owner.team,t);await notifyResource(scope,owner.role,entry.waitingOn.reason);}
     }
   });
-  bb.events.on("thread.idle",({thread})=>resources.settle(thread.id,"completed"));
-  bb.events.on("thread.failed",({thread})=>resources.settle(thread.id,"failed"));
-  bb.events.on("experimental_thread.events",async({thread})=>{
+  alia.events.on("thread.idle",({thread})=>resources.settle(thread.id,"completed"));
+  alia.events.on("thread.failed",({thread})=>resources.settle(thread.id,"failed"));
+  alia.events.on("experimental_thread.events",async({thread})=>{
     const owner=await resourceOwner(thread.id);if(owner)await resources.inspect(owner);
   });
-  bb.events.on("thread.created", ({ thread }) => onThreadCreated(thread));
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) =>
+  alia.events.on("thread.created", ({ thread }) => onThreadCreated(thread));
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) =>
     onTeamThreadEvent(thread, "idle", lastAssistantText),
   );
-  bb.events.on("thread.failed", ({ thread, error }) => onTeamThreadEvent(thread, "error", error));
-  bb.events.on("thread.active", ({ thread }) => onTeamThreadEvent(thread, "other", null));
-  bb.events.on("thread.archived", ({ thread }) => onTeamThreadEvent(thread, "other", null));
-  bb.events.on("experimental_thread.events", ({ thread }) => onThreadActivityEvent(thread));
+  alia.events.on("thread.failed", ({ thread, error }) => onTeamThreadEvent(thread, "error", error));
+  alia.events.on("thread.active", ({ thread }) => onTeamThreadEvent(thread, "other", null));
+  alia.events.on("thread.archived", ({ thread }) => onTeamThreadEvent(thread, "other", null));
+  alia.events.on("experimental_thread.events", ({ thread }) => onThreadActivityEvent(thread));
 
   /* ── RPC ── */
 
   const kindsList = (lang: Language) =>
     ROLE_KINDS.map((kind) => ({ kind, title: kindTitle(lang, kind) }));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async trackerConfig({projectId}) {
       const {t} = await loadLang();
-      return tracker.getConfig(await resolveWorkspace(bb, projectId, undefined, t, {}));
+      return tracker.getConfig(await resolveWorkspace(alia, projectId, undefined, t, {}));
     },
     async trackerSet({projectId, kind}) {
       const {t} = await loadLang();
-      await setProjectTracker(await resolveWorkspace(bb, projectId, undefined, t, {}), kind);
+      await setProjectTracker(await resolveWorkspace(alia, projectId, undefined, t, {}), kind);
       return {ok: true};
     },
     async trackerPrepare({projectId, team}) {
       const {t} = await loadLang();
-      const result = await tracker.prepare({...await resolveWorkspace(bb, projectId, undefined, t, {}), team});
+      const result = await tracker.prepare({...await resolveWorkspace(alia, projectId, undefined, t, {}), team});
       publishChange(projectId);
       return result;
     },
     async projects() {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return { projects: projects.map((p) => ({ id: p.id, name: p.name })) };
     },
     async teams({ projectId }) {
       const { lang, t } = await loadLang();
-      const workspace = await resolveWorkspace(bb, projectId, undefined, t, {});
+      const workspace = await resolveWorkspace(alia, projectId, undefined, t, {});
       return { teams: await allTeams(workspace), language: lang };
     },
     async snapshot({ projectId, team }) {
       const { lang, t } = await loadLang();
-      const workspace = await resolveWorkspace(bb, projectId, undefined, t, {});
+      const workspace = await resolveWorkspace(alia, projectId, undefined, t, {});
       const teams = await allTeams(workspace);
       const chosen = team ?? teams[0] ?? DEFAULT_TEAM;
       return { snapshot: await buildSnapshot({ ...workspace, team: chosen }, t), language: lang };
     },
     async overview() {
       const { lang, m } = await loadLang();
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
-      let hosts: Awaited<ReturnType<typeof bb.sdk.hosts.list>> = [];
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
+      let hosts: Awaited<ReturnType<typeof alia.sdk.hosts.list>> = [];
       try {
-        hosts = await bb.sdk.hosts.list();
+        hosts = await alia.sdk.hosts.list();
       } catch {
         // host states unknown — do not block projects on them
       }
@@ -2684,11 +2684,11 @@ export default async function plugin(bb: BbPluginApi) {
           }
           const workspace: Workspace = { projectId: project.id, projectName: project.name, path, hostId: source.hostId };
           try {
-            await bb.sdk.files.list({ hostId: source.hostId, path, limit: 1 });
+            await alia.sdk.files.list({ hostId: source.hostId, path, limit: 1 });
           } catch (error) {
             return { ...base, path, state: "blocked" as const, reason: m.overviewUnreadable((error as Error).message.slice(0, 160)) };
           }
-          const scan = await scanTeamThreads(bb, project.id).catch(() => ({ rows: [], free: [] }) as ThreadScan);
+          const scan = await scanTeamThreads(alia, project.id).catch(() => ({ rows: [], free: [] }) as ThreadScan);
           const teams = await allTeams(workspace, scan).catch(() => [] as string[]);
           const teamRows = scan.rows.filter((row) => !row.helper);
           return {
@@ -2707,7 +2707,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async tree({ projectId }) {
       const { lang, t } = await loadLang();
-      const workspace = await resolveWorkspace(bb, projectId, undefined, t, {});
+      const workspace = await resolveWorkspace(alia, projectId, undefined, t, {});
       const snapshots: TeamSnapshot[] = [];
       for (const team of await allTeams(workspace)) {
         snapshots.push(await buildSnapshot({ ...workspace, team }, t));
@@ -2744,17 +2744,17 @@ export default async function plugin(bb: BbPluginApi) {
       let stopped = 0;
       for (const row of [...(rows.get(role) ?? []), ...(helpers.get(role) ?? [])]) {
         if (!RUNNING.includes(row.status)) continue;
-        await bb.sdk.threads.stop({ threadId: row.threadId });
+        await alia.sdk.threads.stop({ threadId: row.threadId });
         stopped += 1;
       }
       if (stopped > 0) publishChange(projectId);
       return { stopped };
     },
     async providers() {
-      return providerState(bb);
+      return providerState(alia);
     },
     async freeThreads({ projectId }) {
-      const scan = await scanTeamThreads(bb, projectId);
+      const scan = await scanTeamThreads(alia, projectId);
       return {
         threads: scan.free.slice(0, 200).map((thread) => ({
           id: thread.id,
@@ -2855,7 +2855,7 @@ export default async function plugin(bb: BbPluginApi) {
     async templateFromTeam({ projectId, team, id, title }) {
       const { lang, t, m } = await loadLang();
       const scope = await scopeFor(projectId, team, t);
-      const loaded = await readTeamConfig(bb, scope, team, t);
+      const loaded = await readTeamConfig(alia, scope, team, t);
       const { template } = await templateFromConfig(scope, loaded, lang, t, id, title);
       await saveUserTemplate(template, m);
       return { template };
@@ -2886,8 +2886,8 @@ export default async function plugin(bb: BbPluginApi) {
     async rolePolicy({projectId,team,role:roleName,primary,policy,expectedRevision}) {
       const {t}=await loadLang(); const scope=await scopeFor(projectId,team,t);
       return withScopeLock(scope,async()=>{
-        const loaded=await readTeamConfig(bb,scope,team,t);
-        const raw=await readFileOrNull(bb,scope,loaded.source);
+        const loaded=await readTeamConfig(alia,scope,team,t);
+        const raw=await readFileOrNull(alia,scope,loaded.source);
         if(raw===null) throw new PluginCliError("Team config is unavailable",{code:"not_found"});
         const revision=createHash("sha256").update(raw).digest("hex");
         const role=loaded.config.roles.find(r=>r.name===roleName);
@@ -2902,7 +2902,7 @@ export default async function plugin(bb: BbPluginApi) {
         if(policy===null) delete entry.executionPolicy; else if(policy!==undefined) entry.executionPolicy=policy;
         const next=loaded.source.endsWith(".json")?`${JSON.stringify(parsed,null,2)}\n`:dumpYaml(parsed,{lineWidth:120,noRefs:true});
         core.parseTeamConfig(next,loaded.source,t);
-        await writeWorkspaceFile(bb,scope,loaded.source,next);publishChange(projectId);
+        await writeWorkspaceFile(alia,scope,loaded.source,next);publishChange(projectId);
         const updated=core.parseTeamConfig(next,loaded.source,t).roles.find(r=>r.name===roleName)!;
         return {role:updated,source:loaded.source,revision:createHash("sha256").update(next).digest("hex")};
       });
@@ -2912,17 +2912,17 @@ export default async function plugin(bb: BbPluginApi) {
       if(!reason){if(policy||taskId!==undefined||role)throw new experimental_PluginRpcRefusal({code:"invalid",message:"State the concrete resource decision"});return withResourceResults(await resources.inspect(scope),(await readTasks(scope)).tasks);}
       if(taskId!==undefined){
         const task=(await readTasks(scope)).tasks.find(t=>t.id===taskId);if(!task)throw new experimental_PluginRpcRefusal({code:"not_found",message:"Task missing"});
-        const intent=await readReplacementIntent(bb,scope.projectId,scope.team,task.role);
+        const intent=await readReplacementIntent(alia,scope.projectId,scope.team,task.role);
         if(intent&&intent.stage!=="complete")throw new experimental_PluginRpcRefusal({code:"conflict",message:"Resolve the unfinished replacement before releasing attempts"});
         await tracker.review(scope,taskId,{decision:{decision:"changes-requested",reason,decidedBy:"manual",basis:"manual",atMs:Date.now()}});
       }
       const result=await resources.decide(scope,reason,policy,taskId,role);publishChange(projectId);
-      await bb.experimental_hooks.recheck("message.dispatch");return withResourceResults(result,(await readTasks(scope)).tasks);
+      await alia.experimental_hooks.recheck("message.dispatch");return withResourceResults(result,(await readTasks(scope)).tasks);
     },
     async setVersioned({ projectId, team, versioned }) {
       const { t } = await loadLang();
       const scope = await scopeFor(projectId, team, t);
-      const loaded = await readTeamConfig(bb, scope, team, t);
+      const loaded = await readTeamConfig(alia, scope, team, t);
       const state = await setVersioned(scope, loaded.legacy, versioned);
       return { versioned: state.versioned, blocked: state.blocked };
     },
@@ -2959,14 +2959,14 @@ export default async function plugin(bb: BbPluginApi) {
   /* ── Composer "@" menu: team roles of the current project ── */
 
   try {
-    bb.ui.registerMentionProvider({
+    alia.ui.registerMentionProvider({
       id: "team-roles",
       label: strings(currentLang).mentionLabel,
       search: async ({ query, projectId }): Promise<PluginMentionItem[]> => {
         if (!projectId) return [];
         try {
           const t = strings(currentLang);
-          const scan = await scanTeamThreads(bb, projectId);
+          const scan = await scanTeamThreads(alia, projectId);
           const multi = teamsWithThreads(scan).length > 1;
           const q = query.trim().toLowerCase();
           const items: PluginMentionItem[] = [];
@@ -2993,17 +2993,17 @@ export default async function plugin(bb: BbPluginApi) {
       },
     });
   } catch (error) {
-    bb.log.warn(`mention provider registration failed: ${(error as Error).message}`);
+    alia.log.warn(`mention provider registration failed: ${(error as Error).message}`);
   }
 
   /* ── CLI ── */
 
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "team",
-      summary: "Role-based agent teams for a project (.bb/teams/<team>.yaml)",
+      summary: "Role-based agent teams for a project (.vesnalia/teams/<team>.yaml)",
       commands: {
-        /* ── bb team init ── */
+        /* ── VesnALIA team init ── */
         init: cliCommand({
           summary: "Create a team config from a template (or copy one from another project)",
           options: {
@@ -3011,7 +3011,7 @@ export default async function plugin(bb: BbPluginApi) {
             team: { ...TEAM_OPTION, description: `Team name (default: ${DEFAULT_TEAM})` },
             template: {
               type: "string",
-              description: "Template id (default: the Default team template setting, initially dev); see bb team template list",
+              description: "Template id (default: the Default team template setting, initially dev); see VesnALIA team template list",
               placeholder: "<id>",
             },
             from: {
@@ -3034,7 +3034,7 @@ export default async function plugin(bb: BbPluginApi) {
           ],
           async run(input, ctx) {
             const { lang, t, m } = await loadLang();
-            const workspace = await resolveWorkspace(bb, input.options.project, ctx.projectId, t, ctx);
+            const workspace = await resolveWorkspace(alia, input.options.project, ctx.projectId, t, ctx);
             const team = input.options.team ?? DEFAULT_TEAM;
             core.assertTeamName(team);
             const scope: Scope = { ...workspace, team };
@@ -3044,11 +3044,11 @@ export default async function plugin(bb: BbPluginApi) {
             let vars: TeamConfig["vars"];
             let defaults: TeamConfig["defaults"];
             if (input.options.from) {
-              const source = await resolveWorkspace(bb, input.options.from, undefined, t, {});
+              const source = await resolveWorkspace(alia, input.options.from, undefined, t, {});
               const sourceTeam = input.options["from-team"] ?? team;
               let loaded: LoadedConfig;
               try {
-                loaded = await readTeamConfig(bb, source, sourceTeam, t);
+                loaded = await readTeamConfig(alia, source, sourceTeam, t);
               } catch (error) {
                 if ((error as PluginCliError).code === "config_missing") {
                   const err = m.fromNoConfig(source.projectName);
@@ -3072,19 +3072,19 @@ export default async function plugin(bb: BbPluginApi) {
                 if (!input.options.template && (error as PluginCliError).code === "template_not_found") {
                   throw new PluginCliError(
                     `Default team template "${templateId}" does not exist; save it first or change the Team "Default team template" setting`,
-                    { code: "template_not_found", hint: "bb team template list" },
+                    { code: "template_not_found", hint: "alia team template list" },
                   );
                 }
                 throw error;
               }
             }
             const written = await withScopeLock(scope, async () => {
-              const teams = await listConfiguredTeams(bb, workspace);
+              const teams = await listConfiguredTeams(alia, workspace);
               if (teams.includes(team) && !input.options.force) {
                 const err = m.teamExists(team);
                 throw new PluginCliError(err.message, { code: "team_exists", hint: err.hint });
               }
-              const checkouts = input.options.from ? [] : await bb.sdk.environments.list({
+              const checkouts = input.options.from ? [] : await alia.sdk.environments.list({
                 projectId: scope.projectId, environmentProviderId: "project-checkout",
               });
               const files = teamFilesFromTemplate(lang, template, team, {
@@ -3126,7 +3126,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team create ── */
+        /* ── VesnALIA team create ── */
         create: cliCommand({
           summary: "Spawn the team threads from its config (missing roles only)",
           options: {
@@ -3139,10 +3139,10 @@ export default async function plugin(bb: BbPluginApi) {
             const { lang, t, m } = await loadLang();
             const scope = await resolveScope(input.options, ctx, t);
             if (input.options["dry-run"]) {
-              const { config, source } = await readTeamConfig(bb, scope, scope.team, t);
+              const { config, source } = await readTeamConfig(alia, scope, scope.team, t);
               const { lead, roles } = core.semanticChecks(config, t);
-              await validateProviders(bb, roles.filter((r) => !r.threadId), t);
-              const existing = roleThreadsOf(await scanTeamThreads(bb, scope.projectId), scope.team);
+              await validateProviders(alia, roles.filter((r) => !r.threadId), t);
+              const existing = roleThreadsOf(await scanTeamThreads(alia, scope.projectId), scope.team);
               const out = [t.planTitle(source, scope.projectName)];
               for (const role of roles) {
                 const already = existing.get(role.name)?.map((row) => row.threadId);
@@ -3155,10 +3155,10 @@ export default async function plugin(bb: BbPluginApi) {
                 out.push(line(t.labels.title, await threadTitle(scope, role.title ?? role.name)));
                 out.push(line(t.labels.provider, role.provider ?? t.labels.projectDefault));
                 if (role.model) out.push(line(t.labels.model, role.model));
-                const environment = await resolveEnvironment(bb, scope, roleEnvironmentSpec(role, config), t);
+                const environment = await resolveEnvironment(alia, scope, roleEnvironmentSpec(role, config), t);
                 out.push(line(t.labels.environment, JSON.stringify(environment).slice(0, 120)));
                 const prompt = core.applyVars(
-                  await loadRolePrompt(bb, scope, role, role.name === lead.name, lang, t),
+                  await loadRolePrompt(alia, scope, role, role.name === lead.name, lang, t),
                   config.vars,
                 );
                 out.push(line(t.labels.prompt, `${prompt.split("\n")[0]!.slice(0, 80)}…`));
@@ -3194,26 +3194,26 @@ export default async function plugin(bb: BbPluginApi) {
             }
             if (result.relinked > 0) out.push(m.relinked(result.relinked));
             if (result.rosterQueued && result.leadThreadId) out.push("", t.rosterSent(result.leadThreadId));
-            out.push("", "bb team status");
+            out.push("", "alia team status");
             return { exitCode: 0, stdout: out.join("\n") };
           },
         }),
 
-        /* ── bb team list ── */
+        /* ── VesnALIA team list ── */
         list: cliCommand({
           summary: "List the teams of a project",
           options: { project: PROJECT_OPTION, json: JSON_OPTION },
           async run(input, ctx) {
             const { t, m } = await loadLang();
-            const workspace = await resolveWorkspace(bb, input.options.project, ctx.projectId, t, ctx);
-            const scan = await scanTeamThreads(bb, workspace.projectId);
+            const workspace = await resolveWorkspace(alia, input.options.project, ctx.projectId, t, ctx);
+            const scan = await scanTeamThreads(alia, workspace.projectId);
             const teams = await allTeams(workspace, scan);
             const rows = [];
             for (const team of teams) {
               const scope = { ...workspace, team };
               let loaded: LoadedConfig | null = null;
               try {
-                loaded = await readTeamConfig(bb, scope, team, t);
+                loaded = await readTeamConfig(alia, scope, team, t);
               } catch {
                 loaded = null;
               }
@@ -3241,7 +3241,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team add-role ── */
+        /* ── VesnALIA team add-role ── */
         "add-role": cliCommand({
           summary: "Add an executor role to a team (spawn it, or adopt an existing thread)",
           positionals: [{ name: "name", required: true, description: "Role name, e.g. junior or developer-2" }],
@@ -3254,14 +3254,14 @@ export default async function plugin(bb: BbPluginApi) {
               placeholder: "<kind>",
             },
             title: { type: "string", description: "Display title of the role" },
-            provider: { type: "string", description: "Provider id (bb provider list)" },
+            provider: { type: "string", description: "Provider id (VesnALIA provider list)" },
             model: { type: "string", description: "Model of the provider" },
             thread: {
               type: "string",
               description: "Adopt this existing thread (same project, not in a team)",
               placeholder: "<thr_…>",
             },
-            "no-spawn": { type: "boolean", description: "Only write the config; spawn later with bb team create" },
+            "no-spawn": { type: "boolean", description: "Only write the config; spawn later with VesnALIA team create" },
             json: JSON_OPTION,
           },
           async run(input, ctx) {
@@ -3296,7 +3296,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team version ── */
+        /* ── VesnALIA team version ── */
         version: cliCommand({
           summary: "Track a team config in git (on) or keep it out of git (off)",
           positionals: [{ name: "state", required: true, description: "on | off" }],
@@ -3308,7 +3308,7 @@ export default async function plugin(bb: BbPluginApi) {
               throw new PluginCliError(`expected on or off, got "${state}"`, { code: "invalid_value" });
             }
             const scope = await resolveScope(input.options, ctx, t);
-            const loaded = await readTeamConfig(bb, scope, scope.team, t);
+            const loaded = await readTeamConfig(alia, scope, scope.team, t);
             const result = await setVersioned(scope, loaded.legacy, state === "on");
             const files = [loaded.source, `${result.layout.promptDir}/`].join(" ");
             if (input.options.json) {
@@ -3325,7 +3325,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team tell ── */
+        /* ── VesnALIA team tell ── */
         tell: cliCommand({
           summary: "Send a message to a team role by name (or all)",
           positionals: [{ name: "role", required: true, description: 'Role name, or "all"' }],
@@ -3351,11 +3351,11 @@ export default async function plugin(bb: BbPluginApi) {
             let text = input.options.message;
             if (!text) {
               const rel = input.options["message-file"]!;
-              const hostId = await core.invokerHost(bb, ctx);
+              const hostId = await core.invokerHost(alia, ctx);
               const base = ctx.cwd?.replace(/\/+$/, "") || scope.path;
               const abs = rel.startsWith("/") ? rel : joinPath(base, rel);
               try {
-                text = (await bb.sdk.files.read({ hostId: hostId ?? undefined, path: abs })).content;
+                text = (await alia.sdk.files.read({ hostId: hostId ?? undefined, path: abs })).content;
               } catch {
                 throw new PluginCliError(t.tellFileReadFailed(rel), { code: "message_file_missing" });
               }
@@ -3391,7 +3391,7 @@ export default async function plugin(bb: BbPluginApi) {
           options: {project: PROJECT_OPTION, json: JSON_OPTION},
           async run(input, ctx) {
             const {t} = await loadLang();
-            const workspace = await resolveWorkspace(bb, input.options.project, ctx.projectId, t, ctx);
+            const workspace = await resolveWorkspace(alia, input.options.project, ctx.projectId, t, ctx);
             const kind = input.positionals.kind;
             if (kind !== undefined) {
               if (!["beads", "builtin", "default"].includes(kind)) throw new PluginCliError("Tracker must be beads, builtin or default", {code: "invalid_value"});
@@ -3412,37 +3412,37 @@ export default async function plugin(bb: BbPluginApi) {
               const id = parseTaskId(input.positionals.id!);
               const task = (await readTasks(scope)).tasks.find(task => task.id === id);
               if (!task) throw new PluginCliError(`Task ${id} not found`, {code: "task_not_found"});
-              const replacement = await readReplacementIntent(bb,scope.projectId,scope.team,task.role);
+              const replacement = await readReplacementIntent(alia,scope.projectId,scope.team,task.role);
               if (replacement && replacement.stage!=="complete") {
-                const canonical=await bb.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${task.role}`);
+                const canonical=await alia.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${task.role}`);
                 if ((replacement.stage!=="spawning" && replacement.stage!=="spawn_uncertain") || (canonical && canonical!==replacement.oldThreadId)) throw new PluginCliError("Finish or abort the pending replacement before saving another checkpoint",{code:"replacement_pending"});
               }
               const {rows} = await teamContext(scope, t);
               const list = rows.get(task.role) ?? [];
               if (list.length !== 1) throw new PluginCliError("Checkpoint requires exactly one current thread for the task role", {code: "thread_ambiguous"});
               const target = list[0]!;
-              const assigned=await bb.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
+              const assigned=await alia.storage.kv.get<TaskId>(sessionTaskKey(scope,target.threadId));
               if (assigned !== undefined && assigned !== id) throw new PluginCliError("Checkpoint must describe this session existing package",{code:"session_consumed"});
               const other=busyTasks(await readTasks(scope),task.role,id);
               if (other.length) throw new PluginCliError("Checkpoint must describe the role active package",{code:"role_busy"});
               if (task.status === "todo" && !(await tracker.ready(scope)).includes(id)) throw new PluginCliError("Checkpoint task is not ready in the selected tracker",{code:"task_not_ready"});
               if (ctx.threadId && ctx.threadId !== target.threadId) {
-                const mark = readTeamMark(await bb.sdk.threads.getPluginMetadata({threadId: ctx.threadId}) as Record<string,unknown>);
+                const mark = readTeamMark(await alia.sdk.threads.getPluginMetadata({threadId: ctx.threadId}) as Record<string,unknown>);
                 if (mark) throw new PluginCliError("An agent can checkpoint only its own role", {code: "task_forbidden"});
               }
-              const thread = await bb.sdk.threads.get({threadId: ctx.threadId ?? target.threadId});
-              const environment = thread.environmentId ? await bb.sdk.environments.get({environmentId: thread.environmentId}) : null;
+              const thread = await alia.sdk.threads.get({threadId: ctx.threadId ?? target.threadId});
+              const environment = thread.environmentId ? await alia.sdk.environments.get({environmentId: thread.environmentId}) : null;
               const path = joinPath(environment?.path ?? scope.path, input.options.file!);
-              const file = await bb.sdk.files.read({hostId: environment?.hostId ?? scope.hostId, path});
+              const file = await alia.sdk.files.read({hostId: environment?.hostId ?? scope.hostId, path});
               let content: unknown;
               try { content = JSON.parse(file.content); } catch { throw new PluginCliError("Checkpoint file must contain JSON", {code: "checkpoint_invalid"}); }
-              const checkpoint = await captureCheckpoint(bb, id, task.role, target.threadId, content);
+              const checkpoint = await captureCheckpoint(alia, id, task.role, target.threadId, content);
               if (task.status === "todo") await tracker.update(scope,id,{status:"in-progress"});
               await tracker.writeCheckpoint(scope, id, checkpoint);
               const verified = workCheckpointSchema.parse(await tracker.readCheckpoint(scope, id));
               if (JSON.stringify(checkpoint) !== JSON.stringify(verified)) throw new PluginCliError("Checkpoint read-back failed", {code: "checkpoint_invalid"});
-              await bb.storage.kv.set(checkpointRefKey(scope, task.role), {taskId: id});
-              await bb.storage.kv.set(sessionTaskKey(scope,target.threadId),id);
+              await alia.storage.kv.set(checkpointRefKey(scope, task.role), {taskId: id});
+              await alia.storage.kv.set(sessionTaskKey(scope,target.threadId),id);
               // --rotate queues an explicit deferred context rotation; it
               // never stops the caller's own active turn (the machine only
               // replaces idle sessions). Otherwise a fresh agent-saved
@@ -3460,7 +3460,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team task … ── */
+        /* ── VesnALIA team task … ── */
         "task add": cliCommand({
           summary: "Add a work package for a role (--send hands it to the role's thread)",
           positionals: [
@@ -3571,7 +3571,7 @@ export default async function plugin(bb: BbPluginApi) {
             "return-reason": { type: "string", description: "Concrete remark when returning from review (--status todo)", stdin: true },
             "expected-submission": {
               type: "string",
-              description: "Id of the reviewed submission (bb team task list --json): a mismatch with the stored report is a conflict, nothing is written",
+              description: "Id of the reviewed submission (VesnALIA team task list --json): a mismatch with the stored report is a conflict, nothing is written",
               placeholder: "<sub_…>",
             },
             json: JSON_OPTION,
@@ -3613,7 +3613,7 @@ export default async function plugin(bb: BbPluginApi) {
             },
             "expected-submission": {
               type: "string",
-              description: "Id of the reviewed submission (bb team task list --json): a mismatch with the stored report is a conflict, nothing is written",
+              description: "Id of the reviewed submission (VesnALIA team task list --json): a mismatch with the stored report is a conflict, nothing is written",
               placeholder: "<sub_…>",
             },
             json: JSON_OPTION,
@@ -3653,7 +3653,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team report ── */
+        /* ── VesnALIA team report ── */
         report: cliCommand({
           summary: "Team digest: an inline-vis HTML page (--out) or Markdown on stdout",
           options: {
@@ -3666,7 +3666,7 @@ export default async function plugin(bb: BbPluginApi) {
             },
             out: {
               type: "string",
-              description: 'File to write on the invoking machine, e.g. "$BB_THREAD_STORAGE/team-report.html"',
+              description: 'File to write on the invoking machine, e.g. "$ALIA_THREAD_STORAGE/team-report.html"',
               placeholder: "<file>",
             },
             json: JSON_OPTION,
@@ -3696,12 +3696,12 @@ export default async function plugin(bb: BbPluginApi) {
             if (!/\.(html?|md|markdown)$/i.test(outPath)) {
               throw new PluginCliError(`--out must end in .html or .md: ${outPath}`, { code: "invalid_value" });
             }
-            const hostId = await core.invokerHost(bb, ctx);
-            await bb.sdk.files.write({ hostId: hostId ?? undefined, path: outPath, content: body, createParents: true });
+            const hostId = await core.invokerHost(alia, ctx);
+            await alia.sdk.files.write({ hostId: hostId ?? undefined, path: outPath, content: body, createParents: true });
             let directive: string | null = null;
             if (ctx.threadId) {
               try {
-                const location = await bb.sdk.threads.storageLocation({ threadId: ctx.threadId });
+                const location = await alia.sdk.threads.storageLocation({ threadId: ctx.threadId });
                 const root = location.storageRootPath.replace(/\/+$/, "");
                 if (outPath.startsWith(`${root}/`)) {
                   directive = `::inline-vis{source="thread-storage" file="${outPath.slice(root.length + 1)}"}`;
@@ -3722,7 +3722,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team doctor ── */
+        /* ── VesnALIA team doctor ── */
         doctor: cliCommand({
           summary: "Check config, providers, environments, prompts and team threads",
           options: { project: PROJECT_OPTION, team: TEAM_OPTION, json: JSON_OPTION },
@@ -3748,7 +3748,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team replace ── */
+        /* ── VesnALIA team replace ── */
         replace: cliCommand({
           summary: "Continue a role in its existing environment using a saved task checkpoint",
           positionals: [{ name: "role", required: true, description: "Role name" }],
@@ -3765,50 +3765,50 @@ export default async function plugin(bb: BbPluginApi) {
             const { t, m } = await loadLang();
             const scope = await resolveScope(input.options, ctx, t);
             const roleName = input.positionals.role!;
-            const { roles } = core.semanticChecks((await readTeamConfig(bb, scope, scope.team, t)).config, t);
+            const { roles } = core.semanticChecks((await readTeamConfig(alia, scope, scope.team, t)).config, t);
             const role = roles.find((r) => r.name === roleName);
             if (!role) {
               const err = m.taskRoleUnknown(roleName);
               throw new PluginCliError(err.message, { code: "role_not_found", hint: err.hint });
             }
             return withScopeLock(scope, async () => {
-              const scan = await scanTeamThreads(bb, scope.projectId);
+              const scan = await scanTeamThreads(alia, scope.projectId);
               const rows = roleThreadsOf(scan, scope.team);
-              const intent = await readReplacementIntent(bb, scope.projectId, scope.team, roleName);
+              const intent = await readReplacementIntent(alia, scope.projectId, scope.team, roleName);
               const pending = intent && intent.stage !== "complete" ? intent : null;
               if (input.options.abort && !input.options["dry-run"]) {
                 if (!pending) throw new PluginCliError("No unfinished replacement to abort",{code:"replacement_missing"});
-                const canonical=await bb.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${roleName}`);
+                const canonical=await alia.storage.kv.get<string>(`active-session:${scope.projectId}:${scope.team}:${roleName}`);
                 if (canonical && canonical!==pending.oldThreadId) throw new PluginCliError("The role already switched; repeat replace to finish recovery",{code:"replacement_switched"});
-                const candidates=await core.listProjectThreads(bb,scope.projectId);
+                const candidates=await core.listProjectThreads(alia,scope.projectId);
                 for (const candidate of candidates) {
-                  const meta=await bb.sdk.threads.getPluginMetadata({threadId:candidate.id}) as Record<string,unknown>;
+                  const meta=await alia.sdk.threads.getPluginMetadata({threadId:candidate.id}) as Record<string,unknown>;
                   if (candidate.id!==pending.newThreadId && !(meta.teamReplacement===true && meta.teamReplacementRole===roleName && meta.teamReplacementTeam===scope.team)) continue;
-                  if (!(await isPreparedReplacement(bb,await bb.sdk.threads.get({threadId:candidate.id}))) || candidate.environmentId!==pending.environmentId) throw new PluginCliError("A replacement candidate is active or changed environment; inspect it before aborting",{code:"replacement_candidate_invalid"});
-                  const descendants=await bb.sdk.threads.experimental_listDescendants({threadIds:[candidate.id]});
+                  if (!(await isPreparedReplacement(alia,await alia.sdk.threads.get({threadId:candidate.id}))) || candidate.environmentId!==pending.environmentId) throw new PluginCliError("A replacement candidate is active or changed environment; inspect it before aborting",{code:"replacement_candidate_invalid"});
+                  const descendants=await alia.sdk.threads.experimental_listDescendants({threadIds:[candidate.id]});
                   for (const id of descendants.threads.find(x=>x.threadId===candidate.id)?.descendantIds ?? []) {
-                    const child=await bb.sdk.threads.get({threadId:id});
-                    if (child.parentThreadId===candidate.id) await bb.sdk.threads.update({threadId:id,parentThreadId:pending.oldThreadId});
+                    const child=await alia.sdk.threads.get({threadId:id});
+                    if (child.parentThreadId===candidate.id) await alia.sdk.threads.update({threadId:id,parentThreadId:pending.oldThreadId});
                   }
-                  await bb.sdk.threads.updatePluginMetadata({threadId:candidate.id,set:{teamRetired:true},remove:["teamRole","teamName","teamNotifyOn"]});
-                  await bb.sdk.threads.archive({threadId:candidate.id});
+                  await alia.sdk.threads.updatePluginMetadata({threadId:candidate.id,set:{teamRetired:true},remove:["teamRole","teamName","teamNotifyOn"]});
+                  await alia.sdk.threads.archive({threadId:candidate.id});
                 }
-                await bb.storage.kv.delete(`replacement:${scope.projectId}:${scope.team}:${roleName}`);
+                await alia.storage.kv.delete(`replacement:${scope.projectId}:${scope.team}:${roleName}`);
                 publishChange(scope.projectId);
                 return {exitCode:0,stdout:input.options.json?JSON.stringify({ok:true,aborted:true,oldThreadId:pending.oldThreadId}):`Replacement aborted; original session ${pending.oldThreadId} remains current`};
               }
               if (pending?.stage === "spawn_uncertain" && input.options.thread && !input.options["dry-run"]) {
-                const candidate = await bb.sdk.threads.get({threadId:input.options.thread});
-                const meta = await bb.sdk.threads.getPluginMetadata({threadId:candidate.id}) as Record<string,unknown>;
-                if (candidate.projectId!==scope.projectId || candidate.environmentId!==pending.environmentId || !(await isPreparedReplacement(bb,candidate)) || candidate.archivedAt!==null || meta.teamReplacement!==true || meta.teamReplacementRole!==roleName || meta.teamReplacementTeam!==scope.team) throw new PluginCliError("Candidate is not an idle replacement for this role and environment",{code:"replacement_candidate_invalid"});
+                const candidate = await alia.sdk.threads.get({threadId:input.options.thread});
+                const meta = await alia.sdk.threads.getPluginMetadata({threadId:candidate.id}) as Record<string,unknown>;
+                if (candidate.projectId!==scope.projectId || candidate.environmentId!==pending.environmentId || !(await isPreparedReplacement(alia,candidate)) || candidate.archivedAt!==null || meta.teamReplacement!==true || meta.teamReplacementRole!==roleName || meta.teamReplacementTeam!==scope.team) throw new PluginCliError("Candidate is not an idle replacement for this role and environment",{code:"replacement_candidate_invalid"});
                 pending.newThreadId=candidate.id;pending.stage="spawning";
-                await bb.storage.kv.set(`replacement:${scope.projectId}:${scope.team}:${roleName}`,pending);
+                await alia.storage.kv.set(`replacement:${scope.projectId}:${scope.team}:${roleName}`,pending);
               }
               const list = rows.get(roleName) ?? [];
               const selected = pending?.oldThreadId ?? input.options.thread ?? (list.length === 1 ? list[0]!.threadId : null);
               if (!selected) throw new PluginCliError(list.length ? m.replaceAmbiguous(roleName, list.map(x=>x.threadId).join(", ")).message : m.replaceNoThread(roleName).message, {code: list.length ? "thread_ambiguous" : "thread_not_found"});
               if (!pending && !list.some(x => x.threadId === selected)) throw new PluginCliError(m.replaceThreadMismatch(roleName, selected), {code: "thread_not_found"});
-              const old = await bb.sdk.threads.get({threadId: selected});
+              const old = await alia.sdk.threads.get({threadId: selected});
               if (input.options["dry-run"]) return {exitCode: 0, stdout: input.options.json ? JSON.stringify({ok:true,dryRun:true,role:roleName,oldThreadId:old.id,environmentId:old.environmentId,replacement:pending}) : m.replacePlan(roleName, old.id)};
               const outcome = await continueRoleSession(scope, roleName, old.id, {keep: input.options.keep, pending});
               if (input.options.json) return {exitCode:0,stdout:JSON.stringify({ok:true,team:scope.team,role:roleName,...outcome.result,continuing:outcome.continuing,archived:!outcome.kept})};
@@ -3817,7 +3817,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team stop / pause / resume ── */
+        /* ── VesnALIA team stop / pause / resume ── */
         stop: cliCommand({
           summary: "Stop running team threads: the executors, one role, or all (incl. the lead)",
           positionals: [{ name: "role", description: 'Role name, or "all"; default: every executor (not the lead)' }],
@@ -3840,7 +3840,7 @@ export default async function plugin(bb: BbPluginApi) {
                 for (const row of list) {
                   if (!RUNNING.includes(row.status) || row.threadId === ctx.threadId) continue;
                   try {
-                    await bb.sdk.threads.stop({ threadId: row.threadId });
+                    await alia.sdk.threads.stop({ threadId: row.threadId });
                     stopped.push({ role, threadId: row.threadId });
                   } catch (error) {
                     failed.push({ role, error: (error as Error).message });
@@ -3867,7 +3867,7 @@ export default async function plugin(bb: BbPluginApi) {
         }),
 
         pause: cliCommand({
-          summary: "Hold agent messages to every executor of a team until bb team resume",
+          summary: "Hold agent messages to every executor of a team until VesnALIA team resume",
           options: {
             project: PROJECT_OPTION,
             team: TEAM_OPTION,
@@ -3880,11 +3880,11 @@ export default async function plugin(bb: BbPluginApi) {
             const result = await pause(scope, t);
             const stopped: string[] = [];
             if (input.options.stop) {
-              const scan = await scanTeamThreads(bb, scope.projectId);
+              const scan = await scanTeamThreads(alia, scope.projectId);
               for (const row of scan.rows) {
                 if (!pausedThreads.has(row.threadId) || !RUNNING.includes(row.status)) continue;
                 try {
-                  await bb.sdk.threads.stop({ threadId: row.threadId });
+                  await alia.sdk.threads.stop({ threadId: row.threadId });
                   stopped.push(row.threadId);
                 } catch {
                   // reported by count only
@@ -3917,7 +3917,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team retitle ── */
+        /* ── VesnALIA team retitle ── */
         retitle: cliCommand({
           summary: "Re-apply the title format (Settings → Team) to a team's threads",
           options: { project: PROJECT_OPTION, team: TEAM_OPTION, json: JSON_OPTION },
@@ -3931,7 +3931,7 @@ export default async function plugin(bb: BbPluginApi) {
               const title = await threadTitle(scope, titles.get(role) ?? role, scan);
               for (const row of list) {
                 if (row.title === title) continue;
-                await bb.sdk.threads.update({ threadId: row.threadId, title });
+                await alia.sdk.threads.update({ threadId: row.threadId, title });
                 count += 1;
               }
             }
@@ -3941,13 +3941,13 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team status ── */
+        /* ── VesnALIA team status ── */
         status: cliCommand({
           summary: "Show the teams of a project: config, live threads, current packages",
           options: { project: PROJECT_OPTION, team: TEAM_OPTION, json: JSON_OPTION },
           async run(input, ctx) {
             const { t, m } = await loadLang();
-            const workspace = await resolveWorkspace(bb, input.options.project, ctx.projectId, t, ctx);
+            const workspace = await resolveWorkspace(alia, input.options.project, ctx.projectId, t, ctx);
             const teams = input.options.team ? [input.options.team] : await allTeams(workspace);
             if (input.options.team) core.assertTeamName(input.options.team);
             const snapshots: TeamSnapshot[] = [];
@@ -4035,7 +4035,7 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
 
-        /* ── bb team template … ── */
+        /* ── VesnALIA team template … ── */
         "template list": cliCommand({
           summary: "List team templates (built-in and yours)",
           options: { json: JSON_OPTION },
@@ -4105,7 +4105,7 @@ export default async function plugin(bb: BbPluginApi) {
               };
             } else {
               const scope = await resolveScope({ project: input.options.project, team: input.options["from-team"] }, ctx, t);
-              const loaded = await readTeamConfig(bb, scope, scope.team, t);
+              const loaded = await readTeamConfig(alia, scope, scope.team, t);
               ({ template } = await templateFromConfig(
                 scope,
                 loaded,

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import {
   createFakePluginHost, makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext, makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 
 type Harness = ReturnType<typeof createFakePluginHost>["harness"];
@@ -15,8 +15,8 @@ type State = {
 };
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  await plugin(alia);
   const { soul } = await harness.behavior.callRpc("souls_create", {
     draft: { name: "Marshal", role: "Delegate and verify the work." }, origin: "manual",
   }) as { soul: { id: string } };
@@ -74,7 +74,7 @@ test("prepare is not injection; session identity confirms the exact prepared ver
     assert.equal((await x.state()).status, "injected");
     now = 1200;
     await x.harness.behavior.callRpc("souls_update", { id: x.soul.id, patch: { role: "Delegate a different task, then verify it." } });
-    await x.configure(); // BB resolves on turns too; this is NOT a new session.
+    await x.configure(); // VesnALIA resolves on turns too; this is NOT a new session.
     assert.equal((await x.state()).status, "outdated");
     assert.equal((await x.state()).session?.providerThreadId, "session-1");
     now = 1300; x.identity(now, 2);

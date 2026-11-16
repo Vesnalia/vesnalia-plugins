@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.ts";
 
 const connection = {
@@ -43,9 +43,9 @@ async function loadHost(fetchResponse) {
       },
     },
   });
-  await host.bb.storage.kv.set("sentry-connections", [connection]);
+  await host.alia.storage.kv.set("sentry-connections", [connection]);
   try {
-    await plugin(host.bb);
+    await plugin(host.alia);
     return { host, restore: () => { globalThis.fetch = previousFetch; } };
   } catch (error) {
     globalThis.fetch = previousFetch;

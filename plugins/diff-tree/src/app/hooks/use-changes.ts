@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { ChangedFile } from "../../core/tree";
 import { automaticBase } from "../../core/comparison-base";
 import type { AutomaticBase, Environment } from "../../core/comparison-base";
@@ -51,7 +51,7 @@ export function useChanges(threadId: string, scope: Scope, base: string, revisio
         if (status.outcome === "unavailable") throw new Error(status.failure.message);
         automatic = automaticBase(environment, status.workspace);
         resolvedBase ||= automatic.branch;
-        // BB's branch diff is empty without HEAD, even when untracked files exist.
+        // VesnALIA's branch diff is empty without HEAD, even when untracked files exist.
         if (status.workspace.checkout.kind === "unborn") effectiveScope = "uncommitted";
       }
       const target = effectiveScope === "uncommitted"

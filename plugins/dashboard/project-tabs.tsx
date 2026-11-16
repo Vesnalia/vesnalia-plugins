@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type DragEvent } from "react";
-import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderIcon as ProviderIcon, experimental_useProviders as useProviders } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/ui/icon";
 import { ThreadIndicator } from "./components/thread-indicator";
 import { useTranslation } from "./use-translation";

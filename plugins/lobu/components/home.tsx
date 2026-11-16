@@ -1,12 +1,12 @@
-// The New thread screen's Lobu section: the setup card until bb is connected,
+// The New thread screen's Lobu section: the setup card until VesnALIA is connected,
 // then the inbox and what a new thread in the project picked in the composer starts with.
-import { useComposers } from "@get-bb/plugin-sdk/app";
+import { useComposers } from "@vesnalia/plugin-sdk/app";
 import { ProjectBrief } from "@/components/memory";
 import { InboxSection } from "@/components/inbox";
 import { isConnected, SetupCard, useSetupStatus } from "@/components/setup";
 
 /**
- * The project the New thread composer will create the thread in. bb 0.46
+ * The project the New thread composer will create the thread in. VesnALIA 0.46
  * leaves the section's own `projectId` prop null, so this reads the
  * composer's scope, which follows its project picker.
  */

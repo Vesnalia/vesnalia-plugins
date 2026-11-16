@@ -3,7 +3,7 @@
 // What: remembers, per repository, whether it is on the standard workflow
 // or the simple one, and answers that at once for any folder.
 //
-// Why: the user chooses the workflow per repository (bead-bb-8j6), and a
+// Why: the user chooses the workflow per repository (bead-alia-8j6), and a
 // work tree must follow its repository's choice ("worktrees should continue
 // existing flow"), not start again on the default.
 //
@@ -14,7 +14,7 @@
 //   `bd` call on every look, where this answers from memory.
 // - `get` is synchronous: the choices are loaded once at start and kept in
 //   memory. It was first needed that way to decide an agent's tools, which
-//   cannot wait; the tools are now offered everywhere (bead-bb-8fm), and
+//   cannot wait; the tools are now offered everywhere (bead-alia-8fm), and
 //   the quick answer is kept because every list and every move asks.
 // - The key is the repository's shared git directory, found by reading
 //   git's own files rather than running git, so it needs no waiting. A main
@@ -28,7 +28,7 @@
 // - If git's files cannot be read as expected, the folder is its own key:
 //   it then behaves like a separate repository, on the default.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import {
@@ -89,11 +89,11 @@ export interface WorkflowChoice {
  * Side effects: one read of the plugin's storage now; one write per `set`.
  */
 export async function createWorkflowChoice(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
 ): Promise<WorkflowChoice> {
   /** Repository key -> choice. Only repositories that chose are in it. */
   const choices = new Map<string, WorkflowId>();
-  const saved = await bb.storage.kv
+  const saved = await alia.storage.kv
     .get<unknown>(CHOICES_KEY)
     .catch(() => undefined);
   if (typeof saved === "object" && saved !== null) {
@@ -108,7 +108,7 @@ export async function createWorkflowChoice(
     workflowFor: (path) => workflowFor(idFor(path)),
     set: async (path, id) => {
       const next = new Map(choices).set(repositoryKey(path), id);
-      await bb.storage.kv.set(CHOICES_KEY, Object.fromEntries(next));
+      await alia.storage.kv.set(CHOICES_KEY, Object.fromEntries(next));
       choices.set(repositoryKey(path), id);
     },
   };

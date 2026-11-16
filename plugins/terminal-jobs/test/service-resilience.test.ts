@@ -1,4 +1,4 @@
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import plugin from "../server.js";
 import { formatCompletion, TerminalJobService } from "../src/service.js";
@@ -59,7 +59,7 @@ async function loadHost(options: {
       },
     } as never,
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host;
 }
 
@@ -91,8 +91,8 @@ async function run(host: FakePluginHost, title: string, artifactRoot = "/tmp/job
 }
 
 function service(host: FakePluginHost, onDecodeError: (message: string) => void = () => {}) {
-  const store = new JobStore(host.bb.storage.database(), onDecodeError);
-  return { store, worker: new TerminalJobService(host.bb, store) };
+  const store = new JobStore(host.alia.storage.database(), onDecodeError);
+  return { store, worker: new TerminalJobService(host.alia, store) };
 }
 
 function file(content: string, path: string) {
@@ -230,7 +230,7 @@ describe("service resilience", () => {
       },
     });
     const job = await run(host, `status ${status}`);
-    expect(new JobStore(host.bb.storage.database()).get(job.jobId)?.terminalState).toBe(state);
+    expect(new JobStore(host.alia.storage.database()).get(job.jobId)?.terminalState).toBe(state);
     await host.harness.lifecycle.dispose();
   });
 
@@ -241,7 +241,7 @@ describe("service resilience", () => {
       },
     });
     const job = await run(host, "network");
-    expect(new JobStore(host.bb.storage.database()).get(job.jobId)?.terminalState).toBe("preparing");
+    expect(new JobStore(host.alia.storage.database()).get(job.jobId)?.terminalState).toBe("preparing");
     await host.harness.lifecycle.dispose();
   });
 
@@ -314,9 +314,9 @@ describe("service resilience", () => {
     });
     const corrupt = await watch(host, "term_corrupt");
     const healthy = await watch(host, "term_healthy");
-    host.bb.storage.database().prepare("UPDATE jobs SET scope_json = '{}' WHERE job_id = ?").run(corrupt.jobId);
+    host.alia.storage.database().prepare("UPDATE jobs SET scope_json = '{}' WHERE job_id = ?").run(corrupt.jobId);
     const createdAfterCorruption = await run(host, "created after corrupt row");
-    expect(new JobStore(host.bb.storage.database()).get(createdAfterCorruption.jobId)).toMatchObject({
+    expect(new JobStore(host.alia.storage.database()).get(createdAfterCorruption.jobId)).toMatchObject({
       terminalId: "term_created",
       terminalState: "observing",
       lastObservationError: null,
@@ -326,7 +326,7 @@ describe("service resilience", () => {
     expect(errors).toEqual([expect.stringContaining(`Skipped corrupt terminal job ${corrupt.jobId}`)]);
     expect(store.get(healthy.jobId)).toMatchObject({ deliveryState: "delivered" });
     expect(sends).toHaveLength(2);
-    const quarantined = host.bb.storage.database().prepare(
+    const quarantined = host.alia.storage.database().prepare(
       "SELECT terminal_state, outcome_state, delivery_state FROM jobs WHERE job_id = ?",
     ).get(corrupt.jobId);
     expect(quarantined).toEqual({
@@ -432,7 +432,7 @@ describe("service resilience", () => {
 
   it("preserves mandatory completion fields under long optional data", async () => {
     const host = await loadHost();
-    const store = new JobStore(host.bb.storage.database());
+    const store = new JobStore(host.alia.storage.database());
     const long = "x".repeat(20_000);
     const job = store.insert({
       jobId: "job_message_contract",
@@ -451,7 +451,7 @@ describe("service resilience", () => {
       outcomePath: `/tmp/${long}.json`,
       terminalId: "term_message_contract",
       terminalState: "exited",
-      lastBbStatus: long,
+      lastAliaStatus: long,
       outcomeState: "missing",
     });
     const updated = store.update(job.jobId, {
@@ -464,8 +464,8 @@ describe("service resilience", () => {
     expect(message).toContain("[terminal-job:job_message_contract]");
     expect(message).toContain("Terminal: term_message_contract");
     expect(message).toContain("Runner outcome: missing; command success is unknown");
-    expect(message).toContain("Status: bb terminal-job show job_message_contract --json");
-    expect(message.endsWith("Status: bb terminal-job show job_message_contract --json")).toBe(true);
+    expect(message).toContain("Status: VesnALIA terminal-job show job_message_contract --json");
+    expect(message.endsWith("Status: VesnALIA terminal-job show job_message_contract --json")).toBe(true);
     await host.harness.lifecycle.dispose();
   });
 

@@ -102,7 +102,7 @@ describe("a review run", () => {
     expect(await quiet(h)).toBe(1);
   });
 
-  it("does not end a review as quiet when a draft or new activity comes while bb is asked", async () => {
+  it("does not end a review as quiet when a draft or new activity comes while VesnALIA is asked", async () => {
     for (const late of ["draft", "activity"] as const) {
       const { h, threadId } = await reviewing();
       setStatus(h, "thr_critic1", { status: "idle" });
@@ -125,10 +125,10 @@ describe("a review run", () => {
     }
   });
 
-  it("keeps a review running while bb cannot say whether it is at work, and logs that once an hour", async () => {
+  it("keeps a review running while VesnALIA cannot say whether it is at work, and logs that once an hour", async () => {
     const { h } = await reviewing();
     h.port.threadsById = async () => {
-      throw new Error("bb is down");
+      throw new Error("alia is down");
     };
     h.clock.now += REVIEW_QUIET_MS + 1;
     for (let i = 0; i < 3; i++) {
@@ -136,13 +136,13 @@ describe("a review run", () => {
       h.clock.now += 30_000;
     }
     expect(run(h).state).toBe("running");
-    expect(h.port.logs.filter((text) => text.includes("bb is down"))).toHaveLength(1);
+    expect(h.port.logs.filter((text) => text.includes("alia is down"))).toHaveLength(1);
     h.clock.now += 3_600_000;
     await quiet(h);
-    expect(h.port.logs.filter((text) => text.includes("bb is down"))).toHaveLength(2);
+    expect(h.port.logs.filter((text) => text.includes("alia is down"))).toHaveLength(2);
   });
 
-  it("asks bb's list whether a thread waits on you, since a single read of a thread does not say", async () => {
+  it("asks VesnALIA's list whether a thread waits on you, since a single read of a thread does not say", async () => {
     const { h, threadId } = await reviewing();
     setStatus(h, "thr_critic1", { status: "idle" });
     setStatus(h, "thr_critic2", { status: "idle" });
@@ -237,9 +237,9 @@ describe("a review run", () => {
   });
 });
 
-/** What bb says when a thread's workspace could not be set up: thread.failed with no environment left. */
+/** What VesnALIA says when a thread's workspace could not be set up: thread.failed with no environment left. */
 const SETUP_FAILED = { error: "Provisioning thread failed", environmentId: null };
-/** bb's thread after that: in error, with no workspace. */
+/** VesnALIA's thread after that: in error, with no workspace. */
 const setupFailed = (h: ReturnType<typeof harness>, id: string) => h.port.threads.set(id, { ...h.port.threads.get(id)!, status: "error", hasWorkspace: false });
 
 describe("a review whose thread could not be set up", () => {
@@ -273,7 +273,7 @@ describe("a review whose thread could not be set up", () => {
     expect(h.shuttle.activity(1)[0]!.text).toBe("Shuttle stopped starting the review of acme/app#3 again: 3 threads in a row could not set up their workspaces. Start it again once the machine or environment provider works.");
     expect(h.shuttle.view(KEY).next).toMatchObject({
       kind: "review_failed", label: "The review thread couldn\u2019t be set up",
-      why: "bb could not set up the workspace of \u201cReview acme/app#3\u201d, so the review never started. Shuttle tried 3 times, each in a new thread.",
+      why: "alia could not set up the workspace of \u201cReview acme/app#3\u201d, so the review never started. Shuttle tried 3 times, each in a new thread.",
     });
     // A thread Shuttle started again elsewhere stays over; the last one runs again if you get it to work yourself.
     h.shuttle.onThreadActive(first);
@@ -339,15 +339,15 @@ describe("a review whose thread could not be set up", () => {
 
   it("says so when the new thread cannot start, and leaves the review failed", async () => {
     const { h, threadId } = await reviewing();
-    h.port.spawnError = new Error("bb is restarting");
+    h.port.spawnError = new Error("alia is restarting");
     await h.shuttle.onThreadFailed(threadId, SETUP_FAILED);
     expect(run(h)).toMatchObject({ state: "failed", endedBy: "setup" });
-    expect(h.shuttle.activity(1)[0]!.text).toBe("\u201cReview acme/app#3\u201d could not set up its workspace, and the review of acme/app#3 could not start again in a new thread: bb is restarting");
+    expect(h.shuttle.activity(1)[0]!.text).toBe("\u201cReview acme/app#3\u201d could not set up its workspace, and the review of acme/app#3 could not start again in a new thread: VesnALIA is restarting");
   });
 
   it("Try again starts a new thread instead of sending to the one that has no workspace", async () => {
     const { h, threadId } = await reviewing();
-    h.port.spawnError = new Error("bb is restarting");
+    h.port.spawnError = new Error("alia is restarting");
     setupFailed(h, threadId);
     await h.shuttle.onThreadFailed(threadId, SETUP_FAILED);
     h.port.spawnError = null;

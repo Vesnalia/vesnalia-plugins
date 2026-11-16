@@ -4,7 +4,7 @@ usage() {
   cat >&2 <<'TEXT'
 The root steps of 070 unit 7's live check, on the Proxmox node. Each acts
 only on the VMIDs in BBBOX_VMIDS, and only on guests that carry the tag
-install.<BBBOX_INSTALL>, as bb-box's boxes and forks do.
+install.<BBBOX_INSTALL>, as alia-box's boxes and forks do.
 
   live: BBBOX_VMIDS="3170 3171" BBBOX_INSTALL=<id> proxmox-root.sh <command> [vmid]
   (card-late and sample take one VMID or several, quoted, and act on one)
@@ -14,12 +14,12 @@ install.<BBBOX_INSTALL>, as bb-box's boxes and forks do.
       or name, network lines and SMBIOS UUID (gate G14: a fork starts with
       onboot set and its links up)
   card-late "<vmid>..." [seconds]
-      for a fork, a container or a VM, that bb-box holds before its first
-      start (bb box snapshot hold-next --at forked): waits up to 10 minutes
-      for the first of the VMIDs given to exist as bb-box holds a fork, of
+      for a fork, a container or a VM, that alia-box holds before its first
+      start (alia box snapshot hold-next --at forked): waits up to 10 minutes
+      for the first of the VMIDs given to exist as alia-box holds a fork, of
       the install, stopped, with no lock,
       onboot not set and its net0's link down, the same across 5 s; saves
-      net0 in /root/unit7-<vmid>-net0, removes it, waits for bb-box to start
+      net0 in /root/unit7-<vmid>-net0, removes it, waits for alia-box to start
       it, waits the seconds given (75 by default) and puts the same net0
       back, with its link up, while it runs. With 75 s its first boot
       cannot tell whether it is a copy (gate G14: a fork whose first boot
@@ -31,15 +31,15 @@ install.<BBBOX_INSTALL>, as bb-box's boxes and forks do.
       appear for the first of the VMIDs given that has none when it starts,
       then reads that config from /etc/pve every 0.1 s, with
       whether the guest runs, for up to the seconds given, and stops at
-      bb-box's arm: the first sample with onboot 1 and no lock after the
+      alia-box's arm: the first sample with onboot 1 and no lock after the
       guest has run. Writes every change to /root/unit7-<vmid>-samples.log
       and says whether any sample before the arm had onboot 1 and no lock,
-      and how long the clone was unlocked before bb-box disarmed it
+      and how long the clone was unlocked before alia-box disarmed it
   leftovers
       read only: lists every guest in BBBOX_VMIDS that carries the install's
       tag, with its status and tags, for the clean-up
   destroy <vmid>
-      stops and destroys a guest of the install that bb-box no longer
+      stops and destroys a guest of the install that alia-box no longer
       records, for the clean-up
 TEXT
   exit 2

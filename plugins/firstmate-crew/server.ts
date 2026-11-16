@@ -1,18 +1,18 @@
 /**
- * FirstMate's server: the RPCs the panels call, `bb firstmate-crew`, the watch runner, and the thread
+ * FirstMate's server: the RPCs the panels call, `alia firstmate-crew`, the watch runner, and the thread
  * events that keep the board live.
  *
- * Every decision lives in `server/`; this file only wires it to bb. The ports over `bb.sdk` are built
+ * Every decision lives in `server/`; this file only wires it to VesnALIA. The ports over `alia.sdk` are built
  * on first use, from a handler, a service or a listener — never in the factory body.
  */
 import { join } from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { FLEET_TAG, rpcContract } from "./shared/contract";
 import { STATE_DIR } from "./shared/types";
 import { AUTOCOMPACT_INTERVAL_MS, checkAutoCompact, FailureLog } from "./server/autocompact";
-import { bbProjects, bbThreads } from "./server/bb-ports";
+import { aliaProjects, aliaThreads } from "./server/alia-ports";
 import { acknowledgeCharter, NEW_CHARTER_FILE, writeNewCharter } from "./server/charter-file";
 import { firstmateCli } from "./server/cli";
 import { endCrew, interruptCrew, noteCrew, relaunchCrew, steerCrew } from "./server/crew";
@@ -65,23 +65,23 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define(SETTINGS);
-  const store = createStore(bb.storage.kv);
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define(SETTINGS);
+  const store = createStore(alia.storage.kv);
 
   let threads: ThreadsPort | null = null;
   let projects: ProjectsPort | null = null;
   /** One set of dependencies for the RPCs, the CLI and the watches. The ports are made on first read. */
   const deps: MateDeps = {
     get threads() {
-      return (threads ??= bbThreads(bb.sdk));
+      return (threads ??= aliaThreads(alia.sdk));
     },
     get projects() {
-      return (projects ??= bbProjects(bb.sdk));
+      return (projects ??= aliaProjects(alia.sdk));
     },
     store,
     settings: () => settings.get(),
-    log: bb.log,
+    log: alia.log,
   };
 
   /** Crewmates' status lines, kept for the plugin's lifetime so the board's polls stay cheap. */
@@ -91,9 +91,9 @@ export default async function plugin(bb: BbPluginApi) {
   /** The first mate's own home while one is aboard, else the setting's (`activeHome`). */
   const currentHome = () => activeHome(deps);
 
-  /** Every open board reads the fleet again (bb's live reads, tag `fleet`). */
+  /** Every open board reads the fleet again (VesnALIA's live reads, tag `fleet`). */
   function publishFleet(): void {
-    bb.rpc.experimental_invalidate([FLEET_TAG]);
+    alia.rpc.experimental_invalidate([FLEET_TAG]);
   }
 
   // --- Watches -------------------------------------------------------------------------------------
@@ -115,27 +115,27 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       home = homePath(homeDirectory);
     } catch (error) {
-      bb.log.warn(`Watches are off: ${reason(error)}`);
+      alia.log.warn(`Watches are off: ${reason(error)}`);
       return null;
     }
     return new WatchRunner({
       home: async () => ((await isHomeReady(home)) ? home : null),
       disabled: () => store.disabledWatches(),
       deliver: createDeliver({
-        // A getter, as in `deps`: bb.sdk is reached at delivery, never while the runner is built.
+        // A getter, as in `deps`: alia.sdk is reached at delivery, never while the runner is built.
         get threads() {
           return deps.threads;
         },
         store,
         home,
-        log: bb.log,
+        log: alia.log,
         rules: async () => autoCompactRules(await settings.get()),
         withMateLock,
       }),
       root: home,
       stateFile: join(home, STATE_DIR, "watches.json"),
       scriptStateRoot: join(home, STATE_DIR, "watch-state"),
-      log: bb.log,
+      log: alia.log,
     });
   }
 
@@ -151,7 +151,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           home = await activeHome(deps);
         } catch (error) {
-          bb.log.warn(`Watches are off: ${reason(error)}`);
+          alia.log.warn(`Watches are off: ${reason(error)}`);
         }
       }
       if (home !== null && home === runnerHome && runner !== null) return;
@@ -164,7 +164,7 @@ export default async function plugin(bb: BbPluginApi) {
       runnerHome = runner === null ? null : home;
       runner?.start();
     });
-    runnerChange = change.catch((error: unknown) => bb.log.error(`The watch runner could not be changed: ${reason(error)}`));
+    runnerChange = change.catch((error: unknown) => alia.log.error(`The watch runner could not be changed: ${reason(error)}`));
     return runnerChange;
   }
 
@@ -180,11 +180,11 @@ export default async function plugin(bb: BbPluginApi) {
       if (!(await isHomeReady(home))) return;
       await prepareHome(home, homeConfig(await settings.get()));
     } catch (error) {
-      bb.log.error(`The home could not be brought up to date on load: ${reason(error)}`);
+      alia.log.error(`The home could not be brought up to date on load: ${reason(error)}`);
     }
   }
 
-  bb.background.service("watches", {
+  alia.background.service("watches", {
     async start(signal) {
       await refreshHome();
       if (signal.aborted) return;
@@ -203,12 +203,12 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * Checks once a minute, the first time a minute after loading, so a reload's new instance does not check
-   * while the old one is being disposed. Each check reads bb afresh and compacts at most one thread
+   * while the old one is being disposed. Each check reads VesnALIA afresh and compacts at most one thread
    * (`server/autocompact.ts`). The service's signal goes into the check, so a check under way when the
-   * plugin stops or reloads sends nothing more to bb.
+   * plugin stops or reloads sends nothing more to VesnALIA.
    */
-  const autoCompactFailures = new FailureLog(bb.log);
-  bb.background.service("autocompact", {
+  const autoCompactFailures = new FailureLog(alia.log);
+  alia.background.service("autocompact", {
     async start(signal) {
       while (!signal.aborted) {
         await pause(AUTOCOMPACT_INTERVAL_MS, signal);
@@ -220,7 +220,7 @@ export default async function plugin(bb: BbPluginApi) {
             rules: async () => autoCompactRules(await settings.get()),
             withMateLock,
             now: Date.now,
-            log: bb.log,
+            log: alia.log,
             failures: autoCompactFailures,
             signal,
           });
@@ -249,10 +249,10 @@ export default async function plugin(bb: BbPluginApi) {
     return null;
   }
 
-  /** Runs a listener's work; a failure is logged, never left to reject inside the bb server. */
+  /** Runs a listener's work; a failure is logged, never left to reject inside the VesnALIA server. */
   function listen(event: string, work: () => Promise<void>): Promise<void> {
     return work().catch((error: unknown) => {
-      bb.log.error(`Handling ${event} failed: ${reason(error)}`);
+      alia.log.error(`Handling ${event} failed: ${reason(error)}`);
     });
   }
 
@@ -263,21 +263,21 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.events.on("thread.created", ({ thread }) => publishOnFleetThread("thread.created", thread));
-  bb.events.on("thread.active", ({ thread }) => publishOnFleetThread("thread.active", thread));
-  bb.events.on("thread.failed", ({ thread }) => publishOnFleetThread("thread.failed", thread));
-  bb.events.on("thread.archived", ({ thread }) => publishOnFleetThread("thread.archived", thread));
+  alia.events.on("thread.created", ({ thread }) => publishOnFleetThread("thread.created", thread));
+  alia.events.on("thread.active", ({ thread }) => publishOnFleetThread("thread.active", thread));
+  alia.events.on("thread.failed", ({ thread }) => publishOnFleetThread("thread.failed", thread));
+  alia.events.on("thread.archived", ({ thread }) => publishOnFleetThread("thread.archived", thread));
   // A crewmate waiting on a permission or a question moves to Blocked now, not at the next poll.
-  bb.events.on("interaction.pending", ({ thread }) => publishOnFleetThread("interaction.pending", thread));
-  // A thread moved under the first mate, or off it, joins or leaves the board now (bb 0.46.1).
-  bb.events.on("experimental_thread.parentChanged", ({ thread, previousParentThreadId }) =>
+  alia.events.on("interaction.pending", ({ thread }) => publishOnFleetThread("interaction.pending", thread));
+  // A thread moved under the first mate, or off it, joins or leaves the board now (VesnALIA 0.46.1).
+  alia.events.on("experimental_thread.parentChanged", ({ thread, previousParentThreadId }) =>
     listen("experimental_thread.parentChanged", async () => {
       const mateId = await store.mateThreadId();
       if (mateId === null) return;
       if (thread.parentThreadId === mateId || previousParentThreadId === mateId) publishFleet();
     }),
   );
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) =>
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) =>
     listen("thread.idle", async () => {
       const role = await roleOf(thread);
       if (role === null) return;
@@ -291,13 +291,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- RPCs and the CLI ----------------------------------------------------------------------------
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     "fleet.load": () =>
       loadFleet({
         ...deps,
         reports: reportCache(),
         watches: () => (runner === null ? Promise.resolve([]) : runner.summaries()),
-        log: bb.log,
+        log: alia.log,
       }),
     "mate.launch": async (pick) => {
       const mate = await launchMate(deps, pick);
@@ -375,16 +375,16 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * While any board is open, every `refreshSeconds` it reads the fleet again, for what no event reports (a
-   * backlog edit, a status line, a watch's last run). One wait on the server for every window, run by bb
-   * while the read is watched: it ends when the last board closes, or on bb 0.48 is hidden.
+   * backlog edit, a status line, a watch's last run). One wait on the server for every window, run by VesnALIA
+   * while the read is watched: it ends when the last board closes, or on VesnALIA 0.48 is hidden.
    */
-  bb.rpc.experimental_whileWatched("fleet.load", async (_read, signal) => {
+  alia.rpc.experimental_whileWatched("fleet.load", async (_read, signal) => {
     while (!signal.aborted) {
       let wait: number;
       try {
         wait = refreshMs(await settings.get());
       } catch (error) {
-        bb.log.warn(`The board refresh setting could not be read: ${reason(error)}`);
+        alia.log.warn(`The board refresh setting could not be read: ${reason(error)}`);
         wait = DEFAULT_REFRESH_SECONDS * 1000;
       }
       await pause(wait, signal);
@@ -392,10 +392,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.cli.register(firstmateCli(deps));
+  alia.cli.register(firstmateCli(deps));
 
   // Waits for the runner to drain, so a reload's new instance cannot read the state file mid-save.
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     watching = false;
     await syncRunner();
   });

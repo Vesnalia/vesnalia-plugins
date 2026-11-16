@@ -1,4 +1,4 @@
-// ponytail: BB 0.5.9 row markup is not a versioned API; replace this selector with a native preview slot when BB exposes one.
+// ponytail: VesnALIA 0.5.9 row markup is not a versioned API; replace this selector with a native preview slot when VesnALIA exposes one.
 const rows = 'button[title^="Backlog tasks: "]';
 const titlePrefix = "Backlog tasks: ";
 export function mountMentionPreview() {

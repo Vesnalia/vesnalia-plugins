@@ -222,7 +222,7 @@ test("unified and split code views render real changes", async ({ page }) => {
   const errors = page.getByRole("alert");
   await expect(errors).toHaveCount(0);
   await page.locator('[data-pr-inbox="root"]').screenshot({
-    path: process.env.BB_PR_CODE_SCREENSHOT ?? "test-results/code.png",
+    path: process.env.ALIA_PR_CODE_SCREENSHOT ?? "test-results/code.png",
   });
 });
 
@@ -268,7 +268,7 @@ test("new chat input stays at the bottom on wide and narrow screens", async ({
   await expect(page.locator("[data-pr-row]")).toHaveCount(1);
   await expect(editor).toBeVisible();
   await page.locator('[data-pr-inbox="root"]').screenshot({
-    path: process.env.BB_PR_CHAT_SCREENSHOT ?? "test-results/chat.png",
+    path: process.env.ALIA_PR_CHAT_SCREENSHOT ?? "test-results/chat.png",
   });
 });
 
@@ -326,7 +326,7 @@ test("description renders headings, code chips, and highlighted fences safely", 
   );
   await page.locator('[data-pr-inbox="root"]').screenshot({
     path:
-      process.env.BB_PR_DESCRIPTION_SCREENSHOT ??
+      process.env.ALIA_PR_DESCRIPTION_SCREENSHOT ??
       "test-results/description.png",
   });
 });

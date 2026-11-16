@@ -1,4 +1,4 @@
-// What the Bench tab, the Overview, the Live bench strip and `bb study bench`
+// What the Bench tab, the Overview, the Live bench strip and `alia study bench`
 // show about remote bench hosts: each entry (provider, shape, lifetime, seed)
 // and each machine (state, expiry, rotation, its own calibration, what it
 // measures). Read only; built from the remote_hosts and bench_hosts rows.
@@ -193,7 +193,7 @@ export function remoteView(engine: Engine, s: StudyRow, spec: StudySpec | null):
   };
 }
 
-/** One line per live machine for `bb study show` / `bb study bench`. */
+/** One line per live machine for `alia study show` / `alia study bench`. */
 export function remoteLines(v: RemoteView, now: number): string[] {
   const out: string[] = [];
   for (const e of v.entries) {

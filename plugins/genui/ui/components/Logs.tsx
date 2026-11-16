@@ -2,7 +2,7 @@
 // read: the command and its exit code up top, colours kept, a quiet level bar
 // per line with filter chips, search with next/previous, repeated lines
 // folded, long output opened at its tail (where a failure usually is) with
-// earlier lines a click away, and `file:line` locations opening in BB. Reads
+// earlier lines a click away, and `file:line` locations opening in VesnALIA. Reads
 // text, lists of lines and JSON log records (core/logs.ts).
 import { useContext, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";

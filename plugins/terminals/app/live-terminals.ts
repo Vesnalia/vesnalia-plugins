@@ -5,14 +5,14 @@
  * the shell prints, and the page re-parents the same element when it comes
  * back, at the line it was scrolled to (app/viewport.ts).
  *
- * A reload of the app starts this map empty: each tab then reattaches and bb
+ * A reload of the app starts this map empty: each tab then reattaches and VesnALIA
  * replays its last 512 KB of output (app/connection.ts).
  */
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 
-import { forwardLateImeInput } from "./bb-late-ime/terminal-late-ime-input";
+import { forwardLateImeInput } from "./alia-late-ime/terminal-late-ime-input";
 import { TerminalConnection, terminalSocketUrl, type ConnectionStatus, type SocketLike } from "./connection";
 import { TerminalSizing } from "./sizing";
 import { directoryFromOsc7 } from "./project-match";
@@ -51,7 +51,7 @@ export interface LiveTerminal {
 }
 
 /**
- * The bb terminal calls a tab makes itself: the app SDK's `useSdk().terminals`
+ * The VesnALIA terminal calls a tab makes itself: the app SDK's `useSdk().terminals`
  * satisfies this.
  */
 export interface TerminalsBackend {
@@ -63,7 +63,7 @@ export interface TerminalsBackend {
 }
 
 const SCROLLBACK_LINES = 10_000;
-/** As much of an exited shell's output as bb replays to a live one. */
+/** As much of an exited shell's output as VesnALIA replays to a live one. */
 const RETAINED_TAIL_BYTES = 512 * 1024;
 
 const live = new Map<string, LiveTerminal & { dispose(): void }>();
@@ -140,7 +140,7 @@ function create(terminalId: string, backend: TerminalsBackend): LiveTerminal & {
     if (!shown || !opened || element.clientWidth === 0 || element.clientHeight === 0) return null;
     const proposed = fitAddon.proposeDimensions();
     if (proposed === undefined || !Number.isFinite(proposed.cols) || !Number.isFinite(proposed.rows)) return null;
-    // bb's limits for a terminal's size.
+    // VesnALIA's limits for a terminal's size.
     return {
       cols: Math.max(2, Math.min(500, Math.floor(proposed.cols))),
       rows: Math.max(1, Math.min(200, Math.floor(proposed.rows))),
@@ -230,7 +230,7 @@ export function releaseClosedTerminals(openIds: ReadonlySet<string>): void {
 }
 
 /**
- * Lets go of every terminal, for when this copy of the plugin's app goes (bb
+ * Lets go of every terminal, for when this copy of the plugin's app goes (VesnALIA
  * reloaded or disabled the plugin): the shells keep running, and the next copy
  * reattaches to them.
  */
@@ -238,7 +238,7 @@ export function releaseAllTerminals(): void {
   releaseClosedTerminals(new Set());
 }
 
-/** Re-reads bb's theme into every terminal, after bb's light/dark mode or theme changes. */
+/** Re-reads VesnALIA's theme into every terminal, after VesnALIA's light/dark mode or theme changes. */
 export function applyThemeToAll(): void {
   for (const entry of live.values()) entry.applyTheme();
 }

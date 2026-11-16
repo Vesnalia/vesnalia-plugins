@@ -4,7 +4,7 @@ import {
   makeMessageDispatchHookContext,
   makePluginAgentConfigurationContext,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, { parseRuntimeSettings } from "./server.js";
 
 const primaryContext = makePluginAgentConfigurationContext({
@@ -112,7 +112,7 @@ async function loadAdvisor(
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   await host.harness.resolveAgentConfiguration(primaryContext);
   return {
     ...host,
@@ -193,7 +193,7 @@ function steers(harness: AdvisorHarness, threadId: string) {
 }
 
 /**
- * Start a turn the way bb does: the session's configuration resolves, then the
+ * Start a turn the way VesnALIA does: the session's configuration resolves, then the
  * thread goes active. Returns what Advisor steered into that turn, or null.
  */
 async function startTurn(
@@ -377,7 +377,7 @@ END_ADVISOR_RESULT`;
   });
 
   it("leaves new threads on the global default independently of existing overrides", async () => {
-    const { bb, harness } = await loadAdvisor(PASS_OUTPUT);
+    const { alia, harness } = await loadAdvisor(PASS_OUTPUT);
     await harness.callRpc("setThreadToggle", { threadId: "thread-primary", enabled: false });
     for (const projectId of ["project-test", "project-other"]) {
       const thread = makeThreadResponse({ id: `new-${projectId}`, projectId });
@@ -385,7 +385,7 @@ END_ADVISOR_RESULT`;
       expect(await harness.callRpc("threadToggle", { threadId: thread.id }))
         .toEqual({ enabled: true, override: null, globalEnabled: true });
     }
-    expect(bb.storage.database().prepare(
+    expect(alia.storage.database().prepare(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'advisor_new_thread_default'",
     ).get()).toBeUndefined();
   });
@@ -415,7 +415,7 @@ END_ADVISOR_RESULT`;
 describe("advisor storage migrations", () => {
   it("preserves legacy selections and sessions while adding reasoning state", async () => {
     const host = createFakePluginHost({ pluginId: "advisor" });
-    const db = host.bb.storage.database();
+    const db = host.alia.storage.database();
     db.exec(`
       CREATE TABLE advisor_sessions (
         primary_thread_id TEXT PRIMARY KEY,
@@ -457,7 +457,7 @@ describe("advisor storage migrations", () => {
       );
     `);
 
-    await plugin(host.bb);
+    await plugin(host.alia);
 
     expect(
       db
@@ -1429,7 +1429,7 @@ describe("repeated advice", () => {
 
 describe("advisor session environment binding", () => {
   it("spawns the reviewer in the narrowest mode the provider offers", async () => {
-    // The mode is negotiated against the advertised list, not pinned, so a bb
+    // The mode is negotiated against the advertised list, not pinned, so a VesnALIA
     // that reintroduces a narrower mode is picked up without a code change.
     const { harness, spawn } = await loadAdvisor(BLOCKER_OUTPUT);
     harness.sdk.stub("providers.models", async () => ({
@@ -1464,11 +1464,11 @@ describe("advisor session environment binding", () => {
    * column alone.
    */
   function seedSession(
-    bb: { storage: { database(): { prepare(sql: string): { run(...args: unknown[]): unknown } } } },
+    alia: { storage: { database(): { prepare(sql: string): { run(...args: unknown[]): unknown } } } },
     permissionMode: string,
   ) {
     const now = Date.now();
-    bb.storage
+    alia.storage
       .database()
       .prepare(
         `INSERT INTO advisor_sessions (
@@ -1506,9 +1506,9 @@ describe("advisor session environment binding", () => {
   it("reuses a stored session that already runs in the negotiated mode", async () => {
     // The control for the respawn test below: with every reuse key matching,
     // the stored session is kept and no reviewer is spawned.
-    const { bb, harness, spawn } = await loadAdvisor(BLOCKER_OUTPUT);
+    const { alia, harness, spawn } = await loadAdvisor(BLOCKER_OUTPUT);
     harness.sdk.stub("providers.models", async () => NEGOTIABLE_CATALOG);
-    seedSession(bb, "accept-edits");
+    seedSession(alia, "accept-edits");
 
     await harness.callAgentTool(
       "advisor_review",
@@ -1519,14 +1519,14 @@ describe("advisor session environment binding", () => {
     expect(spawn).not.toHaveBeenCalled();
   });
 
-  it("respawns a reviewer stored under a mode this bb no longer negotiates", async () => {
+  it("respawns a reviewer stored under a mode this VesnALIA no longer negotiates", async () => {
     // Every install that ran a pre-0.40 build has a session row stored under
     // the removed `readonly` mode. Reusing it would keep the reviewer pinned to
     // a mode the host can no longer validate, so it must be respawned. Only
     // `permission_mode` differs from the reused row above.
-    const { bb, harness, spawn } = await loadAdvisor(BLOCKER_OUTPUT);
+    const { alia, harness, spawn } = await loadAdvisor(BLOCKER_OUTPUT);
     harness.sdk.stub("providers.models", async () => NEGOTIABLE_CATALOG);
-    seedSession(bb, "readonly");
+    seedSession(alia, "readonly");
 
     await harness.callAgentTool(
       "advisor_review",
@@ -3663,9 +3663,9 @@ END_ADVISOR_RESULT`);
     );
   });
 
-  it("reads the provider capability field this bb actually publishes", async () => {
+  it("reads the provider capability field this VesnALIA actually publishes", async () => {
     // BM-9: the plugin read the pre-0.40 `supportedPermissionModes`. That field
-    // is absent on bb 0.40, so the filter called `.find` on undefined and every
+    // is absent on VesnALIA 0.40, so the filter called `.find` on undefined and every
     // connected machine reported "Could not load models: TypeError ...".
     const { harness } = await loadAdvisor(BLOCKER_OUTPUT);
     harness.sdk.stub("hosts.list", async () => [
@@ -3676,7 +3676,7 @@ END_ADVISOR_RESULT`);
         id: "codex",
         displayName: "Codex",
         available: true,
-        // Exactly what bb 0.40 publishes: `permissionModes`, and no
+        // Exactly what VesnALIA 0.40 publishes: `permissionModes`, and no
         // `supportedPermissionModes` key at all.
         capabilities: { permissionModes: ["accept-edits", "auto", "full"] },
       },
@@ -3887,15 +3887,15 @@ END_ADVISOR_RESULT`,
 
 describe("advisor_review registration", () => {
   it("declares its row labels under presentation.label, not experimental_statusLabels", async () => {
-    const { bb } = createFakePluginHost({ pluginId: "advisor" });
+    const { alia } = createFakePluginHost({ pluginId: "advisor" });
     const registrations: Record<string, unknown>[] = [];
-    const registerTool = bb.agents.registerTool.bind(bb.agents);
-    bb.agents.registerTool = ((tool: Record<string, unknown>) => {
+    const registerTool = alia.agents.registerTool.bind(alia.agents);
+    alia.agents.registerTool = ((tool: Record<string, unknown>) => {
       registrations.push(tool);
       return (registerTool as (raw: unknown) => void)(tool);
-    }) as unknown as typeof bb.agents.registerTool;
+    }) as unknown as typeof alia.agents.registerTool;
 
-    await plugin(bb);
+    await plugin(alia);
 
     const tool = registrations.find(
       (registered) => registered.name === "advisor_review",
@@ -3941,7 +3941,7 @@ describe("child threads still running (#25)", () => {
     ]);
     await harness.emitThreadEvent("thread.idle", {
       thread: primary,
-      lastAssistantText: "Both reviewers are still running; bb will wake me when they report.",
+      lastAssistantText: "Both reviewers are still running; VesnALIA will wake me when they report.",
     });
 
     expect(spawn).not.toHaveBeenCalled();

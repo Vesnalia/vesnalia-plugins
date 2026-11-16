@@ -2,9 +2,9 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import hostEntry from "./host.js";
-import type { ExperimentalHostWatchListener } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostWatchListener } from "@vesnalia/plugin-sdk";
 
 const originalStateHome = process.env.XDG_STATE_HOME;
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
@@ -20,7 +20,7 @@ afterEach(async () => {
 
 describe("host entry", () => {
   it("ignores unrelated state changes and temporary hook files while keeping palette and recovery events", async () => {
-    const root = await mkdtemp(join(tmpdir(), "bb-omarchy-watch-"));
+    const root = await mkdtemp(join(tmpdir(), "alia-omarchy-watch-"));
     roots.push(root);
     process.env.XDG_STATE_HOME = root;
     await mkdir(join(root, "omarchy"), { recursive: true });
@@ -50,7 +50,7 @@ describe("host entry", () => {
   });
 
   it("reads the active Omarchy palette and owns only its exact hook", async () => {
-    const root = await mkdtemp(join(tmpdir(), "bb-omarchy-host-"));
+    const root = await mkdtemp(join(tmpdir(), "alia-omarchy-host-"));
     roots.push(root);
     const state = join(root, "state");
     const config = join(root, "config");
@@ -74,8 +74,8 @@ describe("host entry", () => {
     });
 
     await expect(harness.experimental_call("setHook", { enabled: true })).resolves.toEqual({ installed: true });
-    const hookPath = join(config, "omarchy", "hooks", "theme-set.d", "90-bb-omarchy");
-    expect(await readFile(hookPath, "utf8")).toContain("bb-omarchy");
+    const hookPath = join(config, "omarchy", "hooks", "theme-set.d", "90-alia-omarchy");
+    expect(await readFile(hookPath, "utf8")).toContain("alia-omarchy");
     await expect(harness.experimental_call("setHook", { enabled: false })).resolves.toEqual({ installed: false });
     await expect(readFile(hookPath, "utf8")).rejects.toThrow();
     await harness.experimental_dispose();

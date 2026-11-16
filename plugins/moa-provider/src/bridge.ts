@@ -24,7 +24,7 @@ import {
   turnSteerParamsSchema,
   type ClientTurnRequestId,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import type { z } from "zod";
 import {
   MOA_TOOL_NAME,
@@ -334,7 +334,7 @@ const handlers: Record<string, Handler> = {
   [BRIDGE_REQUEST_METHODS.threadStart]: (id, params) => {
     const parsed = threadStartParamsSchema.safeParse(params);
     if (!parsed.success) return invalidParams(id, "thread/start", parsed.error.issues);
-    // Derived from the bb thread id: unique per thread, stable across restarts.
+    // Derived from the VesnALIA thread id: unique per thread, stable across restarts.
     const providerThreadId = `moa-${parsed.data.threadId}`;
     const session = openSession(parsed.data.threadId, providerThreadId);
     io.sendResult(id, { providerThreadId, sessionRestorable: true });

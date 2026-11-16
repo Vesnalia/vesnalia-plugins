@@ -1,4 +1,4 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import {
   factoryProjectPolicySchema, factoryRecordSchema, factoryScanObservationSchema,
   type FactoryIdentity, type FactoryProjectPolicy, type FactoryProjectStatus,
@@ -14,7 +14,7 @@ export function consumesFactoryCapacity(record: FactoryRecord) {
     last.reviewResult?.verdict === 'passed');
 }
 
-export function createFactoryStore(db: ReturnType<BbPluginApi['storage']['database']>) {
+export function createFactoryStore(db: ReturnType<AliaPluginApi['storage']['database']>) {
   // Separate names avoid colliding with installed preparation migration numbers.
   db.exec(`
     CREATE TABLE IF NOT EXISTS taskboard_factory_v1 (

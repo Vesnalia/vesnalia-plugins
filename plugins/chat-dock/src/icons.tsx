@@ -1,6 +1,6 @@
 /**
  * The dock button's glyph: lucide's dock (ISC licence, https://lucide.dev/icons/dock),
- * shrunk, with a chevron pointing where a click sends the composer. BB's icon set
+ * shrunk, with a chevron pointing where a click sends the composer. VesnALIA's icon set
  * has no dock, so the plugin registers it under its own name; `experimental_Icon`
  * resolves a registration before the built-ins.
  *

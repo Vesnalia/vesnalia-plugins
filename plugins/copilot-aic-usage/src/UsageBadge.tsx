@@ -12,7 +12,7 @@ const reasons: Record<Usage["reason"], string> = {
   "telemetry-unavailable": "Session telemetry is missing or unreadable",
   "awaiting-checkpoint": "Waiting for the first usage checkpoint",
   capacity: "Usage watcher capacity reached",
-  "connection-lost": "Stale: reconnecting to BB",
+  "connection-lost": "Stale: reconnecting to VesnALIA",
 };
 
 const todayReasons: Record<NonNullable<Usage["todayReason"]>, string> = {

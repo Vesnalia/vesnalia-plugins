@@ -4,7 +4,7 @@
 import type { z } from "zod";
 import { BenchProviderError, benchProviderContract, errorCode, type BenchProviderMethod, type MethodInput, type MethodOutput } from "./contract.ts";
 
-/** How a call reaches the provider: bb.sdk.plugins.callRpc in the server, a function in tests. */
+/** How a call reaches the provider: alia.sdk.plugins.callRpc in the server, a function in tests. */
 export type ProviderTransport = (method: string, input: unknown, outputSchema: z.ZodType) => Promise<unknown>;
 
 export interface CallOptions {
@@ -43,7 +43,7 @@ export class BenchProviderClient {
 
 /**
  * The call never reached a provider: its plugin isn't installed, enabled or
- * loaded (yet, during BB's startup). Code `not_found` like a machine the
+ * loaded (yet, during VesnALIA's startup). Code `not_found` like a machine the
  * provider doesn't know, so callers that don't care treat both alike.
  */
 export class ProviderMissingError extends BenchProviderError {
@@ -56,7 +56,7 @@ export function toProviderError(e: unknown, method: string, pluginId: string): B
   const code = errorCode(e);
   // A provider plugin that isn't installed, enabled or loaded: the call never reached a handler.
   const missing = code === null && /not (installed|enabled|loaded|found)|unknown plugin|no such plugin|plugin .* (is )?(disabled|unavailable)|\b404\b/iu.test(msg);
-  // BB prefixes what a provider throws ("HTTP 500: [invalid] …"): the bracketed code is found anywhere. No code: internal.
+  // VesnALIA prefixes what a provider throws ("HTTP 500: [invalid] …"): the bracketed code is found anywhere. No code: internal.
   if (missing) return new ProviderMissingError(`${pluginId} ${method}: ${msg}`, "not_found", method);
   return new BenchProviderError(`${pluginId} ${method}: ${msg}`, code ?? "internal", method);
 }

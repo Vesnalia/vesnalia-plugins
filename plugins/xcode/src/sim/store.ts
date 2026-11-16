@@ -1,7 +1,7 @@
 /**
  * The schema, and the one rule that governs it.
  *
- * `bb.storage.migrate` keys migrations by **statement index**, so this array is
+ * `alia.storage.migrate` keys migrations by **statement index**, so this array is
  * append-only and a statement is never edited after release. New facts go into
  * `meta_json` / `sidecar_json` first and are promoted to a real column with an
  * appended `ALTER TABLE … ADD COLUMN` only when they need an index.
@@ -23,7 +23,7 @@ export type Db = BetterSqlite3.Database;
 /**
  * One statement per entry, always.
  *
- * `bb.storage.migrate` applies these by index, and better-sqlite3's `prepare`
+ * `alia.storage.migrate` applies these by index, and better-sqlite3's `prepare`
  * rejects a string holding more than one statement — so a `CREATE TABLE` and
  * its indexes packed into one template literal works against the real host and
  * throws `RangeError: The supplied SQL string contains more than one

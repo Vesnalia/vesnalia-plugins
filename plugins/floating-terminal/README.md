@@ -1,40 +1,40 @@
 <h1 align="center">Floating Terminal</h1>
 
-<p align="center"><b>A real terminal that floats over bb.</b><br>Open it from the sidebar footer or <kbd>Ctrl</kbd> <kbd>&#96;</kbd>, run whatever you need next to the agent that is working, and hide it again. The shells keep running.</p>
+<p align="center"><b>A real terminal that floats over VesnALIA.</b><br>Open it from the sidebar footer or <kbd>Ctrl</kbd> <kbd>&#96;</kbd>, run whatever you need next to the agent that is working, and hide it again. The shells keep running.</p>
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-floating-terminal/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-floating-terminal?style=flat-square&label=release&color=57606a" alt="Latest release"></a>
-<img src="https://img.shields.io/badge/bb-0.49%2B-57606a?style=flat-square" alt="Requires bb 0.49 or newer">
+<img src="https://img.shields.io/badge/bb-0.49%2B-57606a?style=flat-square" alt="Requires VesnALIA 0.49 or newer">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 </p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/dark/hero.png">
-  <img alt="Three shells floating over a bb thread, the active one showing a git log" src="docs/media/light/hero.png" width="100%">
+  <img alt="Three shells floating over a VesnALIA thread, the active one showing a git log" src="docs/media/light/hero.png" width="100%">
 </picture>
 
 <p align="center"><sub>One window, several shells, sitting over the thread you are reading.</sub></p>
 
 ## Install
 
-Floating Terminal is listed in the [BB Community marketplace](https://github.com/get-bb/marketplace), so bb installs it by name:
+Floating Terminal is listed in the [VesnALIA Community marketplace](https://github.com/get-bb/marketplace), so VesnALIA installs it by name:
 
 ```sh
-bb plugin install floating-terminal
+alia plugin install floating-terminal
 ```
 
 Or install it straight from this repository:
 
 ```sh
-bb plugin install git:https://github.com/vburojevic/bb-plugin-floating-terminal
+alia plugin install git:https://github.com/vburojevic/bb-plugin-floating-terminal
 ```
 
 > [!TIP]
-> Press <kbd>Ctrl</kbd> <kbd>&#96;</kbd> anywhere in bb to show or hide the window, or <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>&#96;</kbd> to open a shell in the worktree of the thread you are looking at.
+> Press <kbd>Ctrl</kbd> <kbd>&#96;</kbd> anywhere in VesnALIA to show or hide the window, or <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>&#96;</kbd> to open a shell in the worktree of the thread you are looking at.
 
 > [!NOTE]
-> Requires bb 0.49 or newer. No keys and no setup: the button appears in the sidebar footer next to Settings the moment the plugin lands.
+> Requires VesnALIA 0.49 or newer. No keys and no setup: the button appears in the sidebar footer next to Settings the moment the plugin lands.
 
 ## What it does
 
@@ -68,7 +68,7 @@ rings the bell, so `make; tput bel` in one tab tells you when to come back.
 
 ### Multi-machine
 
-Every connected bb machine is offered, so a tab can be a shell on a remote box.
+Every connected VesnALIA machine is offered, so a tab can be a shell on a remote box.
 Paths and tab titles keep the machine visible once you have more than one, and
 an offline machine says so instead of failing on click.
 
@@ -78,7 +78,7 @@ an offline machine says so instead of failing on click.
 ### It survives everything short of a reboot
 
 Open tabs are persisted, so closing the window, reloading the app or restarting
-bb reattaches to the same shells with their scrollback intact. A shell that died
+VesnALIA reattaches to the same shells with their scrollback intact. A shell that died
 while you were away is dropped rather than left as a dead row.
 
 </td>
@@ -88,7 +88,7 @@ while you were away is dropped rather than left as a dead row.
 
 ### Drag it anywhere, resize from any edge
 
-The position is remembered, and the whole window stays inside bb: on a narrower
+The position is remembered, and the whole window stays inside VesnALIA: on a narrower
 screen, or an iPad turned to portrait, it comes back on screen rather than with
 its hide button off the edge. It rests in the bottom-left corner with the same
 inset on every edge, which is also the origin the open animation grows from, so
@@ -142,7 +142,7 @@ where there is no scrollback to lose.
 
 ### Right-click for the rest
 
-Copy, paste, select all, find, clear. bb's desktop app shows no context menu of
+Copy, paste, select all, find, clear. VesnALIA's desktop app shows no context menu of
 its own, so before this a right-click in the terminal did nothing at all.
 
 </td>
@@ -158,11 +158,11 @@ the size that reads well on a laptop is not the one that reads well on a phone.
 </td>
 <td width="50%" valign="top">
 
-### The same terminal bb runs
+### The same terminal VesnALIA runs
 
-WebGL rendering, Unicode 11 widths, clickable links, bb's Nerd Font stack and
+WebGL rendering, Unicode 11 widths, clickable links, VesnALIA's Nerd Font stack and
 10,000 lines of scrollback, so a powerline prompt, a box-drawing TUI and an emoji
-all land the same way they do in bb's own terminal panel.
+all land the same way they do in VesnALIA's own terminal panel.
 
 </td>
 </tr>
@@ -190,7 +190,7 @@ The terminal is next to an agent for a reason, so text crosses between them:
   becomes a question in one click. Without a selection, the <kbd>⋯</kbd> menu and
   the right-click menu send the recent tail of the scrollback.
 - **Palette commands.** *Floating Terminal: New shell here*, *New shell in…*,
-  *Show or hide*, *Find*, *Clear* and *Restart* are in bb's quick palette
+  *Show or hide*, *Find*, *Clear* and *Restart* are in VesnALIA's quick palette
   (<kbd>Cmd/Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd>), and any of them can be given
   a shortcut in **Settings → Keyboard**.
 
@@ -241,7 +241,7 @@ search field.
 </td>
 <td width="62%" valign="top">
 
-Below bb's compact-viewport breakpoint the window becomes a sheet. It fills the
+Below VesnALIA's compact-viewport breakpoint the window becomes a sheet. It fills the
 viewport minus one even inset, measured from the safe area so it clears a notch
 and a home indicator, over a blurred backdrop, and drag and resize are not
 installed at all. A 760x460 window you drag around a phone screen is a desktop
@@ -282,32 +282,32 @@ alternate screen (`vim`, `less`, `tmux`) there is no scrollback to move through,
 so a drag sends cursor keys instead, the same substitution xterm makes for a
 wheel there.
 
-## It looks like the rest of your bb
+## It looks like the rest of your VesnALIA
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-<img alt="The window in bb's light theme" src="docs/media/light/hero.png" width="100%">
+<img alt="The window in VesnALIA's light theme" src="docs/media/light/hero.png" width="100%">
 
 </td>
 <td width="50%" valign="top">
 
-<img alt="The same window in bb's dark theme" src="docs/media/dark/hero.png" width="100%">
+<img alt="The same window in VesnALIA's dark theme" src="docs/media/dark/hero.png" width="100%">
 
 </td>
 </tr>
 </table>
 
-The xterm palette is derived from bb's live theme tokens, light or dark.
+The xterm palette is derived from VesnALIA's live theme tokens, light or dark.
 Background, foreground, cursor and selection come from the window's own card
-tokens; the ANSI 16 come from `--ansi-0` … `--ansi-15`, the same tokens bb's
-terminal reads. Switch bb to Dracula or Gruvbox and this window's reds and
+tokens; the ANSI 16 come from `--ansi-0` … `--ansi-15`, the same tokens VesnALIA's
+terminal reads. Switch VesnALIA to Dracula or Gruvbox and this window's reds and
 yellows move with it, instead of sitting on a palette of their own.
 
 **Icons render everywhere.** A shell that prints file icons (`eza --icons`, a
 powerline prompt) needs a Nerd Font, and on a desktop that works only because
-the OS has one installed to fall back to. A phone has none and bb ships none, so
+the OS has one installed to fall back to. A phone has none and VesnALIA ships none, so
 every icon came out as a tofu box. The plugin carries the Nerd Font symbol set
 itself (`fonts/`), listed last in the stack and restricted by `unicode-range`,
 so an installed Nerd Font still wins and this only draws the codepoints nothing
@@ -319,12 +319,12 @@ is running, back to `Acme Storefront` at the prompt. With several connected
 machines it keeps the host alongside either title, so a remote shell cannot look
 local. Titles that only restate the location (`user@host:~/Git/acme`,
 `acme-storefront:main`) are ignored, because the tab already says that; the
-directory stays in the tooltip either way. The rename lands on the bb session
-itself, so `bb terminal list` shows the same name.
+directory stays in the tooltip either way. The rename lands on the VesnALIA session
+itself, so `alia terminal list` shows the same name.
 
 ## Settings
 
-**bb → Extensions → Floating Terminal**: the default font size, and whether
+**VesnALIA → Extensions → Floating Terminal**: the default font size, and whether
 <kbd>Ctrl</kbd> <kbd>&#96;</kbd> and <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>&#96;</kbd> are
 bound. The <kbd>⋯</kbd> menu overrides the size on one device. Palette commands
 take shortcuts in **Settings → Keyboard**.
@@ -367,9 +367,9 @@ app.tsx                       contentScript (React root), sidebar button, palett
     ├── key-toolbar.tsx       the phone sheet's key bar
     └── terminal-view.tsx     one tab's terminal; owns a TerminalPump
 
-server.ts                     RPC over bb.sdk.terminals; tab list in kv
+server.ts                     RPC over alia.sdk.terminals; tab list in kv
 lib/pump.ts                   one xterm <-> one PTY
-lib/socket.ts                 bb's /ws/terminals socket (RPC is the fallback)
+lib/socket.ts                 alia's /ws/terminals socket (RPC is the fallback)
 lib/late-ime-input.ts         iOS input xterm drops after a 229 keydown
 lib/portal-scope.ts           tags portaled overlays for the plugin's CSS
 lib/tabs.ts                   pure reducer for the tab strip
@@ -379,10 +379,10 @@ lib/scroll.ts                 finger travel -> whole terminal lines
 lib/viewport.ts               visualViewport -> sheet height, keyboard state
 lib/scopes.ts                 which directories are offered, and in what order
 lib/frame.ts                  drag, resize, clamping, persistence
-lib/theme.ts                  bb's oklch tokens -> an xterm palette
+lib/theme.ts                  alia's oklch tokens -> an xterm palette
 lib/rpc.ts                    fetch twin of the useRpc hook
 lib/commands.ts               message text -> a command; output -> the composer
-lib/host.ts                   bb's clipboard writer
+lib/host.ts                   alia's clipboard writer
 lib/prefs.ts                  the per-device text size
 fonts/nerd-symbols.css        generated: the Nerd Font symbol set, inlined
 ```
@@ -400,21 +400,21 @@ flowchart LR
   server <-.-> pty
 ```
 
-**Output is streamed over bb's own terminal socket, polled only as a
-fallback.** The window lives in bb's page, so `lib/socket.ts` opens the same
-same-origin `/ws/terminals/:id` socket bb's terminal panel uses: keystrokes go
+**Output is streamed over VesnALIA's own terminal socket, polled only as a
+fallback.** The window lives in VesnALIA's page, so `lib/socket.ts` opens the same
+same-origin `/ws/terminals/:id` socket VesnALIA's terminal panel uses: keystrokes go
 up it as they are typed and output is pushed down as the pty writes it. In the
 same page on the same machine, that took a keystroke's echo from a median of
 ~55 ms (an HTTP write, then waiting for the next 40 ms poll) to ~10 ms. Every
 tab in an open window holds one, none are held while the window is hidden,
-and a reconnect resumes from the last byte written. Only what every bb since
+and a reconnect resumes from the last byte written. Only what every VesnALIA since
 0.36 speaks is used, with no output acks. A tab whose socket closes three times
-in a row without holding (a proxy that refuses the upgrade, or bb restarting)
+in a row without holding (a proxy that refuses the upgrade, or VesnALIA restarting)
 uses the plugin RPC instead, and tries the socket again every 30 s and whenever
 its window is shown. On the RPC, `lib/pump.ts` polls: 40 ms while bytes are
 moving, backing off to 320 ms when the shell is quiet, and every 2 s for a
 background tab. Resizes go over the RPC, apart from one sent up the socket on
-attach by a tab that has been on screen: bb takes a socket resize only from the
+attach by a tab that has been on screen: VesnALIA takes a socket resize only from the
 session's most recently attached socket, so with a tab open on two devices the
 other one's would be dropped.
 
@@ -423,23 +423,23 @@ other one's would be dropped.
 <details>
 <summary><b>Four things to know before changing it</b></summary>
 
-**There is no bb React context in the window.** A content script mounts the
-root into `document.body`, outside bb's component tree, so `useRpc`,
-`useSettings` and `useBbContext` are unavailable there. `lib/rpc.ts` speaks the
+**There is no VesnALIA React context in the window.** A content script mounts the
+root into `document.body`, outside VesnALIA's component tree, so `useRpc`,
+`useSettings` and `useAliaContext` are unavailable there. `lib/rpc.ts` speaks the
 plugin RPC wire format (`POST /api/v1/plugins/<id>/rpc/<method>`) directly and
-is typed off the same `rpcContract`. What the window needs from bb's context
+is typed off the same `rpcContract`. What the window needs from VesnALIA's context
 (which thread is in view, which composers are on screen) two invisible app
 overlays read and report into `lib/controller.ts`.
 
 **Everything the window portals must stack above it.** Menus, the phone
 drawer and tooltips render outside the window, at the end of `<body>`. The
-window sits at z-55 to clear bb's own chrome, so the vendored overlays sit at
-z-60; at bb's default z-50 the <kbd>+</kbd> menu opened invisibly *behind* the
-window. Hit-testing will not catch a regression: while a modal menu is open bb
+window sits at z-55 to clear VesnALIA's own chrome, so the vendored overlays sit at
+z-60; at VesnALIA's default z-50 the <kbd>+</kbd> menu opened invisibly *behind* the
+window. Hit-testing will not catch a regression: while a modal menu is open VesnALIA
 turns pointer events off on everything else, so `elementFromPoint` sees straight
 through the window. Compare z-indices, or look at a screenshot.
 
-**Output is streamed over bb's own terminal socket, polled only as a
+**Output is streamed over VesnALIA's own terminal socket, polled only as a
 fallback.** See *How bytes reach the shell and back* above.
 
 **The server owns the tab list; the client owns status and focus.** Every
@@ -468,8 +468,8 @@ where a round trip is ~2 ms, and easy to hit on a remote machine at ~100 ms.
 npm install
 npm run typecheck
 npm test
-bb plugin build
-bb plugin dev      # watch: rebuild + reload on every save
+alia plugin build
+alia plugin dev      # watch: rebuild + reload on every save
 ```
 
 `npm test` is hermetic. The mobile behavior is not testable that way (a sheet
@@ -481,32 +481,32 @@ npm run test:mobile                            # the whole matrix
 node tests/mobile-e2e.mjs webkit "iPhone 14 Pro"
 ```
 
-It drives a running bb (`BB_APP_URL`, default `http://localhost:38886`) across
+It drives a running VesnALIA (`ALIA_APP_URL`, default `http://localhost:38886`) across
 Galaxy S9+, iPhone 14 Pro, Pixel 7, the same iPhone under WebKit (the engine
 iOS Safari uses) and an iPad, which is over the compact breakpoint and must
-stay a window. 35 checks: layout and insets, stacking above bb's chrome, the
+stay a window. 35 checks: layout and insets, stacking above VesnALIA's chrome, the
 <kbd>+</kbd> menu painting above the window, the directory list, the key bar and
 its latch, touch scrolling in both buffers, momentum, the bundled glyphs,
 keyboard-aware height, and persistence across a hide and reopen.
 
-It opens one real shell in whichever bb it points at, types only into that one,
+It opens one real shell in whichever VesnALIA it points at, types only into that one,
 closes only that one, and asserts it leaves none behind, so it is safe to run
-against the bb you work in. With shells already open, the empty-state checks
+against the VesnALIA you work in. With shells already open, the empty-state checks
 report SKIP rather than closing yours to earn them. Touch gestures go over CDP,
 so on WebKit those checks report SKIP rather than passing silently.
 `PW_CHROMIUM` / `PW_WEBKIT` point it at a browser build when the one Playwright
 expects is not the one installed.
 
 `components/ui/` is vendored source you own (the shadcn model): edit it freely,
-it never updates out from under you. Add more from bb's registry, which is
-pinned in `components.json` to the bb release you are running:
+it never updates out from under you. Add more from VesnALIA's registry, which is
+pinned in `components.json` to the VesnALIA release you are running:
 
 ```sh
-npx shadcn add @bb/table @bb/command
+npx shadcn add @alia-core/table @alia-core/command
 ```
 
 React, `react-dom/client`, the radix portal primitives and `sonner` are
-provided by the bb app at runtime and never bundled; everything else (xterm,
+provided by the VesnALIA app at runtime and never bundled; everything else (xterm,
 hugeicons, tailwind-merge) bundles from `node_modules`. Ship `dist/` so
 consumers never need npm.
 
@@ -523,4 +523,4 @@ licenses. See `fonts/README.md` for provenance and how to rebuild it.
 
 ---
 
-<p align="center"><sub>More bb plugins I publish: <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/bb-plugins</b></a></sub></p>
+<p align="center"><sub>More VesnALIA plugins I publish: <a href="https://github.com/vburojevic/bb-plugins"><b>vburojevic/alia-plugins</b></a></sub></p>

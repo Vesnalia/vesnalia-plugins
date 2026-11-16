@@ -7,21 +7,21 @@ import {
   definePluginApp,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, CopyMode, Target } from "./contracts.js";
 
 /**
- * Injected by `bb plugin build`. The menu is portalled to the document body,
+ * Injected by `alia plugin build`. The menu is portalled to the document body,
  * so it has to carry the plugin style-scope attributes itself or the plugin's
- * compiled utilities (scoped to `[data-bb-plugin]` roots) would not apply.
+ * compiled utilities (scoped to `[data-alia-plugin]` roots) would not apply.
  */
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 const PORTAL_SCOPE = {
-  "data-bb-portaled-overlay": "",
-  "data-bb-plugin-root": "",
-  ...(typeof __BB_PLUGIN_ID__ === "string"
-    ? { "data-bb-plugin": __BB_PLUGIN_ID__ }
+  "data-alia-portaled-overlay": "",
+  "data-alia-plugin-root": "",
+  ...(typeof __ALIA_PLUGIN_ID__ === "string"
+    ? { "data-alia-plugin": __ALIA_PLUGIN_ID__ }
     : {}),
 };
 
@@ -51,7 +51,7 @@ const MODE_TOASTS: Record<CopyMode, string> = {
 
 const TRIGGER_LABEL = "Copy Browser Element";
 
-// Same box, glyph sizing, and coarse-pointer step as bb's own header icon
+// Same box, glyph sizing, and coarse-pointer step as VesnALIA's own header icon
 // buttons, so this sits in the action row without looking foreign.
 const triggerClass =
   "flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring data-[state=open]:bg-state-hover data-[state=open]:text-foreground disabled:opacity-40 max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9 [&_svg]:size-[16px] max-md:pointer-coarse:[&_svg]:size-[20px]";
@@ -69,7 +69,7 @@ const hintClass = "px-2 py-[0.3125rem] text-xs text-muted-foreground";
 const itemBaseClass =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 text-xs outline-none focus:bg-state-hover focus:text-foreground hover:bg-state-hover hover:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
 
-// The same icon set bb draws its own chrome from: a browser window with the
+// The same icon set VesnALIA draws its own chrome from: a browser window with the
 // pointer inside it, which is what this button does — pick something in the page.
 const copyIcon = (
   <HugeiconsIcon icon={CursorInWindowIcon} size={16} strokeWidth={1.8} />
@@ -276,7 +276,7 @@ function BrowserCopyHeaderAction({
  */
 declare global {
   interface Window {
-    bbDesktop?: { browser?: unknown };
+    aliaDesktop?: { browser?: unknown };
   }
 }
 
@@ -285,13 +285,13 @@ declare global {
  * clicking it in that native view — something a browser client cannot do. So on a
  * web client the control would only offer an action that cannot be completed.
  *
- * `bbDesktop` is the same signal bb's own desktop-only UI uses (`getBbDesktopInfo`
- * in `apps/app/src/lib/bb-desktop.ts`); the plugin SDK has no platform surface for
+ * `aliaDesktop` is the same signal VesnALIA's own desktop-only UI uses (`getAliaDesktopInfo`
+ * in `apps/app/src/lib/alia-desktop.ts`); the plugin SDK has no platform surface for
  * it yet.
  */
 function isDesktopShell(): boolean {
   if (typeof window === "undefined") return false;
-  return typeof window.bbDesktop === "object" && window.bbDesktop !== null;
+  return typeof window.aliaDesktop === "object" && window.aliaDesktop !== null;
 }
 
 export default definePluginApp((app) => {

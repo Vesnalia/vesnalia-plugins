@@ -1,6 +1,6 @@
 # Chime product specification
 
-Chime is a polished, publishable bb plugin, installed locally first and suitable for later marketplace distribution.
+Chime is a polished, publishable VesnALIA plugin, installed locally first and suitable for later marketplace distribution.
 
 ## Required behavior
 
@@ -17,7 +17,7 @@ Chime is a polished, publishable bb plugin, installed locally first and suitable
 
 ## Playback
 
-1. Default to client-local playback in bb desktop windows and browser/remote clients.
+1. Default to client-local playback in VesnALIA desktop windows and browser/remote clients.
 2. Elect one audible client per browser origin on a best-effort basis.
 3. Surface browser autoplay activation state and provide an explicit enable/test action.
 4. Offer optional server playback on macOS when `/usr/bin/afplay` is available; report it unavailable elsewhere.
@@ -32,6 +32,6 @@ Chime is a polished, publishable bb plugin, installed locally first and suitable
 
 ## Delivery quality
 
-1. Use the name Chime, package name `bb-plugin-chime`, plugin-owned bell branding, and the MIT license.
+1. Use the name Chime, package name `alia-plugin-chime`, plugin-owned bell branding, and the MIT license.
 2. Include backend and frontend unit tests, typechecking, a successful plugin build, local path installation, and live smoke tests.
 3. Document browser autoplay, per-origin coordination, server playback location, and heuristic cancellation detection.

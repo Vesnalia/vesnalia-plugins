@@ -21,7 +21,7 @@ export type BridgeClient = {
 };
 export type LaunchBridge = (args: {
   provider: NativeProvider;
-  bbRoot: string;
+  aliaRoot: string;
   dataDir: string;
   onMessage(message: RpcMessage): void;
   onExit(error: Error): void;
@@ -31,8 +31,8 @@ export const launchBridge: LaunchBridge = async (args) => {
   const childDir = join(args.dataDir, "native", args.provider);
   await mkdir(childDir, { recursive: true, mode: 0o700 });
   const child = spawn(process.execPath, [
-    join(args.bbRoot, "host-daemon/dist/bb-provider-bridge-worker.mjs"),
-    join(args.bbRoot, `server/dist/builtin-plugins/provider-${args.provider}/dist/host.js`),
+    join(args.aliaRoot, "host-daemon/dist/alia-provider-bridge-worker.mjs"),
+    join(args.aliaRoot, `server/dist/builtin-plugins/provider-${args.provider}/dist/host.js`),
     `provider-${args.provider}`, childDir,
   ], { stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" } });
   return connectBridge(child, args);

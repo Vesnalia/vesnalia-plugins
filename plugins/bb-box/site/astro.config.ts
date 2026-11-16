@@ -15,8 +15,8 @@ export default defineConfig({
   base,
   integrations: [
     starlight({
-      title: "BB Box",
-      description: "Computers for BB threads.",
+      title: "VesnALIA Box",
+      description: "Computers for VesnALIA threads.",
       favicon: "/favicon.png",
       head: siteHead({ site, base }),
       customCss: ["@fontsource-variable/inter", "@fontsource-variable/jetbrains-mono", "./src/styles/theme.css"],

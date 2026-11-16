@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../hooks/usePresets", () => ({
   usePresets: () => ({ state: mocks.state, save: vi.fn(), loading: false, error: null, reload: vi.fn() }),
 }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   experimental_Icon: () => null,
   experimental_useProviders: () => ({ providers: [{ id: "codex" }] }),
   experimental_ProviderIcon: () => null,
@@ -23,7 +23,7 @@ vi.mock("@get-bb/plugin-sdk/app", () => ({
 
 afterEach(cleanup);
 
-// On stock BB the dialog renders this picker itself, passing only the current
+// On stock VesnALIA the dialog renders this picker itself, passing only the current
 // selection — there is no host model-picker slot to hand it catalog props.
 describe("stored model presets", () => {
   it("renders the saved presets from the selection alone", async () => {

@@ -1,4 +1,4 @@
-// Page rendering on the bb server's machine: pages of a PDF (the document
+// Page rendering on the VesnALIA server's machine: pages of a PDF (the document
 // itself, or LibreOffice's rendering of a Word or PowerPoint file — see
 // viewer.ts) rendered to PNG by poppler's pdftoppm on first request, word
 // boxes from pdftotext for the selectable text layer, and crops for area
@@ -56,7 +56,7 @@ function run(
       (error, stdout, stderr) => {
         if (error) {
           if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-            reject(new ToolMissingError(`${command} is not installed on the bb server`));
+            reject(new ToolMissingError(`${command} is not installed on the VesnALIA server`));
             return;
           }
           const detail = String(stderr || error.message).trim().split("\n").slice(-3).join(" ");
@@ -154,7 +154,7 @@ export class Renderer {
       }).catch((error: unknown) => {
         if (error instanceof ToolMissingError) {
           throw new ToolMissingError(
-            "Pages need poppler-utils on the bb server (pdfinfo, pdftoppm, pdftotext).",
+            "Pages need poppler-utils on the VesnALIA server (pdfinfo, pdftoppm, pdftotext).",
           );
         }
         throw error;

@@ -17,7 +17,7 @@ box, with no desktop shown.
 | Audio input | none, until BlackHole 2ch was installed with Homebrew and `coreaudiod` restarted |
 
 The helper on main refused every grant there, with exit code 1: "TCC's
-database is not as bb-box knows it on macOS 27, so it writes nothing there."
+database is not as alia-box knows it on macOS 27, so it writes nothing there."
 
 ## The grants
 
@@ -27,7 +27,7 @@ The helper from this change ran as Namespace's backend runs it:
 - `vm-ready` took 0.4 s and said `sip=0`, `tcc=1`, `macos=26.3.1` and
   `signing=1`.
 - The probes: an app, `GrantProbe.app` (bundle ID `dev.example.grantprobe`),
-  and a command-line program, `~/bin/micprobe`, both signed with "bb-box
+  and a command-line program, `~/bin/micprobe`, both signed with "alia-box
   local code signing". Signing worked only in `runner`'s session, through
   `sudo launchctl asuser "$(id -u)" sudo -u "$(id -un)" codesign ...`:
   run straight from `box_run`, `codesign` found no identity.
@@ -53,7 +53,7 @@ The Mac had no display for ScreenCaptureKit, so the check stopped at its
 permission: capturing a window there failed in macOS's display lookup,
 granted or not.
 
-## Through BB Box's code
+## Through VesnALIA Box's code
 
 The branch's `MacVmHelper` and the doctor's check, run on the Mac with
 Node 25 and a command runner in place of SSH, said:
@@ -65,9 +65,9 @@ Node 25 and a command runner in place of SSH, said:
 - `/Applications/Safari.app`: refused, as it is Apple's;
 - `grants`: the 3 grants, and nothing blocking;
 - the doctor's check: "box_grant works: System Integrity Protection is off
-  and TCC's database is one BB Box knows (macOS 26.3.1)."
+  and TCC's database is one VesnALIA Box knows (macOS 26.3.1)."
 
-Before the change, BB Box's `box_grant` on the same box answered:
+Before the change, VesnALIA Box's `box_grant` on the same box answered:
 "Namespace cannot grant macOS permissions: only Tart's macOS boxes and
 Macs of the SSH host pool with SIP off can."
 
@@ -76,6 +76,6 @@ Macs of the SSH host pool with SIP off can."
 - A Namespace Mac with SIP on, or with a TCC schema the helper does not
   know: none was available. The tests cover both refusals, with the fake
   Mac and the fake helper.
-- A Namespace backend in a separate BB acquiring the Mac: the live check
+- A Namespace backend in a separate VesnALIA acquiring the Mac: the live check
   ran the branch's helper and TypeScript on a Mac acquired from another
-  BB, as a separate BB would need a Namespace token of its own.
+  VesnALIA, as a separate VesnALIA would need a Namespace token of its own.

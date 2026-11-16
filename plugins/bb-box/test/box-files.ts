@@ -33,12 +33,12 @@ export function storage(folder: string, refuseAttach = false): DatabaseSource & 
   };
 }
 
-export function bbOf(source: DatabaseSource) {
+export function aliaOf(source: DatabaseSource) {
   return {
     storage: {
       kv: null as never,
       database: source.database,
-      migrate: (db: Database.Database, statements: string[]) => void migrateFile(db as never, "main", "_bb_migrations_test", statements),
+      migrate: (db: Database.Database, statements: string[]) => void migrateFile(db as never, "main", "_alia_migrations_test", statements),
     },
   };
 }

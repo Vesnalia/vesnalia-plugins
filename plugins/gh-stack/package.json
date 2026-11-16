@@ -1,21 +1,12 @@
 {
-  "name": "@smsunarto/bb-plugin-gh-stack",
+  "name": "@smsunarto/alia-plugin-gh-stack",
   "version": "0.2.3",
-  "description": "Visualize and drive stacked pull requests (gh stack) from BB threads.",
+  "description": "Visualize and drive stacked pull requests (gh stack) from VesnALIA threads.",
   "license": "MIT",
   "author": "Scott Sunarto",
-  "homepage": "https://github.com/smsunarto/bb-plugins/tree/main/plugins/gh-stack#readme",
-  "bugs": {
-    "url": "https://github.com/smsunarto/bb-plugins/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/smsunarto/bb-plugins.git",
-    "directory": "plugins/gh-stack"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "github",
     "gh-stack",
     "stacked-prs",
@@ -27,12 +18,12 @@
   },
   "type": "module",
   "engines": {
-    "bb": ">=0.40.0 <1.0.0",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40.0 <1.0.0",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "GitHub Stack",
-    "description": "Visualize and drive stacked pull requests (gh stack) from BB threads.",
+    "description": "Visualize and drive stacked pull requests (gh stack) from VesnALIA threads.",
     "branding": {
       "icon": "./assets/icon.svg",
       "logo": {
@@ -71,7 +62,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -84,9 +74,26 @@
   },
   "scripts": {
     "dev": "bun ../../scripts/dev-plugin.ts",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "bun test --timeout=30000 test/*.test.ts",
     "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/gh-stack#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/gh-stack"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

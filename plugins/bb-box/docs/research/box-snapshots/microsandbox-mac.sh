@@ -176,7 +176,7 @@ msb snap restore c-src:p0 --name c-r --quiet
 t msb snap rm --force c-src:p0
 msb stop c-r --quiet; msb start c-r --quiet; held c-r >"$work/c1.txt" 2>&1; same "$work/c.txt" "$work/c1.txt" "C the same after a restart"
 
-echo "== E: bb-box's own snapshot commands, by group:member, through a linked home and through a real one"
+echo "== E: alia-box's own snapshot commands, by group:member, through a linked home and through a real one"
 ids() { msb snap ls --format json | field snapshot_id; }
 gone() { ! ids | grep -qx "$1"; }
 idof() { msb snap ls --group bbbox-e --format json | tr ',{}' '\n\n\n' | grep -E '"(name|snapshot_id)"' | paste -d' ' - - | grep "\"$1\"" | sed -n 's/.*"\(snap_[0-9a-f]*\)".*/\1/p'; }

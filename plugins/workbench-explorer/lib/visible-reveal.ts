@@ -7,7 +7,7 @@ export interface VisibleReveal {
 }
 
 /**
- * BB's host directory listing omits dotfolders, even when the file can be
+ * VesnALIA's host directory listing omits dotfolders, even when the file can be
  * resolved directly. Add only the verified reveal chain to its visible rows.
  */
 export function includeRevealedChild(

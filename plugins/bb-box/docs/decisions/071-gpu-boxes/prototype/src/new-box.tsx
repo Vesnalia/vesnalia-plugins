@@ -70,7 +70,7 @@ export function gpuLine(world: World, backend: BackendId | null, gpu: GpuPart, d
     const host = backendOf(id).host;
     const reach = backendOf(id).fencesWhole ? "" : ` ${DOCKER_REACH}`;
     if (gpu === "whole") {
-      const outside = card.outsideMiB > 0 ? ` ${gib(card.outsideMiB)} of it is in use outside bb-box's boxes.` : " bb-box places no other box on it.";
+      const outside = card.outsideMiB > 0 ? ` ${gib(card.outsideMiB)} of it is in use outside alia-box's boxes.` : " alia-box places no other box on it.";
       return { words: `${capital(cardName(card))} on ${host}, to itself.${outside}${reach}`, blocked: false, backend: id };
     }
     const others = holders(world, card).length;
@@ -123,7 +123,7 @@ export function NewBoxPage() {
   };
   return (
     <div className="mx-auto w-full max-w-[600px] px-4 pb-6 pt-3 md:pt-4">
-      <p className="pb-3 text-xs text-subtle-foreground">BB's New box popover, opened from the plus in the Boxes header.</p>
+      <p className="pb-3 text-xs text-subtle-foreground">VesnALIA's New box popover, opened from the plus in the Boxes header.</p>
       <form
         aria-label="New box"
         className="space-y-5 rounded-lg border border-border bg-popover p-4 sm:p-5"

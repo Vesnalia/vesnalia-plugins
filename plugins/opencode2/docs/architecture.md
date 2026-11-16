@@ -4,27 +4,27 @@
 
 The plugin connects to OpenCode's single shared background service only when
 a thread needs it, and never stops it. Sharing the service matters because
-OpenCode stores session state there, and BB may resume a thread from another
+OpenCode stores session state there, and VesnALIA may resume a thread from another
 host worker.
 
-For BB dynamic tools, the plugin starts a local, session-specific MCP
+For VesnALIA dynamic tools, the plugin starts a local, session-specific MCP
 process. OpenCode sees the configured tools, while the plugin checks the
-calling session and a random token before forwarding each call to BB. An
-unchanged tool catalog keeps the live MCP child across BB's repeated session
+calling session and a random token before forwarding each call to VesnALIA. An
+unchanged tool catalog keeps the live MCP child across VesnALIA's repeated session
 setup. Discarding the thread removes its OpenCode MCP registration; a
 persisted registry lets discards clean up even when another host worker owns
 the thread.
 
 OpenCode shells run under the background service, whose environment is fixed
 at service start. The plugin sends each session a credential-filtered host
-environment, BB's per-session `envVars`, and `PATH` with the `bb` binary
+environment, VesnALIA's per-session `envVars`, and `PATH` with the `alia` binary
 directory first.
 
 ## Code layout
 
 ```text
 src/
-  server.ts            BB server entry: provider metadata, settings storage, sync to hosts
+  server.ts            ALIA server entry: provider metadata, settings storage, sync to hosts
   host.ts              Host entry: host RPC and the provider bridge (public test helpers too)
   app.tsx              Frontend entry: registers the settings slot
   app/                 Settings page
@@ -42,14 +42,14 @@ Inside `src/host/`:
 - `provider-bridge.ts` validates and dispatches provider protocol requests.
 - `opencode-server.ts` owns the service connection, HTTP client, model
   catalog, persistence, event stream, and turn reconciliation.
-- `opencode-event-router.ts` translates OpenCode events into BB deltas,
+- `opencode-event-router.ts` translates OpenCode events into VesnALIA deltas,
   including live shell output and subagent nesting.
 - `session-manager.ts` owns session setup, per-turn preparation (settings,
   permissions, agent, model), MCP registration, and shutdown.
 - `maintenance.ts` implements health, install, and update.
-- `dynamic-tools-mcp.ts` and `bridge-runtime.ts` expose BB dynamic tools to
+- `dynamic-tools-mcp.ts` and `bridge-runtime.ts` expose VesnALIA dynamic tools to
   OpenCode and route their calls back.
-- `opencode-config.ts` maintains the global deny rule that keeps BB's tools out
+- `opencode-config.ts` maintains the global deny rule that keeps VesnALIA's tools out
   of OpenCode's own sessions.
 - `opencode-requests.ts`, `timeline.ts`, `tool-mapping.ts`, `prompt.ts`, and
   `models.ts` contain the testable protocol mappings.
@@ -57,13 +57,13 @@ Inside `src/host/`:
 ## Design decisions
 
 - **Native subagents are off by default** and enforced with a session `deny`
-  rule. When the user enables them, they render as BB delegation rows.
+  rule. When the user enables them, they render as VesnALIA delegation rows.
 - **Permission modes are session rulesets.** OpenCode's `build` agent allows
-  everything, so BB encodes its modes as session rules (the last matching rule
+  everything, so VesnALIA encodes its modes as session rules (the last matching rule
   wins). `auto` keeps OpenCode's agent rules and answers remaining asks with
   `once`; `full` adds `*` → allow so nothing prompts. A denial is sent as a
   reject with a message, so the agent continues instead of the turn aborting.
-- **BB tools are allowed by exact `<server>_<tool>` action name.** OpenCode
+- **VesnALIA tools are allowed by exact `<server>_<tool>` action name.** OpenCode
   shares MCP servers per directory, not per session, so each session allows only
   its own tools and hides the others.
 - **The OpenCode service is shared** and must never be stopped by the plugin.

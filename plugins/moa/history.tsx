@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { Markdown, ThreadChat, useBbContext, useRpc, useRealtime, useRealtimeConnectionState,
-  experimental_ProviderIcon as ProviderIcon } from "@get-bb/plugin-sdk/app";
+import { Markdown, ThreadChat, useAliaContext, useRpc, useRealtime, useRealtimeConnectionState,
+  experimental_ProviderIcon as ProviderIcon } from "@vesnalia/plugin-sdk/app";
 import type { Audit, Slot, rpcContract } from "./contract";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -8,7 +8,7 @@ import { HISTORY_TITLE, HISTORY_TITLES, t, useLocale } from "./i18n";
 
 export function readablePayload(text: string) {
   return text.split("\n").map(line => {
-    if (/^\[bb-moa-reference:/.test(line)) return "";
+    if (/^\[alia-moa-reference:/.test(line)) return "";
     try {
       const parsed = JSON.parse(line);
       if (typeof parsed.advice === "string") return parsed.advice;
@@ -32,10 +32,10 @@ export function openMessageAudit(threadId: string, messageId: string) {
 }
 // Public messageAction owns the button and click. The current SDK lacks a
 // per-message availability predicate, so a content script narrows visibility
-// using the native row anchors observed on BB 0.43.1. Never match question text.
+// using the native row anchors observed on VesnALIA 0.43.1. Never match question text.
 export function mountHistoryVisibility() {
   const style = document.createElement("style");
-  style.dataset.bbMoa = "message-history";
+  style.dataset.aliaMoa = "message-history";
   const update = () => {
     const button = HISTORY_TITLES.map(label => `button[aria-label=${JSON.stringify(label)}]`).join(", ");
     const rows = [...indexes.values()].flat().filter(row => /^[\w:-]+$/.test(row.rowId));
@@ -61,7 +61,7 @@ function Bubble({ title, body, user = false }: { title: string; body: string; us
 export function HistoryOverlay() {
   useLocale();
   const current = useSyncExternalStore(fn => { listeners.add(fn); return () => { listeners.delete(fn); }; }, () => target);
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const rpc = useRpc<typeof rpcContract>();
   const connection = useRealtimeConnectionState();
   const [detail, setDetail] = useState<Audit | null>(null);
@@ -134,7 +134,7 @@ export function HistoryOverlay() {
               <p className="text-sm">{inputVerified ? t("foundOutgoing") : input ? t("preparedUnconfirmed") : t("noSavedRequest")}</p>
               {member.fileGateway !== undefined && <p className="mt-2 text-xs text-muted-foreground">{member.fileGateway ? t("gatewayAvailable") : t("gatewayUnavailable")}</p>}
               {member.primaryAdvisor && <p className="mt-2 text-xs text-muted-foreground">{t("reserveReplaced")} {member.primaryAdvisor.model}. {member.attempts?.map(attempt => attempt.error ?? t("stoppedByUser")).join(" ")}</p>}
-              {member.progress && <p className="mt-2 text-xs text-muted-foreground">BB: {member.progress.state} · {new Date(member.progress.observedAt).toLocaleTimeString()}</p>}
+              {member.progress && <p className="mt-2 text-xs text-muted-foreground">VesnALIA: {member.progress.state} · {new Date(member.progress.observedAt).toLocaleTimeString()}</p>}
               {detail.canReplace && detail.run.status === "running" && member.status === "running" && !member.primaryAdvisor && <Button className="mt-2" size="sm" variant="outline" disabled={!!replacing} onClick={() => void replace(member.key)}>{t("replaceParticipant")}</Button>}
               {input && <details className="mt-3 text-sm"><summary className="cursor-pointer">{t("requestContext")}</summary><Markdown className="mt-3 text-sm" content={readablePayload(input)} /></details>}
             </article>

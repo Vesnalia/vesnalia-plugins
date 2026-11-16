@@ -1,4 +1,4 @@
-/* Chat layer — BB's native chat (composer, messages, work rows, loaders,
+/* Chat layer — ALIA's native chat (composer, messages, work rows, loaders,
    approval cards, banners, tooltips) restyled for the Pokecut theme.
    Ported from Beautiful Chat (https://github.com/diip3sh/bb-plugin-beautiful-chat,
    MIT, © 2026 Diip3sh), itself after BeautifulUI (MIT). Geometry and motion follow
@@ -8,7 +8,7 @@
      data-pk-off     space-separated features turned off
                      (prompt bubbles code actions rows shimmer caret approval selection
                       unread banners minimize tree)
-     data-pk-loader  drive | dots | orbit | coins | bb
+     data-pk-loader  drive | dots | orbit | coins | alia
      data-pk-chips   surface | outline | plain
    With no attributes (settings still loading) everything uses its default. */
 
@@ -171,7 +171,7 @@
 }
 
 /* ── Tool call rows (toolChips): surface = fill + hairline, outline = hairline,
-      plain = BB's own row with no background or border ───────────────────────── */
+      plain = ALIA's own row with no background or border ───────────────────────── */
 :root:not([data-pk-chips="plain"]) [data-timeline-row-id]:not([data-timeline-row-id*=":turn:"]):not([data-timeline-row-id*=":assistant:"]):not([data-timeline-row-id*=":user"]):not([data-timeline-row-id*="reasoning"]):not([data-timeline-row-id*=":error:"])
   > .rounded-md > .group\/timeline-row > button {
   margin-block: 2px;
@@ -209,10 +209,10 @@
 @keyframes pk-orb-6 { 0%, 62%, 100% { --pk-orb-6: 0.15; } 18%, 42% { --pk-orb-6: 1; } }
 @keyframes pk-orb-7 { 0%, 62%, 100% { --pk-orb-7: 0.15; } 18%, 42% { --pk-orb-7: 1; } }
 
-:root:not([data-pk-loader="bb"]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child) > svg {
+:root:not([data-pk-loader="alia"]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child) > svg {
   display: none;
 }
-:root:not([data-pk-loader="bb"]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
+:root:not([data-pk-loader="alia"]) [data-timeline-row-list] .group\/timeline-row > button > span > span:has(> span > .animate-shine:first-child)::before {
   --pk-px-on: var(--pk-ink);
   content: "";
   flex-shrink: 0;
@@ -426,7 +426,7 @@
 }
 
 /* ── Composer banners (mergedBanners): one card instead of a stack ──────────── */
-/* BB gives each banner above the composer (background commands, git, parent and
+/* ALIA gives each banner above the composer (background commands, git, parent and
    child threads) its own bordered card, 8px apart. The banners keep their own
    boxes here and join into one card: gaps close, shared edges collapse onto each
    other, and only the outer corners round. The chrome stays on the banners rather
@@ -453,13 +453,13 @@
   border-bottom-right-radius: var(--pk-radius-card);
 }
 /* Anything that is not a banner keeps the stack's original spacing. */
-:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid:has(> section[aria-label]) > :not(section[aria-label]):not([data-bb-plugin-root]) {
+:root:not([data-pk-off~="banners"]) [data-app-composer] > div.grid:has(> section[aria-label]) > :not(section[aria-label]):not([data-alia-plugin-root]) {
   margin-block: 8px;
 }
 
 /* ── Minimize while running (minimizeWhileRunning) ───────────────────────────── */
-/* While a response is generating, the prompt box drops to BB's own one-line compact
-   layout, freeing room for the reply. These are BB's compact-composer rules with
+/* While a response is generating, the prompt box drops to ALIA's own one-line compact
+   layout, freeing room for the reply. These are ALIA's compact-composer rules with
    the trigger swapped for the send button: "Stop run" means a run is live and the
    box is empty. Typing a follow-up flips it to "Steer current run", so the box
    grows back as soon as you type, focused or not; voice input keeps the full box.
@@ -622,10 +622,10 @@ ul)>li+li:before {
 }
 
 /* ── Unread marker (unreadMarker): NEW trails the first unread row's label ───── */
-/* BB stacks a separator above the row: a 10px wide-tracked accent label and a rule
+/* ALIA stacks a separator above the row: a 10px wide-tracked accent label and a rule
    across the width. Where the row below has a label of its own, the separator is
    clipped away (it stays in the a11y tree as role="separator") and the row prints
-   NEW after its label, at the label's own size. Message rows keep BB's separator.
+   NEW after its label, at the label's own size. Message rows keep ALIA's separator.
    NEW sits outside the row's button so a long, truncating label can't clip it; the
    button's own trailing chevron supplies the gap. */
 :root:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) {
@@ -650,7 +650,7 @@ ul)>li+li:before {
   letter-spacing: normal;
   line-height: 20px;
 }
-/* Compact work rows off: BB's own 14px label size. */
+/* Compact work rows off: ALIA's own 14px label size. */
 :root[data-pk-off~="rows"]:not([data-pk-off~="unread"]) [data-timeline-window-key^="divider:"]:has(+ [data-timeline-row-id] .group\/timeline-row) + [data-timeline-row-id] > .rounded-md > .group\/timeline-row::after {
   font-size: 14px;
 }
@@ -706,7 +706,7 @@ ul)>li+li:before {
   transition: none;
 }
 
-/* Git chip is `flex-1` in BB, so it eats the row and the new-thread plus
+/* Git chip is `flex-1` in ALIA, so it eats the row and the new-thread plus
    sits in the hole before permission. Keep plus next to the chips. */
 :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer] [data-promptbox-hide-branch-compact] {
   flex-grow: 0 !important;
@@ -718,7 +718,7 @@ ul)>li+li:before {
 }
 
 /* Folders chip already names the section; hide the native path select
-   and its BB slot (that slot is flex-1 and opens a hole between folder
+   and its ALIA slot (that slot is flex-1 and opens a hole between folder
    and the machine chip). The Environment button stays. */
 :root:not([data-pk-off~="prompt"]) [data-app-composer] :has(> .pf-env-inputs),
 :root:not([data-pk-off~="prompt"]) [data-app-composer] .pf-env-inputs,
@@ -952,7 +952,7 @@ ul)>li+li:before {
     min-width: 0 !important;
   }
 
-  :root:not([data-pk-off~="prompt"]) [data-app-composer] [data-bb-plugin="environment-project-checkout"] button[role="combobox"] {
+  :root:not([data-pk-off~="prompt"]) [data-app-composer] [data-alia-plugin="environment-project-checkout"] button[role="combobox"] {
     max-width: 60%;
     min-width: 0;
   }
@@ -964,7 +964,7 @@ ul)>li+li:before {
 
 /* ── Context meter (context-meter.ts): a fill line instead of the ring ──────
    The line sits on the context row's top edge, i.e. the composer's bottom
-   edge. The ring button stays as an invisible strip over the line so BB's
+   edge. The ring button stays as an invisible strip over the line so ALIA's
    detail popover still opens from it; hovering shows the percentage. */
 :root:not([data-pk-off~="prompt"]) [data-follow-up-composer-footer][data-pk-ctx] {
   position: relative !important;
@@ -1005,7 +1005,7 @@ ul)>li+li:before {
 }
 
 /* ── Expanded work group as one card (workRows) ────────────────────────────
-   Rows of an expanded group (inside BB's [data-timeline-items] wrapper) sit in
+   Rows of an expanded group (inside ALIA's [data-timeline-items] wrapper) sit in
    one card with hairline dividers instead of each row being an outlined chip.
    The repeated verb ("Ran") moves to the row's tooltip; a dot shows status; the
    command reads as code; durations align right; errors are red

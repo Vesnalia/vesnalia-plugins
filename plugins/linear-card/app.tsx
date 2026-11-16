@@ -1,4 +1,4 @@
-// bb-plugin-linear-card — a thread header chip showing the thread's Linear
+// alia-plugin-linear-card — a thread header chip showing the thread's Linear
 // card. Clicking it opens the card, or, when nothing is linked, an explorer of
 // the viewer's assigned issues where one can be linked to the thread.
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -6,11 +6,11 @@ import type { ReactNode } from "react";
 import {
   Markdown,
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginRpcClient, PluginThreadHeaderActionProps } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcClient, PluginThreadHeaderActionProps } from "@vesnalia/plugin-sdk/app";
 import type { IssueDetail, IssueSummary, Team, ThreadCard, rpcContract } from "./server";
 import { CARD_CHANGED, ENABLED_PROJECTS_CHANGED } from "./shared";
 import { Button } from "@/components/ui/button";
@@ -106,7 +106,7 @@ function Unconfigured() {
       <p>Linear Card needs a Linear personal API key.</p>
       <p>
         Add it in Settings → Plugins → Linear Card, or run{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-xs">bb plugin config linear-card set apiKey</code>.
+        <code className="rounded bg-muted px-1 py-0.5 text-xs">alia plugin config linear-card set apiKey</code>.
       </p>
     </div>
   );
@@ -161,7 +161,7 @@ function CardView({
   threadId: string;
   onChange: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { issue } = card;
@@ -217,7 +217,7 @@ function IssuePreview({
   linked: boolean;
   onLink: () => Promise<void>;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [issue, setIssue] = useState<IssueDetail | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -591,7 +591,7 @@ function useEnabledProjects(rpc: Rpc) {
 
 type SettingsProject = { id: string; name: string };
 
-/** Plugin settings page: one switch per BB project. */
+/** Plugin settings page: one switch per VesnALIA project. */
 function ProjectsSettings() {
   const rpc = useRpc<typeof rpcContract>();
   const [projects, setProjects] = useState<SettingsProject[] | null>(null);

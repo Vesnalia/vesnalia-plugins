@@ -78,7 +78,7 @@ function fakeBrowser(layout: BridgeLayout, browser: string, answer: (method: str
 describe("browser bridge install", () => {
   it("registers the native host only for browsers on this machine", async () => {
     const { layout, profile } = tempLayout();
-    await installBridge(layout, "/Applications/bb.app/Contents/MacOS/bb");
+    await installBridge(layout, "/Applications/alia.app/Contents/MacOS/alia");
 
     const manifest = JSON.parse(readFileSync(join(profile, "NativeMessagingHosts", `${NATIVE_HOST_NAME}.json`), "utf8"));
     expect(manifest).toMatchObject({ name: NATIVE_HOST_NAME, type: "stdio", path: layout.launcher });
@@ -86,7 +86,7 @@ describe("browser bridge install", () => {
     expect(statSync(layout.launcher).mode & 0o777).toBe(0o700);
     expect(readFileSync(layout.launcher, "utf8")).toContain("ELECTRON_RUN_AS_NODE=1");
 
-    const state = await bridgeState(layout, "/Applications/bb.app/Contents/MacOS/bb");
+    const state = await bridgeState(layout, "/Applications/alia.app/Contents/MacOS/alia");
     expect(state.installed).toBe(true);
     expect(state.browsers.map((browser) => [browser.id, browser.detected, browser.registered])).toEqual([
       ["brave", true, true],

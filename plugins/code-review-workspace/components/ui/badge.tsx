@@ -3,10 +3,10 @@ import { cn } from "../../lib/utils";
 import { Icon } from "./icon";
 
 /**
- * Semantic tones on bb's theme tokens. Text uses the theme's AA-safe text
+ * Semantic tones on VesnALIA's theme tokens. Text uses the theme's AA-safe text
  * roles (diff-added, warning-text, destructive-text) and fills stay soft
  * tints, so the same tone reads in any light or dark theme. Agent work uses
- * the terminal's bright magenta, which every bb theme defines.
+ * the terminal's bright magenta, which every VesnALIA theme defines.
  */
 export type Tone = "neutral" | "primary" | "success" | "warning" | "danger" | "merged" | "agent" | "added" | "removed";
 

@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-hmm-floating-terminal",
+  "name": "alia-plugin-hmm-floating-terminal",
   "version": "0.3.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
-  "bb": {
+  "alia": {
     "name": "Hmm Floating Terminal",
     "description": "A resizable, tabbed floating terminal that follows the project you are in, opened from the thread header, the sidebar footer, or Ctrl+backtick.",
     "branding": {
@@ -24,7 +24,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -50,9 +49,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/hmm-floating-terminal#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fadlihdytullah/hmm-floating-terminal.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/hmm-floating-terminal"
   },
-  "license": "MIT"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

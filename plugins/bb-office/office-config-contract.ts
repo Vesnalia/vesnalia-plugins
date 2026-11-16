@@ -1,4 +1,4 @@
-import type { PluginRpcContract } from "@get-bb/plugin-sdk";
+import type { PluginRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   officeApplyCommandSchema,
@@ -11,7 +11,7 @@ import {
   officeUsageSnapshotSchema,
 } from "./office-usage";
 
-export const bbOfficeRpcContract = {
+export const aliaOfficeRpcContract = {
   readOfficeConfig: {
     input: z.object({}).strict(),
     output: officeSnapshotSchema,

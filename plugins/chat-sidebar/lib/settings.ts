@@ -1,7 +1,7 @@
-// Plugin settings: one description for the backend (`bb.settings.define`)
-// and the frontend (defaults while bb loads the values, plus parsing).
+// Plugin settings: one description for the backend (`alia.settings.define`)
+// and the frontend (defaults while VesnALIA loads the values, plus parsing).
 //
-// bb renders these labels on the plugin's settings page as written, so they
+// VesnALIA renders these labels on the plugin's settings page as written, so they
 // stay in English. The list itself is translated (see `lib/i18n`).
 //
 // Select options are stored as the visible strings, so the parsers below map
@@ -41,7 +41,7 @@ export const SETTINGS = {
     type: "select",
     label: "Folder layout on phones",
     description:
-      "On a narrow screen bb's navigation rail already sits beside the list, so tabs leave the list more room. Pick the other option to follow Folder layout there too.",
+      "On a narrow screen VesnALIA's navigation rail already sits beside the list, so tabs leave the list more room. Pick the other option to follow Folder layout there too.",
     options: [...PHONE_LAYOUT_OPTIONS] as string[],
     default: "Tabs above the list",
   },
@@ -76,7 +76,7 @@ export const SETTINGS = {
     type: "boolean",
     label: "Section folders",
     description:
-      "A folder for each of your bb sidebar sections. Kept in step with the Sections folder in the folder editor.",
+      "A folder for each of your VesnALIA sidebar sections. Kept in step with the Sections folder in the folder editor.",
     default: true,
   },
   archiveFolder: {
@@ -148,7 +148,7 @@ function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
-/** Turns whatever bb stored into typed settings; never throws. */
+/** Turns whatever VesnALIA stored into typed settings; never throws. */
 export function parseSettings(values: Readonly<Record<string, unknown>> | undefined): ChatSettings {
   const source = values ?? {};
   const days = source.hideQuietAfterDays;

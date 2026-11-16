@@ -1,7 +1,7 @@
-// Cooperative scheduling for parsing that runs inside the bb server process.
+// Cooperative scheduling for parsing that runs inside the VesnALIA server process.
 //
 // Spreadsheet parsing is CPU work on the same event loop that serves every
-// other bb request. Long loops therefore hand control back every few
+// other VesnALIA request. Long loops therefore hand control back every few
 // milliseconds and stop as soon as the caller gives up.
 import { setImmediate as nextTurn } from "node:timers/promises";
 

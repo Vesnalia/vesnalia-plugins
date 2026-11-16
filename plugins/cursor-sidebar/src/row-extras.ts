@@ -4,7 +4,7 @@ import {
   experimental_copyToClipboard,
   experimental_saveFile,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { readRequestOnce, requestNounOf } from "./change-requests";
 import { threadDisplayTitle } from "./inbox";
 

@@ -1,9 +1,9 @@
-// bb-plugin-waiting-on-you — a "Needs you" block pinned above the sidebar thread list,
+// alia-plugin-waiting-on-you — a "Needs you" block pinned above the sidebar thread list,
 // whichever list is active, its settings page, and two keyboard commands.
 //
-// bb has no slot above the thread list, so an app overlay (which keeps the
+// VesnALIA has no slot above the thread list, so an app overlay (which keeps the
 // SDK's React context) portals the block into a host node placed right
-// before the sidebar's scroll area. If bb changes that markup, the block
+// before the sidebar's scroll area. If VesnALIA changes that markup, the block
 // simply doesn't show; nothing else breaks.
 import "./app.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -12,9 +12,9 @@ import {
   definePluginApp,
   experimental_usePluginId as usePluginId,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbContext,
-  useBbNavigate,
-} from "@get-bb/plugin-sdk/app";
+  useAliaContext,
+  useAliaNavigate,
+} from "@vesnalia/plugin-sdk/app";
 import {
   InboxBlock,
   orderNeeds,
@@ -60,9 +60,9 @@ function useSidebarHost(): HTMLElement | null {
   const [host, setHost] = useState<HTMLElement | null>(null);
   useEffect(() => {
     const node = document.createElement("div");
-    // bb scopes plugin CSS to [data-bb-plugin=<id>]. Outside that scope only
-    // classes bb itself also uses would apply, so colors and dots vanish.
-    node.setAttribute("data-bb-plugin", pluginId);
+    // VesnALIA scopes plugin CSS to [data-alia-plugin=<id>]. Outside that scope only
+    // classes VesnALIA itself also uses would apply, so colors and dots vanish.
+    node.setAttribute("data-alia-plugin", pluginId);
     node.className = "shrink-0";
     const place = () => {
       // Cheap check first: the observer fires on every DOM change.
@@ -90,9 +90,9 @@ function useSidebarHost(): HTMLElement | null {
   return host;
 }
 
-/** Folded or not, remembered per window like bb's own collapsed groups. */
+/** Folded or not, remembered per window like VesnALIA's own collapsed groups. */
 function useCollapsed(pluginId: string) {
-  const key = `bb-plugin-${pluginId}:collapsed`;
+  const key = `alia-plugin-${pluginId}:collapsed`;
   const [collapsed, setCollapsed] = useState(
     () => window.localStorage.getItem(key) === "1",
   );
@@ -114,8 +114,8 @@ function InboxOverlay() {
   const host = useSidebarHost();
   const { status, threads, projects } = useSidebarThreads();
   const { settings, isLoaded } = useInboxSettings();
-  const { threadId: activeThreadId, projectId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { threadId: activeThreadId, projectId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const now = useNow();
   const [collapsed, toggleCollapsed] = useCollapsed(pluginId);
   const [showAll, setShowAll] = useState(false);
@@ -169,7 +169,7 @@ function InboxOverlay() {
   }, [threadIds, activeThreadId, navigate, toggleCollapsed, settings.collapsible]);
   useEffect(() => () => setCommandTarget(null), []);
 
-  // Modifier + 1–9 opens that thread of the block. Captured before bb's own
+  // Modifier + 1–9 opens that thread of the block. Captured before VesnALIA's own
   // handlers so the press doesn't also do something else.
   useEffect(() => {
     if (settings.jumpModifier === "off") return;

@@ -1,17 +1,17 @@
-// bb-plugin-ayu — the three ayu themes for BB.
+// alia-plugin-ayu — the three ayu themes for VesnALIA.
 //
-// The themes are declarative (`bb.themes` in package.json points at the
+// The themes are declarative (`alia.themes` in package.json points at the
 // generated stylesheets); this factory adds what CSS cannot:
 //
 //   - rpc for the panel: read the active palette, activate an ayu theme
-//     through `bb.sdk.theme` (same server API the Settings page uses)
+//     through `alia.sdk.theme` (same server API the Settings page uses)
 //   - a realtime signal so every open panel tracks theme changes live
-//   - the `bb ayu` CLI, exposing the same resolved palette the stylesheets
+//   - the `alia ayu` CLI, exposing the same resolved palette the stylesheets
 //     were generated from
 //
 // Palette data itself never crosses rpc: `generated/palettes.ts` is a plain
 // module, so the frontend bundles it directly.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { AYU_PALETTES, AYU_VARIANTS, type AyuVariant } from "./generated/palettes";
 import { AYU_THEMES } from "./themes-meta";
@@ -33,44 +33,44 @@ function isVariant(value: string): value is AyuVariant {
 
 const USAGE = [
   "Usage:",
-  "  bb ayu themes [--json]                     The three ayu themes and how to activate each",
-  "  bb ayu colors [variant] [filter] [--json]  Resolved ayu colours",
+  "  VesnALIA ayu themes [--json]                     The three ayu themes and how to activate each",
+  "  VesnALIA ayu colors [variant] [filter] [--json]  Resolved ayu colours",
   "",
   `Variants: ${AYU_VARIANTS.join(", ")}. A filter matches dotted keys, e.g. \`syntax\`.`,
 ].join("\n");
 
-export default function plugin(bb: BbPluginApi) {
-  const qualify = (id: string) => `plugin:${bb.pluginId}:${id}`;
+export default function plugin(alia: AliaPluginApi) {
+  const qualify = (id: string) => `plugin:${alia.pluginId}:${id}`;
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async activeTheme() {
-      const active = await bb.sdk.theme.get();
+      const active = await alia.sdk.theme.get();
       return { themeId: active.themeId };
     },
     async setTheme({ themeId }) {
       if (!AYU_THEMES.some((theme) => qualify(theme.id) === themeId)) {
         throw new Error(`Not an ayu theme: ${themeId}`);
       }
-      const applied = await bb.sdk.theme.set(themeId);
-      bb.realtime.publish("theme-changed", { themeId: applied.themeId });
+      const applied = await alia.sdk.theme.set(themeId);
+      alia.realtime.publish("theme-changed", { themeId: applied.themeId });
       return { themeId: applied.themeId };
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "ayu",
     summary: "The ayu colour palette and the themes this plugin contributes",
     commands: [
       {
         name: "themes",
         summary: "List the three ayu themes and the command that activates each",
-        usage: "bb ayu themes [--json]",
+        usage: "alia ayu themes [--json]",
       },
       {
         name: "colors",
         summary:
           "Print resolved ayu colours (light, dark, or mirage) as dotted key/hex pairs",
-        usage: "bb ayu colors [light|dark|mirage] [filter] [--json]",
+        usage: "alia ayu colors [light|dark|mirage] [filter] [--json]",
       },
     ],
     run(argv) {
@@ -94,14 +94,14 @@ export default function plugin(bb: BbPluginApi) {
         }
         const lines = rows.map(
           (row) =>
-            `  ${row.name.padEnd(12)} ${row.note.padEnd(36)} bb theme set ${row.themeId}`,
+            `  ${row.name.padEnd(12)} ${row.note.padEnd(36)} VesnALIA theme set ${row.themeId}`,
         );
         return { exitCode: 0, stdout: ["Themes:", ...lines].join("\n") };
       }
 
       if (command === "colors") {
         const [first, second] = rest;
-        // Both arguments are optional, so a lone `bb ayu colors syntax` reads
+        // Both arguments are optional, so a lone `alia ayu colors syntax` reads
         // as a filter on the default variant rather than an unknown variant.
         const variant = first && isVariant(first) ? first : "dark";
         const filter = first && isVariant(first) ? second : first;
@@ -136,5 +136,5 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info(`contributing ${AYU_THEMES.length} themes`);
+  alia.log.info(`contributing ${AYU_THEMES.length} themes`);
 }

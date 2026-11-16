@@ -1,7 +1,7 @@
 import {
   experimental_ThreadStatusGlyph as ThreadStatusGlyph,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { SidebarRow, type ChildToggle } from "./SidebarRow";
 import { ThreadStatus } from "./StatusSlot";
 import { snoozeWakeLabel } from "./lifecycle";

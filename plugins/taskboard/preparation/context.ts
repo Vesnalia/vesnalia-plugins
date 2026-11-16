@@ -11,7 +11,7 @@ export function safeContextPath(path: string): boolean {
     !isAbsolute(path) &&
     !path.split(/[\\/]/).includes('..') &&
     !/[\x00-\x1f\x7f]/.test(path) &&
-    !/(^|\/)(?:node_modules|dist|build|coverage|vendor|\.git|\.bb|\.codex|\.claude|\.cursor|\.gemini|\.windsurf|\.next|\.cache|\.venv|venv|secrets?|credentials?|private|artifacts|evidence)(\/|$)/i.test(
+    !/(^|\/)(?:node_modules|dist|build|coverage|vendor|\.git|\.alia|\.codex|\.claude|\.cursor|\.gemini|\.windsurf|\.next|\.cache|\.venv|venv|secrets?|credentials?|private|artifacts|evidence)(\/|$)/i.test(
       path
     ) &&
     !/(^|\/)(?:\.env(?:\..*)?|\.npmrc|\.netrc|\.pypirc|\.mcp\.json|(?:access[_-]?token|refresh[_-]?token|auth)\.(?:json|txt)|id_rsa.*|id_ed25519.*|.*(?:credential|secret|password|lockfile).*|package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$/i.test(

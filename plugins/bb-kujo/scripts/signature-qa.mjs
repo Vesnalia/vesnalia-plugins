@@ -1,17 +1,17 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
-const base=process.env.BB_SERVER_URL;
-if(!base) throw new Error('Set BB_SERVER_URL to an isolated bb instance.');
-const mode=process.env.BB_QA_APPEARANCE||'dark';
+const base=process.env.ALIA_SERVER_URL;
+if(!base) throw new Error('Set ALIA_SERVER_URL to an isolated VesnALIA instance.');
+const mode=process.env.ALIA_QA_APPEARANCE||'dark';
 assert.ok(['dark','light'].includes(mode));
 const prefix=mode==='light'?'light-':'';
 const browser=await chromium.launch({channel:process.env.KUJO_BROWSER||'chrome',headless:true});
 try {
  const page=await browser.newPage({viewport:{width:1600,height:1000}});
- await page.addInitScript(mode=>localStorage.setItem('bb.theme',mode),mode);
+ await page.addInitScript(mode=>localStorage.setItem('alia.theme',mode),mode);
  await page.goto(base,{waitUntil:'domcontentloaded'});
- await page.locator('.bb-kujo-signal').waitFor({state:'attached'});
+ await page.locator('.alia-kujo-signal').waitFor({state:'attached'});
  await page.waitForTimeout(8000);
  await mkdir('screenshots',{recursive:true});
  const states=[];

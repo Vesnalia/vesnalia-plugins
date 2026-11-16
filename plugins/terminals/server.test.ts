@@ -1,9 +1,9 @@
 /**
- * The whole server against the SDK's fake host: what it asks bb for when a tab
+ * The whole server against the SDK's fake host: what it asks VesnALIA for when a tab
  * opens and closes, what it stores, and that a reload drops ended tabs. No
- * shell is started; bb's terminals are stubs.
+ * shell is started; VesnALIA's terminals are stubs.
  */
-import { createFakePluginHost, makeHostResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeHostResponse } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import plugin from "./server";
@@ -17,7 +17,7 @@ function notFound(): Error {
   return Object.assign(new Error("Terminal session not found"), { status: 404 });
 }
 
-/** bb's terminal API, stubbed; `holdCreates` keeps each create waiting until the test lets it finish. */
+/** VesnALIA's terminal API, stubbed; `holdCreates` keeps each create waiting until the test lets it finish. */
 async function start(options: { holdCreates?: boolean; startingWhileHeld?: boolean } = {}) {
   const sessions = new Map<string, Session>();
   const held: (() => void)[] = [];
@@ -35,7 +35,7 @@ async function start(options: { holdCreates?: boolean; startingWhileHeld?: boole
     threadId: null,
     title: "Mac mini",
   });
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "terminals",
     sdk: {
       system: { config: async () => ({ primaryHostId: "mini" }) as never },
@@ -49,7 +49,7 @@ async function start(options: { holdCreates?: boolean; startingWhileHeld?: boole
       terminals: {
         create: async ({ id }) => {
           if (id === undefined) throw new Error("the plugin must choose the id");
-          // bb 0.48.1 inserts the session as starting before it asks the machine to open it.
+          // VesnALIA 0.48.1 inserts the session as starting before it asks the machine to open it.
           if (options.startingWhileHeld) sessions.set(id, { id, status: "starting", exitCode: null });
           if (options.holdCreates) await new Promise<void>((resolve) => held.push(resolve));
           sessions.set(id, { id, status: "running", exitCode: null });
@@ -67,8 +67,8 @@ async function start(options: { holdCreates?: boolean; startingWhileHeld?: boole
       },
     },
   });
-  await plugin(bb);
-  return { bb, harness, sessions, held };
+  await plugin(alia);
+  return { alia, harness, sessions, held };
 }
 
 const TERMINAL_ID = /^term_[23456789abcdefghijkmnpqrstuvwxyz]{10}$/u;
@@ -109,7 +109,7 @@ describe("terminals server", () => {
     expect(await tabs(harness)).toMatchObject([{ terminalId: tab.terminalId, status: "running" }]);
   });
 
-  it("leaves no shell without a tab when it is reloaded while bb is still opening one", async () => {
+  it("leaves no shell without a tab when it is reloaded while VesnALIA is still opening one", async () => {
     const { harness, sessions, held } = await start({ holdCreates: true });
     const opening = harness.callRpc("open", { hostId: "mini", cols: 80, rows: 24 });
     opening.catch(() => undefined);
@@ -136,14 +136,14 @@ describe("terminals server", () => {
     expect(harness.sdk.callsTo("terminals.create")).toEqual([]);
   });
 
-  it("ends a shell bb finishes making after its tab was closed and the plugin reloaded", async () => {
+  it("ends a shell VesnALIA finishes making after its tab was closed and the plugin reloaded", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const { harness, sessions, held } = await start({ holdCreates: true });
     const opening = harness.callRpc("open", { hostId: "mini", cols: 80, rows: 24 });
     opening.catch(() => undefined);
     await expect.poll(() => held.length).toBe(1);
     const [stored] = await tabs(harness);
-    // bb has no session yet, so closing finds nothing to end.
+    // VesnALIA has no session yet, so closing finds nothing to end.
     await harness.callRpc("close", { terminalId: stored!.terminalId });
     expect(await tabs(harness)).toEqual([]);
     const next = (await harness.reload(plugin)).harness;
@@ -160,7 +160,7 @@ describe("terminals server", () => {
     await service.done;
   });
 
-  it("lists a shell bb is still starting as starting, and keeps its tab", async () => {
+  it("lists a shell VesnALIA is still starting as starting, and keeps its tab", async () => {
     const { harness, held } = await start({ holdCreates: true, startingWhileHeld: true });
     const opening = harness.callRpc("open", { hostId: "mini", cols: 80, rows: 24 });
     await expect.poll(() => held.length).toBe(1);

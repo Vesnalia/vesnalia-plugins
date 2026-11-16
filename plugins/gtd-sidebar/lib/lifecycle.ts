@@ -1,13 +1,13 @@
 /**
  * The settled / snoozed lifecycle, as pure functions over stored rows.
  *
- * This state lives in the PLUGIN's own database, never on bb's thread. That
- * keeps a plugin concept out of bb's schema and out of the host-daemon
+ * This state lives in the PLUGIN's own database, never on VesnALIA's thread. That
+ * keeps a plugin concept out of VesnALIA's schema and out of the host-daemon
  * protocol, and uninstalling the plugin takes that database with it — see
  * `lib/warm-start.ts` for the browser-side copy it does not take.
  */
 
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 
 /** Any live work at all, whether it runs in the foreground or background. */
 export function isThreadWorking(thread: PluginSidebarThread): boolean {
@@ -36,7 +36,7 @@ export interface ThreadLifecycleRow {
 /**
  * The ids a settle's archive took, read back from the store.
  *
- * bb's archive cascades to child threads, so un-settling has to give back more
+ * VesnALIA's archive cascades to child threads, so un-settling has to give back more
  * than the one id the user acted on. Rows written before that was recorded
  * hold nothing, and a JSON column is only as good as what wrote it — both
  * cases return an empty list, and the caller falls back to the thread's own
@@ -59,7 +59,7 @@ export interface ThreadActivitySignals {
   /** Any live work: runtime, workflows, background agents, plan, goals. */
   isWorking: boolean;
   isUnread: boolean;
-  /** Newest attention timestamp bb reports for the thread. */
+  /** Newest attention timestamp VesnALIA reports for the thread. */
   latestAttentionAt: number;
 }
 
@@ -68,7 +68,7 @@ export type ThreadShelf = "active" | "snoozed" | "settled";
 /**
  * Whether a thread may be parked at all.
  *
- * bb has more kinds of live work than a single session status — workflows,
+ * VesnALIA has more kinds of live work than a single session status — workflows,
  * background agents, background commands, plan mode, goals — and every one of
  * them must block parking. Hiding a thread that is still working is the one
  * failure this feature cannot afford.
@@ -113,14 +113,14 @@ export function resolveShelf(
 
 /**
  * The settled rows that have come back on their own, so the store can let
- * them go — and, with them, bb's archive.
+ * them go — and, with them, VesnALIA's archive.
  *
  * `resolveShelf` un-settles a thread the moment it has something new to say,
  * but that is a reading of the row, not a change to it. Without this the row
  * would sit there settled forever while the thread is back in the inbox, and
- * bb would still call it archived.
+ * VesnALIA would still call it archived.
  *
- * `signalsFor` returns undefined for a thread bb no longer reports; those
+ * `signalsFor` returns undefined for a thread VesnALIA no longer reports; those
  * rows belong to the `thread.deleted` cleanup instead.
  */
 export function wokenSettledThreadIds(

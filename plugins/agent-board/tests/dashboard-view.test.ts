@@ -18,7 +18,7 @@ describe("activity freshness without lifecycle inference", () => {
     expect(activityFreshness(card({ lastActivityAt: 1000 }), 900).ageMs).toBe(0);
   });
   it("includes child and delegated worker observations in a logical execution", () => {
-    const e = buildGlobalExecution({ key: "x", source: "bb", title: "x", threadId: "x", projectId: null, updatedAt: 99_999, cards: [card({ lastActivityAt: 10 })], delegatedWorkers: [card({ source: "ollama-fleet", lastActivityAt: 900 })] });
+    const e = buildGlobalExecution({ key: "x", source: "alia", title: "x", threadId: "x", projectId: null, updatedAt: 99_999, cards: [card({ lastActivityAt: 10 })], delegatedWorkers: [card({ source: "ollama-fleet", lastActivityAt: 900 })] });
     expect(e.card.lastActivityAt).toBe(900);
   });
 });
@@ -55,7 +55,7 @@ describe("completion provenance and repository privacy", () => {
     }
   });
   it("omits absent completion metadata on legacy adapters and preserves their preview fallback", () => {
-    const e = buildGlobalExecution({ key: "legacy", source: "bb", title: "legacy", threadId: "legacy", projectId: null, updatedAt: 1, cards: [card({ outputPreview: "Tests: not run", status: "completed" })] });
+    const e = buildGlobalExecution({ key: "legacy", source: "alia", title: "legacy", threadId: "legacy", projectId: null, updatedAt: 1, cards: [card({ outputPreview: "Tests: not run", status: "completed" })] });
     expect(Object.hasOwn(e.card, "reportedVerification")).toBe(false);
     expect(completionSummary(e.card).reportedChecks).toEqual(["not run"]);
   });

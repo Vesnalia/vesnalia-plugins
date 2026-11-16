@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createItemStore, type PlanPatchItem } from "./items.ts";
 
 const hosts: FakePluginHost[] = [];
@@ -12,7 +12,7 @@ afterEach(async () => {
 function itemStore() {
   const host = createFakePluginHost({ pluginId: `items-test-${hosts.length}` });
   hosts.push(host);
-  host.bb.storage.database().exec(`
+  host.alia.storage.database().exec(`
     CREATE TABLE goal_items (
       id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
@@ -27,7 +27,7 @@ function itemStore() {
       check_cmd TEXT
     )
   `);
-  return { host, store: createItemStore(host.bb), db: host.bb.storage.database() };
+  return { host, store: createItemStore(host.alia), db: host.alia.storage.database() };
 }
 
 describe("patch-style plans", () => {
@@ -123,7 +123,7 @@ describe("durable item provenance", () => {
     store.patch("thr_root", [{ id: minted.id, step: "Fix a defect", status: "in_progress" }], []);
     store.replace("thr_root", [{ id: minted.id, step: "Fix a defect", status: "pending" }]);
     db.prepare("UPDATE goal_items SET thread_id = ? WHERE thread_id = ?").run("thr_moved", "thr_root");
-    assert.equal(createItemStore(host.bb).origin("thr_moved", minted.id), "finding");
+    assert.equal(createItemStore(host.alia).origin("thr_moved", minted.id), "finding");
   });
 
   it("never lets an ordinary plan patch forge finding ownership", () => {

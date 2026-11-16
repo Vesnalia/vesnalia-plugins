@@ -5,7 +5,7 @@ import {
   useSettings,
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -126,7 +126,7 @@ export function ThreadInbox({ activeThreadId, onNavigate, searchQuery }: PluginT
         }
       } catch {
         // Keep the last known virtual branch. The host may reconnect before
-        // the next bounded refresh, and bb's own label remains the fallback.
+        // the next bounded refresh, and VesnALIA's own label remains the fallback.
       }
     };
 
@@ -184,7 +184,7 @@ export function ThreadInbox({ activeThreadId, onNavigate, searchQuery }: PluginT
 
   const { pinned, nextAction, waiting, snoozed, settled } = useMemo(() => {
     const scoped = filterByProject(
-      // Settling archives the thread in bb, so the parked set is what keeps
+      // Settling archives the thread in VesnALIA, so the parked set is what keeps
       // the settled shelf from filtering itself away.
       visibleInboxThreads(threads, lifecycle.parkedThreadIds),
       scope === ALL_PROJECTS ? null : scope,
@@ -255,7 +255,7 @@ export function ThreadInbox({ activeThreadId, onNavigate, searchQuery }: PluginT
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* The one control the host has no equivalent for. Everything else in
-          the chrome above — New thread, search — is bb's and stays bb's. */}
+          the chrome above — New thread, search — is VesnALIA's and stays VesnALIA's. */}
       <div className="flex shrink-0 items-center gap-1 px-2 pb-0.5">
         <Select value={scope} onValueChange={setScope}>
           {/* Ghost trigger: no border, no filled track — it reads as a label
@@ -288,7 +288,7 @@ export function ThreadInbox({ activeThreadId, onNavigate, searchQuery }: PluginT
 
       <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
         {/* Five outcomes, and the order carries the argument. The unready one
-            renders nothing rather than "No threads yet" — bb's threads are
+            renders nothing rather than "No threads yet" — VesnALIA's threads are
             already here, so what is still missing is this plugin's own rows,
             and a false empty state is worse than a blank moment. It comes
             after the error branch so a failed thread query still says so, and

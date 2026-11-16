@@ -2,13 +2,13 @@
 // tree the sidebar renders.
 //
 // This function must never throw. A throw inside a replaced thread list costs
-// the user their entire sidebar (bb re-renders its own list and shows a
+// the user their entire sidebar (VesnALIA re-renders its own list and shows a
 // toast), so unknown ids, dangling parents and unrecognized enum values all
 // degrade instead of raising.
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { Lifecycle, OrderEntry, ThreadPrompt } from "./types";
 import { itemKey } from "./types";
 

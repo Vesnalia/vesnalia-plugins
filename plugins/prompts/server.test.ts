@@ -9,11 +9,11 @@ function idleEvent(harness: FakeHarness, threadId: string) {
 }
 
 async function setup(options?: Parameters<typeof createFakeHost>[0]) {
-  const { bb, harness } = createFakeHost(options);
+  const { alia, harness } = createFakeHost(options);
   harness.addThread({ id: "t1", projectId: "prj_1", title: "Fix the flaky test" });
   harness.addThread({ id: "t2", projectId: "prj_1", title: "Other thread" });
   harness.addProject({ id: "prj_1", name: "Acme Storefront" });
-  plugin(bb);
+  plugin(alia);
   // The factory reads settings asynchronously; let that land before asserting
   // on anything that depends on them.
   await Promise.resolve();
@@ -430,8 +430,8 @@ describe("queueing for a time", () => {
   });
 });
 
-describe("bb's native queue", () => {
-  it("pushes a stashed prompt into bb's queue", async () => {
+describe("VesnALIA's native queue", () => {
+  it("pushes a stashed prompt into VesnALIA's queue", async () => {
     const harness = await setup();
     const { prompt } = await harness.callRpc<{ prompt: { id: string } }>("addPrompt", {
       text: "push me",
@@ -453,7 +453,7 @@ describe("bb's native queue", () => {
     expect(listed.threadPrompts).toHaveLength(0);
   });
 
-  it("stashes everything bb has queued, in one call", async () => {
+  it("stashes everything VesnALIA has queued, in one call", async () => {
     const harness = await setup();
     harness.queued.set("t1", [
       { id: "qm_1", content: [{ type: "text", text: "one" }], updatedAt: 1 },

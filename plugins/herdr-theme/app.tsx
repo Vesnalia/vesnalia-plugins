@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { BranchDetails } from "./branch-details";
 import { mountChrome } from "./chrome";
 import "./font.css";

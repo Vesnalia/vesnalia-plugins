@@ -20,7 +20,7 @@ an agent can say where a box goes.
   other thread's new boxes there too.
 - A person may want a box on one machine for the task in hand, such as
   their own PC with Docker
-  ([042](042-a-docker-host-can-be-a-bb-machine.md)) or one Proxmox host.
+  ([042](042-a-docker-host-can-be-a-alia-machine.md)) or one Proxmox host.
 - The New box pane already lists each offer of a kind in acquire order,
   with its provider and host: "Proxmox LXC on pve1", "Docker on devpc",
   "Tart on 2 Macs". `box_list` names the kinds but not their providers.
@@ -31,7 +31,7 @@ an agent can say where a box goes.
 
 - `box_acquire` gains an optional `on`: "Where the box goes, from
   box_list: a provider such as Docker on devpc. Leave it out for the first
-  with room." `bb box acquire` and `bb box machines add` take `--on`, and
+  with room." `alia box acquire` and `alia box machines add` take `--on`, and
   the panel's and settings' forms send it.
 - `on` matches, without case, the provider's name as `box_list` and the
   pane give it, its backend ID, or the name of its host when it has one
@@ -107,9 +107,9 @@ or `windows`), or null until it knows, for the Runs on filter. Proxmox
 and pool machines are Linux and Tart's are Macs. A Docker backend reports
 what its machine says:
 
-- for a BB machine, the platform bb-box's host entry there reports over
+- for a VesnALIA machine, the platform alia-box's host entry there reports over
   the relay;
-- for a local daemon, the platform of BB's server;
+- for a local daemon, the platform of VesnALIA's server;
 - for an `ssh://` daemon, what `docker info` says, kept in the backend's
   storage as its host's name is.
 
@@ -117,9 +117,9 @@ what its machine says:
 
 - How core places a box. It keeps only the named providers' offers before
   it asks for capacity, and the box record keeps its backend, as now.
-- "New box" in BB's new-thread screen
+- "New box" in VesnALIA's new-thread screen
   ([033](033-a-thread-can-start-on-a-new-box.md)) takes the first with
-  room. Its form is BB's; `on` can join its inputs later.
+  room. Its form is VesnALIA's; `on` can join its inputs later.
 - Spares are made on the first offer with room.
 
 ## Consequences
@@ -131,6 +131,6 @@ what its machine says:
 - A person who filters the form and leaves "First with room" gets a box on
   one of the providers they see, or a refusal that says why each is full.
   An agent can ask for "any of these" in the same way.
-- A provider's name is now something an agent types. A BB machine renamed
-  in BB renames its "Docker on" provider, and an `on` with the old name is
+- A provider's name is now something an agent types. A VesnALIA machine renamed
+  in VesnALIA renames its "Docker on" provider, and an `on` with the old name is
   refused, with the new name listed.

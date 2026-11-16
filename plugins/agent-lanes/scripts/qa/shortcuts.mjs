@@ -1,10 +1,10 @@
-// Check pane shortcuts against real bb data, optionally previewing dist/ in
+// Check pane shortcuts against real VesnALIA data, optionally previewing dist/ in
 // this browser only without changing the installed plugin.
 // PLAYWRIGHT_DIR=/tmp/lanes-qa-tools QA_LOCAL_BUILD=1 node scripts/qa/shortcuts.mjs
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BB, launch } from "./browser.mjs";
+import { ALIA, launch } from "./browser.mjs";
 
 const out = process.argv[2] ?? "docs/fidelity/live/shortcuts";
 mkdirSync(out, { recursive: true });
@@ -28,7 +28,7 @@ try {
         } else await route.fulfill({ response });
       });
     }
-    await page.goto(`${BB}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
+    await page.goto(`${ALIA}/plugins/agent-lanes/lanes`, { waitUntil: "networkidle" });
     await page.locator(".lanes-tray").waitFor();
     if (process.env.QA_LOCAL_BUILD === "1") assert(previewed, "Loaded the local build");
     await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), scheme === "dark");

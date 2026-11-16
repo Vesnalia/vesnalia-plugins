@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { definePluginApp, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { formatSubPath, TRACES_PATH } from "./routes.js";
 import { ThreadTrace, type Back, type Target } from "./thread-trace.js";
 import { TracesHeader, TracesPage, TracesSidebar, useTracesPageTitle } from "./traces.js";
@@ -17,7 +17,7 @@ function parseParams(params: unknown): Omit<Target, "threadId"> {
 
 /** The tab: one thread's trace at a time, with a way back from the threads it spawned. */
 function TracePanel({ threadId, params }: { threadId: string; params: unknown }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [stack, setStack] = useState<Target[]>(() => [{ threadId, ...parseParams(params) }]);
   const target = stack[stack.length - 1];
   const back: Back | null =
@@ -43,7 +43,7 @@ export default definePluginApp((app) => {
   app.slots.navPanel({
     id: "traces",
     title: "Traces",
-    // Declared in package.json under bb.branding.experimental_icons.
+    // Declared in package.json under alia.branding.experimental_icons.
     icon: "agent-traces/waterfall",
     path: TRACES_PATH,
     component: TracesPage,

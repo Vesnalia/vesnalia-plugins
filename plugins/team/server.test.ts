@@ -1,10 +1,10 @@
-// Тесты bb-plugin-team: чистая логика конфига + поведение CLI на фейковом хосте.
+// Тесты alia-plugin-team: чистая логика конфига + поведение CLI на фейковом хосте.
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   experimental_scanPublicSdkOnly,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin, {
   applyPlaceholders,
   findSourceByPath,
@@ -29,7 +29,7 @@ roles:
   - name: lead
     title: Lead
     provider: codex
-    promptFile: .bb/team/roles/lead.md
+    promptFile: .vesnalia/team/roles/lead.md
   - name: developer
     title: Developer
     provider: pi
@@ -220,15 +220,15 @@ describe("плейсхолдеры промптов", () => {
 
 describe("границы путей", () => {
   it("joinPath", () => {
-    expect(joinPath("/ws/demo", ".bb/team.yaml")).toBe("/ws/demo/.bb/team.yaml");
+    expect(joinPath("/ws/demo", ".vesnalia/team.yaml")).toBe("/ws/demo/.vesnalia/team.yaml");
     expect(joinPath("/ws/demo", "/abs/path")).toBe("/abs/path");
   });
 
   it("requireInsideWorkspace: escape наружу запрещён", () => {
     expect(() =>
-      requireInsideWorkspace("/ws/demo", "/ws/other/.bb/team.yaml"),
+      requireInsideWorkspace("/ws/demo", "/ws/other/.vesnalia/team.yaml"),
     ).toThrow();
-    expect(() => requireInsideWorkspace("/ws/demo", "/ws/demo/.bb/x")).not.toThrow();
+    expect(() => requireInsideWorkspace("/ws/demo", "/ws/demo/.vesnalia/x")).not.toThrow();
   });
 });
 
@@ -257,7 +257,7 @@ describe("резолюция проекта по cwd", () => {
 
   it("корень проекта и подкаталоги", () => {
     expect(findSourceByPath("/ws/demo", candidates, "host_1")?.projectId).toBe("proj_1");
-    expect(findSourceByPath("/ws/demo/.bb", candidates, "host_1")?.projectId).toBe("proj_1");
+    expect(findSourceByPath("/ws/demo/.vesnalia", candidates, "host_1")?.projectId).toBe("proj_1");
     expect(findSourceByPath("/ws", candidates, "host_1")?.projectId).toBe("proj_ws");
   });
 
@@ -274,13 +274,13 @@ describe("резолюция проекта по cwd", () => {
 });
 
 describe("gitIgnoresBB", () => {
-  it("распознаёт типичные паттерны .bb", () => {
-    expect(gitIgnoresBB("node_modules\n.bb\n")).toBe(true);
-    expect(gitIgnoresBB(".bb/\n")).toBe(true);
-    expect(gitIgnoresBB(".bb/*\n")).toBe(true);
-    // A single file under .bb does not block versioning of .bb/teams/.
-    expect(gitIgnoresBB(".bb/team.yaml\n")).toBe(false);
-    expect(gitIgnoresBB("# .bb comment\ndist/\n")).toBe(false);
+  it("распознаёт типичные паттерны .vesnalia", () => {
+    expect(gitIgnoresBB("node_modules\n.alia\n")).toBe(true);
+    expect(gitIgnoresBB(".vesnalia/\n")).toBe(true);
+    expect(gitIgnoresBB(".vesnalia/*\n")).toBe(true);
+    // A single file under .vesnalia does not block versioning of .vesnalia/teams/.
+    expect(gitIgnoresBB(".vesnalia/team.yaml\n")).toBe(false);
+    expect(gitIgnoresBB("# .vesnalia comment\ndist/\n")).toBe(false);
     expect(gitIgnoresBB("")).toBe(false);
   });
 });
@@ -314,7 +314,7 @@ function makeHost(
     opts.configYaml === undefined ? FAKE_CONFIG_YAML : opts.configYaml;
   let threadNo = 0;
   const written: Array<{ path: string; content: string }> = [];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "team",
     settings: {defaultTracker: "builtin", ...opts.settings},
     sdk: {
@@ -365,7 +365,7 @@ function makeHost(
       files: {
         read: async ({ path }: { path: string }) => {
           if (path.endsWith("/.gitignore")) {
-            return { content: ".bb\nnode_modules/\n", sha256: "g" };
+            return { content: ".alia\nnode_modules/\n", sha256: "g" };
           }
           if (path.endsWith("team.yaml")) {
             if (configYaml === null) throw new Error("ENOENT: " + path);
@@ -445,7 +445,7 @@ function makeHost(
     },
   });
   return {
-    bb,
+    alia,
     harness,
     written,
     setConfigYaml(value: string | null) {
@@ -454,10 +454,10 @@ function makeHost(
   };
 }
 
-describe("bb team CLI (поведение)", () => {
+describe("alia team CLI (поведение)", () => {
   it("create: спавнит руководителя первым, исполнителя — дочерним с плейсхолдерами", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
 
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
@@ -489,8 +489,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("create: ростер уходит руководителю", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     const sends = harness.inspection.sdk.callsTo("threads.send");
@@ -500,8 +500,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("create --dry-run: ничего не спавнит", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const result = await harness.behavior.runCli([
       "create",
       "--project",
@@ -514,8 +514,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("create: неизвестный провайдер — ошибка до спавна", async () => {
-    const { bb, harness, setConfigYaml } = makeHost();
-    await plugin(bb);
+    const { alia, harness, setConfigYaml } = makeHost();
+    await plugin(alia);
     setConfigYaml(
       FAKE_CONFIG_YAML.replace("provider: pi", "provider: no-such-provider"),
     );
@@ -526,8 +526,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("create: отключённый провайдер — понятная ошибка с командой включения", async () => {
-    const { bb, harness, setConfigYaml } = makeHost();
-    await plugin(bb);
+    const { alia, harness, setConfigYaml } = makeHost();
+    await plugin(alia);
     setConfigYaml(FAKE_CONFIG_YAML.replace("provider: pi", "provider: pi-disabled"));
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
@@ -536,17 +536,17 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("init: пишет шаблонные файлы и не перезаписывает без --force", async () => {
-    const { bb, harness, written, setConfigYaml } = makeHost({ configYaml: null });
-    await plugin(bb);
+    const { alia, harness, written, setConfigYaml } = makeHost({ configYaml: null });
+    await plugin(alia);
 
     // Первый вызов: файлов нет (files.read бросает) — пишет.
     const first = await harness.behavior.runCli(["init", "--project", "demo"]);
     if (first.exitCode !== 0) console.log("INIT STDERR:", first.stderr);
     expect(first.exitCode).toBe(0);
-    expect(written.map((w) => w.path)).toContain("/ws/demo/.bb/teams/main.yaml");
-    expect(written.map((w) => w.path)).toContain("/ws/demo/.bb/teams/main/junior.md");
-    // По умолчанию конфиг не версионируется: .bb/teams/.gitignore со строками команды.
-    const ignore = written.find((w) => w.path === "/ws/demo/.bb/teams/.gitignore");
+    expect(written.map((w) => w.path)).toContain("/ws/demo/.vesnalia/teams/main.yaml");
+    expect(written.map((w) => w.path)).toContain("/ws/demo/.vesnalia/teams/main/junior.md");
+    // По умолчанию конфиг не версионируется: .vesnalia/teams/.gitignore со строками команды.
+    const ignore = written.find((w) => w.path === "/ws/demo/.vesnalia/teams/.gitignore");
     expect(ignore?.content).toContain("/main.yaml");
 
     // Второй вызов: файл появился — защита от перезаписи без --force.
@@ -557,16 +557,16 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("настройка roster: off — ростер не отправляется", async () => {
-    const { bb, harness } = makeHost({ settings: { roster: false } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { roster: false } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     expect(harness.inspection.sdk.callsTo("threads.send")).toHaveLength(0);
   });
 
   it("настройка teamSection: off — секция не создаётся", async () => {
-    const { bb, harness } = makeHost({ settings: { teamSection: false } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { teamSection: false } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     expect(harness.inspection.sdk.callsTo("threadSections.create")).toHaveLength(0);
@@ -576,8 +576,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("настройка language: ru — вывод на русском и секция «Команда»", async () => {
-    const { bb, harness } = makeHost({ settings: { language: "ru" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { language: "ru" } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["status", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Проект");
@@ -589,8 +589,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("без --project: проект определяется по cwd (вложенный — самый длинный)", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["status"], {
       cwd: "/ws/demo/apps/budget",
     });
@@ -599,8 +599,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("без --project и вне проекта: ошибка с подсказкой", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["status"], {
       cwd: "/elsewhere",
     });
@@ -608,9 +608,9 @@ describe("bb team CLI (поведение)", () => {
     expect(result.stderr).toContain("--project");
   });
 
-  it("init: заметка, если корневой .gitignore закрывает весь .bb", async () => {
-    const { bb, harness } = makeHost({ configYaml: null });
-    await plugin(bb);
+  it("init: заметка, если корневой .gitignore закрывает весь .vesnalia", async () => {
+    const { alia, harness } = makeHost({ configYaml: null });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init"], { cwd: "/ws/demo" });
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("cannot be versioned");
@@ -621,8 +621,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("spawn: одиночный сбой спавна автоматически повторяется", async () => {
-    const { bb, harness } = makeHost({ spawnFailures: 1 });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ spawnFailures: 1 });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).toBe(0);
     // первый вызов lead упал, повтор создал, tester — сразу: 3 вызова
@@ -632,16 +632,16 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("spawn: два сбоя подряд — понятная ошибка", async () => {
-    const { bb, harness } = makeHost({ spawnFailures: 2 });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ spawnFailures: 2 });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["create", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("Re-run bb team create");
+    expect(result.stderr).toContain("Re-run alia team create");
   });
 
   it("status --json: машина-читаемый ответ", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const result = await harness.behavior.runCli(["status", "--project", "demo", "--json"]);
     expect(result.exitCode).toBe(0);
     const data = JSON.parse(result.stdout) as { ok: boolean; config: { lead: string } };
@@ -650,8 +650,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("init: defaultTemplate задаёт шаблон по умолчанию (fallback на настройку)", async () => {
-    const { bb, harness, written } = makeHost({ configYaml: null, settings: { defaultTemplate: "qa" } });
-    await plugin(bb);
+    const { alia, harness, written } = makeHost({ configYaml: null, settings: { defaultTemplate: "qa" } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init", "--project", "demo", "--json"]);
     expect(result.exitCode).toBe(0);
     expect((JSON.parse(result.stdout) as { template: string }).template).toBe("qa");
@@ -663,9 +663,9 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("init нового проекта без checkout-окружения сохраняет рабочий project-default", async () => {
-    const { bb, harness, written } = makeHost({ configYaml: null });
+    const { alia, harness, written } = makeHost({ configYaml: null });
     harness.sdk.stub("environments.list", async () => []);
-    await plugin(bb);
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init", "--project", "demo", "--json"]);
     expect(result.exitCode).toBe(0);
     const yaml = written.find(w => w.path.endsWith("main.yaml"))!.content;
@@ -673,8 +673,8 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("init: отсутствующий defaultTemplate — явная ошибка, не молчаливый fallback на dev", async () => {
-    const { bb, harness, written } = makeHost({ configYaml: null, settings: { defaultTemplate: "ghost" } });
-    await plugin(bb);
+    const { alia, harness, written } = makeHost({ configYaml: null, settings: { defaultTemplate: "ghost" } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init", "--project", "demo"]);
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("Default team template");
@@ -683,16 +683,16 @@ describe("bb team CLI (поведение)", () => {
   });
 
   it("init: явный --template перекрывает defaultTemplate", async () => {
-    const { bb, harness } = makeHost({ configYaml: null, settings: { defaultTemplate: "ghost" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ configYaml: null, settings: { defaultTemplate: "ghost" } });
+    await plugin(alia);
     const result = await harness.behavior.runCli(["init", "--project", "demo", "--template", "qa", "--json"]);
     expect(result.exitCode).toBe(0);
     expect((JSON.parse(result.stdout) as { template: string }).template).toBe("qa");
   });
 
   it("templates RPC отдаёт defaultTemplate; по умолчанию dev", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const data = (await harness.behavior.callRpc("templates", null)) as { defaultTemplate: string; templates: Array<{ id: string }> };
     expect(data.defaultTemplate).toBe("dev");
     expect(data.templates.some((tpl) => tpl.id === "dev")).toBe(true);
@@ -713,13 +713,13 @@ describe("общие настройки: локализация и defaultTempla
   };
 
   it("native descriptors при сохранённом ru — русские подписи без EN-склейки", async () => {
-    const { bb, harness } = makeHost({ settings: { language: "ru" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { language: "ru" } });
+    await plugin(alia);
     const descriptors = harness.inspection.registrations.settingsDescriptors as Record<string, { label: string; description?: string; experimental_optionLabels?: Record<string, string> }>;
     // Переключатель языка находим на обоих языках; остальные поля — RU-only.
     expect(descriptors.language.label).toBe("Language / Язык");
     expect(descriptors.defaultTemplate.label).toBe("Шаблон команды по умолчанию");
-    expect(descriptors.defaultTemplate.description).toContain("bb team init");
+    expect(descriptors.defaultTemplate.description).toContain("alia team init");
     expect(descriptors.defaultTracker.label).toBe("Трекер задач по умолчанию");
     expect(descriptors.defaultTracker.experimental_optionLabels).toEqual({
       beads: "Beads (внешний трекер задач)",
@@ -736,8 +736,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("native descriptors по умолчанию (en) — английские подписи", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const descriptors = harness.inspection.registrations.settingsDescriptors as Record<string, { label: string }>;
     expect(descriptors.defaultTemplate.label).toBe("Default team template");
     expect(descriptors.defaultTracker.label).toBe("Default task tracker");
@@ -745,8 +745,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettings: дефолты, существование defaultTemplate, hint о reload", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const data = (await harness.behavior.callRpc("editorSettings", null)) as Record<string, unknown>;
     expect(Object.keys(data).sort()).toEqual([...EDITOR_SETTINGS_FIELDS].sort());
     expect(data.language).toBe("en");
@@ -757,8 +757,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettingsSet: language и defaultTemplate пишутся в существующий settings handle", async () => {
-    const { bb, harness } = makeHost({ settings: { language: "ru" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { language: "ru" } });
+    await plugin(alia);
     const data = (await harness.behavior.callRpc("editorSettingsSet", { defaultTemplate: "qa" })) as {
       language: string;
       defaultTemplate: string;
@@ -773,8 +773,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettingsSet: смена языка на ru видна CLI без второго источника", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const data = (await harness.behavior.callRpc("editorSettingsSet", { language: "ru" })) as { language: string; reloadHint: string };
     expect(data.language).toBe("ru");
     // Подсказка локализована уже в новом языке.
@@ -784,8 +784,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettingsSet: несуществующий defaultTemplate — отказ, настройки не меняются", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const failure = await rpcErrorCode(harness.behavior.callRpc("editorSettingsSet", { defaultTemplate: "ghost" }));
     // Структурный отказ RPC: код из множества forbidden/not_found/conflict/invalid.
     expect(failure.code).toBe("not_found");
@@ -795,8 +795,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettings: сохранённый ru отдаёт русские значения", async () => {
-    const { bb, harness } = makeHost({ settings: { language: "ru", defaultTemplate: "ghost" } });
-    await plugin(bb);
+    const { alia, harness } = makeHost({ settings: { language: "ru", defaultTemplate: "ghost" } });
+    await plugin(alia);
     const data = (await harness.behavior.callRpc("editorSettings", null)) as { language: string; defaultTemplate: string; defaultTemplateExists: boolean };
     expect(data.language).toBe("ru");
     expect(data.defaultTemplate).toBe("ghost");
@@ -804,15 +804,15 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettingsSet: generatorSelection сохраняется и очищается (один kv-ключ)", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const selection = { providerId: "pi", model: "qwen3-coder", reasoningLevel: "high" as const };
     const saved = (await harness.behavior.callRpc("editorSettingsSet", { generatorSelection: selection })) as { generatorSelection: typeof selection | null };
     expect(saved.generatorSelection).toEqual(selection);
     const read = (await harness.behavior.callRpc("editorSettings", null)) as { generatorSelection: typeof selection | null };
     expect(read.generatorSelection).toEqual(selection);
     // Перезагрузка плагина с тем же kv-хранилищем — значение сохранено.
-    const reloaded = await harness.behavior.reload((nextBb) => plugin(nextBb));
+    const reloaded = await harness.behavior.reload((nextAlia) => plugin(nextAlia));
     const reread = (await reloaded.harness.behavior.callRpc("editorSettings", null)) as { generatorSelection: typeof selection | null };
     expect(reread.generatorSelection).toEqual(selection);
     // null очищает.
@@ -821,8 +821,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("editorSettingsSet: невалидная generatorSelection — ошибка валидации, ничего не пишется", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     const failure = await rpcErrorCode(harness.behavior.callRpc("editorSettingsSet", {
       generatorSelection: { providerId: "pi", model: "" },
     }));
@@ -833,8 +833,8 @@ describe("общие настройки: локализация и defaultTempla
   });
 
   it("удаление текущего default-шаблона запрещено; после смены default — удаляется", async () => {
-    const { bb, harness } = makeHost();
-    await plugin(bb);
+    const { alia, harness } = makeHost();
+    await plugin(alia);
     await harness.behavior.callRpc("templateNew", { id: "custom", title: "Custom", kinds: ["lead", "developer"] });
     await harness.behavior.callRpc("editorSettingsSet", { defaultTemplate: "custom" });
 

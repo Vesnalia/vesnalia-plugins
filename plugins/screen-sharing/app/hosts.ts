@@ -10,7 +10,7 @@
  * again.
  */
 import { useSyncExternalStore } from "react";
-import type { useRpc } from "@get-bb/plugin-sdk/app";
+import type { useRpc } from "@vesnalia/plugin-sdk/app";
 
 import type { HostEntry, ScreenStatus } from "../shared/channels";
 import type { RpcContract } from "../shared/contract";

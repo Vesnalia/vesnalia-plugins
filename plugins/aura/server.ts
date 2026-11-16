@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CHANGED, defaults, settingsSchema, snapshotSchema, applySchema, slotNumberSchema, type Snapshot, type ApplyInput } from "./lib/model.ts";
 import { decodeImage } from "./lib/image.ts";
@@ -17,10 +17,10 @@ export const rpcContract = defineRpcContract({
   reset: { input: z.null(), output: snapshotSchema },
 });
 type Stored = { settings: string; image_info: string | null; image_bytes: Buffer | null };
-export default function aura(bb: BbPluginApi): void {
+export default function aura(alia: AliaPluginApi): void {
   const activity = createActivityService();
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE background (id INTEGER PRIMARY KEY CHECK (id = 1), settings TEXT NOT NULL, image_info TEXT, image_bytes BLOB)",
     "ALTER TABLE background ADD COLUMN active_slot INTEGER",
     "CREATE TABLE aura_slots (slot INTEGER PRIMARY KEY CHECK (slot BETWEEN 1 AND 6), name TEXT NOT NULL, settings TEXT NOT NULL, image_info TEXT, image_bytes BLOB)",
@@ -32,7 +32,7 @@ export default function aura(bb: BbPluginApi): void {
       .map(slot => ({ slot: slot.slot, name: slot.name, settings: JSON.parse(slot.settings), image: slot.image_info ? JSON.parse(slot.image_info) : null }));
     return snapshotSchema.parse({ settings: JSON.parse(row.settings), image: row.image_info ? JSON.parse(row.image_info) : null, slots, activeSlot: row.active_slot });
   }
-  function changed(): Snapshot { const value = read(); bb.realtime.publish(CHANGED, null); return value; }
+  function changed(): Snapshot { const value = read(); alia.realtime.publish(CHANGED, null); return value; }
   function apply(input: ApplyInput): Snapshot {
     // Validate/decode before entering the transaction. A bad image never applies
     // partial settings or overwrites a saved slot.
@@ -79,13 +79,13 @@ export default function aura(bb: BbPluginApi): void {
     const current = read().settings;
     return apply({ settings: { ...defaults, enabled: current.enabled, newThreadOnly: current.newThreadOnly, dimmerEnabled: current.dimmerEnabled, topbarBackground: current.topbarBackground, activityOverview: current.activityOverview }, image: { action: "remove" } });
   }
-  bb.rpc.register(rpcContract, { get: read, apply, setDimmer: ({ enabled }) => {
+  alia.rpc.register(rpcContract, { get: read, apply, setDimmer: ({ enabled }) => {
     const current = read().settings;
     return apply({ settings: { ...current, dimmerEnabled: enabled, fade: enabled && current.fade === 0 ? 1 : current.fade }, image: { action: "keep" } });
   }, setActivityOverview: ({ enabled }) => apply({ settings: { ...read().settings, activityOverview: enabled }, image: { action: "keep" } }),
   activity: input => read().settings.activityOverview ? activity(input) : Promise.resolve({ status: "unavailable" as const, message: "Enable Activity overview in Settings → Aura.", data: null }),
   activateSlot: ({slot}) => activate(slot), deleteSlot: ({slot}) => deleteSlot(slot), reset });
-  bb.http.route("GET", "/image", c => {
+  alia.http.route("GET", "/image", c => {
     const version = c.req.query("v");
     if (!version || !/^[a-f0-9]{24}$/.test(version)) return c.notFound();
     // A saved slot keeps its own image, even when the active image changes.
@@ -96,10 +96,10 @@ export default function aura(bb: BbPluginApi): void {
       "Content-Security-Policy": "default-src 'none'",
     } });
   });
-  const usage = "bb aura status [--json]\nbb aura enable|disable|reset\nbb aura slots\nbb aura use <1-6>\nbb aura new-thread-only on|off\nbb aura overview on|off\nOpen Settings → Aura to upload images, save slots and toggle Activity overview.";
-  bb.cli.register({
+  const usage = "alia aura status [--json]\nbb aura enable|disable|reset\nbb aura slots\nbb aura use <1-6>\nbb aura new-thread-only on|off\nbb aura overview on|off\nOpen Settings → Aura to upload images, save slots and toggle Activity overview.";
+  alia.cli.register({
     name: "aura", summary: "Manage Aura backgrounds and saved slots",
-    commands: ["status", "enable", "disable", "reset", "slots", "use", "new-thread-only", "overview"].map(name => ({ name, summary: `Aura ${name}`, usage: `bb aura ${name}` })),
+    commands: ["status", "enable", "disable", "reset", "slots", "use", "new-thread-only", "overview"].map(name => ({ name, summary: `Aura ${name}`, usage: `alia aura ${name}` })),
     async run(argv) {
       const [command, ...args] = argv.filter(arg => arg !== "--json");
       if (!command || command === "help" || command === "--help") return { exitCode: 0, stdout: usage };

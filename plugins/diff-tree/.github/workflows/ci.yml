@@ -16,6 +16,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run check
-      - name: Build with the supported BB CLI
-        run: npm exec --yes --ignore-scripts --package=bb-app@0.46.1 -- bb plugin build .
+      - name: Build with the supported ALIA CLI
+        run: npm exec --yes --ignore-scripts --package=alia-app@0.46.1 -- alia plugin build .
       - run: npm run check:release

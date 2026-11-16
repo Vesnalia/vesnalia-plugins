@@ -1,8 +1,8 @@
-// The Main thread tab in BB's side panel (components/PanelTabs.tsx): the review's main thread, the thread that writes the
-// code and gets your Sends, as BB's own chat beside the diff, its permissions the thread's own; which thread that is, on
+// The Main thread tab in VesnALIA's side panel (components/PanelTabs.tsx): the review's main thread, the thread that writes the
+// code and gets your Sends, as VesnALIA's own chat beside the diff, its permissions the thread's own; which thread that is, on
 // which machine, Change thread, and Main thread ↗.
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { experimental_useSidebarThreads, ThreadChat, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, ThreadChat, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { MainThreadLink } from "../src/loop";
@@ -30,7 +30,7 @@ function moveFocus(event: KeyboardEvent<HTMLElement>) {
 }
 
 /**
- * Change main thread: the threads you can send to instead, BB's own in the review's folder, or for a review of no
+ * Change main thread: the threads you can send to instead, VesnALIA's own in the review's folder, or for a review of no
  * folder, in its project; not this plugin's agents, nor archived ones. Choosing one sends there from now on; Start a
  * fresh thread here starts one, which does.
  */
@@ -38,7 +38,7 @@ function ChangeMainThread({ current, onChanged }: { current: string | null; onCh
   const { targetKey, review } = useWorkspace();
   const rpc = useRpc<typeof rpcContract>();
   const [open, setOpen] = useState(false);
-  // Asked for from Finish review's Change main thread: the menu opens with the tab. BB then focuses the tab's chat box,
+  // Asked for from Finish review's Change main thread: the menu opens with the tab. VesnALIA then focuses the tab's chat box,
   // so until a click or tap outside it, focus leaving doesn't close it.
   const takeAsk = useChangeThreadAsked(targetKey);
   const asked = useRef(false);
@@ -99,7 +99,7 @@ function ChangeMainThread({ current, onChanged }: { current: string | null; onCh
 
 /** Which thread it is, on which machine, and whether it's working now, so a Send waits for its turn; Change thread and Main thread ↗. */
 function ThreadLine({ thread, onChanged }: { thread: MainThreadLink; onChanged: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const listed = experimental_useSidebarThreads().threads.find((item) => item.id === thread.threadId);
   const working = thread.state === "open" && !!listed && BUSY.has(listed.status);
   return <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 border-b border-border py-1 pl-3 pr-1.5 text-xs text-muted-foreground">
@@ -118,7 +118,7 @@ function ThreadLine({ thread, onChanged }: { thread: MainThreadLink; onChanged: 
  * The Main thread tab: its header names it and the review, `Main thread · api:snooze-checks · Snooze checks`; a line
  * says which thread it is, on which machine, and whether it's working now, with Change thread and Main thread ↗; then
  * the thread's chat, which can't widen its permissions. An archived thread shows its conversation without a box to write
- * in. `active`: the tab shows, so it reads the main thread and BB's thread list.
+ * in. `active`: the tab shows, so it reads the main thread and VesnALIA's thread list.
  */
 export function MainThreadPanel({ active, reviewId, reviewName }: { active: boolean; reviewId?: string; reviewName?: string }) {
   const { targetKey, review } = useWorkspace();
@@ -129,10 +129,10 @@ export function MainThreadPanel({ active, reviewId, reviewName }: { active: bool
       <Icon name="Code" className="size-4 shrink-0 text-primary" aria-hidden />
       <TabTitle title="Main thread" reviewId={reviewId} reviewName={reviewName} />
     </div>
-    {/* BB's thread list is read only while the tab shows. */}
+    {/* VesnALIA's thread list is read only while the tab shows. */}
     {thread && active && <ThreadLine thread={thread} onChanged={reload} />}
     {thread === undefined ? <p role="status" className="p-3 text-sm text-muted-foreground">Loading the main thread…</p>
-      : thread === null ? notice("This review has no main thread yet. Run bb review in the thread working on the change, and your Sends go there.")
+      : thread === null ? notice("This review has no main thread yet. Run alia review in the thread working on the change, and your Sends go there.")
       : thread.state === "gone" ? notice("The main thread was deleted. Your next Send starts a fresh thread, or choose another with Change thread.")
       : <>
         {thread.state === "archived" && <p role="status" className="shrink-0 border-b border-warning/20 bg-warning/10 px-3 py-2 text-xs text-warning-text">This thread is archived. Your next Send offers to unarchive it or start a fresh thread, or choose another with Change thread.</p>}

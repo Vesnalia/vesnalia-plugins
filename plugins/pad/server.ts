@@ -1,6 +1,6 @@
-// bb-plugin-pad — backend entry. Pad is one plain markdown outline on disk
+// alia-plugin-pad — backend entry. Pad is one plain markdown outline on disk
 // (`~/Pad/pad.md` by default). This server is its only writer: the
-// panel, the `bb pad` command and the `pad_add` agent tool all go through it,
+// panel, the `alia pad` command and the `pad_add` agent tool all go through it,
 // so concurrent writes never lose a line. Hand edits made in any editor are
 // picked up by a file watcher. The folder is a local git repo; changes are
 // committed in small batches so every mistake can be undone. Nothing is
@@ -13,7 +13,7 @@ import { existsSync, watch, type FSWatcher } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   applyOps,
@@ -77,8 +77,8 @@ function run(cmd: string, args: string[], cwd: string): Promise<string> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     folder: {
       type: "string",
       label: "Pad folder",
@@ -152,7 +152,7 @@ export default async function plugin(bb: BbPluginApi) {
         await writeDisk(serialize(nodes));
         scheduleCommit();
       }
-      if (changed || external) bb.realtime.publish(PAD_CHANGED, null);
+      if (changed || external) alia.realtime.publish(PAD_CHANGED, null);
       return doc();
     });
   }
@@ -178,7 +178,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!existsSync(join(dir, ".git"))) await run("git", ["init", "-q"], dir);
     gitReady = true;
   } catch (error) {
-    bb.log.warn(`git unavailable; pad history is off: ${String(error)}`);
+    alia.log.warn(`git unavailable; pad history is off: ${String(error)}`);
   }
 
 
@@ -196,7 +196,7 @@ export default async function plugin(bb: BbPluginApi) {
         dir,
       );
     } catch (error) {
-      bb.log.warn(`pad commit failed: ${String(error)}`);
+      alia.log.warn(`pad commit failed: ${String(error)}`);
     }
   }
   function scheduleCommit() {
@@ -210,7 +210,7 @@ export default async function plugin(bb: BbPluginApi) {
     await commit();
     await writeDisk(serialize(nodes));
     await commit();
-    bb.log.info("migrated pad.md from day headings to full stamps");
+    alia.log.info("migrated pad.md from day headings to full stamps");
   }
 
   // -------------------------------------------------------------------------
@@ -227,17 +227,17 @@ export default async function plugin(bb: BbPluginApi) {
         watchTimer = null;
         void serial(async () => {
           if (await syncFromDisk()) {
-            bb.realtime.publish(PAD_CHANGED, null);
+            alia.realtime.publish(PAD_CHANGED, null);
             scheduleCommit();
           }
-        }).catch((error) => bb.log.warn(`pad reload failed: ${String(error)}`));
+        }).catch((error) => alia.log.warn(`pad reload failed: ${String(error)}`));
       }, 120);
     });
   } catch (error) {
-    bb.log.warn(`pad watcher unavailable: ${String(error)}`);
+    alia.log.warn(`pad watcher unavailable: ${String(error)}`);
   }
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     disposed = true;
     watcher?.close();
     if (watchTimer !== null) clearTimeout(watchTimer);
@@ -250,7 +250,7 @@ export default async function plugin(bb: BbPluginApi) {
   // -------------------------------------------------------------------------
   // RPC for the panel.
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     pad_get: () => serial(async () => {
       await syncFromDisk();
       return doc();
@@ -261,10 +261,10 @@ export default async function plugin(bb: BbPluginApi) {
   // -------------------------------------------------------------------------
   // Agent tool: "save this note" from any thread.
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "pad_add",
     description:
-      "Add one note to the user's Pad (a plain-text outline on the right side of bb). Use when the user asks to note, jot down or remember something for later.",
+      "Add one note to the user's Pad (a plain-text outline on the right side of VesnALIA). Use when the user asks to note, jot down or remember something for later.",
     presentation: { label: { pending: "Adding to Pad", completed: "Added to Pad" } },
     parameters: z.object({
       text: z.string().min(1).max(1000).describe("The note, one line, in the user's language."),
@@ -283,8 +283,8 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const review = createReviewLifecycle({
-    kv: bb.storage.kv,
-    threads: bb.sdk.threads,
+    kv: alia.storage.kv,
+    threads: alia.sdk.threads,
     file,
     projectId: reviewProjectId,
     notes: (now, includeToday) => serial(async () => {
@@ -293,16 +293,16 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   });
 
-  // Once per day, whenever bb is running at a reasonable hour: the machine
+  // Once per day, whenever VesnALIA is running at a reasonable hour: the machine
   // may be off or asleep at any fixed time, so check shortly after start
   // and then every half hour (which also catches wake from sleep).
   async function maybeReview(): Promise<void> {
     const result = await review.start({ includeToday: false, automatic: true });
-    bb.log.info(`daily review: ${result}`);
+    alia.log.info(`daily review: ${result}`);
   }
 
   if (config.review && config.reviewProject) {
-    bb.background.service("daily-review", {
+    alia.background.service("daily-review", {
       async start(signal) {
         const sleep = (ms: number) =>
           new Promise<void>((resolve) => {
@@ -311,7 +311,7 @@ export default async function plugin(bb: BbPluginApi) {
           });
         await sleep(REVIEW_START_DELAY_MS);
         while (!signal.aborted) {
-          await maybeReview().catch((error) => bb.log.warn(`daily review failed: ${String(error)}`));
+          await maybeReview().catch((error) => alia.log.warn(`daily review failed: ${String(error)}`));
           await sleep(REVIEW_CHECK_MS);
         }
       },
@@ -319,18 +319,18 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   // -------------------------------------------------------------------------
-  // `bb pad` command.
+  // `alia pad` command.
 
   const usage = [
     "Usage:",
-    '  bb pad add <note…>                         add a note to today',
-    "  bb pad today                               print today's notes",
-    "  bb pad show [--days N]                     print the last N days (default 3)",
-    "  bb pad search <words…>                     find notes",
-    '  bb pad mark --at "<YYYY-MM-DD HH:MM>" --text "<words in the note>" --mark "<mark>"',
+    '  VesnALIA pad add <note…>                         add a note to today',
+    "  VesnALIA pad today                               print today's notes",
+    "  VesnALIA pad show [--days N]                     print the last N days (default 3)",
+    "  VesnALIA pad search <words…>                     find notes",
+    '  VesnALIA pad mark --at "<YYYY-MM-DD HH:MM>" --text "<words in the note>" --mark "<mark>"',
     '                                             append a resolution mark (e.g. "[pad:keep]"); --at "" selects unstamped notes',
-    "  bb pad review [--now] [--dry-run]          start the review thread now (--now includes today)",
-    "  bb pad path                                print the file path",
+    "  VesnALIA pad review [--now] [--dry-run]          start the review thread now (--now includes today)",
+    "  VesnALIA pad path                                print the file path",
   ].join("\n");
 
   function flag(args: string[], name: string): string | undefined {
@@ -354,21 +354,21 @@ export default async function plugin(bb: BbPluginApi) {
     return `${"  ".repeat(node.depth)}- ${node.done ? "[x] " : ""}${[node.stamp, node.text].filter(Boolean).join(" ")}`;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "pad",
     summary: "Pad: the user's plain-text notepad (add, read, search, mark notes)",
     commands: [
-      { name: "add", summary: "Add a note to today", usage: "bb pad add <note…>" },
-      { name: "today", summary: "Print today's notes", usage: "bb pad today" },
-      { name: "show", summary: "Print recent days", usage: "bb pad show [--days N]" },
-      { name: "search", summary: "Find notes", usage: "bb pad search <words…>" },
+      { name: "add", summary: "Add a note to today", usage: "alia pad add <note…>" },
+      { name: "today", summary: "Print today's notes", usage: "alia pad today" },
+      { name: "show", summary: "Print recent days", usage: "alia pad show [--days N]" },
+      { name: "search", summary: "Find notes", usage: "alia pad search <words…>" },
       {
         name: "mark",
         summary: "Append a routing mark to one note",
-        usage: 'bb pad mark --at "<YYYY-MM-DD HH:MM>" --text "<words in the note>" --mark "<mark>"',
+        usage: 'alia pad mark --at "<YYYY-MM-DD HH:MM>" --text "<words in the note>" --mark "<mark>"',
       },
-      { name: "review", summary: "Start the daily review thread now", usage: "bb pad review [--now] [--dry-run]" },
-      { name: "path", summary: "Print the pad file path", usage: "bb pad path" },
+      { name: "review", summary: "Start the daily review thread now", usage: "alia pad review [--now] [--dry-run]" },
+      { name: "path", summary: "Print the pad file path", usage: "alia pad path" },
     ],
     async run(argv) {
       const [command, ...args] = argv;
@@ -382,7 +382,7 @@ export default async function plugin(bb: BbPluginApi) {
             return ok(usage);
           case "add": {
             const note = args.join(" ").trim();
-            if (note === "") return fail('Nothing to add. Usage: bb pad add "<note>"');
+            if (note === "") return fail('Nothing to add. Usage: VesnALIA pad add "<note>"');
             return ok(`Added: ${await append(note)}`);
           }
           case "today":
@@ -395,7 +395,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
           case "search": {
             const words = args.map((w) => w.toLocaleLowerCase("tr")).filter(Boolean);
-            if (words.length === 0) return fail("Usage: bb pad search <words…>");
+            if (words.length === 0) return fail("Usage: VesnALIA pad search <words…>");
             await serial(syncFromDisk);
             const hits: string[] = [];
             nodes.forEach((node, i) => {
@@ -429,7 +429,7 @@ export default async function plugin(bb: BbPluginApi) {
               if (changed) {
                 await writeDisk(serialize(nodes));
                 scheduleCommit();
-                bb.realtime.publish(PAD_CHANGED, null);
+                alia.realtime.publish(PAD_CHANGED, null);
               }
               message = `Marked: ${at} ${target.text}`;
             });
@@ -447,5 +447,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info(`loaded ${file} (${nodes.length} lines)`);
+  alia.log.info(`loaded ${file} (${nodes.length} lines)`);
 }

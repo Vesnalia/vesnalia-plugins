@@ -8,43 +8,43 @@
  * holds still under reduced motion.
  */
 
-.bb-sidebar-working-eye {
+.alia-sidebar-working-eye {
   transform-box: fill-box;
   transform-origin: center;
 }
 
-.bb-sidebar-working-sprout {
+.alia-sidebar-working-sprout {
   transform-box: view-box;
   transform-origin: 90px 36px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .bb-sidebar-working-head {
-    animation: bb-sidebar-working-bob 0.9s ease-in-out 4;
+  .alia-sidebar-working-head {
+    animation: alia-sidebar-working-bob 0.9s ease-in-out 4;
   }
 
-  .bb-sidebar-working-eye {
-    animation: bb-sidebar-working-blink 4.2s ease-in-out 1;
+  .alia-sidebar-working-eye {
+    animation: alia-sidebar-working-blink 4.2s ease-in-out 1;
   }
 
-  .bb-sidebar-working-sprout {
-    animation: bb-sidebar-working-sway 2.4s ease-in-out 2;
+  .alia-sidebar-working-sprout {
+    animation: alia-sidebar-working-sway 2.4s ease-in-out 2;
   }
 
-  .bb-sidebar-working-dot {
-    animation: bb-sidebar-working-dot 1.2s ease-in-out 3;
+  .alia-sidebar-working-dot {
+    animation: alia-sidebar-working-dot 1.2s ease-in-out 3;
   }
 
-  .bb-sidebar-working-dot:nth-of-type(2) {
+  .alia-sidebar-working-dot:nth-of-type(2) {
     animation-delay: 0.15s;
   }
 
-  .bb-sidebar-working-dot:nth-of-type(3) {
+  .alia-sidebar-working-dot:nth-of-type(3) {
     animation-delay: 0.3s;
   }
 }
 
-@keyframes bb-sidebar-working-bob {
+@keyframes alia-sidebar-working-bob {
   0%,
   100% {
     transform: translateY(0);
@@ -54,7 +54,7 @@
   }
 }
 
-@keyframes bb-sidebar-working-blink {
+@keyframes alia-sidebar-working-blink {
   0%,
   92%,
   100% {
@@ -65,7 +65,7 @@
   }
 }
 
-@keyframes bb-sidebar-working-sway {
+@keyframes alia-sidebar-working-sway {
   0%,
   100% {
     transform: rotate(0);
@@ -78,7 +78,7 @@
   }
 }
 
-@keyframes bb-sidebar-working-dot {
+@keyframes alia-sidebar-working-dot {
   0%,
   60%,
   100% {

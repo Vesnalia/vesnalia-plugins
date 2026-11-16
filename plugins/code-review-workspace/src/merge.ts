@@ -2,7 +2,7 @@
 // already. The one that goes is merged into the one that stays (store.mergeReview): on its own when the one that goes
 // has nothing of yours, else on your click, which the review offers (src/feature-review.ts becomePr). What's left of it
 // is archived and points at the one that stays, whose page it opens.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { MergeNote, ReviewMeta, Store } from "./store";
 import type { AsyncStore } from "./store-queue";
 import type { ServeDeps } from "./server-modules";
@@ -13,7 +13,7 @@ import { stopGuide } from "./generate";
 import { stopFocusRun } from "./focus-run";
 import { settleFixes } from "./fix-tally";
 
-type Deps = { bb: BbPluginApi; store: AsyncStore; changed(targetKey: string): void; sync?: Pick<ServeDeps["sync"], "one"> };
+type Deps = { alia: AliaPluginApi; store: AsyncStore; changed(targetKey: string): void; sync?: Pick<ServeDeps["sync"], "one"> };
 
 /**
  * Whether the review has anything of yours, which merging it away would move: comments, a summary or a chosen verdict,
@@ -61,7 +61,7 @@ export async function mergeIn(tx: Store, from: string, into: string): Promise<bo
 /** After a merge: the review that stays is read from GitHub, its agent's thread named for it, and both pages told. */
 export async function afterMerge(deps: Deps, from: string, into: string): Promise<void> {
   await deps.sync?.one(into, true).catch(() => {});
-  await retitleAssistant(deps.bb, deps.store, into).catch(() => {});
+  await retitleAssistant(deps.alia, deps.store, into).catch(() => {});
   deps.changed(into);
   deps.changed(from);
 }
@@ -71,8 +71,8 @@ export async function afterMerge(deps: Deps, from: string, into: string): Promis
  * leaves both as they were, never merged with no notice or note. Returns whether it merged (mergeIn).
  */
 export async function mergeReviews(deps: Deps, from: string, into: string): Promise<boolean> {
-  if ((await deps.store.getReview(from))?.status === "generating") await stopGuide(deps.bb, deps.store, from);
-  await stopFocusRun(deps.bb, deps.store, from, "stopped", true);
+  if ((await deps.store.getReview(from))?.status === "generating") await stopGuide(deps.alia, deps.store, from);
+  await stopFocusRun(deps.alia, deps.store, from, "stopped", true);
   const merged = await deps.store.exclusive((tx) => tx.transaction((db) => mergeIn(db, from, into)));
   if (merged) await afterMerge(deps, from, into);
   return merged;

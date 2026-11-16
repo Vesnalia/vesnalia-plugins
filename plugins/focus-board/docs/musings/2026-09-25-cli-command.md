@@ -6,26 +6,26 @@
 
 Probably not — at first. The pattern elsewhere (Deck, Taskboard, Autobahn)
 exposes a CLI because the plugin has state to read or mutate that
-agents/automation need: Taskboard's `bb taskboard move` operates on external
+agents/automation need: Taskboard's `alia taskboard move` operates on external
 trackers; Deck's tools write notes and tags agents consume.
 
-Thread Board is a **view over bb's threads**, and bb's own CLI already covers
-everything meaningful: `bb thread list/show/pin/archive/tell`. A
-`bb thread-board` command would be a thin re-spelling of `bb thread`, with
+Thread Board is a **view over VesnALIA's threads**, and VesnALIA's own CLI already covers
+everything meaningful: `alia thread list/show/pin/archive/tell`. A
+`alia thread-board` command would be a thin re-spelling of `alia thread`, with
 one extra hop and nothing of its own.
 
 Then plugin-owned state entered the direction (Done + sweep), and the verdict
-updated: a small `bb thread-board` surface (`done list`, `sweep`, `config`)
-comes back into scope with it — same rule as `bb thread-list` and
-`bb branch-janitor`: **the CLI exists to manage plugin-owned state, not to
-re-spell bb thread commands.**
+updated: a small `alia thread-board` surface (`done list`, `sweep`, `config`)
+comes back into scope with it — same rule as `alia thread-list` and
+`alia branch-janitor`: **the CLI exists to manage plugin-owned state, not to
+re-spell VesnALIA thread commands.**
 
 ## Standing rule
 
-- No CLI for read actions over bb-native state; `bb thread` already covers
+- No CLI for read actions over alia-native state; `alia thread` already covers
   those.
 - If Done lands as a thread-tag rather than a plugin table (see the Done
-  state musing), part of the rationale shrinks: `bb thread-tags threads
+  state musing), part of the rationale shrinks: `alia thread-tags threads
   done` already answers the sweep's query, and `done list` would duplicate
   it. What would remain ours: `sweep` (needs the archived-threshold logic
   and the override valve) and `config` (thresholds, defaults). The CLI

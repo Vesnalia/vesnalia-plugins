@@ -1,10 +1,10 @@
-// Mac Watch: the health of the Mac that runs this BB server, readable from anywhere.
+// Mac Watch: the health of the Mac that runs this VesnALIA server, readable from anywhere.
 //
 // A background service samples the Mac every 15 seconds with stock macOS tools
 // (no sudo). The latest sample and 24 hours of history feed the sidebar page
-// over RPC, the `bb mac-watch` command and the agent skill.
+// over RPC, the `alia mac-watch` command and the agent skill.
 import { existsSync } from "node:fs";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { Collector } from "./collector";
 import { appIcon } from "./icons";
@@ -80,12 +80,12 @@ const COOLDOWN_MS = { always: 30 * 60_000, day: 6 * 3600_000 } as const;
 const GLOBAL_GAP_MS = 15 * 60_000;
 const pushSchema = z.object({ ok: z.literal(true), channels: z.array(z.enum(["web", "desktop", "mobile"])) });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     notify: {
       type: "boolean",
       label: "Пуш-уведомления о проблемах",
-      description: "Перегрев, батарея, отключение от сети, диск, внезапная перезагрузка. Через плагин уведомлений BB.",
+      description: "Перегрев, батарея, отключение от сети, диск, внезапная перезагрузка. Через плагин уведомлений ALIA.",
       default: true,
     },
     quiet: {
@@ -97,50 +97,50 @@ export default async function plugin(bb: BbPluginApi) {
   });
   let cfg = await settings.get();
   settings.onChange((next) => { cfg = next; });
-  bb.log.info(`notifications: ${cfg.notify ? "on" : "off"}, quiet hours: ${cfg.quiet || "off"}`);
+  alia.log.info(`notifications: ${cfg.notify ? "on" : "off"}, quiet hours: ${cfg.quiet || "off"}`);
 
-  const collector = new Collector(pluginFile("helpers/temps.c"), (m) => bb.log.warn(m));
+  const collector = new Collector(pluginFile("helpers/temps.c"), (m) => alia.log.warn(m));
   let snapshot: Snapshot | null = null;
   let recent: Snapshot[] = [];
   let error: string | null = null;
   let busy: Promise<void> | null = null;
   let lastPersist = Date.now();
   // Restored at one-minute resolution; fresh samples append at full resolution.
-  let points: HistoryPoint[] = ((await bb.storage.kv.get<HistoryPoint[]>("history")) ?? [])
+  let points: HistoryPoint[] = ((await alia.storage.kv.get<HistoryPoint[]>("history")) ?? [])
     .filter((p) => p.at > Date.now() - DAY_MS);
 
-  let pending: power.PendingSleep | null = (await bb.storage.kv.get<power.PendingSleep>("pending-sleep")) ?? null;
-  let note: { at: number; text: string } | null = (await bb.storage.kv.get<{ at: number; text: string }>("power-note")) ?? null;
+  let pending: power.PendingSleep | null = (await alia.storage.kv.get<power.PendingSleep>("pending-sleep")) ?? null;
+  let note: { at: number; text: string } | null = (await alia.storage.kv.get<{ at: number; text: string }>("power-note")) ?? null;
   const logPower = async (text: string) => {
     note = { at: Date.now(), text };
-    bb.log.info(`power: ${text}`);
-    await bb.storage.kv.set("power-note", note);
+    alia.log.info(`power: ${text}`);
+    await alia.storage.kv.set("power-note", note);
   };
   const savePending = async (next: power.PendingSleep | null) => {
     pending = next;
-    await (next ? bb.storage.kv.set("pending-sleep", next) : bb.storage.kv.delete("pending-sleep"));
+    await (next ? alia.storage.kv.set("pending-sleep", next) : alia.storage.kv.delete("pending-sleep"));
   };
 
   // ---- notifications ----
   let lastPush: { at: number; title: string; channels: string[] } | null =
-    (await bb.storage.kv.get<{ at: number; title: string; channels: string[] }>("last-push")) ?? null;
+    (await alia.storage.kv.get<{ at: number; title: string; channels: string[] }>("last-push")) ?? null;
   const notifyState: NotifyState = {
     streak: new Map(),
     seen: new Map(),
-    notified: (await bb.storage.kv.get<Record<string, number>>("notified")) ?? {},
+    notified: (await alia.storage.kv.get<Record<string, number>>("notified")) ?? {},
     sent: new Set(),
     lastSentAt: lastPush?.at ?? 0,
   };
 
   async function push(title: string, body: string): Promise<string[]> {
-    const { channels } = await bb.sdk.plugins.callRpc({
+    const { channels } = await alia.sdk.plugins.callRpc({
       pluginId: "push-notifications",
       method: "notifications.send",
       input: { title, body },
       outputSchema: pushSchema,
     });
     lastPush = { at: Date.now(), title, channels };
-    await bb.storage.kv.set("last-push", lastPush);
+    await alia.storage.kv.set("last-push", lastPush);
     return channels;
   }
 
@@ -155,17 +155,17 @@ export default async function plugin(bb: BbPluginApi) {
       gap: GLOBAL_GAP_MS,
     });
     for (const n of batch) {
-      await push(n.title, n.body).catch((e) => bb.log.warn(`push failed: ${e}`));
+      await push(n.title, n.body).catch((e) => alia.log.warn(`push failed: ${e}`));
     }
-    await bb.storage.kv.set("notified", notifyState.notified);
+    await alia.storage.kv.set("notified", notifyState.notified);
   }
 
   // ---- unexpected restarts ----
   let restart: Alert | null = null;
   {
     const bootAt = Date.now() - (await import("node:os")).uptime() * 1000;
-    const lastBoot = await bb.storage.kv.get<number>("last-boot");
-    const shutdownAt = await bb.storage.kv.get<number>("shutdown-requested");
+    const lastBoot = await alia.storage.kv.get<number>("last-boot");
+    const shutdownAt = await alia.storage.kv.get<number>("shutdown-requested");
     if (lastBoot && Math.abs(bootAt - lastBoot) > 120_000) {
       const planned = shutdownAt && shutdownAt > lastBoot && shutdownAt < bootAt;
       if (!planned) {
@@ -178,7 +178,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
     }
-    await bb.storage.kv.set("last-boot", bootAt);
+    await alia.storage.kv.set("last-boot", bootAt);
     if (restart) setTimeout(() => { restart = null; }, 24 * 3600_000).unref?.();
   }
 
@@ -192,7 +192,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function persist() {
     lastPersist = Date.now();
     // 1440 one-minute points ≈ 120 KB, under the 256 KB KV value limit.
-    await bb.storage.kv.set("history", downsample(points, Date.now() - DAY_MS, 60_000));
+    await alia.storage.kv.set("history", downsample(points, Date.now() - DAY_MS, 60_000));
   }
 
   async function tick() {
@@ -204,9 +204,9 @@ export default async function plugin(bb: BbPluginApi) {
         recent = [...recent, next].slice(-12);
         points = [...points.filter((p) => p.at > next.at - DAY_MS), toPoint(next)];
         error = null;
-        bb.realtime.publish(SAMPLE_CHANNEL, { at: next.at });
+        alia.realtime.publish(SAMPLE_CHANNEL, { at: next.at });
         if (Date.now() - lastPersist > PERSIST_EVERY_MS) await persist();
-        await notifyAlerts(status().alerts).catch((e) => bb.log.warn(`notify failed: ${e}`));
+        await notifyAlerts(status().alerts).catch((e) => alia.log.warn(`notify failed: ${e}`));
         if (pending) {
           const settled = await power.settleAfterSleep(pending).catch((e: unknown) => `Не удалось вернуть запрет сна: ${e instanceof Error ? e.message : e}`);
           if (settled) {
@@ -216,7 +216,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
       } catch (cause) {
         error = cause instanceof Error ? cause.message : String(cause);
-        bb.log.warn(`sample failed: ${error}`);
+        alia.log.warn(`sample failed: ${error}`);
       } finally {
         busy = null;
       }
@@ -224,7 +224,7 @@ export default async function plugin(bb: BbPluginApi) {
     return busy;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     status: async () => {
       if (!snapshot) await tick();
       return status();
@@ -257,7 +257,7 @@ export default async function plugin(bb: BbPluginApi) {
       channels: await push("Mac Watch: проверка", "Так будут выглядеть предупреждения о вашем Маке."),
     }),
     shutdown: async () => {
-      await bb.storage.kv.set("shutdown-requested", Date.now());
+      await alia.storage.kv.set("shutdown-requested", Date.now());
       await power.shutdown((m) => void logPower(`Выключение не удалось: ${m}`));
       await logPower("Мак выключается.");
       await persist().catch(() => undefined);
@@ -293,28 +293,28 @@ export default async function plugin(bb: BbPluginApi) {
     return lines.join("\n");
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "mac-watch",
-    summary: "Показатели Мака, на котором работает BB: CPU, память, диск, питание, сон",
+    summary: "Показатели Мака, на котором работает ALIA: CPU, память, диск, питание, сон",
     commands: [
-      { name: "status", summary: "Сводка последнего замера", usage: "bb mac-watch status [--json]" },
-      { name: "display-off", summary: "Погасить экран", usage: "bb mac-watch display-off" },
-      { name: "sleep", summary: "Усыпить Мак (BB станет недоступен)", usage: "bb mac-watch sleep [--wake 1|4|8] --yes" },
-      { name: "shutdown", summary: "Выключить Мак (включить можно только кнопкой)", usage: "bb mac-watch shutdown --yes" },
+      { name: "status", summary: "Сводка последнего замера", usage: "alia mac-watch status [--json]" },
+      { name: "display-off", summary: "Погасить экран", usage: "alia mac-watch display-off" },
+      { name: "sleep", summary: "Усыпить Мак (ALIA станет недоступен)", usage: "alia mac-watch sleep [--wake 1|4|8] --yes" },
+      { name: "shutdown", summary: "Выключить Мак (включить можно только кнопкой)", usage: "alia mac-watch shutdown --yes" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
       const yes = argv.includes("--yes");
       const [command] = argv.filter((arg) => !arg.startsWith("--"));
-      const usage = "Usage: bb mac-watch status [--json] | display-off | sleep [--wake 1|4|8] --yes | shutdown --yes";
+      const usage = "Usage: VesnALIA mac-watch status [--json] | display-off | sleep [--wake 1|4|8] --yes | shutdown --yes";
       const fail = (e: unknown) => ({ exitCode: 1, stderr: e instanceof Error ? e.message : String(e) });
       if (command === "display-off") {
         return power.displayOff().then(() => ({ exitCode: 0, stdout: "Экран погашен." }), fail);
       }
       if (command === "sleep" || command === "shutdown") {
-        if (!yes) return { exitCode: 1, stderr: `Это отключит Мак от BB. Повторите с --yes.\n${usage}` };
+        if (!yes) return { exitCode: 1, stderr: `Это отключит Мак от ALIA. Повторите с --yes.\n${usage}` };
         if (command === "shutdown") {
-          await bb.storage.kv.set("shutdown-requested", Date.now());
+          await alia.storage.kv.set("shutdown-requested", Date.now());
           return power.shutdown((m) => void logPower(`Выключение не удалось: ${m}`))
             .then(async () => { await logPower("Мак выключается."); return { exitCode: 0, stdout: "Мак выключается через пару секунд." }; }, fail);
         }
@@ -335,7 +335,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.background.service("poll", {
+  alia.background.service("poll", {
     async start(signal) {
       while (!signal.aborted) {
         await tick();

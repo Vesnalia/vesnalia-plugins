@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-message-date-time",
+  "name": "alia-plugin-message-date-time",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
+  "alia": {
     "name": "Message Date & Time",
     "description": "Shows the date and time above every message in a thread, yours and the agent's, in English or Russian and a 12- or 24-hour clock.",
     "branding": {
@@ -20,7 +20,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.15",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -32,18 +31,31 @@
   "description": "Shows the date and time above every message in a thread, yours and the agent's, in English or Russian and a 12- or 24-hour clock.",
   "license": "MIT",
   "author": "Sergey Kalachev",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/meanwhile17/bb-plugin-message-date-time.git"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "chat",
     "timestamps"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types test/*.test.ts",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.15"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/message-date-time#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/message-date-time"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

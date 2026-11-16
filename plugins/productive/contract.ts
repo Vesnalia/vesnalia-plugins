@@ -5,13 +5,13 @@
 // provider (Productive.io) and one credential (an org-wide API token).
 //
 // Productive vocabulary -> plugin vocabulary:
-//   Productive project    -> the external project a bb project maps to
+//   Productive project    -> the external project a VesnALIA project maps to
 //   Productive task       -> WorkItem
 //   workflow status       -> status (category_id 1/2/3 -> todo/in_progress/done)
 //   task list             -> taskList (a lane inside a project)
 //   tag_list              -> labels
 // Productive has no task priority field, so there is no priority anywhere here.
-import { defineRpcContract } from '@get-bb/plugin-sdk';
+import { defineRpcContract } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { projectBoardSettingsSchema } from './board-settings.js';
 import {
@@ -63,7 +63,7 @@ export const laneGroupingSchema = z
 export type LaneGroupingChoice = z.infer<typeof laneGroupingSchema>;
 
 /**
- * The board's live view state, persisted per bb project so reopening the panel
+ * The board's live view state, persisted per VesnALIA project so reopening the panel
  * restores the filters and layout the user left it in. Reuses the saved-preset
  * state shape rather than inventing a second serialization of the same thing.
  */
@@ -75,7 +75,7 @@ export const boardViewStateSchema = z
   .strict();
 export type BoardViewState = z.infer<typeof boardViewStateSchema>;
 
-export const bbProjectIdSchema = z.string().startsWith('proj_');
+export const aliaProjectIdSchema = z.string().startsWith('proj_');
 
 /** Productive ids are numeric strings; keep them opaque but bounded. */
 export const productiveIdSchema = z.string().trim().min(1).max(64);
@@ -100,7 +100,7 @@ export const secretMutationSchema = z.discriminatedUnion('operation', [
 export type SecretMutation = z.infer<typeof secretMutationSchema>;
 
 export const trackerProjectSchema = z
-  .object({ id: bbProjectIdSchema, name: z.string() })
+  .object({ id: aliaProjectIdSchema, name: z.string() })
   .strict();
 export type TrackerProject = z.infer<typeof trackerProjectSchema>;
 
@@ -147,12 +147,12 @@ export type ConnectionInteractionResponse = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
-// Per-bb-project mapping
+// Per-alia-project mapping
 // ---------------------------------------------------------------------------
 
 export const projectScopeSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     /** Empty string means "not mapped yet". */
     productiveProjectId: z.string().trim().max(64),
     /** Optional folder filter; empty string means "all folders". */
@@ -227,7 +227,7 @@ export type WorkStatusOption = z.infer<typeof workStatusOptionSchema>;
 
 export const workItemSchema = z
   .object({
-    bbProjectId: bbProjectIdSchema,
+    aliaProjectId: aliaProjectIdSchema,
     /** Productive task id — the stable primary key everywhere in this plugin. */
     locator: productiveIdSchema,
     /** Human identifier, e.g. "#412". */
@@ -339,7 +339,7 @@ export const connectorRevisionSchema = z.number().int().nonnegative();
 
 export const createTaskContextSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     projectName: z.string().min(1),
     available: z.boolean(),
     message: z.string().nullable(),
@@ -351,7 +351,7 @@ export type CreateTaskContext = z.infer<typeof createTaskContextSchema>;
 
 export const createTaskInputSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     connectorRevision: connectorRevisionSchema,
     title: z.string().trim().min(1).max(500),
     description: z.string().max(100_000).default(''),
@@ -384,7 +384,7 @@ export type AssigneeConfirmation = z.infer<typeof assigneeConfirmationSchema>;
 
 const listInputSchema = z
   .object({
-    projectId: bbProjectIdSchema.optional(),
+    projectId: aliaProjectIdSchema.optional(),
     query: z.string().optional(),
     stateCategories: z.array(workStateCategorySchema).optional(),
     // The board reads the local SQLite cache, not the network, so a low
@@ -400,7 +400,7 @@ export const productiveRpcContract = defineRpcContract({
   },
   threadProject: {
     input: z.object({ threadId: z.string().min(1) }).strict(),
-    output: z.object({ projectId: bbProjectIdSchema }).strict()
+    output: z.object({ projectId: aliaProjectIdSchema }).strict()
   },
   getConnection: {
     input: z.null(),
@@ -411,7 +411,7 @@ export const productiveRpcContract = defineRpcContract({
     output: z.object({ connection: connectionViewSchema }).strict()
   },
   status: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ status: boardStatusSchema }).strict()
   },
   listItems: {
@@ -419,7 +419,7 @@ export const productiveRpcContract = defineRpcContract({
     output: z.object({ items: z.array(workItemSchema) }).strict()
   },
   refresh: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z
       .object({
         status: boardStatusSchema,
@@ -430,7 +430,7 @@ export const productiveRpcContract = defineRpcContract({
   getItem: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema
       })
       .strict(),
@@ -439,7 +439,7 @@ export const productiveRpcContract = defineRpcContract({
   statusOptions: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema
       })
       .strict(),
@@ -448,7 +448,7 @@ export const productiveRpcContract = defineRpcContract({
   updateItemStatus: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema,
         statusId: productiveIdSchema
       })
@@ -458,7 +458,7 @@ export const productiveRpcContract = defineRpcContract({
   updateItemContent: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema,
         /** Omitted fields are left untouched. */
         title: z.string().trim().min(1).max(500).optional(),
@@ -475,7 +475,7 @@ export const productiveRpcContract = defineRpcContract({
   updateItemTaskList: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema,
         /** null clears the task's list. */
         taskListId: productiveIdSchema.nullable()
@@ -486,7 +486,7 @@ export const productiveRpcContract = defineRpcContract({
   addComment: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema,
         body: z.string().trim().min(1).max(50_000)
       })
@@ -496,7 +496,7 @@ export const productiveRpcContract = defineRpcContract({
   updateItemAssignee: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema,
         assigneeId: productiveIdSchema.nullable()
       })
@@ -504,11 +504,11 @@ export const productiveRpcContract = defineRpcContract({
     output: z.object({ item: workItemSchema }).strict()
   },
   getCreateTaskContext: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ context: createTaskContextSchema }).strict()
   },
   getCreateTaskMetadata: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.discriminatedUnion('ok', [
       z
         .object({
@@ -540,7 +540,7 @@ export const productiveRpcContract = defineRpcContract({
   startThread: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         locator: productiveIdSchema,
         /** Optional extra instruction appended after the task reference. */
         instruction: z.string().trim().max(10_000).default(''),
@@ -558,7 +558,7 @@ export const productiveRpcContract = defineRpcContract({
       .strict()
   },
   getProjectScope: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ scope: projectScopeViewSchema }).strict()
   },
   saveProjectScope: {
@@ -590,7 +590,7 @@ export const productiveRpcContract = defineRpcContract({
       .strict()
   },
   getBoardView: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z
       .object({ view: boardViewStateSchema.nullable() })
       .strict()
@@ -598,14 +598,14 @@ export const productiveRpcContract = defineRpcContract({
   saveBoardView: {
     input: z
       .object({
-        projectId: bbProjectIdSchema,
+        projectId: aliaProjectIdSchema,
         view: boardViewStateSchema
       })
       .strict(),
     output: z.object({ saved: z.literal(true) }).strict()
   },
   getProjectBoardSettings: {
-    input: z.object({ projectId: bbProjectIdSchema }).strict(),
+    input: z.object({ projectId: aliaProjectIdSchema }).strict(),
     output: z.object({ settings: projectBoardSettingsSchema }).strict()
   },
   saveProjectBoardSettings: {
@@ -728,7 +728,7 @@ export function formatWorkItemContext(item: WorkItemDetail | WorkItem): string {
     '',
     `- Status: ${item.status}`,
     `- Assignee: ${item.assignee ?? 'Unassigned'}`,
-    `- BB project: ${item.bbProjectId}`,
+    `- VesnALIA project: ${item.aliaProjectId}`,
     `- Productive project: ${item.project ?? 'None'}`,
     `- Folder: ${item.folder ?? 'None'}`,
     `- Task list: ${item.taskList ?? 'None'}`,
@@ -743,7 +743,7 @@ export function formatWorkItemContext(item: WorkItemDetail | WorkItem): string {
   ];
   const identity = [
     'provider="Productive"',
-    `project=${delimiterValue(item.bbProjectId)}`,
+    `project=${delimiterValue(item.aliaProjectId)}`,
     `key=${delimiterValue(item.key)}`
   ].join(' ');
   const externalData = escapeExternalControlCharacters(externalLines.join('\n'))
@@ -775,9 +775,9 @@ export function formatWorkItemHandoffPrompt(
   ].join('\n');
 }
 
-/** Mention ids round-trip (bb project, task) through the mention provider. */
-export function mentionId(item: Pick<WorkItem, 'bbProjectId' | 'locator'>): string {
-  return `${item.bbProjectId}:${item.locator}`;
+/** Mention ids round-trip (VesnALIA project, task) through the mention provider. */
+export function mentionId(item: Pick<WorkItem, 'aliaProjectId' | 'locator'>): string {
+  return `${item.aliaProjectId}:${item.locator}`;
 }
 
 export function parseMentionId(

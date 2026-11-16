@@ -188,7 +188,7 @@ function workRowText(row: UnknownRecord): string | undefined {
     : undefined;
 }
 
-/** Convert BB timeline rows into a bounded transcript for the recap worker. */
+/** Convert VesnALIA timeline rows into a bounded transcript for the recap worker. */
 export function buildConversationText(
   rows: unknown[],
   maxChars = MAX_TRANSCRIPT_CHARS,

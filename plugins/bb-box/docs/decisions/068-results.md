@@ -6,7 +6,7 @@ that called boat's API, polling the API every 0.5 s and SSH every 0.3 s.
 
 ## A sandbox's life
 
-A stock `small` sandbox, created, stopped, resumed and forked from BB's
+A stock `small` sandbox, created, stopped, resumed and forked from VesnALIA's
 server, with no account secrets (`noEnv`):
 
 | Step | Time |
@@ -26,7 +26,7 @@ What else it showed:
   sandbox, as 068 decides.
 - **boat ran out of machines** for at least 6 minutes, from 14:55 to 15:01:
   every create and fork, with `failFast` or without, answered
-  `503 out_of_capacity` with `retryAfterSeconds: 120`. bb-box tries again
+  `503 out_of_capacity` with `retryAfterSeconds: 120`. alia-box tries again
   for up to 2 minutes, then refuses the box as `no_capacity`, so another
   backend can take it.
 - **A sandbox's machine is boat's base image, already running, with the
@@ -35,29 +35,29 @@ What else it showed:
   30 s, then Docker and the enabled services started again; `hydrated` came
   35 s after the fork. A stop followed at once by a resume brought back the
   same running machine (uptime unbroken), so a restart is no test of a
-  template: bb-box checks its templates in a fork, as boxes are.
+  template: alia-box checks its templates in a fork, as boxes are.
 - **Boat's image is not Ubuntu's cloud image.** It has Docker CE 29.7, Node
   in `/usr/local/bin`, Claude Code, Codex and other agents, Chrome, a
   desktop on `:0` (LightDM, Openbox, Sunshine, moonlight-web), and apt
   sources for a PHP PPA, CRAN, NodeSource, Microsoft, Chrome and Docker. Its
-  user is `user`, uid 1000. bb-box's guest scripts needed three changes
+  user is `user`, uid 1000. alia-box's guest scripts needed three changes
   around them, in `setup/boat/template.sh`: boat's extra apt sources are set
   aside during the build (the PPA has no dated snapshot, which the scripts
   pin to), boat's Docker CE goes for Ubuntu's `docker.io` (they conflict),
-  and boat's commands that bb-box's pinned tools replace move to
+  and boat's commands that alia-box's pinned tools replace move to
   `/usr/local/lib/boat-tools`.
 - **A fork comes up with `docker.socket` stopped** and the removed base
-  units failed, so the template has a service, `bb-box-boat-ready`, that
+  units failed, so the template has a service, `alia-box-boat-ready`, that
   boat starts once the system files are there: it clears the failed units,
-  starts `docker.socket`, and writes `/run/bb-box/boat-ready`, which an
+  starts `docker.socket`, and writes `/run/alia-box/boat-ready`, which an
   acquire waits for.
-- **A sandbox cannot reach a BB server on a private network**: a request to
-  BB's URL from a sandbox timed out after 8 s. The doctor's `boat.bb` says
+- **A sandbox cannot reach a VesnALIA server on a private network**: a request to
+  VesnALIA's URL from a sandbox timed out after 8 s. The doctor's `boat.alia` says
   so with its fix.
 
-## Through bb-box's own code
+## Through alia-box's own code
 
-`scripts/smoke.ts` on a Linux box beside BB's server, with the trial's key,
+`scripts/smoke.ts` on a Linux box beside VesnALIA's server, with the trial's key,
 the backend as this branch has it:
 
 | Run | Template | fork | ready | ssh | settle | Acquire | Command | Release |
@@ -67,26 +67,26 @@ the backend as this branch has it:
 | Third | forked | 0.39 s | 2.67 s | 4.71 s | 0.85 s | 8.8 s | 0.13 s | 0.23 s |
 
 `ssh` includes giving the box user this install's key through boat's own
-user; `settle` is waiting for `bb-box-boat-ready` and for Docker to answer.
+user; `settle` is waiting for `alia-box-boat-ready` and for Docker to answer.
 The template's build took about 6 minutes: about 5 for the guest scripts,
 then finalizing, stopping, and checking a fork of it as the box user, all
 checks passing but "docker stopped after boot", which boat answers for (it
 starts Docker with the machine). The command ran `uname -a`, Docker's
 `hello-world`, and showed `/dev/kvm` to the box user, in the `kvm` group.
 
-## On a separate BB
+## On a separate VesnALIA
 
-A fresh `npx bb-app` (0.48.0) with no account, in a Proxmox LXC box, its own
-data folder and ports, bb-box installed from this branch with
-`bb plugin install path:`, the boat backend set by `bb box config apply`
+A fresh `npx alia-app` (0.48.0) with no account, in a Proxmox LXC box, its own
+data folder and ports, alia-box installed from this branch with
+`alia plugin install path:`, the boat backend set by `alia box config apply`
 with the key read from a file `box_copy` put there. With no agent login
-there, the panel's RPCs were called over BB's HTTP API, as the panel calls
+there, the panel's RPCs were called over VesnALIA's HTTP API, as the panel calls
 them, and commands ran through the panel's terminal WebSocket, for a thread
-made with `bb thread spawn`.
+made with `alia thread spawn`.
 
 | Step | First run | Second run | Third run, the bundle's tree |
 | --- | --- | --- | --- |
-| `bb box doctor` | boat.dev API ok on the trial plan; plan limits; `boat.bb` skipped, as this BB has no URL; templates; sandboxes | same | same, naming the template it forks |
+| `alia box doctor` | boat.dev API ok on the trial plan; plan limits; `boat.alia` skipped, as this VesnALIA has no URL; templates; sandboxes | same | same, naming the template it forks |
 | Acquire `linux`, the template the smoke runs' install built forked | ready in 12.3 s: fork 0.53, ready 3.26, ssh 4.08, settle 3.77 s | 24.6 s: fork 0.79, ready 4.32, ssh 18.17, settle 0.18 s | 17.4 s: fork 0.40, ready 3.64, ssh 8.74, settle 4.27 s |
 | A command in the terminal | `uname`, `id` (box, in docker and kvm), Docker 29.7.0, `/dev/kvm`; first byte in 24 ms | same, first byte in 16 ms | same, first byte in 22 ms |
 | A file copied in through the terminal | (sent as one 350 KB line, which the terminal's line limit cut) | 256 KiB, its SHA-256 matching in the box | the same |
@@ -94,7 +94,7 @@ made with `bb thread spawn`.
 | Start | 1.2 s to ready | 2.0 s to ready, the copied file still there | 1.6 s, the file still there |
 | Release | 0.5 s, and boat's list showed only the template | 0.5 s, the same | 1.8 s, the same |
 | Phase 2's build, last | ready in 33.3 s (ssh 20.0 s); the command, the file, stop 8.2 s, start 1.4 s with the file there, release 0.6 s | | |
-| Enrolment | failed in BB's words: "Sign in to your bb account to use bb connect", as this BB has no URL a sandbox reaches | same | the same |
+| Enrolment | failed in VesnALIA's words: "Sign in to your VesnALIA account to use VesnALIA connect", as this VesnALIA has no URL a sandbox reaches | same | the same |
 
 The second acquire's 18 s of `ssh` was the sandbox's system files arriving
 late; the first and the smoke runs' were 4 to 5 s.
@@ -102,7 +102,7 @@ late; the first and the smoke runs' were 4 to 5 s.
 ## The conformance suite
 
 `npm run conformance -- --backend boat --kind linux`, live on the trial
-account, from the Linux box beside BB's server: 22 passed, none failed, 8
+account, from the Linux box beside VesnALIA's server: 22 passed, none failed, 8
 skipped, in 135 s.
 
 - Passed: the doctor; kinds and capacity; refusing a kind it lacks; an
@@ -115,7 +115,7 @@ skipped, in 135 s.
   box; releasing twice; a `medium` box read back at its size; acquires
   cancelled at claim and at starting leaving nothing; two installs leaving
   each other's boxes alone, the second forking the first's template.
-- Skipped, with the run's reasons: enrolment and reconnecting to BB (no BB
+- Skipped, with the run's reasons: enrolment and reconnecting to VesnALIA (no VesnALIA
   server that a sandbox reaches in this run); the presets' sizes and resize
   (the trial refuses `large` and `xlarge`, so `large` and `largest` cannot
   be made, and the backend resizes nothing); and, by the suite, a pool, image
@@ -134,7 +134,7 @@ follows in phase 2.
 ## In production
 
 After phase 1 was deployed (main `97fed57a`), with the boat backend on
-with the owner's key and the tailnet on, from an agent thread with BB's
+with the owner's key and the tailnet on, from an agent thread with VesnALIA's
 own tools:
 
 | Step | Result |
@@ -142,7 +142,7 @@ own tools:
 | `box_acquire` linux, `on: boat.dev` | ready in 41.4 s: fork 0.4, ready 5.6, ssh 21.4, settle 6.7, joining the tailnet 7.1 s, forking the template the smoke runs' install built |
 | `box_run` | `uname`, `id` (box, in docker and kvm), Docker's `hello-world`, `/dev/kvm`, a tailnet address |
 | `box_copy` | 4 MiB of random bytes into the box and back, SHA-256 matching both ways |
-| Enrolment | a BB machine in 7.1 s, over the tailnet, shown connected in `bb machine list` |
+| Enrolment | a VesnALIA machine in 7.1 s, over the tailnet, shown connected in `alia machine list` |
 | `box_release` | released; boat answered 404 for the sandbox |
 
 The first `box_acquire` was refused, in plain words, as if the template
@@ -155,7 +155,7 @@ The fix counts a template the install can adopt as built.
 A stock `small` sandbox, a page with a block moving across it full screen
 in Chrome on boat's desktop (`:0`), and boat's stream URL from
 `POST /sandboxes/{id}/desktop`, opened in headless Chrome 156 on a Linux box
-beside BB's server for 20 s. The URL was passed by file and never printed:
+beside VesnALIA's server for 20 s. The URL was passed by file and never printed:
 it carries the token that opens the desktop.
 
 | | Boat's stream |
@@ -165,16 +165,16 @@ it carries the token that opens the desktop.
 | Latency in the sandbox, as its stats say | host processing 6 to 13 ms, 8.7 ms on average; streamer round trip 1 ms |
 | Control | its own: keyboard, mouse modes, touch modes, its own resolution choice |
 
-So boat's stream is good video. bb-box does not use it: it is a page of
-boat's, opened by a URL that is a secret, with its own input, so bb-box's
+So boat's stream is good video. alia-box does not use it: it is a page of
+boat's, opened by a URL that is a secret, with its own input, so alia-box's
 viewer could only frame it, and its one controller at a time (008, 015),
 the agent's computer use beside a person, recordings (059) and the
 clipboard would not reach through it. The template turns it off, and its
-desktop runs bb-box's own stack, measured below.
+desktop runs alia-box's own stack, measured below.
 
 ## The Linux desktop
 
-Four more things in boat's image stood in the way of bb-box's desktop, each
+Four more things in boat's image stood in the way of alia-box's desktop, each
 found in a build or a fork and handled in `setup/boat/template.sh`:
 
 - **Rust**: boat has it in `/usr/local/rustup` and `/usr/local/cargo`, with
@@ -183,9 +183,9 @@ found in a build or a fork and handled in `setup/boat/template.sh`:
   aside for desktops.
 - **Cua Driver**: boat has its own, 0.23.2, behind a wrapper at
   `/usr/local/bin/cua-driver`, and puts that wrapper back in every fork, so
-  bb-box's daemon and `cua-driver mcp` ran boat's driver and timed out.
-  The template calls bb-box's 0.28.3 by its pinned path, puts it first on
-  the PATH, and `bb-box-boat-ready` links it back after each restore.
+  alia-box's daemon and `cua-driver mcp` ran boat's driver and timed out.
+  The template calls alia-box's 0.28.3 by its pinned path, puts it first on
+  the PATH, and `alia-box-boat-ready` links it back after each restore.
 - **A Cua daemon started during the restore does not answer**: the box
   user's systemd manager restarts while boat brings the files in, and the
   daemon it starts then times out on MCP's `initialize`, until it is
@@ -193,10 +193,10 @@ found in a build or a fork and handled in `setup/boat/template.sh`:
   is up and wait until it answers over MCP, 1 to 15 s.
 - **GNOME keyring**: boat's image has it, and Chrome started in the box
   user's session asked for a new keyring's password in a dialog that took
-  the keyboard. The template purges it, as bb-box's other desktops do not
+  the keyboard. The template purges it, as alia-box's other desktops do not
   have it.
 
-`bb-box-check-desktop` passed in a fork of the template, but for "docker
+`alia-box-check-desktop` passed in a fork of the template, but for "docker
 stopped after boot", which boat answers for. The smoke script then gave:
 
 | Run | fork | ready | ssh | settle | display | computer use | Acquire | The desktop, as the relay opens it | Release |
@@ -206,17 +206,17 @@ stopped after boot", which boat answers for. The smoke script then gave:
 
 A desktop box is the `default` size, 4 cores and 8 GB, at $0.036 an hour.
 
-### bb-box's desktop stream on boat, measured live
+### alia-box's desktop stream on boat, measured live
 
 With [060's harness](../../scripts/measure/README.md), through a separate
-BB's relay: the separate BB above, its viewer headless Chrome 156 and the
-harness's proxy in the same Linux box as BB's server, BB reaching the boat
+VesnALIA's relay: the separate VesnALIA above, its viewer headless Chrome 156 and the
+harness's proxy in the same Linux box as VesnALIA's server, VesnALIA reaching the boat
 box over SSH across the internet. The box, a `linux-desktop-cpu` of the
 `default` size, showed `scene.html` full screen in Chrome, its own
 screenshot the reference, and the viewer took control as the panel does.
 Each run waited until the box was quiet (under half a core over 5 s), as
 boat's restore takes 1 to 2.5 cores for its first minute. TCP connects from
-BB's server to the box's SSH address took 16 to 62 ms, mostly about 20.
+VesnALIA's server to the box's SSH address took 16 to 62 ms, mostly about 20.
 
 | Run | Stream | Drag fps | Drag lag p50 / p95 | Torn | Scroll fps | Scroll Mbit/s | Key p50 / p95 | Text SSIM | Box cores, drag / idle |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -236,9 +236,9 @@ boat's restore; in the next five, a GNOME keyring dialog from boat's image
 held the keyboard over the scene, which is how the keyring was found, and
 the drag and keys measured the dialog, not the stream.
 
-### The desktop on the separate BB
+### The desktop on the separate VesnALIA
 
-The same separate BB and driver as for `linux`, for `linux-desktop-cpu`:
+The same separate VesnALIA and driver as for `linux`, for `linux-desktop-cpu`:
 
 | Run | Result |
 | --- | --- |
@@ -249,7 +249,7 @@ The same separate BB and driver as for `linux`, for `linux-desktop-cpu`:
 
 So the backend now waits up to 5 minutes for the desktop and allows the
 kind 10 minutes to ready; it restarts Cua Driver up to 6 times until it
-answers over MCP; and `bb-box-boat-ready` no longer waits for the desktop
+answers over MCP; and `alia-box-boat-ready` no longer waits for the desktop
 before it says the system files are in. How long a desktop takes to start
 depends most on boat's restore of the template's files: 25 to 63 s in
 eight acquires on quiet machines, and over 6 minutes once on a busy one.
@@ -258,17 +258,17 @@ eight acquires on quiet machines, and over 6 minutes once on a busy one.
 
 After phase 2 was deployed (main `ae2ad0a6`), production adopted the
 templates the smoke runs had built, so nothing was rebuilt. From an agent
-thread with BB's own tools, and the owner's browser on the Box panel:
+thread with VesnALIA's own tools, and the owner's browser on the Box panel:
 
 | Step | Result |
 | --- | --- |
-| `box_acquire` linux-desktop-cpu | ready in 59.1 s: fork 0.3, ready 20.7, ssh 13.1, settle 6.7, tailnet 8.9, display 0.1, computer use 8.0; a BB machine in 29.4 s |
+| `box_acquire` linux-desktop-cpu | ready in 59.1 s: fork 0.3, ready 20.7, ssh 13.1, settle 6.7, tailnet 8.9, display 0.1, computer use 8.0; a VesnALIA machine in 29.4 s |
 | Computer use | `computer_launch` failed at first: Cua Driver had answered during the acquire, but stopped answering when boat finished restoring the template, 61 s after it started. Restarted, it answered (Cua 0.28.3, 62 tools, 1920x1080); Mousepad opened and took 65 characters |
 | The panel | control taken and handed back; text typed in the panel reached Mousepad |
 | `box_release` | released; boat answered 404 for the sandbox |
 
 Measured in the panel's page, a Chromium browser on a Mac on the same
-network as BB's server (TCP connect 5 ms); BB's server to the box's SSH
+network as VesnALIA's server (TCP connect 5 ms); VesnALIA's server to the box's SSH
 address, 17 to 22 ms. For frame rate, a page full screen on the box drew a
 new colour 59 to 60 times a second, by its own count, and the panel's
 canvas was sampled on every animation frame for 10 s. For keys, a page on
@@ -283,7 +283,7 @@ timed from its keydown in the panel to the first frame that changed.
 Chrome drawing the page took about a core, Selkies 0.3 and boat's lazy
 file system 0.2. The page changed all of its top half every frame, which is
 the hardest case for either stream; the 060 harness's drag and keys, from
-BB's server, are above.
+VesnALIA's server, are above.
 
 So a desktop box now waits for boat to say the sandbox is restored
 (`hydrated`) before it checks Cua Driver, which restarts it, when it is
@@ -317,11 +317,11 @@ first device's first boot: the emulator's QEMU exited with code 1 within
 2 s, saying only "QEMU main loop exits abnormally with code 1".
 
 The same build in a fresh sandbox of our own failed the same way, on the
-same CPU (AMD Ryzen 9 9950X, 4 cores) with KVM usable. bb-box's Android
+same CPU (AMD Ryzen 9 9950X, 4 cores) with KVM usable. alia-box's Android
 scripts run by hand in a box forked from the Linux template made all three
 devices: cold boots of 36 to 64 s and boots from their snapshots of 6 to
 9 s. Started by hand in the failed sandbox, the emulator booted too, with
-every flag `bb-box-emulator` gives it, until it was started from boat's
+every flag `alia-box-emulator` gives it, until it was started from boat's
 home directory, `/home/user`, mode 750, which the box user cannot enter:
 then it failed as the build did, every time. boat runs the build's commands
 over SSH as its own user, from that home, and `prepare-avds` kept it as its
@@ -344,7 +344,7 @@ Proxmox QEMU template's build on 8 cores (063). The Android step took
 
 With that fix deployed (main `d5b1eb48`), production built again 6 hours
 after the first failure, at 01:57 UTC. The guest scripts, the devices and
-the finalize passed in 11 minutes. bb-box then stopped the template, and
+the finalize passed in 11 minutes. alia-box then stopped the template, and
 boat was still saving its disk, with the SDK, the system image and three
 devices' disks and snapshots on it, 10 minutes later, when the build gave
 up and deleted it.
@@ -371,9 +371,9 @@ So the least size is now each device's. Each device was measured in a fork
 of production's Android template at 4 cores and 8 GB (7.75 GiB to Linux,
 with a 2 GiB swap file): booted from its snapshot, then 10 minutes of 063's
 load, the launcher's app list swiped up and down, with frames by shared
-memory to `bb-box-h264` with OpenH264, as a box's device server does. Free
+memory to `alia-box-h264` with OpenH264, as a box's device server does. Free
 memory, swap and the emulator's resident memory were read every 10 s, and
-the kernel's log for OOM kills. BB's daemon, about 260 MB in a box, was not
+the kernel's log for OOM kills. VesnALIA's daemon, about 260 MB in a box, was not
 running, so a box has that much less.
 
 | Device | Boot from its snapshot, first in a fork | Least available | Swap used, most | Emulator resident, most | OOM kills | Busy fps (063, 4 cores) |
@@ -391,12 +391,12 @@ box is refused a switch to a device it is too small for.
 ### Android live in production
 
 After the per-device sizes were deployed (main `e1d1630b`), from an agent
-thread with BB's own tools and the owner's browser on the Box panel, with
+thread with VesnALIA's own tools and the owner's browser on the Box panel, with
 production's Android template of 08:20:
 
 | Step | Result |
 | --- | --- |
-| `box_acquire` android, 4 cores, 8 GiB, on boat.dev | ready in 146.6 s: fork 0.4, ready 10.1, ssh 22.3, settle 42.1, tailnet 70.4; a BB machine in 14.7 s. The Pixel 8 booted 107.5 s after, 25 s of it giving the device its own Android ID. boat finished restoring the sandbox 4 min 16 s after it was made |
+| `box_acquire` android, 4 cores, 8 GiB, on boat.dev | ready in 146.6 s: fork 0.4, ready 10.1, ssh 22.3, settle 42.1, tailnet 70.4; a VesnALIA machine in 14.7 s. The Pixel 8 booted 107.5 s after, 25 s of it giving the device its own Android ID. boat finished restoring the sandbox 4 min 16 s after it was made |
 | `box_device` | Home, Back, Recents, rotate both ways, location: 0.1 to 0.2 s. Dark appearance, text size, battery, status bar, lock: 0.3 to 0.4 s. Wake 0.6 s. Network offline 1.3 s, online 2.3 s. The device's own battery back 6.1 s. A switch to the Pixel Fold refused: "This box has no Pixel Fold. Its devices are: Pixel 8." |
 | The panel | the device's stream did not connect: "The device server did not start within 10 s". See below |
 | After the fix below, by hand | the stream up 80 s after reconnecting, the device's boot included; control taken and handed back |
@@ -418,7 +418,7 @@ stale lock files from before it removed.
 Measured in the panel, in a Chromium browser on a Mac, as for the desktop,
 on the probe page of 063 (unit 5.1):
 
-| Measure | Result | 063 on Proxmox QEMU, through BB |
+| Measure | Result | 063 on Proxmox QEMU, through VesnALIA |
 | --- | --- | --- |
 | Tap to screen, 3 runs of 30, 60 and 40 taps | all seen; median 221, 158 and 147 ms; p95 1034, 1198 and 865 ms; worst 2.1 s | 67 ms median, idle, 8 cores |
 | Frames in the panel while the device animates every frame | 8.8 to 14.1 fps | 41 fps busy at 8 cores, 23.5 at 4 (E17, at the encoder) |
@@ -447,7 +447,7 @@ Tablet; boat's saves would stay.
 
 Two things this check found for later:
 
-- **The panel after a deploy.** Production bb-box was deployed three times
+- **The panel after a deploy.** Production alia-box was deployed three times
   during the check. One deploy handed the device's control back to the
   agent while the panel still showed the person holding it; another left
   the panel's input going nowhere, with its video still live, until the
@@ -469,7 +469,7 @@ template for `78e74984`: the interrupted build's sandbox was deleted by
 the next upkeep, as no build followed it and it was over 10 minutes old,
 and no half-made template was left. The Linux and desktop templates then
 built under the new fingerprint, in 8 and 11 minutes. The Android
-template's build failed: `bb-box-h264`'s C sources include `encoder.h`,
+template's build failed: `alia-box-h264`'s C sources include `encoder.h`,
 which the list lacked, as following the scripts' `$src`, `$build` and
 `$here` paths does not see a C include. The list now has it, and the test
 follows `#include "..."` and `#import "..."` too. In a fresh sandbox from
@@ -478,7 +478,7 @@ three devices in 243 s, booting from their snapshots in 4.6 to 8.9 s, and
 the finalize passed.
 
 The two templates production had adopted on the first day, built by the
-separate BB's install, were left on the account after production
+separate VesnALIA's install, were left on the account after production
 replaced them, as an install tidies only the templates it built. They were
 deleted by hand.
 
@@ -497,7 +497,7 @@ that passed saved in 6.6 to 14 s, the failures took 17.8 s, 21 s and about
 the same way, until the launcher was given 120 s: the save took 45 s, and
 the device booted from it.
 
-So `bb-box-emulator` gives the emulator 180 s to save, and waits that long
+So `alia-box-emulator` gives the emulator 180 s to save, and waits that long
 and 30 s more before it kills it; it and `prepare-avds.sh` also say which
 line failed when one does. Run again in the same sandbox, the Android step
 made all three devices, whose saves took 63, 97 and 88 s, and each booted
@@ -518,14 +518,14 @@ still stopping keeps the same machine and size. So a boat box resizes with
 a restart, cores, memory and disk together, onto the smallest of boat's
 sizes the plan allows that has what is asked for.
 
-Live on the trial, through bb-box's own `Boxes` with the boat backend, as
+Live on the trial, through alia-box's own `Boxes` with the boat backend, as
 the smoke test runs it, on a `linux` box from production's template:
 
 | Step | Result |
 | --- | --- |
 | Acquire, `small` | 2 cores, 4 GiB, 51 GiB; inside, `nproc` 2 and 3916 MiB |
 | Plan to 4 cores, 8 GiB | cores 2 to 4 and memory 4096 to 8192 MiB, each with a restart, about 60 s, room |
-| Resize without a restart | refused: "needs a restart for its cores and memory ... bb-box changed nothing" |
+| Resize without a restart | refused: "needs a restart for its cores and memory ... alia-box changed nothing" |
 | Resize with a restart | 29.0 s; boat's `default`; inside, `nproc` 4 and 7941 MiB |
 | Back to `small` | 32.1 s, the plan's estimate now this box's own, about 35 s; inside, `nproc` 2 and 3916 MiB |
 | Release | the sandbox gone |

@@ -7,9 +7,9 @@ import { describe, expect, it } from "vitest";
  *
  * In Chromium any running animation redraws the window at the display's
  * refresh rate, whatever its size. While a thread worked, the sidebar's
- * spinning and shining glyphs kept bb's renderer, GPU process and WindowServer
+ * spinning and shining glyphs kept VesnALIA's renderer, GPU process and WindowServer
  * near a full core on a 120 Hz Mac; slower or stepped motion still cost a
- * third of that (see StatusGlyph and get-bb/bb#7233). So a looping utility or
+ * third of that (see StatusGlyph and get-alia/alia#7233). So a looping utility or
  * an `infinite` keyframe may only sit on a spinner for an operation that ends
  * in seconds, on a hover, or on a pulse that holds still most of the time and
  * is measured, and each one is listed below with its reason.
@@ -35,7 +35,7 @@ function sourceFiles(dir: string): string[] {
 
 const SOURCES = [join(ROOT, "app.tsx"), ...sourceFiles(join(ROOT, "src"))];
 
-/** Tailwind's looping utilities, bb's shine, and CSS `infinite`. */
+/** Tailwind's looping utilities, VesnALIA's shine, and CSS `infinite`. */
 const LOOPING = /\banimate-(?:spin|pulse|ping|bounce|shine[\w-]*)\b|\binfinite\b/g;
 
 /** Uses that end on their own, with the count expected in each file. */

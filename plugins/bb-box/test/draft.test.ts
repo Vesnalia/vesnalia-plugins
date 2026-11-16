@@ -20,7 +20,7 @@ const order = (script: string, ...parts: string[]) => {
   assert.deepEqual([...at].sort((a, b) => a - b), at, `in that order:\n${script}`);
 };
 
-test("devcontainer.json: its Dockerfile, then features as standard images have them, mise or bb-box-feature, its variables, and its commands commented out (049)", () => {
+test("devcontainer.json: its Dockerfile, then features as standard images have them, mise or alia-box-feature, its variables, and its commands commented out (049)", () => {
   const draft = drafted([
     {
       path: ".devcontainer/devcontainer.json",
@@ -50,7 +50,7 @@ test("devcontainer.json: its Dockerfile, then features as standard images have t
     "apt-get update && apt-get install -y libpq-dev",
     "# ghcr.io/devcontainers/features/docker-in-docker:2: standard images have Docker",
     "# ghcr.io/devcontainers/features/github-cli:1: standard images have gh.",
-    "bb-box-feature 'ghcr.io/devcontainers/features/terraform:1' 'version=1.9' 'installTFsec=true'",
+    "alia-box-feature 'ghcr.io/devcontainers/features/terraform:1' 'version=1.9' 'installTFsec=true'",
     "set_env APP_ENV 'dev'",
     "~/.local/bin/mise use --global 'node@20'  # .devcontainer/devcontainer.json",
     'path_first "$BOX_HOME/.local/share/mise/shims"',
@@ -107,7 +107,7 @@ test("a Dockerfile: its last stage's RUN lines in order, ENV and ARG, USER as th
     "mkdir -p '/opt/app' && cd '/opt/app'",
     "# COPY requirements.txt .: a build has no checkout to copy from.",
     "'pip' 'install' 'uv'",
-    `sudo -iu "$BOX_USER" bash -se <<'BB_BOX_AS_USER'\necho one\necho two\nBB_BOX_AS_USER`,
+    `sudo -iu "$BOX_USER" bash -se <<'ALIA_BOX_AS_USER'\necho one\necho two\nBB_BOX_AS_USER`,
     "echo back to root",
     "~/.local/bin/mise use --global 'python@3.11'  # Dockerfile FROM",
   );
@@ -139,7 +139,7 @@ test("version files: mise for the box user, what standard images have left out, 
     "mise.toml: [env] PORT = 3000 is not a plain string.",
     ".nvmrc: node 18 as well as 20.11.0 from .tool-versions: the draft takes 20.11.0.",
   ]);
-  assert.equal(draft.check, "#!/bin/bash\n# A project image's check (049): BB Box runs it as the box user after the script, and\n# on a box of the image's build. It fails when the script did not do its work.\nset -euo pipefail\nnode --version\ngo version\njava -version\n");
+  assert.equal(draft.check, "#!/bin/bash\n# A project image's check (049): VesnALIA Box runs it as the box user after the script, and\n# on a box of the image's build. It fails when the script did not do its work.\nset -euo pipefail\nnode --version\ngo version\njava -version\n");
   const lts = drafted([{ path: ".nvmrc", text: "lts/*\n" }]);
   assert.ok(!lts.script.includes("mise use --global 'node"), "the LTS is the standard image's node");
   assert.match(lts.script, /# The standard image has what \.nvmrc asks for\./);
@@ -159,10 +159,10 @@ test("Nix: installed for the box user, and the dev shell built once from copies 
     { path: "flake.nix", text: flake },
     { path: "flake.lock", text: '{ "nodes": {} }\n' },
   ]);
-  order(draft.script, 'install -d -m 0755 -o "$BOX_USER" /nix', "--no-daemon", "cat >/opt/bb-box-image/nix/flake.nix <<'BB_BOX_FILE'", flake.trim(), "cat >/opt/bb-box-image/nix/flake.lock", '"$BOX_HOME/.nix-profile/bin/nix" develop /opt/bb-box-image/nix --command true');
+  order(draft.script, 'install -d -m 0755 -o "$BOX_USER" /nix', "--no-daemon", "cat >/opt/alia-box-image/nix/flake.nix <<'ALIA_BOX_FILE'", flake.trim(), "cat >/opt/alia-box-image/nix/flake.lock", '"$BOX_HOME/.nix-profile/bin/nix" develop /opt/alia-box-image/nix --command true');
   assert.deepEqual(draft.used, ["flake.nix", "flake.lock"]);
   assert.match(drafted([{ path: "flake.nix", text: flake }]).gaps[0]!, /flake\.lock was not given/);
-  assert.ok(drafted([{ path: "shell.nix", text: "{ pkgs ? import <nixpkgs> {} }: pkgs.mkShell {}\n" }]).script.includes("nix-shell\" /opt/bb-box-image/nix/shell.nix --run true"));
+  assert.ok(drafted([{ path: "shell.nix", text: "{ pkgs ? import <nixpkgs> {} }: pkgs.mkShell {}\n" }]).script.includes("nix-shell\" /opt/alia-box-image/nix/shell.nix --run true"));
 });
 
 test("with nothing to draft from, a template; with JSON that is not, a gap (049)", () => {

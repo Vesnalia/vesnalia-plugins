@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
  experimental_copyToClipboard as copyToClipboard, experimental_usePluginId as usePluginId, experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery,
- useBbNavigate, useComposer,
-} from "@get-bb/plugin-sdk/app";
+ useAliaNavigate, useComposer,
+} from "@vesnalia/plugin-sdk/app";
 import { deleteSourceConfirmation } from "../contract.ts";
 import type { SourceScope } from "../web/contracts.ts";
 import { rpcContract } from "./contract.ts";
@@ -57,7 +57,7 @@ export function Reader(props: ReaderProps) {
  const [target, setTarget] = useState<[number, number] | null>(props.lines ?? null);
  const [confirmDelete, setConfirmDelete] = useState(false);
  const [note, setNote] = useState<string | null>(null);
- const navigate = useBbNavigate();
+ const navigate = useAliaNavigate();
  const pluginId = usePluginId();
  const copy = useMutation({ contract: rpcContract, method: "copySourceToProject" });
  const remove = useMutation({ contract: rpcContract, method: "deleteSource" });
@@ -100,7 +100,7 @@ export function Reader(props: ReaderProps) {
  function showInChat() {
   const element = citation && document.querySelector(`[data-forage-cite="${CSS.escape(`${citation.snapshotId}:${citation.startLine}-${citation.endLine}`)}"]`);
   if (element) { element.scrollIntoView({ behavior: "smooth", block: "center" }); (element as HTMLElement).focus({ preventScroll: true }); }
-  else setNote("The reply that cites it is not on screen. Scroll the chat to it; bb only draws messages near the screen.");
+  else setNote("The reply that cites it is not on screen. Scroll the chat to it; VesnALIA only draws messages near the screen.");
  }
  return <div className="flex min-h-0 flex-1 flex-col">
   <Back label={backLabel} onBack={onBack} actions={<Menu trigger={({ toggle }) => <IconButton icon="more" label="More for this source" onClick={toggle} />} width="w-72">

@@ -87,7 +87,7 @@ export function taskList(threadId?: number) {
           .join("\n\n")
       : tr("Активных задач нет.")) +
     (list.length > 12
-      ? tr("\n\nЕщё ") + String(list.length - 12) + tr(" — в BB.")
+      ? tr("\n\nЕщё ") + String(list.length - 12) + tr(" — в ALIA.")
       : "")
   ).slice(0, 3900);
 }

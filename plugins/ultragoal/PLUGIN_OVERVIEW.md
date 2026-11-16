@@ -1,4 +1,4 @@
-Turn a BB root thread into a durable, provider-neutral orchestration workspace. The root plans and coordinates while a deterministic scheduler assigns dependency-ready work to isolated worker threads. Optional independent verifiers inspect completed slices before they close.
+Turn a VesnALIA root thread into a durable, provider-neutral orchestration workspace. The root plans and coordinates while a deterministic scheduler assigns dependency-ready work to isolated worker threads. Optional independent verifiers inspect completed slices before they close.
 
 ## What it provides
 
@@ -12,6 +12,6 @@ Turn a BB root thread into a durable, provider-neutral orchestration workspace. 
 
 ## Typical workflow
 
-Start an UltraGoal from the pane, `/ultragoal`, or `bb ultragoal set`. Add or update work through the `ultragoal_patch` tool. The scheduler staffs ready slices; workers report structured evidence; verifiers return `VERIFY_PASS` or actionable findings. The pane keeps current work, upcoming dependencies, execution provenance, defects, and owner decisions visible without retransmitting the full history.
+Start an UltraGoal from the pane, `/ultragoal`, or `alia ultragoal set`. Add or update work through the `ultragoal_patch` tool. The scheduler staffs ready slices; workers report structured evidence; verifiers return `VERIFY_PASS` or actionable findings. The pane keeps current work, upcoming dependencies, execution provenance, defects, and owner decisions visible without retransmitting the full history.
 
-UltraGoal supports Codex, Cursor, OpenCode, Claude Code, and Pi. It requires BB 0.39 or newer and Plugin SDK 0.4.8 or newer.
+UltraGoal supports Codex, Cursor, OpenCode, Claude Code, and Pi. It requires VesnALIA 0.39 or newer and Plugin SDK 0.4.8 or newer.

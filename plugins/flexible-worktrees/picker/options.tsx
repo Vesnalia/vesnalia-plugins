@@ -37,7 +37,7 @@ function newSection({ query, form, branches, data }: Model, q: string, { choose 
   return { key: "new", title: "New", options: [{
     id: "new", selected: form.target === "new",
     render: <Row icon="new" title={typed ? `New branch "${typed}"` : "New branch (automatic name)"} detail={`from ${base || data.choices?.defaultBase || "the default branch"}`} />,
-    // The automatic row means BB names the branch, so it clears any typed name.
+    // The automatic row means VesnALIA names the branch, so it clears any typed name.
     select: () => choose({ target: "new", branch: typed || undefined, base, location: locationOf(form) }),
   }] };
 }

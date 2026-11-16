@@ -2,7 +2,7 @@
 ## Working with beads through Airbender
 
 This repository's issues are tracked in beads (`bd`) and worked from the
-Airbender tab in BB. Follow these rules whenever you work on an issue.
+Airbender tab in VesnALIA. Follow these rules whenever you work on an issue.
 Where they disagree with beads' own instructions elsewhere in this file (for
 example "`bd close <id>` to complete work"), these rules take precedence.
 

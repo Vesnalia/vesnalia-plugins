@@ -1,8 +1,8 @@
-/* Radar panel. Every colour comes from bb theme variables so it follows any theme. */
+/* Radar panel. Every colour comes from alia theme variables so it follows any theme. */
 
 /* The frame fills Radar's pane and does not scroll; .radar inside it does. Overlays (the
    review sheet) sit in the frame, so they cover and centre on Radar's pane only, never the
-   window: position: fixed would centre on the window and end up partly under bb's sidebar. */
+   window: position: fixed would centre on the window and end up partly under alia's sidebar. */
 .radar-frame {
   position: relative;
   display: flex;
@@ -260,7 +260,7 @@
   color: var(--r-faint);
 }
 
-/* lanes: cards match Pulse and bb's sent-message bubble (surface-recessed + border-seam) */
+/* lanes: cards match Pulse and alia's sent-message bubble (surface-recessed + border-seam) */
 .radar-lane {
   border: 1px solid var(--border-seam, var(--r-line));
   border-radius: var(--r-radius);
@@ -818,7 +818,7 @@
   pointer-events: none;
 }
 
-/* bb's "Close pane" × has no use on Radar's single-pane board and the SDK has no
+/* alia's "Close pane" × has no use on Radar's single-pane board and the SDK has no
    opt-out, so hide it only in the title bar that holds Radar's header content
    (.radar-header-anchor, rendered through navPanel.headerContent). */
 header:has(.radar-header-anchor) button[aria-label="Close pane"] {

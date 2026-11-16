@@ -5,7 +5,7 @@
 // onto the review's activity. Settings' Let the review agent act when you ask (reviewAgentActs) gives these tools, and
 // each checks it.
 import { createHash } from "node:crypto";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { assistantReview, mergedAway } from "./draft-comments";
 import { linesOf, postedBody, sameComments, VERDICT_LABEL, type CommentLocation, type DraftComment, type Verdict } from "./draft";
@@ -77,13 +77,13 @@ export function register(deps: ServeDeps, { submit }: {
   /** draft-rpc's Submit: it posts, then records what follows. */
   submit: (targetKey: string, revision: undefined, account: string | undefined, comments: Comment[], summary: { body: string; verdict: Verdict }, force?: readonly SubmitWarning[], options?: { posting?: readonly CommentLocation[] }) => Promise<SubmitResult>;
 }) {
-  const { bb, store, receipts, githubWrites, submitReview, sync, changed, refreshThreads, classify } = deps;
+  const { alia, store, receipts, githubWrites, submitReview, sync, changed, refreshThreads, classify } = deps;
   const key = (threadId: string) => `post-preview:${threadId}`;
-  /** The message that last confirmed a write, by bb's id for its request, and when it was sent: each message confirms one. */
+  /** The message that last confirmed a write, by VesnALIA's id for its request, and when it was sent: each message confirms one. */
   const confirmedKey = (threadId: string) => `post-confirmed:${threadId}`;
   /** Whether `message` may confirm a write: not the one that confirmed the last, nor older. */
   const fresh = async (threadId: string, message: TurnMessage) => {
-    const last = await bb.storage.kv.get<{ id: string; at: number }>(confirmedKey(threadId));
+    const last = await alia.storage.kv.get<{ id: string; at: number }>(confirmedKey(threadId));
     return !last || (message.id !== last.id && message.at >= last.at);
   };
   /** Each open Post form, by its token, to cancel when a yes in chat posts it, or a newer one replaces it. */
@@ -121,7 +121,7 @@ export function register(deps: ServeDeps, { submit }: {
   /** Add what the agent did to the review's activity. */
   async function noteActivity(targetKey: string, turn: Turn, text: string, url?: string) {
     const from = turn.message?.senderThreadId ?? null;
-    const fromTitle = from ? await bb.sdk.threads.get({ threadId: from }).then((thread) => thread.title ?? undefined, () => undefined) : undefined;
+    const fromTitle = from ? await alia.sdk.threads.get({ threadId: from }).then((thread) => thread.title ?? undefined, () => undefined) : undefined;
     const entry: ActivityEntry = { at: Date.now(), text, asking: turn.asking, ...(from ? { from } : {}), ...(fromTitle ? { fromTitle } : {}), ...(url ? { url } : {}) };
     await store.exclusive(async (tx) => {
       const review = await tx.getReview(targetKey);
@@ -136,13 +136,13 @@ export function register(deps: ServeDeps, { submit }: {
    */
   async function consume(threadId: string, token: string, message: TurnMessage | null): Promise<Preview | null | "message"> {
     return store.exclusive(async () => {
-      const preview = await bb.storage.kv.get<Preview>(key(threadId));
+      const preview = await alia.storage.kv.get<Preview>(key(threadId));
       if (!preview || preview.token !== token || preview.usedAt) return null;
       if (message) {
         if (!await fresh(threadId, message)) return "message";
-        await bb.storage.kv.set(confirmedKey(threadId), { id: message.id, at: message.at });
+        await alia.storage.kv.set(confirmedKey(threadId), { id: message.id, at: message.at });
       }
-      await bb.storage.kv.set(key(threadId), { ...preview, usedAt: Date.now() });
+      await alia.storage.kv.set(key(threadId), { ...preview, usedAt: Date.now() });
       return preview;
     });
   }
@@ -150,7 +150,7 @@ export function register(deps: ServeDeps, { submit }: {
   async function claim(threadId: string, message: TurnMessage): Promise<boolean> {
     return store.exclusive(async () => {
       if (!await fresh(threadId, message)) return false;
-      await bb.storage.kv.set(confirmedKey(threadId), { id: message.id, at: message.at });
+      await alia.storage.kv.set(confirmedKey(threadId), { id: message.id, at: message.at });
       return true;
     });
   }
@@ -182,7 +182,7 @@ export function register(deps: ServeDeps, { submit }: {
           return true;
         });
         if (!ready) return { ok: false, text: "The draft or the review changed since it was shown, so nothing was posted. Call submit_review again to show it as it is now." };
-        bb.realtime.publish(`draft:${targetKey}`, {});
+        alia.realtime.publish(`draft:${targetKey}`, {});
         // Only what the form showed as posting: a Reopen, a Send or a Resolve since refuses it.
         const result = await submit(targetKey, undefined, account ?? undefined, w.comments, { body: w.body, verdict: w.verdict }, w.force, { posting: w.posting ?? [] });
         if (result.ok) return { ok: true, text: `Posted the review to GitHub${result.url ? `: ${result.url}` : "."}`, activity: `Submitted ${VERDICT_LABEL[w.verdict]}${w.posts ? ` with ${plural(w.posts, "comment")}` : ""}`, ...(result.url ? { url: result.url } : {}) };
@@ -200,7 +200,7 @@ export function register(deps: ServeDeps, { submit }: {
         });
         if (!replied.ok) return { ok: false, text: `Nothing was posted. ${replied.error}` };
         await refreshThreads(review).catch(() => {});
-        bb.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
+        alia.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
         if (replied.alreadyPosted) return { ok: false, text: "GitHub already has this reply, posted in the last 15 minutes, so it wasn't posted again." };
         return { ok: true, text: `Posted the reply${url ? `: ${url}` : "."}`, activity: `Posted reply${w.at ? ` on ${w.at}` : ""}`, ...(url ? { url } : {}) };
       }
@@ -236,7 +236,7 @@ export function register(deps: ServeDeps, { submit }: {
         const r = await githubWrites.post(runGh, w.resolved ? ghResolveThreadArgs(w.thread) : ghUnresolveThreadArgs(w.thread), { action: w.resolved ? "resolve" : "unresolve" });
         if (!r.ok) return { ok: false, text: `Nothing changed. ${sentence(r)}` };
         await refreshThreads(review).catch(() => {});
-        bb.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
+        alia.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
         const done = `${w.resolved ? "Resolved" : "Unresolved"} the thread${w.at ? ` on ${w.at}` : ""}`;
         return { ok: true, text: `${done}.`, activity: done };
       }
@@ -310,7 +310,7 @@ export function register(deps: ServeDeps, { submit }: {
       // Taken without touching a form that's open for something else: a refused one leaves it be.
       if (!await claim(threadId, message)) return failed(usedUp);
       // The form open for exactly this is answered by it: used now and closed, so its click can't post it again.
-      const open = await bb.storage.kv.get<Preview>(key(threadId));
+      const open = await alia.storage.kv.get<Preview>(key(threadId));
       if (open?.token === token) {
         if (!await consume(threadId, token, null)) return failed("That was posted already, from the form. Nothing more was posted.");
         forms.get(token)?.abort("confirmed");
@@ -318,7 +318,7 @@ export function register(deps: ServeDeps, { submit }: {
       const done = await post(review, preview, turn);
       return done.ok ? done.text : failed(done.text);
     }
-    const open = await bb.storage.kv.get<Preview>(key(threadId));
+    const open = await alia.storage.kv.get<Preview>(key(threadId));
     if (answer === "yes" && open?.token === token) {
       if (open.usedAt) return failed("That was posted already, from the Post form. Nothing more was posted.");
       // A yes since it was shown: the reviewer's in the review, or the thread's it was sent to.
@@ -337,16 +337,16 @@ export function register(deps: ServeDeps, { submit }: {
     await replace(threadId, relayed ? { ...preview, from: sender } : preview);
     const changedSince = answer === "yes" ? "It changed since it was shown, so it's shown again. " : "";
     // Relayed, it goes back to the thread that asked: a form in this hidden chat would wait for no one.
-    if (relayed) return `${changedSince}Nothing was posted yet. ${sender ? `Send exactly this to the thread that asked, with \`bb thread tell ${sender}\`` : "Show exactly this in your reply"}, then end your turn. When it says yes, call again with the same input and confirm: "yes".\n\n${shownText(preview.shown)}`;
+    if (relayed) return `${changedSince}Nothing was posted yet. ${sender ? `Send exactly this to the thread that asked, with \`alia thread tell ${sender}\`` : "Show exactly this in your reply"}, then end your turn. When it says yes, call again with the same input and confirm: "yes".\n\n${shownText(preview.shown)}`;
     const inChat = `Show the reviewer exactly this, then ask. When they say yes, call again with the same input and confirm: "yes".\n\n${shownText(preview.shown)}`;
-    if (!bb.ui?.requestInput) return `${changedSince}${inChat}`;
+    if (!alia.ui?.requestInput) return `${changedSince}${inChat}`;
     const form = new AbortController();
     forms.set(token, form);
     // A PR's draft waiting for the reviewer: Finish review says so, with where to post it.
     const draft = w.kind === "open-pr" ? { at: preview.at, until: preview.at + FORM_TIMEOUT_MS } : null;
     if (draft) await markPrDraft(review.targetKey, draft);
     try {
-      const result = await bb.ui.requestInput({
+      const result = await alia.ui.requestInput({
         threadId, rendererId: POST_PREVIEW_RENDERER, title: preview.shown.title.slice(0, 160), payload: { ...preview.shown },
         timeoutMs: FORM_TIMEOUT_MS,
         // The row says what you did, not what GitHub did: the agent's answer says that.
@@ -384,8 +384,8 @@ export function register(deps: ServeDeps, { submit }: {
   /** Keep `preview` as the agent's one waiting post, closing the form of the one it replaces. */
   async function replace(threadId: string, preview: Preview) {
     const before = await store.exclusive(async () => {
-      const before = await bb.storage.kv.get<Preview>(key(threadId));
-      await bb.storage.kv.set(key(threadId), preview);
+      const before = await alia.storage.kv.get<Preview>(key(threadId));
+      await alia.storage.kv.set(key(threadId), preview);
       return before;
     });
     if (before && before.token !== preview.token) forms.get(before.token)?.abort("replaced");
@@ -419,7 +419,7 @@ export function register(deps: ServeDeps, { submit }: {
   }
   const by = (account: string | null) => account ? ` as @${account}` : "";
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "submit_review",
     description: "Submit the reviewer's review of this PR to GitHub: their draft's comments, with the verdict, and the summary given or the draft's. The reviewer sees exactly what posts, with a button naming the verdict, before it posts.",
     instructions: `When the reviewer asks you to submit their review, approve, or request changes, call submit_review. It opens a form showing them exactly what posts: say it's there, and end your turn. If they answer with a short yes in chat instead, call it again with the same input and confirm: "yes". Pass confirm: "just-post-it" only when their own message says to post without showing it, and for an approval names it ("approve it, just post it"). Asked from another of their threads, it gives you the text to send back there, and an approval waits for the reviewer's click in Needs review. If it comes back with a warning, such as new commits since they reviewed, tell them in a line, and call again with force: true only if they want it posted anyway. In a turn the reviewer didn't start, it only marks your suggested verdict. ${ONLY_WITH_THESE_TOOLS}`,
@@ -438,7 +438,7 @@ export function register(deps: ServeDeps, { submit }: {
       if (turn.asking === "unattended") {
         const saved = body ? await writeSummary(store, k, { body, verdict }, threadId) : null;
         if (!saved?.ok) await store.updateSummary(k, { suggestedVerdict: verdict });
-        bb.realtime.publish(`draft:${k}`, {});
+        alia.realtime.publish(`draft:${k}`, {});
         return `Marked ${VERDICT_LABEL[verdict]} as your suggested verdict in the reviewer's draft${saved?.ok ? ", with your summary" : ""}. ${UNATTENDED}`;
       }
       const { draft, preferences } = await store.exclusive(async (tx) => ({ draft: await tx.getDraft(k), preferences: (await tx.getPreferences()).preferences }));
@@ -449,7 +449,7 @@ export function register(deps: ServeDeps, { submit }: {
       // Relayed, an approval waits for the reviewer's own click, with the summary alone: the draft's comments stay.
       if (turn.asking === "relayed" && verdict === "APPROVE") {
         if (!review.headSha) return failed("The commit the reviewer reviewed isn't known, so there's nothing to approve yet. Nothing was done.");
-        await holdForApproval(bb, store, { ...review, headSha: review.headSha }, { action: "approve", verdict, body: summary, from: turn.message?.senderThreadId ?? null });
+        await holdForApproval(alia, store, { ...review, headSha: review.headSha }, { action: "approve", verdict, body: summary, from: turn.message?.senderThreadId ?? null });
         changed(k);
         return HELD("approving");
       }
@@ -475,7 +475,7 @@ export function register(deps: ServeDeps, { submit }: {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "post_reply",
     description: "Reply on a review thread on this PR, as the reviewer. They see exactly what posts, with a Post button, before it posts.",
     instructions: `When the reviewer asks you to reply on a thread, call post_reply with the thread's id; it opens the Post form, and a yes works as with submit_review. ${ONLY_WITH_THESE_TOOLS}`,
@@ -499,7 +499,7 @@ export function register(deps: ServeDeps, { submit }: {
           return true;
         });
         if (!drafted) return failed(`The reviewer has a reply drafted on that thread, so it stays as they wrote it. ${UNATTENDED} Suggest yours in chat.`);
-        bb.realtime.publish(`feedback:${k}`, { ts: Date.now() });
+        alia.realtime.publish(`feedback:${k}`, { ts: Date.now() });
         return `Drafted the reply on the thread, for the reviewer to send. ${UNATTENDED}`;
       }
       const found = yours ? { commentId: yours.commentId, path: yours.path, line: yours.line } : await (async () => {
@@ -516,7 +516,7 @@ export function register(deps: ServeDeps, { submit }: {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "resolve_thread",
     description: "Resolve, or with resolved: false unresolve, a review thread on this PR on GitHub.",
     instructions: `Resolve or unresolve a thread when the reviewer asks, with resolve_thread. ${TEAMMATES} ${ONLY_WITH_THESE_TOOLS}`,
@@ -537,7 +537,7 @@ export function register(deps: ServeDeps, { submit }: {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "github_pr",
     description: "Act on this PR on GitHub as the reviewer: comment; edit its title or description; add or remove labels, reviewers (a team as org/slug) or assignees; close, reopen or merge it; mark it ready for review or a draft. A comment, an edit, closing and merging show the reviewer exactly what happens, with a button naming it, first.",
     instructions: `Use github_pr when the reviewer asks for one of these. ${TEAMMATES} Ask before merging while checks are still running, and offer auto: true, which merges once they pass. Force-pushing is the main thread's job: offer to send it there. The form and a yes work as with submit_review. ${ONLY_WITH_THESE_TOOLS}`,
@@ -576,7 +576,7 @@ export function register(deps: ServeDeps, { submit }: {
           if (facts.headSha !== review.headSha) return failed(`The PR has commits the reviewer hasn't reviewed (${review.headSha.slice(0, 7)} reviewed, ${facts.headSha.slice(0, 7)} now), so nothing was merged. Tell them: they Update the review and read those first.`);
           // Relayed, it waits for the reviewer's own click, with GitHub's commit message for it.
           if (turn.asking === "relayed") {
-            await holdForApproval(bb, store, { ...review, headSha: review.headSha }, { action: "merge", verdict: null, body: "", merge: { method, auto, deleteBranch }, from: turn.message?.senderThreadId ?? null });
+            await holdForApproval(alia, store, { ...review, headSha: review.headSha }, { action: "merge", verdict: null, body: "", merge: { method, auto, deleteBranch }, from: turn.message?.senderThreadId ?? null });
             changed(review.targetKey);
             return HELD("merging");
           }
@@ -593,7 +593,7 @@ export function register(deps: ServeDeps, { submit }: {
         case "close":
           if (turn.asking === "relayed") {
             if (!review.headSha) return failed("The commit the reviewer reviewed isn't known. Nothing was done.");
-            await holdForApproval(bb, store, { ...review, headSha: review.headSha }, { action: "close", verdict: null, body: "", from: turn.message?.senderThreadId ?? null });
+            await holdForApproval(alia, store, { ...review, headSha: review.headSha }, { action: "close", verdict: null, body: "", from: turn.message?.senderThreadId ?? null });
             changed(review.targetKey);
             return HELD("closing");
           }
@@ -611,7 +611,7 @@ export function register(deps: ServeDeps, { submit }: {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "open_pr",
     description: "Open a PR on GitHub from this local review's branch, as the reviewer, with the title and description you give. They see exactly what opens, with an Open PR button, first. Once it's open, this review becomes the PR's review.",
     instructions: `When the reviewer asks you to open a PR, draft its title and description from the review, then call open_pr; it opens the Post form, and a yes works as with submit_review. The branch must be on GitHub first: if it isn't, tell the reviewer to push it with Push in Finish review, and never push it yourself. ${ONLY_WITH_THESE_TOOLS}`,

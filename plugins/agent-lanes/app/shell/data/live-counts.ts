@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { experimental_useSidebarThreads, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { isBusy, laneState } from "../grouping/lane-state";
 
 export interface LiveCounts {

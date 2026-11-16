@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useBbNavigate, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useAliaNavigate, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { parseKey } from "../keys";
 import { BUTTON, ICON_GHOST } from "./common";
 import { PANEL_PATH } from "./constants";
@@ -55,7 +55,7 @@ export function LookupInput({ placeholder, onFound, icon = "Search", label = "Lo
  * a pasted link or key is looked up on its server when you press Enter, as before.
  */
 function SearchInput({ subPath, placeholder, autoFocus = false }: { subPath: string; placeholder: string; autoFocus?: boolean }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const route = routeOf(subPath);
   const routeQuery = route.view === "search" ? route.query : null;
   const [text, setText] = useState(routeQuery ?? "");
@@ -113,7 +113,7 @@ function SearchInput({ subPath, placeholder, autoFocus = false }: { subPath: str
             event.preventDefault();
             void submit();
           } else if (event.key === "Escape" && text !== "") {
-            // bb's "Back to app" also listens for Escape; a field with text only clears.
+            // VesnALIA's "Back to app" also listens for Escape; a field with text only clears.
             event.preventDefault();
             event.stopPropagation();
             change("");
@@ -129,7 +129,7 @@ function SyncControls({ phone, syncing, onSync }: { phone: boolean; syncing: boo
   const refreshProjects = async () => {
     if (refresh.isPending) return;
     const result = await refresh.run({});
-    if (result !== null) toast.success(`Refreshed ${result.count} BB projects`);
+    if (result !== null) toast.success(`Refreshed ${result.count} VesnALIA projects`);
   };
   return (
     <div className="flex items-center gap-0.5">
@@ -145,7 +145,7 @@ function SyncControls({ phone, syncing, onSync }: { phone: boolean; syncing: boo
         </PickerAction>
         <PickerAction onSelect={() => void refreshProjects()}>
           <Icon name="Folder" className="size-4 shrink-0" aria-hidden />
-          <span><span className="block">BB projects</span><span className="block text-xs text-muted-foreground">Reload projects and repository matches</span></span>
+          <span><span className="block">VesnALIA projects</span><span className="block text-xs text-muted-foreground">Reload projects and repository matches</span></span>
         </PickerAction>
       </Picker>
     </div>
@@ -179,7 +179,7 @@ function PhoneHeader({ subPath, syncing, onSync, onClose }: { subPath: string; s
 }
 
 export function ShuttleHeader({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const phone = useViewport() === "phone";
   const overview = useShuttleQuery("overview", {});
@@ -196,7 +196,7 @@ export function ShuttleHeader({ subPath }: PluginNavPanelProps) {
         <SearchInput subPath={subPath} placeholder="Search PRs, or paste a link to look one up" />
       </div>
       <SyncControls phone={false} syncing={syncing} onSync={() => void sync()} />
-      <UrlLink href={settingsHref(pluginId)} aria-label="Shuttle settings" title="Shuttle settings: opens Shuttle's page in bb's Settings" className={ICON_GHOST}>
+      <UrlLink href={settingsHref(pluginId)} aria-label="Shuttle settings" title="Shuttle settings: opens Shuttle's page in VesnALIA's Settings" className={ICON_GHOST}>
         <Icon name="Settings" className="size-4" aria-hidden />
       </UrlLink>
     </div>

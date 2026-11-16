@@ -2,15 +2,15 @@
 //
 // A sidebar page listing every thread waiting on you, a banner with the
 // sentence above a thread's composer, a thread panel with the sentences of
-// its past turns, a choice in bb's thread menu of what Herald announces for
+// its past turns, a choice in VesnALIA's thread menu of what Herald announces for
 // that thread or a selection of threads, a settings section for what the
 // host form cannot hold, and an app-wide overlay that keeps the list current
 // and speaks each new sentence.
 // See AGENTS.md.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import { HeraldBanner } from "./app/banner";
-import { HAS_PANEL_CONTROLLER } from "./app/bb-features";
+import { HAS_PANEL_CONTROLLER } from "./app/alia-features";
 import { HeraldBridge } from "./app/bridge";
 import { HISTORY_PANEL_ACTION_ID, registerHistoryOpener } from "./app/header-action";
 import { HeraldHistoryPanel } from "./app/history-panel";
@@ -47,11 +47,11 @@ export default definePluginApp((app) => {
     availability: "action",
     component: HeraldHistoryPanel,
   });
-  // And the megaphone in the thread header that opens it, a button of its own on every bb.
+  // And the megaphone in the thread header that opens it, a button of its own on every VesnALIA.
   registerHistoryOpener(app.slots, HAS_PANEL_CONTROLLER);
 
   // Announce, Questions only or Silent, per thread — or for every selected
-  // thread at once — beside bb's own notification level.
+  // thread at once — beside VesnALIA's own notification level.
   app.slots.experimental_threadAction(THREAD_CHOICE_ACTION);
 
   app.slots.settingsSection({

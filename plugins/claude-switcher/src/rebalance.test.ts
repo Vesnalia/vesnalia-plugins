@@ -5,7 +5,7 @@ import {
   type RebalanceProject,
 } from "./rebalance.js";
 
-// The Ultra accounts as `bb claude-switcher list` and `health` had them on
+// The Ultra accounts as `alia claude-switcher list` and `health` had them on
 // 2026-11-03 13:07 (docs/plazas-2026-11-03/antes-*.txt): projects pinned,
 // and the fuller of weekly and Fable.
 const TODAY = [

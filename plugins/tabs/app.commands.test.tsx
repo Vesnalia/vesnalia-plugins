@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginCommandContext, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginCommandContext, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { renderPartialSlot } from "./test-utils";
 import type { rpcContract } from "./server";
 import { createTabCommands } from "./lib/tab-commands";
@@ -232,7 +232,7 @@ describe("SDK tab commands", () => {
     fireEvent.keyDown(slot.getByRole("menu", { name: "Subthreads of “current”" }), {
       key: "Escape",
     });
-    await waitFor(() => expect(document.querySelector(".bb-chat-tabs-child-menu")).toBeNull());
+    await waitFor(() => expect(document.querySelector(".alia-chat-tabs-child-menu")).toBeNull());
     expect(available("list")).toBe(true);
     await run("list");
     const search = await slot.findByRole("searchbox", { name: "Search chats by title or project" });

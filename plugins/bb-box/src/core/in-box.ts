@@ -1,4 +1,4 @@
-// Everything bb-box runs inside a box, written once per guest OS: POSIX sh
+// Everything alia-box runs inside a box, written once per guest OS: POSIX sh
 // for Linux and macOS, PowerShell for Windows. Backends never run these; the
 // core sends them through the box's command transport.
 
@@ -13,23 +13,23 @@ export { DESKTOP_EXITS };
 
 /**
  * The thread's environment for commands in the box, relative to the box
- * user's home. bb-box writes it, readable by the box user only, before every
+ * user's home. alia-box writes it, readable by the box user only, before every
  * command it runs, and sources it. An enrolled box's ~/.bashrc, or ~/.zshenv
  * on macOS, sources it too, so the thread's own SSH commands get it, but not
- * in the shells of bb-box's own commands, which start with LOADS_ENV.
+ * in the shells of alia-box's own commands, which start with LOADS_ENV.
  */
 export function envFile(os: GuestOs): string {
-  return os === "windows" ? ".config/bb-box/env.ps1" : ".config/bb-box/env";
+  return os === "windows" ? ".config/alia-box/env.ps1" : ".config/alia-box/env";
 }
 
 /**
  * Where commands in a box take the thread's access from: the named
  * variables of a live process below one that runs a program whose path
- * holds `parent`, with \ read as / on Windows (#560). In a box that is a BB machine, that is BB's daemon, whose
- * workers carry BB's machine variables, GH_TOKEN and the user's git
+ * holds `parent`, with \ read as / on Windows (#560). In a box that is a VesnALIA machine, that is VesnALIA's daemon, whose
+ * workers carry VesnALIA's machine variables, GH_TOKEN and the user's git
  * identity. A project's variables are only in the agent a worker starts for
  * a thread of the project on the box, a level further down (#109). Only the
- * program's path counts, not the rest of its command line: commands bb-box
+ * program's path counts, not the rest of its command line: commands alia-box
  * runs carry the env file, and with it `parent`, on theirs.
  */
 export interface Access {
@@ -37,9 +37,9 @@ export interface Access {
   readonly parent: string;
   /**
    * Of `names`, those a box's commands must have before it counts as having
-   * the thread's access, such as GH_TOKEN, which git needs. BB can give a
+   * the thread's access, such as GH_TOKEN, which git needs. VesnALIA can give a
    * new machine some variables before others. Any name counts when
-   * undefined; when empty, BB gives none, so nothing is waited for.
+   * undefined; when empty, VesnALIA gives none, so nothing is waited for.
    */
   readonly required?: readonly string[];
 }
@@ -77,7 +77,7 @@ export const WINDOWS_CLIPBOARD = {
   write: "$m=[IO.MemoryStream]::new();[Console]::OpenStandardInput().CopyTo($m);Set-Clipboard -Value ([Text.Encoding]::UTF8.GetString($m.ToArray()))",
 } as const;
 
-/** The commands that read and write a box's clipboard in its desktop session, for a desktop whose server moves none; null where bb-box has none. */
+/** The commands that read and write a box's clipboard in its desktop session, for a desktop whose server moves none; null where alia-box has none. */
 export function clipboardCommands(os: GuestOs): { readonly read: string; readonly write: string } | null {
   return os === "macos" ? MAC_CLIPBOARD : os === "windows" ? WINDOWS_CLIPBOARD : null;
 }
@@ -94,13 +94,13 @@ const LINUX_DESKTOP =
   'export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"; ';
 
 /**
- * bb-box's launcher in a macOS image (#628), which a desktop command goes
+ * alia-box's launcher in a macOS image (#628), which a desktop command goes
  * through where the box has it: what the command starts is attributed by
  * TCC to the launcher, which has the microphone, the camera, the system's
  * audio and what sshd has, rather than to sshd, for which nothing can be
  * asked (setup/tart/guest/launcher.sh).
  */
-export const MAC_LAUNCHER = "/usr/local/libexec/bb-box/Launcher.app/Contents/MacOS/bb-box-launcher";
+export const MAC_LAUNCHER = "/usr/local/libexec/alia-box/Launcher.app/Contents/MacOS/alia-box-launcher";
 
 /**
  * Unlocks a pool Mac's signing keychain (058) in the command's own session:
@@ -108,7 +108,7 @@ export const MAC_LAUNCHER = "/usr/local/libexec/bb-box/Launcher.app/Contents/Mac
  * locked asks for its password, in a dialog on the desktop or not at all.
  */
 const MAC_UNLOCK =
-  'bb_keychain="$HOME/Library/Keychains/bb-box-signing.keychain-db"; [ ! -f "$bb_keychain" ] || /usr/bin/security unlock-keychain -p "" "$bb_keychain" 2>/dev/null; unset bb_keychain; ';
+  'alia_keychain="$HOME/Library/Keychains/alia-box-signing.keychain-db"; [ ! -f "$alia_keychain" ] || /usr/bin/security unlock-keychain -p "" "$alia_keychain" 2>/dev/null; unset alia_keychain; ';
 
 /**
  * Puts a macOS command in the box user's desktop session (030). sudo gives
@@ -120,17 +120,17 @@ const MAC_UNLOCK =
  * the box has it.
  */
 function macDesktop(script: string): string {
-  const wrapper = '/bin/launchctl asuser "$bb_uid" /usr/bin/sudo -n -u "$bb_user" --';
+  const wrapper = '/bin/launchctl asuser "$alia_uid" /usr/bin/sudo -n -u "$alia_user" --';
   return (
-    `bb_uid=$(id -u) bb_user=$(id -un) bb_console=$(stat -f %Su /dev/console 2>/dev/null); ` +
-    `if [ "$bb_console" != "$bb_user" ]; then ` +
-    `printf 'bb-box: there is no desktop session to join: %s is not logged in to the desktop (the console belongs to %s).\\n' "$bb_user" "\${bb_console:-nobody}" >&2; ` +
+    `alia_uid=$(id -u) alia_user=$(id -un) alia_console=$(stat -f %Su /dev/console 2>/dev/null); ` +
+    `if [ "$alia_console" != "$alia_user" ]; then ` +
+    `printf 'alia-box: there is no desktop session to join: %s is not logged in to the desktop (the console belongs to %s).\\n' "$alia_user" "\${alia_console:-nobody}" >&2; ` +
     `exit ${DESKTOP_EXITS.noSession}; fi; ` +
     `if ! sudo -n ${wrapper} /usr/bin/true </dev/null >/dev/null 2>&1; then ` +
-    `printf 'bb-box: sudo does not let %s run commands in the desktop session. Mac setup adds this rule as /etc/sudoers.d/bb-box-desktop:\\n%s ALL=(root) NOPASSWD: /bin/launchctl asuser %s /usr/bin/sudo -n -u %s -- *\\n' "$bb_user" "$bb_user" "$bb_uid" "$bb_user" >&2; ` +
+    `printf 'alia-box: sudo does not let %s run commands in the desktop session. Mac setup adds this rule as /etc/sudoers.d/alia-box-desktop:\\n%s ALL=(root) NOPASSWD: /bin/launchctl asuser %s /usr/bin/sudo -n -u %s -- *\\n' "$alia_user" "$alia_user" "$alia_uid" "$alia_user" >&2; ` +
     `exit ${DESKTOP_EXITS.refused}; fi; ` +
-    `bb_launch=; [ ! -x ${MAC_LAUNCHER} ] || bb_launch=${MAC_LAUNCHER}; ` +
-    `exec sudo -n ${wrapper} $bb_launch "\${SHELL:-/bin/sh}" -c ${sh(LOADS_ENV + script)}`
+    `alia_launch=; [ ! -x ${MAC_LAUNCHER} ] || alia_launch=${MAC_LAUNCHER}; ` +
+    `exec sudo -n ${wrapper} $alia_launch "\${SHELL:-/bin/sh}" -c ${sh(LOADS_ENV + script)}`
   );
 }
 
@@ -141,22 +141,22 @@ export interface CommandOptions {
   readonly env?: string;
   /** Stops the command and everything it started, in the box, after this long. */
   readonly timeoutMs?: number;
-  /** On Linux and macOS, runs the command as a job, whose result outlives bb-box (#405). */
+  /** On Linux and macOS, runs the command as a job, whose result outlives alia-box (#405). */
   readonly job?: JobOptions;
 }
 
 export interface JobOptions {
   /** The job's ID, from newJobId. */
   readonly id: string;
-  /** Jobs whose results bb-box has, whose files go first. */
+  /** Jobs whose results alia-box has, whose files go first. */
   readonly forget: readonly string[];
-  /** Also remove the files of jobs older than JOB_DAYS, as bb-box does once per box after it starts. */
+  /** Also remove the files of jobs older than JOB_DAYS, as alia-box does once per box after it starts. */
   readonly prune: boolean;
 }
 
 /** Where box_run's commands keep their output and exit status, relative to the box user's home (#405). */
-export const JOBS_DIR = ".local/state/bb-box/jobs";
-/** Days a job's files stay when bb-box does not remove them. */
+export const JOBS_DIR = ".local/state/alia-box/jobs";
+/** Days a job's files stay when alia-box does not remove them. */
 export const JOB_DAYS = 7;
 /** A job's ID, as newJobId makes it. */
 export const JOB_ID = /^[0-9a-f]{12}$/;
@@ -173,34 +173,34 @@ function jobDir(id: string): string {
 /**
  * Runs `run` with its output and exit status in files in the job's
  * directory, then passes them on. The files stay, for jobScript, until
- * bb-box's next command in the box removes them: a write to a connection
- * bb-box has dropped can still succeed, as `docker exec` takes it, so the
- * job cannot tell whether bb-box got its result. Where the files cannot be
+ * alia-box's next command in the box removes them: a write to a connection
+ * alia-box has dropped can still succeed, as `docker exec` takes it, so the
+ * job cannot tell whether alia-box got its result. Where the files cannot be
  * made, it runs `run` as it is; when the status cannot be written, as on a
  * full disk, it says the output may be cut short.
  */
 function inJob(job: JobOptions, run: string): string {
   const jobs = `"$HOME/${JOBS_DIR}"`;
-  const file = (name: string) => `"$bb_job/${name}"`;
+  const file = (name: string) => `"$alia_job/${name}"`;
   const forget = job.forget.map(jobDir).join(" ");
   return (
-    `bb_run() {\n${run}\n}\n` +
-    `bb_job=${jobDir(job.id)}; ` +
-    `if [ -n "\${HOME:-}" ] && mkdir -p "$bb_job" 2>/dev/null && : >${file("out")} 2>/dev/null; then ` +
+    `alia_run() {\n${run}\n}\n` +
+    `alia_job=${jobDir(job.id)}; ` +
+    `if [ -n "\${HOME:-}" ] && mkdir -p "$alia_job" 2>/dev/null && : >${file("out")} 2>/dev/null; then ` +
     (forget ? `rm -rf ${forget}; ` : "") +
     (job.prune ? `find ${jobs} -mindepth 1 -maxdepth 1 -mtime +${JOB_DAYS} -exec rm -rf {} + 2>/dev/null; ` : "") +
-    `(bb_run) >${file("out")} 2>${file("err")}; bb_status=$?; ` +
-    `echo "$bb_status" >${file("status")} 2>/dev/null || bb_full=1; ` +
+    `(alia_run) >${file("out")} 2>${file("err")}; alia_status=$?; ` +
+    `echo "$alia_status" >${file("status")} 2>/dev/null || alia_full=1; ` +
     `[ ! -s ${file("out")} ] || cat ${file("out")}; [ ! -s ${file("err")} ] || cat ${file("err")} >&2; ` +
-    `if [ -n "\${bb_full:-}" ]; then rm -rf "$bb_job"; echo "bb-box: the box's disk may be full: the command's output may be cut short." >&2; fi; ` +
-    `exit "$bb_status"; fi; bb_run`
+    `if [ -n "\${alia_full:-}" ]; then rm -rf "$alia_job"; echo "alia-box: the box's disk may be full: the command's output may be cut short." >&2; fi; ` +
+    `exit "$alia_status"; fi; alia_run`
   );
 }
 
 /** A job's directory in a Windows box, as PowerShell names it. */
 function windowsJobDir(id: string): string {
   if (!JOB_ID.test(id)) throw new Error(`"${id}" is not a job ID.`);
-  return `(Join-Path $HOME '.local\\state\\bb-box\\jobs\\${id}')`;
+  return `(Join-Path $HOME '.local\\state\\alia-box\\jobs\\${id}')`;
 }
 
 /**
@@ -208,11 +208,11 @@ function windowsJobDir(id: string): string {
  * that writes it may still hold it open.
  */
 const WINDOWS_EMIT =
-  "function bbEmit($s,$p,$n){if(Test-Path -LiteralPath $p){$f=[IO.File]::Open($p,'Open','Read','ReadWrite');try{if($n -and $f.Length -gt $n){$null=$f.Seek(-$n,'End')};$f.CopyTo($s);$s.Flush()}finally{$f.Close()}}};";
+  "function aliaEmit($s,$p,$n){if(Test-Path -LiteralPath $p){$f=[IO.File]::Open($p,'Open','Read','ReadWrite');try{if($n -and $f.Length -gt $n){$null=$f.Seek(-$n,'End')};$f.CopyTo($s);$s.Flush()}finally{$f.Close()}}};";
 
 /**
  * A job in a Windows box (#414). sshd ends every process of a command when
- * the command's PowerShell exits, so a command that is to outlive bb-box's
+ * the command's PowerShell exits, so a command that is to outlive alia-box's
  * connection must start outside it. The script goes in a file in the job's
  * directory and stdin in another, and WMI starts cmd, which runs the script
  * in a PowerShell with the job's files as its stdin, output and error, then
@@ -221,7 +221,7 @@ const WINDOWS_EMIT =
  * second PowerShell that WMI starts beside it and that holds cmd's handle,
  * stops cmd and all it started at the timeout and writes status 1, as the
  * watchdog of a command in the session gives; it ends with the job, or when
- * the job ends first. If bb-box drops the connection, the job and the
+ * the job ends first. If alia-box drops the connection, the job and the
  * watchdog go on, and jobScript reads the files. A process WMI starts has
  * the user's environment, not the session's, so the script reads the env
  * file itself. One PowerShell start, about 155 ms, is the job's cost over a
@@ -229,51 +229,51 @@ const WINDOWS_EMIT =
  */
 function windowsJob(job: JobOptions, script: string, timeoutMs: number | undefined): string {
   const file = Buffer.from(powershellCommand(script), "utf8").toString("base64");
-  const jobs = "(Join-Path $HOME '.local\\state\\bb-box\\jobs')";
+  const jobs = "(Join-Path $HOME '.local\\state\\alia-box\\jobs')";
   // A path in the job's directory, in double quotes, for cmd's command line.
-  const at = (name: string) => `$q+(Join-Path $bbJob '${name}')+$q`;
+  const at = (name: string) => `$q+(Join-Path $aliaJob '${name}')+$q`;
   const run =
-    `$bbCl='cmd /d /v:on /s /c '+$q+$q+[Environment]::ProcessPath+$q+' -NoProfile -NonInteractive -ExecutionPolicy Bypass -File '+${at("script.ps1")}+` +
+    `$aliaCl='cmd /d /v:on /s /c '+$q+$q+[Environment]::ProcessPath+$q+' -NoProfile -NonInteractive -ExecutionPolicy Bypass -File '+${at("script.ps1")}+` +
     `' <'+${at("in")}+' >'+${at("out")}+' 2>'+${at("err")}+` +
     `' & echo !errorlevel!>'+${at("status.tmp")}+' & move /y '+${at("status.tmp")}+' '+${at("status")}+' >nul'+$q;`;
   const start = (command: string, what: string) =>
     // Its console hidden: in the desktop session it would be a window over the desktop (#916).
-    `$bbR=Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine=${command};CurrentDirectory=(Get-Location -PSProvider FileSystem).ProviderPath;ProcessStartupInformation=(New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow=[uint16]0})};` +
-    `if($bbR.ReturnValue -ne 0 -or -not $bbR.ProcessId){[Console]::Error.WriteLine('bb-box: Windows did not start the ${what}: Win32_Process Create returned '+$bbR.ReturnValue+'.');exit 1};`;
+    `$aliaR=Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine=${command};CurrentDirectory=(Get-Location -PSProvider FileSystem).ProviderPath;ProcessStartupInformation=(New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow=[uint16]0})};` +
+    `if($aliaR.ReturnValue -ne 0 -or -not $aliaR.ProcessId){[Console]::Error.WriteLine('alia-box: Windows did not start the ${what}: Win32_Process Create returned '+$aliaR.ReturnValue+'.');exit 1};`;
   // The watchdog's own script: stop the job at its timeout, unless it ended first, and say it timed out.
   const dog =
     timeoutMs === undefined
       ? ""
-      : `$d=$env:BB_BOX_JOB;$p=Get-Process -Id $env:BB_BOX_JOB_PID -ErrorAction Ignore;if($p.ProcessName -ne 'cmd'){$p=$null};` +
+      : `$d=$env:ALIA_BOX_JOB;$p=Get-Process -Id $env:ALIA_BOX_JOB_PID -ErrorAction Ignore;if($p.ProcessName -ne 'cmd'){$p=$null};` +
         `if($p -and -not $p.WaitForExit(${Math.ceil(timeoutMs)})){taskkill /T /F /PID $p.Id *>$null;$p.WaitForExit();` +
         `[IO.File]::WriteAllText((Join-Path $d 'status.tmp'),'1');Move-Item -Force -LiteralPath (Join-Path $d 'status.tmp') -Destination (Join-Path $d 'status')}`;
   // The watchdog's command line carries the job's directory and cmd's process ID itself, as a WMI start carries no variables.
   const dogLine =
     timeoutMs === undefined
       ? ""
-      : `$bbDogScript='$env:BB_BOX_JOB='+[char]39+$bbJob.Replace([string][char]39,[string][char]39*2)+[char]39+';$env:BB_BOX_JOB_PID='+$bbCmd+';'+${ps(dog)};` +
-        `$bbDogLine=$q+[Environment]::ProcessPath+$q+' -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand '+[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($bbDogScript));` +
-        start("$bbDogLine", "watchdog for the job");
+      : `$aliaDogScript='$env:ALIA_BOX_JOB='+[char]39+$aliaJob.Replace([string][char]39,[string][char]39*2)+[char]39+';$env:ALIA_BOX_JOB_PID='+$aliaCmd+';'+${ps(dog)};` +
+        `$aliaDogLine=$q+[Environment]::ProcessPath+$q+' -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand '+[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($aliaDogScript));` +
+        start("$aliaDogLine", "watchdog for the job");
   return (
-    `$bbJob=${windowsJobDir(job.id)};$q=[char]34;` +
+    `$aliaJob=${windowsJobDir(job.id)};$q=[char]34;` +
     job.forget.map((id) => `Remove-Item -Recurse -Force -LiteralPath ${windowsJobDir(id)} -ErrorAction Ignore;`).join("") +
     (job.prune ? `Get-ChildItem -Directory -LiteralPath ${jobs} -ErrorAction Ignore|Where-Object LastWriteTime -lt (Get-Date).AddDays(-${JOB_DAYS})|Remove-Item -Recurse -Force -ErrorAction Ignore;` : "") +
-    "New-Item -ItemType Directory -Force -Path $bbJob|Out-Null;" +
-    `[IO.File]::WriteAllBytes((Join-Path $bbJob 'script.ps1'),[Convert]::FromBase64String('${file}'));` +
-    "$f=[IO.File]::Create((Join-Path $bbJob 'in'));try{[Console]::OpenStandardInput().CopyTo($f)}finally{$f.Close()};" +
+    "New-Item -ItemType Directory -Force -Path $aliaJob|Out-Null;" +
+    `[IO.File]::WriteAllBytes((Join-Path $aliaJob 'script.ps1'),[Convert]::FromBase64String('${file}'));` +
+    "$f=[IO.File]::Create((Join-Path $aliaJob 'in'));try{[Console]::OpenStandardInput().CopyTo($f)}finally{$f.Close()};" +
     run +
-    start("$bbCl", "job") +
-    "$bbCmd=$bbR.ProcessId;" +
+    start("$aliaCl", "job") +
+    "$aliaCmd=$aliaR.ProcessId;" +
     dogLine +
     // Waits on cmd's handle, not by polling; a cmd that ended already has written the status.
-    "try{(Get-Process -Id $bbCmd -ErrorAction Stop).WaitForExit()}catch{};" +
-    "$bbStatus=Join-Path $bbJob 'status';" +
+    "try{(Get-Process -Id $aliaCmd -ErrorAction Stop).WaitForExit()}catch{};" +
+    "$aliaStatus=Join-Path $aliaJob 'status';" +
     // The watchdog writes the status of a job it stopped a moment after cmd ends.
-    "for($i=0;-not (Test-Path -LiteralPath $bbStatus) -and $i -lt 50;$i++){Start-Sleep -Milliseconds 100};" +
-    "if(-not (Test-Path -LiteralPath $bbStatus)){[Console]::Error.WriteLine('bb-box: the job ended without an exit status: the box'+[char]39+'s disk may be full.');exit 1};" +
+    "for($i=0;-not (Test-Path -LiteralPath $aliaStatus) -and $i -lt 50;$i++){Start-Sleep -Milliseconds 100};" +
+    "if(-not (Test-Path -LiteralPath $aliaStatus)){[Console]::Error.WriteLine('alia-box: the job ended without an exit status: the box'+[char]39+'s disk may be full.');exit 1};" +
     WINDOWS_EMIT +
-    "bbEmit ([Console]::OpenStandardOutput()) (Join-Path $bbJob 'out') 0;bbEmit ([Console]::OpenStandardError()) (Join-Path $bbJob 'err') 0;" +
-    "exit [int](Get-Content -Raw -LiteralPath $bbStatus)"
+    "aliaEmit ([Console]::OpenStandardOutput()) (Join-Path $aliaJob 'out') 0;aliaEmit ([Console]::OpenStandardError()) (Join-Path $aliaJob 'err') 0;" +
+    "exit [int](Get-Content -Raw -LiteralPath $aliaStatus)"
   );
 }
 
@@ -291,14 +291,14 @@ export function jobScript(id: string, tailBytes: number, os: GuestOs = "linux"):
       WINDOWS_EMIT +
       "$o=[Console]::OpenStandardOutput();$e=[Console]::OpenStandardError();$s=Join-Path $d 'status';" +
       "if(Test-Path -LiteralPath $s){$b=[Text.Encoding]::UTF8.GetBytes((Get-Content -Raw -LiteralPath $s).Trim()+[char]10);$o.Write($b,0,$b.Length);" +
-      "bbEmit $o (Join-Path $d 'out') 0;bbEmit $e (Join-Path $d 'err') 0;exit 0};" +
-      `bbEmit $o (Join-Path $d 'out') ${tail};bbEmit $e (Join-Path $d 'err') ${tail};exit 4`
+      "aliaEmit $o (Join-Path $d 'out') 0;aliaEmit $e (Join-Path $d 'err') 0;exit 0};" +
+      `aliaEmit $o (Join-Path $d 'out') ${tail};aliaEmit $e (Join-Path $d 'err') ${tail};exit 4`
     );
   }
   return (
-    `bb_job=${jobDir(id)}; [ -d "$bb_job" ] || exit 3; ` +
-    `if [ -s "$bb_job/status" ]; then { cat "$bb_job/status" "$bb_job/out" && cat "$bb_job/err" >&2; } || exit 5; exit 0; fi; ` +
-    `tail -c ${Math.floor(tailBytes)} "$bb_job/out"; tail -c ${Math.floor(tailBytes)} "$bb_job/err" >&2; exit 4`
+    `alia_job=${jobDir(id)}; [ -d "$alia_job" ] || exit 3; ` +
+    `if [ -s "$alia_job/status" ]; then { cat "$alia_job/status" "$alia_job/out" && cat "$alia_job/err" >&2; } || exit 5; exit 0; fi; ` +
+    `tail -c ${Math.floor(tailBytes)} "$alia_job/out"; tail -c ${Math.floor(tailBytes)} "$alia_job/err" >&2; exit 4`
   );
 }
 
@@ -321,7 +321,7 @@ export function timedOutExits(os: GuestOs): readonly number[] {
  */
 const MAC_TIMEOUT = String.raw`my $t = shift;
 my $pid = fork;
-die "bb-box: fork: $!\n" unless defined $pid;
+die "alia-box: fork: $!\n" unless defined $pid;
 if (!$pid) { setpgrp(0, 0); exec @ARGV or exit 127 }
 my $timed = 0;
 $SIG{ALRM} = sub { $timed = 1; kill "TERM", -$pid; $SIG{ALRM} = sub { kill "KILL", -$pid }; alarm 5 };
@@ -350,12 +350,12 @@ function macTimeout(script: string, timeoutMs: number): string {
  */
 export function command(os: GuestOs, script: string, options: CommandOptions = {}): string {
   if (os === "windows") {
-    const file = `$bbBoxEnv = Join-Path $HOME ${ps(envFile(os))}; `;
+    const file = `$aliaBoxEnv = Join-Path $HOME ${ps(envFile(os))}; `;
     const write =
       options.env === undefined
         ? ""
-        : `New-Item -ItemType Directory -Force -Path (Split-Path $bbBoxEnv) | Out-Null; Set-Content -LiteralPath $bbBoxEnv -NoNewline -Value ${ps(options.env)}; `;
-    const env = "if (Test-Path -LiteralPath $bbBoxEnv) { . $bbBoxEnv }; ";
+        : `New-Item -ItemType Directory -Force -Path (Split-Path $aliaBoxEnv) | Out-Null; Set-Content -LiteralPath $aliaBoxEnv -NoNewline -Value ${ps(options.env)}; `;
+    const env = "if (Test-Path -LiteralPath $aliaBoxEnv) { . $aliaBoxEnv }; ";
     const cd = options.cwd ? `Set-Location -LiteralPath ${ps(options.cwd)} -ErrorAction Stop; ` : "";
     if (options.session === "desktop") return `${write && file + write}${desktopScript(`${file}${env}${cd}${script}`, options.timeoutMs)}`;
     // A job's runner keeps the timeout itself, as it outlives this command (#414).
@@ -420,7 +420,7 @@ function accessNames(access: Access): string[] {
 /**
  * Sets the named variables from the newest of the processes below `parent`
  * that has the most of them, afresh each time the env file is sourced, so a
- * change in BB reaches the next command. BB gives some workers only some of
+ * change in VesnALIA reaches the next command. VesnALIA gives some workers only some of
  * its variables. Each is read as it is counted, so one that ends before then
  * is passed over, not left as the one with none. Values never reach the
  * disk. Needs GNU grep and sed.
@@ -429,7 +429,7 @@ function accessLoader(access: Access): string {
   const names = accessNames(access);
   if (!names.length) return "";
   const pattern = sh(`^(${names.join("|")})=`);
-  return String.raw`bb_box_access() (
+  return String.raw`alia_box_access() (
   PATH="${"$"}{PATH:+${"$"}PATH:}/usr/bin:/bin"
   ps -u "$(id -u)" -o pid= -o ppid= -o etimes= -o args= 2>/dev/null |
     awk -v parent=${sh(access.parent)} '{ up[$1] = $2; age[$1] = $3; program[$1] = $5 }
@@ -446,8 +446,8 @@ function accessLoader(access: Access): string {
       [ -n "$best" ] && printf '%s\n' "$best"
     }
 )
-eval "$(bb_box_access)"
-unset -f bb_box_access
+eval "$(alia_box_access)"
+unset -f alia_box_access
 `;
 }
 
@@ -462,7 +462,7 @@ unset -f bb_box_access
 function macAccessLoader(access: Access): string {
   const names = accessNames(access);
   if (!names.length) return "";
-  return String.raw`bb_box_access() (
+  return String.raw`alia_box_access() (
   PATH="${"$"}{PATH:+${"$"}PATH:}/usr/bin:/bin"
   LC_ALL=en_US.UTF-8 ps -ww -U "$(id -u)" -o pid= -o ppid= -o etime= -o command= 2>/dev/null |
     LC_ALL=C awk -v parent=${sh(access.parent)} -v names=${sh(names.join(" "))} '
@@ -509,8 +509,8 @@ function macAccessLoader(access: Access): string {
         for (i = 1; i <= n; i++) if ((best, list[i]) in got) print "export " list[i] "=" quote(decode(got[best, list[i]]))
       }'
 )
-eval "$(bb_box_access)"
-unset -f bb_box_access
+eval "$(alia_box_access)"
+unset -f alia_box_access
 `;
 }
 
@@ -527,7 +527,7 @@ export function envScript(os: GuestOs, variables: Readonly<Record<string, string
     const own = names.map((name) => `$env:${name} = ${ps(variables[name]!)}`).join("\r\n") + "\r\n";
     return own + (access ? windowsAccessLoader(accessNames(access), access.parent) : "");
   }
-  const header = "# Written by bb-box: the thread's environment for commands in this box.\n";
+  const header = "# Written by alia-box: the thread's environment for commands in this box.\n";
   const defaults = os === "linux" ? "export DEBIAN_FRONTEND=noninteractive\n" : "";
   const loader = !access ? "" : os === "macos" ? macAccessLoader(access) : accessLoader(access);
   return header + defaults + names.map((name) => `export ${name}=${sh(variables[name]!)}`).join("\n") + "\n" + loader;
@@ -542,7 +542,7 @@ const HOOK_LINE =
  * The lines an enrolled box's shell startup file starts with, above anything
  * that returns early.
  */
-const SHELL_HOOK = `# Added by bb-box: the thread's environment and access, for SSH commands too.
+const SHELL_HOOK = `# Added by alia-box: the thread's environment and access, for SSH commands too.
 ${HOOK_LINE}
 `;
 
@@ -551,12 +551,12 @@ ${HOOK_LINE}
  * file in every shell: its two lines and the blank line after them.
  */
 const DROP_OLD_HOOK =
-  `awk -v a=${sh("# Added by bb-box: the thread's environment and access, for SSH commands too.")} ` +
+  `awk -v a=${sh("# Added by alia-box: the thread's environment and access, for SSH commands too.")} ` +
   `-v b=${sh(`if [ -r "$HOME/${envFile("linux")}" ]; then . "$HOME/${envFile("linux")}"; fi`)} ` +
   `'$0 == a { next } $0 == b { gap = 1; next } gap && $0 == "" { gap = 0; next } { gap = 0; print }'`;
 
 /**
- * Run once a Linux or macOS box is a BB machine, after the env file is
+ * Run once a Linux or macOS box is a VesnALIA machine, after the env file is
  * written: the shell's startup file sources the env file first, in place of
  * an older hook, git asks gh for GitHub credentials, so both use GH_TOKEN,
  * and git fetches GitHub's SSH URLs over HTTPS, as on the thread's machine.
@@ -567,14 +567,14 @@ const DROP_OLD_HOOK =
  * log, when the box's date can tell. A Windows box gets git's part (#560).
  * Once it has run to its end, a file named by its own hash says so, and it
  * does nothing again: a warm Mac's fill runs it before the claim, so the
- * claim's enrolment, where it competed with BB's installer, need not.
+ * claim's enrolment, where it competed with VesnALIA's installer, need not.
  */
 export function accessSetup(os: GuestOs): string {
   if (os === "windows") return WINDOWS_ACCESS_SETUP;
   const setup = unixAccessSetup(os);
-  const done = `"$HOME/.config/bb-box/access-${createHash("sha256").update(setup).digest("hex").slice(0, 12)}"`;
+  const done = `"$HOME/.config/alia-box/access-${createHash("sha256").update(setup).digest("hex").slice(0, 12)}"`;
   return `if [ -f ${done} ]; then echo 0; exit 0; fi
-${setup.replace(/exit "\$code"\n$/, `[ "$code" -ne 0 ] || { mkdir -p "$HOME/.config/bb-box" && : > ${done}; } || :\nexit "$code"\n`)}`;
+${setup.replace(/exit "\$code"\n$/, `[ "$code" -ne 0 ] || { mkdir -p "$HOME/.config/alia-box" && : > ${done}; } || :\nexit "$code"\n`)}`;
 }
 
 function unixAccessSetup(os: "linux" | "macos"): string {
@@ -582,8 +582,8 @@ function unixAccessSetup(os: "linux" | "macos"): string {
   return String.raw`started=$(date +%s%N)
 f="$HOME/${os === "macos" ? ".zshenv" : ".bashrc"}"
 if ! grep -qsxF ${sh(HOOK_LINE)} "$f"; then
-  { [ ! -e "$f" ] || cp -p "$f" "$f.bb-box"; } &&
-    { printf '%s\n' ${sh(SHELL_HOOK)} && { [ ! -e "$f" ] || ${DROP_OLD_HOOK} "$f"; }; } > "$f.bb-box" && mv -f "$f.bb-box" "$f"
+  { [ ! -e "$f" ] || cp -p "$f" "$f.alia-box"; } &&
+    { printf '%s\n' ${sh(SHELL_HOOK)} && { [ ! -e "$f" ] || ${DROP_OLD_HOOK} "$f"; }; } > "$f.alia-box" && mv -f "$f.alia-box" "$f"
 fi
 code=0
 if command -v git >/dev/null 2>&1; then
@@ -612,8 +612,8 @@ export function accessSetupMs(stdout: string): number | null {
 export const ACCESS_CHECK_EXITS = { found: 0, waiting: 1, noDaemon: 2 } as const;
 
 /**
- * Run with the env file sourced, once a box's BB daemon connects: whether
- * the box's commands have the thread's access yet. BB starts the workers
+ * Run with the env file sourced, once a box's VesnALIA daemon connects: whether
+ * the box's commands have the thread's access yet. VesnALIA starts the workers
  * that carry the variables a moment after its daemon connects. Exits 0 when
  * the env file set every required name, or any name when none is required,
  * 1 while the daemon runs without them, and 2 when nothing runs the

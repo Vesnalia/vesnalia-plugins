@@ -9,7 +9,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { BoardColumn, GroupBy, LaneHideOutcome } from "./grouping";
 import { THREAD_STATE_LABELS, threadState } from "./grouping";
 import {
@@ -3186,16 +3186,16 @@ function BoardBase({
                       the per-lane menu ruling. The bare header around it is
                       a drop surface, never a trigger.
 
-                      Hover reads at bb's interactive-state weight
+                      Hover reads at VesnALIA's interactive-state weight
                       (`hover:bg-state-active`, not the chips' `bg-accent`).
-                      Accent is the same step as bb's `state-hover` and
+                      Accent is the same step as VesnALIA's `state-hover` and
                       measured 1.24:1 against the dark canvas and 1.35:1
                       against the light one — the too-subtle read the
                       operator's ruling names. state-active is the step above
                       it (1.63:1 / 1.60:1 on the same harness pass) and the
-                      fill bb's own small caret triggers hover with; the caret
+                      fill VesnALIA's own small caret triggers hover with; the caret
                       lifts from `muted-foreground/60` to full ink beside it,
-                      the fill-plus-glyph-tone pair bb's sidebar controls
+                      the fill-plus-glyph-tone pair VesnALIA's sidebar controls
                       carry. The group is NAMED because the header already
                       owns a plain `group` for its hide-lane icon, so a bare
                       `group-hover:` would light the caret from anywhere in

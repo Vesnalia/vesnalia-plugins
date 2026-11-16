@@ -1,8 +1,8 @@
-// What links a review to the code and the BB thread that made the change: where Open in editor opens a local review's
+// What links a review to the code and the VesnALIA thread that made the change: where Open in editor opens a local review's
 // files, and what its comments' status lines say of it, its Sends among them. The workspace provides it, so each card in
 // the code reads it without the whole draft.
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { POSTS, type StatusFacts } from "./comments";
 import type { ReviewItem } from "./review-state";
@@ -13,7 +13,7 @@ export interface ReviewLinks {
   /** What a draft comment's status line says of its review (lib/comment-status.ts): with Send to thread off, no Sends. */
   status: StatusFacts;
   /**
-   * Where the review's files open: a local review's checkout and the BB server's host; a folder's review's folder, on
+   * Where the review's files open: a local review's checkout and the VesnALIA server's host; a folder's review's folder, on
    * its machine, a PR's that came from it too, while it's there on its branch. Null for another PR, a diff that doesn't
    * end at the checkout, or with Open in editor off. `unpushed`: on a PR, the files the folder has changed since the
    * PR's head, whose lines aren't the PR's; null until read, when none's are.
@@ -34,7 +34,7 @@ export function diffEndsAtCheckout(gitRef: string | undefined): boolean {
 }
 
 /**
- * The review's links, as its switches allow. A local review's checkout is on the BB server, so its files open there; a
+ * The review's links, as its switches allow. A local review's checkout is on the VesnALIA server, so its files open there; a
  * folder's review's open in its folder, on its machine.
  */
 export function useReviewLinks(review: ReviewItem | null): ReviewLinks {

@@ -3,7 +3,7 @@
 // notification in Lobu; Mark read clears it here. Quiet when empty or
 // unreachable — the project brief below stays the source of truth.
 import { useCallback, useEffect, useState } from "react";
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "@/lib/contract";
 import { Button } from "@/components/ui/button";
 import { Frame } from "@/components/setup";

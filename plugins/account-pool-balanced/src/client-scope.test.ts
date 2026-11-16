@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { clientAccountScopeSchema, clientRouteAllowed, type ClientAccountScope } from './client-scope.js';
 import { createHub } from './hub.js';
 import { createAccountPoolPlugin } from './management-test-fixture.js';
@@ -15,7 +15,7 @@ import { CURSOR_EXCHANGE_PATH, CURSOR_MOUNT_PREFIX } from './cursor-adapter.js';
 const cleanups: Array<()=>Promise<unknown>>=[];
 afterEach(async()=>{for(const close of cleanups.splice(0).reverse())await close();vi.restoreAllMocks();});
 const syntheticId='11111111-1111-4111-8111-111111111111';
-const scope=(ids=[syntheticId]):ClientAccountScope=>({schema:'bb-account-pool/client-account-scope/1',accountIds:ids,egress:{id:'fixture-vpn',version:1}});
+const scope=(ids=[syntheticId]):ClientAccountScope=>({schema:'alia-account-pool/client-account-scope/1',accountIds:ids,egress:{id:'fixture-vpn',version:1}});
 const profile={id:'fixture-vpn',version:1,label:'Fixture',node:'fixture-node',hostIds:['fixture-host'],transport:'ssh-connect' as const,
   endpoint:'http://127.0.0.1:19081',dns:'remote' as const,ipv4:true as const,ipv6:false as const,failure:'closed' as const,
   expectedExit:['192.0.2.1'],assurance:'proxy-enforced' as const};
@@ -56,14 +56,14 @@ it.each([null,false,{}, {accountIds:['invalid']}, {...scope(),accountIds:['inval
 
 async function fixture(provider:PoolProvider='claude',ids?:string[]) {
   const dir=await directory();const host=createFakePluginHost({pluginId:'fixture-pool',dataDir:dir});cleanups.push(()=>host.harness.lifecycle.dispose());
-  const accounts=new AccountStore(host.bb.storage.kv,path.join(dir,'accounts'));
+  const accounts=new AccountStore(host.alia.storage.kv,path.join(dir,'accounts'));
   const common={provider,kind:'api-key' as const,label:'Fixture',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true};
   const add=(key:string,priority:number)=>accounts.add({...common,kind:provider==='codex'?'oauth':'api-key',priority,...(provider==='codex'?{codexAccountId:key}:{})},provider==='codex'
     ?{kind:'oauth',accessToken:key,refreshToken:'fixture-refresh',expiresAt:1900000000000+86400000}
     :{kind:'api-key',apiKey:key});
   const personal=await add('fixture-personal',100);
   const allowed=await add('fixture-permitted',200);
-  const db=host.bb.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);
+  const db=host.alia.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);
   const affinity=new PoolAffinityStore(db),quotas=new QuotaStore(db),tokens=new HubTokenStore(path.join(dir,'tokens'));
   const authority=scope(ids??[allowed.id]);const token=await tokens.forIssuedClient('external_fixture','project',undefined,authority);
   const legacy=await tokens.forIssuedClient('external_fixture_legacy','project');
@@ -78,7 +78,7 @@ async function fixture(provider:PoolProvider='claude',ids?:string[]) {
   vi.spyOn(hub,'refreshUsage').mockResolvedValue();
   const controller=new AbortController();const done=hub.start(controller.signal);cleanups.push(async()=>{controller.abort();await done;});await new Promise(r=>setImmediate(r));
   const request=async(key=token,parent?:string,method='POST',signal?:AbortSignal)=>{
-    const r=await hub.handle(new Request('http://localhost/pool/v1/'+(method==='GET'?'models':'messages'),{method,signal,headers:{authorization:`Bearer ${key}`,'content-type':'application/json','x-account-id':personal.id,'x-bb-project-id':'other',...(provider==='cursor'?{'x-cursor-rpc-path':'aiserver.v1.AiService/AvailableModels'}:{})},...(method==='GET'?{}:{body:JSON.stringify({accountId:personal.id,accountScope:scope([personal.id]),metadata:{user_id:JSON.stringify({session_id:parent?'child':'same',...(parent?{parent_session_id:parent}:{})})}})})}),provider);
+    const r=await hub.handle(new Request('http://localhost/pool/v1/'+(method==='GET'?'models':'messages'),{method,signal,headers:{authorization:`Bearer ${key}`,'content-type':'application/json','x-account-id':personal.id,'x-alia-project-id':'other',...(provider==='cursor'?{'x-cursor-rpc-path':'aiserver.v1.AiService/AvailableModels'}:{})},...(method==='GET'?{}:{body:JSON.stringify({accountId:personal.id,accountScope:scope([personal.id]),metadata:{user_id:JSON.stringify({session_id:parent?'child':'same',...(parent?{parent_session_id:parent}:{})})}})})}),provider);
     const text=await r.text();return {status:r.status,text};};
   return {hub,request,settings,advance:(ms:number)=>{now+=ms;hub.admissionLimitsChanged();},allowed,personal,accounts,affinity,tokens,token,legacy,seen,quotas,fallback,authority,transport:direct,
     status:(s:number)=>status=s,route:(r:AccountRoute)=>route=r,onGuard:(fn:()=>Promise<void>)=>guardAction=fn};
@@ -151,7 +151,7 @@ it.each(['codex','zai','cursor'] as const)('service %s evidence excludes persona
 it('CLI issues scoped private credentials, rejects invalid scope, exchange retains authority and native rejects it',async()=>{
   const dir=await directory();const transport=vi.fn<typeof fetch>(async()=>{throw Error('No upstream');});
   const host=createFakePluginHost({pluginId:'account-pool-balanced',dataDir:dir,sdk:{hosts:{list:async()=>[]},system:{providerStates:async()=>({providers:[]})}}});cleanups.push(()=>host.harness.lifecycle.dispose());
-  await createAccountPoolPlugin({fetch:transport,fetchIpv4:transport})(host.bb);
+  await createAccountPoolPlugin({fetch:transport,fetchIpv4:transport})(host.alia);
   const out=path.join(dir,'client.token');
   const issue=(name:string,fields:string[],file=out)=>host.harness.behavior.runCli(['client','add',name,'--output',file,...fields]);
   expect((await issue('bad',['--project','project','--account-scope-json','{"accountIds":[]}'])).exitCode).not.toBe(0);

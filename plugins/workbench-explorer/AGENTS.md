@@ -1,6 +1,6 @@
 ## Project Overview
 
-**bb-plugin-workbench-explorer** (Workbench Explorer) is a [BB](https://getbb.app) plugin that keeps a file explorer open across threads. Choose a project source or thread workspace as its pinned folder. Switching threads leaves the folder, expanded directories, and selection in place. Built with TypeScript, React 19, and Tailwind CSS.
+**alia-plugin-workbench-explorer** (Workbench Explorer) is a [VesnALIA](https://getbb.app) plugin that keeps a file explorer open across threads. Choose a project source or thread workspace as its pinned folder. Switching threads leaves the folder, expanded directories, and selection in place. Built with TypeScript, React 19, and Tailwind CSS.
 
 The rail carries two tabs — **Files** (name/path search) and **Search text** (content search with replace) — and integrates with chat by revealing paths written in messages, including bare filenames resolved via a name index over the search roots.
 
@@ -8,8 +8,8 @@ The rail carries two tabs — **Files** (name/path search) and **Search text** (
 
 ```bash
 npm install           # Install dependencies
-bb plugin build       # Build the plugin
-bb plugin reload workbench-explorer  # Reload plugin in development
+alia plugin build       # Build the plugin
+alia plugin reload workbench-explorer  # Reload plugin in development
 bun test              # Run the unit tests
 ```
 
@@ -17,7 +17,7 @@ bun test              # Run the unit tests
 
 ### Entry Points
 
-- **`server.ts`** — Plugin server entry point. Registers RPC handlers via `rpcContract`. Manages settings, host connection for filesystem operations, search roots, and the ignored-dirs set. Content search is handed to the host; replace runs here through a per-call `hostFileStore` adapter over BB's host SDK (`bb.sdk.files.read`, `bb.sdk.files.write`).
+- **`server.ts`** — Plugin server entry point. Registers RPC handlers via `rpcContract`. Manages settings, host connection for filesystem operations, search roots, and the ignored-dirs set. Content search is handed to the host; replace runs here through a per-call `hostFileStore` adapter over VesnALIA's host SDK (`alia.sdk.files.read`, `alia.sdk.files.write`).
 - **`host.ts`** — Host entry point. Exposes `statPath`, `listDirectory`, `searchInFiles`, and `removePath` handlers that run in the host process for filesystem access. Delegates to `statHostPath`/`listHostDirectory`/`removeHostPath` in `src/host-listing.ts` and `searchHostInFiles` in `src/host-search.ts`.
 - **`app.tsx`** — Frontend app. Registers UI slots:
   - `experimental_appOverlay` → `GlobalFileExplorerRail` (the persistent right rail)
@@ -29,7 +29,7 @@ bun test              # Run the unit tests
 ### Contracts
 
 - **`shared.ts`** — SDK-free schemas, types, and constants shared between server and frontend. Browser-safe; imported by all frontend components, hooks, and lib modules. Exports `SKIP_FILE_NAMES` (a `Record<string, true>`), all Zod schemas (`treeEntrySchema`, `workspaceSchema`, `rootChoiceSchema`, `workspaceResultSchema`, `revealRootSchema`, `revealResultSchema`, `searchHitSchema`, `fileSearchMatchSchema`, `fileReplaceOutcomeSchema`, `anchorFixSchema`), and all their inferred TypeScript types.
-- **`contract.ts`** — Server RPC contract. Imports schemas from `shared.ts` and uses `defineRpcContract` (server-only `@get-bb/plugin-sdk`) to wire the 19 RPC methods. Frontend code imports only types from here via `import type`.
+- **`contract.ts`** — Server RPC contract. Imports schemas from `shared.ts` and uses `defineRpcContract` (server-only `@vesnalia/plugin-sdk`) to wire the 19 RPC methods. Frontend code imports only types from here via `import type`.
 - **`host-contract.ts`** — Host-side contract for `statPath`, `listDirectory`, `searchInFiles`, and `removePath` calls.
 
 ### Key Source Modules (`src/`)
@@ -43,9 +43,9 @@ bun test              # Run the unit tests
 - **`search-in-files.ts`** — Content search walk and replace across files in a pinned root. The walk is the fallback engine (used when ripgrep cannot answer) and the home of the shared line shaping (`matchLine`). Walks directories via `HostSearchReader`, bounded by 4000 files, 24 depth, 1MB file size. Exports `searchInFiles`, `replaceInFiles`, `matchLine`, `HostSearchReader`, `HostFileStore`, `HostSearchFs`, `HostSearchEntry`, `HostSearchRead`, `HostSearchReadResult`, `MAX_FILES`, `MAX_DEPTH`, `MAX_FILE_BYTES`, `BINARY_EXTENSIONS`.
 - **`host-search.ts`** — Host-side text search: runs ripgrep (npm `ripgrep`, WASM) at the pinned root, maps its JSON rows through `matchLine`, falls back to the walk over local `node:fs`. Exports `searchHostInFiles`.
 - **`text-match.ts`** — Regex/text matching utilities for content search. Builds a single global `RegExp` per query (supporting case sensitivity, whole-word, regex). Exports `buildMatcher`, `findMatches`, `countMatches`, `replaceMatches`, `escapeRegExp`, `MatchOptions`.
-- **`create-file.ts`** — Create an empty file from a user-typed name in a given folder. Validates name, checks for collisions, writes via `bb.sdk.files.write`. Returns workspace-relative path.
-- **`create-folder.ts`** — Create a folder from a user-typed name. Validates, checks collisions, writes via `bb.sdk.files.mkdir`.
-- **`rename-entry.ts`** — Rename a file or folder. Validates name, checks collisions, performs `bb.sdk.files.rename`. The tree root is refused.
+- **`create-file.ts`** — Create an empty file from a user-typed name in a given folder. Validates name, checks for collisions, writes via `alia.sdk.files.write`. Returns workspace-relative path.
+- **`create-folder.ts`** — Create a folder from a user-typed name. Validates, checks collisions, writes via `alia.sdk.files.mkdir`.
+- **`rename-entry.ts`** — Rename a file or folder. Validates name, checks collisions, performs `alia.sdk.files.rename`. The tree root is refused.
 - **`delete-entry.ts`** — Delete a file or folder. The tree root is refused. Folders are removed recursively.
 - **`os-actions.ts`** — OS-level actions: `revealInExplorer` (cross-platform: `open -R` on macOS, `explorer /select` on Windows, `xdg-open` on Linux; WSL-aware) and `copyTextToClipboard` (multiple clipboard backends with fallback).
 - **`ignore.ts`** — Skip patterns. Exports `shouldSkip` (checks `SKIP_FILE_NAMES` / ignored dirs against a `TreeEntry`) and `sortEntries` (directories first, then alphabetical).
@@ -56,7 +56,7 @@ bun test              # Run the unit tests
 
 ### Components (`components/`)
 
-- **`GlobalFileExplorerRail.tsx`** — The right-side rail container. Mounted once per BB window (navigation never unmounts it). Manages two tabs (Files/Search text), pinned root selector, rail open/close, resize handle, and refresh button. Persists pinned root and active tab to localStorage.
+- **`GlobalFileExplorerRail.tsx`** — The right-side rail container. Mounted once per VesnALIA window (navigation never unmounts it). Manages two tabs (Files/Search text), pinned root selector, rail open/close, resize handle, and refresh button. Persists pinned root and active tab to localStorage.
 - **`FileExplorerPanel.tsx`** — Tree view container. Combines `FileExplorerSearchBox`/`FileExplorerSearchResults` when searching, otherwise `FileExplorerBody`.
 - **`FileExplorerSearch.tsx`** — Search box (debounced, 280ms, min 2 chars, limit 20) with inline results list. Results sorted with active workspace first. Selecting a result reveals it in the tree via the same path as chat anchors.
 - **`FileContentSearchPanel.tsx`** — Content search panel with query input, replace input, match options (case/whole-word/regex toggles), and replace-all button. Groups matches by file with per-file replace action.
@@ -78,12 +78,12 @@ bun test              # Run the unit tests
 - **`chat-path-buttons.ts`** — DOM scanner that mounts "reveal in tree" buttons on chat path links. Caches verdicts per thread with TTL. Uses `createTimedCache` for path existence and anchor fixes.
 - **`reveal-bus.ts`** — One-slot hand-off between chat content scripts and the mounted tree. Pending requests are delivered when the tree subscribes.
 - **`search-focus-bus.ts`** — One-slot hand-off for command-palette "find a file" focus requests.
-- **`surface-navigation.ts`** — Registers and resolves `useBbNavigate` per thread route. Keyed by threadId (or "new-thread").
+- **`surface-navigation.ts`** — Registers and resolves `useAliaNavigate` per thread route. Keyed by threadId (or "new-thread").
 - **`timed-cache.ts`** — Per-scope TTL cache for verdicts (default 10min for path cache). Used by `chat-path-buttons.ts`.
 - **`file-type.ts`** — Seti-style file glyph and color detection. Maps file names and extensions to glyphs (markdown, json, git, config, react, shell, code, etc.).
-- **`open-preview.ts`** — Opens files in BB's preview panel. Prefers workspace target for environment-rooted files; falls back to host-by-absolute-path for re-rooted or remote files.
+- **`open-preview.ts`** — Opens files in VesnALIA's preview panel. Prefers workspace target for environment-rooted files; falls back to host-by-absolute-path for re-rooted or remote files.
 - **`utils.ts`** — `cn` (clsx + tailwind-merge) and `formatHomePathForDisplay` (abbreviate home paths for display only).
-- **`portal-scope.ts`** — Returns portal scope attributes for `data-bb-portaled-overlay` / `data-bb-plugin-root` / `data-bb-plugin`.
+- **`portal-scope.ts`** — Returns portal scope attributes for `data-alia-portaled-overlay` / `data-alia-plugin-root` / `data-alia-plugin`.
 - **`visible-reveal.ts`** — Ensures a revealed child row appears in the tree even when the host directory listing omits dotfolders. Only for unverified reveal chains.
 
 ### Hooks (`hooks/`)
@@ -95,10 +95,10 @@ bun test              # Run the unit tests
 
 ## Key Patterns
 
-### BB Plugin SDK
+### VesnALIA Plugin SDK
 
-- Uses `@get-bb/plugin-sdk` (version `0.5.29` in devDependencies, minimum `0.5.9` in engines).
-- Plugin config: `bb plugin config file-explorer`
+- Uses `@vesnalia/plugin-sdk` (version `0.5.29` in devDependencies, minimum `0.5.9` in engines).
+- Plugin config: `alia plugin config file-explorer`
 - Entry points: `server.ts` (server), `host.ts` (host), `app.tsx` (client).
 
 ### Path Aliases
@@ -120,18 +120,18 @@ Three layers of persistence:
 
 | What                                                                                        | Storage                       | Key                                   |
 | ------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------- |
-| Settings (openByDefault, confirmDelete, showSkipped, ignoredFolders, treeRoot, searchRoots) | `bb.settings.define`          | survives BB restarts                  |
-| Rail open state                                                                             | `localStorage` + custom event | `bb-plugin-workbench-explorer:rail-open`   |
-| Rail width                                                                                  | `localStorage` + custom event | `bb-plugin-workbench-explorer:rail-width`  |
-| Pinned root ID                                                                              | `localStorage`                | `bb-plugin-workbench-explorer:pinned-root` |
-| Active tab (files/search)                                                                   | `localStorage`                | `bb-plugin-workbench-explorer:tab`         |
+| Settings (openByDefault, confirmDelete, showSkipped, ignoredFolders, treeRoot, searchRoots) | `alia.settings.define`          | survives VesnALIA restarts                  |
+| Rail open state                                                                             | `localStorage` + custom event | `alia-plugin-workbench-explorer:rail-open`   |
+| Rail width                                                                                  | `localStorage` + custom event | `alia-plugin-workbench-explorer:rail-width`  |
+| Pinned root ID                                                                              | `localStorage`                | `alia-plugin-workbench-explorer:pinned-root` |
+| Active tab (files/search)                                                                   | `localStorage`                | `alia-plugin-workbench-explorer:tab`         |
 | Tree expansion state                                                                        | In-memory (per window)        | not persisted                         |
 | Path resolution cache                                                                       | In-memory `createTimedCache`  | scoped by threadId, 10min TTL         |
 
 
 ### Filesystem Access
 
-- All filesystem operations go through the **host** via `host.call("statPath"/"listDirectory", ...)` or `bb.sdk.hosts.directory`/`bb.sdk.files.*`.
+- All filesystem operations go through the **host** via `host.call("statPath"/"listDirectory", ...)` or `alia.sdk.hosts.directory`/`alia.sdk.files.*`.
 - Root IDs are server-minted (UUID via `randomUUID`) and map to `{hostId, rootPath}` pairs in a bounded registry (500 entries). Client-supplied rootId, never hostId/rootPath — security: a direct RPC caller cannot point destructive ops at any path.
 - `onThisComputer()` checks if a root is on the primary host before performing OS-level actions (`revealInExplorer`, `copyTextToClipboard`).
 - `resolveUnderRoot` in `src/paths.ts` provides lexical confinement (`..` rejected) but follows symlinks — a deliberate posture for browsing.
@@ -160,7 +160,7 @@ When a path lands in another registered project, the tree **re-roots** there rat
 - The run is `--no-ignore --hidden`, plus globs for `ignoredFolders`, `SKIP_FILE_NAMES`, and `BINARY_EXTENSIONS`: a file the tree shows must be a file the search reads
 - Fallback: a pattern the Rust engine refuses (lookaround, say) or a ripgrep run that exits 2 falls back to the walk in `search-in-files.ts` (`searchInFiles`, BFS bounded to 4000 files, 24 depth, 1MB per file) over a local `node:fs` reader
 - Whole-word matching is applied by the JavaScript matcher only — ripgrep returns a superset of candidate lines
-- `replaceInFiles` still runs on the server, reading and writing through `HostFileStore` (`bb.sdk.files`), and writes each file against the SHA256 it was read at — a changed file is refused, not clobbered
+- `replaceInFiles` still runs on the server, reading and writing through `HostFileStore` (`alia.sdk.files`), and writes each file against the SHA256 it was read at — a changed file is refused, not clobbered
 - One global `RegExp` per query (via `buildMatcher` in `text-match.ts`) ensures highlight and replace agree
 
 ### Skip Patterns
@@ -225,7 +225,7 @@ interface FileReplaceOutcome {
   replaced: number               // count of replacements
 }
 
-// A chat link bb aimed at a file that doesn't exist, with the real target
+// A chat link alia aimed at a file that doesn't exist, with the real target
 interface AnchorFix {
   text: string                   // anchor text
   href: string                   // original href (workspace-relative)
@@ -263,7 +263,7 @@ type SearchRootsGetter = () => Promise<string[]>
 | `resolvePaths`        | client→server | Filter chat paths to those that exist                                  |
 | `searchFiles`         | client→server | Name search across thread workspace + search roots                     |
 | `resolveFileAnchors`  | client→server | Repair dead chat links pointing at wrong workspace                     |
-| `clientLog`           | client→server | Forward browser diagnostics to bb.log                                  |
+| `clientLog`           | client→server | Forward browser diagnostics to alia.log                                  |
 | `listDir`             | client→server | List directory with skip patterns + caching                            |
 | `revealInExplorer`    | client→server | Open in system file manager (primary host only)                        |
 | `copyTextToClipboard` | client→server | Copy text to system clipboard (primary host only)                      |
@@ -277,16 +277,16 @@ type SearchRootsGetter = () => Promise<string[]>
 
 ## Settings
 
-Defined in `server.ts` via `bb.settings.define`:
+Defined in `server.ts` via `alia.settings.define`:
 
 
 | Setting          | Type               | Label                                         | Default         | Notes                                            |
 | ---------------- | ------------------ | --------------------------------------------- | --------------- | ------------------------------------------------ |
-| `openByDefault`  | boolean            | Show the pinned file explorer when BB opens   | `true`          | Controls rail visibility on startup              |
+| `openByDefault`  | boolean            | Show the pinned file explorer when VesnALIA opens   | `true`          | Controls rail visibility on startup              |
 | `confirmDelete`  | boolean            | Confirm before deleting files and folders     | `true`          | Safety dialog for delete/rename                  |
 | `showSkipped`    | boolean            | Show hidden files and folders                 | `false`         | Reveals `.git`, `node_modules`, etc.             |
 | `ignoredFolders` | string (multiline) | Folders to hide by default                    | `""` (empty)    | Folder names hidden in tree and search; one name per line; leave empty to hide nothing |
-| `treeRoot`       | string             | Root folder for personal threads              | `""`            | `~/Documents`-style path for BB personal threads |
+| `treeRoot`       | string             | Root folder for personal threads              | `""`            | `~/Documents`-style path for VesnALIA personal threads |
 | `searchRoots`    | string (multiline) | Folders to search for paths mentioned in chat | `"~/Documents"` | Each folder + immediate subdirs searchable       |
 
 

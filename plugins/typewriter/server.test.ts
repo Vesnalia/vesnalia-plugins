@@ -1,9 +1,9 @@
 import { expect, it } from 'vitest';
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from '@vesnalia/plugin-sdk/testing';
 import plugin from './server';
 it('rejects invalid volume values',async()=>{
- const {bb,harness}=createFakePluginHost({pluginId:'typewriter'});
- plugin(bb);
+ const {alia,harness}=createFakePluginHost({pluginId:'typewriter'});
+ plugin(alia);
  await expect(harness.behavior.setSettings({volume:101})).rejects.toThrow();
  await expect(harness.behavior.setSettings({volume:-1})).rejects.toThrow();
  await harness.behavior.setSettings({enabled:true,volume:50});

@@ -32,7 +32,7 @@ const textBetween = (el: Element, node: Node, offset: number, toEnd: boolean): s
 };
 
 /**
- * The source line of a point in a block as BB's Markdown drew it, `el`, where a selection starts (`edge` "start") or
+ * The source line of a point in a block as VesnALIA's Markdown drew it, `el`, where a selection starts (`edge` "start") or
  * ends. Read from the drawing, never changing it: in a table, its row's (`tr`, in the order they draw); in code, its
  * line's, by the highlighter's line spans or its newlines; in prose, the line of the words around the point as drawn,
  * found once in the source and once in the drawing. Otherwise, as where a table draws other rows than its source has,

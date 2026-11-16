@@ -10,19 +10,19 @@ On the desktop, the thread context card gets a section with the fill in tokens, 
 
 ## How the forecast works
 
-The server polls bb for limits every 2 minutes (1–10, configurable), with every client closed too. The first forecast extends the current window's pace once 5 % of the window has passed. After the server has seen windows of the same kind close, it also shows a learned forecast from the last eight of them.
+The server polls VesnALIA for limits every 2 minutes (1–10, configurable), with every client closed too. The first forecast extends the current window's pace once 5 % of the window has passed. After the server has seen windows of the same kind close, it also shows a learned forecast from the last eight of them.
 
 ## Several hosts
 
-Each connected bb host (the server and, for example, a laptop enrolled in the same bb) is polled on its own, with its own history and forecast. A thread shows the limits of the host it runs on, and the sidebar card shows one host per tab. Hosts signed in to one account show it once and get one push.
+Each connected VesnALIA host (the server and, for example, a laptop enrolled in the same VesnALIA) is polled on its own, with its own history and forecast. A thread shows the limits of the host it runs on, and the sidebar card shows one host per tab. Hosts signed in to one account show it once and get one push.
 
 ## Push notifications
 
-When a limit window reaches 90 % (configurable) the server sends one push through bb's push-notifications plugin, and one more when the window runs out. On by default.
+When a limit window reaches 90 % (configurable) the server sends one push through VesnALIA's push-notifications plugin, and one more when the window runs out. On by default.
 
 ## Auto-compact
 
-Off by default. When it is on, the server compacts a thread when the thread goes idle with its context at or above the threshold (80 % by default, 50–95). It never interrupts a turn. The threshold is a percent of the thread's working context limit in tokens. The limit is a per-thread limit, else a per-provider limit for Claude Code or Codex, else the point where the provider compacts on its own when bb reports it, else a global limit (150 000 by default). A per-thread mode and limit override the settings; the band's switch turns the thread's mode on or off.
+Off by default. When it is on, the server compacts a thread when the thread goes idle with its context at or above the threshold (80 % by default, 50–95). It never interrupts a turn. The threshold is a percent of the thread's working context limit in tokens. The limit is a per-thread limit, else a per-provider limit for Claude Code or Codex, else the point where the provider compacts on its own when VesnALIA reports it, else a global limit (150 000 by default). A per-thread mode and limit override the settings; the band's switch turns the thread's mode on or off.
 
 For a provider that cannot compact (custom ACP agents), an optional setting, off by default, asks the agent for a summary, clears the thread's context and sends the summary back. The history stays visible, and nothing is cleared without a summary.
 
@@ -30,14 +30,14 @@ For a provider that cannot compact (custom ACP agents), an optional setting, off
 
 Settings: context limits, auto-compact and its threshold, limit pushes and their threshold, the poll interval, the UI language (English or Russian), percent used or left, reset as a countdown or a time, providers to hide, and a switch for the band above the composer.
 
-The `bb usage-forecast` command prints the status of every provider and a thread's context, compacts a thread and sets a thread's auto-compact mode. `bb usage-forecast headroom` tells an agent which provider has room left until its reset. Agents in bb threads get the same reference as a skill.
+The `alia usage-forecast` command prints the status of every provider and a thread's context, compacts a thread and sets a thread's auto-compact mode. `alia usage-forecast headroom` tells an agent which provider has room left until its reset. Agents in VesnALIA threads get the same reference as a skill.
 
 ## Requirements
 
-Limits appear only for providers that report them to bb; today these are Claude Code and Codex. Other providers show their status only. Codex reports no context breakdown, only the total.
+Limits appear only for providers that report them to VesnALIA; today these are Claude Code and Codex. Other providers show their status only. Codex reports no context breakdown, only the total.
 
 ## Privacy
 
-All numbers come from bb itself. The plugin calls no provider API and reads no provider credentials. Account e-mail addresses and account keys are dropped before anything is stored, and e-mail addresses in error texts are masked.
+All numbers come from VesnALIA itself. The plugin calls no provider API and reads no provider credentials. Account e-mail addresses and account keys are dropped before anything is stored, and e-mail addresses in error texts are masked.
 
 Source and issues: https://github.com/ponomr/bb-plugin-usage-forecast

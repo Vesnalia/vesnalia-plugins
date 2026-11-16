@@ -1,10 +1,10 @@
 // The commit dialog as a thread panel tab: the working tree and the index
-// as a checklist (the checkbox is the staged state), bb's diff viewer for
+// as a checklist (the checkbox is the staged state), VesnALIA's diff viewer for
 // the selected file, the message, and Commit / Commit and Push. Every
 // mutation goes through useVcsActions, so discards and amends ask first with
 // the exact command and the commit runs as a job on the host.
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { experimental_Diff as Diff, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Diff as Diff, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ChangeEntry, FileDiff } from "../contracts";
 import { useChanges } from "../hooks/use-changes";
 import { useJobs } from "../hooks/use-jobs";
@@ -227,7 +227,7 @@ export function CommitPanel({ threadId }: PanelProps) {
   const { changes, loading, error, refetch } = useChanges(threadId);
   const { overview, applyOverview } = useOverview({ threadId, environmentId: sidebar.environmentId, enabled: true });
   const jobs = useJobs(threadId);
-  // Quiet: the status line under the buttons reports every outcome, and bb's
+  // Quiet: the status line under the buttons reports every outcome, and VesnALIA's
   // toasts would stack right over this form.
   const actions = useVcsActions({ threadId, overview, applyOverview, onCheckedOut: () => undefined, waitForJob: jobs.waitFor, quiet: true });
 

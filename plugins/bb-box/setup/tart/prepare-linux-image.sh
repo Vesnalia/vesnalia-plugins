@@ -3,9 +3,9 @@
 # 24.04 on arm64, with what the Proxmox LXC Linux template has, from the same
 # guest scripts and the arm64 tool pins. With --desktop, the image desktop
 # boxes are cloned from, with what the CPU-only desktop template has. Run on
-# each Mac as the user bb-box logs in as (see README.md):
+# each Mac as the user alia-box logs in as (see README.md):
 #
-#   ./prepare-linux-image.sh --key '<bb-box public key>' [--key <another>]... [--desktop] [--from <image>] [--name <vm>] [--bb-url <url>] [--replace]
+#   ./prepare-linux-image.sh --key '<alia-box public key>' [--key <another>]... [--desktop] [--from <image>] [--name <vm>] [--alia-url <url>] [--replace]
 #
 # It clones the base image to <name>-build, grows its disk, boots it, runs
 # ../proxmox-lxc/template's fetch-artifacts.sh, guest/customize-base.sh
@@ -13,8 +13,8 @@
 # and guest/finalize.sh in it as root, checks it as the box user in between,
 # shuts it down and renames it to <name>. Boxes cloned from an image it
 # replaces keep running. finalize.sh writes its record (049),
-# /usr/share/bb-box/image.json, and this copies it beside the image, to
-# ~/.bb-box/tart/images/<name>.json, where bb-box's doctor reads it. About 6
+# /usr/share/alia-box/image.json, and this copies it beside the image, to
+# ~/.alia-box/tart/images/<name>.json, where alia-box's doctor reads it. About 6
 # minutes, 8 with --desktop.
 set -eu
 
@@ -25,7 +25,7 @@ desktop=0
 # what a box writes.
 disk_gb=64
 key=
-bb_url=
+alia_url=
 replace=0
 die() { echo "prepare-linux-image: $*" >&2; exit 1; }
 while [ $# -gt 0 ]; do
@@ -38,23 +38,23 @@ while [ $# -gt 0 ]; do
       key="${key:+$key
 }$2"
       shift 2 ;;
-    --bb-url) bb_url=$2; shift 2 ;;
+    --alia-url) alia_url=$2; shift 2 ;;
     --replace) replace=1; shift ;;
     *) die "unknown option $1 (see the top of this script)" ;;
   esac
 done
-[ -n "$key" ] || die "give bb-box's public key with --key, as bb box doctor shows it"
+[ -n "$key" ] || die "give alia-box's public key with --key, as alia box doctor shows it"
 if [ "$desktop" = 1 ]; then
-  : "${name:=bb-box-linux-desktop}"
+  : "${name:=alia-box-linux-desktop}"
   kind=linux-arm64-desktop-cpu artifacts=desktop-cpu finalize=desktop identity_reset=on
 else
-  : "${name:=bb-box-linux}"
+  : "${name:=alia-box-linux}"
   kind=linux-arm64 artifacts=linux finalize=linux identity_reset=on
 fi
 
 here=$(cd "$(dirname "$0")" && pwd)
 template=$here/../proxmox-lxc/template
-[ -f "$template/pins.json" ] || die "no $template: run this from a checkout of bb-box"
+[ -f "$template/pins.json" ] || die "no $template: run this from a checkout of alia-box"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.nix-profile/bin:/run/current-system/sw/bin:$PATH" TART_NO_AUTO_PRUNE=1
 command -v tart >/dev/null || die "install Tart first: brew install openai/tools/tart"
 [ "$(uname -m)" = arm64 ] || die "Tart runs Linux VMs on Apple silicon only"
@@ -117,24 +117,24 @@ as_root sh -c 'dev=$(findmnt -no SOURCE /); disk=/dev/$(lsblk -no PKNAME "$dev")
 
 # The Linux template's files, as build.sh lays them out in a CT.
 step "copying the Linux template's scripts and pins into $build"
-dir=/var/tmp/bb-box-build
+dir=/var/tmp/alia-box-build
 tar -C "$here/.." -czf - proxmox-lxc/template proxmox-lxc/host/common.sh |
   as_root sh -c "rm -rf $dir && mkdir -p $dir && tar -xzf - -C $dir"
 src=$dir/proxmox-lxc/template
 prepare=$(sha256sum "$0" | awk 'NR==1{print $1}')
-printf 'BOX_USER=box\nBOX_RUNTIME=vm\nDESKTOP_GPU=none\nBB_URL=%s\nBUILD_ID=%s\nBOX_IDENTITY_RESET=%s\nPREPARE=%s\n' "$bb_url" "$build_id" "$identity_reset" "$prepare" | as_root sh -c "cat >$src/build.env"
+printf 'BOX_USER=box\nBOX_RUNTIME=vm\nDESKTOP_GPU=none\nBB_URL=%s\nBUILD_ID=%s\nBOX_IDENTITY_RESET=%s\nPREPARE=%s\n' "$alia_url" "$build_id" "$identity_reset" "$prepare" | as_root sh -c "cat >$src/build.env"
 printf '%s\n' "$key" | as_root sh -c "cat >$src/plugin-key.pub"
 
-step "fetching the arm64 tools, BB's host app and any desktop artifacts"
+step "fetching the arm64 tools, ALIA's host app and any desktop artifacts"
 as_root bash -c 'command -v jq >/dev/null || { bash "$1" update -q >/dev/null && DEBIAN_FRONTEND=noninteractive bash "$1" install -y -q jq >/dev/null; }' _ "$src/guest/apt.sh" </dev/null
-as_root env BBBOX_ENV=/nonexistent BBBOX_BB_URL="$bb_url" bash "$src/fetch-artifacts.sh" "$src/artifacts" "$artifacts" arm64 </dev/null
+as_root env BBBOX_ENV=/nonexistent BBBOX_ALIA_URL="$alia_url" bash "$src/fetch-artifacts.sh" "$src/artifacts" "$artifacts" arm64 </dev/null
 step "customising $build (the Linux template's customize-base.sh)"
 as_root bash "$src/guest/customize-base.sh" "$src" </dev/null
 # Each check runs after a boot, as in a new box: Docker, for one, is stopped
 # then (041).
 step "booting $build again, as a box would, and checking it as the box user"
 reboot
-as_root runuser -l box -c "bb-box-check-headless" </dev/null | tee "$work/check.txt"
+as_root runuser -l box -c "alia-box-check-headless" </dev/null | tee "$work/check.txt"
 # Each line is the check's name in 34 columns, a space, then ok or FAIL.
 ! grep -qE '^.{35}FAIL' "$work/check.txt" || die "a check failed (above)"
 if [ "$desktop" = 1 ]; then
@@ -142,20 +142,20 @@ if [ "$desktop" = 1 ]; then
   as_root bash "$src/guest/customize-desktop.sh" "$src" </dev/null
   step "booting $build again, as a box would, and checking the desktop as the box user"
   reboot
-  as_root runuser -l box -c "bb-box-check-desktop" </dev/null | tee "$work/check.txt"
+  as_root runuser -l box -c "alia-box-check-desktop" </dev/null | tee "$work/check.txt"
   # Each line is the check's name in 26 columns, a space, then ok or FAIL.
   ! grep -qE '^.{27}FAIL' "$work/check.txt" || die "a check failed (above)"
 fi
 step "finalizing $build"
 as_root bash "$src/guest/finalize.sh" "$src" "$finalize" </dev/null
-tart exec "$build" cat /usr/share/bb-box/image.json >"$work/image.json" || die "$build has no image record"
+tart exec "$build" cat /usr/share/alia-box/image.json >"$work/image.json" || die "$build has no image record"
 step "shutting $build down"
 shutdown
 
 if exists "$name"; then tart delete "$name"; fi
 tart rename "$build" "$name"
-mkdir -p "$HOME/.bb-box/tart/images"
+mkdir -p "$HOME/.alia-box/tart/images"
 printf 'from=%s\nkind=%s\nbuilt=%s\n%s\n' "$from" "$kind" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s\n' "$key" | awk '{print "key=" $2}')" \
-  >"$HOME/.bb-box/tart/images/$name"
-cp "$work/image.json" "$HOME/.bb-box/tart/images/$name.json"
+  >"$HOME/.alia-box/tart/images/$name"
+cp "$work/image.json" "$HOME/.alia-box/tart/images/$name.json"
 step "done: $name is ready to clone ($(du -sh "${TART_HOME:-$HOME/.tart}/vms/$name" | cut -f1) on disk)"

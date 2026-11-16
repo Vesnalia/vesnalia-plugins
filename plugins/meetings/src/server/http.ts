@@ -4,7 +4,7 @@
 // Google OAuth redirect (§13), and the mock meeting page for the selftest.
 // Bytes come from the host in ≤ 4 MiB reads (base64 stays under the 8 MiB
 // host RPC output cap).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Context } from "hono";
 import { RUNTIME_FILES } from "../generated/runtime-files.js";
 import { MAX_READ_CHUNK } from "../shared/contract.js";
@@ -188,24 +188,24 @@ const MOCK_TYPES: Readonly<Record<string, string>> = {
   ".css": "text/css; charset=utf-8",
 };
 
-/** The mock meeting page (runtime/mock-meeting) for `bb meetings selftest`, served on the bb loopback URL. */
-function registerMockMeeting(bb: BbPluginApi): void {
+/** The mock meeting page (runtime/mock-meeting) for `alia meetings selftest`, served on the VesnALIA loopback URL. */
+function registerMockMeeting(alia: AliaPluginApi): void {
   for (const [file, content] of Object.entries(RUNTIME_FILES)) {
     if (!file.startsWith("mock-meeting/")) continue;
     const type = MOCK_TYPES[file.slice(file.lastIndexOf("."))] ?? "application/octet-stream";
-    bb.http.route("GET", `/${file}`, () =>
+    alia.http.route("GET", `/${file}`, () =>
       new Response(content, { status: 200, headers: { "content-type": type, "cache-control": "no-store" } }),
     );
   }
   // The page reports its script events here; the selftest does not need them.
-  bb.http.route("POST", "/mock-meeting/log", () => new Response(null, { status: 204 }));
+  alia.http.route("POST", "/mock-meeting/log", () => new Response(null, { status: 204 }));
 }
 
-export function registerHttp(bb: BbPluginApi, service: MeetingsService): void {
-  registerMockMeeting(bb);
+export function registerHttp(alia: AliaPluginApi, service: MeetingsService): void {
+  registerMockMeeting(alia);
 
   // Google redirects here after the consent screen (a top-level navigation: no Origin header, "local" auth passes).
-  bb.http.route("GET", GOOGLE_CALLBACK_ROUTE, async (c) => {
+  alia.http.route("GET", GOOGLE_CALLBACK_ROUTE, async (c) => {
     const query = (name: string) => c.req.query(name)?.slice(0, 4096);
     const outcome = await service.google.handleCallback({
       code: query("code"),
@@ -216,7 +216,7 @@ export function registerHttp(bb: BbPluginApi, service: MeetingsService): void {
     return googleResultPage(outcome);
   });
 
-  bb.http.route("GET", "/bot/avatar-preview", async () => {
+  alia.http.route("GET", "/bot/avatar-preview", async () => {
     try {
       const jpeg = await service.bot.preview();
       if (jpeg === null) return jsonError(404, "Аватар не загружен");
@@ -230,7 +230,7 @@ export function registerHttp(bb: BbPluginApi, service: MeetingsService): void {
   });
 
   for (const method of ["GET", "HEAD"] as const) {
-    bb.http.route(method, "/audio", async (c) => {
+    alia.http.route(method, "/audio", async (c) => {
       const id = meetingIdFrom(c);
       if (typeof id !== "string") return id;
       try {
@@ -242,7 +242,7 @@ export function registerHttp(bb: BbPluginApi, service: MeetingsService): void {
     });
   }
 
-  bb.http.route("GET", "/screenshot", async (c) => {
+  alia.http.route("GET", "/screenshot", async (c) => {
     const id = meetingIdFrom(c);
     if (typeof id !== "string") return id;
     try {
@@ -267,7 +267,7 @@ export function registerHttp(bb: BbPluginApi, service: MeetingsService): void {
     }
   });
 
-  bb.http.route("GET", "/download", async (c) => {
+  alia.http.route("GET", "/download", async (c) => {
     const id = meetingIdFrom(c);
     if (typeof id !== "string") return id;
     const format = c.req.query("format") ?? "md";

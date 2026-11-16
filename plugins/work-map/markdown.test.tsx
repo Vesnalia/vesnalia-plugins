@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { parseBlocks, safeHref, SafeMarkdown } from "./markdown";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   UrlLink: (props: Record<string, unknown>) => <a {...props} />,
 }));
 afterEach(cleanup);

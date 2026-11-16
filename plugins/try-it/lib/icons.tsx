@@ -1,4 +1,4 @@
-// Glyphs for this plugin; BB ships a short icon list and draws a bolt for unknown names.
+// Glyphs for this plugin; VesnALIA ships a short icon list and draws a bolt for unknown names.
 import type { ReactNode, SVGProps } from "react";
 
 function glyph(children: ReactNode) {

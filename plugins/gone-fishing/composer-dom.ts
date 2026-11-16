@@ -1,7 +1,7 @@
-// bb has no plugin API to place UI next to the chat input or to paint it, so
+// VesnALIA has no plugin API to place UI next to the chat input or to paint it, so
 // these helpers find the composer that shares a banner's `[data-app-composer]`
-// shell in bb's markup. Callers treat null as "markup not recognized" and fall
-// back to bb's own banner placement.
+// shell in VesnALIA's markup. Callers treat null as "markup not recognized" and fall
+// back to VesnALIA's own banner placement.
 
 const SHELL_SELECTOR = "[data-app-composer]";
 
@@ -11,7 +11,7 @@ export function findComposerSurface(from: Element): HTMLElement | null {
 }
 
 /**
- * Inserts an empty element right above the chat input, below bb's card stack
+ * Inserts an empty element right above the chat input, below VesnALIA's card stack
  * (queued messages, background commands, changed files). The caller owns it
  * and must remove it.
  */
@@ -22,9 +22,9 @@ export function insertComposerSlot(from: Element, pluginId: string): HTMLElement
   if (!anchor) return null;
   const slot = document.createElement("div");
   slot.dataset.goneFishingSlot = "";
-  // bb scopes plugin CSS to these attributes, like its portal-scope helper.
-  slot.dataset.bbPluginRoot = "";
-  slot.dataset.bbPlugin = pluginId;
+  // VesnALIA scopes plugin CSS to these attributes, like its portal-scope helper.
+  slot.dataset.aliaPluginRoot = "";
+  slot.dataset.aliaPlugin = pluginId;
   // The shell spaces its children apart; the slot sits flush on the chat input.
   slot.style.marginBlockEnd = "0";
   anchor.before(slot);

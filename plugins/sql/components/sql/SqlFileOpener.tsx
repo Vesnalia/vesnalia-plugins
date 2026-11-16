@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
-import { useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
 import { Button } from "@/components/ui/button";

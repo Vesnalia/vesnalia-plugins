@@ -1,44 +1,44 @@
 # Receipts
 
-A [bb](https://github.com/get-bb/bb) plugin that shows what each coding agent
+A [VesnALIA](https://github.com/get-bb/bb) plugin that shows what each coding agent
 actually cost — Claude Code, Codex, Hermes Agent, OpenCode, Pi and Cursor —
 with a daily chart and a model / project / day breakdown.
 
-Requires bb `>= 0.41`. Git installs need `npm` on PATH.
+Requires VesnALIA `>= 0.41`. Git installs need `npm` on PATH.
 
 ## Install
 
-Find **Receipts** under **Extensions** in bb and install it from the Community marketplace.
+Find **Receipts** under **Extensions** in VesnALIA and install it from the Community marketplace.
 
 Or install from GitHub:
 
 ```bash
-bb plugin install https://github.com/ChrBoebel/bb-plugin-receipts
+alia plugin install https://github.com/ChrBoebel/bb-plugin-receipts
 ```
 
 That tracks `main`. Pin a branch, tag, or commit with:
 
 ```bash
-bb plugin install git:https://github.com/ChrBoebel/bb-plugin-receipts.git@main
+alia plugin install git:https://github.com/ChrBoebel/bb-plugin-receipts.git@main
 ```
 
 From a local checkout:
 
 ```bash
-bb plugin install .
+alia plugin install .
 ```
 
-Open **Usage** in the bb sidebar, or run:
+Open **Usage** in the VesnALIA sidebar, or run:
 
 ```bash
-bb receipts show [--days 7|30|90] [--force]
+alia receipts show [--days 7|30|90] [--force]
 ```
 
 ## Features
 
 - Sidebar **Receipts** panel with 7 / 30 / 90 day windows
 - Provider split, daily chart, and model / project / day breakdown
-- Project rows map to bb projects when possible; personal `env_*` workspaces
+- Project rows map to VesnALIA projects when possible; personal `env_*` workspaces
   link to their thread; `~/Documents/Codex/*` chats merge into **Unassociated
   Codex chats**; unmatched folders stay as their own rows
 - Durable on-disk caches — only re-parse transcripts whose size/mtime changed
@@ -48,7 +48,7 @@ bb receipts show [--days 7|30|90] [--force]
 
 ## Data sources
 
-Usage is read from the machine running the bb server, not from enrolled remote
+Usage is read from the machine running the VesnALIA server, not from enrolled remote
 hosts.
 
 | Provider     | Source                                                    | Cost                             |
@@ -57,7 +57,7 @@ hosts.
 | Codex        | `~/.codex/sessions/**/*.jsonl` (or `CODEX_HOME`)          | LiteLLM model rates              |
 | Hermes Agent | `~/.hermes/state.db` (or `HERMES_STATE_DB`)               | `actual_cost_usd`, else estimate |
 | OpenCode     | `~/.local/share/opencode/opencode.db` (or `OPENCODE_DATABASE_PATH`) | OpenCode-recorded cost |
-| Pi           | `~/.bb/pi-bridge-sessions`, `~/.pi/agent/sessions`        | `message.usage.cost.total`       |
+| Pi           | `~/.vesnalia/pi-bridge-sessions`, `~/.pi/agent/sessions`        | `message.usage.cost.total`       |
 | Cursor       | Cursor dashboard API using local desktop auth             | Cursor-reported cents            |
 
 The two SQLite sources are opened read-only through `node:sqlite`, with a short
@@ -66,7 +66,7 @@ busy timeout so a running agent is never blocked. A missing database is normal
 
 ### Hermes project attribution
 
-Hermes fills `sessions.cwd` only for CLI runs. Sessions that bb launches are
+Hermes fills `sessions.cwd` only for CLI runs. Sessions that VesnALIA launches are
 ACP sessions, which leave that column null and record the working directory
 inside `model_config` instead; subagents record neither and inherit it from the
 session that delegated to them. Receipts resolves the directory in that order —
@@ -84,7 +84,7 @@ billed. Sessions on those models therefore show real token counts against
 
 ### Cursor
 
-Cursor support is opt-in under bb Settings → Plugins → Receipts. It reads the
+Cursor support is opt-in under VesnALIA Settings → Plugins → Receipts. It reads the
 Cursor desktop `state.vscdb` database in read-only mode and derives a
 short-lived dashboard cookie in memory; the access token is not persisted by
 this plugin. Cursor usage is account-level, so it cannot be attributed to
@@ -93,7 +93,7 @@ endpoint and may change independently of the plugin.
 
 ## On-disk cache
 
-All durable state lives under `~/.bb/plugins/receipts/`:
+All durable state lives under `~/.vesnalia/plugins/receipts/`:
 
 | File               | Purpose                                                          |
 | ------------------ | ---------------------------------------------------------------- |
@@ -107,8 +107,8 @@ Refresh / `--force` deletes the scan + base caches and re-reads the sources.
 
 ```bash
 npm install
-bb plugin install .
-bb plugin dev
+alia plugin install .
+alia plugin dev
 npm run typecheck
 ```
 
@@ -124,7 +124,7 @@ npm run typecheck
 ## Credits
 
 Receipts is a fork of
-[`iamEvanYT/bb-usage-page`](https://github.com/iamEvanYT/bb-usage-page), which
+[`iamEvanYT/alia-usage-page`](https://github.com/iamEvanYT/bb-usage-page), which
 is itself inspired by [t3code](https://github.com/pingdotgg/t3code)'s Usage
 page. The Claude Code, Codex, Pi and Cursor scanners, the caching layer and the
 dashboard are its work; this fork adds the Hermes Agent and OpenCode sources
@@ -139,7 +139,7 @@ otherwise.
 
 Tried this plugin? Share what worked and what got in the way using the
 [feedback form](https://github.com/ChrBoebel/bb-plugin-receipts/issues/new?template=feedback.yml).
-Include your bb version, plugin version and operating system if known.
+Include your VesnALIA version, plugin version and operating system if known.
 Feedback is voluntary and public; omit private project paths, transcripts and credentials.
 
 ## License

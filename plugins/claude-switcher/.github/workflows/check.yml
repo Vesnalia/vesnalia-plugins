@@ -19,11 +19,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      # dist/ must be the build of this tree (bb rebuilds it at install time;
+      # dist/ must be the build of this tree (alia rebuilds it at install time;
       # the committed copy is for review).
-      # The exact bb version matters: server.meta.json stamps it.
-      - run: npm install -g bb-app@0.45.0
-      - run: bb plugin types --check
+      # The exact alia version matters: server.meta.json stamps it.
+      - run: npm install -g alia-app@0.45.0
+      - run: alia plugin types --check
       - run: npm run build
       # Say which file differs, and how, before failing.
       - run: git diff --stat -- dist && git diff -U0 -- dist/server.meta.json dist/app.meta.json && test -z "$(git status --porcelain -- dist)"

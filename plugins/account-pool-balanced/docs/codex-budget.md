@@ -16,7 +16,7 @@ availability.
 
 The response contains:
 
-- `schema`: exactly `bb-account-pool/codex-budget/1`.
+- `schema`: exactly `alia-account-pool/codex-budget/1`.
 - `projectId`, `observedAt` (Unix milliseconds), `maxAgeMs` (300000).
 - `route`: `provider="codex"`, `path="/v1/responses"`, `accepting`,
   `routingEnabled`, `networkAllowed`, `threadBypassed`, `ready`.

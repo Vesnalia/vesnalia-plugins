@@ -1,15 +1,15 @@
 # Noted command reference
 
-All commands must run inside a bb thread.
+All commands must run inside a VesnALIA thread.
 
 ## Open
 
 ```sh
-bb noted open <file> [--view <thread>] [--reply-to <thread>] [--reopen] [--json]
+alia noted open <file> [--view <thread>] [--reply-to <thread>] [--reopen] [--json]
 ```
 
 - `<file>` can be workspace HTML or Markdown, or a path in
-  `$BB_THREAD_STORAGE`. Markdown is rendered before annotation; feedback still
+  `$ALIA_THREAD_STORAGE`. Markdown is rendered before annotation; feedback still
   names the original Markdown file.
 - The producing thread owns the session and normally receives feedback.
 - `--view` and `--reply-to` each accept `self`, `parent`, or a thread ID.
@@ -26,17 +26,17 @@ bb noted open <file> [--view <thread>] [--reply-to <thread>] [--reopen] [--json]
 Examples:
 
 ```sh
-bb noted open decision.html
-bb noted open notes.md
-bb noted open decision.html --view parent
-bb noted open decision.html --view parent --reply-to parent --json
-bb noted open decision.html --reopen
+alia noted open decision.html
+alia noted open notes.md
+alia noted open decision.html --view parent
+alia noted open decision.html --view parent --reply-to parent --json
+alia noted open decision.html --reopen
 ```
 
 ## Reply
 
 ```sh
-bb noted reply <text...> [--json]
+alia noted reply <text...> [--json]
 ```
 
 Adds a short agent note to the most recently updated open session visible to
@@ -46,7 +46,7 @@ for editing the artifact.
 ## Status
 
 ```sh
-bb noted status [<file>] [--json]
+alia noted status [<file>] [--json]
 ```
 
 Lists open sessions associated with the calling thread. Passing `<file>` filters
@@ -60,7 +60,7 @@ revision updates.
 ## End
 
 ```sh
-bb noted end <file>
+alia noted end <file>
 ```
 
 Ends the producing thread's open session for the artifact. Ending does not
@@ -69,7 +69,7 @@ delete the source file or its stored review history.
 ## File to a knowledge base
 
 ```sh
-bb noted file <file> --to <folder> --title <title> --summary <text> \
+alia noted file <file> --to <folder> --title <title> --summary <text> \
   [--profile <name>] [--json]
 ```
 

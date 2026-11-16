@@ -1,5 +1,5 @@
 /**
- * bb-plugin-pulse — server.
+ * alia-plugin-pulse — server.
  *
  * Reads the Pulse item store (lib/store.mjs, the same module the `pulse` CLI
  * uses), watches its directory and pushes a realtime signal so the panel stays
@@ -16,7 +16,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 // @ts-ignore -- plain ESM module shared with the CLI
 import * as storeModule from "./lib/store.mjs";
@@ -67,7 +67,7 @@ const STUCK_MS = 60 * MINUTE;
 const RETRY_DELAY_MS = 5 * MINUTE;
 /** Pulse starts a fresh run thread once its current one is this old (the prompt carries all state). */
 const ROTATE_MS = 24 * 60 * MINUTE;
-/** A run missed while bb or Pulse was not loaded is caught up when its tick is this recent. */
+/** A run missed while VesnALIA or Pulse was not loaded is caught up when its tick is this recent. */
 const CATCH_UP_WINDOW_MS = 24 * 60 * MINUTE;
 const CATCH_UP_GRACE_MS = 2 * MINUTE;
 const DISPATCH_HISTORY = 20;
@@ -103,8 +103,8 @@ export const rpcContract = defineRpcContract({
   pulse_action_seen: { input: z.object({ id: z.string().min(3).max(400) }), output: z.any() },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     project: { type: "project", label: "Project for run and agent threads", description: "Pulse creates its Hourly, Daily and Weekly threads and its agent threads here. Required." },
     userName: { type: "string", label: "Your first name", description: "Used in the prompts (\"what needs Sam\"). Empty = \"the user\".", default: "" },
     sources: {
@@ -147,13 +147,13 @@ export default async function plugin(bb: BbPluginApi) {
       user: v.userName.trim() || "the user",
       sources: v.sources.trim() || DEFAULT_SOURCES,
       instructions: v.instructions,
-      skillRules: parseSkillRules(v.skillRules, (m) => bb.log.warn(m)) as SkillRule[],
+      skillRules: parseSkillRules(v.skillRules, (m) => alia.log.warn(m)) as SkillRule[],
       model: v.model.trim(),
       reasoningLevel: (v.reasoningLevel === "default" ? "" : v.reasoningLevel) as "" | "low" | "medium" | "high",
       permissionMode: (v.permissionMode === "default" ? "" : v.permissionMode) as "" | "accept-edits" | "auto" | "full",
       cron: { hourly: v.hourlyCron.trim(), daily: v.dailyCron.trim(), weekly: v.weeklyCron.trim() } as Record<RunName, string>,
       section: v.section.trim(),
-      timeZone: (() => { try { new Intl.DateTimeFormat("en-US", { timeZone }); return timeZone; } catch { bb.log.warn(`bad time zone "${timeZone}"`); return systemTimeZone(); } })(),
+      timeZone: (() => { try { new Intl.DateTimeFormat("en-US", { timeZone }); return timeZone; } catch { alia.log.warn(`bad time zone "${timeZone}"`); return systemTimeZone(); } })(),
       // Absolute, so the panel and the run's shell (which runs in the project cwd) share one store.
       home: path.resolve(os.homedir(), v.storeDir.trim().replace(/^~(?=\/|$)/, os.homedir()) || store.pulseHome()),
       ...pinsOf({ hourly: v.hourlyThread.trim(), daily: v.dailyThread.trim(), weekly: v.weeklyThread.trim() }),
@@ -172,7 +172,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (raw[run] === "" || !owner) return;
       threads[run] = "";
       sharedWith[run] = owner;
-      bb.log.warn(`${run} thread setting ${raw[run]} is already the ${owner} thread; ${run} runs use Pulse's own thread`);
+      alia.log.warn(`${run} thread setting ${raw[run]} is already the ${owner} thread; ${run} runs use Pulse's own thread`);
     });
     return { threads, sharedWith };
   };
@@ -187,39 +187,39 @@ export default async function plugin(bb: BbPluginApi) {
     config = readConfig(next);
     // A pin that was marked dead gets a fresh try as soon as its setting changes, even if it
     // later changes back to the same id (the user may have repaired that thread).
-    const cleared = RUN_NAMES.filter((r) => config.threads[r] !== prev.threads[r]).map((r) => bb.storage.kv.delete(deadPinnedKey(r)));
+    const cleared = RUN_NAMES.filter((r) => config.threads[r] !== prev.threads[r]).map((r) => alia.storage.kv.delete(deadPinnedKey(r)));
     if (cleared.length) pinClears = Promise.all(cleared).then(() => undefined, () => undefined);
     for (const run of RUN_NAMES) {
       if (config.cron[run] === prev.cron[run]) continue;
-      // Check now, so a typo shows in the panel before a reload makes bb drop the schedule.
+      // Check now, so a typo shows in the panel before a reload makes VesnALIA drop the schedule.
       const problem = config.cron[run] ? cronError(config.cron[run]) : null;
-      if (problem) bb.log.warn(`${run} schedule "${config.cron[run]}" is not valid (${problem}); bb will refuse it on reload`);
+      if (problem) alia.log.warn(`${run} schedule "${config.cron[run]}" is not valid (${problem}); VesnALIA will refuse it on reload`);
     }
     if (config.home !== prev.home || RUN_NAMES.some((r) => config.cron[r] !== prev.cron[r])) {
-      bb.log.info("store directory or schedules changed; run `bb plugin reload` to apply");
+      alia.log.info("store directory or schedules changed; run `alia plugin reload` to apply");
     }
     publish();
   });
   fs.mkdirSync(home, { recursive: true });
-  if (!config.projectId) bb.status.needsConfiguration("Choose a project in Pulse settings, then reload the plugin.");
+  if (!config.projectId) alia.status.needsConfiguration("Choose a project in Pulse settings, then reload the plugin.");
 
   const cliPath = path.join(ROOT, "bin/pulse.mjs");
   const cliCommand = () => `PULSE_HOME=${shellQuote(home)} node ${shellQuote(cliPath)}`;
   /**
-   * `<store>/bin/pulse`: a launcher for the bundled CLI, pinned to this store. bb copies the pulse
+   * `<store>/bin/pulse`: a launcher for the bundled CLI, pinned to this store. VesnALIA copies the pulse
    * skill on its own into a global skills directory, so the skill can't point at the plugin's
    * files; it points here instead (default store: ~/.config/pulse/bin/pulse).
    */
   const writeLauncher = () => {
     const file = path.join(home, "bin", "pulse");
-    const body = `#!/bin/sh\n# Written by the Pulse bb plugin on load: the bundled CLI, pinned to this store.\nPULSE_HOME=${shellQuote(home)} exec node ${shellQuote(cliPath)} "$@"\n`;
+    const body = `#!/bin/sh\n# Written by the Pulse VesnALIA plugin on load: the bundled CLI, pinned to this store.\nPULSE_HOME=${shellQuote(home)} exec node ${shellQuote(cliPath)} "$@"\n`;
     try {
       if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === body) return;
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(file, body, { mode: 0o755 });
       fs.chmodSync(file, 0o755);
     } catch (error) {
-      bb.log.warn(`could not write the CLI launcher ${file}: ${message(error)}`);
+      alia.log.warn(`could not write the CLI launcher ${file}: ${message(error)}`);
     }
   };
   writeLauncher();
@@ -246,9 +246,9 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (!lines.length) return;
       fs.writeFileSync(tips, `# Pulse tool tips (shared by every run; newest last, keep under 40 lines)\n${lines.slice(-40).join("\n")}\n`);
-      bb.log.info(`seeded ${tips} from the per-run memory files`);
+      alia.log.info(`seeded ${tips} from the per-run memory files`);
     } catch (error) {
-      bb.log.warn(`could not seed ${tips}: ${message(error)}`);
+      alia.log.warn(`could not seed ${tips}: ${message(error)}`);
     }
   };
   seedTips();
@@ -263,11 +263,11 @@ export default async function plugin(bb: BbPluginApi) {
   const threadKey = (name: RunName) => `thread:${name}`;
   const dispatchKey = (name: RunName) => `dispatches:${name}`;
   const failureKey = (name: RunName) => `failure:${name}`;
-  const isPaused = async (name: RunName) => (await bb.storage.kv.get<boolean>(pausedKey(name))) === true;
+  const isPaused = async (name: RunName) => (await alia.storage.kv.get<boolean>(pausedKey(name))) === true;
 
   /** Every prompt Pulse sent, newest last: the evidence for overdue and didn't-finish runs. */
   const dispatches = async (name: RunName): Promise<RunDispatch[]> => {
-    const list = await bb.storage.kv.get<RunDispatch[]>(dispatchKey(name));
+    const list = await alia.storage.kv.get<RunDispatch[]>(dispatchKey(name));
     return Array.isArray(list) ? list : [];
   };
   /** `replace`: the prompt replaced a queued one, so the earlier dispatch never ran on its own. */
@@ -275,12 +275,12 @@ export default async function plugin(bb: BbPluginApi) {
     const list = await dispatches(name);
     if (replace && list.length && list.at(-1)!.threadId === d.threadId) list.pop();
     list.push(d);
-    await bb.storage.kv.set(dispatchKey(name), list.slice(-DISPATCH_HISTORY));
+    await alia.storage.kv.set(dispatchKey(name), list.slice(-DISPATCH_HISTORY));
     // lastDispatchAt, overdue and missedRuns read this, and the queued-row path writes nothing else.
     publish();
   };
   const recordFailure = async (name: RunName, failure: RunFailure) => {
-    await bb.storage.kv.set(failureKey(name), failure);
+    await alia.storage.kv.set(failureKey(name), failure);
     publish();
   };
   const runsOf = (name: RunName): PulseRun[] => {
@@ -294,11 +294,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   /**
    * A run's thread id, from plugin kv or the store's durable `runThreads` map.
-   * The store copy exists because `bb plugin remove` wipes kv; without it every
+   * The store copy exists because `alia plugin remove` wipes kv; without it every
    * reinstall would spawn a fresh thread for each run.
    */
   const storedRunThread = async (name: RunName): Promise<string | null> => {
-    const cached = await bb.storage.kv.get<string>(threadKey(name));
+    const cached = await alia.storage.kv.get<string>(threadKey(name));
     if (cached) return cached;
     // kv is the fast path; the store copy only matters after a reinstall. A store
     // read failure must not break an otherwise healthy run, so treat it as absent.
@@ -306,7 +306,7 @@ export default async function plugin(bb: BbPluginApi) {
       const durable = storeModule.getRunThreads(home)?.[name];
       return typeof durable === "string" && durable ? durable : null;
     } catch (error) {
-      bb.log.warn(`could not read run threads from ${home}: ${message(error)}`);
+      alia.log.warn(`could not read run threads from ${home}: ${message(error)}`);
       return null;
     }
   };
@@ -316,19 +316,19 @@ export default async function plugin(bb: BbPluginApi) {
    * the thread works either way, only the next reinstall loses the id.
    */
   const rememberRunThread = async (name: RunName, threadId: string) => {
-    await bb.storage.kv.set(threadKey(name), threadId);
+    await alia.storage.kv.set(threadKey(name), threadId);
     try {
       storeModule.setRunThread(name, threadId, home);
     } catch (error) {
-      bb.log.warn(`could not persist ${name} run thread to ${home}: ${message(error)}`);
+      alia.log.warn(`could not persist ${name} run thread to ${home}: ${message(error)}`);
     }
   };
   const forgetRunThread = async (name: RunName) => {
-    await bb.storage.kv.delete(threadKey(name));
+    await alia.storage.kv.delete(threadKey(name));
     try {
       storeModule.setRunThread(name, null, home);
     } catch (error) {
-      bb.log.warn(`could not clear ${name} run thread from ${home}: ${message(error)}`);
+      alia.log.warn(`could not clear ${name} run thread from ${home}: ${message(error)}`);
     }
   };
   /**
@@ -338,20 +338,20 @@ export default async function plugin(bb: BbPluginApi) {
   const recoverRunThread = async (name: RunName): Promise<string | null> => {
     if (!config.projectId) return null;
     try {
-      const listed = await bb.sdk.threads.list({ projectId: config.projectId, includeHidden: true, archived: false, originPluginId: bb.pluginId, limit: 200 });
+      const listed = await alia.sdk.threads.list({ projectId: config.projectId, includeHidden: true, archived: false, originPluginId: alia.pluginId, limit: 200 });
       const threads = listed as unknown as { id: string; createdAt: number; archivedAt?: unknown; deletedAt?: unknown }[];
       const live = threads.filter((t) => !t.archivedAt && !t.deletedAt);
       if (!live.length) return null;
-      const meta = await bb.sdk.threads.experimental_listPluginMetadata({ threadIds: live.map((t) => t.id) });
+      const meta = await alia.sdk.threads.experimental_listPluginMetadata({ threadIds: live.map((t) => t.id) });
       const rows = meta.threads as { threadId: string; metadata: Record<string, unknown> }[];
       const mine = new Set(rows.filter((r) => r.metadata?.pulseRun === name).map((r) => r.threadId));
       const found = live.filter((t) => mine.has(t.id)).sort((a, b) => b.createdAt - a.createdAt)[0];
       if (!found) return null;
-      bb.log.info(`recovered the ${name} run thread ${found.id} from its plugin metadata`);
+      alia.log.info(`recovered the ${name} run thread ${found.id} from its plugin metadata`);
       await rememberRunThread(name, found.id);
       return found.id;
     } catch (error) {
-      bb.log.warn(`could not look for an earlier ${name} run thread: ${message(error)}`);
+      alia.log.warn(`could not look for an earlier ${name} run thread: ${message(error)}`);
       return null;
     }
   };
@@ -366,7 +366,7 @@ export default async function plugin(bb: BbPluginApi) {
    */
   const probeRunThread = async (id: string): Promise<Probe> => {
     try {
-      const thread = await bb.sdk.threads.get({ threadId: id });
+      const thread = await alia.sdk.threads.get({ threadId: id });
       return { state: thread.archivedAt || thread.deletedAt ? "dead" : "ok", thread: thread as ThreadInfo };
     } catch (cause) {
       return { state: threadGone(cause) ? "dead" : "unknown" };
@@ -400,7 +400,7 @@ export default async function plugin(bb: BbPluginApi) {
   const resolveRunThread = async (name: RunName, { prune = false } = {}): Promise<{ id: string; pinned: boolean; thread?: ThreadInfo } | null> => {
     await pinClears;
     const pinned = config.threads[name];
-    const pinnedDead = pinned !== "" && (await bb.storage.kv.get<string>(deadPinnedKey(name))) === pinned;
+    const pinnedDead = pinned !== "" && (await alia.storage.kv.get<string>(deadPinnedKey(name))) === pinned;
     if (pinned && !pinnedDead) {
       const p = await probe(pinned, prune);
       if (p.state !== "dead") return { id: pinned, pinned: true, thread: p.thread };
@@ -410,7 +410,7 @@ export default async function plugin(bb: BbPluginApi) {
     const p = await probe(cached, prune);
     if (p.state !== "dead") return { id: cached, pinned: false, thread: p.thread };
     if (!prune) return null;
-    bb.log.warn(`${name} run thread ${cached} is archived or gone; starting a new one`);
+    alia.log.warn(`${name} run thread ${cached} is archived or gone; starting a new one`);
     await forgetRunThread(name);
     return null;
   };
@@ -426,7 +426,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** Turn starts on run threads, for "busy since". Unknown after a reload: the dispatch time stands in. */
   const activeSince = new Map<string, number>();
 
-  /** Only the cron registered at load can fire; the error bb gave when it refused one. */
+  /** Only the cron registered at load can fire; the error VesnALIA gave when it refused one. */
   const registered = new Map<RunName, string | null>();
 
   /**
@@ -463,7 +463,7 @@ export default async function plugin(bb: BbPluginApi) {
         const ofRun = runs.filter((r) => r.run === run);
         const lastRun = ofRun.at(-1);
         const lastDispatch = sent.at(-1) ?? null;
-        const failure = (await bb.storage.kv.get<RunFailure>(failureKey(run))) ?? null;
+        const failure = (await alia.storage.kv.get<RunFailure>(failureKey(run))) ?? null;
         // A failure counts until a later run of this name logs.
         const currentFailure = failure && (!lastRun || failure.at > lastRun.finishedAt) ? failure : null;
         const overdue = !!lastDispatch && !covered(lastDispatch, undefined, ofRun) && now - Date.parse(lastDispatch.at) > OVERDUE_MS;
@@ -473,7 +473,7 @@ export default async function plugin(bb: BbPluginApi) {
         const pinned = config.threads[run];
         const pinState: Automation["pinState"] = config.sharedWith[run] ? "shared"
           : !pinned ? null
-          : (await bb.storage.kv.get<string>(deadPinnedKey(run))) === pinned ? "skipped"
+          : (await alia.storage.kv.get<string>(deadPinnedKey(run))) === pinned ? "skipped"
           : (await probe(pinned, false)).state === "dead" ? "dead" : "ok";
         const next = enabled ? nextCronRun(cron) : null;
         return {
@@ -495,7 +495,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const runStarting = new Set<RunName>();
   /**
-   * A run thread is hidden from bb's thread list. It stays alive and sendable —
+   * A run thread is hidden from VesnALIA's thread list. It stays alive and sendable —
    * hidden is not archived, and archiving the *current* thread is exactly what wedged runs before.
    */
   const RUN_THREAD_VISIBILITY = "hidden" as const;
@@ -505,12 +505,12 @@ export default async function plugin(bb: BbPluginApi) {
    */
   const hideRunThread = async (name: RunName, threadId: string, info?: ThreadInfo) => {
     try {
-      const visibility = info?.visibility ?? (await bb.sdk.threads.get({ threadId })).visibility;
+      const visibility = info?.visibility ?? (await alia.sdk.threads.get({ threadId })).visibility;
       if (visibility === RUN_THREAD_VISIBILITY) return;
-      await bb.sdk.threads.update({ threadId, visibility: RUN_THREAD_VISIBILITY });
-      bb.log.info(`${name} run thread ${threadId} is now hidden`);
+      await alia.sdk.threads.update({ threadId, visibility: RUN_THREAD_VISIBILITY });
+      alia.log.info(`${name} run thread ${threadId} is now hidden`);
     } catch (error) {
-      bb.log.warn(`could not hide ${name} run thread ${threadId}: ${message(error)}`);
+      alia.log.warn(`could not hide ${name} run thread ${threadId}: ${message(error)}`);
     }
   };
   /** A 409 from a send that means the thread itself is unusable, not a transient conflict. */
@@ -524,9 +524,9 @@ export default async function plugin(bb: BbPluginApi) {
   type QueuedRow = { id: string; updatedAt: number; payload?: { kind?: string }; content: { type: string; text?: string }[] };
   const queuedRows = async (threadId: string): Promise<QueuedRow[]> => {
     try {
-      return (await bb.sdk.threads.queuedMessages.list({ threadId })) as QueuedRow[];
+      return (await alia.sdk.threads.queuedMessages.list({ threadId })) as QueuedRow[];
     } catch (error) {
-      bb.log.warn(`could not read the queue of ${threadId}: ${message(error)}`);
+      alia.log.warn(`could not read the queue of ${threadId}: ${message(error)}`);
       return [];
     }
   };
@@ -560,7 +560,7 @@ export default async function plugin(bb: BbPluginApi) {
           if (Number.isFinite(since) && Date.now() - since > STUCK_MS) {
             const minutes = Math.round((Date.now() - since) / MINUTE);
             const error = `skipped: the ${RUN_LABEL[name]} thread has been busy for ${minutes} min`;
-            bb.log.warn(`${name} run ${error} (${id})`);
+            alia.log.warn(`${name} run ${error} (${id})`);
             await recordFailure(name, { at, error, threadId: id });
             return id;
           }
@@ -571,32 +571,32 @@ export default async function plugin(bb: BbPluginApi) {
         // Pulse's own threads: a pinned thread's retries may be the user's.)
         if (!pinned) {
           for (const retry of rows.filter((r) => r.payload?.kind === "retry")) {
-            await bb.sdk.threads.queuedMessages.delete({ threadId: id, queuedMessageId: retry.id }).then(
-              () => bb.log.info(`dropped the pending retry on ${id}; the new ${name} run replaces it`),
-              (error) => bb.log.warn(`could not drop the pending retry on ${id}: ${message(error)}`),
+            await alia.sdk.threads.queuedMessages.delete({ threadId: id, queuedMessageId: retry.id }).then(
+              () => alia.log.info(`dropped the pending retry on ${id}; the new ${name} run replaces it`),
+              (error) => alia.log.warn(`could not drop the pending retry on ${id}: ${message(error)}`),
             );
           }
         }
         if (row) {
           try {
-            await bb.sdk.threads.queuedMessages.update({ threadId: id, queuedMessageId: row.id, expectedUpdatedAt: row.updatedAt, input });
+            await alia.sdk.threads.queuedMessages.update({ threadId: id, queuedMessageId: row.id, expectedUpdatedAt: row.updatedAt, input });
             await recordDispatch(name, { at, threadId: id, trigger }, { replace: true });
-            bb.log.info(`${trigger} ${name} run → ${id} (replaced the run already queued there)`);
+            alia.log.info(`${trigger} ${name} run → ${id} (replaced the run already queued there)`);
             return id;
           } catch (error) {
-            bb.log.warn(`could not update the queued ${name} run on ${id}: ${message(error)}; queueing a new one`);
+            alia.log.warn(`could not update the queued ${name} run on ${id}: ${message(error)}; queueing a new one`);
           }
         }
       }
       const sources = Object.fromEntries(Object.keys(execution()).map((k) => [k, "explicit"]));
       try {
-        await bb.sdk.threads.send({
+        await alia.sdk.threads.send({
           threadId: id, mode: "queue-if-active", input,
           ...execution(),
           ...(Object.keys(sources).length ? { executionInputSources: sources } : {}),
         });
         await recordDispatch(name, { at, threadId: id, trigger });
-        bb.log.info(`${trigger} ${name} run → ${id}`);
+        alia.log.info(`${trigger} ${name} run → ${id}`);
         if (!pinned) void hideRunThread(name, id, thread);
         return id;
       } catch (cause) {
@@ -607,10 +607,10 @@ export default async function plugin(bb: BbPluginApi) {
         if (pinned) {
           // The pin comes from settings, so it can't be forgotten; skip it until the setting
           // changes, and fall back to the cached run thread (which was never tried).
-          bb.log.warn(`pinned ${name} run thread ${id} is unusable (${reason}); using Pulse's own thread until the ${RUN_LABEL[name]} thread setting changes`);
-          await bb.storage.kv.set(deadPinnedKey(name), id);
+          alia.log.warn(`pinned ${name} run thread ${id} is unusable (${reason}); using Pulse's own thread until the ${RUN_LABEL[name]} thread setting changes`);
+          await alia.storage.kv.set(deadPinnedKey(name), id);
         } else {
-          bb.log.warn(`${name} run thread ${id} became unusable (${reason}); starting a new one`);
+          alia.log.warn(`${name} run thread ${id} became unusable (${reason}); starting a new one`);
           await forgetRunThread(name);
         }
       }
@@ -619,7 +619,7 @@ export default async function plugin(bb: BbPluginApi) {
     runStarting.add(name);
     try {
       const sectionId = await sectionIdFor();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: config.projectId,
         ...(sectionId ? { sectionId } : {}),
         environment: { type: "project-default" },
@@ -631,12 +631,12 @@ export default async function plugin(bb: BbPluginApi) {
       });
       await rememberRunThread(name, thread.id);
       await recordDispatch(name, { at, threadId: thread.id, trigger });
-      bb.log.info(`${trigger} ${name} run → new thread ${thread.id}`);
+      alia.log.info(`${trigger} ${name} run → new thread ${thread.id}`);
       if (retire) {
         // Idle and not pinned (checked above); archived only once its replacement exists.
-        await bb.sdk.threads.archive({ threadId: retire }).then(
-          () => bb.log.info(`retired the previous ${name} run thread ${retire}`),
-          (error) => bb.log.warn(`could not archive the previous ${name} run thread ${retire}: ${message(error)}`),
+        await alia.sdk.threads.archive({ threadId: retire }).then(
+          () => alia.log.info(`retired the previous ${name} run thread ${retire}`),
+          (error) => alia.log.warn(`could not archive the previous ${name} run thread ${retire}: ${message(error)}`),
         );
         probeCache.delete(retire);
       }
@@ -668,7 +668,7 @@ export default async function plugin(bb: BbPluginApi) {
   const scheduledRun = async (run: RunName, trigger: "schedule" | "catch-up") => {
     if (run === "hourly") {
       const reason = await hourlyYields(Date.now());
-      if (reason) { bb.log.info(`hourly run skipped: ${reason}`); return; }
+      if (reason) { alia.log.info(`hourly run skipped: ${reason}`); return; }
     }
     await startRun(run, trigger);
   };
@@ -677,7 +677,7 @@ export default async function plugin(bb: BbPluginApi) {
     const cron = config.cron[run];
     if (!cron) continue;
     try {
-      bb.background.schedule(`run-${run}`, cron, async () => {
+      alia.background.schedule(`run-${run}`, cron, async () => {
         try {
           // The SDK can't unschedule, so a cron changed or cleared in settings leaves this job
           // registered until reload. Skip it rather than run on a cadence the user turned off.
@@ -685,8 +685,8 @@ export default async function plugin(bb: BbPluginApi) {
           if (await isPaused(run)) return;
           await scheduledRun(run, "schedule");
         } catch (error) {
-          // bb records this in `bb plugin list`; log it here too, and show it in the panel.
-          bb.log.warn(`scheduled ${run} run failed: ${message(error)}`);
+          // VesnALIA records this in `alia plugin list`; log it here too, and show it in the panel.
+          alia.log.warn(`scheduled ${run} run failed: ${message(error)}`);
           await recordFailure(run, { at: new Date().toISOString(), error: message(error), threadId: null }).catch(() => undefined);
           throw error;
         }
@@ -694,21 +694,21 @@ export default async function plugin(bb: BbPluginApi) {
       registered.set(run, null);
     } catch (error) {
       registered.set(run, message(error));
-      bb.log.warn(`schedule ${run} ("${cron}"): ${message(error)}`);
+      alia.log.warn(`schedule ${run} ("${cron}"): ${message(error)}`);
     }
   }
 
   /**
-   * bb sets each schedule's next run to the next *future* tick on every load, so a tick that came
-   * due while bb was quit or Pulse was reloading is lost (for Weekly, a whole week). On load, run
+   * VesnALIA sets each schedule's next run to the next *future* tick on every load, so a tick that came
+   * due while VesnALIA was quit or Pulse was reloading is lost (for Weekly, a whole week). On load, run
    * any enabled schedule whose latest tick in the last day has no dispatch and no logged run.
    * A fresh install (no dispatch, no run yet) has missed nothing.
    */
   /** The cron each run had at the previous load: a tick under a different schedule was never due. */
   const previousCron = new Map<RunName, string | undefined>();
   for (const run of RUN_NAMES) {
-    previousCron.set(run, await bb.storage.kv.get<string>(`cron:${run}`));
-    await bb.storage.kv.set(`cron:${run}`, loadedCron[run]);
+    previousCron.set(run, await alia.storage.kv.get<string>(`cron:${run}`));
+    await alia.storage.kv.set(`cron:${run}`, loadedCron[run]);
   }
   async function catchUp() {
     const now = Date.now();
@@ -725,11 +725,11 @@ export default async function plugin(bb: BbPluginApi) {
       if (!last && !sent) continue;
       const tickIso = tick.toISOString();
       if ((last && last.finishedAt >= tickIso) || (sent && sent.at >= tickIso)) continue;
-      bb.log.info(`${run} run due ${tickIso} was missed while Pulse was not loaded; catching up`);
+      alia.log.info(`${run} run due ${tickIso} was missed while Pulse was not loaded; catching up`);
       try {
         await scheduledRun(run, "catch-up");
       } catch (error) {
-        bb.log.warn(`catch-up ${run} run failed: ${message(error)}`);
+        alia.log.warn(`catch-up ${run} run failed: ${message(error)}`);
         await recordFailure(run, { at: new Date().toISOString(), error: message(error), threadId: null }).catch(() => undefined);
       }
     }
@@ -752,7 +752,7 @@ export default async function plugin(bb: BbPluginApi) {
   let publishTimer: ReturnType<typeof setTimeout> | undefined;
   const publish = () => {
     if (publishTimer) clearTimeout(publishTimer);
-    publishTimer = setTimeout(() => bb.realtime.publish(CHANGED, { at: new Date().toISOString() }), 250);
+    publishTimer = setTimeout(() => alia.realtime.publish(CHANGED, { at: new Date().toISOString() }), 250);
   };
   let watcher: fs.FSWatcher | undefined;
   try {
@@ -763,10 +763,10 @@ export default async function plugin(bb: BbPluginApi) {
       publish();
     });
   } catch (error) {
-    bb.log.warn(`cannot watch ${home}: ${message(error)}`);
+    alia.log.warn(`cannot watch ${home}: ${message(error)}`);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     pulse_snapshot: () => fullSnapshot(),
     pulse_action: async ({ id, action, until, restore }) => {
       const status = action === "reopen" && restore ? restore : STATUS_FOR[action];
@@ -779,7 +779,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     pulse_run_now: async ({ run: name }) => ({ threadId: await startRun(name, "manual") }),
     pulse_set_run_enabled: async ({ run: name, enabled }) => {
-      await bb.storage.kv.set(pausedKey(name), !enabled);
+      await alia.storage.kv.set(pausedKey(name), !enabled);
       publish();
       return fullSnapshot();
     },
@@ -803,7 +803,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       if (!config.projectId) throw new Error("Choose a project in Pulse settings first");
       const sectionId = await sectionIdFor();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: config.projectId,
         ...(sectionId ? { sectionId } : {}),
         environment: { type: "project-default" },
@@ -816,13 +816,13 @@ export default async function plugin(bb: BbPluginApi) {
         actionThreads = null;
       } catch (error) {
         // Unrecorded, the thread would work unseen and the next click would spawn a second one.
-        bb.log.warn(`action ${id}: could not record thread ${thread.id}; stopping and archiving it`);
-        await bb.sdk.threads.stop({ threadId: thread.id }).catch(() => undefined);
-        await bb.sdk.threads.archive({ threadId: thread.id }).catch((e) => bb.log.warn(`archive ${thread.id}: ${message(e)}`));
+        alia.log.warn(`action ${id}: could not record thread ${thread.id}; stopping and archiving it`);
+        await alia.sdk.threads.stop({ threadId: thread.id }).catch(() => undefined);
+        await alia.sdk.threads.archive({ threadId: thread.id }).catch((e) => alia.log.warn(`archive ${thread.id}: ${message(e)}`));
         throw new Error(`Couldn't record the agent thread, so it was stopped: ${message(error)}`);
       }
       await notifyOnFinish(thread.id);
-      bb.log.info(`action ${id} → ${thread.id}`);
+      alia.log.info(`action ${id} → ${thread.id}`);
       return thread.id;
     } finally {
       starting.delete(id);
@@ -834,11 +834,11 @@ export default async function plugin(bb: BbPluginApi) {
     const name = config.section;
     if (!name) return null;
     try {
-      const sections = (await bb.sdk.threadSections.list()) as ReadonlyArray<{ id: string; name: string }>;
+      const sections = (await alia.sdk.threadSections.list()) as ReadonlyArray<{ id: string; name: string }>;
       const existing = sections.find((x) => x.name.trim().toLowerCase() === name.toLowerCase());
-      return existing ? existing.id : (await bb.sdk.threadSections.create({ name })).id;
+      return existing ? existing.id : (await alia.sdk.threadSections.create({ name })).id;
     } catch (error) {
-      bb.log.warn(`section "${name}" unavailable: ${message(error)}`);
+      alia.log.warn(`section "${name}" unavailable: ${message(error)}`);
       return null;
     }
   }
@@ -848,19 +848,19 @@ export default async function plugin(bb: BbPluginApi) {
   // its finished turn reaches the user on mobile (Expo push), web and desktop.
   async function notifyOnFinish(threadId: string) {
     try {
-      await bb.sdk.plugins.callRpc({
+      await alia.sdk.plugins.callRpc({
         pluginId: "push-notifications",
         method: "threadNotifications.set",
         input: { threadId, level: "all" },
         outputSchema: z.any(),
       });
     } catch (error) {
-      bb.log.warn(`push-notifications level for ${threadId}: ${message(error)}`);
+      alia.log.warn(`push-notifications level for ${threadId}: ${message(error)}`);
     }
   }
 
   /**
-   * Thread ids of items' agent actions. Thread events fire for every thread in bb, including the
+   * Thread ids of items' agent actions. Thread events fire for every thread in VesnALIA, including the
    * run threads' own turns, so look them up in memory and only read items.json for a real match.
    * Reset on every store write.
    */
@@ -877,18 +877,18 @@ export default async function plugin(bb: BbPluginApi) {
     const item = itemForThread(threadId);
     if (!item || item.action?.status === status) return;
     store.setActionStatus(item.id, status, { threadId, summary, by: "pulse" }, home);
-    bb.log.info(`action ${item.id} (${threadId}) → ${status}`);
+    alia.log.info(`action ${item.id} (${threadId}) → ${status}`);
     publish();
   };
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) => {
     activeSince.delete(thread.id);
     settle(thread.id, "ready", readySummary(lastAssistantText));
   });
-  bb.events.on("thread.failed", ({ thread, error }) => {
+  alia.events.on("thread.failed", ({ thread, error }) => {
     activeSince.delete(thread.id);
     settle(thread.id, "failed", error ?? "Thread stopped on an error");
   });
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     activeSince.set(thread.id, Date.now());
     settle(thread.id, "running");
   });
@@ -897,7 +897,7 @@ export default async function plugin(bb: BbPluginApi) {
    * provider error). Retry a Pulse thread's first failure once, later; record anything else so the
    * run menu says so instead of the board quietly going stale.
    */
-  bb.events.on("turn.failed", async (event) => {
+  alia.events.on("turn.failed", async (event) => {
     try {
       const owner = await runForThread(event.threadId);
       if (!owner) return;
@@ -907,18 +907,18 @@ export default async function plugin(bb: BbPluginApi) {
       if (event.attemptNumber === 1 && !owner.pinned) {
         const retryAt = Date.now() + RETRY_DELAY_MS;
         try {
-          await bb.sdk.threads.retry({ threadId: event.threadId, turnRequestId: event.requestId, sendAt: retryAt, reason: "Pulse: retrying a failed run once" });
-          bb.log.warn(`${owner.name} run on ${event.threadId} failed (${why}); retrying in ${RETRY_DELAY_MS / MINUTE} min`);
+          await alia.sdk.threads.retry({ threadId: event.threadId, turnRequestId: event.requestId, sendAt: retryAt, reason: "Pulse: retrying a failed run once" });
+          alia.log.warn(`${owner.name} run on ${event.threadId} failed (${why}); retrying in ${RETRY_DELAY_MS / MINUTE} min`);
           await recordFailure(owner.name, { at, error: `${why}; retrying`, threadId: event.threadId, retryAt: new Date(retryAt).toISOString() });
           return;
         } catch (error) {
-          bb.log.warn(`could not retry the ${owner.name} run on ${event.threadId}: ${message(error)}`);
+          alia.log.warn(`could not retry the ${owner.name} run on ${event.threadId}: ${message(error)}`);
         }
       }
-      bb.log.warn(`${owner.name} run on ${event.threadId} failed (${why}, attempt ${event.attemptNumber})`);
+      alia.log.warn(`${owner.name} run on ${event.threadId} failed (${why}, attempt ${event.attemptNumber})`);
       await recordFailure(owner.name, { at, error: why, threadId: event.threadId });
     } catch (error) {
-      bb.log.warn(`turn.failed handler: ${message(error)}`);
+      alia.log.warn(`turn.failed handler: ${message(error)}`);
     }
   });
 
@@ -927,17 +927,17 @@ export default async function plugin(bb: BbPluginApi) {
     for (const item of store.actionItems("running", home)) {
       const threadId = item.action!.threadId;
       try {
-        const t = await bb.sdk.threads.get({ threadId });
+        const t = await alia.sdk.threads.get({ threadId });
         if (t.deletedAt || t.archivedAt) settle(threadId, "failed", "Action thread was archived or deleted");
         else if (t.status === "error") settle(threadId, "failed", "Thread stopped on an error");
         else if (t.status === "idle") {
-          const out = await bb.sdk.threads.output({ threadId }).catch(() => ({ output: null }));
+          const out = await alia.sdk.threads.output({ threadId }).catch(() => ({ output: null }));
           settle(threadId, "ready", readySummary(out.output));
         }
       } catch (error) {
         // A deleted thread answers 404 forever; settle it instead of retrying every pass.
         if (threadGone(error)) settle(threadId, "failed", "Action thread was archived or deleted");
-        else bb.log.warn(`reconcile ${threadId}: ${message(error)}`);
+        else alia.log.warn(`reconcile ${threadId}: ${message(error)}`);
       }
     }
   }
@@ -946,15 +946,15 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       const out = store.housekeep(home);
       if (out.snoozesExpired.length || out.fyisExpired.length || out.archivedItems || out.archivedRuns) {
-        bb.log.info(`housekeeping: ${out.snoozesExpired.length} snooze(s) woke, ${out.fyisExpired.length} FYI(s) aged out, ${out.archivedItems} item(s) and ${out.archivedRuns} run(s) archived`);
+        alia.log.info(`housekeeping: ${out.snoozesExpired.length} snooze(s) woke, ${out.fyisExpired.length} FYI(s) aged out, ${out.archivedItems} item(s) and ${out.archivedRuns} run(s) archived`);
       }
     } catch (error) {
-      bb.log.warn(`housekeeping: ${message(error)}`);
+      alia.log.warn(`housekeeping: ${message(error)}`);
     }
   };
-  bb.background.service("action-reconcile", {
+  alia.background.service("action-reconcile", {
     async start(signal) {
-      await catchUp().catch((error) => bb.log.warn(`catch-up: ${message(error)}`));
+      await catchUp().catch((error) => alia.log.warn(`catch-up: ${message(error)}`));
       while (!signal.aborted) {
         housekeep();
         await reconcile();
@@ -966,7 +966,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     watcher?.close();
     if (publishTimer) clearTimeout(publishTimer);
   });

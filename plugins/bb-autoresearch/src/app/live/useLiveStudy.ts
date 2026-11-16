@@ -2,7 +2,7 @@
 // locally (stage moves, phases, pairs, verdicts), with refetches when a
 // delta can't be applied, on "study-changed" (throttled), on reconnect, and
 // every few seconds for consistency. Signals are ephemeral; RPC is the truth.
-import { useRealtime, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { applyDeltas, LIVE_CHANNEL, type LiveDeltaMessage, type LiveView } from "../../live-model.ts";
 import { improvementText } from "../../present.ts";

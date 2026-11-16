@@ -2,13 +2,13 @@ Keep large reviews organized by directory, with file counts and line statistics 
 
 ## Review the right changes
 
-Choose all branch changes, uncommitted work, a range from a chosen starting commit through HEAD, or a single commit. Pick a comparison branch with BB's searchable branch picker. When BB recorded a branch's creation source, Diff Tree uses it as the automatic comparison default.
+Choose all branch changes, uncommitted work, a range from a chosen starting commit through HEAD, or a single commit. Pick a comparison branch with VesnALIA's searchable branch picker. When VesnALIA recorded a branch's creation source, Diff Tree uses it as the automatic comparison default.
 
 Return to a chat with its comparison, selected file, layout and folder expansion restored. Changes and Full tree remember their own selected paths and searches. Review state stays in this browser; file contents and chat drafts are not stored with it.
 
 Image changes show Before/After versions with transparency backgrounds, dimensions and Fit / 100% zoom. PNG, JPEG, GIF, WebP, BMP, ICO, AVIF and SVG are supported up to 2 MiB per side; SVG keeps a text-diff option. Historical comparisons use pinned Git versions, and Worktree previews use the current file.
 
-Switch between unified and split layouts. Expand unchanged lines in either direction to read surrounding code, with syntax highlighting that follows your BB theme. File type icons help distinguish source files, configuration, and documents.
+Switch between unified and split layouts. Expand unchanged lines in either direction to read surrounding code, with syntax highlighting that follows your VesnALIA theme. File type icons help distinguish source files, configuration, and documents.
 
 ## Browse the full worktree
 
@@ -20,7 +20,7 @@ Click, Shift-click, or drag across line numbers, then choose **Add to chat**. Th
 
 ## Open files from chat
 
-Choose BB's default file links, a separate Diff Tree button, or direct opening in Diff Tree. Optional routing works with workspace links and Open buttons in GenUI Changes cards. It reuses the viewer, reveals the selected file, and preserves modified clicks and inline diff expansion. BB's default behavior is selected initially.
+Choose VesnALIA's default file links, a separate Diff Tree button, or direct opening in Diff Tree. Optional routing works with workspace links and Open buttons in GenUI Changes cards. It reuses the viewer, reveals the selected file, and preserves modified clicks and inline diff expansion. VesnALIA's default behavior is selected initially.
 
 ## Adjust your viewer
 
@@ -28,6 +28,6 @@ Use **Settings → Diff Tree** to toggle file icons, choose the initial layout, 
 
 ## Requirements and limits
 
-Requires BB 0.46.1+, Plugin SDK 0.6.49+, and a Git workspace. Commit history runs read-only Git commands on the workspace's enrolled BB host. No API key, paid account, external service, or icon download is needed.
+Requires VesnALIA 0.46.1+, Plugin SDK 0.6.49+, and a Git workspace. Commit history runs read-only Git commands on the workspace's enrolled VesnALIA host. No API key, paid account, external service, or icon download is needed.
 
-This is a separate thread panel. Binary and oversized files show notices; full-file context and source previews are limited to 512 KiB per version and chat quotes to 500 diff rows. Worktree browsing honors Git ignore rules and BB's exclusions, with up to 10,000 paths per query; a partial-list notice prompts a narrower search. The plugin does not stage files, revert changes, or create commits.
+This is a separate thread panel. Binary and oversized files show notices; full-file context and source previews are limited to 512 KiB per version and chat quotes to 500 diff rows. Worktree browsing honors Git ignore rules and VesnALIA's exclusions, with up to 10,000 paths per query; a partial-list notice prompts a narrower search. The plugin does not stage files, revert changes, or create commits.

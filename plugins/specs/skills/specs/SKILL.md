@@ -36,7 +36,7 @@ in the injected context; full content is pulled on demand.
 | `specs_attach` / `specs_detach` | Add or remove a spec from this thread's context. |
 | `specs_delete` | Permanently delete a spec, its revisions, and its annotations. Its chat thread is archived. Only on explicit request. |
 
-The same operations exist as `bb specs ...` (see `bb specs help`) for scripts
+The same operations exist as `alia specs ...` (see `alia specs help`) for scripts
 and manual runs.
 
 ## The question loop
@@ -47,7 +47,7 @@ and manual runs.
 3. When the context supports an answer, record `specs_answer` with
    `requiresSpecChange: false` if no document edit is needed, or `true` if it is.
    Omission conservatively requires checking document impact. CLI equivalent:
-   `bb specs answer <id> --text <answer> --no-spec-change` for answer-only decisions.
+   `alia specs answer <id> --text <answer> --no-spec-change` for answer-only decisions.
 4. If a spec change is needed, create a proposal with `specs_propose`, `questionId`,
    and `expectedRevision`. Leave the question open for user review.
 5. The user chooses **Accept decision** for an answer-only decision, or
@@ -92,7 +92,7 @@ are labelled "not audited".
 ## Proposals, decisions, and research
 
 - **People own the document.** With the default `agentWriteMode=propose`,
-  `specs_write` and agent-thread `bb specs write` calls record a proposal the user reviews and applies, including title, summary, and icon edits (the UI shows a
+  `specs_write` and agent-thread `alia specs write` calls record a proposal the user reviews and applies, including title, summary, and icon edits (the UI shows a
   diff with Apply / Reject). Link a proposal to the question it answers with
   `questionId`; **Apply and close** records the decision, links its revision, and closes
   the question together. Standalone proposals retain Apply / Reject. Use `specs_propose` for edits you initiate and
@@ -146,5 +146,5 @@ are labelled "not audited".
   it, or recently updated), `available` (searchable/readable, never injected).
 - A spec's chat thread is attached automatically; changes agreed there should be
   applied with `specs_write` in that thread.
-- Deletion (`specs_delete`, `bb specs delete <id> --yes`) is permanent and is
+- Deletion (`specs_delete`, `alia specs delete <id> --yes`) is permanent and is
   only performed when the user explicitly asks for it.

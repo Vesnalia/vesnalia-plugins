@@ -4,11 +4,11 @@
 // rests on it or the keyboard focuses it.
 //
 // Why: most of the tab's controls are icon-only (grip, chevrons, play, close,
-// refresh), and an icon alone does not say what it does (bead-bb-b5o).
+// refresh), and an icon alone does not say what it does (bead-alia-b5o).
 //
 // Design notes:
-// - Built on @radix-ui/react-tooltip, which BB provides at run time (it is
-//   never bundled), so it positions and dismisses like BB's own tooltips.
+// - Built on @radix-ui/react-tooltip, which VesnALIA provides at run time (it is
+//   never bundled), so it positions and dismisses like VesnALIA's own tooltips.
 // - Each Tip carries its own Provider. That costs nothing visible and means a
 //   Tip works wherever it is dropped, with no provider to remember to mount
 //   at the top of the tab.

@@ -1,6 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { fileCount } from "./counted";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { isWorking } from "./live";
 import { plural, reviewStarted, type Chip, type Group, type Outside, type Row } from "./model";
 import { useRemembered } from "./remember";

@@ -1,15 +1,15 @@
-# Graphite Stack for BB
+# Graphite Stack for VesnALIA
 
-Review a Graphite stack without leaving your BB thread.
+Review a Graphite stack without leaving your VesnALIA thread.
 
-Review and operate **local** Graphite stacks inside BB. The plugin reads the
+Review and operate **local** Graphite stacks inside VesnALIA. The plugin reads the
 stack that `gt` tracks on each environment's machine. It needs no pull request,
 no GitHub authentication, and no Git remote. PR data from GitHub is optional
 enrichment.
 
-![A fictional BB thread beside the Graphite Stack file tree, inline diff, and local comment](docs/screenshots/review.jpg)
+![A fictional VesnALIA thread beside the Graphite Stack file tree, inline diff, and local comment](docs/screenshots/review.jpg)
 
-<sub>BB review view with fictional project data. The interface follows your BB theme.</sub>
+<sub>VesnALIA review view with fictional project data. The interface follows your VesnALIA theme.</sub>
 
 ## Review beside your thread
 
@@ -17,25 +17,25 @@ Open the **Graphite** tab in a thread's right panel to follow the stack and revi
 changes beside the conversation. The panel uses the thread's environment, so
 you can see the branches and local comments for that work.
 
-![A BB thread beside the open Graphite Stack selector, using a fictional verification repository](docs/screenshots/thread-review.jpg)
+![A VesnALIA thread beside the open Graphite Stack selector, using a fictional verification repository](docs/screenshots/thread-review.jpg)
 
-<sub>Real BB thread and Graphite panel with a fictional verification repository. Additional thread-list entries are simulated.</sub>
+<sub>Real VesnALIA thread and Graphite panel with a fictional verification repository. Additional thread-list entries are simulated.</sub>
 
 ## Why this exists
 
 Stacked changes often span several branches and worktrees. Graphite Stack brings
-the branch graph, parent-relative changes, and review comments into BB so you
+the branch graph, parent-relative changes, and review comments into VesnALIA so you
 can follow the work from the same place as your agent threads.
 
 Review a branch locally first. Keep comments as local drafts, send selected
-drafts to the open BB thread, or use the separate GitHub PR review flow when a
+drafts to the open VesnALIA thread, or use the separate GitHub PR review flow when a
 pull request exists.
 
 ## What you get
 
 - **Graphite tab** on every thread. It shows the stack of the thread's
   environment: the stack rail, each layer's true Graphite parent, commits,
-  restack state, worktrees, and the linked BB thread.
+  restack state, worktrees, and the linked VesnALIA thread.
 - **Graphite stacks page** in the navigation rail. Pick a project to see every
   Graphite repository in it, then open any stack.
 - **Layer review without a checkout.** Select a layer to see only its changes
@@ -48,7 +48,7 @@ pull request exists.
 - **Local line comments** on any layer, with replies, edit, local resolve,
   and delete. A comment keeps its original commit, path, side, and line range.
   Changed lines show as outdated. Select local drafts to send one
-  message to the open BB thread, or choose a thread on the stacks page. Sent, queued, and uncertain outcomes have
+  message to the open VesnALIA thread, or choose a thread on the stacks page. Sent, queued, and uncertain outcomes have
   separate labels. Local comments are not sent to GitHub.
 - **PR review** (only when the branch has a GitHub PR and `gh` is
   authenticated on that machine): read review threads, reply, resolve and
@@ -58,15 +58,15 @@ pull request exists.
   (only/upstack/stack), sync, draft submit, and continue or abort an actual
   in-progress Graphite rebase. Every action shows a preview with the exact
   commands, affected branches, blockers, and warnings before it runs.
-- **Thread association**: link one primary BB thread per branch, open it,
+- **Thread association**: link one primary VesnALIA thread per branch, open it,
   reuse a thread that already works in that branch's worktree, or start a new
-  thread from BB's own composer.
+  thread from VesnALIA's own composer.
 
 ## Requirements and supported versions
 
 | Tool | Requirement |
 | --- | --- |
-| BB | 0.48 or later, Plugin SDK 0.6.94 |
+| VesnALIA | 0.48 or later, Plugin SDK 0.6.94 |
 | Graphite CLI | `gt` 1.8 or later 1.x on the environment's machine. Tested: **1.8.6**. |
 | git | 2.31 or later (uses `rev-parse --path-format=absolute`) |
 | GitHub CLI | Optional. `gh` authenticated on the machine enables PR features. |
@@ -77,20 +77,20 @@ with their own configuration and authentication. It stores no tokens.
 
 ## Install
 
-The [BB Community marketplace submission](https://app.graphite.com/github/pr/get-bb/marketplace/755) is merged.
+The [VesnALIA Community marketplace submission](https://app.graphite.com/github/pr/get-bb/marketplace/755) is merged.
 
 Install directly from this repository:
 
 ```sh
-bb plugin install git:https://github.com/prakashchokalingam/bb-plugin-graphite-stack.git
+alia plugin install git:https://github.com/prakashchokalingam/bb-plugin-graphite-stack.git
 ```
 
 For local development, install from this directory:
 
 ```sh
 npm install --include=dev
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 Then open a thread whose environment is a Git repository with Graphite, and
@@ -101,9 +101,9 @@ select the **Graphite** tab. Or open **Graphite stacks** in the navigation rail.
 1. Select a branch in the stack.
 2. Select a changed file and hover over a line to reveal the comment control.
 3. Save a local draft, or choose a pending PR comment in the line options.
-4. Open **Comments** to review drafts and send selected local comments to the open BB thread. On the stacks page, choose a thread first.
+4. Open **Comments** to review drafts and send selected local comments to the open VesnALIA thread. On the stacks page, choose a thread first.
 
-Local drafts stay in BB until you send them. Pending PR comments remain separate
+Local drafts stay in VesnALIA until you send them. Pending PR comments remain separate
 and go to GitHub only when you submit a PR review.
 
 ## How the plugin reads a stack
@@ -191,7 +191,7 @@ Any skipped branch makes the result **partial**.
 The host watches the repository's Git directory and signals on ref, HEAD,
 packed-refs, rebase, and `.graphite_repo_config` changes. It ignores
 `.graphite_metadata.db` (gt rewrites it during reads) and `index`, so a read
-never triggers itself. Limit: a `gt track`/`untrack` outside BB that moves no
+never triggers itself. Limit: a `gt track`/`untrack` outside VesnALIA that moves no
 ref shows on the next refresh. PR data refreshes on request and is cached;
 when GitHub fails, the last good PR data shows with its age, and local data
 is never hidden.
@@ -206,8 +206,8 @@ is never hidden.
 ## CLI
 
 ```sh
-bb graphite-stack stack <environment-id> [--json]
-bb graphite-stack notes <environment-id> <branch> [--json]
+alia graphite-stack stack <environment-id> [--json]
+alia graphite-stack notes <environment-id> <branch> [--json]
 ```
 
 Both commands only read.
@@ -215,14 +215,14 @@ Both commands only read.
 ## Known limits
 
 - Inline review uses a line button and a line-range form. It highlights
-  JavaScript, TypeScript, JSX, TSX, JSON, and Python with BB's active code
+  JavaScript, TypeScript, JSX, TSX, JSON, and Python with VesnALIA's active code
   theme. Other file types use plain text.
 - Thread sends start a turn or queue behind an active thread. When a send
   outcome is uncertain, the plugin blocks a duplicate send and offers a
   thread search. A missing search result does not prove delivery failed.
 - Local resolve or hide does not change the sent thread message or a GitHub PR.
   GitHub PR replies and resolution use explicit remote actions.
-- New threads are created only from BB's new-thread composer, by the user.
+- New threads are created only from VesnALIA's new-thread composer, by the user.
 - Review threads show the first 100 threads and 50 comments per thread; the
   UI marks longer lists as partial.
 - PR features need a GitHub remote on github.com or `*.ghe.com`. Graphite
@@ -235,7 +235,7 @@ Both commands only read.
 ```sh
 npm test            # vitest: parsers, planner, host + server against real gt
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
 Integration tests create disposable repositories in the OS temp directory and

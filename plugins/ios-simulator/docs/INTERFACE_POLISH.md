@@ -25,7 +25,7 @@ reach in narrow side panels. Preserve control policy and recording behavior.
 Verify actual components in isolated browser fixtures at narrow and regular
 widths, dark and light themes, Live and Replay, and with Activity open. Keep
 these fixtures separate from shipped source. Run affected behavior tests,
-TypeScript and the plugin build, then reload locally. Native BB inspection
+TypeScript and the plugin build, then reload locally. Native VesnALIA inspection
 remains blocked by the previously reported Cua permission state; do not claim
 that separate verification without resolving the block.
 
@@ -42,7 +42,7 @@ that separate verification without resolving the block.
   navigation, event seeking, download and polling/disposal coverage.
 - The browser fixture renders actual components and built plugin CSS, with
   mock SDK/network boundaries and existing local Xcode artwork. It checks
-  layout and interaction, not native BB integration or live stream performance.
+  layout and interaction, not native VesnALIA integration or live stream performance.
   Screenshots and results are outside the source repository under
   `verification/polish-review/` in the workspace.
 
@@ -50,6 +50,6 @@ The follow-up device-picker review adds four browser cases: dark/light at
 440px, narrow at 320px, and a 320×320 short-panel stress case. The popup fits
 the panel, scrolls to keyboard-selected rows, retains trigger focus and closes
 with Escape or outside input. These checks use the same isolated component
-fixture; native BB inspection remains pending.
+fixture; native VesnALIA inspection remains pending.
 The complete suite after this follow-up passes 196 tests across 21 files,
 TypeScript, plugin build and diff checks.

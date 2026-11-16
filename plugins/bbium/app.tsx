@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 import { createKeys, parseSettings, type Keys } from "./keys.ts";
 
-// An app overlay instead of a content script: it mounts once per bb window,
+// An app overlay instead of a content script: it mounts once per VesnALIA window,
 // outside route layouts, and has the React context that useSettings needs.
 // It renders nothing; it owns the key handler's lifetime.
 function KeyboardControl() {

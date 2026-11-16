@@ -3,14 +3,14 @@
 # Autopilots
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](package.json)
-[![BB](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
+[![VesnALIA](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Organize scheduled work into named folders. See what belongs together, control a whole group, and inspect a run when something needs attention.
 
 [Quick start](#quick-start) · [Install](#install) · [Requirements](#requirements) · [All plugins](../../README.md)
 
-![Autopilots in BB](../../marketplace/screenshots/automation-groups/overview.png)
+![Autopilots in VesnALIA](../../marketplace/screenshots/automation-groups/overview.png)
 
 *Screenshots use illustrative schedules and run records in an isolated demo. They are not live automations.*
 
@@ -19,7 +19,7 @@ Organize scheduled work into named folders. See what belongs together, control a
 | | |
 | --- | --- |
 | **Work in groups** | Create colored folders, search across projects, and move automations between groups. |
-| **Control the whole group** | Pause, resume or run group members together. Keep each automation’s schedule in BB Automations. |
+| **Control the whole group** | Pause, resume or run group members together. Keep each automation’s schedule in VesnALIA Automations. |
 | **Understand each run** | Open execution history, errors and outputs. Agent runs can show their conversation in the detail view. |
 
 ## Quick start
@@ -39,40 +39,40 @@ Organize scheduled work into named folders. See what belongs together, control a
 From a local checkout, install this package:
 
 ```sh
-bb plugin install ./plugins/automation-groups
+alia plugin install ./plugins/automation-groups
 ```
 
 <details>
 <summary>Install a versioned release</summary>
 
 ```sh
-bb plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin automation-groups --tag-prefix automation-groups/
+alia plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin automation-groups --tag-prefix automation-groups/
 ```
 
 Compatible updates remain explicit:
 
 ```sh
-bb plugin outdated
-bb plugin update automation-groups
+alia plugin outdated
+alia plugin update automation-groups
 ```
 
 </details>
 
 ## Requirements
 
-BB **0.43+** and Plugin SDK **0.4.87+**.
+VesnALIA **0.43+** and Plugin SDK **0.4.87+**.
 
 Requires the bundled **Automations** plugin. Scheduled agent runs use your configured providers and their quotas; script runs use their configured execution environment.
 
-This plugin stores group metadata and membership. Automation definitions and schedules remain in BB Automations. A fresh installation creates no schedules.
+This plugin stores group metadata and membership. Automation definitions and schedules remain in VesnALIA Automations. A fresh installation creates no schedules.
 
 ## From the terminal
 
 ```sh
-bb automation-group list --json
-bb automation-group create "Quality checks" --color blue
-bb automation-group assign <automation-id> <group>
-bb automation-group runs <automation-id> --limit 10 --json
+alia automation-group list --json
+alia automation-group create "Quality checks" --color blue
+alia automation-group assign <automation-id> <group>
+alia automation-group runs <automation-id> --limit 10 --json
 ```
 
 <details>
@@ -87,7 +87,7 @@ Creating a new automation opens the native authoring flow. Removing a group remo
 <details>
 <summary>Development</summary>
 
-From the repository root, using Node 22.19+ and the BB CLI:
+From the repository root, using Node 22.19+ and the VesnALIA CLI:
 
 ```sh
 node scripts/run.mjs deps automation-groups
@@ -96,7 +96,7 @@ node scripts/run.mjs test automation-groups
 node scripts/run.mjs build automation-groups
 ```
 
-The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `bb plugin source automation-groups` points to the copy you edited, then run `bb plugin reload automation-groups`.
+The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `alia plugin source automation-groups` points to the copy you edited, then run `alia plugin reload automation-groups`.
 
 </details>
 

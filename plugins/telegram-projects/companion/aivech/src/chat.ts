@@ -21,12 +21,12 @@ export function chatEnabled(root = CHAT_ROOT) {
     return false;
   }
 }
-// Retain updates while BB is restarting: the last explicit enabled flag is authoritative.
+// Retain updates while VesnALIA is restarting: the last explicit enabled flag is authoritative.
 export function saveChatUpdate(ctx: Context, root = CHAT_ROOT) {
   const m = ctx.msg;
   if (!m) return false;
   const callback = ctx.callbackQuery?.data;
-  if (callback && !callback.startsWith("bb:")) return false;
+  if (callback && !callback.startsWith("alia:")) return false;
   const text =
     "text" in m ? m.text : "forum_topic_created" in m ? "/project" : undefined;
   if (!callback && text?.match(/^\/tasks(?:@\w+)?(?:\s|$)/)) return false;
@@ -59,7 +59,7 @@ export function saveChatUpdate(ctx: Context, root = CHAT_ROOT) {
         }
       : undefined,
   };
-  const dir = join(root, "bb-chat-inbox");
+  const dir = join(root, "alia-chat-inbox");
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const path = join(dir, record.updateId + ".json");
   if (existsSync(path)) return true;

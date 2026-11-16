@@ -111,7 +111,7 @@ const english: Omit<Translator, "locale"> = {
   loadingPreview: "Loading preview…",
   previewOf: (path) => `Preview of ${path}`,
   previewErrors: {
-    unsupported: "Unsupported file type for inline preview. Open this file in BB's preview-capable surface.",
+    unsupported: "Unsupported file type for inline preview. Open this file in VesnALIA's preview-capable surface.",
     too_large: "This file is too large for inline preview (64 KiB limit).",
     invalid_path: "This file path is unavailable.",
     no_workspace: "No workspace is available for preview.",
@@ -175,7 +175,7 @@ const german: Partial<Omit<Translator, "locale">> = {
   loadingPreview: "Vorschau wird geladen…",
   previewOf: (path) => `Vorschau von ${path}`,
   previewErrors: {
-    unsupported: "Dieser Dateityp kann nicht inline angezeigt werden. Öffne die Datei in einer BB-Vorschau.",
+    unsupported: "Dieser Dateityp kann nicht inline angezeigt werden. Öffne die Datei in einer ALIA-Vorschau.",
     too_large: "Diese Datei ist für die Inline-Vorschau zu groß (Limit: 64 KiB).",
     invalid_path: "Dieser Dateipfad ist nicht verfügbar.",
     no_workspace: "Für die Vorschau ist kein Arbeitsbereich verfügbar.",

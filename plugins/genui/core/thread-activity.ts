@@ -1,8 +1,8 @@
 // What a Threads row says a thread is doing beyond its status: its latest
 // assistant message, the question or approval it waits on, and the workers
 // (running subthreads) an idle parent waits for. The backend (project/source.ts)
-// maps BB's answers through these; the renderer and the markdown fallback read
-// the results. Pure: nothing here talks to BB.
+// maps VesnALIA's answers through these; the renderer and the markdown fallback read
+// the results. Pure: nothing here talks to VesnALIA.
 import { threadStatusLabel, type ThreadInfo } from "./project";
 
 /** Most characters of a latest message the backend keeps (the row expands to them; the thread has the rest). */
@@ -27,7 +27,7 @@ export interface PendingAsk {
   readonly kind: "question" | "approval" | "plan" | "request";
   /** What the user is asked to do, in a few words: "Answer a question", "Approve running a command". */
   readonly action: string;
-  /** The question, the command, the plan's start, the request's detail; null when BB gives nothing more. */
+  /** The question, the command, the plan's start, the request's detail; null when VesnALIA gives nothing more. */
   readonly text: string | null;
   /** `text` is a command (shown as code). */
   readonly code: boolean;
@@ -35,7 +35,7 @@ export interface PendingAsk {
   readonly options: readonly string[];
   /** Further questions in the same interaction, or further pending interactions. */
   readonly more: number;
-  /** Epoch ms BB recorded the interaction. */
+  /** Epoch ms VesnALIA recorded the interaction. */
   readonly since: number;
 }
 
@@ -110,7 +110,7 @@ function ask(kind: PendingAsk["kind"], action: string, body: string | null, sinc
   return { kind, action, text: body === null ? null : clip(body, PREVIEW_CHARS), code: false, options: [], more: 0, since, ...extra };
 }
 
-/** One BB interaction (threads.interactions.list entry) as the user's task, or null for a shape it doesn't know. */
+/** One VesnALIA interaction (threads.interactions.list entry) as the user's task, or null for a shape it doesn't know. */
 function interactionAsk(interaction: Record<string, unknown>): PendingAsk | null {
   const payload = record(interaction.payload);
   if (payload === null) return null;
@@ -164,7 +164,7 @@ function interactionAsk(interaction: Record<string, unknown>): PendingAsk | null
 }
 
 /**
- * What the thread waits on the user for, from BB's interaction list: the
+ * What the thread waits on the user for, from VesnALIA's interaction list: the
  * oldest still-pending interaction it can describe (the one blocking the
  * turn), with how many others are pending too. Null when nothing is pending.
  */
@@ -197,7 +197,7 @@ export function waitsOnWorkers(thread: Pick<ThreadInfo, "status" | "needsInput" 
   return thread.status === "idle" && !thread.needsInput && !thread.archived && thread.runningWorkers > 0;
 }
 
-/** The status a Threads row shows: "Waiting on 2 running workers" for an idle parent of running workers, else BB's status. */
+/** The status a Threads row shows: "Waiting on 2 running workers" for an idle parent of running workers, else VesnALIA's status. */
 export function threadActivityLabel(thread: Pick<ThreadInfo, "status" | "needsInput" | "archived" | "runningWorkers">): string {
   return waitsOnWorkers(thread) ? `Waiting on ${workersLabel(thread.runningWorkers)}` : threadStatusLabel(thread);
 }

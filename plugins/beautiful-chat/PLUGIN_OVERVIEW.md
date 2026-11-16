@@ -1,6 +1,6 @@
-Beautiful Chat restyles the chat you already use in BB. It does not replace it
+Beautiful Chat restyles the chat you already use in VesnALIA. It does not replace it
 or add a second chat view — it applies the design language of BeautifulUI to
-BB's own composer, messages and work rows, in place.
+VesnALIA's own composer, messages and work rows, in place.
 
 ## What it changes
 
@@ -30,7 +30,7 @@ off what you do not want. Disabling or removing the plugin reverts everything.
 
 ## Colors and motion
 
-It ships no palette. Every color comes from your active BB theme, so it follows
+It ships no palette. Every color comes from your active VesnALIA theme, so it follows
 your theme instead of imposing one, in light and dark alike. Under
 `prefers-reduced-motion: reduce` the loaders stop animating, the shimmer is
 off, cards fade in without moving, press feedback does not scale, and the
@@ -38,10 +38,10 @@ shared tooltip stops gliding.
 
 ## Limitation worth knowing
 
-This plugin styles BB's own chat markup, which is not a public interface. A BB
+This plugin styles VesnALIA's own chat markup, which is not a public interface. A VesnALIA
 update can change that markup, and a part of the restyle can then stop applying
 until the plugin is updated. Chat keeps working — that part just looks like
-stock BB again.
+stock VesnALIA again.
 
 Design reference: BeautifulUI (https://www.beautifului.dev, MIT). No
 BeautifulUI code is bundled.

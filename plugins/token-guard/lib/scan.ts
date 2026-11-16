@@ -39,7 +39,7 @@ export function defaultRoots(dataDir: string | null): ScanRoot[] {
   return [
     { label: "Claude Code", path: join(home, ".claude", "projects") },
     { label: "Codex", path: join(home, ".codex", "sessions") },
-    ...(dataDir === null ? [] : [{ label: "BB database", path: join(dataDir, "bb.db"), undated: true }]),
+    ...(dataDir === null ? [] : [{ label: "VesnALIA database", path: join(dataDir, "alia.db"), undated: true }]),
   ];
 }
 

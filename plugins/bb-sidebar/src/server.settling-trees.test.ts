@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { disposers, projectThread, projectsWith, loadPlugin, deferred, type LifecycleListResult } from "./test-server";
 

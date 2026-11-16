@@ -9,7 +9,7 @@
  * Plugin settings (scope, composer and terminal ratios) are only readable through `useSettings()`, so an app overlay that renders nothing bridges them into the shared store for the content script.
  */
 import { useEffect, useSyncExternalStore } from "react";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { mountPinchZoom } from "./lib/gestures";
 import {
@@ -83,7 +83,7 @@ function SettingsSection() {
   const { state, config } = useZoomSnapshot();
   const text = state.textScale;
   const terminalPx = valueOf(state, config, "terminal");
-  // Composer size relative to bb's default, in either scope.
+  // Composer size relative to VesnALIA's default, in either scope.
   const composer = Math.round(text * config.composerRatio * 100) / 100;
   return (
     <div className="flex flex-col">

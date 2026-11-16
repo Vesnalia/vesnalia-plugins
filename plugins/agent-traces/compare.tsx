@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import { PHASE_HINTS, PHASE_LABELS } from "./breakdown.js";
 import type { rpcContract } from "./server.js";
 import { formatDuration } from "./trace.js";

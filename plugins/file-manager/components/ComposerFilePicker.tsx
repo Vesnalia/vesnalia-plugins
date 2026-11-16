@@ -1,7 +1,7 @@
 // components/ComposerFilePicker.tsx — the "+" menu's file browser (§8.8).
 //
-// bb's own "+" attaches files from the machine the *browser* runs on. This row
-// attaches them from the machine bb itself runs on — the tree this plugin
+// VesnALIA's own "+" attaches files from the machine the *browser* runs on. This row
+// attaches them from the machine VesnALIA itself runs on — the tree this plugin
 // manages — as @-mentions that the backend re-reads at send time, so the agent
 // always sees each file as it is when the message goes out, not as it was when
 // it was picked. The dialog picks any number of them at once (§8.8).
@@ -12,7 +12,7 @@
 // own (see lib/composer-bus.ts for why this is the mount point and not
 // `actions`). An idle picker therefore contributes no DOM to the composer.
 import { useCallback, useEffect, useState } from "react";
-import { useComposer } from "@get-bb/plugin-sdk/app";
+import { useComposer } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { FileEntry } from "../contract";
@@ -29,7 +29,7 @@ const messages = defineMessages(
     added: (name: string) => `${name} added to the chat`,
     filesAdded: (count: number) => `${String(count)} files added to the chat`,
     title: "Add a file from this machine",
-    description: "Files on the machine bb runs on. The agent reads the file when you send the message.",
+    description: "Files on the machine VesnALIA runs on. The agent reads the file when you send the message.",
   },
   {
     unreachable: "Файловый менеджер не отвечает.",
@@ -37,7 +37,7 @@ const messages = defineMessages(
     filesAdded: (count) =>
       `${String(count)} ${pluralRu(count, ["файл добавлен", "файла добавлены", "файлов добавлено"])} в чат`,
     title: "Добавить файл с этой машины",
-    description: "Файлы с машины, на которой работает bb. Агент прочитает файл, когда вы отправите сообщение.",
+    description: "Файлы с машины, на которой работает alia. Агент прочитает файл, когда вы отправите сообщение.",
   },
 );
 
@@ -66,7 +66,7 @@ export function ComposerFilePicker() {
     [scopeKey],
   );
 
-  // The root is the home folder of whoever runs bb, so only the backend knows
+  // The root is the home folder of whoever runs VesnALIA, so only the backend knows
   // it. Asked for on first open rather than on mount: this component is
   // mounted under every composer in the app and most of them never open it.
   useEffect(() => {

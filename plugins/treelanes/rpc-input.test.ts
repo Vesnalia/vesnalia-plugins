@@ -9,7 +9,7 @@ const accepts = (input: z.ZodType, value: unknown) => input.safeParse(value).suc
 const noFields = methods.filter(([, input]) => accepts(input, {}));
 
 describe("RPC input", () => {
-  it("accepts a missing or null input for each method without input fields, as the bb CLI sends", () => {
+  it("accepts a missing or null input for each method without input fields, as the VesnALIA CLI sends", () => {
     expect(noFields.map(([name]) => name).sort())
       .toEqual(["getTaskMap", "listGroups", "listLifecycle", "listOrder", "listTitles"]);
     for (const [name, input] of noFields) {

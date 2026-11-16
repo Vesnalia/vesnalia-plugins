@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import * as commands from "./commands.js";
 import type { CommandContext } from "./commands.js";
@@ -11,8 +11,8 @@ import { createTargetStore } from "./store.js";
 import { MAX_EVAL_SCRIPT_LENGTH, MAX_SELECTOR_LENGTH, MAX_TYPE_TEXT_LENGTH, MAX_URL_LENGTH } from "./types.js";
 import type { KernelAuthClient, KernelBrowserClient } from "./types.js";
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     apiKey: { type: "string", label: "Kernel API key", secret: true },
   });
 
@@ -21,9 +21,9 @@ export default async function plugin(bb: BbPluginApi) {
   let authClient: KernelAuthClient | null = initial.apiKey ? createKernelAuthClient(initial.apiKey) : null;
 
   if (!client) {
-    bb.status.needsConfiguration(
-      "Set apiKey with `bb plugin config kernel-browser set apiKey <key>` " +
-        "(create one at https://dashboard.onkernel.com/api-keys), then `bb plugin reload kernel-browser`.",
+    alia.status.needsConfiguration(
+      "Set apiKey with `alia plugin config kernel-browser set apiKey <key>` " +
+        "(create one at https://dashboard.onkernel.com/api-keys), then `alia plugin reload kernel-browser`.",
     );
   }
 
@@ -32,87 +32,87 @@ export default async function plugin(bb: BbPluginApi) {
     authClient = next.apiKey ? createKernelAuthClient(next.apiKey) : null;
   });
 
-  const store = createTargetStore(bb);
+  const store = createTargetStore(alia);
 
   const ctx: CommandContext = {
     get client() {
       if (!client) {
-        throw new Error("kernel-browser is not configured — set apiKey, then `bb plugin reload kernel-browser`");
+        throw new Error("kernel-browser is not configured — set apiKey, then `alia plugin reload kernel-browser`");
       }
       return client;
     },
     get authClient() {
       if (!authClient) {
-        throw new Error("kernel-browser is not configured — set apiKey, then `bb plugin reload kernel-browser`");
+        throw new Error("kernel-browser is not configured — set apiKey, then `alia plugin reload kernel-browser`");
       }
       return authClient;
     },
     store,
     notify(threadId, event, targetId) {
-      if (threadId) bb.realtime.publish(`kernel-browser:${threadId}`, { event, targetId });
+      if (threadId) alia.realtime.publish(`kernel-browser:${threadId}`, { event, targetId });
     },
   };
 
-  registerRpc(bb, ctx);
+  registerRpc(alia, ctx);
 
-  bb.cli.register({
+  alia.cli.register({
     name: "kernel-browser",
     summary: "Open, drive, and watch Kernel cloud browsers",
     commands: [
       {
         name: "open",
         summary: "Open a Kernel browser",
-        usage: "bb kernel-browser open [url] [--stealth] [--headless] [--profile <name>] [--timeout <seconds>] [--json]",
+        usage: "alia kernel-browser open [url] [--stealth] [--headless] [--profile <name>] [--timeout <seconds>] [--json]",
       },
-      { name: "list", summary: "List open targets", usage: "bb kernel-browser list [--json]" },
+      { name: "list", summary: "List open targets", usage: "alia kernel-browser list [--json]" },
       {
         name: "snapshot",
         summary: "Read a target's current url and title",
-        usage: "bb kernel-browser snapshot <target-id> [--json]",
+        usage: "alia kernel-browser snapshot <target-id> [--json]",
       },
       {
         name: "click",
         summary: "Click a selector or a coordinate",
-        usage: "bb kernel-browser click <target-id> --selector <css> | --x <n> --y <n>",
+        usage: "alia kernel-browser click <target-id> --selector <css> | --x <n> --y <n>",
       },
       {
         name: "type",
         summary: "Type text into a selector, or the focused element",
-        usage: "bb kernel-browser type <target-id> --text <text> [--selector <css>]",
+        usage: "alia kernel-browser type <target-id> --text <text> [--selector <css>]",
       },
       {
         name: "eval",
         summary: "Run a small Playwright script against a target",
-        usage: "bb kernel-browser eval <target-id> --script <code> | --script-file <path> [--json]",
+        usage: "alia kernel-browser eval <target-id> --script <code> | --script-file <path> [--json]",
       },
       {
         name: "close",
         summary: "Close a target and delete its Kernel session",
-        usage: "bb kernel-browser close <target-id>",
+        usage: "alia kernel-browser close <target-id>",
       },
       {
         name: "replay-start",
         summary: "Start recording a video replay of a target",
-        usage: "bb kernel-browser replay-start <target-id> [--framerate <fps>] [--max-duration <seconds>] [--audio] [--json]",
+        usage: "alia kernel-browser replay-start <target-id> [--framerate <fps>] [--max-duration <seconds>] [--audio] [--json]",
       },
       {
         name: "replay-stop",
         summary: "Stop a replay recording and persist the video",
-        usage: "bb kernel-browser replay-stop <target-id> --replay-id <id> [--json]",
+        usage: "alia kernel-browser replay-stop <target-id> --replay-id <id> [--json]",
       },
       {
         name: "replay-list",
         summary: "List replay recordings for a target",
-        usage: "bb kernel-browser replay-list <target-id> [--json]",
+        usage: "alia kernel-browser replay-list <target-id> [--json]",
       },
       ...AUTH_CLI_COMMANDS,
     ],
     async run(argv, runCtx) {
-      return runCli(bb, ctx, argv, runCtx);
+      return runCli(alia, ctx, argv, runCtx);
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_open",
     description:
       "Open a real, cloud-hosted Chrome browser via Kernel and get back a target id plus a live view URL " +
@@ -140,7 +140,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_snapshot",
     description: "Read the current URL and title of an open Kernel browser target.",
     parameters: z.object({ targetId: z.string() }),
@@ -150,7 +150,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_click",
     description: "Click a CSS selector (preferred) or an x/y coordinate in an open Kernel browser target.",
     parameters: z.object({
@@ -165,7 +165,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_type",
     description: "Type text into a CSS selector, or the focused element, in an open Kernel browser target.",
     parameters: z.object({
@@ -179,7 +179,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_eval",
     description:
       "Run a short Playwright script (with `page` in scope) against an open Kernel browser target and return " +
@@ -194,7 +194,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_close",
     description: "Close an open Kernel browser target and delete its cloud session.",
     parameters: z.object({ targetId: z.string() }),
@@ -204,7 +204,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_replay_start",
     description:
       "Start recording a video replay of an open Kernel browser target and return a replay id. Call " +
@@ -221,7 +221,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_replay_stop",
     description: "Stop an in-progress replay recording on a Kernel browser target and persist the finished video.",
     instructions:
@@ -237,7 +237,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "kernel_browser_replay_list",
     description:
       "List video replay recordings for an open Kernel browser target, including view URLs once finished.",
@@ -250,19 +250,19 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  registerAuthTools(bb, ctx);
+  registerAuthTools(alia, ctx);
 
   async function closeTargetsForThreadLogged(threadId: string): Promise<void> {
     const failures = await commands.closeTargetsForThread(ctx, threadId);
     for (const failure of failures) {
-      bb.log.warn(`failed to close target ${failure.targetId} for thread ${threadId}: ${failure.error}`);
+      alia.log.warn(`failed to close target ${failure.targetId} for thread ${threadId}: ${failure.error}`);
     }
   }
 
-  bb.events.on("thread.archived", async ({ thread }) => {
+  alia.events.on("thread.archived", async ({ thread }) => {
     await closeTargetsForThreadLogged(thread.id);
   });
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     await closeTargetsForThreadLogged(thread.id);
   });
 }

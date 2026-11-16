@@ -1,6 +1,6 @@
-# Machine Sidebar for bb
+# Machine Sidebar for VesnALIA
 
-A thread list for [bb](https://github.com/get-bb/bb) that groups threads by the
+A thread list for [VesnALIA](https://github.com/get-bb/bb) that groups threads by the
 **machine they run on**, then by **project**. Useful when you work across
 several machines, for example a laptop and a remote Mac or Linux box.
 
@@ -35,12 +35,12 @@ several machines, for example a laptop and a remote Mac or Linux box.
   [farcall-mcp](https://github.com/regenrek/farcall-mcp) (`claude_worker` /
   `codex_worker` `run` and `run_batch`), each coordinator thread lists its
   worker tasks underneath: provider, model, task, elapsed call time and the
-  final outcome. The list is built only from bb's own tool-call events; it
+  final outcome. The list is built only from VesnALIA's own tool-call events; it
   never starts, retries or controls workers. While a batch call is open the
   sidebar shows "Call open" rather than guessing per-worker progress. Turn it
   on under Settings → Installed plugins → Machine Sidebar → Show Farcall tasks.
   A second compact line shows the worker's worktree branch when its requested
-  working directory matches a bb environment on the coordinator's machine.
+  working directory matches a VesnALIA environment on the coordinator's machine.
   Otherwise, a `worktrees/<name>` path shows a folder icon and name; its tooltip says
   **Working folder**, never claiming a branch. Updates are debounced; working
   directory paths stay on the server. [Matching and cache behavior](docs/worker-workspaces.md).
@@ -52,23 +52,23 @@ several machines, for example a laptop and a remote Mac or Linux box.
   that machine). Hover a thread for **Archive** and **…** (open in split,
   rename, pin, mark read/unread, mark inactive, delete).
 - Pinned threads sit on top; child threads are indented under their parent.
-  bb's `Cmd+1…9` and next/previous-thread shortcuts keep working.
+  VesnALIA's `Cmd+1…9` and next/previous-thread shortcuts keep working.
 
-Tag colors and inactive marks are stored on the bb server, so every window and
+Tag colors and inactive marks are stored on the VesnALIA server, so every window and
 machine sees the same state. Collapsed groups are remembered per window.
 
 ## Install
 
-From the bb plugin marketplace, or:
+From the VesnALIA plugin marketplace, or:
 
 ```sh
-bb plugin install git:https://github.com/regenrek/bb-plugin-machine-sidebar.git
+alia plugin install git:https://github.com/regenrek/bb-plugin-machine-sidebar.git
 ```
 
-bb switches to the new list automatically. To switch back, choose another list
-under Settings → Appearance → Sidebar, or run `bb plugin disable machine-sidebar`.
+VesnALIA switches to the new list automatically. To switch back, choose another list
+under Settings → Appearance → Sidebar, or run `alia plugin disable machine-sidebar`.
 
-Requires bb 0.44 or later.
+Requires VesnALIA 0.44 or later.
 
 ## Development
 
@@ -76,9 +76,9 @@ Requires bb 0.44 or later.
 npm install
 npx tsc -p .                              # type check
 npm test                                  # unit tests (node --test + vitest)
-bb plugin build                           # build dist/
-bb plugin install . --yes                 # install from this folder
-bb plugin dev                             # rebuild and reload on save
+alia plugin build                           # build dist/
+alia plugin install . --yes                 # install from this folder
+alia plugin dev                             # rebuild and reload on save
 ```
 
 | File | Purpose |
@@ -88,7 +88,7 @@ bb plugin dev                             # rebuild and reload on save
 | `tags.ts` | Title tag parsing, colors, rule cleanup |
 | `tag-rules.tsx`, `inactive.tsx` | Loading and live refresh of tag rules and inactive marks |
 | `settings.tsx` | Title tags settings page |
-| `farcall-*.ts(x)` | Optional Farcall task projection from bb tool-call events |
+| `farcall-*.ts(x)` | Optional Farcall task projection from VesnALIA tool-call events |
 | `hierarchy-guides.tsx` | Optional tree guide lines |
 | `strings.ts` | Every user-visible text, so variants can translate one file |
 | `server.ts` | Settings, storage and RPC for tag rules, inactive marks and Farcall tasks |

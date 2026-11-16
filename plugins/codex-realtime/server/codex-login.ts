@@ -47,7 +47,7 @@ export async function readCodexLogin(path: string, now: number = Date.now()): Pr
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code === "ENOENT") {
-      throw new CodexLoginError("missing", `No Codex login found at ${path}. ${SIGN_IN_HINT} on the machine running the bb server.`);
+      throw new CodexLoginError("missing", `No Codex login found at ${path}. ${SIGN_IN_HINT} on the machine running the VesnALIA server.`);
     }
     throw new CodexLoginError("malformed", `Could not read the Codex login at ${path} (${code ?? "unknown error"}). ${SIGN_IN_HINT}.`);
   }

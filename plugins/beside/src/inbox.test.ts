@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import {
   childrenByParentId,
   filterByProject,
@@ -159,7 +159,7 @@ describe("filtering", () => {
     expect(visibleInboxThreads(threads).map((t) => t.id)).toEqual(["a"]);
   });
 
-  it("orders pinned threads like bb: sort key, then most recently pinned", () => {
+  it("orders pinned threads like VesnALIA: sort key, then most recently pinned", () => {
     const pinned = sortPinned([
       thread({ id: "old", isPinned: true, pinnedAt: 10 }),
       thread({ id: "new", isPinned: true, pinnedAt: 20 }),

@@ -1,6 +1,6 @@
 # Snapshots of boxes
 
-What a snapshot of a box should be in bb-box: what people and agents want
+What a snapshot of a box should be in alia-box: what people and agents want
 it for, what each backend can do natively, how fast and at what cost, a
 model every backend fills in as it can, the agent's tools, the person's
 pages, safety and security, and the units that would build it.
@@ -13,24 +13,24 @@ about: snapshot. Is it provider based? The management etc.; for example
 boat supports snapshot built in. An agent should be able to snapshot,
 right?"
 
-Measured on real hosts through bb-box's boxes, as the
+Measured on real hosts through alia-box's boxes, as the
 [method](#how-it-was-measured) says. The raw output and the scripts are in
-[box-snapshots/](box-snapshots/). Read against bb-box's main branch at
+[box-snapshots/](box-snapshots/). Read against alia-box's main branch at
 `e2d05767`.
 
 ## Recommendation
 
-Is it provider based? The mechanism is; the model is bb-box's. And yes, an
+Is it provider based? The mechanism is; the model is alia-box's. And yes, an
 agent should be able to take one, and restore its own box to one.
 
-1. **A snapshot is bb-box's own record, filled in by each backend as it
-   can.** bb-box keeps one list of snapshots, with one set of verbs (take,
+1. **A snapshot is alia-box's own record, filled in by each backend as it
+   can.** alia-box keeps one list of snapshots, with one set of verbs (take,
    restore, fork, keep, delete), one owner rule and one retention rule. Each
    backend says, per kind, what its snapshots hold (the disk, or the disk
    and memory), whether a running box can be taken, whether it restores in
    place and forks, where the snapshot lives and what it costs, as
    backends already say what they resize (061). Where a backend has
-   nothing, the box says so, and bb-box builds nothing generic for it in
+   nothing, the box says so, and alia-box builds nothing generic for it in
    the first units.
 2. **Native mechanisms only, at first.** The backends used most have fast
    ones: Proxmox LXC takes a snapshot in 0.7 s, Proxmox QEMU in 1.1 s, or
@@ -38,7 +38,7 @@ agent should be able to take one, and restore its own box to one.
    one with memory in 1.5 s and forks a running box in 1.6 s; a macOS VM on
    Tart already saves its memory at each stop, and an APFS copy of it,
    86 GB, takes 0.02 s and no space. A
-   portable format of bb-box's own, which could move between hosts, was
+   portable format of alia-box's own, which could move between hosts, was
    slower by an order (13 s and 3 GB for a small box with vzdump), holds no
    memory, and puts secrets in an archive away from the box; it is left for
    later.
@@ -51,7 +51,7 @@ agent should be able to take one, and restore its own box to one.
    changed since the snapshot, and take a snapshot of the state they
    replace first, by default.
 5. **A fork is a new box, with a new identity.** It keeps the files and
-   drops the box's BB machine, its access and its tailnet node, so a fork
+   drops the box's VesnALIA machine, its access and its tailnet node, so a fork
    never acts as its source.
 6. **The person sees every snapshot in one place**: a Snapshots tab on the
    Boxes page, beside Machines and Threads, and each box's own on its page
@@ -64,12 +64,12 @@ forks, Tart, microsandbox and boat. See [build units](#build-units).
 ## What a snapshot is for
 
 What a person and an agent want, most common first. "Covered" says what
-bb-box does today that meets it, without a snapshot.
+alia-box does today that meets it, without a snapshot.
 
 | # | Want | Who | Covered today | Gap |
 | --- | --- | --- | --- | --- |
 | 1 | **A checkpoint before a risky change, and a roll back**: an upgrade, a migration, a `rm -rf`, an agent's experiment | agent, often unasked; person | No. A stop keeps the disk, but not an earlier one | Native on Proxmox, Tart (macOS, memory), microsandbox, boat (paid only) |
-| 2 | **Fork a box to try two things**: two fixes from one set-up state, or a person and an agent side by side | agent, person | No. boat's backend forks a template, not a box (068); 069 left Fork out: "bb-box has no fork of a box" ([069](../decisions/069-boxes-page.md)) | Native on Proxmox (clone), microsandbox, boat, Tart (clone) |
+| 2 | **Fork a box to try two things**: two fixes from one set-up state, or a person and an agent side by side | agent, person | No. boat's backend forks a template, not a box (068); 069 left Fork out: "alia-box has no fork of a box" ([069](../decisions/069-boxes-page.md)) | Native on Proxmox (clone), microsandbox, boat, Tart (clone) |
 | 3 | **Keep a set-up box to start more like it**: a box with a project's dependencies built, a logged-in app, a device with an app installed | person, project | Partly: a project's image (049) is a script on the standard image, rebuilt nightly; spares and warm boxes are of an image (032). 049 rejected "save this box as an image" | Short-lived: a fork of a snapshot. Long-lived and shared: stays 049's script |
 | 4 | **Save a box's state across a stop or a release**: go home, come back to the same desktop and processes; free a Mac's VM slot | person | Partly: a stop keeps the disk (all virtual backends); Tart's macOS stop saves its memory (suspend); Windows on a Mac saves its memory; boat keeps a stopped disk 14 days. Nothing outlives a release | A kept snapshot outlives the release |
 | 5 | **Recover from a broken box**: a box that no longer boots or answers | person | Partly: release and acquire again; 025 and 026 re-enrol a box whose record was lost | Restore of the last snapshot |
@@ -83,7 +83,7 @@ the short-lived half, "five more like this one, today".
 
 ## What each backend can do
 
-What it offers natively, then what bb-box would build where it has
+What it offers natively, then what alia-box would build where it has
 nothing. Times are this note's measurements where marked (m), and the
 provider's words otherwise. "In place" is a restore of the same box;
 "fork" is a new box from a snapshot.
@@ -100,7 +100,7 @@ provider's words otherwise. "In place" is a restore of the same box;
 | microsandbox | disk, or disk and memory | yes, paused briefly | 0.34 s; with memory 1.50 s (m) | no: each restore is a new sandbox, 3.85 s with memory (m) | `msb fork` of a running box, 1.57 s (m) | the host | changed layers; 1.5 GB archive for 0.5 GiB RAM and 0.5 GiB disk (m) | until removed |
 | boat.dev | disk (changes over boat's base); never memory | yes: a capture each minute, and one at each stop | automatic; a saved snapshot "can run minutes" | **no**: "You cannot resume or fork an older snapshot" | fork of the newest snapshot; 3.5 s to SSH from a stopped sandbox (068) | boat | automatic ones free; saved ones 10 per $20 of plan, then $0.056 a day; **refused on the trial** | automatic: 14 days after a stop, older ones within a day; saved: never |
 | Hetzner Cloud (the host) | the whole host's disk, every box on it | yes | 76.7 s for a 320 GB host, 17.0 GB compressed (m) | rebuild the server from it | a new server at least as large as the snapshot's disk; refused here by the project's core limit (m) | Hetzner, in the project | EUR 0.0119 a GB a month ([guide](../guide/hetzner.md)) | until deleted |
-| Namespace (the instance) | memory and disks, by a suspend, as documented | yes | refused: HTTP 501 for bb-box's instance (m) | wake only: one state, no list | none in the compute API | Namespace | not stated | not stated |
+| Namespace (the instance) | memory and disks, by a suspend, as documented | yes | refused: HTTP 501 for alia-box's instance (m) | wake only: one state, no list | none in the compute API | Namespace | not stated | not stated |
 | SSH host pool, Linux | nothing: no root on the machine | | a copy of the box user's home | by putting it back | no | the machine | | |
 | SSH host pool, Mac | nothing native without root; APFS local snapshots are of the whole volume and need root | | a copy of the box user's home | by putting it back | no | | | |
 | iOS slots (shared hosts, 064) | nothing native: a Simulator device has no saved state | no: shut down first, 3.2 s (m) | `simctl clone` 1.6 s, or an APFS copy of its 352 MB folder 1.0 s (m) | | `xcrun simctl clone`; the clone booted in 2.5 s (m) | the host | its folder's changed blocks | until deleted |
@@ -119,10 +119,10 @@ provider's words otherwise. "In place" is a restore of the same box;
   snapshots; LVM (thick) only for VMs since Proxmox VE 9, as a technology
   preview, with thick snapshot volumes; a raw directory does not
   ([storage](https://pve.proxmox.com/pve-docs/chapter-pvesm.html)).
-  bb-box's LXC guide asks for storage with linked clones, LVM-thin, ZFS or
+  alia-box's LXC guide asks for storage with linked clones, LVM-thin, ZFS or
   Ceph ([setup/proxmox-lxc/README.md](../../setup/proxmox-lxc/README.md)),
-  so every Proxmox LXC host bb-box supports can take snapshots.
-- **The token.** bb-box's token has `VM.Clone`, `VM.Allocate`, the
+  so every Proxmox LXC host alia-box supports can take snapshots.
+- **The token.** alia-box's token has `VM.Clone`, `VM.Allocate`, the
   `VM.Config.*` rights and `VM.PowerMgmt`, but not `VM.Snapshot` or
   `VM.Snapshot.Rollback` ([setup/proxmox-lxc/README.md](../../setup/proxmox-lxc/README.md),
   [privileges](https://pve.proxmox.com/pve-docs/chapter-pveum.html)).
@@ -132,20 +132,20 @@ provider's words otherwise. "In place" is a restore of the same box;
   blocks. After 1 GiB was written, the 7.3 TiB pool's use rose by 0.02%,
   about 1.5 GiB, and the snapshot itself by nothing. A memory snapshot
   of a 4 GiB VM took an 8.5 GiB state volume, 3.7 GiB of it used.
-- **What bb-box saw.** The rollbacks were made outside bb-box. Its box log
-  recorded no stop, and both boxes were connected BB machines again within
-  minutes: the snapshot held BB's daemon state from before. A restore
-  through bb-box must say so in the box's log itself.
+- **What alia-box saw.** The rollbacks were made outside alia-box. Its box log
+  recorded no stop, and both boxes were connected VesnALIA machines again within
+  minutes: the snapshot held VesnALIA's daemon state from before. A restore
+  through alia-box must say so in the box's log itself.
 - **The LXC rollback's 45.8 s** was mostly the container's own shutdown:
   `pct rollback` shuts a running container down before it rolls back. A
-  hard stop, as bb-box's stop for LXC is, takes 1.3 s (the clone's stop),
-  so a restore through bb-box should stop first: about 3 s in all, to be
+  hard stop, as alia-box's stop for LXC is, takes 1.3 s (the clone's stop),
+  so a restore through alia-box should stop first: about 3 s in all, to be
   measured in unit 2.
 - **Forks.** Proxmox clones a snapshot only fully: 9.3 s for 4 GiB used
   (LXC), 6.5 s (QEMU), at the copy's full size. On LVM-thin a thin
   snapshot of the snapshot took 0.13 s and shares every block, which is
   what a linked clone of a template is; Proxmox's API cannot make one of a
-  snapshot. bb-box would do it only through `pct clone` of a template made
+  snapshot. alia-box would do it only through `pct clone` of a template made
   from the snapshot, or not at all: a full clone is fast enough for a
   first unit.
 - **Moving.** `vzdump --mode snapshot` made a 2.9 GB archive of the LXC box
@@ -160,7 +160,7 @@ provider's words otherwise. "In place" is a restore of the same box;
   A box with Docker keeps its own Docker's data on a volume,
   `/var/lib/docker` ([docker/backend.ts](../../src/backends/docker/backend.ts),
   near `--volume`), so a commit of such a box loses its images and
-  containers. bb-box would add a copy of that volume, as a tar beside the
+  containers. alia-box would add a copy of that volume, as a tar beside the
   image.
 - **Checkpoints.** `docker checkpoint` with CRIU saves memory and
   processes; it is experimental and "focuses on single-host use cases"
@@ -169,9 +169,9 @@ provider's words otherwise. "In place" is a restore of the same box;
   failed on Docker 29.1.3, with a network and without one; restoring into
   a new container is refused ("custom checkpointdir is not supported").
   Not usable.
-- **Hetzner Cloud** boxes are Docker containers on a host bb-box makes
+- **Hetzner Cloud** boxes are Docker containers on a host alia-box makes
   (055), so a box's snapshot is a Docker commit on that host. Hetzner's own
-  snapshot is of the whole host, every box on it: what bb-box already uses
+  snapshot is of the whole host, every box on it: what alia-box already uses
   for its host image ([host-image.ts](../../src/backends/hetzner/host-image.ts)).
   It costs EUR 0.0119 a GB a month and is kept until deleted
   ([Hetzner's docs](https://docs.hetzner.com/cloud/servers/backups-snapshots/overview/)).
@@ -181,18 +181,18 @@ provider's words otherwise. "In place" is a restore of the same box;
   cores refused one beside the host, so a fork was not measured. A host
   snapshot is no box's snapshot: it holds every box on the host, and a
   server from it starts all their containers, which `--restart
-  unless-stopped` brings back, with their BB machines and tailnet nodes.
+  unless-stopped` brings back, with their VesnALIA machines and tailnet nodes.
 - **Namespace** Linux boxes are a Docker container in a Namespace instance
   of their own ([namespace/linux.ts](../../src/backends/namespace/linux.ts)),
   so a commit works there too, and could be pushed to the workspace's
-  registry, where bb-box already keeps its Linux images. See
+  registry, where alia-box already keeps its Linux images. See
   [Namespace](#namespace).
 
 ### Tart
 
 - **What it offers.** A macOS VM run with `--suspendable` can be suspended:
   Virtualization saves its memory beside its disk, as `state.vzvmsave`, and
-  the next run resumes it. bb-box already stops every macOS box so
+  the next run resumes it. alia-box already stops every macOS box so
   ([tart/backend.ts](../../src/backends/tart/backend.ts), top), and keeps
   its warm VMs suspended. A Linux VM cannot be suspended, as Tart cannot
   resume one (040). A VM is a folder on the Mac's APFS disk, and `tart
@@ -204,7 +204,7 @@ provider's words otherwise. "In place" is a restore of the same box;
   longest suspend). A snapshot is a copy of the whole suspended folder,
   disk and memory together; an earlier snapshot is restored by putting its
   copy back in the VM's place while it is suspended.
-- **Measured.** Through bb-box, a 16 GiB macOS VM suspended in about 7 s
+- **Measured.** Through alia-box, a 16 GiB macOS VM suspended in about 7 s
   and resumed in 10.4 s, its processes running on. Suspended, its folder
   held an 88.6 GB disk image and a 7.9 GB saved state, 86 GB on disk. An
   APFS copy of the folder (`cp -c`) took 0.02 s and no space, and putting
@@ -216,9 +216,9 @@ provider's words otherwise. "In place" is a restore of the same box;
   VM with its memory did not work: a fork would drop the saved state and
   boot from the disk, with a new MAC address, which unit 7 must measure.
 - **The copy must be on the VMs' volume.** On another volume `cp -c`
-  falls back to a full copy: 1 GB of 96 GB in 7.5 minutes. bb-box's VMs
+  falls back to a full copy: 1 GB of 96 GB in 7.5 minutes. alia-box's VMs
   can live on a volume of their own, so snapshots go beside them.
-- **Moving.** `tart push` sends a VM to an OCI registry, which bb-box has
+- **Moving.** `tart push` sends a VM to an OCI registry, which alia-box has
   none of for Macs.
 
 ### microsandbox
@@ -230,11 +230,11 @@ provider's words otherwise. "In place" is a restore of the same box;
   a `.msb` archive another machine imports
   ([snapshots](https://docs.microsandbox.dev/sandboxes/snapshots)). Full
   captures, forks and archives are local only.
-- **Measured** with bb-box's pinned msb 0.7.7, nested in a Proxmox QEMU
+- **Measured** with alia-box's pinned msb 0.7.7, nested in a Proxmox QEMU
   box: disk 0.34 s, full 1.50 s, fork of a running sandbox 1.57 s with its
   memory, a restore with memory 3.85 s, an archive of a full snapshot of
   0.5 GiB of memory and 0.5 GiB of disk 1.55 GB in 9.0 s.
-- **What bb-box would add.** A restore in place is a restore into a new
+- **What alia-box would add.** A restore in place is a restore into a new
   microVM under the box's name, then the old one removed: the box keeps
   its record and its name, and its guest changes. Snapshots of one sandbox
   form a chain with a head, which cannot be removed until another is
@@ -263,50 +263,50 @@ provider's words otherwise. "In place" is a restore of the same box;
     containers and their images, and changes in `/etc`, `/usr`, `/opt`,
     `/var`; not `/tmp`, `~/.cache`, the build cache, the hostname, the
     address or the SSH host keys.
-- **Measured through bb-box** (a `small` box forked from bb-box's template,
+- **Measured through alia-box** (a `small` box forked from alia-box's template,
   using 2 of the 4 starts the trial had left that day): acquire 26.1 s, stop about 30 s,
   start 5.2 s. The start brought back the same machine, uptime unbroken,
   `/dev/shm` and `/tmp` still there, as 068's results also saw: a quick
   stop and start is no restore. 068 measured a fork of a stopped sandbox at
   3.5 s to SSH.
-- **What bb-box would build.** On the trial there is no checkpoint to go
+- **What alia-box would build.** On the trial there is no checkpoint to go
   back to: a stopped fork of the box would be one, kept free for 14 days,
   and a restore would swap the box's guest to a fork of it. On a paid plan
   a saved snapshot is the checkpoint, with a price.
 
 ### Namespace
 
-Not measured beyond one call: Namespace answered bb-box's own call to
+Not measured beyond one call: Namespace answered alia-box's own call to
 suspend a Linux box's instance with HTTP 501, not implemented
 ([namespace-results.txt](box-snapshots/namespace-results.txt)). What
-Namespace's docs and bb-box's code say:
+Namespace's docs and alia-box's code say:
 
 - **What a box is there.** A Linux box is a Docker container in a Namespace
   instance of its own; a macOS box is an instance of its own; iOS boxes are
   slots on a Namespace Mac ([namespace/linux.ts](../../src/backends/namespace/linux.ts),
   [the guide](../guide/namespace.md)). An instance lives at most its plan's
-  longest life, 3 to 24 hours, and bb-box destroys it at release. bb-box
+  longest life, 3 to 24 hours, and alia-box destroys it at release. alia-box
   never stops one: the backend has no `stop`.
 - **Suspend and wake.** The SDK documents `suspendInstance`: "Execution
   stops and RAM and disks are snapshotted so the instance can be restored
   without restarting it", and `wakeInstance`
   ([compute SDK](https://namespace.so/docs/reference/typescript-sdk/compute/manage.md)).
   It is one saved state, as a Mac's suspend is: no list, no older state, no
-  fork. For bb-box's instance and token it answered 501, so it is either
+  fork. For alia-box's instance and token it answered 501, so it is either
   not offered for these instances or not to this token.
 - **Volumes.** Persistent volumes are "automatically snapshotted on
   shutdown, and new volumes can be initialized from a specific snapshot"
   ([storage](https://namespace.so/docs/architecture/storage)). Cache volumes
   are caches, billed at $0.002 a GB-hour while attached and $0.0048 a
-  GB-day stored ([pricing](https://namespace.so/pricing.md)). bb-box uses
+  GB-day stored ([pricing](https://namespace.so/pricing.md)). alia-box uses
   neither.
 - **Devboxes**, Namespace's other product, snapshot at each start and
   restore to any of them ([changelog](https://namespace.so/changelog),
-  10 June 2026). bb-box does not use
+  10 June 2026). alia-box does not use
   Devboxes: they are a different API, with their own images and lifecycle.
-- **What bb-box would build.** For a Linux box, a `docker commit` of the
+- **What alia-box would build.** For a Linux box, a `docker commit` of the
   box's container in its instance, pushed to the workspace's registry,
-  where bb-box already keeps its Linux images; a restore or a fork is a new
+  where alia-box already keeps its Linux images; a restore or a fork is a new
   container from it, in the same instance or a new one. Its Docker volume
   is lost, as on any Docker backend, unless copied. Registry storage is
   "accounted in blocks of 100 GB" (pricing). For a macOS box, nothing
@@ -325,7 +325,7 @@ Namespace's docs and bb-box's code say:
   ([ssh-pool/backend.ts](../../src/backends/ssh-pool/backend.ts), top;
   `restores` in [types.ts](../../src/backends/types.ts)). An iOS slot is a
   macOS user on a shared host, removed with everything it owns at release
-  (064). A copy of the box user's home is all bb-box could take, without
+  (064). A copy of the box user's home is all alia-box could take, without
   memory, and a restore would need the user's processes ended first.
   Not worth a first unit; the box says it has no snapshots.
 - **iOS Simulator.** `simctl` has no saved state of a booted device; a
@@ -338,22 +338,22 @@ Namespace's docs and bb-box's code say:
 - **Android emulator.** Its console saves and loads named snapshots of the
   device's disk and memory: 14.8 s and 2.5 GB to save, 3.2 s to load, with
   the open app and a setting put back. These live in the box's disk, so a
-  Proxmox QEMU snapshot of an android box holds them too. bb-box could
+  Proxmox QEMU snapshot of an android box holds them too. alia-box could
   offer the device's own as the device box's snapshot, as it already uses
   Quick Boot.
 
 ## How it was measured
 
-On 30 October 2026, through boxes from production BB's bb-box, each
+On 30 October 2026, through boxes from production VesnALIA's alia-box, each
 released when done. Times are wall clock, from `date` before and after
-each step on the machine that ran it, or bb-box's own timings for a stop
+each step on the machine that ran it, or alia-box's own timings for a stop
 and a start. Sizes are from the storage itself.
 
 - **Proxmox**: one `linux` LXC box and one `linux` QEMU box, 2 cores,
-  4 GiB, 16 GiB, on a Proxmox VE 9.2 node with LVM-thin. bb-box's token
+  4 GiB, 16 GiB, on a Proxmox VE 9.2 node with LVM-thin. alia-box's token
   cannot take snapshots, so [proxmox-snapshots.sh](box-snapshots/proxmox-snapshots.sh)
   was run by the lead as root on the node. It checks each VMID's tags name
-  the box, uses a spare VMID outside bb-box's ranges for clones, and
+  the box, uses a spare VMID outside alia-box's ranges for clones, and
   removes everything it makes. Each box held 1 GiB of random data on disk,
   the QEMU box 1.5 GiB more in `/dev/shm`. [Output](box-snapshots/proxmox-results.txt).
 - **Docker**: [docker-snapshots.sh](box-snapshots/docker-snapshots.sh) in
@@ -363,19 +363,19 @@ and a start. Sizes are from the storage itself.
   if anything. [Output](box-snapshots/microsandbox-results.txt).
 - **Android**: the emulator's console in an `android` box.
   [Output](box-snapshots/android-results.txt).
-- **boat.dev**: bb-box's own acquire, stop and start of a `small` box on
-  the trial; bb-box's timings.
+- **boat.dev**: alia-box's own acquire, stop and start of a `small` box on
+  the trial; alia-box's timings.
 - **Tart**: a `macos` box on Tart (6 cores, 16 GiB), stopped and started
-  through bb-box, and [tart-snapshots.sh](box-snapshots/tart-snapshots.sh)
+  through alia-box, and [tart-snapshots.sh](box-snapshots/tart-snapshots.sh)
   run by the lead as the Tart user on the Mac: an APFS copy of the
   suspended VM's folder, a clone, and a second run that put the copy back.
   [Output](box-snapshots/tart-results.txt). An `ios` box on a shared host,
   `simctl` in the slot. [Output](box-snapshots/ios-results.txt).
 - **Hetzner and Namespace**: [hetzner-snapshot.sh](box-snapshots/hetzner-snapshot.sh)
   and [namespace-suspend.sh](box-snapshots/namespace-suspend.sh), run by
-  the lead with bb-box's tokens, which the owner allowed for this; each
-  checks the machine is the box's or bb-box's host, labels what it makes
-  with none of bb-box's labels, and deletes it. [Hetzner](box-snapshots/hetzner-results.txt),
+  the lead with alia-box's tokens, which the owner allowed for this; each
+  checks the machine is the box's or alia-box's host, labels what it makes
+  with none of alia-box's labels, and deletes it. [Hetzner](box-snapshots/hetzner-results.txt),
   [Namespace](box-snapshots/namespace-results.txt).
 
 What limits the numbers: one run each; small boxes (4 GiB, a few GiB used);
@@ -388,11 +388,11 @@ not grow with the box.
 
 ### What a snapshot is
 
-A record bb-box keeps, beside the box's record and its log (069 unit 1b):
+A record alia-box keeps, beside the box's record and its log (069 unit 1b):
 
 | Field | Example | Notes |
 | --- | --- | --- |
-| `id` | `sn` and 12 letters and digits | bb-box's, never the provider's |
+| `id` | `sn` and 12 letters and digits | alia-box's, never the provider's |
 | `box` | the box's ID, name and kind at the time | kept after the box goes, for a kept snapshot |
 | `name` | "before the migration" | given, or made from the time; unique per box |
 | `note` | free text | |
@@ -429,12 +429,12 @@ and serves that box and its forks. A project's image stays a script (049).
   per box.
 - **With its box.** A box's snapshots are deleted when the box is
   released, before or with its guest. On Proxmox a guest's destroy removes
-  its snapshots anyway; on a Mac and with microsandbox and Docker bb-box
+  its snapshots anyway; on a Mac and with microsandbox and Docker alia-box
   removes them; on boat a delete removes them.
 - **A thread's end** releases its boxes (003), and so their snapshots.
 - **Kept.** The person can keep a snapshot past its box's release, for 30
   days by default, or until a date; then it is theirs, listed with its box
-  gone, and can be forked into a new box of theirs. bb-box deletes it at
+  gone, and can be forked into a new box of theirs. alia-box deletes it at
   its date, and warns 3 days before on the Snapshots tab. Not on backends
   where it would hold a host: an SSH pool has none anyway.
 - **Quotas**, in Settings, per backend: snapshots per box (5 by default;
@@ -489,9 +489,9 @@ hold, as they say what it resizes.
 
 ## Three shapes, compared
 
-| | A. Native, behind one model (recommended) | B. One portable format of bb-box's own | C. A provider's model, passed through |
+| | A. Native, behind one model (recommended) | B. One portable format of alia-box's own | C. A provider's model, passed through |
 | --- | --- | --- | --- |
-| What it is | bb-box's record, verbs and rules; each backend uses its own mechanism and says what it offers | bb-box archives a box's files (or a disk export) to a store of its own, and restores or forks it on any backend of the kind | each backend shows its provider's snapshots as they are: boat's, Proxmox's, Tart's |
+| What it is | alia-box's record, verbs and rules; each backend uses its own mechanism and says what it offers | alia-box archives a box's files (or a disk export) to a store of its own, and restores or forks it on any backend of the kind | each backend shows its provider's snapshots as they are: boat's, Proxmox's, Tart's |
 | Take | 0.3 to 4 s on Proxmox, microsandbox; 7 s for a Mac's suspend | 13 s for a small box (vzdump); minutes for a desktop | as A |
 | Memory | where native: Proxmox QEMU, Tart macOS, microsandbox, Android | never | where native |
 | Same everywhere | no: the box says what it gets | yes, for a kind | no, and the words differ |
@@ -499,12 +499,12 @@ hold, as they say what it resizes.
 | Secrets | stay on the box's own storage | in an archive away from the box | as A |
 | Storage | changed blocks | a full archive each time | as A |
 | Work | per backend, small | one big format, a store, and restores per backend | per backend, and a page per provider |
-| Fits bb-box | as resize (061) and images (049): a capability and optional methods | against 001's "the core does not care", it puts a format in the core | against 001: the core would name providers |
+| Fits alia-box | as resize (061) and images (049): a capability and optional methods | against 001's "the core does not care", it puts a format in the core | against 001: the core would name providers |
 
 B is the only one that moves and is the same everywhere, but it costs an
 order of magnitude more per take, holds no memory, needs a store, and
 copies a box's secrets off its storage. C is what a person would see if
-bb-box did nothing: each provider's console. A keeps the speed of each
+alia-box did nothing: each provider's console. A keeps the speed of each
 provider and one way to use them all, at the price of being uneven: the
 SSH host pool, iOS slots and Namespace get nothing at first, and a Docker
 box gets its files but not its own Docker's data until unit 10. B can come
@@ -512,7 +512,7 @@ later as the export of an A snapshot, for the moves that need it.
 
 ## Safety: a restore replaces a box's state
 
-- **Say what goes.** Before a restore, bb-box says what it replaces: "Goes
+- **Say what goes.** Before a restore, alia-box says what it replaces: "Goes
   back to 10:42, 2 h ago. What changed since goes: files written, apps
   installed, and on a running box every process. [It comes back running,
   as it was then.]" with the last of these only for a memory snapshot.
@@ -530,23 +530,23 @@ later as the export of an A snapshot, for the moves that need it.
   as 069's guard for Stop and Release.
 - **The box log** records each take, restore, fork and delete with its
   actor, as it records stops and starts now (069 unit 1b).
-- **After a restore** the box enrols again if its BB machine changed, as a
+- **After a restore** the box enrols again if its VesnALIA machine changed, as a
   restored record does (025, 026), and gets the thread's current access.
   A Proxmox rollback also puts back the guest's tags and description as
-  they were, so bb-box writes the box's current owner and name on it again,
+  they were, so alia-box writes the box's current owner and name on it again,
   as a relabel does (036), in case the box changed hands since.
 
 ## Security
 
 What a snapshot of a box holds, from the code:
 
-- **The thread's access**: `~/.config/bb-box/env`, mode 600, with the
-  variables BB gives the thread's machine, GH_TOKEN among them
+- **The thread's access**: `~/.config/alia-box/env`, mode 600, with the
+  variables VesnALIA gives the thread's machine, GH_TOKEN among them
   ([core/in-box.ts](../../src/core/in-box.ts), `envFile`, `envScript`).
-- **BB's machine credentials**: the daemon's folder under `~/.bb-machines/`,
+- **VesnALIA's machine credentials**: the daemon's folder under `~/.alia-machines/`,
   with `auth.json` and `host-id`. 017 clears only its lock and PID at boot.
 - **A tailnet node**, where the box joined one (050): Tailscale's state.
-- **SSH host keys, the machine ID**, bb-box's authorized key, and on boat
+- **SSH host keys, the machine ID**, alia-box's authorized key, and on boat
   the template's.
 - **Memory**, in a memory snapshot: every process's environment, with the
   same tokens, and whatever the agent or a person typed.
@@ -558,9 +558,9 @@ What follows:
 1. **A snapshot is as secret as its box.** It is listed only to its owner
    and the person. No other thread sees it, in `box_list`, the CLI or the
    pages.
-2. **A restore of the same box** brings back old access, which bb-box
+2. **A restore of the same box** brings back old access, which alia-box
    writes again from the thread's current access, as each command does.
-3. **A fork is a new machine.** Before a fork answers, bb-box removes BB's
+3. **A fork is a new machine.** Before a fork answers, alia-box removes VesnALIA's
    machine credentials, the env file, Tailscale's state and the SSH host
    keys, makes a new machine ID, and enrols it under its own box ID, as a
    new box; the source's node and machine are never reused. This is the
@@ -568,7 +568,7 @@ What follows:
    start.
 4. **No fork into another thread** in the first units: it would hand one
    thread's files and history to another. When it comes, the person
-   chooses it, and the fork drops the env file and the BB credentials as in
+   chooses it, and the fork drops the env file and the VesnALIA credentials as in
    3.
 5. **A kept snapshot** outlives its thread, so it outlives that thread's
    tokens' lifetime too: the Snapshots tab says it holds "files and access
@@ -594,7 +594,7 @@ box's page tells snapshots of one box apart better than their times.
 - **When.** At the take, before a memory snapshot pauses the box, so it
   shows what the snapshot holds. A failure to take one never fails the
   snapshot.
-- **Where.** In bb-box's own storage beside the record, never on the
+- **Where.** In alia-box's own storage beside the record, never on the
   provider, and deleted with it. A thumbnail adds about 30 KB a snapshot;
   100 snapshots, 3 MB.
 - **What it shows.** Whatever was on the screen: a token in a terminal, a
@@ -620,8 +620,8 @@ holds, or that the box has none, as they say what it resizes. The
 skill tells the agent when to take one: before a change it cannot undo,
 when the person asks, and never on a schedule of its own.
 
-The CLI, for a person and for scripts: `bb box snapshot take|list|restore|fork|keep|delete`,
-with `--machine` for one of the person's machines, as `bb box stop` has.
+The CLI, for a person and for scripts: `alia box snapshot take|list|restore|fork|keep|delete`,
+with `--machine` for one of the person's machines, as `alia box stop` has.
 
 ## The person's pages
 
@@ -757,10 +757,10 @@ tests, each checked live on the real backend.
 
 ## A draft of the decision
 
-070: A box's snapshots are bb-box's own records, taken by each backend's
+070: A box's snapshots are alia-box's own records, taken by each backend's
 own mechanism, kept with the box unless a person keeps them.
 
-- A snapshot is a record of bb-box's: an ID, its box, a name and note,
+- A snapshot is a record of alia-box's: an ID, its box, a name and note,
   when and by whom, what it holds, its size, cost and place, its owner and
   expiry. It is not an image, and never becomes one.
 - Each backend says per kind what its snapshots hold and can do
@@ -774,7 +774,7 @@ own mechanism, kept with the box unless a person keeps them.
 - A restore says what it replaces, takes an undo snapshot first, and is
   recorded in the box's log. An agent passes `replace: true`; a person
   confirms.
-- A fork is a new box with a new identity: no BB machine, access, tailnet
+- A fork is a new box with a new identity: no VesnALIA machine, access, tailnet
   node or host keys of its source.
 - The person sees every snapshot on a Snapshots tab of the Boxes page, and
   a box's own on its page.

@@ -26,7 +26,7 @@ import { makeChatControlPublisher, writeJsonAtomic } from "./json-file";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { randomInt } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   watch,
@@ -37,7 +37,7 @@ import {
   telegram,
   transcribeTelegramVoice,
   checkBot,
-  runBb,
+  runAlia,
   readEnvToken,
   trackersSchema,
   readTasks,
@@ -146,8 +146,8 @@ export const rpcContract = defineRpcContract({
   status: { input: z.null(), output: statusSchema },
   sync: { input: z.null(), output: statusSchema },
 });
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     agencyEnabled: {type:"boolean",label:"Уведомления из Агентства",default:false},
     language: {
       type: "select",
@@ -162,12 +162,12 @@ export default async function plugin(bb: BbPluginApi) {
     },
     chatEnabled: {
       type: "boolean",
-      label: "Общение с BB из Telegram",
+      label: "Общение с ALIA из Telegram",
       default: false,
     },
     richReplies: {
       type: "boolean",
-      label: "Rich Messages для ответов BB",
+      label: "Rich Messages для ответов VesnALIA",
       default: true,
     },
     botToken: {
@@ -198,13 +198,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
     cliPath: {
       type: "string",
-      label: "BB CLI на сервере",
-      default: process.env.BB_CLI || "bb",
+      label: "VesnALIA CLI на сервере",
+      default: process.env.ALIA_CLI || "alia",
     },
     appUrl: {
       type: "string",
-      label: "Публичный адрес BB",
-      default: bb.server.experimental_appUrl || "https://vechkasov.getbb.app",
+      label: "Публичный адрес ALIA",
+      default: alia.server.experimental_appUrl || "https://vechkasov.getbb.app",
     },
     reportMode: {
       type: "select",
@@ -214,7 +214,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     summaryProvider: {
       type: "string",
-      label: "Провайдер для саммери (пусто — по умолчанию BB)",
+      label: "Провайдер для саммери (пусто — по умолчанию ALIA)",
       default: "",
     },
     summaryModel: {
@@ -239,7 +239,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     deleteTopics: {
       type: "boolean",
-      label: "Удалять тему и её историю при удалении проекта BB",
+      label: "Удалять тему и её историю при удалении проекта ALIA",
       default: true,
     },
     notifyTasks: { type: "boolean", label: "Уведомления Tasks", default: true },
@@ -254,8 +254,8 @@ export default async function plugin(bb: BbPluginApi) {
       default: true,
     },
   });
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE state (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
   ]);
   const store: Store = {
@@ -305,7 +305,7 @@ export default async function plugin(bb: BbPluginApi) {
         name: c.tokenEnv,
         value: await readEnvToken(
           c.cliPath,
-          bb.server.loopbackBaseUrl,
+          alia.server.loopbackBaseUrl,
           c.tokenEnv,
           lifetime.signal,
         ),
@@ -343,7 +343,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function folderState(): Promise<{ hidden: string[]; folders: Folder[] }> {
     try {
       const [prefs, list] = await Promise.all([
-        bb.sdk.plugins.callRpc({
+        alia.sdk.plugins.callRpc({
           pluginId: "project-folders",
           method: "prefs_get",
           input: null,
@@ -351,7 +351,7 @@ export default async function plugin(bb: BbPluginApi) {
             items: z.record(z.string(), z.object({ hidden: z.boolean().optional() }).passthrough()),
           }).passthrough(),
         }),
-        bb.sdk.plugins.callRpc({
+        alia.sdk.plugins.callRpc({
           pluginId: "project-folders",
           method: "list",
           input: null,
@@ -448,10 +448,10 @@ export default async function plugin(bb: BbPluginApi) {
     topicsEnabled = me.topics;
     // A complete project snapshot is the only authority for removals. Failed reads never reconcile.
     const projects = (
-      await bb.sdk.projects.list({ signal: lifetime.signal })
+      await alia.sdk.projects.list({ signal: lifetime.signal })
     ).filter((p) => p.kind === "standard");
     const cli = (args: string[]) =>
-      runBb(cfg.cliPath, bb.server.loopbackBaseUrl, args, lifetime.signal);
+      runAlia(cfg.cliPath, alia.server.loopbackBaseUrl, args, lifetime.signal);
     let taskFailure: string | null = null;
     const allTasks: { task: Task; tracker: Tracker }[] = [];
     const ev = await events();
@@ -465,8 +465,8 @@ export default async function plugin(bb: BbPluginApi) {
         ).projects;
         for (const tracker of trackers) {
           if (
-            !tracker.linkedBbProjectId ||
-            !projects.some((p) => p.id === tracker.linkedBbProjectId)
+            !tracker.linkedAliaProjectId ||
+            !projects.some((p) => p.id === tracker.linkedAliaProjectId)
           )
             continue;
           const tasks = await readTasks(cli, tracker.id);
@@ -499,7 +499,7 @@ export default async function plugin(bb: BbPluginApi) {
                 ) {
                   const event: Event = {
                     id: `${task.id}:${worker.threadId}:${worker.updatedAt}:error`,
-                    projectId: tracker.linkedBbProjectId,
+                    projectId: tracker.linkedAliaProjectId,
                     taskId: task.id,
                     key: task.key,
                     title: task.title,
@@ -570,16 +570,16 @@ export default async function plugin(bb: BbPluginApi) {
       if (!topic.threadId || topic.missingSince) continue;
       let text =
         topic.key === "navigation"
-          ? tr("<b>🧭 Рабочее пространство BB</b>\n\n") +
+          ? tr("<b>🧭 Рабочее пространство ALIA</b>\n\n") +
             visible.map((p) => "📂 " + escapeHtml(p.name)).join("\n") +
             tr(
-              "\n\nВ темах проектов — чаты BB, отчёты агентов и уведомления Tasks.",
+              "\n\nВ темах проектов — чаты ALIA, отчёты агентов и уведомления Tasks.",
             ) +
             (store.get<Topic>("topic:sms")?.threadId
               ? tr("\n📱 SMS — коды и сообщения на телефон.")
               : "") +
             tr(
-              "\n\n/project — привязать новую тему\n/chats — чаты BB\n/model — агент и модель\n/tasks — активные задачи\n/menu — управление",
+              "\n\n/project — привязать новую тему\n/chats — чаты ALIA\n/model — агент и модель\n/tasks — активные задачи\n/menu — управление",
             )
           : topic.key === "sms"
             ? tr(
@@ -588,9 +588,9 @@ export default async function plugin(bb: BbPluginApi) {
             : "<b>" +
               String(escapeHtml(topic.name)) +
               tr(
-                "</b>\n\nЗдесь появляются события задач и отчёты агентов этого проекта: кто закончил работу, кто ждёт ответа, что остановилось.\n\n/menu — управление чатом BB\n/new — новая сессия\n/chats — подключиться к существующему чату\n/model — агент и модель\n/tasks — задачи проекта\n\nКакие события присылать, настраивается на странице плагина, вкладка «События».",
+                "</b>\n\nЗдесь появляются события задач и отчёты агентов этого проекта: кто закончил работу, кто ждёт ответа, что остановилось.\n\n/menu — управление чатом ALIA\n/new — новая сессия\n/chats — подключиться к существующему чату\n/model — агент и модель\n/tasks — задачи проекта\n\nКакие события присылать, настраивается на странице плагина, вкладка «События».",
               );
-      // The BB iPhone app claims /projects/* links; the bare origin opens only in a browser.
+      // The VesnALIA iPhone app claims /projects/* links; the bare origin opens only in a browser.
       const open = topic.key.startsWith("proj_")
         ? base.origin + "/projects/" + encodeURIComponent(topic.key)
         : base.origin;
@@ -601,7 +601,7 @@ export default async function plugin(bb: BbPluginApi) {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
         reply_markup: {
-          inline_keyboard: [[{ text: tr("Открыть BB"), url: open }]],
+          inline_keyboard: [[{ text: tr("Открыть ALIA"), url: open }]],
         },
       };
       if (topic.introId)
@@ -657,7 +657,7 @@ export default async function plugin(bb: BbPluginApi) {
                 : []),
               {
                 text: e.thread
-                  ? tr("Открыть в BB")
+                  ? tr("Открыть в ALIA")
                   : e.kind === "test"
                     ? tr("Открыть Telegram Projects")
                     : tr("Открыть ") + String(e.key) + "",
@@ -715,7 +715,7 @@ export default async function plugin(bb: BbPluginApi) {
     lastError = taskFailure;
     await publishProjection(cfg.companionDir, allTasks);
   }
-  // A hidden worker thread writes the summary with the chosen BB model; the sync loop only
+  // A hidden worker thread writes the summary with the chosen VesnALIA model; the sync loop only
   // polls it, so a slow model never blocks other deliveries. Failures keep the full reply.
   async function advanceSummaries(
     language: "ru" | "en",
@@ -732,23 +732,23 @@ export default async function plugin(bb: BbPluginApi) {
       const finish = async (text: string | null) => {
         if (text) {
           e.thread!.reply = text;
-          e.thread!.summaryModel = cfg.summaryModel || cfg.summaryProvider || "BB";
+          e.thread!.summaryModel = cfg.summaryModel || cfg.summaryProvider || "ALIA";
         }
         e.summary = { ...summary, state: text ? "done" : "failed" };
         store.put(key, e);
         if (summary.workerId)
-          await bb.sdk.threads
+          await alia.sdk.threads
             .archive({ threadId: summary.workerId })
             .catch(() => {});
       };
       try {
         if (!summary.workerId) {
-          const source = await bb.sdk.threads.get({ threadId: e.thread.threadId });
+          const source = await alia.sdk.threads.get({ threadId: e.thread.threadId });
           if (!source.environmentId) {
             await finish(null);
             continue;
           }
-          const worker = await bb.sdk.threads.spawn({
+          const worker = await alia.sdk.threads.spawn({
             projectId: e.projectId,
             environment: { type: "reuse", environmentId: source.environmentId },
             prompt: summaryPrompt(e.thread.title, e.thread.reply ?? "", language),
@@ -768,13 +768,13 @@ export default async function plugin(bb: BbPluginApi) {
           store.put(key, e);
           continue;
         }
-        const worker = await bb.sdk.threads.get({ threadId: summary.workerId });
+        const worker = await alia.sdk.threads.get({ threadId: summary.workerId });
         if (worker.status === "error" || worker.archivedAt || worker.deletedAt) {
           await finish(null);
           continue;
         }
         if (worker.status === "idle" && !worker.queuedMessageCount) {
-          const out = await bb.sdk.threads
+          const out = await alia.sdk.threads
             .output({ threadId: summary.workerId, signal: lifetime.signal })
             .then((r) => r.output?.trim() || null)
             .catch(() => null);
@@ -804,7 +804,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
     for (const [threadId, types] of batch) {
       try {
-        const t = await bb.sdk.threads.get({ threadId, signal: lifetime.signal });
+        const t = await alia.sdk.threads.get({ threadId, signal: lifetime.signal });
         const project = visible.find((p) => p.id === t.projectId);
         // Sub-agents, chats already mirrored into Telegram and closed threads stay quiet.
         if (
@@ -816,7 +816,7 @@ export default async function plugin(bb: BbPluginApi) {
           t.visibility === "hidden"
         )
           continue;
-        const pending = await bb.sdk.threads.interactions
+        const pending = await alia.sdk.threads.interactions
           .list({ threadId, signal: lifetime.signal })
           .then((list) => list.filter((i: any) => i.status === "pending" || !i.status))
           .catch(() => []);
@@ -837,7 +837,7 @@ export default async function plugin(bb: BbPluginApi) {
         const kind = ("thread_" + outcome) as "thread_done";
         if (!route(ev, kind, project.id).send) continue;
         const env = t.environmentId
-          ? await bb.sdk.environments
+          ? await alia.sdk.environments
               .get({ environmentId: t.environmentId })
               .catch(() => null)
           : null;
@@ -855,7 +855,7 @@ export default async function plugin(bb: BbPluginApi) {
         const reply =
           outcome === "attention"
             ? null
-            : await bb.sdk.threads
+            : await alia.sdk.threads
                 .output({ threadId, signal: lifetime.signal })
                 .then((r) => r.output ?? null)
                 .catch(() => null);
@@ -918,7 +918,7 @@ export default async function plugin(bb: BbPluginApi) {
           key: task.key,
           title: task.title,
           status: task.status,
-          projectId: tracker.linkedBbProjectId,
+          projectId: tracker.linkedAliaProjectId,
           tracker: tracker.name,
         }))
         .slice(0, 500),
@@ -932,7 +932,7 @@ export default async function plugin(bb: BbPluginApi) {
         lastError = safeError(e);
         if (e instanceof TelegramFailure)
           store.put("retryAt", Date.now() + e.retryAfter * 1000);
-        bb.log.warn("Telegram Projects: " + lastError);
+        alia.log.warn("Telegram Projects: " + lastError);
       })
       .finally(() => {
         flight = null;
@@ -940,7 +940,7 @@ export default async function plugin(bb: BbPluginApi) {
     return flight;
   }
   const agency=agencyIntegration(store);
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     agencyCapabilities: async()=>{const c=await settings.get();return agency.capabilities(c.enabled&&c.agencyEnabled);},
     agencyConfigure: async({enabled})=>{await settings.experimental_set({agencyEnabled:enabled});return {saved:true as const};},
     agencyEnqueue: async(input)=>{const c=await settings.get();return agency.enqueue(input,c.enabled&&c.agencyEnabled);},
@@ -982,7 +982,7 @@ export default async function plugin(bb: BbPluginApi) {
     eventsGet: async () => {
       const [ev, list, folders] = await Promise.all([
         events(),
-        bb.sdk.projects.list({ signal: lifetime.signal }),
+        alia.sdk.projects.list({ signal: lifetime.signal }),
         folderState(),
       ]);
       return {
@@ -1007,12 +1007,12 @@ export default async function plugin(bb: BbPluginApi) {
       await sync();
       return status();
     },
-    // The native picker needs a concrete value: start from BB's own default model.
+    // The native picker needs a concrete value: start from VesnALIA's own default model.
     summaryDefaults: async () => {
-      const base = await bb.sdk.system.executionOptions({});
+      const base = await alia.sdk.system.executionOptions({});
       const providerId =
         base.providers.find((p) => p.available)?.id ?? "claude-code";
-      const options = await bb.sdk.system.executionOptions({ providerId });
+      const options = await alia.sdk.system.executionOptions({ providerId });
       const model =
         options.models.find((m) => m.isDefault) ?? options.models[0];
       return {
@@ -1053,46 +1053,46 @@ export default async function plugin(bb: BbPluginApi) {
       return status();
     },
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "telegram-projects",
-    summary: "BB project topics, chats and Tasks notifications in Telegram",
+    summary: "VesnALIA project topics, chats and Tasks notifications in Telegram",
     commands: [
       {
         name: "chat-forget",
         summary: "Remove a topic binding and keep the chats",
-        usage: "bb telegram-projects chat-forget <topic-id>",
+        usage: "alia telegram-projects chat-forget <topic-id>",
       },
       {
         name: "chat-status",
         summary: "Chat bridge status",
-        usage: "bb telegram-projects chat-status --json",
+        usage: "alia telegram-projects chat-status --json",
       },
       {
         name: "menu",
         summary: "Show the chat menu in a project topic",
-        usage: "bb telegram-projects menu <project-id>",
+        usage: "alia telegram-projects menu <project-id>",
       },
       {
         name: "test",
         summary: "Send a clearly marked test card to a project topic",
-        usage: "bb telegram-projects test <project-id>",
+        usage: "alia telegram-projects test <project-id>",
       },
       {
         name: "status",
         summary: "Status and topics",
-        usage: "bb telegram-projects status --json",
+        usage: "alia telegram-projects status --json",
       },
       {
         name: "sync",
         summary: "Sync now",
-        usage: "bb telegram-projects sync --json",
+        usage: "alia telegram-projects sync --json",
       },
       {
         name: "bind",
         summary:
           "Bind an existing topic to a project, SMS or navigation",
         usage:
-          "bb telegram-projects bind <project-id|sms|navigation> <topic-id>",
+          "alia telegram-projects bind <project-id|sms|navigation> <topic-id>",
       },
     ],
     async run(argv) {
@@ -1104,7 +1104,7 @@ export default async function plugin(bb: BbPluginApi) {
         bridge.forget(topicId);
         return {
           exitCode: 0,
-          stdout: "Binding removed; BB and Telegram history preserved",
+          stdout: "Binding removed; VesnALIA and Telegram history preserved",
         };
       }
       if (cmd === "chat-status")
@@ -1209,10 +1209,10 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange(() => {
     wake?.();
   });
-  bb.background.service("project-task-sync", {
+  alia.background.service("project-task-sync", {
     async start(signal) {
       signal.addEventListener("abort", () => lifetime.abort(), { once: true });
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "project:changed",
         callback: () => wake?.(),
       });
@@ -1222,7 +1222,7 @@ export default async function plugin(bb: BbPluginApi) {
         "system/interaction/lifecycle",
         "system/userQuestion/lifecycle",
       ];
-      const unsubscribeThreads = bb.sdk.subscribe({
+      const unsubscribeThreads = alia.sdk.subscribe({
         event: "thread:changed",
         callback: (e) => {
           const types = e.metadata?.eventTypes ?? [];
@@ -1257,11 +1257,11 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
   });
-  bb.background.service("telegram-chat", {
+  alia.background.service("telegram-chat", {
     async start(signal) {
       // The control file and spool exist only for an optional companion receiver.
       const companion = (await settings.get()).companionDir;
-      const spool = companion ? join(companion, "bb-chat-inbox") : undefined;
+      const spool = companion ? join(companion, "alia-chat-inbox") : undefined;
       const publishControl = companion
         ? makeChatControlPublisher(join(companion, "telegram-chat.json"))
         : async () => {};
@@ -1300,7 +1300,7 @@ export default async function plugin(bb: BbPluginApi) {
               ]);
               bridge = new ChatBridge({
                 store,
-                sdk: bb.sdk,
+                sdk: alia.sdk,
                 tg: telegram(botToken, bridgeSignal, 15_000, ownerId),
                 owner: ownerId,
                 spool,
@@ -1312,7 +1312,7 @@ export default async function plugin(bb: BbPluginApi) {
                 language: () => language,
                 wake: wakeChat,
                 transcribe: (v) =>
-                  transcribeTelegramVoice(botToken, bb.sdk, v, bridgeSignal),
+                  transcribeTelegramVoice(botToken, alia.sdk, v, bridgeSignal),
               });
               bridge.recover();
             }
@@ -1367,7 +1367,7 @@ export default async function plugin(bb: BbPluginApi) {
     const list = activeTasks.filter(
       (x) =>
         !["done", "canceled"].includes(x.task.status) &&
-        (!project || x.tracker.linkedBbProjectId === project.key),
+        (!project || x.tracker.linkedAliaProjectId === project.key),
     );
     return (
       "📋 " +
@@ -1383,11 +1383,11 @@ export default async function plugin(bb: BbPluginApi) {
             .join("\n\n")
         : tr("Активных задач нет.")) +
       (list.length > 12
-        ? tr("\n\nЕщё ") + String(list.length - 12) + tr(" — в BB.")
+        ? tr("\n\nЕщё ") + String(list.length - 12) + tr(" — в ALIA.")
         : "")
     ).slice(0, 3900);
   }
-  bb.background.service("telegram-ingress", {
+  alia.background.service("telegram-ingress", {
     async start(signal) {
       const pause = (ms: number) =>
         new Promise<void>((resolve) => {
@@ -1423,7 +1423,7 @@ export default async function plugin(bb: BbPluginApi) {
               await tg("sendMessage", {
                 text: translate(
                   cfg.language as "ru" | "en",
-                  "✅ Бот привязан к BB. Темы проектов появятся в этом чате в течение минуты.",
+                  "✅ Бот привязан к ALIA. Темы проектов появятся в этом чате в течение минуты.",
                 ),
               });
               wake?.();
@@ -1450,7 +1450,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
     },
   });
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     lifetime.abort();
     wake?.();
     await flight;

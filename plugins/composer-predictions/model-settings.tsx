@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { experimental_ProviderModelPicker as ProviderModelPicker, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ModelSelection, ModelSettings, rpcContract } from "./contract";
 import { MODEL_CHANGED } from "./lib/channels";
 import { Button } from "./components/ui/button";

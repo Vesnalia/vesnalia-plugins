@@ -15,7 +15,7 @@ export interface ProxmoxConnection {
   readonly tokenId: string;
   readonly tokenSecret: string;
   readonly caCertificate: string | null;
-  /** SHA-256 of the API's certificate, as AA:BB:..., pinned instead of checking its CA. */
+  /** SHA-256 of the API's certificate, as AA:ALIA:..., pinned instead of checking its CA. */
   readonly tlsFingerprint: string | null;
   /** Null means the API's only node. */
   readonly node: string | null;
@@ -91,7 +91,7 @@ export function formatIpv4(value: number): string {
   return [24, 16, 8, 0].map((shift) => Math.floor(value / 2 ** shift) % 256).join(".");
 }
 
-/** A SHA-256 fingerprint as AA:BB:..., from hex with or without colons, or null. */
+/** A SHA-256 fingerprint as AA:ALIA:..., from hex with or without colons, or null. */
 export function normaliseFingerprint(value: string): string | null {
   const hex = value.trim().replace(/^sha256[:=]?\s*/i, "").replace(/[:\s]/g, "").toUpperCase();
   if (!/^[0-9A-F]{64}$/.test(hex)) return null;
@@ -207,7 +207,7 @@ export function checkNetwork(values: Values, keys: ProxmoxKeys, defaults: Proxmo
   return { bridge, prefix, gateway: gatewayText, addresses };
 }
 
-/** A null key means bb-box generates one and shows its public key. */
+/** A null key means alia-box generates one and shows its public key. */
 export function checkSsh(values: Values, keys: ProxmoxKeys, defaults: ProxmoxDefaults, problem: Problem): { privateKey: string | null; user: string } {
   const keyText = text(values, keys.sshPrivateKey);
   const privateKey = keyText ? normalisePrivateKey(keyText) : null;

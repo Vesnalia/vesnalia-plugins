@@ -5,14 +5,14 @@ import {
   dynamicToolSchema,
   experimental_buildBridgeToolCallContent as buildBridgeToolCallContent,
   type DynamicTool,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
-export const DYNAMIC_TOOLS_MCP_ARG = "--opencode2-bb-tools-mcp";
+export const DYNAMIC_TOOLS_MCP_ARG = "--opencode2-alia-tools-mcp";
 
-const ENV_PORT = "BB_OPENCODE2_MCP_PORT";
-const ENV_TOKEN = "BB_OPENCODE2_MCP_TOKEN";
-const ENV_TOOLS = "BB_OPENCODE2_MCP_TOOLS";
-const ENV_SESSION_ID = "BB_OPENCODE2_MCP_SESSION_ID";
+const ENV_PORT = "ALIA_OPENCODE2_MCP_PORT";
+const ENV_TOKEN = "ALIA_OPENCODE2_MCP_TOKEN";
+const ENV_TOOLS = "ALIA_OPENCODE2_MCP_TOOLS";
+const ENV_SESSION_ID = "ALIA_OPENCODE2_MCP_SESSION_ID";
 const LOOPBACK_HOST = "127.0.0.1";
 const MAX_PROXY_MESSAGE_BYTES = 1024 * 1024;
 const PROXY_CALL_TIMEOUT_MS = 610_000;
@@ -100,14 +100,14 @@ export async function startDynamicToolsMcpProxy(args: {
       resolve({
         serverName: args.serverName,
         // `codemode: false` is important. OpenCode otherwise hides the
-        // individual BB tools behind its generic Code Mode tool.
+        // individual VesnALIA tools behind its generic Code Mode tool.
         config: {
           type: "local",
           command: [process.execPath, args.entryPath, DYNAMIC_TOOLS_MCP_ARG],
           environment: {
-            // The bridge may run on an Electron binary acting as Node (BB's
+            // The bridge may run on an Electron binary acting as Node (VesnALIA's
             // desktop app). Without this, OpenCode would launch the app itself,
-            // which exits at once, and every BB tool would be missing.
+            // which exits at once, and every VesnALIA tool would be missing.
             ...(process.versions.electron ? { ELECTRON_RUN_AS_NODE: "1" } : {}),
             [ENV_PORT]: String(address.port),
             [ENV_TOKEN]: token,
@@ -229,7 +229,7 @@ export async function handleDynamicToolsMcpRequest(
         protocolVersion:
           typeof requested === "string" ? requested : "2025-06-18",
         capabilities: { tools: {} },
-        serverInfo: { name: "bb-opencode2", version: "1.0.0" },
+        serverInfo: { name: "alia-opencode2", version: "1.0.0" },
       });
       return;
     }
@@ -264,7 +264,7 @@ export async function handleDynamicToolsMcpRequest(
           content: [
             {
               type: "text",
-              text: "This BB tool is not available in this OpenCode session.",
+              text: "This VesnALIA tool is not available in this OpenCode session.",
             },
           ],
           isError: true,

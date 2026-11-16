@@ -1,25 +1,25 @@
-// A push connection to one bb terminal session — the socket bb's own terminal
+// A push connection to one VesnALIA terminal session — the socket VesnALIA's own terminal
 // panel uses.
 //
 // The RPC path has to poll: a keystroke goes out as one HTTP request, and its
 // echo only comes back on the next read, which can be a full idle interval
-// away. bb's panel instead holds `/ws/terminals/:id` open, sends keystrokes up
+// away. VesnALIA's panel instead holds `/ws/terminals/:id` open, sends keystrokes up
 // it the moment they are typed and gets output pushed down it the moment the
-// pty writes. The window runs inside bb's own page, so the socket is
-// same-origin and passes bb's origin check exactly as the panel's does.
+// pty writes. The window runs inside VesnALIA's own page, so the socket is
+// same-origin and passes VesnALIA's origin check exactly as the panel's does.
 //
 // One instance is one connection. Reconnecting, and falling back to polling
 // when the socket is not on offer at all, belong to the pump; this only speaks
 // the wire protocol and reports what happened.
 //
-// Only the parts of the protocol every bb since 0.36 speaks are used (the
-// plugin itself now needs bb 0.49, for the @get-bb/plugin-sdk runtime):
+// Only the parts of the protocol every VesnALIA since 0.36 speaks are used (the
+// plugin itself now needs VesnALIA 0.49, for the @vesnalia/plugin-sdk runtime):
 //   - `sinceSeq` and `attached.replayStartSeq` arrived in 0.36. A 0.35 server
 //     attaches without `replayStartSeq`, which is reported as null and makes
 //     the pump poll instead.
 //   - Output acks (`outputAcks=1`, `{type:"ack"}`) arrived in 0.46, and an
 //     older server answers an unknown message by closing the socket — so this
-//     never asks for them. Output is then paced the way it was for every bb
+//     never asks for them. Output is then paced the way it was for every VesnALIA
 //     client before 0.46: a client that falls far behind is dropped by the
 //     server, and the pump reconnects and resumes from where it was.
 
@@ -53,7 +53,7 @@ export interface TerminalSocketHandlers {
    * chunks below `nextSeq` are retained output being replayed.
    */
   onAttached(info: {
-    /** Null from a bb that predates resumable attach (0.35). */
+    /** Null from a VesnALIA that predates resumable attach (0.35). */
     replayStartSeq: number | null;
     nextSeq: number;
     session: SessionInfo;
@@ -256,7 +256,7 @@ export class TerminalSocket {
           this.dispose();
         } else if (!this.attached) {
           // A failed attach (it timed out, the host dropped) leaves the socket
-          // open but unregistered, and bb still answers its pings: nothing
+          // open but unregistered, and VesnALIA still answers its pings: nothing
           // would ever stream. Close it as one that never attached, so the
           // pump retries and, if that keeps failing, polls.
           this.dispose();
@@ -266,7 +266,7 @@ export class TerminalSocket {
         return;
       }
       default:
-        // session-updated, and anything a newer bb adds.
+        // session-updated, and anything a newer VesnALIA adds.
         return;
     }
   }

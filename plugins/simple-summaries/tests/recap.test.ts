@@ -31,7 +31,7 @@ import {
   createGenerationLimiter,
 } from "../src/recap.ts";
 
-test("builds a bounded BB transcript and preserves the latest context", () => {
+test("builds a bounded VesnALIA transcript and preserves the latest context", () => {
   const rows = [
     {
       kind: "conversation",

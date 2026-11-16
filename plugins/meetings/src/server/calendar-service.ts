@@ -2,7 +2,7 @@
 // sync state in kv, scheduled meetings for occurrences, skip toggles. Sources
 // are the ICS feeds and the watched Google calendars (google-service.ts); the
 // parsing and the sync algorithm live in calendar.ts.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { parseMeetingUrl } from "../shared/meeting-url.js";
 import { CHANNEL_CALENDAR_CHANGED, type CalendarStatus } from "../shared/rpc-contract.js";
 import { applyAutoJoin, feedId, isTwinOccurrence, syncCalendars, syncWindow, twinOccurrences, type CalendarSyncOptions } from "./calendar.js";
@@ -25,7 +25,7 @@ export class CalendarService {
   private running: Promise<CalendarStatus> | null = null;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly settings: SettingsHandle,
     private readonly repo: Repository,
     private readonly service: MeetingsService,
@@ -40,7 +40,7 @@ export class CalendarService {
   async status(): Promise<CalendarStatus> {
     const settings = await this.settings.get();
     const feeds = this.configuredFeeds(settings);
-    const state = (await this.bb.storage.kv.get<SyncState>(KV_SYNC)) ?? null;
+    const state = (await this.alia.storage.kv.get<SyncState>(KV_SYNC)) ?? null;
     const window = syncWindow(this.service.now());
     const events = this.repo.calendarEventsBetween(window.from, window.to);
     const upcoming = events
@@ -135,7 +135,7 @@ export class CalendarService {
       .catch(() => undefined)
       .then(() => this.sync())
       .catch((error: unknown) => {
-        if (!this.service.lifetime.aborted) this.bb.log.warn(`Calendar sync failed: ${errorMessage(error)}`);
+        if (!this.service.lifetime.aborted) this.alia.log.warn(`Calendar sync failed: ${errorMessage(error)}`);
       });
   }
 
@@ -167,15 +167,15 @@ export class CalendarService {
       const icsErrors = result.failures.filter((failure) => !isGoogleFeed(failure.feed)).map((failure) => failure.error);
       googleFailures = result.failures.filter((failure) => isGoogleFeed(failure.feed)).map((failure) => failure.error);
       error = icsErrors.length > 0 ? icsErrors.join("; ") : null;
-      if (error !== null) this.bb.log.warn(`Calendar sync: ${error}`);
+      if (error !== null) this.alia.log.warn(`Calendar sync: ${error}`);
       if (result.created.length > 0) this.service.wake();
     }
     // Calendars dropped from the watched set (gone from Google, or deselected while this sync ran): their bots go.
     const watched = new Set(this.service.google.feedIds());
     if (google.selectionChanged || google.sources.some((source) => !watched.has(source.feed))) this.reapply(settings);
     this.service.google.finishSync(google, googleFailures, now);
-    await this.bb.storage.kv.set(KV_SYNC, { at: now, error } satisfies SyncState);
-    this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+    await this.alia.storage.kv.set(KV_SYNC, { at: now, error } satisfies SyncState);
+    this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     return this.status();
   }
 
@@ -193,7 +193,7 @@ export class CalendarService {
       cancelled += 1;
     }
     this.repo.deleteCalendarEventsOfFeeds(prefix);
-    this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     if (cancelled > 0) this.service.wake();
     return cancelled;
   }
@@ -236,7 +236,7 @@ export class CalendarService {
       if (configured.has(event.feed) && applyAutoJoin(event, options) !== null) changed = true;
     }
     if (changed) {
-      this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+      this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
       this.service.wake();
     }
   }
@@ -253,9 +253,9 @@ export class CalendarService {
     if (!changed) return;
     try {
       this.reapply(next);
-      this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+      this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     } catch (error) {
-      this.bb.log.warn(`Could not apply the calendar settings: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not apply the calendar settings: ${errorMessage(error)}`);
     }
     const running = this.running;
     const fetchNew = feedsChanged && feeds.length > 0;
@@ -268,7 +268,7 @@ export class CalendarService {
         else this.reapply(await this.settings.get());
       })
       .catch((error: unknown) => {
-        if (!this.service.lifetime.aborted) this.bb.log.warn(`Calendar sync failed: ${errorMessage(error)}`);
+        if (!this.service.lifetime.aborted) this.alia.log.warn(`Calendar sync failed: ${errorMessage(error)}`);
       });
   }
 
@@ -278,18 +278,18 @@ export class CalendarService {
     void (async () => {
       const settings = await this.settings.get();
       if (calendarFeedUrls(settings).length === 0 && !this.service.google.connected()) return;
-      const state = (await this.bb.storage.kv.get<SyncState>(KV_SYNC)) ?? null;
+      const state = (await this.alia.storage.kv.get<SyncState>(KV_SYNC)) ?? null;
       if (state !== null && this.service.now() - state.at < settings.calendarSyncMinutes * 60_000) return;
       await this.sync(signal);
     })().catch((error: unknown) => {
-      if (!signal?.aborted) this.bb.log.warn(`Calendar sync failed: ${errorMessage(error)}`);
+      if (!signal?.aborted) this.alia.log.warn(`Calendar sync failed: ${errorMessage(error)}`);
     });
   }
 
   /** calendarAutoJoin; settings.onChange schedules or cancels the calendar bots right away. */
   async setAutoJoin(autoJoin: boolean): Promise<CalendarStatus> {
     await this.settings.experimental_set({ calendarAutoJoin: autoJoin });
-    this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     return this.status();
   }
 
@@ -299,7 +299,7 @@ export class CalendarService {
         "not_found",
         "Событие календаря не найдено",
         `Calendar event ${key} not found`,
-        "List events with: bb meetings calendar",
+        "List events with: VesnALIA meetings calendar",
       );
     }
     // The same meeting in another watched calendar is skipped (or joined again) with it.
@@ -318,7 +318,7 @@ export class CalendarService {
       const event = this.repo.calendarEvent(member);
       if (event !== null) applyAutoJoin(event, options);
     }
-    this.bb.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_CALENDAR_CHANGED, {});
     this.service.wake();
     return this.status();
   }

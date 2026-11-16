@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   defaultConfig,
@@ -116,30 +116,30 @@ export function readScoops(stored: unknown): Record<string, number> {
   return parsed.success ? parsed.data : {};
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   const readState = async () => {
-    const stored = await bb.storage.kv.get(POND_KEY);
+    const stored = await alia.storage.kv.get(POND_KEY);
     const config = readPond(stored, Date.now());
     // Keep what was read (a migrated pond, or a new seed) so every window agrees.
-    if (!pondSchema.safeParse(stored).success) await bb.storage.kv.set(POND_KEY, config);
-    return { config, scoops: readScoops(await bb.storage.kv.get(SCOOPS_KEY)) };
+    if (!pondSchema.safeParse(stored).success) await alia.storage.kv.set(POND_KEY, config);
+    return { config, scoops: readScoops(await alia.storage.kv.get(SCOOPS_KEY)) };
   };
   // Scoops arrive one at a time from any window; serialize the read-modify-write.
   let scoopQueue: Promise<unknown> = Promise.resolve();
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getPond: readState,
     setPond: async (pond) => {
-      await bb.storage.kv.set(POND_KEY, pond);
-      bb.realtime.publish(POND_CHANNEL, {});
+      await alia.storage.kv.set(POND_KEY, pond);
+      alia.realtime.publish(POND_CHANNEL, {});
       return readState();
     },
     recordScoop: ({ koiId: id }) => {
       const next = scoopQueue.then(async () => {
-        const scoops = readScoops(await bb.storage.kv.get(SCOOPS_KEY));
+        const scoops = readScoops(await alia.storage.kv.get(SCOOPS_KEY));
         scoops[id] = (scoops[id] ?? 0) + 1;
-        await bb.storage.kv.set(SCOOPS_KEY, scoops);
-        bb.realtime.publish(POND_CHANNEL, {});
+        await alia.storage.kv.set(SCOOPS_KEY, scoops);
+        alia.realtime.publish(POND_CHANNEL, {});
         return { count: scoops[id] };
       });
       scoopQueue = next.catch(() => undefined);

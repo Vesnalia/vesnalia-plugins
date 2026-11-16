@@ -189,7 +189,7 @@ export function getThreadActivity(thread: {
   createdAt?: number;
   lastReadAt?: number | null;
 }): number {
-  // BB sets updatedAt = lastReadAt = Date.now() whenever a thread is opened/read.
+  // VesnALIA sets updatedAt = lastReadAt = Date.now() whenever a thread is opened/read.
   // To detect actual conversation activity (messages, turns, attention), ignore updatedAt
   // if it only reflects reading the thread without new messages.
   const isOnlyRead =

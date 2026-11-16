@@ -113,7 +113,7 @@ export function enumerateDays(days: TokenWindowDays, endMs = Date.now()): string
 }
 
 /**
- * Names bb uses for the agents it ships with. Anything else is title-cased
+ * Names VesnALIA uses for the agents it ships with. Anything else is title-cased
  * from its id rather than dropped, so a provider added after this release
  * still reads as a name instead of a slug.
  */

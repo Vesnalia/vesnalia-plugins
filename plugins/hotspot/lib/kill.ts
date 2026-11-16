@@ -13,22 +13,22 @@
  *    that no longer belongs to the thread is refused, not signalled.
  *
  * What may be a target is decided here and nowhere else. Ownership is found
- * by walking up from a process, not by inheriting a thread id: a *wall* (BB,
+ * by walking up from a process, not by inheriting a thread id: a *wall* (VesnALIA,
  * an app bundle, another user's process, a system binary, an interactive
  * shell, Hotspot's own chain) ends the thread's claim, so nothing below an
- * app a thread happened to launch belongs to the thread. Only a process BB
- * launched (the agent) or a detached one carrying its own BB_THREAD_ID can
+ * app a thread happened to launch belongs to the thread. Only a process VesnALIA
+ * launched (the agent) or a detached one carrying its own ALIA_THREAD_ID can
  * pass the thread down. Walls and the agent are never targets, and the
- * agent is the whole chain from BB down to its first work shell (wrappers,
+ * agent is the whole chain from VesnALIA down to its first work shell (wrappers,
  * relaunches) plus the helpers it runs directly (MCP servers). A process
  * that is the parent of any of those is also spared, so the shell running
- * `bb hotspot kill` survives its own command, and so is the rest of the
- * command a `bb` CLI call belongs to (`bb … | head`).
+ * `alia hotspot kill` survives its own command, and so is the rest of the
+ * command a `VesnALIA` CLI call belongs to (`VesnALIA … | head`).
  */
 import { friendlyName } from "./proc-name";
 import {
   attributeThreads,
-  isBbCommand,
+  isAliaCommand,
   parseProcStat,
   type ProcessRow,
   type ProcessSource,
@@ -42,7 +42,7 @@ import {
  * reads no memory or CPU time. `key` is built as the sampler builds it
  * (lib/procs.ts), so a drill-down row names the same process here.
  */
-export interface KillRow extends Omit<ProcessRow, "rssBytes" | "cpuMs" | "bb" | "argv"> {
+export interface KillRow extends Omit<ProcessRow, "rssBytes" | "cpuMs" | "alia" | "argv"> {
   uid: number;
   /** `ps` lstart in the C locale, e.g. `Mon Sep 28 14:04:23 2026`. */
   startedAt: string;
@@ -103,9 +103,9 @@ export async function readKillRows(source: ProcessSource): Promise<KillRow[]> {
   return rows.filter((row): row is KillRow => row !== null);
 }
 
-/** BB's own processes: the app, its helpers, daemons, bridges and the `bb` CLI. */
-export function isBbProcess(row: Pick<KillRow, "argv" | "name">): boolean {
-  return isBbCommand(row.argv, row.name);
+/** VesnALIA's own processes: the app, its helpers, daemons, bridges and the `VesnALIA` CLI. */
+export function isAliaProcess(row: Pick<KillRow, "argv" | "name">): boolean {
+  return isAliaCommand(row.argv, row.name);
 }
 
 /** Binaries the OS owns. `/bin` and `/usr/bin` are left out: `sleep`, `yes`, `sh` are ordinary work. */
@@ -127,7 +127,7 @@ const HEADLESS = /\s--headless\b|\s--remote-debugging-(?:port|pipe)\b/;
 export interface PlanContext {
   /** The uid the server runs as; other users' processes are never targets. */
   uid: number;
-  /** The plugin's own process and its ancestors (the BB host running it). */
+  /** The plugin's own process and its ancestors (the VesnALIA host running it). */
   selfPids: ReadonlySet<number>;
 }
 
@@ -195,12 +195,12 @@ export function isInteractiveShell(row: Pick<KillRow, "argv">): boolean {
 /**
  * Why a process ends a thread's claim, or null. A wall is never a target, and
  * nothing below it belongs to the thread either: an app launched from a
- * thread (Orca, VS Code, Docker) passes BB_THREAD_ID to its own terminals and
+ * thread (Orca, VS Code, Docker) passes ALIA_THREAD_ID to its own terminals and
  * helpers, which are the user's, not the thread's.
  */
 export function wallReason(row: KillRow, context: PlanContext): string | null {
-  if (context.selfPids.has(row.pid)) return "Hotspot's own process or the BB host running it";
-  if (isBbProcess(row)) return "BB itself";
+  if (context.selfPids.has(row.pid)) return "Hotspot's own process or the VesnALIA host running it";
+  if (isAliaProcess(row)) return "VesnALIA itself";
   if (row.uid !== context.uid) return "owned by another user";
   if (SYSTEM_PATH.test(row.argv.split(/\s/, 1)[0] ?? "")) return "a system process";
   if (TERMINALS.has(executable(row).toLowerCase()) || TERMINALS.has(row.name.toLowerCase())) return "a terminal, not work the thread started";
@@ -249,34 +249,34 @@ function wrappedCommand(row: KillRow): KillRow {
   return argv === undefined ? row : { ...row, argv };
 }
 
-/** Who may claim a process for a kill, found by walking up to the nearest wall, BB or launchd. */
+/** Who may claim a process for a kill, found by walking up to the nearest wall, VesnALIA or launchd. */
 interface Ownership {
   /** The nearest thread id on the path, or null (none, or a wall was in the way). */
   threadId: string | null;
   /** The wall that ended the claim; the process itself when it is one. */
   wall: KillRow | null;
-  /** The top of the path: launched by BB (`byBb`) or detached to launchd. */
+  /** The top of the path: launched by VesnALIA (`byAlia`) or detached to launchd. */
   root: KillRow | null;
-  byBb: boolean;
+  byAlia: boolean;
 }
 
 function ownershipOf(row: KillRow, byPid: Map<number, KillRow>, context: PlanContext): Ownership {
   const path: KillRow[] = [];
   const seen = new Set<number>();
-  let byBb = false;
+  let byAlia = false;
   for (let node: KillRow | undefined = row; node !== undefined && !seen.has(node.pid); ) {
     seen.add(node.pid);
-    if (wallReason(node, context) !== null) return { threadId: null, wall: node, root: null, byBb: false };
+    if (wallReason(node, context) !== null) return { threadId: null, wall: node, root: null, byAlia: false };
     path.push(node);
     const parent: KillRow | undefined = node.ppid > 1 ? byPid.get(node.ppid) : undefined;
-    if (parent !== undefined && (isBbProcess(parent) || context.selfPids.has(parent.pid))) {
-      byBb = true;
+    if (parent !== undefined && (isAliaProcess(parent) || context.selfPids.has(parent.pid))) {
+      byAlia = true;
       break;
     }
     node = parent;
   }
   const threadId = path.find((node) => node.threadId !== null)?.threadId ?? null;
-  return { threadId, wall: null, root: path[path.length - 1] ?? null, byBb };
+  return { threadId, wall: null, root: path[path.length - 1] ?? null, byAlia };
 }
 
 /**
@@ -290,14 +290,14 @@ export function planKill(rows: readonly KillRow[], threadId: string, context: Pl
   const members = rows.filter((row) => owner(row.pid) === threadId);
   const memberPids = new Set(members.map((row) => row.pid));
 
-  // Under a process BB launched, walk down from it: everything up to the
+  // Under a process VesnALIA launched, walk down from it: everything up to the
   // first work shell is the agent, and its helpers are spared with them.
   const reasons = new Map<number, string>();
   for (const row of members) {
     const ownership = owners.get(row.pid);
-    if (!ownership?.byBb || ownership.root === null) continue;
+    if (!ownership?.byAlia || ownership.root === null) continue;
     if (ownership.root === row) {
-      reasons.set(row.pid, "the thread's agent (launched by BB)");
+      reasons.set(row.pid, "the thread's agent (launched by VesnALIA)");
       continue;
     }
     const path: KillRow[] = [];
@@ -334,13 +334,13 @@ export function planKill(rows: readonly KillRow[], threadId: string, context: Pl
     const reason = wall === row ? (wallReason(row, context) ?? "") : `under ${wall.label} (pid ${wall.pid}), which the thread does not own`;
     shadowed.push({ pid: row.pid, name: row.label, cpuPercent: row.cpuPercent, reason });
   }
-  // A `bb` CLI call inside the thread: the other processes its shell runs
+  // A `VesnALIA` CLI call inside the thread: the other processes its shell runs
   // are the same command (a pipeline), not work to stop.
   for (const row of rows) {
-    if (!isBbProcess(row) || context.selfPids.has(row.pid) || !memberPids.has(row.ppid)) continue;
+    if (!isAliaProcess(row) || context.selfPids.has(row.pid) || !memberPids.has(row.ppid)) continue;
     for (const sibling of members) {
       if (sibling.ppid === row.ppid && !reasons.has(sibling.pid)) {
-        reasons.set(sibling.pid, "part of the same command as a bb CLI call");
+        reasons.set(sibling.pid, "part of the same command as a VesnALIA CLI call");
       }
     }
   }
@@ -441,24 +441,24 @@ export function sameProcess(target: KillTarget, row: KillRow | undefined): row i
 }
 
 /**
- * Whether `bb hotspot kill <threadId> --yes` was typed by a person. The CLI
+ * Whether `alia hotspot kill <threadId> --yes` was typed by a person. The CLI
  * handler runs in the server and cannot see the caller's stdin, so it finds
- * the calling `bb` process in the table: it must have a controlling terminal
+ * the calling `VesnALIA` process in the table: it must have a controlling terminal
  * and no provider bridge above it. An agent's shell has neither a terminal
  * nor, if a provider gives it one, a way out from under its bridge.
  */
 export function checkInteractiveCaller(rows: readonly KillRow[], threadId: string): { ok: true } | { ok: false; reason: string } {
   const byPid = new Map(rows.map((row) => [row.pid, row] as const));
   const callers = rows.filter(
-    (row) => isBbProcess(row) && /\bhotspot\s+kill\b/.test(row.argv) && row.argv.includes(threadId) && /\s--yes\b/.test(row.argv),
+    (row) => isAliaProcess(row) && /\bhotspot\s+kill\b/.test(row.argv) && row.argv.includes(threadId) && /\s--yes\b/.test(row.argv),
   );
-  if (callers.length === 0) return { ok: false, reason: "could not find the calling bb process to check its terminal" };
+  if (callers.length === 0) return { ok: false, reason: "could not find the calling VesnALIA process to check its terminal" };
   for (const caller of callers) {
     if (caller.tty === null) return { ok: false, reason: "it was not run from an interactive terminal" };
     const seen = new Set<number>();
     for (let node = byPid.get(caller.ppid); node !== undefined && !seen.has(node.pid); node = byPid.get(node.ppid)) {
       seen.add(node.pid);
-      if (/bb-provider-bridge/.test(node.argv)) return { ok: false, reason: "it was run by an agent" };
+      if (/alia-provider-bridge/.test(node.argv)) return { ok: false, reason: "it was run by an agent" };
     }
   }
   return { ok: true };

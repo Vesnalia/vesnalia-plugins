@@ -1,8 +1,8 @@
 // Unit tests for the Session Notes backend.
 //
-// These run against `createFakePluginHost`, an in-process stand-in for BB's
-// plugin runtime — no server, no bb.db. It gives us the two things that are
-// awkward to check by hand against a live bb: the retention schedule (normally
+// These run against `createFakePluginHost`, an in-process stand-in for VesnALIA's
+// plugin runtime — no server, no alia.db. It gives us the two things that are
+// awkward to check by hand against a live VesnALIA: the retention schedule (normally
 // hourly cron) and thread lifecycle events (normally requires archiving a real
 // thread).
 import { describe, expect, it } from "vitest";
@@ -10,7 +10,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   type CreateFakePluginHostOptions,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 const THREAD = "thr_test";
@@ -28,7 +28,7 @@ interface ListResult {
   draft: { sourceSeqEnd: number; messageRole: string; anchorPreview: string } | null;
 }
 
-// A couple of timeline rows for `bb note add` to anchor against. Only
+// A couple of timeline rows for `alia note add` to anchor against. Only
 // sourceSeqEnd and text are read by the plugin.
 const TIMELINE_ROWS = [
   { id: "row-1", threadId: THREAD, sourceSeqEnd: 10, text: "an early message" },
@@ -41,7 +41,7 @@ function load(options: CreateFakePluginHostOptions = {}) {
     sdk: { threads: { timeline: async () => ({ rows: TIMELINE_ROWS }) } },
     ...options,
   });
-  plugin(host.bb);
+  plugin(host.alia);
   return host;
 }
 
@@ -241,7 +241,7 @@ describe("delete", () => {
   });
 });
 
-describe("bb note CLI", () => {
+describe("alia note CLI", () => {
   it("anchors to the end of the thread by default", async () => {
     const { harness } = load();
     const result = await harness.runCli(["add", "a", "marker"], { threadId: THREAD });
@@ -323,7 +323,7 @@ describe("bb note CLI", () => {
 describe("ephemerality", () => {
   /** Age every stored note by writing created_at directly. */
   function backdate(host: ReturnType<typeof load>, days: number) {
-    host.bb.storage
+    host.alia.storage
       .database()
       .prepare(`UPDATE notes SET created_at = ?`)
       .run(Date.now() - days * DAY_MS);

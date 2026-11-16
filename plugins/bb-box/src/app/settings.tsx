@@ -1,4 +1,4 @@
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { ConfigDocument } from "../core/document.ts";
 import type { ConfigState, Contract } from "../plugin/contract.ts";
@@ -106,10 +106,10 @@ export function SettingsSection() {
     },
     [rpc, refresh],
   );
-  if (error && !state) return <LoadFailed what="BB Box's settings" error={error} onRetry={refresh} />;
+  if (error && !state) return <LoadFailed what="VesnALIA Box's settings" error={error} onRetry={refresh} />;
   if (!state) {
     return (
-      <WhileLoading words="Reading BB Box's settings…">
+      <WhileLoading words="Reading VesnALIA Box's settings…">
         <SettingsSkeleton />
       </WhileLoading>
     );

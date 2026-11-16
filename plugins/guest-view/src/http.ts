@@ -6,7 +6,7 @@
 //   POST /<token>/prompts  a guest's prompt, held for the owner's approval
 //
 // Every other path, method or token gets the same 404, so a wrong token and an
-// ended share look alike. BB's own API is never reachable through it.
+// ended share look alike. VesnALIA's own API is never reachable through it.
 import { randomBytes } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { TOKEN_PATTERN } from "./model.ts";

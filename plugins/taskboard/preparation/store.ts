@@ -1,7 +1,7 @@
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { preparationSchema, type Preparation } from './contract.js';
-export function preparationStore(bb: Pick<BbPluginApi, 'storage'>) {
-  const db = bb.storage.database();
+export function preparationStore(alia: Pick<AliaPluginApi, 'storage'>) {
+  const db = alia.storage.database();
   db.exec(
     'CREATE TABLE IF NOT EXISTS preparations (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, updated_at TEXT NOT NULL, document TEXT NOT NULL); CREATE TABLE IF NOT EXISTS preparation_artifacts (id TEXT PRIMARY KEY, preparation_id TEXT NOT NULL, html TEXT NOT NULL)'
   );

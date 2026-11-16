@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { describeTask, localDay } from "./model";
 import type { Settlement, SettleInput } from "./settlement-contract";
@@ -115,13 +115,13 @@ export function handoffDescription(
   return `${head.trimEnd()}\n\n${tail}${tail ? "\n\n" : ""}${hasLog ? "" : "──────────── log ────────────\n"}Work Map · ${stamp} · User chose ${input.action === "review" ? `review by ${input.reviewBy === "me" ? "me" : tidy(input.reviewer)}` : input.action}.${input.threadId ? ` Session: ${input.threadId}.` : ""}${oldState ? `\nPrevious state: ${oldState}` : ""}${input.action !== "pause" && oldReason ? `\nPrevious status reason: ${oldReason}` : ""}`;
 }
 
-export function settlementService(bb: BbPluginApi, changed: () => void) {
+export function settlementService(alia: AliaPluginApi, changed: () => void) {
   const call = <T>(
     method: string,
     input: unknown,
     outputSchema: z.ZodType<T>,
   ) =>
-    bb.sdk.plugins.callRpc({
+    alia.sdk.plugins.callRpc({
       pluginId: "tasks",
       method,
       input: input as never,
@@ -163,8 +163,8 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
     return result.task;
   };
   const save = async (receipt: Receipt) => {
-    await bb.storage.kv.set(`settled:${receipt.result.id}`, receipt);
-    bb.realtime.publish("settlements-changed", {});
+    await alia.storage.kv.set(`settled:${receipt.result.id}`, receipt);
+    alia.realtime.publish("settlements-changed", {});
   };
   let chain: Promise<unknown> = Promise.resolve();
   const serial = <T>(run: () => Promise<T>): Promise<T> => {
@@ -174,13 +174,13 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
   };
   const archive = async (receipt: Receipt) => {
     const threadId = receipt.result.threadId!;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (thread.archivedAt !== null) return [];
-    // BB's public archive method recursively archives children and hidden forks.
+    // VesnALIA's public archive method recursively archives children and hidden forks.
     // Refuse that wider mutation instead of silently stopping other sessions.
     const [children, forks] = await Promise.all([
-      bb.sdk.threads.childSummary({ threadId }),
-      bb.sdk.threads.list({
+      alia.sdk.threads.childSummary({ threadId }),
+      alia.sdk.threads.list({
         sourceThreadId: threadId,
         includeHidden: true,
         limit: 1,
@@ -188,11 +188,11 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
     ]);
     if (children.nonDeletedChildCount || forks.length)
       throw new Error(
-        "Session kept open: BB archives child sessions too. Manage this session in BB to choose what to close.",
+        "Session kept open: VesnALIA archives child sessions too. Manage this session in VesnALIA to choose what to close.",
       );
     receipt.archiveAttempted = true;
     await save(receipt);
-    const result = await bb.sdk.threads.archive({ threadId });
+    const result = await alia.sdk.threads.archive({ threadId });
     changed();
     return result.archivedThreadIds;
   };
@@ -206,12 +206,12 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
       !result.archivedThreadIds.length &&
       result.threadId
     ) {
-      const thread = await bb.sdk.threads.get({ threadId: result.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: result.threadId });
       if (
         thread.archivedAt !== null &&
         new Date(thread.archivedAt).getTime() >= result.at
       ) {
-        // The response can be lost after BB has archived the guarded leaf.
+        // The response can be lost after VesnALIA has archived the guarded leaf.
         result.archivedThreadIds = [result.threadId];
       }
     }
@@ -244,22 +244,22 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
     receipt.finished = true;
     await save(receipt);
     // Bound private before/after snapshots. Retain pending receipts for recovery.
-    const keys = (await bb.storage.kv.list("settled:")).sort().reverse();
+    const keys = (await alia.storage.kv.list("settled:")).sort().reverse();
     for (const key of keys.slice(200)) {
-      const old = await bb.storage.kv.get<Receipt>(key);
-      if (old?.finished) await bb.storage.kv.delete(key);
+      const old = await alia.storage.kv.get<Receipt>(key);
+      if (old?.finished) await alia.storage.kv.delete(key);
     }
     changed();
     return result;
   };
   return {
     settledToday: async () => {
-      const keys = (await bb.storage.kv.list("settled:"))
+      const keys = (await alia.storage.kv.list("settled:"))
         .sort()
         .reverse()
         .slice(0, 200);
       const rows = await Promise.all(
-        keys.map((key) => bb.storage.kv.get<Receipt>(key)),
+        keys.map((key) => alia.storage.kv.get<Receipt>(key)),
       );
       for (const row of rows)
         if (row && !row.finished) {
@@ -290,7 +290,7 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
               z.object({ task: taskState.nullable() }),
             );
             if (task) return false;
-            await bb.storage.kv.delete(`settled:${r.result.id}`);
+            await alia.storage.kv.delete(`settled:${r.result.id}`);
             return true;
           } catch {
             return false;
@@ -306,7 +306,7 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
       serial(async () => {
         const { expectedUpdatedAt: _expected, ...intent } = input;
         const signature = JSON.stringify(intent);
-        const prior = await bb.storage.kv.get<Receipt>(`settled:${input.id}`);
+        const prior = await alia.storage.kv.get<Receipt>(`settled:${input.id}`);
         if (prior) {
           if (prior.signature !== signature)
             throw new Error(
@@ -328,7 +328,7 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
         let title = before ? `${before.key} · ${before.title}` : "Session";
         let threadWasArchived = false;
         if (input.threadId) {
-          const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+          const thread = await alia.sdk.threads.get({ threadId: input.threadId });
           if (thread.deletedAt !== null)
             throw new Error(
               "This session has been deleted. Settle the task without archiving a session.",
@@ -473,7 +473,7 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
       }),
     undoSettlement: ({ id }: { id: string }) =>
       serial(async () => {
-        const receipt = await bb.storage.kv.get<Receipt>(`settled:${id}`);
+        const receipt = await alia.storage.kv.get<Receipt>(`settled:${id}`);
         if (!receipt) throw new Error("This undo is no longer available.");
         const { result, before, after } = receipt;
         if (result.undone) return result;
@@ -500,10 +500,10 @@ export function settlementService(bb: BbPluginApi, changed: () => void) {
         for (const threadId of result.archivedThreadIds) {
           if (receipt.undoThreads.includes(threadId)) continue;
           try {
-            const thread = await bb.sdk.threads.get({ threadId });
+            const thread = await alia.sdk.threads.get({ threadId });
             if (thread.deletedAt !== null) missing.push(threadId);
             else if (thread.archivedAt !== null)
-              await bb.sdk.threads.unarchive({ threadId });
+              await alia.sdk.threads.unarchive({ threadId });
           } catch (cause) {
             if (
               (cause as { status?: number })?.status === 404 ||

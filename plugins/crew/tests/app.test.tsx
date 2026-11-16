@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { ActivityDto, MemberDto, MessageDto, OverviewDto } from "../server";
 
 const member = (overrides: Partial<MemberDto>): MemberDto => ({
@@ -87,7 +87,7 @@ const card = (overrides: Partial<OverviewDto["crews"][number]>): OverviewDto["cr
   status: "running",
   summary: "",
   task: "CRD-1",
-  branch: "bb/trio-1",
+  branch: "alia/trio-1",
   behind: 2,
   merge: null,
   needsYou: 0,
@@ -99,7 +99,7 @@ const overview = (overrides: Partial<OverviewDto>): OverviewDto => ({
   crews: [card({})],
   leadLinks: [],
   dependencies: [],
-  threads: { limit: 16, source: "bb", running: 1, members: 3 },
+  threads: { limit: 16, source: "alia", running: 1, members: 3 },
   ...overrides,
 });
 
@@ -386,7 +386,7 @@ describe("Crews zoom canvas (BBP-83)", () => {
   const foreign = { ...crew, id: "p2:gs15", projectId: "p2", name: "gs15", projectName: "Graph Studio" };
   const twoProjects = (extra: Record<string, unknown> = {}) =>
     backend({
-      listCrews: () => ({ crews: [{ ...crew, projectName: "BB Plugins" }, foreign] }),
+      listCrews: () => ({ crews: [{ ...crew, projectName: "VesnALIA Plugins" }, foreign] }),
       projectOverview: (input: never) =>
         (input as { projectId: string }).projectId === "p2"
           ? overview({ crews: [card({ name: "gs15", status: "running", needsYou: 1 })] })
@@ -450,7 +450,7 @@ describe("Crews zoom canvas (BBP-83)", () => {
     });
     await clickNode(slot, '[data-project-frame="p1"]');
     await clickNode(slot, '[data-crew-node="trio"]');
-    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "BB Plugins", "trio"]));
+    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "VesnALIA Plugins", "trio"]));
     const canvas = slot.getByLabelText("Crews canvas");
     // The members are drawn on the same canvas, inside the crew.
     await waitFor(() => expect(canvas.querySelector('[data-member-node="dev-impl"]')).not.toBeNull());
@@ -458,7 +458,7 @@ describe("Crews zoom canvas (BBP-83)", () => {
     const panel = slot.getByRole("complementary", { name: "Crew details" });
     expect(within(panel).getByRole("button", { name: "Edit" })).toBeTruthy();
     await clickNode(slot, '[data-member-node="dev-impl"]');
-    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "BB Plugins", "trio", "dev-impl"]));
+    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "VesnALIA Plugins", "trio", "dev-impl"]));
     const agent = await waitFor(() => {
       const found = canvas.querySelector<HTMLElement>('[data-agent-node="dev-impl"]');
       expect(found).not.toBeNull();
@@ -474,10 +474,10 @@ describe("Crews zoom canvas (BBP-83)", () => {
     expect(within(agent).getByRole("button", { name: "Open" })).toBeTruthy();
     expect(within(agent).getByRole("button", { name: "Reset" })).toBeTruthy();
     fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "BB Plugins", "trio"]));
+    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "VesnALIA Plugins", "trio"]));
     expect(canvas.querySelector("[data-agent-node]")).toBeNull();
     fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "BB Plugins"]));
+    await waitFor(() => expect(crumbs(slot)).toEqual(["All", "VesnALIA Plugins"]));
     expect(canvas.querySelector("[data-member-node]")).toBeNull();
     fireEvent.click(within(slot.getByRole("navigation", { name: "Breadcrumb" })).getByRole("button", { name: "All" }));
     await waitFor(() => expect(crumbs(slot)).toEqual(["All"]));
@@ -489,7 +489,7 @@ describe("Crews zoom canvas (BBP-83)", () => {
     const slot = renderSlot(app.navPanels[0]!, { subPath: "" }, { rpc: twoProjects() });
     await waitFor(() => expect(slot.container.querySelectorAll("[data-project-frame]")).toHaveLength(2));
     const chips = slot.getByRole("group", { name: "Projects" });
-    expect(within(chips).getAllByRole("button").map((b) => b.textContent)).toEqual(["All", "BB Plugins1", "Graph Studio1"]);
+    expect(within(chips).getAllByRole("button").map((b) => b.textContent)).toEqual(["All", "VesnALIA Plugins1", "Graph Studio1"]);
     fireEvent.click(within(chips).getByRole("button", { name: /Graph Studio/ }));
     await waitFor(() => expect(slot.container.querySelector('[data-project-frame="p2"]')).toBeNull());
     fireEvent.click(within(chips).getByRole("button", { name: "All" }));
@@ -508,14 +508,14 @@ describe("Crews zoom canvas (BBP-83)", () => {
     await clickNode(slot, '[data-project-frame="p1"]');
     const select = await slot.findByLabelText("Filter by crew");
     fireEvent.keyDown(select, { key: "Escape" });
-    expect(crumbs(slot)).toEqual(["All", "BB Plugins"]);
+    expect(crumbs(slot)).toEqual(["All", "VesnALIA Plugins"]);
     slot.lifecycle.unmount();
   });
 
   it("level 1 lists a waiting merge with Merge and Reject; negative: a merged one has no buttons", async () => {
     const app = await loadPluginApp(() => import("../app"));
     const calls: unknown[] = [];
-    const merge = { id: "mr_1", crew: "trio", branch: "bb/trio-1", base: "main", state: "open" as const, reason: null, commitSha: null, mergedBy: null, createdAt: 1 };
+    const merge = { id: "mr_1", crew: "trio", branch: "alia/trio-1", base: "main", state: "open" as const, reason: null, commitSha: null, mergedBy: null, createdAt: 1 };
     const slot = renderSlot(app.navPanels[0]!, { subPath: "" }, {
       rpc: backend({
         projectOverview: () => overview({ crews: [card({ merge }), card({ name: "beta", merge: { ...merge, id: "mr_0", crew: "beta", state: "merged" } })] }),

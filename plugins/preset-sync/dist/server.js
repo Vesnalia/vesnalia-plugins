@@ -11,7 +11,7 @@ var __export = (target, all) => {
 };
 
 // server.ts
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 // node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -18940,7 +18940,7 @@ var pluginSettingPresetEntrySchema = external_exports.object({
 var presetSnapshotSchema = external_exports.object({
   schemaVersion: external_exports.literal(PRESET_SCHEMA_VERSION),
   capturedAt: external_exports.string(),
-  bbVersion: external_exports.string(),
+  aliaVersion: external_exports.string(),
   settings: settingsPresetSchema,
   plugins: external_exports.array(pluginPresetEntrySchema),
   marketplaces: external_exports.array(marketplacePresetEntrySchema),
@@ -19036,7 +19036,7 @@ var pluginSettingsFileSchema = external_exports.object({
 }).strict();
 var metadataFileSchema = external_exports.object({
   schemaVersion: external_exports.literal(PRESET_SCHEMA_VERSION),
-  bbVersion: external_exports.string(),
+  aliaVersion: external_exports.string(),
   capturedAt: external_exports.string().optional()
 }).passthrough();
 var MANAGED_PRESET_FILES = [
@@ -19157,7 +19157,7 @@ async function readPresetSnapshot(repoDir) {
     presetSnapshotSchema.parse({
       schemaVersion: PRESET_SCHEMA_VERSION,
       capturedAt: metadata.capturedAt ?? "unknown",
-      bbVersion: metadata.bbVersion,
+      aliaVersion: metadata.aliaVersion,
       settings: {
         generalSettings: settings.generalSettings,
         experiments: settings.experiments,
@@ -19198,9 +19198,9 @@ async function writePresetSnapshot(repoDir, rawSnapshot) {
     }),
     writePrettyJson(join(presetDir, "metadata.json"), {
       schemaVersion: PRESET_SCHEMA_VERSION,
-      bbVersion: snapshot.bbVersion,
+      aliaVersion: snapshot.aliaVersion,
       capturedAt: snapshot.capturedAt,
-      managedBy: "bb-plugin-preset-sync"
+      managedBy: "alia-plugin-preset-sync"
     })
   ]);
 }
@@ -19376,8 +19376,8 @@ function buildPullPlan(args) {
     changes.push({
       kind: "general-settings",
       action: "update",
-      target: "BB general settings",
-      summary: "Update BB general settings",
+      target: "VesnALIA general settings",
+      summary: "Update VesnALIA general settings",
       risk: "configuration"
     });
   }
@@ -19385,8 +19385,8 @@ function buildPullPlan(args) {
     changes.push({
       kind: "experiments",
       action: "update",
-      target: "BB experiments",
-      summary: "Update BB experiment flags",
+      target: "VesnALIA experiments",
+      summary: "Update VesnALIA experiment flags",
       risk: "configuration"
     });
   }
@@ -19408,9 +19408,9 @@ function buildPullPlan(args) {
       risk: "configuration"
     });
   }
-  if (remote.bbVersion !== local.bbVersion) {
+  if (remote.aliaVersion !== local.aliaVersion) {
     warnings.push(
-      `Preset was captured with BB ${remote.bbVersion}; this machine runs BB ${local.bbVersion}.`
+      `Preset was captured with VesnALIA ${remote.aliaVersion}; this machine runs VesnALIA ${local.aliaVersion}.`
     );
   }
   return syncPlanSchema.parse({
@@ -19553,8 +19553,8 @@ function buildPushChanges(localSnapshot, remoteSnapshot) {
     changes.push({
       kind: "general-settings",
       action: "update",
-      target: "BB general settings",
-      summary: "Update BB general settings in the preset",
+      target: "VesnALIA general settings",
+      summary: "Update VesnALIA general settings in the preset",
       risk: "configuration"
     });
   }
@@ -19562,8 +19562,8 @@ function buildPushChanges(localSnapshot, remoteSnapshot) {
     changes.push({
       kind: "experiments",
       action: "update",
-      target: "BB experiments",
-      summary: "Update BB experiment flags in the preset",
+      target: "VesnALIA experiments",
+      summary: "Update VesnALIA experiment flags in the preset",
       risk: "configuration"
     });
   }
@@ -19585,12 +19585,12 @@ function buildPushChanges(localSnapshot, remoteSnapshot) {
       risk: "configuration"
     });
   }
-  if (local.bbVersion !== remote.bbVersion) {
+  if (local.aliaVersion !== remote.aliaVersion) {
     changes.push({
       kind: "metadata",
       action: "update",
-      target: "BB version",
-      summary: `Record BB ${local.bbVersion} in preset metadata`,
+      target: "VesnALIA version",
+      summary: `Record VesnALIA ${local.aliaVersion} in preset metadata`,
       risk: "configuration"
     });
   }
@@ -19682,7 +19682,7 @@ async function runGit(args, options) {
 async function withClone(options, operation) {
   const repositoryUrl = validateRepositoryUrl(options.repositoryUrl);
   const branch = validateBranch(options.branch);
-  const tempRoot = await mkdtemp(join2(tmpdir(), "bb-preset-sync-"));
+  const tempRoot = await mkdtemp(join2(tmpdir(), "alia-preset-sync-"));
   const repoDir = join2(tempRoot, "repo");
   try {
     await runGit(
@@ -19805,12 +19805,12 @@ function pluginInstallSpec(plugin2) {
   }
   return plugin2.source;
 }
-async function installPluginFromPreset(bb, source, signal) {
+async function installPluginFromPreset(alia, source, signal) {
   const catalogTarget = parseCatalogInstallSource(source);
   if (catalogTarget === null) {
-    return bb.sdk.plugins.install({ source });
+    return alia.sdk.plugins.install({ source });
   }
-  const plan = await bb.sdk.plugins.catalog.installPlan({
+  const plan = await alia.sdk.plugins.catalog.installPlan({
     ...catalogTarget,
     signal
   });
@@ -19824,12 +19824,12 @@ async function installPluginFromPreset(bb, source, signal) {
     if (unresolvedReason !== void 0) {
       throw new Error(unresolvedReason);
     }
-    return bb.sdk.plugins.catalog.install({
+    return alia.sdk.plugins.catalog.install({
       ...catalogTarget,
       confirmedSource: plan.resolvedSource
     });
   }
-  return bb.sdk.plugins.catalog.install(catalogTarget);
+  return alia.sdk.plugins.catalog.install(catalogTarget);
 }
 function settingValueMatchesDescriptor(descriptor, value) {
   if (descriptor.type === "boolean") return typeof value === "boolean";
@@ -19867,11 +19867,11 @@ function cachedCheckFingerprint(check2) {
   };
 }
 var PresetSyncService = class {
-  constructor(bb, getSettings) {
-    this.bb = bb;
+  constructor(alia, getSettings) {
+    this.alia = alia;
     this.getSettings = getSettings;
   }
-  bb;
+  alia;
   getSettings;
   operationTail = Promise.resolve();
   backgroundWake = null;
@@ -19885,7 +19885,7 @@ var PresetSyncService = class {
     return result;
   }
   async readStaged() {
-    const value = await this.bb.storage.kv.get(STAGED_KEY);
+    const value = await this.alia.storage.kv.get(STAGED_KEY);
     if (value === void 0) return null;
     return {
       snapshot: presetSnapshotSchema.parse(value.snapshot),
@@ -19894,22 +19894,22 @@ var PresetSyncService = class {
     };
   }
   async readLastOperation() {
-    const value = await this.bb.storage.kv.get(LAST_OPERATION_KEY);
+    const value = await this.alia.storage.kv.get(LAST_OPERATION_KEY);
     if (value === void 0) return null;
     const parsed = lastOperationSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
   }
   async cachedCheck() {
-    const value = await this.bb.storage.kv.get(CACHED_CHECK_KEY);
+    const value = await this.alia.storage.kv.get(CACHED_CHECK_KEY);
     if (value === void 0) return null;
     const parsed = cachedSyncCheckSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
   }
   async writeCachedCheck(check2) {
     const previous = await this.cachedCheck();
-    await this.bb.storage.kv.set(CACHED_CHECK_KEY, check2);
+    await this.alia.storage.kv.set(CACHED_CHECK_KEY, check2);
     if (!sameJson(cachedCheckFingerprint(previous), cachedCheckFingerprint(check2))) {
-      this.bb.realtime.publish("preset-sync-state", {
+      this.alia.realtime.publish("preset-sync-state", {
         checkedAt: check2.checkedAt,
         hasError: check2.error !== null,
         pullCount: check2.status?.changeCount ?? 0,
@@ -19918,8 +19918,8 @@ var PresetSyncService = class {
     }
   }
   async writeLastOperation(operation) {
-    await this.bb.storage.kv.set(LAST_OPERATION_KEY, operation);
-    this.bb.realtime.publish("preset-sync-changed", operation);
+    await this.alia.storage.kv.set(LAST_OPERATION_KEY, operation);
+    this.alia.realtime.publish("preset-sync-changed", operation);
   }
   async remoteSettings() {
     const settings = await this.getSettings();
@@ -19937,10 +19937,10 @@ var PresetSyncService = class {
   }
   async captureSnapshot(signal) {
     const [config2, pluginList, marketplaces, version2] = await Promise.all([
-      this.bb.sdk.system.config({ signal }),
-      this.bb.sdk.plugins.list({ signal }),
-      this.bb.sdk.plugins.marketplaces.list({ signal }),
-      this.bb.sdk.system.version({ force: false, signal })
+      this.alia.sdk.system.config({ signal }),
+      this.alia.sdk.plugins.list({ signal }),
+      this.alia.sdk.plugins.marketplaces.list({ signal }),
+      this.alia.sdk.system.version({ force: false, signal })
     ]);
     const settings = await this.getSettings();
     const warnings = [];
@@ -19966,7 +19966,7 @@ var PresetSyncService = class {
       const captured = await Promise.all(
         pluginList.plugins.filter((plugin2) => plugin2.id !== SELF_PLUGIN_ID && plugin2.hasSettings).map(async (plugin2) => {
           try {
-            const response = await this.bb.sdk.plugins.getSettings({
+            const response = await this.alia.sdk.plugins.getSettings({
               pluginId: plugin2.id,
               signal
             });
@@ -19998,7 +19998,7 @@ var PresetSyncService = class {
     const snapshot = presetSnapshotSchema.parse({
       schemaVersion: 1,
       capturedAt: (/* @__PURE__ */ new Date()).toISOString(),
-      bbVersion: version2.currentVersion,
+      aliaVersion: version2.currentVersion,
       settings: {
         generalSettings: config2.generalSettings,
         experiments: config2.experiments,
@@ -20090,7 +20090,7 @@ var PresetSyncService = class {
         error: error61
       });
       if (previous?.error !== error61) {
-        this.bb.log.warn(`Background check failed: ${error61}`);
+        this.alia.log.warn(`Background check failed: ${error61}`);
       }
     }
   }
@@ -20147,7 +20147,7 @@ var PresetSyncService = class {
           `Captured preset is ${bytes} bytes; the safe staging limit is ${MAX_STAGED_BYTES} bytes.`
         );
       }
-      await this.bb.storage.kv.set(STAGED_KEY, staged);
+      await this.alia.storage.kv.set(STAGED_KEY, staged);
       await this.writeLastOperation({
         type: "capture",
         at: staged.stagedAt,
@@ -20168,14 +20168,14 @@ var PresetSyncService = class {
       let staged = await this.readStaged();
       if (args.fresh || staged === null) {
         if (!args.fresh && staged === null) {
-          throw new Error('No staged preset. Run "bb preset capture" or use "bb preset push --fresh".');
+          throw new Error('No staged preset. Run "alia preset capture" or use "alia preset push --fresh".');
         }
         const captured = await this.captureSnapshot(args.signal);
         staged = {
           ...captured,
           stagedAt: (/* @__PURE__ */ new Date()).toISOString()
         };
-        await this.bb.storage.kv.set(STAGED_KEY, staged);
+        await this.alia.storage.kv.set(STAGED_KEY, staged);
       }
       const pushed = await pushRemotePreset(
         {
@@ -20184,7 +20184,7 @@ var PresetSyncService = class {
           githubToken: settings.githubToken,
           authorName: settings.gitAuthorName,
           authorEmail: settings.gitAuthorEmail,
-          message: args.message?.trim() || "chore: sync BB preset",
+          message: args.message?.trim() || "chore: sync VesnALIA preset",
           signal: args.signal
         },
         staged.snapshot
@@ -20229,7 +20229,7 @@ var PresetSyncService = class {
           return false;
         }
       };
-      const currentMarketplaces = await this.bb.sdk.plugins.marketplaces.list({ signal });
+      const currentMarketplaces = await this.alia.sdk.plugins.marketplaces.list({ signal });
       const marketplaceMap = new Map(
         currentMarketplaces.map((marketplace) => [marketplace.name, marketplace])
       );
@@ -20242,13 +20242,13 @@ var PresetSyncService = class {
           }
           await attempt(
             `Added marketplace ${marketplace.name}`,
-            () => this.bb.sdk.plugins.marketplaces.add({ source: marketplace.source })
+            () => this.alia.sdk.plugins.marketplaces.add({ source: marketplace.source })
           );
         } else if (current.source !== marketplace.source) {
           skipped.push(`Kept marketplace ${marketplace.name} with its existing source`);
         }
       }
-      let pluginList = await this.bb.sdk.plugins.list({ signal });
+      let pluginList = await this.alia.sdk.plugins.list({ signal });
       let installed = new Map(pluginList.plugins.map((plugin2) => [plugin2.id, plugin2]));
       for (const plugin2 of remote.snapshot.plugins) {
         if (plugin2.id === SELF_PLUGIN_ID || installed.has(plugin2.id)) continue;
@@ -20258,10 +20258,10 @@ var PresetSyncService = class {
         }
         await attempt(
           `Installed plugin ${plugin2.id}`,
-          () => installPluginFromPreset(this.bb, plugin2.install, signal)
+          () => installPluginFromPreset(this.alia, plugin2.install, signal)
         );
       }
-      pluginList = await this.bb.sdk.plugins.list({ signal });
+      pluginList = await this.alia.sdk.plugins.list({ signal });
       installed = new Map(pluginList.plugins.map((plugin2) => [plugin2.id, plugin2]));
       const desiredSettings = /* @__PURE__ */ new Map();
       for (const entry of remote.snapshot.pluginSettings) {
@@ -20279,7 +20279,7 @@ var PresetSyncService = class {
           continue;
         }
         try {
-          const response = await this.bb.sdk.plugins.getSettings({ pluginId, signal });
+          const response = await this.alia.sdk.plugins.getSettings({ pluginId, signal });
           const values = {};
           for (const entry of entries) {
             const descriptor = response.schema[entry.key];
@@ -20294,7 +20294,7 @@ var PresetSyncService = class {
           if (Object.keys(values).length > 0) {
             const ok2 = await attempt(
               `Updated ${Object.keys(values).length} settings for ${pluginId}`,
-              () => this.bb.sdk.plugins.updateSettings({ pluginId, values })
+              () => this.alia.sdk.plugins.updateSettings({ pluginId, values })
             );
             if (ok2) settingsUpdated.add(pluginId);
           }
@@ -20312,27 +20312,27 @@ var PresetSyncService = class {
         if (current.enabled !== desired.enabled) {
           await attempt(
             `${desired.enabled ? "Enabled" : "Disabled"} plugin ${pluginId}`,
-            () => desired.enabled ? this.bb.sdk.plugins.enable({ pluginId }) : this.bb.sdk.plugins.disable({ pluginId })
+            () => desired.enabled ? this.alia.sdk.plugins.enable({ pluginId }) : this.alia.sdk.plugins.disable({ pluginId })
           );
         } else if (desired.enabled && settingsUpdated.has(pluginId)) {
           await attempt(
             `Reloaded plugin ${pluginId}`,
-            () => this.bb.sdk.plugins.reload({ pluginId })
+            () => this.alia.sdk.plugins.reload({ pluginId })
           );
         }
       }
       if (!sameJson(local.snapshot.settings.generalSettings, remote.snapshot.settings.generalSettings)) {
         await attempt(
-          "Updated BB general settings",
-          () => this.bb.sdk.system.updateGeneralSettings(
+          "Updated VesnALIA general settings",
+          () => this.alia.sdk.system.updateGeneralSettings(
             remote.snapshot.settings.generalSettings
           )
         );
       }
       if (!sameJson(local.snapshot.settings.experiments, remote.snapshot.settings.experiments)) {
         await attempt(
-          "Updated BB experiments",
-          () => this.bb.sdk.system.updateExperiments(
+          "Updated VesnALIA experiments",
+          () => this.alia.sdk.system.updateExperiments(
             remote.snapshot.settings.experiments
           )
         );
@@ -20343,15 +20343,15 @@ var PresetSyncService = class {
       )) {
         await attempt(
           "Updated keyboard shortcuts",
-          () => this.bb.sdk.system.updateKeyboardSettings(
+          () => this.alia.sdk.system.updateKeyboardSettings(
             remote.snapshot.settings.keybindingOverrides
           )
         );
       }
       if (!sameJson(local.snapshot.settings.appearance, remote.snapshot.settings.appearance)) {
         await attempt(
-          "Updated BB theme",
-          () => this.bb.sdk.theme.set(remote.snapshot.settings.appearance)
+          "Updated VesnALIA theme",
+          () => this.alia.sdk.theme.set(remote.snapshot.settings.appearance)
         );
       }
       const at = (/* @__PURE__ */ new Date()).toISOString();
@@ -20405,11 +20405,11 @@ var rpcContract = defineRpcContract({
 });
 var usage = [
   "Usage:",
-  "  bb preset status [--json]",
-  "  bb preset diff [--json]",
-  "  bb preset capture [--json]",
-  "  bb preset push [--fresh] [--message <text>] [--json]",
-  "  bb preset pull --yes [--json]",
+  "  VesnALIA preset status [--json]",
+  "  VesnALIA preset diff [--json]",
+  "  VesnALIA preset capture [--json]",
+  "  VesnALIA preset push [--fresh] [--message <text>] [--json]",
+  "  VesnALIA preset pull --yes [--json]",
   "",
   "Pull is additive: local plugins absent from the preset are kept.",
   "Secret settings, credentials, sessions, and runtime data are never captured."
@@ -20433,8 +20433,8 @@ function parseMessage(argv) {
   if (message === void 0 || message.startsWith("--")) return { ok: false };
   return { ok: true, message };
 }
-async function plugin(bb) {
-  const settings = bb.settings.define({
+async function plugin(alia) {
+  const settings = alia.settings.define({
     repositoryUrl: {
       type: "string",
       label: "Preset repository",
@@ -20449,13 +20449,13 @@ async function plugin(bb) {
     githubToken: {
       type: "string",
       label: "GitHub token (optional)",
-      description: "Stored in BB's protected secrets file. Leave empty when Git Credential Manager or gh already authenticates Git.",
+      description: "Stored in VesnALIA's protected secrets file. Leave empty when Git Credential Manager or gh already authenticates Git.",
       secret: true
     },
     gitAuthorName: {
       type: "string",
       label: "Git author name",
-      default: "BB Preset Sync"
+      default: "VesnALIA Preset Sync"
     },
     gitAuthorEmail: {
       type: "string",
@@ -20471,12 +20471,12 @@ async function plugin(bb) {
     backgroundCheckInterval: {
       type: "select",
       label: "Background check interval",
-      description: "How often to compare this BB installation with the Git preset. Select Off to disable background checks.",
+      description: "How often to compare this VesnALIA installation with the Git preset. Select Off to disable background checks.",
       options: ["Off", "1 minute", "5 minutes", "10 minutes", "15 minutes", "30 minutes", "60 minutes"],
       default: "5 minutes"
     }
   });
-  const service = new PresetSyncService(bb, async () => {
+  const service = new PresetSyncService(alia, async () => {
     const value = await settings.get();
     return {
       repositoryUrl: value.repositoryUrl ?? "",
@@ -20489,7 +20489,7 @@ async function plugin(bb) {
     };
   });
   settings.onChange(() => service.wakeBackgroundCheck());
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     sync_status: () => service.status(),
     sync_cached_check: () => service.cachedCheck(),
     sync_preview: () => service.preview(),
@@ -20497,37 +20497,37 @@ async function plugin(bb) {
     sync_push: ({ fresh, message }) => service.push({ fresh, message }),
     sync_pull: () => service.pullAndApply()
   });
-  bb.background.service("change-check", {
+  alia.background.service("change-check", {
     start: (signal) => service.runBackgroundChecks(signal)
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "preset",
-    summary: "Synchronize BB plugins and settings through a Git repository",
+    summary: "Synchronize VesnALIA plugins and settings through a Git repository",
     commands: [
       {
         name: "status",
-        summary: "Compare this BB installation with the Git preset",
-        usage: "bb preset status [--json]"
+        summary: "Compare this VesnALIA installation with the Git preset",
+        usage: "alia preset status [--json]"
       },
       {
         name: "diff",
         summary: "Preview changes that pull would apply",
-        usage: "bb preset diff [--json]"
+        usage: "alia preset diff [--json]"
       },
       {
         name: "capture",
-        summary: "Stage the current BB preset locally",
-        usage: "bb preset capture [--json]"
+        summary: "Stage the current VesnALIA preset locally",
+        usage: "alia preset capture [--json]"
       },
       {
         name: "push",
         summary: "Push the staged or freshly captured preset to Git",
-        usage: "bb preset push [--fresh] [--message <text>] [--json]"
+        usage: "alia preset push [--fresh] [--message <text>] [--json]"
       },
       {
         name: "pull",
         summary: "Pull and apply the Git preset after an explicit preview",
-        usage: "bb preset pull --yes [--json]"
+        usage: "alia preset pull --yes [--json]"
       }
     ],
     async run(argv, context) {
@@ -20603,7 +20603,7 @@ async function plugin(bb) {
                   planText(plan),
                   plan.changes.length === 0 ? 0 : 2
                 ),
-                stderr: plan.changes.length === 0 ? void 0 : 'Nothing was changed. Review the preview, then rerun with "bb preset pull --yes".'
+                stderr: plan.changes.length === 0 ? void 0 : 'Nothing was changed. Review the preview, then rerun with "alia preset pull --yes".'
               };
             }
             const result = await service.pullAndApply(context.signal);
@@ -20627,7 +20627,7 @@ async function plugin(bb) {
       }
     }
   });
-  bb.log.info("ready: bb preset status|diff|capture|push|pull");
+  alia.log.info("ready: VesnALIA preset status|diff|capture|push|pull");
 }
 export {
   plugin as default,

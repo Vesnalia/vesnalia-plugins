@@ -10,7 +10,7 @@ export function initializeCollector(pi, { builtinProviders, version, directory, 
     const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(version ?? '');
     if (!match || Number(match[1]) < 1 || (Number(match[1]) === 1 && Number(match[2]) < 5)) {
       readiness.update('unsupported');
-      failure = 'Pi 1.5.0+ is required for Copilot credit capture. Use the same authenticated Pi runtime as BB.';
+      failure = 'Pi 1.5.0+ is required for Copilot credit capture. Use the same authenticated Pi runtime as VesnALIA.';
       throw Error(failure);
     }
     const provider = builtinProviders().find(provider => provider.id === 'github-copilot');

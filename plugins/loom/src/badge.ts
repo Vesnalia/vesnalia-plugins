@@ -1,5 +1,5 @@
 // What the badge on Loom's rail button counts, from Loom's side: the home page's Needs you items, and the threads that count
-// when bb says they wait on the human. ui/badge.ts adds those threads from bb's live thread state.
+// when VesnALIA says they wait on the human. ui/badge.ts adds those threads from VesnALIA's live thread state.
 import type { BadgeView } from "./contract";
 import type { Store } from "./db/store";
 import { homeView } from "./home";

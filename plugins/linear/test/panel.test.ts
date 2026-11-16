@@ -173,7 +173,7 @@ describe("the second line appears only when it earns it", () => {
     expect(line).toMatchObject({ kind: "pr", text: "#128 checks failed" });
   });
 
-  it("borrows bb's own pull-request vocabulary and says nothing for a settled one", () => {
+  it("borrows VesnALIA's own pull-request vocabulary and says nothing for a settled one", () => {
     // A user running a sibling PR plugin must not meet two vocabularies for
     // one pull request fifteen pixels apart.
     expect(selectSecondLine({ ...base, pr: { number: 1, attention: "merged" } })).toBeNull();
@@ -416,12 +416,12 @@ describe("buildPanelView", () => {
     expect(view.state.kind).toBe("no-binding");
   });
 
-  it("carries the bb-native fact in the lead column when grouping by state", () => {
+  it("carries the alia-native fact in the lead column when grouping by state", () => {
     const d = deps();
     d.store.putIssues([issue({ id: "1", stateId: "s_progress" })], NOW);
     const view = buildPanelView(d, query);
     if (view.state.kind !== "rows") throw new Error("expected rows");
-    expect(view.state.groups[0]?.rows[0]?.lead).toBe("bb-fact");
+    expect(view.state.groups[0]?.rows[0]?.lead).toBe("alia-fact");
     expect(view.state.groups[0]?.rows[0]?.glyph).toMatchObject({
       ring: "solid",
       pie: 0.5,
@@ -692,7 +692,7 @@ describe("buildWorkingSet", () => {
     expect(unstarted?.rows.map((row) => row.id).sort()).toEqual(["m1", "m2"]);
   });
 
-  it("keeps other people's issues with bb work on them when the team has more open issues than the row limit", () => {
+  it("keeps other people's issues with VesnALIA work on them when the team has more open issues than the row limit", () => {
     // Running, PR needs you and In progress are about work on this machine,
     // whoever the issue is assigned to. A low-priority issue with a running
     // thread, a pull request waiting on review, or a checked-out branch sits
@@ -725,7 +725,7 @@ describe("buildWorkingSet", () => {
         boundTeamIds: ["team_eng"],
         backfilledTeamIds: new Set(["team_eng"]),
         notice: null,
-        bbFacts: new Map([["run", "thread-running"]]),
+        aliaFacts: new Map([["run", "thread-running"]]),
       },
       null,
     );

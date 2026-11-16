@@ -9,7 +9,7 @@ import {
   loadPluginApp,
   renderSlot,
   type CapturedPluginApp,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { TEMPLATES } from "../lib/templates";
 import { suggestGraphs } from "../lib/suggest";
 

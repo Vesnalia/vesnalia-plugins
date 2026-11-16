@@ -141,7 +141,7 @@ describe("decodeWarmStartRows", () => {
   });
 
   // Half-accepting is the failure that hurts: settling archives the thread in
-  // bb, so a dropped row does not make its thread read active, it makes the
+  // VesnALIA, so a dropped row does not make its thread read active, it makes the
   // thread disappear from the sidebar entirely.
   it("rejects the whole payload when one row is bad", () => {
     assert.equal(

@@ -18,16 +18,16 @@
  * seconds for in-flight invocations to settle — and an rpc handler is an
  * in-flight invocation. A plugin that saves its own key from its own handler
  * therefore stalls for five seconds, has its database handles closed and its
- * `bb` handle invalidated while the handler is still running, and then throws
+ * `VesnALIA` handle invalidated while the handler is still running, and then throws
  * `PluginContextStaleError` from a detached continuation, which takes down the
- * whole bb server. There is no plugin-side workaround, and there does not need
+ * whole VesnALIA server. There is no plugin-side workaround, and there does not need
  * to be one: the host already renders a `secret: true` descriptor as a
  * password field with a `[not set]` placeholder, and renders that form for
  * `needs-configuration` plugins precisely so this can work. A CI grep asserts
  * the absence of `updateSettings` in this repository.
  */
 
-import type { PluginSettingDescriptors, PluginSettingsValues } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors, PluginSettingsValues } from "@vesnalia/plugin-sdk";
 
 export const SETTING_DESCRIPTORS = {
   apiKey: {
@@ -35,7 +35,7 @@ export const SETTING_DESCRIPTORS = {
     label: "Linear API key",
     secret: true,
     description:
-      "Create one in Linear under Settings → Account → Security & access → Personal API keys. Read access is enough to browse; write access is needed to change anything. Stored in bb's secret storage on this machine (a 0600 file), never shown again, and never given to an agent.",
+      "Create one in Linear under Settings → Account → Security & access → Personal API keys. Read access is enough to browse; write access is needed to change anything. Stored in VesnALIA's secret storage on this machine (a 0600 file), never shown again, and never given to an agent.",
   },
 
   /*
@@ -106,7 +106,7 @@ export const SETTING_DESCRIPTORS = {
     label: "Webhook URL",
     default: "",
     description:
-      "A public HTTPS URL that reaches this bb from the internet. Leave it empty and the plugin polls, which always works. Creating a webhook also needs a Linear workspace admin, and a bb connect share link will not work — it is session-gated, so Linear's delivery bot gets the sign-in page.",
+      "A public HTTPS URL that reaches this VesnALIA from the internet. Leave it empty and the plugin polls, which always works. Creating a webhook also needs a Linear workspace admin, and a VesnALIA connect share link will not work — it is session-gated, so Linear's delivery bot gets the sign-in page.",
   },
 
   syncProfile: {
@@ -124,14 +124,14 @@ export const SETTING_DESCRIPTORS = {
     options: ["title", "exact"],
     default: "title",
     description:
-      "Title puts the issue identifier at the front of the thread title and lets bb name the branch — Linear's autolink matches on the identifier, so the link survives. Exact checks out the branch name Linear generated, but only when that branch already exists and the working tree is clean; otherwise it falls back to title and says so.",
+      "Title puts the issue identifier at the front of the thread title and lets VesnALIA name the branch — Linear's autolink matches on the identifier, so the link survives. Exact checks out the branch name Linear generated, but only when that branch already exists and the working tree is clean; otherwise it falls back to title and says so.",
   },
   autoBind: {
     type: "boolean",
     label: "Bind projects to teams automatically",
     default: true,
     description:
-      "When an issue key in a branch or thread title names exactly one team you can access, bind that bb project to the team. Every automatic bind is announced with an undo. Turn this off to keep the same offers visible without ever binding automatically.",
+      "When an issue key in a branch or thread title names exactly one team you can access, bind that VesnALIA project to the team. Every automatic bind is announced with an undo. Turn this off to keep the same offers visible without ever binding automatically.",
   },
   spawnMovesStatus: {
     type: "boolean",
@@ -146,7 +146,7 @@ export const SETTING_DESCRIPTORS = {
     label: "Move the issue when its pull request moves",
     default: false,
     description:
-      "Follow the git automation your team already configured in Linear, using the team's own target states. OFF by default: agents with a Linear connection often drive states themselves, and two writers fighting over one card is worse than either alone. Needs the GitHub CLI (gh) authenticated on the machine running bb; nothing else in this plugin does.",
+      "Follow the git automation your team already configured in Linear, using the team's own target states. OFF by default: agents with a Linear connection often drive states themselves, and two writers fighting over one card is worse than either alone. Needs the GitHub CLI (gh) authenticated on the machine running VesnALIA; nothing else in this plugin does.",
   },
   threadMovesStatus: {
     type: "boolean",
@@ -194,7 +194,7 @@ export const SETTING_DESCRIPTORS = {
     label: "Push plugin",
     default: "",
     description:
-      "bb has no plugin notification API, so notifications land in bb. If you run a push plugin that implements the contract in docs/push-contract.md, put its plugin id here and they reach your phone too. Nothing is auto-detected — calling a guessed method on somebody else's plugin is not detection.",
+      "alia has no plugin notification API, so notifications land in VesnALIA. If you run a push plugin that implements the contract in docs/push-contract.md, put its plugin id here and they reach your phone too. Nothing is auto-detected — calling a guessed method on somebody else's plugin is not detection.",
   },
 
   linkBackComment: {
@@ -202,7 +202,7 @@ export const SETTING_DESCRIPTORS = {
     label: "Comment on the issue when a thread starts",
     default: false,
     description:
-      "Post a comment on the Linear issue saying a bb thread has started. Off, because writing into someone else's tracker uninvited is rude.",
+      "Post a comment on the Linear issue saying a VesnALIA thread has started. Off, because writing into someone else's tracker uninvited is rude.",
   },
 } as const satisfies PluginSettingDescriptors;
 
@@ -232,16 +232,16 @@ export function readAgentWrites(value: string | undefined): AgentWrites {
 }
 
 /**
- * The message a user reads in `bb plugin list` and in the plugin's status
+ * The message a user reads in `alia plugin list` and in the plugin's status
  * detail when no key is set. It names both routes because the two audiences
  * are different: someone in the app wants the field, someone in a terminal
  * wants the command.
  *
- * It deliberately does not recite a navigation breadcrumb. bb shows plugin
+ * It deliberately does not recite a navigation breadcrumb. VesnALIA shows plugin
  * management under Extensions only when that collection is enabled and
  * otherwise under Settings → Plugins, so any breadcrumb this plugin printed
  * would be wrong for some installs — which is exactly what the sidebar footer
  * button is for.
  */
 export const NEEDS_CONFIGURATION_MESSAGE =
-  "Add your Linear API key in this plugin's settings, or run: bb plugin config linear set apiKey <key>";
+  "Add your Linear API key in this plugin's settings, or run: VesnALIA plugin config linear set apiKey <key>";

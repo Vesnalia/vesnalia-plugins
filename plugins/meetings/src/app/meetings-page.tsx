@@ -1,5 +1,5 @@
 // The "Встречи" nav panel: routes the panel's subPath to a page.
-import type { PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { DetailPage } from "./detail-page";
 import { ListPage } from "./list-page";

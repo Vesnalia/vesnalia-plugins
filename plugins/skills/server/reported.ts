@@ -1,12 +1,12 @@
 /**
- * What bb's provider says a thread can run, as opposed to what was found on
+ * What VesnALIA's provider says a thread can run, as opposed to what was found on
  * disk. This is the only way to see commands and skills built into an agent
  * binary, which live on no scannable path, and the whole list for a provider
  * whose skill directories nobody has documented.
  */
 import type { ReportedSkill } from "../shared/skills";
 
-/** One row of `bb.sdk.projects.commands`, the list behind bb's own `/` menu. */
+/** One row of `alia.sdk.projects.commands`, the list behind VesnALIA's own `/` menu. */
 export interface ReportedCommand {
   name: string;
   description: string | null;
@@ -25,7 +25,7 @@ export interface ReportedSplit {
  * session controls on the `source` the provider assigned.
  *
  * `source` is the provider's own judgement, not ground truth, and it is the
- * same split bb's `/` menu shows — so the browser at least agrees with the
+ * same split VesnALIA's `/` menu shows — so the browser at least agrees with the
  * composer. A name reported twice is listed once, under the first row.
  */
 export function selectReported(

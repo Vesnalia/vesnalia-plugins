@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import {
   threadDeltaSchema,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { Timeline } from "../src/timeline.js";
 import { record } from "../src/protocol.js";
 
@@ -225,8 +225,8 @@ it("maps file writes, reads, and searches onto rich rows", () => {
     ],
     [
       "WebSearch",
-      { query: "bb plugin" },
-      { type: "webSearch", queries: ["bb plugin"] },
+      { query: "alia plugin" },
+      { type: "webSearch", queries: ["alia plugin"] },
     ],
     [
       "WebFetch",

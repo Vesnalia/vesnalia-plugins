@@ -2,18 +2,18 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@get-bb/plugin-sdk/provider-bridge/testing";
+import { experimental_createBridgeJsonRpcTestHarness as createBridgeJsonRpcTestHarness } from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
 // Live integration test: real `kimi acp` child, no prompt is sent (thread/start
 // only), so no model tokens are spent. Still needs the kimi binary and a valid
-// login, so it runs only when BB_KIMI_LIVE=1 is set explicitly.
-const LIVE = process.env.BB_KIMI_LIVE === "1";
+// login, so it runs only when ALIA_KIMI_LIVE=1 is set explicitly.
+const LIVE = process.env.ALIA_KIMI_LIVE === "1";
 
 let workspaceDir: string;
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-kimi-state-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-kimi-state-"));
 });
 
 afterEach(() => {
@@ -49,7 +49,7 @@ function collectStateKinds(messages: unknown[]): Map<string, unknown> {
   return states;
 }
 
-itLive("publishes kimi slash commands and session options as bb thread state", async () => {
+itLive("publishes kimi slash commands and session options as VesnALIA thread state", async () => {
   const { experimental_providerBridge: bridge } = await import("./host.js");
   const harness = createBridgeJsonRpcTestHarness(bridge.handleLine);
   try {
@@ -79,21 +79,21 @@ itLive("publishes kimi slash commands and session options as bb thread state", a
     let states = collectStateKinds(harness.messages);
     while (
       Date.now() < deadline &&
-      !(states.has("bb/session-options") && states.has("bb/provider-commands"))
+      !(states.has("alia/session-options") && states.has("alia/provider-commands"))
     ) {
       await harness.flushWork();
       await new Promise((resolve) => setTimeout(resolve, 200));
       states = collectStateKinds(harness.messages);
     }
 
-    const commands = states.get("bb/provider-commands") as {
+    const commands = states.get("alia/provider-commands") as {
       commands: Array<{ name: string }>;
     };
     expect(
       commands.commands.map((command) => command.name),
     ).toContain("compact");
 
-    const sessionOptions = states.get("bb/session-options") as {
+    const sessionOptions = states.get("alia/session-options") as {
       options: Array<{ id: string; category?: string; values?: Array<{ id: string }> }>;
     };
     const mode = sessionOptions.options.find((option) => option.id === "mode");

@@ -108,7 +108,7 @@ export async function runTerminalJobRunner(argv: string[]): Promise<number> {
   fs.chmodSync(jobDirectory, 0o700);
   const startedMs = Date.now();
   const startedAt = new Date(startedMs).toISOString();
-  const terminalId = process.env.BB_TERMINAL_SESSION_ID || null;
+  const terminalId = process.env.ALIA_TERMINAL_SESSION_ID || null;
 
   atomicJson(
     launchPath,

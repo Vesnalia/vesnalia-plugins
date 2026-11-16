@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
-import { threadDeltaNotificationParamsSchema } from "@get-bb/plugin-sdk/provider-bridge";
+import { threadDeltaNotificationParamsSchema } from "@vesnalia/plugin-sdk/provider-bridge";
 import { createBridge } from "../src/bridge.js";
 import { record } from "../src/protocol.js";
 import type { ClientCallbacks } from "../src/client.js";
@@ -12,7 +12,7 @@ const options = {
   permissionScope: "full",
   approvalReviewer: null,
   permissionEscalation: null,
-  providerOptions: { executable: process.execPath, bbToolsEnabled: true },
+  providerOptions: { executable: process.execPath, aliaToolsEnabled: true },
   model: "test/model",
 };
 const closes: Array<() => Promise<void>> = [];
@@ -30,7 +30,7 @@ function harness(
     id = 0;
   const messages: Record<string, unknown>[] = [],
     calls: { method: string; params: Record<string, unknown> }[] = [];
-  const cwd = mkdtempSync(join(tmpdir(), "bb-zcode-features-"));
+  const cwd = mkdtempSync(join(tmpdir(), "alia-zcode-features-"));
   const snapshot = {
     session: { sessionId: "native-session" },
     settings: {
@@ -516,7 +516,7 @@ it("advertises each model's context window in model/list descriptions", async ()
     (models as Record<string, unknown>[]).map((m) => m.description),
   ).toEqual([
     "1M token context window",
-    "256K token context budget: caps the window reported to bb, while the model keeps its 1M native window.",
+    "256K token context budget: caps the window reported to VesnALIA, while the model keeps its 1M native window.",
   ]);
 });
 
@@ -655,9 +655,9 @@ it("does not replay an accepted turn/start client request", async () => {
   expect(h.calls.filter((c) => c.method === "session/send")).toHaveLength(1);
 });
 
-it("configures bb skills and exposes original paths on fresh and resumed execution", async () => {
+it("configures VesnALIA skills and exposes original paths on fresh and resumed execution", async () => {
   const h = harness();
-  const path = join(h.cwd, "bb-skills");
+  const path = join(h.cwd, "alia-skills");
   mkdirSync(join(path, "review"), { recursive: true });
   writeFileSync(
     join(path, "review", "SKILL.md"),
@@ -716,9 +716,9 @@ it("rejects relative roots and traversal skill names", async () => {
     ).toBeDefined();
 });
 
-const bbTool = {
+const aliaTool = {
   name: "fixture.echo",
-  description: "Echo text from bb",
+  description: "Echo text from VesnALIA",
   inputSchema: {
     type: "object",
     properties: { text: { type: "string" } },
@@ -732,8 +732,8 @@ const bbTool = {
 async function injectedEndpoint(h: ReturnType<typeof harness>) {
   const servers = h.calls.find((c) => c.method === "session/create")?.params
     .mcpServers as Array<Record<string, unknown>> | undefined;
-  const server = servers?.find((s) => s.name === "bb-bridge");
-  expect(server, "bb tools must reach native startup").toBeDefined();
+  const server = servers?.find((s) => s.name === "alia-bridge");
+  expect(server, "alia tools must reach native startup").toBeDefined();
   const headers = Object.fromEntries(
     (server!.headers as Array<{ name: string; value: string }>).map((h) => [
       h.name,
@@ -754,14 +754,14 @@ async function mcp(
   });
 }
 
-it("forwards injected tool calls to bb and retains text, images and presentation", async () => {
+it("forwards injected tool calls to VesnALIA and retains text, images and presentation", async () => {
   const h = harness();
-  await h.start({ dynamicTools: [bbTool] });
+  await h.start({ dynamicTools: [aliaTool] });
   await h.send("call the tool");
   const endpoint = await injectedEndpoint(h);
   const listing = await (await mcp(endpoint, "tools/list")).json();
   const tool = listing.result.tools[0];
-  expect(tool.inputSchema).toEqual(bbTool.inputSchema);
+  expect(tool.inputSchema).toEqual(aliaTool.inputSchema);
   const pending = mcp(endpoint, "tools/call", {
     name: tool.name,
     arguments: { text: "hello" },
@@ -794,24 +794,24 @@ it("forwards injected tool calls to bb and retains text, images and presentation
       { type: "image", data: "aGVsbG8=", mimeType: "image/png" },
     ],
   });
-  expect(h.deltas().filter((d) => record(d.item).server === "bb")).toEqual(
+  expect(h.deltas().filter((d) => record(d.item).server === "alia")).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
         kind: "item.open",
-        presentation: bbTool.presentation,
+        presentation: aliaTool.presentation,
       }),
       expect.objectContaining({
         kind: "item.close",
         status: "completed",
-        presentation: bbTool.presentation,
+        presentation: aliaTool.presentation,
       }),
     ]),
   );
 });
 
-it("denies unauthenticated MCP access and cancels pending bb calls on stop", async () => {
+it("denies unauthenticated MCP access and cancels pending VesnALIA calls on stop", async () => {
   const h = harness();
-  await h.start({ dynamicTools: [bbTool] });
+  await h.start({ dynamicTools: [aliaTool] });
   await h.send("call tool");
   const endpoint = await injectedEndpoint(h);
   expect((await mcp({ ...endpoint, headers: {} }, "tools/list")).status).toBe(
@@ -832,17 +832,17 @@ it("denies unauthenticated MCP access and cancels pending bb calls on stop", asy
   await expect(mcp(endpoint, "tools/list")).rejects.toThrow();
 });
 
-it("does not publish denied or duplicate bb tools", async () => {
+it("does not publish denied or duplicate VesnALIA tools", async () => {
   const h = harness();
   const duplicate = await h.rpc("thread/start", {
     threadId: "dupe",
     cwd: h.cwd,
     options,
     instructionMode: "append",
-    dynamicTools: [bbTool, bbTool],
+    dynamicTools: [aliaTool, aliaTool],
   });
   expect(duplicate.error).toBeDefined();
-  await h.start({ dynamicTools: [bbTool], disallowedTools: [bbTool.name] });
+  await h.start({ dynamicTools: [aliaTool], disallowedTools: [aliaTool.name] });
   expect(
     h.calls.filter((c) => c.method === "session/create").at(-1)?.params
       .mcpServers,
@@ -911,7 +911,7 @@ it("rejects invalid custom subagents before launching native sessions", async ()
 
 it("refuses unknown tools and calls outside an active turn", async () => {
   const h = harness();
-  await h.start({ dynamicTools: [bbTool] });
+  await h.start({ dynamicTools: [aliaTool] });
   const endpoint = await injectedEndpoint(h);
   const list = await (await mcp(endpoint, "tools/list")).json();
   expect(
@@ -928,9 +928,9 @@ it("refuses unknown tools and calls outside an active turn", async () => {
   expect(h.messages.some((m) => m.method === "item/tool/call")).toBe(false);
 });
 
-it("maps bb tool failures and suppresses duplicate native MCP rows", async () => {
+it("maps VesnALIA tool failures and suppresses duplicate native MCP rows", async () => {
   const h = harness();
-  await h.start({ dynamicTools: [bbTool] });
+  await h.start({ dynamicTools: [aliaTool] });
   await h.send("call tool");
   const endpoint = await injectedEndpoint(h);
   const list = await (await mcp(endpoint, "tools/list")).json();
@@ -938,7 +938,7 @@ it("maps bb tool failures and suppresses duplicate native MCP rows", async () =>
   h.event("tool.updated", {
     kind: "scheduled",
     toolCallId: "native-mcp",
-    toolName: `mcp__bb-bridge__${alias}`,
+    toolName: `mcp__alia-bridge__${alias}`,
     input: {},
   });
   h.event("tool.updated", { kind: "started", toolCallId: "native-mcp" });
@@ -972,9 +972,9 @@ it("maps bb tool failures and suppresses duplicate native MCP rows", async () =>
     ).toBe(true);
 });
 
-it("closes pending bb tool rows before a crashed session boundary", async () => {
+it("closes pending VesnALIA tool rows before a crashed session boundary", async () => {
   const h = harness();
-  await h.start({ dynamicTools: [bbTool] });
+  await h.start({ dynamicTools: [aliaTool] });
   await h.send("call tool");
   const endpoint = await injectedEndpoint(h);
   const list = await (await mcp(endpoint, "tools/list")).json();
@@ -1016,10 +1016,10 @@ it("binds native subagent startup callbacks before the session snapshot arrives"
   });
 });
 
-it("preserves CLI MCP inheritance until the bb tool bridge is enabled", async () => {
+it("preserves CLI MCP inheritance until the VesnALIA tool bridge is enabled", async () => {
   const h = harness();
   await h.start({
-    dynamicTools: [bbTool],
+    dynamicTools: [aliaTool],
     options: { ...options, providerOptions: { executable: process.execPath } },
   });
   expect(
@@ -1029,7 +1029,7 @@ it("preserves CLI MCP inheritance until the bb tool bridge is enabled", async ()
 
 it.each([
   ["model-256k"],
-  ["model-256k", "model-bb-context-256k", "model-bb-context-256k-2"],
+  ["model-256k", "model-alia-context-256k", "model-alia-context-256k-2"],
 ])(
   "allocates a usable budget alias without colliding with native IDs %j",
   async (...nativeIds: string[]) => {
@@ -1199,7 +1199,7 @@ it.each([
   },
 );
 
-it("retains a resumed budget before any new bb prompt is sent", async () => {
+it("retains a resumed budget before any new VesnALIA prompt is sent", async () => {
   const h = harness();
   h.snapshot.settings.model.available[0].contextWindow = 1000000;
   expect(

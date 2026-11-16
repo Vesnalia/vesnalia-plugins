@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { rpcContract } from "../shared/contract";
 import { createGithub } from "./github";
@@ -7,7 +7,7 @@ import { createStore } from "./store";
 
 describe("the model picker", () => {
   it("skips a provider that can't list its models", async () => {
-    const bb = {
+    const alia = {
       sdk: {
         providers: {
           list: async () => [{ id: "broken" }, { id: "working" }],
@@ -17,8 +17,8 @@ describe("the model picker", () => {
           },
         },
       },
-    } as unknown as BbPluginApi;
-    await expect(createModels(bb).pickerSeed()).resolves.toEqual({ providerId: "working", model: "m1", reasoningLevel: "low" });
+    } as unknown as AliaPluginApi;
+    await expect(createModels(alia).pickerSeed()).resolves.toEqual({ providerId: "working", model: "m1", reasoningLevel: "low" });
   });
 });
 
@@ -30,11 +30,11 @@ describe("pending comments", () => {
       { id: "pc_good", json: JSON.stringify(good), created_at: "t" },
     ];
     const warn = vi.fn();
-    const bb = {
+    const alia = {
       log: { warn },
       storage: { database: () => ({ prepare: () => ({ all: () => rows }) }), migrate: vi.fn() },
-    } as unknown as BbPluginApi;
-    const pending = createStore(bb).pendingComments({ owner: "a", repo: "b", number: 1 });
+    } as unknown as AliaPluginApi;
+    const pending = createStore(alia).pendingComments({ owner: "a", repo: "b", number: 1 });
     expect(pending.map((row) => row.id)).toEqual(["pc_good"]);
     expect(warn).toHaveBeenCalledOnce();
   });

@@ -4,4 +4,4 @@ Use **+** for a fresh conversation with any installed model, the output’s **�
 
 Right-click a tab to rename it, mark it unread, copy its transcript or link, or close other chat tabs. Main remains open with its thread.
 
-The same output menu includes BB’s native **Fork into new thread**. The tab strip has no Fork button.
+The same output menu includes VesnALIA’s native **Fork into new thread**. The tab strip has no Fork button.

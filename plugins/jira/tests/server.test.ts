@@ -1,8 +1,8 @@
-// The plugin loaded into BB's fake host, against a fake Jira. These cover the
+// The plugin loaded into VesnALIA's fake host, against a fake Jira. These cover the
 // agent write gate: nothing reaches Jira before approval, a refusal writes
 // nothing, "Always allow" persists, and each action's policy is independent.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeHostResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeHostResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin, { matchTransition, matchUser } from "../server";
 import { PERMISSION_ALWAYS } from "../jira";
 
@@ -112,7 +112,7 @@ async function waitFor<T>(read: () => T | undefined): Promise<T> {
 
 async function load(settings: Record<string, string> = CONFIGURED) {
   const host = createFakePluginHost({ pluginId: "jira", settings });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return host.harness;
 }
 
@@ -344,7 +344,7 @@ describe("project links", () => {
 
   it("scopes jira_search_issues to the thread's linked projects, but not the all-projects tool", async () => {
     const harness = await load();
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-a", jiraProjectKeys: ["web"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-a", jiraProjectKeys: ["web"] });
 
     const scoped = await harness.callAgentTool(
       "jira_search_issues",
@@ -359,14 +359,14 @@ describe("project links", () => {
     await harness.callAgentTool("jira_search_all_issues", { jql: "assignee = currentUser()" }, { projectId: "proj-a" });
     expect(lastSearchJql()).toBe("assignee = currentUser()");
 
-    // A thread in an unlinked BB project is not scoped.
+    // A thread in an unlinked VesnALIA project is not scoped.
     await harness.callAgentTool("jira_search_issues", { jql: "assignee = currentUser()" }, { projectId: "proj-b" });
     expect(lastSearchJql()).toBe("assignee = currentUser()");
   });
 
   it("tells agents about the link only in linked projects", async () => {
     const harness = await load();
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-a", jiraProjectKeys: ["WEB"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-a", jiraProjectKeys: ["WEB"] });
     const instructions = harness.registrations.instructionProvider;
     expect(instructions?.({ threadId: "t", projectId: "proj-a" })).toContain("linked to Jira project WEB");
     expect(instructions?.({ threadId: "t", projectId: "proj-b" })).toBeNull();
@@ -374,14 +374,14 @@ describe("project links", () => {
 
   it("keeps links across a reload and removes a link set to no projects", async () => {
     const host = createFakePluginHost({ pluginId: "jira", settings: CONFIGURED });
-    await plugin(host.bb);
-    await host.harness.callRpc("setProjectLink", { bbProjectId: "proj-a", jiraProjectKeys: ["WEB", "APP"] });
+    await plugin(host.alia);
+    await host.harness.callRpc("setProjectLink", { aliaProjectId: "proj-a", jiraProjectKeys: ["WEB", "APP"] });
     const reloaded = await host.harness.reload(plugin);
-    expect(await reloaded.harness.callRpc("projectLink", { bbProjectId: "proj-a" })).toEqual({
+    expect(await reloaded.harness.callRpc("projectLink", { aliaProjectId: "proj-a" })).toEqual({
       jiraProjectKeys: ["WEB", "APP"],
     });
-    await reloaded.harness.callRpc("setProjectLink", { bbProjectId: "proj-a", jiraProjectKeys: [] });
-    expect(await reloaded.harness.callRpc("projectLink", { bbProjectId: "proj-a" })).toEqual({ jiraProjectKeys: [] });
+    await reloaded.harness.callRpc("setProjectLink", { aliaProjectId: "proj-a", jiraProjectKeys: [] });
+    expect(await reloaded.harness.callRpc("projectLink", { aliaProjectId: "proj-a" })).toEqual({ jiraProjectKeys: [] });
   });
 
   it("keeps the panel's project pick inside the linked scope, including custom JQL", async () => {
@@ -401,7 +401,7 @@ describe("project links", () => {
       created.push(JSON.parse(String(init.body)));
       return new Response(JSON.stringify({ key: "WEB-9" }), { status: 201 });
     });
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-a", jiraProjectKeys: ["WEB"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-a", jiraProjectKeys: ["WEB"] });
     expect(
       await harness.callAgentTool("jira_create_issue", { issueType: "Task", summary: "New" }, { projectId: "proj-a" }),
     ).toContain("Created WEB-9");
@@ -442,7 +442,7 @@ describe("send to agent", () => {
         threads: { spawn: async () => ({ id: "thr-new" }) },
       },
     } as Parameters<typeof createFakePluginHost>[0]);
-    await plugin(host.bb);
+    await plugin(host.alia);
     jira.fetchImpl.mockImplementation(async (url: string, init: RequestInit) => {
       const path = new URL(url).pathname;
       if (path === "/rest/api/3/issue/WEB-1/comment") return new Response(JSON.stringify({ comments: [], total: 0 }));
@@ -451,56 +451,56 @@ describe("send to agent", () => {
     return host.harness;
   }
 
-  it("offers the BB projects linked to the issue's Jira project", async () => {
+  it("offers the VesnALIA projects linked to the issue's Jira project", async () => {
     const harness = await loadWithProjects();
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-api", jiraProjectKeys: ["WEB"] });
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-web", jiraProjectKeys: ["APP", "WEB"] });
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-misc", jiraProjectKeys: ["OPS"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-api", jiraProjectKeys: ["WEB"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-web", jiraProjectKeys: ["APP", "WEB"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-misc", jiraProjectKeys: ["OPS"] });
     const laptop = { hostId: "host-laptop", name: "laptop", connected: true, isDefault: true };
     const desktop = { hostId: "host-desktop", name: "desktop", connected: false, isDefault: false };
     expect(await harness.callRpc("agentTargets", { key: "WEB-1" })).toEqual({
       jiraProjectKey: "WEB",
       linked: [
-        { bbProjectId: "proj-api", name: "api", hosts: [laptop] },
-        { bbProjectId: "proj-web", name: "web-app", hosts: [laptop, desktop] },
+        { aliaProjectId: "proj-api", name: "api", hosts: [laptop] },
+        { aliaProjectId: "proj-web", name: "web-app", hosts: [laptop, desktop] },
       ],
       all: [
-        { bbProjectId: "proj-api", name: "api", hosts: [laptop] },
-        { bbProjectId: "proj-misc", name: "misc", hosts: [] },
-        { bbProjectId: "proj-web", name: "web-app", hosts: [laptop, desktop] },
+        { aliaProjectId: "proj-api", name: "api", hosts: [laptop] },
+        { aliaProjectId: "proj-misc", name: "misc", hosts: [] },
+        { aliaProjectId: "proj-web", name: "web-app", hosts: [laptop, desktop] },
       ],
     });
   });
 
-  it("starts the thread in the chosen BB project", async () => {
+  it("starts the thread in the chosen VesnALIA project", async () => {
     const harness = await loadWithProjects();
-    expect(await harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-api", note: "fix it" })).toEqual({
+    expect(await harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-api", note: "fix it" })).toEqual({
       threadId: "thr-new",
     });
     const [spawn] = harness.sdk.callsTo("threads.spawn")[0] as [{ projectId: string; prompt: string }];
     expect(spawn.projectId).toBe("proj-api");
     expect(spawn.prompt).toContain("fix it");
     // Not asked to link, so no link appears.
-    expect(await harness.callRpc("projectLink", { bbProjectId: "proj-api" })).toEqual({ jiraProjectKeys: [] });
+    expect(await harness.callRpc("projectLink", { aliaProjectId: "proj-api" })).toEqual({ jiraProjectKeys: [] });
   });
 
   it("links the Jira project when asked, keeping existing links", async () => {
     const harness = await loadWithProjects();
-    await harness.callRpc("setProjectLink", { bbProjectId: "proj-api", jiraProjectKeys: ["OPS"] });
-    await harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-api", linkProject: true });
-    expect(await harness.callRpc("projectLink", { bbProjectId: "proj-api" })).toEqual({ jiraProjectKeys: ["OPS", "WEB"] });
+    await harness.callRpc("setProjectLink", { aliaProjectId: "proj-api", jiraProjectKeys: ["OPS"] });
+    await harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-api", linkProject: true });
+    expect(await harness.callRpc("projectLink", { aliaProjectId: "proj-api" })).toEqual({ jiraProjectKeys: ["OPS", "WEB"] });
   });
 
   it("works in the project's own checkout by default", async () => {
     const harness = await loadWithProjects();
-    await harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-web" });
+    await harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-web" });
     const [spawn] = harness.sdk.callsTo("threads.spawn")[0] as [{ environment: unknown }];
     expect(spawn.environment).toEqual({ type: "project-default" });
   });
 
   it("starts a new worktree when asked", async () => {
     const harness = await loadWithProjects();
-    await harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-web", worktree: true });
+    await harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-web", worktree: true });
     const [spawn] = harness.sdk.callsTo("threads.spawn")[0] as [{ environment: unknown }];
     expect(spawn.environment).toEqual({
       type: "host",
@@ -510,10 +510,10 @@ describe("send to agent", () => {
 
   it("runs on the chosen machine, in its checkout or in a worktree", async () => {
     const harness = await loadWithProjects();
-    await harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-web", hostId: "host-desktop" });
+    await harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-web", hostId: "host-desktop" });
     await harness.callRpc("sendToAgent", {
       key: "WEB-1",
-      bbProjectId: "proj-web",
+      aliaProjectId: "proj-web",
       hostId: "host-desktop",
       worktree: true,
     });
@@ -532,7 +532,7 @@ describe("send to agent", () => {
 
   it("leaves the agent to the project's defaults unless one is picked", async () => {
     const harness = await loadWithProjects();
-    await harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-web" });
+    await harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-web" });
     const [spawn] = harness.sdk.callsTo("threads.spawn")[0] as [Record<string, unknown>];
     expect(spawn).not.toHaveProperty("providerId");
     expect(spawn).not.toHaveProperty("model");
@@ -542,7 +542,7 @@ describe("send to agent", () => {
     const harness = await loadWithProjects();
     await harness.callRpc("sendToAgent", {
       key: "WEB-1",
-      bbProjectId: "proj-web",
+      aliaProjectId: "proj-web",
       execution: { providerId: "claude-code", model: "claude-opus-5-5", reasoningLevel: "high", serviceTier: "fast" },
     });
     const [spawn] = harness.sdk.callsTo("threads.spawn")[0] as [Record<string, unknown>];
@@ -565,7 +565,7 @@ describe("send to agent", () => {
     await expect(
       harness.callRpc("sendToAgent", {
         key: "WEB-1",
-        bbProjectId: "proj-web",
+        aliaProjectId: "proj-web",
         execution: { providerId: "claude-code", model: "", reasoningLevel: "high" },
       }),
     ).rejects.toThrow();
@@ -581,32 +581,32 @@ describe("send to agent", () => {
       serviceTier: "default",
       permissionMode: "auto",
     }));
-    expect(await harness.callRpc("executionDefaults", { bbProjectId: "proj-web" })).toEqual({
+    expect(await harness.callRpc("executionDefaults", { aliaProjectId: "proj-web" })).toEqual({
       providerId: "codex",
       model: "gpt-5",
       reasoningLevel: "medium",
       serviceTier: "default",
     });
-    // No defaults, or none readable, leaves the picker to bb's own default.
+    // No defaults, or none readable, leaves the picker to VesnALIA's own default.
     harness.sdk.stub("projects.defaultExecutionOptions", async () => null);
-    expect(await harness.callRpc("executionDefaults", { bbProjectId: "proj-web" })).toBeNull();
+    expect(await harness.callRpc("executionDefaults", { aliaProjectId: "proj-web" })).toBeNull();
     harness.sdk.stub("projects.defaultExecutionOptions", async () => {
       throw new Error("offline");
     });
-    expect(await harness.callRpc("executionDefaults", { bbProjectId: "proj-web" })).toBeNull();
+    expect(await harness.callRpc("executionDefaults", { aliaProjectId: "proj-web" })).toBeNull();
   });
 
   it("refuses a machine the project is not checked out on", async () => {
     const harness = await loadWithProjects();
     await expect(
-      harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-api", hostId: "host-desktop" }),
+      harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-api", hostId: "host-desktop" }),
     ).rejects.toThrow("not checked out on that machine");
     expect(harness.sdk.callsTo("threads.spawn")).toEqual([]);
   });
 
-  it("refuses an unknown BB project without spawning", async () => {
+  it("refuses an unknown VesnALIA project without spawning", async () => {
     const harness = await loadWithProjects();
-    await expect(harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-gone" })).rejects.toThrow(
+    await expect(harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-gone" })).rejects.toThrow(
       "no longer exists",
     );
     expect(harness.sdk.callsTo("threads.spawn")).toEqual([]);
@@ -614,7 +614,7 @@ describe("send to agent", () => {
 });
 
 // A done issue has no more work in it, so the threads "Send to agent" started
-// for it are filed away on BB Sidebar's settled shelf. Sidebar is optional:
+// for it are filed away on VesnALIA Sidebar's settled shelf. Sidebar is optional:
 // every failure here leaves the transition itself alone.
 describe("settling threads when an issue is done", () => {
   async function loadWithThread(settings: Record<string, string | boolean> = {}) {
@@ -632,13 +632,13 @@ describe("settling threads when an issue is done", () => {
         plugins: { callRpc: async () => ({ ok: true }) },
       },
     } as Parameters<typeof createFakePluginHost>[0]);
-    await plugin(host.bb);
+    await plugin(host.alia);
     jira.fetchImpl.mockImplementation(async (url: string, init: RequestInit) => {
       const path = new URL(url).pathname;
       if (path === "/rest/api/3/issue/WEB-1/comment") return new Response(JSON.stringify({ comments: [], total: 0 }));
       return fakeJira().fetchImpl(url, init);
     });
-    await host.harness.callRpc("sendToAgent", { key: "WEB-1", bbProjectId: "proj-web" });
+    await host.harness.callRpc("sendToAgent", { key: "WEB-1", aliaProjectId: "proj-web" });
     return host.harness;
   }
 
@@ -652,7 +652,7 @@ describe("settling threads when an issue is done", () => {
     const harness = await loadWithThread();
     await harness.callRpc("moveIssue", { key: "WEB-1", toStatus: "Done" });
     expect(settleCalls(harness)).toEqual([
-      { pluginId: "bb-sidebar", method: "settle", input: { threadId: "thr-web-1" } },
+      { pluginId: "alia-sidebar", method: "settle", input: { threadId: "thr-web-1" } },
     ]);
   });
 
@@ -702,7 +702,7 @@ describe("settling threads when an issue is done", () => {
 
     await harness.callRpc("transitionIssue", { key: "WEB-1", transitionId: "31" });
     expect(settleCalls(harness)).toEqual([
-      { pluginId: "bb-sidebar", method: "settle", input: { threadId: "thr-web-1" } },
+      { pluginId: "alia-sidebar", method: "settle", input: { threadId: "thr-web-1" } },
     ]);
   });
 
@@ -712,10 +712,10 @@ describe("settling threads when an issue is done", () => {
     expect(settleCalls(harness)).toEqual([]);
   });
 
-  it("completes the transition when BB Sidebar is not installed", async () => {
+  it("completes the transition when VesnALIA Sidebar is not installed", async () => {
     const harness = await loadWithThread();
     harness.sdk.stub("plugins.callRpc", async () => {
-      throw new Error("plugin bb-sidebar is not installed");
+      throw new Error("plugin alia-sidebar is not installed");
     });
     expect(await harness.callRpc("moveIssue", { key: "WEB-1", toStatus: "Done" })).toEqual({ ok: true });
     expect(harness.logEntries.some((entry) => entry.message.includes("Could not settle thr-web-1"))).toBe(true);

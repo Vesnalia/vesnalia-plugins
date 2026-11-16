@@ -40,7 +40,7 @@ function claudeProfileDirs(home: string): string[] {
  * personal profiles sets it per shell — their sessions are then in `~/.claude-work`
  * and invisible to a lookup hardcoded on `~/.claude`.
  *
- * Reading the variable is necessary but not sufficient: bb's server does not
+ * Reading the variable is necessary but not sufficient: VesnALIA's server does not
  * inherit the shell a session was started from, so a profile directory that no
  * live environment points at can only be found by looking for it. Hence the
  * sibling scan, which costs one readdir of the home directory.
@@ -114,7 +114,7 @@ const cwdCache = new MtimeCache<Promise<string | null>>();
 export const claudeAdapter: AgentAdapter = {
   id: "claude",
   label: "Claude Code",
-  bbProviderId: "claude-code",
+  aliaProviderId: "claude-code",
 
   async list(cwd: string, home: string = os.homedir()): Promise<SessionSummary[]> {
     const out: SessionSummary[] = [];

@@ -3,10 +3,10 @@
  * Search the workspace by path, open a file, and comment on its lines with the gutter "+" or on the
  * whole file, as in the diff; the comments are sent to the agent the same way. A thread keeps the
  * text of its lines and is found again by it when the file changes. Files with comments are listed
- * first. Diffity's Files tab, on bb's file reads (whichever machine holds the workspace).
+ * first. Diffity's Files tab, on VesnALIA's file reads (whichever machine holds the workspace).
  */
 import { File as PierreFile, type LineAnnotation, type SelectedLineRange } from "@pierre/diffs/react";
-import { experimental_useCodeTheme, useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_useCodeTheme, useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";

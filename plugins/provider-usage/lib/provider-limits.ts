@@ -13,8 +13,8 @@ function asLimitSlice(value: unknown): ProviderLimitSlice {
 }
 
 /**
- * BB 0.41 keys usage results by provider id (`claude-code`, `acp-cursor`).
- * Older BB releases exposed the UI aliases (`claudeCode`, `cursor`). Accept
+ * VesnALIA 0.41 keys usage results by provider id (`claude-code`, `acp-cursor`).
+ * Older VesnALIA releases exposed the UI aliases (`claudeCode`, `cursor`). Accept
  * both contracts so one plugin release remains compatible across upgrades.
  */
 export function normalizeProviderLimits(

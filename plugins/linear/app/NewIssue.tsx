@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,7 +80,7 @@ export function NewIssueDialog({
   onCreated?: () => void;
 }) {
   const rpc = useLinearRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [teamId, setTeamId] = useState<string | null>(null);
@@ -218,7 +218,7 @@ export function NewIssueDialog({
             ) : targets.status === "ready" && teams.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No team here has write access — bind one with{" "}
-                <code className="text-foreground">bb linear bind &lt;TEAM-KEY&gt;</code>.
+                <code className="text-foreground">alia linear bind &lt;TEAM-KEY&gt;</code>.
               </p>
             ) : null}
           </div>

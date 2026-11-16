@@ -26,7 +26,7 @@ const send = async (settings: DoneSettings) => {
 const pr = (doc: Doc) => (doc.merge = { strategy: "pr", describe: "loom", squash: false, max_fix_rounds: 0 });
 const PR = (n: number) => `https://github.com/acme/shop/pull/${n}`;
 const minute = (at: number) => `${new Date(at).toISOString().slice(0, 16).replace("T", " ")}Z`;
-const recordSpawns = () => h.bb.callsTo("spawnThread").map(([args]) => args as SpawnArgs).filter((args) => args.metadata.role === "record");
+const recordSpawns = () => h.alia.callsTo("spawnThread").map(([args]) => args as SpawnArgs).filter((args) => args.metadata.role === "record");
 
 /** Approves one ticket and runs the merge queue: it merges into its repo's integration branch, or opens its pull request on the pr strategy. */
 async function queueOne(key: string): Promise<void> {
@@ -161,7 +161,7 @@ describe("sendRecords", () => {
     await send(NO_HOOK);
     expect(row()?.state).toBe("skipped");
     expect(hookRuns()).toHaveLength(0);
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(0);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(0);
   });
 
   it("sends the full record to the hook in the checkout, with stdin and the LOOM_ variables", async () => {
@@ -207,9 +207,9 @@ describe("sendRecords", () => {
 
   it("starts the summary agent on the reviewer's model with the record as agent-only detail", async () => {
     const threadId = await summarizing();
-    const args = h.bb.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
+    const args = h.alia.callsTo("spawnThread").at(-1)![0] as SpawnArgs;
     expect(args).toMatchObject({
-      bbProjectId: "proj_1",
+      aliaProjectId: "proj_1",
       hostId: "host_1",
       baseBranch: "origin/main",
       title: "CSV · record",
@@ -224,52 +224,52 @@ describe("sendRecords", () => {
     expect(hookRuns()).toHaveLength(0);
   });
 
-  it("starts the agent with no section when bb refuses the project's section, as a finished project's often is deleted", async () => {
+  it("starts the agent with no section when VesnALIA refuses the project's section, as a finished project's often is deleted", async () => {
     await finishedProject();
     h.store.updateProject(project().id, { section_id: "sec_gone" });
-    h.bb.spawnError = (args) => (args.sectionId === null ? null : new SpawnRefusedError(404, "HTTP 404: Section not found"));
+    h.alia.spawnError = (args) => (args.sectionId === null ? null : new SpawnRefusedError(404, "HTTP 404: Section not found"));
     await send(SUMMARY);
-    expect(h.bb.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).sectionId)).toEqual(["sec_gone", null]);
+    expect(h.alia.callsTo("spawnThread").map(([args]) => (args as SpawnArgs).sectionId)).toEqual(["sec_gone", null]);
     expect(row()).toMatchObject({ state: "summarizing", thread_id: expect.stringMatching(/^thr_w/) });
   });
 
   it("waits while the agent works or is idle with no output, then sends its output as the summary and archives it", async () => {
     const threadId = await summarizing();
     await send(SUMMARY);
-    h.bb.threads.get(threadId)!.status = "idle";
+    h.alia.threads.get(threadId)!.status = "idle";
     await send(SUMMARY);
     expect(row()?.state).toBe("summarizing");
     expect(hookRuns()).toHaveLength(0);
 
-    h.bb.outputs.set(threadId, "## Goal\nExport orders.\n");
+    h.alia.outputs.set(threadId, "## Goal\nExport orders.\n");
     await send(SUMMARY);
     expect(hookRuns()).toHaveLength(1);
     expect(hookRuns()[0]).toMatchObject({ stdin: "## Goal\nExport orders.", env: expect.objectContaining({ LOOM_RECORD: "summary" }) });
-    expect(h.bb.callsTo("archive").map(([id]) => id)).toContain(threadId);
+    expect(h.alia.callsTo("archive").map(([id]) => id)).toContain(threadId);
     expect(row()?.state).toBe("sent");
     expect(eventsOf("record.sent")).toEqual([{ kind: "summary" }]);
   });
 
   it("tries the agent again while it cannot start or get an environment, then sends the full record once the 30 minutes are up", async () => {
     await finishedProject();
-    h.bb.spawnError = () => new Error("No free slot.");
+    h.alia.spawnError = () => new Error("No free slot.");
     await send(SUMMARY);
     expect(row()).toMatchObject({ state: "pending", thread_id: null, retry_at: h.clock.t + 2 * 60_000 });
     await send(SUMMARY);
-    expect(h.bb.callsTo("spawnThread")).toHaveLength(1);
+    expect(h.alia.callsTo("spawnThread")).toHaveLength(1);
 
-    // A thread whose environment bb could not provision is tried again too.
-    h.bb.spawnError = null;
+    // A thread whose environment VesnALIA could not provision is tried again too.
+    h.alia.spawnError = null;
     h.clock.advance(2 * 60_000);
     await send(SUMMARY);
     const threadId = row()!.thread_id!;
-    h.bb.threads.get(threadId)!.status = "error";
-    h.bb.systemErrors.set(threadId, { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
+    h.alia.threads.get(threadId)!.status = "error";
+    h.alia.systemErrors.set(threadId, { code: "thread_provisioning_failed", message: "Provisioning thread failed", detail: "No free slot." });
     await send(SUMMARY);
     expect(row()).toMatchObject({ state: "pending", thread_id: null });
-    expect(h.bb.callsTo("archive").map(([id]) => id)).toContain(threadId);
+    expect(h.alia.callsTo("archive").map(([id]) => id)).toContain(threadId);
 
-    h.bb.spawnError = () => new Error("No free slot.");
+    h.alia.spawnError = () => new Error("No free slot.");
     for (let n = 0; n < 20 && row()?.state === "pending"; n++) {
       h.clock.advance(2 * 60_000);
       await send(SUMMARY);
@@ -283,37 +283,37 @@ describe("sendRecords", () => {
     const fallbackOf = () => String(eventsOf("record.sent").at(-1)?.fallback);
 
     await finishedProject();
-    h.bb.spawnError = () => new SpawnRefusedError(400, "HTTP 400: bb refused");
+    h.alia.spawnError = () => new SpawnRefusedError(400, "HTTP 400: VesnALIA refused");
     await send(SUMMARY);
-    expect(fallbackOf()).toMatch(/could not start.*bb refused/);
+    expect(fallbackOf()).toMatch(/could not start.*alia refused/);
 
     h = makeCtx();
     let threadId = await summarizing();
-    h.bb.threads.get(threadId)!.archivedAt = 1;
+    h.alia.threads.get(threadId)!.archivedAt = 1;
     await send(SUMMARY);
     expect(fallbackOf()).toMatch(/gone/);
 
     h = makeCtx();
     threadId = await summarizing();
-    h.bb.threads.delete(threadId);
+    h.alia.threads.delete(threadId);
     await send(SUMMARY);
     expect(fallbackOf()).toMatch(/gone/);
 
     h = makeCtx();
     threadId = await summarizing();
-    h.bb.threads.get(threadId)!.status = "error";
+    h.alia.threads.get(threadId)!.status = "error";
     await send(SUMMARY);
     expect(fallbackOf()).toMatch(/failed/);
-    expect(h.bb.callsTo("archive").map(([id]) => id)).toEqual([threadId]);
-    expect(h.bb.callsTo("stop")).toHaveLength(0);
+    expect(h.alia.callsTo("archive").map(([id]) => id)).toEqual([threadId]);
+    expect(h.alia.callsTo("stop")).toHaveLength(0);
 
     h = makeCtx();
     threadId = await summarizing();
     h.clock.advance(SUMMARY_TIMEOUT_MS + 1);
     await send(SUMMARY);
     expect(fallbackOf()).toMatch(/30 minutes/);
-    expect(h.bb.callsTo("stop").map(([id]) => id)).toEqual([threadId]);
-    expect(h.bb.callsTo("archive").map(([id]) => id)).toEqual([threadId]);
+    expect(h.alia.callsTo("stop").map(([id]) => id)).toEqual([threadId]);
+    expect(h.alia.callsTo("archive").map(([id]) => id)).toEqual([threadId]);
     expect(hookRuns()[0]).toMatchObject({ stdin: projectRecord(h.store, project()), env: expect.objectContaining({ LOOM_RECORD: "full" }) });
     expect(row()?.state).toBe("sent");
   });
@@ -331,7 +331,7 @@ describe("sendRecords", () => {
     await send(FULL);
     expect(row()?.state).toBe("failed");
     expect(hookRuns()).toHaveLength(0);
-    expect(String(eventsOf("record.failed")[0]?.reason)).toContain("bb loom report csv --send");
+    expect(String(eventsOf("record.failed")[0]?.reason)).toContain("alia loom report csv --send");
   });
 
   it("starts one delivery per record however often it is called", async () => {
@@ -354,9 +354,9 @@ describe("a multi-repo project", () => {
       [
         "## Goal\n\nLet people export their orders as a CSV file from the admin page.\n",
         "## Repos\n",
-        "- web: bb project proj_web, base main, integration branch loom/csv.",
-        "- api: bb project proj_api, base trunk, integration branch loom/csv.",
-        "- docs: bb project proj_docs, base main, integration branch loom/csv.\n",
+        "- web: VesnALIA project proj_web, base main, integration branch loom/csv.",
+        "- api: VesnALIA project proj_api, base trunk, integration branch loom/csv.",
+        "- docs: VesnALIA project proj_docs, base main, integration branch loom/csv.\n",
         "## Outcome\n",
         "- web: not landed yet; its merged work is on the integration branch loom/csv.",
         "- api: not landed yet; its merged work is on the integration branch loom/csv.",
@@ -391,7 +391,7 @@ describe("a multi-repo project", () => {
     );
   });
 
-  it("on the pull request strategy lists each repo's bb project and base, and gives each repo its tickets' merged and open pull requests, or no merged work", async () => {
+  it("on the pull request strategy lists each repo's VesnALIA project and base, and gives each repo its tickets' merged and open pull requests, or no merged work", async () => {
     await seedRepoProject(h, (doc) => {
       pr(doc);
       doc.ticket.push({ ref: "web-docs", title: "Web docs", body: "Write the docs.", acceptance: ["WHEN the docs are built THE SYSTEM SHALL list the export"], scope: ["docs/**"], repo: "web" });
@@ -418,18 +418,18 @@ describe("a multi-repo project", () => {
     await pollPullRequests(h.ctx, project());
     const at = minute(h.clock.t);
     const record = projectRecord(h.store, project());
-    expect(record).toContain("## Repos\n\n- web: bb project proj_web, base main.\n- api: bb project proj_api, base trunk.\n- docs: bb project proj_docs, base main.\n\n## Outcome");
+    expect(record).toContain("## Repos\n\n- web: VesnALIA project proj_web, base main.\n- api: VesnALIA project proj_api, base trunk.\n- docs: VesnALIA project proj_docs, base main.\n\n## Outcome");
     expect(outcomeOf()).toBe(`## Outcome\n\n- web: merged as ${PR(2)} (CSV-1, ${at}); ${PR(3)} (CSV-3) is still open.\n- api: merged as ${PR(1)} (CSV-2, ${at}).\n- docs: no merged work.\n\n`);
     expect(record).not.toContain("One pull request per ticket");
     expect(record).toContain(`### CSV-2 · Export endpoint (done)\n\nRepo: api\n\nServe the file.\n\nPull request: ${PR(1)}\n`);
   });
 
-  it("starts the summary agent in the first repo's bb project from that repo's fresh base", async () => {
+  it("starts the summary agent in the first repo's VesnALIA project from that repo's fresh base", async () => {
     await mergedRepoProject();
     await land(h.ctx, "csv", human);
     await send(SUMMARY);
     expect(recordSpawns()).toHaveLength(1);
-    expect(recordSpawns()[0]).toMatchObject({ bbProjectId: "proj_web", hostId: "host_1", baseBranch: "loom/csv", title: "CSV · record", detail: projectRecord(h.store, project()) });
+    expect(recordSpawns()[0]).toMatchObject({ aliaProjectId: "proj_web", hostId: "host_1", baseBranch: "loom/csv", title: "CSV · record", detail: projectRecord(h.store, project()) });
     expect(row()?.state).toBe("summarizing");
 
     // On the pull request strategy the fresh base is the repo's remote base branch, so api's first place shows.
@@ -441,7 +441,7 @@ describe("a multi-repo project", () => {
     for (const key of ["CSV-1", "CSV-2"]) h.store.setTicketState(ticketOf(h, key).id, "cancelled", "human");
     expect(finishIfComplete(h.ctx, project())).toBe(true);
     await send(SUMMARY);
-    expect(recordSpawns()[0]).toMatchObject({ bbProjectId: "proj_api", baseBranch: "upstream/trunk" });
+    expect(recordSpawns()[0]).toMatchObject({ aliaProjectId: "proj_api", baseBranch: "upstream/trunk" });
   });
 
   it("gives the hook the first repo's pull request in [[repo]] order and every repo's, one per line, in the Loom project's checkout", async () => {

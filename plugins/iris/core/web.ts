@@ -3,7 +3,7 @@
 // I/O; web-source.ts fetches, caps and caches. A block never supplies a URL:
 // it names a place or describes a photo, and the server builds the request.
 
-export const USER_AGENT = "Iris/0.1 (bb plugin; https://github.com/vburojevic/bb-plugin-iris)";
+export const USER_AGENT = "Iris/0.1 (VesnALIA plugin; https://github.com/vburojevic/bb-plugin-iris)";
 
 /** Every host the server may fetch from, and nothing else. */
 export const WEB_HOSTS = ["tile.openstreetmap.org", "photon.komoot.io", "nominatim.openstreetmap.org", "commons.wikimedia.org", "upload.wikimedia.org", "thumb.wikimedia.org"] as const;
@@ -174,7 +174,7 @@ export function readCommons(body: unknown): CommonsPick | null {
     if (!pageUrl || allowedHost(pageUrl) !== "commons.wikimedia.org") continue;
     const meta = obj(info.extmetadata);
     const field = (k: string) => obj(meta[k]).value;
-    // Commons often lists licenses over http; bb opens only https links.
+    // Commons often lists licenses over http; VesnALIA opens only https links.
     const licenseUrl = text(field("LicenseUrl"), 500)?.replace(/^http:\/\//i, "https://");
     const title = plainText(field("ObjectName"), 160) ?? (text(page.title, 300) ?? "").replace(/^File:/, "").replace(/\.[a-z0-9]+$/i, "");
     return {

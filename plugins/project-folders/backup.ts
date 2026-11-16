@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type Database from "better-sqlite3";
 
-export const BACKUP_KIND = "bb-project-folders-backup";
+export const BACKUP_KIND = "alia-project-folders-backup";
 export const BACKUP_VERSION = 1;
 
 export const DURABLE_TABLES = [

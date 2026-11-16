@@ -11,7 +11,7 @@ import {
   experimental_runBridgeConformance,
   experimental_formatConformanceReport,
   type BridgeJsonRpcOutputMessage,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { fxProviderDeclaration } from "../server.js";
 
@@ -291,7 +291,7 @@ it.each([false, true])(
         }),
       ]),
     });
-    // A stored BB preference must not become an unsupported fx config request.
+    // A stored VesnALIA preference must not become an unsupported fx config request.
     const configured = { ...options(), reasoningLevel: "high" };
     const started = (await bridge.request("thread/start", {
       threadId: "fx-reasoning",

@@ -13,7 +13,7 @@ import path from "node:path";
 import { editFolder } from "./folder-files";
 const roots: string[] = [];
 async function root() {
-  const p = await mkdtemp(path.join(tmpdir(), "bb-folders-"));
+  const p = await mkdtemp(path.join(tmpdir(), "alia-folders-"));
   roots.push(p);
   return p;
 }

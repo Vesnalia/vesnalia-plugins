@@ -19,7 +19,7 @@ import {
   experimental_defineHostEntry,
   type ExperimentalHostRpcContext,
   type ExperimentalHostWorkerLease,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import {
   COMPLETION_MAX_BYTES,
   COMPLETION_MAX_LINES,
@@ -364,7 +364,7 @@ export class TaskManager {
     commandInput: string,
     cwd: string,
     env: Record<
-      "BB_THREAD_ID" | "BB_PROJECT_ID" | "BB_ENVIRONMENT_ID" | "BB_THREAD_STORAGE",
+      "ALIA_THREAD_ID" | "ALIA_PROJECT_ID" | "ALIA_ENVIRONMENT_ID" | "ALIA_THREAD_STORAGE",
       string
     >,
     context: HostContext,

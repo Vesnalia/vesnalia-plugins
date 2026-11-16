@@ -1,10 +1,10 @@
 # 055: Cloud boxes run on cloud hosts first, and a cloud VM per box later
 
 Status: accepted, 7 October 2026. Reviewed on 22 October 2026 against
-BB 0.46.0 and that day's code: see [Since 7 October](#since-7-october), and
+VesnALIA 0.46.0 and that day's code: see [Since 7 October](#since-7-october), and
 the plan for steps 1 and 2 in [Cloud hosts](../research/cloud-hosts.md).
 Research only: nothing is built, and no cloud account was used. Extends
-[042](042-a-docker-host-can-be-a-bb-machine.md): a cloud VM is a Docker
+[042](042-a-docker-host-can-be-a-alia-machine.md): a cloud VM is a Docker
 host like any other; and
 [053](053-microsandbox-runs-light-linux-boxes-as-microvms.md): a cloud
 host with KVM runs microsandbox.
@@ -14,11 +14,11 @@ host with KVM runs microsandbox.
 The operator wants boxes in a public cloud, and has Hetzner and AWS
 accounts to test on. There are two ways to build it:
 
-- **A. A cloud VM per box.** bb-box creates and deletes a server for each
+- **A. A cloud VM per box.** alia-box creates and deletes a server for each
   box through the provider's API: a Hetzner Cloud server or an EC2
   instance.
 - **B. Cloud hosts for the backends we have.** A cloud VM or bare-metal
-  server runs Docker or microsandbox, and bb-box places boxes on it as it
+  server runs Docker or microsandbox, and alia-box places boxes on it as it
   does on any Docker or microsandbox host. What is new is making, sizing
   and removing the hosts.
 
@@ -45,26 +45,26 @@ were not read again.
 | API limits | 3,600 requests an hour per project, refilling one a second, with `RateLimit-*` headers; `resource_limit_exceeded` past the project's limits | Robot API | per action, with retries |
 | Records on a server | labels, listed by label selector; server names unique in a project | | tags set at launch (`TagSpecifications`); `ClientToken` makes a launch idempotent |
 
-From bb-box's own measurements: a Docker or microsandbox box is ready 0.3
+From alia-box's own measurements: a Docker or microsandbox box is ready 0.3
 to 0.7 s after it is asked for on a host that has room
 ([031](031-docker-boxes-are-reached-through-docker-exec.md),
 [053](053-microsandbox-runs-light-linux-boxes-as-microvms.md)), and a box
-enrols in BB about 5 s after it is ready.
+enrols in VesnALIA about 5 s after it is ready.
 
 ## Decision
 
 **Build B first, in two steps, then A only for what B cannot serve.**
 
 1. **Hosts made by hand, now, with no new code.** A cloud VM that runs
-   Docker and is a BB machine is a Docker host through BB's relay
-   ([042](042-a-docker-host-can-be-a-bb-machine.md)): it needs no inbound
-   port, and its boxes start in under a second. Where BB's server is
+   Docker and is a VesnALIA machine is a Docker host through VesnALIA's relay
+   ([042](042-a-docker-host-can-be-a-alia-machine.md)): it needs no inbound
+   port, and its boxes start in under a second. Where VesnALIA's server is
    reachable only on a tailnet, as it is for the operator's, the VM joins
    the tailnet first. A Hetzner CX or CCX server
    serves Docker boxes; an AWS C7i or M7i instance with nested
    virtualization, or a Hetzner AX server, serves microsandbox boxes too,
    once 053's backend is built. The setup guide gains a page for it.
-2. **Hosts made by bb-box.** A cloud backend makes hosts through the
+2. **Hosts made by alia-box.** A cloud backend makes hosts through the
    provider's API from a host image, places boxes on them as the Docker
    and microsandbox backends do, and deletes a host that has had no box for
    a set time. Hetzner Cloud first, with Docker, as it is the cheaper and
@@ -88,13 +88,13 @@ Why B first:
   cheaper than a share of an m7i.2xlarge unless idle boxes are packed beyond
   their size (see Cost).
 - **It reuses what works.** The Docker backend, its images and the relay
-  through BB machines are built, and microsandbox is being built. A VM per
+  through VesnALIA machines are built, and microsandbox is being built. A VM per
   box needs a new image pipeline for each provider.
 - **It suits the operator's choice of microsandbox**, which needs KVM:
   only a host can give it on Hetzner, and nested virtualization does on
   AWS.
 
-**Infrastructure as code stays out of the hot path.** bb-box creates and
+**Infrastructure as code stays out of the hot path.** alia-box creates and
 deletes hosts and boxes by calling the provider's API itself, recording
 the claim first and the owner on the server, as every backend does. A
 state file would be a second record that can disagree with the provider's,
@@ -102,14 +102,14 @@ and would slow each call (see [The tools](#the-tools-opentofu-and-alchemy)).
 
 - **For our tests: OpenTofu**, for the environment we create and destroy
   whole: the AWS security group and key pair, and a test host.
-- **For users: neither is needed.** On Hetzner, bb-box needs only an API
+- **For users: neither is needed.** On Hetzner, alia-box needs only an API
   token: it makes its SSH key, firewall and images itself. On AWS, the one
-  thing the account's owner must make is bb-box's IAM policy, which the
+  thing the account's owner must make is alia-box's IAM policy, which the
   setup guide gives as JSON, with an OpenTofu module beside it for those
   who use one.
-- **Alchemy, not now.** It is TypeScript like bb-box, and has Hetzner and
+- **Alchemy, not now.** It is TypeScript like alia-box, and has Hetzner and
   EC2 resources, but version 2 is in beta (its 81st), built on Effect, a
-  programming model bb-box does not use, and needs the provider's API even
+  programming model alia-box does not use, and needs the provider's API even
   to plan.
 
 ## How the two models compare
@@ -119,11 +119,11 @@ and would slow each call (see [The tools](#the-tools-opentofu-and-alchemy)).
 | Time to a ready box | 15 to 40 s, plus enrolment | 0.3 to 0.7 s on a host with room, plus enrolment; a new host 30 s to a few minutes |
 | Cost of a small box running | Hetzner EUR 0.0095/h with its IPv4; AWS t3.medium about $0.05/h with IPv4 and disk | a share of the host: Hetzner about EUR 0.007/h, AWS m7i.2xlarge about $0.058/h at its nominal size |
 | Cost of a stopped box | Hetzner: the full price; AWS: its disk, about $0.003/h | nothing extra; the host costs the same |
-| Cost at rest, with no boxes | nothing | the hosts kept, until bb-box deletes them |
+| Cost at rest, with no boxes | nothing | the hosts kept, until alia-box deletes them |
 | Images | a snapshot or AMI per provider, from our guest scripts | a host image with Docker, microsandbox and our OCI images loaded |
-| Reaching BB | each box reaches BB's server; on a tailnet, each joins it | the host reaches BB, and its boxes reach it through the host |
-| bb-box reaching boxes | SSH to each box's public address, or the tailnet | a host made by hand: as a BB machine, through BB (042). A host bb-box makes: one SSH connection over the tailnet, forwarding Docker's socket ([plan](../research/cloud-hosts.md#how-bb-box-reaches-a-host-it-made)). No inbound port either way |
-| Desktops | RFB through SSH to the box | RFB through `docker exec` or `msb exec`, through BB |
+| Reaching VesnALIA | each box reaches VesnALIA's server; on a tailnet, each joins it | the host reaches VesnALIA, and its boxes reach it through the host |
+| alia-box reaching boxes | SSH to each box's public address, or the tailnet | a host made by hand: as a VesnALIA machine, through VesnALIA (042). A host alia-box makes: one SSH connection over the tailnet, forwarding Docker's socket ([plan](../research/cloud-hosts.md#how-alia-box-reaches-a-host-it-made)). No inbound port either way |
+| Desktops | RFB through SSH to the box | RFB through `docker exec` or `msb exec`, through VesnALIA |
 | Tailscale (050) | each box joins, with a TUN device of its own | Docker boxes join through the host's TUN; microsandbox guests join, but reach peers through DERP (053) |
 | Leaks | every box is a server to sweep | the hosts are the servers to sweep |
 | What a user sets up | a token or IAM policy, and an image build | the same, and the host's type and how long an idle host lives |
@@ -136,7 +136,7 @@ and would slow each call (see [The tools](#the-tools-opentofu-and-alchemy)).
   Hetzner bills a stopped server in full, so a warm VM costs its running
   price. On AWS a stopped warm instance costs only its disk; how fast it
   starts is to be measured.
-- **B.** A box on a host with room is ready in 0.3 to 0.7 s. bb-box makes a
+- **B.** A box on a host with room is ready in 0.3 to 0.7 s. alia-box makes a
   new host before the last one fills, so an acquire waits for a host only
   when demand jumps.
 
@@ -150,7 +150,7 @@ For a small box of 2 vCPU and 4 GB:
   public IPv4 and about $0.003/h for 30 GB of gp3, about $0.05/h. Stopped,
   only the disk.
 - **B on Hetzner Cloud**: a CX53, 16 vCPU and 32 GB at EUR 0.0473/h, holds
-  seven such boxes beside bb-box's 4 GiB reserve: about EUR 0.007/h a box,
+  seven such boxes beside alia-box's 4 GiB reserve: about EUR 0.007/h a box,
   full.
 - **B on AWS**: an m7i.2xlarge, 8 vCPU and 32 GiB with nested
   virtualization at $0.403/h, holds seven: about $0.058/h a box, full, or
@@ -162,7 +162,7 @@ For a small box of 2 vCPU and 4 GB:
 
 Packing saves real money only when idle boxes are packed beyond their
 nominal size, as microsandbox allows: an idle box held 92 to 120 MiB in
-053's spike. bb-box counts each box at its size today. Whether a cloud host
+053's spike. alia-box counts each box at its size today. Whether a cloud host
 counts boxes at less than their size is for the backend's PRs to measure.
 
 Desktops cost more on AWS than their instance: traffic out costs $0.09/GB,
@@ -182,31 +182,31 @@ and a desktop stream of 2 Mbit/s is about 0.9 GB an hour. Hetzner includes
   registry of our images would let a host pull them in seconds rather than
   build them.
 
-### Reaching BB, and enrolment
+### Reaching VesnALIA, and enrolment
 
-A box enrols by reaching BB's server. When BB is on a private network or a
+A box enrols by reaching VesnALIA's server. When VesnALIA is on a private network or a
 tailnet, a cloud machine must join it first.
 
 - **A**: each box joins the tailnet as an ephemeral node (050), with a TUN
   device of its own.
-- **B**: the host joins once, and its boxes reach BB through it: Docker
+- **B**: the host joins once, and its boxes reach VesnALIA through it: Docker
   boxes by the host's routes, microsandbox guests with
   `--net public,private`, as 053's spike found for a server on a
   100.64.0.0/10 address.
 
-bb-box reaches a host made by hand, a BB machine, through BB, as 042 does,
-with no inbound port. A host bb-box makes is not a BB machine: BB would list
-it for threads, as root on the host, and BB's installer adds about a minute
-to its start. bb-box reaches it over the tailnet instead, with one SSH
-connection that forwards Docker's socket to BB's server (see the plan). A box of A is reached by SSH at its public address, with a
-firewall that lets in only BB's server, which breaks when BB's address
+alia-box reaches a host made by hand, a VesnALIA machine, through VesnALIA, as 042 does,
+with no inbound port. A host alia-box makes is not a VesnALIA machine: VesnALIA would list
+it for threads, as root on the host, and VesnALIA's installer adds about a minute
+to its start. alia-box reaches it over the tailnet instead, with one SSH
+connection that forwards Docker's socket to VesnALIA's server (see the plan). A box of A is reached by SSH at its public address, with a
+firewall that lets in only VesnALIA's server, which breaks when VesnALIA's address
 changes, or over the tailnet.
 
 ### Desktops and VNC over a public network
 
 No VNC port is ever open. The relay reaches a desktop through SSH (A) or
-`docker exec` and `msb exec` through BB (B), as on every backend, and the
-viewer's stream goes through BB's server. Latency is the region's
+`docker exec` and `msb exec` through VesnALIA (B), as on every backend, and the
+viewer's stream goes through VesnALIA's server. Latency is the region's
 distance.
 
 ### Tailscale (050)
@@ -225,31 +225,31 @@ rules every backend follows
 ([018](018-guests-name-their-install-and-box.md),
 [019](019-lost-records-are-restored-from-guests.md)) and adds four:
 
-- **The claim first, and an idempotent create.** bb-box records the server
+- **The claim first, and an idempotent create.** alia-box records the server
   it is about to make before the call. On Hetzner the name is
-  `bb-box-<box or host ID>`, unique in the project, so a retried create
+  `alia-box-<box or host ID>`, unique in the project, so a retried create
   meets `uniqueness_error` and finds the first; on AWS the box or host ID is
   the launch's `ClientToken`.
 - **Owner at the provider, from the create.** Labels on Hetzner, tags in
   `TagSpecifications` on AWS: the install, the box or host, and the time.
   The sweep lists by them and deletes what no record claims.
 - **Delete, not stop.** A host with no box for its idle time is deleted. On
-  AWS, a host's shutdown behaviour is `terminate`, so a host that bb-box has
+  AWS, a host's shutdown behaviour is `terminate`, so a host that alia-box has
   stopped hearing from can shut itself down after a set time.
 - **The doctor counts them**, with each server's age and cost so far, and
   warns of any it does not know.
 
 ### Budget limits
 
-Neither provider stops spending by itself, so bb-box keeps its own limits
+Neither provider stops spending by itself, so alia-box keeps its own limits
 and leans on the providers' where they have them:
 
-- **bb-box**: the most hosts, or boxes for A, at once; the server types
+- **alia-box**: the most hosts, or boxes for A, at once; the server types
   allowed; and an hourly spend limit, from the provider's prices
   (Hetzner's pricing API, or a figure in the configuration for AWS), past
   which acquires are refused with the reason.
 - **Hetzner**: the account's resource limit, which Hetzner sets and
-  raises on request, as a hard cap; a separate project for bb-box, so its
+  raises on request, as a hard cap; a separate project for alia-box, so its
   token reaches nothing else; and cost alerts.
 - **AWS**: a budget with an action that stops instances or applies a deny
   policy, the account's vCPU quotas, and an IAM policy that allows only
@@ -258,16 +258,16 @@ and leans on the providers' where they have them:
 ### What a user sets up
 
 - **B made by hand (step 1)**: a cloud VM with Docker, on the tailnet where
-  BB's server is reachable only there, enrolled in BB, then "Docker on BB
-  machines" in BB Box's settings. About 30 minutes, most of it bb-box
+  VesnALIA's server is reachable only there, enrolled in VesnALIA, then "Docker on VesnALIA
+  machines" in VesnALIA Box's settings. About 30 minutes, most of it alia-box
   building its images there, and it works today.
 - **Hetzner, for steps 2 and 3**: a project and an API token with Read &
-  Write, pasted into BB Box's settings, a location, and a way for hosts to
+  Write, pasted into VesnALIA Box's settings, a location, and a way for hosts to
   join the tailnet: a Tailscale auth key, or an OAuth client that makes a
-  one-off key for each host. bb-box makes its SSH key, firewall and images.
-- **AWS, for steps 2 and 3**: an IAM user or role with bb-box's policy, its
-  keys in BB Box's settings unless BB runs on EC2 with a role, a region, and
-  the default VPC or a subnet. bb-box makes its security group, key pair
+  one-off key for each host. alia-box makes its SSH key, firewall and images.
+- **AWS, for steps 2 and 3**: an IAM user or role with alia-box's policy, its
+  keys in VesnALIA Box's settings unless VesnALIA runs on EC2 with a role, a region, and
+  the default VPC or a subnet. alia-box makes its security group, key pair
   and images. New accounts may need a larger vCPU quota.
 
 ## The tools: OpenTofu and Alchemy
@@ -294,22 +294,22 @@ from the provider's own labels.
 
 Tests run in a separate Hetzner project and a separate AWS account with a
 budget alarm. OpenTofu makes the AWS security group and key pair, and a
-test host where one is needed. A run ends with bb-box's sweep, then a
+test host where one is needed. A run ends with alia-box's sweep, then a
 script that deletes every server labelled or tagged for the tests, then
-`tofu destroy`, since servers bb-box made are not in OpenTofu's state.
+`tofu destroy`, since servers alia-box made are not in OpenTofu's state.
 
 Credentials, with the least access each test needs:
 
 1. **Hetzner Cloud**: one API token for the test project, Read & Write.
    Hetzner has no narrower scope that can create a server, so the separate
    project is the boundary. No Robot (dedicated server) account yet.
-2. **AWS**: one IAM user, `bb-box-test`, with access keys and only the
+2. **AWS**: one IAM user, `alia-box-test`, with access keys and only the
    policy below, in one region. No IAM permissions, so it cannot give
    itself more. The account's standard vCPU quota in that region should
    allow 32 vCPUs.
-3. **Tailscale**, only for tests that enrol in BB, while BB's server is on
+3. **Tailscale**, only for tests that enrol in VesnALIA, while VesnALIA's server is on
    a tailnet: a reusable, ephemeral, pre-approved auth key with
-   `tag:bb-box` (050).
+   `tag:alia-box` (050).
 
 The AWS policy, with `<region>` and `<account>` filled in:
 
@@ -382,7 +382,7 @@ The AWS policy, with `<region>` and `<account>` filled in:
 
 The first PR of step 2 checks this policy against a real launch, image
 build and sweep with AWS's IAM policy simulator, and tightens it: the
-setup statement to resources tagged for bb-box, and the image statements
+setup statement to resources tagged for alia-box, and the image statements
 to the account's own.
 
 ## Consequences
@@ -420,19 +420,19 @@ to the account's own.
 
 Read again on 22 October 2026:
 
-- **BB's server.** BB 0.46.0 lets machines reach its server by a direct
-  URL or through its bb Connect service. The operator's install uses a
+- **VesnALIA's server.** VesnALIA 0.46.0 lets machines reach its server by a direct
+  URL or through its VesnALIA Connect service. The operator's install uses a
   direct URL on its tailnet, which public DNS answers with a tailnet
-  address too, so a cloud host and its boxes reach BB only through the
-  tailnet, or once the operator pairs bb Connect.
+  address too, so a cloud host and its boxes reach VesnALIA only through the
+  tailnet, or once the operator pairs VesnALIA Connect.
 - **Tailscale for boxes (050)** is designed, not built: nothing joins a
   machine to the tailnet. Step 1 joins its host by hand; step 2 joins its
   hosts itself.
-- **microsandbox (053)** is built, with a relay of its own for BB machines.
+- **microsandbox (053)** is built, with a relay of its own for VesnALIA machines.
 - **Images (049)** are built on each Docker host through the relay: about
   15 minutes and 36 GB of free disk for all three. A hand-made host needs a
   CX43's 160 GB rather than a CX33's 80 GB.
-- **Spawns.** bb-box starts its commands from a helper process, so BB's
+- **Spawns.** alia-box starts its commands from a helper process, so VesnALIA's
   server no longer forks for each `docker` command. A Docker host over
   `ssh://` still starts an `ssh` for each, which is why step 2 forwards one
   socket a host instead.
@@ -445,10 +445,10 @@ Read again on 22 October 2026:
   or Helsinki, so step 1's host was a CPX32, and step 2 cannot count on CX
   types: a CPX costs about twice a CX of its size.
 - **Step 1, done by hand** on 22 October: Ubuntu 26.04, Docker from
-  `get.docker.com`, Tailscale, and Node.js 22 or later, which BB's
+  `get.docker.com`, Tailscale, and Node.js 22 or later, which VesnALIA's
   installer needs and does not say so
-  ([request 35](../bb-requests.md#35-say-what-a-machine-needs-before-installing)).
-  BB's daemon runs as a user of its own, in the `docker` group. bb-box's
+  ([request 35](../alia-requests.md#35-say-what-a-machine-needs-before-installing)).
+  VesnALIA's daemon runs as a user of its own, in the `docker` group. alia-box's
   Docker check answered in 0.1 s through the relay. The guide page is
   [a cloud server as a Docker host](../guide/cloud-docker-host.md).
 - **Namespace**, which the owner's team uses, was compared as a second
@@ -464,7 +464,7 @@ Read again on 22 October 2026:
 The plan of 22 October 2026 for steps 1 and 2, with what each PR proves, is
 in [Cloud hosts](../research/cloud-hosts.md#pull-requests). In short:
 
-1. The setup guide's page for a cloud VM as a Docker host through BB (step
+1. The setup guide's page for a cloud VM as a Docker host through VesnALIA (step
    1), checked on a Hetzner test server.
 2. A Hetzner Cloud client and a fake of its API.
 3. The Docker backend's work on one host, made a part both backends use.

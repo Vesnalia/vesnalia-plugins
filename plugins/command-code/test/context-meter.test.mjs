@@ -21,7 +21,7 @@ test("cmd's model doc yields context windows in tokens, keyed case-insensitively
   assert.equal(CONTEXTS.has("zai-org/glm-5.1"), false);
 });
 
-test("a finished model request becomes an ACP usage_update for BB's context meter", () => {
+test("a finished model request becomes an ACP usage_update for VesnALIA's context meter", () => {
   const event = {
     type: "model_request_end",
     model: "z-ai/glm-5.3-flash",

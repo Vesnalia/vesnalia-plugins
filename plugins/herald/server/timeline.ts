@@ -19,7 +19,7 @@ function nonEmpty(text: string | null | undefined): string | null {
 }
 
 /**
- * What to show and say for a pause. bb hands every provider's request over in
+ * What to show and say for a pause. VesnALIA hands every provider's request over in
  * one shape: a `user_question` with its questions and options, an `approval`
  * whose subject says what is being approved (a plan, a command, a file change,
  * extra permissions, a tool), a provider's own request kind with a title, or

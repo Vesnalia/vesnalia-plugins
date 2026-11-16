@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useRpc, UrlLink } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useRpc, UrlLink } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Snapshot, Preference } from "./server";
 import type { WorkItem } from "./model";
 import {
@@ -537,7 +537,7 @@ function ProjectForm({
           : ""),
   );
   const [workspace, setWorkspace] = useState(
-    project?.linkedBbProjectId ?? (editing ? "" : (workspaceId ?? "")),
+    project?.linkedAliaProjectId ?? (editing ? "" : (workspaceId ?? "")),
   );
   const attempt = useRef<{ signature: string; id: string } | null>(null);
   if (editing && !project) return <p>Project no longer exists.</p>;
@@ -550,7 +550,7 @@ function ProjectForm({
           name,
           color,
           folderId: folderId || null,
-          linkedBbProjectId: workspace || null,
+          linkedAliaProjectId: workspace || null,
         };
         const signature = JSON.stringify({ ...fields, prefix });
         if (attempt.current?.signature !== signature)
@@ -626,13 +626,13 @@ function ProjectForm({
           </select>
         </label>
         <label>
-          BB workspace
+          VesnALIA workspace
           <select
             value={workspace}
             onChange={(e) => setWorkspace(e.target.value)}
           >
             <option value="">No linked workspace</option>
-            {options.bbProjects.map((p) => (
+            {options.aliaProjects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -767,7 +767,7 @@ function WorkForm({
               <div key={t.id} className="wm-connect-row">
                 <span>
                   {t.title}
-                  <small>{t.providerId ?? "BB"}</small>
+                  <small>{t.providerId ?? "ALIA"}</small>
                 </span>
                 <Button
                   size="sm"

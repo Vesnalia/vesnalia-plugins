@@ -22,7 +22,7 @@ describe("readLogs: text", () => {
     const output = read(fixture("vitest-run.log"));
     expect(output.format).toBe("text");
     expect(output.lines).toHaveLength(87);
-    expect(output.lines[0].text).toBe(" RUN  v4.1.11 /home/dev/bb-plugin-genui");
+    expect(output.lines[0].text).toBe(" RUN  v4.1.11 /home/dev/alia-plugin-genui");
     expect(output.lines[0].segments?.map((s) => s.color)).toEqual(["dim", null, "cyan", "dim"]);
     expect(output.counts).toMatchObject({ error: 3, warn: 0 });
     const errors = output.lines.filter((line) => line.level === "error").map((line) => line.text.trim());

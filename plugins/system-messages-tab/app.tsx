@@ -1,28 +1,28 @@
-// bb-plugin-system-messages-tab - frontend entry.
+// alia-plugin-system-messages-tab - frontend entry.
 //
-// BB's thread outline (the rail on the right of a thread, which opens a
-// popover with "Agent messages" and "Your messages" tabs) lists "[bb system]"
+// VesnALIA's thread outline (the rail on the right of a thread, which opens a
+// popover with "Agent messages" and "Your messages" tabs) lists "[VesnALIA system]"
 // notices and messages from other agent threads under "Your messages",
-// because BB delivers both to the agent as user turns. This plugin:
+// because VesnALIA delivers both to the agent as user turns. This plugin:
 // - adds a "System messages" tab that holds them and hides them from
 //   "Your messages";
 // - puts a date-and-time line above every entry, in all three tabs;
 // - lists entries newest first, and opens each tab scrolled to the newest;
-// - replaces the "Agent" chip BB shows for sender threads the app has not
+// - replaces the "Agent" chip VesnALIA shows for sender threads the app has not
 //   loaded with the thread's real title.
 //
 // A content script works on the rendered popover (see lib/outline-dom.ts).
-// BB keeps owning its own tab state: the "System messages" tab filters BB's
+// VesnALIA keeps owning its own tab state: the "System messages" tab filters VesnALIA's
 // "Your messages" list, which already holds every entry this plugin sorts.
 // Times and sender titles come from the backend (server.ts), whose RPC client
 // a small app-wide overlay hands to the content script. Disposal removes
 // every node, attribute, class change, listener and style the plugin added.
 //
-// Newest-first is a CSS column-reverse on BB's list, so React's own DOM order
-// is untouched. BB scrolls the entry for the message in view into sight when
+// Newest-first is a CSS column-reverse on VesnALIA's list, so React's own DOM order
+// is untouched. VesnALIA scrolls the entry for the message in view into sight when
 // the popover opens; the plugin scrolls back to the top once per opened tab.
 import { useEffect } from "react";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { OutlineMeta, rpcContract } from "./server";
 import { isSystemLabel, isVisible, type Tab } from "./lib/classify";
 import { formatLabel, senderThreadOf, timeKeyOf } from "./lib/format";
@@ -46,7 +46,7 @@ const HIDDEN_ATTR = "data-smt-hidden";
 const PAINTED_ATTR = "data-smt-painted";
 const TIME_ATTR = "data-smt-time";
 const NEWEST_FIRST_ATTR = "data-smt-newest-first";
-const STYLE_ID = "bb-plugin-system-messages-tab-style";
+const STYLE_ID = "alia-plugin-system-messages-tab-style";
 /** How long to wait before asking again for times of entries still missing one. */
 const REFETCH_MS = 5_000;
 /** Relabels "Today" as "Yesterday" after midnight without any DOM change. */
@@ -54,7 +54,7 @@ const RELABEL_MS = 60_000;
 /** Renamed chips to keep before forgetting ones that left the page. */
 const RENAMED_PRUNE_SIZE = 500;
 
-// BB sizes the popover for two tabs; with a third, widen it so all three
+// VesnALIA sizes the popover for two tabs; with a third, widen it so all three
 // labels fit on one line.
 const STYLE = `
 [${HIDDEN_ATTR}] { display: none !important; }
@@ -107,17 +107,17 @@ function mountOutline(signal: AbortSignal): () => void {
   document.head.appendChild(style);
 
   // Per outline element, which lives as long as the thread view: the selected
-  // tab while BB shows "Your messages", and whether the thread has any system
+  // tab while VesnALIA shows "Your messages", and whether the thread has any system
   // message. Both survive the popover closing and reopening.
   const tabs = new WeakMap<Element, Tab>();
   const hasSystem = new WeakMap<Element, boolean>();
   // An entry element keeps its id and label for life; read React's tree once.
   const entries = new WeakMap<Element, Entry>();
   const metas = new Map<string, MetaState>();
-  // Per entry list, the tab it last showed. BB renders a new list each time
+  // Per entry list, the tab it last showed. VesnALIA renders a new list each time
   // the popover opens, so a missing or different value means a fresh view.
   const views = new WeakMap<Element, string>();
-  // Chip text nodes this plugin renamed, with BB's original text.
+  // Chip text nodes this plugin renamed, with VesnALIA's original text.
   const renamed = new Map<Text, string>();
   let frame = 0;
   let forwarding = false;
@@ -186,7 +186,7 @@ function mountOutline(signal: AbortSignal): () => void {
     paintTab(systemButton, systemActive);
     setAttr(systemButton, "aria-pressed", String(systemActive));
     if (showingUser) {
-      // BB still considers "Your messages" selected; show it as unselected
+      // VesnALIA still considers "Your messages" selected; show it as unselected
       // while "System messages" is the tab in view.
       paintTab(userButton, tab === "user");
       setAttr(userButton, PAINTED_ATTR, "");
@@ -203,7 +203,7 @@ function mountOutline(signal: AbortSignal): () => void {
     if (views.get(list) === view) return;
     views.set(list, view);
     scroller.scrollTop = 0;
-    // BB scrolls the entry in view into sight from an effect that can run
+    // VesnALIA scrolls the entry in view into sight from an effect that can run
     // after this frame; scroll back to the top once it has.
     requestAnimationFrame(() => {
       if (!signal.aborted) scroller.scrollTop = 0;
@@ -260,7 +260,7 @@ function mountOutline(signal: AbortSignal): () => void {
     if (frame === 0 && !signal.aborted) frame = requestAnimationFrame(scan);
   };
 
-  // Track which tab the user picks. Capture phase, so this runs before BB's
+  // Track which tab the user picks. Capture phase, so this runs before VesnALIA's
   // own handlers re-render the popover.
   const onClick = (event: MouseEvent): void => {
     if (forwarding || !(event.target instanceof Element)) return;
@@ -271,7 +271,7 @@ function mountOutline(signal: AbortSignal): () => void {
     if (!parts || button.parentElement !== parts.tabRow) return;
     if (button.hasAttribute(TAB_ATTR)) {
       tabs.set(toc, "system");
-      // "System messages" filters BB's "Your messages" list, so switch BB to it.
+      // "System messages" filters VesnALIA's "Your messages" list, so switch VesnALIA to it.
       if (!isPressed(parts.userButton)) {
         forwarding = true;
         try {
@@ -289,7 +289,7 @@ function mountOutline(signal: AbortSignal): () => void {
   };
 
   document.addEventListener("click", onClick, true);
-  // Scans write only on a change and only to attributes BB does not watch,
+  // Scans write only on a change and only to attributes VesnALIA does not watch,
   // so a scan settles instead of retriggering itself.
   const observer = new MutationObserver(schedule);
   observer.observe(document.body, {

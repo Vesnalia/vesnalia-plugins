@@ -1,4 +1,4 @@
-// Focus Sidebar — frontend. Replaces bb's sidebar thread list with three
+// Focus Sidebar — frontend. Replaces VesnALIA's sidebar thread list with three
 // tabs: Focus (threads active in the last few hours, plus anything running,
 // waiting for you, or pinned), Periodic (threads automations run on a
 // schedule) and Archive (everything older, grouped by day, newest first). A search box at the top filters both by title, project and
@@ -16,7 +16,7 @@ import {
   experimental_useSidebarThreads as useSidebarThreads,
   experimental_useThreadActions as useThreadActions,
   ThreadTitle,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
   useSdk,
@@ -26,7 +26,7 @@ import {
   type PluginThreadActionTarget,
   type PluginThreadHeaderActionProps,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import {
   buildTrees,
@@ -48,7 +48,7 @@ import { cn } from "@/lib/utils";
 import type { FocusPrefs, rpcContract } from "./server";
 
 const PREFS_CHANGED = "prefs-changed";
-const ARCHIVE_ACTION_KEY = "bb--core/archive";
+const ARCHIVE_ACTION_KEY = "alia--core/archive";
 const TAB_STORAGE_KEY = "focus-sidebar:tab";
 const ARCHIVE_PAGE = 150;
 const SEARCH_DEBOUNCE_MS = 250;
@@ -163,7 +163,7 @@ function actionTarget(thread: PluginSidebarThread): PluginThreadActionTarget {
 // ---------------------------------------------------------------------------
 // Rows
 
-/** bb's archive action for one thread; "Unarchive" for a closed thread. */
+/** VesnALIA's archive action for one thread; "Unarchive" for a closed thread. */
 function useCloseAction(thread: PluginSidebarThread) {
   const target = useMemo(() => actionTarget(thread), [thread]);
   const [entry] = useThreadActions(target, { keys: [ARCHIVE_ACTION_KEY] });
@@ -229,7 +229,7 @@ function ProviderGlyph({ providerId }: { providerId: string }) {
   );
 }
 
-/** bb's status glyph (running, unread, waiting…), drawn only when there is one. */
+/** VesnALIA's status glyph (running, unread, waiting…), drawn only when there is one. */
 function StatusGlyph({ thread }: { thread: PluginSidebarThread }) {
   const rowStatus = useSidebarThreadRowStatus(thread.id);
   const { hasUnsubmittedDraft } = useSidebarThreadDraft(thread.id);
@@ -489,7 +489,7 @@ function MessageHitRow({
   projectName: string | undefined;
   onNavigate: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const isActive = hit.threadId === activeThreadId;
   return (
     <a
@@ -785,7 +785,7 @@ function FocusThreadList({ activeThreadId, onNavigate }: PluginThreadListProps) 
     body =
       periodic.length === 0 ? (
         <EmptyNote>
-          No periodic threads. Threads that bb&apos;s automations run on a schedule show up
+          No periodic threads. Threads that VesnALIA&apos;s automations run on a schedule show up
           here instead of in Focus.
         </EmptyNote>
       ) : (
@@ -863,7 +863,7 @@ function FocusThreadList({ activeThreadId, onNavigate }: PluginThreadListProps) 
                   onClick={() => setTab("periodic")}
                   badge={<Count value={periodic.length} dot={periodic.some(treeHasUnread)} />}
                 >
-                  <span title="Threads that bb's automations run on a schedule. One that waits for your answer, or that you pinned, shows in Focus instead.">
+                  <span title="Threads that VesnALIA's automations run on a schedule. One that waits for your answer, or that you pinned, shows in Focus instead.">
                     Periodic
                   </span>
                 </TabButton>
@@ -881,7 +881,7 @@ function FocusThreadList({ activeThreadId, onNavigate }: PluginThreadListProps) 
               {tab === "archive" ? (
                 <label
                   className="flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 text-xs text-muted-foreground hover:text-sidebar-foreground"
-                  title="Also list threads you closed (bb's Archived)"
+                  title="Also list threads you closed (VesnALIA's Archived)"
                 >
                   <input
                     type="checkbox"

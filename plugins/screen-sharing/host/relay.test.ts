@@ -139,7 +139,7 @@ describe("a remote session on its Mac", () => {
     expect(port.released).toBe(1);
   });
 
-  it("holds a write that arrives early until the ones before it are in, as bb's host calls can overtake each other", async () => {
+  it("holds a write that arrives early until the ones before it are in, as VesnALIA's host calls can overtake each other", async () => {
     const host = relay();
     const port = fakePort();
     await host.open("s1", port);
@@ -228,7 +228,7 @@ describe("a remote session on its Mac", () => {
     expect(host.keepalive("kept")).toBe(true);
     now += 30_000;
     host.sweep();
-    expect(quiet.closed).toEqual([{ reason: "the bb server stopped asking for it", failed: true }]);
+    expect(quiet.closed).toEqual([{ reason: "the VesnALIA server stopped asking for it", failed: true }]);
     expect(quiet.released).toBe(1);
     expect(kept.closed).toEqual([]);
     expect(host.size).toBe(1);
@@ -262,11 +262,11 @@ describe("a remote session on its Mac", () => {
     expect(byServer.released).toBe(1);
 
     const cancelled = new AbortController();
-    const byBb = fakePort();
-    const aborted = host.open("s2", byBb, cancelled.signal);
+    const byAlia = fakePort();
+    const aborted = host.open("s2", byAlia, cancelled.signal);
     cancelled.abort();
     await expect(aborted).rejects.toThrow("the session was closed while it was connecting");
-    expect(byBb.released).toBe(1);
+    expect(byAlia.released).toBe(1);
 
     const byStopping = fakePort();
     const stopping = host.open("s3", byStopping);

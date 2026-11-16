@@ -1,18 +1,18 @@
 // Where each review's code is, for its identity (lib/review-identity.ts): a local review's repository, from its
-// project's remote, and the machine its checkout is on, the bb server's, where `bb review` reads it; a folder's review's
+// project's remote, and the machine its checkout is on, the VesnALIA server's, where `alia review` reads it; a folder's review's
 // own folder, machine and repository. Derived for display, never stored: the top-level `repo` still means a PR.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { distinguish, reviewIdentity, type ReviewIdentity, type ReviewPlace } from "../lib/review-identity";
 import { machineStatus } from "./machines";
 import type { ReviewMeta } from "./store";
 
-/** What bb says that a local review's place needs: each project's repository, and the bb server's name. */
+/** What VesnALIA says that a local review's place needs: each project's repository, and the VesnALIA server's name. */
 export interface PlaceFacts { repos: ReadonlyMap<string, string>; machine?: string }
 
 const NONE: PlaceFacts = { repos: new Map() };
-/** How long bb's answer is reused: every list load and open review reads it. */
+/** How long VesnALIA's answer is reused: every list load and open review reads it. */
 const FRESH_MS = 60_000;
-const cache = new WeakMap<BbPluginApi, { at: number; facts: Promise<PlaceFacts> }>();
+const cache = new WeakMap<AliaPluginApi, { at: number; facts: Promise<PlaceFacts> }>();
 
 /** owner/repo from a remote's URL: https://github.com/o/r.git, git@github.com:o/r, ssh://git@host/o/r. */
 export function remoteRepo(url: string | null | undefined): string | null {
@@ -28,26 +28,26 @@ async function answer<T, F>(ask: () => Promise<T>, fallback: F): Promise<T | F> 
   }
 }
 
-/** bb's facts for local reviews' places, when `reviews` has one; read outside the store's lock, as it asks bb. */
-export function placeFacts(bb: BbPluginApi, reviews: readonly Pick<ReviewMeta, "kind">[]): Promise<PlaceFacts> {
+/** VesnALIA's facts for local reviews' places, when `reviews` has one; read outside the store's lock, as it asks VesnALIA. */
+export function placeFacts(alia: AliaPluginApi, reviews: readonly Pick<ReviewMeta, "kind">[]): Promise<PlaceFacts> {
   if (!reviews.some((review) => review.kind === "ref")) return Promise.resolve(NONE);
-  const cached = cache.get(bb);
+  const cached = cache.get(alia);
   if (cached && Date.now() - cached.at < FRESH_MS) return cached.facts;
   const facts = (async (): Promise<PlaceFacts> => {
     // Without an answer, the ids name the folder, and no machine.
     const [projects, config] = await Promise.all([
-      answer(() => bb.sdk.projects.list({ includePersonal: true }), []),
-      answer(() => bb.sdk.system.config(), null),
+      answer(() => alia.sdk.projects.list({ includePersonal: true }), []),
+      answer(() => alia.sdk.system.config(), null),
     ]);
     const repos = new Map<string, string>();
     for (const project of projects) {
       const repo = remoteRepo(project.gitRemoteUrl);
       if (repo) repos.set(project.id, repo);
     }
-    const machine = (await machineStatus(bb, config?.primaryHostId ?? undefined))?.name;
+    const machine = (await machineStatus(alia, config?.primaryHostId ?? undefined))?.name;
     return { repos, ...machine ? { machine } : {} };
   })();
-  cache.set(bb, { at: Date.now(), facts });
+  cache.set(alia, { at: Date.now(), facts });
   return facts;
 }
 

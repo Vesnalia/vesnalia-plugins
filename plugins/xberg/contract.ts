@@ -1,5 +1,5 @@
 // The typed RPC surface between the server entry and the host entry.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const MAX_CHARS_LIMIT = 200_000;

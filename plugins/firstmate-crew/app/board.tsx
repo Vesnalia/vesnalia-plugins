@@ -4,7 +4,7 @@
  * mate's suggestions, the seven columns in the captain's order — each a collapsible section with its
  * count and arrows that move it past its shown neighbour, empty ones left out — and the home's watches.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 

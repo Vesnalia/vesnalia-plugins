@@ -1,14 +1,14 @@
 /**
  * One card: a crewmate, a backlog item, or both. Steering and interrupting go to the crewmate directly;
  * relaunching goes through the first mate, because it owns the brief the new crewmate starts from.
- * Ending archives the thread, which removes its worktree after bb's grace period — so a worker whose
+ * Ending archives the thread, which removes its worktree after VesnALIA's grace period — so a worker whose
  * task is not Done is only ended after the captain has said so.
  *
  * A backlog item's `(actions: …)` are buttons that send their prompt to the first mate, as a suggestion
  * does; a held item — the captain's call — also gets an Answer box, whose words go to the first mate
  * under the task's id and title. Both share the one send in flight (`./send-gate`).
  */
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ const TONES: Readonly<Record<ColumnId, string>> = {
 };
 
 const END_WARNING =
-  "This worker's task isn't Done. Archiving removes its worktree after bb's grace period; only committed work can be restored.";
+  "This worker's task isn't Done. Archiving removes its worktree after VesnALIA's grace period; only committed work can be restored.";
 
 type Draft = { kind: "steer" | "relaunch"; text: string };
 
@@ -53,7 +53,7 @@ export function Card({
   showOpen?: boolean;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const mate = useMateSender();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);

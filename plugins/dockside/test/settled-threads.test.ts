@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import {
   isUnread,
   isWithinSettledWindow,
@@ -65,7 +65,7 @@ function lifecycleRow(
 }
 
 describe("isUnread", () => {
-  it("is bb's own rule: last read has to catch up with last attention", () => {
+  it("is VesnALIA's own rule: last read has to catch up with last attention", () => {
     assert.equal(isUnread(row({ lastReadAt: 100, latestAttentionAt: 100 })), false);
     assert.equal(isUnread(row({ lastReadAt: 100, latestAttentionAt: 101 })), true);
   });
@@ -160,7 +160,7 @@ describe("toSidebarThread", () => {
       toSidebarThread(row({ originKind: "side-chat" })).originKind,
       "side-chat",
     );
-    // A kind bb adds later must degrade, not crash the shelf.
+    // A kind VesnALIA adds later must degrade, not crash the shelf.
     assert.equal(toSidebarThread(row({ originKind: "teleport" })).originKind, null);
   });
 
@@ -197,7 +197,7 @@ describe("mergeSettledThreads", () => {
     );
   });
 
-  // The host's view is live and this one is a round trip old: a thread bb has
+  // The host's view is live and this one is a round trip old: a thread VesnALIA has
   // already unarchived must not be dragged back by a stale copy of itself.
   it("lets the host win a collision", () => {
     const merged = mergeSettledThreads(
@@ -221,7 +221,7 @@ describe("pendingSettledCount", () => {
   const now = 10 * SETTLED_WINDOW_MS;
   const nothingVisible: ReadonlySet<string> = new Set();
 
-  // The whole reason this exists: settling archives the thread, so bb reports
+  // The whole reason this exists: settling archives the thread, so VesnALIA reports
   // nothing and `listSettledThreads` is a round trip away. The seeded row is
   // all the shelf has to go on, and a collapsed shelf only ever needed a count.
   it("counts a settled thread the host cannot report", () => {
@@ -235,7 +235,7 @@ describe("pendingSettledCount", () => {
     );
   });
 
-  // A snoozed thread is not archived, so bb keeps reporting it and the snooze
+  // A snoozed thread is not archived, so VesnALIA keeps reporting it and the snooze
   // shelf draws it from these same rows. Counting it here would add it to the
   // settled header as well.
   it("ignores a row that is not settled", () => {

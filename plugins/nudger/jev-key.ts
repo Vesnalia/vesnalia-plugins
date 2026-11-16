@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 /**
- * Saving a new Jev key turns Nudger on. The key itself lives only in BB's secret file; Nudger stores a digest of it,
+ * Saving a new Jev key turns Nudger on. The key itself lives only in VesnALIA's secret file; Nudger stores a digest of it,
  * which is enough to tell a newly saved key from the one that already turned Nudger on.
  */
 export const KEY_STATE_KEY = "jev.key.v1";

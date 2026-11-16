@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useBbContext, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { FileTypeIcon } from "@/components/FileTypeIcon";
 import { FILE_DIFF_ACTION_ID } from "@/components/FileDiffPanel";
@@ -19,7 +19,7 @@ function splitPath(path: string): { name: string; folder: string } {
 /** VS Code's Source Control list: every uncommitted file, its folder dimmed beside it. */
 export function ChangesPanel({ root }: { root: Workspace | null }) {
   const rpc = useRpc<typeof rpcContract>();
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   const { result } = useGitStatus(root?.rootId ?? null);
   const entries = useMemo(
     () => [...result.entries].sort((left, right) => left.path.localeCompare(right.path)),

@@ -31,7 +31,7 @@ export const shortcutRequestSchema = z
   .object({
     operationId: z.string().regex(/^korey-[a-f0-9-]+$/u),
     requestHash: z.string().regex(/^[a-f0-9]{64}$/u),
-    bbThreadId: z.string().min(1),
+    aliaThreadId: z.string().min(1),
     action: z.enum(["create", "update"]),
     storyId: z.string().nullable(),
     instruction: z.string().trim().min(1).max(20_000),
@@ -96,6 +96,6 @@ export const connectionRpcContract = {
     output: connectionViewSchema,
   },
   "connection.disconnect": { input: z.null(), output: connectionViewSchema },
-  // bb's settings form cannot clear a secret field.
+  // VesnALIA's settings form cannot clear a secret field.
   "connection.removeToken": { input: z.null(), output: connectionViewSchema },
 } as const;

@@ -1,6 +1,6 @@
 // What every diff read shares: the caps that keep one host payload sane, the
 // binary check, and reading one side of a file out of the object database so
-// bb's viewer can expand context between hunks.
+// VesnALIA's viewer can expand context between hunks.
 import type { GitError } from "../contracts";
 import { classifyGitFailure, type GitPhase } from "../shared/git-errors";
 import { runGit, type GitRunResult } from "./git";

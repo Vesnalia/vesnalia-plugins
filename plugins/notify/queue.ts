@@ -176,7 +176,7 @@ function publicNotification(item: StoredNotification): PendingNotification {
  * Durable at-least-once delivery for the renderer bridge.
  *
  * Every mutation reloads the stored state first. That matters during plugin
- * reload: BB builds the replacement generation while the old one may still be
+ * reload: VesnALIA builds the replacement generation while the old one may still be
  * handling a request, so a state snapshot captured by the candidate factory
  * could otherwise miss the old generation's final write.
  */

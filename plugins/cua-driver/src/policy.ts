@@ -19,8 +19,8 @@ export const DEFAULT_POLICY: RoutingPolicy = {
 /**
  * Providers whose harness ships its own desktop computer-use tools. In
  * `prefer-native` mode these providers keep their own tools and receive no
- * Cua tools. Users can override any entry per provider; a bb capability flag
- * (`supportsNativeComputerUse`) would replace this table once bb exposes one.
+ * Cua tools. Users can override any entry per provider; a VesnALIA capability flag
+ * (`supportsNativeComputerUse`) would replace this table once VesnALIA exposes one.
  */
 export const NATIVE_COMPUTER_USE_PROVIDERS: ReadonlySet<string> = new Set([
   "codex",

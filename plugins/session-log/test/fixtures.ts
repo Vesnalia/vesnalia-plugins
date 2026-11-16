@@ -179,7 +179,7 @@ export function timelineResponse(rows: TimelineRow[] = [], overrides: Partial<Ti
   };
 }
 
-/** bb's answer to `afterTag`; the default says nothing changed since the window tagged `tag-1`. */
+/** VesnALIA's answer to `afterTag`; the default says nothing changed since the window tagged `tag-1`. */
 export function timelineDelta(options: {
   afterTag?: string;
   tag?: string;

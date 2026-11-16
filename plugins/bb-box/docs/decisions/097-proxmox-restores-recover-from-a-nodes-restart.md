@@ -6,28 +6,28 @@ Date: 11 November 2026
 ## Context
 
 [070](070-snapshots.md) made gate G16: a restore on Proxmox must come
-through a restart of its node, not only a restart of BB Box.
+through a restart of its node, not only a restart of VesnALIA Box.
 [086](086-proxmox-lxc-boxes-restore-on-zfs-in-zfss-order.md) turned ZFS
 restores on with G16 unproved on both LVM-thin and ZFS, to be run on a
 Proxmox node nested in a VM.
 
 That run is in [097's results](097-results.md). A node was rebooted, and
 reset hard, at steps a restore journals, on LVM-thin and on ZFS. Some
-cells needed root on the node before BB Box could go on, and a ZFS take
-cut short was not run. It showed four things BB Box did wrong:
+cells needed root on the node before VesnALIA Box could go on, and a ZFS take
+cut short was not run. It showed four things VesnALIA Box did wrong:
 
-- A node starts its boxes at its boot. A box BB Box had stopped for a
-  restore was running again when BB Box went on, so BB Box took an undo of
+- A node starts its boxes at its boot. A box VesnALIA Box had stopped for a
+  restore was running again when VesnALIA Box went on, so VesnALIA Box took an undo of
   the running box, and the rollback was then refused.
 - Proxmox VE 9 answers a task it has no record of with HTTP 400, not 500.
-  BB Box read that as a task it could not read, so a take or restore whose
+  VesnALIA Box read that as a task it could not read, so a take or restore whose
   task a hard reset lost stayed unsettled at every sweep.
 - A task a node lost in its restart cannot be running. 070 left a take
   with a missing task and no snapshot unknown, rightly, as missing alone
   does not prove that. But nothing else settled it.
 - A rollback cut short by the restart was settled as failed, with the box
   stopped and its disk "maybe part-restored": half way, with no way back
-  through BB Box.
+  through VesnALIA Box.
 
 Proxmox's API token cannot clear a lock a task leaves: Proxmox answers
 "CT is locked (rollback)" to any change, and only root's `pct unlock`
@@ -37,7 +37,7 @@ clears it.
 
 - A restore that goes on after a restart, before it changed the box's
   disk, first reads whether the box runs. If it does, it was started again,
-  as a node starts its boxes at its boot. BB Box restores nothing, takes no
+  as a node starts its boxes at its boot. VesnALIA Box restores nothing, takes no
   undo, and says so: the box stays as it is.
 - The Proxmox backends say a node restarted after a task began only on the
   node's own evidence, never on wall-clock times. Proxmox's task ID holds
@@ -50,56 +50,56 @@ clears it.
   Proxmox answers it as a task it has no record of.
 - A task Proxmox has no record of, under Proxmox VE 9's "no such task"
   answer or the older HTTP 500 one, is lost when the node restarted after
-  it began. A lost task is not running. BB Box then settles the take or
+  it began. A lost task is not running. VesnALIA Box then settles the take or
   undo by what the guest holds: a whole snapshot is ready, a part-made one
   incomplete, and none means it was not taken. A task Proxmox has no record
   of with no such evidence is still missing, and still left unknown, as 070
   decided. No other HTTP 400 answer reads as no task.
-- BB Box rolls a restore back again on its own only where 070 built it to:
-  when the first rollback's request had no answer and BB Box finds no task
-  for it, it sends it once more. In every other case where BB Box cannot be
+- VesnALIA Box rolls a restore back again on its own only where 070 built it to:
+  when the first rollback's request had no answer and VesnALIA Box finds no task
+  for it, it sends it once more. In every other case where VesnALIA Box cannot be
   certain whether a rollback began, or what the disk holds, it never rolls
   back again on its own. Those cases are:
   - the rollback's task was cut short by its node's restart: lost, or
     failed with the node restarted after it began
   - Proxmox no longer has the rollback's task
-  - the request sent once more had no answer either, and BB Box finds no
+  - the request sent once more had no answer either, and VesnALIA Box finds no
     task for it
-  - the box runs when BB Box would send the request once more, as a node
+  - the box runs when VesnALIA Box would send the request once more, as a node
     that restarts starts its boxes
-- In each of those cases BB Box stops the box if it runs, and never starts
+- In each of those cases VesnALIA Box stops the box if it runs, and never starts
   it. It ends the restore as failed, with the box stopped, and says that
   its disk may be part-restored, that it does not roll it back again on
   its own, and what the person can do: restore it to a snapshot again, or
   release it. A new restore of the box is allowed. It first takes a fresh
   undo, of the part-restored disk, and the failed restore's undo stays, so
   the disk as it was before can still be restored.
-- BB Box journals the decision to stop the box and fail the restore the
-  moment it makes it. Every later sweep, before BB Box restarts or after,
+- VesnALIA Box journals the decision to stop the box and fail the restore the
+  moment it makes it. Every later sweep, before VesnALIA Box restarts or after,
   reads that decision before it looks at any task: it only tries to stop
   the box, and ends the restore failed once a read says the box is stopped.
   A task that later reads as OK, running, failed or unreadable changes
   nothing.
-- If BB Box cannot stop the box, or cannot read whether it runs, the
-  restore stays open, so nothing starts the box, and BB Box tries to stop
+- If VesnALIA Box cannot stop the box, or cannot read whether it runs, the
+  restore stays open, so nothing starts the box, and VesnALIA Box tries to stop
   it again at each sweep. It does so before it lists the backend's
   snapshots, so a listing that fails does not stop it. It never rolls back
   then. The person can release
-  the box at any time. BB Box reads the box's power once more as it ends
+  the box at any time. VesnALIA Box reads the box's power once more as it ends
   the restore, and ends it only when that read says stopped. A box found
-  running then, or whose power cannot be read, stays held, and BB Box stops
+  running then, or whose power cannot be read, stays held, and VesnALIA Box stops
   it at the next sweep.
 - An HTTP answer to the rollback's request that does not say Proxmox began
   nothing is never a refusal: a 5xx answer, a timeout or a lost connection
   leaves the rollback's outcome unknown. Only a 4xx answer, or Proxmox
   failing to take the guest's lock, is a refusal.
-- BB Box journals each rollback before it sends the request, then adds its
+- VesnALIA Box journals each rollback before it sends the request, then adds its
   task when Proxmox answers, so a lost answer is known to be uncertain.
-  A rollback task whose ID the journal holds is BB Box's own. So is a
-  rollback task of the same guest, by BB Box's own Proxmox user, that began
+  A rollback task whose ID the journal holds is VesnALIA Box's own. So is a
+  rollback task of the same guest, by VesnALIA Box's own Proxmox user, that began
   while a request whose answer never came was open: from the request,
   until the restore ended, each with a minute's slack for the two clocks.
-  BB Box reports neither as a restore made outside it. A rollback by
+  VesnALIA Box reports neither as a restore made outside it. A rollback by
   another user in that time is still reported, as Proxmox names its user.
 - On LVM-thin, the refusal of a new restore for a guest locked by a
   rollback also gives the `lvs` check and the `lvcreate` command that makes
@@ -121,7 +121,7 @@ no answer either, the restore fails rather than sending a third.
   guest.
 - A node whose uptime has passed a task's worker start since its restart
   gives no evidence. A take or undo whose task was lost then stays unknown,
-  as 070 decided, and `bb box doctor` names it. A rollback whose task
+  as 070 decided, and `alia box doctor` names it. A rollback whose task
   Proxmox no longer has needs no such evidence: it fails, with the box
   stopped, as above.
 - A restore cut short by its node's restart does not finish on its own. It
@@ -130,7 +130,7 @@ no answer either, the restore fails rather than sending a third.
   after a restart. Review found that each guard it needed opened another
   case, so it was taken out.
 - The first rollback whose answer never came, and whose task cannot be
-  found, is still sent again, as 070 built it. BB Box cannot tell whether
+  found, is still sent again, as 070 built it. VesnALIA Box cannot tell whether
   its node restarted then, unless the box is running.
 - A rollback whose task is missing while its worker still runs is failed.
   Proxmox's lock on the guest refuses a new restore, or a release, until
@@ -148,7 +148,7 @@ no answer either, the restore fails rather than sending a third.
   changes to disk in the background, so a power cut can lose recent guest
   configuration. No wait is known to make a change safe. In the run, the
   reset lost a held copy made 41 s before it, which was the restore's undo.
-  BB Box listed that undo as ready until a later listing found it gone. No
+  VesnALIA Box listed that undo as ready until a later listing found it gone. No
   recovery of a lost undo is proved.
 - Held copies and earlier guests stayed stopped, with their links down,
   through a reboot and a hard reset.

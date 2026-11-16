@@ -361,27 +361,27 @@ export function createDemoAsana(now = new Date()) {
   };
 
   /** The Projects page: one waiting suggestion, two mapped, one unmapped. */
-  const bbProjects = [
+  const aliaProjects = [
     { id: "proj_demo_acme", name: "acme-website" },
     { id: "proj_demo_bluebird", name: "bluebird-app" },
     { id: "proj_demo_copperleaf", name: "copperleaf" },
     { id: "proj_demo_ops", name: "northwind-ops" },
   ];
   const mapRows: ProjectMapRow[] = [
-    { asanaGid: PROJECTS.acme.gid, asanaName: PROJECTS.acme.name, bbProjectId: "proj_demo_acme", source: "learned" },
-    { asanaGid: PROJECTS.bluebird.gid, asanaName: PROJECTS.bluebird.name, bbProjectId: "proj_demo_bluebird", source: "confirmed" },
-    { asanaGid: PROJECTS.copperleaf.gid, asanaName: PROJECTS.copperleaf.name, bbProjectId: "proj_demo_copperleaf", source: "suggested" },
-    { asanaGid: PROJECTS.internal.gid, asanaName: PROJECTS.internal.name, bbProjectId: null, source: "none" },
+    { asanaGid: PROJECTS.acme.gid, asanaName: PROJECTS.acme.name, aliaProjectId: "proj_demo_acme", source: "learned" },
+    { asanaGid: PROJECTS.bluebird.gid, asanaName: PROJECTS.bluebird.name, aliaProjectId: "proj_demo_bluebird", source: "confirmed" },
+    { asanaGid: PROJECTS.copperleaf.gid, asanaName: PROJECTS.copperleaf.name, aliaProjectId: "proj_demo_copperleaf", source: "suggested" },
+    { asanaGid: PROJECTS.internal.gid, asanaName: PROJECTS.internal.name, aliaProjectId: null, source: "none" },
   ];
   const projectMap = {
-    get: () => ({ rows: mapRows.map((row) => ({ ...row })), bbProjects, effective: {} as Record<string, string> }),
-    set: (asanaGid: string, bbProjectId: string | null) => {
+    get: () => ({ rows: mapRows.map((row) => ({ ...row })), aliaProjects, effective: {} as Record<string, string> }),
+    set: (asanaGid: string, aliaProjectId: string | null) => {
       const row = mapRows.find((candidate) => candidate.asanaGid === asanaGid);
-      if (row !== undefined) Object.assign(row, { bbProjectId, source: bbProjectId === null ? "none" : "confirmed" });
+      if (row !== undefined) Object.assign(row, { aliaProjectId, source: aliaProjectId === null ? "none" : "confirmed" });
     },
     forget: (asanaGid: string) => {
       const row = mapRows.find((candidate) => candidate.asanaGid === asanaGid);
-      if (row !== undefined) Object.assign(row, { bbProjectId: null, source: "none" });
+      if (row !== undefined) Object.assign(row, { aliaProjectId: null, source: "none" });
     },
   };
 

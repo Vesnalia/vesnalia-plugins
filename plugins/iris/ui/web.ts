@@ -2,7 +2,7 @@
 // never fetches a tile, a place or a photo itself. Answers are kept for the
 // session so cards that redraw or repeat a place ask once.
 import { useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { GeoHit, Photo, WebFailure } from "../core/web";
 import type { RpcContract } from "../shared/rpc";
 

@@ -1,23 +1,17 @@
 {
-  "name": "bb-plugin-miku",
+  "name": "alia-plugin-miku",
   "version": "0.7.0",
-  "description": "An agent-powered Hatsune Miku companion for BB.",
+  "description": "An agent-powered Hatsune Miku companion for VesnALIA.",
   "author": "Sawyer Hood",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SawyerHood/sawyer-plugins.git",
-    "directory": "plugins/miku"
-  },
-  "homepage": "https://github.com/SawyerHood/sawyer-plugins/tree/main/plugins/miku",
   "type": "module",
   "private": true,
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.45"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.45"
   },
-  "bb": {
+  "alia": {
     "name": "Miku Companion",
-    "description": "An agent-powered Hatsune Miku companion that observes and comments on activity across BB.",
+    "description": "An agent-powered Hatsune Miku companion that observes and comments on activity across VesnALIA.",
     "branding": {
       "icon": "Sparkles",
       "logo": {
@@ -30,7 +24,7 @@
     "skills": []
   },
   "scripts": {
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -38,7 +32,6 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -63,5 +56,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/miku#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/miku"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

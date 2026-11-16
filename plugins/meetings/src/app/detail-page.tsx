@@ -1,7 +1,7 @@
 // Meeting detail page: header (title, status, timings, link, errors), actions,
 // live view, audio player, summary, speakers and the transcript.
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { MeetingDetail } from "../shared/rpc-contract";
 import { maskMeetingUrl } from "../shared/meeting-url";
 import { Button } from "@/components/ui/button";
@@ -481,7 +481,7 @@ export function DetailPage({ id, segmentId, nav }: { id: string; segmentId: numb
           <p className="break-words text-xs text-muted-foreground">{meeting.transcriptError}</p>
           <p className="text-xs text-muted-foreground">
             Текст продолжит появляться, когда распознавание снова заработает. Состояние сервера GigaAM:{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono">bb gigaam status</code>
+            <code className="rounded bg-muted px-1 py-0.5 font-mono">alia gigaam status</code>
           </p>
         </Notice>
       ) : null}

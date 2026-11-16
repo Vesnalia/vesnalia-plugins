@@ -330,8 +330,8 @@ export function createOffPeakService(options: {
   const client = options.client;
   const storeDir =
     options.storeDir ??
-    process.env.BB_BRIDGE_DIR ??
-    path.join(homedir(), ".bb", "plugins", "zcode", "bridge-data");
+    process.env.ALIA_BRIDGE_DIR ??
+    path.join(homedir(), ".vesnalia", "plugins", "zcode", "bridge-data");
   const storePath = path.join(storeDir, "offpeak.json");
   let loaded: StoredOffPeakTask[] | undefined;
   let loading: Promise<void> | undefined;
@@ -545,7 +545,7 @@ export function createOffPeakService(options: {
     if (method === "offPeak/list") {
       if (!context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       return list(context.cwd);
@@ -553,7 +553,7 @@ export function createOffPeakService(options: {
     if (method === "offPeak/create") {
       if (!context.threadId || !context.providerThreadId || !context.cwd)
         throw new ProtocolError(
-          "No active bb session for this request.",
+          "No active VesnALIA session for this request.",
           -32601,
         );
       return create(raw, {

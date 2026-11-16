@@ -1,9 +1,9 @@
 /**
  * Which skills a Radar-started thread gets.
  *
- * Two mechanisms, both first-class in bb:
+ * Two mechanisms, both first-class in VesnALIA:
  *  1. Radar's own skills (skills/radar-review, skills/radar-triage) are selected per thread by
- *     `bb.agents.configure` from the thread's Radar plugin metadata.
+ *     `alia.agents.configure` from the thread's Radar plugin metadata.
  *  2. One installed host skill (e.g. a code-review skill) is invoked through a skill mention at the
  *     start of the opening message, exactly what picking it from the composer's `/` menu does.
  *     Pi turns a single leading skill mention into `/skill:<name>`, so only one is sent.

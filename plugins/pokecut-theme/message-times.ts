@@ -1,7 +1,7 @@
 // Message timestamps: a quiet relative time ("5 min ago") in a message's action
 // strip, shown on hover/focus; the exact local date and direction in its title.
-// BB's DOM has no message times, so they come from the plugin server
-// (bb.sdk.threads.timeline) and are matched by data-timeline-row-id.
+// VesnALIA's DOM has no message times, so they come from the plugin server
+// (alia.sdk.threads.timeline) and are matched by data-timeline-row-id.
 // Adapted from Chat Timestamps (https://github.com/pixexid/bb-plugin-chat-timestamps, MIT).
 import type { MessageTime } from "./contract";
 import { detectLocale, t } from "./i18n.ts";

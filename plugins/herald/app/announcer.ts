@@ -39,7 +39,7 @@ export interface AnnouncerDeps {
    */
   claim(eventId: string): Promise<Claim | null>;
   audio: AnnouncerAudio;
-  /** What was said, and why something was not, for `bb plugin logs herald`. */
+  /** What was said, and why something was not, for `alia plugin logs herald`. */
   report(level: "info" | "warn", message: string, error?: unknown): void;
 }
 

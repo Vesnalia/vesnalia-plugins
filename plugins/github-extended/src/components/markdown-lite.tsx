@@ -1,6 +1,6 @@
 import { isSafeExternalUrl } from "../app-logic.js";
 import { cn } from "../shared-ui.js";
-import { UrlLink as UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink as UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { ComponentProps } from "react";
 
 const INLINE_PATTERN =

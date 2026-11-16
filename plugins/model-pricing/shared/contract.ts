@@ -4,7 +4,7 @@
  * The app imports this file as a type only: it imports `defineRpcContract`
  * from the SDK root, which only the server bundle has (`app/imports.test.ts`).
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 import { LoadInputSchema, LoadOutputSchema } from "./pricing";
 

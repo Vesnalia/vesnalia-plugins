@@ -99,11 +99,11 @@ function searchInput(): HTMLInputElement {
 afterEach(cleanup);
 
 describe("the chip triggers' hover affordance", () => {
-  it("every dropdown chip names the pointer cursor (bb's own row hover signal)", () => {
+  it("every dropdown chip names the pointer cursor (VesnALIA's own row hover signal)", () => {
     renderToolbar();
     for (const chip of [...document.querySelectorAll('button[aria-haspopup="listbox"]')]) {
       // Tailwind v4's preflight resets buttons to the arrow; the chips are
-      // text-label triggers, the same class of affordance bb's sidebar rows
+      // text-label triggers, the same class of affordance VesnALIA's sidebar rows
       // are, and those rows compute cursor: pointer (measured live on the
       // board's own host, 2026-11-05).
       expect(chip.className).toContain("cursor-pointer");

@@ -1,4 +1,4 @@
-// bb-plugin-usage-meter — token usage read from the local Claude Code transcripts.
+// alia-plugin-usage-meter — token usage read from the local Claude Code transcripts.
 //
 // The module reads ~/.claude/projects/**/*.jsonl, reduces them to a list of
 // unique API calls and answers with aggregates over any window. Only counters
@@ -18,7 +18,7 @@
 //    takes seconds. So parsed calls live in a cache next to the plugin's own
 //    data, and the next pass reads only the tails of the files that changed.
 // 3. ATTRIBUTION. Usage is worth looking at in slices, not as one heap: main
-//    session against subagents, project, bb thread, model, workflow run,
+//    session against subagents, project, VesnALIA thread, model, workflow run,
 //    background /go run, skill.
 import { execFile } from "node:child_process";
 import fs from "node:fs";
@@ -36,8 +36,8 @@ const execFileAsync = promisify(execFile);
 export const DEFAULT_TRANSCRIPTS_DIR = path.join(os.homedir(), ".claude", "projects");
 /** Where the /go skill keeps the metadata of its background runs. */
 export const DEFAULT_GO_RUNS_DIR = path.join(os.homedir(), ".claude", "go-runs");
-/** The bb database. Opened read-only: it is the live database of the server. */
-export const DEFAULT_BB_DB_PATH = path.join(os.homedir(), ".bb", "bb.db");
+/** The VesnALIA database. Opened read-only: it is the live database of the server. */
+export const DEFAULT_ALIA_DB_PATH = path.join(os.homedir(), ".vesnalia", "alia.db");
 
 /** Cache format version. Change it and the cache is rebuilt from scratch. */
 const CACHE_VERSION = 2;
@@ -52,8 +52,8 @@ const YIELD_EVERY_CHUNKS = 1;
 const SESSION_ACTIVE_MS = 5 * 60_000;
 /** Two markers of one skill closer than this are the same run, not two. */
 const SKILL_DEDUP_MS = 120_000;
-/** How long the in-memory snapshot of the bb.db tables is reused. */
-const BB_DB_TTL_MS = 60_000;
+/** How long the in-memory snapshot of the alia.db tables is reused. */
+const ALIA_DB_TTL_MS = 60_000;
 /** A day, in milliseconds. */
 const DAY_MS = 86_400_000;
 /** An hour, in milliseconds. */
@@ -61,7 +61,7 @@ const HOUR_MS = 3_600_000;
 
 // The insight numbers below reproduce the "What's contributing to your limits
 // usage?" summary of the Claude Code extension for VS Code, constant for
-// constant, so a bb user sees the same figures as the extension does. Every
+// constant, so a VesnALIA user sees the same figures as the extension does. Every
 // percentage there is a share of WEIGHTED COST, never of raw tokens: a cached
 // read counts 1, uncached input 10, a cache write 12.5, an output token 50, and
 // the whole call is multiplied by the model tier. Counting raw tokens instead
@@ -240,7 +240,7 @@ export interface UsageQuery {
   topN?: number;
   /** Boundary rule for a skill's usage window. Defaults to untilNextHumanPrompt. */
   skillWindow?: SkillWindowBoundary;
-  /** Do not go to bb.db for thread names. */
+  /** Do not go to alia.db for thread names. */
   skipThreads?: boolean;
   /** Timeline bucket width; by default an hour for a day, six hours for a week. */
   timelineStepMs?: number;
@@ -268,7 +268,7 @@ export interface BucketCounts {
   session: number;
 }
 
-/** The key of the bucket holding the sessions no bb thread was found for. */
+/** The key of the bucket holding the sessions no VesnALIA thread was found for. */
 export const UNRESOLVED_THREAD_KEY = "unresolved";
 
 /** The summary of one window — everything that goes out over RPC. */
@@ -303,7 +303,7 @@ export interface UsageSummary {
     contextMax: number;
     top: SessionBucket[];
   };
-  /** How much of the usage could not be tied to a bb thread. */
+  /** How much of the usage could not be tied to a VesnALIA thread. */
   unresolvedThreadShare: number;
   /** Rows every breakdown above had before `topN` trimmed it. */
   bucketCounts: BucketCounts;
@@ -439,8 +439,8 @@ export interface UsageScanOptions {
   goRunsDir?: string;
   /** Cache directory. Without one the module still works, but every pass is cold. */
   cacheDir?: string | null;
-  /** Path to bb.db; null means do not go to the database at all. */
-  bbDbPath?: string | null;
+  /** Path to alia.db; null means do not go to the database at all. */
+  aliaDbPath?: string | null;
   log?: (level: "debug" | "info" | "warn", message: string) => void;
   /** A stand-in clock, for tests. */
   now?: () => number;
@@ -452,11 +452,11 @@ export interface UsageScanner {
   status(): ScanStatus;
   /** Catch up with the transcripts. A second call during a pass waits for that pass. */
   scan(options?: { signal?: AbortSignal; full?: boolean }): Promise<ScanStatus>;
-  /** The endless loop for bb.background.service. */
+  /** The endless loop for alia.background.service. */
   runForever(signal: AbortSignal, intervalMs?: number): Promise<void>;
   /** Aggregates over a window. Answers mid-cold-pass too, from what has been read. */
   summary(query?: UsageQuery): UsageSummary;
-  /** Let go of the resources (the bb.db snapshot). */
+  /** Let go of the resources (the alia.db snapshot). */
   close(): void;
 }
 
@@ -935,7 +935,7 @@ async function readGoRuns(dir: string): Promise<Map<string, GoRunMeta>> {
   return out;
 }
 
-// ─────────────────────────────── reading bb.db ───────────────────────────────
+// ─────────────────────────────── reading alia.db ───────────────────────────────
 
 interface ThreadRow {
   id: string;
@@ -944,8 +944,8 @@ interface ThreadRow {
   environmentId: string | null;
 }
 
-interface BbDbSnapshot {
-  /** Claude Code sessionId → bb thread id, via events.provider_thread_id. */
+interface AliaDbSnapshot {
+  /** Claude Code sessionId → VesnALIA thread id, via events.provider_thread_id. */
   bySession: Map<string, string>;
   /** environment_id → thread id, only where the environment has a single thread. */
   byEnvironment: Map<string, string>;
@@ -969,12 +969,12 @@ const EVENTS_SQL =
   "select distinct provider_thread_id, thread_id from events where provider_thread_id is not null";
 
 /**
- * The bb.db reader. The database is live, so it is opened read-only and nothing
+ * The alia.db reader. The database is live, so it is opened read-only and nothing
  * else. The built-in node:sqlite is tried first, then an external
  * `sqlite3 -readonly`; with neither of them a thread simply stays unnamed.
  */
-class BbDbReader {
-  private snapshot: BbDbSnapshot | null = null;
+class AliaDbReader {
+  private snapshot: AliaDbSnapshot | null = null;
   private loadedAt = 0;
   private failed = false;
 
@@ -990,14 +990,14 @@ class BbDbReader {
   }
 
   /** A snapshot of the tables; on any trouble it answers empty and stops trying. */
-  async load(now: number): Promise<BbDbSnapshot> {
-    const empty: BbDbSnapshot = {
+  async load(now: number): Promise<AliaDbSnapshot> {
+    const empty: AliaDbSnapshot = {
       bySession: new Map(),
       byEnvironment: new Map(),
       threads: new Map(),
     };
     if (!this.dbPath || this.failed) return this.snapshot ?? empty;
-    if (this.snapshot && now - this.loadedAt < BB_DB_TTL_MS) return this.snapshot;
+    if (this.snapshot && now - this.loadedAt < ALIA_DB_TTL_MS) return this.snapshot;
     const rows = this.viaNodeSqlite() ?? (await this.viaCli());
     if (!rows) {
       this.failed = true;
@@ -1068,7 +1068,7 @@ class BbDbReader {
       }
       return { threads, bySession };
     } catch (error) {
-      this.log("warn", `bb.db read failed: ${String(error)}`);
+      this.log("warn", `alia.db read failed: ${String(error)}`);
       return null;
     } finally {
       try {
@@ -1120,9 +1120,9 @@ class BbDbReader {
   }
 }
 
-/** A transcripts directory name → the environment_id of a bb environment. */
+/** A transcripts directory name → the environment_id of a VesnALIA environment. */
 function environmentIdFromProjectDir(projectDir: string): string | null {
-  const match = /-bb-personal-workspaces-(env-[0-9a-z]+)$/.exec(projectDir);
+  const match = /-alia-personal-workspaces-(env-[0-9a-z]+)$/.exec(projectDir);
   if (!match) return null;
   return match[1].replace(/^env-/, "env_");
 }
@@ -1545,7 +1545,7 @@ function parsePrompt(record: JsonObject, time: number, sink: ParseSink): void {
 
 class Scanner implements UsageScanner {
   private readonly store = new UsageStore();
-  private readonly bbDb: BbDbReader;
+  private readonly aliaDb: AliaDbReader;
   private readonly log: (level: "debug" | "info" | "warn", message: string) => void;
   private readonly now: () => number;
   private readonly transcriptsDir: string;
@@ -1556,7 +1556,7 @@ class Scanner implements UsageScanner {
   private running: Promise<ScanStatus> | null = null;
   private workflowCache = new Map<string, WorkflowMeta | null>();
   private goRuns = new Map<string, GoRunMeta>();
-  private threads: BbDbSnapshot = {
+  private threads: AliaDbSnapshot = {
     bySession: new Map(),
     byEnvironment: new Map(),
     threads: new Map(),
@@ -1583,8 +1583,8 @@ class Scanner implements UsageScanner {
     this.cacheDir = options.cacheDir === undefined ? null : options.cacheDir;
     this.log = options.log ?? (() => {});
     this.now = options.now ?? (() => Date.now());
-    this.bbDb = new BbDbReader(
-      options.bbDbPath === undefined ? DEFAULT_BB_DB_PATH : options.bbDbPath,
+    this.aliaDb = new AliaDbReader(
+      options.aliaDbPath === undefined ? DEFAULT_ALIA_DB_PATH : options.aliaDbPath,
       this.log,
     );
   }
@@ -1594,7 +1594,7 @@ class Scanner implements UsageScanner {
   }
 
   close(): void {
-    this.bbDb.close();
+    this.aliaDb.close();
   }
 
   async scan(options: { signal?: AbortSignal; full?: boolean } = {}): Promise<ScanStatus> {
@@ -1783,7 +1783,7 @@ class Scanner implements UsageScanner {
 
       await this.loadWorkflowMeta();
       this.goRuns = await readGoRuns(this.goRunsDir);
-      this.threads = await this.bbDb.load(this.now());
+      this.threads = await this.aliaDb.load(this.now());
       await this.persist(rewrite, newEvents, newMarks);
 
       const finished = this.now();
@@ -2542,7 +2542,7 @@ class Scanner implements UsageScanner {
     return cut.topN > 0 ? buckets.slice(0, cut.topN) : buckets;
   }
 
-  /** Session traits and the bb-thread breakdown — counted in one pass. */
+  /** Session traits and the alia-thread breakdown — counted in one pass. */
   private sessions(
     events: CallEvent[],
     cut: Cut,
@@ -2659,7 +2659,7 @@ class Scanner implements UsageScanner {
       if (!bucket) {
         bucket = {
           key,
-          label: thread ? thread.title.slice(0, 80) || thread.id : "Without a bb thread",
+          label: thread ? thread.title.slice(0, 80) || thread.id : "Without a VesnALIA thread",
           totals: emptyTotals(),
           share: 0,
         };
@@ -2686,7 +2686,7 @@ class Scanner implements UsageScanner {
   }
 
   /**
-   * A Claude Code session → a bb thread. The exact mapping lives in events
+   * A Claude Code session → a VesnALIA thread. The exact mapping lives in events
    * (provider_thread_id), but events are kept for a couple of days; for older
    * sessions only the environment is left, and only where it has one thread.
    */
@@ -2828,8 +2828,8 @@ export function createUsageScanner(options: UsageScanOptions = {}): UsageScanner
   return new Scanner(options);
 }
 
-/** The least of bb the module needs: the path to its own database, and a log. */
-export interface BbLike {
+/** The least of VesnALIA the module needs: the path to its own database, and a log. */
+export interface AliaLike {
   storage: { database(): { name: string } };
   log?: {
     debug?: (message: string) => void;
@@ -2840,22 +2840,22 @@ export interface BbLike {
 
 /**
  * A scanner tied to the plugin's data directory. The SDK gives no file path
- * outright, but bb.storage.database() opens the plugin's database at
+ * outright, but alia.storage.database() opens the plugin's database at
  * <dataDir>/plugins/<id>/data.db — and that is enough to work from: the cache
- * goes next to it, and bb.db is looked for in the data directory itself.
+ * goes next to it, and alia.db is looked for in the data directory itself.
  */
-export function usageScannerForPlugin(bb: BbLike, options: UsageScanOptions = {}): UsageScanner {
+export function usageScannerForPlugin(alia: AliaLike, options: UsageScanOptions = {}): UsageScanner {
   let cacheDir = options.cacheDir ?? null;
-  let bbDbPath = options.bbDbPath;
+  let aliaDbPath = options.aliaDbPath;
   try {
-    const own = bb.storage.database().name;
+    const own = alia.storage.database().name;
     const pluginDir = path.dirname(own);
     if (cacheDir === null) cacheDir = path.join(pluginDir, "usage-scan");
-    if (bbDbPath === undefined) {
-      // <dataDir>/plugins/<id>/data.db → <dataDir>/bb.db
+    if (aliaDbPath === undefined) {
+      // <dataDir>/plugins/<id>/data.db → <dataDir>/alia.db
       const dataDir = path.dirname(path.dirname(pluginDir));
-      const candidate = path.join(dataDir, "bb.db");
-      bbDbPath = fs.existsSync(candidate) ? candidate : DEFAULT_BB_DB_PATH;
+      const candidate = path.join(dataDir, "alia.db");
+      aliaDbPath = fs.existsSync(candidate) ? candidate : DEFAULT_ALIA_DB_PATH;
     }
   } catch {
     // The plugin database is out of reach — no cache then, but still working.
@@ -2863,7 +2863,7 @@ export function usageScannerForPlugin(bb: BbLike, options: UsageScanOptions = {}
   const log =
     options.log ??
     ((level: "debug" | "info" | "warn", message: string) => {
-      bb.log?.[level]?.(message);
+      alia.log?.[level]?.(message);
     });
-  return createUsageScanner({ ...options, cacheDir, bbDbPath, log });
+  return createUsageScanner({ ...options, cacheDir, aliaDbPath, log });
 }

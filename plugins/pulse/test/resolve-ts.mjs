@@ -1,4 +1,4 @@
-// Lets tests import server.ts, whose relative imports are extensionless for `bb plugin build`.
+// Lets tests import server.ts, whose relative imports are extensionless for `alia plugin build`.
 import * as mod from "node:module";
 
 if (typeof mod.registerHooks === "function") {

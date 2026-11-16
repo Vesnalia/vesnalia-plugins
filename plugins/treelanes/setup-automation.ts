@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { TaskContext } from "./stage-evidence";
 import type { SetupPlan } from "./setup-plan";
 import { buildSetupPrompt, validateSetupProposal } from "./setup-request";
@@ -6,7 +6,7 @@ import { resolveStepExecution, stepExecutionSchema } from "./step-execution";
 import { requireStepChoices, stepChoices, type Choices } from "./task-map";
 import { findDispatchHolder } from "./dispatch";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 type Thread = { id: string; projectId: string; environmentId?: string | null; providerId: string;
   title?: string | null; status: "active" | "idle" | "error" | "pending" | "starting" | "stopping"; hasPendingInteraction?: boolean;
   activity?: { activeWorkflowCount: number; activeBackgroundAgentCount: number; activeBackgroundCommandCount: number; activePlanModeCount: number; activeGoalCount: number };
@@ -34,7 +34,7 @@ CREATE TABLE worktree_setup_requests (
 );
 CREATE INDEX worktree_setup_requests_env ON worktree_setup_requests(environment_id, id DESC);`;
 
-export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
+export function createSetupAutomation(alia: AliaPluginApi, db: Db, hooks: {
   context(environmentId: string): AutomationContext;
   useInitiatingThread(): Promise<boolean>;
   choices(): Choices;
@@ -111,8 +111,8 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
     })();
   }
   async function waiting(thread: Thread) {
-    return thread.hasPendingInteraction || (await bb.sdk.threads.interactions.list({ threadId: thread.id })).length > 0 ||
-      (await bb.sdk.threads.queuedMessages.list({ threadId: thread.id })).length > 0;
+    return thread.hasPendingInteraction || (await alia.sdk.threads.interactions.list({ threadId: thread.id })).length > 0 ||
+      (await alia.sdk.threads.queuedMessages.list({ threadId: thread.id })).length > 0;
   }
   async function tickUnlocked(env: string, force = false, listed?: Thread[]) {
     if (hooks.disposed()) return;
@@ -128,7 +128,7 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
       db.prepare("UPDATE worktree_setup_requests SET status = 'stale', last_error = 'Task or stage changed' WHERE id = ?").run(job.id); return;
     }
     const run = readRun(env)!;
-    const source = await bb.sdk.threads.get({ threadId: run.initiator_thread_id });
+    const source = await alia.sdk.threads.get({ threadId: run.initiator_thread_id });
     const threads = (listed ?? await hooks.listThreads(source.projectId)).filter(thread => thread.environmentId === env);
     if (job.status === "starting") {
       const orphan = threads.find(thread => job!.thread_id ? thread.id === job!.thread_id : (thread.title === title(job!) || thread.title === `Workflow setup [${job!.environment_id}:${job!.id}:${job!.attempts}]`));
@@ -142,11 +142,11 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
         return;
       }
     }
-    if (await findDispatchHolder(bb.sdk, threads, orchestrator(env))) return;
+    if (await findDispatchHolder(alia.sdk, threads, orchestrator(env))) return;
     if (job.thread_id && ["pending", "started", "blocked"].includes(job.status)) {
       // Older versions queued a replacement after a worker failed or went idle.
       // Retain that assignment and allow its worker to submit a corrected plan.
-      const worker = await bb.sdk.threads.get({ threadId: job.thread_id }).catch(() => null);
+      const worker = await alia.sdk.threads.get({ threadId: job.thread_id }).catch(() => null);
       if (!worker || worker.deletedAt || worker.archivedAt || worker.environmentId !== env) {
         db.prepare("UPDATE worktree_setup_requests SET last_error = 'Assigned setup worker is unavailable; inspect it before replacement' WHERE id = ?").run(job.id);
         return;
@@ -166,10 +166,10 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
     }
     if (job.next_attempt_at > Date.now() || job.attempts >= 2) return;
     const coordinatorId = job.kind !== "initial" ? orchestrator(env) : null;
-    const executionSource = coordinatorId ? await bb.sdk.threads.get({ threadId: coordinatorId }) : source;
+    const executionSource = coordinatorId ? await alia.sdk.threads.get({ threadId: coordinatorId }) : source;
     if (!executionSource || executionSource.archivedAt || executionSource.deletedAt || executionSource.environmentId !== env)
       throw new Error("The saved orchestrator is unavailable. Keep the task for inspection.");
-    const execution = await bb.sdk.threads.defaultExecutionOptions({ threadId: executionSource.id });
+    const execution = await alia.sdk.threads.defaultExecutionOptions({ threadId: executionSource.id });
     if (!execution?.model || !execution.reasoningLevel) throw new Error("The initiating thread must have explicit model and effort settings for setup planning.");
     const inheritedChoice = { providerId: executionSource.providerId, model: execution.model, reasoningLevel: execution.reasoningLevel,
       permissionMode: execution.permissionMode ?? "auto", ...(execution.serviceTier ? { serviceTier: execution.serviceTier } : {}) };
@@ -177,11 +177,11 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
     const reuseSource = (await hooks.useInitiatingThread()) && (!saved?.providerId || saved.providerId === source.providerId);
     let selected = inheritedChoice;
     if (saved?.providerId) {
-      const catalog = await bb.sdk.providers.models({ environmentId: env, providerId: saved.providerId });
+      const catalog = await alia.sdk.providers.models({ environmentId: env, providerId: saved.providerId });
       const model = saved.model ? catalog.models.find(model => model.model === saved.model)
         : (saved.providerId === source.providerId ? catalog.models.find(model => model.model === inheritedChoice.model) : undefined)
           ?? catalog.models.find(model => model.isDefault) ?? catalog.models[0];
-      const resolved = await resolveStepExecution(bb.sdk, { environmentId: env, projectId: source.projectId }, stepExecutionSchema.parse({
+      const resolved = await resolveStepExecution(alia.sdk, { environmentId: env, projectId: source.projectId }, stepExecutionSchema.parse({
         providerId: saved.providerId, model: saved.model ?? model?.model,
         reasoningLevel: saved.reasoningLevel ?? (saved.providerId === source.providerId && model?.model === inheritedChoice.model
           ? inheritedChoice.reasoningLevel : model?.defaultReasoningEffort),
@@ -208,13 +208,13 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
       const targetId = coordinatorId ?? (reuseSource ? source.id : null);
       let worker: { id: string };
       if (targetId) {
-        const coordinator = await bb.sdk.threads.get({ threadId: targetId });
+        const coordinator = await alia.sdk.threads.get({ threadId: targetId });
         if (!coordinator || coordinator.archivedAt || coordinator.deletedAt || coordinator.environmentId !== env) throw new Error("The saved orchestrator is unavailable. Keep the task for inspection.");
         db.prepare("UPDATE worktree_setup_requests SET thread_id = ? WHERE id = ?").run(targetId, job.id);
-        await bb.sdk.threads.send({ threadId: targetId, mode: coordinator.status === "active" ? "steer" : "start", model: choice.model, reasoningLevel: choice.reasoningLevel, input: [{ type: "text", mentions: [], text: prompt }] });
+        await alia.sdk.threads.send({ threadId: targetId, mode: coordinator.status === "active" ? "steer" : "start", model: choice.model, reasoningLevel: choice.reasoningLevel, input: [{ type: "text", mentions: [], text: prompt }] });
         worker = coordinator;
       } else {
-        worker = await bb.sdk.threads.spawn({ ...choice, projectId: source.projectId, parentThreadId: source.id,
+        worker = await alia.sdk.threads.spawn({ ...choice, projectId: source.projectId, parentThreadId: source.id,
           environment: { type: "reuse", environmentId: env }, visibility: "visible", title: title(job), prompt });
       }
       // A fast worker can apply its plan before the spawn response arrives.
@@ -240,7 +240,7 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
     } finally { locks.delete(env); }
   }
   async function apply(threadId: string, plan: SetupPlan) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const job = thread.environmentId ? latest(thread.environmentId) : undefined;
     if (!job || !["starting", "started"].includes(job.status) || (job.thread_id !== threadId && !(job.status === "starting" && thread.title === title(job)))) {
       throw new Error("Only the assigned setup worker can submit this plan.");
@@ -251,7 +251,7 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
     validateSetupProposal(context.task!, plan, context.stage, context.activeStepId, job.kind === "recovery");
     const active = job.kind === "recovery" ? plan.steps.findIndex(step => step.id === context.activeStepId) : 0;
     requireStepChoices(context.task!.kind, plan.steps.slice(Math.max(0, active)), hooks.choices());
-    await Promise.all(plan.steps.map(step => resolveStepExecution(bb.sdk, { environmentId: job.environment_id, projectId: thread.projectId }, step.execution)));
+    await Promise.all(plan.steps.map(step => resolveStepExecution(alia.sdk, { environmentId: job.environment_id, projectId: thread.projectId }, step.execution)));
     fresh(job);
     if (hooks.disposed()) throw new Error("Plugin reloaded before setup submission.");
     return db.transaction(() => {
@@ -264,7 +264,7 @@ export function createSetupAutomation(bb: BbPluginApi, db: Db, hooks: {
   async function tickAll(force = false, listed?: Thread[]) {
     const rows = db.prepare("SELECT environment_id FROM worktree_delivery_runs").all() as { environment_id: string }[];
     await Promise.all(rows.filter(row => !listed || listed.some(thread => thread.environmentId === row.environment_id))
-      .map(async row => { try { await tick(row.environment_id, force, listed); } catch (error) { if (!hooks.disposed()) bb.log.error(`Setup recovery for ${row.environment_id}: ${String(error)}`); } }));
+      .map(async row => { try { await tick(row.environment_id, force, listed); } catch (error) { if (!hooks.disposed()) alia.log.error(`Setup recovery for ${row.environment_id}: ${String(error)}`); } }));
   }
   return { enqueue, reopen: (env: string, reason: string) => insert(env, "reopen", reason), openDesignGate, recover, apply, tick, tickAll, pending, isPlanner, latest, orchestrator, requestedTarget: (env: string) => { const run = readRun(env); return run ? (JSON.parse(run.request_json) as TaskContext).deliveryTarget : undefined; }, enabled: (env: string) => Boolean(readRun(env)),
     exhausted: (env: string) => (readRun(env)?.recovery_count ?? 0) >= 2 };

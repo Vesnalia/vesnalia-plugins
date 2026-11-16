@@ -5,7 +5,7 @@
 // the server (server/web.ts), behind the webLookups setting; nothing here
 // contacts another host. Pure helpers are exported for web.test.ts.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { defineComponent } from "@openuidev/react-lang";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { z } from "zod/v4";
@@ -456,7 +456,7 @@ window.bbui={send:function(text){post({type:"send",text:String(text)});}};
 
 const THEME_VARS = ["--foreground", "--muted-foreground", "--border", "--primary", "--primary-foreground", "--card", "--muted", "--font-sans", "--font-mono"];
 
-/** The frame's document: our CSP, BB's theme variables and the bridge first, then the page as written (its doctype dropped so ours keeps standards mode). */
+/** The frame's document: our CSP, VesnALIA's theme variables and the bridge first, then the page as written (its doctype dropped so ours keeps standards mode). */
 export function appDocument(html: string, theme: Record<string, string>, colorScheme = "light dark"): string {
   const clean = (value: string) => value.replace(/[<>;{}]/g, "");
   const vars = Object.entries(theme)
@@ -527,7 +527,7 @@ function AppFrame({ html, title, caption }: { html: string; title: string; capti
   const [confirm, setConfirm] = useState<string | null>(null);
   const lastSend = useRef(0);
 
-  // Read BB's theme where the block sits, before the frame exists.
+  // Read VesnALIA's theme where the block sits, before the frame exists.
   useLayoutEffect(() => {
     const style = getComputedStyle(holder.current ?? document.documentElement);
     setTheme({ vars: Object.fromEntries(THEME_VARS.map((name) => [name, style.getPropertyValue(name).trim()])), scheme: style.colorScheme || "light dark" });
@@ -846,7 +846,7 @@ p6 = MapPlace("Praça do Comércio", 38.7075, -9.1364, "Finish at the river.")`;
 export const webGroup: ExtraGroup = {
   name: "Maps, media and sandbox",
   notes: [
-    "Map and ImageSearch fetch through the BB server (OpenStreetMap, Photon, Wikimedia Commons). The user can turn web lookups off; then they say so instead.",
+    "Map and ImageSearch fetch through the VesnALIA server (OpenStreetMap, Photon, Wikimedia Commons). The user can turn web lookups off; then they say so instead.",
     "Map: give lat and lng when you know them; names alone are looked up and can miss. Pass null to skip an optional argument, e.g. MapPlace(\"Alfama, Lisbon\", null, null, \"Walk\").",
     "App: the page has no network (no CDN scripts, fonts, fetch or remote images), forms do not submit, alert and confirm do nothing, and storage does not persist. Style with var(--foreground), var(--muted-foreground), var(--border), var(--primary), var(--card) and var(--font-sans). In a click handler, bbui.send(text) sends text as the user's message. Use ' inside the HTML and \\n for line breaks.",
     "Shader: one pass, no textures. Size by iResolution; the user can pause it.",

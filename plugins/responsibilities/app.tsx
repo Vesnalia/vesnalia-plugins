@@ -3,13 +3,13 @@ import {
   definePluginApp,
   experimental_useRpcQuery as useRpcQuery,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbContext,
+  useAliaContext,
   useSettings,
   type ExperimentalSidebarFooterDisclosureProps,
   type PluginComposerThreadRowStatus,
   type PluginContentScriptContext,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { rowAttention, type Attention } from "./attention";
 import { CHILD_CSS, ChildComposer, childThreadAction } from "./child";
 import { contract } from "./contract";
@@ -18,14 +18,14 @@ import { COMPACT_THEME } from "./theme";
 import { useAttention, useSeenWhileShown } from "./use-attention";
 
 const ROW = "[data-sidebar-rename-row]";
-/** BB's lazy list wraps each item, mounted or not; an unmounted one names its threads in `data-sidebar-windowed-nav`. */
+/** VesnALIA's lazy list wraps each item, mounted or not; an unmounted one names its threads in `data-sidebar-windowed-nav`. */
 const ITEM = "[data-sidebar-windowed-item]";
 /** Manager titles may carry this marker; the row hides it. */
 const MARKER = "○ ";
 const FILTER_LABEL = "Filter threads";
 const FILTER_KEY = "responsibilities:filter";
 
-/** Set by the content script, which is the only holder of BB's row-status writer. */
+/** Set by the content script, which is the only holder of VesnALIA's row-status writer. */
 let setRowStatus: PluginContentScriptContext["experimental_setThreadRowStatus"];
 let onRowStatusWriter = () => {};
 
@@ -44,15 +44,15 @@ function subscribeFilter(listener: () => void) {
   };
 }
 
-/** BB's CircleX glyph, for the failure BB will not draw over its spinner or question. */
+/** VesnALIA's CircleX glyph, for the failure VesnALIA will not draw over its spinner or question. */
 const CIRCLE_X = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>')}`;
 
-/** BB's Loading glyph. BB spins the <svg> itself, which Chromium animates on the main thread at every frame; drawn on the indicator, the same spin runs on the compositor. */
+/** VesnALIA's Loading glyph. VesnALIA spins the <svg> itself, which Chromium animates on the main thread at every frame; drawn on the indicator, the same spin runs on the compositor. */
 const LOADING = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"><path d="M12 3V6M12 18V21M21 12L18 12M6 12L3 12M18.3635 5.63672L16.2422 7.75804M7.75804 16.2422L5.63672 18.3635M18.3635 18.3635L16.2422 16.2422M7.75804 7.75804L5.63672 5.63672"/></svg>')}`;
 
 // No rule here may continue past :has() to a wide subject such as "> *": Chromium then restyles the whole sidebar on every element added to a row.
 const CSS = `
-[data-resp-manager] .bb-thread-title { font-weight: 600; color: light-dark(oklch(from var(--sidebar-foreground) calc(l - .12) c h), oklch(from var(--sidebar-foreground) calc(l + .14) c h)); }
+[data-resp-manager] .alia-thread-title { font-weight: 600; color: light-dark(oklch(from var(--sidebar-foreground) calc(l - .12) c h), oklch(from var(--sidebar-foreground) calc(l + .14) c h)); }
 [data-sidebar-thread-trailing-indicator] > [data-icon="CircleQuestion"] { color: var(--warning); }
 [data-sidebar-thread-trailing-indicator] > [data-icon="Circle"][aria-label="Unread reply"] { width: 6px; height: 6px; border-radius: 50%; background: var(--sidebar-foreground); }
 [data-sidebar-thread-trailing-indicator] > [data-icon="Circle"][aria-label="Unread reply"] > * { display: none; }
@@ -83,7 +83,7 @@ function toggle(element: HTMLElement, name: string, on: boolean) {
 
 /** The title's first text node, where the manager marker sits. */
 function titleText(row: HTMLElement): Text | null {
-  const title = row.querySelector(".bb-thread-title");
+  const title = row.querySelector(".alia-thread-title");
   const text = title && document.createTreeWalker(title, NodeFilter.SHOW_TEXT).nextNode();
   return text instanceof Text ? text : null;
 }
@@ -93,7 +93,7 @@ function Responsibilities() {
   const { threads } = useSidebarThreads();
   const { attention } = useAttention();
   const { data: managerIds } = useRpcQuery({ contract, method: "managers", input: {} });
-  const { threadId: openThreadId } = useBbContext();
+  const { threadId: openThreadId } = useAliaContext();
   const current = useSyncExternalStore(subscribeFilter, () => filter);
   const managers = new Set(managerIds);
   const latest = useRef({ threads, attention, managers, current, openThreadId });
@@ -107,7 +107,7 @@ function Responsibilities() {
     let hoveredThreadId: string | null = null;
     // Row statuses this generation of the writer currently holds.
     const shown = new Map<string, PluginComposerThreadRowStatus>();
-    // Parents last seen collapsed. BB's lazy list unmounts rows as they scroll away, and a status has to
+    // Parents last seen collapsed. VesnALIA's lazy list unmounts rows as they scroll away, and a status has to
     // outlive that: every status change re-renders each section at once.
     const collapsedIds = new Set<string>();
     onRowStatusWriter = () => {
@@ -162,7 +162,7 @@ function Responsibilities() {
           if (!summary) {
             summary = document.createElement("span");
             summary.dataset.respSummary = "";
-            summary.className = "bb-sidebar-hover-actions-fade";
+            summary.className = "alia-sidebar-hover-actions-fade";
             row.querySelector("[data-sidebar-thread-trailing]")!.prepend(summary);
           }
           const countsKey = JSON.stringify(state.summary);
@@ -219,7 +219,7 @@ function Responsibilities() {
       }
     };
 
-    // Hides whole list items, mounted or not, so BB's lazy list closes the gaps itself. A thread or group
+    // Hides whole list items, mounted or not, so VesnALIA's lazy list closes the gaps itself. A thread or group
     // item stays while any thread in it, mounted or not, is kept; the same rule holds in both states.
     const syncFilter = (visible: ReadonlySet<string> | null, threads: readonly PluginSidebarThread[]) => {
       if (visible === null) {
@@ -305,7 +305,7 @@ function Responsibilities() {
         if (text && !text.data.startsWith(MARKER)) text.data = MARKER + text.data;
         for (const name of names) row.removeAttribute(name);
       }
-      // BB clears this generation's row statuses itself when the plugin deactivates.
+      // VesnALIA clears this generation's row statuses itself when the plugin deactivates.
       onRowStatusWriter = () => {};
     };
   }, []);

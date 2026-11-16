@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { groupThreadsByProject } from "../lib/inbox.ts";
 import {
   applyRootSelection,

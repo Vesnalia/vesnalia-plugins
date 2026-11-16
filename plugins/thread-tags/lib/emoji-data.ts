@@ -1739,7 +1739,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
    "🇦🇽|flag: åland islands ax flag флаг: аландские о-ва флаг",
    "🇦🇿|flag: azerbaijan az flag флаг: азербайджан флаг",
    "🇧🇦|flag: bosnia & herzegovina ba flag флаг: босния и герцеговина флаг",
-   "🇧🇧|flag: barbados bb flag флаг: барбадос флаг",
+   "🇧🇧|flag: barbados VesnALIA flag флаг: барбадос флаг",
    "🇧🇩|flag: bangladesh bd flag флаг: бангладеш флаг",
    "🇧🇪|flag: belgium be flag флаг: бельгия флаг",
    "🇧🇫|flag: burkina faso bf flag флаг: буркина-фасо флаг",

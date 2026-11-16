@@ -60,7 +60,7 @@
   {
     "id": "proof-tests",
     "category": "proof",
-    "prompt": "I ran the test suite. The vitest JSON report is saved at $BB_THREAD_STORAGE/tests.json (142 passed, 2 failed: 'parse > handles empty input' and 'render > keeps focus after update', 3 skipped). Report the run to me.",
+    "prompt": "I ran the test suite. The vitest JSON report is saved at $ALIA_THREAD_STORAGE/tests.json (142 passed, 2 failed: 'parse > handles empty input' and 'render > keeps focus after update', 3 skipped). Report the run to me.",
     "expect": [
       "Tests"
     ]
@@ -68,7 +68,7 @@
   {
     "id": "proof-acceptance",
     "category": "proof",
-    "prompt": "Is the dark-mode feature done? Criteria: toggle in settings (passed, screenshot at $BB_THREAD_STORAGE/shots/toggle.png), follows system setting (passed), persists across restarts (passed), charts readable in dark (failed: axis labels too dim, screenshot at $BB_THREAD_STORAGE/shots/chart-dark.png), print styles unaffected (not tested).",
+    "prompt": "Is the dark-mode feature done? Criteria: toggle in settings (passed, screenshot at $ALIA_THREAD_STORAGE/shots/toggle.png), follows system setting (passed), persists across restarts (passed), charts readable in dark (failed: axis labels too dim, screenshot at $ALIA_THREAD_STORAGE/shots/chart-dark.png), print styles unaffected (not tested).",
     "expect": [
       "Acceptance"
     ]
@@ -76,7 +76,7 @@
   {
     "id": "proof-before-after",
     "category": "proof",
-    "prompt": "I fixed the header layout bug. Before and after screenshots are at $BB_THREAD_STORAGE/before.png and $BB_THREAD_STORAGE/after.png. Show me the fix.",
+    "prompt": "I fixed the header layout bug. Before and after screenshots are at $ALIA_THREAD_STORAGE/before.png and $ALIA_THREAD_STORAGE/after.png. Show me the fix.",
     "expect": [
       "Compare",
       "CompareGrid",
@@ -86,7 +86,7 @@
   {
     "id": "proof-screens-matrix",
     "category": "proof",
-    "prompt": "I re-rendered 6 screens after the redesign and saved before and after shots as $BB_THREAD_STORAGE/before/<name>.png and $BB_THREAD_STORAGE/after/<name>.png for: home, search, detail, cart, profile, settings. Three changed visibly (home, cart, settings); the rest are identical. Show me.",
+    "prompt": "I re-rendered 6 screens after the redesign and saved before and after shots as $ALIA_THREAD_STORAGE/before/<name>.png and $ALIA_THREAD_STORAGE/after/<name>.png for: home, search, detail, cart, profile, settings. Three changed visibly (home, cart, settings); the rest are identical. Show me.",
     "expect": [
       "CompareGrid",
       "Compare",
@@ -114,7 +114,7 @@
   {
     "id": "ci-pipeline-failed",
     "category": "ci",
-    "prompt": "The CI run failed. I saved `gh run view 4821 --json name,displayTitle,status,conclusion,jobs,url` to $BB_THREAD_STORAGE/run.json. Jobs: lint passed, unit tests passed, e2e failed at step 'checkout flow', build passed. Tell me what failed.",
+    "prompt": "The CI run failed. I saved `gh run view 4821 --json name,displayTitle,status,conclusion,jobs,url` to $ALIA_THREAD_STORAGE/run.json. Jobs: lint passed, unit tests passed, e2e failed at step 'checkout flow', build passed. Tell me what failed.",
     "expect": [
       "Pipeline"
     ]
@@ -131,7 +131,7 @@
   {
     "id": "ci-release",
     "category": "ci",
-    "prompt": "Track the 3.2.0 release for me. I'm writing its state to $BB_THREAD_STORAGE/release.json as it moves: tag pushed, iOS build 512 uploaded and processing, Android build 512 in review, web deployed to staging, production deploy waiting for approval.",
+    "prompt": "Track the 3.2.0 release for me. I'm writing its state to $ALIA_THREAD_STORAGE/release.json as it moves: tag pushed, iOS build 512 uploaded and processing, Android build 512 in review, web deployed to staging, production deploy waiting for approval.",
     "expect": [
       "Release",
       "Status",
@@ -142,7 +142,7 @@
   {
     "id": "ci-logs",
     "category": "ci",
-    "prompt": "The build failed. The full output is at $BB_THREAD_STORAGE/build.log (exit code 2). The error is a type error in src/api/client.ts line 88. Show me.",
+    "prompt": "The build failed. The full output is at $ALIA_THREAD_STORAGE/build.log (exit code 2). The error is a type error in src/api/client.ts line 88. Show me.",
     "expect": [
       "Logs",
       "StackTrace",
@@ -273,7 +273,7 @@
   {
     "id": "ask-markup",
     "category": "ask",
-    "prompt": "Something looks off on the settings screen but I can't describe it well. The screenshot is at $BB_THREAD_STORAGE/settings.png. Let me point at the problems on it so you know exactly what to fix.",
+    "prompt": "Something looks off on the settings screen but I can't describe it well. The screenshot is at $ALIA_THREAD_STORAGE/settings.png. Let me point at the problems on it so you know exactly what to fix.",
     "expect": [
       "MarkUp"
     ],
@@ -284,7 +284,7 @@
   {
     "id": "ask-spec-review",
     "category": "ask",
-    "prompt": "I wrote the spec for the import feature at $BB_THREAD_STORAGE/import-spec.md (sections: Goals, Non-goals, File formats, Error handling, Rollout). I want to read it and leave comments section by section, then approve it or ask for changes. Set that up and wait for my review.",
+    "prompt": "I wrote the spec for the import feature at $ALIA_THREAD_STORAGE/import-spec.md (sections: Goals, Non-goals, File formats, Error handling, Rollout). I want to read it and leave comments section by section, then approve it or ask for changes. Set that up and wait for my review.",
     "expect": [
       "DocReview"
     ],
@@ -306,7 +306,7 @@
   {
     "id": "proof-screens-devices",
     "category": "proof",
-    "prompt": "I captured the onboarding flow on every platform after the redesign: welcome, permissions and done screens, each on iPhone, iPad and Mac, in light and dark. The files are $BB_THREAD_STORAGE/shots/<screen>-<device>-<theme>.png (for example welcome-iphone-dark.png). The Mac dark done screen failed to capture. Show me the result.",
+    "prompt": "I captured the onboarding flow on every platform after the redesign: welcome, permissions and done screens, each on iPhone, iPad and Mac, in light and dark. The files are $ALIA_THREAD_STORAGE/shots/<screen>-<device>-<theme>.png (for example welcome-iphone-dark.png). The Mac dark done screen failed to capture. Show me the result.",
     "expect": [
       "Screens"
     ]
@@ -340,7 +340,7 @@
   {
     "id": "progress-pin-job",
     "category": "progress",
-    "prompt": "I'm starting the 40-minute database backfill now. It rewrites $BB_THREAD_STORAGE/backfill.json as it goes ({\"done\": 0, \"total\": 120000, \"label\": \"Rows\", \"eta\": 2400}) and logs to $BB_THREAD_STORAGE/backfill.log. Keep its progress in view while we keep talking about other things.",
+    "prompt": "I'm starting the 40-minute database backfill now. It rewrites $ALIA_THREAD_STORAGE/backfill.json as it goes ({\"done\": 0, \"total\": 120000, \"label\": \"Rows\", \"eta\": 2400}) and logs to $ALIA_THREAD_STORAGE/backfill.log. Keep its progress in view while we keep talking about other things.",
     "expect": [
       "LiveProgress",
       "LiveLog",
@@ -354,7 +354,7 @@
   {
     "id": "status-file-card",
     "category": "status",
-    "prompt": "I keep the fleet's status card in $BB_THREAD_STORAGE/fleet.iris and rewrite it whenever a worker reports. Show me that card here so it stays current as the file changes.",
+    "prompt": "I keep the fleet's status card in $ALIA_THREAD_STORAGE/fleet.iris and rewrite it whenever a worker reports. Show me that card here so it stays current as the file changes.",
     "expect": [],
     "tools": [
       "directive",

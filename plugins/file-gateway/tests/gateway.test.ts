@@ -4,8 +4,8 @@ import { mkdtemp, realpath, writeFile, mkdir, symlink, link, readFile, readdir, 
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
-import { experimental_createHostEntryHarness } from '@get-bb/plugin-sdk/testing/host';
-import { createFakePluginHost, makeHostResponse, makeThreadResponse, experimental_scanPublicSdkOnly } from '@get-bb/plugin-sdk/testing';
+import { experimental_createHostEntryHarness } from '@vesnalia/plugin-sdk/testing/host';
+import { createFakePluginHost, makeHostResponse, makeThreadResponse, experimental_scanPublicSdkOnly } from '@vesnalia/plugin-sdk/testing';
 import { createEntry } from '../host.js';
 import plugin from '../server.js';
 import { lexicalAllowed } from '../policy.js';
@@ -17,7 +17,7 @@ async function fixture(t: {after(fn:()=>Promise<void>):void}) {
  t.after(async()=>{await h.experimental_dispose();await rm(root,{recursive:true,force:true});});
  return {root,shares,data,h,policy:{roots:[shares],deny:[]}};
 }
-for(const file of ['.env','.env.production','.ssh/id_rsa','folder/private.pem','.bb/bb.db','Cookies','secret/hello.txt','/proc/self/environ'])test(`deny sensitive ${file}`,()=>{
+for(const file of ['.env','.env.production','.ssh/id_rsa','folder/private.pem','.vesnalia/alia.db','Cookies','secret/hello.txt','/proc/self/environ'])test(`deny sensitive ${file}`,()=>{
  assert.throws(()=>lexicalAllowed(file.startsWith('/')?file:'/share/'+file,{roots:['/'],deny:[]}));
 });
 test('root containment and explicit deny',()=>{
@@ -64,12 +64,12 @@ test('worker disposal deletes incomplete transfers',async t=>{
 async function serverFixture(t: Parameters<typeof fixture>[0], afterCall?: (method:string)=>void){
  const src=await fixture(t),dst=await fixture(t);
  const policies={source:src.policy,destination:dst.policy};
- const {bb,harness}=createFakePluginHost({pluginId:'file-gateway',experimental_hostEntry:true,settings:{shares:JSON.stringify(policies)},sdk:{threads:{get:async()=>makeThreadResponse({environmentId:'env-destination'})},environments:{get:async()=>({id:'env-destination',hostId:'destination'} as any)},hosts:{list:async()=>[makeHostResponse({id:'source',name:'Source',status:'connected'}),makeHostResponse({id:'destination',name:'Destination',status:'connected'})]}},experimental_callHostRpc:async call=>{
+ const {alia,harness}=createFakePluginHost({pluginId:'file-gateway',experimental_hostEntry:true,settings:{shares:JSON.stringify(policies)},sdk:{threads:{get:async()=>makeThreadResponse({environmentId:'env-destination'})},environments:{get:async()=>({id:'env-destination',hostId:'destination'} as any)},hosts:{list:async()=>[makeHostResponse({id:'source',name:'Source',status:'connected'}),makeHostResponse({id:'destination',name:'Destination',status:'connected'})]}},experimental_callHostRpc:async call=>{
   const h=call.hostId==='source'?src.h:dst.h;
   const result=await h.experimental_call(call.method as never,call.input as never,{signal:call.signal});
   afterCall?.(call.method);return result;
  }});
- await bb.storage.kv.set('config-v2',{shares:policies,revision:0,maxFileMiB:256});plugin(bb);t.after(()=>harness.lifecycle.dispose());return {src,dst,harness};
+ await alia.storage.kv.set('config-v2',{shares:policies,revision:0,maxFileMiB:256});plugin(alia);t.after(()=>harness.lifecycle.dispose());return {src,dst,harness};
 }
 test('server copies binary across hosts with matching SHA and unique destination',async t=>{
  const {src,dst,harness}=await serverFixture(t);const bytes=randomBytes(CHUNK*2+37);const p=path.join(src.shares,'test.bin');await writeFile(p,bytes);
@@ -86,7 +86,7 @@ test('empty file transfers successfully',async t=>{
 });
 test('agent tool reads text; CLI validates inputs and settings revocation',async t=>{
  const {src,harness}=await serverFixture(t);const p=path.join(src.shares,'text');await writeFile(p,'Привет');
- const result=await harness.behavior.callAgentTool('bb_file_gateway',{operation:'read',hostId:'source',path:p});assert.match(JSON.stringify(result),/Привет/);
+ const result=await harness.behavior.callAgentTool('alia_file_gateway',{operation:'read',hostId:'source',path:p});assert.match(JSON.stringify(result),/Привет/);
  assert.equal((await harness.behavior.runCli(['read','source',p,'-1'])).exitCode,1);
  await harness.behavior.callRpc('saveMachine',{hostId:'source',revision:0,policy:{mode:'off',roots:[],deny:[]}});
  assert.equal((await harness.behavior.runCli(['read','source',p])).exitCode,1);
@@ -100,10 +100,10 @@ test('public SDK only',async()=>{
  const result=await experimental_scanPublicSdkOnly(path.resolve('.'),{allow:['@hugeicons/react','@hugeicons/core-free-icons','@radix-ui/react-select','basic-ftp','fflate','ssh2-sftp-client','ftp-srv','ssh2','react','@radix-ui/react-slot','class-variance-authority','clsx','tailwind-merge','vitest','@testing-library/react'].map(x=>new RegExp('^'+x+'$'))});assert.deepEqual(result.violations,[]);assert.deepEqual(result.privateDependencies,[]);
 });
 
-test('conversation artifacts can be shared without exposing BB history or credentials',()=>{
+test('conversation artifacts can be shared without exposing VesnALIA history or credentials',()=>{
  const p={roots:['/work'],deny:[]};
- assert.equal(lexicalAllowed('/work/.bb/chats/thr_abc/artifacts/report.pdf',p),'/work/.bb/chats/thr_abc/artifacts/report.pdf');
- for(const x of ['/work/.bb/bb.db','/work/.bb/chats/thr_abc/history/messages.json','/work/.bb/chats/thr_abc/artifacts/.env'])assert.throws(()=>lexicalAllowed(x,p));
+ assert.equal(lexicalAllowed('/work/.vesnalia/chats/thr_abc/artifacts/report.pdf',p),'/work/.vesnalia/chats/thr_abc/artifacts/report.pdf');
+ for(const x of ['/work/.vesnalia/alia.db','/work/.vesnalia/chats/thr_abc/history/messages.json','/work/.vesnalia/chats/thr_abc/artifacts/.env'])assert.throws(()=>lexicalAllowed(x,p));
 });
 
 test('abort during relayed transfer removes destination partial',async t=>{

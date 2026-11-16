@@ -25,10 +25,10 @@ DEBIAN_FRONTEND=noninteractive apt_install -y -q --no-install-recommends qemu-gu
 for group in adm cdrom dip lxd; do gpasswd -d "$BOX_USER" "$group" >/dev/null 2>&1 || true; done
 usermod -aG kvm "$BOX_USER"
 
-install -m 0755 "$here/boot.sh" /usr/local/sbin/bb-box-boot
-cat >/etc/systemd/system/bb-box-boot.service <<'EOF'
+install -m 0755 "$here/boot.sh" /usr/local/sbin/alia-box-boot
+cat >/etc/systemd/system/alia-box-boot.service <<'EOF'
 [Unit]
-Description=bb-box: the box's address from the SMBIOS serial, and its disk grown
+Description=alia-box: the box's address from the SMBIOS serial, and its disk grown
 DefaultDependencies=no
 After=local-fs.target
 Before=network-pre.target systemd-networkd.service
@@ -36,22 +36,22 @@ Wants=network-pre.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/bb-box-boot
+ExecStart=/usr/local/sbin/alia-box-boot
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable bb-box-boot.service systemd-networkd.service systemd-resolved.service >/dev/null
+systemctl enable alia-box-boot.service systemd-networkd.service systemd-resolved.service >/dev/null
 
 # The network is the boot script's alone: cloud-init's netplan file gave the
 # build VM its address only for its first boot.
 rm -f /etc/netplan/50-cloud-init.yaml /etc/sudoers.d/90-cloud-init-users
 install -d -m 0755 /etc/systemd/resolved.conf.d
-printf '[Resolve]\nDNS=%s\n' "${BOX_DNS:-1.1.1.1 9.9.9.9}" >/etc/systemd/resolved.conf.d/10-bb-box.conf
+printf '[Resolve]\nDNS=%s\n' "${BOX_DNS:-1.1.1.1 9.9.9.9}" >/etc/systemd/resolved.conf.d/10-alia-box.conf
 ln -sf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 # Only IPv4 matters for network-online (Docker waits for it).
 install -d -m 0755 /etc/systemd/system/systemd-networkd-wait-online.service.d
-cat >/etc/systemd/system/systemd-networkd-wait-online.service.d/10-bb-box.conf <<'EOF'
+cat >/etc/systemd/system/systemd-networkd-wait-online.service.d/10-alia-box.conf <<'EOF'
 [Service]
 ExecStart=
 ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any --ipv4 --timeout=10

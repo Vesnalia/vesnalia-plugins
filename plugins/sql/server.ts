@@ -1,6 +1,6 @@
-// bb-plugin-sql — backend: connection CRUD, browse, controlled SQL, agent tools.
+// alia-plugin-sql — backend: connection CRUD, browse, controlled SQL, agent tools.
 import path from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   buildSslConfig,
@@ -524,7 +524,7 @@ export const rpcContract = defineRpcContract({
   },
   /**
    * Сессия Query-панели: SQL + вкладки результатов переживают remount
-   * при переключении вкладок bb (0.6.1).
+   * при переключении вкладок VesnALIA (0.6.1).
    */
   getQuerySession: {
     input: z.null(),
@@ -719,11 +719,11 @@ function tablesMatch(expected: string | null, typed: string | undefined): boolea
   return norm(expected) === norm(typed);
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS connections (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -791,7 +791,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (legacy.length > 0) {
       db.prepare(`UPDATE connections SET password = ''`).run();
-      bb.log.info(`migrated ${legacy.length} connection password(s) to secrets file`);
+      alia.log.info(`migrated ${legacy.length} connection password(s) to secrets file`);
     }
   }
 
@@ -1040,7 +1040,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publishUi() {
-    bb.realtime.publish("sql:ui", { type: "changed", at: Date.now() });
+    alia.realtime.publish("sql:ui", { type: "changed", at: Date.now() });
   }
 
   function listRows(): ConnectionRow[] {
@@ -1162,7 +1162,7 @@ export default async function plugin(bb: BbPluginApi) {
     return pool;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listConnections: () => ({
       connections: listRows().map((row) => ({
         ...toPublic(row),
@@ -1770,7 +1770,7 @@ export default async function plugin(bb: BbPluginApi) {
     readSqlFile: async ({ path, kind, threadId }) => {
       let content: string;
       if (kind === "host") {
-        const file = await bb.sdk.files.read({ path });
+        const file = await alia.sdk.files.read({ path });
         if (file.contentEncoding !== "utf8") {
           throw new Error("SQL file is not UTF-8 text");
         }
@@ -1779,7 +1779,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (!threadId) {
           throw new Error("Workspace .sql files need an open thread context");
         }
-        const thread = await bb.sdk.threads.get({
+        const thread = await alia.sdk.threads.get({
           threadId,
           include: "environment",
         });
@@ -1795,7 +1795,7 @@ export default async function plugin(bb: BbPluginApi) {
         const absolutePath = path.startsWith("/")
           ? path
           : `${rootPath.replace(/\/$/, "")}/${path.replace(/^\.\//, "")}`;
-        const file = await bb.sdk.files.read({
+        const file = await alia.sdk.files.read({
           hostId,
           rootPath,
           path: absolutePath,
@@ -1814,7 +1814,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "sql_list_connections",
     description: "List configured Postgres connection names for sql_query.",
     instructions:
@@ -1842,7 +1842,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "sql_query",
     description:
       "Run a SQL query against a configured Postgres connection (one statement per call). " +
@@ -1920,8 +1920,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     void closeAllPools();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

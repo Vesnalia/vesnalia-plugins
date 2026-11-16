@@ -31,7 +31,7 @@ describe("createReviewStore", () => {
     expect(await store.reviewed(["w"])).toEqual({ w: {} });
   });
 
-  it("keeps a marks row under bb's byte limit even when the paths are not ASCII", async () => {
+  it("keeps a marks row under VesnALIA's byte limit even when the paths are not ASCII", async () => {
     const kv = memoryKv();
     const store = createReviewStore(() => kv);
     const marks = Array.from({ length: 2000 }, (_, index) => ({ mark: `uncommitted\0文档/说明-${index}-${"漢".repeat(20)}.md`, signature: "m:1:0:" }));
@@ -75,7 +75,7 @@ describe("attentionOf", () => {
 describe("toastsFor", () => {
   const waiting = [{ id: "a", title: "A", failed: false }, { id: "b", title: "B", failed: true }];
 
-  it("toasts nothing on the first look, which bb's sidebar already shows", () => {
+  it("toasts nothing on the first look, which VesnALIA's sidebar already shows", () => {
     expect(toastsFor(null, waiting, null, true)).toEqual([]);
   });
 

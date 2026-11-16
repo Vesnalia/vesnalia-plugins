@@ -1,8 +1,8 @@
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type PluginRpcHandlers,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { execFile, type ExecFileException } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -696,8 +696,8 @@ function repositoryFromRemote(raw: string, base: URL): string | null {
   return repositorySchema.safeParse(candidate).success ? candidate : null;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     baseUrl: {
       type: "string",
       label: "Gitea instance URL",
@@ -735,9 +735,9 @@ export default async function plugin(bb: BbPluginApi) {
   const classifyDisplayFailure = (error: unknown): FailureScope =>
     error instanceof GiteaAccessError ? "drop-entry" : "retain";
   const publishDisplay = (item: string | null) =>
-    bb.realtime.publish("display-changed", { item });
+    alia.realtime.publish("display-changed", { item });
   const publishFiles = (item: string | null) =>
-    bb.realtime.publish("display-changed", { item, files: true });
+    alia.realtime.publish("display-changed", { item, files: true });
   const cacheBounds = (maxEntries: number): CacheBounds => ({
     maxEntries,
     maxBytes: config.cacheLimitMiB * mebibyte,
@@ -791,7 +791,7 @@ export default async function plugin(bb: BbPluginApi) {
     myIssueLists.invalidate(listTag);
     publishDisplay(listTag);
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const cache of displays) cache.dispose();
   });
   settings.onChange((next) => {
@@ -1066,7 +1066,7 @@ export default async function plugin(bb: BbPluginApi) {
         : response;
     } catch (error) {
       if (signal?.aborted) throw error;
-      bb.log.warn(
+      alia.log.warn(
         `Could not read the raw diff for ${repo}#${number}: ${error instanceof Error ? error.message : "unknown error"}`,
       );
       return { kind: "failed" };
@@ -1356,7 +1356,7 @@ export default async function plugin(bb: BbPluginApi) {
     const found = new Map<string, Repo>();
     const base = cleanBaseUrl(config.baseUrl);
     try {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       for (const project of projects)
         for (const source of project.sources ?? []) {
           if (source.type !== "local_path") continue;
@@ -1568,9 +1568,9 @@ export default async function plugin(bb: BbPluginApi) {
     `thread:${itemKey(repo, number)}`;
   async function readThreadId(repo: string, number: number) {
     const key = threadKey(repo, number);
-    const threadId = await bb.storage.kv.get<string>(key);
+    const threadId = await alia.storage.kv.get<string>(key);
     if (threadId !== undefined) return threadId;
-    const keys = await bb.storage.kv.list("thread:");
+    const keys = await alia.storage.kv.list("thread:");
     const match = keys.find((storedKey) => {
       if (storedKey === key) return false;
       const separator = storedKey.lastIndexOf(":");
@@ -1579,7 +1579,7 @@ export default async function plugin(bb: BbPluginApi) {
         repoKey(storedKey.slice("thread:".length, separator)) === repoKey(repo)
       );
     });
-    return match ? bb.storage.kv.get<string>(match) : undefined;
+    return match ? alia.storage.kv.get<string>(match) : undefined;
   }
   const autoFixerThreadKey = (threadId: string) =>
     `auto-fixer-thread:${threadId}`;
@@ -1598,7 +1598,7 @@ export default async function plugin(bb: BbPluginApi) {
     number: number,
   ): Promise<AutoFixerSession | null> {
     return parseStoredSession(
-      await bb.storage.kv.get<unknown>(autoFixerKey(repo, number)),
+      await alia.storage.kv.get<unknown>(autoFixerKey(repo, number)),
     );
   }
 
@@ -1606,7 +1606,7 @@ export default async function plugin(bb: BbPluginApi) {
     threadId: string,
   ): Promise<AutoFixerSession | null> {
     const ref = autoFixerRefSchema.safeParse(
-      await bb.storage.kv.get<unknown>(autoFixerThreadKey(threadId)),
+      await alia.storage.kv.get<unknown>(autoFixerThreadKey(threadId)),
     );
     if (!ref.success) return null;
     const session = await getSession(ref.data.repo, ref.data.number);
@@ -1615,8 +1615,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function listSessions(): Promise<AutoFixerSession[]> {
     const sessions: AutoFixerSession[] = [];
-    for (const key of await bb.storage.kv.list(autoFixerPrefix)) {
-      const session = parseStoredSession(await bb.storage.kv.get<unknown>(key));
+    for (const key of await alia.storage.kv.list(autoFixerPrefix)) {
+      const session = parseStoredSession(await alia.storage.kv.get<unknown>(key));
       if (session) sessions.push(session);
     }
     return sessions.sort((left, right) =>
@@ -1625,15 +1625,15 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function setSession(session: AutoFixerSession): Promise<void> {
-    await bb.storage.kv.set(
+    await alia.storage.kv.set(
       autoFixerKey(session.repo, session.number),
       session,
     );
-    await bb.storage.kv.set(autoFixerThreadKey(session.threadId), {
+    await alia.storage.kv.set(autoFixerThreadKey(session.threadId), {
       repo: session.repo,
       number: session.number,
     });
-    bb.realtime.publish("auto-fixer-changed", {
+    alia.realtime.publish("auto-fixer-changed", {
       repo: session.repo,
       number: session.number,
     });
@@ -1642,13 +1642,13 @@ export default async function plugin(bb: BbPluginApi) {
   async function forgetDeletedThread(threadId: string): Promise<void> {
     const current = await getSessionByThread(threadId);
     if (current !== null) {
-      await bb.storage.kv.delete(autoFixerKey(current.repo, current.number));
-      bb.realtime.publish("auto-fixer-changed", {
+      await alia.storage.kv.delete(autoFixerKey(current.repo, current.number));
+      alia.realtime.publish("auto-fixer-changed", {
         repo: current.repo,
         number: current.number,
       });
     }
-    await bb.storage.kv.delete(autoFixerThreadKey(threadId));
+    await alia.storage.kv.delete(autoFixerThreadKey(threadId));
   }
 
   async function readThreadPresence(
@@ -1659,7 +1659,7 @@ export default async function plugin(bb: BbPluginApi) {
     | { state: "idle" | "error" | "running"; canRestoreEnvironment: boolean }
   > {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.deletedAt) return { state: "deleted" };
       const canRestoreEnvironment = Boolean(thread.canRestoreEnvironment);
       if (thread.archivedAt) return { state: "archived", canRestoreEnvironment };
@@ -1695,14 +1695,14 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function agentExecution() {
     const parsed = autoFixerExecutionSchema.safeParse(
-      await bb.storage.kv.get<unknown>(agentExecutionKey),
+      await alia.storage.kv.get<unknown>(agentExecutionKey),
     );
     return parsed.success ? parsed.data : null;
   }
 
   async function getPreferences(): Promise<AutoFixerPreferences> {
     return parseStoredPreferences(
-      await bb.storage.kv.get<unknown>("auto-fixer-preferences"),
+      await alia.storage.kv.get<unknown>("auto-fixer-preferences"),
     );
   }
 
@@ -1712,8 +1712,8 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<AutoFixerPreferences> {
     const result = preferencesUpdate.then(async () => {
       const next = update(await getPreferences());
-      await bb.storage.kv.set("auto-fixer-preferences", next);
-      bb.realtime.publish("auto-fixer-changed", { settings: true });
+      await alia.storage.kv.set("auto-fixer-preferences", next);
+      alia.realtime.publish("auto-fixer-changed", { settings: true });
       return next;
     });
     preferencesUpdate = result.catch(() => undefined);
@@ -1805,10 +1805,10 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function withdrawQueued(threadId: string) {
-    const queued = await bb.sdk.threads.queuedMessages.list({ threadId });
+    const queued = await alia.sdk.threads.queuedMessages.list({ threadId });
     for (const entry of queued)
-      if (entry.originPluginId === bb.pluginId)
-        await bb.sdk.threads.queuedMessages.delete({
+      if (entry.originPluginId === alia.pluginId)
+        await alia.sdk.threads.queuedMessages.delete({
           threadId,
           queuedMessageId: entry.id,
         });
@@ -1824,18 +1824,18 @@ export default async function plugin(bb: BbPluginApi) {
       failures.push(`withdraw: ${message(error)}`);
     }
     try {
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     } catch (error) {
       failures.push(`stop: ${message(error)}`);
     }
     try {
-      await bb.sdk.threads.archive({ threadId });
+      await alia.sdk.threads.archive({ threadId });
     } catch (error) {
       failures.push(`archive: ${message(error)}`);
     }
     if (!failures.length) return { ok: true };
     const error = failures.join("; ");
-    bb.log.error(`Could not clean up Gitean auto-fixer ${threadId}: ${error}`);
+    alia.log.error(`Could not clean up Gitean auto-fixer ${threadId}: ${error}`);
     return { ok: false, error };
   }
 
@@ -1852,14 +1852,14 @@ export default async function plugin(bb: BbPluginApi) {
     detail: string | null,
   ) {
     try {
-      await bb.sdk.plugins.callRpc({
+      await alia.sdk.plugins.callRpc({
         pluginId: "supervisor",
         method: "notifyAutoFixer",
         input: { threadId, event, detail },
         outputSchema: z.object({ accepted: z.boolean() }).strict(),
       });
     } catch (error) {
-      bb.log.debug(
+      alia.log.debug(
         `Supervisor unavailable for Gitean auto-fixer ${threadId}: ${message(error)}`,
       );
     }
@@ -1994,7 +1994,7 @@ export default async function plugin(bb: BbPluginApi) {
       getPreferences(),
       autoFixerPrompt(repo, number, title, policy),
     ]);
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await alia.sdk.threads.spawn({
       projectId: decision.projectId,
       environment: project?.hostId
         ? {
@@ -2044,15 +2044,15 @@ export default async function plugin(bb: BbPluginApi) {
       status: "watching",
     });
     if (decision.replaces !== null)
-      await bb.storage.kv.delete(
+      await alia.storage.kv.delete(
         autoFixerThreadKey(decision.replaces.threadId),
       );
-    await bb.storage.kv.set(`thread-link:${thread.id}`, {
+    await alia.storage.kv.set(`thread-link:${thread.id}`, {
       repo,
       number,
       kind: "pr",
     });
-    bb.log.info(`Started Gitean auto-fixer ${thread.id} for ${key}`);
+    alia.log.info(`Started Gitean auto-fixer ${thread.id} for ${key}`);
     return { threadId: thread.id };
   }
 
@@ -2099,10 +2099,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
     try {
       if (presence.state === "archived" || cleanupFirst)
-        await bb.sdk.threads.unarchive({ threadId: session.threadId });
+        await alia.sdk.threads.unarchive({ threadId: session.threadId });
       await withdrawQueued(session.threadId);
       if (!sameSession(session, await getSession(repo, number))) return result;
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: session.threadId,
         mode: "start",
         input: [
@@ -2144,7 +2144,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
     const steer = async () => {
       await withdrawQueued(session.threadId);
-      return await bb.sdk.threads.send({
+      return await alia.sdk.threads.send({
         threadId: session.threadId,
         mode: "steer",
         input: [
@@ -2256,7 +2256,7 @@ export default async function plugin(bb: BbPluginApi) {
         await api(path, { method: "DELETE" });
       }
       forgetDisplay();
-      bb.realtime.publish("auto-fixer-changed", { repo, number });
+      alia.realtime.publish("auto-fixer-changed", { repo, number });
       return { ok: true as const };
     });
   }
@@ -2410,7 +2410,7 @@ export default async function plugin(bb: BbPluginApi) {
           }),
         );
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Automatic Gitea auto-fixer failed for ${target.repo}#${target.number}: ${message(error)}`,
         );
       }
@@ -2463,7 +2463,7 @@ export default async function plugin(bb: BbPluginApi) {
             case "idle":
               await handleIdle(
                 session.threadId,
-                (await bb.sdk.threads.output({ threadId: session.threadId }))
+                (await alia.sdk.threads.output({ threadId: session.threadId }))
                   .output,
                 session,
               );
@@ -2479,24 +2479,24 @@ export default async function plugin(bb: BbPluginApi) {
               break;
           }
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Could not reconcile Gitean auto-fixer ${session.threadId}: ${message(error)}`,
         );
       }
     }
   }
 
-  bb.events.on("thread.idle", ({ thread, lastAssistantText }) =>
+  alia.events.on("thread.idle", ({ thread, lastAssistantText }) =>
     handleIdle(thread.id, lastAssistantText),
   );
-  bb.events.on("thread.failed", ({ thread, error }) =>
+  alia.events.on("thread.failed", ({ thread, error }) =>
     handleFailed(thread.id, error),
   );
-  bb.events.on("thread.archived", ({ thread }) => handleArchived(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) =>
+  alia.events.on("thread.archived", ({ thread }) => handleArchived(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) =>
     forgetDeletedThread(thread.id),
   );
-  bb.background.service("auto-fixers", {
+  alia.background.service("auto-fixers", {
     async start(signal) {
       let nextAutoStartAt = 0;
       while (!signal.aborted) {
@@ -2508,7 +2508,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
         } catch (error) {
           if (signal.aborted) break;
-          bb.log.warn(
+          alia.log.warn(
             `Gitean auto-fixer reconciliation failed: ${message(error)}`,
           );
         }
@@ -2526,7 +2526,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const branchHandlers = registerBranchProvider(bb, {
+  const branchHandlers = registerBranchProvider(alia, {
     repoFromRemote(remote) {
       try {
         return repositoryFromRemote(remote, cleanBaseUrl(config.baseUrl));
@@ -2975,7 +2975,7 @@ export default async function plugin(bb: BbPluginApi) {
       const known = await projectFor(repo);
       if (!known?.projectId)
         throw new Error(
-          `No BB project is associated with ${repo}. Attach a project checkout or use another repository.`,
+          `No VesnALIA project is associated with ${repo}. Attach a project checkout or use another repository.`,
         );
       const item = mapItem(
         repo,
@@ -3015,7 +3015,7 @@ export default async function plugin(bb: BbPluginApi) {
         .join("\n")
         .slice(0, 60000);
       const execution = await agentExecution();
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: known.projectId,
         environment: { type: "project-default" },
         title: `${ref}: ${item.title}`.slice(0, 120),
@@ -3033,8 +3033,8 @@ export default async function plugin(bb: BbPluginApi) {
           },
         }),
       });
-      await bb.storage.kv.set(threadKey(repo, number), thread.id);
-      await bb.storage.kv.set(`thread-link:${thread.id}`, {
+      await alia.storage.kv.set(threadKey(repo, number), thread.id);
+      await alia.storage.kv.set(`thread-link:${thread.id}`, {
         repo,
         number,
         kind,
@@ -3043,8 +3043,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
     getAgentExecution: async () => ({ execution: await agentExecution() }),
     setAgentExecution: async ({ execution }) => {
-      if (execution) await bb.storage.kv.set(agentExecutionKey, execution);
-      else await bb.storage.kv.delete(agentExecutionKey);
+      if (execution) await alia.storage.kv.set(agentExecutionKey, execution);
+      else await alia.storage.kv.delete(agentExecutionKey);
       return { ok: true as const };
     },
     setDraft: async (
@@ -3064,7 +3064,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { ok: true as const };
     },
     threadItem: async ({ threadId }) =>
-      (await bb.storage.kv.get(`thread-link:${threadId}`)) ?? null,
+      (await alia.storage.kv.get(`thread-link:${threadId}`)) ?? null,
     refresh: async () => {
       repoDiscovery = null;
       repoOptionCache.clear();
@@ -3139,14 +3139,14 @@ export default async function plugin(bb: BbPluginApi) {
       );
       if (preferences.autoFix)
         await reconcileAutoAutoFixer().catch((error: unknown) =>
-          bb.log.warn(`Automatic Gitea auto-fixing failed: ${message(error)}`),
+          alia.log.warn(`Automatic Gitea auto-fixing failed: ${message(error)}`),
         );
       return preferences;
     },
     setAutoFixerExecution: (execution) =>
       updatePreferences((current) => ({ ...current, execution })),
   } satisfies PluginRpcHandlers<typeof giteaRpcContract>;
-  bb.rpc.register(giteaRpcContract, handlers);
+  alia.rpc.register(giteaRpcContract, handlers);
   async function mentionItems(kind: "issue" | "pr", query: string) {
     const list = await readList(
       itemLists,
@@ -3186,11 +3186,11 @@ export default async function plugin(bb: BbPluginApi) {
         "",
         item.body.slice(0, 16000) || "(no description)",
         "",
-        `Use the Gitea panel or bb gitea ${kind === "pr" ? "prs" : "issues"} ${repo} for more details.`,
+        `Use the Gitea panel or VesnALIA gitea ${kind === "pr" ? "prs" : "issues"} ${repo} for more details.`,
       ].join("\n"),
     };
   }
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "issue",
     label: "Gitea issues",
     triggers: ["@", "#"],
@@ -3201,7 +3201,7 @@ export default async function plugin(bb: BbPluginApi) {
       return mentionContext("issue", itemId);
     },
   });
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "pr",
     label: "Gitea pull requests",
     triggers: ["@", "#"],
@@ -3212,186 +3212,186 @@ export default async function plugin(bb: BbPluginApi) {
       return mentionContext("pr", itemId);
     },
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "gitea",
     summary: "Browse and update Gitea issues and pull requests",
     commands: [
       {
         name: "status",
         summary: "Show Gitea connection and tracked repositories",
-        usage: "bb gitea status [--json]",
+        usage: "alia gitea status [--json]",
       },
       {
         name: "repos",
         summary: "List tracked Gitea repositories",
-        usage: "bb gitea repos [--json]",
+        usage: "alia gitea repos [--json]",
       },
       {
         name: "issues",
         summary: "List repository issues",
         usage:
-          "bb gitea issues [owner/repo] [--state open|closed|all] [--query text] [--json]",
+          "alia gitea issues [owner/repo] [--state open|closed|all] [--query text] [--json]",
       },
       {
         name: "prs",
         summary: "List pull requests",
         usage:
-          "bb gitea prs [owner/repo] [--state open|closed|all] [--query text] [--json]",
+          "alia gitea prs [owner/repo] [--state open|closed|all] [--query text] [--json]",
       },
       {
         name: "show",
         summary: "Read issue or pull request details",
-        usage: "bb gitea show <issue|pr> <owner/repo> <number> [--json]",
+        usage: "alia gitea show <issue|pr> <owner/repo> <number> [--json]",
       },
       {
         name: "conversation",
         summary: "Read the cached issue or pull request conversation",
         usage:
-          "bb gitea conversation <issue|pr> <owner/repo> <number> [--refresh] [--json]",
+          "alia gitea conversation <issue|pr> <owner/repo> <number> [--refresh] [--json]",
       },
       {
         name: "files",
         summary: "Read cached pull request changed files and diffs",
-        usage: "bb gitea files <owner/repo> <number> [--refresh] [--json]",
+        usage: "alia gitea files <owner/repo> <number> [--refresh] [--json]",
       },
       {
         name: "create-issue",
         summary: "Create an issue",
-        usage: "bb gitea create-issue <owner/repo> <title> [--body text]",
+        usage: "alia gitea create-issue <owner/repo> <title> [--body text]",
       },
       {
         name: "comment",
         summary: "Add an issue or pull request comment",
-        usage: "bb gitea comment <owner/repo> <number> <body>",
+        usage: "alia gitea comment <owner/repo> <number> <body>",
       },
       {
         name: "line-comment",
         summary: "Comment on one line of a pull request diff",
         usage:
-          "bb gitea line-comment <owner/repo> <number> <path> <line> [--old] <body>",
+          "alia gitea line-comment <owner/repo> <number> <path> <line> [--old] <body>",
       },
       {
         name: "comment-edit",
         summary: "Replace the body of a conversation comment",
         usage:
-          "bb gitea comment-edit <owner/repo> <number> <comment-id> <body>",
+          "alia gitea comment-edit <owner/repo> <number> <comment-id> <body>",
       },
       {
         name: "comment-delete",
         summary: "Delete a conversation comment",
-        usage: "bb gitea comment-delete <owner/repo> <number> <comment-id>",
+        usage: "alia gitea comment-delete <owner/repo> <number> <comment-id>",
       },
       {
         name: "options",
         summary: "List a repository's labels and assignable users",
-        usage: "bb gitea options <owner/repo> [--json]",
+        usage: "alia gitea options <owner/repo> [--json]",
       },
       {
         name: "set-state",
         summary: "Open or close an issue or pull request",
-        usage: "bb gitea set-state <owner/repo> <number> <open|closed>",
+        usage: "alia gitea set-state <owner/repo> <number> <open|closed>",
       },
       {
         name: "metadata",
         summary: "Replace labels and assignees",
         usage:
-          "bb gitea metadata <owner/repo> <number> <labels-csv> <assignees-csv>",
+          "alia gitea metadata <owner/repo> <number> <labels-csv> <assignees-csv>",
       },
       {
         name: "review",
         summary: "Submit a pull request review",
         usage:
-          "bb gitea review <owner/repo> <number> <APPROVED|REQUEST_CHANGES|COMMENT> [body]",
+          "alia gitea review <owner/repo> <number> <APPROVED|REQUEST_CHANGES|COMMENT> [body]",
       },
       {
         name: "send-agent",
-        summary: "Start a BB agent thread for an item",
-        usage: "bb gitea send-agent <issue|pr> <owner/repo> <number>",
+        summary: "Start a VesnALIA agent thread for an item",
+        usage: "alia gitea send-agent <issue|pr> <owner/repo> <number>",
       },
       {
         name: "draft",
         summary: "Mark a pull request as a draft or ready for review",
-        usage: "bb gitea draft <owner/repo> <number> on|off",
+        usage: "alia gitea draft <owner/repo> <number> on|off",
       },
       {
         name: "agent-execution",
         summary: "Show or set the model for send-agent threads",
         usage:
-          "bb gitea agent-execution [<provider> <model> <reasoning> [fast|default] | default] [--json]",
+          "alia gitea agent-execution [<provider> <model> <reasoning> [fast|default] | default] [--json]",
       },
       {
         name: "thread",
-        summary: "Read the Gitea item linked to a BB thread",
-        usage: "bb gitea thread <thread-id> [--json]",
+        summary: "Read the Gitea item linked to a VesnALIA thread",
+        usage: "alia gitea thread <thread-id> [--json]",
       },
       {
         name: "refresh",
         summary: "Refresh repository availability",
-        usage: "bb gitea refresh [--json]",
+        usage: "alia gitea refresh [--json]",
       },
       {
         name: "my-issues",
         summary: "List issues assigned to your Gitea account",
-        usage: "bb gitea my-issues [owner/repo] [--state open|closed|all] [--query text] [--json]",
+        usage: "alia gitea my-issues [owner/repo] [--state open|closed|all] [--query text] [--json]",
       },
       {
         name: "my-prs",
         summary: "List your pull requests with Auto-fix status",
         usage:
-          "bb gitea my-prs [owner/repo] [--state open|closed|all] [--query text] [--json]",
+          "alia gitea my-prs [owner/repo] [--state open|closed|all] [--query text] [--json]",
       },
       {
         name: "auto-fix",
         summary:
           "Turn Auto-fix on or off for your pull request; it fixes CI failures and review feedback but never merges",
-        usage: "bb gitea auto-fix <owner/repo> <number> on|off [--json]",
+        usage: "alia gitea auto-fix <owner/repo> <number> on|off [--json]",
       },
       {
         name: "auto-merge",
         summary:
           "Request or cancel native Gitea auto-merge through tea; never starts an agent",
-        usage: "bb gitea auto-merge <owner/repo> <number> on|off [--json]",
+        usage: "alia gitea auto-merge <owner/repo> <number> on|off [--json]",
       },
       {
         name: "auto-fixer-status",
         summary:
           "Show a pull request's Auto-fix and auto-fixer state",
-        usage: "bb gitea auto-fixer-status <owner/repo> <number> [--json]",
+        usage: "alia gitea auto-fixer-status <owner/repo> <number> [--json]",
       },
       {
         name: "auto-fixer-retry",
         summary: "Resume a failed or waiting auto-fixer",
-        usage: "bb gitea auto-fixer-retry <owner/repo> <number> [--json]",
+        usage: "alia gitea auto-fixer-retry <owner/repo> <number> [--json]",
       },
       {
         name: "auto-fixer-thread",
-        summary: "Show the auto-fixer session owned by a BB thread",
-        usage: "bb gitea auto-fixer-thread <thread-id> [--json]",
+        summary: "Show the auto-fixer session owned by a VesnALIA thread",
+        usage: "alia gitea auto-fixer-thread <thread-id> [--json]",
       },
       {
         name: "auto-fixers",
         summary: "List retained auto-fixer sessions",
-        usage: "bb gitea auto-fixers [--json]",
+        usage: "alia gitea auto-fixers [--json]",
       },
       {
         name: "automation-defaults",
         summary:
           "Show or set whether Auto-fix turns on automatically for your pull requests",
-        usage: "bb gitea automation-defaults [fix on|off] [--json]",
+        usage: "alia gitea automation-defaults [fix on|off] [--json]",
       },
       {
         name: "auto-fixer-execution",
         summary:
           "Set the provider, model, reasoning, and tier for new auto-fixers",
         usage:
-          "bb gitea auto-fixer-execution <provider> <model> <reasoning> [fast|default] [--json]",
+          "alia gitea auto-fixer-execution <provider> <model> <reasoning> [fast|default] [--json]",
       },
       {
         name: "pr-watch",
         summary:
           "Wait up to a few minutes for a cheap pull request or CI change signal",
         usage:
-          "bb gitea pr-watch <owner/repo> <number> [--since token] [--timeout seconds] [--json]",
+          "alia gitea pr-watch <owner/repo> <number> [--since token] [--timeout seconds] [--json]",
       },
     ],
     async run(argv) {
@@ -3622,7 +3622,7 @@ export default async function plugin(bb: BbPluginApi) {
             number: Number(values[2]),
           });
           const value = await handlers.sendAgent(input);
-          return succeed(value, `Started BB thread ${value.threadId}`);
+          return succeed(value, `Started VesnALIA thread ${value.threadId}`);
         }
         if (command === "thread") {
           const input = giteaRpcContract.threadItem.input.parse({
@@ -3822,7 +3822,7 @@ export default async function plugin(bb: BbPluginApi) {
         }
         return {
           exitCode: 1,
-          stderr: "Run `bb gitea --help` for supported commands.",
+          stderr: "Run `alia gitea --help` for supported commands.",
         };
       } catch (error) {
         return {

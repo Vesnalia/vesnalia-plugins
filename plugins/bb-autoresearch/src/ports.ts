@@ -1,4 +1,4 @@
-// The engine's view of BB. server.ts adapts bb.sdk to this; tests fake it.
+// The engine's view of VesnALIA. server.ts adapts alia.sdk to this; tests fake it.
 import type { ZodType } from "zod";
 import type { HostRunner } from "./host/runner.ts";
 
@@ -8,7 +8,7 @@ export interface ThreadInfo {
   archivedAt: number | null;
   deletedAt: number | null;
   environmentId: string | null;
-  /** The agent provider running the thread (when BB reports it). */
+  /** The agent provider running the thread (when VesnALIA reports it). */
   providerId?: string | null;
 }
 
@@ -49,7 +49,7 @@ export interface HostInfo {
   status: "connected" | "disconnected";
 }
 
-/** One provider's subscription/usage windows (bb.sdk.system.usageLimits). */
+/** One provider's subscription/usage windows (alia.sdk.system.usageLimits). */
 export interface ProviderUsage {
   providerId: string;
   status: "ok" | "not_installed" | "unauthenticated" | "expired" | "error";
@@ -62,13 +62,13 @@ export interface PortMessage {
   detail: string;
 }
 
-export interface BbPort {
-  /** Call another plugin's bb.rpc method (bench providers); the output is parsed with `outputSchema`. */
+export interface AliaPort {
+  /** Call another plugin's alia.rpc method (bench providers); the output is parsed with `outputSchema`. */
   callPlugin(pluginId: string, method: string, input: unknown, outputSchema: ZodType): Promise<unknown>;
   primaryHostId(): Promise<string | null>;
-  /** Enrolled BB machines (bench host names and ids are resolved against these). */
+  /** Enrolled VesnALIA machines (bench host names and ids are resolved against these). */
   listHosts(): Promise<HostInfo[]>;
-  /** Connection state of one machine; "unknown" when BB can't say. */
+  /** Connection state of one machine; "unknown" when VesnALIA can't say. */
   hostStatus(hostId: string): Promise<"connected" | "disconnected" | "unknown">;
   /** The project's checkout on `hostId`, if it has one. */
   projectCheckout(projectId: string, hostId: string): Promise<string | null>;
@@ -102,15 +102,15 @@ export interface BbPort {
    * text is never read.
    */
   threadActivity(threadId: string, afterSeq: number, limit?: number): Promise<{ seq: number; items: ThreadActivityItem[] }>;
-  /** Provider usage windows; empty when BB can't say. */
+  /** Provider usage windows; empty when VesnALIA can't say. */
   usageLimits(providerId?: string): Promise<ProviderUsage[]>;
-  /** This plugin's id (the package name minus `bb-plugin-`), used in app links. */
+  /** This plugin's id (the package name minus `alia-plugin-`), used in app links. */
   pluginId(): string;
   /** The configured public app URL (for links in PR bodies and reports), if any. */
   appUrl(): string | null;
   log(level: "info" | "warn" | "error", message: string): void;
   publish(channel: string, payload: unknown): void;
-  /** Ask BB to re-decide dispatches this plugin holds (quiet bench: a measurement ended). Fire and forget. */
+  /** Ask VesnALIA to re-decide dispatches this plugin holds (quiet bench: a measurement ended). Fire and forget. */
   recheckDispatch(): Promise<void>;
 }
 
@@ -118,10 +118,10 @@ export interface BbPort {
 export interface DispatchQuery {
   threadId: string;
   attempt: "start-turn" | "join-turn";
-  /** The machine the turn would run on, when BB knows. */
+  /** The machine the turn would run on, when VesnALIA knows. */
   hostId: string | null;
   /**
-   * BB says this plugin created the thread (originPluginId). A worker's first
+   * VesnALIA says this plugin created the thread (originPluginId). A worker's first
    * turn is dispatched while the spawn call is still in flight, before its
    * row knows the thread id: only workers are spawned by the plugin.
    */

@@ -19,12 +19,12 @@ await loadInboxApp();
 
 describe("sidebar settings", () => {
   it("keeps project colors opt-in and ignores the removed archive preview settings", async () => {
-    localStorage.setItem("bb-sidebar:shelf-expansion:v1", JSON.stringify({ settled: true, archived: true }));
+    localStorage.setItem("alia-sidebar:shelf-expansion:v1", JSON.stringify({ settled: true, archived: true }));
     let settings = { ...defaultSidebarSettings, archivedShelfEnabled: true };
     const rendered = renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         threads: [
           thread({ id: "live", title: "Live work" }),
           thread({ id: "done", title: "Settled work" }),
@@ -59,7 +59,7 @@ describe("sidebar settings", () => {
   });
 
   it("uses one continuous stripe for a project group and refreshes its custom color", async () => {
-    localStorage.setItem("bb-sidebar:active-sort:v1", "project");
+    localStorage.setItem("alia-sidebar:active-sort:v1", "project");
     let colors = { proj_1: "#123456" };
     const rendered = renderSlot(inbox, listProps, {
       sidebarThreads: {
@@ -80,7 +80,7 @@ describe("sidebar settings", () => {
     const group = await screen.findByRole("region", { name: "add_on project" });
     await waitFor(() =>
       expect(
-        (group.querySelector("[data-project-stripe]") as HTMLElement)?.style.getPropertyValue("--bb-sidebar-project"),
+        (group.querySelector("[data-project-stripe]") as HTMLElement)?.style.getPropertyValue("--alia-sidebar-project"),
       ).toBe("#123456"),
     );
     expect(group.querySelectorAll("[data-project-stripe]")).toHaveLength(1);
@@ -89,7 +89,7 @@ describe("sidebar settings", () => {
     await rendered.emitRealtime("project-colors", { projectId: "proj_1" });
     await waitFor(() =>
       expect(
-        (group.querySelector("[data-project-stripe]") as HTMLElement).style.getPropertyValue("--bb-sidebar-project"),
+        (group.querySelector("[data-project-stripe]") as HTMLElement).style.getPropertyValue("--alia-sidebar-project"),
       ).toBe("#fedcba"),
     );
     fireEvent.click(within(group).getByRole("button", { name: "add_on (2)" }));
@@ -97,9 +97,9 @@ describe("sidebar settings", () => {
   });
 
   it("limits stripes by display mode while keeping all project names colored", async () => {
-    localStorage.setItem("bb-sidebar:active-sort:v1", "project");
-    localStorage.setItem("bb-sidebar:single-thread-project-grouping:v1", "false");
-    localStorage.setItem("bb-sidebar:shelf-expansion:v1", JSON.stringify({ settled: true, archived: true }));
+    localStorage.setItem("alia-sidebar:active-sort:v1", "project");
+    localStorage.setItem("alia-sidebar:single-thread-project-grouping:v1", "false");
+    localStorage.setItem("alia-sidebar:shelf-expansion:v1", JSON.stringify({ settled: true, archived: true }));
     let settings = {
       ...defaultSidebarSettings,
       projectColorsEnabled: true,
@@ -141,8 +141,8 @@ describe("sidebar settings", () => {
     await screen.findByText("Settled row");
     const assertColor = (element: Element, showStripe: boolean) => {
       expect(element.querySelectorAll("[data-project-stripe]")).toHaveLength(showStripe ? 1 : 0);
-      expect(element.querySelector(".bb-sidebar-project-name")).not.toBeNull();
-      expect(element.querySelector(".bb-sidebar-project-monogram")).not.toBeNull();
+      expect(element.querySelector(".alia-sidebar-project-name")).not.toBeNull();
+      expect(element.querySelector(".alia-sidebar-project-monogram")).not.toBeNull();
     };
     const row = (title: string) => screen.getByText(title).closest("li")!;
     await waitFor(() => expect(row("Compact card").querySelector(".h-8")).not.toBeNull());
@@ -169,9 +169,9 @@ describe("sidebar settings", () => {
     }
     settings = { ...settings, projectColorsEnabled: false };
     await rendered.emitRealtime("sidebar-settings", {});
-    await waitFor(() => expect(document.querySelector(".bb-sidebar-project-name")).toBeNull());
+    await waitFor(() => expect(document.querySelector(".alia-sidebar-project-name")).toBeNull());
     expect(document.querySelector("[data-project-stripe]")).toBeNull();
-    expect(document.querySelector(".bb-sidebar-project-monogram")).toBeNull();
+    expect(document.querySelector(".alia-sidebar-project-monogram")).toBeNull();
   });
 
   it("saves the color switch and lets users choose and reset a project's color", async () => {
@@ -253,7 +253,7 @@ describe("sidebar settings", () => {
     const select = await screen.findByLabelText("Open port links on");
     expect(within(select).getByRole("option", { name: "Local Mac" })).toBeDefined();
     fireEvent.change(select, { target: { value: "host_local" } });
-    expect(localStorage.getItem("bb-sidebar:port-link-host:v1")).toBe("host_local");
+    expect(localStorage.getItem("alia-sidebar:port-link-host:v1")).toBe("host_local");
   });
   it("groups related controls and saves changes without a save button", async () => {
     let saved: typeof defaultSidebarSettings | null = null;
@@ -462,7 +462,7 @@ describe("sidebar settings", () => {
     delete previous.childIconStyle;
     delete previous.projectColorDisplay;
     previous.projectColorsEnabled = true;
-    window.localStorage.setItem("bb-sidebar:settings-cache:v1", JSON.stringify(previous));
+    window.localStorage.setItem("alia-sidebar:settings-cache:v1", JSON.stringify(previous));
     renderSlot(
       sidebarSettings,
       {},
@@ -598,7 +598,7 @@ describe("sidebar settings", () => {
     expect(within(confirmation).getByText("Remove Sidebar?")).toBeDefined();
     expect(removal).toBeNull();
 
-    fireEvent.click(within(confirmation).getByRole("button", { name: "Remove from BB" }));
+    fireEvent.click(within(confirmation).getByRole("button", { name: "Remove from VesnALIA" }));
 
     await waitFor(() =>
       expect(removal).toEqual({
@@ -608,6 +608,6 @@ describe("sidebar settings", () => {
     );
     expect(await within(management).findByText("No projects to remove.")).toBeDefined();
     expect(within(appearance).getByRole("combobox", { name: "Project" })).toHaveProperty("value", "personal");
-    expect(toastMocks.success).toHaveBeenCalledWith("Sidebar removed from BB", { className: "bb-sidebar-toast" });
+    expect(toastMocks.success).toHaveBeenCalledWith("Sidebar removed from VesnALIA", { className: "alia-sidebar-toast" });
   });
 });

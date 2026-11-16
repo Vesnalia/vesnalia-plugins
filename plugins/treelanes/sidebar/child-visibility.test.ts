@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { childVisibility } from "./child-visibility";
 
 it("reveals linked agent descendants, keeps internal and unrelated threads hidden, and handles new children", async () => {
@@ -24,7 +24,7 @@ it("reveals linked agent descendants, keeps internal and unrelated threads hidde
     },
   } } });
   try {
-    const visibility = childVisibility(host.bb);
+    const visibility = childVisibility(host.alia);
     await visibility.run();
     expect(updated).toEqual(["deep", "review"]);
     const next = { ...rows[1]!, id: "next", visibility: "hidden" as const };

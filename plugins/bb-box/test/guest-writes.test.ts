@@ -115,7 +115,7 @@ test("071 unit 5, go review: the write table in 071-results.md lists every funct
 });
 
 test("071 unit 5, go review: the helper writes a container only in change_guest, and only from a with_guest callback that holds the guest's config lock and finds it the same guest", () => {
-  const helper = readFileSync(join(ROOT, "setup/proxmox-lxc/host/bb-box-gpu"), "utf8").split("\n");
+  const helper = readFileSync(join(ROOT, "setup/proxmox-lxc/host/alia-box-gpu"), "utf8").split("\n");
   const subOf = (at: number) => {
     for (let line = at; line >= 0; line--) {
       const match = /^sub (\w+)/.exec(helper[line]!);

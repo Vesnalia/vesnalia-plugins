@@ -2,7 +2,7 @@
 // then kept live across windows. A live update that lands while the first
 // read is still out is newer, so the read never overwrites it.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ThreadPrefsSignal, rpcContract } from "../server";
 import { options } from "./kit/common";
 import {

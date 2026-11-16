@@ -1,7 +1,7 @@
 ## What you get
 
-BB draws each OMP `task` call as one "Ran tool" row, while OMP keeps a full
-transcript for every subagent on disk. This plugin shows those files in BB.
+VesnALIA draws each OMP `task` call as one "Ran tool" row, while OMP keeps a full
+transcript for every subagent on disk. This plugin shows those files in VesnALIA.
 
 - **A strip under every spawn.** One line per agent: status, name, and what it
   is doing now. Click an agent to open its history in the side panel.
@@ -15,7 +15,7 @@ transcript for every subagent on disk. This plugin shows those files in BB.
   subagents, and a toast reports an agent that fails.
 - **Commands** in the command palette and the thread actions menu, and an
   **OMP sessions page** with the subagent count of each session.
-- **A `bb omp-subagents` command**, a skill, and two read-only agent tools.
+- **A `alia omp-subagents` command**, a skill, and two read-only agent tools.
 
 ## How it works
 
@@ -25,14 +25,14 @@ interrupted, or partial for an agent that stopped without a clean end.
 
 ## Requirements
 
-- BB 0.47 or newer.
+- VesnALIA 0.47 or newer.
 - Threads on the `omp` provider, with the `omp` CLI on the thread's machine.
 
 ## Limits
 
 - Messages go to the OMP main agent, which forwards a message meant for one
   subagent. The plugin does not kill or revive agents.
-- The strip reads BB's internal timeline code, which is not a public API. A BB
+- The strip reads VesnALIA's internal timeline code, which is not a public API. A VesnALIA
   update can remove the strip; the timeline itself is not affected.
-- Sidebar status and the row menu item show in BB's own thread list, not in
+- Sidebar status and the row menu item show in VesnALIA's own thread list, not in
   thread list plugins that draw their own rows.

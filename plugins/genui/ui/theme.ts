@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useLayoutEffect, useState } from "react";
 
-/** BB marks its dark theme with a `dark` class on the root element. */
+/** VesnALIA marks its dark theme with a `dark` class on the root element. */
 export function useDarkTheme(): boolean {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   useEffect(() => {
@@ -15,7 +15,7 @@ export function useDarkTheme(): boolean {
 /**
  * The colour an element is painted on, as #rrggbb: its ancestors'
  * backgrounds composited, outermost first. Null until the element mounts.
- * `dark` re-reads it when BB's theme flips.
+ * `dark` re-reads it when VesnALIA's theme flips.
  */
 export function useBackdropColor(element: RefObject<HTMLElement | null>, dark: boolean): string | null {
   const [color, setColor] = useState<string | null>(null);
@@ -33,7 +33,7 @@ function backdropColor(element: HTMLElement, dark: boolean): string {
     const background = getComputedStyle(current).backgroundColor;
     if (!TRANSPARENT.test(background)) layers.unshift(background);
   }
-  // A canvas composites the layers and reads any colour syntax (BB's are oklch) back as sRGB.
+  // A canvas composites the layers and reads any colour syntax (VesnALIA's are oklch) back as sRGB.
   const context = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
   if (context === null) return dark ? "#000000" : "#ffffff";
   context.canvas.width = 1;

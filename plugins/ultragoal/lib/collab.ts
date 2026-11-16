@@ -1,6 +1,6 @@
 import type { AgentPermissionMode } from "./goal-settings.js";
 import { immediateSendMode } from "./scheduler.js";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { isPromptLikeTitle, shortSliceTitle } from "./titles.js";
 import { z } from "zod";
 import type { GoalAgent, GoalAgentRole, GoalAgentStatus } from "../contract.js";
@@ -180,7 +180,7 @@ function mapThreadStatus(status: string | undefined, output?: string | null): {
 }
 
 export function createCollabStore(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   hooks?: {
     onChange?: (rootThreadId: string) => void;
     retitleItem?: (rootThreadId: string, itemId: string, message: string) => void;
@@ -226,7 +226,7 @@ export function createCollabStore(
     workerPermissionMode?: (rootThreadId: string) => AgentPermissionMode;
     /** Refuse an in-flight scheduler snapshot after settings changed. */
     executionRevision?: (rootThreadId: string) => number;
-    /** A discovered BB child could not obtain a durable root worker slot. */
+    /** A discovered VesnALIA child could not obtain a durable root worker slot. */
     onRejectedChild?: (
       rootThreadId: string,
       childThreadId: string,
@@ -234,17 +234,17 @@ export function createCollabStore(
     ) => void;
   },
 ) {
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const readExecutionOptions = async (threadId: string) => {
     try {
-      return await bb.sdk.threads.defaultExecutionOptions({ threadId });
+      return await alia.sdk.threads.defaultExecutionOptions({ threadId });
     } catch {
       return null;
     }
   };
   const readThread = async (threadId: string) => {
     try {
-      return await bb.sdk.threads.get({ threadId });
+      return await alia.sdk.threads.get({ threadId });
     } catch {
       return null;
     }
@@ -399,14 +399,14 @@ export function createCollabStore(
 
   async function statusOf(threadId: string): Promise<AgentStatus> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status === "active" || thread.status === "starting") return "running";
       if (thread.status === "stopping") return "interrupted";
       if (thread.status === "error") {
         return { errored: "Turn error" };
       }
       if (thread.status === "idle") {
-        const output = await bb.sdk.threads.output({ threadId }).catch(() => ({ output: null }));
+        const output = await alia.sdk.threads.output({ threadId }).catch(() => ({ output: null }));
         return { completed: output.output ?? null };
       }
       return "shutdown";
@@ -450,7 +450,7 @@ export function createCollabStore(
     };
     try {
       take(
-        await bb.sdk.threads.list({
+        await alia.sdk.threads.list({
           parentThreadId: root,
           includeHidden: true,
           limit: 80,
@@ -460,9 +460,9 @@ export function createCollabStore(
       // parent filter is best-effort
     }
     try {
-      const rootThread = await bb.sdk.threads.get({ threadId: root });
+      const rootThread = await alia.sdk.threads.get({ threadId: root });
       if (rootThread.projectId) {
-        const listed = await bb.sdk.threads.list({
+        const listed = await alia.sdk.threads.list({
           projectId: rootThread.projectId,
           includeHidden: true,
           hasParent: true,
@@ -495,7 +495,7 @@ export function createCollabStore(
   /** First user message of a thread — the spawn prompt for a child worker. */
   async function spawnPromptOf(threadId: string): Promise<string | null> {
     try {
-      const timeline = await bb.sdk.threads.timeline({ threadId });
+      const timeline = await alia.sdk.threads.timeline({ threadId });
       for (const raw of timeline.rows as readonly unknown[]) {
         const row = raw as { kind?: string; role?: string; text?: string };
         if (row?.kind !== "conversation" || row.role !== "user") continue;
@@ -520,7 +520,7 @@ export function createCollabStore(
     threadId: string,
   ): Promise<{ status: GoalAgentStatus; summary: string | null; title: string | null }> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       const mapped = mapThreadStatus(thread.status, null);
       const next = { ...mapped, title: displayTitle(thread.title), at: Date.now() };
       statusCache.set(threadId, next);
@@ -534,7 +534,7 @@ export function createCollabStore(
     const title = shortSliceTitle(step);
     if (!title) return;
     try {
-      await bb.sdk.threads.update({ threadId, title });
+      await alia.sdk.threads.update({ threadId, title });
       const cached = statusCache.get(threadId);
       if (cached) statusCache.set(threadId, { ...cached, title, at: Date.now() });
     } catch {
@@ -616,7 +616,7 @@ export function createCollabStore(
               extras.push(persisted);
               continue;
             }
-            // A capacity-rejected legacy spawn has already created a BB
+            // A capacity-rejected legacy spawn has already created a VesnALIA
             // process but owns no durable row. Tombstone first so repeated
             // discovery cannot resurrect it, then stop it and release its
             // optimistic item claim.
@@ -636,12 +636,12 @@ export function createCollabStore(
             const prompt = await spawnPromptOf(child.id);
             const requested = /\bitem_id=([A-Za-z0-9_]+)/.exec(prompt ?? "")?.[1] ?? null;
             try {
-              await bb.sdk.threads.stop({ threadId: child.id });
+              await alia.sdk.threads.stop({ threadId: child.id });
             } catch {
               // The tombstone still prevents scheduler accounting/adoption.
             }
             hooks?.onRejectedChild?.(root, child.id, requested);
-            bb.log.warn(
+            alia.log.warn(
               `Stopped unowned child ${child.id} on ${root}: durable capacity admission failed (${error instanceof Error ? error.message : String(error)})`,
             );
           }
@@ -757,7 +757,7 @@ export function createCollabStore(
           display_name: row?.display_name ?? null,
           item_id: claimed,
         });
-        bb.log.info(`Linked ${agent.nickname} to ${claimed} from its spawn prompt`);
+        alia.log.info(`Linked ${agent.nickname} to ${claimed} from its spawn prompt`);
       }
     }
 
@@ -824,7 +824,7 @@ export function createCollabStore(
     } = args;
     const trimmed = args.message.trim();
     if (!trimmed) return { error: "Empty message can't be sent to an agent" };
-    const parent = await bb.sdk.threads.get({ threadId });
+    const parent = await alia.sdk.threads.get({ threadId });
     const parentPath = canonicalName(threadId);
     const usedNames = (byRoot.all(rootId(threadId)) as CollabRow[])
       .map((row) => row.display_name)
@@ -915,13 +915,13 @@ export function createCollabStore(
     // a containing directory, remote URL, or a source on another host.
     const root = rootThreadId === threadId
       ? parent
-      : await bb.sdk.threads.get({ threadId: rootThreadId });
+      : await alia.sdk.threads.get({ threadId: rootThreadId });
     const rootEnv = root.environmentId
-      ? await bb.sdk.environments.get({ environmentId: root.environmentId })
+      ? await alia.sdk.environments.get({ environmentId: root.environmentId })
       : null;
     let workerProjectId = root.projectId ?? args.projectId;
     if (rootEnv?.isGitRepo && !rootEnv.isWorktree && rootEnv.path) {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const matches = projects.filter((project) => project.sources.some((source) =>
         source.hostId === rootEnv.hostId && source.path === rootEnv.path,
       ));
@@ -1001,8 +1001,8 @@ export function createCollabStore(
     };
       const child =
       fresh || fork_turns === "none"
-        ? await bb.sdk.threads.spawn(spawnArgs)
-        : await bb.sdk.threads
+        ? await alia.sdk.threads.spawn(spawnArgs)
+        : await alia.sdk.threads
             .fork({
               sourceThreadId: threadId,
               input: [{ type: "text", text: prompt, mentions: [] }],
@@ -1010,11 +1010,11 @@ export function createCollabStore(
               permissionMode: hooks?.workerPermissionMode?.(rootThreadId) ?? "auto",
               visibility: "hidden",
               workspace: "reuse",
-              // Plugin-origin children skip bb's parent "needs help"
+              // Plugin-origin children skip VesnALIA's parent "needs help"
               // notifications; UltraGoal handles its own crew.
               origin: "plugin",
             })
-            .catch(() => bb.sdk.threads.spawn(spawnArgs));
+            .catch(() => alia.sdk.threads.spawn(spawnArgs));
       const actual = await readExecutionOptions(child.id);
       const row = {
         thread_id: child.id,
@@ -1050,7 +1050,7 @@ export function createCollabStore(
         );
         if (!reservationCommitted) {
           try {
-            await bb.sdk.threads.stop({ threadId: child.id });
+            await alia.sdk.threads.stop({ threadId: child.id });
           } catch {
             // The unowned child is still excluded from scheduler accounting.
           }
@@ -1066,7 +1066,7 @@ export function createCollabStore(
       if (!persisted || persisted.item_id !== requested || itemId !== requested) {
         removeRow.run({ thread_id: child.id, retired_at: Date.now() });
         try {
-          await bb.sdk.threads.stop({ threadId: child.id });
+          await alia.sdk.threads.stop({ threadId: child.id });
         } catch {
           // The durable row is retired even when the host cannot stop a
           // malformed spawn; scheduler accounting will never accept it.
@@ -1092,12 +1092,12 @@ export function createCollabStore(
   }
 
   async function deliverImmediately(threadId: string, text: string): Promise<void> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     const mode = immediateSendMode(thread);
     if (!mode) {
       throw new Error(`Thread ${threadId} cannot accept an immediate message (${thread.status ?? "unavailable"})`);
     }
-    await bb.sdk.threads.send({
+    await alia.sdk.threads.send({
       threadId,
       mode,
       permissionMode: hooks?.workerPermissionMode?.(rootId(threadId)) ?? "auto",
@@ -1264,13 +1264,13 @@ export function createCollabStore(
       /** The slice text under audit, for a work-related auditor name. */
       workText?: string;
     }): Promise<{ threadId: string; nickname: string } | null> {
-      const root = await bb.sdk.threads.get({ threadId: args.rootThreadId });
+      const root = await alia.sdk.threads.get({ threadId: args.rootThreadId });
       if (!root.projectId) {
         throw new Error("UltraGoal root thread has no project; cannot spawn a verifier");
       }
       // The verifier inspects the worker's worktree — its edits may not exist
       // anywhere else yet.
-      const source = await bb.sdk.threads
+      const source = await alia.sdk.threads
         .get({ threadId: args.sourceThreadId })
         .catch(() => null);
       const verifyEnvironmentId = source?.environmentId ?? root.environmentId;
@@ -1280,7 +1280,7 @@ export function createCollabStore(
       const displayName = auditorNameFor(args.workText ?? "", usedNames);
       const slug = slugFromName(displayName);
       const taskName = `/root/${slug}`;
-      const child = await bb.sdk.threads.spawn({
+      const child = await alia.sdk.threads.spawn({
         projectId: source?.environmentId ? source.projectId : root.projectId,
         parentThreadId: args.rootThreadId,
         providerId: args.providerId,
@@ -1337,7 +1337,7 @@ export function createCollabStore(
         execution_revision: args.executionRevision ?? hooks?.executionRevision?.(args.rootThreadId) ?? 0,
       });
       try {
-        await bb.sdk.threads.update({ threadId: child.id, title: displayName });
+        await alia.sdk.threads.update({ threadId: child.id, title: displayName });
       } catch {
         // Title from spawn is enough if update is unavailable.
       }
@@ -1382,7 +1382,7 @@ export function createCollabStore(
     },
 
     registerTools() {
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_spawn_agent",
         description: SPAWN_AGENT_DESCRIPTION,
         parameters: z.object({
@@ -1456,7 +1456,7 @@ export function createCollabStore(
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_send_message",
         description:
           "Deliver a message to an existing agent immediately: steer it into the live turn, or start a new turn if the agent is idle. Never uses the composer queue.",
@@ -1492,7 +1492,7 @@ export function createCollabStore(
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_followup_task",
         description:
           "Steer an existing agent immediately about the ONE slice it was spawned for (clarify, unblock, course-correct). Delivers into the live turn, or starts a new turn if idle — never the composer queue. One agent = one slice: a worker whose slice is finished is retired and cannot take new work — spawn a fresh agent with ultragoal_spawn_agent instead.",
@@ -1551,7 +1551,7 @@ export function createCollabStore(
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_list_agents",
         description: "List live agents in the current root thread tree. Optionally filter by task-path prefix.",
         parameters: z.object({
@@ -1576,7 +1576,7 @@ export function createCollabStore(
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_wait_agent",
         description:
           "Wait for a mailbox update from any live agent, including immediately delivered follow-ups and final-status notifications. The wait also ends early when new user input is steered into the active turn. Does not return the content; returns either a summary of which agents have updates (if any), an interruption summary for steered input, or a timeout summary if no activity arrives before the deadline.",
@@ -1606,7 +1606,7 @@ export function createCollabStore(
             rows.map(async (row) => {
               const remaining = Math.max(1, deadline - Date.now());
               try {
-                await bb.sdk.threads.wait({
+                await alia.sdk.threads.wait({
                   threadId: row.thread_id,
                   status: "idle",
                   timeoutMs: remaining,
@@ -1629,7 +1629,7 @@ export function createCollabStore(
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_interrupt_agent",
         description:
           "Interrupt an agent's current turn, if any, and return its previous status. The agent remains available for messages and follow-up tasks.",
@@ -1645,12 +1645,12 @@ export function createCollabStore(
             return { content: [{ type: "text", text: `Agent not found: ${target}` }], isError: true };
           }
           const previous_status = await statusOf(agent.thread_id);
-          await bb.sdk.threads.stop({ threadId: agent.thread_id });
+          await alia.sdk.threads.stop({ threadId: agent.thread_id });
           return { content: [{ type: "text", text: JSON.stringify({ previous_status }) }] };
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_release_slice",
         description:
           "Stop an agent and return its work item to the ready queue, freeing its scheduler slot. Use when a worker is redundant, stuck, or working from a stale base. Its committed work is untouched — only the assignment is given up.",
@@ -1668,10 +1668,10 @@ export function createCollabStore(
           }
           // Stop first: releasing a slice under a running turn lets the worker
           // keep writing to a directory nobody is watching any more.
-          await bb.sdk.threads.stop({ threadId: agent.thread_id }).catch(() => undefined);
+          await alia.sdk.threads.stop({ threadId: agent.thread_id }).catch(() => undefined);
           const itemId = agent.item_id ?? null;
           removeRow.run({ thread_id: agent.thread_id, retired_at: Date.now() });
-          await bb.sdk.threads.archive({ threadId: agent.thread_id }).catch(() => undefined);
+          await alia.sdk.threads.archive({ threadId: agent.thread_id }).catch(() => undefined);
           if (itemId) hooks?.releaseItem?.(rootId(threadId), itemId, reason);
           hooks?.onChange?.(rootId(threadId));
           return {
@@ -1683,7 +1683,7 @@ export function createCollabStore(
         },
       });
 
-      bb.agents.registerTool({
+      alia.agents.registerTool({
         name: "ultragoal_retire_agent",
         description:
           "Retire a finished agent: free its scheduler slot and archive its thread so its worktree can be reclaimed. Refuses while the agent still holds an open work item — ultragoal_release_slice that first.",
@@ -1705,9 +1705,9 @@ export function createCollabStore(
               isError: true,
             };
           }
-          await bb.sdk.threads.stop({ threadId: agent.thread_id }).catch(() => undefined);
+          await alia.sdk.threads.stop({ threadId: agent.thread_id }).catch(() => undefined);
           removeRow.run({ thread_id: agent.thread_id, retired_at: Date.now() });
-          await bb.sdk.threads.archive({ threadId: agent.thread_id }).catch(() => undefined);
+          await alia.sdk.threads.archive({ threadId: agent.thread_id }).catch(() => undefined);
           hooks?.onChange?.(rootId(threadId));
           return { content: [{ type: "text", text: JSON.stringify({ retired: agent.thread_id }) }] };
         },

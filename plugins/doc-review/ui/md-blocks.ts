@@ -29,7 +29,7 @@ const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
 /**
  * Points relative image paths at a URL that serves the document's folder.
- * bb's Markdown renderer reads a src that starts with "/" as a path on disk,
+ * VesnALIA's Markdown renderer reads a src that starts with "/" as a path on disk,
  * so an origin-relative preview URL gets the page origin in front.
  */
 export function rewriteImages(

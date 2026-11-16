@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { loadPluginApp, mountPluginContentScripts, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import type { ModelSelection, ModelSettings, PredictionState } from "../contract.ts";
 import { refreshGhost } from "../lib/ghost.ts";
 import plugin from "../server.ts";
@@ -127,14 +127,14 @@ const settingsCatalog = {
 };
 test("settings surfaces a catalog error from the server and Retry restores the chooser", async () => {
   let recovered = false;
-  const { bb, harness } = createFakePluginHost({ pluginId: "composer-predictions", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "composer-predictions", sdk: {
     threads: { list: async () => [] },
     providers: {
       list: async () => [settingsProvider],
       models: async () => recovered ? settingsCatalog : { ...settingsCatalog, models: [], modelLoadError: { providerId: "claude-code", code: "auth_required", detail: "Sign in again" } },
     },
   } });
-  await plugin(bb);
+  await plugin(alia);
   const slot = renderSlot(app.settingsSections[0]!, {}, { rpc: { model_get: () => harness.behavior.callRpc("model_get", {}) } });
   try {
     assert.match((await slot.findByRole("alert")).textContent!, /claude-code.*auth_required.*Sign in again/);
@@ -147,7 +147,7 @@ test("settings surfaces a catalog error from the server and Retry restores the c
 });
 test("settings keeps a fallback usable while showing the failed provider and saves only on request", async () => {
   const failedProvider = { ...settingsProvider, id: "codex" };
-  const { bb, harness } = createFakePluginHost({ pluginId: "composer-predictions", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "composer-predictions", sdk: {
     threads: { list: async () => [] },
     providers: {
       list: async () => [failedProvider, settingsProvider],
@@ -157,7 +157,7 @@ test("settings keeps a fallback usable while showing the failed provider and sav
       },
     },
   } });
-  await plugin(bb);
+  await plugin(alia);
   const slot = renderSlot(app.settingsSections[0]!, {}, { rpc: {
     model_get: () => harness.behavior.callRpc("model_get", {}),
     model_set: input => harness.behavior.callRpc("model_set", input),

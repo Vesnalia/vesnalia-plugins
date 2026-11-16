@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a problem with ZCode for bb
+about: Report a problem with ZCode for VesnALIA
 title: ''
 labels: bug
 assignees: ''
@@ -17,7 +17,7 @@ thread. Omit private project content.
 
 ## Local diagnostic report
 
-Run `bb zcode-report` (or `bb plugin run zcode` if ambiguous), review its output
+Run `alia zcode-report` (or `alia plugin run zcode` if ambiguous), review its output
 and paste below. Never attach credentials, secret files, raw native logs,
 prompts, workspace content, tokens or authorization links.
 

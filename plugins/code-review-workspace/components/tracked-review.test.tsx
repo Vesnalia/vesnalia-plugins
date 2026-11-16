@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { snoozeLabel } from "../lib/turn";
 
@@ -58,7 +58,7 @@ test("a tracked review's page bar goes back to All reviews and has the review's 
   expect(bar.getByRole("heading", { level: 1, name: "pr-42 Parse rows" })).toBeTruthy();
   fireEvent.click(bar.getByRole("button", { name: "Review actions" }));
   const menu = within(await slot.findByRole("dialog"));
-  // Pin once Settings say reviews show in BB's thread list.
+  // Pin once Settings say reviews show in VesnALIA's thread list.
   await waitFor(() => expect(menu.getAllByRole("button").map((button) => button.textContent).filter(Boolean)).toEqual(["Build the guide", "Snooze", "Pin", "Rename…", "Archive", "Open on GitHub", "Review settings…", "Delete…"]));
   fireEvent.click(menu.getByRole("button", { name: "Review settings…" }));
   expect(slot.inspection.navigateCalls).toEqual([{ method: "toPluginPanel", path: "review", options: { subPath: "settings/pr-42" } }]);

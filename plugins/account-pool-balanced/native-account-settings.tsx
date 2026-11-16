@@ -74,7 +74,7 @@ export function NativeAccountSettings({account,revision,save,loadProjects,probe}
     <section className="pool-settings-section" aria-label="Доступ Google и модель">
       <h3 className="pool-settings-heading">Доступ Google и модель</h3>
       <p className="pool-settings-help">{account.executors.some(e=>e.enabled)?'Запуск разрешён настройками пула. Ответ Google пока не проверен этой страницей.':'Обычные сессии выключены. Адресная проверка запускается отдельно кнопкой ниже.'}</p>
-      <p className="pool-settings-help">Модель выбирается в форме новой сессии BB для Antigravity. Сохранённый каталог не подтверждает доступ этой подписки к модели; он проверяется при запросе.</p>
+      <p className="pool-settings-help">Модель выбирается в форме новой сессии VesnALIA для Antigravity. Сохранённый каталог не подтверждает доступ этой подписки к модели; он проверяется при запросе.</p>
       <p className="pool-settings-help">При Verification Required завершите проверку Google в браузере с владельцем. Успешный вход и оплата сами по себе не подтверждают доступ к модели.</p>
       <p className="pool-settings-help">Измеренный лимит и состояние оплаты недоступны. Страница не запускает повторный вход.</p>
     </section>

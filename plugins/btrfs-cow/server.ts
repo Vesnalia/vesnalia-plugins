@@ -1,5 +1,5 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { PluginEnvironmentProviderProgress } from "@get-bb/plugin-sdk/environment-provider";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { PluginEnvironmentProviderProgress } from "@vesnalia/plugin-sdk/environment-provider";
 import { registerCli } from "./cli.js";
 import { cowHostContract, cowHostSignals } from "./contract.js";
 import { COW_COPY_ENVIRONMENT_PROVIDER_ID } from "./provider-id.js";
@@ -12,8 +12,8 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export default async function cowCopyPlugin(bb: BbPluginApi): Promise<void> {
-  const host = bb.hosts.experimental_client({
+export default async function cowCopyPlugin(alia: AliaPluginApi): Promise<void> {
+  const host = alia.hosts.experimental_client({
     contract: cowHostContract,
     experimental_signals: cowHostSignals,
   });
@@ -26,9 +26,9 @@ export default async function cowCopyPlugin(bb: BbPluginApi): Promise<void> {
     else report.log(event.payload.text);
   });
 
-  registerCli(bb, host);
+  registerCli(alia, host);
 
-  bb.experimental_environments.register({
+  alia.experimental_environments.register({
     id: COW_COPY_ENVIRONMENT_PROVIDER_ID,
     displayName: "Btrfs Cow",
     icon: "Copy",

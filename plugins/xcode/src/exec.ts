@@ -1,9 +1,9 @@
 /**
  * Thin `child_process` helpers.
  *
- * Everything here runs on the bb *server* host. The SDK exposes no general
+ * Everything here runs on the VesnALIA *server* host. The SDK exposes no general
  * remote-exec primitive, so process observation is necessarily server-local;
- * remote hosts are covered by the file-based tiers via `bb.sdk.files`.
+ * remote hosts are covered by the file-based tiers via `alia.sdk.files`.
  */
 
 import { execFile } from "node:child_process";
@@ -41,7 +41,7 @@ export function run(
         maxBuffer: options.maxBuffer ?? 32 * 1024 * 1024,
         cwd: options.cwd,
         // Process inspection and xcresult parsing do not need provider,
-        // plugin, or tunnel credentials from the long-lived bb server.
+        // plugin, or tunnel credentials from the long-lived VesnALIA server.
         env: curatedChildEnv(process.env),
         encoding: "utf8",
       },

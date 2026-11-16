@@ -22,7 +22,7 @@ environment and execution history when a session changes.
 
 ## Requirements and limits
 
-Requires BB 0.49 and SDK 0.6.132 or newer. Beads mode requires the `bd` CLI
+Requires VesnALIA 0.49 and SDK 0.6.132 or newer. Beads mode requires the `bd` CLI
 (tested with 1.3.1) on the project's source host. Team prepares a missing database
 in the canonical checkout. Existing built-in tasks are not migrated automatically.
 Models run through your configured providers and may use their credits or plan.
@@ -30,11 +30,11 @@ A model catalog entry does not prove that it is free.
 
 Budgets gate subsequent starts; active operations are not interrupted. Unknown
 usage is not zero, and Team does not guarantee a hard monetary limit or control
-provider-internal retries and BB's explicit policy overrides.
+provider-internal retries and VesnALIA's explicit policy overrides.
 
 ## Getting started
 
 Open Team, select a project and create a team from a template. Give its lead a
 normal goal; its persistent instructions cover planning, delegation and review.
-Use `bb team report` for a digest and `bb team doctor` for configuration checks.
-AI prompt generation is deferred until BB provides a suitable text-only API.
+Use `alia team report` for a digest and `alia team doctor` for configuration checks.
+AI prompt generation is deferred until VesnALIA provides a suitable text-only API.

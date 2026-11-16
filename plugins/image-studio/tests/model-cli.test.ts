@@ -110,12 +110,12 @@ test("parseModelGenerateCli keeps --style as project when --project is absent", 
 });
 
 test("modelCliProjectOrigin binds generate to the host folder name", () => {
-  const bound = modelCliProjectOrigin("/x/lava-arena", "bb");
+  const bound = modelCliProjectOrigin("/x/lava-arena", "alia");
   assert.equal(bound.origin, "/x/lava-arena");
   assert.equal(bound.projectName, "lava-arena");
 });
 
-test("readHostBytes resolves paths with hostPath before bb.sdk.files.read", () => {
+test("readHostBytes resolves paths with hostPath before alia.sdk.files.read", () => {
   const server = readFileSync(new URL("../server.ts", import.meta.url), "utf8");
   assert.match(server, /const absolute = hostPath\(cwd, path\)/);
   assert.doesNotMatch(server, /readHostBytes[\s\S]*?rootPath:\s*cwd/);

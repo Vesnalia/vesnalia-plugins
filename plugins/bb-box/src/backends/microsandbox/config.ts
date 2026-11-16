@@ -1,12 +1,12 @@
-// The microsandbox backend's fields in bb-box's configuration (029), parsed
+// The microsandbox backend's fields in alia-box's configuration (029), parsed
 // into a typed config (053). The backend runs boxes as libkrun microVMs with
-// bb-box's msb on one Linux host with KVM: BB's server, one over ssh://, or
-// a BB machine through bb-box's msb relay; a Mac with Apple silicon runs the
+// alia-box's msb on one Linux host with KVM: VesnALIA's server, one over ssh://, or
+// a VesnALIA machine through alia-box's msb relay; a Mac with Apple silicon runs the
 // arm64 kinds. Each kind runs one of the images setup/docker/build.sh builds,
 // imported into msb from Docker on the host, or built in a microVM there.
 
 import type { BackendPart, FieldDescriptor, FieldProblem, ParsedBackend } from "../types.ts";
-import { BB_MACHINE } from "../docker/config.ts";
+import { ALIA_MACHINE } from "../docker/config.ts";
 import { IMAGE_REF } from "./release.ts";
 import { PRODUCT } from "../../brand.ts";
 
@@ -14,9 +14,9 @@ export const MSB_KINDS = ["linux", "linux-desktop-cpu", "linux-arm64", "linux-ar
 export type MsbKind = (typeof MSB_KINDS)[number];
 
 export interface MsbConfig {
-  /** ssh://user@host, bb:<machine ID> for a BB machine reached through bb-box's msb relay, or null for BB's server. */
+  /** ssh://user@host, VesnALIA:<machine ID> for a VesnALIA machine reached through alia-box's msb relay, or null for VesnALIA's server. */
   readonly host: string | null;
-  /** The BB machine's ID when the host is one, else null. */
+  /** The VesnALIA machine's ID when the host is one, else null. */
   readonly machine: string | null;
   /**
    * The image of each kind, or null when the kind is off. A host offers the
@@ -32,7 +32,7 @@ export interface MsbConfig {
   readonly diskGiB: number;
   /** msb's network profiles for each box, such as public,private. */
   readonly network: string;
-  /** The most bb-box microVMs on the host, counting every install's. */
+  /** The most alia-box microVMs on the host, counting every install's. */
   readonly boxes: number;
   readonly reserveMemoryMiB: number;
   /**
@@ -50,7 +50,7 @@ export const MSB_DEFAULTS = {
   arm64DesktopImage: "bbbox/linux-desktop:1-arm64",
   dockerDiskGiB: 64,
   diskGiB: 32,
-  // BB's server is often on a private or tailnet address, which msb's
+  // VesnALIA's server is often on a private or tailnet address, which msb's
   // default profile does not reach (053).
   network: "public,private",
   boxes: 20,
@@ -58,7 +58,7 @@ export const MSB_DEFAULTS = {
   memoryOvercommit: 1,
 } as const;
 
-/** The most memory overcommit bb-box allows. */
+/** The most memory overcommit alia-box allows. */
 export const MSB_MAX_OVERCOMMIT = 4;
 
 export const MSB_KEYS = {
@@ -81,7 +81,7 @@ export const MSB_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
     type: "string",
     label: "Host",
     description:
-      `The host that runs the boxes: a Linux host with KVM, or a Mac. Give ssh://user@host, or bb:<machine ID> for a BB machine, which ${PRODUCT} reaches through BB. Empty uses BB's server. ${PRODUCT} installs its own msb there.`,
+      `The host that runs the boxes: a Linux host with KVM, or a Mac. Give ssh://user@host, or VesnALIA:<machine ID> for a VesnALIA machine, which ${PRODUCT} reaches through VesnALIA. Empty uses VesnALIA's server. ${PRODUCT} installs its own msb there.`,
     group: "connection",
     default: "",
   },
@@ -139,7 +139,7 @@ export const MSB_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   [MSB_KEYS.network]: {
     type: "string",
     label: "Network profiles",
-    description: "What each box's network reaches, as msb's profiles separated by commas. The profile public reaches the internet, and private reaches the host's local networks and tailnet, where BB's server often is.",
+    description: "What each box's network reaches, as msb's profiles separated by commas. The profile public reaches the internet, and private reaches the host's local networks and tailnet, where VesnALIA's server often is.",
     group: "advanced",
     default: MSB_DEFAULTS.network,
   },
@@ -182,15 +182,15 @@ function number(values: Readonly<Record<string, unknown>>, key: string, fallback
 const SSH = /^ssh:\/\/(?:[a-z_][a-z0-9_.-]{0,31}@)?(?:\[[0-9a-fA-F:.]+\]|[A-Za-z0-9][A-Za-z0-9.-]*)(?::\d{1,5})?$/;
 const PROFILES = new Set(["public", "private", "host"]);
 
-/** microsandbox's part of bb-box's configuration (029), with each problem at its field. */
+/** microsandbox's part of alia-box's configuration (029), with each problem at its field. */
 export function parseMsbPart(part: BackendPart): ParsedBackend<MsbConfig> {
   const values = part.fields;
   const problems: FieldProblem[] = [];
   const problem = (path: string, message: string) => problems.push({ path, message });
 
   const host = text(values, MSB_KEYS.host);
-  if (host && !SSH.test(host) && !BB_MACHINE.test(host)) {
-    problem(MSB_KEYS.host, `microsandbox: the host must be ssh://user@host or bb:<machine ID>, or empty for BB's server.`);
+  if (host && !SSH.test(host) && !ALIA_MACHINE.test(host)) {
+    problem(MSB_KEYS.host, `microsandbox: the host must be ssh://user@host or VesnALIA:<machine ID>, or empty for VesnALIA's server.`);
   }
   const linux = text(values, MSB_KEYS.linuxImage, MSB_DEFAULTS.linuxImage);
   const desktop = text(values, MSB_KEYS.desktopImage, MSB_DEFAULTS.desktopImage);
@@ -231,7 +231,7 @@ export function parseMsbPart(part: BackendPart): ParsedBackend<MsbConfig> {
     ok: true,
     config: {
       host: host || null,
-      machine: BB_MACHINE.exec(host)?.[1] ?? null,
+      machine: ALIA_MACHINE.exec(host)?.[1] ?? null,
       images: { linux: linux || null, "linux-desktop-cpu": desktop || null, "linux-arm64": arm64 || null, "linux-arm64-desktop-cpu": arm64Desktop || null },
       docker,
       dockerDiskGiB,

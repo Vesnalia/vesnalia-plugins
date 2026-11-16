@@ -49,7 +49,7 @@ The first modal redesign improved the property grid but retained visible Edit co
 <!-- SECTION:NOTES:BEGIN -->
 The user reviewed BCKLG-2 in the installed UI and requested a stronger visual hierarchy matching the reference screenshots. This follow-up deliberately changes presentation and edit affordances only; parser authorization remains unchanged.
 
-Verification evidence: focused modal suite passed 11/11; full mise test passed 61/61; typecheck and build passed in named tmux sessions. Reloaded the installed plugin and checked a fresh BB-owned CDP tab: zero visible .inline-edit controls, 13 keyboard-editable cells, 2 state badges, 5 compact chips, and a 430px viewport with a 412px modal and no horizontal overflow. The owned lease and tab were released and closed.
+Verification evidence: focused modal suite passed 11/11; full mise test passed 61/61; typecheck and build passed in named tmux sessions. Reloaded the installed plugin and checked a fresh ALIA-owned CDP tab: zero visible .inline-edit controls, 13 keyboard-editable cells, 2 state badges, 5 compact chips, and a 430px viewport with a 412px modal and no horizontal overflow. The owned lease and tab were released and closed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

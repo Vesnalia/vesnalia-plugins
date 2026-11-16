@@ -3,9 +3,9 @@ import { quote } from "../../transports/process.ts";
 import type { CommandTransport, RunResult } from "../../transports/types.ts";
 import type { DaemonKeptByHost } from "../types.ts";
 
-export const DEVICE_HOST_HELPER = "/usr/local/libexec/bb-box/device-host";
+export const DEVICE_HOST_HELPER = "/usr/local/libexec/alia-box/device-host";
 export const DEVICE_HOST_EXITS = { done: 0, failed: 1, usage: 2, lost: 3, notOurs: 4, full: 5, notReady: 6, deleting: 7, lending: 8 } as const;
-export const SLOT_INSTALLER_ENVIRONMENT: Readonly<Record<string, string>> = { BB_INSTALL_SKIP_SERVICE: "1" };
+export const SLOT_INSTALLER_ENVIRONMENT: Readonly<Record<string, string>> = { ALIA_INSTALL_SKIP_SERVICE: "1" };
 export const HELD_PORTS = [3000, 4200, 5000, 5173, 8000, 8080, 8081, 19000] as const;
 
 export type SlotStateWord = "making" | "ready" | "held" | "releasing" | "resetting";
@@ -79,8 +79,8 @@ export interface HostStatus {
   readonly deviceWords: readonly { readonly slot: string; readonly words: string }[];
   readonly sweeping: number;
   readonly sweeps: readonly HostSweep[];
-  readonly bbApp: string | null;
-  readonly bbAppKept: boolean;
+  readonly aliaApp: string | null;
+  readonly aliaAppKept: boolean;
 }
 
 export interface ServerApp {
@@ -196,31 +196,31 @@ export function parseHostStatus(stdout: string): HostStatus | null {
     deviceWords,
     sweeping: wholeOrNull(values.get("sweeping")) ?? 0,
     sweeps,
-    bbApp: /^[a-f0-9]{64}$/.test(values.get("bb-app") ?? "") ? values.get("bb-app")! : null,
-    bbAppKept: values.get("bb-app-kept") === "yes",
+    aliaApp: /^[a-f0-9]{64}$/.test(values.get("alia-app") ?? "") ? values.get("alia-app")! : null,
+    aliaAppKept: values.get("alia-app-kept") === "yes",
   };
 }
 
-export function bbServerFolder(url: string): string {
+export function aliaServerFolder(url: string): string {
   return new URL(url).host.replace(/[^a-zA-Z0-9.-]/gu, "-");
 }
 
 export function hostAppInstallScript(app: ServerApp): string {
   return `/bin/sh -c ${quote(String.raw`set -eu
 want=${quote(app.digest)}
-d="$HOME/.bb-machines/"${quote(bbServerFolder(app.url))}
-if [ "$(cat "$d/host-artifact.sha256" 2>/dev/null)" != "$want" ] || [ ! -d "$d/npm/lib/node_modules/bb-app" ]; then
+d="$HOME/.alia-machines/"${quote(aliaServerFolder(app.url))}
+if [ "$(cat "$d/host-artifact.sha256" 2>/dev/null)" != "$want" ] || [ ! -d "$d/npm/lib/node_modules/alia-app" ]; then
   PATH=$PATH:/opt/homebrew/opt/node@24/bin:/opt/homebrew/opt/node/bin:/opt/homebrew/bin:/usr/local/bin
-  command -v npm >/dev/null 2>&1 || { echo "There is no npm for $(id -un), so BB Box cannot install BB's app for the slots." >&2; exit 3; }
+  command -v npm >/dev/null 2>&1 || { echo "There is no npm for $(id -un), so VesnALIA Box cannot install VesnALIA's app for the slots." >&2; exit 3; }
   work=$(mktemp -d)
   trap 'rm -rf "$work"' EXIT
-  curl -fsS --max-time 120 -o "$work/bb-app.tgz" ${quote(`${app.url.replace(/\/+$/, "")}/install/bb-app.tgz`)}
-  echo "$want  $work/bb-app.tgz" | shasum -a 256 -c --quiet - >/dev/null 2>&1 || { echo "BB's server gave an app that is not build $want." >&2; exit 4; }
+  curl -fsS --max-time 120 -o "$work/alia-app.tgz" ${quote(`${app.url.replace(/\/+$/, "")}/install/alia-app.tgz`)}
+  echo "$want  $work/alia-app.tgz" | shasum -a 256 -c --quiet - >/dev/null 2>&1 || { echo "VesnALIA's server gave an app that is not build $want." >&2; exit 4; }
   umask 022
   mkdir -p "$d"
-  chmod 700 "$HOME/.bb-machines" "$d"
+  chmod 700 "$HOME/.alia-machines" "$d"
   rm -rf "$d/npm.new"
-  npm install -g --no-fund --no-audit --allow-scripts=better-sqlite3,node-pty,@parcel/watcher --prefix "$d/npm.new" "$work/bb-app.tgz" >"$work/npm.log" 2>&1 || { tail -n 5 "$work/npm.log" >&2; exit 5; }
+  npm install -g --no-fund --no-audit --allow-scripts=better-sqlite3,node-pty,@parcel/watcher --prefix "$d/npm.new" "$work/alia-app.tgz" >"$work/npm.log" 2>&1 || { tail -n 5 "$work/npm.log" >&2; exit 5; }
   rm -rf "$d/npm"
   mv "$d/npm.new" "$d/npm"
   (umask 077 && printf '%s\n' "$want" >"$d/host-artifact.sha256")
@@ -244,7 +244,7 @@ export async function keepServerApp(app: ServerApp, installAsHostUser: (script: 
 }
 
 export function keptAppWords(app: ServerApp, kept: Extract<KeptApp, { kept: true }>): string {
-  return `BB's app build ${app.digest.slice(0, 12)} for its slots, in ${kept.seconds.toFixed(1)} s (${kept.installed ? `installed in ${kept.installSeconds.toFixed(1)} s` : "installed already"})`;
+  return `VesnALIA's app build ${app.digest.slice(0, 12)} for its slots, in ${kept.seconds.toFixed(1)} s (${kept.installed ? `installed in ${kept.installSeconds.toFixed(1)} s` : "installed already"})`;
 }
 
 function fieldOf(stdout: string, key: string): string | null {
@@ -253,7 +253,7 @@ function fieldOf(stdout: string, key: string): string | null {
 }
 
 export function keepAppInput(app: ServerApp, home: string): string {
-  return `server=${bbServerFolder(app.url)}\ndigest=${app.digest}\nfrom=${home}\n`;
+  return `server=${aliaServerFolder(app.url)}\ndigest=${app.digest}\nfrom=${home}\n`;
 }
 
 export function helperCommand(verb: string, ...args: readonly string[]): string {
@@ -271,7 +271,7 @@ export function slotDaemonKeptByHost(host: CommandTransport, slot: string, claim
     async takeOver(signal) {
       const result = await host.run(helperCommand("daemon", slot), { stdin: claimantInput(claimant), timeoutMs: 60_000, signal });
       if (result.exitCode !== DEVICE_HOST_EXITS.done) {
-        throw new Error(`The iOS host could not take over BB's daemon for slot ${slot}: ${result.stderr.trim() || `exit ${result.exitCode}`}`);
+        throw new Error(`The iOS host could not take over VesnALIA's daemon for slot ${slot}: ${result.stderr.trim() || `exit ${result.exitCode}`}`);
       }
     },
   };

@@ -87,7 +87,7 @@ function SubtreeChildren({
   if (node.children.length === 0) return null;
   return (
     <ul
-      className="bb-ws-subtree"
+      className="alia-ws-subtree"
       style={
         {
           // Both numbers come from lib/indent.ts so the rail can never drift
@@ -145,7 +145,7 @@ function RootSubtree({
     </>
   );
   const content = leaving ? (
-    <div aria-hidden className="bb-ws-row-leaving">
+    <div aria-hidden className="alia-ws-row-leaving">
       {subtree}
     </div>
   ) : (

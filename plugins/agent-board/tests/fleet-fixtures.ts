@@ -31,10 +31,10 @@ export const wire = (jobs: FleetJob[] = []): FleetSnapshot => ({
 export function parent(overrides: Partial<BoardCard> = {}): BoardCard {
   return {
     key: "thread:parent",
-    source: "bb",
+    source: "alia",
     kind: "thread",
     title: "Parent work",
-    subtitle: "BB",
+    subtitle: "ALIA",
     isRoot: true,
     threadId: "parent",
     parentKey: null,
@@ -61,8 +61,8 @@ export function parent(overrides: Partial<BoardCard> = {}): BoardCard {
   };
 }
 export const group = (card = parent()): GlobalExecutionGroup => ({
-  key: "bb:parent",
-  source: "bb",
+  key: "alia:parent",
+  source: "alia",
   title: "Parent work",
   threadId: "parent",
   projectId: "p",

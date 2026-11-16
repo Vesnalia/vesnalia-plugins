@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { toLiveThread, type LiveThread, type ThreadDetails } from "./status";
 import { compactTitle, safe } from "./text";
 
@@ -18,7 +18,7 @@ export type ThreadMessage = { role: "user" | "assistant" | "message"; text: stri
 /** A thread's harness session ids, oldest first, and the event to continue reading identities after. */
 export type ProviderSessions = { ids: string[]; afterSeq: string | null };
 
-type ListEvents = BbPluginApi["sdk"]["threads"]["events"]["list"];
+type ListEvents = AliaPluginApi["sdk"]["threads"]["events"]["list"];
 type EventTypes = NonNullable<Parameters<ListEvents>[0]["types"]>;
 type ThreadEvent = Awaited<ReturnType<ListEvents>>[number];
 
@@ -51,7 +51,7 @@ function fileName(part: { name?: string; path: string }): string {
   return part.name?.trim() || part.path.split(/[\\/]/u).at(-1) || part.path;
 }
 
-export function createThreadReader(bb: BbPluginApi) {
+export function createThreadReader(alia: AliaPluginApi) {
   const detailsCache = new Map<string, ThreadDetails>();
   const firstPromptCache = new Map<string, string>();
   /** Opening text of read attachments by `projectId:path`; null when unreadable. Attachments never change. */
@@ -64,7 +64,7 @@ export function createThreadReader(bb: BbPluginApi) {
   async function attachmentText(projectId: string, path: string): Promise<string | null | undefined> {
     const key = `${projectId}:${path}`;
     if (attachmentCache.has(key)) return attachmentCache.get(key) ?? null;
-    const read = await safe(() => bb.sdk.projects.attachments.read({ projectId, path }));
+    const read = await safe(() => alia.sdk.projects.attachments.read({ projectId, path }));
     if (!read) return undefined;
     let text: string | null = null;
     if (read.sizeBytes <= ATTACHMENT_READ_MAX_BYTES) {
@@ -115,8 +115,8 @@ export function createThreadReader(bb: BbPluginApi) {
   async function titleChainForParent(parentThreadId: string | undefined) {
     if (!parentThreadId) return { titleChain: null as string | null, projectId: null as string | null };
     const [thread, meta] = await Promise.all([
-      safe(() => bb.sdk.threads.get({ threadId: parentThreadId })),
-      safe(() => bb.sdk.threads.getPluginMetadata({ threadId: parentThreadId })),
+      safe(() => alia.sdk.threads.get({ threadId: parentThreadId })),
+      safe(() => alia.sdk.threads.getPluginMetadata({ threadId: parentThreadId })),
     ]);
     return {
       titleChain:
@@ -129,7 +129,7 @@ export function createThreadReader(bb: BbPluginApi) {
 
   function turnRequests(threadId: string, order: "asc" | "desc", limit: number): Promise<ThreadEvent[] | null> {
     return safe(() =>
-      bb.sdk.threads.events.list({ threadId, order, limit: String(limit), types: ["client/turn/requested"] }),
+      alia.sdk.threads.events.list({ threadId, order, limit: String(limit), types: ["client/turn/requested"] }),
     );
   }
 
@@ -170,7 +170,7 @@ export function createThreadReader(bb: BbPluginApi) {
     const [turn, output, firstPrompt] = await Promise.all([
       lastUserTurn(thread.id, thread.projectId),
       needOutput
-        ? safe(async () => (await bb.sdk.threads.output({ threadId: thread.id })).output)
+        ? safe(async () => (await alia.sdk.threads.output({ threadId: thread.id })).output)
         : (cached?.output ?? null),
       firstUserPrompt(thread.id, thread.projectId),
     ]);
@@ -193,12 +193,12 @@ export function createThreadReader(bb: BbPluginApi) {
   async function listAllThreads(archived = false): Promise<LiveThread[] | null> {
     const all: LiveThread[] = [];
     for (let offset = 0; offset < MAX_THREADS; offset += PAGE) {
-      const page = await safe(() => bb.sdk.threads.list({ archived, includeHidden: true, limit: PAGE, offset }));
+      const page = await safe(() => alia.sdk.threads.list({ archived, includeHidden: true, limit: PAGE, offset }));
       if (page === null) return offset === 0 ? null : all;
       all.push(...page.map(toLiveThread));
       if (page.length < PAGE) return all;
     }
-    if (!cappedLogged.has(archived)) bb.log.info(`listing stopped at ${MAX_THREADS} ${archived ? "archived" : "open"} threads`);
+    if (!cappedLogged.has(archived)) alia.log.info(`listing stopped at ${MAX_THREADS} ${archived ? "archived" : "open"} threads`);
     cappedLogged.add(archived);
     return all;
   }
@@ -212,7 +212,7 @@ export function createThreadReader(bb: BbPluginApi) {
   ): Promise<{ afterSeq: string | null } | null> {
     for (let page = 0; page < MAX_EVENT_PAGES; page += 1) {
       const events = await safe(() =>
-        bb.sdk.threads.events.list({
+        alia.sdk.threads.events.list({
           threadId,
           order: "asc",
           limit: String(EVENT_PAGE),
@@ -249,7 +249,7 @@ export function createThreadReader(bb: BbPluginApi) {
     for (let start = 0; start < ids.length; start += IDS_PAGE) {
       const threadIds = ids.slice(start, start + IDS_PAGE);
       const lists = await Promise.all(
-        [false, true].map((archived) => safe(() => bb.sdk.threads.list({ threadIds, archived, includeHidden: true }))),
+        [false, true].map((archived) => safe(() => alia.sdk.threads.list({ threadIds, archived, includeHidden: true }))),
       );
       for (const row of lists.flatMap((list) => list ?? [])) byId.set(row.id, toLiveThread(row));
     }
@@ -259,7 +259,7 @@ export function createThreadReader(bb: BbPluginApi) {
   /** Every descendant of a thread, hidden included and archived ones on request; null when the read fails. */
   async function listDescendants(threadId: string, includeArchived = false): Promise<LiveThread[] | null> {
     const result = await safe(() =>
-      bb.sdk.threads.experimental_listDescendants({ threadIds: [threadId], includeHidden: true, includeArchived }),
+      alia.sdk.threads.experimental_listDescendants({ threadIds: [threadId], includeHidden: true, includeArchived }),
     );
     if (result === null) return null;
     const ids = result.threads.find((entry) => entry.threadId === threadId)?.descendantIds ?? [];

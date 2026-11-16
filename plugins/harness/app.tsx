@@ -1,5 +1,5 @@
-// bb-plugin-harness — frontend: opt-in run panel, header/command entry, banner.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// alia-plugin-harness — frontend: opt-in run panel, header/command entry, banner.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import {
   HarnessBanner,
   HarnessHeaderAction,

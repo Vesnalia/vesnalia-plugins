@@ -3,7 +3,7 @@ import {
   experimental_ProviderModelPicker as ProviderModelPicker,
   useRpc,
   type ExperimentalProviderModelPickerValue,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useEffect, useMemo, useState } from "react";
 import type { saveMyModelRpcContract } from "./server.js";
 import {
@@ -82,7 +82,7 @@ function Settings() {
     }).catch(() => {
       if (!active) return;
       setHosts([]);
-      setHostError("BB could not list machines.");
+      setHostError("VesnALIA could not list machines.");
     });
     return () => { active = false; };
   }, [rpc, refreshKey]);
@@ -108,7 +108,7 @@ function Settings() {
       }
     }).catch(() => {
       if (!active) return;
-      setSelectionError("BB could not load this machine's model catalog.");
+      setSelectionError("VesnALIA could not load this machine's model catalog.");
     }).finally(() => {
       if (active) setResolving(false);
     });
@@ -133,22 +133,22 @@ function Settings() {
       <header className="save-model-header">
         <div>
           <h2>Machine model preferences</h2>
-          <p>Choose the provider, model, and reasoning level to remember for each BB machine.</p>
+          <p>Choose the provider, model, and reasoning level to remember for each VesnALIA machine.</p>
         </div>
         <button className="save-model-button" type="button" onClick={() => setRefreshKey((key) => key + 1)}>
           Refresh
         </button>
       </header>
 
-      {hosts === null ? <div className="save-model-state" role="status">Loading BB machines…</div> : null}
+      {hosts === null ? <div className="save-model-state" role="status">Loading VesnALIA machines…</div> : null}
       {hostError !== null ? <div className="save-model-state save-model-state--error" role="alert">{hostError}</div> : null}
       {hosts?.length === 0 && hostError === null ? (
-        <div className="save-model-state">No machines are enrolled in BB yet.</div>
+        <div className="save-model-state">No machines are enrolled in VesnALIA yet.</div>
       ) : null}
 
       {hosts !== null && hosts.length > 0 ? (
         <div className="save-model-workspace">
-          <nav aria-label="BB machines" className="save-model-hosts">
+          <nav aria-label="VesnALIA machines" className="save-model-hosts">
             {hosts.map((host) => (
               <button
                 aria-current={host.id === selectedHostId ? "true" : undefined}
@@ -177,7 +177,7 @@ function Settings() {
             <div className="save-model-picker-row">
               <div>
                 <h3>Execution default</h3>
-                <p>Saved only for this machine. BB's built-in New Thread defaults are unchanged.</p>
+                <p>Saved only for this machine. VesnALIA's built-in New Thread defaults are unchanged.</p>
               </div>
               {selection !== null ? (
                 <ProviderModelPicker
@@ -220,7 +220,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "save-my-model",
     title: "Save My Model",
-    description: "Remember a provider, model, and reasoning level for each BB machine.",
+    description: "Remember a provider, model, and reasoning level for each VesnALIA machine.",
     component: Settings,
   });
 });

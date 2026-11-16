@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { LiveActivityFile, LiveActivityOutput, LiveActivityStatus } from "./contracts";
 import { assertWorkspaceRelative } from "./tree-model";
 
@@ -132,7 +132,7 @@ function prune(state: ActivityState, now: number) {
   }
 }
 
-export function createLiveActivityCollector(bb: BbPluginApi) {
+export function createLiveActivityCollector(alia: AliaPluginApi) {
   const states = new Map<string, ActivityState>();
 
   async function sync(thread: { id: string; parentThreadId?: string | null; environmentId?: string | null }): Promise<LiveActivityOutput> {
@@ -140,9 +140,9 @@ export function createLiveActivityCollector(bb: BbPluginApi) {
     const state: ActivityState = { parentThreadId: thread.parentThreadId ?? null, files: new Map(), status: new Map() };
     let rootPath: string | null = null;
     if (thread.environmentId) {
-      try { rootPath = (await bb.sdk.environments.get({ environmentId: thread.environmentId })).path?.replaceAll("\\", "/").replace(/\/$/, "") ?? null; } catch { /* Activity still works for relative paths. */ }
+      try { rootPath = (await alia.sdk.environments.get({ environmentId: thread.environmentId })).path?.replaceAll("\\", "/").replace(/\/$/, "") ?? null; } catch { /* Activity still works for relative paths. */ }
     }
-    const rows = await bb.sdk.threads.events.list({
+    const rows = await alia.sdk.threads.events.list({
       threadId: thread.id,
       order: "desc",
       limit: "50",
@@ -166,7 +166,7 @@ export function createLiveActivityCollector(bb: BbPluginApi) {
   }
 
   async function syncById(threadId: string): Promise<LiveActivityOutput> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     return sync(thread);
   }
 

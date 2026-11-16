@@ -7,7 +7,7 @@ Stay in 0.8.x (installed range `^0.8.1`).
 ## 0.8.12 — 2026-10-17
 
 ### Added
-- Office Studio keeps your work: every change autosaves to the chat's files, and hiding the panel, switching chats or reloading BB brings back the same tool, document and view. A save status shows in the toolbar.
+- Office Studio keeps your work: every change autosaves to the chat's files, and hiding the panel, switching chats or reloading VesnALIA brings back the same tool, document and view. A save status shows in the toolbar.
 
 ### Changed
 - Prototype Style panel: standard alignment icons in one row with proper tooltips; controls no longer overlap; clear line height and font size fields.

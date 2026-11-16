@@ -54,7 +54,7 @@ function watchAccess(state: World, box: BoxRecord): { readonly seen: (string | n
   const seen: (string | null)[] = [];
   Object.assign(state.backend, {
     relabel: async (_guest: Guest, _identity: BoxIdentity, _from: string) => {
-      seen.push(read(state, box, ".config/bb-box/env"));
+      seen.push(read(state, box, ".config/alia-box/env"));
     },
   });
   return { seen };
@@ -96,18 +96,18 @@ test("a restored box records the address its start found, as a Tart VM's that bo
   assert.equal((await current(state, box)).guest?.address, "192.168.64.7");
 });
 
-test("G8: the access file is the first command after the restore, before the labels and BB's machine; the size is read back", async () => {
+test("G8: the access file is the first command after the restore, before the labels and VesnALIA's machine; the size is read back", async () => {
   const state = world();
   const box = await readyBox(state);
-  write(state, box, ".config/bb-box/env", "BB_STALE=from-before\n");
+  write(state, box, ".config/alia-box/env", "ALIA_STALE=from-before\n");
   await state.snapshots.take(COMMAND, box, standing(box), { name: "stale" });
   state.backend.setSize(box.guest!.ref, { cores: 4, memoryMiB: 8192, diskGiB: null });
   await state.boxes.update(box, (latest) => ({ guest: { ...latest.guest!, size: { cores: 4, memoryMiB: 8192, diskGiB: null } } }));
   const watched = watchAccess(state, box);
   const answer = await state.snapshots.restore(COMMAND, box, standing(box), "stale");
   assert.equal(watched.seen.length, 1, "the labels were written once");
-  assert.doesNotMatch(watched.seen[0]!, /BB_STALE/, "the access file was written before the labels");
-  assert.match(watched.seen[0]!, new RegExp(`BB_BOX_ID=.?${box.id}`));
+  assert.doesNotMatch(watched.seen[0]!, /ALIA_STALE/, "the access file was written before the labels");
+  assert.match(watched.seen[0]!, new RegExp(`ALIA_BOX_ID=.?${box.id}`));
   assert.deepEqual(answer.to && { cores: answer.to.cores, memoryMiB: answer.to.memoryMiB }, { cores: box.guest!.size!.cores, memoryMiB: box.guest!.size!.memoryMiB });
   assert.match(state.log.events(box.id).at(-1)!.words!, /its size went from 4 cores, 8 GiB memory to/);
   assert.equal((await current(state, box)).guest?.size?.memoryMiB, box.guest!.size!.memoryMiB);
@@ -132,7 +132,7 @@ test("G9: a box keeps two undos; a new one replaces the oldest that may go, neve
   assert.ok(state.store.record(first.undo!.id), "a kept undo stays");
   assert.ok(state.store.record(third.undo!.id) && state.store.record(fourth.undo!.id));
   assert.equal(state.store.records({ box: box.id }).filter((record) => record.undoOf && record.keptUntil === null).length, 2);
-  assert.ok(state.log.events(box.id).some((event) => event.kind === "snapshot-deleted" && event.by.is === "bb-box" && event.by.why === "a newer undo replaced it"));
+  assert.ok(state.log.events(box.id).some((event) => event.kind === "snapshot-deleted" && event.by.is === "alia-box" && event.by.why === "a newer undo replaced it"));
 });
 
 test("the undo is admitted before the box stops: room and the ceiling refuse it with their own fix, and only the person restores without one", async () => {
@@ -143,7 +143,7 @@ test("the undo is admitted before the box stops: room and the ceiling refuse it 
   state.provider.percentFull = 90;
   const room = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"));
   assert.equal(room.code, "try_again", "room is refused only for now");
-  assert.match(room.message, /^BB Box would take an undo of box \S+ before restoring it, and (\S+ )?storage fast is 90% full, and your settings take no snapshot past 85%: .* Or restore without an undo, with --no-undo\.$/);
+  assert.match(room.message, /^ALIA Box would take an undo of box \S+ before restoring it, and (\S+ )?storage fast is 90% full, and your settings take no snapshot past 85%: .* Or restore without an undo, with --no-undo\.$/);
   const agentRoom = await rejection(state.snapshots.restore(AGENT, box, standing(box), "one"));
   assert.doesNotMatch(agentRoom.message, /--no-undo/);
   assert.equal((await rejection(state.snapshots.restore(AGENT, box, standing(box), "one", { undo: false }))).code, "not_owner");
@@ -172,23 +172,23 @@ test("G5: the guard refuses a box threads run on for everyone, and while a perso
     assert.equal(refused.code, "in_use");
     assert.match(refused.message, /is a box threads run on: "Write the API guide" \(idle\) runs on it\. A restore would take their worktrees/);
   }
-  state.guard = { threads: null, threadsUnread: "BB did not answer", control: false, terminals: 0 };
+  state.guard = { threads: null, threadsUnread: "VesnALIA did not answer", control: false, terminals: 0 };
   assert.match((await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"))).message, /could not tell which threads run on box/);
   state.guard = { threads: [], threadsUnread: null, control: true, terminals: 2 };
   const person = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"));
-  assert.match(person.message, /would end what is on it now: a person holds control of its desktop; 2 BB terminals are open on it\. Restore anyway with --force\. BB Box changed nothing\.$/);
+  assert.match(person.message, /would end what is on it now: a person holds control of its desktop; 2 ALIA terminals are open on it\. Restore anyway with --force\. ALIA Box changed nothing\.$/);
   const agent = await rejection(state.snapshots.restore(AGENT, box, standing(box), "one"));
   assert.match(agent.message, /Ask the person to end it first, or to restore the box themselves\./);
   assert.equal((await rejection(state.snapshots.restore(AGENT, box, standing(box), "one", { force: true }))).code, "not_owner");
   state.guard = { threads: [], threadsUnread: null, control: false, terminals: null };
   const unknownTerminal = (await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"))).message;
-  assert.match(unknownTerminal, /BB Box could not tell whether a BB terminal is open on it/);
+  assert.match(unknownTerminal, /ALIA Box could not tell whether a ALIA terminal is open on it/);
   assert.doesNotMatch(unknownTerminal, /\$\{/);
   assert.deepEqual(state.provider.order, [], "nothing changed while refused");
   state.guard = { threads: [], threadsUnread: null, control: true, terminals: 1 };
   const anyway = await state.snapshots.restore(COMMAND, box, standing(box), "one", { force: true });
-  assert.deepEqual(anyway.anyway, ["a person holds control of its desktop", "a BB terminal is open on it"]);
-  assert.match(state.log.events(box.id).find((event) => event.kind === "restore-asked")!.words!, /restored anyway, though a person holds control of its desktop, and a BB terminal is open on it\.$/);
+  assert.deepEqual(anyway.anyway, ["a person holds control of its desktop", "a VesnALIA terminal is open on it"]);
+  assert.match(state.log.events(box.id).find((event) => event.kind === "restore-asked")!.words!, /restored anyway, though a person holds control of its desktop, and a ALIA terminal is open on it\.$/);
   state.guard = { threads: [], threadsUnread: null, control: false, terminals: 0 };
   state.settings = { agentsRestore: false };
   const asks = await rejection(state.snapshots.restore(AGENT, box, standing(box), "one"));
@@ -210,7 +210,7 @@ test("a failed undo, a refused rollback or a failed stop leaves the disk as it w
   write(state, box, "work.txt", "now");
   state.provider.take = "failed";
   const undo = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"));
-  assert.match(undo.message, /^BB Box did not restore box \S+ to "one": BB Box could not take the undo "before the restore at 10:42": snapshot feature is not available\. Nothing on its disk changed, and BB Box started box \S+ again as it was\.$/);
+  assert.match(undo.message, /^ALIA Box did not restore box \S+ to "one": ALIA Box could not take the undo "before the restore at 10:42": snapshot feature is not available\. Nothing on its disk changed, and ALIA Box started box \S+ again as it was\.$/);
   assert.equal(read(state, box, "work.txt"), "now");
   assert.equal((await current(state, box)).state, "ready");
   assert.equal(state.store.records({ box: box.id }).find((record) => record.undoOf)?.state, "failed");
@@ -229,7 +229,7 @@ test("a failed undo, a refused rollback or a failed stop leaves the disk as it w
   assert.equal(stopped.restoring ?? null, null);
   assert.equal(state.store.pins().size, 0);
   assert.ok(state.kinds(box.id).filter((kind) => kind === "restore-failed").length >= 4);
-  assert.match(state.log.events(box.id).at(-1)!.words!, /^At the rollback: Proxmox's rollback task failed: rollback interrupted\. BB Box then found it stopped\.$/);
+  assert.match(state.log.events(box.id).at(-1)!.words!, /^At the rollback: Proxmox's rollback task failed: rollback interrupted\. ALIA Box then found it stopped\.$/);
 });
 
 test("G7: a locked guest refuses a restore with the host's command before anything changes; a restore across a disk's growth gives the disk back its size then", async () => {
@@ -240,9 +240,9 @@ test("G7: a locked guest refuses a restore with the host's command before anythi
   state.provider.locked = { lock: "rollback", fix: "Run `pct unlock 214` on pve-1." };
   const locked = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"));
   assert.equal(locked.code, "locked");
-  assert.equal(locked.message, `Fake host left box ${box.name} locked (rollback), so BB Box restores nothing. Run \`pct unlock 214\` on pve-1.`);
+  assert.equal(locked.message, `Fake host left box ${box.name} locked (rollback), so VesnALIA Box restores nothing. Run \`pct unlock 214\` on pve-1.`);
   assert.deepEqual(await state.snapshots.restoreChecks(), [
-    { id: `snapshots.locked.${box.name}`, name: `${box.name} locked`, status: "fail", detail: `Fake host left box ${box.name} locked (rollback), so BB Box takes, deletes and restores none of its snapshots.`, fix: "Run `pct unlock 214` on pve-1." },
+    { id: `snapshots.locked.${box.name}`, name: `${box.name} locked`, status: "fail", detail: `Fake host left box ${box.name} locked (rollback), so VesnALIA Box takes, deletes and restores none of its snapshots.`, fix: "Run `pct unlock 214` on pve-1." },
   ]);
   state.provider.locked = null;
   const snapshot = state.store.records({ box: box.id })[0]!;
@@ -255,7 +255,7 @@ test("G7: a locked guest refuses a restore with the host's command before anythi
   assert.match(state.log.events(box.id).at(-1)!.words!, /its size went from 2 cores, 4 GiB memory, 16 GiB disk to 2 cores, 4 GiB memory, 8 GiB disk, as it was then\.$/);
 });
 
-test("G6: BB Box restarted after the stop, the undo, the rollback and the start: each restore finishes at the next start, and its pins end", async () => {
+test("G6: VesnALIA Box restarted after the stop, the undo, the rollback and the start: each restore finishes at the next start, and its pins end", async () => {
   for (const step of ["stopped", "undo", "rolled-back", "started"] as const) {
     const state = world();
     const box = await readyBox(state);
@@ -277,11 +277,11 @@ test("G6: BB Box restarted after the stop, the undo, the rollback and the start:
     assert.equal(state.store.pins().size, 0, step);
     const undo = state.store.records({ box: box.id }).find((record) => record.undoOf)!;
     assert.equal(undo.state, "ready", step);
-    assert.match(state.log.events(box.id).at(-1)!.words!, /after BB Box restarted; its undo is "before the restore at 10:42"\.$/, step);
+    assert.match(state.log.events(box.id).at(-1)!.words!, /after ALIA Box restarted; its undo is "before the restore at 10:42"\.$/, step);
   }
 });
 
-test("G6: BB Box restarted once a restore was recorded changes nothing; an unconfirmed rollback stays unknown and pinned, and the box says so", async () => {
+test("G6: VesnALIA Box restarted once a restore was recorded changes nothing; an unconfirmed rollback stays unknown and pinned, and the box says so", async () => {
   const state = world();
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "one" });
@@ -294,7 +294,7 @@ test("G6: BB Box restarted once a restore was recorded changes nothing; an uncon
   assert.equal((await current(state, box)).state, "ready");
   assert.equal(state.store.records({ box: box.id }).filter((record) => record.undoOf).length, 0, "an undo never begun is not kept");
   assert.equal(state.store.pins().size, 0);
-  assert.match(state.log.events(box.id).at(-1)!.words!, /^BB Box restarted before the restore began\. Nothing changed\.$/);
+  assert.match(state.log.events(box.id).at(-1)!.words!, /^ALIA Box restarted before the restore began\. Nothing changed\.$/);
   state.provider.rollback = "unknown";
   const unsure = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"));
   assert.equal(unsure.code, "unreachable");
@@ -308,11 +308,11 @@ test("G6: BB Box restarted once a restore was recorded changes nothing; an uncon
   assert.match((await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"))).message, /could not confirm the restore that began at/);
   const [doctor] = await state.snapshots.restoreChecks();
   assert.equal(doctor?.id, `snapshots.restore.${box.name}`);
-  assert.match(doctor!.detail, /^BB Box could not confirm the restore that began at 10:42 UTC on box \S+: It was rolling back, and BB Box could not read the rollback's task: cannot reach the provider's task list: timed out\.$/);
+  assert.match(doctor!.detail, /^ALIA Box could not confirm the restore that began at 10:42 UTC on box \S+: It was rolling back, and ALIA Box could not read the rollback's task: cannot reach the provider's task list: timed out\.$/);
   await state.backend.start!(stuck.guest!);
   await state.boxes.sweep();
   const swept = await current(state, box);
-  assert.equal(swept.state, "stopped", "the sweep does not take a box mid-restore as started outside bb-box");
+  assert.equal(swept.state, "stopped", "the sweep does not take a box mid-restore as started outside alia-box");
   assert.equal(swept.restoring?.name, "one");
   await state.backend.stop!(stuck.guest!);
   state.provider.tasksReadable = true;
@@ -337,7 +337,7 @@ test("a repeated request is the same restore, and a reuse for another is refused
   assert.equal((await current(state, box)).state, "ready");
 });
 
-test("G13: restores made outside BB Box are logged from the provider's tasks by their status, once each, and an OK one sets the box straight", async () => {
+test("G13: restores made outside VesnALIA Box are logged from the provider's tasks by their status, once each, and an OK one sets the box straight", async () => {
   const state = world();
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "one" });
@@ -356,10 +356,10 @@ test("G13: restores made outside BB Box are logged from the provider's tasks by 
   assert.deepEqual(
     events().map((event) => event.kind),
     ["restored-outside", "restored-outside", "restore-outside-failed", "restore-outside-running"],
-    "BB Box's own rollback is not logged as made outside it",
+    "VesnALIA Box's own rollback is not logged as made outside it",
   );
-  assert.match(events()[0]!.words!, /^Proxmox's task UPID:one, by root@pam, at 2026-10-30 10:43 UTC, ended OK: its disk went back to an earlier snapshot\. BB Box wrote its labels again, wrote its access file\.$/);
-  assert.match(events()[2]!.words!, /failed: unable to rollback: no such snapshot\. BB Box then found it running\.$/);
+  assert.match(events()[0]!.words!, /^Proxmox's task UPID:one, by root@pam, at 2026-10-30 10:43 UTC, ended OK: its disk went back to an earlier snapshot\. ALIA Box wrote its labels again, wrote its access file\.$/);
+  assert.match(events()[2]!.words!, /failed: unable to rollback: no such snapshot\. ALIA Box then found it running\.$/);
   assert.equal(state.backend.relabels.length, relabels + 2);
   await state.snapshots.sweep();
   assert.equal(events().length, 4, "nothing is logged twice, and a task still running is said once");
@@ -382,7 +382,7 @@ const ON_ZFS: ZfsOrderMode = {
   enter: (state) => {
     state.provider.restoreWay = "rollback-newest-only";
   },
-  olderRefused: /^fake's storage fast is ZFS, which restores only the newest snapshot, and "one" has 1 newer one\. Fork "one" instead, or delete the newer one yourself first\. BB Box never deletes newer snapshots to make a restore possible, and changed nothing\.$/,
+  olderRefused: /^fake's storage fast is ZFS, which restores only the newest snapshot, and "one" has 1 newer one\. Fork "one" instead, or delete the newer one yourself first\. ALIA Box never deletes newer snapshots to make a restore possible, and changed nothing\.$/,
 };
 
 const BY_THE_SWITCH: ZfsOrderMode = {
@@ -390,7 +390,7 @@ const BY_THE_SWITCH: ZfsOrderMode = {
   enter: (state) => {
     state.undoByCopy = true;
   },
-  olderRefused: /as on ZFS, BB Box restores only the newest snapshot there, and "one" has 1 newer one\. Delete it yourself first\. BB Box never deletes newer snapshots/,
+  olderRefused: /as on ZFS, ALIA Box restores only the newest snapshot there, and "one" has 1 newer one\. Delete it yourself first\. ALIA Box never deletes newer snapshots/,
 };
 
 for (const mode of [ON_ZFS, BY_THE_SWITCH]) test(`G4 in ZFS's order ${mode.name}: the newest only, after a held copy of the stopped box; undoing it is a swap to a new guest with the box's identity, which leaves an earlier guest, fork only`, async () => {
@@ -511,8 +511,8 @@ test("a check says what a restore would do, refuses what it would refuse, and ch
   assert.equal(check.undo?.kind, "snapshot");
   assert.equal(check.undo?.name, "before the restore at 10:42");
   assert.deepEqual(check.to && { cores: check.to.cores, memoryMiB: check.to.memoryMiB }, { cores: box.guest!.size!.cores, memoryMiB: box.guest!.size!.memoryMiB });
-  assert.deepEqual(check.anyway, ["a BB terminal is open on it"]);
-  assert.match((await rejection(state.snapshots.checkRestore(COMMAND, box, standing(box), "one"))).message, /a BB terminal is open on it\. Restore anyway with --force\./);
+  assert.deepEqual(check.anyway, ["a VesnALIA terminal is open on it"]);
+  assert.match((await rejection(state.snapshots.checkRestore(COMMAND, box, standing(box), "one"))).message, /a ALIA terminal is open on it\. Restore anyway with --force\./);
   state.provider.percentFull = 90;
   assert.equal((await rejection(state.snapshots.checkRestore(COMMAND, box, standing(box), "one", { force: true }))).code, "try_again");
   assert.equal((await state.snapshots.checkRestore(COMMAND, box, standing(box), "one", { force: true, undo: false })).undo, null);
@@ -545,7 +545,7 @@ test("a failed flush stops the restore before the stop unless the person accepts
   state.provider.order.length = 0;
   const stopped = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one"));
   assert.equal(stopped.code, "unflushed");
-  assert.match(stopped.message, /could not flush box \S+'s writes to its disk before stopping it \(sync: Input\/output error\), so its undo could miss what was written in the last seconds before the restore\. BB Box changed nothing\.$/);
+  assert.match(stopped.message, /could not flush box \S+'s writes to its disk before stopping it \(sync: Input\/output error\), so its undo could miss what was written in the last seconds before the restore\. ALIA Box changed nothing\.$/);
   assert.deepEqual(state.provider.order, ["flush"], "nothing stopped");
   assert.equal((await current(state, box)).state, "ready");
   assert.equal(state.store.records({ box: box.id }).length, 1, "no undo was left");
@@ -554,7 +554,7 @@ test("a failed flush stops the restore before the stop unless the person accepts
   const went = await state.snapshots.restore(COMMAND, box, standing(box), "one", { unflushed: "go-on" });
   assert.equal(went.unflushed, "sync: Input/output error");
   assert.match(state.store.record(went.undo!.id)?.note ?? "", /may miss what was written in the last seconds before the restore\.$/);
-  assert.match(state.log.events(box.id).find((event) => event.kind === "restored")!.words!, /BB Box could not flush its writes before the stop \(sync: Input\/output error\), so its undo may miss the last of them/);
+  assert.match(state.log.events(box.id).find((event) => event.kind === "restored")!.words!, /ALIA Box could not flush its writes before the stop \(sync: Input\/output error\), so its undo may miss the last of them/);
 });
 
 test("the flush waits 15 s at most, getting into the box included", async () => {
@@ -594,8 +594,8 @@ test("the person's restore goes on only past what they were shown: a loss that c
   state.guard = { threads: [], threadsUnread: null, control: true, terminals: 2 };
   state.provider.order.length = 0;
   const refused = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "one", { force: true, accept: ["a person holds control of its desktop"] }));
-  assert.match(refused.message, /^Since you looked, more would go with box \S+: 2 BB terminals are open on it\./);
+  assert.match(refused.message, /^Since you looked, more would go with box \S+: 2 ALIA terminals are open on it\./);
   assert.deepEqual(state.provider.order, []);
-  const answer = await state.snapshots.restore(COMMAND, box, standing(box), "one", { force: true, accept: ["a person holds control of its desktop", "2 BB terminals are open on it"] });
+  const answer = await state.snapshots.restore(COMMAND, box, standing(box), "one", { force: true, accept: ["a person holds control of its desktop", "2 VesnALIA terminals are open on it"] });
   assert.equal(answer.snapshot?.name, "one");
 });

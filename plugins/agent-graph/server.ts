@@ -1,13 +1,13 @@
-// bb-plugin-agent-graph — backend.
+// alia-plugin-agent-graph — backend.
 //
 // Builds a live node graph of what agents are doing: project → thread →
 // turn → tool call / subagent / workflow agent, plus child threads nested
 // under their parent. The frontend lays it out and animates it; the
-// `bb agent-graph` CLI prints the same graph as a tree.
+// `alia agent-graph` CLI prints the same graph as a tree.
 //
 // Timelines are read loosely (as records) so new row kinds degrade to a
 // generic "tool" node instead of breaking the graph.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { normalizeTurns, type Row } from "./timeline";
 import { GRAPH_CHANGED, type GraphChangedPayload } from "./shared";
@@ -458,8 +458,8 @@ class GraphBuilder {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     windowHours: {
       type: "select",
       label: "Overview window (hours)",
@@ -505,7 +505,7 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange((next) => {
     config = parseConfig(next);
     buildCache.clear();
-    bb.realtime.publish(GRAPH_CHANGED, { threadIds: [] } satisfies GraphChangedPayload);
+    alia.realtime.publish(GRAPH_CHANGED, { threadIds: [] } satisfies GraphChangedPayload);
   });
 
   // A thread's updatedAt does not move while a turn streams, so it is only
@@ -528,7 +528,7 @@ export default async function plugin(bb: BbPluginApi) {
       return cached.rows;
     }
     try {
-      const timeline = await bb.sdk.threads.timeline({
+      const timeline = await alia.sdk.threads.timeline({
         threadId: thread.id,
         includeNestedRows: "true",
         segmentLimit: String(segments),
@@ -542,7 +542,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       return rows;
     } catch (error) {
-      bb.log.warn(`timeline failed for ${thread.id}: ${String(error)}`);
+      alia.log.warn(`timeline failed for ${thread.id}: ${String(error)}`);
       return [];
     }
   }
@@ -630,7 +630,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function allThreads(): Promise<ThreadDto[]> {
-    const result = (await bb.sdk.threads.list({
+    const result = (await alia.sdk.threads.list({
       archived: false,
       limit: 300,
     })) as unknown as ThreadDto[];
@@ -641,7 +641,7 @@ export default async function plugin(bb: BbPluginApi) {
     const builder = new GraphBuilder(OVERVIEW_WORK_LIMIT);
     const [threads, projects] = await Promise.all([
       allThreads(),
-      bb.sdk.projects.list({ includePersonal: true }) as unknown as Promise<
+      alia.sdk.projects.list({ includePersonal: true }) as unknown as Promise<
         Array<{ id: string; name?: string | null }>
       >,
     ]);
@@ -725,13 +725,13 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function buildThread(threadId: string): Promise<Graph> {
     const builder = new GraphBuilder();
-    const root = (await bb.sdk.threads.get({ threadId })) as unknown as ThreadDto;
+    const root = (await alia.sdk.threads.get({ threadId })) as unknown as ThreadDto;
     const byParent = new Map<string, ThreadDto[]>();
     // Walk descendants breadth-first, a few levels deep.
     let frontier = [root.id];
     for (let depth = 0; depth < 4 && frontier.length > 0; depth++) {
       const levels = await mapLimited(frontier, 4, async (parentThreadId) => {
-        const children = (await bb.sdk.threads.list({
+        const children = (await alia.sdk.threads.list({
           parentThreadId,
           includeHidden: true,
           limit: 100,
@@ -778,7 +778,7 @@ export default async function plugin(bb: BbPluginApi) {
     return promise;
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     graph: ({ threadId }) => graphFor(threadId),
   });
 
@@ -787,7 +787,7 @@ export default async function plugin(bb: BbPluginApi) {
   // structural changes the graph draws.
   const pending = new Set<string>();
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
-  const unsubscribe = bb.sdk.subscribe({
+  const unsubscribe = alia.sdk.subscribe({
     event: "thread:changed",
     callback: (event) => {
       const eventTypes = event.metadata?.eventTypes;
@@ -807,20 +807,20 @@ export default async function plugin(bb: BbPluginApi) {
         flushTimer = null;
         const threadIds = [...pending];
         pending.clear();
-        bb.realtime.publish(GRAPH_CHANGED, { threadIds } satisfies GraphChangedPayload);
+        alia.realtime.publish(GRAPH_CHANGED, { threadIds } satisfies GraphChangedPayload);
       }, 600);
     },
   });
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribe();
     if (flushTimer !== null) clearTimeout(flushTimer);
   });
 
-  // `bb agent-graph [--thread <id>] [--json]`: the same graph as a tree, so
+  // `alia agent-graph [--thread <id>] [--json]`: the same graph as a tree, so
   // agents can see what their siblings and subagents are doing.
   const usage = [
     "Usage:",
-    "  bb agent-graph [--thread <id>] [--json]",
+    "  VesnALIA agent-graph [--thread <id>] [--json]",
     "",
     "Prints the live agent graph: projects, threads, turns, tool calls,",
     "subagents and workflow agents, with their status.",
@@ -834,14 +834,14 @@ export default async function plugin(bb: BbPluginApi) {
     interrupted: "■",
     idle: "○",
   };
-  bb.cli.register({
+  alia.cli.register({
     name: "agent-graph",
     summary: "Show a live graph of agents, subagents and their tool calls",
     commands: [
       {
         name: "show",
         summary: "Print the agent graph (default)",
-        usage: "bb agent-graph [show] [--thread <id>] [--json]",
+        usage: "alia agent-graph [show] [--thread <id>] [--json]",
       },
     ],
     async run(argv) {

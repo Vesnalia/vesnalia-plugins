@@ -1,14 +1,14 @@
 // bbt-er6.4/6.5: acceptance auto-continue of the package queue and the real
 // execution-state surfaced per role. Real Git (host entry) so checkpoints
-// verify; BB threads are deterministic SDK fixtures, no model calls.
+// verify; VesnALIA threads are deterministic SDK fixtures, no model calls.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdtemp, readFile, writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it, expect } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import plugin from "./server";
 import hostEntry from "./host";
 import { deriveExecutionState } from "./snapshot";
@@ -77,9 +77,9 @@ async function setup(opts: { spawnFailures?: number; fallbacks?:ExecutionFallbac
     await git(["add", "profile.ts"]);
     await git(["commit", "-qm", "Initial state"]);
     await git(["worktree", "add", "-q", "-b", "task/profile", worktree]);
-    await mkdir(join(checkout, ".bb", "teams"), { recursive: true });
+    await mkdir(join(checkout, ".vesnalia", "teams"), { recursive: true });
     await writeFile(
-      join(checkout, ".bb", "teams", "main.yaml"),
+      join(checkout, ".vesnalia", "teams", "main.yaml"),
       "version: 1\nroles:\n  - name: lead\n    lead: true\n    prompt: Coordinate the work.\n  - name: dev\n    prompt: Implement the package.\n"+(opts.fallbacks?`    provider: pi\n    model: ollama-cloud/original\n    executionPolicy: ${JSON.stringify({noAdditionalCost:true,fallbacks:opts.fallbacks})}\n`:""),
     );
     await writeFile(join(worktree, "profile.ts"), "export const profile = 2; // unfinished\n");
@@ -229,8 +229,8 @@ async function setup(opts: { spawnFailures?: number; fallbacks?:ExecutionFallbac
       },
     });
     harness = fake.harness;
-    const recheck = fake.bb.experimental_hooks.recheck;
-    fake.bb.experimental_hooks.recheck = async (hook) => {
+    const recheck = fake.alia.experimental_hooks.recheck;
+    fake.alia.experimental_hooks.recheck = async (hook) => {
       await recheck(hook);
       for (const id of queued.keys()) {
         const decision = await harness!.inspection.registrations.hooks["message.dispatch"]!({
@@ -242,7 +242,7 @@ async function setup(opts: { spawnFailures?: number; fallbacks?:ExecutionFallbac
       }
       if(releaseFailures>0){releaseFailures--;throw new Error("Release acknowledgement was lost");}
     };
-    await plugin(fake.bb);
+    await plugin(fake.alia);
     const cli = async (args: string[]) => {
       const r = await harness!.behavior.runCli([...args, "--project", "flow", "--json"]);
       expect(r.exitCode, r.stderr || r.stdout).toBe(0);
@@ -262,8 +262,8 @@ async function setup(opts: { spawnFailures?: number; fallbacks?:ExecutionFallbac
       rawCli,
       session: (role = "dev") => harness!.behavior.callRpc("sessionView", {projectId: "proj_flow", team: "main", role}) as Promise<SessionView>,
       rotate: (expectedThreadId = "thr_dev", role = "dev") => harness!.behavior.callRpc("sessionRotate", {projectId: "proj_flow", team: "main", role, expectedThreadId}) as Promise<SessionView>,
-      kv: (key: string) => fake.bb.storage.kv.get(key),
-      setKv: (key, value) => fake.bb.storage.kv.set(key, value as never),
+      kv: (key: string) => fake.alia.storage.kv.get(key),
+      setKv: (key, value) => fake.alia.storage.kv.set(key, value as never),
       snapshotRole: async (role: string) => {
         const snap = (await harness!.behavior.callRpc("snapshot", { projectId: "proj_flow", team: "main" })) as {
           snapshot: { roles: Array<{ name: string; executionState?: unknown }> };
@@ -324,11 +324,11 @@ async function setup(opts: { spawnFailures?: number; fallbacks?:ExecutionFallbac
         } as never);
       },
       reassignTask: async (taskId, role) => {
-        const store = (await fake.bb.storage.kv.get("tasks:proj_flow:main")) as { tasks: Array<{ id: number | string; role: string }> };
+        const store = (await fake.alia.storage.kv.get("tasks:proj_flow:main")) as { tasks: Array<{ id: number | string; role: string }> };
         const task = store.tasks.find((t) => t.id === taskId);
         if (!task) throw new Error(`task ${taskId} not found in the builtin store`);
         task.role = role;
-        await fake.bb.storage.kv.set("tasks:proj_flow:main", store);
+        await fake.alia.storage.kv.set("tasks:proj_flow:main", store);
       },
       dispose: async () => {
         await harness!.lifecycle.dispose();
@@ -357,14 +357,14 @@ describe("авто-продолжение очереди после приёмк
       const record = (await fx.kv("auto-continue:proj_flow:main:dev")) as { stage: string; taskId: unknown };
       expect(record.stage).toBe("awaiting-checkpoint");
       expect(record.taskId).toBe(first.task.id);
-      const requests = fx.sent.filter((x) => x.threadId === "thr_dev" && x.text.includes("bb team checkpoint"));
+      const requests = fx.sent.filter((x) => x.threadId === "thr_dev" && x.text.includes("alia team checkpoint"));
       expect(requests).toHaveLength(1);
       const state = (await fx.snapshotRole("dev")).executionState as { kind: string; taskId: unknown };
       expect(state.kind).toBe("awaiting-checkpoint");
       expect(state.taskId).toBe(first.task.id);
       // Повторный триггер не дублирует уведомление (durable-запрос, dedup).
       await fx.cli(["task", "add", "dev", "Third"]);
-      expect(fx.sent.filter((x) => x.threadId === "thr_dev" && x.text.includes("bb team checkpoint"))).toHaveLength(1);
+      expect(fx.sent.filter((x) => x.threadId === "thr_dev" && x.text.includes("alia team checkpoint"))).toHaveLength(1);
       expect(fx.spawnCalls()).toBe(0);
     } finally {
       await fx.dispose();
@@ -460,7 +460,7 @@ describe("авто-продолжение очереди после приёмк
       const state = (await fx.snapshotRole("dev")).executionState as { kind: string; errorCode: string; safeAction: string; errorMessage?: string };
       expect(state.kind).toBe("error");
       expect(state.errorCode).toBe("spawn_uncertain");
-      expect(state.safeAction).toContain("bb team replace");
+      expect(state.safeAction).toContain("alia team replace");
       expect(state.errorMessage).toContain("HTTP 500");
       // Повторный триггер (приёмка задачи lead) не повторяет спавн.
       const wake = (await fx.cli(["task", "add", "lead", "Wake"])) as { task: { id: number | string } };
@@ -569,7 +569,7 @@ describe("ротация контекста сессии (bbt-er6.8)", () => {
       expect(record.stage).toBe("awaiting-checkpoint");
       expect(record.reason).toBe("context");
       expect(record.taskId).toBe(first.task.id);
-      expect(fx.sent.filter((x) => x.threadId === "thr_dev" && x.text.includes("bb team checkpoint"))).toHaveLength(1);
+      expect(fx.sent.filter((x) => x.threadId === "thr_dev" && x.text.includes("alia team checkpoint"))).toHaveLength(1);
       expect(fx.spawnCalls()).toBe(0);
       // Агент сохраняет checkpoint (без --rotate) — запрос продолжается.
       await fx.cli(["checkpoint", String(first.task.id), "--file", "checkpoint.json"]);
@@ -778,7 +778,7 @@ describe("execution-state роли (bbt-er6.5, чистая функция)", ()
     });
     expect(failed?.kind).toBe("error");
     expect(failed?.errorCode).toBe("release_failed");
-    expect(failed?.safeAction).toContain("bb team resume");
+    expect(failed?.safeAction).toContain("alia team resume");
     const replacing = deriveExecutionState({
       role: "dev",
       tasks: [],
@@ -794,12 +794,12 @@ describe("execution-state роли (bbt-er6.5, чистая функция)", ()
       role: "dev", tasks: [], replacement: { stage: "spawn_uncertain", delivery: "pending", startedAtMs: 1 }, autoContinue: null, threadStatus: null,
     });
     expect(spawn?.kind).toBe("error");
-    expect(spawn?.safeAction).toContain("bb team replace dev --dry-run");
+    expect(spawn?.safeAction).toContain("alia team replace dev --dry-run");
     const delivery = deriveExecutionState({
       role: "dev", tasks: [], replacement: { stage: "complete", delivery: "uncertain", startedAtMs: 1 }, autoContinue: null, threadStatus: null,
     });
     expect(delivery?.kind).toBe("error");
-    expect(delivery?.safeAction).toContain("bb team resume");
+    expect(delivery?.safeAction).toContain("alia team resume");
   });
 
   it("replacement_unfinished и unknown коды дают конкретное безопасное действие", () => {
@@ -807,14 +807,14 @@ describe("execution-state роли (bbt-er6.5, чистая функция)", ()
       role: "dev", tasks: [], replacement: null,
       autoContinue: { taskId: 1, stage: "failed", errorCode: "replacement_unfinished", updatedAtMs: 1 }, threadStatus: null,
     });
-    expect(unfinished?.safeAction).toContain("bb team replace dev");
+    expect(unfinished?.safeAction).toContain("alia team replace dev");
     expect(unfinished?.safeAction).toContain("--abort");
     const unknown = deriveExecutionState({
       role: "dev", tasks: [], replacement: null,
       autoContinue: { taskId: 1, stage: "failed", errorCode: "old_environment_mismatch", updatedAtMs: 1 }, threadStatus: null,
     });
     expect(unknown?.kind).toBe("error");
-    expect(unknown?.safeAction).toContain("bb team doctor");
+    expect(unknown?.safeAction).toContain("alia team doctor");
   });
 
   it("errorMessage: ограниченная первая строка исходной причины, без стеков и без потерь коротких сообщений", () => {

@@ -38,7 +38,7 @@ export async function verifiedGh(account: string | undefined, write: keyof typeo
 export const NOT_THIS_REVIEW = "That thread isn't part of this review anymore. Refresh and try again.";
 
 export function register(deps: ServeDeps) {
-  const { bb, store, receipts, githubWrites } = deps;
+  const { alia, store, receipts, githubWrites } = deps;
   /** Resolve or unresolve one of this PR's threads, as the verified account; any other thread id is refused. */
   async function updateThread(targetKey: string, threadId: string, account: string | undefined, args: string[], action: WriteAction): Promise<{ ok: boolean; error?: string }> {
     const m = await store.getReview(targetKey);
@@ -70,7 +70,7 @@ export function register(deps: ServeDeps) {
       if (!threadId) return post();
       // The thread's drafted reply went out as this one.
       const replied = await postDraftedReply(receipts, store, targetKey, threadId, body, post);
-      if (replied.ok) bb.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
+      if (replied.ok) alia.realtime.publish(`feedback:${targetKey}`, { ts: Date.now() });
       return replied;
     },
     async resolveThread({ targetKey, threadId, account }) {

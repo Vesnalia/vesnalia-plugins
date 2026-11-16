@@ -1,6 +1,6 @@
 // The Qlik Sense panel: pick the machine agents run on, sign in, tick reports, choose agents.
 import { useCallback, useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { ConnectionStatus } from "../../contract";
 import type { rpcContract } from "../../server";
 import { AgentsSection } from "./AgentsSection";

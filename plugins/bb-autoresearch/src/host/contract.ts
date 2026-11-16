@@ -3,7 +3,7 @@
 // Every method names an explicit absolute path on the target host. Core does
 // not infer a cwd or environment for host RPC, and M2 runs the same contract
 // against a remote bench host, so nothing here may assume the server's disk.
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const absPath = z.string().min(1).refine((p) => p.startsWith("/"), "must be an absolute path");
@@ -25,7 +25,7 @@ const key = z.string().regex(/^[a-z0-9][a-z0-9._-]{0,120}$/u);
 const bundleId = z.string().regex(/^[a-f0-9]{16,64}$/u);
 const jobId = z.string().regex(/^job_[a-f0-9]{8,64}$/u);
 
-/** Host RPC limits (bb.hosts): 32 MiB of JSON input per call, 8 MiB of output. */
+/** Host RPC limits (alia.hosts): 32 MiB of JSON input per call, 8 MiB of output. */
 export const HOST_RPC_INPUT_LIMIT = 32 * 1024 * 1024;
 export const HOST_RPC_OUTPUT_LIMIT = 8 * 1024 * 1024;
 /**

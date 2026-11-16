@@ -1,5 +1,5 @@
 /**
- * Display language. The bb SDK exposes no user locale, so the language is a
+ * Display language. The VesnALIA SDK exposes no user locale, so the language is a
  * plugin setting (`language`) that the server passes to the app in `state`.
  * English is the default; Russian is the secondary language.
  */

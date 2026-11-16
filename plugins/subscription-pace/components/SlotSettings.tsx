@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useRpc } from '@get-bb/plugin-sdk/app';
+import { useRpc } from '@vesnalia/plugin-sdk/app';
 import type { rpcContract } from '../server.js';
 
 type SectionData = Awaited<ReturnType<typeof fetchSection>>;

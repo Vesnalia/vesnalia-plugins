@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ForageRuntime } from "../src/operations.ts";
 import type { createServerRuntime } from "../server.ts";
 import { artifact, attempt, threadScope } from "./sources/helpers.ts";
 
-// The bundle exists only after `bb plugin build`; environments without the bb CLI
+// The bundle exists only after `alia plugin build`; environments without the VesnALIA CLI
 // (CI runs plain vitest) skip these instead of failing.
 const bundleUrl = new URL("../dist/server.js", import.meta.url).href;
 const hasBundle = existsSync(new URL("../dist/server.js", import.meta.url));
 const compiled = hasBundle
-  ? await import(/* @vite-ignore */ bundleUrl) as { default(bb: BbPluginApi): Promise<void>; createServerRuntime: typeof createServerRuntime }
+  ? await import(/* @vite-ignore */ bundleUrl) as { default(alia: AliaPluginApi): Promise<void>; createServerRuntime: typeof createServerRuntime }
   : undefined;
 const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const cleanup of cleanups.splice(0)) await cleanup(); });
@@ -30,7 +30,7 @@ function fetched(url: string) {
 describe.skipIf(!hasBundle)("compiled bundle", () => {
 it("runs six CLI entrypoints, shared native diagnostics, and the emitted local bench corpus", async () => {
  const fake = host();
- const runtime = await compiled!.createServerRuntime(fake.bb, { fetch: async url => fetched(url), search: async query => ({ query, provider: "duckduckgo", results: [], rawCount: 0, durationMs: 0, attempts: [], appliedControls: [], unsupportedControls: [], cached: false }) });
+ const runtime = await compiled!.createServerRuntime(fake.alia, { fetch: async url => fetched(url), search: async query => ({ query, provider: "duckduckgo", results: [], rawCount: 0, durationMs: 0, attempts: [], appliedControls: [], unsupportedControls: [], cached: false }) });
  const a = runtime.sources.recordRetrieval({ scope: threadScope(), origin: "fetch", artifact: artifact("# A", { fetchedAt: new Date().toISOString() }), attempt: attempt() });
  const b = runtime.sources.recordRetrieval({ scope: threadScope(), origin: "fetch", artifact: artifact("# B", { fetchedAt: new Date().toISOString() }), attempt: attempt() });
  for (const [name, params] of Object.entries({ search: { query: "bundled fixture" }, fetch: { url: "https://example.com/docs" }, map: { url: "https://example.com", maxIndexDocuments: 1 }, extract: { snapshotId: b.snapshotId, fields: ["title"] }, diff: { beforeSnapshotId: a.snapshotId, afterSnapshotId: b.snapshotId }, crawl: { action: "list" } })) {
@@ -43,7 +43,7 @@ it("runs six CLI entrypoints, shared native diagnostics, and the emitted local b
 });
 it("pauses running crawl work on reload and does not let the old generation capture", async () => {
  let fake = host(); let started!: () => void; const entered = new Promise<void>(resolve => { started = resolve; });
- const runtime = await compiled!.createServerRuntime(fake.bb, { crawl: {
+ const runtime = await compiled!.createServerRuntime(fake.alia, { crawl: {
   transport: async url => ({ response: new Response("", { status: 404 }), finalUrl: url, redirects: 0, acceptedRedirectBytes: 0, access: { network: "public", credentialed: false, requestScopeKey: null } }),
   fetchPage: async (_url, options) => { started(); await new Promise<void>((_resolve, reject) => options.signal!.addEventListener("abort", () => reject(new Error("fixture shutdown")), { once: true })); throw new Error("unreachable"); },
  } });
@@ -57,8 +57,8 @@ it("pauses running crawl work on reload and does not let the old generation capt
 });
 it("persists snapshots and crawl controls through compiled-factory reload without model turns", async () => {
  let fake = host(); let runtime: ForageRuntime;
- const load = async (bb: BbPluginApi) => { runtime = await compiled!.createServerRuntime(bb); };
- await load(fake.bb);
+ const load = async (alia: AliaPluginApi) => { runtime = await compiled!.createServerRuntime(alia); };
+ await load(fake.alia);
  const receipt = runtime!.sources.recordRetrieval({ scope: threadScope(), origin: "fetch", artifact: artifact("# Persisted bundle", { fetchedAt: new Date().toISOString() }), attempt: attempt() });
  const start = await fake.harness.behavior.runCli(["crawl", "start", ...flags, "--input", '{"url":"https://example.com/docs"}']); expect(start.exitCode).toBe(0); const jobId = JSON.parse(start.stdout!).id as string;
  const cancel = await fake.harness.behavior.runCli(["crawl", "cancel", ...flags, "--input", JSON.stringify({ jobId })]); expect(JSON.parse(cancel.stdout!).state).toBe("cancelled");

@@ -1,5 +1,5 @@
 // Sums up raw-<label>.json from drive.mjs (060): per phase, frames a second
-// and the gaps between them, kbit/s through BB's server; the drag's lag
+// and the gaps between them, kbit/s through VesnALIA's server; the drag's lag
 // behind the pointer per frame and its torn frames, whose rows disagree on
 // the block's edge; the scroll's torn frames, whose list rows change colour
 // at two places in their 20 pixels; key-to-screen; the SSIM of the fixed, coloured and

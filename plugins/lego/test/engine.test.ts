@@ -37,7 +37,7 @@ function harness() {
   /** Errors the next spawn or send calls throw, in order. */
   const failures: string[] = [];
   const attempts = { spawn: 0, send: 0 };
-  /** Threads the fake BB reports as deleted. */
+  /** Threads the fake VesnALIA reports as deleted. */
   const deleted = new Set<string>();
   let next = 0;
   const sdk: WorkerSdk = {
@@ -324,7 +324,7 @@ describe("builders that stop short", () => {
 });
 
 describe("dispatch", () => {
-  it("retries a spawn that BB refused under load", async () => {
+  it("retries a spawn that VesnALIA refused under load", async () => {
     const { engine, store, book, failures, attempts, notices } = harness();
     failures.push('HTTP 502: The "concurrency-limit" plugin\'s message.dispatch hook failed: did not decide within 10000ms');
     engine.start(book.id, { sameForAll: true, builders: [SONNET], master: OPUS }, null);

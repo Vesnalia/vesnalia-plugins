@@ -25,7 +25,7 @@ export interface LastRun {
 export interface LoopRecord {
   /** Absolute path of the checkout on its host. */
   workDir: string;
-  /** The bb host the checkout lives on; null for the primary host. */
+  /** The VesnALIA host the checkout lives on; null for the primary host. */
   hostId: string | null;
   active: boolean;
   ownerThreadId: string | null;

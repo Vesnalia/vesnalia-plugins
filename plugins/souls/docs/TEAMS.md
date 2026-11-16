@@ -11,7 +11,7 @@ permissions and settings you want that persona to use.
 | --- | --- | --- |
 | Allow child threads by default | Off | New bindings copy this delegation choice. Existing bindings retain their own choice. |
 | Allow hiring | Off | Allows automatic creation of specialists with `souls_hire`. Existing threads follow the current setting unless you gave them an override. |
-| Preferred model | No preference | Use BB's provider picker to save a provider, model and reasoning level. Applied by the composer and managed child starts. |
+| Preferred model | No preference | Use VesnALIA's provider picker to save a provider, model and reasoning level. Applied by the composer and managed child starts. |
 | Preferred specialists | Empty | Save up to 20 role/soul pairs. Managers are instructed to reuse a suitable member before hiring. |
 | New hires per task | Blank: unlimited | Set 0–100. Zero prevents new hires; deleted hires still count against their original task. |
 | Concurrent children | Blank: unlimited | Set 0–50. Zero holds new child admission; excess children wait in the queue. |
@@ -55,7 +55,7 @@ never invent a new key to retry an uncertain start. A known failure before any
 spawn request can be retried with the same key after its cause is corrected.
 
 For CLI child starts, call `souls_arm_child` immediately before
-`bb thread spawn --parent-self`. One arm binds one child and expires after five
+`alia thread spawn --parent-self`. One arm binds one child and expires after five
 minutes. Managed starts do not consume these CLI arms.
 
 ## Finish a task

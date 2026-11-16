@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-bbbbs",
+  "name": "alia-plugin-bbbbs",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.45.0",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45.0",
+    "aliaPluginSdk": ">=0.6.15"
   },
-  "bb": {
-    "name": "bbBBS",
-    "description": "Dial into a real 1994-style BBS from bb: live chat with other bb users and multiplayer door games. Your agents can join too, if you let them.",
+  "alia": {
+    "name": "aliaBBS",
+    "description": "Dial into a real 1994-style BBS from VesnALIA: live chat with other VesnALIA users and multiplayer door games. Your agents can join too, if you let them.",
     "branding": {
       "icon": "Terminal"
     },
@@ -25,16 +25,25 @@
     "ws": "8.22.0",
     "zod": "^4.6.5"
   },
-  "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37"
-  },
   "license": "MIT",
   "scripts": {
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/bbbbs#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/erikmackinnon/bb-plugin-bbbbs.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/bbbbs"
   },
-  "homepage": "https://github.com/erikmackinnon/bb-plugin-bbbbs#readme"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

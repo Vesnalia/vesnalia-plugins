@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { readAntigravityUsage } from "./antigravity-usage.js";
 import { hostUsageState, usageHostContract } from "./usage-host-contract.js";
 

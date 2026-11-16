@@ -6,12 +6,12 @@
 // ever type an id.
 //
 // Rendered through `renderSlot` rather than plain `render`: the editor now
-// hosts BB's own provider/model picker, and the SDK hooks behind it only exist
+// hosts VesnALIA's own provider/model picker, and the SDK hooks behind it only exist
 // inside a plugin app. `renderSlot` supplies that context for a single
 // component, so these stay fast unit tests instead of loading the bundle.
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { GraphEditor } from "../components/graph-editor";
 import { TEMPLATES } from "../lib/templates";
 

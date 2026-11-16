@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.ts";
 
-test("registers OpenCode v2 as an installed checkpoint-capable provider with every BB permission mode", async () => {
-  const { bb, harness } = createFakePluginHost({
+test("registers OpenCode v2 as an installed checkpoint-capable provider with every VesnALIA permission mode", async () => {
+  const { alia, harness } = createFakePluginHost({
     pluginId: "opencode2",
     experimental_hostEntry: true,
   });
 
-  await plugin(bb);
+  await plugin(alia);
 
   const provider = harness.inspection.registrations.providerRegistrations.find(
     (registration) => registration.id === "opencode2",
@@ -38,7 +38,7 @@ test("registers OpenCode v2 as an installed checkpoint-capable provider with eve
 });
 
 test("aborts a pending settings sync when the background service stops", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "opencode2",
     experimental_hostEntry: true,
     sdk: {
@@ -48,7 +48,7 @@ test("aborts a pending settings sync when the background service stops", async (
     },
     experimental_callHostRpc: async () => new Promise(() => {}),
   });
-  await plugin(bb);
+  await plugin(alia);
 
   const service = harness.runService("sync-model-settings");
   await new Promise((resolve) => setImmediate(resolve));
@@ -63,7 +63,7 @@ test("aborts a pending settings sync when the background service stops", async (
 
 test("synchronizes settings when each host connects", async () => {
   let connected = [{ id: "host-a", status: "connected" }];
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "opencode2",
     experimental_hostEntry: true,
     sdk: {
@@ -73,7 +73,7 @@ test("synchronizes settings when each host connects", async () => {
     },
     experimental_callHostRpc: async () => ({ ok: true }),
   });
-  await plugin(bb);
+  await plugin(alia);
 
   const firstRun = harness.runService("sync-model-settings");
   await new Promise((resolve) => setImmediate(resolve));

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 const app = await loadPluginApp(() => import("./app"));
 afterEach(cleanup);
@@ -289,7 +289,7 @@ describe("Noted banner and opener", () => {
     await waitFor(() => expect(slot.inspection.rpcCalls.some((c) => c.method === "listSessions")).toBe(true));
     expect(slot.queryByText(/Review requested/)).toBeNull();
   });
-  it("file opener shows bb's preview with a Review with Noted button", async () => {
+  it("file opener shows VesnALIA's preview with a Review with Noted button", async () => {
     const opener = app.fileOpeners.find((o) => o.id === "html")!;
     expect([...opener.extensions]).toEqual(["html", "htm", "md", "markdown"]);
     const Original = () => <div>original preview</div>;
@@ -320,7 +320,7 @@ describe("Noted banner and opener", () => {
   it("file opener is enabled for a thread-storage file and reuses its open session", async () => {
     const opener = app.fileOpeners.find((o) => o.id === "html")!;
     const Original = () => <div>original preview</div>;
-    const open = { ...session, id: "s9", absolutePath: "/home/m/.bb/thread-storage/t1/noted-smoke/plan.html", sourceKind: "thread-storage" };
+    const open = { ...session, id: "s9", absolutePath: "/home/m/.vesnalia/thread-storage/t1/noted-smoke/plan.html", sourceKind: "thread-storage" };
     const slot = renderSlot(opener, { path: "noted-smoke/plan.html", source: { kind: "thread-storage", threadId: "t1", environmentId: null, projectId: "p1" }, Original }, { rpc: { listSessions: () => ({ sessions: [open] }), openSession: () => payload }, context: { threadId: "t1", projectId: "p1" } });
     await slot.findByText("original preview");
     const button = slot.getByRole("button", { name: "Review with Noted" }) as HTMLButtonElement;

@@ -18,19 +18,19 @@ sources:
 
 # HTML layout on devices
 
-TL;DR: The HTML opener shows a page inside realistic phone, tablet, laptop and monitor mockups. It lays the page out at each device's real CSS size, rotates phones and tablets, and puts several devices side by side. BB's own preview with the source is one click away.
+TL;DR: The HTML opener shows a page inside realistic phone, tablet, laptop and monitor mockups. It lays the page out at each device's real CSS size, rotates phones and tablets, and puts several devices side by side. VesnALIA's own preview with the source is one click away.
 
 ## Purpose
 
-Check how a page's layout behaves on the screens people actually use, without leaving BB: breakpoints, orientation queries and how much room the browser leaves the page.
+Check how a page's layout behaves on the screens people actually use, without leaving VesnALIA: breakpoints, orientation queries and how much room the browser leaves the page.
 
 ## How it works
 
-1. BB routes `.html` and `.htm` to `HtmlOpener`, which preserves the BB source context in its `open` request (`app.tsx:5-7`; `src/html/html.tsx:493-520`).
+1. VesnALIA routes `.html` and `.htm` to `HtmlOpener`, which preserves the VesnALIA source context in its `open` request (`app.tsx:5-7`; `src/html/html.tsx:493-520`).
 2. The opener requests a fresh preview URL, adds a cache buster to the fetch, decodes the response, and passes the page to `DevicesViewer` (`src/html/html.tsx:511-536`). `prepareHtml` inserts a `<base>` only when the page has no existing one, then inserts the screenshot library and agent after `<head>` or `<html>`; fragments without either receive the scripts at the start (`src/html/capture.ts:165-176`). The library URL is absolute, so the page's `<base>` does not redirect the script request (`src/html/html.tsx:571-582`; `src/html/capture.ts:6`).
 3. Each device is a `mockup()`: the case around the screen, plus the system bars on it. Bars are the status bar with the notch, Dynamic Island or camera hole, the home indicator, the browser's tabs and address bar, the macOS menu bar and the Windows taskbar. The page iframe gets the rest as its viewport (`src/html/devices.ts`).
 4. The mockup is drawn at the device's CSS pixels and scaled as a whole. `fitGrid()` picks the number of columns and the scale that show all devices largest in the panel (`src/html/devices.ts`).
-5. The iframe is sandboxed like BB's own HTML preview (`allow-scripts allow-forms allow-popups allow-modals`, no same origin), so the page can't reach BB (`src/html/html.tsx`).
+5. The iframe is sandboxed like VesnALIA's own HTML preview (`allow-scripts allow-forms allow-popups allow-modals`, no same origin), so the page can't reach VesnALIA (`src/html/html.tsx`).
 6. Screenshot: the sandbox agent captures one viewport as JPEG with modern-screenshot, filters off-screen content, and temporarily replaces unloaded off-screen images and videos with same-sized spans (`src/html/capture.ts:122-161`). It collects used `@font-face` rules and asks the parent viewer to fetch site files through `postMessage`; the viewer accepts files under the page scope, caches each URL per load and shrinks image blobs (`src/html/capture.ts:46-79`; `src/html/html.tsx:599-625`). The viewer places each captured viewport into its device frame, composes the frames into a WebP, then attaches it to chat or saves it beside the HTML file; when there is no save callback it downloads the image (`src/html/html.tsx:350-361`; `src/html/html.tsx:690-740`).
 
 | Control | Behaviour |
@@ -43,7 +43,7 @@ Check how a page's layout behaves on the screens people actually use, without le
 | Scale | Fit the panel, or 25–100 %. |
 | Breakpoint ruler | Ticks at common media-query widths over the page; a click tries that width. |
 | Screenshot | The devices as they are now, in their mockups, as one WebP in the draft with a caption listing the sizes. About a second for one device, a few for five. |
-| Reload / new tab / full screen / source | Reloads the frames, opens the page in a browser tab, fills the screen, shows BB's preview (`Original`). |
+| Reload / new tab / full screen / source | Reloads the frames, opens the page in a browser tab, fills the screen, shows VesnALIA's preview (`Original`). |
 
 ## Websites
 
@@ -70,7 +70,7 @@ The **Website on devices** panel tab (`src/html/site.tsx:22-32`) displays a fetc
 | `HtmlOpener`, `HTML_EXTENSIONS`, `DevicesViewer`, `PageSource` | `src/html/html.tsx` | Opener for files; the device viewer around any page source. |
 | `SitePanel`, `BrowserDevicesButton`, `SITE_PANEL` | `src/html/site.tsx` | The website tab and the Browser address-bar button. |
 | `SitePanel` | `src/html/site.tsx:23-82` | Load and normalize a website address, then render it through the shared device viewer. |
-| `HtmlOpener` | `src/html/html.tsx:493-536` | Load a BB HTML file with its source context and provide screenshot saving. |
+| `HtmlOpener` | `src/html/html.tsx:493-536` | Load a VesnALIA HTML file with its source context and provide screenshot saving. |
 | `DevicesViewer` | `src/html/html.tsx:543-602` | Shared viewport, devices, controls and screenshot host for a page source. |
 | RPC `webPage`, `webFile`; `fetchPublic()`, `isInternalAddress()` | `server.ts`; `src/server/web.ts` | Server-side fetching of public pages and their files. |
 | `DEVICES`, `MAIN_DEVICES`, `mockup()`, `fitGrid()`, `turned()` | `src/html/devices.ts` | Presets, mockup geometry, fitting. |

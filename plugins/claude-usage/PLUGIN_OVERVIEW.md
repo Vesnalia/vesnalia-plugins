@@ -9,7 +9,7 @@
   a hover readout, and an activity calendar where a click opens that day.
 - **Spend by session.** Every session with its title and project, cost and tokens, sorted by
   cost or recency and searchable. Open one to see its models and its cost by token type; a
-  bb thread's own session opens its thread.
+  VesnALIA thread's own session opens its thread.
 - **Spend by model.** Each model's cost, share and tokens. Click a model to filter the whole
   page to it.
 - **Every agent CLI you use.** Pick one or several providers from the header (Claude Code,
@@ -30,16 +30,16 @@ checks it against a pinned checksum before running it. Costs are estimates at AP
 higher price of one-hour cache writes.
 
 Plan limits come from Anthropic's usage endpoint, using the sign-in Claude Code already stored
-on your Mac (Keychain, then `~/.claude/.credentials.json`). The token stays in bb's server: it
+on your Mac (Keychain, then `~/.claude/.credentials.json`). The token stays in VesnALIA's server: it
 is never sent to the page, logged, refreshed or written. If that check fails, the plugin asks
-bb's built-in usage plugin instead.
+VesnALIA's built-in usage plugin instead.
 
 Session titles and projects for Claude Code are read from each transcript's first and last
 lines. Everything is cached for a minute, and the page reads again when you press refresh.
 
 ## Requirements
 
-- bb 0.48 or later, on macOS, Linux or Windows.
+- VesnALIA 0.48 or later, on macOS, Linux or Windows.
 - Plan limits need Claude Code signed in to a Claude subscription on the same machine; on
   macOS, the first read may ask to allow access to Claude Code's Keychain item.
-- Usage for other agents needs their CLI's local logs on the machine that runs bb.
+- Usage for other agents needs their CLI's local logs on the machine that runs VesnALIA.

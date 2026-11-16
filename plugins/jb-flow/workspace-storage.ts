@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   initialWorkspaces,
   workspaceSchema,
@@ -7,8 +7,8 @@ import {
   type WorkspaceState,
 } from "./workspaces";
 
-export function createWorkspaceStorage(bb: BbPluginApi, changed: () => void) {
-  const kv = bb.storage.kv;
+export function createWorkspaceStorage(alia: AliaPluginApi, changed: () => void) {
+  const kv = alia.storage.kv;
   let pending: Promise<unknown> = Promise.resolve();
   function exclusive<T>(run: () => Promise<T>): Promise<T> {
     const result = pending.then(run, run);
@@ -18,7 +18,7 @@ export function createWorkspaceStorage(bb: BbPluginApi, changed: () => void) {
   async function list(): Promise<Workspace[]> {
     const saved = await kv.get<Workspace[]>("workspaces");
     if (saved !== undefined) return saved;
-    const workspaces = initialWorkspaces(await bb.sdk.projects.list());
+    const workspaces = initialWorkspaces(await alia.sdk.projects.list());
     await kv.set("workspaces", workspaces);
     return workspaces;
   }
@@ -73,7 +73,7 @@ export function createWorkspaceStorage(bb: BbPluginApi, changed: () => void) {
     workspaceId: string | null,
     automatic: boolean,
   ): Promise<void> {
-    await bb.sdk.threads.get({ threadId });
+    await alia.sdk.threads.get({ threadId });
     await exclusive(async () => {
       const all = await list();
       if (
@@ -101,7 +101,7 @@ export function createWorkspaceStorage(bb: BbPluginApi, changed: () => void) {
     });
     changed();
   }
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     await kv.delete(`workspace-thread:${thread.id}`);
   });
   return { read, save, assign, remove };

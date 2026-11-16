@@ -20,7 +20,7 @@ sources:
 
 # Word and PowerPoint documents
 
-TL;DR: This feature renders supported Word documents and PowerPoint presentations in BB, with search, zoom and chat quoting; legacy binary Word files are extracted as text (`src/word/document.tsx:82-170`; `src/slides/slides.tsx:83-149`).
+TL;DR: This feature renders supported Word documents and PowerPoint presentations in VesnALIA, with search, zoom and chat quoting; legacy binary Word files are extracted as text (`src/word/document.tsx:82-170`; `src/slides/slides.tsx:83-149`).
 
 ## Purpose
 
@@ -28,7 +28,7 @@ The Word opener presents Word documents as pages or extracted legacy text; the s
 
 ## How it works
 
-1. BB registers separate Word and slide openers for their extension lists (`app.tsx:27-37`).
+1. VesnALIA registers separate Word and slide openers for their extension lists (`app.tsx:27-37`).
 2. For `.docx`, `.docm` and `.dotx`, the Word opener gets a preview URL, fetches file bytes and passes them to `docx-preview`; `.doc` and `.dot` call `docText` and render extracted sections (`src/word/document.tsx:21-22`; `src/word/document.tsx:148-170`; `server.ts:480-503`).
 3. Word search finds case-insensitive text runs across formatted text nodes and highlights them; selected text is formatted with file context and inserted into the composer (`src/word/document.tsx:28-79`; `src/shared/quote.ts:3-10`).
 4. The slide opener gets a preview, checks the payload size, parses the PPTX ZIP/XML into a deck and renders the selected slide; thumbnails, navigation, notes and present mode are managed by the opener (`src/slides/slides.tsx:83-160`; `src/slides/pptx.ts:401-460`; `src/slides/slide-view.tsx:140-159`).

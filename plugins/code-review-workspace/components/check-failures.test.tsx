@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { getReviewState, patchReviewState } from "../lib/panel-state";
 import { defaultKnobs, type Knobs } from "../lib/knobs";
@@ -237,7 +237,7 @@ test("a failure's Comment quotes an image in its message as a link, so your comm
 test("a failure's Ask agent puts it into the agent's box, fenced as CI output, unsent", async () => {
   const { app, rpc, slot, failure, startConversation } = await renderChapter();
   fireEvent.click(failure.getByRole("button", { name: "Ask agent about the lint failure at src/a.ts:2" }));
-  // It opens BB's side panel on the Review agent tab, which takes the ask.
+  // It opens VesnALIA's side panel on the Review agent tab, which takes the ask.
   expect(panelTabCalls(slot)).toEqual(["openTab:agent"]);
   const tab = renderPanelTab(app, "agent", "pr-42", { rpc });
   const agent = within(await tab.findByRole("region", { name: "Review agent" }));

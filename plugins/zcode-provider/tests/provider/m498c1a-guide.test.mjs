@@ -45,7 +45,7 @@ test('G4 reviewed native guide drain preserves admission order and persisted sou
     x => x ? { inputPresentation: x } : undefined, () => ({ source: 'real_user' }),
     { TurnSteerDrained: 'turn_steer_drained' }, () => ({}), native17 ? x => x : () => undefined);
   const pending = (id, input) => ({ id, input, delivery: 'guide', queuedAt: new Date(), intent: { sourceCommandId: id } });
-  const turn = { turnId: 'main-turn', pendingInputs: [pending('real-user', 'user guidance'), ...(desktop3172 ? [] : [pending('bb-service', 'frozen full bb block')])] };
+  const turn = { turnId: 'main-turn', pendingInputs: [pending('real-user', 'user guidance'), ...(desktop3172 ? [] : [pending('alia-service', 'frozen full VesnALIA block')])] };
   const history = [], persisted = [], events = [];
   const runtime = { pendingInputReservations: new Set(), messageHistory: { addEntries: entries => history.push(...entries) },
     persistUserPrompt: async (id, text, attachments, trace, identity) => persisted.push({ id, text, ...identity }),
@@ -53,8 +53,8 @@ test('G4 reviewed native guide drain preserves admission order and persisted sou
   const first = await drain.call(runtime, { activeTurn: turn, events, traceContext: {} });
   assert.deepEqual(first.pendingInputIds, ['real-user']);
   assert.equal(turn.pendingInputs.length, desktop3172 ? 0 : 1);
-  assert.equal(history.some(e => e.message.content === 'frozen full bb block'), false);
-  if (desktop3172) turn.pendingInputs.push(pending('bb-service', 'frozen full bb block'));
+  assert.equal(history.some(e => e.message.content === 'frozen full VesnALIA block'), false);
+  if (desktop3172) turn.pendingInputs.push(pending('alia-service', 'frozen full VesnALIA block'));
   // Even with an absent/lost command ACK, native persisted sourceCommandId
   // identifies the delivery. Re-read that outcome, never submit it again.
   let dispatches = 0, second;
@@ -64,13 +64,13 @@ test('G4 reviewed native guide drain preserves admission order and persisted sou
     throw new Error('transport lost ACK after native persistence');
   };
   await assert.rejects(dispatchWithLostAck, /lost ACK/);
-  assert.deepEqual(second.pendingInputIds, ['bb-service']);
-  assert.equal(persisted.filter(p => p.sourceCommandId === 'bb-service').length, 1);
-  assert.equal(persisted.find(p => p.sourceCommandId === 'bb-service').steerDelivery, 'guide');
+  assert.deepEqual(second.pendingInputIds, ['alia-service']);
+  assert.equal(persisted.filter(p => p.sourceCommandId === 'alia-service').length, 1);
+  assert.equal(persisted.find(p => p.sourceCommandId === 'alia-service').steerDelivery, 'guide');
   assert.equal(dispatches, 1);
   assert.equal(await drain.call(runtime, { activeTurn: turn, events, traceContext: {} }), undefined);
-  assert.equal(history.filter(e => e.message.content === 'frozen full bb block').length, 1);
-  assert.deepEqual(events.map(e => e.payload.pendingInputIds), [['real-user'], ['bb-service']]);
+  assert.equal(history.filter(e => e.message.content === 'frozen full VesnALIA block').length, 1);
+  assert.deepEqual(events.map(e => e.payload.pendingInputIds), [['real-user'], ['alia-service']]);
   if (desktop3172) {
     turn.pendingInputs.push(pending('guide-a', 'a'), pending('guide-b', 'b'), { ...pending('queued', 'q'), delivery: 'queue' });
     assert.deepEqual((await drain.call(runtime, { activeTurn: turn, events, traceContext: {} })).pendingInputIds, ['guide-a', 'guide-b']);

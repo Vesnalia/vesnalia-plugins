@@ -16,6 +16,6 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@bb": "https://raw.githubusercontent.com/get-bb/bb/desktop-v0.39.1-nightly.32567325585.1/packages/plugin-registry/r/{name}.json"
+    "@alia": "https://raw.githubusercontent.com/get-bb/bb/desktop-v0.39.1-nightly.32567325585.1/packages/plugin-registry/r/{name}.json"
   }
 }

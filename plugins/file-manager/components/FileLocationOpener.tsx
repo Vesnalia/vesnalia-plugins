@@ -1,19 +1,19 @@
 // components/FileLocationOpener.tsx — "show me where this file is".
 //
-// bb offers every registered `fileOpener` in the right-click menu of a file
+// VesnALIA offers every registered `fileOpener` in the right-click menu of a file
 // link in a rendered message ("Open with <title>"), and opens the chosen one
 // as a tab in the side panel. That is exactly the surface a reveal wants, so
 // the file manager registers two of them (§10.2):
 //
 //   - `FileLocationOpener` — opens the file's folder with the file selected.
 //     This is the menu entry the user clicks to reveal something.
-//   - `FilePreviewOpener` — bb's own preview with one extra strip on top,
-//     carrying the same reveal as a button. It exists because bb also picks an
+//   - `FilePreviewOpener` — VesnALIA's own preview with one extra strip on top,
+//     carrying the same reveal as a button. It exists because VesnALIA also picks an
 //     opener *automatically* for every matching extension, and the automatic
 //     pick has to keep looking like the preview it replaced.
 //
 // An archive link is the one kind the preview opener draws itself (§8.13):
-// bb's preview has nothing to show for a `.zip`, so under the same strip it
+// VesnALIA's preview has nothing to show for a `.zip`, so under the same strip it
 // renders the archive's contents instead, with an "Extract…" that opens the
 // file manager on the archive with its Extract dialog up.
 //
@@ -22,7 +22,7 @@
 // answers with the nearest folder that does exist, and the panel opens there
 // with the name pre-filtered.
 import { useEffect, useRef, useState } from "react";
-import type { PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import type { PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { detectArchiveFormat } from "../contract";
@@ -181,7 +181,7 @@ function LocationView({
 }
 
 /**
- * An archive link's body: its contents, where bb's preview would have shown
+ * An archive link's body: its contents, where VesnALIA's preview would have shown
  * nothing. The link is resolved first, like a reveal, because the listing
  * needs the absolute path and a link can name a file that has since gone.
  */
@@ -224,11 +224,11 @@ export function FileLocationOpener({ path, source }: PluginFileOpenerProps) {
 }
 
 /**
- * `fileOpener` #1: bb's preview, plus one strip that reveals the file.
+ * `fileOpener` #1: VesnALIA's preview, plus one strip that reveals the file.
  *
- * Registered first, so bb's automatic per-extension pick lands here rather
+ * Registered first, so VesnALIA's automatic per-extension pick lands here rather
  * than on the reveal — opening a file link with a plain click must still show
- * the file. For an archive "the file" is its contents (§8.13): bb's preview
+ * the file. For an archive "the file" is its contents (§8.13): VesnALIA's preview
  * cannot render one, so that one kind is drawn here instead.
  */
 export function FilePreviewOpener({ path, source, Original }: PluginFileOpenerProps) {
@@ -246,7 +246,7 @@ export function FilePreviewOpener({ path, source, Original }: PluginFileOpenerPr
 
   return (
     <div className="@container flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Kept to one thin line: BB's preview already has a header of its own
+      {/* Kept to one thin line: VesnALIA's preview already has a header of its own
           with the file name and its actions, so this adds the one thing it
           does not have — where the file lives, and a way to go there. */}
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-2">
@@ -279,11 +279,11 @@ export function FilePreviewOpener({ path, source, Original }: PluginFileOpenerPr
         </Button>
       </div>
       {/*
-       * This wrapper is the scroller, and that is not a detail: BB's preview
+       * This wrapper is the scroller, and that is not a detail: VesnALIA's preview
        * picks its layout per file type. Code, CSV and iframes take
        * `h-full min-h-0` and scroll inside themselves; a rendered markdown
        * document takes `min-h-full` and grows to its content, expecting
-       * whatever holds it to scroll. BB's own opener frame is
+       * whatever holds it to scroll. VesnALIA's own opener frame is
        * `overflow-hidden`, so with no scroller of our own a long document
        * simply had nowhere to go — the bug reported against 0.6 and 0.7.
        * `overflow-auto` serves both: the self-scrolling kinds never overflow

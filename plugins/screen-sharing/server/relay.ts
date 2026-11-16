@@ -1,7 +1,7 @@
 /**
  * The relay: one WebSocket from noVNC in the app, one link to the chosen
  * Mac's Screen Sharing (link.ts) — a TCP connection on the server's own
- * loopback, or bb's host link to another Mac. Bytes are copied both ways and
+ * loopback, or VesnALIA's host link to another Mac. Bytes are copied both ways and
  * never read. It reads only the ticket in the URL and the page's ack frames;
  * the VNC sign-in (macOS user name and password) travels inside the RFB
  * stream, encrypted by Apple's ARD handshake, and is never seen here.
@@ -16,7 +16,7 @@
  * relay answers each with `pong` at once, so a page whose socket outlived the
  * server can tell.
  */
-import type { ExperimentalPluginWebSocket, ExperimentalPluginWebSocketHandler } from "@get-bb/plugin-sdk";
+import type { ExperimentalPluginWebSocket, ExperimentalPluginWebSocketHandler } from "@vesnalia/plugin-sdk";
 
 import { CloseCode, FLOW_PARAM, FLOW_VERSION, PING_FRAME, PONG_FRAME, parseAck } from "../shared/channels";
 import type { Link, OpenLink } from "./link";
@@ -112,7 +112,7 @@ export function createRelay(options: RelayOptions): ExperimentalPluginWebSocketH
         if (flow !== FLOW_VERSION) {
           done = true;
           options.log("refused a connection from a page without flow control");
-          closeQuietly(opened, CloseCode.policy, "this page is out of date; reload bb and connect again");
+          closeQuietly(opened, CloseCode.policy, "this page is out of date; reload VesnALIA and connect again");
           return;
         }
         const redeemed = registry.redeem(token, hostId);
@@ -135,7 +135,7 @@ export function createRelay(options: RelayOptions): ExperimentalPluginWebSocketH
               try {
                 opened.send(bytes);
               } catch (error) {
-                // Called from socket and signal callbacks in the bb server's process: never let it escape.
+                // Called from socket and signal callbacks in the VesnALIA server's process: never let it escape.
                 finish({ code: CloseCode.failed, reason: `could not send to the page (${error instanceof Error ? error.message : String(error)})` });
               }
             },

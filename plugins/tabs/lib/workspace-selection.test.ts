@@ -8,8 +8,8 @@ const infos = [
 ];
 function storage(saved: string | null = null, persisted: string | null = null) {
   const values = new Map<string, string>();
-  if (saved !== null) values.set("bb.tabs.workspace.v1", saved);
-  if (persisted !== null) values.set("bb.tabs.workspace.last.v1", persisted);
+  if (saved !== null) values.set("alia.tabs.workspace.v1", saved);
+  if (persisted !== null) values.set("alia.tabs.workspace.last.v1", persisted);
   return {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, next: string) => {
@@ -48,12 +48,12 @@ describe("window-local workspace selection", () => {
     reloadedA.acceptCatalog(infos.map((info) => ({ ...info, name: `${info.name}!` })));
     reloadedA.setWorkspacesEnabled(false);
     reloadedA.setWorkspacesEnabled(true);
-    expect(machine.getItem("bb.tabs.workspace.last.v1")).toBe("home");
+    expect(machine.getItem("alia.tabs.workspace.last.v1")).toBe("home");
     const fresh = createWorkspaceSelectionStore(storage(), machine);
     fresh.acceptCatalog(infos);
     expect(fresh.getSnapshot().workspaceId).toBe("home");
     reloadedA.select("other");
-    expect(machine.getItem("bb.tabs.workspace.last.v1")).toBe("other");
+    expect(machine.getItem("alia.tabs.workspace.last.v1")).toBe("other");
   });
 
   it("reconciles a deleted machine-local choice without adopting an old window's selection", () => {
@@ -62,7 +62,7 @@ describe("window-local workspace selection", () => {
     const remaining = infos.filter((info) => info.id !== "home");
     oldWindow.acceptCatalog(remaining);
     expect(oldWindow.getSnapshot().workspaceId).toBe("other");
-    expect(machine.getItem("bb.tabs.workspace.last.v1")).toBe("work");
+    expect(machine.getItem("alia.tabs.workspace.last.v1")).toBe("work");
     const fresh = createWorkspaceSelectionStore(storage(), machine);
     fresh.acceptCatalog(remaining);
     expect(fresh.getSnapshot().workspaceId).toBe("work");
@@ -181,9 +181,9 @@ describe("window-local workspace selection", () => {
     expect(reloaded.lastClosed("home")).toBeNull();
     for (let i = 0; i < 105; i++)
       reloaded.rememberClosed("work", { ...entry, threadId: `closed-${i}` }, 0);
-    expect(JSON.parse(session.getItem("bb.tabs.closed.v1") ?? "[]")).toHaveLength(100);
+    expect(JSON.parse(session.getItem("alia.tabs.closed.v1") ?? "[]")).toHaveLength(100);
     const corrupt = storage();
-    corrupt.setItem("bb.tabs.closed.v1", "not JSON");
+    corrupt.setItem("alia.tabs.closed.v1", "not JSON");
     expect(createWorkspaceSelectionStore(corrupt).lastClosed("work")).toBeNull();
   });
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Build a BB plugin's README logo: the plugin's own BB icon, in white, on a
-// rounded gradient tile. The 120×120 layout matches bb-plugin-rewind's
+// Build a VesnALIA plugin's README logo: the plugin's own VesnALIA icon, in white, on a
+// rounded gradient tile. The 120×120 layout matches alia-plugin-rewind's
 // docs/logo.svg.
 //
 //   node make-logo.mjs [--plugin <dir>] [--out <file>] [--from <hex>] [--to <hex>]
 //                      [--icon <name|path.svg>] [--stroke <width>] [--hugeicons <dir>]
 //
-// --icon defaults to bb.branding.icon in the plugin's package.json:
+// --icon defaults to alia.branding.icon in the plugin's package.json:
 //   - A path (./assets/icon.svg) is read as SVG and recoloured white.
 //   - A name (GridView) is resolved the way the plugin's vendored icon
 //     component resolves it: a `Name: SomethingIcon` entry in
@@ -39,8 +39,8 @@ for (const colour of [from, to]) if (!HEX.test(colour)) fail(`"${colour}" is not
 const manifestPath = join(plugin, "package.json");
 if (!existsSync(manifestPath)) fail(`no package.json in ${plugin}`);
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-const icon = args.icon ?? manifest.bb?.branding?.icon;
-if (!icon) fail("package.json has no bb.branding.icon; pass --icon <name|path.svg>");
+const icon = args.icon ?? manifest.alia?.branding?.icon;
+if (!icon) fail("package.json has no alia.branding.icon; pass --icon <name|path.svg>");
 
 const glyph = /\.svg$/i.test(icon) || /^[./~]/.test(icon)
   ? glyphFromSvg(resolve(plugin, icon))
@@ -59,7 +59,7 @@ const ty = (TILE - height * scale) / 2 - minY * scale;
 const groupAttrs = Object.entries(glyph.group).map(([k, v]) => ` ${k}="${v}"`).join("");
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${TILE}" height="${TILE}" viewBox="0 0 ${TILE} ${TILE}">
-  <!-- Glyph: ${glyph.source}, the icon BB shows for ${manifest.bb?.name ?? manifest.name}. -->
+  <!-- Glyph: ${glyph.source}, the icon VesnALIA shows for ${manifest.alia?.name ?? manifest.name}. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${from}"/>
@@ -117,7 +117,7 @@ async function glyphFromHugeicons(name) {
         (guessed ? ` (guessed from "${name}"; no mapping in components/ui). Pass --icon <path.svg>` : ""),
     );
   }
-  if (guessed) console.warn(`make-logo: guessed ${exportName} for "${name}"; check the preview against BB`);
+  if (guessed) console.warn(`make-logo: guessed ${exportName} for "${name}"; check the preview against VesnALIA`);
   const body = data
     .map(([tag, attrs]) => {
       const rendered = Object.entries(attrs)

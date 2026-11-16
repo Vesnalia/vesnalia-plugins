@@ -52,8 +52,8 @@ export function WorktreePicker({ form, onChange, preview, checking, onOpen, onRe
       </button>
     </Popover.Trigger>
     <Popover.Portal>
-      {/* The portal leaves BB's plugin root; the same scope attribute keeps the plugin's own CSS applying. */}
-      <Popover.Content data-bb-plugin="flexible-worktrees" align="end" side="bottom" sideOffset={8} collisionPadding={12} aria-labelledby={`${id}-title`}
+      {/* The portal leaves VesnALIA's plugin root; the same scope attribute keeps the plugin's own CSS applying. */}
+      <Popover.Content data-alia-plugin="flexible-worktrees" align="end" side="bottom" sideOffset={8} collisionPadding={12} aria-labelledby={`${id}-title`}
         onOpenAutoFocus={e => { e.preventDefault(); document.getElementById(`${id}-search`)?.focus(); }}
         style={{ width: "min(440px, calc(100vw - 24px))", maxHeight: "var(--radix-popover-content-available-height)", overflowY: "auto" }}
         className="z-50 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">

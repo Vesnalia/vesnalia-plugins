@@ -4,37 +4,37 @@
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-floating-notes/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-floating-notes?style=flat-square&label=release&color=57606a" alt="Latest release"></a>
-<img src="https://img.shields.io/badge/bb-0.49%2B-57606a?style=flat-square" alt="Requires bb 0.49 or newer">
+<img src="https://img.shields.io/badge/bb-0.49%2B-57606a?style=flat-square" alt="Requires VesnALIA 0.49 or newer">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-57606a?style=flat-square" alt="MIT license"></a>
-<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the VesnALIA Community marketplace"></a>
 </p>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/vburojevic/bb-plugin-floating-notes/main/docs/media/dark/hero.png">
-  <img alt="The Floating Notes window and three stickies over a bb thread" src="https://raw.githubusercontent.com/vburojevic/bb-plugin-floating-notes/main/docs/media/light/hero.png" width="100%">
+  <img alt="The Floating Notes window and three stickies over a VesnALIA thread" src="https://raw.githubusercontent.com/vburojevic/bb-plugin-floating-notes/main/docs/media/light/hero.png" width="100%">
 </picture>
 
 <p align="center"><sub>One window, three stickies, and the thread you are actually working on.</sub></p>
 
 ## Install
 
-Floating Notes is listed in the [BB Community marketplace](https://github.com/get-bb/marketplace), so bb installs it by name:
+Floating Notes is listed in the [VesnALIA Community marketplace](https://github.com/get-bb/marketplace), so VesnALIA installs it by name:
 
 ```sh
-bb plugin install floating-notes
+alia plugin install floating-notes
 ```
 
 Or install it straight from this repository:
 
 ```sh
-bb plugin install git:https://github.com/vburojevic/bb-plugin-floating-notes
+alia plugin install git:https://github.com/vburojevic/bb-plugin-floating-notes
 ```
 
 > [!TIP]
-> Press <kbd>Ctrl</kbd> <kbd>'</kbd> anywhere in bb to open the notes window, or <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>'</kbd> to jot one line without leaving the thread.
+> Press <kbd>Ctrl</kbd> <kbd>'</kbd> anywhere in VesnALIA to open the notes window, or <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>'</kbd> to jot one line without leaving the thread.
 
 > [!NOTE]
-> Requires bb 0.49 or newer. No account, no API key, nothing leaves your machine: notes live in a SQLite database inside bb's own data directory.
+> Requires VesnALIA 0.49 or newer. No account, no API key, nothing leaves your machine: notes live in a SQLite database inside VesnALIA's own data directory.
 
 ## What it does
 
@@ -88,7 +88,7 @@ to threads. Search understands operators too: `tag:api`, `in:scratchpads`,
 
 Formatting marks hide as you leave a line. Headings size themselves,
 checkboxes are clickable and roll up into a progress ring on the row, code
-fences get real syntax highlighting from your bb theme, and tables stay
+fences get real syntax highlighting from your VesnALIA theme, and tables stay
 readable. `[[Wiki links]]` autocomplete across your notes: follow one to a
 note that does not exist and it gets created. Paste an image and it is stored
 with the note. Type `#tag` anywhere and it becomes a filterable tag.
@@ -131,7 +131,7 @@ a note into the draft, and `@note` mentions resolve fresh at send time.
 </td>
 <td width="50%" valign="top">
 
-Below bb's compact breakpoint the window stops pretending to be a window: it
+Below VesnALIA's compact breakpoint the window stops pretending to be a window: it
 fills the viewport minus one even inset, measured from the safe area, and
 tracks `visualViewport` so the software keyboard never covers what you are
 typing.
@@ -158,7 +158,7 @@ the sheet instead.
 ## Agents and the command line
 
 Five tools let an agent keep notes current while it works, so findings land
-on the pad you are already watching. The `bb notes` command covers the same
+on the pad you are already watching. The `alia notes` command covers the same
 ground from a shell.
 
 <details>
@@ -178,17 +178,17 @@ ground from a shell.
 <summary><b>CLI</b></summary>
 
 ```sh
-bb notes list                  # every note, newest first
-bb notes search "coupon"       # full-text search
-bb notes add "Ship the v2.4 announcement"
-bb notes scratchpad <thread>   # read or append a thread's pad
-bb notes export ./notes-backup # markdown files with front matter
-bb notes import ./notes-backup
+alia notes list                  # every note, newest first
+alia notes search "coupon"       # full-text search
+alia notes add "Ship the v2.4 announcement"
+alia notes scratchpad <thread>   # read or append a thread's pad
+alia notes export ./notes-backup # markdown files with front matter
+alia notes import ./notes-backup
 ```
 
 The full set: `list`, `search`, `show`, `add`, `append`, `tag`, `pin`,
 `trash`, `restore`, `purge`, `empty-trash`, `daily`, `scratchpad`, `export`
-and `import`. Run `bb notes --help` for usage.
+and `import`. Run `alia notes --help` for usage.
 
 </details>
 
@@ -216,7 +216,7 @@ and `import`. Run `bb notes --help` for usage.
 flowchart LR
   ui["Window, stickies,<br>capture bar, panels"] <--> store["lib/store.ts<br>client cache"]
   store <-->|"RPC and realtime"| server["server.ts<br>SQLite + FTS5"]
-  cli["bb notes CLI"] --> server
+  cli["alia notes CLI"] --> server
   agents["Agent tools"] --> server
 ```
 
@@ -235,10 +235,10 @@ components/floating-notes.tsx the content-script root
 
 **Four things worth knowing before changing it:**
 
-- **There is no bb React context in the content script.** `lib/rpc.ts` speaks the plugin RPC wire format directly, typed off the same contract. An app overlay in `app.tsx` relays bb's realtime signal and navigation to it.
+- **There is no VesnALIA React context in the content script.** `lib/rpc.ts` speaks the plugin RPC wire format directly, typed off the same contract. An app overlay in `app.tsx` relays VesnALIA's realtime signal and navigation to it.
 - **The server owns the notes; the client caches.** Every surface renders from `lib/store.ts` and mutates through it. Server mutations run behind a mutex.
-- **Theme-aware color is `light-dark()` or bb tokens only.** This plugin's Tailwind build has no `.dark` variant wired to bb's theme.
-- **Do not trust a Tailwind utility bb does not use itself.** Our utilities compile into `@layer utilities`, and layered CSS loses to bb's unlayered app CSS. `w-60` once computed to the container width and pushed the whole editor off-screen; `size-2.5` collapsed a color swatch to a 2px speck. Anything load-bearing lives in `styles.css` under an unlayered `.bb-fn-*` class. Measure the computed value in the running app rather than trusting the class.
+- **Theme-aware color is `light-dark()` or VesnALIA tokens only.** This plugin's Tailwind build has no `.dark` variant wired to VesnALIA's theme.
+- **Do not trust a Tailwind utility VesnALIA does not use itself.** Our utilities compile into `@layer utilities`, and layered CSS loses to VesnALIA's unlayered app CSS. `w-60` once computed to the container width and pushed the whole editor off-screen; `size-2.5` collapsed a color swatch to a 2px speck. Anything load-bearing lives in `styles.css` under an unlayered `.alia-fn-*` class. Measure the computed value in the running app rather than trusting the class.
 
 </details>
 
@@ -248,8 +248,8 @@ components/floating-notes.tsx the content-script root
 npm install
 npm run typecheck
 npm test
-bb plugin build
-bb plugin dev      # watch: rebuild and reload on every save
+alia plugin build
+alia plugin dev      # watch: rebuild and reload on every save
 ```
 
 ## License

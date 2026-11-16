@@ -28,7 +28,7 @@ export interface Host {
 }
 `;
 
-/** Audits a fixture project of store.ts, BB's types in host/sdk.ts, and `files`, by name under /p. */
+/** Audits a fixture project of store.ts, VesnALIA's types in host/sdk.ts, and `files`, by name under /p. */
 function audit(files: Record<string, string>): AuditReport {
   const project = new Project({ useInMemoryFileSystem: true, compilerOptions: { strict: true, target: 9 /* ES2022 */ } });
   project.createSourceFile("/p/store.ts", STORE);
@@ -319,7 +319,7 @@ test("lists store calls in array-method callbacks and in positions that can't aw
   expect(fn(report, "named").uses).toEqual([{ file: "a.ts", line: 8, label: "named > known (a.ts:7)", helper: true, asyncStart: false }]);
 });
 
-test("lists BB's callbacks that use the store, those that must return synchronously first", () => {
+test("lists VesnALIA's callbacks that use the store, those that must return synchronously first", () => {
   const report = audit({ "a.ts": `
     import { tick, type Store } from "./store";
     import type { Host } from "./host/sdk";
@@ -358,7 +358,7 @@ Store call sites: 3 (plus 1 calls inside the store implementations, not audited)
 (a) Functions that use the store: 2 (1 sync, 1 async); 2 call it directly; 0 only through an async function's start
 (b) R2 candidates: 1 stretches in 1 async functions; 1 run from the function's start; 0 repeat a call in a loop or callback
 (c) Callbacks and positions that can't await: 0 (0 array-method callbacks, 0 of them predicates)
-(d) BB callbacks that use the store: 2; 1 must return synchronously
+(d) VesnALIA callbacks that use the store: 2; 1 must return synchronously
     value: 1 (must return its result synchronously)
     promise: 1 (its type allows a Promise)
 
@@ -374,7 +374,7 @@ Store call sites: 3 (plus 1 calls inside the store implementations, not audited)
 
 (c) Store use in array-method callbacks and positions that can't await
 
-(d) BB callbacks that use the store
+(d) VesnALIA callbacks that use the store
   a.ts:5  value   sync   host.configure()  (plugin > callback to host.configure())
       Store.get @5
   a.ts:6  promise async  host.on("idle")  (plugin > callback to host.on("idle"))

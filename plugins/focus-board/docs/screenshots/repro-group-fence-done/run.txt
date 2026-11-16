@@ -68,4 +68,4 @@
   PASS  [group] after: the Triage group renders exactly one frame, in Done
   PASS  [group] after: the live parent's Done projection card stays outside the group's Done frame
 
-frames → /Users/cristos/.bb/plugins/environment-git-worktree/host-data/worktrees/thr_e8xdgg5dgq-1/bb-plugin-focus-board/docs/screenshots/repro-group-fence-done/
+frames → /Users/cristos/.vesnalia/plugins/environment-git-worktree/host-data/worktrees/thr_e8xdgg5dgq-1/alia-plugin-focus-board/docs/screenshots/repro-group-fence-done/

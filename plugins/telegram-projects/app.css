@@ -1,17 +1,17 @@
 /*
  * Telegram Projects in the Pokecut look, the same visual language as the
- * Pokecut BB theme and Lane Pilot: nested panels (a gray well around a white
+ * Pokecut ALIA theme and Lane Pilot: nested panels (a gray well around a white
  * card), outlined white secondary buttons, the gradient on primary actions,
  * soft tinted status pills.
  *
- * The --tg-* tokens read the theme's --pk-* tokens and fall back to BB's own
- * palette, so the plugin stays tidy under any BB theme, light or dark.
+ * The --tg-* tokens read the theme's --pk-* tokens and fall back to ALIA's own
+ * palette, so the plugin stays tidy under any ALIA theme, light or dark.
  * Radii: 8px rows, buttons and inputs; 12px inner cards; 14px header strip;
  * 16px panels.
  */
 
-[data-bb-plugin="telegram-projects"],
-[data-bb-plugin-root]:not([data-bb-plugin]) {
+[data-alia-plugin="telegram-projects"],
+[data-alia-plugin-root]:not([data-alia-plugin]) {
   --tg-well: var(--pk-well, color-mix(in oklab, var(--muted) 45%, var(--card)));
   --tg-card: var(--pk-card, var(--card));
   --tg-outline: var(--pk-outline, var(--input));

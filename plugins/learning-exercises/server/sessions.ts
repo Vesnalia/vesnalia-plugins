@@ -11,9 +11,9 @@
  *
  * Two ways to ask, one state machine:
  * - `tool`: the `learning_ask` tool awaits the card and returns the answer as its result.
- * - `cli`: `bb learning ask` returns at once; when the learner answers, the plugin sends the answer to
+ * - `cli`: `alia learning ask` returns at once; when the learner answers, the plugin sends the answer to
  *   the session thread (one visible line, the answer agent-only). Used in "here" mode, and in forks of
- *   providers whose forks do not get plugin tools (Codex in bb 0.48.1, spike S2). A card the plugin
+ *   providers whose forks do not get plugin tools (Codex in VesnALIA 0.48.1, spike S2). A card the plugin
  *   reopens on Resume answers the same way.
  *
  * A card dies with a reload or a restart (spike S3), so on load every `awaiting-answer` session is
@@ -24,12 +24,12 @@
  * session only from the state it expects (`store.transition`). A database index allows one open session
  * per source thread whatever races. After `dispose()` no continuation of this copy touches the store.
  */
-import type { PluginInteractionResult } from "@get-bb/plugin-sdk";
+import type { PluginInteractionResult } from "@vesnalia/plugin-sdk";
 
 import { draftValues, parseAnswerForm, readAnswerForm, sanitizeValues, summarizeAnswer, type AnswerForm, type FormValues } from "../shared/answer-form";
 import { ANSWER_MAX_CHARS, FEEDBACK_MAX_CHARS, PAUSE_REASONS, readCardValue, REPLY_MAX_CHARS, type CardDraft, type CardPayload, type QuestionRef, type ExerciseType, type PauseReason, type Refs, type SettledRow, type TriggerKind, type Verdict, type Workspace } from "../shared/types";
 import type { OrientationSummary } from "../shared/orientation";
-import { SESSION_METADATA_KEY } from "./bb-ports";
+import { SESSION_METADATA_KEY } from "./alia-ports";
 import { BRIEF_VERSION, buildBrief, buildOrientationSessionBrief, ORIENTATION_MAX_QUESTIONS, startLine } from "./content";
 import { canStartByHand, DAY, projectKey } from "./policy";
 import type { Ports, ThreadInfo } from "./ports";
@@ -41,7 +41,7 @@ import { workspaceOf } from "./workspace";
 /** A paused session nobody resumed is abandoned after this; it stays in the history. */
 export const ABANDON_AFTER_MS = 30 * DAY;
 
-/** The most event-log pages one read of the agent's replies reads (100 rows each, bb's cap, so 2,000 rows). */
+/** The most event-log pages one read of the agent's replies reads (100 rows each, VesnALIA's cap, so 2,000 rows). */
 export const REPLY_READ_PAGES = 20;
 
 /** The most reads one history open goes on for in the background (so 100,000 rows of later work). */
@@ -109,7 +109,7 @@ export function settledRow(question: string, raw: unknown, workspace: Workspace 
 export class SessionService {
   /** The open card per session, to cancel it on Pause or Finish from the tab. */
   private readonly cards = new Map<string, AbortController>();
-  /** Set when this copy of the plugin goes: its store and its `bb` handle are closed from then on. */
+  /** Set when this copy of the plugin goes: its store and its `VesnALIA` handle are closed from then on. */
   private disposed = false;
   /** The background continuation of each session's reply backfill (`recoverReplies`). */
   private readonly recoveries = new Map<string, Promise<void>>();
@@ -339,7 +339,7 @@ export class SessionService {
       const session = await this.requireActive(threadId);
       const thread = await this.ports.thread(threadId);
       const workspace = await workspaceOf(this.ports, thread);
-      // The agent's feedback on the previous answer, before bb folds it away with the turn that wrote it.
+      // The agent's feedback on the previous answer, before VesnALIA folds it away with the turn that wrote it.
       const reply = await this.readReply(session);
       this.alive();
       const current = this.store.session(session.id);
@@ -449,7 +449,7 @@ export class SessionService {
           return "The learner closed the question, so the session is paused. Reply with one short line saying they can resume it from the Learning tab, nothing else.";
         default:
           this.pause(sessionId, "restart");
-          return "The question was lost when bb restarted, so the session is paused.";
+          return "The question was lost when VesnALIA restarted, so the session is paused.";
       }
     }
     const read = readCardValue(result.value);
@@ -481,7 +481,7 @@ export class SessionService {
           "",
           `Their confidence: ${value.confidence}/5.`,
           "",
-          "Give direct feedback now, in the `feedback` argument of learning_feedback (or `--feedback-base64-stdin` of `bb learning feedback`), together with your verdict: say plainly what is right and what is wrong, and credit only what they actually said. Do not write it as a message as well: the plugin shows it in the chat as a card, above the next question and in the session's history. Then ask the next question or finish the session.",
+          "Give direct feedback now, in the `feedback` argument of learning_feedback (or `--feedback-base64-stdin` of `alia learning feedback`), together with your verdict: say plainly what is right and what is wrong, and credit only what they actually said. Do not write it as a message as well: the plugin shows it in the chat as a card, above the next question and in the session's history. Then ask the next question or finish the session.",
         ].join("\n");
       }
       case "skip":
@@ -527,7 +527,7 @@ export class SessionService {
   /**
    * Records the agent's verdict on the last answer, with its feedback. The feedback text (`feedback`) is
    * kept with the question and the turn this call runs in, so the chat shows it as a card above that turn's
-   * last message (bb folds the rest of the turn away), the next card shows it above its question, and the
+   * last message (VesnALIA folds the rest of the turn away), the next card shows it above its question, and the
    * history keeps it. An agent that passes no text (one briefed before the argument existed) wrote its
    * feedback as a message: that is read from the log instead, as before.
    */
@@ -665,7 +665,7 @@ export class SessionService {
 
   /**
    * The agent's reply to the last question the learner answered or skipped: its messages from then until
-   * the next question was asked (or now), from the event log. bb folds a turn's earlier messages into the
+   * the next question was asked (or now), from the event log. VesnALIA folds a turn's earlier messages into the
    * turn once it ends, so feedback written before the next question would otherwise be gone from view.
    * Null when there is no such question or nothing was written (or the log could not be read).
    */
@@ -886,7 +886,7 @@ export class SessionService {
     });
   }
 
-  /** bb cancels this copy's open cards itself; nothing here may touch the store afterwards. */
+  /** VesnALIA cancels this copy's open cards itself; nothing here may touch the store afterwards. */
   dispose(): void {
     this.disposed = true;
     this.cards.clear();

@@ -85,8 +85,8 @@ export interface CardMenuHandlers {
   /**
    * Retry (issue #405): re-submits the thread's errored turn through the
    * host's real retry primitive (sdk.threads.retry — the same re-submission
-   * bb's own thread surface offers, never a re-sent message). A host refusal
-   * reports on the board's notice banner, with bb's reason; app.tsx owns
+   * VesnALIA's own thread surface offers, never a re-sent message). A host refusal
+   * reports on the board's notice banner, with VesnALIA's reason; app.tsx owns
    * that report.
    */
   retryError: () => void;

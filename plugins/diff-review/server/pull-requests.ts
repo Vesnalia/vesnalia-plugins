@@ -12,7 +12,7 @@
  *   be posted says why. Adapted from diffity's `src-tauri/src/github/review.rs` and `service.rs`
  *   (https://github.com/nilbuild/diffity, MIT).
  */
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { placeThread } from "../shared/anchors";
@@ -24,9 +24,9 @@ import { GitHubError, type DraftThread, type FileViewedState, type GitHub, type 
 import type { HostFetchPull } from "./host-git";
 import type { GithubThreadInput, ReviewStore } from "./store";
 
-type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>>;
+type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>>;
 
-export const PR_STATUS_PLUGIN_ID = "bb--github-pr-status";
+export const PR_STATUS_PLUGIN_ID = "alia--github-pr-status";
 
 interface Loaded {
   pullId: string;
@@ -193,7 +193,7 @@ export class PullRequests {
   private readonly posting = new Set<string>();
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: ReviewStore,
     private readonly github: GitHub,
     private readonly fetchPull: HostFetchPull,
@@ -202,12 +202,12 @@ export class PullRequests {
   ) {}
 
   /**
-   * The pull request of a workspace's branch, from bb's GitHub PR Status plugin; null when it has none
-   * or cannot say, and when `signal` abandoned the wait (bb 0.48.1's PR Status finishes its lookup anyway).
+   * The pull request of a workspace's branch, from VesnALIA's GitHub PR Status plugin; null when it has none
+   * or cannot say, and when `signal` abandoned the wait (VesnALIA 0.48.1's PR Status finishes its lookup anyway).
    */
   async branchPull(environmentId: string, signal?: AbortSignal): Promise<(PullRef & { title: string }) | null> {
     try {
-      const rows = await this.bb.sdk.plugins.callRpc({
+      const rows = await this.alia.sdk.plugins.callRpc({
         pluginId: PR_STATUS_PLUGIN_ID,
         method: "pullRequests",
         input: { keys: [environmentId] },
@@ -250,7 +250,7 @@ export class PullRequests {
     } catch (error) {
       throw new ReviewUnavailable(`Could not fetch the pull request on the workspace's machine: ${failure(error)}`);
     }
-    const diff = await loadDiff(this.sources, this.bb.log, environment, { kind: "range", from: fetched.baseSha, to: fetched.headSha, symmetric: true }, patterns, ignoreWhitespace);
+    const diff = await loadDiff(this.sources, this.alia.log, environment, { kind: "range", from: fetched.baseSha, to: fetched.headSha, symmetric: true }, patterns, ignoreWhitespace);
     const { states, error: viewedError } = await marks;
     return {
       diff: { ...diff, files: states === null ? diff.files : diff.files.map((file) => ({ ...file, viewed: githubViewed(states.get(file.path)) })), viewable: states !== null },
@@ -274,7 +274,7 @@ export class PullRequests {
     try {
       return { states: await this.github.viewedFiles(ref, signal), error: null };
     } catch (error) {
-      if (signal?.aborted !== true) this.bb.log.warn(`Could not read the Viewed marks of ${pullUrl(ref)}: ${failure(error)}`);
+      if (signal?.aborted !== true) this.alia.log.warn(`Could not read the Viewed marks of ${pullUrl(ref)}: ${failure(error)}`);
       return { states: null, error: failure(error) };
     }
   }
@@ -301,7 +301,7 @@ export class PullRequests {
       if (this.store.syncGithubThreads(sessionId, mirrored)) this.publish(sessionId);
       return { syncedAt: Date.now(), syncError: null };
     } catch (error) {
-      this.bb.log.warn(`Could not read the review threads of ${pullUrl(ref)}: ${failure(error)}`);
+      this.alia.log.warn(`Could not read the review threads of ${pullUrl(ref)}: ${failure(error)}`);
       return { syncedAt: null, syncError: failure(error) };
     }
   }

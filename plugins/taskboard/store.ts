@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import {
   FILTER_PRESET_LIMIT,
   FILTER_PRESET_PROJECT_STATE_BYTES_MAX,
@@ -24,11 +24,11 @@ import {
   type WorkStateCategory
 } from './contract.js';
 
-type PluginDatabase = ReturnType<BbPluginApi['storage']['database']>;
+type PluginDatabase = ReturnType<AliaPluginApi['storage']['database']>;
 type SqlParameter = string | number | null;
 
 interface WorkItemRow {
-  bb_project_id: string;
+  alia_project_id: string;
   source: string;
   locator: string;
   item_key: string;
@@ -45,7 +45,7 @@ interface WorkItemRow {
 }
 
 interface SyncRow {
-  bb_project_id: string;
+  alia_project_id: string;
   source: string;
   last_synced_at: string | null;
   error: string | null;
@@ -53,7 +53,7 @@ interface SyncRow {
 }
 
 interface ProjectConfigRow {
-  bb_project_id: string;
+  alia_project_id: string;
   source: string;
   linear_team_key: string;
   linear_finished_days: number;
@@ -66,7 +66,7 @@ interface ProjectConfigRow {
 }
 
 interface ProjectBoardSettingsRow {
-  bb_project_id: string;
+  alia_project_id: string;
   default_view: string;
   enabled_filters_json: string;
   status_order_json: string;
@@ -74,7 +74,7 @@ interface ProjectBoardSettingsRow {
 
 interface FilterPresetRow {
   id: string;
-  bb_project_id: string;
+  alia_project_id: string;
   name: string;
   name_normalized: string;
   filters_json: string;
@@ -107,7 +107,7 @@ export type ProjectSourceConfigDefaults = Omit<
 
 function itemFromRow(row: WorkItemRow): WorkItem {
   return workItemSchema.parse({
-    bbProjectId: row.bb_project_id,
+    aliaProjectId: row.alia_project_id,
     source: row.source,
     locator: row.locator,
     key: row.item_key,
@@ -126,7 +126,7 @@ function itemFromRow(row: WorkItemRow): WorkItem {
 
 function configFromRow(row: ProjectConfigRow): ProjectSourceConfig {
   return projectSourceConfigSchema.parse({
-    projectId: row.bb_project_id,
+    projectId: row.alia_project_id,
     source: row.source,
     linearTeamKey: row.linear_team_key,
     linearFinishedDays: row.linear_finished_days,
@@ -143,7 +143,7 @@ function boardSettingsFromRow(
   row: ProjectBoardSettingsRow
 ): ProjectBoardSettings {
   return projectBoardSettingsSchema.parse({
-    projectId: row.bb_project_id,
+    projectId: row.alia_project_id,
     defaultView: row.default_view,
     enabledFilters: JSON.parse(row.enabled_filters_json),
     statusOrder: JSON.parse(row.status_order_json)
@@ -155,7 +155,7 @@ function filterPresetFromRow(row: FilterPresetRow): FilterPreset | null {
   if (state === undefined) return null;
   const parsed = filterPresetSchema.safeParse({
     id: row.id,
-    projectId: row.bb_project_id,
+    projectId: row.alia_project_id,
     name: row.name,
     state,
     position: row.position
@@ -169,7 +169,7 @@ function filterPresetFromRow(row: FilterPresetRow): FilterPreset | null {
   }
   if (
     parsed.data.id !== row.id ||
-    parsed.data.projectId !== row.bb_project_id ||
+    parsed.data.projectId !== row.alia_project_id ||
     parsed.data.name !== row.name ||
     normalizedName !== row.name_normalized
   ) {
@@ -190,14 +190,14 @@ function parseJsonSafely(value: string): unknown {
   }
 }
 
-export function createWorkItemStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export function createWorkItemStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   // The reverted Work board left a durable migration in some installations.
   const hasMigrationTable = db.prepare(
-    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '_bb_migrations'"
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '_alia_migrations'"
   ).get();
   const legacyWork = hasMigrationTable ? db.prepare(
-    'SELECT statement_hash FROM _bb_migrations WHERE id = 7'
+    'SELECT statement_hash FROM _alia_migrations WHERE id = 7'
   ).get() as { statement_hash: string } | undefined : undefined;
   const legacyWorkMigrations = legacyWork?.statement_hash ===
     '2ed0e2eda3103f718fe67e4f50324116a3dfddcd1959b05959e083a2cc80e1ca' ? [`
@@ -213,7 +213,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
   );
   CREATE TABLE work_board_settings (project_id TEXT PRIMARY KEY, data_json TEXT NOT NULL);
 `] : [];
-  bb.storage.migrate(db, [
+  alia.storage.migrate(db, [
     `
       CREATE TABLE work_items (
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira')),
@@ -250,7 +250,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
     `,
     `
       CREATE TABLE work_items_by_project (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira')),
         locator TEXT NOT NULL,
         item_key TEXT NOT NULL,
@@ -266,20 +266,20 @@ export function createWorkItemStore(bb: BbPluginApi) {
         project TEXT,
         labels_json TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        PRIMARY KEY (bb_project_id, source, locator)
+        PRIMARY KEY (alia_project_id, source, locator)
       );
 
       CREATE TABLE source_sync_by_project (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira')),
         last_synced_at TEXT,
         error TEXT,
         item_count INTEGER NOT NULL DEFAULT 0 CHECK (item_count >= 0),
-        PRIMARY KEY (bb_project_id, source)
+        PRIMARY KEY (alia_project_id, source)
       );
 
       CREATE TABLE project_source_config (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         github_enabled INTEGER NOT NULL CHECK (github_enabled IN (0, 1)),
         linear_team_key TEXT NOT NULL,
         jira_jql TEXT NOT NULL,
@@ -287,13 +287,13 @@ export function createWorkItemStore(bb: BbPluginApi) {
       );
 
       CREATE INDEX idx_project_work_items_updated
-        ON work_items_by_project(bb_project_id, updated_at DESC, source, locator);
+        ON work_items_by_project(alia_project_id, updated_at DESC, source, locator);
       CREATE INDEX idx_project_work_items_source_state_updated
         ON work_items_by_project(
-          bb_project_id, source, state_category, updated_at DESC, locator
+          alia_project_id, source, state_category, updated_at DESC, locator
         );
       CREATE INDEX idx_project_work_items_key
-        ON work_items_by_project(bb_project_id, item_key COLLATE NOCASE);
+        ON work_items_by_project(alia_project_id, item_key COLLATE NOCASE);
     `,
     `
       ALTER TABLE project_source_config
@@ -304,7 +304,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
         CHECK (jira_enabled IN (0, 1));
 
       CREATE INDEX idx_all_project_work_items_updated
-        ON work_items_by_project(updated_at DESC, bb_project_id, source, locator);
+        ON work_items_by_project(updated_at DESC, alia_project_id, source, locator);
 
       DROP TABLE work_items;
       DROP TABLE source_sync;
@@ -316,13 +316,13 @@ export function createWorkItemStore(bb: BbPluginApi) {
         ADD COLUMN jira_email TEXT NOT NULL DEFAULT '';
 
       CREATE INDEX idx_project_source_linear_enabled
-        ON project_source_config(linear_enabled, bb_project_id);
+        ON project_source_config(linear_enabled, alia_project_id);
       CREATE INDEX idx_project_source_jira_enabled
-        ON project_source_config(jira_enabled, bb_project_id);
+        ON project_source_config(jira_enabled, alia_project_id);
     `,
     `
       CREATE TABLE project_source_config_next (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira')),
         linear_team_key TEXT NOT NULL,
         jira_base_url TEXT NOT NULL,
@@ -332,11 +332,11 @@ export function createWorkItemStore(bb: BbPluginApi) {
       );
 
       INSERT INTO project_source_config_next (
-        bb_project_id, source, linear_team_key, jira_base_url, jira_email,
+        alia_project_id, source, linear_team_key, jira_base_url, jira_email,
         jira_jql, updated_at
       )
       SELECT
-        config.bb_project_id,
+        config.alia_project_id,
         CASE
           WHEN config.github_enabled + config.linear_enabled + config.jira_enabled = 0
             THEN 'github'
@@ -355,7 +355,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
                 UNION ALL SELECT 'jira', 3
               ) AS candidate
               LEFT JOIN source_sync_by_project AS sync
-                ON sync.bb_project_id = config.bb_project_id
+                ON sync.alia_project_id = config.alia_project_id
                 AND sync.source = candidate.source
               WHERE CASE candidate.source
                 WHEN 'github' THEN config.github_enabled
@@ -386,7 +386,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       WHERE EXISTS (
         SELECT 1
         FROM project_source_config_next AS config
-        WHERE config.bb_project_id = work_items_by_project.bb_project_id
+        WHERE config.alia_project_id = work_items_by_project.alia_project_id
           AND config.source <> work_items_by_project.source
       );
 
@@ -394,7 +394,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       WHERE EXISTS (
         SELECT 1
         FROM project_source_config_next AS config
-        WHERE config.bb_project_id = source_sync_by_project.bb_project_id
+        WHERE config.alia_project_id = source_sync_by_project.alia_project_id
           AND config.source <> source_sync_by_project.source
       );
 
@@ -402,11 +402,11 @@ export function createWorkItemStore(bb: BbPluginApi) {
       ALTER TABLE project_source_config_next RENAME TO project_source_config;
 
       CREATE INDEX idx_project_source_selected
-        ON project_source_config(source, bb_project_id);
+        ON project_source_config(source, alia_project_id);
     `,
     `
       CREATE TABLE project_board_settings (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         default_view TEXT NOT NULL CHECK (default_view IN ('list', 'kanban')),
         enabled_filters_json TEXT NOT NULL,
         status_order_json TEXT NOT NULL,
@@ -417,10 +417,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
       CREATE TABLE project_filter_presets (
         id TEXT NOT NULL PRIMARY KEY
           CHECK (length(id) BETWEEN 1 AND 100),
-        bb_project_id TEXT NOT NULL
+        alia_project_id TEXT NOT NULL
           CHECK (
-            substr(bb_project_id, 1, 5) = 'proj_' AND
-            length(bb_project_id) BETWEEN 6 AND 500
+            substr(alia_project_id, 1, 5) = 'proj_' AND
+            length(alia_project_id) BETWEEN 6 AND 500
           ),
         name TEXT NOT NULL
           CHECK (length(name) BETWEEN 1 AND 60),
@@ -434,18 +434,18 @@ export function createWorkItemStore(bb: BbPluginApi) {
           CHECK (position >= 0 AND position < 50),
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        UNIQUE (bb_project_id, name_normalized)
+        UNIQUE (alia_project_id, name_normalized)
       );
 
       CREATE INDEX idx_filter_presets_project
         ON project_filter_presets(
-          bb_project_id, position, created_at, id
+          alia_project_id, position, created_at, id
         );
     `,
     ...legacyWorkMigrations,
     `
       CREATE TABLE work_items_by_project_next (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira', 'gitlab')),
         locator TEXT NOT NULL,
         item_key TEXT NOT NULL,
@@ -461,47 +461,47 @@ export function createWorkItemStore(bb: BbPluginApi) {
         project TEXT,
         labels_json TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        PRIMARY KEY (bb_project_id, source, locator)
+        PRIMARY KEY (alia_project_id, source, locator)
       );
       INSERT INTO work_items_by_project_next (
-        bb_project_id, source, locator, item_key, title, description, url,
+        alia_project_id, source, locator, item_key, title, description, url,
         status, state_category, priority, assignee, project, labels_json,
         updated_at
       )
-      SELECT bb_project_id, source, locator, item_key, title, description, url,
+      SELECT alia_project_id, source, locator, item_key, title, description, url,
         status, state_category, priority, assignee, project, labels_json,
         updated_at
       FROM work_items_by_project;
       DROP TABLE work_items_by_project;
       ALTER TABLE work_items_by_project_next RENAME TO work_items_by_project;
       CREATE INDEX idx_project_work_items_updated
-        ON work_items_by_project(bb_project_id, updated_at DESC, source, locator);
+        ON work_items_by_project(alia_project_id, updated_at DESC, source, locator);
       CREATE INDEX idx_project_work_items_source_state_updated
         ON work_items_by_project(
-          bb_project_id, source, state_category, updated_at DESC, locator
+          alia_project_id, source, state_category, updated_at DESC, locator
         );
       CREATE INDEX idx_project_work_items_key
-        ON work_items_by_project(bb_project_id, item_key COLLATE NOCASE);
+        ON work_items_by_project(alia_project_id, item_key COLLATE NOCASE);
 
       CREATE TABLE source_sync_by_project_next (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira', 'gitlab')),
         last_synced_at TEXT,
         error TEXT,
         item_count INTEGER NOT NULL DEFAULT 0 CHECK (item_count >= 0),
-        PRIMARY KEY (bb_project_id, source)
+        PRIMARY KEY (alia_project_id, source)
       );
       INSERT INTO source_sync_by_project_next (
-        bb_project_id, source, last_synced_at, error, item_count
+        alia_project_id, source, last_synced_at, error, item_count
       )
-      SELECT bb_project_id, source, last_synced_at, error, item_count
+      SELECT alia_project_id, source, last_synced_at, error, item_count
       FROM source_sync_by_project;
       DROP TABLE source_sync_by_project;
       ALTER TABLE source_sync_by_project_next RENAME TO source_sync_by_project;
     `,
     `
       CREATE TABLE project_source_config_next2 (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira', 'gitlab')),
         linear_team_key TEXT NOT NULL,
         jira_base_url TEXT NOT NULL,
@@ -511,11 +511,11 @@ export function createWorkItemStore(bb: BbPluginApi) {
         updated_at TEXT NOT NULL
       );
       INSERT INTO project_source_config_next2 (
-        bb_project_id, source, linear_team_key, jira_base_url, jira_email,
+        alia_project_id, source, linear_team_key, jira_base_url, jira_email,
         jira_jql, gitlab_project_ref, updated_at
       )
       SELECT
-        cfg.bb_project_id,
+        cfg.alia_project_id,
         cfg.source,
         cfg.linear_team_key,
         cfg.jira_base_url,
@@ -527,11 +527,11 @@ export function createWorkItemStore(bb: BbPluginApi) {
       DROP TABLE project_source_config;
       ALTER TABLE project_source_config_next2 RENAME TO project_source_config;
       CREATE INDEX idx_project_source_selected
-        ON project_source_config(source, bb_project_id);
+        ON project_source_config(source, alia_project_id);
     `,
     `
       CREATE INDEX idx_all_project_work_items_updated
-        ON work_items_by_project(updated_at DESC, bb_project_id, source, locator);
+        ON work_items_by_project(updated_at DESC, alia_project_id, source, locator);
     `,
     `
       ALTER TABLE project_source_config
@@ -539,7 +539,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
     `,
     `
       CREATE TABLE project_source_config_gitea (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira', 'gitlab', 'gitea')),
         linear_team_key TEXT NOT NULL,
         linear_finished_days INTEGER NOT NULL DEFAULT 0,
@@ -552,39 +552,39 @@ export function createWorkItemStore(bb: BbPluginApi) {
         updated_at TEXT NOT NULL
       );
       INSERT INTO project_source_config_gitea (
-        bb_project_id, source, linear_team_key, linear_finished_days,
+        alia_project_id, source, linear_team_key, linear_finished_days,
         jira_base_url, jira_email, jira_jql, gitlab_project_ref, updated_at
-      ) SELECT bb_project_id, source, linear_team_key, linear_finished_days,
+      ) SELECT alia_project_id, source, linear_team_key, linear_finished_days,
         jira_base_url, jira_email, jira_jql, gitlab_project_ref, updated_at
         FROM project_source_config;
       DROP TABLE project_source_config;
       ALTER TABLE project_source_config_gitea RENAME TO project_source_config;
-      CREATE INDEX idx_project_source_selected ON project_source_config(source, bb_project_id);
+      CREATE INDEX idx_project_source_selected ON project_source_config(source, alia_project_id);
 
       CREATE TABLE work_items_by_project_gitea (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira', 'gitlab', 'gitea')),
         locator TEXT NOT NULL, item_key TEXT NOT NULL, title TEXT NOT NULL,
         description TEXT NOT NULL, url TEXT NOT NULL, status TEXT NOT NULL,
         state_category TEXT NOT NULL CHECK (state_category IN ('backlog', 'todo', 'in_progress', 'done', 'canceled')),
         priority TEXT, assignee TEXT, project TEXT, labels_json TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        PRIMARY KEY (bb_project_id, source, locator)
+        PRIMARY KEY (alia_project_id, source, locator)
       );
       INSERT INTO work_items_by_project_gitea SELECT * FROM work_items_by_project;
       DROP TABLE work_items_by_project;
       ALTER TABLE work_items_by_project_gitea RENAME TO work_items_by_project;
-      CREATE INDEX idx_project_work_items_updated ON work_items_by_project(bb_project_id, updated_at DESC, source, locator);
-      CREATE INDEX idx_project_work_items_source_state_updated ON work_items_by_project(bb_project_id, source, state_category, updated_at DESC, locator);
-      CREATE INDEX idx_project_work_items_key ON work_items_by_project(bb_project_id, item_key COLLATE NOCASE);
-      CREATE INDEX idx_all_project_work_items_updated ON work_items_by_project(updated_at DESC, bb_project_id, source, locator);
+      CREATE INDEX idx_project_work_items_updated ON work_items_by_project(alia_project_id, updated_at DESC, source, locator);
+      CREATE INDEX idx_project_work_items_source_state_updated ON work_items_by_project(alia_project_id, source, state_category, updated_at DESC, locator);
+      CREATE INDEX idx_project_work_items_key ON work_items_by_project(alia_project_id, item_key COLLATE NOCASE);
+      CREATE INDEX idx_all_project_work_items_updated ON work_items_by_project(updated_at DESC, alia_project_id, source, locator);
 
       CREATE TABLE source_sync_by_project_gitea (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('linear', 'github', 'jira', 'gitlab', 'gitea')),
         last_synced_at TEXT, error TEXT,
         item_count INTEGER NOT NULL DEFAULT 0 CHECK (item_count >= 0),
-        PRIMARY KEY (bb_project_id, source)
+        PRIMARY KEY (alia_project_id, source)
       );
       INSERT INTO source_sync_by_project_gitea SELECT * FROM source_sync_by_project;
       DROP TABLE source_sync_by_project;
@@ -611,11 +611,11 @@ export function createWorkItemStore(bb: BbPluginApi) {
     ]
   >(`
     INSERT INTO work_items_by_project (
-      bb_project_id, source, locator, item_key, title, description, url,
+      alia_project_id, source, locator, item_key, title, description, url,
       status, state_category, priority, assignee, project, labels_json,
       updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(bb_project_id, source, locator) DO UPDATE SET
+    ON CONFLICT(alia_project_id, source, locator) DO UPDATE SET
       item_key = excluded.item_key,
       title = excluded.title,
       description = excluded.description,
@@ -632,7 +632,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
   function writeItem(item: WorkItem): void {
     const parsed = workItemSchema.parse(item);
     upsertItem.run(
-      parsed.bbProjectId,
+      parsed.aliaProjectId,
       parsed.source,
       parsed.locator,
       parsed.key,
@@ -657,15 +657,15 @@ export function createWorkItemStore(bb: BbPluginApi) {
       syncedAt: string
     ) => {
       db.prepare<[string, WorkSource]>(
-        'DELETE FROM work_items_by_project WHERE bb_project_id = ? AND source = ?'
+        'DELETE FROM work_items_by_project WHERE alia_project_id = ? AND source = ?'
       ).run(projectId, source);
       for (const item of items) writeItem(item);
       db.prepare<[string, WorkSource, string, number]>(
         `
         INSERT INTO source_sync_by_project (
-          bb_project_id, source, last_synced_at, error, item_count
+          alia_project_id, source, last_synced_at, error, item_count
         ) VALUES (?, ?, ?, NULL, ?)
-        ON CONFLICT(bb_project_id, source) DO UPDATE SET
+        ON CONFLICT(alia_project_id, source) DO UPDATE SET
           last_synced_at = excluded.last_synced_at,
           error = NULL,
           item_count = excluded.item_count
@@ -676,7 +676,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
 
   const readProjectConfig = db.prepare<[string], ProjectConfigRow>(`
     SELECT
-      bb_project_id,
+      alia_project_id,
       source,
       linear_team_key,
       linear_finished_days,
@@ -687,7 +687,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       gitea_login,
       gitea_project_ref
     FROM project_source_config
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
   `);
 
   const readProjectBoardSettings = db.prepare<
@@ -695,28 +695,28 @@ export function createWorkItemStore(bb: BbPluginApi) {
     ProjectBoardSettingsRow
   >(`
     SELECT
-      bb_project_id,
+      alia_project_id,
       default_view,
       enabled_filters_json,
       status_order_json
     FROM project_board_settings
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
   `);
 
   const readFilterPresets = db.prepare<[string], FilterPresetRow>(`
     SELECT
-      id, bb_project_id, name, name_normalized, filters_json, position
+      id, alia_project_id, name, name_normalized, filters_json, position
     FROM project_filter_presets
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
     ORDER BY position ASC, created_at ASC, id ASC
     LIMIT ${FILTER_PRESET_LIMIT + 1}
   `);
 
   const readFilterPreset = db.prepare<[string, string], FilterPresetRow>(`
     SELECT
-      id, bb_project_id, name, name_normalized, filters_json, position
+      id, alia_project_id, name, name_normalized, filters_json, position
     FROM project_filter_presets
-    WHERE bb_project_id = ? AND id = ?
+    WHERE alia_project_id = ? AND id = ?
   `);
 
   const readFilterPresetStateBytes = db.prepare<
@@ -725,7 +725,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
   >(`
     SELECT COALESCE(SUM(length(CAST(filters_json AS BLOB))), 0) AS total_bytes
     FROM project_filter_presets
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
   `);
 
   const readFilterPresetStateBytesExcluding = db.prepare<
@@ -734,16 +734,16 @@ export function createWorkItemStore(bb: BbPluginApi) {
   >(`
     SELECT COALESCE(SUM(length(CAST(filters_json AS BLOB))), 0) AS total_bytes
     FROM project_filter_presets
-    WHERE bb_project_id = ? AND id <> ?
+    WHERE alia_project_id = ? AND id <> ?
   `);
 
   const clearSourceTransaction = db.transaction(
     (projectId: string, source: WorkSource) => {
       db.prepare<[string, WorkSource]>(
-        'DELETE FROM work_items_by_project WHERE bb_project_id = ? AND source = ?'
+        'DELETE FROM work_items_by_project WHERE alia_project_id = ? AND source = ?'
       ).run(projectId, source);
       db.prepare<[string, WorkSource]>(
-        'DELETE FROM source_sync_by_project WHERE bb_project_id = ? AND source = ?'
+        'DELETE FROM source_sync_by_project WHERE alia_project_id = ? AND source = ?'
       ).run(projectId, source);
     }
   );
@@ -774,9 +774,9 @@ export function createWorkItemStore(bb: BbPluginApi) {
       syncedAt: string
     ) {
       for (const item of items) {
-        if (item.bbProjectId !== projectId || item.source !== source) {
+        if (item.aliaProjectId !== projectId || item.source !== source) {
           throw new Error(
-            'Cannot write a work item outside its BB project and source scope'
+            'Cannot write a work item outside its VesnALIA project and source scope'
           );
         }
       }
@@ -788,14 +788,14 @@ export function createWorkItemStore(bb: BbPluginApi) {
           .prepare<
             [string, WorkSource],
             { count: number }
-          >('SELECT COUNT(*) AS count FROM work_items_by_project WHERE bb_project_id = ? AND source = ?')
+          >('SELECT COUNT(*) AS count FROM work_items_by_project WHERE alia_project_id = ? AND source = ?')
           .get(projectId, source)?.count ?? 0;
       db.prepare<[string, WorkSource, string, number]>(
         `
         INSERT INTO source_sync_by_project (
-          bb_project_id, source, last_synced_at, error, item_count
+          alia_project_id, source, last_synced_at, error, item_count
         ) VALUES (?, ?, NULL, ?, ?)
-        ON CONFLICT(bb_project_id, source) DO UPDATE SET
+        ON CONFLICT(alia_project_id, source) DO UPDATE SET
           error = excluded.error,
           item_count = excluded.item_count
       `
@@ -807,7 +807,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           `
           SELECT *
           FROM source_sync_by_project
-          WHERE bb_project_id = ? AND source = ?
+          WHERE alia_project_id = ? AND source = ?
         `
         )
         .get(projectId, source);
@@ -830,7 +830,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           `
           SELECT *
           FROM work_items_by_project
-          WHERE bb_project_id = ? AND source = ? AND locator = ?
+          WHERE alia_project_id = ? AND source = ? AND locator = ?
         `
         )
         .get(projectId, source, locator);
@@ -860,14 +860,14 @@ export function createWorkItemStore(bb: BbPluginApi) {
               (
                 SELECT config.source
                 FROM project_source_config AS config
-                WHERE config.bb_project_id = item.bb_project_id
+                WHERE config.alia_project_id = item.alia_project_id
               ),
               'github'
             )
-            AND (:projectId IS NULL OR item.bb_project_id = :projectId)
+            AND (:projectId IS NULL OR item.alia_project_id = :projectId)
             AND (
               :projectIdsSpecified = 0 OR
-              item.bb_project_id IN (SELECT value FROM json_each(:projectIds))
+              item.alia_project_id IN (SELECT value FROM json_each(:projectIds))
             )
             AND (:source IS NULL OR item.source = :source)
             AND (
@@ -885,7 +885,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
               :excludeLocatorCount = 0 OR
               item.locator NOT IN (SELECT value FROM json_each(:excludeLocators))
             )
-          ORDER BY item.updated_at DESC, item.bb_project_id, item.source, item.locator
+          ORDER BY item.updated_at DESC, item.alia_project_id, item.source, item.locator
           LIMIT :limit
         `
         )
@@ -921,10 +921,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
       >(
         `
         INSERT INTO project_source_config (
-          bb_project_id, source, linear_team_key, linear_finished_days,
+          alia_project_id, source, linear_team_key, linear_finished_days,
           jira_base_url, jira_email, jira_jql, gitlab_project_ref, gitea_login, gitea_project_ref, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(bb_project_id) DO NOTHING
+        ON CONFLICT(alia_project_id) DO NOTHING
       `
       ).run(
         config.projectId,
@@ -962,10 +962,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
         >(
           `
           INSERT INTO project_source_config (
-            bb_project_id, source, linear_team_key, linear_finished_days,
+            alia_project_id, source, linear_team_key, linear_finished_days,
             jira_base_url, jira_email, jira_jql, gitlab_project_ref, gitea_login, gitea_project_ref, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(bb_project_id) DO UPDATE SET
+          ON CONFLICT(alia_project_id) DO UPDATE SET
             source = excluded.source,
             linear_team_key = excluded.linear_team_key,
             linear_finished_days = excluded.linear_finished_days,
@@ -992,17 +992,17 @@ export function createWorkItemStore(bb: BbPluginApi) {
         );
         if (previous && previous.source !== config.source) {
           db.prepare<[string]>(
-            'DELETE FROM work_items_by_project WHERE bb_project_id = ?'
+            'DELETE FROM work_items_by_project WHERE alia_project_id = ?'
           ).run(config.projectId);
           db.prepare<[string]>(
-            'DELETE FROM source_sync_by_project WHERE bb_project_id = ?'
+            'DELETE FROM source_sync_by_project WHERE alia_project_id = ?'
           ).run(config.projectId);
         } else {
           db.prepare<[string, WorkSource]>(
-            'DELETE FROM work_items_by_project WHERE bb_project_id = ? AND source <> ?'
+            'DELETE FROM work_items_by_project WHERE alia_project_id = ? AND source <> ?'
           ).run(config.projectId, config.source);
           db.prepare<[string, WorkSource]>(
-            'DELETE FROM source_sync_by_project WHERE bb_project_id = ? AND source <> ?'
+            'DELETE FROM source_sync_by_project WHERE alia_project_id = ? AND source <> ?'
           ).run(config.projectId, config.source);
         }
         return configFromRow(readProjectConfig.get(config.projectId)!);
@@ -1019,10 +1019,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
       db.prepare<[string, string, string, string, string]>(
         `
         INSERT INTO project_board_settings (
-          bb_project_id, default_view, enabled_filters_json, status_order_json,
+          alia_project_id, default_view, enabled_filters_json, status_order_json,
           updated_at
         ) VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(bb_project_id) DO UPDATE SET
+        ON CONFLICT(alia_project_id) DO UPDATE SET
           default_view = excluded.default_view,
           enabled_filters_json = excluded.enabled_filters_json,
           status_order_json = excluded.status_order_json,
@@ -1088,7 +1088,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
             `
             SELECT id, name
             FROM project_filter_presets
-            WHERE bb_project_id = ? AND name_normalized = ?
+            WHERE alia_project_id = ? AND name_normalized = ?
           `
           )
           .get(projectId, normalized);
@@ -1105,7 +1105,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
             `
             UPDATE project_filter_presets
             SET name = ?, name_normalized = ?, filters_json = ?, updated_at = ?
-            WHERE bb_project_id = ? AND id = ?
+            WHERE alia_project_id = ? AND id = ?
           `
           ).run(
             name,
@@ -1128,7 +1128,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
         const updatePosition = db.prepare<[number, string, string, string]>(
           `UPDATE project_filter_presets
            SET position = ?, updated_at = ?
-           WHERE bb_project_id = ? AND id = ?`
+           WHERE alia_project_id = ? AND id = ?`
         );
         rows.forEach((row, index) => {
           if (row.position === index) return;
@@ -1143,7 +1143,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
         >(
           `
           INSERT INTO project_filter_presets (
-            id, bb_project_id, name, name_normalized, filters_json, position,
+            id, alia_project_id, name, name_normalized, filters_json, position,
             created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `
@@ -1170,7 +1170,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       return db.transaction(() => {
         const deletion = db.prepare<[string, string]>(
           `DELETE FROM project_filter_presets
-           WHERE bb_project_id = ? AND id = ?`
+           WHERE alia_project_id = ? AND id = ?`
         ).run(parsedProjectId, parsedId);
         if (deletion.changes === 0) {
           return visibleFilterPresets(parsedProjectId);
@@ -1188,7 +1188,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           `
           UPDATE project_filter_presets
           SET position = ?, updated_at = ?
-          WHERE bb_project_id = ? AND id = ?
+          WHERE alia_project_id = ? AND id = ?
         `
         );
         remaining.forEach((row, index) => {
@@ -1229,7 +1229,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           `
           UPDATE project_filter_presets
           SET position = ?, updated_at = ?
-          WHERE bb_project_id = ? AND id = ?
+          WHERE alia_project_id = ? AND id = ?
         `
         );
         ordered.forEach((id, index) => {
@@ -1241,28 +1241,28 @@ export function createWorkItemStore(bb: BbPluginApi) {
     },
     configuredProjectIds(): string[] {
       return db
-        .prepare<[], { bb_project_id: string }>(
+        .prepare<[], { alia_project_id: string }>(
           `
-          SELECT bb_project_id
+          SELECT alia_project_id
           FROM project_source_config
-          ORDER BY bb_project_id
+          ORDER BY alia_project_id
         `
         )
         .all()
-        .map(row => row.bb_project_id);
+        .map(row => row.alia_project_id);
     },
     selectedProjectIds(source: WorkSource): string[] {
       return db
-        .prepare<[WorkSource], { bb_project_id: string }>(
+        .prepare<[WorkSource], { alia_project_id: string }>(
           `
-          SELECT bb_project_id
+          SELECT alia_project_id
           FROM project_source_config
           WHERE source = ?
-          ORDER BY bb_project_id
+          ORDER BY alia_project_id
         `
         )
         .all(source)
-        .map(row => row.bb_project_id);
+        .map(row => row.alia_project_id);
     }
   };
 }

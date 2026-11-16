@@ -1,7 +1,7 @@
 /**
  * The categorical palette the chart draws from.
  *
- * BB's theme ships no chart ramp — `--primary` is a near-neutral ink and
+ * VesnALIA's theme ships no chart ramp — `--primary` is a near-neutral ink and
  * `--chart-N` is undefined — so a chart that borrows UI tokens ends up with
  * series that have no hue at all. These are fixed values rather than theme
  * tokens, with a separate step per mode instead of one set flipped

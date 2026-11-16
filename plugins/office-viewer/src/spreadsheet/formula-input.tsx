@@ -109,7 +109,7 @@ export const FormulaInput = forwardRef<FormulaInputHandle, Props>(function Formu
           <div
             className="fixed z-[1000] min-w-64 max-w-md overflow-hidden rounded-md border border-border bg-popover text-xs text-popover-foreground shadow-md"
             style={{ left: rect.left, top: rect.bottom + 4 }}
-            data-bb-ru-skip=""
+            data-alia-ru-skip=""
             onMouseDown={(event) => event.preventDefault()}
           >
             {showCompletion ? (
@@ -149,7 +149,7 @@ export const FormulaInput = forwardRef<FormulaInputHandle, Props>(function Formu
       : null;
 
   return (
-    <div className={cn("relative overflow-hidden", props.className)} style={props.style} data-bb-ru-skip="">
+    <div className={cn("relative overflow-hidden", props.className)} style={props.style} data-alia-ru-skip="">
       <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center overflow-hidden px-1">
         <div ref={mirror} className="whitespace-pre">
           {segments.map((segment, i) => (

@@ -1,12 +1,12 @@
 import { posix } from "node:path";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
 import { countDiffLines } from "./git";
 
-export type EventsSdk = { threads: { events: Pick<PluginBbSdk["threads"]["events"], "list"> } };
-type EventRow = Awaited<ReturnType<PluginBbSdk["threads"]["events"]["list"]>>[number];
-type EventTypes = NonNullable<Parameters<PluginBbSdk["threads"]["events"]["list"]>[0]["types"]>;
+export type EventsSdk = { threads: { events: Pick<PluginAliaSdk["threads"]["events"], "list"> } };
+type EventRow = Awaited<ReturnType<PluginAliaSdk["threads"]["events"]["list"]>>[number];
+type EventTypes = NonNullable<Parameters<PluginAliaSdk["threads"]["events"]["list"]>[0]["types"]>;
 
-// bb 0.46.1 rejects a limit above 100 with HTTP 400 "Thread event limit cannot exceed 100".
+// VesnALIA 0.46.1 rejects a limit above 100 with HTTP 400 "Thread event limit cannot exceed 100".
 const PAGE_SIZE = 100;
 const DIFF_LIMIT = 60_000;
 const DEFAULT_MAX_THREADS = 300;
@@ -143,7 +143,7 @@ async function* pages(
 export interface EditIndex {
   /** `settled` means no event can still arrive for the thread (it is archived), so an indexed thread is not read again. */
   get(threadId: string, signal?: AbortSignal, options?: { settled?: boolean }): Promise<ThreadEdits>;
-  /** What an earlier read found, without asking bb: the instant outline may not wait for events. */
+  /** What an earlier read found, without asking VesnALIA: the instant outline may not wait for events. */
   peek(threadId: string): ThreadEdits | undefined;
   forget(threadIds: readonly string[]): void;
 }

@@ -2,7 +2,7 @@
 //
 // A node spends its minutes inside `awaitThread`, and LangGraph has nothing to
 // say in that time: it emits one event per node, and that event is "finished".
-// The activity therefore cannot come from the graph — it comes from the BB
+// The activity therefore cannot come from the graph — it comes from the VesnALIA
 // thread underneath, whose timeline items are the same ones the user would see
 // by opening the worker.
 //
@@ -39,7 +39,7 @@ function asString(value: unknown): string | null {
 }
 
 /**
- * BB's own wording for the item, if the provider supplied one. Preferred over
+ * VesnALIA's own wording for the item, if the provider supplied one. Preferred over
  * anything assembled here: it is the line the user already reads in the
  * thread, so the canvas and the thread say the same thing about the same
  * moment instead of two descriptions that drift apart.
@@ -121,14 +121,14 @@ function fromKind(item: Record<string, unknown>): string | null {
  *
  * Takes the event's `data` as it comes off the SDK, unparsed: the union of
  * item shapes is large and mostly irrelevant here, and a schema for it would
- * have to be kept in step with BB's timeline for no gain.
+ * have to be kept in step with VesnALIA's timeline for no gain.
  */
 export function describeActivity(data: unknown): string | null {
   if (typeof data !== "object" || data === null) return null;
   const item = (data as { item?: unknown }).item;
   if (typeof item !== "object" || item === null) return null;
   const record = item as Record<string, unknown>;
-  // BB hides suppressed items from its own timeline. Checked before both
+  // VesnALIA hides suppressed items from its own timeline. Checked before both
   // readings, not inside the presentation one: falling through to the kind
   // fallback would put the item back on the canvas under another name.
   if ((record.presentation as { suppress?: unknown } | undefined)?.suppress === true) {

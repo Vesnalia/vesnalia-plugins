@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_VOICE_PROMPT, DEFAULT_OPENING } from "./policy";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export const voices = [
   "marin",
@@ -105,10 +105,10 @@ export const preferencesPatchSchema = z
   })
   .strict();
 
-export async function createPreferences(bb: BbPluginApi) {
+export async function createPreferences(alia: AliaPluginApi) {
   const key = "preferences.v1";
   let current: Preferences;
-  const stored = await bb.storage.kv.get(key);
+  const stored = await alia.storage.kv.get(key);
   if (stored !== undefined) current = preferencesSchema.parse(stored);
   else {
     // Migrate only declared non-secret fields from the old generic settings.
@@ -116,13 +116,13 @@ export async function createPreferences(bb: BbPluginApi) {
     // isn't registered yet), so fall back to schema defaults on 404.
     let legacyValues: unknown = {};
     try {
-      const legacy = await bb.sdk.plugins.getSettings({ pluginId: bb.pluginId });
+      const legacy = await alia.sdk.plugins.getSettings({ pluginId: alia.pluginId });
       legacyValues = legacy.values;
     } catch {
       legacyValues = {};
     }
     current = preferencesSchema.parse(legacyValues);
-    await bb.storage.kv.set(key, current);
+    await alia.storage.kv.set(key, current);
   }
   let tail: Promise<unknown> = Promise.resolve();
   return {
@@ -133,7 +133,7 @@ export async function createPreferences(bb: BbPluginApi) {
           ...current,
           ...preferencesPatchSchema.parse(patch),
         });
-        await bb.storage.kv.set(key, next);
+        await alia.storage.kv.set(key, next);
         current = next;
         return { ...current };
       });

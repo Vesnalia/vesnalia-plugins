@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { AgentStatus, AgentSummary } from "../src/contract.ts";
-import { GLYPHS, VERIFIED_BB_GLYPHS } from "../src/glyphs.ts";
+import { GLYPHS, VERIFIED_ALIA_GLYPHS } from "../src/glyphs.ts";
 import { PENDING_OPEN_TTL_MS, requestOpenAgent, takePendingOpen } from "../src/open-agent.ts";
 import { splitPatchByFile } from "../src/patch-split.ts";
 import {
@@ -187,7 +187,7 @@ describe("roster store: realtime filtering", () => {
     h.store.handleChanged({ sessionUuid: "bbb" });
     assert.deepEqual(h.calls, ["t2"]);
     await h.answer(roster("bbb"));
-    h.store.handleChanged({ sessionUuid: "bb" });
+    h.store.handleChanged({ sessionUuid: "alia" });
     h.store.handleChanged({ sessionUuid: "BBB" });
     h.store.handleChanged({ sessionUuid: "2026-01-01T00-00-00-000Z_bbb" });
     assert.deepEqual(h.calls, ["t2"], "prefix / case / timestamped forms do not match");
@@ -433,9 +433,9 @@ describe("thread row status", () => {
 
   it("only uses verified glyphs", () => {
     for (const status of [deriveRowStatus([agent("A", "running")]), deriveRowStatus([agent("A", "failed", { spawnedInLatestBatch: true })])]) {
-      assert.ok(status && (VERIFIED_BB_GLYPHS as readonly string[]).includes(status.icon));
+      assert.ok(status && (VERIFIED_ALIA_GLYPHS as readonly string[]).includes(status.icon));
     }
-    assert.ok(Object.values(GLYPHS).every((name) => (VERIFIED_BB_GLYPHS as readonly string[]).includes(name)));
+    assert.ok(Object.values(GLYPHS).every((name) => (VERIFIED_ALIA_GLYPHS as readonly string[]).includes(name)));
   });
 
   it("pushes changes only, clears when agents settle, and clears everything on abort", async () => {

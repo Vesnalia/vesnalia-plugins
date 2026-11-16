@@ -28,7 +28,7 @@ describe("approvalMessage", () => {
   it("names the run, the node and how to answer", () => {
     expect(visible!.text).toContain("run_abc");
     expect(visible!.text).toContain("**Approval**");
-    expect(visible!.text).toContain('bb graph-studio answer run_abc "<answer>"');
+    expect(visible!.text).toContain('alia graph-studio answer run_abc "<answer>"');
   });
 
   it("tells the agent, and only the agent, to pass the reply on instead of deciding", () => {

@@ -42,7 +42,7 @@ install folder, which an upgrade replaces. `view` is required; every other opera
 
 ## How commands run
 
-Each command runs with `/bin/sh -c` in bb's server process, with the user's environment plus
+Each command runs with `/bin/sh -c` in VesnALIA's server process, with the user's environment plus
 the usual tool directories on `PATH`, and a 60-second limit. It gets:
 
 | Variable | When |
@@ -70,7 +70,7 @@ A command must exit 0 and print one JSON document. A non-zero exit, output that 
 JSON in the wrong shape fails that operation; the other operations still run, and the PRs of
 the lists that failed keep their last good data. When a command fails, print the reason on
 stderr: Shuttle keeps the end of it, with the exit code, and shows it on Insights › Sync, in
-Settings › Servers and in `bb shuttle status`. An exit 0 that prints nothing counts as a failure
+Settings › Servers and in `alia shuttle status`. An exit 0 that prints nothing counts as a failure
 too, with whatever went to stderr. A line such as ``run `forge auth login` `` on stderr becomes the
 fix Shuttle offers to copy. Do not pipe a server call straight into `jq`: without `pipefail`, a
 failed call leaves `jq` to print nothing and exit 0. Capture the answer first, then parse it.
@@ -275,9 +275,9 @@ commands are optional; without them, auto post holds every draft on the server.
 
 ## Review workspace
 
-A review preset whose workspace is "its own checkout" gets bb's git worktree, unless the PR's
+A review preset whose workspace is "its own checkout" gets VesnALIA's git worktree, unless the PR's
 server says otherwise. Some repositories refuse worktrees outside their own place, such as a monorepo
-that keeps them in its own trees folder. A server can then name a bb environment provider:
+that keeps them in its own trees folder. A server can then name a VesnALIA environment provider:
 
 ```toml
 [server.workspace]
@@ -287,7 +287,7 @@ inputs = { tree = "shuttle-{number}" }
 ```
 
 or a command that prepares a checkout and prints its absolute path on its last line (it runs
-with `/bin/sh` in bb's server process, with a 10-minute limit, so it must be safe to run again):
+with `/bin/sh` in VesnALIA's server process, with a 10-minute limit, so it must be safe to run again):
 
 ```toml
 [server.workspace]
@@ -302,11 +302,11 @@ that holds its default checkout, unless the provider's workspace names a machine
 
 ### Reviews on a new machine
 
-A provider's workspace can start each review on a new machine of its own, from any bb machine
-provider (`bb machine providers --json` lists them with their inputs schemas), instead of on the
+A provider's workspace can start each review on a new machine of its own, from any VesnALIA machine
+provider (`alia machine providers --json` lists them with their inputs schemas), instead of on the
 machine with the project's checkout. `machine.inputs` takes the same placeholders as `inputs`
 and defaults to none. Shuttle names no provider: any machine provider and any environment
-provider that runs on its machines work. bb's `git-worktree` provider gives a plain worktree on
+provider that runs on its machines work. VesnALIA's `git-worktree` provider gives a plain worktree on
 the new machine.
 
 ```toml
@@ -320,9 +320,9 @@ provider = "example-sandbox"
 inputs = { cores = 8 }
 ```
 
-Some environments make a new machine for each thread themselves: `bb environment providers
+Some environments make a new machine for each thread themselves: `alia environment providers
 --json` shows their `machineProviderId`. Such an environment still needs `machine`, set to that
-machine provider, as bb refuses any other machine for it:
+machine provider, as VesnALIA refuses any other machine for it:
 
 ```toml
 [server.workspace]
@@ -331,12 +331,12 @@ provider = "example-sandbox-checkout"
 machine = { provider = "example-sandbox-checkout", inputs = { paths = ["src/{repo_name}"] } }
 ```
 
-In the settings, the server form lists bb's providers as you type and fills in that machine
+In the settings, the server form lists VesnALIA's providers as you type and fills in that machine
 provider when you pick such an environment. The server's Test checks the workspace against what
-bb has now: that both providers exist, that an environment which makes its own machine has that
+VesnALIA has now: that both providers exist, that an environment which makes its own machine has that
 machine provider, and that the inputs and machine inputs match their schemas (with sample values
-for the placeholders). It starts no thread, so whether a provider has room is bb's answer when a
-review starts. Empty machine inputs go to bb as none, which a machine provider without inputs
+for the placeholders). It starts no thread, so whether a provider has room is VesnALIA's answer when a
+review starts. Empty machine inputs go to VesnALIA as none, which a machine provider without inputs
 needs; empty environment inputs go as `{}`, so an environment provider that takes no inputs
 cannot be a review workspace.
 
@@ -347,18 +347,18 @@ What changes when reviews run on new machines:
 - A machine provider that removes its machines when their threads end, such as a sandbox
   provider marked ephemeral, keeps the machine while the review thread is unarchived. With
   "Archive finished review threads" on, Shuttle archives the thread once its review is done,
-  which lets bb remove the machine. A draft you have not posted or discarded keeps both.
+  which lets VesnALIA remove the machine. A draft you have not posted or discarded keeps both.
 - The PR's next review brings its last review thread back only while that thread's machine is
-  there. Once bb removed it, the review starts in a new thread on a new machine, and the
+  there. Once VesnALIA removed it, the review starts in a new thread on a new machine, and the
   Automation log says why.
-- When bb cannot start a machine now, because its machine provider has no room or is not ready,
-  or the environment provider says it is unavailable, a review you start shows bb's message.
-  An auto review waits instead: the Automation log says so once, with bb's reason, Shuttle tries
+- When VesnALIA cannot start a machine now, because its machine provider has no room or is not ready,
+  or the environment provider says it is unavailable, a review you start shows VesnALIA's message.
+  An auto review waits instead: the Automation log says so once, with VesnALIA's reason, Shuttle tries
   again at each sync, and after an hour of waiting it records the review as one that could not
-  start. bb gives the same answer when a machine provider refuses the inputs themselves, so that
+  start. VesnALIA gives the same answer when a machine provider refuses the inputs themselves, so that
   waits too. Waiting does not count toward the daily limit, and a review that comes back after
   more than an hour without a try, such as a request made again, waits afresh.
-- A new machine that fails while bb sets it up, such as a sandbox too slow to finish its
+- A new machine that fails while VesnALIA sets it up, such as a sandbox too slow to finish its
   setup, fails the review thread before its agent runs. Shuttle starts the same review again
   in a new thread, so on a new machine, up to twice, and the Automation log says so. After
   three threads in a row it stops, and the PR comes to the Inbox as a review whose thread
@@ -366,7 +366,7 @@ What changes when reviews run on new machines:
   auto review is off. Those runs don't count toward the daily limit. The PR's next review
   skips a thread that never got a workspace, rather than sending to it again.
 - The review thread works on the new machine, but Shuttle's tools, `shuttle_review_draft`
-  among them, run in bb's server, so the draft comes back to Shuttle as from any review. The
+  among them, run in VesnALIA's server, so the draft comes back to Shuttle as from any review. The
   read command in the prompt (`{view_command}`) runs on the new machine and must work there.
 
 ## GitHub

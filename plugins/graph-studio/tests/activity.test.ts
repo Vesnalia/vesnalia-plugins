@@ -1,7 +1,7 @@
-// What a worker is doing, read off a BB thread event.
+// What a worker is doing, read off a VesnALIA thread event.
 //
 // The shapes below are measured, not assumed: they are copied from
-// `bb thread log --self --json` on a real Claude Code thread. That measurement
+// `alia thread log --self --json` on a real Claude Code thread. That measurement
 // corrected two things a reading of the SDK types had got wrong — the specific
 // part of a line lives in `presentation.title`, not in `detail`, and the two
 // most frequent item types (`agentMessage`, `commandExecution`) arrive with no
@@ -18,7 +18,7 @@ const started = (item: Record<string, unknown>) => ({
 
 describe("describeActivity", () => {
   // Verbatim from a real thread's `item/started`.
-  it("prefers BB's own wording, and keeps the part that identifies the call", () => {
+  it("prefers VesnALIA's own wording, and keeps the part that identifies the call", () => {
     expect(
       describeActivity(
         started({
@@ -67,9 +67,9 @@ describe("describeActivity", () => {
     ).toBe("Writing file: activity.ts");
   });
 
-  // BB keeps these out of its own timeline; the canvas must not be louder
+  // VesnALIA keeps these out of its own timeline; the canvas must not be louder
   // about a worker than the worker's thread is.
-  it("says nothing about an item BB itself suppresses", () => {
+  it("says nothing about an item VesnALIA itself suppresses", () => {
     expect(
       describeActivity(
         started({

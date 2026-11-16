@@ -22,7 +22,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import Database from "better-sqlite3";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { createStore, reanchorDraft, storeOn } from "../src/store";
 import { queueStore, type AsyncStore } from "../src/store-queue";
@@ -153,14 +153,14 @@ async function writeReviews(store: AsyncStore): Promise<Keys> {
   await store.setLifecycle(own, {
     prState: "OPEN", ownPr: true, reviewer: "casey", latestHeadSha: HEAD, watchingSince: AT,
     feature: { environmentId: "env_login", hostId: "host_maxbook", machine: "MaxBook", path: "/Users/casey/src/web-login", branch: "casey/login", baseRef: "main", repo: "acme/web", folderGone: true },
-    mainThread: { threadId: "thr_fixer", environmentId: "env_fixer", origin: "fresh", since: AT + 300, branch: "bb/fixes-thr_fixer", fixer: { sha: HEAD, at: AT + 300 } },
+    mainThread: { threadId: "thr_fixer", environmentId: "env_fixer", origin: "fresh", since: AT + 300, branch: "alia/fixes-thr_fixer", fixer: { sha: HEAD, at: AT + 300 } },
     implementers: [{ threadId: "thr_login", environmentId: "env_login", origin: "adopted", since: AT + 10 }],
     sourceThreadId: "thr_fixer", sourceThreadAt: AT + 300,
     sends: [{ n: 1, at: AT + 310, threadId: "thr_fixer", ids: ["c5", "c6", "c7", "c8"], patch: "--- a/api.ts\n+++ b/api.ts\n@@ -3 +3 @@\n-send();\n+send().catch(log);\n", readyAt: AT + 420, letPush: true, coverClosed: true }],
     threadSends: { PRRT_7: { id: "c8", sendN: 1, claim: { outcome: "done", note: "Matches the SLO.", threadId: "thr_fixer", at: AT + 402 } } },
     sent: { at: AT + 310, threadId: "thr_fixer", title: "Fixes for web#12 · Fix login race", comments: [{ ...at("api.ts", 2), body: "Sent: use the shared constant.", at: AT + 310 }] },
     notPushedSeen: { environmentId: "env_fixer", base: HEAD, at: AT + 430 },
-    keptBranches: [{ branch: "bb/login-thr_login", machine: "MaxBook", path: "/Users/casey/src/web", at: AT + 305 }],
+    keptBranches: [{ branch: "alia/login-thr_login", machine: "MaxBook", path: "/Users/casey/src/web", at: AT + 305 }],
     prConversation: [{ id: "IC_1", kind: "comment", author: "per", bot: false, body: "Can this land today?", at: AT + 5, url: "https://github.com/acme/web/pull/12#issuecomment-1", waiting: true }],
     headFork: null,
     push: { state: "flagged", at: AT + 500, threadId: "thr_fixer", repo: "acme/web", head: "casey/login", flag: "unrequested", remote: "4444444444444444444444444444444444444444", fixer: true },
@@ -232,8 +232,8 @@ async function writeReviews(store: AsyncStore): Promise<Keys> {
 }
 
 if (mode === "write") {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = queueStore(createStore(bb));
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = queueStore(createStore(alia));
   const keys = await writeReviews(store);
   // The review each draft would post, as a teammate's PR's and as your own.
   const payloads: Record<string, unknown> = {};
@@ -243,13 +243,13 @@ if (mode === "write") {
   }
   await store.dispose();
   rmSync(join(out, "data.db"), { force: true });
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   db.prepare(`VACUUM INTO ?`).run(join(out, "data.db"));
   writeFileSync(join(out, "keys.json"), formatDump(keys));
   // As scripts/fixture-1.7.0.ts writes src/fixtures/1.7.0: each table's rows as INSERTs, but the migrations' own record;
   // and every Store read of them.
   const quote = (value: unknown) => value === null ? "NULL" : typeof value === "number" || typeof value === "bigint" ? String(value) : `'${String(value).replaceAll("'", "''")}'`;
-  const tables = (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '_bb_migrations' ORDER BY name`).all() as Array<{ name: string }>).map((row) => row.name);
+  const tables = (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '_alia_migrations' ORDER BY name`).all() as Array<{ name: string }>).map((row) => row.name);
   const inserts = tables.flatMap((table) => (db.prepare(`SELECT * FROM "${table}" ORDER BY rowid`).all() as Array<Record<string, unknown>>)
     .map((row) => `INSERT INTO ${table} (${Object.keys(row).join(", ")}) VALUES (${Object.values(row).map(quote).join(", ")});`));
   writeFileSync(join(out, "data.sql"), inserts.join("\n") + "\n");
@@ -357,24 +357,24 @@ writeFileSync(join(out, "reads-1.7.0-sqlite.json"), reads);
 check("sqlite", "every Store read of 1.8.0's data, with no error", throwsIn(reads).length === 0, throwsIn(reads));
 
 const copy = (made: ReturnType<typeof createFakePluginHost>) => {
-  const empty = made.bb.storage.database();
+  const empty = made.alia.storage.database();
   empty.close();
   copyFileSync(join(out, "data.db"), empty.name);
   return made;
 };
 {
-  const { bb, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.8.0-")) }));
-  const store = queueStore(createStore(bb));
-  await storeChecks("sqlite", store, sqliteSql(bb.storage.database()));
+  const { alia, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.8.0-")) }));
+  const store = queueStore(createStore(alia));
+  await storeChecks("sqlite", store, sqliteSql(alia.storage.database()));
   await store.dispose();
   await harness.dispose();
 }
 {
   // The plugin opens each review, and asks a folder's review for changes and a rebuild, as its page does.
-  const { bb, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.8.0-")) }));
-  const stored = (k: string) => JSON.parse((bb.storage.database().prepare(`SELECT state FROM review_lifecycle WHERE target_key=?`).get(k) as { state: string }).state) as Record<string, unknown>;
+  const { alia, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.8.0-")) }));
+  const stored = (k: string) => JSON.parse((alia.storage.database().prepare(`SELECT state FROM review_lifecycle WHERE target_key=?`).get(k) as { state: string }).state) as Record<string, unknown>;
   const lifecycles = Object.fromEntries([keys.feature, keys.own, keys.teammate].map((k) => [k, stored(k)]));
-  await plugin(bb);
+  await plugin(alia);
   const rpc = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<Record<string, unknown>>;
   const errors: Record<string, string> = {};
   const opened: Record<string, Record<string, unknown>> = {};

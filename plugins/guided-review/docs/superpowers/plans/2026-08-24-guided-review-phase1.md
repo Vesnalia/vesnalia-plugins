@@ -2,34 +2,34 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a bb plugin that turns a GitHub PR (or local git ref) into an agent-authored chaptered walkthrough, rendered in a live bb panel, reviewable with per-line/chapter comments and inline agent-assist, and submittable back to the GitHub PR as one batched review.
+**Goal:** Ship a VesnALIA plugin that turns a GitHub PR (or local git ref) into an agent-authored chaptered walkthrough, rendered in a live VesnALIA panel, reviewable with per-line/chapter comments and inline agent-assist, and submittable back to the GitHub PR as one batched review.
 
-**Architecture:** A single bb plugin with a TypeScript backend (`bb.server`) and a React panel (`bb.app`). The backend registers a `bb review` CLI command, an RPC data plane for the panel, two native agent tools + a bundled skill that drive guide generation in a hidden bb thread, and a SQLite-backed store. The panel (a `navPanel`) renders chapters + `@pierre/diffs` diffs, collects a draft review, and submits it via the `gh` CLI. All GitHub access is `gh` shelled out server-local; no raw token handling.
+**Architecture:** A single VesnALIA plugin with a TypeScript backend (`alia.server`) and a React panel (`alia.app`). The backend registers a `alia review` CLI command, an RPC data plane for the panel, two native agent tools + a bundled skill that drive guide generation in a hidden VesnALIA thread, and a SQLite-backed store. The panel (a `navPanel`) renders chapters + `@pierre/diffs` diffs, collects a draft review, and submits it via the `gh` CLI. All GitHub access is `gh` shelled out server-local; no raw token handling.
 
-**Tech Stack:** TypeScript, `@get-bb/plugin-sdk` (backend + `/app` + `/testing`), Zod 4, React, Tailwind (host theme tokens), `@pierre/diffs`, vendored shadcn UI, `gh` CLI, `git`, vitest.
+**Tech Stack:** TypeScript, `@vesnalia/plugin-sdk` (backend + `/app` + `/testing`), Zod 4, React, Tailwind (host theme tokens), `@pierre/diffs`, vendored shadcn UI, `gh` CLI, `git`, vitest.
 
 **Spec:** `docs/superpowers/specs/2026-08-24-guided-review-design.md`
 
 ## Global Constraints
 
-- **Plugin id:** `guided-review` (package name `bb-plugin-guided-review`). CLI command name: `review`.
-- **Frontend ↔ backend:** panel uses `bb.rpc` + `useRpc` only. Never `bb.http` (reserved for external callers; unused in Phase 1).
+- **Plugin id:** `guided-review` (package name `alia-plugin-guided-review`). CLI command name: `review`.
+- **Frontend ↔ backend:** panel uses `alia.rpc` + `useRpc` only. Never `alia.http` (reserved for external callers; unused in Phase 1).
 - **Diffs:** render with `@pierre/diffs` (`parsePatchFiles` + `FileDiff` from `@pierre/diffs/react`). Synthesize `diff --git a/<p> b/<p>` headers when `gh` omits them. `@pierre/diffs` is a devDependency (types only; runtime is host-shimmed).
 - **GitHub:** all access via `gh` shelled server-local with `cwd` = repo dir. No token in code. Use the active `gh` account.
 - **Generation flow (plannotator-exact, per user):** dump diff → read → chunk & order sections *implementation heart first, consequences next, glue/wiring/config in a trailing grouped chapter last* → write `title`/`intent`/each section's `overview` + `diffs` → verify coverage (every changed file in exactly one section's `diffs` or in `unplacedFiles`; never twice; never omitted) → submit. Never edit the patch to fit the guide.
 - **guide.json shape:** `title`, `intent`, `sections[]` = `{ id, title, overview, risk?, diffs[] = { file, summary } }`, `unplacedFiles[]`, `review = { gitRef, base? }`, `source?`, `generator?`.
-- **Storage:** plugin SQLite via `bb.storage.database()` + append-only `bb.storage.migrate`. Patches live in the DB (no 256KB kv cap). Migration statements are append-only — never reorder/edit shipped statements.
+- **Storage:** plugin SQLite via `alia.storage.database()` + append-only `alia.storage.migrate`. Patches live in the DB (no 256KB kv cap). Migration statements are append-only — never reorder/edit shipped statements.
 - **UI styling:** host token classes only (`bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-destructive`, …). No hardcoded colors, no custom `@theme`, no `oklch(...)` literals. `toast` from `sonner`.
 - **Host assumption (Phase 1):** single local machine (server host == local). `gh`/`git` run via `node:child_process`. Multi-host is Phase 2.
-- **Panel open:** backend cannot navigate the frontend; `bb review` prints "open the Guided Review panel". The panel lists reviews; the user opens the target. Auto-open is Phase 2.
+- **Panel open:** backend cannot navigate the frontend; `alia review` prints "open the Guided Review panel". The panel lists reviews; the user opens the target. Auto-open is Phase 2.
 
 ---
 
 ## File Structure
 
 ```
-bb-plugin-guided-review/
-  package.json                      # manifest: bb.server, bb.app, bb.skills, deps
+alia-plugin-guided-review/
+  package.json                      # manifest: alia.server, alia.app, alia.skills, deps
   server.ts                         # factory: wires store, cli, rpc, tools, configure, realtime
   app.tsx                           # definePluginApp: navPanel "Review"
   vitest.config.ts                  # backend + jsdom projects
@@ -39,7 +39,7 @@ bb-plugin-guided-review/
     guide.ts                        # Zod schema, validateGuide, checkCoverage (pure)
     draft.ts                        # Draft types, toGithubReviewPayload (pure)
     gh.ts                           # gh/git arg builders (pure) + runGh/runGit (child_process)
-    store.ts                        # createStore(bb): DB migrations + persistence
+    store.ts                        # createStore(alia): DB migrations + persistence
     generate.ts                     # generateGuide(): spawn hidden thread, wait, finalize
     assist.ts                       # runAssist(): scoped hidden thread → text
     rpc-contract.ts                 # Zod rpc contract (app imports its TYPE only)
@@ -79,22 +79,22 @@ The project dir already exists with `.git` and `docs/`. Scaffold elsewhere, copy
 
 ```bash
 cd /Volumes/X9/Dev
-bb plugin new guided-review --app        # creates ./bb-plugin-guided-review OR fails if non-empty
+alia plugin new guided-review --app        # creates ./alia-plugin-guided-review OR fails if non-empty
 ```
 
-If `bb plugin new` refuses because `bb-plugin-guided-review` is non-empty, scaffold to a temp name and merge:
+If `alia plugin new` refuses because `alia-plugin-guided-review` is non-empty, scaffold to a temp name and merge:
 
 ```bash
 cd /tmp && rm -rf gr-scaffold && mkdir gr-scaffold && cd gr-scaffold
-bb plugin new guided-review --app
+alia plugin new guided-review --app
 # copy everything except its .git into the real repo
-rsync -a --exclude='.git' /tmp/gr-scaffold/bb-plugin-guided-review/ /Volumes/X9/Dev/bb-plugin-guided-review/
+rsync -a --exclude='.git' /tmp/gr-scaffold/alia-plugin-guided-review/ /Volumes/X9/Dev/alia-plugin-guided-review/
 ```
 
 - [ ] **Step 2: Add dependencies**
 
 ```bash
-cd /Volumes/X9/Dev/bb-plugin-guided-review
+cd /Volumes/X9/Dev/alia-plugin-guided-review
 npm pkg set dependencies.zod="^4.0.0"
 npm pkg set devDependencies.@pierre/diffs="*"
 npm pkg set devDependencies.vitest="^3.0.0"
@@ -103,7 +103,7 @@ npm pkg set devDependencies.jsdom="*"
 npm pkg set devDependencies.@testing-library/react="*"
 npm pkg set devDependencies.@testing-library/dom="*"
 npm pkg set scripts.test="vitest run"
-npm pkg set bb.skills[0]="skills"
+npm pkg set alia.skills[0]="skills"
 npm install
 ```
 
@@ -125,7 +125,7 @@ export default defineConfig({
 - [ ] **Step 4: Create `src/rpc-contract.ts` with a smoke method**
 
 ```ts
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -136,13 +136,13 @@ export const rpcContract = defineRpcContract({
 - [ ] **Step 5: Replace `server.ts` with a minimal factory that registers the contract**
 
 ```ts
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { rpcContract } from "./src/rpc-contract";
 
 export { rpcContract } from "./src/rpc-contract";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.rpc.register(rpcContract, {
+export default async function plugin(alia: AliaPluginApi) {
+  alia.rpc.register(rpcContract, {
     ping() {
       return { ok: true };
     },
@@ -153,12 +153,12 @@ export default async function plugin(bb: BbPluginApi) {
 - [ ] **Step 6: Write the smoke test**
 
 ```ts
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 test("ping returns ok", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "guided-review" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "guided-review" });
+  await plugin(alia);
   const res = await harness.behavior.callRpc("ping", null);
   expect(res).toEqual({ ok: true });
 });
@@ -169,11 +169,11 @@ test("ping returns ok", async () => {
 Run: `npm test -- src/smoke.test.ts`
 Expected: PASS.
 
-- [ ] **Step 8: Install into the running bb and confirm it loads**
+- [ ] **Step 8: Install into the running VesnALIA and confirm it loads**
 
 ```bash
-bb plugin install . --yes
-bb plugin list | grep guided-review        # status should be running
+alia plugin install . --yes
+alia plugin list | grep guided-review        # status should be running
 ```
 
 - [ ] **Step 9: Commit**
@@ -740,7 +740,7 @@ git add src/gh.ts src/gh.test.ts && git commit -m "feat: gh/git command builders
 - Produces:
   - `interface ReviewMeta { targetKey: string; kind: "pr" | "ref"; number?: number; repo?: string; title?: string; author?: string; base?: string; head?: string; gitRef?: string; url?: string; status: "generating" | "ready" | "error"; createdAt: number }`
   - `interface Store { saveReview; getReview; listReviews; savePatch; readPatch; setStatus; saveGuide; getGuide; getDraft; upsertDraftComment; removeDraftComment; setVerdict }`
-  - `createStore(bb: BbPluginApi): Store`
+  - `createStore(alia: AliaPluginApi): Store`
 - Exact method signatures:
   - `saveReview(meta: ReviewMeta): void`
   - `getReview(targetKey: string): ReviewMeta | null`
@@ -758,12 +758,12 @@ git add src/gh.ts src/gh.test.ts && git commit -m "feat: gh/git command builders
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 
 function store() {
-  const { bb } = createFakePluginHost({ pluginId: "guided-review" });
-  return createStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "guided-review" });
+  return createStore(alia);
 }
 
 test("review round-trips and lists newest first", () => {
@@ -803,7 +803,7 @@ Expected: FAIL.
 - [ ] **Step 3: Implement**
 
 ```ts
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Guide } from "./guide";
 import type { Draft, DraftComment, Verdict } from "./draft";
 
@@ -837,9 +837,9 @@ export interface Store {
   setVerdict(targetKey: string, verdict: Verdict, body: string): Draft;
 }
 
-export function createStore(bb: BbPluginApi): Store {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createStore(alia: AliaPluginApi): Store {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS reviews (
       target_key TEXT PRIMARY KEY, kind TEXT NOT NULL, number INTEGER, repo TEXT,
       title TEXT, author TEXT, base TEXT, head TEXT, git_ref TEXT, url TEXT,
@@ -961,7 +961,7 @@ git add src/store.ts src/store.test.ts && git commit -m "feat: sqlite store"
 - Consumes: `Store` (Task 7), `changedFiles` (Task 3), `validateGuide`/`checkCoverage` (Task 4).
 - Produces:
   - Native tools `read_review_patch` and `generate_review_guide` (registered in `server.ts`).
-  - `generateGuide(bb: BbPluginApi, store: Store, targetKey: string, projectId: string): Promise<void>` — spawns a hidden thread, waits for idle, sets final status, publishes realtime `review:<targetKey>`.
+  - `generateGuide(alia: AliaPluginApi, store: Store, targetKey: string, projectId: string): Promise<void>` — spawns a hidden thread, waits for idle, sets final status, publishes realtime `review:<targetKey>`.
   - `buildGenerationPrompt(targetKey: string): string`
 
 - [ ] **Step 1: Write `skills/guided-review-generate/SKILL.md` (plannotator-exact flow)**
@@ -994,7 +994,7 @@ You are producing a **guide**: a chaptered walkthrough of a diff. Follow this ex
 - [ ] **Step 2: Write the failing test (tools + coverage gate)**
 
 ```ts
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 const patch = `diff --git a/a.ts b/a.ts
@@ -1007,12 +1007,12 @@ const patch = `diff --git a/a.ts b/a.ts
 
 async function host() {
   const h = createFakePluginHost({ pluginId: "guided-review" });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return h;
 }
 
 test("read_review_patch returns stored patch text", async () => {
-  const { bb, harness } = await host();
+  const { alia, harness } = await host();
   // seed a review + patch through the store the factory created:
   await harness.behavior.callRpc("__seedForTest", { targetKey: "pr-1", patch }); // helper rpc, Task 10 note
   const out = await harness.behavior.callAgentTool("read_review_patch", { targetKey: "pr-1" });
@@ -1046,7 +1046,7 @@ test("generate_review_guide rejects incomplete coverage then accepts a full guid
 - [ ] **Step 3: Implement `src/generate.ts`**
 
 ```ts
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 
 export function buildGenerationPrompt(targetKey: string): string {
@@ -1059,7 +1059,7 @@ export function buildGenerationPrompt(targetKey: string): string {
 }
 
 export async function generateGuide(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   store: Store,
   targetKey: string,
   projectId: string,
@@ -1069,7 +1069,7 @@ export async function generateGuide(
   // was actually spawned.
   let workerId: string | undefined;
   try {
-    const worker = await bb.sdk.threads.spawn({
+    const worker = await alia.sdk.threads.spawn({
       projectId,
       environment: { type: "project-default" },
       prompt: buildGenerationPrompt(targetKey),
@@ -1077,31 +1077,31 @@ export async function generateGuide(
       visibility: "hidden",
     });
     workerId = worker.id;
-    await bb.sdk.threads.wait({ threadId: worker.id, status: "idle" });
+    await alia.sdk.threads.wait({ threadId: worker.id, status: "idle" });
   } catch {
     // spawn/wait failed — fall through and finalize as error below
   } finally {
     if (workerId) {
-      await bb.sdk.threads.archive({ threadId: workerId }).catch(() => {});
-      await bb.sdk.threads.stop({ threadId: workerId }).catch(() => {});
+      await alia.sdk.threads.archive({ threadId: workerId }).catch(() => {});
+      await alia.sdk.threads.stop({ threadId: workerId }).catch(() => {});
     }
   }
   const ok = store.getGuide(targetKey) !== null;
   store.setStatus(targetKey, ok ? "ready" : "error");
-  bb.realtime.publish(`review:${targetKey}`, { status: ok ? "ready" : "error" });
+  alia.realtime.publish(`review:${targetKey}`, { status: ok ? "ready" : "error" });
 }
 ```
 
 - [ ] **Step 4: Register the tools + configure gating in `server.ts`**
 
-Add to the factory (after `const store = createStore(bb);`):
+Add to the factory (after `const store = createStore(alia);`):
 
 ```ts
 import { z } from "zod";
 import { changedFiles } from "./src/patch";
 import { validateGuide, checkCoverage } from "./src/guide";
 
-bb.agents.registerTool({
+alia.agents.registerTool({
   name: "read_review_patch",
   description: "Return the diff text for a Guided Review target (paginated).",
   parameters: z.object({
@@ -1117,7 +1117,7 @@ bb.agents.registerTool({
   },
 });
 
-bb.agents.registerTool({
+alia.agents.registerTool({
   name: "generate_review_guide",
   description: "Submit the authored guide. Validates shape and coverage.",
   parameters: z.object({ targetKey: z.string(), guide: z.unknown() }),
@@ -1133,8 +1133,8 @@ bb.agents.registerTool({
 });
 
 // Only expose these tools to THIS plugin's own spawned generation thread.
-bb.agents.configure((context) =>
-  context.origin?.pluginId === bb.pluginId
+alia.agents.configure((context) =>
+  context.origin?.pluginId === alia.pluginId
     ? { tools: ["read_review_patch", "generate_review_guide"], skills: ["guided-review-generate"] }
     : { tools: [] },
 );
@@ -1153,16 +1153,16 @@ git add skills src/generate.ts src/generate.test.ts server.ts && git commit -m "
 
 ---
 
-## Task 9: `bb review` CLI command
+## Task 9: `alia review` CLI command
 
 **Files:**
 - Create: `src/review-command.ts`
-- Modify: `server.ts` (register `bb.cli`)
+- Modify: `server.ts` (register `alia.cli`)
 - Test: `src/review-command.test.ts`
 
 **Interfaces:**
 - Consumes: `parseTarget`/`targetKey` (Task 2), `ensureGitHeaders`/`changedFiles` (Task 3), `gh` builders + `runGh`/`runGit` (Task 6), `Store` (Task 7), `generateGuide` (Task 8).
-- Produces: `runReviewCommand(deps, argv, ctx): Promise<{ exitCode: number; stdout?: string; stderr?: string }>` where `deps = { bb, store, gh: { runGh, runGit } }`, `ctx = { projectId?, threadId?, cwd? }`.
+- Produces: `runReviewCommand(deps, argv, ctx): Promise<{ exitCode: number; stdout?: string; stderr?: string }>` where `deps = { alia, store, gh: { runGh, runGit } }`, `ctx = { projectId?, threadId?, cwd? }`.
 
 - [ ] **Step 1: Write the failing test (gh/git mocked via `vi.mock`)**
 
@@ -1182,18 +1182,18 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { runReviewCommand } from "./review-command";
 import * as gh from "./gh";
 
-test("bb review <number> fetches, stores patch+meta, and kicks generation", async () => {
-  const { bb, harness } = createFakePluginHost({
+test("alia review <number> fetches, stores patch+meta, and kicks generation", async () => {
+  const { alia, harness } = createFakePluginHost({
     pluginId: "guided-review",
     sdk: { threads: { spawn: async () => ({ id: "th_1" }), wait: async () => {}, archive: async () => {}, stop: async () => {} } },
   });
-  const store = createStore(bb);
-  const res = await runReviewCommand({ bb, store, gh }, ["7"], { projectId: "p1", cwd: "/repo" });
+  const store = createStore(alia);
+  const res = await runReviewCommand({ alia, store, gh }, ["7"], { projectId: "p1", cwd: "/repo" });
   expect(res.exitCode).toBe(0);
   const meta = store.getReview("pr-7");
   expect(meta?.repo).toBe("acme/web");
@@ -1209,7 +1209,7 @@ Expected: FAIL.
 - [ ] **Step 3: Implement `src/review-command.ts`**
 
 ```ts
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 import { parseTarget, targetKey, type ReviewTarget } from "./targets";
 import { ensureGitHeaders } from "./patch";
@@ -1219,7 +1219,7 @@ import {
 } from "./gh";
 
 interface Deps {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   gh: { runGh: typeof import("./gh").runGh; runGit: typeof import("./gh").runGit };
 }
@@ -1228,8 +1228,8 @@ interface Ctx { projectId?: string; threadId?: string; cwd?: string }
 export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx) {
   const positional = argv.filter((a) => !a.startsWith("-"));
   const input = positional[0];
-  if (!input) return { exitCode: 2, stderr: "usage: bb review <pr-url | pr-number | git-ref> [--base <ref>]" };
-  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `bb review` inside a project thread." };
+  if (!input) return { exitCode: 2, stderr: "usage: alia review <pr-url | pr-number | git-ref> [--base <ref>]" };
+  if (!ctx.projectId) return { exitCode: 2, stderr: "Run `alia review` inside a project thread." };
 
   const baseIdx = argv.indexOf("--base");
   const base = baseIdx >= 0 ? argv[baseIdx + 1] : undefined;
@@ -1272,7 +1272,7 @@ export async function runReviewCommand(deps: Deps, argv: string[], ctx: Ctx) {
   deps.store.savePatch(key, ensureGitHeaders(patch));
 
   // Fire-and-forget generation; the panel refetches on the realtime signal.
-  void generateGuide(deps.bb, deps.store, key, ctx.projectId).catch(() => deps.store.setStatus(key, "error"));
+  void generateGuide(deps.alia, deps.store, key, ctx.projectId).catch(() => deps.store.setStatus(key, "error"));
 
   return {
     exitCode: 0,
@@ -1294,12 +1294,12 @@ function ghError(stderr: string): string {
 import { runReviewCommand } from "./src/review-command";
 import { runGh, runGit } from "./src/gh";
 
-bb.cli.register({
+alia.cli.register({
   name: "review",
   summary: "Open a Guided Review of a GitHub PR or local git ref",
-  commands: [{ name: "review", summary: "Review a PR or ref", usage: "bb review <pr-url | pr-number | git-ref> [--base <ref>]" }],
+  commands: [{ name: "review", summary: "Review a PR or ref", usage: "alia review <pr-url | pr-number | git-ref> [--base <ref>]" }],
   async run(argv, ctx) {
-    return runReviewCommand({ bb, store, gh: { runGh, runGit } }, argv, ctx);
+    return runReviewCommand({ alia, store, gh: { runGh, runGit } }, argv, ctx);
   },
 });
 ```
@@ -1312,7 +1312,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/review-command.ts src/review-command.test.ts server.ts && git commit -m "feat: bb review command"
+git add src/review-command.ts src/review-command.test.ts server.ts && git commit -m "feat: alia review command"
 ```
 
 ---
@@ -1339,7 +1339,7 @@ git add src/review-command.ts src/review-command.test.ts server.ts && git commit
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 test("listReviews + getPatch round-trip through rpc", async () => {
@@ -1351,12 +1351,12 @@ test("listReviews + getPatch round-trip through rpc", async () => {
 > Replace the placeholder above with a real test once `plugin` is imported once at top; the intent:
 
 ```ts
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 test("seed then read", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "guided-review" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "guided-review" });
+  await plugin(alia);
   await harness.behavior.callRpc("__seedForTest", { targetKey: "pr-1", patch: "diff --git a/a.ts b/a.ts\n" });
   const list = await harness.behavior.callRpc("listReviews", null);
   expect(list.reviews.map((r: any) => r.targetKey)).toContain("pr-1");
@@ -1373,7 +1373,7 @@ Expected: FAIL.
 - [ ] **Step 3: Extend `src/rpc-contract.ts`**
 
 ```ts
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const targetKey = z.object({ targetKey: z.string() }).strict();
@@ -1393,12 +1393,12 @@ export const rpcContract = defineRpcContract({
 
 - [ ] **Step 4: Implement handlers in `server.ts`**
 
-Replace the `bb.rpc.register` block with the full set (keep `ping`):
+Replace the `alia.rpc.register` block with the full set (keep `ping`):
 
 ```ts
 import { ghPrViewArgs, ghPrCommentsArgs, ghPrChecksArgs, runGh } from "./src/gh";
 
-bb.rpc.register(rpcContract, {
+alia.rpc.register(rpcContract, {
   ping: () => ({ ok: true }),
   __seedForTest({ targetKey, patch }) {
     store.saveReview({ targetKey, kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: Date.now() });
@@ -1466,12 +1466,12 @@ import { vi } from "vitest";
 const submit = vi.fn(async () => ({ stdout: "{}", stderr: "", code: 0 }));
 vi.mock("./gh", async (o) => ({ ...(await o<any>()), runGh: (args: string[]) => (args.includes("reviews") ? submit(args as any) : ({ stdout: "", stderr: "", code: 0 })) }));
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 test("draft comment then submit builds a batched review", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "guided-review" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "guided-review" });
+  await plugin(alia);
   await harness.behavior.callRpc("__seedForTest", { targetKey: "pr-1", patch: "diff --git a/a.ts b/a.ts\n" });
   await harness.behavior.callRpc("saveDraftComment", { targetKey: "pr-1", comment: { file: "a.ts", line: 1, side: "RIGHT", body: "nit" } });
   await harness.behavior.callRpc("setVerdict", { targetKey: "pr-1", verdict: "COMMENT", body: "ok" });
@@ -1545,12 +1545,12 @@ git add src/rpc-contract.ts src/rpc-draft.test.ts server.ts && git commit -m "fe
 **Interfaces:**
 - Consumes: `Store` (Task 7).
 - Produces:
-  - `runAssist(bb, store, { targetKey, chapterId?, file?, question, projectId }): Promise<{ answer: string }>` — spawns a hidden thread seeded with the relevant diff + guide context, waits idle, returns its output, archives+stops.
-  - rpc `assist({ targetKey, chapterId?, file?, question })` → `{ answer: string }` (reads `projectId` from the review meta's… no — from the invoking context; store the review's `projectId` at creation? Phase 1: pass a configured project). Use `bb.sdk` current project: resolve via the review's stored project. **Add `projectId` to `ReviewMeta`** and persist it in Task 9 (`meta.projectId = ctx.projectId`). Update store schema with a new appended migration `ALTER TABLE reviews ADD COLUMN project_id TEXT`.
+  - `runAssist(alia, store, { targetKey, chapterId?, file?, question, projectId }): Promise<{ answer: string }>` — spawns a hidden thread seeded with the relevant diff + guide context, waits idle, returns its output, archives+stops.
+  - rpc `assist({ targetKey, chapterId?, file?, question })` → `{ answer: string }` (reads `projectId` from the review meta's… no — from the invoking context; store the review's `projectId` at creation? Phase 1: pass a configured project). Use `alia.sdk` current project: resolve via the review's stored project. **Add `projectId` to `ReviewMeta`** and persist it in Task 9 (`meta.projectId = ctx.projectId`). Update store schema with a new appended migration `ALTER TABLE reviews ADD COLUMN project_id TEXT`.
 
 - [ ] **Step 1: Append the store migration + field**
 
-In `src/store.ts` add to the `bb.storage.migrate` array (append-only, new last element):
+In `src/store.ts` add to the `alia.storage.migrate` array (append-only, new last element):
 
 ```ts
     `ALTER TABLE reviews ADD COLUMN project_id TEXT`,
@@ -1561,12 +1561,12 @@ Add `projectId?: string` to `ReviewMeta`, include it in `saveReview` insert (`pr
 - [ ] **Step 2: Write the failing test (spawn stubbed, output stubbed)**
 
 ```ts
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "./store";
 import { runAssist } from "./assist";
 
 test("assist returns the worker thread's output", async () => {
-  const { bb } = createFakePluginHost({
+  const { alia } = createFakePluginHost({
     pluginId: "guided-review",
     sdk: {
       threads: {
@@ -1578,8 +1578,8 @@ test("assist returns the worker thread's output", async () => {
       },
     },
   });
-  const store = createStore(bb);
-  const res = await runAssist(bb, store, { targetKey: "pr-1", question: "why?", projectId: "p1" });
+  const store = createStore(alia);
+  const res = await runAssist(alia, store, { targetKey: "pr-1", question: "why?", projectId: "p1" });
   expect(res.answer).toContain("refresh");
 });
 ```
@@ -1587,7 +1587,7 @@ test("assist returns the worker thread's output", async () => {
 - [ ] **Step 3: Implement `src/assist.ts`**
 
 ```ts
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Store } from "./store";
 import { splitPatchByFile } from "./patch";
 
@@ -1599,7 +1599,7 @@ interface AssistArgs {
   projectId: string;
 }
 
-export async function runAssist(bb: BbPluginApi, store: Store, args: AssistArgs): Promise<{ answer: string }> {
+export async function runAssist(alia: AliaPluginApi, store: Store, args: AssistArgs): Promise<{ answer: string }> {
   const guide = store.getGuide(args.targetKey);
   const patch = store.readPatch(args.targetKey, 0, 5_000_000).text;
   const files = splitPatchByFile(patch);
@@ -1617,7 +1617,7 @@ export async function runAssist(bb: BbPluginApi, store: Store, args: AssistArgs)
     `Question: ${args.question}`,
   ].filter(Boolean).join("\n");
 
-  const worker = await bb.sdk.threads.spawn({
+  const worker = await alia.sdk.threads.spawn({
     projectId: args.projectId,
     environment: { type: "project-default" },
     prompt,
@@ -1625,12 +1625,12 @@ export async function runAssist(bb: BbPluginApi, store: Store, args: AssistArgs)
     visibility: "hidden",
   });
   try {
-    await bb.sdk.threads.wait({ threadId: worker.id, status: "idle" });
-    const answer = await bb.sdk.threads.output({ threadId: worker.id });
+    await alia.sdk.threads.wait({ threadId: worker.id, status: "idle" });
+    const answer = await alia.sdk.threads.output({ threadId: worker.id });
     return { answer: typeof answer === "string" ? answer : String(answer ?? "") };
   } finally {
-    await bb.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
-    await bb.sdk.threads.stop({ threadId: worker.id }).catch(() => {});
+    await alia.sdk.threads.archive({ threadId: worker.id }).catch(() => {});
+    await alia.sdk.threads.stop({ threadId: worker.id }).catch(() => {});
   }
 }
 ```
@@ -1653,8 +1653,8 @@ import { runAssist } from "./src/assist";
 
   async assist({ targetKey, chapterId, file, question }) {
     const m = store.getReview(targetKey);
-    if (!m?.projectId) return { answer: "This review has no associated project; re-run `bb review` inside a project." };
-    return runAssist(bb, store, { targetKey, chapterId, file, question, projectId: m.projectId });
+    if (!m?.projectId) return { answer: "This review has no associated project; re-run `alia review` inside a project." };
+    return runAssist(alia, store, { targetKey, chapterId, file, question, projectId: m.projectId });
   },
 ```
 
@@ -1679,13 +1679,13 @@ git add src/assist.ts src/assist.test.ts src/store.ts src/rpc-contract.ts server
 - Test: `components/ReviewList.test.tsx`
 
 **Interfaces:**
-- Consumes: `rpcContract` type from `../src/rpc-contract`; `useRpc`, `useBbNavigate`.
+- Consumes: `rpcContract` type from `../src/rpc-contract`; `useRpc`, `useAliaNavigate`.
 - Produces: navPanel id `review`, path `review`; `ReviewPanel` routes by `subPath` (`""` → list; else → `ReviewWorkspace` (Task 14)).
 
 - [ ] **Step 1: Register the panel in `app.tsx`**
 
 ```tsx
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { ReviewPanel } from "./components/ReviewPanel";
 
 export default definePluginApp((app) => {
@@ -1717,7 +1717,7 @@ ReviewPanel.displayName = "ReviewPanel";
 
 ```tsx
 // @vitest-environment jsdom
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 test("review list renders rows from rpc", async () => {
   const app = await loadPluginApp(() => import("../app"));
@@ -1739,12 +1739,12 @@ Expected: FAIL.
 
 ```tsx
 import { memo, useEffect, useState } from "react";
-import { useRpc, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useRpc, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 
 export const ReviewList = memo(function ReviewList() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [reviews, setReviews] = useState<any[]>([]);
 
   useEffect(() => {
@@ -1755,7 +1755,7 @@ export const ReviewList = memo(function ReviewList() {
     <div className="mx-auto w-full max-w-3xl space-y-2 p-4">
       <h2 className="text-lg font-semibold text-foreground">Guided Reviews</h2>
       {reviews.length === 0 && (
-        <p className="text-sm text-muted-foreground">Run <code>bb review &lt;pr&gt;</code> to start one.</p>
+        <p className="text-sm text-muted-foreground">Run <code>alia review &lt;pr&gt;</code> to start one.</p>
       )}
       {reviews.map((r) => (
         <button
@@ -1790,7 +1790,7 @@ git add app.tsx components/ReviewPanel.tsx components/ReviewList.tsx components/
 
 **Files:**
 - Create: `components/ReviewWorkspace.tsx`, `components/ReviewHeader.tsx`, `components/ChapterNav.tsx`, `components/DiffViewer.tsx`
-- Test: manual via `bb plugin dev` (host diff worker + layout are not reproduced by the harness)
+- Test: manual via `alia plugin dev` (host diff worker + layout are not reproduced by the harness)
 
 **Interfaces:**
 - Consumes: `getReview`, `getGuide`, `getPatch` rpc; `@pierre/diffs`.
@@ -1811,8 +1811,8 @@ export const DiffViewer = memo(function DiffViewer({ patch, files }: { patch: st
   }, [patch, files]);
 
   const theme = {
-    dark: document.documentElement.dataset.bbCodeThemeDark,
-    light: document.documentElement.dataset.bbCodeThemeLight,
+    dark: document.documentElement.dataset.aliaCodeThemeDark,
+    light: document.documentElement.dataset.aliaCodeThemeLight,
   };
 
   return (
@@ -1886,7 +1886,7 @@ ReviewHeader.displayName = "ReviewHeader";
 
 ```tsx
 import { memo, useEffect, useMemo, useState } from "react";
-import { useRpc, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { ReviewHeader } from "./ReviewHeader";
 import { ChapterNav } from "./ChapterNav";
@@ -1921,7 +1921,7 @@ export const ReviewWorkspace = memo(function ReviewWorkspace({ targetKey }: { ta
   if (!guide) {
     return (
       <div className="p-6 text-sm text-muted-foreground">
-        {review?.status === "error" ? "Generation failed. Re-run `bb review`." : "Building the guide…"}
+        {review?.status === "error" ? "Generation failed. Re-run `alia review`." : "Building the guide…"}
       </div>
     );
   }
@@ -1950,8 +1950,8 @@ ReviewWorkspace.displayName = "ReviewWorkspace";
 - [ ] **Step 5: Build and verify live**
 
 ```bash
-bb plugin dev &        # rebuilds app on save
-# In bb: open Guided Review panel; run `bb review <a small PR>` in a project thread;
+alia plugin dev &        # rebuilds app on save
+# In alia: open Guided Review panel; run `alia review <a small PR>` in a project thread;
 # confirm chapters render on the left and diffs on the right.
 ```
 Expected: panel shows the header/intent, chapter list, and syntax-highlighted diffs for the selected chapter.
@@ -1968,8 +1968,8 @@ git add components/ReviewWorkspace.tsx components/ReviewHeader.tsx components/Ch
 
 **Files:**
 - Create: `components/DraftTray.tsx`, `components/AssistPopover.tsx`
-- Add: `npx shadcn add @bb/select @bb/textarea @bb/popover` (verdict select, comment box, assist popover)
-- Test: manual via `bb plugin dev`
+- Add: `npx shadcn add @alia-core/select @alia-core/textarea @alia-core/popover` (verdict select, comment box, assist popover)
+- Test: manual via `alia plugin dev`
 
 **Interfaces:**
 - Consumes: `getDraft`, `saveDraftComment`, `removeDraftComment`, `setVerdict`, `submitReview`, `assist` rpc; `toast` from `sonner`.
@@ -1978,7 +1978,7 @@ git add components/ReviewWorkspace.tsx components/ReviewHeader.tsx components/Ch
 - [ ] **Step 1: Add shadcn pieces**
 
 ```bash
-npx shadcn add @bb/select @bb/textarea @bb/popover
+npx shadcn add @alia-core/select @alia-core/textarea @alia-core/popover
 npm install
 ```
 
@@ -1986,7 +1986,7 @@ npm install
 
 ```tsx
 import { memo, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -2026,7 +2026,7 @@ AssistPopover.displayName = "AssistPopover";
 
 ```tsx
 import { memo, useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { Button } from "./ui/button";
@@ -2114,8 +2114,8 @@ DraftTray.displayName = "DraftTray";
 - [ ] **Step 4: Build and verify live**
 
 ```bash
-bb plugin dev
-# In bb: open a generated review, add a comment, pick a verdict, submit.
+alia plugin dev
+# In alia: open a generated review, add a comment, pick a verdict, submit.
 # Verify the review appears on the real GitHub PR.
 ```
 Expected: comment adds to the pending list; Submit posts one batched review to the PR; assist returns an answer.
@@ -2137,23 +2137,23 @@ git add components/DraftTray.tsx components/AssistPopover.tsx components/ui && g
 - [ ] **Step 1: Full build + install**
 
 ```bash
-cd /Volumes/X9/Dev/bb-plugin-guided-review
+cd /Volumes/X9/Dev/alia-plugin-guided-review
 npm test
-bb plugin build
-bb plugin reload guided-review
-bb plugin list | grep guided-review     # running, no errors
+alia plugin build
+alia plugin reload guided-review
+alia plugin list | grep guided-review     # running, no errors
 ```
 
 - [ ] **Step 2: Live end-to-end against a throwaway PR**
 
-In a scratch GitHub repo you control, open a small PR, then in a bb project thread on that repo:
+In a scratch GitHub repo you control, open a small PR, then in a VesnALIA project thread on that repo:
 
 ```bash
-bb review <that-pr-url>
+alia review <that-pr-url>
 ```
 Verify: CLI prints the "open the panel" message → panel shows chapters (heart → consequences → glue order) + diffs → add a comment → Ask the agent returns an answer → Submit with "Comment" → the batched review appears on the PR.
 
-- [ ] **Step 3: Write `README.md`** (install, `bb review` usage, the Phase-1 feature list, `gh` auth prerequisite, and a Phase-2 roadmap pointer to the spec).
+- [ ] **Step 3: Write `README.md`** (install, `alia review` usage, the Phase-1 feature list, `gh` auth prerequisite, and a Phase-2 roadmap pointer to the spec).
 
 - [ ] **Step 4: Commit**
 
@@ -2182,5 +2182,5 @@ git add README.md && git commit -m "docs: readme + phase 1 complete"
 **Type consistency:** `ReviewMeta` gains `projectId` in Task 12 (store migration appended, not edited). `targetKey`, `Guide`, `Draft`, `ReviewMeta`, and the rpc method names are used identically across tasks. `runGh`/`runGit` signature `{ cwd?, stdin? }` is consistent between Task 6 and its callers (Tasks 9, 11).
 
 **Open execution notes:**
-- Confirm exact `bb.sdk.threads.wait`/`output`/`archive`/`stop` signatures against `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` when implementing Tasks 8/12 (run `bb plugin types` first). Shapes here follow the authoring skill; adjust field names if the pinned SDK differs.
+- Confirm exact `alia.sdk.threads.wait`/`output`/`archive`/`stop` signatures against `node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts` when implementing Tasks 8/12 (run `alia plugin types` first). Shapes here follow the authoring skill; adjust field names if the pinned SDK differs.
 - If `splitPatchByFile` import into the panel (Task 14) trips the frontend build (Node-free but shared), copy the pure function into `components/`.

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ReviewMeta } from "./store";
 import { isMissingThread } from "./thread-errors";
 import type { runGh } from "./gh";
@@ -46,7 +46,7 @@ export interface SyncHealth {
   /**
    * auth: gh isn't signed in or its token was refused. rate-limit: reading waits until retryAt.
    * partial: `count` PRs couldn't be read. teams: your teams couldn't be read, so team requests may be missing.
-   * gh-missing: gh couldn't start on the BB server.
+   * gh-missing: gh couldn't start on the VesnALIA server.
    */
   error: { kind: "auth" | "rate-limit" | "partial" | "teams" | "gh-missing" | "other"; at: number; count?: number; retryAt?: number } | null;
 }
@@ -102,11 +102,11 @@ const GH_MISSING = /\bgh could not start\b/;
 const PREPARE = new Set<TurnReason>(["re-requested", "handled", "looks-ready", "dismissed"]);
 
 /** Reconcile durable review state with GitHub, and act when a review becomes your turn. Never writes to GitHub. */
-export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof runGh, options: { github?: GithubReads; actions?: TurnActions; now?: () => number } = {}) {
+export function createReviewSync(alia: AliaPluginApi, store: AsyncStore, run: typeof runGh, options: { github?: GithubReads; actions?: TurnActions; now?: () => number } = {}) {
   const github = options.github ?? githubReads(run);
   const actions = options.actions;
   const clock = options.now ?? Date.now;
-  const notifications = completionNotifications(bb, store);
+  const notifications = completionNotifications(alia, store);
   /** Each review being read, until its read is applied. */
   const inflight = new Map<string, Promise<void>>();
   const checked = new Map<string, number>();
@@ -137,11 +137,11 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     if (!login) failed(AUTH_FAILED.test(why) ? "auth" : GH_MISSING.test(why) ? "gh-missing" : "other");
     return login;
   }
-  bb.onDispose(() => { disposed = true; });
-  // New turn rules can make events read before them a new turn; like the time before bb watched a PR, they're history.
+  alia.onDispose(() => { disposed = true; });
+  // New turn rules can make events read before them a new turn; like the time before VesnALIA watched a PR, they're history.
   let rulesUpgraded: Promise<void> | null = null;
   const upgradeRules = () => rulesUpgraded ??= (async () => {
-    const from = await bb.storage.kv.get<number>("turn-rules");
+    const from = await alia.storage.kv.get<number>("turn-rules");
     if (from === TURN_RULES) return;
     // 6 changed only your own PRs' turns: other PRs coming from 5 keep what they were watching.
     const ownOnly = from === 5;
@@ -151,8 +151,8 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
         if (review.watchingSince != null && (!ownOnly || review.ownPr === true)) await tx.setLifecycle(review.targetKey, { watchingSince: at, watchedHead: review.latestHeadSha ?? review.headSha ?? null });
       }
     });
-    await bb.storage.kv.set("turn-rules", TURN_RULES);
-  })().catch((error) => bb.log.warn(`Could not start the new turn rules: ${String(error)}`));
+    await alia.storage.kv.set("turn-rules", TURN_RULES);
+  })().catch((error) => alia.log.warn(`Could not start the new turn rules: ${String(error)}`));
 
   const turnOf = async (review: ReviewMeta, now = clock(), options?: ReturnType<typeof turnOptions>) => computeTurn(review, options ?? turnOptions((await store.getPreferences()).preferences), now);
   // Stale alerts drop when the review is no longer your turn for the same reason. The outbox asks inside its block.
@@ -162,19 +162,19 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     return turn?.group === "needs" ? turn.signal : null;
   });
 
-  // Tidies a legacy review-agent worker. Assistant threads in bb stay
+  // Tidies a legacy review-agent worker. Assistant threads in VesnALIA stay
   // unarchived, because an archived thread cannot take messages.
   async function maintainThread(targetKey: string) {
     const threadId = await store.getAgentThread(targetKey);
     if (!threadId || disposed) return;
     try {
       if (!hidden.has(threadId)) {
-        await bb.sdk.threads.update({ threadId, visibility: "hidden" });
+        await alia.sdk.threads.update({ threadId, visibility: "hidden" });
         hidden.add(threadId);
       }
       if ((await store.getReview(targetKey))?.archivedAt && !archived.has(threadId) && !disposed) {
-        try { await bb.sdk.threads.stop({ threadId }); }
-        finally { if (!disposed) await bb.sdk.threads.archive({ threadId }); }
+        try { await alia.sdk.threads.stop({ threadId }); }
+        finally { if (!disposed) await alia.sdk.threads.archive({ threadId }); }
         archived.add(threadId);
       }
     } catch (error) {
@@ -184,7 +184,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
         await store.exclusive(async (tx) => {
           if (await tx.getAgentThread(targetKey) === threadId) await tx.clearAgentThread(targetKey);
         });
-      } else bb.log.warn(`Could not tidy review thread ${threadId}: ${String(error)}`);
+      } else alia.log.warn(`Could not tidy review thread ${threadId}: ${String(error)}`);
     }
   }
 
@@ -248,7 +248,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
           // Missing: GitHub couldn't be read for it; keep what's saved. Null or "forbidden": the PR is gone or out of reach.
           const done = fact === null || fact === "forbidden" ? unreachable(review.targetKey, fact ? "forbidden" : "not-found")
             : fact ? apply(review.targetKey, fact, login, startedAt) : null;
-          if (await done?.catch((error) => { bb.log.warn(`Could not refresh ${review.targetKey}: ${String(error)}`); })) changed = true;
+          if (await done?.catch((error) => { alia.log.warn(`Could not refresh ${review.targetKey}: ${String(error)}`); })) changed = true;
           await maintainThread(review.targetKey);
           settled(review.targetKey);
         }
@@ -256,7 +256,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
       if (disposed) return;
       if (failure && !read) {
         readFailed(failure);
-        bb.log.warn(`Could not refresh reviews: ${String(failure)}`);
+        alia.log.warn(`Could not refresh reviews: ${String(failure)}`);
         return;
       }
       // Once GitHub answers, a batch it failed waits for its next turn like the rest.
@@ -267,7 +267,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
       health = { lastReadAt: clock(), error: kept };
       if (!kept && missing) failed("partial", { count: missing });
       else if (!kept && teamsFailed) failed("teams");
-      if (changed) bb.realtime.publish("reviews", { ts: clock() });
+      if (changed) alia.realtime.publish("reviews", { ts: clock() });
     })().finally(() => { for (const key of fresh) settled(key); });
     await Promise.allSettled([task, ...waiting]);
   }
@@ -284,7 +284,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
       const before = await tx.getReview(key);
       // One merged into another review while GitHub answered stays as the merge left it, in Archive.
       if (!before || before.mergedInto || before.prState === "MERGED" && facts.state !== "MERGED") return null;
-      // What happened before bb first read the PR is history: it shows, but doesn't alert or start work.
+      // What happened before VesnALIA first read the PR is history: it shows, but doesn't alert or start work.
       const firstRead = before.watchingSince == null;
       if (firstRead) await tx.setLifecycle(key, { watchingSince: startedAt, watchedHead: facts.headSha });
       // Keep what the list shows current; a review found on GitHub learns its PR here.
@@ -306,7 +306,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     });
     if (!read) return false;
     if (read.threads) {
-      const warn = (error: unknown) => bb.log.warn(`Could not read your threads on ${key}: ${String(error)}`);
+      const warn = (error: unknown) => alia.log.warn(`Could not read your threads on ${key}: ${String(error)}`);
       let threads: Awaited<ReturnType<typeof github.threads>> | null = null;
       try { threads = await github.threads(facts.repo, facts.number, login, facts.author); } catch (error) { warn(error); }
       const gone = await store.exclusive(async (tx) => {
@@ -315,7 +315,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
           const now = await tx.getReview(key);
           if (!now || now.mergedInto) return true;
           // Every open review page reads the threads again when told, so it's told only when they changed.
-          if (await tx.saveFeedbackThreads(key, threads, facts.updatedAt)) bb.realtime.publish(`feedback:${key}`, { ts: clock() });
+          if (await tx.saveFeedbackThreads(key, threads, facts.updatedAt)) alia.realtime.publish(`feedback:${key}`, { ts: clock() });
         } catch (error) { warn(error); }
         await threadsSignals(tx);
         return false;
@@ -341,7 +341,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
   /** Tell the review's page when it changed; returns whether it did. */
   async function changed(key: string, before: ReviewMeta): Promise<boolean> {
     if (JSON.stringify(before) === JSON.stringify(await store.getReview(key))) return false;
-    bb.realtime.publish(`review:${key}`, { ts: clock() });
+    alia.realtime.publish(`review:${key}`, { ts: clock() });
     return true;
   }
 
@@ -390,7 +390,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
   /**
    * Act on the review's turn: alert once per signal (after its re-review is prepared, up to
    * ALERT_WAIT), prepare re-reviews, check settled pushes, and clear the alert when it leaves Needs review.
-   * Events from before bb watched the review are recorded without acting, except a new request found on GitHub.
+   * Events from before VesnALIA watched the review are recorded without acting, except a new request found on GitHub.
    */
   async function evaluateNow(key: string, firstRead: boolean): Promise<void> {
     await upgradeRules();
@@ -424,7 +424,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
           // A row waiting to be approved carries the alert of the turn beneath it.
           const { reason, label } = turn.under ?? turn;
           const request = reason === "requested" || reason === "team-requested";
-          // An event from before bb watched the PR is history; one without a time is history on the first read. Fixes
+          // An event from before VesnALIA watched the PR is history; one without a time is history on the first read. Fixes
           // coming back are the plugin's own news, on a local review too.
           const recent = reason === "fixes-ready" || watching !== null && (turn.eventAt === null ? !firstRead : turn.eventAt >= watching);
           const act = recent || request && !!review.newRequest;
@@ -459,7 +459,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
       }
     }
     /**
-     * While you wait, the assistant checks the author's pushes once they settle; ones from before bb watched are history.
+     * While you wait, the assistant checks the author's pushes once they settle; ones from before VesnALIA watched are history.
      * A check that's turned off has nothing to run; one that couldn't start is retried now and then. Recorded in the
      * caller's block; returns whether to check them once it has ended.
      */
@@ -479,7 +479,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     };
     /** The group the review is in now, recorded in the caller's block; leaving Needs review clears its alert. */
     const regroup = async (tx: AsyncStore, review: ReviewMeta) => {
-      if (review.turnGroup === "needs" && turn.group !== "needs") void notifications.dismiss(key).catch((error) => bb.log.warn(`Could not dismiss the Needs You alert of ${key}: ${String(error)}`));
+      if (review.turnGroup === "needs" && turn.group !== "needs") void notifications.dismiss(key).catch((error) => alia.log.warn(`Could not dismiss the Needs You alert of ${key}: ${String(error)}`));
       if (review.turnGroup !== turn.group && await tx.getReview(key)) await tx.setLifecycle(key, { turnGroup: turn.group });
       // And since when it stands as it does, for other plugins, whose PR it is read as the list reads it (src/review-status.ts).
       const listed = ownPrOf(review, github.viewer.cachedLogin?.() ?? null);
@@ -597,7 +597,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
   async function discover(since: number): Promise<void> {
     if (!actions) return;
     if (!(await store.getPreferences()).preferences.trackGithubReviews) {
-      await bb.storage.kv.delete(DISCOVERED);
+      await alia.storage.kv.delete(DISCOVERED);
       return;
     }
     const login = await viewerLogin();
@@ -606,7 +606,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     const requested = await github.discover({ reviewed: knobs.trackReviewedPrs, teams: trackTeamRequests });
     // Your own PRs come from a search of their own, whose failure leaves the rest of the look as it was.
     const own = knobs.trackOwnPrs ? await github.ownPrs().catch((error) => {
-      bb.log.warn(`Could not look for your own PRs on GitHub: ${String(error)}`);
+      alia.log.warn(`Could not look for your own PRs on GitHub: ${String(error)}`);
       return [];
     }) : [];
     // With nothing to read, as in an empty list, only this look shows GitHub answers again. It says nothing of PRs or teams.
@@ -617,7 +617,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     const { converted, waiting } = await adoptFeatures(own);
     if (disposed) return;
     const found = [...requested, ...own.filter((pr) => !waiting.has(pr))];
-    const last = await bb.storage.kv.get<{ login: string; teams?: boolean }>(DISCOVERED);
+    const last = await alia.storage.kv.get<{ login: string; teams?: boolean }>(DISCOVERED);
     const first = last?.login !== login;
     // Team requests come from the same search as yours, so the look that first includes them adds no new request.
     // PRs you've reviewed come from a search of their own, and never count as new requests.
@@ -656,11 +656,11 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
       if (disposed) return;
       added = await store.exclusive(async (tx) => await add(tx, await urlsNow(tx)));
     }
-    await bb.storage.kv.set(DISCOVERED, { login, at: clock(), teams: trackTeamRequests });
+    await alia.storage.kv.set(DISCOVERED, { login, at: clock(), teams: trackTeamRequests });
     const fresh = [...converted, ...added ?? []];
     if (!fresh.length) return;
     await read(fresh);
-    bb.realtime.publish("reviews", { ts: clock() });
+    alia.realtime.publish("reviews", { ts: clock() });
   }
 
   /**
@@ -680,7 +680,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
       if (at < 0 || await store.isDiscoveryIgnored(keyFor({ kind: "pr", number: pr.number, repo: pr.repo }))) continue;
       const [folder] = folders.splice(at, 1);
       const became = await actions.becomePr(folder.targetKey, { repo: pr.repo, number: pr.number }).catch((error) => {
-        bb.log.warn(`Could not make ${folder.targetKey} the review of ${pr.repo}#${pr.number}: ${String(error)}`);
+        alia.log.warn(`Could not make ${folder.targetKey} the review of ${pr.repo}#${pr.number}: ${String(error)}`);
         return "skipped" as const;
       });
       if (became === "converted" || became === "merged") converted.push(folder.targetKey);
@@ -702,7 +702,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     // `gh auth switch` outside the plugin: read as the new account, and let the panel know.
     if (await github.viewer.changed?.().catch(() => false)) {
       await resetViewer();
-      bb.realtime.publish("gh-account", { active: null });
+      alia.realtime.publish("gh-account", { active: null });
     }
     // A failed check of notifications is no reason to read everything more often.
     const gate = await github.gate.poll().catch(() => ({ kind: "unchanged" as const }));
@@ -727,7 +727,7 @@ export function createReviewSync(bb: BbPluginApi, store: AsyncStore, run: typeof
     for (const review of reviews) if (!disposed) await maintainThread(review.targetKey);
     if (!limited() && (force || now - lastDiscovery >= DISCOVER_EVERY)) {
       lastDiscovery = now;
-      discovering ??= discover(now).catch((error) => { readFailed(error); bb.log.warn(`Could not look for reviews on GitHub: ${String(error)}`); }).finally(() => { discovering = null; });
+      discovering ??= discover(now).catch((error) => { readFailed(error); alia.log.warn(`Could not look for reviews on GitHub: ${String(error)}`); }).finally(() => { discovering = null; });
       await discovering;
     }
     // Turns also change with time, such as a quiet period ending, and waiting alerts may be ready.

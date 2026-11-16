@@ -1,7 +1,7 @@
 /*
  * Fat Fingers: 50% larger icons on a phone.
  *
- * "On a phone" is bb's own definition — the media query below is the one bb
+ * "On a phone" is alia's own definition — the media query below is the one alia
  * uses for its coarse-pointer sizing, so a narrow desktop window with a mouse
  * is left alone and a phone held sideways still counts.
  *
@@ -11,9 +11,9 @@
  * while leaving a 16px box for a finger to find. `zoom` is standard in every
  * current browser (Firefox since 126).
  *
- * The selectors name bb's icon-rendering paths rather than every <svg>, so a
+ * The selectors name alia's icon-rendering paths rather than every <svg>, so a
  * diagram or image rendered inside a message is not blown up too:
- *   svg[data-icon]              every glyph drawn through bb's Icon component,
+ *   svg[data-icon]              every glyph drawn through alia's Icon component,
  *                               including vendored copies inside other plugins
  *   svg.lucide                  the few shadcn primitives that ship lucide glyphs
  *   [data-plugin-icon-asset]    a plugin's own SVG mark, drawn as a CSS mask
@@ -35,7 +35,7 @@ html[data-fat-fingers] {
   }
 
   /*
-   * bb's icon buttons bump their glyph to at least 16px on a phone with a
+   * alia's icon buttons bump their glyph to at least 16px on a phone with a
    * descendant rule that names <svg>, so a plugin mark or provider logo (a
    * <span> drawn as a mask) in the same button keeps its desktop 12px and
    * ends up two thirds the size of its neighbours, before and after scaling.
@@ -48,13 +48,13 @@ html[data-fat-fingers] {
   }
 
   /*
-   * Bigger glyphs alone left the buttons around them touching. bb packs its
+   * Bigger glyphs alone left the buttons around them touching. alia packs its
    * action-row buttons at 28px edge to edge, so a 24px glyph leaves a finger
    * 4px of margin before it lands on the neighbour. Widen any button that is
    * nothing but an icon (an icon, optionally with screen-reader-only text) to
    * the 44px target phones are designed around. Row spacing comes from the
    * button box, so the glyph centres move apart with it. Height is left to
-   * bb's own row sizing: a mis-tap above or below lands on text, not on
+   * alia's own row sizing: a mis-tap above or below lands on text, not on
    * another button.
    */
   html[data-fat-fingers]

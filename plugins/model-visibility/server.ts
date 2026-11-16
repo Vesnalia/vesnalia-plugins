@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
+import { defineRpcContract, type AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import {
   catalogSchema,
@@ -62,11 +62,11 @@ export function mergeModelIds(
   }));
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   const modelCache = new Map<string, { at: number; value: Pick<MenuProvider, 'models' | 'more' | 'error'> }>();
 
   async function readHidden(): Promise<HiddenMap> {
-    return sanitizeHidden(await bb.storage.kv.get<unknown>(KV_KEY));
+    return sanitizeHidden(await alia.storage.kv.get<unknown>(KV_KEY));
   }
 
   async function modelsFor(providerId: string): Promise<Pick<MenuProvider, 'models' | 'more' | 'error'>> {
@@ -74,7 +74,7 @@ export default function plugin(bb: BbPluginApi) {
     if (cached && Date.now() - cached.at < MODEL_CACHE_TTL_MS) return cached.value;
     let value: Pick<MenuProvider, 'models' | 'more' | 'error'>;
     try {
-      const options = await bb.sdk.providers.models({ providerId });
+      const options = await alia.sdk.providers.models({ providerId });
       value = {
         models: mergeModelIds(options.models),
         more: mergeModelIds(options.selectedOnlyModels),
@@ -95,7 +95,7 @@ export default function plugin(bb: BbPluginApi) {
 
   async function providerCatalog(): Promise<MenuProvider[]> {
     // The roster changes when the user toggles a provider, so never cache it.
-    const catalog = await bb.sdk.providers.catalog();
+    const catalog = await alia.sdk.providers.catalog();
     const enabled = catalog.filter((provider) => provider.enabled && provider.pluginEnabled);
     return Promise.all(enabled.map(async (provider): Promise<MenuProvider> => {
       const base = {
@@ -109,7 +109,7 @@ export default function plugin(bb: BbPluginApi) {
     }));
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async catalog() {
       const [providers, hidden] = await Promise.all([providerCatalog(), readHidden()]);
       const result: Catalog = { providers, hidden };
@@ -117,7 +117,7 @@ export default function plugin(bb: BbPluginApi) {
     },
     async save({ hidden }) {
       const clean = sanitizeHidden(hidden);
-      await bb.storage.kv.set(KV_KEY, clean);
+      await alia.storage.kv.set(KV_KEY, clean);
       return clean;
     },
   });

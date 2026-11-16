@@ -1,4 +1,4 @@
-// Host contract for the Team plugin's singular `bb.host` entry.
+// Host contract for the Team plugin's singular `alia.host` entry.
 //
 // The entry is a thin, validated bridge between the plugin server and the
 // tools that only exist on the machine holding the project's canonical
@@ -12,10 +12,10 @@
 // - `gitState`: read-only git snapshot (branch, HEAD, dirty files, and a
 //   content fingerprint) used for task checkpoints.
 //
-// The contract is shared by the server (`bb.hosts.experimental_client`) and
+// The contract is shared by the server (`alia.hosts.experimental_client`) and
 // the host entry (`host.ts`), so both sides validate the same shapes.
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 /** bd subcommands the entry may run; anything else is refused before exec. */

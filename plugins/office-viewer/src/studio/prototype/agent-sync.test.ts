@@ -25,7 +25,7 @@ test("shouldApplyRemoteWireframe ignores own writes and duplicate remote", () =>
 
 test("invalid external JSON keeps current document", () => {
   const current = newWireframe("Keep");
-  const bad = tryParseWireframe({ format: "bb-wireframe", version: 2, name: "X", pages: [], activePageId: "missing" });
+  const bad = tryParseWireframe({ format: "alia-wireframe", version: 2, name: "X", pages: [], activePageId: "missing" });
   assert.equal(bad.ok, false);
   if (!bad.ok) {
     const still = replaceWireframeFromRemote(current, current);

@@ -1,13 +1,13 @@
 ---
 name: backlog
-description: Work with the Markdown tasks displayed by the BB Backlog.MD board.
+description: Work with the Markdown tasks displayed by the VesnALIA Backlog.MD board.
 ---
 
 # Backlog.MD board
 
-Backlog.MD adds a Tasks Kanban page to BB navigation. It discovers `backlog/`,
+Backlog.MD adds a Tasks Kanban page to VesnALIA navigation. It discovers `backlog/`,
 `.backlog/`, and `backlog_directory` in root `backlog.config.yml`. A user may
-select a different folder per BB project and checkout in Folder settings.
+select a different folder per VesnALIA project and checkout in Folder settings.
 
 Task Markdown files are authoritative. The plugin does not require or invoke
 the Backlog.md CLI. Agent-written changes are watched and refresh the board.
@@ -52,11 +52,11 @@ Historical suggestions label storage separately from status. Existing draft
 references survive title/filename changes and moves among task directories in
 the original folder. Changing the task ID, source, host/root or Backlog folder
 requires restoring the original reference or selecting again. Retry after host
-reconnection or task restoration reads current content. BB may require a
+reconnection or task restoration reads current content. VesnALIA may require a
 nonempty query before asking plugin providers for suggestions.
 
 Pause over a Backlog suggestion, or leave it keyboard-highlighted, for 1.5
 seconds to read a larger preview (up to 420 description characters). Escape or
-selection dismisses it. This content-script prototype depends on BB 0.5.9's
+selection dismisses it. This content-script prototype depends on VesnALIA 0.5.9's
 suggestion-row markup; native preview support should replace that dependency
 when available. It uses the row's existing text and adds no task fetch.

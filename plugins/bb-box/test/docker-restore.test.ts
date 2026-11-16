@@ -151,7 +151,7 @@ test("Docker keeps a restored container's Docker volume through a sweep that run
   assert.deepEqual(readBoth(fake, restored), ["A", "A"]);
 });
 
-test("Docker releases a restored container whose Docker data is still being copied, as after BB stopped part way, and leaves nothing of it", async () => {
+test("Docker releases a restored container whose Docker data is still being copied, as after VesnALIA stopped part way, and leaves nothing of it", async () => {
   const fake = fakeDockerHost();
   const { state, box, target } = await boxWithSnapshotOfA(fake);
   const copyMayFinish = join(tempDir("docker-restore"), "copy-may-finish");
@@ -384,7 +384,7 @@ test("Docker removes a part-made restored container's volume when copying its Do
   assert.doesNotMatch(JSON.stringify(Object.keys(JSON.parse(readFileSync(join(fake.root, "volumes.json"), "utf8")))), /bbbox-bx[0-9a-z]+-[0-9a-f]{8}-docker/);
 });
 
-test("Docker finishes a restore that BB Box stopped after the undo was taken, leaving one working box", async () => {
+test("Docker finishes a restore that VesnALIA Box stopped after the undo was taken, leaving one working box", async () => {
   const fake = fakeDockerHost();
   const { state, box, target, old } = await boxWithSnapshotOfA(fake);
   state.holds.step = "undo";
@@ -403,7 +403,7 @@ test("Docker finishes a restore that BB Box stopped after the undo was taken, le
   assert.deepEqual(readBoth(fake, after), ["A", "A"]);
 });
 
-test("Docker finishes a restore that BB Box stopped after the new container was made, before the old one was removed", async () => {
+test("Docker finishes a restore that VesnALIA Box stopped after the new container was made, before the old one was removed", async () => {
   const fake = fakeDockerHost();
   const { state, box, target, old } = await boxWithSnapshotOfA(fake);
   state.holds.step = "adopted";
@@ -470,7 +470,7 @@ test("Docker counts a restored container as the box's own when its box is not na
   assert.equal(await state.backend.power({ ref: `${fresh}x`, host: null, address: null, size: null }), null);
 });
 
-test("Docker blanks in a snapshot image every label BB Box gives a box's container", () => {
+test("Docker blanks in a snapshot image every label VesnALIA Box gives a box's container", () => {
   const settings: BoxContainerSettings = {
     box: { boxId: "bx1", threadId: "thr_1", name: "amber-fox", kind: "linux", createdAt: 1, size: { cores: 2, memoryMiB: 4096, diskGiB: null, gpu: "shared" } } as never,
     installId: "test",

@@ -88,7 +88,7 @@ body {
   max-width: 100%;
   border-radius: 20px;
 }
-/* The spark and title stand in for bb's title bar; upstream's values. */
+/* The spark and title stand in for alia's title bar; upstream's values. */
 .hx-spark {
   display: grid;
   flex: none;

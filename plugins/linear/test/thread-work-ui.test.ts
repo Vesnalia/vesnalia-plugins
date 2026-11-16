@@ -2,7 +2,7 @@
 import React from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { createTestStore, issue, NOW, state, team } from "./helpers/store.js";
 import { threadIssuesFor, threadWorkBinding } from "../src/thread-issues.js";
 import type { WorkAction } from "../src/store/thread-work.js";
@@ -96,7 +96,7 @@ describe("thread work UI", () => {
     } } });
     // Loading: no segment.
     expect(probe.getByTestId("visible").textContent).toBe("false");
-    // Answered with nothing bound: still no segment, so bb draws no empty card.
+    // Answered with nothing bound: still no segment, so VesnALIA draws no empty card.
     await waitFor(() => expect(answered).toBe(true));
     await act(async () => {});
     expect(probe.getByTestId("visible").textContent).toBe("false");

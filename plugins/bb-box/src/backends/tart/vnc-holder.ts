@@ -29,7 +29,7 @@
 // command line, and answers VNC authentication with DES through openssl.
 
 /** The holder's source, written to the Mac for each run. It has no line `BBBOX_HOLDER`, which ends it in holderScript's heredoc. */
-export const VNC_HOLDER_PY = String.raw`# bb-box's VNC holder for one run of a Tart macOS VM (#406).
+export const VNC_HOLDER_PY = String.raw`# alia-box's VNC holder for one run of a Tart macOS VM (#406).
 #
 #   python3 holder.py <tart run output> <socket> <status file>
 #

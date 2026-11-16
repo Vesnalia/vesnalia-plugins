@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-tab-close-right",
+  "name": "alia-plugin-tab-close-right",
   "version": "0.1.0",
-  "description": "Keep tab icons visible and move close buttons to the right in BB.",
+  "description": "Keep tab icons visible and move close buttons to the right in VesnALIA.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.46.1",
-    "bbPluginSdk": ">=0.6.49 <0.7.0"
+    "alia": ">=0.46.1",
+    "aliaPluginSdk": ">=0.6.49 <0.7.0"
   },
-  "bb": {
+  "alia": {
     "name": "Tab Close Right",
     "description": "Keep tab icons on the left and close buttons on the right. Active tabs always show the close button; other tabs show it on hover or keyboard focus.",
     "branding": {
@@ -33,11 +33,27 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "typescript": "5.9.3",
     "@types/react": "19.2.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/tab-close-right#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/tab-close-right"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

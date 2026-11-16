@@ -90,7 +90,7 @@ export function isNoiseRun(run: {
  *
  * So the split is by lifetime rather than by importance:
  *
- *  - live surfaces (the banner, `bb xcode status`) show ephemeral runs;
+ *  - live surfaces (the banner, `alia xcode status`) show ephemeral runs;
  *  - history surfaces (the log, "last result", trends) drop them.
  *
  * Index builds ride along for the same reason: Xcode indexes constantly, and
@@ -178,10 +178,10 @@ export interface Run {
   branch: string | null;
   /** Human name of the checkout/worktree directory the build ran from. */
   worktree: string | null;
-  /** bb thread whose environment this build ran in, when attributable. */
+  /** VesnALIA thread whose environment this build ran in, when attributable. */
   threadId: string | null;
   /**
-   * The enrolled Mac the build ran on, when it is not the machine running bb.
+   * The enrolled Mac the build ran on, when it is not the machine running VesnALIA.
    * Null for every run this machine observed itself.
    */
   hostId: string | null;

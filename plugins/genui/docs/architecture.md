@@ -7,21 +7,21 @@ The internals behind [the README](../README.md): how agents learn the language, 
 1. Sessions whose replies a person reads get four instruction sections from
    `instructions.ts`. Threads spawned by another agent get none, and neither
    do threads run by plugins other than side chat (for example workflows),
-   except the subthreads `bb genui ask` opens to try a prompt.
+   except the subthreads `alia genui ask` opens to try a prompt.
    - `UI_REFERENCE` (the syntax; the Layout, Content, Data and Project
      signatures, generated from the catalog; when to write ```app) rides on
      the optional `check_ui` tool's instructions, and `UI_REFERENCE_MORE`
      (Inputs, Widgets, Media, Dev, Manage, the icon names) on the optional
-     `ui_examples` tool's. BB places tool sections first.
-   - `CODE_WORK_INSTRUCTIONS` (`bb.agents.contributeInstructions`) comes
+     `ui_examples` tool's. ALIA places tool sections first.
+   - `CODE_WORK_INSTRUCTIONS` (`alia.agents.contributeInstructions`) comes
      next: for each kind of engineering or management output, the command
      that saves it and the component that shows it, with examples, and the
      Evidence group's signatures (the reference sections are full). Replies
      after a task are where models fall back to pasted output and markdown
      tables. A contribution only gets the thread id, so it goes to the
-     threads `configure` last chose; BB resolves `configure` first within a
+     threads `configure` last chose; ALIA resolves `configure` first within a
      session's resolution.
-   - `AGENT_INSTRUCTIONS` (`bb.agents.configure`) comes last, closest to the
+   - `AGENT_INSTRUCTIONS` (`alia.agents.configure`) comes last, closest to the
      conversation. It says what the user wants shown (anything better seen
      or used than read) and that a markdown table, numbered steps, pasted
      code or an ASCII diagram is the wrong form for it; that the rest is
@@ -31,19 +31,19 @@ The internals behind [the README](../README.md): how agents learn the language, 
      component for every kind of content. Only the message that ends the
      turn may hold a block: progress notes, thinking and tool input stay
      plain text, and nothing asks the user to decide mid-turn. Questions go
-     in one Form or one run of Buttons (see 6 below). "Read in BB, not a
+     in one Form or one run of Buttons (see 6 below). "Read in ALIA, not a
      terminal" is there for Claude Code, whose own system prompt says replies
      show as markdown in a terminal. Examples here are what moves models:
      the same calculator example stopped being followed when it sat in an
      earlier section. While web lookups are off, `AGENT_INSTRUCTIONS_WEB_OFF`
      swaps the Map example for a line saying so.
-   BB refuses a tool whose instructions pass 4,096 characters (the plugin
+   ALIA refuses a tool whose instructions pass 4,096 characters (the plugin
    then fails to reload) and truncates the other sections there;
    `instructions.test.ts` fails the build past that and compiles every
    example. The four sections and the two tools cost 6,432 input tokens
    per session (measured against a session without them); about 42% is the
    component signatures, 42% the guidance. Formats a component can Load are
-   listed once, in the code-work section, not again in its summary. BB's
+   listed once, in the code-work section, not again in its summary. ALIA's
    acp provider sends the instructions again, with every other plugin's,
    each time it starts a new agent process for the thread, and earlier
    copies stay in the context until it is compacted.
@@ -76,36 +76,36 @@ The internals behind [the README](../README.md): how agents learn the language, 
    - `ui_examples` is optional: it returns the gallery examples of the
      components named (`examples.ts`), with their data files; "app"
      returns the app guide.
-3. Rendering depends on the BB version:
-   - With BB's merged `experimental_codeFenceRenderer` slot (#5387), BB
+3. Rendering depends on the VesnALIA version:
+   - With VesnALIA's merged `experimental_codeFenceRenderer` slot (#5387), VesnALIA
      hands each fence to `ui/SlotFence.tsx` with `code`, `language`,
      `status: "streaming" | "closed" | "unclosed"`, a per-language index
      and its message identity. Closed means the delimiter arrived; unclosed
      means the reply ended without it. UI finalizes diagnostics for either
      terminal status. Unclosed apps render `Original`, never partial HTML.
-     BB keeps the renderer instance through streaming, closure and reply
+     VesnALIA keeps the renderer instance through streaming, closure and reply
      completion. Missing, disabled, conflicting or crashing renderers fall
-     back to BB's code block; a crash is retried when code or status changes.
+     back to VesnALIA's code block; a crash is retried when code or status changes.
      The props are the SDK's `ExperimentalCodeFenceRendererProps` (0.6.54);
-     `app.tsx` checks the method exists at runtime, since BB 0.45 lacks it.
-   - On a BB without that slot, an app overlay (`ui/FenceOverlay.tsx`) finds
-     the code blocks in BB's DOM, hides them and portals the same `Fence`
+     `app.tsx` checks the method exists at runtime, since VesnALIA 0.45 lacks it.
+   - On a VesnALIA without that slot, an app overlay (`ui/FenceOverlay.tsx`) finds
+     the code blocks in VesnALIA's DOM, hides them and portals the same `Fence`
      there. It treats a block as complete after 1.5 seconds without a text
      change, so a paused or interrupted app can execute on this legacy path.
-     Each mount carries `data-bb-plugin`, so BB's scoped plugin
+     Each mount carries `data-alia-plugin`, so VesnALIA's scoped plugin
      CSS applies.
-   - BB's timeline unmounts rows that scroll out of view and remounts them
+   - VesnALIA's timeline unmounts rows that scroll out of view and remounts them
      on the way back, so a block must open at its final height or the
      conversation moves under the reader. The overlay renders a block it
-     finds in the same task as BB's DOM change, before the browser paints
+     finds in the same task as VesnALIA's DOM change, before the browser paints
      (`flushSync` in its MutationObserver; streaming text is batched every
      60 ms). A remounted block reuses what it had: files and its images
      already read in this page (`useLoadedData`), its settled state, an
      app's last height, a diagram's last drawn height at that width (kept in
      `localStorage`), and no replayed entrance. A diagram holds that height
-     exactly until BB draws it (BB draws a Mermaid block only within 256 px
+     exactly until VesnALIA draws it (VesnALIA draws a Mermaid block only within 256 px
      of the screen); one never drawn on this device keeps the tallest of its
-     placeholders, so it moves once, when it draws. BB's code viewer shows a
+     placeholders, so it moves once, when it draws. VesnALIA's code viewer shows a
      fixed skeleton while it highlights and then draws code at a height set
      by its line count alone (no wrapping), so a Code or Snippet body holds
      the height that many lines took on this device (`ui/codeHeight.ts`,
@@ -114,16 +114,16 @@ The internals behind [the README](../README.md): how agents learn the language, 
      page (the app started, the plugin reloaded) holds the height it last
      settled at, at that width (`ui/reservedHeight.ts`, also in
      `localStorage`), until the files and images it reads arrive and its
-     pictures decode, however long a remote BB takes (a picture the browser
+     pictures decode, however long a remote VesnALIA takes (a picture the browser
      can't decode isn't kept for the page, so the next mount reads it
      again); a component waiting for a `Load` is a quiet
      placeholder, never an error line. PullRequest's placeholder has its
      body's layout; list-shaped Project components (Changes, Commits,
-     Threads, Environments) can't know their length before BB answers, so
+     Threads, Environments) can't know their length before VesnALIA answers, so
      on a first view they grow once. An Image is laid out at the natural
      size its picture last decoded at (kept in `localStorage`; not for SVGs,
      which lay themselves out) before the picture arrives, and a reply seen
-     answered folds its choices on the first frame instead of when BB's
+     answered folds its choices on the first frame instead of when VesnALIA's
      outline is read again (`ui/useSuperseded.ts`); until the outline says,
      the block remembers no height. Height glides (`useSmoothHeight`) only
      follow the user's own input; anything else snaps. `scripts/scroll-jitter.mjs`
@@ -131,7 +131,7 @@ The internals behind [the README](../README.md): how agents learn the language, 
      `data-genui-renderer="slot" | "overlay"`; the script reports mount
      counts and hidden code blocks as well as drift. Only the overlay adds
      `data-genui-hidden`. Persistent keys remain
-     `bb.genui.state:${message.id}#${language}#${index}` on either path.
+     `alia.genui.state:${message.id}#${language}#${index}` on either path.
 4. ```ui specs render while the reply streams: `compileStreaming` renders
    the longest prefix that compiles, cutting after each finished string
    too, so `Metric("Total", "$"` shows while `+ price` is still coming. A
@@ -152,7 +152,7 @@ The internals behind [the README](../README.md): how agents learn the language, 
    carries `data-genui-motion="off"`, under which `app.css` stops every CSS
    transition and animation; the system setting reaches CSS only through
    `motion-reduce:` variants. The page reads the setting with `useSettings`,
-   live, and keeps it in `localStorage`, since BB answers after a fresh
+   live, and keeps it in `localStorage`, since ALIA answers after a fresh
    page's first blocks have mounted. On the slot path,
    ```app blocks run only after the closing delimiter; the overlay uses the
    settlement heuristic above. Until then a preview frame
@@ -164,9 +164,9 @@ The internals behind [the README](../README.md): how agents learn the language, 
    `javascript:` URLs and embedded frames. The finished app opens under the
    preview at its height and replaces it once loaded. Apps run in an
    `<iframe sandbox="allow-scripts allow-forms">` with an opaque origin, a
-   no-network CSP (with `form-action 'none'`) and BB's theme variables, and
+   no-network CSP (with `form-action 'none'`) and VesnALIA's theme variables, and
    size themselves to their content; their heights go through
-   `reservedHeight.ts` like a block's. BB's streaming-tail move preserves
+   `reservedHeight.ts` like a block's. VesnALIA's streaming-tail move preserves
    iframe documents where `Element.moveBefore` exists; elsewhere an iframe
    can reload once during settlement even though React state survives.
 5. Interactions re-evaluate the spec locally, with no model call. State
@@ -202,19 +202,19 @@ The internals behind [the README](../README.md): how agents learn the language, 
    later edits beside it; a TextArea answer's own blank line must stay. A
    change that takes the whole block out withdraws those answers (the
    composer is the truth for what will be sent), unless it empties the
-   draft: BB submitting (`isSubmitting`) makes them sent at once; otherwise
+   draft: VesnALIA submitting (`isSubmitting`) makes them sent at once; otherwise
    they stay staged until `onSubmitted`, the reply being superseded (the
    fallback for a composer that reports no submissions), or anything going
    back into the draft (text, a mention, an attachment) or a new pick, which
    makes it a deletion. A Form stages only on the user's own edit of a
    field, never because the sheet's entry differs from it; its typed answer
    waiting out the pause is written first on leaving the field, on Enter, on
-   any press (BB's send button) and when BB starts submitting (those
+   any press (VesnALIA's send button) and when VesnALIA starts submitting (those
    document listeners exist only while an answer is pending). It never
    focuses the composer or toasts; a muted "In your message" line marks a
    staged question. The sheet (entries, the block's range and the draft text
    it stands in) is read once per thread from `localStorage` and written on
-   every change, so a reload, with the draft BB keeps, restores the picks.
+   every change, so a reload, with the draft VesnALIA keeps, restores the picks.
    Windows on one thread don't merge: the last write wins, and a stale
    window can at worst append a duplicate block. The gallery shows what a
    pick would put in the message; only a thread with no composer on screen
@@ -223,7 +223,7 @@ The internals behind [the README](../README.md): how agents learn the language, 
    A control whose action leaves the block says so
    (`ui/components/action-logic.ts`): a glyph at its end (`Sent` for an
    answer, `ExternalLink` for a link, `Copy` for a copy) and, on hover or
-   keyboard focus, BB's tooltip (`components/ui/tooltip.tsx`, from the `@bb`
+   keyboard focus, VesnALIA's tooltip (`components/ui/tooltip.tsx`, from the `@alia`
    registry) saying what pressing does now (`SendEffect`): an answer reads
    "Add to your message", "Take it out of your message" once picked, and
    "Send as your reply" where a pick is sent at once; a link shows what it
@@ -246,10 +246,10 @@ The internals behind [the README](../README.md): how agents learn the language, 
    again. Hints take no pointer events and close as the pointer leaves. A
    control keeps the same tree with or without a hint, so an action that
    changes with state doesn't remount a focused button. Touch screens show
-   the glyph only. Buttons that open a file in BB draw `FileText`, the File
+   the glyph only. Buttons that open a file in VesnALIA draw `FileText`, the File
    component's icon, so `ExternalLink` always means a web page. A row that
    names a file draws that icon once: a code frame's header ends with the
-   open button (or leads with a plain icon where BB can't open the file), and
+   open button (or leads with a plain icon where VesnALIA can't open the file), and
    a file listed as an item (a Findings group, a review artifact, Acceptance
    evidence) is itself the control that opens it.
 6. Choices close once sent. Consecutive Buttons render side by side (a Row
@@ -259,10 +259,10 @@ The internals behind [the README](../README.md): how agents learn the language, 
    reads as one): a choice folds into one "sent" line, a Form turns
    read-only with "Sent". Once the thread has a user message after the
    reply (typed, or sent from anywhere), its open choices go away.
-   `ui/useSuperseded.ts` reads that from BB's conversation outline and
+   `ui/useSuperseded.ts` reads that from VesnALIA's conversation outline and
    re-reads it only on thread events that can add a user message, so it
-   holds for blocks BB has scrolled out of its timeline. A user row whose
-   sequence is below one already listed doesn't count: BB's outline can put
+   holds for blocks VesnALIA has scrolled out of its timeline. A user row whose
+   sequence is below one already listed doesn't count: VesnALIA's outline can put
    an old rejected steer at its end (`ui/supersession.ts`). Copy and link
    buttons stay.
 7. A state declared with the wrong but losslessly convertible type
@@ -273,7 +273,7 @@ The internals behind [the README](../README.md): how agents learn the language, 
    called as `paid("Ana")`; no recursion, keys per call site) and object
    keys written as bare words (`{Good for: "views"}`). A style argument
    (`color:`, `background:`, `size:`…) is an error that says why:
-   components draw in BB's theme, and `tone:` is the status colour where a
+   components draw in VesnALIA's theme, and `tone:` is the status colour where a
    component has one.
 8. Data by reference: `Load("path")` reads a JSON (also `.sarif`, `.har`),
    CSV, TSV, JSONL or text file (a log, tsc output, lcov), and
@@ -282,18 +282,18 @@ The internals behind [the README](../README.md): how agents learn the language, 
    reports reach their component; a spec iterating one (`.map`, `.filter`)
    is still capped at 1,000. `Image(path)` loads png, jpg, gif, webp,
    svg or avif files (5 MB cap) through the `load_image` RPC. Paths are
-   workspace-relative, `$BB_THREAD_STORAGE/…`, or absolute. Components that
+   workspace-relative, `$ALIA_THREAD_STORAGE/…`, or absolute. Components that
    show code at a location their data names (a stack frame, a finding, an
    uncovered line) read the file through `runtime.readText`. A Scene's
    models, environments and textures (glb, gltf, hdr, png, jpg, webp; 10 MB
    cap) come through the `load_asset` RPC as bytes (`runtime.loadAsset`),
    decoded in the browser without fetching (glTF buffers and images
-   included), since BB's CSP may refuse data: and blob: fetches. The backend
+   included), since VesnALIA's CSP may refuse data: and blob: fetches. The backend
    (`data-source.ts`) only reads inside the thread's workspace, its thread
    storage and `/tmp` on the environment's host, where agents and their tools
-   save screenshots and reports. BB refuses a symlinked root and macOS's
+   save screenshots and reports. VesnALIA refuses a symlinked root and macOS's
    `/tmp` is one, so `/tmp` paths are read through `/private/tmp` first.
-9. Web lookups (`web/`), the plugin's only network access, run on the BB
+9. Web lookups (`web/`), the plugin's only network access, run on the VesnALIA
    server, never in the browser, behind the `webLookups` setting (on by
    default):
    - ImageSearch and Gallery `{query}` items: the search words go to
@@ -320,15 +320,15 @@ The internals behind [the README](../README.md): how agents learn the language, 
    link upload.wikimedia.org directly. Off: nothing is fetched, the
    components say so, and the instructions tell the agent.
 10. An app's page gets, before the model's HTML, the bootstrap in
-    `ui/appDocument.ts` (ES5 text that runs in the frame) and BB's base
+    `ui/appDocument.ts` (ES5 text that runs in the frame) and VesnALIA's base
     styles with the SVG kit: `t`/`ts`/`th` text, `box`, `arr`, `leader`,
-    `tone-*` tints mixed from BB's tokens, and a `#genui-arrow` marker
+    `tone-*` tints mixed from VesnALIA's tokens, and a `#genui-arrow` marker
     (WebKit has no `context-stroke`, so its arrowheads are drawn in the
     muted colour). The bootstrap fills the sandbox's gaps:
     - `localStorage` and `sessionStorage` are in-memory Storage objects (an
       opaque origin has neither). localStorage writes are posted to the
       host, debounced, and saved in its localStorage as `<stateKey>:storage`
-      (256 KB per app; `bb.genui.appStorage` indexes them, 1 MB for all,
+      (256 KB per app; `alia.genui.appStorage` indexes them, 1 MB for all,
       oldest write evicted first); the next document starts with them.
       Gallery apps don't persist.
     - `alert`, `confirm`, `prompt` and `window.open` return what a sandbox
@@ -336,9 +336,9 @@ The internals behind [the README](../README.md): how agents learn the language, 
       fires no submit event without `allow-forms`, so the frame has it, and
       a capture-phase listener cancels every submit (Chromium lets a form
       navigate about:srcdoc despite `form-action`). A click on a link the
-      app didn't handle is cancelled: https opens in BB, `#part` sets the
-      document's hash (it would otherwise resolve against BB's address and
-      load BB in the frame), anything else posts `blocked`.
+      app didn't handle is cancelled: https opens in VesnALIA, `#part` sets the
+      document's hash (it would otherwise resolve against VesnALIA's address and
+      load VesnALIA in the frame), anything else posts `blocked`.
     - The Animations setting reaches the frame in its config and live
       (`motion`): off, a style zeroes animation and transition durations,
       `genui.reducedMotion` is true and `matchMedia` answers the
@@ -356,9 +356,9 @@ The internals behind [the README](../README.md): how agents learn the language, 
     preview, `preview`. Full screen makes the app's always-displayed
     `<dialog>` modal (`showModal()`): the top layer escapes any transformed
     ancestor without moving the iframe, so the app keeps its document, and
-    an Escape the app doesn't handle is forwarded to close it. With BB's
+    an Escape the app doesn't handle is forwarded to close it. With ALIA's
     threads side by side or stacked, the dialog is placed over the app's own
-    pane (`ui/paneBounds.ts`, from BB's `data-split-pane-id` markup) and the
+    pane (`ui/paneBounds.ts`, from ALIA's `data-split-pane-id` markup) and the
     backdrop dims the rest; with one pane it fills the window. *Download as
     HTML* saves the same document built standalone: theme and current
     storage baked in, `genui.answer` a no-op, links opening a new tab.
@@ -384,11 +384,11 @@ the instructions list it.
 - Inputs: Slider, Stepper, Toggle, Choice (a vertical list when its options
   are long), Radio, Select, Checklist, ListEditor, Input, TextArea, DateInput,
   Rating, OptionCards, Swatches, EditableTable, FollowUps, Button (primary,
-  secondary or red destructive; an optional BB icon in front, resolved
+  secondary or red destructive; an optional ALIA icon in front, resolved
   against `ui/icons.ts`, and its action's glyph at its end), Form
 - Widgets: Timer, Quiz, Flashcards, Walkthrough
 - Project: Changes, Commits, PullRequest and Threads read the reply's
-  thread's own state from BB (its checkout's diff, its branch's commits and
+  thread's own state from ALIA (its checkout's diff, its branch's commits and
   pull request, its subthreads), so the model writes `Changes()` and no data;
   Changes and Commits keep a snapshot per reply (plugin storage), so an old
   reply keeps showing what it showed, with a Refresh. Threads also shows each
@@ -396,7 +396,7 @@ the instructions list it.
   and reasoning level, and "Waiting on N running workers" for an idle
   parent. Tests renders a list, a vitest/jest JSON report or a JUnit XML
   report (`Load` reads `.xml` as JUnit), Json any value as a collapsible tree.
-- Dev: the agent saves what a tool printed to `$BB_THREAD_STORAGE` and
+- Dev: the agent saves what a tool printed to `$ALIA_THREAD_STORAGE` and
   Loads it; each component knows that tool's exact format.
   - Logs: a log or command output (ANSI, levels from any common format,
     JSON-line records, filters, search, folded repeats, tail first).
@@ -417,13 +417,13 @@ the instructions list it.
     repeated experiment; rows measured under different conditions read "not
     comparable"), Waterfall (spans, a HAR, a Chrome trace) and Treemap
     (sizes, an esbuild metafile, `du`).
-- Manage: Board (a list, `bb tasks list --json`, `gh issue/pr list
+- Manage: Board (a list, `alia tasks list --json`, `gh issue/pr list
   --json`), Roadmap (a Gantt), Status (project health), Plan (steps the
   user approves in one message), Decision (a weighted matrix whose weights
   the user tunes), Estimate (three-point, P50/P80/P90), and Environments,
-  which reads the project's checkouts and worktrees from BB: branch,
+  which reads the project's checkouts and worktrees from ALIA: branch,
   threads, uncommitted changes, ahead/behind and pull request.
-- Evidence, drawn from the user's own BB history (claims without proof,
+- Evidence, drawn from the user's own ALIA history (claims without proof,
   visual parity disputes, wrong installed builds, speech errors):
   - Acceptance: criteria × conditions, each cell passed, failed, blocked,
     not tested or only claimed, with who checked and the evidence (code at a
@@ -483,7 +483,7 @@ numbering, the list, each day's route and the tour, whose pace is
 
 What the user changes inside a component without a `$state` (weights,
 unchecked steps, filters) is kept per block with `ui/usePersistedState.ts`,
-so it survives BB remounting the row as the user scrolls. `ui_examples`
+so it survives ALIA remounting the row as the user scrolls. `ui_examples`
 also says, for each tool-backed component, the commands that save the file
 it reads.
 
@@ -497,32 +497,32 @@ then zooms with the wheel, a trackpad pinch, two fingers or a double tap, and
 pans by dragging; arrows, buttons or a swipe step through the component's
 pictures; Escape, the close button, a tap beside the picture or a swipe down
 closes it. Its caption is the picture's caption or alt, and an Image of a
-file can be opened in BB from there. Like an app's full screen, it covers
-only the block's own pane when BB shows several (a tap on the dimmed rest
+file can be opened in ALIA from there. Like an app's full screen, it covers
+only the block's own pane when ALIA shows several (a tap on the dimmed rest
 closes it). Touch goes through touch events, not
 pointer events, so a gesture the browser starts (a scroll under two
 fingers) can't cancel it, and cancelling them is what keeps iOS from zooming
 the whole page. The zoom and pan geometry is `zoomMath.ts`, shared with
 Compare. Every surface a finger drags or pinches (the viewer, inline
-diagrams, Compare, Map, an orbiting Scene or Shader) carries BB's
-`data-no-sidebar-swipe` and `data-no-secondary-panel-swipe` (`NO_BB_SWIPE`):
-BB's mobile swipes otherwise take a sideways pan, or the outer finger of a
+diagrams, Compare, Map, an orbiting Scene or Shader) carries ALIA's
+`data-no-sidebar-swipe` and `data-no-secondary-panel-swipe` (`NO_ALIA_SWIPE`):
+ALIA's mobile swipes otherwise take a sideways pan, or the outer finger of a
 pinch, and slide a panel over the thread, so the next drag never reaches the
-drawing. An inline diagram draws its zoom again whenever BB replaces the
-drawn block, so the zoom survives BB re-rendering the row.
+drawing. An inline diagram draws its zoom again whenever ALIA replaces the
+drawn block, so the zoom survives ALIA re-rendering the row.
 
 Diagrams look like Excalidraw (`ui/components/sketch.ts`): Mermaid's
 hand-drawn look in Excalifont on Excalidraw's palette, with decisions,
-data stores, start/end points and events coloured by shape. Under BB's dark
+data stores, start/end points and events coloured by shape. Under ALIA's dark
 theme the palette is Excalidraw's dark one, computed from its
 `invert(93%) hue-rotate(180deg)` filter. A diagram has no frame or canvas of
 its own: it is drawn on the card it sits in, its edge labels take that
-colour (read from the page when it renders), and BB's diagram toolbar
+colour (read from the page when it renders), and ALIA's diagram toolbar
 (source, open, copy) is a quiet row of icons at its top right. Two fingers
 or ⌘/Ctrl + scroll zoom it in place (one finger then pans it, and "Reset
 zoom" fits it again); at its fitted size one finger scrolls the thread.
-BB's open button shows it in the plugin's own full-screen view
-(`DiagramViewer`), not BB's dialog, whose pinch listeners attach before the
+ALIA's open button shows it in the plugin's own full-screen view
+(`DiagramViewer`), not ALIA's dialog, whose pinch listeners attach before the
 dialog mounts, so on a phone it only pans; there a node with `details` opens
 them in a popup over the drawing that folds to its title, and a tap
 elsewhere dismisses the popup, not the view. A diagram that brings its own
@@ -533,11 +533,11 @@ text as it lays them out.
 
 Every ChatGPT component the [OpenUI teardown](https://www.openui.com/blog/how-chatgpt-intelligent-ui-works)
 describes has a counterpart, except the ones that need paid data services
-BB doesn't have (product search, flights, news, stocks) and image or video
+ALIA doesn't have (product search, flights, news, stocks) and image or video
 generation. Product and place cards (Entity) take their facts from the
 model or from `Load` instead of a shopping search.
 
-The Gen-UI Gallery page (`/plugins/genui/gallery`, in BB's sidebar) lists
+The Gen-UI Gallery page (`/plugins/genui/gallery`, in ALIA's sidebar) lists
 every catalog component by group with its examples from `gallery/`
 (`<Component>.ui`, `<Component>-<variant>.ui`), rendered as they appear in a
 reply; `/gallery/<Component>` shows one component and `/gallery/<file>` one
@@ -554,20 +554,20 @@ doesn't render cleanly.
 
 ## Clients
 
-- **Web, desktop, mobile:** the BB mobile app is a WebView shell around the
+- **Web, desktop, mobile:** the ALIA mobile app is a WebView shell around the
   same web app, so it loads this plugin and renders the UI too. Checked in
   WebKit with iPhone emulation, including taps, sliders and the app iframe.
   Not run on a device.
-- **CLI and SDK:** `bb genui render [thread]` prints the last reply with
+- **CLI and SDK:** `alia genui render [thread]` prints the last reply with
   ```ui blocks rendered as static markdown (data loaded) and ```app blocks
   replaced by a one-line pointer. The `render_markdown` RPC does the same
-  for SDK consumers. `bb thread output` still returns the raw source. In
-  BB, `Frame` takes a `markdown` callback from `LiveUi`, and *Copy as
+  for SDK consumers. `alia thread output` still returns the raw source. In
+  ALIA, `Frame` takes a `markdown` callback from `LiveUi`, and *Copy as
   markdown* (the reply's footer and the gallery's) copies
   `toMarkdownWithImages` of the current roots with the photos the page has
   already found (`foundImages`, `foundWikiPhotos` in `ui/webLookups.ts`);
   Project components copy their placeholder line.
-- **Notifications and outlines:** BB's push previews skip fenced blocks. The
+- **Notifications and outlines:** ALIA's push previews skip fenced blocks. The
   instructions make the reply open with a plain answer sentence, so that
   sentence is what previews show.
 
@@ -589,7 +589,7 @@ pilot stored.
 - `ui/`:
   - `Fence.tsx`: the shared renderer.
   - `SlotFence.tsx`: the native renderer slot, including terminal status policy.
-  - `FenceOverlay.tsx`: the older-BB DOM fallback and settlement heuristic.
+  - `FenceOverlay.tsx`: the older-ALIA DOM fallback and settlement heuristic.
   - `AppBlock.tsx`: the sandboxed apps (preview, frame, toolbar);
     `appDocument.ts` their documents and bootstrap; `appBridge.ts` what a
     frame may post, and app storage in the host.
@@ -600,7 +600,7 @@ pilot stored.
     `gallery-search.ts`.
 - Backend:
   - `server.ts`: scopes the instructions and registers the tools, the RPCs
-    and the `bb genui` CLI.
+    and the `alia genui` CLI.
   - `data-source.ts`: the confined file loader, also for the gallery and the
     diagram font in `assets/fonts/`.
   - `web/`: web lookups (address-checked fetches, Commons search, Wikipedia
@@ -612,11 +612,11 @@ pilot stored.
 ```sh
 npm install
 npm run typecheck && npm test
-bb plugin build && bb plugin install .   # then: bb plugin reload genui
+VesnALIA plugin build && VesnALIA plugin install .   # then: VesnALIA plugin reload genui
 node scripts/gallery-shot.mjs Map --mobile   # screenshot gallery/Map.ui at 393 px
 node scripts/gallery-shot.mjs Changes --thread thr_…   # examples that read a thread's state
-node scripts/scroll-jitter.mjs thr_… [--off]   # how far a thread moves while scrolling, vs BB alone
-bb genui ask "Plan a day in Lisbon"          # try a prompt in a subthread that gets the instructions
+node scripts/scroll-jitter.mjs thr_… [--off]   # how far a thread moves while scrolling, vs VesnALIA alone
+VesnALIA genui ask "Plan a day in Lisbon"          # try a prompt in a subthread that gets the instructions
 ```
 
 Instruction changes apply to provider sessions started after the reload.

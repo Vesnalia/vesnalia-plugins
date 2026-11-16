@@ -8,4 +8,4 @@ Includes local step profiles and sample workflows. No other Kapustin plugin is r
 
 ## Before running
 
-Configure a BB provider and review step instructions and permissions. Runs consume that provider's quota. A failed or timed-out step fails the run; you can inspect the completed steps and their outputs.
+Configure a VesnALIA provider and review step instructions and permissions. Runs consume that provider's quota. A failed or timed-out step fails the run; you can inspect the completed steps and their outputs.

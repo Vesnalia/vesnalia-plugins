@@ -1,9 +1,9 @@
-// bb review storage: where the reviews are kept, and moving them between SQLite and Postgres. status and verify answer
+// VesnALIA review storage: where the reviews are kept, and moving them between SQLite and Postgres. status and verify answer
 // in any state and change nothing. migrate and export-sqlite run in maintenance, where the plugin serves nothing else,
 // so nothing reads or writes the reviews while they move; they run from a terminal, not from a thread.
 import { existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { BbPluginApi, PluginCliContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginCliContext } from "@vesnalia/plugin-sdk";
 import { pgSql, type PgSql } from "./db/pg";
 import { migratePg } from "./db/pg-migrations";
 import { migrateSqlite } from "./store";
@@ -14,10 +14,10 @@ import {
 } from "./storage-copy";
 
 export const STORAGE_USAGE = [
-  "usage: bb review storage status",
-  "       bb review storage verify",
-  "       bb review storage migrate",
-  "       bb review storage export-sqlite [--replace-data-db]",
+  "usage: VesnALIA review storage status",
+  "       VesnALIA review storage verify",
+  "       VesnALIA review storage migrate",
+  "       VesnALIA review storage export-sqlite [--replace-data-db]",
   "",
   "Shows where Code Review Workspace keeps its reviews, and moves them between SQLite and Postgres.",
   "  status         the backend the settings choose (storageBackend), the one holding the reviews (storage:owner), and whether the plugin serves from it",
@@ -35,8 +35,8 @@ type CliResult = { exitCode: number; stdout?: string; stderr?: string };
 
 const STATE: Record<StorageStatus["state"], string> = {
   serving: "serving",
-  opening: "opening Postgres; only bb review storage answers until it's open",
-  maintenance: "maintenance; only bb review storage answers",
+  opening: "opening Postgres; only VesnALIA review storage answers until it's open",
+  maintenance: "maintenance; only VesnALIA review storage answers",
 };
 
 const usage = (problem: string): CliResult => ({ exitCode: 2, stderr: `${problem}\n${STORAGE_USAGE}` });
@@ -58,15 +58,15 @@ function exportPaths(dir: string) {
 }
 
 /**
- * `bb review storage …`, for the plugin whose storage `storage` chose. Only one of its commands runs at a time, and a
+ * `alia review storage …`, for the plugin whose storage `storage` chose. Only one of its commands runs at a time, and a
  * reload stops a running migrate or export-sqlite before it commits, as a cancelled command does.
  */
-export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
+export function createStorageCommand(alia: AliaPluginApi, storage: StorageChoice) {
   const { status, settings } = storage;
   const redact = redactor(settings);
-  const reload = `bb plugin reload ${bb.pluginId}`;
+  const reload = `alia plugin reload ${alia.pluginId}`;
   const disposed = new AbortController();
-  bb.onDispose(() => { disposed.abort(); });
+  alia.onDispose(() => { disposed.abort(); });
   let running: string | null = null;
 
   /** Why `command` can't run in this state, or null. */
@@ -77,11 +77,11 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
     const where = status.owner === "sqlite" ? "SQLite" : "Postgres";
     if (command === "migrate") {
       if (status.owner === "postgres") return `The reviews are in Postgres already (storage:owner).`;
-      if (status.state !== "maintenance") return `The plugin is serving the reviews from SQLite. To move them to Postgres, set storageBackend to postgres and the Postgres settings, reload (${reload}), then run bb review storage migrate.`;
+      if (status.state !== "maintenance") return `The plugin is serving the reviews from SQLite. To move them to Postgres, set storageBackend to postgres and the Postgres settings, reload (${reload}), then run alia review storage migrate.`;
       return null;
     }
     if (status.owner === "sqlite") return `The reviews are in SQLite already (storage:owner).`;
-    if (status.state !== "maintenance") return `The plugin ${status.state === "opening" ? "opens" : "serves"} the reviews from ${where}. To copy them to SQLite, set storageBackend to sqlite, reload (${reload}), then run bb review storage export-sqlite.`;
+    if (status.state !== "maintenance") return `The plugin ${status.state === "opening" ? "opens" : "serves"} the reviews from ${where}. To copy them to SQLite, set storageBackend to sqlite, reload (${reload}), then run alia review storage export-sqlite.`;
     if (replace && status.configured !== "sqlite") return `--replace-data-db makes SQLite hold the reviews, so it runs with storageBackend set to sqlite: set it, reload (${reload}), then run it again.`;
     return null;
   }
@@ -97,17 +97,17 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
     if (command === "status") return statusOf(status);
     const replace = rest.length === 1;
     if ((command === "migrate" || command === "export-sqlite") && ctx.threadId) {
-      return { exitCode: 1, stderr: `bb review storage ${command} moves every review, so it runs from a terminal, not from a thread.` };
+      return { exitCode: 1, stderr: `alia review storage ${command} moves every review, so it runs from a terminal, not from a thread.` };
     }
-    if (running) return { exitCode: 1, stderr: `bb review storage ${running} is running; try again once it's done.` };
+    if (running) return { exitCode: 1, stderr: `alia review storage ${running} is running; try again once it's done.` };
     const refused = command === "verify" ? null : refusal(command, replace);
     if (refused) return { exitCode: 1, stderr: refused };
 
     running = command;
     const out: string[] = [];
     const say = (line: string) => { out.push(line); };
-    // Each table is in BB's log as it's done, for a command whose terminal has gone.
-    const progress = (line: string) => { say(line); bb.log.info(`bb review storage ${command}: ${line.trim()}`); };
+    // Each table is in VesnALIA's log as it's done, for a command whose terminal has gone.
+    const progress = (line: string) => { say(line); alia.log.info(`alia review storage ${command}: ${line.trim()}`); };
     const signal = AbortSignal.any([disposed.signal, ...ctx.signal ? [ctx.signal] : []]);
     let pg: PgSql | null = null;
     try {
@@ -115,11 +115,11 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
         // A connection of its own, beside the store's when the plugin serves from Postgres.
         pg = pgSql({ ...pgOptions(settings), applicationName: "code-review-workspace storage", timeouts: { writerLockMs: 5_000 } });
       } catch (error) {
-        return { exitCode: 1, stderr: `bb review storage ${command} needs the Postgres settings: ${redact(describe(error))}.` };
+        return { exitCode: 1, stderr: `alia review storage ${command} needs the Postgres settings: ${redact(describe(error))}.` };
       }
       if (command !== "verify") {
         // Report both ledgers before either migrator can refuse; allow only the upgrades this command performs.
-        const problems = [...sqliteMigrationProblems(bb.storage.database(), "main", true), ...await pgMigrationProblems(pg, settings.postgresSchema, command === "migrate")];
+        const problems = [...sqliteMigrationProblems(alia.storage.database(), "main", true), ...await pgMigrationProblems(pg, settings.postgresSchema, command === "migrate")];
         if (problems.length) throw new StorageProblems(problems);
       }
       const exitCode = command === "verify" ? await verify(pg, signal, say, progress)
@@ -141,9 +141,9 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
   /** Mark `owner` as holding the reviews, once they're there, or say what's done and what isn't. */
   async function markOwner(owner: "sqlite" | "postgres", done: string) {
     try {
-      await bb.storage.kv.set(STORAGE_OWNER_KEY, owner);
+      await alia.storage.kv.set(STORAGE_OWNER_KEY, owner);
     } catch (error) {
-      throw new OwnerNotMarked(`${done}: ${describe(error)}. Run the command again once BB answers.`);
+      throw new OwnerNotMarked(`${done}: ${describe(error)}. Run the command again once VesnALIA answers.`);
     }
     status.owner = owner;
   }
@@ -151,7 +151,7 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
   /** Compare SQLite and Postgres, reading each as it is: Postgres in one snapshot, SQLite a page at a time. */
   async function verify(pg: PgSql, signal: AbortSignal, say: (line: string) => void, progress: (line: string) => void): Promise<number> {
     const schema = settings.postgresSchema;
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     say(`Comparing SQLite's data.db with Postgres schema "${schema}".`);
     if (status.state === "serving") say(`The plugin serves the reviews from ${status.owner === "sqlite" ? "SQLite" : "Postgres"}, so they may have changed since the other was copied.`);
     return pg.transaction(async () => {
@@ -180,7 +180,7 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
   async function migrate(pg: PgSql, signal: AbortSignal, say: (line: string) => void, progress: (line: string) => void): Promise<number> {
     const schema = settings.postgresSchema;
     // SQLite's tables as SQLite storage would open them, so an install set to Postgres from the start has them too.
-    const db = migrateSqlite(bb);
+    const db = migrateSqlite(alia);
     db.exec("BEGIN IMMEDIATE");
     try {
       await pg.lockWriter();
@@ -224,16 +224,16 @@ export function createStorageCommand(bb: BbPluginApi, storage: StorageChoice) {
   }
 
   /**
-   * Copy Postgres's reviews to a new file beside data.db: a copy of data.db, whose own tables (BB's migrations record,
+   * Copy Postgres's reviews to a new file beside data.db: a copy of data.db, whose own tables (VesnALIA's migrations record,
    * plugin_updates) it keeps, with the Store's tables replaced by Postgres's and checked. With `replace`, data.db is
    * then backed up beside it, and its Store tables replaced from the copy in one transaction, checked before it commits,
    * and SQLite marked as holding the reviews.
    */
   async function exportSqlite(pg: PgSql, replace: boolean, signal: AbortSignal, say: (line: string) => void, progress: (line: string) => void): Promise<number> {
     const schema = settings.postgresSchema;
-    const db = migrateSqlite(bb);
+    const db = migrateSqlite(alia);
     const { exported, backup } = exportPaths(dirname(db.name));
-    // The writer lock keeps another BB from writing to Postgres until SQLite holds the reviews.
+    // The writer lock keeps another VesnALIA from writing to Postgres until SQLite holds the reviews.
     if (replace) await pg.lockWriter();
     say(`Copying the reviews from Postgres schema "${schema}" to ${exported}.`);
     const started = performance.now();
@@ -298,7 +298,7 @@ function check(tables: Table[], copy: Checksums, source: Checksums) {
 }
 
 /** Replace data.db's Store tables, and their sqlite_sequence rows, with the export's. Inside a transaction. */
-function replaceFromExport(db: ReturnType<BbPluginApi["storage"]["database"]>, tables: Table[]) {
+function replaceFromExport(db: ReturnType<AliaPluginApi["storage"]["database"]>, tables: Table[]) {
   for (const table of tables) {
     const name = `"${table.name}"`;
     const columns = table.columns.map((column) => `"${column.name}"`).join(", ");

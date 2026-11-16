@@ -3,7 +3,7 @@ import {
   definePluginApp,
   useRpc,
   type PluginSettingsSectionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "./vendor/components/ui/button";
 import { parseBrowserCookieImport } from "./browser-cookie-import.js";
 import type { rpcContract, CookieSource, CurrentImport } from "./contracts.js";
@@ -85,7 +85,7 @@ function BrowserSessionSettings(_: PluginSettingsSectionProps) {
   return (
     <div className="grid gap-4 text-sm text-foreground" aria-busy={pending}>
       <p className="text-muted-foreground">
-        Import one browser session, and BB&apos;s shared Browser session uses it
+        Import one browser session, and VesnALIA&apos;s shared Browser session uses it
         — every ordinary Browser tab, now and in the future. Isolated automation
         browsers keep their own session. Imports cookies only, not extensions,
         passwords, bookmarks, or local storage.
@@ -150,7 +150,7 @@ function BrowserSessionSettings(_: PluginSettingsSectionProps) {
             onClick={() => {
               if (
                 window.confirm(
-                  "Remove the imported session? This clears ALL cookies from the shared BB Browser session on this host.",
+                  "Remove the imported session? This clears ALL cookies from the shared VesnALIA Browser session on this host.",
                 )
               )
                 operate(async () => {
@@ -260,7 +260,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "session-import",
     title: "Browser Session Import",
-    description: "Import one session into the shared BB Browser",
+    description: "Import one session into the shared VesnALIA Browser",
     component: BrowserSessionSettings,
   });
 });

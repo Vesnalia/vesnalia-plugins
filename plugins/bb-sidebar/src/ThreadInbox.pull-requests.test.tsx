@@ -35,7 +35,7 @@ describe("pull request badge", () => {
   const prEnvironment = {
     id: "env_pr",
     name: "Worktree",
-    branchName: "bb/fix-flake",
+    branchName: "alia/fix-flake",
     workspaceDisplayKind: "managed-worktree" as const,
     path: null,
     isWorktree: true,
@@ -46,7 +46,7 @@ describe("pull request badge", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_pr", environment: prEnvironment })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -88,31 +88,31 @@ describe("pull request badge", () => {
     expect(screen.queryByRole("link", { name: /^#/ })).toBeNull();
   });
 
-  // BB's richer attention state keeps failed open PRs red while other open
+  // VesnALIA's richer attention state keeps failed open PRs red while other open
   // states use the emerald pull request color.
   it("colors the badge from the attention state", async () => {
     const failing = withPr("checks_failed");
     expect((await screen.findByRole("link", { name: "#412" })).className).toContain(
-      "text-[color:var(--bb-sidebar-pr-alert)]",
+      "text-[color:var(--alia-sidebar-pr-alert)]",
     );
     failing.unmount();
 
     withPr("ready_to_merge");
     expect((await screen.findByRole("link", { name: "#412" })).className).toContain(
-      "text-[color:var(--bb-sidebar-pr-open)]",
+      "text-[color:var(--alia-sidebar-pr-open)]",
     );
   });
 
   it("covers pending, review, draft, closed, and merged states", async () => {
     const pending = withPr("checks_pending");
     expect((await screen.findByRole("link", { name: "#412" })).className).toContain(
-      "text-[color:var(--bb-sidebar-pr-open)]",
+      "text-[color:var(--alia-sidebar-pr-open)]",
     );
     pending.unmount();
 
     const review = withPr("review_requested");
     expect((await screen.findByRole("link", { name: "#412" })).className).toContain(
-      "text-[color:var(--bb-sidebar-pr-open)]",
+      "text-[color:var(--alia-sidebar-pr-open)]",
     );
     review.unmount();
 
@@ -122,13 +122,13 @@ describe("pull request badge", () => {
 
     const closed = withPr("closed", "closed");
     expect((await screen.findByRole("link", { name: "#412" })).className).toContain(
-      "text-[color:var(--bb-sidebar-pr-alert)]",
+      "text-[color:var(--alia-sidebar-pr-alert)]",
     );
     closed.unmount();
 
     withPr("merged", "merged");
     expect((await screen.findByRole("link", { name: "#412" })).className).toContain(
-      "text-[color:var(--bb-sidebar-pr-merged)]",
+      "text-[color:var(--alia-sidebar-pr-merged)]",
     );
   });
 });

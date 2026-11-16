@@ -9,7 +9,7 @@
 // accountability, not proof the reported checks are true.
 
 import { useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { Language, TeamTask } from "./snapshot";
 

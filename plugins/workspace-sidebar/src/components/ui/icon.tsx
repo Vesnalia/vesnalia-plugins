@@ -50,7 +50,7 @@ import {
   WorkflowCircle03Icon,
 } from "@hugeicons/core-free-icons";
 
-// BB's icon names, drawn with the same Hugeicons glyphs BB uses for them, so
+// VesnALIA's icon names, drawn with the same Hugeicons glyphs VesnALIA uses for them, so
 // the sidebar matches the rest of the window.
 const ICONS = {
   AlertCircle: AlertCircleIcon,

@@ -42,8 +42,8 @@ const launch = () => {
     // …and Kilo's store must not be readable either: counts in these tests
     // come from the adapter's own publish paths, never from a real database.
     XDG_DATA_HOME: path.join(directory, "xdg"),
-    BB_KILO_STATE_DIR: stateDir(),
-    BB_THREAD_ID: "thr_proxy_test",
+    ALIA_KILO_STATE_DIR: stateDir(),
+    ALIA_THREAD_ID: "thr_proxy_test",
   });
   return driver;
 };
@@ -139,13 +139,13 @@ describe("ACP proxy", () => {
       await acp.request("initialize", { protocolVersion: 1, clientCapabilities: {} });
       const session = await acp.request("session/new", { cwd: directory, mcpServers: [] });
 
-      // Written under the session id and the bb thread id, and observable the
+      // Written under the session id and the VesnALIA thread id, and observable the
       // moment the response reaches the bridge — the turn boundary that
       // follows this turn already has a checkpoint to stamp.
       expect(record(session.sessionId)).toMatchObject({
         kind: "live",
         sessionId: session.sessionId,
-        bbThreadId: "thr_proxy_test",
+        aliaThreadId: "thr_proxy_test",
         cwd: directory,
         userCount: 0,
         seeded: true,
@@ -191,7 +191,7 @@ describe("ACP proxy", () => {
       writeRecord("ses_loaded_hinted", {
         kind: "live",
         sessionId: "ses_loaded_hinted",
-        bbThreadId: null,
+        aliaThreadId: null,
         cwd: directory,
         userCount: 3,
         seeded: true,
@@ -219,7 +219,7 @@ describe("ACP proxy", () => {
       writeRecord("ses_live_source", {
         kind: "live",
         sessionId: "ses_live_source",
-        bbThreadId: null,
+        aliaThreadId: null,
         cwd: directory,
         userCount: 4,
         seeded: true,
@@ -239,7 +239,7 @@ describe("ACP proxy", () => {
         kind: "live",
         userCount: 4,
         seeded: true,
-        bbThreadId: "thr_proxy_test",
+        aliaThreadId: "thr_proxy_test",
       });
       // Only the target was rewritten: this was a plain tip fork, not a staged
       // rewind, so the source record survives untouched.
@@ -256,7 +256,7 @@ describe("ACP proxy", () => {
       const workspace = path.join(directory, "workspace");
       fs.mkdirSync(workspace, { recursive: true });
 
-      // What host.ts leaves behind when bb rewinds to "<sessionId>#1".
+      // What host.ts leaves behind when VesnALIA rewinds to "<sessionId>#1".
       const stagedId = "kilo-staged-fixture";
       fs.mkdirSync(stateDir(), { recursive: true });
       fs.writeFileSync(
@@ -290,7 +290,7 @@ describe("ACP proxy", () => {
         sessionId: fork.sessionId,
         userCount: 1,
         seeded: true,
-        bbThreadId: "thr_proxy_test",
+        aliaThreadId: "thr_proxy_test",
         cwd: workspace,
       });
       expect(record("thr_proxy_test")).toMatchObject({ sessionId: fork.sessionId, userCount: 1 });
@@ -374,7 +374,7 @@ describe("ACP proxy", () => {
       ).rejects.toThrow(/could not rebuild the session/u);
 
       // A failed clone consumes nothing: the record survives for a retry (and
-      // for thread/discard to clean up if bb abandons the edit).
+      // for thread/discard to clean up if VesnALIA abandons the edit).
       expect(record("kilo-staged-broken")).toMatchObject({ kind: "staged" });
       await acp.shutdown();
     }, 20_000);

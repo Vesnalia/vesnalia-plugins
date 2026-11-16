@@ -72,7 +72,7 @@ The Markdown body is preserved verbatim in **Voice and temperament**, including
 blank lines and indentation. JSON imports preserve the inline `prompt` string.
 Both use `name` and `description` like TOML; Markdown names derived from
 `reviewer.agent.md` become `reviewer`. Optional `model`, `effort` and
-`reasoningEffort` values are advisory preferences without a guessed BB provider.
+`reasoningEffort` values are advisory preferences without a guessed VesnALIA provider.
 `model: inherit` leaves the current model unchanged. Review harness-specific
 model names and reasoning levels in the editor.
 

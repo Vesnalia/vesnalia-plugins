@@ -10,8 +10,8 @@ updates:
       dev-dependencies:
         dependency-type: development
     ignore:
-      # Pinned to the BB release the plugin targets; bump with `bb plugin types`.
-      - dependency-name: "@get-bb/plugin-sdk"
+      # Pinned to the ALIA release the plugin targets; bump with `alia plugin types`.
+      - dependency-name: "@vesnalia/plugin-sdk"
       # The committed Monaco bundle is rebuilt deliberately, not by a bot.
       - dependency-name: monaco-editor
   - package-ecosystem: github-actions

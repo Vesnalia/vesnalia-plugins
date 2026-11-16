@@ -1,6 +1,6 @@
 # Manual test checklist
 
-Run after `bb plugin build` and `bb plugin install .`, in bb Desktop on macOS. Use a message box in a thread or the new-thread composer.
+Run after `alia plugin build` and `alia plugin install .`, in VesnALIA Desktop on macOS. Use a message box in a thread or the new-thread composer.
 
 | # | Step | Expected |
 |---|------|----------|
@@ -16,4 +16,4 @@ Run after `bb plugin build` and `bb plugin install .`, in bb Desktop on macOS. U
 | 10 | Focus a terminal or browser tab, press ⇧⌘V | The plugin does nothing |
 | 11 | Rebind the command in Settings → Keyboard, press the new shortcut | It works; the old one no longer does |
 
-Record the bb version and the result of each row before a release.
+Record the VesnALIA version and the result of each row before a release.

@@ -1,12 +1,12 @@
-# bb-plugin-thread-namer
+# alia-plugin-thread-namer
 
-Names [bb](https://getbb.app) threads with an agent, so the sidebar reads like a
+Names [VesnALIA](https://getbb.app) threads with an agent, so the sidebar reads like a
 list of what you were doing instead of a list of first lines.
 
 - **Automatic.** When a thread's first turn finishes, the plugin reads the
   opening of the conversation and writes a short title onto the thread.
 - **On demand.** A button in the thread header re-generates the name of the
-  thread you are looking at. `bb thread-namer rename` does the same from a
+  thread you are looking at. `alia thread-namer rename` does the same from a
   terminal or from an agent.
 - **Your model.** By default the naming turn runs on the same model and harness
   as the thread it is naming. Pick one model for every thread instead in
@@ -18,16 +18,16 @@ A title you typed yourself is never overwritten by automatic naming.
 ## Install
 
 ```sh
-bb plugin install https://github.com/suiramdev/bb-plugin-thread-namer
+alia plugin install https://github.com/suiramdev/bb-plugin-thread-namer
 ```
 
 Or from a checkout:
 
 ```sh
 git clone https://github.com/suiramdev/bb-plugin-thread-namer
-cd bb-plugin-thread-namer
+cd alia-plugin-thread-namer
 npm install
-bb plugin install .
+alia plugin install .
 ```
 
 ## Settings
@@ -40,7 +40,7 @@ bb plugin install .
 | Timeout | 1 minute | How long to wait for the naming agent before giving up. |
 | Naming agent | The thread's own agent | Which agent writes names — the default reuses the thread's own model, reasoning level and harness. |
 
-Settings are edited in the app, or with `bb plugin config thread-namer set …`.
+Settings are edited in the app, or with `alia plugin config thread-namer set …`.
 
 ## Which threads get named
 
@@ -51,15 +51,15 @@ Automatic naming skips:
 - child threads — subagent and background threads are named by their parent,
 - archived and deleted threads.
 
-The header button and `bb thread-namer rename` ignore the "Automatic naming"
+The header button and `alia thread-namer rename` ignore the "Automatic naming"
 setting and re-name a thread you already named by hand, but they still refuse
 hidden and child threads.
 
 ## CLI
 
 ```sh
-bb thread-namer rename [<threadId>]   # defaults to the calling thread
-bb thread-namer status                # how naming is configured
+alia thread-namer rename [<threadId>]   # defaults to the calling thread
+alia thread-namer status                # how naming is configured
 ```
 
 ## How a name is made
@@ -82,7 +82,7 @@ never written.
 
 ## Where the re-generate control lives
 
-In the **thread header**, not in the sidebar row's context menu. bb's sidebar
+In the **thread header**, not in the sidebar row's context menu. VesnALIA's sidebar
 menu is host-rendered and has no contribution point for plugins: the only way
 to add a row to it is to replace the whole sidebar thread list
 (`experimental_threadList`), which is an exclusive slot — it would conflict with
@@ -96,13 +96,13 @@ intent without taking that over.
 npm install
 npm run typecheck
 npm test
-bb plugin dev          # rebuild + reload on every save
+alia plugin dev          # rebuild + reload on every save
 ```
 
 Tests need **Node 22** (`.nvmrc`): the plugin test harness loads
 `better-sqlite3`, which has no prebuilt binary for newer Node releases. The
-plugin itself runs inside the bb server and does not depend on it — a
-`bb plugin install` from git omits dev dependencies entirely.
+plugin itself runs inside the VesnALIA server and does not depend on it — a
+`alia plugin install` from git omits dev dependencies entirely.
 
 | File | What it holds |
 | --- | --- |

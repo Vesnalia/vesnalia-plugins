@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -164,7 +164,7 @@ function CopyLink({ url }: { url: string }) {
 }
 
 function ThreadLine({ page, now }: { page: BoxPageState; now: number }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   if (page.owner === "yours") return null;
   const thread = page.thread;
   if (!thread || !page.threadId) return null;
@@ -283,7 +283,7 @@ function Header({ page, box, route, now, titles, actions, menu }: { page: BoxPag
               <StatusDot tone={head.tone} className="motion-reduce:[&_*]:animate-none" />
               <span className={cn("text-foreground", head.tone === "bad" && "text-destructive-text", head.tone === "warn" && "text-warning-text")}>{head.words}</span>
               {head.detail.map((detail) => (
-                <span key={detail} className={cn("text-muted-foreground", detail === "Could not join BB" && "text-warning-text")}>
+                <span key={detail} className={cn("text-muted-foreground", detail === "Could not join VesnALIA" && "text-warning-text")}>
                   · {detail}
                 </span>
               ))}
@@ -408,7 +408,7 @@ function Notices({ page, box, now, actions, announce }: { page: BoxPageState; bo
         actions={
           <>
             <Button asChild variant="outline" size="sm" className="h-7">
-              <UrlLink href={SETTINGS_PATH} onClick={leaveModifiedClick}>Open BB Box settings</UrlLink>
+              <UrlLink href={SETTINGS_PATH} onClick={leaveModifiedClick}>Open VesnALIA Box settings</UrlLink>
             </Button>
             <SmallButton words="Forget…" danger onClick={() => actions.ask("forget")} />
           </>
@@ -459,18 +459,18 @@ function Notices({ page, box, now, actions, announce }: { page: BoxPageState; bo
     );
   }
   if (box.state === "ready" && box.enrol.state === "failed") {
-    note("join", "It could not join BB", box.enrol.error ?? "");
+    note("join", "It could not join VesnALIA", box.enrol.error ?? "");
     notices.push(
-      <PageNotice key="join" tone="warn" title="It could not join BB" actions={<SmallButton words="Join BB again" disabled={actions.busy !== null} onClick={() => actions.act("enrol")} />}>
+      <PageNotice key="join" tone="warn" title="It could not join VesnALIA" actions={<SmallButton words="Join VesnALIA again" disabled={actions.busy !== null} onClick={() => actions.act("enrol")} />}>
         <JoinHelp words={box.enrol.error} advice={joinAdvice(box)} />
       </PageNotice>,
     );
   }
   const waiting = box.state === "ready" && box.enrol.state === "enrolling" && box.joinTries && box.joinTries.failed > 0 ? joiningSecond(box.joinTries, now) : null;
   if (waiting) {
-    note("joining", "It has not joined BB yet", `Try ${box.joinTries!.failed} failed: ${box.joinTries!.words}`);
+    note("joining", "It has not joined VesnALIA yet", `Try ${box.joinTries!.failed} failed: ${box.joinTries!.words}`);
     notices.push(
-      <PageNotice key="joining" tone="warn" title="It has not joined BB yet" actions={<SmallButton words="Join BB again" disabled={actions.busy !== null} onClick={() => actions.act("enrol")} />}>
+      <PageNotice key="joining" tone="warn" title="It has not joined VesnALIA yet" actions={<SmallButton words="Join VesnALIA again" disabled={actions.busy !== null} onClick={() => actions.act("enrol")} />}>
         {waiting}
       </PageNotice>,
     );
@@ -618,7 +618,7 @@ function Facts({ box, mates, now }: { box: BoxView; mates: BoxPageState["gpuMate
         </Fact>
         <Fact label="Address">{box.address ? <CopyValue value={box.address} label="Address" /> : <span className="text-muted-foreground">{box.state === "stopped" ? "None while stopped" : "Not yet"}</span>}</Fact>
         <Fact label="System">{systemWords(box)}</Fact>
-        <Fact label="BB machine" second={enrol.second}>
+        <Fact label="VesnALIA machine" second={enrol.second}>
           {enrol.first}
         </Fact>
         <Fact
@@ -653,7 +653,7 @@ function ThreadsCard({ page, box, onNewThread }: { page: BoxPageState; box: BoxV
   const others = page.threads.filter((thread) => thread.id !== page.thread?.id);
   const unreachable = silentWhy(box);
   const online = box.enrol.state === "enrolled" && box.state === "ready" && !unreachable;
-  const none = online ? "None now. A thread can run on its BB machine." : box.enrol.state === "enrolled" ? "None. Its BB machine is offline now." : "None. It is not a BB machine, so no thread can run on it.";
+  const none = online ? "None now. A thread can run on its VesnALIA machine." : box.enrol.state === "enrolled" ? "None. Its VesnALIA machine is offline now." : "None. It is not a VesnALIA machine, so no thread can run on it.";
   return (
     <section aria-labelledby="threads-heading" className="rounded-lg border border-border bg-card px-4 py-3">
       <h2 id="threads-heading" className="text-sm font-normal text-foreground">
@@ -680,7 +680,7 @@ function HowItStarted({ box, now, titles }: { box: BoxView; now: number; titles:
   const restartSteps = startSteps(box.timings).filter(([step]) => step !== "start.total");
   const by = restart ? actorWords(restart.by, titles) : null;
   const quicker = steps.length - longest.size;
-  const summary = [quicker > 0 ? `And ${quicker} quicker ${quicker === 1 ? "step" : "steps"}.` : null, afterwards !== null ? `Once it was ready, ${PRODUCT} named it for its thread in ${stepTime(afterwards)}.` : null, joined !== null ? `It joined BB ${stepTime(joined)} later.` : null, `Made ${whenInSentence(box.createdAt, now)}.`].filter(Boolean).join(" ");
+  const summary = [quicker > 0 ? `And ${quicker} quicker ${quicker === 1 ? "step" : "steps"}.` : null, afterwards !== null ? `Once it was ready, ${PRODUCT} named it for its thread in ${stepTime(afterwards)}.` : null, joined !== null ? `It joined VesnALIA ${stepTime(joined)} later.` : null, `Made ${whenInSentence(box.createdAt, now)}.`].filter(Boolean).join(" ");
   return (
     <section aria-labelledby="started-heading" className="rounded-lg border border-border bg-card px-4 py-3">
       <div className="flex items-baseline justify-between gap-2">

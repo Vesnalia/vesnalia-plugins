@@ -21,7 +21,7 @@ describe("zoom path (BBP-83)", () => {
   });
 
   it("the breadcrumb lists every level down to the current one, with the project's name", () => {
-    expect(breadcrumb(agent, (id) => (id === "p1" ? "bb-plugins" : id)).map((step) => step.label)).toEqual(["All", "bb-plugins", "factory-4", "dev-impl"]);
+    expect(breadcrumb(agent, (id) => (id === "p1" ? "alia-plugins" : id)).map((step) => step.label)).toEqual(["All", "alia-plugins", "factory-4", "dev-impl"]);
     expect(breadcrumb(agent, () => "x").map((step) => step.path)).toEqual([all, project, crew, agent]);
   });
 

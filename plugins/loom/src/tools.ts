@@ -1,7 +1,7 @@
-// Agent tools, gated by role twice: bb.agents.configure selects them from the
+// Agent tools, gated by role twice: alia.agents.configure selects them from the
 // plugin's own threads table, and every call re-checks the role there too.
 // Thread metadata never grants a role: any client can write it.
-import type { BbPluginApi, PluginAgentToolResult } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, PluginAgentToolResult } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ASK_ACTIONS, recordAsk } from "./asks";
 import { requestMerge } from "./auto-merge";
@@ -99,18 +99,18 @@ function proposeReport(result: ProposeResult, review: SpecReviewStatus | null): 
   if (result.warnings.length > 0) lines.push("Warnings:", ...result.warnings.map((warning) => `- ${warning}`));
   if (result.pending) {
     lines.push(...reviewLines(version, review));
-    if (!specReviewBlocks(review)) lines.push(`Needs you (human): read it with \`bb loom spec ${slug} --version ${version}\`, then apply it with \`bb loom approve ${slug} --version ${version}\`. Record what else the human should do after approving, such as requeue tickets, with loom_ask_human.`);
+    if (!specReviewBlocks(review)) lines.push(`Needs you (human): read it with \`alia loom spec ${slug} --version ${version}\`, then apply it with \`alia loom approve ${slug} --version ${version}\`. Record what else the human should do after approving, such as requeue tickets, with loom_ask_human.`);
   } else if (result.state === "draft") {
     lines.push(...reviewLines(version, review));
-    if (!specReviewBlocks(review)) lines.push(`Needs you (human): read the spec with \`bb loom spec ${slug}\`, approve it with \`bb loom approve ${slug}\`, then start the project with \`bb loom start ${slug}\`. You never approve, start or pause a project.`);
+    if (!specReviewBlocks(review)) lines.push(`Needs you (human): read the spec with \`alia loom spec ${slug}\`, approve it with \`alia loom approve ${slug}\`, then start the project with \`alia loom start ${slug}\`. You never approve, start or pause a project.`);
   }
   return lines.join("\n");
 }
 
-export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engine): void {
+export function registerTools(alia: AliaPluginApi, projects: Projects, engine: Engine): void {
   const { store } = projects;
   const ctx = engine.ctx;
-  const log = (what: string, error: unknown) => ctx.bb.log("warn", `${what}: ${errText(error)}`);
+  const log = (what: string, error: unknown) => ctx.alia.log("warn", `${what}: ${errText(error)}`);
 
   // The live worker of a ticket in working, by the plugin's own table.
   const worker = (threadId: string): { row: ThreadRow; ticket: TicketRow } => {
@@ -133,24 +133,24 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     return { row, projectId: row.project_id, ticket };
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_propose",
     description:
-      "Submit a Loom project spec (TOML) for validation. Creates the project as a draft, or revises its draft, and binds this thread as the project's planner. An invalid spec is refused with numbered errors and nothing is saved. The human approves and starts the project with `bb loom approve <slug>` and `bb loom start <slug>`.",
+      "Submit a Loom project spec (TOML) for validation. Creates the project as a draft, or revises its draft, and binds this thread as the project's planner. An invalid spec is refused with numbered errors and nothing is saved. The human approves and starts the project with `alia loom approve <slug>` and `alia loom start <slug>`.",
     presentation: { label: { pending: "Proposing Loom project", completed: "Proposed Loom project" } },
     parameters: z.object({ spec_toml: z.string().min(50).max(262_144).describe("The full project spec in TOML; see the loom-plan skill.") }),
     execute: ({ spec_toml }, tool) =>
       run(async () => {
         const hostId = await projects.hostOf(tool.threadId);
-        const result = await projects.propose({ toml: spec_toml, threadId: tool.threadId, bbProjectId: tool.projectId, hostId });
+        const result = await projects.propose({ toml: spec_toml, threadId: tool.threadId, aliaProjectId: tool.projectId, hostId });
         return proposeReport(result, result.state === "draft" || result.pending ? await ensureSpecReview(ctx, result.slug) : null);
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_discover",
     description:
-      "Before proposing a Loom spec: the human's standing planner instructions from Loom's settings, if any, and for each repo its git remotes, whether gh can open pull requests there, the environment providers bb offers for it on this machine (with their inputs schemas), and whether Loom can add its own integration worktree. Every choice comes back as found or ask; ask the human about each ask item before you propose, and carry out the standing instructions in the spec.",
+      "Before proposing a Loom spec: the human's standing planner instructions from Loom's settings, if any, and for each repo its git remotes, whether gh can open pull requests there, the environment providers VesnALIA offers for it on this machine (with their inputs schemas), and whether Loom can add its own integration worktree. Every choice comes back as found or ask; ask the human about each ask item before you propose, and carry out the standing instructions in the spec.",
     presentation: { label: { pending: "Discovering how the repos are reached", completed: "Discovered how the repos are reached" } },
     parameters: z.object({
       projects: z
@@ -158,16 +158,16 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
         .min(1)
         .max(10)
         .optional()
-        .describe("bb project ids of the repos, in the order of their [[repo]] tables; leave out for this thread's own project"),
+        .describe("alia project ids of the repos, in the order of their [[repo]] tables; leave out for this thread's own project"),
     }),
     execute: ({ projects: ids }, tool) =>
       run(async () => {
         const hostId = await projects.hostOf(tool.threadId);
-        if (hostId === null) throw new LoomError("loom_unavailable", "bb did not say which machine this thread runs on, so Loom cannot look at its checkouts. Call loom_discover again in a moment.");
-        let targets: RepoTarget[] = [{ label: "this thread's repository", index: null, bbProjectId: tool.projectId, settings: null }];
+        if (hostId === null) throw new LoomError("loom_unavailable", "alia did not say which machine this thread runs on, so Loom cannot look at its checkouts. Call loom_discover again in a moment.");
+        let targets: RepoTarget[] = [{ label: "this thread's repository", index: null, aliaProjectId: tool.projectId, settings: null }];
         if (ids !== undefined) {
-          const names = new Map((await ctx.bb.listProjects()).map((project) => [project.id, project.name]));
-          targets = ids.map((id, index) => ({ label: `the repo of bb project ${names.get(id) ?? id}`, index, bbProjectId: id, settings: null }));
+          const names = new Map((await ctx.alia.listProjects()).map((project) => [project.id, project.name]));
+          targets = ids.map((id, index) => ({ label: `the repo of VesnALIA project ${names.get(id) ?? id}`, index, aliaProjectId: id, settings: null }));
         }
         const standing = standingInstructionsLines(projects.plannerInstructions());
         // First, so a long report that is clipped never loses them.
@@ -177,7 +177,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
 
   // ---- the planner's board tools
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_board",
     description: "The project's board: every ticket with its state, priority, repo on a project with [[repo]] tables, dependencies and how long it has been in that state. Optionally only the tickets in one state.",
     presentation: { label: { pending: "Reading the Loom board", completed: "Read the Loom board" } },
@@ -185,7 +185,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: ({ state }, tool) => run(() => boardText(ctx, planner(tool.threadId).projectId, state === undefined ? undefined : [state])),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_ticket",
     description: "One ticket and its whole reply thread, indented by reply depth: the brief, claims, notes, check results, reviews, block reasons and replies.",
     presentation: { label: { pending: "Reading a Loom ticket", completed: "Read a Loom ticket" } },
@@ -197,7 +197,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_requeue",
     description:
       "Send a blocked ticket back to the queue. Post your answer first (loom_post) or pass it as the note: the next worker starts from the previous branch and reads the whole thread. With review: true the ticket goes back as it is, with no new worker: to review for the commit whose checks passed last, or to its open pull request when its branch has nothing the pull request lacks. Use it when the work is right and only needs to be reviewed again or followed again, such as after a reviewer outage or a status no fix can clear; it is refused when the branch changed since.",
@@ -217,7 +217,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_confirm_merge",
     description:
       "Ask the human to confirm the merge of a ticket's pull request on a repo whose auto_merge.mode is manual, at the exact commit Loom pushed last (sha, the full commit hash Loom's \"ready to merge\" post names). This merges nothing: it puts the request, with your note, on the Planner page, the ticket and its board card, and Loom merges only once the human clicks Confirm there or confirms with the CLI. Use it when the human asked you to get a ticket merged, or a ready pull request waits on their confirmation. A new push needs a new request.",
@@ -234,7 +234,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_add_tickets",
     description:
       "Add tickets to the board, for example to split a blocked ticket or add a missing dependency. Same fields as the spec's [[ticket]] tables. On a project whose spec has [[repo]] tables, every ticket sets repo to one of those repo names, and its scope and verify are checked against that repo's protected paths and checks; on a single-repo project, leave repo out. depends_on may name refs in this batch or tickets already on the board (key or ref); the cycle check covers the batch. merge_after works the same way: the tickets whose pull requests merge before this one's, without holding its start or stacking it. rollout (pull request strategy only) places the ticket in the deploy order: its stage, requires_live (refs in this batch, tickets on the board, or the spec's milestone refs), release, dark, how, verify and rollback; it is advice for the human and holds nothing back. Nothing is added when any ticket is refused.",
@@ -248,7 +248,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_edit_ticket",
     description:
       "Change a queued or blocked ticket. Only the fields in the patch change: title, body, acceptance, verify, scope, depends_on, merge_after, priority, repo, rollout. A patch of merge_after alone changes any ticket that has not finished, for example one whose pull request is open, since the merge order holds nothing a worker does. A patch of rollout alone, or with merge_after, does too, and rollout alone also changes a done ticket, whose deploy can come after its merge; it replaces the whole rollout, requires_live by key, ref or milestone ref, and rollout = {} removes it. repo moves the ticket to another of the spec's [[repo]] tables, and only while it has no branch, because a branch lives in one repository; otherwise cancel the ticket and add a new one in the other repo. A ticket a worker holds cannot be edited; cancel it or reply on it.",
@@ -262,7 +262,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_cancel_ticket",
     description: "Cancel a ticket that should not be done. A live worker or reviewer is stopped. A ticket whose merge is running cannot be cancelled until that run ends; one whose merge waits to run again can.",
     presentation: { label: { pending: "Cancelling a Loom ticket", completed: "Cancelled a Loom ticket" } },
@@ -275,7 +275,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_post",
     description: "Post on a ticket's thread, for example your answer to a blocked ticket before you requeue it. On a ticket whose pull request is open, the post starts a fix round that its worker gets, as a human reply does: use it to ask for a change such as merging the base branch in. reply_to answers one post by its #id.",
     presentation: { label: { pending: "Posting on a Loom ticket", completed: "Posted on a Loom ticket" } },
@@ -292,7 +292,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_ask_human",
     description:
       "Tell the human what you need them to do, as steps the Loom page shows under Needs you with a button for each: approve a spec version, requeue or reply on a ticket, start, resume or land the project, live to mark a ticket or milestone live (with its key), or other for anything else. Loom checks a step off once it sees the human take it, such as a live mark for that key; the human marks an other step, or any step they will not take, done themselves. Each call replaces your earlier asks; call it with no steps once nothing is needed. Say the same in your reply too: the human may read the chat instead.",
@@ -321,7 +321,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     return { row, ticket };
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_note",
     description: "Record a milestone on your ticket's thread, so the human and the reviewer can follow your work; a reviewer records what it checked. reply_to answers one post by its #id.",
     presentation: { label: { pending: "Noting progress", completed: "Noted progress" } },
@@ -341,7 +341,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_submit",
     description:
       "Hand your work in when every acceptance criterion holds, then end your turn. The plugin commits your worktree, checks the changed files against your scope and the protected paths, and runs the ticket's and the project's checks. You get the result as a message: a failure to fix, or a note that the ticket waits for review. On a project that opens a pull request per ticket, pr is the pull request's title and description as they should read: the reviewers judge them with the work, and once they approve, Loom opens the pull request with them, or sets them on the one that is open. A pr replaces only the fields it gives; leave it out to keep the earlier proposal. A fix round that changes only pr still goes to review, and Loom pushes nothing for it.",
@@ -360,7 +360,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: ({ summary, pr }, tool) => run(() => submit(ctx, tool.threadId, summary, pr)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_block",
     description:
       "Say that you cannot continue without something from the human or the planner: what is wrong and exactly what you need. The plugin saves your work on the ticket's branch and blocks the ticket. End your turn after calling it.",
@@ -375,7 +375,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       }),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_pr",
     description:
       "Hand in the pull request Loom asked you for once your ticket is approved: the message of the one commit Loom pushes, and the title and description you did not propose with loom_submit. In a fix round, hand in the commit_message of the fix commit. Write them as you normally write a pull request and commit message. A title or body you give wins over the proposed one, and in a fix round Loom sets it on the pull request. Then end your turn: Loom pushes and opens or updates the pull request.",
@@ -388,7 +388,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: (input, tool) => run(() => handInPrText(ctx, tool.threadId, input)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_pr_reply",
     description: `In a fix round on your ticket's open pull request, answer one item of the feedback Loom sent you: a review, a review thread or a comment, named by its key as the fix round's message lists it. Loom posts the reply through the forge from the project's machine, ends it with the comment signature, and with resolve: true resolves a review thread. It answers with what happened, or the forge's error. At most ${REPLIES_PER_ROUND} replies per fix round; your replies never count as new feedback.`,
     presentation: { label: { pending: "Replying on the pull request", completed: "Replied on the pull request" } },
@@ -400,7 +400,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: ({ item, text, resolve }, tool) => run(() => replyToItem(ctx, tool.threadId, { item, text, ...(resolve === undefined ? {} : { resolve }) })),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_resume",
     description:
       "Your first step when your brief says so: Loom puts the work its earlier workers left on this ticket in your worktree, as one commit on the base, carried from the project's machine. Then continue from it. loom_submit is refused until you have.",
@@ -411,7 +411,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
 
   // ---- the reviewer's tools
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_checkout",
     description:
       "Your first step: Loom puts the exact work the ticket was submitted with, the work that merges, in your worktree, checked out on this machine or carried to it. The verdict tools are refused until your worktree has it.",
@@ -420,7 +420,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: (_input, tool) => run(() => checkOutReview(ctx, tool.threadId)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_approve",
     description:
       "Approve the ticket you review: every acceptance criterion holds and no blocking finding remains. Give one verdict per round, then end your turn. Refused until loom_checkout put the reviewed work in your worktree.",
@@ -429,7 +429,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: ({ summary }, tool) => run(() => approve(ctx, tool.threadId, summary)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_request_changes",
     description:
       "Send the ticket back to its worker with findings: each has a severity (blocking or should-fix), a title, a detail, and where you can, a file and a line. Give one verdict per round, then end your turn. Refused until loom_checkout put the reviewed work in your worktree.",
@@ -440,7 +440,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
 
   // ---- the spec reviewer's tools
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_spec_approve",
     description: "Approve the draft spec you review: it builds what the human asked for, and no more. Give one verdict per review, then end your turn.",
     presentation: { label: { pending: "Approving the spec", completed: "Approved the spec" } },
@@ -448,7 +448,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: ({ summary }, tool) => run(() => specVerdict(ctx, tool.threadId, [], summary)),
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_spec_request_changes",
     description:
       "Send the draft spec back to its planner with findings: each has a title, a detail and, where you can, the spec path it is about. Every finding stops the handover. Give one verdict per review, then end your turn.",
@@ -459,7 +459,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
 
   // ---- the final reviewer's tool
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "loom_final_review",
     description:
       "Give Loom's final review before the merge: verdict pass, or fail with a reason and fixable (true when the ticket's worker can fix it on the branch, false when it needs a person). Judge only what changed since the approval, whether the pull request's text is still true, and anything alarming. One call, then end your turn.",
@@ -472,7 +472,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
     execute: (input, tool) => run(() => finalVerdict(ctx, tool.threadId, input)),
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     if (context.origin.kind === "fork" && context.origin.pluginId === "side-chat") return { tools: [], skills: [] };
     let row;
     let review = null;
@@ -480,7 +480,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
       row = projects.roleOf(context.thread.id, context.pluginMetadata);
       if (row === null) review = specReviewerOf(store, context.thread.id, context.pluginMetadata);
     } catch (error) {
-      bb.log.warn(`agent configuration: ${errText(error)}`);
+      alia.log.warn(`agent configuration: ${errText(error)}`);
       return { tools: [], skills: [] };
     }
     if (row === null && review === null && context.pluginMetadata.role === "final-review") {
@@ -507,7 +507,7 @@ export function registerTools(bb: BbPluginApi, projects: Projects, engine: Engin
         // A worker that started on a machine of its own keeps loom_resume after a spec version moves new workers elsewhere.
         remote = row.resume_json !== null || (ticket !== null && project?.approved_version != null && usesNewMachine(ticketRepo(specOf(store, project), ticket), "worker"));
       } catch (error) {
-        bb.log.warn(`agent configuration of ${context.thread.id}: ${errText(error)}`);
+        alia.log.warn(`agent configuration of ${context.thread.id}: ${errText(error)}`);
       }
       return { tools: [...(remote ? MACHINE_WORKER_TOOLS : WORKER_TOOLS)], skills: [SKILLS.usage], instructions: `You are a Loom worker on ${ticket?.key ?? "a ticket"}; follow the brief in your first message.` };
     }

@@ -1,4 +1,4 @@
-// Connections the panel keeps across tab switches (037). BB remounts a panel
+// Connections the panel keeps across tab switches (037). VesnALIA remounts a panel
 // tab when a person switches tabs, and the SDK has no way to keep a tab
 // mounted, so the desktop's noVNC client and canvas and the terminal's xterm
 // and socket live here, in the app bundle, keyed by box and viewer or
@@ -41,7 +41,7 @@ function drop(key: string): void {
   try {
     entry.kept.dispose();
   } catch (error) {
-    console.error(`bb-box: a kept session (${key}) failed as it closed.`, error);
+    console.error(`alia-box: a kept session (${key}) failed as it closed.`, error);
   }
 }
 
@@ -68,7 +68,7 @@ export function claimKept<K extends Kept>(key: string, make: () => K, resume?: (
       resume?.(entry.kept as K);
       return { session: entry.kept as K, kept: true };
     } catch (error) {
-      console.error(`bb-box: a kept session (${key}) failed as it showed again, so a fresh one starts.`, error);
+      console.error(`alia-box: a kept session (${key}) failed as it showed again, so a fresh one starts.`, error);
       drop(key);
     }
   } else if (entry) {
@@ -95,7 +95,7 @@ export function releaseKept(key: string, options: { handBack?: () => Promise<voi
   try {
     entry.kept.hidden = true;
   } catch (error) {
-    console.error(`bb-box: a kept session (${key}) failed as it was hidden, so it closes.`, error);
+    console.error(`alia-box: a kept session (${key}) failed as it was hidden, so it closes.`, error);
     drop(key);
     return;
   }

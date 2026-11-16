@@ -1,4 +1,4 @@
-// bb-plugin-my-jira — backend entry.
+// alia-plugin-my-jira — backend entry.
 //
 // Sign-in goes through Atlassian's v2 MCP server, whose OAuth server supports
 // dynamic client registration + PKCE: the plugin registers itself on first
@@ -12,8 +12,8 @@ import { createHash, randomBytes } from "node:crypto";
 import {
   defineRpcContract,
   experimental_PluginRpcRefusal,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   MCP_RESOURCE_METADATA,
@@ -155,8 +155,8 @@ async function getJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     refreshToken: {
       type: "string",
       label: "Jira refresh token",
@@ -178,15 +178,15 @@ export default async function plugin(bb: BbPluginApi) {
   let graphAt = Date.now();
 
   function callbackUrl(): string {
-    const url = new URL(`/api/v1/plugins/${bb.pluginId}/http/oauth/callback`, bb.server.loopbackBaseUrl);
+    const url = new URL(`/api/v1/plugins/${alia.pluginId}/http/oauth/callback`, alia.server.loopbackBaseUrl);
     url.hostname = "localhost"; // OAuth servers accept plain http callbacks only for localhost
     return url.toString();
   }
 
-  /** Discover the OAuth server, register once (RFC 7591), reuse; register again only if bb's callback URL changed. */
+  /** Discover the OAuth server, register once (RFC 7591), reuse; register again only if VesnALIA's callback URL changed. */
   async function registeredClient(): Promise<OAuthClient> {
     const redirectUri = callbackUrl();
-    const saved = await bb.storage.kv.get<OAuthClient>(CLIENT_KEY);
+    const saved = await alia.storage.kv.get<OAuthClient>(CLIENT_KEY);
     if (saved?.redirectUri === redirectUri) return saved;
     const resource = await getJson<{ authorization_servers?: string[] }>(MCP_RESOURCE_METADATA);
     const issuer = resource.authorization_servers?.[0];
@@ -198,7 +198,7 @@ export default async function plugin(bb: BbPluginApi) {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({
-        client_name: "BB Jira Board",
+        client_name: "VesnALIA Jira Board",
         redirect_uris: [redirectUri],
         grant_types: ["authorization_code", "refresh_token"],
         response_types: ["code"],
@@ -208,7 +208,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
     const body = (await res.json().catch(() => ({}))) as { client_id?: string; error_description?: string };
     if (!res.ok || !body.client_id) {
-      throw new Error(`Atlassian refused to register BB (${res.status}) ${body.error_description ?? ""}`.trim());
+      throw new Error(`Atlassian refused to register VesnALIA (${res.status}) ${body.error_description ?? ""}`.trim());
     }
     const client = {
       clientId: body.client_id,
@@ -216,7 +216,7 @@ export default async function plugin(bb: BbPluginApi) {
       authorizationEndpoint: meta.authorization_endpoint,
       tokenEndpoint: meta.token_endpoint,
     };
-    await bb.storage.kv.set(CLIENT_KEY, client);
+    await alia.storage.kv.set(CLIENT_KEY, client);
     return client;
   }
 
@@ -256,17 +256,17 @@ export default async function plugin(bb: BbPluginApi) {
     session = null;
     forgetSite();
     await settings.experimental_set({ refreshToken: null });
-    await bb.storage.kv.delete(TOKEN_CLIENT_KEY);
-    await bb.storage.kv.delete("site");
-    await bb.storage.kv.delete("sites");
-    bb.realtime.publish(AUTH_CHANGED, null);
+    await alia.storage.kv.delete(TOKEN_CLIENT_KEY);
+    await alia.storage.kv.delete("site");
+    await alia.storage.kv.delete("sites");
+    alia.realtime.publish(AUTH_CHANGED, null);
   }
 
   /** The client the stored refresh token belongs to, or null when there is no usable token. */
   async function tokenClient(): Promise<OAuthClient | null> {
     const { refreshToken } = await settings.get();
-    const client = await bb.storage.kv.get<OAuthClient>(CLIENT_KEY);
-    const issuer = await bb.storage.kv.get<string>(TOKEN_CLIENT_KEY);
+    const client = await alia.storage.kv.get<OAuthClient>(CLIENT_KEY);
+    const issuer = await alia.storage.kv.get<string>(TOKEN_CLIENT_KEY);
     return refreshToken && client && issuer === client.clientId ? client : null;
   }
 
@@ -282,7 +282,7 @@ export default async function plugin(bb: BbPluginApi) {
         const { status, code } = error as { status?: number; code?: string };
         // Only a dead grant (revoked, expired, client gone) logs you out; 429s and network errors keep it.
         if (code === "invalid_grant" || code === "invalid_client" || status === 401 || status === 403) {
-          bb.log.warn(`refresh rejected: ${(error as Error).message}`);
+          alia.log.warn(`refresh rejected: ${(error as Error).message}`);
           await disconnect();
           throw refuse("forbidden", "Your Jira session expired. Click Connect Jira again.");
         }
@@ -338,7 +338,7 @@ export default async function plugin(bb: BbPluginApi) {
         params: {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: {},
-          clientInfo: { name: "bb-plugin-my-jira", version },
+          clientInfo: { name: "alia-plugin-my-jira", version },
         },
       },
       null,
@@ -397,7 +397,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function connectedSite(): Promise<Site> {
-    const site = await bb.storage.kv.get<Site>("site");
+    const site = await alia.storage.kv.get<Site>("site");
     if (!site) throw refuse("forbidden", NOT_CONNECTED);
     return site;
   }
@@ -431,13 +431,13 @@ export default async function plugin(bb: BbPluginApi) {
     return raws.map((raw) => toTicket(raw, site.url, ancestorsOf(g, raw.key)));
   }
 
-  bb.http.route("GET", "/oauth/callback", async (c) => {
+  alia.http.route("GET", "/oauth/callback", async (c) => {
     const { code, state, error, error_description: errorDescription } = c.req.query();
     if (error) return htmlPage("Jira connection cancelled", errorDescription ?? error, 400);
     const flow = state ? pending.get(state) : undefined;
     if (state) pending.delete(state);
     if (!flow || flow.expiresAt < Date.now() || !code) {
-      return htmlPage("This link has expired", "Go back to BB and click Connect Jira again.", 400);
+      return htmlPage("This link has expired", "Go back to VesnALIA and click Connect Jira again.", 400);
     }
     // Once tokens are saved, any failure below must remove them: the page would say "not connected"
     // and offer no Disconnect, leaving a live token you can't see.
@@ -453,43 +453,43 @@ export default async function plugin(bb: BbPluginApi) {
         }),
       );
       saved = true;
-      await bb.storage.kv.set(TOKEN_CLIENT_KEY, client.clientId);
+      await alia.storage.kv.set(TOKEN_CLIENT_KEY, client.clientId);
       const sites = toSites(await op(["getAccessibleAtlassianResources"], {}));
-      const site = pickSite(sites, (await bb.storage.kv.get<Site>("site"))?.cloudId);
+      const site = pickSite(sites, (await alia.storage.kv.get<Site>("site"))?.cloudId);
       if (!site) {
         await disconnect();
         return htmlPage("No Jira site", "Your Atlassian account did not grant access to any Jira site.", 400);
       }
-      await bb.storage.kv.set("sites", sites satisfies Site[]);
-      await bb.storage.kv.set("site", site);
+      await alia.storage.kv.set("sites", sites satisfies Site[]);
+      await alia.storage.kv.set("site", site);
       forgetSite();
-      bb.realtime.publish(AUTH_CHANGED, null);
-      const more = sites.length > 1 ? ` Switch between your ${sites.length} Jira sites from the site menu in BB.` : "";
-      return htmlPage("Connected to Jira", `BB can now see your tickets on ${site.name}.${more} You can close this tab.`, 200);
+      alia.realtime.publish(AUTH_CHANGED, null);
+      const more = sites.length > 1 ? ` Switch between your ${sites.length} Jira sites from the site menu in VesnALIA.` : "";
+      return htmlPage("Connected to Jira", `VesnALIA can now see your tickets on ${site.name}.${more} You can close this tab.`, 200);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      bb.log.error(`oauth callback: ${message}`);
+      alia.log.error(`oauth callback: ${message}`);
       if (saved) await disconnect();
       return htmlPage("Couldn't connect to Jira", message, 502);
     }
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     auth_status: async () => {
-      // A leftover v1 token (or one from before bb's port changed) means "connect again".
+      // A leftover v1 token (or one from before VesnALIA's port changed) means "connect again".
       if (!(await tokenClient())) return { site: null, sites: [] };
-      const site = (await bb.storage.kv.get<Site>("site")) ?? null;
+      const site = (await alia.storage.kv.get<Site>("site")) ?? null;
       // Connections made before the site menu saved only the one site.
-      return { site, sites: (await bb.storage.kv.get<Site[]>("sites")) ?? (site ? [site] : []) };
+      return { site, sites: (await alia.storage.kv.get<Site[]>("sites")) ?? (site ? [site] : []) };
     },
     site_select: async ({ cloudId }) => {
       // Only a site the account granted: the page names it by cloudId and never supplies a URL.
-      const sites = (await bb.storage.kv.get<Site[]>("sites")) ?? [];
+      const sites = (await alia.storage.kv.get<Site[]>("sites")) ?? [];
       const site = sites.find((s) => s.cloudId === cloudId);
       if (!site) throw refuse("not_found", "That Jira site isn't connected. Disconnect, then connect again and grant it.");
-      await bb.storage.kv.set("site", site);
+      await alia.storage.kv.set("site", site);
       forgetSite();
-      bb.realtime.publish(AUTH_CHANGED, null);
+      alia.realtime.publish(AUTH_CHANGED, null);
       return { site, sites };
     },
     auth_start: async () => {
@@ -524,7 +524,7 @@ export default async function plugin(bb: BbPluginApi) {
         op(["getJiraIssue"], { cloudId: site.cloudId, issueIdOrKey: key, fields: DETAIL_FIELDS, responseContentFormat: "markdown", view: "full" }),
         // shortcut: first 50 comments only.
         op(["listJiraIssueComments"], { cloudId: site.cloudId, issueIdOrKey: key, maxResults: 50 }).then(toComments, (e) => {
-          bb.log.warn(`comments for ${key}: ${(e as Error).message}`);
+          alia.log.warn(`comments for ${key}: ${(e as Error).message}`);
           return [];
         }),
       ]);
@@ -566,7 +566,7 @@ export default async function plugin(bb: BbPluginApi) {
           return { ...board, keys: boardIssueKeys(result), failed: false };
         } catch (error) {
           if (/rate.?limit|429|too many/i.test((error as Error).message)) throw error; // retrying the rest would only make it worse
-          bb.log.warn(`board ${board.id}: ${(error as Error).message}`); // e.g. a board whose filter you can't see
+          alia.log.warn(`board ${board.id}: ${(error as Error).message}`); // e.g. a board whose filter you can't see
           return { ...board, keys: [], failed: true };
         }
       });

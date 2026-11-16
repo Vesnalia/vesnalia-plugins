@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 const hostId = z.string().min(1);
 const installation = z.object({ version: z.string(), executable: z.string() });

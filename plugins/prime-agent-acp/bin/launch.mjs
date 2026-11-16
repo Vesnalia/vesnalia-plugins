@@ -42,7 +42,7 @@ function installerEnv() {
 function installPrimeAgentSync() {
   try {
     process.stderr.write(
-      `[bb-plugin-prime-agent-acp] Downloading and installing prime-agent from ${INSTALL_URL}\n`,
+      `[alia-plugin-prime-agent-acp] Downloading and installing prime-agent from ${INSTALL_URL}\n`,
     );
     execFileSync("sh", ["-c", `curl -fsSL ${INSTALL_URL} | sh`], {
       stdio: "inherit",
@@ -51,7 +51,7 @@ function installPrimeAgentSync() {
     });
     return findPrimeAgentBinary();
   } catch (err) {
-    process.stderr.write(`[bb-plugin-prime-agent-acp] Install failed: ${err.message}\n`);
+    process.stderr.write(`[alia-plugin-prime-agent-acp] Install failed: ${err.message}\n`);
     return null;
   }
 }
@@ -70,7 +70,7 @@ if (argv[0] === "--install" || argv[0] === "install") {
         `  ${INSTALL_URL}`,
         "It installs the official prime-agent binary into your home directory.",
         "",
-        "Re-run with --yes to confirm: `bb prime-agent install --yes`",
+        "Re-run with --yes to confirm: `alia prime-agent install --yes`",
       ].join("\n"),
     );
     process.exit(1);
@@ -90,7 +90,7 @@ if (argv.includes("--list-models") || (argv[0] === "model" && argv[1] === "list"
   const bin = findPrimeAgentBinary();
   if (!bin) {
     console.error(
-      "prime-agent binary not found. Install it explicitly first: `bb prime-agent install`.",
+      "prime-agent binary not found. Install it explicitly first: `alia prime-agent install`.",
     );
     process.exit(1);
   }
@@ -136,7 +136,7 @@ if (argv.includes("--list-models") || (argv[0] === "model" && argv[1] === "list"
 const bin = findPrimeAgentBinary();
 if (!bin) {
   console.error(
-    "prime-agent binary not found. Install it explicitly first: `bb prime-agent install`.",
+    "prime-agent binary not found. Install it explicitly first: `alia prime-agent install`.",
   );
   process.exit(1);
 }

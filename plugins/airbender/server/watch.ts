@@ -20,7 +20,7 @@
 // - `bd show` does rewrite it, so an agent merely reading an issue causes one
 //   harmless reload.
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { existsSync, watch } from "node:fs";
 import type { FSWatcher } from "node:fs";
 import { basename, dirname, join } from "node:path";
@@ -37,7 +37,7 @@ import type { Watched } from "./bend.ts";
  *   now, and a write whenever a new folder is added.
  */
 export async function createWatcher(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
 ) {
   /** Most folders watched at once; the oldest is dropped beyond this. */
   const MAX_WATCHED_FOLDERS = 32;
@@ -53,7 +53,7 @@ export async function createWatcher(
   /**
    * What each watch looks at, by the same key: when a folder is to be
    * watched somewhere else (its tracker was switched, so bend's copy of the
-   * issues is in another folder, bead-bb-c9l.18), the watch is replaced.
+   * issues is in another folder, bead-alia-c9l.18), the watch is replaced.
    */
   const watching = new Map<string, string>();
 
@@ -80,12 +80,12 @@ export async function createWatcher(
     // never writes to), else in the folder itself.
     const sign = watched.sign ?? join(path, ".beads", "last-touched");
     watchOne(path, dirname(sign), basename(sign), path);
-    // bend's copy of the issues (bead-bb-c9l.14): it changes whenever any
+    // bend's copy of the issues (bead-alia-c9l.14): it changes whenever any
     // bend process rereads it and finds something new, whoever made the
     // change.
     if (watched.copy !== null) {
       watchOne(path, watched.copy, "issues.json", `${path}\ncopy`);
-      // bend's log of syncs, kept beside the copy (bead-bb-c9l.16): a sync
+      // bend's log of syncs, kept beside the copy (bead-alia-c9l.16): a sync
       // made in a terminal or by bend's helper then shows in an open tab,
       // with no timer here.
       watchOne(path, watched.copy, "sync-runs.json", `${path}\nruns`);
@@ -118,12 +118,12 @@ export async function createWatcher(
         if (timer !== null) clearTimeout(timer);
         timer = setTimeout(() => {
           timer = null;
-          bb.log.info("beads changed in " + path + "; telling open tabs");
-          bb.realtime.publish(CHANGED_CHANNEL, { path });
+          alia.log.info("beads changed in " + path + "; telling open tabs");
+          alia.realtime.publish(CHANGED_CHANNEL, { path });
         }, WATCH_SETTLE_MS);
       });
     } catch (cause) {
-      bb.log.warn("could not watch " + beadsDir + ": " + cause);
+      alia.log.warn("could not watch " + beadsDir + ": " + cause);
       return;
     }
     const stop = () => {
@@ -152,22 +152,22 @@ export async function createWatcher(
       }
     }
     // Remember the folder so the watch comes back after the plugin is
-    // reloaded or BB restarts. Not awaited: a failed save only costs the
+    // reloaded or VesnALIA restarts. Not awaited: a failed save only costs the
     // watch until some tab next lists this folder.
-    bb.storage.kv
+    alia.storage.kv
       // Folders only: the copy's place is found again from bend.
       .set(
         WATCHED_FOLDERS_KEY,
         [...watchers.keys()].filter((kept) => !kept.includes("\n")),
       )
-      .catch((cause) => bb.log.warn("could not save watched folders: " + cause));
+      .catch((cause) => alia.log.warn("could not save watched folders: " + cause));
   }
 
-  // Watches live in memory, so a reload of the plugin (or a restart of BB)
+  // Watches live in memory, so a reload of the plugin (or a restart of VesnALIA)
   // would otherwise leave tabs that are already open deaf to outside changes
   // until something made them list again. Start them again from the saved
   // list; folders that no longer use beads are skipped by watchFolder.
-  const savedFolders = await bb.storage.kv
+  const savedFolders = await alia.storage.kv
     .get<unknown>(WATCHED_FOLDERS_KEY)
     .catch(() => undefined);
 
@@ -178,7 +178,7 @@ export async function createWatcher(
   }
 
   // Release every file watch when the plugin is reloaded or disabled.
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const watcher of watchers.values()) watcher.close();
     watchers.clear();
   });

@@ -4,7 +4,7 @@ import {
   experimental_useSidebarThreadSplit as useSplit,
   experimental_useSidebarThreadActions as useActions,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { RunningDot } from "./RunningDot";
 import type { groupAttentionItems } from "./groups";
 import { Icon } from "../components/ui/icon";

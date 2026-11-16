@@ -1,19 +1,19 @@
-# VCS Widget for bb
+# VCS Widget for VesnALIA
 
-![The branch popup, the commit panel and the git log under a bb thread header](docs/screenshots/hero.png)
+![The branch popup, the commit panel and the git log under a VesnALIA thread header](docs/screenshots/hero.png)
 
-IntelliJ-style VCS popup, commit dialog and log, inside bb.
+IntelliJ-style VCS popup, commit dialog and log, inside VesnALIA.
 
 ## Requirements
 
-- bb 0.42 or newer
+- VesnALIA 0.42 or newer
 - git 2.24 or newer
 - npm
 
 ## Install
 
 ```sh
-bb plugin install https://github.com/CostaFot/bb-plugin-vcs-widget --yes
+alia plugin install https://github.com/CostaFot/bb-plugin-vcs-widget --yes
 ```
 
 ## Popup
@@ -46,7 +46,7 @@ bb plugin install https://github.com/CostaFot/bb-plugin-vcs-widget --yes
 - The checkbox is the staged state: ticking runs `git add`, unticking
   `git reset`, a partly staged file shows a mixed box, and a group header
   toggles the whole group.
-- The selected file renders in bb's diff viewer, both sides complete, with a
+- The selected file renders in VesnALIA's diff viewer, both sides complete, with a
   Staged / Unstaged switch.
 - Below it: the message (Ctrl+Enter commits), Amend, Sign-off, Run Git hooks,
   Commit and Commit and Push. The commit runs as a background job so hooks can
@@ -78,9 +78,9 @@ bb plugin install https://github.com/CostaFot/bb-plugin-vcs-widget --yes
   takes a revision, which is how the log compares one commit with the current
   branch.
 - Eight command palette rows (`VCS Widget: ...`) on thread routes.
-- Live refresh: bb's sidebar follows a checkout within a few seconds, open
+- Live refresh: VesnALIA's sidebar follows a checkout within a few seconds, open
   popups refetch after an action or a job, and changes made by an agent or a
-  terminal reach them through bb's environment events and a watch on the git
+  terminal reach them through VesnALIA's environment events and a watch on the git
   directory.
 
 It does not do interactive rebase, stashes of its own (only auto-stash before
@@ -109,14 +109,14 @@ is visible.
 
 ## From a terminal, or an agent
 
-`bb vcs-widget` reads the repository behind a thread, on the machine that owns
+`alia vcs-widget` reads the repository behind a thread, on the machine that owns
 the worktree.
 
 | Command | Prints |
 |---|---|
-| `bb vcs-widget status` | branch, upstream, working tree, a running fetch/pull/push |
-| `bb vcs-widget branches [--remote \| --all]` | branches with ahead/behind, upstream and worktree |
-| `bb vcs-widget log [--branch <name> \| --all] [--grep <text>]` | recent commits with their refs |
+| `alia vcs-widget status` | branch, upstream, working tree, a running fetch/pull/push |
+| `alia vcs-widget branches [--remote \| --all]` | branches with ahead/behind, upstream and worktree |
+| `alia vcs-widget log [--branch <name> \| --all] [--grep <text>]` | recent commits with their refs |
 
 `--thread <id>` reads another thread, `--json` prints the data instead of the
 table, and `--limit <n>` sets the rows. A usage error exits 2; a thread with no
@@ -142,10 +142,10 @@ are the human's to ask for.
 
 ```sh
 npm install
-bb plugin types              # pin the SDK to your bb
-npm run check                # vitest + tsc + bb plugin build
-bb plugin install . --yes
-bb plugin dev                # rebuild and reload on save
+alia plugin types              # pin the SDK to your alia
+npm run check                # vitest + tsc + alia plugin build
+alia plugin install . --yes
+alia plugin dev                # rebuild and reload on save
 ```
 
 `CLAUDE.md` has the architecture and `docs/VERIFY.md` the live click-throughs.

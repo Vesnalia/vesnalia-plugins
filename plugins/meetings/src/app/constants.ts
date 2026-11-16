@@ -16,7 +16,7 @@ export const CHANNEL_ZOOM_CHANGED = "meetings.zoom";
 export const CHANNEL_GOOGLE_CHANGED = "meetings.google";
 export const CHANNEL_BOT_CHANGED = "meetings.bot";
 
-/** GOOGLE_CALLBACK_PATH in src/shared/rpc-contract.ts: the OAuth redirect route, relative to the bb origin. */
+/** GOOGLE_CALLBACK_PATH in src/shared/rpc-contract.ts: the OAuth redirect route, relative to the VesnALIA origin. */
 export const GOOGLE_CALLBACK_PATH = "/api/v1/plugins/meetings/http/google/callback";
 
 // FTS snippet markers: SNIPPET_OPEN / SNIPPET_CLOSE in src/shared/rpc-contract.ts.

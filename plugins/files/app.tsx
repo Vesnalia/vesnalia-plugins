@@ -1,4 +1,4 @@
-import { definePluginApp } from "@bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { FilesPanel } from "./src/components/FilesPanel";
 import { FILE_OPENER_EXTENSIONS } from "./src/file-opener-extensions";
 import "./app.css";
@@ -15,7 +15,7 @@ export default definePluginApp((app) => {
     component: FilesPanel,
   });
   // Matching files — including file links clicked in rendered Markdown and in
-  // other plugins' panels — open this panel instead of BB's built-in preview.
+  // other plugins' panels — open this panel instead of VesnALIA's built-in preview.
   app.slots.fileOpener({
     id: "files",
     title: "Files",

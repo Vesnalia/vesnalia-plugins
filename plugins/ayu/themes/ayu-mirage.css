@@ -8,7 +8,7 @@
   --canvas: #242936;
   --ink: #cccac2;
 
-  /* chrome — ayu puts this BELOW the content; BB would derive it above */
+  /* chrome — ayu puts this BELOW the content; ALIA would derive it above */
   --sidebar: #1f2430;
   --sidebar-border: #171b24;
   --sidebar-accent: #63759926;
@@ -27,7 +27,7 @@
   --surface-recessed-solid: #1f2430;
   --surface-recessed-soft-solid: #1f2430;
 
-  /* lines and overlays — ayu draws these far subtler than BB derives them */
+  /* lines and overlays — ayu draws these far subtler than ALIA derives them */
   --border: #171b24;
   --border-hairline: #171b24;
   --border-seam: #171b24;
@@ -95,11 +95,11 @@
   --subtle-foreground: color-mix(in oklch, var(--ink) 64%, var(--canvas));
 }
 
-/* Syntax highlighting (sugar-high). Declared at element level because BB
-   sets these on .bb-code-highlight itself, not on :root. */
-.bb-code-highlight,
-.light .bb-code-highlight,
-.dark .bb-code-highlight {
+/* Syntax highlighting (sugar-high). Declared at element level because ALIA
+   sets these on .alia-code-highlight itself, not on :root. */
+.alia-code-highlight,
+.light .alia-code-highlight,
+.dark .alia-code-highlight {
   --sh-keyword: #ffa659;
   --sh-string: #d5ff80;
   --sh-comment: #6e7c8f;

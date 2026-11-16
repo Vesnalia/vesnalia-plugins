@@ -1,13 +1,13 @@
 # Sidebar parity contract
 
-The workspace sidebar must not replace ordinary BB behavior with a reduced
-thread list. The reference implementation was audited from BB 0.40.0
+The workspace sidebar must not replace ordinary VesnALIA behavior with a reduced
+thread list. The reference implementation was audited from VesnALIA 0.40.0
 (`apps/app/src/components/sidebar/{ProjectList,ProjectRow,ThreadRow}.tsx` and
 `components/project/{ProjectActionsMenu,ProjectActionsProvider}.tsx`).
 
 ## Activation boundary
 
-- Always render BB's bound `Original` list; workspace mode decorates and orders
+- Always render VesnALIA's bound `Original` list; workspace mode decorates and orders
   its real project-row DOM nodes rather than reimplementing them.
 - With no workspace links, the native list is unchanged.
 - The workspace editor entry augments the native project actions menu but does
@@ -52,7 +52,7 @@ thread list. The reference implementation was audited from BB 0.40.0
   project's threads. Its heading uses the same visual language as a compatible
   native direct-child project heading; `main` remains a UI group, not a Git
   branch.
-- Direct child BB projects are rendered as sibling subgroups under that root and
+- Direct child VesnALIA projects are rendered as sibling subgroups under that root and
   omitted from the top level.
 - Content below `main` and below every direct child group receives one shared
   8px hierarchy inset. Native chat rows and native empty states therefore begin
@@ -63,20 +63,20 @@ thread list. The reference implementation was audited from BB 0.40.0
   independent `main` and native child-project collapse states.
 - Collapsing `main` hides only root chats; collapsing one child project hides
   only that project's chats and does not affect siblings.
-- On compatible BB rows, clicking the project title delegates exactly once to
+- On compatible VesnALIA rows, clicking the project title delegates exactly once to
   the native chevron. Project menus, new-thread controls, links, warnings,
   context menus, and DnD pointer handling remain separate native interactions.
-- Children remain real BB projects; their project settings, thread actions, and
+- Children remain real VesnALIA projects; their project settings, thread actions, and
   environments are unchanged.
-- Worktree is a BB-owned environment/thread indicator, never a plugin action or
+- Worktree is a ALIA-owned environment/thread indicator, never a plugin action or
   separate top-level tree.
 - Unlink warns that logical relations are lost and never deletes projects,
   threads, branches, environments, or worktree directories.
 
 ## SDK boundary
 
-The implementation and live regression pass target BB 0.40.0 with public
-`@get-bb/plugin-sdk` 0.4.21. The plugin deliberately leaves BB's native
+The implementation and live regression pass target VesnALIA 0.40.0 with public
+`@vesnalia/plugin-sdk` 0.4.21. The plugin deliberately leaves VesnALIA's native
 new-thread screen and its current-folder/new-worktree placement untouched. The
 SDK exposes thread actions and thread-list slots, but no native project-row
 renderer, project action hook, project-menu contribution, sidebar organization
@@ -93,14 +93,14 @@ decoration strategy:
 4. Treat the native project chevron and its `aria-expanded` state as the source
    of truth. The bridge only propagates root visibility to decorated siblings
    and owns the independent `main` state.
-5. Add title activation only when the narrow BB 0.40 heading/title/chevron
+5. Add title activation only when the narrow VesnALIA 0.40 heading/title/chevron
    contract is present; otherwise preserve the untouched native fallback.
 6. Reapply decorations after React updates and relevant native state changes,
    coalesce observer work, and restore each plugin-owned visibility and inline
    layout value on unlink, relation failure, and teardown.
-7. Prefer a future official project-group/menu contribution point when BB adds
+7. Prefer a future official project-group/menu contribution point when VesnALIA adds
    one; the content-script bridge is deliberately isolated for replacement.
 
-No unpublished BB imports are used. The bridge was retained because the tested
+No unpublished VesnALIA imports are used. The bridge was retained because the tested
 SDK still has no equivalent extension point; unsupported markup or RPC failure
 falls back to the untouched native `Original` list.

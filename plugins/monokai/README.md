@@ -5,39 +5,39 @@
   <img src="assets/logo.svg" width="72" height="72" alt="" />
 </picture>
 
-# bb Monokai
+# VesnALIA Monokai
 
-**A dark Monokai palette for bb, terminal included.**
+**A dark Monokai palette for VesnALIA, terminal included.**
 
-![bb 0.40+](https://img.shields.io/badge/bb-0.40%2B-88C0D0?style=flat-square)
+![VesnALIA 0.40+](https://img.shields.io/badge/bb-0.40%2B-88C0D0?style=flat-square)
 ![platform: any](https://img.shields.io/badge/platform-any-3FA266?style=flat-square)
 ![dark only](https://img.shields.io/badge/appearance-dark%20only-E3E3DD?style=flat-square)
 
 </div>
 
-<picture><img src="docs/media/hero.png" alt="bb Monokai applied across bb — sidebar, thread, syntax highlighting, and the GitHub Stack panel" width="100%" /></picture>
+<picture><img src="docs/media/hero.png" alt="VesnALIA Monokai applied across VesnALIA — sidebar, thread, syntax highlighting, and the GitHub Stack panel" width="100%" /></picture>
 
-bb draws itself from CSS custom properties, so a theme is just a stylesheet.
-This plugin adds one: **bb Monokai**, a dark palette built on a five-step
+VesnALIA draws itself from CSS custom properties, so a theme is just a stylesheet.
+This plugin adds one: **VesnALIA Monokai**, a dark palette built on a five-step
 grounds ramp, a single off-white text ladder, and one accent that always means
 _interactive_.
 
 It reaches past the app chrome: the terminal, the diff viewer, the file tree's
 git-status column, inline code, and the syntax tokens inside diffs and file
-previews all draw from the same palette rather than keeping bb's defaults.
+previews all draw from the same palette rather than keeping VesnALIA's defaults.
 
 ## Install
 
 **From the marketplace** — add this repository once, then install by name:
 
 ```sh
-bb marketplace add git:github.com/smsunarto/bb-plugins
-bb plugin install monokai
-bb theme set plugin:monokai:bb-monokai
+alia marketplace add git:github.com/smsunarto/bb-plugins
+alia plugin install monokai
+alia theme set plugin:monokai:alia-monokai
 ```
 
-bb resolves the newest `monokai/vX.Y.Z` tag and builds the plugin from it against
-your bb, so the bundle always matches the host it runs on. `bb plugin update
+VesnALIA resolves the newest `monokai/vX.Y.Z` tag and builds the plugin from it against
+your VesnALIA, so the bundle always matches the host it runs on. `alia plugin update
 monokai` follows the same release line. If another marketplace you have added
 publishes a `monokai`, spell it `monokai@smsunarto`.
 
@@ -46,30 +46,30 @@ source. This is also how you install a change that is not released yet:
 
 ```sh
 git clone https://github.com/smsunarto/bb-plugins.git
-cd bb-plugins
+cd alia-plugins
 bun install
-bun run --filter '@smsunarto/bb-plugin-monokai' build
-bb plugin install ./plugins/monokai
-bb theme set plugin:monokai:bb-monokai
+bun run --filter '@smsunarto/alia-plugin-monokai' build
+alia plugin install ./plugins/monokai
+alia theme set plugin:monokai:alia-monokai
 ```
 
-The source path needs Bun and the `bb` CLI. It installs the plugin as a **local
-path source**, so bb reads the files in place: edit, rebuild, reload, with no
+The source path needs Bun and the `alia` CLI. It installs the plugin as a **local
+path source**, so VesnALIA reads the files in place: edit, rebuild, reload, with no
 reinstall.
 
 ## Usage
 
-Installing the plugin only adds the palette. The `bb theme set` line above is
-what selects it. You can also switch in bb under
+Installing the plugin only adds the palette. The `alia theme set` line above is
+what selects it. You can also switch in VesnALIA under
 **Settings → Appearance → Palette**:
 
-Disabling or removing the plugin returns bb to the default palette.
+Disabling or removing the plugin returns VesnALIA to the default palette.
 
 ## Requirements
 
-- bb 0.40+ (code themes arrived in bb 0.39)
-- bb set to **dark** appearance. The palette only restyles `.dark`; light mode
-  keeps bb's defaults.
+- VesnALIA 0.40+ (code themes arrived in VesnALIA 0.39)
+- VesnALIA set to **dark** appearance. The palette only restyles `.dark`; light mode
+  keeps VesnALIA's defaults.
 - Optional: **Berkeley Mono**. It is _not_ bundled. Install it yourself and the
   type stack picks it up. Without it the
   stack falls back to `ui-monospace`, Menlo, then `monospace`. The terminal
@@ -77,7 +77,7 @@ Disabling or removing the plugin returns bb to the default palette.
 
 ## The palette
 
-<picture><img src="docs/media/palette.svg" alt="bb Monokai swatches" width="100%" /></picture>
+<picture><img src="docs/media/palette.svg" alt="VesnALIA Monokai swatches" width="100%" /></picture>
 
 | Role                | Value                 | Where it lands                                                                 |
 | ------------------- | --------------------- | ------------------------------------------------------------------------------ |
@@ -116,13 +116,13 @@ ratio against the ground it sits on.
 ### Syntax tokens
 
 Token colors are not a CSS surface — Shiki writes an inline style on every span
-inside a shadow root. bb 0.38 answers that with a manifest field that picks the
-Shiki theme, so the plugin ships one: `themes/bb-monokai-code.json`, the same
+inside a shadow root. VesnALIA 0.38 answers that with a manifest field that picks the
+Shiki theme, so the plugin ships one: `themes/alia-monokai-code.json`, the same
 TextMate layer as the Cursor Monokai editor theme. One hue per kind — pink machinery, cyan structure, green
 callables, yellow literals, purple constants, gray commentary, white for
 everything else.
 
-Only the dark side is declared, so light mode keeps bb's `pierre-light`. A
+Only the dark side is declared, so light mode keeps VesnALIA's `pierre-light`. A
 diff has no language server behind it, so this is the TextMate layer alone:
 tokens an editor colors from semantic tokens (a plain parameter, a declaration
 in bold) stay at their TextMate color here.
@@ -130,10 +130,10 @@ in bold) stay at their TextMate color here.
 ## Troubleshooting
 
 **The app still looks the same.** The palette has to be selected. Run
-`bb theme set plugin:monokai:bb-monokai`, or pick **bb Monokai** under
+`alia theme set plugin:monokai:alia-monokai`, or pick **VesnALIA Monokai** under
 **Settings → Appearance → Palette**.
 
-**Only part of the app changed.** Check that bb is in dark appearance. In light
+**Only part of the app changed.** Check that VesnALIA is in dark appearance. In light
 mode the palette contributes fonts only.
 
 **Some surfaces stay off-palette.** CSS cannot reach them:
@@ -145,7 +145,7 @@ mode the palette contributes fonts only.
 - **Mermaid diagrams** keep a hardcoded Inter font. Colors follow the palette
   on the next render.
 - **The favicon tint** comes from a fixed list, with no CSS involved.
-- **Built-in bb plugin panels** (tasks, docs, github, workflows, memory) ship
+- **Built-in VesnALIA plugin panels** (tasks, docs, github, workflows, memory) ship
   their own bundles with raw scale colors.
 
 ## Develop from source
@@ -155,31 +155,31 @@ generated from the TypeScript palette and a selector-focused template:
 
 ```sh
 $EDITOR plugins/monokai/scripts/generate-theme.ts
-$EDITOR plugins/monokai/scripts/bb-monokai.template.css
-bun run --filter '@smsunarto/bb-plugin-monokai' generate:theme
-bun run --filter '@smsunarto/bb-plugin-monokai' check
-bb plugin reload monokai
+$EDITOR plugins/monokai/scripts/alia-monokai.template.css
+bun run --filter '@smsunarto/alia-plugin-monokai' generate:theme
+bun run --filter '@smsunarto/alia-plugin-monokai' check
+alia plugin reload monokai
 ```
 
 The palette in `generate-theme.ts` is the only color registry: every surface
-takes a role name, never a hex. `themes/bb-monokai.css` and
-`themes/bb-monokai-code.json` are generated; do not edit them. The syntax
+takes a role name, never a hex. `themes/alia-monokai.css` and
+`themes/alia-monokai-code.json` are generated; do not edit them. The syntax
 layer's scope map lives in `scripts/code-theme-rules.json`, also in role names.
 
 The generator rejects stale output, unknown roles, off-contract colors, missing
 tokens, wrong role mappings, illegible pairs, and a chrome-only role on a
 syntax token. The plugin build runs that check automatically.
 
-Re-apply with `bb theme set plugin:monokai:bb-monokai` if the palette does not
+Re-apply with `alia theme set plugin:monokai:alia-monokai` if the palette does not
 refresh.
 
-To review the palette contract outside bb, start its local Storybook:
+To review the palette contract outside VesnALIA, start its local Storybook:
 
 ```sh
-bun run --filter '@smsunarto/bb-plugin-monokai' storybook
+bun run --filter '@smsunarto/alia-plugin-monokai' storybook
 ```
 
 The catalog imports the generated theme stylesheet, so regeneration updates
 the stories without a second token source. It previews the palette and
-component states; live bb remains the integration check for shadow-DOM
+component states; live VesnALIA remains the integration check for shadow-DOM
 surfaces and host styles.

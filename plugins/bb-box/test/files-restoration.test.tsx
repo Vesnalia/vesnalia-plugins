@@ -3,7 +3,7 @@ import { StrictMode } from 'react';
 import { z } from 'zod';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import { renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import { Workspace } from '../src/app/files-ui/Workspace.tsx';
 import { BoxFiles } from '../src/app/files.tsx';
 import { forgetLive } from '../src/app/common.tsx';
@@ -204,7 +204,7 @@ test('preview text selection and scroll survive remount', async () => {
   const first = mount(rpc);
   fireEvent.click(await screen.findByRole('treeitem', { name: 'README.md' }));
   const preview = await screen.findByRole('region', { name: 'Preview of README.md' });
-  const node = screen.getByTestId('bb-markdown').firstChild!;
+  const node = screen.getByTestId('alia-markdown').firstChild!;
   window.getSelection()?.setBaseAndExtent(node, 3, node, 10);
   fireEvent(document, new Event('selectionchange'));
   preview.scrollTop = 90;

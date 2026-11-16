@@ -1,4 +1,4 @@
-// bb-box: sign in to the desktop's VNC server as the relay does, and time the
+// alia-box: sign in to the desktop's VNC server as the relay does, and time the
 // first full frame. With a user and password it answers Apple's
 // authentication (type 30), which wayvnc offers; with neither, type None.
 // Prints {types, width, height, signInMs, firstFrameMs} as JSON. With --hold

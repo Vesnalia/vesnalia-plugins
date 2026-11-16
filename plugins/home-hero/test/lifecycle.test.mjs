@@ -27,9 +27,9 @@ test("renders one hero above the composer column", () => {
   assert.equal(heroes.length, 1);
   assert.equal(heroes[0].parentElement, column);
   assert.equal(column.firstElementChild, heroes[0]);
-  assert.ok(column.hasAttribute("data-bb-hero-column"));
-  assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Morning");
-  assert.match(doc.getElementById("bb-hero-style").textContent, /prefers-reduced-motion/);
+  assert.ok(column.hasAttribute("data-alia-hero-column"));
+  assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Morning");
+  assert.match(doc.getElementById("alia-hero-style").textContent, /prefers-reduced-motion/);
 });
 
 test("finds the compact homepage column on narrow viewports", () => {
@@ -52,15 +52,15 @@ test("finds the compact homepage column on narrow viewports", () => {
 test("greets with the configured name", () => {
   const doc = page();
   applyHero(doc, { hours: 14, displayName: "Alex" });
-  assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Afternoon, Alex");
-  assert.equal(doc.querySelector(".bb-hero-name").textContent, "Alex");
-  assert.equal(doc.querySelector(".bb-hero-hello").textContent, "Afternoon, ");
+  assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Afternoon, Alex");
+  assert.equal(doc.querySelector(".alia-hero-name").textContent, "Alex");
+  assert.equal(doc.querySelector(".alia-hero-hello").textContent, "Afternoon, ");
 });
 
 test("treats the name as text, never markup", () => {
   const doc = page();
   applyHero(doc, { hours: 9, displayName: "<b>Alex</b>" });
-  const name = doc.querySelector(".bb-hero-name");
+  const name = doc.querySelector(".alia-hero-name");
   assert.equal(name.textContent, "<b>Alex</b>");
   assert.equal(name.querySelector("b"), null);
 });
@@ -68,11 +68,11 @@ test("treats the name as text, never markup", () => {
 test("shows the uploaded icon only when one exists", () => {
   const withIcon = page();
   applyHero(withIcon, { hours: 9, iconDataUrl: PNG });
-  assert.equal(withIcon.querySelector(".bb-hero-icon")?.getAttribute("src"), PNG);
+  assert.equal(withIcon.querySelector(".alia-hero-icon")?.getAttribute("src"), PNG);
 
   const withoutIcon = page();
   applyHero(withoutIcon, { hours: 9, iconDataUrl: null });
-  assert.equal(withoutIcon.querySelector(".bb-hero-icon"), null);
+  assert.equal(withoutIcon.querySelector(".alia-hero-icon"), null);
 });
 
 test("re-applying keeps a single hero", () => {
@@ -80,7 +80,7 @@ test("re-applying keeps a single hero", () => {
   applyHero(doc, { hours: 9, displayName: "Alex" });
   applyHero(doc, { hours: 18, displayName: "Sam" });
   assert.equal(doc.querySelectorAll(`#${HERO_ID}`).length, 1);
-  assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Evening, Sam");
+  assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Evening, Sam");
 });
 
 test("the hero survives until the last mounted owner unmounts", () => {
@@ -88,13 +88,13 @@ test("the hero survives until the last mounted owner unmounts", () => {
   const first = applyHero(doc, { hours: 9, displayName: "Alex" });
   const second = applyHero(doc, { hours: 9, displayName: "Sam" });
   assert.equal(doc.querySelectorAll(`#${HERO_ID}`).length, 1);
-  assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Morning, Sam");
+  assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Morning, Sam");
   second();
   assert.equal(doc.querySelectorAll(`#${HERO_ID}`).length, 1);
-  assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Morning, Sam");
+  assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Morning, Sam");
   first();
   assert.equal(doc.getElementById(HERO_ID), null);
-  assert.equal(doc.querySelector("[data-bb-hero-column]"), null);
+  assert.equal(doc.querySelector("[data-alia-hero-column]"), null);
 });
 
 test("disposal removes the hero, styles and column marker", () => {
@@ -102,14 +102,14 @@ test("disposal removes the hero, styles and column marker", () => {
   const dispose = applyHero(doc, { hours: 9 });
   dispose();
   assert.equal(doc.getElementById(HERO_ID), null);
-  assert.equal(doc.querySelector("[data-bb-hero-column]"), null);
-  assert.equal(doc.getElementById("bb-hero-style"), null);
+  assert.equal(doc.querySelector("[data-alia-hero-column]"), null);
+  assert.equal(doc.getElementById("alia-hero-style"), null);
 });
 
 test("reduced motion shows the full greeting immediately", () => {
   const doc = page();
   applyHero(doc, { hours: 9, displayName: "Alex", reducedMotion: true });
-  assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Morning, Alex");
+  assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Morning, Alex");
 });
 
 test("renders the full greeting when requestAnimationFrame is unavailable", () => {
@@ -119,7 +119,7 @@ test("renders the full greeting when requestAnimationFrame is unavailable", () =
   view.requestAnimationFrame = undefined;
   try {
     applyHero(doc, { hours: 9, displayName: "Alex" });
-    assert.equal(doc.querySelector(".bb-hero-greeting").textContent, "Morning, Alex");
+    assert.equal(doc.querySelector(".alia-hero-greeting").textContent, "Morning, Alex");
   } finally {
     view.requestAnimationFrame = realRaf;
   }
@@ -136,14 +136,14 @@ test("typing grows the in-flow greeting and writes only on character change", as
   Date.now = () => 1000 + now;
   try {
     const dispose = applyHero(doc, { hours: 9, displayName: "Alex" });
-    const greeting = doc.querySelector(".bb-hero-greeting");
+    const greeting = doc.querySelector(".alia-hero-greeting");
     // The typed text is in flow: the centered row grows around it, so the icon
     // shifts outward instead of the text filling a reserved box left to right.
-    assert.equal(doc.querySelector(".bb-hero-sizer"), null);
-    assert.equal(doc.querySelector(".bb-hero-typed"), null);
+    assert.equal(doc.querySelector(".alia-hero-sizer"), null);
+    assert.equal(doc.querySelector(".alia-hero-typed"), null);
     assert.equal(greeting.children.length, 2);
-    assert.equal(greeting.firstElementChild.className, "bb-hero-hello");
-    assert.equal(greeting.lastElementChild.className, "bb-hero-name");
+    assert.equal(greeting.firstElementChild.className, "alia-hero-hello");
+    assert.equal(greeting.lastElementChild.className, "alia-hero-name");
     assert.equal(greeting.textContent, "", "nothing is painted before the entrance ends");
 
     const writes = [];
@@ -206,7 +206,7 @@ test("ignores a generic mx-auto column with no home composer target", () => {
   assert.equal(findColumn(doc), null);
   const dispose = applyHero(doc, { hours: 9 });
   assert.equal(doc.querySelectorAll(`#${HERO_ID}`).length, 0);
-  assert.equal(doc.getElementById("bb-hero-style"), null);
+  assert.equal(doc.getElementById("alia-hero-style"), null);
   dispose();
 });
 

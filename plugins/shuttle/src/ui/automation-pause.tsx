@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { AutomationPause, Overview } from "../contract";
 import { BUTTON, BUTTON_GHOST, BUTTON_PRIMARY, Dialog, ErrorNote, FIELD } from "./common";
 import { messageOf, useShuttleMutation } from "./data";
@@ -75,7 +75,7 @@ export function AutomationPauseControls({ overview }: { overview: Overview }) {
             )}
             {invalidCustom && custom !== "" && <div role="status" className="text-xs text-warning-text">Choose a future date and time.</div>}
             <div className="text-xs text-muted-foreground">
-              {duration === "today" ? "Resumes at midnight in your local time zone." : duration === "indefinite" ? "Stays paused until you resume it." : "Dates use your local time zone. If bb is closed at the return time, automation resumes when it reopens."}
+              {duration === "today" ? "Resumes at midnight in your local time zone." : duration === "indefinite" ? "Stays paused until you resume it." : "Dates use your local time zone. If VesnALIA is closed at the return time, automation resumes when it reopens."}
             </div>
             {error !== null && <ErrorNote>{error}</ErrorNote>}
             <div className="flex flex-wrap justify-end gap-2">

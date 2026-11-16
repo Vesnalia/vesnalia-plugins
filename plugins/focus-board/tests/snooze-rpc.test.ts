@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { setup, snoozeRecordOf } from "./helpers/snooze-fake-host";
 import { SNOOZE_METADATA_KEY } from "../lib/snooze";
-import type { JsonValue } from "@get-bb/plugin-sdk";
+import type { JsonValue } from "@vesnalia/plugin-sdk";
 
 type Host = Awaited<ReturnType<typeof setup>>;
 
@@ -251,7 +251,7 @@ describe("the wake timer", () => {
   it("a record corrupted between set and tick logs a warn instead of crashing the wake", async () => {
     // Security audit 2026-10-05 finding 1: fireWake's record read and
     // deletion ran uncaught on the timer path — a malformed record turned
-    // the tick into an unhandled rejection inside the bb server.
+    // the tick into an unhandled rejection inside the VesnALIA server.
     const { callRpc, meta, unreadCalls, harness } = await setup({ threads: ["thr_a"] });
     await callRpc("snooze_set", {
       threadId: "thr_a",

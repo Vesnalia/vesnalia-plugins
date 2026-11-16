@@ -1,19 +1,15 @@
 {
-  "name": "bb-plugin-table-expand",
+  "name": "alia-plugin-table-expand",
   "version": "0.1.1",
   "type": "module",
   "private": true,
   "description": "Click a markdown table in the timeline to view it full width in a dialog.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/steveafrost/bb-plugin-table-expand.git"
-  },
   "license": "MIT",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Table Expand",
     "description": "Click a markdown table in the timeline, or its corner expand button, to view it full width in a dialog. Esc, the close button or the backdrop closes it.",
     "branding": {
@@ -24,7 +20,6 @@
     "skills": []
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -33,11 +28,28 @@
     "vitest": "^4.1.11"
   },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/table-expand#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/table-expand"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

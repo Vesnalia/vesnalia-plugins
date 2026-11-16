@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { buildOverview, buildShell, type CollectDeps, type Environment, type HostCall, type ProjectInfo } from "../src/collect";
 import { overviewSchema } from "../src/contract";
 import { createRootCache } from "../src/root-cache";
@@ -34,7 +34,7 @@ function setup(options: Setup = {}) {
   };
   const edits = { get: vi.fn(async () => { throw new Error("the shell must not scan events"); }), peek: vi.fn(() => undefined), forget: vi.fn() };
   const host = vi.fn(async () => { throw new Error("the shell must not call the host"); });
-  const deps = { sdk: sdk as unknown as PluginBbSdk, host: host as unknown as HostCall, edits, allOptions: { windowHours: 24, maxThreads: 200 } } as CollectDeps;
+  const deps = { sdk: sdk as unknown as PluginAliaSdk, host: host as unknown as HostCall, edits, allOptions: { windowHours: 24, maxThreads: 200 } } as CollectDeps;
   return { deps, sdk, edits, host };
 }
 
@@ -64,7 +64,7 @@ describe("buildShell", () => {
     expect(overview.threads.map((thread) => thread.id)).toEqual(["thr_1"]);
   });
 
-  it("lists each workspace as a loading worktree and a loading repository, with the facts bb already knows", async () => {
+  it("lists each workspace as a loading worktree and a loading repository, with the facts VesnALIA already knows", async () => {
     const { deps } = setup();
     const overview = await shell(deps);
     expect(overview.worktrees).toEqual([{

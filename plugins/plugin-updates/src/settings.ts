@@ -1,5 +1,5 @@
 // The plugin's settings and the check schedule they select.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 const CHECK_CRON: Record<string, string> = {
   "1h": "0 * * * *",
@@ -8,8 +8,8 @@ const CHECK_CRON: Record<string, string> = {
 };
 
 /** Settings are read once per load; changing one needs a plugin reload. */
-export async function loadSettings(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export async function loadSettings(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     toastOnNewUpdate: {
       type: "boolean",
       label: "Toast when a new update is found",

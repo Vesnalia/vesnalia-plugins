@@ -1,9 +1,9 @@
 /**
- * Everything the offer engine and the sessions need from bb, as one interface. `bb-ports.ts` is the
- * real one; tests pass a fake. Keeping bb behind it keeps the policy and the state machine testable
- * without a bb.
+ * Everything the offer engine and the sessions need from VesnALIA, as one interface. `alia-ports.ts` is the
+ * real one; tests pass a fake. Keeping VesnALIA behind it keeps the policy and the state machine testable
+ * without a VesnALIA.
  */
-import type { PluginInteractionResult } from "@get-bb/plugin-sdk";
+import type { PluginInteractionResult } from "@vesnalia/plugin-sdk";
 
 import type { CardPayload, SettledRow } from "../shared/types";
 import type { GateThread } from "./policy";
@@ -137,9 +137,9 @@ export interface Ports {
    */
   writeFile(root: FileRoot, relativePath: string, content: string, expectedSha256: string | null): Promise<void>;
   /**
-   * One folder under a root, by a normalized relative path ("" for the root): bb's host directory listing,
+   * One folder under a root, by a normalized relative path ("" for the root): VesnALIA's host directory listing,
    * which leaves out hidden names and `node_modules` and follows links. `directory` is the absolute path
-   * bb listed, links resolved. Null when the folder cannot be listed (absent, not a folder, unreachable).
+   * VesnALIA listed, links resolved. Null when the folder cannot be listed (absent, not a folder, unreachable).
    */
   listFolder(root: FileRoot, relativeDir: string): Promise<FolderListing | null>;
   /** The id of the thread's newest turn, finished or running (its last `turn/started`); null when it cannot be read. */
@@ -167,7 +167,7 @@ export interface Ports {
   fork(request: ForkRequest): Promise<{ threadId: string }>;
   /** Sends one visible line and an agent-only part; starts a turn, or joins the running one. */
   send(threadId: string, visible: string, agentOnly: string): Promise<void>;
-  /** Starts a thread; throws when bb refuses. */
+  /** Starts a thread; throws when VesnALIA refuses. */
   spawn(request: SpawnRequest): Promise<{ threadId: string }>;
   /** Stops a thread's running turn; throws on failure. */
   stopThread(threadId: string): Promise<void>;
@@ -175,12 +175,12 @@ export interface Ports {
   archiveThread(threadId: string): Promise<void>;
   /**
    * This plugin's unarchived threads whose metadata holds `metadataKey`; null when either read fails.
-   * Each carries bb's `archived` flag as well, which callers check before archiving.
+   * Each carries VesnALIA's `archived` flag as well, which callers check before archiving.
    */
   pluginThreadsWith(metadataKey: string): Promise<PluginThread[] | null>;
   /** One string value of a thread's plugin metadata; null when absent, not a string or unreadable. */
   metadataValue(threadId: string, key: string): Promise<string | null>;
-  /** The session id seeded on a thread's metadata, for a fork bb answers before `fork` returns. */
+  /** The session id seeded on a thread's metadata, for a fork VesnALIA answers before `fork` returns. */
   sessionIdOf(threadId: string): Promise<string | null>;
   /** The fork made for a session whose id never reached the store (a reload mid-fork); null when none. */
   forkOf(sessionId: string, sourceThreadId: string): Promise<string | null>;

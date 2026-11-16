@@ -45,7 +45,7 @@ export const legal = {
     model: "Pixel Fold",
     power: booted,
     geometry: { generation: 1, physical: "upright", content: "upright", video: { width: 1080, height: 2092 }, screen: "outer" },
-    posture: { known: true, value: "closed", at: 0, by: "bb-box" },
+    posture: { known: true, value: "closed", at: 0, by: "alia-box" },
     settings: androidSettings,
     at: 0,
   } satisfies DeviceState,
@@ -97,9 +97,9 @@ export const illegal = {
   // @ts-expect-error
   iosBattery: { ...iosSettings, battery: unknown } satisfies IosSettings,
   // @ts-expect-error
-  iosFontScale: { ...iosSettings, textSize: { known: true, value: 1.3, at: 0, by: "bb-box" } } satisfies IosSettings,
+  iosFontScale: { ...iosSettings, textSize: { known: true, value: 1.3, at: 0, by: "alia-box" } } satisfies IosSettings,
   // @ts-expect-error
-  androidOddFontScale: { ...androidSettings, fontScale: { known: true, value: 1.2, at: 0, by: "bb-box" } } satisfies AndroidSettings,
+  androidOddFontScale: { ...androidSettings, fontScale: { known: true, value: 1.2, at: 0, by: "alia-box" } } satisfies AndroidSettings,
   // @ts-expect-error
   bootedWithError: { is: "booted", awake: true, error: { code: "boot-failed", words: "x" } } satisfies Power,
   // @ts-expect-error
@@ -113,7 +113,7 @@ export const illegal = {
   // @ts-expect-error
   overrideWithoutTime: { set: { latitude: 1, longitude: 2 }, at: null } satisfies Override<{ latitude: number; longitude: number }>,
   // @ts-expect-error
-  observedKnownWithoutValue: { ...iosSettings, appearance: { known: true, at: 0, by: "bb-box" } } satisfies IosSettings,
+  observedKnownWithoutValue: { ...iosSettings, appearance: { known: true, at: 0, by: "alia-box" } } satisfies IosSettings,
   // @ts-expect-error
   intentAcrossPlatforms: { target: "iPhone 18 Pro", switching: { id: "a", from: "Pixel 8", step: "booting", since: 0 } } satisfies Intent,
   // @ts-expect-error

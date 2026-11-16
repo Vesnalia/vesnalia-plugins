@@ -1,11 +1,11 @@
-// bb-plugin-theme-toggle — light/dark plus the bb palette from one button.
+// alia-plugin-theme-toggle — light/dark plus the VesnALIA palette from one button.
 //
-// The palette lives on the server (bb.sdk.theme); light/dark is a client-side
-// setting (localStorage `bb.theme`), so app.tsx owns that half.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// The palette lives on the server (alia.sdk.theme); light/dark is a client-side
+// setting (localStorage `alia.theme`), so app.tsx owns that half.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-// bb's built-in palettes: the catalog only reports custom and plugin themes.
+// VesnALIA's built-in palettes: the catalog only reports custom and plugin themes.
 const BUILT_IN = [
   { id: "default", name: "Default" },
   { id: "nord", name: "Nord" },
@@ -25,9 +25,9 @@ export const rpcContract = defineRpcContract({
   select: { input: z.object({ themeId: z.string() }), output: themeList },
 });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   async function read() {
-    const catalog = await bb.sdk.theme.catalog();
+    const catalog = await alia.sdk.theme.catalog();
     const themes = [
       ...BUILT_IN,
       ...catalog.custom.map((id) => ({ id, name: id })),
@@ -40,12 +40,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function apply(themeId: string) {
     const { catalog } = await read();
     // selection requires faviconColor — carry the current one over unchanged.
-    await bb.sdk.theme.set({ themeId, faviconColor: catalog.active.faviconColor });
+    await alia.sdk.theme.set({ themeId, faviconColor: catalog.active.faviconColor });
     const next = await read();
     return { activeId: next.activeId, themes: next.themes };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async state() {
       const { activeId, themes } = await read();
       return { activeId, themes };

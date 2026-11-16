@@ -1,4 +1,4 @@
-import type { PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 
 export const GHOST_CSS = `
 [data-next-step-visible] .is-editor-empty::before,
@@ -29,7 +29,7 @@ function findEditor(anchor: HTMLElement) {
   return null;
 }
 
-/** DOM enhancement of BB's bundled Composer. Draft writes use the public SDK. */
+/** DOM enhancement of VesnALIA's bundled Composer. Draft writes use the public SDK. */
 export function mountGhost(
   anchor: HTMLElement, composer: PluginComposerApi, text: string, pluginId: string, dismiss: () => void,
 ): () => void {
@@ -38,8 +38,8 @@ export function mountGhost(
   const { root, region, editor } = found;
   const overlay = document.createElement("div");
   overlay.dataset.nextStepGhost = "";
-  overlay.dataset.bbPlugin = pluginId;
-  overlay.dataset.bbPluginRoot = pluginId;
+  overlay.dataset.aliaPlugin = pluginId;
+  overlay.dataset.aliaPluginRoot = pluginId;
   overlay.setAttribute("role", "status");
   overlay.setAttribute("aria-live", "polite");
   const button = document.createElement("button");

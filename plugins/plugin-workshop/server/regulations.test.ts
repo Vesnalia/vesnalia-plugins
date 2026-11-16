@@ -24,7 +24,7 @@ function attempt(o: Partial<AttemptRow> = {}): AttemptRow {
 
 const w = fakeWork();
 const ALL = [1, 2, 3, 7, 4, 5, 6] as StageNo[];
-/** Skills the stage knowledge may name besides bb's built-in ones (a typical skill library), without calling bb. bb's built-in skills are not in it. */
+/** Skills the stage knowledge may name besides VesnALIA's built-in ones (a typical skill library), without calling VesnALIA. VesnALIA's built-in skills are not in it. */
 const LIBRARY = ["brainstorming", "writing-plans", "subagent-driven-development", "test-driven-development", "verification-before-completion", "finishing-a-development-branch", "executing-plans", "systematic-debugging", "frontend-design", "ai-interface-design"];
 
 describe("regulations", () => {
@@ -58,7 +58,7 @@ describe("regulations", () => {
 
   test("skill steps the stages cancel", () => {
     expect(kickoff(w, stageOf(1), 1)).toContain("Builder check");
-    expect(kickoff(w, stageOf(2), 1)).toContain("bb's built-in skill `bb-plugin-authoring`");
+    expect(kickoff(w, stageOf(2), 1)).toContain("VesnALIA's built-in skill `alia-plugin-authoring`");
     for (const s of ["final review", "deleting the ledger folder", "finishing-a-development-branch"]) expect(kickoff(w, stageOf(4), 1)).toContain(s);
     expect(kickoff(w, stageOf(3), 1)).toContain("choosing the execution approach");
     expect(kickoff(w, stageOf(1), 1)).toContain("Cancelled from the skill");
@@ -71,58 +71,58 @@ describe("regulations", () => {
       for (const x of [...k.skills, ...k.sources]) expect(t).toContain(x);
     }
     expect(stageKnowledge()[1].skills).toContain("brainstorming");
-    expect(stageKnowledge()[2].skills).toEqual(["bb-plugin-authoring", "secrets"]);
+    expect(stageKnowledge()[2].skills).toEqual(["alia-plugin-authoring", "secrets"]);
     expect(stageKnowledge()[3].skills).toEqual(["writing-plans"]);
     expect(stageKnowledge()[4].skills).toEqual(["subagent-driven-development", "test-driven-development", "secrets"]);
-    expect(kickoff(w, stageOf(2), 1)).toContain("bb's built-in skill `secrets`");
+    expect(kickoff(w, stageOf(2), 1)).toContain("VesnALIA's built-in skill `secrets`");
     expect(stageKnowledge()[5].skills).toEqual(["verification-before-completion"]);
     expect(stageKnowledge()[6].skills).toEqual(["verification-before-completion", "browser-automation"]);
     // A non-built-in skill is used if it is installed; a built-in one is invoked as built-in.
     expect(kickoff(w, stageOf(1), 1)).toContain("`brainstorming` — if such a skill is installed");
-    expect(kickoff(w, stageOf(2), 1)).not.toContain("`bb-plugin-authoring` — if such a skill is installed");
-    expect(kickoff(w, stageOf(6), 1)).toContain("bb's built-in skill `browser-automation`");
+    expect(kickoff(w, stageOf(2), 1)).not.toContain("`alia-plugin-authoring` — if such a skill is installed");
+    expect(kickoff(w, stageOf(6), 1)).toContain("VesnALIA's built-in skill `browser-automation`");
     expect(kickoff(w, stageOf(6), 1)).toContain("`verification-before-completion` — if such a skill is installed");
     for (const no of ALL) {
-      expect(stageKnowledge()[no].sources).toContain("`bb plugin --help` — bb commands for plugins");
+      expect(stageKnowledge()[no].sources).toContain("`alia plugin --help` — VesnALIA commands for plugins");
       expect(stageKnowledge()[no].sources.some((s) => s.includes("README.md"))).toBe(true);
-      expect(stageKnowledge()[no].sources.some((s) => s.includes("node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts"))).toBe(true);
+      expect(stageKnowledge()[no].sources.some((s) => s.includes("node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts"))).toBe(true);
     }
-    for (const no of [2, 5] as StageNo[]) expect(stageKnowledge()[no].sources.some((s) => s.includes("bb plugin logs <id>"))).toBe(true);
-    for (const no of [2, 5] as StageNo[]) expect(stageKnowledge()[no].sources.some((s) => s.includes("bb plugin list"))).toBe(true);
+    for (const no of [2, 5] as StageNo[]) expect(stageKnowledge()[no].sources.some((s) => s.includes("alia plugin logs <id>"))).toBe(true);
+    for (const no of [2, 5] as StageNo[]) expect(stageKnowledge()[no].sources.some((s) => s.includes("alia plugin list"))).toBe(true);
     expect(stageKnowledge()[6].sources.some((s) => s.includes(browserRecipePath()))).toBe(true);
   });
 
   test("the browser recipe lives in the plugin's own docs folder, not in a thread's worktree", () => {
     const was = DOCS_ROOT;
-    setDocsRoot("/opt/bb/plugins/plugin-workshop/docs/");
+    setDocsRoot("/opt/alia/plugins/plugin-workshop/docs/");
     try {
-      expect(browserRecipePath()).toBe("/opt/bb/plugins/plugin-workshop/docs/browser-recipe.md");
+      expect(browserRecipePath()).toBe("/opt/alia/plugins/plugin-workshop/docs/browser-recipe.md");
     } finally {
       setDocsRoot(was);
     }
     expect(browserRecipePath()).not.toContain("worktrees/thr_");
-    // The file is in this repository: the path above points at the plugin's install folder, which bb builds it from.
+    // The file is in this repository: the path above points at the plugin's install folder, which VesnALIA builds it from.
     const local = fileURLToPath(new URL("../docs/browser-recipe.md", import.meta.url));
     expect(existsSync(local)).toBe(true);
     const recipe = readFileSync(local, "utf8");
-    expect(recipe).toContain("bb browser-automation open");
+    expect(recipe).toContain("alia browser-automation open");
     expect(recipe).toContain("zoom");
-    expect(recipe).toContain("bb browser-automation close");
+    expect(recipe).toContain("alia browser-automation close");
     for (const no of ALL) for (const s of stageKnowledge()[no].sources) expect(s).not.toContain("worktrees/thr_");
   });
 
-  test("every skill of the stage knowledge is from the library or built into bb", () => {
+  test("every skill of the stage knowledge is from the library or built into VesnALIA", () => {
     for (const no of ALL) {
       for (const skill of stageKnowledge()[no].skills) expect(LIBRARY.includes(skill) || BUILTIN_SKILLS.has(skill), `${skill} (stage ${no})`).toBe(true);
     }
     for (const builtin of BUILTIN_SKILLS) expect(LIBRARY).not.toContain(builtin); // a built-in skill is invoked, not read from a library
   });
 
-  test("a skill that is not built into bb is used only if installed; a built-in one is invoked as built-in", () => {
+  test("a skill that is not built into VesnALIA is used only if installed; a built-in one is invoked as built-in", () => {
     for (const no of ALL) {
       const t = kickoff(w, stageOf(no), 1);
       for (const s of stageKnowledge()[no].skills) {
-        expect(t).toContain(BUILTIN_SKILLS.has(s) ? `bb's built-in skill \`${s}\` — invoke it as a built-in skill` : `\`${s}\` — if such a skill is installed`);
+        expect(t).toContain(BUILTIN_SKILLS.has(s) ? `VesnALIA's built-in skill \`${s}\` — invoke it as a built-in skill` : `\`${s}\` — if such a skill is installed`);
       }
     }
   });
@@ -137,20 +137,20 @@ describe("regulations", () => {
 
   test("stage 2 checks the SDK version of the types against the host", () => {
     const t = kickoff(w, stageOf(2), 1);
-    expect(t).toContain("compare the version in `node_modules/@get-bb/plugin-sdk/package.json` with the host's SDK version (`bb plugin types --check .` prints «host is …» and writes nothing)");
+    expect(t).toContain("compare the version in `node_modules/@vesnalia/plugin-sdk/package.json` with the host's SDK version (`alia plugin types --check .` prints «host is …» and writes nothing)");
     expect(t).toContain("only of the matching version");
-    expect(t).not.toMatch(/bb 0\.\d+\.\d+ = SDK/); // no version pairs of a particular bb install
+    expect(t).not.toMatch(/alia 0\.\d+\.\d+ = SDK/); // no version pairs of a particular VesnALIA install
     // The fallback is one command from the worktree root: the folder, its own package.json (npm init writes to the current folder, ignores --prefix), the install under the lock.
     expect(t).toContain(
-      `mkdir -p .superpowers/workshop/TEST-12/spike && (cd .superpowers/workshop/TEST-12/spike && npm init -y) && flock '${BUILD_LOCK}' npm install --ignore-scripts --prefix .superpowers/workshop/TEST-12/spike @get-bb/plugin-sdk@<host SDK version>`,
+      `mkdir -p .superpowers/workshop/TEST-12/spike && (cd .superpowers/workshop/TEST-12/spike && npm init -y) && flock '${BUILD_LOCK}' npm install --ignore-scripts --prefix .superpowers/workshop/TEST-12/spike @vesnalia/plugin-sdk@<host SDK version>`,
     );
     expect(t).toContain("Without its own `package.json` in `spike/` npm climbs up to the `package.json` of the worktree root");
     expect(t).toContain("`npm init` writes to the current folder");
     expect(t.indexOf("mkdir -p .superpowers/workshop/TEST-12/spike")).toBeLessThan(t.indexOf("npm install --ignore-scripts --prefix")); // the folder comes before the install
     expect(t).not.toContain("first `npm init -y` in that folder"); // a bare `npm init -y` without cd would rewrite the plugin's package.json
-    expect(t).toContain("do not run `bb plugin types` without `--check` in the plugin");
+    expect(t).toContain("do not run `alia plugin types` without `--check` in the plugin");
     // The source shared by all stages says the same — types of another version lie.
-    expect(stageKnowledge()[2].sources.join("\n")).toContain("Check that `node_modules/@get-bb/plugin-sdk/package.json` matches the host");
+    expect(stageKnowledge()[2].sources.join("\n")).toContain("Check that `node_modules/@vesnalia/plugin-sdk/package.json` matches the host");
   });
 
   test("no stage source points at a file outside the plugin and its worktree", () => {
@@ -160,7 +160,7 @@ describe("regulations", () => {
   test("stage 3 asks the migrations line, the live-check section and a stop on contradictions", () => {
     const t = kickoff(w, stageOf(3), 1);
     expect(t).toContain("### Task N");
-    expect(t).toContain("bb plugin logs <id>");
+    expect(t).toContain("alia plugin logs <id>");
     expect(t).toMatch(/at the start of `docs\/workshop\/TEST-12\/tz\.md`/);
     expect(t).toContain("## Review");
   });
@@ -191,12 +191,12 @@ describe("regulations", () => {
     const n = fakeWork({ task_key: "TEST-13", plugin_id: "hello", kind: "new" });
     const t4 = kickoff(n, stageOf(4), 1);
     expect(t4).toContain("remove the scaffold samples the spec does not use");
-    for (const s of ["skills/example-todos", "bb.skills", "Example todos", "showDone", "bb hello", "skills/example-skill", "bb plugin new"]) expect(t4).toContain(s);
-    expect(t4).toContain("`bb.app`");
+    for (const s of ["skills/example-todos", "alia.skills", "Example todos", "showDone", "alia hello", "skills/example-skill", "alia plugin new"]) expect(t4).toContain(s);
+    expect(t4).toContain("`alia.app`");
     expect(kickoff(w, stageOf(4), 1)).not.toContain("remove the scaffold samples"); // a rework — without this item
     expect(kickoff(w, stageOf(4), 1)).not.toContain("Example todos");
     for (const x of [n, w]) {
-      expect(kickoff(x, stageOf(5), 1)).toContain("`VERDICT: FAIL` if the branch still has `skills/example-todos` or its entry in the manifest's `bb.skills`");
+      expect(kickoff(x, stageOf(5), 1)).toContain("`VERDICT: FAIL` if the branch still has `skills/example-todos` or its entry in the manifest's `alia.skills`");
     }
     // The same skill under another name — by the scaffold's description.
     expect(kickoff(w, stageOf(5), 1)).toContain("skills/example-skill");
@@ -204,7 +204,7 @@ describe("regulations", () => {
 
   test("stage 5 verifies by commands under the lock and against MIGRATIONS", () => {
     const t = kickoff(w, stageOf(5), 1);
-    for (const s of ["npm test", "npm run typecheck", "bb plugin build", "bb plugin types --check", "git diff main...HEAD"]) expect(t).toContain(s);
+    for (const s of ["npm test", "npm run typecheck", "alia plugin build", "alia plugin types --check", "git diff main...HEAD"]) expect(t).toContain(s);
     expect(t).toContain(`flock '${BUILD_LOCK}'`);
     expect(t).toMatch(/[Mm]igrations[^\n]*`MIGRATIONS: no`[^\n]*FAIL/);
     expect(t).toMatch(/Do not change or commit code/);
@@ -215,9 +215,9 @@ describe("regulations", () => {
   test("rules", () => {
     expect(rulesText()).toContain(`flock '${BUILD_LOCK}'`);
     expect(rulesText()).toMatch(/Only the Workshop code installs, enables and disables plugins/);
-    expect(rulesText()).toContain("@get-bb/plugin-sdk");
-    expect(rulesText()).toContain("bb plugin types --check");
-    expect(rulesText()).toContain("bb plugin reload");
+    expect(rulesText()).toContain("@vesnalia/plugin-sdk");
+    expect(rulesText()).toContain("alia plugin types --check");
+    expect(rulesText()).toContain("alia plugin reload");
     // The section on the bar is part of the work: the badge in the plugin itself, the place by a NAV line, set by the Workshop.
     expect(rulesText()).toContain("app.experimental_icons.register");
     expect(rulesText()).toContain("NAV: <id>/<section> after <neighbour>");
@@ -226,7 +226,7 @@ describe("regulations", () => {
     expect(rulesText()).toContain("127.0.0.1");
     expect(rulesText()).toContain("private network address");
     expect(rulesText()).toMatch(/append-only/);
-    expect(rulesText()).toContain("bb.app");
+    expect(rulesText()).toContain("alia.app");
     expect(rulesText()).toContain("only the Workshop code moves its main branch on rollout and rollback");
   });
 
@@ -259,7 +259,7 @@ describe("regulations", () => {
   });
 
   test("path settings: absolute, normalized and plain, or they are ignored", () => {
-    for (const ok of ["/srv/plugins", "/srv/bb/.bb/locks/build.lock", "/a/b@c/d+e/f-g_h.i"]) expect(pathSettingProblem(ok), ok).toBeNull();
+    for (const ok of ["/srv/plugins", "/srv/alia/.vesnalia/locks/build.lock", "/a/b@c/d+e/f-g_h.i"]) expect(pathSettingProblem(ok), ok).toBeNull();
     expect(pathSettingProblem("plugins")).toBe("not an absolute path");
     expect(pathSettingProblem("-w0")).toBe("not an absolute path");
     expect(pathSettingProblem("~/plugins")).toBe("not an absolute path");
@@ -292,7 +292,7 @@ describe("regulations", () => {
     expect(t).toContain(".superpowers/workshop/TEST-12/live-r1.md");
     expect(t).toContain("Post-rollout check");
     expect(t).toContain("docs/workshop/TEST-12/tz.md");
-    expect(t).toContain("bb plugin logs hello");
+    expect(t).toContain("alia plugin logs hello");
     expect(t).toContain("VERDICT: FAIL"); // if the wrong commit is installed
     expect(t).toContain(browserRecipePath());
     expect(t).not.toContain("worktrees/thr_");
@@ -311,7 +311,7 @@ describe("regulations", () => {
       expect(t).toContain("VERDICT: FAIL");
       expect(t).toContain("nothing after it");
       expect(t).toContain("docs/workshop/TEST-12/tz.md");
-      expect(t).toContain("bb plugin logs hello");
+      expect(t).toContain("alia plugin logs hello");
     }
     expect(kickoff(w, stageOf(6), 2)).toContain("`VERDICT: PASS`");
   });
@@ -322,14 +322,14 @@ describe("regulations", () => {
     expect(t).toContain(rulesText());
     expect(t).toContain("abc1234");
     expect(t).toContain("live-r2.md");
-    expect(t).toContain("bb's built-in skill `browser-automation`");
+    expect(t).toContain("VesnALIA's built-in skill `browser-automation`");
     expect(t.indexOf("abc1234")).toBeGreaterThan(t.indexOf(rulesText())); // the packet comes last
   });
 
   test("regulationOf covers every stage, both work kinds, and the stage knowledge", () => {
     for (const no of ALL) expect(regulationOf(no).length).toBeGreaterThan(100);
     expect(regulationOf(4)).toContain("remove the scaffold samples");
-    expect(regulationOf(2)).toContain("bb-plugin-authoring");
+    expect(regulationOf(2)).toContain("alia-plugin-authoring");
     expect(regulationOf(1)).not.toBe(regulationOf(2));
     expect(() => regulationOf(8 as StageNo)).toThrow();
   });

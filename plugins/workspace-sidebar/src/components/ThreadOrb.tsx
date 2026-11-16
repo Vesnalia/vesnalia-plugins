@@ -3,11 +3,11 @@
 // The Linear ring (StatusIcon) says where a thread stands; this says what the
 // agent is doing right now. It only exists while the agent is in motion, so a
 // row at rest keeps the ring and the sidebar does not turn into a wall of
-// animation. Keyed off bb's indicator, never the pull request: a PR with
+// animation. Keyed off VesnALIA's indicator, never the pull request: a PR with
 // conflicts is a fact about the work, not about the agent.
 import { ThinkingOrb } from "@/components/ui/thinking-orb";
 import type { OrbState } from "thinking-orbs";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 
 export interface AgentOrb {
@@ -15,7 +15,7 @@ export interface AgentOrb {
   label: string;
 }
 
-// bb adds indicator kinds over time; anything unknown gets no orb.
+// VesnALIA adds indicator kinds over time; anything unknown gets no orb.
 const BY_INDICATOR: Record<string, AgentOrb> = {
   runtime: { state: "working", label: "The agent is running" },
   "working-draft": { state: "working", label: "The agent is running" },
@@ -47,7 +47,7 @@ export function ThreadOrb({ orb, className }: { orb: AgentOrb; className?: strin
     >
       {/* The 20px preset is the inline-text tuning; scaled to the ring's 14px
           slot so the title column does not shift when a row starts working.
-          theme="auto" follows bb's `dark` class on <html>. */}
+          theme="auto" follows VesnALIA's `dark` class on <html>. */}
       <ThinkingOrb
         state={orb.state}
         size={20}

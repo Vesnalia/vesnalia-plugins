@@ -35,9 +35,9 @@ describe("otlp", () => {
     const by = (n: string) => metrics.find((x) => x.name === n)!;
     expect(by("c").sum.dataPoints[0].asDouble).toBe(5);
     expect(by("h").histogram.dataPoints[0]).toMatchObject({ count: "2", sum: 55, bucketCounts: ["0", "1", "1"] });
-    expect(by("bb.provider.usage.used_percent").gauge.dataPoints).toHaveLength(1);
-    expect(by("bb.provider.usage.cost_used").gauge.dataPoints[0].asDouble).toBe(2.5);
-    expect(metrics.some((x) => x.name === "bb.provider.usage.reset_time")).toBe(false);
+    expect(by("alia.provider.usage.used_percent").gauge.dataPoints).toHaveLength(1);
+    expect(by("alia.provider.usage.cost_used").gauge.dataPoints[0].asDouble).toBe(2.5);
+    expect(metrics.some((x) => x.name === "alia.provider.usage.reset_time")).toBe(false);
   });
 
   it("drops the oldest spans when the queue is full", () => {

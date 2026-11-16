@@ -25,7 +25,7 @@ export function extractReferences(text: string): string[] {
 /**
  * References from the original that the rewrite dropped. `knownTokens` are
  * ground-truth references the caller already has (e.g. the composer's
- * structured @-mention labels) — merged with the regex extraction so bb
+ * structured @-mention labels) — merged with the regex extraction so VesnALIA
  * mentions are verified exactly, not heuristically.
  */
 export function missingReferences(

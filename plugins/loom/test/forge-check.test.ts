@@ -1,4 +1,4 @@
-import { experimental_PluginRpcCallError as PluginRpcCallError } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcCallError as PluginRpcCallError } from "@vesnalia/plugin-sdk";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createCli } from "../src/cli";
 import { forgeCheck, formatForgeCheck } from "../src/forge-check";
@@ -99,7 +99,7 @@ describe("forgeCheck", () => {
     expect(h.host.callsTo("prState")).toEqual([{ repo: "/repo", url: pull, forge: { kind: "command", state: "state.sh" } }]);
     expect(stated).toMatchObject({ forge: "command", call: "prState", runs: "state.sh", read: { state: "MERGED", draft: null, checks: null }, noFeedback: "this forge has no feedback command, so Loom reads only the state" });
 
-    await h.projects.propose({ toml: specToml((doc) => pr({ forge: { kind: "command", open: "open.sh", state: "state.sh", feedback: "feedback.sh" } })(doc)), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml((doc) => pr({ forge: { kind: "command", open: "open.sh", state: "state.sh", feedback: "feedback.sh" } })(doc)), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     const pending = await check("CSV-1", { version: 2 });
     expect(h.host.callsTo("prFeedback")).toEqual([{ repo: "/repo", url: pull, forge: { kind: "command", feedback: "feedback.sh" } }]);
     expect(pending).toMatchObject({ version: 2, call: "prFeedback", runs: "feedback.sh", read: { state: "MERGED" } });
@@ -138,11 +138,11 @@ describe("forgeCheck", () => {
   });
 });
 
-describe("bb loom forge check", () => {
+describe("alia loom forge check", () => {
   it("prints the read for the human and for an agent thread, exits 1 on a failed read, and writes no human.action event", async () => {
     const host = makeHost({ port: new FakePort() });
-    host.bb.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
-    await host.projects.propose({ toml: specToml(pr()), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_env" });
+    host.alia.cli.register(createCli(host.projects, host.engine, host.store, Date.now));
+    await host.projects.propose({ toml: specToml(pr()), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_env" });
     await host.projects.approve("csv", "human");
     const run = (argv: string[], threadId?: string) => host.harness.runCli(argv, threadId === undefined ? undefined : { threadId });
 

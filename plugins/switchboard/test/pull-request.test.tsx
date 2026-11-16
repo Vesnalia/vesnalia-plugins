@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { pullRequestContract, usePullRequest, type PullRequest } from "../src/pull-request";
 
 export const pullRequest: PullRequest = { number: 12, title: "Card", url: "https://example.com/12", state: "open",
@@ -68,7 +68,7 @@ describe("environment-keyed pull requests", () => {
     });
     expect(await screen.findByText("#12 open passing approved")).toBeTruthy();
     failed = true;
-    await slot.behavior.experimental_invalidateRpc(["environment:e"], "bb--github-pr-status");
+    await slot.behavior.experimental_invalidateRpc(["environment:e"], "alia--github-pr-status");
     await waitFor(() => expect(screen.getByText("No PR data")).toBeTruthy());
     expect(slot.rpcCalls).toHaveLength(2);
   });

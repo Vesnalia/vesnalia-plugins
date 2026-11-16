@@ -1,29 +1,29 @@
-// bb-plugin-openui frontend. Renders ```openui-lang fences in agent replies
+// alia-plugin-openui frontend. Renders ```openui-lang fences in agent replies
 // with OpenUI's React renderer and built-in library. React and the SDK are
-// shimmed to BB's copies by `bb plugin build`.
+// shimmed to VesnALIA's copies by `alia plugin build`.
 import "@openuidev/react-ui/layered/styles/index.css";
 import "./app.css";
 import "./ui/components/styles.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useSdk,
   type ExperimentalCodeFenceRendererProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { BuiltinActionType, Renderer, type ActionEvent, type ElementNode } from "@openuidev/react-lang";
 import { ThemeProvider } from "@openuidev/react-ui";
 import { answerLines, collectForms } from "./ui/answers";
 import { DiagramView } from "./ui/Diagram";
 import { FenceContext } from "./ui/data";
 import { buildLibrary } from "./ui/library";
-import { useBbTheme } from "./ui/theme";
+import { useAliaTheme } from "./ui/theme";
 
 const LANGUAGES = ["openui-lang", "openui"] as const;
 // Module scope: OpenUI parsers memoize by library identity.
 const library = buildLibrary(DiagramView);
 
-/** BB marks its dark theme with a `dark` class on the root element. */
+/** VesnALIA marks its dark theme with a `dark` class on the root element. */
 function useDarkMode(): boolean {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   useEffect(() => {
@@ -44,9 +44,9 @@ export function toModelMessage(event: ActionEvent, root: ElementNode | null): st
 function OpenUiFence({ code, status, message, Original }: ExperimentalCodeFenceRendererProps) {
   const fence = useMemo(() => ({ threadId: message.threadId, messageId: message.id }), [message.threadId, message.id]);
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const dark = useDarkMode();
-  const theme = useBbTheme(dark);
+  const theme = useAliaTheme(dark);
   const [failed, setFailed] = useState(false);
   const root = useRef<ElementNode | null>(null);
 

@@ -5,7 +5,7 @@
  *
  *  1. The FRAME is the host's. Geometry, radius, surface and rhythm come from
  *     `PromptStackCard` (see `.bbx-stack-card` in app.css) so the row sits in
- *     bb's prompt stack as a peer of "Running background command".
+ *     VesnALIA's prompt stack as a peer of "Running background command".
  *  2. The CONTENTS are ours. The row opens with a phrase, not a badge:
  *     "Building Almanac" while it runs, "Almanac succeeded" once it lands.
  *     State and identity are one clause whose grammar does the work, in the

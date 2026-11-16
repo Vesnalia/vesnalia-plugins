@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-flare",
+  "name": "alia-plugin-flare",
   "version": "0.3.2",
   "private": true,
   "type": "module",
   "engines": {
-    "bb": ">=0.48.1",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48.1",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Flare",
     "description": "Lets agents send up a flare mid-turn: a finding, a decision, progress or a blocker you see at once in a banner above the message box and in the thread's Flares tab, with a push notification for blockers. The flare tool returns at once and never holds the agent's turn.",
     "branding": {
@@ -29,14 +29,14 @@
     "host": "./host.ts"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.5.0",
     "zod": "4.6.6",
-    "@get-bb/plugin-sdk": "0.6.104"
+    "@vesnalia/plugin-sdk": "^0.6.104"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
@@ -56,5 +56,14 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.12"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/flare#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/flare"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

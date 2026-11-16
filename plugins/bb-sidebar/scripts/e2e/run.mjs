@@ -10,7 +10,7 @@ try {
     threads.push(await server.seed(title, { idle: true }));
   }
   await server.checkIsolation("seeded");
-  const settingsResponse = await fetch(`${server.url}/api/v1/plugins/bb-sidebar/rpc/getSidebarSettings`, {
+  const settingsResponse = await fetch(`${server.url}/api/v1/plugins/alia-sidebar/rpc/getSidebarSettings`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: "{}",
@@ -23,7 +23,7 @@ try {
     JSON.stringify({
       url: server.url,
       env: server.env,
-      bb: server.bb,
+      alia: server.alia,
       threads,
       projectId: server.projectId,
       defaultSettings: settingsPayload.result,

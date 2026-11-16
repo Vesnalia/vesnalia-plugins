@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-touchbar_clean_base=${BB_THREAD_STORAGE:-${TMPDIR:-/tmp}}
+touchbar_clean_base=${ALIA_THREAD_STORAGE:-${TMPDIR:-/tmp}}
 touchbar_clean=$(mktemp -d "$touchbar_clean_base/touchbar-clean.XXXXXX")
 cleanup() {
   find "$touchbar_clean" -depth -delete
@@ -13,4 +13,4 @@ tar --exclude=.git --exclude=node_modules --exclude=dist -cf - . |
 
 cd "$touchbar_clean"
 npm ci --ignore-scripts >/dev/null
-npm run check --workspace bb-plugin-touchbar
+npm run check --workspace alia-plugin-touchbar

@@ -1,6 +1,6 @@
-// app/patch.ts — unified patches for BB's diff viewer.
+// app/patch.ts — unified patches for VesnALIA's diff viewer.
 //
-// BB's diff component takes a unified patch for one file, so the review
+// VesnALIA's diff component takes a unified patch for one file, so the review
 // before saving builds one from the old and new text.
 
 import { createTwoFilesPatch } from "diff";

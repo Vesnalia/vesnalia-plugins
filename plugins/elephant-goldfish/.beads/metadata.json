@@ -2,6 +2,6 @@
   "database": "dolt",
   "backend": "dolt",
   "dolt_mode": "embedded",
-  "dolt_database": "bb_elephant_goldfish",
+  "dolt_database": "alia_elephant_goldfish",
   "project_id": "82d74ef5-fd5b-4697-a058-61ec64818b68"
 }

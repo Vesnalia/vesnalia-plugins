@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { BrowserSave, checkAction, CiteDirective, createCommands, HeaderChip, InfoResearch, policyAction, SegmentDetails, SegmentSummary, SourcesDirective, useSegmentVisible } from "./src/ui/chat.tsx";
 import { CHECK_TAB_ID, RESEARCH_TAB_ID } from "./src/ui/nav-store.ts";
 import { PAGE_PATH, ResearchHeader, ResearchPage, ResearchSidebar, usePageTitle, useResearchBadge } from "./src/ui/page.tsx";

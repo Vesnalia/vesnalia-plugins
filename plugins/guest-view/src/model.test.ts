@@ -81,7 +81,7 @@ test("guestTranscript keeps messages and turns tool work into counts", () => {
 
 test("guestTranscript marks live work and hides other agents' messages", () => {
   const items = guestTranscript([
-    user("u1", "[bb message from thread:thr_x] private", "agent"),
+    user("u1", "[VesnALIA message from thread:thr_x] private", "agent"),
     user("u2", "system note", "system"),
     work("c1", "command", { status: "pending" }),
   ]);
@@ -361,7 +361,7 @@ test("maskSecrets reads long texts once", () => {
 });
 
 test("a guest cannot take the owner's, the system's or the agent's name", () => {
-  for (const name of ["Owner", "owner", "OWNER", "0wner", "O w n e r", "System", "BB", "bb", "Claude", "Assistant", "Admin", "Owner Bob", "System: Bob", "Agent 7"]) {
+  for (const name of ["Owner", "owner", "OWNER", "0wner", "O w n e r", "System", "ALIA", "alia", "Claude", "Assistant", "Admin", "Owner Bob", "System: Bob", "Agent 7"]) {
     assert.equal(cleanName(name, "Guest"), "Guest", name);
     assert.ok(reservedName(name) || /:/.test(name), name);
   }

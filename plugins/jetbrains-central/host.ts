@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
-import { experimental_defineProviderBridge, PROVIDER_BRIDGE_PROTOCOL_VERSION, skillsConfigureParamsSchema, type ProviderBridgeContext } from "@get-bb/plugin-sdk/provider-bridge";
-import { experimental_acpProviderBridge } from "@get-bb/plugin-sdk/provider-bridge/acp";
+import { experimental_defineProviderBridge, PROVIDER_BRIDGE_PROTOCOL_VERSION, skillsConfigureParamsSchema, type ProviderBridgeContext } from "@vesnalia/plugin-sdk/provider-bridge";
+import { experimental_acpProviderBridge } from "@vesnalia/plugin-sdk/provider-bridge/acp";
 import { z } from "zod";
 import { profileSchema, centralArgs } from "./profiles.js";
 import { findNativeBridge, claudeWrapper, nativeLaunchEnv, codexWrapper, resolveOnPath, runner } from "./native.js";
 import { piModels, isWorkPiModel } from "./pi.js";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { usageHostContract } from "./usage-contract.js";
 import { collectUsage } from "./usage.js";
 
@@ -72,7 +72,7 @@ const centralBridge = experimental_defineProviderBridge({
     }
     const options = message.params?.options?.providerOptions ?? message.params?.providerOptions;
     try {
-      // BB configures injected skills before sending any provider launch options.
+      // VesnALIA configures injected skills before sending any provider launch options.
       // Save this host-level setup and apply it before the first session request.
       if (message.method === "skills/configure" && !child) {
         deferredSkills = skillsConfigureParamsSchema.parse(message.params);
@@ -129,13 +129,13 @@ const centralBridge = experimental_defineProviderBridge({
           let value: any;
           try { value = JSON.parse(output); } catch { return; }
           if (value.id === initializeId && !value.method && !ready) {
-            if (value.error) { failure(message.id, "BB native bridge initialization failed"); return; }
+            if (value.error) { failure(message.id, "VesnALIA native bridge initialization failed"); return; }
             if (deferredSkills) {
               child!.stdin!.write(JSON.stringify({jsonrpc: "2.0", id: skillsReplayId, method: "skills/configure", params: deferredSkills}) + "\n");
             } else flushPending();
           } else if (value.id === skillsReplayId && !value.method) {
             if (value.error) {
-              for (const id of waiting) failure(id, "Could not apply BB skills to the Central provider: " + value.error.message);
+              for (const id of waiting) failure(id, "Could not apply VesnALIA skills to the Central provider: " + value.error.message);
               waiting.clear(); stop(); return;
             }
             deferredSkills = undefined;
@@ -147,7 +147,7 @@ const centralBridge = experimental_defineProviderBridge({
         });
         // Drain without forwarding raw agent stderr (which can contain credentials).
         child.stderr!.resume();
-        child.on("error", () => { for (const id of waiting) failure(id, "Could not launch BB native bridge"); waiting.clear(); });
+        child.on("error", () => { for (const id of waiting) failure(id, "Could not launch VesnALIA native bridge"); waiting.clear(); });
         child.stdin!.on("error", () => { for (const id of waiting) failure(id, "Central provider input closed"); waiting.clear(); });
         child.on("exit", code => {
           if (!closed) {

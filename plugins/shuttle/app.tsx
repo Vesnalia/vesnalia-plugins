@@ -1,5 +1,5 @@
 import "./src/ui/links/links.css";
-import { definePluginApp, experimental_THREAD_INFO_SECTION_GROUPS as INFO_SECTION_GROUPS } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, experimental_THREAD_INFO_SECTION_GROUPS as INFO_SECTION_GROUPS } from "@vesnalia/plugin-sdk/app";
 import { PANEL_ACTION_ID, PANEL_PATH } from "./src/ui/constants";
 import { ShuttleHeader } from "./src/ui/header";
 import { mountLinks } from "./src/ui/links/dom";

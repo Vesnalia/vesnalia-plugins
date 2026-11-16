@@ -18,7 +18,7 @@ test("relative link stays in the thread workspace", () => {
 });
 
 test("percent-encoded Cyrillic and spaces decode", () => {
-  const action = resolveLink("./%D0%9F%D0%BB%D0%B0%D0%BD%20v2.md", workspaceDoc);
+  const action = resolveLink("./%D0%9F%D0%ALIA%D0%B0%D0%BD%20v2.md", workspaceDoc);
   assert.equal(action?.type === "file" && action.target.path, "docs/guide/План v2.md");
 });
 

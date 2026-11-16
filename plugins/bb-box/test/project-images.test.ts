@@ -6,7 +6,7 @@ import { checkDocument, emptyDocument, readDraft, type ConfigDocument, type Imag
 import { imageChoices, namedImage, projectImage, withImage } from "../src/core/project-images.ts";
 import { imagesText, imageWords, type ImageOptionView } from "../src/plugin/views.ts";
 
-const IMAGE: ImageConfig = { kinds: ["linux", "linux-desktop-cpu"], script: "#!/bin/bash\napt-get install -y tailscale\n", check: "tailscale version\n", bake: "auto", projects: ["prj_one"], source: { script: ".bb/box-setup.sh", check: ".bb/box-check.sh" }, updated: "2026-10-03T10:00:00.000Z" };
+const IMAGE: ImageConfig = { kinds: ["linux", "linux-desktop-cpu"], script: "#!/bin/bash\napt-get install -y tailscale\n", check: "tailscale version\n", bake: "auto", projects: ["prj_one"], source: { script: ".vesnalia/box-setup.sh", check: ".vesnalia/box-check.sh" }, updated: "2026-10-03T10:00:00.000Z" };
 const problemsOf = (document: ConfigDocument) => checkDocument(document, {}, DRIVERS).filter((problem) => problem.path.startsWith("images"));
 
 test("a project's image reads from the configuration, and comes back as it was (049)", () => {
@@ -44,7 +44,7 @@ test("an image's shape and its checks: its name, Linux kinds that exist, its pro
       ["images.windows.kinds", "An image's script is a Linux one for now, and windows-desktop is not a Linux kind"],
       ["images.windows.kinds", 'There is no kind "nonsense"'],
       ["images.twin.kinds", "Project prj_one's linux boxes would get both first and twin"],
-      ["images.large.script", "The script is 257 KiB; BB Box keeps up to 256 KiB"],
+      ["images.large.script", "The script is 257 KiB; VesnALIA Box keeps up to 256 KiB"],
     ],
   );
 });

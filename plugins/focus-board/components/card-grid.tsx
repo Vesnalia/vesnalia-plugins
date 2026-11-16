@@ -14,7 +14,7 @@
 // data-driven sort, so a card's place is recomputed from its own fields on
 // every render, never from a stored hand order.
 import { useMemo, type MouseEvent, type ReactNode, type Ref } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { BoardColumn } from "./grouping";
 import { compareGridSort, type GridSort } from "./grid-sort";
 import type { CardMenuAction } from "./thread-card-menu";

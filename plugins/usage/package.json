@@ -1,9 +1,9 @@
 {
-  "name": "bb-plugin-usage",
+  "name": "alia-plugin-usage",
   "version": "0.3.27",
   "type": "module",
   "scripts": {
-    "build": "npm run generate:collectors && bb plugin build",
+    "build": "npm run generate:collectors && alia plugin build",
     "generate:collectors": "node scripts/generate-host-scripts.mjs",
     "check": "tsc --noEmit",
     "test": "node scripts/generate-host-scripts.mjs --check && vitest run",
@@ -12,10 +12,10 @@
     "test:tz:akl": "TZ=Pacific/Auckland vitest run"
   },
   "engines": {
-    "bb": ">=0.36",
-    "bbPluginSdk": "^0.4.1"
+    "alia": ">=0.36",
+    "aliaPluginSdk": ">=0.6"
   },
-  "bb": {
+  "alia": {
     "name": "Usage",
     "description": "Coding-agent token usage and estimated API cost across enrolled machines.",
     "branding": {
@@ -54,5 +54,22 @@
   },
   "allowScripts": {
     "better-sqlite3": true
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/usage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/usage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

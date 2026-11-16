@@ -1,6 +1,6 @@
 # Disk Usage
 
-See what's taking up disk space on the bb server host, `ncdu`-style: scan a
+See what's taking up disk space on the VesnALIA server host, `ncdu`-style: scan a
 directory, get its immediate children sorted by recursive size, and drill down
 until you find the culprit.
 
@@ -22,13 +22,13 @@ until you find the culprit.
   drilling back up (or reopening the panel) is instant; the header shows the
   snapshot's age and **Rescan** forces a fresh walk. Concurrent requests for
   the same path join a single walk.
-- **`bb disk-usage` CLI** — the same scan for agents and scripts:
+- **`alia disk-usage` CLI** — the same scan for agents and scripts:
 
   ```sh
-  bb disk-usage                     # scan the server home directory
-  bb disk-usage /var --top 10       # the 10 largest entries under /var
-  bb disk-usage ~/GitHub --json     # machine-readable output
-  bb disk-usage --refresh           # bypass the per-path cache
+  alia disk-usage                     # scan the server home directory
+  alia disk-usage /var --top 10       # the 10 largest entries under /var
+  alia disk-usage ~/GitHub --json     # machine-readable output
+  alia disk-usage --refresh           # bypass the per-path cache
   ```
 
 ## How sizes are measured
@@ -43,5 +43,5 @@ until you find the culprit.
   truncated, with the budget spread across the tree rather than exhausted
   depth-first.
 
-The scan runs on the machine hosting the bb server, so paths are server-host
+The scan runs on the machine hosting the VesnALIA server, so paths are server-host
 paths — the same model as the System Monitor plugin.

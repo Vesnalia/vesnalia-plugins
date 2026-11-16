@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds bb-box's CT templates on a Proxmox host, as root.
+# Builds alia-box's CT templates on a Proxmox host, as root.
 #
 #   build.sh linux <vmid> [--cpu]
 #       the Linux template: development tools, agent CLIs and Docker, and on a
@@ -21,13 +21,13 @@
 #       host without the GPU helper, so desktops can spread across cards
 #
 # Options: --keep     stop before finalizing and leave the build CT running.
-#          --replace  <vmid> may be a bb-box template of the same kind
+#          --replace  <vmid> may be a alia-box template of the same kind
 #                     already. The new one is built and checked (or copied)
 #                     in another CT (BBBOX_BUILD_VMID, or the next free VMID)
 #                     and only then takes the old one's place. Boxes cloned
 #                     from the old one keep running on LVM-thin; on storage
 #                     where they need it, it refuses until they are released.
-# Settings: /etc/bb-box/bb-box.env (see host/bb-box.env.example).
+# Settings: /etc/alia-box/alia-box.env (see host/alia-box.env.example).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=../host/common.sh
@@ -105,19 +105,19 @@ copy_ct() { # from to hostname
 # template.
 ct=$vmid
 if in_use "$vmid"; then
-  [ -n "$replace" ] || die "VMID $vmid is already in use (--replace replaces a bb-box template)"
+  [ -n "$replace" ] || die "VMID $vmid is already in use (--replace replaces a alia-box template)"
   word=$kind
   [ "$kind" != copy-desktop ] || word=desktop
   # A Linux template built before its rename says headless.
   pattern=$word
   [ "$word" != linux ] || pattern='(linux|headless)'
   config=$(pct config "$vmid" 2>/dev/null || true)
-  grep -q '^template: 1' <<<"$config" && grep -Eq "^description: bb-box $pattern template" <<<"$config" ||
-    die "$vmid is not a bb-box $word template; --replace replaces only those"
+  grep -q '^template: 1' <<<"$config" && grep -Eq "^description: alia-box $pattern template" <<<"$config" ||
+    die "$vmid is not a alia-box $word template; --replace replaces only those"
   # A Wayland desktop replaces only a Wayland one, and an X11 one only an X11 one.
   if [ "$kind" = desktop ]; then
     was_wayland=
-    ! grep -q '^description: bb-box desktop template (Wayland' <<<"$config" || was_wayland=1
+    ! grep -q '^description: alia-box desktop template (Wayland' <<<"$config" || was_wayland=1
     [ "$was_wayland" = "$wayland" ] || die "$vmid is a desktop template of the other session (X11 or Wayland); --replace replaces only one of the same"
   fi
   clones=$(linked_clones "$vmid")
@@ -128,9 +128,9 @@ if in_use "$vmid"; then
   ! in_use "$ct" || die "VMID $ct for the build is already in use; set BBBOX_BUILD_VMID to a free one"
 fi
 
-cache=/var/cache/bb-box/artifacts
-stage=/var/tmp/bb-box-build-$vmid
-in_ct=/var/tmp/bb-box-build
+cache=/var/cache/alia-box/artifacts
+stage=/var/tmp/alia-box-build-$vmid
+in_ct=/var/tmp/alia-box-build
 
 # The NVIDIA GPU's device nodes: /dev/nvidiaN, and its DRM card and render nodes.
 gpu_lines() {
@@ -208,9 +208,9 @@ if [ "$kind" = copy-desktop ]; then
   note=$(grep '^#' <<<"$lines" | cut -c3-)
   # The copy has its source's image record (049), from the description's second line.
   record=$(pvesh get "/nodes/$BBBOX_NODE/lxc/$from/config" --output-format json | jq -r '.description // ""' | grep '^{' | tail -1 || true)
-  description="bb-box desktop template ($note), copied from $from on $(date -u +%F).${record:+
+  description="alia-box desktop template ($note), copied from $from on $(date -u +%F).${record:+
 $record}"
-  copy_ct "$from" "$ct" "bb-box-desktop-$vmid"
+  copy_ct "$from" "$ct" "alia-box-desktop-$vmid"
   pct set "$ct" --delete protection 2>/dev/null || true
   for key in $(pct config "$ct" | sed -n 's|^\(dev[0-9]*\): /dev/\(nvidia\|dri/\).*|\1|p'); do pct set "$ct" --delete "$key"; done
   pct set "$ct" --tags "$build"
@@ -218,7 +218,7 @@ $record}"
   add_devices "$ct" "${devices[@]}"
   add_tun "$ct"
   if [ "$ct" != "$vmid" ]; then
-    replace_with "$ct" "$vmid" "bb-box-desktop-$vmid" "$description"
+    replace_with "$ct" "$vmid" "alia-box-desktop-$vmid" "$description"
   else
     make_template "$vmid" "$description"
   fi
@@ -230,7 +230,7 @@ fi
 # and the artifacts.
 [ -f "$BBBOX_SSH_KEY" ] || {
   install -d -m 0700 "$(dirname "$BBBOX_SSH_KEY")"
-  ssh-keygen -q -t ed25519 -N '' -C "bb-box plugin" -f "$BBBOX_SSH_KEY"
+  ssh-keygen -q -t ed25519 -N '' -C "alia-box plugin" -f "$BBBOX_SSH_KEY"
   echo "created the plugin's SSH key $BBBOX_SSH_KEY"
 }
 artifacts=$kind
@@ -249,7 +249,7 @@ linux_gpu=none
 cat >"$stage/build.env" <<EOF
 BOX_USER=box
 BOX_DNS="$BBBOX_DNS"
-BB_URL="$BBBOX_BB_URL"
+ALIA_URL="$BBBOX_ALIA_URL"
 DESKTOP_GPU=$desktop_gpu
 LINUX_GPU=$linux_gpu
 DESKTOP_SESSION=${wayland:+wayland}
@@ -287,7 +287,7 @@ if [ "$kind" = desktop ] && [ -z "$cpu" ]; then
 fi
 [ -z "$cpu" ] || [ "$kind" != desktop ] || lines="# cpu only"
 [ -z "$wayland" ] || lines="# Wayland, cpu only"
-pct create "$ct" "$os_template" --hostname "bb-box-$kind" --pool "$BBBOX_POOL" --unprivileged 1 \
+pct create "$ct" "$os_template" --hostname "alia-box-$kind" --pool "$BBBOX_POOL" --unprivileged 1 \
   --features nesting=1 --cores 16 --memory 16384 --swap 1024 --rootfs "$BBBOX_STORAGE:$size" --tags "$build" \
   --net0 "name=eth0,bridge=$BBBOX_BRIDGE,ip=$BBBOX_BUILD_ADDRESS/$BBBOX_PREFIX,gw=$BBBOX_GATEWAY,type=veth" \
   --nameserver "$BBBOX_DNS" --ostype ubuntu --onboot 0
@@ -311,8 +311,8 @@ pct reboot "$ct"
 sleep 1
 pct exec "$ct" -- timeout 60 systemctl is-system-running --wait >/dev/null || true
 # The Linux template's check keeps its earlier name, which templates have.
-check=bb-box-check-$kind
-[ "$kind" != linux ] || check=bb-box-check-headless
+check=alia-box-check-$kind
+[ "$kind" != linux ] || check=alia-box-check-headless
 pct exec "$ct" -- runuser -u box -- env PATH=/home/box/.local/bin:/home/box/.cargo/bin:/usr/local/bin:/usr/bin:/bin \
   XDG_RUNTIME_DIR=/run/user/1000 "$check" | tee "$stage/check.txt"
 if grep -q '^[^ ].* FAIL ' "$stage/check.txt"; then
@@ -328,19 +328,19 @@ push --exclude=./artifacts
 pct exec "$ct" -- bash "$in_ct/guest/finalize.sh" "$in_ct" "$kind"
 # The image's record (049), which the template's description carries for the
 # plugin's doctor, as its second line.
-record=$(pct exec "$ct" -- cat /usr/share/bb-box/image.json | jq -c .) || die "the template has no image record"
+record=$(pct exec "$ct" -- cat /usr/share/alia-box/image.json | jq -c .) || die "the template has no image record"
 pct fstrim "$ct" || echo "pct fstrim $ct failed: the template keeps the blocks its build deleted"
 pct shutdown "$ct" --timeout 60
 # Clones get their address from the plugin; without one they have none.
 pct set "$ct" --net0 "name=eth0,bridge=$BBBOX_BRIDGE,ip=manual,type=veth" --delete nameserver \
   --cores "$cores" --memory "$memory" --swap 512
 note=$(grep '^#' <<<"$lines" | cut -c3- || true)
-description="bb-box $kind template${note:+ ($note)}, built $(date -u +%F). See /usr/share/bb-box/template-release inside.
+description="alia-box $kind template${note:+ ($note)}, built $(date -u +%F). See /usr/share/alia-box/template-release inside.
 $record"
 if [ "$ct" != "$vmid" ]; then
   # The new template replaces the old one only now.
   echo "replacing template $vmid with CT $ct (if this fails, CT $ct keeps the new template)"
-  replace_with "$ct" "$vmid" "bb-box-$kind" "$description"
+  replace_with "$ct" "$vmid" "alia-box-$kind" "$description"
 else
   make_template "$vmid" "$description"
 fi

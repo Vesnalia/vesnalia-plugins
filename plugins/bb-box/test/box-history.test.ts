@@ -20,7 +20,7 @@ import type { BoxRecord, Boxes } from "../src/core/boxes.ts";
 import type { ReachCheck } from "../src/core/reach.ts";
 import { TransportError, type RunResult } from "../src/transports/types.ts";
 import { tempDir } from "./helpers.ts";
-import { bbOf, storage } from "./box-files.ts";
+import { aliaOf, storage } from "./box-files.ts";
 
 const T0 = 1_800_000_000_000;
 const MINUTE = 60_000;
@@ -99,7 +99,7 @@ test("a Mac's light reading parses its memory, load, disk and default interface,
     "@@df",
     "/dev/disk3s1s1 971350180 400000000 500000000 45% /",
     "@@net",
-    "en0   1500  <Link#11>   aa:bb:cc:dd:ee:ff  900  0  123456  800  0  654321  0",
+    "en0   1500  <Link#11>   aa:alia:cc:dd:ee:ff  900  0  123456  800  0  654321  0",
     "",
   ].join("\n");
   const reading = parseLightOutput("macos", output);
@@ -454,7 +454,7 @@ function openedHistory(folder: string, now: () => number, refuseAttach = false, 
   return { source, files, store: new BoxHistoryStore({ file: files.history, now, ...(logError ? { logError } : {}) }), log: new BoxLogStore({ file: files.log, now }) };
 }
 
-test("G12: a restart of BB Box taking 30 s loses no point, one taking 4 minutes loses one, and a box restarted inside shows no negative or huge CPU", async () => {
+test("G12: a restart of VesnALIA Box taking 30 s loses no point, one taking 4 minutes loses one, and a box restarted inside shows no negative or huge CPU", async () => {
   const folder = tempDir("history-restart");
   const clock = new FakeClock(T0 - 1000);
   const box = new FakeBox("bxrestarting001", 4, T0 - 1000);
@@ -798,7 +798,7 @@ test("G18: with box history's cap set low, its writes stop and say so in the doc
   assert.ok(opened.store.full, `writes stopped after ${written} points, at ${pageSize * (Number(db.pragma("boxhistory.page_count", { simple: true })))} bytes`);
   const check = opened.store.checks("On.")[0]!;
   assert.equal(check.status, "warn");
-  assert.match(check.detail, /Box history's file is full, so BB Box stopped keeping box history/);
+  assert.match(check.detail, /Box history's file is full, so ALIA Box stopped keeping box history/);
   assert.match(opened.store.fullWords() ?? "", /starts again once old points age out/, "Monitor settings show the same words");
   assert.equal(opened.store.record("bxfilling000000", { start: T0, end: T0 + MINUTE, cpu: 1, memory: 1, disk: 1, down: 1, up: 1, load: null, cores: 1, cpuStall: null, memoryStall: null, high: 0 }, { at: T0 + 2 * HOUR, reading: parseLightOutput("linux", linuxOutput({})) }), false, "no write is tried while full");
   const before = logged.length;
@@ -807,7 +807,7 @@ test("G18: with box history's cap set low, its writes stop and say so in the doc
     opened.store.setQuiet("history", minute % 2 === 0, clock.now);
   }
   assert.equal(logged.length, before, "while full, tallies and off times are left alone, with nothing logged each minute");
-  const monitor = createMonitorStore(bbOf(opened.source) as never);
+  const monitor = createMonitorStore(aliaOf(opened.source) as never);
   assert.equal(monitor.write([{ type: "sample", timestamp: clock.now, cpu: 10 }]).length, 1, "the Monitor's alerts still write");
   opened.log.record({ box: "bxone", thread: "thr_one", name: "amber-fox", at: clock.now, kind: "stopped", by: BY_PERSON });
   assert.equal(opened.log.failures, null, "the box log still writes");
@@ -926,15 +926,15 @@ test("a step read in part keeps its known gaps at their own times and says how m
 
 test("the doctor says whether box history reads, and its coverage this hour and the last", () => {
   assert.match(historyStateWords({ ...MONITOR_DEFAULTS, enabled: false }, 0, 2, null), /^Off, as the Monitor is off/);
-  assert.match(historyStateWords({ ...MONITOR_DEFAULTS, boxHistory: false }, 0, 2, null), /^Off: BB Box reads no box in the background/);
+  assert.match(historyStateWords({ ...MONITOR_DEFAULTS, boxHistory: false }, 0, 2, null), /^Off: ALIA Box reads no box in the background/);
   assert.equal(
     historyStateWords(MONITOR_DEFAULTS, 30, 6, { due: 1800, taken: 1790, skipped: 4, failed: 6, unanswered: 60, readingMs: 0, slowestMs: 0, workers: 6 }),
-    "On: BB Box reads 30 boxes once a minute, with up to 6 readings at once. This hour and the last, 1790 of 1800 readings due were taken within 10 s of their second (99.4%); 4 skipped, 6 failed, and 60 not tried as their box did not answer.",
+    "On: VesnALIA Box reads 30 boxes once a minute, with up to 6 readings at once. This hour and the last, 1790 of 1800 readings due were taken within 10 s of their second (99.4%); 4 skipped, 6 failed, and 60 not tried as their box did not answer.",
   );
   assert.equal(HIGH.load, 32);
 });
 
-test("a history reading goes through a connected BB machine's host entry, else one command through its route; a box that does not answer is told to the reach check, and nothing else is called (069 G7, G11)", async () => {
+test("a history reading goes through a connected VesnALIA machine's host entry, else one command through its route; a box that does not answer is told to the reach check, and nothing else is called (069 G7, G11)", async () => {
   const calls: string[] = [];
   const reach = {
     answered: (box: BoxRecord) => void calls.push(`answered ${box.id}`),
@@ -986,7 +986,7 @@ test("a history reading goes through a connected BB machine's host entry, else o
 
   connected = false;
   await read(as("bxmachine00001"), request, signal);
-  assert.deepEqual(calls.splice(0), ["route 10000 true", "answered bxmachine00001"], "a BB machine BB does not see connected is read through its route");
+  assert.deepEqual(calls.splice(0), ["route 10000 true", "answered bxmachine00001"], "a VesnALIA machine VesnALIA does not see connected is read through its route");
 
   route = async () => {
     throw new TransportError("unreachable", "ssh: connect to host 10.0.0.31 port 22: Connection timed out");
@@ -994,7 +994,7 @@ test("a history reading goes through a connected BB machine's host entry, else o
   await assert.rejects(read(as("bxroutedbox001"), request, signal), /Connection timed out/);
   assert.deepEqual(calls.splice(0), ["route 10000 true", "reach check told bxroutedbox001"], "one command, then the reach check, and no backend call");
 
-  await assert.rejects(read(as("bxwindows00001"), request, signal), /not answering BB/);
+  await assert.rejects(read(as("bxwindows00001"), request, signal), /not answering ALIA/);
   assert.deepEqual(calls.splice(0), ["machine offline bxwindows00001"]);
 });
 

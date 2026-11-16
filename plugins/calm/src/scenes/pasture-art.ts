@@ -42,20 +42,20 @@ export const SHEEP = {
 /** A tri-colour collie: tan, dark saddle, white collar and socks. */
 export const DOG = {
   trot1: [
-    "..........bb..",
+    "..........alia..",
     ".........bttt.",
     "c........ttetK",
-    "bb.......cccc.",
+    "alia.......cccc.",
     ".bbbbbbbbccc..",
     ".tttttttccc...",
     "..t.t...t.t...",
     "..c.c...c.c...",
   ],
   trot2: [
-    "..........bb..",
+    "..........alia..",
     ".........bttt.",
     "c........ttetK",
-    "bb.......cccc.",
+    "alia.......cccc.",
     ".bbbbbbbbccc..",
     ".tttttttccc...",
     "...tt....tt...",
@@ -63,7 +63,7 @@ export const DOG = {
   ],
   /** Sitting, facing the viewer. */
   sit: [
-    ".bb...bb.",
+    ".alia...alia.",
     "bbttcttbb",
     ".ttKcKtt.",
     ".tttcttt.",
@@ -76,7 +76,7 @@ export const DOG = {
     ".cc...cc.",
   ],
   lie: [
-    "..........bb..",
+    "..........alia..",
     ".........bttt.",
     "c........ttetK",
     "bbbbbbbbbcccc.",

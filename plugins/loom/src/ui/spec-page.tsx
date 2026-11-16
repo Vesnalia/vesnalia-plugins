@@ -156,11 +156,11 @@ function ChangeLine({ change }: { change: SpecChange }) {
   return <>{changeText(change)}</>;
 }
 
-/** bb's name for each bb project id a project view's repos name; the spec versions carry only the ids. */
-export function bbProjectNamesOf(view: ProjectView | null): Record<string, string> {
+/** VesnALIA's name for each VesnALIA project id a project view's repos name; the spec versions carry only the ids. */
+export function aliaProjectNamesOf(view: ProjectView | null): Record<string, string> {
   if (view === null) return {};
   const repos = [...view.overview.repos, ...view.spec.summary.repos];
-  return Object.fromEntries(repos.flatMap((repo) => (repo.bbProjectName === null ? [] : [[repo.bbProjectId, repo.bbProjectName]])));
+  return Object.fromEntries(repos.flatMap((repo) => (repo.aliaProjectName === null ? [] : [[repo.aliaProjectId, repo.aliaProjectName]])));
 }
 
 /** The Approve the review panel offers, for one version. */
@@ -176,11 +176,11 @@ export interface SpecApprove {
  * what changed from the version it is compared with, a comment on any part, and one message to the planner. `readOnly`
  * opens at `version` and takes no comments: the page of a rewound project.
  */
-export function SpecPage(props: { slug: string; version?: number; readOnly?: boolean; bbProjectNames?: Readonly<Record<string, string>>; specReview?: SpecReviewStatus | null; approve?: SpecApprove | null }) {
+export function SpecPage(props: { slug: string; version?: number; readOnly?: boolean; aliaProjectNames?: Readonly<Record<string, string>>; specReview?: SpecReviewStatus | null; approve?: SpecApprove | null }) {
   return <Page key={`${props.slug} ${props.version ?? "latest"} ${props.readOnly === true}`} {...props} />;
 }
 
-function Page({ slug, version: pinned, readOnly = false, bbProjectNames = {}, specReview = null, approve = null }: Parameters<typeof SpecPage>[0]) {
+function Page({ slug, version: pinned, readOnly = false, aliaProjectNames = {}, specReview = null, approve = null }: Parameters<typeof SpecPage>[0]) {
   const [version, setVersion] = useState<number | null>(pinned ?? null);
   const [base, setBase] = useState<number | null>(null);
   const input = { slug, ...(version === null ? {} : { version }), ...(base === null ? {} : { base }) };
@@ -200,7 +200,7 @@ function Page({ slug, version: pinned, readOnly = false, bbProjectNames = {}, sp
       view={view}
       tray={tray}
       readOnly={readOnly}
-      bbProjectNames={bbProjectNames}
+      aliaProjectNames={aliaProjectNames}
       specReview={specReview}
       approve={approve}
       onVersion={(next) => {
@@ -221,7 +221,7 @@ function Loaded({
   view,
   tray,
   readOnly,
-  bbProjectNames,
+  aliaProjectNames,
   specReview,
   approve,
   onVersion,
@@ -231,7 +231,7 @@ function Loaded({
   view: SpecVersionView;
   tray: ReturnType<typeof useNoteTray>;
   readOnly: boolean;
-  bbProjectNames: Readonly<Record<string, string>>;
+  aliaProjectNames: Readonly<Record<string, string>>;
   specReview: SpecReviewStatus | null;
   approve: SpecApprove | null;
   onVersion(version: number): void;
@@ -566,7 +566,7 @@ function Loaded({
                   )}
                 </div>
                 <ReviewContext.Provider value={sectionReview(section)}>
-                  {section === "settings" && <SettingsSection spec={view.spec} bbProjectNames={bbProjectNames} onShowAll={showAll} onJump={(to) => document.getElementById(domId(to))?.scrollIntoView({ behavior: "smooth", block: "start" })} />}
+                  {section === "settings" && <SettingsSection spec={view.spec} aliaProjectNames={aliaProjectNames} onShowAll={showAll} onJump={(to) => document.getElementById(domId(to))?.scrollIntoView({ behavior: "smooth", block: "start" })} />}
                   {section === "tickets" && (
                     <MarksContext.Provider value={filesMarks}>
                       <TicketsSection view={view} compared={view.compared?.spec ?? null} layout={layout} onLayout={setLayout} selected={selected} onSelect={setSelected} filesView={filesView} onShowAll={showAll} />

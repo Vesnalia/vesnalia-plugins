@@ -1,4 +1,4 @@
-// bb-box: open an app or a URL through Cua Driver's daemon, as computer use
+// alia-box: open an app or a URL through Cua Driver's daemon, as computer use
 // does, wait for its new window, and count the elements of its accessibility
 // tree. With --type, types the text into the window's focused element, in the
 // foreground, and waits for it in the tree. Closes the app it opened. Prints
@@ -57,7 +57,7 @@ const isSignallablePid = (pid) => Number.isSafeInteger(pid) && pid > 0;
 // own, which differ when a URL opens through xdg-open.
 const opened = new Set();
 try {
-  await request("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "bb-box-cua-launch-probe", version: "1" } });
+  await request("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "alia-box-cua-launch-probe", version: "1" } });
   send({ method: "notifications/initialized" });
   const before = new Set((await windows()).map((window) => window.window_id));
   const started = performance.now();

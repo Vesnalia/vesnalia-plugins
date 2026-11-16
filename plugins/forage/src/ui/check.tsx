@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery, useComposer } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcMutation as useMutation, experimental_useRpcQuery as useQuery, useComposer } from "@vesnalia/plugin-sdk/app";
 import type { ThreadScope } from "../research/activity.ts";
 import { rpcContract } from "./contract.ts";
 import { Button, ErrorLine, Glyph, hostOf, Loading, Notice, plainText, plural, Tag, Tile, when } from "./kit.tsx";

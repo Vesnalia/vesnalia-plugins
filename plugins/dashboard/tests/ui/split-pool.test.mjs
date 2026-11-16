@@ -8,7 +8,7 @@ import { sharedPoolLimit, addPoolEntry } from '../../split-layout.ts';
 
 test("history drag opens an untracked conversation alongside and removes its temporary tab on close", async () => {
   const slot = mount({ connected: true, language: "en", threads: [thread("a", "p1", "Current"), thread("old", "p1", "Historical")], hiddenIds: ["old"] });
-  const original = await slot.findByTestId("bb-thread-chat");
+  const original = await slot.findByTestId("alia-thread-chat");
   fireEvent.click(slot.getByRole("button", { name: "Show last 10 threads" }));
   const history = slot.getByRole("region", { name: "Previous threads" });
   const source = within(history).getByRole("button", { name: "Historical", exact: true });
@@ -16,7 +16,7 @@ test("history drag opens an untracked conversation alongside and removes its tem
   fireEvent.dragStart(source, { dataTransfer: transfer });
   dropSplit(slot, transfer);
   assert.deepEqual(splitIds(slot), ["a", "old"]);
-  assert.equal(slot.getAllByTestId("bb-thread-chat")[0], original);
+  assert.equal(slot.getAllByTestId("alia-thread-chat")[0], original);
   assert.ok(slot.getByRole("tab", { name: /^Historical:/ }));
   fireEvent.click(slot.getByRole("button", { name: "Remove “Historical” from split view" }));
   assert.deepEqual(splitIds(slot), ["a"]);
@@ -32,7 +32,7 @@ test("history drag unlocks a compact workspace and closes the overlay only after
   globalThis.ResizeObserver = class { constructor(callback) { this.callback = callback; } observe(el) { callbacks.set(el, this.callback); } disconnect() {} };
   try {
     const slot = mount({ connected: true, language: "en", threads: [thread("a", "p1", "Current"), thread("old", "p1", "Historical")], hiddenIds: ["old"] });
-    await slot.findByTestId("bb-thread-chat");
+    await slot.findByTestId("alia-thread-chat");
     const main = slot.container.querySelector('.db-main');
     Object.defineProperty(main, "clientWidth", { value: 480 });
     await act(async () => callbacks.get(main)());
@@ -56,7 +56,7 @@ test("history drag unlocks a compact workspace and closes the overlay only after
 test("split drag inserts columns, focuses duplicates and replaces only the active column on tab click", async () => {
   const threads = [thread("a", "p1", "Alpha", { isUnread: true }), thread("b", "p1", "Beta"), thread("c", "p1", "Gamma"), thread("d", "p1", "Delta")];
   const slot = mount({ connected: true, language: "en", threads });
-  const original = await slot.findByTestId("bb-thread-chat");
+  const original = await slot.findByTestId("alia-thread-chat");
   const beta = slot.getByRole("tab", { name: /^Beta:/ });
   const transfer = splitTransfer("p1", "b");
   fireEvent.dragStart(beta, { dataTransfer: transfer });
@@ -64,36 +64,36 @@ test("split drag inserts columns, focuses duplicates and replaces only the activ
   assert.ok(splitPanes(slot)[0].dataset.drop);
   dropSplit(slot, transfer);
   assert.deepEqual(splitIds(slot), ["a", "b"]);
-  assert.equal(slot.getAllByTestId("bb-thread-chat")[0], original);
+  assert.equal(slot.getAllByTestId("alia-thread-chat")[0], original);
   fireEvent.keyDown(slot.getByRole("tab", { name: /^Gamma:/ }), { key: "Enter", altKey: true });
   assert.deepEqual(splitIds(slot), ["a", "b", "c"]);
   fireEvent.keyDown(beta, { key: "Enter", altKey: true });
   assert.deepEqual(splitIds(slot), ["a", "b", "c"]);
   assert.equal(splitPanes(slot)[1].dataset.active, "true");
-  const gammaChat = slot.getAllByTestId("bb-thread-chat")[2];
+  const gammaChat = slot.getAllByTestId("alia-thread-chat")[2];
   fireEvent.click(slot.getByRole("tab", { name: /^Delta:/ }));
   assert.deepEqual(splitIds(slot), ["a", "d", "c"]);
-  assert.equal(slot.getAllByTestId("bb-thread-chat")[0], original);
-  assert.equal(slot.getAllByTestId("bb-thread-chat")[2], gammaChat);
+  assert.equal(slot.getAllByTestId("alia-thread-chat")[0], original);
+  assert.equal(slot.getAllByTestId("alia-thread-chat")[2], gammaChat);
   fireEvent.click(slot.getByRole("button", { name: "Remove “Delta” from split view" }));
   assert.deepEqual(splitIds(slot), ["a", "c"]);
   fireEvent.click(slot.getByRole("button", { name: "Remove “Alpha” from split view" }));
   assert.deepEqual(splitIds(slot), ["c"]);
   assert.equal(slot.queryByRole("separator", { name: /Resize adjacent/ }), null);
-  assert.equal(slot.getByTestId("bb-thread-chat"), gammaChat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), gammaChat);
   assert.equal(slot.inspection.rpcCalls.filter(call => call.method === "thread_hide").length, 0);
 });
 
 test("split resizing changes adjacent widths, supports equalization and survives project return and reload", async () => {
   const threads = [thread("a", "p1", "Alpha"), thread("b", "p1", "Beta"), thread("c", "p2", "Other project")];
   let slot = mount({ connected: true, language: "en", projects: [project, secondProject], threads });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   fireEvent.keyDown(slot.getByRole("tab", { name: /^Beta:/ }), { key: "Enter", altKey: true });
   const [left, right] = splitPanes(slot);
   left.getBoundingClientRect = right.getBoundingClientRect = () => ({ width: 600 });
   const separator = slot.getByRole("separator", { name: /Resize adjacent/ });
   fireEvent.keyDown(separator, { key: "ArrowRight" });
-  const memory = () => JSON.parse(window.localStorage.getItem("bb-dashboard:split-layout:v1")).p1;
+  const memory = () => JSON.parse(window.localStorage.getItem("alia-dashboard:split-layout:v1")).p1;
   assert.deepEqual(memory().sizes, { a: 616, b: 584 });
   const previous = window.PointerEvent;
   window.PointerEvent = window.MouseEvent;
@@ -112,14 +112,14 @@ test("split resizing changes adjacent widths, supports equalization and survives
   assert.deepEqual(splitIds(slot), ["a", "b"]);
   slot.lifecycle.unmount();
   slot = mount({ connected: true, language: "en", projects: [project, secondProject], threads });
-  await slot.findAllByTestId("bb-thread-chat");
+  await slot.findAllByTestId("alia-thread-chat");
   assert.deepEqual(splitIds(slot), ["a", "b"]);
   assert.deepEqual(memory().sizes, { a: 600, b: 600 });
 });
 
 test("split ignores foreign and invalid drops and opens no duplicate native chat", async () => {
   const slot = mount({ connected: true, language: "en", threads: [thread("a", "p1", "Alpha"), thread("b", "p1", "Beta")] });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   for (const transfer of [splitTransfer("p2", "b"), splitTransfer("p1", "missing"), { types: ["text/plain"], getData: () => "b" }, { types: ["application/x-bbdesk-thread"], getData: () => "broken" }]) {
     dropSplit(slot, transfer);
     assert.deepEqual(splitIds(slot), ["a"]);
@@ -127,13 +127,13 @@ test("split ignores foreign and invalid drops and opens no duplicate native chat
   fireEvent.keyDown(slot.getByRole("tab", { name: /^Beta:/ }), { key: "Enter", altKey: true });
   fireEvent.click(slot.getByRole("tab", { name: /^Alpha:/ }));
   assert.deepEqual(splitIds(slot), ["a", "b"]);
-  assert.equal(slot.getAllByTestId("bb-thread-chat").length, 2);
+  assert.equal(slot.getAllByTestId("alia-thread-chat").length, 2);
 });
 
 test("split closes unavailable columns and hiding the active tab keeps the remaining column selected", async () => {
   const threads = [thread("a", "p1", "Alpha"), thread("b", "p1", "Beta"), thread("c", "p1", "Gamma")];
   const slot = mount({ connected: true, language: "en", threads });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   fireEvent.keyDown(slot.getByRole("tab", { name: /^Beta:/ }), { key: "Enter", altKey: true });
   fireEvent.keyDown(slot.getByRole("tab", { name: /^Gamma:/ }), { key: "Enter", altKey: true });
   fireEvent.click(slot.getByRole("button", { name: "Hide “Gamma” from the dashboard" }));
@@ -145,12 +145,12 @@ test("split closes unavailable columns and hiding the active tab keeps the remai
   assert.deepEqual(splitIds(slot), ["a"]);
   assert.equal(slot.queryByRole("separator", { name: /Resize adjacent/ }), null);
   fireEvent.click(slot.container.querySelector('.db-thread-open'));
-  assert.equal(slot.queryByTestId("bb-thread-chat"), null);
+  assert.equal(slot.queryByTestId("alia-thread-chat"), null);
 });
 
 test("split persistence validates saved layouts and tolerates unavailable browser storage", async () => {
   const { readSplitLayouts, saveSplitLayouts } = await import("../../split-layout.ts");
-  const key = "bb-dashboard:split-layout:v1";
+  const key = "alia-dashboard:split-layout:v1";
   window.localStorage.setItem(key, JSON.stringify({ p1: { ids: ["a", "b", "a"], active: "missing", sizes: { a: -2, b: "bad" } }, p2: { ids: [null] } }));
   assert.deepEqual(readSplitLayouts(), { p1: { ids: ["a", "b"], active: "a", sizes: { a: 1, b: 1 } } });
   window.localStorage.setItem(key, "broken");
@@ -177,11 +177,11 @@ test("shared pool pins threads from several projects without changing a project 
       { id: "codex", displayName: "Codex", logoUrl: null },
     ] },
   });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   const poolButton = () => slot.getByRole("button", { name: /^Shared pool/ });
   fireEvent.click(slot.getByRole("button", { name: "Pin “Alpha” to the shared pool" }));
   assert.equal(poolButton().getAttribute("aria-pressed"), "false");
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "alpha");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "alpha");
   fireEvent.click(slot.getByRole("tab", { name: /^Второй проект/ }));
   const transfer = splitTransfer("p2", "other");
   fireEvent.dragStart(slot.getByRole("tab", { name: /^Other:/ }), { dataTransfer: transfer });
@@ -197,7 +197,7 @@ test("shared pool pins threads from several projects without changing a project 
   assert.ok(icons[0].compareDocumentPosition(pool.querySelector(".db-project-tab-name")) & Node.DOCUMENT_POSITION_FOLLOWING);
   assert.ok(pool.querySelector(".db-project-tab-name").compareDocumentPosition(pool.querySelector(".db-project-tab-states")) & Node.DOCUMENT_POSITION_FOLLOWING);
   assert.match(pool.getAttribute("aria-label"), /Shared pool, working: 0, need attention: 0, queued: 0, results: 2\. Alpha: Read \(Claude\); Other: Read \(Codex\)/);
-  assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "other");
+  assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "other");
   fireEvent.click(poolButton());
   assert.equal(poolButton().getAttribute("aria-pressed"), "true");
   assert.equal(slot.getByRole("tab", { name: /^Тестовый проект,/ }).getAttribute("aria-selected"), "false");
@@ -214,37 +214,37 @@ test("shared pool pins threads from several projects without changing a project 
   fireEvent.click(slot.getByRole("tab", { name: /^Тестовый проект,/ }));
   assert.equal(poolButton().getAttribute("aria-pressed"), "false");
   assert.deepEqual(splitIds(slot), ["alpha"]);
-  assert.equal(JSON.parse(window.localStorage.getItem("bb-dashboard:split-layout:v1")).p1, undefined);
+  assert.equal(JSON.parse(window.localStorage.getItem("alia-dashboard:split-layout:v1")).p1, undefined);
   fireEvent.click(slot.getByRole("button", { name: "Show last 10 threads" }));
   fireEvent.click(within(slot.getByRole("region", { name: "Previous threads" })).getByRole("button", { name: "Pin “Historical” to the shared pool" }));
   fireEvent.click(poolButton());
   assert.deepEqual(splitIds(slot), ["alpha", "old"]);
-  assert.equal(slot.getAllByTestId("bb-thread-chat").map(node => node.dataset.threadId).sort().join(), "alpha,old");
+  assert.equal(slot.getAllByTestId("alia-thread-chat").map(node => node.dataset.threadId).sort().join(), "alpha,old");
 });
 
 test("catalog toggles shared pool immediately without forgetting its threads", async () => {
-  window.localStorage.setItem('bb-dashboard:shared-pool:v1',JSON.stringify({open:true,active:'alpha',sizes:{},entries:[{projectId:'p1',threadId:'alpha'}]}));
+  window.localStorage.setItem('alia-dashboard:shared-pool:v1',JSON.stringify({open:true,active:'alpha',sizes:{},entries:[{projectId:'p1',threadId:'alpha'}]}));
   const slot=mount({connected:true,language:'en',threads:[thread('alpha','p1','Alpha')]});
   await slot.findByRole('button',{name:/^Shared pool/});
   fireEvent.click(slot.getByRole('button',{name:'Configure projects and applications'}));
   await act(async()=>fireEvent.click(slot.getByRole('checkbox',{name:'Shared pool'})));
   assert.equal(slot.queryByRole('button',{name:/^Shared pool/}),null);
-  assert.deepEqual(JSON.parse(window.localStorage.getItem('bb-dashboard:shared-pool:v1')).entries,[{projectId:'p1',threadId:'alpha'}]);
-  assert.equal(JSON.parse(window.localStorage.getItem('bb-dashboard:shared-pool:v1')).open,false);
+  assert.deepEqual(JSON.parse(window.localStorage.getItem('alia-dashboard:shared-pool:v1')).entries,[{projectId:'p1',threadId:'alpha'}]);
+  assert.equal(JSON.parse(window.localStorage.getItem('alia-dashboard:shared-pool:v1')).open,false);
   await act(async()=>fireEvent.click(slot.getByRole('checkbox',{name:'Shared pool'})));
   assert.ok(slot.getByRole('button',{name:/^Shared pool/}));
   assert.deepEqual(slot.inspection.rpcCalls.filter(c=>c.method==='catalog_change'&&c.input.type==='pool').map(c=>c.input.enabled),[false,true]);
 });
 
 test("shared pool keeps a disabled project visible and drops archived threads", async () => {
-  window.localStorage.setItem("bb-dashboard:shared-pool:v1", JSON.stringify({
+  window.localStorage.setItem("alia-dashboard:shared-pool:v1", JSON.stringify({
     open: true, active: "a", sizes: { a: 3, b: 3 },
     entries: [{ projectId: "p1", threadId: "a" }, { projectId: "p1", threadId: "b" }, { projectId: "gone", threadId: "missing" }],
   }));
   const threads = [thread("a", "p1", "Alpha"), thread("b", "p1", "Beta")];
   let slot = mount({ connected: true, language: "en", threads });
-  await slot.findAllByTestId("bb-thread-chat");
-  assert.equal(slot.getAllByTestId("bb-thread-chat").length, 2);
+  await slot.findAllByTestId("alia-thread-chat");
+  assert.equal(slot.getAllByTestId("alia-thread-chat").length, 2);
   assert.deepEqual(splitIds(slot), ["a", "b", "missing"]);
   assert.ok(slot.getAllByText("Project unavailable").length);
   assert.ok(slot.getByText("Check access to this project or disable it in dashboard settings."));
@@ -253,14 +253,14 @@ test("shared pool keeps a disabled project visible and drops archived threads", 
   assert.deepEqual(splitIds(slot), ["a", "missing"]);
   slot.lifecycle.unmount();
   slot = mount({ connected: true, language: "en", threads });
-  await slot.findByTestId("bb-thread-chat");
+  await slot.findByTestId("alia-thread-chat");
   assert.deepEqual(splitIds(slot), ["a", "missing"]);
-  assert.equal(JSON.parse(window.localStorage.getItem("bb-dashboard:shared-pool:v1")).open, true);
+  assert.equal(JSON.parse(window.localStorage.getItem("alia-dashboard:shared-pool:v1")).open, true);
 });
 
 test("shared pool persistence keeps valid pairs and ignores malformed storage", async () => {
   const { readSharedPool, saveSharedPool, addPoolEntry, movePoolEntry, removePoolEntry } = await import("../../split-layout.ts");
-  const key = "bb-dashboard:shared-pool:v1";
+  const key = "alia-dashboard:shared-pool:v1";
   window.localStorage.setItem(key, JSON.stringify({
     open: true, active: "missing", sizes: { a: 4, b: 0, c: "no" },
     entries: [{ projectId: "p1", threadId: "a" }, { projectId: "p2", threadId: "a" }, { projectId: "", threadId: "b" }, null, { projectId: "p2", threadId: "c" }],
@@ -314,16 +314,16 @@ test("pool addition reports capacity and duplicate outcomes without changing exi
 test("full pool pin and drop refusals preserve the selected chat and existing pins", async () => {
   const threads = poolLimitFixture();
   const slot = mount({ connected: true, language: "en", threads });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   const before = storedPool().entries;
   const extra = threads[sharedPoolLimit];
   fireEvent.click(slot.getByRole("button", { name: new RegExp(`^Pin.*${extra.displayTitle}`) }));
   assert.ok(slot.container.querySelector("[data-pool-full]"));
   assert.deepEqual(storedPool().entries, before);
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   dropTransfer(slot.getByRole("button", { name: /^Shared pool/ }), splitTransfer("p1", extra.id));
   assert.deepEqual(storedPool().entries, before);
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   // An already pinned entry can still be selected by dropping it at capacity.
   dropTransfer(slot.getByRole("button", { name: /^Shared pool/ }), splitTransfer("p1", threads[1].id));
   assert.equal(storedPool().active, threads[1].id);
@@ -335,7 +335,7 @@ test("full pool pin and drop refusals preserve the selected chat and existing pi
 });
 
 test("shared pool bottom tabs reorder the split columns", async () => {
-  window.localStorage.setItem("bb-dashboard:shared-pool:v1", JSON.stringify({
+  window.localStorage.setItem("alia-dashboard:shared-pool:v1", JSON.stringify({
     open: true, active: "alpha", sizes: { alpha: 4, other: 2, gamma: 1 },
     entries: [
       { projectId: "p1", threadId: "alpha" },
@@ -347,10 +347,10 @@ test("shared pool bottom tabs reorder the split columns", async () => {
     connected: true, language: "en", projects: [project, secondProject],
     threads: [thread("alpha", "p1", "Alpha"), thread("other", "p2", "Other"), thread("gamma", "p1", "Gamma")],
   });
-  await slot.findAllByTestId("bb-thread-chat");
+  await slot.findAllByTestId("alia-thread-chat");
   const dock = () => slot.container.querySelector(".db-pool-workspace .db-thread-dock");
   const tabs = () => within(dock()).getAllByRole("tab").map(tab => tab.textContent);
-  const alphaChat = slot.getAllByTestId("bb-thread-chat").find(node => node.dataset.threadId === "alpha");
+  const alphaChat = slot.getAllByTestId("alia-thread-chat").find(node => node.dataset.threadId === "alpha");
   assert.deepEqual(splitIds(slot), ["alpha", "other", "gamma"]);
   assert.deepEqual(tabs(), ["Тестовый проект · Alpha", "Второй проект · Other", "Тестовый проект · Gamma"]);
   function reorder(from, to, clientX) {
@@ -373,11 +373,11 @@ test("shared pool bottom tabs reorder the split columns", async () => {
   reorder(/^Тестовый проект · Gamma:/, /^Тестовый проект · Alpha:/, 10);
   assert.deepEqual(splitIds(slot), ["gamma", "alpha", "other"]);
   assert.deepEqual(tabs(), ["Тестовый проект · Gamma", "Тестовый проект · Alpha", "Второй проект · Other"]);
-  const stored = JSON.parse(window.localStorage.getItem("bb-dashboard:shared-pool:v1"));
+  const stored = JSON.parse(window.localStorage.getItem("alia-dashboard:shared-pool:v1"));
   assert.deepEqual(stored.entries.map(entry => entry.threadId), ["gamma", "alpha", "other"]);
   assert.equal(stored.active, "alpha");
   assert.deepEqual(stored.sizes, { alpha: 4, other: 2, gamma: 1 });
-  assert.equal(slot.getAllByTestId("bb-thread-chat").find(node => node.dataset.threadId === "alpha"), alphaChat);
+  assert.equal(slot.getAllByTestId("alia-thread-chat").find(node => node.dataset.threadId === "alpha"), alphaChat);
   assert.equal(splitPanes(slot).find(pane => pane.dataset.threadId === "alpha").dataset.active, "true");
   reorder(/^Второй проект · Other:/, /^Тестовый проект · Gamma:/, 90);
   assert.deepEqual(splitIds(slot), ["gamma", "other", "alpha"]);

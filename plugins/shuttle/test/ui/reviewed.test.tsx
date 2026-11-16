@@ -87,6 +87,6 @@ describe("Reviewed by me", () => {
     const { slot } = await reviewedPage();
     const row = await find(slot.container, `[data-pr="${merged.key}"]`);
     fireEvent.click(row);
-    expect(lastNavigation(slot)).toEqual({ method: "toPluginPanel", path: "shuttle", options: { subPath: "reviewed/github/get-bb/bb/1" } });
+    expect(lastNavigation(slot)).toEqual({ method: "toPluginPanel", path: "shuttle", options: { subPath: "reviewed/github/get-alia/alia/1" } });
   });
 });

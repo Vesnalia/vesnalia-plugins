@@ -3,7 +3,7 @@
 Two user-visible features, one release:
 
 1. **Location memory** — the panel reopens in the folder you were last in, across
-   panel navigation, page reloads and bb restarts.
+   panel navigation, page reloads and VesnALIA restarts.
 2. **Path bar** — a browser-style editable address line in the toolbar strip that
    accepts a pasted path, including a path to a **file**.
 
@@ -95,13 +95,13 @@ Rejected alternatives, on the record:
 
 * **Plugin settings (`savePreferences`).** It would survive a browser-profile wipe,
   but every folder change would be an RPC that calls
-  `bb.sdk.plugins.updateSettings`, which makes the server broadcast
+  `alia.sdk.plugins.updateSettings`, which makes the server broadcast
   `plugins-changed`, which invalidates the app's whole plugin-settings query
   (`SettingsSection.tsx` documents this chain). Writing view state on every
   double-click into a store whose write is an app-wide cache invalidation is
   abuse of the settings channel. It is also the wrong lifetime: the start folder is
   a *decision*, the last folder is a *trace*.
-* **`bb.storage.kv`.** SPEC §7.2 says it is not used, and reaching it needs an RPC
+* **`alia.storage.kv`.** SPEC §7.2 says it is not used, and reaching it needs an RPC
   round trip on bootstrap — one more thing between `getState` and the first paint,
   for a value the client can read synchronously.
 * **A second, private localStorage helper next to the tree's.** Two copies of the
@@ -138,7 +138,7 @@ Rules carried over verbatim from TREE-SPEC §6, because they are load-bearing:
   kills the plugin's UI for the whole session (SPEC §8.1);
 * a corrupt row degrades to the fallback, silently;
 * the serialized payload is size-capped before the write, never after;
-* the key is namespaced `bb-plugin-file-manager:<what>:v1`, so a shape change is a
+* the key is namespaced `alia-plugin-file-manager:<what>:v1`, so a shape change is a
   new key rather than a migration.
 
 `hooks/useTree.ts` is refactored onto it in the same pass, with **no behaviour
@@ -154,7 +154,7 @@ be edited to make it pass.
 `lib/last-folder.ts` (new):
 
 ```ts
-export const LAST_FOLDER_STORAGE_KEY = "bb-plugin-file-manager:last-folder:v1";
+export const LAST_FOLDER_STORAGE_KEY = "alia-plugin-file-manager:last-folder:v1";
 /** A path is bounded by PATH_MAX; this is the JSON envelope's ceiling. */
 export const LAST_FOLDER_MAX_BYTES = 8 * 1024;
 
@@ -169,7 +169,7 @@ export interface RememberedFolder {
 Stored JSON: `{"path":"/…/projects/site","root":"/…"}`.
 
 `root` is stored for one reason: the same browser profile can, over time, talk to
-two bb hosts with different homes (a laptop home and a container home). Comparing
+two VesnALIA hosts with different homes (a laptop home and a container home). Comparing
 the stored `root` with `getState().root` turns "a path that happens to look
 plausible" into "a path recorded under a different root" — which is dropped, not
 guessed at. `parse` rejects anything that is not an object with two non-empty
@@ -408,7 +408,7 @@ folder would occasionally land the user somewhere confidently wrong.
 
 ### 1.8 Per-user, per-machine
 
-`localStorage` is scoped to the bb app's origin inside the browser (or the Electron
+`localStorage` is scoped to the VesnALIA app's origin inside the browser (or the Electron
 profile partition). That makes the memory **per operating-system user, per machine,
 per browser profile** — never shared, never synced. That is the right scope: the
 value is a local filesystem path, and the hard root differs between machines.
@@ -467,7 +467,7 @@ restoreLastFolder: {
 ```
 
 * **Key**: `restoreLastFolder`. Also the CLI surface:
-  `bb plugin config file-manager set restoreLastFolder false`.
+  `alia plugin config file-manager set restoreLastFolder false`.
 * **Default**: `true` — the feature was asked for; a default-off feature nobody
   finds is not a feature.
 * The description names *both* folders because the setting is only comprehensible
@@ -481,7 +481,7 @@ restoreLastFolder: {
 ### 2.2 Where it appears in the custom settings section
 
 **It is not re-rendered as a second editable control.** `components/SettingsSection.tsx`
-exists because bb's declarative form has no path picker; a boolean needs no picker,
+exists because VesnALIA's declarative form has no path picker; a boolean needs no picker,
 and the file's own comment records why two identically-labelled editors of one
 setting on one page are a trap ("they read as two different settings"). The host's
 checkbox is the only writer.
@@ -967,7 +967,7 @@ is today's behaviour and is unchanged).
 
 `Ctrl+L` is a genuine steal from the browser's address bar. It is the right steal
 for a full-page panel — it is what VS Code, Gmail and every web IDE do — and the
-panel is the focused surface when it fires. If the bb shell claims the accelerator
+panel is the focused surface when it fires. If the VesnALIA shell claims the accelerator
 first on some platform, the button (§3.3) and the empty-area click still work, so
 the feature degrades rather than disappears.
 
@@ -1227,9 +1227,9 @@ This is the reason `lib/last-folder.ts` exports a reset seam at all, mirroring
   `uploads.test.tsx`, `registration.test.tsx`.
 * `test/integration/frontend-bundle-graph.test.ts` — extend its file list with
   `lib/fm-pathbar.ts`, `lib/last-folder.ts`, `lib/fm-store.ts` and
-  `components/PathBar.tsx`: none may import `@get-bb/plugin-sdk` as a value.
+  `components/PathBar.tsx`: none may import `@vesnalia/plugin-sdk` as a value.
 * `npx tsc --noEmit`, `npm test` (27 files / 536 tests, plus the new ones),
-  `env -u BB_CLI bb plugin build .`, `npm run types:check`.
+  `env -u ALIA_CLI alia plugin build .`, `npm run types:check`.
 
 ---
 
@@ -1308,7 +1308,7 @@ non-breaking, so this is not a door being closed.
    suite is the gate, but it touches the one piece of state a user would notice
    losing. If it goes sideways, ship the memory on its own copy of the primitive and
    deduplicate later — the feature is not worth a tree regression.
-2. **`Ctrl+L` may be claimed by the bb shell** on some platform. Degrades to the
+2. **`Ctrl+L` may be claimed by the VesnALIA shell** on some platform. Degrades to the
    button and the empty-area click; nothing breaks, the shortcut just does not fire.
    Verify in the live app before release.
 3. **The optimistic restore (§1.6) trades a round trip for a state machine.** If the

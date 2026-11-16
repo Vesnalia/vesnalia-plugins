@@ -42,7 +42,7 @@ function MatchSnippet({ snippet }: { snippet: string }) {
         }
         if (part === "") return null;
         return matched ? (
-          <span key={index} className="bb-fn-match">
+          <span key={index} className="alia-fn-match">
             {part}
           </span>
         ) : (
@@ -60,7 +60,7 @@ function QueryRuns({ text, query }: { text: string; query: string }) {
     <>
       {runs.map((run, index) =>
         index % 2 === 1 ? (
-          <span key={index} className="bb-fn-match">
+          <span key={index} className="alia-fn-match">
             {run}
           </span>
         ) : (
@@ -82,12 +82,12 @@ export const SCOPE_ICON: Record<ScopeKind, IconName> = {
 };
 
 const SCOPE_CLASS: Record<ScopeKind, string> = {
-  project: "bb-fn-scope-project",
-  thread: "bb-fn-scope-thread",
-  scratchpad: "bb-fn-scope-thread",
-  daily: "bb-fn-scope-daily",
-  inbox: "bb-fn-scope-inbox",
-  global: "bb-fn-scope-global",
+  project: "alia-fn-scope-project",
+  thread: "alia-fn-scope-thread",
+  scratchpad: "alia-fn-scope-thread",
+  daily: "alia-fn-scope-daily",
+  inbox: "alia-fn-scope-inbox",
+  global: "alia-fn-scope-global",
 };
 
 /** What the row is called: a scratchpad is named for its thread. */
@@ -141,7 +141,7 @@ function NoteRow({
       }}
       aria-current={selected ? "true" : undefined}
       className={cn(
-        "bb-fn-row group flex w-full cursor-pointer flex-col gap-0.5 rounded-r-lg py-1.5 pl-2 pr-2.5 text-left transition-colors",
+        "alia-fn-row group flex w-full cursor-pointer flex-col gap-0.5 rounded-r-lg py-1.5 pl-2 pr-2.5 text-left transition-colors",
         selected ? "bg-accent text-accent-foreground" : "hover:bg-accent/50",
       )}
     >
@@ -160,7 +160,7 @@ function NoteRow({
         </span>
         {note.color !== null ? (
           <span
-            className={cn("bb-fn-swatch bb-fn-swatch-sm", `bb-fn-tint-${note.color}`)}
+            className={cn("alia-fn-swatch alia-fn-swatch-sm", `alia-fn-tint-${note.color}`)}
             aria-label="Note color"
           />
         ) : null}
@@ -233,14 +233,14 @@ function SectionHeader({
   count: number;
 }) {
   return (
-    <div className="bb-fn-section">
+    <div className="alia-fn-section">
       <Icon
         name={SCOPE_ICON[kind]}
         className={cn("size-3", SCOPE_CLASS[kind])}
         aria-hidden
       />
       <span className="min-w-0 truncate">{label}</span>
-      <span className="bb-fn-section-count">{count}</span>
+      <span className="alia-fn-section-count">{count}</span>
     </div>
   );
 }
@@ -386,7 +386,7 @@ export function NoteList({
       <button
         key={key}
         type="button"
-        className="bb-fn-chip"
+        className="alia-fn-chip"
         data-active={active ? "true" : "false"}
         onClick={() => onScopeFilterChange(active ? { kind: "all" } : filter)}
       >
@@ -410,7 +410,7 @@ export function NoteList({
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={trashView ? "Search trash…" : "Search notes…"}
             aria-label="Search notes"
-            className="bb-fn-input h-8 pl-7 text-sm"
+            className="alia-fn-input h-8 pl-7 text-sm"
           />
         </div>
         {!trashView ? (
@@ -427,7 +427,7 @@ export function NoteList({
       </div>
 
       {showScopeFilter ? (
-        <div className="bb-fn-scope-filter">
+        <div className="alia-fn-scope-filter">
           {chip("All", { kind: "all" }, "all")}
           {chip("Global", { kind: "global" }, "global")}
           {projects.map((name) =>
@@ -444,7 +444,7 @@ export function NoteList({
               key={tag.name}
               type="button"
               onClick={() => onTagChange(activeTag === tag.name ? null : tag.name)}
-              className="bb-fn-chip"
+              className="alia-fn-chip"
               data-active={activeTag === tag.name ? "true" : "false"}
             >
               #{tag.name}
@@ -462,7 +462,7 @@ export function NoteList({
         />
       ) : null}
 
-      <div className="bb-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto px-1.5 pb-1.5">
+      <div className="alia-fn-quiet-scroll min-h-0 flex-1 overflow-y-auto px-1.5 pb-1.5">
         {grouped !== null ? (
           <>
             {grouped.pinned.length > 0 ? (

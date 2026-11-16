@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactElement, type RefObject } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import { experimental_useSidebarThreadActions, experimental_useSidebarThreadSplit } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import { experimental_useSidebarThreadActions, experimental_useSidebarThreadSplit } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./ui/icon";
 
 const menuItemClass: string = "flex w-full cursor-pointer items-center gap-2 rounded-sm px-0 py-[0.3125rem] text-left text-xs hover:bg-state-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-50";

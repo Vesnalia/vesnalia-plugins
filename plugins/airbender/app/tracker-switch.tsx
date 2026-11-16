@@ -6,7 +6,7 @@
 // two things: copies and switches, or switches only.
 //
 // Why: the owner chose the menu as the place to switch between beads and
-// GitHub issues (bead-bb-c9l.18), and asked that the window say what it
+// GitHub issues (bead-alia-c9l.18), and asked that the window say what it
 // will do instead of asking how: "I want UI that doesn't ask you wrong
 // questions."
 //
@@ -38,7 +38,7 @@
 //   the server and finishes the issues it is on); going to GitHub issues,
 //   the switch is then not made.
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {

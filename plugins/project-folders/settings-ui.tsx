@@ -51,7 +51,7 @@ export function SettingRow({
   );
 }
 
-/** An accessible on/off switch styled like BB's own toggles. */
+/** An accessible on/off switch styled like VesnALIA's own toggles. */
 export function Switch({
   id,
   checked,

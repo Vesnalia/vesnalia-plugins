@@ -1,8 +1,8 @@
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const RECENT_CHAT_LIMIT = 50;
@@ -74,14 +74,14 @@ export function toChatSummary(thread: ThreadLike): ChatSummary {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(alia: AliaPluginApi) {
   // Ids of this plugin's chats, so thread change events for unrelated threads
   // never trigger a refetch.
   const knownChatIds = new Set<string>();
 
   async function listChats(): Promise<ChatSummary[]> {
-    const threads = await bb.sdk.threads.list({
-      originPluginId: bb.pluginId,
+    const threads = await alia.sdk.threads.list({
+      originPluginId: alia.pluginId,
       includeHidden: true,
       archived: false,
       limit: RECENT_CHAT_LIMIT,
@@ -96,9 +96,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function getOwnChat(threadId: string): Promise<ThreadLike | null> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (
-        thread.originPluginId !== bb.pluginId ||
+        thread.originPluginId !== alia.pluginId ||
         thread.archivedAt !== null ||
         thread.deletedAt !== null
       ) {
@@ -110,19 +110,19 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(quickChatRpcContract, {
+  alia.rpc.register(quickChatRpcContract, {
     async personalProject() {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       const personal = projects.find((project) => project.kind === "personal");
       return { projectId: personal?.id ?? null };
     },
     async createChat({ request }) {
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         ...request,
         visibility: "hidden",
       });
       knownChatIds.add(thread.id);
-      bb.realtime.publish(CHATS_CHANGED, null);
+      alia.realtime.publish(CHATS_CHANGED, null);
       return { threadId: thread.id };
     },
     listChats: async () => ({ chats: await listChats() }),
@@ -134,15 +134,15 @@ export default async function plugin(bb: BbPluginApi) {
       if ((await getOwnChat(threadId)) === null) {
         throw new Error("That quick chat no longer exists.");
       }
-      await bb.sdk.threads.update({ threadId, visibility: "visible" });
+      await alia.sdk.threads.update({ threadId, visibility: "visible" });
       knownChatIds.delete(threadId);
-      bb.realtime.publish(CHATS_CHANGED, null);
+      alia.realtime.publish(CHATS_CHANGED, null);
       return { ok: true as const };
     },
   });
 
   let publishTimer: ReturnType<typeof setTimeout> | null = null;
-  const unsubscribe = bb.sdk.subscribe({
+  const unsubscribe = alia.sdk.subscribe({
     event: "thread:changed",
     callback(event) {
       if (event.id === undefined || !knownChatIds.has(event.id)) return;
@@ -156,12 +156,12 @@ export default async function plugin(bb: BbPluginApi) {
       if (!relevant || publishTimer !== null) return;
       publishTimer = setTimeout(() => {
         publishTimer = null;
-        bb.realtime.publish(CHATS_CHANGED, null);
+        alia.realtime.publish(CHATS_CHANGED, null);
       }, 300);
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     unsubscribe();
     if (publishTimer !== null) clearTimeout(publishTimer);
   });

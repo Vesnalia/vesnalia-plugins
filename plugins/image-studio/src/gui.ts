@@ -32,9 +32,9 @@ export type GuiRef = z.infer<typeof guiRefSchema>;
 /** A GUI project: its own history of generations and the style every GUI prompt of it carries. */
 export const guiStyleSchema = z.object({
   id: z.string(),
-  /** BB project it was made in (informational; projects are listed everywhere). */
+  /** VesnALIA project it was made in (informational; projects are listed everywhere). */
   projectId: z.string(),
-  /** The folder (or BB project) whose generations go here when no project is named. */
+  /** The folder (or VesnALIA project) whose generations go here when no project is named. */
   origin: z.string().default(""),
   /** Which section the project belongs to: interface, characters for 3D, Roblox game assets, site graphics, or texture-by-model. */
   section: z.enum(["gui", "characters", "roblox", "web", "model"]).default("gui"),

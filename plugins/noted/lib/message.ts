@@ -57,6 +57,6 @@ export function buildFeedbackMessage(input: FeedbackMessageInput): string {
     lines.push("The reviewer ended the session. Do not reopen it.", "");
   }
 
-  lines.push("Edit the file in place. Reply in chat or with `bb noted reply <text>`; the reviewer is watching the panel.");
+  lines.push("Edit the file in place. Reply in chat or with `alia noted reply <text>`; the reviewer is watching the panel.");
   return lines.join("\n");
 }

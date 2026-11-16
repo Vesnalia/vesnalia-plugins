@@ -2,7 +2,7 @@ import type { DragEvent } from "react";
 
 export type SplitLayout = { ids: string[]; active: string; sizes: Record<string, number> };
 export type SplitLayouts = Record<string, SplitLayout>;
-const storageKey = "bb-dashboard:split-layout:v1";
+const storageKey = "alia-dashboard:split-layout:v1";
 export const threadDragType = "application/x-bbdesk-thread";
 
 export function startThreadDrag(event: DragEvent, projectId: string, threadId: string) {
@@ -44,7 +44,7 @@ export type PoolEntry = { projectId: string; threadId: string };
 export type SharedPool = { entries: PoolEntry[]; active: string; sizes: Record<string, number>; open: boolean };
 export const sharedPoolLimit = 50;
 export type PoolAddition = { pool: SharedPool; status: "added" | "present" | "limit" | "invalid" };
-const poolStorageKey = "bb-dashboard:shared-pool:v1";
+const poolStorageKey = "alia-dashboard:shared-pool:v1";
 const emptyPool = (): SharedPool => ({ entries: [], active: "", sizes: {}, open: false });
 
 function validId(value: unknown): value is string {

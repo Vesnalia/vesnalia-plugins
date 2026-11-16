@@ -206,7 +206,7 @@ export interface EventRow {
 /**
  * What held the bench lock: a measurement, a profile, calibration, a drift
  * check, a harvest measurement (before 1.0), a measurement or gate an agent
- * asked for (`bb study measure` / `bb study gate`), or (single-machine mode) a gate.
+ * asked for (`alia study measure` / `alia study gate`), or (single-machine mode) a gate.
  */
 export type BenchIntervalKind = "measure" | "profile" | "calibration" | "drift" | "harvest" | "adhoc" | "gate";
 
@@ -230,7 +230,7 @@ export interface NoticeRow {
   delivered_round: number | null;
 }
 
-/** shared: plugin checkouts on the edit host; clone: a BB machine with its own clone; remote: a machine lent by a bench provider plugin. */
+/** shared: plugin checkouts on the edit host; clone: a VesnALIA machine with its own clone; remote: a machine lent by a bench provider plugin. */
 export type BenchMode = "shared" | "clone" | "remote";
 
 export interface BenchHostRow {
@@ -380,7 +380,7 @@ export interface ResolvedBenchHost {
 
 /**
  * v1 harvests are `waiting` (in-flight candidates finish) then `frozen` (best
- * is fixed; an agent harvests it with `bb study evidence|measure|gate`).
+ * is fixed; an agent harvests it with `alia study evidence|measure|gate`).
  * `grouping` … `ready` are the states of harvests the plugin ran before 1.0;
  * those records stay readable.
  */
@@ -530,7 +530,7 @@ export interface AppendedEvent {
 
 /**
  * Thrown by a store whose plugin instance was disposed (reload, disable,
- * shutdown). BB closes the database right after the dispose hooks, so work
+ * shutdown). VesnALIA closes the database right after the dispose hooks, so work
  * still in flight in the old instance (a measurement awaiting its bench run)
  * must stop instead of touching the handle; this error says so quietly.
  */
@@ -852,7 +852,7 @@ export class Store {
   }
   /**
    * A worker's candidates: linked through its worker row (candidates.worker_id),
-   * with the BB thread id as the fallback for rows that predate the link.
+   * with the VesnALIA thread id as the fallback for rows that predate the link.
    */
   workerCandidates(studyId: string, worker: Pick<ThreadRow, "id" | "thread_id">, opts: { stages?: CandidateStage[]; limit?: number; order?: "asc" | "desc" } = {}): CandidateRow[] {
     const parts = [`study_id = ?`, worker.thread_id ? `(worker_id = ? OR (worker_id IS NULL AND thread_id = ?))` : `worker_id = ?`];

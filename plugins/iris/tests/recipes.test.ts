@@ -15,7 +15,7 @@ describe("recipes", () => {
   it("come from iris_examples as their own family", () => {
     expect(exampleFamilies().at(-1)).toBe("Recipes");
     const text = examplesForGroups(["Recipes"]);
-    expect(text).toContain('::iris{file="$BB_THREAD_STORAGE/status.iris"}');
+    expect(text).toContain('::iris{file="$ALIA_THREAD_STORAGE/status.iris"}');
     expect(text).toContain("<Variants bind=\"pick\"");
   });
 });

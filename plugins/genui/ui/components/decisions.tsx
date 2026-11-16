@@ -2,9 +2,9 @@
 // Decision matrix and a three-point Estimate. The maths and the messages live
 // in core/decisions.ts (shared with the markdown fallback); this file draws
 // them and keeps what the user changes (checks, weights, edited numbers)
-// with usePersistedState, so it survives BB remounting the row.
+// with usePersistedState, so it survives VesnALIA remounting the row.
 import { useContext, useEffect, useId, useState, type ReactNode } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button as BaseButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -67,7 +67,7 @@ function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
   );
 }
 
-/** A path chip that opens the file in BB at its line (plain text where nothing can open files). */
+/** A path chip that opens the file in VesnALIA at its line (plain text where nothing can open files). */
 function FileChip({ file }: { file: PlanFile }) {
   const { openFile } = useUiRuntime();
   const label = file.line === null ? file.path : `${file.path}:${file.line}`;

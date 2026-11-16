@@ -1,5 +1,5 @@
 // PdfViewer (chunk "pdf", with pdf.js; its worker is the "pdf-worker" chunk).
-// pdf.js reads the file from its bb preview URL with range requests, so a big
+// pdf.js reads the file from its VesnALIA preview URL with range requests, so a big
 // PDF opens without being read whole; pages draw as they scroll in.
 
 import { Chip, Glyph, InlineError, Shimmer, chunkEntryUrl, cn, num, str } from "@iris/ui";

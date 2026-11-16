@@ -1,6 +1,6 @@
 /**
  * The page's check that the relay is still there. A WebSocket can stay open
- * in the browser after the server behind it has gone — bb restarting behind
+ * in the browser after the server behind it has gone — VesnALIA restarting behind
  * the getbb.app tunnel leaves the browser's end open — so a close event alone
  * cannot tell the page its session is over. This pings the relay every
  * `PING_EVERY_MS` and calls `onLost` once a ping has gone unanswered, with

@@ -1,8 +1,8 @@
-// Finished and stale worker chats are archived through BB (which forwards to
+// Finished and stale worker chats are archived through VesnALIA (which forwards to
 // capable providers). Only the existing age/retention sweep deletes them.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { modelStubs, until } from "./helpers.mjs";
 
@@ -64,7 +64,7 @@ async function boot(t, { keepWorkers = 0, metadata = {}, leftovers = false } = {
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   t.after(() => host.harness.lifecycle.dispose());
   return {
     world, host,

@@ -36,7 +36,7 @@ const warnings: string[] = [];
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), "launchd-jobs-"));
   agents = join(root, "LaunchAgents");
-  ownDir = join(root, "bb", "plugins", "launchd-jobs", "host-data");
+  ownDir = join(root, "alia", "plugins", "launchd-jobs", "host-data");
   paseoDir = join(root, "paseo", "plugin-data", "launchd-jobs");
   await mkdir(agents, { recursive: true });
   launchd = createFakeLaunchd();
@@ -621,7 +621,7 @@ describe.skipIf(!onMac)("a job an interrupted change left not loaded", () => {
   const spec = { name: "Left", command: "true", cwd: null, schedule: { type: "interval" as const, seconds: 60 } };
   const label = `${LABEL_PREFIX}left`;
 
-  /** bb quit after the bootout and rewrite of an update, before its bootstrap. */
+  /** VesnALIA quit after the bootout and rewrite of an update, before its bootstrap. */
   async function interrupted(): Promise<void> {
     await jobs.create(spec);
     launchd.loaded.delete(label);

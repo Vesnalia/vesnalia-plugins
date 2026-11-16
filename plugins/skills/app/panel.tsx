@@ -1,4 +1,4 @@
-import { type ExperimentalThreadActionTabProps, type PluginAppSlots, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { type ExperimentalThreadActionTabProps, type PluginAppSlots, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 
 import { SkillBrowser, selectionFrom } from "./browser";
 import { SKILLS_ICON } from "./icons";
@@ -15,7 +15,7 @@ export const PANEL_ACTION_ID = "skills";
  */
 export function SkillsPanel({ threadId, params }: ExperimentalThreadActionTabProps) {
   const { state } = useSkillList(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // `params` names the skill the popover had open, if any; the tab opens on it.
   // The composer takes focus after Add to chat, with the command in it.
   return (
@@ -30,8 +30,8 @@ export function SkillsPanel({ threadId, params }: ExperimentalThreadActionTabPro
 }
 
 /**
- * The Skills tab: an action tab in the thread's side panel on bb 0.47, which
- * replaced `threadPanelAction` with `experimental_tab`. bb 0.45 and 0.46 have
+ * The Skills tab: an action tab in the thread's side panel on VesnALIA 0.47, which
+ * replaced `threadPanelAction` with `experimental_tab`. VesnALIA 0.45 and 0.46 have
  * no `experimental_tab`, and their `threadPanelAction` takes the same fields,
  * so the plugin keeps running there. Both open by the same id.
  */
@@ -44,7 +44,7 @@ export function registerSkillsTab(slots: PluginAppSlots) {
   }
 }
 
-/** bb 0.45–0.46's thread panel slot, gone from the SDK's types since 0.6.73. */
+/** VesnALIA 0.45–0.46's thread panel slot, gone from the SDK's types since 0.6.73. */
 interface LegacySlots {
   threadPanelAction(registration: {
     id: string;

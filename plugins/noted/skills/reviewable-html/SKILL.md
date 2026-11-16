@@ -1,6 +1,6 @@
 ---
 name: reviewable-html
-description: Create or substantially revise branded, reviewable HTML artifacts in bb. Use whenever an agent will write an .html file for a user, including plans, reports, comparisons, decision memos, research syntheses, implementation proposals, status packets, diagrams, tables, and prototypes. Use this together with any matching brand or design skill; the brand skill supplies the visual system and this skill supplies the artifact and review standard. Also use when the user asks for an HTML artifact, a reviewable page, branded HTML, or something to review in Noted. Substantial visual deliverables default to HTML when no other format is required. Do not use for a trivial answer, a code-only change, or a question merely about HTML.
+description: Create or substantially revise branded, reviewable HTML artifacts in VesnALIA. Use whenever an agent will write an .html file for a user, including plans, reports, comparisons, decision memos, research syntheses, implementation proposals, status packets, diagrams, tables, and prototypes. Use this together with any matching brand or design skill; the brand skill supplies the visual system and this skill supplies the artifact and review standard. Also use when the user asks for an HTML artifact, a reviewable page, branded HTML, or something to review in Noted. Substantial visual deliverables default to HTML when no other format is required. Do not use for a trivial answer, a code-only change, or a question merely about HTML.
 ---
 
 # Reviewable HTML standard
@@ -25,7 +25,7 @@ Never invent a visual system from a blank page.
    theme. Replace every bracketed placeholder before review.
 
 The finished artifact must not depend on an absolute path into a skill folder.
-Keep its CSS inline or beside it. BB's ordinary HTML preview may render the page
+Keep its CSS inline or beside it. VesnALIA's ordinary HTML preview may render the page
 as `srcdoc`, where relative image URLs have no filesystem base. Embed small,
 identity-critical images such as logos as data URLs generated from the supplied
 brand assets; keep larger images, fonts, and scripts relative and local so Noted
@@ -67,10 +67,10 @@ can inline or export them.
 Use the `noted` skill for the session lifecycle.
 
 ```sh
-bb noted open <artifact.html>
+alia noted open <artifact.html>
 ```
 
-For a substantial deliverable in an interactive bb thread, open it for review
+For a substantial deliverable in an interactive VesnALIA thread, open it for review
 by default. Do not open it when the user says not to or when the artifact is only
 an intermediate input to another task. When a parent or designated review thread
 should see it, pass `--view parent` or the specific thread. End the turn when

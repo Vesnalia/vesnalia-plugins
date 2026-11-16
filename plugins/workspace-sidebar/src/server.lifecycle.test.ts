@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeQueueEntry, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 async function setup() {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "workspace-sidebar",
     sdk: { threads: { events: { list: async () => [] } } },
   });
-  await plugin(bb);
+  await plugin(alia);
   return harness;
 }
 

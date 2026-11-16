@@ -1,22 +1,17 @@
 {
-  "name": "bb-plugin-drmanhattan",
+  "name": "alia-plugin-drmanhattan",
   "version": "0.10.1",
   "type": "module",
-  "description": "Shows each bb thread's drmanhattan runs and tells bb's agents to queue heavy commands through drmanhattan.",
+  "description": "Shows each VesnALIA thread's drmanhattan runs and tells VesnALIA's agents to queue heavy commands through drmanhattan.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gagansingh/drmanhattan.git",
-    "directory": "integrations/bb"
-  },
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "drmanhattan",
     "description": "Makes agents in parallel threads take turns on builds and tests, and shows each thread its queued runs.",
     "branding": {
@@ -32,11 +27,11 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.132"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
@@ -45,7 +40,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "0.49.0",
     "better-sqlite3": "^12.0.0",
     "cron-parser": "^5.5.0",
     "hono": "^4.11.9",
@@ -54,5 +48,14 @@
     "react-dom": "^19.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.2.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/drmanhattan#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/drmanhattan"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

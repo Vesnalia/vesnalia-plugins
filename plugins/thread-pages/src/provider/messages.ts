@@ -1,10 +1,10 @@
-// threads.timeline → Message[]; the cursor codec (DESIGN §B.1 `messages`, D-bb-6). Every Message.cursor is
+// threads.timeline → Message[]; the cursor codec (DESIGN §B.1 `messages`, D-alia-6). Every Message.cursor is
 // base64url(JSON{ v: 1, id, s: sourceSeqStart, e: sourceSeqEnd }); `before` → beforeAnchorId/Seq; `after` walks
-// back from the latest page with bb's olderCursor until the cursor's sequence is covered (BB-9): bb's
+// back from the latest page with VesnALIA's olderCursor until the cursor's sequence is covered (ALIA-9): VesnALIA's
 // `afterSequence` is not paging — it is the client's known maxSeq for the server's latest-rows cache, which
-// answers `rows: []` plus a delta on a hit (bb 0.42.1 start-server.js, `timelineLatestRowsCache`). A cursor
+// answers `rows: []` plus a delta on a hit (VesnALIA 0.42.1 start-server.js, `timelineLatestRowsCache`). A cursor
 // this host did not issue is ProviderError(reason "cursor") → invalid_params in the core.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ProviderError, type Message } from "../../core/src/host/index.ts";
 import { asRecord, sdkCall } from "./errors.ts";
 
@@ -167,10 +167,10 @@ function stringOf(value: unknown): string {
 
 export interface MessagesDeps { titleOf: TitleLookup; log?: { warn(message: string): void } }
 
-export function createMessages(bb: BbPluginApi, deps: MessagesDeps) {
+export function createMessages(alia: AliaPluginApi, deps: MessagesDeps) {
   const tailWarned = new Set<string>();
   async function page(threadId: string, query: Record<string, string>): Promise<{ rows: FlatRow[]; hasOlder: boolean; older: { anchorId: string; anchorSeq: string } | null }> {
-    const response = await sdkCall("sessions.messages", () => bb.sdk.threads.timeline({ threadId, includeNestedRows: "true", ...query }));
+    const response = await sdkCall("sessions.messages", () => alia.sdk.threads.timeline({ threadId, includeNestedRows: "true", ...query }));
     const timelinePage = asRecord(asRecord(response)?.timelinePage);
     const olderCursor = asRecord(timelinePage?.olderCursor);
     return {
@@ -202,7 +202,7 @@ export function createMessages(bb: BbPluginApi, deps: MessagesDeps) {
       }
       if (result.rows.length > 0 && seq(result.rows[0]!.row) > cursor.e && result.hasOlder) {
         // The cursor lies beyond the bound: refuse it as unknown (invalid_params in the core) rather than skip rows
-        // silently; the page then reads without a cursor and continues from the newest rows (BB-9b).
+        // silently; the page then reads without a cursor and continues from the newest rows (ALIA-9b).
         if (!tailWarned.has(id)) {
           tailWarned.add(id);
           deps.log?.warn(`sessions.messages: a cursor of ${id} lies more than ${TAIL_PAGES_MAX} pages behind the head; refused as unknown`);

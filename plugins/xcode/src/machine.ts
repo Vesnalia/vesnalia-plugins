@@ -2,9 +2,9 @@
  * Everything the collector reads from a Mac, behind one interface.
  *
  * The collector decides what to read and what it means; a `MachineIO` reads
- * it on one particular Mac. `LocalMachine` is the machine running bb — the
+ * it on one particular Mac. `LocalMachine` is the machine running VesnALIA — the
  * same `ps`, `lsof` and file reads the collector always made. The other Macs
- * a thread can have a checkout on are read through their `bb.host` worker by
+ * a thread can have a checkout on are read through their `alia.host` worker by
  * `RemoteMachine` (`src/remote-watch.ts`), so a path is always read, and
  * checked, on the Mac it names.
  */
@@ -114,7 +114,7 @@ export interface MachineIO {
   parseBundle(path: string): Promise<ParsedBundle>;
 }
 
-/** The machine running bb. */
+/** The machine running VesnALIA. */
 export class LocalMachine implements MachineIO {
   private readonly workspaces = new Map<string, string | null>();
   private readonly observer: ProcessObserver;

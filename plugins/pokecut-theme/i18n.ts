@@ -1,4 +1,4 @@
-// UI strings follow BB's interface language (`<html lang>`); English by default.
+// UI strings follow VesnALIA's interface language (`<html lang>`); English by default.
 // The Russian dictionary must carry every English key (checked by the type below).
 
 const en = {
@@ -24,7 +24,7 @@ const en = {
   themeMode_system: "System",
   language: "Language",
   languageAuto: "Auto",
-  languageHint: "Auto follows BB's interface language, including the Russifier plugin.",
+  languageHint: "Auto follows VesnALIA's interface language, including the Russifier plugin.",
   groupComposer: "Composer",
   groupMessages: "Messages",
   groupWork: "Work rows and loading",
@@ -35,7 +35,7 @@ const en = {
   loader_dots: "Round pixels",
   loader_orbit: "Orbit",
   loader_coins: "Coins",
-  loader_bb: "BB's own icon",
+  loader_alia: "VesnALIA's own icon",
   toolChips: "Tool call rows",
   toolChipsHint: "How a single tool call row is drawn.",
   toolChips_surface: "Filled card",
@@ -94,7 +94,7 @@ const ru: Record<I18nKey, string> = {
   themeMode_system: "Системная",
   language: "Язык",
   languageAuto: "Авто",
-  languageHint: "«Авто» следует языку интерфейса BB, включая плагин «Русификатор».",
+  languageHint: "«Авто» следует языку интерфейса ALIA, включая плагин «Русификатор».",
   groupComposer: "Поле ввода",
   groupMessages: "Сообщения",
   groupWork: "Строки работы и загрузка",
@@ -105,7 +105,7 @@ const ru: Record<I18nKey, string> = {
   loader_dots: "Круглые пиксели",
   loader_orbit: "Орбита",
   loader_coins: "Монеты",
-  loader_bb: "Значок BB",
+  loader_alia: "Значок ALIA",
   toolChips: "Строки вызовов инструментов",
   toolChipsHint: "Как рисуется отдельный вызов инструмента.",
   toolChips_surface: "Карточка с заливкой",
@@ -144,7 +144,7 @@ export type UiLocale = Locale | "auto";
 
 const STORAGE_KEY = "pokecut-theme:locale";
 const LANGUAGE_EVENT = "pokecut-theme:locale";
-const RUSSIFIER_KEY = "bb-plugin-ru:enabled";
+const RUSSIFIER_KEY = "alia-plugin-ru:enabled";
 
 function storedLocale(): Locale | null {
   try {
@@ -155,8 +155,8 @@ function storedLocale(): Locale | null {
   }
 }
 
-/** The Russifier plugin translates BB's English UI in place (a content script, no
-    marker of its own) and leaves <html lang> alone. Its work is visible on BB's own
+/** The Russifier plugin translates VesnALIA's English UI in place (a content script, no
+    marker of its own) and leaves <html lang> alone. Its work is visible on VesnALIA's own
     chrome: the history and sidebar buttons' accessible names turn Cyrillic. */
 function russifierActive(): boolean {
   try {
@@ -201,7 +201,7 @@ export function subscribeLocale(listener: () => void): () => void {
 const LANG_ATTR = "data-pk-lang";
 const RUSSIFIER_RETRY_MS = [500, 2000, 5000];
 
-/** Writes detectLocale() onto <html> so theme CSS can follow BB's UI language,
+/** Writes detectLocale() onto <html> so theme CSS can follow VesnALIA's UI language,
     including the Russifier (which leaves <html lang> as en). */
 export function mountDocumentLocale(): () => void {
   const root = document.documentElement;

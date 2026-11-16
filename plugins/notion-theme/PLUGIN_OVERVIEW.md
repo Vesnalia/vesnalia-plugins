@@ -13,13 +13,13 @@ When a provider window is exhausted, a notice sits on the prompt box and can ret
 ## Setup
 
 ```sh
-bb theme set plugin:notion-theme:notion
+alia theme set plugin:notion-theme:notion
 ```
 
-Back to BB's look: `bb theme reset`. Font: the Ag tiles, or `bb plugin config notion-theme set font serif` (`default`, `serif`, `mono`).
+Back to VesnALIA's look: `alia theme reset`. Font: the Ag tiles, or `alia plugin config notion-theme set font serif` (`default`, `serif`, `mono`).
 
 ## Requirements
 
-BB 0.47 or later, Plugin SDK 0.6.79 or later. No account and no network call. Notion's licensed fonts are named first; the theme falls back to system fonts when they are not installed.
+VesnALIA 0.47 or later, Plugin SDK 0.6.79 or later. No account and no network call. Notion's licensed fonts are named first; the theme falls back to system fonts when they are not installed.
 
-A BB update that renames a `data-*` hook can drop the extra restyling. The palette tokens still apply.
+A VesnALIA update that renames a `data-*` hook can drop the extra restyling. The palette tokens still apply.

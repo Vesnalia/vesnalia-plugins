@@ -6,7 +6,7 @@ import { IgnoreButton } from "@/components/sections/IgnoreButton";
 import { StaleNote } from "@/components/sections/StaleNote";
 import { Button } from "@/components/ui/button";
 
-/** Newer releases bb can't reach in place; each update is confirmed first. */
+/** Newer releases VesnALIA can't reach in place; each update is confirmed first. */
 export function OutOfRangeSection({
   items,
   stateFor,

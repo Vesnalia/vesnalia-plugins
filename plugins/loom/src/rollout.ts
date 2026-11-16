@@ -502,7 +502,7 @@ function milestoneText(milestone: RolloutMilestone): string {
   return `${milestone.ref} ${milestone.title}: ${state}.${check}${needed}`;
 }
 
-/** The view as sentences, for `bb loom rollout`. */
+/** The view as sentences, for `alia loom rollout`. */
 export function rolloutLines(view: RolloutView): string[] {
   const lines = [`Next: ${view.next.text}`];
   if (view.warnings.length > 0) lines.push("", "Warnings:", ...view.warnings.map((warning) => `- ${warning.text}`));

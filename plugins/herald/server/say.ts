@@ -1,5 +1,5 @@
 /**
- * The bb server Mac's `say`, driven for its voices rather than its speaker: the
+ * The VesnALIA server Mac's `say`, driven for its voices rather than its speaker: the
  * sentence goes in on stdin, a WAV comes out to a temporary file, and the bytes
  * go back to the app to play. Nothing here plays audio on the server.
  *

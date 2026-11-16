@@ -126,10 +126,10 @@ describe("projectKey", () => {
     );
     // Measured on the Mac (ls ~/.claude/projects, 2026-10-29).
     expect(
-      projectKey("/Users/aitor/Desarrollo/bb-plugin-claude-accounts"),
-    ).toBe("-Users-aitor-Desarrollo-bb-plugin-claude-accounts");
-    expect(projectKey("/Users/aitor/.bb/plugins/x_y")).toBe(
-      "-Users-aitor--bb-plugins-x-y",
+      projectKey("/Users/aitor/Desarrollo/alia-plugin-claude-accounts"),
+    ).toBe("-Users-aitor-Desarrollo-alia-plugin-claude-accounts");
+    expect(projectKey("/Users/aitor/.vesnalia/plugins/x_y")).toBe(
+      "-Users-aitor--alia-plugins-x-y",
     );
   });
 });
@@ -242,7 +242,7 @@ describe("shareSessions", () => {
 
   it("also shares the sessions kept under the project's resolved path", async () => {
     const fs = memoryFs();
-    // On the NUC /Users/aitor is a link to /home/aitor: bb may name the
+    // On the NUC /Users/aitor is a link to /home/aitor: VesnALIA may name the
     // project by one and Claude Code by the other.
     fs.addDir(PROJECT);
     fs.real.set("/Users/aitor", "/home/aitor");

@@ -1,6 +1,6 @@
-// Computer use (015). The agent drives a desktop box through bb-box's six
-// computer tools, and bb-box drives the Cua Driver in the box over one MCP
-// session per box. bb-box owns the references the agent sees, keeps pixels
+// Computer use (015). The agent drives a desktop box through alia-box's six
+// computer tools, and alia-box drives the Cua Driver in the box over one MCP
+// session per box. alia-box owns the references the agent sees, keeps pixels
 // with the image they came from, retries in the foreground an action Cua
 // cannot do in the background, says which menus and popups an action opened
 // or closed, and refuses everything while a person holds the box's desktop.
@@ -20,7 +20,7 @@ import { PRODUCT } from "../brand.ts";
 import { clickShape, type TypedText } from "./pointer-shapes.ts";
 
 export const PAUSED =
-  "Paused: a person has taken control of this box's desktop in BB. The computer tools will work again when they hand control back. " +
+  "Paused: a person has taken control of this box's desktop in VesnALIA. The computer tools will work again when they hand control back. " +
   "Nothing was done and the desktop is as they left it. Wait, or ask them in the thread. " +
   "Once they ask you to continue, or the thread makes clear they have finished, take control back with computer_take_control.";
 export const RETURNED = "Control returned; the desktop may have changed. Observe before acting.";
@@ -38,7 +38,7 @@ const IDLE_MS = 10 * 60_000;
 const PAUSE_WAIT_MS = 3_000;
 const OPEN_TIMEOUT_MS = 15_000;
 const CALL_TIMEOUT_MS = 30_000;
-const DRIVER_SESSION_PREFIX = "bb-box-";
+const DRIVER_SESSION_PREFIX = "alia-box-";
 const CURSOR_RESTORE_RETRY_MS: readonly number[] = [250, 1_000, 4_000];
 const LAUNCH_WAIT_MS = 10_000;
 const LAUNCH_POLL_MS = 250;
@@ -58,7 +58,7 @@ const COMPOSITOR_WAIT_MS = 2_000;
 const LOOKUP_WAIT_MS = 20_000;
 const LOOKUP_POLL_MS = 2_000;
 /**
- * After an action on a window that changed nothing in it, how long bb-box
+ * After an action on a window that changed nothing in it, how long alia-box
  * waits before it looks once more whether the window has gone, as a dialog
  * closes a moment after its button is pressed.
  */
@@ -79,7 +79,7 @@ const GLANCE_MS = 1_000;
 /** Lines of a popup that opened shown with it. */
 const POPUP_LINES = 30;
 /**
- * How far bb-box moves a window from another of its app's when Cua reads the
+ * How far alia-box moves a window from another of its app's when Cua reads the
  * other's tree for it: Cua confuses windows up to about 20 pixels apart.
  */
 const APART = 40;
@@ -90,8 +90,8 @@ const WALK_MS = 3_000;
 /** References kept per box; the oldest go first. */
 const MAX_REFS = 20_000;
 
-/** How bb-box names itself to the driver. Cua does not read it. */
-const CLIENT = { name: "bb-box", version: "1" };
+/** How alia-box names itself to the driver. Cua does not read it. */
+const CLIENT = { name: "alia-box", version: "1" };
 const PAUSED_WHILE_RUNNING = `A person took control of the box's desktop while this ran, so ${PRODUCT} closed its session with the driver.`;
 const AFTER_PAUSE = "Wait until they hand control back, or take it back with computer_take_control once they ask you to continue; then call computer_observe.";
 const FORGOTTEN = "The box stopped or was released while this ran.";
@@ -275,21 +275,21 @@ interface Open {
 }
 
 interface Popup extends Open {
-  /** What bb-box told the agent it is, such as "the menu Applications"; null when it only listed it. */
+  /** What alia-box told the agent it is, such as "the menu Applications"; null when it only listed it. */
   readonly what: string | null;
 }
 
 /** What the desktop looked like before an action on it or in a popup. */
 interface Watch {
   readonly windows: Map<number, WindowInfo>;
-  /** The windows whose reads list the popups bb-box looks for. */
+  /** The windows whose reads list the popups alia-box looks for. */
   readonly owners: readonly WindowInfo[];
   readonly popups: Map<number, Open>;
   /** The window or popup under the point. */
   readonly under: WindowInfo | null;
   /** The tree of the window under the point, when it is small enough to read quickly. */
   readonly tree: Snapshot | null;
-  /** The named element under the point, when bb-box read it. */
+  /** The named element under the point, when alia-box read it. */
   readonly element: Element | null;
 }
 
@@ -304,7 +304,7 @@ interface RefEntry {
   readonly fingerprint: string;
   readonly unique: boolean;
   readonly describe: string;
-  /** Its element's role and name as bb-box last showed them to the agent; null before it did (024). */
+  /** Its element's role and name as alia-box last showed them to the agent; null before it did (024). */
   readonly shown: string | null;
 }
 
@@ -321,7 +321,7 @@ interface Changes {
   readonly hints: string[];
   /** Whether anything was seen to change. */
   readonly changed: boolean;
-  /** The window as it is now, when bb-box could read it. */
+  /** The window as it is now, when alia-box could read it. */
   readonly after: Snapshot | null;
 }
 
@@ -343,7 +343,7 @@ interface Image extends Size {
 interface Live {
   readonly mcp: McpSession;
   readonly generation: number;
-  /** Why bb-box closed it; null while open, or when it ended by itself. */
+  /** Why alia-box closed it; null while open, or when it ended by itself. */
   reason: string | null;
   sessionTools: ReadonlySet<string> | null;
 }
@@ -407,7 +407,7 @@ interface Read {
   readonly image: Image | null;
   /** The agent's image of the window no longer matches it. */
   readonly dropped: boolean;
-  /** What bb-box said when it moved the window so that Cua could read it; null when it did not. */
+  /** What alia-box said when it moved the window so that Cua could read it; null when it did not. */
   readonly moved: string | null;
 }
 
@@ -451,7 +451,7 @@ function rawText(result: McpResult): string {
  * as Explorer's hidden-icons panel or an app's tray menu does (#484). On
  * Windows, Cua checks after a click that the window it clicked, or one of
  * its process's, is in front, and says it failed when not, though the click
- * landed. bb-box takes it as done, and says which window came forward.
+ * landed. alia-box takes it as done, and says which window came forward.
  */
 export function landedElsewhere(result: McpResult): { forward: number | null } | null {
   const raw = rawText(result);
@@ -467,7 +467,7 @@ function codeOf(result: McpResult): string | undefined {
 }
 
 /**
- * Why Cua did not do something, in bb-box's words: without its codes, its
+ * Why Cua did not do something, in alia-box's words: without its codes, its
  * tools and its advice, which the agent does not have, and with window IDs
  * as computer_windows gives them.
  */
@@ -814,7 +814,7 @@ function placeholder(title: string, url: string): boolean {
   try {
     host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
   } catch {
-    // Not a URL bb-box can take apart: only a scheme marks an address.
+    // Not a URL alia-box can take apart: only a scheme marks an address.
   }
   return head.includes("://") || (!!host && head.toLowerCase().replace(/^www\./, "").startsWith(host));
 }
@@ -834,7 +834,7 @@ function joinText(pieces: readonly string[]): string {
   return out;
 }
 
-/** The line saying which listed windows bb-box gave a title, and why (#365); null for none. */
+/** The line saying which listed windows alia-box gave a title, and why (#365); null for none. */
 function namedLine(named: readonly { readonly id: number; readonly title: string }[], windows: readonly WindowInfo[]): string | null {
   const shown = named.filter((window) => windows.some((listed) => listed.id === window.id));
   if (!shown.length) return null;
@@ -893,16 +893,16 @@ const TERMINALS = "foot|footclient|kitty|Alacritty|alacritty|org.wezfurlong.wezt
 
 /**
  * Types `text` into Sway window `windowId` (Cua's window ID is Sway's
- * container ID) with the Wayland image's US keyboard, bb-box-type, after
- * focusing the window if it is not focused, as the box user. A bb-box-type
+ * container ID) with the Wayland image's US keyboard, alia-box-type, after
+ * focusing the window if it is not focused, as the box user. A alia-box-type
  * on the PATH comes first, as tests give one. Exits 3 where the image has
  * none or no Sway, or where the text has a character the US layout lacks,
- * which bb-box-type types none of (#707).
+ * which alia-box-type types none of (#707).
  */
 export function swayKeyboardScript(windowId: number, text: string): string {
   const encoded = Buffer.from(text, "utf8").toString("base64");
-  return `set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
-tool=$(command -v bb-box-type || echo /usr/local/libexec/bb-box/type)
+  return `set -a; [ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a
+tool=$(command -v alia-box-type || echo /usr/local/libexec/alia-box/type)
 [ -x "$tool" ] && tree=$(swaymsg -t get_tree 2>/dev/null) || exit 3
 focused=$(printf %s "$tree" | python3 -c 'import json,sys
 def walk(n):
@@ -913,8 +913,8 @@ walk(json.load(sys.stdin))')
 printf %s ${encoded} | base64 -d | "$tool"`;
 }
 
-const CLIPBOARD_ENV = `set -a; [ ! -r /run/bb-box/display.env ] || . /run/bb-box/display.env; set +a
-saved="\${XDG_RUNTIME_DIR:-$HOME}/.bb-box-clipboard"`;
+const CLIPBOARD_ENV = `set -a; [ ! -r /run/alia-box/display.env ] || . /run/alia-box/display.env; set +a
+saved="\${XDG_RUNTIME_DIR:-$HOME}/.alia-box-clipboard"`;
 
 /**
  * Puts `text` on the clipboard of a Sway desktop, as the box user, to be
@@ -1164,7 +1164,7 @@ export class Computer {
       };
       const step = steps[input.action];
       this.#selecting(use, num(target.args.window_id), input.action === "double_click", input.action === "click" || input.action === "right_click");
-      // On the desktop or in a popup, Cua cannot say what changed: bb-box looks before and after.
+      // On the desktop or in a popup, Cua cannot say what changed: alia-box looks before and after.
       const inPopup = !!target.snapshot && use.state.popups.has(target.snapshot.window.id);
       const watch = target.screen || inPopup ? await this.#watch(use, target.screen ?? null) : null;
       // An element Cua cannot click as an element is clicked at its centre (048).
@@ -1337,9 +1337,9 @@ export class Computer {
     // search. The element is clicked first with the real pointer, as a person
     // would, which focuses it and, in an address bar, selects what it holds,
     // unless a chord there may have selected text a click would lose (#707).
-    // On Sway, bb-box types the text with the image's US keyboard, or, where
+    // On Sway, alia-box types the text with the image's US keyboard, or, where
     // the image has none or the text has a character it lacks, pastes it:
-    // bb-box puts it on the clipboard, and Cua presses the paste key. Cua's
+    // alia-box puts it on the clipboard, and Cua presses the paste key. Cua's
     // own typing there loses characters.
     if (!keys && use.box.capabilities.os === "linux" && id !== undefined) {
       const window = { pid: args.pid, window_id: args.window_id };
@@ -1552,7 +1552,7 @@ export class Computer {
     void this.#close(state, FORGOTTEN).catch((error) => this.#deps.logError("close a computer-use session", error));
   }
 
-  /** Whether bb-box holds a session to the box's driver. For tests and the doctor. */
+  /** Whether alia-box holds a session to the box's driver. For tests and the doctor. */
   connected(boxId: string): boolean {
     const live = this.#boxes.get(boxId)?.live;
     return !!live && !live.mcp.closed;
@@ -1942,7 +1942,7 @@ export class Computer {
    * Clicks an element at the centre of its frame. The frame is in the
    * screen's pixels, and the click in those of Cua's latest image of the
    * window, which Cua takes only after a read of the window with an image in
-   * this session: bb-box reads it first when the session has not (048).
+   * this session: alia-box reads it first when the session has not (048).
    */
   async #centre(use: Use, target: Target, args: Json): Promise<{ result: McpResult; foreground: boolean; snapshot: Snapshot }> {
     let snapshot = target.snapshot!;
@@ -1966,7 +1966,7 @@ export class Computer {
    * The window of an app that was already open, when opening it again only
    * handed the launch to it. A single-instance app, such as Mousepad, may
    * show a new document in its window and open none, as does an app on
-   * macOS that has a window already. bb-box brings that window, of the app
+   * macOS that has a window already. alia-box brings that window, of the app
    * by name or of process `pid`, to the front, as a new window would be.
    * Null when the app had no window before.
    */
@@ -2156,7 +2156,7 @@ export class Computer {
    * window's tree by where the window is, so of two windows of one app within
    * a few pixels of each other, as a browser places a new window, it reads
    * the first for both; the tree's frame then bears the other's title. With
-   * `list`, bb-box lists the windows to find it; otherwise it goes by the
+   * `list`, alia-box lists the windows to find it; otherwise it goes by the
    * windows it knows.
    */
   async #twin(use: Use, window: WindowInfo, structured: Json, list: boolean): Promise<WindowInfo | null> {
@@ -2450,7 +2450,7 @@ export class Computer {
   /**
    * Finds a reference in the window's latest snapshot, reading the window
    * again when its tokens are from an earlier session. Refuses once when its
-   * element's role or name is not what bb-box last showed the agent (024).
+   * element's role or name is not what alia-box last showed the agent (024).
    */
   async #element(use: Use, ref: string): Promise<{ snapshot: Snapshot; element: Element }> {
     const name = refName(ref);
@@ -2489,7 +2489,7 @@ export class Computer {
     return { snapshot, element };
   }
 
-  /** Records how bb-box showed these elements to the agent. */
+  /** Records how alia-box showed these elements to the agent. */
   #show(state: BoxState, elements: Iterable<Element | null>): void {
     for (const element of elements) {
       const entry = element && state.refs.get(element.ref);
@@ -2536,7 +2536,7 @@ export class Computer {
     }
     if (window === "desktop") {
       // Cua maps the desktop's pixels to the screen by its latest image of the
-      // desktop in this session: the agent's, or in a new session one bb-box
+      // desktop in this session: the agent's, or in a new session one alia-box
       // takes of the same size.
       await this.#mapped(use, held);
       const screen = held.source;
@@ -2789,7 +2789,7 @@ export class Computer {
   /**
    * After an action on the desktop or in a popup, which Cua cannot check
    * itself: which popups and windows opened, closed or changed, and what
-   * changed in the window under the point when bb-box read its tree. Looks
+   * changed in the window under the point when alia-box read its tree. Looks
    * again for a moment while nothing has.
    */
   async #settle(use: Use, watch: Watch, cause: Cause): Promise<{ parts: string[]; hints: string[] }> {
@@ -2869,7 +2869,7 @@ export class Computer {
 
   /**
    * Which popups opened and closed, in words, each that opened with its
-   * items when Cua gives them. A popup bb-box named when it opened is named
+   * items when Cua gives them. A popup alia-box named when it opened is named
    * again when it closes. `tree` is the window read before and after, whose
    * changes follow: a GTK app's menu items show there.
    */
@@ -2924,7 +2924,7 @@ export class Computer {
   }
 }
 
-/** What bb-box says when it cannot read what an action it did changed. */
+/** What alia-box says when it cannot read what an action it did changed. */
 function unread(error: unknown, hint: string): Changes {
   if (error instanceof ComputerError && (error.code === "paused" || error.code === "interrupted")) {
     return {

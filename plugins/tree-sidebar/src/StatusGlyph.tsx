@@ -1,16 +1,16 @@
-import type { PluginSidebarThreadIndicator } from "@bb/plugin-sdk";
+import type { PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 /**
- * bb's own status vocabulary, drawn by this plugin.
+ * VesnALIA's own status vocabulary, drawn by this plugin.
  *
  * The SDK ships `indicator` as data and no component on purpose, so a replaced
  * sidebar can look how it likes. This one deliberately matches the built-in
  * list shape for shape: a user switching between the two should not have to
  * learn a second set of glyphs.
  *
- * An unrecognized indicator draws nothing — bb adds kinds over time, and a
+ * An unrecognized indicator draws nothing — VesnALIA adds kinds over time, and a
  * sidebar built today must not break on one shipped tomorrow.
  */
 export function StatusGlyph({

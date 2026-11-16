@@ -62,11 +62,11 @@ Then respond to the following.
 The subagent's Read tool presents the PNG visually. Restricting it to that one
 read is what keeps the critique honest; a critic that can open the HTML will.
 
-In bb there is no Read preamble: `scripts/bb-critics.sh` attaches the PNG to
+In VesnALIA there is no Read preamble: `scripts/alia-critics.sh` attaches the PNG to
 the child thread with `--image`, so the opening becomes "A screenshot of a
 product surface is attached to this message. Judge only what is on screen. Do
 not open any files in the workspace." — and the prompt below is unchanged
-from there on. See `references/runtime-bb.md`.
+from there on. See `references/runtime-alia.md`.
 
 ## Prompt
 

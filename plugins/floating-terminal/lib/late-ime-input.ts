@@ -10,7 +10,7 @@
 // Install right after terminal.open(), so its listeners and timer run after
 // xterm's own. That ordering holds only because xterm also listens on the
 // textarea in the capture phase: at the target, capture listeners run before
-// bubble ones whatever the order they were added in. Mirrors get-bb/bb#6815.
+// bubble ones whatever the order they were added in. Mirrors get-alia/alia#6815.
 import type { IDisposable, Terminal } from "@xterm/xterm";
 
 const IME_PROCESS_KEY_CODE = 229;

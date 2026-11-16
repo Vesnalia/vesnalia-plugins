@@ -2,7 +2,7 @@
 // (result, artifacts, actual checks, remaining problems) and the lead's or
 // the user's manual acceptance decisions (accept / changes-requested with a
 // reason). Storage belongs to the selected tracker only — Beads issue
-// metadata (merge keys bbTeamSubmission / bbTeamAcceptance) or the built-in
+// metadata (merge keys aliaTeamSubmission / aliaTeamAcceptance) or the built-in
 // task row; no duplicate kv record is kept.
 //
 // Honesty contract:

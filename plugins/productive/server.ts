@@ -1,13 +1,13 @@
-// bb-plugin-productive — backend entry.
+// alia-plugin-productive — backend entry.
 //
-// One Productive.io organization (one API token) serves every bb project. A bb
-// project is mapped to exactly one Productive project; the board for that bb
+// One Productive.io organization (one API token) serves every VesnALIA project. A VesnALIA
+// project is mapped to exactly one Productive project; the board for that VesnALIA
 // project is the mapped project's tasks, optionally narrowed to one task list
 // and/or the configured person.
 //
 // Surfaces, all reading the same cache:
 //   - the Productive nav panel and thread panel (app.tsx, over RPC)
-//   - the `bb productive` CLI command
+//   - the `alia productive` CLI command
 //   - the `productive-task` mention provider (@ / # in the composer)
 //   - skills/productive/SKILL.md, which tells agents to use the CLI
 //
@@ -15,7 +15,7 @@
 // it does not require a plugin reload.
 import { join, dirname } from 'node:path';
 import { readFile } from 'node:fs/promises';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import {
   CONNECTION_CHANGED,
@@ -69,11 +69,11 @@ const EMPTY_CONNECTION: ConnectionSettings = {
   personId: ''
 };
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info('loaded');
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info('loaded');
 
-  const store = createWorkItemStore(bb);
-  const pluginDataDirectory = dirname(bb.storage.database().name);
+  const store = createWorkItemStore(alia);
+  const pluginDataDirectory = dirname(alia.storage.database().name);
   const tokenPath = join(pluginDataDirectory, 'secrets', 'api-token');
 
   // -------------------------------------------------------------------------
@@ -97,7 +97,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function readConnectionSettings(): Promise<ConnectionSettings> {
-    const stored = await bb.storage.kv.get<unknown>('connection');
+    const stored = await alia.storage.kv.get<unknown>('connection');
     const parsed = connectionSettingsSchema.safeParse(stored);
     return parsed.success ? parsed.data : EMPTY_CONNECTION;
   }
@@ -224,11 +224,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   function toWorkItem(
     task: ProductiveTask,
-    bbProjectId: string,
+    aliaProjectId: string,
     orgId: string
   ): WorkItem {
     return {
-      bbProjectId,
+      aliaProjectId,
       locator: task.id,
       key: task.key,
       title: task.title,
@@ -257,7 +257,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function toWorkItemDetail(
     task: ProductiveTask,
-    bbProjectId: string,
+    aliaProjectId: string,
     api: ProductiveApi,
     orgId: string
   ): Promise<WorkItemDetail> {
@@ -266,7 +266,7 @@ export default async function plugin(bb: BbPluginApi) {
       api.listTaskAttachments(task.id)
     ]);
     return {
-      ...toWorkItem(task, bbProjectId, orgId),
+      ...toWorkItem(task, aliaProjectId, orgId),
       comments: comments.map(comment => ({
         author: comment.user?.name ?? 'Unknown',
         body: comment.body,
@@ -364,11 +364,11 @@ export default async function plugin(bb: BbPluginApi) {
       );
       store.replaceAll(projectId, items, new Date().toISOString());
     } catch (error) {
-      bb.log.warn(`sync failed for ${projectId}: ${safeMessage(error)}`);
+      alia.log.warn(`sync failed for ${projectId}: ${safeMessage(error)}`);
       store.setSyncError(projectId, safeMessage(error));
     }
     const status = store.syncStatus(projectId);
-    bb.realtime.publish(ITEMS_CHANGED, { projectId });
+    alia.realtime.publish(ITEMS_CHANGED, { projectId });
     return status;
   }
 
@@ -395,7 +395,7 @@ export default async function plugin(bb: BbPluginApi) {
     const previous = store.get(projectId, locator);
     store.upsert(projectId, item);
     if (previous === null || !sameWorkItem(previous, item)) {
-      bb.realtime.publish(ITEMS_CHANGED, { projectId });
+      alia.realtime.publish(ITEMS_CHANGED, { projectId });
     }
     return detail;
   }
@@ -403,7 +403,7 @@ export default async function plugin(bb: BbPluginApi) {
   /** A ticket-per-worktree keeps parallel tickets from colliding in one checkout. */
   function threadEnvironment(
     kind: 'project-default' | 'worktree'
-  ): Parameters<typeof bb.sdk.threads.spawn>[0]['environment'] {
+  ): Parameters<typeof alia.sdk.threads.spawn>[0]['environment'] {
     return kind === 'worktree'
       ? {
           type: 'host',
@@ -457,9 +457,9 @@ export default async function plugin(bb: BbPluginApi) {
   // RPC
   // -------------------------------------------------------------------------
 
-  bb.rpc.register(productiveRpcContract, {
+  alia.rpc.register(productiveRpcContract, {
     listProjects: async () => {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return {
         projects: projects.map(project => ({
           id: project.id,
@@ -468,12 +468,12 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     threadProject: async ({ threadId }) => {
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       return { projectId: thread.projectId };
     },
     getConnection: async () => ({ connection: await connectionView() }),
     saveConnection: async input => {
-      await bb.storage.kv.set('connection', {
+      await alia.storage.kv.set('connection', {
         organizationId: input.organizationId,
         personId: input.personId
       });
@@ -488,7 +488,7 @@ export default async function plugin(bb: BbPluginApi) {
         advanceRevision(projectId);
       }
       const connection = await connectionView();
-      bb.realtime.publish(CONNECTION_CHANGED, {
+      alia.realtime.publish(CONNECTION_CHANGED, {
         configured: connection.configured
       });
       return { connection };
@@ -539,7 +539,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { item: await refreshItem(projectId, locator) };
     },
     getCreateTaskContext: async ({ projectId }) => {
-      const project = (await bb.sdk.projects.list({ includePersonal: true }))
+      const project = (await alia.sdk.projects.list({ includePersonal: true }))
         .find(candidate => candidate.id === projectId);
       const scope = await scopeView(projectId);
       const connection = await connectionView();
@@ -553,7 +553,7 @@ export default async function plugin(bb: BbPluginApi) {
             !connection.configured
               ? 'Productive is not connected.'
               : scope.productiveProjectId === ''
-                ? 'This bb project is not mapped to a Productive project yet.'
+                ? 'This VesnALIA project is not mapped to a Productive project yet.'
                 : connection.message,
           productiveProjectId:
             scope.productiveProjectId === '' ? null : scope.productiveProjectId,
@@ -569,7 +569,7 @@ export default async function plugin(bb: BbPluginApi) {
           error: {
             code: 'metadata_unavailable' as const,
             safeMessage:
-              'This bb project is not mapped to a Productive project yet.'
+              'This VesnALIA project is not mapped to a Productive project yet.'
           }
         };
       }
@@ -627,7 +627,7 @@ export default async function plugin(bb: BbPluginApi) {
       const detail = await refreshItem(projectId, locator);
       const { comments: _comments, attachments: _attachments, ...item } = detail;
       const title = threadTitleForItem(item);
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId,
         environment: threadEnvironment(environment),
         title,
@@ -701,17 +701,17 @@ export default async function plugin(bb: BbPluginApi) {
       const saved = store.savePreset({ projectId, id, name, state });
       const preset = filterPresetSummary(saved);
       const presets = store.listPresets(projectId);
-      bb.realtime.publish(PRESETS_CHANGED, { projectId });
+      alia.realtime.publish(PRESETS_CHANGED, { projectId });
       return { preset, presets };
     },
     deleteFilterPreset: async ({ projectId, id }) => {
       const presets = store.deletePreset(projectId, id);
-      bb.realtime.publish(PRESETS_CHANGED, { projectId });
+      alia.realtime.publish(PRESETS_CHANGED, { projectId });
       return { presets };
     },
     reorderFilterPresets: async ({ projectId, ids }) => {
       const presets = store.reorderPresets(projectId, ids);
-      bb.realtime.publish(PRESETS_CHANGED, { projectId });
+      alia.realtime.publish(PRESETS_CHANGED, { projectId });
       return { presets };
     }
   });
@@ -719,7 +719,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function createTask(input: CreateTaskInput) {
     const scope = store.projectScope(input.projectId, SCOPE_DEFAULTS);
     if (scope.productiveProjectId === '') {
-      throw new Error('This bb project is not mapped to a Productive project.');
+      throw new Error('This VesnALIA project is not mapped to a Productive project.');
     }
     if (input.connectorRevision !== revision(input.projectId)) {
       throw new Error(
@@ -739,7 +739,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
     const item = toWorkItem(created, input.projectId, orgId);
     store.upsert(input.projectId, item);
-    bb.realtime.publish(ITEMS_CHANGED, { projectId: input.projectId });
+    alia.realtime.publish(ITEMS_CHANGED, { projectId: input.projectId });
 
     // Productive silently drops an assignee the caller may not assign, so the
     // result is reported rather than assumed.
@@ -774,7 +774,7 @@ export default async function plugin(bb: BbPluginApi) {
   // Composer mentions
   // -------------------------------------------------------------------------
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: 'productive-task',
     label: 'Productive',
     triggers: ['@', '#'],
@@ -818,7 +818,7 @@ export default async function plugin(bb: BbPluginApi) {
       readToken(),
       readConnectionSettings()
     ]);
-    const result = await bb.ui.requestInput(
+    const result = await alia.ui.requestInput(
       {
         threadId,
         rendererId: 'productive-connection',
@@ -833,7 +833,7 @@ export default async function plugin(bb: BbPluginApi) {
     );
     if (result.outcome !== 'submitted') return null;
     const response = connectionInteractionResponseSchema.parse(result.value);
-    await bb.storage.kv.set('connection', {
+    await alia.storage.kv.set('connection', {
       organizationId: response.organizationId,
       personId: response.personId
     });
@@ -845,7 +845,7 @@ export default async function plugin(bb: BbPluginApi) {
     apiCache = null;
     viewerCache = null;
     const connection = await connectionView();
-    bb.realtime.publish(CONNECTION_CHANGED, {
+    alia.realtime.publish(CONNECTION_CHANGED, {
       configured: connection.configured
     });
     return connection;
@@ -857,25 +857,25 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usage = [
     'Usage:',
-    '  bb productive status [--project <proj_id>] [--json]',
-    '  bb productive list [--project <proj_id>] [--query <text>] [--state <todo|in_progress|done>] [--cached] [--json]',
-    '  bb productive show <locator> [--project <proj_id>] [--json]',
-    '  bb productive start <locator> [--worktree] [--project <proj_id>] [--json]',
-    '  bb productive transitions <locator> [--project <proj_id>] [--json]',
-    '  bb productive move <locator> --status <status-id> [--project <proj_id>] [--json]',
-    '  bb productive move-list <locator> --list <task-list-id> [--project <proj_id>] [--json]',
-    '  bb productive comment <locator> <text> [--project <proj_id>] [--json]',
-    '  bb productive edit <locator> [--title <text>] [--description <text>] [--project <proj_id>] [--json]',
-    '  bb productive create --title <text> [--description <text>] [--list <task-list-id>]',
+    '  VesnALIA productive status [--project <proj_id>] [--json]',
+    '  VesnALIA productive list [--project <proj_id>] [--query <text>] [--state <todo|in_progress|done>] [--cached] [--json]',
+    '  VesnALIA productive show <locator> [--project <proj_id>] [--json]',
+    '  VesnALIA productive start <locator> [--worktree] [--project <proj_id>] [--json]',
+    '  VesnALIA productive transitions <locator> [--project <proj_id>] [--json]',
+    '  VesnALIA productive move <locator> --status <status-id> [--project <proj_id>] [--json]',
+    '  VesnALIA productive move-list <locator> --list <task-list-id> [--project <proj_id>] [--json]',
+    '  VesnALIA productive comment <locator> <text> [--project <proj_id>] [--json]',
+    '  VesnALIA productive edit <locator> [--title <text>] [--description <text>] [--project <proj_id>] [--json]',
+    '  VesnALIA productive create --title <text> [--description <text>] [--list <task-list-id>]',
     '                       [--status <status-id>] [--assignee <person-id>] [--due <YYYY-MM-DD>]',
     '                       [--project <proj_id>] [--json]',
-    '  bb productive refresh [--project <proj_id>] [--json]',
-    '  bb productive config [--project <proj_id>] [--productive-project <id>] [--folder <id>] [--list <id>]',
+    '  VesnALIA productive refresh [--project <proj_id>] [--json]',
+    '  VesnALIA productive config [--project <proj_id>] [--productive-project <id>] [--folder <id>] [--list <id>]',
     '                       [--assigned-to-me <on|off>] [--include-closed <on|off>] [--json]',
-    '  bb productive connect [--json]',
-    '  bb productive connect --org <organization-id> [--person <person-id>] --token-file <path>',
-    '  bb productive disconnect [--json]',
-    '  bb productive presets list [--project <proj_id>] [--json]'
+    '  VesnALIA productive connect [--json]',
+    '  VesnALIA productive connect --org <organization-id> [--person <person-id>] --token-file <path>',
+    '  VesnALIA productive disconnect [--json]',
+    '  VesnALIA productive presets list [--project <proj_id>] [--json]'
   ].join('\n');
 
   function formatItem(item: WorkItem): string {
@@ -887,90 +887,90 @@ export default async function plugin(bb: BbPluginApi) {
     ].join('  ');
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: 'productive',
     summary: 'Browse and update the current project\'s Productive tasks',
     commands: [
       {
         name: 'status',
         summary: 'Show the project mapping, last sync, and task count',
-        usage: 'bb productive status [--project <proj_id>] [--json]'
+        usage: 'alia productive status [--project <proj_id>] [--json]'
       },
       {
         name: 'list',
         summary: 'List the project\'s Productive tasks',
         usage:
-          'bb productive list [--project <proj_id>] [--query <text>] [--state <todo|in_progress|done>] [--cached] [--json]'
+          'alia productive list [--project <proj_id>] [--query <text>] [--state <todo|in_progress|done>] [--cached] [--json]'
       },
       {
         name: 'show',
         summary: 'Show one task with its description and comments',
-        usage: 'bb productive show <locator> [--project <proj_id>] [--json]'
+        usage: 'alia productive show <locator> [--project <proj_id>] [--json]'
       },
       {
         name: 'start',
-        summary: 'Start a bb thread to work on a task',
+        summary: 'Start a VesnALIA thread to work on a task',
         usage:
-          'bb productive start <locator> [--worktree] [--project <proj_id>] [--json]'
+          'alia productive start <locator> [--worktree] [--project <proj_id>] [--json]'
       },
       {
         name: 'transitions',
         summary: 'List the workflow statuses a task can move to',
-        usage: 'bb productive transitions <locator> [--json]'
+        usage: 'alia productive transitions <locator> [--json]'
       },
       {
         name: 'move',
         summary: 'Move a task to another workflow status',
-        usage: 'bb productive move <locator> --status <status-id> [--json]'
+        usage: 'alia productive move <locator> --status <status-id> [--json]'
       },
       {
         name: 'move-list',
         summary: "Move a task to another task list (the board's lanes)",
-        usage: 'bb productive move-list <locator> --list <task-list-id> [--json]'
+        usage: 'alia productive move-list <locator> --list <task-list-id> [--json]'
       },
       {
         name: 'comment',
         summary: 'Add a comment to a task',
-        usage: 'bb productive comment <locator> <text> [--json]'
+        usage: 'alia productive comment <locator> <text> [--json]'
       },
       {
         name: 'edit',
         summary: "Edit a task's title or description",
         usage:
-          'bb productive edit <locator> [--title <text>] [--description <text>] [--json]'
+          'alia productive edit <locator> [--title <text>] [--description <text>] [--json]'
       },
       {
         name: 'create',
         summary: 'Create a task in the mapped Productive project',
-        usage: 'bb productive create --title <text> [--description <text>] [--json]'
+        usage: 'alia productive create --title <text> [--description <text>] [--json]'
       },
       {
         name: 'refresh',
         summary: 'Force a sync with Productive',
-        usage: 'bb productive refresh [--project <proj_id>] [--json]'
+        usage: 'alia productive refresh [--project <proj_id>] [--json]'
       },
       {
         name: 'config',
-        summary: 'Show or change this bb project\'s Productive mapping',
+        summary: 'Show or change this VesnALIA project\'s Productive mapping',
         usage:
-          'bb productive config [--productive-project <id>] [--folder <id>] [--list <id>] [--json]'
+          'alia productive config [--productive-project <id>] [--folder <id>] [--list <id>] [--json]'
       },
       {
         name: 'connect',
         summary:
           'Show the Productive connection, or set it with --org and --token-file',
         usage:
-          'bb productive connect [--org <id> [--person <id>] --token-file <path>] [--json]'
+          'alia productive connect [--org <id> [--person <id>] --token-file <path>] [--json]'
       },
       {
         name: 'disconnect',
         summary: 'Remove the stored Productive API token',
-        usage: 'bb productive disconnect [--json]'
+        usage: 'alia productive disconnect [--json]'
       },
       {
         name: 'presets',
         summary: 'List the board\'s saved filter presets',
-        usage: 'bb productive presets list [--project <proj_id>] [--json]'
+        usage: 'alia productive presets list [--project <proj_id>] [--json]'
       }
     ],
     async run(argv, context) {
@@ -988,7 +988,7 @@ export default async function plugin(bb: BbPluginApi) {
       const fail = (message: string) => ({ exitCode: 1, stderr: message });
       const needProject = () =>
         fail(
-          'No bb project in context. Pass --project <proj_id>. Run "bb project list" to see ids.'
+          'No VesnALIA project in context. Pass --project <proj_id>. Run "alia project list" to see ids.'
         );
 
       try {
@@ -1003,13 +1003,13 @@ export default async function plugin(bb: BbPluginApi) {
             apiCache = null;
       viewerCache = null;
             const connection = await connectionView();
-            bb.realtime.publish(CONNECTION_CHANGED, { configured: false });
+            alia.realtime.publish(CONNECTION_CHANGED, { configured: false });
             return reply(connection, 'Disconnected. The stored token was removed.');
           }
 
           case 'connect': {
             // Why a file and not a flag value: a plugin CLI command runs inside
-            // the BB server, so it has no stdin to pipe a secret through. A path
+            // the VesnALIA server, so it has no stdin to pipe a secret through. A path
             // keeps the token out of argv, shell history, and agent transcripts.
             const tokenFile = flagValue(args, '--token-file');
             if (tokenFile !== null) {
@@ -1031,7 +1031,7 @@ export default async function plugin(bb: BbPluginApi) {
               if (/[\r\n]/u.test(token)) {
                 return fail('The API token must be a single line.');
               }
-              await bb.storage.kv.set('connection', {
+              await alia.storage.kv.set('connection', {
                 organizationId: organization,
                 personId: flagValue(args, '--person') ?? ''
               });
@@ -1039,7 +1039,7 @@ export default async function plugin(bb: BbPluginApi) {
               apiCache = null;
       viewerCache = null;
               const saved = await connectionView();
-              bb.realtime.publish(CONNECTION_CHANGED, {
+              alia.realtime.publish(CONNECTION_CHANGED, {
                 configured: saved.configured
               });
               return reply(
@@ -1064,8 +1064,8 @@ export default async function plugin(bb: BbPluginApi) {
                       ? ''
                       : ` — ${connection.message ?? 'unavailable'}`
                   }`
-                : 'Not connected. Open the Productive panel in BB, or run:\n'
-                  + '  bb productive connect --org <organization-id> --token-file <path>'
+                : 'Not connected. Open the Productive panel in VesnALIA, or run:\n'
+                  + '  VesnALIA productive connect --org <organization-id> --token-file <path>'
             );
           }
 
@@ -1076,7 +1076,7 @@ export default async function plugin(bb: BbPluginApi) {
               Promise.resolve(store.syncStatus(projectId))
             ]);
             return reply({ scope, status }, [
-              `bb project:          ${projectId}`,
+              `alia project:          ${projectId}`,
               `Productive project:  ${
                 scope.productiveProjectId === ''
                   ? 'not mapped'
@@ -1128,7 +1128,7 @@ export default async function plugin(bb: BbPluginApi) {
             const { comments: _c, attachments: _a, ...item } = detail;
             const title = threadTitleForItem(item);
             const worktree = argv.includes('--worktree');
-            const thread = await bb.sdk.threads.spawn({
+            const thread = await alia.sdk.threads.spawn({
               projectId,
               environment: threadEnvironment(
                 worktree ? 'worktree' : 'project-default'
@@ -1335,7 +1335,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.background.service('sync', {
+  alia.background.service('sync', {
     async start(signal) {
       while (!signal.aborted) {
         const api = await currentApi();
@@ -1344,7 +1344,7 @@ export default async function plugin(bb: BbPluginApi) {
           await Promise.all(
             projectIds.map(projectId =>
               syncProject(projectId).catch(error => {
-                bb.log.warn(`sync loop: ${safeMessage(error)}`);
+                alia.log.warn(`sync loop: ${safeMessage(error)}`);
                 return null;
               })
             )
@@ -1355,10 +1355,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     apiCache = null;
     viewerCache = null;
-    bb.log.info('disposed');
+    alia.log.info('disposed');
   });
 
   // Exported for tests and for the settings page's "connect" affordance.

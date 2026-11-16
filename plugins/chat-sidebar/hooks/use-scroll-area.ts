@@ -1,4 +1,4 @@
-// bb's scroll area around the list. The plugin does not own it, so it is
+// VesnALIA's scroll area around the list. The plugin does not own it, so it is
 // found from the DOM: the nearest scrollable ancestor of `anchor`.
 import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
 

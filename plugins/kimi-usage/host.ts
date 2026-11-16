@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, type HostUsageResult, type HostWindow } from "./contract.js";
 
 /** Kimi Code CLI's public OAuth client id (from @moonshot-ai/kimi-code). */
@@ -16,7 +16,7 @@ const OAUTH_CLIENT_ID = "17e5f671-d194-4dfb-9706-5516cb48c098";
 const DEFAULT_BASE_URL = "https://api.kimi.com/coding/v1";
 const DEFAULT_OAUTH_HOST = "https://auth.kimi.com";
 /** The usage endpoint rejects requests without a CLI-style User-Agent (403). */
-const USER_AGENT = "kimi-code-cli/2.5.3 (bb-kimi-usage)";
+const USER_AGENT = "kimi-code-cli/2.5.3 (alia-kimi-usage)";
 const REQUEST_TIMEOUT_MS = 20_000;
 const CACHE_TTL_MS = 60_000;
 const REFRESH_LEAD_SECONDS = 120;

@@ -4,13 +4,13 @@ Status: accepted, 30 September 2026. Superseded by
 [031](031-docker-boxes-are-reached-through-docker-exec.md) and
 [041](041-every-linux-box-has-docker.md), except that Docker boxes still run
 without systemd and `access.dockerHost` is still null. 031: no sshd, and
-bb-box starts BB's daemon. 041: boxes are privileged by default, so they
+alia-box starts VesnALIA's daemon. 041: boxes are privileged by default, so they
 have Docker.
 
 ## Context
 
 A box image could run systemd as its first process, like an LXC template, so
-services start and BB's host app installs as a service. The later-backends
+services start and VesnALIA's host app installs as a service. The later-backends
 research measured this on Docker 29.8.1, nested in an LXC container:
 
 | Container | systemd | Ready (SSH and RFB answer) |
@@ -28,7 +28,7 @@ A privileged container is root on the Docker host.
 - Privileged kinds are a setting the operator turns on. Only they offer the
   features `docker` and `systemd`, and so `linux-headless-docker`
   ([012](012-offers-may-add-features.md)).
-- Enrolment works without systemd. BB's installer finds no service manager
+- Enrolment works without systemd. VesnALIA's installer finds no service manager
   and leaves its host daemon running in the background, which also saves a
   daemon handover. The start script starts the daemon again when the
   container restarts, if the box is enrolled.
@@ -42,4 +42,4 @@ A privileged container is root on the Docker host.
 - A Docker box image differs from the LXC template in how it starts
   services, not in what it has.
 - The conformance suite restarts an enrolled box and checks that it
-  reconnects to BB.
+  reconnects to VesnALIA.

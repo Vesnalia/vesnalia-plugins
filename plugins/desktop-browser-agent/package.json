@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-desktop-browser-agent",
+  "name": "alia-plugin-desktop-browser-agent",
   "version": "0.5.4",
   "type": "module",
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.16"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.16"
   },
-  "bb": {
+  "alia": {
     "name": "Desktop & Browser Agent",
-    "description": "Computer use for bb agents: desktop apps and browser windows through Cua Driver from Cua AI, and your own Chrome, Edge or Brave tabs through a browser extension, with per-provider routing.",
+    "description": "Computer use for VesnALIA agents: desktop apps and browser windows through Cua Driver from Cua AI, and your own Chrome, Edge or Brave tabs through a browser extension, with per-provider routing.",
     "branding": {
       "icon": "./icons/desktop-browser-agent.svg"
     },
@@ -27,7 +27,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.16",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@testing-library/react": "^16.3.0",
@@ -35,7 +34,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "^0.39.0",
     "better-sqlite3": "^12.0.0",
     "cron-parser": "^5.10.0",
     "jsdom": "^29.0.0",
@@ -45,15 +43,10 @@
     "typescript": "^5.7.0",
     "vitest": "^4.0.0"
   },
-  "description": "Desktop & Browser Agent for bb: computer use in the background on the thread's machine, powered by Cua Driver, with a Chrome extension for your own browser tabs and per-provider routing.",
+  "description": "Desktop & Browser Agent for VesnALIA: computer use in the background on the thread's machine, powered by Cua Driver, with a Chrome extension for your own browser tabs and per-provider routing.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/qwadrox/bb-plugin-desktop-browser-agent.git"
-  },
-  "homepage": "https://github.com/qwadrox/bb-plugin-desktop-browser-agent#readme",
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "computer-use",
     "browser-automation",
     "chrome-extension",
@@ -62,7 +55,7 @@
     "mcp"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit && npm run typecheck --workspace browser-extension",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && npm run build && npm run build:extension",
@@ -74,5 +67,22 @@
   },
   "workspaces": [
     "browser-extension"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.16"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/desktop-browser-agent#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/desktop-browser-agent"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

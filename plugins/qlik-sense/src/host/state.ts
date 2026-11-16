@@ -18,7 +18,7 @@ const stateSchema = z.object({
     .nullable()
     .default(null),
   /** One engine identity per machine, so the agent never shares selections with a person's browser tab. */
-  identity: z.string().default(() => `bb-agent-${randomBytes(4).toString("hex")}`),
+  identity: z.string().default(() => `alia-agent-${randomBytes(4).toString("hex")}`),
   catalog: catalogSchema.default({ apps: [] }),
 });
 export type HostState = z.infer<typeof stateSchema>;

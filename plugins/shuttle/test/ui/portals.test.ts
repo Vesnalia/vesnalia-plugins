@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 const files = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? files(join(dir, entry.name)) : /\.tsx?$/u.test(entry.name) ? [join(dir, entry.name)] : []));
 
-// bb applies a plugin's CSS only under [data-bb-plugin=<id>]. A portal to document.body that does not
-// carry usePortalScope() keeps only the classes bb's own stylesheet happens to have, which is how the
+// VesnALIA applies a plugin's CSS only under [data-alia-plugin=<id>]. A portal to document.body that does not
+// carry usePortalScope() keeps only the classes VesnALIA's own stylesheet happens to have, which is how the
 // reviewer picker's avatars lost their size. Every portal in the UI has to spread the scope.
 describe("portals", () => {
   it("carry Shuttle's CSS scope", () => {

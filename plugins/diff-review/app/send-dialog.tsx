@@ -3,7 +3,7 @@
  * or to a new thread in the same workspace, with the agent picked here.
  * Threads still waiting on an earlier send start unticked, so a second send does not repeat them.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 

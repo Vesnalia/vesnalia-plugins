@@ -1,4 +1,4 @@
-import type { ProviderRecoveryHint } from "@get-bb/plugin-sdk/provider-bridge";
+import type { ProviderRecoveryHint } from "@vesnalia/plugin-sdk/provider-bridge";
 import { mspTurnCompletedParamsSchema } from "./msp/schemas.js";
 
 /**
@@ -28,15 +28,15 @@ export interface TurnFailureClassification {
   /** A rebuild is owed before the next turn. */
   restart: { reason: string; fresh: boolean } | null;
   /**
-   * Whether bb should rerun the prompt itself once the rebuild is done.
+   * Whether VesnALIA should rerun the prompt itself once the rebuild is done.
    *
    * Only where the rebuild *is* the fix. An expired login is not cleared by a
    * new session and a rate limit is not cleared by anything but time, so those
-   * settle as failures and are left to the user and to bb's own retry policy —
+   * settle as failures and are left to the user and to VesnALIA's own retry policy —
    * the same division codex keeps, which restarts for them and reruns neither.
    */
   rerun: boolean;
-  /** A typed hint bb's runtime acts on. */
+  /** A typed hint VesnALIA's runtime acts on. */
   hint: ProviderRecoveryHint | null;
 }
 
@@ -61,7 +61,7 @@ export function classifyTurnFailure(
     return {
       restart: {
         reason:
-          "Muse read an image into this session and the model behind it cannot carry media in history, so bb started a fresh session without it",
+          "Muse read an image into this session and the model behind it cannot carry media in history, so VesnALIA started a fresh session without it",
         fresh: true,
       },
       rerun: true,
@@ -73,7 +73,7 @@ export function classifyTurnFailure(
     return {
       restart: {
         reason:
-          "Muse could not replay this session's reasoning history after its route changed, so bb started a fresh session",
+          "Muse could not replay this session's reasoning history after its route changed, so VesnALIA started a fresh session",
         fresh: true,
       },
       rerun: true,

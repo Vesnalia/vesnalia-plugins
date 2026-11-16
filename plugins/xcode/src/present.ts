@@ -2,7 +2,7 @@
  * Turning a run into text for a human or a model.
  *
  * Shared by the CLI and the agent tools, which must not drift: an agent that
- * reads `bb xcode status` and one that calls `xcode_status` are asking the same
+ * reads `alia xcode status` and one that calls `xcode_status` are asking the same
  * question and deserve the same answer. Pure, so it tests without a server.
  */
 
@@ -42,7 +42,7 @@ export function runName(run: Run): string {
 }
 
 export interface PresentOptions {
-  /** Resolve a bb project id to its display name. */
+  /** Resolve a VesnALIA project id to its display name. */
   projectName?(id: string): string | null;
   /**
    * What a live run is doing right now, from the process tree.
@@ -63,7 +63,7 @@ export interface PresentOptions {
   machineName?(hostId: string): string | null;
 }
 
-/** One run as a fixed-width line, as `bb xcode runs` prints them. */
+/** One run as a fixed-width line, as `alia xcode runs` prints them. */
 export function describeRun(run: Run, options: PresentOptions = {}): string {
   const name = runName(run);
   const project = run.projectId

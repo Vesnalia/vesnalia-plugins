@@ -1,7 +1,7 @@
 // Haze backend: a global background, optional per-project overrides (each its
 // own image and settings, as in MonoCode), and the window glass settings.
 import { randomBytes } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   backgroundSettingsSchema,
@@ -40,9 +40,9 @@ export const CHANGED = "changed";
 
 type Row = { target: string; settings: string; mime: string | null; version: string | null };
 
-export default function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export default function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     "CREATE TABLE haze (id INTEGER PRIMARY KEY CHECK (id = 1), settings TEXT NOT NULL, mime TEXT, version TEXT, bytes BLOB)",
     // v0.2: the single v0.1 background becomes the global one.
     "CREATE TABLE bg (target TEXT PRIMARY KEY, settings TEXT NOT NULL, mime TEXT, version TEXT, bytes BLOB)",
@@ -76,7 +76,7 @@ export default function plugin(bb: BbPluginApi) {
     return { global: global!, projects, glass: readGlass() };
   }
   function changed(): Snapshot {
-    bb.realtime.publish(CHANGED, null);
+    alia.realtime.publish(CHANGED, null);
     return read();
   }
   function settingsOf(t: string) {
@@ -101,10 +101,10 @@ export default function plugin(bb: BbPluginApi) {
     return { mime: mime!, bytes };
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     get: read,
     projects: async () => {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return projects.map((p) => ({ id: p.id, name: p.name }));
     },
     set: ({ target: t, patch }) => {
@@ -139,7 +139,7 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.http.route("GET", "/image", (c) => {
+  alia.http.route("GET", "/image", (c) => {
     const row = db.prepare("SELECT target, mime, version, bytes FROM bg WHERE target = ?").get(c.req.query("t") ?? GLOBAL) as
       (Row & { bytes: Buffer | null }) | undefined;
     // The version in the URL makes each image immutable and cacheable.

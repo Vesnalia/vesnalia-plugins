@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ const DaemonNotice = ({
 
 export const Dashboard = ({ subPath }: { subPath: string }) => {
   const { actions, isLoading, loadError, pending, reload, state } = useTokenmaxx();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const now = useNow(30_000);
   const [login, setLogin] = useState<LoginRequest | null>(null);
 

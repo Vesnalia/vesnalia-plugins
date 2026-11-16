@@ -6,7 +6,7 @@
 // needs you still pulses and leads the lane.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import { assembleBoard } from "../components/nesting";
 import type { GroupingContext } from "../components/grouping";

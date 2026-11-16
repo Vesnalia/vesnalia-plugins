@@ -242,7 +242,7 @@ const selectedTab = (page) =>
 
 // The round-trip: the modal must render previously-written values. The mock
 // store's ?settings= seed stands in for the persisted host store; the real
-// persistence lives in bb and is covered by the manual row in the coverage
+// persistence lives in VesnALIA and is covered by the manual row in the coverage
 // matrix.
 {
   const page = await open("?demo=1&lastSeenVersion=9999&groupBy=status&settings=" +
@@ -272,7 +272,7 @@ const selectedTab = (page) =>
 }
 
 // The configuration page: `?page=configuration` mounts the plugin's
-// settingsSection registration bare (the Appearance mirror beside bb's
+// settingsSection registration bare (the Appearance mirror beside VesnALIA's
 // declared settings). Same controls, same localStorage truth as the modal.
 {
   const page = await open("?page=configuration&groupBy=status");

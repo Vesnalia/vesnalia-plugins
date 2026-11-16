@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { hostContract } from "../shared/contracts";
 import { history, committedChanges, committedPatch, committedContents } from "./git-history";
 

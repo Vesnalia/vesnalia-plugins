@@ -1,4 +1,4 @@
-// `bb lego demo`: a sample book driven through the real BuildEngine by
+// `alia lego demo`: a sample book driven through the real BuildEngine by
 // simulated workers, so the live view can be previewed without spending
 // agent turns. Simulated threads never exist; nothing is spawned.
 import { bookSpecSchema, type AgentChoice, type BookSpec, type BookState } from "./book";
@@ -76,7 +76,7 @@ export const DEMO_BLUEPRINT: Blueprint = blueprintSchema.parse({
   ],
 });
 
-/** A task that suits each ready-made model, for `bb lego demo --model`. */
+/** A task that suits each ready-made model, for `alia lego demo --model`. */
 const DEMO_TITLES: Record<ModelId, string> = {
   house: "Settings page",
   rocket: "Release pipeline",

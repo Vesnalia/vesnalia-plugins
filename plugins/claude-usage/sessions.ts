@@ -1,5 +1,5 @@
 // Pure parsing for Claude Code transcripts (~/.claude/projects/<folder>/<id>.jsonl).
-// No Node or bb imports, so server.ts and the tests share it.
+// No Node or VesnALIA imports, so server.ts and the tests share it.
 
 /** How Claude Code names a project folder: every non-alphanumeric character becomes "-". */
 export function encodeCwd(path: string): string {
@@ -7,7 +7,7 @@ export function encodeCwd(path: string): string {
 }
 
 export type Place =
-  | { kind: "bb"; threadId: string }
+  | { kind: "alia"; threadId: string }
   | { kind: "desktop" }
   | { kind: "project"; name: string; worktree: string | null };
 
@@ -18,7 +18,7 @@ export type Place =
  */
 export function placeOf(folder: string, cwd: string | null, home: string): Place {
   const thread = /-environment-personal-workspace-host-data-workspaces-thr-([a-z0-9]+)$/.exec(folder);
-  if (thread) return { kind: "bb", threadId: `thr_${thread[1]}` };
+  if (thread) return { kind: "alia", threadId: `thr_${thread[1]}` };
   if (folder.startsWith(encodeCwd(`${home}/Library/Application Support/Claude/`))) return { kind: "desktop" };
   const worktree = /--claude-worktrees-(.+)$/.exec(folder)?.[1] ?? null;
   if (cwd !== null && encodeCwd(cwd) === folder) {

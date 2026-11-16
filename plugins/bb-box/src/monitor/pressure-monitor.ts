@@ -1,13 +1,13 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { MONITOR_INTERVAL_MS, PRESSURE_CHANNEL, freshPressureState, stepPressure, type PressureState } from "./pressure.ts";
 import { createMonitorStore, type LogEntry } from "./monitor-store.ts";
 
 export interface LightSample { cpu: number | null; memory: number | null; load1: number | null; rssBytes: number; heapUsedBytes: number; availableBytes: number | null; totalBytes: number }
-export function createPressureMonitor(bb: BbPluginApi, read: (signal: AbortSignal) => Promise<LightSample>, reset: () => void) {
+export function createPressureMonitor(alia: AliaPluginApi, read: (signal: AbortSignal) => Promise<LightSample>, reset: () => void) {
   let enabled = false;
   let notifications = true;
   let store: ReturnType<typeof createMonitorStore> | undefined;
-  const getStore = () => store ??= createMonitorStore(bb);
+  const getStore = () => store ??= createMonitorStore(alia);
   let state: PressureState | undefined;
   let wake: (() => void) | undefined;
   let revision = 0;
@@ -37,7 +37,7 @@ export function createPressureMonitor(bb: BbPluginApi, read: (signal: AbortSigna
     lastSummary = -Infinity;
     if (!enabled) {
       try { getStore().write([{ type: "monitor_disabled", timestamp: Date.now() }], freshPressureState()); }
-      catch { bb.log.warn("The monitor could not record that background monitoring was disabled."); }
+      catch { alia.log.warn("The monitor could not record that background monitoring was disabled."); }
     }
     wake?.();
   }
@@ -74,7 +74,7 @@ export function createPressureMonitor(bb: BbPluginApi, read: (signal: AbortSigna
     const saved = storage.write(records, result.state);
     state = result.state;
     if (summaryDue) { lastSummary = begin; cpuPeak = memoryPeak = null; }
-    if (notifications) for (const event of saved) if (event.type === "incident" || event.type === "recovery") bb.realtime.publish(PRESSURE_CHANNEL, event);
+    if (notifications) for (const event of saved) if (event.type === "incident" || event.type === "recovery") alia.realtime.publish(PRESSURE_CHANNEL, event);
   }
 
   async function start(signal: AbortSignal) {
@@ -99,7 +99,7 @@ export function createPressureMonitor(bb: BbPluginApi, read: (signal: AbortSigna
           if (now - lastError >= 300_000) {
             lastError = now;
             records.push({ type: "error", timestamp: Date.now(), message: "Pressure sampling or log storage failed", errorType: cause instanceof Error ? cause.name.slice(0, 64) : "UnknownError" });
-            bb.log.warn("The background monitor could not sample or store diagnostics; retrying in 30 seconds.");
+            alia.log.warn("The background monitor could not sample or store diagnostics; retrying in 30 seconds.");
           }
           const storageUnavailable = cause instanceof Error && "code" in cause &&
             typeof cause.code === "string" && /^SQLITE_(BUSY|LOCKED|FULL|IOERR|READONLY|CANTOPEN|CORRUPT|NOTADB)(_|$)/.test(cause.code);

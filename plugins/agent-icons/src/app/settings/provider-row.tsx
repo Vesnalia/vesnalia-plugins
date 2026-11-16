@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { experimental_useRpcMutation } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcMutation } from "@vesnalia/plugin-sdk/app";
 import { Button } from "../../../components/ui/button";
 import { iconsContract, type Assignment, type IconsState } from "../../shared/contract";
 import { assignedArtwork, OriginalIcon } from "../mark";

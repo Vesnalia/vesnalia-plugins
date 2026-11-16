@@ -8,7 +8,7 @@ Every Model Pilot change is measured with them before it ships.
 The scripts read the Claude Code transcripts in `~/.claude/projects`, with helper transcripts in `<session>/subagents/`.
 They read the Codex rollouts in `~/.codex/sessions` and `~/.codex/archived_sessions`.
 They read the Pi sessions in `~/.pi/agent/sessions`.
-BB, T3 Code, and Model Pilot run the same agents, so their runs are in these logs too.
+VesnALIA, T3 Code, and Model Pilot run the same agents, so their runs are in these logs too.
 
 Claude Code deletes transcripts after 30 days.
 For a deleted transcript, the scripts read its requests from T3 Code's usage scan in `~/.t3/userdata/usage-scan-cache.json`.
@@ -47,7 +47,7 @@ python3 -I scripts/measure/paired.py report TASKS OUT opus pilot
 ```
 
 `TASKS` holds the task prompts. Keep it outside the repo, because the prompts come from private sessions.
-`ARMS` maps each arm name to its `bb thread spawn` flags, for example `{"opus": ["--provider", "claude-code", "--model", "claude-opus-5-5", "--reasoning-level", "medium"], "pilot": ["--provider", "auto"]}`.
+`ARMS` maps each arm name to its `alia thread spawn` flags, for example `{"opus": ["--provider", "claude-code", "--model", "claude-opus-5-5", "--reasoning-level", "medium"], "pilot": ["--provider", "auto"]}`.
 An arm can also run a project in its own workspace: `{"rtk": {"flags": [...], "environments": {"PROJECT_ID": "/path/to/worktree"}}}`.
 `blind` and `report` take any number of arms, and one judge rates all of a task's answers in one blind call.
 A run that fails, for example during a network outage, goes to `OUT/failed.jsonl`, and its task runs again next time.

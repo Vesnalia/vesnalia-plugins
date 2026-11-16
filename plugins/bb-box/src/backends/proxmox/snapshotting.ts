@@ -69,7 +69,7 @@ export function cloneWaitMs(diskGiB: number | null): number {
 }
 
 export function snapshotName(id: string): string {
-  return `bb${id}`;
+  return `alia${id}`;
 }
 
 export interface SnapshotLabel {
@@ -82,11 +82,11 @@ export interface SnapshotLabel {
 
 export function snapshotLabel(label: SnapshotLabel): string {
   const reset = typeof label.reset === "number" ? ` reset ${label.reset}` : "";
-  return `bb-box install ${label.install} box ${label.box} snapshot ${label.snapshot}${reset}${label.kept ? ` kept ${label.kept}` : ""}`;
+  return `alia-box install ${label.install} box ${label.box} snapshot ${label.snapshot}${reset}${label.kept ? ` kept ${label.kept}` : ""}`;
 }
 
 export function parseSnapshotLabel(text: string): SnapshotLabel | null {
-  const match = /^bb-box install (\S+) box (\S+) snapshot (sn[a-z2-7]{12})(?: reset (\d{1,4}))?(?: kept (\d{4}-\d{2}-\d{2}))?\s*$/.exec(text.trim());
+  const match = /^alia-box install (\S+) box (\S+) snapshot (sn[a-z2-7]{12})(?: reset (\d{1,4}))?(?: kept (\d{4}-\d{2}-\d{2}))?\s*$/.exec(text.trim());
   if (!match) return null;
   return { install: match[1]!, box: match[2]!, snapshot: match[3]!, reset: match[4] ? Number(match[4]) : null, kept: match[5] ?? null };
 }

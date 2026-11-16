@@ -1,4 +1,4 @@
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { bindingSchema, enginePolicySchema, type Binding, type EnginePolicy } from "./contract.ts";
 import { normalizeBaseUrl } from "./steel-client.ts";
 

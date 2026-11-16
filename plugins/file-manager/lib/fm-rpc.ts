@@ -11,12 +11,12 @@
 // component, which matters because it ends up in `useEffect` and `useCallback`
 // dependency arrays all over the panel.
 import { useMemo, useRef } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type {
   PluginRpcCallArgs,
   PluginRpcClient,
   PluginRpcResult,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import type { FileManagerContract } from "../contract";
 import { toFileManagerError } from "./errors";

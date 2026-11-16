@@ -770,7 +770,7 @@ test("a server that sends no picture for a full update request is restarted, and
   await until("the viewer to close", () => dead.viewer.closed !== null);
   assert.equal(restarts, 1);
   assert.deepEqual(restarted, ["sent no picture for a full update"]);
-  assert.deepEqual(dead.viewer.closed, { code: 1011, reason: "The desktop's VNC server sent no picture for a full update, so BB Box restarted it, and the viewer connects again." });
+  assert.deepEqual(dead.viewer.closed, { code: 1011, reason: "The desktop's VNC server sent no picture for a full update, so VesnALIA Box restarted it, and the viewer connects again." });
 
   // A server that answers is left alone.
   server.silent = false;
@@ -810,7 +810,7 @@ test("a server that says it lost the desktop is restarted at once or within a ch
   attached = false;
   await until("the viewer to close", () => viewer.viewer.closed !== null);
   assert.equal(restarts, 1);
-  assert.match(viewer.viewer.closed!.reason, /^The desktop's VNC server lost the desktop, so BB Box restarted it/);
+  assert.match(viewer.viewer.closed!.reason, /^The desktop's VNC server lost the desktop, so ALIA Box restarted it/);
   // A viewer that connects while it has lost it is told at once.
   const fresh = relayTo(server, { open, attachedCheckMs: 60_000 });
   await fresh.init();
@@ -1019,7 +1019,7 @@ test("each person's control is stored as it changes, and a reload keeps it for t
   before.value.resized("box1", "viewer-a", SCREEN);
   await before.value.dispose();
   const kept = { boxId: "box1", holder: "viewer-a", size: { width: 1280, height: 800 }, resized: SCREEN };
-  assert.deepEqual(stored, [[], [{ ...kept, resized: null }], [kept]], "every change, and only a box a person has; nothing as BB Box stops");
+  assert.deepEqual(stored, [[], [{ ...kept, resized: null }], [kept]], "every change, and only a box a person has; nothing as VesnALIA Box stops");
   assert.equal(a.releases, 1, "what the holder held down is let go");
   assert.deepEqual(before.restores, [], "the desktop keeps the person's size");
   assert.deepEqual(stopping, ["box1 true"]);
@@ -1108,7 +1108,7 @@ test("a take or hand-back in the last instance after this one started holds once
   assert.deepEqual(errors, []);
 });
 
-test("a reload that cannot keep control gives it back and sets the desktop's size back before BB Box goes, and schedules nothing after (#139)", async () => {
+test("a reload that cannot keep control gives it back and sets the desktop's size back before VesnALIA Box goes, and schedules nothing after (#139)", async () => {
   const stopping: string[] = [];
   let stores = 0;
   const { value, events, restores, errors, connect } = control({

@@ -4,7 +4,7 @@ import {
   useRealtimeConnectionState,
   useRealtime,
   experimental_usePluginId,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { Inbox, InboxPr } from "./github";
 import type { InboxFilters } from "./filters";

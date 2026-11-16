@@ -4,7 +4,7 @@ import http, { type IncomingMessage, type ServerResponse } from "node:http";
 import path from "node:path";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CURSOR_PROXIED_PATHS } from "./cursor-adapter.js";
 import { DEVIN_PROXIED_PATHS } from "./devin-adapter.js";
@@ -269,14 +269,14 @@ async function createFixture(args: {
   beforePlugin?: (host: Fixture["host"]) => void;
   callBrowserHost?: (request: {hostId:string;method:string;input:unknown})=>Promise<unknown>;
 }): Promise<Fixture> {
-  const dataDir = await mkdtemp(path.join(tmpdir(), "bb-account-pool-"));
+  const dataDir = await mkdtemp(path.join(tmpdir(), "alia-account-pool-"));
   const host = createFakePluginHost({
     pluginId: "account-pool",
     dataDir,
     sdk: sdkStubs(),
     ...(args.callBrowserHost ? {experimental_callHostRpc:args.callBrowserHost} : {}),
   });
-  await host.bb.storage.kv.set("config", {
+  await host.alia.storage.kv.set("config", {
     anthropicUpstreamBaseUrl: args.upstreamUrl,
     codexUpstreamBaseUrl: args.upstreamUrl,
     kimiUpstreamBaseUrl: args.upstreamUrl,
@@ -294,7 +294,7 @@ async function createFixture(args: {
     ...args.options,
   });
   args.beforePlugin?.(host);
-  await plugin(host.bb);
+  await plugin(host.alia);
   const accountMetadata = accountSchema.parse(
     await host.harness.behavior.callRpc("account.add", {
       provider: args.provider ?? "claude",
@@ -504,14 +504,14 @@ describe("Account Pool config schema", () => {
 describe("Account Pool plugin", () => {
   it("reads and updates one full config record through RPC and CLI", async () => {
     const dataDir = await mkdtemp(
-      path.join(tmpdir(), "bb-account-pool-config-"),
+      path.join(tmpdir(), "alia-account-pool-config-"),
     );
     const host = createFakePluginHost({
       pluginId: "account-pool",
       dataDir,
       sdk: sdkStubs(),
     });
-    await createAccountPoolPlugin({ vpnPayload: async (timestamp) => vpnProof(timestamp, "connected")})(host.bb);
+    await createAccountPoolPlugin({ vpnPayload: async (timestamp) => vpnProof(timestamp, "connected")})(host.alia);
     cleanups.push(async () => {
       await host.harness.lifecycle.dispose();
       await fs.rm(dataDir, { recursive: true, force: true });
@@ -568,7 +568,7 @@ describe("Account Pool plugin", () => {
       vpnPolicyVersion:2,
     });
     expect(
-      accountPoolConfigSchema.parse(await host.bb.storage.kv.get("config")),
+      accountPoolConfigSchema.parse(await host.alia.storage.kv.get("config")),
     ).toEqual(updated);
     expect(host.harness.inspection.realtimeSignals).toContainEqual({
       channel: "config-changed",
@@ -592,7 +592,7 @@ describe("Account Pool plugin", () => {
       request: {
         id: "search-1",
         model: "gpt-5.5",
-        commands: { search_query: [{ q: "bb account pooler" }] },
+        commands: { search_query: [{ q: "alia account pooler" }] },
       },
       result: { encrypted_output: "encrypted-search-output" },
     },
@@ -623,7 +623,7 @@ describe("Account Pool plugin", () => {
         {
           headers: {
             "content-type": "application/json",
-            "x-bb-account-pool-token": fixture.key,
+            "x-alia-account-pool-token": fixture.key,
             authorization: "Bearer local-token",
           },
           body,
@@ -639,7 +639,7 @@ describe("Account Pool plugin", () => {
       expect(requests[0]?.headers.get("chatgpt-account-id")).toBe(
         "chatgpt-account",
       );
-      expect(requests[0]?.headers.has("x-bb-account-pool-token")).toBe(false);
+      expect(requests[0]?.headers.has("x-alia-account-pool-token")).toBe(false);
       expect(await requests[0]?.text()).toBe(body);
     },
   );
@@ -855,7 +855,7 @@ describe("Account Pool plugin", () => {
     const metadata = Uint8Array.of(0x1a, key.length, ...key);
     const body = Buffer.from(Uint8Array.of(0x0a, metadata.length, ...metadata));
     const rpcPath = "/devin/exa.seat_management_pb.SeatManagementService/GetUserStatus";
-    const headers = { authorization: `Basic ${fixture.key}`, "content-type": "application/proto", "x-bb-devin-session": "synthetic-cli-session" };
+    const headers = { authorization: `Basic ${fixture.key}`, "content-type": "application/proto", "x-alia-devin-session": "synthetic-cli-session" };
     try {
       const one = fixture.host.harness.behavior.fetchHttp("POST", rpcPath, { headers, body });
       await vi.waitFor(() => expect(requests).toHaveLength(1));
@@ -879,7 +879,7 @@ describe("Account Pool plugin", () => {
       seen.push(new URL(r.url).pathname);
       return r.url.endsWith("/RunSSE")?new Response(new ReadableStream({start(c){c.enqueue(new Uint8Array([1]));}})):Response.json({ok:true});
     }}});
-    const call=(rpc:string)=>fixture.host.harness.behavior.fetchHttp("POST",dynamic?"/cursor/rpc":`/cursor/${rpc}`,{headers:{authorization:`Bearer ${fixture.key}`,"content-type":"application/connect+proto",...(dynamic?{"x-bb-cursor-rpc-path":rpc}:{})},body:"synthetic"});
+    const call=(rpc:string)=>fixture.host.harness.behavior.fetchHttp("POST",dynamic?"/cursor/rpc":`/cursor/${rpc}`,{headers:{authorization:`Bearer ${fixture.key}`,"content-type":"application/connect+proto",...(dynamic?{"x-alia-cursor-rpc-path":rpc}:{})},body:"synthetic"});
     const streams=await Promise.all([call("agent.v1.AgentService/RunSSE"),call("agent.v1.AgentService/RunSSE")]);
     try {
       const append=call("aiserver.v1.BidiService/BidiAppend"),metadata=call("aiserver.v1.AiService/GetUsableModels");
@@ -936,7 +936,7 @@ describe("Account Pool plugin", () => {
           "accept-encoding": "gzip",
           "content-encoding": "gzip",
           "x-unrelated-header": "dropped",
-          "x-bb-cursor-rpc-path": rpcPath,
+          "x-alia-cursor-rpc-path": rpcPath,
         },
         body,
       },
@@ -958,7 +958,7 @@ describe("Account Pool plugin", () => {
     // The body travels untouched, so its own encoding header has to travel with it.
     expect(requests[0]?.headers.get("content-encoding")).toBe("gzip");
     expect(requests[0]?.headers.has("x-unrelated-header")).toBe(false);
-    expect(requests[0]?.headers.has("x-bb-cursor-rpc-path")).toBe(false);
+    expect(requests[0]?.headers.has("x-alia-cursor-rpc-path")).toBe(false);
     expect(await requests[0]?.text()).toBe(body);
   });
 
@@ -996,7 +996,7 @@ describe("Account Pool plugin", () => {
     const body = JSON.stringify({model:"qwen3.6-unlim-xl",messages:[]});
     const denied = await fixture.host.harness.behavior.fetchHttp("POST","/neuraldeep/v1/chat/completions",{headers:authHeaders(token),body});
     expect(denied.status).toBe(403);
-    expect(denied.headers.get("x-bb-pool-error")).toBe("POOL_ACCOUNT_POLICY");
+    expect(denied.headers.get("x-alia-pool-error")).toBe("POOL_ACCOUNT_POLICY");
     expect(calls).toBe(before);
     // A client-supplied purpose label cannot elevate an invalid credential.
     const foreign = await fixture.host.harness.behavior.fetchHttp("POST","/neuraldeep/v1/chat/completions",{headers:{...authHeaders("synthetic-invalid"),"x-purpose":"autopilot"},body});
@@ -1108,7 +1108,7 @@ describe("Account Pool plugin", () => {
     await fixture.host.harness.behavior.callRpc("config.set",{switchThreshold:0.9});
     await fixture.host.harness.behavior.callRpc("account.refreshUsage",{accountId:fixture.account.id});
     const response=await fixture.host.harness.behavior.fetchHttp("POST","/cursor/agent.v1.AgentService/Run",{headers:{authorization:`Bearer ${fixture.key}`,"content-type":contentType},body:new Uint8Array()});
-    expect(response.headers.get("x-bb-pool-error")).toBe("POOL_QUOTA_THRESHOLD");
+    expect(response.headers.get("x-alia-pool-error")).toBe("POOL_QUOTA_THRESHOLD");
     expect(response.headers.get("retry-after")).toBeNull();
     const bytes=Buffer.from(await response.arrayBuffer());
     const payload=contentType.includes("connect+")?JSON.parse(bytes.subarray(5).toString()).error:JSON.parse(bytes.toString());
@@ -1172,7 +1172,7 @@ describe("Account Pool plugin", () => {
     await fixture.host.harness.behavior.callRpc('login.complete',{sessionId:started.sessionId,pasted:`fixture-code#${state}`});
     const after=(await fixture.host.harness.behavior.callRpc('account.list',null) as AccountSummary[]);
     expect(after).toHaveLength(1);expect(after[0]).toMatchObject({id:before.id,enabled,priority:7,role:'reserve',label:before.label,createdAt:before.createdAt});
-    const store=new AccountStore(fixture.host.bb.storage.kv,path.join(fixture.dataDir,'plugins',fixture.host.bb.pluginId,'secrets','accounts'));
+    const store=new AccountStore(fixture.host.alia.storage.kv,path.join(fixture.dataDir,'plugins',fixture.host.alia.pluginId,'secrets','accounts'));
     expect((await store.get(before.id))?.projects).toEqual(projects);
     expect((await store.get(before.id))?.policy).toMatchObject(policy);
     const authorization=await store.readSecret(before.id);
@@ -1839,7 +1839,7 @@ describe("Account Pool plugin", () => {
         {
           headers: {
             "content-type": "application/json",
-            "x-bb-account-pool-token": fixture.key,
+            "x-alia-account-pool-token": fixture.key,
           },
           body: JSON.stringify({ model: "gpt-5.6-luna", input: "hi" }),
         },
@@ -1958,7 +1958,7 @@ describe("Account Pool plugin", () => {
     });
     cleanups.push(upstream.close);
     const dataDir = await mkdtemp(
-      path.join(tmpdir(), "bb-account-pool-codex-"),
+      path.join(tmpdir(), "alia-account-pool-codex-"),
     );
     let imported = 0;
     const importCodexCredentials =
@@ -1978,7 +1978,7 @@ describe("Account Pool plugin", () => {
       dataDir,
       sdk: sdkStubs(),
     });
-    await host.bb.storage.kv.set("config", {
+    await host.alia.storage.kv.set("config", {
       anthropicUpstreamBaseUrl: upstream.url,
       codexUpstreamBaseUrl: upstream.url,
     });
@@ -1988,7 +1988,7 @@ describe("Account Pool plugin", () => {
       codexUsageUrl: `${upstream.url}/usage`,
       importCodexCredentials,
       usageUrl: "data:application/json,{}",
-    })(host.bb);
+    })(host.alia);
     const service = host.harness.behavior.runService("hub");
     cleanups.push(async () => {
       service.controller.abort();
@@ -2047,7 +2047,7 @@ describe("Account Pool plugin", () => {
       {
         headers: {
           authorization: "Bearer local-codex-token",
-          "x-bb-account-pool-token": routed.token,
+          "x-alia-account-pool-token": routed.token,
           "content-type": "application/json",
           "openai-beta": "responses=experimental",
         },
@@ -2060,7 +2060,7 @@ describe("Account Pool plugin", () => {
       "GET",
       "/v1/models",
       {
-        headers: { "x-bb-account-pool-token": routed.token },
+        headers: { "x-alia-account-pool-token": routed.token },
       },
     );
     expect(await modelsResponse.json()).toEqual({ data: [] });
@@ -2075,7 +2075,7 @@ describe("Account Pool plugin", () => {
       host.harness.behavior.fetchHttp("POST", "/v1/responses", {
         headers: {
           authorization: "Bearer local-codex-token",
-          "x-bb-account-pool-token": routed.token,
+          "x-alia-account-pool-token": routed.token,
           "content-type": "application/json",
         },
         body: JSON.stringify({ model: "gpt-5", input }),
@@ -2161,7 +2161,7 @@ describe("Account Pool plugin", () => {
       "POST",
       "/v1/responses",
       {
-        headers: { "x-bb-account-pool-token": routed.token },
+        headers: { "x-alia-account-pool-token": routed.token },
         body: JSON.stringify({ model: "gpt-5", input: [] }),
       },
     );
@@ -2193,7 +2193,7 @@ describe("Account Pool plugin", () => {
 
   it("cancels a Codex upstream read when the HTTP client aborts", async () => {
     const dataDir = await mkdtemp(
-      path.join(tmpdir(), "bb-account-pool-codex-cancel-"),
+      path.join(tmpdir(), "alia-account-pool-codex-cancel-"),
     );
     let upstreamReadCanceled = false;
     const upstreamFetch = async (
@@ -2231,7 +2231,7 @@ describe("Account Pool plugin", () => {
       dataDir,
       sdk: sdkStubs(),
     });
-    await host.bb.storage.kv.set("config", {
+    await host.alia.storage.kv.set("config", {
       codexUpstreamBaseUrl: "https://example.com",
     });
     await createAccountPoolPlugin({
@@ -2246,7 +2246,7 @@ describe("Account Pool plugin", () => {
         email: null,
         expiresAt: null,
       }),
-    })(host.bb);
+    })(host.alia);
     const service = host.harness.behavior.runService("hub");
     cleanups.push(async () => {
       service.controller.abort();
@@ -2274,7 +2274,7 @@ describe("Account Pool plugin", () => {
       "/v1/responses",
       {
         headers: {
-          "x-bb-account-pool-token": token,
+          "x-alia-account-pool-token": token,
           "content-type": "application/json",
         },
         body: JSON.stringify({ model: "gpt-5", input: [] }),
@@ -2299,7 +2299,7 @@ describe("Account Pool plugin", () => {
   });
 
   it("prunes token files for unenrolled hosts on startup and status", async () => {
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-pool-prune-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-pool-prune-"));
     const secretDir = path.join(
       dataDir,
       "plugins",
@@ -2317,7 +2317,7 @@ describe("Account Pool plugin", () => {
       dataDir,
       sdk: sdkStubs(),
     });
-    await createAccountPoolPlugin({ vpnPayload: async (timestamp) => vpnProof(timestamp, "connected")})(host.bb);
+    await createAccountPoolPlugin({ vpnPayload: async (timestamp) => vpnProof(timestamp, "connected")})(host.alia);
     cleanups.push(async () => {
       await host.harness.lifecycle.dispose();
       await fs.rm(dataDir, { recursive: true, force: true });
@@ -2344,7 +2344,7 @@ describe("Account Pool plugin", () => {
 
   it("uses a single-process token cache and throttles last-use file writes", async () => {
     let now = 1_000;
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-pool-tokens-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-pool-tokens-"));
     cleanups.push(() => fs.rm(dataDir, { recursive: true, force: true }));
     const tokens = new HubTokenStore(dataDir, () => now);
     await tokens.initialize();
@@ -2385,17 +2385,17 @@ describe("Account Pool plugin", () => {
     });
     cleanups.push(upstream.close);
     const dataDir = await mkdtemp(
-      path.join(tmpdir(), "bb-account-pool-empty-"),
+      path.join(tmpdir(), "alia-account-pool-empty-"),
     );
     const host = createFakePluginHost({
       pluginId: "account-pool",
       dataDir,
       sdk: sdkStubs(),
     });
-    await host.bb.storage.kv.set("config", {
+    await host.alia.storage.kv.set("config", {
       anthropicUpstreamBaseUrl: upstream.url,
     });
-    await createAccountPoolPlugin({ vpnPayload: async (timestamp) => vpnProof(timestamp, "connected")})(host.bb);
+    await createAccountPoolPlugin({ vpnPayload: async (timestamp) => vpnProof(timestamp, "connected")})(host.alia);
     const service = host.harness.behavior.runService("hub");
     cleanups.push(async () => {
       service.controller.abort();
@@ -2423,7 +2423,7 @@ describe("Account Pool plugin", () => {
       }),
     ).resolves.toBeNull();
     expect(host.harness.inspection.needsConfigurationMessages).toEqual([
-      "Add and enable a Claude or Codex account with `bb pool account add`.",
+      "Add and enable a Claude or Codex account with `alia pool account add`.",
     ]);
     const hello = helloResponse();
     expect(hello.status).toBe(200);
@@ -2592,7 +2592,7 @@ describe("Account Pool plugin", () => {
       response.end();
     });
     cleanups.push(oauth.close);
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-pool-login-rpc-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-pool-login-rpc-"));
     const host = createFakePluginHost({
       pluginId: "account-pool",
       dataDir,
@@ -2604,7 +2604,7 @@ describe("Account Pool plugin", () => {
       oauthTokenUrl: `${oauth.url}/token`,
       oauthProfileUrl: `${oauth.url}/profile`,
       usageUrl: "data:application/json,{}",
-    })(host.bb);
+    })(host.alia);
     cleanups.push(async () => {
       await host.harness.lifecycle.dispose();
       await fs.rm(dataDir, { recursive: true, force: true });
@@ -2755,7 +2755,7 @@ describe("Account Pool plugin", () => {
       response.end("{}");
     });
     cleanups.push(auth.close);
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-pool-codex-login-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-pool-codex-login-"));
     const host = createFakePluginHost({
       pluginId: "account-pool",
       dataDir,
@@ -2766,7 +2766,7 @@ describe("Account Pool plugin", () => {
       codexAuthBaseUrl: auth.url,
       codexUsageUrl: EMPTY_USAGE_URL,
       usageUrl: "data:application/json,{}",
-    })(host.bb);
+    })(host.alia);
     cleanups.push(async () => {
       await host.harness.lifecycle.dispose();
       await fs.rm(dataDir, { recursive: true, force: true });
@@ -2867,7 +2867,7 @@ describe("Account Pool plugin", () => {
     );
   });
 
-  it("resolves pooled env without a thread for bb model listing", async () => {
+  it("resolves pooled env without a thread for VesnALIA model listing", async () => {
     const upstream = await startUpstream(async (request, response) => {
       await readRequestBody(request);
       response.writeHead(200, { "content-type": "application/json" });
@@ -2875,7 +2875,7 @@ describe("Account Pool plugin", () => {
     });
     cleanups.push(upstream.close);
     const fixture = await createFixture({ upstreamUrl: upstream.url });
-    // bb resolves provider env with a null thread and project when it lists models;
+    // VesnALIA resolves provider env with a null thread and project when it lists models;
     // SDK types before 0.6.57 still declare both as strings.
     const catalogContext = {
       threadId: null,
@@ -2901,7 +2901,7 @@ describe("Account Pool plugin", () => {
     );
     expect(response.status).toBe(200);
     await response.text();
-    expect(await fixture.host.bb.storage.kv.list("routed:")).not.toContain(
+    expect(await fixture.host.alia.storage.kv.list("routed:")).not.toContain(
       "routed:null",
     );
   });
@@ -3136,7 +3136,7 @@ describe("Account Pool plugin", () => {
     expect(fixture.host.harness.inspection.logEntries).toContainEqual({
       level: "warn",
       message:
-        "Account Pooler disabled with 1 recently routed thread on machines without a local Claude login. Run bb pool status before disabling to inspect them.",
+        "Account Pooler disabled with 1 recently routed thread on machines without a local Claude login. Run alia pool status before disabling to inspect them.",
     });
   });
 
@@ -3248,7 +3248,7 @@ describe("Account Pool plugin", () => {
         app: request.headers["x-app"]?.toString(),
         stainlessRetry: request.headers["x-stainless-retry-count"]?.toString(),
         cookie: request.headers.cookie,
-        gateMachineId: request.headers["x-bb-gate-machine-id"]?.toString(),
+        gateMachineId: request.headers["x-alia-gate-machine-id"]?.toString(),
         forwarded: request.headers.forwarded,
         cfRay: request.headers["cf-ray"]?.toString(),
         body: await readRequestBody(request),
@@ -3295,8 +3295,8 @@ describe("Account Pool plugin", () => {
           "user-agent": "claude-code-test",
           "x-app": "cli",
           "x-stainless-retry-count": "2",
-          cookie: "bb_session=browser-secret",
-          "x-bb-gate-machine-id": "machine-stable-id",
+          cookie: "alia_session=browser-secret",
+          "x-alia-gate-machine-id": "machine-stable-id",
           forwarded: "for=192.0.2.1",
           "cf-ray": "edge-request-id",
           "accept-encoding": "gzip",
@@ -7088,7 +7088,7 @@ describe("sequential pool recovery", () => {
     ).toBe("exhausted");
   });
   it("routes sessions to its own plugin id when installed under another name", async () => {
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-account-pool-id-"));
+    const dataDir = await mkdtemp(path.join(tmpdir(), "alia-account-pool-id-"));
     const host = createFakePluginHost({
       pluginId: "account-pool-balanced",
       dataDir,
@@ -7096,7 +7096,7 @@ describe("sequential pool recovery", () => {
     });
     await createAccountPoolPlugin({
     vpnPayload: async (timestamp) => vpnProof(timestamp, "connected"), usageUrl: "data:application/json,{}" })(
-      host.bb,
+      host.alia,
     );
     const service = host.harness.behavior.runService("hub");
     cleanups.push(async () => {
@@ -7425,7 +7425,7 @@ describe("sequential pool recovery", () => {
     ]);
     const persisted = z
       .array(accountSchema)
-      .parse(await fixture.host.bb.storage.kv.get("accounts:v1"));
+      .parse(await fixture.host.alia.storage.kv.get("accounts:v1"));
     expect(
       persisted.find((account) => account.id === third.id)?.priority,
     ).toBeLessThan(
@@ -7443,7 +7443,7 @@ describe("sequential pool recovery", () => {
         }),
       ).rejects.toThrow("exactly once");
     }
-    expect(await fixture.host.bb.storage.kv.get("accounts:v1")).toEqual(
+    expect(await fixture.host.alia.storage.kv.get("accounts:v1")).toEqual(
       persisted,
     );
     await send("new-before-failover");
@@ -7538,8 +7538,8 @@ it("drains a streamed response before disposing the owned transport", async () =
   const fixture = await createFixture({
     upstreamUrl: upstream.url,
     beforePlugin(host) {
-      const register = host.bb.onDispose.bind(host.bb);
-      vi.spyOn(host.bb, "onDispose").mockImplementation((hook) => {
+      const register = host.alia.onDispose.bind(host.alia);
+      vi.spyOn(host.alia, "onDispose").mockImplementation((hook) => {
         hooks.push(hook);
         register(hook);
       });
@@ -7598,7 +7598,7 @@ describe('project subscription routing', () => {
     };
     const other=await tokenFor('project-two');
     const send=async(token:string,session='same-session')=>{
-      const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(token),'x-bb-project-id':'project-one'},body:JSON.stringify({metadata:{user_id:JSON.stringify({session_id:session})}})});
+      const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(token),'x-alia-project-id':'project-one'},body:JSON.stringify({metadata:{user_id:JSON.stringify({session_id:session})}})});
       expect(response.status).toBe(200);await response.text();
     };
     await send(other);await send(fixture.key);await send(other);await send(fixture.key);
@@ -7640,7 +7640,7 @@ describe('project subscription routing', () => {
     await rpc('account.setDrainOnce',{accountId:fixture.account.id,enabled:true});
     const assigned=await addApiAccount(fixture,'sk-project',200);
     await rpc('account.setProjects',{accountId:assigned.id,projects:{onlySelected:true,rules:[{projectId:'project-one',role:'primary'}]}});
-    const quotas=new QuotaStore(fixture.host.bb.storage.database());
+    const quotas=new QuotaStore(fixture.host.alia.storage.database());
     const body=JSON.stringify({metadata:{user_id:JSON.stringify({session_id:'recovered-project-session'})}});
     const send=async()=>{const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body});expect(response.status).toBe(200);await response.text();};
     await send();
@@ -7665,7 +7665,7 @@ describe('project subscription routing', () => {
     const assigned=await addApiAccount(fixture,'sk-project',200),rpc=fixture.host.harness.behavior.callRpc;
     await rpc('account.setDrainOnce',{accountId:fixture.account.id,enabled:true});
     await rpc('account.setProjects',{accountId:assigned.id,projects:{onlySelected:true,rules:[{projectId:'project-one',role:'primary'}]}});
-    const quotas=new QuotaStore(fixture.host.bb.storage.database());
+    const quotas=new QuotaStore(fixture.host.alia.storage.database());
     quotas.put({...quotas.get(assigned.id),fiveHourUtilization:1,fiveHourResetAt:clock+60000});
     const body=JSON.stringify({metadata:{user_id:JSON.stringify({session_id:'live-recovery'})}});
     const request=()=>fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body});
@@ -7701,7 +7701,7 @@ describe('project subscription routing', () => {
     expect((await fixture.host.harness.behavior.runCli(['client','add','unknown','--output',unknownFile])).exitCode).toBe(0);
     expect((await fixture.host.harness.behavior.runCli(['client','add','bound','--output',boundFile,'--project','project-one'])).exitCode).toBe(0);
     const unknown=(await fs.readFile(unknownFile,'utf8')).trim(),bound=(await fs.readFile(boundFile,'utf8')).trim();
-    const request=async(token:string)=>fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(token),'x-bb-project-id':'project-one'},body:'{}'});
+    const request=async(token:string)=>fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(token),'x-alia-project-id':'project-one'},body:'{}'});
     const refused=await request(unknown);expect(refused.status).toBe(403);expect(await refused.text()).toContain('allowed for this project');expect(calls).toBe(0);
     const accepted=await request(bound);expect(accepted.status).toBe(200);await accepted.text();expect(calls).toBe(1);
     await fixture.host.harness.behavior.runCli(['client','revoke','bound']);const revoked=await request(bound);expect(revoked.status).toBe(401);
@@ -7750,13 +7750,13 @@ describe("VPN-only outbound protection", () => {
     const request = () => fixture.host.harness.behavior.fetchHttp("POST", routes[provider], { headers: { authorization: `${provider === "devin" ? "Basic" : "Bearer"} ${fixture.key}`, "x-api-key": fixture.key, "content-type": provider === "devin" ? "application/proto" : "application/json" }, body: provider === "devin" ? protobuf : "{}" });
     const denied = await request();
     expect(denied.status).toBe(503);
-    expect(denied.headers.get("x-bb-pool-error")).toBe("VPN_REQUIRED");
+    expect(denied.headers.get("x-alia-pool-error")).toBe("VPN_REQUIRED");
     expect(outbound).not.toHaveBeenCalled();
     const accounts = z.array(accountSummarySchema).parse(await fixture.host.harness.behavior.callRpc("account.list", null));
     expect(accounts[0]?.error).toBeNull();
     connected = true;
     const allowed = await request();
-    expect(allowed.headers.get("x-bb-pool-error")).not.toBe("VPN_REQUIRED");
+    expect(allowed.headers.get("x-alia-pool-error")).not.toBe("VPN_REQUIRED");
     await allowed.text();
     expect(outbound).toHaveBeenCalled();
   });
@@ -7781,7 +7781,7 @@ describe("recovery from persisted edge errors", () => {
     const outbound = vi.fn(async () => Response.json({ rate_limit: { primary_window: { used_percent: 10, limit_window_seconds: 604800 } } }));
     const fixture = await createFixture({ upstreamUrl: "https://upstream.example", provider: "codex", source: "import", options: { fetch: outbound, importCodexCredentials: async () => ({ accessToken: "synthetic", refreshToken: "refresh", idToken: null, accountId: "fixture-account", email: "fixture@example.com", expiresAt: Date.now() + 3600_000 }) } });
     await fixture.host.harness.behavior.callRpc("account.refreshUsage", { accountId: fixture.account.id });
-    fixture.host.bb.storage.database().prepare("UPDATE account_quota SET error = ? WHERE account_id = ?").run(failure, fixture.account.id);
+    fixture.host.alia.storage.database().prepare("UPDATE account_quota SET error = ? WHERE account_id = ?").run(failure, fixture.account.id);
     outbound.mockClear();
     await fixture.host.harness.behavior.callRpc("account.refreshUsage", { accountId: fixture.account.id });
     expect(outbound).toHaveBeenCalled();
@@ -7794,7 +7794,7 @@ describe("recovery from persisted edge errors", () => {
     const fixture = await createFixture({ upstreamUrl: "https://upstream.example", provider: "codex", source: "import", options: { fetch: outbound, importCodexCredentials: async () => ({ accessToken: "synthetic", refreshToken: "refresh", idToken: null, accountId: "fixture-account", email: "fixture@example.com", expiresAt: Date.now() + 3600_000 }) } });
     await fixture.host.harness.behavior.callRpc("account.refreshUsage", { accountId: fixture.account.id });
     outbound.mockClear();
-    fixture.host.bb.storage.database().prepare("UPDATE account_quota SET error = ? WHERE account_id = ?").run("OAuth refresh failed with HTTP 401.", fixture.account.id);
+    fixture.host.alia.storage.database().prepare("UPDATE account_quota SET error = ? WHERE account_id = ?").run("OAuth refresh failed with HTTP 401.", fixture.account.id);
     await expect(fixture.host.harness.behavior.callRpc("account.refreshUsage", { accountId: fixture.account.id })).rejects.toThrow("HTTP 401");
     const accounts = z.array(accountSummarySchema).parse(await fixture.host.harness.behavior.callRpc("account.list", null));
     expect(accounts[0]?.error).toContain("HTTP 401");
@@ -7819,7 +7819,7 @@ describe("network policy boundaries", () => {
     checks = 0;
     const response = await fixture.host.harness.behavior.fetchHttp("POST", "/v1/messages", { headers: authHeaders(fixture.key), body: "{}" });
     expect(response.status).toBe(503);
-    expect(response.headers.get("x-bb-pool-error")).toBe("VPN_REQUIRED");
+    expect(response.headers.get("x-alia-pool-error")).toBe("VPN_REQUIRED");
     expect(outbound).not.toHaveBeenCalled();
     const accounts = z.array(accountSummarySchema).parse(await fixture.host.harness.behavior.callRpc("account.list", null));
     expect(accounts[0]?.error).toBeNull();
@@ -7847,7 +7847,7 @@ describe('VPN Guard linked network policy',()=>{
     const fixture=await createFixture({upstreamUrl:'https://upstream.example',options:{fetch:outbound,fetchIpv4:undefined}});
     const denied=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body:'{}'});
     expect(denied.status).toBe(503);
-    expect(denied.headers.get('x-bb-pool-error')).toBe('VPN_REQUIRED');
+    expect(denied.headers.get('x-alia-pool-error')).toBe('VPN_REQUIRED');
     expect(outbound).not.toHaveBeenCalled();
   });
   it('checks status permissions concurrently while preserving provider order',async()=>{
@@ -7859,7 +7859,7 @@ describe('VPN Guard linked network policy',()=>{
       maxActive=Math.max(maxActive,++active);
       try {
         await new Promise(resolve=>setTimeout(resolve,25));
-        return {schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:false,reason:'manual_block'};
+        return {schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:false,reason:'manual_block'};
       } finally {active--;}
     });
     fixture.host.harness.sdk.stub('plugins.callRpc',call);
@@ -7883,7 +7883,7 @@ describe('VPN Guard linked network policy',()=>{
       expect(args.signal).toBeInstanceOf(AbortSignal);
       await new Promise(resolve=>setTimeout(resolve,1200));
       expect(args.signal?.aborted).toBe(false);
-      return {schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:true,reason:'connected'};
+      return {schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:true,reason:'connected'};
     });
     await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true});
     const allowed=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body:'{}'});
@@ -7898,12 +7898,12 @@ describe('VPN Guard linked network policy',()=>{
     let blocked=true;
     const call=vi.fn(async(args:{input?:unknown})=>{
       expect(args.input).toMatchObject({hostId:'pool-host'});
-      return {schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:!blocked,reason:blocked?'manual_block':'observe'};
+      return {schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:!blocked,reason:blocked?'manual_block':'observe'};
     });
     fixture.host.harness.sdk.stub('plugins.callRpc',call);
     await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true,vpnOnlyProviders:[]});
     const request=()=>fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body:'{}'});
-    const denied=await request();expect(denied.status).toBe(503);expect(denied.headers.get('x-bb-pool-error')).toBe('VPN_GUARD_BLOCKED');
+    const denied=await request();expect(denied.status).toBe(503);expect(denied.headers.get('x-alia-pool-error')).toBe('VPN_GUARD_BLOCKED');
     await fixture.host.harness.behavior.callRpc('account.refreshUsage',{accountId:fixture.account.id});
     await expect(fixture.host.harness.behavior.callRpc('login.start',null)).rejects.toThrow('VPN_GUARD_BLOCKED');
     expect(outbound).not.toHaveBeenCalled();
@@ -7914,7 +7914,7 @@ describe('VPN Guard linked network policy',()=>{
     fixture.host.harness.sdk.stub('system.config',async()=>({primaryHostId:'pool-host'}));fixture.host.harness.sdk.stub('plugins.callRpc',async()=>{throw Error('Guard offline');});
     await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true});
     const denied=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body:'{}'});
-    expect(denied.status).toBe(503);expect(denied.headers.get('x-bb-pool-error')).toBe('VPN_GUARD_UNAVAILABLE');expect(outbound).not.toHaveBeenCalled();
+    expect(denied.status).toBe(503);expect(denied.headers.get('x-alia-pool-error')).toBe('VPN_GUARD_UNAVAILABLE');expect(outbound).not.toHaveBeenCalled();
     const accounts=z.array(accountSummarySchema).parse(await fixture.host.harness.behavior.callRpc('account.list',null));expect(accounts[0]?.error).toBeNull();
   });
 });
@@ -7930,7 +7930,7 @@ it('blocks Guard-linked OAuth quotas and login without corrupting account eligib
    })},
  });
  fixture.host.harness.sdk.stub('system.config',async()=>({primaryHostId:'pool-host'}));
- fixture.host.harness.sdk.stub('plugins.callRpc',async()=>({schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:false,reason:'manual_block'}));
+ fixture.host.harness.sdk.stub('plugins.callRpc',async()=>({schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:false,reason:'manual_block'}));
  await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true});outbound.mockClear();
  for(const method of ['account.refreshUsage','provider-usage.v1.getResource'] as const) {
    const input=method==='account.refreshUsage'?{accountId:fixture.account.id}:{resourceId:fixture.account.id,refresh:true};
@@ -7944,7 +7944,7 @@ it('cancels a retained linked protected stream through the actual policy service
  let blocked=false;
  const fixture=await createFixture({upstreamUrl:'https://upstream.example',options:{fetch:async()=>new Response(new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('first'));}}))}});
  fixture.host.harness.sdk.stub('system.config',async()=>({primaryHostId:'pool-host'}));
- fixture.host.harness.sdk.stub('plugins.callRpc',async()=>({schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:!blocked,reason:blocked?'manual_block':'observe'}));
+ fixture.host.harness.sdk.stub('plugins.callRpc',async()=>({schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:!blocked,reason:blocked?'manual_block':'observe'}));
  await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true});
  const service=fixture.host.harness.behavior.runService('network-policy');
  try {
@@ -7959,11 +7959,11 @@ it('cancels a retained linked protected stream through the actual policy service
 it.each(['devin','opencode-go'] as const)('refuses linked %s before any provider call on manual block',async provider=>{
  const outbound=vi.fn(async()=>Response.json({}));const fixture=await createFixture({upstreamUrl:'https://upstream.example',provider,options:{fetch:outbound}});
  fixture.host.harness.sdk.stub('system.config',async()=>({primaryHostId:'pool-host'}));
- fixture.host.harness.sdk.stub('plugins.callRpc',async()=>({schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:false,reason:'manual_block'}));
+ fixture.host.harness.sdk.stub('plugins.callRpc',async()=>({schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:false,reason:'manual_block'}));
  await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true});outbound.mockClear();
  const route=provider==='devin'?'/devin/exa.seat_management_pb.SeatManagementService/GetUserStatus':'/opencode-go/v1/chat/completions';
  const response=await fixture.host.harness.behavior.fetchHttp('POST',route,{headers:authHeaders(fixture.key),body:'{}'});
- expect(response.status).toBe(503);expect(response.headers.get('x-bb-pool-error')).toBe('VPN_GUARD_BLOCKED');expect(outbound).not.toHaveBeenCalled();
+ expect(response.status).toBe(503);expect(response.headers.get('x-alia-pool-error')).toBe('VPN_GUARD_BLOCKED');expect(outbound).not.toHaveBeenCalled();
 });
 
 it('routes browser panel and CLI to the selected Mac with no server browser fallback',async()=>{
@@ -8019,7 +8019,7 @@ describe('bounded request metadata observations',()=>{
       offset=page.nextOffset;
     }
     expect(seen.size).toBe(HISTORY_MAX_ROWS);expect(seen.has('f'.repeat(24))).toBe(true);
-    console.info(JSON.stringify({trafficHistoryCapacity:HISTORY_MAX_ROWS,maxCliBytes,BB_MAX_BYTES:1048576}));
+    console.info(JSON.stringify({trafficHistoryCapacity:HISTORY_MAX_ROWS,maxCliBytes,ALIA_MAX_BYTES:1048576}));
     for(const args of [['--limit','201'],['--limit','0'],['--limit','1.5'],['--offset','-1'],['--offset','8193']])
       expect((await fixture.host.harness.behavior.runCli(['history',...args,'--json'])).exitCode).not.toBe(0);
   });
@@ -8031,7 +8031,7 @@ describe('bounded request metadata observations',()=>{
     expect(response.status).toBe(200);await response.text();
     const reply=await fixture.host.harness.behavior.runCli(['history','--json']);expect(reply.exitCode).toBe(0);
     const result=JSON.parse(reply.stdout);
-    expect(result).toMatchObject({schema:'bb-account-pool/traffic-history/1',identitiesAvailable:true,truncated:false});
+    expect(result).toMatchObject({schema:'alia-account-pool/traffic-history/1',identitiesAvailable:true,truncated:false});
     expect(result.clients).toEqual([{clientHash:expect.any(String),hostId:'host-one',hostName:'One'}]);
     expect(result.rows).toEqual(expect.arrayContaining([expect.objectContaining({accountId:null,requests:1,attempts:0}),expect.objectContaining({accountId:fixture.account.id,requests:0,firstDispatches:1,attempts:1,upstreamResponses:1,streamEnds:1,peakAccountInFlight:1})]));
     expect(JSON.stringify(result)).not.toMatch(/synthetic|forged-machine|ANTHROPIC|threadId|requestId/);
@@ -8052,7 +8052,7 @@ describe('bounded request metadata observations',()=>{
       'set-cookie':'synthetic private cookie','x-other':'synthetic private header'}}));
     const fixture=await createFixture({upstreamUrl:'https://upstream.example',provider:'codex',source:'import',options:{fetch:outbound,
       importCodexCredentials:async()=>({accessToken:'synthetic',refreshToken:'synthetic-refresh',idToken:null,accountId:'fixture-account',email:'fixture@example.com',expiresAt:now+3600000})}});
-    const quotas=new QuotaStore(fixture.host.bb.storage.database());
+    const quotas=new QuotaStore(fixture.host.alia.storage.database());
     quotas.put(codexQuotaFromUsage(fixture.account.id,{rate_limit:{allowed:true,limit_reached:false,
       primary_window:{used_percent:20,limit_window_seconds:604800,reset_at:(now+86400000)/1000},secondary_window:null}},quotas.get(fixture.account.id),now)!);
     const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/responses',{headers:authHeaders(fixture.key),body:JSON.stringify({model:'gpt-6-sol',input:'synthetic private prompt'})});
@@ -8084,7 +8084,7 @@ describe('bounded request metadata observations',()=>{
     const fixture=await createFixture({upstreamUrl:'https://upstream.example',options:{fetch:outbound}});
     const body=JSON.stringify({model:'claude-opus-4-6',metadata:{user_id:'user_session_11111111-1111-4111-8111-111111111111'}});
     const first=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body});await first.text();
-    fixture.host.bb.storage.database().prepare('UPDATE account_quota SET held_until=? WHERE account_id=?').run(Date.now()+60000,fixture.account.id);
+    fixture.host.alia.storage.database().prepare('UPDATE account_quota SET held_until=? WHERE account_id=?').run(Date.now()+60000,fixture.account.id);
     const second=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body,signal:AbortSignal.timeout(30)});expect(second.status).toBe(499);await second.text();
     const r=await records(fixture);
     expect(outbound).toHaveBeenCalledTimes(1);
@@ -8170,7 +8170,7 @@ describe('trusted automation account admission', () => {
     for(const route of routes[provider]){
       const response=await fixture.host.harness.behavior.fetchHttp(route==='/v1/models'?'GET':'POST',route,{headers:{...authHeaders(token),authorization:`${provider==='devin'?'Basic':'Bearer'} ${token}`,'x-api-key':token},...(route==='/v1/models'?{}:{body:'{}'})});
       expect(response.status,route).toBe(503);
-      expect(response.headers.get('x-bb-pool-error'),route).toBe('POOL_MAINTENANCE');
+      expect(response.headers.get('x-alia-pool-error'),route).toBe('POOL_MAINTENANCE');
       expect(response.headers.get('retry-after')).toBe('30');
       await response.text();
     }
@@ -8199,7 +8199,7 @@ describe('trusted automation account admission', () => {
     for(const route of routes[provider]) {
       const response=await request(token,route);
       expect(response.status,route).toBe(403);
-      expect(response.headers.get('x-bb-pool-error')).toBe('POOL_ACCOUNT_POLICY');
+      expect(response.headers.get('x-alia-pool-error')).toBe('POOL_ACCOUNT_POLICY');
       await response.text();
     }
     expect(outbound).not.toHaveBeenCalled();
@@ -8209,7 +8209,7 @@ describe('trusted automation account admission', () => {
     await allow(fixture);
     const permitted=await request(token,routes[provider][0]!);await permitted.text();
     expect(outbound).toHaveBeenCalled();
-    expect(permitted.headers.get('x-bb-pool-error')).not.toBe('POOL_ACCOUNT_POLICY');
+    expect(permitted.headers.get('x-alia-pool-error')).not.toBe('POOL_ACCOUNT_POLICY');
     await allow(fixture,false,true);
     outbound.mockClear();
     const deniedAgain=await request(token,routes[provider][0]!);await deniedAgain.text();
@@ -8225,7 +8225,7 @@ describe('trusted automation account admission', () => {
     if(restriction==='disabled') await rpc('account.disable',{id:fixture.account.id});
     if(restriction==='schedule') await rpc('account.setPolicy',{accountId:fixture.account.id,policy:{enabled:true,schedule:{timeZone:'UTC',intervals:[]}}});
     if(restriction==='cap') {
-      const quotas=new QuotaStore(fixture.host.bb.storage.database());
+      const quotas=new QuotaStore(fixture.host.alia.storage.database());
       quotas.put({...quotas.get(fixture.account.id),sevenDayUtilization:0.8,sevenDayResetAt:Date.now()+86400000});
       await rpc('account.setCap',{accountId:fixture.account.id,cap:{early:0.1,late:0.1}});
     }
@@ -8240,7 +8240,7 @@ describe('trusted automation account admission', () => {
     const file=path.join(fixture.dataDir,'legacy.token');
     expect((await fixture.host.harness.behavior.runCli(['client','add','autopilot','--project','project-one','--output',file])).exitCode).toBe(0);
     const token=(await fs.readFile(file,'utf8')).trim();outbound.mockClear();
-    const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(token),'x-bb-pool-purpose':'autopilot'},body:'{}'});await response.text();
+    const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(token),'x-alia-pool-purpose':'autopilot'},body:'{}'});await response.text();
     expect(outbound).toHaveBeenCalled();
     await allow(fixture);
     await expect(allow(fixture,false,false)).rejects.toThrow('permission changed');
@@ -8254,7 +8254,7 @@ describe('trusted automation account admission', () => {
     const exchange=await fixture.host.harness.behavior.fetchHttp('POST','/cursor/auth/exchange_user_api_key',{headers:authHeaders(token),body:'{}'});
     expect(await exchange.json()).toEqual({accessToken:token,refreshToken:token});
     for(const method of ['GET','POST'] as const){
-      const response=await fixture.host.harness.behavior.fetchHttp(method,'/cursor/rpc',{headers:{...authHeaders(token),'x-bb-cursor-rpc-path':'agent.v1.AgentService/Run'},...(method==='POST'?{body:'{}'}:{})});
+      const response=await fixture.host.harness.behavior.fetchHttp(method,'/cursor/rpc',{headers:{...authHeaders(token),'x-alia-cursor-rpc-path':'agent.v1.AgentService/Run'},...(method==='POST'?{body:'{}'}:{})});
       expect(response.status).toBe(403);await response.text();
     }
     expect(outbound).not.toHaveBeenCalled();
@@ -8502,7 +8502,7 @@ describe('shared account request pressure',()=>{
   const send=(signal?:AbortSignal)=>f.host.harness.behavior.fetchHttp('POST','/v1/responses',{headers:authHeaders(f.key),body:JSON.stringify({model:'gpt-6-sol',prompt_cache_key:'synthetic-session',input:[]}),signal});
   await (await send()).text();const pending=send();await vi.waitFor(()=>expect(calls).toBe(2));
   const rejected=await send();expect(rejected.status).toBe(429);await rejected.text();
-  const quotas=new QuotaStore(f.host.bb.storage.database());const hold=quotas.get(f.account.id).heldUntil!;expect(hold).toBeGreaterThan(Date.now()+59000);
+  const quotas=new QuotaStore(f.host.alia.storage.database());const hold=quotas.get(f.account.id).heldUntil!;expect(hold).toBeGreaterThan(Date.now()+59000);
   late(normal());await (await pending).text();expect(quotas.get(f.account.id).heldUntil).toBe(hold);
   const abort=new AbortController(),queued=send(abort.signal);
   await vi.waitFor(async()=>expect(statusSchema.parse(await f.host.harness.behavior.callRpc('status.get',null)).accounts[0]!.queuedRequests).toBe(1));
@@ -8630,9 +8630,9 @@ describe("cached provider readiness", () => {
     expect(await read("project-two")).toMatchObject({ready:false,reason:"no-selectable-account"});
     expect(await read("project-one")).toMatchObject({ready:true});
     await rpc("account.setDrainOnce",{accountId:f.account.id,enabled:true});
-    const q=new QuotaStore(f.host.bb.storage.database());
+    const q=new QuotaStore(f.host.alia.storage.database());
     q.put({...q.get(f.account.id),fiveHourUtilization:1,fiveHourResetAt:clock+60000});
-    const store=new AccountStore(f.host.bb.storage.kv,path.join(f.dataDir,"plugins",f.host.bb.pluginId,"secrets","accounts"));
+    const store=new AccountStore(f.host.alia.storage.kv,path.join(f.dataDir,"plugins",f.host.alia.pluginId,"secrets","accounts"));
     const before=await store.list();
     expect(await read("project-one")).toMatchObject({ready:false});
     expect(await store.list()).toEqual(before);
@@ -8736,7 +8736,7 @@ describe('server-owned account egress dispatch',()=>{
       return Response.json({error:'synthetic quota'},{status:429});
     });
     direct.mockClear();
-    const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(fixture.key),'x-bb-egress-profile':'untrusted'},body:JSON.stringify({model:'claude-any-supported-model',messages:[]})});
+    const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:{...authHeaders(fixture.key),'x-alia-egress-profile':'untrusted'},body:JSON.stringify({model:'claude-any-supported-model',messages:[]})});
     expect(response.status).toBe(429);await response.text();expect(routed).toHaveBeenCalledTimes(1);expect(direct).not.toHaveBeenCalled();
     const after429=(await rpc('account.list',null) as any[]).find(a=>a.id===fixture.account.id);
     expect(after429.heldUntil).not.toBeNull();
@@ -8756,7 +8756,7 @@ describe('server-owned account egress dispatch',()=>{
     direct.mockClear();
     const routed=vi.spyOn(globalThis,'fetch').mockRejectedValue(new Error('transport down'));
     const response=await fixture.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(fixture.key),body:JSON.stringify({model:'claude-any-supported-model',messages:[]})});
-    expect(response.status).toBe(503);expect(response.headers.get('x-bb-pool-error')).toBe('POOL_EGRESS_UNAVAILABLE');
+    expect(response.status).toBe(503);expect(response.headers.get('x-alia-pool-error')).toBe('POOL_EGRESS_UNAVAILABLE');
     await response.text();expect(routed).toHaveBeenCalledOnce();expect(direct).not.toHaveBeenCalled();
   });
 });
@@ -8775,7 +8775,7 @@ it('correlates a mid-frame Cursor policy abort without leaking payload or RPC er
  fixture.host.harness.sdk.stub('system.config',async()=>({primaryHostId:'pool-host'}));
  fixture.host.harness.sdk.stub('plugins.callRpc',async()=>{
   if(unavailable)throw Error('private RPC payload');
-  return {schema:'bb-vpn-guard/network-decision/2',hostId:'pool-host',allowed:true,reason:'direct'};
+  return {schema:'alia-vpn-guard/network-decision/2',hostId:'pool-host',allowed:true,reason:'direct'};
  });
  await fixture.host.harness.behavior.callRpc('config.set',{vpnGuardEnabled:true,vpnOnlyProviders:[]});
  const response=await fixture.host.harness.behavior.fetchHttp('POST','/cursor/agent.v1.AgentService/RunSSE',{
@@ -8813,22 +8813,22 @@ it.each(['application/connect+proto','text/event-stream'])('wires an exact authe
   const url=input instanceof Request?input.url:String(input);
   if(url.startsWith('https://exchange.example/'))return Response.json({accessToken:'synthetic-access'});
   if(url.startsWith('https://usage.example/'))return Response.json({planUsage:{totalPercentUsed:10}});
-  return new Response(new ReadableStream<Uint8Array>({start(c){c.enqueue(new Uint8Array([0,0,0]));}}),{headers:{'content-type':contentType,'x-bb-pool-request-id':'synthetic-untrusted-upstream-id'}});
+  return new Response(new ReadableStream<Uint8Array>({start(c){c.enqueue(new Uint8Array([0,0,0]));}}),{headers:{'content-type':contentType,'x-alia-pool-request-id':'synthetic-untrusted-upstream-id'}});
  });
  const f=await createFixture({upstreamUrl:'https://upstream.example',provider:'cursor',options:{cursorExchangeUrl:'https://exchange.example/token',cursorUsageUrl:'https://usage.example/usage',fetch:outbound}});
  const call=async(threadId:string,rpc:string)=>{
   const env=await f.host.harness.behavior.resolveProviderEnv('acp-oxi-cursor',{threadId,projectId:'proj_abcdef',hostId:'host-one'});
   const token=env.find(e=>e.name==='CURSOR_API_KEY')!.value as string;
-  return f.host.harness.behavior.fetchHttp('POST','/cursor/rpc',{headers:{authorization:`Bearer ${token}`,'content-type':contentType,'x-bb-cursor-rpc-path':rpc},body:'synthetic'});
+  return f.host.harness.behavior.fetchHttp('POST','/cursor/rpc',{headers:{authorization:`Bearer ${token}`,'content-type':contentType,'x-alia-cursor-rpc-path':rpc},body:'synthetic'});
  };
  const one=await call('thr_abcdef','agent.v1.AgentService/RunSSE'),two=await call('thr_ghijkl','agent.v1.AgentService/RunSSE'),append=await call('thr_abcdef','aiserver.v1.BidiService/BidiAppend');
  expect(one.status).toBe(200);expect(two.status).toBe(200);expect(append.status).toBe(200);
  const reader=one.body!.getReader();await reader.read();
  const probe=async(...args:string[])=>JSON.parse((await f.host.harness.behavior.runCli(['stream-probe','--thread','thr_abcdef',...args,'--json'])).stdout);
  const streams=(await probe()).streams;expect(streams).toHaveLength(1);expect(streams[0]).toMatchObject({threadId:'thr_abcdef',bytesRead:3,contentType});
- expect(one.headers.get('x-bb-pool-request-id')).toBe(streams[0].requestId);
- expect(two.headers.get('x-bb-pool-request-id')).not.toBe(streams[0].requestId);
- expect(append.headers.get('x-bb-pool-request-id')).toBeNull();
+ expect(one.headers.get('x-alia-pool-request-id')).toBe(streams[0].requestId);
+ expect(two.headers.get('x-alia-pool-request-id')).not.toBe(streams[0].requestId);
+ expect(append.headers.get('x-alia-pool-request-id')).toBeNull();
  const rejected=expect(reader.read()).rejects.toThrow('Controlled Cursor stream interruption');
  expect((await probe('--interrupt-request',streams[0].requestId,'--confirm')).interrupted).toBe(true);await rejected;
  expect((await probe('--interrupt-request',streams[0].requestId,'--confirm')).interrupted).toBe(false);
@@ -8856,7 +8856,7 @@ describe('maintenance races and existing streams',()=>{
     hold=false;release();
     const response=await pending;
     expect(response.status).toBe(503);
-    expect(response.headers.get('x-bb-pool-error')).toBe('POOL_MAINTENANCE');
+    expect(response.headers.get('x-alia-pool-error')).toBe('POOL_MAINTENANCE');
     expect(outbound).not.toHaveBeenCalled();
     const fresh=await f.host.harness.behavior.fetchHttp('POST','/v1/messages',{headers:authHeaders(f.key),body:'{}'});
     expect(fresh.status).toBe(200);await fresh.text();
@@ -8879,7 +8879,7 @@ describe('maintenance races and existing streams',()=>{
     expect((await pause(f)).exitCode).toBe(0);
     const denied=await queued;
     expect(denied.status).toBe(503);
-    expect(denied.headers.get('x-bb-pool-error')).toBe('POOL_MAINTENANCE');
+    expect(denied.headers.get('x-alia-pool-error')).toBe('POOL_MAINTENANCE');
     await reading;
     await vi.waitFor(()=>expect(canceled).toHaveBeenCalledTimes(1));
     expect(outbound).toHaveBeenCalledTimes(1);
@@ -8900,7 +8900,7 @@ describe('account HTTP proxy operator wiring',()=>{
   const accounts=await fixture.host.harness.behavior.callRpc('account.list',null) as AccountSummary[];
   const draft=accounts.find(a=>a.email==='new@example.test')!;
   expect(draft).toMatchObject({draft:true,enabled:false,label:'Prepared account',eligible:false});
-  const store=new AccountStore(fixture.host.bb.storage.kv,path.join(fixture.dataDir,'plugins',fixture.host.bb.pluginId,'secrets','accounts'));
+  const store=new AccountStore(fixture.host.alia.storage.kv,path.join(fixture.dataDir,'plugins',fixture.host.alia.pluginId,'secrets','accounts'));
   await expect(store.readSecret(draft.id)).rejects.toThrow();
   expect(outbound).not.toHaveBeenCalled();
   let connects=0;

@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 
 // Exercise the managed Git install build without installing or replacing a plugin.
 const root = fileURLToPath(new URL("../", import.meta.url));
-const temporary = await mkdtemp(path.join(tmpdir(), "bb-openspec-git-build-"));
+const temporary = await mkdtemp(path.join(tmpdir(), "alia-openspec-git-build-"));
 const fixture = path.join(temporary, "plugin");
 const excluded = new Set([".git", "node_modules", "dist", "coverage", ".env"]);
 function run(command, args) {
@@ -41,9 +41,9 @@ try {
     "--no-audit",
     "--no-fund",
     "--cache",
-    path.join(tmpdir(), "bb-openspec-npm-cache"),
+    path.join(tmpdir(), "alia-openspec-npm-cache"),
   ]);
-  run(process.env.BB_CLI || "bb", ["plugin", "build"]);
+  run(process.env.ALIA_CLI || "alia", ["plugin", "build"]);
   const manifest = JSON.parse(
     await readFile(path.join(fixture, "package.json"), "utf8"),
   );

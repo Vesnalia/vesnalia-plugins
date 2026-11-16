@@ -1,4 +1,4 @@
-import { defineCli, type PluginCliContext } from "@get-bb/plugin-sdk";
+import { defineCli, type PluginCliContext } from "@vesnalia/plugin-sdk";
 import type { Problem } from "../core/document.ts";
 
 const READ_FAILURES: Readonly<Record<string, string>> = {
@@ -244,7 +244,7 @@ function placeWords(positions: readonly number[]): string {
   if (!positions.length) return "not shown, as it may be a secret";
   const words = positions.map((index) => String(index + 1));
   const listed = words.length === 1 ? words[0]! : `${words.slice(0, -1).join(", ")} or ${words.at(-1)}`;
-  return `word ${listed} after bb box, not shown, as it may be a secret`;
+  return `word ${listed} after VesnALIA box, not shown, as it may be a secret`;
 }
 
 function unquoted(text: string, refusal: Refusal, positions: readonly number[]): string {

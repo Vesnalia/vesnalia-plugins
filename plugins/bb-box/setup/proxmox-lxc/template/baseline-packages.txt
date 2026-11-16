@@ -1,4 +1,4 @@
-# Ubuntu packages in every bb-box template. Versions come
+# Ubuntu packages in every alia-box template. Versions come
 # from the pinned Ubuntu snapshot; tools outside the archive are in the pins.
 # Keep this list headless: desktop packages are in guest/customize-desktop.sh.
 bc

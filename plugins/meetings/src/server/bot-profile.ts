@@ -1,7 +1,7 @@
 // The bot's name and avatar (docs/dev/DESIGN.md §14): the botName and
 // showAvatar settings, and the avatar image kept by the host on the
 // recording machine (host `bot.avatar` / `bot.avatarPreview`).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { AvatarStatus } from "../shared/contract.js";
 import { CHANNEL_BOT_CHANGED, type BotProfile } from "../shared/rpc-contract.js";
 import { MeetingsError, errorMessage } from "./errors.js";
@@ -69,13 +69,13 @@ export function botNameOf(settings: Pick<MeetingsSettings, "botName">): string {
 
 export class BotProfileService {
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly settings: SettingsHandle,
     private readonly service: MeetingsService,
   ) {}
 
   private changed(): void {
-    this.bb.realtime.publish(CHANNEL_BOT_CHANGED, {});
+    this.alia.realtime.publish(CHANNEL_BOT_CHANGED, {});
   }
 
   /** The avatar on the recording machine; null when the host cannot be asked right now. */
@@ -83,7 +83,7 @@ export class BotProfileService {
     try {
       return await this.service.call("bot.avatar", { action: "status" });
     } catch (error) {
-      this.bb.log.warn(`Could not read the bot avatar: ${errorMessage(error)}`);
+      this.alia.log.warn(`Could not read the bot avatar: ${errorMessage(error)}`);
       return null;
     }
   }
@@ -118,7 +118,7 @@ export class BotProfileService {
   async setAvatar(imageBase64: string): Promise<BotProfile> {
     const image = decodeAvatar(imageBase64);
     await this.service.call("bot.avatar", { action: "set", imageBase64: image.base64, mimeType: image.mimeType }, { timeoutMs: AVATAR_TIMEOUT_MS });
-    this.bb.log.info(`Bot avatar replaced (${image.mimeType}, ${image.bytes} bytes)`);
+    this.alia.log.info(`Bot avatar replaced (${image.mimeType}, ${image.bytes} bytes)`);
     this.changed();
     return this.profile();
   }

@@ -1,10 +1,10 @@
-// bb-github-pr-dashboard — backend entry.
+// alia-github-pr-dashboard — backend entry.
 //
 // `prs_list` runs one GitHub GraphQL query for one tab's PRs (open, review
 // requested, assigned, merged or closed) and every tab's count; `pr_detail` fetches one PR's threads, conversation and
 // checks. A background service polls open PRs and stores an alert when CI
 // starts failing or someone comments; the page shows them as toasts and a badge,
-// and each check's alerts go out as one system notification through bb's
+// and each check's alerts go out as one system notification through VesnALIA's
 // push-notifications plugin. Auth comes from the optional `token` setting, else
 // from the GitHub CLI already logged in on the machine (`gh auth token`), so
 // every user of a published copy sees their own PRs.
@@ -12,8 +12,8 @@ import { execFile } from "node:child_process";
 import {
   defineRpcContract,
   experimental_PluginRpcRefusal,
-  type BbPluginApi,
-} from "@get-bb/plugin-sdk";
+  type AliaPluginApi,
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   agentTarget,
@@ -199,7 +199,7 @@ const nodeId = z.string().regex(/^[A-Za-z0-9_=-]{1,100}$/, "Expected a GitHub no
 const commentBody = z.string().trim().min(1, "Write something first").max(65_000, "GitHub comments are limited to about 65,000 characters");
 
 export const rpcContract = defineRpcContract({
-  /** Read-only: whether bb's My Jira plugin runs here (Jira keys then open in it), and its Jira site. */
+  /** Read-only: whether VesnALIA's My Jira plugin runs here (Jira keys then open in it), and its Jira site. */
   jira_link: {
     input: z.object({}).strict(),
     output: z.object({ plugin: z.boolean(), siteUrl: z.string().nullable() }),
@@ -318,7 +318,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ prId: nodeId, action: z.enum(["close", "reopen", "ready", "draft"]) }).strict(),
     output: z.object({ state: z.string() }),
   },
-  /** Read-only: which bb thread works on this PR's branch, else which project a new thread should start in. */
+  /** Read-only: which VesnALIA thread works on this PR's branch, else which project a new thread should start in. */
   pr_agent_target: {
     input: z
       .object({
@@ -346,7 +346,7 @@ const pushSent = z.object({ ok: z.literal(true), channels: z.array(z.enum(["web"
 
 const MAX_ALERTS = 50;
 
-/** The part of bb's GitHub PR Status `pullRequests` answer read here: each environment's PR, when it has one. */
+/** The part of VesnALIA's GitHub PR Status `pullRequests` answer read here: each environment's PR, when it has one. */
 const prStatusSchema = z.record(
   z.string(),
   z.object({ outcome: z.string(), pullRequest: z.object({ url: z.string() }).optional() }),
@@ -372,7 +372,7 @@ function gh(args: string[]): Promise<{ stdout: string; error: NodeJS.ErrnoExcept
       args,
       {
         timeout: 15_000,
-        // bb.app launched from the Dock may not have Homebrew on PATH.
+        // alia.app launched from the Dock may not have Homebrew on PATH.
         env: { ...process.env, PATH: `${process.env.PATH ?? ""}:/opt/homebrew/bin:/usr/local/bin` },
       },
       (error, stdout) => resolve({ stdout: String(stdout), error: error as NodeJS.ErrnoException | null }),
@@ -415,8 +415,8 @@ interface GraphqlResponse<T> {
   errors?: { message: string }[];
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     token: {
       type: "string",
       label: "GitHub token (optional)",
@@ -438,13 +438,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
     showToasts: {
       type: "boolean",
-      label: "Show alerts as bb toasts",
+      label: "Show alerts as VesnALIA toasts",
       default: true,
     },
     showDesktop: {
       type: "boolean",
       label: "Send desktop notifications",
-      description: "One system notification per check, sent through bb's Push notifications plugin to the channels on there (desktop, web, mobile).",
+      description: "One system notification per check, sent through VesnALIA's Push notifications plugin to the channels on there (desktop, web, mobile).",
       default: true,
     },
     showBadge: {
@@ -469,7 +469,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function auth(): Promise<{ token: string; fromSetting: boolean }> {
     const configured = (await settings.get()).token;
     const fromSetting = typeof configured === "string" && configured.trim() !== "";
-    return { token: fromSetting ? configured.trim() : await ghToken((await bb.storage.kv.get<string>("account")) ?? ""), fromSetting };
+    return { token: fromSetting ? configured.trim() : await ghToken((await alia.storage.kv.get<string>("account")) ?? ""), fromSetting };
   }
 
   /** Every GitHub call, REST or GraphQL, goes through here so auth and errors stay in one place. */
@@ -481,7 +481,7 @@ export default async function plugin(bb: BbPluginApi) {
         authorization: `bearer ${token}`,
         accept: "application/vnd.github+json",
         "content-type": "application/json",
-        "user-agent": "bb-github-pr-dashboard",
+        "user-agent": "alia-github-pr-dashboard",
       },
       signal: AbortSignal.timeout(20_000),
     });
@@ -510,12 +510,12 @@ export default async function plugin(bb: BbPluginApi) {
     if (mutation && body.errors?.length) throw new experimental_PluginRpcRefusal({ code: "invalid", message });
     if (body.data == null) throw new Error(message);
     // Partial errors on reads (e.g. an SSO org the token cannot see) still return data.
-    if (body.errors?.length) bb.log.warn(`GitHub partial result: ${body.errors[0]!.message}`);
+    if (body.errors?.length) alia.log.warn(`GitHub partial result: ${body.errors[0]!.message}`);
     return body.data;
   }
 
   async function readAlerts(): Promise<Alert[]> {
-    return (await bb.storage.kv.get<Alert[]>("alerts")) ?? [];
+    return (await alia.storage.kv.get<Alert[]>("alerts")) ?? [];
   }
   const summary = (alerts: Alert[]) => ({ alerts, unread: alerts.filter((a) => !a.seen).length });
 
@@ -525,8 +525,8 @@ export default async function plugin(bb: BbPluginApi) {
     const known = new Set(stored.map((a) => a.id));
     const fresh = alerts.filter((a) => !known.has(a.id));
     if (fresh.length === 0) return [];
-    await bb.storage.kv.set("alerts", [...fresh, ...stored].slice(0, MAX_ALERTS));
-    bb.realtime.publish(ALERTS_NEW, { alerts: fresh });
+    await alia.storage.kv.set("alerts", [...fresh, ...stored].slice(0, MAX_ALERTS));
+    alia.realtime.publish(ALERTS_NEW, { alerts: fresh });
     return fresh;
   }
 
@@ -538,7 +538,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     let message: string;
     try {
-      const { channels } = await bb.sdk.plugins.callRpc({
+      const { channels } = await alia.sdk.plugins.callRpc({
         pluginId: "push-notifications",
         method: "notifications.send",
         input: pushText(alerts),
@@ -550,44 +550,44 @@ export default async function plugin(bb: BbPluginApi) {
     } catch (cause) {
       message = `Push notifications did not send it (${cause instanceof Error ? cause.message : String(cause)}). Check that the Push notifications plugin is enabled.`;
     }
-    bb.log.warn(`Desktop notification not sent: ${message}`);
+    alia.log.warn(`Desktop notification not sent: ${message}`);
     return { sent: false, message };
   }
 
   async function pollOnce() {
     const s = await settings.get();
     if (!s.notifyCi && !s.notifyComments) {
-      await bb.storage.kv.delete("watch"); // turning back on starts from a fresh baseline
+      await alia.storage.kv.delete("watch"); // turning back on starts from a fresh baseline
       return;
     }
     const ignore = new Set(s.ignoreAuthors.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean));
     const data = await graphql<{ viewer: { login: string }; open: { nodes: (RawWatchPr | Record<string, never>)[] } }>(WATCH_QUERY);
     const prs = data.open.nodes.filter((n): n is RawWatchPr => "url" in n).map((n) => toWatched(n, ignore));
     // Keyed by account: switching gh accounts must not look like new failures.
-    const saved = await bb.storage.kv.get<{ login: string; state: Record<string, WatchState> }>("watch");
+    const saved = await alia.storage.kv.get<{ login: string; state: Record<string, WatchState> }>("watch");
     const prev = saved?.login === data.viewer.login ? saved.state : null;
     const { alerts, next } = diffWatch(prev, prs, new Date().toISOString(), { ci: s.notifyCi, comments: s.notifyComments });
-    await bb.storage.kv.set("watch", { login: data.viewer.login, state: next });
-    if (prev === null) bb.log.info(`Watching ${prs.length} open PRs for ${data.viewer.login} (new baseline)`);
-    if (alerts.length > 0) bb.log.info(`${alerts.length} new PR alert(s)`);
+    await alia.storage.kv.set("watch", { login: data.viewer.login, state: next });
+    if (prev === null) alia.log.info(`Watching ${prs.length} open PRs for ${data.viewer.login} (new baseline)`);
+    if (alerts.length > 0) alia.log.info(`${alerts.length} new PR alert(s)`);
     await pushAlerts(await addAlerts(alerts));
   }
 
-  bb.background.service("watch", {
+  alia.background.service("watch", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           await pollOnce();
         } catch (cause) {
           // Logged, not thrown: a logged-out gh must not disable the plugin.
-          bb.log.warn(`PR watch skipped: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`PR watch skipped: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
         await sleep((await settings.get()).checkEveryMinutes * 60_000, signal);
       }
     },
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     prs_list: async ({ tab }) => {
       const data = await graphql<Record<(typeof LIST_TABS)[number], RawSearch>>(listQuery(tab));
       const count = (t: (typeof LIST_TABS)[number]) => data[t].issueCount;
@@ -649,7 +649,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
     jira_link: async () => {
       try {
-        const status = await bb.sdk.plugins.callRpc({
+        const status = await alia.sdk.plugins.callRpc({
           pluginId: "my-jira",
           method: "auth_status",
           input: null,
@@ -663,7 +663,7 @@ export default async function plugin(bb: BbPluginApi) {
     accounts: async () => {
       const [accounts, chosen, { token }] = await Promise.all([
         ghAccounts(),
-        bb.storage.kv.get<string>("account"),
+        alia.storage.kv.get<string>("account"),
         settings.get(),
       ]);
       const usingToken = typeof token === "string" && token.trim() !== "";
@@ -676,8 +676,8 @@ export default async function plugin(bb: BbPluginApi) {
         throw new experimental_PluginRpcRefusal({ code: "invalid", message: `GitHub CLI is not logged in as ${login}.` });
       }
       // gh's active account is the default: remembering it would stop following later gh switches.
-      if (accounts.find((a) => a.active)?.login === login) await bb.storage.kv.delete("account");
-      else await bb.storage.kv.set("account", login);
+      if (accounts.find((a) => a.active)?.login === login) await alia.storage.kv.delete("account");
+      else await alia.storage.kv.set("account", login);
       return { selected: login };
     },
     pr_resolve_thread: async ({ threadId, resolved }) => {
@@ -767,12 +767,12 @@ export default async function plugin(bb: BbPluginApi) {
       return { state: pr.state };
     },
     pr_agent_target: async ({ repo, number, headRefName }) => {
-      const projects = await bb.sdk.projects.list();
-      const threads: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+      const projects = await alia.sdk.projects.list();
+      const threads: Awaited<ReturnType<typeof alia.sdk.threads.list>> = [];
       // shortcut: the first 1,000 open threads; page further if someone keeps more.
       const PAGE = 100;
       for (let offset = 0; offset < 1000; offset += PAGE) {
-        const page = await bb.sdk.threads.list({ limit: PAGE, offset });
+        const page = await alia.sdk.threads.list({ limit: PAGE, offset });
         threads.push(...page);
         if (page.length < PAGE) break;
       }
@@ -780,8 +780,8 @@ export default async function plugin(bb: BbPluginApi) {
       const prUrlByEnvironment: Record<string, string> = {};
       if (onBranch.length > 0) {
         try {
-          const rows = await bb.sdk.plugins.callRpc({
-            pluginId: "bb--github-pr-status",
+          const rows = await alia.sdk.plugins.callRpc({
+            pluginId: "alia--github-pr-status",
             method: "pullRequests",
             input: { keys: [...new Set(onBranch.map((t) => t.environmentId!))] },
             outputSchema: prStatusSchema,
@@ -791,7 +791,7 @@ export default async function plugin(bb: BbPluginApi) {
           }
         } catch (cause) {
           // Disabled or failing: the project's git remote decides instead.
-          bb.log.warn(`GitHub PR Status lookup skipped: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`GitHub PR Status lookup skipped: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
       }
       const target = agentTarget({ url: `https://github.com/${repo}/pull/${number}`, repo, headRefName }, onBranch, projects, prUrlByEnvironment);
@@ -800,8 +800,8 @@ export default async function plugin(bb: BbPluginApi) {
     alerts_list: async () => summary(await readAlerts()),
     alerts_mark_seen: async () => {
       const alerts = (await readAlerts()).map((a) => ({ ...a, seen: true }));
-      await bb.storage.kv.set("alerts", alerts);
-      bb.realtime.publish(ALERTS_SEEN, {});
+      await alia.storage.kv.set("alerts", alerts);
+      alia.realtime.publish(ALERTS_SEEN, {});
       return summary(alerts);
     },
     alerts_test: async () => {

@@ -21,7 +21,7 @@ export function verifiedDelivery(conflict: ConflictState, snapshot?: ScanSnapsho
 
 /** Who else provides a skill with the same name, in words a user recognises. */
 export function ownerLabel(source: ConflictSource): string {
-  if (source.scope === "bb-user") return "your own skills";
+  if (source.scope === "alia-user") return "your own skills";
   return source.pluginId ? `the ${source.pluginId} plugin` : "another plugin";
 }
 
@@ -47,7 +47,7 @@ function mattBlockedReason(conflict: ConflictState, snapshot: ScanSnapshot | nul
     !source.pluginId || source.pluginId.localeCompare(mirrorConfig.identity.pluginId) <= 0);
   if (unsupported) return `Matt's can't replace ${ownerLabel(unsupported)}. Turn that one off where it lives, or keep both to use Matt's as /${aliasName}.`;
   if (!verifiedDelivery(conflict, snapshot) || conflict.oursBlockedReason !== null) {
-    return `bb can't give Matt's this name yet. Keep both to use Matt's as /${aliasName}.`;
+    return `alia can't give Matt's this name yet. Keep both to use Matt's as /${aliasName}.`;
   }
   return null;
 }

@@ -1,25 +1,25 @@
 {
-  "name": "bb-plugin-thread-namer",
+  "name": "alia-plugin-thread-namer",
   "version": "0.1.0",
-  "description": "Names bb threads automatically with an agent, and re-generates a name on demand.",
+  "description": "Names VesnALIA threads automatically with an agent, and re-generates a name on demand.",
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "thread",
     "title"
   ],
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.8"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "bb": {
+  "alia": {
     "name": "Thread Namer",
     "description": "Names threads automatically with an agent, and lets you re-generate a name from the thread header.",
     "branding": {
@@ -39,7 +39,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.8",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
@@ -57,9 +56,21 @@
     "typescript": "^5.7.0",
     "vitest": "^3.2.7"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.8"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/thread-namer#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/suiramdev/bb-plugin-thread-namer.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/thread-namer"
   },
-  "homepage": "https://github.com/suiramdev/bb-plugin-thread-namer#readme"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

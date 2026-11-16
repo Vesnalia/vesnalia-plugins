@@ -1,7 +1,7 @@
 # Agent Reload
 
-A [bb](https://getbb.app) plugin that restarts one thread's agent session
-without restarting bb and without losing the conversation.
+A [VesnALIA](https://getbb.app) plugin that restarts one thread's agent session
+without restarting VesnALIA and without losing the conversation.
 
 An agent reads its MCP servers, settings, instruction files, skills, and
 plugins when its session starts. Connect an MCP server or edit your config
@@ -18,8 +18,8 @@ The button only appears on threads whose agent can be reloaded.
 **From a shell or an agent:**
 
 ```sh
-bb agent-reload              # the thread the command runs in
-bb agent-reload thr_abc123   # any other thread
+alia agent-reload              # the thread the command runs in
+alia agent-reload thr_abc123   # any other thread
 ```
 
 Agents in other threads learn the command from the bundled `agent-reload`
@@ -40,19 +40,19 @@ Add custom ACP agents by provider ID, comma-separated. The change applies
 immediately:
 
 ```sh
-bb plugin config agent-reload set extraProviderIds acp-my-agent
+alia plugin config agent-reload set extraProviderIds acp-my-agent
 ```
 
-Codex is not supported because bb's Codex bridge does not rebuild a session
+Codex is not supported because VesnALIA's Codex bridge does not rebuild a session
 when the thread's environment changes.
 
 ## How it works
 
-bb rebuilds a thread's agent session, resuming the same conversation, when the
+VesnALIA rebuilds a thread's agent session, resuming the same conversation, when the
 environment it passes to that agent changes. Agent Reload contributes one
 per-thread variable, `AGENT_RELOAD_NONCE`, through the plugin SDK's provider
 environment API. A reload stores a new value for that thread, so the next turn
-sees a changed environment and bb rebuilds the session.
+sees a changed environment and VesnALIA rebuilds the session.
 
 Threads you never reload get no variable and are unaffected. The plugin stores
 one timestamp per reloaded thread and deletes it when the thread is deleted. It
@@ -60,11 +60,11 @@ makes no network requests.
 
 ## Install
 
-From the bb plugin store, or from a checkout:
+From the VesnALIA plugin store, or from a checkout:
 
 ```sh
 npm install
-bb plugin install .
+alia plugin install .
 ```
 
 ## Development
@@ -72,11 +72,11 @@ bb plugin install .
 ```sh
 npm install
 npx tsc -p .
-bb plugin build
-bb plugin dev      # rebuild and reload on save
+alia plugin build
+alia plugin dev      # rebuild and reload on save
 ```
 
-Requires bb 0.46 or later.
+Requires VesnALIA 0.46 or later.
 
 ## License
 

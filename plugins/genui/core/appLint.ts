@@ -89,7 +89,7 @@ export function lintApp(html: string): Diagnostic[] {
     if (name === "a") {
       const href = attribute("href")?.value.trim();
       if (href !== undefined && href !== "" && !href.startsWith("#") && !/^https:/i.test(href) && !/^javascript:/i.test(href)) {
-        report(attribute("href")!.offset, "warning", `<a href="${href}"> opens nothing from an app: only https links open, in BB.`);
+        report(attribute("href")!.offset, "warning", `<a href="${href}"> opens nothing from an app: only https links open, in VesnALIA.`);
       }
     }
   }

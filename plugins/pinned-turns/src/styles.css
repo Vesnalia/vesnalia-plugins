@@ -1,6 +1,6 @@
 /*
- * The plugin's own classes, prefixed so nothing of BB's matches them. `bb plugin
- * build` scopes Tailwind utilities as `:where([data-bb-plugin=…]) .<utility>`, and BB's
+ * The plugin's own classes, prefixed so nothing of ALIA's matches them. `alia plugin
+ * build` scopes Tailwind utilities as `:where([data-alia-plugin=…]) .<utility>`, and ALIA's
  * elements carry the same class names, so every utility a plugin uses is matched
  * against the whole page on every style recalc. CSS imported here is passed through
  * as written. Values are the ones the Tailwind classes had.

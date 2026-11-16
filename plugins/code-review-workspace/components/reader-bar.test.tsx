@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { interdiff } from "../src/interdiff";
 import { getCommentsFolded, patchReviewState } from "../lib/panel-state";
@@ -82,8 +82,8 @@ function touchWindow(width: number, height: number) {
 }
 
 const file = (path: string, line: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-x\n+${line}\n`;
-const patch = file("src/a.ts", "aa") + file("src/b.ts", "bb");
-const reviewed = file("src/a.ts", "a0") + file("src/b.ts", "bb");
+const patch = file("src/a.ts", "aa") + file("src/b.ts", "alia");
+const reviewed = file("src/a.ts", "a0") + file("src/b.ts", "alia");
 const guide = { title: "Guide", intent: "Parses rows.", unplacedFiles: [] as string[], sections: [{ id: "c1", title: "Parsing", overview: "Reads rows.", diffs: [{ file: "src/a.ts" }, { file: "src/b.ts" }] }] };
 
 async function renderWorkspace(review: Record<string, unknown> = {}) {
@@ -137,7 +137,7 @@ test("on a re-review the band ends with the compare select, Fold comments and Di
   fakePane(1400);
   let slot = await renderWorkspace(rereview);
   expect(await band(slot).findByRole("button", { name: "Show changes: Since your review" })).toBeTruthy();
-  // Before the review's commands, which join the band where BB's title bar didn't take them.
+  // Before the review's commands, which join the band where VesnALIA's title bar didn't take them.
   const controls = () => band(slot).getAllByRole("button").filter((button) => !button.closest("[data-review-commands]")).map((button) => button.getAttribute("aria-label") ?? button.textContent).slice(-3);
   expect(controls()).toEqual(["Show changes: Since your review", "Fold comments in code", "Diff options"]);
   slot.lifecycle.unmount();
@@ -176,7 +176,7 @@ test("on touch, the band beside Comments docked on an unfolded iPhone Duo held s
 });
 
 test("on an iPad, which has no fold, a band with under 600px of room keeps the compare select and Fold comments, as with a mouse", async () => {
-  // The 13" iPad held upright, Comments docked in BB's 978px pane: 578px of band.
+  // The 13" iPad held upright, Comments docked in VesnALIA's 978px pane: 578px of band.
   fakePane(978, 1376, 578);
   touchWindow(1032, 1376);
   const slot = await renderWorkspace(rereview);

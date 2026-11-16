@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { MonitorSnapshot } from "../../plugin/contract.ts";
 import { cn } from "@/lib/utils";
 import { HudTooltip, HudTooltipContent, HudTooltipTrigger } from "./hud-tooltip.tsx";
@@ -92,7 +92,7 @@ export function LoadingTailscaleRows({ rows }: { rows: number }) {
 
 type IpVersion = "IPv4" | "IPv6";
 
-const IP_VERSION_KEY = "bb-box:monitor:ip-version";
+const IP_VERSION_KEY = "alia-box:monitor:ip-version";
 
 function readIpVersion(): IpVersion {
   try {

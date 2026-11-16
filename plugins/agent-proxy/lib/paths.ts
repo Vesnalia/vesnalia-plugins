@@ -1,6 +1,6 @@
 import { isAbsolute, join } from "node:path";
 
-/** On-disk layout under <bb dataDir>/plugins/agent-proxy. Coexists with bb's
+/** On-disk layout under <VesnALIA dataDir>/plugins/agent-proxy. Coexists with VesnALIA's
     own data.db / secrets/ / logs for this plugin. */
 export interface Paths {
   root: string;

@@ -107,9 +107,9 @@ describe("end to end with real git (LocalHostRunner)", () => {
       const id = `thr_w${port.spawned.length + 1}`;
       port.spawned.push(args);
       const path = join(root, id);
-      sh(repo, "worktree", "add", "-q", "-b", `bb/${id}`, path, args.baseBranch);
+      sh(repo, "worktree", "add", "-q", "-b", `alia/${id}`, path, args.baseBranch);
       port.threads.set(id, { id, status: "active", archivedAt: null, deletedAt: null, environmentId: `env_${id}`, metadata: { ...args.metadata } });
-      port.envs.set(`env_${id}`, { id: `env_${id}`, hostId: "host_test", path, branchName: `bb/${id}` });
+      port.envs.set(`env_${id}`, { id: `env_${id}`, hostId: "host_test", path, branchName: `alia/${id}` });
       return { threadId: id, environmentId: `env_${id}` };
     };
     port.addThread("thr_study");
@@ -150,7 +150,7 @@ describe("end to end with real git (LocalHostRunner)", () => {
     expect(runner.probes).toBeGreaterThan(0);
     expect(store.healthChecks(study.id).every((h) => h.ok === 1)).toBe(true);
     await engine.archiveStudy("toy-size", "human");
-    expect(sh(repo, "branch", "--list", "bb/thr_w1")).toBe("");
+    expect(sh(repo, "branch", "--list", "alia/thr_w1")).toBe("");
     expect(sh(repo, "rev-parse", "refs/studies/toy-size/c/1")).toBe(c.sha);
     expect(sh(repo, "worktree", "list")).not.toContain("toy-size-best");
   });

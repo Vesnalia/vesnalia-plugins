@@ -1,27 +1,22 @@
 {
-  "name": "bb-plugin-agent-reload",
+  "name": "alia-plugin-agent-reload",
   "version": "0.1.0",
-  "description": "Restart a bb thread's agent session so it picks up new MCP servers and config, keeping the conversation.",
+  "description": "Restart a VesnALIA thread's agent session so it picks up new MCP servers and config, keeping the conversation.",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "mcp",
     "claude-code",
     "reload"
   ],
   "license": "MIT",
   "author": "Dennis Zimmermann (https://github.com/dennzimm)",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dennzimm/bb-plugin-agent-reload.git"
-  },
-  "homepage": "https://github.com/dennzimm/bb-plugin-agent-reload#readme",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Agent Reload",
     "description": "Restart a thread's agent session before its next turn, keeping the conversation, so it picks up new MCP servers and config.",
     "branding": {
@@ -34,7 +29,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "@types/better-sqlite3": "^7.6.12",
@@ -43,5 +37,22 @@
     "hono": "^4.11.9",
     "sonner": "^1.7.4",
     "@radix-ui/react-tooltip": "^1.2.12"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/agent-reload#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/agent-reload"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

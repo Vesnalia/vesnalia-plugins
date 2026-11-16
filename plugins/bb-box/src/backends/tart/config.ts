@@ -1,17 +1,17 @@
-// Settings of the Tart backend, parsed into a typed config. In bb-box's
+// Settings of the Tart backend, parsed into a typed config. In alia-box's
 // configuration (029) the Macs are the backend's hosts, each with its
 // address, user and host keys, and parseTartPart reads them. Before it, they
-// were BB settings starting with "tart-", which the tests still use through
-// parseTartSettings, and which bb-box moves into the configuration once.
+// were VesnALIA settings starting with "tart-", which the tests still use through
+// parseTartSettings, and which alia-box moves into the configuration once.
 //
 // The backend runs macOS VMs, and Linux VMs on arm64 (040), with Tart on one
-// or more Macs, and Windows VMs on arm64 with QEMU (046). bb-box reaches each
+// or more Macs, and Windows VMs on arm64 with QEMU (046). alia-box reaches each
 // Mac over SSH as its host user, runs `tart` or QEMU there, and reaches each
 // VM through the Mac, since the VMs sit on the Mac's own NAT, or QEMU's. Each
 // kind is cloned from an image on every Mac, prepared by the setup guide: a
 // Tart VM, or for Windows a directory of QEMU's.
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { MOST_SLOTS, type SlotsSizedBy } from "../../core/slot-sizing.ts";
 import { normalisePrivateKey } from "../../transports/ssh.ts";
 import { hostKeysFor } from "../ssh-pool/config.ts";
@@ -60,21 +60,21 @@ export interface TartConfig {
   readonly hostKeys: readonly string[];
   readonly kinds: Readonly<Record<TartKind, TartKindConfig>>;
   readonly iosImage: string | null;
-  /** The most macOS VMs bb-box lets run on each Mac, counting every VM Tart lists there. */
+  /** The most macOS VMs alia-box lets run on each Mac, counting every VM Tart lists there. */
   readonly vmsPerHost: number;
-  /** A null key means bb-box generates one and shows its public key. */
+  /** A null key means alia-box generates one and shows its public key. */
   readonly ssh: { readonly privateKey: string | null; readonly vmUser: string };
   readonly reserve: { readonly memoryMiB: number; readonly diskGiB: number };
-  /** Windows boxes join BB as machines, unless set off, as on Proxmox QEMU (#539). */
+  /** Windows boxes join VesnALIA as machines, unless set off, as on Proxmox QEMU (#539). */
   readonly windowsEnrol: boolean;
-  /** macOS desktops open as video by default, where every Mac's image has bb-box-stream (060); else VNC, with video a choice. Off by default. */
+  /** macOS desktops open as video by default, where every Mac's image has alia-box-stream (060); else VNC, with video a choice. Off by default. */
   readonly video: boolean;
   readonly warmMaxHours: number;
   readonly iosHosts: IosHostsConfig;
 }
 
 export const TART_DEFAULTS = {
-  image: "bb-box-macos",
+  image: "alia-box-macos",
   vmUser: "admin",
   reserveMemoryMiB: 16384,
   reserveDiskGiB: 50,
@@ -159,7 +159,7 @@ export const TART_SETTINGS: Record<string, PluginSettingDescriptor> = {
   [TART_KEYS.vmUser]: {
     type: "string",
     label: "Tart: VM user",
-    description: `The user in the macOS images that ${PRODUCT} and BB work as. It is logged in to the desktop automatically. Linux boxes work as box.`,
+    description: `The user in the macOS images that ${PRODUCT} and VesnALIA work as. It is logged in to the desktop automatically. Linux boxes work as box.`,
     default: TART_DEFAULTS.vmUser,
   },
   [TART_KEYS.macosImage]: {
@@ -178,41 +178,41 @@ export const TART_SETTINGS: Record<string, PluginSettingDescriptor> = {
     type: "string",
     label: "Tart: Linux image",
     description:
-      "The Tart VM on each Mac that Linux boxes on arm64 are cloned from. setup/tart/prepare-linux-image.sh builds it, as bb-box-linux. Empty turns them off.",
+      "The Tart VM on each Mac that Linux boxes on arm64 are cloned from. setup/tart/prepare-linux-image.sh builds it, as alia-box-linux. Empty turns them off.",
     default: "",
   },
   [TART_KEYS.linuxDesktopImage]: {
     type: "string",
     label: "Tart: Linux desktop image",
     description:
-      "The Tart VM on each Mac that Linux desktops on arm64 are cloned from. setup/tart/prepare-linux-image.sh --desktop builds it, as bb-box-linux-desktop. Empty turns them off.",
+      "The Tart VM on each Mac that Linux desktops on arm64 are cloned from. setup/tart/prepare-linux-image.sh --desktop builds it, as alia-box-linux-desktop. Empty turns them off.",
     default: "",
   },
   [TART_KEYS.windowsImage]: {
     type: "string",
     label: "Tart: Windows image",
     description:
-      "The image on each Mac that Windows desktops on arm64 are made from, run by QEMU. It is in ~/.bb-box/qemu/images. Empty turns them off.",
+      "The image on each Mac that Windows desktops on arm64 are made from, run by QEMU. It is in ~/.alia-box/qemu/images. Empty turns them off.",
     default: "",
   },
   [TART_KEYS.iosImage]: {
     type: "string",
     label: "Tart: iOS image",
     description:
-      `The Tart VM on each Mac that iOS Simulator boxes are cloned from. setup/tart/prepare-ios-image.sh builds it on the macOS image, as bb-box-ios, with idb_companion and a booted-once, slimmed iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5). ${PRODUCT} checks and refreshes it with the macOS image. Empty turns iOS boxes off.`,
+      `The Tart VM on each Mac that iOS Simulator boxes are cloned from. setup/tart/prepare-ios-image.sh builds it on the macOS image, as alia-box-ios, with idb_companion and a booted-once, slimmed iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5). ${PRODUCT} checks and refreshes it with the macOS image. Empty turns iOS boxes off.`,
     default: "",
   },
   [TART_KEYS.windowsEnrol]: {
     type: "boolean",
-    label: "Tart: Windows boxes as BB machines",
-    description: "Windows boxes join BB as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only.",
+    label: "Tart: Windows boxes as VesnALIA machines",
+    description: "Windows boxes join VesnALIA as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only.",
     default: true,
   },
   [TART_KEYS.video]: {
     type: "boolean",
     label: "Tart: Video by default for macOS desktops",
     description:
-      "Opens macOS desktops as video, from bb-box-stream in the image, instead of VNC. Off, they open as VNC, which is already smooth on a Tart Mac at 52 to 55 frames a second, and a person can choose video under Display. Video uses much less bandwidth, about 1.2 Mbit/s against 20 while scrolling, but a key shows a little later, about 57 ms against 31.",
+      "Opens macOS desktops as video, from alia-box-stream in the image, instead of VNC. Off, they open as VNC, which is already smooth on a Tart Mac at 52 to 55 frames a second, and a person can choose video under Display. Video uses much less bandwidth, about 1.2 Mbit/s against 20 while scrolling, but a key shows a little later, about 57 ms against 31.",
     default: false,
   },
   [TART_KEYS.vmsPerHost]: {
@@ -305,7 +305,7 @@ function number(values: Readonly<Record<string, unknown>>, key: string, fallback
 
 const NAME = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const USER = /^[a-z_][a-z0-9_.-]{0,31}$/i;
-/** A Tart VM name, as bb-box passes it: no spaces, quotes or slashes. */
+/** A Tart VM name, as alia-box passes it: no spaces, quotes or slashes. */
 const VM_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
 /** One Mac per line: `name user@address[:port]`. */
@@ -480,7 +480,7 @@ const IMAGE_LABELS: Readonly<Record<string, string>> = {
   [TART_KEYS.iosImage]: "iOS image",
 };
 
-/** The backend's fields in bb-box's configuration: the settings above without the prefix, but the Macs. */
+/** The backend's fields in alia-box's configuration: the settings above without the prefix, but the Macs. */
 export const TART_FIELDS: Readonly<Record<string, FieldDescriptor>> = Object.fromEntries(
   ([
     [TART_KEYS.sshPrivateKey, "credentials"],
@@ -543,7 +543,7 @@ export const TART_HOST_FIELDS: Readonly<Record<string, FieldDescriptor>> = {
   },
 };
 
-/** Tart's part of bb-box's configuration (029), with each problem at its field. */
+/** Tart's part of alia-box's configuration (029), with each problem at its field. */
 export function parseTartPart(part: BackendPart): ParsedBackend<TartConfig> {
   const problems: FieldProblem[] = [];
   const hosts: TartHost[] = [];

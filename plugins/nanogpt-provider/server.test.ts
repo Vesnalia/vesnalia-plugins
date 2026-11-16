@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import nanoGptPlugin from "./server.js";
 import {
@@ -11,7 +11,7 @@ import { HISTORY_TOOL_NAME } from "./src/history-protocol.js";
 
 function registeredDeclaration() {
   const host = createFakePluginHost({ pluginId: "nanogpt-provider" });
-  nanoGptPlugin(host.bb);
+  nanoGptPlugin(host.alia);
   const declaration = host.harness.registrations.providerRegistrations.find(
     (entry) => entry.id === NANO_GPT_PROVIDER_ID,
   );
@@ -26,7 +26,7 @@ const ENV_CONTEXT = { threadId: null, projectId: null, hostId: "host-1" };
 describe("the NanoGPT provider registration", () => {
   it("registers a hidden, paginated history reader scoped to the active thread", async () => {
     const host = createFakePluginHost({ pluginId: "nanogpt-provider" });
-    nanoGptPlugin(host.bb);
+    nanoGptPlugin(host.alia);
     const tool = host.harness.registrations.agentTools.find((entry) => entry.name === HISTORY_TOOL_NAME);
     expect(tool).toBeDefined();
     expect(tool?.presentation?.suppress).toBe(true);
@@ -98,8 +98,8 @@ describe("the NanoGPT provider registration", () => {
     expect(declaration.icon).toBe("./assets/icon.svg");
     const manifest = JSON.parse(
       readFileSync(new URL("./package.json", import.meta.url), "utf8"),
-    ) as { bb: { branding: { icon: string } } };
-    expect(manifest.bb.branding.icon).toBe("./assets/icon.svg");
+    ) as { alia: { branding: { icon: string } } };
+    expect(manifest.alia.branding.icon).toBe("./assets/icon.svg");
     const svg = readFileSync(
       new URL("./assets/icon.svg", import.meta.url),
       "utf8",

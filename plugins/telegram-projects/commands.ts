@@ -26,17 +26,17 @@ export const BOT_COMMANDS: BotCommand[] = [
     ru: "Привязать тему к проекту",
     en: "Bind this topic to a project",
     hintRu:
-      "Выбор проекта BB для текущей темы. Новая тема, созданная вручную, привязывается так же.",
+      "Выбор проекта ALIA для текущей темы. Новая тема, созданная вручную, привязывается так же.",
     hintEn:
-      "Pick the BB project for this topic. A manually created topic is bound the same way.",
+      "Pick the VesnALIA project for this topic. A manually created topic is bound the same way.",
   },
   {
     command: "new",
     group: "chat",
     ru: "Новый чат",
     en: "New chat",
-    hintRu: "Следующее сообщение начнёт новый тред BB в проекте этой темы.",
-    hintEn: "The next message starts a new BB thread in this topic's project.",
+    hintRu: "Следующее сообщение начнёт новый тред ALIA в проекте этой темы.",
+    hintEn: "The next message starts a new VesnALIA thread in this topic's project.",
   },
   {
     command: "chats",
@@ -68,9 +68,9 @@ export const BOT_COMMANDS: BotCommand[] = [
     group: "chat",
     ru: "Отключить чат",
     en: "Disconnect this chat",
-    hintRu: "Отвязывает тред от темы. Тред и история в BB остаются.",
+    hintRu: "Отвязывает тред от темы. Тред и история в ALIA остаются.",
     hintEn:
-      "Unbinds the thread from the topic. The thread and history stay in BB.",
+      "Unbinds the thread from the topic. The thread and history stay in VesnALIA.",
   },
   {
     command: "model",
@@ -101,8 +101,8 @@ export const BOT_COMMANDS: BotCommand[] = [
     group: "agent",
     ru: "Выбрать сервер",
     en: "Choose a server",
-    hintRu: "Машина BB, на которой запустится новый чат.",
-    hintEn: "BB machine where a new chat starts.",
+    hintRu: "Машина ALIA, на которой запустится новый чат.",
+    hintEn: "VesnALIA machine where a new chat starts.",
   },
   {
     command: "tasks",
@@ -117,8 +117,8 @@ export const BOT_COMMANDS: BotCommand[] = [
     group: "chat",
     ru: "Подключить тред по ID",
     en: "Connect a thread by ID",
-    hintRu: "Подключает конкретный тред BB к теме.",
-    hintEn: "Connects a specific BB thread to the topic.",
+    hintRu: "Подключает конкретный тред ALIA к теме.",
+    hintEn: "Connects a specific VesnALIA thread to the topic.",
     args: "<thread-id>",
   },
   {

@@ -1,11 +1,11 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const sessionStatusSchema = z.enum(["idle", "live", "released", "failed"]);
 export const scopeSchema = z.object({
   threadId: z.string().min(1).max(200).optional(),
   projectId: z.string().min(1).max(200).optional(),
-}).strict().refine(value => !!value.threadId || !!value.projectId, "A BB project or thread is required.");
+}).strict().refine(value => !!value.threadId || !!value.projectId, "A VesnALIA project or thread is required.");
 export const enginePolicySchema = z.object({
   engine: z.enum(["playwright", "jev", "auto"]),
   fallback: z.boolean(),

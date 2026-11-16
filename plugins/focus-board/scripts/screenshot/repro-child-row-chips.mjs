@@ -72,7 +72,7 @@ const family = await page.$(`[data-thread-card="${FAMILY}"]`);
 if (family !== null) await family.screenshot({ path: `${OUT}family-card.png` });
 
 const record = {
-  issue: "cristoslc/bb-plugin-focus-board#191",
+  issue: "cristoslc/alia-plugin-focus-board#191",
   url: BASE,
   child: CHILD,
   domEvidence: evidence,

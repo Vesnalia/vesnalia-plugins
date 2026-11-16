@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import {
   useRpc,
   useSdk,
-  useBbNavigate,
-  useBbContext,
+  useAliaNavigate,
+  useAliaContext,
   experimental_usePluginId,
   experimental_NewThreadComposer as NewThreadComposer,
   ThreadChat,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Chat } from "./server";
 import type { PrRef } from "./github";
 import { Button } from "./components/ui/button";
@@ -18,8 +18,8 @@ import { chatViews, viewKey } from "./view-cache";
 export function PrChat({ prRef, active }: { prRef: PrRef; active: boolean }) {
   const rpc = useRpc<typeof rpcContract>();
   const sdk = useSdk();
-  const navigate = useBbNavigate();
-  const { projectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId } = useAliaContext();
   const pluginId = experimental_usePluginId();
   const cacheKey = viewKey(pluginId, prRef);
   const [chats, setChats] = useState<Chat[] | null>(
@@ -139,7 +139,7 @@ export function PrChat({ prRef, active }: { prRef: PrRef; active: boolean }) {
       )}
       {limited && (
         <p className="px-4 py-2 text-xs text-muted-foreground">
-          Searching the latest 1,000 PR chat threads. Older chats remain in BB’s
+          Searching the latest 1,000 PR chat threads. Older chats remain in VesnALIA’s
           thread list.
         </p>
       )}

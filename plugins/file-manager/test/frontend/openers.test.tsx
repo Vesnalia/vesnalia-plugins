@@ -2,16 +2,16 @@
 //
 // §10.2 — the two file openers behind "Open with …" on a file link.
 //
-// The registration order is load-bearing: bb picks an opener automatically per
+// The registration order is load-bearing: VesnALIA picks an opener automatically per
 // extension, and it picks the first match. The preview wrapper therefore has
 // to be registered first, or a plain click on a .md link would open a folder
 // instead of the file.
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 
-import type { PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import type { PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 
@@ -136,7 +136,7 @@ function baseRpc(
 }
 
 function Original() {
-  return <div data-testid="bb-preview">bb preview</div>;
+  return <div data-testid="alia-preview">alia preview</div>;
 }
 
 function mountOpener(
@@ -184,14 +184,14 @@ describe("file opener registration (§10.2)", () => {
     ]) {
       expect(previewOpener.extensions).toContain(extension);
     }
-    // bb picks the FIRST matching opener in plugin-id order, and file-manager
+    // VesnALIA picks the FIRST matching opener in plugin-id order, and file-manager
     // sorts before pdf-viewer: claiming any of these would shadow the viewer.
     for (const extension of [
       "pdf", "rtf", "doc", "docx", "odt", "xls", "xlsx", "ods", "ppt", "pptx", "odp",
     ]) {
       expect(previewOpener.extensions).not.toContain(extension);
     }
-    // A duplicate is dead weight bb would match twice over.
+    // A duplicate is dead weight VesnALIA would match twice over.
     expect(new Set(previewOpener.extensions).size).toBe(previewOpener.extensions.length);
     // Both openers must claim the same set, or the context menu would offer
     // the reveal for files the automatic pick never covers.
@@ -320,14 +320,14 @@ describe("Preview + location opener — an archive link (§8.13)", () => {
     };
   }
 
-  it("shows the archive's contents where bb's preview would show nothing, under the same strip", async () => {
+  it("shows the archive's contents where VesnALIA's preview would show nothing, under the same strip", async () => {
     const slot = mountOpener(previewOpener, archiveRpc(), ARCHIVE_PATH);
 
     const tree = await slot.findByTestId("fm-archive-tree");
     expect(within(tree).getAllByTestId("fm-archive-row").map((row) => row.getAttribute("data-archive-path"))).toEqual(
       ["inside", "inside/a.txt"],
     );
-    expect(slot.queryByTestId("bb-preview")).toBeNull();
+    expect(slot.queryByTestId("alia-preview")).toBeNull();
     // The strip is still there, still naming the folder and offering the reveal.
     expect(slot.getByTestId("fm-opener-folder").textContent).toBe("knowledge-base/backups");
     expect(slot.getByTestId("fm-open-location")).toBeDefined();
@@ -398,53 +398,53 @@ describe("Preview + location opener — an archive link (§8.13)", () => {
     expect(slot.inspection.rpcCalls.map((call) => call.method)).toEqual(["resolveFileLocation"]);
   });
 
-  it("leaves every other file to bb's own preview, with nothing resolved up front", async () => {
+  it("leaves every other file to VesnALIA's own preview, with nothing resolved up front", async () => {
     const slot = mountOpener(previewOpener, archiveRpc(), "knowledge-base/backups/notes.gz");
 
-    expect(await slot.findByTestId("bb-preview")).toBeDefined();
+    expect(await slot.findByTestId("alia-preview")).toBeDefined();
     expect(slot.inspection.rpcCalls).toHaveLength(0);
   });
 });
 
 describe("Preview + location opener", () => {
-  it("renders bb's own preview until the location is asked for", async () => {
+  it("renders VesnALIA's own preview until the location is asked for", async () => {
     const slot = mountOpener(previewOpener, baseRpc());
 
-    expect(await slot.findByTestId("bb-preview")).toBeDefined();
+    expect(await slot.findByTestId("alia-preview")).toBeDefined();
     expect(slot.queryByTestId("fm-panel")).toBeNull();
     // Nothing is resolved until the button is pressed.
     expect(slot.inspection.rpcCalls).toHaveLength(0);
   });
 
-  it("gives BB's preview the flex frame it sizes itself against", async () => {
+  it("gives VesnALIA's preview the flex frame it sizes itself against", async () => {
     // The regression that shipped in 0.6: the preview was wrapped in a plain
     // block, so its own `flex-1` resolved against nothing. It grew to content
     // height with no scrollbar — the document would not scroll and a tall file
-    // looked like an empty tab. BB mounts an opener in
+    // looked like an empty tab. VesnALIA mounts an opener in
     // `flex h-full min-h-0 flex-1 flex-col overflow-hidden`; anything holding
     // the preview has to be a flex column too.
     const slot = mountOpener(previewOpener, baseRpc());
-    await slot.findByTestId("bb-preview");
+    await slot.findByTestId("alia-preview");
 
     const body = slot.getByTestId("fm-opener-body");
     for (const className of ["flex", "flex-col", "flex-1", "min-h-0"]) {
       expect(body.className).toContain(className);
     }
     // And it scrolls: a rendered markdown document grows to its content and
-    // expects its container to be the scroller, while BB's own opener frame is
+    // expects its container to be the scroller, while VesnALIA's own opener frame is
     // overflow-hidden. Without this the document had nowhere to scroll.
     expect(body.className).toContain("overflow-auto");
-    expect(body.querySelector("[data-testid='bb-preview']")).not.toBeNull();
+    expect(body.querySelector("[data-testid='alia-preview']")).not.toBeNull();
   });
 
   it("switches to the file manager on the location button", async () => {
     const slot = mountOpener(previewOpener, baseRpc());
-    await slot.findByTestId("bb-preview");
+    await slot.findByTestId("alia-preview");
 
     fireEvent.click(slot.getByTestId("fm-open-location"));
 
     await slot.findByText("readme.md");
     expect(slot.getByTestId("fm-panel").getAttribute("data-current-path")).toBe(BACKUPS);
-    expect(slot.queryByTestId("bb-preview")).toBeNull();
+    expect(slot.queryByTestId("alia-preview")).toBeNull();
   });
 });

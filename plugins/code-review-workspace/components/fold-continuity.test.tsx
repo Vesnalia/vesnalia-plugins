@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 // Folding and unfolding an iPhone Duo, or rotating a phone, resizes the window live: what you had open, typed and
-// focused stays (lanes/00-devices.md, requirement 3). BB's pane narrowing alone, and an iPad's or a desktop's window
+// focused stays (lanes/00-devices.md, requirement 3). VesnALIA's pane narrowing alone, and an iPad's or a desktop's window
 // resizing, keep the shell's older rules.
 import { afterEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
 import { keep, resetForTests } from "../lib/remount";
@@ -25,9 +25,9 @@ const restores: (() => void)[] = [];
 afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); vi.clearAllMocks(); restores.splice(0).forEach((restore) => restore()); resetForTests(); });
 
 /**
- * The workspace in a BB pane `width` × `height`, in a window (`window`: by default the pane plus BB's bar, as Safari's
+ * The workspace in a VesnALIA pane `width` × `height`, in a window (`window`: by default the pane plus VesnALIA's bar, as Safari's
  * page on a phone), on a touch screen, or a desktop's (`pointer: "fine"`). `fold` resizes both, the window to the pane
- * plus BB's bar, as folding, unfolding or rotating a phone does; `pane` resizes the pane alone, as BB's thread list
+ * plus VesnALIA's bar, as folding, unfolding or rotating a phone does; `pane` resizes the pane alone, as VesnALIA's thread list
  * does; `resize` resizes each to its own size, as an iPad's rotation or Split View, or a desktop's window, does.
  */
 function fakeScreen(width: number, height: number, { pointer = "coarse", window: frame = { width, height: height + 48 } }: { pointer?: "coarse" | "fine"; window?: Size } = {}) {
@@ -67,11 +67,11 @@ function fakeScreen(width: number, height: number, { pointer = "coarse", window:
 }
 type Size = { width: number; height: number };
 
-// The user's phones, as BB's pane in Safari (lanes/00-devices.md).
+// The user's phones, as VesnALIA's pane in Safari (lanes/00-devices.md).
 const OUTER = { width: 382, height: 550 };
 const INNER_LANDSCAPE = { width: 951, height: 541 };
 const INNER_PORTRAIT = { width: 669, height: 821 };
-// The 13" iPad with BB's thread list open, each way (spec §3.1), and a desktop's 1440 × 900 window with it open.
+// The 13" iPad with VesnALIA's thread list open, each way (spec §3.1), and a desktop's 1440 × 900 window with it open.
 const IPAD_LANDSCAPE = { pane: { width: 1056, height: 984 }, window: { width: 1376, height: 1032 } };
 const IPAD_PORTRAIT = { pane: { width: 712, height: 1328 }, window: { width: 1032, height: 1376 } };
 const DESKTOP = { pane: { width: 1120, height: 852 }, window: { width: 1440, height: 900 } };
@@ -194,12 +194,12 @@ test("Comments docked unfolded becomes the sheet as it folds, and docks again as
 test.each([
   { open: "Comments", opener: "Comments" },
   { open: "Chapters", opener: /^pr-42, Chapters:/ },
-])("unfolding as BB remounts the page beside its thread list, $open open folded stays open over the code", async ({ open, opener }) => {
+])("unfolding as VesnALIA remounts the page beside its thread list, $open open folded stays open over the code", async ({ open, opener }) => {
   const screen = fakeScreen(OUTER.width, OUTER.height);
   let slot = await renderWorkspace();
   fireEvent.click(await slot.findByRole("button", { name: opener }));
   expect(sheet(slot, open)).toBeTruthy();
-  // Until BB swaps its layout, a few frames on, its old one gives the page the window's whole width, where it docks.
+  // Until VesnALIA swaps its layout, a few frames on, its old one gives the page the window's whole width, where it docks.
   act(() => { window.dispatchEvent(new Event("resize")); });
   screen.fold(INNER_LANDSCAPE);
   expect(slot.queryByRole("dialog")).toBeNull();
@@ -211,7 +211,7 @@ test.each([
   slot.lifecycle.unmount();
 });
 
-test("as BB remounts the page while you type in the code, another chapter before the box is back ends that: folding then keeps Comments open", async () => {
+test("as VesnALIA remounts the page while you type in the code, another chapter before the box is back ends that: folding then keeps Comments open", async () => {
   const screen = fakeScreen(INNER_LANDSCAPE.width, INNER_LANDSCAPE.height);
   let slot = await renderWorkspace();
   fireEvent.click(await slot.findByRole("button", { name: "Comments" }));
@@ -227,7 +227,7 @@ test("as BB remounts the page while you type in the code, another chapter before
   slot.lifecycle.unmount();
 });
 
-test("BB's pane narrowing, with the window as it was, still hides docked Comments until there's room", async () => {
+test("VesnALIA's pane narrowing, with the window as it was, still hides docked Comments until there's room", async () => {
   const screen = fakeScreen(INNER_LANDSCAPE.width, INNER_LANDSCAPE.height);
   const slot = await renderWorkspace();
   fireEvent.click(await slot.findByRole("button", { name: "Comments" }));
@@ -311,7 +311,7 @@ test("typing a comment in the code, chapters opened folded and docked as it unfo
   slot.lifecycle.unmount();
 });
 
-test("on a desktop, a window resize hides docked Comments as BB's pane narrowing does, leaves the focus where it is, and docks it again with room", async () => {
+test("on a desktop, a window resize hides docked Comments as VesnALIA's pane narrowing does, leaves the focus where it is, and docks it again with room", async () => {
   const screen = fakeScreen(DESKTOP.pane.width, DESKTOP.pane.height, { pointer: "fine", window: DESKTOP.window });
   const slot = await renderWorkspace();
   fireEvent.click(await slot.findByRole("button", { name: "Comments" }));
@@ -331,7 +331,7 @@ test("on a desktop, a window resize hides docked Comments as BB's pane narrowing
   slot.lifecycle.unmount();
 });
 
-test("an iPad's rotation hides docked Comments, as BB's pane narrowing does, and docks it again as it turns back; so does Split View", async () => {
+test("an iPad's rotation hides docked Comments, as VesnALIA's pane narrowing does, and docks it again as it turns back; so does Split View", async () => {
   const screen = fakeScreen(IPAD_LANDSCAPE.pane.width, IPAD_LANDSCAPE.pane.height, { window: IPAD_LANDSCAPE.window });
   const slot = await renderWorkspace();
   fireEvent.click(await slot.findByRole("button", { name: "Comments" }));
@@ -348,7 +348,7 @@ test("an iPad's rotation hides docked Comments, as BB's pane narrowing does, and
   slot.lifecycle.unmount();
 });
 
-test("chapters opened folded and docked as it unfolded hide as BB's pane narrows, rather than open over the code by themselves", async () => {
+test("chapters opened folded and docked as it unfolded hide as VesnALIA's pane narrows, rather than open over the code by themselves", async () => {
   const screen = fakeScreen(OUTER.width, OUTER.height);
   const slot = await renderWorkspace();
   fireEvent.click(slot.getByRole("button", { name: /^pr-42, Chapters:/ }));
@@ -365,7 +365,7 @@ test("chapters opened folded and docked as it unfolded hide as BB's pane narrows
   slot.lifecycle.unmount();
 });
 
-test("unfolded, chapters peeked at beside docked Comments and docked as it closes hide as BB's pane narrows, rather than open over the code", async () => {
+test("unfolded, chapters peeked at beside docked Comments and docked as it closes hide as VesnALIA's pane narrows, rather than open over the code", async () => {
   const screen = fakeScreen(OUTER.width, OUTER.height);
   const slot = await renderWorkspace();
   screen.fold(INNER_LANDSCAPE);

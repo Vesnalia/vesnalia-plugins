@@ -2,7 +2,7 @@
 // { bookId } from the inline card or the setup form; opened bare from the
 // panel launcher, it shows the newest build for this thread.
 import { useEffect, useState } from "react";
-import { useRpc, type PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { useRpc, type PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../server";
 import { BuildView } from "./BuildView";
 import { BOOK_ID, cachedLatest, rememberLatest, useBook } from "./useBook";

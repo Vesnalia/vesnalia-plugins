@@ -20,7 +20,7 @@ import {
 const node = (type: UiNode["type"], props: Record<string, Value> = {}): UiNode => ({ kind: "node", type, key: type, props });
 
 describe("mermaidNodeId", () => {
-  const svg = "bb-mermaid-_r_2f_-1";
+  const svg = "alia-mermaid-_r_2f_-1";
   it("reads the source id of flowchart, state, class and ER nodes, hyphens included", () => {
     expect(mermaidNodeId(`${svg}-flowchart-pedals-0`, svg, false)).toBe("pedals");
     expect(mermaidNodeId(`${svg}-flowchart-my-node-12`, svg, false)).toBe("my-node");

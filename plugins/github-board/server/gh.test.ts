@@ -75,7 +75,7 @@ describe("ghRunner", () => {
     const signal = new AbortController().signal;
     expect(await ghRunner(exec)(["auth", "token"], signal)).toBe("out");
     expect(await ghRunner(exec)(["api", "graphql"])).toBe("out");
-    // By name, not by a path found at load: bb's toolchain resolves it per call.
+    // By name, not by a path found at load: VesnALIA's toolchain resolves it per call.
     expect(calls.map((call) => [call.file, call.args])).toEqual([
       ["gh", ["auth", "token"]],
       ["gh", ["api", "graphql"]],

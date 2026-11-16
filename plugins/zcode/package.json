@@ -1,25 +1,17 @@
 {
-  "name": "bb-plugin-zcode",
+  "name": "alia-plugin-zcode",
   "version": "0.14.1",
   "private": true,
   "license": "MIT",
   "author": "Dmitry Polishuk (https://github.com/dpolishuk)",
-  "homepage": "https://github.com/dpolishuk/bb-zcode#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dpolishuk/bb-zcode.git"
-  },
-  "bugs": {
-    "url": "https://github.com/dpolishuk/bb-zcode/issues"
-  },
   "type": "module",
-  "description": "Run ZCode coding sessions inside bb.",
+  "description": "Run ZCode coding sessions inside VesnALIA.",
   "engines": {
     "node": ">=22",
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49 <0.7"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49 <0.7"
   },
-  "bb": {
+  "alia": {
     "name": "ZCode",
     "description": "Run local ZCode sessions with streaming replies, tool activity, approvals, and resume.",
     "branding": {
@@ -40,11 +32,11 @@
     "app": "./app.tsx"
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "zcode"
   ],
   "scripts": {
-    "build": "node scripts/bb.mjs plugin build .",
+    "build": "node scripts/alia.mjs plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:live": "tsx scripts/smoke-live.ts",
@@ -55,9 +47,9 @@
     "format:check": "prettier --check server.ts app.tsx src tests scripts docs skills knowledge AGENTS.md README.md CONTRIBUTING.md PLUGIN_OVERVIEW.md marketplace.json package.json tsconfig.json .github"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "cron-parser": "^5.5.0",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.49"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -69,5 +61,14 @@
     "vitest": "^4.1.1",
     "react": "^19.0.0",
     "@types/react": "^19.0.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/zcode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/zcode"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

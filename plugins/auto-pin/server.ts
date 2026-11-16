@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.events.on("thread.created", async ({ thread }) => {
+export default function plugin(alia: AliaPluginApi) {
+  alia.events.on("thread.created", async ({ thread }) => {
     if (
       thread.visibility !== "visible" ||
       thread.parentThreadId !== null ||
@@ -11,12 +11,12 @@ export default function plugin(bb: BbPluginApi) {
     }
 
     try {
-      await bb.sdk.threads.pin({ threadId: thread.id });
+      await alia.sdk.threads.pin({ threadId: thread.id });
     } catch (cause) {
       // Thread events are fire-and-forget, so a throw here is swallowed into
       // the plugin's handler stats. Without this line the only symptom is a
       // thread that quietly did not get pinned, with nothing to look at.
-      bb.log.warn(
+      alia.log.warn(
         `could not pin thread ${thread.id}: ` +
           (cause instanceof Error ? cause.message : String(cause)),
       );

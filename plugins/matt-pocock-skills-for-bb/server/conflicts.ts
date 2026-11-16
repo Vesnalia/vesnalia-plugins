@@ -6,13 +6,13 @@ import { promisify } from "node:util";
 import { parse } from "yaml";
 import { z } from "zod";
 import { mirrorConfig } from "../mirror.config.ts";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { bbNameSchema, type Catalog } from "../shared/catalog.ts";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { aliaNameSchema, type Catalog } from "../shared/catalog.ts";
 import type { ConflictSource, ScanSnapshot, ProviderProbe } from "../shared/conflicts.ts";
 import type { ProjectState, ResolvedSkill } from "../shared/state.ts";
 import type { SkillSelection } from "./resolve.ts";
 
-export const pluginId = "matt-pocock-skills-for-bb";
+export const pluginId = "matt-pocock-skills-for-alia";
 export interface Discovery {
   sources: ConflictSource[];
   errors: string[];
@@ -20,30 +20,30 @@ export interface Discovery {
 }
 export type Discover = () => Promise<Discovery>;
 
-// bb itself removes a Matt skill in two global cases: another plugin's same-name skill (bb drops
-// both) and a bb user skill (it overrides plugin skills). Both are read once per scan, never per
-// project, environment, or provider. Project .bb/skills and provider-native skills are not
-// detected: the first is per workspace, and providers keep native copies alongside bb's.
+// VesnALIA itself removes a Matt skill in two global cases: another plugin's same-name skill (VesnALIA drops
+// both) and a VesnALIA user skill (it overrides plugin skills). Both are read once per scan, never per
+// project, environment, or provider. Project .vesnalia/skills and provider-native skills are not
+// detected: the first is per workspace, and providers keep native copies alongside VesnALIA's.
 // See compat/AUDIT.md.
 const pluginsSchema = z.object({ plugins: z.array(z.object({ id: z.string(), enabled: z.boolean(), rootDir: z.string(),
   version: z.string().nullable(), capabilities: z.array(z.object({ kind: z.string(), id: z.string() })) })) });
-export function bbSkillDiscovery(bb: BbPluginApi, names: readonly string[], warn: (message: string) => void = () => {}): Discover {
+export function aliaSkillDiscovery(alia: AliaPluginApi, names: readonly string[], warn: (message: string) => void = () => {}): Discover {
   return async () => {
     const result: Discovery = { sources: [], errors: [], affectedUnknownNames: [] };
     let plugins;
-    try { plugins = pluginsSchema.parse(await bb.sdk.plugins.list()).plugins; }
+    try { plugins = pluginsSchema.parse(await alia.sdk.plugins.list()).plugins; }
     catch (error) { return { sources: [], errors: [String(error)], affectedUnknownNames: [...names] }; }
     for (const plugin of plugins) {
       if (plugin.id === pluginId) continue;
-      for (const capability of plugin.capabilities) if (capability.kind === "skill" && bbNameSchema.safeParse(capability.id).success) {
-        result.sources.push({ name: capability.id, scope: "bb-plugin", path: plugin.rootDir, providerId: null, pluginId: plugin.id,
+      for (const capability of plugin.capabilities) if (capability.kind === "skill" && aliaNameSchema.safeParse(capability.id).success) {
+        result.sources.push({ name: capability.id, scope: "alia-plugin", path: plugin.rootDir, providerId: null, pluginId: plugin.id,
           version: plugin.version, active: plugin.enabled, selection: "unknown", evidence: ["Advertised plugin skill; session selection is not published"] });
       }
     }
     let dataDir: string | undefined;
-    try { dataDir = bb.server.experimental_dataDir; } catch { dataDir = undefined; }
-    // An older bb without the API still gets plugin detection rather than holding every skill back.
-    if (!dataDir) { warn("bb does not expose its data directory; bb user skills are not checked for same-name clashes"); return result; }
+    try { dataDir = alia.server.experimental_dataDir; } catch { dataDir = undefined; }
+    // An older VesnALIA without the API still gets plugin detection rather than holding every skill back.
+    if (!dataDir) { warn("alia does not expose its data directory; VesnALIA user skills are not checked for same-name clashes"); return result; }
     const user = await userSkills(join(dataDir, "skills"));
     if ("error" in user) return { ...result, errors: [user.error], affectedUnknownNames: [...names] };
     result.sources.push(...user.sources);
@@ -57,7 +57,7 @@ export async function userSkills(root: string): Promise<{ sources: ConflictSourc
   try { entries = await readdir(root, { withFileTypes: true }); }
   catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") return { sources: [] };
-    return { error: `Cannot read bb user skills at ${root}: ${String(error)}` };
+    return { error: `Cannot read VesnALIA user skills at ${root}: ${String(error)}` };
   }
   const sources: ConflictSource[] = [];
   for (const entry of entries) if (!entry.name.startsWith(".") && (entry.isDirectory() || entry.isSymbolicLink())) {
@@ -66,22 +66,22 @@ export async function userSkills(root: string): Promise<{ sources: ConflictSourc
     try { text = await readFile(path, "utf8"); } catch { continue; }
     let declared: unknown;
     try { declared = parse(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text)?.[1] ?? "")?.name; } catch { declared = undefined; }
-    const name = [declared, entry.name].find(value => bbNameSchema.safeParse(value).success) as string | undefined;
-    if (name) sources.push({ name, scope: "bb-user", path, providerId: null, pluginId: null, version: null, active: true,
-      selection: "unknown", evidence: ["bb user skill; it overrides plugin skills with the same name"] });
+    const name = [declared, entry.name].find(value => aliaNameSchema.safeParse(value).success) as string | undefined;
+    if (name) sources.push({ name, scope: "alia-user", path, providerId: null, pluginId: null, version: null, active: true,
+      selection: "unknown", evidence: ["alia user skill; it overrides plugin skills with the same name"] });
   }
   return { sources };
 }
 
 export function resolveConflictChoices(input: { catalog: Catalog; selections: readonly SkillSelection[]; projectId: string; project: ProjectState;
-  snapshot: ScanSnapshot; bbVersion: string; probes: readonly ProviderProbe[] }) {
-  const { catalog, selections, projectId, project, snapshot, bbVersion, probes } = input;
+  snapshot: ScanSnapshot; aliaVersion: string; probes: readonly ProviderProbe[] }) {
+  const { catalog, selections, projectId, project, snapshot, aliaVersion, probes } = input;
   const applicable = snapshot.sources.filter(item => item.pluginId !== pluginId && item.active && item.selection !== "omitted");
   const unknown = (canonical: string, alias: string) => snapshot.freshness === "invalidated" ||
     (!snapshot.complete && (snapshot.affectedUnknownNames.length === 0 || snapshot.affectedUnknownNames.includes(canonical) || snapshot.affectedUnknownNames.includes(alias)));
-  // Plugin ordering is bb's own resolver, so a passing probe on any provider covers this bb version.
-  const orderingPassed = bbVersion !== "unknown" && probes.some(probe => probe.requirement === "CMP-204" && probe.status === "passed" &&
-    probe.bbVersion === bbVersion);
+  // Plugin ordering is VesnALIA's own resolver, so a passing probe on any provider covers this VesnALIA version.
+  const orderingPassed = aliaVersion !== "unknown" && probes.some(probe => probe.requirement === "CMP-204" && probe.status === "passed" &&
+    probe.aliaVersion === aliaVersion);
   const definitions = new Map(catalog.skills.map(skill => [skill.canonicalId, skill]));
   const rows: ResolvedSkill[] = selections.map(selection => {
     const definition = definitions.get(selection.canonicalId);
@@ -89,7 +89,7 @@ export function resolveConflictChoices(input: { catalog: Catalog; selections: re
     const choice = project.conflicts[selection.canonicalId] ?? "unresolved";
     const conflicts = applicable.filter(item => item.name === definition.canonicalId);
     const aliasTaken = applicable.some(item => item.name === definition.aliasName);
-    const unsupported = conflicts.filter(item => item.scope !== "bb-plugin" || !item.pluginId || item.pluginId.localeCompare(pluginId) <= 0);
+    const unsupported = conflicts.filter(item => item.scope !== "alia-plugin" || !item.pluginId || item.pluginId.localeCompare(pluginId) <= 0);
     const oursBlockedReason = unknown(definition.canonicalId, definition.aliasName) ? "Discovery is incomplete or invalidated for this name"
       : unsupported.length ? `Keep Matt's canonical is unavailable with ${unsupported.map(item => item.scope).join(", ")}. Use its plugin settings or move your skill yourself`
       : !orderingPassed ? undefined : null;
@@ -107,13 +107,13 @@ export function resolveConflictChoices(input: { catalog: Catalog; selections: re
         outcome = aliasTaken ? "blocked" : "alias-selected";
         name = aliasTaken ? null : definition.aliasName;
         reason = aliasTaken ? "The Matt alias is taken" : "Free alias selected; the canonical source remains available";
-      } else if (choice === "ours" && (!orderingPassed || conflicts.some(item => item.scope !== "bb-plugin" || !item.pluginId || item.pluginId.localeCompare(pluginId) <= 0))) {
-        outcome = "blocked"; reason = !orderingPassed ? `CMP-204 ordering has not passed for bb ${bbVersion}`
+      } else if (choice === "ours" && (!orderingPassed || conflicts.some(item => item.scope !== "alia-plugin" || !item.pluginId || item.pluginId.localeCompare(pluginId) <= 0))) {
+        outcome = "blocked"; reason = !orderingPassed ? `CMP-204 ordering has not passed for VesnALIA ${aliaVersion}`
           : "Keep Matt's canonical is unavailable with this source. Use its plugin settings or move your skill yourself";
       } else if (choice === "unresolved" && conflicts.length > 0) reason = "Same-name sources require a project choice; Matt yields by default";
       else { outcome = "canonical-selected"; name = definition.canonicalId; reason = "Canonical selected from a complete scope"; }
     }
-    return { ...selection, active: name !== null, bbName: name, outcome,
+    return { ...selection, active: name !== null, aliaName: name, outcome,
       reason: selection.active && name === null ? outcome === "unknown" ? "off-scan" : "off-conflict" : selection.reason,
       conflict: { projectId, canonicalId: selection.canonicalId, requestedChoice: choice, outcome,
         effectiveName: name, reason, sources: snapshot.sources.filter(item => item.pluginId !== pluginId &&
@@ -140,9 +140,9 @@ export function resolveConflicts(input: Parameters<typeof resolveConflictChoices
     const required = catalog.skills.some(caller => selections.some(item => item.canonicalId === caller.canonicalId && item.active) &&
       caller.dependsOn.some(edge => (edge.kind === "hard" || edge.kind === "conditional-hard") && edge.canonicalId === row.canonicalId));
     if (required) {
-      row.active = true; row.bbName = skill.aliasName; row.outcome = "alias-selected";
+      row.active = true; row.aliaName = skill.aliasName; row.outcome = "alias-selected";
       row.reason = selections.find(item => item.canonicalId === row.canonicalId)?.reason ?? row.reason;
-      row.conflict = { ...row.conflict, outcome: row.outcome, effectiveName: row.bbName, reason: "Internal dependency alias" };
+      row.conflict = { ...row.conflict, outcome: row.outcome, effectiveName: row.aliaName, reason: "Internal dependency alias" };
     }
   }
   let changed = true;
@@ -153,7 +153,7 @@ export function resolveConflicts(input: Parameters<typeof resolveConflictChoices
       const blockedBy = definitions.get(row.canonicalId)?.dependsOn.flatMap(edge =>
         (edge.kind === "hard" || edge.kind === "conditional-hard") && !byId.get(edge.canonicalId)?.active ? [edge.canonicalId] : []) ?? [];
       if (blockedBy.length) {
-        row.active = false; row.bbName = null; row.outcome = "blocked"; row.reason = "off-dependency"; row.blockedBy = blockedBy;
+        row.active = false; row.aliaName = null; row.outcome = "blocked"; row.reason = "off-dependency"; row.blockedBy = blockedBy;
         row.conflict = { ...row.conflict, outcome: "blocked", effectiveName: null, reason: `Unavailable dependencies: ${blockedBy.join(", ")}` };
         changed = true;
       }
@@ -167,7 +167,7 @@ export function resolveConflicts(input: Parameters<typeof resolveConflictChoices
         byId.get(edge.canonicalId)?.active && !reachable.has(edge.canonicalId)) { reachable.add(edge.canonicalId); pending.push(edge.canonicalId); }
     }
     for (const row of rows) if (row.active && (row.conflict.reason === "Internal dependency alias" || !row.chosen) && !reachable.has(row.canonicalId)) {
-      row.active = false; row.bbName = null; row.outcome = "yielded";
+      row.active = false; row.aliaName = null; row.outcome = "yielded";
       row.conflict = { ...row.conflict, outcome: "yielded", effectiveName: null, reason: "No active Matt caller needs this alias" };
       changed = true;
     }
@@ -179,13 +179,13 @@ export function resolveConflicts(input: Parameters<typeof resolveConflictChoices
   }
   const lines = ["Matt routing reads the selected Matt SKILL.md and stops before execution."];
   for (const row of rows) if (row.active && row.outcome === "alias-selected") {
-    lines.push(`when Matt's skills reference ${row.canonicalId}, load ${row.bbName}`);
-    if (row.conflict.internalDependencyFor.length) lines.push(`Matt's ${row.canonicalId} runs as ${row.bbName} for ${row.conflict.internalDependencyFor.join(", ")}. Internal plumbing; do not recommend it as an ordinary route.`);
+    lines.push(`when Matt's skills reference ${row.canonicalId}, load ${row.aliaName}`);
+    if (row.conflict.internalDependencyFor.length) lines.push(`Matt's ${row.canonicalId} runs as ${row.aliaName} for ${row.conflict.internalDependencyFor.join(", ")}. Internal plumbing; do not recommend it as an ordinary route.`);
   }
   const yielded = rows.filter(row => !row.active).map(row => row.canonicalId);
   if (yielded.length) lines.push(`Unavailable Matt routes: ${yielded.join(", ")}. ask-matt skips these routes and recommends effective alias invocations.`);
   if (providerId?.startsWith("acp-")) {
-    const userOnly = rows.filter(row => row.active && definitions.get(row.canonicalId)?.userInvoked).map(row => row.bbName);
+    const userOnly = rows.filter(row => row.active && definitions.get(row.canonicalId)?.userInvoked).map(row => row.aliaName);
     if (userOnly.length) lines.push(`Advisory user-only intent (ACP does not enforce it): ${userOnly.join(", ")}. Load only on explicit user request or an explicit Matt workflow call.`);
   }
   return { snapshot, resolved: rows, addendum: lines.join("\n") };
@@ -276,8 +276,8 @@ export class PluginScan {
   }
 }
 
-export async function installedBbVersion(): Promise<string> {
-  try { return (await promisify(execFile)("bb", ["--version"], { timeout: 5000 })).stdout.trim().replace(/^bb\s+/, ""); }
+export async function installedAliaVersion(): Promise<string> {
+  try { return (await promisify(execFile)("alia", ["--version"], { timeout: 5000 })).stdout.trim().replace(/^alia\s+/, ""); }
   catch { return "unknown"; }
 }
 
@@ -299,11 +299,11 @@ export async function createProviderProbeFixture() {
     await marker(base, "probe-collision", "NATIVE");
     await marker(base, "probe-keep", "KEEP");
   }
-  await marker(injected, "probe-collision", "BB");
+  await marker(injected, "probe-collision", "ALIA");
   await marker(injected, "probe-user-only", "USER_ONLY", true);
   const claudePlugin = join(root, "claude-plugin");
   await mkdir(join(claudePlugin, ".claude-plugin"), { recursive: true });
-  await writeFile(join(claudePlugin, ".claude-plugin/plugin.json"), JSON.stringify({ name: "bb-global-skills", skills: "./skills" }));
+  await writeFile(join(claudePlugin, ".claude-plugin/plugin.json"), JSON.stringify({ name: "alia-global-skills", skills: "./skills" }));
   await symlink(injected, join(claudePlugin, "skills"), "dir");
   return { root, home, project, injected, records, claudePlugin,
     childEnv: { HOME: home, CODEX_HOME: join(home, ".codex"), CLAUDE_CONFIG_DIR: join(home, ".claude"), TMPDIR: temporary } };

@@ -17,19 +17,19 @@ import {
   definePluginApp,
   experimental_useSidebarThreadActions,
   experimental_useSidebarThreads,
-  useBbContext,
+  useAliaContext,
   useRealtime,
   useRealtimeConnectionState,
   useSettings,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   PluginHomepageSectionProps,
   PluginSidebarThread,
   PluginThreadHeaderActionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk";
 import { chatStatusFor } from "./lib/chat-status";
 import {
   DEFAULT_WORKSPACE_ID,
@@ -1069,7 +1069,7 @@ function wheelTargetsTabs(event: WheelEvent, elements: readonly (HTMLElement | n
 }
 
 function ChatTabsOverlay() {
-  const context = useBbContext();
+  const context = useAliaContext();
   const resolveRpc = useRpc<typeof rpcContract>();
   const resolveRpcRef = useRef(resolveRpc);
   resolveRpcRef.current = resolveRpc;
@@ -1348,7 +1348,7 @@ function ChatTabsOverlay() {
 
   const handleTabDragStart = useCallback((event: DragEvent<HTMLDivElement>, entry: TabEntry) => {
     const target = event.target;
-    if (!entry.pinned || (target instanceof Element && target.closest(".bb-chat-tab-action"))) {
+    if (!entry.pinned || (target instanceof Element && target.closest(".alia-chat-tab-action"))) {
       event.preventDefault();
       return;
     }
@@ -2529,7 +2529,7 @@ function ChatTabsOverlay() {
       dropTarget?.targetThreadId === targetThreadId && dropTarget.position === position;
     return (
       <div
-        className="bb-chat-tab-drop-slot"
+        className="alia-chat-tab-drop-slot"
         data-active={active ? "true" : "false"}
         data-drop-position={position}
         data-drop-target={targetThreadId}
@@ -2537,7 +2537,7 @@ function ChatTabsOverlay() {
         onDragOver={(event) => handleDropSlotDragOver(event, targetThreadId, position)}
         onDrop={(event) => commitTabDrop(event, { targetThreadId, position })}
       >
-        <span className="bb-chat-tab-drop-slot-hit" aria-hidden="true" />
+        <span className="alia-chat-tab-drop-slot-hit" aria-hidden="true" />
       </div>
     );
   };
@@ -2570,9 +2570,9 @@ function ChatTabsOverlay() {
     const item = (
       <MenuItem
         key={tab.entry.threadId}
-        id={searchIndex < 0 ? undefined : `bb-chat-tabs-search-result-${searchIndex}`}
+        id={searchIndex < 0 ? undefined : `alia-chat-tabs-search-result-${searchIndex}`}
         data-selected={searchIndex >= 0 && searchIndex === selectedSearchIndex ? "true" : undefined}
-        className="bb-chat-tabs-list-menu-item"
+        className="alia-chat-tabs-list-menu-item"
         disabled={unavailableReason !== null && children.length === 0}
         aria-current={active ? "page" : undefined}
         aria-label={
@@ -2591,7 +2591,7 @@ function ChatTabsOverlay() {
             ? (event) => {
                 if (
                   event.target instanceof Element &&
-                  event.target.closest(".bb-chat-tabs-child-expand")
+                  event.target.closest(".alia-chat-tabs-child-expand")
                 )
                   return;
                 event.preventDefault();
@@ -2610,43 +2610,43 @@ function ChatTabsOverlay() {
             : undefined
         }
       >
-        <span className="bb-chat-tabs-list-menu-copy">
+        <span className="alia-chat-tabs-list-menu-copy">
           <span
-            className="bb-chat-tabs-list-menu-title"
+            className="alia-chat-tabs-list-menu-title"
             data-unavailable={unavailableReason ?? undefined}
             title={unavailableLabel === null ? tab.title : `${unavailableLabel}: ${tab.title}`}
           >
             {tab.title}
           </span>
-          <span className="bb-chat-tabs-list-menu-meta">
+          <span className="alia-chat-tabs-list-menu-meta">
             {tab.isSubthread ? <SubthreadBadge locale={locale} /> : null}
-            <span className="bb-chat-tabs-list-menu-project" title={tab.projectName}>
+            <span className="alia-chat-tabs-list-menu-project" title={tab.projectName}>
               {tab.projectName}
             </span>
             {unavailableLabel !== null ? (
-              <span className="bb-chat-tabs-list-menu-unavailable-label" title={unavailableLabel}>
+              <span className="alia-chat-tabs-list-menu-unavailable-label" title={unavailableLabel}>
                 {unavailableLabel}
               </span>
             ) : status !== null ? (
               <span
-                className="bb-chat-tabs-list-menu-status"
+                className="alia-chat-tabs-list-menu-status"
                 data-status={status.kind}
                 title={status.text}
               >
-                <span className="bb-chat-tabs-list-menu-status-dot" aria-hidden />
+                <span className="alia-chat-tabs-list-menu-status-dot" aria-hidden />
                 {status.text}
               </span>
             ) : null}
           </span>
         </span>
-        {active ? <Icon name="Check" className="bb-chat-tabs-list-menu-check" aria-hidden /> : null}
+        {active ? <Icon name="Check" className="alia-chat-tabs-list-menu-check" aria-hidden /> : null}
         {children.length > 0 ? (
           <span
-            className="bb-chat-tabs-child-expand"
+            className="alia-chat-tabs-child-expand"
             aria-hidden
             title={t("Subthreads of “{title}”", { title: tab.title })}
           >
-            <Icon name="ChevronRight" className="bb-chat-tabs-child-chevron" />
+            <Icon name="ChevronRight" className="alia-chat-tabs-child-chevron" />
           </span>
         ) : null}
       </MenuItem>
@@ -2659,7 +2659,7 @@ function ChatTabsOverlay() {
         <DropdownMenu.Portal>
           <DropdownMenu.SubContent
             lang={locale}
-            className="bb-chat-tabs-list-menu"
+            className="alia-chat-tabs-list-menu"
             aria-label={t("Subthreads of “{title}”", { title: tab.title })}
             aria-labelledby={undefined}
             sideOffset={4}
@@ -2689,7 +2689,7 @@ function ChatTabsOverlay() {
   };
 
   const tabListSwitcher = tabListMenuHasNavigation ? (
-    <div className="bb-chat-tabs-list-switcher" data-position={tabListButtonPosition}>
+    <div className="alia-chat-tabs-list-switcher" data-position={tabListButtonPosition}>
       <DropdownMenu.Root
         dir={locale === "ar" ? "rtl" : "ltr"}
         modal={false}
@@ -2706,7 +2706,7 @@ function ChatTabsOverlay() {
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
-            className="bb-chat-tabs-list-trigger"
+            className="alia-chat-tabs-list-trigger"
             aria-label={t("Open chat list")}
             title={t("Open tab list")}
             onPointerDown={(event) => {
@@ -2720,14 +2720,14 @@ function ChatTabsOverlay() {
             onPointerLeave={(event) => leaveTabListMenu(event.pointerType)}
             onPointerCancel={clearListHoverTimers}
           >
-            <Icon name="ListView" className="bb-chat-tabs-list-icon" aria-hidden />
+            <Icon name="ListView" className="alia-chat-tabs-list-icon" aria-hidden />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
             lang={locale}
-            id="bb-chat-tabs-menu-content"
-            className="bb-chat-tabs-list-menu"
+            id="alia-chat-tabs-menu-content"
+            className="alia-chat-tabs-list-menu"
             aria-label={t("Open chat list")}
             side="bottom"
             align={tabListButtonPosition === "right" ? "end" : "start"}
@@ -2737,7 +2737,7 @@ function ChatTabsOverlay() {
               // Trigger clicks are handled by its own toggle/latch logic, not dismissal.
               if (
                 event.target instanceof Element &&
-                event.target.closest(".bb-chat-tabs-list-trigger")
+                event.target.closest(".alia-chat-tabs-list-trigger")
               ) {
                 event.preventDefault();
               }
@@ -2752,17 +2752,17 @@ function ChatTabsOverlay() {
             onPointerEnter={(event) => enterTabListMenu(event.pointerType)}
             onPointerLeave={(event) => leaveTabListMenu(event.pointerType)}
           >
-            <div className="bb-chat-tabs-list-menu-search">
-              <Icon name="Search" className="bb-chat-tabs-list-menu-search-icon" aria-hidden />
+            <div className="alia-chat-tabs-list-menu-search">
+              <Icon name="Search" className="alia-chat-tabs-list-menu-search-icon" aria-hidden />
               <input
                 ref={searchInputRef}
                 type="search"
-                className="bb-chat-tabs-list-menu-search-input"
+                className="alia-chat-tabs-list-menu-search-input"
                 aria-label={t("Search chats by title or project")}
-                aria-controls="bb-chat-tabs-menu-content"
+                aria-controls="alia-chat-tabs-menu-content"
                 aria-activedescendant={
                   selectedSearchIndex >= 0 && selectedSearchIndex < navigableMenuTabs.length
-                    ? `bb-chat-tabs-search-result-${selectedSearchIndex}`
+                    ? `alia-chat-tabs-search-result-${selectedSearchIndex}`
                     : undefined
                 }
                 placeholder={t("Search chats or projects...")}
@@ -2781,7 +2781,7 @@ function ChatTabsOverlay() {
                   ) {
                     event.preventDefault();
                     const index = selectedSearchIndex < 0 ? 0 : selectedSearchIndex;
-                    document.getElementById(`bb-chat-tabs-search-result-${index}`)?.focus();
+                    document.getElementById(`alia-chat-tabs-search-result-${index}`)?.focus();
                     return;
                   }
                   if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -2814,38 +2814,38 @@ function ChatTabsOverlay() {
             </div>
             {searchActive ? (
               <DropdownMenu.Group
-                id="bb-chat-tabs-search-results"
-                className="bb-chat-tabs-list-menu-search-results"
+                id="alia-chat-tabs-search-results"
+                className="alia-chat-tabs-list-menu-search-results"
                 aria-label={t("Search results")}
                 aria-busy={searchPending}
               >
                 {searchResults.length > 0 ? (
                   searchResults.map((tab) => renderTabListMenuItem(tab))
                 ) : (
-                  <span className="bb-chat-tabs-list-menu-search-empty">
+                  <span className="alia-chat-tabs-list-menu-search-empty">
                     {t(searchPending ? "Search chats..." : "No matching chats")}
                   </span>
                 )}
               </DropdownMenu.Group>
             ) : null}
             {!searchActive && displayedPinnedTabs.length > 0 ? (
-              <DropdownMenu.Group className="bb-chat-tabs-list-menu-group">
-                <DropdownMenu.Label className="bb-chat-tabs-list-menu-group-label">
+              <DropdownMenu.Group className="alia-chat-tabs-list-menu-group">
+                <DropdownMenu.Label className="alia-chat-tabs-list-menu-group-label">
                   {t("Pinned")}
                 </DropdownMenu.Label>
                 {displayedPinnedTabs.map(renderMenuTab)}
               </DropdownMenu.Group>
             ) : null}
             {!searchActive && visibleHistoryMenuTabs.length > 0 ? (
-              <DropdownMenu.Group className="bb-chat-tabs-list-menu-group">
-                <DropdownMenu.Label className="bb-chat-tabs-list-menu-group-label">
+              <DropdownMenu.Group className="alia-chat-tabs-list-menu-group">
+                <DropdownMenu.Label className="alia-chat-tabs-list-menu-group-label">
                   {t("History")}
                 </DropdownMenu.Label>
                 {visibleHistoryMenuTabs.map((tab, index) => (
                   <Fragment key={tab.entry.threadId}>
                     {index > 0 && index % HISTORY_MENU_PAGE_SIZE === 0 ? (
                       <DropdownMenu.Separator
-                        className="bb-chat-tabs-list-menu-history-page-separator"
+                        className="alia-chat-tabs-list-menu-history-page-separator"
                         aria-label={t("Next history page")}
                       />
                     ) : null}
@@ -2856,7 +2856,7 @@ function ChatTabsOverlay() {
             ) : null}
             {!searchActive && hasMoreHistory ? (
               <DropdownMenu.Item
-                className="bb-chat-tabs-list-menu-more"
+                className="alia-chat-tabs-list-menu-more"
                 data-pending={historyMorePending ? "true" : "false"}
                 aria-label={t("Show {count} more history chats", {
                   count: Math.min(
@@ -2880,7 +2880,7 @@ function ChatTabsOverlay() {
                 }}
               >
                 <span>{t("More")}</span>
-                <span className="bb-chat-tabs-list-menu-more-count">
+                <span className="alia-chat-tabs-list-menu-more-count">
                   {displayedHistoryTabs.length - visibleHistoryMenuTabs.length}
                 </span>
               </DropdownMenu.Item>
@@ -2893,7 +2893,7 @@ function ChatTabsOverlay() {
 
   return (
     <aside
-      id="bb-chat-tabs-overlay"
+      id="alia-chat-tabs-overlay"
       ref={overlayBoundsRef}
       lang={locale}
       data-docked={shouldDock ? "true" : "false"}
@@ -2902,27 +2902,27 @@ function ChatTabsOverlay() {
       aria-hidden={!shouldDock}
     >
       <div
-        className="bb-chat-tabs-shell"
+        className="alia-chat-tabs-shell"
         data-scrollable={hasHorizontalOverflow ? "true" : "false"}
       >
         <div
           ref={topScrollbarRef}
-          className="bb-chat-tabs-top-scrollbar"
+          className="alia-chat-tabs-top-scrollbar"
           aria-hidden={!hasHorizontalOverflow}
           aria-label={t("Horizontal tab scroll")}
           tabIndex={hasHorizontalOverflow ? 0 : -1}
         >
           <div
             ref={topScrollbarSpacerRef}
-            className="bb-chat-tabs-top-scrollbar-spacer"
+            className="alia-chat-tabs-top-scrollbar-spacer"
             aria-hidden
           />
         </div>
-        <div className="bb-chat-tabs-content-row">
+        <div className="alia-chat-tabs-content-row">
           {tabListButtonPosition === "left" ? tabListSwitcher : null}
           <div
             ref={stripRef}
-            className="bb-chat-tabs-strip"
+            className="alia-chat-tabs-strip"
             data-dragging={draggedTab === null ? "false" : "true"}
             aria-label={t("Open chats")}
             onDragOver={(event) => {
@@ -3016,12 +3016,12 @@ function ChatTabsOverlay() {
                             tabElementsRef.current.set(entry.threadId, element);
                           }
                         }}
-                        className="bb-chat-tab"
+                        className="alia-chat-tab"
                         data-colored={tabColor === undefined ? undefined : "true"}
                         style={
                           tabColor === undefined
                             ? undefined
-                            : ({ "--bb-chat-tab-color": tabColor } as CSSProperties)
+                            : ({ "--alia-chat-tab-color": tabColor } as CSSProperties)
                         }
                         data-active={active ? "true" : "false"}
                         data-dragging={dragging ? "true" : "false"}
@@ -3066,7 +3066,7 @@ function ChatTabsOverlay() {
                         {editing ? (
                           <input
                             autoFocus
-                            className="bb-chat-tab-inline-rename"
+                            className="alia-chat-tab-inline-rename"
                             aria-label={t("Rename tab “{title}”", { title })}
                             maxLength={300}
                             value={inlineRename?.value ?? title}
@@ -3094,7 +3094,7 @@ function ChatTabsOverlay() {
                         ) : (
                           <button
                             type="button"
-                            className="bb-chat-tab-select"
+                            className="alia-chat-tab-select"
                             aria-current={active ? "page" : undefined}
                             aria-description={`${t("Click opens the chat.")} ${t("Project: {project}", { project: projectName })}. ${t(
                               preview ? "Preview tab." : "Pinned tab. Drag it to change the order.",
@@ -3125,7 +3125,7 @@ function ChatTabsOverlay() {
                           >
                             {isWaiting ? (
                               <span
-                                className="bb-chat-tab-waiting"
+                                className="alia-chat-tab-waiting"
                                 title={waitingLabel}
                                 aria-hidden
                               >
@@ -3133,15 +3133,15 @@ function ChatTabsOverlay() {
                               </span>
                             ) : isWorking ? (
                               <span
-                                className="bb-chat-tab-working"
+                                className="alia-chat-tab-working"
                                 data-nested-only={nestedOnly ? "true" : "false"}
                                 aria-hidden
                               />
                             ) : null}
                             {isSubthread ? <SubthreadBadge locale={locale} /> : null}
-                            <span className="bb-chat-tab-copy">
+                            <span className="alia-chat-tab-copy">
                               <span
-                                className="bb-chat-tab-title"
+                                className="alia-chat-tab-title"
                                 onDoubleClick={(event) => {
                                   if (!entry.pinned) return;
                                   event.preventDefault();
@@ -3152,7 +3152,7 @@ function ChatTabsOverlay() {
                                 {displayTitle}
                               </span>
                             </span>
-                            {isUnread ? <span className="bb-chat-tab-unread" aria-hidden /> : null}
+                            {isUnread ? <span className="alia-chat-tab-unread" aria-hidden /> : null}
                           </button>
                         )}
                         {!editing ? (
@@ -3174,7 +3174,7 @@ function ChatTabsOverlay() {
                         ) : null}
                         <button
                           type="button"
-                          className="bb-chat-tab-action"
+                          className="alia-chat-tab-action"
                           aria-label={t("Close tab “{title}”", { title })}
                           title={t("Close tab")}
                           onClick={(event) => {
@@ -3195,7 +3195,7 @@ function ChatTabsOverlay() {
             )}
             {error === null ? null : (
               <span
-                className="bb-chat-tabs-error"
+                className="alia-chat-tabs-error"
                 role="status"
                 title={workspaceErrorMessage(locale, error)}
               >
@@ -3332,7 +3332,7 @@ function WorkspaceHomepageVisit({
   return (
     <>
       {showPinnedTabsList && (removalFailed || error !== null) ? (
-        <p role="alert" className="bb-chat-tabs-error">
+        <p role="alert" className="alia-chat-tabs-error">
           {removalFailed
             ? translate(locale, "Could not update the chat.")
             : workspaceErrorMessage(locale, error)}

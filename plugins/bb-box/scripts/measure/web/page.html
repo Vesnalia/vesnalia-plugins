@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#222;overflow:hidden}#screen{position:relative;width:100vw;height:100vh}.absolute{position:absolute}.inset-0{inset:0}</style></head><body><div id="screen"></div>
 <script type="module">
-// One viewer of a desktop showing scene.html (060), through BB's server:
+// One viewer of a desktop showing scene.html (060), through VesnALIA's server:
 // video (the panel's SelkiesSession) or VNC (noVNC at the panel's quality
 // 2). The page's viewport is the desktop's size, so a pixel here is one of
 // the desktop's. Every frame drawn is logged: the red block's left edge as
@@ -71,7 +71,7 @@ const screen = document.getElementById("screen");
 if (kind === "video") {
   const draw = CanvasRenderingContext2D.prototype.drawImage;
   CanvasRenderingContext2D.prototype.drawImage = function (image, ...rest) { const out = draw.call(this, image, ...rest); if (typeof VideoFrame !== "undefined" && image instanceof VideoFrame) { canvas = this.canvas; queueMicrotask(sample); } return out; };
-  // ws: a stream server reached directly, to test one without BB's server.
+  // ws: a stream server reached directly, to test one without VesnALIA's server.
   window.session = new SelkiesSession(q.get("ws") ?? `ws://${location.host}/bb?box=${q.get("box")}&viewer=${q.get("viewer")}&stream=selkies`);
   screen.appendChild(window.session.element);
   window.connected = () => window.session.connection.state === "connected";

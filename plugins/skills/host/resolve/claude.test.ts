@@ -29,7 +29,7 @@ async function writeManifest(plugins: unknown): Promise<void> {
 }
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-claude-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-claude-"));
   claudeHome = path.join(root, "claude-home");
 });
 
@@ -191,7 +191,7 @@ describe("resolveClaudeSkills", () => {
     await writeFile(path.join(worktree, ".git"), `gitdir: ${gitDir}\n`, "utf8");
   }
 
-  // Claude keys a project by its main checkout, and bb runs most threads in
+  // Claude keys a project by its main checkout, and VesnALIA runs most threads in
   // worktrees kept somewhere else entirely.
   test("includes a project-scoped plugin inside a linked worktree of its project", async () => {
     const projectPath = path.join(root, "ios-app");

@@ -2,7 +2,7 @@ import {
   addTokenUsage,
   ZERO_TOKEN_USAGE,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { record } from "./protocol.js";
 
 const count = (v: unknown): number | undefined =>

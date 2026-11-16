@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ThreadChat, experimental_copyToClipboard, experimental_useRpcQuery, useSettings, type ExperimentalThreadActionTabProps } from "@get-bb/plugin-sdk/app";
+import { ThreadChat, experimental_copyToClipboard, experimental_useRpcQuery, useSettings, type ExperimentalThreadActionTabProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -57,7 +57,7 @@ const ON_ITS_WAY_MS = 30_000;
 function ViewSwitch({ view, canRender, onChange }: { view: View; canRender: boolean; onChange: (view: View) => void }) {
   return (
     <div role="group" aria-label="How the Flares tab shows flares" className="flex shrink-0 items-center rounded-md border border-border p-0.5">
-      <span title={canRender ? "Each flare as bb shows a reply" : "Shown once the next flare reaches this thread's renderer"}>
+      <span title={canRender ? "Each flare as VesnALIA shows a reply" : "Shown once the next flare reaches this thread's renderer"}>
         <Button variant="ghost" size="sm" className="h-7 px-2" aria-pressed={view === "rendered"} disabled={!canRender} onClick={() => onChange("rendered")}>
           <Icon name="Eye" aria-hidden />
           Rendered
@@ -120,7 +120,7 @@ function IconToggle({ icon, label, pressed, disabled, onClick }: { icon: string;
   );
 }
 
-/** Every flare of a thread and the threads it started: drawn by bb in the companion, or as Flare's own cards. */
+/** Every flare of a thread and the threads it started: drawn by VesnALIA in the companion, or as Flare's own cards. */
 export function FlaresPanel({ threadId }: { threadId: string }) {
   const now = useNow();
   const [children, setChildren] = useState(true);
@@ -146,7 +146,7 @@ export function FlaresPanel({ threadId }: { threadId: string }) {
   const missed = undrawn.filter((flare) => now - flare.createdAt >= ON_ITS_WAY_MS).reverse();
   const sections = useMemo(() => (data === undefined ? [] : groupFlares(data)), [data]);
   const total = data?.flares.length ?? 0;
-  // Which companion turn shows which flare, so bb can draw a divider with its time over each message.
+  // Which companion turn shows which flare, so VesnALIA can draw a divider with its time over each message.
   const { data: turns } = experimental_useRpcQuery({ contract: rpcContract, method: "marks", input: { threadId }, enabled: view === "rendered" });
   const marks = useMemo(() => (turns === undefined ? null : buildMarks(sections, turns.marks)), [sections, turns]);
   useEffect(() => {
@@ -205,7 +205,7 @@ export function FlaresPanel({ threadId }: { threadId: string }) {
           ) : (
             // Oldest first, newest at the bottom, as the rendered view and a conversation read.
             <div className="space-y-5">
-              {data?.truncated && <p className="text-center text-xs text-muted-foreground">Older flares are not shown; <code>bb flare list --limit 5000</code> prints more.</p>}
+              {data?.truncated && <p className="text-center text-xs text-muted-foreground">Older flares are not shown; <code>alia flare list --limit 5000</code> prints more.</p>}
               {sections.map((section) => (
                 <TurnSection key={section.key} section={section} now={now} />
               ))}

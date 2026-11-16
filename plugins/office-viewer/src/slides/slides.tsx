@@ -3,7 +3,7 @@
 // the panel, full-screen presenting, speaker notes and quoting a slide into the chat.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, RefObject } from "react";
-import { useComposer, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
 import { Button } from "@/components/ui/button";

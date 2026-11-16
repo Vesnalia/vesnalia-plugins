@@ -1,6 +1,6 @@
 Click a markdown table in a thread to read it full width.
 
-bb widens markdown tables past the message column so wide ones have room. This plugin adds the other half: any table can open in a dialog sized to the window, the same way images and Mermaid diagrams already expand.
+VesnALIA widens markdown tables past the message column so wide ones have room. This plugin adds the other half: any table can open in a dialog sized to the window, the same way images and Mermaid diagrams already expand.
 
 ## What you get
 
@@ -22,4 +22,4 @@ If you'd rather tables never break out of the message column, add this to your t
 
 ## Caveats
 
-This is a content script that finds tables by bb's markdown markup (`[data-markdown-preview] div.overflow-x-auto > table`), so a bb release that changes that markup can break it until the plugin is updated. Upstream request: [get-bb/bb#1705](https://github.com/get-bb/bb/issues/1705).
+This is a content script that finds tables by VesnALIA's markdown markup (`[data-markdown-preview] div.overflow-x-auto > table`), so a VesnALIA release that changes that markup can break it until the plugin is updated. Upstream request: [get-alia/alia#1705](https://github.com/get-bb/bb/issues/1705).

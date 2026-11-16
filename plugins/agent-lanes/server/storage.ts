@@ -1,13 +1,13 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { LaneBlock, LaneHandoff, LaneNeighbors, LanesSnapshot } from "../shared/model";
 import { emptyIndex, INDEX_VERSION, type IndexThread, type ThreadIndex } from "./indexer";
 
 type JsonRow = { json: string };
 export class LanesStorage {
   private readonly db;
-  constructor(bb: BbPluginApi) {
-    this.db = bb.storage.database();
-    bb.storage.migrate(this.db, [
+  constructor(alia: AliaPluginApi) {
+    this.db = alia.storage.database();
+    alia.storage.migrate(this.db, [
       `CREATE TABLE lane_threads (id TEXT PRIMARY KEY, state TEXT NOT NULL, metadata TEXT NOT NULL)`,
       `CREATE TABLE lane_blocks (id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, start REAL NOT NULL, end REAL, json TEXT NOT NULL)`,
       `CREATE INDEX lane_blocks_window ON lane_blocks(end, start)`,

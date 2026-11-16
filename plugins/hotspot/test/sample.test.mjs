@@ -68,7 +68,7 @@ const threadCpu = (sample) => Object.fromEntries(sample.threads.map((entry) => [
 const procCpu = (sample) => Object.fromEntries(sample.procs.map((entry) => [entry.pid, entry.cpu]));
 
 function withAgent(mac, pcpu = 40) {
-  mac.procs.set(200, { ppid: 1, pcpu, cpuMs: 60_000, start: EARLY, command: `node agent.js BB_THREAD_ID=${THREAD}` });
+  mac.procs.set(200, { ppid: 1, pcpu, cpuMs: 60_000, start: EARLY, command: `node agent.js ALIA_THREAD_ID=${THREAD}` });
 }
 
 test("one ps per reading, and the first reading after a load falls back to ps pcpu", async () => {
@@ -186,24 +186,24 @@ test("a stored sample measures its whole interval, not the last live reading", a
   assert.equal(live.cpu, 0);
 });
 
-test("the BB total counts BB's own processes and every thread's, and nothing else", async () => {
+test("the VesnALIA total counts VesnALIA's own processes and every thread's, and nothing else", async () => {
   const mac = fakeMac();
   const add = (pid, ppid, command) => mac.procs.set(pid, { ppid, pcpu: 0, cpuMs: 0, start: EARLY, command });
-  add(100, 1, "/Applications/bb.app/Contents/MacOS/bb");
-  add(101, 100, "/Applications/bb.app/Contents/Frameworks/bb Helper (Renderer).app/Contents/MacOS/bb Helper (Renderer)");
+  add(100, 1, "/Applications/alia.app/Contents/MacOS/alia");
+  add(101, 100, "/Applications/alia.app/Contents/Frameworks/alia Helper (Renderer).app/Contents/MacOS/alia Helper (Renderer)");
   // The agent carries its thread's id; the compiler it forked inherits it.
-  add(200, 100, `/Users/me/.local/bin/claude --verbose BB_THREAD_ID=${THREAD}`);
+  add(200, 100, `/Users/me/.local/bin/claude --verbose ALIA_THREAD_ID=${THREAD}`);
   add(201, 200, "node tsc --watch");
-  // A `bb` CLI call the agent made is BB's binary but its thread's work.
-  add(202, 200, `/Users/me/.local/bin/bb hotspot status BB_THREAD_ID=${THREAD}`);
-  // Outside BB, and a child of BB no thread claims: neither counts.
+  // A `VesnALIA` CLI call the agent made is VesnALIA's binary but its thread's work.
+  add(202, 200, `/Users/me/.local/bin/alia hotspot status ALIA_THREAD_ID=${THREAD}`);
+  // Outside VesnALIA, and a child of VesnALIA no thread claims: neither counts.
   add(300, 1, "/Applications/Slack.app/Contents/MacOS/Slack");
-  add(400, 100, "/Users/me/.bb/plugins/toolchain/node_modules/@esbuild/darwin-arm64/bin/esbuild");
+  add(400, 100, "/Users/me/.vesnalia/plugins/toolchain/node_modules/@esbuild/darwin-arm64/bin/esbuild");
   await mac.read();
   mac.advance(2, { 100: 0.25, 101: 0.25, 200: 0.5, 201: 1, 202: 0.5, 300: 2, 400: 1 });
   const { live } = await mac.read();
   // Four cores: a busy core is 25% of the machine. Each fake process holds 1 MiB resident.
-  assert.deepEqual(live.bb, {
+  assert.deepEqual(live.alia, {
     cpu: 62.5,
     memBytes: 5 * 1024 ** 2,
     processes: 5,
@@ -212,17 +212,17 @@ test("the BB total counts BB's own processes and every thread's, and nothing els
   });
 });
 
-test("without a process table there is no BB total", async () => {
+test("without a process table there is no VesnALIA total", async () => {
   const mac = fakeMac();
   mac.failNext = true;
   const { live } = await mac.read();
-  assert.equal(live.bb, null);
+  assert.equal(live.alia, null);
 });
 
 test("each thread keeps its busiest processes, named safely, and only its own", async () => {
   const mac = fakeMac();
   const add = (pid, ppid, command) => mac.procs.set(pid, { ppid, pcpu: 0, cpuMs: 0, start: EARLY, command });
-  add(200, 1, `/Users/me/.local/bin/claude --verbose BB_THREAD_ID=${THREAD}`);
+  add(200, 1, `/Users/me/.local/bin/claude --verbose ALIA_THREAD_ID=${THREAD}`);
   add(201, 200, "/bin/zsh -c npm run dev");
   add(202, 201, "node /repo/node_modules/vite/bin/vite.js --port 5173");
   add(203, 200, "/usr/bin/yes");

@@ -3,9 +3,9 @@
 # prepare-windows-image.sh adapts it. QEMU's real-time clock is UTC, so
 # Windows reads it as UTC whatever a box's time zone. The time service syncs
 # about every 17 minutes and corrects any offset, as a Mac that slept leaves
-# a running box behind; bb-box sets the clock itself after it restores a box.
+# a running box behind; alia-box sets the clock itself after it restores a box.
 $ErrorActionPreference = 'Stop'
-Start-Transcript -Path C:\bb-box\clock.log -Append | Out-Null
+Start-Transcript -Path C:\alia-box\clock.log -Append | Out-Null
 $w32time = 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time'
 Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\TimeZoneInformation' RealTimeIsUniversal 1 -Type DWord
 Set-ItemProperty "$w32time\Parameters" Type NTP

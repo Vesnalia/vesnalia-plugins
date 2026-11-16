@@ -78,7 +78,7 @@ The job ends only at the end state: the PR is ready to merge, or a human merged 
 2. **Arm** the watch the harness supports:
    - **Background command with exit notice** (Claude Code: Bash `run_in_background`): `python3 <skill-dir>/watch.py <PR>`. End the turn; the exit notice starts the next pass.
    - **Foreground only**: run the same command with the longest command timeout the harness allows, and `--timeout <minutes>` just under it.
-   - **Scheduler with no long-lived process** (a bb automation): see [`scheduled-watch.md`](scheduled-watch.md).
+   - **Scheduler with no long-lived process** (a VesnALIA automation): see [`scheduled-watch.md`](scheduled-watch.md).
 3. **Act on the line it prints:**
    - `CHANGED`: run the pass again from step 1.
    - `CHANGED … PR is MERGED` or `CLOSED`: report the end state and stop.

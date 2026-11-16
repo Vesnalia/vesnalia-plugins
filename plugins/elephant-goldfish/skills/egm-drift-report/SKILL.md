@@ -7,7 +7,7 @@ description: >-
   check docs-code consistency.
 ---
 
-# EGM Drift Report (BB adaptation)
+# EGM Drift Report (VesnALIA adaptation)
 
 Adapted from google/elephant-goldfish-model @ 3d0b348 (Apache-2.0; see `LICENSE`).
 

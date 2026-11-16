@@ -1,4 +1,4 @@
-import type { PluginMessageDirectiveProps } from '@get-bb/plugin-sdk/app';
+import type { PluginMessageDirectiveProps } from '@vesnalia/plugin-sdk/app';
 import { Icon } from '../components/ui/icon.js';
 import { resultHeaderSchema, type ResultHeader } from './result.js';
 

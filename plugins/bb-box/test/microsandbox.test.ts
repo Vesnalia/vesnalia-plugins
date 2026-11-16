@@ -80,14 +80,14 @@ test("parses the fields, with the guide's defaults, and refuses what it cannot u
     reserveMemoryMiB: 4096,
     memoryOvercommit: 1,
   });
-  assert.equal(msbConfig({ host: "bb:host_abc123" }).machine, "host_abc123");
+  assert.equal(msbConfig({ host: "alia:host_abc123" }).machine, "host_abc123");
   assert.equal(msbConfig({ "memory-overcommit": 1.5 }).memoryOvercommit, 1.5);
   const bad = parseMsbPart({ id: "microsandbox", hosts: [], fields: { host: "tcp://x:1", "linux-image": "a b", network: "public,lan", boxes: 0, "disk-gib": 2, "memory-overcommit": 5 } });
   assert.equal(bad.ok, false);
   assert.deepEqual(bad.ok ? [] : bad.problems.map((problem) => problem.path).sort(), ["boxes", "disk-gib", "host", "linux-image", "memory-overcommit", "network"]);
   const under = parseMsbPart({ id: "microsandbox", hosts: [], fields: { "memory-overcommit": 0.5 } });
   assert.deepEqual(under.ok ? [] : under.problems.map((problem) => problem.message), ["microsandbox: the memory overcommit must be from 1 to 4, such as 1.5."]);
-  assert.equal(microsandboxDriver.several?.({ host: " bb:host_a " }), "bb:host_a");
+  assert.equal(microsandboxDriver.several?.({ host: " alia:host_a " }), "alia:host_a");
 });
 
 test("offers linux, with Docker unless it is off, and linux-desktop-cpu, agreeing with Docker's offers of them", () => {
@@ -105,7 +105,7 @@ test("offers linux, with Docker unless it is off, and linux-desktop-cpu, agreein
   assert.deepEqual(checks.filter((check) => check.status !== "ok"), [], "the agent may rely on the same things from either");
 });
 
-test("acquires a box as a microVM labelled with its owner, at its size, with /run a tmpfs, Docker on a disk of its own and the network that reaches BB", async () => {
+test("acquires a box as a microVM labelled with its owner, at its size, with /run a tmpfs, Docker on a disk of its own and the network that reaches VesnALIA", async () => {
   const { fake, backend } = setup();
   const box = identity();
   const run = hooks();
@@ -131,7 +131,7 @@ test("acquires a box as a microVM labelled with its owner, at its size, with /ru
     [box.name, "2", "4096M", "32G", "/run", "public,private", "never", "/var/lib/docker:kind=disk,size=64G"],
   );
   assert.deepEqual(after(create, "--mount-disk"), [], "msb's own disk, which msb snapshots and gives a restored box, never a file of the host's (070 unit 10)");
-  assert.deepEqual(after(create, "--env"), [`BBBOX_IDENTITY=${box.boxId}`, "BBBOX_DOCKERD=1"], "the value its identity marker holds, set on the guest by bb-box (070)");
+  assert.deepEqual(after(create, "--env"), [`BBBOX_IDENTITY=${box.boxId}`, "BBBOX_DOCKERD=1"], "the value its identity marker holds, set on the guest by alia-box (070)");
   assert.ok(!create.includes("--replace"));
   const quiet = setup({ docker: false });
   const small = identity("linux", { cores: 1, memoryMiB: 2048, diskGiB: 8 });
@@ -171,7 +171,7 @@ test("070 unit 10: a box made before, with its Docker disk a file of the host's,
   await backend.maintain(signal());
   assert.deepEqual(readdirSync(join(fake.dir, "disks")).sort(), ["bbbox-bxmaking.ext4"], "the old leftover goes; a new one stays");
   assert.ok(fake.sandboxes().includes(kept.ref));
-  assert.ok(!fake.calls().some((call) => call[0] === "create" && after(call, "--name")[0]?.startsWith("bb-box-mkfs-")), "no template of a host disk is made any more");
+  assert.ok(!fake.calls().some((call) => call[0] === "create" && after(call, "--name")[0]?.startsWith("alia-box-mkfs-")), "no template of a host disk is made any more");
 });
 
 test("installs msb on a host that lacks it, once, and imports a kind's image from Docker when msb lacks it, and again when Docker's changes", async () => {
@@ -193,17 +193,17 @@ test("installs msb on a host that lacks it, once, and imports a kind's image fro
   assert.equal(fake.scripts.filter(([name]) => name === "import").length, 3, "nothing new, nothing imported");
 });
 
-test("a kind whose image neither msb nor Docker has is refused for now, and BB Box builds the image in a builder microVM, pulling only Docker's own, pinned, and removes the builder (053)", async () => {
+test("a kind whose image neither msb nor Docker has is refused for now, and VesnALIA Box builds the image in a builder microVM, pulling only Docker's own, pinned, and removes the builder (053)", async () => {
   const { fake, backend } = setup({}, { imported: false });
   fake.docker.delete("bbbox/linux:1");
   const built = fake.whenImage("bbbox/linux:1");
   await assert.rejects(
     backend.acquire(identity(), null, hooks().hooks, signal()),
-    (error: unknown) => error instanceof BackendError && error.code === "no_capacity" && /has no image bbbox\/linux:1 yet\. BB Box is building it there in a microVM/.test(error.message),
+    (error: unknown) => error instanceof BackendError && error.code === "no_capacity" && /has no image bbbox\/linux:1 yet\. ALIA Box is building it there in a microVM/.test(error.message),
   );
   await built;
   assert.ok(fake.images()["bbbox/linux:1"], "built and moved into msb");
-  const builder = fake.calls().find((call) => call[0] === "create" && call.includes("--name") && after(call, "--name")[0]!.startsWith("bb-box-builder-"))!;
+  const builder = fake.calls().find((call) => call[0] === "create" && call.includes("--name") && after(call, "--name")[0]!.startsWith("alia-box-builder-"))!;
   assert.equal(builder[1], BUILDER_IMAGE);
   assert.match(BUILDER_IMAGE, /^docker:[\w.-]+-dind@sha256:[0-9a-f]{64}$/, "by digest");
   const { readFileSync } = await import("node:fs");
@@ -212,7 +212,7 @@ test("a kind whose image neither msb nor Docker has is refused for now, and BB B
   assert.match(steps, /base64 -d \| tar -xz -C \/build/);
   assert.match(steps, /bash setup\/docker\/build\.sh --arch x86_64 --tag bbbox\/linux:1 linux /);
   assert.ok(fake.scripts.some(([name, , image]) => name === "transfer" && image === "bbbox/linux:1"));
-  await untilSeen(join(fake.root, "sandboxes"), () => !fake.sandboxes().some((name) => name.startsWith("bb-box-builder-")));
+  await untilSeen(join(fake.root, "sandboxes"), () => !fake.sandboxes().some((name) => name.startsWith("alia-box-builder-")));
   assert.deepEqual(fake.sandboxes(), [], "the builder is removed, and no box was made");
   assert.ok(!fake.calls().some((call) => call[0] === "pull"));
   // The next box starts from the built image.
@@ -233,18 +233,18 @@ test("on a Mac, the backend offers the arm64 kinds, checks the Hypervisor framew
   assert.match(by["microsandbox.host"]!.detail, /It offers the arm64 kinds\./);
   assert.deepEqual([by["microsandbox.kvm"]!.name, by["microsandbox.kvm"]!.status], ["Hypervisor", "ok"]);
   assert.equal(by["image.bbbox/linux:1-arm64"]!.status, "warn");
-  assert.match(by["image.bbbox/linux:1-arm64"]!.fix ?? "", /BB Box builds it there in a microVM of its own/);
+  assert.match(by["image.bbbox/linux:1-arm64"]!.fix ?? "", /ALIA Box builds it there in a microVM of its own/);
   assert.equal(by["image.bbbox/linux:1"], undefined, "no x86_64 image on an arm64 host");
   await assert.rejects(backend.acquire(identity("linux"), null, hooks().hooks, signal()), /does not offer linux boxes/);
   const built = fake.whenImage("bbbox/linux:1-arm64");
-  await assert.rejects(backend.acquire(identity("linux-arm64"), null, hooks().hooks, signal()), /BB Box is building it there/);
+  await assert.rejects(backend.acquire(identity("linux-arm64"), null, hooks().hooks, signal()), /ALIA Box is building it there/);
   await built;
   const { readFileSync } = await import("node:fs");
   assert.match(readFileSync(join(fake.root, "builder"), "utf8"), /nohup sh -c .*build\.sh --arch arm64.*echo \$\? >\/build\/build\.exit/, "detached, as a heavy build has ended msb's exec session");
   assert.match(readFileSync(join(fake.root, "builder"), "utf8"), /cat \/build\/build\.exit/);
   assert.match(readFileSync(join(fake.root, "builder"), "utf8"), /build\.sh --arch arm64 --tag bbbox\/linux:1-arm64 linux /);
   // The builder goes in the background after its image is in msb: the next box waits for that, so no fake reads a sandbox as it is removed.
-  await untilSeen(join(fake.root, "sandboxes"), () => !fake.sandboxes().some((name) => name.startsWith("bb-box-builder-")));
+  await untilSeen(join(fake.root, "sandboxes"), () => !fake.sandboxes().some((name) => name.startsWith("alia-box-builder-")));
   const box = await backend.acquire(identity("linux-arm64"), null, hooks().hooks, signal());
   assert.deepEqual(after(fake.calls().find((call) => call[0] === "create" && call.includes(box.ref))!, "--mount-owned"), ["/var/lib/docker:kind=disk,size=64G"], "msb's own disk");
   await backend.maintain(signal());
@@ -256,15 +256,15 @@ test("a start runs the image's command again, which msb start does not, and wait
   const guest = await backend.acquire(identity(), null, hooks().hooks, signal());
   await backend.stop!(guest, signal());
   assert.equal(await backend.power(guest), "stopped");
-  assert.equal(existsSync(join(fake.root, "sandboxes", guest.ref, "run", "bb-box", "ready")), false);
+  assert.equal(existsSync(join(fake.root, "sandboxes", guest.ref, "run", "alia-box", "ready")), false);
   const steps: string[] = [];
   await backend.start!(guest, signal(), (step) => steps.push(step));
   assert.deepEqual(steps, ["boot", "ready"]);
   assert.equal(await backend.power(guest), "running");
   // Once as the box was made, once after msb start: neither runs the image's command.
-  const exec = fake.calls().filter((call) => call[0] === "exec" && call.some((arg) => arg.includes("bb-box-start")));
+  const exec = fake.calls().filter((call) => call[0] === "exec" && call.some((arg) => arg.includes("alia-box-start")));
   assert.equal(exec.length, 2);
-  assert.match(exec[1]!.at(-1)!, /\[ -e \/run\/bb-box-started \] \|\| \{ : >\/run\/bb-box-started; setsid -f \/usr\/local\/sbin\/bb-box-start /);
+  assert.match(exec[1]!.at(-1)!, /\[ -e \/run\/alia-box-started \] \|\| \{ : >\/run\/alia-box-started; setsid -f \/usr\/local\/sbin\/alia-box-start /);
 });
 
 test("acts only on its own microVMs: another install's or another box's are left alone, and a failed create's leftover is replaced (018, 053)", async () => {
@@ -303,7 +303,7 @@ test("counts every install's microVMs and the memory of running ones, and refuse
   assert.match((await backend.capacity("linux", { cores: 12, memoryMiB: 2048, diskGiB: null }, [])).message ?? "", /has 8 cores, fewer than the 12 asked for/);
   await backend.stop!(mine);
   const stopped = await backend.capacity("linux", SMALL, [{ kind: "linux", size: SMALL }]);
-  assert.match(stopped.message ?? "", /has 3 of the 3 BB Box microVMs it may have, counting stopped boxes/);
+  assert.match(stopped.message ?? "", /has 3 of the 3 ALIA Box microVMs it may have, counting stopped boxes/);
   assert.match((await backend.capacity("linux", { ...SMALL, diskGiB: 900 }, [])).message ?? "", /less than the 900 GiB disk asked for/);
 });
 
@@ -331,7 +331,7 @@ test("above 1, the boxes' sizes may add up to the overcommit times the host's me
   ]);
   // Another box in flight takes the last of the ceiling.
   const ceiling = await backend.capacity("linux", SMALL, [{ kind: "linux", size: SMALL }]);
-  assert.match(ceiling.message ?? "", /the boxes on .+ may have 24 GiB of memory in all, at a memory overcommit of 2, and have 24 GiB, so a box with 4 GiB does not fit\. Ask for less memory, release a box, or raise the memory overcommit in BB Box's settings/);
+  assert.match(ceiling.message ?? "", /the boxes on .+ may have 24 GiB of memory in all, at a memory overcommit of 2, and have 24 GiB, so a box with 4 GiB does not fit\. Ask for less memory, release a box, or raise the memory overcommit in ALIA Box's settings/);
 
   // Busy boxes: under the ceiling, but the host has too little available to start one.
   fake.facts({ available_kib: String(5 * 1024 * 1024) });
@@ -355,7 +355,7 @@ test("on a Mac, which keeps the memory a box has used, each box counts at its fu
   assert.ok(!fake.scripts.some(([name]) => name === "memory"), "the memory script is not run");
   const check = (await backend.doctor(signal())).checks.find((one) => one.id === "microsandbox.overcommit");
   assert.equal(check?.status, "warn");
-  assert.match(check?.detail ?? "", /is a Mac, which keeps the memory a box has used, so BB Box counts each box there at its full size, whatever the memory overcommit of 2\./);
+  assert.match(check?.detail ?? "", /is a Mac, which keeps the memory a box has used, so ALIA Box counts each box there at its full size, whatever the memory overcommit of 2\./);
   assert.equal(check?.fix, "Set the memory overcommit to 1.");
 });
 
@@ -372,16 +372,16 @@ test("each launch and each upkeep raise the microVMs' oom_score_adj on the host,
   assert.ok(scriptArgsOk("memory", []) && scriptArgsOk("oom", []));
   assert.ok(!scriptArgsOk("oom", ["bbbox-x"]));
   const dir = (await import("./helpers.ts")).tempDir("oom");
-  // A stand-in /proc: a BB Box microVM, another sandbox's, one already raised, and another process.
+  // A stand-in /proc: a VesnALIA Box microVM, another sandbox's, one already raised, and another process.
   const proc = (pid: string, cmdline: string[], adj: string) => {
     mkdirSync(join(dir, pid));
     writeFileSync(join(dir, pid, "cmdline"), `${cmdline.join("\0")}\0`);
     writeFileSync(join(dir, pid, "oom_score_adj"), `${adj}\n`);
   };
-  proc("101", ["/home/u/.local/share/bb-box/microsandbox/0.7.7/msb", "machine", "--name", "bbbox-bx1", "--sandbox-id", "3"], "0");
+  proc("101", ["/home/u/.local/share/alia-box/microsandbox/0.7.7/msb", "machine", "--name", "bbbox-bx1", "--sandbox-id", "3"], "0");
   proc("102", ["/opt/msb", "machine", "--name", "other", "--sandbox-id", "4"], "0");
   proc("103", ["/opt/msb", "machine", "-n", "bbbox-bx2"], "800");
-  proc("104", ["/usr/bin/node", "bb-app.js", "host-daemon"], "0");
+  proc("104", ["/usr/bin/node", "alia-app.js", "host-daemon"], "0");
   const oom = msbScript("oom").replace("/proc/[0-9]*", `${dir}/[0-9]*`);
   assert.equal(execFileSync("sh", ["-c", oom], { encoding: "utf8" }).trim(), "adjusted=1");
   assert.deepEqual(["101", "102", "103", "104"].map((pid) => readFileSync(join(dir, pid, "oom_score_adj"), "utf8").trim()), ["500", "0", "800", "0"]);
@@ -401,10 +401,10 @@ test("the doctor checks the host, msb, KVM and the images, warns in LXC, and say
   const { fake, backend } = setup();
   const report = await backend.doctor(signal());
   assert.equal(report.ok, true, JSON.stringify(report.checks.filter((check) => check.status !== "ok")));
-  assert.equal(report.summary, "msb 0.7.7 on BB's server");
+  assert.equal(report.summary, "msb 0.7.7 on VesnALIA's server");
   // The largest desktop preset has more cores than the fake host, which sizes warns of.
   assert.deepEqual(report.checks.map((check) => check.id).filter((id) => id !== "microsandbox.sizes"), ["microsandbox.host", "microsandbox.msb", "microsandbox.kvm", "microsandbox.snapshots", "image.bbbox/linux:1", "image.bbbox/linux-desktop:1", "microsandbox.capacity"]);
-  assert.match(report.notes.join("\n"), /msb's state and images take 3 GiB in .+\/home on BB's server\. Its file system has no reflinks, so msb copies a box's disk to fork or snapshot it\./);
+  assert.match(report.notes.join("\n"), /msb's state and images take 3 GiB in .+\/home on ALIA's server\. Its file system has no reflinks, so msb copies a box's disk to fork or snapshot it\./);
 
   fake.facts({ kvm: "denied", lxc: "1", installed: "" });
   const broken = await backend.doctor(signal());
@@ -415,20 +415,20 @@ test("the doctor checks the host, msb, KVM and the images, warns in LXC, and say
   assert.equal(by["microsandbox.lxc"]!.status, "warn");
   assert.match(by["microsandbox.lxc"]!.detail, /refuses FICLONE, so msb's snapshots and flat roots fail there/);
   assert.equal(by["microsandbox.msb"]!.status, "warn");
-  assert.match(by["microsandbox.msb"]!.fix ?? "", /BB Box installs msb 0\.7\.7 there, checked by its SHA-256/);
+  assert.match(by["microsandbox.msb"]!.fix ?? "", /ALIA Box installs msb 0\.7\.7 there, checked by its SHA-256/);
 });
 
-test("the doctor says which images BB Box imports from Docker, and which it builds itself (053)", async () => {
+test("the doctor says which images VesnALIA Box imports from Docker, and which it builds itself (053)", async () => {
   const { fake, backend } = setup({}, { imported: false });
-  // Before msb is installed too: Docker alone says what BB Box can import.
+  // Before msb is installed too: Docker alone says what VesnALIA Box can import.
   fake.facts({ installed: "" });
   fake.docker.delete("bbbox/linux-desktop:1");
   const report = await backend.doctor(signal());
   const by = Object.fromEntries(report.checks.map((check) => [check.id, check]));
   assert.equal(by["image.bbbox/linux:1"]!.status, "warn");
-  assert.match(by["image.bbbox/linux:1"]!.fix ?? "", /BB Box imports it from Docker with the first linux box/);
+  assert.match(by["image.bbbox/linux:1"]!.fix ?? "", /ALIA Box imports it from Docker with the first linux box/);
   assert.equal(by["image.bbbox/linux-desktop:1"]!.status, "warn");
-  assert.match(by["image.bbbox/linux-desktop:1"]!.fix ?? "", /BB Box builds it there in a microVM of its own, about 10 minutes, with the first linux-desktop-cpu box/);
+  assert.match(by["image.bbbox/linux-desktop:1"]!.fix ?? "", /ALIA Box builds it there in a microVM of its own, about 10 minutes, with the first linux-desktop-cpu box/);
 });
 
 test("runs commands, copies files and probes through msb exec as the box user, and a stopped box does not answer", async () => {
@@ -446,7 +446,7 @@ test("runs commands, copies files and probes through msb exec as the box user, a
   assert.equal(await command!.probe(), false, "msb ping says it is not running, so the probe never boots it");
 });
 
-test("on a BB machine, msb runs through BB Box's msb relay, and an offline machine takes no box and runs nothing (053)", async () => {
+test("on a VesnALIA machine, msb runs through VesnALIA Box's msb relay, and an offline machine takes no box and runs nothing (053)", async () => {
   const fake = fakeMsbHost();
   const calls: string[][] = [];
   let connected = true;
@@ -465,7 +465,7 @@ test("on a BB machine, msb runs through BB Box's msb relay, and an offline machi
     }),
   };
   const context = { ...testContext(), machines };
-  const backend = new MsbBackend(msbConfig({ host: "bb:host_dev" }), context, { readyTimeoutMs: 2_000 });
+  const backend = new MsbBackend(msbConfig({ host: "alia:host_dev" }), context, { readyTimeoutMs: 2_000 });
   assert.equal(backend.label, "microsandbox on devpc");
   assert.deepEqual(backend.hosts, ["devpc"]);
   await backend.acquire(identity(), null, hooks().hooks, signal());
@@ -473,15 +473,15 @@ test("on a BB machine, msb runs through BB Box's msb relay, and an offline machi
   connected = false;
   const before = calls.length;
   const room = await backend.capacity("linux", SMALL, []);
-  assert.deepEqual([room.ok, room.message], [false, "devpc is offline in BB."]);
+  assert.deepEqual([room.ok, room.message], [false, "devpc is offline in VesnALIA."]);
   assert.equal(calls.length, before);
 });
 
-test("over ssh://, msb is BB Box's own in the user's home there, and a terminal asks ssh for a PTY", () => {
+test("over ssh://, msb is VesnALIA Box's own in the user's home there, and a terminal asks ssh for a PTY", () => {
   const cli = new MsbCli("ssh://box@msb.example.com:2222", null, undefined, { ssh: "ssh" });
   assert.deepEqual(cli.argv(["exec", "--stream", "bbbox-bx1", "--", "echo", "it's"]), [
     "ssh", "-o", "BatchMode=yes", "-T", "-l", "box", "-p", "2222", "--", "msb.example.com",
-    `exec "$HOME/.local/share/bb-box/microsandbox/bin/msb" 'exec' '--stream' 'bbbox-bx1' '--' 'echo' 'it'\\''s'`,
+    `exec "$HOME/.local/share/alia-box/microsandbox/bin/msb" 'exec' '--stream' 'bbbox-bx1' '--' 'echo' 'it'\\''s'`,
   ]);
   assert.equal(cli.argv(["ls"], { tty: true })[3], "-tt");
 });
@@ -497,10 +497,10 @@ test("each boot sets the guest's page reporting to its smallest blocks, gives th
   const stopped = await backend.acquire(identity(), null, hooks().hooks, signal());
   await backend.stop!(stopped);
   const theirs = await make("other").acquire(identity(), null, hooks().hooks, signal());
-  const launch = fake.calls().find((call) => call[0] === "exec" && call.some((arg) => arg.includes("bb-box-start")))!;
+  const launch = fake.calls().find((call) => call[0] === "exec" && call.some((arg) => arg.includes("alia-box-start")))!;
   assert.ok(launch.at(-1)!.startsWith(`${RUN_IN_MEMORY}; ${OWN_HOSTNAME}; `), "first /run in memory and the box's hostname, which a restored box lacks (070 unit 10)");
   assert.match(launch.at(-1)!, /; echo 0 >\/sys\/module\/page_reporting\/parameters\/page_reporting_order 2>\/dev\/null; /);
-  assert.match(launch.at(-1)!, /; chmod 0666 \/dev\/net\/tun 2>\/dev\/null; \[ -e \/run\/bb-box-started \]/, "the box user may open TUN (#595)");
+  assert.match(launch.at(-1)!, /; chmod 0666 \/dev\/net\/tun 2>\/dev\/null; \[ -e \/run\/alia-box-started \]/, "the box user may open TUN (#595)");
   await backend.maintain(signal());
   const { readFileSync } = await import("node:fs");
   assert.deepEqual(readFileSync(join(fake.root, "reclaims"), "utf8").trim().split("\n"), [mine.ref], "not a stopped box, nor another install's");
@@ -529,7 +529,7 @@ test("the reclaim drops caches and compacts only in a box whose load is under ha
   assert.deepEqual(run("0.02", 100_000), ["", ""], "a small cache stays");
 });
 
-test("on a host without Docker, the nightly refresh's image operations build with BB's app in a builder, check a trial box, put the build under the image's name, and wait when the volume msb builds on is short (053)", async () => {
+test("on a host without Docker, the nightly refresh's image operations build with VesnALIA's app in a builder, check a trial box, put the build under the image's name, and wait when the volume msb builds on is short (053)", async () => {
   const { fake, backend } = setup();
   fake.facts({ os: "Darwin", arch: "arm64", mkfs: "0", docker: "" });
   const images = backend.images!;
@@ -539,14 +539,14 @@ test("on a host without Docker, the nightly refresh's image operations build wit
   assert.equal(images.startsFrom, undefined, "no project images on microsandbox yet");
   assert.match(images.check!("linux-arm64"), /docker on first use/);
 
-  // The build: in a builder, from the refresh's setup/, with BB's app, under a tag of its own.
+  // The build: in a builder, from the refresh's setup/, with VesnALIA's app, under a tag of its own.
   const lines: string[] = [];
   const setupCopy = (await import("./helpers.ts")).tempDir("refresh-setup");
-  const made = await images.build!(builds[0]!, setupCopy, { bbUrl: "https://bb.example.com", log: (line) => lines.push(line), signal: signal() });
+  const made = await images.build!(builds[0]!, setupCopy, { aliaUrl: "https://bb.example.com", log: (line) => lines.push(line), signal: signal() });
   assert.match(made.ref, /^bbbox\/linux:refresh-[a-z0-9]+$/);
   assert.equal(made.current, false);
   const { readFileSync } = await import("node:fs");
-  assert.match(readFileSync(join(fake.root, "builder"), "utf8"), /build\.sh --arch arm64 --bb-url \S*https:\/\/bb\.example\.com\S* --tag bbbox\/linux:refresh-[a-z0-9]+ linux /);
+  assert.match(readFileSync(join(fake.root, "builder"), "utf8"), /build\.sh --arch arm64 --alia-url \S*https:\/\/alia\.example\.com\S* --tag bbbox\/linux:refresh-[a-z0-9]+ linux /);
   assert.ok(fake.images()[made.ref], "the build is in msb under its own tag");
   assert.ok(fake.images()["bbbox/linux:1-arm64"], "and the image stays until the build passes");
 
@@ -567,33 +567,33 @@ test("on a host without Docker, the nightly refresh's image operations build wit
   assert.deepEqual([replaced.ref, replaced.current], ["bbbox/linux:1-arm64", true]);
   assert.ok(!fake.images()[made.ref]);
   assert.equal(JSON.parse(fake.images()["bbbox/linux:1-arm64"]!["bbbox.image-record"]!).build, "build.builder");
-  await assert.rejects(images.remove("bbbox/linux:1-arm64", signal()), /is not a refresh's build, so BB Box leaves it/);
+  await assert.rejects(images.remove("bbbox/linux:1-arm64", signal()), /is not a refresh's build, so ALIA Box leaves it/);
 
   // The upkeep's sweep of leftover builders leaves the one a refresh's build is using.
   fake.set({ holdBuild: true });
-  const held = images.build!(builds[0]!, setupCopy, { bbUrl: null, log: () => {}, signal: signal() });
-  while (!fake.sandboxes().some((name) => name.startsWith("bb-box-builder-"))) await new Promise((resolve) => setTimeout(resolve, 20));
+  const held = images.build!(builds[0]!, setupCopy, { aliaUrl: null, log: () => {}, signal: signal() });
+  while (!fake.sandboxes().some((name) => name.startsWith("alia-box-builder-"))) await new Promise((resolve) => setTimeout(resolve, 20));
   await backend.maintain(signal());
-  assert.ok(fake.sandboxes().some((name) => name.startsWith("bb-box-builder-")), "the sweep left the refresh's builder");
+  assert.ok(fake.sandboxes().some((name) => name.startsWith("alia-box-builder-")), "the sweep left the refresh's builder");
   writeFileSync(join(fake.root, "release"), "");
   await images.remove((await held).ref, signal());
-  assert.ok(!fake.sandboxes().some((name) => name.startsWith("bb-box-builder-")));
+  assert.ok(!fake.sandboxes().some((name) => name.startsWith("alia-box-builder-")));
   fake.set({ holdBuild: false });
 
   // A failed build says what the builder's msb log ended with, which goes with the builder.
   fake.set({ failBuild: true });
   const failed: string[] = [];
-  await assert.rejects(images.build!(builds[0]!, setupCopy, { bbUrl: null, log: (line) => failed.push(line), signal: signal() }), /build\.sh failed in the builder with exit code 1.*The builder's kernel says: .*Out of memory: Killed process 812.*The builder's msb log ended: .*agent relay: client disconnected/);
+  await assert.rejects(images.build!(builds[0]!, setupCopy, { aliaUrl: null, log: (line) => failed.push(line), signal: signal() }), /build\.sh failed in the builder with exit code 1.*The builder's kernel says: .*Out of memory: Killed process 812.*The builder's msb log ended: .*agent relay: client disconnected/);
   assert.ok(failed.some((line) => /^msb: .*unexpected EOF/.test(line)));
   assert.ok(failed.some((line) => /^guest: .*Out of memory/.test(line)));
-  assert.ok(!fake.sandboxes().some((name) => name.startsWith("bb-box-builder-")), "the builder is removed");
+  assert.ok(!fake.sandboxes().some((name) => name.startsWith("alia-box-builder-")), "the builder is removed");
   fake.set({ failBuild: false });
 
   // Room: the volume msb keeps its images and build files on, through any link.
   assert.equal(await images.room!(builds[0]!, signal()), null);
   fake.facts({ free_kib: String(37 * 1024 * 1024) });
-  assert.match((await images.room!(builds[0]!, signal())) ?? "", /has 37 GiB free where msb keeps its images and build files \(.+\), and BB Box builds an image there only with 80 GiB free/);
-  await assert.rejects(images.build!(builds[0]!, "/nowhere", { bbUrl: null, log: () => {}, signal: signal() }), /only with 80 GiB free/);
+  assert.match((await images.room!(builds[0]!, signal())) ?? "", /has 37 GiB free where msb keeps its images and build files \(.+\), and ALIA Box builds an image there only with 80 GiB free/);
+  await assert.rejects(images.build!(builds[0]!, "/nowhere", { aliaUrl: null, log: () => {}, signal: signal() }), /only with 80 GiB free/);
 
   // On a host with Docker, msb's images follow Docker's, so the refresh builds none here.
   const linux = setup();

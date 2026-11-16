@@ -73,9 +73,9 @@ async function readSummary(
 export const geminiAdapter: AgentAdapter = {
   id: "gemini",
   label: "Gemini CLI",
-  // bb has no Gemini provider; the continued thread runs on claude-code unless
+  // VesnALIA has no Gemini provider; the continued thread runs on claude-code unless
   // overridden with --thread-provider.
-  bbProviderId: "claude-code",
+  aliaProviderId: "claude-code",
 
   async list(cwd: string, home: string = os.homedir()): Promise<SessionSummary[]> {
     const dir = chatsDir(cwd, home);

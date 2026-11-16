@@ -1,4 +1,4 @@
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -87,7 +87,7 @@ const RANGES: Array<{ key: RangeKey; label: string; blurb: string; priorBlurb: s
 ];
 
 // One green hue. Series step and the 4-step heatmap ramp are validated for
-// lightness band, chroma, monotonicity and contrast against bb's own light
+// lightness band, chroma, monotonicity and contrast against VesnALIA's own light
 // (#ffffff) and dark (#151515) canvases. Chart chrome stays on theme tokens.
 const PALETTE = {
   series: { light: "#2f9e6a", dark: "#2eae74" },
@@ -360,7 +360,7 @@ function useFloatingTooltip() {
   return { showTooltip, hideTooltip, tooltip };
 }
 
-/** bb provider id -> brand mark id. Unknown providers render no mark at all. */
+/** VesnALIA provider id -> brand mark id. Unknown providers render no mark at all. */
 function providerLogoId(providerId: string): string | null {
   const key = providerId.trim().toLowerCase();
   if (!key || isUnknown(key)) return null;
@@ -1146,7 +1146,7 @@ function LoadingState() {
   const barHeights = [30, 54, 42, 78, 62, 104, 86, 124, 94, 148, 116, 138];
   return (
     <div className="flex flex-col gap-3" aria-live="polite" aria-busy="true">
-      <span className="sr-only">Loading bb activity</span>
+      <span className="sr-only">Loading VesnALIA activity</span>
       <Card className="wk-loading-hero min-w-0 p-4">
         <div className="wk-grid wk-hero-grid">
           <div className="flex flex-col gap-3">
@@ -1217,8 +1217,8 @@ function ActiveThreadIndicator() {
     <span
       data-wk-root
       className="relative flex"
-      aria-label="A bb thread is active"
-      title="A bb thread is active"
+      aria-label="A VesnALIA thread is active"
+      title="A VesnALIA thread is active"
       style={{ flex: "none", width: 6, height: 6 }}
     >
       <span className="wk-live absolute inset-0 rounded-full" />
@@ -1392,7 +1392,7 @@ function Dashboard() {
             <Card style={riseDelay(0)} className="wk-rise wk-hero min-w-0 p-4">
               <div className="wk-grid wk-hero-grid">
                 <div className="wk-hero-figure min-w-0">
-                  <p className="text-muted-foreground text-xs opacity-80">bb worked {rangeBlurb}</p>
+                  <p className="text-muted-foreground text-xs opacity-80">alia worked {rangeBlurb}</p>
                   {/* the one hero figure on the page: proportional figures, not tabular */}
                   <p className="wk-hero-value text-foreground flex items-baseline gap-2 text-5xl font-semibold tracking-tight">
                     {heroParts.map((part) => (

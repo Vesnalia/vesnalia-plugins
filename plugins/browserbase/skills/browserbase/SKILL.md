@@ -5,7 +5,7 @@ description: Browse interactive websites, extract page data, and verify web work
 
 # Browserbase
 
-Use these native BB tools:
+Use these native VesnALIA tools:
 
 | Tool | Input | Purpose |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ Use these native BB tools:
 | `browserbase_extract` | `{ "instruction": "Extract the main heading" }` | Read page data |
 | `browserbase_end` | `{}` | Close this thread's session |
 
-Start a session before navigating. The plugin supplies session IDs automatically; do not invent or pass them. Each BB thread has a separate session. Calls in one thread are serialized.
+Start a session before navigating. The plugin supplies session IDs automatically; do not invent or pass them. Each VesnALIA thread has a separate session. Calls in one thread are serialized.
 
 Inspect the page before acting. After each significant action, extract or observe the result to verify success. Do not treat a successful action request as proof of the requested outcome.
 
@@ -28,4 +28,4 @@ After a timeout or cancellation, inspect the page before repeating a mutating ac
 
 End the session when the task is complete, including after failures, unless the user wants it kept open. Reloading, disabling, archiving, or deleting the thread can close sessions. Cleanup is best effort; when it cannot be confirmed, direct the user to check Sessions in the Browserbase dashboard. A force-quit may leave a session running until its service timeout.
 
-If configuration is missing, direct the user to Settings → Installed plugins → Browserbase. New tools may require starting a new BB thread. Report actual results and source links; never claim success when a tool failed.
+If configuration is missing, direct the user to Settings → Installed plugins → Browserbase. New tools may require starting a new VesnALIA thread. Report actual results and source links; never claim success when a tool failed.

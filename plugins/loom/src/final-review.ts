@@ -2,9 +2,9 @@
 // merge hold has cleared, on the exact commit it would merge. It judges only what changed since Loom's reviewers approved
 // the ticket: did anything break the acceptance criteria, is the pull request's text still true, and is anything alarming.
 //
-// Where it runs: a bb thread in an empty scratch directory of Loom's data directory on the project's machine, with
+// Where it runs: a VesnALIA thread in an empty scratch directory of Loom's data directory on the project's machine, with
 // everything it judges inline in its brief; nothing to provision and nothing of the person's to damage. It never runs in
-// the repo's checkout: should bb refuse the scratch directory, the merge holds. The threat is an accident, not an
+// the repo's checkout: should VesnALIA refuse the scratch directory, the merge holds. The threat is an accident, not an
 // adversary: a reviewer that wanders into the checkout. So Loom takes a cheap fingerprint of the checkout before the
 // thread starts and, once the thread has really stopped, again before it counts a pass: any change, or a fingerprint it
 // cannot take, holds the merge for the human, and Loom never resets the checkout.
@@ -229,7 +229,7 @@ export function finalBadge(store: Store, spec: Spec, ticket: TicketRow): FinalBa
   if (state.passed !== null) return { state: "passed", reason: null };
   if (state.failed !== null) return { state: "failed", reason: state.failed.verdict!.reason };
   if (state.held === "checkout") return { state: "held", reason: "the repo's checkout changed while it ran, or Loom could not fingerprint it" };
-  if (state.held === "scratch") return { state: "held", reason: "bb would not start it in Loom's scratch directory" };
+  if (state.held === "scratch") return { state: "held", reason: "alia would not start it in Loom's scratch directory" };
   if (state.held === "partial") return { state: "held", reason: "it passed on an incomplete brief; the human accepts it" };
   if (state.held !== null) return { state: "held", reason: state.unfinished.at(-1)?.ended?.message ?? state.unfinished.at(-1)?.ended?.why ?? null };
   if (state.open !== null || state.passRun !== null) return { state: "running", reason: null };
@@ -311,10 +311,10 @@ export async function sweepScratch(ctx: EngineCtx, hostsOf: () => readonly strin
   const keep = [...outstandingOf(ctx.store).values()].flatMap((run) => (run.scratch === null ? [] : [run.scratch]));
   for (const host of new Set(hosts)) {
     const answer = await ctx.host.call(host, "finalScratch", { key: "loom-sweep", action: "sweep", keep }).catch((error: unknown) => {
-      ctx.bb.log("warn", `Could not sweep the final reviews' scratch directories on ${host}: ${errText(error)}`);
+      ctx.alia.log("warn", `Could not sweep the final reviews' scratch directories on ${host}: ${errText(error)}`);
       return null;
     });
-    if (answer !== null && answer.entries.length > 0) ctx.bb.log("info", `Removed ${answer.entries.length} final review scratch directories no run owns on ${host}.`);
+    if (answer !== null && answer.entries.length > 0) ctx.alia.log("info", `Removed ${answer.entries.length} final review scratch directories no run owns on ${host}.`);
   }
 }
 
@@ -344,12 +344,12 @@ function endRun(ctx: EngineCtx, ticket: TicketRow, run: FinalRun, why: string, m
  */
 async function stopped(ctx: EngineCtx, threadId: string): Promise<boolean> {
   try {
-    const done = (thread: Awaited<ReturnType<EngineCtx["bb"]["getThread"]>>) => thread === null || thread.archivedAt !== null || thread.deletedAt !== null || thread.status === "idle" || thread.status === "error";
-    if (done(await ctx.bb.getThread(threadId))) return true;
-    await ctx.bb.stop(threadId);
-    return done(await ctx.bb.getThread(threadId));
+    const done = (thread: Awaited<ReturnType<EngineCtx["alia"]["getThread"]>>) => thread === null || thread.archivedAt !== null || thread.deletedAt !== null || thread.status === "idle" || thread.status === "error";
+    if (done(await ctx.alia.getThread(threadId))) return true;
+    await ctx.alia.stop(threadId);
+    return done(await ctx.alia.getThread(threadId));
   } catch (error) {
-    ctx.bb.log("warn", `Could not stop the final reviewer ${threadId}: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not stop the final reviewer ${threadId}: ${errText(error)}`);
     return false;
   }
 }
@@ -367,11 +367,11 @@ async function closeRuns(ctx: EngineCtx, ticket: TicketRow, runs: readonly Final
     if (run.thread !== null) {
       if (!(await stopped(ctx, run.thread))) continue;
       try {
-        const thread = await ctx.bb.getThread(run.thread);
-        if (thread !== null && thread.archivedAt === null && thread.deletedAt === null) await ctx.bb.archive(run.thread);
-        tokens = await ctx.bb.threadTokens(run.thread).catch(() => null);
+        const thread = await ctx.alia.getThread(run.thread);
+        if (thread !== null && thread.archivedAt === null && thread.deletedAt === null) await ctx.alia.archive(run.thread);
+        tokens = await ctx.alia.threadTokens(run.thread).catch(() => null);
       } catch (error) {
-        ctx.bb.log("warn", `Could not archive the final reviewer ${run.thread}: ${errText(error)}`);
+        ctx.alia.log("warn", `Could not archive the final reviewer ${run.thread}: ${errText(error)}`);
         continue;
       }
     }
@@ -396,7 +396,7 @@ async function removeScratch(ctx: EngineCtx, ticket: TicketRow, run: FinalRun): 
     await ctx.host.call(host, "finalScratch", { key: run.scratch, action: "remove" });
     return true;
   } catch (error) {
-    ctx.bb.log("warn", `Could not remove the final review's scratch directory ${run.scratch}: ${errText(error)}`);
+    ctx.alia.log("warn", `Could not remove the final review's scratch directory ${run.scratch}: ${errText(error)}`);
     return false;
   }
 }
@@ -459,8 +459,8 @@ function hold(ctx: EngineCtx, project: ProjectRow, ticket: TicketRow, sha: strin
   ctx.store.event(ticket.project_id, ticket.id, FINAL_HELD, LOOM_ACTOR, { sha, reason });
   const next =
     reason === "partial"
-      ? `\`bb loom auto-merge ${project.slug} accept --ticket ${ticket.key}\` lets it merge on this review, and \`retry\` runs a new one.`
-      : `\`bb loom auto-merge ${project.slug} retry --ticket ${ticket.key}\` lets it try again.`;
+      ? `\`alia loom auto-merge ${project.slug} accept --ticket ${ticket.key}\` lets it merge on this review, and \`retry\` runs a new one.`
+      : `\`alia loom auto-merge ${project.slug} retry --ticket ${ticket.key}\` lets it try again.`;
   addPost(ctx, ticket, `${body} ${next}`, { outcome: "final_review_held", url: ticket.pr_url, sha, reason, ...more });
 }
 
@@ -544,7 +544,7 @@ async function followRun(ctx: EngineCtx, ticket: TicketRow, run: FinalRun): Prom
   const now = ctx.now();
   if (run.thread === null) {
     if (spawningOf(store).has(run.id)) return;
-    const found = await ctx.bb.findSpawnedThread(run.token).catch(() => null);
+    const found = await ctx.alia.findSpawnedThread(run.token).catch(() => null);
     if (found !== null) {
       store.event(ticket.project_id, ticket.id, FINAL_BOUND, LOOM_ACTOR, { run: run.id, thread: found });
       return;
@@ -552,18 +552,18 @@ async function followRun(ctx: EngineCtx, ticket: TicketRow, run: FinalRun): Prom
     if (now - run.at >= SPAWN_GRACE_MS) endRun(ctx, ticket, run, "restart", "Loom restarted before the reviewer started");
     return;
   }
-  const thread = await ctx.bb.getThread(run.thread).catch(() => undefined);
+  const thread = await ctx.alia.getThread(run.thread).catch(() => undefined);
   if (thread === undefined) return;
   if (thread === null || thread.archivedAt !== null || thread.deletedAt !== null) return endRun(ctx, ticket, run, "gone", "its thread was archived or deleted");
   if (thread.status === "error") {
-    const failure = await ctx.bb.latestSystemError(run.thread).catch(() => null);
+    const failure = await ctx.alia.latestSystemError(run.thread).catch(() => null);
     endRun(ctx, ticket, run, "error", failure?.message ?? "its thread failed");
     return closeRuns(ctx, ticket, finalState(store, ticket.id, null).all);
   }
   if (thread.status !== "idle" || now - run.at < NUDGE_GRACE_MS) return;
   if (run.nudgedAt === null) {
     store.event(ticket.project_id, ticket.id, FINAL_NUDGED, LOOM_ACTOR, { run: run.id });
-    await ctx.bb.send(run.thread, `You ended your turn without a verdict. Call loom_final_review now: pass, or fail with a reason and whether the worker can fix it. Then end your turn.`).catch((error) => ctx.bb.log("warn", `Could not nudge ${run.thread}: ${errText(error)}`));
+    await ctx.alia.send(run.thread, `You ended your turn without a verdict. Call loom_final_review now: pass, or fail with a reason and whether the worker can fix it. Then end your turn.`).catch((error) => ctx.alia.log("warn", `Could not nudge ${run.thread}: ${errText(error)}`));
     return;
   }
   if (now - run.nudgedAt >= NUDGE_GRACE_MS) {
@@ -754,7 +754,7 @@ function peopleSince(read: FinalRead, approvedAt: number | null): NonNullable<Fi
  * the ticket again, records the run with its deadline and fingerprint, and spawns its thread in the scratch directory. The
  * run is recorded before the scratch directory is made and the thread spawned, so a restart finds its thread by its token
  * or ends it, never starts a second one for the head unseen, and leaves no directory without a run that removes it. Should
- * bb refuse the scratch directory as a workspace, the review does not run and the merge holds.
+ * VesnALIA refuse the scratch directory as a workspace, the review does not run and the merge holds.
  */
 async function startRun(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticket: TicketRow, final: FinalReviewSettings, read: FinalRead, still: () => TicketRow | null): Promise<void> {
   const { store } = ctx;
@@ -764,20 +764,20 @@ async function startRun(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticket:
   try {
     checkout = await repoCheckout(ctx, project, spec, ticket.repo);
   } catch (error) {
-    ctx.bb.log("warn", `${ticket.key}'s final review waits: ${errText(error)}`);
+    ctx.alia.log("warn", `${ticket.key}'s final review waits: ${errText(error)}`);
     return;
   }
   const { sha: approved, at: approvedAt } = approvedHead(store, ticket.id);
   const delta = await readDelta(ctx, checkout, ticket, approved);
   // A read that got no answer is tried at the next read of the pull request, and starts nothing.
-  if (isTransient(delta)) return ctx.bb.log("warn", `${ticket.key}'s final review waits for the delta: ${delta.message}`);
+  if (isTransient(delta)) return ctx.alia.log("warn", `${ticket.key}'s final review waits for the delta: ${delta.message}`);
   let print: string;
   try {
     const answer = await ctx.host.call(checkout.hostId, "checkoutPrint", { repo: checkout.path });
     if (answer.outcome !== "ok") return failedStart(ctx, ticket, sha, url, `Loom could not read the checkout ${checkout.path} to fingerprint it: ${answer.message}`);
     print = answer.print;
   } catch (error) {
-    if (hostCallTransient(error) !== null) return ctx.bb.log("warn", `${ticket.key}'s final review waits for the checkout's fingerprint: ${errText(error)}`);
+    if (hostCallTransient(error) !== null) return ctx.alia.log("warn", `${ticket.key}'s final review waits for the checkout's fingerprint: ${errText(error)}`);
     return failedStart(ctx, ticket, sha, url, `Loom could not read the checkout ${checkout.path} to fingerprint it: ${errText(error)}`);
   }
   const now = still();
@@ -797,8 +797,8 @@ async function startRun(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticket:
     // Upkeep may have stopped the run while the directory was made.
     if (still() === null || finalState(store, ticket.id, sha).open?.id !== run.id) return;
     const spawn = (sectionId: string | null) =>
-      ctx.bb.spawnThread({
-        bbProjectId: checkout.bbProjectId,
+      ctx.alia.spawnThread({
+        aliaProjectId: checkout.aliaProjectId,
         hostId: checkout.hostId,
         baseBranch: `${checkout.settings.remote}/${checkout.settings.base}`,
         workspace: { path: scratch },
@@ -825,7 +825,7 @@ async function startRun(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticket:
         endRun(ctx, now, run, "refused", errText(again));
         const held = still();
         if (held !== null && held.pushed_sha === sha) {
-          hold(ctx, project, held, sha, "scratch", `bb would not start Loom's final reviewer of ${url} in its scratch directory (${errText(again)}), and Loom never runs it in the repo's checkout, so it holds the merge.`);
+          hold(ctx, project, held, sha, "scratch", `alia would not start Loom's final reviewer of ${url} in its scratch directory (${errText(again)}), and Loom never runs it in the repo's checkout, so it holds the merge.`);
         }
         return;
       }
@@ -835,7 +835,7 @@ async function startRun(ctx: EngineCtx, project: ProjectRow, spec: Spec, ticket:
     const what = delta.same ? "nothing in the code changed since the reviewers approved it" : `${count(delta.own.length, "of the pull request's own file")} changed since the approval`;
     addPost(ctx, now, `Loom started its final review of ${url} on ${sha.slice(0, 12)}: ${what}${brief.incomplete.length === 0 ? "" : `; its brief is incomplete (${brief.incomplete.join("; ")})`}. It merges only once the review passes.`, { outcome: "final_review_started", url, sha, same: delta.same, incomplete: brief.incomplete });
   } catch (error) {
-    if (finalState(store, ticket.id, sha).open?.id === run.id) endRun(ctx, now, run, "start", `bb could not start the reviewer: ${errText(error)}`);
+    if (finalState(store, ticket.id, sha).open?.id === run.id) endRun(ctx, now, run, "start", `alia could not start the reviewer: ${errText(error)}`);
   } finally {
     spawningOf(store).delete(run.id);
   }
@@ -920,7 +920,7 @@ export async function finalThreadEvent(ctx: EngineCtx, threadId: string): Promis
 }
 
 
-/** `bb loom auto-merge <slug> retry --ticket KEY` also lets a held final review try again for the ticket's head. */
+/** `alia loom auto-merge <slug> retry --ticket KEY` also lets a held final review try again for the ticket's head. */
 export function resetFinalReview(store: Store, ticket: TicketRow): boolean {
   const state = finalState(store, ticket.id, ticket.pushed_sha);
   if (state.passed !== null || (state.held === null && state.unfinished.length === 0)) return false;
@@ -928,7 +928,7 @@ export function resetFinalReview(store: Store, ticket: TicketRow): boolean {
   return true;
 }
 
-/** `bb loom auto-merge <slug> accept --ticket KEY`: the human lets Loom merge on a counted pass of an incomplete brief, for the head it reviewed. */
+/** `alia loom auto-merge <slug> accept --ticket KEY`: the human lets Loom merge on a counted pass of an incomplete brief, for the head it reviewed. */
 export function acceptFinalReview(store: Store, ticket: TicketRow): string {
   const state = finalState(store, ticket.id, ticket.pushed_sha);
   if (state.passRun === null || !state.passRun.verified) return `${ticket.key} has no counted pass of its final review for its head to accept.`;

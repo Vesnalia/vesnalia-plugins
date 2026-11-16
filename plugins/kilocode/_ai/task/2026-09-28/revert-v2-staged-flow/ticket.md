@@ -4,9 +4,9 @@ Type: Feature
 
 ## Problem
 
-Two gaps in the KiloCode BB thread UI:
+Two gaps in the KiloCode VesnALIA thread UI:
 
-1. **Wrong icon.** The "Revert from here" message action registers `icon: "Undo2"` (`app.tsx:51`). BB's host icon registry is HugeIcons; `Undo2` is a Lucide name the host does not know, so the action renders BB's generic fallback icon instead of a revert glyph. BB's extended icon set already ships the HugeIcons `ArrowTurnBackward` glyph (verified in the installed BB app bundle `icon-extended-CdKZK3gi.js`), so this is a one-string fix.
+1. **Wrong icon.** The "Revert from here" message action registers `icon: "Undo2"` (`app.tsx:51`). VesnALIA's host icon registry is HugeIcons; `Undo2` is a Lucide name the host does not know, so the action renders VesnALIA's generic fallback icon instead of a revert glyph. VesnALIA's extended icon set already ships the HugeIcons `ArrowTurnBackward` glyph (verified in the installed VesnALIA app bundle `icon-extended-CdKZK3gi.js`), so this is a one-string fix.
 
 2. **Revert is v1 one-shot; KiloCode v2 is staged — rewind-to-checkpoint should work like native.** The plugin calls v1 `POST /session/{id}/revert` (`src/client.ts:376`) which truncates history and restores snapshots immediately, leaving no undo beyond the plugin's own projection. KiloCode v2 (installed binary v2.0.18) moved to a staged model and the plugin should adopt it:
 
@@ -26,15 +26,15 @@ Two gaps in the KiloCode BB thread UI:
 - `openchamber/openchamber`: `packages/ui/src/sync/session-actions.ts` — `revertToMessage` flow: read target message → restore prompt text/attachments to composer → cascade revert to descendant sessions → `stageRevert(sessionId, revertMessageID, { directory })` → refresh; staged dock offers Clear / Commit / fork-from-staged-message. Their dock: `packages/ui/src/components/chat/composer/ui/RevertedMessageDock.tsx`; message action button uses a back-arrow icon. Descendant cascade cutoff: a subagent run's report lands after its child already worked, so reverting the run reverts the child from its start — `descendantRevertCutoff` uses child session created time when the target carries a subagent run.
 - **Where revert can be clicked** (verified in both): user messages only — assistant replies never receive the action. An LLM reply is rewound by reverting at its own user prompt, which hides the reply along with the turn. Neither UI uses KiloCode's `partID` mid-reply rewind either.
 
-## BB-native support assessment
+## ALIA-native support assessment
 
-BB does not expose a revert/checkpoint API of its own for plugins. What BB does support natively:
+VesnALIA does not expose a revert/checkpoint API of its own for plugins. What VesnALIA does support natively:
 
-- Provider capabilities declare `fork: "none" | "tip" | "checkpoint"` — "checkpoint" is exactly "recreate the session at an earlier point, which is what edit-past-message rewind needs". This plugin already declares `fork: "checkpoint"` in both `server.ts` (`bb.providers.register`) and the bridge handshake (`src/bridge.ts:2601`), and `thread/fork` is wired to KiloCode `session.fork` with a `messageID` checkpoint.
-- Bridge request methods (`node_modules/@get-bb/plugin-sdk/dist/provider-bridge.js` `BRIDGE_REQUEST_METHODS`) include `threadFork` with `sourceProviderCheckpointId` but **no** `threadRewind`/`threadRevert` method — the staged-revert path must run through plugin host RPC (`revert` / `unrevert` handlers already exist in `host.ts`/`src/host-handlers.ts`), not through BB's provider-bridge methods.
-- The plugin already hydrates checkpoint ids into the BB timeline (`providerCheckpointId` in `src/hydrate.ts`) and already projects staged/committed hidden rows onto timeline rows (`src/revert-projection.ts`, `src/app/revert-timeline.ts` sets `data-oc-reverted`).
+- Provider capabilities declare `fork: "none" | "tip" | "checkpoint"` — "checkpoint" is exactly "recreate the session at an earlier point, which is what edit-past-message rewind needs". This plugin already declares `fork: "checkpoint"` in both `server.ts` (`alia.providers.register`) and the bridge handshake (`src/bridge.ts:2601`), and `thread/fork` is wired to KiloCode `session.fork` with a `messageID` checkpoint.
+- Bridge request methods (`node_modules/@vesnalia/plugin-sdk/dist/provider-bridge.js` `BRIDGE_REQUEST_METHODS`) include `threadFork` with `sourceProviderCheckpointId` but **no** `threadRewind`/`threadRevert` method — the staged-revert path must run through plugin host RPC (`revert` / `unrevert` handlers already exist in `host.ts`/`src/host-handlers.ts`), not through VesnALIA's provider-bridge methods.
+- The plugin already hydrates checkpoint ids into the VesnALIA timeline (`providerCheckpointId` in `src/hydrate.ts`) and already projects staged/committed hidden rows onto timeline rows (`src/revert-projection.ts`, `src/app/revert-timeline.ts` sets `data-oc-reverted`).
 
-**Assessment:** not hacky. This mirrors how OpenChamber does it (drive the KiloCode server API directly over the plugin's host RPC). The UX can reach OpenChamber/KiloCode-native quality: staged marker + dock with Restore (clear → back to exactly the pre-revert state) / Commit (finalize the rewind) / fork-from-staged-message. One note for later: a future BB-native `threadRewind` bridge method would let the host own more, but nothing in the staged flow *requires* it.
+**Assessment:** not hacky. This mirrors how OpenChamber does it (drive the KiloCode server API directly over the plugin's host RPC). The UX can reach OpenChamber/KiloCode-native quality: staged marker + dock with Restore (clear → back to exactly the pre-revert state) / Commit (finalize the rewind) / fork-from-staged-message. One note for later: a future ALIA-native `threadRewind` bridge method would let the host own more, but nothing in the staged flow *requires* it.
 
 ## Outcome (target UX)
 
@@ -56,13 +56,13 @@ Clicking "Revert from here" on a **user message** only (the action is removed fr
 - [ ] Committing the rewind (via re-send from the composer after staging, or a dock Commit action) removes staged messages for good; timeline and history reflect the rewind; a fresh prompt continues after the checkpoint.
 - [ ] Reverting a message containing a subagent run also stages the revert in the child session (child's messages past its start hidden per cutoff rule).
 - [ ] Assistant replies are rewound via their user prompt; no reply-only partial revert, no hanging orphaned prompt.
-- [ ] Works with BB message ids passed from the action (`message.id` + `message.text` path in `runMessageUndo`) without text-matching ambiguity on duplicate prompts — prefer exact messageID passthrough when the host can resolve it.
+- [ ] Works with VesnALIA message ids passed from the action (`message.id` + `message.text` path in `runMessageUndo`) without text-matching ambiguity on duplicate prompts — prefer exact messageID passthrough when the host can resolve it.
 
 ## Verification
 
-- Verify on: a BB thread running KiloCode v2.x in this plugin (this machine), plus mechanical checks.
+- Verify on: a VesnALIA thread running KiloCode v2.x in this plugin (this machine), plus mechanical checks.
 - Never: never run KiloCode `session.delete`, never touch git directly to fabricate state (revert flows restore via KiloCode snapshots; git only used read-only to observe file rollbacks), never spawn extra KiloCode servers.
-- Icon — proof: hover a user message in a BB KiloCode thread, screenshot the action row — receipt: screenshot showing the back-arrow glyph.
+- Icon — proof: hover a user message in a VesnALIA KiloCode thread, screenshot the action row — receipt: screenshot showing the back-arrow glyph.
 - User-messages-only — proof: hover both a user message and an LLM reply; the revert icon shows only on the user message — receipt: screenshot of both action rows.
 - File rollback — proof: make the agent edit a tracked file, click Revert from here on that user message, run `git diff` to show the file restored — receipt: terminal output.
 - Restore (clear) — proof: revert, then Restore from dock, then `git diff` clean + timeline intact — receipt: screenshot + `git status`.
@@ -72,28 +72,28 @@ Clicking "Revert from here" on a **user message** only (the action is removed fr
 ## Scope
 
 - **In:** revert action on user messages only (remove from assistant replies); revert action icon fix; host RPC `revert`→ v2 `revert.stage`, `unrevert`→ v2 `revert.clear`; new `revertCommit` RPC + contract entries (`contract.ts` both `hostContract` and `rpcContract`, `host.ts`, `server.ts`, `src/client.ts`, `src/host-handlers.ts`); revert dock Restore/Commit model (extends current undo/redo dock); subagent-run cascade stage; timeline projection already handles hidden rows — keep.
-- **Out:** BB-native `threadRewind` bridge method (possible follow-up upstream request), TUI/desktop KiloCode UI changes, forking new BB threads from staged messages (v1 `forkFromMessage` stays as-is), any provider other than KiloCode.
+- **Out:** ALIA-native `threadRewind` bridge method (possible follow-up upstream request), TUI/desktop KiloCode UI changes, forking new VesnALIA threads from staged messages (v1 `forkFromMessage` stays as-is), any provider other than KiloCode.
 
 ## Evidence / media
 
-- Screenshot (user-supplied): ![Revert from here tooltip on a BB user message showing the generic fallback icon instead of the revert glyph](https://github.com/user-attachments/assets/04170b05-2f6d-4ee0-9303-18a10f87d137) — the "Revert from here" tooltip on a BB user message, showing the generic/wrong icon (dark square) in the message action bar.
+- Screenshot (user-supplied): ![Revert from here tooltip on a VesnALIA user message showing the generic fallback icon instead of the revert glyph](https://github.com/user-attachments/assets/04170b05-2f6d-4ee0-9303-18a10f87d137) — the "Revert from here" tooltip on a VesnALIA user message, showing the generic/wrong icon (dark square) in the message action bar.
 
-![Revert from here tooltip on a BB user message showing the generic fallback icon instead of the revert glyph](https://github.com/user-attachments/assets/04170b05-2f6d-4ee0-9303-18a10f87d137)
+![Revert from here tooltip on a VesnALIA user message showing the generic fallback icon instead of the revert glyph](https://github.com/user-attachments/assets/04170b05-2f6d-4ee0-9303-18a10f87d137)
 
 ## Result (2026-09-29)
 
-Shipped. Verified live in BB on disposable threads: back-arrow icon on user messages only; Revert hides the turn, rolls files back, refills the composer; Restore undoes it; **Confirm** (dock button, was "Commit") makes it permanent and the next prompt continues; revert while running stops first; subagent edits roll back with the parent.
+Shipped. Verified live in VesnALIA on disposable threads: back-arrow icon on user messages only; Revert hides the turn, rolls files back, refills the composer; Restore undoes it; **Confirm** (dock button, was "Commit") makes it permanent and the next prompt continues; revert while running stops first; subagent edits roll back with the parent.
 
 How it works:
 - Dock: Restore → KiloCode `revert/clear`; Confirm → `revert/commit` (`revertCommit` RPC). Staging → `revert/stage`.
-- BB row → KiloCode message: row → BB turn → `turn/completed.providerCheckpointId` (the turn's first prompt ID). Fails closed if missing.
+- VesnALIA row → KiloCode message: row → VesnALIA turn → `turn/completed.providerCheckpointId` (the turn's first prompt ID). Fails closed if missing.
 - Subagents: child sessions created after the target are staged/cleared/committed with the parent.
-- Assistant-row button hide + icon swap live in `src/app/revert-timeline.ts` (BB SDK has no per-role action filter; icon comes from the plugin branding asset).
+- Assistant-row button hide + icon swap live in `src/app/revert-timeline.ts` (VesnALIA SDK has no per-role action filter; icon comes from the plugin branding asset).
 
 Bugs found only in live testing (keep in mind):
-- BB icon asset URL has a `?h=` cache tag — match by prefix.
+- VesnALIA icon asset URL has a `?h=` cache tag — match by prefix.
 - Stopped turns must still carry `providerCheckpointId`, or revert says "Can't revert this older message".
-- Subagent "[bb system] completed" notices arrive as user messages; the checkpoint must be the turn's first prompt, not the last user message.
+- Subagent "[VesnALIA system] completed" notices arrive as user messages; the checkpoint must be the turn's first prompt, not the last user message.
 - A thread's opening prompt row has `turnId: null`; map it to the next turn row.
 - `threads.events.list` limit max is 100.
 

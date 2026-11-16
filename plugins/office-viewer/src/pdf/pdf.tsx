@@ -3,7 +3,7 @@
 // viewport. PDF.js and its worker come from the plugin server's HTTP route.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode, RefObject } from "react";
-import { useBbContext, useComposer, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useAliaContext, useComposer, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask, TextLayer } from "pdfjs-dist";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
@@ -49,7 +49,7 @@ const TEXT_LAYER = cn(
 
 let library: Promise<Library> | null = null;
 
-/** The plugin server hands PDF.js out on the first PDF, so the panel bundle every BB window loads stays small. */
+/** The plugin server hands PDF.js out on the first PDF, so the panel bundle every VesnALIA window loads stays small. */
 const PDFJS_BASE = "/api/v1/plugins/office-viewer/http/pdfjs/";
 
 function loadLibrary() {
@@ -239,7 +239,7 @@ function ToolButton({ label, onClick, disabled, pressed, children }: { label: st
 
 export function PdfOpener(props: PluginFileOpenerProps) {
   const { path, source } = props;
-  const { threadId } = useBbContext();
+  const { threadId } = useAliaContext();
   // A different file gets a fresh load and saver; late work cannot update its replacement.
   const key = JSON.stringify([threadId, path, source.kind, source.threadId, source.environmentId, source.projectId, source.experimental_hostId]);
   return <PdfViewer key={key} {...props} readingThreadId={threadId} stateKey={key} />;

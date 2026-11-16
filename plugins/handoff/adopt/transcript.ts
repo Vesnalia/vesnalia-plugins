@@ -1,5 +1,5 @@
 // Shared transcript model: agent adapters produce Blocks, this module renders
-// them to markdown with a size budget. Pure logic, no bb API.
+// them to markdown with a size budget. Pure logic, no VesnALIA API.
 
 export type AgentId = "claude" | "codex" | "gemini" | "opencode" | "pi";
 
@@ -37,8 +37,8 @@ export interface FoundSession extends SessionSummary {
 export interface AgentAdapter {
   id: AgentId;
   label: string;
-  /** Preferred bb provider for the continued thread. */
-  bbProviderId: string;
+  /** Preferred VesnALIA provider for the continued thread. */
+  aliaProviderId: string;
   list(cwd: string, home?: string): Promise<SessionSummary[]>;
   /**
    * Locate sessions by id or id prefix across ALL directories this agent has

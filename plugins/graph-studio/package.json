@@ -1,15 +1,10 @@
 {
-  "name": "bb-plugin-graph-studio",
+  "name": "alia-plugin-graph-studio",
   "version": "0.1.4",
-  "description": "Build agent graphs that may contain cycles, run them, and watch them live. Nodes are BB threads.",
+  "description": "Build agent graphs that may contain cycles, run them, and watch them live. Nodes are VesnALIA threads.",
   "author": "sajov",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sajov/bb-plugins.git",
-    "directory": "bb-plugin-graph-studio"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "agents",
     "graph",
     "langgraph",
@@ -18,12 +13,12 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Graph Studio",
-    "description": "Build agent graphs that may contain cycles, run them, and watch them live. Nodes are BB threads; LangGraph holds state, edges, cycles and checkpoints.",
+    "description": "Build agent graphs that may contain cycles, run them, and watch them live. Nodes are VesnALIA threads; LangGraph holds state, edges, cycles and checkpoints.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -40,7 +35,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -72,9 +66,26 @@
     "vitest": "^5.0.0"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/graph-studio#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/graph-studio"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

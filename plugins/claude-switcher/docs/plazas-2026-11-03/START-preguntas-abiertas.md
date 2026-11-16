@@ -3,8 +3,8 @@
 Encargo: «Qué tal va el sistema de carga, tengo mucha cola? necesitaría abrir
 más hilos por favor» y «que se vayan balanceando, pero que no sea un "máximo
 4"» (Aitor, 2026-11-03 ~12:55 y ~13:15, hilo thr_zudr84azva → thr_zf8ncnt6de).
-Publicado como v0.2.37 (d01559a) e instalado en bb a las 13:56 CET
-(`bb plugin source claude-switcher`).
+Publicado como v0.2.37 (d01559a) e instalado en VesnALIA a las 13:56 CET
+(`alia plugin source claude-switcher`).
 
 ## Decidido (Fable, hilo thr_zudr84azva, 2026-11-03 18:50; Aitor 19:15)
 
@@ -25,12 +25,12 @@ Publicado como v0.2.37 (d01559a) e instalado en bb a las 13:56 CET
   (ritmo 96 %), viaulab 3 (ritmo 100 %), ganaresenas y siloeads 4.
 - Reparto de proyectos (`verificar-reparto.salida.txt`): aitor 17, ganaresenas
   18, joytorm 27, siloeads 17 (antes 28/16/9/26); 20 movidos, ningún hilo vivo
-  movido. Se deshace uno con `bb claude-switcher use <proyecto> <cuenta>`.
+  movido. Se deshace uno con `alia claude-switcher use <proyecto> <cuenta>`.
 
 ## Dónde está cada cosa
 
 Este repo es público: la lista de proyectos, los títulos de hilos y la salida
 de `rebalance` con nombres están fuera, en el almacenamiento del hilo
-thr_zf8ncnt6de (`/home/aitor/.bb-machines/macbook-pro-de-aitor.tail81fad6.ts.net/thread-storage/thr_zf8ncnt6de/plazas-2026-11-03`). La primera publicación de 0.2.37 (d01559a) sí llevaba
+thr_zf8ncnt6de (`/home/aitor/.alia-machines/macbook-pro-de-aitor.tail81fad6.ts.net/thread-storage/thr_zf8ncnt6de/plazas-2026-11-03`). La primera publicación de 0.2.37 (d01559a) sí llevaba
 los nombres de 79 proyectos y dos títulos de hilos; el commit siguiente los
 quita de `main`, y el historial se reescribió sin ellos (ver «Decidido», punto 5).

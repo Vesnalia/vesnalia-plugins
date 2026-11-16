@@ -21,7 +21,7 @@ import { chmodSync, copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import Database from "better-sqlite3";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { createStore, storeOn } from "../src/store";
 import { queueStore, type AsyncStore } from "../src/store-queue";
@@ -164,12 +164,12 @@ async function writeReviews(store: AsyncStore): Promise<Keys> {
 }
 
 if (mode === "write") {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = queueStore(createStore(bb));
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = queueStore(createStore(alia));
   const keys = await writeReviews(store);
   await store.dispose();
   rmSync(join(out, "data.db"), { force: true });
-  bb.storage.database().prepare(`VACUUM INTO ?`).run(join(out, "data.db"));
+  alia.storage.database().prepare(`VACUUM INTO ?`).run(join(out, "data.db"));
   writeFileSync(join(out, "keys.json"), formatDump(keys));
   await harness.dispose();
   if (testPgUrl) {
@@ -272,24 +272,24 @@ writeFileSync(join(out, "reads-1.8.1-sqlite.json"), reads);
 check("sqlite", "every Store read of 1.9.0's data, with no error", throwsIn(reads).length === 0, throwsIn(reads));
 
 const copy = (made: ReturnType<typeof createFakePluginHost>) => {
-  const empty = made.bb.storage.database();
+  const empty = made.alia.storage.database();
   empty.close();
   copyFileSync(join(out, "data.db"), empty.name);
   return made;
 };
 {
-  const { bb, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.9.0-")) }));
-  const store = queueStore(createStore(bb));
-  await storeChecks("sqlite", store, sqliteSql(bb.storage.database()));
+  const { alia, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.9.0-")) }));
+  const store = queueStore(createStore(alia));
+  await storeChecks("sqlite", store, sqliteSql(alia.storage.database()));
   await store.dispose();
   await harness.dispose();
 }
 {
   // The plugin opens each review, as its page does, and submits the converted one.
-  const { bb, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.9.0-")) }));
-  const stored = (k: string) => JSON.parse((bb.storage.database().prepare(`SELECT state FROM review_lifecycle WHERE target_key=?`).get(k) as { state: string } | undefined)?.state ?? "{}") as Record<string, unknown>;
+  const { alia, harness } = copy(createFakePluginHost({ pluginId: "code-review-workspace", dataDir: mkdtempSync(join(tmpdir(), "fixture-1.9.0-")) }));
+  const stored = (k: string) => JSON.parse((alia.storage.database().prepare(`SELECT state FROM review_lifecycle WHERE target_key=?`).get(k) as { state: string } | undefined)?.state ?? "{}") as Record<string, unknown>;
   const lifecycles = Object.fromEntries(reviews.map((k) => [k, stored(k)]));
-  await plugin(bb);
+  await plugin(alia);
   const rpc = (method: string, input: unknown) => harness.behavior.callRpc(method, input) as Promise<Record<string, unknown>>;
   const attempt = async (method: string, input: unknown) => {
     try { return await rpc(method, input); } catch (error) { return { threw: error instanceof Error ? error.message : String(error) }; }
@@ -311,7 +311,7 @@ const copy = (made: ReturnType<typeof createFakePluginHost>) => {
 
   // Submit on the review merged away that keeps a tracked comment, on Dana's PR, where 1.8.1 posts a sent comment: it
   // refuses, with no repo, and nothing reaches gh.
-  const strandedDraft = (await bb.storage.database().prepare(`SELECT comments, body, verdict FROM drafts WHERE target_key=?`).get(keys.stranded)) as { comments: string; body: string; verdict: string };
+  const strandedDraft = (await alia.storage.database().prepare(`SELECT comments, body, verdict FROM drafts WHERE target_key=?`).get(keys.stranded)) as { comments: string; body: string; verdict: string };
   const strandedComments = (JSON.parse(strandedDraft.comments) as Array<Record<string, unknown>>).map(({ file, line, side, body }) => ({ file, line, side, body }));
   const before = ran("gh").length;
   const strandedSubmit = await attempt("submitReview", {
@@ -324,7 +324,7 @@ const copy = (made: ReturnType<typeof createFakePluginHost>) => {
   // Submit on the converted review, as its page would send it: the draft's comments, the open ones posting. Then the
   // same past every warning, then with only the comments 1.8.1's contract takes. What gh got is what GitHub would get.
   const submitted: Record<string, unknown> = {};
-  const draft = (await bb.storage.database().prepare(`SELECT comments, body, verdict FROM drafts WHERE target_key=?`).get(keys.converted)) as { comments: string; body: string; verdict: string };
+  const draft = (await alia.storage.database().prepare(`SELECT comments, body, verdict FROM drafts WHERE target_key=?`).get(keys.converted)) as { comments: string; body: string; verdict: string };
   const comments = JSON.parse(draft.comments) as Array<Record<string, unknown>>;
   const shown = comments.map(({ file, line, side, startLine, startSide, severity, introduced, body }) => ({ file, line, side, startLine, startSide, severity, introduced, body }));
   const posting = comments.filter((c) => !c.state || c.state === "open").map(({ file, line, side }) => ({ file, line, side }));

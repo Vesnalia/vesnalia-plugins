@@ -16,7 +16,7 @@ test('viewerAddress falls back to the only address and refuses to guess among se
 });
 
 test('hostError takes the first key and its detail', () => {
-  assert.deepEqual(hostError('bb android-emulator failed: startFailed: x86 emulation unavailable'),
+  assert.deepEqual(hostError('alia android-emulator failed: startFailed: x86 emulation unavailable'),
     { key: 'startFailed', detail: 'x86 emulation unavailable' });
   assert.deepEqual(hostError('noSdk'), { key: 'noSdk' });
   assert.deepEqual(hostError('boom'), { key: 'commandFailed' });

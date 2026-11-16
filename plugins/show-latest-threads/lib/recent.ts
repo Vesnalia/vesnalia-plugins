@@ -1,6 +1,6 @@
 // Pure selection and ordering rules for the list, kept free of React and the
 // SDK runtime so they can be unit-tested with plain Node.
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export type SidebarThreadLike = Pick<
   PluginSidebarThread,

@@ -8,7 +8,7 @@
  * also stays in this window, so coming back is instant and never loses to a save still in flight:
  * of the two, the one saved last wins.
  */
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { toast } from "sonner";
 

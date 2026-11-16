@@ -1,13 +1,13 @@
-// bb-plugin-keep-last-blocks-open: backend entry.
+// alia-plugin-keep-last-blocks-open: backend entry.
 //
 // The plugin keeps no server state. Its three settings appear in the plugin's
 // settings page. The frontend reads them with useSettings and passes them to
 // the content script (see app.tsx).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     runningBlocks: {
       type: "number",
       label: "Open blocks while the thread runs (0 = off)",
@@ -26,5 +26,5 @@ export default async function plugin(bb: BbPluginApi) {
       default: true,
     },
   });
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }

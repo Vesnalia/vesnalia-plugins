@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon, Markdown } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, Markdown } from "@vesnalia/plugin-sdk/app";
 import type { TicketAction, TicketDetail } from "../contract";
 import { plural } from "../format";
 import { BUTTON, momentLabel, useAction, useLoom, useLoomWrite, useRun, useSyncPullRequests } from "./common";

@@ -1,14 +1,14 @@
 /**
- * `bb diff-review` — how the agent a review was sent to answers it: `list` the threads sent to it,
+ * `alia diff-review` — how the agent a review was sent to answers it: `list` the threads sent to it,
  * then `reply`, `resolve` or `dismiss` each one. Built with `defineCli`, so argv parsing, `--help` and
  * usage errors are the SDK's; the refusals that need the store (whose thread, which id) are
  * `ReviewService`'s.
  *
- * Text arrives as words or as `--text-base64`, which an agent fills through bb's
+ * Text arrives as words or as `--text-base64`, which an agent fills through VesnALIA's
  * `--text-base64-stdin`: one line read from stdin on the caller's machine, so quotes, backticks and
  * new lines survive no matter the shell (AGENTS.md, "A plugin CLI command knows its caller").
  */
-import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@vesnalia/plugin-sdk";
 
 import { describeLocation, describeTarget, GENERAL_PATH, type ReviewThread, type TargetRequest } from "../shared/types";
 import { parseRange } from "../shared/git-spec";
@@ -16,17 +16,17 @@ import { parsePullUrl } from "../shared/github";
 import { answeredText, ReviewError, type AgentAction, type ReviewService } from "./review";
 import type { RunService } from "./runs";
 
-/** The longest text a command takes, in UTF-8 bytes; its base64 still fits bb's 16 KiB stdin line. */
+/** The longest text a command takes, in UTF-8 bytes; its base64 still fits VesnALIA's 16 KiB stdin line. */
 export const TEXT_MAX_BYTES = 12_000;
 
-/** Output stays well under bb's cap for a plugin command's output. */
+/** Output stays well under VesnALIA's cap for a plugin command's output. */
 const LIST_MAX_CHARS = 500_000;
 
 function reason(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Runs a command; a run's thread calling in before bb told the plugin which thread it is is bound first. */
+/** Runs a command; a run's thread calling in before VesnALIA told the plugin which thread it is is bound first. */
 async function guarded<T>(work: () => Promise<T>, runs?: RunService, threadId?: string): Promise<T> {
   try {
     await runs?.bindIfPending(threadId);
@@ -103,7 +103,7 @@ const TEXT_OPTION = {
 function answerCommand(service: ReviewService, runs: RunService, action: AgentAction, summary: string, what: string) {
   return cliCommand({
     summary,
-    description: `Run from the bb thread the comments were sent to. The ${what} is the words after the id, or --text-base64.`,
+    description: `Run from the VesnALIA thread the comments were sent to. The ${what} is the words after the id, or --text-base64.`,
     positionals: [
       { name: "id", description: "The comment thread's id, or a unique prefix of it", required: true },
       { name: "text", description: `The ${what}`, variadic: true },
@@ -173,7 +173,7 @@ export function diffReviewCli(service: ReviewService, runs: RunService): PluginC
         run: (input, ctx) =>
           guarded(async () => {
             if (ctx.threadId === undefined) {
-              throw new PluginCliError("Run this inside the bb thread the comments were sent to.", { code: "not_in_thread" });
+              throw new PluginCliError("Run this inside the VesnALIA thread the comments were sent to.", { code: "not_in_thread" });
             }
             const threads = service.sentTo(ctx.threadId, input.options.all === true);
             if (input.options.json === true) return { exitCode: 0, stdout: `${JSON.stringify(threads)}\n` };
@@ -216,21 +216,21 @@ export function viewRequest(view: string | undefined, base: string | undefined, 
 
 function openCommand(service: ReviewService) {
   return cliCommand({
-    summary: "Open a thread's review in bb, on a view and at a file, or a GitHub pull request's review",
+    summary: "Open a thread's review in VesnALIA, on a view and at a file, or a GitHub pull request's review",
     description:
-      "Opens the review of this thread's workspace (or --thread's) on the Reviews page, in the bb window that shows the thread, and prints the page's address. The view is the uncommitted changes unless --view says otherwise: staged, unstaged, branch (committed since --base, the workspace's base branch by default), all (everything since --base), commit with --commit <sha>, or range with --range a..b or a...b. A <file> goes to that file. A GitHub pull request's address in place of the file opens its review: fetched into this workspace's repository without switching the checkout, with its review threads from GitHub.",
+      "Opens the review of this thread's workspace (or --thread's) on the Reviews page, in the VesnALIA window that shows the thread, and prints the page's address. The view is the uncommitted changes unless --view says otherwise: staged, unstaged, branch (committed since --base, the workspace's base branch by default), all (everything since --base), commit with --commit <sha>, or range with --range a..b or a...b. A <file> goes to that file. A GitHub pull request's address in place of the file opens its review: fetched into this workspace's repository without switching the checkout, with its review threads from GitHub.",
     positionals: [{ name: "file", description: "A file of the view to go to, by its path in the diff" }],
     options: {
       view: { type: "enum", values: ["uncommitted", "staged", "unstaged", "branch", "all", "commit", "range"], description: "Which changes to review" },
       range: { type: "string", description: "Two revisions to compare, as a..b or a...b", placeholder: "a...b" },
       base: { type: "string", description: "The branch the branch views compare against", placeholder: "branch" },
       commit: { type: "string", description: "The commit to review", placeholder: "sha" },
-      thread: { type: "string", description: "The bb thread whose review to open; this thread by default", placeholder: "id" },
+      thread: { type: "string", description: "The VesnALIA thread whose review to open; this thread by default", placeholder: "id" },
     },
     run: (input, ctx) =>
       guarded(async () => {
         const threadId = input.options.thread ?? ctx.threadId;
-        if (threadId === undefined) throw new PluginCliError("Run this inside a bb thread, or give --thread.", { code: "not_in_thread" });
+        if (threadId === undefined) throw new PluginCliError("Run this inside a VesnALIA thread, or give --thread.", { code: "not_in_thread" });
         // A pull request's address in place of a file opens its review.
         const pull = input.positionals.file === undefined ? null : parsePullUrl(input.positionals.file);
         if (pull !== null && (input.options.view !== undefined || input.options.range !== undefined || input.options.commit !== undefined)) {
@@ -239,9 +239,9 @@ function openCommand(service: ReviewService) {
         const request = pull === null ? viewRequest(input.options.view, input.options.base, input.options.commit, input.options.range) : { kind: "pr" as const, ...pull };
         const file = pull === null ? (input.positionals.file ?? null) : null;
         const opened = await service.requestOpen(threadId, request, file);
-        const lines = [`Opening the review of ${describeTarget(opened.target)} for ${threadId} in the bb window that shows that thread.`];
+        const lines = [`Opening the review of ${describeTarget(opened.target)} for ${threadId} in the VesnALIA window that shows that thread.`];
         if (opened.inDiff === false) lines.push(`${file} is not in that view.`);
-        lines.push(`The page, in any bb window: ${opened.route}`);
+        lines.push(`The page, in any VesnALIA window: ${opened.route}`);
         return { exitCode: 0, stdout: `${lines.join("\n")}\n` };
       }),
   });

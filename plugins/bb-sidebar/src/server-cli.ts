@@ -1,5 +1,5 @@
-import { PluginCliError, cliCommand, defineCli } from "@get-bb/plugin-sdk";
-import type { PluginCliContext } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli } from "@vesnalia/plugin-sdk";
+import type { PluginCliContext } from "@vesnalia/plugin-sdk";
 import type { ServerHandlers } from "./server-context";
 import type { ThreadLimitState } from "./contract";
 import type { createServerLifecycle } from "./server-lifecycle";
@@ -95,7 +95,7 @@ export function createServerCli(
     // A child's question shows inside its parent's row, so it counts as the
     // parent's own, as it does in the sidebar.
     const asking = ancestorsOfAskingThreads(threads, (thread) => thread.hasPendingInteraction);
-    // A snooze can wait on the sidebar's own scheduled Continue, which bb
+    // A snooze can wait on the sidebar's own scheduled Continue, which VesnALIA
     // reports as queued work. Only those threads need the limit lookup.
     const waiting = threads.filter(
       (thread) => thread.queuedWork === "waiting" && (readOne(thread.id)?.snoozedUntil ?? 0) > now,
@@ -126,7 +126,7 @@ export function createServerCli(
 
   return defineCli({
     name: "sidebar",
-    summary: "Snooze, settle, park, pin, and re-parent threads in the BB Sidebar",
+    summary: "Snooze, settle, park, pin, and re-parent threads in the VesnALIA Sidebar",
     commands: {
       list: cliCommand({
         summary: "List threads with their sidebar shelf",
@@ -251,7 +251,7 @@ export function createServerCli(
               const { id } = placed.rowThread;
               throw new PluginCliError(`${threadId} is ${placed.shelf} with ${id}, the thread it is nested under`, {
                 code: "action_failed",
-                hint: `Resume the whole tree: bb sidebar resume --thread ${id}`,
+                hint: `Resume the whole tree: VesnALIA sidebar resume --thread ${id}`,
               });
             }
             const row = readOne(threadId);
@@ -284,7 +284,7 @@ export function createServerCli(
           if (Boolean(positionals.parent) === options.clear) {
             throw new PluginCliError("Give a parent thread id or --clear, not both", {
               code: "invalid_value",
-              hint: "bb sidebar parent <parent-thread-id> or bb sidebar parent --clear",
+              hint: "alia sidebar parent <parent-thread-id> or VesnALIA sidebar parent --clear",
             });
           }
           const parentThreadId = positionals.parent?.trim() || null;

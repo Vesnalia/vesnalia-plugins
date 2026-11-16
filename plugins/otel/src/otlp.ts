@@ -32,7 +32,7 @@ export interface Span {
   attrs: Attrs;
 }
 
-export const SCOPE = { name: "bb-plugin-otel" };
+export const SCOPE = { name: "alia-plugin-otel" };
 
 export function tracesBody(resource: Attrs, version: string, spans: readonly Span[]) {
   return {
@@ -88,7 +88,7 @@ export interface MetricMeta {
 /**
  * Cumulative in-memory metrics. A flush exports only the series that changed since the
  * last delivered export, or every series when `full` is set (a periodic refresh), so an
- * idle bb sends nothing.
+ * idle VesnALIA sends nothing.
  */
 export class Meter {
   private sums = new Map<string, SumSeries>();

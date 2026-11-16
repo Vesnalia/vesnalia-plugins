@@ -80,9 +80,9 @@ Bottom half is ours, and the extension has no counterpart for it:
 - **Processes** — workflow runs and background `/go` runs by usage, each with
   its agent count, duration, status or exit code, taken from the run's own
   metadata.
-- **Projects and threads** — tokens by working folder, by model, and by bb
-  thread. Sessions map to threads through bb's own events, which do not live
-  long, so older sessions honestly stay under `Without a bb thread`.
+- **Projects and threads** — tokens by working folder, by model, and by VesnALIA
+  thread. Sessions map to threads through VesnALIA's own events, which do not live
+  long, so older sessions honestly stay under `Without a alia thread`.
 - **Usage over the window** — a hand-drawn SVG chart, stacked by main session /
   workflow agents / subagents, bucketed by the hour for a day and by six hours
   for a week, on the local clock.
@@ -108,7 +108,7 @@ it), or `More details →` at the bottom of the rings' popup.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin usage-meter
+alia plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin usage-meter
 ```
 
 ## How it works
@@ -116,7 +116,7 @@ bb plugin install git:https://github.com/xMinor-1/bb-plugins.git --plugin usage-
 `server.ts` runs two background services: one polls the limits, one reads the
 transcripts.
 
-The limit poll calls `bb.sdk.system.usageLimits()` and keeps the snapshot in
+The limit poll calls `alia.sdk.system.usageLimits()` and keeps the snapshot in
 memory; the `state` RPC method serves that same snapshot, so the number of open
 tabs adds no load on the API. Realtime does not apply here: the channel subscription lives only in the
 `useRealtime` React hook, and the rings are drawn by a content script that
@@ -162,7 +162,7 @@ from that cache, and the page never touches the transcripts itself.
 | Afterwards | Only the tails of files that changed are read — a pass costs about a second |
 | A transcript that a fork copied disappears | The cache is rebuilt from scratch, in the background, rather than losing the calls that only lived there |
 | Two files hold the same call and neither is the original | The tie goes to the file whose first timestamped line is older, then to byte order of the path — an arbitrary rule, and the only kind available (see above) |
-| bb thread names | `bb.db` is opened read-only, and a missing or unreadable database only costs the names, not the figures |
+| VesnALIA thread names | `alia.db` is opened read-only, and a missing or unreadable database only costs the names, not the figures |
 | Message bodies | Never read into the summary: counts, names and paths only — from `SKILL.md` just its size, from a workflow run everything but the script |
 
 ## Development
@@ -170,8 +170,8 @@ from that cache, and the page never touches the transcripts itself.
 ```sh
 npm install
 npx tsc --noEmit
-bb plugin build .
-bb plugin dev .
+alia plugin build .
+alia plugin dev .
 ```
 
 ## License

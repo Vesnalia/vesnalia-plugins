@@ -1,6 +1,6 @@
 # Diff Explorer
 
-A [BB](https://getbb.app) plugin. Review a thread's changes, and jump into the code behind them.
+A [VesnALIA](https://getbb.app) plugin. Review a thread's changes, and jump into the code behind them.
 
 ![Diff view](screenshots/diff.png)
 
@@ -17,7 +17,7 @@ A [BB](https://getbb.app) plugin. Review a thread's changes, and jump into the c
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/arashout/bb-plugin-diff-explorer.git
+alia plugin install git:https://github.com/arashout/bb-plugin-diff-explorer.git
 ```
 
 ## Go to definition needs a language server
@@ -38,7 +38,7 @@ Other languages still show the diff.
 ```sh
 npm install
 npm run build:monaco   # only after changing scripts/multi-diff.js or the Monaco version
-bb plugin install .
+alia plugin install .
 ```
 
 ## License

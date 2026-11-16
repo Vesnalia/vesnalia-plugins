@@ -1,19 +1,15 @@
 {
-  "name": "bb-plugin-auto-compact",
+  "name": "alia-plugin-auto-compact",
   "version": "0.1.0",
   "description": "Automatically compacts thread context when usage nears the model's limit.",
   "license": "MIT",
   "author": "Dummy-pixel-hash",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Dummy-pixel-hash/bb-plugin-auto-compact.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Auto Compact",
     "description": "Automatically compacts thread context when usage nears the model's limit.",
     "branding": {
@@ -26,7 +22,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -54,8 +49,25 @@
     "vitest": "^3.2.7"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/auto-compact#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/auto-compact"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -6,7 +6,7 @@ import { createInterface } from "node:readline";
 import {
   experimental_defineHostEntry,
   type ExperimentalHostWorkerLease,
-} from "@get-bb/plugin-sdk/host";
+} from "@vesnalia/plugin-sdk/host";
 import {
   IDLE_INSTALL_STATE,
   hostContract,
@@ -394,7 +394,7 @@ export function createCuaHostEntry(deps: HostDependencies) {
         emitConnection?.(false, reason);
       });
       try {
-        serverVersion = await next.initialize("bb-plugin-desktop-browser-agent", PLUGIN_VERSION);
+        serverVersion = await next.initialize("alia-plugin-desktop-browser-agent", PLUGIN_VERSION);
         tools = await next.listTools();
       } catch (error) {
         const stderr = next.recentStderr;

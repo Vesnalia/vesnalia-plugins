@@ -1,4 +1,4 @@
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 import { oneLine, turnStatus, type Message, type SpanEvent } from "./model.ts";
 
 // `timeline` is overloaded; a read without `afterTag` is a full page, never a delta.
@@ -93,7 +93,7 @@ function attachmentTitle(row: Extract<Row, { kind: "conversation"; role: "user" 
   return images > 0 ? (images === 1 ? "Image" : `${images} images`) : "";
 }
 
-/** A row's text as the timeline draws it: mentions as their labels, BB's own tag dropped. */
+/** A row's text as the timeline draws it: mentions as their labels, VesnALIA's own tag dropped. */
 function textOf(row: Extract<Row, { kind: "conversation" }>): string {
   let text = row.text;
   if (row.role === "user") {
@@ -102,7 +102,7 @@ function textOf(row: Extract<Row, { kind: "conversation" }>): string {
       text = text.slice(0, start) + resource.label + text.slice(end);
     }
   }
-  text = text.replace(/^\[bb system\]\s*/, "");
+  text = text.replace(/^\[alia system\]\s*/, "");
   return text.trim() === "" && row.role === "user" ? attachmentTitle(row) : text;
 }
 
@@ -217,13 +217,13 @@ export interface Outline {
 }
 
 /**
- * How a message another agent sent (`bb thread tell`) begins. BB's `conversationOutline` has no
- * `initiator`, so this is how its items are told apart; BB itself marks such a
+ * How a message another agent sent (`alia thread tell`) begins. VesnALIA's `conversationOutline` has no
+ * `initiator`, so this is how its items are told apart; VesnALIA itself marks such a
  * user row `initiator: "agent"` by the same pattern.
  */
-const AGENT_ENVELOPE = /^\[bb message from thread:[^;\]\s]+(?:;[^\]]*)?\]/;
+const AGENT_ENVELOPE = /^\[alia message from thread:[^;\]\s]+(?:;[^\]]*)?\]/;
 
-/** The turn counter from BB's `conversationOutline`, counting the messages the bar names: not another agent's, not an empty one. */
+/** The turn counter from VesnALIA's `conversationOutline`, counting the messages the bar names: not another agent's, not an empty one. */
 export function outlineOf(items: readonly Pick<OutlineItem, "id" | "preview" | "attachmentSummary">[]): Outline {
   const counted = items.filter((item) => !AGENT_ENVELOPE.test(item.preview) && (item.preview !== "" || item.attachmentSummary));
   return { ordinals: new Map(counted.map((item, i) => [item.id, i + 1])), total: counted.length };

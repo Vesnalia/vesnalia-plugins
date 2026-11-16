@@ -1,4 +1,4 @@
-// bb-plugin-side-board — frontend.
+// alia-plugin-side-board — frontend.
 //
 // Two surfaces over one board:
 //   - a thread side-panel tab rendering the board as Markdown (board.ts
@@ -8,8 +8,8 @@
 // The panel is read-only by design: the user answers in chat by id ("Q3
 // clerk") and the agent closes the item.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { definePluginApp, Markdown, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginThreadHeaderActionProps, PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, Markdown, useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginThreadHeaderActionProps, PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import { renderMarkdown } from "./board";
 import type { Board, rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
@@ -103,7 +103,7 @@ function BoardPanel({ threadId }: PluginThreadPanelProps) {
 /** Always mounted while a thread is open, which lets it open the panel. */
 function BoardBadge({ threadId, isCompactViewport }: PluginThreadHeaderActionProps) {
   const { board } = useBoard(threadId);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const openItems = board?.items.filter((item) => item.status === "open") ?? [];
   const open = openItems.length;
   const blocking = openItems.some((item) => item.blocking);

@@ -1,12 +1,12 @@
 #!/bin/bash
-# bb-box base template, run as root inside a Proxmox Ubuntu 24.04 CT: the
+# alia-box base template, run as root inside a Proxmox Ubuntu 24.04 CT: the
 # development baseline, pinned tools, Docker, the box user, SSH with the
 # plugin's key, DNS and PATH. The desktop template runs this first too, and so
 # does setup/docker/Dockerfile for the Docker backend's images, and
 # setup/tart for Linux VMs on a Mac (040).
 #
 # usage: customize-base.sh <build-dir>
-# <build-dir>/build.env sets BOX_USER, BOX_DNS and BB_URL (see build.sh), and
+# <build-dir>/build.env sets BOX_USER, BOX_DNS and ALIA_URL (see build.sh), and
 # BOX_RUNTIME: lxc (the default), docker, or vm (a Tart Linux VM).
 set -Eeuo pipefail
 trap 'echo "customize-base: line $LINENO failed: $BASH_COMMAND" >&2' ERR
@@ -62,7 +62,7 @@ printf 'prefix=/usr/local\nupdate-notifier=false\nfund=false\n' >"$node_prefix/e
 grep -q '^COREPACK_ENABLE_DOWNLOAD_PROMPT=' /etc/environment ||
   printf 'COREPACK_ENABLE_DOWNLOAD_PROMPT=0\n' >>/etc/environment
 install -d -m 0755 /etc/environment.d
-printf 'COREPACK_ENABLE_DOWNLOAD_PROMPT=0\n' >/etc/environment.d/50-bb-box-corepack.conf
+printf 'COREPACK_ENABLE_DOWNLOAD_PROMPT=0\n' >/etc/environment.d/50-alia-box-corepack.conf
 # Git LFS for every user and repository, as `git lfs install` does for one user.
 git lfs install --system --skip-repo >/dev/null
 
@@ -104,9 +104,9 @@ EOF
 # as before.
 systemctl disable containerd.service docker.service >/dev/null 2>&1
 systemctl enable docker.socket >/dev/null
-cat >/etc/systemd/system/bb-box-docker-containers.service <<'EOF'
+cat >/etc/systemd/system/alia-box-docker-containers.service <<'EOF'
 [Unit]
-Description=bb-box: start Docker at boot when the box has containers
+Description=alia-box: start Docker at boot when the box has containers
 ConditionDirectoryNotEmpty=/var/lib/docker/containers
 After=docker.socket
 
@@ -117,7 +117,7 @@ ExecStart=/usr/bin/systemctl start --no-block docker.service
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable bb-box-docker-containers.service >/dev/null
+systemctl enable alia-box-docker-containers.service >/dev/null
 
 # SSH: a plain service, keys only. The template holds no host keys; the
 # service makes them before its first start in each clone, and again when a
@@ -126,7 +126,7 @@ systemctl enable bb-box-docker-containers.service >/dev/null
 systemctl disable ssh.socket >/dev/null 2>&1 || true
 systemctl enable ssh.service >/dev/null
 install -d -m 0755 /etc/ssh/sshd_config.d /etc/systemd/system/ssh.service.d
-cat >/etc/ssh/sshd_config.d/10-bb-box.conf <<'EOF'
+cat >/etc/ssh/sshd_config.d/10-alia-box.conf <<'EOF'
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PermitRootLogin prohibit-password
@@ -134,7 +134,7 @@ PermitEmptyPasswords no
 HostKey /etc/ssh/ssh_host_ed25519_key
 HostKey /etc/ssh/ssh_host_ecdsa_key
 EOF
-cat >/etc/systemd/system/ssh.service.d/50-bb-box-host-keys.conf <<'EOF'
+cat >/etc/systemd/system/ssh.service.d/50-alia-box-host-keys.conf <<'EOF'
 [Service]
 ExecStartPre=
 ExecStartPre=/bin/sh -c 'test -s /etc/ssh/ssh_host_ed25519_key || { rm -f /etc/ssh/ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key.pub; ssh-keygen -q -t ed25519 -N "" -f /etc/ssh/ssh_host_ed25519_key; }'
@@ -165,8 +165,8 @@ fi
 # the user's own NOPASSWD rule below wins.
 usermod -aG docker,adm,sudo "$user"
 # npm's global packages. The box user's go in its ~/.local, whose bin is first
-# on the PATH of its commands, terminals and BB's daemon: `npm install -g`, as
-# BB's updater runs it for an agent CLI, needs no root, and the command it
+# on the PATH of its commands, terminals and ALIA's daemon: `npm install -g`, as
+# ALIA's updater runs it for an agent CLI, needs no root, and the command it
 # installs takes over from the pinned one in /usr/local/bin. Root's go in
 # /usr/local, from root's own npmrc: sudo sets HOME to /root. The box user's
 # prefix is in the global npmrc rather than ~/.npmrc, which npm also reads as a
@@ -178,26 +178,26 @@ printf 'prefix=%s/.local\nupdate-notifier=false\nfund=false\n' "$box_home" >"$no
 mv /root/.npmrc.new /root/.npmrc
 passwd -l "$user" >/dev/null
 passwd -l root >/dev/null
-# sudo resets the environment, which drops the DEBIAN_FRONTEND bb-box's
+# sudo resets the environment, which drops the DEBIAN_FRONTEND alia-box's
 # commands export, so `sudo apt-get install` would warn or prompt.
 printf 'Defaults env_keep += "DEBIAN_FRONTEND"\n%s ALL=(ALL) NOPASSWD:ALL\n' "$user" >"/etc/sudoers.d/90-$user"
 chmod 0440 "/etc/sudoers.d/90-$user"
 visudo -cf "/etc/sudoers.d/90-$user" >/dev/null
-# BB's host daemon runs as a systemd user service, so the user's manager
+# ALIA's host daemon runs as a systemd user service, so the user's manager
 # starts at boot.
 install -d -m 0755 /var/lib/systemd/linger
 touch "/var/lib/systemd/linger/$user"
-# After a hard stop BB's daemon leaves its lock (a new daemon then waits about
+# After a hard stop ALIA's daemon leaves its lock (a new daemon then waits about
 # 8 s for it to go stale) and, without a service manager, a pid file that may
 # name another process after the restart. Clear both at boot.
-cat >/etc/tmpfiles.d/bb-box.conf <<EOF
-# bb-box: BB daemon state a hard stop leaves behind.
-R /home/$user/.bb-machines/*/daemon.lock.lock
-r /home/$user/.bb-machines/*/install-daemon.pid
+cat >/etc/tmpfiles.d/alia-box.conf <<EOF
+# alia-box: ALIA daemon state a hard stop leaves behind.
+R /home/$user/.alia-machines/*/daemon.lock.lock
+r /home/$user/.alia-machines/*/install-daemon.pid
 EOF
 
 # The plugin's key, for the box user and root: in a Proxmox LXC box and a
-# Tart VM. A Docker box has no SSH server running and no key: bb-box reaches it
+# Tart VM. A Docker box has no SSH server running and no key: alia-box reaches it
 # through `docker exec`.
 if [ "$runtime" != docker ]; then
   key=$(cat "$build/plugin-key.pub")
@@ -220,13 +220,13 @@ if [ "$runtime" = lxc ]; then
   # file for eth0 carries no DNS.
   installed systemd-resolved || die "systemd-resolved is not installed"
   install -d -m 0755 /etc/systemd/resolved.conf.d
-  printf '[Resolve]\nDNS=%s\n' "${BOX_DNS:-1.1.1.1 9.9.9.9}" >/etc/systemd/resolved.conf.d/10-bb-box.conf
+  printf '[Resolve]\nDNS=%s\n' "${BOX_DNS:-1.1.1.1 9.9.9.9}" >/etc/systemd/resolved.conf.d/10-alia-box.conf
   systemctl enable systemd-networkd.service systemd-resolved.service >/dev/null
   ln -sf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
   : >/etc/.pve-ignore.resolv.conf
   # Only IPv4 matters for network-online (Docker waits for it).
   install -d -m 0755 /etc/systemd/system/systemd-networkd-wait-online.service.d
-  cat >/etc/systemd/system/systemd-networkd-wait-online.service.d/10-bb-box.conf <<'EOF'
+  cat >/etc/systemd/system/systemd-networkd-wait-online.service.d/10-alia-box.conf <<'EOF'
 [Service]
 ExecStart=
 ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any --ipv4 --timeout=10
@@ -235,8 +235,8 @@ EOF
   # back by 1.4 s. Proxmox rewrites eth0.network at each start but leaves
   # drop-ins alone.
   install -d -m 0755 /etc/systemd/network/eth0.network.d
-  cat >/etc/systemd/network/eth0.network.d/10-bb-box.conf <<'EOF'
-# bb-box: IPv4 only; no IPv6 link-local DAD delaying network-online.
+  cat >/etc/systemd/network/eth0.network.d/10-alia-box.conf <<'EOF'
+# alia-box: IPv4 only; no IPv6 link-local DAD delaying network-online.
 [Network]
 LinkLocalAddressing=no
 IPv6AcceptRA=no
@@ -245,10 +245,10 @@ EOF
   # A box's address is often one a deleted box had. Announce the new MAC with a
   # gratuitous ARP as soon as the address is up; otherwise the host keeps a
   # stale neighbour entry and sends to the old MAC for up to 8 s.
-  install -d -m 0755 /usr/local/libexec/bb-box
-  cat >/usr/local/libexec/bb-box/announce <<'EOF'
+  install -d -m 0755 /usr/local/libexec/alia-box
+  cat >/usr/local/libexec/alia-box/announce <<'EOF'
 #!/bin/sh
-# bb-box: announce eth0's IPv4 address (gratuitous ARP) once it is configured.
+# alia-box: announce eth0's IPv4 address (gratuitous ARP) once it is configured.
 for _ in $(seq 1 50); do
   addr=$(ip -4 -o addr show dev eth0 2>/dev/null | awk '{ split($4, a, "/"); print a[1]; exit }')
   [ -n "$addr" ] && break
@@ -257,44 +257,44 @@ done
 [ -n "$addr" ] || exit 0
 exec arping -q -U -c 2 -I eth0 "$addr"
 EOF
-  chmod 0755 /usr/local/libexec/bb-box/announce
-  cat >/etc/systemd/system/bb-box-announce.service <<'EOF'
+  chmod 0755 /usr/local/libexec/alia-box/announce
+  cat >/etc/systemd/system/alia-box-announce.service <<'EOF'
 [Unit]
-Description=bb-box: announce this box's address to its neighbours
+Description=alia-box: announce this box's address to its neighbours
 After=systemd-networkd.service
 Wants=systemd-networkd.service
 
 [Service]
 Type=oneshot
-ExecStart=-/usr/local/libexec/bb-box/announce
+ExecStart=-/usr/local/libexec/alia-box/announce
 
 [Install]
 WantedBy=multi-user.target
 EOF
-  systemctl enable bb-box-announce.service >/dev/null
+  systemctl enable alia-box-announce.service >/dev/null
 fi
 
 # Locale for tools that complain without one.
 printf 'LANG=C.UTF-8\n' >/etc/default/locale
 
-# BB's host daemon package, pre-installed where BB's installer looks for it.
-[ -z "${BB_URL:-}" ] || bash "$build/guest/install-bb-app.sh" "$user" "$BB_URL" "$build/artifacts"
+# ALIA's host daemon package, pre-installed where ALIA's installer looks for it.
+[ -z "${ALIA_URL:-}" ] || bash "$build/guest/install-alia-app.sh" "$user" "$ALIA_URL" "$build/artifacts"
 
 # A health check the plugin (or a person) can run as the box user.
-install -m 0755 "$build/guest/check-headless.sh" /usr/local/bin/bb-box-check-headless
-install -d -m 0755 /usr/local/libexec/bb-box
-install -m 0755 "$build/guest/docker-first-start.sh" /usr/local/libexec/bb-box/docker-first-start
+install -m 0755 "$build/guest/check-headless.sh" /usr/local/bin/alia-box-check-headless
+install -d -m 0755 /usr/local/libexec/alia-box
+install -m 0755 "$build/guest/docker-first-start.sh" /usr/local/libexec/alia-box/docker-first-start
 # Dev Container features for a project image's script (049).
-install -m 0755 "$build/guest/bb-box-feature.sh" /usr/local/bin/bb-box-feature
+install -m 0755 "$build/guest/alia-box-feature.sh" /usr/local/bin/alia-box-feature
 
-install -m 0755 "$build/guest/bb-box-identity.sh" /usr/local/sbin/bb-box-identity
-/usr/local/sbin/bb-box-identity disable
+install -m 0755 "$build/guest/alia-box-identity.sh" /usr/local/sbin/alia-box-identity
+/usr/local/sbin/alia-box-identity disable
 if [ "${BOX_IDENTITY_RESET:-off}" = on ]; then
   identity_options=()
   [ "$runtime" != docker ] || identity_options+=(--no-unit)
   [ -z "${BOX_IDENTITY_VALUE_FILE:-}" ] || identity_options+=(--value-file "$BOX_IDENTITY_VALUE_FILE")
   [ "${BOX_IDENTITY_MACHINE:-own}" != provider ] || identity_options+=(--machine-from-provider)
-  /usr/local/sbin/bb-box-identity enable "${identity_options[@]}"
+  /usr/local/sbin/alia-box-identity enable "${identity_options[@]}"
 fi
 
 case "${LINUX_GPU:-none}" in
@@ -312,7 +312,7 @@ esac
 [[ ":$(sed -n 's/^PATH="\([^"]*\)"$/\1/p' /etc/environment):" == *":/home/$user/.local/bin:"* ]] ||
   sed -i "s|^PATH=\"|PATH=\"/home/$user/.local/bin:|" /etc/environment
 
-# Every command BB and agents use must be on the box user's PATH over SSH,
+# Every command ALIA and agents use must be on the box user's PATH over SSH,
 # where pam_env sets PATH from /etc/environment.
 box_path=$(sed -n 's/^PATH="\([^"]*\)"$/\1/p' /etc/environment)
 [[ ":$box_path:" == *:/usr/local/bin:* ]] || die "/etc/environment PATH lacks /usr/local/bin"
@@ -320,7 +320,7 @@ box_path=$(sed -n 's/^PATH="\([^"]*\)"$/\1/p' /etc/environment)
 # shellcheck disable=SC2016
 for command in git git-lfs gh node npm npx pnpm yarn python3 pip3 uv uvx rg fd jj claude codex pi curl wget jq \
   zip unzip zstd rsync tree bc socat netstat make gcc pkg-config sudo sshd runuser docker psql redis-cli sqlite3 \
-  tmux vim nvim bb-box-feature; do
+  tmux vim nvim alia-box-feature; do
   runuser -u "$user" -- env PATH="$box_path" sh -c 'command -v "$1" >/dev/null' sh "$command" ||
     die "$command is not on $user's PATH"
 done

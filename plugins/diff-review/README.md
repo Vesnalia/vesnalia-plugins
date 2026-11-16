@@ -1,10 +1,10 @@
 # Diff Review (diff-review)
 
-Review an agent's changes the way you review a pull request, without leaving bb: comment on lines,
+Review an agent's changes the way you review a pull request, without leaving VesnALIA: comment on lines,
 ranges, files or the whole diff in a **Review** tab beside the thread, then send the comments to the
 thread's agent. It fixes the code and answers in each comment thread, and the tab updates as it does.
 
-It is a bb take on [diffity](https://github.com/nilbuild/diffity)'s review loop, and reuses its prompts
+It is a VesnALIA take on [diffity](https://github.com/nilbuild/diffity)'s review loop, and reuses its prompts
 (MIT; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 
 ## What you get
@@ -16,15 +16,15 @@ It is a bb take on [diffity](https://github.com/nilbuild/diffity)'s review loop,
   **committed since** the base branch, **all changes since** the base branch, **one commit** of the
   branch, or **a range** (`main..feature`, or `main...feature`, which still shows a branch's changes
   once merged). It opens on the uncommitted changes, or on the committed ones when nothing is
-  uncommitted; after that, the view is the one you pick. Split or unified, in bb's code theme, with
+  uncommitted; after that, the view is the one you pick. Split or unified, in VesnALIA's code theme, with
   **Hide whitespace** and, in the settings, colour-blind colours (blue and orange). Each file's diff
   loads by itself as it scrolls into view; a very large change starts folded, and a binary or
   oversized file says why it has no line diff.
 - **Any file.** *Any file* in the view picker searches the workspace for a file, in the diff or not,
   opens it and takes comments on its lines like the diff does.
-- **Viewed**, per file, shared with bb's own diff panel: marking a file folds it, and a file that
+- **Viewed**, per file, shared with VesnALIA's own diff panel: marking a file folds it, and a file that
   changed since you marked it says so. On a pull request the marks are your own on GitHub, the same
-  ones GitHub's *Files changed* page shows. **Open** shows the file in bb's viewer at the version the view
+  ones GitHub's *Files changed* page shows. **Open** shows the file in VesnALIA's viewer at the version the view
   shows.
 - **Find and go to.** **Find** searches every file of the diff, folded ones too; **Go to** (from the
   palette) jumps to a file, an open comment or another view as you type. The up and down arrows in
@@ -54,7 +54,7 @@ It is a bb take on [diffity](https://github.com/nilbuild/diffity)'s review loop,
   were looking at; symlinks and submodules are left to git.
 - **Send to agent.** Pick open threads, add an overall note, and send them to the thread under review,
   queued behind its current turn if it is in one. The agent answers each thread with
-  `bb diff-review reply`, `resolve` or `dismiss`; its answers appear in the tab as they land. A thread
+  `alia diff-review reply`, `resolve` or `dismiss`; its answers appear in the tab as they land. A thread
   shows *Sent · waiting*, *Agent answered*, or *No reply* (with a link to the thread) when the agent's
   turn ended without a word on it.
 - **AI review.** **AI review** in the toolbar starts an agent reviewing the diff, with an optional
@@ -73,30 +73,30 @@ It is a bb take on [diffity](https://github.com/nilbuild/diffity)'s review loop,
 - **Runs.** Each AI run is a thread under the thread you are reviewing, in the same workspace, listed
   under the toolbar too, with **Open thread** and **Close** (which archives the thread). They start
   with the provider and model in Settings → Plugins → Diff Review (Claude Code and its default model
-  unless changed), in bb's *Approve for me* mode unless you choose *Accept edits* there. bb cannot make
+  unless changed), in VesnALIA's *Approve for me* mode unless you choose *Accept edits* there. VesnALIA cannot make
   a thread read-only, so an AI review is only asked not to edit; when it ends, the run lists every file
   that changed in the workspace while it ran.
 - **Clear review.** Once a view has comments or runs, **Clear review** in the toolbar deletes every
   comment thread in that view, yours and the AI's, open or closed, and closes its runs, archiving
   their threads, so the tab starts fresh. It asks first, since it can't be undone; other views keep
   their comments.
-- **The thread under review hears from its runs.** bb tells a thread when one of its child threads
+- **The thread under review hears from its runs.** VesnALIA tells a thread when one of its child threads
   finishes a turn. Each run's last message opens with "Diff Review status report — no action
   needed", and the thread's agent is told these notices are reports, so it reads them without acting.
 - **Leave generated files out.** List gitignore patterns in Settings → Plugins → Diff Review, and
   the workspace's own `.diffityignore` (and `.git/info/diffityignore`, the main repository's in a git worktree) is read too, as diffity does.
 
-- **The Reviews page** in bb's sidebar lists every review with comments, across projects, newest
+- **The Reviews page** in VesnALIA's sidebar lists every review with comments, across projects, newest
   first, with the number of open comment threads on its entry (in the reviews it lists: a review whose
   workspace was archived is in neither); pick one to see it in full. Under the list, the page says how
   many reviews no thread can open any more (every thread of their workspace archived and the workspace
   gone) and offers **Delete…**, which removes them and all their comments after you confirm. Nothing
   is deleted otherwise. A thread's
   **Info** tab says how many review comments its workspace has open.
-- **From the command line**, `bb diff-review open [file] [--view …]` opens a thread's review on a
-  view, at a file, in the bb window that shows the thread, and prints the page's address.
+- **From the command line**, `alia diff-review open [file] [--view …]` opens a thread's review on a
+  view, at a file, in the VesnALIA window that shows the thread, and prints the page's address.
 - **GitHub pull requests.** *Pull request #N* in the view picker (when the branch has one), *A pull
-  request…*, or `bb diff-review open <pull request address>` reviews a pull request here: its changes
+  request…*, or `alia diff-review open <pull request address>` reviews a pull request here: its changes
   are fetched into the workspace's repository (into refs of the plugin's own, never switching your
   checkout), its review threads from GitHub sit on their lines, and a reply, Resolve or Reopen on one
   goes to GitHub (a reply that asks @reviewer or @agent stays in the tab and asks the AI reviewer). When
@@ -109,35 +109,35 @@ It is a bb take on [diffity](https://github.com/nilbuild/diffity)'s review loop,
   "changed since viewed". **Submit review…** posts your own comments as one review with the verdict you pick,
   and the agents' drafts you tick in it as replies in that review; a comment that cannot be posted says why. *A new thread…* in Send to agent fixes the pull request in
   a new worktree that checks it out. This needs the GitHub CLI (`gh`), signed in, on the machine
-  running bb; it posts as that account, only from Submit and a draft's Post, and changes your Viewed
+  running VesnALIA; it posts as that account, only from Submit and a draft's Post, and changes your Viewed
   marks only from the Viewed box.
 
-Comments are stored by the plugin, per workspace and view, on the bb server; they stay when the tab or
-bb closes. The diffs come from bb's Git plugin (turned on by default), and the staged, unstaged and
+Comments are stored by the plugin, per workspace and view, on the VesnALIA server; they stay when the tab or
+VesnALIA closes. The diffs come from VesnALIA's Git plugin (turned on by default), and the staged, unstaged and
 range views from git itself, run on the machine that holds the workspace.
 
 ## What it is not (yet)
 
-- It does not comment inside bb's own diff panel (Mod+D): bb has no hook for that, so the Review tab
+- It does not comment inside VesnALIA's own diff panel (Mod+D): VesnALIA has no hook for that, so the Review tab
   draws its own diff with the same renderer.
-- Viewed marks cover bb's own views and pull requests; the staged, unstaged, range and Any file views
+- Viewed marks cover VesnALIA's own views and pull requests; the staged, unstaged, range and Any file views
   have none.
 - The agent may edit files the way it always can in its thread: Diff Review adds no permission of its
   own. Its AI runs use *Approve for me* (or *Accept edits*, if you set it).
 
 ## Install
 
-Needs bb 0.48 or newer, with its Git plugin on (it is unless you turned it off).
+Needs VesnALIA 0.48 or newer, with its Git plugin on (it is unless you turned it off).
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.4.0' --plugin diff-review --tag-prefix diff-review/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.4.0' --plugin diff-review --tag-prefix diff-review/
 ```
 
 ## For agents
 
-The plugin ships a `diff-review` skill that tells a thread's agent how to answer: `bb diff-review list`,
+The plugin ships a `diff-review` skill that tells a thread's agent how to answer: `alia diff-review list`,
 then `reply`, `resolve` or `dismiss` with the text as base64 through `--text-base64-stdin`; an AI review
-(or summary, or explanation) also has `comment`, and `bb diff-review open` opens a review for the user. Answers are accepted only from the thread the comments were sent to (or, for an AI
+(or summary, or explanation) also has `comment`, and `alia diff-review open` opens a review for the user. Answers are accepted only from the thread the comments were sent to (or, for an AI
 review, from its own thread). The threads AI runs start also get `diff_review_*` tools that do the same
 without the base64.
 
@@ -147,7 +147,7 @@ without the base64.
 npm install --include=dev
 npm run typecheck
 npm test
-bb plugin build
+alia plugin build
 ```
 
 See [AGENTS.md](AGENTS.md) for how it is built and what must not break.

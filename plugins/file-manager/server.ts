@@ -1,10 +1,10 @@
-// server.ts — File Manager backend entry (§1: a plain bb.server factory over
-// node:fs; metadata through bb.rpc, bytes through bb.http.route).
+// server.ts — File Manager backend entry (§1: a plain alia.server factory over
+// node:fs; metadata through alia.rpc, bytes through alia.http.route).
 //
 // This file is wiring only. It resolves the hard root once, builds the settings
-// module, hands the two halves of the contract to bb.rpc, registers the byte
+// module, hands the two halves of the contract to alia.rpc, registers the byte
 // routes and the upload GC schedule, and logs on dispose.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 // One source of truth for both sides (§4): the panel does
 // `useRpc<typeof fileManagerContract>()` against this re-export.
@@ -30,34 +30,34 @@ export const PLUGIN_NAME = "File Manager";
 const UPLOAD_GC_CRON = "17 * * * *";
 const UPLOAD_GC_NAME = "upload-gc";
 
-export default async function plugin(bb: BbPluginApi): Promise<void> {
+export default async function plugin(alia: AliaPluginApi): Promise<void> {
   // §6: ROOT is realpath'ed exactly once; every later path check compares
   // against this value, after its own realpath.
   const root = await initRoot();
-  const settings = await createSettings(bb);
+  const settings = await createSettings(alia);
   // Synchronous on purpose: every kv access is per call, so there is nothing
   // to warm up and nothing a failed read at load could take down (§8.11).
-  const bookmarks = createBookmarks(bb);
+  const bookmarks = createBookmarks(alia);
 
   /* ---------------- byte transfer (BACKEND-TRANSFER) ---------------- */
-  const jobs = await createJobs(bb);
-  const archives = await createArchives(bb, { jobs, settings });
-  const uploads = await createUploads(bb, { settings });
+  const jobs = await createJobs(alia);
+  const archives = await createArchives(alia, { jobs, settings });
+  const uploads = await createUploads(alia, { settings });
   const archiveSupport: ArchiveSupport = archives.support;
 
-  registerHttpRoutes(bb, { uploads });
-  bb.background.schedule(UPLOAD_GC_NAME, UPLOAD_GC_CRON, async () => {
+  registerHttpRoutes(alia, { uploads });
+  alia.background.schedule(UPLOAD_GC_NAME, UPLOAD_GC_CRON, async () => {
     const dropped = await uploads.sweep();
-    if (dropped > 0) bb.log.info(`upload-gc dropped ${dropped} stale upload session(s)`);
+    if (dropped > 0) alia.log.info(`upload-gc dropped ${dropped} stale upload session(s)`);
   });
   // §5.2: the GC also runs once at load, so a crash mid-upload cannot leave
   // stale parts lying around until the next hour boundary.
   void uploads.sweep().catch((error: unknown) => {
-    bb.log.warn(`upload-gc sweep at load failed: ${String(error)}`);
+    alia.log.warn(`upload-gc sweep at load failed: ${String(error)}`);
   });
 
   /* ---------------- rpc ---------------- */
-  registerRpc(bb, {
+  registerRpc(alia, {
     settings,
     bookmarks,
     archiveSupport,
@@ -77,22 +77,22 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
   /* ---------------- composer mentions (§8.8) ---------------- */
   // Host-rendered, no frontend bundle involved: "@" in any composer now lists
   // files from this machine, and the picked one is read fresh at send time.
-  registerMentions(bb);
+  registerMentions(alia);
 
-  bb.log.info(
+  alia.log.info(
     `${PLUGIN_NAME} ${PLUGIN_VERSION} loaded — root ${root}` +
       ` (zip:${archiveSupport.zip} tar:${archiveSupport.tar} 7z:${archiveSupport.sevenZip}` +
       ` rar:${archiveSupport.rar})`,
   );
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     // Hooks run LIFO, so this one — registered last — runs *first*, and must
     // therefore not tear anything down that the modules still need.
     // `createArchives` registers its own hook (kill the extractor children,
     // delete their staging directories) and it runs right after this line.
     // Uploads need no hook: a chunk in flight holds nothing but a raw fd, and
     // its `.part` file is the resume point by design (§5.2).
-    bb.log.info(`${PLUGIN_NAME} disposed — root was ${getRoot()}`);
+    alia.log.info(`${PLUGIN_NAME} disposed — root was ${getRoot()}`);
   });
 }
 
@@ -105,17 +105,17 @@ export default async function plugin(bb: BbPluginApi): Promise<void> {
  * contract.ts, so a name change here is a one-line edit in this file only.
  *
  * Expected exports:
- *   src/jobs.ts        createJobs(bb) -> { jobStatus, jobCancel }
+ *   src/jobs.ts        createJobs(VesnALIA) -> { jobStatus, jobCancel }
  *                      (handlers matching the contract methods of the same name)
- *   src/archives.ts    createArchives(bb, { jobs, settings })
+ *   src/archives.ts    createArchives(VesnALIA, { jobs, settings })
  *                        -> { extractArchive, listArchive,
  *                             support: { zip, tar, sevenZip, rar } }
  *                      (listArchive is src/archive-listing.ts, built on the
  *                      same executable probe — §8.13)
- *   src/uploads.ts     createUploads(bb, { settings })
+ *   src/uploads.ts     createUploads(VesnALIA, { settings })
  *                        -> { uploadCreate, uploadStatus, uploadFinish,
  *                             uploadAbort, sweep() }
- *   src/http-routes.ts registerHttpRoutes(bb, { uploads }) -> void
+ *   src/http-routes.ts registerHttpRoutes(VesnALIA, { uploads }) -> void
  *
  * `src/bookmarks.ts` is BACKEND-CORE, not transfer: it carries no bytes and is
  * handed to `registerRpc` as an ordinary dependency, like `settings`.

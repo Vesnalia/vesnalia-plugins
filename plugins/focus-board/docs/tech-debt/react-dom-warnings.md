@@ -1,4 +1,4 @@
-# Tech debt — bb-plugin-focus-board
+# Tech debt — alia-plugin-focus-board
 
 Each entry: what breaks or smells, where, why it is not fixed inline, and how
 to verify it is still there.

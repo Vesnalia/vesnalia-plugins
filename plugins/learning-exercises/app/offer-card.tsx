@@ -6,7 +6,7 @@
  * The card claims the offer once it is on screen (`offerSeen`), which re-checks the caps; only an answer
  * counts toward them, so an offer left unanswered, seen or not, expires without counting.
  */
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -36,7 +36,7 @@ export function offerSentence(offer: Offer): string {
 export function OfferCard(props: { offer: Offer; threadId: string; onScreen: boolean; where: "banner" | "tab"; sessionWhere: SessionMode; environmentId: string | null }) {
   const { offer, threadId, onScreen } = props;
   const rpc = useLearningRpc();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState<OfferAnswer | null>(null);
   const [more, setMore] = useState(false);
   const reported = useRef<string | null>(null);
@@ -79,7 +79,7 @@ export function OfferCard(props: { offer: Offer; threadId: string; onScreen: boo
   if (offer.seenAt === null && claimed !== offer.id) return null;
 
   return (
-    // bb's "card" banner chrome draws only the border, so the banner pads itself as bb's own composer
+    // VesnALIA's "card" banner chrome draws only the border, so the banner pads itself as VesnALIA's own composer
     // banners pad their rows (px-3, a little more vertically for two lines of buttons). In the tab the
     // offer sits in the tab's own padding, with no border around it.
     <div className={props.where === "banner" ? `${BOX} px-3 py-2.5` : BOX} data-testid={`offer-${props.where}`}>

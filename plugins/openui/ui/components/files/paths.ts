@@ -1,8 +1,8 @@
 // Paths as Workspace files components name them: deciding whether a prop is a
-// path or inline text, which BB file target opens it, and its code language.
+// path or inline text, which VesnALIA file target opens it, and its code language.
 // Pure: no React, no DOM.
 
-export const THREAD_STORAGE = "$BB_THREAD_STORAGE/";
+export const THREAD_STORAGE = "$ALIA_THREAD_STORAGE/";
 
 /** The environment of the reply's thread, as far as it is known. */
 export interface ThreadEnv {
@@ -28,7 +28,7 @@ export function isPath(value: string): boolean {
   return FILE_LIKE.test(text);
 }
 
-/** The BB file target for `path` in this thread, or null until the thread's environment is known. */
+/** The VesnALIA file target for `path` in this thread, or null until the thread's environment is known. */
 export function fileTarget(path: string, threadId: string | null, env: ThreadEnv | null): FileTarget | null {
   const clean = path.trim();
   if (clean === "") return null;
@@ -61,7 +61,7 @@ export function framePath(file: string | null): string | null {
 
 /** The last segment of a path, and the directory before it (with its trailing slash). */
 export function splitPath(path: string): { dir: string; base: string } {
-  const clean = path.replace(/^\$BB_THREAD_STORAGE\//, "");
+  const clean = path.replace(/^\$ALIA_THREAD_STORAGE\//, "");
   const cut = clean.lastIndexOf("/");
   return cut < 0 ? { dir: "", base: clean } : { dir: clean.slice(0, cut + 1), base: clean.slice(cut + 1) };
 }

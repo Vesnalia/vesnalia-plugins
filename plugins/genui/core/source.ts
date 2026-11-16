@@ -35,7 +35,7 @@ export function sameCaption(a: SourceCaption | null, b: SourceCaption | null): b
  * say nothing to the reader.
  */
 export function sourceFileLabel(path: string): string {
-  if (!/^(\$BB_THREAD_STORAGE\/|\/|~\/|[A-Za-z]:[\\/])/.test(path)) return path;
+  if (!/^(\$ALIA_THREAD_STORAGE\/|\/|~\/|[A-Za-z]:[\\/])/.test(path)) return path;
   return path.split(/[\\/]/).filter((part) => part !== "").pop() ?? path;
 }
 

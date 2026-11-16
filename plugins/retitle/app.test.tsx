@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginAppBuilder, PluginCommandRegistration } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginAppBuilder, PluginCommandRegistration } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 
 afterEach(cleanup);

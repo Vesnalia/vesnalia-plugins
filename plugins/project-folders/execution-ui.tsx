@@ -4,7 +4,7 @@ import {
   useRpc,
   experimental_PermissionModePicker as PermissionModePicker,
   experimental_ProviderModelPicker as ProviderModelPicker,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { ExecutionScope, rpcContract } from "./server";
 import {
   CLI_AGENTS_URL,
@@ -22,7 +22,7 @@ import {
   type ResolvedExecution,
   type ServiceTier,
 } from "./execution";
-import type { BbDefaults, BbSync, Remembered } from "./bb-remembered";
+import type { AliaDefaults, AliaSync, Remembered } from "./alia-remembered";
 import { t } from "./i18n";
 import { Help } from "./agents-apply";
 import { Button } from "./components/ui/button";
@@ -46,7 +46,7 @@ type Loaded = {
   knownHosts?: { id: string; name: string }[];
   fallback: ExecutionFallback | null;
   agents: AgentCatalog;
-  bb?: BbDefaults | null;
+  alia?: AliaDefaults | null;
 };
 type PickerValue = {
   providerId: string;
@@ -60,57 +60,57 @@ const rememberedLabel = (r: Remembered) =>
   [r.providerId, r.model, r.reasoningLevel, r.permissionMode].join(" · ");
 
 /**
- * BB's own remembered provider for the project, shown when it disagrees with
+ * VesnALIA's own remembered provider for the project, shown when it disagrees with
  * the plugin's project setting or cannot run at all: a chat started without
  * an explicit provider goes there, not to what this page shows.
  */
-function BbDefaultsNotice({
-  bb,
+function AliaDefaultsNotice({
+  alia,
   sync,
   busy,
   onRemember,
 }: {
-  bb: BbDefaults | null | undefined;
-  sync: BbSync | null;
+  alia: AliaDefaults | null | undefined;
+  sync: AliaSync | null;
   busy: boolean;
   onRemember: () => void;
 }) {
   const result =
     sync?.status === "written"
-      ? { tone: "ok", text: t("Записано в BB: треды без явного провайдера пойдут сюда.") }
+      ? { tone: "ok", text: t("Записано в ALIA: треды без явного провайдера пойдут сюда.") }
       : sync?.status === "unavailable"
-        ? { tone: "warn", text: t("Не записано в BB: у выбранного провайдера нет моста на машине проекта.") }
+        ? { tone: "warn", text: t("Не записано в ALIA: у выбранного провайдера нет моста на машине проекта.") }
         : sync?.status === "failed"
-          ? { tone: "warn", text: `${t("Не удалось записать в BB:")} ${sync.message ?? ""}` }
+          ? { tone: "warn", text: `${t("Не удалось записать в ALIA:")} ${sync.message ?? ""}` }
           : null;
-  const broken = !!bb?.remembered && !bb.rememberedAvailable;
-  const differs = !!bb && !bb.matches;
+  const broken = !!alia?.remembered && !alia.rememberedAvailable;
+  const differs = !!alia && !alia.matches;
   if (!result && !broken && !differs) return null;
   return (
-    <div className="pf-exec-bb" role="status">
+    <div className="pf-exec-alia" role="status">
       {result && (
-        <p className={result.tone === "ok" ? "pf-agents-hint" : "pf-exec-bb-warn"}>
+        <p className={result.tone === "ok" ? "pf-agents-hint" : "pf-exec-alia-warn"}>
           {result.text}
         </p>
       )}
-      {(broken || differs) && bb && (
+      {(broken || differs) && alia && (
         <>
-          <p className="pf-exec-bb-warn">
-            {bb.remembered
-              ? `${t("Запомнено в BB:")} ${rememberedLabel(bb.remembered)}. `
-              : `${t("BB ничего не запомнил для проекта.")} `}
+          <p className="pf-exec-alia-warn">
+            {alia.remembered
+              ? `${t("Запомнено в ALIA:")} ${rememberedLabel(alia.remembered)}. `
+              : `${t("ALIA ничего не запомнил для проекта.")} `}
             {broken
               ? t("У этого провайдера нет моста на машине проекта: треды без явного провайдера упадут.")
-              : t("Расходится с настройкой здесь: треды без явного провайдера (bb thread spawn, новый чат вне раздела) пойдут туда.")}
+              : t("Расходится с настройкой здесь: треды без явного провайдера (VesnALIA thread spawn, новый чат вне раздела) пойдут туда.")}
           </p>
-          {differs && bb.wanted && !bb.wantedAvailable && sync?.status !== "unavailable" && (
-            <p className="pf-exec-bb-warn">
-              {t("Не записано в BB: у выбранного провайдера нет моста на машине проекта.")}
+          {differs && alia.wanted && !alia.wantedAvailable && sync?.status !== "unavailable" && (
+            <p className="pf-exec-alia-warn">
+              {t("Не записано в ALIA: у выбранного провайдера нет моста на машине проекта.")}
             </p>
           )}
-          {differs && bb.wanted && bb.wantedAvailable && (
+          {differs && alia.wanted && alia.wantedAvailable && (
             <Button variant="outline" size="sm" disabled={busy} onClick={onRemember}>
-              {t("Записать в BB")}
+              {t("Записать в ALIA")}
             </Button>
           )}
         </>
@@ -122,7 +122,7 @@ const NO_AGENT = "__none";
 
 /** Where a value that is not pinned here comes from, in one short phrase. */
 function originLabel(origin: Origin | undefined, scope: ExecutionScope) {
-  if (!origin) return t("как в BB");
+  if (!origin) return t("как в ALIA");
   if (origin.scope === "global") return t("из настроек плагина");
   if (origin.scope === "project") return t("из проекта");
   return scope.kind === "folder" && origin.folderId === scope.folderId
@@ -134,7 +134,7 @@ function originLabel(origin: Origin | undefined, scope: ExecutionScope) {
  * The provider, model, reasoning level, service tier, permission mode and
  * session agent new chats start with here. Every group can be left off, and
  * then it is inherited: the nearest section that pins it, else the project,
- * else the plugin-wide default, else BB's own remembered choice.
+ * else the plugin-wide default, else VesnALIA's own remembered choice.
  */
 export function ExecutionEditor({
   scope,
@@ -149,14 +149,14 @@ export function ExecutionEditor({
   const [draft, setDraft] = useState<Execution>({});
   /**
    * A group can be switched on before it holds anything — when nothing is
-   * pinned above and BB has no remembered choice either, the picker opens
+   * pinned above and VesnALIA has no remembered choice either, the picker opens
    * empty and the user chooses. Saving an empty group simply stores nothing.
    */
   const [modelOn, setModelOn] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [sync, setSync] = useState<BbSync | null>(null);
+  const [sync, setSync] = useState<AliaSync | null>(null);
   const key =
     scope.kind === "folder"
       ? `f:${scope.folderId}`
@@ -270,8 +270,8 @@ export function ExecutionEditor({
       const result = (await rpc.call("execution_save", {
         scope,
         value: normalizeExecution(draft),
-      })) as { bb?: BbSync };
-      setSync(result.bb ?? null);
+      })) as { alia?: AliaSync };
+      setSync(result.alia ?? null);
       await load();
       setSaved(true);
     } catch (e) {
@@ -288,7 +288,7 @@ export function ExecutionEditor({
       setSync(
         (await rpc.call("execution_remember", {
           projectId: scope.projectId,
-        })) as BbSync,
+        })) as AliaSync,
       );
       await load();
     } catch (e) {
@@ -300,8 +300,8 @@ export function ExecutionEditor({
   const controls = (
     <div className="pf-exec-rows">
       {scope.kind === "project" && (
-        <BbDefaultsNotice
-          bb={state.bb}
+        <AliaDefaultsNotice
+          alia={state.alia}
           sync={sync}
           busy={busy}
           onRemember={() => void remember()}
@@ -542,9 +542,9 @@ export function CliAgentsCard({ installed }: { installed: boolean }) {
       </p>
       {!installed && (
         <>
-          <code>bb plugin install {CLI_AGENTS_URL}.git --yes</code>
+          <code>alia plugin install {CLI_AGENTS_URL}.git --yes</code>
           <p className="pf-exec-aside-note">
-            {t("Он же есть в каталоге плагинов BB под именем")} CLI Agents.
+            {t("Он же есть в каталоге плагинов ALIA под именем")} CLI Agents.
           </p>
         </>
       )}

@@ -121,7 +121,7 @@ async function setup() {
       timeoutMs: 20_000,
       maxOutputBytes: 64_000,
       maxErrorBytes: 4000,
-      // Node's own spawn keeps PATH to exactly these: bb's toolchain would add the machine's own gh.
+      // Node's own spawn keeps PATH to exactly these: VesnALIA's toolchain would add the machine's own gh.
       spawn,
     });
   }

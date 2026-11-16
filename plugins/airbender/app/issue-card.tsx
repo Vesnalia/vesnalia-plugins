@@ -5,9 +5,9 @@
 // when the pointer rests on a trigger and closes it again.
 //
 // Why: first built for the line above the message box, so the user can see
-// what the thread is on without opening the tab (bead-bb-3l4, bead-bb-eg0).
+// what the thread is on without opening the tab (bead-alia-3l4, bead-alia-eg0).
 // The epic band in the tab shows the same card for the epic (the user,
-// bead-bb-ha9: "it can show the same card as it shows when you focus on ID
+// bead-alia-ha9: "it can show the same card as it shows when you focus on ID
 // of the current issue in the main window"), so both live here.
 //
 // Design notes:
@@ -22,11 +22,11 @@
 // Gotchas:
 // - The card is drawn at the top level of the page (a portal), at a fixed
 //   place in the window. Positioned against its trigger it was cut off:
-//   BB's message box, and the tab's bands, clip what sticks out of them.
+//   VesnALIA's message box, and the tab's bands, clip what sticks out of them.
 //   Content moved out like this loses the plugin's styles unless it carries
 //   usePortalScopeProps().
 
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, RefObject } from "react";
 import { createPortal } from "react-dom";
@@ -177,7 +177,7 @@ export function useHoverCard(side: "above" | "below"): HoverCard {
  *
  * Drawn at the top level of the page (a portal), at a fixed place in the
  * window. The first version was positioned against its trigger, inside the
- * message box, and the user saw nothing happen on a click: BB's message box
+ * message box, and the user saw nothing happen on a click: VesnALIA's message box
  * cuts off whatever sticks out of it. Content moved out like this loses the
  * plugin's styles unless it carries usePortalScopeProps().
  *

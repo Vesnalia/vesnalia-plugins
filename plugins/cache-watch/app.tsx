@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { definePluginApp, experimental_useThreadContextKind, useBbContext, useRealtime, useRpc } from '@get-bb/plugin-sdk/app';
+import { definePluginApp, experimental_useThreadContextKind, useAliaContext, useRealtime, useRpc } from '@vesnalia/plugin-sdk/app';
 import { CacheMessageMetadata, SessionStatisticsPanel, SessionStatisticsButton } from './statistics-ui';
 import { StatusTemplateSettings } from './template-settings';
 import { registerCacheHeader } from './header-cache';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 function time(value: number | null) { return value === null ? 'Unknown' : new Date(value).toLocaleString(); }
 function CacheWatchPage() {
   const rpc = useRpc<typeof rpcContract>();
-  const context = useBbContext();
+  const context = useAliaContext();
   const [threadId, setThreadId] = useState(context.threadId ?? '');
   const [hours, setHours] = useState('6');
   const [status, setStatus] = useState<CacheStatus | null>(null);
@@ -51,7 +51,7 @@ function CacheWatchPage() {
     {!threadId && <p className="text-muted-foreground">To view session statistics, open Cache inside that session and choose Session statistics. You can also enter a Thread ID below.</p>}
     <div className="rounded-lg border p-4 space-y-2">
       <p className="font-medium">Keepalive uses ordinary paid turns</p>
-      <p className="text-muted-foreground">Each ping and its reply remain in the transcript. The agent is instructed to reply OK without tools. BB does not enforce a tool ban for these turns. Cache reuse and savings are not guaranteed.</p>
+      <p className="text-muted-foreground">Each ping and its reply remain in the transcript. The agent is instructed to reply OK without tools. VesnALIA does not enforce a tool ban for these turns. Cache reuse and savings are not guaranteed.</p>
       <p className="text-muted-foreground">Pings are scheduled 5 minutes before estimated expiry, using provider TTL when reported. Without a reported TTL, the provider-specific fallback is shown in the session cache panel. Unknown or elapsed expiry waits for fresh telemetry.</p>
     </div>
     <section className="space-y-3">

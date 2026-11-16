@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-automation-groups",
+  "name": "alia-plugin-automation-groups",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.87"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.87"
   },
-  "bb": {
+  "alia": {
     "name": "Autopilots",
     "description": "Organize scheduled work into folders and control groups together.",
     "branding": {
@@ -26,7 +26,6 @@
     "@radix-ui/react-checkbox": "^1.3.7"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.87",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -57,11 +56,6 @@
     "name": "Dmitrii Kapustin",
     "url": "https://github.com/dmitriikapustin"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git",
-    "directory": "plugins/automation-groups"
-  },
   "files": [
     "server.ts",
     "app.tsx",
@@ -80,7 +74,24 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.87"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/automation-groups#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/automation-groups"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

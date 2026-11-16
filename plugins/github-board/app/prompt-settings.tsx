@@ -8,7 +8,7 @@
  * normalises on save, so clearing a field is how an override is dropped.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { COLUMN_IDS, type ColumnId, type PromptSet, type PromptSettings } from "../shared/board";

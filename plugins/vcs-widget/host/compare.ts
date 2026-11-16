@@ -1,6 +1,6 @@
 // Read-only views for the panel tabs and the revision step: commits on
 // either side of two branches, changed files, one file's patch, tags. Output
-// is capped so a huge repository cannot exceed bb's host payload limits.
+// is capped so a huge repository cannot exceed VesnALIA's host payload limits.
 import type { BranchRef, CompareRef, CompareResult, GitError, PatchResult, TagList, WorkingTreeDiff } from "../contracts";
 import { classifyGitFailure } from "../shared/git-errors";
 import { fullRef, refLabel } from "../shared/model";

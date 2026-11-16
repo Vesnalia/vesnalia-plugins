@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import plugin from '../server.ts';
 
 const activity = { sourceId: 'guided-review', sourceName: 'Guided Review', entityId: 'pr-123',
   eventId: 'generation-1', occurredAt: 100, projectId: 'p1', title: 'Improve sign-in',
   body: 'Your guide is ready to review.', status: 'ready', target: { panel: 'review', segments: ['pr-123'] } };
 async function fixture(settings = {}) {
-  const { bb, harness } = createFakePluginHost({ pluginId: 'inbox', sdk: { threads: { list: async () => [] } }, settings: { desktopEnabled: false, telegramInstant: false, ...settings } });
-  await plugin(bb);
-  return { bb, harness, rpc: (method, input = null) => harness.behavior.callRpc(method, input), close: () => harness.lifecycle.dispose() };
+  const { alia, harness } = createFakePluginHost({ pluginId: 'inbox', sdk: { threads: { list: async () => [] } }, settings: { desktopEnabled: false, telegramInstant: false, ...settings } });
+  await plugin(alia);
+  return { alia, harness, rpc: (method, input = null) => harness.behavior.callRpc(method, input), close: () => harness.lifecycle.dispose() };
 }
 
 test('extension completion is retained once across concurrent retries, dismissal, and older events', async () => {
@@ -55,8 +55,8 @@ test('extension alerts have a separate preference and remain in the inbox when m
   const f = await fixture({ notifyExtensions: false, notifyFinished: true });
   try {
     const emitted = [];
-    const publish = f.bb.realtime.publish;
-    f.bb.realtime.publish = (channel, payload) => { emitted.push(channel); return publish(channel, payload); };
+    const publish = f.alia.realtime.publish;
+    f.alia.realtime.publish = (channel, payload) => { emitted.push(channel); return publish(channel, payload); };
     await f.rpc('publishActivity', activity);
     assert.equal(emitted.includes('inbox:toast'), false);
     assert.equal((await f.rpc('list', {})).total, 1);

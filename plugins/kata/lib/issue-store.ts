@@ -57,7 +57,7 @@ export function createIssueStore(options: IssueStoreOptions) {
   const pollInterval = options.pollIntervalMs ?? POLL_INTERVAL_MS;
   const entries = new Map<string, Entry>();
   let included: string[] = [];
-  /** Projects kept warm besides the included ones (kata-bound bb projects). */
+  /** Projects kept warm besides the included ones (kata-bound VesnALIA projects). */
   let watched = new Set<string>();
   const tracked = (uid: string) => included.includes(uid) || watched.has(uid);
   let projectsCache: { at: number; projects: KataProject[] } | null = null;
@@ -200,7 +200,7 @@ export function createIssueStore(options: IssueStoreOptions) {
     isAvailable: () => available,
     /** Daemon reachability as last seen by the tail (null before the first poll). */
     availability: () => ({ available, message: availabilityMessage }),
-    /** Reload one project's open list now (after a mutation from bb). */
+    /** Reload one project's open list now (after a mutation from VesnALIA). */
     refreshProject: (uid: string): Promise<void> =>
       tracked(uid) ? refresh(uid) : Promise.resolve(),
     /** Replace the included set; warms new projects, drops removed caches. */

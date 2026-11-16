@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRealtime, useRealtimeConnectionState, useRpc, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract, ThreadLimitState } from "./contract";
+import { useRealtime, useRealtimeConnectionState, useRpc, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract, ThreadLimitState } from "./contract";
 import { RATE_LIMITS_CHANNEL } from "./realtime-channels";
 import { toast } from "./lib/toast";
 import { useOnDemandLookups } from "./useOnDemandLookups";
@@ -35,7 +35,7 @@ export function RateLimitsProvider({
   settledThreadIds: ReadonlySet<string> | null;
   children: ReactNode;
 }) {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const connection = useRealtimeConnectionState();
   const [rows, setRows] = useState<LimitRows>({});
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());

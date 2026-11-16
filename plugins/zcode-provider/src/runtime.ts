@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import { resolve, join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { reasoningLevelSchema, providerHealthResultSchema, providerInstallationStatusSchema, providerUsageResultSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { reasoningLevelSchema, providerHealthResultSchema, providerInstallationStatusSchema, providerUsageResultSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 import { ReadOnlyAuth, AuthError, accountProviderId, nativeAccount, authMode } from './auth.ts';
 import type { AuthMode, AccountPlan } from './auth.ts';
 import { NativeProcess, childEnvironment, MissingExecutableError } from './process.ts';
@@ -112,14 +112,14 @@ export function mapNativeModels(value: unknown, nativeDefault?: unknown, plan: A
     seen.add(model);
     if (!reasoningLevelSchema.safeParse(reasoning.defaultLevel).success) {
       rejected.add(model);
-      process.stderr.write(`ZCode model ${model}: default reasoning unsupported by bb SDK; model unavailable.\n`);
+      process.stderr.write(`ZCode model ${model}: default reasoning unsupported by VesnALIA SDK; model unavailable.\n`);
       continue;
     }
     const inputFormat = record(record(m.properties ?? {}).inputFormat ?? {});
     if (inputFormat.supportsImage !== undefined && typeof inputFormat.supportsImage !== 'boolean') throw new Error('Malformed native image capability');
     output.push({ id: model, model, displayName: typeof m.label === 'string' ? m.label : model, description: `ZCode native account ${nativeAccount(plan).label} model`, isDefault: false, defaultReasoningEffort: reasoning.defaultLevel, supportedReasoningEfforts: levels.filter(level => reasoningLevelSchema.safeParse(level).success).map(level => ({ reasoningEffort: level, description: level })), ...(typeof inputFormat.supportsImage === 'boolean' ? { supportsImage: inputFormat.supportsImage } : {}) });
   }
-  if (!output.length) throw new Error(rejected.size ? 'Native model default reasoning unsupported by bb SDK; no supported models' : 'Native selected-plan catalogue empty');
+  if (!output.length) throw new Error(rejected.size ? 'Native model default reasoning unsupported by VesnALIA SDK; no supported models' : 'Native selected-plan catalogue empty');
   const fallback = record(nativeDefault ?? {});
   const selected = (plan === 'coding-plan' ? output.find(m => m.model === 'GLM-5.3') : undefined) ?? (fallback.providerId === accountProviderId ? output.find(m => m.model === fallback.modelId) : undefined);
   if (!selected && !rejected.has(String(fallback.modelId)) && !(plan === 'coding-plan' && rejected.has('GLM-5.3'))) throw new Error('Native selected-plan default unavailable; no invented fallback');
@@ -132,7 +132,7 @@ function validateEntitlement(value: unknown): StartEntitlement {
       typeof e.validUntil !== 'number' || !Number.isFinite(e.validUntil) || e.validUntil <= Date.now()) throw Error('Start entitlement expired or invalid');
   return { modelIds: e.modelIds, validUntil: e.validUntil };
 }
-export function createNativeServices(initialRoot = join(homedir(), '.local/share/bb-zcode'), dependencies: {
+export function createNativeServices(initialRoot = join(homedir(), '.local/share/alia-zcode'), dependencies: {
   discovery?: typeof discovery; auth?: ReadOnlyAuth; paths?: ReturnType<typeof nativePaths>;
   configure?: (child: NativeProcess) => Promise<void>;
   catalogueCache?: boolean;
@@ -170,7 +170,7 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
     appendFileSync(join(root, 'auth-metadata.ndjson'), JSON.stringify({ at: new Date().toISOString(), purpose, generation, fresh: true }) + '\n', { encoding: 'utf8', mode: 0o600 });
   });
   const selectedAuth = (mode: AuthMode = 'desktop', plan: AccountPlan = 'coding-plan') => dependencies.auth && mode === 'desktop' && plan === 'coding-plan' ? auth : auth.fork(mode, explicitKeyPath, plan);
-  // A bb maintenance bridge may expire independently of a live thread bridge.
+  // A VesnALIA maintenance bridge may expire independently of a live thread bridge.
   // Share only the validated public catalogue, never credentials/identity/hash.
   // Pinned account capabilities are public config; authentication is checked
   // independently on every hit and every model request, never part of the key.
@@ -280,12 +280,12 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
     const operationRoot = root;
     // Identity and binding checks precede discovery, auth and writes.
     const threadId = identity?.threadId;
-    if (!service && (!threadId || !threadId.trim())) throw new Error('Canonical thread identity required; attach from the original bb thread. Keep session/history files.');
-    if (!service && execution?.envVars.BB_THREAD_ID !== undefined && execution.envVars.BB_THREAD_ID !== threadId)
-      throw new Error('Environment thread identity conflict; remove manual BB_THREAD_ID override and attach from the original bb thread.');
+    if (!service && (!threadId || !threadId.trim())) throw new Error('Canonical thread identity required; attach from the original VesnALIA thread. Keep session/history files.');
+    if (!service && execution?.envVars.ALIA_THREAD_ID !== undefined && execution.envVars.ALIA_THREAD_ID !== threadId)
+      throw new Error('Environment thread identity conflict; remove manual ALIA_THREAD_ID override and attach from the original VesnALIA thread.');
     try { cwd = realpathSync(cwd); } catch { throw new Error('Workspace binding path unavailable; restore original workspace directory and attach again. Keep session/history files.'); }
     const sessionDir = service ? join(root, 'services', randomUUID()) : sessionDataDir(root, cwd, threadId!);
-    const bindingFile = join(sessionDir, 'bb-binding.json');
+    const bindingFile = join(sessionDir, 'alia-binding.json');
     let binding: Record<string, unknown> | null;
     try { binding = existsSync(bindingFile) ? record(JSON.parse(readFileSync(bindingFile, 'utf8'))) : null; }
     catch { throw new Error('Native binding unreadable; keep binding/session/history files and ask the provider maintainer to reconcile the original native identity before attach.'); }
@@ -294,7 +294,7 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
     if (!service && identity?.providerThreadId && (!binding || binding.nativeSessionId !== identity.providerThreadId))
       throw new Error('Unknown or legacy native identity; keep binding/session/history files and ask the provider maintainer to reconcile the original native identity before attach. No migration.');
     if (!service && !identity?.providerThreadId && (binding?.nativeSessionId || binding?.creationPending))
-      throw new Error('Existing native identity requires resume; no create fallback. Attach the original bb thread with its saved native ID. If creation is pending, ask the provider maintainer to reconcile it; keep binding/session/history files.');
+      throw new Error('Existing native identity requires resume; no create fallback. Attach the original VesnALIA thread with its saved native ID. If creation is pending, ask the provider maintainer to reconcile it; keep binding/session/history files.');
     const d = detect(), paths = getPaths();
     if (!d.installed) throw new MissingExecutableError(resolveZCode().message);
     const sessionAuth = selectedAuth(execution?.authMode ?? serviceMode, execution?.accountPlan ?? servicePlan);
@@ -313,15 +313,15 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
     const overlay = async () => {
       const plan = sessionAuth.accountPlan();
       const entitlement = plan === 'start-plan' ? (serviceEntitlement ?? (await services.models(undefined, sessionAuth.source(), plan) as Catalogue).entitlement) : undefined;
-      return sessionAuth.overlay(`bb-${randomUUID()}`, builtinRevision!, entitlement?.modelIds);
+      return sessionAuth.overlay(`alia-${randomUUID()}`, builtinRevision!, entitlement?.modelIds);
     };
     const observer = join(root, 'observer.json');
     own.ZCODE_SESSION_DB_PATH = join(sessionDir, 'db.sqlite');
     Object.assign(own, observerEnvironment(root));
     const warnings: string[] = [];
-    const launchEnv = { ...childEnvironment(process.env, own, execution?.envVars), ...(!service ? { BB_THREAD_ID: threadId } : {}) };
+    const launchEnv = { ...childEnvironment(process.env, own, execution?.envVars), ...(!service ? { ALIA_THREAD_ID: threadId } : {}) };
     sessionAuth.setNetworkEnvironment(launchEnv, desktopVersion(compatibilityFiles(paths)[3]!) ?? 'unknown');
-    return { warnings, auth: sessionAuth, knowledgeStore: service ? undefined : join(sessionDir, 'bb-session-knowledge.json'), backgroundTaskStore: service ? undefined : join(sessionDir, 'bb-background-tasks.json'), mentionCatalogue: service ? undefined : async side => {
+    return { warnings, auth: sessionAuth, knowledgeStore: service ? undefined : join(sessionDir, 'alia-session-knowledge.json'), backgroundTaskStore: service ? undefined : join(sessionDir, 'alia-background-tasks.json'), mentionCatalogue: service ? undefined : async side => {
       try {
         const { stdout } = await promisify(execFile)(paths.executable,
           [paths.script, '--json', side, 'list'],
@@ -376,7 +376,7 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
     compatibility,
     compatibilityWarning() {
       const value = compatibility();
-      const key = JSON.stringify('tuple' in value ? { bb: value.tuple.bb, sdk: value.tuple.installedSdk,
+      const key = JSON.stringify('tuple' in value ? { alia: value.tuple.alia, sdk: value.tuple.installedSdk,
         declaredSdk: value.tuple.declaredSdk, desktop: value.tuple.desktop, cli: value.tuple.cli } : value);
       return claimNotice(root, 'last-version-combination', key) ? value.message : null;
     },
@@ -488,7 +488,7 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
       const available = record(await services.models(undefined, mode, plan)).models as ReturnType<typeof mapNativeModels>;
       const selected = model ? available.find(m => m.model === model) : available.find(m => m.isDefault);
       const effort = reasoning || selected?.defaultReasoningEffort;
-      if (!selected || !effort || !selected.supportedReasoningEfforts.some(e => e.reasoningEffort === effort)) throw new Error('Selected model/reasoning unavailable; models with a default reasoning level unsupported by bb SDK cannot be used. No fallback');
+      if (!selected || !effort || !selected.supportedReasoningEfforts.some(e => e.reasoningEffort === effort)) throw new Error('Selected model/reasoning unavailable; models with a default reasoning level unsupported by VesnALIA SDK cannot be used. No fallback');
       return { model: selected.model, reasoning: effort };
     },
   };
@@ -526,7 +526,7 @@ export function createNativeServices(initialRoot = join(homedir(), '.local/share
       }
   }
   return { services, setSecretRoot(path: string) { explicitKeyPath = join(resolve(path), 'backupKey'); }, setRoot(path: string) { const next = resolve(path); configureZCodeLocation(next, evidence); if (next !== root) { root = next; catalogueEpoch++; catalogues.clear(); balanceLoading = undefined; }
-    // Maintenance starts only after bb supplies this installation's owned data root.
+    // Maintenance starts only after VesnALIA supplies this installation's owned data root.
     scheduleDataMaintenance(root);
     maintenanceTimer ??= setInterval(() => scheduleDataMaintenance(root), 24 * 60 * 60 * 1000);
     maintenanceTimer.unref();

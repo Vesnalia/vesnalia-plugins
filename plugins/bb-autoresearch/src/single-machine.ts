@@ -51,7 +51,7 @@ export function singleMachineMode(spec: Pick<StudySpec, "oracle">, editHostId: s
   return { on: false, setting, reason: "off (auto: no bench host is the edit machine)", hostId: null, shared };
 }
 
-/** One paragraph for the Oracle tab, the calibration report and `bb study show`. */
+/** One paragraph for the Oracle tab, the calibration report and `alia study show`. */
 export function singleMachineText(mode: SingleMachineMode, spec: Pick<StudySpec, "oracle">, hostName: string | null): string {
   const quiet = spec.oracle.quiet_bench
     ? " Quiet bench is on: while a measurement runs, new worker turns on that machine wait to start (turns already running are not interrupted; a held turn waits for at most one measurement)."

@@ -1,5 +1,5 @@
 /**
- * The project list is a loopback fetch into the bb server, and it fails in
+ * The project list is a loopback fetch into the VesnALIA server, and it fails in
  * the real world — "TypeError: fetch failed" under host load, around
  * sleep/wake, or while the server restarts. These tests pin the failure
  * discipline: the last good list survives a failure, a sustained outage

@@ -87,7 +87,7 @@ export function labelPrompt(input: {
     // Room for about one more card line than the old 18 words: the card shows two lines, and hovering it adds a third.
     input.running
       ? '- summary: one sentence, at most 24 words, saying what the agent is doing now for the last user message and what that involves, present progressive, e.g. "Making board clicks scroll to the latest message and keeping the selected card in view."'
-      : '- summary: one sentence, at most 24 words, saying what happened in the latest exchange: the main changes or findings, past tense, no "I", e.g. "Made the board denser, synced titles with bb threads, and added a blocked reason; typecheck passes." Only if it stopped to ask the user something, end with what it needs, e.g. "…; asks whether to merge duplicates."',
+      : '- summary: one sentence, at most 24 words, saying what happened in the latest exchange: the main changes or findings, past tense, no "I", e.g. "Made the board denser, synced titles with VesnALIA threads, and added a blocked reason; typecheck passes." Only if it stopped to ask the user something, end with what it needs, e.g. "…; asks whether to merge duplicates."',
     "- needsInput: true only if the reply directly asks the user a question (or says it is waiting on them) and the agent cannot continue the work until they answer. False when the work is finished, even if the reply lists suggested next steps, recommendations, decisions for later, things to review or verify, or optional offers (\"I can also…\", \"let me know if you want…\").",
     'Example: {"category": "checkout api", "intent": "fix flaky payment test", "summary": "…", "needsInput": false}',
   ]

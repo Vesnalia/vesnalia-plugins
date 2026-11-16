@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { extensionOf, formatLabel } from "./lib/formats";
 import {
@@ -47,15 +47,15 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded — audio file opener is registered by the app bundle");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded — audio file opener is registered by the app bundle");
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async prepare({ path, source }) {
-      const resolved = await resolveAudioLocation(bb, path, source);
+      const resolved = await resolveAudioLocation(alia, path, source);
       try {
-        const preview = await createAudioPreviewUrl(bb, resolved);
-        bb.log.info(`preview ${resolved.fileName} (${resolved.mimeType})`);
+        const preview = await createAudioPreviewUrl(alia, resolved);
+        alia.log.info(`preview ${resolved.fileName} (${resolved.mimeType})`);
         return {
           url: preview.url,
           fileName: resolved.fileName,
@@ -66,14 +66,14 @@ export default async function plugin(bb: BbPluginApi) {
         };
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
-        bb.log.warn(`preview failed for ${resolved.fileName}: ${message}`);
+        alia.log.warn(`preview failed for ${resolved.fileName}: ${message}`);
         throw cause instanceof Error ? cause : new Error(message);
       }
     },
     async loadBytes({ path, source }) {
-      const resolved = await resolveAudioLocation(bb, path, source);
-      const bytes = await readAudioBytes(bb, resolved);
-      bb.log.info(`bytes ${resolved.fileName} (${bytes.sizeBytes})`);
+      const resolved = await resolveAudioLocation(alia, path, source);
+      const bytes = await readAudioBytes(alia, resolved);
+      alia.log.info(`bytes ${resolved.fileName} (${bytes.sizeBytes})`);
       return {
         contentBase64: bytes.contentBase64,
         fileName: resolved.fileName,

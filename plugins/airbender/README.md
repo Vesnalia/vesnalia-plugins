@@ -2,12 +2,12 @@
 
 **Never get lost in vibe coding.**
 
-Airbender is a plugin for [BB](https://getbb.app), the coding-agent app. It
+Airbender is a plugin for [VesnALIA](https://getbb.app), the coding-agent app. It
 keeps your project's issues in a tab beside every agent conversation, so each
 agent knows what it is on and you always know what comes next. Issues live in
 your tracker, [beads](https://github.com/gastownhall/beads) inside the
 repository or GitHub issues, never in the chat. It works with Claude Code and
-Codex inside BB.
+Codex inside VesnALIA.
 
 [Website](https://mturilin.github.io/airbender/) ·
 [Install](#install) ·
@@ -15,7 +15,7 @@ Codex inside BB.
 [bend, the command for agents](#bend-the-command-for-agents) ·
 [Development](#development)
 
-![BB with the Airbender tab open: an agent working on an issue in the middle, and on the right the current issue with its step, size, priority and type, and the Ready group with an epic of six sub-issues.](site/img/hero.png)
+![VesnALIA with the Airbender tab open: an agent working on an issue in the middle, and on the right the current issue with its step, size, priority and type, and the Ready group with an epic of six sub-issues.](site/img/hero.png)
 
 ## The problem
 
@@ -61,17 +61,17 @@ Your agent got fast. Your process is still a terminal tab and a good memory.
 
 ## Install
 
-You need BB 0.44 or later on the machine that has the repository. On Linux
+You need VesnALIA 0.44 or later on the machine that has the repository. On Linux
 and macOS, on Intel/AMD or ARM64, setup downloads the matching `bend` release
 and verifies its SHA-256 checksum before installing it. Go is not required.
 The download needs `curl` and `sha256sum` or `shasum`. Other platforms can
 build from source with Go 1.24 or later. The tab offers the missing tools
 and the rules for your agent.
 
-1. **Install the plugin** where BB is installed:
+1. **Install the plugin** where VesnALIA is installed:
 
    ```sh
-   bb plugin install https://github.com/mturilin/airbender
+   alia plugin install https://github.com/mturilin/airbender
    ```
 
 2. **Open the tab.** In any conversation: right-hand panel, new tab,
@@ -93,8 +93,8 @@ To build it yourself instead:
 git clone https://github.com/mturilin/airbender
 cd airbender
 npm install --include=dev
-bb plugin build
-bb plugin install .
+alia plugin build
+alia plugin install .
 ```
 
 ## How it works
@@ -147,7 +147,7 @@ the whole issue.
   same conversation, and "Commit & merge" lands it, pushes main and deletes
   the branch.
 - **Start in worktree** opens a new conversation for the issue in a work
-  tree BB makes, so several issues can be worked at once. At the end the
+  tree VesnALIA makes, so several issues can be worked at once. At the end the
   agent brings main into its branch, lands it, and Airbender archives the
   conversation and removes the work tree and the branch.
 - **Epics** are issues with sub-issues, to any depth. Drag an issue onto
@@ -214,9 +214,9 @@ the JSON output for programs, and the tests.
 
 ## Settings
 
-In BB under Tools, then Airbender.
+In VesnALIA under Tools, then Airbender.
 
-- **bd command**: name or path of the beads tool, only if BB cannot find it.
+- **bd command**: name or path of the beads tool, only if VesnALIA cannot find it.
 - **Size issues in the background**, and the **provider** and **model** the
   sizing agent runs on (by default Claude Code and a small Claude model).
 - **GitHub token**: optional, for "Import / export GitHub issues"; by default
@@ -227,16 +227,16 @@ In BB under Tools, then Airbender.
 - The tab edits an issue's title, description, type, priority, category,
   parent and links. Design, acceptance criteria, notes and comments are
   written by agents through `bend`, and issues are not deleted from the tab.
-- The repository must be on the machine BB runs on. A conversation whose
+- The repository must be on the machine VesnALIA runs on. A conversation whose
   folder is on another machine gets an explanation instead of a list.
 
 ## Development
 
 ```sh
 npm install --include=dev
-bb plugin build          # compile into dist/
-bb plugin install .      # register this folder with BB
-bb plugin dev            # rebuild and reload on every save
+alia plugin build          # compile into dist/
+alia plugin install .      # register this folder with ALIA
+alia plugin dev            # rebuild and reload on every save
 npx tsc --noEmit         # typecheck
 npm test                 # the plugin's tests (node's own runner)
 cd bend && go test ./... # bend's tests

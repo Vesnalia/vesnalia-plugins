@@ -10,7 +10,7 @@ function openStore() {
 }
 
 function sample(at, extra = {}) {
-  return { at, thermal: 0, cpu: 10, load: 0.2, memory: null, threads: [], procs: [], bb: null, ...extra };
+  return { at, thermal: 0, cpu: 10, load: 0.2, memory: null, threads: [], procs: [], alia: null, ...extra };
 }
 
 const MEMORY = {
@@ -106,7 +106,7 @@ test("the memory migration keeps rows stored before it, which read back without 
     memory: null,
     threads: [{ threadId: "thr_aaaaaaaaaa", cpu: 30, processes: 2, memBytes: null, top: null }],
     procs: [],
-    bb: null,
+    alia: null,
   });
   assert.deepEqual(store.readings(0, 5_000), [{ at: 1000, cpu: 42, thermal: 1, load: 0.5, mem: null }]);
 });
@@ -129,7 +129,7 @@ test("closeStrayEpisodes ends every open episode but the detector's own", () => 
   assert.equal(store.prune(30 * DAY_MS, 7).episodes, 3);
 });
 
-const BB = {
+const ALIA = {
   cpu: 23,
   memBytes: 3 * 1024 ** 3,
   processes: 12,
@@ -137,7 +137,7 @@ const BB = {
   threads: { cpu: 18, memBytes: 2 * 1024 ** 3, processes: 3 },
 };
 
-test("the BB total round-trips, and rows stored before its migration read back with none", () => {
+test("the VesnALIA total round-trips, and rows stored before its migration read back with none", () => {
   const db = new Database(":memory:");
   for (const statement of MIGRATIONS.slice(0, 6)) db.exec(statement);
   db.prepare(
@@ -145,9 +145,9 @@ test("the BB total round-trips, and rows stored before its migration read back w
   ).run();
   for (const statement of MIGRATIONS.slice(6)) db.exec(statement);
   const store = createStore(db);
-  assert.equal(store.latest()?.bb, null);
-  store.addSample(sample(2_000, { bb: BB }));
-  assert.deepEqual(store.latest(), sample(2_000, { bb: BB }));
+  assert.equal(store.latest()?.alia, null);
+  store.addSample(sample(2_000, { alia: ALIA }));
+  assert.deepEqual(store.latest(), sample(2_000, { alia: ALIA }));
 });
 
 test("the naming migration clears stored process names that may hold arguments, and nothing else", () => {

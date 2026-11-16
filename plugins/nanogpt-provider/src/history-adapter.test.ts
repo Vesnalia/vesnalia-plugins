@@ -28,9 +28,9 @@ describe("restoreNanoGptHistory", () => {
       { role: "user", content: "read it" },
       {
         role: "assistant", content: null,
-        tool_calls: [{ id: "bb_6974656d2d63616c6c", type: "function", function: { name: "read_file", arguments: '{"path":"a"}' } }],
+        tool_calls: [{ id: "alia_6974656d2d63616c6c", type: "function", function: { name: "read_file", arguments: '{"path":"a"}' } }],
       },
-      { role: "tool", tool_call_id: "bb_6974656d2d63616c6c", content: "contents" },
+      { role: "tool", tool_call_id: "alia_6974656d2d63616c6c", content: "contents" },
       { role: "assistant", content: "Done" },
     ]);
     expect(restored.completedTurnEnds).toEqual([4]);
@@ -109,7 +109,7 @@ describe("restoreNanoGptHistory", () => {
   it.each([false, true])("does not resurrect oversized failed input (checkpoint=%s)", (checkpoint) => {
     const restored = restoreNanoGptHistory([
       prompt(1, "bad", "x".repeat(100000)), accept(2, "bad", "t"),
-      // A checkpoint is authoritative even when bb displays a context notice.
+      // A checkpoint is authoritative even when VesnALIA displays a context notice.
       ...(checkpoint ? [answer(3, "t", "Older conversation context was removed")] : []),
       end(4, "t", "failed", checkpoint ? { requestId: "bad", inputRetained: false } : undefined),
     ]);

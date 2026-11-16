@@ -1,16 +1,16 @@
 /**
- * The seams between Herald's decisions and bb. Everything in `server/` that
+ * The seams between Herald's decisions and VesnALIA. Everything in `server/` that
  * decides something talks to these, so the tests can hand it fakes; the
- * implementations over `bb.sdk` are in `bb-ports.ts`.
+ * implementations over `alia.sdk` are in `alia-ports.ts`.
  */
-import type { PluginBbSdk, PluginThreadEventPayloads } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk, PluginThreadEventPayloads } from "@vesnalia/plugin-sdk";
 
 import type { ThreadChoice } from "../shared/thread-choice";
 
 /** The thread as every event carries it — the same DTO `GET /threads/:id` serves. */
 export type ThreadDto = PluginThreadEventPayloads["thread.idle"]["thread"];
 export type Interaction = PluginThreadEventPayloads["interaction.pending"]["interaction"];
-export type PromptRecord = Awaited<ReturnType<PluginBbSdk["threads"]["promptHistory"]>>[number];
+export type PromptRecord = Awaited<ReturnType<PluginAliaSdk["threads"]["promptHistory"]>>[number];
 
 /** What names the work, and what was asked of it; looked up per event, since a thread's DTO has neither. */
 export interface ThreadContext {
@@ -49,9 +49,9 @@ export interface LivenessPort {
   facts(threadId: string): Promise<ThreadFacts>;
 }
 
-/** What bb calls a thread now, for the Herald page's history. */
+/** What VesnALIA calls a thread now, for the Herald page's history. */
 export interface NamesPort {
-  /** The thread's title and project, or null when bb answers that it does not exist; rejects when bb cannot say. */
+  /** The thread's title and project, or null when VesnALIA answers that it does not exist; rejects when VesnALIA cannot say. */
   thread(threadId: string): Promise<{ title: string | null; projectId: string } | null>;
   projectName(projectId: string): Promise<string>;
 }
@@ -62,7 +62,7 @@ export interface Log {
   error(message: string): void;
 }
 
-/** Herald's per-thread choice, as bb stores it: plugin metadata on each thread, and each thread's ancestors. */
+/** Herald's per-thread choice, as VesnALIA stores it: plugin metadata on each thread, and each thread's ancestors. */
 export interface ThreadChoicesPort {
   /** Each known thread with its ancestors, parent first; unknown ids are left out. At most `CHOICES_BATCH_MAX` ids. */
   ancestors(threadIds: readonly string[]): Promise<Array<{ threadId: string; ancestorIds: string[] }>>;

@@ -1,12 +1,12 @@
 # Composer padding and sidebar swipe conflict
 
-A right swipe starting in BB's padded composer text area could open the sidebar
+A right swipe starting in VesnALIA's padded composer text area could open the sidebar
 instead of accepting a prediction. The original gesture listener covered only
-the contenteditable element. BB excludes that element from sidebar gestures,
+the contenteditable element. VesnALIA excludes that element from sidebar gestures,
 but its surrounding padding was still eligible.
 
 The decoration now listens on `data-promptbox-editor-scroll` (falling back to the
-editor parent). While a suggestion is visible it sets BB's existing
+editor parent). While a suggestion is visible it sets VesnALIA's existing
 `data-no-sidebar-swipe` exclusion before document-capture pointer/touch listeners
 run. It restores the previous attribute on hide, acceptance, dismissal and
 disposal. Nested controls cannot accept predictions.
@@ -22,7 +22,7 @@ multitouch, generation and input cancellation rules remain in place.
 - 66 unit tests pass, including padded-area gestures, document-capture sidebar
   exclusions for touch and pointer starts, cleanup, controls and non-cancelable
   horizontal moves. Typecheck and plugin build pass.
-- Chrome touch emulation at 390 × 844 against the running BB server, with an
+- Chrome touch emulation at 390 × 844 against the running VesnALIA server, with an
   isolated test composer inserted inside the real sidebar inset:
   - Before: a swipe starting at x=61 in text-area padding opened the real sidebar
     and accepted nothing.
@@ -36,4 +36,4 @@ multitouch, generation and input cancellation rules remain in place.
   padding accepts the suggestion, and approved this fix for upstream submission.
   The browser and OS versions were not recorded.
 - Wider-content browser navigation behavior outside the reserved composer area
-  is controlled by BB and the browser, not this patch.
+  is controlled by VesnALIA and the browser, not this patch.

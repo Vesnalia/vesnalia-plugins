@@ -9,7 +9,7 @@
  *
  * Here scrolling is turned into as many steps as one event's distance holds,
  * and the remainder carries over to the next event; the "Scroll speed"
- * setting (shared/settings.ts, 1 to 5) multiplies the steps. Tried on the bb
+ * setting (shared/settings.ts, 1 to 5) multiplies the steps. Tried on the VesnALIA
  * server's own Mac, with no link delay: a step per line of scrolling (20 px)
  * moved the remote page far too little, and five steps per line felt right.
  * So the default, 3, is a step per 4 px, and each speed s is s/3 of that.

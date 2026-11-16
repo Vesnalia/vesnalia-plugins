@@ -36,7 +36,7 @@ export function pushTarget(review: Pushable | null): PushTarget | string {
       const fork = !!feature.joinedAt && review.headFork != null;
       return { repo: review.repo, head, environmentId: feature.environmentId, remote: fork ? "<remote>" : "origin", ...fork && review.headFork ? { forkOf: review.headFork } : {}, fixer: false, pr: review.number };
     }
-    if (review.ownPr !== true) return "Push works on someone else’s PR only from the folder that joined its review, while BB has it.";
+    if (review.ownPr !== true) return "Push works on someone else’s PR only from the folder that joined its review, while VesnALIA has it.";
     const environmentId = review.mainThread?.environmentId;
     if (!review.repo || !review.number || !review.head || !environmentId) return "No thread is working on this PR in a folder, so there’s nothing to push.";
     if (pushCommand("HEAD", review.head) === null) return unsafe(review.head);
@@ -46,7 +46,7 @@ export function pushTarget(review: Pushable | null): PushTarget | string {
   const feature = review.feature;
   if (!feature) return "Push works on a local review of a folder’s branch.";
   if (!feature.repo) return "This folder’s project has no GitHub repo, so there’s nowhere to push.";
-  if (feature.folderGone) return "BB removed this review’s folder. Start a fresh thread from Main thread, then Push.";
+  if (feature.folderGone) return "VesnALIA removed this review’s folder. Start a fresh thread from Main thread, then Push.";
   if (pushCommand("HEAD", feature.branch) === null) return unsafe(feature.branch);
   return { repo: feature.repo, head: feature.branch, environmentId: feature.environmentId, remote: "origin", fixer: false };
 }

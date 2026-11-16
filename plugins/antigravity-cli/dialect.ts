@@ -4,7 +4,7 @@ import {
   type AcpToolCallUpdateEvent,
   type AcpToolIdentity,
   type AcpToolKind,
-} from "@get-bb/plugin-sdk/provider-bridge/acp";
+} from "@vesnalia/plugin-sdk/provider-bridge/acp";
 
 export type AcpToolUpdateEvent = AcpToolCallUpdateEvent;
 
@@ -480,7 +480,7 @@ export function parseAntigravityCommandOutput(rawText: string): {
 
   // A failed command must never normalize to an empty string: when the output
   // section is empty, surface the diagnostic text (or the exit-code line it came
-  // from) so the failure reason reaches BB and the model.
+  // from) so the failure reason reaches VesnALIA and the model.
   if (cleanOutput.trim() === "" && (diagnosticLines.length > 0 || (exitCode !== null && exitCode !== 0))) {
     cleanOutput =
       diagnosticLines.length > 0

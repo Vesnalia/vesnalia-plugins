@@ -1,16 +1,16 @@
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { requireThreadId, type Registrar } from "../lib/toolkit";
 import { absolutePath, resolveHost } from "../lib/resolve-host";
 
-export function registerWorkspaceTools(bb: BbPluginApi, register: Registrar) {
+export function registerWorkspaceTools(alia: AliaPluginApi, register: Registrar) {
   register("workspace", {
     name: "bbtools_projects_list",
     description:
-      "List bb projects with their ids and names. Use it to orient yourself across workspaces.",
+      "List VesnALIA projects with their ids and names. Use it to orient yourself across workspaces.",
     parameters: z.object({}),
     execute: async () => {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       if (projects.length === 0) return "No projects.";
       return projects
         .map(
@@ -32,8 +32,8 @@ export function registerWorkspaceTools(bb: BbPluginApi, register: Registrar) {
       limit: z.number().int().min(1).max(500).optional().describe("Max entries (default 200)."),
     }),
     execute: async ({ path, includeFiles, includeDirectories, limit }, ctx) => {
-      const { hostId, rootPath } = await resolveHost(bb, requireThreadId(ctx));
-      const res = await bb.sdk.files.listPaths({
+      const { hostId, rootPath } = await resolveHost(alia, requireThreadId(ctx));
+      const res = await alia.sdk.files.listPaths({
         hostId,
         path: absolutePath(rootPath, path || ""),
         includeFiles: includeFiles ?? true,
@@ -55,8 +55,8 @@ export function registerWorkspaceTools(bb: BbPluginApi, register: Registrar) {
       path: z.string().describe("Workspace-relative file path."),
     }),
     execute: async ({ path }, ctx) => {
-      const { hostId, rootPath } = await resolveHost(bb, requireThreadId(ctx));
-      const res = await bb.sdk.files.read({
+      const { hostId, rootPath } = await resolveHost(alia, requireThreadId(ctx));
+      const res = await alia.sdk.files.read({
         hostId,
         path: absolutePath(rootPath, path),
         rootPath,
@@ -72,14 +72,14 @@ export function registerWorkspaceTools(bb: BbPluginApi, register: Registrar) {
   register("workspace", {
     name: "bbtools_workspace_write",
     description:
-      "Write or overwrite a file in the current project's workspace, creating parent directories as needed. Use it to create/update files from bb context.",
+      "Write or overwrite a file in the current project's workspace, creating parent directories as needed. Use it to create/update files from VesnALIA context.",
     parameters: z.object({
       path: z.string().describe("Workspace-relative file path."),
       content: z.string().describe("The full file content."),
     }),
     execute: async ({ path, content }, ctx) => {
-      const { hostId, rootPath } = await resolveHost(bb, requireThreadId(ctx));
-      await bb.sdk.files.write({
+      const { hostId, rootPath } = await resolveHost(alia, requireThreadId(ctx));
+      await alia.sdk.files.write({
         hostId,
         path: absolutePath(rootPath, path),
         rootPath,
@@ -98,8 +98,8 @@ export function registerWorkspaceTools(bb: BbPluginApi, register: Registrar) {
       path: z.string().describe("Workspace-relative directory path."),
     }),
     execute: async ({ path }, ctx) => {
-      const { hostId, rootPath } = await resolveHost(bb, requireThreadId(ctx));
-      await bb.sdk.files.mkdir({
+      const { hostId, rootPath } = await resolveHost(alia, requireThreadId(ctx));
+      await alia.sdk.files.mkdir({
         hostId,
         path: absolutePath(rootPath, path),
         rootPath,

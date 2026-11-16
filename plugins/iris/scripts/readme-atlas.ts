@@ -54,7 +54,7 @@ function grid(names: (string | [string, string])[]): string {
 
 const parts: string[] = [];
 parts.push(`### The right card for the moment\n\n${grid(HIGHLIGHTS)}\n`);
-parts.push(`### Every component, by family\n\nOpen a family to see each card as it renders in bb. Every picture links to its live page in the [playground](${PLAYGROUND}), with its code and every prop.\n`);
+parts.push(`### Every component, by family\n\nOpen a family to see each card as it renders in VesnALIA. Every picture links to its live page in the [playground](${PLAYGROUND}), with its code and every prop.\n`);
 for (const g of GROUPS) {
   const names = CATALOG.filter((c) => c.group === g).map((c) => c.name);
   if (!names.length) continue;

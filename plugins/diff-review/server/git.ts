@@ -1,27 +1,27 @@
 /**
- * bb's Git plugin (`bb--git`, bundled and on by default since bb 0.48), which owns every git read:
+ * VesnALIA's Git plugin (`alia--git`, bundled and on by default since VesnALIA 0.48), which owns every git read:
  * status, the changed files, patches and Viewed marks. It runs git on whichever machine holds the
- * workspace, remote hosts included. bb 0.48 moved these reads out of `bb.sdk.environments`, whose old
+ * workspace, remote hosts included. VesnALIA 0.48 moved these reads out of `alia.sdk.environments`, whose old
  * members are now adapters over the same calls; going to the plugin directly keys patches by the
  * revision `files` returned and says plainly when the user has turned the plugin off.
  *
- * The plugin's contract (`plugins/git/rpc-contract.ts` and `contract.ts` in bb) is not published, so
- * this keeps its own copy of the parts read. The schemas are not strict: a field a later bb adds is
+ * The plugin's contract (`plugins/git/rpc-contract.ts` and `contract.ts` in VesnALIA) is not published, so
+ * this keeps its own copy of the parts read. The schemas are not strict: a field a later VesnALIA adds is
  * dropped, not refused.
  */
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 
-export const GIT_PLUGIN_ID = "bb--git";
+export const GIT_PLUGIN_ID = "alia--git";
 /** The most keys one `patches` call takes (`GIT_PATCHES_MAX_KEYS`). */
 export const GIT_PATCHES_MAX_KEYS = 50;
 /** The most paths one `viewed` call takes (`GIT_VIEWED_MAX_PATHS`). */
 export const GIT_VIEWED_MAX_PATHS = 500;
 
 export const GIT_PLUGIN_OFF_MESSAGE =
-  "bb's Git plugin is turned off, and Diff Review reads every diff through it. Turn Git back on in Settings → Plugins, then reload this tab.";
+  "VesnALIA's Git plugin is turned off, and Diff Review reads every diff through it. Turn Git back on in Settings → Plugins, then reload this tab.";
 
 /** A diff target as the Git plugin names it. */
 export type GitTarget =
@@ -124,9 +124,9 @@ export class GitReads {
   ) {}
 
   /**
-   * One call to the Git plugin. A call that fails asks bb whether the plugin is there and on, since a
+   * One call to the Git plugin. A call that fails asks VesnALIA whether the plugin is there and on, since a
    * turned-off plugin's error says only that the call failed; otherwise the call's own error stands.
-   * `signal` abandons the wait for the call, which rejects; bb 0.48.1's Git plugin ignores it, so work
+   * `signal` abandons the wait for the call, which rejects; VesnALIA 0.48.1's Git plugin ignores it, so work
    * already started there runs to the end. A call abandoned that way is not worth asking about.
    */
   private async call<T>(method: string, input: Record<string, unknown>, outputSchema: z.ZodType<T>, signal?: AbortSignal): Promise<T> {

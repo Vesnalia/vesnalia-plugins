@@ -1,9 +1,9 @@
-import type { PluginSidebarThread, PluginSidebarThreadRowStatus } from "@get-bb/plugin-sdk/app";
-import { resolveThreadStatus } from "./bb-sdk";
+import type { PluginSidebarThread, PluginSidebarThreadRowStatus } from "@vesnalia/plugin-sdk/app";
+import { resolveThreadStatus } from "./alia-sdk";
 import { childSubtree, threadAsksForInput, type ThreadWorking } from "./child-status";
 
 /**
- * Whether a thread is working, for display: bb's own rule, from bb's status
+ * Whether a thread is working, for display: VesnALIA's own rule, from VesnALIA's status
  * resolver, over the thread and its own row status. A running runtime, any
  * workflow, background agent, background command or plan mode, and another
  * plugin's status with the "running" tone all count. A thread whose machine
@@ -23,7 +23,7 @@ export function isThreadWorkingForDisplay(
 /**
  * Whether a thread, or anything under it, still has work running, by
  * `isWorking` (isThreadWorkingForDisplay with each thread's own row status).
- * Children are asked one by one rather than passed to bb as hidden threads,
+ * Children are asked one by one rather than passed to VesnALIA as hidden threads,
  * so each answers with its own row status.
  *
  * The thread itself needing you, or failing, outranks its children's work:

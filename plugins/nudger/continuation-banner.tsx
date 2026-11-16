@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useComposer, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./rpc-contract.js";
 import type { ContinuationStatus } from "./continuation-status.js";
 import { COPY, countdownLine, LINE, type Line, nudgeCountLabel } from "./continuation-copy.js";

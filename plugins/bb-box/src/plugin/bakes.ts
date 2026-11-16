@@ -2,7 +2,7 @@
  * Projects' images baked when used (049): a box of an image with no current
  * build on its backend runs the script at start. Once two such boxes started
  * on a backend within 14 days, or at once for an image that says always,
- * bb-box builds the image there in the background, and the next box starts
+ * alia-box builds the image there in the background, and the next box starts
  * from the build. A build is current while the image's script and check,
  * and the standard build it was made on, are as they were; a changed script
  * is built again at once. Builds no box started from for 30 days go, and so
@@ -38,7 +38,7 @@ const RETIRED = "images/bake-retired";
 /** Builds a try kept for a thread's box (#451), by backend and reference: the box's ID. */
 const KEPT = "images/try-kept/";
 /** Where the build's files go in the box, as a refresh puts them. */
-const BUILD_DIR = "/var/tmp/bb-box-build";
+const BUILD_DIR = "/var/tmp/alia-box-build";
 /** A GPU desktop's build would hold one GPU's devices, so its image runs at start. */
 const UNBAKED_KINDS = new Set(["linux-desktop"]);
 
@@ -72,7 +72,7 @@ interface Built {
   readonly ms: number;
 }
 
-/** A spare of a project's image that bb-box keeps (#440): its build on a backend, for a kind. */
+/** A spare of a project's image that alia-box keeps (#440): its build on a backend, for a kind. */
 export interface ImageSpareWant {
   readonly name: string;
   readonly backend: string;
@@ -84,7 +84,7 @@ export interface ImageSpareWant {
 
 /** A script to try as a build runs it (049). */
 export interface TryInput {
-  /** The image's name, which the script reads as BB_BOX_IMAGE. */
+  /** The image's name, which the script reads as ALIA_BOX_IMAGE. */
   readonly name: string;
   readonly kind: string;
   readonly script: string;
@@ -165,8 +165,8 @@ export function checkDetail(ran: { exitCode: number | null; timedOut: boolean; d
 }
 
 async function imageCheck(box: ImageBox, check: string, signal: AbortSignal) {
-  await box.command.writeFile(".bb-box-image/check.sh", new TextEncoder().encode(check), { mode: "0700", signal });
-  return box.command.run(`${LOAD_ENVIRONMENT} bash "$HOME/.bb-box-image/check.sh" 2>&1; s=$?; rm -rf "$HOME/.bb-box-image"; exit $s`, { timeoutMs: CHECK_MS, signal, maxOutputBytes: 256 * 1024 });
+  await box.command.writeFile(".alia-box-image/check.sh", new TextEncoder().encode(check), { mode: "0700", signal });
+  return box.command.run(`${LOAD_ENVIRONMENT} bash "$HOME/.alia-box-image/check.sh" 2>&1; s=$?; rm -rf "$HOME/.alia-box-image"; exit $s`, { timeoutMs: CHECK_MS, signal, maxOutputBytes: 256 * 1024 });
 }
 const key = (prefix: string, name: string, backend: string, kind: string) => `${prefix}${name}/${backend}/${kind}`;
 const label = (name: string, backend: string, kind: string) => `${name} for ${kind} on ${backend}`;
@@ -223,7 +223,7 @@ export class ImageBakes {
     return this.#deps.backends().find((candidate) => candidate.id === id) ?? null;
   }
 
-  /** Whether bb-box bakes an image for a kind on a backend at all. */
+  /** Whether alia-box bakes an image for a kind on a backend at all. */
   #bakes(image: ImageConfig, backend: Backend, kind: string): boolean {
     return (
       image.bake !== "never" &&
@@ -369,9 +369,9 @@ export class ImageBakes {
     const box = await images.box(standard, `build of ${name}`, signal);
     made.push(box.ref);
     if (options.state) options.state.box = box;
-    await box.command.writeFile("bb-box-setup.tgz", tar.stdout, { signal });
-    await box.command.writeFile(".bb-box-image/setup.sh", text.encode(image.script), { mode: "0700", signal });
-    if (image.check) await box.command.writeFile(".bb-box-image/check.sh", text.encode(image.check), { mode: "0700", signal });
+    await box.command.writeFile("alia-box-setup.tgz", tar.stdout, { signal });
+    await box.command.writeFile(".alia-box-image/setup.sh", text.encode(image.script), { mode: "0700", signal });
+    if (image.check) await box.command.writeFile(".alia-box-image/check.sh", text.encode(image.check), { mode: "0700", signal });
     const time = new Date(started).toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
     const buildId = `build.${time}-${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, "0")}`;
     const at = this.#now();
@@ -381,7 +381,7 @@ export class ImageBakes {
     if (ran.exitCode !== 0) throw new Error(`${ran.timedOut ? "It ran out of time" : `It exited with ${ran.exitCode}`}: ${output.at(-1) ?? ""}`);
 
     // The standard build's record, as a project's image on it (049).
-    const read = await box.command.run("cat /usr/share/bb-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
+    const read = await box.command.run("cat /usr/share/alia-box/image.json", { timeoutMs: 15_000, signal, maxOutputBytes: 64 * 1024 });
     const finalized = recordFromJson(read.stdout.trim());
     if (!finalized) throw new Error("Finalizing wrote no image record.");
     const record: ImageRecord = {
@@ -393,7 +393,7 @@ export class ImageBakes {
       layer: { sha256: scriptHash(image), seconds: Math.round((this.#now() - started) / 1000) },
       sizeGiB: finalized.sizeGiB,
     };
-    const wrote = await box.command.run(`printf '%s\\n' ${quote(JSON.stringify(record))} | sudo -n tee /usr/share/bb-box/image.json >/dev/null`, { timeoutMs: 15_000, signal });
+    const wrote = await box.command.run(`printf '%s\\n' ${quote(JSON.stringify(record))} | sudo -n tee /usr/share/alia-box/image.json >/dev/null`, { timeoutMs: 15_000, signal });
     if (wrote.exitCode !== 0) throw new Error(`The image's record could not be written: ${wrote.stderr.trim()}`);
     const captured = await images.capture(box, standard, name, signal);
     made.splice(made.indexOf(box.ref), 1, captured.ref);
@@ -714,7 +714,7 @@ export class ImageBakes {
     return found;
   }
 
-  /** An image's builds and failed bakes, for bb box image list: a line each. */
+  /** An image's builds and failed bakes, for VesnALIA box image list: a line each. */
   async lines(name: string): Promise<string[]> {
     const lines: string[] = [];
     const day = (time: number) => new Date(time).toISOString().slice(0, 10);
@@ -746,7 +746,7 @@ export class ImageBakes {
         name: `Build of ${label(name, backend, kind)}`,
         status: "warn",
         detail: `Its last build, on ${new Date(failure.at).toISOString().slice(0, 10)}, failed: ${failure.reason.replace(/\.?$/, ".")} Its boxes run its script as they start meanwhile.`,
-        fix: `Fix its script, then set the image again with bb box image set ${name} or box_image_set, which builds it again.`,
+        fix: `Fix its script, then set the image again with VesnALIA box image set ${name} or box_image_set, which builds it again.`,
       });
     }
     return checks;
@@ -765,25 +765,25 @@ export class ImageBakes {
  */
 export function bakeScript(name: string, kind: string, backend: string, buildId: string, check: boolean): string {
   const src = `${BUILD_DIR}/proxmox-lxc/template`;
-  const env = `BB_BOX_IMAGE=${quote(name)} BB_BOX_KIND=${quote(kind)} BB_BOX_BACKEND=${quote(backend)} BB_BOX_ARCH="$(uname -m | sed s/aarch64/arm64/)"`;
-  const keep = "/usr/share/bb-box/.bake-keep";
+  const env = `ALIA_BOX_IMAGE=${quote(name)} ALIA_BOX_KIND=${quote(kind)} ALIA_BOX_BACKEND=${quote(backend)} ALIA_BOX_ARCH="$(uname -m | sed s/aarch64/arm64/)"`;
+  const keep = "/usr/share/alia-box/.bake-keep";
   return [
     "set -euo pipefail",
     "exec 2>&1",
     `sudo -n rm -rf ${BUILD_DIR} && sudo -n install -d -m 0700 ${BUILD_DIR}`,
-    `sudo -n tar -xzf ~/bb-box-setup.tgz -C ${BUILD_DIR} && rm -f ~/bb-box-setup.tgz`,
+    `sudo -n tar -xzf ~/alia-box-setup.tgz -C ${BUILD_DIR} && rm -f ~/alia-box-setup.tgz`,
     `printf 'BOX_USER=box\\nBUILD_ID=%s\\n' ${quote(buildId)} | sudo -n tee ${src}/build.env >/dev/null`,
-    // bb-box-feature as this bb-box has it, for an image built before standard images had it (049).
-    `sudo -n install -m 0755 ${src}/guest/bb-box-feature.sh /usr/local/bin/bb-box-feature`,
+    // alia-box-feature as this alia-box has it, for an image built before standard images had it (049).
+    `sudo -n install -m 0755 ${src}/guest/alia-box-feature.sh /usr/local/bin/alia-box-feature`,
     // The release lines finalizing does not write itself, such as runtime=docker and nvidia=.
-    `{ grep -vE '^(kind|built|apt_snapshot|tool)=' /usr/share/bb-box/template-release || true; } | sudo -n tee ${src}/extra-release >/dev/null`,
+    `{ grep -vE '^(kind|built|apt_snapshot|tool)=' /usr/share/alia-box/template-release || true; } | sudo -n tee ${src}/extra-release >/dev/null`,
     `echo "bake: ${name}'s script, as root"`,
-    `sudo -n env ${env} bash "$HOME/.bb-box-image/setup.sh"`,
-    ...(check ? [`echo "bake: ${name}'s check"`, `(${LOAD_ENVIRONMENT} env ${env} bash "$HOME/.bb-box-image/check.sh")`] : []),
-    'rm -rf "$HOME/.bb-box-image"',
+    `sudo -n env ${env} bash "$HOME/.alia-box-image/setup.sh"`,
+    ...(check ? [`echo "bake: ${name}'s check"`, `(${LOAD_ENVIRONMENT} env ${env} bash "$HOME/.alia-box-image/check.sh")`] : []),
+    'rm -rf "$HOME/.alia-box-image"',
     `sudo -n rm -rf ${keep} && sudo -n install -d ${keep}`,
-    `for file in template-release template-pins.json; do [ ! -f /usr/share/bb-box/$file ] || sudo -n cp -p /usr/share/bb-box/$file ${keep}/; done`,
+    `for file in template-release template-pins.json; do [ ! -f /usr/share/alia-box/$file ] || sudo -n cp -p /usr/share/alia-box/$file ${keep}/; done`,
     `sudo -n bash ${src}/guest/finalize.sh ${src} ${kind === "linux" ? "linux" : "desktop"}`,
-    `sudo -n sh -c 'cp -p ${keep}/* /usr/share/bb-box/ 2>/dev/null; rm -rf ${keep}'`,
+    `sudo -n sh -c 'cp -p ${keep}/* /usr/share/alia-box/ 2>/dev/null; rm -rf ${keep}'`,
   ].join("\n");
 }

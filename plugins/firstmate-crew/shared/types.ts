@@ -2,14 +2,14 @@
  * The vocabulary the board, the server and the first mate's charter share: the metadata a crewmate
  * thread is created with, the words it ends a turn with, and the shapes of the board's data.
  *
- * The plugin never dispatches a crewmate itself. The first mate does, with `bb firstmate-crew crew spawn`; the plugin
+ * The plugin never dispatches a crewmate itself. The first mate does, with `alia firstmate-crew crew spawn`; the plugin
  * sets up its home, starts it, carries the captain's words to it, and draws what it and its crew are doing.
  */
 import { z } from "zod";
 
 /**
  * The keys a crewmate thread is created with, inside the plugin's own metadata namespace.
- * `bb firstmate-crew crew spawn` sets them and the board reads them, so both use this one object rather than
+ * `alia firstmate-crew crew spawn` sets them and the board reads them, so both use this one object rather than
  * spelling the keys twice.
  */
 export const CREW_METADATA = {
@@ -41,9 +41,9 @@ export const ThreadStatusSchema = z.enum(["pending", "idle", "starting", "active
 export type ThreadStatus = z.infer<typeof ThreadStatusSchema>;
 
 /**
- * A child thread's Notify parent setting, as bb names it: `auto` tells the parent of every finished,
+ * A child thread's Notify parent setting, as VesnALIA names it: `auto` tells the parent of every finished,
  * failed or interrupted turn and every blocker; `stuck` leaves out finished turns; `off` tells it nothing.
- * The plugin spawns crew with `auto`, and the captain can change it from any thread menu (bb 0.48.1).
+ * The plugin spawns crew with `auto`, and the captain can change it from any thread menu (VesnALIA 0.48.1).
  */
 export const ParentNotificationsSchema = z.enum(["auto", "stuck", "off"]);
 export type ParentNotifications = z.infer<typeof ParentNotificationsSchema>;
@@ -85,13 +85,13 @@ export const BacklogItemSchema = z.object({
 });
 export type BacklogItem = z.infer<typeof BacklogItemSchema>;
 
-/** What the board needs of one bb thread — a crewmate. */
+/** What the board needs of one VesnALIA thread — a crewmate. */
 export const CrewSummarySchema = z.object({
   threadId: z.string(),
   title: z.string().nullable(),
   status: ThreadStatusSchema,
   pendingInteractions: z.number().int(),
-  /** Anything but `auto` means bb will not tell the first mate when this crewmate finishes a turn. */
+  /** Anything but `auto` means VesnALIA will not tell the first mate when this crewmate finishes a turn. */
   parentNotifications: ParentNotificationsSchema,
   projectId: z.string(),
   environmentId: z.string().nullable(),
@@ -231,7 +231,7 @@ export const FleetSchema = z.object({
       title: z.string().nullable(),
     })
     .nullable(),
-  /** A first mate is recorded but bb no longer has its thread (archived, deleted). */
+  /** A first mate is recorded but VesnALIA no longer has its thread (archived, deleted). */
   mateMissing: z.boolean(),
   cards: z.array(FleetCardSchema),
   /** What the captain might do next, most likely first; empty hides the card and the tab. */

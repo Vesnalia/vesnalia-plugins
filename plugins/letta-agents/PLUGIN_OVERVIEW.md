@@ -1,10 +1,10 @@
 ## Local Letta agents in your sidebar
 
-Browse a local Letta roster with avatars and activity indicators, then start or resume chats through BB's ACP adapter. This plugin connects existing infrastructure; it does not install Letta or provision workspaces.
+Browse a local Letta roster with avatars and activity indicators, then start or resume chats through VesnALIA's ACP adapter. This plugin connects existing infrastructure; it does not install Letta or provision workspaces.
 
 ## Setup you must supply
 
-Requires BB **>=0.46**, Plugin SDK **>=0.6.49** (development pin **0.6.49**), and the enabled ACP adapter **`bb--provider-acp-next`**. These are declared version constraints, not a tested-version matrix.
+Requires VesnALIA **>=0.46**, Plugin SDK **>=0.6.49** (development pin **0.6.49**), and the enabled ACP adapter **`alia--provider-acp-next`**. These are declared version constraints, not a tested-version matrix.
 
 Set **`projectId`**, **`hostId`**, and **`environmentProviderId`** to existing IDs in your installation. All three default to empty and are required for a new chat. `personal-workspace` is only an example provider where installed.
 
@@ -24,7 +24,7 @@ Generated entries run **`npx -y @letta-ai/letta-acp@0.1.10`**, pinned because **
 
 Use `ws://` only on a trusted local network; use `wss://` outside it. TLS is not enforced by the plugin.
 
-Defaults are Letta **`standard`** and BB **`auto`** approvals. `allowUnrestricted` explicitly opts into Letta **`unrestricted`** and **`full`** permissions for new BB threads. Existing threads preserve their BB permissions. Providers absent from the roster retain their settings, including unrestricted permissions, until explicit cleanup; toggling the setting is not global revocation.
+Defaults are Letta **`standard`** and VesnALIA **`auto`** approvals. `allowUnrestricted` explicitly opts into Letta **`unrestricted`** and **`full`** permissions for new VesnALIA threads. Existing threads preserve their VesnALIA permissions. Providers absent from the roster retain their settings, including unrestricted permissions, until explicit cleanup; toggling the setting is not global revocation.
 
 ## Stable identity and conservative updates
 
@@ -34,6 +34,6 @@ Syncs re-read settings before writing and reject detected changes, but the publi
 
 ## Compatibility and current limits
 
-Provider-picker hiding is a **DOM/CSS compatibility workaround**, not an upstream supported hide API or an access-control mechanism. Display-name collisions with unrelated providers fail open, leaving entries visible. BB markup changes may break hiding. `showAgentsInProviderPicker` disables the workaround while providers stay enabled.
+Provider-picker hiding is a **DOM/CSS compatibility workaround**, not an upstream supported hide API or an access-control mechanism. Display-name collisions with unrelated providers fail open, leaving entries visible. VesnALIA markup changes may break hiding. `showAgentsInProviderPicker` disables the workaround while providers stay enabled.
 
-The implementation depends on the local container layout, adapter settings, and experimental BB sidebar surfaces. **Exact clean-install and end-to-end live chat/streaming checks are still pending.** No release, publication, or fully tested compatibility claim is made here.
+The implementation depends on the local container layout, adapter settings, and experimental VesnALIA sidebar surfaces. **Exact clean-install and end-to-end live chat/streaming checks are still pending.** No release, publication, or fully tested compatibility claim is made here.

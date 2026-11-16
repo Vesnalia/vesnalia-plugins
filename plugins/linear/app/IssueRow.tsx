@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/icon";
 import type { IssueRowView } from "../src/contract.js";
 import { priorityToneClass, toneClass } from "../src/select/tone.js";
 import { safeHref } from "./href.js";
-import { BbFactGlyph, describeBbFact, StateGlyph } from "./StateGlyph.js";
+import { AliaFactGlyph, describeAliaFact, StateGlyph } from "./StateGlyph.js";
 import { ProgressRing } from "./ProgressRing.js";
 
 export interface RowActions {
@@ -112,7 +112,7 @@ function RowBody({
         {row.lead === "state" ? (
           <StateGlyph tone={row.tone} glyph={row.glyph} />
         ) : (
-          <BbFactGlyph fact={row.bbFact} />
+          <AliaFactGlyph fact={row.aliaFact} />
         )}
 
         {/* Tabular and fixed-width so the identifier column aligns down the
@@ -218,8 +218,8 @@ function RowBody({
       ) : null}
 
       {/* The lead glyph's meaning, for anything that is not looking at it. */}
-      {row.lead === "bb-fact" && row.bbFact !== "none" ? (
-        <span className="sr-only">{describeBbFact(row.bbFact)}</span>
+      {row.lead === "alia-fact" && row.aliaFact !== "none" ? (
+        <span className="sr-only">{describeAliaFact(row.aliaFact)}</span>
       ) : null}
     </li>
   );

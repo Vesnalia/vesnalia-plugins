@@ -1,17 +1,17 @@
 // Which ACP provider id gets which mark.
 //
-// bb has no per-model icon: every model row in the picker inherits its
+// VesnALIA has no per-model icon: every model row in the picker inherits its
 // provider's logo (`availableModelSchema` carries no icon field), so the
-// finest granularity bb can render is one mark per provider id.
+// finest granularity VesnALIA can render is one mark per provider id.
 //
-// Built-in defaults cover the ACP agents bb ships without a logo. bb's own
+// Built-in defaults cover the ACP agents VesnALIA ships without a logo. VesnALIA's own
 // provider-acp plugin resolves a logo only for its 41 registry agents and for
 // the four agents it ships (cursor, opencode, grok, hermes-agent); every other
 // custom agent falls back to the generic "Toolbox" glyph, which is why custom
 // agents look identical in the picker.
 //
 // Users override the default for any provider with
-// `bb model-favicons set <provider-id> <mark>`, stored in bb.storage.kv and
+// `alia model-favicons set <provider-id> <mark>`, stored in alia.storage.kv and
 // read by the app over RPC. An override always wins over the default.
 
 import type { Mark } from "./marks";
@@ -58,15 +58,15 @@ export function isMarkId(value: string): value is MarkId {
 }
 
 /**
- * Default marks, keyed by the provider id bb knows the agent by.
+ * Default marks, keyed by the provider id VesnALIA knows the agent by.
  *
  * `acp-` is the provider-id prefix the provider-acp plugin gives every agent
  * (`formatCustomAcpProviderId`). An agent registered as `zcode` is therefore
  * the provider `acp-zcode`.
  *
- * bb ships a logo for its 41 registry agents and for cursor, opencode, grok
+ * VesnALIA ships a logo for its 41 registry agents and for cursor, opencode, grok
  * and hermes-agent. Every other agent — the ones a user registers with
- * `bb acp add` or the ACP plugin's `customAgents` setting — falls back to the
+ * `alia acp add` or the ACP plugin's `customAgents` setting — falls back to the
  * generic "Toolbox" glyph, which is why custom agents look identical.
  *
  * The defaults below give the common custom agents their real mark. A user

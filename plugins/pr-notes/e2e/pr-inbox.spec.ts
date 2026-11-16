@@ -146,7 +146,7 @@ test("inbox loads, notes keep drafts, refresh stays safe, and narrow layouts wor
   await page.getByRole("tab", { name: "Overview", exact: true }).click();
   await expect(page.getByRole("heading", { name: /linux/i })).toBeVisible();
   await page.locator('[data-pr-inbox="root"]').screenshot({
-    path: process.env.BB_PR_SCREENSHOT ?? "test-results/inbox.png",
+    path: process.env.ALIA_PR_SCREENSHOT ?? "test-results/inbox.png",
   });
   await page.setViewportSize({ width: 650, height: 920 });
   await expect(
@@ -216,7 +216,7 @@ test("a failed inbox refresh has a recoverable error", async ({ page }) => {
         ok: false,
         error: {
           code: "handler_error",
-          message: "GitHub login expired. Run gh auth login on the BB server.",
+          message: "GitHub login expired. Run gh auth login on the VesnALIA server.",
         },
       },
     }),

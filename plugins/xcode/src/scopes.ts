@@ -1,5 +1,5 @@
 /**
- * Thread scopes: which bb thread "owns" which checkout right now.
+ * Thread scopes: which VesnALIA thread "owns" which checkout right now.
  *
  * There is no plugin event for "an agent ran a command", so builds cannot be
  * attributed by observing tool calls. What IS knowable is stronger anyway:
@@ -8,7 +8,7 @@
  * path here; the probe then attributes a new xcodebuild to the thread the
  * moment its cwd (or container/DerivedData root) falls under a scoped path.
  *
- * Pure and import-free so it unit-tests without a bb server.
+ * Pure and import-free so it unit-tests without a VesnALIA server.
  */
 
 export interface ThreadScope {
@@ -19,7 +19,7 @@ export interface ThreadScope {
   path: string;
   /**
    * The enrolled Mac the checkout lives on, or null for the machine running
-   * bb. Normalized by `ScopeSync`: an environment on this machine is null
+   * VesnALIA. Normalized by `ScopeSync`: an environment on this machine is null
    * here, exactly as its runs are, so the host comparison in
    * `runMatchesScope` is a plain equality. `path` names a directory on that
    * host — see `src/launcher.ts`.

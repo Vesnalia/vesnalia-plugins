@@ -1,7 +1,7 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
-/** The BB session option through which OpenCode's primary agent is chosen. */
+/** The VesnALIA session option through which OpenCode's primary agent is chosen. */
 export const AGENT_OPTION_ID = "agent";
 /** OpenCode's default primary agent. */
 export const DEFAULT_AGENT = "build";
@@ -49,12 +49,12 @@ export const modelSettingsSchema = z
     // allowlist, including an empty array for "disable all".
     enabledModels: z.array(z.string().min(1)).max(10_000).nullable(),
     // Prevent OpenCode from starting native subagents (task tool) so agents
-    // use BB for delegation instead. Missing key defaults to true so older
+    // use VesnALIA for delegation instead. Missing key defaults to true so older
     // stored settings migrate to the safer default.
     disableSubagents: z.boolean().default(true),
     // Add one deny rule to OpenCode's global config so OpenCode's own
-    // sessions (TUI, web) don't list BB threads' tools. On by default.
-    hideBbToolsOutsideBb: z.boolean().default(true),
+    // sessions (TUI, web) don't list VesnALIA threads' tools. On by default.
+    hideAliaToolsOutsideAlia: z.boolean().default(true),
   })
   .strict();
 

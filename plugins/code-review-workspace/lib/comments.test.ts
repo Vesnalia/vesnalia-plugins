@@ -206,7 +206,7 @@ test("groups come in order, show each item once under All, and count what their 
   // Not submitted counts every draft comment, as Submit does: the one on an older diff too, which All shows in Needs you.
   expect(list.map((group) => [group.id, group.title, group.count, group.summary, group.elsewhere])).toEqual([
     ["needs-you", "Needs you", 7, null, 0],
-    ["not-submitted", "Not submitted · only in BB", 5, "1 blocking · 1 should fix · 1 question · 2 nits", 1],
+    ["not-submitted", "Not submitted · only in VesnALIA", 5, "1 blocking · 1 should fix · 1 question · 2 nits", 1],
     ["fixes", "Sent to fix · won’t post", 0, null, 0],
     ["on-github", "On GitHub", 7, "Yours: 2 of 4 handled +2 nits", 0],
     ["private", "Private · with the agent", 1, null, 0],
@@ -328,7 +328,7 @@ test("threads read without the newer fields still build", () => {
   expect(items[0]).toMatchObject({ resolvedBy: null, fileComment: false, url: null });
 });
 
-test("a local review has only what's in BB: drafts and private discussions", () => {
+test("a local review has only what's in VesnALIA: drafts and private discussions", () => {
   const items = buildItems({ draft: { draft: { ...draft, verdict: "COMMENT", body: "" }, stale: [{ file: "src/cache.ts", line: 21, side: "RIGHT" }], discussions }, threads: [], feedback: null, sections, patch });
   expect(groups(items).map((group) => [group.id, group.count, group.summary])).toEqual([
     ["needs-you", 1, null], ["not-submitted", 5, "1 blocking · 1 should fix · 1 question · 2 nits"], ["fixes", 0, null], ["on-github", 0, null], ["private", 1, null],
@@ -364,7 +364,7 @@ test("the words for every state, thread flag, check, reply draft and summary", (
   expect(CHECK_LABEL).toEqual({ addressed: "Addressed", partial: "Partly addressed", not_addressed: "Not addressed", disputed: "Author disagrees", unclear: "Unclear", deferred: "Deferred" });
   expect(REPLY_DRAFT_LABEL).toEqual({ reviewer: "Reply draft · not sent", agent: "Agent reply draft · not sent" });
   expect(SUMMARY_LABEL).toEqual({ reviewer: "Summary · not submitted", agent: "Agent summary · not submitted" });
-  expect(GROUP_TITLE).toEqual({ "needs-you": "Needs you", "not-submitted": "Not submitted · only in BB", fixes: "Sent to fix · won’t post", "on-github": "On GitHub", private: "Private · with the agent" });
+  expect(GROUP_TITLE).toEqual({ "needs-you": "Needs you", "not-submitted": "Not submitted · only in VesnALIA", fixes: "Sent to fix · won’t post", "on-github": "On GitHub", private: "Private · with the agent" });
 });
 
 // Your own PR (S6): every thread is yours to answer; bots' are folded.

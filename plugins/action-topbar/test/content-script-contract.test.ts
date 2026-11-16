@@ -23,7 +23,7 @@ test("mounts the owned strip in the thread-header center and leaves native plus 
   );
 });
 
-test("keeps Action lookup scoped to BB's native launcher", () => {
+test("keeps Action lookup scoped to VesnALIA's native launcher", () => {
   const start = source.indexOf("function actionButton");
   const end = source.indexOf("function abortableDelay", start);
   const actionLookup = source.slice(start, end);
@@ -101,7 +101,7 @@ test("preserves keyboard focus and the bounded cross-pane relaunch path", () => 
     source,
     /relaunchTabInPane\(current\.source, current\.targetPane\)/,
   );
-  assert.match(source, /BB cannot move this file tab between thread panes/);
+  assert.match(source, /ALIA cannot move this file tab between thread panes/);
 });
 
 test("focuses main Action panes without opening the right panel", () => {
@@ -135,7 +135,7 @@ test("drags Actions with a local fallback when the native API is absent", () => 
   assert.match(source, /beginThreadActionSplitDrag/);
   assert.match(source, /actionPaneAt/);
   assert.match(source, /requestLaunch\(action, targetPane\)/);
-  assert.doesNotMatch(source, /Reload BB to load Action dragging support/);
+  assert.doesNotMatch(source, /Reload ALIA to load Action dragging support/);
   assert.match(source, /tryCapturePointer\(row, pointerId\)/);
   assert.match(source, /tryReleasePointer\(row, pointerId\)/);
   assert.match(source, /option\.kind === "action"\) return/);

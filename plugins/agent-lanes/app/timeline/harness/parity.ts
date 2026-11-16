@@ -3,7 +3,7 @@
 // engine and the shell's cells can be compared with the real component side
 // by side (`?parity`, and `?parity=live` for its scripted clock).
 //
-// Upstream's tools are app logos; ours are bb's tool families, mapped by
+// Upstream's tools are app logos; ours are VesnALIA's tool families, mapped by
 // what each app does (Google → web, Notion → mcp, GitHub → command, …).
 import type { BlockDetail, BlockStatus, LaneBlock, LaneHandoff, ToolKind } from "../../../shared/model";
 import type { LaneRow } from "../../../shared/view";

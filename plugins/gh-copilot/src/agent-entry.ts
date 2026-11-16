@@ -18,7 +18,7 @@ export const PROFILE = {
     workspaceWrite: ['--allow-tool=write'],
   },
   installHint:
-    'Install GitHub Copilot CLI with `brew install --cask copilot-cli`, authenticate it, then run `bb plugin reload gh-copilot`.',
+    'Install GitHub Copilot CLI with `brew install --cask copilot-cli`, authenticate it, then run `alia plugin reload gh-copilot`.',
 } as const;
 
 export const RENAMED_FROM = 'copilot';

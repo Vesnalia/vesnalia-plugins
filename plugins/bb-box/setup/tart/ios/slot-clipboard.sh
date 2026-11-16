@@ -3,8 +3,8 @@ set -u
 PATH=/usr/bin:/bin:/usr/sbin:/sbin
 export PATH
 
-PASTEBOARD_SERVER_LABEL=app.bb-box.pboard
-SESSION_JOB_LABEL=app.bb-box.session-job
+PASTEBOARD_SERVER_LABEL=app.alia-box.pboard
+SESSION_JOB_LABEL=app.alia-box.session-job
 JOB_MOST_S=60
 SET_TRIES=12
 SET_GAP_S=${SLOT_CLIPBOARD_GAP_S:-5}
@@ -22,7 +22,7 @@ else
   domain=user/$uid session=Background own_server=yes
 fi
 
-dir=$(as_user mktemp -d /tmp/bb-box-clipboard.XXXXXX) || { echo "could not make a folder as $user" >&2; exit 1; }
+dir=$(as_user mktemp -d /tmp/alia-box-clipboard.XXXXXX) || { echo "could not make a folder as $user" >&2; exit 1; }
 server_loaded_here=no
 
 finish() {
@@ -82,7 +82,7 @@ session_job() {
 
 started=$(perl -MTime::HiRes=time -e 'printf "%.3f", time')
 [ "$own_server" = no ] || load_pasteboard_server || exit 1
-sample=$(printf 'bb-box clipboard check \342\234\223 \303\251 \346\227\245\346\234\254')
+sample=$(printf 'alia-box clipboard check \342\234\223 \303\251 \346\227\245\346\234\254')
 set_sample() { printf '%s' "$sample" | session_job pbcopy >/dev/null 2>"$dir/said"; }
 tries=1
 until set_sample; do

@@ -1,6 +1,6 @@
 // Setup's checks: the token's missing scopes, read from what GitHub says of it.
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 const runGh = vi.hoisted(() => vi.fn());
 vi.mock("./gh", async (orig) => ({ ...(await orig<any>()), runGh }));
@@ -15,10 +15,10 @@ async function setupStatus(scopesHeader: string | null) {
     if (args.join(" ") === "api -i user") return { code: 0, stderr: "", stdout: ["HTTP/2.0 200 OK", ...(scopesHeader === null ? [] : [`X-Oauth-Scopes: ${scopesHeader}`]), "", "{\"login\":\"me\"}"].join("\r\n") };
     return { code: 0, stderr: "", stdout: "" };
   });
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
   harness.sdk.stub("providers.list", async () => []);
   harness.sdk.stub("projects.list", async () => []);
-  await plugin(bb);
+  await plugin(alia);
   return harness.behavior.callRpc("getSetupStatus", null);
 }
 

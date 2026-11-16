@@ -4,7 +4,7 @@
 // request links; nothing reaches Asana until you press Hand back.
 import { useEffect, useId, useState } from "react";
 import type { FormEvent } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { LinkedThread, rpcContract, TaskDetail } from "../server";
 import { Button } from "@/components/ui/button";

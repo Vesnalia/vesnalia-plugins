@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createFindingStore } from "./findings.ts";
 import {
   closeFindingsForCompletedItem,
@@ -18,7 +18,7 @@ afterEach(async () => {
 function stores() {
   const host = createFakePluginHost({ pluginId: `finding-queue-test-${hosts.length}` });
   hosts.push(host);
-  const db = host.bb.storage.database();
+  const db = host.alia.storage.database();
   db.exec(`
     CREATE TABLE goal_items (
       id TEXT PRIMARY KEY,
@@ -53,8 +53,8 @@ function stores() {
   return {
     host,
     db,
-    items: createItemStore(host.bb),
-    findings: createFindingStore(host.bb),
+    items: createItemStore(host.alia),
+    findings: createFindingStore(host.alia),
   };
 }
 
@@ -113,8 +113,8 @@ describe("durable finding remediation queue", () => {
 
     // Recreate the stores over the same database: the backlog must recover
     // from durable metadata, not an in-memory registration callback.
-    const restartedItems = createItemStore(state.host.bb);
-    const restartedFindings = createFindingStore(state.host.bb);
+    const restartedItems = createItemStore(state.host.alia);
+    const restartedFindings = createFindingStore(state.host.alia);
     const afterRestart = reconcileFindingQueue({
       threadId: "thr_root",
       findings: restartedFindings,
@@ -202,8 +202,8 @@ describe("durable finding remediation queue", () => {
     // Reconstructing the stores models a plugin reload. The oldest link
     // remains the item's durable creator even though its evidence lives in a
     // generated migration; only the later broad-directory coalescing is stale.
-    const restartedItems = createItemStore(state.host.bb);
-    const restartedFindings = createFindingStore(state.host.bb);
+    const restartedItems = createItemStore(state.host.alia);
+    const restartedFindings = createFindingStore(state.host.alia);
     const repaired = reconcileFindingQueue({
       threadId: "thr_root",
       findings: restartedFindings,
@@ -243,8 +243,8 @@ describe("durable finding remediation queue", () => {
 
     const repaired = reconcileFindingQueue({
       threadId: "thr_root",
-      findings: createFindingStore(state.host.bb),
-      items: createItemStore(state.host.bb),
+      findings: createFindingStore(state.host.alia),
+      items: createItemStore(state.host.alia),
       maxStaffed: 1,
     });
     assert.equal(repaired.requeuedInvalid, 1);
@@ -337,8 +337,8 @@ describe("durable finding remediation queue", () => {
     assert.equal(state.findings.linkItem("thr_root", stale.id, item.id), true);
     assert.equal(state.findings.resolve("thr_root", primary.id, "fixed", "fixed earlier")!.status, "fixed");
 
-    const restartedItems = createItemStore(state.host.bb);
-    const restartedFindings = createFindingStore(state.host.bb);
+    const restartedItems = createItemStore(state.host.alia);
+    const restartedFindings = createFindingStore(state.host.alia);
     const repaired = reconcileFindingQueue({
       threadId: "thr_root",
       findings: restartedFindings,
@@ -605,8 +605,8 @@ describe("durable finding remediation queue", () => {
     assert.equal(state.findings.linkItem("thr_root", paymentLater.id, paymentDuplicate.id), true);
     assert.equal(state.findings.linkItem("thr_root", appPrimary.id, appItem.id), true);
 
-    const restartedItems = createItemStore(state.host.bb);
-    const restartedFindings = createFindingStore(state.host.bb);
+    const restartedItems = createItemStore(state.host.alia);
+    const restartedFindings = createFindingStore(state.host.alia);
     const repaired = reconcileFindingQueue({
       threadId: "thr_root",
       findings: restartedFindings,
@@ -734,6 +734,6 @@ describe("durable remediation provenance", () => {
     assert.equal(state.items.origin("thr_root", declared.id), null);
     const mintedId = state.findings.get("thr_root", unowned.id)!.itemId!;
     assert.equal(state.items.origin("thr_root", mintedId), "finding");
-    assert.equal(createItemStore(state.host.bb).origin("thr_root", mintedId), "finding");
+    assert.equal(createItemStore(state.host.alia).origin("thr_root", mintedId), "finding");
   });
 });

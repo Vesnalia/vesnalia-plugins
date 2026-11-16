@@ -4,7 +4,7 @@ usage() {
   cat >&2 <<'TEXT'
 The root steps of 070 unit 3's live check, on the Proxmox node. Each acts
 only on the VMIDs in BBBOX_VMIDS whose guests carry the tag
-install.<BBBOX_INSTALL> (bb-box's boxes, held copies and earlier guests all
+install.<BBBOX_INSTALL> (alia-box's boxes, held copies and earlier guests all
 do), and on snapshots that install labelled.
 
   live: BBBOX_VMIDS="3240 3241" BBBOX_INSTALL=<id> proxmox-root.sh <command> <vmid> [snapshot]
@@ -12,14 +12,14 @@ do), and on snapshots that install labelled.
   lock <vmid>
       leaves <vmid> locked (rollback), as a rollback task that died does (gate G7)
   unlock <vmid>
-      unlocks <vmid>, as bb-box then asks
+      unlocks <vmid>, as alia-box then asks
   rollback <vmid> <snapshot>
-      rolls <vmid> back to one of the install's snapshots, outside bb-box (gate G13);
+      rolls <vmid> back to one of the install's snapshots, outside alia-box (gate G13);
       a running container shuts down first, which takes a while
   outside-take <vmid>
-      takes a snapshot named byhand by hand, outside bb-box (gate G13)
+      takes a snapshot named byhand by hand, outside alia-box (gate G13)
   outside-delete <vmid> <snapshot>
-      deletes one of the install's snapshots by hand, outside bb-box (gate G13)
+      deletes one of the install's snapshots by hand, outside alia-box (gate G13)
   failing-rollback <vmid> <snapshot>
       locks <vmid> (backup), asks Proxmox for a rollback, whose task then fails
       on the lock, and unlocks it again (gate G13)
@@ -30,7 +30,7 @@ do), and on snapshots that install labelled.
   config <vmid>
       prints <vmid>'s onboot, template, lock, tags and network lines (gate G16)
   destroy-kept <vmid>
-      destroys a held copy or an earlier guest that bb-box no longer records,
+      destroys a held copy or an earlier guest that alia-box no longer records,
       for the clean-up; it refuses a guest without either tag
   journal <vmid>
       read only: mounts a stopped container and prints its last boot's
@@ -57,10 +57,10 @@ tags=$($tool config "$vmid" | sed -n 's/^tags: //p')
 
 ours() {
   local name=$1
-  [[ $name =~ ^bbsn[a-z2-7]{12}$ ]] || { echo "not one of bb-box's snapshot names: $name" >&2; exit 2; }
+  [[ $name =~ ^bbsn[a-z2-7]{12}$ ]] || { echo "not one of alia-box's snapshot names: $name" >&2; exit 2; }
   local label
   label=$(pvesh get "/nodes/$node/$type/$vmid/snapshot/$name/config" --output-format json | jq -r '.description // ""')
-  [[ $label =~ ^bb-box\ install\ ${BBBOX_INSTALL}\ box\ [^\ ]+\ snapshot\ sn[a-z2-7]{12}($|\ kept) ]] || { echo "not a snapshot of install $BBBOX_INSTALL: $label" >&2; exit 2; }
+  [[ $label =~ ^alia-box\ install\ ${BBBOX_INSTALL}\ box\ [^\ ]+\ snapshot\ sn[a-z2-7]{12}($|\ kept) ]] || { echo "not a snapshot of install $BBBOX_INSTALL: $label" >&2; exit 2; }
 }
 
 case $command in
@@ -124,8 +124,8 @@ case $command in
     pct mount "$vmid" >/dev/null
     root=/var/lib/lxc/$vmid/rootfs
     journalctl -D "$root/var/log/journal" -b 0 -o short-precise --no-pager \
-      -u bb-box-identity.service -u systemd-networkd.service -u ssh.service -u ssh.socket -u user@1000.service -u tailscaled.service | head -60 || true
-    cat "$root/var/lib/bb-box/identity-resets" 2>/dev/null || true
+      -u alia-box-identity.service -u systemd-networkd.service -u ssh.service -u ssh.socket -u user@1000.service -u tailscaled.service | head -60 || true
+    cat "$root/var/lib/alia-box/identity-resets" 2>/dev/null || true
     pct unmount "$vmid"
     ;;
   tasks)
@@ -136,9 +136,9 @@ case $command in
     [ $type = lxc ] || { echo "start-by-hand reads the journal of containers only" >&2; exit 2; }
     pct start "$vmid"
     sleep 30
-    pct exec "$vmid" -- /usr/local/sbin/bb-box-identity status || true
-    pct exec "$vmid" -- journalctl -b -u bb-box-identity -o short-precise --no-pager | tail -20 || true
-    pct exec "$vmid" -- sh -c 'cat /var/lib/bb-box/identity-resets 2>/dev/null; ip -br link' || true
+    pct exec "$vmid" -- /usr/local/sbin/alia-box-identity status || true
+    pct exec "$vmid" -- journalctl -b -u alia-box-identity -o short-precise --no-pager | tail -20 || true
+    pct exec "$vmid" -- sh -c 'cat /var/lib/alia-box/identity-resets 2>/dev/null; ip -br link' || true
     pct stop "$vmid"
     echo "stopped $vmid again"
     ;;

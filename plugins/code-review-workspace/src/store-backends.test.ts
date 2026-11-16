@@ -2,7 +2,7 @@
 // after each one, every read the same; at the end their tables hold the same rows.
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { canonical, dumpStoreReads, type StoreEntities } from "../scripts/store-reads";
 import { pgTestSql, testPgUrl } from "./db/pg-test.test-support";
 import { sqliteSql, type Sql } from "./db/sql";
@@ -85,7 +85,7 @@ function lifecycle(r: Rng): ReviewLifecycle {
     {
       feature: r.pick([null, { environmentId: "env-1", hostId: "host-1", machine: r.pick(TEXTS), path: "/repo", branch: "feature", baseRef: r.pick(HEADS), repo: r.pick([null, "acme/web"]), ...(r.bool() ? { pausedOn: "other" } : {}), ...(r.bool(0.3) ? { folderGone: true } : {}) }]),
       mainThread: r.pick([null, { threadId: r.pick(THREADS), environmentId: "env-1", origin: r.pick(["adopted", "fresh", "forked"] as const), since: r.pick(TIMES) }]),
-      implementers: r.bool() ? [] : [{ threadId: r.pick(THREADS), environmentId: "env-1", origin: "fresh", since: r.pick(TIMES), ...(r.bool() ? { branch: "bb/fix-thr_x" } : {}) }],
+      implementers: r.bool() ? [] : [{ threadId: r.pick(THREADS), environmentId: "env-1", origin: "fresh", since: r.pick(TIMES), ...(r.bool() ? { branch: "alia/fix-thr_x" } : {}) }],
       letPush: r.bool(), includeHidden: FILES.filter(() => r.bool(0.2)),
     },
     {
@@ -288,8 +288,8 @@ describe.skipIf(!testPgUrl)("the Store on SQLite and on Postgres (CRW_TEST_PG_UR
     const sqliteHost = createFakePluginHost({ pluginId: "code-review-workspace" });
     const pgHost = createFakePluginHost({ pluginId: "code-review-workspace" });
     const backends = [
-      { name: "sqlite", sql: sqliteSql(sqliteHost.bb.storage.database()), store: queueStore(createStore(sqliteHost.bb)) },
-      { name: "postgres", sql: pgTestSql(pgHost.bb), store: queueStore(storeOn(pgTestSql(pgHost.bb))) },
+      { name: "sqlite", sql: sqliteSql(sqliteHost.alia.storage.database()), store: queueStore(createStore(sqliteHost.alia)) },
+      { name: "postgres", sql: pgTestSql(pgHost.alia), store: queueStore(storeOn(pgTestSql(pgHost.alia))) },
     ];
     vi.useFakeTimers({ toFake: ["Date"] });
     // On each backend, the same time and the same ids.
@@ -303,7 +303,7 @@ describe.skipIf(!testPgUrl)("the Store on SQLite and on Postgres (CRW_TEST_PG_UR
       }
       return results;
     };
-    // Rows from before conversations moved into bb threads, which the store only reads and clears.
+    // Rows from before conversations moved into VesnALIA threads, which the store only reads and clears.
     await same(0, async ({ sql }) => {
       for (const k of KEYS) {
         await sql.run(`INSERT INTO focus_threads (thread_id,target_key,run_id,focus_id,label,created_at) VALUES (?,?,?,?,?,?)`, [`focus-${k}`, k, "run-1", "docs", "Docs", T0]);
@@ -325,7 +325,7 @@ describe.skipIf(!testPgUrl)("the Store on SQLite and on Postgres (CRW_TEST_PG_UR
       const [readsSqlite, readsPostgres] = await same(step, ({ store }) => dumpStoreReads(store, entities()));
       expect({ step, call: call.name, reads: readsPostgres }).toEqual({ step, call: call.name, reads: readsSqlite });
     }
-    const tables = (await backends[0].sql.all<{ name: string }>(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name<>'_bb_migrations' ORDER BY name`))
+    const tables = (await backends[0].sql.all<{ name: string }>(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name<>'_alia_migrations' ORDER BY name`))
       .map((row) => row.name);
     expect(tables.length).toBeGreaterThan(20);
     const [rowsSqlite, rowsPostgres] = await same(STEPS + 1, ({ sql }) => tableRows(sql, tables));

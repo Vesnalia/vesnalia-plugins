@@ -153,9 +153,9 @@ describe("Scene and Shader arguments", () => {
 
   it("falls back to markdown lines", () => {
     expect(toMarkdown(render('Scene([{shape: "sphere", at: [0, 0, 0]}, {shape: "sphere", at: [1, 0, 0]}, {shape: "surface", values: [[0, 1], [1, 0]]}, {shape: "grid"}])').roots)).toBe(
-      "_3D scene: 2 spheres, 1 surface. Open this reply in BB to turn it._",
+      "_3D scene: 2 spheres, 1 surface. Open this reply in VesnALIA to turn it._",
     );
-    expect(toMarkdown(render('Shader("a", buffers: ["b"])').roots)).toBe("_GPU shader (2 passes). Open this reply in BB to see it._");
+    expect(toMarkdown(render('Shader("a", buffers: ["b"])').roots)).toBe("_GPU shader (2 passes). Open this reply in VesnALIA to see it._");
   });
 });
 

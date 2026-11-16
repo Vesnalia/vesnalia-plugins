@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Gate G8: a git install must be able to build this plugin.
 //
-// `bb plugin install git:<url>` runs `npm install --omit=dev --omit=optional`
+// `alia plugin install git:<url>` runs `npm install --omit=dev --omit=optional`
 // and then builds from source. Two things can break that and neither shows up
 // in a working checkout: a runtime import left in devDependencies (installed
 // away), and a file the build needs that was never committed. So this takes
@@ -55,12 +55,12 @@ try {
     }
   }
 
-  run("bb", ["plugin", "build"], extractDir);
+  run("alia", ["plugin", "build"], extractDir);
 
   const metaPath = path.join(extractDir, "dist", "server.meta.json");
   const bundlePath = path.join(extractDir, "dist", "server.js");
   if (!existsSync(metaPath) || !existsSync(bundlePath)) {
-    fail("bb plugin build produced no server bundle");
+    fail("alia plugin build produced no server bundle");
   }
   const meta = JSON.parse(readFileSync(metaPath, "utf8"));
   if (meta.pluginId !== "agent-retry") {

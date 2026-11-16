@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   type PluginSidebarThread,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "../components/ui/icon";
 import {
@@ -354,7 +354,7 @@ export function ThreadInbox({
     return (
       <>
         <p role="alert" className="px-3 py-2 text-xs">
-          Could not load Treelanes. Showing BB's list.
+          Could not load Treelanes. Showing VesnALIA's list.
         </p>
         <Original />
       </>

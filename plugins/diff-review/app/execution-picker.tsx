@@ -1,15 +1,15 @@
 /**
- * The provider, model and reasoning an AI run starts with: bb's own picker, starting from the plugin's
+ * The provider, model and reasoning an AI run starts with: VesnALIA's own picker, starting from the plugin's
  * settings (Claude Code unless changed), with its catalog read from the reviewed workspace.
  */
-import { experimental_ProviderModelPicker as ProviderModelPicker, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_ProviderModelPicker as ProviderModelPicker, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 
 import type { RpcContract } from "../shared/contract";
 import type { Execution } from "../shared/types";
 import { errorMessage } from "./use-review";
 
-/** Where the picker starts when bb cannot say: Claude Code, its default model. */
+/** Where the picker starts when VesnALIA cannot say: Claude Code, its default model. */
 const FALLBACK: Execution = { providerId: "claude-code", model: "", reasoningLevel: "medium" };
 
 /** The starting choice for a thread's runs, read once each time `active` turns on. */

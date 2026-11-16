@@ -6,11 +6,11 @@
 
 ### Several models advise. One of them does the work.
 
-Adds a Mixture of Agents provider to BB's model picker, whose models are your presets: advisor agents read the request first, then an aggregator agent reads their notes and does the work.<br>
+Adds a Mixture of Agents provider to VesnALIA's model picker, whose models are your presets: advisor agents read the request first, then an aggregator agent reads their notes and does the work.<br>
 Any installed provider and model can fill a slot.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-f59e0b)
+![VesnALIA ≥ 0.43](https://img.shields.io/badge/bb-%E2%89%A5%200.43-f59e0b)
 ![Plugin SDK ≥ 0.5.9](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.5.9-c2410c)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -25,7 +25,7 @@ Any installed provider and model can fill a slot.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional demo data.
+> The screenshots are real VesnALIA captures populated with fictional demo data.
 
 ## The problem
 
@@ -120,7 +120,7 @@ its own panel.
 <table>
 <tr>
 <td align="center"><img src="docs/screenshots/moa-ask.png" alt="/moa from an ordinary thread: the advisor panel, then that thread's own answer" width="440"><br><sub><b><code>/moa</code> in a thread on any provider</b></sub></td>
-<td align="center"><img src="docs/screenshots/presets.png" alt="The Presets settings page with an aggregator slot and two advisor slots" width="440"><br><sub><b>Presets, built on BB's own model picker</b></sub></td>
+<td align="center"><img src="docs/screenshots/presets.png" alt="The Presets settings page with an aggregator slot and two advisor slots" width="440"><br><sub><b>Presets, built on VesnALIA's own model picker</b></sub></td>
 </tr>
 </table>
 </div>
@@ -128,7 +128,7 @@ its own panel.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/MacHatter1/bb-plugin-moa-provider --yes
+alia plugin install git:https://github.com/MacHatter1/bb-plugin-moa-provider --yes
 ```
 
 That's it. On first load the plugin creates a **MoA Default** preset from the
@@ -139,16 +139,16 @@ providers installed on this machine, and `/moa` works in every thread.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-moa-provider
-cd bb-plugin-moa-provider
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-moa-provider
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.43+** (Plugin SDK 0.5.9+)
+- VesnALIA **0.43+** (Plugin SDK 0.5.9+)
 - At least one agent provider signed in. A preset's slots must use providers
   other than Mixture of Agents itself.
 
@@ -160,7 +160,7 @@ bb plugin install path:$PWD --yes
 | **The thread** | The advisor panel for each round, then the aggregator's work as it happens. |
 | **Settings → Plugins → MoA Provider** | The **Presets** page: name, description, aggregator, advisors, mid-task consulting. |
 | **The composer** | `/moa <question>`, and **Ask MoA** in the **+** menu. |
-| **`bb thread list --include-hidden`** | The worker threads. Their titles start with `MoA advisor ·` or `MoA aggregator ·`. |
+| **`alia thread list --include-hidden`** | The worker threads. Their titles start with `MoA advisor ·` or `MoA aggregator ·`. |
 
 ## How it works
 
@@ -191,7 +191,7 @@ sequenceDiagram
     end
 ```
 
-- **Every slot is an ordinary BB thread.** Advisors and the aggregator run as
+- **Every slot is an ordinary VesnALIA thread.** Advisors and the aggregator run as
   hidden worker threads in the MoA thread's environment, on their own
   provider and with that provider's own sign-in. Workers belong to the MoA
   thread: they archive and delete with it, and they are reused on later
@@ -214,7 +214,7 @@ sequenceDiagram
 <summary><b>Steering, check-ins and the every-N nudge</b></summary>
 
 MoA turns cannot be steered: a message you send mid-turn runs as the next
-turn. Mid-task check-ins are sent with BB's ordinary steer right after a tool
+turn. Mid-task check-ins are sent with VesnALIA's ordinary steer right after a tool
 call finishes, so they work with any aggregator — Claude Code, Codex and Pi
 inject it into the running loop, and the ACP agents (Cursor, opencode, Grok,
 Antigravity) cancel the in-flight prompt and continue with the check-in in the
@@ -232,7 +232,7 @@ plugin grants it itself: the tool only reads.
 
 | Hermes | This plugin |
 | --- | --- |
-| `reference_models` | Advisor slots: any BB provider and model, each with its own reasoning level |
+| `reference_models` | Advisor slots: any VesnALIA provider and model, each with its own reasoning level |
 | `aggregator` | Aggregator slot: runs that provider's own agent harness and tools |
 | `fanout: user_turn` | "No, once per message is enough" (the default) |
 | `fanout: every_n:N` | "Every few tool calls": check-ins every N tool calls, answered with `moa_consult` |
@@ -268,7 +268,7 @@ plugin grants it itself: the tool only reads.
 ## Safety and privacy
 
 - 🚫 **Advisors are told to change nothing.** That is an instruction, not a
-  lock. Any approval they ask for is declined, and BB's workspace sandbox stops
+  lock. Any approval they ask for is declined, and VesnALIA's workspace sandbox stops
   writes outside the workspace. But Accept Edits and Auto let an agent edit
   inside the workspace without asking, and a provider with only full access,
   such as Pi, has no sandbox at all.
@@ -291,8 +291,8 @@ plugin grants it itself: the tool only reads.
 ## CLI
 
 ```sh
-bb moa-provider list           # each preset with its aggregator and advisor slots
-bb moa-provider list --json    # the stored shape, for scripts
+alia moa-provider list           # each preset with its aggregator and advisor slots
+alia moa-provider list --json    # the stored shape, for scripts
 ```
 
 <details>
@@ -300,8 +300,8 @@ bb moa-provider list --json    # the stored shape, for scripts
 
 | Command | Does |
 | --- | --- |
-| `bb moa-provider list` | Prints every preset: id (the default one marked), name, aggregator, advisors, and how often they are asked. Exits with `no_presets` when there are none. |
-| `bb moa-provider list --json` | Prints the same store as JSON. |
+| `alia moa-provider list` | Prints every preset: id (the default one marked), name, aggregator, advisors, and how often they are asked. Exits with `no_presets` when there are none. |
+| `alia moa-provider list --json` | Prints the same store as JSON. |
 
 Presets are written in the settings page; there is no CLI for that.
 
@@ -316,7 +316,7 @@ agents. The bundled [moa](skills/moa/SKILL.md) and
 
 ## Settings
 
-`bb plugin config moa-provider`, or **Settings → Plugins → MoA Provider**.
+`alia plugin config moa-provider`, or **Settings → Plugins → MoA Provider**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -337,18 +337,18 @@ the aggregator asks / every N tool calls).
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb plugin disable moa-provider
-bb plugin enable moa-provider
+alia plugin disable moa-provider
+alia plugin enable moa-provider
 ```
 
-`bb plugin remove moa-provider` removes the plugin and its settings.
+`alia plugin remove moa-provider` removes the plugin and its settings.
 
 To keep the plugin but stop consulting: switch off **Consult advisors first**
 on a preset and its aggregator answers alone. To stop finished MoA turns from
 folding their steps:
 
 ```sh
-bb settings completed-turns moa flat
+alia settings completed-turns moa flat
 ```
 
 </details>
@@ -359,13 +359,13 @@ bb settings completed-turns moa flat
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
-server.ts              provider, settings, RPC, `bb moa-provider`, and the four agent tools
+server.ts              provider, settings, RPC, `alia moa-provider`, and the four agent tools
 host.ts                the daemon's entry point for the provider bridge
 app.tsx                the Presets page, the composer action, and the panel slot
 src/bridge.ts          the provider bridge: moa_turn, long-polling, approvals
@@ -384,23 +384,23 @@ test/                  vitest suites and a recorded aggregator turn
 docs/                  logo and screenshots
 ```
 
-**Tests** run on vitest with no network and no real BB server:
-`test/bridge.conformance.test.ts` runs BB's provider-bridge conformance suite
+**Tests** run on vitest with no network and no real VesnALIA server:
+`test/bridge.conformance.test.ts` runs VesnALIA's provider-bridge conformance suite
 against the bridge with a fake server answering `moa_turn`;
 `test/bridge.stream.test.ts` feeds a recorded Claude Code turn through the
-mirror, the bridge and BB's own delta assembler; `test/runs.test.ts` drives the
-orchestrator against a scripted stand-in for `bb.sdk`; `test/prompts.test.ts`,
+mirror, the bridge and VesnALIA's own delta assembler; `test/runs.test.ts` drives the
+orchestrator against a scripted stand-in for `alia.sdk`; `test/prompts.test.ts`,
 `test/mirror.test.ts`, `test/advisor-stream.test.ts` and
 `test/agent-config.test.ts` cover the prompt text, the timeline mapping and
 which tools each thread is offered.
 
 **Maintainer notes.** The advisor panel only appears in a real thread, so
-verify visual changes by reloading the plugin (`bb plugin reload moa-provider`) and
-sending a message to a MoA thread. `bb plugin build` must pass before a path
+verify visual changes by reloading the plugin (`alia plugin reload moa-provider`) and
+sending a message to a MoA thread. `alia plugin build` must pass before a path
 install picks up your changes.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`, the README and the two skills.
+`alia.description` in `package.json`, the README and the two skills.
 
 ## Licence
 

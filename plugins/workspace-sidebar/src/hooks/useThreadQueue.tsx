@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { useRpc, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 import type { QueueSummary } from "../lib/thread-queue";
 

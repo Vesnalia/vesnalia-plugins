@@ -4,7 +4,7 @@
 // controlled data, so extraction happens in three separated phases:
 //
 //   1. **Stage.** Everything lands in a fresh, private directory
-//      `<dest>/.bb-extract-<hex>/out` obtained through resolveNew. The extra
+//      `<dest>/.alia-extract-<hex>/out` obtained through resolveNew. The extra
 //      level of nesting means a single `../` escape (the classic zip-slip)
 //      still lands inside a directory this module owns and deletes.
 //   2. **Sweep.** Anything the extractor wrote *beside* `out` is removed
@@ -27,7 +27,7 @@ import { spawn } from "node:child_process";
 import { constants as fsConstants } from "node:fs";
 import { access, lstat, mkdir, readdir, readlink, realpath, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import type { ArchiveFormat, ArchiveListing, Job } from "../contract";
 import {
@@ -293,8 +293,8 @@ const defaultSpawn: SpawnExtractor = (command, args, options) =>
 
 const STDERR_LIMIT = 8 * 1024;
 const KILL_ESCALATION_MS = 3_000;
-/** `.bb-extract-<hex>` — the staging roots this module creates. */
-const STALE_STAGING_PATTERN = /^\.bb-extract-[0-9a-f]{1,16}$/u;
+/** `.alia-extract-<hex>` — the staging roots this module creates. */
+const STALE_STAGING_PATTERN = /^\.alia-extract-[0-9a-f]{1,16}$/u;
 /** Abandoned staging roots are only collected once they are this old. */
 const STALE_STAGING_MS = 60 * 60 * 1000;
 
@@ -339,7 +339,7 @@ export function canExtractFormat(format: ArchiveFormat, executables: Executables
 }
 
 export async function createArchives(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: ArchivesOptions,
 ): Promise<ArchivesModule> {
   const jobs = options.jobs;
@@ -348,7 +348,7 @@ export async function createArchives(
   const support = supportFrom(executables);
   // Built on the same probe, so "can list" and "can extract" never disagree
   // about which tools this host has.
-  const lister = createArchiveLister(bb, {
+  const lister = createArchiveLister(alia, {
     executables,
     canExtract: (format) => canExtractFormat(format, executables),
     ...(options.spawnLister === undefined ? {} : { spawnLister: options.spawnLister }),
@@ -469,7 +469,7 @@ export async function createArchives(
       try {
         await rename(entry.target, entry.source);
       } catch (error) {
-        bb.log.warn(`extract rollback failed for ${entry.target}: ${String(error)}`);
+        alia.log.warn(`extract rollback failed for ${entry.target}: ${String(error)}`);
       }
     }
   }
@@ -537,7 +537,7 @@ export async function createArchives(
 
   async function run(jobId: string, context: RunContext): Promise<void> {
     // The staging root is ours alone: created here, deleted in `finally`.
-    const stagingName = `.bb-extract-${Math.random().toString(16).slice(2, 10)}`;
+    const stagingName = `.alia-extract-${Math.random().toString(16).slice(2, 10)}`;
     const stagingRoot = await resolveNew(context.destReal, stagingName);
     const outDir = path.join(stagingRoot, "out");
     staging.set(jobId, stagingRoot);
@@ -636,7 +636,7 @@ export async function createArchives(
       }
 
       if (removed.length > 0) {
-        bb.log.warn(
+        alia.log.warn(
           `extract ${context.fileName}: removed ${removed.length} escaping entr${removed.length === 1 ? "y" : "ies"} (${removed.slice(0, 5).join(", ")})`,
         );
       }
@@ -644,7 +644,7 @@ export async function createArchives(
       // A cancel that lands during the commit cannot un-move the files; the
       // job simply stays `canceled` and the panel refetches the directory.
       if (jobs.isCanceled(jobId)) return;
-      publishFs(bb, [context.destReal], "extract");
+      publishFs(alia, [context.destReal], "extract");
       jobs.succeed(jobId, resultPath);
     } catch (error) {
       if (!jobs.isCanceled(jobId)) {
@@ -659,7 +659,7 @@ export async function createArchives(
 
   /**
    * A `SIGKILL` (or a host crash) skips the `finally` above and leaves a
-   * `.bb-extract-<hex>` directory in the user's folder for ever: there is no
+   * `.alia-extract-<hex>` directory in the user's folder for ever: there is no
    * central place to sweep, because staging deliberately lives next to the
    * destination so the commit is a rename, not a copy. Extracting into the
    * same folder again is the one moment we are guaranteed to look at it, so
@@ -685,7 +685,7 @@ export async function createArchives(
         continue;
       }
       await rm(candidate, { recursive: true, force: true }).catch(() => undefined);
-      bb.log.warn(`extract: removed abandoned staging directory ${candidate}`);
+      alia.log.warn(`extract: removed abandoned staging directory ${candidate}`);
     }
   }
 
@@ -744,7 +744,7 @@ export async function createArchives(
   // §7.2: a reload/shutdown must not orphan a `tar` child that keeps writing
   // into a directory nobody will ever clean up. Hooks run LIFO, so this one
   // runs before server.ts's final log line.
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     const pending = [...staging.entries()];
     for (const [jobId] of pending) jobs.jobCancel({ jobId });
     for (const [jobId, stagingRoot] of pending) {
@@ -752,11 +752,11 @@ export async function createArchives(
       await rm(stagingRoot, { recursive: true, force: true }).catch(() => undefined);
     }
     if (pending.length > 0) {
-      bb.log.info(`archives disposed — stopped ${String(pending.length)} extraction(s)`);
+      alia.log.info(`archives disposed — stopped ${String(pending.length)} extraction(s)`);
     }
   });
 
-  bb.log.info(
+  alia.log.info(
     `archive support — zip:${support.zip} tar:${support.tar} 7z:${support.sevenZip} rar:${support.rar}`,
   );
 

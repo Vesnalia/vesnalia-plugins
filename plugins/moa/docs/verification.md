@@ -24,20 +24,20 @@ TL;DR: This page records earlier local and live verification. The current source
 
 ### 0.1.0-beta.1
 
-Checked on 2026-09-13 with BB 0.43.1, Plugin SDK 0.4.87 and Node on macOS arm64.
+Checked on 2026-09-13 with VesnALIA 0.43.1, Plugin SDK 0.4.87 and Node on macOS arm64.
 
 ## Automated checks
 
 - `npm run check`: TypeScript, all 20 tests and server/frontend bundles passed.
-- `bb plugin types --check`: installed SDK pin matches 0.4.87.
-- Clean source copy: `npm ci --omit=dev` followed by `bb plugin build` passed. Git installations can build without development dependencies.
+- `alia plugin types --check`: installed SDK pin matches 0.4.87.
+- Clean source copy: `npm ci --omit=dev` followed by `alia plugin build` passed. Git installations can build without development dependencies.
 - Package allowlist includes bundles and compatibility metadata, original prompts, skill, license and documentation. Tests, node_modules and private chat artifacts are excluded.
 
 The official SDK harness tests dispatch gating, forged markers, recursion prevention, session reuse, role reversal, failure handling, stale edits, cancellation/bypass, off-mode cleanup, durable reload state, explicit retry, per-chat FIFO, and frontend toggling/error feedback. An early bypass cancellation race was found and fixed; the regression now passes. A reload test initially needed its fake-host SDK stubs restored after reload; that fixture was corrected.
 
 ## Live checks
 
-A hidden, isolated chat used Codex Luna/Sol with low reasoning. Seven consultations completed and their private reference blocks appeared in BB's outbound request events. Main/advisor timelines contained assistant responses and reasoning, with no tool-call items.
+A hidden, isolated chat used Codex Luna/Sol with low reasoning. Seven consultations completed and their private reference blocks appeared in VesnALIA's outbound request events. Main/advisor timelines contained assistant responses and reasoning, with no tool-call items.
 
 - Sol advised Luna; the next question reused the Sol worker.
 - Changing the main model to Sol selected Luna as advisor.
@@ -47,15 +47,15 @@ A hidden, isolated chat used Codex Luna/Sol with low reasoning. Seven consultati
 - A user correction made with MoA off was remembered by both advisor and main agent after re-enabling, then again after plugin reload. The same advisor thread was reused.
 - Russian desktop settings rendered with the native model picker and optional CLI Agents catalog. Test workers were stopped and archived after verification.
 
-One earlier probe sent a fact change through `bb thread tell`, which BB labels as an **agent** message. After reload the main model returned the original user's fact despite receiving the advisor's updated fact. The outbound event confirmed correct delivery. Repeating the scenario using actual browser **user** submissions passed before and after reload, without a code change. The exact model decision in the earlier probe is not established; MoA does not guarantee agreement or factual accuracy.
+One earlier probe sent a fact change through `alia thread tell`, which VesnALIA labels as an **agent** message. After reload the main model returned the original user's fact despite receiving the advisor's updated fact. The outbound event confirmed correct delivery. Repeating the scenario using actual browser **user** submissions passed before and after reload, without a code change. The exact model decision in the earlier probe is not established; MoA does not guarantee agreement or factual accuracy.
 
 ## Remaining scope
 
-Other providers and actual native-profile execution need separate live validation. No compact-device live interaction check is recorded here. The settings control uses BB's dialog trigger, which selects `MobileTrigger` for compact viewports and toggles on click. (components/ui/dialog.tsx:107-146, components/ui/responsive-overlay.tsx:108-125, components/ui/responsive-overlay.tsx:157-225)
+Other providers and actual native-profile execution need separate live validation. No compact-device live interaction check is recorded here. The settings control uses VesnALIA's dialog trigger, which selects `MobileTrigger` for compact viewports and toggles on click. (components/ui/dialog.tsx:107-146, components/ui/responsive-overlay.tsx:108-125, components/ui/responsive-overlay.tsx:157-225)
 
 The build printed an unrelated existing custom ACP configuration warning on the test host, while returning success and generating all bundles. This plugin does not alter ACP configuration.
 
-These records describe a local beta, not marketplace acceptance or compatibility with future BB versions.
+These records describe a local beta, not marketplace acceptance or compatibility with future VesnALIA versions.
 
 ## 0.1.0-beta.2 — first-message support
 
@@ -73,7 +73,7 @@ request. The main model replied FIRST-READY. A user follow-up reused the same
 advisor and both answered COBALT. The checkbox remained enabled in the created
 chat. Browser computed styles confirmed a 12 px checkbox and 12 px label.
 
-The initial live attempt failed because BB permits personal workspaces only in
+The initial live attempt failed because VesnALIA permits personal workspaces only in
 the personal project. This was corrected to use the standard project's source
 on the actual submission host; the original queued first request then succeeded
 on explicit retry. These initial failures remain in the consultation history.
@@ -88,7 +88,7 @@ worktree is created just for the advisor.
 
 ## Beta.3 — shared settings, hidden marker and long consultations (2026-09-13)
 
-Typecheck, build and 34 tests pass on BB 0.43.1 / SDK 0.4.87. New cases cover cross-chat/project model/profile sharing with independent enable flags, older draft binding to current shared settings, first-message profile routing, invalidation of another chat's ready advice, and content-script isolation/disposal.
+Typecheck, build and 34 tests pass on VesnALIA 0.43.1 / SDK 0.4.87. New cases cover cross-chat/project model/profile sharing with independent enable flags, older draft binding to current shared settings, first-message profile routing, invalidation of another chat's ready advice, and content-script isolation/disposal.
 
 Using a controlled clock, a silent active advisor stayed running after 2041 seconds and its eventual answer passed the delivery gate. A pending advisor stayed running after 3600 seconds and could still be cancelled by disabling MoA. Saving only the notice threshold did not stop or replace the running advisor. These are deterministic lifecycle simulations, not 34/60-minute live provider calls.
 
@@ -96,7 +96,7 @@ An initial new sharing test expected role reversal when swapping both slots; tha
 
 The live path installation was reloaded only after the plugin-held queue was empty. Four existing chats across projects returned the same selected models/efforts, retaining their different enable flags. In a real new-chat composer, saved shared models appeared, enabling retained the structured draft mention while both its native chip and wrapper had display:none. Browser screenshot inspection confirmed the checkbox remained visible with no chip in the text field. No model request was submitted for this UI check.
 
-Native profile first-message routing is covered by the SDK harness, not a live profile invocation. Native BB runtime state and event timestamps are observations, not proof that a remote provider is making useful progress. MoA's threshold no longer cancels active work; BB/provider watchdogs and explicit user actions retain their separate behavior.
+Native profile first-message routing is covered by the SDK harness, not a live profile invocation. Native VesnALIA runtime state and event timestamps are observations, not proof that a remote provider is making useful progress. MoA's threshold no longer cancels active work; ALIA/provider watchdogs and explicit user actions retain their separate behavior.
 
 ## Beta.4–5 corrections and current verification
 
@@ -108,19 +108,19 @@ Beta.5 changes the original one-advisor scheme to two independent participants, 
 
 A live isolated Grok 4.6 high + Gemini 3.8 Flash high consultation started both outgoing requests before either answer completed. Participant elapsed times were 20.132 and 16.563 seconds; the full consultation took 20.817 seconds. The recorded outgoing request of the acting Codex Luna chat contained both exact answers. No CLI Agents selection marker was present. This verifies actual routing and delivery, not merely the coordinator's status. Provider failure fallback is verified with controlled SDK simulations; no live provider outage was induced.
 
-Browser verification on BB 0.43.1: settings show the fallback policy in the existing modal, reserve picker appears when selected, save is disabled until a reserve is explicitly chosen, and native profile selectors are absent. Legacy consultation opens without HTTP 400 and renders headings/lists with an explicit one-advisor historical label. The composer retains its compact checkbox/settings controls.
+Browser verification on VesnALIA 0.43.1: settings show the fallback policy in the existing modal, reserve picker appears when selected, save is disabled until a reserve is explicitly chosen, and native profile selectors are absent. Legacy consultation opens without HTTP 400 and renders headings/lists with an explicit one-advisor historical label. The composer retains its compact checkbox/settings controls.
 
-The live two-participant modal showed separate A/B tabs and confirmed actual inputs for both. Expanded delivery payload rendered two model headings and no escaped newline sequences. Both native session tabs displayed the respective real transcript. BB 0.43.1's embedded timeline also displayed a residual “Working…” footer for an idle worker; the coordinator's runtime state and message-level receipt remained correct. This host-renderer discrepancy is not treated as evidence of current provider activity.
+The live two-participant modal showed separate A/B tabs and confirmed actual inputs for both. Expanded delivery payload rendered two model headings and no escaped newline sequences. Both native session tabs displayed the respective real transcript. VesnALIA 0.43.1's embedded timeline also displayed a residual “Working…” footer for an idle worker; the coordinator's runtime state and message-level receipt remained correct. This host-renderer discrepancy is not treated as evidence of current provider activity.
 
 ## Beta.6 — optional File Gateway
 
 `npm run check` passed: 54 tests, TypeScript and both bundles. SDK 0.4.87 matches the host. Added tests for absent, disabled, errored, unrelated and running plugin records; discovery failure selects local-only mode. Native File Gateway mentions preserve their original itemId/source reference while unrelated plugin selections and duplicates are excluded. A reused A/B pair receives an updated unavailable policy after gateway removal, without losing session continuity.
 
-MoA uses only the public BB plugin list and native thread input APIs. File Gateway supplies its own tool/CLI and resolves file references. No gateway imports, fixed host IDs or access-policy changes are introduced. Per-attempt history labels availability separately from actual reads. Gateway access enforcement belongs to the optional plugin; local provider role restrictions are instructions, not an OS sandbox.
+MoA uses only the public VesnALIA plugin list and native thread input APIs. File Gateway supplies its own tool/CLI and resolves file references. No gateway imports, fixed host IDs or access-policy changes are introduced. Per-attempt history labels availability separately from actual reads. Gateway access enforcement belongs to the optional plugin; local provider role restrictions are instructions, not an OS sandbox.
 
-Initial live remote-reading test: Gemini issued gateway hosts/read commands and reported the remote file's correct size and headings. Grok waited for manual approval of `bb file-gateway hosts` because MoA still forced `accept-edits`. The test was cancelled and archived, not reported as a successful two-participant run. Fixed worker permissions to inherit the original queued message's mode; a regression test verifies full inheritance and preservation of manual approval mode.
+Initial live remote-reading test: Gemini issued gateway hosts/read commands and reported the remote file's correct size and headings. Grok waited for manual approval of `alia file-gateway hosts` because MoA still forced `accept-edits`. The test was cancelled and archived, not reported as a successful two-participant run. Fixed worker permissions to inherit the original queued message's mode; a regression test verifies full inheritance and preservation of manual approval mode.
 
-Repeated live test with inherited full mode passed: Grok and Gemini each issued completed `bb file-gateway hosts` and `read` commands against the same remote file and reported its correct 2246-byte size and headings. Both exact notes reached the acting Codex Luna request; consultation elapsed 21.3 seconds. Grok's BB event included the raw gateway read result; the Antigravity bridge exposed command arguments/status and the final note, but omitted the raw command output. This transport visibility limitation is preserved in the private verification artifact. Native gateway-mention forwarding and plugin absence/removal were verified by SDK tests, without disabling the user's live gateway.
+Repeated live test with inherited full mode passed: Grok and Gemini each issued completed `alia file-gateway hosts` and `read` commands against the same remote file and reported its correct 2246-byte size and headings. Both exact notes reached the acting Codex Luna request; consultation elapsed 21.3 seconds. Grok's VesnALIA event included the raw gateway read result; the Antigravity bridge exposed command arguments/status and the final note, but omitted the raw command output. This transport visibility limitation is preserved in the private verification artifact. Native gateway-mention forwarding and plugin absence/removal were verified by SDK tests, without disabling the user's live gateway.
 
 ## Current source coverage
 

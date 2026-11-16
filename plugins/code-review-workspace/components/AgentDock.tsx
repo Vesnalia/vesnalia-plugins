@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
-import { ThreadChat, useComposers, useRealtime, useRpc, experimental_ProviderModelPicker as ProviderModelPicker } from "@get-bb/plugin-sdk/app";
+import { ThreadChat, useComposers, useRealtime, useRpc, experimental_ProviderModelPicker as ProviderModelPicker } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { AgentMessage, AgentMessageContext } from "../src/store";
@@ -13,7 +13,7 @@ import { Icon } from "./ui/icon";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { TOUCH_CONTROL, TOUCH_TARGET } from "./touch";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { Badge, SpeakerMark } from "./ui/badge";
 import { TabTitle } from "./TabTitle";
 
@@ -27,7 +27,7 @@ export interface AgentDockProps {
   /** The review's patch, for quoting selected lines. */
   patch: string;
   injection?: DockInjection;
-  /** Its tab shows in BB's side panel: it reads the conversation, and focuses its box, only then. */
+  /** Its tab shows in VesnALIA's side panel: it reads the conversation, and focuses its box, only then. */
   active?: boolean;
   /** Within another view, as a thread's Review tab, with no header of its own, nor taking the focus as it opens. */
   bare?: boolean;
@@ -36,26 +36,26 @@ export interface AgentDockProps {
 }
 interface Conversation {
   threadId: string | null; legacy: AgentMessage[]; defaults: AgentChoice | null;
-  /** The machine chosen in Review settings, when it isn't the bb server. */
+  /** The machine chosen in Review settings, when it isn't the VesnALIA server. */
   machine?: { name: string; connected: boolean } | null;
 }
 // The last ask each review's agent took, by its nonce: the tab can mount after the ask that opens it, and mount again
-// with BB's panel, and takes each ask once.
+// with VesnALIA's panel, and takes each ask once.
 const handledInjections = new Map<string, number>();
 
 /** A first message being written: what's typed, its context, and the quotes put in it. */
 interface FirstDraft { input: string; chip: AgentMessageContext | null; quoted: string[] }
-// Each review's first message as it's written, kept for this page's life: through the review switching, and BB closing
-// its panel, which BB 0.48 does by unmounting the tab (seen in its e2e; later BBs say they keep it mounted).
+// Each review's first message as it's written, kept for this page's life: through the review switching, and VesnALIA closing
+// its panel, which VesnALIA 0.48 does by unmounting the tab (seen in its e2e; later BBs say they keep it mounted).
 const firstDrafts = new Map<string, FirstDraft>();
 
 /** For tests: forget every first message being written, and every ask taken. */
 export function forgetAgentDrafts() { firstDrafts.clear(); handledInjections.clear(); }
 
-// bb's picker resolves the first provider's default model from an empty seed.
+// VesnALIA's picker resolves the first provider's default model from an empty seed.
 const UNSET_AGENT: AgentChoice = { providerId: "", model: "", reasoningLevel: "medium" };
-// The Review agent tab in BB's side panel (components/PanelTabs.tsx), mounted again for each review it shows, and by BB
-// 0.48 each time its panel opens. A review's conversation is a hidden bb thread shown with ThreadChat; until it exists, a
+// The Review agent tab in VesnALIA's side panel (components/PanelTabs.tsx), mounted again for each review it shows, and by VesnALIA
+// 0.48 each time its panel opens. A review's conversation is a hidden VesnALIA thread shown with ThreadChat; until it exists, a
 // first-message composer chooses its agent.
 export const AgentDock = memo(function AgentDock({ targetKey, reviewId, reviewName, patch, injection, active = true, bare = false, wasDeleted = false }: AgentDockProps) {
   const rpc = useRpc<typeof rpcContract>();
@@ -114,7 +114,7 @@ export const AgentDock = memo(function AgentDock({ targetKey, reviewId, reviewNa
     return () => cancelAnimationFrame(frame);
   }, [visible, threadId, bare]);
   // Before the conversation exists, a selection becomes the first message's
-  // context; afterwards it is quoted into bb's composer for the reviewer to edit.
+  // context; afterwards it is quoted into VesnALIA's composer for the reviewer to edit.
   useEffect(() => {
     if (!injection || handledInjections.get(targetKey) === injection.nonce || !conversation) return;
     if (!threadId) {

@@ -17,7 +17,7 @@
  * counter is, and a day sampled only once is still an honest point.
  *
  * Samples are persisted rather than kept in memory because a plugin reload is
- * routine (settings change, `bb plugin reload`, app restart) and an in-memory
+ * routine (settings change, `alia plugin reload`, app restart) and an in-memory
  * series would restart from a single point every time, which is exactly the
  * state this file exists to get out of.
  *

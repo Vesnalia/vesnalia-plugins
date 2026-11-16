@@ -29,7 +29,7 @@ under the MIT licence. The full licence text is at the end of this file.
 - Licence: MIT
 - Copyright (c) Tailwind Labs, Inc.
 - Home: https://tailwindcss.com
-- Where it ships: the bb plugin build generates `dist/app.css` with Tailwind
+- Where it ships: the VesnALIA plugin build generates `dist/app.css` with Tailwind
   CSS. That file keeps the Tailwind licence banner on its first line.
 
 ## MIT licence text

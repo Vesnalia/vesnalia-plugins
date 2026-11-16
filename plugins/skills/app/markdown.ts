@@ -1,16 +1,16 @@
 /**
- * A skill's body renders through bb's own `Markdown`, which loads an image as
+ * A skill's body renders through VesnALIA's own `Markdown`, which loads an image as
  * soon as it draws it and takes no say over that. A skill someone else wrote
  * can carry a remote image or raw HTML, and opening its detail should fetch
  * nothing — and never hang or crash the surface, whatever the body holds.
  *
  * Deliberately conservative rather than precise:
  *
- * - **Budgets first.** The parser (the one bb's renderer uses too) slows down
+ * - **Budgets first.** The parser (the one VesnALIA's renderer uses too) slows down
  *   badly on some shapes — nested image labels, long runs of mixed emphasis
  *   delimiters, very large bodies — and throws on very deep nesting. A body
  *   past any budget below is never parsed: it is shown whole as a fenced code
- *   block, which loads nothing and which bb parses in linear time. The counts
+ *   block, which loads nothing and which VesnALIA parses in linear time. The counts
  *   are raw character counts, so no syntax (a code span, an escape) can hide
  *   anything from them. Real skills sit far below every one.
  * - **One parse, one walk.** Every image, image reference and HTML node, at
@@ -124,7 +124,7 @@ function defuse(markdown: string, parse: (markdown: string) => Nodes): string {
 }
 
 /**
- * The body, safe to hand to bb's `Markdown`. `parse` is for tests that need
+ * The body, safe to hand to VesnALIA's `Markdown`. `parse` is for tests that need
  * the parser to fail.
  */
 export function withoutImages(markdown: string, parse: (markdown: string) => Nodes = parseBody): string {

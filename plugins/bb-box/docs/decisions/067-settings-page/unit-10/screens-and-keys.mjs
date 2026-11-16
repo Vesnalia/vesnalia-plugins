@@ -4,9 +4,9 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
-const dataDir = process.env.LIVE_BB_DATA ?? join(process.env.HOME ?? "", "bbdata");
-const cli = process.env.LIVE_BB_CLI ?? join(process.env.HOME ?? "", "bbc.sh");
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
+const dataDir = process.env.LIVE_ALIA_DATA ?? join(process.env.HOME ?? "", "bbdata");
+const cli = process.env.LIVE_ALIA_CLI ?? join(process.env.HOME ?? "", "bbc.sh");
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const [what] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
@@ -15,7 +15,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const browser = await chromium.launch();
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -28,13 +28,13 @@ async function elsewhere(change) {
 }
 
 function keepCopy() {
-  const db = new DatabaseSync(join(dataDir, "bb.db"));
+  const db = new DatabaseSync(join(dataDir, "alia.db"));
   try {
     const value = JSON.stringify({ at: Date.now() - 86_400_000 * 21, version: "0.1.9", values: { "boxes-per-thread": 0 }, notes: [] });
     const columns = db.prepare("pragma table_info(plugin_kv)").all().map((column) => column.name);
     const extra = columns.filter((name) => !["plugin_id", "key", "value"].includes(name));
     const names = ["plugin_id", "key", "value", ...extra];
-    db.prepare(`insert or replace into plugin_kv (${names.join(", ")}) values (${names.map(() => "?").join(", ")})`).run("bb-box", "config/migrated-from-bb-settings", value, ...extra.map(() => Date.now()));
+    db.prepare(`insert or replace into plugin_kv (${names.join(", ")}) values (${names.map(() => "?").join(", ")})`).run("alia-box", "config/migrated-from-alia-settings", value, ...extra.map(() => Date.now()));
   } finally {
     db.close();
   }
@@ -63,13 +63,13 @@ function changedFile() {
 }
 
 async function open(page, hash = "#option/configuration") {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   await page.locator("[data-page-heading]").filter({ hasText: /^Configuration/ }).waitFor();
   await pause(600);
@@ -214,7 +214,7 @@ async function keys() {
   await page.getByRole("alertdialog").waitFor();
   const toRemove = await tabTo(page, "Remove copy", 4);
   await page.keyboard.press("Enter");
-  await page.getByText("Removed the copy of BB's earlier settings.").waitFor();
+  await page.getByText("Removed the copy of VesnALIA's earlier settings.").waitFor();
   await pause(300);
   const removed = await focusSummary(page);
   say(`Tab to Remove copy (${toRemove.stop} stop) and Enter: focus ${removed.name}, ring ${removed.ring}`);

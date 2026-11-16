@@ -18,7 +18,7 @@ export function createAcpInstaller({ dataDir, fetchImpl = fetch, run = runJson, 
   let cachedAt = 0;
 
   async function download(url, limit, signal) {
-    const response = await fetchImpl(url, { signal, headers: { Accept: url === API ? "application/vnd.github+json" : "application/octet-stream", "User-Agent": "bb-plugin-zcode" } });
+    const response = await fetchImpl(url, { signal, headers: { Accept: url === API ? "application/vnd.github+json" : "application/octet-stream", "User-Agent": "alia-plugin-zcode" } });
     if (response.status === 404 && url === API) return null;
     if (!response.ok) throw new Error(`GitHub download failed (HTTP ${response.status})`);
     if (Number(response.headers.get("content-length")) > limit) throw new Error("Release download is too large");
@@ -87,7 +87,7 @@ export function createAcpInstaller({ dataDir, fetchImpl = fetch, run = runJson, 
       if (checksum.length !== 2 || !/^[a-fA-F0-9]{64}$/.test(checksum[0]) || checksum[1] !== files.name) throw new Error("Invalid ACP SHA-256 file");
       const archive = await download(files.archive.browser_download_url, MAX_ARCHIVE, signal);
       if (digest(archive) !== checksum[0].toLowerCase()) throw new Error("ACP SHA-256 mismatch; existing installation was kept");
-      const allowed = new Set([binary, "LICENSE", "NOTICE", "LICENSES/bb-zcode-MIT.txt"]);
+      const allowed = new Set([binary, "LICENSE", "NOTICE", "LICENSES/alia-zcode-MIT.txt"]);
       const contents = unzipSync(archive, { filter: entry => {
         if (!allowed.has(entry.name)) throw new Error("Unexpected file in ACP archive");
         if (entry.originalSize > (entry.name === binary ? MAX_ARCHIVE : 1024 * 1024)) throw new Error("ACP archive entry is too large");

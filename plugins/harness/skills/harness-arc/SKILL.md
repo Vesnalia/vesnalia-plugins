@@ -17,7 +17,7 @@ Ordinary chats stay ordinary until the operator explicitly starts a Harness.
 4. **Critic** — simplify and push back. Complete with APPROVE, REWORK, or BLOCK. Spawns a child thread.
 5. **Promote** — the job is unfinished until you communicate it. Spawns a child thread.
 
-Custom Harnesses clone this five-arc shape. Name, description, per-phase instructions, parent/child execution, artifact policy, promote mode (`always` or `off`), and max corrections can change. Starting snapshots the resolved definition into the plan so later edits do not rewrite in-flight work. This plugin injects only `harness-arc`; it cannot attach arbitrary BB skills.
+Custom Harnesses clone this five-arc shape. Name, description, per-phase instructions, parent/child execution, artifact policy, promote mode (`always` or `off`), and max corrections can change. Starting snapshots the resolved definition into the plan so later edits do not rewrite in-flight work. This plugin injects only `harness-arc`; it cannot attach arbitrary VesnALIA skills.
 
 Milestone Pipeline is removed. Do not start `--milestone` or `milestone-pipeline`.
 
@@ -25,19 +25,19 @@ Milestone Pipeline is removed. Do not start `--milestone` or `milestone-pipeline
 
 | Command | Effect |
 | --- | --- |
-| `bb harness status` | Current phase, resolved model, next DAG node |
-| `bb harness start --task "<text>"` | Start Standard Harness |
-| `bb harness start --task "<text>" --harness <id>` | Start a named Harness |
-| `bb harness advance` | Move one phase forward |
-| `bb harness rewind` | Move one phase back (critic → worker) |
-| `bb harness set-phase <phase>` | Jump to explore\|plan\|worker\|critic\|promote |
-| `bb harness init` | Create `artifacts/`, `plans/`, and `HARNESS.md` |
-| `bb harness plan create "<name>"` | Seed a five-node DAG (add `--no-seed` for empty) |
-| `bb harness plan list` / `show <id>` | List or inspect a plan |
-| `bb harness plan next <id>` | Next unblocked node |
-| `bb harness plan start <id> <node>` | Start a node (spawns a child when execution is child) |
-| `bb harness plan complete <id> <node> [--verdict APPROVE\|REWORK\|BLOCK] [--summary "<text>"]` | Mark that node done |
-| `bb harness plan add <id> <title> [--phase worker] [--deps a,b]` | Add a node |
+| `alia harness status` | Current phase, resolved model, next DAG node |
+| `alia harness start --task "<text>"` | Start Standard Harness |
+| `alia harness start --task "<text>" --harness <id>` | Start a named Harness |
+| `alia harness advance` | Move one phase forward |
+| `alia harness rewind` | Move one phase back (critic → worker) |
+| `alia harness set-phase <phase>` | Jump to explore\|plan\|worker\|critic\|promote |
+| `alia harness init` | Create `artifacts/`, `plans/`, and `HARNESS.md` |
+| `alia harness plan create "<name>"` | Seed a five-node DAG (add `--no-seed` for empty) |
+| `alia harness plan list` / `show <id>` | List or inspect a plan |
+| `alia harness plan next <id>` | Next unblocked node |
+| `alia harness plan start <id> <node>` | Start a node (spawns a child when execution is child) |
+| `alia harness plan complete <id> <node> [--verdict APPROVE\|REWORK\|BLOCK] [--summary "<text>"]` | Mark that node done |
+| `alia harness plan add <id> <title> [--phase worker] [--deps a,b]` | Add a node |
 
 Pass `--thread <id>` when you are not already inside that thread. Add `--json` when the output drives code.
 
@@ -45,7 +45,7 @@ Native tools: `harness_get_arc`, `harness_advance`, `harness_create_plan`, `harn
 
 ## Procedure
 
-1. `bb harness status` (or `harness_get_arc`) before changing anything.
+1. `alia harness status` (or `harness_get_arc`) before changing anything.
 2. Stay in the current phase. If you need a DAG, advance to Plan and write a DAG instead of improvising a giant todo list in prose.
 3. Worker: start the next node, finish it, complete it, then take the following node. Never start two nodes.
 4. Keep auditable outputs in `artifacts/`. Do not dump scratch into the repo root.
@@ -56,7 +56,7 @@ Native tools: `harness_get_arc`, `harness_advance`, `harness_create_plan`, `harn
 
 Settings → Role routing picks a real provider and model for Explore/Plan (parent on Standard), Worker, Critic, and Promote.
 
-A DAG node can override that slot. Unset means inherit the parent thread's provider/model when BB exposes `defaultExecutionOptions`. Otherwise attempt telemetry records `inherited-unknown` with null provider/model. No cost is invented.
+A DAG node can override that slot. Unset means inherit the parent thread's provider/model when VesnALIA exposes `defaultExecutionOptions`. Otherwise attempt telemetry records `inherited-unknown` with null provider/model. No cost is invented.
 
 Do not auto-complete a node when the child goes idle. The operator clicks Done or records a Critic verdict.
 

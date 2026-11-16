@@ -1,7 +1,7 @@
 // What the page and the backend both read. No imports here: the page bundle must not pull in the backend's libraries.
 
 /**
- * `label` and `description` are what the settings API and the `bb` CLI show. The panel is smaller, so it shows `short` (its
+ * `label` and `description` are what the settings API and the `VesnALIA` CLI show. The panel is smaller, so it shows `short` (its
  * label) and `hint` (one line) when there are, and the long ones otherwise; `unit` is what a slider's value ends in.
  */
 type Common = { label: string; description?: string; short?: string; hint?: string };
@@ -38,7 +38,7 @@ export const SETTINGS = {
     label: "Hide the thread-index button",
     short: "Hide the thread-index button",
     hint: "On removes it; off moves it left of the strip",
-    description: "BB's thread-index button beside the scrollbar. Off: it sits just left of the minimap, which keeps the right edge.",
+    description: "VesnALIA's thread-index button beside the scrollbar. Off: it sits just left of the minimap, which keeps the right edge.",
     default: true,
   },
   width: { type: "number", label: "Width (px)", short: "Width", hint: "6 to 120 pixels", unit: "px", description: "How wide the minimap is, from 6 to 120.", default: 26, min: 6, max: 120 },
@@ -202,7 +202,7 @@ export const SETTINGS = {
     label: "Keep the minimap on narrow windows",
     short: "Keep on narrow windows",
     hint: "Instead of handing back to the scrollbar when there is no room",
-    description: "When the window is too narrow for the full strip, BB's own scrollbar normally comes back. On: the minimap stays, at the narrow width.",
+    description: "When the window is too narrow for the full strip, VesnALIA's own scrollbar normally comes back. On: the minimap stays, at the narrow width.",
     default: true,
   },
   narrowWidth: {
@@ -220,8 +220,8 @@ export const SETTINGS = {
     type: "boolean",
     label: "Always show the scrollbar",
     short: "Always show the scrollbar",
-    hint: "With the scrollbar kept: stops BB fading it out",
-    description: "With the scrollbar kept, BB still fades it out after scrolling. On: it stays shown, so it works as a second position indicator.",
+    hint: "With the scrollbar kept: stops VesnALIA fading it out",
+    description: "With the scrollbar kept, VesnALIA still fades it out after scrolling. On: it stays shown, so it works as a second position indicator.",
     default: true,
   },
   hoverPreview: {

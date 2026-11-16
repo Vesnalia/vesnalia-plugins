@@ -1,6 +1,6 @@
 /**
- * "Learning offers" in bb's thread menu (feature #3): On or Off for one thread, the same flag as the
- * banner's "Not in this thread", and undoable. bb calls `useData` once for the app with the threads on
+ * "Learning offers" in VesnALIA's thread menu (feature #3): On or Off for one thread, the same flag as the
+ * banner's "Not in this thread", and undoable. VesnALIA calls `useData` once for the app with the threads on
  * screen, so the flags are read in one batch and read again whenever the server says something changed.
  */
 import {
@@ -8,7 +8,7 @@ import {
   type PluginThreadAction,
   type PluginThreadActionDataInput,
   type PluginThreadActionItemInput,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { rpcContract, THREAD_OFFERS_BATCH_MAX } from "../shared/contract";

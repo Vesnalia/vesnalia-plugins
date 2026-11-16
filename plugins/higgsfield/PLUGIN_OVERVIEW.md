@@ -16,7 +16,7 @@
   by media type. Filter by this cycle, 7, 30, or 90 days.
 - **Recent activity.** The latest transactions (generations, refunds, grants,
   credit packages, expiries) and the latest generation jobs with their status.
-- **Agent access.** `bb higgsfield status` and `bb higgsfield models` give an
+- **Agent access.** `alia higgsfield status` and `alia higgsfield models` give an
   agent the same numbers, so you can ask "how many Higgsfield credits do I
   have left?" in any thread.
 
@@ -36,7 +36,7 @@ forecast assumes the next grant equals the last one.
 
 ## Requirements
 
-- The Higgsfield CLI installed on the BB host, on `PATH` or set in the plugin
+- The Higgsfield CLI installed on the VesnALIA host, on `PATH` or set in the plugin
   settings.
 - A Higgsfield account. The forecast needs a subscription plan with a monthly
   credit grant.

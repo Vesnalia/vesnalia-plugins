@@ -1,13 +1,13 @@
 /**
  * The open thread pane's place in the panel's own URL.
  *
- * bb gives every nav panel a `subPath` route remainder
+ * VesnALIA gives every nav panel a `subPath` route remainder
  * (`/plugins/<pluginId>/board/*` → `subPath`) and a navigate API whose
- * pushes participate in browser history: `useBbNavigate().toPluginPanel(
- * path, { subPath })`. Keeping the open pane's thread there means bb's own
+ * pushes participate in browser history: `useAliaNavigate().toPluginPanel(
+ * path, { subPath })`. Keeping the open pane's thread there means VesnALIA's own
  * back arrow (and a plain reload or shared link) restores the exact pane the
  * user left — the pane state is the URL, not component state that dies on the
- * first link-out to main bb.
+ * first link-out to main VesnALIA.
  *
  * Shape: `t/<threadId>`, e.g. `t/thr_abc123`. A short segment prefix keeps the
  * scheme open for future sub-locations without colliding with them.
@@ -15,7 +15,7 @@
 
 const PANE_PREFIX = "t/";
 
-/** A thread id: bb ids are `thr_…`; allow the same charset generically. */
+/** A thread id: VesnALIA ids are `thr_…`; allow the same charset generically. */
 const THREAD_ID_PATTERN = /^[\w-]+$/;
 
 /** The subPath that routes the panel to an open pane for `threadId`. */

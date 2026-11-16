@@ -8,11 +8,11 @@ import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";
 import { gunzipSync } from "node:zlib";
 
-// BB supplies this identity function when it loads the production bundle. Keep
+// VesnALIA supplies this identity function when it loads the production bundle. Keep
 // the bundle itself untouched: these tests must exercise its actual commands.
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === "@bb/plugin-sdk" || specifier === "@get-bb/plugin-sdk") {
+    if (specifier === "@vesnalia/plugin-sdk" || specifier === "@vesnalia/plugin-sdk") {
       return { shortCircuit: true, url: "data:text/javascript,export const defineRpcContract = value => value;" };
     }
     return nextResolve(specifier, context);
@@ -22,7 +22,7 @@ const { jsonAgentCommand, devinCommand, kilocodeCommand, syncGrokLimits, loadCod
 hooks.deregister();
 
 function temporaryHome(t) {
-  const home = mkdtempSync(join(tmpdir(), "bb-usage-built-"));
+  const home = mkdtempSync(join(tmpdir(), "alia-usage-built-"));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   return home;
 }
@@ -35,7 +35,7 @@ function run(command, home, env = {}) {
 }
 
 function scan(output) {
-  const encoded = output.match(/__BB_USAGE_SCAN_BEGIN__\s+([A-Za-z0-9+/=]+)\s+__BB_USAGE_SCAN_END__/)?.[1];
+  const encoded = output.match(/__ALIA_USAGE_SCAN_BEGIN__\s+([A-Za-z0-9+/=]+)\s+__ALIA_USAGE_SCAN_END__/)?.[1];
   assert.ok(encoded, `Missing scan result: ${output}`);
   return JSON.parse(gunzipSync(Buffer.from(encoded, "base64")));
 }
@@ -59,13 +59,13 @@ require('node:readline').createInterface({ input: process.stdin }).on('line', li
   if (!Object.hasOwn(responses, method)) process.exit(1);
   console.log(JSON.stringify({ id, result: responses[method] }));
 });`, { mode: 0o755 });
-  const bb = { sdk: { hosts: { directory: async () => ({ directory: fixtureDir }) } }, log: { debug() {} } };
+  const alia = { sdk: { hosts: { directory: async () => ({ directory: fixtureDir }) } }, log: { debug() {} } };
   const limits = [{
     id: 'personal', providerId: 'codex', providerName: 'Codex', accountEmail: 'user@example.com',
     planLabel: 'Pro', windows: [], status: 'ok', error: null, lastUpdatedAt: null,
     machines: [{ machineId: 'local', machineName: 'Local', status: 'ok' }],
   }];
-  const [result] = await loadCodexResetCredits(bb, limits, async (_bb, _machine, command) => {
+  const [result] = await loadCodexResetCredits(alia, limits, async (_alia, _machine, command) => {
     return execFileSync('/bin/sh', ['-c', command], {
       encoding: 'utf8', timeout: 15000, env: { ...process.env, PATH: bin, NODE_OPTIONS: '' },
     });
@@ -242,7 +242,7 @@ test("production Grok command normalizes billing without bundler helpers", async
     { log: { warn: (message) => warnings.push(message) } },
     { prepare: () => ({ run: (...values) => writes.push(values) }) },
     { id: "test-host", name: "Test" }, home, AbortSignal.timeout(15_000),
-    async (_bb, _machine, command) => run(command, home, { GROK_AUTH_PATH: authPath, NODE_OPTIONS: `--require=${preload}` }),
+    async (_alia, _machine, command) => run(command, home, { GROK_AUTH_PATH: authPath, NODE_OPTIONS: `--require=${preload}` }),
   );
   assert.deepEqual(warnings, []);
   assert.equal(writes.length, 1);

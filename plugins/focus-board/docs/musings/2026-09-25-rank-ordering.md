@@ -86,7 +86,7 @@ subsequence of the stored order. Fine, as long as nobody computes an insertion
 slot from what they can see. Slots must be derived from the unfiltered order,
 or a filter left on will scatter the operator's arrangement.
 
-**Multi-window.** Two BB windows on the same board, both holding the column
+**Multi-window.** Two VesnALIA windows on the same board, both holding the column
 visible. A rank write is a metadata write like any other; the loser's drag has
 to either win silently or be refused. Last-write-wins on a whole ordered list is
 the worst option here — two concurrent drags clobber every move but one. A
@@ -154,7 +154,7 @@ the cards above the drop point are ranked with the moved card.
 ## Postscript (2026-10-16): the stored write becomes per-card fractional ranks
 
 The head rewrite above carried one flaw the write lock (#243) could not fix:
-the resulting head was derived from the CLIENT's `visibleIds`, so a second bb
+the resulting head was derived from the CLIENT's `visibleIds`, so a second VesnALIA
 window holding a stale view of the lane rearranged cards it never aimed at.
 Window A's drag landed, then B's later drop wrote B's stale arrangement back —
 the cross-window edition of #232. The fix in

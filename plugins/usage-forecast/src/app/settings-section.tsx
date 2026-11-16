@@ -1,9 +1,9 @@
-// Settings page section. bb draws the form for the settings above it (and
+// Settings page section. VesnALIA draws the form for the settings above it (and
 // rejects out-of-range values); this section shows what the plugin is doing
 // with them.
 
 import { useState } from "react";
-import { useRpc, useSettings } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSettings } from "@vesnalia/plugin-sdk/app";
 import {
   CONTEXT_LIMIT_DEFAULT_TOKENS,
   POLL_DEFAULT_MINUTES,

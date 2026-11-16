@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ExperimentalRpcQueryState } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalRpcQueryState } from "@vesnalia/plugin-sdk/app";
 import { errorMessage } from "./reader-error";
 
 /** One-shot reads for source selection and form data. */

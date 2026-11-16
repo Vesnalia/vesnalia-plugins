@@ -4,7 +4,7 @@ Status: accepted, 11 October 2026.
 
 ## Context
 
-bb-box makes Linux boxes as Proxmox LXC containers, Docker containers,
+alia-box makes Linux boxes as Proxmox LXC containers, Docker containers,
 microsandbox microVMs (053) and SSH pool machines. The operator wants every
 shape on offer, and one is missing: a Linux box that is a full VM on
 Proxmox. The Proxmox QEMU backend makes only Windows VMs (039), from a
@@ -48,13 +48,13 @@ What it costs, against what is there:
 - The template: Ubuntu 24.04's cloud image, imported as a VM, set up once
   with the same guest scripts as the LXC template
   (`setup/proxmox-lxc/template/guest/`), through cloud-init, then made a
-  template in bb-box's own VMID range. `setup/proxmox-qemu/build.sh linux
+  template in alia-box's own VMID range. `setup/proxmox-qemu/build.sh linux
   <vmid>` builds it, as `build.sh windows` builds Windows'.
 - Refresh, as 054: monthly, a box of the current build runs 049's Linux
   refresh, and the box is captured as the next build after the same
   checks. The build before stays as the rollback.
-- BB: a VM box joins BB as other Linux boxes do, through bb-box's machine
-  provider and BB's POSIX installer, with no manual machine.
+- VesnALIA: a VM box joins VesnALIA as other Linux boxes do, through alia-box's machine
+  provider and VesnALIA's POSIX installer, with no manual machine.
 - Spares: a stop hibernates the VM, so spares wait hibernated and take a
   warm VM's place, as for Windows (#612).
 - Clones are linked clones of the template, as for Windows.
@@ -71,7 +71,7 @@ Otherwise a `linux` box from LXC or microsandbox starts sooner.
 
 ## The live check
 
-On a Proxmox host, with the template in bb-box's VMID range, applied by
+On a Proxmox host, with the template in alia-box's VMID range, applied by
 the operator:
 
 - a cold `linux` VM box and a claimed spare, timed, against LXC and

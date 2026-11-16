@@ -1,7 +1,7 @@
 import { PRODUCT } from "../../brand.ts";
 import type { SnapshotPlan, Snapshotting } from "../types.ts";
 
-export const WINDOWS_DESKTOP_NO_FORK = "a Windows box has no identity reset BB Box has checked, so a copy of it would keep the box's identity";
+export const WINDOWS_DESKTOP_NO_FORK = "a Windows box has no identity reset VesnALIA Box has checked, so a copy of it would keep the box's identity";
 
 const WINDOWS_DISK_ONLY = "A Windows desktop's snapshot holds its disk only.";
 

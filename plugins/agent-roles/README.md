@@ -3,16 +3,16 @@
 # Agent Roles
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](package.json)
-[![BB](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
+[![VesnALIA](https://img.shields.io/badge/bb-0.43%2B-blue)](https://getbb.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Define reusable specialists with clear instructions and execution preferences. Start focused work, or share profiles with optional companion plugins.
 
 [Quick start](#quick-start) · [Install](#install) · [Requirements](#requirements) · [All plugins](../../README.md)
 
-![Agent Roles in BB](../../marketplace/screenshots/agent-roles/overview.png)
+![Agent Roles in VesnALIA](../../marketplace/screenshots/agent-roles/overview.png)
 
-*Real plugin interface captured in an isolated BB instance with example content.*
+*Real plugin interface captured in an isolated VesnALIA instance with example content.*
 
 ## What you can do
 
@@ -34,42 +34,42 @@ Define reusable specialists with clear instructions and execution preferences. S
 From a local checkout, install this package:
 
 ```sh
-bb plugin install ./plugins/agent-roles
+alia plugin install ./plugins/agent-roles
 ```
 
 <details>
 <summary>Install a versioned release</summary>
 
 ```sh
-bb plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin agent-roles --tag-prefix agent-roles/
+alia plugin install 'git:https://github.com/dmitriikapustin/bb-plugins-by-kapustin.git@^0.1.0' --plugin agent-roles --tag-prefix agent-roles/
 ```
 
 Compatible updates remain explicit:
 
 ```sh
-bb plugin outdated
-bb plugin update agent-roles
+alia plugin outdated
+alia plugin update agent-roles
 ```
 
 </details>
 
 ## Requirements
 
-BB **0.43+** and Plugin SDK **0.4.87+**.
+VesnALIA **0.43+** and Plugin SDK **0.4.87+**.
 
-Running agents requires configured BB providers and uses their account quotas. Task jobs integrate with the bundled Tasks plugin. The optional [Role Picker](../role-picker/README.md) companion applies roles in the current composer.
+Running agents requires configured VesnALIA providers and uses their account quotas. Task jobs integrate with the bundled Tasks plugin. The optional [Role Picker](../role-picker/README.md) companion applies roles in the current composer.
 
 Synchronization with local Claude agent files and Tasks presets is **off by default**. Enable it only after configuring the agent directory and reviewing the synchronization settings.
 
 ## From the terminal
 
 ```sh
-bb role list
-bb role show reviewer
-bb role teams
+alia role list
+alia role show reviewer
+alia role teams
 
 # File a job for later; this does not start a thread.
-bb role spawn reviewer --prompt "Review the release checklist"
+alia role spawn reviewer --prompt "Review the release checklist"
 ```
 
 <details>
@@ -86,7 +86,7 @@ See the [full command and workflow reference](skills/agent-roles/SKILL.md) for s
 <details>
 <summary>Development</summary>
 
-From the repository root, using Node 22.19+ and the BB CLI:
+From the repository root, using Node 22.19+ and the VesnALIA CLI:
 
 ```sh
 node scripts/run.mjs deps agent-roles
@@ -95,7 +95,7 @@ node scripts/run.mjs test agent-roles
 node scripts/run.mjs build agent-roles
 ```
 
-The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `bb plugin source agent-roles` points to the copy you edited, then run `bb plugin reload agent-roles`.
+The test command reports when a package has no declared test suite. To reload a development installation, first confirm that `alia plugin source agent-roles` points to the copy you edited, then run `alia plugin reload agent-roles`.
 
 </details>
 

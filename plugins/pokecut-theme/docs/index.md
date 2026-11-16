@@ -19,4 +19,4 @@ Built by Lane Pilot from page frontmatter.
 | [Chat and timeline enhancements](features/chat-enhancements.md) | component | active | 2026-10-18 |
 | [Theme appearance](features/theme-appearance.md) | component | active | 2026-10-18 |
 | [Gotchas](gotchas.md) | gotchas | active | 2026-10-14 |
-| [Pokecut Theme for BB overview](overview.md) | overview | active | 2026-10-18 |
+| [Pokecut Theme for VesnALIA overview](overview.md) | overview | active | 2026-10-18 |

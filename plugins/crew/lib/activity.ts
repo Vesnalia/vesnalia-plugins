@@ -1,7 +1,7 @@
 // Activity (§3.7): three orthogonal axes per member, derived diagnoses, and
 // "Needs you" as a state of the member rather than a list of its own.
 //
-// Sources are BB facts only — thread status and read markers from
+// Sources are VesnALIA facts only — thread status and read markers from
 // `threads.get`, open interactions from `threads.interactions.list`, and the
 // plugin's own `messages` rows. Nothing is read off the screen.
 import type { GraphsRpc } from "./graphs";
@@ -65,7 +65,7 @@ export type Derived = {
   held: number;
   diagnoses: Diagnosis[];
   openWork: number;
-  /** Context usage as a fraction 0–1; null when BB did not report it. */
+  /** Context usage as a fraction 0–1; null when VesnALIA did not report it. */
   context: number | null;
   /** BBP-31: this member's graph_runs rows, newest first. */
   graphRuns: readonly { runId: string; graphId: string; status: string }[];

@@ -1,4 +1,4 @@
-# bb-box's and BB's own words
+# alia-box's and VesnALIA's own words
 getbb
 linux
 macos

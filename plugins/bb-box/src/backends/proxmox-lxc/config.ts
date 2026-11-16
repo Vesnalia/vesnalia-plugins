@@ -25,9 +25,9 @@
 //
 // Each flavour's cores, memory and disk were settings until 028, when box
 // sizes replaced them. Their keys stay declared, without defaults, so that
-// bb-box can read saved values once into the box-sizes setting.
+// alia-box can read saved values once into the box-sizes setting.
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { PRODUCT } from "../../brand.ts";
 import {
   addressFor,
@@ -95,7 +95,7 @@ export interface LxcConfig {
   readonly gpuMemoryMiB: number;
   readonly vmids: VmidRange;
   readonly network: ProxmoxNetwork;
-  /** A null key means bb-box generates one and shows its public key. */
+  /** A null key means alia-box generates one and shows its public key. */
   readonly ssh: { readonly privateKey: string | null; readonly user: string };
   readonly reserve: { readonly memoryMiB: number; readonly diskGiB: number };
 }
@@ -342,7 +342,7 @@ export const LXC_SETTINGS: Record<string, PluginSettingDescriptor> = {
   [LXC_KEYS.sshUser]: {
     type: "string",
     label: "Proxmox LXC: SSH user",
-    description: `The user in the templates that ${PRODUCT} and BB work as.`,
+    description: `The user in the templates that ${PRODUCT} and VesnALIA work as.`,
     default: LXC_DEFAULTS.sshUser,
   },
   [LXC_KEYS.reserveMemoryMiB]: {
@@ -364,7 +364,7 @@ export const LXC_SETTINGS: Record<string, PluginSettingDescriptor> = {
 };
 
 /**
- * Settings that came after 029, which BB never declared: fields alone. Of the
+ * Settings that came after 029, which VesnALIA never declared: fields alone. Of the
  * Wayland flavour (048) only the templates are a field, as warm counts are
  * the configuration's, by kind.
  */
@@ -392,7 +392,7 @@ const LATER_SETTINGS: Readonly<Record<string, PluginSettingDescriptor>> = {
 const REPLACED: Readonly<Record<string, string>> = { [LXC_KEYS.perGpu]: LXC_KEYS.boxesPerCard };
 
 /**
- * The backend's fields in bb-box's configuration (029): the settings above
+ * The backend's fields in alia-box's configuration (029): the settings above
  * without the prefix, in the order the setup guide gives their values.
  */
 const FIELD_GROUPS: readonly (readonly [string, FieldGroup])[] = [
@@ -490,7 +490,7 @@ export function readEarlierLxc(input: Readonly<Record<string, unknown>>): Earlie
 
 /**
  * The size each kind's boxes had under the settings before 028, for the
- * kinds whose flavour had any of them saved. Unset parts are what bb-box
+ * kinds whose flavour had any of them saved. Unset parts are what alia-box
  * made then: 2 cores and 4 GiB for Linux boxes, 4 cores and 8 GiB for
  * desktops, and the template's disk.
  */
@@ -556,7 +556,7 @@ export function parseLxcSettings(input: Readonly<Record<string, unknown>>): Pars
   return { enabled: true, ok: true, config: config! };
 }
 
-/** Proxmox LXC's part of bb-box's configuration (029), with each problem at its field. */
+/** Proxmox LXC's part of alia-box's configuration (029), with each problem at its field. */
 export function parseLxcPart(part: BackendPart): ParsedBackend<LxcConfig> {
   const values: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(part.fields)) values[LXC_PREFIX + field] = value;

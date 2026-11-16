@@ -4,7 +4,7 @@
 // than before, the watch moves with it: a change in the new place is told
 // to the tabs, one in the old place no longer is.
 // Why: switching a repository's tracker moves bend's copy to another
-// folder (bead-bb-c9l.18). A watch left on the first one would tell the
+// folder (bead-alia-c9l.18). A watch left on the first one would tell the
 // tab of the other tracker's changes and miss this one's.
 
 import assert from "node:assert/strict";
@@ -12,7 +12,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createWatcher } from "./watch.ts";
 
 /** Long enough for a change to be noticed and the burst to settle. */
@@ -33,7 +33,7 @@ test("a folder whose copy moved is watched in the new place, not the old", async
       realtime: { publish: () => void (told += 1) },
       storage: { kv: { get: async () => undefined, set: async () => {} } },
       onDispose: (run: () => void) => void (dispose = run),
-    } as unknown as BbPluginApi);
+    } as unknown as AliaPluginApi);
 
     watchFolder(root, { copy: first, sign: null });
     writeFileSync(join(first, "issues.json"), "[1]");

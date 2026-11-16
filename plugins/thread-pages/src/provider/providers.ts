@@ -1,10 +1,10 @@
 // providers.list + providers.models (DESIGN §B.11): models, reasoning levels (per model, and their union), permission
 // modes; exactly one default per list; `settings` — what `threads.send` takes per message (U47): every field with
 // something to choose from, scope `turn`. A listing failure is `unavailable`, never an empty list (R5.15). The
-// defaults are bb's own (BB-11): the provider is the general setting `defaultProviderId` (`system.config`) when it
+// defaults are VesnALIA's own (ALIA-11): the provider is the general setting `defaultProviderId` (`system.config`) when it
 // names an available one, else the first available; the permission mode is what the server picks for a thread that
 // names none (`resolveSupportedPermissionMode`: "auto", else "full", else the first offered).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ProviderError, type ProviderChoice, type ProviderHost } from "../../core/src/host/index.ts";
 import { asRecord } from "./errors.ts";
 
@@ -18,22 +18,22 @@ export function effortsOf(model: Record<string, unknown>): string[] {
   return unique((Array.isArray(model.supportedReasoningEfforts) ? model.supportedReasoningEfforts : []).map((e) => asRecord(e)?.reasoningEffort).filter((l): l is string => typeof l === "string"));
 }
 
-export function createBbProviders(bb: BbPluginApi): NonNullable<ProviderHost["providers"]> {
+export function createAliaProviders(alia: AliaPluginApi): NonNullable<ProviderHost["providers"]> {
   return {
     async list() {
       let listed: unknown;
       try {
-        listed = await bb.sdk.providers.list();
+        listed = await alia.sdk.providers.list();
       } catch (error) {
-        throw new ProviderError("unavailable", "providers.list: bb could not list providers", undefined, { cause: error });
+        throw new ProviderError("unavailable", "providers.list: VesnALIA could not list providers", undefined, { cause: error });
       }
       const providers = (Array.isArray(listed) ? listed : []).map(asRecord).filter((p): p is Record<string, unknown> => p !== null && typeof p.id === "string");
-      const general = asRecord(asRecord(await bb.sdk.system.config().catch(() => null))?.generalSettings);
+      const general = asRecord(asRecord(await alia.sdk.system.config().catch(() => null))?.generalSettings);
       const preferredProvider = typeof general?.defaultProviderId === "string" ? general.defaultProviderId : null;
       const choices = await Promise.all(
         providers.map(async (provider): Promise<ProviderChoice> => {
           const id = provider.id as string;
-          const catalog = asRecord(await bb.sdk.providers.models({ providerId: id }).catch(() => null));
+          const catalog = asRecord(await alia.sdk.providers.models({ providerId: id }).catch(() => null));
           const models = (Array.isArray(catalog?.models) ? catalog.models : [])
             .map(asRecord)
             .filter((m): m is Record<string, unknown> => m !== null && typeof m.id === "string" && (m.providerId === undefined || m.providerId === id))

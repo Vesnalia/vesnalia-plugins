@@ -9,7 +9,7 @@ import { selfTestPayload, signPayload } from "./webhook.js";
  * Turning webhooks on, keeping them honest, and turning them off again.
  *
  * The whole flow is built around one rule: **register on proof, not on hope.**
- * A webhook registered against a URL that does not actually reach this bb gets
+ * A webhook registered against a URL that does not actually reach this VesnALIA gets
  * three failed deliveries — after 1 minute, 1 hour and 6 hours — and is then
  * disabled by Linear, with no replay API and no notification. That is strictly
  * worse than never having registered, because the user believes they are on
@@ -81,7 +81,7 @@ export type UrlVerdict = { readonly ok: true; readonly url: string } | { readonl
  * Checked before anything else, because every later failure mode is more
  * expensive to explain than this one.
  *
- * A bb connect share link is *not* rejected by pattern here even though it can
+ * A VesnALIA connect share link is *not* rejected by pattern here even though it can
  * never work — guessing at share-link shapes would be wrong for someone else's
  * deployment, and the self-test catches it honestly a second later: Linear's
  * delivery bot carries no session, so a session-gated URL answers the probe
@@ -108,7 +108,7 @@ export function checkWebhookUrl(raw: string): UrlVerdict {
     return { ok: false, why: "A URL with credentials in it would be stored and sent in the clear. Put the secret in the path or drop it." };
   }
   if (isPrivateHost(parsed.hostname)) {
-    // The self-test POSTs to this URL from the machine running bb, so a
+    // The self-test POSTs to this URL from the machine running VesnALIA, so a
     // private/loopback/link-local target turns the webhook enable command into
     // an internal-network probe. Linear itself only delivers to public
     // endpoints, so nothing legitimate is lost by refusing these — and the
@@ -255,7 +255,7 @@ export async function runSelfTest(options: SelfTestOptions): Promise<SelfTestRes
       ok: false,
       why:
         status === 401 || status === 403
-          ? `That URL answered ${status} — something in front of bb is asking for a session. Linear's delivery bot has no session, so it would get the same page.`
+          ? `That URL answered ${status} — something in front of VesnALIA is asking for a session. Linear's delivery bot has no session, so it would get the same page.`
           : `That URL answered ${status}, not 200. Linear treats anything but a 2xx as a failed delivery.`,
     };
   }
@@ -270,7 +270,7 @@ export async function runSelfTest(options: SelfTestOptions): Promise<SelfTestRes
 
   return {
     ok: false,
-    why: "That URL answered 200, but the request never reached this plugin. Something in front of bb is absorbing it.",
+    why: "That URL answered 200, but the request never reached this plugin. Something in front of VesnALIA is absorbing it.",
   };
 }
 

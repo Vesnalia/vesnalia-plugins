@@ -97,7 +97,7 @@ describe("board overview", () => {
   });
 
   it.each(["inbox", "mine", "reviews", "insights", "search"])("uses an ordinary Boards navigation row without a submenu on %s", async (subPath) => {
-    localStorage.setItem("bb-plugin-shuttle:boards-collapsed", "false");
+    localStorage.setItem("alia-plugin-shuttle:boards-collapsed", "false");
     reloadPrefs();
     const loaded = await app();
     const slot = mount(loaded.navPanels[0]!.experimental_sidebar!, { subPath }, handlers({
@@ -117,7 +117,7 @@ describe("board overview", () => {
   });
 
   it.each(["boards", "boards/archived", "board/release"])("shows board links only while Boards is active on %s, ignoring the old collapse preference", async (subPath) => {
-    localStorage.setItem("bb-plugin-shuttle:boards-collapsed", "true");
+    localStorage.setItem("alia-plugin-shuttle:boards-collapsed", "true");
     reloadPrefs();
     const loaded = await app();
     const slot = mount(loaded.navPanels[0]!.experimental_sidebar!, { subPath }, handlers({
@@ -162,15 +162,15 @@ describe("board selection", () => {
         };
       },
     });
-    const first = await find(slot.container, `[data-pr="github:get-bb/bb#1"]`);
-    const second = await find(slot.container, `[data-pr="github:get-bb/bb#2"]`);
+    const first = await find(slot.container, `[data-pr="github:get-alia/alia#1"]`);
+    const second = await find(slot.container, `[data-pr="github:get-alia/alia#2"]`);
     fireEvent.click(within(first).getByRole("checkbox"));
     fireEvent.click(within(second).getByRole("checkbox"));
     fireEvent.click(within(slot.container).getByRole("button", { name: /Save as new board/u }));
     const dialog = await slot.findByRole("dialog", { name: /Create board/u });
     fireEvent.change(within(dialog).getByRole("textbox", { name: /Board name/u }), { target: { value: "Release candidate" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /Create board/u }));
-    await waitFor(() => expect(created).toEqual([{ name: "Release candidate", description: "", prs: ["github:get-bb/bb#1", "github:get-bb/bb#2"] }]));
+    await waitFor(() => expect(created).toEqual([{ name: "Release candidate", description: "", prs: ["github:get-alia/alia#1", "github:get-alia/alia#2"] }]));
     await waitFor(() => expect(lastNavigation(slot)).toEqual({ method: "toPluginPanel", path: "shuttle", options: { subPath: "board/launch" } }));
   });
 
@@ -214,7 +214,7 @@ describe("board selection", () => {
     fireEvent.click(within(slot.container).getByRole("button", { name: /Add PRs/u }));
     const dialog = await slot.findByRole("dialog", { name: /Add PRs/u });
     fireEvent.click(within(dialog).getByRole("button", { name: /Paste links/u }));
-    fireEvent.change(within(dialog).getByRole("textbox", { name: /PR links or keys/u }), { target: { value: "github:get-bb/bb#1" } });
+    fireEvent.change(within(dialog).getByRole("textbox", { name: /PR links or keys/u }), { target: { value: "github:get-alia/alia#1" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /Add 1/u }));
     await waitFor(() => expect(within(slot.container).getByText("Retry 429s in the edge router")).toBeTruthy());
     expect(within(slot.container).getByText("1 saved PR")).toBeTruthy();
@@ -358,7 +358,7 @@ describe("board sorting and grouping", () => {
   });
 
   it("ignores invalid saved preferences without discarding another board's choices", async () => {
-    localStorage.setItem("bb-plugin-shuttle:board-views", JSON.stringify({ release: { sort: "missing", group: [] }, other: { sort: "newest", group: "status" } }));
+    localStorage.setItem("alia-plugin-shuttle:board-views", JSON.stringify({ release: { sort: "missing", group: [] }, other: { sort: "newest", group: "status" } }));
     reloadPrefs();
     const { slot, route } = await boardPage("board/release", {
       board: ({ id }: { id: string }) => ({ ...populated, board: { ...activeBoard, id, name: id }, prs }),
@@ -533,7 +533,7 @@ describe("board management safeguards", () => {
     expect(slot.container.querySelector(`[data-pr="${attention.key}"]`)).toBeTruthy();
   });
 
-  it.each(["#1", "bb#1", "get-bb/bb#1", "github:get-bb/bb#1", "GitHub"])("filters board PRs by identifier or server %s", async (query) => {
+  it.each(["#1", "alia#1", "get-alia/alia#1", "github:get-alia/alia#1", "GitHub"])("filters board PRs by identifier or server %s", async (query) => {
     const { slot } = await boardPage("board/release", { board: () => populated });
     await find(slot.container, `[data-pr="${member.key}"]`);
     fireEvent.change(slot.getByRole("searchbox", { name: "Filter board PRs" }), { target: { value: query } });

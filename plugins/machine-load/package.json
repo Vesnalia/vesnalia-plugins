@@ -1,17 +1,12 @@
 {
-  "name": "bb-plugin-machine-load",
+  "name": "alia-plugin-machine-load",
   "version": "0.1.0",
-  "description": "bb plugin: monitor CPU, RAM, GPU, network and disk IO of every bb machine on shared time-series charts with 7-day history.",
+  "description": "alia plugin: monitor CPU, RAM, GPU, network and disk IO of every VesnALIA machine on shared time-series charts with 7-day history.",
   "license": "MIT",
   "author": "artgas1",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/artgas1/bb-plugin-machine-load.git"
-  },
-  "homepage": "https://github.com/artgas1/bb-plugin-machine-load#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "getbb",
     "system-monitor",
     "hardware-monitoring",
@@ -31,12 +26,12 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Machine Load",
-    "description": "Live CPU, memory, GPU, network and disk load of every bb machine on one timeline.",
+    "description": "Live CPU, memory, GPU, network and disk load of every VesnALIA machine on one timeline.",
     "branding": {
       "icon": "./assets/icon.svg",
       "experimental_icons": {
@@ -48,8 +43,8 @@
     "app": "./app.tsx"
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "@vesnalia/plugin-sdk": "^0.6.132"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
@@ -61,5 +56,14 @@
     "hono": "^4.11.9",
     "tailwind-merge": "^3.7.0",
     "typescript": "^5.7.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/machine-load#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/machine-load"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

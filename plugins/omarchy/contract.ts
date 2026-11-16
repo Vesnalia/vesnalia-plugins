@@ -1,4 +1,4 @@
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const animationSchema = z.enum(["off", "subtle", "smooth", "cinematic"]);
@@ -46,7 +46,7 @@ export const hostThemeSchema = z.object({
 export type HostTheme = z.infer<typeof hostThemeSchema>;
 
 export const hostContract = defineRpcContract({
-  // Read-only, so bb may resend it when a daemon response is lost.
+  // Read-only, so VesnALIA may resend it when a daemon response is lost.
   readTheme: { input: z.null(), output: hostThemeSchema, experimental_retryable: true },
   watchTheme: {
     input: z.null(),
@@ -70,7 +70,7 @@ const syncStatusSchema = z.object({
   themeName: z.string().nullable(),
   mode: z.enum(["light", "dark"]).nullable(),
   colors: omarchyColorsSchema.nullable(),
-  bbThemeId: z.string().nullable(),
+  aliaThemeId: z.string().nullable(),
   lastSyncedAt: z.string().nullable(),
   hookInstalled: z.boolean(),
   autoSync: z.boolean(),

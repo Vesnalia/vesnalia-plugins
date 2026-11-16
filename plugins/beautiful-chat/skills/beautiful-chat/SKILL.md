@@ -1,17 +1,17 @@
 ---
 name: beautiful-chat
-description: Beautiful Chat plugin — CSS restyle of BB's native chat (composer, messages, work rows, background commands) in BeautifulUI's design language, using the active theme's colors.
+description: Beautiful Chat plugin — CSS restyle of VesnALIA's native chat (composer, messages, work rows, background commands) in BeautifulUI's design language, using the active theme's colors.
 ---
 
 # Beautiful Chat
 
-It changes how BB's native chat looks, not how it behaves. Every feature below
+It changes how VesnALIA's native chat looks, not how it behaves. Every feature below
 has a setting (Settings → Plugins → Beautiful Chat, or
-`bb plugin config beautiful-chat`): `loader` (drive | dots | orbit | coins | bb),
+`alia plugin config beautiful-chat`): `loader` (drive | dots | orbit | coins | VesnALIA),
 `toolChips` (surface | outline | plain), and on/off switches `shimmer`,
 `workRows`, `streamingCaret`, `approvalCard`, `promptBar`, `userBubbles`,
 `codeChips`, `selectionPill`, `messageActions`, `unreadMarker`, `mergedBanners`, `minimizeWhileRunning`, `treeLines`. Disable or remove it to revert
-everything: `bb plugin disable beautiful-chat` / `bb plugin remove beautiful-chat`.
+everything: `alia plugin disable beautiful-chat` / `alia plugin remove beautiful-chat`.
 
 - Composer (`form[data-promptbox]`): 14px radius, hairline border that firms up on
   focus, soft shadow; 28px filled send/stop button; chip-style icon buttons.
@@ -35,21 +35,21 @@ everything: `bb plugin disable beautiful-chat` / `bb plugin remove beautiful-cha
 - Tree lines: rows inside an expanded work group are indented under its header
   and joined by a trunk with rounded elbows into each row's icon.
 - Minimize while generating: while a run is live and the prompt box is empty
-  ("Stop run" on the send button), the box uses BB's one-line compact layout.
+  ("Stop run" on the send button), the box uses VesnALIA's one-line compact layout.
   Typing a follow-up ("Steer current run") grows it back.
 - Composer banners: background commands, git, and parent/child thread banners
   share one card with hairline dividers instead of stacking as separate cards.
 - Unread marker: the first unread work row prints NEW after its own label
-  (success colour, row's text size, 8px gap) instead of BB's separator and rule
-  above it. Message rows keep BB's separator.
+  (success colour, row's text size, 8px gap) instead of VesnALIA's separator and rule
+  above it. Message rows keep VesnALIA's separator.
 - Spatial tooltips (`spatial-tooltip.ts`): in a row of 3+ tooltip buttons (message
   actions, composer icon rows) one shared bubble glides and resizes between
-  siblings. BB's Radix tooltips still decide when to open and supply the
+  siblings. VesnALIA's Radix tooltips still decide when to open and supply the
   screen-reader text; their bubble is only hidden visually.
 - No entrance animations (rows mount while scrolling); press feedback respects
   `prefers-reduced-motion`.
 
 Design reference: BeautifulUI (https://www.beautifului.dev, MIT). No BeautifulUI
-code is bundled; only its visual language is applied, with BB theme colors.
-BB's chat markup is not a public API, so a BB update can change what these
+code is bundled; only its visual language is applied, with VesnALIA theme colors.
+VesnALIA's chat markup is not a public API, so a VesnALIA update can change what these
 selectors match.

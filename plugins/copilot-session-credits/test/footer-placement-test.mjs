@@ -23,7 +23,7 @@ firstButton.remove();await tick();
 check('Context removal preserves the same footer target without toolbar fallback',target===originalTarget&&target.parentNode===one.footer.lastElementChild);
 one.footer.lastElementChild.append(firstButton);await tick();
 
-check('Own container immediately precedes context control; BB control unchanged', target?.nextSibling === button() && target.parentNode === button().parentNode && button().textContent === '16%');
+check('Own container immediately precedes context control; VesnALIA control unchanged', target?.nextSibling === button() && target.parentNode === button().parentNode && button().textContent === '16%');
 check('Another composer is not touched', !two.root.querySelector('[data-copilot-session-credit-info]'));
 const disposeTwo = attachCreditTarget(two.anchor, node => second = node);
 check('Two composers retain separate scoped targets', target !== second && one.root.contains(target) && two.root.contains(second));

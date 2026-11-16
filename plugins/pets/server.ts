@@ -1,4 +1,4 @@
-// bb-plugin-pets — backend.
+// alia-plugin-pets — backend.
 //
 // Owns the den (SQLite), the XP ledger, fleet state, sprite serving, and
 // (M3) the hatch/evolve generation pipeline. The overlay in app.tsx is an
@@ -19,7 +19,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { computeAchievements } from "./src/achievements";
 import {
@@ -420,7 +420,7 @@ export const rpcContract = defineRpcContract({
 
 // Identity of the frontend bundle this server booted with, read once. The
 // overlay snapshots it on its first fetch and nudges for a reload when a later
-// fetch reports a different stamp (bb rebuilt and restarted the plugin under a
+// fetch reports a different stamp (VesnALIA rebuilt and restarted the plugin under a
 // long-lived window). Falls back to boot time so a missing dist still yields a
 // stable per-boot value.
 let bundleStamp = "";
@@ -451,8 +451,8 @@ interface PetRow {
   created_at: number;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Enabled",
@@ -592,7 +592,7 @@ export default async function plugin(bb: BbPluginApi) {
     personalityHelpful: {
       type: "boolean",
       label: "Personality: helpful",
-      description: "Nudges about waiting threads and a bb tip now and then.",
+      description: "Nudges about waiting threads and a VesnALIA tip now and then.",
       default: true,
     },
     personalityCozy: {
@@ -673,8 +673,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- storage ---------------------------------------------------------------
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS pets (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -761,7 +761,7 @@ export default async function plugin(bb: BbPluginApi) {
       `INSERT INTO pets (id, name, description, kind, active, created_at)
        VALUES ('starter', 'Pixel', 'a round teal axolotl with a cheerful face', 'starter', 1, ?)`,
     ).run(Date.now());
-    bb.log.info("den was empty — seeded starter pet Pixel");
+    alia.log.info("den was empty — seeded starter pet Pixel");
   };
   seedStarterIfEmpty();
 
@@ -820,7 +820,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         atlas = JSON.parse(readFileSync(atlasPath, "utf8")) as SpriteAtlas;
       } catch {
-        bb.log.warn(`unreadable atlas at ${atlasPath}; using fallback`);
+        alia.log.warn(`unreadable atlas at ${atlasPath}; using fallback`);
       }
     }
     const entry = { key, atlas, version };
@@ -851,7 +851,7 @@ export default async function plugin(bb: BbPluginApi) {
       nextStage: next ? { name: next.name, minXp: next.minXp } : null,
       artStage: row.art_stage,
       artBehind: stage.index > row.art_stage,
-      spriteBaseUrl: `/api/v1/plugins/${bb.pluginId}/http/sprite?pet=${encodeURIComponent(row.id)}&art=${row.art_stage}&v=${version}`,
+      spriteBaseUrl: `/api/v1/plugins/${alia.pluginId}/http/sprite?pet=${encodeURIComponent(row.id)}&art=${row.art_stage}&v=${version}`,
       atlas,
       missingAnimations: statesForPack(currentPack).filter((s) => !(s in atlas.states)).length,
       active: row.active === 1,
@@ -868,9 +868,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Everything that can fire after teardown (debounced publishes, detached
   // SDK continuations, settings callbacks) checks this first: touching a
-  // stale bb handle throws, and a throw on a detached path kills the server.
+  // stale VesnALIA handle throws, and a throw on a detached path kills the server.
   let pluginDisposed = false;
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     pluginDisposed = true;
   });
 
@@ -884,13 +884,13 @@ export default async function plugin(bb: BbPluginApi) {
       publishTimer = null;
       if (pluginDisposed) return;
       try {
-        bb.realtime.publish("pets", { kind: "fleet", fleet: snapshot(fleet), bundleStamp });
+        alia.realtime.publish("pets", { kind: "fleet", fleet: snapshot(fleet), bundleStamp });
       } catch {
         // disposed between the check and the publish — nothing to do
       }
     }, 250);
   };
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     if (publishTimer) clearTimeout(publishTimer);
   });
 
@@ -974,7 +974,7 @@ export default async function plugin(bb: BbPluginApi) {
     const xp = pet.xp + amount;
     const after = stageForXp(xp);
     updatePetXpStmt.run(xp, after.index, pet.id);
-    bb.realtime.publish("pets", {
+    alia.realtime.publish("pets", {
       kind: "xp",
       petId: pet.id,
       source,
@@ -985,12 +985,12 @@ export default async function plugin(bb: BbPluginApi) {
       evolved: after.index > before.index,
     });
     if (after.index > before.index) {
-      bb.log.info(`${pet.name} evolved: ${before.name} → ${after.name} at ${xp} XP`);
+      alia.log.info(`${pet.name} evolved: ${before.name} → ${after.name} at ${xp} XP`);
       // The new stage outruns the artwork until the glow up runs — say so once.
       try {
         nudgeGlowup(pet, after);
       } catch (error) {
-        bb.log.warn(`glow-up nudge failed: ${String(error)}`);
+        alia.log.warn(`glow-up nudge failed: ${String(error)}`);
       }
     }
   };
@@ -1034,7 +1034,7 @@ export default async function plugin(bb: BbPluginApi) {
       true,
     );
     if (pluginDisposed) return;
-    bb.realtime.publish("pets", { kind: "glowup-available", petId: pet.id, stageName: stage.name });
+    alia.realtime.publish("pets", { kind: "glowup-available", petId: pet.id, stageName: stage.name });
   };
 
   const maybeDailyBonus = () => {
@@ -1045,7 +1045,7 @@ export default async function plugin(bb: BbPluginApi) {
       const pet = getActivePet();
       if (pet) nudgeGlowup(pet, stageForXp(pet.xp), true);
     } catch (error) {
-      bb.log.warn(`glow-up nudge failed: ${String(error)}`);
+      alia.log.warn(`glow-up nudge failed: ${String(error)}`);
     }
   };
 
@@ -1065,7 +1065,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const readCounter = async (key: string): Promise<number> => {
-    const raw = await bb.storage.kv.get<number>(key);
+    const raw = await alia.storage.kv.get<number>(key);
     return typeof raw === "number" && Number.isFinite(raw) ? Math.max(0, Math.trunc(raw)) : 0;
   };
 
@@ -1074,7 +1074,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   const publishTreatDrop = () => {
     if (pluginDisposed) return;
-    bb.realtime.publish("pets", { kind: "treat-drop", x: treatDropX() });
+    alia.realtime.publish("pets", { kind: "treat-drop", x: treatDropX() });
   };
 
   /** One treat per 10 completed turns today. Earning also drops it: a single
@@ -1082,17 +1082,17 @@ export default async function plugin(bb: BbPluginApi) {
   const earnTreat = () =>
     withWallet(async () => {
       const balance = (await readCounter(TREATS_BALANCE_KEY)) + 1;
-      await bb.storage.kv.set(TREATS_BALANCE_KEY, balance);
+      await alia.storage.kv.set(TREATS_BALANCE_KEY, balance);
       if (pluginDisposed) return;
-      bb.realtime.publish("pets", { kind: "treat-earned", balance });
+      alia.realtime.publish("pets", { kind: "treat-earned", balance });
       publishTreatDrop();
     });
 
   // --- thread lifecycle → fleet + XP + moments -------------------------------
 
-  bb.events.on("thread.created", ({ thread }) => upsertFleetThread(thread));
-  bb.events.on("thread.active", ({ thread }) => upsertFleetThread(thread));
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.created", ({ thread }) => upsertFleetThread(thread));
+  alia.events.on("thread.active", ({ thread }) => upsertFleetThread(thread));
+  alia.events.on("thread.idle", ({ thread }) => {
     upsertFleetThread(thread);
     if (!countable(thread)) return;
     maybeDailyBonus();
@@ -1118,21 +1118,21 @@ export default async function plugin(bb: BbPluginApi) {
         // Treats are earned from real work: one per 10 completed turns today.
         if (n > 0 && n % 10 === 0) {
           void earnTreat().catch((error: unknown) => {
-            bb.log.warn(`treat earn failed: ${String(error)}`);
+            alia.log.warn(`treat earn failed: ${String(error)}`);
           });
         }
       }
     } catch (error) {
-      bb.log.warn(`diary milestone write failed: ${String(error)}`);
+      alia.log.warn(`diary milestone write failed: ${String(error)}`);
     }
-    bb.realtime.publish("pets", {
+    alia.realtime.publish("pets", {
       kind: "moment",
       moment: "celebrate",
       threadId: thread.id,
       title: thread.title ?? thread.titleFallback ?? "a thread",
     });
   });
-  bb.events.on("thread.failed", ({ thread }) => {
+  alia.events.on("thread.failed", ({ thread }) => {
     upsertFleetThread(thread);
     if (!countable(thread)) return;
     awardXp("thread-failed", thread.id, null);
@@ -1144,39 +1144,39 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         writeDiary(failedPet.id, "first-fail", "first red of the day. we don't talk about it.", true);
       } catch (error) {
-        bb.log.warn(`diary first-fail write failed: ${String(error)}`);
+        alia.log.warn(`diary first-fail write failed: ${String(error)}`);
       }
     }
-    bb.realtime.publish("pets", {
+    alia.realtime.publish("pets", {
       kind: "moment",
       moment: "sad",
       threadId: thread.id,
       title: thread.title ?? thread.titleFallback ?? "a thread",
     });
   });
-  bb.events.on("thread.archived", ({ thread }) => {
+  alia.events.on("thread.archived", ({ thread }) => {
     dropFleetThread(thread.id);
     if (!countable(thread)) return;
     awardXp("thread-archived", thread.id, `arch:${thread.id}`);
   });
-  bb.events.on("thread.deleted", ({ thread }) => dropFleetThread(thread.id));
+  alia.events.on("thread.deleted", ({ thread }) => dropFleetThread(thread.id));
 
   // Seed the fleet and track pending interactions ("waiting on you") via the
-  // SDK realtime feed. Runs as a service so bb.sdk use stays off the factory
+  // SDK realtime feed. Runs as a service so alia.sdk use stays off the factory
   // path in harnesses.
-  bb.background.service("fleet", {
+  alia.background.service("fleet", {
     async start(signal) {
       try {
-        const rows = await bb.sdk.threads.list({ limit: 200 });
+        const rows = await alia.sdk.threads.list({ limit: 200 });
         for (const row of rows) {
           if (row.archivedAt !== null) continue;
           upsertFleetThread(row, row.hasPendingInteraction);
         }
       } catch (error) {
-        bb.log.warn(`fleet seed failed: ${String(error)}`);
+        alia.log.warn(`fleet seed failed: ${String(error)}`);
       }
 
-      const unsubscribe = bb.sdk.subscribe({
+      const unsubscribe = alia.sdk.subscribe({
         event: "thread:changed",
         callback: (event) => {
           try {
@@ -1202,7 +1202,7 @@ export default async function plugin(bb: BbPluginApi) {
               publishFleet();
             } else if (!existing && meta.hasPendingInteraction && meta.projectId) {
               // A thread we have not seen yet (started before plugin load).
-              void bb.sdk.threads
+              void alia.sdk.threads
                 .get({ threadId: id })
                 .then((thread) => {
                   if (pluginDisposed) return;
@@ -1306,14 +1306,14 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         return readFileSync(sidePath);
       } catch (error) {
-        bb.log.warn(`unreadable side hero at ${sidePath}: ${String(error)}`);
+        alia.log.warn(`unreadable side hero at ${sidePath}: ${String(error)}`);
         return undefined;
       }
     }
     if (!engines.openai?.apiKey) {
       if (!warnedNoSideHeroKey) {
         warnedNoSideHeroKey = true;
-        bb.log.warn(
+        alia.log.warn(
           "no OpenAI key — walk/run strips will stay front-facing (no side-profile hero)",
         );
       }
@@ -1324,7 +1324,7 @@ export default async function plugin(bb: BbPluginApi) {
       writeFileSync(sidePath, side);
       return side;
     } catch (error) {
-      bb.log.warn(`side-profile hero failed: ${String(error)}`);
+      alia.log.warn(`side-profile hero failed: ${String(error)}`);
       return undefined;
     }
   };
@@ -1350,7 +1350,7 @@ export default async function plugin(bb: BbPluginApi) {
   let lastJobError: { phase: string; subject: string; message: string; at: number } | null = null;
 
   const publishJob = () => {
-    bb.realtime.publish("pets", { kind: "job", job: currentJob, queued: queuedView() });
+    alia.realtime.publish("pets", { kind: "job", job: currentJob, queued: queuedView() });
   };
 
   const publishProgress = (
@@ -1373,11 +1373,11 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Generation jobs outlive their rpc handler, so they MUST die with the
   // load: a reload/disable aborts them (fetches cancel via the signal), and
-  // the error path never touches bb — a stale-handle throw inside .catch is
+  // the error path never touches VesnALIA — a stale-handle throw inside .catch is
   // an unhandled rejection that takes the whole server down (learned the
   // hard way: crash dump 2026-08-13T17-18-43Z).
   const jobControllers = new Set<AbortController>();
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     for (const controller of jobControllers) controller.abort();
     jobControllers.clear();
     // Drain the queue synchronously, before the aborted job's finally-block
@@ -1424,14 +1424,14 @@ export default async function plugin(bb: BbPluginApi) {
       .catch((error: unknown) => {
         if (controller.signal.aborted) return; // torn down mid-job — silence is correct
         try {
-          bb.log.error(`${phase} job failed: ${String(error)}`);
+          alia.log.error(`${phase} job failed: ${String(error)}`);
           lastJobError = {
             phase,
             subject,
             message: error instanceof Error ? error.message : String(error),
             at: Date.now(),
           };
-          bb.realtime.publish("pets", {
+          alia.realtime.publish("pets", {
             kind: "gen-error",
             jobId,
             phase,
@@ -1460,11 +1460,11 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
   const getDraftMetas = async (): Promise<DraftMeta[]> =>
-    (await bb.storage.kv.get<DraftMeta[]>("drafts")) ?? [];
+    (await alia.storage.kv.get<DraftMeta[]>("drafts")) ?? [];
 
   const draftView = (meta: DraftMeta) => ({
     ...meta,
-    url: `/api/v1/plugins/${bb.pluginId}/http/draft?id=${meta.id}`,
+    url: `/api/v1/plugins/${alia.pluginId}/http/draft?id=${meta.id}`,
   });
 
   const saveStrips = (
@@ -1530,10 +1530,10 @@ export default async function plugin(bb: BbPluginApi) {
     };
   };
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async getOverlay() {
       const pet = getActivePet();
-      const stored = await bb.storage.kv.get<z.infer<typeof overlayPrefsSchema>>("overlay-prefs");
+      const stored = await alia.storage.kv.get<z.infer<typeof overlayPrefsSchema>>("overlay-prefs");
       const values = await settings.get();
       const engines: SpriteEngines = {
         openai: { apiKey: values.openaiApiKey ?? "", model: values.imageModel },
@@ -1556,19 +1556,19 @@ export default async function plugin(bb: BbPluginApi) {
       };
     },
     async setBehavior({ key, value }) {
-      await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values: { [key]: value } });
+      await alia.sdk.plugins.updateSettings({ pluginId: alia.pluginId, values: { [key]: value } });
       return { ok: true };
     },
     async setActivityLevel({ level }) {
-      await bb.sdk.plugins.updateSettings({
-        pluginId: bb.pluginId,
+      await alia.sdk.plugins.updateSettings({
+        pluginId: alia.pluginId,
         values: { activityLevel: level },
       });
       return { ok: true as const };
     },
     async setSoundVolume({ level }) {
-      await bb.sdk.plugins.updateSettings({
-        pluginId: bb.pluginId,
+      await alia.sdk.plugins.updateSettings({
+        pluginId: alia.pluginId,
         values: { soundVolume: level },
       });
       return { ok: true as const };
@@ -1613,7 +1613,7 @@ export default async function plugin(bb: BbPluginApi) {
         db.prepare(`UPDATE pets SET active = 0 WHERE active = 1`).run();
         db.prepare(`UPDATE pets SET active = 1 WHERE id = ?`).run(petId);
       })();
-      bb.realtime.publish("pets", { kind: "pet-changed", petId });
+      alia.realtime.publish("pets", { kind: "pet-changed", petId });
       return { ok: true };
     },
     renamePet({ petId, name }) {
@@ -1623,15 +1623,15 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           writeDiary(petId, "rename", `answering to ${newName} now. reluctantly.`);
         } catch (error) {
-          bb.log.warn(`diary rename write failed: ${String(error)}`);
+          alia.log.warn(`diary rename write failed: ${String(error)}`);
         }
-        bb.realtime.publish("pets", { kind: "pet-changed", petId });
+        alia.realtime.publish("pets", { kind: "pet-changed", petId });
       }
       return { ok: result.changes > 0 };
     },
     setPetSize({ petId, scale }) {
       const result = db.prepare(`UPDATE pets SET size_scale = ? WHERE id = ?`).run(scale, petId);
-      if (result.changes > 0) bb.realtime.publish("pets", { kind: "pet-changed", petId });
+      if (result.changes > 0) alia.realtime.publish("pets", { kind: "pet-changed", petId });
       return { ok: result.changes > 0 };
     },
     deletePet({ petId }) {
@@ -1649,13 +1649,13 @@ export default async function plugin(bb: BbPluginApi) {
         if (file.startsWith(`${petId}-`)) rmSync(path.join(spritesDir, file), { force: true });
       }
       invalidateArtCache(petId);
-      bb.realtime.publish("pets", { kind: "pet-changed", petId });
+      alia.realtime.publish("pets", { kind: "pet-changed", petId });
       return { ok: true };
     },
     async clearDrafts() {
       rmSync(draftsDir, { recursive: true, force: true });
       mkdirSync(draftsDir, { recursive: true });
-      await bb.storage.kv.delete("drafts");
+      await alia.storage.kv.delete("drafts");
       return { ok: true };
     },
     petPet({ petId }) {
@@ -1682,7 +1682,7 @@ export default async function plugin(bb: BbPluginApi) {
       return { accepted: true, xp: fresh.xp, cooldownRemainingMs: PET_COOLDOWN_MS };
     },
     async setOverlayPrefs(prefs) {
-      await bb.storage.kv.set("overlay-prefs", prefs);
+      await alia.storage.kv.set("overlay-prefs", prefs);
       return { ok: true };
     },
     getNeediestThread() {
@@ -1725,8 +1725,8 @@ export default async function plugin(bb: BbPluginApi) {
         for (const stale of (await getDraftMetas()).filter((m) => !all.some((k) => k.id === m.id))) {
           rmSync(path.join(draftsDir, `${stale.id}.png`), { force: true });
         }
-        await bb.storage.kv.set("drafts", all);
-        bb.realtime.publish("pets", {
+        await alia.storage.kv.set("drafts", all);
+        alia.realtime.publish("pets", {
           kind: "drafts-ready",
           jobId,
           drafts: metas.map(draftView),
@@ -1752,7 +1752,7 @@ export default async function plugin(bb: BbPluginApi) {
         const refined = await refineDraft(engines, readFileSync(draftPath), instruction.trim());
         // Same id, same file: the panel re-fetches with a cache-busting v.
         writeFileSync(draftPath, refined);
-        bb.realtime.publish("pets", { kind: "draft-changed", draftId });
+        alia.realtime.publish("pets", { kind: "draft-changed", draftId });
         return { draftId };
       } finally {
         refineBusy = false;
@@ -1784,8 +1784,8 @@ export default async function plugin(bb: BbPluginApi) {
         );
         if (signal.aborted) return;
         if (result.skipped.length > 0) {
-          bb.log.warn(`${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`);
-          bb.realtime.publish("pets", {
+          alia.log.warn(`${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`);
+          alia.realtime.publish("pets", {
             kind: "gen-warning",
             jobId,
             phase: "hatch",
@@ -1808,10 +1808,10 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           writeDiary(petId, "hatch", "day one. i have decided to trust you.");
         } catch (error) {
-          bb.log.warn(`diary hatch write failed: ${String(error)}`);
+          alia.log.warn(`diary hatch write failed: ${String(error)}`);
         }
-        bb.realtime.publish("pets", { kind: "hatched", jobId, petId });
-        bb.realtime.publish("pets", { kind: "pet-changed", petId });
+        alia.realtime.publish("pets", { kind: "hatched", jobId, petId });
+        alia.realtime.publish("pets", { kind: "pet-changed", petId });
       };
       enqueueJob(jobId, "hatch", name.trim(), () => {
         runJob(jobId, "hatch", name.trim(), states.length, [...states], work);
@@ -1862,8 +1862,8 @@ export default async function plugin(bb: BbPluginApi) {
         );
         if (signal.aborted) return;
         if (result.skipped.length > 0) {
-          bb.log.warn(`${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`);
-          bb.realtime.publish("pets", {
+          alia.log.warn(`${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`);
+          alia.realtime.publish("pets", {
             kind: "gen-warning",
             jobId,
             phase: "evolve",
@@ -1892,10 +1892,10 @@ export default async function plugin(bb: BbPluginApi) {
             `outgrew my old pixels at ${row.xp} xp. keeping the attitude.`,
           );
         } catch (error) {
-          bb.log.warn(`diary evolve write failed: ${String(error)}`);
+          alia.log.warn(`diary evolve write failed: ${String(error)}`);
         }
-        bb.realtime.publish("pets", { kind: "evolved-art", jobId, petId: row.id });
-        bb.realtime.publish("pets", { kind: "pet-changed", petId: row.id });
+        alia.realtime.publish("pets", { kind: "evolved-art", jobId, petId: row.id });
+        alia.realtime.publish("pets", { kind: "pet-changed", petId: row.id });
       };
       enqueueJob(jobId, "evolve", row.name, () => {
         runJob(jobId, "evolve", row.name, states.length + 1, [...states], work);
@@ -1930,8 +1930,8 @@ export default async function plugin(bb: BbPluginApi) {
         );
         if (signal.aborted) return;
         if (result.skipped.length > 0) {
-          bb.log.warn(`${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`);
-          bb.realtime.publish("pets", {
+          alia.log.warn(`${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`);
+          alia.realtime.publish("pets", {
             kind: "gen-warning",
             jobId,
             phase: "refresh",
@@ -1941,8 +1941,8 @@ export default async function plugin(bb: BbPluginApi) {
           });
         }
         saveStrips(row.id, row.art_stage, result);
-        bb.realtime.publish("pets", { kind: "evolved-art", jobId, petId: row.id });
-        bb.realtime.publish("pets", { kind: "pet-changed", petId: row.id });
+        alia.realtime.publish("pets", { kind: "evolved-art", jobId, petId: row.id });
+        alia.realtime.publish("pets", { kind: "pet-changed", petId: row.id });
       };
       enqueueJob(jobId, "refresh", row.name, () => {
         runJob(jobId, "refresh", row.name, states.length, [...states], work);
@@ -1981,10 +1981,10 @@ export default async function plugin(bb: BbPluginApi) {
         );
         if (signal.aborted) return;
         if (result.skipped.length > 0) {
-          bb.log.warn(
+          alia.log.warn(
             `${jobId}: skipped ${result.skipped.map((s) => `${s.state} (${s.reason})`).join(", ")}`,
           );
-          bb.realtime.publish("pets", {
+          alia.realtime.publish("pets", {
             kind: "gen-warning",
             jobId,
             phase: "refresh",
@@ -1997,10 +1997,10 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           writeDiary(row.id, "touchup", `got my ${requested.join(" and ")} redrawn. felt nothing.`);
         } catch (error) {
-          bb.log.warn(`diary touchup write failed: ${String(error)}`);
+          alia.log.warn(`diary touchup write failed: ${String(error)}`);
         }
-        bb.realtime.publish("pets", { kind: "evolved-art", jobId, petId: row.id });
-        bb.realtime.publish("pets", { kind: "pet-changed", petId: row.id });
+        alia.realtime.publish("pets", { kind: "evolved-art", jobId, petId: row.id });
+        alia.realtime.publish("pets", { kind: "pet-changed", petId: row.id });
       };
       enqueueJob(jobId, "refresh", subject, () => {
         runJob(jobId, "refresh", subject, requested.length, [...requested], work);
@@ -2051,7 +2051,7 @@ export default async function plugin(bb: BbPluginApi) {
     getLineage({ petId }) {
       const row = db.prepare(`SELECT * FROM pets WHERE id = ?`).get(petId) as PetRow | undefined;
       if (!row) return { stages: [] };
-      const base = `/api/v1/plugins/${bb.pluginId}/http/hero?petId=${encodeURIComponent(row.id)}`;
+      const base = `/api/v1/plugins/${alia.pluginId}/http/hero?petId=${encodeURIComponent(row.id)}`;
       let heroVersion = 0;
       try {
         heroVersion = Math.round(statSync(heroPathFor(row)).mtimeMs);
@@ -2100,7 +2100,7 @@ export default async function plugin(bb: BbPluginApi) {
         const current = await readCounter(TREATS_BALANCE_KEY);
         if (current <= 0) throw new Error("No treats left.");
         const balance = current - 1;
-        await bb.storage.kv.set(TREATS_BALANCE_KEY, balance);
+        await alia.storage.kv.set(TREATS_BALANCE_KEY, balance);
         publishTreatDrop();
         return { balance };
       });
@@ -2108,7 +2108,7 @@ export default async function plugin(bb: BbPluginApi) {
     async eatTreat() {
       const eaten = await withWallet(async () => {
         const next = (await readCounter(TREATS_EATEN_KEY)) + 1;
-        await bb.storage.kv.set(TREATS_EATEN_KEY, next);
+        await alia.storage.kv.set(TREATS_EATEN_KEY, next);
         return next;
       });
       const pet = getActivePet();
@@ -2117,7 +2117,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           writeDiary(pet.id, "treat", "ate a treat. gourmet hour.", true);
         } catch (error) {
-          bb.log.warn(`diary treat write failed: ${String(error)}`);
+          alia.log.warn(`diary treat write failed: ${String(error)}`);
         }
       }
       return { eaten };
@@ -2129,7 +2129,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           writeDiary(pet.id, "fetch", "fetch. i allowed it.", true);
         } catch (error) {
-          bb.log.warn(`diary fetch write failed: ${String(error)}`);
+          alia.log.warn(`diary fetch write failed: ${String(error)}`);
         }
       }
       return { ok: true as const };
@@ -2138,7 +2138,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- sprite serving --------------------------------------------------------
 
-  bb.http.route("GET", "/sprite", async (c) => {
+  alia.http.route("GET", "/sprite", async (c) => {
     const petId = c.req.query("pet") ?? "";
     const state = c.req.query("state") ?? "idle";
     if (!isSpriteState(state)) return new Response("unknown state", { status: 400 });
@@ -2160,7 +2160,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   });
 
-  bb.http.route("GET", "/hero", async (c) => {
+  alia.http.route("GET", "/hero", async (c) => {
     const petId = c.req.query("petId") ?? "";
     const stage = c.req.query("stage");
     const row = db.prepare(`SELECT * FROM pets WHERE id = ?`).get(petId) as PetRow | undefined;
@@ -2183,7 +2183,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   });
 
-  bb.http.route("GET", "/draft", async (c) => {
+  alia.http.route("GET", "/draft", async (c) => {
     const id = c.req.query("id") ?? "";
     if (!/^[a-z0-9-]+$/.test(id)) return new Response("bad id", { status: 400 });
     const file = path.join(draftsDir, `${id}.png`);
@@ -2201,17 +2201,17 @@ export default async function plugin(bb: BbPluginApi) {
 
   // --- CLI -------------------------------------------------------------------
 
-  bb.cli.register({
+  alia.cli.register({
     name: "pets",
-    summary: "Your bb companion: status, den, and controls",
+    summary: "Your VesnALIA companion: status, den, and controls",
     commands: [
-      { name: "status", summary: "Active pet, stage, XP, and fleet mood", usage: "bb pets status" },
-      { name: "list", summary: "All pets in the den", usage: "bb pets list" },
-      { name: "select", summary: "Make a den pet the active companion", usage: "bb pets select <name|id>" },
-      { name: "rename", summary: "Rename a pet", usage: "bb pets rename <name|id> <new-name>" },
-      { name: "on", summary: "Enable the overlay", usage: "bb pets on" },
-      { name: "off", summary: "Disable the overlay", usage: "bb pets off" },
-      { name: "reset", summary: "Dev: wipe den, XP, art, drafts and reseed the starter", usage: "bb pets reset" },
+      { name: "status", summary: "Active pet, stage, XP, and fleet mood", usage: "alia pets status" },
+      { name: "list", summary: "All pets in the den", usage: "alia pets list" },
+      { name: "select", summary: "Make a den pet the active companion", usage: "alia pets select <name|id>" },
+      { name: "rename", summary: "Rename a pet", usage: "alia pets rename <name|id> <new-name>" },
+      { name: "on", summary: "Enable the overlay", usage: "alia pets on" },
+      { name: "off", summary: "Disable the overlay", usage: "alia pets off" },
+      { name: "reset", summary: "Dev: wipe den, XP, art, drafts and reseed the starter", usage: "alia pets reset" },
     ],
     async run(argv) {
       const [command, ...rest] = argv;
@@ -2250,12 +2250,12 @@ export default async function plugin(bb: BbPluginApi) {
         case "select": {
           const ref = rest.join(" ").trim();
           const pet = ref ? findPet(ref) : undefined;
-          if (!pet) return { exitCode: 1, stderr: `No pet matching "${ref}". Try: bb pets list` };
+          if (!pet) return { exitCode: 1, stderr: `No pet matching "${ref}". Try: VesnALIA pets list` };
           db.transaction(() => {
             db.prepare(`UPDATE pets SET active = 0 WHERE active = 1`).run();
             db.prepare(`UPDATE pets SET active = 1 WHERE id = ?`).run(pet.id);
           })();
-          bb.realtime.publish("pets", { kind: "pet-changed", petId: pet.id });
+          alia.realtime.publish("pets", { kind: "pet-changed", petId: pet.id });
           return { exitCode: 0, stdout: `${pet.name} is now your companion.` };
         }
         case "rename": {
@@ -2263,15 +2263,15 @@ export default async function plugin(bb: BbPluginApi) {
           const newName = nameParts.join(" ").trim();
           const pet = ref ? findPet(ref) : undefined;
           if (!pet || !newName)
-            return { exitCode: 1, stderr: "Usage: bb pets rename <name|id> <new-name>" };
+            return { exitCode: 1, stderr: "Usage: VesnALIA pets rename <name|id> <new-name>" };
           db.prepare(`UPDATE pets SET name = ? WHERE id = ?`).run(newName, pet.id);
-          bb.realtime.publish("pets", { kind: "pet-changed", petId: pet.id });
+          alia.realtime.publish("pets", { kind: "pet-changed", petId: pet.id });
           return { exitCode: 0, stdout: `${pet.name} is now ${newName}.` };
         }
         case "on":
         case "off": {
-          await bb.sdk.plugins.updateSettings({
-            pluginId: bb.pluginId,
+          await alia.sdk.plugins.updateSettings({
+            pluginId: alia.pluginId,
             values: { enabled: command === "on" },
           });
           return { exitCode: 0, stdout: `Overlay ${command}.` };
@@ -2291,7 +2291,7 @@ export default async function plugin(bb: BbPluginApi) {
             db.prepare(`DELETE FROM pets`).run();
           })();
           for (const key of ["overlay-prefs", "drafts"]) {
-            await bb.storage.kv.delete(key);
+            await alia.storage.kv.delete(key);
           }
           rmSync(spritesDir, { recursive: true, force: true });
           rmSync(draftsDir, { recursive: true, force: true });
@@ -2299,14 +2299,14 @@ export default async function plugin(bb: BbPluginApi) {
           mkdirSync(draftsDir, { recursive: true });
           atlasCache.clear();
           seedStarterIfEmpty();
-          bb.realtime.publish("pets", { kind: "pet-changed", petId: "starter" });
+          alia.realtime.publish("pets", { kind: "pet-changed", petId: "starter" });
           return { exitCode: 0, stdout: "Den reset. Pixel is back at Hatchling, fresh out of the shell." };
         }
         default:
           return {
             exitCode: command ? 1 : 0,
             stdout:
-              "bb pets — your companion\n\n  status   Active pet, stage, XP, fleet mood\n  list     All pets in the den\n  select   Switch companion\n  rename   Rename a pet\n  on/off   Toggle the overlay\n  reset    Dev: wipe den, XP, art, drafts",
+              "alia pets — your companion\n\n  status   Active pet, stage, XP, fleet mood\n  list     All pets in the den\n  select   Switch companion\n  rename   Rename a pet\n  on/off   Toggle the overlay\n  reset    Dev: wipe den, XP, art, drafts",
           };
       }
     },
@@ -2315,22 +2315,22 @@ export default async function plugin(bb: BbPluginApi) {
   settings.onChange((values) => {
     currentPack = values.animationPack;
     try {
-      bb.realtime.publish("pets", { kind: "settings-changed" });
+      alia.realtime.publish("pets", { kind: "settings-changed" });
     } catch {
       // settings change landed after teardown — the mirror is updated, done
     }
   });
 
-  // Boot announce. A `bb plugin reload` restarts this server but does NOT close
+  // Boot announce. A `alia plugin reload` restarts this server but does NOT close
   // the overlay's socket (it belongs to the host), so a reconnect-driven refetch
   // never happens. This signal is the trigger that actually fires on reload.
   if (!pluginDisposed) {
     try {
-      bb.realtime.publish("pets", { kind: "server-boot", bundleStamp });
+      alia.realtime.publish("pets", { kind: "server-boot", bundleStamp });
     } catch {
       // torn down between the check and the publish — nothing to announce to
     }
   }
 
-  bb.log.info("pets backend ready");
+  alia.log.info("pets backend ready");
 }

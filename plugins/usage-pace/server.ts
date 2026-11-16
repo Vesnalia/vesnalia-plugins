@@ -1,11 +1,11 @@
-// bb-plugin-usage-pace — backend entry. Forked from Usage Bar by Dmitrii
+// alia-plugin-usage-pace — backend entry. Forked from Usage Bar by Dmitrii
 // Kapustin (MIT).
 //
 // Reads agent-provider usage limits (weekly windows and friends) through
-// bb.sdk.system.usageLimits, caches them per host, and exposes them to the
-// frontend over RPC and to shells/agents via `bb usage-pace`. Pace is not
+// alia.sdk.system.usageLimits, caches them per host, and exposes them to the
+// frontend over RPC and to shells/agents via `alia usage-pace`. Pace is not
 // cached: it depends on the current time, so each reader computes it.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { registerGrokProvider } from "./lib/grok-provider";
 import {
@@ -81,12 +81,12 @@ export function isWeeklyLabel(label: string): boolean {
   return WEEKLY_PATTERN.test(label);
 }
 
-type Host = Awaited<ReturnType<BbPluginApi["sdk"]["hosts"]["list"]>>[number];
+type Host = Awaited<ReturnType<AliaPluginApi["sdk"]["hosts"]["list"]>>[number];
 type Provider = Awaited<
-  ReturnType<BbPluginApi["sdk"]["providers"]["list"]>
+  ReturnType<AliaPluginApi["sdk"]["providers"]["list"]>
 >[number];
 type UsageResponse = Awaited<
-  ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>
+  ReturnType<AliaPluginApi["sdk"]["system"]["usageLimits"]>
 >;
 
 function normalizeProvider(
@@ -132,9 +132,9 @@ function normalizeProvider(
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const getTokens = createTokenTotals(bb);
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const getTokens = createTokenTotals(alia);
+  const settings = alia.settings.define({
     cacheMinutes: {
       type: "number",
       label: "Cache usage for (minutes)",
@@ -147,13 +147,13 @@ export default async function plugin(bb: BbPluginApi) {
     },
     hiddenCardProviders: {
       type: "string",
-      label: "Hide these providers in bb's usage card",
+      label: "Hide these providers in VesnALIA's usage card",
       description: "Provider names as the card shows them, separated by commas. For example: Cursor",
       default: "",
     },
     grokUsage: {
       type: "boolean",
-      label: "Add Grok Build usage to bb's usage card (takes effect after a plugin reload)",
+      label: "Add Grok Build usage to VesnALIA's usage card (takes effect after a plugin reload)",
       default: true,
     },
     renewGrokSession: {
@@ -174,19 +174,19 @@ export default async function plugin(bb: BbPluginApi) {
     hiddenProviders = parseProviderList(String(values.hiddenCardProviders ?? ""));
   };
   await applySettings();
-  // bb registers providers when the plugin loads, so this setting applies
+  // VesnALIA registers providers when the plugin loads, so this setting applies
   // after a reload.
   if ((await settings.get()).grokUsage !== false) {
-    registerGrokProvider(bb);
-    // bb's usage card shows the providers of plugins that serve this
+    registerGrokProvider(alia);
+    // VesnALIA's usage card shows the providers of plugins that serve this
     // discoverable contract; the provider alone does not add a Grok tab.
-    bb.rpc.register(grokUsageSourceContract, createGrokUsageSource(bb), {
+    alia.rpc.register(grokUsageSourceContract, createGrokUsageSource(alia), {
       experimental_discoverable: true,
       experimental_description:
         "Grok Build usage from Usage Pace. Inventory reads metadata only.",
     });
   }
-  const grokHosts = bb.hosts.experimental_client({ contract: grokSessionContract });
+  const grokHosts = alia.hosts.experimental_client({ contract: grokSessionContract });
 
   async function renewGrokOnConnectedHosts(force: boolean): Promise<string[]> {
     const lines: string[] = [];
@@ -195,10 +195,10 @@ export default async function plugin(bb: BbPluginApi) {
     }
     let hosts: Host[] = [];
     try {
-      hosts = await bb.sdk.hosts.list();
+      hosts = await alia.sdk.hosts.list();
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      bb.log.warn(`Grok login renewal could not list machines: ${message}`);
+      alia.log.warn(`Grok login renewal could not list machines: ${message}`);
       return [`Could not list machines: ${message}`];
     }
     const connected = hosts.filter((host) => host.status !== "disconnected");
@@ -212,20 +212,20 @@ export default async function plugin(bb: BbPluginApi) {
         );
         lines.push(formatGrokRenewal(host.name, result));
         if (result.status === "renewed") {
-          bb.log.info(`Grok login renewed on ${host.name} until ${result.expiresAt}.`);
+          alia.log.info(`Grok login renewed on ${host.name} until ${result.expiresAt}.`);
         } else if (result.status === "failed") {
-          bb.log.warn(`Grok login renewal failed on ${host.name}: ${result.message}`);
+          alia.log.warn(`Grok login renewal failed on ${host.name}: ${result.message}`);
         }
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
-        bb.log.warn(`Grok login renewal failed on ${host.name}: ${message}`);
+        alia.log.warn(`Grok login renewal failed on ${host.name}: ${message}`);
         lines.push(`${host.name}: failed — ${message}`);
       }
     }
     return lines;
   }
 
-  bb.background.service("grok-session", {
+  alia.background.service("grok-session", {
     async start(signal) {
       while (!signal.aborted) {
         if ((await settings.get()).renewGrokSession !== false) {
@@ -238,7 +238,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   settings.onChange?.(() => {
     void applySettings().then(() => {
-      bb.realtime.publish("usage-changed", { fetchedAt: new Date().toISOString() });
+      alia.realtime.publish("usage-changed", { fetchedAt: new Date().toISOString() });
     });
   });
 
@@ -251,7 +251,7 @@ export default async function plugin(bb: BbPluginApi) {
     let error: string | null = null;
     let hosts: Host[] = [];
     try {
-      hosts = await bb.sdk.hosts.list();
+      hosts = await alia.sdk.hosts.list();
     } catch (cause) {
       error = cause instanceof Error ? cause.message : String(cause);
     }
@@ -260,8 +260,8 @@ export default async function plugin(bb: BbPluginApi) {
         if (host.status === "disconnected") return;
         try {
           const [list, usage] = await Promise.all([
-            bb.sdk.providers.list({ hostId: host.id, capability: "usage" }),
-            bb.sdk.system.usageLimits({ hostId: host.id }),
+            alia.sdk.providers.list({ hostId: host.id, capability: "usage" }),
+            alia.sdk.system.usageLimits({ hostId: host.id }),
           ]);
           for (const provider of list) {
             providers.push(normalizeProvider(host, provider, usage[provider.id]));
@@ -286,7 +286,7 @@ export default async function plugin(bb: BbPluginApi) {
     pending = loadSnapshot()
       .then((snapshot) => {
         cached = { at: Date.now(), snapshot, dirty: false };
-        bb.realtime.publish("usage-changed", { fetchedAt: snapshot.fetchedAt });
+        alia.realtime.publish("usage-changed", { fetchedAt: snapshot.fetchedAt });
         return snapshot;
       })
       .finally(() => {
@@ -298,10 +298,10 @@ export default async function plugin(bb: BbPluginApi) {
   const markDirty = () => {
     if (cached !== null) cached.dirty = true;
   };
-  bb.events.on("thread.idle", markDirty);
-  bb.events.on("thread.failed", markDirty);
+  alia.events.on("thread.idle", markDirty);
+  alia.events.on("thread.failed", markDirty);
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getTokens: (input) => getTokens(input.timeZone, input.force),
     getCardSettings: () => ({ hiddenProviders }),
     getUsage: async (input) => ({
@@ -357,28 +357,28 @@ export default async function plugin(bb: BbPluginApi) {
 
   const usageText = [
     "Usage:",
-    "  bb usage-pace [--all] [--force] [--json]",
-    "  bb usage-pace renew-grok [--force]",
+    "  VesnALIA usage-pace [--all] [--force] [--json]",
+    "  VesnALIA usage-pace renew-grok [--force]",
     "",
-    "  --tokens total tokens across BB for today and this month (JSON)",
+    "  --tokens total tokens across VesnALIA for today and this month (JSON)",
     "  --all    show every window, not only weekly ones",
     "  --force  bypass the cache and query providers now",
     "  --json   machine-readable output; each window has a `pace` field",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "usage-pace",
     summary: "Show agent-provider usage limits and pace (weekly windows by default)",
     commands: [
       {
         name: "show",
         summary: "Print usage windows with pace",
-        usage: "bb usage-pace [show] [--all] [--force] [--json]",
+        usage: "alia usage-pace [show] [--all] [--force] [--json]",
       },
       {
         name: "renew-grok",
         summary: "Renew the Grok Build login on each connected machine when it is 5 hours old",
-        usage: "bb usage-pace renew-grok [--force]",
+        usage: "alia usage-pace renew-grok [--force]",
       },
     ],
     async run(argv) {
@@ -423,7 +423,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     cached = null;
   });
 }

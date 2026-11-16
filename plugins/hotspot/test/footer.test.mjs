@@ -95,7 +95,7 @@ test("unknown thermal colours by the CPU rule; unread memory leaves MEM out", ()
   assert.equal(over.heat, "Hot");
   assert.deepEqual(footerLines(over).map(shape), ["row: CPU 90%"]);
   assert.match(over.tooltip, /Thermal unknown · CPU 90% · Memory not read/);
-  assert.match(over.tooltip, /No BB thread is using CPU/);
+  assert.match(over.tooltip, /No ALIA thread is using CPU/);
   const under = footerView({ latest: { thermal: null, cpu: 20, load: 1, threads: [] }, hot: false, cpuThreshold: 80 });
   assert.equal(under.tone, "calm");
 });

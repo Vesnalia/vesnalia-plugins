@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 
 test("backend surfaces validate inputs, use fresh secrets and resolve issue mentions", async () => {
@@ -12,9 +12,9 @@ test("backend surfaces validate inputs, use fresh secrets and resolve issue ment
     if (url.pathname.includes("/issue/")) return Response.json({ key: "APP-7", fields: { summary: "Checkout", description: "Task context", customfield_1: "Acceptance criteria" } });
     return Response.json({ values: [], isLast: true });
   }) as typeof fetch;
-  const { bb, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-first" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-first" } });
   try {
-    await plugin(bb);
+    await plugin(alia);
     const patSetting = harness.registrations.settingsDescriptors.pat;
     assert.ok(patSetting.type === "string" && patSetting.secret);
     await harness.behavior.callRpc("boards", {});
@@ -46,9 +46,9 @@ test("@ search looks up an exact key cheaply and treats a missing key as no matc
     if (url.pathname.endsWith("/issue/APP-403")) return new Response("No", { status: 403 });
     return Response.json({ key: "APP-7", fields: { summary: "Checkout", status: { id: "3", name: "In progress" } } });
   }) as typeof fetch;
-  const { bb, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-secret" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-secret" } });
   try {
-    await plugin(bb);
+    await plugin(alia);
     const mention = harness.registrations.mentionProviders[0];
     assert.deepEqual(await mention.search({ query: "app-7" } as any), [{ id: "APP-7", title: "APP-7 Checkout", subtitle: "In progress" }]);
     assert.equal(requests.length, 1);
@@ -79,9 +79,9 @@ test("write surfaces post comments and transitions with validated input", async 
     if (url.searchParams.get("fields") === "status") return Response.json({ key: "APP-7", fields: { status: { id: "3", name: "In progress" } } });
     return Response.json({ key: "APP-7", fields: { summary: "Checkout", status: { id: "3", name: "In progress" } } });
   }) as typeof fetch;
-  const { bb, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-secret" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-secret" } });
   try {
-    await plugin(bb);
+    await plugin(alia);
     assert.deepEqual(await harness.behavior.callRpc("add_comment", { key: "APP-7", body: "привет" }), { id: "501", author: "Sam", created: "now", body: "привет" });
     assert.deepEqual(writes[0], { method: "POST", path: "/rest/api/2/issue/APP-7/comment", body: { body: "привет" }, auth: "Bearer fake-secret" });
     assert.deepEqual(await harness.behavior.callRpc("transitions", { key: "APP-7" }), [{ id: "31", name: "Start progress", to: "In progress", toId: "3" }]);
@@ -119,16 +119,16 @@ test("write surfaces post comments and transitions with validated input", async 
 });
 
 test("the board view is saved per user and a damaged saved view is ignored", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-secret" } });
+  const { alia, harness } = createFakePluginHost({ pluginId: "jira-boards", settings: { baseUrl: "https://jira.example.test", pat: "fake-secret" } });
   try {
-    await plugin(bb);
+    await plugin(alia);
     assert.equal(await harness.behavior.callRpc("view_state", null), null);
     const view = { boardId: 9, jql: "project = APP", quickFilterIds: ["12"], grouping: "priority" };
     await harness.behavior.callRpc("save_view_state", view);
     assert.deepEqual(await harness.behavior.callRpc("view_state", null), view);
     await assert.rejects(harness.behavior.callRpc("save_view_state", { ...view, grouping: "sprint" }));
     await assert.rejects(harness.behavior.callRpc("save_view_state", { ...view, jql: "x".repeat(4001) }));
-    await bb.storage.kv.set("view-state", { boardId: "nine" });
+    await alia.storage.kv.set("view-state", { boardId: "nine" });
     assert.equal(await harness.behavior.callRpc("view_state", null), null);
   } finally { await harness.lifecycle.dispose(); }
 });

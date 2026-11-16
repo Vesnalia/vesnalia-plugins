@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse, makeQueueEntry } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost, makeThreadResponse, makeQueueEntry } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin, { DELEGATE_TOOL } from "./server";
 
 function deferred<T>() {
@@ -12,7 +12,7 @@ function deferred<T>() {
 
 const turn = () => new Promise<void>((resolve) => setImmediate(resolve));
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
-type SdkCatalog = Awaited<ReturnType<BbPluginApi["sdk"]["providers"]["models"]>>;
+type SdkCatalog = Awaited<ReturnType<AliaPluginApi["sdk"]["providers"]["models"]>>;
 // Only the response fields consumed here; the fake SDK accepts partial DTOs.
 type CatalogResponse = Pick<SdkCatalog, "models"> & Partial<Pick<SdkCatalog, "modelLoadError">> & {
   providers: Pick<SdkCatalog["providers"][number], "id" | "available" | "displayName">[];
@@ -59,7 +59,7 @@ describe("startup readiness", () => {
       },
     });
     let registered = false;
-    const loading = plugin(host.bb).then(() => { registered = true; });
+    const loading = plugin(host.alia).then(() => { registered = true; });
     const services: Promise<void>[] = [];
     try {
       await turn();
@@ -85,9 +85,9 @@ describe("startup readiness", () => {
     const ready = deferred<CatalogResponse>();
     const host = fixture(async (args) => args?.providerId ? models(args.providerId) : ready.promise);
     try {
-      await host.bb.storage.kv.set("worker", config);
-      await host.bb.storage.kv.set("project_worker", { project: config });
-      await plugin(host.bb);
+      await host.alia.storage.kv.set("worker", config);
+      await host.alia.storage.kv.set("project_worker", { project: config });
+      await plugin(host.alia);
       const service = host.harness.behavior.runService("worker-catalog");
       expect(await getWorker(host)).toEqual(config);
       expect(await getProject(host)).toEqual(config);
@@ -100,8 +100,8 @@ describe("startup readiness", () => {
       expect(await getWorker(host)).toEqual(reconciled);
       expect(await getProject(host)).toEqual(reconciled);
       // Discovery updates effective choices without destroying durable settings.
-      expect(await host.bb.storage.kv.get("worker")).toEqual(config);
-      expect(await host.bb.storage.kv.get("project_worker")).toEqual({ project: config });
+      expect(await host.alia.storage.kv.get("worker")).toEqual(config);
+      expect(await host.alia.storage.kv.get("project_worker")).toEqual({ project: config });
       await host.harness.behavior.callRpc("set_enabled", { threadId: "parent", enabled: true });
       await host.harness.behavior.callAgentTool(DELEGATE_TOOL, { task: "Probe", preset: "build", waitForResult: false }, { threadId: "parent", projectId: "project" });
       expect(host.harness.inspection.sdk.callsTo("threads.spawn")[0]?.[0]).toMatchObject({ providerId: "beta", model: "beta-model" });
@@ -115,7 +115,7 @@ describe("startup readiness", () => {
     const ready = deferred<CatalogResponse>();
     const host = fixture(async (args) => args?.providerId ? models(args.providerId) : ready.promise);
     try {
-      await plugin(host.bb);
+      await plugin(host.alia);
       const service = host.harness.behavior.runService("worker-catalog");
       await host.harness.behavior.callRpc("set_worker_execution", { ...pin, fallback: mismatched });
       const cli = await host.harness.behavior.runCli(["worker", "--preset", "build", "--model", "beta-model"]);
@@ -150,9 +150,9 @@ describe("startup readiness", () => {
     const host = fixture(async (args) => args?.providerId ? models(args.providerId) : ready.promise);
     const saved = { model: "beta-model", fallback: { model: "alpha-model" }, presets: { build: { model: "beta-model" } } };
     try {
-      await host.bb.storage.kv.set("worker", saved);
-      await host.bb.storage.kv.set("project_worker", { project: saved });
-      await plugin(host.bb);
+      await host.alia.storage.kv.set("worker", saved);
+      await host.alia.storage.kv.set("project_worker", { project: saved });
+      await plugin(host.alia);
       expect(await getWorker(host)).toEqual(saved);
       expect(await getProject(host)).toEqual(saved);
       const service = host.harness.behavior.runService("worker-catalog");
@@ -175,9 +175,9 @@ describe("startup readiness", () => {
       return args?.providerId ? models(args.providerId) : providers;
     });
     try {
-      await host.bb.storage.kv.set("worker", config);
-      await host.bb.storage.kv.set("project_worker", { project: config });
-      await plugin(host.bb);
+      await host.alia.storage.kv.set("worker", config);
+      await host.alia.storage.kv.set("project_worker", { project: config });
+      await plugin(host.alia);
       const service = host.harness.behavior.runService("worker-catalog");
       await flush();
       expect(host.harness.logEntries.some((entry) => entry.message.includes("preserving saved choices and retrying"))).toBe(true);
@@ -198,8 +198,8 @@ describe("startup readiness", () => {
   it("distinguishes a successful empty catalog from unavailable discovery", async () => {
     const host = fixture(async () => ({ providers: [], models: [] }));
     try {
-      await host.bb.storage.kv.set("worker", config);
-      await plugin(host.bb);
+      await host.alia.storage.kv.set("worker", config);
+      await plugin(host.alia);
       expect(await getWorker(host)).toEqual(config);
       await host.harness.behavior.runService("worker-catalog").done;
       expect(await getWorker(host)).toEqual({});
@@ -210,7 +210,7 @@ describe("startup readiness", () => {
   it.each(["resolve", "reject"])("disposes promptly during discovery and safely consumes a late %s", async (outcome) => {
     const ready = deferred<CatalogResponse>();
     const host = fixture(async () => ready.promise);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const service = host.harness.behavior.runService("worker-catalog");
     await turn();
     await host.harness.lifecycle.dispose();
@@ -233,8 +233,8 @@ describe("startup readiness", () => {
       if (old) return ready.promise;
       return models(args.providerId);
     });
-    await host.bb.storage.kv.set("worker", config);
-    await plugin(host.bb);
+    await host.alia.storage.kv.set("worker", config);
+    await plugin(host.alia);
     const service = host.harness.behavior.runService("worker-catalog");
     await turn();
     old = false;
@@ -257,7 +257,7 @@ describe("startup readiness", () => {
     vi.useFakeTimers();
     const host = fixture(async () => { throw new Error("offline"); });
     try {
-      await plugin(host.bb);
+      await plugin(host.alia);
       const service = host.harness.behavior.runService("worker-catalog");
       await flush();
       expect(vi.getTimerCount()).toBe(1);
@@ -275,7 +275,7 @@ describe("startup readiness", () => {
     const host = fixture(async () => ({ providers: [], models: [] }));
     let reads = 0;
     host.harness.inspection.sdk.stub("threads.queue.list", async () => ++reads === heldRead ? ready.promise : []);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const service = host.harness.behavior.runService("queue-recovery");
     await turn();
     expect(reads).toBe(heldRead);

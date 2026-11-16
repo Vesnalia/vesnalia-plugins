@@ -1,9 +1,9 @@
-// @smsunarto/bb-plugin-gtd-sidebar — an action-oriented replacement for bb's
+// @smsunarto/alia-plugin-gtd-sidebar — an action-oriented replacement for VesnALIA's
 // sidebar thread list, and a reference for `app.slots.experimental_threadList`.
 //
 // Active threads are grouped by who acts next. Each section holds entrance
 // order, oldest first, so a new handoff always arrives at the bottom.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { ThreadInbox } from "@/components/inbox/thread-inbox";
 import { ParentChip } from "@/components/inbox/parent-chip";
 import { SubagentsChip } from "@/components/inbox/subagents-chip";

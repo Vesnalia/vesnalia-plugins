@@ -1,6 +1,6 @@
 import type { WorkspaceStatus, WorkspaceWorktree } from "./workspace-status.js";
 
-/** The environment fields the service reads; a subset of BB's Environment. */
+/** The environment fields the service reads; a subset of VesnALIA's Environment. */
 export interface WorkspaceEnvironment {
   id: string;
   projectId: string;
@@ -56,7 +56,7 @@ export function isInspectableEnvironment(environment: WorkspaceEnvironment): boo
   );
 }
 
-/** Prefer BB's own project checkout; otherwise the newest non-worktree repo. */
+/** Prefer VesnALIA's own project checkout; otherwise the newest non-worktree repo. */
 export function pickCheckoutEnvironment(
   environments: readonly WorkspaceEnvironment[],
 ): WorkspaceEnvironment | null {

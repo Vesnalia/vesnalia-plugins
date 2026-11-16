@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
-import type { BbPluginApi, MessageDispatchHookContext, MessageDispatchHookDecision, PluginTurnFailedEvent } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, MessageDispatchHookContext, MessageDispatchHookDecision, PluginTurnFailedEvent } from "@vesnalia/plugin-sdk";
 import type { TaskId, TeamTask } from "./snapshot";
 import type { ExecutionFallbackSelection } from "./execution-policy";
 
@@ -49,13 +49,13 @@ export function confirmedQuota(f:PluginTurnFailedEvent):boolean {
 
 /** Technical accounting only. No task content, model calls, polling or retry scheduler. */
 export class ResourceControl {
-  private db:ReturnType<BbPluginApi["storage"]["database"]>;
+  private db:ReturnType<AliaPluginApi["storage"]["database"]>;
   private tail:Promise<unknown>=Promise.resolve();
   private enabledAt:number;
-  constructor(private bb:BbPluginApi,private resolve:(threadId:string)=>Promise<ResourceOwner|null>,private changed:(projectId:string)=>void,private now=Date.now) {
+  constructor(private alia:AliaPluginApi,private resolve:(threadId:string)=>Promise<ResourceOwner|null>,private changed:(projectId:string)=>void,private now=Date.now) {
     this.enabledAt=this.now();
-    this.db=bb.storage.database();
-    bb.storage.migrate(this.db,["CREATE TABLE IF NOT EXISTS team_resource_state (scope TEXT PRIMARY KEY, data TEXT NOT NULL)","CREATE TABLE IF NOT EXISTS team_resource_quota (id TEXT PRIMARY KEY, data TEXT NOT NULL)","CREATE TABLE IF NOT EXISTS team_resource_provider_pools (provider TEXT PRIMARY KEY, pools TEXT NOT NULL)"]);
+    this.db=alia.storage.database();
+    alia.storage.migrate(this.db,["CREATE TABLE IF NOT EXISTS team_resource_state (scope TEXT PRIMARY KEY, data TEXT NOT NULL)","CREATE TABLE IF NOT EXISTS team_resource_quota (id TEXT PRIMARY KEY, data TEXT NOT NULL)","CREATE TABLE IF NOT EXISTS team_resource_provider_pools (provider TEXT PRIMARY KEY, pools TEXT NOT NULL)"]);
   }
   private scope(owner:Pick<ResourceOwner,"projectId"|"team">){return JSON.stringify([owner.projectId,owner.team]);}
   private load(owner:Pick<ResourceOwner,"projectId"|"team">):ResourceState {
@@ -103,7 +103,7 @@ export class ResourceControl {
     const thread=state.threads[id];if(!thread)return;
     try {
       for(let page=0;page<20;page++){
-        const rows=await this.bb.sdk.threads.events.list({threadId:id,afterSeq:String(thread.cursor),order:"asc",limit:"100",types:TYPES});
+        const rows=await this.alia.sdk.threads.events.list({threadId:id,afterSeq:String(thread.cursor),order:"asc",limit:"100",types:TYPES});
         thread.eventsAvailable=true;
         for(const row of rows){
           if(row.seq<=thread.cursor)continue;
@@ -117,8 +117,8 @@ export class ResourceControl {
             } else if(row.type==="turn/started"){
               let active=this.attempt(state,thread);
               if(!active||terminal(active)){
-                // Explicit Send-now bypasses hooks in BB. Observe it, never claim it was vetoed.
-                const dto=await this.bb.sdk.threads.get({threadId:id});
+                // Explicit Send-now bypasses hooks in VesnALIA. Observe it, never claim it was vetoed.
+                const dto=await this.alia.sdk.threads.get({threadId:id});
                 active=this.append(state,thread.owner,id,`observed:${row.id}`,dto.providerId,null,"override/observed");
                 active.requestId=thread.requestId;active.atMs=row.createdAt;
               }
@@ -241,7 +241,7 @@ export class ResourceControl {
       s.seenFailures??=[];if(s.seenFailures.includes(f.requestId))return null;s.seenFailures.push(f.requestId); // Event replay must not cause another switch.
       const thread=s.threads[f.threadId]!;
       let a=s.attempts.find(a=>a.requestId===f.requestId)??this.attempt(s,thread);
-      if(!a){const dto=await this.bb.sdk.threads.get({threadId:f.threadId});a=this.append(s,owner,f.threadId,`failed:${f.requestId}`,dto.providerId,null,"observed failure");}
+      if(!a){const dto=await this.alia.sdk.threads.get({threadId:f.threadId});a=this.append(s,owner,f.threadId,`failed:${f.requestId}`,dto.providerId,null,"observed failure");}
       a.requestId=f.requestId;a.outcome="failed";a.endedAtMs=this.now();a.reason=safeText(f.errorInfo?.category??"unknown");
       s.holds[taskKey(owner.taskId,owner.role)]=a.reason;
       if(!this.quota(f)){this.save(owner,s);this.changed(owner.projectId);return null;}
@@ -252,7 +252,7 @@ export class ResourceControl {
         const quota:Quota={provider:a.provider,hostId:owner.hostId,pool:w.providerKey?digest(w.providerKey):null,until:finite(w.resetsAtMs)&&w.resetsAtMs>this.now()?w.resetsAtMs:null,requestId:f.requestId};
         s.quotas.push(quota);this.db.prepare("INSERT OR IGNORE INTO team_resource_quota(id,data) VALUES(?,?)").run(digest([f.threadId,f.requestId,quota.pool]),JSON.stringify(quota));
       }
-      // Unknown account scopes are conservatively pooled by host+BB provider.
+      // Unknown account scopes are conservatively pooled by host+VesnALIA provider.
       // Known providerKey hashes also exclude shared pools across providers.
       const selection=candidates.find(c=>!this.isBlocked(s,c.provider,owner.hostId));
       const reason=this.limit(s)??s.blocked??(owner.taskId===null?"No task is bound to this session":!selection?"No independent approved backup provider remains (shared quota, empty pool or unavailable catalog)":null);

@@ -14,7 +14,7 @@ describe("stage handoffs", () => {
     expect(prompt).toContain(skill);
     expect(prompt).toContain("treelanes_get_context");
     expect(prompt).toContain("execution.selectedSkills");
-    expect(prompt).toContain("bb skill show");
+    expect(prompt).toContain("alia skill show");
     expect(prompt).toContain("Keep the accepted API.");
     expect(prompt).toContain('"previousThreadId":"previous"');
     expect(prompt).toContain('"taskRevision":7');

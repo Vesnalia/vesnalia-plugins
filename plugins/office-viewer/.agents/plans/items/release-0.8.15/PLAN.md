@@ -11,7 +11,7 @@ Stay in 0.8.x (installed range `^0.8.1`).
 - Pinned comments on the canvas; Spec export (Markdown with annotated screenshots, element tree, interactions, notes) and React + Tailwind code export; «В чат: сверстай это».
 - Auto layout stacks (direction, gap, padding, alignment, hug/fill), constraints and per-device page views.
 - Text and colour styles with import from DESIGN.md; Sketch / Mockup fidelity switch; ⌘K command palette; layers search; minimap; history panel; first-run tour.
-- Publish a preview link served by BB; PDF, SVG and PNG exports; Excalidraw and SVG import.
+- Publish a preview link served by VesnALIA; PDF, SVG and PNG exports; Excalidraw and SVG import.
 - Version history with restore; faster canvas on large prototypes.
 
 Nothing else changes.

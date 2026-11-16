@@ -1,4 +1,4 @@
-Every bb thread starts from zero. A script one agent wrote and debugged yesterday gets written again today by another agent. This plugin keeps those scripts in a library the agents can search, so a later thread runs the saved program instead of writing it again.
+Every VesnALIA thread starts from zero. A script one agent wrote and debugged yesterday gets written again today by another agent. This plugin keeps those scripts in a library the agents can search, so a later thread runs the saved program instead of writing it again.
 
 ## What you get
 
@@ -10,12 +10,12 @@ Every bb thread starts from zero. A script one agent wrote and debugged yesterda
 
 ## How it works
 
-Programs live in an Extella account, in the scope of one Extella agent. Any bb project configured with the same agent id sees the same library. Programs run on your own computer through Extella Desktop, so they can read local files there. A run takes about 10 seconds end to end, so the gain is on work that takes longer to write and debug than that.
+Programs live in an Extella account, in the scope of one Extella agent. Any VesnALIA project configured with the same agent id sees the same library. Programs run on your own computer through Extella Desktop, so they can read local files there. A run takes about 10 seconds end to end, so the gain is on work that takes longer to write and debug than that.
 
 ## Requirements
 
 - An Extella account with an API key and an agent id from https://extella.ai
 - Extella Desktop running on the machine where programs should run
-- bb plugins run with full trust. This one talks only to the API address in its settings.
+- VesnALIA plugins run with full trust. This one talks only to the API address in its settings.
 
 Source and tests: https://github.com/AnvarBakiyev/bb-plugin-extella

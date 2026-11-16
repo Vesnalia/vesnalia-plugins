@@ -1,32 +1,24 @@
 {
-  "name": "bb-plugin-collapsible-navigation",
+  "name": "alia-plugin-collapsible-navigation",
   "version": "0.1.0",
-  "description": "Collapsible sidebar navigation for BB with upward fold and compact quick actions.",
+  "description": "Collapsible sidebar navigation for VesnALIA with upward fold and compact quick actions.",
   "type": "module",
   "license": "MIT",
   "author": "VanDalkvist",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/VanDalkvist/bb-plugin-collapsible-navigation.git"
-  },
-  "homepage": "https://github.com/VanDalkvist/bb-plugin-collapsible-navigation#readme",
-  "bugs": {
-    "url": "https://github.com/VanDalkvist/bb-plugin-collapsible-navigation/issues"
-  },
   "keywords": [
-    "bb-plugin",
-    "bb-marketplace",
+    "alia-plugin",
+    "alia-marketplace",
     "navigation",
     "sidebar",
     "collapsible"
   ],
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Collapsible Navigation",
-    "description": "Collapsible sidebar navigation for BB with upward fold and compact quick actions.",
+    "description": "Collapsible sidebar navigation for VesnALIA with upward fold and compact quick actions.",
     "branding": {
       "icon": "PanelTopClose"
     },
@@ -39,7 +31,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -59,5 +50,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/collapsible-navigation#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/collapsible-navigation"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

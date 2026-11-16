@@ -1,4 +1,4 @@
-// bb-plugin-crew — server entry: storage, service, RPC, CLI.
+// alia-plugin-crew — server entry: storage, service, RPC, CLI.
 //
 // Crew file, members, apply/stop with sync and journal.
 // E2: messages with delivery service, activity axes and "Needs you", agent
@@ -10,7 +10,7 @@
 // other plugins (§3.3, §4.5–§4.8).
 import { execFile } from "node:child_process";
 import { homedir } from "node:os";
-import { defineRpcContract, type BbPluginApi, type JsonValue } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi, type JsonValue } from "@vesnalia/plugin-sdk";
 import { parseLimitStatus } from "./lib/capacity";
 import { createTasksRpcPort } from "./lib/dependencies";
 import { z } from "zod";
@@ -39,7 +39,7 @@ const crewSchema = z.object({
   fileVersion: z.number(),
   status: z.enum(["stopped", "starting", "running", "degraded"]),
   updatedAt: z.number(),
-  /** The BB project's name, for the panel's project switch; null when BB did not report it. */
+  /** The VesnALIA project's name, for the panel's project switch; null when VesnALIA did not report it. */
   projectName: z.string().nullable().default(null),
 });
 const memberSchema = z.object({
@@ -151,7 +151,7 @@ const overviewSchema = z.object({
       merge: mergeSchema.nullable(),
       needsYou: z.number(),
       members: z.array(z.object({ key: z.string(), lead: z.boolean(), activity: z.string(), needsYou: z.array(z.string()) })),
-      /** BB tasks carrying the label `crew-<name>` (BBP-84): the factory tick never sets `task`, so this is their only link to the diagram. */
+      /** VesnALIA tasks carrying the label `crew-<name>` (BBP-84): the factory tick never sets `task`, so this is their only link to the diagram. */
       labelTasks: z.array(z.object({ key: z.string(), title: z.string(), status: z.string() })),
     }),
   ),
@@ -217,7 +217,7 @@ export const rpcContract = defineRpcContract({
     input: crewRef.extend({ archive: z.boolean().default(false) }),
     output: z.object({ crew: crewSchema.nullable() }),
   },
-  /** `bb crew delete`: refusals come back as `error` (with `blockers` when `force` would override them). */
+  /** `alia crew delete`: refusals come back as `error` (with `blockers` when `force` would override them). */
   deleteCrew: {
     input: crewRef.extend({ threads: z.enum(["archive", "delete", "keep"]).default("archive"), force: z.boolean().default(false) }),
     output: z.object({
@@ -489,13 +489,13 @@ function mergeDto(store: Store, merge: ReturnType<Store["getMerge"]> & object): 
   };
 }
 
-/** BB's thread limit through its CLI — the SDK has no read access (see lib/capacity.ts). Cached for a minute. */
-function createBbLimit(log: (text: string) => void): () => Promise<number | null> {
+/** VesnALIA's thread limit through its CLI — the SDK has no read access (see lib/capacity.ts). Cached for a minute. */
+function createAliaLimit(log: (text: string) => void): () => Promise<number | null> {
   let cached: { at: number; limit: number | null } | null = null;
   return async () => {
     if (cached && Date.now() - cached.at < 60_000) return cached.limit;
     const limit = await new Promise<number | null>((resolve) => {
-      execFile(process.env.BB_CLI ?? "bb", ["concurrency-limit", "status", "--json"], { timeout: 5_000 }, (error, stdout) => {
+      execFile(process.env.ALIA_CLI ?? "alia", ["concurrency-limit", "status", "--json"], { timeout: 5_000 }, (error, stdout) => {
         if (error) {
           log(`thread limit unreadable: ${error.message}`);
           resolve(null);
@@ -519,9 +519,9 @@ function debounced(fn: () => void, ms = 250): () => void {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [...MIGRATIONS]);
+export default async function plugin(alia: AliaPluginApi) {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [...MIGRATIONS]);
   const store = createStore(db);
   // Crew files from before provider/model moved onto the members: rewrite
   // them once, as a new file version, so they validate again.
@@ -530,10 +530,10 @@ export default async function plugin(bb: BbPluginApi) {
     const rewritten = file ? inlineExecution(file.yaml) : null;
     if (rewritten !== null) {
       store.saveCrewFile(crew.projectId, crew.name, rewritten);
-      bb.log.info(`crew ${crew.name}: moved provider/model onto each member (file v${file!.version + 1})`);
+      alia.log.info(`crew ${crew.name}: moved provider/model onto each member (file v${file!.version + 1})`);
     }
   }
-  const port = createSdkThreadPort(bb);
+  const port = createSdkThreadPort(alia);
 
   // The catalogue is read at most once a minute: a plan runs it once per
   // provider, and nothing about installed providers changes that fast.
@@ -541,26 +541,26 @@ export default async function plugin(bb: BbPluginApi) {
   async function catalog(): Promise<Catalog | null> {
     if (cached && Date.now() - cached.at < 60_000) return cached.catalog;
     try {
-      const all = await bb.sdk.providers.models({});
+      const all = await alia.sdk.providers.models({});
       const providers = new Map<string, Set<string>>();
       for (const provider of all.providers.filter((entry) => entry.available)) {
-        const own = await bb.sdk.providers.models({ providerId: provider.id });
+        const own = await alia.sdk.providers.models({ providerId: provider.id });
         providers.set(provider.id, new Set(own.models.flatMap((model) => [model.id, model.model])));
       }
       cached = { at: Date.now(), catalog: { providers } };
       return cached.catalog;
     } catch (error) {
-      bb.log.warn(`Model catalogue unreadable, check skipped: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`Model catalogue unreadable, check skipped: ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   }
 
-  // Skills per project: ~/.bb/skills, ~/.bb/skills-generated, ~/.claude/skills and the project's
-  // own .bb/skills and .claude/skills; read at most once a minute, same reasoning as the model catalogue.
+  // Skills per project: ~/.vesnalia/skills, ~/.vesnalia/skills-generated, ~/.claude/skills and the project's
+  // own .vesnalia/skills and .claude/skills; read at most once a minute, same reasoning as the model catalogue.
   const skillsCache = new Map<string, { at: number; catalog: SkillsCatalog }>();
   async function projectPath(projectId: string): Promise<string | null> {
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       const source = project.sources.find((entry) => entry.isDefault) ?? project.sources[0];
       return source?.path ?? null;
     } catch {
@@ -575,12 +575,12 @@ export default async function plugin(bb: BbPluginApi) {
       skillsCache.set(projectId, { at: Date.now(), catalog });
       return catalog;
     } catch (error) {
-      bb.log.warn(`Skills catalogue unreadable, check skipped: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`Skills catalogue unreadable, check skipped: ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   }
 
-  const publishActivity = debounced(() => bb.realtime.publish(ACTIVITY_CHANGED, { at: Date.now() }));
+  const publishActivity = debounced(() => alia.realtime.publish(ACTIVITY_CHANGED, { at: Date.now() }));
   const service = createCrewService({
     store,
     port,
@@ -588,10 +588,10 @@ export default async function plugin(bb: BbPluginApi) {
     skills,
     // `outputSchema` is required (d.ts:15920–15925); the port narrows the shapes itself.
     tasks: createTasksRpcPort((method, input) =>
-      bb.sdk.plugins.callRpc({ pluginId: "tasks", method, input: input as JsonValue, outputSchema: z.unknown() })),
+      alia.sdk.plugins.callRpc({ pluginId: "tasks", method, input: input as JsonValue, outputSchema: z.unknown() })),
     graphsRpc: createGraphsRpc((method, input) =>
-      bb.sdk.plugins.callRpc({ pluginId: "graph-studio", method, input: input as JsonValue, outputSchema: z.unknown() })),
-    bbLimit: createBbLimit((text) => bb.log.warn(text)),
+      alia.sdk.plugins.callRpc({ pluginId: "graph-studio", method, input: input as JsonValue, outputSchema: z.unknown() })),
+    aliaLimit: createAliaLimit((text) => alia.log.warn(text)),
     onActivity: publishActivity,
     onMessages: () => {
       messagesChanged();
@@ -599,7 +599,7 @@ export default async function plugin(bb: BbPluginApi) {
       void service.activity.refreshAll().catch(() => undefined);
     },
   });
-  const publish = () => bb.realtime.publish(CREWS_CHANGED, { at: Date.now() });
+  const publish = () => alia.realtime.publish(CREWS_CHANGED, { at: Date.now() });
 
   // Delivery and activity services share one wake-up: any thread event may
   // release a hold (there is no interaction.resolved event, d.ts:20627) and
@@ -624,7 +624,7 @@ export default async function plugin(bb: BbPluginApi) {
     poke();
   };
 
-  bb.background.service("delivery", {
+  alia.background.service("delivery", {
     async start(signal) {
       while (!signal.aborted) {
         try {
@@ -639,13 +639,13 @@ export default async function plugin(bb: BbPluginApi) {
           touched.clear();
           for (const threadId of threads) await service.activity.refreshThread(threadId);
         } catch (error) {
-          bb.log.warn(`delivery pass failed: ${error instanceof Error ? error.message : String(error)}`);
+          alia.log.warn(`delivery pass failed: ${error instanceof Error ? error.message : String(error)}`);
         }
         await sleep(10_000, signal);
       }
     },
   });
-  bb.background.service("activity", {
+  alia.background.service("activity", {
     async start(signal) {
       // Initial reconcile via threads.get, then a slow safety net for what
       // no event reports (the read marker behind "Unread result").
@@ -653,7 +653,7 @@ export default async function plugin(bb: BbPluginApi) {
         try {
           await service.activity.refreshAll();
         } catch (error) {
-          bb.log.warn(`activity reconcile failed: ${error instanceof Error ? error.message : String(error)}`);
+          alia.log.warn(`activity reconcile failed: ${error instanceof Error ? error.message : String(error)}`);
         }
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, 30_000);
@@ -667,28 +667,28 @@ export default async function plugin(bb: BbPluginApi) {
   });
   // Follow-ups and the dependency poll: every minute, idempotent (escalations
   // and satisfied dependencies are keyed, so a double run changes nothing).
-  bb.background.schedule("follow-ups", "* * * * *", async () => {
+  alia.background.schedule("follow-ups", "* * * * *", async () => {
     if ((await service.followUps()).length > 0) messagesChanged();
   });
-  bb.background.schedule("dependencies", "* * * * *", async () => {
+  alia.background.schedule("dependencies", "* * * * *", async () => {
     if ((await service.pollDependencies()) > 0) messagesChanged();
   });
 
   for (const event of ["thread.idle", "thread.active", "thread.failed", "thread.archived", "thread.unarchived", "interaction.pending"] as const) {
-    bb.events.on(event, ({ thread }) => {
+    alia.events.on(event, ({ thread }) => {
       if (!store.memberByThread(thread.id)) return;
       touched.add(thread.id);
       poke();
     });
   }
-  bb.events.on("message.dispatched", ({ entry }) => {
+  alia.events.on("message.dispatched", ({ entry }) => {
     if (store.memberByThread(entry.threadId)) poke();
   });
 
   // The confirmation form (§4.6 `slots.pendingInteraction`, renderer
   // "crew-confirm" in app.tsx) in the calling lead's thread.
   const confirm: Confirm = async (threadId, request) => {
-    const result = await bb.ui.requestInput({
+    const result = await alia.ui.requestInput({
       threadId,
       rendererId: "crew-confirm",
       title: request.title,
@@ -698,7 +698,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
     return result.outcome === "submitted" && (result.value as { confirmed?: unknown })?.confirmed === true;
   };
-  registerAgentTools(bb, service, { confirm });
+  registerAgentTools(alia, service, { confirm });
   const dto = (crew: { id: string; projectId: string; name: string; fileVersion: number; status: CrewDto["status"]; updatedAt: number }) => ({
     id: crew.id,
     projectId: crew.projectId,
@@ -739,13 +739,13 @@ export default async function plugin(bb: BbPluginApi) {
     }, (error) => ({ results: [], problems: [], error }));
   void CONTRACT_VERSION;
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     listCrews: async ({ projectId }) => {
       const crews = store.listCrews(projectId ?? undefined).map(dto);
       // Names only decorate the switch: a failing lookup must not hide the crews.
       const names = new Map<string, string>();
       try {
-        for (const project of await bb.sdk.projects.list()) names.set(project.id, project.name);
+        for (const project of await alia.sdk.projects.list()) names.set(project.id, project.name);
       } catch {
         // fall through with ids
       }
@@ -759,7 +759,7 @@ export default async function plugin(bb: BbPluginApi) {
       // thread side panel) showed the project id in its title instead of its name.
       let projectName: string | null = null;
       try {
-        projectName = (await bb.sdk.projects.get({ projectId })).name;
+        projectName = (await alia.sdk.projects.get({ projectId })).name;
       } catch {
         // fall through with no name — decoration only
       }
@@ -1070,12 +1070,12 @@ export default async function plugin(bb: BbPluginApi) {
   /** `--project` takes an id or a name; otherwise the calling thread's project. */
   async function resolveProject(ref: string | null, ctx: CliContext): Promise<string | null> {
     if (!ref) return ctx.projectId ?? null;
-    const projects = await bb.sdk.projects.list();
+    const projects = await alia.sdk.projects.list();
     const match = projects.find((project) => project.id === ref) ?? projects.find((project) => project.name === ref);
     return match?.id ?? null;
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "crew",
     summary: "Build and run a persistent agent team (crew) from a crew file",
     commands: CLI_COMMANDS.map((command) => ({ ...command })),
@@ -1093,5 +1093,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("crew loaded");
+  alia.log.info("crew loaded");
 }

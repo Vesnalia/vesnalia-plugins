@@ -17,7 +17,7 @@ const block = (key: string) => {
   h.store.setTicketState(ticket.id, "blocked", "thr_w", { reason: "check crashes" });
   h.store.updateTicket(ticket.id, { blocked_reason: "check crashes" });
 };
-const proposeV2 = () => h.projects.propose({ toml: specToml((doc) => (doc.checks.commands = ["LANG=C.UTF-8 npm test"])), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+const proposeV2 = () => h.projects.propose({ toml: specToml((doc) => (doc.checks.commands = ["LANG=C.UTF-8 npm test"])), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
 
 describe("the planner's asks", () => {
   it("records the steps, marks each done from the events that follow, and closes once every step is done", async () => {
@@ -109,7 +109,7 @@ describe("the planner's asks", () => {
   });
 
   it("keeps an ask written before live existed valid, and refuses live on a draft or a project without a rollout", async () => {
-    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     expect(() => ask([{ action: "live", key: "CSV-1", text: "Mark CSV-1 live." }])).toThrow("steps[0]: csv is draft, so nothing of it goes live.");
     await h.projects.approve("csv", "human");
     expect(() => ask([{ action: "live", key: "CSV-1", text: "Mark CSV-1 live." }])).toThrow("steps[0]: csv has no rollout, so nothing is marked live");

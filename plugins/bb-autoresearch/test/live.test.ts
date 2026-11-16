@@ -379,7 +379,7 @@ describe("live recorder and view (fake host)", () => {
     expect(port.published.some((p) => p.channel === "study-changed")).toBe(true);
   });
 
-  it("reads tool items when BB announces new thread events, once per new sequence, at most 100 per page", async () => {
+  it("reads tool items when VesnALIA announces new thread events, once per new sequence, at most 100 per page", async () => {
     await running(["Idea A"]);
     for (let i = 0; i < 130; i++) port.addActivity("thr_w1", i < 129 ? "fileRead" : "fileChange", { at: clock.t + i });
     engine.onThreadEvents("thr_w1", 500);

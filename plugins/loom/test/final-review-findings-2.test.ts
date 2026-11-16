@@ -22,8 +22,8 @@ const ticket = () => ticketOf(h, "CSV-1");
 const posts = () => h.store.posts(ticket().id);
 const dataOf = (outcome: string) => posts().filter((post) => (JSON.parse(post.data_json) as { outcome?: string }).outcome === outcome).map((post) => ({ post, data: JSON.parse(post.data_json) as Record<string, any> }));
 const merges = () => h.host.callsTo("prMerge");
-const spawns = () => (h.bb.callsTo("spawnThread") as Array<[SpawnArgs]>).map(([args]) => args).filter((args) => args.metadata.role === "final-review");
-const reviewer = () => h.bb.threads.get(String(JSON.parse(h.store.ticketEvents(ticket().id, [FINAL_BOUND]).at(-1)!.data_json).thread))!;
+const spawns = () => (h.alia.callsTo("spawnThread") as Array<[SpawnArgs]>).map(([args]) => args).filter((args) => args.metadata.role === "final-review");
+const reviewer = () => h.alia.threads.get(String(JSON.parse(h.store.ticketEvents(ticket().id, [FINAL_BOUND]).at(-1)!.data_json).thread))!;
 const poll = async (ctx: EngineCtx = h.ctx, ms = 5 * 60_000) => {
   h.clock.advance(ms);
   await pollPullRequests(ctx, ctx.store.projectBySlug("csv")!);
@@ -49,10 +49,10 @@ function around(method: string, fn: (input: any, real: () => Promise<unknown>) =
 }
 
 describe("finding 1: the reviewer never starts in the checkout", () => {
-  it("holds with a post when bb refuses the scratch directory, and spawns nothing in the checkout", async () => {
+  it("holds with a post when VesnALIA refuses the scratch directory, and spawns nothing in the checkout", async () => {
     await openPr(FINAL());
     approved();
-    h.bb.spawnError = (args) => (args.metadata.role === "final-review" ? new SpawnRefusedError(400, "bb refused the workspace path") : null);
+    h.alia.spawnError = (args) => (args.metadata.role === "final-review" ? new SpawnRefusedError(400, "alia refused the workspace path") : null);
     await poll();
     expect(spawns().map((args) => args.workspace!.path).filter((path) => path === "/repo")).toEqual([]);
     const held = dataOf("final_review_held");
@@ -128,7 +128,7 @@ describe("finding 4: a pass made just before a pause or an off still has its thr
     stop();
     h.clock.advance(60 * 60_000);
     await maintainFinalReviews(h.ctx);
-    expect(h.bb.callsTo("stop").map(([id]) => id)).toContain(reviewer().id);
+    expect(h.alia.callsTo("stop").map(([id]) => id)).toContain(reviewer().id);
     expect(reviewer().archivedAt).not.toBeNull();
     expect(h.host.scratch.size).toBe(0);
     expect(finalState(h.store, ticket().id, ticket().pushed_sha).passRun).not.toBeNull();

@@ -3,7 +3,7 @@
  * thread, and Close, which archives that thread. A review run that ended with files changed in the
  * workspace says which.
  */
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ export function runTitle(run: Run, threads: readonly ReviewThread[]): string {
 
 function RunRow({ run, threads, onClosed }: { run: Run; threads: readonly ReviewThread[]; onClosed(run: Run): void }) {
   const rpc = useRpc<RpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [closing, setClosing] = useState(false);
   const changed = run.changedFiles ?? [];
 

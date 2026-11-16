@@ -1,13 +1,13 @@
 # Verification
 
-Date: 2026-11-01. BB 0.48.1, Plugin SDK 0.6.104, Node 26.0.0. Audited BB source: `e003e9510cbfd3bb6c26a28630b46ffb1c242a44`.
+Date: 2026-11-01. VesnALIA 0.48.1, Plugin SDK 0.6.104, Node 26.0.0. Audited VesnALIA source: `e003e9510cbfd3bb6c26a28630b46ffb1c242a44`.
 
 ## Automated checks
 
 - `npm run typecheck`: passed.
 - `npm test`: 48 tests passed across four files.
 - `npm run build`: passed; generated server/frontend bundles and SDK metadata.
-- `bb plugin types --check`: host and package pin both 0.6.104.
+- `alia plugin types --check`: host and package pin both 0.6.104.
 - Dependency installation/audit: zero reported vulnerabilities after updating the test runner.
 - Package inventory: source, generated bundles, README, license, skill and this verification record; research notes excluded.
 
@@ -15,7 +15,7 @@ The React tests use actual React DOM, exercising committed-branch lookup after D
 
 ## Real-host checks
 
-The plugin was installed from the project directory and exercised against the running BB server through its actual frontend in a local headless Chrome session on the Mac. Terminal rendering used bb's own xterm and native daemon-backed shell sessions. This was not a mocked terminal or a custom terminal renderer.
+The plugin was installed from the project directory and exercised against the running VesnALIA server through its actual frontend in a local headless Chrome session on the Mac. Terminal rendering used VesnALIA's own xterm and native daemon-backed shell sessions. This was not a mocked terminal or a custom terminal renderer.
 
 The UI driver sent trusted browser keyboard/mouse input. It used an external, temporary copy of the metadata adapter for assertions, read only known test draft/attachment content, and issued test commands only into test-created shells. Test-only scripts are local scratch material and are not part of the production plugin. The plugin itself never sends shell input or intercepts requests.
 
@@ -53,7 +53,7 @@ Manual close operations were test setup/cleanup on test-created shells. Producti
 - Two chat panes/shared panel were tested; secondary-panel split groups, same-thread duplicate chat panes, and mouse tab reordering still require native acceptance. The implementation uses the public flat order as designed; current-order/closed-tab fallback has unit coverage.
 - Caret restoration, mentions, and all attachment kinds have not been exhaustively checked. The implementation only calls the existing focus operation and never rewrites draft contents.
 - New thread has no toggle command in this implementation. The asynchronous context-change test used New thread only as the destination that must retain focus.
-- Private React/bb structures remain a maintenance dependency, even though the tested host resolved them correctly. The bb application version is unrestricted; SDK compatibility uses a range and runtime failures are reported. Structural validation cannot prove that unchanged method signatures retain their semantics.
+- Private React/alia structures remain a maintenance dependency, even though the tested host resolved them correctly. The VesnALIA application version is unrestricted; SDK compatibility uses a range and runtime failures are reported. Structural validation cannot prove that unchanged method signatures retain their semantics.
 - Additional Grok review was attempted under the project's standing permission, but the installed CLI was not signed in; no review result is claimed.
 
 The original public-focus-API blocker is bypassed experimentally by the implemented private adapter. Native desktop acceptance and the remaining cases above prevent claiming full marketplace release readiness. No marketplace publication or remote push was performed.
@@ -66,8 +66,8 @@ The actual capture listener checks the effective host shortcut, including keys w
 
 ## Runtime compatibility instead of an application-version pin
 
-The bb engine equality constraint was removed. The runtime SDK engine is `>=0.6.104 <1`; the build dependency remains reproducibly pinned. Failure-injection regressions cover missing keyboard, panel/composer contracts, changed terminal input markup, malformed panel tabs, bindings and create results. Missing private discovery no longer hides the palette command in thread contexts or silently swallows a shortcut failure. A diagnostic code identifies the failed component, automatic repeated reports are deduplicated, and explicit retries can show the error again.
+The VesnALIA engine equality constraint was removed. The runtime SDK engine is `>=0.6.104 <1`; the build dependency remains reproducibly pinned. Failure-injection regressions cover missing keyboard, panel/composer contracts, changed terminal input markup, malformed panel tabs, bindings and create results. Missing private discovery no longer hides the palette command in thread contexts or silently swallows a shortcut failure. A diagnostic code identifies the failed component, automatic repeated reports are deduplicated, and explicit retries can show the error again.
 
-A real-frontend fault-injection check temporarily made the native panel's `close` method unavailable in the isolated test browser. Ctrl+backtick displayed `TT_PANEL` identifying the missing `close` method and suggesting a plugin update. Terminal IDs and panel visibility were unchanged. The method was restored in a `finally` block; the normal terminal/composer round trip then passed. Installed bb was still 0.48.1; no newer app release is claimed tested.
+A real-frontend fault-injection check temporarily made the native panel's `close` method unavailable in the isolated test browser. Ctrl+backtick displayed `TT_PANEL` identifying the missing `close` method and suggesting a plugin update. Terminal IDs and panel visibility were unchanged. The method was restored in a `finally` block; the normal terminal/composer round trip then passed. Installed VesnALIA was still 0.48.1; no newer app release is claimed tested.
 
 The compatibility review added regressions for an unrelated nested `capabilities.panel` and for focus in an ordinary textarea. Surface discovery now follows the primary composer's committed navigation-context owner before validating its methods. Terminal-like classification requires native terminal ownership or xterm markup. Both regressions failed before the corrections and pass afterward. The real-frontend missing-panel-method diagnostic and normal toggle after restoration were rerun successfully with the new ownership resolver.

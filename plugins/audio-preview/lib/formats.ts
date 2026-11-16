@@ -37,7 +37,7 @@ const MIME_BY_EXT: Record<AudioExtension, string> = {
   caf: "audio/x-caf",
 };
 
-/** BB's createPreview rejects ttlMs above one hour. */
+/** VesnALIA's createPreview rejects ttlMs above one hour. */
 export const PREVIEW_TTL_MS = 60 * 60 * 1000;
 
 export function extensionOf(path: string): string {

@@ -13,7 +13,7 @@ const PROXMOX_PREFIX = "BC:24:11";
 
 export function heldCopyTags(installId: string, label: HeldCopyLabel, takenAt: number, template: number | null): string[] {
   return [
-    "bb-box",
+    "alia-box",
     `${INSTALL}${installId}`,
     HELD_COPY,
     `box.${label.box}`,
@@ -31,11 +31,11 @@ export function withKeptTag(tags: readonly string[], kept: string | null): strin
 }
 
 export function copyName(vmid: number): string {
-  return `bb-box-copy-${vmid}`;
+  return `alia-box-copy-${vmid}`;
 }
 
 export function heldCopyDescription(installId: string, label: HeldCopyLabel): string {
-  return `bb-box install ${installId} box ${label.box} held copy of snapshot ${label.snapshot}${label.kept ? ` kept ${label.kept}` : ""}`;
+  return `alia-box install ${installId} box ${label.box} held copy of snapshot ${label.snapshot}${label.kept ? ` kept ${label.kept}` : ""}`;
 }
 
 export interface CopyTags {

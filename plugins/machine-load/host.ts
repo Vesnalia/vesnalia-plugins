@@ -1,4 +1,4 @@
-// Runs inside the bb daemon on every enrolled machine. Collects a hardware
+// Runs inside the VesnALIA daemon on every enrolled machine. Collects a hardware
 // snapshot without root: Linux via /proc and /sys, macOS via vm_stat, sysctl,
 // netstat and ioreg; GPUs via nvidia-smi, AMD sysfs or Apple's IOAccelerator.
 // Rates (CPU %, network, disk IO) are deltas against the previous call.
@@ -6,7 +6,7 @@ import { execFile } from "node:child_process";
 import { readFile, readdir, readlink, realpath, statfs } from "node:fs/promises";
 import { basename } from "node:path";
 import os from "node:os";
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { hostContract, type GpuSample, type MachineSample } from "./contract.js";
 
 const platform = os.platform();

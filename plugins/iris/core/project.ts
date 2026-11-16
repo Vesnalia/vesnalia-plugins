@@ -1,5 +1,5 @@
 // What the live project components (Changes, Commits, PullRequest,
-// Environments, Threads) read from bb, and the pure rules behind them: which
+// Environments, Threads) read from VesnALIA, and the pure rules behind them: which
 // diff a target names, which paths a filter keeps, how many commits to show.
 // The server fills these shapes (project.ts at the root); the views draw them.
 
@@ -145,9 +145,9 @@ export interface ChangedFile {
   deletions: number;
   binary: boolean;
   untracked: boolean;
-  /** Too large for bb to diff. */
+  /** Too large for VesnALIA to diff. */
   tooLarge: boolean;
-  /** bb's revision for this file, used to ask for its patch. */
+  /** VesnALIA's revision for this file, used to ask for its patch. */
   revision: string;
 }
 
@@ -164,7 +164,7 @@ export interface ChangesScope {
   base: string | null;
   /** On the base branch itself the branch's work is its uncommitted work. */
   onBase: boolean;
-  /** bb found no merge base (the base branch isn't fetched): only uncommitted work is shown. */
+  /** VesnALIA found no merge base (the base branch isn't fetched): only uncommitted work is shown. */
   noBase: boolean;
   sha: string | null;
   subject: string | null;
@@ -172,15 +172,15 @@ export interface ChangesScope {
 
 export interface ChangesData {
   ok: true;
-  /** The bb environment read, so the card can follow its changes. */
+  /** The VesnALIA environment read, so the card can follow its changes. */
   environmentId: string;
   scope: ChangesScope;
   files: ChangedFile[];
   /** Files before the paths filter. */
   totalFiles: number;
-  /** bb cut the list short. */
+  /** VesnALIA cut the list short. */
   truncated: boolean;
-  /** Patches bb sent with the list (small files), by path. */
+  /** Patches VesnALIA sent with the list (small files), by path. */
   patches: Record<string, FilePatch>;
 }
 
@@ -209,12 +209,12 @@ export interface CommitInfo {
 
 export interface CommitsData {
   ok: true;
-  /** The bb environment read, so the card can follow its changes. */
+  /** The VesnALIA environment read, so the card can follow its changes. */
   environmentId: string;
   branch: string | null;
   base: string | null;
   onBase: boolean;
-  /** bb found no merge base, so the branch's own commits are unknown. */
+  /** VesnALIA found no merge base, so the branch's own commits are unknown. */
   noBase: boolean;
   ahead: number | null;
   behind: number | null;
@@ -225,7 +225,7 @@ export interface CommitsData {
 
 export type CommitsResult = CommitsData | ProjectFailure;
 
-/** bb's authoredAt can be seconds or milliseconds; Iris uses milliseconds. */
+/** VesnALIA's authoredAt can be seconds or milliseconds; Iris uses milliseconds. */
 export function epochMs(value: number): number {
   return value > 0 && value < 1e11 ? value * 1000 : value;
 }
@@ -253,18 +253,18 @@ export interface PullRequestInfo {
 
 export interface PullRequestData {
   ok: true;
-  /** The bb environment read, so the card can follow its pull request. */
+  /** The VesnALIA environment read, so the card can follow its pull request. */
   environmentId: string;
   branch: string | null;
   /** null when the branch has no pull request. */
   pullRequest: PullRequestInfo | null;
-  /** Why bb couldn't ask GitHub, when it couldn't. */
+  /** Why VesnALIA couldn't ask GitHub, when it couldn't. */
   unavailable: string | null;
 }
 
 export type PullRequestResult = PullRequestData | ProjectFailure;
 
-/** bb's GitHub PR Status row as Iris shows it. */
+/** VesnALIA's GitHub PR Status row as Iris shows it. */
 export function pullRequestInfo(pr: {
   number: number;
   title: string;
@@ -322,7 +322,7 @@ export interface ThreadInfo {
   needsInput: boolean;
   archived: boolean;
   branch: string | null;
-  /** The bb environment it runs in, so a card can follow its branch. */
+  /** The VesnALIA environment it runs in, so a card can follow its branch. */
   environmentId?: string | null;
   providerId: string;
   /** Background agents, commands and workflows running in it. */

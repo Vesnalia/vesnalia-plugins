@@ -4,8 +4,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { MAX_PRESETS, effortLabel, isActivePreset, parsePreset, type ModelPreset } from "../lib/presets";
-import type { ExperimentalProviderModelPickerValue } from "@get-bb/plugin-sdk";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import type { ExperimentalProviderModelPickerValue } from "@vesnalia/plugin-sdk";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { cn } from "../lib/utils";
 
 type ReasoningLevel = ExperimentalProviderModelPickerValue["reasoningLevel"];

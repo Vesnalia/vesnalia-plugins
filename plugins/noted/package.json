@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-noted",
+  "name": "alia-plugin-noted",
   "version": "0.2.0",
   "type": "module",
   "engines": {
     "node": ">=22.12.0",
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.29"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.29"
   },
-  "bb": {
+  "alia": {
     "name": "Noted",
     "description": "Review and annotate HTML and Markdown artifacts in the side panel, then send feedback to the thread. Built on Lavish.",
     "branding": {
@@ -30,7 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.29",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -63,11 +62,11 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
-  "description": "Review and annotate HTML and Markdown artifacts inside bb, then send feedback to the thread. Built on Lavish.",
+  "description": "Review and annotate HTML and Markdown artifacts inside VesnALIA, then send feedback to the thread. Built on Lavish.",
   "license": "MIT",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "getbb",
     "agent-ide",
     "artifacts",
@@ -76,18 +75,10 @@
     "review",
     "lavish"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mpiv-ai/noted.git"
-  },
-  "bugs": {
-    "url": "https://github.com/mpiv-ai/noted/issues"
-  },
-  "homepage": "https://github.com/mpiv-ai/noted#readme",
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "bb plugin build .",
+    "build": "alia plugin build .",
     "e2e": "node e2e/review.mjs",
     "check": "npm run typecheck && npm test && npm run build"
   },
@@ -107,5 +98,22 @@
     "THIRD_PARTY_NOTICES.md",
     "SECURITY.md",
     "CONTRIBUTING.md"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/noted#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/noted"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

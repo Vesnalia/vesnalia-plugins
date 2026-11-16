@@ -28,13 +28,13 @@ interface ProblemShape {
 }
 
 const PROBLEMS: readonly ProblemShape[] = [
-  { problem: "dns-timeout", matches: /Resolving timed out|EAI_AGAIN|Temporary failure in name resolution/i, words: "This box could not look up BB's address in time" },
-  { problem: "dns", matches: /curl: \(6\)|Could not resolve host|ENOTFOUND|Name or service not known/i, words: "This box's DNS lookup found no address for BB" },
-  { problem: "refused", matches: /Connection refused|ECONNREFUSED/i, words: "This box found BB's address, but nothing there accepted the connection: it was refused" },
-  { problem: "unroutable", matches: /No route to host|Network is unreachable|EHOSTUNREACH|ENETUNREACH|Couldn't connect to server/i, words: "This box has no network route to BB's address" },
-  { problem: "reset", matches: /Connection reset|ECONNRESET|Empty reply from server|Recv failure|curl: \((52|56)\)/i, words: "The connection from this box to BB was cut off before BB answered" },
-  { problem: "timeout", matches: /curl: \(28\)|Connection timed out|Timeout was reached|Operation timed out|ETIMEDOUT|curl: \(7\)/i, words: "This box could not reach BB's address in time: the connection timed out" },
-  { problem: "slow", matches: /BB did not finish adding the box as a machine within/i, words: "" },
+  { problem: "dns-timeout", matches: /Resolving timed out|EAI_AGAIN|Temporary failure in name resolution/i, words: "This box could not look up VesnALIA's address in time" },
+  { problem: "dns", matches: /curl: \(6\)|Could not resolve host|ENOTFOUND|Name or service not known/i, words: "This box's DNS lookup found no address for VesnALIA" },
+  { problem: "refused", matches: /Connection refused|ECONNREFUSED/i, words: "This box found VesnALIA's address, but nothing there accepted the connection: it was refused" },
+  { problem: "unroutable", matches: /No route to host|Network is unreachable|EHOSTUNREACH|ENETUNREACH|Couldn't connect to server/i, words: "This box has no network route to VesnALIA's address" },
+  { problem: "reset", matches: /Connection reset|ECONNRESET|Empty reply from server|Recv failure|curl: \((52|56)\)/i, words: "The connection from this box to VesnALIA was cut off before VesnALIA answered" },
+  { problem: "timeout", matches: /curl: \(28\)|Connection timed out|Timeout was reached|Operation timed out|ETIMEDOUT|curl: \(7\)/i, words: "This box could not reach VesnALIA's address in time: the connection timed out" },
+  { problem: "slow", matches: /ALIA did not finish adding the box as a machine within/i, words: "" },
 ];
 
 const PROBLEM_LINE = /curl: \(\d+\)[^\n]*/;
@@ -66,7 +66,7 @@ export function plainJoinFailure(text: string): string {
   return joinProblem(text)?.sentence ?? text;
 }
 
-export function reachesBb(problem: JoinProblem): boolean {
+export function reachesAlia(problem: JoinProblem): boolean {
   return problem !== "slow";
 }
 
@@ -83,7 +83,7 @@ function firstTry(box: BoxRecord): boolean {
 }
 
 function cannotReach(box: BoxRecord): boolean {
-  return !!box.joinTries?.problem && reachesBb(box.joinTries.problem) && (box.enrol.state === "failed" || box.enrol.state === "enrolling");
+  return !!box.joinTries?.problem && reachesAlia(box.joinTries.problem) && (box.enrol.state === "failed" || box.enrol.state === "enrolling");
 }
 
 export function backendVerdict(box: BoxRecord, all: readonly BoxRecord[]): BackendVerdict {
@@ -100,7 +100,7 @@ export interface NextTry {
 }
 
 export function nextTry(input: { readonly failed: number; readonly problem: JoinProblem; readonly verdict: BackendVerdict; readonly now: number; readonly since: number; readonly waits?: readonly number[] }): NextTry {
-  const everyBox = reachesBb(input.problem) && input.verdict === "none can reach";
+  const everyBox = reachesAlia(input.problem) && input.verdict === "none can reach";
   const gaveUp = input.failed >= JOIN_TRIES || (everyBox && clearlySetup(input.problem));
   const waits = input.waits ?? JOIN_WAITS_MS;
   const wait = gaveUp ? (waits.at(-1) ?? JOIN_EVERY_MS) : (waits[input.failed - 1] ?? waits.at(-1) ?? JOIN_EVERY_MS);
@@ -115,13 +115,13 @@ function tries(count: number): string {
 export function gaveUpWords(input: { readonly sentence: string; readonly failed: number; readonly verdict: BackendVerdict; readonly backendLabel: string; readonly setup: boolean; readonly stopped: boolean }): string {
   const after = `It failed ${tries(input.failed)}.`;
   const blame = input.setup
-    ? `No box on ${input.backendLabel} can reach BB, so BB's address is likely one its boxes cannot reach: turn the tailnet on in BB Box's settings, or give BB a URL its boxes can reach (docs/guide/tailnet.md).`
+    ? `No box on ${input.backendLabel} can reach VesnALIA, so VesnALIA's address is likely one its boxes cannot reach: turn the tailnet on in VesnALIA Box's settings, or give VesnALIA a URL its boxes can reach (docs/guide/tailnet.md).`
     : input.verdict === "others joined"
-      ? `Other boxes on ${input.backendLabel} joined BB, so BB's setup is fine: the fault is in this box's network.`
+      ? `Other boxes on ${input.backendLabel} joined VesnALIA, so VesnALIA's setup is fine: the fault is in this box's network.`
       : "";
   const next = input.stopped
-    ? `${PRODUCT} gave up after ${JOIN_GIVE_UP_MS / 3_600_000} hours of tries; Join BB again starts a new round.`
-    : `${PRODUCT} tries again every ${JOIN_EVERY_MS / 60_000} minutes for up to ${JOIN_GIVE_UP_MS / 3_600_000} hours; Join BB again tries at once.`;
+    ? `${PRODUCT} gave up after ${JOIN_GIVE_UP_MS / 3_600_000} hours of tries; Join VesnALIA again starts a new round.`
+    : `${PRODUCT} tries again every ${JOIN_EVERY_MS / 60_000} minutes for up to ${JOIN_GIVE_UP_MS / 3_600_000} hours; Join VesnALIA again tries at once.`;
   return [input.sentence, after, blame, next].filter(Boolean).join(" ");
 }
 
@@ -150,10 +150,10 @@ export function waitWords(ms: number): string {
 export function joiningWords(tries: Pick<JoinTries, "failed" | "next" | "words">, now: number): string {
   const step =
     tries.next === null
-      ? `joining BB, ${tryWords(tries.failed)}`
+      ? `joining VesnALIA, ${tryWords(tries.failed)}`
       : tries.next <= now
-        ? `joining BB: ${tryWords(tries.failed)} starts now`
-        : `joining BB: ${tryWords(tries.failed)} starts in ${waitWords(tries.next - now)}`;
+        ? `joining VesnALIA: ${tryWords(tries.failed)} starts now`
+        : `joining VesnALIA: ${tryWords(tries.failed)} starts in ${waitWords(tries.next - now)}`;
   return tries.failed > 0 && tries.words ? `${step}. Try ${tries.failed} failed: ${tries.words.replace(/\.$/, "")}` : step;
 }
 
@@ -161,13 +161,13 @@ export function joinChecks(boxes: readonly BoxRecord[], now: number): DoctorChec
   return boxes.flatMap((box): DoctorCheck[] => {
     const tries = box.joinTries;
     if (box.state !== "ready" || !tries || (box.enrol.state !== "enrolling" && box.enrol.state !== "failed")) return [];
-    const name = `${box.name} joining BB`;
+    const name = `${box.name} joining VesnALIA`;
     if (box.enrol.state === "enrolling") {
-      return [{ id: `join.${box.name}`, name, status: "warn", detail: `Box ${box.name} on ${box.backendLabel} is ${joiningWords(tries, now)}.`, fix: `${PRODUCT} tries again by itself. Join BB again on the box's page, or bb box enrol, tries at once.` }];
+      return [{ id: `join.${box.name}`, name, status: "warn", detail: `Box ${box.name} on ${box.backendLabel} is ${joiningWords(tries, now)}.`, fix: `${PRODUCT} tries again by itself. Join VesnALIA again on the box's page, or VesnALIA box enrol, tries at once.` }];
     }
     return [
       tries.setup
-        ? { id: `join.${box.name}`, name, status: "fail", detail: box.enrol.error ?? tries.words, fix: "Turn the tailnet on in BB Box's settings, or give BB a URL its boxes can reach. Then Join BB again on the box's page tries at once." }
+        ? { id: `join.${box.name}`, name, status: "fail", detail: box.enrol.error ?? tries.words, fix: "Turn the tailnet on in VesnALIA Box's settings, or give VesnALIA a URL its boxes can reach. Then Join VesnALIA again on the box's page tries at once." }
         : { id: `join.${box.name}`, name, status: "warn", detail: box.enrol.error ?? tries.words, fix: "Look at the box's network and DNS, or release it and make another." },
     ];
   });

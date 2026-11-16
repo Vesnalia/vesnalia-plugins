@@ -1,16 +1,16 @@
 /**
- * `bb firstmate-crew` — how the first mate dispatches a crewmate (`crew spawn`) and how anyone reaches the
+ * `alia firstmate-crew` — how the first mate dispatches a crewmate (`crew spawn`) and how anyone reaches the
  * first mate (`tell`).
  *
  * The plugin never dispatches crew itself: the first mate does, from its own thread, through this
  * command, so a crewmate is always a child of the first mate and always carries the crew metadata the
  * board finds it by. Built with `defineCli`, so argv parsing, `--help` and usage errors are the SDK's;
- * what is left here are the refusals that need bb (who is calling, which project, what file).
+ * what is left here are the refusals that need VesnALIA (who is calling, which project, what file).
  */
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 
-import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, defineCli, type PluginCliRegistration } from "@vesnalia/plugin-sdk";
 
 import { CREW_METADATA } from "../shared/types";
 import { askMate, resolveMate, type MateDeps } from "./mate";
@@ -52,12 +52,12 @@ function titleOf(explicit: string | undefined, task: string, brief: string): str
 
 /**
  * The brief, read from `promptFile` relative to the caller's working directory. With no working
- * directory from bb, a relative path would resolve against the bb server's own, so only an absolute one
+ * directory from VesnALIA, a relative path would resolve against the VesnALIA server's own, so only an absolute one
  * is taken.
  */
 async function readBrief(promptFile: string, cwd: string | undefined): Promise<string> {
   if (cwd === undefined && !isAbsolute(promptFile)) {
-    throw new PluginCliError("--prompt-file must be an absolute path when bb gives no working directory.", { code: "prompt_file_relative" });
+    throw new PluginCliError("--prompt-file must be an absolute path when VesnALIA gives no working directory.", { code: "prompt_file_relative" });
   }
   const path = cwd === undefined ? promptFile : resolve(cwd, promptFile);
   let brief: string;
@@ -73,13 +73,13 @@ async function readBrief(promptFile: string, cwd: string | undefined): Promise<s
 
 /**
  * The longest message `tell` takes, in UTF-8 bytes. With the newline the skill's heredoc adds, its base64
- * still fits the one stdin line of at most 16 KiB that bb's `--message-base64-stdin` reads.
+ * still fits the one stdin line of at most 16 KiB that VesnALIA's `--message-base64-stdin` reads.
  */
 export const MESSAGE_MAX_BYTES = 12_000;
 
 /**
- * The message from `--message-base64`, which the `/fm` skill fills through bb's `--message-base64-stdin`:
- * bb's CLI reads one line from stdin on the caller's machine, so the text crosses machines and no shell
+ * The message from `--message-base64`, which the `/fm` skill fills through VesnALIA's `--message-base64-stdin`:
+ * VesnALIA's CLI reads one line from stdin on the caller's machine, so the text crosses machines and no shell
  * argument or server-side file ever holds it. Strict base64 of valid UTF-8. A heredoc always ends its text
  * with a newline, so exactly one trailing "\n" is dropped — a request that itself ended with one keeps
  * it — and the size limit applies after that. Everything else, a leading byte-order mark included, is
@@ -106,13 +106,13 @@ function decodeMessage(encoded: string): string {
 }
 
 /** How every relayed message begins; the charter names it. */
-export const RELAY_PREFIX = "Relayed by bb firstmate-crew tell";
+export const RELAY_PREFIX = "Relayed by VesnALIA firstmate-crew tell";
 
 /**
  * The line every message `tell` delivers opens with, so a relayed message can never pass for the
  * captain's own words in the first mate's chat — not even one whose text begins with a line like this.
- * The thread is the one the caller's `bb` names (its `BB_THREAD_ID`), which the caller controls, so it is
- * labelled as claimed. Its project and branch are bb's, and what bb cannot say is left out.
+ * The thread is the one the caller's `VesnALIA` names (its `ALIA_THREAD_ID`), which the caller controls, so it is
+ * labelled as claimed. Its project and branch are VesnALIA's, and what VesnALIA cannot say is left out.
  */
 async function relayLine(deps: MateDeps, threadId: string | undefined): Promise<string> {
   if (threadId === undefined) return `${RELAY_PREFIX}, from no thread (a terminal or a script):`;
@@ -168,8 +168,8 @@ function crewPick(
 }
 
 /**
- * `--option <id>=<value>`, as `bb thread spawn` takes it: the provider's agent options for the model
- * (`bb provider models` lists them), `true` or `false` for an on/off one. bb checks the ids and values
+ * `--option <id>=<value>`, as `alia thread spawn` takes it: the provider's agent options for the model
+ * (`alia provider models` lists them), `true` or `false` for an on/off one. VesnALIA checks the ids and values
  * against the model; here only the shape is checked, and an id given twice is refused rather than one
  * value quietly winning.
  */
@@ -200,7 +200,7 @@ export function firstmateCli(deps: MateDeps): PluginCliRegistration {
           "Run from the first mate's own thread. Reads the brief from --prompt-file (relative to the current directory) and prints the new thread id.",
         options: {
           task: { type: "string", required: true, description: "The task id the crewmate works on, as in the backlog", placeholder: "id" },
-          project: { type: "string", required: true, description: "The bb project to work in: its id or its exact name", placeholder: "project" },
+          project: { type: "string", required: true, description: "The VesnALIA project to work in: its id or its exact name", placeholder: "project" },
           "prompt-file": { type: "string", required: true, description: "File holding the crewmate's brief", placeholder: "path" },
           title: { type: "string", description: "Thread title; defaults to `<task>: <first line of the brief>`", placeholder: "title" },
           kind: { type: "string", description: "The kind of work, kept on the thread for the board", placeholder: "kind" },
@@ -213,14 +213,14 @@ export function firstmateCli(deps: MateDeps): PluginCliRegistration {
           model: { type: "string", description: "Model for the crewmate; overrides the crew settings. Needs --provider", placeholder: "model" },
           reasoning: {
             type: "string",
-            description: "Reasoning level, any the model lists (bb refuses one it does not); overrides the crew reasoning setting",
+            description: "Reasoning level, any the model lists (VesnALIA refuses one it does not); overrides the crew reasoning setting",
             placeholder: "level",
           },
           option: {
             type: "string",
             repeatable: true,
             description:
-              "An agent option the model lists (see bb provider models), as <id>=<value>; true or false for an on/off one. Repeatable",
+              "An agent option the model lists (see VesnALIA provider models), as <id>=<value>; true or false for an on/off one. Repeatable",
             placeholder: "id=value",
           },
           json: { type: "boolean", description: "Print {\"threadId\": \"...\"} instead of the bare id" },
@@ -253,7 +253,7 @@ export function firstmateCli(deps: MateDeps): PluginCliRegistration {
               title: titleOf(options.title, options.task, prompt),
               prompt,
               parentThreadId: mate.id,
-              // Explicit, so a project's or bb's default cannot keep a crewmate's turns from the first mate.
+              // Explicit, so a project's or VesnALIA's default cannot keep a crewmate's turns from the first mate.
               parentNotifications: "auto",
               environment: environmentId === "" ? { kind: "worktree" } : { kind: "reuse", environmentId },
               ...crewPick(settings, { provider: options.provider, model: options.model, reasoning: options.reasoning }),

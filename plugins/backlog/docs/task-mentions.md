@@ -1,6 +1,6 @@
 # Mention Backlog tasks
 
-In a BB composer with a project selected, type `@` and part of a task title
+In a VesnALIA composer with a project selected, type `@` and part of a task title
 or full ID, or words from its description. Choose a row under **Backlog tasks** with the arrow keys and Enter.
 The native composer saves the mention with the draft. Suggestions show the
 original title, ID and configured status, with at most 20 matches. Any task
@@ -18,9 +18,9 @@ resolved Backlog folder and metadata ID, not its search-time content.
 Missing or invalid tasks, duplicate IDs, incomplete scans, unavailable hosts,
 and changed source/folder selection block send with a visible error. Repair or
 restore the original task/source and retry, or remove the mention and select
-it again. Search failures/timeouts contribute no results to BB's picker.
+it again. Search failures/timeouts contribute no results to VesnALIA's picker.
 
-The public `bb.ui.registerMentionProvider` contract was verified against SDK
+The public `alia.ui.registerMentionProvider` contract was verified against SDK
 0.5.9: native title/subtitle rows, a two-second search window, persistent plugin
 mentions, and send-time resolution whose errors block submission.
 
@@ -34,7 +34,7 @@ prefer active storage, then completed, then archived, followed by ID and file pa
 Each row shows title and ID, followed by the configured status, optional priority,
 and up to 420 characters of description. The shared board preview helper removes
 Backlog comments, code fences, common Markdown formatting and HTML tags. Missing
-descriptions or priorities add no placeholder text. BB may visually truncate long
+descriptions or priorities add no placeholder text. VesnALIA may visually truncate long
 rows to fit the native picker; identity and status appear before the preview.
 
 ## Historical tasks and durable references
@@ -52,7 +52,7 @@ Duplicate IDs, including case variants across storage directories, are ambiguous
 and block resolution. Once the original task/host is available again, retry the
 same draft; no cached task content is used.
 
-BB controls when provider searches run. In the verified host version, an empty
+VesnALIA controls when provider searches run. In the verified host version, an empty
 query does not invoke plugin providers; type a word after `@` to show Backlog
 results. The provider supplies deterministic active-first results if called
 with an empty query.
@@ -67,8 +67,8 @@ Modifier keys and macOS screenshot shortcuts (Command-Shift-3/4/5) keep the
 preview open. The card uses the suggestion already shown, so opening it adds no task request.
 Sending still resolves the task afresh.
 
-This is a plugin prototype using BB's public content-script lifecycle. BB 0.5.9
+This is a plugin prototype using VesnALIA's public content-script lifecycle. VesnALIA 0.5.9
 has no native mention-preview slot: the script recognizes the current
 `Backlog tasks: …` button title and `bg-state-active` keyboard-highlight class.
 That row markup is not a versioned SDK contract and may need adjustment after a
-BB update. It never reads private React state or replaces the native picker.
+VesnALIA update. It never reads private React state or replaces the native picker.

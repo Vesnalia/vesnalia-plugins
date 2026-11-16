@@ -1,6 +1,6 @@
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import {mkdtemp,mkdir,writeFile,rm,readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
@@ -28,15 +28,15 @@ async function fixture() {
     terminals:{create,get:async()=>terminal,list:async()=>({sessions:[]})},
   }});
   cleanup.push(()=>host.harness.lifecycle.dispose());
-  return {host,create,pluginRoot,checkout,dataDir,controller:new PoolUpdate(host.bb),exit:(exitCode:number)=>{terminal={...terminal,status:'exited',exitCode};}};
+  return {host,create,pluginRoot,checkout,dataDir,controller:new PoolUpdate(host.alia),exit:(exitCode:number)=>{terminal={...terminal,status:'exited',exitCode};}};
 }
-it('starts exactly one BB-owned machine terminal and follows it across plugin reload',async()=>{
+it('starts exactly one ALIA-owned machine terminal and follows it across plugin reload',async()=>{
   const f=await fixture();
   const [first,second]=await Promise.all([f.controller.start(),f.controller.start()]);
   expect(first).toEqual(second);expect(f.create).toHaveBeenCalledTimes(1);
   expect(f.create.mock.calls[0]?.[0]).toMatchObject({scope:{kind:'host_path',hostId:'host-one',cwd:path.join(f.dataDir,'plugins','account-pool','updates',first!.operationId)},start:{mode:'command',command:expect.stringContaining('--pause-sessions --operator-key-file')}});
   expect((f.create.mock.calls[0]?.[0] as {start:{command:string}}).start.command).not.toContain('--drain-sessions');
-  const reloaded=new PoolUpdate(f.host.bb);
+  const reloaded=new PoolUpdate(f.host.alia);
   expect(await reloaded.start()).toEqual(first);expect(f.create).toHaveBeenCalledTimes(1);
   f.exit(0);expect(await reloaded.status()).toMatchObject({state:'succeeded',terminalId:'terminal-one'});
 });
@@ -44,7 +44,7 @@ it('retains an ambiguous creation receipt and never dispatches another updater',
   const f=await fixture();
   f.create.mockRejectedValueOnce(Error('lost reply'));
   await expect(f.controller.start()).rejects.toThrow('outcome is unknown');
-  expect(await new PoolUpdate(f.host.bb).start()).toMatchObject({state:'unknown',terminalId:null});
+  expect(await new PoolUpdate(f.host.alia).start()).toMatchObject({state:'unknown',terminalId:null});
   expect(f.create).toHaveBeenCalledTimes(1);
 });
 it('does not report a failed updater as success',async()=>{
@@ -52,7 +52,7 @@ it('does not report a failed updater as success',async()=>{
   expect(await f.controller.status()).toMatchObject({state:'failed'});
 });
 
-it('retains executable inputs and a usable cwd after BB removes the old source checkout',async()=>{
+it('retains executable inputs and a usable cwd after VesnALIA removes the old source checkout',async()=>{
   const f=await fixture();const operation=await f.controller.start();
   const cwd=path.join(f.dataDir,'plugins','account-pool','updates',operation!.operationId);
   const input=f.create.mock.calls[0]![0] as {scope:{cwd:string};start:{command:string}};

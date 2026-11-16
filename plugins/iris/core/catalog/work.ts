@@ -71,7 +71,7 @@ export const CODE = [
   component({
     name: "Code",
     group: "Code",
-    summary: "A code block with syntax highlighting in bb's code theme.",
+    summary: "A code block with syntax highlighting in VesnALIA's code theme.",
     props: { lang: p.str("Language, e.g. \"ts\", \"swift\", \"bash\""), title: p.str("File name or caption"), lines: p.str("Lines to highlight, e.g. \"3-5\"") },
     children: "raw",
     childrenDoc: "The code, verbatim",
@@ -96,7 +96,7 @@ export const CODE = [
   component({
     name: "Diff",
     group: "Code",
-    summary: "A unified diff for one file in bb's diff viewer, unified or split.",
+    summary: "A unified diff for one file in VesnALIA's diff viewer, unified or split.",
     props: {
       path: p.str("The file the patch applies to", { required: true }),
       view: p.oneOf(["unified", "split"], "Layout", { def: "unified" }),
@@ -140,7 +140,7 @@ export const PROJECT = [
     group: "Project",
     summary: "A test run: counts, failures first with messages and file links. Reads vitest, jest, JUnit XML, Swift Testing and similar reports.",
     props: {
-      results: p.any("A loaded report (load(\"$BB_THREAD_STORAGE/tests.json\")) or a list of {name, status: passed|failed|skipped, message?, file?, line?, duration?}; may list only the failures"),
+      results: p.any("A loaded report (load(\"$ALIA_THREAD_STORAGE/tests.json\")) or a list of {name, status: passed|failed|skipped, message?, file?, line?, duration?}; may list only the failures"),
       passed: p.num("Total passed, when results lists only some tests (often just the failures)"),
       failed: p.num("Total failed, when results lists only some"),
       skipped: p.num("Total skipped, when results lists only some"),

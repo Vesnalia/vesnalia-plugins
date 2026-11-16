@@ -25,11 +25,11 @@
  *   harness: it carries the production shape's scan term, priced at the
  *   MODELED_KNOBS constant below.
  *
- * The modeled numbers are synthetic by construction (no bb account, no
+ * The modeled numbers are synthetic by construction (no VesnALIA account, no
  * network), so the baseline doc carries them as HARNESS numbers, with the
  * knobs' meaning next to each stage. What a run proves about another run is
  * the DELTA on the same harness, never an absolute wall-clock claim about a
- * real bb.
+ * real VesnALIA.
  *
  * Usage:
  *   npm run perf:load                 # measure + report
@@ -182,7 +182,7 @@ function installLoadInstrument() {
   mutationClock.observe(document.body, { childList: true, subtree: true });
 
   /** First-commit watcher: the plugin mount point's first child. */
-  const root = document.querySelector('[data-bb-plugin="focus-board"]');
+  const root = document.querySelector('[data-alia-plugin="focus-board"]');
   if (root === null) throw new Error("load instrument: the plugin mount point is missing");
   if (root.childElementCount > 0) mark("fb:first-commit");
   else {

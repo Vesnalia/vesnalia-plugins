@@ -1,4 +1,4 @@
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ import { backendFieldPath, kindPath } from "./settings-paths.ts";
 
 export const BOXES_PER_CARD_FIELD = "boxes-per-card";
 
-const CARDS_FAILED: SettingsCards = { is: "unread", host: null, why: "BB Box could not ask for the cards.", setup: null };
+const CARDS_FAILED: SettingsCards = { is: "unread", host: null, why: "VesnALIA Box could not ask for the cards.", setup: null };
 
 function useCards(backend: string, revision: number): SettingsCards | null {
   const rpc = useRpc<Contract>();

@@ -1,8 +1,8 @@
-// This install's ID (018). Each bb-box install makes a random ID the first
+// This install's ID (018). Each alia-box install makes a random ID the first
 // time it starts and keeps it in plugin storage. Backends record it on every
 // guest and act only on guests that carry it, so installs that share a host
 // leave each other's guests alone. An install that lost its storage takes its
-// old ID back with `bb box install-id --set <id>`.
+// old ID back with `alia box install-id --set <id>`.
 
 import { randomInt } from "node:crypto";
 

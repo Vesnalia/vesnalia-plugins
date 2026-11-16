@@ -1,4 +1,4 @@
-import type { PluginAppCommands } from "@get-bb/plugin-sdk/app";
+import type { PluginAppCommands } from "@vesnalia/plugin-sdk/app";
 import {
   type ConfiguredSnoozePreset,
   DEFAULT_SNOOZE_PRESET_CONFIG,
@@ -36,14 +36,14 @@ const SNOOZE_COMMANDS = parseConfiguredSnoozePresets(DEFAULT_SNOOZE_PRESET_CONFI
 /** Hand the request to the mounted inbox, which owns the snooze actions. */
 function requestSnooze(request: SnoozeCommandRequest) {
   const event = new CustomEvent(BROWSER_EVENTS.snoozeCommand, { detail: request, cancelable: true });
-  if (window.dispatchEvent(event)) toast.error("Open the BB Sidebar to snooze threads");
+  if (window.dispatchEvent(event)) toast.error("Open the VesnALIA Sidebar to snooze threads");
 }
 
 export function registerSnoozeCommands(commands: PluginAppCommands) {
   for (const { id, title, preset } of SNOOZE_COMMANDS) {
     commands.register({
       id,
-      title: `BB Sidebar: Snooze this thread ${title}`,
+      title: `VesnALIA Sidebar: Snooze this thread ${title}`,
       isAvailable: ({ threadId }) => threadId !== null && resolveConfiguredSnoozePreset(preset) !== null,
       run: ({ threadId }) => {
         const snoozedUntil = resolveConfiguredSnoozePreset(preset);
@@ -53,7 +53,7 @@ export function registerSnoozeCommands(commands: PluginAppCommands) {
   }
   commands.register({
     id: "unsnooze",
-    title: "BB Sidebar: Unsnooze this thread",
+    title: "VesnALIA Sidebar: Unsnooze this thread",
     isAvailable: ({ threadId }) => threadId !== null,
     run: ({ threadId }) => {
       if (threadId !== null) requestSnooze({ kind: "unsnooze", threadId });

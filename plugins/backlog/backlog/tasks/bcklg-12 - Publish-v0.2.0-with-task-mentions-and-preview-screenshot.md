@@ -36,7 +36,7 @@ Review the changes and existing verification gaps; update version and release do
 <!-- SECTION:NOTES:BEGIN -->
 Prepared v0.2.0 notes with the existing 1280x577 live hover-preview screenshot, updated README and plugin overview, and selected v0.2.0 as the new feature release. Reviewed mention search/resolution and tooltip lifecycle against tests. Full suite: 86 pass, 506 expectations, 98.62% line coverage; typecheck, public SDK scan, SDK pins and build pass. Production dependency audit reports no known vulnerabilities. BCKLG-10 live send-error/retry and historical-send gaps remain explicitly open and are disclosed in the release notes.
 
-Clean v0.2.0 copy with no node_modules: pnpm install --prod --frozen-lockfile --ignore-scripts installed the five runtime dependencies and bb plugin build produced server, app and host artifacts successfully. No dev dependencies were installed. Existing screenshot inspected and copied unchanged into docs/screenshots/task-mention-preview.png.
+Clean v0.2.0 copy with no node_modules: pnpm install --prod --frozen-lockfile --ignore-scripts installed the five runtime dependencies and VesnALIA plugin build produced server, app and host artifacts successfully. No dev dependencies were installed. Existing screenshot inspected and copied unchanged into docs/screenshots/task-mention-preview.png.
 
 Published annotated tag v0.2.0 at b180bad7cc8f021996505ffd54ce2cda4558a37f and GitHub release https://github.com/StreamlinedStartup/bb-plugin-backlog/releases/tag/v0.2.0. Verified release is published (not draft or prerelease), notes match docs/releases/v0.2.0.md, screenshot asset is uploaded, and the tag-linked inline screenshot downloads with the exact local SHA-256. Original v0.1.0 tag was not changed.
 <!-- SECTION:NOTES:END -->

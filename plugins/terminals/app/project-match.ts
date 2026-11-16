@@ -5,7 +5,7 @@
  * of their most recent thread. No React and no SDK.
  */
 
-/** A directory bb knows belongs to a project on one machine. */
+/** A directory VesnALIA knows belongs to a project on one machine. */
 export interface ProjectPlace {
   projectId: string;
   hostId: string;
@@ -16,7 +16,7 @@ export interface ProjectPlace {
  * The directory an OSC 7 sequence reports (`file://host/path`, which shells
  * send as they change directory), or null for anything else. The host part
  * is not checked: it names the machine as the shell sees it, which need not
- * match bb's name for it, and the tab already says which machine it is.
+ * match VesnALIA's name for it, and the tab already says which machine it is.
  */
 export function directoryFromOsc7(data: string): string | null {
   let url: URL;
@@ -95,7 +95,7 @@ export function defaultProject(options: {
   return available[0] ?? null;
 }
 
-const LAST_PROJECT_KEY = "bb-plugin-terminals:last-new-thread-project";
+const LAST_PROJECT_KEY = "alia-plugin-terminals:last-new-thread-project";
 
 function browserStorage(): Storage | null {
   try {

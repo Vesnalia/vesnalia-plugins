@@ -1,5 +1,5 @@
-// The review summary as agents and `bb review summary` write it. Like the draft
-// comments, it stays in this bb's local draft until the reviewer submits it.
+// The review summary as agents and `alia review summary` write it. Like the draft
+// comments, it stays in this VesnALIA's local draft until the reviewer submits it.
 import { commentsKey, SUMMARY_AT, VERDICT_LABEL, verdictPicked, type Verdict } from "./draft";
 import { describeComments, unchangeable, type DraftResult } from "./draft-comments";
 import { asked } from "./asks";
@@ -38,7 +38,7 @@ export async function writeSummary(store: AsyncStore, targetKey: string, input: 
       },
     });
     const verdict = input.verdict ? ` Your suggested verdict, ${VERDICT_LABEL[input.verdict]}, is marked for the reviewer, who picks the verdict.` : "";
-    return { ok: true, text: `${reviewers ? "Updated the reviewer's review summary, as they asked." : "Wrote the review summary."}${verdict} It stays in bb until the reviewer submits the review.` };
+    return { ok: true, text: `${reviewers ? "Updated the reviewer's review summary, as they asked." : "Wrote the review summary."}${verdict} It stays in VesnALIA until the reviewer submits the review.` };
   });
 }
 

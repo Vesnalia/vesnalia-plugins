@@ -17,7 +17,7 @@ profile: ${input.profile}
 status: active
 executive_summary: "${summary}"
 source_refs:
-  - "bb thread: ${input.threadId}"
+  - "alia thread: ${input.threadId}"
   - "[[${input.htmlFileName}]]"
 ---
 
@@ -27,6 +27,6 @@ ${input.summary}
 
 Artifact: [[${input.htmlFileName}]]
 
-bb thread: ${input.threadId}
+VesnALIA thread: ${input.threadId}
 `;
 }

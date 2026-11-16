@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { mkdtemp } from "node:fs/promises";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import { createCodexAdapter } from "./codex-adapter.js";
 import { AccountStore, QUOTA_MIGRATIONS, QuotaStore } from "./store.js";
@@ -16,7 +16,7 @@ afterEach(async () => {
 describe("usage refresh", () => {
   it("clears a stale account error once the usage endpoint answers", async () => {
     const dataDir = await mkdtemp(
-      path.join(tmpdir(), "bb-account-pool-usage-"),
+      path.join(tmpdir(), "alia-account-pool-usage-"),
     );
     const host = createFakePluginHost({ pluginId: "account-pool", dataDir });
     cleanups.push(async () => {
@@ -24,12 +24,12 @@ describe("usage refresh", () => {
       await fs.rm(dataDir, { recursive: true, force: true });
     });
     const accounts = new AccountStore(
-      host.bb.storage.kv,
+      host.alia.storage.kv,
       path.join(dataDir, "secrets"),
     );
     await accounts.initialize();
-    const db = host.bb.storage.database();
-    host.bb.storage.migrate(db, QUOTA_MIGRATIONS);
+    const db = host.alia.storage.database();
+    host.alia.storage.migrate(db, QUOTA_MIGRATIONS);
     const quotas = new QuotaStore(db);
     const secret = {
       kind: "oauth" as const,

@@ -210,7 +210,7 @@ describe("prepareHome and the charter", () => {
     const home = await tempHome();
     await prepareHome(home, homeConfig);
     const agents = await read(home, "AGENTS.md");
-    expect(agents).toMatch(/^<!-- Written by the FirstMate plugin for bb from data\/charter\.md/);
+    expect(agents).toMatch(/^<!-- Written by the FirstMate plugin for alia from data\/charter\.md/);
     expect(agents).toContain(`Your home is \`${home}\``);
     expect(agents).not.toContain("firstmate-charter");
     expect(fingerprint(await read(home, CHARTER_FILE))).toBe(fingerprint(await readTemplate(TEMPLATES.charter)));
@@ -219,22 +219,22 @@ describe("prepareHome and the charter", () => {
     // whose Notify parent is not `auto` sends it no notice for a finished turn (or none at all), to watch
     // such a crewmate itself and never change the setting back; d34bbcd8b84ee0f9 told it to link the
     // message a worker reported in (`@thread:<id>#msg=<seq>`), to reread one message with
-    // `bb thread log --message`, and offering `crew spawn --option`; 4585c7a769acf5af told it to give every
+    // `alia thread log --message`, and offering `crew spawn --option`; 4585c7a769acf5af told it to give every
     // (hold: …) an (actions: …) field of the captain's likely answers; 94aa62a528a0a275 told it to read
     // data/suggestions-dismissed.md before rewriting its suggestions, never to write a dismissed one again,
     // and to start from data/suggestions.md as it is; 8afda56015b32e19 was the charter with no ahoy section;
     // dab8203ddd18566b was the charter telling the first mate what to do when
-    // bb cuts a crewmate's work short (host loss, a daemon restart, a failed setup, an undelivered message)
+    // VesnALIA cuts a crewmate's work short (host loss, a daemon restart, a failed setup, an undelivered message)
     // and to check the log for a stop by hand, which sends nothing, before any nudge, resend or relaunch;
     // dda507f48da7647d held any work a relayed message starts,
     // steers or relaunches for the captain's word to merge; 022869ca9102c7d4 held only work it started, over
     // `+yolo` and standing orders; 7ac1042b58fb4a85 had it saying a message relayed by `tell` (as
-    // `/fm` sends) opens with `Relayed by bb firstmate-crew tell` and never stands in for the captain's word;
-    // a5a689fdd3a12e27 had it naming the CLI `bb firstmate-crew` after the plugin
-    // id changed; 83b2b65bf38bb8e0 had it saying bb also wakes the first mate
+    // `/fm` sends) opens with `Relayed by VesnALIA firstmate-crew tell` and never stands in for the captain's word;
+    // a5a689fdd3a12e27 had it naming the CLI `alia firstmate-crew` after the plugin
+    // id changed; 83b2b65bf38bb8e0 had it saying VesnALIA also wakes the first mate
     // when a crewmate needs attention (a permission or a question); a89e672c1e7d45f9 had the relaunch
     // command carrying --title and the crew list saying archived children are included; 62c1c091a39506bd told the first
-    // mate to always title its crew; 79b5a4bc6315ef40 the charter rewritten for bb; 09fd534b24db4e75 was Paseo's text
+    // mate to always title its crew; 79b5a4bc6315ef40 the charter rewritten for VesnALIA; 09fd534b24db4e75 was Paseo's text
     // with only its placeholders renamed, e0b749cb695c5df6 the charter as it moved into templates/, and
     // 8b6df21d082df6e6 Paseo's before {{crewModeRule}} became {{crewReasoningRule}}.
     expect(fingerprint(await readTemplate(TEMPLATES.charter))).toBe("4d4203adc1f0d594");

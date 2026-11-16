@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. This plugin follows bb's community conventions.
+Thanks for helping. This plugin follows VesnALIA's community conventions.
 
 ## Before you open a pull request
 
@@ -12,12 +12,12 @@ Thanks for helping. This plugin follows bb's community conventions.
   Driver on a Mac, and `npm run test:browser` needs a Chromium binary in
   `CHROMIUM`. Run them when your change touches what they cover.
 - Keep pure logic in `src/` and unit-test it. Server and host behavior is
-  tested with `@get-bb/plugin-sdk/testing`; do not mock the fake host's
+  tested with `@vesnalia/plugin-sdk/testing`; do not mock the fake host's
   storage.
 - Never bundle Cua Driver binaries or call the installer from the plugin. The
   user installs and grants permissions on each machine.
-- Any new bb SDK surface you rely on must exist in the `@get-bb/plugin-sdk`
-  version pinned in `package.json`; bump `engines.bbPluginSdk` when you raise
+- Any new VesnALIA SDK surface you rely on must exist in the `@vesnalia/plugin-sdk`
+  version pinned in `package.json`; bump `engines.aliaPluginSdk` when you raise
   it.
 
 ## Tool catalog changes

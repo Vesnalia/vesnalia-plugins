@@ -1,6 +1,6 @@
 ---
 name: github-app-auth
-description: Use when GitHub CLI or git returns 401 or "Bad credentials" in a project that authenticates as a GitHub App, or when you need to know which identity GH_TOKEN carries. Covers the `bb github-app-auth` command.
+description: Use when GitHub CLI or git returns 401 or "Bad credentials" in a project that authenticates as a GitHub App, or when you need to know which identity GH_TOKEN carries. Covers the `alia github-app-auth` command.
 ---
 
 # GitHub App token
@@ -25,7 +25,7 @@ than about an hour can outlive its token. When `gh` or `git push` reports 401,
 "Bad credentials", or an authentication failure, refresh the shell you are in:
 
 ```bash
-eval "$(bb github-app-auth env)"
+eval "$(alia github-app-auth env)"
 ```
 
 Then retry the command. Run the refresh in the same shell as the retry; a
@@ -35,10 +35,10 @@ separate command invocation does not keep the exported value.
 
 | Command | Effect |
 | --- | --- |
-| `bb github-app-auth status [--json]` | Configuration, enabled projects, token expiry, app identity. Never prints a token. |
-| `bb github-app-auth env [--project <id>]` | `export` lines for `GH_TOKEN` and `GITHUB_TOKEN`. |
-| `bb github-app-auth token [--project <id>] [--json]` | The current token on its own. |
-| `bb github-app-auth refresh [--json]` | Discard the cached token and mint a new one. |
+| `alia github-app-auth status [--json]` | Configuration, enabled projects, token expiry, app identity. Never prints a token. |
+| `alia github-app-auth env [--project <id>]` | `export` lines for `GH_TOKEN` and `GITHUB_TOKEN`. |
+| `alia github-app-auth token [--project <id>] [--json]` | The current token on its own. |
+| `alia github-app-auth refresh [--json]` | Discard the cached token and mint a new one. |
 
 `--project` defaults to the current thread's project. A project that is not
 in the plugin's projects setting gets `project_not_enabled`.

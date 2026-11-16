@@ -31,7 +31,7 @@ const IOS_REPORT: MacReport = {
   capabilities: {
     simulator: { is: "yes", what: { xcode: "26.1.1", runtimes: ["iOS 26.2"], newest: { os: "26.2", build: "23C54" }, deviceTypes: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17"] } },
     hardwareEncoder: { is: "yes", what: { fullSizeFps: 141 } },
-    softwareEncoder: { is: "no", why: "bb-box-h264 is not installed" },
+    softwareEncoder: { is: "no", why: "alia-box-h264 is not installed" },
   },
   probe: PROBE_VERSION,
 };
@@ -53,8 +53,8 @@ function backendOn(fake: FakeNamespace, id: string, options: BackendOptions = {}
   fakeSsh();
   const context = {
     ...testContext(options.storage ?? new MemoryStorage(), options.installId ?? "inst1", { id }),
-    bbUrl: () => "https://bb.example",
-    images: { bbApp: async () => "a".repeat(64) },
+    aliaUrl: () => "https://bb.example",
+    images: { aliaApp: async () => "a".repeat(64) },
     ...(options.tailnet ? { tailnet: () => options.tailnet! } : {}),
     ...(options.logs ? { log: (line: string) => void options.logs!.push(line) } : {}),
   } as never;
@@ -159,7 +159,7 @@ test("Most machines counts the backend's own machines and other installs', but n
   plant(fake, "elsewhere1", { [LABELS.install]: "inst2", [LABELS.backend]: "namespace" });
   const full = await second.capacity("macos", size, []);
   assert.equal(full.ok, false);
-  assert.equal(full.message, "Namespace (team-b) has 1 of the 1 machines BB Box may have at once, counting other BB Box installs' in the workspace. Release a box, or raise the most machines in BB Box's settings.");
+  assert.equal(full.message, "Namespace (team-b) has 1 of the 1 machines VesnALIA Box may have at once, counting other VesnALIA Box installs' in the workspace. Release a box, or raise the most machines in VesnALIA Box's settings.");
 });
 
 test("each backend builds its own Linux images, labelled and tagged with its ID, and its upkeep destroys only its own leftover build machines", async () => {
@@ -193,7 +193,7 @@ interface StaleDevice {
 
 function tailnetOf(devices: readonly StaleDevice[]): { readonly tailnet: Tailnet; readonly removed: string[] } {
   const removed: string[] = [];
-  const listed = () => devices.filter((device) => !removed.includes(device.nodeId)).map((device) => ({ ...device, tags: ["tag:bb-box"], lastSeen: "2020-01-01T00:00:00Z" }));
+  const listed = () => devices.filter((device) => !removed.includes(device.nodeId)).map((device) => ({ ...device, tags: ["tag:alia-box"], lastSeen: "2020-01-01T00:00:00Z" }));
   const tailnet = new Tailnet({
     credentials: { clientId: "id", clientSecret: "secret" },
     fetch: async (url) => {
@@ -215,13 +215,13 @@ function tailnetNameOf(backendId: string, installId: string, box: string): strin
 test("each backend's upkeep removes only its own machines' stale tailnet devices, and the doctor counts both as the install's", async () => {
   const secondPrefix = new NamespaceOwner(TEAM_B, "inst1").tailnetPrefix();
   const devices = [
-    { nodeId: "first-gone", hostname: "bb-box-ns-inst1-gone-box" },
+    { nodeId: "first-gone", hostname: "alia-box-ns-inst1-gone-box" },
     { nodeId: "second-gone", hostname: `${secondPrefix}gone-box` },
   ];
   const { tailnet, removed } = tailnetOf(devices);
   const fake = workspace();
 
-  assert.equal(secondPrefix, "bb-box-nsb-inst1-6-team-b-");
+  assert.equal(secondPrefix, "alia-box-nsb-inst1-6-team-b-");
   assert.ok(devices.every((device) => isInstallDevice(device.hostname, "inst1")));
   await backendOn(fake, TEAM_B, { tailnet }).maintain();
   assert.deepEqual(removed, ["second-gone"]);
@@ -245,7 +245,7 @@ test("namespace:team-339 and namespace:team-3245, whose earlier tailnet codes ma
 });
 
 test("no Namespace backend holds another's tailnet names, for names that look alike and the longest install ID and name (#1455)", () => {
-  const names = ["a", "a-1", "1-a", "1", "11", "1-1", "a1", "1a", "team-339", "team-3245", "team-b", "team-bb", "b-team", "10-x", "x-10", "a".repeat(14), "a".repeat(15), `${"a".repeat(14)}b`];
+  const names = ["a", "a-1", "1-a", "1", "11", "1-1", "a1", "1a", "team-339", "team-3245", "team-b", "team-alia", "b-team", "10-x", "x-10", "a".repeat(14), "a".repeat(15), `${"a".repeat(14)}b`];
   const ids = [FIRST, ...names.map((name) => `namespace:${name}`)];
 
   for (const installId of ["inst1", "x".repeat(LONGEST_INSTALL_ID)]) {
@@ -276,9 +276,9 @@ test("on the longest install ID, each Namespace backend gives every machine its 
       assert.ok(isInstallDevice(hostname, longest), `the doctor counts ${hostname} as the install's`);
     }
   }
-  assert.equal(tailnetNameOf(FIRST, "inst1", "gentle-marsh"), "bb-box-ns-inst1-gentle-marsh");
-  assert.equal(tailnetNameOf(TEAM_B, "inst1", "gentle-marsh"), "bb-box-nsb-inst1-6-team-b-gentle-marsh");
-  assert.equal(tailnetNameOf(FIRST, longest, "gentle-marsh"), `bb-box-ns-${longest}-gentle-marsh`);
+  assert.equal(tailnetNameOf(FIRST, "inst1", "gentle-marsh"), "alia-box-ns-inst1-gentle-marsh");
+  assert.equal(tailnetNameOf(TEAM_B, "inst1", "gentle-marsh"), "alia-box-nsb-inst1-6-team-b-gentle-marsh");
+  assert.equal(tailnetNameOf(FIRST, longest, "gentle-marsh"), `alia-box-ns-${longest}-gentle-marsh`);
 });
 
 test("on the longest install ID with the longest backend name, upkeep removes a gone machine's tailnet device and keeps a held one's", async () => {
@@ -328,12 +328,12 @@ test("a second Namespace backend is named by its ID in its label, and the first 
   assert.equal(backendOn(fake, TEAM_B).label, "Namespace (team-b)");
 });
 
-test("bb box images list shows each Namespace backend's own Linux images, by backend, with where each is and whether it is due", async () => {
+test("alia box images list shows each Namespace backend's own Linux images, by backend, with where each is and whether it is due", async () => {
   const fake = workspace(() => START);
   const first = backendOn(fake, FIRST, { now: () => START });
   const second = backendOn(fake, TEAM_B, { now: () => START });
   await second.linuxImages.forBox("linux", new AbortController().signal);
-  const jobs = new ImageJobs({ backends: () => [first, second], setup: "", bbUrl: () => null, facts: {} as never, storage: new MemoryStorage() });
+  const jobs = new ImageJobs({ backends: () => [first, second], setup: "", aliaUrl: () => null, facts: {} as never, storage: new MemoryStorage() });
 
   const lines = (await jobs.ownImages()).flatMap((of) => ownImageLines(of, START));
 

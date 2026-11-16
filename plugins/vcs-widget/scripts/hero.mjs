@@ -5,7 +5,7 @@
 //   node scripts/hero.mjs
 //
 // It photographs a local HTML page, so it needs system Chromium and
-// puppeteer-core but no running bb. Refresh the panel shots with
+// puppeteer-core but no running VesnALIA. Refresh the panel shots with
 // scripts/screenshots.mjs first if the UI has moved on.
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-meetings",
+  "name": "alia-plugin-meetings",
   "version": "0.3.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Meetings",
     "description": "Record Zoom, Google Meet, Telemost and Jitsi with local transcription, summary templates, action items and MCP.",
     "branding": {
@@ -23,7 +23,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -53,14 +52,9 @@
     "vaul": "^1.1.2",
     "vitest": "^5.0.4"
   },
-  "description": "Multi-platform meeting notetaker for bb: Zoom, Google Meet, Telemost and Jitsi; local transcription, templates, analysis, Q&A and MCP.",
+  "description": "Multi-platform meeting notetaker for VesnALIA: Zoom, Google Meet, Telemost and Jitsi; local transcription, templates, analysis, Q&A and MCP.",
   "license": "MIT",
   "author": "AiXenix (https://aixenix.com)",
-  "homepage": "https://github.com/AiXenix/bb-plugin-meetings#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AiXenix/bb-plugin-meetings.git"
-  },
   "files": [
     "dist/",
     "assets/",
@@ -84,8 +78,8 @@
     "LICENSE"
   ],
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "zoom",
     "meeting-recorder",
     "notetaker",
@@ -110,10 +104,24 @@
     "test:py": ".e2e/venv/bin/python -I runtime/transcriber/test_transcriber.py",
     "e2e:bot": "node scripts/e2e-bot-mock.mjs all",
     "e2e:server": "MEETINGS_E2E=1 vitest run test/server-e2e.test.ts",
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test:platforms": "node --test runtime/bot/platform-adapters.browser.test.mjs"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/meetings#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/meetings"
+  },
   "bugs": {
-    "url": "https://github.com/AiXenix/bb-plugin-meetings/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

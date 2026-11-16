@@ -29,7 +29,7 @@ vi.mock("./gh", async (orig) => {
   };
 });
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createPrReview } from "./start-review";
 import { localDiffChanged, rerunReview } from "./rereview";
 import * as gh from "./gh";
@@ -41,19 +41,19 @@ const key = targetKey({ kind: "pr", number: 7, repo: "acme/web" });
 const threads = { spawn: async () => ({ id: "th_1" }), wait: async () => {}, archive: async () => {}, stop: async () => {} };
 
 test("a PR whose diff holds a NUL character starts its review, with U+FFFD in its place", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads } as never });
-  const store = testStore(bb);
-  expect(await createPrReview({ bb, store, gh }, { input: "https://github.com/acme/web/pull/7", projectId: "p1" })).toEqual({ ok: true, targetKey: key });
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads } as never });
+  const store = testStore(alia);
+  expect(await createPrReview({ alia, store, gh }, { input: "https://github.com/acme/web/pull/7", projectId: "p1" })).toEqual({ ok: true, targetKey: key });
   expect(await store.patch(key)).toBe(STORED_DIFF);
   await store.dispose();
 });
 
 test("a local review rebuilds for a new diff that holds a NUL character, which then counts as its diff, not a change", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads } as never });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads } as never });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "ref-abc", kind: "ref", status: "ready", createdAt: 1, projectId: "p1", gitRef: "main...feature", cwd: process.cwd() });
   await store.savePatch("ref-abc", "diff --git a/a.txt b/a.txt\n--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-o\n+x\n");
-  expect(await rerunReview({ bb, store, gh }, "ref-abc")).toEqual({ ok: true });
+  expect(await rerunReview({ alia, store, gh }, "ref-abc")).toEqual({ ok: true });
   expect(await store.patch("ref-abc")).toBe(STORED_DIFF);
   // Rebuilt, it isn't rebuilt again for the same diff.
   expect(await localDiffChanged({ store, gh }, { ...(await store.getReview("ref-abc"))!, status: "ready" })).toBe(false);
@@ -65,8 +65,8 @@ const at = { file: "a.ts", line: 2, side: "RIGHT" as const };
 const BODY = "The fixture has a stray \u0000 byte here.";
 
 async function reviewWithAgentComment() {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", PATCH);
   expect(await addComment(store, "pr-1", { ...at, code: "two", body: BODY })).toMatchObject({ ok: true });
@@ -105,8 +105,8 @@ test("recording what became of the agent's comments after a submit takes a NUL c
 });
 
 test("free text with a NUL character is kept by every Store write, with U+FFFD in its place", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   const v = "a\u0000b";
   const stored = "a\uFFFDb";
   const where = { file: "a.ts", line: 1, side: "RIGHT" as const };

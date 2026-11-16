@@ -1,5 +1,5 @@
 #!/bin/bash
-# Smoke test for a bb-box template, run as root on the Proxmox host. It uses
+# Smoke test for a alia-box template, run as root on the Proxmox host. It uses
 # only the plugin's API token (not pct), as the plugin would: linked-clone the
 # template into the pool, give the box an address, start it, time each step,
 # SSH in as the box user with the plugin's key, run the template's own check,
@@ -46,7 +46,7 @@ ssh_box() {
 
 t0=$(ms)
 upid=$(call POST "/nodes/$node/lxc/$template/clone" --data-urlencode "newid=$vmid" \
-  --data-urlencode "hostname=bb-box-smoke-$vmid" --data-urlencode "pool=$BBBOX_POOL" --data-urlencode "full=0" | jq -er .data)
+  --data-urlencode "hostname=alia-box-smoke-$vmid" --data-urlencode "pool=$BBBOX_POOL" --data-urlencode "full=0" | jq -er .data)
 wait_task "$upid"
 t1=$(ms)
 # Clones inherit the template's protection flag; clear it so the box can be
@@ -55,7 +55,7 @@ call PUT "/nodes/$node/lxc/$vmid/config" \
   --data-urlencode "net0=name=eth0,bridge=$BBBOX_BRIDGE,ip=$addr/$BBBOX_PREFIX,gw=$BBBOX_GATEWAY,type=veth" \
   --data-urlencode "delete=protection" >/dev/null
 # Tags only after the box is in the pool: Proxmox checks them on /vms/<id>.
-call PUT "/nodes/$node/lxc/$vmid/config" --data-urlencode "tags=bb-box;smoke" >/dev/null
+call PUT "/nodes/$node/lxc/$vmid/config" --data-urlencode "tags=alia-box;smoke" >/dev/null
 t2=$(ms)
 upid=$(call POST "/nodes/$node/lxc/$vmid/status/start" | jq -er .data)
 wait_task "$upid"
@@ -70,12 +70,12 @@ t4=$(ms)
 # A desktop template has the desktop's check; a CPU-only one has no device
 # nodes to tell it by.
 kind=headless
-ssh_box test -x /usr/local/bin/bb-box-check-desktop && kind=desktop
+ssh_box test -x /usr/local/bin/alia-box-check-desktop && kind=desktop
 echo "clone $((t1 - t0)) ms, configure $((t2 - t1)) ms, start $((t3 - t2)) ms, SSH ready $((t4 - t3)) ms after start"
 echo "config: $(call GET "/nodes/$node/lxc/$vmid/config" | jq -c '.data | with_entries(select(.key | test("^(features|dev[0-9]+|net0)$")))')"
-ssh_box "systemctl is-system-running --wait >/dev/null; bb-box-check-$kind" | tee /tmp/bb-box-smoke-$vmid.txt
-failed=$(grep -c ' FAIL ' /tmp/bb-box-smoke-$vmid.txt || true)
-rm -f /tmp/bb-box-smoke-$vmid.txt
+ssh_box "systemctl is-system-running --wait >/dev/null; alia-box-check-$kind" | tee /tmp/alia-box-smoke-$vmid.txt
+failed=$(grep -c ' FAIL ' /tmp/alia-box-smoke-$vmid.txt || true)
+rm -f /tmp/alia-box-smoke-$vmid.txt
 
 if [ "$keep" != --keep ]; then
   upid=$(call POST "/nodes/$node/lxc/$vmid/status/stop" | jq -er .data)

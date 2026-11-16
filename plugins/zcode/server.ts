@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { parseMcpServers } from "./src/settings.js";
 import { parseSubagents } from "./src/subagents.js";
@@ -10,8 +10,8 @@ import {
 } from "./src/runs.js";
 import { workflowRunsRpcContract } from "./src/runsContract.js";
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     executable: {
       type: "string",
       label: "ZCode executable",
@@ -83,18 +83,18 @@ export default async function plugin(bb: BbPluginApi) {
         }
       }, "Use a native subagent configuration snapshot."),
     },
-    bbToolsEnabled: {
+    aliaToolsEnabled: {
       type: "boolean",
-      label: "bb plugin tools",
+      label: "alia plugin tools",
       description:
-        "Expose bb tools to ZCode. Overrides the CLI MCP server list; list other custom servers in MCP servers above. Applies to new sessions.",
+        "Expose VesnALIA tools to ZCode. Overrides the CLI MCP server list; list other custom servers in MCP servers above. Applies to new sessions.",
       default: false,
     },
     automationsEnabled: {
       type: "boolean",
       label: "ZCode automations",
       description:
-        "Let ZCode sessions create scheduled tasks (CronCreate) and run them in this bb while it is open. Applies to new sessions.",
+        "Let ZCode sessions create scheduled tasks (CronCreate) and run them in this VesnALIA while it is open. Applies to new sessions.",
       default: false,
     },
     offPeakTasksEnabled: {
@@ -108,11 +108,11 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "ZCode dynamic workflows",
       description:
-        "Let ZCode sessions author and run dynamic workflows (CreateWorkflow multi-agent orchestration). Workflow subagents run in the background of this bb and consume plan quota. Applies to new sessions.",
+        "Let ZCode sessions author and run dynamic workflows (CreateWorkflow multi-agent orchestration). Workflow subagents run in the background of this VesnALIA and consume plan quota. Applies to new sessions.",
       default: false,
     },
   });
-  let registered: ReturnType<BbPluginApi["providers"]["register"]> | undefined;
+  let registered: ReturnType<AliaPluginApi["providers"]["register"]> | undefined;
   // Launch options captured for the sessionless run-history reader (the
   // run hub / thread pane RPC below); register() refreshes them per settings.
   let launchOptions = {
@@ -128,7 +128,7 @@ export default async function plugin(bb: BbPluginApi) {
     nativeSearchEnhancementsEnabled: boolean;
     mcpServers: string;
     subagents: string;
-    bbToolsEnabled: boolean;
+    aliaToolsEnabled: boolean;
     automationsEnabled: boolean;
     offPeakTasksEnabled: boolean;
     dynamicWorkflowsEnabled: boolean;
@@ -147,13 +147,13 @@ export default async function plugin(bb: BbPluginApi) {
       nativeSearchEnhancementsEnabled: values.nativeSearchEnhancementsEnabled,
       mcpServers: values.mcpServers,
       subagents: values.subagents,
-      bbToolsEnabled: values.bbToolsEnabled,
+      aliaToolsEnabled: values.aliaToolsEnabled,
       automationsEnabled: values.automationsEnabled,
       offPeakTasksEnabled: values.offPeakTasksEnabled,
       dynamicWorkflowsEnabled: values.dynamicWorkflowsEnabled,
     };
     registered?.dispose();
-    registered = bb.providers.register({
+    registered = alia.providers.register({
       id: "zcode",
       displayName: "ZCode",
       icon: "./icons/zcode.svg",
@@ -168,7 +168,7 @@ export default async function plugin(bb: BbPluginApi) {
       maintenance: { health: true, usage: true, installation: false },
       capabilities: {
         permissionModes: ["accept-edits", "auto", "full"],
-        // This is bb's coarse validation ladder. model/list supplies each
+        // This is VesnALIA's coarse validation ladder. model/list supplies each
         // model's actual choices; unknown/stale values use the native default.
         reasoningLevels: [
           "none",
@@ -215,15 +215,15 @@ export default async function plugin(bb: BbPluginApi) {
         ],
         scope: "workspace",
       },
-      env: { passthrough: ["BB_ZCODE_EXECUTABLE", "BB_ZCODE_NODE_EXECUTABLE"] },
+      env: { passthrough: ["ALIA_ZCODE_EXECUTABLE", "ALIA_ZCODE_NODE_EXECUTABLE"] },
       // Sessionless model/health probes also need launch settings. Re-registration
-      // changes the bridge fingerprint so bb invalidates the old model catalog.
+      // changes the bridge fingerprint so VesnALIA invalidates the old model catalog.
       experimental_bridgeOptions: launch,
     });
   }
   register(await settings.get());
   settings.onChange(register);
-  bb.onDispose(() => registered?.dispose());
+  alia.onDispose(() => registered?.dispose());
 
   // Sidebar hub + thread run pane read run history through this RPC. The
   // persisted run store outlives any thread's CLI process, so a short-lived
@@ -237,20 +237,20 @@ export default async function plugin(bb: BbPluginApi) {
     projectId?: string;
   }): Promise<string> => {
     if (input.threadId) {
-      const thread = await bb.sdk.threads.get({
+      const thread = await alia.sdk.threads.get({
         threadId: input.threadId,
       });
       const environmentId =
         typeof thread.environmentId === "string" ? thread.environmentId : null;
       if (!environmentId)
         throw new Error("This thread has no environment checkout yet.");
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       if (!environment.path)
         throw new Error("This thread's environment has no local path.");
       return environment.path;
     }
     if (input.projectId) {
-      const environments = await bb.sdk.environments.list({
+      const environments = await alia.sdk.environments.list({
         projectId: input.projectId,
       });
       const withPath = environments.filter(
@@ -269,7 +269,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     throw new Error("Pass a threadId or projectId to locate the workspace.");
   };
-  bb.rpc.register(
+  alia.rpc.register(
     workflowRunsRpcContract,
     {
       workflowRuns: async (input) => {

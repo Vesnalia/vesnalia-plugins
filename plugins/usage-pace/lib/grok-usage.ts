@@ -1,5 +1,5 @@
 // Grok Build usage: reads the Grok CLI login and asks xAI's billing service
-// for the credit window. From bb-plugin-grok-build-usage by MacHatter1 (MIT),
+// for the credit window. From alia-plugin-grok-build-usage by MacHatter1 (MIT),
 // https://github.com/MacHatter1/bb-plugin-grok-build-usage, unchanged.
 
 import { execFile as execFileCallback } from "node:child_process";
@@ -10,7 +10,7 @@ import { promisify } from "node:util";
 import type {
   ProviderHealthResult,
   ProviderUsageResult,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 const execFile = promisify(execFileCallback);
 const BILLING_URL = "https://cli-chat-proxy.grok.com/v1/billing?format=credits";

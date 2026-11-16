@@ -1,4 +1,4 @@
-// bb loom forge check: reads a live pull request through a repo's forge on the project's machine, with the host call a
+// VesnALIA loom forge check: reads a live pull request through a repo's forge on the project's machine, with the host call a
 // poll makes, and says what Loom reads from it. It changes no ticket and writes no event, so any thread may run it.
 import { repoCheckout } from "./checkouts";
 import type { TicketRow } from "./db/store";
@@ -87,7 +87,7 @@ function readOf(feedback: Feedback, forge: ForgeSpec): ForgeCheckRead {
   };
 }
 
-/** The fields a host contract refused, from the RPC error bb raises for an answer that fails its output schema. */
+/** The fields a host contract refused, from the RPC error VesnALIA raises for an answer that fails its output schema. */
 function issuesOf(error: unknown): Issue[] {
   const issues = (error as { issues?: unknown } | null)?.issues;
   if (!Array.isArray(issues)) return [];
@@ -106,7 +106,7 @@ function target(ctx: EngineCtx, projectId: number, spec: Spec, a: { target: stri
     ticket = tickets.find((row) => row.pr_url === url) ?? null;
   } else {
     ticket = tickets.find((row) => row.key === a.target) ?? null;
-    if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${a.target} in this project.`, "Give a ticket key from `bb loom tickets <slug>`, or a pull request URL.");
+    if (ticket === null) throw new LoomError("loom_not_found", `No ticket ${a.target} in this project.`, "Give a ticket key from `alia loom tickets <slug>`, or a pull request URL.");
     if (ticket.pr_url === null) throw new LoomError("loom_invalid_input", `${ticket.key} has no pull request yet.`, "Give the URL of a pull request to read instead.");
     url = ticket.pr_url;
   }
@@ -133,10 +133,10 @@ function settingsOf(spec: Spec, repo: string | null): RepoSettings {
 export async function forgeCheck(ctx: EngineCtx, a: { slug: string; target: string; repo?: string; version?: number }): Promise<ForgeCheck> {
   const { store } = ctx;
   const project = store.projectBySlug(a.slug);
-  if (project === null) throw new LoomError("loom_not_found", `No project ${a.slug}.`, "Run `bb loom list` to see the projects.");
+  if (project === null) throw new LoomError("loom_not_found", `No project ${a.slug}.`, "Run `alia loom list` to see the projects.");
   const version = a.version ?? project.approved_version ?? store.latestSpecVersion(project.id)!.version;
   const row = store.specVersion(project.id, version);
-  if (row === null) throw new LoomError("loom_not_found", `${a.slug} has no spec v${version}.`, `Run \`bb loom show ${a.slug}\` to see its versions.`);
+  if (row === null) throw new LoomError("loom_not_found", `${a.slug} has no spec v${version}.`, `Run \`alia loom show ${a.slug}\` to see its versions.`);
   const spec = JSON.parse(row.spec_json) as Spec;
   const { url, ticket, repo } = target(ctx, project.id, spec, a);
   const settings = settingsOf(spec, repo);

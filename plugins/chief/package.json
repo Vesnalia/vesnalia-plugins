@@ -1,29 +1,21 @@
 {
-  "name": "bb-plugin-chief",
+  "name": "alia-plugin-chief",
   "version": "0.1.0",
-  "description": "Supervises delegated BB worker and reviewer threads through verified completion.",
+  "description": "Supervises delegated VesnALIA worker and reviewer threads through verified completion.",
   "license": "MIT",
   "author": "Divyesh",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/divyesh-puri/bb-plugin-chief.git"
-  },
-  "homepage": "https://github.com/divyesh-puri/bb-plugin-chief#readme",
-  "bugs": {
-    "url": "https://github.com/divyesh-puri/bb-plugin-chief/issues"
-  },
   "type": "module",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run server.test.ts app.test.tsx"
   },
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Chief",
-    "description": "Supervise ordinary BB worker and review threads through completion.",
+    "description": "Supervise ordinary VesnALIA worker and review threads through completion.",
     "branding": {
       "icon": "Crown"
     },
@@ -37,7 +29,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -65,5 +56,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.7"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/chief#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/chief"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

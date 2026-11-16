@@ -1,4 +1,4 @@
-# Human tasks for bb
+# Human tasks for VesnALIA
 
 **The steps only you can do, handed over by your agents in one checklist. Check
 one off and the agent that asked picks up where it stopped.**
@@ -14,10 +14,10 @@ list when it suits you, and the agent that asked is told the moment you finish.
 ## Install
 
 ```sh
-bb plugin install https://github.com/kvaliotti/bb-plugin-human-tasks
+alia plugin install https://github.com/kvaliotti/bb-plugin-human-tasks
 ```
 
-Open **Human tasks** (the raised hand) in bb's navigation. Agents pick up the
+Open **Human tasks** (the raised hand) in VesnALIA's navigation. Agents pick up the
 tools and the bundled skill on their next turn; no AGENTS.md changes needed.
 
 ## What you get
@@ -33,15 +33,15 @@ tools and the bundled skill on their next turn; no AGENTS.md changes needed.
   picked it back up. If the agent checks and it isn't done, it sends the task
   back with a reason. Threads that asked for the same thing all hear back.
 - **You notice new tasks:** a count on the navigation icon (red while an agent
-  is blocked), a toast, a system notification while bb is in the background,
+  is blocked), a toast, a system notification while VesnALIA is in the background,
   a *Waiting on you* list on the home screen, and a banner above the
   requesting thread's composer.
-- **Blocking tasks wait in the thread** as bb's native input form, so the
+- **Blocking tasks wait in the thread** as VesnALIA's native input form, so the
   thread shows as waiting on you and push notifications fire.
 - **Time-aware:** due dates, snooze (an hour, tomorrow, Monday, a week), and
   tasks agents hide until they can be done.
 - **Credentials stay out of chat.** A task names the env vars the agent needs
-  back; after you finish, the agent collects them with `bb secret request`.
+  back; after you finish, the agent collects them with `alia secret request`.
   The note box warns you when you paste something that looks like a key.
 
 ![A blocking task with a credential hand-back](docs/screenshots/2-blocking-task.jpg)
@@ -50,7 +50,7 @@ tools and the bundled skill on their next turn; no AGENTS.md changes needed.
 
 Every task says what the agent would need to do it itself, this time and next
 time: an MCP server, a scoped API key, a CLI login, permission to use your
-signed-in bb browser. Then you choose:
+signed-in VesnALIA browser. Then you choose:
 
 - **Mark done** after doing it yourself, or
 - **Let the agent do it.** The task goes back to the agent and its thread
@@ -88,47 +88,47 @@ Three tools, kept short because every thread carries them:
 Agents without the tools can read and add tasks from a shell:
 
 ```sh
-bb human-tasks list [--all] [--mine]
-bb human-tasks show <id>
-bb human-tasks add --title "…" --instructions "…" [--kind setup] [--blocking] \
+alia human-tasks list [--all] [--mine]
+alia human-tasks show <id>
+alia human-tasks add --title "…" --instructions "…" [--kind setup] [--blocking] \
   --agent-needs "…" [--reply-prompt "…"] [--secret NAME:description --env-file .env] [--due 2026-11-02] [--not-before …]
 ```
 
 ## Settings
 
-`bb plugin config human-tasks`, or the plugin's settings page:
+`alia plugin config human-tasks`, or the plugin's settings page:
 
 | Setting | Default | Effect |
 | --- | --- | --- |
 | `notifyOnComplete` | on | Message the requesting thread when a task is done |
 | `askInThreadForBlocking` | on | Show blocking tasks as a form in their thread |
-| `systemNotifications` | on | System notification for new tasks while bb is in the background |
+| `systemNotifications` | on | System notification for new tasks while VesnALIA is in the background |
 | `keepFinishedDays` | 365 | Delete done and dismissed tasks older than this, once a day (0 keeps them) |
 
 ## Privacy and trust
 
-- Tasks live in this plugin's SQLite database on your bb server. Nothing is
+- Tasks live in this plugin's SQLite database on your VesnALIA server. Nothing is
   sent anywhere else.
 - Notes you write go to the requesting agent's thread, so they become part of
   that conversation. That's why the note box flags credentials and credential
-  tasks use bb's secret form instead.
+  tasks use VesnALIA's secret form instead.
 - Agent tools only act on tasks their own thread created, and only you finish,
   reopen, dismiss, or delete tasks: from the page or the in-thread form. The
   shell command has no way to do those things.
 - Your note or answer goes only to the thread that asked. Threads that asked
   for the same thing are told it's done, not what you wrote. A thread listing
   tasks sees its own project only. Duplicates only merge within one project.
-- These are guard rails, not a security boundary: bb gives plugins no way to
+- These are guard rails, not a security boundary: VesnALIA gives plugins no way to
   tell its app apart from an agent calling the plugin's API directly, and
   plugins are full-trust code. Don't put anything in a task you wouldn't let
   your agents read.
 
 ## Compatibility
 
-Built against bb 0.46 and plugin SDK 0.6.49. It uses three experimental bb
+Built against VesnALIA 0.46 and plugin SDK 0.6.49. It uses three experimental VesnALIA
 APIs: `experimental_appOverlay` (alerts and the badge count),
 `experimental_icons` (only the badge icon is registered; the plugin's other
-icons render locally), and composer banners. If a bb release changes them, the
+icons render locally), and composer banners. If a VesnALIA release changes them, the
 page, tools, and in-thread forms keep working; the badge count or toasts may
 stop until the plugin is updated.
 
@@ -136,9 +136,9 @@ stop until the plugin is updated.
 
 ```sh
 npm install
-npm test            # vitest, against bb's fake plugin host
+npm test            # vitest, against alia's fake plugin host
 npm run typecheck
-bb plugin install . # path install; `bb plugin dev` rebuilds on save
+alia plugin install . # path install; `alia plugin dev` rebuilds on save
 ```
 
 The page at `/plugins/human-tasks/tasks/example` renders made-up tasks in the

@@ -332,7 +332,7 @@
 .db-error { color:var(--destructive-text,var(--destructive)); }
 .db-warning { color:var(--warning-text,var(--warning)); }
 .db-sr { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-/* The panel can be narrow inside a wide BB window: query it, not the viewport. */
+/* The panel can be narrow inside a wide ALIA window: query it, not the viewport. */
 /* Keep at least 300px for wrapping tabs; below that, use one scrollable row. */
 @container project-workspace (max-width:350px) {
   .db-project-tabs { flex-wrap:nowrap; overflow-x:auto; }

@@ -161,14 +161,14 @@ export function touchGhostTransform(dx: number, dy: number): string {
 
 /**
  * Where a snapshot may be parented so it keeps the card's look. The plugin's
- * Tailwind utilities are scoped to an ancestor (`[data-bb-plugin=…]` /
- * `[data-bb-plugin-root]`), so a clone hung off `document.body` resolves none
+ * Tailwind utilities are scoped to an ancestor (`[data-alia-plugin=…]` /
+ * `[data-alia-plugin-root]`), so a clone hung off `document.body` resolves none
  * of them: no `bg-card`, no border radius, no muted text — the lift rendered as
  * bare floating text the first time this shipped. The nearest scope ancestor is
  * also the right place to escape the board's clipping: it sits outside the
  * board's scrollers, and the snapshot is `position: fixed`.
  */
-export const TOUCH_GHOST_SCOPE_SELECTOR = "[data-bb-plugin], [data-bb-plugin-root]";
+export const TOUCH_GHOST_SCOPE_SELECTOR = "[data-alia-plugin], [data-alia-plugin-root]";
 
 /**
  * Lift a floating snapshot of the dragged element (issue #336): the canonical

@@ -42,7 +42,7 @@ Archive SHA-256: `c95cc346815518a2a9f91edf8c194d497ba6e4e3ecb3f20a38e034f72d756b
 
 Verified in a fresh Node 20 Alpine container using
 `npm install --ignore-scripts --omit=dev`, followed by frontend bundling with
-esbuild (development dependencies, including BB-provided host modules, external).
-The native `bb plugin build` was also verified on macOS. This is a Linux
-production-install/bundling check, not a marketplace admission test on a Linux BB
+esbuild (development dependencies, including ALIA-provided host modules, external).
+The native `alia plugin build` was also verified on macOS. This is a Linux
+production-install/bundling check, not a marketplace admission test on a Linux VesnALIA
 server. Icons were rendered at 14, 16, 20, and 24px for visual inspection.

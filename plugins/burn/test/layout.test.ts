@@ -41,20 +41,20 @@ function importsUnder(dir: string): Import[] {
 const inside = (path: string, dir: string): boolean => path === dir || path.startsWith(`${dir}/`);
 const describeImport = ({ file, specifier }: Import): string => `${file} imports ${specifier}`;
 
-// Shared code runs in pi and in bb, so it may use only Node and other files in src/.
+// Shared code runs in pi and in VesnALIA, so it may use only Node and other files in src/.
 const breaksSrcRule = ({ specifier, target }: Import): boolean =>
   target !== null ? !inside(target, "src") : !isBuiltin(specifier);
 
 const isSelfImport = (specifier: string): boolean => specifier === "burn" || specifier.startsWith("burn/");
 
-// pi loads the extension from the package, where only declared dependencies resolve: no zod, no bb SDK.
+// pi loads the extension from the package, where only declared dependencies resolve: no zod, no VesnALIA SDK.
 const breaksPiRule = ({ specifier, target }: Import): boolean => {
   if (target !== null) return !inside(target, "extensions/pi") && !inside(target, "src");
-  return specifier === "zod" || specifier.startsWith("@get-bb/") || isSelfImport(specifier);
+  return specifier === "zod" || specifier.startsWith("@get-alia/") || isSelfImport(specifier);
 };
 
-const breaksBbRule = ({ specifier, target }: Import): boolean => {
-  if (target !== null) return !inside(target, "extensions/bb") && !inside(target, "src");
+const breaksAliaRule = ({ specifier, target }: Import): boolean => {
+  if (target !== null) return !inside(target, "extensions/alia") && !inside(target, "src");
   return specifier.startsWith("@earendil-works/") || isSelfImport(specifier);
 };
 
@@ -63,20 +63,20 @@ describe("repository layout", () => {
     expect(importsUnder("src").filter(breaksSrcRule).map(describeImport)).toEqual([]);
   });
 
-  it("keeps the pi extension off zod, the bb SDK and extensions/bb", () => {
+  it("keeps the pi extension off zod, the VesnALIA SDK and extensions/alia", () => {
     expect(importsUnder("extensions/pi").filter(breaksPiRule).map(describeImport)).toEqual([]);
   });
 
-  it("keeps the bb plugin off pi's packages and extensions/pi", () => {
-    expect(importsUnder("extensions/bb").filter(breaksBbRule).map(describeImport)).toEqual([]);
+  it("keeps the VesnALIA plugin off pi's packages and extensions/pi", () => {
+    expect(importsUnder("extensions/alia").filter(breaksAliaRule).map(describeImport)).toEqual([]);
   });
 
   it("points the manifests at files that exist in their extension", () => {
     const entries: [string, string][] = [
       ...manifest.pi.extensions.map((entry: string) => [entry, "extensions/pi"] as [string, string]),
-      [manifest.bb.server, "extensions/bb"],
-      [manifest.bb.app, "extensions/bb"],
-      [manifest.bb.host, "extensions/bb"],
+      [manifest.alia.server, "extensions/alia"],
+      [manifest.alia.app, "extensions/alia"],
+      [manifest.alia.host, "extensions/alia"],
     ];
     for (const [entry, dir] of entries) {
       const path = join(ROOT, entry);
@@ -88,11 +88,11 @@ describe("repository layout", () => {
   it("ships only src and the pi extension in the npm package", () => {
     const files = (manifest.files as string[]).map((entry) => entry.replace(/^\.\//, ""));
     expect(files).toEqual(expect.arrayContaining(["src/", "extensions/pi/"]));
-    expect(files.filter((entry) => /^(extensions\/?$|extensions\/bb|test)/.test(entry))).toEqual([]);
+    expect(files.filter((entry) => /^(extensions\/?$|extensions\/alia|test)/.test(entry))).toEqual([]);
   });
 
-  it("gives extensions/bb no index file that pi could load as an extension", () => {
-    expect(readdirSync(join(ROOT, "extensions/bb")).filter((name) => /^index\.[cm]?[jt]sx?$/.test(name))).toEqual([]);
+  it("gives extensions/alia no index file that pi could load as an extension", () => {
+    expect(readdirSync(join(ROOT, "extensions/alia")).filter((name) => /^index\.[cm]?[jt]sx?$/.test(name))).toEqual([]);
   });
 
   it("keeps zod the only runtime dependency", () => {

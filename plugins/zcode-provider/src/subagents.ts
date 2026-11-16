@@ -1,12 +1,12 @@
-import { threadDeltaSchema } from '@get-bb/plugin-sdk/provider-bridge';
-import type { ThreadDelta } from '@get-bb/plugin-sdk/provider-bridge';
+import { threadDeltaSchema } from '@vesnalia/plugin-sdk/provider-bridge';
+import type { ThreadDelta } from '@vesnalia/plugin-sdk/provider-bridge';
 import type { Snapshot } from './native.ts';
 import { record, boundedWarnings } from './errors.ts';
 import type { Warn } from './errors.ts';
 
 type Child = { key: string; turnId: string; childId: string; parentId: string; background: boolean; closed: boolean; signature: string; label: string; summary: string };
 // Projection only: ZCode owns execution, task IDs and cancellation. childRef is
-// the actual native session identity, never a fabricated bb thread reference.
+// the actual native session identity, never a fabricated VesnALIA thread reference.
 export class Subagents {
   private children = new Map<number, Child>();
   private turns = new Set<string>();

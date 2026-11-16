@@ -30,7 +30,7 @@ describe("keys and links", () => {
   const servers = [...DEFAULT_CONFIG.servers, parseConfig({ ...DEFAULT_CONFIG, servers: [TEST_SERVER] }).servers[0]!];
   it("parses keys with either sign and links of every server", () => {
     expect(parseKey("gitlab:group/sub/proj!77")).toEqual({ server: "gitlab", repo: "group/sub/proj", number: 77 });
-    expect(parseLink("https://github.com/get-bb/bb/pull/4411/files", servers)).toEqual({ server: "github", repo: "get-bb/bb", number: 4411 });
+    expect(parseLink("https://github.com/get-bb/bb/pull/4411/files", servers)).toEqual({ server: "github", repo: "get-alia/alia", number: 4411 });
     expect(parseLink("https://forge.test/acme/app/pull/12", servers)).toEqual({ server: "forge", repo: "acme/app", number: 12 });
     expect(() => resolveQuery("nope:a/b#1", servers)).toThrow(/no server called nope/u);
     expect(() => resolveQuery("hello", servers)).toThrow(/no server's link pattern/u);
@@ -41,10 +41,10 @@ describe("projects", () => {
   it("matches a repo to a project by remote, then by repository name, then the default", () => {
     const projects = [
       { id: "a", name: "app", gitRemoteUrl: "git@github.com:acme/app.git" },
-      { id: "b", name: "bb", gitRemoteUrl: "https://github.com/get-bb/bb" },
+      { id: "b", name: "alia", gitRemoteUrl: "https://github.com/get-bb/bb" },
     ];
     expect(remotePath("git@github.com:acme/app.git")).toBe("acme/app");
-    expect(matchProject("get-bb/bb", projects, null)).toBe("b");
+    expect(matchProject("get-alia/alia", projects, null)).toBe("b");
     expect(matchProject("acme/app", projects, null)).toBe("a");
     expect(matchProject("x/y", projects, "b")).toBe("b");
     expect(matchProject("x/y", projects, null)).toBeNull();
@@ -54,7 +54,7 @@ describe("projects", () => {
 describe("templates and globs", () => {
   it("fills known variables and leaves unknown ones", () => {
     expect(renderTemplate("{url} {nope}", { url: "u" })).toBe("u {nope}");
-    expect(globMatch("get-bb/*", "get-bb/bb")).toBe(true);
+    expect(globMatch("get-alia/*", "get-alia/alia")).toBe(true);
     expect(globMatch("acme/app", "Acme/App")).toBe(true);
     expect(globMatch("acme/*", "other/x")).toBe(false);
   });
@@ -108,7 +108,7 @@ describe("server workspaces", () => {
     const toml = configToToml(testConfig()).replace("[[preset]]", '[server.workspace]\nkind = "provider"\nprovider = "sandbox-checkout"\n\n[server.workspace.machine]\nprovider = "sandbox"\n\n[[preset]]');
     expect(configFromToml(toml).servers[0]!.workspace).toEqual({ kind: "provider", provider: "sandbox-checkout", inputs: {}, machine: { provider: "sandbox", inputs: {} } });
     const bad = { ...TEST_SERVER, workspace: { kind: "provider", provider: "sandbox-checkout", machine: { provider: "Not An Id" } } };
-    expect(() => parseConfig({ ...DEFAULT_CONFIG, servers: [bad] })).toThrow(/machine\.provider: must be a bb machine provider id/u);
+    expect(() => parseConfig({ ...DEFAULT_CONFIG, servers: [bad] })).toThrow(/machine\.provider: must be a alia machine provider id/u);
     const command = { ...TEST_SERVER, workspace: { kind: "command", command: "echo /tmp", machine: { provider: "sandbox" } } };
     expect(() => parseConfig({ ...DEFAULT_CONFIG, servers: [command] })).toThrow(/machine/u);
   });
@@ -132,7 +132,7 @@ describe("server workspaces", () => {
     expect(h.port.spawned[0]!.workspace).toEqual({ kind: "provider", providerId: "my-trees", inputs: { tree: "shuttle-3" } });
   });
 
-  it("tests the review workspace against bb's providers: ids, a composition's own machine provider and inputs", async () => {
+  it("tests the review workspace against VesnALIA's providers: ids, a composition's own machine provider and inputs", async () => {
     const h = harness();
     const schema = (properties: Record<string, unknown>, required: string[] = []) => ({ type: "object", properties, required, additionalProperties: false });
     h.port.environments = [
@@ -150,7 +150,7 @@ describe("server workspaces", () => {
       const row = results.find((result) => result.operation === "workspace")!;
       return `${row.ok ? "ok" : "fail"}: ${row.detail}`;
     };
-    expect(await workspaceRow(undefined)).toBe("ok: bb's git worktree, on the machine with the project's checkout");
+    expect(await workspaceRow(undefined)).toBe("ok: VesnALIA's git worktree, on the machine with the project's checkout");
     expect(await workspaceRow({ kind: "command", command: "echo /tmp" })).toBe("ok: a command prints the checkout's path; the test does not run it");
     expect(await workspaceRow({ kind: "provider", provider: "my-trees", inputs: { tree: "shuttle-{number}" } })).toBe("ok: My trees (my-trees), on the machine with the project's checkout");
     expect(await workspaceRow({ kind: "provider", provider: "sandbox-checkout", inputs: { base: "origin/{head_ref}" }, machine: { provider: "sandbox", inputs: { cores: 8, revision: "{head}" } } })).toBe("ok: Sandbox checkout (sandbox-checkout), on a new Sandbox machine (sandbox) for each review");
@@ -158,14 +158,14 @@ describe("server workspaces", () => {
 
     expect(await workspaceRow({ kind: "provider", provider: "sandbox-checkout", inputs: {}, machine: { provider: "plain", inputs: {} } })).toBe("ok: Sandbox checkout (sandbox-checkout), on a new Plain machine (plain) for each review");
 
-    expect(await workspaceRow({ kind: "provider", provider: "nope", inputs: {} })).toBe('fail: bb has no environment provider "nope"; it has bare, my-trees, sandbox-checkout, sandbox-full');
+    expect(await workspaceRow({ kind: "provider", provider: "nope", inputs: {} })).toBe('fail: VesnALIA has no environment provider "nope"; it has bare, my-trees, sandbox-checkout, sandbox-full');
     expect(await workspaceRow({ kind: "provider", provider: "sandbox-full", inputs: {} })).toBe("fail: Sandbox with checkout (sandbox-full) makes a new machine for each review with the machine provider sandbox, so the machine must be sandbox");
     expect(await workspaceRow({ kind: "provider", provider: "my-trees", inputs: {} })).toBe("fail: inputs.tree: Invalid input: expected string, received undefined");
-    expect(await workspaceRow({ kind: "provider", provider: "sandbox-checkout", inputs: {}, machine: { provider: "gone", inputs: {} } })).toBe('fail: bb has no machine provider "gone"; it has plain, sandbox');
+    expect(await workspaceRow({ kind: "provider", provider: "sandbox-checkout", inputs: {}, machine: { provider: "gone", inputs: {} } })).toBe('fail: VesnALIA has no machine provider "gone"; it has plain, sandbox');
     expect(await workspaceRow({ kind: "provider", provider: "sandbox-checkout", inputs: {}, machine: { provider: "plain", inputs: { cores: 2 } } })).toBe("fail: machine.inputs: Plain (plain) takes none");
     expect(await workspaceRow({ kind: "provider", provider: "sandbox-checkout", inputs: {}, machine: { provider: "sandbox", inputs: { cores: 64 } } })).toMatch(/^fail: machine\.inputs\.cores: Too big/u);
     // Shuttle sends {} for an environment provider's empty inputs, since one with a schema refuses none at all.
-    expect(await workspaceRow({ kind: "provider", provider: "bare", inputs: {} })).toBe("fail: inputs: Bare (bare) takes no inputs, and bb refuses the empty inputs Shuttle sends it");
+    expect(await workspaceRow({ kind: "provider", provider: "bare", inputs: {} })).toBe("fail: inputs: Bare (bare) takes no inputs, and VesnALIA refuses the empty inputs Shuttle sends it");
   });
 
   it("starts a review on a new machine when the server's workspace names one", async () => {
@@ -255,7 +255,7 @@ describe("reviews", () => {
     await h.shuttle.review({ key: "forge:acme/app#3", threadId: "thr_mine", note: "focus on filters" });
     expect(h.port.sent[0]).toMatchObject({ threadId: "thr_mine" });
     expect(h.port.sent[0]!.text).toContain("Note from me: focus on filters");
-    await expect(h.shuttle.review({ key: "forge:x/unknown#4" })).rejects.toThrow(/no bb project matches x\/unknown/u);
+    await expect(h.shuttle.review({ key: "forge:x/unknown#4" })).rejects.toThrow(/no alia project matches x\/unknown/u);
     h.settings.defaultProject = "proj_app";
     await h.shuttle.review({ key: "forge:x/unknown#4" });
     expect(h.port.spawned[0]).toMatchObject({ projectId: "proj_app", workspace: { kind: "project-default" } });

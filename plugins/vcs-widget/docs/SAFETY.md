@@ -31,24 +31,24 @@ revert is in progress, or a job holds the repository. The popup says which, and
 offers Abort or Cancel. One mutation at a time per repository.
 
 Network work runs as a job rather than inside a request, so a slow remote cannot
-hit bb's call deadline. Anything that does time out is killed as a process
+hit VesnALIA's call deadline. Anything that does time out is killed as a process
 group, ssh and credential helpers included.
 
 ## Agents and terminals
 
-**No agent tool or CLI can mutate the repository.** `bb vcs-widget` and
+**No agent tool or CLI can mutate the repository.** `alia vcs-widget` and
 `vcs_widget_status` reach exactly two of the host's reads, and there is no
 argument that turns either into a write.
 
 Agent Commit and Agent Commit & Push send one of two fixed lines to the thread
 as an ordinary user message, and the caller names a variant, never the text. It
 widens nothing: whatever can call it can already send the thread any message it
-likes through bb's own API.
+likes through VesnALIA's own API.
 
 ## What it does not close
 
 The RPC endpoints behind the popup are a different matter, and worth knowing
-before you install. They are bb's local-auth API, like every other plugin's, so
+before you install. They are VesnALIA's local-auth API, like every other plugin's, so
 any local process holding the browser's rights — an agent shell included — can
 call them with a thread id, and a mutation on thread T runs on T's host.
 

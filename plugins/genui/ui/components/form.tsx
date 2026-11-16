@@ -74,7 +74,7 @@ export function Form({ props }: { props: Props }) {
       void stage(question, { text: message, selection: true });
     };
     // A click (a box, a choice) shows in the message at once; typing waits for a pause,
-    // or less: leaving the field, Enter or a press anywhere (BB's send button) write it first.
+    // or less: leaving the field, Enter or a press anywhere (VesnALIA's send button) write it first.
     if (!edit.typed) {
       apply();
       return;

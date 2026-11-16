@@ -22,7 +22,7 @@ const PERSONAL = [
 // Files that may name the maintainer: the licence, these rules and this test.
 const SKIP = new Set(["LICENSE", "AGENTS.md", "CLAUDE.md", "generic.test.ts", "package-lock.json"]);
 // The plugin's own repository URL is fine.
-const OWN_REPO = /github\.com\/Johannes-Berggren\/bb-plugin-jb-flow/g;
+const OWN_REPO = /github\.com\/Johannes-Berggren\/alia-plugin-jb-flow/g;
 
 test("no personal names, companies, repos or paths in tracked files", () => {
   const files = execFileSync("git", ["ls-files"], { encoding: "utf8" })

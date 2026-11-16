@@ -2,7 +2,7 @@
 // "Copy as markdown" under a reply's ```ui block: what lands on the clipboard
 // is the block's markdown with the values the user moved, not the spec's.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { specToMarkdown } from "../core";
 import { Frame } from "./LiveUi";
@@ -12,11 +12,11 @@ declare const jsdom: { window: Window };
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   useComposers: () => [],
   useSdk: () => ({ threads: { send: vi.fn() } }),
-  useBbNavigate: () => ({}),
+  useAliaNavigate: () => ({}),
   useRpc: () => ({ call: vi.fn() }),
   useSettings: () => ({ values: { animations: false }, isLoading: false }),
   Markdown: ({ content }: { content: string }) => <p>{content}</p>,

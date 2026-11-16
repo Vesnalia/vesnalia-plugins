@@ -1,7 +1,7 @@
 ## Environment
 
 - Host: macOS (darwin), Google Chrome 155, board rendered at 1280×800 desktop viewport
-- Focus Board dev lineage (`0.6.x/1.1.1-dev`); headless evidence captured through the screenshot harness (`scripts/screenshot/`, mocked SDK, no bb server needed)
+- Focus Board dev lineage (`0.6.x/1.1.1-dev`); headless evidence captured through the screenshot harness (`scripts/screenshot/`, mocked SDK, no VesnALIA server needed)
 
 ## Reproduction steps
 

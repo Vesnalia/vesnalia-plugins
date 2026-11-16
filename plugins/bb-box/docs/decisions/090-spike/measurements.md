@@ -33,9 +33,9 @@ A writer whose working folder was in the home kept it in the deleted
 subvolume, and the files it opened by path (`~/work/writer.log`) were
 written into the restored home.
 
-A user service under linger (a stand-in for BB's daemon) is ended by the
+A user service under linger (a stand-in for VesnALIA's daemon) is ended by the
 restore and is not started again by restarting `user@<uid>.service` alone,
-as it was a transient unit. BB's daemon is a unit in the home, which comes
+as it was a transient unit. VesnALIA's daemon is a unit in the home, which comes
 back with the user manager.
 
 Today's reset on a subvolume home:
@@ -135,17 +135,17 @@ iOS Simulator, as a user with no desktop session, as slot users are:
 | After restore | `simctl list` showed the device as it was, and not the device made after the take; it booted in 14 s; the setting inside it was as at the take |
 | Snapshot taken while the device was booted and paused | restored, booted in 14 s, setting as at the take |
 
-Fork of a logged-in home into a new user, with BB-style files planted:
+Fork of a logged-in home into a new user, with ALIA-style files planted:
 
 - Clone 180 ms, change of owner 694 ms.
-- Removed by the reset: BB's `host-id`, `auth.json`, `config.json`, the
-  access file, BB's launch agent, `login.keychain-db` and the keychain
+- Removed by the reset: VesnALIA's `host-id`, `auth.json`, `config.json`, the
+  access file, VesnALIA's launch agent, `login.keychain-db` and the keychain
   folder named by the Mac's hardware UUID.
 - Kept: the user's SSH key and `gh` token, as 070 says of every fork.
 - No file named the source user's GeneratedUID.
 - 6 files named the source's home path, `/Users/bbx-1`: Photos libraries'
   `appPrivateData.plist`, CoreSpotlight's `EnabledIndexes`, a photolibraryd
-  plist, and BB's launch agent before the reset.
+  plist, and VesnALIA's launch agent before the reset.
 - `ByHost` preferences name the Mac's hardware UUID, which a fork on the
   same Mac shares.
 - After a userspace restart the fork was at the console, with a new login

@@ -120,7 +120,7 @@ export function parseCliContexts(listed: unknown): CliContext[] {
 
 const isLoopback = (url: URL) => ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
 
-/** Cloud origin bb signs in to; the CLI's built-in `lobu` context points here. */
+/** Cloud origin VesnALIA signs in to; the CLI's built-in `lobu` context points here. */
 export const CLOUD_ORIGIN = "https://app.lobu.ai";
 
 /** Classify a Lobu origin the way the Mac app does: local loopback, Cloud, or another Lobu. */
@@ -327,7 +327,7 @@ export function createLobuApi({ baseUrl }: LobuApiOptions) {
       throw cliFailure(error, context);
     }
     const parsed = parseWhoami(stdout);
-    if (parsed === null) throw new LobuSetupError("cli_failed", context, "lobu whoami printed something bb cannot read.");
+    if (parsed === null) throw new LobuSetupError("cli_failed", context, "lobu whoami printed something VesnALIA cannot read.");
     if (parsed.token === null) {
       throw new LobuSetupError("not_logged_in", context, `The lobu CLI has no login for ${contextLabel(context)}.`);
     }
@@ -516,7 +516,7 @@ export function createLobuApi({ baseUrl }: LobuApiOptions) {
     async deleteMemories(context: string | null, workspace: string, ids: number[], reason: string): Promise<number[]> {
       const script = `export default async (_ctx, client) => client.knowledge.delete(${JSON.stringify({ content_ids: ids, reason })});`;
       const result = (await request(context, `/api/${encodeURIComponent(workspace)}/run_sdk`, {
-        title: "Undo a memory saved from bb",
+        title: "Undo a memory saved from VesnALIA",
         script,
       })) as { success?: boolean; return_value?: { deleted_ids?: number[]; already_superseded_ids?: number[] }; error?: { message?: string } };
       if (result.success !== true) throw new Error(result.error?.message ?? "run_sdk failed");

@@ -4,7 +4,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { createStore } from "./store";
 import { queueStore } from "./store-queue";
@@ -24,16 +24,16 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 /** A host whose database holds the rows 1.7.0 wrote, on the tables 1.8.0 migrates. */
 function host() {
   const made = createFakePluginHost({ pluginId: "code-review-workspace" });
-  createStore(made.bb);
-  made.bb.storage.database().exec(fixture("data.sql"));
+  createStore(made.alia);
+  made.alia.storage.database().exec(fixture("data.sql"));
   return made;
 }
 
 test("every Store read of reviews 1.7.0 wrote gives what 1.7.0's gave, but the new knobs and focuses at their defaults", async () => {
-  const { bb, harness } = host();
+  const { alia, harness } = host();
   const dir = mkdtempSync(join(tmpdir(), "data-1.7.0-"));
   dirs.push(dir);
-  bb.storage.database().prepare(`VACUUM INTO ?`).run(join(dir, "data.db"));
+  alia.storage.database().prepare(`VACUUM INTO ?`).run(join(dir, "data.db"));
   await harness.dispose();
   const reads = JSON.parse((await dumpDatabase(join(dir, "data.db"))).reads);
   const read170 = JSON.parse(fixture("reads.json"));
@@ -47,8 +47,8 @@ test("every Store read of reviews 1.7.0 wrote gives what 1.7.0's gave, but the n
 });
 
 test("each draft 1.7.0 wrote posts the same review, byte for byte, and what it sent to threads reads as it stored it", async () => {
-  const { bb, harness } = host();
-  const store = queueStore(createStore(bb));
+  const { alia, harness } = host();
+  const store = queueStore(createStore(alia));
   const payloads = JSON.parse(fixture("payloads.json"));
   for (const k of [TEAMMATE, OWN, LOCAL]) {
     const draft = await store.getDraft(k);
@@ -56,8 +56,8 @@ test("each draft 1.7.0 wrote posts the same review, byte for byte, and what it s
     // A comment with no state is open: none gains one by loading.
     expect(draft.comments.filter((c) => "id" in c || "state" in c || "sendN" in c || "claim" in c)).toEqual([]);
   }
-  const stored = (k: string) => JSON.parse((bb.storage.database().prepare(`SELECT state FROM review_lifecycle WHERE target_key=?`).get(k) as { state: string }).state);
-  await plugin(bb);
+  const stored = (k: string) => JSON.parse((alia.storage.database().prepare(`SELECT state FROM review_lifecycle WHERE target_key=?`).get(k) as { state: string }).state);
+  await plugin(alia);
   const review = async (k: string) => (await harness.behavior.callRpc("getReviewBundle", { targetKey: k }) as { review: Record<string, unknown> }).review;
   expect(stored(OWN).sent.comments).toHaveLength(1);
   expect((await review(OWN)).sent).toEqual(stored(OWN).sent);

@@ -1,4 +1,4 @@
-// server.md #3 and #7: the panel's cron reading must match bb's scheduler (cron-parser).
+// server.md #3 and #7: the panel's cron reading must match VesnALIA's scheduler (cron-parser).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cronError, nextCronRun, prevCronRun } from "../lib/cron.ts";
@@ -26,7 +26,7 @@ test("server#7 a monthly schedule more than 8 days out still has a next run", ()
   assert.deepEqual(nextCronRun("0 0 1 1 *", from), new Date(2027, 0, 1, 0, 0));
 });
 
-test("server#3 crons bb rejects are errors, not a clamped next run", () => {
+test("server#3 crons VesnALIA rejects are errors, not a clamped next run", () => {
   for (const expr of ["0 9-30 * * *", "0 9 1-40 * *", "5-70 9 * * *", "0 9 * * 1-9", "0 9 * * 1-3,9", "0 */2 * * *  extra", "0 9 * * 0-6/0", "0 9 * * L", "@midnight", "0 9 5-3 * *"]) {
     assert.ok(cronError(expr), expr);
     assert.equal(nextCronRun(expr, from), null, expr);

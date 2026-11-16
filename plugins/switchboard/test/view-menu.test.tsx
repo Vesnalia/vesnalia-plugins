@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { ViewMenu, ViewSwitch } from "../src/view-menu";
 import { useUpdateSettings } from "../src/use-update-settings";
 import { useSwitchboardSettings } from "../src/use-settings";

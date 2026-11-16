@@ -3,7 +3,7 @@
 // threads working on it (034); and your machines' Start, Stop and Remove with settings' warnings (036), so the
 // Boxes page manages machines exactly as settings does (the operator's note of 5 October 2026).
 
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { BoxDialog, DialogButton, useDialogAction } from "./box-dialog.tsx";
@@ -77,7 +77,7 @@ export function RemoveMachineDialog({ box, onClose, onRemove }: { box: BoxView |
     <BoxDialog
       open={box !== null}
       title={`Remove ${shown?.name ?? "this machine"}?`}
-      description={shown?.nature === "real" ? "Its machine leaves BB, and it is reset and returned to its pool. Anything in the box user's home will be deleted." : "Its machine leaves BB, and its disk and everything on it will be deleted. Copy out anything you want to keep first."}
+      description={shown?.nature === "real" ? "Its machine leaves VesnALIA, and it is reset and returned to its pool. Anything in the box user's home will be deleted." : "Its machine leaves VesnALIA, and its disk and everything on it will be deleted. Copy out anything you want to keep first."}
       busy={action.busy}
       refused={action.refused}
       clearRefused={action.clear}

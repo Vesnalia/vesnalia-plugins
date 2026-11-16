@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ANTIGRAVITY_ACP_DIALECT_ID } from "./dialect.ts";
 import { registerAntigravityUsageSource } from "./usage.ts";
 
@@ -9,9 +9,9 @@ const launchSpec = {
   env: {},
 };
 
-export default async function antigravity(bb: BbPluginApi) {
-  registerAntigravityUsageSource(bb);
-  const settings = bb.settings.define({
+export default async function antigravity(alia: AliaPluginApi) {
+  registerAntigravityUsageSource(alia);
+  const settings = alia.settings.define({
     autoApprove: {
       type: "boolean",
       label: "Automatically approve ACP permission requests",
@@ -27,7 +27,7 @@ export default async function antigravity(bb: BbPluginApi) {
     subagentsDisabled: {
       type: "boolean",
       label: "Disable provider subagents",
-      description: "Prevent Antigravity CLI from using its native subagent tools so agents use bb for delegation.",
+      description: "Prevent Antigravity CLI from using its native subagent tools so agents use VesnALIA for delegation.",
       default: false,
     },
     commandDescriptionsEnabled: {
@@ -43,7 +43,7 @@ export default async function antigravity(bb: BbPluginApi) {
       default: true,
     },
   });
-  const register = () => bb.providers.register({
+  const register = () => alia.providers.register({
     id: "antigravity-cli",
     displayName: "Antigravity CLI",
     icon: "./assets/provider.svg",

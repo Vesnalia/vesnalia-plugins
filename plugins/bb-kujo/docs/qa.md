@@ -2,14 +2,14 @@
 
 ## Three explicit passes
 
-1. **Foundation:** inspected bb's real manifest/runtime and all six reference implementations before writing code. Generated the semantic palette, all ANSI colors, code JSON and diff bridges. Eight contract/lifecycle tests and TypeScript checks passed. Native `bb plugin build` produced both bundles; local install and theme registration succeeded.
-2. **Cohesion:** captured bb's real UI and its bundled Theme Preview. Corrected sugar-high's locally redeclared colors, readable input borders and secondary/tertiary contrast. Real timeline inspection found upstream `opacity-40` defeating token contrast; a narrow documented override restores readable settled metadata. Preserved native disabled states. Verified Monaco typing and undo through its actual `native-edit-context` surface; its hidden IME textarea is not an editable test target. Source files were not saved or changed by typing QA.
+1. **Foundation:** inspected VesnALIA's real manifest/runtime and all six reference implementations before writing code. Generated the semantic palette, all ANSI colors, code JSON and diff bridges. Eight contract/lifecycle tests and TypeScript checks passed. Native `alia plugin build` produced both bundles; local install and theme registration succeeded.
+2. **Cohesion:** captured VesnALIA's real UI and its bundled Theme Preview. Corrected sugar-high's locally redeclared colors, readable input borders and secondary/tertiary contrast. Real timeline inspection found upstream `opacity-40` defeating token contrast; a narrow documented override restores readable settled metadata. Preserved native disabled states. Verified Monaco typing and undo through its actual `native-edit-context` surface; its hidden IME textarea is not an editable test target. Source files were not saved or changed by typing QA.
 3. **Signature:** added thin sidebar alignment/active rails, technical Departure Mono labels, static 48px home grid and the 100ms/12s signal edge. Reduced-motion and narrow/touch modes disable the decorative animation. Removed stock rainbow bracket colors through native code-theme colors. Repeated browser/lifecycle checks after polish.
 
 ## Automated and runtime checks
 
 - `npm run check`: manifest/assets, canonical theme ID, generated consistency, code JSON/scopes, offline asset rules, all 16 ANSI pairs, contrast, SVG validation, idempotent cleanup and pre-aborted generation; TypeScript passes.
-- `bb plugin build .`: bb 0.43.0 / SDK 0.4.84 compiler succeeds; `bb plugin install path:… --yes` reports running; `bb theme set plugin:bb-kujo:kujo` resolves the native palette and code theme.
+- `alia plugin build .`: VesnALIA 0.43.0 / SDK 0.4.84 compiler succeeds; `alia plugin install path:… --yes` reports running; `alia theme set plugin:alia-kujo:kujo` resolves the native palette and code theme.
 - `npm run qa`: 100 content-script mount/abort/dispose cycles; no retained decorative nodes, no increasing listener count, no browser exceptions. Pointer transparency, input, keyboard focus, reduced motion, theme removal and widths 375/768/1024/1440/2560 pass. Raw result: [browser-qa.json](browser-qa.json).
 - `scripts/host-qa.mjs`: five native plugin reloads, dark/light appearance, native palette switch, plugin disable/enable, visible controls, menus, dialog, popover, checkbox/switch, toast, command palette and responsive screenshots. No page exceptions. Raw result: [host-qa.json](host-qa.json).
 - Real offline echo-provider thread rendered markdown, fenced code, table and long scroll content. Monaco editor/file tree loaded the Kujo theme; insertion of `// KUJOtyping` appeared, Undo removed it, and the disk file remained unchanged.
@@ -22,11 +22,11 @@ The original background was too anonymous. The revised signature reuses Kujo's a
 
 The Monaco gate has a verified repair: dispose the editor before its saved model. [workspace-repaired-qa.json](workspace-repaired-qa.json) records editor typing/undo, panel switching and terminal input/output with zero exceptions. Original stock failures are retained in workspace-qa.json and workspace-baseline-qa.json. See [monaco-compatibility.md](monaco-compatibility.md) for the separate source patch and checksum-locked apply/check/restore command. This is not an automatic theme side effect or an upstream release claim.
 
-Native `bb marketplace add path:...` accepted the v2 catalog with one entry and no errors. Nine contract tests pass, including the brightest #363636 decorative composite. Host reload/unload and responsive QA pass again after the signature revision.
+Native `alia marketplace add path:...` accepted the v2 catalog with one entry and no errors. Nine contract tests pass, including the brightest #363636 decorative composite. Host reload/unload and responsive QA pass again after the signature revision.
 
 ## Accessibility
 
-All text ladder, syntax and semantic colors clear 4.5:1 against each of #060606, #111111, #1b1b1b, #2b2b2b and the conservative #363636 background composite. Strong control borders clear 3:1 on #2b2b2b. Primary white action/focus is distinct from semantic green/amber/red/cyan. Links remain underlined, diff signs remain present, and decoration is noninteractive, inert and aria-hidden. Native keyboard interactions are preserved. Disabled controls retain bb's visual treatment and are excluded from minimum text contrast requirements. Native mobile screen readers/device behavior was not certified.
+All text ladder, syntax and semantic colors clear 4.5:1 against each of #060606, #111111, #1b1b1b, #2b2b2b and the conservative #363636 background composite. Strong control borders clear 3:1 on #2b2b2b. Primary white action/focus is distinct from semantic green/amber/red/cyan. Links remain underlined, diff signs remain present, and decoration is noninteractive, inert and aria-hidden. Native keyboard interactions are preserved. Disabled controls retain VesnALIA's visual treatment and are excluded from minimum text contrast requirements. Native mobile screen readers/device behavior was not certified.
 
 ## Performance
 
@@ -36,7 +36,7 @@ Generated CSS is approximately **134.5 KB**, including the **66,810-byte** optim
 
 ## Environment and limits
 
-QA used a disposable bb data directory and npm bb-app 0.43.0. This machine's Node 24 native SQLite build crashed; an isolated Node 22.22.0 build ran bb successfully. Intermittent local Node HTTP failures were worked around using the same public bb routes through curl. bb's Theme Preview catalog occasionally reported loading/timeouts; those are not errors in Kujo. Screenshot/UI checks distinguish built-in preview fixtures from real editor/terminal/thread surfaces.
+QA used a disposable VesnALIA data directory and npm alia-app 0.43.0. This machine's Node 24 native SQLite build crashed; an isolated Node 22.22.0 build ran VesnALIA successfully. Intermittent local Node HTTP failures were worked around using the same public VesnALIA routes through curl. VesnALIA's Theme Preview catalog occasionally reported loading/timeouts; those are not errors in Kujo. Screenshot/UI checks distinguish built-in preview fixtures from real editor/terminal/thread surfaces.
 
 The three supplied X posts were inaccessible. No upstream change or issue was submitted. Native-device coverage, third-party iframe palettes, long-duration profiling and marketplace publication remain outside the verified scope. See [compatibility](compatibility.md) for the exact boundaries.
 
@@ -46,7 +46,7 @@ Installation from `git:https://github.com/kujolang/bb-kujo.git` succeeded in the
 
 ## 0.1.1 typography and icon verification
 
-Eleven contract tests and TypeScript/native build pass. The native host run confirms a loaded Departure Mono face, computed Departure navigation typography and active Tabler SVGs. Switching to light/default and disabling Kujo restores native icons; five reloads remain clean with no browser exceptions. See the updated host-qa.json. The frontend bundle is now about **31.4 KB**, including the selected Tabler geometry; React is supplied by bb. The old 1.75 KB figure describes the original effects-only entry, not this release.
+Eleven contract tests and TypeScript/native build pass. The native host run confirms a loaded Departure Mono face, computed Departure navigation typography and active Tabler SVGs. Switching to light/default and disabling Kujo restores native icons; five reloads remain clean with no browser exceptions. See the updated host-qa.json. The frontend bundle is now about **31.4 KB**, including the selected Tabler geometry; React is supplied by VesnALIA. The old 1.75 KB figure describes the original effects-only entry, not this release.
 
 Default code/technical typography now uses Departure Mono through the native font variable. Conversation paragraphs remain sans. There is no DOM icon substitution, external font request or runtime icon-library download. SVG source/license and exact mappings are documented in typography-icons.md.
 
@@ -54,10 +54,10 @@ Default code/technical typography now uses Departure Mono through the native fon
 
 Foundation: map SiteKit's `kujo-light` paper/ink tokens and base semantic colors through the same native palette, ANSI, diff and code generator. Twelve contracts cover both palettes, native asset paths, code modes, shared asset embedding and contrast.
 
-Cohesion: native Theme Preview captures both appearances across thread/new/split/settings, menus, dialogs, popovers, notifications, tooltip, command palette and 375/768/1024/2560px widths. Overlay captures reload the isolated preview between examples to avoid retained popup state. The light view retains Departure Mono and Tabler icons. Default palette/unload still restores bb's own styling.
+Cohesion: native Theme Preview captures both appearances across thread/new/split/settings, menus, dialogs, popovers, notifications, tooltip, command palette and 375/768/1024/2560px widths. Overlay captures reload the isolated preview between examples to avoid retained popup state. The light view retains Departure Mono and Tabler icons. Default palette/unload still restores VesnALIA's own styling.
 
-Signature: light uses the original paper/ink artwork at 6% opacity, with the existing brief decorative slice signal and static reduced-motion treatment. Dark retains its original inverted artwork. All light text roles clear 4.5:1 against the conservative #d8d8d8 decoration bound. No readable content is animated. CSS is 143,194 characters, below bb's 256,000-character limit; fonts and workflow image are embedded once.
+Signature: light uses the original paper/ink artwork at 6% opacity, with the existing brief decorative slice signal and static reduced-motion treatment. Dark retains its original inverted artwork. All light text roles clear 4.5:1 against the conservative #d8d8d8 decoration bound. No readable content is animated. CSS is 143,194 characters, below VesnALIA's 256,000-character limit; fonts and workflow image are embedded once.
 
 The new browser sample records 0.001665 seconds of themed task time over 13 seconds, no additional layouts, and no listener growth after 100 cleanup cycles. This is an isolated short sample, not a full-app or all-day benchmark. Raw 0.2.0 records are named `light-release-*.json`; native editor evidence continues to use the explicitly repaired isolated Monaco build documented above.
 
-Real native light and dark Monaco typing/undo and terminal ANSI input/output pass with zero page errors on the repaired isolated editor. The harness explicitly focuses Monaco's native EditContext (or textarea fallback) before sending keyboard events; clicking the rendered code alone did not reliably focus editing. This changes the test driver, not bb or the skin.
+Real native light and dark Monaco typing/undo and terminal ANSI input/output pass with zero page errors on the repaired isolated editor. The harness explicitly focuses Monaco's native EditContext (or textarea fallback) before sending keyboard events; clicking the rendered code alone did not reliably focus editing. This changes the test driver, not VesnALIA or the skin.

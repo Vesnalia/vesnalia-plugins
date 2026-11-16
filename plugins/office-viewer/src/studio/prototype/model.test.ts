@@ -25,14 +25,14 @@ test("parseWireframe round-trips a valid v2 document", () => {
   page.elements.push({ ...button, note: "Primary action" });
   const again = parseWireframe(JSON.stringify(doc));
   assert.deepEqual(again, doc);
-  assert.equal(again.format, "bb-wireframe");
+  assert.equal(again.format, "alia-wireframe");
   assert.equal(again.version, WIREFRAME_VERSION);
 });
 
 test("parseWireframe migrates v1 to v2 with elements preserved", () => {
   const button = defaultElement("Button", 8, 8);
   const v1 = {
-    format: "bb-wireframe" as const,
+    format: "alia-wireframe" as const,
     version: WIREFRAME_VERSION_LEGACY as 1,
     name: "Legacy",
     canvas: { width: 1280, height: 800, background: "#ffffff" },

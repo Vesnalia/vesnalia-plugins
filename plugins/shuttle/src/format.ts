@@ -70,7 +70,7 @@ function hhmm(at: number, now: number): string {
   return date.toDateString() === new Date(now).toDateString() ? time : `${date.toDateString().slice(4, 10)} ${time}`;
 }
 
-/** A server's status for `bb shuttle status`: one line when it is fine, and why it failed on the lines below when not. */
+/** A server's status for `alia shuttle status`: one line when it is fine, and why it failed on the lines below when not. */
 export function serverText(server: ServerStatus, now = Date.now()): string {
   const id = server.id.padEnd(7);
   if (!server.enabled) return `${id} off`;
@@ -100,7 +100,7 @@ export const OUTCOME_TEXT: Record<UsageOutcome, string> = {
 const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const share = (part: number, whole: number) => `${whole === 0 ? 0 : Math.round((part / whole) * 100)}%`;
 
-/** What AI reviews used in a range, for `bb shuttle usage`. */
+/** What AI reviews used in a range, for `alia shuttle usage`. */
 export function usageText(view: UsageView): string {
   const lines: string[] = [];
   const { source, totals } = view;

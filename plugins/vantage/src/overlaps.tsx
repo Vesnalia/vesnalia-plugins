@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { FileChange, Overview, PatchOutput, SharedFile, ThreadSummary, Worktree } from "./contract";
 import type { CommentStore } from "./comments";
 import { FileCard, patchKey, patchRequest, type FileLoaders } from "./file-card";

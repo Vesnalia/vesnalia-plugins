@@ -1,5 +1,5 @@
 // Frontend-side type aliases derived from the server contract.
-import type { useRpc } from "@get-bb/plugin-sdk/app";
+import type { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../server/contract";
 
 export type Rpc = ReturnType<typeof useRpc<typeof rpcContract>>;

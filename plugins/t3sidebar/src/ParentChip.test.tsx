@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 
-// Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
+// Load through the harness so the plugin's `@vesnalia/plugin-sdk/app` import binds
 // to the test runtime.
 const app = await loadPluginApp(() => import("../app"));
 const parentChip = app.threadHeaderActions.find(
@@ -59,7 +59,7 @@ function render(
       sidebarThreads: {
         status: "ready",
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
     },
   );

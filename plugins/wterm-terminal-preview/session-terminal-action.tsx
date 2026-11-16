@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useComposerView } from "@bb/plugin-sdk/app";
+import { useComposerView } from "@vesnalia/plugin-sdk/app";
 
 export function SessionTerminalComposerAction({
 	onOpen,

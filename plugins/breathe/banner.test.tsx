@@ -2,8 +2,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 const state=vi.hoisted(()=>({running:true,pending:false,enabled:true,popup:vi.fn()}));
-vi.mock('@get-bb/plugin-sdk/app',async original=>({
-  ...await original<typeof import('@get-bb/plugin-sdk/app')>(),
+vi.mock('@vesnalia/plugin-sdk/app',async original=>({
+  ...await original<typeof import('@vesnalia/plugin-sdk/app')>(),
   experimental_Icon:()=>null,
   useComposer:()=>({scope:{kind:'thread',threadId:'one'},isRunning:state.running,experimental_openPopup:state.popup}),
   useSettings:()=>({values:{enabled:state.enabled,inhale:6,hold:7,exhale:8},isLoading:false}),

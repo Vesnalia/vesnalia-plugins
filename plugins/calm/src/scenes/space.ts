@@ -23,7 +23,7 @@ const ASTRO = {
   /** Floating, facing right. */
   up: [".www..", "wvvvw.", "wvvvw.", ".www..", "wwwwwb", "wwwwwb", ".w.w..", ".w.w.."],
   /** Turned on its side, for the somersault. */
-  side: ["........", "ww....ww", "wwwwwwvw", "wwwwwwvw", "bb.wwww.", "........"],
+  side: ["........", "ww....ww", "wwwwwwvw", "wwwwwwvw", "alia.wwww.", "........"],
   down: [".w.w..", ".w.w..", "wwwwwb", "wwwwwb", ".www..", "wvvvw.", "wvvvw.", ".www.."],
   front: [".www..", "wvvvw.", "wvavw.", ".www..", "wwwwww", "wwwwww", ".w..w.", ".w..w."],
 } satisfies Record<string, Sprite>;

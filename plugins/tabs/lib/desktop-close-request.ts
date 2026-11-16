@@ -1,8 +1,8 @@
 /**
- * The smallest publicly exposed BB Desktop capability.
+ * The smallest publicly exposed VesnALIA Desktop capability.
  *
  * The Plugin SDK does not wrap this callback yet, so this module does not
- * import an internal desktop contract. The bridge is absent in web BB, while
+ * import an internal desktop contract. The bridge is absent in web VesnALIA, while
  * Desktop uses only a feature-detected contextBridge shape.
  */
 type DesktopUnsubscribe = () => void;
@@ -18,13 +18,13 @@ interface DesktopCloseWindowBridge {
 }
 
 type DesktopGlobal = typeof globalThis & {
-  bbDesktop?: unknown;
+  aliaDesktop?: unknown;
 };
 
 export function subscribeToDesktopCloseWindowRequest(
   listener: () => boolean,
 ): DesktopUnsubscribe | null {
-  const desktop = (globalThis as DesktopGlobal).bbDesktop;
+  const desktop = (globalThis as DesktopGlobal).aliaDesktop;
   if (typeof desktop !== "object" || desktop === null) return null;
 
   const bridge = desktop as DesktopCloseWindowBridge;
@@ -40,7 +40,7 @@ export function subscribeToDesktopCloseWindowRequest(
 export function subscribeToDesktopBrowserViewFocus(
   listener: DesktopBrowserFocusListener,
 ): DesktopUnsubscribe | null {
-  const desktop = (globalThis as DesktopGlobal).bbDesktop;
+  const desktop = (globalThis as DesktopGlobal).aliaDesktop;
   if (typeof desktop !== "object" || desktop === null) return null;
 
   const browser = (desktop as DesktopCloseWindowBridge).browser;

@@ -1,5 +1,5 @@
-export const MIKU_VOICE_STORAGE_KEY = "bb-plugin-miku:voice-enabled";
-const CHANGE_EVENT = "bb-plugin-miku:voice-change";
+export const MIKU_VOICE_STORAGE_KEY = "alia-plugin-miku:voice-enabled";
+const CHANGE_EVENT = "alia-plugin-miku:voice-change";
 type VoiceStorage = Pick<Storage, "getItem" | "setItem">;
 let sessionPreference: boolean | undefined;
 let sessionOnly = false;

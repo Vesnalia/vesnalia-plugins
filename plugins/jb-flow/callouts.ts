@@ -1,7 +1,7 @@
 import "./callouts.css";
 
-// GitHub-style callouts ("> [!TIP]") in chat messages. BB renders the marker as
-// literal text; with "Polish the entire BB interface" on, this script drops the
+// GitHub-style callouts ("> [!TIP]") in chat messages. VesnALIA renders the marker as
+// literal text; with "Polish the entire VesnALIA interface" on, this script drops the
 // marker and tags the blockquote so callouts.css can style it as a callout.
 // It only edits the marker's own text node and sets one attribute, so React's
 // nodes stay where React put them, and it puts the text back when polish is off.

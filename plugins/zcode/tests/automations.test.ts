@@ -19,10 +19,10 @@ function service(dir: string, now: () => Date = () => new Date()) {
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "bb-zcode-automations-"));
+  dir = mkdtempSync(join(tmpdir(), "alia-zcode-automations-"));
 });
 afterEach(() => {
-  delete process.env.BB_BRIDGE_DIR;
+  delete process.env.ALIA_BRIDGE_DIR;
 });
 
 it("creates a cron automation with the protocol snapshot shape", async () => {
@@ -172,7 +172,7 @@ it("answers permanent bindings, fails closed on a damaged store", async () => {
     ).bound,
   ).toBe(false);
   // An empty store legitimately answers unbound...
-  const empty = service(mkdtempSync(join(tmpdir(), "bb-zcode-automations-")));
+  const empty = service(mkdtempSync(join(tmpdir(), "alia-zcode-automations-")));
   expect(
     record(
       await empty.handle(
@@ -184,7 +184,7 @@ it("answers permanent bindings, fails closed on a damaged store", async () => {
   ).toBe(false);
   // ...but a store that cannot be parsed must fail closed on every port:
   // answering "unbound" from a replacement would re-open recursive creation.
-  const damaged = mkdtempSync(join(tmpdir(), "bb-zcode-automations-"));
+  const damaged = mkdtempSync(join(tmpdir(), "alia-zcode-automations-"));
   writeFileSync(join(damaged, "automations.json"), "{ not json");
   const broken = service(damaged);
   await expect(
@@ -311,7 +311,7 @@ it("defers busy dispatches and gives up after ten minutes", async () => {
 // ---- Dispatch-level: the bridge runs a due automation through a synthetic peer.
 
 function dispatchHarness(storeDir: string, holdTurns = false) {
-  const cwd = mkdtempSync(join(tmpdir(), "bb-zcode-automation-bridge-"));
+  const cwd = mkdtempSync(join(tmpdir(), "alia-zcode-automation-bridge-"));
   const messages: Record<string, unknown>[] = [];
   const calls: Array<{ method: string; params: Record<string, unknown> }> = [];
   const native = new Map<string, { cb?: ClientCallbacks; closed?: boolean }>();
@@ -433,7 +433,7 @@ const dispatchOptions = {
 
 it("dispatches a due automation into its bound thread and releases the headless child", async () => {
   mkdirSync(dir, { recursive: true });
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = dispatchHarness(dir);
   const { bridge, calls, messages, native, cwd, until, rpc } = harness;
   // Seed the store before the bridge loads it; the fake peer deterministically
@@ -492,7 +492,7 @@ it("dispatches a due automation into its bound thread and releases the headless 
       c.method === "session/send" && c.params.automationId === "automation-1",
   )!;
   expect(send.params.content).toContain("Run the report");
-  // The scheduled turn streams into the bound bb thread.
+  // The scheduled turn streams into the bound VesnALIA thread.
   await until(() =>
     messages.some(
       (m) =>
@@ -514,7 +514,7 @@ it("dispatches a due automation into its bound thread and releases the headless 
 });
 
 it("answers automation reverse RPCs only when the setting is enabled", async () => {
-  const storeDir = mkdtempSync(join(tmpdir(), "bb-zcode-automation-gate-"));
+  const storeDir = mkdtempSync(join(tmpdir(), "alia-zcode-automation-gate-"));
   const harness = dispatchHarness(storeDir);
   const { bridge, calls, messages, rpc, cwd, until } = harness;
   await rpc("thread/start", {
@@ -657,7 +657,7 @@ it("retryRun releases a reservation so the next tick can dispatch again", async 
 
 it("a busy bound thread defers the run instead of recording a failure", async () => {
   mkdirSync(dir, { recursive: true });
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = dispatchHarness(dir, true);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   writeFileSync(
@@ -715,7 +715,7 @@ it("a busy bound thread defers the run instead of recording a failure", async ()
 
 it("dispatches a management-command prompt natively instead of intercepting it", async () => {
   mkdirSync(dir, { recursive: true });
-  process.env.BB_BRIDGE_DIR = dir;
+  process.env.ALIA_BRIDGE_DIR = dir;
   const harness = dispatchHarness(dir);
   const { bridge, calls, native, cwd, until, rpc } = harness;
   writeFileSync(

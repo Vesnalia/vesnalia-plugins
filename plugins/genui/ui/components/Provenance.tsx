@@ -7,7 +7,7 @@
 // A stage opens to its detail, every fact (copyable) and its evidence: a
 // log read through runtime.readText, a screenshot, a link.
 import { useContext, useId, useMemo, useState, type CSSProperties } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -254,7 +254,7 @@ function FileEvidence({ evidence }: { evidence: Extract<Evidence, { kind: "file"
   }
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
-      {/* CodeExcerpt's header, as for a file with a line: the open button is the file's icon. Where BB can't open it, a plain icon leads. */}
+      {/* CodeExcerpt's header, as for a file with a line: the open button is the file's icon. Where VesnALIA can't open it, a plain icon leads. */}
       <div className="flex h-7 items-center justify-between gap-3 border-b border-border bg-surface-recessed pl-3 pr-1 text-[11px] text-muted-foreground">
         <span className="flex min-w-0 items-center gap-1.5">
           {opener === null ? <Icon name="FileText" aria-hidden className="size-3 shrink-0" /> : null}

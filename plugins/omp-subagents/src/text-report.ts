@@ -1,4 +1,4 @@
-// bb-plugin-omp-subagents — plain-text renderings of the host's read results.
+// alia-plugin-omp-subagents — plain-text renderings of the host's read results.
 // The CLI prints them as is; the agent tools clip them to a bounded size.
 import type { AgentSummary, TranscriptEntry } from "./contract.ts";
 

@@ -1,7 +1,7 @@
 {
-  "name": "bb-plugin-vesper",
+  "name": "alia-plugin-vesper",
   "version": "1.0.0",
-  "description": "Rauno Freiberg's Vesper colors for BB, as dark, light and auto palettes with matching code colors.",
+  "description": "Rauno Freiberg's Vesper colors for VesnALIA, as dark, light and auto palettes with matching code colors.",
   "type": "module",
   "license": "MIT",
   "files": [
@@ -11,17 +11,17 @@
     "skills"
   ],
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
-  "bb": {
+  "alia": {
     "name": "Vesper",
-    "description": "Rauno Freiberg's Vesper colors for BB, as dark, light and auto palettes with matching code colors.",
+    "description": "Rauno Freiberg's Vesper colors for VesnALIA, as dark, light and auto palettes with matching code colors.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -63,17 +63,25 @@
     ]
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
     "vitest": "^5.0.4"
   },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/vesper#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dillionverma/bb-plugin-vesper.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/vesper"
   },
-  "homepage": "https://github.com/dillionverma/bb-plugin-vesper#readme",
   "bugs": {
-    "url": "https://github.com/dillionverma/bb-plugin-vesper/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

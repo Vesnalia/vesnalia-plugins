@@ -6,8 +6,8 @@ import type {
   WorkflowAgentSnapshot,
   WorkflowAgentState,
   WorkflowProgressSnapshot,
-} from "@get-bb/plugin-sdk/provider-bridge";
-import { LOCAL_WORKFLOW_TASK_TYPE } from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
+import { LOCAL_WORKFLOW_TASK_TYPE } from "@vesnalia/plugin-sdk/provider-bridge";
 import type { ZCodeConnection } from "./client.js";
 import { ProtocolError } from "./client.js";
 import { record, text } from "./protocol.js";
@@ -190,7 +190,7 @@ export class History {
     const ack = record(
       await this.client.request("v4/command", {
         commandId,
-        clientId: "bb-zcode",
+        clientId: "alia-zcode",
         sessionId: this.sessionId,
         type,
         payload,
@@ -510,7 +510,7 @@ function foldRunEvent(fold: RunFold, event: Record<string, unknown>) {
     };
   }
 }
-/** bb's `backgroundTask.workflow` snapshot grammar (agents + phases). */
+/** VesnALIA's `backgroundTask.workflow` snapshot grammar (agents + phases). */
 function workflowSnapshot(
   fold: RunFold,
   model: string,
@@ -519,7 +519,7 @@ function workflowSnapshot(
   return {
     agents: actors.map((actor, index): WorkflowAgentSnapshot => ({
       agentType: "zcode-dynamic-workflow",
-      // bb numbers agent attempts from 1; the journal exposes no retries.
+      // VesnALIA numbers agent attempts from 1; the journal exposes no retries.
       attempt: 1,
       cached: actor.cached === true,
       index: index + 1,
@@ -528,7 +528,7 @@ function workflowSnapshot(
       model,
       ...(actor.phaseName
         ? {
-            // bb numbers phases from 1; unknown phases land before the list.
+            // VesnALIA numbers phases from 1; unknown phases land before the list.
             phaseIndex:
               Math.max(0, fold.phaseNames.indexOf(actor.phaseName)) + 1,
             phaseTitle: actor.phaseName,
@@ -589,7 +589,7 @@ export class BackgroundWork {
         .join("\n")
         .slice(-8192);
       // Dynamic-workflow runs surface in the projection with taskKind
-      // "workflow" (POC-verified); bb's workflow task grammar then renders
+      // "workflow" (POC-verified); VesnALIA's workflow task grammar then renders
       // live agent lamps from the journal snapshot. Bash jobs keep the
       // generic local task row.
       const isWorkflowRun =

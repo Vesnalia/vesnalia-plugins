@@ -12,7 +12,7 @@ import { NamespaceApi } from "../src/backends/namespace/api.ts";
 
 function tailscaleAnswer(path: string): { status: number; body: unknown } {
   if (path === "/api/v2/oauth/token") return { status: 200, body: { access_token: "tok", expires_in: 3600 } };
-  return { status: 200, body: { devices: [{ nodeId: "n1", hostname: "bb-box-ns-i1-mac", tags: ["tag:bb-box"], addresses: ["100.64.0.1"] }] } };
+  return { status: 200, body: { devices: [{ nodeId: "n1", hostname: "alia-box-ns-i1-mac", tags: ["tag:alia-box"], addresses: ["100.64.0.1"] }] } };
 }
 
 function silentAfterFirstAnswer(answer: (path: string) => { status: number; body: unknown } = tailscaleAnswer): Promise<{ server: Server; url: string; connections: () => number; close: () => Promise<void> }> {
@@ -43,7 +43,7 @@ function silentAfterFirstAnswer(answer: (path: string) => { status: number; body
   );
 }
 
-test("a pooled connection that has gone silent hangs a long-lived fetch until its timeout, as BB Box's calls to Tailscale did", async () => {
+test("a pooled connection that has gone silent hangs a long-lived fetch until its timeout, as VesnALIA Box's calls to Tailscale did", async () => {
   const site = await silentAfterFirstAnswer();
   const pool = new Agent({ keepAliveTimeout: 600_000, keepAliveMaxTimeout: 600_000 });
   try {
@@ -65,7 +65,7 @@ test("the Tailscale client gets past a silent pooled connection: the timed-out r
     assert.deepEqual(await tailnet.check(), { ok: true });
     await sleep(50);
     const devices = await tailnet.devices();
-    assert.deepEqual(devices.map((device) => device.hostname), ["bb-box-ns-i1-mac"]);
+    assert.deepEqual(devices.map((device) => device.hostname), ["alia-box-ns-i1-mac"]);
     assert.equal(site.connections(), 2, "the token on one connection; the devices tried on it, then on a fresh one");
     assert.deepEqual(lines.filter((line) => line.includes("opened")), ["Tailscale: opened a fresh connection to 127.0.0.1 (IPv4), over http/1.1, after a failed request."], "only the connection after the failure is logged");
     assert.ok(lines.some((line) => /^Tailscale: GET \/api\/v2\/tailnet\/-\/devices failed after \d+ ms on a reused connection to 127\.0\.0\.1/.test(line)), lines.join("\n"));

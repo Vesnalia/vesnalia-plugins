@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { managementService } from "./management";
 import { runManagementCli } from "./management-cli";
@@ -22,7 +22,7 @@ async function setup() {
       prefix: "WORK",
       color: "slategray",
       folderId: "folder",
-      linkedBbProjectId: null,
+      linkedAliaProjectId: null,
     },
   ];
   const mutations = vi.fn();
@@ -44,8 +44,8 @@ async function setup() {
           if (method === "listProjects") value = { projects };
           else if (method === "listFolders")
             value = { folders: [{ id: "folder", name: "Work" }] };
-          else if (method === "listBbProjects")
-            value = { bbProjects: [{ id: "workspace", name: "Code" }] };
+          else if (method === "listAliaProjects")
+            value = { aliaProjects: [{ id: "workspace", name: "Code" }] };
           else if (method === "getTask")
             value = { task: { projectId: "p1", status } };
           else {
@@ -76,9 +76,9 @@ async function setup() {
       },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   const invalidate = vi.fn();
-  const service = managementService(fake.bb, invalidate);
+  const service = managementService(fake.alia, invalidate);
   return {
     ...fake,
     service,
@@ -109,7 +109,7 @@ describe("project maintenance", () => {
       prefix: "LAUNCH",
       color: "slategray",
       folderId: "folder",
-      linkedBbProjectId: null,
+      linkedAliaProjectId: null,
     };
     f.rejectInput(true);
     await expect(f.service.manage(input)).rejects.toThrow("Input rejected");
@@ -127,11 +127,11 @@ describe("project maintenance", () => {
       prefix: "LAUNCH",
       color: "slategray",
       folderId: "folder",
-      linkedBbProjectId: "workspace",
+      linkedAliaProjectId: "workspace",
     };
     const first = await f.service.manage(input);
     expect(await f.service.manage(input)).toEqual(first);
-    expect(await managementService(f.bb, f.invalidate).manage(input)).toEqual(
+    expect(await managementService(f.alia, f.invalidate).manage(input)).toEqual(
       first,
     );
     expect(f.mutations).toHaveBeenCalledTimes(1);
@@ -152,7 +152,7 @@ describe("project maintenance", () => {
     };
     await expect(f.service.manage(input)).rejects.toThrow("Connection lost");
     await expect(
-      managementService(f.bb, f.invalidate).manage(input),
+      managementService(f.alia, f.invalidate).manage(input),
     ).rejects.toThrow("uncertain");
     expect(f.mutations).toHaveBeenCalledTimes(1);
     await f.harness.lifecycle.dispose();
@@ -178,7 +178,7 @@ describe("project maintenance", () => {
         prefix: "NEW",
         color: "slategray",
         folderId: "missing",
-        linkedBbProjectId: null,
+        linkedAliaProjectId: null,
       }),
     ).rejects.toThrow("existing folder");
     expect(f.mutations).not.toHaveBeenCalled();

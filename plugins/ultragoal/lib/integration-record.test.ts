@@ -23,7 +23,7 @@ function store() {
 describe("integration provenance", () => {
   it("creates its own table so a missed migration cannot lose the record", () => {
     const s = store();
-    s.record("thr_g", { itemId: "itm_1", commit: null, branch: "bb/x", status: "integrated", detail: "into main" }, 1);
+    s.record("thr_g", { itemId: "itm_1", commit: null, branch: "alia/x", status: "integrated", detail: "into main" }, 1);
     assert.equal(s.get("thr_g", "itm_1")?.status, "integrated");
   });
 
@@ -32,21 +32,21 @@ describe("integration provenance", () => {
     // so a failure used to leave the register asserting a fix that is not in
     // the tree, with nothing written down anywhere.
     const s = store();
-    s.record("thr_g", { itemId: "itm_1", commit: null, branch: "bb/x", status: "failed", detail: "dirty checkout" }, 1);
-    assert.deepEqual(s.unintegrated("thr_g"), [{ itemId: "itm_1", branch: "bb/x", detail: "dirty checkout" }]);
+    s.record("thr_g", { itemId: "itm_1", commit: null, branch: "alia/x", status: "failed", detail: "dirty checkout" }, 1);
+    assert.deepEqual(s.unintegrated("thr_g"), [{ itemId: "itm_1", branch: "alia/x", detail: "dirty checkout" }]);
   });
 
   it("lists only the slices whose work is genuinely not on the base branch", () => {
     const s = store();
-    s.record("thr_g", { itemId: "ok", commit: "abc", branch: "bb/a", status: "integrated", detail: null }, 1);
-    s.record("thr_g", { itemId: "bad", commit: null, branch: "bb/b", status: "failed", detail: "conflict" }, 2);
+    s.record("thr_g", { itemId: "ok", commit: "abc", branch: "alia/a", status: "integrated", detail: null }, 1);
+    s.record("thr_g", { itemId: "bad", commit: null, branch: "alia/b", status: "failed", detail: "conflict" }, 2);
     assert.deepEqual(s.unintegrated("thr_g").map((r) => r.itemId), ["bad"]);
   });
 
   it("lets a retry overwrite a failure, so a fixed merge stops being reported", () => {
     const s = store();
-    s.record("thr_g", { itemId: "itm_1", commit: null, branch: "bb/x", status: "failed", detail: "conflict" }, 1);
-    s.record("thr_g", { itemId: "itm_1", commit: "def", branch: "bb/x", status: "integrated", detail: null }, 2);
+    s.record("thr_g", { itemId: "itm_1", commit: null, branch: "alia/x", status: "failed", detail: "conflict" }, 1);
+    s.record("thr_g", { itemId: "itm_1", commit: "def", branch: "alia/x", status: "integrated", detail: null }, 2);
     assert.deepEqual(s.unintegrated("thr_g"), []);
     assert.equal(s.get("thr_g", "itm_1")?.commit_sha, "def");
   });

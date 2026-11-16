@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import type { ReviewItem } from "../lib/review-state";
@@ -21,7 +21,7 @@ import { TOUCH_CONTROL } from "./touch";
 /** A PR found on GitHub with no guide yet: the page bar with its menu, where the PR stands, and Build the guide. */
 export const TrackedReview = memo(function TrackedReview({ review, onBack }: { review: ReviewItem; onBack: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pinnable = useThreadListReviews() === true;
   const [starting, setStarting] = useState(false);
   const unattendedAgents = useKnob("unattendedAgents");

@@ -1,21 +1,14 @@
 {
-  "name": "bb-plugin-zcode-provider",
+  "name": "alia-plugin-zcode-provider",
   "version": "0.2.3",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "description": "Run your installed ZCode agent with a Z.ai Coding Plan inside bb on macOS.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/emlevsky777/bb-plugin-zcode.git"
-  },
-  "bugs": {
-    "url": "https://github.com/emlevsky777/bb-plugin-zcode/issues"
-  },
+  "description": "Run your installed ZCode agent with a Z.ai Coding Plan inside VesnALIA on macOS.",
   "engines": {
     "node": "^24.22.0 || ^26.0.0",
-    "bb": ">=0.47.1",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47.1",
+    "aliaPluginSdk": ">=0.6.79"
   },
   "exports": {
     ".": {
@@ -31,9 +24,9 @@
       "import": "./dist/host.js"
     }
   },
-  "bb": {
+  "alia": {
     "name": "ZCode Provider",
-    "description": "Use your Z.ai GLM Coding Plan in bb through your installed ZCode agent. macOS only.",
+    "description": "Use your Z.ai GLM Coding Plan in VesnALIA through your installed ZCode agent. macOS only.",
     "branding": {
       "icon": "./assets/zcode.svg"
     },
@@ -54,9 +47,6 @@
     "test": "node scripts/provider/test.mjs",
     "test:artifact": "ZCODE_TEST_ARTIFACT=1 node scripts/provider/test.mjs"
   },
-  "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.79"
-  },
   "devDependencies": {
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "24.10.1",
@@ -65,5 +55,17 @@
     "cron-parser": "^5.5.0",
     "hono": "4.13.12",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@vesnalia/plugin-sdk": "^0.6.79"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/zcode-provider#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/zcode-provider"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

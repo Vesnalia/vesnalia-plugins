@@ -13,7 +13,7 @@ const BODY = "Goal: ship UF-4. Decisions: summary and clear for ACP agents. Next
 const SUMMARY_ANSWER = { output: `${SUMMARY_MARKER}\n\n${BODY}` };
 const UNSUPPORTED = new Error(`Provider "${KAYA}" does not support manual context compaction`);
 
-/** An ACP answer: usage only, like a Hermes agent on bb 0.49. 150 000 is the default limit. */
+/** An ACP answer: usage only, like a Hermes agent on VesnALIA 0.49. 150 000 is the default limit. */
 const acp = (usedTokens: number) => ({ usage: { usedTokens, modelContextWindow: 500_000, estimated: false } });
 
 function setup(over: Partial<PluginSettings> = {}) {

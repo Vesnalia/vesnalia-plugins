@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@get-bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@vesnalia/plugin-sdk";
 import { OUTPUT_BUDGET_BYTES, capOutput, formatPlan, statsLabel } from "../../src/format";
 import { CHECKPOINT_ID_PATTERN, newId } from "../../src/ids";
 import { idTime } from "../../src/host/shadow";
@@ -68,21 +68,21 @@ describe("formatting", () => {
   });
 });
 
-describe("checkpoints from before bb's chat copies were left out", () => {
+describe("checkpoints from before VesnALIA's chat copies were left out", () => {
   it("do not show those copies, and their stats leave them out", () => {
     const row = {
       id: "ck_test",
       stats: { files: 4, insertions: 1_500, deletions: 240 },
       changes: [
-        { path: ".bb/chats/thr_1/thread.json", status: "M", oldMode: "100644", newMode: "100644", binary: false, additions: 3, deletions: 2 },
-        { path: ".bb/chats/thr_1/history/turn_1/page-1.json", status: "A", oldMode: null, newMode: "100644", binary: false, additions: 1_490, deletions: 235 },
-        { path: ".bb/plugins.json", status: "M", oldMode: "100644", newMode: "100644", binary: false, additions: 1, deletions: 1 },
+        { path: ".vesnalia/chats/thr_1/thread.json", status: "M", oldMode: "100644", newMode: "100644", binary: false, additions: 3, deletions: 2 },
+        { path: ".vesnalia/chats/thr_1/history/turn_1/page-1.json", status: "A", oldMode: null, newMode: "100644", binary: false, additions: 1_490, deletions: 235 },
+        { path: ".vesnalia/plugins.json", status: "M", oldMode: "100644", newMode: "100644", binary: false, additions: 1, deletions: 1 },
         { path: "src/app.ts", status: "M", oldMode: "100644", newMode: "100644", binary: false, additions: 6, deletions: 2 },
       ],
       changesTruncated: false,
     } as unknown as CheckpointRow;
     const dto = toCheckpointDto(row);
-    expect(dto.changes.map((change) => change.path)).toEqual([".bb/plugins.json", "src/app.ts"]);
+    expect(dto.changes.map((change) => change.path)).toEqual([".vesnalia/plugins.json", "src/app.ts"]);
     expect(dto.stats).toEqual({ files: 2, insertions: 7, deletions: 3 });
     const clean = { ...row, changes: row.changes.slice(2), stats: { files: 2, insertions: 7, deletions: 3 } } as CheckpointRow;
     expect(toCheckpointDto(clean)).toMatchObject({ changes: clean.changes, stats: clean.stats });

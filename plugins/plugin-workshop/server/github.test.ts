@@ -40,11 +40,11 @@ describe("the work branch on GitHub", () => {
     const s = await started();
     idleStage(s);
     await s.engine.reconcile(s.id);
-    expect(s.ports.github.repos.has("acme/bb-plugin-hello")).toBe(true);
+    expect(s.ports.github.repos.has("acme/alia-plugin-hello")).toBe(true);
     expect(await s.ports.github.remote(s.dir)).toBe(REPO);
     expect(await s.ports.github.remoteSha(s.dir, "main")).toBe((await s.ports.git.facts(s.dir)).head);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
-    expect(s.store.work(s.id)).toMatchObject({ pushed_sha: "h1", pushed_branch: `bb/${s.env}`, pr_url: null });
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
+    expect(s.store.work(s.id)).toMatchObject({ pushed_sha: "h1", pushed_branch: `alia/${s.env}`, pr_url: null });
     // Only main and the work branch — nothing «all at once».
     expect(s.ports.calls.filter((c) => c.effect === "github.push").flatMap((c) => c.args[1] as string[]).some((x) => x.includes("*"))).toBe(false);
     expect(s.ports.github.prs).toHaveLength(0);
@@ -52,9 +52,9 @@ describe("the work branch on GitHub", () => {
     commitWork(s, "h2");
     await moveTo(s, 4);
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h2");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h2");
     expect(s.ports.github.prs).toHaveLength(1);
-    expect(s.ports.github.prs[0]).toMatchObject({ branch: `bb/${s.env}`, title: `${s.key}: ${s.w.title}` });
+    expect(s.ports.github.prs[0]).toMatchObject({ branch: `alia/${s.env}`, title: `${s.key}: ${s.w.title}` });
     expect(s.store.work(s.id)!.pr_url).toBe("https://github.com/acme/bb-plugin-hello/pull/1");
     expect([...s.ports.taskRows.values()].flatMap((t) => t.comments).some((c) => c.includes("PR on GitHub: https://github.com/acme/bb-plugin-hello/pull/1"))).toBe(true);
     await s.engine.reconcile(s.id);
@@ -69,7 +69,7 @@ describe("the work branch on GitHub", () => {
     s.ports.git.commitFiles.set("h3", { "server.ts": `const key = '${OPENAI_KEY}';\n` });
     await s.engine.reconcile(s.id);
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
     expect(s.engine.githubProblem(s.id)).toContain("the work branch looks like it contains keys — not pushed to GitHub: server.ts: sk-");
     expect(s.store.events(s.id).filter((e) => e.text.includes("looks like it contains keys")).length).toBe(1);
     expect(JSON.stringify(s.store.events(s.id))).not.toContain(OPENAI_KEY);
@@ -84,7 +84,7 @@ describe("the work branch on GitHub", () => {
     s.ports.git.commitFiles.set("h2", { "config.ts": `export const t = "${GITHUB_TOKEN}";\n` });
     s.ports.git.commitFiles.set("h3", { "config.ts": "export const t = process.env.T;\n" });
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
     expect(s.engine.githubProblem(s.id)).toContain("config.ts: ghp_");
   });
 
@@ -101,7 +101,7 @@ describe("the work branch on GitHub", () => {
     expect(problem).toContain("server.test.ts: xoxb-");
     expect(problem).toContain("commit h2 message: sk-");
     expect(problem).not.toContain("ghp_");
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
   });
 
   test("a work branch with only synthetic values is published", async () => {
@@ -111,7 +111,7 @@ describe("the work branch on GitHub", () => {
     commitWork(s, "h2");
     s.ports.git.commitFiles.set("h2", { "server.test.ts": `const t = "ghp_${"FAKE".repeat(9)}";\nconst z = "sk-${"0".repeat(30)}";\n` });
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h2");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h2");
     expect(s.engine.githubProblem(s.id)).toBeNull();
   });
 
@@ -122,14 +122,14 @@ describe("the work branch on GitHub", () => {
     commitWork(s, "h2");
     s.ports.github.logFails = "more than 64 MB of changes";
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
     expect(s.engine.githubProblem(s.id)).toContain("the publication scan did not complete: more than 64 MB of changes — nothing is pushed");
     // Output the scan does not understand is a failed scan too, not a clean one.
     s.ports.github.logFails = null;
     commitWork(s, "h3");
     s.ports.git.commitLogs.set("h3", "\0commit h3\nmsg\n\0end\n\ndiff --git a/x b/x\n+no hunk header\n");
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
     expect(s.engine.githubProblem(s.id)).toContain("the publication scan did not complete: unexpected git log output");
   });
 
@@ -140,7 +140,7 @@ describe("the work branch on GitHub", () => {
     s.ports.git.commitFiles.set(main, { "old.ts": `const t = "${OPENAI_KEY}";\n` });
     await s.engine.reconcile(s.id);
     expect(await s.ports.github.remoteSha(s.dir, "main")).toBeNull();
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBeNull();
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBeNull();
     expect(s.engine.githubProblem(s.id)).toContain("main looks like it contains keys — not pushed to GitHub: old.ts: sk-");
     expect(s.ports.count("github.push")).toBe(0);
   });
@@ -158,7 +158,7 @@ describe("the work branch on GitHub", () => {
     expect(s.ports.count("github.push")).toBe(pushes);
     s.ports.t += GITHUB_RETRY_MS + 1;
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
     expect(s.engine.githubProblem(s.id)).toBeNull();
   });
 });
@@ -178,7 +178,7 @@ describe("rollout and acceptance", () => {
   test("after «Accept» the rolled-out main is on GitHub and the work branch is deleted there", async () => {
     const r = await ready();
     await r.engine.reconcile(r.id);
-    expect(await r.ports.github.remoteSha(r.dir, `bb/${r.env}`)).toBe("h1");
+    expect(await r.ports.github.remoteSha(r.dir, `alia/${r.env}`)).toBe("h1");
     const a = await enterDone(r);
     // Until accepted, main does not go to GitHub: a rollback could leave the rejected code there.
     expect(await r.ports.github.remoteSha(r.dir, "main")).not.toBe("h1");
@@ -187,10 +187,10 @@ describe("rollout and acceptance", () => {
     expect(await r.ports.github.remoteSha(r.dir, "main")).not.toBe("h1");
     r.ports.files.set(`${r.env}:${livePath(r.key, 1)}`, "works\nVERDICT: PASS");
     // GitHub marked the PR merged — the branch can be deleted (otherwise deleting it would close the PR unmerged).
-    r.ports.github.merged.add(`${r.dir}#bb/${r.env}`);
+    r.ports.github.merged.add(`${r.dir}#alia/${r.env}`);
     expect(await r.rollout.accept(r.id, { expectedVersion: await versionOf(r), attemptId: a, force: false, note: "" })).toMatchObject({ ok: true });
     expect(await r.ports.github.remoteSha(r.dir, "main")).toBe("h1");
-    expect(await r.ports.github.remoteSha(r.dir, `bb/${r.env}`)).toBeNull();
+    expect(await r.ports.github.remoteSha(r.dir, `alia/${r.env}`)).toBeNull();
     expect(r.store.plugin("hello")).toMatchObject({ gh_remote: REPO, gh_ahead: 0, gh_behind: 0, gh_error: null });
   });
 });
@@ -202,13 +202,13 @@ describe("the branch after acceptance", () => {
     const a = await enterDone(r);
     r.ports.files.set(`${r.env}:${livePath(r.key, 1)}`, "works\nVERDICT: PASS");
     expect(await r.rollout.accept(r.id, { expectedVersion: await versionOf(r), attemptId: a, force: false, note: "" })).toMatchObject({ ok: true });
-    expect(await r.ports.github.remoteSha(r.dir, `bb/${r.env}`)).toBe("h1");
-    expect(r.store.work(r.id)!.pushed_branch).toBe(`bb/${r.env}`);
+    expect(await r.ports.github.remoteSha(r.dir, `alia/${r.env}`)).toBe("h1");
+    expect(r.store.work(r.id)!.pushed_branch).toBe(`alia/${r.env}`);
     await r.rollout.githubOne("hello");
-    expect(await r.ports.github.remoteSha(r.dir, `bb/${r.env}`)).toBe("h1");
-    r.ports.github.merged.add(`${r.dir}#bb/${r.env}`);
+    expect(await r.ports.github.remoteSha(r.dir, `alia/${r.env}`)).toBe("h1");
+    r.ports.github.merged.add(`${r.dir}#alia/${r.env}`);
     await r.rollout.githubOne("hello");
-    expect(await r.ports.github.remoteSha(r.dir, `bb/${r.env}`)).toBeNull();
+    expect(await r.ports.github.remoteSha(r.dir, `alia/${r.env}`)).toBeNull();
     expect(r.store.work(r.id)!.pushed_branch).toBeNull();
   });
 });
@@ -293,12 +293,12 @@ describe("the destination", () => {
   test("an existing public origin: nothing is pushed, the reason is where GitHub errors are shown; its visibility is not touched", async () => {
     const s = await started();
     await s.ports.github.setRemote(s.dir, "https://github.com/acme/bb-plugin-hello.git");
-    s.ports.github.repoInfos.set("acme/bb-plugin-hello", { visibility: "PUBLIC", owner: "acme", nameWithOwner: "acme/bb-plugin-hello" });
+    s.ports.github.repoInfos.set("acme/alia-plugin-hello", { visibility: "PUBLIC", owner: "acme", nameWithOwner: "acme/alia-plugin-hello" });
     idleStage(s);
     await s.engine.reconcile(s.id);
     expect(s.ports.count("github.push")).toBe(0);
     expect(s.ports.count("github.ensureRepo")).toBe(0);
-    expect(s.engine.githubProblem(s.id)).toContain("acme/bb-plugin-hello is public — the Workshop publishes only to private repositories");
+    expect(s.engine.githubProblem(s.id)).toContain("acme/alia-plugin-hello is public — the Workshop publishes only to private repositories");
     expect(s.store.events(s.id).some((e) => e.text.includes("is public"))).toBe(true);
     // A refused destination is the commit's verdict too: `failed` with the reason — a warning for the owner, a hard stop for the autopilot.
     expect(JSON.parse(s.store.work(s.id)!.gh_scan!)).toMatchObject({ sha: "h1", state: "failed", text: expect.stringContaining("is public") });
@@ -306,10 +306,10 @@ describe("the destination", () => {
 
   test("a repository of another owner, several push URLs, a URL that is not GitHub, a repository GitHub does not show — all refused", async () => {
     const cases: Array<[(s: Started) => void, string]> = [
-      [(s) => s.ports.github.repoInfos.set("acme/bb-plugin-hello", { visibility: "PRIVATE", owner: "someone", nameWithOwner: "someone/bb-plugin-hello" }), "belongs to someone, not to acme"],
+      [(s) => s.ports.github.repoInfos.set("acme/alia-plugin-hello", { visibility: "PRIVATE", owner: "someone", nameWithOwner: "someone/alia-plugin-hello" }), "belongs to someone, not to acme"],
       [(s) => s.ports.github.pushUrlsOf.set(s.dir, ["https://github.com/acme/bb-plugin-hello.git", "https://github.com/acme/mirror.git"]), "origin has 2 push URLs"],
       [(s) => s.ports.github.pushUrlsOf.set(s.dir, ["https://gitlab.example.com/acme/bb-plugin-hello.git"]), "is not a GitHub repository"],
-      [(s) => s.ports.github.repoInfos.set("acme/bb-plugin-hello", null), "GitHub does not show the repository acme/bb-plugin-hello"],
+      [(s) => s.ports.github.repoInfos.set("acme/alia-plugin-hello", null), "GitHub does not show the repository acme/alia-plugin-hello"],
     ];
     for (const [arrange, why] of cases) {
       const s = await started();
@@ -326,10 +326,10 @@ describe("the destination", () => {
     const s0 = await started();
     const s = { ...s0, engine: new Engine(s0.store, s0.ports, () => ({ maxBuilding: 2, minFreeDiskGb: 2, autoReview: false, mockup: false, githubOwner: "acme", allowPublicRepos: true })) };
     await s.ports.github.setRemote(s.dir, "https://github.com/acme/bb-plugin-hello.git");
-    s.ports.github.repoInfos.set("acme/bb-plugin-hello", { visibility: "PUBLIC", owner: "other", nameWithOwner: "other/bb-plugin-hello" });
+    s.ports.github.repoInfos.set("acme/alia-plugin-hello", { visibility: "PUBLIC", owner: "other", nameWithOwner: "other/alia-plugin-hello" });
     idleStage(s);
     await s.engine.reconcile(s.id);
-    expect(await s.ports.github.remoteSha(s.dir, `bb/${s.env}`)).toBe("h1");
+    expect(await s.ports.github.remoteSha(s.dir, `alia/${s.env}`)).toBe("h1");
   });
 });
 
@@ -486,7 +486,7 @@ describe("main reaches GitHub only through the gate", () => {
   test("the low-level push refuses anything that is not a fresh gate clearance for the same folder", async () => {
     const s = await started();
     await s.ports.github.setRemote(s.dir, "https://github.com/acme/bb-plugin-hello.git");
-    const forged = Object.freeze({ dir: s.dir, sha: "h1", url: "https://github.com/acme/bb-plugin-hello.git", repo: "acme/bb-plugin-hello" });
+    const forged = Object.freeze({ dir: s.dir, sha: "h1", url: "https://github.com/acme/bb-plugin-hello.git", repo: "acme/alia-plugin-hello" });
     await expect(s.ports.github.push(s.dir, forged, "main")).rejects.toThrow(/no publication gate result/);
     const { publicationGate } = await import("./publish");
     const g = await publicationGate(s.ports.github, s.dir, "h1", s.engine.publishPolicy());
@@ -508,7 +508,7 @@ describe("the PR address", () => {
       await moveTo(s, 4);
       await s.engine.reconcile(s.id);
       expect(s.store.work(s.id)!.pr_url).toBeNull();
-      expect(s.engine.githubProblem(s.id)).toContain("not a PR of acme/bb-plugin-hello");
+      expect(s.engine.githubProblem(s.id)).toContain("not a PR of acme/alia-plugin-hello");
     }
   });
 });

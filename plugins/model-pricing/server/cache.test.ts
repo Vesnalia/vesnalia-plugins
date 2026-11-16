@@ -25,7 +25,7 @@ function entry(overrides: Partial<CacheEntry> = {}): CacheEntry {
   return { rows: [row()], fetchedAt: Date.now(), etag: '"abc123"', ...overrides };
 }
 
-/** `bb.storage.kv`'s shape over a Map, with every call counted. */
+/** `alia.storage.kv`'s shape over a Map, with every call counted. */
 function memoryStore(initial: Record<string, unknown> = {}) {
   const values = new Map<string, unknown>(Object.entries(initial));
   const store = {

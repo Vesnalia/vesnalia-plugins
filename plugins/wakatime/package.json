@@ -1,20 +1,20 @@
 {
-  "name": "bb-plugin-wakatime",
+  "name": "alia-plugin-wakatime",
   "version": "0.5.2",
   "type": "module",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "build": "node scripts/check-fragile-classes.mjs && bb plugin build && node scripts/add-legacy-css-fallback.mjs",
+    "build": "node scripts/check-fragile-classes.mjs && alia plugin build && node scripts/add-legacy-css-fallback.mjs",
     "check:css": "node scripts/check-fragile-classes.mjs"
   },
   "engines": {
-    "bb": ">=0.39",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.39",
+    "aliaPluginSdk": ">=0.4.8"
   },
-  "bb": {
+  "alia": {
     "name": "WakaTime",
-    "description": "Time tracking for bb — working time by project, machine, and model.",
+    "description": "Time tracking for VesnALIA — working time by project, machine, and model.",
     "branding": {
       "icon": "./icons/wakatime.svg"
     },
@@ -27,7 +27,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -54,5 +53,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.47"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/wakatime#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/wakatime"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,5 +1,5 @@
-// bb-plugin-sql — UI slots: nav explorer + query (fixed tab / Actions) + .sql opener + Run from chat.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+// alia-plugin-sql — UI slots: nav explorer + query (fixed tab / Actions) + .sql opener + Run from chat.
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { SqlExplorer } from "@/components/sql/SqlExplorer";
 import { SqlFileOpener } from "@/components/sql/SqlFileOpener";
 import { SqlQueryWorkspace } from "@/components/sql/SqlQueryWorkspace";

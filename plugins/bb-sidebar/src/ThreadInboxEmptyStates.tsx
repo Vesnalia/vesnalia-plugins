@@ -11,7 +11,7 @@ import "./working-empty-state.css";
 const LOADING_INDICATOR_DELAY_MS = 200;
 
 /**
- * The list's placeholder while bb is still loading threads. The paragraph
+ * The list's placeholder while VesnALIA is still loading threads. The paragraph
  * mounts empty at the size it will have with text, so the layout does not
  * jump when the text arrives. Because the live region already exists before
  * its text is added, a screen reader announces "Loading threads…" once, and
@@ -85,7 +85,7 @@ export function WorkingEmptyState() {
     <div role="status" className="flex flex-col items-center px-5 pb-6 pt-7 text-center text-muted-foreground">
       <svg viewBox="40 14 110 80" className="mb-2 h-auto w-28" aria-hidden="true">
         <ellipse cx="90" cy="88" rx="38" ry="2.5" fill="currentColor" opacity="0.08" />
-        <g className="bb-sidebar-working-head">
+        <g className="alia-sidebar-working-head">
           <path
             d="M70 66v-6c0-14 9-24 20-24s20 10 20 24v6z"
             fill="currentColor"
@@ -96,7 +96,7 @@ export function WorkingEmptyState() {
             strokeLinejoin="round"
           />
           <g
-            className="bb-sidebar-working-sprout"
+            className="alia-sidebar-working-sprout"
             fill="none"
             stroke="currentColor"
             strokeLinecap="round"
@@ -108,8 +108,8 @@ export function WorkingEmptyState() {
             <path d="M93 27c3-3 7-3 9-1-2 3-6 4-9 1z" fill="currentColor" fillOpacity="0.3" />
           </g>
           <g fill="currentColor" opacity="0.7">
-            <circle className="bb-sidebar-working-eye" cx="84" cy="50" r="1.8" />
-            <circle className="bb-sidebar-working-eye" cx="96" cy="50" r="1.8" />
+            <circle className="alia-sidebar-working-eye" cx="84" cy="50" r="1.8" />
+            <circle className="alia-sidebar-working-eye" cx="96" cy="50" r="1.8" />
           </g>
           <g fill="currentColor" opacity="0.15">
             <ellipse cx="79.5" cy="54.5" rx="2.5" ry="1.2" />
@@ -144,9 +144,9 @@ export function WorkingEmptyState() {
           opacity="0.35"
         />
         <g fill="currentColor">
-          <circle className="bb-sidebar-working-dot" cx="121" cy="30.5" r="1.4" opacity="0.25" />
-          <circle className="bb-sidebar-working-dot" cx="127" cy="30.5" r="1.4" opacity="0.25" />
-          <circle className="bb-sidebar-working-dot" cx="133" cy="30.5" r="1.4" opacity="0.25" />
+          <circle className="alia-sidebar-working-dot" cx="121" cy="30.5" r="1.4" opacity="0.25" />
+          <circle className="alia-sidebar-working-dot" cx="127" cy="30.5" r="1.4" opacity="0.25" />
+          <circle className="alia-sidebar-working-dot" cx="133" cy="30.5" r="1.4" opacity="0.25" />
         </g>
       </svg>
       <p className="text-xs font-medium text-foreground/75">{line}</p>

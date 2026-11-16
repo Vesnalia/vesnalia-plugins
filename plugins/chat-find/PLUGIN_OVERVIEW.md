@@ -23,4 +23,4 @@ It searches what the chat has rendered. Collapsed tool output and older messages
 
 ## Requirements
 
-bb 0.43 or later. No account, external service, or network access. Highlights use the CSS Custom Highlight API (Chrome 105+, Safari 17.2+, Firefox 140+); the bb desktop app supports it.
+VesnALIA 0.43 or later. No account, external service, or network access. Highlights use the CSS Custom Highlight API (Chrome 105+, Safari 17.2+, Firefox 140+); the VesnALIA desktop app supports it.

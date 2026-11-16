@@ -1,5 +1,5 @@
 /**
- * The gear: quick toggles for what this plugin shows, without a trip to bb's
+ * The gear: quick toggles for what this plugin shows, without a trip to VesnALIA's
  * settings screen.
  *
  * The server owns the list — labels, order, values — through the `uiOptions`
@@ -10,7 +10,7 @@
  */
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

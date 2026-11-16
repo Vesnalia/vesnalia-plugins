@@ -2,7 +2,7 @@
 
 # Configuration reference
 
-bb-box's configuration is one document (029): `bb box config show --json` prints it, and `bb box config apply <file>` saves one. BB Box's settings page edits the same document. A secret field reads `{ "set": true }` in an export, and takes a string to set it.
+alia-box's configuration is one document (029): `alia box config show --json` prints it, and `alia box config apply <file>` saves one. VesnALIA Box's settings page edits the same document. A secret field reads `{ "set": true }` in an export, and takes a string to set it.
 
 ## The document
 
@@ -14,20 +14,20 @@ bb-box's configuration is one document (029): `bb box config show --json` prints
 | `kinds` | `Readonly<Record<string, KindConfig>>` |  | Each kind's entry, by its ID: only what differs from its defaults. |
 | `general` | `GeneralSettings` |  | Settings for every backend and kind. |
 | `images` | `Readonly<Record<string, ImageConfig>>` |  | Projects' images, by name (049). |
-| `monitor` | `MonitorSettings` |  | The Monitor (066): machine status in BB's sidebar footer, and background monitoring of BB's server. |
+| `monitor` | `MonitorSettings` |  | The Monitor (066): machine status in VesnALIA's sidebar footer, and background monitoring of VesnALIA's server. |
 
 ## Secrets
 
-A secret's value never leaves bb-box. Each secret field shows its state:
+A secret's value never leaves alia-box. Each secret field shows its state:
 
 | Key | Type | Default | What it is |
 | --- | --- | --- | --- |
 | `set` | `boolean` |  | Whether it has a value. In a draft, true keeps it and false clears it. |
-| `version` | `number` |  | As the settings page reads the configuration, from config.get and config.apply: the revision that last set or cleared it, so the page can tell that it changed while a person edited. A secret never has the same version twice, and the version says nothing of its value. bb box config show leaves it out; a draft may send it back, and it is ignored. |
+| `version` | `number` |  | As the settings page reads the configuration, from config.get and config.apply: the revision that last set or cleared it, so the page can tell that it changed while a person edited. A secret never has the same version twice, and the version says nothing of its value. VesnALIA box config show leaves it out; a draft may send it back, and it is ignored. |
 
 ## Saves from the settings page
 
-The settings page saves with an operation ID it makes for each save, and the changes it froze for it. bb-box applies an ID at most once: the same ID again gets the first save's receipt, and the same ID with other changes is refused. The receipt is stored in the same write as the configuration, and config.get lists the receipts:
+The settings page saves with an operation ID it makes for each save, and the changes it froze for it. alia-box applies an ID at most once: the same ID again gets the first save's receipt, and the same ID with other changes is refused. The receipt is stored in the same write as the configuration, and config.get lists the receipts:
 
 | Key | Type | Default | What it is |
 | --- | --- | --- | --- |
@@ -40,17 +40,17 @@ The settings page saves with an operation ID it makes for each save, and the cha
 | Key | Type | Default | What it is |
 | --- | --- | --- | --- |
 | `boxesPerThread` | `number` | `0` | The most boxes a thread may hold at once. 0 means no limit. |
-| `enrol` | `boolean` | `true` | Whether boxes join BB as machines, so threads and terminals can use them with the thread's credentials. |
+| `enrol` | `boolean` | `true` | Whether boxes join VesnALIA as machines, so threads and terminals can use them with the thread's credentials. |
 | `defaultKind` | `string` | `"linux"` | The kind a thread gets when it asks for none. |
 | `files` | `readonly BoxFileSetting[]` |  | Files for every box (#455): paths under the box user's home, whose contents are secrets. |
 | `video` | `boolean` | `true` | Whether viewers of a Linux X11 desktop on the CPU show it as video, through Selkies (056), unless one chose VNC in its menu. On unless set off: an install with no value takes the default. |
-| `nightlyImages` | `boolean` | `false` | Whether bb-box rebuilds the standard images that are due each night (049), on a schedule of its own at 03:00 on BB's server. Off unless set; first-run setup turns it on. |
+| `nightlyImages` | `boolean` | `false` | Whether alia-box rebuilds the standard images that are due each night (049), on a schedule of its own at 03:00 on VesnALIA's server. Off unless set; first-run setup turns it on. |
 | `identityResetBackends` | `readonly string[]` |  | The backends whose new Linux boxes get an identity marker, so that a copy of one resets its identity (070). None by default. |
-| `testDevice` | `boolean` | `false` | Advanced: whether linux, linux-desktop-cpu, macos and macos-desktop boxes offer the test device (063), a test card served by bb-box's device server in place of a phone, for checking the device path with no simulator or emulator. It stands in for an Android phone or tablet on Linux and an iPhone on macOS, under those models' names, so a box acquired with device "Pixel 8" or "Test device" gets one. Off unless set; the conformance suite turns it on. |
-| `wholeCards` | `boolean` |  | Whether a Linux box or desktop on a backend that can give one may have a whole card: a GPU to itself, on which bb-box places no other box (071). Off, gpu whole is refused and not offered, and boxes that hold a card whole keep it until they are released. Off unless set. A backend's own whole-cards field, in its GPUs section, wins where it is set: this is what a backend gets while that field is unset. |
-| `encoderLedger` | `boolean` | `true` | Advanced: whether bb-box keeps the iOS devices it streams on each Mac within that Mac's video encoder (064), giving room first to the person in control of a device, then recordings, other viewers and the agent's waits, and showing the others at a lower resolution. Off, every stream of a shared ios box is capped at two thirds and nothing else is. On unless set off. |
-| `iosEncoder` | `"auto" \| "hardware" \| "software"` | `"auto"` | Advanced: how an ios box's device server encodes the device's video (065). auto uses the Mac's hardware H.264 encoder where it has one, and bb-box-h264 in software where it has none or its encoder fails; hardware never uses software; software always does, as to test it on a Mac that has an encoder. A box takes it when its device server is delivered. auto unless set. |
-| `tailnet` | `TailnetSetting` |  | How bb-box joins machines it makes to the operator's tailnet: off, where BB is reached without one, or through a Tailscale OAuth client, from which it makes a single-use key for each machine. The client's ID and secret are general secrets. |
+| `testDevice` | `boolean` | `false` | Advanced: whether linux, linux-desktop-cpu, macos and macos-desktop boxes offer the test device (063), a test card served by alia-box's device server in place of a phone, for checking the device path with no simulator or emulator. It stands in for an Android phone or tablet on Linux and an iPhone on macOS, under those models' names, so a box acquired with device "Pixel 8" or "Test device" gets one. Off unless set; the conformance suite turns it on. |
+| `wholeCards` | `boolean` |  | Whether a Linux box or desktop on a backend that can give one may have a whole card: a GPU to itself, on which alia-box places no other box (071). Off, gpu whole is refused and not offered, and boxes that hold a card whole keep it until they are released. Off unless set. A backend's own whole-cards field, in its GPUs section, wins where it is set: this is what a backend gets while that field is unset. |
+| `encoderLedger` | `boolean` | `true` | Advanced: whether alia-box keeps the iOS devices it streams on each Mac within that Mac's video encoder (064), giving room first to the person in control of a device, then recordings, other viewers and the agent's waits, and showing the others at a lower resolution. Off, every stream of a shared ios box is capped at two thirds and nothing else is. On unless set off. |
+| `iosEncoder` | `"auto" \| "hardware" \| "software"` | `"auto"` | Advanced: how an ios box's device server encodes the device's video (065). auto uses the Mac's hardware H.264 encoder where it has one, and alia-box-h264 in software where it has none or its encoder fails; hardware never uses software; software always does, as to test it on a Mac that has an encoder. A box takes it when its device server is delivered. auto unless set. |
+| `tailnet` | `TailnetSetting` |  | How alia-box joins machines it makes to the operator's tailnet: off, where VesnALIA is reached without one, or through a Tailscale OAuth client, from which it makes a single-use key for each machine. The client's ID and secret are general secrets. |
 | `snapshots` | `SnapshotSettings` |  | Snapshots of boxes (070): how many a box holds, how full a host's storage may get, and what paid ones may cost. |
 
 ### general.snapshots
@@ -60,11 +60,11 @@ Snapshots of boxes (070). A ceiling for a backend that is not set is 5.
 | Key | Type | Default | What it is |
 | --- | --- | --- | --- |
 | `perBox` | `number` | `5` | The most snapshots a box holds, 1 to 50; kept ones count, and undos are counted apart, 2 a box. 5 unless set. |
-| `roomPercent` | `number` | `85` | How full a host's storage may be, in percent, 50 to 90, for bb-box to take a snapshot on it: a take is refused past it, and past 5 points below it of a thin pool's metadata. 7 points above it, bb-box deletes agents' snapshots on that storage that nobody kept, oldest first. 85 unless set. |
-| `keepDays` | `number` | `30` | Days Keep keeps a snapshot from the day the person keeps it, or adds to a keep that has not ended, unless they choose a date: 1 to 365, 30 unless set. bb-box deletes a kept snapshot after its date. |
+| `roomPercent` | `number` | `85` | How full a host's storage may be, in percent, 50 to 90, for alia-box to take a snapshot on it: a take is refused past it, and past 5 points below it of a thin pool's metadata. 7 points above it, alia-box deletes agents' snapshots on that storage that nobody kept, oldest first. 85 unless set. |
+| `keepDays` | `number` | `30` | Days Keep keeps a snapshot from the day the person keeps it, or adds to a keep that has not ended, unless they choose a date: 1 to 365, 30 unless set. alia-box deletes a kept snapshot after its date. |
 | `agentsRestore` | `boolean` | `true` | Whether an agent restores its thread's own boxes without asking, always with an undo first. Off, it asks for a yes in its thread through a form. A box threads run on always needs that yes. On unless set off. |
 | `agentsMemory` | `boolean` | `true` | Whether an agent may restore a snapshot that holds a box's memory; off, only the person restores one. On unless set off. |
-| `pictures` | `boolean` | `true` | Whether bb-box keeps a small picture of a box's screen with each snapshot: a JPEG 320 px wide, taken as the snapshot is, kept with it in snapshots.db and shown to the person on the box's page. On unless set off. |
+| `pictures` | `boolean` | `true` | Whether alia-box keeps a small picture of a box's screen with each snapshot: a JPEG 320 px wide, taken as the snapshot is, kept with it in snapshots.db and shown to the person on the box's page. On unless set off. |
 | `ceilings` | `Readonly<Record<string, number>>` |  | The ceiling on paid snapshots, by backend ID: the most a month, in the provider's currency, that the paid snapshots held on it may cost at their prices, 0 to 1000. A take, an undo, a Keep, a renewal or a held copy that would pass it is refused. 5 for a backend not set. |
 
 ## kinds
@@ -92,7 +92,7 @@ Each backend's entry, in the order acquire tries them. Its ID is its type, or `<
 | `enabled` | `boolean` |  | Off, the backend takes no new boxes; its boxes keep working. |
 | `fields` | `Readonly<Record<string, FieldValue \| SecretState>>` |  | What the operator set. Stored without secrets; shown with each as its state. |
 | `warm` | `Readonly<Record<string, number>>` |  | Ready guests to keep, by kind. |
-| `projects` | `readonly string[]` |  | The BB projects it is kept for, by their IDs (#1458). Left out or empty, it serves every project. With a list, only threads in those projects place boxes and forks on it or claim its spares, and they use it before the backends every project shares. Threads elsewhere, or in no project, never see it. Spares are made on it in the backend list's order, as on any backend. Your own machines may still be made on it. |
+| `projects` | `readonly string[]` |  | The VesnALIA projects it is kept for, by their IDs (#1458). Left out or empty, it serves every project. With a list, only threads in those projects place boxes and forks on it or claim its spares, and they use it before the backends every project shares. Threads elsewhere, or in no project, never see it. Spares are made on it in the backend list's order, as on any backend. Your own machines may still be made on it. |
 | `hosts` | `readonly HostConfig[]` |  | For a driver with host fields. |
 
 A host of a backend with hosts:
@@ -113,21 +113,21 @@ Projects' images, by name (049).
 | `script` | `string` |  | The script, run as root in a box of the kind's standard image. |
 | `check` | `string` |  | Run as the box user after the script: the image fails when it fails. |
 | `bake` | `ImageBake` |  | When it is built ahead: auto, after two boxes in 14 days; always; or never, so it runs at each start. |
-| `projects` | `readonly string[]` |  | The BB projects whose threads' boxes get it. |
-| `source` | `{ readonly script?: string; readonly check?: string }` |  | Where the files came from in the project's repository, such as .bb/box-setup.sh. |
+| `projects` | `readonly string[]` |  | The VesnALIA projects whose threads' boxes get it. |
+| `source` | `{ readonly script?: string; readonly check?: string }` |  | Where the files came from in the project's repository, such as .vesnalia/box-setup.sh. |
 | `updated` | `string` |  | When it was set, as an ISO 8601 time. |
 
 ## monitor
 
-The Monitor (066): machine status in BB's sidebar footer for BB's server, your machines and every box, and background monitoring of BB's server.
+The Monitor (066): machine status in VesnALIA's sidebar footer for VesnALIA's server, your machines and every box, and background monitoring of VesnALIA's server.
 
 | Key | Type | Default | What it is |
 | --- | --- | --- | --- |
-| `enabled` | `boolean` | `true` | Whether the Monitor runs: the machine status in BB's sidebar footer, its sampling, background monitoring and the Mac sensors helper. Off, none of them runs. On unless set off. |
+| `enabled` | `boolean` | `true` | Whether the Monitor runs: the machine status in VesnALIA's sidebar footer, its sampling, background monitoring and the Mac sensors helper. Off, none of them runs. On unless set off. |
 | `refreshIntervalSeconds` | `number` | `5` | Seconds between readings while the machine status is open, 2 to 60. Background monitoring keeps its own 30 seconds. |
-| `backgroundMonitoring` | `boolean` | `false` | Whether bb-box checks BB's server's CPU and memory every 30 seconds while nobody looks, and keeps diagnostic logs for bb box monitor logs. Off unless set. |
-| `pressureNotifications` | `boolean` | `true` | Whether background monitoring shows a toast in BB when CPU or memory stays high, and when it recovers. On unless set off. |
-| `boxHistory` | `boolean` | `true` | Whether bb-box keeps each box's history: a light reading of every running box once a minute, kept 24 hours by the minute and 7 days by the hour, for the 1 h, 24 h and 7 d of a box's page (069). Off, nothing is read in the background, and what was kept stays until it ages out. On unless set off. |
+| `backgroundMonitoring` | `boolean` | `false` | Whether alia-box checks VesnALIA's server's CPU and memory every 30 seconds while nobody looks, and keeps diagnostic logs for VesnALIA box monitor logs. Off unless set. |
+| `pressureNotifications` | `boolean` | `true` | Whether background monitoring shows a toast in VesnALIA when CPU or memory stays high, and when it recovers. On unless set off. |
+| `boxHistory` | `boolean` | `true` | Whether alia-box keeps each box's history: a light reading of every running box once a minute, kept 24 hours by the minute and 7 days by the hour, for the 1 h, 24 h and 7 d of a box's page (069). Off, nothing is read in the background, and what was kept stays until it ages out. On unless set off. |
 
 ## Each backend's fields
 
@@ -153,11 +153,11 @@ Setup: [setup/proxmox-lxc/README.md](../../setup/proxmox-lxc/README.md).
 | --- | --- | --- | --- | --- | --- |
 | `url` | API URL | string | connection |  | The Proxmox API's address, from the setup guide's token file. For example https://192.0.2.10:8006/api2/json. |
 | `node` | Node | string | connection |  | The node boxes run on. Leave empty on a single-node host. |
-| `tls-fingerprint` | TLS fingerprint | string | connection |  | Pins the Proxmox API's certificate, so BB Box trusts that certificate alone. Paste its SHA-256 fingerprint from the setup guide's token file. Leave it empty to check the certificate against its CA instead. |
+| `tls-fingerprint` | TLS fingerprint | string | connection |  | Pins the Proxmox API's certificate, so VesnALIA Box trusts that certificate alone. Paste its SHA-256 fingerprint from the setup guide's token file. Leave it empty to check the certificate against its CA instead. |
 | `ca-certificate` | CA certificate | string | connection |  | The CA that signed the Proxmox API's certificate, for when there is no TLS fingerprint. Paste it as a PEM certificate. Leave it empty when the API's certificate is publicly trusted. |
-| `token-id` | API token ID | string | credentials |  | The Proxmox API token BB Box signs in with, such as bbbox@pve!plugin. The setup guide lists the privileges it needs. |
+| `token-id` | API token ID | string | credentials |  | The Proxmox API token VesnALIA Box signs in with, such as bbbox@pve!plugin. The setup guide lists the privileges it needs. |
 | `token-secret` | API token secret | string, secret | credentials |  | The secret of the API token, from the setup guide's token file. |
-| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key BB Box reaches boxes with. Paste the unencrypted OpenSSH private key the templates were built with, the setup guide's BBBOX_SSH_KEY. Leave it empty and BB Box makes one and shows its public key, which the templates must then accept. |
+| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key VesnALIA Box reaches boxes with. Paste the unencrypted OpenSSH private key the templates were built with, the setup guide's BBBOX_SSH_KEY. Leave it empty and VesnALIA Box makes one and shows its public key, which the templates must then accept. |
 | `pool` | Resource pool | string | boxes | `bbbox` | The Proxmox resource pool boxes are made in. The token needs rights on it. |
 | `linux-templates` | Linux templates | string | boxes | `9100` | The CT templates Linux boxes are linked clones of. List their VMIDs, separated by spaces or commas. Empty turns Linux boxes off. |
 | `desktop-templates` | GPU desktop templates | string | boxes |  | The CT templates Linux desktops on a GPU are linked clones of. One line per template: its VMID. A template serves every card the host's GPU helper gives, and desktops with no GPU. A line with a GPU ID after the VMID, such as the UUID nvidia-smi -L shows, still reads, for a template made with one card's device lines; the ID is no longer needed once the helper is there. Empty turns these desktops off. |
@@ -173,7 +173,7 @@ Setup: [setup/proxmox-lxc/README.md](../../setup/proxmox-lxc/README.md).
 | `addresses` | Box addresses | string | advanced | `10.200.0.10-10.200.0.254` | The range of addresses boxes get, inside the subnet. The n-th VMID gets the n-th address. Empty uses the whole subnet except the gateway. |
 | `vmid-first` | First box VMID | number | advanced | `9900` | The first VMID boxes take. Keep other guests out of the range. |
 | `vmid-last` | Last box VMID | number | advanced | `9999` | The last VMID boxes take. |
-| `ssh-user` | SSH user | string | advanced | `box` | The user in the templates that BB Box and BB work as. |
+| `ssh-user` | SSH user | string | advanced | `box` | The user in the templates that VesnALIA Box and VesnALIA work as. |
 | `reserve-memory-mib` | Memory kept free (MiB) | number | advanced | `4096` | Memory the node keeps for itself. A new box is refused if the node would have less than this left. |
 | `reserve-disk-gib` | Disk kept free (GiB) | number | advanced | `50` | Disk the node keeps free. A new box is refused if the template's storage has less free space than this. |
 
@@ -189,17 +189,17 @@ Fields left empty take proxmox-lxc's, a set at a time: `url`, `token-id`, `token
 | --- | --- | --- | --- | --- | --- |
 | `url` | API URL | string | connection |  | The Proxmox API's address, from the Proxmox LXC setup guide's token file. For example https://192.0.2.10:8006/api2/json. Leave it, the token, the fingerprint and the CA certificate empty to use Proxmox LXC's. |
 | `node` | Node | string | connection |  | The node boxes run on. Leave empty on a single-node host. |
-| `tls-fingerprint` | TLS fingerprint | string | connection |  | Pins the Proxmox API's certificate, so BB Box trusts that certificate alone. Paste its SHA-256 fingerprint from the setup guide's token file. Leave it empty to check the certificate against its CA instead. |
+| `tls-fingerprint` | TLS fingerprint | string | connection |  | Pins the Proxmox API's certificate, so VesnALIA Box trusts that certificate alone. Paste its SHA-256 fingerprint from the setup guide's token file. Leave it empty to check the certificate against its CA instead. |
 | `ca-certificate` | CA certificate | string | connection |  | The CA that signed the Proxmox API's certificate, for when there is no TLS fingerprint. Paste it as a PEM certificate. Leave it empty when the API's certificate is publicly trusted. |
-| `token-id` | API token ID | string | credentials |  | The Proxmox API token BB Box signs in with, such as bbbox@pve!plugin. The setup guide lists the privileges it needs. |
+| `token-id` | API token ID | string | credentials |  | The Proxmox API token VesnALIA Box signs in with, such as bbbox@pve!plugin. The setup guide lists the privileges it needs. |
 | `token-secret` | API token secret | string, secret | credentials |  | The secret of the API token, from the setup guide's token file. |
-| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key BB Box reaches boxes with. Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, BB Box makes a key, which the template does not accept until you add its public key. |
+| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key VesnALIA Box reaches boxes with. Paste BBBOX_SSH_KEY, the private key build.sh put in the template, or leave it empty to use Proxmox LXC's. With neither, VesnALIA Box makes a key, which the template does not accept until you add its public key. |
 | `pool` | Resource pool | string | boxes | `bbbox` | The Proxmox resource pool boxes are made in. The token needs rights on it. |
 | `windows-templates` | Windows templates | string | boxes | `9104` | The templates Windows desktops are linked clones of. List their VMIDs, separated by spaces or commas; a new box is cloned from the least used. setup/proxmox-qemu/build.sh builds one. Empty offers no Windows desktops. |
 | `linux-templates` | Linux templates | string | boxes |  | The templates Linux boxes as VMs are linked clones of, for a box with its own kernel. List their VMIDs, separated by spaces or commas. setup/proxmox-qemu/build.sh linux builds one. Empty offers no Linux VMs. |
 | `linux-desktop-templates` | Linux desktop templates | string | boxes |  | The templates Linux desktops as VMs are linked clones of, for a desktop with its own kernel. They are drawn by the CPU. List their VMIDs, separated by spaces or commas. setup/proxmox-qemu/build.sh linux-desktop builds one. Empty offers no Linux desktop VMs. |
-| `android-templates` | Android templates | string | boxes |  | The templates Android emulator boxes are linked clones of. Each is the Linux template with the Android SDK, the emulator and a booted device for each model. List their VMIDs, separated by spaces or commas. setup/proxmox-qemu/build.sh android builds one, on a host with nested virtualization, and the nightly job refreshes it monthly. BB Box offers Android boxes while KVM in Linux VM boxes is on and the template's record lists its devices. |
-| `windows-enrol` | Windows boxes as BB machines | boolean | boxes | `true` | Windows boxes join BB as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only. |
+| `android-templates` | Android templates | string | boxes |  | The templates Android emulator boxes are linked clones of. Each is the Linux template with the Android SDK, the emulator and a booted device for each model. List their VMIDs, separated by spaces or commas. setup/proxmox-qemu/build.sh android builds one, on a host with nested virtualization, and the nightly job refreshes it monthly. VesnALIA Box offers Android boxes while KVM in Linux VM boxes is on and the template's record lists its devices. |
+| `windows-enrol` | Windows boxes as VesnALIA machines | boolean | boxes | `true` | Windows boxes join VesnALIA as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only. |
 | `linux-kvm` | KVM in Linux VM boxes | boolean | boxes | `false` | Lets Linux VM boxes run VMs of their own through /dev/kvm. A box asked for as linux-kvm gets one, and Android emulator boxes need it. Turn it on when the host allows nested virtualization: build.sh linux says whether /dev/kvm works in a clone. |
 | `bridge` | Network bridge | string | advanced | `vmbr200` | The Proxmox network bridge boxes attach to. |
 | `subnet` | Subnet | string | advanced | `10.200.0.0/24` | The bridge's subnet, in CIDR form such as 10.200.0.0/24. Boxes get static addresses from it; there is no DHCP. |
@@ -207,7 +207,7 @@ Fields left empty take proxmox-lxc's, a set at a time: `url`, `token-id`, `token
 | `addresses` | Box addresses | string | advanced | `10.200.0.150-10.200.0.254` | The range of addresses boxes get, inside the subnet. The n-th VMID gets the n-th address. Keep it apart from Proxmox LXC's. Empty uses the whole subnet except the gateway. |
 | `vmid-first` | First box VMID | number | advanced | `9700` | The first VMID boxes take. Keep other guests out of the range, Proxmox LXC's boxes too. |
 | `vmid-last` | Last box VMID | number | advanced | `9799` | The last VMID boxes take. |
-| `ssh-user` | SSH user | string | advanced | `box` | The user in the template that BB Box and BB work as. |
+| `ssh-user` | SSH user | string | advanced | `box` | The user in the template that VesnALIA Box and VesnALIA work as. |
 | `reserve-memory-mib` | Memory kept free (MiB) | number | advanced | `4096` | Memory the node keeps for itself. A new box is refused if the node would have less than this left. |
 | `reserve-disk-gib` | Disk kept free (GiB) | number | advanced | `50` | Disk the node keeps free. A new box is refused if the template's storage has less free space than this. |
 
@@ -219,10 +219,10 @@ Setup: [setup/ssh-pool/README.md](../../setup/ssh-pool/README.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `machines` | Machines | string | boxes |  | Your machines, one line each, with the kinds of box each serves. A line is a name, [user@]host[:port], its kinds, and optionally via=&lt;jump host>, reset=machine and labels=&lt;words>, such as "build-1 192.0.2.21 linux" or "mac-mini 192.0.2.30 macos,macos-desktop". setup/ssh-pool/setup.sh, or setup-mac.sh on a Mac, prints the line for each machine. The kind ios on a Mac lends iOS slots there, each a macOS user with its own device, for iOS boxes asked for with shared: true; ios:&lt;slots> sets how many, where BB Box would estimate them from the Mac. |
-| `known-hosts` | Host keys | string | connection |  | The SSH host keys of every machine and jump host. BB Box connects only to a machine whose key is here. Paste the known_hosts lines setup.sh and setup-mac.sh print. |
-| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key BB Box logs in to the machines with. Paste an unencrypted OpenSSH private key that their admin user accepts. Leave it empty and BB Box makes one and shows its public key, which you then give setup.sh. |
-| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots each shared iOS host has at once, making, ready or held. Here a shared iOS host is a Mac whose line lists ios, and it is lent whole only while it lends no slot. Empty, BB Box estimates it for each Mac: the fewest of its cores over 1.3, its memory over 1.5 GiB after 8 GiB for the Mac, and what its video encoder allows. ios:&lt;slots> on a Mac's line wins. |
+| `machines` | Machines | string | boxes |  | Your machines, one line each, with the kinds of box each serves. A line is a name, [user@]host[:port], its kinds, and optionally via=&lt;jump host>, reset=machine and labels=&lt;words>, such as "build-1 192.0.2.21 linux" or "mac-mini 192.0.2.30 macos,macos-desktop". setup/ssh-pool/setup.sh, or setup-mac.sh on a Mac, prints the line for each machine. The kind ios on a Mac lends iOS slots there, each a macOS user with its own device, for iOS boxes asked for with shared: true; ios:&lt;slots> sets how many, where VesnALIA Box would estimate them from the Mac. |
+| `known-hosts` | Host keys | string | connection |  | The SSH host keys of every machine and jump host. VesnALIA Box connects only to a machine whose key is here. Paste the known_hosts lines setup.sh and setup-mac.sh print. |
+| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key VesnALIA Box logs in to the machines with. Paste an unencrypted OpenSSH private key that their admin user accepts. Leave it empty and VesnALIA Box makes one and shows its public key, which you then give setup.sh. |
+| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots each shared iOS host has at once, making, ready or held. Here a shared iOS host is a Mac whose line lists ios, and it is lent whole only while it lends no slot. Empty, VesnALIA Box estimates it for each Mac: the fewest of its cores over 1.3, its memory over 1.5 GiB after 8 GiB for the Mac, and what its video encoder allows. ios:&lt;slots> on a Mac's line wins. |
 | `ios-hosts-ahead` | Ready slots kept on a shared iOS host | number | ios-hosts | `1` | Slots a shared iOS host keeps ready, so the next iOS box is ready in seconds. Here a shared iOS host is a Mac whose line lists ios, while it is not lent whole. |
 | `ios-hosts-resetting-most` | Slots a shared iOS host resets at once | number | ios-hosts | `4` | The most released slots a shared iOS host resets in one pass, sweeping their files. |
 | `ios-hosts-disk-reserve-gib` | Disk a shared iOS host keeps free (GiB) | number | ios-hosts | `40` | A shared iOS host makes no new slot while it has less free disk than this. |
@@ -235,22 +235,22 @@ Setup: [setup/tart/README.md](../../setup/tart/README.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key BB Box logs in to each Mac and each VM with. Paste an unencrypted OpenSSH private key that each Mac's user and each image's VM user accept. Leave it empty and BB Box makes one and shows its public key. |
-| `macos-image` | macOS image | string | boxes | `bb-box-macos` | The Tart VM on each Mac that macOS boxes, with no desktop shown, are cloned from. Empty turns them off. |
-| `macos-desktop-image` | macOS desktop image | string | boxes | `bb-box-macos` | The Tart VM on each Mac that macOS desktops are cloned from. Empty turns them off. |
-| `linux-image` | Linux image (arm64) | string | boxes |  | The Tart VM on each Mac that Linux boxes on arm64 are cloned from. setup/tart/prepare-linux-image.sh builds it, as bb-box-linux. Empty turns them off. |
-| `linux-desktop-image` | Linux desktop image (arm64) | string | boxes |  | The Tart VM on each Mac that Linux desktops on arm64 are cloned from. setup/tart/prepare-linux-image.sh `--desktop` builds it, as bb-box-linux-desktop. Empty turns them off. |
-| `windows-image` | Windows image (arm64) | string | boxes |  | The image on each Mac that Windows desktops on arm64 are made from, run by QEMU. It is in ~/.bb-box/qemu/images. Empty turns them off. |
-| `ios-image` | iOS image | string | boxes |  | The Tart VM on each Mac that iOS Simulator boxes are cloned from. setup/tart/prepare-ios-image.sh builds it on the macOS image, as bb-box-ios, with idb_companion and a booted-once, slimmed iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5). BB Box checks and refreshes it with the macOS image. Empty turns iOS boxes off. |
+| `ssh-private-key` | SSH private key | string, secret | credentials |  | The SSH key VesnALIA Box logs in to each Mac and each VM with. Paste an unencrypted OpenSSH private key that each Mac's user and each image's VM user accept. Leave it empty and VesnALIA Box makes one and shows its public key. |
+| `macos-image` | macOS image | string | boxes | `alia-box-macos` | The Tart VM on each Mac that macOS boxes, with no desktop shown, are cloned from. Empty turns them off. |
+| `macos-desktop-image` | macOS desktop image | string | boxes | `alia-box-macos` | The Tart VM on each Mac that macOS desktops are cloned from. Empty turns them off. |
+| `linux-image` | Linux image (arm64) | string | boxes |  | The Tart VM on each Mac that Linux boxes on arm64 are cloned from. setup/tart/prepare-linux-image.sh builds it, as alia-box-linux. Empty turns them off. |
+| `linux-desktop-image` | Linux desktop image (arm64) | string | boxes |  | The Tart VM on each Mac that Linux desktops on arm64 are cloned from. setup/tart/prepare-linux-image.sh `--desktop` builds it, as alia-box-linux-desktop. Empty turns them off. |
+| `windows-image` | Windows image (arm64) | string | boxes |  | The image on each Mac that Windows desktops on arm64 are made from, run by QEMU. It is in ~/.alia-box/qemu/images. Empty turns them off. |
+| `ios-image` | iOS image | string | boxes |  | The Tart VM on each Mac that iOS Simulator boxes are cloned from. setup/tart/prepare-ios-image.sh builds it on the macOS image, as alia-box-ios, with idb_companion and a booted-once, slimmed iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5). VesnALIA Box checks and refreshes it with the macOS image. Empty turns iOS boxes off. |
 | `ios-hosts-on` | Shared iOS hosts | boolean | ios-hosts | `false` | Lends iOS boxes as slots on shared hosts, which are VMs of the iOS image. Each slot is a macOS user with its own device, for an iOS box asked for with shared: true. A host is made when a box needs one, and deleted when its last box is released. |
-| `windows-enrol` | Windows boxes as BB machines | boolean | boxes | `true` | Windows boxes join BB as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only. |
-| `video` | Video by default for macOS desktops | boolean | boxes | `false` | Opens macOS desktops as video, from bb-box-stream in the image, instead of VNC. Off, they open as VNC, which is already smooth on a Tart Mac at 52 to 55 frames a second, and a person can choose video under Display. Video uses much less bandwidth, about 1.2 Mbit/s against 20 while scrolling, but a key shows a little later, about 57 ms against 31. |
-| `vm-user` | VM user | string | advanced | `admin` | The user in the macOS images that BB Box and BB work as. It is logged in to the desktop automatically. Linux boxes work as box. |
-| `vms-per-host` | VMs per Mac | number | advanced | `2` | The most macOS VMs each Mac runs at once, counting every Tart VM there, not only BB Box's. At most 2, which Apple's licence and the Virtualization framework allow. |
+| `windows-enrol` | Windows boxes as VesnALIA machines | boolean | boxes | `true` | Windows boxes join VesnALIA as machines, so threads and terminals can use them. Linux and macOS boxes always do. Off, Windows boxes are boxes only. |
+| `video` | Video by default for macOS desktops | boolean | boxes | `false` | Opens macOS desktops as video, from alia-box-stream in the image, instead of VNC. Off, they open as VNC, which is already smooth on a Tart Mac at 52 to 55 frames a second, and a person can choose video under Display. Video uses much less bandwidth, about 1.2 Mbit/s against 20 while scrolling, but a key shows a little later, about 57 ms against 31. |
+| `vm-user` | VM user | string | advanced | `admin` | The user in the macOS images that VesnALIA Box and VesnALIA work as. It is logged in to the desktop automatically. Linux boxes work as box. |
+| `vms-per-host` | VMs per Mac | number | advanced | `2` | The most macOS VMs each Mac runs at once, counting every Tart VM there, not only VesnALIA Box's. At most 2, which Apple's licence and the Virtualization framework allow. |
 | `reserve-memory-mib` | Memory kept free (MiB) | number | advanced | `16384` | Memory each Mac keeps for its own use. A new box is refused if the Mac would have less than this left, after its running VMs. |
 | `reserve-disk-gib` | Disk kept free (GiB) | number | advanced | `50` | Disk each Mac keeps free. A new box is refused if the Mac's disk has less free space than this. |
 | `warm-max-hours` | Hours a macOS warm VM or spare is kept | number | advanced | `6` | How long a suspended macOS warm VM or spare is kept before a fresh one replaces it. An old saved state may not restore. |
-| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots each shared iOS host has at once, making, ready or held. Empty, BB Box estimates it for each Mac: the fewest of the host's cores over 1.3, its memory over 1.5 GiB after 8 GiB for the host, and what the Mac's video encoder allows. A Mac's own value wins. |
+| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots each shared iOS host has at once, making, ready or held. Empty, VesnALIA Box estimates it for each Mac: the fewest of the host's cores over 1.3, its memory over 1.5 GiB after 8 GiB for the host, and what the Mac's video encoder allows. A Mac's own value wins. |
 | `ios-hosts-ahead` | Ready slots kept on a shared iOS host | number | ios-hosts | `1` | Slots a shared iOS host keeps ready while it holds a box, so the next box is ready in seconds. |
 | `ios-hosts-resetting-most` | Slots a shared iOS host resets at once | number | ios-hosts | `4` | The most released slots a shared iOS host resets in one pass, sweeping their files. |
 | `ios-hosts-cores` | Cores of a shared iOS host | number | ios-hosts |  | The cores of each shared iOS host's VM, shared by its slots. Empty uses the Mac's performance cores. A Mac's own value wins. |
@@ -263,11 +263,11 @@ Each host's fields:
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
 | `address` | Address | string | connection |  | The Mac's address, with :port when SSH is not on 22. For example 192.0.2.20. |
-| `user` | User | string | connection |  | The user BB Box logs in to the Mac as, which runs tart. |
-| `host-keys` | Host keys | string | connection |  | The Mac's SSH host keys as known_hosts lines. ssh-keyscan -t ed25519 &lt;address> prints one. BB Box checks them on every connection. |
-| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots a shared iOS host on this Mac has, in place of the backend's setting. Empty uses the backend's setting, or else BB Box's estimate for the Mac. |
+| `user` | User | string | connection |  | The user VesnALIA Box logs in to the Mac as, which runs tart. |
+| `host-keys` | Host keys | string | connection |  | The Mac's SSH host keys as known_hosts lines. ssh-keyscan -t ed25519 &lt;address> prints one. VesnALIA Box checks them on every connection. |
+| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots a shared iOS host on this Mac has, in place of the backend's setting. Empty uses the backend's setting, or else VesnALIA Box's estimate for the Mac. |
 | `ios-hosts-cores` | Cores of a shared iOS host | number | ios-hosts |  | The cores of a shared iOS host's VM on this Mac, in place of the backend's setting. Empty uses the backend's setting, or else the Mac's performance cores. |
-| `ios-hosts-memory-gib` | Memory of a shared iOS host (GiB) | number | ios-hosts |  | The memory of a shared iOS host's VM on this Mac, in place of the backend's setting. Empty uses the backend's setting, or else BB Box's estimate. |
+| `ios-hosts-memory-gib` | Memory of a shared iOS host (GiB) | number | ios-hosts |  | The memory of a shared iOS host's VM on this Mac, in place of the backend's setting. Empty uses the backend's setting, or else VesnALIA Box's estimate. |
 
 ### docker
 
@@ -277,67 +277,67 @@ Setup: [setup/docker/README.md](../../setup/docker/README.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `host` | Host | string | connection |  | The Docker daemon boxes run on. Give unix:///path/to/docker.sock, ssh://user@host, tcp://host:port, wsl://distro or wsl://user@distro, or bb:&lt;machine ID> for a BB machine, which BB Box reaches through BB. wsl:// reaches Docker in that WSL distribution through wsl.exe and docker system dial-stdio, not through WSL's localhost forwarder. Over SSH, BB's server user must log in without a prompt. Empty uses the docker CLI's own default on BB's server: DOCKER_HOST, its current context, or the local socket. |
-| `machine-docker-host` | Docker on the machine | string | connection |  | Where Docker is on a BB machine, when Host is bb:&lt;machine ID>. Give wsl://distro or wsl://user@distro, unix:///path/to/docker.sock, or tcp://host:port. BB Box sends it when that machine's relay opens, and the machine dials it instead of its own DOCKER_HOST or docker context. Empty leaves those. On a Windows machine whose Docker is at tcp://127.0.0.1, set wsl://&lt;distro>: WSL's localhost forwarder drops attached output, so docker exec prints nothing and exits 0. |
+| `host` | Host | string | connection |  | The Docker daemon boxes run on. Give unix:///path/to/docker.sock, ssh://user@host, tcp://host:port, wsl://distro or wsl://user@distro, or VesnALIA:&lt;machine ID> for a VesnALIA machine, which VesnALIA Box reaches through VesnALIA. wsl:// reaches Docker in that WSL distribution through wsl.exe and docker system dial-stdio, not through WSL's localhost forwarder. Over SSH, VesnALIA's server user must log in without a prompt. Empty uses the docker CLI's own default on VesnALIA's server: DOCKER_HOST, its current context, or the local socket. |
+| `machine-docker-host` | Docker on the machine | string | connection |  | Where Docker is on a VesnALIA machine, when Host is VesnALIA:&lt;machine ID>. Give wsl://distro or wsl://user@distro, unix:///path/to/docker.sock, or tcp://host:port. VesnALIA Box sends it when that machine's relay opens, and the machine dials it instead of its own DOCKER_HOST or docker context. Empty leaves those. On a Windows machine whose Docker is at tcp://127.0.0.1, set wsl://&lt;distro>: WSL's localhost forwarder drops attached output, so docker exec prints nothing and exits 0. |
 | `linux-image` | Linux image | string | boxes | `bbbox/linux:1` | The image Linux boxes run. setup/docker/build.sh builds it. Empty turns them off. |
 | `desktop-image` | Desktop image | string | boxes | `bbbox/linux-desktop:1` | The image Linux desktops run: those drawn by the CPU, and those on a GPU when GPU boxes are on. setup/docker/build.sh builds it. Empty turns them off. |
 | `wayland-desktop-image` | Wayland desktop image | string | boxes | `bbbox/linux-desktop-wayland:1` | The image Linux desktops on Wayland run: Sway, drawn by the CPU. setup/docker/build.sh builds it. Empty turns them off. |
 | `privileged` | Docker in boxes | boolean | boxes | `true` | Gives each box its own Docker daemon, started by its first docker command. Each box then runs as a privileged container, which can take over the Docker host. Off, or on rootless Docker, boxes say No Docker. |
-| `gpus` | GPU boxes | boolean | gpus | `false` | Offers Linux servers and desktops on the host's NVIDIA cards, shared or, where whole cards are on, a card to themselves. The NVIDIA Container Toolkit must list the cards as CDI devices (nvidia-ctk cdi generate). With Docker in boxes on, every box can open every card, with a GPU or without: BB Box places boxes on cards, but does not fence them. Not set here, it reads gpu-desktops, off unless that is set. |
+| `gpus` | GPU boxes | boolean | gpus | `false` | Offers Linux servers and desktops on the host's NVIDIA cards, shared or, where whole cards are on, a card to themselves. The NVIDIA Container Toolkit must list the cards as CDI devices (nvidia-ctk cdi generate). With Docker in boxes on, every box can open every card, with a GPU or without: VesnALIA Box places boxes on cards, but does not fence them. Not set here, it reads gpu-desktops, off unless that is set. |
 | `boxes-per-card` | Boxes per card | number | gpus | `4` | The most boxes on one card, servers and desktops together, running or stopped, of every install that uses the host. A lower limit stops nothing that runs: no new box goes on a card over it until it has room. Empty, it reads desktops-per-gpu where that is set, else 4. |
-| `whole-cards` | Whole cards | boolean | gpus |  | Lets a box have a card to itself. Off, no box is given a whole card or changes to one; boxes that have one keep it until they change or are released. A whole card is where BB Box places boxes, not a fence. Not set here, it follows the install-wide option general.wholeCards, off unless that is set. |
+| `whole-cards` | Whole cards | boolean | gpus |  | Lets a box have a card to itself. Off, no box is given a whole card or changes to one; boxes that have one keep it until they change or are released. A whole card is where VesnALIA Box places boxes, not a fence. Not set here, it follows the install-wide option general.wholeCards, off unless that is set. |
 | `gpu-memory-mib` | GPU memory a new box needs (MiB) | number | gpus | `1024` | The memory, in MiB, a card must have free when last read for a new server box to be placed on it. A start-up check, not a limit on what the box uses. A desktop needs at least 384 MiB. |
 | `gpu-desktops` | GPU desktops (replaced) | boolean | advanced |  | Replaced by GPU boxes, and read only while that is unset. |
 | `desktops-per-gpu` | Desktops per GPU (replaced) | number | advanced |  | Replaced by Boxes per card, and read only while that is unset. |
-| `network` | Network | string | advanced | `bbbox` | The Docker network BB Box makes for its boxes, apart from the host's other containers. |
-| `boxes` | Most boxes | number | advanced | `10` | The most BB Box containers on the host at once, running or stopped. This counts those of every BB Box install that uses the host. |
+| `network` | Network | string | advanced | `bbbox` | The Docker network VesnALIA Box makes for its boxes, apart from the host's other containers. |
+| `boxes` | Most boxes | number | advanced | `10` | The most VesnALIA Box containers on the host at once, running or stopped. This counts those of every VesnALIA Box install that uses the host. |
 | `reserve-memory-mib` | Memory kept free (MiB) | number | advanced | `4096` | Memory the host keeps for itself. A new box is refused if the host would have less than this left, after the memory limits of the running boxes. |
 
 ### microsandbox
 
-microsandbox: Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. BB Box installs its own msb there.
+microsandbox: Linux boxes, with or without a desktop, as microVMs that start in under a second, on a Linux host with KVM or a Mac. VesnALIA Box installs its own msb there.
 
 Setup: [setup/microsandbox/README.md](../../setup/microsandbox/README.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `host` | Host | string | connection |  | The host that runs the boxes: a Linux host with KVM, or a Mac. Give ssh://user@host, or bb:&lt;machine ID> for a BB machine, which BB Box reaches through BB. Empty uses BB's server. BB Box installs its own msb there. |
-| `linux-image` | Linux image | string | boxes | `bbbox/linux:1` | The image Linux boxes run. BB Box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off. |
-| `desktop-image` | Desktop image | string | boxes | `bbbox/linux-desktop:1` | The image Linux desktops run, drawn by the CPU. BB Box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off. |
-| `linux-arm64-image` | Linux image (arm64) | string | boxes | `bbbox/linux:1-arm64` | The image Linux boxes on arm64 run, on an arm64 host such as a Mac. BB Box imports it from Docker on the host, or builds it there with setup/docker/build.sh `--arch` arm64 in a microVM of its own. Empty turns them off. |
-| `desktop-arm64-image` | Desktop image (arm64) | string | boxes | `bbbox/linux-desktop:1-arm64` | The image Linux desktops on arm64 run, on an arm64 host such as a Mac. BB Box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off. |
+| `host` | Host | string | connection |  | The host that runs the boxes: a Linux host with KVM, or a Mac. Give ssh://user@host, or VesnALIA:&lt;machine ID> for a VesnALIA machine, which VesnALIA Box reaches through VesnALIA. Empty uses VesnALIA's server. VesnALIA Box installs its own msb there. |
+| `linux-image` | Linux image | string | boxes | `bbbox/linux:1` | The image Linux boxes run. VesnALIA Box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off. |
+| `desktop-image` | Desktop image | string | boxes | `bbbox/linux-desktop:1` | The image Linux desktops run, drawn by the CPU. VesnALIA Box imports it from Docker on the host, where setup/docker/build.sh builds it. Empty turns them off. |
+| `linux-arm64-image` | Linux image (arm64) | string | boxes | `bbbox/linux:1-arm64` | The image Linux boxes on arm64 run, on an arm64 host such as a Mac. VesnALIA Box imports it from Docker on the host, or builds it there with setup/docker/build.sh `--arch` arm64 in a microVM of its own. Empty turns them off. |
+| `desktop-arm64-image` | Desktop image (arm64) | string | boxes | `bbbox/linux-desktop:1-arm64` | The image Linux desktops on arm64 run, on an arm64 host such as a Mac. VesnALIA Box imports it from Docker on the host, or builds it there in a microVM of its own. Empty turns them off. |
 | `docker` | Docker in boxes | boolean | boxes | `true` | Gives each box its own Docker daemon, started by its first docker command. Its data is on a disk of the box's own. Each box has its own kernel, so this needs no privilege on the host. |
 | `docker-disk-gib` | Docker disk (GiB) | number | advanced | `64` | The most each box's Docker disk may grow to. It takes only what Docker writes, and goes with the box. |
 | `disk-gib` | Root disk (GiB) | number | advanced | `32` | The most a box's root disk may grow to when no disk size is asked for. It takes only what the box writes. |
-| `network` | Network profiles | string | advanced | `public,private` | What each box's network reaches, as msb's profiles separated by commas. The profile public reaches the internet, and private reaches the host's local networks and tailnet, where BB's server often is. |
-| `boxes` | Most boxes | number | advanced | `20` | The most BB Box microVMs on the host at once, running or stopped. This counts those of every BB Box install that uses the host. |
+| `network` | Network profiles | string | advanced | `public,private` | What each box's network reaches, as msb's profiles separated by commas. The profile public reaches the internet, and private reaches the host's local networks and tailnet, where VesnALIA's server often is. |
+| `boxes` | Most boxes | number | advanced | `20` | The most VesnALIA Box microVMs on the host at once, running or stopped. This counts those of every VesnALIA Box install that uses the host. |
 | `reserve-memory-mib` | Memory kept free (MiB) | number | advanced | `4096` | Memory the host keeps for itself. A new box is refused if the host would have less than this left, after the memory of the running boxes. |
 | `memory-overcommit` | Memory overcommit | number | advanced | `1` | How many times the host's memory the boxes may take in all, after the memory kept free: 1 to 4. At 1, each box counts at its full memory. Above 1, a new box also needs memory free on the host now. Raise it for mostly idle boxes. |
 
 ### hetzner
 
-Hetzner Cloud: Linux boxes on x86 or Arm, with or without a desktop, on Hetzner Cloud hosts BB Box makes as boxes need them. Each box is a container on a Docker host, and a host is deleted once it is idle.
+Hetzner Cloud: Linux boxes on x86 or Arm, with or without a desktop, on Hetzner Cloud hosts VesnALIA Box makes as boxes need them. Each box is a container on a Docker host, and a host is deleted once it is idle.
 
 Setup: [docs/guide/hetzner.md](../../docs/guide/hetzner.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `token` | API token | string, secret | credentials |  | The API token of the Hetzner Cloud project BB Box makes its hosts in. Make a Read & Write token on the project's Security page. The project should hold nothing else. |
-| `location` | Location | string | connection | `nbg1` | The Hetzner location hosts are made in, such as nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki). Choose one near BB's server, as a desktop's stream crosses between them. |
+| `token` | API token | string, secret | credentials |  | The API token of the Hetzner Cloud project VesnALIA Box makes its hosts in. Make a Read & Write token on the project's Security page. The project should hold nothing else. |
+| `location` | Location | string | connection | `nbg1` | The Hetzner location hosts are made in, such as nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki). Choose one near VesnALIA's server, as a desktop's stream crosses between them. |
 | `server-type` | Server type | string | boxes | `cpx42` | The type of every host, such as cpx42 (8 cores, 16 GB, 320 GB disk). A box at its largest must fit one, with the memory kept free. |
 | `arm-server-type` | Arm server type | string | boxes |  | The type of the hosts for Linux boxes on arm64, an Ampere type such as cax31 (8 cores, 16 GB, 160 GB disk). Empty offers no arm64 boxes. Arm hosts have their own host image. |
 | `most-hosts` | Most hosts | number | boxes | `2` | The most hosts at once. At this many, a box that fits on none of them is refused. |
 | `idle-minutes` | Idle minutes | number | boxes | `30` | How long a host with no box waits before it is deleted. Hetzner bills by the started hour, so a shorter time saves little and makes new boxes wait for a new host more often. |
-| `monthly-limit-eur` | Monthly limit (EUR) | number | boxes | `20` | The most BB Box may spend on Hetzner in a calendar month, in euros before VAT. It makes no host when this month's spend so far, and an hour more of every host with the new one, would pass it. A busy host keeps running until it is idle. 0 sets no limit. Hetzner has no limit of its own: set a cost alert in its Console too. |
-| `host-image` | Host image | string | advanced | `ubuntu-26.04` | What hosts start from: an image name or a snapshot's ID. An image name, such as ubuntu-26.04, is the base of the host image BB Box builds as a snapshot, with Docker, Tailscale and the box images in it. BB Box rebuilds it weekly or when its scripts change, keeping two; until the first is built, hosts start from the image itself. A snapshot's ID makes hosts start from that snapshot, and BB Box builds none. |
-| `ssh-from` | SSH from | string | advanced |  | The addresses that may reach a host's SSH over the internet, used only with the tailnet off. Give CIDRs separated by commas, such as BB's server's public address. With the tailnet on, a host's SSH is reached on the tailnet alone. |
+| `monthly-limit-eur` | Monthly limit (EUR) | number | boxes | `20` | The most VesnALIA Box may spend on Hetzner in a calendar month, in euros before VAT. It makes no host when this month's spend so far, and an hour more of every host with the new one, would pass it. A busy host keeps running until it is idle. 0 sets no limit. Hetzner has no limit of its own: set a cost alert in its Console too. |
+| `host-image` | Host image | string | advanced | `ubuntu-26.04` | What hosts start from: an image name or a snapshot's ID. An image name, such as ubuntu-26.04, is the base of the host image VesnALIA Box builds as a snapshot, with Docker, Tailscale and the box images in it. VesnALIA Box rebuilds it weekly or when its scripts change, keeping two; until the first is built, hosts start from the image itself. A snapshot's ID makes hosts start from that snapshot, and VesnALIA Box builds none. |
+| `ssh-from` | SSH from | string | advanced |  | The addresses that may reach a host's SSH over the internet, used only with the tailnet off. Give CIDRs separated by commas, such as VesnALIA's server's public address. With the tailnet on, a host's SSH is reached on the tailnet alone. |
 | `linux-image` | Linux image | string | boxes | `bbbox/linux:1` | The image Linux boxes run. setup/docker/build.sh builds it. Empty turns them off. |
 | `desktop-image` | Desktop image | string | boxes | `bbbox/linux-desktop:1` | The image Linux desktops run, drawn by the CPU. setup/docker/build.sh builds it. Empty turns them off. |
 | `wayland-desktop-image` | Wayland desktop image | string | boxes | `bbbox/linux-desktop-wayland:1` | The image Linux desktops on Wayland run: Sway, drawn by the CPU. setup/docker/build.sh builds it. Empty turns them off. |
 | `privileged` | Docker in boxes | boolean | boxes | `true` | Gives each box its own Docker daemon, started by its first docker command. Each box then runs as a privileged container, which can take over the Docker host. Off, or on rootless Docker, boxes say No Docker. |
-| `boxes` | Most boxes | number | advanced | `10` | The most BB Box containers on the host at once, running or stopped. This counts those of every BB Box install that uses the host. |
+| `boxes` | Most boxes | number | advanced | `10` | The most VesnALIA Box containers on the host at once, running or stopped. This counts those of every VesnALIA Box install that uses the host. |
 | `reserve-memory-mib` | Memory kept free (MiB) | number | advanced | `4096` | Memory the host keeps for itself. A new box is refused if the host would have less than this left, after the memory limits of the running boxes. |
-| `network` | Network | string | advanced | `bbbox` | The Docker network BB Box makes for its boxes, apart from the host's other containers. |
+| `network` | Network | string | advanced | `bbbox` | The Docker network VesnALIA Box makes for its boxes, apart from the host's other containers. |
 
 ### namespace
 
@@ -347,27 +347,27 @@ Setup: [docs/guide/namespace.md](../../docs/guide/namespace.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `token` | API token | string, secret | connection |  | The token BB Box calls Namespace's API with. Make a revocable token for the workspace with nsc token create, granted the instance actions the guide lists. |
-| `region` | API region | string | connection | `us` | Where BB Box calls Namespace's API and its SSH gateway: us or eu. Where the machines run is the workspace's regional preference, which Namespace's support sets. |
+| `token` | API token | string, secret | connection |  | The token VesnALIA Box calls Namespace's API with. Make a revocable token for the workspace with nsc token create, granted the instance actions the guide lists. |
+| `region` | API region | string | connection | `us` | Where VesnALIA Box calls Namespace's API and its SSH gateway: us or eu. Where the machines run is the workspace's regional preference, which Namespace's support sets. |
 | `macos-version` | macOS version | string | boxes | `26.x` | The macOS a box runs, as Namespace's base images name it, such as 26.x. |
-| `machines` | Most machines | number | boxes | `2` | The most Namespace machines BB Box has at once. Each box is one machine, billed by the minute while it exists. |
+| `machines` | Most machines | number | boxes | `2` | The most Namespace machines VesnALIA Box has at once. Each box is one machine, billed by the minute while it exists. |
 | `longest-life-hours` | Longest life (hours) | number | boxes | `3` | How long the workspace's plan lets a machine live. That is 3 hours on Developer, 5 on Team and up to 24 on Business. A box ends then, and its thread hears an hour ahead. |
-| `largest-machine` | Largest machine | string | boxes |  | The largest Mac BB Box asks for, as cores x memory in GB, such as 6x14. A box that needs a larger one is refused before BB Box asks Namespace, so another backend can take it. Empty: the largest the workspace allows, which BB Box reads from Namespace when the token may, or learns the first time Namespace refuses a Mac for its size. |
-| `ios-hosts-on` | Shared iOS hosts | boolean | ios-hosts | `true` | Lends iOS boxes as macOS users on a shared Namespace Mac. A host is made for an iOS box that finds no slot on a pool Mac or a Tart host, and deleted when its last box goes. It lends once BB Box has measured that Namespace's Macs run the iOS Simulator. A host takes the workspace's one Mac, so no macOS box starts on Namespace while it lives. |
-| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots each shared iOS host has at once, making, ready or held. Empty, BB Box estimates it from the Mac's cores, memory and video encoder, as for a pool Mac. |
+| `largest-machine` | Largest machine | string | boxes |  | The largest Mac VesnALIA Box asks for, as cores x memory in GB, such as 6x14. A box that needs a larger one is refused before VesnALIA Box asks Namespace, so another backend can take it. Empty: the largest the workspace allows, which VesnALIA Box reads from Namespace when the token may, or learns the first time Namespace refuses a Mac for its size. |
+| `ios-hosts-on` | Shared iOS hosts | boolean | ios-hosts | `true` | Lends iOS boxes as macOS users on a shared Namespace Mac. A host is made for an iOS box that finds no slot on a pool Mac or a Tart host, and deleted when its last box goes. It lends once VesnALIA Box has measured that Namespace's Macs run the iOS Simulator. A host takes the workspace's one Mac, so no macOS box starts on Namespace while it lives. |
+| `ios-hosts-most` | Slots per shared iOS host | number | ios-hosts |  | The most slots each shared iOS host has at once, making, ready or held. Empty, VesnALIA Box estimates it from the Mac's cores, memory and video encoder, as for a pool Mac. |
 | `ios-hosts-ahead` | Ready slots kept on a shared iOS host | number | ios-hosts | `1` | Slots a shared iOS host keeps ready while it holds a box, so the next box is ready in seconds. |
 | `ios-hosts-resetting-most` | Slots a shared iOS host resets at once | number | ios-hosts | `2` | The most released slots a shared iOS host resets in one pass, sweeping their files. |
 | `ios-hosts-disk-reserve-gib` | Disk a shared iOS host keeps free (GiB) | number | ios-hosts | `20` | A shared iOS host makes no new slot while it has less free disk than this. |
 
 ### boat
 
-boat.dev: Linux VMs, with or without a desktop, rented by the second from boat.dev, one for each box. Each box is forked from BB Box's template in seconds, and deleted when it is released.
+boat.dev: Linux VMs, with or without a desktop, rented by the second from boat.dev, one for each box. Each box is forked from VesnALIA Box's template in seconds, and deleted when it is released.
 
 Setup: [docs/guide/boat.md](../../docs/guide/boat.md).
 
 | Field | Label | Type | Group | Default | Description |
 | --- | --- | --- | --- | --- | --- |
-| `api-key` | API key | string, secret | credentials |  | The boat.dev API key BB Box makes and deletes sandboxes with. Make one in boat's dashboard, or with boat api-key create, starting boat_. A key that expires stops BB Box's boxes there when it does. It is kept as a secret and never shown. |
-| `most-boxes` | Most boxes | number | boxes | `2` | The most boat sandboxes BB Box runs at once, a template being built included. Each box is one sandbox, billed by the second while it runs: $0.018 an hour for 2 cores and 4 GB, $0.036 for 4 and 8, $0.072 for 8 and 16. A stopped box costs nothing. The free trial allows 2 at once. |
-| `android-sdk-licence` | Android SDK licence | boolean | boxes | `false` | Whether you accept the Android SDK's licence, which Android boxes on boat.dev need. Google's terms cover the SDK, the emulator and the system image that BB Box installs, as setup/android/pins.json pins them; read them with setup/android/accept-sdk-licence.sh, or at developer.android.com/studio/terms. Turning this on is your acceptance. While it is off, boat.dev offers no Android boxes. |
-| `lease-minutes` | Auto-stop (minutes) | number | advanced | `30` | How long a box runs on after BB Box last renewed it. BB Box renews each box it holds every few minutes, so a box stops this long after BB Box stops for good, and keeps its disk. From 10 to 120: the free trial allows at most 120. |
+| `api-key` | API key | string, secret | credentials |  | The boat.dev API key VesnALIA Box makes and deletes sandboxes with. Make one in boat's dashboard, or with boat api-key create, starting boat_. A key that expires stops VesnALIA Box's boxes there when it does. It is kept as a secret and never shown. |
+| `most-boxes` | Most boxes | number | boxes | `2` | The most boat sandboxes VesnALIA Box runs at once, a template being built included. Each box is one sandbox, billed by the second while it runs: $0.018 an hour for 2 cores and 4 GB, $0.036 for 4 and 8, $0.072 for 8 and 16. A stopped box costs nothing. The free trial allows 2 at once. |
+| `android-sdk-licence` | Android SDK licence | boolean | boxes | `false` | Whether you accept the Android SDK's licence, which Android boxes on boat.dev need. Google's terms cover the SDK, the emulator and the system image that VesnALIA Box installs, as setup/android/pins.json pins them; read them with setup/android/accept-sdk-licence.sh, or at developer.android.com/studio/terms. Turning this on is your acceptance. While it is off, boat.dev offers no Android boxes. |
+| `lease-minutes` | Auto-stop (minutes) | number | advanced | `30` | How long a box runs on after VesnALIA Box last renewed it. VesnALIA Box renews each box it holds every few minutes, so a box stops this long after VesnALIA Box stops for good, and keeps its disk. From 10 to 120: the free trial allows at most 120. |

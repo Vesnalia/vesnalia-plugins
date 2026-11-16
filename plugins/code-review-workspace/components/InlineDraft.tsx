@@ -1,5 +1,5 @@
 import { createContext, memo, useContext, useRef, useState, type KeyboardEvent, type ReactNode, type Ref, type RefObject } from "react";
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { diffWords } from "diff";
 import { isLocal, linesOf, postable, sameLocation, SEVERITIES, SEVERITY_LABEL, type CommentLocation, type Discussion, type DiscussionEntry, type DraftComment, type Severity } from "../src/draft";
 import { draftItemId, draftState, draftStatus, privateItemId, sentCheck, STATE_LABEL, type CommentChecks } from "../lib/comments";
@@ -123,7 +123,7 @@ function Speaker({ agent, children }: { agent: boolean; children: ReactNode }) {
 }
 
 /**
- * A line's draft comment, its discussion with the agent, and the comment box while it's open there. Only in BB, so
+ * A line's draft comment, its discussion with the agent, and the comment box while it's open there. Only in VesnALIA, so
  * dashed, with an edge in its words' color, and its state in words. With comments folded it's a one-line pill, unless
  * its box is open or you opened it.
  */
@@ -287,7 +287,7 @@ export function CommentBody({ body, link = false }: { body: string; link?: boole
     : part.trim() && <Markdown key={index} content={withLineBreaks(link ? linkImages(part.trim()) : part.trim())} className="text-sm leading-relaxed" />)}</div>;
 }
 
-/** How the agent confirmed its comment, folded under it in the agent's tint. It stays in BB: GitHub never gets it. */
+/** How the agent confirmed its comment, folded under it in the agent's tint. It stays in VesnALIA: GitHub never gets it. */
 export function AgentEvidence({ evidence }: { evidence: string }) {
   const [open, setOpen] = useState(false);
   return <div className="rounded-md border-l-2 border-(--ansi-13)/60 bg-(--ansi-13)/5">
@@ -298,7 +298,7 @@ export function AgentEvidence({ evidence }: { evidence: string }) {
   </div>;
 }
 
-/** Heads a discussion with no comment: a question about the line, or one whose comment the agent removed. Private: it never leaves BB. */
+/** Heads a discussion with no comment: a question about the line, or one whose comment the agent removed. Private: it never leaves VesnALIA. */
 function DiscussionBar({ discussion, draft, boxOpen, onFold }: { discussion: Discussion; draft: InlineDraft; boxOpen: boolean; onFold: (() => void) | null }) {
   const removed = discussion.entries.filter((entry) => entry.kind !== "message").slice(-1)[0]?.kind === "removed";
   return (

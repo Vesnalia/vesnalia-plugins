@@ -2,9 +2,9 @@
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import { experimental_useAppPanel } from "@get-bb/plugin-sdk/app";
-import type { PluginThreadActionTarget } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import { experimental_useAppPanel } from "@vesnalia/plugin-sdk/app";
+import type { PluginThreadActionTarget } from "@vesnalia/plugin-sdk/app";
 
 const app = await loadPluginApp(() => import("./app"));
 

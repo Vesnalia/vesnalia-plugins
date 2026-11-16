@@ -27,7 +27,7 @@ export function notFound(id: string): MeetingsError {
     "not_found",
     `Встреча ${id} не найдена`,
     `Meeting ${id} not found`,
-    "List meetings with: bb meetings list",
+    "List meetings with: VesnALIA meetings list",
   );
 }
 

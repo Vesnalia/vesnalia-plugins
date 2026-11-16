@@ -378,7 +378,7 @@ interface RawVoice {
   VoiceTag?: { VoicePersonalities?: unknown } | undefined;
 }
 
-/** The voice catalog, for `bb read-aloud voices`. Escalates like connect(). */
+/** The voice catalog, for `alia read-aloud voices`. Escalates like connect(). */
 export async function listVoices(): Promise<VoiceSummary[]> {
   const candidates = candidateVersions();
   let lastStatus = 0;

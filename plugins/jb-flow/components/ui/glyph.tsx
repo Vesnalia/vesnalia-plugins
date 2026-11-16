@@ -1,4 +1,4 @@
-// Inline SVG icons for states bb's built-in icon set has no name for, so they
+// Inline SVG icons for states VesnALIA's built-in icon set has no name for, so they
 // never fall back to a placeholder glyph. Paths are from Lucide (ISC license).
 import type { SVGProps } from "react";
 import { cn } from "@/lib/utils";

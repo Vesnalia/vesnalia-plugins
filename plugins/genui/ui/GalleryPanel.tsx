@@ -6,7 +6,7 @@
 // Form answers only show what they would put in the user's message; there is
 // no thread composer to stage them in.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { compile } from "../core";
 import { COMPONENTS, type ComponentName } from "../core/catalog";
 import type { rpcContract } from "../server";
@@ -50,7 +50,7 @@ function examplesByComponent(names: readonly string[]): ReadonlyMap<ComponentNam
 
 export function GalleryPanel({ subPath }: { subPath: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [listing, setListing] = useState<Listing>({ status: "loading" });
   const [generation, setGeneration] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
@@ -124,7 +124,7 @@ export function GalleryPanel({ subPath }: { subPath: string }) {
     ));
 
   return (
-    // BB's page frame doesn't scroll; the page is its own scroll container.
+    // VesnALIA's page frame doesn't scroll; the page is its own scroll container.
     <div {...motion} ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="mx-auto flex w-full max-w-3xl flex-col px-5 pb-12">
         <GalleryHeader
@@ -245,7 +245,7 @@ function ExampleBody({ example }: { example: GalleryExample }) {
       program={compiled.program}
       compileDiagnostics={compiled.diagnostics}
       source={text}
-      stateKey={`bb.genui.gallery:${file}`}
+      stateKey={`alia.genui.gallery:${file}`}
       data={data}
       answers={GALLERY_ANSWERS}
       openFile={null}

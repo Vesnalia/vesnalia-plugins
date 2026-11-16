@@ -5,7 +5,7 @@ import {
   experimental_ProviderIcon as ProviderIcon,
   experimental_useProviders,
   type PluginSidebarProject,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 import { swatch } from "@/lib/colors";

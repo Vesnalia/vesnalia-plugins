@@ -3,14 +3,14 @@
 // the id/name/order/limit machinery here is a verbatim port.
 //
 // Adaptations for Productive:
-// - `filterPresetProjectIdSchema` no longer imports `bbProjectIdSchema` from
+// - `filterPresetProjectIdSchema` no longer imports `aliaProjectIdSchema` from
 //   a shared credential-contract module (contract.ts owns that schema here,
 //   and importing from contract.ts would be a cycle since contract.ts
 //   imports from this file). It is redefined locally instead.
 // - Taskboard's preset state was a full multi-source `BrowsePreferences`
 //   snapshot (provider/source + priorities + externalProjects), ported from
 //   browse-preferences.ts. This plugin has exactly one provider (Productive)
-//   and is scoped to a single bb project, so that whole multi-source
+//   and is scoped to a single VesnALIA project, so that whole multi-source
 //   preference store has no equivalent here. `filterPresetStateSchema` is
 //   defined locally instead, matching the trimmed filter field set from
 //   board-settings.ts: no `provider`/`source`/`priorities`, and

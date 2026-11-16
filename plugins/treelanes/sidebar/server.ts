@@ -1,17 +1,17 @@
 // Sidebar backend: lifecycle, manual thread order, main threads and titles.
 //
-// This state lives in the plugin's own SQLite database, never on bb's thread.
+// This state lives in the plugin's own SQLite database, never on VesnALIA's thread.
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes its state with it.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { groupDefinitions, groupStore, type MainThread } from "./group-store";
 import { automaticTitles, type TitleChoice } from "./automatic-titles";
 import { childVisibility } from "./child-visibility";
 import { noInput } from "../rpc-input";
 
-type Db = ReturnType<BbPluginApi["storage"]["database"]>;
+type Db = ReturnType<AliaPluginApi["storage"]["database"]>;
 
 /** Appended to the plugin's single migration list. */
 export const sidebarMigrations = [
@@ -121,7 +121,7 @@ export const sidebarRpcContract = defineRpcContract({
 export const LIFECYCLE_CHANNEL = "lifecycle";
 export const ORDER_CHANNEL = "order";
 
-export function sidebar(bb: BbPluginApi, db: Db, deps: {
+export function sidebar(alia: AliaPluginApi, db: Db, deps: {
   preferredMains(): MainThread[];
   titleChoice(): TitleChoice | null;
 }) {
@@ -182,12 +182,12 @@ export function sidebar(bb: BbPluginApi, db: Db, deps: {
     db.prepare(`DELETE FROM thread_lifecycle WHERE thread_id = ?`).run(
       threadId,
     );
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
   };
 
-  const groups = groupStore(bb, db, deps.preferredMains);
-  const titles = automaticTitles(bb, db, deps.titleChoice);
-  childVisibility(bb);
+  const groups = groupStore(alia, db, deps.preferredMains);
+  const titles = automaticTitles(alia, db, deps.titleChoice);
+  childVisibility(alia);
 
   /** Sidebar CLI commands; null for a command the sidebar does not own. */
   async function cli(argv: string[]) {
@@ -229,10 +229,10 @@ export function sidebar(bb: BbPluginApi, db: Db, deps: {
     return result ? { exitCode: 0, stdout: JSON.stringify(result) + "\n" } : null;
   }
   async function requireParkable(threadId: string, includeWorktree = false) {
-    const thread = await bb.sdk.threads.get({ threadId });
-    const targets: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+    const thread = await alia.sdk.threads.get({ threadId });
+    const targets: Awaited<ReturnType<typeof alia.sdk.threads.list>> = [];
     for (let offset = 0; ; offset += 200) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         projectId: thread.projectId,
         archived: false,
         includeHidden: false,
@@ -274,10 +274,10 @@ export function sidebar(bb: BbPluginApi, db: Db, deps: {
       for (const id of threadIds)
         write({ threadId: id, settledAt, snoozedUntil: null, snoozedAt: null });
     })();
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
     return { ok: true };
   }
-  bb.rpc.register(sidebarRpcContract, {
+  alia.rpc.register(sidebarRpcContract, {
     ...groups,
     async listTitles() {
       return titles.list();
@@ -290,7 +290,7 @@ export function sidebar(bb: BbPluginApi, db: Db, deps: {
     },
     async saveOrder({ threadIds }) {
       saveOrder(threadIds);
-      bb.realtime.publish(ORDER_CHANNEL, {});
+      alia.realtime.publish(ORDER_CHANNEL, {});
       return { ok: true };
     },
     settle,
@@ -307,7 +307,7 @@ export function sidebar(bb: BbPluginApi, db: Db, deps: {
         snoozedUntil,
         snoozedAt: now,
       });
-      bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+      alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
       return { ok: true };
     },
     async unsnooze({ threadId }) {
@@ -318,10 +318,10 @@ export function sidebar(bb: BbPluginApi, db: Db, deps: {
 
   // A deleted thread must not leave a row behind that would park a future
   // thread reusing the id, and stale rows accumulate otherwise.
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     clear(thread.id);
     db.prepare(`DELETE FROM thread_order WHERE thread_id = ?`).run(thread.id);
-    bb.realtime.publish(ORDER_CHANNEL, { threadId: thread.id });
+    alia.realtime.publish(ORDER_CHANNEL, { threadId: thread.id });
   });
   return { lifecycle: readAll, settle, cli, titles };
 }

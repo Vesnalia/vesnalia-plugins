@@ -3,7 +3,7 @@
 // page. System notifications are sent by the server (see pushAlerts).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useBbNavigate, useRealtime, useRpc, useSettings, type ExperimentalBadge } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc, useSettings, type ExperimentalBadge } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { ALERTS_NEW, ALERTS_SEEN, type Alert } from "./prs";
 import { ago } from "./parts";
@@ -26,7 +26,7 @@ function alertsIn(payload: unknown): Alert[] {
 }
 
 function useOpenAlert() {
-  const nav = useBbNavigate();
+  const nav = useAliaNavigate();
   return useCallback(
     (a: Alert) => nav.toPluginPanel("prs", a.number > 0 ? { subPath: `${a.repo}/${a.number}` } : undefined),
     [nav],
@@ -137,9 +137,9 @@ export function NotificationSettings() {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-muted-foreground">
-        Alerts show as bb toasts and a badge on My PRs. Desktop notifications go out through bb's Push notifications
-        plugin, one per check, to the channels turned on there: desktop and web while a bb window is open, and your
-        registered phones. The watcher runs on the bb server, so it pauses when bb is not running.
+        Alerts show as VesnALIA toasts and a badge on My PRs. Desktop notifications go out through VesnALIA's Push notifications
+        plugin, one per check, to the channels turned on there: desktop and web while a VesnALIA window is open, and your
+        registered phones. The watcher runs on the VesnALIA server, so it pauses when VesnALIA is not running.
       </p>
       <Button
         size="sm"

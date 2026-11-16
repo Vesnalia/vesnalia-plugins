@@ -6,7 +6,7 @@ import {
   useRealtimeConnectionState,
   useRpc,
   type PluginFileOpenerSource,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { RpcContract } from "../src/contract";
 import type { ReviewComment, ReviewDoc } from "../src/types";
 import { localizeError } from "./labels";

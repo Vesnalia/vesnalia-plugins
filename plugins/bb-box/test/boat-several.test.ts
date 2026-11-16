@@ -169,7 +169,7 @@ test("a second boat.dev backend builds and forks only its own templates on a sha
   assert.equal((await second.templates.adoptable("linux"))?.id, anotherInstalls.id);
   assert.notEqual((await first.templates.adoptable("linux"))?.id, anotherInstalls.id);
   assert.equal((await second.templates.keepAdoptable("linux"))?.sandbox, anotherInstalls.id);
-  assert.ok(logs.includes(`boat.dev (team-b): using the linux template ${anotherInstalls.id}, which bb-box built for another install on this account.`), logs.join("\n"));
+  assert.ok(logs.includes(`boat.dev (team-b): using the linux template ${anotherInstalls.id}, which alia-box built for another install on this account.`), logs.join("\n"));
 });
 
 test("each backend's upkeep deletes only its own old templates and its own abandoned restore sandboxes, even on one account", async () => {
@@ -204,7 +204,7 @@ test("Most boxes counts the backend's own sandboxes only, while the plan's sandb
   on.fake.add({ labels: { [LABELS.install]: "inst2" }, state: "ready" });
   const full = await second.capacity("linux", size, []);
   assert.equal(full.ok, false);
-  assert.match(full.message!, /boat's free trial allows 2 sandboxes at once, and 2 are running or starting, 1 of them not BB Box's and 1 another boat.dev backend's\./);
+  assert.match(full.message!, /boat's free trial allows 2 sandboxes at once, and 2 are running or starting, 1 of them not ALIA Box's and 1 another boat.dev backend's\./);
 });
 
 test("each backend's saved snapshots carry its ID in their names, and each lists, changes and deletes only its own; names from before are the boat backend's", async () => {
@@ -274,7 +274,7 @@ test("a second backend's restore deploys a sandbox named with its ID, which only
 
   const token = (fresh.data as { guest: string }).guest;
   const deployed = [...on.fake.sandboxes.values()].find((sandbox) => sandbox.forkedFrom === `saved:${taken.ref}`)!;
-  assert.equal(deployed.name, `bb-box:restoring:boat-team-b:${BOX_B}:${token}`);
+  assert.equal(deployed.name, `alia-box:restoring:boat-team-b:${BOX_B}:${token}`);
   assert.equal(deployed.state, "deleted");
   assert.equal(sandboxOf(on, fresh).labels[LABELS.backend], "boat-team-b");
   assert.equal(sandboxOf(on, fresh).idempotencyKey, `bbbox-inst1-boat-team-b-${BOX_B}-${token}`);
@@ -287,7 +287,7 @@ interface Device {
 
 function tailnetOf(devices: readonly Device[]): { readonly tailnet: Tailnet; readonly removed: string[] } {
   const removed: string[] = [];
-  const listed = () => devices.filter((device) => !removed.includes(device.nodeId)).map((device) => ({ ...device, tags: ["tag:bb-box"], lastSeen: "2020-01-01T00:00:00Z" }));
+  const listed = () => devices.filter((device) => !removed.includes(device.nodeId)).map((device) => ({ ...device, tags: ["tag:alia-box"], lastSeen: "2020-01-01T00:00:00Z" }));
   const tailnet = new Tailnet({
     credentials: { clientId: "id", clientSecret: "secret" },
     fetch: async (url) => {
@@ -308,13 +308,13 @@ function tailnetNameOf(backendId: string, installId: string, name: string): stri
 
 test("each boat.dev backend's upkeep removes only its own sandboxes' stale tailnet devices, and the boat backend's names are as before", async () => {
   const devices = [
-    { nodeId: "first-gone", hostname: "bb-box-boat-inst1-gone-box" },
+    { nodeId: "first-gone", hostname: "alia-box-boat-inst1-gone-box" },
     { nodeId: "second-gone", hostname: tailnetNameOf(TEAM_B, "inst1", "gone-box") },
   ];
   const { tailnet, removed } = tailnetOf(devices);
   const on = account();
 
-  assert.equal(new BoatOwner(TEAM_B, "inst1").tailnetPrefix(), "bb-box-boatb-inst1-6-team-b-");
+  assert.equal(new BoatOwner(TEAM_B, "inst1").tailnetPrefix(), "alia-box-boatb-inst1-6-team-b-");
   await backendOn(on, TEAM_B, { tailnet }).maintain(undefined, new Set());
   assert.deepEqual(removed, ["second-gone"]);
   await backendOn(on, FIRST, { tailnet }).maintain(undefined, new Set());
@@ -322,7 +322,7 @@ test("each boat.dev backend's upkeep removes only its own sandboxes' stale tailn
 });
 
 test("no boat.dev backend holds another's tailnet names, for names that look alike and the longest install ID and name", () => {
-  const names = ["a", "a-1", "1-a", "1", "11", "b", "team-b", "team-bb", "b-team", "10-x", "x-10", "a".repeat(12), "a".repeat(13)];
+  const names = ["a", "a-1", "1-a", "1", "11", "b", "team-b", "team-alia", "b-team", "10-x", "x-10", "a".repeat(12), "a".repeat(13)];
   const ids = [FIRST, ...names.map((name) => `boat:${name}`)];
 
   for (const installId of ["inst1", "x".repeat(LONGEST_INSTALL_ID)]) {
@@ -352,9 +352,9 @@ test("on the longest install ID, each boat.dev backend gives every box its own t
       assert.ok(owner.holdsTailnetHostname(hostname), `${id} holds ${hostname}`);
     }
   }
-  assert.equal(tailnetNameOf(FIRST, "inst1", "gentle-marsh"), "bb-box-boat-inst1-gentle-marsh");
-  assert.equal(tailnetNameOf(TEAM_B, "inst1", "gentle-marsh"), "bb-box-boatb-inst1-6-team-b-gentle-marsh");
-  assert.equal(tailnetNameOf(FIRST, longest, "gentle-marsh"), `bb-box-boat-${longest}-gentle-marsh`);
+  assert.equal(tailnetNameOf(FIRST, "inst1", "gentle-marsh"), "alia-box-boat-inst1-gentle-marsh");
+  assert.equal(tailnetNameOf(TEAM_B, "inst1", "gentle-marsh"), "alia-box-boatb-inst1-6-team-b-gentle-marsh");
+  assert.equal(tailnetNameOf(FIRST, longest, "gentle-marsh"), `alia-box-boat-${longest}-gentle-marsh`);
 });
 
 test("on the longest install ID with the longest backend name, releasing one of two boxes removes only its own tailnet device", async () => {
@@ -400,11 +400,11 @@ test("a second boat.dev backend is named by its ID, as a provider and in its lab
   assert.equal(providerName({ label: "boat.dev", hosts: [], id: FIRST }), "boat.dev");
 });
 
-test("bb box images list shows each boat.dev backend's own templates, by backend", async () => {
+test("alia box images list shows each boat.dev backend's own templates, by backend", async () => {
   const on = account();
   const first = backendOn(on, FIRST);
   const second = backendOn(on, TEAM_B);
-  const jobs = new ImageJobs({ backends: () => [first, second], setup: "", bbUrl: () => null, facts: {} as never, storage: new MemoryStorage() });
+  const jobs = new ImageJobs({ backends: () => [first, second], setup: "", aliaUrl: () => null, facts: {} as never, storage: new MemoryStorage() });
 
   const own = await jobs.ownImages();
 
@@ -417,7 +417,7 @@ test("bb box images list shows each boat.dev backend's own templates, by backend
   assert.match(ownImageLines(own[1]!, on.now()).join("\n"), new RegExp(`^boat:team-b/linux \\(linux\\): ${secondTemplate}, built today; not due; boat\\.dev \\(team-b\\) builds and refreshes it by itself\\.$`));
 });
 
-test("bb box images list leaves out the Android template while the Android SDK's licence is off, as no backend builds it then", async () => {
+test("alia box images list leaves out the Android template while the Android SDK's licence is off, as no backend builds it then", async () => {
   const on = account();
   const kinds = ["linux", "android"] as const;
 

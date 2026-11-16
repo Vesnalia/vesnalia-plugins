@@ -1,4 +1,4 @@
-Keep the official AWS promotional-credit balance visible while you work in BB.
+Keep the official AWS promotional-credit balance visible while you work in VesnALIA.
 
 ## What you get
 
@@ -19,11 +19,11 @@ selected by the user.
 
 When an executable helper uses `aws login`, AWS may initially select an AWS
 Builder ID and display **You don't have any projects yet**. Users should choose
-**Add session**, sign in to the intended AWS account, return to BB, and refresh.
+**Add session**, sign in to the intended AWS account, return to VesnALIA, and refresh.
 
 ## Requirements
 
-- BB 0.46 or newer.
+- VesnALIA 0.46 or newer.
 - AWS CLI v2 and a configured local profile.
 - Permission to read AWS Billing credits, Cost Explorer usage, and call STS GetCallerIdentity.
 - An AWS account with promotional credits; AWS Activate is supported.
@@ -36,5 +36,5 @@ AWS product identifiers until a bill is finalized.
 
 ## Terminal access
 
-Use `bb aws-activate-usage summary`, `refresh`, or `login` for the same data
-and actions outside the BB interface.
+Use `alia aws-activate-usage summary`, `refresh`, or `login` for the same data
+and actions outside the VesnALIA interface.

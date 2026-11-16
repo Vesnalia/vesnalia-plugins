@@ -206,7 +206,7 @@ describe("scheduling", () => {
     expect(await get(harness, scheduled.id)).toMatchObject({
       status: "failed",
       statusDetail: "Пропущена",
-      errorMessage: "Встреча пропущена: в назначенное время bb не работал",
+      errorMessage: "Встреча пропущена: в назначенное время alia не работал",
     });
     expect(hostCalls(harness, "meeting.start")).toEqual([]);
     const sends = harness.inspection.sdk.callsTo("threads.send") as Array<[{ threadId: string; input: Array<{ text: string }> }]>;
@@ -289,7 +289,7 @@ describe("races with a starting bot", () => {
   });
 
   it("does not keep segments of a meeting deleted during a reconcile", async () => {
-    const { bb, harness, service, fake } = await load();
+    const { alia, harness, service, fake } = await load();
     const meeting = await join(harness);
     const runtime = fake.get(meeting.id);
     fake.setBot(meeting.id, { phase: "in_meeting" });
@@ -313,7 +313,7 @@ describe("races with a starting bot", () => {
     release();
     await ticking;
     expect(await deleting).toEqual({ deleted: true });
-    expect(new Repository(bb.storage.database()).segmentStats(meeting.id).count).toBe(0);
+    expect(new Repository(alia.storage.database()).segmentStats(meeting.id).count).toBe(0);
     expect(((await harness.behavior.callRpc("meetings.search", { query: "секретное" })) as { hits: unknown[] }).hits).toEqual([]);
   });
 });
@@ -428,7 +428,7 @@ describe("reconcile", () => {
     expect(text).toContain(`Встреча «Бюджет Q4» (${id}) записана и расшифрована.`);
     expect(text).toContain("Длительность: 30 с.");
     expect(text).toContain("Спикеры: Анна (33%), Спикер 2 (33%), Борис (33%).");
-    expect(text).toContain(`bb meetings transcript ${id}`);
+    expect(text).toContain(`alia meetings transcript ${id}`);
     expect(text).toContain("meetings_save_summary");
     expect(text).not.toContain("AbCdEf123");
 
@@ -474,7 +474,7 @@ describe("reconcile", () => {
     expect(message.threadId).toBe("thr_deaf");
     expect(message.input[0]!.text).toContain(`Встреча «Планёрка» (${id}) идёт, но с записью проблема.`);
     expect(message.input[0]!.text).toContain(warning);
-    expect(message.input[0]!.text).toContain(`bb meetings stop ${id}`);
+    expect(message.input[0]!.text).toContain(`alia meetings stop ${id}`);
 
     // Surfaces: CLI show (text + json) and the agent api.
     const show = await harness.behavior.runCli(["show", id]);
@@ -586,7 +586,7 @@ describe("reconcile", () => {
 
   it("gives an imported recording no 1970 recording date", async () => {
     const { harness, service, fake } = await load({ now: () => T0 });
-    const result = await harness.behavior.runCli(["import", "/home/bb/call.mp3", "--json"]);
+    const result = await harness.behavior.runCli(["import", "/home/alia/call.mp3", "--json"]);
     const id = (JSON.parse(result.stdout) as { meeting: Summary }).meeting.id;
     const runtime = fake.get(id);
     // The host writes recordingStartedAt 0 for imports.
@@ -646,7 +646,7 @@ describe("reconcile", () => {
     expect(await get(harness, meeting.id)).toMatchObject({
       status: "failed",
       transcriptStatus: "failed",
-      transcriptError: "Транскрибатор несколько раз завершился с ошибкой. Смотрите bb meetings logs",
+      transcriptError: "Транскрибатор несколько раз завершился с ошибкой. Смотрите VesnALIA meetings logs",
     });
     expect(fake.ensureCalls).toHaveLength(2);
   });
@@ -836,10 +836,10 @@ describe("user actions", () => {
 
   it("imports a file for offline transcription", async () => {
     const { harness, service, fake } = await load();
-    const result = await harness.behavior.runCli(["import", "calls/interview.mp3", "--title", "Интервью"], { cwd: "/home/bb/work" });
+    const result = await harness.behavior.runCli(["import", "calls/interview.mp3", "--title", "Интервью"], { cwd: "/home/alia/work" });
     expect(result.stdout).toMatch(/^Imported as mtg_/);
     const call = hostCalls(harness, "meeting.import")[0]?.input as { sourcePath: string; config: unknown };
-    expect(call.sourcePath).toBe("/home/bb/work/calls/interview.mp3");
+    expect(call.sourcePath).toBe("/home/alia/work/calls/interview.mp3");
     const id = botConfigSchema.parse(call.config).meetingId;
     expect(await get(harness, id)).toMatchObject({ status: "processing", title: "Интервью" });
     const runtime = fake.get(id);

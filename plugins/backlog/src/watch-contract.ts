@@ -1,4 +1,4 @@
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 export const watchContract = defineRpcContract({
   watch: { input: z.object({ key: z.string().min(1), rootPath: z.string().min(1), folder: z.string().min(1) }).strict(), output: z.null() },

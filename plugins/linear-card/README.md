@@ -1,6 +1,6 @@
-# bb-plugin-linear-card
+# alia-plugin-linear-card
 
-Shows the Linear card behind each BB thread in the thread header, in the projects
+Shows the Linear card behind each VesnALIA thread in the thread header, in the projects
 switched on under Settings → Plugins → Linear Card → Projects.
 
 - **Card linked or detected**: the chip shows the Linear logo, issue id, and title
@@ -17,8 +17,8 @@ detection for that thread.
 
 ```sh
 npm install --include=dev
-bb plugin install .
-bb plugin config linear-card set apiKey <linear-personal-api-key>
+alia plugin install .
+alia plugin config linear-card set apiKey <linear-personal-api-key>
 # then turn on projects under Settings → Plugins → Linear Card → Projects
 ```
 

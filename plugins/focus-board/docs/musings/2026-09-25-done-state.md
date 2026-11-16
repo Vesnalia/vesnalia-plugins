@@ -4,17 +4,17 @@
 
 Shared context from that comparison: the README's "makes no server-side
 writes" line was not code truth. `app.tsx` already calls
-`experimental_useSidebarThreadActions().setPinned()`, which writes bb's own
+`experimental_useSidebarThreadActions().setPinned()`, which writes VesnALIA's own
 server-side pin state, and the Attention grouping already supports dropping a
-card onto the Unread column. So the board writes through **bb's native thread
+card onto the Unread column. So the board writes through **VesnALIA's native thread
 actions**; what it never writes is its *own* plugin state.
 
 ## The decision: Done is distinct from Archived
 
 The operator wants a separation. Done becomes plugin-owned state, distinct
-from bb's archive: marked from a card action, clearable, surviving while the
-thread itself stays active in bb. The plugin is the source of truth for
-"done"; bb stays the source of truth for the thread itself.
+from VesnALIA's archive: marked from a card action, clearable, surviving while the
+thread itself stays active in VesnALIA. The plugin is the source of truth for
+"done"; VesnALIA stays the source of truth for the thread itself.
 
 The distinction earns its cost because the two states answer different
 questions: Done means "the work landed, but the thread may still be useful"
@@ -22,7 +22,7 @@ questions: Done means "the work landed, but the thread may still be useful"
 retired." A thread can be Done-not-archived, or archived without ever being
 marked Done.
 
-Rejected along the way: deriving Done from bb's archive state (one collapsed
+Rejected along the way: deriving Done from VesnALIA's archive state (one collapsed
 Archived column, zero plugin storage). Cheapest, but it erases the separation
 the operator wants — archived-but-not-done and done-but-useful are exactly
 the cases this column exists to separate.
@@ -31,7 +31,7 @@ the cases this column exists to separate.
 
 Maybe the best version. The thread-tags plugin already stores freeform tags
 server-side, keyed by thread, shared across clients, with a CLI
-(`bb thread-tags add/threads`) agents can write too. Storing Done as a tag
+(`alia thread-tags add/threads`) agents can write too. Storing Done as a tag
 (even a reserved single-value one, N = 1) means:
 
 - **All clients render it with zero new server surface.** No plugin database,
@@ -40,14 +40,14 @@ server-side, keyed by thread, shared across clients, with a CLI
   (`done:2026-09-25`) instead of a bare `done` — the tag itself is the record.
 - **Agents can mark threads done** via the existing CLI, closing half the
   agent-tools gap from the comparison without shipping our own tool.
-- **`bb thread-tags threads done` is the sweep's query**, before any CLI of
+- **`alia thread-tags threads done` is the sweep's query**, before any CLI of
   our own.
 
 What tags do *not* give us: the override flag (keep past threshold) would be
 a second reserved tag (`done:keep`); the sweep ordering; a migration-proof
 schema. And the card action now depends on the thread-tags plugin being
 installed, or we write the tag through its RPC/CLI rather than owning the
-storage. That dependency is real but mild: tags are a bb-side convention
+storage. That dependency is real but mild: tags are a alia-side convention
 other surfaces already read, and a Done marker that the tags panel, the
 registry, and agents can all see is arguably *more* honest than a private
 table.
@@ -59,19 +59,19 @@ Open design points:
   date, which is weaker provenance.
 - Do we reserve the tag namespace (`done:*`, `done:keep`) and document it, or
   treat Done as an ordinary tag that merely renders specially on the board?
-- Does the board *write* through `bb thread-tags` (CLI from host) or the
+- Does the board *write* through `alia thread-tags` (CLI from host) or the
   thread-tags plugin's RPC? CLI is simplest; RPC avoids shelling out.
 
 Earlier lean (superseded below): Done-as-tag with a stamped form, reserved
 namespace, writes via RPC with CLI fallback.
 
-## The dependency question, settled: thread metadata is bb-native
+## The dependency question, settled: thread metadata is alia-native
 
-Checked the SDK (`@get-bb/plugin-sdk` bundled types, 2026-09-25): bb exposes
+Checked the SDK (`@vesnalia/plugin-sdk` bundled types, 2026-09-25): VesnALIA exposes
 `threads.getPluginMetadata` / `threads.updatePluginMetadata` as core surfaces,
 namespaced by `pluginId`. The thread-tags plugin does not own that store — it
 stores tags as its own namespace's `"tags"` key inside it
-(`TAGS_METADATA_KEY`), plus a `bb.storage.kv` registry for autocomplete.
+(`TAGS_METADATA_KEY`), plus a `alia.storage.kv` registry for autocomplete.
 
 Consequences:
 
@@ -84,7 +84,7 @@ Consequences:
   creates two sources of truth for the same data. The board reads tags for
   display if useful later; it never writes them.
 - **The one thing tags gave that metadata does not:** agents marking threads
-  done for free via `bb thread-tags`. With plugin-metadata Done, agents need
+  done for free via `alia thread-tags`. With plugin-metadata Done, agents need
   a board-provided tool or CLI to mark done — that is the CLI musing's
   `done list`/`mark` surface, now with a concrete reason to exist.
 - Done-as-tag remains possible (a board-specific stamp tag written via the
@@ -95,11 +95,11 @@ Consequences:
 
 ## SETTLED (2026-09-25, operator call): Done lives in plugin metadata, pluginId `thread-board`
 
-The lean above is now the decision. Done is stored as bb-native thread plugin
+The lean above is now the decision. Done is stored as alia-native thread plugin
 metadata scoped to the board plugin:
 
 - **Namespace:** `pluginId: "thread-board"` (SDK defaults `pluginId` to the
-  calling plugin on both frontend `sdk.threads` and backend `bb.sdk`; plugin
+  calling plugin on both frontend `sdk.threads` and backend `alia.sdk`; plugin
   ids are lowercase letters/digits/dashes — ours qualifies).
 - **Key and shape:** `"done"` → `{ doneAt: <ISO-8601 string>, keep?: boolean }`.
   Absent key = not done. `doneAt` is the sweep's aging basis; `keep` is the
@@ -126,8 +126,8 @@ in localStorage; the only state that must move server-side is Done itself.
 
 ## README correction
 
-"Reads bb's live thread view … and makes no server-side writes" is neither
+"Reads VesnALIA's live thread view … and makes no server-side writes" is neither
 true (the board already writes pin state and Unread drops) nor useful. Reword
 to name what the board owns: it makes no writes *to thread content* — reads
-everything else live, writes pins/marks/Done through bb's own stores, and
+everything else live, writes pins/marks/Done through VesnALIA's own stores, and
 keeps nothing of its own except the small state it declares.

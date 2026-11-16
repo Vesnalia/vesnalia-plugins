@@ -1,6 +1,6 @@
-// Private BB notes: anchored, persisted, never posted to a pull request.
+// Private VesnALIA notes: anchored, persisted, never posted to a pull request.
 import { useEffect, useRef, useState } from "react";
-import { useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { Note } from "../contract";
 import { Button } from "@/components/ui/button";
 import { Chip, InlineError, Notice } from "./primitives";
@@ -62,7 +62,7 @@ function NoteCard({
   selected: boolean;
   onSelect?: (id: string, checked: boolean) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const replyDraft = useTextDraft(rpc, draftKey(["note-reply", note.repoKey, note.id]));
   const reply = replyDraft.value;
   const [busy, setBusy] = useState<string | null>(null);

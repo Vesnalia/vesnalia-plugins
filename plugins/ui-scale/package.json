@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-ui-scale",
+  "name": "alia-plugin-ui-scale",
   "version": "0.1.0",
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
-  "bb": {
+  "alia": {
     "name": "UI Scale",
-    "description": "Makes the bb interface bigger or smaller on each device, so your phone and desktop each get a size that fits.",
+    "description": "Makes the VesnALIA interface bigger or smaller on each device, so your phone and desktop each get a size that fits.",
     "branding": {
       "icon": "ZoomIn"
     },
@@ -22,7 +22,6 @@
     "@radix-ui/react-slot": "^1.3.0"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -49,11 +48,24 @@
     "vaul": "^1.1.2",
     "zod": "^4.6.5"
   },
-  "description": "Scale the bb interface per device.",
+  "description": "Scale the VesnALIA interface per device.",
   "license": "MIT",
   "author": "Mathieu Post (https://github.com/m9tdev)",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/ui-scale#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/m9tdev/bb-plugin-ui-scale.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/ui-scale"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

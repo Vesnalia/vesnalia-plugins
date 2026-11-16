@@ -1,7 +1,7 @@
 // Open files as Monaco models, keep them in step with the disk, and save them
 // through the server's hash guard.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type * as MonacoApi from "monaco-editor/esm/vs/editor/editor.api.js";
 import type { rpcContract, Scope } from "../server";
 import { onDiskChange, remapPath } from "@/lib/editor-state";

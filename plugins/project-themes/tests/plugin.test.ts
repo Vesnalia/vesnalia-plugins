@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, experimental_scanPublicSdkOnly } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../src/server.ts";
 import { defaultTheme, themeCss } from "../src/theme.ts";
 
@@ -13,7 +13,7 @@ test("themes stay isolated, validate input and survive reload; reset affects one
     } } },
   });
   let { harness } = host;
-  plugin(host.bb);
+  plugin(host.alia);
   const sage = defaultTheme();
   sage.threads = true;
   const rose = defaultTheme();

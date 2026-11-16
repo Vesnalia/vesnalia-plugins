@@ -25,7 +25,7 @@ function start(t, mode = "normal", permission = "accept-edits", fromPath = false
     env.PATH = path.dirname(process.env.ZCODE_ACP_BIN) + path.delimiter + inheritedPath;
   }
   Object.assign(env, spec.env, { ZCODE_NODE: process.execPath });
-  // Match BB's applyPermissionCliArgs contract. Launch the registered command,
+  // Match VesnALIA's applyPermissionCliArgs contract. Launch the registered command,
   // rather than a manually ordered command that could hide a broken spec.
   const index = Math.min(spec.permissionCli.insertAfterArgs ?? 0, spec.args.length);
   const flags = permission === "full" ? spec.permissionCli.full : spec.permissionCli.workspaceWrite;
@@ -62,7 +62,7 @@ function start(t, mode = "normal", permission = "accept-edits", fromPath = false
   };
 }
 
-for (const permission of ["full", "accept-edits"]) test(`BB native provider starts with ${permission} policy`, async t => {
+for (const permission of ["full", "accept-edits"]) test(`VesnALIA native provider starts with ${permission} policy`, async t => {
   const agent = start(t, "normal", permission);
   await agent.request("initialize", { protocolVersion: 1 });
   const session = await agent.request("session/new", { cwd: process.cwd(), mcpServers: [] });
@@ -72,7 +72,7 @@ for (const permission of ["full", "accept-edits"]) test(`BB native provider star
   assert.equal(agent.stderr(), "");
 });
 
-test("BB native provider can launch zcode-acp directly from PATH", async t => {
+test("VesnALIA native provider can launch zcode-acp directly from PATH", async t => {
   const agent = start(t, "normal", "accept-edits", true);
   const info = (await agent.request("initialize")).agentInfo;
   assert.equal(info.name, "zcode-cli-acp");

@@ -3,9 +3,9 @@
 // script that rebuilds a digest memory listing every preference. It runs
 // without a shell, and its failure never fails the confirm or the discard.
 //
-// The plugin server is started by the BB app, so its PATH may lack `node` and
-// `bb`: a `.js`, `.mjs` or `.cjs` script runs with an explicitly resolved Node,
-// and BB_CLI names the bb command when the server knows where it is.
+// The plugin server is started by the VesnALIA app, so its PATH may lack `node` and
+// `VesnALIA`: a `.js`, `.mjs` or `.cjs` script runs with an explicitly resolved Node,
+// and ALIA_CLI names the VesnALIA command when the server knows where it is.
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 
@@ -44,7 +44,7 @@ export function nodeRuntime(
 ): string {
   if (!probe.electron) return probe.execPath;
   return (
-    probe.env.BB_NODE ??
+    probe.env.ALIA_NODE ??
     ["/opt/homebrew/bin/node", "/usr/local/bin/node"].find(probe.exists) ??
     "node"
   );
@@ -59,7 +59,7 @@ const SCRIPT = /\.[cm]?js$/i;
 
 /**
  * Runs `command` (nothing when it is blank). A script runs with `node`; any
- * other program runs as it is. `bbCli`, when given, becomes BB_CLI unless the
+ * other program runs as it is. `aliaCli`, when given, becomes ALIA_CLI unless the
  * environment already has one. A failure is logged, never thrown.
  */
 export async function runDigestCommand(
@@ -69,13 +69,13 @@ export async function runDigestCommand(
     log = (message: string) => console.warn(message),
     node = nodeRuntime(),
     baseEnv = process.env,
-    bbCli,
+    aliaCli,
   }: {
     run?: RunFile;
     log?: (message: string) => void;
     node?: string;
     baseEnv?: NodeJS.ProcessEnv;
-    bbCli?: string;
+    aliaCli?: string;
   } = {},
 ): Promise<void> {
   const words = parseCommand(command);
@@ -83,7 +83,7 @@ export async function runDigestCommand(
   if (program === undefined) return;
   const rest = words.slice(1);
   const env =
-    baseEnv.BB_CLI === undefined && bbCli !== undefined ? { ...baseEnv, BB_CLI: bbCli } : { ...baseEnv };
+    baseEnv.ALIA_CLI === undefined && aliaCli !== undefined ? { ...baseEnv, ALIA_CLI: aliaCli } : { ...baseEnv };
   try {
     if (SCRIPT.test(program)) await run(node, [program, ...rest], env);
     else await run(program, rest, env);

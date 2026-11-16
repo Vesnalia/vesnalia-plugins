@@ -1,17 +1,17 @@
-// The plugin hears about a worker finishing from the thread.idle / thread.failed events BB sends
+// The plugin hears about a worker finishing from the thread.idle / thread.failed events VesnALIA sends
 // for every thread, so it waits on those instead of polling the worker every half second; a slow
 // poll is only the safety net. Idle events from hidden threads (the workers themselves, other
 // plugins' helpers) are ignored without a lookup. Run with `npm test`.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 import { modelStubs, sleep, until } from "./helpers.mjs";
 
 const OUTPUT = '[{"label": "Add a test", "why": "The fix shipped untested"}]';
 
 /**
- * A fake BB whose worker threads run until the test finishes them. `world.gets` counts every status
+ * A fake VesnALIA whose worker threads run until the test finishes them. `world.gets` counts every status
  * lookup per thread, so a test can see how often the plugin looked at a worker. `metadata` seeds
  * what is stored per thread.
  */
@@ -42,7 +42,7 @@ async function boot({ tree = { t1: { status: "idle" } }, startIdle = false, meta
         },
         list: async (args) => (args.parentThreadId ? [] : [{ id: "live" }]),
         output: async ({ threadId }) => ({ output: world.workers[threadId] ? (world.workers[threadId].output ?? "") : "The answer." }),
-        // With `startIdle`, a worker is idle until its turn starts, and BB reports its last
+        // With `startIdle`, a worker is idle until its turn starts, and VesnALIA reports its last
         // message, its own prompt, as its output.
         spawn: async (args) => {
           const id = `worker${world.spawned.length + 1}`;
@@ -59,13 +59,13 @@ async function boot({ tree = { t1: { status: "idle" } }, startIdle = false, meta
       ...modelStubs(),
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   const rpc = (name, input) => host.harness.callRpc(name, input);
   return {
     world, tree, finish, rpc,
     shown: (id = "t1") => rpc("followups_get", { threadId: id }),
     idle: (id = "t1", text = "The answer.") => host.harness.emitThreadEvent("thread.idle", { thread: row(id), lastAssistantText: text }),
-    // what BB sends when a worker's thread goes idle or fails
+    // what VesnALIA sends when a worker's thread goes idle or fails
     workerIdle: (id, text = OUTPUT) => host.harness.emitThreadEvent("thread.idle", { thread: workerRow(id, "idle"), lastAssistantText: text }),
     workerFailed: (id) => host.harness.emitThreadEvent("thread.failed", { thread: workerRow(id, "error"), error: "boom" }),
     logs: () => host.harness.logEntries,

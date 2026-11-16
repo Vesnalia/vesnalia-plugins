@@ -1,11 +1,11 @@
 /**
- * Cron expressions as bb's scheduler reads them (it uses cron-parser), in server-local time:
+ * Cron expressions as VesnALIA's scheduler reads them (it uses cron-parser), in server-local time:
  * 5 fields, or 6 with seconds first; `*`, `?`, numbers, `jan`-`dec` / `sun`-`sat` names, lists,
  * ranges, `/n` steps, `L` (last day of month), `5L` (last Friday), `5#2` (second Friday), and the
  * `@yearly`, `@annually`, `@monthly`, `@weekly`, `@daily` and `@hourly` macros. Out-of-range values
- * are errors, as they are for bb, so the panel never shows a next run for a schedule bb refused.
+ * are errors, as they are for VesnALIA, so the panel never shows a next run for a schedule VesnALIA refused.
  * (cron-parser's `H` hash fields are not supported here: the panel shows no next time for them. In
- * the repeated hour of a fall-back night this picks the first occurrence; bb may pick the second.)
+ * the repeated hour of a fall-back night this picks the first occurrence; VesnALIA may pick the second.)
  */
 export interface CronSpec {
   sec: number[];
@@ -149,7 +149,7 @@ function search(expr: string, from: Date, dir: 1 | -1): Date | null {
     const y = day.getFullYear(), mo = day.getMonth(), d = day.getDate();
     if (!dayMatches(c, y, mo, d)) continue;
     for (const h of hours) for (const m of mins) for (const s of secs) {
-      // A time inside a spring-forward gap normalizes past it (02:15 -> 03:15), as bb fires it.
+      // A time inside a spring-forward gap normalizes past it (02:15 -> 03:15), as VesnALIA fires it.
       const t = new Date(y, mo, d, h, m, s);
       if (dir === 1 ? t.getTime() > at : t.getTime() < at) return t;
     }

@@ -1,20 +1,20 @@
 // Runtime probe for the pane-parity audit's Gap 1 claim (2026-11-04): with a
 // pending question, the pane shows the plugin's PendingInteractionCard AND
 // the host's own question banner at the same time — two forms for one
-// interaction. bb 0.48.1 renders the banners in the embedded chat's composer
+// interaction. VesnALIA 0.48.1 renders the banners in the embedded chat's composer
 // for every presentation (ThreadScreen has no presentation gate), so the
 // card's premise ("the embedded chat renders no interaction UI") is stale.
 //
-// Drives the LIVE bb web UI — the host banner is the host's ThreadChat, which
+// Drives the LIVE VesnALIA web UI — the host banner is the host's ThreadChat, which
 // the mock-SDK harness does not include. Needs a thread whose turn is
 // BLOCKED on a pending question (a provider AskUserQuestion call): spawn one
-// with bb and let it reach the tool call first, e.g.
+// with VesnALIA and let it reach the tool call first, e.g.
 //
-//   bb thread spawn --project proj_p4562js7v2 --prompt "Call your
+//   VesnALIA thread spawn --project proj_p4562js7v2 --prompt "Call your
 //   AskUserQuestion tool ..." --json
 //
 // Usage:
-//   BB_APP=http://127.0.0.1:38886 THREAD_ID=thr_xxx \
+//   ALIA_APP=http://127.0.0.1:38886 THREAD_ID=thr_xxx \
 //     node scripts/screenshot/repro-pending-question-double.mjs
 //
 // Exits 0 when the pane shows BOTH surfaces (claim confirmed); exits 1 when
@@ -25,7 +25,7 @@
 // docs/screenshots/repro-pending-question-double/ unless OUT_DIR is set.
 import puppeteer from "puppeteer-core";
 
-const APP = process.env.BB_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
+const APP = process.env.ALIA_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
 const THREAD_ID = process.env.THREAD_ID ?? "";
 if (!THREAD_ID) {
   console.error("Set THREAD_ID to a thread blocked on a pending question.");

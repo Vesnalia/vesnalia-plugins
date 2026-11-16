@@ -1,20 +1,20 @@
-// bb-plugin-jira — the backend.
+// alia-plugin-jira — the backend.
 //
-// Jira Cloud issues in BB: search, read, create, edit, transition, comment,
+// Jira Cloud issues in VesnALIA: search, read, create, edit, transition, comment,
 // assign, and delete — from the panel and from agents.
 //
 // Writes are split by who is acting:
 //   - In the panel, the user's own click is the intent. Only delete confirms.
 //   - An agent's write goes through `authorizeAgentWrite`, which honors the
 //     per-action policy in settings ("Ask every time" / "Always allow"). Asking
-//     blocks on `bb.ui.requestInput`; the approval card can also flip that
+//     blocks on `alia.ui.requestInput`; the approval card can also flip that
 //     action to "Always allow" for next time.
 // Every agent write tool must call `authorizeAgentWrite` before touching Jira.
 //
-// Project links: a BB project can be linked to Jira projects. In that
+// Project links: a VesnALIA project can be linked to Jira projects. In that
 // project's threads, jira_search_issues, @-mentions, and the side panel only
 // show the linked projects' issues; jira_search_all_issues searches everything.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   ACTION_LABELS,
@@ -47,15 +47,15 @@ const APPROVAL_RENDERER_ID = "jira-approve-write";
 const ISSUE_CHANGED = "issue-changed";
 const SETTINGS_CHANGED = "settings-changed";
 const LINKS_CHANGED = "links-changed";
-/** kv: Record<bbProjectId, jiraProjectKey[]> */
+/** kv: Record<aliaProjectId, jiraProjectKey[]> */
 const LINKS_KEY = "project-links";
 const AGENT_SEARCH_MAX = 50;
 /**
- * The BB Sidebar plugin, whose `settle` rpc files a thread away on its settled
+ * The VesnALIA Sidebar plugin, whose `settle` rpc files a thread away on its settled
  * shelf as an explicit user choice. Optional: an install without it, or with it
  * disabled, just never settles anything.
  */
-const SIDEBAR_PLUGIN_ID = "bb-sidebar";
+const SIDEBAR_PLUGIN_ID = "alia-sidebar";
 const sidebarSettleResult = z.object({ ok: z.boolean() });
 
 const CONFIG_HINT =
@@ -95,8 +95,8 @@ const anyOutput = <T>() => z.custom<T>(() => true);
 const permissionsSchema = z.record(z.string(), z.enum(["ask", "always"]));
 
 /**
- * The agent the thread runs on, as bb's provider/model picker resolves it.
- * Only the shape is checked here; bb itself refuses a provider or model that
+ * The agent the thread runs on, as VesnALIA's provider/model picker resolves it.
+ * Only the shape is checked here; VesnALIA itself refuses a provider or model that
  * does not exist when the thread is spawned.
  */
 const executionInput = z
@@ -134,12 +134,12 @@ export interface JiraIssueDetail {
 }
 
 export interface ProjectLinkRow {
-  bbProjectId: string;
+  aliaProjectId: string;
   name: string;
   jiraProjectKeys: string[];
 }
 
-/** A machine (bb daemon) holding a checkout of one BB project. */
+/** A machine (VesnALIA daemon) holding a checkout of one VesnALIA project. */
 export interface AgentHost {
   hostId: string;
   name: string;
@@ -149,9 +149,9 @@ export interface AgentHost {
   isDefault: boolean;
 }
 
-/** One BB project the thread can start in, with the machines that have it. */
+/** One VesnALIA project the thread can start in, with the machines that have it. */
 export interface AgentProject {
-  bbProjectId: string;
+  aliaProjectId: string;
   name: string;
   /** Machines with a checkout of this project; a picker only for two or more. */
   hosts: AgentHost[];
@@ -160,9 +160,9 @@ export interface AgentProject {
 /** Where "Send to agent" can start a thread for one issue. */
 export interface AgentTargets {
   jiraProjectKey: string;
-  /** BB projects linked to the issue's Jira project, by name. */
+  /** VesnALIA projects linked to the issue's Jira project, by name. */
   linked: AgentProject[];
-  /** Every BB project, by name, for when none (or another) is wanted. */
+  /** Every VesnALIA project, by name, for when none (or another) is wanted. */
   all: AgentProject[];
 }
 
@@ -170,7 +170,7 @@ export interface ThreadLink {
   threadId: string;
   createdAt: string;
   /**
-   * When the issue reaching a done status settled this thread in BB Sidebar.
+   * When the issue reaching a done status settled this thread in VesnALIA Sidebar.
    * Set once and never cleared: a user who un-settles the thread afterwards
    * has overruled the issue, and a later transition must not overrule them
    * back. Absent on links written before this existed.
@@ -186,7 +186,7 @@ export const jiraRpcContract = defineRpcContract({
         view: z.enum(["assigned", "reported", "recent", "all"]),
         projectKey: z.string().default(""),
         /**
-         * Restrict to these Jira projects (a linked BB project's scope). Applies
+         * Restrict to these Jira projects (a linked VesnALIA project's scope). Applies
          * to both the view query and custom JQL; `projectKey` narrows further.
          */
         scopeKeys: z.array(projectKeyInput).max(50).default([]),
@@ -224,14 +224,14 @@ export const jiraRpcContract = defineRpcContract({
     input: z.null(),
     output: anyOutput<ProjectLinkRow[]>(),
   },
-  /** The Jira projects one BB project is linked to; [] when unlinked. */
+  /** The Jira projects one VesnALIA project is linked to; [] when unlinked. */
   projectLink: {
-    input: z.object({ bbProjectId: z.string().min(1) }).strict(),
+    input: z.object({ aliaProjectId: z.string().min(1) }).strict(),
     output: z.object({ jiraProjectKeys: z.array(z.string()) }),
   },
   setProjectLink: {
     input: z
-      .object({ bbProjectId: z.string().min(1), jiraProjectKeys: z.array(projectKeyInput).max(50) })
+      .object({ aliaProjectId: z.string().min(1), jiraProjectKeys: z.array(projectKeyInput).max(50) })
       .strict(),
     output: z.object({ ok: z.literal(true) }),
   },
@@ -315,17 +315,17 @@ export const jiraRpcContract = defineRpcContract({
   },
   /** The agent a new thread in this project gets when none is picked. */
   executionDefaults: {
-    input: z.object({ bbProjectId: z.string().min(1) }).strict(),
+    input: z.object({ aliaProjectId: z.string().min(1) }).strict(),
     output: anyOutput<AgentExecution | null>(),
   },
   sendToAgent: {
     input: z
       .object({
         key: issueKeyInput,
-        /** The BB project whose chat the thread starts in. */
-        bbProjectId: z.string().min(1),
+        /** The VesnALIA project whose chat the thread starts in. */
+        aliaProjectId: z.string().min(1),
         note: z.string().max(4000).default(""),
-        /** Also link the issue's Jira project to that BB project. */
+        /** Also link the issue's Jira project to that VesnALIA project. */
         linkProject: z.boolean().default(false),
         /** Work in a fresh worktree instead of the project's checkout. */
         worktree: z.boolean().default(false),
@@ -343,13 +343,13 @@ export const jiraRpcContract = defineRpcContract({
 // Pure helpers — exported for tests.
 // ---------------------------------------------------------------------------
 
-type ThreadEnvironment = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0]["environment"];
+type ThreadEnvironment = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0]["environment"];
 
 /**
  * Where the thread runs. Two independent choices: which machine holds the
  * checkout, and whether to work in it or in a fresh worktree branched from its
  * default base. Neither choice picked leaves the project's own default
- * environment to bb, exactly as before.
+ * environment to VesnALIA, exactly as before.
  */
 export function threadEnvironment(
   project: AgentProject,
@@ -474,8 +474,8 @@ function toolError(error: unknown): ToolResult {
   };
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     siteUrl: {
       type: "string",
       label: "Jira site",
@@ -540,7 +540,7 @@ export default async function plugin(bb: BbPluginApi) {
       type: "boolean",
       label: "Settle threads when an issue is done",
       description:
-        "When an issue moves to a done status here, settle the agent threads Send to agent started for it. Needs the BB Sidebar plugin; without it nothing happens.",
+        "When an issue moves to a done status here, settle the agent threads Send to agent started for it. Needs the VesnALIA Sidebar plugin; without it nothing happens.",
       default: true,
     },
   });
@@ -573,32 +573,32 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   settings.onChange(() => {
-    bb.realtime.publish(SETTINGS_CHANGED, {});
+    alia.realtime.publish(SETTINGS_CHANGED, {});
   });
 
   // ------------------------------------------------------------------
-  // BB project ↔ Jira project links. Mirrored in memory because
+  // VesnALIA project ↔ Jira project links. Mirrored in memory because
   // contributeInstructions must answer synchronously.
   // ------------------------------------------------------------------
 
   const links = new Map<string, string[]>(
-    Object.entries((await bb.storage.kv.get<Record<string, string[]>>(LINKS_KEY)) ?? {}),
+    Object.entries((await alia.storage.kv.get<Record<string, string[]>>(LINKS_KEY)) ?? {}),
   );
 
-  async function saveLink(bbProjectId: string, jiraProjectKeys: string[]): Promise<void> {
+  async function saveLink(aliaProjectId: string, jiraProjectKeys: string[]): Promise<void> {
     const keys = [...new Set(jiraProjectKeys)];
-    if (keys.length === 0) links.delete(bbProjectId);
-    else links.set(bbProjectId, keys);
-    await bb.storage.kv.set(LINKS_KEY, Object.fromEntries(links));
-    bb.realtime.publish(LINKS_CHANGED, { bbProjectId, jiraProjectKeys: keys });
+    if (keys.length === 0) links.delete(aliaProjectId);
+    else links.set(aliaProjectId, keys);
+    await alia.storage.kv.set(LINKS_KEY, Object.fromEntries(links));
+    alia.realtime.publish(LINKS_CHANGED, { aliaProjectId, jiraProjectKeys: keys });
   }
 
-  function linkedKeys(bbProjectId: string | null | undefined): string[] {
-    return bbProjectId ? (links.get(bbProjectId) ?? []) : [];
+  function linkedKeys(aliaProjectId: string | null | undefined): string[] {
+    return aliaProjectId ? (links.get(aliaProjectId) ?? []) : [];
   }
 
   function published(key: string, deleted = false): void {
-    bb.realtime.publish(ISSUE_CHANGED, { key, deleted });
+    alia.realtime.publish(ISSUE_CHANGED, { key, deleted });
   }
 
   // ------------------------------------------------------------------
@@ -621,7 +621,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (!requiresApproval((await settings.get())[`allow_${request.action}`])) return null;
     let result;
     try {
-      result = await bb.ui.requestInput(
+      result = await alia.ui.requestInput(
         {
           threadId: ctx.threadId,
           rendererId: APPROVAL_RENDERER_ID,
@@ -648,7 +648,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     if (result.value === "always") {
       await setPermission(request.action, "always");
-      bb.log.info(`agent writes of kind "${request.action}" set to always allow`);
+      alia.log.info(`agent writes of kind "${request.action}" set to always allow`);
       return null;
     }
     return result.value === "once" ? null : "The user declined, so nothing was sent to Jira.";
@@ -682,12 +682,12 @@ export default async function plugin(bb: BbPluginApi) {
       comments: comments.comments,
       commentTotal: comments.total,
       transitions,
-      threads: (await bb.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [],
+      threads: (await alia.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [],
     };
   }
 
   /**
-   * The machines a thread can run on. One bb install can have several daemons
+   * The machines a thread can run on. One VesnALIA install can have several daemons
    * enrolled, and a project is only checked out on some of them, so the
    * machines on offer are the project's own sources — named, and marked with
    * whether the daemon is online right now.
@@ -695,18 +695,18 @@ export default async function plugin(bb: BbPluginApi) {
   async function listHosts(): Promise<Map<string, { name: string; connected: boolean }>> {
     const hosts = new Map<string, { name: string; connected: boolean }>();
     try {
-      for (const host of await bb.sdk.hosts.list()) {
+      for (const host of await alia.sdk.hosts.list()) {
         hosts.set(host.id, { name: host.name, connected: host.status === "connected" });
       }
     } catch (error) {
       // Without the machine list the send still works on the default checkout.
-      bb.log.warn(`could not list machines: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`could not list machines: ${error instanceof Error ? error.message : String(error)}`);
     }
     return hosts;
   }
 
-  async function listBbProjects(): Promise<AgentProject[]> {
-    const projects = (await bb.sdk.projects.list()) as unknown as Array<{
+  async function listAliaProjects(): Promise<AgentProject[]> {
+    const projects = (await alia.sdk.projects.list()) as unknown as Array<{
       id: string;
       name: string;
       sources?: Array<{ hostId: string; isDefault: boolean }>;
@@ -714,7 +714,7 @@ export default async function plugin(bb: BbPluginApi) {
     const hosts = await listHosts();
     return projects
       .map((project) => ({
-        bbProjectId: project.id,
+        aliaProjectId: project.id,
         name: project.name,
         hosts: (project.sources ?? [])
           .filter((source) => hosts.has(source.hostId))
@@ -737,22 +737,22 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function agentTargets(key: string): Promise<AgentTargets> {
     const jiraProjectKey = key.slice(0, key.lastIndexOf("-"));
-    const all = await listBbProjects();
+    const all = await listAliaProjects();
     return {
       jiraProjectKey,
-      linked: all.filter((project) => linkedKeys(project.bbProjectId).includes(jiraProjectKey)),
+      linked: all.filter((project) => linkedKeys(project.aliaProjectId).includes(jiraProjectKey)),
       all,
     };
   }
 
   /**
-   * What the model picker starts on: the agent bb would give a new thread in
+   * What the model picker starts on: the agent VesnALIA would give a new thread in
    * this project anyway, so leaving the picker alone changes nothing. Null
-   * lets the picker fall back to bb's own default.
+   * lets the picker fall back to VesnALIA's own default.
    */
   async function executionDefaults(projectId: string): Promise<AgentExecution | null> {
     try {
-      const defaults = await bb.sdk.projects.defaultExecutionOptions({ projectId });
+      const defaults = await alia.sdk.projects.defaultExecutionOptions({ projectId });
       if (defaults === null) return null;
       return {
         providerId: defaults.providerId,
@@ -761,14 +761,14 @@ export default async function plugin(bb: BbPluginApi) {
         serviceTier: defaults.serviceTier,
       };
     } catch (error) {
-      bb.log.warn(`could not read ${projectId}'s agent defaults: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`could not read ${projectId}'s agent defaults: ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   }
 
   async function sendToAgent(args: {
     key: string;
-    bbProjectId: string;
+    aliaProjectId: string;
     note: string;
     linkProject: boolean;
     worktree: boolean;
@@ -776,11 +776,11 @@ export default async function plugin(bb: BbPluginApi) {
     execution: AgentExecution | null;
   }): Promise<string> {
     const { key, note } = args;
-    const projectId = args.bbProjectId;
+    const projectId = args.aliaProjectId;
     // The panel only offers real projects, but the id still crosses the wire.
-    const target = (await listBbProjects()).find((project) => project.bbProjectId === projectId);
+    const target = (await listAliaProjects()).find((project) => project.aliaProjectId === projectId);
     if (target === undefined) {
-      throw new Error("That BB project no longer exists.");
+      throw new Error("That VesnALIA project no longer exists.");
     }
     const environment = threadEnvironment(target, args.hostId, args.worktree);
     const jira = await client();
@@ -800,12 +800,12 @@ export default async function plugin(bb: BbPluginApi) {
       .filter((line) => line !== "")
       .join("\n");
     const { execution } = args;
-    const thread = (await bb.sdk.threads.spawn({
+    const thread = (await alia.sdk.threads.spawn({
       projectId,
       environment,
       title: `${issue.key}: ${issue.summary}`.slice(0, 120),
       prompt,
-      // Marked explicit so bb keeps the pick instead of re-deriving it from
+      // Marked explicit so VesnALIA keeps the pick instead of re-deriving it from
       // the project's defaults.
       ...(execution === null
         ? {}
@@ -822,8 +822,8 @@ export default async function plugin(bb: BbPluginApi) {
             },
           }),
     })) as unknown as { id: string };
-    const links = (await bb.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [];
-    await bb.storage.kv.set(`threads:${key}`, [
+    const links = (await alia.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [];
+    await alia.storage.kv.set(`threads:${key}`, [
       ...links,
       { threadId: thread.id, createdAt: new Date().toISOString() },
     ]);
@@ -834,20 +834,20 @@ export default async function plugin(bb: BbPluginApi) {
   /**
    * File this issue's agent threads away once the issue is done.
    *
-   * Called from every path that transitions an issue inside BB. `toCategory`
+   * Called from every path that transitions an issue inside VesnALIA. `toCategory`
    * is what the chosen transition lands in when the caller knows it; the rpc
    * that takes a bare transition id does not, so the issue is re-read — but
    * only after the cheap checks, so an issue nobody sent to an agent costs no
    * Jira request at all.
    *
-   * A settle is best-effort by design: BB Sidebar is optional, and a thread
+   * A settle is best-effort by design: VesnALIA Sidebar is optional, and a thread
    * that cannot be settled must not turn a completed transition into an error.
    */
   async function settleDoneIssueThreads(
     key: string,
     toCategory?: StatusCategory,
   ): Promise<void> {
-    const links = (await bb.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [];
+    const links = (await alia.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [];
     const pending = links.filter((link) => link.settledAt === undefined);
     if (pending.length === 0) return;
     if ((await settings.get()).settle_on_done !== true) return;
@@ -858,7 +858,7 @@ export default async function plugin(bb: BbPluginApi) {
     const settled = new Set<string>();
     for (const link of pending) {
       try {
-        await bb.sdk.plugins.callRpc({
+        await alia.sdk.plugins.callRpc({
           pluginId: SIDEBAR_PLUGIN_ID,
           method: "settle",
           input: { threadId: link.threadId },
@@ -866,7 +866,7 @@ export default async function plugin(bb: BbPluginApi) {
         });
         settled.add(link.threadId);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `Could not settle ${link.threadId} for ${key}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -874,9 +874,9 @@ export default async function plugin(bb: BbPluginApi) {
     if (settled.size === 0) return;
 
     // Re-read: a Send to agent during the calls above appends to the same key.
-    const current = (await bb.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [];
+    const current = (await alia.storage.kv.get<ThreadLink[]>(`threads:${key}`)) ?? [];
     const settledAt = new Date().toISOString();
-    await bb.storage.kv.set(
+    await alia.storage.kv.set(
       `threads:${key}`,
       current.map((link) =>
         settled.has(link.threadId) ? { ...link, settledAt } : link,
@@ -889,9 +889,9 @@ export default async function plugin(bb: BbPluginApi) {
     await (await client()).myself();
   } catch (error) {
     if (error instanceof Error && error.name === "NeedsConfigurationError") {
-      bb.status.needsConfiguration(error.message);
+      alia.status.needsConfiguration(error.message);
     } else {
-      bb.log.warn(`Jira check failed: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`Jira check failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -900,7 +900,7 @@ export default async function plugin(bb: BbPluginApi) {
   // through the agent gate; the panel confirms delete itself.
   // ------------------------------------------------------------------
 
-  bb.rpc.register(jiraRpcContract, {
+  alia.rpc.register(jiraRpcContract, {
     async status() {
       const values = await settings.get();
       const siteUrl = normalizeSiteUrl(values.siteUrl) ?? "";
@@ -947,9 +947,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
 
     async listProjectLinks() {
-      const projects = (await bb.sdk.projects.list()) as unknown as Array<{ id: string; name: string }>;
+      const projects = (await alia.sdk.projects.list()) as unknown as Array<{ id: string; name: string }>;
       const rows = projects.map((project) => ({
-        bbProjectId: project.id,
+        aliaProjectId: project.id,
         name: project.name,
         jiraProjectKeys: links.get(project.id) ?? [],
       }));
@@ -961,10 +961,10 @@ export default async function plugin(bb: BbPluginApi) {
       );
     },
 
-    projectLink: async ({ bbProjectId }) => ({ jiraProjectKeys: links.get(bbProjectId) ?? [] }),
+    projectLink: async ({ aliaProjectId }) => ({ jiraProjectKeys: links.get(aliaProjectId) ?? [] }),
 
-    async setProjectLink({ bbProjectId, jiraProjectKeys }) {
-      await saveLink(bbProjectId, jiraProjectKeys);
+    async setProjectLink({ aliaProjectId, jiraProjectKeys }) {
+      await saveLink(aliaProjectId, jiraProjectKeys);
       return { ok: true as const };
     },
 
@@ -1056,7 +1056,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     async deleteIssue({ key, deleteSubtasks }) {
       await (await client()).deleteIssue(key, deleteSubtasks);
-      await bb.storage.kv.delete(`threads:${key}`);
+      await alia.storage.kv.delete(`threads:${key}`);
       published(key, true);
       return { ok: true as const };
     },
@@ -1071,7 +1071,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     agentTargets: ({ key }) => agentTargets(key),
 
-    executionDefaults: ({ bbProjectId }) => executionDefaults(bbProjectId),
+    executionDefaults: ({ aliaProjectId }) => executionDefaults(aliaProjectId),
 
     sendToAgent: async (input) => ({ threadId: await sendToAgent(input) }),
   });
@@ -1112,24 +1112,24 @@ export default async function plugin(bb: BbPluginApi) {
     return key;
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_search_issues",
     description:
-      "Search Jira issues with JQL, limited to the Jira projects linked to this thread's BB project (unlimited when none are linked). Returns key, type, status, priority, assignee, and summary per issue. Read-only.",
+      "Search Jira issues with JQL, limited to the Jira projects linked to this thread's VesnALIA project (unlimited when none are linked). Returns key, type, status, priority, assignee, and summary per issue. Read-only.",
     instructions:
-      "Use jira_search_issues to find issues before asking the user for keys; use jira_get_issue for the description and comments. It only searches the Jira projects linked to this BB project — use jira_search_all_issues only when the user asks about issues outside them. Jira writes may pause for the user's approval.",
+      "Use jira_search_issues to find issues before asking the user for keys; use jira_get_issue for the description and comments. It only searches the Jira projects linked to this VesnALIA project — use jira_search_all_issues only when the user asks about issues outside them. Jira writes may pause for the user's approval.",
     presentation: { label: { pending: "Searching Jira", completed: "Searched Jira" } },
     parameters: searchParameters,
     async execute({ jql, maxResults }, ctx) {
       const keys = linkedKeys(ctx.projectId);
-      return runSearch(scopeJql(jql, keys), maxResults, keys.length > 0 ? `Scope: linked Jira project(s) ${keys.join(", ")}.` : "Scope: all Jira projects (this BB project is not linked to any).");
+      return runSearch(scopeJql(jql, keys), maxResults, keys.length > 0 ? `Scope: linked Jira project(s) ${keys.join(", ")}.` : "Scope: all Jira projects (this VesnALIA project is not linked to any).");
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_search_all_issues",
     description:
-      "Search Jira issues with JQL across every Jira project, ignoring this BB project's linked Jira projects. Read-only.",
+      "Search Jira issues with JQL across every Jira project, ignoring this VesnALIA project's linked Jira projects. Read-only.",
     presentation: { label: { pending: "Searching all of Jira", completed: "Searched all of Jira" } },
     parameters: searchParameters,
     async execute({ jql, maxResults }) {
@@ -1137,7 +1137,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_get_issue",
     description:
       "Read one Jira issue: fields, description (Markdown), the latest comments, and the status transitions available now. Read-only.",
@@ -1161,7 +1161,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_create_issue",
     description:
       "Create a Jira issue. Description is Markdown. May pause for the user's approval depending on the plugin's permission settings.",
@@ -1170,7 +1170,7 @@ export default async function plugin(bb: BbPluginApi) {
       projectKey: z
         .string()
         .default("")
-        .describe("Project key, e.g. PROJ. Blank uses the Jira project linked to this BB project."),
+        .describe("Project key, e.g. PROJ. Blank uses the Jira project linked to this VesnALIA project."),
       issueType: z.string().min(1).describe("Issue type name, e.g. Task, Bug, Story."),
       summary: z.string().min(1).max(255),
       description: z.string().default("").describe("Markdown body."),
@@ -1189,8 +1189,8 @@ export default async function plugin(bb: BbPluginApi) {
           if (linked.length !== 1) {
             return toolError(
               linked.length === 0
-                ? "Pass projectKey: this BB project is not linked to a Jira project."
-                : `Pass projectKey: this BB project is linked to several Jira projects (${linked.join(", ")}).`,
+                ? "Pass projectKey: this VesnALIA project is not linked to a Jira project."
+                : `Pass projectKey: this VesnALIA project is linked to several Jira projects (${linked.join(", ")}).`,
             );
           }
           projectKey = linked[0] ?? "";
@@ -1246,7 +1246,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_update_issue",
     description:
       "Edit a Jira issue's summary, description (Markdown, replaces the whole description), priority, or labels (replaces the whole set). Use jira_transition_issue for status and jira_assign_issue for assignee. May pause for approval.",
@@ -1291,7 +1291,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_transition_issue",
     description:
       "Move a Jira issue through its workflow, by transition name or target status name (e.g. \"In Progress\", \"Done\"). May pause for approval.",
@@ -1336,7 +1336,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_add_comment",
     description: "Add a Markdown comment to a Jira issue. May pause for approval.",
     presentation: { label: { pending: "Commenting on Jira issue", completed: "Commented on Jira issue" } },
@@ -1368,7 +1368,7 @@ export default async function plugin(bb: BbPluginApi) {
     .regex(/^\d+$/, "A numeric Jira comment id, as shown by jira_get_issue.")
     .describe("Comment id from jira_get_issue's `[comment <id>]` line or jira_add_comment's result.");
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_update_comment",
     description:
       "Replace the body of an existing Jira comment with new Markdown. Get the comment id from jira_get_issue. May pause for approval.",
@@ -1408,7 +1408,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_delete_comment",
     description:
       "Permanently delete one Jira comment. This cannot be undone. May pause for approval.",
@@ -1444,7 +1444,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_assign_issue",
     description:
       'Assign a Jira issue to "me", a display name, or an email — or "unassigned" to clear it. May pause for approval.',
@@ -1515,7 +1515,7 @@ export default async function plugin(bb: BbPluginApi) {
     return [...seen.values()];
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_list_sprints",
     description:
       "List the sprints of a Jira project's scrum boards (id, state, board, name, dates). Defaults to active and future sprints. Read-only.",
@@ -1524,14 +1524,14 @@ export default async function plugin(bb: BbPluginApi) {
       projectKey: z
         .string()
         .default("")
-        .describe("Project key, e.g. PROJ. Blank uses the Jira project linked to this BB project."),
+        .describe("Project key, e.g. PROJ. Blank uses the Jira project linked to this VesnALIA project."),
       states: z.array(sprintStateParam).min(1).default(["active", "future"]),
       boardId: z.number().int().positive().optional().describe("Limit to one board."),
     }),
     async execute({ projectKey: rawProject, states, boardId }, ctx) {
       try {
         const projectKey = rawProject.trim().toUpperCase() || linkedKeys(ctx.projectId)[0] || "";
-        if (!isProjectKey(projectKey)) return toolError("Give a projectKey; this BB project is not linked to one.");
+        if (!isProjectKey(projectKey)) return toolError("Give a projectKey; this VesnALIA project is not linked to one.");
         const jira = await client();
         const sprints = await sprintsFor(jira, projectKey, states, boardId);
         if (sprints.length === 0) return `No ${states.join("/")} sprints on ${projectKey}'s scrum boards.`;
@@ -1542,7 +1542,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_move_to_sprint",
     description:
       'Move Jira issues into a sprint, or back to the backlog. sprint is a sprint id, an exact sprint name, "active" (the one active sprint), or "backlog". May pause for approval.',
@@ -1608,7 +1608,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "jira_delete_issue",
     description:
       "Permanently delete a Jira issue. This cannot be undone. May pause for approval.",
@@ -1639,7 +1639,7 @@ export default async function plugin(bb: BbPluginApi) {
         );
         if (refusal !== null) return toolError(refusal);
         await jira.deleteIssue(key, deleteSubtasks);
-        await bb.storage.kv.delete(`threads:${key}`);
+        await alia.storage.kv.delete(`threads:${key}`);
         published(key, true);
         return `Deleted ${key}.`;
       } catch (error) {
@@ -1648,17 +1648,17 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.contributeInstructions(({ projectId }) => {
+  alia.agents.contributeInstructions(({ projectId }) => {
     const keys = linkedKeys(projectId);
     if (keys.length === 0) return null;
-    return `This BB project is linked to Jira project${keys.length === 1 ? "" : "s"} ${keys.join(", ")}. jira_search_issues and new issues default to ${keys.length === 1 ? "it" : "them"}; use jira_search_all_issues only when the user asks about other Jira projects.`;
+    return `This VesnALIA project is linked to Jira project${keys.length === 1 ? "" : "s"} ${keys.join(", ")}. jira_search_issues and new issues default to ${keys.length === 1 ? "it" : "them"}; use jira_search_all_issues only when the user asks about other Jira projects.`;
   });
 
   // ------------------------------------------------------------------
   // @-mentions: attach an issue's current state to a message.
   // ------------------------------------------------------------------
 
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "jira-issue",
     label: "Jira issues",
     async search({ query, projectId }) {

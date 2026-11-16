@@ -2,7 +2,7 @@
 
 Design only. Inputs: `01-codebase-map.md`, `02-ux-prior-art.md` (with its correction), `04-oss-baseline.md`, `05-design-review.md` (applied), `PRODUCT.md`, `DESIGN.md`.
 Legend: **[V]** I opened the file and checked. **[01]**/**[05]** taken from that doc, not re-read. **[I]** inferred.
-SDK = `node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (0.6.104). Nothing was run except read-only grep/sed.
+SDK = `node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts` (0.6.104). Nothing was run except read-only grep/sed.
 
 Vocabulary:
 - **Focus**: one kind of problem to look for, with its own instructions ("Docs"). User-facing noun; plural "focuses".
@@ -20,8 +20,8 @@ Vocabulary:
 
 ## 1. Recommendation
 
-- **Each focus runs as a hidden, one-shot BB thread**, the guide writer's pattern (`src/generate.ts:210-296` [V]). It reports through one tool call into a staging table, never into the draft.
-- **Focus threads are untrusted shell agents.** They read attacker-controlled PR text unattended, at a permission mode that still allows edits. No `bb review` CLI writes, no draft tools, no identity from anything the thread can write (§4.2).
+- **Each focus runs as a hidden, one-shot VesnALIA thread**, the guide writer's pattern (`src/generate.ts:210-296` [V]). It reports through one tool call into a staging table, never into the draft.
+- **Focus threads are untrusted shell agents.** They read attacker-controlled PR text unattended, at a permission mode that still allows edits. No `alia review` CLI writes, no draft tools, no identity from anything the thread can write (§4.2).
 - **The existing review agent aggregates.** After its own review it gets one merge turn: confirm each finding against the code, then keep, fold or drop it with a reason. One voice, one thread the user talks to, and it can defend every comment.
 - **"General" is the review agent's own review, not a thread.** One focus = one extra thread + one merge turn.
 - **Off = today exactly**, including the review agent's tool list and instructions: merge tools are granted only while the feature is on (§4.3).
@@ -59,7 +59,7 @@ Vocabulary:
 - Two new tables in both migration lists, plus `REVIEW_TABLES`, `mergeReview` (`src/store.ts:1095-1150` [01]), fixture and Postgres parity tests. Shipped statements can't be edited.
 - A third preferences column, and a list editor in an explicit-save Settings page.
 - Orchestration state machine: partial failure, timeout, Stop, plugin restart, push mid-run, a deleted merge message. All in Phase 1.
-- Lockdown: `run()` gates `bb review` by `ownReview` from `toolThreadReview ?? formerWorkerReview` (`server.ts:396` [V]); an unknown thread gets `undefined` and `comment add` accepts any review (`src/comment-command.ts:78` [V]). Needs a focus-role check.
+- Lockdown: `run()` gates `alia review` by `ownReview` from `toolThreadReview ?? formerWorkerReview` (`server.ts:396` [V]); an unknown thread gets `undefined` and `comment add` accepts any review (`src/comment-command.ts:78` [V]). Needs a focus-role check.
 - Agent classification: `ownThread` = `threadRole` or former worker (`server.ts:309` [V]). Focus threads must count via `focus_threads`, not `former-workers` (kv capped at 500, `src/former-workers.ts:10` [V]).
 - Guard tests: `src/registrations.test.ts` snapshot, `src/agent-sends.test.ts:19` [01 #39, #40].
 - `ASSISTANT_TOOLS` bump restarts every idle review agent once (`src/server-modules.ts:104`) [01 #17]. Needed only if the off-state tool list changes; it doesn't (§4.3) [I: confirm in Phase 1].
@@ -72,17 +72,17 @@ Vocabulary:
 
 ### 4.1 Options
 
-| | A. Hidden BB thread per focus, review agent merges | B. Provider-native subagents inside the review agent's turn | C. BB thread per focus + separate aggregator thread |
+| | A. Hidden VesnALIA thread per focus, review agent merges | B. Provider-native subagents inside the review agent's turn | C. VesnALIA thread per focus + separate aggregator thread |
 |---|---|---|---|
 | Per-focus harness/provider | Yes | **No.** Same harness as the parent | Yes |
-| Works on every BB provider | Yes | No | Yes |
+| Works on every VesnALIA provider | Yes | No | Yes |
 | Plugin sees status, timeout, failure | Yes | No | Yes |
 | Plugin tools limited by `configure` | Yes. Provider shell/edit tools follow `permissionMode` | No | Yes, same caveat |
 | Prompt room | Spawn prompt, no cap | 4000-char instructions cap (`src/agent.ts:23` [01]) | Spawn prompt |
 | Review agent can defend each comment | Yes | Yes | No |
 | Build cost | 5 PRs | 1 PR | A + a role, thread, settings group |
 
-- **Pick A.** Per-focus harness override forces BB threads.
+- **Pick A.** Per-focus harness override forces VesnALIA threads.
 - C stays reachable: the staging table and finding status are the seam (Decision 3).
 
 ### 4.2 Run model
@@ -96,8 +96,8 @@ guide ready ──┬─ startAutomaticReview (sends the review) ─► review a
 
 - **Trigger:** only when `startAutomaticReview` actually sends the review: after a first guide (`src/generate.ts:320` [V]) and on Run review (`src/turn-rpc.ts:59` [01]). When it returns `"conversation"` without reviewing (`src/agent.ts:314-319` [V]), no focus run. Gates checked once: automatic review on and prompt non-blank, `mayRunUnattended`, PR open, focuses enabled with ≥ 1 on. Explicit Run again / Check again starts a fresh focus run through those same gates, without resending the general review.
 - **Parallel, independent.** Focuses and the agent don't see each other's output until the merge (anchoring, 02 §1.2).
-- **Concurrency:** at most 2 focus threads running plugin-wide; the rest wait in a plugin-side queue (FIFO across reviews), not in BB. Plugin-queue time has no deadline of its own; it is bounded by the running focuses' start + run deadlines (each ≤ 15 min + `waitCap`). Hidden threads otherwise take host slots the user can't see (default one per processor, `bb concurrency-limit` skill [V]).
-- **Spawn** per focus through raw `bb.sdk.threads.spawn`, as for the guide writer, inside a separate `focusSpawning` scope: exact title → `{ targetKey, runId, focusId }`, registered before spawn. A focus is a one-shot worker, not a review agent: no `spawnAgent` provenance mark or asking-ledger entry. Never register focus spawns in `spawning` (`src/thread-review.ts:5-47` [V]).
+- **Concurrency:** at most 2 focus threads running plugin-wide; the rest wait in a plugin-side queue (FIFO across reviews), not in VesnALIA. Plugin-queue time has no deadline of its own; it is bounded by the running focuses' start + run deadlines (each ≤ 15 min + `waitCap`). Hidden threads otherwise take host slots the user can't see (default one per processor, `alia concurrency-limit` skill [V]).
+- **Spawn** per focus through raw `alia.sdk.threads.spawn`, as for the guide writer, inside a separate `focusSpawning` scope: exact title → `{ targetKey, runId, focusId }`, registered before spawn. A focus is a one-shot worker, not a review agent: no `spawnAgent` provenance mark or asking-ledger entry. Never register focus spawns in `spawning` (`src/thread-review.ts:5-47` [V]).
   - title `Focus: <label> · <targetKey>`; `visibility: "hidden"`; placement = the review agent's (`agentPlacement`, `src/machines.ts:39` [V])
   - execution = the focus's override, else `assistantAgent`, else the project default, via `spawnExecution`
   - permission mode = `guideWriterMode` (`src/generate.ts:104` [05]) with `known: { providerId }` set to the **focus's** provider, so the mode is one that provider supports
@@ -106,7 +106,7 @@ guide ready ──┬─ startAutomaticReview (sends the review) ─► review a
 - **Prompt** in the spawn `prompt`. Fixed frame (target key, run id, untrusted-data rule, scope = this diff, severity meanings, ≤ 15 findings, evidence with `file:line`, submit once, empty is fine) + the focus's instructions + the guide's core **fenced with `untrusted()`** (`src/untrusted.ts:5` [V]), as `buildGenerationPrompt` fences earlier chapters (`src/generate.ts:126` [V]).
 - **Plugin tools** for role `focus`: `read_review_patch`, `list_review_files`, `read_file`, `read_pr_context`, `submit_focus_findings`. Nothing else, whatever `reviewAgentActs` says.
 - **Lockdown:**
-  - `run()` refuses **every** `bb review` subcommand from a focus thread, live or ended, using `focusSpawning` OR its `focus_threads` row, before resolving `ownReview` or dispatching a command. Refusal starts at BB's session start, before `spawn` returns. It has plugin read tools; no subcommand list to maintain.
+  - `run()` refuses **every** `alia review` subcommand from a focus thread, live or ended, using `focusSpawning` OR its `focus_threads` row, before resolving `ownReview` or dispatching a command. Refusal starts at VesnALIA's session start, before `spawn` returns. It has plugin read tools; no subcommand list to maintain.
   - `threadRole` returns `focus`; `focusThread` resolves the focus; `ownThread` counts it as a plugin thread. All read `focusSpawning` OR the row. Id-only callers (`ownThread`, `focusThread`, `run()`) fetch the thread's exact title while focus spawns are in flight; `ownThread` cannot rely on its current null-title `threadRole` call (`server.ts:305-312` [V]).
   - `threadReview` / `toolThreadReview` / `assistantReview` stay null: focus titles never enter `spawning`. Thus `run()`'s `ownReview`, `read_changes_since_review` (`src/feedback-tools.ts:54,81` [V]), write tools, `recordAgentReads`, `endCheck` and discussion waits ignore it.
   - `submit_focus_findings` refuses unless the run is `finding` and the thread's focus is `running`.
@@ -115,7 +115,7 @@ guide ready ──┬─ startAutomaticReview (sends the review) ─► review a
 - **Repo rules** reach a focus from the PR's base through `read_pr_context`. No repo-defined focuses.
 - **`submit_focus_findings({ findings[], unchecked[] })`:** each finding is `{file, line, side?, startLine?, code, severity, body, evidence, introduced?}`, placed with the draft's own check (`placeProblem`, `src/draft-comments.ts:77` [05]). A rejected call says why; one nudge, as for a rejected guide (`src/generate.ts:262-266` [V]). Accepted call ends the wait.
 - **Timeout:** two deadlines; the start deadline is a fixed constant, not a setting.
-  - **Start deadline:** 15 min from `spawnedAt`, when the focus leaves the plugin queue and is spawned; bounds only BB `pending`. If `activeAt` is still unset, focus `failed: didn't start`; stop and archive its thread, free its plugin slot, and start the next queued focus.
+  - **Start deadline:** 15 min from `spawnedAt`, when the focus leaves the plugin queue and is spawned; bounds only VesnALIA `pending`. If `activeAt` is still unset, focus `failed: didn't start`; stop and archive its thread, free its plugin slot, and start the next queued focus.
   - **Run deadline:** `waitCap` from `activeAt`, when the thread first leaves `pending`, not from spawn. The writer's loop counts pending time (`src/generate.ts:242-256` [V]); focuses must not copy that.
 
 ### 4.3 Aggregation
@@ -126,7 +126,7 @@ guide ready ──┬─ startAutomaticReview (sends the review) ─► review a
   - otherwise → check tool grants below, then `messageAssistant`, kind `automatic`, `queue-if-active`. Visible text: "Check the focuses' findings (Docs: 7)", marked as the plugin's. Agent-only context: the merge rules. Store `queuedMessageId` in `focusRun.mergeMessageId`; no `queuedMessageId` → persist `focusRun.mergeDispatchedAt = Date.now()` (`src/agent.ts:422-453` [V]). For a queued merge, persist that timestamp on `message.dispatched` when `entry.id === focusRun.mergeMessageId`; `entry` is a `ThreadQueuedMessage` with `id` and `threadId` (SDK:4534-4691, 19597-19599 [V]).
 - **Tool-grant gate:** keep `focusToolsGranted` per assistant thread, separate from the run. `configure` runs on every `thread.start` / `turn.submit`, but tools change only when a provider session is constructed (SDK 0.6.104:20768–20786 [V]). Its context identifies no runtime/session construction. An ordinary `configure` may mark a grant stale, never fresh. Only a new assistant spawn or a confirmed idle stop/refresh establishes freshness: use the new spawn's first configuration, or the next configuration after the stop. Missing/unknown evidence is stale; never promote an old busy session just because a later configure selects merge tools. Before sending a merge:
   - fresh → send as above, including `queue-if-active`.
-  - idle and stale → await `refreshAssistants(bb, store, [targetKey])`, confirm the idle runtime stopped, then send so the next runtime configures with merge tools.
+  - idle and stale → await `refreshAssistants(alia, store, [targetKey])`, confirm the idle runtime stopped, then send so the next runtime configures with merge tools.
   - busy and stale → set `focusRun.mergeAwaitingTools`, don't queue a message; at its next idle, refresh, then send. Clear the flag on send or failure. Preserve the dispatch timestamps above; waiting for tools is not dispatch.
   - refresh fails → remaining findings `not-checked: merge tools unavailable`, run `done`. `refreshAssistants` swallows stop errors (`src/agent.ts:515-523` [V]); a resolved call alone isn't proof of a restart. Verify the stop before sending.
 - **Findings cap:** at most 20 go to the merge, ordered Blocking → Should fix → Question → Nit, then by focus order. The rest are `not-checked: over the limit`.
@@ -157,13 +157,13 @@ guide ready ──┬─ startAutomaticReview (sends the review) ─► review a
 | Event | Behavior |
 |---|---|
 | One focus fails, times out or asks for permission | Others continue. Merge runs with what arrived. Strip names it, with Run again for a fresh focus run; Finish review lists it under What it didn't check |
-| Focus never starts (BB `pending`) | Start deadline (§4.2): 15 min after `spawnedAt` without `activeAt`, fail as `didn't start`, stop and archive its thread, free its plugin slot, start the next queued focus; merge proceeds without it |
+| Focus never starts (VesnALIA `pending`) | Start deadline (§4.2): 15 min after `spawnedAt` without `activeAt`, fail as `didn't start`, stop and archive its thread, free its plugin slot, start the next queued focus; merge proceeds without it |
 | Focus idle without submitting | One nudge, then failed: "stopped without reporting" |
 | Stop, while `finding` | Clears the plugin queue, aborts waits, stops and archives focus threads, findings `not-checked: stopped`, run `stopped`. The agent's own review isn't stopped |
 | Stop, while `merging`, message queued | Deletes the queued message (`threads.queuedMessages.delete`, SDK:18796 [V]); findings `not-checked: stopped` |
 | Stop, while `merging`, turn running | Not offered: the strip hides Stop. The turn is the agent's; its tab's own Stop applies, and accounting marks leftovers `not-checked` |
 | Merge tools missing from a live agent | Tool-grant gate (§4.3): wait for idle if busy, refresh before sending; refresh failure → findings `not-checked: merge tools unavailable`, run `done` |
-| Merge message deleted in BB's queue | Persist `mergeCancelledAt`; watchdog (§4.3) |
+| Merge message deleted in VesnALIA's queue | Persist `mergeCancelledAt`; watchdog (§4.3) |
 | Guide rebuild mid-run | `beginGuide` stops the run, as Stop. Not restarted |
 | Push mid-run, no rebuild | Run continues; at settle or at any keep call, head ≠ run head → `not-checked: diff changed`, Run again |
 | Plugin restart mid-run | On start: run `finding` → `stopped`, its threads stopped and archived, findings `not-checked: interrupted`, strip offers Run again. Run `merging` → read persisted evidence: `mergeDispatchedAt` set + agent idle → accounting; `mergeCancelledAt` set → leftovers `not-checked: merge message removed`, run `done`; neither set and `mergeMessageId` still in `queuedMessages` → keep waiting; neither set and absent → leftovers `not-checked: interrupted`, run `done`, no nudge. A merge is classified as removed only with persisted cancellation evidence; a dispatch missed during reload is interrupted, not removed. Plugin events are not replayed after reload [I: not stated in the SDK]. No merge is sent after restart: trust and PR state would need re-checking, and the agent's own review may be mid-turn |
@@ -174,7 +174,7 @@ guide ready ──┬─ startAutomaticReview (sends the review) ─► review a
 | Reviews merged | `mergeReview` drops the archived review's `focus_findings` (another head), including stored draft locations, and moves its `focus_threads` rows. The surviving review's finding locations stay unchanged; no comment-id remapping. A run in flight on the archived one is stopped first |
 | Feature turned off mid-run | The run finishes. Merge tools stay granted while a run is `merging` |
 
-- **The user never manages a focus thread:** hidden, never listed, deleted at run end, one recovery button. `bb review list --json` unchanged.
+- **The user never manages a focus thread:** hidden, never listed, deleted at run end, one recovery button. `alia review list --json` unchanged.
 
 ### 4.5 Fit with the rest
 
@@ -217,7 +217,7 @@ FOCUSES
       Check findings at   [ The review agent’s effort ▾ ]      (… / High)
 
       [x] Label comments on GitHub with their focus
-          Posts “Should fix (Docs): …”. Off: comments post as today. BB shows the focus either way.
+          Posts “Should fix (Docs): …”. Off: comments post as today. ALIA shows the focus either way.
 ```
 
 - Under the switch: indented, disabled while off, values kept (`DESIGN.md`, Review customization).
@@ -304,7 +304,7 @@ Focuses: Docs · 7 findings · 3 kept, 1 folded, 3 dropped · 41k tokens ▸
    Docs: 2 findings not checked · Check again
 ```
 
-- Tokens shown only when BB reported them; an incomplete sum is marked partial. The Focuses line includes the not-checked count. Focus coverage is hidden while focuses are off.
+- Tokens shown only when VesnALIA reported them; an incomplete sum is marked partial. The Focuses line includes the not-checked count. Focus coverage is hidden while focuses are off.
 - Check again starts a fresh focus run through the usual gates, never the general review; it replaces the previous run’s finding records. Selective recheck is deferred.
 - **Goes to GitHub:** "5 comments: 2 yours, 3 the agent’s (2 from Docs)". With the label on, each shows its posted label.
 - **GitHub:** `**Should fix (Docs):** body`; no severity → `**Docs:** body`; pre-existing → `**Pre-existing:** **Should fix (Docs):** body`. Post form shows it exactly.
@@ -359,7 +359,7 @@ focusRun?: {
              state: "queued" | "running" | "done" | "failed" | "stopped"
              queuedAt: number                        // entered plugin queue; no queue deadline
              spawnedAt?: number                      // left plugin queue and spawned: 15 min start deadline
-             activeAt?: number                       // first left BB's pending: waitCap run deadline
+             activeAt?: number                       // first left ALIA's pending: waitCap run deadline
              findings?: number; error?: string; unchecked?: string[]  // failed error includes "didn't start"
              tokens?: { input: number; output: number } }[]
   mergeTokens?: { input: number; output: number }
@@ -398,7 +398,7 @@ Focus {
 
 ### 6.5 Templates and licensing
 
-- `lib/focus-templates/docs.ts`: a source comment header (04 §5.1's three lines: source URL + SHA, "Licensed under Apache-2.0", "Changed: …"), then exported metadata (`id`, `label`, `description`, `source`, `sourceSha`, `license`, `holder`) and the instructions string. A TS module, as default prompts are (`lib/review-preferences.ts:69-70` [V]): the server is bundled (`bb plugin build`, `package.json:67` [V]) and no runtime file read is needed. BB builds from source on install (`.gitignore:1` [V]), so headers and notices ship in the repo.
+- `lib/focus-templates/docs.ts`: a source comment header (04 §5.1's three lines: source URL + SHA, "Licensed under Apache-2.0", "Changed: …"), then exported metadata (`id`, `label`, `description`, `source`, `sourceSha`, `license`, `holder`) and the instructions string. A TS module, as default prompts are (`lib/review-preferences.ts:69-70` [V]): the server is bundled (`alia plugin build`, `package.json:67` [V]) and no runtime file read is needed. VesnALIA builds from source on install (`.gitignore:1` [V]), so headers and notices ship in the repo.
 - The model never sees "Anthropic", "Claude" or a license line (04 §5.2).
 - Release 1 vendors **one** derivative: `docs`, from `plugins/pr-review-toolkit/agents/comment-analyzer.md` in `anthropics/claude-plugins-official` at a pinned SHA, adapted per 04 §3.1 (Decision 5).
 - **Not used:** `claude-code-action`'s `documentation-accuracy-reviewer` (MIT, 04 §3.1's optional secondary); the pre-LICENSE `code-review` SHA (04 §1.2); anything from `anthropics/claude-code`. Notices say so.
@@ -432,7 +432,7 @@ Risky, flagged:
 | 7 | Remove General? | No. Someone must aggregate and own the summary |
 | 8 | GitHub label | Decision 1 |
 | 9 | Limits | 4 enabled, 12 saved, 15 findings per focus, 20 to the merge, 5 nits kept per focus, 2 focus threads plugin-wide. Constants |
-| 10 | Cost shown | Settings: words. Finish review: tokens per run when BB reports them. Override is the lever (a small model for Docs) |
+| 10 | Cost shown | Settings: words. Finish review: tokens per run when VesnALIA reports them. Override is the lever (a small model for Docs) |
 | 11 | Latency | ≈ max(own review, slowest focus incl. plugin queue) + merge turn. Start deadline: 15 min from `spawnedAt`, not plugin queue entry; run deadline: `waitCap` from `activeAt` |
 | 12 | Prompt injection via PR text | Untrusted shell agent: no CLI, five tools, fenced guide core, fenced findings, unattended merge drafts only (§4.2). Residual: a focus can edit files in the checkout at `accept-edits`/`auto`; stated in Settings |
 | 13 | Diff has nothing for a focus | It submits nothing. Later: per-focus path globs |
@@ -469,10 +469,10 @@ Release 1 = Phases 0–4. Each is one PR. `npm run check` passes in all; checks 
 - Verify (backend, fake host):
   - off: spawns, messages, the review agent's tool list, instructions and `registrations` equal today's
   - on: one hidden spawn per enabled focus, never more than 2 running plugin-wide, mode from the focus's provider, the five tools only
-  - `bb review comment add` (and every other subcommand) from a focus thread, live or after run end, is refused
-  - spawn window: BB's session started, row not yet written → `bb review comment add` is refused and tool calls get role `focus`
+  - `alia review comment add` (and every other subcommand) from a focus thread, live or after run end, is refused
+  - spawn window: VesnALIA's session started, row not yet written → `alia review comment add` is refused and tool calls get role `focus`
   - `read_changes_since_review` and every write tool from a focus thread refuse
-  - a focus queued behind 2 running focuses for > 15 min doesn't fail; one spawned but still BB `pending` 15 min after `spawnedAt` fails as `didn't start`; its thread is stopped and archived, its slot freed, next queued focus starts, merge proceeds
+  - a focus queued behind 2 running focuses for > 15 min doesn't fail; one spawned but still VesnALIA `pending` 15 min after `spawnedAt` fails as `didn't start`; its thread is stopped and archived, its slot freed, next queued focus starts, merge proceeds
   - a focus starting 14 min after spawn gets `waitCap` from `activeAt`, not from queueing or spawn
   - a focus with a pending interaction fails at once
   - misplaced finding rejected and nudged once; submit after the run ended refused
@@ -489,7 +489,7 @@ Release 1 = Phases 0–4. Each is one PR. `npm run check` passes in all; checks 
   - dispatch/cancellation persistence precedes idle/start checks even with delayed writes or either event before the send result; ledger listener order changes neither accounting nor watchdog
   - Stop while finding, Stop with queued merge (message deleted), deleted merge message (watchdog), rebuild, push, restart in `finding` and `merging`, orphan thread swept
   - `src/registrations.test.ts -u` reviewed line by line; `src/agent-sends.test.ts` green
-- Verify (manual): a PR with one comment made false by the diff → one "Docs" draft with evidence; no focus thread in BB's sidebar, thread list or `bb review list --json`; token count shown if the provider reports it.
+- Verify (manual): a PR with one comment made false by the diff → one "Docs" draft with evidence; no focus thread in VesnALIA's sidebar, thread list or `alia review list --json`; token count shown if the provider reports it.
 
 **Phase 2. GitHub label.**
 - `githubLabel` setting; label in `toGithubReviewPayload`; Post form and Goes to GitHub show it.
@@ -538,8 +538,8 @@ Release 1 = Phases 0–4. Each is one PR. `npm run check` passes in all; checks 
 ## Open items
 
 - **Decided (owner, 2026-11-09):** derived-file headers name neither co-holder; repo `LICENSE` covers changes.
-- **Phase 1 check (owner decided: ship with the warning):** can a hidden thread get a read-only or no-workspace environment? SDK offers `permissionMode` `accept-edits|auto|full` only and placements `reuse|host|project-default|provider` (`personal` workspace meaning unchecked). Phase 1 checks BB's environment providers; if none fits, Settings' permission sentence stands as the mitigation.
-- **Unverified:** whether a hidden plugin thread can reach `bb` (PATH, `BB_THREAD_ID`) and run it without approval at `accept-edits`/`auto`. `run()` refusal covers it either way; matters only for how loudly to warn.
+- **Phase 1 check (owner decided: ship with the warning):** can a hidden thread get a read-only or no-workspace environment? SDK offers `permissionMode` `accept-edits|auto|full` only and placements `reuse|host|project-default|provider` (`personal` workspace meaning unchecked). Phase 1 checks VesnALIA's environment providers; if none fits, Settings' permission sentence stands as the mitigation.
+- **Unverified:** whether a hidden plugin thread can reach `alia` (PATH, `ALIA_THREAD_ID`) and run it without approval at `accept-edits`/`auto`. `run()` refusal covers it either way; matters only for how loudly to warn.
 - **Unverified:** which providers emit `thread/tokenUsage/updated`, and whether `cost` is filled. Tokens shown best-effort; no cost in UI.
 - **Unverified:** `threads.delete` on a hidden archived plugin thread succeeds and leaves `focus_threads` identity checks sound; fallback is archive-only.
 - **Unverified:** merge-turn compaction with 20 findings; measure in Phase 1's manual run.

@@ -1,12 +1,12 @@
-// bb-plugin-beads — integrate the beads issue tracker (https://beads.gascity.com)
-// into BB.
+// alia-plugin-beads — integrate the beads issue tracker (https://beads.gascity.com)
+// into VesnALIA.
 //
 // Headless plugin with three surfaces:
 //  1. The `beads` agent tool: runs `bd` commands in the thread's environment
-//     checkout through the plugin's bb.host worker.
-//  2. The `bb beads` CLI: same passthrough from a shell.
+//     checkout through the plugin's alia.host worker.
+//  2. The `alia beads` CLI: same passthrough from a shell.
 //  3. skills/beads/SKILL.md: standing instructions for agents.
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { hostContract, hostSignals } from "./contract.js";
 
@@ -24,10 +24,10 @@ function truncate(text: string, max: number): string {
     : text;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     bdPath: {
       type: "string",
       label: "Path to the `bd` beads CLI",
@@ -36,16 +36,16 @@ export default async function plugin(bb: BbPluginApi) {
   });
   const { bdPath } = await settings.get();
 
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
 
   // Environment path + host per thread, captured at turn start by
-  // bb.agents.configure so tool executions (which only carry threadId) can
+  // alia.agents.configure so tool executions (which only carry threadId) can
   // run bd in the right checkout on the right machine.
   const threadEnvs = new Map<string, ThreadEnv>();
-  bb.onDispose(() => threadEnvs.clear());
+  alia.onDispose(() => threadEnvs.clear());
 
   async function resolveEnv(
     threadId: string | null,
@@ -60,7 +60,7 @@ export default async function plugin(bb: BbPluginApi) {
     // cwd — `bd init` would mutate whatever directory the host worker sits in.
     if (fallbackCwd != null && fallbackCwd !== "") {
       try {
-        const hosts = await bb.sdk.hosts.list();
+        const hosts = await alia.sdk.hosts.list();
         const first = hosts[0];
         if (first != null) return { cwd: fallbackCwd, hostId: first.id };
       } catch {
@@ -78,9 +78,9 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const noCwdError =
-    "No working directory to run `bd` in. Run the command from a BB thread " +
+    "No working directory to run `bd` in. Run the command from a VesnALIA thread " +
     "(uses the thread's environment checkout) or from inside a project " +
-    "directory with `bb beads -- <args...>`.";
+    "directory with `alia beads -- <args...>`.";
 
   async function runBd(
     args: readonly string[],
@@ -100,14 +100,14 @@ export default async function plugin(bb: BbPluginApi) {
       return {
         result: null,
         error: `\`bd\` failed to start: ${error instanceof Error ? error.message : String(error)}
-Check the "Path to the \`bd\` beads CLI" setting (currently "${bdPath}") with \`bb plugin config beads\`,
+Check the "Path to the \`bd\` beads CLI" setting (currently "${bdPath}") with \`alia plugin config beads\`,
 and install beads from https://beads.gascity.com if needed.`,
       };
     }
     return { result, error: null };
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "beads",
     description:
       "Run a `bd` (beads issue tracker, https://beads.gascity.com) command in this thread's environment checkout and return its output. " +
@@ -144,7 +144,7 @@ and install beads from https://beads.gascity.com if needed.`,
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     const { path } = context.environment;
     if (path != null) {
       threadEnvs.set(context.thread.id, { cwd: path, hostId: context.host.id });
@@ -156,25 +156,25 @@ and install beads from https://beads.gascity.com if needed.`,
 
   const usage = [
     "Usage:",
-    "  bb beads -- <bd-args...>     Run any bd command, e.g. bb beads -- list",
-    "  bb beads check               Verify the bd CLI is reachable and print its version",
+    "  VesnALIA beads -- <bd-args...>     Run any bd command, e.g. VesnALIA beads -- list",
+    "  VesnALIA beads check               Verify the bd CLI is reachable and print its version",
     "",
     "Full command reference: https://beads.gascity.com/cli-reference/index.md",
   ].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "beads",
     summary: "Run beads (`bd`) issue-tracker commands through the plugin's host worker",
     commands: [
       {
         name: "check",
         summary: "Verify the bd CLI is reachable",
-        usage: "bb beads check",
+        usage: "alia beads check",
       },
       {
         name: "--",
         summary: "Pass arguments to bd",
-        usage: "bb beads -- <bd-args...>",
+        usage: "alia beads -- <bd-args...>",
       },
     ],
     async run(argv, ctx) {
@@ -221,7 +221,7 @@ and install beads from https://beads.gascity.com if needed.`,
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

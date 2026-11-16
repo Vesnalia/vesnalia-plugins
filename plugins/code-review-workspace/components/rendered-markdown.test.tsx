@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { useState, type MutableRefObject } from "react";
 import { defaultPreferences } from "../src/preferences";
 import { patchReviewState } from "../lib/panel-state";
@@ -19,10 +19,10 @@ vi.mock("@pierre/diffs/react", () => ({
   ),
 }));
 
-// BB's Markdown, as far as its HTML goes: the content as HTML, so <del> and <ins> are elements; as a BB whose Markdown
-// drops raw HTML (`strip`), without them; or, until `loadsAt`, as BB's draws it while its HTML loads, without them too.
+// VesnALIA's Markdown, as far as its HTML goes: the content as HTML, so <del> and <ins> are elements; as a VesnALIA whose Markdown
+// drops raw HTML (`strip`), without them; or, until `loadsAt`, as VesnALIA's draws it while its HTML loads, without them too.
 // Each content it's given is kept, with when. Drawn again only for new content: React 19 sets innerHTML on every render.
-// A table draws as BB's does, a thead and a tbody of rows, so the view can read its rows.
+// A table draws as VesnALIA's does, a thead and a tbody of rows, so the view can read its rows.
 const markdown = vi.hoisted(() => ({
   strip: false as boolean | "del", loadsAt: 0, given: [] as { content: string; at: number }[], extraRow: false,
   tables: (content: string) => {
@@ -32,10 +32,10 @@ const markdown = vi.hoisted(() => ({
     return `<table><thead><tr>${cells(head, "th")}</tr></thead><tbody>${body.map((line) => `<tr>${cells(line, "td")}</tr>`).join("")}${markdown.extraRow ? "<tr><td>x</td></tr>" : ""}</tbody></table>`;
   },
 }));
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => {
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => {
   const { memo, useEffect, useState } = await import("react");
   return {
-    ...await importOriginal<typeof import("@get-bb/plugin-sdk/app")>(),
+    ...await importOriginal<typeof import("@vesnalia/plugin-sdk/app")>(),
     Markdown: memo(function Markdown({ content }: { content: string }) {
       const [loaded, setLoaded] = useState(() => Date.now() >= markdown.loadsAt);
       useEffect(() => { markdown.given.push({ content, at: Date.now() }); }, [content]);
@@ -45,7 +45,7 @@ vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => {
         return () => clearTimeout(wait);
       }, [loaded]);
       const html = markdown.strip === "del" ? content.replace(/<\/?del>/g, "") : markdown.strip || !loaded ? content.replace(/<\/?(?:del|ins)>/g, "") : content;
-      return <div data-testid="bb-markdown" dangerouslySetInnerHTML={{ __html: markdown.tables(html) }} />;
+      return <div data-testid="alia-markdown" dangerouslySetInnerHTML={{ __html: markdown.tables(html) }} />;
     }),
   };
 });
@@ -83,15 +83,15 @@ async function renderDiff({ rpc = {}, contents = { ok: true, old: OLD, new: NEW 
 const switchTo = (file: () => ReturnType<typeof within>, value: "Source" | "Rendered") => fireEvent.click(within(file().getByRole("radiogroup", { name: `How ${FILE} shows` })).getByRole("radio", { name: value }));
 const units = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>("[data-md-index]"));
 
-test("a Markdown file opens as its source; Rendered draws each block through BB's Markdown, with its change marked", async () => {
+test("a Markdown file opens as its source; Rendered draws each block through VesnALIA's Markdown, with its change marked", async () => {
   const { slot, file, readContents } = await renderDiff();
   expect(file().getByTestId("filediff")).toBeTruthy();
   switchTo(file, "Rendered");
   await waitFor(() => expect(file().queryByTestId("filediff")).toBeNull());
   expect(readContents).toHaveBeenCalledWith(FILE);
-  // Marked once BB's Markdown has drawn the probe's <ins>.
+  // Marked once VesnALIA's Markdown has drawn the probe's <ins>.
   await waitFor(() => expect(slot.container.querySelector("[data-md-words]")).toBeTruthy());
-  const shown = units(slot.container).map((unit) => [unit.dataset.mdStatus, within(unit).getAllByTestId("bb-markdown").map((md) => md.innerHTML)]);
+  const shown = units(slot.container).map((unit) => [unit.dataset.mdStatus, within(unit).getAllByTestId("alia-markdown").map((md) => md.innerHTML)]);
   expect(shown).toEqual([
     ["unchanged", ["# Tokens"]], ["unchanged", ["We want short-lived tokens."]], ["unchanged", ["## Lifetime"]],
     ["changed", ["Tokens expire after <del>1 hour</del><ins>15 minutes</ins>."]], ["removed", ["Refresh tokens are never rotated."]],
@@ -101,7 +101,7 @@ test("a Markdown file opens as its source; Rendered draws each block through BB'
   expect(within(units(slot.container)[4]).getByText("Removed, old line 9")).toBeTruthy();
   // Show previous puts the changed block's version before above it, as a removed block.
   fireEvent.click(within(units(slot.container)[3]).getByRole("button", { name: "Show previous" }));
-  expect(within(units(slot.container)[3]).getAllByTestId("bb-markdown").map((md) => md.innerHTML)).toEqual(["Tokens expire after 1 hour.", "Tokens expire after <del>1 hour</del><ins>15 minutes</ins>."]);
+  expect(within(units(slot.container)[3]).getAllByTestId("alia-markdown").map((md) => md.innerHTML)).toEqual(["Tokens expire after 1 hour.", "Tokens expire after <del>1 hour</del><ins>15 minutes</ins>."]);
   switchTo(file, "Source");
   expect(file().getByTestId("filediff")).toBeTruthy();
   slot.lifecycle.unmount();
@@ -112,26 +112,26 @@ test("a list's items show added, changed and removed on their own, a changed ite
   const now = "Steps:\n\n- Install the CLI.\n- Sign in with your SSO account.\n- Configure the project.\n";
   const { slot } = await renderDiff({ markdownFiles: "rendered", patch: gitPatch(FILE, old, now), contents: { ok: true, old, new: now } });
   await waitFor(() => expect(slot.container.querySelector("[data-md-words]")).toBeTruthy());
-  expect(units(slot.container).map((unit) => [unit.dataset.mdStatus, within(unit).getByTestId("bb-markdown").innerHTML])).toEqual([
+  expect(units(slot.container).map((unit) => [unit.dataset.mdStatus, within(unit).getByTestId("alia-markdown").innerHTML])).toEqual([
     ["unchanged", "Steps:"], ["unchanged", "- Install the CLI."], ["changed", "- Sign in with your <del>token</del><ins>SSO account</ins>."],
     ["removed", "- Clean up."], ["added", "- Configure the project."],
   ]);
   slot.lifecycle.unmount();
 });
 
-test("a BB whose Markdown drops raw HTML never draws marked words: changed blocks show whole, never old and new run together", async () => {
+test("a VesnALIA whose Markdown drops raw HTML never draws marked words: changed blocks show whole, never old and new run together", async () => {
   markdown.strip = true;
   const { slot } = await renderDiff({ markdownFiles: "rendered" });
   await waitFor(() => expect(units(slot.container)).toHaveLength(7));
   await new Promise((resolve) => setTimeout(resolve, 300));
-  expect(within(units(slot.container)[3]).getByTestId("bb-markdown").innerHTML).toBe("Tokens expire after 15 minutes.");
+  expect(within(units(slot.container)[3]).getByTestId("alia-markdown").innerHTML).toBe("Tokens expire after 15 minutes.");
   expect(units(slot.container)[3].querySelector("[data-md-words]")).toBeNull();
   expect(within(units(slot.container)[3]).getByRole("button", { name: "Show previous" })).toBeTruthy();
   expect(markdown.given.filter(({ content }) => content.includes("<del>") && content !== "a<del>b</del><ins>c</ins>")).toEqual([]);
   slot.lifecycle.unmount();
 });
 
-test("once BB's Markdown has drawn marks, a file drawn after marks its words from the start, with no probe of its own", async () => {
+test("once VesnALIA's Markdown has drawn marks, a file drawn after marks its words from the start, with no probe of its own", async () => {
   const first = await renderDiff({ markdownFiles: "rendered" });
   await waitFor(() => expect(first.slot.container.querySelector("[data-md-words]")).toBeTruthy());
   first.slot.lifecycle.unmount();
@@ -143,7 +143,7 @@ test("once BB's Markdown has drawn marks, a file drawn after marks its words fro
   slot.lifecycle.unmount();
 });
 
-test("a BB whose Markdown keeps <ins> but drops <del> draws no marked words either", async () => {
+test("a VesnALIA whose Markdown keeps <ins> but drops <del> draws no marked words either", async () => {
   markdown.strip = "del";
   const { slot } = await renderDiff({ markdownFiles: "rendered" });
   await waitFor(() => expect(units(slot.container)).toHaveLength(7));
@@ -152,13 +152,13 @@ test("a BB whose Markdown keeps <ins> but drops <del> draws no marked words eith
   slot.lifecycle.unmount();
 });
 
-// BB's Markdown draws content without its HTML while that loads, the first time: marked words would read run together.
-test("words are marked once BB's Markdown has drawn HTML, however long that takes, and never before", async () => {
+// VesnALIA's Markdown draws content without its HTML while that loads, the first time: marked words would read run together.
+test("words are marked once VesnALIA's Markdown has drawn HTML, however long that takes, and never before", async () => {
   markdown.loadsAt = Date.now() + 2500;
   const { slot } = await renderDiff({ markdownFiles: "rendered" });
   await waitFor(() => expect(units(slot.container)).toHaveLength(7));
-  expect(within(units(slot.container)[3]).getByTestId("bb-markdown").innerHTML).toBe("Tokens expire after 15 minutes.");
-  await waitFor(() => expect(within(units(slot.container)[3]).getByTestId("bb-markdown").innerHTML).toBe("Tokens expire after <del>1 hour</del><ins>15 minutes</ins>."), { timeout: 5000 });
+  expect(within(units(slot.container)[3]).getByTestId("alia-markdown").innerHTML).toBe("Tokens expire after 15 minutes.");
+  await waitFor(() => expect(within(units(slot.container)[3]).getByTestId("alia-markdown").innerHTML).toBe("Tokens expire after <del>1 hour</del><ins>15 minutes</ins>."), { timeout: 5000 });
   const marked = markdown.given.filter(({ content }) => content.includes("<del>") && content !== "a<del>b</del><ins>c</ins>");
   expect(marked.length).toBeGreaterThan(0);
   expect(marked.every(({ at }) => at >= markdown.loadsAt)).toBe(true);
@@ -175,9 +175,9 @@ test("Show previous is a button the keyboard reaches, that says it opens the ver
   fireEvent.click(toggle);
   const open = within(units(slot.container)[3]).getByRole("button", { name: "Hide previous" });
   expect(open.getAttribute("aria-expanded")).toBe("true");
-  expect(within(units(slot.container)[3]).getAllByTestId("bb-markdown")).toHaveLength(2);
+  expect(within(units(slot.container)[3]).getAllByTestId("alia-markdown")).toHaveLength(2);
   fireEvent.click(open);
-  expect(within(units(slot.container)[3]).getAllByTestId("bb-markdown")).toHaveLength(1);
+  expect(within(units(slot.container)[3]).getAllByTestId("alia-markdown")).toHaveLength(1);
   slot.lifecycle.unmount();
 });
 
@@ -252,7 +252,7 @@ test("three or more removed blocks in a row show the first, and fold the rest", 
   const now = "Kept intro.\n\nKept end.\n";
   const { slot } = await renderDiff({ markdownFiles: "rendered", patch: gitPatch(FILE, old, now), contents: { ok: true, old, new: now } });
   const fold = await slot.findByRole("button", { name: "Show 3 more removed sections" });
-  expect(units(slot.container).map((unit) => [unit.dataset.mdStatus, within(unit).getByTestId("bb-markdown").innerHTML])).toEqual([
+  expect(units(slot.container).map((unit) => [unit.dataset.mdStatus, within(unit).getByTestId("alia-markdown").innerHTML])).toEqual([
     ["unchanged", "Kept intro."], ["removed", "Gone one."], ["unchanged", "Kept end."],
   ]);
   fireEvent.click(fold);
@@ -304,7 +304,7 @@ test("text selected across blocks picks their lines in one hunk; in blocks the d
   const now = old.replace("1 hour", "15 minutes");
   const { slot, onLineSelected } = await renderDiff({ markdownFiles: "rendered", patch: gitPatch(FILE, old, now, 1), contents: { ok: true, old, new: now } });
   await waitFor(() => expect(units(slot.container)).toHaveLength(7));
-  const text = (index: number) => within(units(slot.container)[index]).getByTestId("bb-markdown").firstChild!;
+  const text = (index: number) => within(units(slot.container)[index]).getByTestId("alia-markdown").firstChild!;
   select(text(4), text(5));
   await waitFor(() => expect(onLineSelected).toHaveBeenLastCalledWith(FILE, { start: 10, end: 11, side: "additions" }, undefined));
   select(text(0), text(1));
@@ -316,7 +316,7 @@ test("text selected in a changed block's version before picks its old lines", as
   const { slot, onLineSelected } = await renderDiff({ markdownFiles: "rendered" });
   await waitFor(() => expect(units(slot.container)).toHaveLength(7));
   fireEvent.click(within(units(slot.container)[3]).getByRole("button", { name: "Show previous" }));
-  const ghost = within(units(slot.container)[3]).getAllByTestId("bb-markdown")[0].firstChild!;
+  const ghost = within(units(slot.container)[3]).getAllByTestId("alia-markdown")[0].firstChild!;
   expect(ghost.textContent).toBe("Tokens expire after 1 hour.");
   select(ghost, ghost);
   await waitFor(() => expect(onLineSelected).toHaveBeenLastCalledWith(FILE, { start: 7, end: 7, side: "deletions" }, undefined));
@@ -339,7 +339,7 @@ test("the same text selected again, after its lines were cleared, picks them aga
   const component = () => <DraftTray targetKey="k" activeChapterId="c1" activeFiles={[FILE]} reviewRevision="r1" account="reviewer" patch={PATCH}><Picking /></DraftTray>;
   const slot = renderSlot({ component }, {}, { rpc: { setReviewPresence: () => ({ ok: true }), getReviewerNotes: () => ({ body: "", revision: 0 }), getDraft: () => ({ draft: draftOf(), stale: [], discussions: [] }) } as any });
   await waitFor(() => expect(units(slot.container)).toHaveLength(7));
-  const text = within(units(slot.container)[3]).getByTestId("bb-markdown").firstChild!;
+  const text = within(units(slot.container)[3]).getByTestId("alia-markdown").firstChild!;
   select(text, text);
   await waitFor(() => expect(picked).toHaveBeenCalledTimes(1));
   fireEvent.click(slot.getByRole("button", { name: "Clear selection" }));
@@ -354,7 +354,7 @@ test("text selected in part of a paragraph picks only the lines it's on", async 
   const now = old.replace("An intro", "A short intro");
   const { slot, onLineSelected } = await renderDiff({ markdownFiles: "rendered", patch: gitPatch(FILE, old, now), contents: { ok: true, old, new: now } });
   await waitFor(() => expect(units(slot.container)).toHaveLength(2));
-  const text = within(units(slot.container)[1]).getByTestId("bb-markdown").firstChild!;
+  const text = within(units(slot.container)[1]).getByTestId("alia-markdown").firstChild!;
   const range = document.createRange();
   const at = text.textContent!.indexOf("second");
   range.setStart(text, at);
@@ -413,7 +413,7 @@ test("text selected into a block's Link changed note, or to its row's edge, pick
   const { slot, onLineSelected } = await renderDiff({ markdownFiles: "rendered", patch: gitPatch(FILE, old, now), contents: { ok: true, old, new: now } });
   await waitFor(() => expect(units(slot.container)).toHaveLength(2));
   const unit = units(slot.container)[1];
-  const text = within(unit).getByTestId("bb-markdown").firstChild!;
+  const text = within(unit).getByTestId("alia-markdown").firstChild!;
   const note = document.createTreeWalker(within(unit).getByRole("note", { name: "Link changed" }), NodeFilter.SHOW_TEXT).nextNode()!;
   select(text, note);
   await waitFor(() => expect(onLineSelected).toHaveBeenLastCalledWith(FILE, { start: 3, end: 3, side: "additions" }, undefined));
@@ -436,7 +436,7 @@ test("a PR's relative links go to their files at its head on GitHub, in marked w
   const now = "See [the setup](../setup.md) now.\n\n![chart](img/a.png)\n";
   const { slot } = await renderDiff({ markdownFiles: "rendered", patch: gitPatch(FILE, old, now), contents: { ok: true, old, new: now }, extra: { linkRoot: "https://github.com/acme/web/blob/abc/" } });
   await waitFor(() => expect(slot.container.querySelector("[data-md-words]")).toBeTruthy());
-  expect(units(slot.container).map((unit) => within(unit).getByTestId("bb-markdown").innerHTML)).toEqual([
+  expect(units(slot.container).map((unit) => within(unit).getByTestId("alia-markdown").innerHTML)).toEqual([
     "See [the setup](https://github.com/acme/web/blob/abc/setup.md) <del>first</del><ins>now</ins>.",
     "[Image: chart](https://github.com/acme/web/blob/abc/docs/img/a.png)",
   ]);
@@ -487,7 +487,7 @@ test("a paragraph split in two shows each half with the paragraph it was, its wo
   for (const unit of units(slot.container)) {
     expect(unit.querySelector("[data-md-words]")).toBeNull();
     fireEvent.click(within(unit).getByRole("button", { name: "Show previous" }));
-    expect(within(unit).getAllByTestId("bb-markdown")[0].innerHTML).toBe("Tokens expire quickly,\nso a stolen one is useless soon.");
+    expect(within(unit).getAllByTestId("alia-markdown")[0].innerHTML).toBe("Tokens expire quickly,\nso a stolen one is useless soon.");
   }
   slot.lifecycle.unmount();
 });
@@ -516,13 +516,13 @@ test("lines that take no comment offer Ask agent alone, which asks about their s
   const slot = renderSlot(app.navPanels[0]!, { subPath: "pr-42" }, { rpc: rpc as any });
   await slot.findByRole("main", { name: /^Review\b/ });
   await waitFor(() => expect(units(slot.container)).toHaveLength(6));
-  select(within(units(slot.container)[0]).getByTestId("bb-markdown").firstChild!, within(units(slot.container)[0]).getByTestId("bb-markdown").firstChild!);
+  select(within(units(slot.container)[0]).getByTestId("alia-markdown").firstChild!, within(units(slot.container)[0]).getByTestId("alia-markdown").firstChild!);
   const bar = within(await slot.findByRole("group", { name: "Selection" }));
   await bar.findByText("GitHub only takes comments on changed sections");
   expect(bar.queryByRole("button", { name: "Comment" })).toBeNull();
   expect(bar.getByText("L1")).toBeTruthy();
   fireEvent.click(bar.getByRole("button", { name: "Ask agent" }));
-  // BB's side panel opens on the Review agent tab, with the lines as the question's context.
+  // VesnALIA's side panel opens on the Review agent tab, with the lines as the question's context.
   expect(panelTabCalls(slot)).toEqual(["openTab:agent"]);
   const tab = renderPanelTab(app, "agent", "pr-42", { rpc: rpc as any });
   await tab.findByText("rfc.md:1");

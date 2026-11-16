@@ -1,7 +1,7 @@
 // "Ask about this PR": a bubble in the bottom-right corner of the review page
 // that opens a chat with an agent that has the PR, its diff and the analysis.
 import { useEffect, useState } from "react";
-import { experimental_VoiceInputTextarea as VoiceInputTextarea, ThreadChat } from "@get-bb/plugin-sdk/app";
+import { experimental_VoiceInputTextarea as VoiceInputTextarea, ThreadChat } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

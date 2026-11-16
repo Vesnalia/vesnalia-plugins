@@ -1,17 +1,9 @@
 {
-  "name": "bb-plugin-next-step",
+  "name": "alia-plugin-next-step",
   "version": "0.1.0",
-  "description": "Подсказка следующего сообщения после ответа Codex в BB.",
+  "description": "Подсказка следующего сообщения после ответа Codex в VesnALIA.",
   "license": "MIT",
   "author": "rutracker152",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rutracker152/bb-plugin-next-step.git"
-  },
-  "homepage": "https://github.com/rutracker152/bb-plugin-next-step#readme",
-  "bugs": {
-    "url": "https://github.com/rutracker152/bb-plugin-next-step/issues"
-  },
   "files": [
     "app.tsx",
     "contract.ts",
@@ -27,10 +19,10 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.49",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.49",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Следующий шаг",
     "description": "Подсказка следующего сообщения после ответа Codex. Tab — принять, Esc — скрыть.",
     "branding": {
@@ -44,7 +36,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -78,9 +69,26 @@
     "vitest": "^5.1.0"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check:clean": "node scripts/check-clean-install.mjs"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/next-step#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/next-step"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

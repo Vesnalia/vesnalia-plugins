@@ -50,7 +50,7 @@ describe("RPC актуализация и жизненный цикл", () => {
     await wait(() => expect(states.at(-1)?.rows[0]?.lastMessageAt).toBe(900));
     expect(f.calls).toHaveLength(1); expect(f.calls[0]!.args.afterSeq).toBeUndefined();
   });
-  it.each([["user", user], ["assistant", assistant]] as const)("replacement %s поднимает чат по дате BB", async (_role, make) => {
+  it.each([["user", user], ["assistant", assistant]] as const)("replacement %s поднимает чат по дате ALIA", async (_role, make) => {
     const f = fixture([thread("thr_synthetic"), thread("thr_second")]);
     f.histories.set("thr_second", [assistant(500, 3)]); const { states } = await setup(f);
     expect(states.at(-1)?.rows[0]?.threadId).toBe("thr_second");

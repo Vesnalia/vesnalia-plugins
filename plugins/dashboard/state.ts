@@ -1,4 +1,4 @@
-/** Persistent inclusion rules, independent of chat content and BB rendering. */
+/** Persistent inclusion rules, independent of chat content and VesnALIA rendering. */
 export interface Activity {
   id: string;
   projectId: string;
@@ -61,6 +61,6 @@ export function reconcileThread(previous: TrackedThread | undefined, t: Activity
   };
 }
 export function hideThread(previous: TrackedThread, current: Activity): TrackedThread {
-  if (hasWork(current)) throw new Error("Скрыть можно после завершения работы и ответа на запросы BB.");
+  if (hasWork(current)) throw new Error("Скрыть можно после завершения работы и ответа на запросы ALIA.");
   return { ...previous, visible: false, latestAttentionAt: current.latestAttentionAt, hiddenAttentionAt: current.latestAttentionAt };
 }

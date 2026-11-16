@@ -1,25 +1,21 @@
 {
-  "name": "bb-plugin-hotspot",
+  "name": "alia-plugin-hotspot",
   "version": "0.1.0",
-  "description": "Records when the Mac runs hot and which BB thread caused it.",
+  "description": "Records when the Mac runs hot and which VesnALIA thread caused it.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Hazihell/bb-plugin-hotspot.git"
-  },
   "type": "module",
   "scripts": {
     "test": "node --experimental-strip-types --no-warnings --import ./test/loader.mjs --test test/*.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "engines": {
-    "bb": ">=0.44",
-    "bbPluginSdk": ">=0.5.29"
+    "alia": ">=0.44",
+    "aliaPluginSdk": ">=0.5.29"
   },
-  "bb": {
+  "alia": {
     "name": "Hotspot",
-    "description": "Records when your Mac runs hot and names the BB thread that caused it.",
+    "description": "Records when your Mac runs hot and names the VesnALIA thread that caused it.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -32,7 +28,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.29",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -57,5 +52,22 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.29"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/hotspot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/hotspot"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

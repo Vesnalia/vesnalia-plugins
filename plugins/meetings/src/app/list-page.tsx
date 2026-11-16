@@ -2,7 +2,7 @@
 // "Сейчас" / "Запланированные" (+ the Google Calendar card) / "Прошедшие",
 // the bot's name and avatar and the Zoom account card.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { CalendarEventView, CalendarStatus, MeetingSummary } from "../shared/rpc-contract";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";

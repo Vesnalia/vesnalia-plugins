@@ -1,5 +1,5 @@
 // Server entry: exposes each host's Ollama Cloud numbers as a usage source for
-// BB's built-in "Provider usage" view.
+// VesnALIA's built-in "Provider usage" view.
 //
 // The built-in provider-usage plugin discovers any loaded plugin that serves
 // `provider-usage.v1.listResources` and `provider-usage.v1.getResource`:
@@ -7,7 +7,7 @@
 // the live numbers for exactly one of them. Nothing here touches the provider
 // itself, so it works beside the ACP-registry `acp-opencode` provider that
 // actually runs the ollama-cloud models.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   hostContract,
@@ -19,7 +19,7 @@ import {
 /** Provider id used for grouping in the usage view. The built-in view falls
  * back to the provider id as the visible name when the provider itself does not
  * advertise usage support, so this string is what the user reads. It must not
- * be the catalog's route provider id ("ollama-cloud"): that is not a bb
+ * be the catalog's route provider id ("ollama-cloud"): that is not a VesnALIA
  * provider, and the view would render the raw id. */
 const PROVIDER_ID = "Ollama Cloud";
 const PROVIDER_LABEL = "Ollama Cloud";
@@ -240,12 +240,12 @@ function formatReport(rows: readonly CliRow[], range: Range): string {
 }
 
 /** ACP provider that runs the ollama-cloud models. The usage row is only
- * meaningful when that provider is part of this bb. */
+ * meaningful when that provider is part of this VesnALIA. */
 const ACP_PROVIDER_ID = "acp-opencode";
 
-async function acpProviderReady(bb: BbPluginApi): Promise<boolean> {
+async function acpProviderReady(alia: AliaPluginApi): Promise<boolean> {
   try {
-    const catalog = await bb.sdk.providers.catalog();
+    const catalog = await alia.sdk.providers.catalog();
     const entry = catalog.find((candidate) => candidate.id === ACP_PROVIDER_ID);
     return (
       entry !== undefined &&
@@ -258,11 +258,11 @@ async function acpProviderReady(bb: BbPluginApi): Promise<boolean> {
   }
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const hostClient = bb.hosts.experimental_client({ contract: hostContract });
+export default async function plugin(alia: AliaPluginApi) {
+  const hostClient = alia.hosts.experimental_client({ contract: hostContract });
 
   async function connectedHosts(): Promise<Array<{ id: string; name: string }>> {
-    const hosts = await bb.sdk.hosts.list({ includeCreating: false });
+    const hosts = await alia.sdk.hosts.list({ includeCreating: false });
     return hosts
       .filter((host) => host.status === "connected" && host.type !== "ephemeral")
       .map((host) => ({ id: host.id, name: host.name }));
@@ -334,11 +334,11 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     usageRpc,
     {
       "provider-usage.v1.listResources": async () => {
-        if (!(await acpProviderReady(bb))) return { resources: [] };
+        if (!(await acpProviderReady(alia))) return { resources: [] };
         const hosts = await connectedHosts();
         return {
           resources: hosts.map((host) => ({
@@ -385,15 +385,15 @@ export default async function plugin(bb: BbPluginApi) {
     return rows;
   }
 
-  // `bb ollama-usage` prints the same numbers from a terminal.
-  bb.cli.register({
+  // `alia ollama-usage` prints the same numbers from a terminal.
+  alia.cli.register({
     name: "ollama-usage",
     summary: "Show Ollama Cloud credits and recent spend per host",
     commands: [
       {
         name: "show",
         summary: "Show the credit pool and spend for every connected host",
-        usage: "bb ollama-usage show [--host <id>] [--range 24h|7d|30d] [--json]",
+        usage: "alia ollama-usage show [--host <id>] [--range 24h|7d|30d] [--json]",
       },
     ],
     async run(argv) {

@@ -1,15 +1,15 @@
-// projects.list → workspaces; browse/create (DESIGN §B.2, D-bb-19, D-bb-20). Opaque ids, no path, no
+// projects.list → workspaces; browse/create (DESIGN §B.2, D-alia-19, D-alia-20). Opaque ids, no path, no
 // environments (the SDK has no read that lists a project's environments: O-2).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { ProviderError, type ProviderHost } from "../../core/src/host/index.ts";
 import { asRecord, sdkCall } from "./errors.ts";
 
 export interface BrowseSelection { hostId: string; path: string }
 
-export function createBbWorkspaces(bb: BbPluginApi): ProviderHost["workspaces"] {
+export function createAliaWorkspaces(alia: AliaPluginApi): ProviderHost["workspaces"] {
   return {
     async list() {
-      const projects = await sdkCall("workspaces.list", () => bb.sdk.projects.list({ includePersonal: true }));
+      const projects = await sdkCall("workspaces.list", () => alia.sdk.projects.list({ includePersonal: true }));
       return (Array.isArray(projects) ? projects : [])
         .map(asRecord)
         .filter((p): p is Record<string, unknown> => p !== null && typeof p.id === "string")
@@ -17,12 +17,12 @@ export function createBbWorkspaces(bb: BbPluginApi): ProviderHost["workspaces"] 
     },
 
     async browse() {
-      const listed = await sdkCall("workspaces.browse", () => bb.sdk.hosts.list()); // one call (BB-5)
+      const listed = await sdkCall("workspaces.browse", () => alia.sdk.hosts.list()); // one call (ALIA-5)
       const hosts = (Array.isArray(listed) ? (listed as unknown[]) : []).map(asRecord).filter((h): h is Record<string, unknown> => h !== null);
       const host = hosts.find((h) => h.status === "connected" && h.type === "persistent") ?? hosts.find((h) => h.status === "connected");
       if (!host || typeof host.id !== "string") throw new ProviderError("unavailable", "workspaces.browse: no connected host to open a picker on");
       const hostId = host.id;
-      const picked = asRecord(await sdkCall("workspaces.browse", () => bb.sdk.hosts.pickFolder({ hostId, clientHostId: hostId } as never)));
+      const picked = asRecord(await sdkCall("workspaces.browse", () => alia.sdk.hosts.pickFolder({ hostId, clientHostId: hostId } as never)));
       const path = typeof picked?.path === "string" ? picked.path : null;
       if (!path) return null; // cancelled or timed out (W1)
       const selection: BrowseSelection = { hostId, path };
@@ -33,9 +33,9 @@ export function createBbWorkspaces(bb: BbPluginApi): ProviderHost["workspaces"] 
       const record = asRecord(selection);
       if (!record || typeof record.hostId !== "string" || typeof record.path !== "string") throw new ProviderError("other", "workspaces.create: a selection this host did not produce");
       const created = asRecord(
-        await sdkCall("workspaces.create", () => bb.sdk.projects.create({ name: name ?? baseName(record.path as string), source: { type: "local_path", hostId: record.hostId as string, path: record.path as string } })),
+        await sdkCall("workspaces.create", () => alia.sdk.projects.create({ name: name ?? baseName(record.path as string), source: { type: "local_path", hostId: record.hostId as string, path: record.path as string } })),
       );
-      if (!created || typeof created.id !== "string") throw new ProviderError("other", "workspaces.create: bb returned no project id");
+      if (!created || typeof created.id !== "string") throw new ProviderError("other", "workspaces.create: VesnALIA returned no project id");
       return { id: created.id };
     },
   };

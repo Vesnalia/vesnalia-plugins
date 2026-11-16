@@ -1,17 +1,17 @@
 # Musing: Parent-child threads on the board
 
-*2026-09-25 · sidequest · origin: the operator asked whether bb has thread parenting and whether the board could render parent-child threads as nested cards, the way Jira renders subissues*
+*2026-09-25 · sidequest · origin: the operator asked whether VesnALIA has thread parenting and whether the board could render parent-child threads as nested cards, the way Jira renders subissues*
 
-## Does bb have a thread-parent relationship?
+## Does VesnALIA have a thread-parent relationship?
 
-Yes, natively. `bb guide` documents it: threads can have a parent-child
+Yes, natively. `alia guide` documents it: threads can have a parent-child
 relationship; the parent coordinates the child and receives lifecycle
 notifications when the child completes, fails, or is interrupted. Threads
 without a parent are managed directly by the operator.
 
 And the plugin SDK exposes it on the surface the board already reads:
 `parentThreadId: z.ZodNullable<z.ZodString>` sits on the live sidebar thread
-schema (`bb-plugin-sdk-app.d.ts`), alongside `lifecycleOwnerThreadId` and
+schema (`alia-plugin-sdk-app.d.ts`), alongside `lifecycleOwnerThreadId` and
 `originKind`/`originPluginId`. There is also a `parent-changed` event, so
 re-parenting is observable in real time, not just a load-time fact.
 
@@ -36,7 +36,7 @@ work; its children are its parts.
   parent's (Needs you / Unread), in which case the child also — or instead —
   stands alone in its state's column. Deck's principle applies: "Needs you"
   is the only state that costs something to miss; never let nesting hide it.
-- **Cross-project children.** `bb thread spawn --parent-thread` allows a
+- **Cross-project children.** `alia thread spawn --parent-thread` allows a
   parent in another project. A child whose project differs from its parent's
   cannot silently ride the parent's card in a project grouping. Lean: show
   the child with its project mark, or fall back to flat rendering when the
@@ -69,7 +69,7 @@ plan when that lands.
 ## Open questions
 
 - Does the live sidebar view include *hidden* child threads (the ones
-  bb hides from the sidebar)? If hidden children exist, does the board show
+  VesnALIA hides from the sidebar)? If hidden children exist, does the board show
   them nested under the parent or stay aligned with the sidebar's exclusion?
 - Can a child's column placement differ from its parent's without confusing
   the grouping axes (Attention vs Project vs Machine)?

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 /** Indicators that mean live work: flipping from one of these to
  * unread-success is a completion worth celebrating. */

@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterEach, expect, test } from "bun:test";
 if (typeof document === "undefined") GlobalRegistrator.register();
-const { installTestPluginRuntime, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+const { installTestPluginRuntime, renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
 installTestPluginRuntime();
 const { render, fireEvent, cleanup } = await import("@testing-library/react");
 const { default: TaskCard } = await import("../src/TaskCard");

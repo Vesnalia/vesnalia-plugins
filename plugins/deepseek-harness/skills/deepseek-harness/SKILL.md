@@ -1,25 +1,25 @@
 ---
 name: deepseek-harness
-description: "Run DeepSeek Harness (dsh) threads in bb, switch its modes, and repair the provisioning."
+description: "Run DeepSeek Harness (dsh) threads in VesnALIA, switch its modes, and repair the provisioning."
 ---
 
-# DeepSeek Harness in bb
+# DeepSeek Harness in VesnALIA
 
-This plugin brings [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) into bb as
+This plugin brings [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) into VesnALIA as
 the `acp-deepseek` provider, using dsh's ACP stdio app (`dsh --profile acp`).
 
 ## Operating it
 
 ```sh
-bb deepseek-harness status            # what is installed, which mode, which profiles
-bb deepseek-harness install           # full (re)provision on a new or broken install
-bb deepseek-harness mode              # mode new threads will use
-bb deepseek-harness mode creator      # standard | creator | minimal
+alia deepseek-harness status            # what is installed, which mode, which profiles
+alia deepseek-harness install           # full (re)provision on a new or broken install
+alia deepseek-harness mode              # mode new threads will use
+alia deepseek-harness mode creator      # standard | creator | minimal
 ```
 
 `install` is idempotent. A `npm i -g @deepseek-ai/dsh` upgrade replaces the patched
 `dsh-acp` bridge and the injected `run_command` plugin, but the launcher keeps copies in
-`~/.bb-dsh-modes` and re-applies both on the first dsh launch after the upgrade. Run
+`~/.alia-dsh-modes` and re-applies both on the first dsh launch after the upgrade. Run
 `install` when the launcher logs `FAILED (inspect anchors)` (upstream code moved), after
 moving to a new machine, or to re-register the provider.
 
@@ -30,15 +30,15 @@ them, so a thread shows one `subagent` tool row per child and no transcript. The
 fills that gap from the state dsh persists for its own UI:
 
 ```sh
-bb deepseek-harness subagents            # this thread (BB_THREAD_ID)
-bb deepseek-harness subagents <thread>   # any thread
+alia deepseek-harness subagents            # this thread (ALIA_THREAD_ID)
+alia deepseek-harness subagents <thread>   # any thread
 ```
 
 The composer chip appears only when a thread has deployed at least one child. It sits in
 the composer's action row beside the model picker, shows `running/total` while any child
 is live, and opens a panel above the composer where each child expands to its prompt, the
 last 20 tool calls, and its final message. The panel is a composer banner mounted only
-while open — host popups and floating overlays are not reliable across bb's thread views.
+while open — host popups and floating overlays are not reliable across VesnALIA's thread views.
 
 Where the data comes from, and what it cannot do:
 
@@ -50,7 +50,7 @@ Where the data comes from, and what it cannot do:
   `~/.dsh/sessions/<cwd>/<child>/session.v4.jsonl.zstd`
 - these are dsh implementation details, not a public API. A dsh upgrade that renames
   them degrades the row to a count, never breaks the thread. Children stay invisible to
-  bb's thread list, cancel, and resume; only the root session is resumable.
+  VesnALIA's thread list, cancel, and resume; only the root session is resumable.
 
 ## Modes
 
@@ -64,21 +64,21 @@ The mode applies when a thread's dsh process starts; dsh itself locks its preset
 the session's first turn, so changing it later does not switch a running thread. The
 picker therefore renders only in the New thread composer. A thread shows a read-only
 badge with the composition it booted with, resolved from
-`~/.bb-dsh-modes/threads/<thread>.json` (written by the launcher on every launch) and
+`~/.alia-dsh-modes/threads/<thread>.json` (written by the launcher on every launch) and
 falling back to the launcher log for threads started before that record existed.
 
 ## Session continuity
 
-Reopening a thread after bb restarts continues the same dsh session with its earlier
-context. bb's stable ACP adapter restores through `session/load`, which dsh does not
+Reopening a thread after VesnALIA restarts continues the same dsh session with its earlier
+context. VesnALIA's stable ACP adapter restores through `session/load`, which dsh does not
 implement natively, so the patch advertises `loadSession` and routes it to dsh's
-persisted-session resume path. Without the patch, bb silently falls back to a fresh
+persisted-session resume path. Without the patch, VesnALIA silently falls back to a fresh
 session ("could not restore the previous session").
 
 ## Commands
 
 The `run_command` tool (installed by `install`) exposes dsh's slash-command registry
-to the agent, so `/compact`, `/goal`, and `/feedback` are reachable from bb. A bare
+to the agent, so `/compact`, `/goal`, and `/feedback` are reachable from VesnALIA. A bare
 command line typed into the composer is run by the patched ACP bridge directly,
 without a model turn — except `/compact` mid-thread, which dsh refuses while the
 agent is busy; compaction therefore stays automatic (`compaction-basic.auto: true`).

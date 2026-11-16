@@ -1,12 +1,12 @@
 // Fake-host scaffolding for the thread_autotitle RPC tests: stubs
-// system.aiServices (the thread-title selection bb routes its own title
+// system.aiServices (the thread-title selection VesnALIA routes its own title
 // generation through), threads.{promptHistory,spawn,get,timeline,delete,stop},
 // threads.defaultExecutionOptions (the thread-model probe's model source),
 // environments.get (the environment-read host call behind the thread-model
 // row's readiness verdict, issue #378), and plugins.callRpc (the
 // cross-plugin bridge focus-board rides on).
-import type { FakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../../server";
 
 export type AutotitleTestHost = {
@@ -29,14 +29,14 @@ export type AutotitleTestHost = {
 
 export type AutotitleSetupOptions = {
   selection?: unknown;
-  /** The `services` array bb's aiServices response carries (registered services). */
+  /** The `services` array VesnALIA's aiServices response carries (registered services). */
   services?: unknown[];
   history?: unknown[];
   /** What the stubbed service plugin answers with; a throw simulates failure. */
   serviceReply?: unknown | (() => never);
   /**
    * Error message thrown by plugins.callRpc for the given pluginId — the
-   * "HTTP 404: plugin X has no rpc method complete" shape bb answers for
+   * "HTTP 404: plugin X has no rpc method complete" shape VesnALIA answers for
    * plugins without the bridge.
    */
   rpcErrorByPluginId?: Record<string, string>;
@@ -45,7 +45,7 @@ export type AutotitleSetupOptions = {
   /** threads.get result for the source thread; defaults to a proj/env row. */
   threadRow?: unknown;
   /**
-   * bb.sdk.environments.get result (issue #378's readiness read). Default:
+   * alia.sdk.environments.get result (issue #378's readiness read). Default:
    * a ready environment row, so the legacy "ids exist" tests keep passing.
    */
   environment?: unknown;
@@ -62,12 +62,12 @@ export type AutotitleSetupOptions = {
   sourceTimeline?: unknown;
   /**
    * Canned paging sequence for the source thread's timeline read (the walk
-   * over bb's segment windows). Each entry is one call's response; the last
+   * over VesnALIA's segment windows). Each entry is one call's response; the last
    * entry repeats when the walk keeps going.
    */
   sourceTimelinePages?: Array<{ rows?: unknown; timelinePage?: unknown }>;
   /**
-   * bb.server.experimental_dataDir for the run (the pasted-attachment
+   * alia.server.experimental_dataDir for the run (the pasted-attachment
    * recovery resolves the attachments store under it). Default: the SDK
    * fake's canned path.
    */
@@ -228,7 +228,7 @@ export async function setup(
       },
     },
   });
-  await plugin(host.bb);
+  await plugin(host.alia);
   return {
     host,
     harness: host.harness,

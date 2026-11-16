@@ -1,7 +1,7 @@
 // Presentational pieces shared by the list (app.tsx) and the ticket (detail.tsx). What each value means: MASTER.md.
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent, ReactNode, Ref } from "react";
-import { UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import type { IssueNode, Ticket, Transition } from "./jira";
 import { age, catOf, priorityLevel, type Cat, type Priority } from "./filters";
@@ -188,7 +188,7 @@ export interface SegOption<T extends string> {
   count?: number;
 }
 
-/** Neutral segmented control: the selection is bb's background, the icons carry meaning. */
+/** Neutral segmented control: the selection is VesnALIA's background, the icons carry meaning. */
 export function Seg<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: SegOption<T>[]; label: string }) {
   return (
     <div role="tablist" aria-label={label} className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-full bg-muted/70 p-1">

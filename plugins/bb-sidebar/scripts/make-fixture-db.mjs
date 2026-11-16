@@ -6,7 +6,7 @@ import { registerHooks } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import ts from "typescript";
 
 const RELEASE_TAG = "v0.2.34";
@@ -59,11 +59,11 @@ try {
   // The tag and this repo pin the same SDK; reuse installed dependencies only.
   symlinkSync(resolve("node_modules"), join(checkout, "node_modules"), "dir");
   const { default: plugin } = await import(pathToFileURL(join(checkout, "src/server.ts")).href);
-  const host = createFakePluginHost({ pluginId: "bb-sidebar" });
+  const host = createFakePluginHost({ pluginId: "alia-sidebar" });
   harness = host.harness;
   Date.now = () => 1_800_000_000_000;
-  await plugin(host.bb);
-  const db = host.bb.storage.database();
+  await plugin(host.alia);
+  const db = host.alia.storage.database();
   const insert = db.prepare(`INSERT INTO thread_lifecycle
     (thread_id, parked_at, settled_at, settled_override, snoozed_until, snoozed_at)
     VALUES (?, ?, ?, ?, ?, ?)`);

@@ -2,18 +2,18 @@
   <img src="./assets/icon.svg" width="64" height="64" alt="Usage Tracker icon" />
 </p>
 
-<h1 align="center">Usage Tracker for BB</h1>
+<h1 align="center">Usage Tracker for VesnALIA</h1>
 
 <p align="center">
-  Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity, and DeepSeek usage in BB's sidebar footer.
+  Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity, and DeepSeek usage in VesnALIA's sidebar footer.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/BB-%E2%89%A5%200.38-7c3aed?style=flat-square" alt="BB 0.38 or newer" />
+  <img src="https://img.shields.io/badge/BB-%E2%89%A5%200.38-7c3aed?style=flat-square" alt="VesnALIA 0.38 or newer" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a?style=flat-square" alt="MIT license" /></a>
 </p>
 
-Usage Tracker adds one compact, live strip beside BB's existing sidebar
+Usage Tracker adds one compact, live strip beside VesnALIA's existing sidebar
 utility icons. Claude Code, Codex, Grok, OpenCode, and Antigravity each show a
 progress bar and their current usage reading, without adding a navigation item
 or a separate plugin page. The opt-in DeepSeek provider shows the API balance
@@ -33,7 +33,7 @@ and, when a topped-up budget is configured, the share already used.
 
 ## Features
 
-- Shows Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity, and DeepSeek usage in BB's sidebar footer.
+- Shows Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity, and DeepSeek usage in VesnALIA's sidebar footer.
 - Lets you show or hide every provider independently; the strip compacts for
   one or two providers and averages the selected usage percentages across all
   enabled providers with usage data. Zero-use providers count in the average;
@@ -51,12 +51,12 @@ and, when a topped-up budget is configured, the share already used.
   dollar amounts exposed by Claude Code usage data.
 - Shows the DeepSeek API total, granted, and topped-up balance when a key is
   configured, with a budget percentage that reaches 100% at a zero balance.
-- Works with BB's Account Pooler: when pooled accounts serve Claude Code or
+- Works with VesnALIA's Account Pooler: when pooled accounts serve Claude Code or
   Codex, the strip shows the currently selected account and the expanded
   details list every pooled account's own limits.
 - Shows the available Codex usage resets in the expanded details.
 - Includes reset timing and provider session status in the expanded view.
-- Refreshes automatically every five minutes and whenever a stale BB window
+- Refreshes automatically every five minutes and whenever a stale VesnALIA window
   becomes active again.
 - Provides one manual refresh button for all providers.
 - Preserves last-known limit windows through temporary errors, expired
@@ -69,26 +69,26 @@ The configurable Compact limit was contributed by
 
 ## Install
 
-Usage Tracker requires BB 0.38 or newer. Install its tracking Git release:
+Usage Tracker requires VesnALIA 0.38 or newer. Install its tracking Git release:
 
 ```sh
-bb plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.17 --subdirectory plugins/usage-tracker --tag-prefix usage-tracker/
+alia plugin install git:https://github.com/MateoCerquetella/bb-plugins.git@^0.1.17 --subdirectory plugins/usage-tracker --tag-prefix usage-tracker/
 ```
 
-After [the BB Community entry](https://github.com/get-bb/marketplace/pull/129)
+After [the VesnALIA Community entry](https://github.com/get-bb/marketplace/pull/129)
 is updated and live, the equivalent shorthand is:
 
 ```sh
-bb plugin install usage-tracker
+alia plugin install usage-tracker
 ```
 
 The strip appears in the bottom of the sidebar as soon as the plugin loads.
-The BB-backed providers are enabled by default; Antigravity and DeepSeek are
+The ALIA-backed providers are enabled by default; Antigravity and DeepSeek are
 opt-in. Change them independently under **Settings → Plugins → Usage Tracker**.
 The same page lets you choose between the weekly and five-hour limit for the
 compact reading.
 
-The provider CLIs must be installed and signed in for BB to report their usage:
+The provider CLIs must be installed and signed in for VesnALIA to report their usage:
 
 ```sh
 codex login
@@ -104,21 +104,21 @@ does not add its 3–4 second CLI startup time to the sidebar RPC response.
 
 DeepSeek reports an account balance rather than subscription windows. Enable
 **DeepSeek** and either paste a key into **DeepSeek API key** or set
-`DEEPSEEK_API_KEY` in the environment that runs BB. Set **Amount topped up** to
+`DEEPSEEK_API_KEY` in the environment that runs VesnALIA. Set **Amount topped up** to
 the amount you paid in, in the currency DeepSeek reports (for example `20`). The
 strip then shows the share of that budget already used, and reads 100% when the
 balance reaches zero. Leave it empty to show the reported balance without a
-percentage. The key is stored in BB's plugin secrets and is read only by the
+percentage. The key is stored in VesnALIA's plugin secrets and is read only by the
 plugin server.
 
 If a CLI is missing, signed out, or expired, expand that provider in the strip
-to see the recovery instruction reported by BB.
+to see the recovery instruction reported by VesnALIA.
 
 ### Claude Code with `CLAUDE_CONFIG_DIR`
 
 When Claude Code runs with `CLAUDE_CONFIG_DIR` set, it stores its macOS
 Keychain credentials under `Claude Code-credentials-<hash>` instead of
-`Claude Code-credentials`, so BB reports Claude Code as signed out. Set
+`Claude Code-credentials`, so VesnALIA reports Claude Code as signed out. Set
 **Claude Keychain service** to that service name and Usage Tracker reads Claude
 Code usage from it directly. List the candidates with:
 
@@ -165,22 +165,22 @@ successful fetch has become stale.
 
 ## Update or remove
 
-Check for updates and install the latest compatible release with BB:
+Check for updates and install the latest compatible release with VesnALIA:
 
 ```sh
-bb plugin outdated
-bb plugin update usage-tracker
+alia plugin outdated
+alia plugin update usage-tracker
 ```
 
 Remove it with:
 
 ```sh
-bb plugin remove usage-tracker
+alia plugin remove usage-tracker
 ```
 
 ## Data and privacy
 
-The plugin reads BB's local `system.usageLimits` data for provider windows.
+The plugin reads VesnALIA's local `system.usageLimits` data for provider windows.
 When the Account Pooler plugin is enabled, it also reads that plugin's cached
 per-account usage through its `provider-usage.v1` RPC; for providers the pool
 serves, that replaces the host-local reading. For DeepSeek, it sends the
@@ -196,7 +196,7 @@ Keychain item, never in plugin storage. Its only persistent browser data is the 
 snapshot in local storage, used to keep useful values visible during a
 temporary provider or network failure.
 
-Usage Tracker runs as a trusted BB frontend content script. Install plugins
+Usage Tracker runs as a trusted VesnALIA frontend content script. Install plugins
 only from sources you trust.
 
 ## Develop
@@ -205,7 +205,7 @@ Clone the repository and run the workspace checks from its root:
 
 ```sh
 git clone https://github.com/MateoCerquetella/bb-plugins.git
-cd bb-plugins
+cd alia-plugins
 npm install
 npm run check
 ```
@@ -213,16 +213,16 @@ npm run check
 For a live Usage Tracker development loop:
 
 ```sh
-bb plugin install ./plugins/usage-tracker
-npm run dev --workspace bb-plugin-usage-tracker
+alia plugin install ./plugins/usage-tracker
+npm run dev --workspace alia-plugin-usage-tracker
 ```
 
 The focused plugin commands are also available from the workspace root:
 
 ```sh
-npm run typecheck --workspace bb-plugin-usage-tracker
-npm test --workspace bb-plugin-usage-tracker
-npm run build --workspace bb-plugin-usage-tracker
+npm run typecheck --workspace alia-plugin-usage-tracker
+npm test --workspace alia-plugin-usage-tracker
+npm run build --workspace alia-plugin-usage-tracker
 ```
 
 ## Links

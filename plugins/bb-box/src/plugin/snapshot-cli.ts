@@ -1,18 +1,18 @@
 import { wholeCardsOn } from "./whole-cards.ts";
-import { PluginCliError, cliCommand, type PluginCliContext, type PluginCliResult } from "@get-bb/plugin-sdk";
+import { PluginCliError, cliCommand, type PluginCliContext, type PluginCliResult } from "@vesnalia/plugin-sdk";
 import { BoxError, OPERATOR, describeError, type BoxRecord } from "../core/boxes.ts";
 import { BY_COMMAND } from "../core/box-log.ts";
 import type { GpuPart } from "../backends/types.ts";
 import { isKept, type Caller, type SnapshotRecord, type Standing } from "../core/snapshot.ts";
 import { HOLD_STEPS, HOLD_WORDS, LIVE_CHECKS_VARIABLE, type HoldStepName } from "./live-checks.ts";
 import { deletedText, forkCheckText, forkedText, keepCheckText, keptText, listText, restoreCheckText, restoredText, takeCheckText, takenText } from "./snapshot-words.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { PRODUCT } from "../brand.ts";
 
 const COMMAND: Caller = { is: "command" };
 const jsonOption = { json: { type: "boolean", description: "Print JSON." } } as const;
 const threadOption = { thread: { type: "string", description: "The thread whose boxes to use. Defaults to the thread this runs in." } } as const;
-const machineOption = { machine: { type: "boolean", description: "The box is one of your machines, from bb box machines, not a thread's." } } as const;
+const machineOption = { machine: { type: "boolean", description: "The box is one of your machines, from VesnALIA box machines, not a thread's." } } as const;
 
 function out(text: string): PluginCliResult {
   return { exitCode: 0, stdout: `${text}\n` };
@@ -35,7 +35,7 @@ async function guard(action: string, task: () => Promise<PluginCliResult>): Prom
 function ownerOf(options: { readonly machine?: boolean; readonly thread?: string }, ctx: PluginCliContext): string {
   if (options.machine) return OPERATOR;
   const threadId = options.thread ?? ctx.threadId;
-  if (!threadId) throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a BB thread, or pass --thread <id> or --machine." });
+  if (!threadId) throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a VesnALIA thread, or pass --thread <id> or --machine." });
   return threadId;
 }
 
@@ -47,10 +47,10 @@ function ownerOrNone(options: { readonly machine?: boolean; readonly thread?: st
   return options.machine ? OPERATOR : (options.thread ?? ctx.threadId ?? null);
 }
 
-async function boxOrGone(app: BbBox, owner: string | null, boxRef: string): Promise<BoxRecord | null> {
+async function boxOrGone(app: AliaBox, owner: string | null, boxRef: string): Promise<BoxRecord | null> {
   if (owner === null) {
     if (app.snapshots.ledger.records().some((record) => record.boxGone !== null && (record.box.id === boxRef || record.box.name === boxRef))) return null;
-    throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a BB thread, or pass --thread <id> or --machine." });
+    throw new PluginCliError("No thread.", { code: "missing_required", hint: "Run this in a VesnALIA thread, or pass --thread <id> or --machine." });
   }
   try {
     return await app.boxes.get(owner, boxRef);
@@ -75,7 +75,7 @@ function shown(records: readonly SnapshotRecord[], kept: boolean): SnapshotRecor
   return kept ? records.filter(isKept) : [...records];
 }
 
-export function snapshotCommands(app: BbBox) {
+export function snapshotCommands(app: AliaBox) {
   const { boxes, snapshots } = app;
   const holds = app.snapshotHolds;
   const prices = app.snapshotPrices;
@@ -139,7 +139,7 @@ export function snapshotCommands(app: BbBox) {
         }),
     }),
     "snapshot delete": cliCommand({
-      summary: "Delete a snapshot of a thread's box, or with --machine one of your machines, by its name or ID, and wait until its backend confirms. An incomplete one is cleaned up on its host. A box that is gone is named by the ID bb box snapshot list --all gives.",
+      summary: "Delete a snapshot of a thread's box, or with --machine one of your machines, by its name or ID, and wait until its backend confirms. An incomplete one is cleaned up on its host. A box that is gone is named by the ID VesnALIA box snapshot list --all gives.",
       positionals: [
         { name: "box", description: "The box's name or ID.", required: true },
         { name: "snapshot", description: "The snapshot's name or ID.", required: true },
@@ -159,7 +159,7 @@ export function snapshotCommands(app: BbBox) {
     }),
     "snapshot restore": cliCommand({
       summary:
-        `Restore a thread's box, or with --machine one of your machines, to one of its snapshots: everything on its disk since then goes, and the box restarts. ${PRODUCT} takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it, unless --no-undo. On ZFS only the newest snapshot restores. It refuses while a person holds the box's desktop or a BB terminal is open on it, unless --force. It refuses a box threads run on, as restores of such boxes stay off until ${PRODUCT} can hold every turn on them. Asks for --replace.`,
+        `Restore a thread's box, or with --machine one of your machines, to one of its snapshots: everything on its disk since then goes, and the box restarts. ${PRODUCT} takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it, unless --no-undo. On ZFS only the newest snapshot restores. It refuses while a person holds the box's desktop or a VesnALIA terminal is open on it, unless --force. It refuses a box threads run on, as restores of such boxes stay off until ${PRODUCT} can hold every turn on them. Asks for --replace.`,
       positionals: [
         { name: "box", description: "The box's name or ID.", required: true },
         { name: "snapshot", description: "The snapshot's name or ID.", required: true },
@@ -170,7 +170,7 @@ export function snapshotCommands(app: BbBox) {
         ...jsonOption,
         replace: { type: "boolean", description: "Replace the box's disk with the snapshot's." },
         "no-undo": { type: "boolean", description: "Take no undo first, so this cannot be undone." },
-        force: { type: "boolean", description: "Restore anyway while a person holds the box's desktop or a BB terminal is open on it, ending them." },
+        force: { type: "boolean", description: "Restore anyway while a person holds the box's desktop or a VesnALIA terminal is open on it, ending them." },
         unflushed: { type: "boolean", description: `Restore anyway when ${PRODUCT} cannot flush the box's writes to its disk before stopping it, so its undo may miss the last seconds' writes.` },
         check: { type: "boolean", description: "Say what the restore would do, and refuse what it would refuse, changing nothing." },
         request: { type: "string", description: "An ID you make, so a repeat of this command is the same restore." },
@@ -204,7 +204,7 @@ export function snapshotCommands(app: BbBox) {
     }),
     "snapshot fork": cliCommand({
       summary:
-        `Fork a snapshot of a thread's box, or with --machine one of your machines, into a new box: of the box's thread, or with --as-machine one of your machines. The fork gets the snapshot's files, at its size, and an identity of its own: it resets at its first boot, and ${PRODUCT} checks that before it is ready. Waits until it is ready. A kept snapshot of a box that was released forks, from its held copy on Proxmox and from the snapshot itself on Tart, microsandbox, Docker and boat.dev, as one of your machines; name its box as bb box snapshot list --all does.`,
+        `Fork a snapshot of a thread's box, or with --machine one of your machines, into a new box: of the box's thread, or with --as-machine one of your machines. The fork gets the snapshot's files, at its size, and an identity of its own: it resets at its first boot, and ${PRODUCT} checks that before it is ready. Waits until it is ready. A kept snapshot of a box that was released forks, from its held copy on Proxmox and from the snapshot itself on Tart, microsandbox, Docker and boat.dev, as one of your machines; name its box as VesnALIA box snapshot list --all does.`,
       positionals: [
         { name: "box", description: "The box's name or ID.", required: true },
         { name: "snapshot", description: "The snapshot's name or ID.", required: true },
@@ -247,7 +247,7 @@ export function snapshotCommands(app: BbBox) {
     }),
     "snapshot keep": cliCommand({
       summary:
-        `Keep a snapshot of a thread's box, or with --machine one of your machines, for 30 days from today unless Settings say otherwise, or until a date: it becomes yours, no agent can delete it, and it outlives its box's release, as a held copy on Proxmox and as it is on Tart, microsandbox, Docker and boat.dev. Hetzner Cloud and Namespace keep none. ${PRODUCT} deletes it after that date. Again on a kept snapshot, it renews its keep, never shortening it unless you give the date. A box that was released is named as bb box snapshot list --all names it.`,
+        `Keep a snapshot of a thread's box, or with --machine one of your machines, for 30 days from today unless Settings say otherwise, or until a date: it becomes yours, no agent can delete it, and it outlives its box's release, as a held copy on Proxmox and as it is on Tart, microsandbox, Docker and boat.dev. Hetzner Cloud and Namespace keep none. ${PRODUCT} deletes it after that date. Again on a kept snapshot, it renews its keep, never shortening it unless you give the date. A box that was released is named as VesnALIA box snapshot list --all names it.`,
       positionals: [
         { name: "box", description: "The box's name or ID.", required: true },
         { name: "snapshot", description: "The snapshot's name or ID.", required: true },
@@ -282,7 +282,7 @@ export function snapshotCommands(app: BbBox) {
         }),
     }),
     "snapshot unkeep": cliCommand({
-      summary: "Stop keeping a snapshot of a thread's box, or with --machine one of your machines: it goes with its box again. A released box's kept snapshot is deleted instead, with bb box snapshot delete.",
+      summary: "Stop keeping a snapshot of a thread's box, or with --machine one of your machines: it goes with its box again. A released box's kept snapshot is deleted instead, with VesnALIA box snapshot delete.",
       positionals: [
         { name: "box", description: "The box's name or ID.", required: true },
         { name: "snapshot", description: "The snapshot's name or ID.", required: true },
@@ -298,7 +298,7 @@ export function snapshotCommands(app: BbBox) {
     "snapshot forget": cliCommand({
       summary:
         `Forget every snapshot ${PRODUCT} records on a backend, so the backend can be removed from ${PRODUCT}'s settings. ${PRODUCT} deletes nothing: they may still exist there, and be billed. Asks for --yes.`,
-      positionals: [{ name: "backend", description: "The backend's ID, from bb box backend list.", required: true }],
+      positionals: [{ name: "backend", description: "The backend's ID, from VesnALIA box backend list.", required: true }],
       options: { yes: { type: "boolean", description: "Forget them." } },
       run: ({ positionals, options }) =>
         guard("Forgetting the snapshots", async () => {
@@ -318,7 +318,7 @@ export function snapshotCommands(app: BbBox) {
     ...(holds
       ? {
           "snapshot hold-next": cliCommand({
-            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on BB's server: the next snapshot operation to reach the step named stops there, as if ${PRODUCT} stopped there, until ${PRODUCT} restarts.`,
+            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on VesnALIA's server: the next snapshot operation to reach the step named stops there, as if ${PRODUCT} stopped there, until ${PRODUCT} restarts.`,
             options: {
               at: {
                 type: "enum",
@@ -341,7 +341,7 @@ export function snapshotCommands(app: BbBox) {
     ...(app.machineRestores
       ? {
           "snapshot machine-restores": cliCommand({
-            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on BB's server: turns restores of boxes threads run on, by the person and by an agent through the form, on or off until ${PRODUCT} restarts.`,
+            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on VesnALIA's server: turns restores of boxes threads run on, by the person and by an agent through the form, on or off until ${PRODUCT} restarts.`,
             positionals: [{ name: "switch", description: "on or off.", required: true }],
             async run({ positionals }) {
               if (positionals.switch !== "on" && positionals.switch !== "off") throw new PluginCliError(`Give on or off, not "${positionals.switch}".`, { code: "invalid_value" });
@@ -358,14 +358,14 @@ export function snapshotCommands(app: BbBox) {
     ...(app.zfsOrder
       ? {
           "snapshot zfs-order": cliCommand({
-            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on BB's server: restores on a backend from now on run ZFS's order where its storage is not ZFS, until ${PRODUCT} restarts. Such a restore takes a held copy of the stopped box as its undo and restores only the newest snapshot, and undoing it swaps the box to a new guest made from the copy.`,
+            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on VesnALIA's server: restores on a backend from now on run ZFS's order where its storage is not ZFS, until ${PRODUCT} restarts. Such a restore takes a held copy of the stopped box as its undo and restores only the newest snapshot, and undoing it swaps the box to a new guest made from the copy.`,
             positionals: [
-              { name: "backend", description: "The backend's ID, as bb box config show lists it.", required: true },
+              { name: "backend", description: "The backend's ID, as VesnALIA box config show lists it.", required: true },
               { name: "switch", description: "on or off.", required: true },
             ],
             async run({ positionals }) {
               const backend = positionals.backend!;
-              if (!app.backends.get(backend)) throw new PluginCliError(`There is no backend "${backend}".`, { code: "not_found", hint: "bb box config show lists the backends' IDs." });
+              if (!app.backends.get(backend)) throw new PluginCliError(`There is no backend "${backend}".`, { code: "not_found", hint: "alia box config show lists the backends' IDs." });
               if (positionals.switch !== "on" && positionals.switch !== "off") throw new PluginCliError(`Give on or off, not "${positionals.switch}".`, { code: "invalid_value" });
               app.zfsOrder!.set(backend, positionals.switch === "on");
               return out(positionals.switch === "on" ? `Restores on ${backend} run ZFS's order from now on, for live checks, until ${PRODUCT} restarts.` : `Restores on ${backend} run in its storage's own order again.`);
@@ -376,14 +376,14 @@ export function snapshotCommands(app: BbBox) {
     ...(prices
       ? {
           "snapshot fake-price": cliCommand({
-            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on BB's server: snapshots taken on a backend from now on carry a made-up price in US dollars a day, so the ceiling on paid snapshots can be checked where no backend charges. Until ${PRODUCT} restarts.`,
+            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on VesnALIA's server: snapshots taken on a backend from now on carry a made-up price in US dollars a day, so the ceiling on paid snapshots can be checked where no backend charges. Until ${PRODUCT} restarts.`,
             positionals: [
-              { name: "backend", description: "The backend's ID, as bb box config show lists it.", required: true },
+              { name: "backend", description: "The backend's ID, as VesnALIA box config show lists it.", required: true },
               { name: "amount", description: "Dollars a day for each snapshot, such as 0.056; or off.", required: true },
             ],
             async run({ positionals }) {
               const backend = positionals.backend!;
-              if (!app.backends.get(backend)) throw new PluginCliError(`There is no backend "${backend}".`, { code: "not_found", hint: "bb box config show lists the backends' IDs." });
+              if (!app.backends.get(backend)) throw new PluginCliError(`There is no backend "${backend}".`, { code: "not_found", hint: "alia box config show lists the backends' IDs." });
               if (positionals.amount === "off") {
                 prices.set(backend, null);
                 return out(`Snapshots taken on ${backend} from now on carry its own price.`);
@@ -395,14 +395,14 @@ export function snapshotCommands(app: BbBox) {
             },
           }),
           "snapshot fake-included": cliCommand({
-            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on BB's server: ${PRODUCT} counts a backend's plan as including fewer snapshots than its provider says, so the ceiling can be checked without holding many. Until ${PRODUCT} restarts.`,
+            summary: `For live checks, with ${LIVE_CHECKS_VARIABLE}=1 on VesnALIA's server: ${PRODUCT} counts a backend's plan as including fewer snapshots than its provider says, so the ceiling can be checked without holding many. Until ${PRODUCT} restarts.`,
             positionals: [
-              { name: "backend", description: "The backend's ID, as bb box config show lists it.", required: true },
+              { name: "backend", description: "The backend's ID, as VesnALIA box config show lists it.", required: true },
               { name: "count", description: "How many snapshots to count as included, such as 1; or off.", required: true },
             ],
             async run({ positionals }) {
               const backend = positionals.backend!;
-              if (!app.backends.get(backend)) throw new PluginCliError(`There is no backend "${backend}".`, { code: "not_found", hint: "bb box config show lists the backends' IDs." });
+              if (!app.backends.get(backend)) throw new PluginCliError(`There is no backend "${backend}".`, { code: "not_found", hint: "alia box config show lists the backends' IDs." });
               if (positionals.count === "off") {
                 prices.setIncluded(backend, null);
                 return out(`${PRODUCT} counts the snapshots ${backend}'s plan includes as its provider says again.`);

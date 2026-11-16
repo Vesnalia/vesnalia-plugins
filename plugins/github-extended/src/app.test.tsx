@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, beforeEach, vi } from "vitest";
 import { act, createElement } from "react";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 afterEach(() => { cleanup(); window.localStorage.clear(); });
 
@@ -121,7 +121,7 @@ describe("GitHub app navigation", () => {
           listItems: () => ({
             items: [
               {
-                repo: "get-bb/bb",
+                repo: "get-alia/alia",
                 number: 42,
                 kind: "issue",
                 title: "Route-backed issue",
@@ -140,7 +140,7 @@ describe("GitHub app navigation", () => {
             ghOk: true,
             ghState: "ready",
             ghError: null,
-            repos: [{ repo: "get-bb/bb", projectId: null, health: { status: "never", lastAttemptAt: null, lastSuccessAt: null, itemCount: 0, alertCount: 0, error: null } }],
+            repos: [{ repo: "get-alia/alia", projectId: null, health: { status: "never", lastAttemptAt: null, lastSuccessAt: null, itemCount: 0, alertCount: 0, error: null } }],
             lastSyncedAt: null,
           }),
           viewer: () => ({ login: "octocat" }),
@@ -152,7 +152,7 @@ describe("GitHub app navigation", () => {
     expect(slot.navigateCalls).toContainEqual({
       method: "toPluginPanel",
       path: "github",
-      options: { subPath: "issues/get-bb/bb/42" },
+      options: { subPath: "issues/get-alia/alia/42" },
     });
     slot.lifecycle.unmount();
   });
@@ -364,7 +364,7 @@ describe("GitHub app navigation", () => {
             ghState: "ready",
             ghError: null,
             repos: [
-              { repo: "get-bb/bb", projectId: null, health: { status: "ok", lastAttemptAt: null, lastSuccessAt: null, itemCount: 1, alertCount: 0, error: null } },
+              { repo: "get-alia/alia", projectId: null, health: { status: "ok", lastAttemptAt: null, lastSuccessAt: null, itemCount: 1, alertCount: 0, error: null } },
               { repo: "acme/widgets", projectId: null, health: { status: "ok", lastAttemptAt: null, lastSuccessAt: null, itemCount: 1, alertCount: 0, error: null } },
             ],
             lastSyncedAt: null,
@@ -394,7 +394,7 @@ describe("GitHub app navigation", () => {
             ghState: "ready",
             ghError: null,
             repos: [
-              { repo: "get-bb/bb", projectId: null, health: { status: "ok", lastAttemptAt: null, lastSuccessAt: null, itemCount: 1, alertCount: 0, error: null } },
+              { repo: "get-alia/alia", projectId: null, health: { status: "ok", lastAttemptAt: null, lastSuccessAt: null, itemCount: 1, alertCount: 0, error: null } },
               { repo: "acme/widgets", projectId: null, health: { status: "ok", lastAttemptAt: null, lastSuccessAt: null, itemCount: 1, alertCount: 0, error: null } },
             ],
             lastSyncedAt: null,
@@ -452,13 +452,13 @@ describe("GitHub app navigation", () => {
         rpc: {
           pullForThread: () => ({
             pull: {
-              repo: "get-bb/bb",
+              repo: "get-alia/alia",
               number: 42,
             },
           }),
           getPull: () => ({
             pull: {
-              repo: "get-bb/bb",
+              repo: "get-alia/alia",
               number: 42,
               title: "Navigation fix",
               state: "OPEN",
@@ -535,7 +535,7 @@ describe("GitHub app navigation", () => {
       "Expand removed.ts diff",
     );
     await act(async () => diffToggle.click());
-    const diff = slot.getByTestId("bb-diff");
+    const diff = slot.getByTestId("alia-diff");
     expect(diff.getAttribute("data-path")).toBe("removed.ts");
     expect(diffToggle.getAttribute("aria-label")).toBe(
       "Collapse removed.ts diff",
@@ -553,7 +553,7 @@ describe("GitHub app navigation", () => {
           listItems: () => ({
             items: [
               {
-                repo: "get-bb/bb",
+                repo: "get-alia/alia",
                 number: 42,
                 kind: "issue",
                 title: "Menu isolation",
@@ -659,7 +659,7 @@ describe("GitHub app navigation", () => {
     expect(slot.container.querySelector('img[src*="example.com"]')).toBeNull();
     expect(slot.container.querySelector("th")?.getAttribute("scope")).toBe("col");
     expect(slot.container.textContent).toContain("![remote](https://example.com/remote.png)");
-    const threadPill = slot.getByRole("button", { name: "Open BB thread thr-safe" });
+    const threadPill = slot.getByRole("button", { name: "Open VesnALIA thread thr-safe" });
     expect(threadPill.tagName).toBe("BUTTON");
     threadPill.focus();
     await threadPill.click();

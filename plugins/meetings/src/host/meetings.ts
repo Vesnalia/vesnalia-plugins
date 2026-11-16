@@ -350,14 +350,14 @@ async function requireRuntime(paths: HostPaths, options: { readonly bot: boolean
   // Only the bot imports playwright-core; transcription works without it.
   const playwright = path.join(paths.runtime, "node_modules", PLAYWRIGHT_CORE.name, "package.json");
   if (options.bot && (await statOrNull(playwright)) === null) {
-    throw new Error("Компоненты для записи не установлены: нет playwright-core, запустите установку компонентов (bb meetings setup)");
+    throw new Error("Компоненты для записи не установлены: нет playwright-core, запустите установку компонентов (VesnALIA meetings setup)");
   }
 }
 
 /** Everything spawnTranscriber needs: checked before a running transcriber or its results are touched. */
 async function requireTranscriberRuntime(paths: HostPaths): Promise<void> {
   if ((await statOrNull(paths.venvPython)) === null) {
-    throw new Error("Python-окружение транскрибатора не установлено: запустите установку компонентов (bb meetings setup)");
+    throw new Error("Python-окружение транскрибатора не установлено: запустите установку компонентов (VesnALIA meetings setup)");
   }
   await requireRuntime(paths, { bot: false });
 }

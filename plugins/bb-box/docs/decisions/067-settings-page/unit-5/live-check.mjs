@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const machine = process.env.LIVE_MACHINE ?? "lab";
 const phase = process.argv[2];
@@ -11,7 +11,7 @@ const label = `Docker on ${machine}`;
 mkdirSync(out, { recursive: true });
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -32,13 +32,13 @@ async function shot(name) {
 }
 
 async function open(hash) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   await page.locator("[data-settings-view]").waitFor();
   await pause(600);
@@ -48,8 +48,8 @@ const text = async (locator) => (await locator.innerText()).replace(/\s+/g, " ")
 const groupOf = (title) => page.getByRole("heading", { name: title, exact: true }).locator("xpath=ancestor::section[1]");
 const backendsGroup = () => groupOf("Backends").first();
 const rowOf = () => backendsGroup().getByRole("button", { name: label, exact: true }).locator("xpath=..");
-const machineCard = () => groupOf("BB machine");
-const offers = () => groupOf("Docker on your BB machines");
+const machineCard = () => groupOf("VesnALIA machine");
+const offers = () => groupOf("Docker on your VesnALIA machines");
 
 async function waitFor(what, read, test, seconds) {
   const until = Date.now() + seconds * 1000;
@@ -79,7 +79,7 @@ async function overview(expect, seconds = 30) {
 
 async function backendPage(expect, seconds = 30) {
   await open(`#backend/${encodeURIComponent(backendId)}`);
-  const card = await waitFor("the BB machine card", () => text(machineCard()), (value) => expect.test(value), seconds);
+  const card = await waitFor("the VesnALIA machine card", () => text(machineCard()), (value) => expect.test(value), seconds);
   const health = await text(groupOf("Health"));
   note("page", { card, health });
   await shot("page");
@@ -106,7 +106,7 @@ try {
     await shot("added");
     const backend = await stored();
     if (!backend?.enabled) throw new Error("the backend was not stored on");
-    await overview(/BB machine/);
+    await overview(/ALIA machine/);
     await backendPage(/Hosts boxes|Building/);
   } else if (phase === "built") {
     await overview(/Not checked|Ready|Last check passed/, 1_800);

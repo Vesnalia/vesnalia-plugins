@@ -1,6 +1,6 @@
 // SlopCop side panel: rules, the rule editor, and the activity feed.
 //
-// The editor's prompt + agent configuration is BB's own new-thread composer.
+// The editor's prompt + agent configuration is VesnALIA's own new-thread composer.
 // It is uncontrolled — there is no value/onChange and the only readout is
 // onSubmit — so its submit button IS "save rule", and each rule gets its own
 // draftKey so switching rules loads the right prompt.
@@ -13,10 +13,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   definePluginApp,
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
@@ -793,7 +793,7 @@ function RuleEditor({
 // --------------------------------------------------------------------------
 
 function Activity({ runs }: { runs: RunView[] }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<typeof rpcContract>();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [comments, setComments] = useState<Record<string, CommentView[]>>({});

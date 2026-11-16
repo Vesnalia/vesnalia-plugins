@@ -6,11 +6,11 @@
 
 ### Keep the plan here. Send the work to worker threads.
 
-Make your BB thread read, plan, ask, delegate and report.<br>
+Make your VesnALIA thread read, plan, ask, delegate and report.<br>
 Give each unit of work to a worker, with a watchdog for direct work.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.44](https://img.shields.io/badge/bb-%E2%89%A5%200.44-0891b2)
+![VesnALIA ≥ 0.44](https://img.shields.io/badge/bb-%E2%89%A5%200.44-0891b2)
 ![Plugin SDK ≥ 0.5.29](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.5.29-0f766e)
 ![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -18,7 +18,7 @@ Give each unit of work to a worker, with a watchdog for direct work.
 
 <br>
 
-<img src="docs/screenshots/orchestrating-thread.png" alt="A BB thread in orchestrator mode: two finished worker threads in the timeline, a third delegation running, and the status strip above the composer" width="900">
+<img src="docs/screenshots/orchestrating-thread.png" alt="A VesnALIA thread in orchestrator mode: two finished worker threads in the timeline, a third delegation running, and the status strip above the composer" width="900">
 
 <table>
 <tr>
@@ -30,7 +30,7 @@ Give each unit of work to a worker, with a watchdog for direct work.
 </div>
 
 > [!NOTE]
-> These are real BB renders of a throwaway demo project (a small Node to-do
+> These are real VesnALIA renders of a throwaway demo project (a small Node to-do
 > CLI). The thread, its worker threads and the recorded violation are real. The
 > Playbooks and Recap panels, which belong to other plugins, were hidden so the
 > subject reads clearly. See [screenshot notes](docs/screenshots/README.md).
@@ -78,11 +78,11 @@ The `orchestrator_delegate` tool creates a child thread from a self-contained
 brief and can wait for its result. Workers use the parent's environment and
 appear in the sidebar unless you request a hidden worker. Optional `providerId`
 and `model` pins are applied before the worker starts.
-Existing sessions without that tool can use `bb orchestrator-mode delegate`.
-Follow-ups with `bb thread tell <worker-id>` (alias `message`) are delegation
+Existing sessions without that tool can use `alia orchestrator-mode delegate`.
+Follow-ups with `alia thread tell <worker-id>` (alias `message`) are delegation
 for recorded workers, including messages supplied through quoted stdin heredocs.
 
-You choose their provider and model with BB's own picker in the plugin's
+You choose their provider and model with VesnALIA's own picker in the plugin's
 settings, or per delegation in the tool call, and the orchestrator has to record
 a verdict for every worker it used. See [Worker
 execution](#worker-execution) and [Reviewing worker
@@ -117,17 +117,17 @@ workers and side chats are left alone.
 From a local checkout:
 
 ```sh
-cd /path/to/bb-plugin-orchestrator-mode
+cd /path/to/alia-plugin-orchestrator-mode
 npm install
-bb plugin build
-bb plugin install path:$PWD --yes
+alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 Open a thread and use **Orchestrator mode** in the composer to enable it.
 
 **Requirements**
 
-- bb **0.44+**, with Plugin SDK **0.5.29+**.
+- VesnALIA **0.44+**, with Plugin SDK **0.5.29+**.
 - Node.js and npm to install dependencies and build from source.
 
 ## Where to find it
@@ -186,7 +186,7 @@ pair rather than a switch:
 
 - **Workers run on** `Inherit` (the project's remembered provider and model) or
   `Custom` (the provider, model, reasoning level and service tier you pick with
-  BB's own picker).
+  VesnALIA's own picker).
 - **Retry a failed worker** `Report` (hand the failure back to the orchestrator)
   or `Retry` (re-delegate the same brief on a second provider, model and access
   you pick, each with its own picker).
@@ -197,7 +197,7 @@ pair rather than a switch:
   or cheaper model for a single unit instead.
 - **Orchestrator subagents** `Read-only` (default), `All` or `None`. Read-only
   requires launch-specific proof of a reading definition and its capabilities.
-  **BB does not currently expose that proof**, so native launches, including
+  **VesnALIA does not currently expose that proof**, so native launches, including
   Explore and Plan, remain unverified work. Familiar names and cached context
   snapshots cannot establish whether a custom writable definition was resolved.
   This limitation needs a provider/SDK change; use `orchestrator_delegate` until
@@ -206,11 +206,11 @@ pair rather than a switch:
   Codex waiting, messaging, resuming and closing are coordination under every
   policy. OMP's `task` arguments are parsed only when its tool is identified.
   Older OMP/ACP rows named only `other` cannot establish that identity: opaque
-  task-shaped calls remain unverified work even under `All`. This is a BB
+  task-shaped calls remain unverified work even under `All`. This is a VesnALIA
   metadata limitation; use `orchestrator_delegate` for those units.
 - **Worker subagents** `Blocked` (default) or `Allowed`. Blocked injects a rule
   into every worker this plugin spawns: do the unit yourself, start no subagents,
-  and say so when the unit is too big. A BB plugin cannot remove a provider's own
+  and say so when the unit is too big. A VesnALIA plugin cannot remove a provider's own
   subagent tool, so this is an instruction, not a watchdog.
 
 ### Where workers run
@@ -220,7 +220,7 @@ A scope's **Where workers run** row decides the checkout a delegation uses:
 - **Shared** (default) runs every worker in the orchestrator's own checkout, so a
   diff is visible the moment a worker stops, and two units that touch the same
   files can overwrite each other.
-- **Worktree** gives one unit its own git worktree and branch, created by BB from
+- **Worktree** gives one unit its own git worktree and branch, created by VesnALIA from
   the project's default branch on the machine the orchestrator runs on. Nothing it
   writes lands in your checkout until you merge it, and its check unit and any
   fallback retry reuse that same worktree, so they inspect and continue the same
@@ -232,16 +232,16 @@ A scope's **Where workers run** row decides the checkout a delegation uses:
   silent default would make mixed behave like shared.
 
 A worktree only holds tracked files, so install what the repo needs from a
-committed `.bb-env-setup.sh` (see `bb guide environments`); until that runs, a
+committed `.alia-env-setup.sh` (see `alia guide environments`); until that runs, a
 check unit cannot execute the tests it is meant to run. The delegation result
-names the branch, and `bb environment diff <id>` shows what the unit changed.
+names the branch, and `alia environment diff <id>` shows what the unit changed.
 
 **Landing a worktree.** The orchestrator cannot merge by hand: the watchdog counts
 a `git merge` as doing the work, so the contract tells it to delegate the merge as
 its own unit with `workspace: "shared"`, or to name the branch for you. Either way
 the merge runs in your checkout and its conflicts land in the report.
-`bb environment commit` and `bb environment pull-request` also operate on the
-environment directly. Deleting a worktree is core's `bb environment delete <id>`,
+`alia environment commit` and `alia environment pull-request` also operate on the
+environment directly. Deleting a worktree is core's `alia environment delete <id>`,
 refused while its worker thread is live.
 
 The retry runs once, and it covers both ways a worker fails: a spawn the
@@ -253,7 +253,7 @@ made with `waitForResult: false` is returned to you before it can fail, so the
 retry happens for a spawn failure but not for a turn failure; the tool says so
 when a fallback is configured.
 
-The picker is BB's, not a copy: choosing a provider shows that provider's
+The picker is VesnALIA's, not a copy: choosing a provider shows that provider's
 models, and one pick resolves provider, model, reasoning level and service tier
 as a single coherent value, the same value `threads.spawn` takes. That is why
 this is not a plugin setting: a settings `select` cannot make its options depend
@@ -272,14 +272,14 @@ A single delegation overrides it with the tool's arguments:
 ```
 
 Under a `Flexible` scope, give the hard units a stronger model and the mechanical
-ones a cheaper one. The orchestrator discovers valid IDs with `bb provider list` and
-`bb provider models <provider>`; both count as read-only orientation. An ID the
+ones a cheaper one. The orchestrator discovers valid IDs with `alia provider list` and
+`alia provider models <provider>`; both count as read-only orientation. An ID the
 catalog does not offer is refused, naming the options that are available, rather
 than spawning a worker whose start cannot succeed. Naming a provider that does
 not serve the chosen model resolves to the model's own provider, and the
 mismatch is logged.
 
-Provider discovery runs after plugin registration, so it cannot hold up BB's
+Provider discovery runs after plugin registration, so it cannot hold up VesnALIA's
 startup. Saved global and project worker choices remain available while the
 catalog loads or a read fails; failed reads retry every 30 seconds. Once a full
 catalog is available, effective worker, fallback and preset choices are
@@ -287,7 +287,7 @@ validated and their model/provider pairs reconciled. Discovery does not rewrite
 the saved configuration. Pending queue batches also recover in the background
 after registration.
 
-`bb orchestrator-mode worker` prints the stored execution, sets it with
+`alia orchestrator-mode worker` prints the stored execution, sets it with
 `--provider`, `--model`, `--reasoning`, `--tier` and `--permission`, clears it
 with `--clear`, and manages the retry target with `--fallback-provider`,
 `--fallback-model`, `--fallback-permission` and `--clear-fallback`. Each flag
@@ -307,8 +307,8 @@ the project default when delegating to `acp-omp`.
 
 ### Queueing child messages
 
-With orchestrator mode on, direct messages from child threads wait in BB's
-persistent queue while the orchestrator is working. When its turn ends, BB
+With orchestrator mode on, direct messages from child threads wait in VesnALIA's
+persistent queue while the orchestrator is working. When its turn ends, VesnALIA
 rechecks the queue and releases waiting messages as the orchestrator becomes
 idle. Compatible pending updates from the same child arrive together in one
 turn, with every message preserved in that child's original order. If updates
@@ -322,25 +322,25 @@ to **queued until turn ends**. Select **immediate** to allow child messages
 into a running turn. The setting supports Global and Project scopes:
 
 ```sh
-bb orchestrator-mode scope --global --child-messages queued
-bb orchestrator-mode scope --project <id> --child-messages immediate
-bb orchestrator-mode scope --project <id> --inherit childMessageDelivery
+alia orchestrator-mode scope --global --child-messages queued
+alia orchestrator-mode scope --project <id> --child-messages immediate
+alia orchestrator-mode scope --project <id> --inherit childMessageDelivery
 ```
 
-The messages stay visible in BB's queue, with their content and sender
+The messages stay visible in VesnALIA's queue, with their content and sender
 preserved. You can use **Send now** to override the wait. Turning orchestrator
 mode off or selecting immediate delivery releases the plugin's hold on the
 next queue recheck.
 
-BB's automatic child completion, failure and attention notices bypass the
-plugin dispatch hook. Those notices keep BB's own delivery behavior; extending
-this policy to them requires support in BB core. BB also requires queued groups
+VesnALIA's automatic child completion, failure and attention notices bypass the
+plugin dispatch hook. Those notices keep VesnALIA's own delivery behavior; extending
+this policy to them requires support in VesnALIA core. VesnALIA also requires queued groups
 to share a sender, so combining reports from several children into one dispatch
 requires a core change. This setting controls when messages are delivered;
 same-child batching requires matching model, reasoning, permissions and service
 tier. User messages, unrelated senders, scheduled messages and other plugins'
 holds form queue boundaries. Existing groups outside the batch are preserved;
-BB's grouping API can prevent automatic batching while such a group remains
+VesnALIA's grouping API can prevent automatic batching while such a group remains
 queued. Results returned by a waiting
 `orchestrator_delegate` call also return directly through that tool.
 
@@ -351,12 +351,12 @@ The orchestrator records it with the `orchestrator_review` tool, one call per
 worker whose result it used, with `accepted` or `rejected` and a line of notes.
 The watchdog notices when a turn ends without one:
 
-- The composer strip and `bb orchestrator-mode status` show how many workers are
+- The composer strip and `alia orchestrator-mode status` show how many workers are
   judged and how many are waiting.
 - At `guard` and `block`, an idle orchestrator with unjudged workers is told
   once. It is asked once per set of workers, not once per turn.
 - A finished turn cannot be stopped after the fact, so `block` behaves as
-  `guard` for the review gate. That limit is a consequence of BB giving plugins
+  `guard` for the review gate. That limit is a consequence of VesnALIA giving plugins
   no pre-tool veto, not a setting.
 
 `orchestrator_delegate` takes `verify: true`, which spawns an **independent
@@ -394,10 +394,10 @@ rewritable, because the contract states exactly which acts the watchdog flags.
 A free-form replacement could desync the two and make the watchdog wrong.
 
 ```sh
-bb orchestrator-mode contract                              # the text this thread receives
-bb orchestrator-mode contract --rules "Never edit generated/."
-bb orchestrator-mode contract --clear-rules
-bb orchestrator-mode contract --json                       # plus its length and the append cap
+alia orchestrator-mode contract                              # the text this thread receives
+alia orchestrator-mode contract --rules "Never edit generated/."
+alia orchestrator-mode contract --clear-rules
+alia orchestrator-mode contract --json                       # plus its length and the append cap
 ```
 
 **Settings → Installed plugins → Orchestrator Mode** shows the same text behind
@@ -434,7 +434,7 @@ or `VERDICT: fail`.
   read-only command into a script counts as work, since a script can do
   anything. A write either one performs still shows
   up as a file change.
-- **Detection follows the action.** BB exposes no pre-tool-call veto. `block`
+- **Detection follows the action.** VesnALIA exposes no pre-tool-call veto. `block`
   stops a turn after detection, so a fast write can complete before the stop.
 - **Grace turns are intentional.** Enabling an idle thread skips its next turn
   for watchdog judgement. Enabling mid-turn skips the active turn and the next
@@ -450,11 +450,11 @@ or `VERDICT: fail`.
 ## CLI
 
 ```sh
-bb orchestrator-mode status
-bb orchestrator-mode on --enforcement guard
-bb orchestrator-mode violations --json
-bb orchestrator-mode worker --model claude-haiku-4-5-20251001
-bb orchestrator-mode off
+alia orchestrator-mode status
+alia orchestrator-mode on --enforcement guard
+alia orchestrator-mode violations --json
+alia orchestrator-mode worker --model claude-haiku-4-5-20251001
+alia orchestrator-mode off
 ```
 
 <details>
@@ -523,7 +523,7 @@ resolve in layers, highest first:
 2. **The project.** Whatever that project overrides under **Settings → Installed
    plugins → Orchestrator Mode**, with **Scope** set to that project.
 3. **Global.** The record every project inherits, edited with **Scope** set to
-   Global or `bb orchestrator-mode scope --global`.
+   Global or `alia orchestrator-mode scope --global`.
 4. **The built-in default**, when nothing names a value at all.
 
 A project that overrides nothing inherits everything, so an install that never
@@ -534,17 +534,17 @@ stays global on purpose: it is a composer default rather than thread behaviour,
 and its row appears only in Global scope. `defaultEnabledAtMs` is bookkeeping for it.
 
 ```sh
-bb orchestrator-mode scope                                     # every project that overrides anything
-bb orchestrator-mode scope --global --max-parallel 2           # the record every project inherits
-bb orchestrator-mode scope --global --read-commands off        # ...for read-only shell commands
-bb orchestrator-mode scope --project <id> --max-parallel 2     # cap fan-out for one project
-bb orchestrator-mode scope --project <id> --contract-preset delegate-only --rules "Never touch generated/."
-bb orchestrator-mode scope --project <id> --inherit maxNudges  # one field back to the global value
-bb orchestrator-mode scope --project <id> --inherit-all        # this project inherits everything again
+alia orchestrator-mode scope                                     # every project that overrides anything
+alia orchestrator-mode scope --global --max-parallel 2           # the record every project inherits
+alia orchestrator-mode scope --global --read-commands off        # ...for read-only shell commands
+alia orchestrator-mode scope --project <id> --max-parallel 2     # cap fan-out for one project
+alia orchestrator-mode scope --project <id> --contract-preset delegate-only --rules "Never touch generated/."
+alia orchestrator-mode scope --project <id> --inherit maxNudges  # one field back to the global value
+alia orchestrator-mode scope --project <id> --inherit-all        # this project inherits everything again
 ```
 
-The global worker execution is `bb orchestrator-mode worker`, and the global
-rules are `bb orchestrator-mode contract --rules`, so `scope --global` refuses
+The global worker execution is `alia orchestrator-mode worker`, and the global
+rules are `alia orchestrator-mode contract --rules`, so `scope --global` refuses
 their flags rather than writing a second copy of the same value.
 
 `status --thread` names the scope it resolved and which fields the project
@@ -553,7 +553,7 @@ overrides, so a surprising cap or contract can be traced to the layer that set i
 ## Settings
 
 The plugin renders this surface itself: **Settings → Installed plugins →
-Orchestrator Mode → Settings**. It is not BB's settings form, because a
+Orchestrator Mode → Settings**. It is not VesnALIA's settings form, because a
 descriptor setting holds one value per install and these resolve per project.
 The values are stored by the plugin, and change only through this section, the
 CLI, and the composer toggles.
@@ -566,7 +566,7 @@ CLI, and the composer toggles.
 | `defaultForNewThreads` | `false` | Enable qualifying root threads created while the default is on, at a user-initiated dispatch. Global only. |
 | `enforcement` | `guard` | `instruct`: contract only. `guard`: record and correct. `block`: also stop. A thread override takes precedence. |
 | `allowReadCommands` | `true` | Treat recognised read-only shell commands as exploration; when off, all commands count as work. |
-| `maxNudges` | `3` | Corrective messages per enablement, for direct work and for unjudged workers. It is one budget shared by both gates, whichever spends it first, and `bb orchestrator-mode status` reports the split; non-negative numbers are rounded down. `0` disables nudges. Recording and `block` stops continue after the cap. |
+| `maxNudges` | `3` | Corrective messages per enablement, for direct work and for unjudged workers. It is one budget shared by both gates, whichever spends it first, and `alia orchestrator-mode status` reports the split; non-negative numbers are rounded down. `0` disables nudges. Recording and `block` stops continue after the cap. |
 | `contractPreset` | `standard` | Which [contract level](#the-contract) a session receives. |
 | `workerRetention` | `keep` | What happens to a worker once its result has been read: keep it, archive check units, or archive every read worker. |
 | `workerWorkspace` | `shared` | Where a delegation runs: `shared`, `worktree`, or `mixed` (the orchestrator names one per unit, see [Where workers run](#where-workers-run)). |
@@ -578,7 +578,7 @@ CLI, and the composer toggles.
 Every row except `defaultForNewThreads` is read and written in the selected
 scope, and the defaults above are the built-in record a fresh install starts
 from. The worker execution and the presets are stored by the plugin too, so they
-can use BB's own provider and model picker. See [Worker execution](#worker-execution).
+can use VesnALIA's own provider and model picker. See [Worker execution](#worker-execution).
 
 Re-enabling an already enabled thread preserves its nudge count. Disabling it
 or clearing violations resets the correction counters.
@@ -588,15 +588,15 @@ or clearing violations resets the correction counters.
 <details>
 <summary><b>Turning it off</b></summary>
 
-Use the strip's **Turn off** button or `bb orchestrator-mode off` for one thread.
-Use `bb orchestrator-mode default off` to stop enabling future threads.
+Use the strip's **Turn off** button or `alia orchestrator-mode off` for one thread.
+Use `alia orchestrator-mode default off` to stop enabling future threads.
 
 ```sh
-bb plugin disable orchestrator-mode
-bb plugin enable orchestrator-mode
+alia plugin disable orchestrator-mode
+alia plugin enable orchestrator-mode
 ```
 
-`bb plugin remove orchestrator-mode` uninstalls the plugin.
+`alia plugin remove orchestrator-mode` uninstalls the plugin.
 
 </details>
 
@@ -615,16 +615,16 @@ watchdog fixes and upgrade guidance; the
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev
 ```
 
 ```text
 server.ts   settings, storage, dispatch hook, watchdog, delegation, RPC and CLI
 shared.ts   pure policy, command classification and contract text
 app.tsx     composer toggle, status strip and menu fallback
-assets/     canonical delegation icon used by BB
+assets/     canonical delegation icon used by ALIA
 skills/     bundled agent skill
 docs/       README logo, screenshots and design notes
 ```
@@ -635,7 +635,7 @@ mirroring, default eligibility, grace turns, read-only commands, delegation,
 enforcement, RPC and CLI behaviour.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with this README,
-the bundled skill and `bb.description` in `package.json`. Keep generated `dist/`
+the bundled skill and `alia.description` in `package.json`. Keep generated `dist/`
 out of Git. There are no CI workflows in this repository.
 
 See [screenshot notes](docs/screenshots/README.md) when refreshing the captures.

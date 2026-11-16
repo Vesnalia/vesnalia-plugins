@@ -20,7 +20,7 @@ die() { echo "guest.sh: $*" >&2; exit 1; }
 conf() {
   local user=$1 want
   want=$(cat <<EOF
-# Written by bb-box's setup/docker-wsl. WSL reads it at the distribution's start.
+# Written by alia-box's setup/docker-wsl. WSL reads it at the distribution's start.
 [boot]
 systemd=true
 [user]
@@ -51,7 +51,7 @@ install_all() {
   apt-get update -qq
   apt-get install -y -q ca-certificates curl openssh-server >/dev/null
 
-  # Docker Engine from Docker's own repository, as bb-box was tested with.
+  # Docker Engine from Docker's own repository, as alia-box was tested with.
   install -d -m 0755 /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   . /etc/os-release
@@ -70,7 +70,7 @@ EOF
   rm -f /usr/sbin/policy-rc.d
   systemctl enable --now containerd.service docker.service >/dev/null
 
-  # The user bb-box logs in as: Docker's group, a key, no password.
+  # The user alia-box logs in as: Docker's group, a key, no password.
   id "$user" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash "$user"
   usermod -aG docker -p '*' "$user"
   install -d -m 0700 -o "$user" -g "$user" "/home/$user/.ssh"
@@ -82,7 +82,7 @@ EOF
   # sshd as a plain service on <port>: Windows' own OpenSSH keeps port 22,
   # and with mirrored networking both listen on the Windows machine's
   # addresses. Docker's CLI opens one SSH session for each call.
-  cat >/etc/ssh/sshd_config.d/10-bb-box.conf <<EOF
+  cat >/etc/ssh/sshd_config.d/10-alia-box.conf <<EOF
 Port $port
 PasswordAuthentication no
 KbdInteractiveAuthentication no

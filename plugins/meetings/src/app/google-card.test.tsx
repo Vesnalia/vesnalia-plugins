@@ -4,8 +4,8 @@
 // sync and disconnect; Google events in "Запланированные".
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { EnvReport } from "../shared/contract";
 import type { CalendarStatus, GoogleStatus } from "../shared/rpc-contract";
 import { formatDateTime } from "./format";

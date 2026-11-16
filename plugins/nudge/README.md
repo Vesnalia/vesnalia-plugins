@@ -1,5 +1,5 @@
 <p align="center">
-  <h3 align="center">Nudge for <a href="https://getbb.app/">BB</a></h3>
+  <h3 align="center">Nudge for <a href="https://getbb.app/">VesnALIA</a></h3>
   <p align="center">
     Replaces Send on an empty composer with Play, so the agent continues without a user message.
     <br><br>
@@ -8,45 +8,45 @@
   </p>
 </p>
 
-<img src="./images/screenshot.png" alt="Empty BB composer with the Nudge play button where Send usually is" />
+<img src="./images/screenshot.png" alt="Empty VesnALIA composer with the Nudge play button where Send usually is" />
 
 ### Features
 - ▶️ Play replaces Send while the composer draft is empty
 - 🙈 Hidden continuation on idle threads — no `Continue.` bubble in the timeline
-- 🔁 Failed turns retry by reference, like `bb thread retry`
+- 🔁 Failed turns retry by reference, like `alia thread retry`
 - 🛑 Hidden while the agent is running, so Stop owns the row
-- ⌨️ `bb nudge` from a terminal or agent shell
+- ⌨️ `alia nudge` from a terminal or agent shell
 
-### Install via BB
-1. Open BB
+### Install via VesnALIA
+1. Open VesnALIA
 2. Plugins → search **Nudge** → Install
 
 Or from a terminal:
 
 ```bash
-bb plugin install git:https://github.com/e-simpson/bb-plugin-nudge.git@semver:^0.1.0
+alia plugin install git:https://github.com/e-simpson/bb-plugin-nudge.git@semver:^0.1.0
 ```
 
 ### Manual Installation
 1. Clone this repository
-2. `cd bb-plugin-nudge`
+2. `cd alia-plugin-nudge`
 3. `npm install --include=dev`
-4. `bb plugin install . --yes`
+4. `alia plugin install . --yes`
 
 ### Usage
 Leave the composer empty and press Play. Typing brings Send back.
 
-From a terminal, inside a BB thread:
+From a terminal, inside a VesnALIA thread:
 
 ```bash
-bb nudge
+alia nudge
 ```
 
 Target another thread, or explain a retry:
 
 ```bash
-bb nudge thr_abc123
-bb nudge thr_abc123 --reason "transient provider overload" --json
+alia nudge thr_abc123
+alia nudge thr_abc123 --reason "transient provider overload" --json
 ```
 
 `--message` is optional and visible. The default idle nudge stays hidden.

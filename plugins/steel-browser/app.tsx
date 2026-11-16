@@ -16,13 +16,13 @@ import {
   definePluginApp,
   useRpc,
   useSettings,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   experimental_useSidebarThreads,
   type PluginRpcClient,
   type PluginMessageDirectiveProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { BrowserSession, Dashboard, Scope, ProjectState, EnginePolicy, rpcContract } from "./contract.ts";
 import { callSteelRpc } from "./rpc-timeout.ts";
 import { useFollowViewer } from "./use-follow-viewer.ts";
@@ -64,7 +64,7 @@ function shortId(id: string): string {
 }
 
 function useScope(threadId?: string): Scope {
-  const context = useBbContext();
+  const context = useAliaContext();
   const id = threadId ?? context.threadId;
   return useMemo(() => id ? { threadId: id } : context.projectId ? { projectId: context.projectId } : {}, [id, context.projectId]);
 }
@@ -142,10 +142,10 @@ function ScopedSteelThreadPanel({ threadId }: { threadId: string }) {
     <section ref={expansion.panel} style={expansion.geometry}
       onPointerEnter={expansion.enter} onPointerLeave={expansion.leave}
       onPointerOverCapture={expansion.enter} onPointerOutCapture={expansion.leave}
-      className={`steel-thread-panel${expansion.expanded ? " steel-thread-panel--expanded" : ""}`} aria-label="BB Surf">
+      className={`steel-thread-panel${expansion.expanded ? " steel-thread-panel--expanded" : ""}`} aria-label="VesnALIA Surf">
       <header className="steel-thread-panel__bar">
         <div>
-          <strong>BB Surf</strong>
+          <strong>VesnALIA Surf</strong>
           <span>{error ? "Unavailable" : active ? "Live in this thread" : dashboard?.connected ? "No active session" : "Connecting..."}</span>
         </div>
         <div className="steel-panel-actions">
@@ -162,7 +162,7 @@ function ScopedSteelThreadPanel({ threadId }: { threadId: string }) {
         </div>
       </header>
       {playerUrl && active && visible ? (
-        <LiveViewer key={playerKey} url={playerUrl} title={`BB Surf for ${threadId}`} />
+        <LiveViewer key={playerKey} url={playerUrl} title={`VesnALIA Surf for ${threadId}`} />
       ) : error || dashboard?.error ? (
         <div className="steel-panel-state" role="alert">{error ?? dashboard?.error}</div>
       ) : (
@@ -185,7 +185,7 @@ export function SteelBrowserDirective(props: PluginMessageDirectiveProps) {
 }
 
 function ScopedSteelBrowser({ message }: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { anchor, style, anchorStyle, latest } = useFollowViewer(message.threadId);
   const scope = useScope(message.threadId);
   const [minimized, setMinimized] = useState(startsInlineViewerMinimized);
@@ -203,13 +203,13 @@ function ScopedSteelBrowser({ message }: PluginMessageDirectiveProps) {
     <div ref={anchor} style={anchorStyle} className="steel-inline-anchor" data-steel-thread={message.threadId}>
     <section style={style}
       className={`steel-inline-browser${minimized ? " steel-inline-browser--minimized" : ""}${style ? " steel-inline-browser--following" : ""}`}
-      aria-label="BB Surf in this thread"
+      aria-label="VesnALIA Surf in this thread"
     >
       <header>
         <div>
           <Monitor aria-hidden="true" />
           <span>
-            <strong>BB Surf</strong>
+            <strong>VesnALIA Surf</strong>
             <small>{error ? "Unavailable" : active ? "Session available" : dashboard?.connected ? "No active session" : minimized ? "Minimized" : "Connecting"}</small>
           </span>
         </div>
@@ -238,7 +238,7 @@ function ScopedSteelBrowser({ message }: PluginMessageDirectiveProps) {
       </header>
       <div className="steel-inline-browser__viewport" hidden={minimized}>
         {playerUrl && active && latest && visible && !minimized ? (
-          <LiveViewer key={playerKey} url={playerUrl} title={`BB Surf for ${message.threadId}`} />
+          <LiveViewer key={playerKey} url={playerUrl} title={`VesnALIA Surf for ${message.threadId}`} />
         ) : !latest ? (
           <div className="steel-panel-state">Viewer active in the latest browser message</div>
         ) : error || dashboard?.error ? (
@@ -326,7 +326,7 @@ export function SteelAgentSettings() {
         <dt>Credentials file</dt><dd>{isLoading ? "Loading..." : String(values?.jevEnvFile || "Not set (optional)")}</dd>
         <dt>Text model</dt><dd>{isLoading ? "Loading..." : String(values?.jevTextModel || "Not configured")}</dd>
       </dl>
-      <p>API keys: BB Tools / BB Surf. Saved keys stay in BB's plugin secrets.
+      <p>API keys: VesnALIA Tools / VesnALIA Surf. Saved keys stay in VesnALIA's plugin secrets.
         Live Jev runs use potentially billable TypeSafe and text-model APIs. DNS changes apply when a project browser is next provisioned or repaired.</p>
     </section>
   );
@@ -423,7 +423,7 @@ export function SteelBrowserPage() {
         <header className="steel-header">
           <div className="steel-identity">
             <span className="steel-brand" aria-hidden="true"><PanelsTopLeft /></span>
-            <h1>BB Surf</h1>
+            <h1>VesnALIA Surf</h1>
           </div>
         </header>
         {picker}
@@ -511,7 +511,7 @@ function ScopedSteelBrowserPage({ scope, picker }: { scope: Scope; picker: React
         <div className="steel-identity">
           <span className="steel-brand" aria-hidden="true"><PanelsTopLeft /></span>
           <div>
-            <h1>BB Surf</h1>
+            <h1>VesnALIA Surf</h1>
             <p>Persistent project browser</p>
           </div>
         </div>
@@ -570,7 +570,7 @@ function ScopedSteelBrowserPage({ scope, picker }: { scope: Scope; picker: React
         </div>
         <div className="steel-viewport">
           {watching && visible && connected && activeSession && playerUrl ? (
-            <LiveViewer key={playerKey} url={playerUrl} title="Live BB Surf" />
+            <LiveViewer key={playerKey} url={playerUrl} title="Live VesnALIA Surf" />
           ) : (
             <div className="steel-viewer-empty">
               <Monitor aria-hidden="true" />
@@ -680,7 +680,7 @@ export default definePluginApp((app) => {
   });
   app.slots.threadPanelAction({
     id: THREAD_PANEL_ACTION_ID,
-    title: "BB Surf",
+    title: "VesnALIA Surf",
     icon: "Monitor",
     component: SteelThreadPanel,
     layout: "flush",
@@ -691,7 +691,7 @@ export default definePluginApp((app) => {
   });
   app.slots.navPanel({
     id: "steel-browser",
-    title: "BB Surf",
+    title: "VesnALIA Surf",
     icon: "Monitor",
     path: "steel-browser",
     component: SteelBrowserPage,

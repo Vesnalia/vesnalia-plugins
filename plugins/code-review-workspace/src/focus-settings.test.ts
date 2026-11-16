@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { defaultPreferences, focusSettingsSchema, readFocusSettings } from "./preferences";
 import { testStore } from "./test-store.test-support";
@@ -17,28 +17,28 @@ test("seven defaults save with only Docs enabled; saved lists are never expanded
   expect(defaults.focuses.map(({ id, label, template }) => ({ id, label, template }))).toEqual(focusTemplates.map(({ id, label }) => ({ id, label, template: id })));
   expect(defaults.focuses.filter(({ enabled }) => enabled).map(({ id }) => id)).toEqual(["docs"]);
   expect(focusSettingsSchema.parse(defaults)).toEqual(defaults);
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
   disposers.push(() => harness.lifecycle.dispose());
-  await plugin(bb);
+  await plugin(alia);
   const saved = await harness.behavior.callRpc("savePreferences", { preferences: defaultPreferences, revision: 0 }) as any;
   expect(saved.preferences.focuses).toEqual(defaults);
   for (const focuses of [[focus], [], [{ ...focus, label: "My docs", instructions: "My saved text" }]]) {
     const settings = { ...defaults, focuses };
     expect(readFocusSettings(settings)).toEqual(settings);
-    const current = await testStore(bb).getPreferences();
+    const current = await testStore(alia).getPreferences();
     await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: settings }, revision: current.revision });
-    expect((await testStore(bb).getPreferences()).preferences.focuses).toEqual(settings);
+    expect((await testStore(alia).getPreferences()).preferences.focuses).toEqual(settings);
   }
 });
 
 test.each([undefined, false, true])("full permissions setting round-trips with value %s", async (allowFullPermissions) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
   disposers.push(() => harness.lifecycle.dispose());
-  await plugin(bb);
+  await plugin(alia);
   const focuses = { ...defaultPreferences.focuses, ...(allowFullPermissions === undefined ? {} : { allowFullPermissions }) };
   const saved = await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses }, revision: 0 }) as any;
   expect(saved.preferences.focuses).toEqual(focuses);
-  expect((await testStore(bb).getPreferences()).preferences.focuses).toEqual(focuses);
+  expect((await testStore(alia).getPreferences()).preferences.focuses).toEqual(focuses);
   expect(readFocusSettings(JSON.stringify(focuses))).toEqual(focuses);
   expect(readFocusSettings(JSON.stringify(focuses)).allowFullPermissions ?? false).toBe(allowFullPermissions ?? false);
 });
@@ -79,9 +79,9 @@ test("corrupt focuses do not replace valid neighbors or turn a blank focus into 
 });
 
 test("savePreferences refuses blank effective instructions and the reader drops only those focuses", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
   disposers.push(() => harness.lifecycle.dispose());
-  await plugin(bb);
+  await plugin(alia);
   for (const enabled of [false, true]) for (const invalid of [
     { id: "blank", label: "Blank", enabled, agent: null },
     { id: "blank", label: "Blank", enabled, agent: null, instructions: "" },
@@ -91,7 +91,7 @@ test("savePreferences refuses blank effective instructions and the reader drops 
   ]) {
     const focuses = { ...defaultPreferences.focuses, focuses: [focus, invalid] };
     await expect(harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses }, revision: 0 })).rejects.toThrow();
-    expect((await testStore(bb).getPreferences()).revision).toBe(0);
+    expect((await testStore(alia).getPreferences()).revision).toBe(0);
     expect(readFocusSettings(focuses).focuses).toEqual([focus]);
   }
   const valid = { ...defaultPreferences.focuses, focuses: [focus, { id: "custom", label: "Custom", enabled: true, agent: null, instructions: "Check retry behavior." }] };
@@ -100,28 +100,28 @@ test("savePreferences refuses blank effective instructions and the reader drops 
 });
 
 test("savePreferences revalidates enabled caps and unique ids and names after merging old-page fields", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
   disposers.push(() => harness.lifecycle.dispose());
-  await plugin(bb);
+  await plugin(alia);
   for (const focuses of [
     Array.from({ length: 5 }, (_, i) => ({ ...focus, id: String(i), label: `Focus ${i}` })),
     [focus, { ...focus, label: "Other" }],
     [focus, { ...focus, id: "other", label: " docs " }],
   ]) {
     await expect(harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: { ...settings, focuses } }, revision: 0 })).rejects.toThrow();
-    expect((await testStore(bb).getPreferences()).revision).toBe(0);
+    expect((await testStore(alia).getPreferences()).revision).toBe(0);
   }
 });
 
 test("pre-Phase-4 saves keep new fields by focus id, allow old fields to change, and refuse stale revision", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
   disposers.push(() => harness.lifecycle.dispose());
-  await plugin(bb);
+  await plugin(alia);
   const saved = await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: settings }, revision: 0 }) as any;
   const oldFocuses = { enabled: false, githubLabel: false, focuses: [{ id: "docs", label: "Renamed", enabled: false, template: "docs" }] };
   const result = await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: oldFocuses }, revision: saved.revision }) as any;
   expect(result.preferences.focuses).toEqual({ ...settings, ...oldFocuses, mergeEffort: "high", focuses: [{ ...settings.focuses[0], label: "Renamed", enabled: false }] });
-  expect((await testStore(bb).getPreferences()).preferences.focuses).toEqual(result.preferences.focuses);
+  expect((await testStore(alia).getPreferences()).preferences.focuses).toEqual(result.preferences.focuses);
   await expect(harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: settings }, revision: saved.revision })).rejects.toThrow(/changed/);
   const cleared = { ...settings, focuses: [{ ...focus, agent: null }] };
   const next = await harness.behavior.callRpc("savePreferences", { preferences: { ...defaultPreferences, focuses: cleared }, revision: result.revision }) as any;

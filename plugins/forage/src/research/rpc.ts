@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { BbPluginApi, ExperimentalPluginRpcHandlersWithContext } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalPluginRpcHandlersWithContext } from "@vesnalia/plugin-sdk";
 import type { CrawlJobService } from "../jobs/model.ts";
 import type { DiagnosticEntry } from "../diagnostics.ts";
 import type { ForageRuntime, OperationResult } from "../operations.ts";
@@ -42,7 +42,7 @@ const WARNING_TEXT: Record<string, string> = {
  partial: "Only part of it worked", cancelled: "Cancelled", failure: "Failed",
 };
 
-export function createResearchHandlers(bb: BbPluginApi, deps: ResearchDependencies, helpers: {
+export function createResearchHandlers(alia: AliaPluginApi, deps: ResearchDependencies, helpers: {
  validateScope(scope: SourceScope, signal?: AbortSignal): Promise<void>;
  sourceAllowed(source: SourceSummary): Promise<boolean>;
 }): ResearchHandlers {
@@ -82,7 +82,7 @@ export function createResearchHandlers(bb: BbPluginApi, deps: ResearchDependenci
  async function titles(threadIds: readonly string[]) {
   const out = new Map<string, { title: string; projectId: string; archived: boolean }>();
   await Promise.allSettled(threadIds.map(async (threadId) => {
-   const value = await bb.sdk.threads.get({ threadId, signal: AbortSignal.timeout(5000) });
+   const value = await alia.sdk.threads.get({ threadId, signal: AbortSignal.timeout(5000) });
    if (value.deletedAt !== null) return;
    out.set(threadId, { title: value.title ?? value.titleFallback ?? "Untitled thread", projectId: value.projectId, archived: value.archivedAt !== null });
   }));
@@ -91,7 +91,7 @@ export function createResearchHandlers(bb: BbPluginApi, deps: ResearchDependenci
  async function projectNames(projectIds: readonly string[]) {
   const out = new Map<string, string>();
   await Promise.allSettled([...new Set(projectIds)].map(async (projectId) => {
-   const value = await bb.sdk.projects.get({ projectId, signal: AbortSignal.timeout(5000) });
+   const value = await alia.sdk.projects.get({ projectId, signal: AbortSignal.timeout(5000) });
    out.set(projectId, value.name);
   }));
   return out;
@@ -236,7 +236,7 @@ export function createResearchHandlers(bb: BbPluginApi, deps: ResearchDependenci
    }
   },
   setThreadPolicy: async ({ threadId, policy }) => {
-   const value = await bb.sdk.threads.get({ threadId, signal: AbortSignal.timeout(5000) });
+   const value = await alia.sdk.threads.get({ threadId, signal: AbortSignal.timeout(5000) });
    if (value.deletedAt !== null) throw new Error("SOURCE_NOT_VISIBLE: The thread is unavailable.");
    const saved = await policies.set(threadId, policy);
    // Crawls already running keep reading the web, so stop the ones the new policy would not allow.

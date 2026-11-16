@@ -17,13 +17,13 @@ state. Evidence gathered 2026-09-30.
 
 | # | Check | Result | Evidence |
 |---|-------|--------|----------|
-| 1 | Feature merged through the two-branch model | PASS | Branch `bb/update-card-column-during-drag-and-drop-thr_x2yua7rwx5` merged into `dev` (c34625f), dev merged into `main` (d59999e); release commit `331a05a` on dev |
+| 1 | Feature merged through the two-branch model | PASS | Branch `alia/update-card-column-during-drag-and-drop-thr_x2yua7rwx5` merged into `dev` (c34625f), dev merged into `main` (d59999e); release commit `331a05a` on dev |
 | 2 | Distributed release surface intact | PASS | Signed annotated tag `v0.5.20` on release commit `331a05a`; `git tag -v v0.5.20` verifies (`Good "git" signature`, ED25519 `SHA256:3KUyU3oB…`); pushed to origin with `dev`, `main`, and the branch |
-| 3 | Release is live | PASS | `bb plugin list` shows `focus-board@0.5.20 running` from the main checkout; built from dev per the release spoke's step 7 |
+| 3 | Release is live | PASS | `alia plugin list` shows `focus-board@0.5.20 running` from the main checkout; built from dev per the release spoke's step 7 |
 | 4 | No uncommitted work in the thread's environment | PASS | `git status` clean in the env worktree |
 | 5 | Thread knowledge persisted outside the thread | PASS | Decision record committed at `docs/chronicles/2026-09-30-cross-lane-drop-placement-thr_x2yua7rwx5/`; user-facing contract in `README.md` + `CHANGELOG.md` 0.5.20; test suite carries the behavioral contract (`tests/board-drop.test.tsx`) |
-| 6 | No automatic archive path can claim the thread | PASS | Dry-run (`bb focus-board sweep`) lists 88 eligible threads; `grep thr_x2yua7rwx5` over it returns 0. The thread is `active` (never idle-eligible), not Done-marked, not pinned-aged-out; the 2026-09-28 archive-safety certification's guards (live-children and status guards) further exclude it |
-| 7 | Archive is reversible | PASS | `bb thread archive` is operator-explicit and user-initiated; `bb thread unarchive` restores it; no eligibility claim hangs on this thread by design |
+| 6 | No automatic archive path can claim the thread | PASS | Dry-run (`alia focus-board sweep`) lists 88 eligible threads; `grep thr_x2yua7rwx5` over it returns 0. The thread is `active` (never idle-eligible), not Done-marked, not pinned-aged-out; the 2026-09-28 archive-safety certification's guards (live-children and status guards) further exclude it |
+| 7 | Archive is reversible | PASS | `alia thread archive` is operator-explicit and user-initiated; `alia thread unarchive` restores it; no eligibility claim hangs on this thread by design |
 
 ## Residuals (do not block archiving)
 

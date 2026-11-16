@@ -1,8 +1,8 @@
 import { toast } from "sonner";
 import {
   experimental_PluginRpcCallError as PluginRpcCallError, experimental_useRpcMutation, experimental_useRpcQuery,
-  type BbNavigate, type ExperimentalRpcOptimisticCache, type PluginRpcCallArgs, type PluginRpcResult, type StandardSchemaV1InferInput,
-} from "@get-bb/plugin-sdk/app";
+  type AliaNavigate, type ExperimentalRpcOptimisticCache, type PluginRpcCallArgs, type PluginRpcResult, type StandardSchemaV1InferInput,
+} from "@vesnalia/plugin-sdk/app";
 import { AREAS, rpcContract, type InboxView, type PrView } from "../contract";
 
 type Contract = typeof rpcContract;
@@ -90,7 +90,7 @@ export function isWebUrl(url: string | null | undefined): url is string {
 }
 
 /** openUrl is experimental and owns only HTTP(S); an http(s) link it declines opens the ordinary way, and nothing else opens. */
-export function openExternal(navigate: BbNavigate, url: string): void {
+export function openExternal(navigate: AliaNavigate, url: string): void {
   if (!isWebUrl(url)) return;
   if (!navigate.openUrl(url)) window.open(url, "_blank", "noopener,noreferrer");
 }

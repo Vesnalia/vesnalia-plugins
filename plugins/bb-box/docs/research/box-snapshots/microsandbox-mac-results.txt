@@ -79,7 +79,7 @@ PASS B the same after its parent was removed with --force
   ✓ Removed             c-src:p0
 TIME 0.06 s rc=0 :: msb snap rm --force c-src:p0
 PASS C the same after a restart
-== E: bb-box's own snapshot commands, by group:member, through a linked home and through a real one
+== E: alia-box's own snapshot commands, by group:member, through a linked home and through a real one
 -- MSB_HOME linked, a link
   inspect by ID: error: invalid config: snapshot identity <ID> has 2 local copies; use group:member or an explicit artifact path
 PASS E linked: inspect by group:member

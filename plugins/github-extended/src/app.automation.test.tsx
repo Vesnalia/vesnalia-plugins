@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import type { AutomationDashboard, JobRecord } from "./automation/domain";
 import { automationRpcMethods, type JobPage } from "./automation/schemas";
 
@@ -56,7 +56,7 @@ function makeDashboard(overrides: Partial<AutomationDashboard> = {}): Automation
       repos: [],
       filters: { draft: false },
       conditionGroups: [],
-      actions: ["bb.review", "github.review"],
+      actions: ["alia.review", "github.review"],
       actionParameters: { bodyTemplate: "{{review}}" },
       approvalRequired: true,
     }],
@@ -317,7 +317,7 @@ describe("GitHub+ automation tab", () => {
     fireEvent.change(prompt, { target: { value: "Investigate failing CI and open a pull request with the fix." } });
     fireEvent.click(slot.getByRole("button", { name: "Save rules" }));
     await vi.waitFor(() => expect(save).toHaveBeenCalledWith({ expectedRules: expect.any(Array), rules: [expect.objectContaining({
-      actions: ["bb.review", "github.review", "bb.agent"],
+      actions: ["alia.review", "github.review", "alia.agent"],
       actionParameters: { bodyTemplate: "{{review}}", agentPrompt: "Investigate failing CI and open a pull request with the fix." },
       approvalRequired: true,
     })] }));
@@ -392,7 +392,7 @@ describe("GitHub+ automation tab", () => {
       expect(slot.getByLabelText(new RegExp(`^${label}:`))).toBeTruthy();
     }
     fireEvent.click(slot.getByLabelText("Issue opened: A new issue is opened."));
-    expect(slot.queryByLabelText("Remove BB agent review")).toBeNull();
+    expect(slot.queryByLabelText("Remove VesnALIA agent review")).toBeNull();
     expect(slot.queryByLabelText("Remove Post PR review")).toBeNull();
     expect(slot.queryByLabelText("Add action: Submit a review comment on the pull request.")).toBeNull();
     fireEvent.click(slot.getByLabelText("PR opened: A pull request is opened."));
@@ -401,7 +401,7 @@ describe("GitHub+ automation tab", () => {
     fireEvent.change(slot.container.querySelector("textarea[id^=agent-prompt-]")!, { target: { value: "Investigate the issue and propose a fix." } });
     fireEvent.click(slot.getByText("Save rules", { selector: "button" }));
     await vi.waitFor(() => expect(save).toHaveBeenCalledWith({ expectedRules: expect.any(Array), rules: [expect.objectContaining({
-      events: ["issue.opened"], actions: ["bb.agent"],
+      events: ["issue.opened"], actions: ["alia.agent"],
       actionParameters: expect.objectContaining({ agentPrompt: "Investigate the issue and propose a fix." }),
     })] }));
     slot.lifecycle.unmount();
@@ -464,7 +464,7 @@ describe("GitHub+ automation tab", () => {
   it("creates automations through the native AI composer with a manual fallback", async () => {
     const slot = renderSlot(app.navPanels[0]!, { subPath: "automation/create" }, { rpc: rpcHandlers(makeDashboard()) });
     await slot.findByText("Create automation", { selector: "h2" });
-    expect(slot.getByTestId("bb-new-thread-composer")).toBeTruthy();
+    expect(slot.getByTestId("alia-new-thread-composer")).toBeTruthy();
     fireEvent.click(slot.getByRole("button", { name: "Build manually" }));
     await slot.findByLabelText("When");
     expect(slot.getByLabelText("Automation summary").textContent).toContain("Ask for approval");

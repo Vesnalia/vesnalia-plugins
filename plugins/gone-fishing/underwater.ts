@@ -1,5 +1,5 @@
 // Floods the chat input while the pond is open: a translucent layer behind the
-// editor, found through bb's markup (see composer-dom.ts). It changes nothing
+// editor, found through VesnALIA's markup (see composer-dom.ts). It changes nothing
 // else, and it does nothing when that markup is not recognized.
 
 import { timeOfDay } from "./catalog.js";

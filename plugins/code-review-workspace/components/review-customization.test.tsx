@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import type { DraftProviderProps } from "./DraftProvider";
 import { findPicker } from "./provider-picker.test-support";
@@ -101,7 +101,7 @@ test("Settings goes back to where it was opened from, All reviews or the review,
   slot.lifecycle.unmount();
 });
 
-test("in BB's Settings, Settings has no page bar of its own; its setup offers to switch the GitHub account where it's shown", async () => {
+test("in VesnALIA's Settings, Settings has no page bar of its own; its setup offers to switch the GitHub account where it's shown", async () => {
   const app = await loadPluginApp(() => import("../app"));
   const slot = renderSlot(app.settingsSections[0]!, {}, { rpc: { setReviewPresence: () => ({ ok: true }), getPreferences: () => ({ preferences: { ...defaultPreferences }, revision: 0 }),
     // The accounts come after the setup's status, as they can on a busy machine: the button says "Checking account…" until then.
@@ -202,7 +202,7 @@ async function renderReview(targetKey: string, notes = "") {
     getConversation: () => ({ threadId: null, legacy: [], defaults: null }),
     markSeen: () => ({ ok: true }),
   } as any });
-  // The commands sit in the band, where BB's title bar didn't take them. The whole workspace can take more than the
+  // The commands sit in the band, where VesnALIA's title bar didn't take them. The whole workspace can take more than the
   // default second to show under a full parallel run.
   await slot.findByRole("button", { name: "Comments" }, { timeout: 5000 });
   const panel = () => within(slot.getByRole("complementary", { name: "Comments and Finish review" }));
@@ -238,7 +238,7 @@ test("a review opens with its panel as you left it: closed stays closed, and an 
   ({ slot } = await renderReview("panel-restore"));
   expect(slot.queryByRole("complementary", { name: "Comments and Finish review" })).toBeNull();
   slot.lifecycle.unmount();
-  // The agent left open by 1.8.0 is BB's to keep now: the review's panel stays closed, and BB's opens nothing.
+  // The agent left open by 1.8.0 is VesnALIA's to keep now: the review's panel stays closed, and VesnALIA's opens nothing.
   patchReviewState("panel-restore", { panel: "agent" });
   ({ slot } = await renderReview("panel-restore"));
   expect(slot.queryByRole("complementary", { name: "Comments and Finish review" })).toBeNull();
@@ -271,7 +271,7 @@ test("a new line-comment request reveals an unfinished comment without replacing
   slot.lifecycle.unmount();
 });
 
-test("each agent uses project defaults until customized with bb's pickers", async () => {
+test("each agent uses project defaults until customized with VesnALIA's pickers", async () => {
   await loadPluginApp(() => import("../app"));
   const { ReviewSettings } = await import("./ReviewSettings");
   let record = { preferences: { ...defaultPreferences }, revision: 0 };
@@ -282,10 +282,10 @@ test("each agent uses project defaults until customized with bb's pickers", asyn
   const guide = await slot.findByRole("group", { name: "Guide writer agent" });
   const assistant = slot.getByRole("group", { name: "Review agent" });
   expect(within(guide).getByRole("button", { name: "Project defaults" }).getAttribute("aria-pressed")).toBe("true");
-  expect(slot.queryByTestId("bb-provider-model-picker")).toBeNull();
+  expect(slot.queryByTestId("alia-provider-model-picker")).toBeNull();
   // The guide writer's defaults don't take the project's permissions; the assistant's do.
   expect(guide.parentElement!.textContent).toContain("at the lowest permissions that agent runs in");
-  expect(assistant.parentElement!.textContent).toContain("effort, and permissions bb remembers");
+  expect(assistant.parentElement!.textContent).toContain("effort, and permissions VesnALIA remembers");
 
   // Custom starts from the personal project's defaults, the guide writer at the lowest mode its provider runs in.
   fireEvent.click(within(guide).getByRole("button", { name: "Custom" }));
@@ -301,7 +301,7 @@ test("each agent uses project defaults until customized with bb's pickers", asyn
   // Without defaults, saving waits until the pickers resolve a provider and model.
   fireEvent.click(within(assistant).getByRole("button", { name: "Custom" }));
   const second = await findPicker(within(assistant.parentElement!));
-  expect(slot.getAllByTestId("bb-provider-model-picker")).toHaveLength(2);
+  expect(slot.getAllByTestId("alia-provider-model-picker")).toHaveLength(2);
   expect(slot.getByRole("button", { name: "Save settings" }).getAttribute("aria-disabled")).toBe("true");
   fireEvent.change(within(second).getByRole("textbox", { name: "Provider ID" }), { target: { value: "pi" } });
   fireEvent.change(within(second).getByRole("textbox", { name: "Model" }), { target: { value: "local" } });
@@ -313,7 +313,7 @@ test("each agent uses project defaults until customized with bb's pickers", asyn
   expect(record.preferences.assistantAgent).toEqual({ providerId: "pi", model: "local", reasoningLevel: "medium", permissionMode: "auto" });
 
   fireEvent.click(within(guide).getByRole("button", { name: "Project defaults" }));
-  expect(slot.getAllByTestId("bb-provider-model-picker")).toHaveLength(1);
+  expect(slot.getAllByTestId("alia-provider-model-picker")).toHaveLength(1);
   fireEvent.click(slot.getByRole("button", { name: "Save settings" }));
   await waitFor(() => expect(record.preferences.guideAgent).toBeNull());
   slot.lifecycle.unmount();
@@ -335,7 +335,7 @@ test("a custom guide writer starts at auto when its provider has no accept-edits
   fireEvent.click(within(guide).getByRole("button", { name: "Custom" }));
   await waitFor(() => expect(getAgentDefaults).toHaveBeenCalledTimes(2));
   await waitFor(() => expect(mode()).toBe("full"));
-  // No defaults, or none to be had: bb's lowest mode.
+  // No defaults, or none to be had: VesnALIA's lowest mode.
   for (const calls of [3, 4]) {
     fireEvent.click(within(guide).getByRole("button", { name: "Project defaults" }));
     fireEvent.click(within(guide).getByRole("button", { name: "Custom" }));
@@ -346,12 +346,12 @@ test("a custom guide writer starts at auto when its provider has no accept-edits
 });
 
 const listMachines = () => ({ machines: [
-  { hostId: "host_server", name: "bb-server-0", connected: true, server: true },
+  { hostId: "host_server", name: "alia-server-0", connected: true, server: true },
   { hostId: "host_flomac", name: "FloMac", connected: true, server: false },
   { hostId: "host_old", name: "FloMac Original", connected: false, server: false },
 ] });
 
-test("a custom agent can run on another machine, with bb's pickers listing that machine's choices", async () => {
+test("a custom agent can run on another machine, with VesnALIA's pickers listing that machine's choices", async () => {
   await loadPluginApp(() => import("../app"));
   const { ReviewSettings } = await import("./ReviewSettings");
   const codex = { providerId: "codex", model: "gpt-6-astra", reasoningLevel: "low", permissionMode: "auto" };
@@ -359,12 +359,12 @@ test("a custom agent can run on another machine, with bb's pickers listing that 
   const save = vi.fn(async (input: any) => record = { ...input, revision: input.revision + 1 });
   const slot = renderSlot({ component: ReviewSettings }, {}, { rpc: { setReviewPresence: () => ({ ok: true }), getPreferences: () => record, savePreferences: save, listMachines } });
   const machine = await slot.findByRole("combobox", { name: "Machine" }) as HTMLSelectElement;
-  await waitFor(() => expect(Array.from(machine.options).map((option) => option.text)).toEqual(["bb-server-0 (server)", "FloMac", "FloMac Original (offline)"]));
+  await waitFor(() => expect(Array.from(machine.options).map((option) => option.text)).toEqual(["alia-server-0 (server)", "FloMac", "FloMac Original (offline)"]));
   const picker = await findPicker(slot);
   expect(picker.dataset.routingKind).toBe("primary");
 
   fireEvent.change(machine, { target: { value: "host_flomac" } });
-  for (const routed of [picker, slot.getByTestId("bb-permission-mode-picker")]) expect(routed.dataset).toMatchObject({ routingKind: "host", routingId: "host_flomac" });
+  for (const routed of [picker, slot.getByTestId("alia-permission-mode-picker")]) expect(routed.dataset).toMatchObject({ routingKind: "host", routingId: "host_flomac" });
   fireEvent.change(within(picker).getByRole("textbox", { name: "Provider ID" }), { target: { value: "claude-code" } });
   fireEvent.change(within(picker).getByRole("textbox", { name: "Model" }), { target: { value: "claude-opus-5-5" } });
   fireEvent.click(within(picker).getByRole("button", { name: "Apply execution selection" }));
@@ -375,7 +375,7 @@ test("a custom agent can run on another machine, with bb's pickers listing that 
 
   // The server is stored as no machine.
   fireEvent.change(slot.getByRole("combobox", { name: "Machine" }), { target: { value: "" } });
-  expect(slot.getByTestId("bb-provider-model-picker").dataset.routingKind).toBe("primary");
+  expect(slot.getByTestId("alia-provider-model-picker").dataset.routingKind).toBe("primary");
   fireEvent.click(slot.getByRole("button", { name: "Save settings" }));
   await waitFor(() => expect(record.preferences.guideAgent).toEqual({ ...onFloMac, hostId: undefined }));
   expect(record.preferences.guideAgent).not.toHaveProperty("hostId");
@@ -397,7 +397,7 @@ test("a saved machine that was removed, or a machine list that won't load, is la
   record = { preferences: { ...defaultPreferences, assistantAgent: { ...assistantAgent, hostId: "host_server" } }, revision: 1 };
   slot = renderSlot({ component: ReviewSettings }, {}, { rpc });
   machine = await slot.findByRole("combobox", { name: "Machine" }) as HTMLSelectElement;
-  await waitFor(() => expect(machine.selectedOptions[0].text).toBe("bb-server-0 (server)"));
+  await waitFor(() => expect(machine.selectedOptions[0].text).toBe("alia-server-0 (server)"));
   slot.lifecycle.unmount();
   record = { preferences: { ...defaultPreferences, assistantAgent }, revision: 1 };
 
@@ -513,7 +513,7 @@ test("1.8.0's switches start on, and each says what it does and what stays with 
   const description = (id: string) => KNOB_CONTROLS.find((control) => control.id === id)?.description;
   expect(["Let the review agent act when you ask", "Review changes above a thread’s message box", "Include your own PRs"].map((label) => toggle(label).checked)).toEqual([true, true, true]);
   expect(description("reviewAgentActs")).toMatch(/^When you ask, the review agent posts replies, comments and reviews, merges PRs, and sends comments to the main thread to fix;.* shows its exact text first, unless you say “just post it”, and approve, merge and close need your own message or click in that review\. Off, the review agent only drafts, as before\.$/);
-  expect(description("reviewChangesLine")).toMatch(/Off, nothing shows there, and bb review in the thread still starts a review\.$/);
+  expect(description("reviewChangesLine")).toMatch(/Off, nothing shows there, and alia review in the thread still starts a review\.$/);
   expect(description("trackOwnPrs")).toMatch(/^Your open PRs on GitHub, with everyone’s comments\. A teammate’s comment waiting for your reply brings one to Needs review; a bot’s doesn’t\. Off, ones you haven’t started a review of go to Archive\.$/);
   slot.lifecycle.unmount();
 });
@@ -719,7 +719,7 @@ test("settings from a server without knobs show each at its default, with nothin
   slot.lifecycle.unmount();
 });
 
-/** The providers `bb provider list` shows on a machine with pi, Codex, Claude Code and OpenCode. */
+/** The providers `alia provider list` shows on a machine with pi, Codex, Claude Code and OpenCode. */
 const providerModes = () => ({ providers: [
   { id: "pi", name: "Pi", permissionModes: ["full"] },
   { id: "codex", name: "Codex", permissionModes: ["accept-edits", "auto", "full"] },
@@ -781,16 +781,16 @@ test("a custom guide writer on a provider that runs only at Full starts at Full,
     getAgentDefaults: () => ({ defaults }), getProviderModes: providerModes } });
   const guide = await slot.findByRole("group", { name: "Guide writer agent" });
   fireEvent.click(within(guide).getByRole("button", { name: "Custom" }));
-  await slot.findByTestId("bb-provider-model-picker");
+  await slot.findByTestId("alia-provider-model-picker");
   await waitFor(() => expect((slot.getByRole("combobox", { name: "Permission mode" }) as HTMLSelectElement).value).toBe("full"));
   slot.lifecycle.unmount();
 });
 
-test("Open Needs You settings opens that BB page in this window, not a new tab", async () => {
+test("Open Needs You settings opens that VesnALIA page in this window, not a new tab", async () => {
   await loadPluginApp(() => import("../app"));
   const { ReviewSettings } = await import("./ReviewSettings");
   const record = { preferences: { ...defaultPreferences }, revision: 0 };
-  // Like BB, the host takes the link's activation.
+  // Like VesnALIA, the host takes the link's activation.
   const slot = renderSlot({ component: ReviewSettings }, {}, { rpc: { setReviewPresence: () => ({ ok: true }), getPreferences: () => record }, openUrl: () => true });
   const link = await slot.findByRole("link", { name: "Open Needs You settings" });
   expect({ href: link.getAttribute("href"), target: link.getAttribute("target") }).toEqual({ href: "/plugins/inbox/inbox/settings", target: null });
@@ -814,7 +814,7 @@ test("an auto-start repository Save can't take says which line and why, and hold
   const { ReviewSettings } = await import("./ReviewSettings");
   const { rpcContract } = await import("../src/rpc-contract");
   const record = { preferences: { ...defaultPreferences }, revision: 1 };
-  // As BB answers a call its input schema refuses (bb-app server/dist/start-server.js: `rpc ${phase} validation failed`).
+  // As VesnALIA answers a call its input schema refuses (alia-app server/dist/start-server.js: `rpc ${phase} validation failed`).
   const savePreferences = vi.fn((input: unknown) => {
     if (!rpcContract.savePreferences.input.safeParse(input).success) throw new Error("rpc input validation failed");
     return { ...(input as typeof record), revision: 2 };

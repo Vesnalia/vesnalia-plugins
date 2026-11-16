@@ -1,6 +1,6 @@
-// bb's own per-thread message queue, which this plugin bridges to.
+// VesnALIA's own per-thread message queue, which this plugin bridges to.
 //
-// bb's queue auto-delivers at the next turn boundary; this plugin's queue never
+// VesnALIA's queue auto-delivers at the next turn boundary; this plugin's queue never
 // sends anything the user did not ask it to. Moving a message between them is
 // the whole bridge, and every path through it lives here so the RPC handlers
 // and the CLI cannot drift apart.
@@ -47,7 +47,7 @@ export interface StashOutcome {
 }
 
 /**
- * Copy queued messages into the stash and remove them from bb's queue.
+ * Copy queued messages into the stash and remove them from VesnALIA's queue.
  *
  * Copy first, then delete: a failed delete would otherwise lose the message
  * outright, and the recovery here is to drop the copy so an undeletable

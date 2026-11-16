@@ -2,7 +2,7 @@
 import { test, afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 afterEach(cleanup);
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 test("review list renders a card with title and status from rpc", async () => {
   const app = await loadPluginApp(() => import("../app"));

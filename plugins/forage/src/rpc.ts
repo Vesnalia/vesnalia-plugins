@@ -1,4 +1,4 @@
-import { experimental_PluginRpcRefusal, type BbPluginApi, type ExperimentalPluginRpcHandlersWithContext } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal, type AliaPluginApi, type ExperimentalPluginRpcHandlersWithContext } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { sourceScopeSchema } from "./contract.ts";
 import { rpcContract } from "./ui/contract.ts";
@@ -27,15 +27,15 @@ function refuse(code: "forbidden" | "not_found" | "conflict" | "invalid", messag
 }
 function invisible(): never { return refuse("not_found", "SOURCE_NOT_VISIBLE: The requested scope or record is unavailable."); }
 
-export function createSourcesRpc(bb: BbPluginApi, deps: SourcesRpcDependencies) {
+export function createSourcesRpc(alia: AliaPluginApi, deps: SourcesRpcDependencies) {
  const { repository, jobs } = deps;
  async function validateScope(scope: SourceScope, signal?: AbortSignal): Promise<void> {
   try {
    if (deps.resolveScope) { await deps.resolveScope(scope, signal); return; }
-   const project = await bb.sdk.projects.get({ projectId: scope.projectId, signal });
+   const project = await alia.sdk.projects.get({ projectId: scope.projectId, signal });
    if (project.id !== scope.projectId) invisible();
    if (scope.kind === "thread") {
-    const thread = await bb.sdk.threads.get({ threadId: scope.threadId, signal });
+    const thread = await alia.sdk.threads.get({ threadId: scope.threadId, signal });
     if (thread.id !== scope.threadId || thread.projectId !== scope.projectId || thread.deletedAt != null) invisible();
    }
   } catch { invisible(); }
@@ -136,15 +136,15 @@ export function createSourcesRpc(bb: BbPluginApi, deps: SourcesRpcDependencies) 
   },
   deleteScope: async ({ scope }) => { await validateScope(scope); return repository.deleteScope(scope); },
   ...(deps.research
-   ? createResearchHandlers(bb, { ...deps.research, repository, jobs, getConfig: deps.getConfig, allowRestrictedThreadCapture: deps.allowRestrictedThreadCapture }, { validateScope, sourceAllowed })
+   ? createResearchHandlers(alia, { ...deps.research, repository, jobs, getConfig: deps.getConfig, allowRestrictedThreadCapture: deps.allowRestrictedThreadCapture }, { validateScope, sourceAllowed })
    : Object.fromEntries(Object.keys(researchContract).map((method) => [method, async () => refuse("not_found", "Research views are unavailable.")])) as unknown as ReturnType<typeof createResearchHandlers>),
  };
  let researchTimer: ReturnType<typeof setTimeout> | null = null;
- bb.onDispose(() => { if (researchTimer) clearTimeout(researchTimer); });
+ alia.onDispose(() => { if (researchTimer) clearTimeout(researchTimer); });
  // The Research page's index reads every thread; refresh it at most every two seconds while crawls save pages.
  const invalidateResearch = () => {
   if (researchTimer) return;
-  researchTimer = setTimeout(() => { researchTimer = null; bb.rpc.experimental_invalidate(["forage:research"]); }, 2000);
+  researchTimer = setTimeout(() => { researchTimer = null; alia.rpc.experimental_invalidate(["forage:research"]); }, 2000);
  };
  const clientOnly = new Set<keyof typeof rpcContract>(["cancelCrawlJob", "resumeCrawlJob", "copySourceToProject", "deleteSource", "deleteScope", "clearActivity", "noteCitation", "run", "setThreadPolicy", "prune"]);
  function wrap<M extends keyof typeof rpcContract>(method: M): void {
@@ -166,15 +166,15 @@ export function createSourcesRpc(bb: BbPluginApi, deps: SourcesRpcDependencies) 
  return {
   handlers, validateScope, sourceAllowed,
   invalidate(scope: SourceScope, domains: readonly ("sources" | "jobs" | "activity")[] = ["sources", "jobs", "activity"]) {
-   bb.rpc.experimental_invalidate(domains.map((domain) => `forage:${domain}:${sourceScopeKey(scope)}`));
+   alia.rpc.experimental_invalidate(domains.map((domain) => `forage:${domain}:${sourceScopeKey(scope)}`));
    invalidateResearch();
   },
  };
 }
 
 export type SourcesRpc = ReturnType<typeof createSourcesRpc>;
-export function registerSourcesRpc(bb: BbPluginApi, api: SourcesRpc): void {
- bb.rpc.register(rpcContract, api.handlers);
+export function registerSourcesRpc(alia: AliaPluginApi, api: SourcesRpc): void {
+ alia.rpc.register(rpcContract, api.handlers);
 }
 
 export const EXPORT_PATH = "/sources-export";
@@ -187,11 +187,11 @@ export const sourceExportSchema = z.object({
  if (value.includeRestricted && (value.scope.kind !== "thread" || !value.sourceIds?.length)) ctx.addIssue({ code: "custom", message: "Restricted export requires explicitly selected thread sources." });
 });
 
-export function registerSourcesHttp(bb: BbPluginApi, deps: SourcesRpcDependencies, api: SourcesRpc): void {
+export function registerSourcesHttp(alia: AliaPluginApi, deps: SourcesRpcDependencies, api: SourcesRpc): void {
  let active = 0;
  const downloads = new Set<() => Promise<void>>();
- bb.onDispose(async () => { await Promise.all([...downloads].map((close) => close())); });
- bb.http.route("GET", EXPORT_PATH, async (c) => {
+ alia.onDispose(async () => { await Promise.all([...downloads].map((close) => close())); });
+ alia.http.route("GET", EXPORT_PATH, async (c) => {
   if (active >= EXPORT_LIMITS.concurrent) return c.json({ error: "Export capacity reached." }, 429);
   let input: z.output<typeof sourceExportSchema>;
   try {
@@ -214,7 +214,7 @@ export function registerSourcesHttp(bb: BbPluginApi, deps: SourcesRpcDependencie
   const onAbort = () => abort.abort();
   c.req.raw.signal.addEventListener("abort", onAbort, { once: true });
   const deadlineAt = Date.now() + EXPORT_LIMITS.durationMs;
-  const timer = setTimeout(() => { void release().catch(() => bb.log.warn("Source export cleanup failed.")); }, EXPORT_LIMITS.durationMs);
+  const timer = setTimeout(() => { void release().catch(() => alia.log.warn("Source export cleanup failed.")); }, EXPORT_LIMITS.durationMs);
   const iterator = deps.repository.export(input.scope, { ...input, signal: abort.signal, deadlineAt })[Symbol.asyncIterator]();
   let released = false;
   let pending = new Uint8Array(0);

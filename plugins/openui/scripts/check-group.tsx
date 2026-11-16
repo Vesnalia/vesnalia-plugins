@@ -1,10 +1,10 @@
 // Checks one component group before it is registered: every component has an
 // example, every example parses against the full library, renders without
-// throwing (server-side, with BB's test runtime) and the signatures fit.
+// throwing (server-side, with VesnALIA's test runtime) and the signatures fit.
 // Usage: npx tsx scripts/check-group.tsx ui/components/<group>.tsx
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { createParser, Renderer } from "@openuidev/react-lang";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
@@ -17,11 +17,11 @@ void React;
 installTestPluginRuntime();
 // The test runtime has no server or navigation outside renderSlot: stub them so file-backed
 // components render their loading state instead of throwing.
-const runtime = (globalThis as { __bbPluginRuntime?: { pluginSdkApp: Record<string, unknown> } }).__bbPluginRuntime!;
+const runtime = (globalThis as { __aliaPluginRuntime?: { pluginSdkApp: Record<string, unknown> } }).__aliaPluginRuntime!;
 runtime.pluginSdkApp = {
   ...runtime.pluginSdkApp,
   useRpc: () => ({ call: async () => ({ ok: false, error: "no server in check" }) }),
-  useBbNavigate: () => ({ openUrl: () => false, openFile: () => false, experimental_openFilePreview: () => false }),
+  useAliaNavigate: () => ({ openUrl: () => false, openFile: () => false, experimental_openFilePreview: () => false }),
   useSdk: () => new Proxy({}, { get: () => new Proxy(() => Promise.resolve(null), { get: (t) => t }) }),
 };
 const file = process.argv[2];

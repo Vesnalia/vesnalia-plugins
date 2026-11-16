@@ -182,7 +182,7 @@ describe("delivery by recipient state (§3.4 table)", () => {
     const { service, port, store } = setup();
     const { self, threads } = await running(service, port);
     const [row] = service.delivery.send({ projectId: PROJECT, from: self("orch-lead"), to: "dev-impl", body: "x" });
-    // Simulate a crash after BB accepted the message but before the row was updated.
+    // Simulate a crash after VesnALIA accepted the message but before the row was updated.
     store.updateMessage(row!.id, { attempt: true });
     port.threads.get(threads["dev-impl"]!)!.inbox.push({ text: `… msg ${row!.id} …`, mode: "start" });
     await service.delivery.drain();

@@ -1,8 +1,8 @@
-// bb-box: check Cua Driver end to end over MCP (stdio, newline-delimited JSON-RPC):
+// alia-box: check Cua Driver end to end over MCP (stdio, newline-delimited JSON-RPC):
 // initialize, list tools, and read the screen size of the desktop, or call
 // another tool with --call (list_windows on Wayland, where get_screen_size
 // needs X11). With a socket, it goes through the running daemon
-// (`cua-driver mcp --socket`), as the bb-box plugin does.
+// (`cua-driver mcp --socket`), as the alia-box plugin does.
 // usage: node cua-probe.mjs [--socket <path>] [--call <tool>]
 import { spawn } from "node:child_process";
 import readline from "node:readline";
@@ -37,7 +37,7 @@ try {
   const init = await call(1, "initialize", {
     protocolVersion: "2025-06-18",
     capabilities: {},
-    clientInfo: { name: "bb-box-cua-probe", version: "1" },
+    clientInfo: { name: "alia-box-cua-probe", version: "1" },
   });
   send({ method: "notifications/initialized" });
   const tools = await call(2, "tools/list", {});

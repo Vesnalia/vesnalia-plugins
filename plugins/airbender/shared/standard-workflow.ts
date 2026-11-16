@@ -8,7 +8,7 @@
 //          -> Agent review -> Human review -> Apply -> Commit (or
 //             Commit & merge) -> closed
 //
-// Why: this is how the user works an issue (bead-bb-e2b, in their words):
+// Why: this is how the user works an issue (bead-alia-e2b, in their words):
 // "First, we need to define what the issue is, and there is some review ...
 // then we need to plan, and analyze if the plan is good. Then we need to
 // implement, and then review by agent and review by myself. And then we can
@@ -41,7 +41,7 @@
 //   asked for afterwards, so a commit or merge that failed left a closed
 //   issue whose work was not in git, with nothing showing it.
 // - Issues differ in size, and the workflow is only as long as an issue
-//   needs (bead-bb-4mb). The user found the full sequence "very clunky" for
+//   needs (bead-alia-4mb). The user found the full sequence "very clunky" for
 //   a question with two clarifications: "like a 15 button presses for three
 //   questions". So the agent first sizes an issue, S, M or L (the user's
 //   T-shirt sizes), and takes that path: S is done in one go and reaches
@@ -57,7 +57,7 @@
 // - Where there is only one way to apply accepted work, the user is not
 //   stopped to choose it: on the main branch "Accept & commit" goes
 //   straight to the commit. Apply remains for work on a branch of its own.
-// - An issue can be started in a branch of its own (bead-bb-jqn.1): a
+// - An issue can be started in a branch of its own (bead-alia-jqn.1): a
 //   second move out of Not started. It is not a step: the agent makes the
 //   branch as the first thing it does, then sizes and works as usual, and
 //   "Commit & merge" ends the branch. The user's decisions: the branch is
@@ -67,18 +67,18 @@
 //   in the menu always; after the merge the main branch is pushed and the
 //   branch deleted, locally and on the remote. Rejected: the plugin making
 //   the branch (it never changes git), and a step of its own for it.
-// - An issue can be started in a work tree of its own (bead-bb-ak0), so
+// - An issue can be started in a work tree of its own (bead-alia-ak0), so
 //   that several are worked at once: a third move out of Not started. It
-//   opens a new top-level conversation in a work tree that BB makes, and
+//   opens a new top-level conversation in a work tree that VesnALIA makes, and
 //   the agent works there. The user's decisions: one conversation per
-//   issue, visible; BB places the tree; it is started from the issue's
+//   issue, visible; VesnALIA places the tree; it is started from the issue's
 //   menu, never the row; and when it has landed, everything is closed
 //   (their option A of three): the conversation is archived, the tree
 //   removed, the branch deleted. Landing itself is the agent's: it brings
 //   the main branch into its own first, so a conflict is settled in its
 //   work tree and never on the main branch.
 // - An epic can be given a branch, or a work tree, for all of its issues
-//   together (bead-bb-ty5.2). The user: "I want to be able to start epic in
+//   together (bead-alia-ty5.2). The user: "I want to be able to start epic in
 //   a branch or worktree / then the epic mode is activated and the
 //   branch/worktree is created / then individual issues don't propose to
 //   merge, only commit / when the issues are all closed the epic has button
@@ -301,7 +301,7 @@ const moves: WorkflowMove[] = [
     from: "not-started",
     to: "define",
     by: ["user", "agent"],
-    // Short, as the user worded it for the buttons (bead-bb-o3d).
+    // Short, as the user worded it for the buttons (bead-alia-o3d).
     label: "Start in branch",
     hint: "Start on this issue in a branch of its own: the agent creates the branch, then sizes the issue and begins. Commit & merge at the end brings it back.",
     icon: "play-branch",
@@ -857,7 +857,7 @@ function instruction(
           "This issue is an epic whose issues were worked one at a time on its branch, and every one of them is closed and committed there. There is normally nothing left to commit: what remains is the merge of that branch.",
         ];
   // An issue with sub-issues is worked as a whole: the user asked that play
-  // on an epic means "this issue and all its sub-issues" (bead-bb-5qt).
+  // on an epic means "this issue and all its sub-issues" (bead-alia-5qt).
   const epic =
     issue.openSubIssues.length === 0
       ? []
@@ -951,7 +951,7 @@ function describeForAgents(): string {
     `When you finish a step, report it with the ${MOVE_TOOL} tool (${agentMoves}), each with a short note. The tool tells you what comes next.`,
     "You have the judgment to move an issue to where the work really is: the move `to:<step id>` (the ids are in square brackets above) takes it to any step, with your reason. Two limits: while an issue waits for the user's review you may only move it back, not on; and you can never move an issue to Apply or past it.",
     "While an issue waits for the user's review, read what they reply. If they ask for changes, move it back with `send-back`, giving their words as the reason, and redo the work; a long rework belongs in the work step, a quick question does not need a move at all. If they approve in the conversation, record it with `approved`, quoting what they said, and carry on. At Human review, if they accept the work and say to commit it, record that with `approved:commit` instead, which goes straight to the commit. At Apply the user chooses between committing and committing with a merge; if they say which in the conversation, record it with `approved:commit` or `approved:commit-merge`, quoting them. Never record an approval the user has not given.",
-    // Kept short: BB limits a tool's instructions to 4096 characters, and
+    // Kept short: VesnALIA limits a tool's instructions to 4096 characters, and
     // the step's own instruction says the rest when it applies.
     "An epic may hold a branch for all its issues (step On its branch [on-branch]): do not work on the epic itself; its issues are only committed on that branch, never merged alone.",
     "Do not commit before the user has accepted an issue; an issue is closed by reporting its last step, never by hand.",

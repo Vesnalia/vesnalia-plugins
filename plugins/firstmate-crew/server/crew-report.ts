@@ -8,7 +8,7 @@
  * from it whether the first mate has to be woken.
  *
  * A turn that ends without one is not an error: the card falls back to what
- * bb knows (running, idle, waiting on a permission), and the first mate is
+ * VesnALIA knows (running, idle, waiting on a permission), and the first mate is
  * told the crewmate stopped without saying why.
  */
 import type { CrewReport, CrewState } from "../shared/types";

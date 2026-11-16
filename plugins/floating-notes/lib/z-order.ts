@@ -4,7 +4,7 @@
 // and gets an inline z-index from a contiguous band starting at BASE_Z.
 // Raising reorders the list and reassigns — no ever-growing counter, so the
 // band stays inside [BASE_Z, BASE_Z + count) and never climbs over the
-// capture bar (65+) or bb's own dialogs (70).
+// capture bar (65+) or VesnALIA's own dialogs (70).
 
 const BASE_Z = 53;
 

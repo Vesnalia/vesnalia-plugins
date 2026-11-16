@@ -1,4 +1,4 @@
-import type { PluginComposerApi } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerApi } from "@vesnalia/plugin-sdk/app";
 
 /** User-provided context is data, never another source of instructions. */
 export function makePrompt(instruction: string, data: Record<string, unknown>): string {

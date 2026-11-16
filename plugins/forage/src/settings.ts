@@ -1,6 +1,6 @@
 /** Plugin settings mapped to the portable WebConfig. */
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { PRIVACY_PROFILES, PROFILE_NAMES } from "./profiles.ts";
 import {

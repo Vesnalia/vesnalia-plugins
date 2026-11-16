@@ -1,7 +1,7 @@
 import type { Nodes } from "mdast";
 import { parseMarkdown } from "./markdown-blocks";
 
-// GitHub shows the images in its comments through its own proxy. BB's Markdown would load them from wherever they point,
+// GitHub shows the images in its comments through its own proxy. VesnALIA's Markdown would load them from wherever they point,
 // telling that server who read the text and when. So the text of others and of agents shows each image as a link to
 // it, and its HTML as text but for a few formatting tags: rewriting each tag that loads something always missed one.
 
@@ -19,8 +19,8 @@ import { parseMarkdown } from "./markdown-blocks";
  */
 export function linkImages(markdown: string, links?: HtmlLinks): string {
   if (!/<|!\[/.test(markdown)) return markdown;
-  // BB's Markdown drops one leading byte order mark, so what follows it may begin an HTML block. The text is read
-  // without it, and it's kept, so that BB drops it and not a second one.
+  // VesnALIA's Markdown drops one leading byte order mark, so what follows it may begin an HTML block. The text is read
+  // without it, and it's kept, so that VesnALIA drops it and not a second one.
   const mark = markdown.startsWith("\uFEFF") ? "\uFEFF" : "";
   const text = markdown.slice(mark.length).replace(/\r\n?/g, "\n");
   const labels = new Set([...text.matchAll(/^ {0,3}\[([^\]\n]+)\]:/gm)].map((match) => normalLabel(match[1])));
@@ -51,7 +51,7 @@ const LINK_SCHEMES = new Set(["http:", "https:", "mailto:"]);
 
 /**
  * `value`, an `<a>`'s href in a rendered file, as the link it keeps, or null for none: an http, https or mailto URL, or
- * a relative one as the file it names in `tree` (none without one, where it would open a page of BB's own). Read as a
+ * a relative one as the file it names in `tree` (none without one, where it would open a page of VesnALIA's own). Read as a
  * browser reads it once `&amp;` is `&`: any other character reference stays as written, so none spells a scheme. A
  * user and password are dropped, as `https://github.com@evil.test` hides its host behind one. Written with nothing an
  * attribute, Markdown or `resolveLinks` reads otherwise: `&` as `&amp;`, and quotes, parentheses, brackets, backticks
@@ -65,7 +65,7 @@ function anchorHref(value: string, tree: LinkTree | null): string | null {
   while (from < to && unbroken.charCodeAt(from) <= 0x20) from++;
   while (to > from && unbroken.charCodeAt(to - 1) <= 0x20) to--;
   const raw = unbroken.slice(from, to);
-  // A protocol-relative URL would take BB's own protocol: few files write one.
+  // A protocol-relative URL would take VesnALIA's own protocol: few files write one.
   if (!raw || /^[\\/]{2}/.test(raw)) return null;
   let url: URL;
   try {
@@ -176,7 +176,7 @@ function endsInBang(parts: string[]): boolean {
 }
 
 /**
- * Each `<img>`, `<video>` and `<source>` in `text` as links to what it would load, the media BB's HTML allows. A video
+ * Each `<img>`, `<video>` and `<source>` in `text` as links to what it would load, the media VesnALIA's HTML allows. A video
  * is replaced even without a url, so the links of its `<source>`s show rather than sit in a player as fallback. With
  * `links`, a `<picture>` is its `<img>` alone, its `<source>`s the same image again; and media inside an `<a>` are
  * their words, as a link can't hold one.
@@ -457,7 +457,7 @@ const PUNCTUATION = /[!-/:-@[-`{-~]/;
 /**
  * `text` with every `<` outside code that isn't kept (`keptEnd`) as `&lt;`, and any `![` left outside code as `\![`.
  * Each `<` is judged in `text` as given, so escaping one can't make a tag of what's around it. On inline text `\<`
- * is `&lt;` too: it shows the same, and is text still if BB reads the line as HTML. With `links`, each `<a>` and `</a>`
+ * is `&lt;` too: it shows the same, and is text still if VesnALIA reads the line as HTML. With `links`, each `<a>` and `</a>`
  * is kept as `linkTag` writes it, a tag where one was, so the text reads as it did.
  */
 function escapeHtml(text: string, links?: HtmlLinks): string {
@@ -497,8 +497,8 @@ function escapeHtml(text: string, links?: HtmlLinks): string {
 }
 
 /**
- * The kept `<…>` from `start` to `end` in `text`, as written but where BB can't read it as an autolink, which holds no
- * space or control character: then its `![`s, which BB reads as images, show as text too.
+ * The kept `<…>` from `start` to `end` in `text`, as written but where VesnALIA can't read it as an autolink, which holds no
+ * space or control character: then its `![`s, which VesnALIA reads as images, show as text too.
  */
 function keptText(text: string, start: number, end: number, anchors = false): string {
   const kept = text.slice(start, end);
@@ -747,7 +747,7 @@ function htmlBlock(text: string, anchors = false): 0 | 1 | 6 | 7 {
  * The code spans CommonMark finds in inline `lines` and table rows, read as `escapeHtml` leaves them. Backticks pair
  * within a line; within a run of lines between blank lines and fences, once a backtick may go uncounted (one no line
  * closes, or one a GFM autolink literal, math, a directive, a link's destination or title, a reference, a footnote's
- * label or a definition may hold), the run's later backticks are text. Math begins at `$$`: BB reads no single `$` as
+ * label or a definition may hold), the run's later backticks are text. Math begins at `$$`: VesnALIA reads no single `$` as
  * math.
  */
 function codeSpans(text: string, lines: Line[], anchors = false): Array<[number, number]> {
@@ -762,7 +762,7 @@ function codeSpans(text: string, lines: Line[], anchors = false): Array<[number,
     if (!paired) continue;
     const found = lineSpans(line, kind === "inline", anchors);
     paired = found.paired;
-    // A table's row, which BB may read as a paragraph's line or as cells: only a span that's one both ways.
+    // A table's row, which VesnALIA may read as a paragraph's line or as cells: only a span that's one both ways.
     const cells = kind === "row" && new Set(tableCells(line).flatMap(([from, to]) => lineSpans(line.slice(from, to), false, anchors).spans.map(([a, b]) => `${from + a} ${from + b}`)));
     for (const [a, b] of found.spans) if (kind === "inline" || (cells && cells.has(`${a} ${b}`))) spans.push([start + a, start + b]);
   }

@@ -1,10 +1,10 @@
-// bb-plugin-floating-terminal — frontend entry.
+// alia-plugin-floating-terminal — frontend entry.
 //
 // The window itself is a content script that mounts its React root into
-// document.body, outside bb's component tree. Around it:
+// document.body, outside VesnALIA's component tree. Around it:
 //
 // - a host-rendered button in the sidebar footer next to Settings;
-// - two invisible app overlays that *can* read bb's React context, and report
+// - two invisible app overlays that *can* read VesnALIA's React context, and report
 //   what the window cannot see on its own: which thread is in view (so "a
 //   shell here" means its worktree) and which composers are on screen (so
 //   terminal output can be handed to the agent);
@@ -18,11 +18,11 @@ import { createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   definePluginApp,
-  useBbContext,
+  useAliaContext,
   useComposers,
   type PluginCommandContext,
   type PluginCommandRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { FloatingTerminal } from "@/components/floating-terminal";
 import { commandFromSelection, extractCommand } from "@/lib/commands";
@@ -38,7 +38,7 @@ import "./styles.css";
 
 /** Reports the route, so "here" can mean the thread's own worktree. */
 function ContextBridge() {
-  const context = useBbContext() as Partial<HostContext> | undefined;
+  const context = useAliaContext() as Partial<HostContext> | undefined;
   const projectId = context?.projectId ?? null;
   const threadId = context?.threadId ?? null;
   useEffect(() => {
@@ -93,7 +93,7 @@ export default definePluginApp((app) => {
   });
 
   // Separate overlays, so a host change that breaks one hook cannot take the
-  // other down with it: bb contains a crash to the overlay that threw.
+  // other down with it: VesnALIA contains a crash to the overlay that threw.
   app.slots.experimental_appOverlay({ id: "context", component: ContextBridge });
   app.slots.experimental_appOverlay({ id: "composers", component: ComposerBridge });
 

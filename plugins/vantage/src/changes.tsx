@@ -1,5 +1,5 @@
 import { useCallback, useMemo, type KeyboardEvent } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import type { FileChange, Overview, Repo, Scope, ThreadSummary } from "./contract";
 import { isArchivedOnly } from "./archived";
 import { FileCard, type FileLoaders } from "./file-card";

@@ -3,8 +3,8 @@
  * A `threads` signal re-reads the session's threads; a `diff` signal (the workspace changed by the end
  * of an agent's turn) reloads the whole view. Signals are not replayed, so a reconnect reloads too.
  *
- * The server also sends `diff` when bb sees the workspace change outside a turn and its content did
- * (`ReviewService.watchChanges`). While the tab is hidden (its panel closed, another tab chosen) bb keeps it mounted;
+ * The server also sends `diff` when VesnALIA sees the workspace change outside a turn and its content did
+ * (`ReviewService.watchChanges`). While the tab is hidden (its panel closed, another tab chosen) VesnALIA keeps it mounted;
  * reloads then wait until it shows again, and run once however many signals came.
  *
  * Every update lands in place: whatever came back unchanged keeps its old object, so React and
@@ -13,7 +13,7 @@
  * demand stays on screen while a reload fetches it again (`stalePatches`), instead of flashing
  * "Loading the diff…".
  */
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { RpcContract } from "../shared/contract";
@@ -60,7 +60,7 @@ export function shareById<T extends { id: string }>(previous: readonly T[], next
 
 /**
  * A reloaded view merged into the one on screen: unchanged files, threads and runs keep their objects.
- * A file whose patch the new load did not send (bb sends only some up front, "auto" files included)
+ * A file whose patch the new load did not send (VesnALIA sends only some up front, "auto" files included)
  * keeps showing the patch it had, marked stale, until the loader fetches it again.
  */
 export function mergeView(previous: ReadyView, previousStale: ReadonlySet<string>, next: ReadyView): { view: ReadyView; stale: ReadonlySet<string> } {
@@ -121,7 +121,7 @@ export interface ViewedToggle {
  */
 function overlay(read: Viewed, toggle: ViewedToggle, startedAt: number): { viewed: Viewed; holds: boolean } {
   const settled = toggle.doneAt !== null && startedAt >= toggle.doneAt;
-  // Started long enough after the write was answered: what it read is GitHub's (or bb's) word.
+  // Started long enough after the write was answered: what it read is GitHub's (or VesnALIA's) word.
   if (settled && startedAt >= toggle.doneAt! + toggle.lag) return { viewed: read, holds: false };
   if (read === toggle.viewed) return { viewed: read, holds: !settled };
   return { viewed: toggle.viewed, holds: true };
@@ -173,7 +173,7 @@ const LEASE_RENEW_MS = 30_000;
 const DEFERRABLE: ReadonlySet<LoadReason> = new Set(["diff-signal", "reconnect"]);
 
 export interface ReviewOptions {
-  /** The thread's environment as bb gave the tab, so signals are heard from the first render. */
+  /** The thread's environment as VesnALIA gave the tab, so signals are heard from the first render. */
   environmentId?: string | null;
   /** Let the first load replace an empty uncommitted view with the branch's commits (the server decides). */
   autoTarget?: boolean;
@@ -310,7 +310,7 @@ export function useReview(threadId: string, target: TargetRequest, options: Revi
   const sessionId = state.status === "ready" ? state.view.sessionId : null;
   const viewKind = state.status === "ready" ? state.view.target.kind : null;
 
-  // While the tab shows, it holds the server's watch on its workspace (bb's changes outside a turn are
+  // While the tab shows, it holds the server's watch on its workspace (VesnALIA's changes outside a turn are
   // checked), renewed before it lapses and given back when the tab hides or closes.
   useEffect(() => {
     if (!visible || sessionId === null || viewKind === null) return;

@@ -5,7 +5,7 @@ import type { ComponentType, CSSProperties, SVGProps } from "react";
 import {
   experimental_Icon,
   type ExperimentalIconProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   CalendarSync,
   CircleAlert,

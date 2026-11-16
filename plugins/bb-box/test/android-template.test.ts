@@ -59,7 +59,7 @@ test("each SDK part is pinned from Google's repository by URL, the manifest's SH
   assert.match(pins.license.accepted, /^[0-9a-f]{40}$/);
 });
 
-test("the records the template's build writes are what BB Box reads: each device, its runtime and its snapshot's origin", () => {
+test("the records the template's build writes are what VesnALIA Box reads: each device, its runtime and its snapshot's origin", () => {
   const runtime = (made: string) => ({
     platform: "android",
     api: pins.systemImage.api,
@@ -80,37 +80,37 @@ test("the records the template's build writes are what BB Box reads: each device
 
 test("the device's firewall drops what the emulator, adb and adb's server listen on, and its check knows exactly those rules", () => {
   const rules = read("device-firewall.nft");
-  assert.match(rules, /^table inet bb_box_device \{$/m);
+  assert.match(rules, /^table inet alia_box_device \{$/m);
   assert.match(rules, /type filter hook input priority -300; policy accept;/);
   assert.match(rules, /iifname "lo" accept/);
   const ports = /tcp dport \{ ([^}]+) \} drop/.exec(rules)![1]!.split(", ");
   assert.deepEqual(ports, ["5037", "5554-5585", "8554"]);
-  const firewall = read("bb-box-device-firewall");
+  const firewall = read("alia-box-device-firewall");
   const expected = JSON.parse(/^expected_rules='(.*)'$/m.exec(firewall)![1]!) as unknown[][];
   const set = (expected[1]![0] as { match: { right: { set: (number | { range: number[] })[] } } }).match.right.set;
   assert.deepEqual(
     set.map((entry) => (typeof entry === "number" ? String(entry) : entry.range.join("-"))),
     ports,
   );
-  const emulator = read("bb-box-emulator");
-  assert.match(emulator, /bb-box-device-firewall check/, "the emulator does not start without it");
+  const emulator = read("alia-box-emulator");
+  assert.match(emulator, /alia-box-device-firewall check/, "the emulator does not start without it");
   assert.match(emulator, /-port 5554 -grpc 8554 -grpc-use-token/);
   assert.match(read("check-android.sh"), /for port in 8554 5554 5555 5037/);
 });
 
 test("what each box makes for itself is cleared before an Android image is captured, after the build's own check", () => {
   const finalize = readFileSync(join(ANDROID, "..", "proxmox-lxc", "template", "guest", "finalize.sh"), "utf8");
-  assert.match(finalize, /^\[ "\$kind" != android \] \|\| \/usr\/local\/sbin\/bb-box-clear-device-state /m);
-  assert.match(read("customize-android.sh"), /install -m 0755 "\$here\/clear-device-state\.sh" \/usr\/local\/sbin\/bb-box-clear-device-state/);
+  assert.match(finalize, /^\[ "\$kind" != android \] \|\| \/usr\/local\/sbin\/alia-box-clear-device-state /m);
+  assert.match(read("customize-android.sh"), /install -m 0755 "\$here\/clear-device-state\.sh" \/usr\/local\/sbin\/alia-box-clear-device-state/);
   const cleared = read("clear-device-state.sh");
   for (const path of [".android/adbkey", ".android/adbkey.pub", ".emulator_console_auth_token", ".android/avd/running", ".android/userid"]) assert.ok(cleared.includes(`"$home/${path}"`), path);
   assert.match(read("check-android.sh"), /older than the image's build: it came with the image/);
 });
 
 test("the template's scripts parse, and carry no comments: their usage says what they do", () => {
-  const scripts = readdirSync(ANDROID).filter((name) => name.endsWith(".sh") || name.startsWith("bb-box-") && !name.includes("."));
-  assert.ok(scripts.includes("customize-android.sh") && scripts.includes("bb-box-emulator"));
-  for (const name of scripts.filter((one) => one !== "bb-box-h264")) {
+  const scripts = readdirSync(ANDROID).filter((name) => name.endsWith(".sh") || name.startsWith("alia-box-") && !name.includes("."));
+  assert.ok(scripts.includes("customize-android.sh") && scripts.includes("alia-box-emulator"));
+  for (const name of scripts.filter((one) => one !== "alia-box-h264")) {
     const text = read(name);
     assert.equal(spawnSync("bash", ["-n", join(ANDROID, name)]).status, 0, name);
     const comments = text.split("\n").slice(1).filter((line) => /^\s*#/.test(line));
@@ -121,18 +121,18 @@ test("the template's scripts parse, and carry no comments: their usage says what
 const STAND_INS: Readonly<Record<string, string>> = {
   python3: "exit 0",
   systemctl: "exit 0",
-  "bb-box-device-firewall": '[ ! -e "$STATE/table-gone" ]',
+  "alia-box-device-firewall": '[ ! -e "$STATE/table-gone" ]',
   sudo: `case "$*" in
-  "-n nft delete table inet bb_box_device") touch "$STATE/table-gone" ;;
-  "-n systemctl restart bb-box-device-firewall.service") rm -f "$STATE/table-gone" ;;
+  "-n nft delete table inet alia_box_device") touch "$STATE/table-gone" ;;
+  "-n systemctl restart alia-box-device-firewall.service") rm -f "$STATE/table-gone" ;;
   *"/dev/tcp/192.0.2.1/22"*) exit 0 ;;
   *"/dev/tcp/"*) exit 1 ;;
 esac`,
-  "bb-box-emulator": `case "$1" in
+  "alia-box-emulator": `case "$1" in
   start)
     [ ! -e "$STATE/table-gone" ] || exit 1
     if [ -e "$STATE/start-ends" ]; then
-      echo "bb-box-emulator: the emulator ended before $2 booted, with exit status 1; its last lines:"
+      echo "alia-box-emulator: the emulator ended before $2 booted, with exit status 1; its last lines:"
       for line in $(seq 1 6); do echo "INFO | starting, step $line of six, with a line long enough to fill the check's output"; done
       echo "FATAL | the last line the emulator wrote"
       exit 1
@@ -200,7 +200,7 @@ function checkAt(stage: "before finalize" | "after finalize" | "no devices", { s
       utimesSync(join(home, ".android", "adbkey"), before, before);
     }
     const ran = spawnSync("bash", [join(ANDROID, "check-android.sh"), "--no-base"], {
-      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home, STATE: state, BB_BOX_SHARE: share, ANDROID_HOME: join(root, "no-sdk") },
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home, STATE: state, ALIA_BOX_SHARE: share, ANDROID_HOME: join(root, "no-sdk") },
       encoding: "utf8",
       timeout: 60_000,
     });
@@ -246,7 +246,7 @@ test("the image's check fails a Pixel Fold whose closed posture locks auto-rotat
 test("the image's check shows the whole of a failed start, down to the emulator's last line", () => {
   const lines = checkAt("after finalize", { startEnds: true });
 
-  const failed = lines.findIndex((line) => /^Pixel 8 boots from its snapshot +FAIL bb-box-emulator: the emulator ended before pixel_8 booted, with exit status 1; its last lines:$/.test(line));
+  const failed = lines.findIndex((line) => /^Pixel 8 boots from its snapshot +FAIL alia-box-emulator: the emulator ended before pixel_8 booted, with exit status 1; its last lines:$/.test(line));
   assert.notEqual(failed, -1, lines.join("\n"));
   assert.equal(lines[failed + 7], "FATAL | the last line the emulator wrote", lines.join("\n"));
 });
@@ -257,7 +257,7 @@ const BUILD_STAND_INS: Readonly<Record<string, string>> = {
   avdmanager: `cat >/dev/null
 while [ $# -gt 0 ]; do [ "$1" = -n ] && name=$2; shift; done
 mkdir -p "$HOME/.android/avd/$name.avd" && touch "$HOME/.android/avd/$name.avd/config.ini"`,
-  "bb-box-emulator": `case "$1" in
+  "alia-box-emulator": `case "$1" in
   start) echo "$2" >"$STATE/avd"; mkdir -p "$STATE/settings/$2"; if [ "\${3:-}" = --cold ]; then echo "avd=$2 boot_s=20.000 snapshot=cold"; else echo "avd=$2 boot_s=3.000 snapshot=loaded"; fi ;;
   stop) [ ! -e "$STATE/avd" ] || { avd=$(cat "$STATE/avd"); mkdir -p "$HOME/.android/avd/$avd.avd/snapshots/default_boot"; touch "$HOME/.android/avd/$avd.avd/snapshots/default_boot/ram.bin"; rm -f "$STATE/avd"; } ;;
   grpc) echo 0 ;;
@@ -325,7 +325,7 @@ test("the build stops when the Pixel Fold keeps auto-rotate locked in a posture"
 });
 
 const EMULATOR_STAND_INS: Readonly<Record<string, string>> = {
-  "bb-box-device-firewall": "exit 0",
+  "alia-box-device-firewall": "exit 0",
   adb: `case "$*" in
   "-s emulator-5554 shell getprop sys.boot_completed") [ ! -e "$STATE/booted" ] || echo 1 ;;
   "-s emulator-5554 emu kill") exit 1 ;;
@@ -352,14 +352,14 @@ function emulatorWorld() {
   for (const [name, body] of Object.entries(EMULATOR_STAND_INS)) writeFileSync(join(bin, name), `#!/bin/bash\n${body}\n`, { mode: 0o755 });
 
   const run = (fake: string, ...args: string[]) => {
-    const ran = spawnSync("bash", [join(ANDROID, "bb-box-emulator"), ...args], {
+    const ran = spawnSync("bash", [join(ANDROID, "alia-box-emulator"), ...args], {
       env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home, STATE: state, ANDROID_HOME: join(root, "no-sdk"), FAKE_EMULATOR: fake },
       encoding: "utf8",
       timeout: 30_000,
     });
     return { status: ran.status, stdout: ran.stdout, stderr: ran.stderr };
   };
-  const recordedPid = () => Number(readFileSync(join(home, ".bb-box", "device", "emulator", "pid"), "utf8"));
+  const recordedPid = () => Number(readFileSync(join(home, ".alia-box", "device", "emulator", "pid"), "utf8"));
   const close = () => {
     try {
       process.kill(recordedPid(), "SIGKILL");
@@ -378,7 +378,7 @@ function processAlive(pid: number): boolean {
   }
 }
 
-test("bb-box-emulator waits for its own emulator while its command line reads empty, as it does for a moment at each exec", () => {
+test("alia-box-emulator waits for its own emulator while its command line reads empty, as it does for a moment at each exec", () => {
   const world = emulatorWorld();
   try {
     const started = world.run("hides-its-command-line", "start", "pixel_8", "--no-save", "--timeout", "20");
@@ -395,25 +395,25 @@ test("bb-box-emulator waits for its own emulator while its command line reads em
   }
 });
 
-test("bb-box-emulator says how an emulator that ends before booting ended, with its last lines", () => {
+test("alia-box-emulator says how an emulator that ends before booting ended, with its last lines", () => {
   const world = emulatorWorld();
   try {
     const started = world.run("fails", "start", "pixel_8", "--no-save", "--timeout", "20");
 
     assert.equal(started.status, 1);
-    assert.match(started.stderr, /^bb-box-emulator: the emulator ended before pixel_8 booted, with exit status 3; its last lines:\n(INFO .*\n){6}FATAL \| Not enough space to create userdata partition\n$/);
+    assert.match(started.stderr, /^alia-box-emulator: the emulator ended before pixel_8 booted, with exit status 3; its last lines:\n(INFO .*\n){6}FATAL \| Not enough space to create userdata partition\n$/);
   } finally {
     world.close();
   }
 });
 
-test("bb-box-emulator says why it shows no lines when the emulator is killed before it writes any", () => {
+test("alia-box-emulator says why it shows no lines when the emulator is killed before it writes any", () => {
   const world = emulatorWorld();
   try {
     const started = world.run("killed", "start", "pixel_8", "--no-save", "--timeout", "20");
 
     assert.equal(started.status, 1);
-    assert.match(started.stderr, /^bb-box-emulator: the emulator ended before pixel_8 booted, killed by signal KILL, and wrote nothing to \S+\/emulator\.log; the kernel's log may say why: sudo dmesg \| tail\n$/);
+    assert.match(started.stderr, /^alia-box-emulator: the emulator ended before pixel_8 booted, killed by signal KILL, and wrote nothing to \S+\/emulator\.log; the kernel's log may say why: sudo dmesg \| tail\n$/);
   } finally {
     world.close();
   }

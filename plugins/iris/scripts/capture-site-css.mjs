@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Captures the CSS the playground site needs from a running bb (once per Iris
-// release): bb's base stylesheet (tokens, the default light and dark theme,
-// shared utilities), Iris's own stylesheet as bb compiled it, and the Ayu
-// themes. Saves them to site/css/ so building the site never needs bb.
-//   PW=<path to playwright> BB_URL=http://127.0.0.1:38886 node scripts/capture-site-css.mjs
+// Captures the CSS the playground site needs from a running VesnALIA (once per Iris
+// release): VesnALIA's base stylesheet (tokens, the default light and dark theme,
+// shared utilities), Iris's own stylesheet as VesnALIA compiled it, and the Ayu
+// themes. Saves them to site/css/ so building the site never needs VesnALIA.
+//   PW=<path to playwright> ALIA_URL=http://127.0.0.1:38886 node scripts/capture-site-css.mjs
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -14,7 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "site", "css");
 mkdirSync(out, { recursive: true });
 const pw = createRequire(import.meta.url)(process.env.PW ?? "playwright");
-const base = process.env.BB_URL ?? "http://127.0.0.1:38886";
+const base = process.env.ALIA_URL ?? "http://127.0.0.1:38886";
 
 const browser = await pw.chromium.launch();
 const page = await (await browser.newContext()).newPage();
@@ -31,18 +31,18 @@ const sheets = await page.evaluate(() =>
 );
 await browser.close();
 
-const bbBase = sheets.find((s) => /\/assets\/index-[^/]+\.css/.test(s.href));
+const aliaBase = sheets.find((s) => /\/assets\/index-[^/]+\.css/.test(s.href));
 const iris = sheets.find((s) => s.text.includes(".iris-card") && s.text.includes(".iris-edge"));
-if (!bbBase || !iris) throw new Error("couldn't find bb's base stylesheet or Iris's stylesheet; is Iris installed and the gallery open?");
-// bb's fonts travel with the site: saved beside the CSS, referenced relatively.
+if (!aliaBase || !iris) throw new Error("couldn't find VesnALIA's base stylesheet or Iris's stylesheet; is Iris installed and the gallery open?");
+// VesnALIA's fonts travel with the site: saved beside the CSS, referenced relatively.
 mkdirSync(join(out, "fonts"), { recursive: true });
-const fontUrls = [...new Set([...bbBase.text.matchAll(/url\("(\/assets\/[^"]+)"\)/g)].map((m) => m[1]))];
+const fontUrls = [...new Set([...aliaBase.text.matchAll(/url\("(\/assets\/[^"]+)"\)/g)].map((m) => m[1]))];
 for (const u of fontUrls) writeFileSync(join(out, "fonts", u.split("/").pop()), Buffer.from(await (await fetch(base + u)).arrayBuffer()));
-writeFileSync(join(out, "bb.css"), bbBase.text.replace(/url\("\/assets\/([^"]+)"\)/g, 'url("fonts/$1")'));
+writeFileSync(join(out, "alia.css"), aliaBase.text.replace(/url\("\/assets\/([^"]+)"\)/g, 'url("fonts/$1")'));
 writeFileSync(join(out, "iris.css"), iris.text);
 
 for (const id of ["ayu-dark", "ayu-light", "ayu-mirage"]) {
-  const css = execFileSync("bb", ["theme", "show", `plugin:ayu:${id}`, "--css"], { encoding: "utf8" });
+  const css = execFileSync("alia", ["theme", "show", `plugin:ayu:${id}`, "--css"], { encoding: "utf8" });
   writeFileSync(join(out, `theme-${id}.css`), css);
 }
-console.log(`saved bb.css (${bbBase.text.length}), iris.css (${iris.text.length}) and 3 themes to site/css/`);
+console.log(`saved alia.css (${aliaBase.text.length}), iris.css (${iris.text.length}) and 3 themes to site/css/`);

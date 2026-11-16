@@ -1,5 +1,5 @@
 import {nativeProbeLaunchSchema,nativeProbeResultSchema} from './native-probe-wire.js';
-import {defineRpcContract} from '@get-bb/plugin-sdk';
+import {defineRpcContract} from '@vesnalia/plugin-sdk';
 import {z} from 'zod';
 import {access} from 'node:fs/promises';
 import {homedir,platform} from 'node:os';
@@ -82,7 +82,7 @@ export function createMacBrowserHandlers(deps:{
  open:(options:Parameters<typeof openAccountBrowser>[0])=>Promise<unknown>;
  list:(options:Parameters<typeof listBrowserProfiles>[0])=>Promise<BrowserProfileInfo[]>;
 }={
- platform,dataDir:()=>path.join(homedir(),'.bb'),
+ platform,dataDir:()=>path.join(homedir(),'.vesnalia'),
  registryExists:async dir=>{try{await access(path.join(dir,'plugins','account-pool-balanced','browser-profiles','registry.json'));return true;}catch{return false;}},
  readEvidence:()=>readVpnEvidence(path.join(homedir(),'.local','state','vpnks','vpn-state.json'),Date.now()),
  open:openAccountBrowser,list:listBrowserProfiles,

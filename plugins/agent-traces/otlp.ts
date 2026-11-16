@@ -98,12 +98,12 @@ function spanAttributes(span: Span, now: number): Attribute[] {
     "gen_ai.agent.name": isAgent ? span.name : undefined,
     "process.command_line": span.kind === "command" ? span.detail : undefined,
     "process.exit.code": span.exitCode ?? undefined,
-    "bb.span.kind": span.kind,
-    "bb.span.detail": span.kind === "command" ? undefined : span.detail,
-    "bb.span.background": span.background || undefined,
-    "bb.span.running": span.end === null && now > span.start ? true : undefined,
-    "bb.subagent.tokens": span.tokens ?? undefined,
-    "bb.child_thread.id": span.kind === "thread" ? span.id.replace(/^thread:/, "") : undefined,
+    "alia.span.kind": span.kind,
+    "alia.span.detail": span.kind === "command" ? undefined : span.detail,
+    "alia.span.background": span.background || undefined,
+    "alia.span.running": span.end === null && now > span.start ? true : undefined,
+    "alia.subagent.tokens": span.tokens ?? undefined,
+    "alia.child_thread.id": span.kind === "thread" ? span.id.replace(/^thread:/, "") : undefined,
   });
 }
 
@@ -129,11 +129,11 @@ export function toOtlp(
       endTimeUnixNano: nanos(turnEnd),
       attributes: attributes({
         "gen_ai.operation.name": "invoke_agent",
-        "bb.turn.id": turn.id,
-        "bb.turn.index": turn.index,
-        "bb.turn.prompt": turn.prompt,
-        "bb.turn.sender": turn.sender,
-        "bb.turn.status": turn.status,
+        "alia.turn.id": turn.id,
+        "alia.turn.index": turn.index,
+        "alia.turn.prompt": turn.prompt,
+        "alia.turn.sender": turn.sender,
+        "alia.turn.status": turn.status,
       }),
       status:
         turn.status === "failed"
@@ -154,8 +154,8 @@ export function toOtlp(
         endTimeUnixNano: nanos(segment.end),
         attributes: attributes({
           "gen_ai.operation.name": "chat",
-          "bb.phase": segment.phase,
-          "bb.inferred": true,
+          "alia.phase": segment.phase,
+          "alia.inferred": true,
         }),
         status: { code: STATUS_UNSET },
       });
@@ -182,14 +182,14 @@ export function toOtlp(
       {
         resource: {
           attributes: attributes({
-            "service.name": "bb",
-            "bb.thread.id": thread.id,
-            "bb.thread.title": thread.title,
-            "bb.project.id": thread.projectId,
-            "bb.provider.id": thread.providerId,
+            "service.name": "alia",
+            "alia.thread.id": thread.id,
+            "alia.thread.title": thread.title,
+            "alia.project.id": thread.projectId,
+            "alia.provider.id": thread.providerId,
           }),
         },
-        scopeSpans: [{ scope: { name: "bb-plugin-agent-traces", version }, spans }],
+        scopeSpans: [{ scope: { name: "alia-plugin-agent-traces", version }, spans }],
       },
     ],
   };

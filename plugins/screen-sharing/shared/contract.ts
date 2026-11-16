@@ -3,7 +3,7 @@
  * as a type only: it imports `defineRpcContract` from the SDK root, which only
  * the server bundle has.
  */
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import {
@@ -19,7 +19,7 @@ const Empty = z.object({});
 const OneHost = z.object({ hostId: z.string().min(1) });
 
 export const rpcContract = defineRpcContract({
-  /** The machines enrolled in this bb, the server's own first. Asks none of them anything. */
+  /** The machines enrolled in this VesnALIA, the server's own first. Asks none of them anything. */
   hosts: { input: Empty, output: HostListSchema },
   /** Whether Screen Sharing answers on one of them. */
   status: { input: OneHost, output: ScreenStatusSchema },
@@ -36,7 +36,7 @@ export const rpcContract = defineRpcContract({
   /** Ends every open session, on every Mac. */
   closeAll: { input: Empty, output: z.object({ closed: z.number().int() }) },
   /**
-   * The Mac's clipboard, for the account bb runs as there: its change count,
+   * The Mac's clipboard, for the account VesnALIA runs as there: its change count,
    * and its text when `since` is a count other than the current one (null asks
    * for no text). Only while a session to that Mac is open.
    */

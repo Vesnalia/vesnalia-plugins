@@ -6,9 +6,9 @@
 // active") are plain markdown text. The host's shared markdown renderer
 // autolinks only raw `@thread:` tokens, and paints a chip for one only when
 // the message carries mention metadata; without it the rendered
-// `bb-thread-mention` element stays an EMPTY inline custom element and the
+// `alia-thread-mention` element stays an EMPTY inline custom element and the
 // token vanishes from view altogether. Raw `@project:` tokens are not
-// autolinked anywhere: in bb's main thread view and in this pane they stay
+// autolinked anywhere: in VesnALIA's main thread view and in this pane they stay
 // dead text (issue #161).
 //
 // Like decorate-inline-code, this module paints parity onto the rendered
@@ -20,7 +20,7 @@
 //   optional `#msg=N` fragment swallowed — becomes a button carrying the
 //   target's display label (the raw id when the caller's labeler does not
 //   know it yet).
-// - The host's OWN empty `bb-thread-mention` elements (the renderer-less
+// - The host's OWN empty `alia-thread-mention` elements (the renderer-less
 //   autolink shape) are repainted the same way from their thread-id
 //   attribute. A mention whose renderer IS wired — a chip the host already
 //   filled — is left untouched.
@@ -28,13 +28,13 @@
 // The chips carry no navigation themselves: they are marked with
 // `data-focus-board-ref-*` attributes the pane's click-capture handler
 // reads (`decoratedReferencePaneTarget`) and routes — opening the thread in
-// the pane, or in bb's main thread view / project page for targets the
+// the pane, or in VesnALIA's main thread view / project page for targets the
 // board does not list. Paint-and-refresh is idempotent, so the pane's
 // existing MutationObserver scan can call this on every frame without
 // duplicating chips; a label resolved after a chip was painted fills in on
 // the next scan. Labels only ever land as text nodes — a title coming from
 // an agent- or operator-named thread can never parse as markup.
-/** The kind of target a reference token names: a bb thread or a bb project. */
+/** The kind of target a reference token names: a VesnALIA thread or a VesnALIA project. */
 export type ReferenceKind = "thread" | "project";
 
 /** The target a painted chip (or token) points at. */
@@ -61,7 +61,7 @@ export interface ReferenceMentions {
 	onOpen(reference: PaneReferenceTarget): void;
 }
 
-/** Marks a painted chip; the value names the target kind. `bb-thread-mention`
+/** Marks a painted chip; the value names the target kind. `alia-thread-mention`
  *  elements repainted from the empty-host shape carry it too. */
 export const REFERENCE_KIND_FLAG = "data-focus-board-ref-kind";
 
@@ -180,7 +180,7 @@ function labelFor(labels: ReferenceLabeler, target: PaneReferenceTarget): string
 function claimedByOtherSurface(node: Node): boolean {
 	return (
 		node.parentElement?.closest(
-			"a[href], pre, bb-thread-mention, [data-focus-board-ref-kind]",
+			"a[href], pre, alia-thread-mention, [data-focus-board-ref-kind]",
 		) !== null
 	);
 }
@@ -278,7 +278,7 @@ export function decorateReferenceMentions(
 	// same attributes the click handler routes (the click handler claims the
 	// element itself; the accessor reads the attributes by name, so the
 	// unknown custom element works exactly like a painted button).
-	for (const host of Array.from(root.querySelectorAll<HTMLElement>("bb-thread-mention"))) {
+	for (const host of Array.from(root.querySelectorAll<HTMLElement>("alia-thread-mention"))) {
 		if ((host.textContent ?? "") !== "") continue; // the host filled it in
 		const id = genericAttributeValue(host, "datathreadid");
 		if (id === null || !id.startsWith(THREAD_ID_PREFIX)) continue;

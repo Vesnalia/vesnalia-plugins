@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-// Opt-in live BB integration test, using the current project's existing Steel browser.
+// Opt-in live VesnALIA integration test, using the current project's existing Steel browser.
 const cdp = new URL(process.env.STEEL_CDP_URL);
-const server = new URL(process.env.BB_SERVER_URL);
+const server = new URL(process.env.ALIA_SERVER_URL);
 const projectId = process.env.STEEL_TEST_PROJECT_ID;
 assert(projectId, "STEEL_TEST_PROJECT_ID must identify the selected test project");
 const version = await (await fetch(new URL("/json/version", cdp))).json();
@@ -62,15 +62,15 @@ try {
       assert.equal(await dashboard.getByRole("button", { name: "New session", exact: true }).isDisabled(), true);
       assert.equal(await dashboard.getByRole("alert").count(), 0);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-      if (process.env.BB_THREAD_STORAGE) await page.screenshot({
-        path: `${process.env.BB_THREAD_STORAGE}/steel-rpc-recovered-${width}.png`,
+      if (process.env.ALIA_THREAD_STORAGE) await page.screenshot({
+        path: `${process.env.ALIA_THREAD_STORAGE}/steel-rpc-recovered-${width}.png`,
       });
-      console.log(`PASS ${width}: actual BB frontend retries stalled reads, shows project and existing session`);
+      console.log(`PASS ${width}: actual VesnALIA frontend retries stalled reads, shows project and existing session`);
 
       if (width === 1280) {
         mode = "all-stalled";
         await page.reload({ waitUntil: "domcontentloaded" });
-        await dashboard.locator(".steel-error").filter({ hasText: "BB did not respond" }).waitFor({ timeout: 40000 });
+        await dashboard.locator(".steel-error").filter({ hasText: "VesnALIA did not respond" }).waitFor({ timeout: 40000 });
         assert.equal(await dashboard.getByRole("button", { name: "Refresh Steel" }).isDisabled(), false);
         assert.equal(await dashboard.getByText("Preparing project browser...", { exact: true }).count(), 0);
         mode = "healthy";

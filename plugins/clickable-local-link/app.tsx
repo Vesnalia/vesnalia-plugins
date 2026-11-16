@@ -1,16 +1,16 @@
-// bb-plugin-clickable-local-link - frontend entry.
+// alia-plugin-clickable-local-link - frontend entry.
 //
 // A content script catches clicks on links to local paths in the app (chat
-// messages, rendered markdown) before BB's own handler runs:
+// messages, rendered markdown) before VesnALIA's own handler runs:
 //   - documents (docx, xlsx, pdf, images, ...) open in their default Mac app;
-//   - folders open in Finder (BB does not treat folder links as files at all);
+//   - folders open in Finder (VesnALIA does not treat folder links as files at all);
 //   - Option-click on any local link selects it in Finder.
-// Text and code files keep BB's built-in preview, so a click never launches a
+// Text and code files keep VesnALIA's built-in preview, so a click never launches a
 // script. The server repeats the same safety decision (server.ts).
 // Only the desktop app on this Mac is affected; remote clients and other
-// operating systems keep BB's behavior untouched.
+// operating systems keep VesnALIA's behavior untouched.
 import { useEffect } from "react";
-import { definePluginApp, useSettings } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useSettings } from "@vesnalia/plugin-sdk/app";
 import { resolveLang, type Lang } from "./lib/locale";
 
 const TOAST_MS = 4000;
@@ -50,13 +50,13 @@ const OPEN_EXTENSIONS = new Set([
   "zip",
 ]);
 
-// Absolute paths BB renders as plain hrefs (folders have no extension, so BB
+// Absolute paths VesnALIA renders as plain hrefs (folders have no extension, so VesnALIA
 // does not turn them into file links). App routes never start with these.
 const LOCAL_ROOTS = /^\/(Users|Volumes|private|tmp|var|Applications|Library|opt)\//;
 
 /**
- * The desktop app loads BB from http://127.0.0.1:<port> when the server runs
- * on this Mac. A window connected to a remote BB server has another host, and
+ * The desktop app loads VesnALIA from http://127.0.0.1:<port> when the server runs
+ * on this Mac. A window connected to a remote VesnALIA server has another host, and
  * a click there must not open files on that remote machine.
  */
 function isLocalMacClient(): boolean {
@@ -161,7 +161,7 @@ function mountOpenLocal(signal: AbortSignal, pluginId: string): () => void {
     if (target === null) return;
     const reveal = event.altKey;
     const ext = extensionOf(target);
-    // Text and code files stay in BB's preview.
+    // Text and code files stay in VesnALIA's preview.
     if (!reveal && ext !== "" && !OPEN_EXTENSIONS.has(ext)) return;
     event.preventDefault();
     event.stopImmediatePropagation();

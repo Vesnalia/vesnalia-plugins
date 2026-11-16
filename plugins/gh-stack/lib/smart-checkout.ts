@@ -26,8 +26,8 @@ export type SmartCheckoutDependencies = {
 
 type StashInspectionDependencies = Pick<SmartCheckoutDependencies, "runGit" | "blockedStashOids">;
 
-const AUTO_STASH_PREFIX = "bb-gh-stack:auto-stash:v1:";
-const STASH_STATE_PREFIX = "refs/bb-gh-stack/stash-state/";
+const AUTO_STASH_PREFIX = "alia-gh-stack:auto-stash:v1:";
+const STASH_STATE_PREFIX = "refs/alia-gh-stack/stash-state/";
 const STASH_OID = /^[0-9a-f]{40,64}$/i;
 const TRANSACTION_ID = /^[A-Za-z0-9-]+$/;
 

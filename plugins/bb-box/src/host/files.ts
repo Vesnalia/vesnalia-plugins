@@ -1,10 +1,10 @@
-// A file copy's end on the thread's machine, in bb-box's host entry (#492).
-// BB's file API moves a file whole and refuses one over 25 MB, so box_copy
+// A file copy's end on the thread's machine, in alia-box's host entry (#492).
+// VesnALIA's file API moves a file whole and refuses one over 25 MB, so box_copy
 // streams a larger one through here instead. "file" opens a WebSocket out to
-// bb-box's route, as the Docker relay does (042), and on the one channel
-// bb-box opens sends the file, or writes what comes to a part file that it
+// alia-box's route, as the Docker relay does (042), and on the one channel
+// alia-box opens sends the file, or writes what comes to a part file that it
 // renames once all of it is there. The call answers with the bytes and
-// their SHA-256, which bb-box compares with the box's.
+// their SHA-256, which alia-box compares with the box's.
 
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
@@ -12,7 +12,7 @@ import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import type { ExperimentalHostRpcContext } from "@get-bb/plugin-sdk/host";
+import type { ExperimentalHostRpcContext } from "@vesnalia/plugin-sdk/host";
 import type { Channel, Mux } from "../relay/mux.ts";
 import { dial, type RelayWebSocket } from "./relay.ts";
 
@@ -28,9 +28,9 @@ export interface FileRequest {
   readonly path: string;
   /** The file, by its absolute path on this machine. */
   readonly file: string;
-  /** The folder it must be within, as for BB's file API. */
+  /** The folder it must be within, as for VesnALIA's file API. */
   readonly root?: string;
-  /** send: this machine's file goes to bb-box; receive: what bb-box sends becomes the file. */
+  /** send: this machine's file goes to alia-box; receive: what alia-box sends becomes the file. */
   readonly direction: "send" | "receive";
   /** What a received file must be, from the box, before it replaces `file`. */
   readonly expect?: FileDone;
@@ -67,7 +67,7 @@ async function send(file: string, channel: Channel): Promise<FileDone> {
 async function receive(file: string, channel: Channel, expect: FileDone | undefined): Promise<FileDone> {
   if ((await stat(file).catch(() => null))?.isDirectory()) throw new Error(`${file} is a directory.`);
   await mkdir(dirname(file), { recursive: true });
-  const part = `${file}.bb-box-part`;
+  const part = `${file}.alia-box-part`;
   const { tap, done } = tally();
   try {
     await pipeline(channel, tap, createWriteStream(part));
@@ -97,13 +97,13 @@ export function fileHandlers(options: FileOptions = {}) {
         const lease = context.experimental_retainWorker();
         return new Promise<FileDone>((settle, fail) => {
           let mux!: Mux;
-          // bb-box closes the link once it has read what was sent, or written all it had; the lease goes with it.
+          // alia-box closes the link once it has read what was sent, or written all it had; the lease goes with it.
           try {
             mux = dial(path, secret, options.connect, {
               pingMs: options.pingMs,
               deadMs: options.deadMs,
               onOpen: (channel) => {
-                // bb-box closing the link resets the channel once the copy is done with it.
+                // alia-box closing the link resets the channel once the copy is done with it.
                 channel.on("error", () => undefined);
                 (direction === "send" ? send(full, channel) : receive(full, channel, expect)).then(settle, (error: unknown) => {
                   channel.destroy(error instanceof Error ? error : new Error(String(error)));
@@ -113,7 +113,7 @@ export function fileHandlers(options: FileOptions = {}) {
               onClose: (reason) => {
                 muxes.delete(mux);
                 void lease.dispose();
-                fail(new Error(`The link to bb-box closed before the copy ended: ${reason}.`));
+                fail(new Error(`The link to alia-box closed before the copy ended: ${reason}.`));
               },
             });
           } catch (error) {

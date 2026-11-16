@@ -16,7 +16,7 @@ export const TREE_SERVER_RETRY_MS = 30_000;
 export const DUMP_MS = 15_000;
 export const APPS_KEPT_MS = 60_000;
 const DEVICE_DIR = "/data/local/tmp";
-const DEX_PREFIX = "bb-box-tree-";
+const DEX_PREFIX = "alia-box-tree-";
 
 export interface TreeChannel {
   send(line: string): void;
@@ -196,7 +196,7 @@ export class AndroidTreeSource {
   }
 
   #via(via: "server" | "dump", why: string): void {
-    if (this.#lastVia !== via) this.#options.log(via === "server" ? "tree: read by bb-box's tree server" : `tree: read by uiautomator dump, ${why}`);
+    if (this.#lastVia !== via) this.#options.log(via === "server" ? "tree: read by alia-box's tree server" : `tree: read by uiautomator dump, ${why}`);
     this.#lastVia = via;
   }
 
@@ -210,7 +210,7 @@ export class AndroidTreeSource {
       const connection = await this.#server();
       const answer = parseServerTree(await connection.ask("tree", TREE_ANSWER_MS));
       if (answer.ok) {
-        if (this.#givingWay) this.#options.log("tree: nothing else holds UiAutomation now, so bb-box's tree server reads again");
+        if (this.#givingWay) this.#options.log("tree: nothing else holds UiAutomation now, so alia-box's tree server reads again");
         this.#givingWay = false;
         return answer.screen;
       }
@@ -223,7 +223,7 @@ export class AndroidTreeSource {
     } catch (error) {
       if (error instanceof GivingWay) throw error;
       const words = error instanceof Error ? error.message : String(error);
-      this.#options.log(`tree: bb-box's tree server failed, so uiautomator dump reads for the next ${TREE_SERVER_RETRY_MS / 1000} s: ${words}`);
+      this.#options.log(`tree: alia-box's tree server failed, so uiautomator dump reads for the next ${TREE_SERVER_RETRY_MS / 1000} s: ${words}`);
       this.#brokenUntil = this.#now() + TREE_SERVER_RETRY_MS;
       this.#drop();
       this.#via("dump", "as the tree server failed");
@@ -272,7 +272,7 @@ export class AndroidTreeSource {
           connection.close();
           throw new DriverError("failed", `${PRODUCT}'s tree server started with something other than its hello: ${hello.slice(0, 120)}`);
         }
-        this.#options.log(`tree: bb-box's tree server started in ${Math.round(this.#now() - began)} ms`);
+        this.#options.log(`tree: alia-box's tree server started in ${Math.round(this.#now() - began)} ms`);
         this.#connection = connection;
         return connection;
       } finally {

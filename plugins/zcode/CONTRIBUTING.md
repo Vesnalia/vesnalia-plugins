@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for helping improve the ZCode provider for bb.
+Thanks for helping improve the ZCode provider for VesnALIA.
 
 ## Working locally
 
-Use Node.js 24+ and bb 0.46.1. Fork and clone the repository, then run:
+Use Node.js 24+ and VesnALIA 0.46.1. Fork and clone the repository, then run:
 
 ```sh
 npm ci --ignore-scripts
@@ -13,8 +13,8 @@ npm run format:check
 ```
 
 The synthetic tests do not need ZCode or model credentials. Building requires
-bb's CLI. On a machine without the desktop app, install the pinned builder with
-`npm install --no-save --ignore-scripts bb-app@0.46.1`.
+VesnALIA's CLI. On a machine without the desktop app, install the pinned builder with
+`npm install --no-save --ignore-scripts alia-app@0.46.1`.
 
 ## Making a change
 
@@ -27,12 +27,12 @@ bb's CLI. On a machine without the desktop app, install the pinned builder with
 - Explain the problem, the changed behavior, and the checks you ran.
 
 `npm run test:live` exercises an installed ZCode CLI against an isolated local
-model fixture. It is optional for documentation changes. Never use a normal bb
-profile for the optional full bb smoke; see [configuration](docs/configuration.md).
+model fixture. It is optional for documentation changes. Never use a normal VesnALIA
+profile for the optional full VesnALIA smoke; see [configuration](docs/configuration.md).
 
 ## Reporting a problem
 
-Include your OS, Node, bb, and ZCode versions, a minimal reproduction, and the
+Include your OS, Node, VesnALIA, and ZCode versions, a minimal reproduction, and the
 relevant error. Redact credentials, private prompts, and private file contents.
 Distinguish failures with the local fixture from failures with a real provider.
 

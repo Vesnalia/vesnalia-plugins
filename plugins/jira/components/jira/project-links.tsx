@@ -1,7 +1,7 @@
-// Linking BB projects to Jira projects. A linked BB project's threads see only
+// Linking VesnALIA projects to Jira projects. A linked VesnALIA project's threads see only
 // those Jira projects' issues (search tool, @-mentions, side panel).
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { JiraProject, ProjectLinkRow } from "../../server";
 import { Button } from "@/components/ui/button";
@@ -21,27 +21,27 @@ import { cn } from "@/lib/utils";
 import { useJiraRpc } from "./hooks";
 import { errorText } from "./primitives";
 
-/** The Jira projects a BB project is linked to, kept live across windows. */
-export function useProjectLink(bbProjectId: string | null): { keys: string[]; loaded: boolean } {
+/** The Jira projects a VesnALIA project is linked to, kept live across windows. */
+export function useProjectLink(aliaProjectId: string | null): { keys: string[]; loaded: boolean } {
   const rpc = useJiraRpc();
-  const [state, setState] = useState<{ keys: string[]; loaded: boolean }>({ keys: [], loaded: bbProjectId === null });
+  const [state, setState] = useState<{ keys: string[]; loaded: boolean }>({ keys: [], loaded: aliaProjectId === null });
   const refetch = useCallback(() => {
-    if (bbProjectId === null) return;
-    rpc.call("projectLink", { bbProjectId }).then(
+    if (aliaProjectId === null) return;
+    rpc.call("projectLink", { aliaProjectId }).then(
       ({ jiraProjectKeys }) => setState({ keys: jiraProjectKeys, loaded: true }),
       () => setState({ keys: [], loaded: true }),
     );
-  }, [rpc, bbProjectId]);
+  }, [rpc, aliaProjectId]);
   useEffect(() => {
-    setState({ keys: [], loaded: bbProjectId === null });
+    setState({ keys: [], loaded: aliaProjectId === null });
     refetch();
-  }, [refetch, bbProjectId]);
+  }, [refetch, aliaProjectId]);
   useRealtime("links-changed", refetch);
   return state;
 }
 
 /**
- * All BB projects with their links, or just `onlyProjectId` when opened from
+ * All VesnALIA projects with their links, or just `onlyProjectId` when opened from
  * a thread (where only that project's link is in question).
  */
 export function ProjectLinksDialog({
@@ -69,17 +69,17 @@ export function ProjectLinksDialog({
   useRealtime("links-changed", refetch);
 
   const visible = useMemo(() => {
-    const scoped = (rows ?? []).filter((row) => onlyProjectId === null || row.bbProjectId === onlyProjectId);
+    const scoped = (rows ?? []).filter((row) => onlyProjectId === null || row.aliaProjectId === onlyProjectId);
     const needle = filter.trim().toLowerCase();
     return needle.length === 0 ? scoped : scoped.filter((row) => row.name.toLowerCase().includes(needle));
   }, [rows, onlyProjectId, filter]);
 
   const save = (row: ProjectLinkRow, jiraProjectKeys: string[]) => {
     setRows((current) =>
-      (current ?? []).map((entry) => (entry.bbProjectId === row.bbProjectId ? { ...entry, jiraProjectKeys } : entry)),
+      (current ?? []).map((entry) => (entry.aliaProjectId === row.aliaProjectId ? { ...entry, jiraProjectKeys } : entry)),
     );
     rpc
-      .call("setProjectLink", { bbProjectId: row.bbProjectId, jiraProjectKeys })
+      .call("setProjectLink", { aliaProjectId: row.aliaProjectId, jiraProjectKeys })
       .catch((error: unknown) => {
         toast.error(errorText(error));
         refetch();
@@ -92,14 +92,14 @@ export function ProjectLinksDialog({
         <DialogHeader>
           <DialogTitle>{onlyProjectId === null ? "Project links" : "Link Jira projects"}</DialogTitle>
           <DialogDescription>
-            In a linked BB project's threads, agents' Jira searches, @-mentions, and the Jira side panel only
+            In a linked VesnALIA project's threads, agents' Jira searches, @-mentions, and the Jira side panel only
             show the linked Jira projects. Agents can still search everything with jira_search_all_issues.
           </DialogDescription>
         </DialogHeader>
         {onlyProjectId === null ? (
           <Input
-            aria-label="Filter BB projects"
-            placeholder="Filter BB projects"
+            aria-label="Filter VesnALIA projects"
+            placeholder="Filter VesnALIA projects"
             value={filter}
             className="h-8 text-sm"
             onChange={(event) => setFilter(event.target.value)}
@@ -112,11 +112,11 @@ export function ProjectLinksDialog({
             ))}
           </div>
         ) : visible.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">No BB projects match.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">No VesnALIA projects match.</p>
         ) : (
           <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">
             {visible.map((row) => (
-              <li key={row.bbProjectId} className="flex items-center gap-3 px-3 py-2">
+              <li key={row.aliaProjectId} className="flex items-center gap-3 px-3 py-2">
                 <span className="min-w-0 flex-1 truncate text-sm text-foreground">{row.name}</span>
                 <JiraProjectPicker
                   selected={row.jiraProjectKeys}

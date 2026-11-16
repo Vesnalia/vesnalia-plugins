@@ -1,28 +1,28 @@
 # AGENTS.md
 
-Hats is a bb plugin that switches the sidebar between named sets of projects.
+Hats is a VesnALIA plugin that switches the sidebar between named sets of projects.
 See README.md for what it does.
 
 ## Layout
 
-- `server.ts`: hats storage, the `hiddenGroups` writes, RPC, and the `bb hats` CLI.
+- `server.ts`: hats storage, the `hiddenGroups` writes, RPC, and the `alia hats` CLI.
 - `app.tsx`: the sidebar footer button and the settings page.
 - `icon-names.ts`: the icons a hat can use, shared by server and app.
 - `skills/hats/SKILL.md`: agent docs for the CLI. Update it with any CLI change.
 - `PLUGIN_OVERVIEW.md`: the marketplace long-form description.
 - `docs/*.gif`: the README recordings.
-- `media/`: scripts for the demo bb instance, screenshots, and recordings.
+- `media/`: scripts for the demo VesnALIA instance, screenshots, and recordings.
 
 ## Develop
 
 ```sh
 npm run typecheck
-bb plugin build .
-bb plugin reload hats
+alia plugin build .
+alia plugin reload hats
 ```
 
 Version control is jj, colocated with git. The remote uses SSH
-(`git@github.com:zaymonoid/bb-hats.git`).
+(`git@github.com:zaymonoid/alia-hats.git`).
 
 ## Release
 
@@ -33,7 +33,7 @@ Version control is jj, colocated with git. The remote uses SSH
    marketplace change. A new minor or major range, or any change to the
    name, description, icon, overview, or screenshots, needs a marketplace PR
    (entry in `zaymonoid/marketplace`, branch per change, PR to
-   `get-bb/marketplace`).
+   `get-alia/marketplace`).
 
 **If the release changes any plugin copy or UI, update the media before you
 publish it.** That means the README GIFs in `docs/`, the marketplace
@@ -41,9 +41,9 @@ screenshots and WebPs, and `PLUGIN_OVERVIEW.md` if the copy there is now
 wrong. Copy includes labels, toasts, the settings page text, and the plugin
 name and description. Stale images in the store are a bug.
 
-## Demo bb for screenshots
+## Demo VesnALIA for screenshots
 
-Never capture your real bb: it shows real projects, threads, machine names,
+Never capture your real VesnALIA: it shows real projects, threads, machine names,
 and account emails. Use the throwaway instance instead.
 
 ```sh
@@ -53,9 +53,9 @@ media/demo-down.sh --wipe # stop and delete, so the next demo-up reseeds
 ```
 
 - It runs at http://127.0.0.1:39886 (daemon on 39887), with data in
-  `/tmp/bb-hats-demo`. Override with `HATS_DEMO_PORT` and `HATS_DEMO_ROOT`.
-- It uses the bb-app bundled in `/Applications/bb.app`. Set `BB_APP` to
-  another `bb-app.js` if bb lives elsewhere.
+  `/tmp/alia-hats-demo`. Override with `HATS_DEMO_PORT` and `HATS_DEMO_ROOT`.
+- It uses the alia-app bundled in `/Applications/alia.app`. Set `ALIA_APP` to
+  another `alia-app.js` if VesnALIA lives elsewhere.
 - The seed renames the machine to "Demo Mac" and creates ten dummy git
   projects in three hats: Day job, Home, and Side quests. It also creates
   twelve threads with fun titles and wears Day job.
@@ -63,17 +63,17 @@ media/demo-down.sh --wipe # stop and delete, so the next demo-up reseeds
   account signed in on this machine. The cost is tiny. Set
   `HATS_DEMO_THREADS=0` to skip threads; projects then show "No threads".
 - The script installs this checkout as a path plugin. After code changes,
-  rebuild and run `BB_SERVER_URL=http://127.0.0.1:39886 bb plugin reload hats`.
-- To use the bb CLI against the demo, set
-  `BB_SERVER_URL=http://127.0.0.1:39886` and unset `BB_PROJECT_ID` and
-  `BB_THREAD_ID`.
+  rebuild and run `ALIA_SERVER_URL=http://127.0.0.1:39886 alia plugin reload hats`.
+- To use the VesnALIA CLI against the demo, set
+  `ALIA_SERVER_URL=http://127.0.0.1:39886` and unset `ALIA_PROJECT_ID` and
+  `ALIA_THREAD_ID`.
 - The first page load shows onboarding, which lists the signed-in agent
   accounts and their emails. The capture scripts click "Skip setup"; never
   capture that screen.
 
 ## Screenshots and recordings
 
-Capture at an 800px-wide viewport with a device scale factor of 2. bb switches
+Capture at an 800px-wide viewport with a device scale factor of 2. VesnALIA switches
 to its mobile layout below about 768px. The output is 1600px wide, which
 meets the marketplace minimum of 1200px.
 
@@ -90,7 +90,7 @@ Output lands in `media-out/` under that workspace; the repo ignores it.
 | `media/capture-configuring.js` | `configuring-<ts>/` frames: add a hat, name it Gym, pick dumbbell, tick two projects |
 
 After `capture-configuring.js`, delete the hat it made:
-`BB_SERVER_URL=http://127.0.0.1:39886 bb hats delete Gym`.
+`ALIA_SERVER_URL=http://127.0.0.1:39886 alia hats delete Gym`.
 
 **The capture scripts drive the UI through selectors and labels**, such as the
 footer button's test id, `aria-label`s like "Change Gym icon" and

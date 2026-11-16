@@ -144,7 +144,7 @@ it("orders hover card subthreads by the saved child sort", async () => {
         thread({ id: "old", parentThreadId: "parent", title: "Old", createdAt: 10 }),
         thread({ id: "new", parentThreadId: "parent", title: "New", createdAt: 20 }),
       ],
-      projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+      projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
     },
     providers: { status: "ready", providers: defaultProviders },
     rpc: {

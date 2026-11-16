@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useThreadExecution, type ThreadExecution } from "./useThreadExecution";
 
 const { rpc } = vi.hoisted(() => ({ rpc: { call: vi.fn() } }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({ useRpc: () => rpc }));
+vi.mock("@vesnalia/plugin-sdk/app", () => ({ useRpc: () => rpc }));
 beforeEach(() => { rpc.call.mockReset(); });
 afterEach(cleanup);
 

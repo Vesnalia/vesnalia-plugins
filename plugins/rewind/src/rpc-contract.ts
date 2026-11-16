@@ -1,6 +1,6 @@
-// The RPC surface the app uses (and `bb plugin rpc call rewind <method>`).
+// The RPC surface the app uses (and `alia plugin rpc call rewind <method>`).
 // app.tsx imports only the type of this contract.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   checkpointIdSchema,
@@ -219,7 +219,7 @@ export const rpcContract = defineRpcContract({
   },
   editMessage: {
     experimental_description:
-      "Restore the files to before a user message, then have bb replace that message, discarding it and every later turn.",
+      "Restore the files to before a user message, then have VesnALIA replace that message, discarding it and every later turn.",
     input: z
       .object({
         threadId: threadIdSchema,
@@ -337,12 +337,12 @@ export const rpcContract = defineRpcContract({
             /** Messages that went out before their checkpoint finished. */
             released: z.number().int().min(0),
             failed: z.number().int().min(0),
-            /** How long the hook held each message (bb's dispatch lock). */
+            /** How long the hook held each message (VesnALIA's dispatch lock). */
             heldMs: percentilesSchema.nullable(),
             snapshotMs: percentilesSchema.nullable(),
             /** How long queued messages waited, until re-attempted or sent. */
             queuedMs: percentilesSchema.nullable(),
-            /** From Rewind's recheck to bb's re-attempt of the message. */
+            /** From Rewind's recheck to VesnALIA's re-attempt of the message. */
             recheckMs: percentilesSchema.nullable(),
           })
           .strict(),

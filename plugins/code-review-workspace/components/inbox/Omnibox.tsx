@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode, type Ref } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../../src/rpc-contract";
 import { parsePrLink } from "../../lib/pr-link";
 import type { ReviewItem } from "../../lib/review-state";
@@ -105,7 +105,7 @@ export function Omnibox({ query, onQuery, reviews, onOpen, placeholder, onCancel
         </Button>
       </div>
         : focused && !query && <p id={hintId} className="absolute inset-x-0 top-full z-20 mt-1 rounded-lg border border-border bg-popover px-3 py-2 text-xs text-muted-foreground shadow-md">
-          For a local branch, run <code className="font-mono text-[11px] text-foreground">bb review</code> in a BB thread.
+          For a local branch, run <code className="font-mono text-[11px] text-foreground">alia review</code> in a VesnALIA thread.
         </p>}
       {error && <p id={errorId} role="alert" className="mt-2 flex items-start gap-1.5 break-words text-sm text-destructive-text"><Icon name="AlertCircle" className="mt-0.5 size-4 shrink-0" aria-hidden />{error}</p>}
     </form>

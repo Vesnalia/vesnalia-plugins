@@ -15,11 +15,11 @@ sources:
 
 # Credential Import and Export
 
-TL;DR: The page and CLI export the full catalog as JSON or `.env` text, import either format, and can import encrypted values from BB Machine Environment (`server.ts:366-559`, `app.tsx:426-435`, `app.tsx:519-547`).
+TL;DR: The page and CLI export the full catalog as JSON or `.env` text, import either format, and can import encrypted values from VesnALIA Machine Environment (`server.ts:366-559`, `app.tsx:426-435`, `app.tsx:519-547`).
 
 ## Purpose
 
-Import/export moves catalog records between Env Catalog and files; machine-environment import reads the existing BB settings database and decrypts matching values before saving them into the plugin catalog (`server.ts:493-559`).
+Import/export moves catalog records between Env Catalog and files; machine-environment import reads the existing VesnALIA settings database and decrypts matching values before saving them into the plugin catalog (`server.ts:493-559`).
 
 ## How it works
 
@@ -28,7 +28,7 @@ Import/export moves catalog records between Env Catalog and files; machine-envir
 3. Import in the page selects JSON when trimmed content starts with `[`; otherwise it selects `env`, and calls `env_import` with overwrite enabled (`app.tsx:529-547`).
 4. JSON import accepts an array of named items, skips non-string values for secret-kind entries, and saves recognized items (`server.ts:408-441`).
 5. `env` import treats each assignment as a secret value; preceding `#` lines become description text (`server.ts:442-485`).
-6. Machine-environment import checks for BB's key and database files, reads `machineEnvironment:%` settings, decrypts each valid record, saves it, and logs decryption failures while continuing (`server.ts:493-559`).
+6. Machine-environment import checks for VesnALIA's key and database files, reads `machineEnvironment:%` settings, decrypts each valid record, saves it, and logs decryption failures while continuing (`server.ts:493-559`).
 7. A positive import count publishes a realtime event so the page refreshes (`server.ts:487-490`, `server.ts:549-554`, `app.tsx:426-435`).
 
 ### Modes
@@ -37,7 +37,7 @@ Import/export moves catalog records between Env Catalog and files; machine-envir
 |---|---|---|
 | JSON | Array of objects with `name`, `kind`, and `value` or `access`. | Preserves structured access and optional description/service/tags; malformed JSON returns an invalid-format error (`server.ts:408-441`). |
 | `.env` | `KEY=value` lines with optional `#` comment lines. | Imports each value as kind `secret`; `overwrite=false` skips existing names (`server.ts:442-485`). |
-| Machine Environment | Existing BB database and `machine-environment-key`. | Decrypts matching BB settings into the catalog; absent files or invalid key format produce count zero (`server.ts:493-505`). |
+| Machine Environment | Existing VesnALIA database and `machine-environment-key`. | Decrypts matching VesnALIA settings into the catalog; absent files or invalid key format produce count zero (`server.ts:493-505`). |
 
 ### Failures
 
@@ -60,8 +60,8 @@ Import/export moves catalog records between Env Catalog and files; machine-envir
 |---|---|---|
 | `env_export` | `server.ts:104-111`, `server.ts:590-592` | Export the catalog as `env` or `json`. |
 | `env_import` | `server.ts:112-120`, `server.ts:593-595` | Import content and optionally preserve existing rows. |
-| `env_import_machine_env` | `server.ts:122-127`, `server.ts:596-598` | Import values from BB Machine Environment. |
-| CLI `export` / `import-machine-env` | `server.ts:1078-1085`, `server.ts:1242-1258` | Write exported content or migrate BB machine values. |
+| `env_import_machine_env` | `server.ts:122-127`, `server.ts:596-598` | Import values from VesnALIA Machine Environment. |
+| CLI `export` / `import-machine-env` | `server.ts:1078-1085`, `server.ts:1242-1258` | Write exported content or migrate VesnALIA machine values. |
 
 See [API](../api.md) for all interfaces and [Data model](../data-model.md) for persistence fields.
 

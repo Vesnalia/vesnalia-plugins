@@ -5,7 +5,7 @@
  * board; Send to chat opens the composer dialog.
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useBbNavigate, type ExperimentalPageTitle, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, type ExperimentalPageTitle, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import type { BoardColumn, BoardItem, ColumnId } from "../shared/board";
@@ -124,7 +124,7 @@ function ColumnBody({
 
 function Board() {
   const compact = useIsCompactViewport();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useBoardRpc();
   const { board, loading, error, refresh } = useBoard();
   const { prefs, update: updatePrefs } = useDisplayPrefs();
@@ -329,7 +329,7 @@ function Board() {
 }
 
 function PromptsPage() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return (
     <div className="h-full overflow-y-auto p-4 md:p-5">
       <div className="mx-auto w-full max-w-3xl space-y-4">

@@ -1,5 +1,5 @@
 /**
- * A `vi.mock` target for `@get-bb/plugin-sdk/app`: a controllable fake host
+ * A `vi.mock` target for `@vesnalia/plugin-sdk/app`: a controllable fake host
  * that mounts the REAL app.tsx (the nav panel it registers) against a
  * simulated sidebar, so board-level gesture wiring — effects, attention
  * freezes, RPC state — can be tested end to end. No value imports from the
@@ -71,7 +71,7 @@ interface FakeSidebarProject {
 }
 
 // The registered nav panel: definePluginApp captures the app's own
-// BoardPage so the test can mount exactly what bb mounts.
+// BoardPage so the test can mount exactly what VesnALIA mounts.
 export const registeredNavPanel: {
   path?: string;
   component?: (props: { subPath: string }) => ReactNode;
@@ -189,7 +189,7 @@ const fakeNavigate = {
   toPluginPanel: (): boolean => false,
 };
 
-export function useBbNavigate(): unknown {
+export function useAliaNavigate(): unknown {
   return fakeNavigate;
 }
 

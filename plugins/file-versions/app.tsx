@@ -1,6 +1,6 @@
 // File Versions page: latest copy of each document, older ones on demand.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { definePluginApp, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, VersionsOutput } from "./server";
 import { ICONS } from "./lib/icons";
 import { Button } from "@/components/ui/button";

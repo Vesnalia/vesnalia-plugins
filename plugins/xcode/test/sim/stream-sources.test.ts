@@ -41,7 +41,7 @@ describe("the source ladder", () => {
   });
 
   it("skips the direct rungs entirely when this page cannot reach loopback", () => {
-    // A remote bb viewer used to burn two guaranteed-failure fetches
+    // A remote VesnALIA viewer used to burn two guaranteed-failure fetches
     // per stream, per generation, finding this out. The page's origin answers
     // it in advance, so the doomed rungs are never offered.
     const sources = streamSources({ direct: DIRECT, proxied: PROXIED }, true, {

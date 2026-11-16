@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Syns bb plugin — 0.6.0 live check</title>
+<title>Syns VesnALIA plugin — 0.6.0 live check</title>
 <!--
   Live check for 0.6.0's page surface, run by hand. Copy it byte
   for byte as BOTH index.html and folder.html of a session whose folder is the
@@ -120,7 +120,7 @@
     a = await call("syns.collaborators", {});
     row("R2.7", "collaborators at the root: the repository's own, total 0")(a.ok && a.value.total === 0 && a.value.data.length === 0, shown(a));
     a = await call("syns.repoVisibility", { visibility: "private" });
-    row("R2.8", "repoVisibility { private } at the root: the record, visibility private")(a.ok && a.value.visibility === "private" && a.value.name === "syns-bb-plugin-scratch", shown(a));
+    row("R2.8", "repoVisibility { private } at the root: the record, visibility private")(a.ok && a.value.visibility === "private" && a.value.name === "syns-alia-plugin-scratch", shown(a));
   });
   on("r7", "R7", async function () {
     var a = await call("syns.collaboratorAdd", { user: who(), role: "read" });
@@ -197,7 +197,7 @@
   (async function () {
     if (folder) {
       try {
-        if (typeof tp.setScope !== "function") throw new Error("this bb's Thread Pages has no setScope");
+        if (typeof tp.setScope !== "function") throw new Error("this VesnALIA's Thread Pages has no setScope");
         await tp.setScope(folder);
         document.getElementById("where").textContent = "This document's scope: " + folder + ".";
         document.getElementById("folder").hidden = false;

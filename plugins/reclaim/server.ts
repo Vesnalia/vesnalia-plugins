@@ -6,7 +6,7 @@
  *   scanner  a full-volume walk that streams directory totals into SQLite
  *   planner  reclaimer rules over that index, producing a costed plan
  *   guard    a capacity poll that escalates: observe → auto-clean → agent
- *   surfaces RPC for the app, `bb reclaim` for humans, tools for agents
+ *   surfaces RPC for the app, `alia reclaim` for humans, tools for agents
  *
  * The scanner is deliberately slow and thorough (~75s for 6.7M entries) and
  * everything else reads its output, so no user-facing action ever waits on a
@@ -14,7 +14,7 @@
  */
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   CHANNEL_CAPACITY,
@@ -71,7 +71,7 @@ const RECLAIMABLE_BADGES = new Map<string, string>([
 /* Scanner                                                             */
 /* ------------------------------------------------------------------ */
 
-function createScanner(bb: BbPluginApi, store: IndexStore) {
+function createScanner(alia: AliaPluginApi, store: IndexStore) {
   let state: IndexState = restore();
   let controller: AbortController | null = null;
   let running: Promise<IndexState> | null = null;
@@ -103,7 +103,7 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
 
   function publish(persist = false): void {
     if (persist) store.setMeta("index-state", { ...state, progress: null });
-    bb.realtime.publish(CHANNEL_INDEX, { at: Date.now(), status: state.status });
+    alia.realtime.publish(CHANNEL_INDEX, { at: Date.now(), status: state.status });
   }
 
   async function run(rootPath: string): Promise<IndexState> {
@@ -121,7 +121,7 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
       progress: null,
     };
     publish();
-    bb.log.info(`scan started: ${rootPath} (generation ${generation})`);
+    alia.log.info(`scan started: ${rootPath} (generation ${generation})`);
 
     try {
       const result = await walk({
@@ -130,7 +130,7 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
         onDirectory: (record: DirRecord) => store.stageDir(generation, record),
         onProgress: (progress: ScanProgress) => {
           state = { ...state, progress };
-          bb.realtime.publish(CHANNEL_INDEX, { at: Date.now(), status: "scanning" });
+          alia.realtime.publish(CHANNEL_INDEX, { at: Date.now(), status: "scanning" });
         },
       });
       store.flush(generation);
@@ -144,7 +144,7 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
           error: "Scan cancelled.",
         };
         publish(true);
-        bb.log.info("scan cancelled");
+        alia.log.info("scan cancelled");
         return state;
       }
 
@@ -166,8 +166,8 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
         progress: null,
       };
       publish(true);
-      bb.realtime.publish(CHANNEL_PLAN, { at: Date.now(), reason: "scan" });
-      bb.log.info(
+      alia.realtime.publish(CHANNEL_PLAN, { at: Date.now(), reason: "scan" });
+      alia.log.info(
         `scan finished in ${formatDuration(result.durationMs)}: ` +
           `${formatCount(result.filesSeen)} files, ${formatCount(result.dirsStored)} indexed dirs, ` +
           `${formatBytes(result.totalBytes)}, ${result.unreadable} unreadable`,
@@ -178,7 +178,7 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
       const error = cause instanceof Error ? cause.message : String(cause);
       state = { ...state, status: "failed", error, progress: null };
       publish(true);
-      bb.log.error(`scan failed: ${error}`);
+      alia.log.error(`scan failed: ${error}`);
       return state;
     } finally {
       controller = null;
@@ -215,7 +215,7 @@ function createScanner(bb: BbPluginApi, store: IndexStore) {
 /** How long a built plan is served before it is considered stale. */
 const PLAN_TTL_MS = 10 * 60_000;
 
-function createPlanner(bb: BbPluginApi, store: IndexStore) {
+function createPlanner(alia: AliaPluginApi, store: IndexStore) {
   let plan: Plan | null = null;
   let executors = new Map<string, DetectedCandidate>();
   let builtAtMs = 0;
@@ -229,7 +229,7 @@ function createPlanner(bb: BbPluginApi, store: IndexStore) {
   async function liveWorktrees(): Promise<Set<string>> {
     const live = new Set<string>();
     try {
-      const threads = await bb.sdk.threads.list({ includeHidden: true });
+      const threads = await alia.sdk.threads.list({ includeHidden: true });
       const environmentIds = new Set<string>();
       for (const thread of threads) {
         if (thread.archivedAt || thread.deletedAt) continue;
@@ -237,7 +237,7 @@ function createPlanner(bb: BbPluginApi, store: IndexStore) {
       }
       for (const environmentId of environmentIds) {
         try {
-          const environment = await bb.sdk.environments.get({ environmentId });
+          const environment = await alia.sdk.environments.get({ environmentId });
           const path = (environment as { workspacePath?: string }).workspacePath;
           if (typeof path === "string" && path !== "") live.add(path);
         } catch {
@@ -246,7 +246,7 @@ function createPlanner(bb: BbPluginApi, store: IndexStore) {
         }
       }
     } catch (cause) {
-      bb.log.warn(
+      alia.log.warn(
         `worktree liveness unavailable: ${cause instanceof Error ? cause.message : String(cause)}`,
       );
     }
@@ -263,7 +263,7 @@ function createPlanner(bb: BbPluginApi, store: IndexStore) {
       staleDays: config.staleDays,
       dockerEnabled: config.dockerEnabled,
       liveWorktrees: await liveWorktrees(),
-      log: (message: string) => bb.log.info(`reclaimer: ${message}`),
+      log: (message: string) => alia.log.info(`reclaimer: ${message}`),
     };
 
     const detected: DetectedGroup[] = [];
@@ -274,7 +274,7 @@ function createPlanner(bb: BbPluginApi, store: IndexStore) {
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
         warnings.push(`${reclaimer.title} could not be checked: ${message}`);
-        bb.log.warn(`reclaimer ${reclaimer.id} failed: ${message}`);
+        alia.log.warn(`reclaimer ${reclaimer.id} failed: ${message}`);
       }
     }
 
@@ -312,7 +312,7 @@ function createPlanner(bb: BbPluginApi, store: IndexStore) {
       warnings,
       stale: false,
     };
-    bb.realtime.publish(CHANNEL_PLAN, { at: nowMs, reason: "rebuilt" });
+    alia.realtime.publish(CHANNEL_PLAN, { at: nowMs, reason: "rebuilt" });
     return plan;
   }
 
@@ -364,7 +364,7 @@ function renderCapacity(capacity: Capacity): string {
 }
 
 function renderIndex(state: IndexState): string {
-  if (state.status === "never") return "Index: never scanned. Run `bb reclaim scan`.";
+  if (state.status === "never") return "Index: never scanned. Run `alia reclaim scan`.";
   if (state.status === "scanning") {
     const progress = state.progress;
     return progress === null
@@ -423,14 +423,14 @@ function renderPlan(plan: Plan, options: { verbose?: boolean } = {}): string {
 /* Plugin                                                              */
 /* ------------------------------------------------------------------ */
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new IndexStore(db);
 
-  const settings = bb.settings.define({
+  const settings = alia.settings.define({
     scanRoot: {
       type: "string",
       label: "Scan root",
@@ -501,8 +501,8 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  const scanner = createScanner(bb, store);
-  const planner = createPlanner(bb, store);
+  const scanner = createScanner(alia, store);
+  const planner = createPlanner(alia, store);
 
   /**
    * Last capacity reading, kept in memory for `contributeInstructions`.
@@ -627,7 +627,7 @@ export default async function plugin(bb: BbPluginApi) {
       candidates: found,
       roots: config.roots,
       dryRun,
-      log: (message) => bb.log.info(`auto-clean: ${message}`),
+      log: (message) => alia.log.info(`auto-clean: ${message}`),
     });
     if (!dryRun && result.succeeded > 0) planner.invalidate();
     return {
@@ -664,7 +664,7 @@ export default async function plugin(bb: BbPluginApi) {
       "",
       note === undefined || note.trim() === "" ? "" : `Operator note: ${note.trim()}`,
       "",
-      "You have the Reclaim tools and the `bb reclaim` command.",
+      "You have the Reclaim tools and the `alia reclaim` command.",
       "Work in this order:",
       "1. `reclaim_plan` to see current candidates with exact byte counts and ids.",
       "2. `reclaim_apply` with `dryRun: true` on the ids you intend to free, and check the total.",
@@ -681,7 +681,7 @@ export default async function plugin(bb: BbPluginApi) {
       .join("\n");
 
     try {
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await alia.sdk.threads.spawn({
         projectId: config.escalationProjectId,
         environment: { type: "project-default" },
         prompt,
@@ -694,14 +694,14 @@ export default async function plugin(bb: BbPluginApi) {
       };
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      bb.log.error(`escalation failed: ${message}`);
+      alia.log.error(`escalation failed: ${message}`);
       return { threadId: null, started: false, message: `Could not start a thread: ${message}` };
     }
   }
 
   /* ---------------- RPC ---------------- */
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     overview: () => buildOverview(),
     capacity: async () => readCapacitySnapshot(await readConfig()),
     indexState: () => scanner.state,
@@ -721,17 +721,17 @@ export default async function plugin(bb: BbPluginApi) {
       const config = await readConfig();
       const { found, missing } = planner.lookup(ids);
       if (missing.length > 0) {
-        bb.log.warn(`apply: ${missing.length} unknown candidate ids ignored`);
+        alia.log.warn(`apply: ${missing.length} unknown candidate ids ignored`);
       }
       const result = await applyCandidates({
         candidates: found,
         roots: config.roots,
         dryRun,
-        log: (message) => bb.log.info(`apply: ${message}`),
+        log: (message) => alia.log.info(`apply: ${message}`),
       });
       if (!dryRun && result.succeeded > 0) {
         planner.invalidate();
-        bb.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), reason: "applied" });
+        alia.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), reason: "applied" });
       }
       // Ids the planner no longer knows are reported as failures rather than
       // silently dropped, so a stale UI selection is visible.
@@ -777,7 +777,7 @@ export default async function plugin(bb: BbPluginApi) {
         ...(patch.roots === undefined
           ? {}
           : // Stored as the multiline text the settings descriptor owns, so the
-            // panel and `bb plugin config` stay the same source of truth.
+            // panel and `alia plugin config` stay the same source of truth.
             { authorizedRoots: parseRoots(patch.roots.join("\n"), HOME).join("\n") }),
         ...(patch.scanRoot === undefined ? {} : { scanRoot: patch.scanRoot }),
         ...(patch.thresholds === undefined
@@ -813,7 +813,7 @@ export default async function plugin(bb: BbPluginApi) {
       return readConfig();
     },
     async projects() {
-      const rows = await bb.sdk.projects.list({ includePersonal: true });
+      const rows = await alia.sdk.projects.list({ includePersonal: true });
       return {
         projects: rows.map((row) => ({ id: row.id, name: row.name })),
       };
@@ -833,7 +833,7 @@ export default async function plugin(bb: BbPluginApi) {
           bytesFreed: outcome.bytesFreed,
           threadId: null,
         });
-        bb.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), reason: "auto-clean" });
+        alia.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), reason: "auto-clean" });
       }
       return outcome.result;
     },
@@ -861,7 +861,7 @@ export default async function plugin(bb: BbPluginApi) {
       );
     });
 
-  bb.background.service("scan", {
+  alia.background.service("scan", {
     async start(signal) {
       // A walk runs for a minute or more. Without this the service would sit
       // inside `scanner.start` ignoring the abort, and a reload would fail with
@@ -885,7 +885,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /* ---------------- background: the guard ---------------- */
 
-  bb.background.service("guard", {
+  alia.background.service("guard", {
     async start(signal) {
       // Persisted, not just in-memory: a plugin reload is not a pressure event,
       // and treating it as one fills the activity log with duplicates that say
@@ -904,7 +904,7 @@ export default async function plugin(bb: BbPluginApi) {
           const level = capacity.level;
 
           if (level !== lastLevel) {
-            bb.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), level });
+            alia.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), level });
             if (lastLevel !== null || level !== "ok") {
               store.recordGuardEvent({
                 atMs: Date.now(),
@@ -917,7 +917,7 @@ export default async function plugin(bb: BbPluginApi) {
                 threadId: null,
               });
             }
-            bb.log.info(`pressure ${lastLevel ?? "unknown"} → ${level}: ${capacity.reason}`);
+            alia.log.info(`pressure ${lastLevel ?? "unknown"} → ${level}: ${capacity.reason}`);
             lastLevel = level;
             store.setMeta("last-level", level);
           }
@@ -948,9 +948,9 @@ export default async function plugin(bb: BbPluginApi) {
               bytesFreed: outcome.bytesFreed,
               threadId: null,
             });
-            bb.log.info(outcome.detail);
+            alia.log.info(outcome.detail);
             if (outcome.bytesFreed > 0) {
-              bb.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), reason: "auto-clean" });
+              alia.realtime.publish(CHANNEL_CAPACITY, { at: Date.now(), reason: "auto-clean" });
             }
           }
 
@@ -974,7 +974,7 @@ export default async function plugin(bb: BbPluginApi) {
             });
           }
         } catch (cause) {
-          bb.log.warn(`guard: ${cause instanceof Error ? cause.message : String(cause)}`);
+          alia.log.warn(`guard: ${cause instanceof Error ? cause.message : String(cause)}`);
         }
         await sleep(CAPACITY_POLL_MS, signal);
       }
@@ -993,7 +993,7 @@ export default async function plugin(bb: BbPluginApi) {
    * names. Below the watch threshold this contributes nothing at all, because
    * a healthy disk is not worth a line of anyone's context.
    */
-  bb.agents.contributeInstructions(() => {
+  alia.agents.contributeInstructions(() => {
     const capacity = lastCapacity;
     if (capacity === null || capacity.level === "ok") return null;
 
@@ -1019,7 +1019,7 @@ export default async function plugin(bb: BbPluginApi) {
       .join("\n");
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "reclaim_status",
     description:
       "Report disk capacity, pressure level, and the largest directories and files on this machine, " +
@@ -1044,7 +1044,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "reclaim_plan",
     description:
       "List reclaimable disk-space candidates with exact byte counts and the ids reclaim_apply takes. " +
@@ -1068,7 +1068,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "reclaim_apply",
     description:
       "Free disk space for candidate ids from reclaim_plan. Always dry-run first and check the total.",
@@ -1100,7 +1100,7 @@ export default async function plugin(bb: BbPluginApi) {
         candidates: found,
         roots: config.roots,
         dryRun,
-        log: (message) => bb.log.info(`agent apply: ${message}`),
+        log: (message) => alia.log.info(`agent apply: ${message}`),
       });
       if (!dryRun && result.succeeded > 0) planner.invalidate();
 
@@ -1119,19 +1119,19 @@ export default async function plugin(bb: BbPluginApi) {
 
   /* ---------------- CLI ---------------- */
 
-  bb.cli.register({
+  alia.cli.register({
     name: "reclaim",
     summary: "Show disk usage, find reclaimable space, and free it",
     commands: [
-      { name: "status", summary: "Disk capacity, pressure, and index state", usage: "bb reclaim status [--json]" },
-      { name: "top", summary: "Largest directories and files", usage: "bb reclaim top [--limit 20] [--json]" },
-      { name: "tree", summary: "List one directory by size", usage: "bb reclaim tree <path> [--json]" },
-      { name: "scan", summary: "Rebuild the index now", usage: "bb reclaim scan [--wait]" },
-      { name: "plan", summary: "Reclaimable candidates with ids", usage: "bb reclaim plan [--refresh] [--json]" },
+      { name: "status", summary: "Disk capacity, pressure, and index state", usage: "alia reclaim status [--json]" },
+      { name: "top", summary: "Largest directories and files", usage: "alia reclaim top [--limit 20] [--json]" },
+      { name: "tree", summary: "List one directory by size", usage: "alia reclaim tree <path> [--json]" },
+      { name: "scan", summary: "Rebuild the index now", usage: "alia reclaim scan [--wait]" },
+      { name: "plan", summary: "Reclaimable candidates with ids", usage: "alia reclaim plan [--refresh] [--json]" },
       {
         name: "clean",
         summary: "Free space (dry run unless --yes)",
-        usage: "bb reclaim clean [--group <id>] [--id <id>]... [--yes] [--json]",
+        usage: "alia reclaim clean [--group <id>] [--id <id>]... [--yes] [--json]",
       },
     ],
     async run(argv) {
@@ -1205,7 +1205,7 @@ export default async function plugin(bb: BbPluginApi) {
           const wait = args.includes("--wait");
           const started = scanner.start(config.scanRoot, true);
           if (!wait) {
-            return ok(`Scan of ${config.scanRoot} started. Watch it with \`bb reclaim status\`.`);
+            return ok(`Scan of ${config.scanRoot} started. Watch it with \`alia reclaim status\`.`);
           }
           const state = await started;
           return json ? asJson(state) : ok(renderIndex(state));
@@ -1233,7 +1233,7 @@ export default async function plugin(bb: BbPluginApi) {
                   );
 
           if (ids.length === 0) {
-            return ok("Nothing selected. Run `bb reclaim plan` to see candidates.");
+            return ok("Nothing selected. Run `alia reclaim plan` to see candidates.");
           }
           const dryRun = !args.includes("--yes");
           const { found, missing } = planner.lookup(ids);
@@ -1241,7 +1241,7 @@ export default async function plugin(bb: BbPluginApi) {
             candidates: found,
             roots: config.roots,
             dryRun,
-            log: (message) => bb.log.info(`cli clean: ${message}`),
+            log: (message) => alia.log.info(`cli clean: ${message}`),
           });
           if (!dryRun && result.succeeded > 0) planner.invalidate();
           if (json) return asJson({ ...result, missing });
@@ -1260,7 +1260,7 @@ export default async function plugin(bb: BbPluginApi) {
             for (const id of missing.slice(0, 20)) {
               lines.push(`  unknown candidate id: ${id}`);
             }
-            lines.push("Run `bb reclaim plan --refresh` for current ids.");
+            lines.push("Run `alia reclaim plan --refresh` for current ids.");
             return { exitCode: 1, stdout: `${lines.join("\n")}\n` };
           }
           if (dryRun) lines.push("Re-run with --yes to apply.");
@@ -1276,8 +1276,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     scanner.cancel();
-    bb.log.info("disposed");
+    alia.log.info("disposed");
   });
 }

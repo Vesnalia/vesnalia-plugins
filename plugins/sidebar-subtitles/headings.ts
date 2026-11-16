@@ -1,5 +1,5 @@
 import {navigationKey} from "./navigation.ts";
-const PREFIX = "__bb_heading__/";
+const PREFIX = "__alia_heading__/";
 
 export function readNavigationHeadings(order: readonly string[]): Map<string, string> {
   const headings = new Map<string, string>();

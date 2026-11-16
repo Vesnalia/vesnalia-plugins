@@ -3,7 +3,7 @@
  */
 import type { HostChoice } from "./tabs";
 
-/** The fields of a bb host (`bb.sdk.hosts.list()`) this file reads. */
+/** The fields of a VesnALIA host (`alia.sdk.hosts.list()`) this file reads. */
 export interface HostRecord {
   id: string;
   name: string;

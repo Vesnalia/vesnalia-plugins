@@ -316,7 +316,7 @@ export class SelkiesSession implements Kept {
   readonly #held = new Set<number>();
   /** The box's cursor as CSS, and whether it has a visible pixel. */
   #cursor: string | null = null;
-  /** The box's pointer drawn over the picture for a viewer without control, where bb-box sends where it is (060). */
+  /** The box's pointer drawn over the picture for a viewer without control, where alia-box sends where it is (060). */
   readonly #boxPointer = new BoxPointer(this.element);
   readonly #agentPointer = new AgentPointer(this.element);
   #cursorVisible = false;
@@ -608,7 +608,7 @@ export class SelkiesSession implements Kept {
     const socket = new WebSocket(this.#url);
     socket.binaryType = "arraybuffer";
     this.#socket = socket;
-    this.#agentPointer.message("BB_AGENT,clear");
+    this.#agentPointer.message("ALIA_AGENT,clear");
     this.#drawPointer();
     this.#leaveSlowVideoStills();
     this.#reset();
@@ -628,7 +628,7 @@ export class SelkiesSession implements Kept {
       this.#awaitFirstFrame();
       // Whether this browser decodes 4:4:4: the box streams it while every viewer does (the relay keeps this message).
       void decodesFullColour().then((yes) => {
-        if (this.#socket === socket && socket.readyState === WebSocket.OPEN) socket.send(`BB_FULLCOLOR,${yes ? 1 : 0}`);
+        if (this.#socket === socket && socket.readyState === WebSocket.OPEN) socket.send(`ALIA_FULLCOLOR,${yes ? 1 : 0}`);
       });
       // The largest frame it decodes: the box keeps High resolution within what every viewer does (#864).
       void decodesMacroblocks().then((most) => {
@@ -789,7 +789,7 @@ export class SelkiesSession implements Kept {
     const comma = text.indexOf(",");
     const verb = (comma < 0 ? text : text.slice(0, comma)).split(" ")[0];
     const rest = comma < 0 ? "" : text.slice(comma + 1);
-    if (this.#device && text.startsWith("BB_DEVICE_")) {
+    if (this.#device && text.startsWith("ALIA_DEVICE_")) {
       this.#deviceMessage(text);
       return;
     }
@@ -878,30 +878,30 @@ export class SelkiesSession implements Kept {
     const parsed = parseDeviceServerMessage(text);
     if (!parsed.ok || !this.#device) return;
     const message = parsed.value;
-    if (message.verb === "BB_DEVICE_TOUCH") {
+    if (message.verb === "ALIA_DEVICE_TOUCH") {
       if (!this.#mine && message.contacts.length && this.#stage) this.#echo?.show(message.contacts, (point) => this.#stage!.toElement(point));
       return;
     }
-    if (message.verb === "BB_DEVICE_STILL") {
+    if (message.verb === "ALIA_DEVICE_STILL") {
       if (this.#device.stills && !this.#stopped) void this.#drawStill(message.png, message.generation);
       return;
     }
-    if (message.verb === "BB_DEVICE_ANSWER") {
+    if (message.verb === "ALIA_DEVICE_ANSWER") {
       this.#answers.answered(message.answer);
       return;
     }
-    if (message.verb === "BB_DEVICE_VIDEO") {
+    if (message.verb === "ALIA_DEVICE_VIDEO") {
       if (this.#device.videoWords === message.video.words) return;
       this.#device = { ...this.#device, videoWords: message.video.words };
       for (const listener of this.#listeners) listener();
       return;
     }
-    if (message.verb === "BB_DEVICE_HELLO") {
+    if (message.verb === "ALIA_DEVICE_HELLO") {
       const hello = message.hello;
       this.#device = { ...this.#device, offered: hello.devices.map((device) => device.model), bootedHere: hello.bootedHere ? [...hello.bootedHere] : null };
     }
-    const state = message.verb === "BB_DEVICE_HELLO" ? message.hello.state : message.verb === "BB_DEVICE_STATE" ? message.state : null;
-    if (message.verb === "BB_DEVICE_HELLO") {
+    const state = message.verb === "ALIA_DEVICE_HELLO" ? message.hello.state : message.verb === "ALIA_DEVICE_STATE" ? message.state : null;
+    if (message.verb === "ALIA_DEVICE_HELLO") {
       this.#framesCarryGeneration = message.hello.version >= FRAME_GENERATIONS_SINCE_VERSION;
       this.#deviceTakesPaste = message.hello.version >= PASTE_REQUEST_SINCE_VERSION;
     }
@@ -946,7 +946,7 @@ export class SelkiesSession implements Kept {
       this.#send(text ? `cw,${bytesBase64(bytes)}` : `cb,${mime},${bytesBase64(bytes)}`);
       return;
     }
-    const id = `bb${Date.now().toString(36)}${(++this.#transfers).toString(36)}`;
+    const id = `alia${Date.now().toString(36)}${(++this.#transfers).toString(36)}`;
     this.#send(text ? `cws,${id},${bytes.byteLength}` : `cbs,${id},${mime},${bytes.byteLength}`);
     for (let offset = 0; offset < bytes.byteLength; offset += CLIPBOARD_CHUNK) {
       this.#send(`${text ? "cwd" : "cbd"},${id},${bytesBase64(bytes.subarray(offset, offset + CLIPBOARD_CHUNK))}`);
@@ -1063,8 +1063,8 @@ export class SelkiesSession implements Kept {
   }
 
   /**
-   * The box's pointer over the picture, where bb-box says it is, for a viewer without control: on a Wayland desktop with
-   * bb-box-cursor neither stream has it in its picture (060), so people watching the agent would not see where it points.
+   * The box's pointer over the picture, where alia-box says it is, for a viewer without control: on a Wayland desktop with
+   * alia-box-cursor neither stream has it in its picture (060), so people watching the agent would not see where it points.
    * Scaled and placed as the picture is, fitted to the pane. The viewer with control has their own pointer, in the box's
    * shape, instead.
    */
@@ -1138,7 +1138,7 @@ export class SelkiesSession implements Kept {
   }
 
   #sendKey(keysym: number, code: string, down: boolean): void {
-    // bb-box's own Mac input names Command and Option as most servers do.
+    // alia-box's own Mac input names Command and Option as most servers do.
     const mac = macBrowser();
     const key = boxKey(keysym, code, this.guestOs, mac, null);
     for (const each of mac && this.guestOs !== "macos" ? this.#option.keys(key, down) : [{ key, down }]) {
@@ -1283,7 +1283,7 @@ export class SelkiesSession implements Kept {
 
   /**
    * Whether the desktop has the size it takes for this tab's `width` and `height` already: a width a multiple of 8 and an even height,
-   * as bb-box sets it, or twice that at High resolution.
+   * as alia-box sets it, or twice that at High resolution.
    */
   #hasSize(width: number, height: number): boolean {
     return [1, 2].some((scale) => {

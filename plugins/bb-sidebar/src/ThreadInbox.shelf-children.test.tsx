@@ -16,7 +16,7 @@ const shelves = [
 
 describe("children of shelved threads", () => {
   it.each(shelves)("shows the child chip on $name rows and expands the children on demand", async ({ name, row }) => {
-    localStorage.setItem("bb-sidebar:shelf-expansion:v1", JSON.stringify({ [name.toLowerCase()]: true }));
+    localStorage.setItem("alia-sidebar:shelf-expansion:v1", JSON.stringify({ [name.toLowerCase()]: true }));
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -28,7 +28,7 @@ describe("children of shelved threads", () => {
           thread({ id: "failed", title: "Failed child", parentThreadId: "parent", indicator: "unread-error" }),
           thread({ id: "lonely", title: "No children" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -48,7 +48,7 @@ describe("children of shelved threads", () => {
     expect(chip.getAttribute("aria-expanded")).toBe("true");
     expect(within(shelf).getByText("Quiet child")).toBeDefined();
     expect(within(shelf).getByText("Failed child")).toBeDefined();
-    expect(JSON.parse(localStorage.getItem("bb-sidebar:child-expansion:v1")!)).toEqual(["parent"]);
+    expect(JSON.parse(localStorage.getItem("alia-sidebar:child-expansion:v1")!)).toEqual(["parent"]);
 
     fireEvent.click(chip);
     expect(within(shelf).queryByText("Quiet child")).toBeNull();

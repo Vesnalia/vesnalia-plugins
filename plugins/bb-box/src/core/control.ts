@@ -48,7 +48,7 @@ export interface ControlDeps {
   keep?(kept: readonly KeptControl[]): Promise<void>;
   /** Reads each person's control as last stored, by this instance or the last one (#318). */
   read?(): Promise<readonly KeptControl[]>;
-  /** bb-box is stopping while a person has control of the box, so the log can say whether it stays theirs or goes back to the agent. */
+  /** alia-box is stopping while a person has control of the box, so the log can say whether it stays theirs or goes back to the agent. */
   stopping?(boxId: string, kept: boolean): Promise<void>;
   logError(operation: string, error: unknown): void;
   /** How long a holder's viewer may be gone before control goes back to the agent. */
@@ -201,7 +201,7 @@ export class Control {
   /**
    * Control people had as the plugin's last instance stopped (045). Each
    * holder's viewer has staleMs to connect again, as a viewer that went away
-   * has: BB starts this instance before it stops the last one, which closes
+   * has: VesnALIA starts this instance before it stops the last one, which closes
    * the viewer's connection. If it does not, control goes back to the agent,
    * and the desktop gets back the size it had while the agent had control.
    */
@@ -217,13 +217,13 @@ export class Control {
       this.#set(boxId, state, "human", holder);
       if (!this.connected(boxId, holder)) this.#wait(boxId, state, this.#deps.staleMs ?? STALE_MS);
     }
-    // What was left out, such as a box that went while bb-box was away, is not kept again.
+    // What was left out, such as a box that went while alia-box was away, is not kept again.
     this.#store();
   }
 
   /**
    * Stores each person's control, latest last. It is stored on every change,
-   * not as the plugin stops, because BB starts the next instance first. A
+   * not as the plugin stops, because VesnALIA starts the next instance first. A
    * stopped instance stores nothing, so it never overwrites the next one's.
    */
   #store(): void {
@@ -380,7 +380,7 @@ export class Control {
    * The plugin is going away, as on a reload. When each person's control is
    * stored, it stays theirs for the next instance (045): what the holder
    * holds down is let go, and the desktop keeps its size for the viewer to
-   * come back to. Otherwise control goes back now, while bb-box can still
+   * come back to. Otherwise control goes back now, while alia-box can still
    * reach the box, so a desktop the holder resized gets its size back
    * (#139). Nothing is scheduled or stored after.
    */

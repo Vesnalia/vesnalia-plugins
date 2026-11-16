@@ -1,8 +1,8 @@
 // src/mentions.ts — "@ a file that lives on this machine" (§8.8).
 //
-// bb's own attachment picker uploads from the machine the *browser* runs on.
+// VesnALIA's own attachment picker uploads from the machine the *browser* runs on.
 // This provider is the other half: the composer can also reach a file on the
-// machine the bb *server* runs on, which is the only tree this plugin ever
+// machine the VesnALIA *server* runs on, which is the only tree this plugin ever
 // touches, under exactly the same §6 clamp as every other read.
 //
 // Two host contracts shape everything below, and neither is negotiable:
@@ -18,11 +18,11 @@ import { open, stat } from "node:fs/promises";
 import path from "node:path";
 import type { Stats } from "node:fs";
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginMentionItem,
   PluginMentionProviderRegistration,
   PluginMentionSearchContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 
 import { MENTION_PROVIDER_ID, MENTION_PROVIDER_LABEL } from "../contract";
 import { searchDir } from "./listing";
@@ -36,7 +36,7 @@ const SEARCH_LIMIT = 20;
  * deeper than that the walk costs more than the row is worth.
  */
 const SEARCH_DEPTH = 4;
-/** Under bb's 2s box, so the walk stops itself before the host drops it. */
+/** Under VesnALIA's 2s box, so the walk stops itself before the host drops it. */
 const SEARCH_BUDGET_MS = 1_500;
 /**
  * A candidate pool wider than the menu, because directories and links that
@@ -209,7 +209,7 @@ export function createFileMentionProvider(): PluginMentionProviderRegistration {
   return {
     id: MENTION_PROVIDER_ID,
     label: MENTION_PROVIDER_LABEL,
-    // `triggers` is omitted on purpose: "@" is the trigger every bb user
+    // `triggers` is omitted on purpose: "@" is the trigger every VesnALIA user
     // already knows, and claiming "#" or "~" as well would put this plugin's
     // rows in menus it has no business being in.
     search: searchFiles,
@@ -217,6 +217,6 @@ export function createFileMentionProvider(): PluginMentionProviderRegistration {
   };
 }
 
-export function registerMentions(bb: BbPluginApi): void {
-  bb.ui.registerMentionProvider(createFileMentionProvider());
+export function registerMentions(alia: AliaPluginApi): void {
+  alia.ui.registerMentionProvider(createFileMentionProvider());
 }

@@ -1,9 +1,9 @@
-// bb-plugin-omp-subagents — timeline subagent enrichment.
+// alia-plugin-omp-subagents — timeline subagent enrichment.
 //
-// bb renders each OMP `task` call as a generic "Ran tool" row: the item
+// VesnALIA renders each OMP `task` call as a generic "Ran tool" row: the item
 // arguments carry the full spawn facts (per-agent names) but nothing draws
 // them. This content script injects a live subagent strip below every such
-// row in the timeline, in bb's own row vocabulary.
+// row in the timeline, in VesnALIA's own row vocabulary.
 //
 // The strip reads the shared roster store (src/roster-store.ts) that also feeds
 // the Hub panel; it owns no timer or request of its own.
@@ -176,7 +176,7 @@ export function startTimelineStrip(signal: AbortSignal): void {
     host.className = "omp-subagent-strip-host contents";
     // Plugin utilities are scoped to this attribute; the timeline lives outside
     // any plugin wrapper, so without it none of the strip's classes apply.
-    host.setAttribute("data-bb-plugin", PLUGIN_ID);
+    host.setAttribute("data-alia-plugin", PLUGIN_ID);
     element.insertAdjacentElement("afterend", host);
     const root = createRoot(host);
     root.render(createElement(TaskStrip, { row: taskRow }));

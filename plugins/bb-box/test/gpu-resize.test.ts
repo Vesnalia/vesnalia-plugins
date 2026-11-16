@@ -31,7 +31,7 @@ function record(nvidia: string | null): string {
 }
 
 function withUserspace(bridge: ClaimsBridge, nvidia: string | null = DRIVER): void {
-  bridge.proxmox.guests.get(9000)!.config.description = `bb-box linux template (NVIDIA ${nvidia}, no card), built 2026-11-06. See /usr/share/bb-box/template-release inside.\n${record(nvidia)}`;
+  bridge.proxmox.guests.get(9000)!.config.description = `alia-box linux template (NVIDIA ${nvidia}, no card), built 2026-11-06. See /usr/share/alia-box/template-release inside.\n${record(nvidia)}`;
 }
 
 function size(gpu: GpuPart, cores = 2): ResizeTarget {
@@ -181,18 +181,18 @@ test("071 unit 9, section 8, running: shared to whole with another box running o
   assert.equal(plan.gpu?.way, "restart");
   assert.equal(plan.gpu?.fromCard?.card, A);
   assert.equal(plan.gpu?.toCard?.card, B);
-  assert.equal(plan.gpu?.words, "GPU: shared on card 0 → whole card 1 · Restart. Card 0 has lone-pine (in thread \"Train the model\") running. BB Box moves amber-fox to card 1, which has no other box, in about 15 s. Everything running in amber-fox stops.");
+  assert.equal(plan.gpu?.words, "GPU: shared on card 0 → whole card 1 · Restart. Card 0 has lone-pine (in thread \"Train the model\") running. VesnALIA Box moves amber-fox to card 1, which has no other box, in about 15 s. Everything running in amber-fox stops.");
   anotherInstallRunning(bridge, 7063, CARD_B);
   const configs = bridge.configs();
   const refused = await backend.planResize(fox.guest, "linux", size("whole"), [], signal());
   assert.deepEqual(refused.gpu?.refusal, {
     person: "No card is free for amber-fox alone. Card 0 has lone-pine (in thread \"Train the model\") running. Card 1 has CT 7063 of another install running. Release one of them, or keep the GPU shared.",
-    agent: "Not resized: no card is free for amber-fox alone. Card 0 has lone-pine running; card 1 has CT 7063 of another install running. Keep the GPU shared, or ask the user. BB Box changed nothing.",
+    agent: "Not resized: no card is free for amber-fox alone. Card 0 has lone-pine running; card 1 has CT 7063 of another install running. Keep the GPU shared, or ask the user. VesnALIA Box changed nothing.",
   });
   await assert.rejects(backend.resize(fox.guest, "linux", size("whole"), { restart: true }, signal()), (error: unknown) => error instanceof BackendError && error.agentMessage === refused.gpu!.refusal!.agent);
   assert.deepEqual(bridge.configs(), configs, "no guest changed");
   const pineAsks = await backend.planResize(pine.guest, "linux", size("whole"), [], signal());
-  assert.equal(pineAsks.gpu?.refusal?.agent, "Not resized: no card is free for lone-pine alone. Card 0 has amber-fox running; card 1 has CT 7063 of another install running. Keep the GPU shared, or ask the user. BB Box changed nothing.");
+  assert.equal(pineAsks.gpu?.refusal?.agent, "Not resized: no card is free for lone-pine alone. Card 0 has amber-fox running; card 1 has CT 7063 of another install running. Keep the GPU shared, or ask the user. VesnALIA Box changed nothing.");
   bridge.proxmox.guests.delete(7063);
   bridge.pass();
   const before = bridge.node.powerLog().length;
@@ -287,8 +287,8 @@ test("071 unit 9, section 8, the plan made again: a live switch that now needs a
   const now = await backend.planResize(elm.guest, "linux", size("whole"), [], signal(), live.gpu!);
   assert.equal(now.gpu?.way, "restart");
   assert.deepEqual(now.gpu?.changedSinceAgreed, {
-    person: "Not resized: when you checked, quiet-elm could change to a whole card live, on card 0; now card 0 has CT 7064 of another install running, so it would move to card 1 with a restart. Resize it again with the restart to do that, or keep its GPU as it is. BB Box changed nothing.",
-    agent: "Not resized: when you checked, quiet-elm could change to a whole card live, on card 0; now card 0 has CT 7064 of another install running, so it would move to card 1 with a restart. Call box_resize with restart true to do that, or ask the user. BB Box changed nothing.",
+    person: "Not resized: when you checked, quiet-elm could change to a whole card live, on card 0; now card 0 has CT 7064 of another install running, so it would move to card 1 with a restart. Resize it again with the restart to do that, or keep its GPU as it is. VesnALIA Box changed nothing.",
+    agent: "Not resized: when you checked, quiet-elm could change to a whole card live, on card 0; now card 0 has CT 7064 of another install running, so it would move to card 1 with a restart. Call box_resize with restart true to do that, or ask the user. VesnALIA Box changed nothing.",
   });
   const configs = bridge.configs();
   const power = bridge.node.powerLog().length;
@@ -306,7 +306,7 @@ test("071 unit 9, section 8, the plan made again: a live switch that now needs a
   const before = bridge.configs();
   await assert.rejects(backend.resize(fox.guest, "linux", size("shared"), { restart: true, agreed: add.gpu! }, signal()), (error: unknown) => {
     assert.ok(error instanceof BackendError);
-    assert.equal(error.agentMessage, "Not resized: no card on pve can take a shared GPU for amber-fox now: card 0 has 1 of this install's boxes, the most a card may have (quiet-elm); card 1 has 1 of this install's boxes, the most a card may have (tidy-glade). Release one of your own boxes on card 0 (quiet-elm), keep it with no GPU, or ask the user. BB Box changed nothing.");
+    assert.equal(error.agentMessage, "Not resized: no card on pve can take a shared GPU for amber-fox now: card 0 has 1 of this install's boxes, the most a card may have (quiet-elm); card 1 has 1 of this install's boxes, the most a card may have (tidy-glade). Release one of your own boxes on card 0 (quiet-elm), keep it with no GPU, or ask the user. VesnALIA Box changed nothing.");
     return true;
   });
   assert.deepEqual(bridge.configs(), before, "a card taken meanwhile changes nothing");
@@ -325,8 +325,8 @@ test("071 unit 9 gate: a move whose card is taken meanwhile is asked again, nami
   const configs = bridge.configs();
   await assert.rejects(backend.resize(fox.guest, "linux", size("shared"), { restart: true, agreed: add.gpu! }, signal()), (error: unknown) => {
     assert.ok(error instanceof BackendError);
-    assert.equal(error.agentMessage, "Not resized: when you checked, amber-fox would get card 0 with a restart; now card 0 has 1 of this install's boxes, the most a card may have (tidy-glade), so it would get card 1 with a restart. Call box_resize with restart true to do that, or ask the user. BB Box changed nothing.");
-    assert.equal(error.message, "Not resized: when you checked, amber-fox would get card 0 with a restart; now card 0 has 1 of this install's boxes, the most a card may have (tidy-glade in thread \"Other work\"), so it would get card 1 with a restart. Resize it again with the restart to do that, or keep its GPU as it is. BB Box changed nothing.");
+    assert.equal(error.agentMessage, "Not resized: when you checked, amber-fox would get card 0 with a restart; now card 0 has 1 of this install's boxes, the most a card may have (tidy-glade), so it would get card 1 with a restart. Call box_resize with restart true to do that, or ask the user. VesnALIA Box changed nothing.");
+    assert.equal(error.message, "Not resized: when you checked, amber-fox would get card 0 with a restart; now card 0 has 1 of this install's boxes, the most a card may have (tidy-glade in thread \"Other work\"), so it would get card 1 with a restart. Resize it again with the restart to do that, or keep its GPU as it is. VesnALIA Box changed nothing.");
     return true;
   });
   assert.deepEqual(bridge.configs(), configs);
@@ -351,7 +351,7 @@ test("071 unit 9 gate: a restart whose new claim the helper does not grant leave
     assert.ok(error instanceof ResizeLeftStopped, String(error));
     assert.equal(error.gpu, "none");
     assert.equal(error.guest.claim, null);
-    assert.match(error.message, /^Amber-fox is stopped, with its disk as it was: the host's GPU helper on pve did not answer within 10 s\. BB Box cannot tell yet whether the host's GPU helper on pve grants its request gpu\.none\.g\d+: until it answers, amber-fox holds no GPU, and its start waits for the answer\. Start it to use it so, or resize it again\.$/);
+    assert.match(error.message, /^Amber-fox is stopped, with its disk as it was: the host's GPU helper on pve did not answer within 10 s\. ALIA Box cannot tell yet whether the host's GPU helper on pve grants its request gpu\.none\.g\d+: until it answers, amber-fox holds no GPU, and its start waits for the answer\. Start it to use it so, or resize it again\.$/);
     assert.match(error.agentMessage ?? "", /^Not resized: amber-fox is stopped, with its disk as it was: .* Start it with box_start, or ask the user\.$/);
     return true;
   });
@@ -371,7 +371,7 @@ test("071 unit 9 gate: a restart that is granted its card but cannot start leave
   let watched: number | null = null;
   const backend = bridge.backend({
     onSleep: () => {
-      if (watched !== null && bridge.tags(watched).some((tag) => tag.startsWith("bb-power.start."))) bridge.proxmox.guests.get(watched)!.config.lock = "backup";
+      if (watched !== null && bridge.tags(watched).some((tag) => tag.startsWith("alia-power.start."))) bridge.proxmox.guests.get(watched)!.config.lock = "backup";
     },
   });
   const fox = await server(bridge, backend, "none", "amber-fox");
@@ -380,7 +380,7 @@ test("071 unit 9 gate: a restart that is granted its card but cannot start leave
     assert.ok(error instanceof ResizeLeftStopped, String(error));
     assert.equal(error.gpu, "shared");
     assert.deepEqual(error.guest.claim, { card: A, part: "shared", generation: 1, answer: "granted" });
-    assert.match(error.message, /^Amber-fox holds a shared GPU, card 0 now, but did not start after its GPU changed: .*It is stopped, with its disk as it was\. Start tries again; bb box doctor has more\.$/);
+    assert.match(error.message, /^Amber-fox holds a shared GPU, card 0 now, but did not start after its GPU changed: .*It is stopped, with its disk as it was\. Start tries again; alia box doctor has more\.$/);
     assert.equal(error.message.split("It is stopped").length, 2, "it says once that it is stopped");
     assert.equal((error.agentMessage ?? "").split("It is stopped").length, 2, "and once to an agent");
     return true;
@@ -397,7 +397,7 @@ test("071 unit 9: a GPU change is refused before anything changes, for each audi
   const plain = await server(off, offBackend, "none", "calm-reef");
   assert.deepEqual((await offBackend.planResize(plain.guest, "linux", size("shared"), [], signal())).gpu?.refusal, {
     person: "pve cannot change calm-reef's GPU now: its GPU helper has writes off, so it gives no box a card. Turn writes on with host/setup-gpu.sh --writes on --check, then --writes on, as root on pve.",
-    agent: "Not resized: pve cannot change calm-reef's GPU now: its GPU helper has writes off, so it gives no box a card. Keep its GPU as it is, or ask the user. BB Box changed nothing.",
+    agent: "Not resized: pve cannot change calm-reef's GPU now: its GPU helper has writes off, so it gives no box a card. Keep its GPU as it is, or ask the user. VesnALIA Box changed nothing.",
   });
   await assert.rejects(offBackend.resize(plain.guest, "linux", size("shared"), { restart: true }, signal()), /its GPU helper has writes off/);
 
@@ -407,7 +407,7 @@ test("071 unit 9: a GPU change is refused before anything changes, for each audi
   const old = box("linux-desktop", "shared", "thr_resize", "old-desk");
   bridge.desktop(7040, CARD_A, old, INSTALL, { running: true });
   const refused = await backend.planResize(bridge.stoppedGuest(7040, old, 9001), "linux-desktop", size("none"), [], signal());
-  assert.equal(refused.gpu?.refusal?.person, "Old-desk has a card's device lines and no GPU marker, so BB Box does not know which claim it holds. Run bb box gpu mark, then resize it again.");
+  assert.equal(refused.gpu?.refusal?.person, "Old-desk has a card's device lines and no GPU marker, so VesnALIA Box does not know which claim it holds. Run alia box gpu mark, then resize it again.");
 
   const bare = await server(bridge, backend, "none", "pale-moss");
   bridge.userspaceIn(bare.vmid, null);
@@ -416,20 +416,20 @@ test("071 unit 9: a GPU change is refused before anything changes, for each audi
   assert.equal(installing?.installs, DRIVER);
   await stopped(bridge, backend, bare.guest);
   withUserspace(bridge, null);
-  assert.equal((await backend.planResize(bare.guest, "linux", size("shared"), [], signal())).gpu?.refusal?.agent, "Not resized: pale-moss is stopped, and a card needs NVIDIA's userspace 580.142 in it, which BB Box installs only in a running box. Start it with box_start, then resize it again, or ask the user. BB Box changed nothing.");
+  assert.equal((await backend.planResize(bare.guest, "linux", size("shared"), [], signal())).gpu?.refusal?.agent, "Not resized: pale-moss is stopped, and a card needs NVIDIA's userspace 580.142 in it, which VesnALIA Box installs only in a running box. Start it with box_start, then resize it again, or ask the user. VesnALIA Box changed nothing.");
   withUserspace(bridge);
 
   const shared = await server(bridge, backend, "shared", "quiet-elm");
   const wholeOff = bridge.backend({ wholeCards: false });
   const offPlan = await wholeOff.planResize(shared.guest, "linux", size("whole"), [], signal());
-  assert.equal(offPlan.gpu?.refusal?.agent, "Not resized: whole cards are off on Proxmox LXC on pve. Keep the GPU shared, or ask the user. BB Box changed nothing.");
+  assert.equal(offPlan.gpu?.refusal?.agent, "Not resized: whole cards are off on Proxmox LXC on pve. Keep the GPU shared, or ask the user. VesnALIA Box changed nothing.");
 
   const timer = new ClaimsBridge();
   withUserspace(timer);
   const timerBackend = timer.backend();
   const lone = await server(timer, timerBackend, "none", "lone-pine");
   timer.timerReport();
-  assert.equal((await timerBackend.planResize(lone.guest, "linux", size("shared"), [], signal())).gpu?.refusal?.agent, "Not resized: pve cannot change lone-pine's GPU now: it has no GPU helper to give a box a card. Keep its GPU as it is, or ask the user. BB Box changed nothing.");
+  assert.equal((await timerBackend.planResize(lone.guest, "linux", size("shared"), [], signal())).gpu?.refusal?.agent, "Not resized: pve cannot change lone-pine's GPU now: it has no GPU helper to give a box a card. Keep its GPU as it is, or ask the user. VesnALIA Box changed nothing.");
 });
 
 test("071 unit 9, section 8, desktops: a GPU desktop that loses its card restarts on the CPU's words and keeps no GPU fact, and gets a card again with a restart", async () => {
@@ -517,9 +517,9 @@ test("071 unit 9: a card reserved for a box whose GPU a resize changes is named 
   const card = { uuid: A, index: 0, pci: "0000:21:00.0", minor: 1, drmCard: "card2", drmRender: "renderD129" };
   const namer: CardNamer = { guest: (vmid) => ({ is: "box", name: `CT ${vmid}`, threadId: null }), title: () => null };
   const making = { name: "amber-fox", threadId: "thr_resize", resizing: true };
-  assert.equal(blockWords({ is: "reserved-whole", card, making }, namer, PERSON), "card 0 is kept whole for amber-fox, which BB Box is resizing");
-  assert.equal(blockWords({ is: "placing", card, making: [making] }, namer, PERSON), "BB Box is changing the GPU of amber-fox to card 0");
-  assert.equal(blockWords({ is: "placing", card, making: [{ name: "lone-pine", threadId: "thr_resize", starting: true }] }, namer, PERSON), "BB Box is starting lone-pine on card 0");
+  assert.equal(blockWords({ is: "reserved-whole", card, making }, namer, PERSON), "card 0 is kept whole for amber-fox, which VesnALIA Box is resizing");
+  assert.equal(blockWords({ is: "placing", card, making: [making] }, namer, PERSON), "VesnALIA Box is changing the GPU of amber-fox to card 0");
+  assert.equal(blockWords({ is: "placing", card, making: [{ name: "lone-pine", threadId: "thr_resize", starting: true }] }, namer, PERSON), "VesnALIA Box is starting lone-pine on card 0");
 });
 
 test("071 unit 9: a running box's restart for a card reserves it, as the box's own, while the resize waits for the helper, so no other box is placed in its room", async () => {
@@ -576,7 +576,7 @@ test("071 unit 9, review 1: the plan is made again under the card lock from the 
   await held;
   await assert.rejects(resizing, (error: unknown) => {
     assert.ok(error instanceof GpuPlanChanged, String(error));
-    assert.equal(error.agentMessage, "Not resized: when you checked, amber-fox would lose card 0 with a restart; now amber-fox has stopped since, so it would lose its card while stopped. Call box_resize again to do that, or ask the user. BB Box changed nothing.");
+    assert.equal(error.agentMessage, "Not resized: when you checked, amber-fox would lose card 0 with a restart; now amber-fox has stopped since, so it would lose its card while stopped. Call box_resize again to do that, or ask the user. VesnALIA Box changed nothing.");
     assert.equal(error.plan.stopped, true, "the plan it says is the plan now");
     return true;
   });
@@ -623,7 +623,7 @@ test("071 unit 9, review 6: a change in place whose marker cannot be written put
     assert.ok(error instanceof ResizeHolds && !(error instanceof ResizeLeftStopped), String(error));
     assert.equal(error.gpu, "shared");
     assert.equal(error.guest.claim?.part, "shared");
-    assert.match(error.message, /^Not resized: BB Box could not ask for its new GPU, as .*\. Its GPU is as it was: a shared GPU, card 0\. Try again, or run bb box doctor\.$/);
+    assert.match(error.message, /^Not resized: ALIA Box could not ask for its new GPU, as .*\. Its GPU is as it was: a shared GPU, card 0\. Try again, or run alia box doctor\.$/);
     return true;
   });
   bridge.proxmox.intercept = undefined;
@@ -725,16 +725,16 @@ test("071 unit 9, Fable 4: the disk grows only once the new claim is granted, so
   assert.equal(grown.claim?.part, "shared");
 });
 
-test("071 unit 9, gate F1a: a start refused after the grant is said in whole sentences, Proxmox's words ended before BB Box's", async () => {
+test("071 unit 9, gate F1a: a start refused after the grant is said in whole sentences, Proxmox's words ended before VesnALIA Box's", async () => {
   const bridge = new ClaimsBridge();
   withUserspace(bridge);
   const backend = bridge.backend();
   const fox = await server(bridge, backend, "none", "amber-fox");
-  bridge.proxmox.intercept = (call) => (call.method === "PUT" && call.path.endsWith(`/lxc/${fox.vmid}/config`) && /(^|;)bb-power\.start\./.test(call.params.tags ?? "") ? refused("CT is locked (backup)") : undefined);
+  bridge.proxmox.intercept = (call) => (call.method === "PUT" && call.path.endsWith(`/lxc/${fox.vmid}/config`) && /(^|;)alia-power\.start\./.test(call.params.tags ?? "") ? refused("CT is locked (backup)") : undefined);
   await assert.rejects(backend.resize(fox.guest, "linux", size("shared"), { restart: true }, signal()), (error: unknown) => {
     assert.ok(error instanceof ResizeLeftStopped, String(error));
     assert.equal(error.gpu, "shared");
-    assert.match(error.message, /CT is locked \(backup\)\. It is stopped, with its disk as it was\. Start tries again; bb box doctor has more\.$/);
+    assert.match(error.message, /CT is locked \(backup\)\. It is stopped, with its disk as it was\. Start tries again; alia box doctor has more\.$/);
     assert.match(error.agentMessage ?? "", /CT is locked \(backup\)\. It is stopped, with its disk as it was\. Start it with box_start, or ask the user\.$/);
     return true;
   });
@@ -814,13 +814,13 @@ test("071 unit 9, Astra re-review 3 and Fable low 1: a start that fails after th
   const fox = await server(bridge, backend, "none", "amber-fox");
   const before = Number(/size=(\d+)G/.exec(bridge.proxmox.guests.get(fox.vmid)!.config.rootfs ?? "")?.[1]);
   const grownTo = before + 8;
-  bridge.proxmox.intercept = (call) => (call.method === "PUT" && call.path.endsWith(`/lxc/${fox.vmid}/config`) && /(^|;)bb-power\.start\./.test(call.params.tags ?? "") ? refused("CT is locked (backup)") : undefined);
+  bridge.proxmox.intercept = (call) => (call.method === "PUT" && call.path.endsWith(`/lxc/${fox.vmid}/config`) && /(^|;)alia-power\.start\./.test(call.params.tags ?? "") ? refused("CT is locked (backup)") : undefined);
   await assert.rejects(backend.resize(fox.guest, "linux", { ...size("shared"), diskGiB: grownTo }, { restart: true }, signal()), (error: unknown) => {
     assert.ok(error instanceof ResizeLeftStopped, String(error));
     assert.equal(error.guest.size?.diskGiB, grownTo);
     assert.doesNotMatch(error.message, /disk as it was/);
     assert.doesNotMatch(error.agentMessage ?? "", /disk as it was/);
-    assert.match(error.message, new RegExp(`CT is locked \\(backup\\)\\. It is stopped, with its disk grown to ${grownTo} GiB\\. Start tries again; bb box doctor has more\\.$`));
+    assert.match(error.message, new RegExp(`CT is locked \\(backup\\)\\. It is stopped, with its disk grown to ${grownTo} GiB\\. Start tries again; VesnALIA box doctor has more\\.$`));
     assert.match(error.agentMessage ?? "", new RegExp(`It is stopped, with its disk grown to ${grownTo} GiB\\. Start it with box_start, or ask the user\\.$`));
     return true;
   });
@@ -862,7 +862,7 @@ test("071 unit 9, Astra re-review 3: a start that fails after the grant, in word
     assert.match(error.message, /did not get card \d/);
     assert.equal(error.message.split("It is stopped").length, 2, error.message);
     assert.equal((error.agentMessage ?? "").split("It is stopped").length, 2, error.agentMessage ?? "");
-    assert.match(error.message, new RegExp(`It is stopped, with its disk grown to ${before + 8} GiB\\. Start tries again; bb box doctor has more\\.$`));
+    assert.match(error.message, new RegExp(`It is stopped, with its disk grown to ${before + 8} GiB\\. Start tries again; VesnALIA box doctor has more\\.$`));
     assert.doesNotMatch(error.message, /disk as it was/);
     return true;
   });

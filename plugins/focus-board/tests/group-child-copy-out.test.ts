@@ -9,7 +9,7 @@
 // (pinned, attention, done, cross-space): those keep their single card and
 // lose the row, exactly as before.
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { BoardColumn, GroupBy, GroupingContext } from "../components/grouping";
 import {
   canJoinGroup,

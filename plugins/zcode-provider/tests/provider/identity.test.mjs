@@ -3,16 +3,16 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { plugin } from './helpers.mjs';
 
 test('distinct manifest identity registers one provider/CLI and reads only its own plugin state with fresh defaults', async () => {
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-  assert.equal(pkg.name, 'bb-plugin-zcode-provider');
+  assert.equal(pkg.name, 'alia-plugin-zcode-provider');
   assert.equal(pkg.version, '0.2.3');
-  assert.equal(pkg.bb.name, 'ZCode Provider');
-  // Installed bb derives the ID from the final package-name component.
-  const pluginId = pkg.name.split('/').at(-1).replace(/^bb-plugin-/, '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+  assert.equal(pkg.alia.name, 'ZCode Provider');
+  // Installed VesnALIA derives the ID from the final package-name component.
+  const pluginId = pkg.name.split('/').at(-1).replace(/^alia-plugin-/, '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
   assert.equal(pluginId, 'zcode-provider');
   const dataDir = mkdtempSync(join(tmpdir(), 'zcode-identity-'));
   const hosts = [];
@@ -23,9 +23,9 @@ test('distinct manifest identity registers one provider/CLI and reads only its o
       writeFileSync(join(root, 'service-evidence.ndjson'), JSON.stringify({ event }) + '\n');
     }
     for (const [id, expected] of [[pluginId, 'native-startup'], ['zcode', 'native-mcp-degraded']]) {
-      const { bb, harness } = createFakePluginHost({ pluginId: id, dataDir });
+      const { alia, harness } = createFakePluginHost({ pluginId: id, dataDir });
       hosts.push(harness);
-      await plugin(bb);
+      await plugin(alia);
       assert.deepEqual(harness.registrations.providerRegistrations.map(p => [p.id, p.displayName]), [['zcode-provider', 'ZCode Provider']]);
       assert.equal(harness.registrations.cli.name, 'zcode-provider-report');
       const help = await harness.runCli(['--help'], {});

@@ -38,13 +38,13 @@ const results = [];
 for (const font of FONT_SETS) {
   if (font === null) {
     await page.evaluate(() => {
-      const panel = document.querySelector('[data-bb-plugin="focus-board"]');
+      const panel = document.querySelector('[data-alia-plugin="focus-board"]');
       panel.style.fontSize = "";
       panel.style.lineHeight = "";
     });
   } else {
     await page.evaluate((font) => {
-      const panel = document.querySelector('[data-bb-plugin="focus-board"]');
+      const panel = document.querySelector('[data-alia-plugin="focus-board"]');
       panel.style.fontSize = font.fs;
       panel.style.lineHeight = font.lh;
     }, font);

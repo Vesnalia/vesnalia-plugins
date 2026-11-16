@@ -148,7 +148,7 @@ export function makeNativeClassifierAsk(
   configuration: NativeConfiguration,
   options: {
     dataDir: string;
-    bbRoot?: string;
+    aliaRoot?: string;
     providerOptions?: Record<string, unknown>;
     timeoutMs?: number;
     spawn?: typeof spawn;
@@ -237,7 +237,7 @@ export function makeNativeClassifierAsk(
           if (code !== 0) {
             reject(
               new Error(
-                "The local classifier failed. Make sure that you are signed in through BB.",
+                "The local classifier failed. Make sure that you are signed in through VesnALIA.",
               ),
             );
             return;

@@ -8,7 +8,7 @@ import { createOwnUsage, macOwnCommand, parseOwnReading, psOwnCommand, type OwnU
 
 export type RouteOs = "linux" | "macos";
 
-const MARK = "@@bb-box-monitor:";
+const MARK = "@@alia-box-monitor:";
 
 function section(name: string, command: string): string {
   return `printf '\\n${MARK}${name}\\n'; ${command} 2>/dev/null`;

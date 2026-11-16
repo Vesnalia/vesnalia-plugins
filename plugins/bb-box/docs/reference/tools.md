@@ -2,20 +2,20 @@
 
 # Agent tools
 
-The tools bb-box gives a thread's agent, with their parameters as the agent sees them.
+The tools alia-box gives a thread's agent, with their parameters as the agent sees them.
 
 | Tool | What it does |
 | --- | --- |
 | [`box_acquire`](#box_acquire) | Get a fresh box for this thread: a Linux or macOS computer for commands, builds, tests, servers or Docker, away from the thread's own machine. |
-| [`box_copy`](#box_copy) | Copy one file, of any size, between this thread's workspace or its storage folder ($BB_THREAD_STORAGE) and a box. |
+| [`box_copy`](#box_copy) | Copy one file, of any size, between this thread's workspace or its storage folder ($ALIA_THREAD_STORAGE) and a box. |
 | [`box_device`](#box_device) | Control an ios or android box's device, as the panel's toolbar does: Home, Back and Recents, lock and wake, rotate, fold, appearance, text size, location, status bar, battery, network, install an app, switch device, and reboot. |
-| [`box_enrol`](#box_enrol) | Add a ready box that could not join BB, or is not a BB machine, to BB again, so threads can run on it. |
+| [`box_enrol`](#box_enrol) | Add a ready box that could not join VesnALIA, or is not a VesnALIA machine, to VesnALIA again, so threads can run on it. |
 | [`box_fork`](#box_fork) | Make a new box of this thread from a snapshot of one of its boxes, or from the box as it is now, to try two things from one set-up state. |
 | [`box_grant`](#box_grant) | Grant a program in a macOS box macOS permissions, such as Accessibility or Screen Recording, with no prompt. |
 | [`box_image_draft`](#box_image_draft) | Draft a project image's script (049) from the project's own files, for you to finish, try with box_image_try and register with box_image_set. |
 | [`box_image_set`](#box_image_set) | Set this thread's project's image (049): a shell script run as root on the standard image of its kinds, so the project's boxes start with what it needs, such as a language's toolchain. |
-| [`box_image_try`](#box_image_try) | Try a project image's script as a build runs it (049), before box_image_set: in a new box of the kind's current standard image, on a backend that builds images, the script runs as root with BB_BOX_IMAGE, BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH, then the check as the box user, then finalizing, which empties /tmp, /var/tmp and the caches. |
-| [`box_job`](#box_job) | Get the exit code and output of a box_run command that went on in its box as a job: one still running after 270 s, or when BB Box restarted, as for an update. |
+| [`box_image_try`](#box_image_try) | Try a project image's script as a build runs it (049), before box_image_set: in a new box of the kind's current standard image, on a backend that builds images, the script runs as root with ALIA_BOX_IMAGE, ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH, then the check as the box user, then finalizing, which empties /tmp, /var/tmp and the caches. |
+| [`box_job`](#box_job) | Get the exit code and output of a box_run command that went on in its box as a job: one still running after 270 s, or when VesnALIA Box restarted, as for an update. |
 | [`box_list`](#box_list) | List this thread's boxes and the kinds of box you can acquire. |
 | [`box_record`](#box_record) | Record a desktop box's screen, to show your work in the thread as a short video (059). |
 | [`box_release`](#box_release) | Release a box you no longer need. |
@@ -25,15 +25,15 @@ The tools bb-box gives a thread's agent, with their parameters as the agent sees
 | [`box_snapshot`](#box_snapshot) | Take a snapshot of a box: its disk, or with memory its disk and running apps where its backend can, so you can restore it if a change goes wrong. |
 | [`box_snapshot_delete`](#box_snapshot_delete) | Delete a snapshot of a box that an agent of this thread took and nobody kept. |
 | [`box_snapshots`](#box_snapshots) | List the snapshots of a box, or of every box of this thread and the machine it runs on: per box, what its snapshots hold or that it has none; per snapshot, its name, ID, when, by whom, what it holds, its size, its price, whether it is kept, and where it is. |
-| [`box_start`](#box_start) | Start a stopped box again, with its disk as it was, and wait up to 20 s more while it reconnects as a BB machine. |
-| [`box_status`](#box_status) | Show one box: its state, kind, address, whether it is a BB machine, and how long it took to start and to become one. |
+| [`box_start`](#box_start) | Start a stopped box again, with its disk as it was, and wait up to 20 s more while it reconnects as a VesnALIA machine. |
+| [`box_status`](#box_status) | Show one box: its state, kind, address, whether it is a VesnALIA machine, and how long it took to start and to become one. |
 | [`box_stop`](#box_stop) | Stop a box to free its memory and CPU while keeping its disk. |
-| [`box_thread`](#box_thread) | Start a child thread on a box, as a BB machine, in this thread's project, with the task as its prompt. |
+| [`box_thread`](#box_thread) | Start a child thread on a box, as a VesnALIA machine, in this thread's project, with the task as its prompt. |
 | [`computer_act`](#computer_act) | Click, double-click, right-click, scroll or set a value on a desktop or device box: on an element by its reference from computer_observe, or at x and y in your latest image of a window or the desktop. |
 | [`computer_launch`](#computer_launch) | Open an app on a desktop box by its name or path, or open a URL in the box's browser. |
 | [`computer_observe`](#computer_observe) | Read a window on a desktop or device box as text: its accessibility tree, one element per line, with a reference such as e12 for each element you can act on, and on a device the element's identifier where the app gives one. |
 | [`computer_screenshot`](#computer_screenshot) | Take an image of a window on a desktop box, or of the whole desktop, or of a device box's screen. |
-| [`computer_take_control`](#computer_take_control) | Take control of a desktop box's desktop, or a device box's device, back from a person who took it in BB, so the computer tools work again. |
+| [`computer_take_control`](#computer_take_control) | Take control of a desktop box's desktop, or a device box's device, back from a person who took it in VesnALIA, so the computer tools work again. |
 | [`computer_type`](#computer_type) | Type text, or press a key or chord such as Escape, Return, Tab, ctrl+a or ctrl+shift+t, into an element by its reference, or into the focused element of a window. |
 | [`computer_windows`](#computer_windows) | List the windows on a desktop box's screen, with the window IDs the other computer tools take. |
 
@@ -48,18 +48,18 @@ Get a fresh box for this thread: a Linux or macOS computer for commands, builds,
 | `cores` | integer | no | Cores, for a custom size. Parts you leave out come from the preset. |
 | `memory_gib` | integer | no | Memory in GiB, for a custom size: at least 2 for a Linux box. |
 | `disk_gib` | integer | no | Root disk in GiB, for a custom size. Presets keep the kind's own disk. |
-| `wait` | boolean | no | Wait until the box answers, and up to 20 s more while it becomes a BB machine. Defaults to true. |
+| `wait` | boolean | no | Wait until the box answers, and up to 20 s more while it becomes a VesnALIA machine. Defaults to true. |
 | `on` | string or array of string | no | Where the box goes, from box_list: a provider such as Docker on devpc, or a list of them for the first with room among them. Leave it out for the first with room: the providers kept for this thread's project first, then the shared ones. A provider kept for other projects is refused. |
-| `image` | string | no | The image the box starts from, from box_list: a project's image by name, or "standard" for bb-box's own. Leave it out for this project's image for the kind, or the standard one. |
+| `image` | string | no | The image the box starts from, from box_list: a project's image by name, or "standard" for alia-box's own. Leave it out for this project's image for the kind, or the standard one. |
 | `device` | string | no | For an ios or android box, the device it boots, from box_list, such as iPhone 18 Pro or Pixel Fold. Defaults to the kind's first. |
 | `slim` | boolean | no | For an ios box: its iOS Simulator runs without the services a device box does not need, such as widgets, Siri, iCloud, Health and Wallet, for about a quarter of the memory and almost no idle CPU. Defaults to true. Set false for an app that uses one of them. |
-| `gpu` | `none`, `shared`, `whole` | no | The box's GPU: none; shared, one card other boxes may share; or whole, a card to itself, on which bb-box places no other box, where its provider has whole cards on. Left out: the kind's GPU when not asked for, which box_list gives; shared for linux-desktop and none for linux unless the user changed it. Only linux and linux-desktop take one, where a provider has cards; box_list says which do, the room on each card, and whether whole cards are on. |
+| `gpu` | `none`, `shared`, `whole` | no | The box's GPU: none; shared, one card other boxes may share; or whole, a card to itself, on which alia-box places no other box, where its provider has whole cards on. Left out: the kind's GPU when not asked for, which box_list gives; shared for linux-desktop and none for linux unless the user changed it. Only linux and linux-desktop take one, where a provider has cards; box_list says which do, the room on each card, and whether whole cards are on. |
 | `dedicated` | boolean | no | For an ios box: a macOS VM of its own, with sudo, brew install, its own cores, ports and desktop, instead of a macOS user on a shared host. It takes one of the Mac's two VMs, so it may wait for one. Without it, an ios box is shared where a shared iOS host has room, and a VM of its own otherwise. Give it with a size, cores, memory_gib or disk_gib: where a shared iOS host is set up, a size without it is refused. |
 | `shared` | boolean | no | For an ios box: a macOS user on a Mac or VM shared with other ios boxes, ready in seconds, with its own device, files and keychain, but no sudo, Homebrew installs or app windows; an ios box is one already where a shared iOS host has room, and shared: true refuses rather than give it a VM of its own. For a macos box: a macOS user on a Mac or VM shared with ios boxes, ready in seconds, for commands, builds and the iOS Simulator, with its own files and keychain, but no sudo, Homebrew installs, desktop or app windows, and cores, ports and processes shared. Only where a shared iOS host is set up; box_list says. Without it a macos box is a VM of its own, which takes one of the Mac's two VMs. |
 
 ## box_copy
 
-Copy one file, of any size, between this thread's workspace or its storage folder ($BB_THREAD_STORAGE) and a box. Every copy's size and SHA-256 are checked at both ends, and one that does not match fails. A file over 16 MiB streams through BB Box's worker on the thread's machine. A relative path on this side is under the workspace; a path under the storage folder, absolute or starting with $BB_THREAD_STORAGE/, is there. A relative box path, or one starting with ~/, is under the box user's home. Tar a directory first.
+Copy one file, of any size, between this thread's workspace or its storage folder ($ALIA_THREAD_STORAGE) and a box. Every copy's size and SHA-256 are checked at both ends, and one that does not match fails. A file over 16 MiB streams through VesnALIA Box's worker on the thread's machine. A relative path on this side is under the workspace; a path under the storage folder, absolute or starting with $ALIA_THREAD_STORAGE/, is there. A relative box path, or one starting with ~/, is under the box user's home. Tar a directory first.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -87,7 +87,7 @@ Control an ios or android box's device, as the panel's toolbar does: Home, Back 
 
 ## box_enrol
 
-Add a ready box that could not join BB, or is not a BB machine, to BB again, so threads can run on it. BB's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the BB daemon of a machine that BB no longer has. A box whose machine BB still has is left as it is, and recorded as a BB machine.
+Add a ready box that could not join VesnALIA, or is not a VesnALIA machine, to VesnALIA again, so threads can run on it. VesnALIA's installer runs in it as its user. It does not restart, stop or resize the box. It stops only the VesnALIA daemon of a machine that VesnALIA no longer has. A box whose machine VesnALIA still has is left as it is, and recorded as a VesnALIA machine.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -95,18 +95,18 @@ Add a ready box that could not join BB, or is not a BB machine, to BB again, so 
 
 ## box_fork
 
-Make a new box of this thread from a snapshot of one of its boxes, or from the box as it is now, to try two things from one set-up state. The fork gets the snapshot's files and its own identity: a new BB machine, address and keys, so it never acts as its source. Everything else on the disk comes with it, project secrets and signed-in browsers too. It starts fresh, with no apps running, at the snapshot's size.
+Make a new box of this thread from a snapshot of one of its boxes, or from the box as it is now, to try two things from one set-up state. The fork gets the snapshot's files and its own identity: a new VesnALIA machine, address and keys, so it never acts as its source. Everything else on the disk comes with it, project secrets and signed-in browsers too. It starts fresh, with no apps running, at the snapshot's size.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `box` | string | yes | The box to fork, by its name or ID: one of this thread's boxes, not one it runs on. |
-| `snapshot` | string | no | The snapshot's name or ID, from box_snapshots. Left out, bb-box takes one of the box now, named "for a fork", and forks that. |
+| `snapshot` | string | no | The snapshot's name or ID, from box_snapshots. Left out, alia-box takes one of the box now, named "for a fork", and forks that. |
 | `name` | string | no | The new box's name: a lower-case letter first, then letters, digits and "-", up to 32 characters, not ending in "-". One is made up when left out. |
 | `gpu` | `none`, `shared`, `whole` | no | The fork's GPU. none, the default, starts it with no card. shared places a shared card, and whole a card to itself where this install has whole cards on, before anything is copied; only a desktop can take either. |
 
 ## box_grant
 
-Grant a program in a macOS box macOS permissions, such as Accessibility or Screen Recording, with no prompt. On Tart's and Namespace's macOS boxes, and on Macs of the SSH host pool with SIP off; Linux, Windows and shared boxes refuse. The program must be the box user's, or an app in /Applications, and signed: sign it with the box's identity, codesign -s "bb-box local code signing", so a rebuild keeps the grant; on Namespace, run codesign in the box user's session, through sudo launchctl asuser "$(id -u)" sudo -u "$(id -un)". Commands box_run runs have the microphone and camera already, except on Namespace.
+Grant a program in a macOS box macOS permissions, such as Accessibility or Screen Recording, with no prompt. On Tart's and Namespace's macOS boxes, and on Macs of the SSH host pool with SIP off; Linux, Windows and shared boxes refuse. The program must be the box user's, or an app in /Applications, and signed: sign it with the box's identity, codesign -s "alia-box local code signing", so a rebuild keeps the grant; on Namespace, run codesign in the box user's session, through sudo launchctl asuser "$(id -u)" sudo -u "$(id -un)". Commands box_run runs have the microphone and camera already, except on Namespace.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -117,7 +117,7 @@ Grant a program in a macOS box macOS permissions, such as Accessibility or Scree
 
 ## box_image_draft
 
-Draft a project image's script (049) from the project's own files, for you to finish, try with box_image_try and register with box_image_set. Read these from the repository and pass each one's path and text: .devcontainer/devcontainer.json (or .devcontainer.json, or one in a subfolder of .devcontainer) and the Dockerfile it names; a Dockerfile; .tool-versions; mise.toml; .nvmrc or .node-version; .python-version; rust-toolchain.toml or rust-toolchain; flake.nix with flake.lock, or shell.nix. It returns a script for .bb/box-setup.sh, each part commented with the file it came from, a check for .bb/box-check.sh, and what it could not translate. The script runs as root on BB Box's standard Ubuntu 24.04 image, with no checkout of the repository: what needs one, such as npm ci, stays in the thread. With `box`, it also reads what a Linux box of this thread has that its image had not, for a box someone set up by hand: packages, package sources, npm globals, mise's tools, the Rust toolchain, uv tools, and what is new in /usr/local, /opt and ~/.local/bin.
+Draft a project image's script (049) from the project's own files, for you to finish, try with box_image_try and register with box_image_set. Read these from the repository and pass each one's path and text: .devcontainer/devcontainer.json (or .devcontainer.json, or one in a subfolder of .devcontainer) and the Dockerfile it names; a Dockerfile; .tool-versions; mise.toml; .nvmrc or .node-version; .python-version; rust-toolchain.toml or rust-toolchain; flake.nix with flake.lock, or shell.nix. It returns a script for .vesnalia/box-setup.sh, each part commented with the file it came from, a check for .vesnalia/box-check.sh, and what it could not translate. The script runs as root on VesnALIA Box's standard Ubuntu 24.04 image, with no checkout of the repository: what needs one, such as npm ci, stays in the thread. With `box`, it also reads what a Linux box of this thread has that its image had not, for a box someone set up by hand: packages, package sources, npm globals, mise's tools, the Rust toolchain, uv tools, and what is new in /usr/local, /opt and ~/.local/bin.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -126,7 +126,7 @@ Draft a project image's script (049) from the project's own files, for you to fi
 
 ## box_image_set
 
-Set this thread's project's image (049): a shell script run as root on the standard image of its kinds, so the project's boxes start with what it needs, such as a language's toolchain. Pass the files' text: commit them in the repository as .bb/box-setup.sh and .bb/box-check.sh, and give their paths. The script runs in a booted box with the network, on any Linux backend, and reads BB_BOX_IMAGE, BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH where it must differ. It gets none of the project's secrets. Setting it changes every new box of those kinds in the project, so ask the user first unless they asked for it.
+Set this thread's project's image (049): a shell script run as root on the standard image of its kinds, so the project's boxes start with what it needs, such as a language's toolchain. Pass the files' text: commit them in the repository as .vesnalia/box-setup.sh and .vesnalia/box-check.sh, and give their paths. The script runs in a booted box with the network, on any Linux backend, and reads ALIA_BOX_IMAGE, ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH where it must differ. It gets none of the project's secrets. Setting it changes every new box of those kinds in the project, so ask the user first unless they asked for it.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -135,25 +135,25 @@ Set this thread's project's image (049): a shell script run as root on the stand
 | `script` | string | yes | The script's text, run as root. |
 | `check` | string | no | A check's text, run as the box user after the script, such as `cargo --version`: the image fails when it fails. |
 | `bake` | `auto`, `always`, `never` | no | auto (the default) builds it ahead once two boxes started within 14 days; always keeps a build; never runs the script at each start. |
-| `script_path` | string | no | The script's path in the repository, such as .bb/box-setup.sh. |
-| `check_path` | string | no | The check's path in the repository, such as .bb/box-check.sh. |
+| `script_path` | string | no | The script's path in the repository, such as .vesnalia/box-setup.sh. |
+| `check_path` | string | no | The check's path in the repository, such as .vesnalia/box-check.sh. |
 
 ## box_image_try
 
-Try a project image's script as a build runs it (049), before box_image_set: in a new box of the kind's current standard image, on a backend that builds images, the script runs as root with BB_BOX_IMAGE, BB_BOX_KIND, BB_BOX_BACKEND and BB_BOX_ARCH, then the check as the box user, then finalizing, which empties /tmp, /var/tmp and the caches. A box of the build then runs the check again and the kind's own check. It returns each check's result, the time and the build's last 200 lines, and removes the boxes and the build, unless keep is true, when a box of it stays for you to look inside. Each try starts from a clean standard image, as a build does, so fix the script and try again until every check passes. It can take as long as the script, plus about a minute.
+Try a project image's script as a build runs it (049), before box_image_set: in a new box of the kind's current standard image, on a backend that builds images, the script runs as root with ALIA_BOX_IMAGE, ALIA_BOX_KIND, ALIA_BOX_BACKEND and ALIA_BOX_ARCH, then the check as the box user, then finalizing, which empties /tmp, /var/tmp and the caches. A box of the build then runs the check again and the kind's own check. It returns each check's result, the time and the build's last 200 lines, and removes the boxes and the build, unless keep is true, when a box of it stays for you to look inside. Each try starts from a clean standard image, as a build does, so fix the script and try again until every check passes. It can take as long as the script, plus about a minute.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `kind` | string | yes | The Linux kind to try it on, such as "linux". box_list shows the kinds. |
-| `script` | string | yes | The script's text, run as root, as in .bb/box-setup.sh. |
-| `check` | string | no | The check's text, run as the box user, as in .bb/box-check.sh: it should fail when the script did not do its work. |
-| `name` | string | no | The image's name, which the script reads as BB_BOX_IMAGE. "try" when left out. |
+| `script` | string | yes | The script's text, run as root, as in .vesnalia/box-setup.sh. |
+| `check` | string | no | The check's text, run as the box user, as in .vesnalia/box-check.sh: it should fail when the script did not do its work. |
+| `name` | string | no | The image's name, which the script reads as ALIA_BOX_IMAGE. "try" when left out. |
 | `on` | string | no | A backend's ID from box_list, such as proxmox-lxc. The first that builds the kind's images when left out. |
 | `keep` | boolean | no | Keep a box of what it built, to look inside with box_run: of the build, or of the build box as a failing script left it. It is this thread's box until you release it. |
 
 ## box_job
 
-Get the exit code and output of a box_run command that went on in its box as a job: one still running after 270 s, or when BB Box restarted, as for an update. box_run's answer names the job.
+Get the exit code and output of a box_run command that went on in its box as a job: one still running after 270 s, or when VesnALIA Box restarted, as for an update. box_run's answer names the job.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -168,7 +168,7 @@ It takes no parameters.
 
 ## box_record
 
-Record a desktop box's screen, to show your work in the thread as a short video (059). start begins recording and returns at once: then do what the video should show, with the computer tools and box_run. While recording, step captions what you test next ("It keeps the draft when saving fails"), and result gives its outcome with passed true or false ("Draft kept; no error toast"); both are burned into the clip and listed as chapters, at the top of the video, or at the bottom with position "bottom" at start, which suits a check near the top of the screen, such as a menu bar or a window's title. A step whose captions would cover more of what changes during it than the other side would has them on the other side. A cut still stretch shows "▶▶ 18 s later" in a corner, and a faster clip its speed. The clip draws a larger pointer that glides to each click, a ring where each click lands, a pill for each shortcut or special key and one "Typing" pill for typing into an element by its ref, never the text typed; nothing shows for a password, or for typing whose field BB Box cannot tell, as into a window, single keys, or a person's typing. It zooms in gently where you click, drag and type by ref, and shows the screen inset on a plain background (073): zoom false or frame false at stop turns either off. stop ends it and makes the clip in this thread's storage folder, with a page that plays it in the thread. Idle stretches, where nothing moves but a blinking caret or a clock, are cut to half a second unless stills is "keep", so do not pause between steps for the viewer. A recording ends by itself after 5 minutes, and stop still gives its clip. Linux desktops, on X11 and Wayland, macOS and Windows desktops. On an ios or android box it records the device's own screen, not the host's: the device in its frame, turning as it turns, with touches shown as circles and the captions in a band above or below it; a stretch the device or its server lost is captioned in the clip. The clip is made in the box with ffmpeg: where the box has none fit for a clip, as on an Android box or an iOS box on a shared Namespace Mac, start first fetches BB Box's pinned ffmpeg into the box user's home, about 10 s once per box, or says why it cannot.
+Record a desktop box's screen, to show your work in the thread as a short video (059). start begins recording and returns at once: then do what the video should show, with the computer tools and box_run. While recording, step captions what you test next ("It keeps the draft when saving fails"), and result gives its outcome with passed true or false ("Draft kept; no error toast"); both are burned into the clip and listed as chapters, at the top of the video, or at the bottom with position "bottom" at start, which suits a check near the top of the screen, such as a menu bar or a window's title. A step whose captions would cover more of what changes during it than the other side would has them on the other side. A cut still stretch shows "▶▶ 18 s later" in a corner, and a faster clip its speed. The clip draws a larger pointer that glides to each click, a ring where each click lands, a pill for each shortcut or special key and one "Typing" pill for typing into an element by its ref, never the text typed; nothing shows for a password, or for typing whose field VesnALIA Box cannot tell, as into a window, single keys, or a person's typing. It zooms in gently where you click, drag and type by ref, and shows the screen inset on a plain background (073): zoom false or frame false at stop turns either off. stop ends it and makes the clip in this thread's storage folder, with a page that plays it in the thread. Idle stretches, where nothing moves but a blinking caret or a clock, are cut to half a second unless stills is "keep", so do not pause between steps for the viewer. A recording ends by itself after 5 minutes, and stop still gives its clip. Linux desktops, on X11 and Wayland, macOS and Windows desktops. On an ios or android box it records the device's own screen, not the host's: the device in its frame, turning as it turns, with touches shown as circles and the captions in a band above or below it; a stretch the device or its server lost is captioned in the clip. The clip is made in the box with ffmpeg: where the box has none fit for a clip, as on an Android box or an iOS box on a shared Namespace Mac, start first fetches VesnALIA Box's pinned ffmpeg into the box user's home, about 10 s once per box, or says why it cannot.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -202,12 +202,12 @@ Change a box's size: its cores, memory or disk, by a preset or by parts, and its
 | `memory_gib` | integer | no | Memory in GiB: at least 2 for a Linux box. Left out, the box keeps its own. |
 | `disk_gib` | integer | no | Root disk in GiB, which only grows. Left out, the box keeps its own. |
 | `gpu` | `none`, `shared`, `whole` | no | The box's GPU: none, shared, one card other boxes may share, or whole, its card to itself, where this install has whole cards on. Left out, the GPU stays as it is. Shared and whole switch live where the box's card allows; adding a GPU, removing it or moving the box to another card restarts it on Proxmox LXC and cannot be done on Docker. A box with no NVIDIA userspace for the host's driver gets it installed in the same restart, about 60 s more, and a linux-desktop-cpu box becomes a GPU desktop, linux-desktop. A stopped box stays stopped. Call with check true first: the answer says what would change, and a resize whose plan changed since that check is refused, saying what changed. box_list says what each provider can change. |
-| `restart` | boolean | no | Allow a restart, which ends everything running in the box, where a part needs one. Defaults to false: bb-box then changes nothing and says so. |
+| `restart` | boolean | no | Allow a restart, which ends everything running in the box, where a part needs one. Defaults to false: alia-box then changes nothing and says so. |
 | `check` | boolean | no | Only say what the resize would change, how, and whether there is room. Defaults to false. |
 
 ## box_restore
 
-Restore a box to one of its snapshots when an attempt went wrong, rather than undoing it by hand. Everything on its disk since then goes, and the box restarts, so every process in it ends. BB Box always takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it. On ZFS only the newest snapshot restores. While Settings turn agents' restores off, this opens a form for a yes given in the thread and answers at once: then end your turn. A box this thread or another runs on, or one of the person's machines, is restored only through such a form, and only where BB Box allows it; this says so when it does not.
+Restore a box to one of its snapshots when an attempt went wrong, rather than undoing it by hand. Everything on its disk since then goes, and the box restarts, so every process in it ends. VesnALIA Box always takes an undo first, a snapshot of the box once stopped, or on ZFS a full copy of it. On ZFS only the newest snapshot restores. While Settings turn agents' restores off, this opens a form for a yes given in the thread and answers at once: then end your turn. A box this thread or another runs on, or one of the person's machines, is restored only through such a form, and only where VesnALIA Box allows it; this says so when it does not.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -225,7 +225,7 @@ Run a shell script in a box, as its user, and wait for it. You get the exit code
 | `box` | string | yes | The box's name or ID, from box_acquire or box_list. |
 | `command` | string | yes | A shell script, run by the box user's shell (bash on Linux, PowerShell 7 on Windows). |
 | `cwd` | string | no | Directory to run in. Defaults to the box user's home. |
-| `timeout_seconds` | integer | no | Seconds before the command, and everything it started, is stopped. Defaults to 600. box_run returns when the script's shell exits, or after 270 s, as BB ends a tool call at about five minutes: a command still running then goes on as a job for box_job, except a Windows one in the desktop session, which is stopped then. Start a server in the background with its output redirected, so it keeps working after that: nohup &lt;cmd> >server.log 2>&1 &, or on Windows Start-Detached { &lt;cmd> } server.log |
+| `timeout_seconds` | integer | no | Seconds before the command, and everything it started, is stopped. Defaults to 600. box_run returns when the script's shell exits, or after 270 s, as VesnALIA ends a tool call at about five minutes: a command still running then goes on as a job for box_job, except a Windows one in the desktop session, which is stopped then. Start a server in the background with its output redirected, so it keeps working after that: nohup &lt;cmd> >server.log 2>&1 &, or on Windows Start-Detached { &lt;cmd> } server.log |
 | `stdin` | string | no | Text to send to the command's standard input. |
 | `desktop` | boolean | no | Run in the box's desktop session so it can open windows. Desktop boxes only. |
 
@@ -260,7 +260,7 @@ List the snapshots of a box, or of every box of this thread and the machine it r
 
 ## box_start
 
-Start a stopped box again, with its disk as it was, and wait up to 20 s more while it reconnects as a BB machine.
+Start a stopped box again, with its disk as it was, and wait up to 20 s more while it reconnects as a VesnALIA machine.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -268,7 +268,7 @@ Start a stopped box again, with its disk as it was, and wait up to 20 s more whi
 
 ## box_status
 
-Show one box: its state, kind, address, whether it is a BB machine, and how long it took to start and to become one.
+Show one box: its state, kind, address, whether it is a VesnALIA machine, and how long it took to start and to become one.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -284,7 +284,7 @@ Stop a box to free its memory and CPU while keeping its disk. box_start starts i
 
 ## box_thread
 
-Start a child thread on a box, as a BB machine, in this thread's project, with the task as its prompt. It works in a worktree of the project's repository on the box, cloned there once, and is archived with this thread.
+Start a child thread on a box, as a VesnALIA machine, in this thread's project, with the task as its prompt. It works in a worktree of the project's repository on the box, cloned there once, and is archived with this thread.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -344,7 +344,7 @@ Take an image of a window on a desktop box, or of the whole desktop, or of a dev
 
 ## computer_take_control
 
-Take control of a desktop box's desktop, or a device box's device, back from a person who took it in BB, so the computer tools work again. Keys they held down are let go, and the desktop gets back its size. Use it when the person asks you to continue, or when the thread makes clear they have finished; otherwise wait for them to hand control back.
+Take control of a desktop box's desktop, or a device box's device, back from a person who took it in VesnALIA, so the computer tools work again. Keys they held down are let go, and the desktop gets back its size. Use it when the person asks you to continue, or when the thread makes clear they have finished; otherwise wait for them to hand control back.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |

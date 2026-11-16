@@ -1,6 +1,6 @@
 # Worktree Ports
 
-Shows what each BB worktree is serving, in the sidebar footer. Click a port
+Shows what each VesnALIA worktree is serving, in the sidebar footer. Click a port
 pill to open it.
 
 ![The ports card in light and dark themes: the app port leads, services behind a toggle](screenshots/card-pair.png)
@@ -41,27 +41,27 @@ the background — reparented to PID 1, no controlling terminal — is still fou
 - **Footer button dot** — a blue dot sits on the footer button itself while
   anything is listening, so the card announces itself without being open. It is
   painted onto the host's button from a content script (the registration API has
-  no badge field) and re-applies itself if BB re-renders the footer.
+  no badge field) and re-applies itself if VesnALIA re-renders the footer.
 - **Sidebar thread rows** — threads whose worktree has a listener get a glyph;
   its tooltip names the app ports and counts the rest. Turn off with the "Mark sidebar threads" setting.
-  Only BB's built-in thread list draws these: a plugin that replaces the list
-  through `experimental_threadList` (such as `bb-sidebar`) renders its own rows,
+  Only VesnALIA's built-in thread list draws these: a plugin that replaces the list
+  through `experimental_threadList` (such as `alia-sidebar`) renders its own rows,
   and plugin row statuses do not appear there.
-- **`bb ports list [--json]`** (app ports first, then `service:` and
-  `internal:` sections), **`bb ports release <env-id> <port>`**.
+- **`alia ports list [--json]`** (app ports first, then `service:` and
+  `internal:` sections), **`alia ports release <env-id> <port>`**.
 - **`worktree_ports` agent tool** and the `worktree-ports` skill.
 
 ## Opening a port
 
-A plain click follows the **Open ports in** setting: `BB browser preference`
-hands the URL to BB, which honors whatever in-app/external preference that
-client already has; `System browser` opens it outside BB. ⌘/Ctrl-click does
+A plain click follows the **Open ports in** setting: `ALIA browser preference`
+hands the URL to VesnALIA, which honors whatever in-app/external preference that
+client already has; `System browser` opens it outside VesnALIA. ⌘/Ctrl-click does
 the other one. Forcing the *in-app* browser against a client whose preference
-is external is not possible — BB owns that tab kind and exposes no API for it.
+is external is not possible — VesnALIA owns that tab kind and exposes no API for it.
 
 ## Labels
 
-Commit `.bb/ports.json` (or reuse an existing `.superset/ports.json`):
+Commit `.vesnalia/ports.json` (or reuse an existing `.superset/ports.json`):
 
 ```json
 {
@@ -85,14 +85,14 @@ the 443 family are assumed HTTPS.
 | Include Docker published ports | on | |
 | Ignore ports | — | comma separated |
 | Ignore processes | — | comma separated, matched on the process name |
-| Open ports in | BB browser preference | or System browser |
+| Open ports in | VesnALIA browser preference | or System browser |
 | Mark sidebar threads that have listening ports | on | |
 
 ## Limits
 
 - macOS and Linux. The scanner needs `lsof`; Windows is not supported.
 - Ports are listed for the machine each worktree lives on. A remote host's
-  `localhost:PORT` is not forwarded to your machine — use `bb connect`, SSH, or
+  `localhost:PORT` is not forwarded to your machine — use `alia connect`, SSH, or
   Tailscale for that.
 - Only processes visible to the daemon's user are attributed.
 
@@ -102,5 +102,5 @@ the 443 family are assumed HTTPS.
 npm install --include=dev
 npm test          # parsing and attribution
 npm run typecheck
-bb plugin build && bb plugin install . --yes
+alia plugin build && alia plugin install . --yes
 ```

@@ -308,8 +308,8 @@ export function searchPage(result: unknown): { total: number | null; nextPageTok
 }
 
 /**
- * Rich text for bb's <Markdown>: HTML bodies are stripped to text, ADF flattened, markdown passed through.
- * (bb's renderer also sanitizes any inline HTML left in markdown with a GitHub-style allowlist.)
+ * Rich text for VesnALIA's <Markdown>: HTML bodies are stripped to text, ADF flattened, markdown passed through.
+ * (VesnALIA's renderer also sanitizes any inline HTML left in markdown with a GitHub-style allowlist.)
  */
 export function bodyText(value: unknown, format?: string): string {
   if (typeof value === "string") {

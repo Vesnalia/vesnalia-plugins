@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { experimental_usePluginId, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_usePluginId, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { applyLayoutPatch, EMPTY_LAYOUT, LAYOUT_CHANNEL, parseLayout, type CollapseKey, type ContainerKey, type HueId, type Layout, type SortMode } from "./layout";
 import type { RpcContract } from "./rpc";

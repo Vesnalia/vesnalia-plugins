@@ -1,8 +1,8 @@
 # Release preparation
 
-This repository is being prepared for direct Git installation. Nothing has been published by these checks. Package: `bb-plugin-openspec`; plugin ID: `openspec`; current version: `0.5.0`; license: MIT. The local listing bundle is in [marketplace/](../marketplace/README.md).
+This repository is being prepared for direct Git installation. Nothing has been published by these checks. Package: `alia-plugin-openspec`; plugin ID: `openspec`; current version: `0.5.0`; license: MIT. The local listing bundle is in [marketplace/](../marketplace/README.md).
 
-Preparation update (2026-10-29): public Git installation and the latest local candidate passed in an isolated bb profile; see [installation verification](research/installation-verification.md). The marketplace fork is checked out beside this repository on `submit-openspec`, with the entry and assets committed locally. Its catalog build, all tests (using system Git) and v1 gate pass. A release tag, final tag installation check, fork push and marketplace PR remain pending release approval.
+Preparation update (2026-10-29): public Git installation and the latest local candidate passed in an isolated VesnALIA profile; see [installation verification](research/installation-verification.md). The marketplace fork is checked out beside this repository on `submit-openspec`, with the entry and assets committed locally. Its catalog build, all tests (using system Git) and v1 gate pass. A release tag, final tag installation check, fork push and marketplace PR remain pending release approval.
 
 ## Local checks
 
@@ -14,17 +14,17 @@ npm run test:stores
 openspec validate --specs --strict --no-interactive
 ```
 
-`test:stores` requires the OpenSpec CLI and uses an isolated temporary registry. The other checks do not require a running bb server. CI runs `check` and `verify:git-build` with pinned `bb-app@0.47.1` and Node 24. It does not publish, push, create tags, or submit a marketplace entry. CI itself must still be observed on GitHub after this update is pushed.
+`test:stores` requires the OpenSpec CLI and uses an isolated temporary registry. The other checks do not require a running VesnALIA server. CI runs `check` and `verify:git-build` with pinned `alia-app@0.47.1` and Node 24. It does not publish, push, create tags, or submit a marketplace entry. CI itself must still be observed on GitHub after this update is pushed.
 
-The production build fixture uses bb's Git-install npm flags: `--omit=dev --omit=optional --ignore-scripts`. It checks generated server/app/host metadata against the package identity and version, then removes its temporary files. It tests the build stage; fetching a remote tag and activating a managed installation remain checks for a real public source.
+The production build fixture uses VesnALIA's Git-install npm flags: `--omit=dev --omit=optional --ignore-scripts`. It checks generated server/app/host metadata against the package identity and version, then removes its temporary files. It tests the build stage; fetching a remote tag and activating a managed installation remain checks for a real public source.
 
-The SDK is a production dependency because the shared RPC contracts import runtime helpers from its root entry. The clean production build verifies that these imports remain available. React and other bb-shimmed UI libraries stay in devDependencies; `zod` and `@radix-ui/react-slot` are bundled dependencies. Do not move shimmed packages into dependencies to resolve a type-only error.
+The SDK is a production dependency because the shared RPC contracts import runtime helpers from its root entry. The clean production build verifies that these imports remain available. React and other alia-shimmed UI libraries stay in devDependencies; `zod` and `@radix-ui/react-slot` are bundled dependencies. Do not move shimmed packages into dependencies to resolve a type-only error.
 
 ## GitHub repository and update
 
 1. The configured source is `https://github.com/khaale/bb-openspec`; package metadata and both READMEs point to it. The user uploaded the preceding version. This update is prepared as a local commit; verify repository visibility before relying on anonymous Git installation.
 2. Review the diff, license and public documentation; inspect screenshots for personal paths or unrelated thread content. `dist/`, dependencies and local environment files are ignored. Historical research documents describe development and may mention fixture projects.
-3. Commit the prepared source. The configured origin is `git@github.com:khaale/bb-openspec.git`. Upload only when authorized. A GitHub upload and a versioned release are separate actions.
+3. Commit the prepared source. The configured origin is `git@github.com:khaale/alia-openspec.git`. Upload only when authorized. A GitHub upload and a versioned release are separate actions.
 4. Observe the CI run. Inspect its logs and resolve failures before tagging a release.
 
 The repository URL comes from the configured Git remote. The MIT copyright name currently follows the repository Git author (`a.khanteev`); the public display name can be updated when the owner is confirmed.
@@ -33,17 +33,17 @@ The repository URL comes from the configured Git remote. The MIT copyright name 
 
 For this single root plugin, use immutable `vX.Y.Z` tags matching `package.json`. Do not move an existing release tag. The current functional update is `0.5.0`; the local version history does not imply earlier public releases.
 
-Before a release, review the exact account, public repository, commit, version, tag and push commands. A repository upload alone does not authorize publishing a release. After approval, create the annotated tag and push the approved commit and tag. Verify the public ref, then test installation in a separate bb profile or disposable environment so the development installation is preserved.
+Before a release, review the exact account, public repository, commit, version, tag and push commands. A repository upload alone does not authorize publishing a release. After approval, create the annotated tag and push the approved commit and tag. Verify the public ref, then test installation in a separate VesnALIA profile or disposable environment so the development installation is preserved.
 
 Once an actual release exists, users can install a compatible version range. These are templates, not a currently available source:
 
 ```sh
-bb plugin install 'git:https://github.com/khaale/bb-openspec.git@^0.5.0'
+alia plugin install 'git:https://github.com/khaale/bb-openspec.git@^0.5.0'
 # For a deliberately fixed release:
-bb plugin install 'git:https://github.com/khaale/bb-openspec.git@v0.5.0'
+alia plugin install 'git:https://github.com/khaale/bb-openspec.git@v0.5.0'
 ```
 
-A bare repository URL tracks its default branch. Prefer a tag range for released versions. Users apply updates with `bb plugin outdated` and `bb plugin update openspec`. npm publication is not required for Git distribution and is not part of this preparation.
+A bare repository URL tracks its default branch. Prefer a tag range for released versions. Users apply updates with `alia plugin outdated` and `alia plugin update openspec`. npm publication is not required for Git distribution and is not part of this preparation.
 
 ## Community marketplace preparation
 

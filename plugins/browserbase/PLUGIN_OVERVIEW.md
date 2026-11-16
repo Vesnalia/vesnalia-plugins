@@ -1,14 +1,14 @@
 ## What you get
 
-Give your BB agents access to the whole web with Browserbase and Stagehand. Browse websites, interact with pages using natural language, and extract structured data. End to end browser tasks become possible for BB when leveraging the Browserbase plugin.
+Give your VesnALIA agents access to the whole web with Browserbase and Stagehand. Browse websites, interact with pages using natural language, and extract structured data. End to end browser tasks become possible for VesnALIA when leveraging the Browserbase plugin.
 
 ## How it works
 
-Each BB thread uses its own Browserbase session. The plugin forwards browser operations to Browserbase's hosted MCP server and returns bounded text results. A bundled skill guides inspection, action verification, and session cleanup. Configure the API key in BB's built-in plugin settings; no custom plugin page is required.
+Each VesnALIA thread uses its own Browserbase session. The plugin forwards browser operations to Browserbase's hosted MCP server and returns bounded text results. A bundled skill guides inspection, action verification, and session cleanup. Configure the API key in VesnALIA's built-in plugin settings; no custom plugin page is required.
 
 ## Requirements
 
-Requires a Browserbase account, a Browserbase API key, internet access, BB 0.43 or later, and a compatible Plugin SDK. Browserbase usage is billed under your Browserbase plan. Enter credentials only in the plugin's secret setting.
+Requires a Browserbase account, a Browserbase API key, internet access, VesnALIA 0.43 or later, and a compatible Plugin SDK. Browserbase usage is billed under your Browserbase plan. Enter credentials only in the plugin's secret setting.
 
 ## Limits
 

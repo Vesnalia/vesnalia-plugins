@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { SOUND_IDS } from "./domain";
 
 describe("Chime backend", () => {
   it("serves every themed sound as a WAV asset", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "chime",
       sdk: { subscribe: () => () => {} },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     for (const soundId of SOUND_IDS) {
       const response = await harness.behavior.fetchHttp("GET", `/sound-${soundId}`);
@@ -20,7 +20,7 @@ describe("Chime backend", () => {
   });
 
   it("publishes lifecycle events without message content", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "chime",
       sdk: {
         subscribe: () => () => {},
@@ -32,7 +32,7 @@ describe("Chime backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.emitThreadEvent("thread.active", {
       thread: makeThreadResponse({ id: "thread-1", projectId: "project-1" }),
@@ -53,11 +53,11 @@ describe("Chime backend", () => {
   });
 
   it("honours muted projects before queueing", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "chime",
       sdk: { subscribe: () => () => {} },
     });
-    await plugin(bb);
+    await plugin(alia);
     await harness.behavior.callRpc("updateConfig", {
       enabled: true,
       volume: 0.5,
@@ -91,7 +91,7 @@ describe("Chime backend", () => {
       payload: { kind: "user_question" },
     }];
     const thread = makeThreadResponse({ id: "thread-1", projectId: "project-1" });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "chime",
       sdk: {
         subscribe: ((args: { callback: typeof changed }) => {
@@ -104,7 +104,7 @@ describe("Chime backend", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
 
     changed?.({ id: "thread-1", changes: ["interactions-changed"] });
     changed?.({ id: "thread-1", changes: ["interactions-changed"] });

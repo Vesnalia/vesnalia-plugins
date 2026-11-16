@@ -479,7 +479,7 @@ export class EncoderLedgers {
     const { mac, chip, label } = ledger.place;
     if (chip === null || budgetForChip(chip) !== null || this.#measured.has(chip) || this.#probing.has(mac) || this.#unprobed.has(chip)) return;
     const probing = (async () => {
-      this.#deps.log(`The video encoder of ${label}, an ${chip}, is not in bb-box's table; measuring it for 15 s while nothing streams there.`);
+      this.#deps.log(`The video encoder of ${label}, an ${chip}, is not in alia-box's table; measuring it for 15 s while nothing streams there.`);
       const measured = await this.#deps.probe(mac, this.#stopping.signal);
       if (measured === null || !(measured > 0)) {
         this.#unprobed.set(chip, `${PRODUCT} could not measure the video encoder of ${label}`);

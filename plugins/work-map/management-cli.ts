@@ -5,12 +5,12 @@ import type {
 } from "./management-contract";
 import type { Preference, Snapshot } from "./server";
 
-export const managementUsage = `bb work-map project list [--json]
-bb work-map project create --name NAME --prefix KEY [--color COLOR] [--folder ID|NAME] [--workspace ID|NAME] [--request-id UUID] [--json]
-bb work-map project edit KEY [--name NAME] [--color COLOR] [--folder ID|NAME|none] [--workspace ID|NAME|none] [--json]
-bb work-map project hide|restore KEY [--json]
-bb work-map task create --project KEY --title TITLE [--description TEXT] [--request-id UUID] [--json]
-bb work-map attach TASK-KEY --thread THREAD-ID [--json]
+export const managementUsage = `alia work-map project list [--json]
+VesnALIA work-map project create --name NAME --prefix KEY [--color COLOR] [--folder ID|NAME] [--workspace ID|NAME] [--request-id UUID] [--json]
+VesnALIA work-map project edit KEY [--name NAME] [--color COLOR] [--folder ID|NAME|none] [--workspace ID|NAME|none] [--json]
+VesnALIA work-map project hide|restore KEY [--json]
+VesnALIA work-map task create --project KEY --title TITLE [--description TEXT] [--request-id UUID] [--json]
+VesnALIA work-map attach TASK-KEY --thread THREAD-ID [--json]
 Hide affects Overview only. Tasks and agents keep running; attention filters and search still include them.`;
 type Services = {
   managementOptions: () => Promise<ManagementOptions>;
@@ -127,8 +127,8 @@ export async function runManagementCli(argv: string[], service: Services) {
         prefix: required("--prefix").toUpperCase(),
         color: flags.get("--color") ?? "slategray",
         folderId: resolve(options.folders, flags.get("--folder")),
-        linkedBbProjectId: resolve(
-          options.bbProjects,
+        linkedAliaProjectId: resolve(
+          options.aliaProjects,
           flags.get("--workspace"),
         ),
       });
@@ -146,9 +146,9 @@ export async function runManagementCli(argv: string[], service: Services) {
         folderId: flags.has("--folder")
           ? resolve(options.folders, flags.get("--folder"))
           : project.folderId,
-        linkedBbProjectId: flags.has("--workspace")
-          ? resolve(options.bbProjects, flags.get("--workspace"))
-          : project.linkedBbProjectId,
+        linkedAliaProjectId: flags.has("--workspace")
+          ? resolve(options.aliaProjects, flags.get("--workspace"))
+          : project.linkedAliaProjectId,
       });
     } else if (verb === "task create") {
       requestId = flags.get("--request-id") ?? crypto.randomUUID();

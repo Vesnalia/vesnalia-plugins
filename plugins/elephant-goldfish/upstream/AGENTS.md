@@ -3,7 +3,7 @@
 ## Purpose
 
 Pinned source materials from `google/elephant-goldfish-model` at commit
-`3d0b34821ce88ad328b0c9bf0e06d7eb5f1cd669`, used by the BB adaptation.
+`3d0b34821ce88ad328b0c9bf0e06d7eb5f1cd669`, used by the VesnALIA adaptation.
 
 ## Ownership
 
@@ -15,10 +15,10 @@ Pinned source materials from `google/elephant-goldfish-model` at commit
 
 ## Local Contracts
 
-- Keep copied files unmodified. Adapt BB behavior under root `skills/` and
+- Keep copied files unmodified. Adapt VesnALIA behavior under root `skills/` and
   `server/`, not here.
 - Preserve license and provenance in root `NOTICE` when updating the pin.
-- These documents describe upstream behavior, not BB SDK guarantees.
+- These documents describe upstream behavior, not VesnALIA SDK guarantees.
 
 ## Work Guidance
 

@@ -1,12 +1,12 @@
-// bb-box's host entry, which BB's daemon runs in a worker on each BB machine
-// bb-box calls: "access" holds the thread's access for commands in a box
+// alia-box's host entry, which VesnALIA's daemon runs in a worker on each VesnALIA machine
+// alia-box calls: "access" holds the thread's access for commands in a box
 // (src/host/access.ts), "relay" opens the Docker API relay (042,
 // src/host/relay.ts), "file" streams a file box_copy moves (#492,
-// src/host/files.ts), and "microsandbox" and "msbRelay" run bb-box's msb
+// src/host/files.ts), and "microsandbox" and "msbRelay" run alia-box's msb
 // here (053, src/host/msb.ts). "monitor" reads the machine for the
 // Monitor's machine status (066, src/host/monitor.ts).
 
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk/host";
 import { accessHandlers } from "./access.ts";
 import { hostContract } from "./contract.ts";
 import { fileHandlers, type FileOptions } from "./files.ts";

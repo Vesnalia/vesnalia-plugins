@@ -3,7 +3,7 @@
  * of pending interaction Herald describes, and a log that records instead of
  * printing.
  */
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 
 import type { Interaction, Log, ThreadDto } from "../ports";
 

@@ -17,7 +17,7 @@ Three reviewer-facing improvements to the Guided Review panel, shipped together:
 3. **Floating agent** — replace the one-shot "Ask the agent" popover with a
    draggable, movable chat window opened from an agent icon; multi-turn; knows
    the current file/chapter; supports highlight-to-ask; backed by one persistent
-   *visible* bb thread per review that can be opened standalone.
+   *visible* VesnALIA thread per review that can be opened standalone.
 
 Non-goals: changing the guide-generation prompt/schema; streaming token output
 (each agent turn resolves as a whole message in v1); mobile/coarse-pointer
@@ -30,7 +30,7 @@ polish beyond what the existing `coarse-pointer-sizing` helpers already give.
   function, not `memo()` — SDK slot requirement).
 - `DiffViewer` renders every file of the active chapter stacked via
   `@pierre/diffs` `FileDiff` (prop is `fileDiff`, theme nested under `options`).
-- Store is SQLite via `bb.storage.database()` + `bb.storage.migrate`; migrations
+- Store is SQLite via `alia.storage.database()` + `alia.storage.migrate`; migrations
   are an append-only array. RPC contract in `src/rpc-contract.ts`; the panel
   imports only its *type*.
 - Realtime: `useRealtime("review:${targetKey}", …)` already re-loads on publish;
@@ -38,7 +38,7 @@ polish beyond what the existing `coarse-pointer-sizing` helpers already give.
 - Guide schema (`src/guide.ts`) is **unchanged**: sections have
   `{ id, title, overview, risk?: low|medium|high, diffs: {file, summary}[] }`.
   The chapter `overview` is used as the human "why" behind the risk flag.
-- SDK thread API (verified in `@get-bb/plugin-sdk` types): `threads.spawn`,
+- SDK thread API (verified in `@vesnalia/plugin-sdk` types): `threads.spawn`,
   `threads.send` (follow-up message to an existing thread), `threads.wait`,
   `threads.output`, `threads.open` (surface a thread in the client UI),
   `threads.archive/stop`.
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS agent_messages (
   Viewed was ticked. On load the panel recomputes the current hash per file; a
   mismatch means "changed since viewed" (auto-uncheck after re-review). No git
   needed — the patch is the source of truth.
-- `agent_messages` is the display source of truth for the floating chat; the bb
+- `agent_messages` is the display source of truth for the floating chat; the VesnALIA
   thread is the compute + the "open as thread" affordance.
 
 Store gains: `getFileViews`, `setFileViewed`, `clearFileViews` (on re-review);
@@ -148,7 +148,7 @@ No LLM. Used by the sidebar and the per-file diff badge.
   5. `appendAgentMessage(role:"assistant", text: answer)`; publish
      `review:${targetKey}` so the dock refreshes.
 - `openAgentThread({ targetKey })` → ensure thread, `threads.open` it, return
-  `{ threadId }`. Header link "Open as bb thread ↗" calls it.
+  `{ threadId }`. Header link "Open as VesnALIA thread ↗" calls it.
 - `getAgentMessages({ targetKey })` → the log for hydration.
 - Old `assist` RPC + `runAssist` + `AssistPopover` are retired (only the popover
   used them). `src/assist.ts` is replaced by `src/agent.ts` housing the
@@ -192,5 +192,5 @@ chapterId?: string }`. Remove `assist`.
 - `assist` removal is internal (only `AssistPopover` called it).
 - Migrations are additive; older DBs upgrade in place.
 - The floating window is confined to the panel container (portal-scope) and
-  clamped, so it can't escape into the rest of the bb UI.
+  clamped, so it can't escape into the rest of the VesnALIA UI.
 ```

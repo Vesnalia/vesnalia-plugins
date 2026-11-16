@@ -6,7 +6,7 @@
 //   CLAUDE_SWITCHER_KEYCHAIN=1 npx vitest run src/keychain.integration.test.ts
 //
 // Read only: a refresh is refused before it reaches the network (it would
-// rotate the refresh token under a running bb and log the account out) and
+// rotate the refresh token under a running VesnALIA and log the account out) and
 // so is any write to the keychain. Prints which step failed, never a token.
 import { platform } from "node:os";
 import { describe, expect, it } from "vitest";

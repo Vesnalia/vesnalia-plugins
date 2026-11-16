@@ -6,7 +6,7 @@
  * spawning git. Handles both repo layouts that exist on this machine:
  *
  *  - a normal checkout: `<root>/.git` directory, `HEAD` inside it;
- *  - a linked worktree (bb's `~/.bb/worktrees/env_XXX/App`): `<root>/.git` is
+ *  - a linked worktree (VesnALIA's `~/.vesnalia/worktrees/env_XXX/App`): `<root>/.git` is
  *    a plain file containing `gitdir: /main/.git/worktrees/<name>`, and HEAD
  *    lives in that referenced directory.
  */

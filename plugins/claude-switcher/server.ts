@@ -1,12 +1,12 @@
-// Claude Switcher — bb plugin backend.
+// Claude Switcher — VesnALIA plugin backend.
 //
 // Seven jobs:
 //   1. Measure every Claude Code account on this machine (one config dir
-//      each) and publish the windows to bb's Provider usage panel.
+//      each) and publish the windows to VesnALIA's Provider usage panel.
 //   2. When a thread is created, put a new project on the best account, and
 //      move a known one off an account already measured unable to run, so
 //      the first turn does not fail. Before every turn, the same for the
-//      model the turn is sent with (bb's dispatch checkpoint), whatever the
+//      model the turn is sent with (VesnALIA's dispatch checkpoint), whatever the
 //      preferred model.
 //   3. When a turn fails on a subscription limit, move the thread's project to
 //      another account (CLAUDE_CONFIG_DIR as a project machine env var) and
@@ -21,12 +21,12 @@ import {
   cliCommand,
   defineCli,
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type MessageDispatchHookContext,
   type MessageDispatchHookDecision,
   type PluginThreadEventPayloads,
   type PluginTurnFailedEvent,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   STUCK_WAIT_MS,
@@ -198,7 +198,7 @@ export const REFUSAL_STORM_MS = 5 * 60_000;
 export const REFUSAL_STORM_MAX_MS = 15 * 60_000;
 /**
  * How long a usage limit with no reset reported keeps its account marked
- * (see limitedAt). [SUPUESTO] 30 min: no default of bb's or ours fits, and
+ * (see limitedAt). [SUPUESTO] 30 min: no default of VesnALIA's or ours fits, and
  * the next turn there may fail once more after it (Astra r4 high 1).
  */
 export const LIMIT_NO_RESET_MS = 30 * 60_000;
@@ -214,7 +214,7 @@ export const SESSION_LOST_MS = 6 * 60 * 60_000;
 export const HOSTS_FRESH_MS = 10 * 60_000;
 /** A measurement older than this is taken again before moving a project ahead of the limit. */
 export const AHEAD_FRESH_MS = 60_000;
-/** bb fails a dispatch whose checkpoint takes 10 s: the placement before a turn is left behind well before. */
+/** VesnALIA fails a dispatch whose checkpoint takes 10 s: the placement before a turn is left behind well before. */
 export const DISPATCH_LIMIT_MS = 3_000;
 /** How long a rescue waits for the model of a turn that ended, its log unread. */
 export const MODEL_READ_LIMIT_MS = 60_000;
@@ -235,7 +235,7 @@ export const SEED_WAIT_MS = 30_000;
 /**
  * A new project's first message waits this long, once, when its placement
  * has not finished within DISPATCH_LIMIT_MS (the accounts are measured
- * first): bb asks again sooner, as soon as the placement ends (E44).
+ * first): VesnALIA asks again sooner, as soon as the placement ends (E44).
  */
 export const FIRST_PLACEMENT_WAIT_MS = 5_000;
 /**
@@ -276,7 +276,7 @@ const STUCK_READ_LIMIT_MS = 15_000;
 /**
  * Times a turn waits, SEAT_RECHECK_MS apart, on an account that cannot run it
  * with another that can, before it starts anyway: the placement should have
- * moved it, so a bb that fails every write would hold it for ever with no
+ * moved it, so a VesnALIA that fails every write would hold it for ever with no
  * failure to see (code-reviewer r1). Started, it fails where the user is told.
  */
 const BLOCKED_WAITS = 10;
@@ -344,11 +344,11 @@ const KV_CANCELLED = "cancelled-retries";
 const KV_SERIES = "usage-series";
 /** The day's first reading of each account's weekly window, for the day's pace (see src/pace.ts). */
 const KV_PACE = "pace-day";
-/** Seats held from outside bb (`reserve`): a reload must not lose them. */
+/** Seats held from outside VesnALIA (`reserve`): a reload must not lose them. */
 const KV_EXTERNAL = "external-seats";
 /** Each running thread's seat budget, as its turn started: a reload counts it there (limpieza 2026-11-06, n.º 86). */
 const KV_RUNNING = "running-seats";
-/** This plugin as bb names it in a queued row's `waitingOn`. */
+/** This plugin as VesnALIA names it in a queued row's `waitingOn`. */
 const PLUGIN_ID = "claude-switcher";
 /** The model of each project's latest turn (see projectModel). */
 const KV_PROJECT_MODELS = "project-models";
@@ -359,7 +359,7 @@ const externalHoldSchema = z.object({
   at: z.number(),
 });
 const HISTORY_LIMIT = 100;
-/** A thread as bb reports it (the SDK does not export the type by name). */
+/** A thread as VesnALIA reports it (the SDK does not export the type by name). */
 type ThreadResponse = PluginThreadEventPayloads["thread.created"]["thread"];
 /** Where a turn runs, as placeTurn leaves it (see there). */
 type TurnPlace =
@@ -376,7 +376,7 @@ type TurnPlace =
  * found: nobody's, never the default's (Astra SEATS-R3-001).
  */
 const UNKNOWN_SEAT = Symbol("unknown seat");
-/** A queued row bb removed, as `message.cancelled` reports it. */
+/** A queued row VesnALIA removed, as `message.cancelled` reports it. */
 type CancelledEntry = PluginThreadEventPayloads["message.cancelled"]["entry"];
 /** When this plugin first ran: a project created later is new. */
 const KV_INSTALLED_AT = "installed-at";
@@ -396,11 +396,11 @@ const storedBasisSchema = z.object({
   at: z.number(),
 });
 /**
- * How long a basis read back after a restart is checked against bb (see
+ * How long a basis read back after a restart is checked against VesnALIA (see
  * restoredHolds; code-reviewer r6, CR-L2): one judged longer ago than this
  * is dropped without reading its thread (every window of a limit has reset
  * since), and one whose check could not tell this many refreshes in a row
- * (the thread could not be read, or bb's log does not say how its retry
+ * (the thread could not be read, or VesnALIA's log does not say how its retry
  * failed) is dropped at the last.
  */
 const RESTORED_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
@@ -536,7 +536,7 @@ const stateSchema = z.object({
   history: z.array(switchRecordSchema),
   /** Per account, per window ("weekly" or a model's display name): how it stands at the pace measured. */
   forecasts: z.record(z.string(), z.record(z.string(), forecastSchema)),
-  /** The login started from bb, running or just ended; null when none. */
+  /** The login started from VesnALIA, running or just ended; null when none. */
   login: loginStatusSchema.nullable(),
   /** Per account: its seats (capacity 0 = no limit), taken and waited for. */
   seats: z
@@ -549,7 +549,7 @@ const stateSchema = z.object({
         queued: z.array(
           z.object({ threadId: z.string(), title: z.string().nullable() }),
         ),
-        /** Seats held from outside bb (`reserve`), by id; only when there is one. */
+        /** Seats held from outside VesnALIA (`reserve`), by id; only when there is one. */
         external: z
           .array(z.object({ id: z.string(), until: z.number() }))
           .optional(),
@@ -571,7 +571,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ projectId: z.string(), account: z.string().nullable() }),
     output: stateSchema,
   },
-  /** Log an account in from bb: a new directory under the accounts dir, or a listed account without a login. */
+  /** Log an account in from VesnALIA: a new directory under the accounts dir, or a listed account without a login. */
   account_login_start: {
     input: z.object({ name: z.string().max(255) }),
     output: stateSchema,
@@ -619,7 +619,7 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-/** What a project's CLAUDE_CONFIG_DIR variable says, as bb reports it. */
+/** What a project's CLAUDE_CONFIG_DIR variable says, as VesnALIA reports it. */
 interface ProjectAccount {
   /** The account it names, or null: none, or one that no longer exists. */
   account: string | null;
@@ -629,8 +629,8 @@ interface ProjectAccount {
   external: boolean;
 }
 
-export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
-  const settings = bb.settings.define({
+export async function createPlugin(alia: AliaPluginApi, deps: PluginDeps) {
+  const settings = alia.settings.define({
     accountsDir: {
       type: "string",
       label: "Accounts directory",
@@ -687,11 +687,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       type: "string",
       label: "Claude Code executable",
       description:
-        "Used to log an account in from bb (`claude auth login`). A name looked up in the bb server's PATH, or a full path.",
+        "Used to log an account in from VesnALIA (`claude auth login`). A name looked up in the VesnALIA server's PATH, or a full path.",
       default: "claude",
     },
     // ponytail: 4 and 2 are a guess, not measured per thread. Each usage
-    // sample carries the seats taken then (KV_SEATS, `bb claude-switcher
+    // sample carries the seats taken then (KV_SEATS, `alia claude-switcher
     // seats`): with a week of them, the share of a window per hour and per
     // seat sets these defaults.
     seatsMax: {
@@ -805,7 +805,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
    * with the banner's generation (a turn of the thread, its archiving or
    * deletion, the automatic choice switched off) and by any later judgment
    * of the thread that is no such decline. Kept in storage (KV_ADVICE): a
-   * restart reads them back, and the first refresh asks each again once bb
+   * restart reads them back, and the first refresh asks each again once VesnALIA
    * says its thread still waits on the turn judged (Sol B2-R5-002).
    */
   type AdviceBasis = {
@@ -823,7 +823,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
      * basis is checked (see RESTORED_MAX_AGE_MS).
      */
     at: number;
-    /** Read back from storage, not yet checked against bb (see reviseAdvice). */
+    /** Read back from storage, not yet checked against VesnALIA (see reviseAdvice). */
     restored?: boolean;
     /** Checks of it read back that could not tell, in a row (see restoredHolds). */
     misses?: number;
@@ -850,9 +850,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     );
     basesWrites = basesWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_ADVICE, snapshot);
+        await alia.storage.kv.set(KV_ADVICE, snapshot);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not store what the banners are asked on (a restart reads them as they were): ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -914,7 +914,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if ((shownAdvice.get(threadId) ?? null) === text) return;
     if (text === null) shownAdvice.delete(threadId);
     else shownAdvice.set(threadId, text);
-    bb.realtime.publish(ADVICE_CHANGED, { threadId });
+    alia.realtime.publish(ADVICE_CHANGED, { threadId });
   }
   let current = await settings.get();
   /**
@@ -956,7 +956,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // the old directory must not be picked.
     if (moved) accounts = [];
     // An open view asks again now, not at the next refresh.
-    if (paceShown) bb.realtime.publish(CHANGED, { at: deps.now() });
+    if (paceShown) alia.realtime.publish(CHANGED, { at: deps.now() });
   });
 
   const collector = new UsageCollector({
@@ -967,14 +967,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       notePaceDay(name, measurement);
       noteCeiling(name);
     },
-    warn: (message) => bb.log.warn(message),
+    warn: (message) => alia.log.warn(message),
   });
   /** What the accounts' look skips is said once per load: 2373 of the 10000 lines the log keeps were one such message (2026-11-03). */
   const skipsSaid = new Set<string>();
   const warnOnce = (message: string) => {
     if (skipsSaid.has(message)) return;
     skipsSaid.add(message);
-    bb.log.warn(message);
+    alia.log.warn(message);
   };
   let accounts: Account[] = [];
   /**
@@ -1028,7 +1028,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   /**
    * Seats per account (see src/seats.ts): a thread's turn starts only with
-   * one. Kept in memory: a reload counts again the threads bb says run
+   * one. Kept in memory: a reload counts again the threads VesnALIA says run
    * (see rebuildSeats). Keyed by seatKey; every change is announced.
    */
   const seats = new Seats(
@@ -1083,7 +1083,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     ceilings.set(key, capacity);
     if (capacity === previous) return;
     const reason = `Seats on ${name}: ${previous} → ${capacity}, ${why ?? "back to the setting"}`;
-    bb.log.info(reason);
+    alia.log.info(reason);
     void addHistory({
       at: deps.now(),
       threadId: "",
@@ -1097,7 +1097,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /**
    * Per account, a sample of its seats and usage each time it is measured,
    * a week of them (see noteSeatSample): what share of a window an hour of
-   * one seat costs (`bb claude-switcher seats`).
+   * one seat costs (`alia claude-switcher seats`).
    */
   const seatSamples: Record<string, SeatSample[]> = {};
   /** The seat history's database (src/historial.ts); null when it could not be opened. */
@@ -1112,7 +1112,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     try {
       write(historial);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `could not write ${what} to the seat history: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -1161,7 +1161,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   let seatsComplete = false;
   /** A count is under way (see countSeats). */
   let seatsCounting = false;
-  /** A message waited for the count: bb is asked again once it is done. */
+  /** A message waited for the count: VesnALIA is asked again once it is done. */
   let seatsAwaited = false;
   /**
    * The threads whose turn ended (or that went) while the seats are being
@@ -1176,7 +1176,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /** The project of each thread that took a seat or a place in a queue (see projectSeated). */
   const seatProjects = new Map<string, string>();
   /**
-   * Threads with a turn under way, by thread: their project. Set as bb
+   * Threads with a turn under way, by thread: their project. Set as VesnALIA
    * announces the turn, before any read, so a turn whose seat could not be
    * counted is still known to run; gone as it ends, fails or the thread
    * goes (Codex PLAZAS-002).
@@ -1314,11 +1314,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   function wakeHeldForMove(projectId: string): void {
     if (moving(projectId) || movesOf(projectId).inFlight > 0) return;
     if (!heldForMove.delete(projectId)) return;
-    void bb.experimental_hooks
+    void alia.experimental_hooks
       .recheck("message.dispatch")
       .catch((error: unknown) =>
-        bb.log.warn(
-          `bb not asked again after a move of project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
+        alia.log.warn(
+          `alia not asked again after a move of project ${projectId}: ${error instanceof Error ? error.message : String(error)}`,
         ),
       );
   }
@@ -1408,15 +1408,15 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const now = JSON.stringify(seats.snapshot());
       if (now === seatsAnnounced) return;
       seatsAnnounced = now;
-      bb.realtime.publish(CHANGED, { at: deps.now() });
+      alia.realtime.publish(CHANGED, { at: deps.now() });
     }, SEATS_CHANGED_MS);
   }
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     if (seatsAnnounce !== null) clearTimeout(seatsAnnounce);
   });
   /**
    * Reservations whose turn never started are freed, and every free seat
-   * goes to the first in its account's queue; bb is asked again at once
+   * goes to the first in its account's queue; VesnALIA is asked again at once
    * when someone got one, or when `freed` (a seat just ended) and threads
    * wait on other accounts: one whose project can move to the seat goes
    * now, not at its next SEAT_RECHECK_MS (Aitor 2026-11-05, «que cuando
@@ -1428,14 +1428,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const expired = seats.expire(now, SEAT_TTL_MS);
     if (expired.length > 0) freed = true;
     for (const key of expired)
-      bb.log.info(
-        `a seat reserved on ${seatName(key)} expired (its turn did not start, or its hold from outside bb ended); ${occupancy(key)}`,
+      alia.log.info(
+        `a seat reserved on ${seatName(key)} expired (its turn did not start, or its hold from outside VesnALIA ended); ${occupancy(key)}`,
       );
     if (seats.holds().length !== held) storeHolds();
     const admitted = seats.admitAll(now);
     for (const threadId of admitted) {
       const key = seats.seatOf(threadId)?.account ?? "?";
-      bb.log.info(
+      alia.log.info(
         `thread ${threadId}: admitted to a seat on ${seatName(key)}; ${occupancy(key)}`,
       );
     }
@@ -1444,11 +1444,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       (heldForMove.size > 0 ||
         Object.values(seats.snapshot()).some((s) => s.queued.length > 0));
     if (admitted.length > 0 || waitingElsewhere)
-      void bb.experimental_hooks
+      void alia.experimental_hooks
         .recheck("message.dispatch")
         .catch((error: unknown) =>
-          bb.log.warn(
-            `bb not asked again after a seat freed: ${error instanceof Error ? error.message : String(error)}`,
+          alia.log.warn(
+            `alia not asked again after a seat freed: ${error instanceof Error ? error.message : String(error)}`,
           ),
         );
   }
@@ -1475,7 +1475,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       try {
         const parsed = z
           .record(z.string(), z.string())
-          .safeParse(await bb.storage.kv.get<unknown>(KV_RUNNING));
+          .safeParse(await alia.storage.kv.get<unknown>(KV_RUNNING));
         if (parsed.success)
           for (const [id, k] of Object.entries(parsed.data))
             if (!runningSeats.has(id) && !endedWhileUnread.has(id))
@@ -1499,9 +1499,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const snapshot = Object.fromEntries([...startedBefore, ...runningSeats]);
     runningWrites = runningWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_RUNNING, snapshot);
+        await alia.storage.kv.set(KV_RUNNING, snapshot);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not store where the running turns started (a reload counts them on their project's account): ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -1511,18 +1511,18 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   let holdsWrites
 : Promise<void> = Promise.resolve();
   /**
-   * The seats held from outside bb (or `snapshot`, what they are to be),
+   * The seats held from outside VesnALIA (or `snapshot`, what they are to be),
    * to storage (KV_EXTERNAL), in order: true when written. A failure is
    * logged; reserve and unreserve say it (Codex ULTRA-R2-004).
    */
   function storeHolds(snapshot = seats.holds()): Promise<boolean> {
     const written = holdsWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_EXTERNAL, snapshot);
+        await alia.storage.kv.set(KV_EXTERNAL, snapshot);
         return true;
       } catch (error) {
-        bb.log.warn(
-          `could not store the seats held from outside bb (a reload forgets them): ${error instanceof Error ? error.message : String(error)}`,
+        alia.log.warn(
+          `could not store the seats held from outside VesnALIA (a reload forgets them): ${error instanceof Error ? error.message : String(error)}`,
         );
         return false;
       }
@@ -1546,7 +1546,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (startedBefore.delete(threadId) || counted) storeRunning();
     const key = seats.release(threadId);
     if (key === null) return;
-    bb.log.info(
+    alia.log.info(
       `thread ${threadId}: seat on ${seatName(key)} released (${why}); ${occupancy(key)}`,
     );
     admitWaiting(true);
@@ -1575,8 +1575,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (had !== undefined && had !== key) admitWaiting(true);
     seatTitles.delete(threadId);
     const line = `thread ${threadId}: running on ${seatName(key)}${over ? " over capacity" : ""}; ${occupancy(key)}`;
-    if (over) bb.log.warn(line);
-    else bb.log.info(line);
+    if (over) alia.log.warn(line);
+    else alia.log.info(line);
   }
   /**
    * The turns not counted as they started (see unseated): counted now, each
@@ -1599,7 +1599,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         seatProjects.set(threadId, projectId);
         const seat = seatFor(read.value);
         if (seat === UNKNOWN_SEAT) {
-          bb.log.debug(
+          alia.log.debug(
             `thread ${threadId}: no seat counted: its project's account is not among the accounts found`,
           );
           return;
@@ -1610,7 +1610,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   /**
    * Before a turn of the thread starts on `account`: null when it has a
-   * seat there, else the wait bb holds its message on.
+   * seat there, else the wait VesnALIA holds its message on.
    */
   function seatWait(
     thread: ThreadResponse,
@@ -1626,7 +1626,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (reserveSeat(thread.id, key, now)) {
       seatTitles.delete(thread.id);
       if (queuedBefore)
-        bb.log.info(
+        alia.log.info(
           `thread ${thread.id}: admitted to a seat on ${account}; ${occupancy(key)}`,
         );
       return null;
@@ -1639,7 +1639,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       why === undefined
         ? `Waiting for a seat on ${account}: ${taken}`
         : `Waiting for a seat on ${account} for ${why}; ${taken}`;
-    bb.log.info(`thread ${thread.id}: ${reason}`);
+    alia.log.info(`thread ${thread.id}: ${reason}`);
     return { action: "wait", reason, sendAt: now + SEAT_RECHECK_MS };
   }
   /** By account name: aliases of one login show the same seats. */
@@ -1672,7 +1672,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   } | null = null;
   /** When each account last refused a turn (in memory: a reload forgets it). */
   const refusedAt = new Map<string, number>();
-  /** The HTTP status of each account's latest refusal, as bb gave it (null: none), for health. */
+  /** The HTTP status of each account's latest refusal, as VesnALIA gave it (null: none), for health. */
   const refusedHttp = new Map<string, number | null>();
   /**
    * The machine of each thread whose refusal is being judged, and whether it
@@ -1763,12 +1763,12 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const after = deps.now() - at;
     if (after < REFUSAL_PROOF_MS) return;
     refusedAt.delete(name);
-    bb.log.info(
+    alia.log.info(
       `account ${name}: a turn ended well on it ${Math.round(after / 1000)} s after its refusal; taken as back`,
     );
   }
   /**
-   * The accounts a turn failed on for want of a session, per machine (bb's
+   * The accounts a turn failed on for want of a session, per machine (VesnALIA's
    * host id; "" when the thread's machine could not be told), and when
    * (Aitor 2026-11-10: «no han cambiado de cuentas»). A login is a
    * machine's: the same account may run on another, so the mark keeps the
@@ -1799,7 +1799,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     { at: number; hosts: ReadonlySet<string>; byEnvironment: ReadonlyMap<string, string> }
   >();
   const hostsReading = new Map<string, Promise<unknown>>();
-  /** The machines' names, as bb lists them, for the texts (see hostLabel). */
+  /** The machines' names, as VesnALIA lists them, for the texts (see hostLabel). */
   const hostNames = new Map<string, string>();
   /**
    * The machines the project's threads run on, as its environments say:
@@ -1817,10 +1817,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   function readHosts(projectId: string) {
     const under = hostsReading.get(projectId);
     if (under !== undefined)
-      return under as Promise<Awaited<ReturnType<typeof bb.sdk.environments.list>> | null>;
+      return under as Promise<Awaited<ReturnType<typeof alia.sdk.environments.list>> | null>;
     const run = (async () => {
       try {
-        const environments = await bb.sdk.environments.list({ projectId });
+        const environments = await alia.sdk.environments.list({ projectId });
         hostsRead.set(projectId, {
           at: deps.now(),
           hosts: new Set(environments.filter((e) => e.status !== "destroyed").map((e) => e.hostId)),
@@ -1828,7 +1828,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         });
         return environments;
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `project ${projectId}: its machines not read (an account without a session on one is kept from it, whatever its machine): ${error instanceof Error ? error.message : String(error)}`,
         );
         return null;
@@ -1878,7 +1878,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         .map(([host, at]) => ({ account, host, hostName: hostLabel(host), until: at + SESSION_LOST_MS })),
     );
   }
-  /** A machine by its name, for the texts; its id when bb did not name it. */
+  /** A machine by its name, for the texts; its id when VesnALIA did not name it. */
   function hostLabel(host: string): string {
     return host === "" ? "una máquina sin identificar" : (hostNames.get(host) ?? host);
   }
@@ -1889,10 +1889,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
    */
   async function readAllHosts(): Promise<void> {
     try {
-      const listed = await bb.sdk.projects.list({ includePersonal: true });
+      const listed = await alia.sdk.projects.list({ includePersonal: true });
       await Promise.all(listed.map((p) => readHosts(p.id)));
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `the projects' machines not read (an account without a session on one is kept from every unread project): ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -1901,9 +1901,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   async function nameHost(host: string): Promise<void> {
     if (host === "" || hostNames.has(host)) return;
     try {
-      for (const h of await bb.sdk.hosts.list()) hostNames.set(h.id, h.name);
+      for (const h of await alia.sdk.hosts.list()) hostNames.set(h.id, h.name);
     } catch (error) {
-      bb.log.debug(
+      alia.log.debug(
         `the machines' names not read: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -1924,13 +1924,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (gone.length === 0) return;
     for (const host of gone) marks.delete(host);
     if (marks.size === 0) sessionLostAt.delete(name);
-    bb.log.info(
+    alia.log.info(
       `account ${name}: its session is taken as back${turn === undefined ? "" : ` on ${gone.map(hostLabel).join(", ")}`}`,
     );
   }
   /**
-   * The text of the failed turn's error in bb's log; null when the log does
-   * not name the turn or cannot be read. bb's failure event carries no
+   * The text of the failed turn's error in VesnALIA's log; null when the log does
+   * not name the turn or cannot be read. VesnALIA's failure event carries no
    * text: a session lost (isSessionLoss) or a network block
    * (isNetworkBlock) is told by this alone. Only an error before the
    * thread's next turn is the turn's: its failure may wait in the project's
@@ -1939,7 +1939,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
    */
   async function failureText(threadId: string, requestId: string): Promise<string | null> {
     try {
-      const turns = await bb.sdk.threads.events.list({
+      const turns = await alia.sdk.threads.events.list({
         threadId,
         types: ["client/turn/requested"],
         order: "desc",
@@ -1952,7 +1952,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const own = turns[at]!;
       // Newest first: the turn requested right after this one, if any.
       const next = turns[at - 1];
-      const errors = await bb.sdk.threads.events.list({
+      const errors = await alia.sdk.threads.events.list({
         threadId,
         types: ["provider/error"],
         order: next === undefined ? "desc" : "asc",
@@ -1964,8 +1964,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       if (failed?.type !== "provider/error") return null;
       return `${failed.data.message} ${failed.data.detail ?? ""}`;
     } catch (error) {
-      bb.log.warn(
-        `thread ${threadId}: its failure not read from bb's log (a session lost or a network block is not told): ${error instanceof Error ? error.message : String(error)}`,
+      alia.log.warn(
+        `thread ${threadId}: its failure not read from VesnALIA's log (a session lost or a network block is not told): ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -2044,7 +2044,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * A project is new when bb created it after this plugin first ran and it
+   * A project is new when VesnALIA created it after this plugin first ran and it
    * was never placed, kept or pinned since. Null when the install time cannot
    * be read or stored: then no project is moved for being new.
    */
@@ -2053,7 +2053,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   const cancelled = new Map<string, string>();
   /**
    * Removals of queued rows by this plugin, under way or landed without
-   * bb's word yet, by row id: bb's `message.cancelled` for one of them is
+   * VesnALIA's word yet, by row id: VesnALIA's `message.cancelled` for one of them is
    * this plugin's own, unless the removal fails because the row was gone
    * before (the user's, then; `held` keeps the event until the removal
    * answers) (Codex r8, IR8-002).
@@ -2063,32 +2063,32 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     { done: boolean; held: CancelledEntry | null }
   >();
   try {
-    const stored = await bb.storage.kv.get<unknown>(KV_INSTALLED_AT);
+    const stored = await alia.storage.kv.get<unknown>(KV_INSTALLED_AT);
     if (typeof stored === "number") {
       installedAt = stored;
     } else {
-      await bb.storage.kv.set(KV_INSTALLED_AT, deps.now());
+      await alia.storage.kv.set(KV_INSTALLED_AT, deps.now());
       installedAt = deps.now();
     }
-    const raw = await bb.storage.kv.get<unknown>(KV_HANDLED_PROJECTS);
+    const raw = await alia.storage.kv.get<unknown>(KV_HANDLED_PROJECTS);
     const list = z.array(z.string()).safeParse(raw);
     if (list.success) for (const id of list.data) handled.add(id);
     else if (raw !== undefined && raw !== null)
-      bb.log.warn(
+      alia.log.warn(
         "the list of projects already placed is unreadable; starting it again",
       );
-    const rawCancelled = await bb.storage.kv.get<unknown>(KV_CANCELLED);
+    const rawCancelled = await alia.storage.kv.get<unknown>(KV_CANCELLED);
     const byHand = z.record(z.string(), z.string()).safeParse(rawCancelled);
     if (byHand.success)
       for (const [threadId, requestId] of Object.entries(byHand.data))
         cancelled.set(threadId, requestId);
     else if (rawCancelled !== undefined && rawCancelled !== null)
-      bb.log.warn(
+      alia.log.warn(
         "the list of retries cancelled by hand is unreadable; starting it again",
       );
   } catch (error) {
     installedAt = null;
-    bb.log.warn(
+    alia.log.warn(
       `could not read the plugin's storage; new projects will not be placed: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2096,12 +2096,12 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   let history: SwitchRecord[] = [];
   try {
     // Record by record: one that cannot be read does not take the rest along.
-    const stored = await bb.storage.kv.get<unknown>(KV_HISTORY);
+    const stored = await alia.storage.kv.get<unknown>(KV_HISTORY);
     // No history yet: a version before it kept only the last switch.
     const records = Array.isArray(stored)
       ? stored
       : stored == null
-        ? [await bb.storage.kv.get<unknown>(KV_LAST_SWITCH)].filter(
+        ? [await alia.storage.kv.get<unknown>(KV_LAST_SWITCH)].filter(
             (record) => record != null,
           )
         : [];
@@ -2113,11 +2113,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       .slice(0, HISTORY_LIMIT);
     const dropped = Math.min(records.length, HISTORY_LIMIT) - history.length;
     if (dropped > 0 || (stored != null && !Array.isArray(stored)))
-      bb.log.warn(
+      alia.log.warn(
         `the stored history of moves had ${dropped > 0 ? `${dropped} unreadable record${dropped === 1 ? "" : "s"}` : "an unreadable shape"}; kept the rest`,
       );
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not read the history of moves; starting it again: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2125,7 +2125,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   let series: Record<string, Record<string, Series>> = {};
   try {
     // Account by account, for the same reason.
-    const stored = await bb.storage.kv.get<unknown>(KV_SERIES);
+    const stored = await alia.storage.kv.get<unknown>(KV_SERIES);
     const byAccount = z.record(z.string(), z.unknown()).safeParse(stored);
     const unreadable: string[] = [];
     for (const [name, value] of Object.entries(
@@ -2136,11 +2136,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       else unreadable.push(name);
     }
     if (unreadable.length > 0 || (stored != null && !byAccount.success))
-      bb.log.warn(
+      alia.log.warn(
         `the stored usage samples ${unreadable.length > 0 ? `of ${unreadable.join(", ")}` : ""} could not be read; their forecast starts again`,
       );
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not read the usage samples; starting them again: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2149,10 +2149,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   try {
     const parsed = z
       .record(z.string(), dayStartSchema)
-      .safeParse(await bb.storage.kv.get<unknown>(KV_PACE));
+      .safeParse(await alia.storage.kv.get<unknown>(KV_PACE));
     if (parsed.success) paceDay = parsed.data;
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not read the day's first readings; the day's pace starts again: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2160,23 +2160,23 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   try {
     const parsed = z
       .record(z.string(), z.string())
-      .safeParse(await bb.storage.kv.get<unknown>(KV_RUNNING));
+      .safeParse(await alia.storage.kv.get<unknown>(KV_RUNNING));
     if (parsed.success) startedBefore = new Map(Object.entries(parsed.data));
   } catch (error) {
     runningUnread = true;
-    bb.log.warn(
+    alia.log.warn(
       `could not read where the running turns started; they count on their project's account, and what is stored is kept for the next load: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  // The seats held from outside bb before the reload.
+  // The seats held from outside VesnALIA before the reload.
   try {
     const parsed = z
       .array(externalHoldSchema)
-      .safeParse(await bb.storage.kv.get<unknown>(KV_EXTERNAL));
+      .safeParse(await alia.storage.kv.get<unknown>(KV_EXTERNAL));
     if (parsed.success) seats.restoreHolds(parsed.data, deps.now());
   } catch (error) {
-    bb.log.warn(
-      `could not read the seats held from outside bb; they are not counted: ${error instanceof Error ? error.message : String(error)}`,
+    alia.log.warn(
+      `could not read the seats held from outside VesnALIA; they are not counted: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
   /**
@@ -2188,12 +2188,12 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   try {
     const parsed = z
       .record(z.string(), z.string())
-      .safeParse(await bb.storage.kv.get<unknown>(KV_PINS));
+      .safeParse(await alia.storage.kv.get<unknown>(KV_PINS));
     if (parsed.success)
       for (const [projectId, name] of Object.entries(parsed.data))
         pins.set(projectId, name);
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not read the projects picked by hand; their next Opus turn is placed as any: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2202,9 +2202,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const snapshot = Object.fromEntries(pins);
     pinsWrites = pinsWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_PINS, snapshot);
+        await alia.storage.kv.set(KV_PINS, snapshot);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not store the projects picked by hand: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -2217,11 +2217,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   try {
     const parsed = z
       .record(z.string(), z.string())
-      .safeParse(await bb.storage.kv.get<unknown>(KV_PROJECT_MODELS));
+      .safeParse(await alia.storage.kv.get<unknown>(KV_PROJECT_MODELS));
     if (parsed.success) storedProjectModels = parsed.data;
   } catch (error) {
     projectModelsRead = false;
-    bb.log.warn(
+    alia.log.warn(
       `could not read the projects' models; the preferred model judges them, and they are not stored until a reload: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2229,11 +2229,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   // week of it. Unopened, the samples live in memory until a reload, as
   // before, and the history says it has none.
   try {
-    const db = bb.storage.database();
-    bb.storage.migrate(db, HISTORIAL_MIGRATIONS);
+    const db = alia.storage.database();
+    alia.storage.migrate(db, HISTORIAL_MIGRATIONS);
     historial = db;
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not open the seat history; samples are kept in memory only until a reload: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2252,7 +2252,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   try {
     const parsed = z
       .record(z.string(), z.array(z.unknown()))
-      .safeParse(await bb.storage.kv.get<unknown>(KV_SEATS));
+      .safeParse(await alia.storage.kv.get<unknown>(KV_SEATS));
     if (parsed.success) {
       fromKv = [];
       for (const [name, samples] of Object.entries(parsed.data))
@@ -2262,7 +2262,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         }
     }
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not read the seat samples 0.2.42 kept: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2275,15 +2275,15 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           addSample(historial, { at, account: name, running, reserved, external: null, waiting: null, capacity: null, session, weekly, sessionResets, weeklyResets, preferredWeekly: null });
         imported = true;
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not move the seat samples 0.2.42 kept to the seat history; kept in memory, and in storage for the next load: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
       if (imported)
         try {
-          await bb.storage.kv.delete(KV_SEATS);
+          await alia.storage.kv.delete(KV_SEATS);
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `could not delete the seat samples 0.2.42 kept (now in the seat history; the next load tries again): ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -2293,7 +2293,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       for (const r of readSamples(historial, deps.now() - SEAT_SAMPLES_MS))
         keep(r.account, [r.at, r.running, r.reserved, r.session, r.weekly, r.sessionResets, r.weeklyResets]);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `could not read the seat history; starting the samples again: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -2302,10 +2302,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     seatSamples[name] = [...own.values()].sort((a, b) => a[0] - b[0]);
   pruneSeatSamples();
   // What the banners were asked on before the restart, thread by thread:
-  // checked against bb by the first refresh (see reviseAdvice). None with
+  // checked against VesnALIA by the first refresh (see reviseAdvice). None with
   // the automatic choice off, which ends them all.
   try {
-    const stored = await bb.storage.kv.get<unknown>(KV_ADVICE);
+    const stored = await alia.storage.kv.get<unknown>(KV_ADVICE);
     const byThread = z.record(z.string(), z.unknown()).safeParse(stored);
     const entries = Object.entries(byThread.success ? byThread.data : {});
     let unreadable = 0;
@@ -2324,7 +2324,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       });
     }
     if (unreadable > 0 || (stored != null && !byThread.success))
-      bb.log.warn(
+      alia.log.warn(
         `what the banners are asked on had ${unreadable > 0 ? `${unreadable} unreadable thread${unreadable === 1 ? "" : "s"}` : "an unreadable shape"}; kept the rest`,
       );
     // Written again without what could not be read, so the next start
@@ -2335,7 +2335,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     )
       storeBases();
   } catch (error) {
-    bb.log.warn(
+    alia.log.warn(
       `could not read what the banners are asked on; they come back with the next judgments: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -2439,9 +2439,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     seriesWrites = seriesWrites.then(async () => {
       await storePaceDay(paceSnapshot);
       try {
-        await bb.storage.kv.set(KV_SERIES, snapshot);
+        await alia.storage.kv.set(KV_SERIES, snapshot);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not store the usage samples: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -2451,15 +2451,15 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /** The day's first readings, to storage; a failure is logged, not thrown. */
   async function storePaceDay(snapshot: Record<string, DayStart>): Promise<void> {
     try {
-      await bb.storage.kv.set(KV_PACE, snapshot);
+      await alia.storage.kv.set(KV_PACE, snapshot);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `could not store the day's first readings: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
   /**
-   * The account was measured, by whichever path (the refresh, bb's usage
+   * The account was measured, by whichever path (the refresh, VesnALIA's usage
    * panel, a placement): the day's first reading of its weekly window is
    * kept or replaced, and stored when it changes (Codex ULTRA-R03). Only a
    * fresh measurement counts: a failed query keeps the old usage.
@@ -2543,7 +2543,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     return out;
   }
-  // ---- Login from bb -------------------------------------------------------
+  // ---- Login from VesnALIA -------------------------------------------------------
   /** What the check after a finished login found, shown with its status. */
   let loginNote: { of: LoginStatus; text: string } | null = null;
   function loginStatus(): State["login"] {
@@ -2559,21 +2559,21 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     timeoutMs: LOGIN_TIMEOUT_MS,
     now: deps.now,
     onShared(name, linked, failed) {
-      bb.log.info(
+      alia.log.info(
         linked.length === 0
           ? `created the directory of ${name}; nothing to share from the default account's directory`
           : `created the directory of ${name}, sharing ${linked.join(", ")} with the default account's directory`,
       );
       if (failed.length > 0)
-        bb.log.warn(
+        alia.log.warn(
           `the directory of ${name} could not share ${failed.join("; ")}: link them by hand (see the README)`,
         );
     },
     onChange(status) {
-      bb.log.info(
+      alia.log.info(
         `login of ${status.name}: ${status.phase}${status.message === null ? "" : ` (${status.message})`}`,
       );
-      bb.realtime.publish(CHANGED, { at: deps.now() });
+      alia.realtime.publish(CHANGED, { at: deps.now() });
       if (status.phase !== "done") return;
       // The directory and its login are new: find and measure the account.
       void (async () => {
@@ -2595,14 +2595,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
                   : null;
           if (text !== null) {
             loginNote = { of: status, text };
-            bb.log.warn(`login of ${status.name}: ${text}`);
+            alia.log.warn(`login of ${status.name}: ${text}`);
           }
         } catch (error) {
           const text = `the account could not be checked after its login: ${error instanceof Error ? error.message : String(error)}`;
           loginNote = { of: status, text };
-          bb.log.warn(`login of ${status.name}: ${text}`);
+          alia.log.warn(`login of ${status.name}: ${text}`);
         }
-        bb.realtime.publish(CHANGED, { at: deps.now() });
+        alia.realtime.publish(CHANGED, { at: deps.now() });
       })();
     },
   });
@@ -2692,9 +2692,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const snapshot = history;
     historyWrites = historyWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_HISTORY, snapshot);
+        await alia.storage.kv.set(KV_HISTORY, snapshot);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not record the move in the history: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -2708,9 +2708,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     handled.add(projectId);
     handledWrites = handledWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_HANDLED_PROJECTS, [...handled]);
+        await alia.storage.kv.set(KV_HANDLED_PROJECTS, [...handled]);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `could not record project ${projectId} as handled: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -2764,7 +2764,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           try {
             await reviseAdvice();
           } catch (error) {
-            bb.log.warn(
+            alia.log.warn(
               `the banners were not asked again: ${error instanceof Error ? error.message : String(error)}`,
             );
           }
@@ -2780,7 +2780,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const found = await discover();
       await collector.collectAll(found);
       await recordSamples();
-      bb.realtime.publish(CHANGED, { at: deps.now() });
+      alia.realtime.publish(CHANGED, { at: deps.now() });
     } finally {
       const first = refreshes === 0;
       refreshes += 1;
@@ -2792,11 +2792,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       if (!underWayListed) countSeats();
       // What waited on the accounts not read yet does not wait a full recheck.
       if (first && firstReadsAwaited)
-        void bb.experimental_hooks
+        void alia.experimental_hooks
           .recheck("message.dispatch")
           .catch((error: unknown) =>
-            bb.log.warn(
-              `bb not asked again after the first reads: ${error instanceof Error ? error.message : String(error)}`,
+            alia.log.warn(
+              `alia not asked again after the first reads: ${error instanceof Error ? error.message : String(error)}`,
             ),
           );
       // Also when the refresh fails: the reads it left grow old, and a
@@ -2814,10 +2814,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
   }
 
-  // ponytail: bb has no batch read of machine environments, so a list costs
-  // one call per project, seconds each when bb is busy, and every open view
+  // ponytail: VesnALIA has no batch read of machine environments, so a list costs
+  // one call per project, seconds each when VesnALIA is busy, and every open view
   // refetches on the same event. The views' lists share one read, kept
-  // PROJECTS_FRESH_MS; a change made here drops it, one made in bb's own
+  // PROJECTS_FRESH_MS; a change made here drops it, one made in VesnALIA's own
   // settings shows within that time. Everything else reads fresh, and
   // decisions read projectAccount directly. A view that needs a project the
   // shared read lacks (made a moment ago, picked in the new-thread composer)
@@ -2826,7 +2826,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const kept = projectsRead;
     if (kept === null || deps.now() - kept.at >= PROJECTS_FRESH_MS)
       return readProjects();
-    // Already read again for this project (one bb does not list): no more.
+    // Already read again for this project (one VesnALIA does not list): no more.
     if (need === undefined || kept.need === need) return kept.value;
     return kept.value.then((projects) => {
       if (projects.some((p) => p.id === need)) return projects;
@@ -2842,7 +2842,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const now = deps.now();
     const value = (async () => {
       // The personal project too: a variable set there must be visible and releasable.
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       for (const p of projects) projectNames.set(p.id, p.name);
       return Promise.all(
         projects.map(async (p) => ({
@@ -2863,13 +2863,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
 
   /**
    * The project's account is whatever its CLAUDE_CONFIG_DIR machine variable
-   * says, read from bb every time: bb never returns values, so the name comes
+   * says, read from VesnALIA every time: VesnALIA never returns values, so the name comes
    * from the note this plugin writes next to it. A variable with another note
    * (set by hand, or inherited from the global environment) is "external"
    * and this plugin never touches it.
    */
   async function projectAccount(projectId: string): Promise<ProjectAccount> {
-    const env = await bb.sdk.projects.machineEnvironment({ projectId });
+    const env = await alia.sdk.projects.machineEnvironment({ projectId });
     const own = env.variables.find((v) => v.name === ENV_VAR);
     if (own !== undefined) {
       const name = accountFromNote(own.note);
@@ -2991,7 +2991,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (move.writes !== before.writes + 2 || move.picks !== before.picks) {
       // Logged, not debug: the project's next turn in the preferred model
       // then stays where it is, and this line is why (code-reviewer r1).
-      bb.log.info(
+      alia.log.info(
         `project ${projectId}: excursion from ${fromName} not noted (${move.picks !== before.picks ? "picked or released by hand meanwhile" : "another move crossed it"})`,
       );
       return;
@@ -3070,7 +3070,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       if (options.byHand === true || toName === fromName) return false;
       const admitted = siblingAdmitted(projectId, options.forThread);
       if (admitted === null) return false;
-      bb.log.info(
+      alia.log.info(
         `project ${projectId}: not moved to ${toName}: thread ${admitted} was told to start where it is and has not`,
       );
       return true;
@@ -3099,7 +3099,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       // session there (Codex E46-002). Links in the new account are
       // harmless if the write below fails. Past SESSIONS_LIMIT_MS the
       // variable is written anyway: a move without the sessions beats a
-      // queue hung on a filesystem or on bb (Fable, 2026-10-29); what is
+      // queue hung on a filesystem or on VesnALIA (Fable, 2026-10-29); what is
       // still under way only adds links.
       if (move !== null && options.share === false)
         void shareProjectSessions(projectId, account, toName, from.account);
@@ -3111,7 +3111,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           `sessions of ${projectNames.get(projectId) ?? projectId} not shared into ${toName}`,
         );
         if (shared === "late")
-          bb.log.warn(
+          alia.log.warn(
             `sessions of ${projectNames.get(projectId) ?? projectId} not shared into ${toName} within ${SESSIONS_LIMIT_MS / 1000} s; the move goes on`,
           );
         if (
@@ -3120,7 +3120,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             move.picks !== mark.picks ||
             options.stillValid?.() === false)
         ) {
-          bb.log.info(
+          alia.log.info(
             `project ${projectId}: not moved to ${toName}: picked by hand or moved meanwhile`,
           );
           return false;
@@ -3142,13 +3142,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       if (account === null || account.configDir === null) {
         // Default account = no variable. Only ours can be there (see above).
         if (from.owned) {
-          await bb.sdk.projects.deleteMachineEnvironmentVariable({
+          await alia.sdk.projects.deleteMachineEnvironmentVariable({
             projectId,
             name: ENV_VAR,
           });
         }
       } else {
-        await bb.sdk.projects.setMachineEnvironmentVariable({
+        await alia.sdk.projects.setMachineEnvironmentVariable({
           projectId,
           name: ENV_VAR,
           value: account.configDir,
@@ -3187,7 +3187,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       pins.delete(projectId)
     )
       storePins();
-    bb.realtime.publish(CHANGED, { at: deps.now() });
+    alia.realtime.publish(CHANGED, { at: deps.now() });
     return true;
   }
 
@@ -3222,7 +3222,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         ...(left === undefined ? [] : [dirOf(left)]),
         ...accounts.map(dirOf),
       ];
-      const environments = await bb.sdk.environments.list({ projectId });
+      const environments = await alia.sdk.environments.list({ projectId });
       const paths = [
         ...new Set(
           environments.flatMap((e) =>
@@ -3235,22 +3235,22 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         const result = await shareSessions({ projectPath, target, sources, io });
         if (result.skipped === "no-project-dir") elsewhere.push(projectPath);
         if (result.linked > 0)
-          bb.log.info(
+          alia.log.info(
             `sessions of ${name} shared into ${toName}: ${result.linked} linked (${projectPath})`,
           );
         if (result.errors.length > 0)
-          bb.log.warn(
+          alia.log.warn(
             `sessions of ${name} not all shared into ${toName}: ${result.errors.slice(0, 3).join("; ")}${result.errors.length > 3 ? ` (+${result.errors.length - 3} more)` : ""} (${projectPath})`,
           );
       }
       if (elsewhere.length > 0 && !elsewhereLogged.has(projectId)) {
         elsewhereLogged.add(projectId);
-        bb.log.info(
+        alia.log.info(
           `sessions not shared for ${name}: path not on this machine (${elsewhere.join(", ")})`,
         );
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `sessions of ${name} not shared into ${toName}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -3342,7 +3342,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       autoSwitch: current.autoSwitch,
       paceHoldsBackground: current.paceHoldsBackground === true,
       lastSwitch:
-        (await bb.storage.kv.get<SwitchRecord>(KV_LAST_SWITCH)) ?? null,
+        (await alia.storage.kv.get<SwitchRecord>(KV_LAST_SWITCH)) ?? null,
       bestAccount: bestAccount(
         measuredAccounts(),
         current.preferredModel,
@@ -3477,7 +3477,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         const toName = to?.name ?? current.defaultAccountName;
         measuredPick = collector.get(toName) !== undefined;
         if (toName === fromName) return;
-        bb.log.info(
+        alia.log.info(
           `project ${projectId}: picked by hand, ${fromName} → ${toName}`,
         );
         await addHistory({
@@ -3511,23 +3511,23 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       });
     } finally {
       if (applied) {
-        bb.realtime.publish(CHANGED, { at: deps.now() });
+        alia.realtime.publish(CHANGED, { at: deps.now() });
         // What waits for this project is looked at now, not at its next
         // ask (up to RESERVE_RECHECK_MS) or refresh: outside the project's
         // queue, which the reads below enter themselves. recheck asks for
         // the rows held by a plugin; the retries with a time are revisited.
-        void bb.experimental_hooks
+        void alia.experimental_hooks
           .recheck("message.dispatch")
           .catch((error: unknown) =>
-            bb.log.warn(
-              `bb not asked again after a pick: ${error instanceof Error ? error.message : String(error)}`,
+            alia.log.warn(
+              `alia not asked again after a pick: ${error instanceof Error ? error.message : String(error)}`,
             ),
           );
         // An account never measured (just after a load) may have no login:
         // nothing is released on it before the refresh looks at it.
         if (measuredPick)
           void revisitWaits().catch((error: unknown) =>
-            bb.log.warn(
+            alia.log.warn(
               `the waiting turns were not looked at again after a pick: ${error instanceof Error ? error.message : String(error)}`,
             ),
           );
@@ -3536,7 +3536,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   // ---- Provider usage panel source -------------------------------------
-  bb.rpc.register(
+  alia.rpc.register(
     usageSourceRpcContract,
     {
       async [usageListMethod]() {
@@ -3562,7 +3562,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   );
 
   // ---- Page RPC ---------------------------------------------------------
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     accounts_list: (input) => state({ shared: true, need: input?.project }),
     async accounts_refresh() {
       await refreshByHand();
@@ -3601,9 +3601,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
 
   // ---- Retry of a failed turn ---------------------------------------------
   /**
-   * Waits queued back after bb did not take their retry, or after ours could
+   * Waits queued back after VesnALIA did not take their retry, or after ours could
    * not replace them (restoreQueued), by retryKey (their id never comes back
-   * when bb's answer is lost): newer than the move that released them, they
+   * when VesnALIA's answer is lost): newer than the move that released them, they
    * still waited on the old account (Codex BM-INSPECT-R4-002). A mark is
    * dropped by the next pass that reads the queue without its row; with the
    * automatic choice off, it stays until a pass runs again (a few strings,
@@ -3620,13 +3620,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   function markPutBack(key: string): void {
     putBack.set(key, ++putBackMarks);
   }
-  /** A queued retry's turn: bb keeps one queued retry per thread, chain and attempt. */
+  /** A queued retry's turn: VesnALIA keeps one queued retry per thread, chain and attempt. */
   function retryKey(threadId: string, of: string, attempt: number): string {
     return JSON.stringify([threadId, of, attempt]);
   }
-  /** Whether a retry with this key is queued on the thread; false when bb cannot be read. */
+  /** Whether a retry with this key is queued on the thread; false when VesnALIA cannot be read. */
   function rowQueued(threadId: string, key: string): Promise<boolean> {
-    return bb.sdk.threads.queuedMessages.list({ threadId }).then(
+    return alia.sdk.threads.queuedMessages.list({ threadId }).then(
       (rows) =>
         rows.some(
           (r) =>
@@ -3639,13 +3639,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * Retry row bb (or its provider-retry plugin) already queued for the failed
-   * turn. bb stamps the row with `attempt` = the failed turn's attempt + 1 and
+   * Retry row VesnALIA (or its provider-retry plugin) already queued for the failed
+   * turn. VesnALIA stamps the row with `attempt` = the failed turn's attempt + 1 and
    * keys it by the ORIGINAL request of the retry chain, while a retry's
    * failure reports the retry's own id: past the first attempt only the
    * attempt tells the rows apart. A retry row of an EARLIER turn can still be
    * waiting on the thread (the user sent a message by hand meanwhile): it is
-   * skipped. bb allows one row per chain, so the first match is the one.
+   * skipped. VesnALIA allows one row per chain, so the first match is the one.
    */
   async function queuedRetry(
     event: PluginTurnFailedEvent,
@@ -3655,7 +3655,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     sendAt: number | null;
     key: string;
   } | null> {
-    const rows = await bb.sdk.threads.queuedMessages.list({
+    const rows = await alia.sdk.threads.queuedMessages.list({
       threadId: event.threadId,
     });
     for (const row of rows) {
@@ -3677,7 +3677,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     return null;
   }
 
-  /** bb's answers for a row that is already on its way: sent meanwhile (404) or being sent right now (409). */
+  /** VesnALIA's answers for a row that is already on its way: sent meanwhile (404) or being sent right now (409). */
   function alreadyOnItsWay(error: unknown): boolean {
     const status =
       typeof error === "object" && error !== null && "status" in error
@@ -3690,7 +3690,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     );
   }
 
-  /** bb's refusal to retry a turn that is no longer the thread's latest. */
+  /** VesnALIA's refusal to retry a turn that is no longer the thread's latest. */
   function superseded(error: unknown): boolean {
     const status =
       typeof error === "object" && error !== null && "status" in error
@@ -3702,13 +3702,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
 
   /**
    * Replace `rowId`, another plugin's retry of the turn, by one of ours: it is
-   * deleted here and queued again by the caller, so bb dispatches the retry
+   * deleted here and queued again by the caller, so VesnALIA dispatches the retry
    * through its checkpoint, where the turn is placed. An explicit send of
    * the row would skip that checkpoint and run the turn where the project
    * stood when the row was found, not when it is sent (Codex
    * BM-INSPECT-R2-001). False when the row is already on its way: nothing to
-   * replace. Any other failure of the delete (its answer lost, bb refusing)
-   * is logged and ours is queued anyway: if the row is still there, bb
+   * replace. Any other failure of the delete (its answer lost, VesnALIA refusing)
+   * is logged and ours is queued anyway: if the row is still there, VesnALIA
    * refuses ours (one retry per turn) and the row stays, so the turn is
    * never left without a retry (Codex BM-INSPECT-R3-001).
    */
@@ -3717,16 +3717,16 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       await deleteOwn(threadId, rowId);
       return true;
     } catch (error) {
-      // Sent between the list and this delete (bb would refuse a retry of a
+      // Sent between the list and this delete (VesnALIA would refuse a retry of a
       // thread that is running again), or removed by the user: nothing to
       // replace.
       if (alreadyOnItsWay(error)) {
-        bb.log.info(
+        alia.log.info(
           `thread ${threadId}: the queued retry is already on its way; leaving it`,
         );
         return false;
       }
-      bb.log.warn(
+      alia.log.warn(
         `thread ${threadId}: could not remove the queued retry (${error instanceof Error ? error.message : String(error)}); queuing ours anyway`,
       );
       return true;
@@ -3734,11 +3734,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * Retry the failed turn now (no sendAt) or at `sendAt`. bb keeps ONE retry
+   * Retry the failed turn now (no sendAt) or at `sendAt`. VesnALIA keeps ONE retry
    * per turn: if provider-retry got there first, its row is replaced by ours,
-   * at once or timed, so bb dispatches the retry through its checkpoint (see
+   * at once or timed, so VesnALIA dispatches the retry through its checkpoint (see
    * replaceQueued). A row queued meanwhile, between the list and ours, is
-   * replaced once more; a third one is left to bb, which dispatches it
+   * replaced once more; a third one is left to VesnALIA, which dispatches it
    * through the checkpoint at its own time. If ours cannot be queued after a
    * row was replaced, that row is put back rather than leave the turn
    * without any retry (code-reviewer r3, CR3-01).
@@ -3757,7 +3757,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const threadId = event.threadId;
     let row = await queuedRetry(event);
     if (row !== null) {
-      bb.log.info(
+      alia.log.info(
         `thread ${threadId}: a retry of the turn is already queued ("${row.reason}"${row.sendAt === null ? "" : `, for ${new Date(row.sendAt).toISOString()}`})`,
       );
       // On a rescue it is left to whoever queued it: another plugin may be
@@ -3768,7 +3768,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     for (let replacements = 0; ; replacements++) {
       if (row !== null && !(await replaceQueued(threadId, row.id))) return;
       try {
-        await bb.sdk.threads.retry({
+        await alia.sdk.threads.retry({
           threadId,
           turnRequestId: event.requestId,
           reason: typeof reason === "string" ? reason : reason(),
@@ -3783,13 +3783,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         try {
           raced = await queuedRetry(event);
         } catch (lookError) {
-          bb.log.warn(
+          alia.log.warn(
             `thread ${threadId}: could not look at the queue again (${lookError instanceof Error ? lookError.message : String(lookError)}); going on without it`,
           );
         }
         if (raced !== null) {
           if (stuck || sendAt !== undefined || replacements > 0) {
-            bb.log[stuck ? "info" : "warn"](
+            alia.log[stuck ? "info" : "warn"](
               row !== null && raced.id === row.id
                 ? `thread ${threadId}: the retry queued before could not be removed and is still there; leaving it`
                 : `thread ${threadId}: another retry was queued ${replacements > 0 ? "again" : "first"}; leaving it`,
@@ -3802,17 +3802,17 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         // A newer turn replaced the failed one (a message sent meanwhile): it
         // runs on the project's account, and its own failure comes on its own.
         if (superseded(error)) {
-          bb.log.info(
+          alia.log.info(
             `thread ${threadId}: turn ${event.requestId} is no longer its latest; the newer turn goes on`,
           );
           return;
         }
-        // bb has the turn already (ours refused for a retry it keeps, or
+        // VesnALIA has the turn already (ours refused for a retry it keeps, or
         // the turn is no longer the failed one): nothing to restore, and
         // nothing is known about a race (code-reviewer 0.2.18 r1, CR1-03).
-        if (bbHasTheTurn(error)) {
-          bb.log.info(
-            `thread ${threadId}: bb already has a retry of the turn (${error instanceof Error ? error.message : String(error)})`,
+        if (aliaHasTheTurn(error)) {
+          alia.log.info(
+            `thread ${threadId}: VesnALIA already has a retry of the turn (${error instanceof Error ? error.message : String(error)})`,
           );
           return;
         }
@@ -3826,7 +3826,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /**
    * Ours could not be queued after `row` was replaced: `row` is queued again
    * as it was, and marked put back so a later pass may still release it
-   * (Codex BM-INSPECT-R4-002). Unless bb has the turn: ours landed and only
+   * (Codex BM-INSPECT-R4-002). Unless VesnALIA has the turn: ours landed and only
    * its answer was lost, or the turn is no longer the failed one
    * (code-reviewer r4, CR4-01).
    */
@@ -3837,11 +3837,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     error: unknown,
   ): Promise<void> {
     const message = error instanceof Error ? error.message : String(error);
-    bb.log.warn(
+    alia.log.warn(
       `thread ${threadId}: could not queue the retry (${message}); restoring the one queued before`,
     );
     try {
-      const back = await bb.sdk.threads.retry({
+      const back = await alia.sdk.threads.retry({
         threadId,
         turnRequestId: event.requestId,
         reason: row.reason,
@@ -3853,13 +3853,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         restoreError instanceof Error
           ? restoreError.message
           : String(restoreError);
-      if (bbHasTheTurn(restoreError)) {
-        bb.log.info(
-          `thread ${threadId}: the retry queued before is not restored: bb has the turn (${restore})`,
+      if (aliaHasTheTurn(restoreError)) {
+        alia.log.info(
+          `thread ${threadId}: the retry queued before is not restored: VesnALIA has the turn (${restore})`,
         );
         return;
       }
-      // bb may have queued it and lost only its answer (as releaseWait
+      // VesnALIA may have queued it and lost only its answer (as releaseWait
       // allows for): looked for, and marked put back only when found, so
       // no mark outlives a row that was never queued (Codex Sol 0.2.18 r1,
       // R0218-CODEX-001; code-reviewer r2, CR2-01). The row found may be
@@ -3867,7 +3867,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       // (CR2-02).
       if (await rowQueued(threadId, row.key)) {
         markPutBack(row.key);
-        bb.log.info(
+        alia.log.info(
           `thread ${threadId}: a retry of the turn is queued after all (the restore's answer was lost: ${restore})`,
         );
         return;
@@ -3907,9 +3907,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       graced: new Set(),
     });
     try {
-      await bb.storage.kv.set(KV_LAST_SWITCH, record);
+      await alia.storage.kv.set(KV_LAST_SWITCH, record);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `could not record the switch: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -3966,14 +3966,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /**
    * After a usage refresh (see askBannersAgain): the banner of each thread
    * whose latest judgment declined its turn, asked again on the new reads
-   * (Sol B2-R4-001). A thread with a retry queued (bb's provider-retry) is
+   * (Sol B2-R4-001). A thread with a retry queued (VesnALIA's provider-retry) is
    * never judged again until that retry runs, while the account an Opus
    * turn would go to changes with the numbers. As a rescue's judgment would
    * ask it: the account the turn failed on judged on its numbers like the
    * rest, from where the project sits now, with the same function and the
    * same placement (opusInstead): a new account, the banner gone (Fable
    * back, no account for Opus, a read that failed) or back. A basis read
-   * back after a restart is checked against bb before anything else is
+   * back after a restart is checked against VesnALIA before anything else is
    * asked of it (see restoredHolds; code-reviewer r6, CR-L2). Only the
    * banner: nothing sent, retried, moved, queued or written. One read of
    * each project's account for all its threads (Sol B2-R5-003), none for a
@@ -4043,7 +4043,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       at = await projectAccount(projectId);
     } catch (error) {
       for (const [threadId, basis] of threads) {
-        bb.log.warn(
+        alia.log.warn(
           `thread ${threadId}: its banner not asked again (the project's account could not be read: ${error instanceof Error ? error.message : String(error)})`,
         );
         // Where an Opus turn would go is not known: the banner goes
@@ -4084,11 +4084,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * A basis read back after a restart (see adviceBasis), checked against bb
+   * A basis read back after a restart (see adviceBasis), checked against VesnALIA
    * before the pass asks its banner (see waitsOnJudgedTurn); a thread that
    * moved on while the plugin was away keeps nothing (Sol B2-R5-002). The
    * basis checked, now the thread's; null when it is dropped, when a
-   * judgment of the thread replaced it meanwhile, or when bb could not be
+   * judgment of the thread replaced it meanwhile, or when VesnALIA could not be
    * read or does not say yet (kept, unchecked and not shown: asked again by
    * the next pass, up to RESTORED_CHECKS refreshes in a row). One judged
    * more than RESTORED_MAX_AGE_MS before is dropped unread (code-reviewer
@@ -4100,14 +4100,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   ): Promise<AdviceBasis | null> {
     let holds: boolean | null = false;
     if (deps.now() - basis.at > RESTORED_MAX_AGE_MS)
-      bb.log.debug(
+      alia.log.debug(
         `thread ${threadId}: what its banner was asked on is dropped (judged more than ${RESTORED_MAX_AGE_MS / 86_400_000} days ago)`,
       );
     else {
       try {
         holds = await waitsOnJudgedTurn(threadId, basis);
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `thread ${threadId}: its banner not asked again (the thread or its log could not be read: ${error instanceof Error ? error.message : String(error)})`,
         );
         holds = null;
@@ -4122,7 +4122,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           adviceBasis.set(threadId, { ...basis, misses, missedIn: refreshes });
           return null;
         }
-        bb.log.info(
+        alia.log.info(
           `thread ${threadId}: what its banner was asked on is dropped (${RESTORED_CHECKS} checks in a row could not tell)`,
         );
         holds = false;
@@ -4140,20 +4140,20 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     return checked;
   }
   /**
-   * Whether bb says the thread still waits on the turn `basis` judged: in
+   * Whether VesnALIA says the thread still waits on the turn `basis` judged: in
    * error, in the same project, its latest turn that one or a later attempt
    * of its chain. With the plugin running, such an attempt's start would
    * have ended the banner, and only its failure's judgment could put one
    * back: so that attempt must have been sent in the model judged and have
    * failed in a way a failure's judgment takes up (a limit, a refusal), as
-   * a rescue reads it from bb's log (Sol B2-R6-001). Null: the log does not
+   * a rescue reads it from VesnALIA's log (Sol B2-R6-001). Null: the log does not
    * say yet how that attempt failed.
    */
   async function waitsOnJudgedTurn(
     threadId: string,
     basis: AdviceBasis,
   ): Promise<boolean | null> {
-    const live = await bb.sdk.threads.get({ threadId });
+    const live = await alia.sdk.threads.get({ threadId });
     if (!waitingThread(live) || live.projectId !== basis.projectId)
       return false;
     const turn = await latestTurn(threadId);
@@ -4284,7 +4284,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const before = moveMark(projectId);
     const from = await projectAccount(projectId);
     if (from.external) {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not placed (the project's CLAUDE_CONFIG_DIR was not set by this plugin)`,
       );
       await markHandled(projectId);
@@ -4292,9 +4292,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     let isNew = false;
     if (installedAt !== null && !handled.has(projectId) && !from.owned) {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       isNew = project.createdAt > installedAt;
-      bb.log.debug(
+      alia.log.debug(
         `thread ${thread.id}: project created at ${project.createdAt}, plugin installed at ${installedAt}: ${isNew ? "new" : "not new"}`,
       );
     }
@@ -4307,7 +4307,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     if (measured.length === 0) {
       // Nothing to decide on: the project stays new for its next thread.
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not placed (no account could be measured)`,
       );
       return;
@@ -4337,7 +4337,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       currentLoggedOut: unconfirmed(fromName),
     });
     if (decision.kind === "keep") {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: project left on account ${fromName} (${isNew ? "the best account for a new project" : "its account can run"})`,
       );
       await markHandled(projectId);
@@ -4346,7 +4346,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const latest = await projectAccount(projectId);
     // A pick of the default account writes nothing; the handled mark shows it.
     if (!sameAccount(from, latest) || (isNew && handled.has(projectId))) {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not placed (the project's account changed meanwhile)`,
       );
       await markHandled(projectId);
@@ -4354,7 +4354,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     // Not its placement yet: the next thread of a new project is placed.
     if (siblingAdmitted(projectId) !== null) {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not placed (another thread is about to start on ${fromName})`,
       );
       return;
@@ -4364,7 +4364,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // placed, and this thread's dispatch goes through placeTurn, which waits
     // for that move (Astra r9 medium).
     if (moving(projectId)) {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not placed (another move of the project is under way)`,
       );
       return;
@@ -4372,7 +4372,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (
       !(await applyAccount(projectId, accountOrDefault(decision.account), latest))
     ) {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not placed (the project's account changed meanwhile)`,
       );
       await markHandled(projectId);
@@ -4392,7 +4392,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         : decision.why === "back-from-excursion"
           ? `Moved back to account ${decision.account} before the turn: ${fromName} was an excursion for ${excursion?.model ?? "another model"}`
           : `Moved to account ${decision.account} before the turn: ${fromName} ${whyOut(fromName, current.preferredModel, projectId)}`;
-    bb.log.info(`thread ${thread.id}: ${reason}`);
+    alia.log.info(`thread ${thread.id}: ${reason}`);
     await recordMove(
       {
         at: now,
@@ -4424,7 +4424,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   /**
    * Before a thread's first turn: a project created after install and never
-   * placed is placed now, not only when bb announces the thread, which may
+   * placed is placed now, not only when VesnALIA announces the thread, which may
    * come after the turn started on the default account (E44: on a machine
    * whose `~/.claude` has no login, that turn fails with «Not logged in»,
    * and so do its retries). A project seen before, or given an account
@@ -4436,14 +4436,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (installedAt === null || handled.has(projectId)) return;
     const under = placing.get(projectId);
     if (under !== undefined) return under;
-    const project = await bb.sdk.projects.get({ projectId });
+    const project = await alia.sdk.projects.get({ projectId });
     if (project.createdAt <= installedAt) return;
     const at = await projectAccount(projectId);
     if (at.owned || at.external) return;
     // In the project's queue, like thread.created's: a pick by hand saved
     // meanwhile runs after it and wins (Astra E44-R2-02). The checkpoint
     // never waits for it longer than DISPATCH_LIMIT_MS, so a retry a
-    // handler of the queue sends through bb cannot hold it.
+    // handler of the queue sends through VesnALIA cannot hold it.
     await inProjectQueue(projectId, () => placeOnce(thread));
   }
 
@@ -4549,7 +4549,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // Asked again: the settings may have changed while the account was measured.
     if (!current.autoSwitch || !aheadConfigured()) return;
     // The threshold is the thread's model's (`model`: read by the caller from
-    // bb's log): a thread in the preferred model moves at switchAheadPercent,
+    // VesnALIA's log): a thread in the preferred model moves at switchAheadPercent,
     // one sent with another model (Opus while Fable is preferred: it only
     // spends the 5-hour session of a Team seat) at switchAheadOtherPercent.
     // Each can be off on its own.
@@ -4580,7 +4580,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // The next turn's end looks again (Astra r8 medium 2, the same guard as
     // the rescue's; on in production: switchAheadOtherPercent 95, 2026-11-07).
     if (moving(projectId)) {
-      bb.log.info(
+      alia.log.info(
         `thread ${thread.id}: not moved ahead of the limit to ${decision.account}: another move of the project is under way; looked at again at the next turn's end`,
       );
       return;
@@ -4597,7 +4597,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     await markHandled(projectId);
     noteMove(projectId, fromName, decision.account, model, before);
     const reason = `Switched ahead of the limit to ${decision.account}: ${fromName} at ${Math.round(decision.used)}% of ${decision.window}`;
-    bb.log.info(`thread ${thread.id}: ${reason}`);
+    alia.log.info(`thread ${thread.id}: ${reason}`);
     await recordMove(
       {
         at: now,
@@ -4618,7 +4618,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   // below read the turn's log first, and a rescue sharing the project's
   // sessions meanwhile must already see that a turn ended (Codex
   // OPUS-0236-R4-001).
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     const started = turnStart.get(thread.id);
     if (
       !current.autoSwitch ||
@@ -4630,7 +4630,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     endingTurns.set(thread.id, turnEnded(thread.projectId, started.activity));
   });
 
-  bb.events.on("thread.idle", async ({ thread }) => {
+  alia.events.on("thread.idle", async ({ thread }) => {
     if (
       !current.autoSwitch ||
       !aheadConfigured() ||
@@ -4639,7 +4639,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     )
       return;
     // The threshold is the thread's model's, and the turn that just ended is
-    // the truth about it: bb's log names the model of every turn requested,
+    // the truth about it: VesnALIA's log names the model of every turn requested,
     // also of the sends that skip the checkpoint (a Send now, an edited
     // message), which the dispatch cache never saw (Codex R0216-INSPECT-001).
     // Read before the account is measured and outside the project's queue:
@@ -4690,7 +4690,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       activity: activity.get(projectId) ?? 0,
     };
   }
-  bb.events.on("thread.active", ({ thread }) => {
+  alia.events.on("thread.active", ({ thread }) => {
     // Only the turns the checkpoint and the end of a turn look at: another
     // provider's or a hidden thread's turn never stops the move (Codex
     // OPUS-R6-002).
@@ -4702,7 +4702,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     noteActivity(thread.projectId);
     turnStart.set(thread.id, projectMarks(thread.projectId));
   });
-  bb.events.on("thread.idle", async ({ thread }) => {
+  alia.events.on("thread.idle", async ({ thread }) => {
     const started = turnStart.get(thread.id);
     turnStart.delete(thread.id);
     let ending = endingTurns.get(thread.id);
@@ -4844,11 +4844,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     );
     projectModelWrites = projectModelWrites.then(async () => {
       try {
-        await bb.storage.kv.set(KV_PROJECT_MODELS, snapshot);
+        await alia.storage.kv.set(KV_PROJECT_MODELS, snapshot);
         projectModelsUnsaved = false;
       } catch (error) {
         projectModelsUnsaved = true;
-        bb.log.warn(
+        alia.log.warn(
           `could not store the projects' models (a reload forgets them): ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -4896,7 +4896,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     seedAsked = true;
     void readSeeds(latest)
       .catch((error: unknown) =>
-        bb.log.warn(
+        alia.log.warn(
           `the projects' models not read from their latest threads; the preferred model judges those with none stored: ${error instanceof Error ? error.message : String(error)}`,
         ),
       )
@@ -4904,20 +4904,20 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   async function readSeeds(latest: LatestThreads | null): Promise<void> {
     if (latest === null) {
-      bb.log.warn(
+      alia.log.warn(
         "the threads not listed to read each project's model at load; the preferred model judges those with none stored",
       );
       return;
     }
     const listed = await within(
-      bb.sdk.projects.list({ includePersonal: true }),
+      alia.sdk.projects.list({ includePersonal: true }),
       DISPATCH_LIMIT_MS,
       "the projects not listed to count those with no thread",
     );
     // Late is said too (Astra MLC-002): a project with only archived
     // threads, or none, is judged for the preferred model then.
     if (listed === "late")
-      bb.log.warn(
+      alia.log.warn(
         "the projects not listed to count those with no thread: no answer in time; those not among the threads listed are judged for the preferred model",
       );
     const ids =
@@ -4931,11 +4931,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const what =
         "the archived threads not listed to read each project's model at load; the preferred model judges those with none stored";
       const page = await within(
-        bb.sdk.threads.list({ archived: true, limit: PAGE, offset }),
+        alia.sdk.threads.list({ archived: true, limit: PAGE, offset }),
         DISPATCH_LIMIT_MS,
         what,
       );
-      if (page === "late") bb.log.warn(`${what}: no answer in time`);
+      if (page === "late") alia.log.warn(`${what}: no answer in time`);
       if (typeof page !== "object") return;
       for (const t of page.value) noteLatestThread(latest, t);
       if (page.value.length < PAGE) break;
@@ -4953,7 +4953,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         }
         const what = `project ${projectId}: the model of its latest turn not read (the preferred model judges it)`;
         const read = await within(latestTurn(thread.id), DISPATCH_LIMIT_MS, what);
-        if (read === "late") bb.log.warn(`${what}: no answer in time`);
+        if (read === "late") alia.log.warn(`${what}: no answer in time`);
         if (typeof read !== "object") {
           unread += 1;
           return;
@@ -4970,7 +4970,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         taken += 1;
       }),
     );
-    bb.log.info(
+    alia.log.info(
       `projects' models after loading: ${taken} from their latest turn, ${typeof listed === "object" ? none : "?"} with no thread, ${unnamed} whose latest turn names no model, ${unread} not read (of ${asked.length} with none stored)`,
     );
   }
@@ -5004,7 +5004,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /**
    * After every refresh (Aitor 2026-10-30, Añadido 2: «that no project stays
    * on an exhausted account or one without a login without moving by
-   * itself, respecting the seats»): bb greys out the composer of a project
+   * itself, respecting the seats»): VesnALIA greys out the composer of a project
    * whose account is at its limit, so the dispatch checkpoint never gets to
    * move it (Fable at 100 %). Each project
    * this plugin may move (not external) whose account cannot run the
@@ -5021,7 +5021,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       !seedLateSaid
     ) {
       seedLateSaid = true;
-      bb.log.warn(
+      alia.log.warn(
         `the projects' models not read from their latest threads within ${SEED_WAIT_MS / 1000} s of a rescue; the preferred model judges those with none stored until they are`,
       );
     }
@@ -5029,7 +5029,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // Each project read apart, within DISPATCH_LIMIT_MS: one that cannot be
     // read is said and left out, the rest are looked at (Astra
     // SEATS-R3-005).
-    const listed = await bb.sdk.projects.list({ includePersonal: true });
+    const listed = await alia.sdk.projects.list({ includePersonal: true });
     const projects = await Promise.all(
       listed.map(async (p) => {
         const read = await within(
@@ -5038,7 +5038,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           `project ${p.name}: its account not read to rescue it`,
         );
         if (read === "late")
-          bb.log.warn(
+          alia.log.warn(
             `project ${p.name}: its account not read to rescue it: no answer in time`,
           );
         return typeof read === "object" ? { ...p, ...read.value } : null;
@@ -5063,7 +5063,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         `project ${project.name}: not moved off its account`,
       );
       if (rescued === "late")
-        bb.log.warn(
+        alia.log.warn(
           `project ${project.name}: not moved off its account: not done within ${RESCUE_LIMIT_MS / 1000} s; the refresh goes on`,
         );
     }
@@ -5080,7 +5080,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       `project ${projectName}: its account not read again to rescue it`,
     );
     if (read === "late")
-      bb.log.warn(
+      alia.log.warn(
         `project ${projectName}: its account not read again to rescue it: no answer in time`,
       );
     if (typeof read !== "object") return;
@@ -5089,7 +5089,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const fromName = from.account ?? current.defaultAccountName;
     const now = deps.now();
     if (modelBeingRead(projectId, deps.now())) {
-      bb.log.debug(
+      alia.log.debug(
         `project ${projectName}: left on ${fromName}: the model of a turn that ended is being read`,
       );
       return;
@@ -5114,7 +5114,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       currentLoggedOut: loggedOut(fromName),
     });
     if (decision.kind === "keep") {
-      bb.log.debug(
+      alia.log.debug(
         `project ${projectName}: left on ${fromName} (${why}): no other account with a free seat can run ${model === "" ? "a turn" : model}`,
       );
       return;
@@ -5124,7 +5124,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // The next refresh looks again (Astra r8 medium 2, the same guard as the
     // failure's judgment).
     if (moving(projectId)) {
-      bb.log.info(
+      alia.log.info(
         `project ${projectName}: left on ${fromName}: another move of the project is under way; looked at again at the next refresh`,
       );
       return;
@@ -5151,7 +5151,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const s = seats.snapshot([seatKey(decision.account)])[
       seatKey(decision.account)
     ]!;
-    bb.log.info(
+    alia.log.info(
       `project ${projectName}: moved from ${fromName} (${why}) to ${decision.account} (seats ${s.running + s.reserved}/${s.capacity === 0 ? "∞" : s.capacity})`,
     );
     await recordMove(
@@ -5190,8 +5190,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   let starts = 0;
   /**
    * The project's moves (`movesOf().epoch`) when each thread's message was
-   * sent, by bb's dispatch checkpoint or by this plugin's own explicit
-   * send: bb reads the account as it starts the turn and announces
+   * sent, by VesnALIA's dispatch checkpoint or by this plugin's own explicit
+   * send: VesnALIA reads the account as it starts the turn and announces
    * `thread.active` after, so a move completed in between is not where the
    * turn runs (Codex IR16-001). A turn announced with no anchor was sent
    * past both (a queued row sent by hand): where the project stood when it
@@ -5199,7 +5199,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
    */
   const dispatchEpoch = new Map<string, number>();
   /**
-   * The threads bb listed with a turn under way as the seats were counted
+   * The threads VesnALIA listed with a turn under way as the seats were counted
    * after the load (see rebuildSeats), each until that turn ends (its
    * `thread.idle`, `turn.failed`, a new turn's `thread.active` or the thread
    * gone), and whether that list was read. A
@@ -5231,7 +5231,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   /** Since when this plugin holds each thread's message: answered "wait", until it goes (see src/atascos.ts). */
   const waitSince = new Map<string, number>();
-  /** When bb last heard "wait" for each of them: bb hides a row while it asks again (Codex R1-001), so a row missing from a read is not yet a wait over. */
+  /** When VesnALIA last heard "wait" for each of them: VesnALIA hides a row while it asks again (Codex R1-001), so a row missing from a read is not yet a wait over. */
   const waitAsked = new Map<string, number>();
   /** When each thread was last said to be stuck. */
   const stuckSaid = new Map<string, number>();
@@ -5242,7 +5242,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     waitAsked.delete(threadId);
     blockedWaits.delete(threadId);
   }
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     // A turn of it runs: the advice of its last failure is over, and whatever
     // it waited for (a message sent with "Send now" is never asked about).
     adviceOver(thread.id);
@@ -5312,7 +5312,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (reserved === null) {
       if (typeof seat === "string") confirmSeat(thread.id, seatKey(seat));
       else if (seat === UNKNOWN_SEAT)
-        bb.log.debug(
+        alia.log.debug(
           `thread ${thread.id}: no seat counted: its project's account is not among the accounts found`,
         );
       else if (seat === undefined) {
@@ -5320,7 +5320,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         if (held !== undefined) confirmSeat(thread.id, held);
         else {
           unseated.set(thread.id, thread.projectId);
-          bb.log.info(
+          alia.log.info(
             `thread ${thread.id}: its seat is counted on the next refresh (its project's account was not read)`,
           );
         }
@@ -5339,7 +5339,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     )
       account = null;
     if (account === null)
-      bb.log.debug(
+      alia.log.debug(
         `thread ${thread.id}: where its turn started is unknown (sent past the dispatch checkpoint, the project moved, or its account could not be read)`,
       );
     if (account !== undefined) {
@@ -5347,7 +5347,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       startedTime.set(thread.id, startedAt);
     }
   });
-  bb.events.on("thread.idle", ({ thread }) => {
+  alia.events.on("thread.idle", ({ thread }) => {
     // A turn that ended well where it started: the account has a session on
     // the thread's machine (sin-login 2026-11-10). Its machine as last read:
     // unread, only the mark on a machine unknown goes (code-reviewer r1,
@@ -5393,18 +5393,18 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // IR8-004).
     if (cancelled.delete(thread.id)) await storeCancelled(thread.id);
   }
-  bb.events.on("thread.archived", threadGone);
-  // Deleted (bb deletes softly): as archived (code-reviewer r5, CR-2).
-  bb.events.on("thread.deleted", threadGone);
+  alia.events.on("thread.archived", threadGone);
+  // Deleted (VesnALIA deletes softly): as archived (code-reviewer r5, CR-2).
+  alia.events.on("thread.deleted", threadGone);
 
-  bb.events.on("thread.created", async ({ thread }) => {
+  alia.events.on("thread.created", async ({ thread }) => {
     const skipped =
       notTheUsersThread(thread) ??
       (thread.providerId === CLAUDE_CODE_PROVIDER
         ? null
         : `provider ${thread.providerId}`);
     if (skipped !== null) {
-      bb.log.debug(`thread ${thread.id}: not placed (${skipped})`);
+      alia.log.debug(`thread ${thread.id}: not placed (${skipped})`);
       return;
     }
     if (!current.autoSwitch) {
@@ -5415,23 +5415,23 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     await inProjectQueue(thread.projectId, () => placeOnce(thread));
   });
 
-  // ---- The model of each turn, at bb's dispatch checkpoint ----------------
+  // ---- The model of each turn, at VesnALIA's dispatch checkpoint ----------------
   /**
    * The model each thread's latest message was sent with, as the usage API
-   * names it. bb says it only at the checkpoint (a thread row and a failed
+   * names it. VesnALIA says it only at the checkpoint (a thread row and a failed
    * turn carry none): a failure of the thread is judged against it, and
    * against the preferred model when the thread has not been seen here.
    */
   const threadModel = new Map<string, string>();
   /**
-   * What bb's log says of the thread's latest message, for a thread whose
+   * What VesnALIA's log says of the thread's latest message, for a thread whose
    * sending this plugin did not see (it was reloaded or restarted since: a
    * long turn outlives both), or of a failed turn (`failed`), in one read
    * (code-reviewer r4, L3):
    *  - `model`: the model it was sent with; null when the log cannot be
    *    read or names no Claude model: the preferred model decides then;
    *  - `chain`, for a failed turn: the first request of its retry chain,
-   *    as bb keys its retries (see latestTurn): the turn's own at its first
+   *    as VesnALIA keys its retries (see latestTurn): the turn's own at its first
    *    attempt, else the one its row names (a retry's failure reports the
    *    retry's own request); null when the log does not say (unreadable, or
    *    the request not among its latest rows).
@@ -5445,7 +5445,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         ? failed.requestId
         : null;
     try {
-      const rows = await bb.sdk.threads.events.list({
+      const rows = await alia.sdk.threads.events.list({
         threadId,
         types: ["client/turn/requested"],
         order: "desc",
@@ -5467,13 +5467,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         chain: first ?? own?.retryOfRequestId ?? own?.requestId ?? null,
       };
     } catch (error) {
-      bb.log.warn(
-        `thread ${threadId}: its ${failed === undefined ? "model" : "turn's model and retry chain"} not read from bb: ${error instanceof Error ? error.message : String(error)}`,
+      alia.log.warn(
+        `thread ${threadId}: its ${failed === undefined ? "model" : "turn's model and retry chain"} not read from VesnALIA: ${error instanceof Error ? error.message : String(error)}`,
       );
       return { model: null, chain: first };
     }
   }
-  /** A thread in one of these has a turn under way: a message sent then waits in bb's queue. */
+  /** A thread in one of these has a turn under way: a message sent then waits in VesnALIA's queue. */
   const TURN_UNDER_WAY: ReadonlySet<string> = new Set([
     "starting",
     "active",
@@ -5982,7 +5982,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           : decision.why === "current-full"
             ? `Moved to account ${decision.account} before the turn: ${fromName} seats full (${fullHere.running + fullHere.reserved + (fullHere.external?.length ?? 0)}/${fullHere.capacity}), ${decision.account} had ${Number.isFinite(roomThere) ? roomThere : "unlimited"} free`
             : `Moved to account ${decision.account} ${when === "after" ? `after a turn in ${model}` : "before the turn"}: ${fromName} ${whyOut(fromName, model, projectId)}`;
-      bb.log.info(`thread ${thread.id}: ${reason}`);
+      alia.log.info(`thread ${thread.id}: ${reason}`);
       await recordMove(
         {
           at: now,
@@ -6058,7 +6058,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     return `Movido a ${to} antes del turno: ${why}; ${to} tenía ${room} ${libres}${margin}${pick}`;
   }
 
-  // bb holds every message it asks about on this answer and fails the
+  // VesnALIA holds every message it asks about on this answer and fails the
   // attempt when a handler throws or takes 10 s: it decides on the
   // measurements already there and stays out of the project's queue (a
   // retry sent from that queue passes through here). A placement that has
@@ -6075,7 +6075,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   function measureForStart(): Promise<void> {
     measuring ??= refreshAll()
       .catch((error: unknown) =>
-        bb.log.warn(
+        alia.log.warn(
           `the accounts not measured for a waiting turn: ${error instanceof Error ? error.message : String(error)}`,
         ),
       )
@@ -6086,7 +6086,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   /**
    * The thread's message waits until FIRST_PLACEMENT_WAIT_MS from now, and
-   * bb is asked again as soon as `pending` ends, when there is one. Null
+   * VesnALIA is asked again as soon as `pending` ends, when there is one. Null
    * once the thread has waited MAX_START_WAITS times.
    */
   function startWait(
@@ -6103,13 +6103,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           () => undefined,
           () => undefined,
         )
-        .then(() => bb.experimental_hooks.recheck("message.dispatch"))
+        .then(() => alia.experimental_hooks.recheck("message.dispatch"))
         .catch((error: unknown) =>
-          bb.log.warn(
-            `thread ${threadId}: bb not asked again after what its message waits for: ${error instanceof Error ? error.message : String(error)}`,
+          alia.log.warn(
+            `thread ${threadId}: VesnALIA not asked again after what its message waits for: ${error instanceof Error ? error.message : String(error)}`,
           ),
         );
-    bb.log.info(`thread ${threadId}: its message waits (${reason})`);
+    alia.log.info(`thread ${threadId}: its message waits (${reason})`);
     return {
       action: "wait",
       reason,
@@ -6135,7 +6135,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         }),
       ]);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `${what}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return "failed";
@@ -6145,9 +6145,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * One dispatch's DISPATCH_BUDGET_MS, from the moment bb asks: each read
+   * One dispatch's DISPATCH_BUDGET_MS, from the moment VesnALIA asks: each read
    * is given what is left, at most DISPATCH_LIMIT_MS, so the reads in a row
-   * never add up to bb's 10 s (Astra SEATS-R4-002).
+   * never add up to VesnALIA's 10 s (Astra SEATS-R4-002).
    */
   type Budget = { limit: () => number; spent: () => boolean };
   function dispatchBudget(): Budget {
@@ -6159,7 +6159,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * Before a turn starts, with the automatic choice on: what bb should do
+   * Before a turn starts, with the automatic choice on: what VesnALIA should do
    * with the message; null = send it.
    */
   async function beforeStart(
@@ -6189,7 +6189,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       );
       if (wait !== null) return wait;
     }
-    // A message whose model bb does not name as a Claude model is placed
+    // A message whose model VesnALIA does not name as a Claude model is placed
     // for the preferred one when the default has no login: it must run
     // somewhere else whatever its model (Astra E44-R1).
     const turnModel =
@@ -6233,7 +6233,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const done = turnPlaced === null ? null : await turnPlaced;
     if (tick && (turn.refused !== undefined || turn.held !== undefined)) {
       const why = turn.refused ?? turn.held!.reason;
-      bb.log.info(`thread ${thread.id}: Calor's tick refused: ${why}`);
+      alia.log.info(`thread ${thread.id}: Calor's tick refused: ${why}`);
       return { action: "reject", message: `Claude Switcher: a Calor tick stays where its cache is: ${why}` };
     }
     if (turn.held !== undefined) {
@@ -6251,7 +6251,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           sendAt: deps.now(),
         };
       }
-      bb.log.info(`thread ${thread.id}: its message waits (${held.reason})`);
+      alia.log.info(`thread ${thread.id}: its message waits (${held.reason})`);
       return { action: "wait", ...held };
     }
     const where: TurnPlace | null =
@@ -6266,11 +6266,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     )
       return null;
     // Not known where because the placement failed or was not tried (a
-    // model bb does not name): a project with a variable of its own, or one
+    // model VesnALIA does not name): a project with a variable of its own, or one
     // set outside this plugin, runs on it whatever the accounts directory
-    // says; bb passes the value it holds (Astra E44-R3-02). Read apart from
+    // says; VesnALIA passes the value it holds (Astra E44-R3-02). Read apart from
     // the placement, which needs that directory and a model. Not when the
-    // placement took too long: bb is slow, and the wait below covers it; nor
+    // placement took too long: VesnALIA is slow, and the wait below covers it; nor
     // with too little of the dispatch's time left (Astra SEATS-R4-002).
     if (where === null && done !== "late" && !budget.spent()) {
       const own = await within(
@@ -6279,7 +6279,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         `thread ${thread.id}: the project's account not read before its turn`,
       );
       if (typeof own === "object" && (own.value.owned || own.value.external)) {
-        bb.log.warn(
+        alia.log.warn(
           `thread ${thread.id}: not placed before its turn; it runs on the project's own CLAUDE_CONFIG_DIR`,
         );
         return null;
@@ -6307,16 +6307,16 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       login === "no"
         ? "has no login"
         : "has a login that could not be checked";
-    bb.log.warn(
+    alia.log.warn(
       `thread ${thread.id}: refused: no account for project ${thread.projectId} and ${current.defaultAccountName} ${why}`,
     );
     return {
       action: "reject",
-      message: `Claude Switcher: no account assigned to this project and the default account (${current.defaultAccountName}) ${why}. Assign one with: bb claude-switcher use ${thread.projectId} <account>`,
+      message: `Claude Switcher: no account assigned to this project and the default account (${current.defaultAccountName}) ${why}. Assign one with: VesnALIA claude-switcher use ${thread.projectId} <account>`,
     };
   }
 
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
     let decision: Awaited<ReturnType<typeof dispatchDecision>>;
     try {
       decision = await dispatchDecision(ctx);
@@ -6344,7 +6344,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     return decision;
   });
   /**
-   * The threads held long with another account free, as bb's queue stands;
+   * The threads held long with another account free, as VesnALIA's queue stands;
    * null when anything of it could not be read, within STUCK_READ_LIMIT_MS:
    * «nothing stuck» is never said unread.
    */
@@ -6360,11 +6360,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
   /**
    * The Opus and Sonnet turns held for a Team seat (see waitingForTeam), as
-   * bb's queue stands; null when it could not be read in time.
+   * VesnALIA's queue stands; null when it could not be read in time.
    */
   async function esperandoTeam(): Promise<EsperaTeam[] | null> {
     const read = await within(
-      bb.sdk.threads.queue.list(),
+      alia.sdk.threads.queue.list(),
       STUCK_READ_LIMIT_MS,
       "the threads waiting for a Team seat could not be read",
     );
@@ -6375,12 +6375,12 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     });
   }
   async function readAtascos(rows?: readonly HeldRow[]): Promise<Atasco[]> {
-    const all = rows ?? (await bb.sdk.threads.queue.list());
+    const all = rows ?? (await alia.sdk.threads.queue.list());
     const out: Atasco[] = [];
     const now = deps.now();
     for (const held of heldLong(all, PLUGIN_ID, waitSince, now)) {
       const queued = seats.position(held.threadId)?.account;
-      const known = await bb.sdk.threads.get({ threadId: held.threadId });
+      const known = await alia.sdk.threads.get({ threadId: held.threadId });
       let account: string;
       if (queued !== undefined) account = seatName(queued);
       else {
@@ -6411,7 +6411,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     return out;
   }
-  /** Says each stuck thread once per STUCK_WAIT_MS, and forgets the threads bb no longer holds. */
+  /** Says each stuck thread once per STUCK_WAIT_MS, and forgets the threads VesnALIA no longer holds. */
   async function sayStuck(
     rows: readonly HeldRow[],
     readAt: number,
@@ -6429,7 +6429,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       if (now - (stuckSaid.get(a.hilo) ?? -Infinity) < STUCK_WAIT_MS) continue;
       stuckSaid.set(a.hilo, now);
       const line = atascoLine(a);
-      bb.log.warn(line);
+      alia.log.warn(line);
       toHistorial(`thread ${a.hilo} stuck`, (db) =>
         addStuck(db, {
           at: now,
@@ -6451,7 +6451,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   ): Promise<MessageDispatchHookDecision> {
     const { thread } = ctx;
     if (
-      // Queued behind a turn: bb asks again when it sends the message.
+      // Queued behind a turn: VesnALIA asks again when it sends the message.
       TURN_UNDER_WAY.has(thread.status) ||
       thread.providerId !== CLAUDE_CODE_PROVIDER ||
       notTheUsersThread(thread) !== null
@@ -6459,11 +6459,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       return { action: "proceed" };
     const budget = dispatchBudget();
     // Seats not yet counted after a load: no turn is let in against an
-    // empty count (Astra SEATS-R02). Not waited for here: bb is asked again
+    // empty count (Astra SEATS-R02). Not waited for here: VesnALIA is asked again
     // once they are counted (Astra SEATS-R4-002).
     if (ctx.attempt === "start-turn" && !seatsReady) {
       seatsAwaited = true;
-      bb.log.info(`thread ${thread.id}: its message waits (seats are being counted)`);
+      alia.log.info(`thread ${thread.id}: its message waits (seats are being counted)`);
       return {
         action: "wait",
         reason: "Claude Switcher: seats are being counted after a reload",
@@ -6526,11 +6526,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       else if (budget.spent())
         // Too little of the dispatch's time left to read it: the message
         // waits, as for an account not read (Astra SEATS-R4-002).
-        bb.log.info(
+        alia.log.info(
           `thread ${thread.id}: its project's account not read for its seat: the dispatch is out of time`,
         );
       else {
-        // Not placed (the automatic choice off, a model bb does not name, a
+        // Not placed (the automatic choice off, a model VesnALIA does not name, a
         // placement that failed or took too long), placed on an account not
         // found, or moved since: the account is the project's, read apart
         // from the model (Astra SEATS-R01). One it names that is not among
@@ -6582,7 +6582,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         heldOff(at.account, model, thread.projectId, thread.id)
       ) {
         const reason = `Waiting to place ${model} again: the project is on ${at.account}, which keeps its weekly for ${current.preferredModel}`;
-        bb.log.info(`thread ${thread.id}: its message waits (${reason})`);
+        alia.log.info(`thread ${thread.id}: its message waits (${reason})`);
         return { action: "wait", reason, sendAt: deps.now() + SEAT_RECHECK_MS };
       }
       // A Team seat out for a model held off the reserve: the turn waits
@@ -6596,7 +6596,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         teamOut(at.account, model, thread.projectId)
       ) {
         const reason = `Waiting for a Team seat that can run ${model}: the project is on ${at.account}, which ${whyOut(at.account, model, thread.projectId)}`;
-        bb.log.info(`thread ${thread.id}: its message waits (${reason})`);
+        alia.log.info(`thread ${thread.id}: its message waits (${reason})`);
         return { action: "wait", reason, sendAt: deps.now() + SEAT_RECHECK_MS };
       }
       if (
@@ -6610,16 +6610,16 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         if (waited < BLOCKED_WAITS) {
           blockedWaits.set(thread.id, waited + 1);
           const reason = `Waiting to place ${model} again: the project is on ${at.account}, which ${whyOut(at.account, model, thread.projectId)}`;
-          bb.log.info(`thread ${thread.id}: its message waits (${reason})`);
+          alia.log.info(`thread ${thread.id}: its message waits (${reason})`);
           return { action: "wait", reason, sendAt: deps.now() + SEAT_RECHECK_MS };
         }
-        bb.log.warn(
+        alia.log.warn(
           `thread ${thread.id}: starts on ${at.account}, which ${whyOut(at.account, model, thread.projectId)}: its project could not be moved in ${BLOCKED_WAITS} tries`,
         );
       }
       if (at === null) {
         // Unknown where it starts: it waits, and is asked again, a few
-        // times; then it goes, as every wait of this plugin does, for bb
+        // times; then it goes, as every wait of this plugin does, for VesnALIA
         // is never left holding a message (see MAX_START_WAITS). Out of
         // the dispatch's time, soon (Astra SEATS-R4-002).
         const waited = seatReadWaits.get(thread.id) ?? 0;
@@ -6643,7 +6643,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
               (budget.spent() ? OUT_OF_TIME_WAIT_MS : SEAT_RECHECK_MS),
           };
         }
-        bb.log.warn(
+        alia.log.warn(
           `thread ${thread.id}: proceeds without a seat: its project's account could not be read ${waited + 1} times`,
         );
       }
@@ -6688,7 +6688,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       sessionLostAt.set(name, marks);
       void readAllHosts();
       const line = `STUCK: ${name} sin sesión en ${hostLabel(host)}: thread ${event.threadId}${model === "" ? "" : ` (${model})`} failed for want of a login there; ${name} is kept from the projects with threads there for ${SESSION_LOST_MS / 3_600_000} h, or until a turn ends well on it there or it is picked by hand`;
-      bb.log.warn(line);
+      alia.log.warn(line);
       toHistorial(`thread ${event.threadId} stuck`, (db) =>
         addStuck(db, {
           at: now,
@@ -6718,29 +6718,29 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     refusedAt.set(name, now);
     refusedHttp.set(name, event.errorInfo?.httpStatusCode ?? null);
-    bb.log.warn(
+    alia.log.warn(
       `account ${name} refused a turn (HTTP ${event.errorInfo?.httpStatusCode ?? "?"}): chosen for nothing for ${REFUSAL_MS / 3_600_000} h`,
     );
     return true;
   }
 
   /**
-   * bb asks again now for what waits (a dispatch held, a seat queued): an
+   * VesnALIA asks again now for what waits (a dispatch held, a seat queued): an
    * account just back is a destination at once, not at the next refresh.
    */
   function askWaitingAgain(why: string): void {
     admitWaiting(true);
-    void bb.experimental_hooks
+    void alia.experimental_hooks
       .recheck("message.dispatch")
       .catch((error: unknown) =>
-        bb.log.warn(
-          `bb not asked again after ${why}: ${error instanceof Error ? error.message : String(error)}`,
+        alia.log.warn(
+          `alia not asked again after ${why}: ${error instanceof Error ? error.message : String(error)}`,
         ),
       );
   }
   /** The thread's failure, with its line, among the stuck threads of history. */
   function stuckLine(event: PluginTurnFailedEvent, now: number, account: string, model: string, line: string): void {
-    bb.log.warn(line);
+    alia.log.warn(line);
     toHistorial(`thread ${event.threadId} stuck`, (db) =>
       addStuck(db, {
         at: now,
@@ -6769,11 +6769,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     ].join(", ") + " lifted";
   }
   /**
-   * `bb claude-switcher unblock`: the account is taken as back now (Aitor
+   * `alia claude-switcher unblock`: the account is taken as back now (Aitor
    * 2026-11-13: «podemos pasar hilos fallidos a otras cuentas ultra con
    * cuota»): its refusal's veto, its usage limits' marks (every scope) and
    * its sessions lost (every machine) go, in the log and the history, and
-   * bb asks again at once for what waits. A new refusal or failure marks it
+   * VesnALIA asks again at once for what waits. A new refusal or failure marks it
    * again.
    */
   function unblock(name: string): Unblocked {
@@ -6794,7 +6794,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const out = { account: name, refusal, limits, sessionsLost };
     if (!refusal && limits === 0 && sessionsLost === 0) return out;
     const line = `account ${name} unblocked by hand: ${unblockedText(out)}`;
-    bb.log.info(line);
+    alia.log.info(line);
     toHistorial(`account ${name} unblocked`, (db) =>
       addStuck(db, {
         at: now,
@@ -6838,7 +6838,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const storm = storms.get(host);
     if (storm === undefined || since <= storm.opened) return;
     storms.delete(host);
-    bb.log.info(
+    alia.log.info(
       `${hostLabel(host)}: a turn started after its run of refusals opened ended well; the run is closed, a refusal there is its account's again`,
     );
   }
@@ -6917,7 +6917,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         ? `network refused a turn of thread ${event.threadId} (HTTP ${event.errorInfo?.httpStatusCode ?? "?"}, Cloudflare): no account marked`
         : `refusal of a turn of thread ${event.threadId} (HTTP ${event.errorInfo?.httpStatusCode ?? "?"}) taken as ${hostLabel(storm)}'s, several accounts refused there: no account marked`;
     if (event.attemptNumber >= MAX_ATTEMPTS) {
-      bb.log.warn(`${prefix}; every retry spent, left in error for the rescue`);
+      alia.log.warn(`${prefix}; every retry spent, left in error for the rescue`);
       return;
     }
     const on = (await projectAccount(projectId)).account ?? current.defaultAccountName;
@@ -6929,7 +6929,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         : `Retrying on account ${on}: several accounts refused turns on ${hostLabel(storm)} within ${REFUSAL_STORM_MS / 60_000} min, taken as its network's`,
       sendAt,
     );
-    bb.log.warn(`${prefix}; retried on ${on} at ${new Date(sendAt).toISOString()}`);
+    alia.log.warn(`${prefix}; retried on ${on} at ${new Date(sendAt).toISOString()}`);
   }
 
   /**
@@ -7024,7 +7024,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         markRefused(started, now, event, model);
       const told = followsAdvice(recent, model, now, event, started, projectId, background);
       const reason = `Retrying on account ${recent.to}${told === null ? "" : `. ${told}`}`;
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: ${reason} (switched ${now - recent.at} ms ago)`,
       );
       if (told !== null)
@@ -7072,7 +7072,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             ? null
             : followsAdvice(recent, model, now, event, started, projectId, background);
         const reason = `Retrying on account ${currentName}${told === null ? "" : `. ${told}`}`;
-        bb.log.info(
+        alia.log.info(
           `thread ${event.threadId}: ${reason} (its turn started on ${started})`,
         );
         if (told !== null)
@@ -7093,7 +7093,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const before = moveMark(projectId);
     const from = await projectAccount(projectId);
     if (from.external) {
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: no switch (${ENV_VAR} on project ${projectId} was set outside this plugin)`,
       );
       return;
@@ -7116,16 +7116,16 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * Retries the user cancelled by hand (from bb's queued card or `bb thread
+   * Retries the user cancelled by hand (from VesnALIA's queued card or `alia thread
    * queue`), per thread: the thread's latest turn at the time (a turn the
-   * user then retries by hand, and fails, is a new one: judged). bb's only
+   * user then retries by hand, and fails, is a new one: judged). VesnALIA's only
    * word of that removal is `message.cancelled`, which this plugin's own
    * deletions fire too (`ownDeletes` tells them apart). The rescue leaves
    * such a thread alone until a new turn of it (Codex r7, IR7-004). Kept
    * in storage: a restart must not turn a cancellation into an abandoned
    * thread.
    */
-  bb.events.on("message.cancelled", async ({ entry }) => {
+  alia.events.on("message.cancelled", async ({ entry }) => {
     // The message that waited for its account to be read is gone: the
     // next one waits on its own count (Astra SEATS-R2-005).
     seatReadWaits.delete(entry.threadId);
@@ -7151,7 +7151,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // leaves no way out to the next one (Astra r4 medium 4).
     if (asked === undefined && !overdueTold.has(threadId)) return;
     const rows = await within(
-      bb.sdk.threads.queuedMessages.list({ threadId }),
+      alia.sdk.threads.queuedMessages.list({ threadId }),
       DISPATCH_LIMIT_MS,
       `thread ${threadId}: its queued messages not read after a cancellation`,
     );
@@ -7173,7 +7173,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (seat === null && seats.position(threadId) === null) return;
     const generation = seatGenerations.get(threadId);
     const rows = await within(
-      bb.sdk.threads.queuedMessages.list({ threadId }),
+      alia.sdk.threads.queuedMessages.list({ threadId }),
       DISPATCH_LIMIT_MS,
       `thread ${threadId}: its queued messages not read after a cancellation`,
     );
@@ -7192,12 +7192,12 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     try {
       turn = await latestTurn(entry.threadId);
       archived =
-        (await bb.sdk.threads.get({ threadId: entry.threadId })).archivedAt !==
+        (await alia.sdk.threads.get({ threadId: entry.threadId })).archivedAt !==
         null;
     } catch (error) {
       // Without the turn, the mark cannot be keyed: the thread is judged
       // again (the user can cancel again) rather than left for dead.
-      bb.log.warn(
+      alia.log.warn(
         `thread ${entry.threadId}: its queued retry was cancelled by hand, but its latest turn could not be read (${error instanceof Error ? error.message : String(error)}); judged again on the next refresh`,
       );
       return;
@@ -7212,15 +7212,15 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     )
       return;
     cancelled.set(entry.threadId, turn.requestId);
-    bb.log.info(
+    alia.log.info(
       `thread ${entry.threadId}: its queued retry was cancelled by hand; not judged again until a new turn of it`,
     );
     await storeCancelled(entry.threadId);
   }
 
   /**
-   * Removes a queued row of this plugin's own; throws as bb's delete does.
-   * bb's cancellation for it is this plugin's own, whenever it comes,
+   * Removes a queued row of this plugin's own; throws as VesnALIA's delete does.
+   * VesnALIA's cancellation for it is this plugin's own, whenever it comes,
    * unless the removal fails: the row was gone before, so a cancellation
    * come meanwhile was the user's.
    */
@@ -7228,7 +7228,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     const own = { done: false, held: null as CancelledEntry | null };
     ownDeletes.set(id, own);
     try {
-      await bb.sdk.threads.queuedMessages.delete({
+      await alia.sdk.threads.queuedMessages.delete({
         threadId,
         queuedMessageId: id,
       });
@@ -7244,9 +7244,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /** The cancellations by hand, to storage; a failure is logged, not thrown. */
   async function storeCancelled(threadId: string): Promise<void> {
     try {
-      await bb.storage.kv.set(KV_CANCELLED, Object.fromEntries(cancelled));
+      await alia.storage.kv.set(KV_CANCELLED, Object.fromEntries(cancelled));
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `thread ${threadId}: the cancellations by hand could not be stored (a restart would read the list as it was): ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -7289,26 +7289,26 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         return;
       }
     } else if (refusal && !stuck) {
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: refused by an account unknown (where its turn started could not be read); none marked`,
       );
       // No account marked, the retry may be refused the same way: this
       // failure gets MAX_ATTEMPTS like any other, then the thread is left
       // in error for the rescue to judge (Codex IR16-002).
       if (event.attemptNumber >= MAX_ATTEMPTS) {
-        bb.log.info(
+        alia.log.info(
           `thread ${event.threadId}: no switch (every retry spent on refusals by an account unknown; judged again on the next refresh)`,
         );
         return;
       }
     } else if (refusal) {
-      // Found in the log on a rescue: bb masks the account in its log and
+      // Found in the log on a rescue: VesnALIA masks the account in its log and
       // this plugin's history of moves cannot date a turn against a move
       // (Codex r8, IR8-001, IR8-005), so no account is marked for it. The
       // thread is judged on the measurements; if the account refuses again,
       // that failure marks it, and so two accounts without a login are
       // marked one after the other, not bounced between.
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: left in error by a refusal; no account marked for it (the one that refuses again marks itself)`,
       );
     }
@@ -7377,7 +7377,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         read.unknown !== true &&
         !resetOfAccount(read, until, now, cached?.observedAt ?? undefined)
       ) {
-        bb.log.warn(
+        alia.log.warn(
           `account ${failedOn}: the reset its 429 reported (${isoInZone(until)}) matches none of its windows as read; marked for ${LIMIT_NO_RESET_MS / 60_000} min only`,
         );
         until = null;
@@ -7422,10 +7422,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       // The account the project sits on is no good either: a leftover
       // thread must be judged too, not retried there at once.
       recentSwitches.delete(projectId);
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: ${how}no switch (${decision.reason})${advice === null ? "" : `; ${advice}`}`,
       );
-      // No retry of ours carries it (bb's provider-retry row, if any, is
+      // No retry of ours carries it (VesnALIA's provider-retry row, if any, is
       // left as it is; a rescue queues none): the history and the log say it.
       // Switched off meanwhile, noteAdvice writes nothing: the judgment's
       // generation ended (code-reviewer r4, N2).
@@ -7450,7 +7450,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // turn is retried at once; its dispatch waits for that move to be
     // recorded and places it then (Astra r8 medium 2).
     if (decision.account !== fromName && moving(projectId)) {
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: ${how}not moved to ${decision.account}: another move of the project is under way; retried, and placed once it is recorded`,
       );
       await retryTurn(event, "Retrying: the project is being moved to another account", undefined, stuck);
@@ -7467,7 +7467,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         // that move, decided later, stands. Nothing is recorded; the turn is
         // retried at once where the project is now (it is judged again if
         // it fails there).
-        bb.log.info(
+        alia.log.info(
           `thread ${event.threadId}: ${how}not moved to ${decision.account} (the project's account changed meanwhile); retried where the project is now`,
         );
         await retryTurn(
@@ -7533,7 +7533,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
     if (stuck && !current.autoSwitch) return;
     if (decision.kind === "wait") {
-      bb.log.info(
+      alia.log.info(
         `thread ${event.threadId}: ${how}${reason} until ${new Date(decision.sendAt).toISOString()}`,
       );
       // The advice only while the judgment's generation holds, as its rows
@@ -7548,11 +7548,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       );
       return;
     }
-    bb.log.info(`thread ${event.threadId}: ${how}${reason}`);
+    alia.log.info(`thread ${event.threadId}: ${how}${reason}`);
     await retryTurn(event, reason, undefined, stuck);
   }
 
-  bb.events.on("turn.failed", async (event) => {
+  alia.events.on("turn.failed", async (event) => {
     // Where its turn started, read now and forgotten whatever comes of the
     // failure: a failure declined below ends the turn as well, with no
     // `thread.idle` (Codex IR13-001, code-reviewer r13).
@@ -7571,18 +7571,18 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (!current.autoSwitch) return;
     // Pure guards first: another provider's limit must not query every account.
     const declined = declineReason(event);
-    // bb announces a turn refused for want of a session with no errorInfo:
-    // its text in bb's log tells (sin-login 2026-11-10). Whatever the
+    // VesnALIA announces a turn refused for want of a session with no errorInfo:
+    // its text in VesnALIA's log tells (sin-login 2026-11-10). Whatever the
     // attempt, as a refusal (see declineReason): its retries in the same
     // place spend them all, and the mark must be set (code-reviewer r1, high).
     const mayBeLost =
       (declined === "not-rate-limit" || declined === "attempts-exhausted") &&
       (event.errorInfo === null || event.errorInfo.category === "unknown");
     if (declined !== null && !mayBeLost) {
-      bb.log.debug(`thread ${event.threadId}: ignored (${declined})`);
+      alia.log.debug(`thread ${event.threadId}: ignored (${declined})`);
       return;
     }
-    const thread = await bb.sdk.threads.get({ threadId: event.threadId });
+    const thread = await alia.sdk.threads.get({ threadId: event.threadId });
     const skipped =
       notTheUsersThread(thread) ??
       // A limit names its provider; a refusal only has the thread's.
@@ -7590,14 +7590,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         ? `refusal of provider ${thread.providerId}`
         : null);
     if (skipped !== null) {
-      bb.log.debug(`thread ${event.threadId}: ignored (${skipped})`);
+      alia.log.debug(`thread ${event.threadId}: ignored (${skipped})`);
       return;
     }
     let failed = event;
     if (mayBeLost) {
       const text = await failureText(event.threadId, event.requestId);
       if (text === null || !isSessionLoss(text)) {
-        bb.log.debug(`thread ${event.threadId}: ignored (${declined})`);
+        alia.log.debug(`thread ${event.threadId}: ignored (${declined})`);
         return;
       }
       failed = sessionLost(event);
@@ -7639,9 +7639,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     } catch (error) {
       // A retry of the turn is already on its way (queued by another plugin,
       // or being sent): nothing to add.
-      if (!bbHasTheTurn(error)) throw error;
-      bb.log.info(
-        `thread ${event.threadId}: bb already has a retry of the turn (${error instanceof Error ? error.message : String(error)})`,
+      if (!aliaHasTheTurn(error)) throw error;
+      alia.log.info(
+        `thread ${event.threadId}: VesnALIA already has a retry of the turn (${error instanceof Error ? error.message : String(error)})`,
       );
     } finally {
       if (seen !== undefined && refusalSeen.get(event.threadId) === seen) refusalSeen.delete(event.threadId);
@@ -7651,7 +7651,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   // ---- A wait another account can end sooner -----------------------------
   /**
    * Waits due within this are left alone: they run soon anyway, and every
-   * backoff bb's provider-retry plugin queues for an overloaded provider is
+   * backoff VesnALIA's provider-retry plugin queues for an overloaded provider is
    * shorter (5 s × 2^(n − 1) plus up to as much jitter: 80 s at its 4th and
    * last), so no backoff is cut short.
    */
@@ -7662,7 +7662,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
    * room now (2026-10-04: a thread waited three hours for a session while
    * another account was free). After each refresh, a project whose account
    * is MEASURED unable to run a waiting retry's model moves to an account
-   * that can, and the wait is replaced by a retry bb dispatches at once; so
+   * that can, and the wait is replaced by a retry VesnALIA dispatches at once; so
    * is a wait queued before its project last changed account, on an account
    * that can run it. Left as they are: a wait due within two minutes, one
    * another plugin holds, a retry of an earlier turn, one of an archived
@@ -7671,15 +7671,15 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
    */
   async function revisitWaits(): Promise<void> {
     if (!current.autoSwitch) return;
-    // Marks made while bb reads are kept: its snapshot may predate them
+    // Marks made while VesnALIA reads are kept: its snapshot may predate them
     // (Codex Sol 0.2.18 r1, R0218-CODEX-002).
     const marksBefore = putBackMarks;
     const readAt = deps.now();
-    const all = await bb.sdk.threads.queue.list();
+    const all = await alia.sdk.threads.queue.list();
     // Beside the pass, not before it: a slow read of a thread that may be
     // stuck does not hold a retry back (Codex R1-002).
     const looked = sayStuck(all, readAt).catch((error: unknown) =>
-      bb.log.warn(
+      alia.log.warn(
         `the stuck threads were not looked for: ${error instanceof Error ? error.message : String(error)}`,
       ),
     );
@@ -7702,13 +7702,13 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       // Switched off meanwhile: the rest of the pass stops too.
       if (!current.autoSwitch) return;
       try {
-        const thread = await bb.sdk.threads.get({ threadId: row.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: row.threadId });
         if (!waitingThread(thread)) continue;
         await inProjectQueue(thread.projectId, () =>
           moveUpWait(row.threadId, row.id),
         );
       } catch (error) {
-        bb.log.warn(
+        alia.log.warn(
           `thread ${row.threadId}: its wait was not looked at again: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -7720,9 +7720,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   /**
    * Threads in error with nothing queued, as the queue stood when the pass
    * began (a queued message of any kind runs when its time comes and takes
-   * the thread out of error): bb's provider-retry gives up after five
+   * the thread out of error): VesnALIA's provider-retry gives up after five
    * attempts and so does the failure handler, so nothing would look at them
-   * again. Each is judged from bb's log on every refresh, until something is
+   * again. Each is judged from VesnALIA's log on every refresh, until something is
    * queued for it.
    */
   async function rescueStuck(
@@ -7736,22 +7736,22 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         await inProjectQueue(thread.projectId, () => rescueThread(thread));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        if (bbHasTheTurn(error))
-          bb.log.info(
-            `thread ${thread.id}: bb already has a retry of the turn (${message})`,
+        if (aliaHasTheTurn(error))
+          alia.log.info(
+            `thread ${thread.id}: VesnALIA already has a retry of the turn (${message})`,
           );
-        else bb.log.warn(`thread ${thread.id}: not judged again: ${message}`);
+        else alia.log.warn(`thread ${thread.id}: not judged again: ${message}`);
       }
     }
   }
 
-  type ListedThread = Awaited<ReturnType<typeof bb.sdk.threads.list>>[number];
+  type ListedThread = Awaited<ReturnType<typeof alia.sdk.threads.list>>[number];
   /** The user's Claude Code threads in error, not archived. */
   async function errorThreads(): Promise<ListedThread[]> {
     const PAGE = 200;
     const found: ListedThread[] = [];
     for (let offset = 0; ; offset += PAGE) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         archived: false,
         limit: PAGE,
         offset,
@@ -7761,7 +7761,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
   }
 
-  /** The thread's failure as bb logged it, judged as a failure would be. */
+  /** The thread's failure as VesnALIA logged it, judged as a failure would be. */
   async function rescueThread(thread: ListedThread): Promise<void> {
     const threadId = thread.id;
     // Taken before any read (see generation).
@@ -7769,14 +7769,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // Read again in the project's queue: archived, running again, moved or
     // retried meanwhile (Codex r6, IR6-005).
     if (!current.autoSwitch) return;
-    const live = await bb.sdk.threads.get({ threadId });
+    const live = await alia.sdk.threads.get({ threadId });
     if (!waitingThread(live) || live.projectId !== thread.projectId) return;
-    if ((await bb.sdk.threads.queuedMessages.list({ threadId })).length > 0)
+    if ((await alia.sdk.threads.queuedMessages.list({ threadId })).length > 0)
       return;
     const turn = await latestTurn(threadId);
     if (turn === null) return;
     if (cancelled.get(threadId) === turn.requestId) {
-      bb.log.debug(
+      alia.log.debug(
         `thread ${threadId}: left in error (its retry was cancelled by hand)`,
       );
       return;
@@ -7785,7 +7785,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (failure === null) return;
     const declined = declineReason(failure, true);
     if (declined !== null) {
-      bb.log.debug(`thread ${threadId}: left in error (${declined})`);
+      alia.log.debug(`thread ${threadId}: left in error (${declined})`);
       return;
     }
     const before = moveMark(thread.projectId);
@@ -7806,7 +7806,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     );
   }
   /**
-   * The failure of the thread's turn as bb logged it, as a failure event
+   * The failure of the thread's turn as VesnALIA logged it, as a failure event
    * reports it (the rescue judges it; a basis read back after a restart is
    * checked against it): null when the log holds none after the turn.
    */
@@ -7815,10 +7815,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     turn: { seq: number; requestId: string; attempt: number },
   ): Promise<PluginTurnFailedEvent | null> {
     // The failure of that turn, not an older one's (a turn sent by hand
-    // after a limit fails on its own account): bb reads it the same way.
-    // A turn bb refused at the door leaves no provider error, only the
-    // reason it was rejected for, as bb's own failure event translates it.
-    const [failed] = await bb.sdk.threads.events.list({
+    // after a limit fails on its own account): VesnALIA reads it the same way.
+    // A turn VesnALIA refused at the door leaves no provider error, only the
+    // reason it was rejected for, as VesnALIA's own failure event translates it.
+    const [failed] = await alia.sdk.threads.events.list({
       threadId,
       types: ["provider/error", "client/turn/rejected"],
       order: "desc",
@@ -7841,7 +7841,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       isSessionLoss(`${failed.data.message} ${failed.data.detail ?? ""}`)
     )
       errorInfo = SESSION_LOST_INFO;
-    const [reported] = await bb.sdk.threads.events.list({
+    const [reported] = await alia.sdk.threads.events.list({
       threadId,
       types: ["provider/rateLimits/updated"],
       order: "desc",
@@ -7860,7 +7860,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       attemptNumber: turn.attempt,
     };
   }
-  /** What bb's failure event says of a turn rejected at the door (bb 0.45, `doorRejectionErrorInfo`). */
+  /** What VesnALIA's failure event says of a turn rejected at the door (VesnALIA 0.45, `doorRejectionErrorInfo`). */
   function rejectedErrorInfo(
     reason: string,
   ): PluginTurnFailedEvent["errorInfo"] {
@@ -7900,8 +7900,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * The user's Claude Code thread with a failed turn bb can retry: not
-   * archived or deleted (bb refuses those, and the wait would be lost).
+   * The user's Claude Code thread with a failed turn VesnALIA can retry: not
+   * archived or deleted (VesnALIA refuses those, and the wait would be lost).
    */
   function waitingThread(
     thread: Pick<
@@ -7923,9 +7923,9 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     );
   }
 
-  /** The thread's latest turn in bb's log: the one bb retries. */
+  /** The thread's latest turn in VesnALIA's log: the one VesnALIA retries. */
   async function latestTurn(threadId: string) {
-    const [row] = await bb.sdk.threads.events.list({
+    const [row] = await alia.sdk.threads.events.list({
       threadId,
       types: ["client/turn/requested"],
       order: "desc",
@@ -7935,7 +7935,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     return {
       seq: row.seq,
       requestId: row.data.requestId,
-      // bb keys a retry by the first request of its chain, and counts from 1.
+      // VesnALIA keys a retry by the first request of its chain, and counts from 1.
       original: row.data.retryOfRequestId ?? row.data.requestId,
       attempt: row.data.retryAttempt ?? 1,
       model: modelFamily(row.data.execution?.model ?? null),
@@ -7945,10 +7945,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   async function moveUpWait(threadId: string, rowId: string): Promise<void> {
     // Read again in the project's queue: archived, sent, replaced or held
     // meanwhile.
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!waitingThread(thread)) return;
     const projectId = thread.projectId;
-    const row = (await bb.sdk.threads.queuedMessages.list({ threadId })).find(
+    const row = (await alia.sdk.threads.queuedMessages.list({ threadId })).find(
       (r) => r.id === rowId,
     );
     if (row?.payload.kind !== "retry" || !longWait(row, deps.now())) return;
@@ -7969,7 +7969,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       turn.attempt + 1 !== row.payload.attempt
     )
       return;
-    // The model the retry runs with: bb copies the failed turn's.
+    // The model the retry runs with: VesnALIA copies the failed turn's.
     const model =
       modelFamily(row.model) ?? turn.model ?? current.preferredModel;
     // Read last: nothing is awaited between this read and the move below.
@@ -8045,7 +8045,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     if (to === null) {
       // Nothing to release it on; the wait fires on its own at sendAt and
       // is placed then (code-reviewer r2, CR2-05).
-      bb.log.debug(
+      alia.log.debug(
         `thread ${threadId}: its wait stays on ${fromName}: no other account can run ${model}${reservedFor(fromName, model, now, projectId) ? " and this one keeps " + current.preferredModel : ""}`,
       );
       return;
@@ -8055,7 +8055,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // The next pass over the waits looks again (Astra r8 medium 2, the same
     // guard as the failure's judgment).
     if (moving(projectId)) {
-      bb.log.info(
+      alia.log.info(
         `thread ${threadId}: its wait stays on ${fromName}: another move of the project is under way; looked at again at the next pass`,
       );
       return;
@@ -8072,7 +8072,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     await markHandled(projectId);
     noteMove(projectId, fromName, to, model, before);
     const reason = `Moved to account ${to}, which can run the waiting turn now: ${fromName} ${noLogin ? "is not logged in" : whyOut(fromName, model, projectId)}`;
-    bb.log.info(`thread ${threadId}: ${reason}`);
+    alia.log.info(`thread ${threadId}: ${reason}`);
     await recordMove(
       { at: now, threadId, projectId, from: fromName, to, reason },
       threadId,
@@ -8082,11 +8082,11 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   /**
-   * Replace a timed retry with one bb dispatches now, through every plugin's
+   * Replace a timed retry with one VesnALIA dispatches now, through every plugin's
    * checkpoint: sending the queued row would be an explicit send, which
-   * skips them. If bb does not take it, the timed one is queued again as it
-   * was, unless bb already has a retry of the turn or the turn is no longer
-   * the failed one. bb keeps one queued retry per turn: a retry it refuses
+   * skips them. If VesnALIA does not take it, the timed one is queued again as it
+   * was, unless VesnALIA already has a retry of the turn or the turn is no longer
+   * the failed one. VesnALIA keeps one queued retry per turn: a retry it refuses
    * for that never doubles a wait.
    */
   async function releaseWait(
@@ -8103,14 +8103,14 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       await deleteOwn(threadId, wait.id);
     } catch (error) {
       if (alreadyOnItsWay(error)) {
-        bb.log.info(
+        alia.log.info(
           `thread ${threadId}: its waiting retry is already on its way`,
         );
         return;
       }
-      // bb may have removed it and lost only its answer: without the retry
-      // below, the wait would be gone. Still queued, bb refuses the retry.
-      bb.log.warn(
+      // VesnALIA may have removed it and lost only its answer: without the retry
+      // below, the wait would be gone. Still queued, VesnALIA refuses the retry.
+      alia.log.warn(
         `thread ${threadId}: could not remove its wait (${error instanceof Error ? error.message : String(error)}); retrying the turn anyway`,
       );
     }
@@ -8118,20 +8118,20 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     // grace window is that account's, judged afresh.
     recentSwitches.get(projectId)?.graced.add(threadId);
     try {
-      await bb.sdk.threads.retry({ threadId, turnRequestId, reason });
+      await alia.sdk.threads.retry({ threadId, turnRequestId, reason });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (bbHasTheTurn(error)) {
-        bb.log.info(
-          `thread ${threadId}: bb did not take the retry (${message}); nothing is queued again`,
+      if (aliaHasTheTurn(error)) {
+        alia.log.info(
+          `thread ${threadId}: VesnALIA did not take the retry (${message}); nothing is queued again`,
         );
         return;
       }
-      bb.log.warn(
+      alia.log.warn(
         `thread ${threadId}: could not retry the turn now (${message}); its wait is queued again`,
       );
       try {
-        const back = await bb.sdk.threads.retry({
+        const back = await alia.sdk.threads.retry({
           threadId,
           turnRequestId,
           reason: wait.reason,
@@ -8144,30 +8144,30 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             ? restoreError.message
             : String(restoreError);
         // The first retry landed and only its answer was lost.
-        if (bbHasTheTurn(restoreError)) {
-          bb.log.info(
-            `thread ${threadId}: its wait is not queued again: bb has the turn (${restore})`,
+        if (aliaHasTheTurn(restoreError)) {
+          alia.log.info(
+            `thread ${threadId}: its wait is not queued again: VesnALIA has the turn (${restore})`,
           );
           return;
         }
-        // bb may have queued it and lost only its answer: looked at again in
+        // VesnALIA may have queued it and lost only its answer: looked at again in
         // the next pass if it is there (marked only when found, CR2-01).
         if (await rowQueued(threadId, wait.key)) {
           markPutBack(wait.key);
-          bb.log.info(
-            `thread ${threadId}: its wait is queued again (only bb's answer was lost: ${restore})`,
+          alia.log.info(
+            `thread ${threadId}: its wait is queued again (only VesnALIA's answer was lost: ${restore})`,
           );
           return;
         }
-        bb.log.error(
+        alia.log.error(
           `thread ${threadId}: its wait is lost (${message}; queuing it again failed too: ${restore}); retry the turn by hand`,
         );
       }
     }
   }
 
-  /** bb's 409s on a retry: it already has one of the turn, or the turn is no longer the failed one. */
-  function bbHasTheTurn(error: unknown): boolean {
+  /** VesnALIA's 409s on a retry: it already has one of the turn, or the turn is no longer the failed one. */
+  function aliaHasTheTurn(error: unknown): boolean {
     const code =
       typeof error === "object" && error !== null && "code" in error
         ? error.code
@@ -8176,30 +8176,30 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   }
 
   // A login must not outlive the plugin that runs it (reload, disable, shutdown).
-  bb.onDispose(() => login.cancel());
+  alia.onDispose(() => login.cancel());
 
   // ---- Periodic refresh -------------------------------------------------
-  bb.background.service("usage-refresh", {
+  alia.background.service("usage-refresh", {
     async start(signal) {
       while (!signal.aborted) {
         try {
           await refreshAll();
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `usage refresh failed: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
         try {
           await countUnseated();
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `the turns not counted as they started were not counted: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
         try {
           await revisitWaits();
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `the waiting turns were not looked at again: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -8208,7 +8208,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         try {
           await rescueStranded();
         } catch (error) {
-          bb.log.warn(
+          alia.log.warn(
             `the projects on an account that cannot run were not looked at: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
@@ -8250,7 +8250,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const found: ListedThread[] = [];
       const PAGE = 200;
       for (let offset = 0; ; offset += PAGE) {
-        const page = await bb.sdk.threads.list({
+        const page = await alia.sdk.threads.list({
           archived: false,
           includeHidden: true,
           ...(projectId === undefined ? {} : { projectId }),
@@ -8359,7 +8359,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           await markHandled(m.projectId);
           noteMove(m.projectId, m.from, m.to, current.preferredModel, mark);
           const reason = `Rebalanced: ${m.from} had ${before[m.from]} projects (weekly ${load.get(m.from)} %), ${m.to} ${before[m.to]} (weekly ${load.get(m.to)} %)`;
-          bb.log.info(`project ${m.projectId}: ${reason}`);
+          alia.log.info(`project ${m.projectId}: ${reason}`);
           await addHistory({
             at: now,
             threadId: "",
@@ -8376,7 +8376,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       }
     }
     if (apply && moves.some((m) => m.done === true))
-      bb.realtime.publish(CHANGED, { at: deps.now() });
+      alia.realtime.publish(CHANGED, { at: deps.now() });
     const landed = projects.map((p) => {
       const m = moves.find((x) => x.projectId === p.id);
       return m !== undefined && (m.done ?? true) ? { account: m.to } : p;
@@ -8485,7 +8485,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       }),
     });
   }
-  bb.cli.register(
+  alia.cli.register(
     defineCli({
       name: "claude-switcher",
       summary:
@@ -8520,7 +8520,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         }),
         reserve: cliCommand({
           summary:
-            "Hold a seat of an account for a run outside bb (claude -p with its CLAUDE_CONFIG_DIR) until a time, at most 12 h; fails when the account has no free seat. The same id renews it",
+            "Hold a seat of an account for a run outside VesnALIA (claude -p with its CLAUDE_CONFIG_DIR) until a time, at most 12 h; fails when the account has no free seat. The same id renews it",
           positionals: [
             { name: "account", description: "Account name", required: true },
           ] as const,
@@ -8556,7 +8556,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             // Never against the empty count of a load: the threads already
             // running are counted first (Codex ULTRA-R02).
             if (!seatsReady) {
-              bb.log.info(
+              alia.log.info(
                 `reserve ${name} for ${options.id} waits for the seats to be counted after loading`,
               );
               await within(
@@ -8602,7 +8602,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
                 },
               );
             }
-            // Granted only once stored: a hold a reload would forget lets bb
+            // Granted only once stored: a hold a reload would forget lets VesnALIA
             // fill the seat under the run (Codex ULTRA-R2-004). Not stored,
             // it is undone, unless another reserve or unreserve of the id
             // changed it meanwhile: that one stands.
@@ -8629,8 +8629,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             // Moved from another account: its seat there is free now (Codex
             // ASIENTOS-001).
             if (before !== undefined && before.account !== key) admitWaiting(true);
-            bb.log.info(
-              `seat on ${name} held from outside bb by ${options.id} until ${isoInZone(result.until)}${result.renewed ? " (renewed)" : ""}; ${occupancy(key)}`,
+            alia.log.info(
+              `seat on ${name} held from outside VesnALIA by ${options.id} until ${isoInZone(result.until)}${result.renewed ? " (renewed)" : ""}; ${occupancy(key)}`,
             );
             const out = {
               id: options.id,
@@ -8671,8 +8671,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             if (key !== null) {
               // What changed meanwhile, stored after the write above.
               void storeHolds();
-              bb.log.info(
-                `seat on ${seatName(key)} held from outside bb by ${options.id} released; ${occupancy(key)}`,
+              alia.log.info(
+                `seat on ${seatName(key)} held from outside VesnALIA by ${options.id} released; ${occupancy(key)}`,
               );
               admitWaiting(true);
             }
@@ -8818,7 +8818,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             const lines: string[] = [];
             for (const [name, a] of Object.entries(taken))
               lines.push(
-                `${name}\tseats ${a.running + a.reserved + (a.external?.length ?? 0)}/${a.capacity === 0 ? "no limit" : a.capacity} (${a.running} running, ${a.reserved} reserved${a.external === undefined ? "" : `, ${a.external.length} held outside bb: ${a.external.map((e) => `${e.id} until ${isoInZone(e.until)}`).join(", ")}`})\t${a.queued.length} waiting`,
+                `${name}\tseats ${a.running + a.reserved + (a.external?.length ?? 0)}/${a.capacity === 0 ? "no limit" : a.capacity} (${a.running} running, ${a.reserved} reserved${a.external === undefined ? "" : `, ${a.external.length} held outside VesnALIA: ${a.external.map((e) => `${e.id} until ${isoInZone(e.until)}`).join(", ")}`})\t${a.queued.length} waiting`,
               );
             if (stuck === null)
               lines.push("", "The queue could not be read: stuck threads unknown.");
@@ -8865,7 +8865,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
                 `${name}\t${seatHours > 0 ? `${(used / seatHours).toFixed(1)} %` : "—"} of the 5-hour window per hour and seat`,
               );
             }
-            lines.push("", ...spend, "", "Older samples, a week of them: bb claude-switcher history --dias N");
+            lines.push("", ...spend, "", "Older samples, a week of them: VesnALIA claude-switcher history --dias N");
             return { exitCode: 0, stdout: `${lines.join("\n")}\n` };
           },
         }),
@@ -9018,7 +9018,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
         return got.value;
       } catch (error) {
         if (attempt >= SEAT_COUNT_TRIES) throw error;
-        bb.log.warn(
+        alia.log.warn(
           `${what} not read to count the seats (try ${attempt}): ${error instanceof Error ? error.message : String(error)}; trying again`,
         );
         await new Promise((resolve) => setTimeout(resolve, SEAT_COUNT_RETRY_MS));
@@ -9026,7 +9026,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
     }
   }
   /**
-   * After a load the seats are empty: the threads bb says run count as
+   * After a load the seats are empty: the threads VesnALIA says run count as
    * running, each on its project's account (a thread on an account set
    * outside this plugin has none). Turns wait for it (Astra SEATS-R02); a
    * read that fails is tried again, and one that still fails leaves its
@@ -9036,7 +9036,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
   function countSeats(): void {
     if (seatsCounting) return;
     seatsCounted = rebuildSeats().catch((error: unknown) =>
-      bb.log.warn(
+      alia.log.warn(
         `the running threads were not counted after loading (they count as they start): ${error instanceof Error ? error.message : String(error)}`,
       ),
     );
@@ -9062,7 +9062,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const PAGE = 200;
       for (let offset = 0; ; offset += PAGE) {
         const page = await countTries("the threads", () =>
-          bb.sdk.threads.list({
+          alia.sdk.threads.list({
             archived: false,
             includeHidden: true,
             limit: PAGE,
@@ -9088,7 +9088,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       underWayListed = true;
       startedUnlisted.clear();
       const listedAt = deps.now();
-      // Under way as bb lists them, whatever their seat's read says (Codex
+      // Under way as VesnALIA lists them, whatever their seat's read says (Codex
       // PLAZAS-002); not one that ended meanwhile.
       for (const t of underWay)
         if (!ended.has(t.id)) turnsUnderWay.set(t.id, t.projectId);
@@ -9102,7 +9102,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
               projectAccount(t.projectId),
             ).catch((error: unknown) => {
               unread = true;
-              bb.log.warn(
+              alia.log.warn(
                 `the threads of project ${t.projectId} not counted after loading (they count as they start): ${error instanceof Error ? error.message : String(error)}`,
               );
               return null;
@@ -9119,8 +9119,8 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           // (Codex RS-001).
           // ponytail: the entry names the thread, not the turn: a turn that
           // ended and another that started while the plugin was off count
-          // where the first started (Codex RS-005; bb gives no turn id).
-          // Rare (a reload takes seconds); a turn id from bb would close it.
+          // where the first started (Codex RS-005; VesnALIA gives no turn id).
+          // Rare (a reload takes seconds); a turn id from VesnALIA would close it.
           const storedKey = () => {
             const stored = startedBefore.get(t.id);
             return stored === undefined
@@ -9140,7 +9140,7 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
             const found = seatFor(at);
             if (found === null) return;
             if (found === UNKNOWN_SEAT) {
-              bb.log.debug(
+              alia.log.debug(
                 `thread ${t.id} not counted after loading: its project's account is not among the accounts found`,
               );
               return;
@@ -9152,10 +9152,10 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
           // the thread (Astra SEATS-R03).
           if (deps.now() - listedAt >= SEAT_COUNT_RETRY_MS) {
             const live = await countTries(`thread ${t.id}`, () =>
-              bb.sdk.threads.get({ threadId: t.id }),
+              alia.sdk.threads.get({ threadId: t.id }),
             ).catch((error: unknown) => {
               unread = true;
-              bb.log.warn(
+              alia.log.warn(
                 `thread ${t.id} not counted after loading (it counts as it starts): ${error instanceof Error ? error.message : String(error)}`,
               );
               return null;
@@ -9191,24 +9191,24 @@ export async function createPlugin(bb: BbPluginApi, deps: PluginDeps) {
       const taken = Object.entries(seats.snapshot())
         .map(([key, s]) => `${seatName(key)} ${s.running} running`)
         .join(", ");
-      bb.log.info(`seats counted after loading: ${taken === "" ? "none taken" : taken}`);
+      alia.log.info(`seats counted after loading: ${taken === "" ? "none taken" : taken}`);
       if (seatsAwaited)
-        void bb.experimental_hooks
+        void alia.experimental_hooks
           .recheck("message.dispatch")
           .catch((error: unknown) =>
-            bb.log.warn(
-              `bb not asked again after the seats were counted: ${error instanceof Error ? error.message : String(error)}`,
+            alia.log.warn(
+              `alia not asked again after the seats were counted: ${error instanceof Error ? error.message : String(error)}`,
             ),
           );
     }
   }
   countSeats();
 
-  bb.log.info("loaded");
+  alia.log.info("loaded");
 }
 
-export default function plugin(bb: BbPluginApi) {
-  return createPlugin(bb, {
+export default function plugin(alia: AliaPluginApi) {
+  return createPlugin(alia, {
     credentialIo: nodeCredentialIo(),
     accountsIo: nodeAccountsIo(),
     loginIo: nodeLoginIo(),

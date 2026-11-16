@@ -390,7 +390,7 @@
       "place": "panel",
       "box": "bright-sparrow",
       "item": "Open in browser",
-      "outcome": "new tab /plugins/bb-box/desktop/thr_bgdv3b5b4u/bxh57qa72p2p5v"
+      "outcome": "new tab /plugins/alia-box/desktop/thr_bgdv3b5b4u/bxh57qa72p2p5v"
     },
     {
       "place": "panel",
@@ -438,19 +438,19 @@
       "place": "threads",
       "box": "ready-heron",
       "item": "Open terminal",
-      "outcome": "url /plugins/bb-box/desktop/thr_bgdv3b5b4u/bxpwmunzulorzc/terminal, panel tabs [], calls desktop"
+      "outcome": "url /plugins/alia-box/desktop/thr_bgdv3b5b4u/bxpwmunzulorzc/terminal, panel tabs [], calls desktop"
     },
     {
       "place": "threads",
       "box": "bright-sparrow",
       "item": "Open in browser",
-      "outcome": "new tab /plugins/bb-box/desktop/thr_bgdv3b5b4u/bxh57qa72p2p5v"
+      "outcome": "new tab /plugins/alia-box/desktop/thr_bgdv3b5b4u/bxh57qa72p2p5v"
     },
     {
       "place": "threads",
       "box": "bright-sparrow",
       "item": "Open desktop",
-      "outcome": "url /plugins/bb-box/desktop/thr_bgdv3b5b4u/bxh57qa72p2p5v, panel tabs []"
+      "outcome": "url /plugins/alia-box/desktop/thr_bgdv3b5b4u/bxh57qa72p2p5v, panel tabs []"
     },
     {
       "place": "threads",
@@ -486,25 +486,25 @@
       "place": "machines",
       "box": "workbench",
       "item": "Open terminal",
-      "outcome": "url /plugins/bb-box/desktop/operator/bx6ewikq6utobp/terminal"
+      "outcome": "url /plugins/alia-box/desktop/operator/bx6ewikq6utobp/terminal"
     },
     {
       "place": "machines",
       "box": "studio",
       "item": "Open in browser",
-      "outcome": "new tab /plugins/bb-box/desktop/operator/bx3lvqtp2666ho"
+      "outcome": "new tab /plugins/alia-box/desktop/operator/bx3lvqtp2666ho"
     },
     {
       "place": "machines",
       "box": "studio",
       "item": "Open desktop",
-      "outcome": "url /plugins/bb-box/desktop/operator/bx3lvqtp2666ho"
+      "outcome": "url /plugins/alia-box/desktop/operator/bx3lvqtp2666ho"
     },
     {
       "place": "machines",
       "box": "spare-d",
       "item": "Remove…",
-      "outcome": "asked \"Remove spare-d?Its machine leaves BB, and its disk and everything on it will be deleted. Copy out anything you want to keep first.CancelRemove\", then removed"
+      "outcome": "asked \"Remove spare-d?Its machine leaves VesnALIA, and its disk and everything on it will be deleted. Copy out anything you want to keep first.CancelRemove\", then removed"
     },
     {
       "place": "settings",

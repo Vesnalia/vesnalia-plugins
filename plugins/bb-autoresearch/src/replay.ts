@@ -52,7 +52,7 @@ export interface ReplayBundle {
   ideas: Array<{ id: number; title: string; theme: string; source: string; variationOf: number | null }>;
   /** Worker rows (threads.id is the lane key). */
   workers: Array<{ key: number; threadId: string | null; ideaId: number | null; spawnedAt: number }>;
-  /** `workerKey`: the worker row that submitted it (candidates.worker_id); lanes link through it, the BB thread id is the fallback. */
+  /** `workerKey`: the worker row that submitted it (candidates.worker_id); lanes link through it, the VesnALIA thread id is the fallback. */
   candidates: Array<{ id: number; n: number; ideaId: number | null; threadId: string | null; workerKey?: number | null; title: string }>;
   /** Bench lock intervals (utilization). */
   intervals: Array<{ hostId: string; start: number; end: number | null }>;
@@ -289,7 +289,7 @@ export class ReplayModel {
 
   /**
    * The lane (worker row) a candidate belongs to: its worker row, else the
-   * worker row its BB thread id maps to, else the submit event's worker row or thread.
+   * worker row its VesnALIA thread id maps to, else the submit event's worker row or thread.
    */
   private workerKeyOf(meta: ReplayBundle["candidates"][number] | undefined, d: Record<string, unknown>): number | null {
     if (typeof meta?.workerKey === "number") return meta.workerKey;

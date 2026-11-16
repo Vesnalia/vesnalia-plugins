@@ -11,7 +11,7 @@ import type { TUI } from "@earendil-works/pi-tui";
 import { type BudgetPolicy, budgetAlert, isExpensiveTurn, NEAR_FRACTION, parseBudget, shouldStop } from "../../src/budget.js";
 import { formatBudget, formatDelta, formatUsd, summaryMarkdown, turnMultiple } from "../../src/format.js";
 import { buildReport, forkedAt, type UsageReport } from "../../src/report.js";
-import { type BbReporter, createBbReporter } from "./bb-report.js";
+import { type AliaReporter, createAliaReporter } from "./alia-report.js";
 import { completions, parseCommand, SUBCOMMANDS } from "./commands.js";
 import { createHistoryLoader, type HistoryLoader, type SessionFile } from "./history.js";
 import { BurnPanel, type PanelResult, type PanelView } from "./panel.js";
@@ -27,7 +27,7 @@ const PANEL_MAX_WIDTH = 100;
 export interface BurnDeps {
   /** pi's agent directory, where burn.json lives. */
   agentDir?: () => string;
-  reporter?: BbReporter;
+  reporter?: AliaReporter;
   copy?: (text: string) => Promise<void>;
   listSessions?: (cwd: string) => Promise<SessionFile[]>;
   parseSession?: (text: string) => unknown[];
@@ -60,7 +60,7 @@ function contextOf(ctx: ExtensionContext): UsageReport["context"] {
 
 export function createBurn(deps: BurnDeps = {}): (pi: ExtensionAPI) => void {
   return (pi) => {
-    const reporter = deps.reporter ?? createBbReporter({});
+    const reporter = deps.reporter ?? createAliaReporter({});
     const now = deps.now ?? Date.now;
     const copy = deps.copy ?? copyToClipboard;
     const path = () => settingsPath((deps.agentDir ?? getAgentDir)());
@@ -251,9 +251,9 @@ export function createBurn(deps: BurnDeps = {}): (pi: ExtensionAPI) => void {
     async function budgetCommand(ctx: ExtensionCommandContext, scope: "thread" | "default", input: string | null): Promise<void> {
       loadSettings(ctx);
       const thread = threadBudget(ctx.sessionManager.getEntries());
-      const bb = reporter.policy();
+      const alia = reporter.policy();
       if (input === null) {
-        ctx.ui.notify(describeBudget(bb, thread, settings), "info");
+        ctx.ui.notify(describeBudget(alia, thread, settings), "info");
         return;
       }
       const budget = parseBudget(input);
@@ -265,12 +265,12 @@ export function createBurn(deps: BurnDeps = {}): (pi: ExtensionAPI) => void {
       if (scope === "thread") {
         pi.appendEntry(BUDGET_ENTRY, { budget });
         refresh(ctx);
-        ctx.ui.notify(describeBudget(bb, budget, settings), "info");
+        ctx.ui.notify(describeBudget(alia, budget, settings), "info");
         return;
       }
       if (!save(ctx, { ...settings, defaultBudget: budget })) return;
       const saved = budget === null ? "Default budget turned off." : `Default budget set to ${formatBudget(budget)}.`;
-      ctx.ui.notify(`${saved}\n${describeBudget(bb, thread, settings)}`, "info");
+      ctx.ui.notify(`${saved}\n${describeBudget(alia, thread, settings)}`, "info");
     }
 
     function save(ctx: ExtensionContext, next: BurnSettings): boolean {

@@ -1,31 +1,23 @@
 {
-  "name": "bb-plugin-simple-sidebar-folders",
+  "name": "alia-plugin-simple-sidebar-folders",
   "version": "0.1.0",
   "type": "module",
-  "description": "Group BB sidebar projects into collapsible folders without replacing the thread list.",
+  "description": "Group VesnALIA sidebar projects into collapsible folders without replacing the thread list.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chug2k/bb-plugin-simple-sidebar-folders.git"
-  },
-  "homepage": "https://github.com/chug2k/bb-plugin-simple-sidebar-folders#readme",
-  "bugs": {
-    "url": "https://github.com/chug2k/bb-plugin-simple-sidebar-folders/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "sidebar",
     "folders",
     "projects"
   ],
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.104"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.104"
   },
-  "bb": {
+  "alia": {
     "name": "Simple Sidebar Folders",
-    "description": "Adds one folder level above sidebar projects, so a whole group of projects folds with one click. bb's own project and thread rows stay as they are.",
+    "description": "Adds one folder level above sidebar projects, so a whole group of projects folds with one click. VesnALIA's own project and thread rows stay as they are.",
     "branding": {
       "icon": "Folder"
     },
@@ -38,7 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.104",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -48,5 +39,22 @@
     "hono": "^4.13.8",
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/simple-sidebar-folders#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/simple-sidebar-folders"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

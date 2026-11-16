@@ -3,10 +3,10 @@ import { registerHooks } from "node:module";
 import test, { after } from "node:test";
 import { JSDOM } from "jsdom";
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaults, type ApplyInput, type Snapshot } from "../lib/model.ts";
 
-// The editor imports its stylesheet; the bundler handles that in BB, so stub it here.
+// The editor imports its stylesheet; the bundler handles that in VesnALIA, so stub it here.
 registerHooks({ load: (url, context, next) => url.endsWith(".css") ? { format: "module", source: "", shortCircuit: true } : next(url, context) });
 const dom = new JSDOM("<!doctype html><html><head></head><body></body></html>", { url: "http://bb.test/" });
 Object.assign(globalThis, {

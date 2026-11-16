@@ -15,7 +15,7 @@ import { renderedIdsOf } from "./repo-activity";
 import {
   experimental_useSidebarThreadSplit as useSidebarThreadSplit,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { flattenShelf, scopeOf, type ProjectSectionData, type DisplayRow } from "./forest";
@@ -88,7 +88,7 @@ export interface TreeContext {
   onToggleAgeGroup: (key: string) => void;
   rawById: ReadonlyMap<string, PluginSidebarThread>;
   workspacePaths: ReadonlyMap<string, string | null>;
-  /** The host bb runs on; a row only names its host when it differs. */
+  /** The host VesnALIA runs on; a row only names its host when it differs. */
   primaryHostId: string | null;
   cloudHostIds: ReadonlySet<string> | null;
   now: number;
@@ -119,7 +119,7 @@ export interface TreeContext {
     sectionId: string,
   ) => void;
   consumeSuppressedClick: (threadId: string) => boolean;
-  /** Digit that opens each thread while BB's keybind guide is up, by thread id. */
+  /** Digit that opens each thread while VesnALIA's keybind guide is up, by thread id. */
   shortcutKeys: ReadonlyMap<string, string> | null;
   /** The row the pointer is over during a drag, for the placement line. */
   dropTarget: { id: string; placement: DropPlacement } | null;
@@ -718,7 +718,7 @@ function ThreadRow({
   const native = ctx.rawById.get(thread.id) ?? thread;
   const workspacePath = native.environment?.id ? ctx.workspacePaths.get(native.environment.id) : null;
   // A real workspace label is the environment's own name, else the last segment
-  // of its resolved path. BB's internal personal workspaces use a raw thr_/env_
+  // of its resolved path. VesnALIA's internal personal workspaces use a raw thr_/env_
   // id as that segment; an id is never a directory name, so it is dropped and
   // the machine stands in below instead. The label is always shown, even when
   // it repeats the project heading, so a row never reads as blank.

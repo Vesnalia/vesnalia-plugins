@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, experimental_usePluginId, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { BoxDialog, DialogButton, useDialogAction } from "./box-dialog.tsx";
@@ -106,7 +106,7 @@ export function BoxMenu({
   triggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const pluginId = experimental_usePluginId();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const rpc = useRpc<Contract>();
   const [ownAsk, setOwnAsk] = useState<MenuAsk>(null);
   const ask = asking !== undefined ? asking : ownAsk;
@@ -322,7 +322,7 @@ export function BoxMenu({
             </>
           }
         >
-          {box.releaseHeldForKept ? <p>Its last release stopped before deleting anything: BB Box could not copy a snapshot you kept. Release again tries the copy again. Release and delete what you kept deletes those snapshots with it.</p> : null}
+          {box.releaseHeldForKept ? <p>Its last release stopped before deleting anything: VesnALIA Box could not copy a snapshot you kept. Release again tries the copy again. Release and delete what you kept deletes those snapshots with it.</p> : null}
         </BoxDialog>
       ) : null}
     </>

@@ -10,8 +10,8 @@ export function defaultPoolErrorCode(status:number):string {
 /** Only local Pooler errors are rendered here; upstream success/passthrough is unchanged. */
 export function poolErrorResponse(provider:PoolProvider,status:number,message:string,init?:HeadersInit,request?:Request):Response {
  const headers=new Headers(init);
- const reason=headers.get('x-bb-pool-error')??defaultPoolErrorCode(status);
- headers.set('x-bb-pool-error',reason);
+ const reason=headers.get('x-alia-pool-error')??defaultPoolErrorCode(status);
+ headers.set('x-alia-pool-error',reason);
  const text=message.startsWith(reason+':')||message.startsWith('['+reason+']')?message:`[${reason}] ${message}`;
  if(provider==='cursor'){
   const code=status===401?'unauthenticated':status===403?'permission_denied':status===429?'resource_exhausted':status===499?'canceled':status>=500?'unavailable':'invalid_argument';
@@ -20,7 +20,7 @@ export function poolErrorResponse(provider:PoolProvider,status:number,message:st
   if(contentType==='application/connect+proto'||contentType==='application/connect+json'){
    const payload=new TextEncoder().encode(JSON.stringify({error}));
    const frame=new Uint8Array(5+payload.length);frame[0]=2;new DataView(frame.buffer).setUint32(1,payload.length);frame.set(payload,5);
-   headers.set('content-type',contentType);headers.set('x-bb-pool-http-status',String(status));
+   headers.set('content-type',contentType);headers.set('x-alia-pool-http-status',String(status));
    return new Response(frame,{status:200,headers});
   }
   return Response.json(error,{status,headers});

@@ -2,7 +2,7 @@
 import {
   loadPluginApp,
   mountPluginContentScripts,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {

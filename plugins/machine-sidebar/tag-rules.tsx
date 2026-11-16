@@ -2,7 +2,7 @@
 // the settings page saves (realtime signal), and shared through context.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { tagColorResolver, TAG_RULES_CHANGED, type TagRule } from "./tags";
 

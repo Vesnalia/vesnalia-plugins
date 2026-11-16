@@ -3,8 +3,8 @@
 // study thread's Live panel, in empty, loading, error, running and finished
 // states; realtime deltas applied locally; one transcript at a time; and
 // "Open beside the study thread" through the header badge.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { configure, fireEvent, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
@@ -71,8 +71,8 @@ describe("frontend: Live tab and Live panel", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 } })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0 } })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec() }, { threadId: "thr_study", projectId: "proj_1" });
   });
@@ -191,16 +191,16 @@ describe("frontend: Live tab and Live panel", () => {
     const p = await page("toy-size/live", { "study.live": async () => liveFixture() });
     const lane1 = await p.findByRole("button", { name: /Worker on idea #3/u });
     fireEvent.click(lane1);
-    await waitFor(() => expect(p.getAllByTestId("bb-thread-chat")).toHaveLength(1));
-    const chat = p.getByTestId("bb-thread-chat");
+    await waitFor(() => expect(p.getAllByTestId("alia-thread-chat")).toHaveLength(1));
+    const chat = p.getByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe("thr_w1");
     expect(chat.getAttribute("data-variant")).toBe("timeline");
     expect(lane1.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(p.getByRole("button", { name: /Worker on idea #4/u }));
-    await waitFor(() => expect(p.getByTestId("bb-thread-chat").getAttribute("data-thread-id")).toBe("thr_w2"));
-    expect(p.getAllByTestId("bb-thread-chat")).toHaveLength(1);
+    await waitFor(() => expect(p.getByTestId("alia-thread-chat").getAttribute("data-thread-id")).toBe("thr_w2"));
+    expect(p.getAllByTestId("alia-thread-chat")).toHaveLength(1);
     fireEvent.click(p.getByRole("button", { name: "Close the transcript" }));
-    await waitFor(() => expect(p.queryByTestId("bb-thread-chat")).toBeNull());
+    await waitFor(() => expect(p.queryByTestId("alia-thread-chat")).toBeNull());
   });
 
   it("loading, error and the calm not-running state that points to the Overview", async () => {
@@ -224,13 +224,13 @@ describe("frontend: Live tab and Live panel", () => {
     const fromStudy = await panel("thr_study");
     await fromStudy.findByRole("region", { name: "Workers" });
     expect(fromStudy.getByText("toy-size")).toBeTruthy();
-    expect(fromStudy.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(fromStudy.queryByTestId("alia-thread-chat")).toBeNull();
     // Compact layout: no "open beside" button inside the panel.
     expect(fromStudy.queryByRole("button", { name: /Open beside/u })).toBeNull();
     fromStudy.lifecycle.unmount();
     // From a worker thread: that worker's transcript is selected.
     const fromWorker = await panel("thr_w1");
-    await waitFor(() => expect(fromWorker.getByTestId("bb-thread-chat").getAttribute("data-thread-id")).toBe("thr_w1"));
+    await waitFor(() => expect(fromWorker.getByTestId("alia-thread-chat").getAttribute("data-thread-id")).toBe("thr_w1"));
     fromWorker.lifecycle.unmount();
     // Params name the study explicitly.
     const fromParams = await panel("thr_unrelated", { slug: "toy-size" });

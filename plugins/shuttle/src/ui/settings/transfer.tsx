@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { experimental_copyToClipboard, experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { BUTTON, BUTTON_GHOST, BUTTON_PRIMARY, ErrorNote, FIELD_CODE } from "../common";
 import { messageOf, useShuttleMutation, useShuttleQuery } from "../data";
 import { plural } from "../format";

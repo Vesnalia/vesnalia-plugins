@@ -1,4 +1,4 @@
-// bb-plugin-agent-board — status chip used on every card.
+// alia-plugin-agent-board — status chip used on every card.
 import { cn } from "@/lib/utils";
 import type { BoardCardStatus } from "@/contract/rpc";
 

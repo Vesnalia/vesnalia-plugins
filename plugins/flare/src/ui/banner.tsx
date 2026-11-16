@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Markdown, experimental_useAppPanel, experimental_useRpcMutation, experimental_useRpcQuery, useComposer } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_useAppPanel, experimental_useRpcMutation, experimental_useRpcQuery, useComposer } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { previewBody } from "../blocks";

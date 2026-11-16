@@ -1,5 +1,5 @@
 // The public Iris site: a front page, the real gallery and a live editor, running
-// the same views as the plugin with bb's SDK swapped for site/sdk-shim.tsx.
+// the same views as the plugin with VesnALIA's SDK swapped for site/sdk-shim.tsx.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { CATALOG, GROUPS } from "../core/catalog";
@@ -56,7 +56,7 @@ function useTheme(): [ThemeName, (t: ThemeName) => void] {
   });
   useEffect(() => {
     const t = THEMES[theme];
-    const el = document.getElementById("bb-app-theme");
+    const el = document.getElementById("alia-app-theme");
     if (el && el.textContent !== t.css) el.textContent = t.css;
     document.documentElement.classList.toggle("dark", t.dark);
     document.documentElement.style.colorScheme = t.dark ? "dark" : "light";

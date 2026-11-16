@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
-// RereviewBanner imports hooks (useRpc, useRealtime) from "@get-bb/plugin-sdk/app",
-// which bind to `globalThis.__bbPluginRuntime.pluginSdkApp` at module-evaluation
+// RereviewBanner imports hooks (useRpc, useRealtime) from "@vesnalia/plugin-sdk/app",
+// which bind to `globalThis.__aliaPluginRuntime.pluginSdkApp` at module-evaluation
 // time. A static `import { RereviewBanner } from "./RereviewBanner"` at the top of
 // this file would pull that module in (via the import graph) before
 // `installTestPluginRuntime()` ever runs, leaving the hooks permanently unbound.
@@ -9,7 +9,7 @@
 // inside each test (mirrors loadPluginApp's thunk pattern; see ThreadsPanel.test.tsx).
 import { test, expect, vi, afterEach } from "vitest";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { installTestPluginRuntime, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 installTestPluginRuntime();
 

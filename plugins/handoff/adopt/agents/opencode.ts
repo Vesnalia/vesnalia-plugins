@@ -107,7 +107,7 @@ function toSummary(dbPath: string, row: SessionRow): SessionSummary {
 export const opencodeAdapter: AgentAdapter = {
   id: "opencode",
   label: "OpenCode",
-  bbProviderId: "acp-opencode",
+  aliaProviderId: "acp-opencode",
 
   async list(cwd: string, home: string = os.homedir()): Promise<SessionSummary[]> {
     const dbPath = opencodeDbPath(home);

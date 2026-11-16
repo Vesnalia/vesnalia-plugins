@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import type { PluginSettingsSectionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginSettingsSectionProps } from "@vesnalia/plugin-sdk/app";
 import type { ServerStatus, SyncHistory, SyncStep } from "../../src/contract";
 import { clock } from "../../src/ui/format";
 import { app, callsTo, config, find, handlers, HOUR, inbox, lastNavigation, mount, next, NOW, overview, page, pr, server, unmountAll } from "./helpers";

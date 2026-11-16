@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import plugin, { bbSidebarRpcContract } from "./server";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import plugin, { aliaSidebarRpcContract } from "./server";
 
 type Handler = (input: unknown) => Promise<unknown>;
 
@@ -33,7 +33,7 @@ function startServer(
   const handlers = new Map<string, Handler>();
   const eventHandlers = new Map<string, (payload: unknown) => void>();
   const published: string[] = [];
-  const bb = {
+  const alia = {
     storage: {
       database: () =>
         Object.assign(db, {
@@ -109,12 +109,12 @@ function startServer(
       on: (event: string, fn: (payload: unknown) => void) =>
         eventHandlers.set(event, fn),
     },
-  } as unknown as BbPluginApi;
-  plugin(bb);
+  } as unknown as AliaPluginApi;
+  plugin(alia);
   return {
     call: (method: string, input: unknown = {}) => {
       const contract = (
-        bbSidebarRpcContract as unknown as Record<
+        aliaSidebarRpcContract as unknown as Record<
           string,
           { input: { parse(value: unknown): unknown } }
         >

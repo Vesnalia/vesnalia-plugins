@@ -10,7 +10,7 @@ import { changeWords, headroom, headroomWords, rangeWords, relativeWords, type G
 /**
  * A message for an agent thread: a short `summary` a human skimming the
  * thread understands at a glance, and the complete `detail` the agent needs.
- * The BB adapter sends `detail` as an agent-only input block (hidden from the
+ * The VesnALIA adapter sends `detail` as an agent-only input block (hidden from the
  * human's timeline, still in the agent's context); the agent sees both.
  */
 export interface AgentMessage {

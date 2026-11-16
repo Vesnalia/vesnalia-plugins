@@ -1,4 +1,4 @@
-// bb-plugin-automation-groups — backend entry.
+// alia-plugin-automation-groups — backend entry.
 //
 // Groups are a thin layer over the builtin automations plugin: this plugin
 // stores only group metadata and automation→group membership in its own
@@ -8,11 +8,11 @@
 // stays the source of truth.
 //
 // Three surfaces share one store: the Automation groups page (app.tsx), the
-// `bb automation-group` CLI command, and the skill in skills/automation-groups
+// `alia automation-group` CLI command, and the skill in skills/automation-groups
 // that tells agents how to use that command. Every write publishes a realtime
 // signal so open pages refetch.
 import { randomUUID } from "node:crypto";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -225,14 +225,14 @@ type AutomationsMethod =
   | "automations_resume"
   | "automations_run";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   // -------------------------------------------------------------------------
   // Storage
   // -------------------------------------------------------------------------
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS groups (
        id TEXT PRIMARY KEY,
        name TEXT NOT NULL,
@@ -316,7 +316,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   function publish(): void {
-    bb.realtime.publish(GROUPS_CHANGED, { at: Date.now() });
+    alia.realtime.publish(GROUPS_CHANGED, { at: Date.now() });
   }
 
   function createGroup(name: string, color?: GroupColor): Group {
@@ -395,7 +395,7 @@ export default async function plugin(bb: BbPluginApi) {
     method: AutomationsMethod,
     input: unknown,
   ): Promise<unknown> {
-    const url = `${bb.server.loopbackBaseUrl}/api/v1/plugins/automations/rpc/${method}`;
+    const url = `${alia.server.loopbackBaseUrl}/api/v1/plugins/automations/rpc/${method}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -447,7 +447,7 @@ export default async function plugin(bb: BbPluginApi) {
     await Promise.all(
       targetIds.map(async (threadId) => {
         try {
-          const thread = await bb.sdk.threads.get({ threadId });
+          const thread = await alia.sdk.threads.get({ threadId });
           hidden.set(threadId, thread.visibility === "hidden");
         } catch {
           hidden.set(threadId, false);
@@ -523,7 +523,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     // Reuse an existing target thread: just hide it.
     if (a.execution.targetThreadId !== undefined) {
-      await bb.sdk.threads.update({ threadId: a.execution.targetThreadId, visibility: "hidden" });
+      await alia.sdk.threads.update({ threadId: a.execution.targetThreadId, visibility: "hidden" });
       return a.execution.targetThreadId;
     }
     const spawnArgs = {
@@ -536,11 +536,11 @@ export default async function plugin(bb: BbPluginApi) {
       permissionMode: a.execution.permissionMode,
       reasoningLevel: a.execution.reasoningLevel,
       prompt:
-        `This hidden thread hosts background runs of the bb automation "${a.name}" (${a.id}). ` +
-        `Each due run arrives as a new message starting with "[bb automation due:${a.id}]" — handle each one independently. ` +
+        `This hidden thread hosts background runs of the VesnALIA automation "${a.name}" (${a.id}). ` +
+        `Each due run arrives as a new message starting with "[VesnALIA automation due:${a.id}]" — handle each one independently. ` +
         `Reply to this message with just "ready".`,
-    } as unknown as Parameters<typeof bb.sdk.threads.spawn>[0];
-    const thread = await bb.sdk.threads.spawn(spawnArgs);
+    } as unknown as Parameters<typeof alia.sdk.threads.spawn>[0];
+    const thread = await alia.sdk.threads.spawn(spawnArgs);
     await callAutomations("automations_update", {
       projectId: ref.projectId,
       automationId: ref.automationId,
@@ -632,7 +632,7 @@ export default async function plugin(bb: BbPluginApi) {
   // -------------------------------------------------------------------------
   // RPC
   // -------------------------------------------------------------------------
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     board_get: () => loadBoard(),
     groups_create: ({ name, color }) => createGroup(name, color),
     groups_update: ({ id, ...patch }) => {
@@ -675,20 +675,20 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // -------------------------------------------------------------------------
-  // CLI: bb automation-group …
+  // CLI: VesnALIA automation-group …
   // -------------------------------------------------------------------------
   const usage = [
     "Usage:",
-    "  bb automation-group list [--json]                 groups with their automations",
-    "  bb automation-group create <name> [--color <c>]   new group",
-    "  bb automation-group rename <group> <new name>",
-    "  bb automation-group color <group> <color>         " + GROUP_COLORS.join("|"),
-    "  bb automation-group delete <group>                members become ungrouped",
-    "  bb automation-group assign <automationId> <group>",
-    "  bb automation-group unassign <automationId>",
-    "  bb automation-group pause|resume|run <group>      apply to every member",
-    "  bb automation-group runs <automationId> [--limit n] [--json]   run history + health",
-    "  bb automation-group background <automationId> on|off   run in one hidden thread (no new sidebar threads)",
+    "  VesnALIA automation-group list [--json]                 groups with their automations",
+    "  VesnALIA automation-group create <name> [--color <c>]   new group",
+    "  VesnALIA automation-group rename <group> <new name>",
+    "  VesnALIA automation-group color <group> <color>         " + GROUP_COLORS.join("|"),
+    "  VesnALIA automation-group delete <group>                members become ungrouped",
+    "  VesnALIA automation-group assign <automationId> <group>",
+    "  VesnALIA automation-group unassign <automationId>",
+    "  VesnALIA automation-group pause|resume|run <group>      apply to every member",
+    "  VesnALIA automation-group runs <automationId> [--limit n] [--json]   run history + health",
+    "  VesnALIA automation-group background <automationId> on|off   run in one hidden thread (no new sidebar threads)",
     "",
     "<group> is a group id (grp_…) or its exact name.",
   ].join("\n");
@@ -722,22 +722,22 @@ export default async function plugin(bb: BbPluginApi) {
     return lines.join("\n");
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "automation-group",
     summary: "Group automations into named folders; pause, resume or run a whole group",
     commands: [
-      { name: "list", summary: "List groups and their automations", usage: "bb automation-group list [--json]" },
-      { name: "create", summary: "Create a group", usage: "bb automation-group create <name> [--color <color>]" },
-      { name: "rename", summary: "Rename a group", usage: "bb automation-group rename <group> <new name>" },
-      { name: "color", summary: "Set a group's color", usage: "bb automation-group color <group> <color>" },
-      { name: "delete", summary: "Delete a group (members become ungrouped)", usage: "bb automation-group delete <group>" },
-      { name: "assign", summary: "Put an automation into a group", usage: "bb automation-group assign <automationId> <group>" },
-      { name: "unassign", summary: "Remove an automation from its group", usage: "bb automation-group unassign <automationId>" },
-      { name: "pause", summary: "Pause every automation in a group", usage: "bb automation-group pause <group>" },
-      { name: "resume", summary: "Resume every automation in a group", usage: "bb automation-group resume <group>" },
-      { name: "run", summary: "Run every automation in a group now", usage: "bb automation-group run <group>" },
-      { name: "background", summary: "Run an agent automation in one hidden dedicated thread instead of spawning a new thread per run", usage: "bb automation-group background <automationId> on|off" },
-      { name: "runs", summary: "Run history and health (failure streak, error) for one automation", usage: "bb automation-group runs <automationId> [--limit <n>] [--json]" },
+      { name: "list", summary: "List groups and their automations", usage: "alia automation-group list [--json]" },
+      { name: "create", summary: "Create a group", usage: "alia automation-group create <name> [--color <color>]" },
+      { name: "rename", summary: "Rename a group", usage: "alia automation-group rename <group> <new name>" },
+      { name: "color", summary: "Set a group's color", usage: "alia automation-group color <group> <color>" },
+      { name: "delete", summary: "Delete a group (members become ungrouped)", usage: "alia automation-group delete <group>" },
+      { name: "assign", summary: "Put an automation into a group", usage: "alia automation-group assign <automationId> <group>" },
+      { name: "unassign", summary: "Remove an automation from its group", usage: "alia automation-group unassign <automationId>" },
+      { name: "pause", summary: "Pause every automation in a group", usage: "alia automation-group pause <group>" },
+      { name: "resume", summary: "Resume every automation in a group", usage: "alia automation-group resume <group>" },
+      { name: "run", summary: "Run every automation in a group now", usage: "alia automation-group run <group>" },
+      { name: "background", summary: "Run an agent automation in one hidden dedicated thread instead of spawning a new thread per run", usage: "alia automation-group background <automationId> on|off" },
+      { name: "runs", summary: "Run history and health (failure streak, error) for one automation", usage: "alia automation-group runs <automationId> [--limit <n>] [--json]" },
     ],
     async run(argv) {
       const json = argv.includes("--json");
@@ -753,7 +753,7 @@ export default async function plugin(bb: BbPluginApi) {
         return findGroup(ref);
       };
       const noGroup = (ref: string) =>
-        fail(`No group "${ref}". Run "bb automation-group list" to see groups.`);
+        fail(`No group "${ref}". Run "alia automation-group list" to see groups.`);
 
       try {
         switch (command) {
@@ -900,7 +900,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

@@ -2,12 +2,12 @@
 // network. An iris-app block is a full HTML page; an iris-react block is a
 // TSX module, compiled here by a pure string transform (sucrase, from an
 // on-demand chunk) and run in the frame with its own React and Iris's kit.
-// bb's theme colors are passed in, a small bridge lets the page write to the
+// VesnALIA's theme colors are passed in, a small bridge lets the page write to the
 // composer or answer a waiting picker, and localStorage is kept per card on
 // the plugin's server. Nothing the agent wrote ever runs in this document.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { RpcContract } from "../shared/rpc";
 import { CardRuntime, compile } from "../core/program";
@@ -34,7 +34,7 @@ const TOKENS = [
 // page can't reach that bar, cover it or click it.
 // Insert, copy and open a link are smaller, so a page may do them only right after the person
 // used the page itself. The browser gives no event for a click inside a frame, so the parent
-// infers it: the page has focus, the window holds a live user activation, and no input in bb's
+// infers it: the page has focus, the window holds a live user activation, and no input in VesnALIA's
 // own window could have given that activation (so it came from inside a frame). They are rate-limited.
 const activation = () => (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation;
 let lastHostGesture = -Infinity;
@@ -316,7 +316,7 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
           <div role="status" className="iris-error my-1 flex items-start gap-2 rounded-md bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground ring-1 ring-border">
             <Glyph name="monitor-off" size={13} className="mt-px shrink-0" />
             <span className="min-w-0 flex-1">
-              This {kind === "react" ? "app" : "page"} can't run in this bb client. {submit ? "Skip it to answer in chat, or open this thread in bb on a computer." : "Open this thread in bb on a computer to use it."}
+              This {kind === "react" ? "app" : "page"} can't run in this VesnALIA client. {submit ? "Skip it to answer in chat, or open this thread in VesnALIA on a computer." : "Open this thread in VesnALIA on a computer to use it."}
             </span>
           </div>
         ) : null}

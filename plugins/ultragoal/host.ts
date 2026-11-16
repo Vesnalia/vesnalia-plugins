@@ -1,4 +1,4 @@
-import { experimental_defineHostEntry } from "@get-bb/plugin-sdk";
+import { experimental_defineHostEntry } from "@vesnalia/plugin-sdk";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFile, realpath, rm, rename, stat, readdir, mkdir } from "node:fs/promises";

@@ -1,17 +1,17 @@
 // Opt-in layout check for the chat glass sheet across device sizes and themes.
 // Read-only: it opens an existing thread and never changes Aura Motion settings.
-// BB_THREAD_ID=thr_… BB_SCREENSHOT_DIR=… [BB_OTHER_THREAD_ID=thr_…] node test/responsive.browser.mjs
+// ALIA_THREAD_ID=thr_… ALIA_SCREENSHOT_DIR=… [ALIA_OTHER_THREAD_ID=thr_…] node test/responsive.browser.mjs
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-const base = process.env.BB_BASE_URL || 'http://127.0.0.1:38886';
-const thread = process.env.BB_THREAD_ID, other = process.env.BB_OTHER_THREAD_ID;
-const shots = process.env.BB_SCREENSHOT_DIR || process.env.BB_THREAD_STORAGE;
-if (!thread || !shots) throw new Error('Set BB_THREAD_ID and BB_SCREENSHOT_DIR.');
+const base = process.env.ALIA_BASE_URL || 'http://127.0.0.1:38886';
+const thread = process.env.ALIA_THREAD_ID, other = process.env.ALIA_OTHER_THREAD_ID;
+const shots = process.env.ALIA_SCREENSHOT_DIR || process.env.ALIA_THREAD_STORAGE;
+if (!thread || !shots) throw new Error('Set ALIA_THREAD_ID and ALIA_SCREENSHOT_DIR.');
 await mkdir(shots, { recursive: true });
 const SIZES = [['phone-se', 320, 568], ['phone', 390, 844], ['tablet', 768, 1024], ['tablet-landscape', 1024, 768], ['laptop', 1280, 800], ['desktop', 1440, 900], ['full-hd', 1920, 1080], ['qhd', 2560, 1440]];
 const INSET = 10, TOLERANCE = 1;
-const browser = await chromium.launch({ headless: true, ...(process.env.BB_CHROMIUM_PATH ? { executablePath: process.env.BB_CHROMIUM_PATH } : {}), args: ['--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({ headless: true, ...(process.env.ALIA_CHROMIUM_PATH ? { executablePath: process.env.ALIA_CHROMIUM_PATH } : {}), args: ['--enable-unsafe-swiftshader'] });
 
 async function measure(page) {
   return page.evaluate(() => {

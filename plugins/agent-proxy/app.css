@@ -1,5 +1,5 @@
 /* Host theme tokens cover everything this plugin renders inside its own panel.
-   The rules below are the one exception: they colour this plugin's row in bb's
+   The rules below are the one exception: they colour this plugin's row in alia's
    main sidebar by core state. `components/sidebar-nav-status.ts` is the only
    writer of `data-agent-proxy-state`, so nothing else in the app can match. */
 

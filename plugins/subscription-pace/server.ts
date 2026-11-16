@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from '@get-bb/plugin-sdk';
+import { defineRpcContract, type AliaPluginApi } from '@vesnalia/plugin-sdk';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -229,7 +229,7 @@ export function slotFieldSpecs(values: SlotValues) {
 /**
  * Open the host database read-only.
  *
- * `better-sqlite3` is already loaded in the server process — bb uses it for this
+ * `better-sqlite3` is already loaded in the server process — VesnALIA uses it for this
  * same file — so this adds no dependency. Read-only and short-lived: the caller
  * closes the connection before the store returns.
  */
@@ -279,7 +279,7 @@ function readOpencodeAuthKeys(home: string): string[] {
 }
 
 /**
- * Asks BB's own Codex provider for the plan's usage.
+ * Asks VesnALIA's own Codex provider for the plan's usage.
  *
  * The plugin does not talk to OpenAI itself. `provider-codex` already holds the
  * sign-in and already reads the plan's quota, so asking it is both the shortest
@@ -291,9 +291,9 @@ function readOpencodeAuthKeys(home: string): string[] {
  * or not signed in. The slot reports that as unavailable rather than as zero,
  * because a plan with an unknown balance is not a plan with an empty one.
  */
-async function codexUsage(bb: BbPluginApi): Promise<ProviderUsage | null> {
+async function codexUsage(alia: AliaPluginApi): Promise<ProviderUsage | null> {
   try {
-    const usage = await bb.sdk.system.usageLimits({ providerId: CODEX_PROVIDER });
+    const usage = await alia.sdk.system.usageLimits({ providerId: CODEX_PROVIDER });
     const entry = (usage as Record<string, ProviderUsage>)[CODEX_PROVIDER];
     return entry ?? null;
   } catch {
@@ -304,21 +304,21 @@ async function codexUsage(bb: BbPluginApi): Promise<ProviderUsage | null> {
 }
 
 /**
- * What BB knows about the Codex provider's setup, for explaining a blank slot.
+ * What VesnALIA knows about the Codex provider's setup, for explaining a blank slot.
  *
  * The quota call and the setup call fail in ways that look identical from the
  * slot — no percentage either way — but "install the CLI" and "your sign-in
  * expired" are different instructions. This is asked only when the quota did
  * not answer, so a working provider costs one request, not two.
  *
- * Both the install and the sign-in happen on BB's Providers page. This plugin
+ * Both the install and the sign-in happen on VesnALIA's Providers page. This plugin
  * deliberately does not shell out to `npm i -g @openai/codex` or drive a login:
- * BB owns provider setup, and a widget should not be managing global packages
+ * VesnALIA owns provider setup, and a widget should not be managing global packages
  * behind it.
  */
-async function codexProviderState(bb: BbPluginApi): Promise<ProviderState | null> {
+async function codexProviderState(alia: AliaPluginApi): Promise<ProviderState | null> {
   try {
-    const states = await bb.sdk.system.providerStates();
+    const states = await alia.sdk.system.providerStates();
     const found = (states as { providers?: ProviderStateEntry[] }).providers
       ?.find(provider => provider.providerId === CODEX_PROVIDER);
     if (!found) return null;
@@ -339,35 +339,35 @@ async function codexProviderState(bb: BbPluginApi): Promise<ProviderState | null
   }
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   // Only credentials stay declarative. The host keeps them in its own 0600
-  // secret files, never returns them to the app, and `bb plugin config` keeps
+  // secret files, never returns them to the app, and `alia plugin config` keeps
   // working for them. The slot fields need none of that, and the flat form the
   // host renders for every descriptor is what made the page unreadable.
-  const credentialsHandle = bb.settings.define({
+  const credentialsHandle = alia.settings.define({
     gatewayApiKey: {
       type: 'string',
       label: 'Vercel AI Gateway API key',
       secret: true,
-      description: 'The `vck_...` key bb already calls the AI Gateway with. Read only: the plugin asks for the credit balance and daily spend.',
+      description: 'The `vck_...` key VesnALIA already calls the AI Gateway with. Read only: the plugin asks for the credit balance and daily spend.',
     },
     opencodeApiKey: {
       type: 'string',
       label: 'OpenCode API key',
       secret: true,
-      description: 'The `oc_s_...` key bb already calls OpenCode with. Sent as a Bearer token to the usage endpoint.',
+      description: 'The `oc_s_...` key VesnALIA already calls OpenCode with. Sent as a Bearer token to the usage endpoint.',
     },
   });
   // Credentials are read through the descriptor handle; slot values come from
   // the plugin's own store so the settings page can lay them out per slot.
   const slots = createSlotStore({
-    kv: bb.storage.kv,
+    kv: alia.storage.kv,
     // An upgrade from the descriptor-based build leaves its choices in the
-    // host's table. `experimental_dataDir` exists for reading bb-managed files a
+    // host's table. `experimental_dataDir` exists for reading alia-managed files a
     // plugin is migrating away from, which is exactly this and nothing else.
     legacy: {
-      hostDbPath: bb.server.experimental_dataDir + '/bb.db',
-      pluginId: bb.pluginId,
+      hostDbPath: alia.server.experimental_dataDir + '/alia.db',
+      pluginId: alia.pluginId,
       open: openHostDatabase,
     },
   });
@@ -375,18 +375,18 @@ export default function plugin(bb: BbPluginApi) {
   // OpenCode publishes only a live percentage, so its trend has to be sampled.
   // The store lives in the plugin database rather than in memory because a
   // reload is routine and an in-memory series would restart from one point.
-  const samples = createSampleStore(bb.storage.database() as never);
+  const samples = createSampleStore(alia.storage.database() as never);
   // Stamped once per observation, so a hand-entered figure carries the day it
   // last changed instead of a second field the user has to keep in step.
-  const stamps = createStampStore(bb.storage.database() as never);
+  const stamps = createStampStore(alia.storage.database() as never);
   const collector = createCollector({ samples, stamps });
-  bb.onDispose(() => collector.dispose());
+  alia.onDispose(() => collector.dispose());
 
   async function snapshot(refresh: boolean) {
     const credentials = await credentialsHandle.get() as Record<string, unknown>;
     const asKey = (name: string) =>
       typeof credentials[name] === 'string' ? credentials[name] as string : '';
-    const codex = await codexUsage(bb);
+    const codex = await codexUsage(alia);
     return collector.measure(
       readSlots(await slots.read()),
       {
@@ -400,7 +400,7 @@ export default function plugin(bb: BbPluginApi) {
         // Asked only when the quota did not answer: a working provider needs no
         // explanation, and the setup call is a second round trip.
         codexState: codex === null || codex.status !== 'ok'
-          ? await codexProviderState(bb)
+          ? await codexProviderState(alia)
           : null,
       },
       refresh,
@@ -411,11 +411,11 @@ export default function plugin(bb: BbPluginApi) {
   // cron at a fixed hour can miss a day entirely if the machine is asleep, and
   // the missed day is the one that would have shown a spike. Hourly sampling
   // costs one request and the store keeps the first reading of each day.
-  bb.background.schedule('opencode-sample', '17 * * * *', async () => {
+  alia.background.schedule('opencode-sample', '17 * * * *', async () => {
     await snapshot(false);
   });
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     getSnapshot: async ({ refresh }) => snapshot(refresh),
     getSlotSettings: async () => {
       const values = await slots.read();

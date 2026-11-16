@@ -26,7 +26,7 @@ export const NOUNS = [
 
 /**
  * adjective-noun, with an optional short hexadecimal suffix added only when
- * the pair collides. At most 24 characters, so it is a valid BB machine name,
+ * the pair collides. At most 24 characters, so it is a valid VesnALIA machine name,
  * hostname label and guest name.
  */
 export const namePattern = /^[a-z]{3,8}-[a-z]{3,8}(?:-[a-f0-9]{2,4})?$/;

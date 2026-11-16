@@ -1,1 +1,1 @@
-export const motionPausedKey = "bb-box-motion-paused";
+export const motionPausedKey = "alia-box-motion-paused";

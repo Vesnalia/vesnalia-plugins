@@ -60,7 +60,7 @@ export interface BoxView {
   readonly state: BoxState;
   readonly error: string | null;
   readonly releaseHeldForKept?: boolean;
-  /** Why it last stopped without bb-box's request, and what bb-box did, in words (#406). */
+  /** Why it last stopped without alia-box's request, and what alia-box did, in words (#406). */
   readonly stopped: string | null;
   readonly waitingOn?: string | null;
   readonly createdAt: number;
@@ -87,14 +87,14 @@ export interface BoxView {
   /** Who controls the desktop's input, when the box has one. */
   readonly control: ControlView | null;
   readonly computerUse: boolean;
-  /** A person can open a terminal in it: it is ready and runs commands. Every command transport gives a shell on a PTY on BB's server. */
+  /** A person can open a terminal in it: it is ready and runs commands. Every command transport gives a shell on a PTY on VesnALIA's server. */
   readonly terminal: boolean;
   readonly address: string | null;
   readonly facts: readonly { readonly label: string; readonly value: string }[];
   readonly timings: Readonly<Record<string, number>>;
   readonly enrol: { readonly state: EnrolState; readonly hostId: string | null; readonly error: string | null };
   readonly joinTries?: JoinTriesView | null;
-  /** Its kind's boxes join BB as machines when enrolment is on; Windows kinds unless their backend's switch is off (#539). */
+  /** Its kind's boxes join VesnALIA as machines when enrolment is on; Windows kinds unless their backend's switch is off (#539). */
   readonly enrols: boolean;
   readonly canStopStart: boolean;
   /** What the box has, in parts, or else what it was asked to be; null when neither is known (061's Resize). Absent from older plugins. */
@@ -238,7 +238,7 @@ export interface KindView {
   readonly windowing: Windowing;
   /** The features every offer promises, such as "docker". */
   readonly features: readonly string[];
-  /** A box of it can become a BB machine, so a thread can run on it. */
+  /** A box of it can become a VesnALIA machine, so a thread can run on it. */
   readonly enrol: boolean;
   /** Its spare boxes (032). */
   readonly spares: SparesView;
@@ -504,10 +504,10 @@ const STATE_WORDS: Record<BoxState, string> = {
 /** Words for timings whose names alone do not say what they are. */
 const STEP_WORDS: Readonly<Record<string, string>> = {
   template: "waiting for the template",
-  enrol: "BB enrolment",
+  enrol: "VesnALIA enrolment",
   spare: "claiming a spare",
   spareResume: "resuming it",
-  spareReconnect: "BB machine reconnecting",
+  spareReconnect: "VesnALIA machine reconnecting",
   spareSwitch: "switching its device",
   relabel: "naming it for its owner",
   clock: "setting the clock",
@@ -528,7 +528,7 @@ export function boxLine(box: BoxRecord): string {
   const parts = [`${box.name}: ${box.kindLabel} (${box.kind}${holdsCard(recordedGpu(box)) ? `, GPU ${recordedGpu(box)}` : ""}${size ? `, ${size}` : ""}), ${STATE_WORDS[box.state]}`];
   if (box.state === "ready" && box.timings.total !== undefined) parts.push(`ready in ${seconds(box.timings.total)}`);
   if (box.role === "machine") parts.push("this thread's machine");
-  else if (box.enrol.state === "enrolled") parts.push(`enrolled as a BB machine${box.timings.enrol !== undefined ? ` in ${seconds(box.timings.enrol)}` : ""}`);
+  else if (box.enrol.state === "enrolled") parts.push(`enrolled as a VesnALIA machine${box.timings.enrol !== undefined ? ` in ${seconds(box.timings.enrol)}` : ""}`);
   const model = box.device?.model ?? box.askedDevice;
   if (model) parts.push(`device: ${model}`);
   if (box.error) parts.push(box.error);
@@ -539,21 +539,21 @@ export function boxLine(box: BoxRecord): string {
 export function placementText(kind: Pick<KindView, "placement">): string {
   if (!kind.placement) return "";
   if (kind.placement.kind === "macos") {
-    return ` Each box is a macOS VM of its own, with sudo, brew install and its own cores and ports, unless it asks for shared: true: then ${SHARED_MACOS_WORDS}. Servers on localhost are reachable from every box on the host: use your box's ports, from BB_PORT_BASE.`;
+    return ` Each box is a macOS VM of its own, with sudo, brew install and its own cores and ports, unless it asks for shared: true: then ${SHARED_MACOS_WORDS}. Servers on localhost are reachable from every box on the host: use your box's ports, from ALIA_PORT_BASE.`;
   }
   const why = kind.placement.why ?? "";
   const asking = kind.placement.sizeNeedsDedicated ? "dedicated: true asks for one, and a size needs it" : "dedicated: true asks for one";
   if (kind.placement.shared && kind.placement.sizeNeedsDedicated) {
     return (
       " Shared by default: a macOS user on a Mac or VM shared with other ios boxes, ready in seconds, with its own device, files and keychain, but no sudo, and cores and processes shared;" +
-      " where no shared iOS host has room, a VM of its own. Servers on localhost are reachable from every box on the host: use your box's ports, from BB_PORT_BASE." +
+      " where no shared iOS host has room, a VM of its own. Servers on localhost are reachable from every box on the host: use your box's ports, from ALIA_PORT_BASE." +
       " Ask for dedicated: true for a VM of its own, with sudo, brew install and its own cores, ports and desktop; a size needs it. Another device than the first, or slim: false, gets a VM of its own."
     );
   }
   if (kind.placement.shared) {
     return (
       ` Each box is a macOS VM of its own, with sudo, brew install and its own cores, ports and desktop, unless it asks for shared: true: then a macOS user on a Mac or VM shared with other ios boxes, ready in seconds,` +
-      " with its own device, files and keychain, but no sudo, and cores and processes shared. Servers on localhost are reachable from every box on the host: use your box's ports, from BB_PORT_BASE." +
+      " with its own device, files and keychain, but no sudo, and cores and processes shared. Servers on localhost are reachable from every box on the host: use your box's ports, from ALIA_PORT_BASE." +
       ` ${asking.charAt(0).toUpperCase()}${asking.slice(1)}.`
     );
   }
@@ -698,7 +698,7 @@ function installNoticeOf(box: BoxRecord): UserspaceNotice | null {
       return { words: `It has ${readingWords(state.reading)}, and no GPU.`, action: "resize-again" };
     case "unfinished":
       return state.update.state === "unknown"
-        ? { words: `${updateLeftWords(box.name, state.update)} Its GPU was not added. bb box doctor reads it, and says whether that install is still running.`, action: null }
+        ? { words: `${updateLeftWords(box.name, state.update)} Its GPU was not added. VesnALIA box doctor reads it, and says whether that install is still running.`, action: null }
         : { words: `${updateLeftWords(box.name, state.update)} Its GPU was not added.`, action: "resize-again" };
     default:
       return null;
@@ -718,7 +718,7 @@ export function userspaceNoticeOf(box: BoxRecord): UserspaceNotice | null {
       return { words: `It has ${readingWords(state.reading)}, so nvidia-smi and CUDA may fail in it.`, action: "update-again" };
     case "unfinished":
       return state.update.state === "unknown"
-        ? { words: `${updateLeftWords(box.name, state.update)} bb box doctor reads it, and says whether that update is still running and when to update it again.`, action: null }
+        ? { words: `${updateLeftWords(box.name, state.update)} VesnALIA box doctor reads it, and says whether that update is still running and when to update it again.`, action: null }
         : { words: updateLeftWords(box.name, state.update), action: "update-again" };
     case "updating":
       return { words: `${PRODUCT} is updating NVIDIA's userspace in it to ${state.update.to}, at its ${state.update.step} step.`, action: null };
@@ -734,7 +734,7 @@ export function userspaceFixLine(box: BoxRecord): string | null {
   if (!notice) return null;
   if (!notice.action) return `NVIDIA userspace: ${notice.words}`;
   const owner = box.threadId === OPERATOR ? " --machine" : ` --thread ${box.threadId}`;
-  const command = notice.action === "resize-again" ? `bb box resize ${box.name} --gpu ${gpuPartToRetry(box.resize)} --restart${owner}` : `bb box gpu update ${box.name}${owner}`;
+  const command = notice.action === "resize-again" ? `alia box resize ${box.name} --gpu ${gpuPartToRetry(box.resize)} --restart${owner}` : `alia box gpu update ${box.name}${owner}`;
   const asked = notice.action === "resize-again" ? "Resize it again" : notice.action === "update-again" ? "Update it again" : "Update it";
   return `NVIDIA userspace: ${notice.words} ${asked}${box.state === "stopped" ? ` once it runs` : ""}: ${command}`;
 }
@@ -791,13 +791,13 @@ export function boxDetail(box: BoxRecord, control?: ControlView): string {
     off:
       capabilities.enrol && neverReady(box)
         ? box.state === "acquiring" || box.state === "starting"
-          ? `not yet: it joins BB once it is ready, if ${PRODUCT} enrols boxes`
+          ? `not yet: it joins VesnALIA once it is ready, if ${PRODUCT} enrols boxes`
           : "not enrolled"
         : box.restoredAt && capabilities.enrol
         ? `not enrolled since ${PRODUCT} restored its lost record. It enrols again once it runs and answers, if ${PRODUCT} enrols boxes`
         : capabilities.enrol
-          ? // A box made before its kind's boxes joined BB, as a Windows box made before #539, is not enrolled in place.
-            `not enrolled: it was made while boxes of its kind did not join BB, and stays so until it is released. A new one joins BB when ${PRODUCT} enrols boxes`
+          ? // A box made before its kind's boxes joined VesnALIA, as a Windows box made before #539, is not enrolled in place.
+            `not enrolled: it was made while boxes of its kind did not join VesnALIA, and stays so until it is released. A new one joins VesnALIA when ${PRODUCT} enrols boxes`
           : "not enrolled",
     enrolling: box.joinTries
       ? `${joiningWords(box.joinTries, Date.now())}. Until it joins, box_run runs commands without the thread's access`
@@ -805,7 +805,7 @@ export function boxDetail(box: BoxRecord, control?: ControlView): string {
     enrolled: "enrolled",
     failed: `enrolment failed${box.enrol.error ? `: ${box.enrol.error}` : ""}`,
   };
-  lines.push(`BB machine: ${enrol[box.enrol.state]}`);
+  lines.push(`VesnALIA machine: ${enrol[box.enrol.state]}`);
   const words = (timings: [string, number][]) => timings.map(([step, ms]) => `${STEP_WORDS[step] ?? step} ${seconds(ms)}`).join(", ");
   const timings = Object.entries(box.timings);
   const acquire = timings.filter(([step]) => !step.startsWith(START));
@@ -824,7 +824,7 @@ export function boxDetail(box: BoxRecord, control?: ControlView): string {
 /** "Next:" hints end every tool result, so an agent always knows what it can do. */
 /**
  * Why a box that an acquire stopped waiting for is not ready yet. A restart
- * ends the wait, and the next bb-box goes on acquiring the box (#533).
+ * ends the wait, and the next alia-box goes on acquiring the box (#533).
  */
 export function startingWords(box: BoxRecord, restarted: boolean): string {
   if (restarted) return `${PRODUCT} restarted, as for an update, before box ${box.name} was ready. It goes on starting once ${PRODUCT} is back, usually within seconds.`;
@@ -840,7 +840,7 @@ export function next(...hints: string[]): string {
   return hints.length ? `\n\nNext: ${hints.join(" ")}` : "";
 }
 
-/** An image's line in bb box images list: its build and age, why it is due, and its last rebuild. */
+/** An image's line in VesnALIA box images list: its build and age, why it is due, and its last rebuild. */
 export function imageLine(view: ImageView): string {
   const record = view.build.record;
   const age = record ? Math.floor((Date.now() - Date.parse(record.built)) / 86_400_000) : null;
@@ -862,8 +862,8 @@ export function ownImageLines(of: OwnImagesOf, now = Date.now()): string[] {
 }
 
 /**
- * A project's image, for a choice of image (049): New box, BB's new-thread
- * inputs, and box_list. A box can also choose "standard", bb-box's own
+ * A project's image, for a choice of image (049): New box, VesnALIA's new-thread
+ * inputs, and box_list. A box can also choose "standard", alia-box's own
  * image, which is in no list.
  */
 export interface ImageOptionView {
@@ -907,12 +907,12 @@ export function draftText(draft: Draft): string {
     draft.used.length ? `Drafted from ${draft.used.join(", ")}.` : "No file it reads was given, so the draft is a template to fill in.",
     ...(draft.gaps.length ? ["", "Left to you, also commented at the top of the script:", ...draft.gaps.map((gap) => `- ${gap}`)] : []),
     "",
-    "`.bb/box-setup.sh`:",
+    "`.vesnalia/box-setup.sh`:",
     "```bash",
     draft.script.trimEnd(),
     "```",
     "",
-    "`.bb/box-check.sh`:",
+    "`.vesnalia/box-check.sh`:",
     "```bash",
     draft.check.trimEnd(),
     "```",
@@ -968,7 +968,7 @@ export function doctorText(view: DoctorView): string {
     }
     for (const note of report.notes) lines.push(`  Note: ${note}`);
   }
-  if (!view.sections.length) lines.push(`No backend is on. bb box setup docker sets up Docker on the machine that runs BB; or add one with bb box backend add <type>, or in ${PRODUCT}'s settings.`);
+  if (!view.sections.length) lines.push(`No backend is on. VesnALIA box setup docker sets up Docker on the machine that runs VesnALIA; or add one with VesnALIA box backend add <type>, or in ${PRODUCT}'s settings.`);
   return lines.join("\n");
 }
 
@@ -993,11 +993,11 @@ function changeWords(change: SizeChange | undefined): string | null {
   return parts.length ? parts.join(", ") : null;
 }
 
-/** The configuration in words, for bb box config show. Secrets show only as set or not. */
+/** The configuration in words, for VesnALIA box config show. Secrets show only as set or not. */
 export function configText(state: ConfigState): string {
   const { document } = state;
   const lines = [`${PRODUCT}'s configuration, revision ${state.revision}.`, ""];
-  if (!document.backends.length) lines.push(`Backends: none. Add one on ${PRODUCT}'s settings page, or with bb box config apply.`);
+  if (!document.backends.length) lines.push(`Backends: none. Add one on ${PRODUCT}'s settings page, or with VesnALIA box config apply.`);
   else lines.push("Backends, in the order they are tried:");
   for (const backend of document.backends) {
     const status = state.backends.find((candidate) => candidate.id === backend.id);
@@ -1033,27 +1033,27 @@ export function configText(state: ConfigState): string {
   lines.push("");
   const general = { ...state.defaults.general, ...document.general };
   lines.push(
-    `Boxes per thread: ${general.boxesPerThread || "no limit"}. Enrol boxes as BB machines: ${general.enrol ? "yes" : "no"}. Default kind: ${general.defaultKind}. Linux desktops as video: ${general.video ? "yes" : "no"}.`,
+    `Boxes per thread: ${general.boxesPerThread || "no limit"}. Enrol boxes as VesnALIA machines: ${general.enrol ? "yes" : "no"}. Default kind: ${general.defaultKind}. Linux desktops as video: ${general.video ? "yes" : "no"}.`,
   );
   if (state.problems.length) lines.push("", "Problems:", problemsText(state.problems));
   if (state.migrated) {
     lines.push(
       "",
-      `${PRODUCT} keeps a copy of the BB settings it moved into this configuration on ${new Date(state.migrated.at).toISOString()}. bb box config migrated shows it, and --remove removes it.`,
+      `${PRODUCT} keeps a copy of the VesnALIA settings it moved into this configuration on ${new Date(state.migrated.at).toISOString()}. VesnALIA box config migrated shows it, and --remove removes it.`,
     );
   }
   return lines.join("\n");
 }
 
-/** The copy of BB's settings the move kept, for bb box config migrated. */
+/** The copy of VesnALIA's settings the move kept, for VesnALIA box config migrated. */
 export function movedText(copy: MovedCopy): string {
   const lines = [
-    `${PRODUCT} ${copy.version} moved these BB settings into its configuration on ${new Date(copy.at).toISOString()}. Secrets show only whether they were set.`,
+    `${PRODUCT} ${copy.version} moved these VesnALIA settings into its configuration on ${new Date(copy.at).toISOString()}. Secrets show only whether they were set.`,
     "",
     ...Object.entries(copy.values).map(([key, value]) => `${key}: ${fieldValue(value)}`),
   ];
   if (copy.notes.length) lines.push("", "Not carried over as they were:", ...copy.notes.map((note) => `- ${note}`));
-  lines.push("", "bb box config migrated --json prints the values in full. --remove removes the copy.");
+  lines.push("", "alia box config migrated --json prints the values in full. --remove removes the copy.");
   return lines.join("\n");
 }
 
@@ -1124,7 +1124,7 @@ function installsWords(driver: string, desktop: boolean): string {
 function installedWords(box: BoxRecord, installed: UserspaceInstalled, desktop: boolean, audience: "person" | "agent"): string {
   const over = installed.from === "none" ? "where it had none" : `over ${installed.from}`;
   if (installed.problem) {
-    const fix = audience === "agent" ? "Ask the user to update it again." : `Update it again: bb box gpu update ${box.name}${box.threadId === OPERATOR ? " --machine" : ` --thread ${box.threadId}`}`;
+    const fix = audience === "agent" ? "Ask the user to update it again." : `Update it again: VesnALIA box gpu update ${box.name}${box.threadId === OPERATOR ? " --machine" : ` --thread ${box.threadId}`}`;
     return `${PRODUCT} installed NVIDIA's userspace ${installed.driver} in it, ${over}, before the restart, but its check after the restart failed: ${installed.problem.replace(/\.$/, "")}. ${fix}`;
   }
   const fact = box.guest?.facts?.find((candidate) => candidate.label === "GPU")?.value ?? "its card";
@@ -1139,7 +1139,7 @@ function becomesWords(becomes: KindChange, gpu: GpuPart, done: boolean): string 
 }
 
 /**
- * What a kind's boxes can resize, for box_list and bb box kinds (061): one
+ * What a kind's boxes can resize, for box_list and VesnALIA box kinds (061): one
  * sentence when every offer agrees, otherwise each offer that resizes, and
  * once that the others cannot; empty when none can.
  */
@@ -1170,13 +1170,13 @@ export interface JoinAgainWords {
 
 export function joinAgainWords(answer: { readonly is: "joined" | "joining" | "trying"; readonly box: BoxRecord }, followWith: string): JoinAgainWords {
   const { box } = answer;
-  const untouched = `${PRODUCT} ran BB's installer in it as its user, and did not restart, stop or resize it.`;
-  if (answer.is === "joined") return { text: `Box ${box.name} is a BB machine already, as machine ${box.enrol.hostId}. Nothing changed.`, failed: false };
-  if (answer.is === "joining") return { text: `Box ${box.name} is joining BB now, so nothing else was started. Follow it with ${followWith}.`, failed: false };
-  if (box.enrol.state === "enrolled") return { text: `Box ${box.name} joined BB as machine ${box.enrol.hostId}. ${untouched}`, failed: false };
-  if (box.enrol.state === "failed") return { text: `Box ${box.name} did not join BB: ${box.enrol.error ?? "BB gave no reason."}`, failed: true };
+  const untouched = `${PRODUCT} ran VesnALIA's installer in it as its user, and did not restart, stop or resize it.`;
+  if (answer.is === "joined") return { text: `Box ${box.name} is a VesnALIA machine already, as machine ${box.enrol.hostId}. Nothing changed.`, failed: false };
+  if (answer.is === "joining") return { text: `Box ${box.name} is joining VesnALIA now, so nothing else was started. Follow it with ${followWith}.`, failed: false };
+  if (box.enrol.state === "enrolled") return { text: `Box ${box.name} joined VesnALIA as machine ${box.enrol.hostId}. ${untouched}`, failed: false };
+  if (box.enrol.state === "failed") return { text: `Box ${box.name} did not join VesnALIA: ${box.enrol.error ?? "VesnALIA gave no reason."}`, failed: true };
   if (box.joinTries?.next && box.joinTries.failed > 0 && box.joinTries.next > Date.now()) {
-    return { text: `Box ${box.name} did not join BB at this try. It is ${joiningWords(box.joinTries, Date.now()).replace(/\.?$/, ".")}`, failed: true };
+    return { text: `Box ${box.name} did not join VesnALIA at this try. It is ${joiningWords(box.joinTries, Date.now()).replace(/\.?$/, ".")}`, failed: true };
   }
-  return { text: `Box ${box.name} is still joining BB. Follow it with ${followWith}.`, failed: false };
+  return { text: `Box ${box.name} is still joining VesnALIA. Follow it with ${followWith}.`, failed: false };
 }

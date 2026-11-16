@@ -5,8 +5,8 @@ export interface ThreadLinkTarget {
 }
 
 /**
- * Builds an absolute link without accessing BB's private route helpers. For
- * the current chat it preserves the actual route, including BB's projectless
+ * Builds an absolute link without accessing VesnALIA's private route helpers. For
+ * the current chat it preserves the actual route, including VesnALIA's projectless
  * personal-project URL.
  */
 export function threadLinkUrl(

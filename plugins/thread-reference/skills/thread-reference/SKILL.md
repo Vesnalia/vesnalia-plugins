@@ -1,17 +1,17 @@
 ---
 name: thread-reference
-description: Use BB Thread Reference when a BB chat needs context from another thread. Drag a sidebar thread into the target composer, or type @ and choose a thread from the Threads mention provider.
+description: Use VesnALIA Thread Reference when a VesnALIA chat needs context from another thread. Drag a sidebar thread into the target composer, or type @ and choose a thread from the Threads mention provider.
 ---
 
 # Thread references
 
-BB Thread Reference turns a sidebar thread into a composer mention. The
+VesnALIA Thread Reference turns a sidebar thread into a composer mention. The
 mention is resolved when the message is sent, so the agent receives current
 context from the referenced thread rather than a stale copy from drag time.
 
 ## Use it
 
-- Drag the six-dot grip handle on a BB sidebar thread directly into any chat
+- Drag the six-dot grip handle on a VesnALIA sidebar thread directly into any chat
   input.
 - You can also type `@` in the composer and choose a result from **Threads**.
 - Send the message normally. The referenced thread is supplied as hidden,

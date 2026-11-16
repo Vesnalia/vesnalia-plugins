@@ -1,17 +1,17 @@
 import { expect, test, vi } from "vitest";
 import { chromium } from "playwright";
 import { mkdir } from "node:fs/promises";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { createStore } from "../src/store";
 import plugin from "../server";
 import { runGh } from "../src/gh";
 
 vi.mock("../src/gh", async (original) => ({ ...await original<typeof import("../src/gh")>(), runGh: vi.fn() }));
 
-// The running BB supplies the real app shell and built plugin. Its plugin RPCs
+// The running VesnALIA supplies the real app shell and built plugin. Its plugin RPCs
 // are routed through the official test host, with real SQLite and mocked GitHub
 // and agent boundaries. No test review, comment or agent is sent to production.
-test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reload → merge → archive, with in-plugin chat", async () => {
+test.skipIf(!process.env.ALIA_E2E_URL)("fullscreen verdict → submitted → reload → merge → archive, with in-plugin chat", async () => {
   let prState = "OPEN";
   let approved = false;
   vi.mocked(runGh).mockImplementation(async (args) => {
@@ -23,13 +23,13 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
   });
   let workerCount = 0;
   const archivedWorkers = new Set<string>();
-  const { bb, harness } = createFakePluginHost({ pluginId: "guided-review", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "guided-review", sdk: { threads: {
     get: async ({ threadId }) => ({ archivedAt: archivedWorkers.has(threadId) ? Date.now() : null, deletedAt: null }),
     spawn: async () => ({ id: `e2e-hidden-agent-${++workerCount}` }), wait: async () => {}, output: async () => workerCount === 1 ? "The guard validates the incoming value before saving it." : "The archived conversation continues in a fresh worker.",
     stop: async () => ({}), update: async () => ({}), archive: async ({ threadId }) => { archivedWorkers.add(threadId); return {}; },
   } } });
-  await plugin(bb);
-  const store = createStore(bb);
+  await plugin(alia);
+  const store = createStore(alia);
   const key = "e2e-review";
   store.saveReview({ targetKey: key, kind: "pr", number: 7, repo: "acme/web", title: "Validate incoming review data", author: "alice", status: "ready", createdAt: Date.now(), headSha: "sha1", projectId: "test-project" });
   store.saveGuide(key, { title: "Validate incoming review data", intent: "Reject invalid values before they reach storage.", sections: [{ id: "validation", title: "Input validation", overview: "The entry point checks the value before saving it.", diffs: [{ file: "src/input.ts", description: "Reject blank values" }] }], unplacedFiles: [] } as any);
@@ -54,11 +54,11 @@ test.skipIf(!process.env.BB_E2E_URL)("fullscreen verdict → submitted → reloa
       await route.fulfill({ json: { ok: true, result } });
     } catch (error) { await route.fulfill({ status: 500, json: { ok: false, error: { message: String(error) } } }); }
   });
-  const base = process.env.BB_E2E_URL!;
+  const base = process.env.ALIA_E2E_URL!;
   try {
     await page.goto(`${base}/plugins/guided-review/review/settings/${key}`);
     // Collapse the unrelated Office overlay through its normal, browser-local control.
-    // Otherwise it can cover the plugin's editors in the shared BB test shell.
+    // Otherwise it can cover the plugin's editors in the shared VesnALIA test shell.
     const collapseOffice = page.getByRole("button", { name: "Collapse office to current worker", exact: true });
     await collapseOffice.waitFor({ timeout: 5000 }).then(() => collapseOffice.click()).catch(() => {});
     await page.getByRole("textbox", { name: "Guide instructions", exact: true }).fill("Explain compatibility and migrations.");

@@ -3,9 +3,9 @@ import {
   experimental_useSidebarNavigation,
   type ExperimentalSidebarNavigationProps,
   type ExperimentalSidebarNavigationState,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
-// BB provides this model only inside the sidebar. Keep the host's actions
+// VesnALIA provides this model only inside the sidebar. Keep the host's actions
 // alive there; pages subscribe without trying to recreate navigation behavior.
 let navigation: ExperimentalSidebarNavigationState | null = null;
 const listeners = new Set<() => void>();

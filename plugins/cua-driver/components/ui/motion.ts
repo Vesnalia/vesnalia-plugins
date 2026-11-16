@@ -29,7 +29,7 @@ export const LIST_HOVER_TRANSITION = "transition-none";
  * emit it — the scanner reads comments too — so the ones these replace are
  * described rather than spelled out.)
  *
- * Each curve ships in three forms, because BB consumes easings three ways:
+ * Each curve ships in three forms, because VesnALIA consumes easings three ways:
  *
  * - `EASE_X` — the raw control-point tuple, for animation runtimes that take
  *   four numbers.
@@ -45,7 +45,7 @@ export const LIST_HOVER_TRANSITION = "transition-none";
  * constant into their own class strings freely.
  */
 
-/** Expo-flavored ease-out: fast initial move, long gentle settle. BB's default
+/** Expo-flavored ease-out: fast initial move, long gentle settle. VesnALIA's default
  * curve for expand/collapse, opacity and transform transitions. */
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 export const EASE_OUT_CSS = "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -73,7 +73,7 @@ export const EASE_BOUNCE_CSS = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 export const EASE_BOUNCE_CLASS = "ease-[cubic-bezier(0.34,1.56,0.64,1)]";
 
 /** Center-unfold curve from beUI's center-morph modal. Kept separate because
- * its symmetrical expansion needs a firmer finish than BB's general ease-out. */
+ * its symmetrical expansion needs a firmer finish than VesnALIA's general ease-out. */
 export const EASE_CENTER_MORPH = [0.2, 0, 0.2, 1] as const;
 export const EASE_CENTER_MORPH_CSS = "cubic-bezier(0.2, 0, 0.2, 1)";
 export const EASE_CENTER_MORPH_CLASS = "ease-[cubic-bezier(0.2,0,0.2,1)]";
@@ -91,7 +91,7 @@ export const DURATION_SHARED_LAYOUT_MS = 180;
 export const DURATION_SHARED_LAYOUT_S = DURATION_SHARED_LAYOUT_MS / 1000;
 
 /**
- * Overlay motion — the enter/exit treatment shared by BB's overlay skeletons
+ * Overlay motion — the enter/exit treatment shared by VesnALIA's overlay skeletons
  * (`responsive-overlay.tsx` and the `dialog`/`popover`/`dropdown-menu` surfaces
  * built on it). CSS only: the drawer drives a `transition` it also reuses to
  * settle a released drag, the desktop surfaces ride tw-animate-css's enter and
@@ -160,11 +160,11 @@ export const OVERLAY_BACKDROP_MOTION_CLASS = [
 ].join(" ");
 
 /**
- * Desktop modal surface adapted from beUI's center-morph modal. BB keeps
+ * Desktop modal surface adapted from beUI's center-morph modal. VesnALIA keeps
  * Radix as the focus, dismissal, portal, and controlled-state authority; this
  * shared class only supplies a theme-aware 30px-equivalent shell.
  *
- * With BB's default 8px control radius, `var(--radius) + 22px` resolves to the
+ * With VesnALIA's default 8px control radius, `var(--radius) + 22px` resolves to the
  * reference's 30px. Custom palettes can still re-anchor the base radius.
  */
 export const OVERLAY_DIALOG_SURFACE_CLASS =
@@ -176,7 +176,7 @@ export const OVERLAY_BACKDROP_SURFACE_CLASS =
 
 /**
  * Centered dialog panel: unfold from the exact center, then fold back toward
- * it. The source component clips a full-size panel; BB expresses the same
+ * it. The source component clips a full-size panel; VesnALIA expresses the same
  * spatial metaphor through tw-animate's existing center-origin scale so Radix
  * can continue owning mount and exit presence without a second controller.
  */

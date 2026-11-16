@@ -66,7 +66,7 @@ const PANE_CYCLES = Number(process.env.PROBE_PANE_CYCLES ?? "5");
 // commits and dropped frames are counted over the whole open+tail span so two
 // runs at different speeds are compared over the same amount of work.
 const SETTLE_MS = Number(process.env.PROBE_SETTLE_MS ?? "500");
-// PROBE_PANEL_WIDTH pins the plugin panel's own width, the way a squeezed bb
+// PROBE_PANEL_WIDTH pins the plugin panel's own width, the way a squeezed VesnALIA
 // panel narrows on a wide window. It is how the panel-scoped sheet (the pane's
 // `absolute inset-0` path below PANE_SHEET_MAX_PANEL_WIDTH) gets priced: on a
 // desktop viewport the compact media query never fires, so without this switch
@@ -411,7 +411,7 @@ async function openBoard(query) {
       const inject = () => {
         const tag = document.createElement("style");
         tag.id = "probe-panel-width";
-        tag.textContent = `[data-bb-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; }`;
+        tag.textContent = `[data-alia-plugin="focus-board"] { width: ${width}px !important; min-width: ${width}px !important; max-width: ${width}px !important; }`;
         document.head.append(tag);
       };
       if (document.head === null) {

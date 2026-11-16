@@ -9,7 +9,7 @@ const REASONS = new Set(['startup', 'quit', 'reload', 'new', 'resume', 'fork']);
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const recordObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const safeLabel = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,119}$/.test(value) ? value : 'unknown';
-// BB bridge file names: `pi_<uuid>` at start, `thr_<BB thread id>` after an edit/rewind fork.
+// VesnALIA bridge file names: `pi_<uuid>` at start, `thr_<VesnALIA thread id>` after an edit/rewind fork.
 export const providerSessionName = name => typeof name === 'string' && ((name.startsWith('pi_') && UUID.test(name.slice(3))) || /^thr_[a-zA-Z0-9_-]{1,100}$/.test(name)) ? name : null;
 const hash = (domain, value) => createHash('sha256').update(domain + '\0' + value).digest('hex');
 

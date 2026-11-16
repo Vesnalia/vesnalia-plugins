@@ -18,8 +18,8 @@ function mockHelper() {
   return fetch;
 }
 
-describe("BB project app launcher", () => {
-  it("discovers directory apps and opens the exact local checkout through BB's helper", async () => {
+describe("VesnALIA project app launcher", () => {
+  it("discovers directory apps and opens the exact local checkout through VesnALIA's helper", async () => {
     const fetch = mockHelper();
     const apps = await discoverProjectApps(source, [1234], "https://bb.test", new AbortController().signal);
     expect(apps.targets.map((app) => app.id)).toEqual(["finder", "code"]);
@@ -46,7 +46,7 @@ describe("BB project app launcher", () => {
   it("reports an unavailable desktop helper", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
     await expect(discoverProjectApps(source, [1234], "https://bb.test", new AbortController().signal))
-      .rejects.toThrow("Open the BB desktop app");
+      .rejects.toThrow("Open the VesnALIA desktop app");
   });
 
   it("surfaces native launch failures", async () => {

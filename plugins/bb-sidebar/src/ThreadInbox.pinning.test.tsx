@@ -56,7 +56,7 @@ describe("ThreadInbox", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "to-pin", title: "Pin this thread" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({
@@ -103,7 +103,7 @@ describe("ThreadInbox", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "to-pin", title: "Still settled" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -131,7 +131,7 @@ describe("ThreadInbox", () => {
 
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not pin thread", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "pin update failed",
       }),
     );
@@ -149,7 +149,7 @@ describe("ThreadInbox", () => {
           thread({ id: "manual", title: "Pinned manual", isPinned: true }),
           thread({ id: "snoozed", title: "Pinned snooze", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         evaluateAutoSettle: () => ({ changedThreadIds: [] }),

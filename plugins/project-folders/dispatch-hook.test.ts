@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { makeMessageDispatchHookContext } from "@get-bb/plugin-sdk/testing";
+import { makeMessageDispatchHookContext } from "@vesnalia/plugin-sdk/testing";
 import { handleMessageDispatch, hasRelocateMarker, type DispatchHookDeps } from "./dispatch-hook";
 import { RELOCATE_MARKER } from "./thread-move";
 

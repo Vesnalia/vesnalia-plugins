@@ -1,13 +1,13 @@
 /*
- * Pokecut — a BB theme after the Pokecut admin dashboard
+ * Pokecut — a ALIA theme after the Pokecut admin dashboard
  * (https://pokecut.rakibulism.space): a flat gray shell, the content area as
  * one raised rounded panel with a hairline and a soft drop, white cards,
  * pill-shaped raised selection and a pink-violet gradient on the primary
  * action. Only the visual language is reproduced; no site assets are bundled.
  *
- * Palette values live in the two top-level blocks so BB tooling and Theme
- * Preview can read them. Shape rules below are scoped by BB's own stable
- * markup (data-sidebar, data-promptbox, bb-sidebar-selected-row) and only use
+ * Palette values live in the two top-level blocks so ALIA tooling and Theme
+ * Preview can read them. Shape rules below are scoped by ALIA's own stable
+ * markup (data-sidebar, data-promptbox, alia-sidebar-selected-row) and only use
  * the tokens declared here, so light and dark follow automatically.
  */
 
@@ -181,8 +181,8 @@ body {
 }
 
 @media (min-width: 768px) {
-  /* BB puts data-side on the outer group, not on the panel (phone drawers do).
-     Keep BB's own top (below the macOS chrome row). Stretch to the window
+  /* ALIA puts data-side on the outer group, not on the panel (phone drawers do).
+     Keep ALIA's own top (below the macOS chrome row). Stretch to the window
      bottom so the surface can share the inset's edges, then extend one
      radius under it as real width (same --pk-panel, no shadow copy). */
   [data-side="left"] > [data-sidebar="panel"] {
@@ -267,7 +267,7 @@ body {
     container-type: normal;
   }
 
-  /* BB 0.47 sizes the body beside the rail as a right-aligned block of the
+  /* ALIA 0.47 sizes the body beside the rail as a right-aligned block of the
      sidebar width minus the rail. The theme's 12px gutter left of the rail
      makes the column narrower than that, so the block ran 12px under the
      rail and the cards' 11px inset below was eaten: project cards and the
@@ -278,7 +278,7 @@ body {
     width: auto !important;
   }
 
-  /* Icon rail is wider than BB's reserved column; apply the 19px once, on
+  /* Icon rail is wider than ALIA's reserved column; apply the 19px once, on
      the outermost wrappers (not again on header/content/footer inside the body). */
   [data-variant="sidebar"][data-side="left"] [data-sidebar="sidebar"]:has([data-testid="app-nav-rail"])
     :is(
@@ -315,7 +315,7 @@ body {
     max-width: none;
   }
 
-  /* BB's px-2 on the chrome row must not stack on the rail inset; keep
+  /* ALIA's px-2 on the chrome row must not stack on the rail inset; keep
      New thread on the same x as the body cards and end 8px before the inset.
      Reserve Проект's width + 8 so it never covers New thread. */
   [data-variant="sidebar"][data-side="left"] [data-sidebar="sidebar"]:has([data-testid="app-nav-rail"])
@@ -339,7 +339,7 @@ body {
     padding-bottom: 10px;
   }
 
-  /* BB centres the 12px resize handle on the sidebar edge; the theme's panel
+  /* ALIA centres the 12px resize handle on the sidebar edge; the theme's panel
      (z-index 1) covers its right half, leaving 6px that on Windows sits on
      the list's scrollbar, so the edge could hardly be grabbed. Keep the whole
      handle on the sidebar side. */
@@ -352,13 +352,13 @@ body {
     [data-testid="plugin-nav-sidebar-items"],
   [data-variant="sidebar"][data-side="left"]
     [data-testid="app-sidebar-top-reserve-row"]
-    [data-sidebar-navigation-item="__bb__/new-thread"] {
+    [data-sidebar-navigation-item="__alia__/new-thread"] {
     margin-left: auto;
   }
 
   [data-variant="sidebar"][data-side="left"]
     [data-testid="plugin-nav-sidebar-items"]
-    [data-sidebar-navigation-item="__bb__/new-thread"] > button,
+    [data-sidebar-navigation-item="__alia__/new-thread"] > button,
   [data-variant="sidebar"][data-side="left"]
     [data-testid="app-sidebar-top-reserve-row"]
     button[aria-label^="New thread"],
@@ -369,7 +369,7 @@ body {
     flex: none;
     min-width: max-content;
     margin-left: auto;
-    /* BB ships pr-0 for a full-width row; at content width the hover pill
+    /* ALIA ships pr-0 for a full-width row; at content width the hover pill
        would end on the last letter. */
     padding-right: 10px;
     anchor-name: --pk-new-thread;
@@ -504,23 +504,23 @@ body {
 
   /* Collapsed icon rail: show the full rail, 12px gutter to the inset,
      and clip the footer card that slides off-screen. */
-  /* Sized to the rail itself (control + 2 × rail padding): at BB's icon width
+  /* Sized to the rail itself (control + 2 × rail padding): at ALIA's icon width
      a strip of the list's lighter surface showed between rail and panel. */
   [data-collapsible="rail"][data-side="left"] > [data-sidebar="panel"] {
     overflow: hidden;
-    width: calc(var(--pk-gap) + var(--bb-sidebar-control-size) + 2 * var(--bb-sidebar-rail-padding));
-    min-width: calc(var(--pk-gap) + var(--bb-sidebar-control-size) + 2 * var(--bb-sidebar-rail-padding));
+    width: calc(var(--pk-gap) + var(--alia-sidebar-control-size) + 2 * var(--alia-sidebar-rail-padding));
+    min-width: calc(var(--pk-gap) + var(--alia-sidebar-control-size) + 2 * var(--alia-sidebar-rail-padding));
   }
 
-  /* Narrower icon rail in the browser: BB pads its 24px controls by 12px a
+  /* Narrower icon rail in the browser: ALIA pads its 24px controls by 12px a
      side (48px), on top of the theme's 12px gutter. 6px a side gives a 36px
      rail; the sidebar toggle derives from the same padding, so the column
-     stays aligned. The macOS app keeps BB's frame metrics (title-bar math). */
+     stays aligned. The macOS app keeps ALIA's frame metrics (title-bar math). */
   :root:not(:has([data-framed]:not([data-framed="false"]))) {
-    --bb-sidebar-rail-padding: 6px;
+    --alia-sidebar-rail-padding: 6px;
   }
 
-  /* Sidebar navigation in the rail (browser): BB pins the sidebar toggle over
+  /* Sidebar navigation in the rail (browser): ALIA pins the sidebar toggle over
      a rail that starts at the window edge; the theme moves the rail in by the
      gutter, so move the toggle with it to keep one icon column. */
   :root:has([data-testid="app-nav-rail"]) [data-testid="app-sidebar-trigger-overlay"] {
@@ -536,13 +536,13 @@ body {
     border-radius: var(--pk-radius-panel);
   }
 
-  /* Flow start is BB's gap column (x 53); rail ends at padding-left + rail
+  /* Flow start is ALIA's gap column (x 53); rail ends at padding-left + rail
      width (x 64). Add the leftover plus --pk-gap so inset is rail + 12. */
   [data-collapsible="rail"] ~ [data-sidebar="inset"] {
     margin-left: calc(var(--pk-gap) + var(--pk-gap) - 1px);
   }
 
-  /* macOS app (data-framed): BB draws its own window frame — a recessed
+  /* macOS app (data-framed): ALIA draws its own window frame — a recessed
      wrapper with a 12px lip right and bottom, and the sidebar body as a gray
      rounded card with seams. The theme already supplies the gutters and the
      surfaces, so the frame would double the bottom/right gap, end the inset
@@ -556,7 +556,7 @@ body {
     background-image: none;
   }
 
-  /* BB 0.47 framed the footer as its own card too (sidebar-footer-body): its
+  /* ALIA 0.47 framed the footer as its own card too (sidebar-footer-body): its
      gray fill and border ran 6px past the panel edge and left a light strip. */
   [data-framed]:not([data-framed="false"]) :is(
     [data-testid="nav-rail-sidebar-body"],
@@ -571,23 +571,23 @@ body {
 
 /* ── Page header (desktop): Pokecut's header strip, a card inside the panel ─ */
 @media (min-width: 768px) {
-  /* BB pads the header strip with px-4; the card's own 8px margin is the
+  /* ALIA pads the header strip with px-4; the card's own 8px margin is the
      gutter, so drop it (otherwise the card sits 24px in from the panel). */
   [data-sidebar="inset"] :has(> [data-testid="app-page-header-content-row"]) {
     padding-inline: 0;
     border-bottom-color: transparent;
   }
 
-  /* BB 0.47 macOS app: the page header moved into the window title bar and BB
+  /* ALIA 0.47 macOS app: the page header moved into the window title bar and ALIA
      lifts the inset by the title-bar height, drawing its content card with
      ::before below the band. The theme keeps its own look instead: the panel
      (that ::before) reaches up to the window top and the header stays the
      Pokecut card inside it, level with the traffic lights. No clip-path on the
      inset: rounding it clipped the panel's antialiased border at the corners.
-     The 1px ::after seam is BB's own frame detail and doubles the panel edge. */
+     The 1px ::after seam is ALIA's own frame detail and doubles the panel edge. */
   [data-framed]:not([data-framed="false"]) [data-sidebar="inset"] {
-    margin-top: calc(-1 * var(--bb-window-title-bar-height, 0px));
-    height: calc(100% + var(--bb-window-title-bar-height, 0px) - var(--pk-gap));
+    margin-top: calc(-1 * var(--alia-window-title-bar-height, 0px));
+    height: calc(100% + var(--alia-window-title-bar-height, 0px) - var(--pk-gap));
     border-color: transparent;
     border-radius: 0;
     background-color: transparent;
@@ -616,15 +616,15 @@ body {
 
   [data-framed]:not([data-framed="false"]) [data-sidebar="inset"] [data-testid="app-page-header-content-row"] {
     box-sizing: border-box;
-    height: calc(var(--bb-window-title-bar-height, 46px) - 6px);
+    height: calc(var(--alia-window-title-bar-height, 46px) - 6px);
     margin: 10px var(--pk-gap-card) 0;
     padding-inline: var(--pk-gap-card);
   }
 
-  /* Sidebar collapsed: BB pads the row past the traffic lights and the sidebar
+  /* Sidebar collapsed: ALIA pads the row past the traffic lights and the sidebar
      toggle, which now sit over the panel's top-left; start the card there. */
-  [data-framed]:not([data-framed="false"]) [data-sidebar="inset"] [data-testid="app-page-header-content-row"][class*="--bb-window-title-bar-controls-end"] {
-    margin-left: calc(var(--bb-window-title-bar-controls-end) + 12px - var(--bb-window-card-collapsed-left, 0px));
+  [data-framed]:not([data-framed="false"]) [data-sidebar="inset"] [data-testid="app-page-header-content-row"][class*="--alia-window-title-bar-controls-end"] {
+    margin-left: calc(var(--alia-window-title-bar-controls-end) + 12px - var(--alia-window-card-collapsed-left, 0px));
   }
 
   /* The header and a full-width strip above it are window-drag regions; keep
@@ -638,7 +638,7 @@ body {
   /* The last toggle carries a negative right margin to reach the window edge;
      against the theme's panel inset it overshoots the panel. */
 
-  [data-sidebar="inset"] [data-testid="app-page-header-content-row"] [class*="-mr-[calc(var(--bb-panel-chrome-padding)"] {
+  [data-sidebar="inset"] [data-testid="app-page-header-content-row"] [class*="-mr-[calc(var(--alia-panel-chrome-padding)"] {
     margin-right: 0;
   }
 
@@ -688,8 +688,8 @@ section[data-root-compose-mobile-recents] li:active {
   /* Same top offset and height as the page header card (inset top + 8). */
   #thread-detail-secondary-panel > aside > div > div:first-child {
     box-sizing: border-box;
-    height: calc(var(--bb-app-chrome-row-height, 48px) - var(--pk-gap-card));
-    min-height: calc(var(--bb-app-chrome-row-height, 48px) - var(--pk-gap-card));
+    height: calc(var(--alia-app-chrome-row-height, 48px) - var(--pk-gap-card));
+    min-height: calc(var(--alia-app-chrome-row-height, 48px) - var(--pk-gap-card));
     margin: var(--pk-gap-card) 0 0;
   }
 
@@ -705,8 +705,8 @@ section[data-root-compose-mobile-recents] li:active {
 
 /* ── Sidebar: the open thread is a raised pill ─────────────────────────────── */
 /* .pf-thread.pf-active is the open row when the project-folders plugin
-   replaces BB's thread list. */
-[data-sidebar="sidebar"] .bb-sidebar-selected-row,
+   replaces ALIA's thread list. */
+[data-sidebar="sidebar"] .alia-sidebar-selected-row,
 [data-sidebar="sidebar"] .pf-thread.pf-active {
   background-color: var(--pk-panel);
   box-shadow:
@@ -734,7 +734,7 @@ section[data-root-compose-mobile-recents] li:active {
   }
 }
 
-[data-testid="plugin-nav-sidebar-items"] [data-sidebar-navigation-item="__bb__/new-thread"] > button {
+[data-testid="plugin-nav-sidebar-items"] [data-sidebar-navigation-item="__alia__/new-thread"] > button {
   background-color: var(--pk-panel);
   box-shadow:
     inset 0 0 0 1px var(--pk-outline),
@@ -807,11 +807,11 @@ section[data-root-compose-mobile-recents] li:active {
   }
 }
 
-/* Usage tracker: BB clips the footer row's body ([clip-path:inset(0_-6px_0_0)]
+/* Usage tracker: ALIA clips the footer row's body ([clip-path:inset(0_-6px_0_0)]
    for the rail slide), which cut the usage card that opens above the footer
    down to the footer's height, so it never showed. Lift the clip while it is
    open; give the strip room from its neighbours and the card's round edge.
-   BB 0.47 dropped the row wrapper: the footer body itself carries the testid,
+   ALIA 0.47 dropped the row wrapper: the footer body itself carries the testid,
    and the framed-card rule above sets its clip, so this one must outrank it. */
 [data-testid="sidebar-footer-row"] > [data-sidebar="collapsible-body"]:has(.usage-tracker-sidebar__details),
 :root [data-sidebar="sidebar"] [data-testid="sidebar-footer-body"]:has(.usage-tracker-sidebar__details) {
@@ -1158,7 +1158,7 @@ section[data-root-compose-mobile-recents] li:active {
 
 /* ── Composer context row (project · machine · access) ────────────────────
    One chip recipe for every context control, in new and follow-up threads:
-   project (BB's control, the project-folders slot and section chip), machine
+   project (ALIA's control, the project-folders slot and section chip), machine
    and access mode. Icon-only controls (new thread here, context ring) stay
    plain. The machine name is short and never truncates first; the project
    chip absorbs the squeeze. */
@@ -1175,7 +1175,7 @@ section[data-root-compose-mobile-recents] li:active {
   button[data-promptbox-project-control]:not(.pf-native-project-slot ~ *),
   button[data-promptbox-shrinkable-control],
   button[aria-haspopup="menu"]:has([data-promptbox-compact-label]),
-  [data-bb-plugin="environment-project-checkout"] button[role="combobox"]
+  [data-alia-plugin="environment-project-checkout"] button[role="combobox"]
 ),
 [data-follow-up-composer-footer] span.inline-flex.h-6 {
   display: inline-flex;

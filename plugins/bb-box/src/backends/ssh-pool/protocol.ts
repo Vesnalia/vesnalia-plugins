@@ -1,12 +1,12 @@
-// How bb-box talks to its helper on a pool machine, setup/ssh-pool/machine.sh,
+// How alia-box talks to its helper on a pool machine, setup/ssh-pool/machine.sh,
 // or machine-mac.sh on a Mac (047). The admin user runs it through sudo.
 // Input and output are name=value lines, and the exit code says what happened.
 
 import type { BoxGrants, BoxIdentity, GrantAnswer, GrantBlock, GrantPermission, GrantRequest } from "../types.ts";
 
 /** Where setup.sh installs the helper, run as root through sudo. */
-export const HELPER_COMMAND = "sudo -n /usr/local/libexec/bb-box/machine";
-/** The helper version this bb-box speaks. A machine with an older one needs setup.sh again. */
+export const HELPER_COMMAND = "sudo -n /usr/local/libexec/alia-box/machine";
+/** The helper version this alia-box speaks. A machine with an older one needs setup.sh again. */
 export const HELPER_VERSION = 1;
 export const SLOTS_HELPER_VERSION = 2;
 
@@ -22,9 +22,9 @@ export const EXIT = {
   dirty: 5,
   /** The machine's reset generation moved on. */
   moved: 6,
-  /** A Mac's grant: System Integrity Protection is on, or TCC's database is one bb-box does not know, so it grants nothing (058, 095). */
+  /** A Mac's grant: System Integrity Protection is on, or TCC's database is one alia-box does not know, so it grants nothing (058, 095). */
   protected: 7,
-  /** A Mac's grant: the program is not one bb-box grants permissions to (058). */
+  /** A Mac's grant: the program is not one alia-box grants permissions to (058). */
   refused: 8,
   /** The whole-machine reset is still running: ask again. */
   restoring: 10,
@@ -175,7 +175,7 @@ export interface MacStatus {
   readonly openHomes: readonly string[] | null;
   /** System Integrity Protection is on; false when the owner turned it off (058); null when the helper did not say. */
   readonly sip: boolean | null;
-  /** setup-mac.sh built bb-box-stream, which streams the desktop as video (060). */
+  /** setup-mac.sh built alia-box-stream, which streams the desktop as video (060). */
   readonly stream: boolean;
 }
 
@@ -195,7 +195,7 @@ export interface CuaGrants {
   readonly input: boolean | null;
 }
 
-/** What BB's installer and a box's GitHub access need, beyond the helper's tools. */
+/** What VesnALIA's installer and a box's GitHub access need, beyond the helper's tools. */
 export interface Enrolment {
   /** Node.js's version, such as 24.21.0, or null when the machine has no node. */
   readonly node: string | null;

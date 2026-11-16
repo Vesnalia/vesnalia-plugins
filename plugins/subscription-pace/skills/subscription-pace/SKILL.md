@@ -62,7 +62,7 @@ the figure was changed. Present the distinction rather than calling all of it "u
 
 The slot fields live in the plugin's own store, not the host settings schema, and are edited on
 the plugin's settings page as one collapsible card per slot. Only `gatewayApiKey` and
-`opencodeApiKey` are declarative, so those are the only two keys `bb plugin config` knows.
+`opencodeApiKey` are declarative, so those are the only two keys `alia plugin config` knows.
 
 A plan with no readable usage (Claude, Cursor…) needs exactly one more field:
 `slotManualSpend`, the dollars spent so far this period. Do not ask for a date — the plugin dates
@@ -70,7 +70,7 @@ the figure to the day its stored value last changed. A figure the user has not t
 earlier period is still drawn, marked as unchanged since that period began, so tell them to
 update it when the amount differs rather than expecting the row to go blank.
 
-Neither key needs to be created for this plugin: use the ones bb already calls these services
+Neither key needs to be created for this plugin: use the ones VesnALIA already calls these services
 with. Never ask for or print a key value. A Vercel **gateway** key cannot read the team billing
 period (it is a different credential class from an account token), which is why the Token Pass
 renewal day is configured rather than discovered.
@@ -97,20 +97,20 @@ renewal day is configured rather than discovered.
   must never displace a working one.
 - Auth split: `/usage` accepts only `Authorization: Bearer`, never `X-Api-Key`, and wants a
   browser `User-Agent`. `/models` accepts either.
-- **Codex**: read through BB, not through OpenAI. `bb.sdk.system.usageLimits({ providerId:
+- **Codex**: read through VesnALIA, not through OpenAI. `alia.sdk.system.usageLimits({ providerId:
   'codex' })` returns the plan's own quota, which `provider-codex` fetches from
   `chatgpt.com/backend-api/wham/usage` — the endpoint the Codex client itself uses. The response
   is `used_percent` per window plus each window's `reset_at`, so the percentage is
   plan-authoritative and no allowance has to be guessed.
-  **Setup is required**: `bb plugin enable provider-codex` and a Codex sign-in, both done on BB's
+  **Setup is required**: `alia plugin enable provider-codex` and a Codex sign-in, both done on VesnALIA's
   **Settings → Providers** page. Without them `usageLimits` returns no entry for the id and the
   slot reads `Unavailable` — never 0%, because an unknown balance is not an empty one.
-  To say *which* step is missing the plugin also reads `bb.sdk.system.providerStates()`, asked only
+  To say *which* step is missing the plugin also reads `alia.sdk.system.providerStates()`, asked only
   when the quota did not answer, and puts the answer in `SlotSnapshot.hint`: CLI not installed,
   signed out, sign-in expired, CLI too old, or an error message from the provider. Every branch
   names Settings → Providers. The plugin never installs the CLI or drives a login — the SDK exposes
   neither (`providerStates` is read-only, and the sign-in flag is literally
-  `internal_DO_NOT_USE_guidedSignIn`), and BB owns provider setup.
+  `internal_DO_NOT_USE_guidedSignIn`), and VesnALIA owns provider setup.
   Note that `providerStates()` omits a provider that has not registered at all, so an absent entry
   means the setup is incomplete without saying which part; that case names both.
   The response carries **no spend and no history**: windows only, so the chart is a single marker.

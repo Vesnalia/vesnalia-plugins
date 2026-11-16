@@ -1,7 +1,7 @@
 // One JSON request in, one JSON answer out: the entry point for agents outside
-// bb (e.g. an OpenClaw bot that drives the bb CLI from another machine):
-//   echo '{"action":"list"}' | bb meetings api --request-stdin --json
-// The bb CLI's stdin option reads one line, so multi-line text (a summary)
+// VesnALIA (e.g. an OpenClaw bot that drives the VesnALIA CLI from another machine):
+//   echo '{"action":"list"}' | VesnALIA meetings api --request-stdin --json
+// The VesnALIA CLI's stdin option reads one line, so multi-line text (a summary)
 // travels JSON-escaped. Agent-visible output never contains meeting passcodes.
 import { z } from "zod";
 import { maskMeetingUrl } from "../shared/meeting-url.js";
@@ -39,7 +39,7 @@ export const agentRequestSchema = z.discriminatedUnion("action", [
       url: z.string().trim().min(1).max(4096),
       title: z.string().trim().max(200).optional(),
       botName: z.string().trim().max(64).optional(),
-      /** HH:MM (bb server local time) or ISO 8601 with offset; omit to join now. */
+      /** HH:MM (VesnALIA server local time) or ISO 8601 with offset; omit to join now. */
       startAt: z.string().trim().max(64).optional(),
       maxDurationMinutes: z.number().int().min(5).max(1440).optional(),
       waitSeconds: z.number().int().min(0).max(120).default(DEFAULT_JOIN_WAIT_SEC),

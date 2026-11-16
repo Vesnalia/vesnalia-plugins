@@ -30,13 +30,13 @@ export const WORKSPACE_MAX_FILES = 100_000;
 export const WORKSPACE_MAX_BYTES = 2 * 1024 * 1024 * 1024;
 
 /**
- * bb's per-chat copies in the workspace (`.bb/chats/<threadId>/`). bb stays
+ * VesnALIA's per-chat copies in the workspace (`.vesnalia/chats/<threadId>/`). VesnALIA stays
  * the canonical chat store, so Rewind never captures, diffs, or restores
- * them. The rest of `.bb/` can be user content and is captured as usual.
+ * them. The rest of `.vesnalia/` can be user content and is captured as usual.
  */
-export const BB_CHAT_DIR = ".bb/chats";
+export const ALIA_CHAT_DIR = ".vesnalia/chats";
 /**
- * Looking up where bb keeps a thread's own storage (to leave it alone when it
+ * Looking up where VesnALIA keeps a thread's own storage (to leave it alone when it
  * is inside the workspace) runs while the gate holds a message: keep it brief.
  */
 export const STORAGE_LOOKUP_MS = 250;

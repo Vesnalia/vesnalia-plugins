@@ -1,4 +1,4 @@
-// Per-turn skill suggestion on stock BB, without a provider hook.
+// Per-turn skill suggestion on stock VesnALIA, without a provider hook.
 //
 // The `message.dispatch` hook cannot amend a message, so the flow is:
 // 1. the hook answers `wait` for a user's new turn (instantly: the pass runs

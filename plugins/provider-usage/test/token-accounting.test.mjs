@@ -34,7 +34,7 @@ const {
 const { estimateTokens, scanCursorStores } = await import(
   "../lib/cursor-scan.ts"
 );
-const { bucketFromTotals } = await import("../lib/bb-usage-scan.ts");
+const { bucketFromTotals } = await import("../lib/alia-usage-scan.ts");
 const { assembleTokenSnapshot, dayKey } = await import("../lib/tokens.ts");
 
 test("Codex total includes cache without adding reasoning twice", () => {
@@ -111,7 +111,7 @@ test("opencode trusts its canonical total when breakdown fields disagree", () =>
   });
 });
 
-test("opencode live source reads completed usage for one BB session", async () => {
+test("opencode live source reads completed usage for one VesnALIA session", async () => {
   const root = await mkdtemp(join(tmpdir(), "provider-usage-opencode-"));
   const path = join(root, "opencode.db");
   const Database = (await import("better-sqlite3")).default;
@@ -126,7 +126,7 @@ test("opencode live source reads completed usage for one BB session", async () =
     const insert = db.prepare("insert into message values (?, ?, ?, ?, ?)");
     insert.run(
       "msg_pending",
-      "ses_bb",
+      "ses_alia",
       1_000,
       2_000,
       JSON.stringify({
@@ -141,7 +141,7 @@ test("opencode live source reads completed usage for one BB session", async () =
     );
     insert.run(
       "msg_done",
-      "ses_bb",
+      "ses_alia",
       3_000,
       4_000,
       JSON.stringify({
@@ -163,12 +163,12 @@ test("opencode live source reads completed usage for one BB session", async () =
   try {
     const source = createOpencodeLiveThroughputSource({ paths: [path] });
     const samples = await source.scan({
-      sessionIds: ["ses_bb"],
+      sessionIds: ["ses_alia"],
       sinceMs: 0,
     });
     assert.equal(samples.length, 1);
     assert.equal(samples[0].id, "msg_done");
-    assert.equal(samples[0].sessionId, "ses_bb");
+    assert.equal(samples[0].sessionId, "ses_alia");
     assert.equal(samples[0].atMs, 4_500);
     assert.equal(samples[0].bucket.tokens, 900);
   } finally {
@@ -176,7 +176,7 @@ test("opencode live source reads completed usage for one BB session", async () =
   }
 });
 
-test("BB usage events difference the canonical running total", () => {
+test("VesnALIA usage events difference the canonical running total", () => {
   const bucket = bucketFromTotals(
     {
       totalTokens: 2_000,

@@ -52,7 +52,7 @@ describe("isoInZone", () => {
   });
 });
 
-describe("healthReport (bb claude-switcher health --json, version 1)", () => {
+describe("healthReport (VesnALIA claude-switcher health --json, version 1)", () => {
   it("gives an Ultra account without the 5-hour window as the SPEC's example (canary 1)", () => {
     const report = healthReport({
       measured: NOW,

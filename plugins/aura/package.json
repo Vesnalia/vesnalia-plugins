@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-aura",
+  "name": "alia-plugin-aura",
   "version": "0.2.8",
-  "description": "Personal backgrounds and an optional authenticated GitHub activity overview for BB.",
+  "description": "Personal backgrounds and an optional authenticated GitHub activity overview for VesnALIA.",
   "license": "MIT",
   "type": "module",
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.21"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.21"
   },
-  "bb": {
+  "alia": {
     "name": "Aura",
     "description": "Personal backgrounds, Capy dithering, six saved slots, and an optional activity overview.",
     "branding": {
@@ -32,7 +32,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "env -u BB_CLI bb plugin build .",
+    "build": "env -u ALIA_CLI alia plugin build .",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "check": "npm run typecheck && npm test && npm run build"
@@ -41,7 +41,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.21",
     "@playwright/test": "^1.51.0",
     "@testing-library/react": "^16.3.3",
     "@types/better-sqlite3": "^7.6.12",
@@ -55,10 +54,21 @@
     "typescript": "^5.7.0"
   },
   "author": "Mateo Cerquetella",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.21"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/aura#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MateoCerquetella/bb-plugins.git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
     "directory": "plugins/aura"
   },
-  "homepage": "https://github.com/MateoCerquetella/bb-plugins/tree/main/plugins/aura"
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

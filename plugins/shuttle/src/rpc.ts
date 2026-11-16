@@ -1,4 +1,4 @@
-import { experimental_PluginRpcRefusal, type BbPluginApi, type PluginRpcHandlers } from "@get-bb/plugin-sdk";
+import { experimental_PluginRpcRefusal, type AliaPluginApi, type PluginRpcHandlers } from "@vesnalia/plugin-sdk";
 import { sleep } from "./adapters/exec";
 import { ConfigError } from "./config";
 import { mutationTags, rpcContract } from "./contract";
@@ -17,13 +17,13 @@ async function refusing<T>(fn: () => T | Promise<T>): Promise<T> {
   }
 }
 
-function withInvalidations(bb: BbPluginApi, handlers: PluginRpcHandlers<typeof rpcContract>): PluginRpcHandlers<typeof rpcContract> {
+function withInvalidations(alia: AliaPluginApi, handlers: PluginRpcHandlers<typeof rpcContract>): PluginRpcHandlers<typeof rpcContract> {
   const tags = mutationTags as Record<string, (input: { apply?: boolean }) => readonly string[]>;
   const mapped = Object.fromEntries(Object.entries(handlers).map(([method, handler]) => [
     method, async (input: unknown, context: unknown) => {
       const result = await (handler as (input: unknown, context: unknown) => unknown)(input, context);
       const invalidate = tags[method];
-      if (invalidate) bb.rpc.experimental_invalidate(invalidate(input as { apply?: boolean }));
+      if (invalidate) alia.rpc.experimental_invalidate(invalidate(input as { apply?: boolean }));
       return result;
     },
   ]));
@@ -32,8 +32,8 @@ function withInvalidations(bb: BbPluginApi, handlers: PluginRpcHandlers<typeof r
 
 const WATCHED_FRESH_MS = 60_000;
 
-export function registerRpc(bb: BbPluginApi, shuttle: Shuttle): void {
-  bb.rpc.register(rpcContract, withInvalidations(bb, {
+export function registerRpc(alia: AliaPluginApi, shuttle: Shuttle): void {
+  alia.rpc.register(rpcContract, withInvalidations(alia, {
     overview: () => refusing(() => shuttle.overview()),
     inbox: () => refusing(() => shuttle.inbox()),
     list: ({ area }) => refusing(() => ({ prs: shuttle.list(area) })),
@@ -58,7 +58,7 @@ export function registerRpc(bb: BbPluginApi, shuttle: Shuttle): void {
     // A sync can take a minute on a slow server; the page follows it through overview.syncing.
     sync: ({ server }) => refusing(() => {
       if (server !== undefined && !shuttle.server(server)) throw new ShuttleError(`no server called ${server}`);
-      shuttle.sync(undefined, server === undefined ? undefined : [server]).catch((error: unknown) => bb.log.warn(`sync: ${error instanceof Error ? error.message : String(error)}`));
+      shuttle.sync(undefined, server === undefined ? undefined : [server]).catch((error: unknown) => alia.log.warn(`sync: ${error instanceof Error ? error.message : String(error)}`));
       return { ok: true as const };
     }),
     syncHistory: () => refusing(() => shuttle.syncHistory()),
@@ -149,7 +149,7 @@ export function registerRpc(bb: BbPluginApi, shuttle: Shuttle): void {
       await sleep(WATCHED_FRESH_MS, signal);
     }
   };
-  bb.rpc.experimental_whileWatched("detail", keepFresh((input) => [(input as { key: string }).key]));
-  bb.rpc.experimental_whileWatched("threadPrs", keepFresh((input) => shuttle.threadPrs((input as { threadId: string }).threadId).prs.map((pr) => pr.key)));
-  bb.rpc.experimental_whileWatched("board", keepFresh((input) => shuttle.board((input as { id: string }).id).prs.map((pr) => pr.key)));
+  alia.rpc.experimental_whileWatched("detail", keepFresh((input) => [(input as { key: string }).key]));
+  alia.rpc.experimental_whileWatched("threadPrs", keepFresh((input) => shuttle.threadPrs((input as { threadId: string }).threadId).prs.map((pr) => pr.key)));
+  alia.rpc.experimental_whileWatched("board", keepFresh((input) => shuttle.board((input as { id: string }).id).prs.map((pr) => pr.key)));
 }

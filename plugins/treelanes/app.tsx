@@ -10,12 +10,12 @@ import {
   ThreadChat,
   definePluginApp,
   experimental_NewThreadComposer as NewThreadComposer,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   BoardResult,
   ComposerDefaultsResult,
@@ -52,7 +52,7 @@ const GIT_DIFF_TAB_ID = "git-diff:git-diff:none";
 function requestBuiltInDiffPanel(threadId: string): void {
   if (typeof window === "undefined") return;
 
-  const key = `bb.thread.fixedPanelTabsState-${encodeURIComponent(threadId.trim())}-1`;
+  const key = `alia.thread.fixedPanelTabsState-${encodeURIComponent(threadId.trim())}-1`;
   let stored: Record<string, unknown> = {};
   let tabs: unknown[] = [];
 
@@ -601,8 +601,8 @@ function StageColumn({
 
 function TreelanesBoard({ subPath }: { subPath: string }) {
   const rpc = useRpc<typeof rpcContract>();
-  const { projectId } = useBbContext();
-  const navigate = useBbNavigate();
+  const { projectId } = useAliaContext();
+  const navigate = useAliaNavigate();
   const connection = useRealtimeConnectionState();
   const [board, setBoard] = useState<BoardResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);

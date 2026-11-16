@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 type WorktreeThread = ReturnType<typeof worktreeThread>;
@@ -156,7 +156,7 @@ function sdkFor(
     },
     plugins: {
       callRpc: async ({ pluginId, method, input }: { pluginId: string; method: string; input?: unknown }) => {
-        if (pluginId !== "bb--github-pr-status" || method !== "pullRequests") return { rows: [] };
+        if (pluginId !== "alia--github-pr-status" || method !== "pullRequests") return { rows: [] };
         return Object.fromEntries((input as { keys: string[] }).keys.map((key) =>
           [key, options.pullRequests?.[key] ?? { outcome: "absent" as const }]));
       },
@@ -165,7 +165,7 @@ function sdkFor(
 }
 
 function seedWorktreeState(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   values: {
     environmentId: string;
     stage: string;
@@ -173,7 +173,7 @@ function seedWorktreeState(
     ownerThreadId?: string | null;
   },
 ) {
-  bb.storage
+  alia.storage
     .database()
     .prepare(
       `INSERT INTO worktree_cards
@@ -189,7 +189,7 @@ function seedWorktreeState(
 }
 
 function seedLaunch(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   values: {
     environmentId: string;
     stage: string;
@@ -202,7 +202,7 @@ function seedLaunch(
     lastError?: string | null;
   },
 ) {
-  bb.storage
+  alia.storage
     .database()
     .prepare(
       `INSERT INTO worktree_stage_thread_launches
@@ -226,7 +226,7 @@ function seedLaunch(
 function pullRequestReads(harness: ReturnType<typeof createFakePluginHost>["harness"]) {
   return harness.sdk.callsTo("plugins.callRpc")
     .map(([args]) => args as { pluginId: string; method: string; input: { keys: string[] } })
-    .filter((args) => args.pluginId === "bb--github-pr-status" && args.method === "pullRequests")
+    .filter((args) => args.pluginId === "alia--github-pr-status" && args.method === "pullRequests")
     .map((args) => args.input.keys);
 }
 
@@ -258,13 +258,13 @@ describe("Board reliability", () => {
       title: "Verify the pull request",
       parentThreadId: null,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([worktree], {
         pullRequests: { [worktree.environmentId]: pullRequest },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await expect(
       harness.behavior.callRpc("moveCard", {
@@ -284,7 +284,7 @@ describe("Board reliability", () => {
       title: "Merged change",
       parentThreadId: null,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([worktree], {
         pullRequests: {
@@ -292,7 +292,7 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const result = await harness.behavior.callRpc("moveCard", {
       environmentId: worktree.environmentId,
@@ -314,7 +314,7 @@ describe("Board reliability", () => {
     const merged = worktreeThread({ id: "thread-merged", projectId: "project-one", title: "Merged", parentThreadId: null });
     const waiting = worktreeThread({ id: "thread-waiting", projectId: "project-one", title: "Host down", parentThreadId: null,
       environmentId: "environment-two", environmentBranchName: "feat/two" });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([merged, waiting], {
         environments: { "environment-two": environment("environment-two", "project-one", "feat/two") },
@@ -324,9 +324,9 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
     for (const environmentId of [merged.environmentId, waiting.environmentId]) {
-      seedWorktreeState(bb, { environmentId, stage: "pr", stageUpdatedAt: 100 });
+      seedWorktreeState(alia, { environmentId, stage: "pr", stageUpdatedAt: 100 });
     }
 
     await harness.behavior.runSchedule("reconcile-worktrees");
@@ -347,15 +347,15 @@ describe("Board reliability", () => {
     const threads = Array.from({ length: 201 }, (_, index) => worktreeThread({
       id: `thread-${index}`, environmentId: `env-${index}`, projectId: "project-one", parentThreadId: null,
     }));
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor(threads) });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor(threads) });
+    await plugin(alia);
     harness.sdk.stub("threads.list", async ({ offset = 0, limit = 100 }) => threads.slice(offset, offset + limit));
     harness.sdk.stub("plugins.callRpc", async ({ input }) => {
       const { keys } = input as { keys: string[] };
       if (keys.length === 200) throw new Error("First batch is unavailable");
       return Object.fromEntries(keys.map(key => [key, availablePullRequest("merged")]));
     });
-    for (const thread of threads) seedWorktreeState(bb, { environmentId: thread.environmentId, stage: "pr", stageUpdatedAt: 100 });
+    for (const thread of threads) seedWorktreeState(alia, { environmentId: thread.environmentId, stage: "pr", stageUpdatedAt: 100 });
     try {
       await harness.behavior.runSchedule("reconcile-worktrees");
       const board = await harness.behavior.callRpc("getBoard", { projectId: "project-one" }) as {
@@ -369,12 +369,12 @@ describe("Board reliability", () => {
 
   it("names the pull request RPC failure when Done cannot verify a merge", async () => {
     const thread = worktreeThread({ id: "thread", projectId: "project-one", parentThreadId: null });
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor([thread]) });
-    await plugin(bb);
-    harness.sdk.stub("plugins.callRpc", async () => { throw new Error("bb--github-pr-status is not installed"); });
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor([thread]) });
+    await plugin(alia);
+    harness.sdk.stub("plugins.callRpc", async () => { throw new Error("alia--github-pr-status is not installed"); });
     try {
       await expect(harness.behavior.callRpc("moveCard", { environmentId: thread.environmentId, stage: "done" }))
-        .rejects.toThrow(/bb--github-pr-status is not installed/);
+        .rejects.toThrow(/alia--github-pr-status is not installed/);
     } finally { await harness.lifecycle.dispose(); }
   });
 
@@ -383,12 +383,12 @@ describe("Board reliability", () => {
     { reason: "a missing row", rows: {}, error: /returned no row/ },
   ])("names $reason when Done cannot verify a merge and keeps the card in a pass", async ({ rows, error }) => {
     const thread = worktreeThread({ id: "thread", projectId: "project-one", parentThreadId: null });
-    const { bb, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor([thread]) });
-    await plugin(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "treelanes", sdk: sdkFor([thread]) });
+    await plugin(alia);
     harness.sdk.stub("plugins.callRpc", async () => rows);
     try {
       await expect(harness.behavior.callRpc("moveCard", { environmentId: thread.environmentId, stage: "done" })).rejects.toThrow(error);
-      seedWorktreeState(bb, { environmentId: thread.environmentId, stage: "pr", stageUpdatedAt: 100 });
+      seedWorktreeState(alia, { environmentId: thread.environmentId, stage: "pr", stageUpdatedAt: 100 });
       await harness.behavior.runSchedule("reconcile-worktrees");
       const board = await harness.behavior.callRpc("getBoard", { projectId: "project-one" }) as { cards: Array<{ stage: string }> };
       expect(board.cards[0]?.stage).toBe("pr");
@@ -412,7 +412,7 @@ describe("Board reliability", () => {
     });
     const threads = [root, unrelated];
     const spawned: WorktreeThread[] = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor(threads, {
         spawn: async () => {
@@ -429,7 +429,7 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: root.environmentId,
@@ -460,11 +460,11 @@ describe("Board reliability", () => {
       title: "Review external changes",
       parentThreadId: null,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([review]),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const message = await harness.behavior.callAgentTool(
       "treelanes_move_card",
@@ -495,7 +495,7 @@ describe("Board reliability", () => {
     });
     const threads = [root];
     let spawnAttempts = 0;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor(threads, {
         spawn: async () => {
@@ -513,7 +513,7 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: root.environmentId,
@@ -555,7 +555,7 @@ describe("Board reliability", () => {
       parentThreadId: null,
     });
     let spawnAttempts = 0;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor([root], {
         spawn: async () => {
@@ -564,15 +564,15 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const stageUpdatedAt = 42;
-    seedWorktreeState(bb, {
+    seedWorktreeState(alia, {
       environmentId: root.environmentId,
       stage: "tdd",
       stageUpdatedAt,
     });
-    seedLaunch(bb, {
+    seedLaunch(alia, {
       environmentId: root.environmentId,
       stage: "tdd",
       stageUpdatedAt,
@@ -622,7 +622,7 @@ describe("Board reliability", () => {
     });
     const threads = [root];
     let spawnAttempts = 0;
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor(threads, {
         spawn: async () => {
@@ -640,7 +640,7 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: root.environmentId,
@@ -681,7 +681,7 @@ describe("Board reliability", () => {
     const secondSpawnGate = new Promise<void>((resolve) => {
       releaseSecondSpawn = resolve;
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor(threads, {
         spawn: async () => {
@@ -701,7 +701,7 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     await harness.behavior.callRpc("moveCard", {
       environmentId: root.environmentId,
@@ -820,7 +820,7 @@ describe("Board reliability", () => {
       "environment-paused": environment("environment-paused", "project-one", "feat/paused"),
       "environment-orphan": environment("environment-orphan", "project-one", "feat/orphan"),
     };
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       pluginId: "treelanes",
       sdk: sdkFor(threads, {
         environments,
@@ -841,27 +841,27 @@ describe("Board reliability", () => {
         },
       }),
     });
-    await plugin(bb);
+    await plugin(alia);
 
     const staleAt = 10;
-    seedWorktreeState(bb, {
+    seedWorktreeState(alia, {
       environmentId: "environment-pending",
       stage: "tdd",
       stageUpdatedAt: staleAt,
     });
-    seedLaunch(bb, {
+    seedLaunch(alia, {
       environmentId: "environment-pending",
       stage: "tdd",
       stageUpdatedAt: staleAt,
       status: "pending",
       nextAttemptAt: 0,
     });
-    seedWorktreeState(bb, {
+    seedWorktreeState(alia, {
       environmentId: "environment-starting",
       stage: "tdd",
       stageUpdatedAt: staleAt + 1,
     });
-    seedLaunch(bb, {
+    seedLaunch(alia, {
       environmentId: "environment-starting",
       stage: "tdd",
       stageUpdatedAt: staleAt + 1,
@@ -870,36 +870,36 @@ describe("Board reliability", () => {
       updatedAt: 0,
       nextAttemptAt: 0,
     });
-    seedWorktreeState(bb, {
+    seedWorktreeState(alia, {
       environmentId: "environment-live",
       stage: "tdd",
       stageUpdatedAt: staleAt + 2,
     });
-    seedLaunch(bb, {
+    seedLaunch(alia, {
       environmentId: "environment-live",
       stage: "tdd",
       stageUpdatedAt: staleAt + 2,
       status: "pending",
       nextAttemptAt: 0,
     });
-    seedWorktreeState(bb, {
+    seedWorktreeState(alia, {
       environmentId: "environment-paused",
       stage: "tdd",
       stageUpdatedAt: staleAt + 3,
     });
-    seedLaunch(bb, {
+    seedLaunch(alia, {
       environmentId: "environment-paused",
       stage: "tdd",
       stageUpdatedAt: staleAt + 3,
       status: "pending",
       nextAttemptAt: 0,
     });
-    seedWorktreeState(bb, {
+    seedWorktreeState(alia, {
       environmentId: "environment-orphan",
       stage: "tdd",
       stageUpdatedAt: staleAt + 4,
     });
-    seedLaunch(bb, {
+    seedLaunch(alia, {
       environmentId: "environment-orphan",
       stage: "tdd",
       stageUpdatedAt: staleAt + 4,
@@ -909,7 +909,7 @@ describe("Board reliability", () => {
       nextAttemptAt: 0,
       lastError: "spawn transport failed after worker creation",
     });
-    bb.storage
+    alia.storage
       .database()
       .prepare(
         `INSERT INTO worktree_controls (environment_id, paused)

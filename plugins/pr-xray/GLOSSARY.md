@@ -1,6 +1,6 @@
 # PR X-ray
 
-Reviewing a GitHub pull request inside bb, with the diff reorganised into an order a human can read.
+Reviewing a GitHub pull request inside VesnALIA, with the diff reorganised into an order a human can read.
 
 ## Language
 
@@ -33,11 +33,11 @@ A short guided tour of the change: a few steps, each showing one diagram, pointi
 _Avoid_: Narrative, tour, story
 
 **Design comment**:
-A note pinned to a node or table on a diagram, saying the design is wrong there. Kept in bb only, never posted to GitHub, and only available on your own PR.
+A note pinned to a node or table on a diagram, saying the design is wrong there. Kept in VesnALIA only, never posted to GitHub, and only available on your own PR.
 _Avoid_: Diagram comment, node comment
 
 **Focus mode**:
-The review filling the whole window, with bb's surroundings hidden.
+The review filling the whole window, with VesnALIA's surroundings hidden.
 _Avoid_: Full screen, zen mode
 
 **Trust prompt**:

@@ -1,10 +1,10 @@
 # Play Continue
 
-Port of [dsh-plugins/play-continue](https://github.com/brzvsk/dsh-plugins/tree/main/play-continue) to BB.
+Port of [dsh-plugins/play-continue](https://github.com/brzvsk/dsh-plugins/tree/main/play-continue) to VesnALIA.
 
 ## Stop shortcut
 
-Press Escape twice within 400 ms to press BB's native **Stop run** button in the
+Press Escape twice within 400 ms to press VesnALIA's native **Stop run** button in the
 visible thread composer. The first press replaces the Stop icon with `Esc` for
 400 ms; a timeout or the second press restores it. Single presses, held-key
 repeats and modified presses do not stop. The shortcut yields to menus, dialogs,
@@ -30,7 +30,7 @@ original prompt.
 
 ## Limits
 
-- Mounts as a hidden composer action, so it follows BB's action rules: thread
+- Mounts as a hidden composer action, so it follows VesnALIA's action rules: thread
   composers in the expanded layout only, and only while the plugin is among the
   first three plugins with composer actions (later ones move to an overflow menu
   and are not mounted until it opens).
@@ -41,7 +41,7 @@ original prompt.
 ## Install
 
 ```sh
-bb plugin install /path/to/bb-plugins --plugin play-continue --yes
+alia plugin install /path/to/alia-plugins --plugin play-continue --yes
 ```
 
 ## Development

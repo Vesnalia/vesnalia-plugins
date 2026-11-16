@@ -2,11 +2,11 @@
 /**
  * The panel renders, asks the server for exactly the providers switched on,
  * and filters on the client without asking again. A throwing slot shows as a
- * "plugin crashed" chip in bb, so a render here is the cheapest check that it
+ * "plugin crashed" chip in VesnALIA, so a render here is the cheapest check that it
  * does not throw.
  */
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RpcContract } from "../shared/contract";
@@ -117,7 +117,7 @@ describe("PricingPanel", () => {
     expect(slot.rpcCalls).toHaveLength(1);
   });
 
-  it("paints each provider in the variant for bb's mode", async () => {
+  it("paints each provider in the variant for VesnALIA's mode", async () => {
     const anthropic = PROVIDERS.find((provider) => provider.id === "anthropic")!;
     const PricingPanel = await freshPanel();
     renderSlot<object, RpcContract>(

@@ -55,7 +55,7 @@ describe("gitInfoFor", () => {
   });
 
   /**
-   * The layout bb actually uses: `~/.bb/worktrees/env_X/App/.git` is a file
+   * The layout VesnALIA actually uses: `~/.vesnalia/worktrees/env_X/App/.git` is a file
    * pointing into the main repo's .git/worktrees directory.
    */
   it("resolves a linked worktree through its gitdir file", async () => {

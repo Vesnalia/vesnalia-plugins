@@ -5,7 +5,7 @@ created: 2026-09-27
 updated: 2026-10-08
 status: active
 confidence: high
-tags: [agents, credentials, bb-tools]
+tags: [agents, credentials, alia-tools]
 sources:
   - server.ts
   - skills/env-catalog/SKILL.md
@@ -15,20 +15,20 @@ sources:
 
 # Agent Access to Credentials
 
-TL;DR: BB agents receive instructions and five registered tools to list, retrieve, save, delete, or securely request credentials; raw values are returned only by retrieval and save/request paths (`server.ts:601-959`, `server.ts:961-964`).
+TL;DR: VesnALIA agents receive instructions and five registered tools to list, retrieve, save, delete, or securely request credentials; raw values are returned only by retrieval and save/request paths (`server.ts:601-959`, `server.ts:961-964`).
 
 ## Purpose
 
-The plugin adds tools to the BB agent runtime so an agent can find a named credential and use its decrypted value or structured connection fields. Instructions tell the agent to list first, retrieve by exact name, avoid repeating secrets in chat, and request missing access through the form (`server.ts:961-964`).
+The plugin adds tools to the VesnALIA agent runtime so an agent can find a named credential and use its decrypted value or structured connection fields. Instructions tell the agent to list first, retrieve by exact name, avoid repeating secrets in chat, and request missing access through the form (`server.ts:961-964`).
 
 ## How it works
 
-1. During plugin startup, the server registers tools with BB through `bb.agents.registerTool` (`server.ts:601-959`).
+1. During plugin startup, the server registers tools with VesnALIA through `alia.agents.registerTool` (`server.ts:601-959`).
 2. `env_list` filters summaries by text or kind and returns names, metadata, timestamps, and masked summaries without raw values (`server.ts:636-667`).
 3. `env_get` looks up an exact name and returns the decrypted secret or structured access **at once**, from any session: no grant, no form, no wait (decision 007). The call is written to the [issuance journal](issuance-journal.md). Missing entries return `found: false` with guidance to list keys.
 4. `env_set` builds structured access from flat fields when needed, then calls the common save function (`server.ts:669-752`).
 5. `env_delete` removes the named record and reports whether it existed (`server.ts:754-785`). Agents may call `env_set` and `env_delete`; both are journalled.
-6. `env_request` asks BB to show the pending-interaction form and persists the submitted values only after completion (`server.ts:861-959`).
+6. `env_request` asks VesnALIA to show the pending-interaction form and persists the submitted values only after completion (`server.ts:861-959`).
 
 ### Tool modes
 
@@ -51,7 +51,7 @@ The plugin adds tools to the BB agent runtime so an agent can find a named crede
 - The contributed instruction says to check `env_list` before requesting credentials, use `env_get` by exact name, and use `env_request` rather than soliciting secrets in chat (`server.ts:961-964`).
 - `env_list` omits credential values; `env_get` is the read tool that returns them (`server.ts:636-667`, `server.ts:602-634`).
 - `secret` is the default kind for `env_set` and `env_request` when no kind is supplied (`server.ts:720-724`, `server.ts:928-933`).
-- `env_request` requires a BB thread context from the tool context or `BB_THREAD_ID` (`server.ts:902-909`).
+- `env_request` requires a VesnALIA thread context from the tool context or `ALIA_THREAD_ID` (`server.ts:902-909`).
 
 ## Public API
 

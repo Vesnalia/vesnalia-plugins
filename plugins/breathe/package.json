@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-breathe",
+  "name": "alia-plugin-breathe",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Breathe",
     "description": "A pixel breathing wave with adjustable timing while your agent works. Inspired by Mindful Claude by halluton.",
     "branding": {
@@ -21,7 +21,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -58,13 +57,30 @@
   "author": "Nikko Foti",
   "description": "A pixel breathing wave with adjustable timing while your agent works. Inspired by Mindful Claude by halluton.",
   "scripts": {
-    "build": "npm run build:bb && npm run build:claude",
+    "build": "npm run build:alia && npm run build:claude",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build:bb": "bb plugin build",
+    "build:bb": "alia plugin build",
     "build:claude": "node scripts/build-claude.mjs",
     "check:claude-build": "node scripts/build-claude.mjs --check",
     "test:claude": "claude plugin test ./claude",
     "validate:claude": "claude plugin validate --strict ./claude && claude plugin validate --strict ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/breathe#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/breathe"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

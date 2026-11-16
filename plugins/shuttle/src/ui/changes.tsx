@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, UrlLink, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { ChangedFile, ConversationItem, FileChange, PrDetails, PrView } from "../contract";
 import { Avatar } from "./avatar";
 import { BUTTON, Pill } from "./common";
@@ -66,7 +66,7 @@ function Heading({ title, count, aside }: { title: string; count: number; aside?
 
 /** What changed, as a summary: the commits and each file's path and line counts. The diff itself stays on the server. */
 export function ChangesPane({ pr, items, details }: { pr: PrView; items: readonly ConversationItem[] | undefined; details: PrDetails | null }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const config = useShuttleQuery("getConfig", {});
   const command = config.data?.config.servers.some((server) => server.id === pr.server && server.kind === "command") === true;

@@ -7,7 +7,7 @@
 //
 // Why: syncing runs unseen every few minutes. The owner asked for a log:
 // "When you see in a small window all the logs of the syncs, was one issue
-// or whatever. Too troubleshooting, you know?" (bead-bb-6a9).
+// or whatever. Too troubleshooting, you know?" (bead-alia-6a9).
 //
 // Design notes:
 // - Every run is listed, also the many that found nothing new: for
@@ -15,17 +15,17 @@
 //   often as not. bend keeps such runs, one after another, as one entry
 //   with a count, shown as "×12".
 // - A run that did not work is in red, with the tracker's words in full:
-//   the owner asked that failures be prominent (bead-bb-c9l.16).
+//   the owner asked that failures be prominent (bead-alia-c9l.16).
 // - It speaks the sync layer's words only (sync/types.ts); nothing here
 //   knows which tracker or remote is behind it.
 // - Read when it opens and again on every change notice while open, so a
 //   sync that ends meanwhile appears.
 // - Above the runs, the changes a hosted tracker refused for good
-//   (bead-bb-c9l.6): each with its issue, what it was, the text it carried
+//   (bead-alia-c9l.6): each with its issue, what it was, the text it carried
 //   and the tracker's reason, so nothing the owner wrote is lost unseen;
 //   and two ways out, forget it or send it once more.
 
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,

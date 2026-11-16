@@ -1,8 +1,8 @@
-// bb-plugin-hats — a sidebar footer button that switches to the next hat, and a
+// alia-plugin-hats — a sidebar footer button that switches to the next hat, and a
 // settings section to create, rename, re-icon, and fill hats with projects.
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ComponentType, SVGProps } from "react";
-import { definePluginApp, useRealtime } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime } from "@vesnalia/plugin-sdk/app";
 import * as Popover from "@radix-ui/react-popover";
 import {
   Baby,
@@ -200,8 +200,8 @@ function IconPicker({
           sideOffset={6}
           // The portal renders outside the plugin's mount, so it needs the
           // plugin scope for this build's classes to apply.
-          data-bb-plugin="hats"
-          data-bb-plugin-root=""
+          data-alia-plugin="hats"
+          data-alia-plugin-root=""
           className="z-50 grid grid-cols-6 gap-1 rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-md"
         >
           {HAT_ICONS.map((name) => {
@@ -381,7 +381,7 @@ function ProjectMatrix({ state }: { state: HatsState }) {
   if (state.projects.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-        No projects yet. Projects you add to bb appear here.
+        No projects yet. Projects you add to VesnALIA appear here.
       </p>
     );
   }

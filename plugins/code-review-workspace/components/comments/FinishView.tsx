@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import { SUMMARY_AT, VERDICT_LABEL, verdictPicked, sameLocation, toGithubReviewPayload, type Verdict } from "../../src/draft";
@@ -51,7 +51,7 @@ const BUSY = "aria-disabled:pointer-events-none aria-disabled:bg-muted/60 aria-d
 
 /**
  * Finish review, the side panel's view for it: the summary, the verdict (with the agent's suggestion, Use as draft and
- * Request what's left), what goes to GitHub, what stays in BB, and Submit, with each doubt listed beside its fix. After
+ * Request what's left), what goes to GitHub, what stays in VesnALIA, and Submit, with each doubt listed beside its fix. After
  * you submit, the receipt offers the next review that needs you. A local review hands its comments to a new thread
  * instead; a closed PR keeps its unsubmitted draft to read.
  */
@@ -128,12 +128,12 @@ export function FinishView({ shown, revision }: {
             {isPr ? <Verdicts revision={revision} /> : review?.focusRun && <FocusCoverage items={d.agentCoverage ? d.draft.unchecked ?? [] : []} />}
             {isPr && <BeforeYouApprove />}
             {isPr ? <GoesToGitHub items={items} replyDrafts={items.filter((item) => item.kind === "thread" && item.replyDraft).length} onList={openList} />
-              : <Part title="Stays in BB"><p className="text-sm text-muted-foreground">{d.hint}</p>{notes.show && <PrivateNotes targetKey={targetKey} />}</Part>}
+              : <Part title="Stays in VesnALIA"><p className="text-sm text-muted-foreground">{d.hint}</p>{notes.show && <PrivateNotes targetKey={targetKey} />}</Part>}
             {(d.isLocal || d.ownPr || api.mainThread) && <FixHandoff targetKey={targetKey} comments={d.sortedComments} revision={revision} />}
             <Push plan={plan} />
             {d.isLocal && <OpenPr plan={plan} />}
             <AgentActivity />
-            {isPr && notes.show && <Part title="Stays in BB"><PrivateNotes targetKey={targetKey} /></Part>}
+            {isPr && notes.show && <Part title="Stays in VesnALIA"><PrivateNotes targetKey={targetKey} /></Part>}
           </div>
           {!d.isLocal && <SubmitFoot onSubmit={submit} />}
         </section>}
@@ -183,7 +183,7 @@ function Push({ plan }: { plan: PushPlan | null | undefined }) {
   const { targetKey, review, reload, go, panel, layout } = useWorkspace();
   const d = useDraft();
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const sendOn = useKnob("sendToThread");
   const acts = useKnob("reviewAgentActs");
   // With no Submit, on a local review, Push's way on stays filled.
@@ -271,7 +271,7 @@ function Push({ plan }: { plan: PushPlan | null | undefined }) {
     </div>
     : <>
       {run?.state === "pushed" ? <p role="status" className="flex gap-1.5 text-sm"><Icon name="CircleCheck" className="mt-0.5 size-4 shrink-0 text-diff-added" aria-hidden />{run.thenOpenPr === "asked" && !draft
-        // Watch shows the agent's chat beside the review; a phone's BB panel would cover it.
+        // Watch shows the agent's chat beside the review; a phone's VesnALIA panel would cover it.
         ? <span>Pushed <Mono text={sha} />. The review agent is drafting the PR; post it from its chat.{layout.mode === "tablet" && <> · <button type="button" className={LINK} onClick={() => panel.open("agent")}>Watch</button></>}</span>
         : <span>Pushed <Mono text={sha} /> to {branch}{timeAgo(run.at) && <span className="text-muted-foreground"> · {timeAgo(run.at)}</span>}
           {/* With the agent drafting only, GitHub opens the PR. */}
@@ -452,7 +452,7 @@ function Verdicts({ revision }: { revision: string }) {
   );
 }
 
-/** Run accounting stays in BB; finding prose is text, never the agent's Markdown. */
+/** Run accounting stays in VesnALIA; finding prose is text, never the agent's Markdown. */
 function FocusCoverage({ items }: { items: readonly string[] }) {
   const { targetKey, review, showLocation } = useWorkspace();
   const rpc = useRpc<typeof rpcContract>();
@@ -508,7 +508,7 @@ function FocusCoverage({ items }: { items: readonly string[] }) {
   </div>;
 }
 
-/** What the agent says it didn't read or run, folded under its suggestion. It stays in BB. */
+/** What the agent says it didn't read or run, folded under its suggestion. It stays in VesnALIA. */
 function Unchecked({ items, action }: { items: readonly ReactNode[]; action?: ReactNode }) {
   const [open, setOpen] = useState(false);
   return <div className="min-w-0 basis-full">
@@ -582,7 +582,7 @@ function GoesToGitHub({ items, replyDrafts, onList }: { items: readonly CommentI
   const posting = moveToSummary({ ...d.draft, comments }, moved, preferences.knobs.preExistingFindings);
   const showLabels = preferences.focuses.githubLabel && posting.comments.some((c) => c.focus);
   const payload = toGithubReviewPayload({ ...d.draft, ...posting }, preferences.knobs.preExistingFindings, false, preferences.focuses.githubLabel);
-  // Sent to fix from your own change, resolved or dismissed: they stay in BB. Those not on GitHub yet go with Send.
+  // Sent to fix from your own change, resolved or dismissed: they stay in VesnALIA. Those not on GitHub yet go with Send.
   const held = d.draft.comments.length - comments.length - d.notOnGithub;
   const agent = comments.filter((comment) => comment.author === "agent").length;
   const older = items.filter((item) => item.kind === "draft" && item.state === "older-diff" && item.posts);
@@ -631,7 +631,7 @@ function GoesToGitHub({ items, replyDrafts, onList }: { items: readonly CommentI
 }
 
 /**
- * Submit, pinned: the verdict on it, that the draft stays in BB until then and where it posts and as whom, or why it
+ * Submit, pinned: the verdict on it, that the draft stays in VesnALIA until then and where it posts and as whom, or why it
  * waits; the one more ask when in doubt; and what GitHub or the server held it back for, in words, with what to do:
  * Submit anyway, Submit as Comment, Open it on GitHub.
  */
@@ -643,7 +643,7 @@ function SubmitFoot({ onSubmit }: { onSubmit: (confirmed?: boolean, choice?: "an
   // While it posts, Submit keeps the focus it was clicked with.
   const unavailable = { disabled: blocked && !d.busy, "aria-disabled": d.busy || undefined };
   const where = review.repo && review.number ? `${review.repo}#${review.number}` : null;
-  const ready = d.hint === "Drafts stay in BB until you submit.";
+  const ready = d.hint === "Drafts stay in VesnALIA until you submit.";
   const warned = d.warned;
   // While it posts, the choice keeps the focus it was clicked with.
   const choosing = { "aria-disabled": d.busy || undefined };
@@ -672,7 +672,7 @@ function SubmitFoot({ onSubmit }: { onSubmit: (confirmed?: boolean, choice?: "an
           {d.busy ? d.submitting ? "Submitting…" : "Saving…" : `Submit to GitHub · ${VERDICT_LABEL[d.draft.verdict]}${d.approvingBlocked ? ` · ${d.blockingCount} blocking` : ""}`}
         </Button>}
       {/* Said of the draft, not of everything: replies, resolves and Push go to GitHub on their own. */}
-      <p className="text-xs leading-relaxed text-muted-foreground">{ready && where ? <>Your draft stays in BB until you submit, then posts to {where}{d.account ? <> as @{d.account}</> : null}.</> : d.hint}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{ready && where ? <>Your draft stays in VesnALIA until you submit, then posts to {where}{d.account ? <> as @{d.account}</> : null}.</> : d.hint}</p>
     </footer>
   );
 }
@@ -680,7 +680,7 @@ function SubmitFoot({ onSubmit }: { onSubmit: (confirmed?: boolean, choice?: "an
 /** What the review agent did on GitHub when you asked, newest first, a line each: "Posted reply on src/a.ts:12 · 2m ago". */
 function AgentActivity() {
   const { review } = useWorkspace();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [all, setAll] = useState(false);
   const entries = review.activity ?? [];
   if (!entries.length) return null;

@@ -5,7 +5,7 @@
 // until then.
 import type Database from "better-sqlite3";
 
-/** Append-only migrations for `bb.storage.migrate`. */
+/** Append-only migrations for `alia.storage.migrate`. */
 export const CACHE_MIGRATIONS: readonly string[] = [
   `CREATE TABLE web_cache (
     key TEXT PRIMARY KEY,

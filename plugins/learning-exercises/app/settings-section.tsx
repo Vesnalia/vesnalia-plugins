@@ -1,7 +1,7 @@
 /**
  * Under the plugin's settings: the projects marked "Never for this project", each with Undo.
  */
-import { experimental_useRpcQuery } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcQuery } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";

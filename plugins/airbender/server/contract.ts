@@ -11,7 +11,7 @@
 // - The frontend may import TYPES from here and nothing else: a value import
 //   would bundle zod and the server SDK into the browser.
 
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { ISSUE_TYPES, LINK_KINDS, SETUP_ACTIONS } from "../shared/constants.ts";
 import { WORKFLOW_IDS } from "../shared/workflows.ts";
@@ -75,7 +75,7 @@ const issueSchema = z.object({
   size: z.string().nullable(),
   /**
    * For an epic whose issues are worked on a branch of its own
-   * (bead-bb-ty5.2): that branch. Null otherwise, and for a moment after
+   * (bead-alia-ty5.2): that branch. Null otherwise, and for a moment after
    * such an epic is started in a work tree, until the tree's branch is
    * known. Kept in beads as a label `branch:<name>`.
    */
@@ -160,7 +160,7 @@ const issuesResultSchema = z.object({
    * no-bend — the bend program, which the tab reads and changes issues
    *   with, is not on this machine or is too old. Setup offers to build it.
    * no-bd — the beads program is not on this machine. Its own state, apart
-   *   from "error", so the tab can offer to install it (bead-bb-80e).
+   *   from "error", so the tab can offer to install it (bead-alia-80e).
    * no-login — the folder's tracker needs a sign-in there is none of
    *   (GitHub issues). Setup offers to sign in.
    * error — the tracker failed; `message` says why.
@@ -170,7 +170,7 @@ const issuesResultSchema = z.object({
   path: z.string().nullable(),
   /**
    * The home folder of the user the plugin's server runs as, so that the
-   * tab can show a path inside it with "~" (bead-bb-ty5.3).
+   * tab can show a path inside it with "~" (bead-alia-ty5.3).
    */
   home: z.string(),
   /** Plain-language explanation for every state except "ok". */
@@ -218,7 +218,7 @@ const issuesResultSchema = z.object({
    */
   workTree: z.boolean(),
   /**
-   * Autopilot in this conversation (bead-bb-8ff): the epic it is on for,
+   * Autopilot in this conversation (bead-alia-8ff): the epic it is on for,
    * or was last, whether it is on, and why it last turned itself off (null
    * when the owner turned it off or it never stopped). Null when the
    * conversation never had it, and without a conversation.
@@ -337,7 +337,7 @@ const setupStatusSchema = z.object({
    * Why the folder looks like someone else's project (origin is a fork, or
    * the GitHub account cannot push to it), asked of GitHub only while no
    * tracker is chosen; null when it does not, or when that cannot be told
-   * (bead-bb-dof).
+   * (bead-alia-dof).
    */
   foreign: z
     .object({
@@ -355,7 +355,7 @@ const setupStatusSchema = z.object({
   initRuns: z.string().nullable(),
   /**
    * Why setup may not change the repository from this folder: a worktree,
-   * or a branch other than main (bead-bb-25p); null where it may.
+   * or a branch other than main (bead-alia-25p); null where it may.
    */
   notHere: z.string().nullable(),
   /** Committing the files setup wrote, while that is to do; else null. */
@@ -388,7 +388,7 @@ const setupStatusSchema = z.object({
   folderReady: z.boolean(),
   /**
    * Whether Airbender's instructions are in place and beads' own are out
-   * (bead-bb-c9l.8): Airbender's rules in the folder's AGENTS.md, a
+   * (bead-alia-c9l.8): Airbender's rules in the folder's AGENTS.md, a
    * CLAUDE.md, where there is one, pointing at it, and none of beads'
    * generated blocks or hooks left. The name is from when this was only
    * about the rules.
@@ -404,7 +404,7 @@ const setupStatusSchema = z.object({
      * of ours, which is replaced; "edited", changed by the owner, which is
      * left as it is; "behind", changed by the owner and from an earlier
      * version than the current one, where the owner chooses between the
-     * current rules and their own (bead-bb-c9l.10); "none".
+     * current rules and their own (bead-alia-c9l.10); "none".
      */
     rules: z.enum(["current", "old", "edited", "behind", "none"]),
     /**
@@ -414,7 +414,7 @@ const setupStatusSchema = z.object({
     rulesVersion: z.number(),
     currentVersion: z.number(),
     /**
-     * How the folder's CLAUDE.md stands (bead-bb-c9l.12): "none"; "linked",
+     * How the folder's CLAUDE.md stands (bead-alia-c9l.12): "none"; "linked",
      * a link to its AGENTS.md; "linked-elsewhere", a link to another file;
      * "file", an ordinary file.
      */
@@ -436,7 +436,7 @@ const setupStatusSchema = z.object({
     beadsHooks: z.array(z.string()),
     /**
      * Files beads' agent setup left that hold nothing of the owner's, to be
-     * deleted (bead-bb-cnv).
+     * deleted (bead-alia-cnv).
      */
     beadsFiles: z.array(z.string()),
     /**
@@ -529,7 +529,7 @@ export const rpcContract = defineRpcContract({
        * then takes its parent's category, a top-level issue gets none.
        */
       category: z.string().nullable(),
-      /** Create it straight into Someday (the #someday tag, bead-bb-26g). */
+      /** Create it straight into Someday (the #someday tag, bead-alia-26g). */
       someday: z.boolean().optional(),
     }),
     // `id` is set on success; `message` explains a failure in plain words.
@@ -637,7 +637,7 @@ export const rpcContract = defineRpcContract({
     output: z.object({ message: z.string().nullable() }),
   },
   issue_defer: {
-    // Puts an issue in Someday: set aside for later (bead-bb-26g).
+    // Puts an issue in Someday: set aside for later (bead-alia-26g).
     input: z.object({
       threadId: z.string().nullable(),
       projectId: z.string().nullable(),
@@ -764,7 +764,7 @@ export const rpcContract = defineRpcContract({
       prefer: z.enum(["newer", "github", "local"]),
       /**
        * Also copy the comments of the GitHub issues brought in (`pull`
-       * and `both`) into their beads issues (bead-bb-apc).
+       * and `both`) into their beads issues (bead-alia-apc).
        */
       comments: z.boolean(),
       preview: z.boolean(),
@@ -859,7 +859,7 @@ export const rpcContract = defineRpcContract({
     // in server/setup.ts); null where there is none. `anyway` sets up, as
     // the owner's own, a folder that looks like someone else's project
     // (for "tracker"). Installing, preparing the issues and publishing run
-    // in a visible BB terminal; the other steps write files directly.
+    // in a visible VesnALIA terminal; the other steps write files directly.
     input: z.object({
       threadId: z.string().nullable(),
       projectId: z.string().nullable(),

@@ -1,5 +1,5 @@
 import { specificationInputSchema, specificationCatalogSchema, specificationDocumentSchema } from "./specification-model";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   actionSchema,

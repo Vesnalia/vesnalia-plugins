@@ -208,7 +208,7 @@ export async function writeWithReceipt(store: ReturnType<typeof useStore>, build
       return { kind: "refused", message: result.message };
     } catch (error) {
       if (!(error instanceof LostReply)) throw error;
-      onStatus("Save not confirmed: BB Box did not reply. Looking for this save's receipt…");
+      onStatus("Save not confirmed: VesnALIA Box did not reply. Looking for this save's receipt…");
       for (let look = 0; look < 3; look += 1) {
         await wait(400);
         const revision = store.receipt(operation);
@@ -351,7 +351,7 @@ export function useDraft({ part, what, label = (path) => path.split("/").pop() ?
     pendingOperation.current = null;
     switch (outcome.kind) {
       case "saved":
-        finishSaved(submitted, outcome.revision, outcome.viaReceipt ? `Saved at revision ${outcome.revision}. The reply was lost; BB Box's receipt for this save confirms it` : outcome.rebased ? `Saved at revision ${outcome.revision}, on top of a change made elsewhere` : "Saved");
+        finishSaved(submitted, outcome.revision, outcome.viaReceipt ? `Saved at revision ${outcome.revision}. The reply was lost; VesnALIA Box's receipt for this save confirms it` : outcome.rebased ? `Saved at revision ${outcome.revision}, on top of a change made elsewhere` : "Saved");
         return true;
       case "conflicts":
         setBar({ kind: "conflicts", count: outcome.paths.length });
@@ -370,7 +370,7 @@ export function useDraft({ part, what, label = (path) => path.split("/").pop() ?
         return false;
       case "unknown":
         pendingOperation.current = outcome.operation;
-        setBar({ kind: "unknown", words: "Save not confirmed: BB Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which BB Box applies at most once." });
+        setBar({ kind: "unknown", words: "Save not confirmed: VesnALIA Box has no receipt for it yet. Your changes are still here. Saving again resends the same request, which VesnALIA Box applies at most once." });
         return false;
     }
   };
@@ -447,7 +447,7 @@ export function outcomeWords(outcome: Outcome, failed: string): string | null {
     case "exhausted":
       return `${failed}: the configuration changed three times while saving. Try again.`;
     case "unknown":
-      return "Not confirmed: BB Box has no receipt for this change yet. Try again; it is applied at most once.";
+      return "Not confirmed: VesnALIA Box has no receipt for this change yet. Try again; it is applied at most once.";
   }
 }
 

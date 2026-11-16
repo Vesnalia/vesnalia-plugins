@@ -1,7 +1,7 @@
 {
   "id": "qwen-cli",
   "displayName": "Qwen CLI [Experimental]",
-  "description": "Chat with Qwen Code in BB using your installed CLI and existing sign-in.",
+  "description": "Chat with Qwen Code in VesnALIA using your installed CLI and existing sign-in.",
   "icon": { "url": "./icons/qwen-cli.svg" },
   "tags": ["acp", "cli", "planning", "qwen"],
   "category": "agents-and-providers",

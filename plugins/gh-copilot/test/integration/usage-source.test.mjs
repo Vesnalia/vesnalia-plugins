@@ -10,10 +10,10 @@ const OK = {
   usage: { status: 'ok', plan: null, accountEmail: null, planLabel: 'Business', windows: [] },
 };
 
-function fakeBb(primaryHostId = 'host_local') {
+function fakeAlia(primaryHostId = 'host_local') {
   let handlers = {};
   let options;
-  const bb = {
+  const alia = {
     rpc: {
       register: (_contract, registered, registerOptions) => {
         handlers = registered;
@@ -31,7 +31,7 @@ function fakeBb(primaryHostId = 'host_local') {
     },
   };
   return {
-    bb,
+    alia,
     call: (method, input) => handlers[method](input),
     options: () => options,
   };
@@ -39,8 +39,8 @@ function fakeBb(primaryHostId = 'host_local') {
 
 describe('registerUsageSource', () => {
   it("registers a discoverable source listing only the server's host", async () => {
-    const { bb, call, options } = fakeBb();
-    registerUsageSource(bb, async () => OK);
+    const { alia, call, options } = fakeAlia();
+    registerUsageSource(alia, async () => OK);
     assert.equal(options().experimental_discoverable, true);
     assert.deepEqual(await call(usageListMethod, {}), {
       resources: [
@@ -56,16 +56,16 @@ describe('registerUsageSource', () => {
   });
 
   it('lists nothing when the server host is unknown', async () => {
-    const { bb, call } = fakeBb(null);
-    registerUsageSource(bb, async () => OK);
+    const { alia, call } = fakeAlia(null);
+    registerUsageSource(alia, async () => OK);
     assert.deepEqual(await call(usageListMethod, {}), { resources: [] });
   });
 
   it('caches a successful reading and refreshes on request', async () => {
-    const { bb, call } = fakeBb();
+    const { alia, call } = fakeAlia();
     let clock = 1_000;
     const read = mock.fn(async () => OK);
-    registerUsageSource(bb, read, () => clock);
+    registerUsageSource(alia, read, () => clock);
 
     const first = await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: false });
     assert.equal(first.accountKey, OK.accountKey);
@@ -86,12 +86,12 @@ describe('registerUsageSource', () => {
   });
 
   it('keeps the last observation time when a later read fails', async () => {
-    const { bb, call } = fakeBb();
+    const { alia, call } = fakeAlia();
     const read = mock.fn(async () => OK);
     read.mock.mockImplementationOnce(async () => {
       throw new Error('boom');
     }, 1);
-    registerUsageSource(bb, read, () => 5);
+    registerUsageSource(alia, read, () => 5);
     await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: true });
     assert.deepEqual(await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: true }), {
       accountKey: OK.accountKey,
@@ -107,9 +107,9 @@ describe('registerUsageSource', () => {
   });
 
   it('reports a first read that fails without an observation time or account', async () => {
-    const { bb, call } = fakeBb();
+    const { alia, call } = fakeAlia();
     registerUsageSource(
-      bb,
+      alia,
       () => Promise.reject('offline'),
       () => 5
     );
@@ -127,7 +127,7 @@ describe('registerUsageSource', () => {
   });
 
   it('keeps the account a failed read names over the previous one', async () => {
-    const { bb, call } = fakeBb();
+    const { alia, call } = fakeAlia();
     const read = mock.fn(async () => OK);
     read.mock.mockImplementationOnce(
       async () => ({
@@ -142,7 +142,7 @@ describe('registerUsageSource', () => {
       }),
       1
     );
-    registerUsageSource(bb, read, () => 5);
+    registerUsageSource(alia, read, () => 5);
     await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: true });
     const failed = await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: true });
     assert.equal(failed.accountKey, 'github.com:copilot-user:2');
@@ -150,10 +150,10 @@ describe('registerUsageSource', () => {
   });
 
   it('does not carry an account key over to a successful anonymous read', async () => {
-    const { bb, call } = fakeBb();
+    const { alia, call } = fakeAlia();
     const read = mock.fn(async () => OK);
     read.mock.mockImplementationOnce(async () => ({ ...OK, accountKey: null }), 1);
-    registerUsageSource(bb, read, () => 5);
+    registerUsageSource(alia, read, () => 5);
     await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: true });
     const second = await call(usageFetchMethod, { resourceId: RESOURCE_ID, refresh: true });
     assert.equal(second.accountKey, null);
@@ -161,8 +161,8 @@ describe('registerUsageSource', () => {
   });
 
   it('rejects resources it did not list', async () => {
-    const { bb, call } = fakeBb();
-    registerUsageSource(bb, async () => OK);
+    const { alia, call } = fakeAlia();
+    registerUsageSource(alia, async () => OK);
     await assert.rejects(
       call(usageFetchMethod, {
         resourceId: JSON.stringify(['host_remote', 'acp-gh-copilot']),

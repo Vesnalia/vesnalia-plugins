@@ -18,9 +18,9 @@ describe("ThreadInbox", () => {
     expect(row.getAttribute("data-sidebar-thread-id")).toBe("thr_x");
   });
 
-  // bb routes the row's link. toThread would also turn off the thread's saved
-  // Full Screen, so a row click must leave navigation to bb.
-  it("leaves a click to bb's link routing and closes the mobile drawer", () => {
+  // VesnALIA routes the row's link. toThread would also turn off the thread's saved
+  // Full Screen, so a row click must leave navigation to VesnALIA.
+  it("leaves a click to VesnALIA's link routing and closes the mobile drawer", () => {
     let navigated = 0;
     const rendered = renderSlot(
       inbox,
@@ -29,7 +29,7 @@ describe("ThreadInbox", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "thr_open" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: { listLifecycle: () => ({ rows: [] }) },
       },
@@ -46,14 +46,14 @@ describe("ThreadInbox", () => {
     expect(rendered.linkCalls).toHaveLength(1);
   });
 
-  // bb owns the modifier hold and numbering; rows draw what it assigns.
-  it("shows bb's jump shortcut on a row in place of its status", () => {
+  // VesnALIA owns the modifier hold and numbering; rows draw what it assigns.
+  it("shows VesnALIA's jump shortcut on a row in place of its status", () => {
     const threads = [thread({ id: "thr_a", title: "Thread A" }), thread({ id: "thr_b", title: "Thread B" })];
     const options = {
       sidebarThreads: {
         status: "ready" as const,
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }) },
     };
@@ -75,7 +75,7 @@ describe("ThreadInbox", () => {
     expect(keys("Thread B")).toBe("Alt+ArrowUp Alt+ArrowDown");
   });
 
-  it("leaves a platform-modifier click to bb, which opens a split", () => {
+  it("leaves a platform-modifier click to VesnALIA, which opens a split", () => {
     const rendered = render([thread({ id: "thr_modifier" })]);
     fireEvent.click(screen.getByRole("link"), { metaKey: true });
 

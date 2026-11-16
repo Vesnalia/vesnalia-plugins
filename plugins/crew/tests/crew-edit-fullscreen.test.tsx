@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { installTestPluginRuntime } from "@get-bb/plugin-sdk/testing/app";
+import { installTestPluginRuntime } from "@vesnalia/plugin-sdk/testing/app";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import YAML from "yaml";
 import { CrewEditFullscreen } from "../components/crew-edit-fullscreen";
@@ -27,7 +27,7 @@ links:
     kind: assigns_to
 `;
 
-// The SDK picker needs BB's runtime; a plain stand-in keeps the test on our own code.
+// The SDK picker needs VesnALIA's runtime; a plain stand-in keeps the test on our own code.
 const Picker = ({ value, onChange }: { value: { providerId: string; model: string }; onChange: (value: { providerId: string; model: string }) => void }) => (
   <input aria-label="Model stub" value={value.model} onChange={(event) => onChange({ providerId: value.providerId, model: event.target.value })} />
 );

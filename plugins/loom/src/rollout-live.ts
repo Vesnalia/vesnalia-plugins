@@ -116,7 +116,7 @@ function start(ctx: EngineCtx, project: ProjectRow, check: Check): void {
   if (!store.claimRolloutRun(project.id, check.target, token, now() - RUN_LEASE_MS)) return;
   const run: Run = { promise: Promise.resolve(), fenced: false };
   run.promise = runCheck(ctx, project.id, check, token, run)
-    .catch((error: unknown) => ctx.bb.log("warn", `The rollout ${check.by} of ${check.target} in ${project.slug} failed: ${errText(error)}`))
+    .catch((error: unknown) => ctx.alia.log("warn", `The rollout ${check.by} of ${check.target} in ${project.slug} failed: ${errText(error)}`))
     .finally(() => {
       if (runs.get(id) === run) runs.delete(id);
     });
@@ -165,7 +165,7 @@ async function runCheck(ctx: EngineCtx, projectId: number, check: Check, token: 
 export function markLiveByHuman(ctx: EngineCtx, slug: string, target: string, opts: { note?: string; undo?: boolean }, actor: string): RolloutMarkRow | null {
   const { store } = ctx;
   const project = store.projectBySlug(slug);
-  if (project === null) throw new LoomError("loom_not_found", `No Loom project ${slug}.`, "Run `bb loom list` to see the projects.");
+  if (project === null) throw new LoomError("loom_not_found", `No Loom project ${slug}.`, "Run `alia loom list` to see the projects.");
   if (project.state === "draft" || project.state === "archived") throw new LoomError("loom_invalid_state", `Project ${slug} is ${project.state}, so it has no rollout to follow.`);
   const spec = specOf(store, project);
   const tickets = store.tickets(project.id);
@@ -173,7 +173,7 @@ export function markLiveByHuman(ctx: EngineCtx, slug: string, target: string, op
   const ticket = tickets.find((row) => row.key === target) ?? null;
   const milestones = (spec.rollout?.milestone ?? []).map((milestone) => milestone.ref);
   if (ticket === null && !milestones.includes(target)) {
-    throw new LoomError("loom_not_found", `"${target}" is neither a ticket of ${slug} nor a milestone of its spec.`, milestones.length === 0 ? "Use a ticket key such as the ones `bb loom tickets` lists." : `Use a ticket key, or one of the milestones: ${milestones.join(", ")}.`);
+    throw new LoomError("loom_not_found", `"${target}" is neither a ticket of ${slug} nor a milestone of its spec.`, milestones.length === 0 ? "Use a ticket key such as the ones `alia loom tickets` lists." : `Use a ticket key, or one of the milestones: ${milestones.join(", ")}.`);
   }
   const name = ticket === null ? target : ticket.key;
   const mark = store.rolloutMark(project.id, name);
@@ -184,7 +184,7 @@ export function markLiveByHuman(ctx: EngineCtx, slug: string, target: string, op
     return store.rolloutMark(project.id, name);
   }
   if (mark?.live_at != null) {
-    throw new LoomError("loom_invalid_state", `${name} is already live: marked by ${mark.live_by ?? "human"} at ${whenText(mark.live_at)}.`, `Undo it with \`bb loom live ${slug} ${name} --undo\` first to mark it again.`);
+    throw new LoomError("loom_invalid_state", `${name} is already live: marked by ${mark.live_by ?? "human"} at ${whenText(mark.live_at)}.`, `Undo it with \`alia loom live ${slug} ${name} --undo\` first to mark it again.`);
   }
   return store.markLive(project.id, ticket?.id ?? null, name, { by: "human", evidence: note }, actor);
 }

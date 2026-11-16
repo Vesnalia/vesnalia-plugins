@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-focus-board",
+  "name": "alia-plugin-focus-board",
   "version": "1.7.15",
   "type": "module",
   "license": "MIT",
@@ -7,7 +7,7 @@
     "pretest": "node scripts/check-node-modules.mjs",
     "test": "node scripts/generate-unreleased.mjs && node scripts/generate-whats-new.mjs && vitest run",
     "prebuild": "node scripts/check-node-modules.mjs",
-    "build": "node scripts/generate-unreleased.mjs && node scripts/generate-whats-new.mjs && bb plugin build",
+    "build": "node scripts/generate-unreleased.mjs && node scripts/generate-whats-new.mjs && alia plugin build",
     "preuat": "node scripts/check-node-modules.mjs",
     "uat": "node scripts/uat/run.mjs",
     "release-shots": "node scripts/uat/release-shots.mjs",
@@ -17,10 +17,10 @@
     "gates": "node scripts/security-gates.mjs"
   },
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.5.9"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.5.9"
   },
-  "bb": {
+  "alia": {
     "name": "Focus Board",
     "description": "A kanban board of your threads, focused on what needs you first.",
     "branding": {
@@ -38,7 +38,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "^0.6.19",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -71,5 +70,22 @@
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.19"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/focus-board#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/focus-board"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

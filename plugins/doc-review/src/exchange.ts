@@ -1,6 +1,6 @@
 // Sharing comments through PDFs: exporting a paged document with its comments
 // written in (src/annotate.ts), and finding and importing the comments that
-// another bb's export carries (src/share.ts). The glue between those, the
+// another VesnALIA's export carries (src/share.ts). The glue between those, the
 // store, and the PDF a document is shown from.
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";

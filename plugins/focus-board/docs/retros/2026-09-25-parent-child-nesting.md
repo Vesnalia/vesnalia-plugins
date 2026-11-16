@@ -4,7 +4,7 @@
 
 ## What shipped
 
-Jira-subissue-style nested cards on the board. bb's native parent-child
+Jira-subissue-style nested cards on the board. VesnALIA's native parent-child
 threads (`parentThreadId` on the sidebar stream + `parent-changed` event)
 render as children indented under parent cards: collapsible chevron, per-child
 state dots, child rows open their own panes, +N chip for grandchildren beyond

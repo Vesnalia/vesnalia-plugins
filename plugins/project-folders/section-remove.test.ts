@@ -12,11 +12,11 @@ import path from "node:path";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 async function fixture(extraProjects: unknown[] = []) {
-  const root = await mkdtemp(path.join(tmpdir(), "bb-folders-remove-"));
+  const root = await mkdtemp(path.join(tmpdir(), "alia-folders-remove-"));
   const h = createFakePluginHost({
     pluginId: "project-folders",
     agentSkillIds: ["project-folders"],
@@ -80,7 +80,7 @@ async function fixture(extraProjects: unknown[] = []) {
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   return {
     ...h,
     root,
@@ -198,8 +198,8 @@ it("purges files and deletes chats", async () => {
   }
 });
 
-it("refuses to purge a folder that holds another BB project, and unbind still works", async () => {
-  const root = await mkdtemp(path.join(tmpdir(), "bb-folders-nested-"));
+it("refuses to purge a folder that holds another VesnALIA project, and unbind still works", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "alia-folders-nested-"));
   const nested = path.join(root, "dzen");
   await mkdir(nested, { recursive: true });
   await writeFile(path.join(nested, "keep.txt"), "stay");
@@ -274,7 +274,7 @@ it("refuses to purge a folder that holds another BB project, and unbind still wo
       },
     },
   });
-  await plugin(h.bb);
+  await plugin(h.alia);
   try {
     const f = (await h.harness.behavior.callRpc("create", {
       projectId: "p1",
@@ -288,7 +288,7 @@ it("refuses to purge a folder that holds another BB project, and unbind still wo
         folderId: f.id,
         mode: "purge",
       }),
-    ).rejects.toThrow(/another BB project/);
+    ).rejects.toThrow(/another ALIA project/);
     await h.harness.behavior.callRpc("section_remove", {
       folderId: f.id,
       mode: "unbind",

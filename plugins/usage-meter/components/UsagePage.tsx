@@ -10,11 +10,11 @@
 //
 // The bottom half is ours and has no counterpart there: workflow runs and
 // background /go runs with their real figures, skills with how often they ran
-// and how heavy their instructions are, projects and bb threads. Those numbers
+// and how heavy their instructions are, projects and VesnALIA threads. Those numbers
 // are token counts, not weighted cost, and the headings say so — mixing the two
 // units silently would be the one thing that makes the whole page untrustworthy.
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { useBbNavigate, useRpc, type PluginNavPanelProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc, type PluginNavPanelProps } from "@vesnalia/plugin-sdk/app";
 
 import type { rpcContract, UsageState } from "../server";
 // Types only, and it has to stay that way: usage-scan.ts reads the file system
@@ -70,7 +70,7 @@ import { Caption, Card, Cell, Empty, Meter, Percent, Stat, Table, toneOf } from 
 import { UsageChart } from "./UsageChart";
 
 /**
- * The scanner's key for the sessions no bb thread was found for. Spelled out
+ * The scanner's key for the sessions no VesnALIA thread was found for. Spelled out
  * rather than imported, because importing the constant itself would be a runtime
  * import of the scanner; the annotation is the link — the scanner's own literal
  * type, so renaming the key there stops this file from compiling.
@@ -93,7 +93,7 @@ function periodOf(subPath: string): Period {
 
 export function UsagePage({ subPath }: PluginNavPanelProps): ReactNode {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const period = periodOf(subPath);
 
   const [summary, setSummary] = useState<UsageSummary | null>(null);
@@ -143,7 +143,7 @@ export function UsagePage({ subPath }: PluginNavPanelProps): ReactNode {
   return (
     <div className="h-full overflow-y-auto p-4 md:p-5">
       {/*
-        The page is a panel, not a window: bb gives it whatever width is left
+        The page is a panel, not a window: VesnALIA gives it whatever width is left
         after the sidebar and the right panel, and that is nothing like the
         viewport. Every breakpoint below is therefore a container query — a
         `md:` here would lay five figures out in a row inside a 450-pixel panel
@@ -736,7 +736,7 @@ function ShareRow({
   );
 }
 
-/** Where the tokens went: folders, models, and bb threads where they are known. */
+/** Where the tokens went: folders, models, and VesnALIA threads where they are known. */
 function ProjectsCard({ summary }: { summary: UsageSummary }): ReactNode {
   const unresolved = summary.unresolvedThreadShare;
   const unresolvedShown = summary.byThread.some(
@@ -752,7 +752,7 @@ function ProjectsCard({ summary }: { summary: UsageSummary }): ReactNode {
   return (
     <Card
       title="Projects and threads"
-      hint="Tokens by working folder and by bb thread. A session is tied to a thread through bb's own events, which do not live long — older sessions stay unattributed."
+      hint="Tokens by working folder and by VesnALIA thread. A session is tied to a thread through VesnALIA's own events, which do not live long — older sessions stay unattributed."
     >
       <div className="space-y-4">
         {/* The folder column carries long paths; the model column carries "opus-5". */}
@@ -789,10 +789,10 @@ function ProjectsCard({ summary }: { summary: UsageSummary }): ReactNode {
           </TrimmedTable>
         </div>
         {summary.byThread.length === 0 ? (
-          <Empty>No bb threads could be tied to these sessions.</Empty>
+          <Empty>No VesnALIA threads could be tied to these sessions.</Empty>
         ) : (
           <TrimmedTable
-            head={["bb thread", "Tokens", "Share"]}
+            head={["alia thread", "Tokens", "Share"]}
             widths={[undefined, "22%", "30%"]}
             shown={summary.byThread.length}
             total={summary.bucketCounts.thread}
@@ -803,13 +803,13 @@ function ProjectsCard({ summary }: { summary: UsageSummary }): ReactNode {
           </TrimmedTable>
         )}
         {/*
-          Unattributed sessions are a bucket of their own ("Without a bb
+          Unattributed sessions are a bucket of their own ("Without a VesnALIA
           thread"), so the figure is normally a row in the table above. It needs
           a sentence only when that row did not survive the cut — otherwise the
           shares on screen quietly leave out the largest slice of all.
         */}
         {unresolved > 0 && !unresolvedShown ? (
-          <Caption>{sharePercent(unresolved)} of the tokens could not be tied to a bb thread.</Caption>
+          <Caption>{sharePercent(unresolved)} of the tokens could not be tied to a VesnALIA thread.</Caption>
         ) : null}
       </div>
     </Card>

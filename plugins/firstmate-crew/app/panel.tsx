@@ -2,7 +2,7 @@
  * The FirstMate tab on any thread. What it shows depends on the thread: the board on the first mate's,
  * the worker's card on a crewmate's, and on any other an offer to adopt it or a way to the first mate.
  */
-import { useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -26,7 +26,7 @@ function Notice({ title, children }: { title: string; children?: React.ReactNode
 
 function Elsewhere({ fleet, threadId, onChanged }: { fleet: Fleet; threadId: string; onChanged: () => void }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [busy, setBusy] = useState(false);
 
   if (fleet.mate !== null) {

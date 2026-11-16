@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Value } from "../../core/types";
@@ -12,8 +12,8 @@ import { Acceptance } from "./Acceptance";
 import { Findings } from "./Findings";
 import { Provenance } from "./Provenance";
 
-// BB draws icons, links and markdown; here each is a plain element.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+// VesnALIA draws icons, links and markdown; here each is a plain element.
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   experimental_Icon: ({ name }: { name: string }) => <i data-icon={name} />,
   Markdown: ({ children }: { children: string }) => <span>{children}</span>,
@@ -109,7 +109,7 @@ describe("A file group's header", () => {
     expect(openFile).toHaveBeenCalledWith("src/mapMath.ts", undefined);
   });
 
-  it("reads as plain text where BB can't open files", () => {
+  it("reads as plain text where VesnALIA can't open files", () => {
     renderFindings(items, false);
     const header = container.querySelector("h4")!;
     expect(header.querySelector("button")).toBeNull();
@@ -119,7 +119,7 @@ describe("A file group's header", () => {
 });
 
 describe("A review's artifacts", () => {
-  it("open a file in BB and a web address as a link, each marked once", async () => {
+  it("open a file in VesnALIA and a web address as a link, each marked once", async () => {
     renderFindings({
       verdict: "fix-required",
       findings: [{ id: "S1", severity: "P1", area: "hud", issue: "The HUD overlaps the arena", status: "open" }],
@@ -160,7 +160,7 @@ describe("Acceptance's file evidence", () => {
     expect(openFile).toHaveBeenCalledWith("data/acceptance/coil-gate.json", undefined);
   });
 
-  it("says so when BB can't open the file", async () => {
+  it("says so when VesnALIA can't open the file", async () => {
     openFile.mockResolvedValueOnce(false);
     render(Acceptance, { criteria });
     press("The gate result is kept");
@@ -168,7 +168,7 @@ describe("Acceptance's file evidence", () => {
     expect(toastError).toHaveBeenCalledWith("Couldn't open data/acceptance/coil-gate.json");
   });
 
-  it("is a plain box where BB can't open files", () => {
+  it("is a plain box where VesnALIA can't open files", () => {
     render(Acceptance, { criteria }, false);
     press("The gate result is kept");
     const box = container.querySelector('[title="data/acceptance/coil-gate.json"]')!;
@@ -191,7 +191,7 @@ describe("Provenance's file evidence", () => {
     expect(evidence.querySelector('button[aria-label="Open logs/xcodebuild-2811.log"]')).not.toBeNull();
   });
 
-  it("leads with a plain file icon where BB can't open the file", () => {
+  it("leads with a plain file icon where VesnALIA can't open the file", () => {
     const evidence = frame("/var/log/xcodebuild-2811.log");
     expect(icons(evidence)).toEqual(["FileText"]);
     expect(evidence.querySelector("button")).toBeNull();

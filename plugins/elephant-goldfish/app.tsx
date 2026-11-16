@@ -1,4 +1,4 @@
-// Elephant Goldfish — BB plugin frontend.
+// Elephant Goldfish — VesnALIA plugin frontend.
 //
 // Two surfaces share one spec view:
 // - "Spec workspace" page in the sidebar: pick a project, see every spec.
@@ -10,12 +10,12 @@ import {
   Markdown,
   definePluginApp,
   experimental_Diff as Diff,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
-  useBbContext,
+  useAliaContext,
   useComposer,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type {
   DecisionKind,
   EventRow,
@@ -190,12 +190,12 @@ function useReviewer() {
 
 function ReviewerBanner({ status }: { status: ReviewerStatus | null }) {
   if (status === null) return null;
-  const engine = status.engine === "bb" ? "BB" : "Goldfish";
+  const engine = status.engine === "alia" ? "ALIA" : "Goldfish";
   if (status.ready) {
     return (
       <p className="flex items-center gap-1 text-xs text-muted-foreground">
         <Mark variant="goldfish" className="size-3.5" />
-        {engine}: <span className="font-mono">{status.model ?? "default model"}</span> — {status.engine === "bb" ? "ready; fresh BB worker per stage; can run tools, subject only to BB's permissions." : "ready; fresh context, no tools, read-only."}
+        {engine}: <span className="font-mono">{status.model ?? "default model"}</span> — {status.engine === "alia" ? "ready; fresh VesnALIA worker per stage; can run tools, subject only to VesnALIA's permissions." : "ready; fresh context, no tools, read-only."}
       </p>
     );
   }
@@ -396,13 +396,13 @@ function StartReview({ spec, threadId, reviewer }: { spec: Spec; threadId: strin
   const [warning, setWarning] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const disabled = !reviewer?.ready || !spec.exists || busy || (preset === "custom" && lenses.length === 0);
-  const engineLabel = reviewer?.engine === "bb" ? "BB worker" : "Advanced endpoint";
+  const engineLabel = reviewer?.engine === "alia" ? "VesnALIA worker" : "Advanced endpoint";
   const start = () => rpc.call("review_start", { specId: spec.id, projectId: spec.projectId, preset, ...(preset === "custom" ? { lenses, standard } : {}), context: context.split(",").map((s) => s.trim()).filter(Boolean), maxRounds, threadId });
   const requestStart = async () => {
     setBusy(true);
     setError(null);
     try {
-      if (reviewer?.engine !== "bb") await start();
+      if (reviewer?.engine !== "alia") await start();
       else {
         const consent = await rpc.call("consent_status", null);
         if (consent.granted) await start();
@@ -460,16 +460,16 @@ function StartReview({ spec, threadId, reviewer }: { spec: Spec; threadId: strin
         </label>
         <Button size="sm" disabled={disabled} onClick={requestStart}>Start {engineLabel} review</Button>
       </div>
-      {reviewer?.engine === "bb" && (
+      {reviewer?.engine === "alia" && (
         <button type="button" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground" onClick={() => rpc.call("consent_revoke", null).catch((cause: unknown) => setError(errorText(cause)))}>
-          Revoke BB worker consent
+          Revoke VesnALIA worker consent
         </button>
       )}
       <ErrorLine error={error} />
       <Dialog open={warning !== null} onOpenChange={(open) => { if (!open && !busy) setWarning(null); }}>
         <DialogContent hideCloseButton={busy}>
-          <DialogHeader><DialogTitle>Allow BB worker review?</DialogTitle><DialogDescription>{warning}</DialogDescription></DialogHeader>
-          <DialogFooter><Button variant="outline" disabled={busy} onClick={() => setWarning(null)}>Cancel</Button><Button disabled={busy} onClick={grantConsentAndStart}>Allow BB workers and start review</Button></DialogFooter>
+          <DialogHeader><DialogTitle>Allow VesnALIA worker review?</DialogTitle><DialogDescription>{warning}</DialogDescription></DialogHeader>
+          <DialogFooter><Button variant="outline" disabled={busy} onClick={() => setWarning(null)}>Cancel</Button><Button disabled={busy} onClick={grantConsentAndStart}>Allow VesnALIA workers and start review</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -868,7 +868,7 @@ function Workspace({ projectId, threadId, onDraft }: { projectId: string; thread
 function ProjectPage() {
   const rpc = useRpc<RpcContract>();
   const reviewer = useReviewer();
-  const { projectId: contextProjectId } = useBbContext();
+  const { projectId: contextProjectId } = useAliaContext();
   const [projects, setProjects] = useState<{ id: string; name: string; root: string | null }[] | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -921,7 +921,7 @@ function ProjectPage() {
 
 function ThreadTab({ threadId }: { threadId: string }) {
   const rpc = useRpc<RpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
   const currentThread = useRef<string | null>(threadId);
   currentThread.current = threadId;

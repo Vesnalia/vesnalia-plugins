@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import { emptyTotals, PHASES } from "./breakdown.js";
 import { CommandsView } from "./commands.js";
 import type { rpcContract } from "./server.js";

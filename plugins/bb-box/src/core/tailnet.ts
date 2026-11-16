@@ -213,13 +213,13 @@ function parseJson(text: string): unknown {
 }
 
 export function keyDescription(text: string): string {
-  return text.replace(/[^A-Za-z0-9 -]+/g, " ").replace(/\s+/g, " ").trim().slice(0, DESCRIPTION_LIMIT) || "bb-box";
+  return text.replace(/[^A-Za-z0-9 -]+/g, " ").replace(/\s+/g, " ").trim().slice(0, DESCRIPTION_LIMIT) || "alia-box";
 }
 
 export function isInstallDevice(hostname: string, installId: string): boolean {
   const install = tailnetHostname(installId);
   const short = shortTailnetInstall(installId);
-  return [`bb-box-${install}-`, `bb-box-hz-${install}-`, `bb-box-ns-${install}-`, `bb-box-nsb-${install}-`, `bb-box-nsb-${short}-`].some((prefix) => hostname.startsWith(prefix));
+  return [`alia-box-${install}-`, `alia-box-hz-${install}-`, `alia-box-ns-${install}-`, `alia-box-nsb-${install}-`, `alia-box-nsb-${short}-`].some((prefix) => hostname.startsWith(prefix));
 }
 
 export const TAILNET_HASH_LENGTH = 6;
@@ -238,7 +238,7 @@ function cleanHostname(name: string): string {
 }
 
 export function tailnetHostname(name: string): string {
-  return cleanHostname(name).slice(0, HOSTNAME_LIMIT) || "bb-box";
+  return cleanHostname(name).slice(0, HOSTNAME_LIMIT) || "alia-box";
 }
 
 export function fitsTailnetHostname(name: string): boolean {

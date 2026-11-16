@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-cache-watch",
+  "name": "alia-plugin-cache-watch",
   "version": "0.4.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104",
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104",
     "node": "^24.0.0 || ^26.0.0"
   },
-  "bb": {
+  "alia": {
     "name": "Cache Watch",
     "description": "Inspect prompt-cache usage and opt in to time-limited keepalive turns for idle threads.",
     "branding": {
@@ -22,7 +22,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -39,7 +38,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "0.48.1",
     "better-sqlite3": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -55,7 +53,7 @@
     "vitest": "^5.0.5"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test"
@@ -87,22 +85,31 @@
     "template-settings.tsx",
     "status-template-ui.tsx"
   ],
-  "description": "Prompt-cache telemetry and opt-in, time-limited paid keepalive for BB threads.",
+  "description": "Prompt-cache telemetry and opt-in, time-limited paid keepalive for VesnALIA threads.",
   "license": "MIT",
   "author": "Sergey Zhukov",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "prompt-cache",
     "cache",
     "keepalive"
   ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/cache-watch#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SergeyZh/bb-plugin-cache-watch.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/cache-watch"
   },
-  "homepage": "https://github.com/SergeyZh/bb-plugin-cache-watch#readme",
   "bugs": {
-    "url": "https://github.com/SergeyZh/bb-plugin-cache-watch/issues"
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

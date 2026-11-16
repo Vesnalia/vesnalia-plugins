@@ -1,11 +1,11 @@
 ---
 name: agent-tv
-description: Read what every other running BB thread is doing right now with the Agent TV fleet feed (`bb agent-tv status`). Use when asked what the fleet/agents are working on, whether another thread is stuck, waiting on input, or which files sibling threads are touching.
+description: Read what every other running VesnALIA thread is doing right now with the Agent TV fleet feed (`alia agent-tv status`). Use when asked what the fleet/agents are working on, whether another thread is stuck, waiting on input, or which files sibling threads are touching.
 ---
 
 # Agent TV: read the fleet
 
-Agent TV folds BB's thread-event stream into one live frame per running thread:
+Agent TV folds VesnALIA's thread-event stream into one live frame per running thread:
 the tool call in flight, the files touched in the last 60 seconds, whether the
 model is mid-stream, and a 60-second activity trace. The sidebar footer shows it
 as a wall of tiles; the command below returns the same data.
@@ -13,11 +13,11 @@ as a wall of tiles; the command below returns the same data.
 ## Read the fleet
 
 ```
-bb agent-tv status                # human-readable, one block per thread
-bb agent-tv status --json         # the exact frame the wall renders
-bb agent-tv status --limit 3      # the busiest threads only
-bb agent-tv status --all-projects # every project on this bb, not just yours
-bb agent-tv --help                # this usage, without reading the fleet
+alia agent-tv status                # human-readable, one block per thread
+alia agent-tv status --json         # the exact frame the wall renders
+alia agent-tv status --limit 3      # the busiest threads only
+alia agent-tv status --all-projects # every project on this alia, not just yours
+alia agent-tv --help                # this usage, without reading the fleet
 ```
 
 **Scope.** Run from inside a thread, this shows that thread's project only.
@@ -40,8 +40,8 @@ project context and the whole machine is shown.
     "parentThreadId": "thr_parent" | null,
     "childCount": 2,
     "tool": "git commit -m 'ship it'" | null,   // the call in flight
-    "verb": "Running command" | "Ran command",  // BB's own words for it
-    "glyph": "Terminal",                        // BB's own icon for it
+    "verb": "Running command" | "Ran command",  // ALIA's own words for it
+    "glyph": "Terminal",                        // ALIA's own icon for it
     "settled": false,                           // the call already returned
     "streaming": true,                          // model output in the last 3s
     "busy": true,                               // actually working — see below
@@ -56,19 +56,19 @@ project context and the whole machine is shown.
 } ] }
 ```
 
-The wall resolves `providerId` through BB's provider catalog, so each tile can
+The wall resolves `providerId` through VesnALIA's provider catalog, so each tile can
 show the provider's own artwork (with an accessible provider label). `model`
 comes from the latest turn request (or a provider fallback), `effort` comes from
 that turn's reasoning-level selection, and `projectId` maps to the project name
 in the sidebar. `parentThreadId` and `childCount`
-identify spawned/forked work. Threads BB marks hidden — the worker threads of
+identify spawned/forked work. Threads VesnALIA marks hidden — the worker threads of
 orchestrated work — never get a row of their own; they are counted in their
 parent's `childCount` instead, which is the only place they appear. The wall can be
 popped out into a draggable monitor from its header.
 
 ## How to use it
 
-- Read `busy`, not `status`, to answer "is this thread working". BB leaves
+- Read `busy`, not `status`, to answer "is this thread working". VesnALIA leaves
   `status` at `active` for hours after an agent stops, so a wall sorted on it
   alone reported long-dead threads as on air. `busy` means a working status
   *and* evidence of it: output streaming, a tool call that has not returned
@@ -98,7 +98,7 @@ popped out into a draggable monitor from its header.
   of `maxRows`, so `quietMs` — not the row's presence — is what tells you
   whether anything is happening. An empty feed means the pump has not seen any
   thread activity at all, and the feed is never a substitute for reading a
-  thread with `bb thread show <id>`.
+  thread with `alia thread show <id>`.
 - A quiet row can be dismissed immediately with its check button. That is a
   viewing-only dismissal remembered across panel/plugin reloads: if the thread
   becomes busy again, it returns.
@@ -106,7 +106,7 @@ popped out into a draggable monitor from its header.
   reads, and it is the same data the user is looking at.
 - The pump asks for only the event kinds it folds, and seeds any thread it has
   not read from the tail of its log; unrelated timeline payloads are not read.
-- A feed that falls far behind its thread, or that has gone silent while BB
+- A feed that falls far behind its thread, or that has gone silent while VesnALIA
   still calls the thread running, is re-read from the tail rather than replayed
   forward. So a row is either current or openly unsettled — but `quietMs` is
   still "since the last event we folded", so treat a large one on a `busy` row
@@ -116,6 +116,6 @@ popped out into a draggable monitor from its header.
   values, `user:pass@` URLs and recognisable key prefixes come through masked
   with `•••`. Do not try to reconstruct them, and do not go and read the
   original event to get around it.
-- Event pages adapt down when BB rejects a response for size, and a single
+- Event pages adapt down when VesnALIA rejects a response for size, and a single
   event too large to fetch at all is stepped over rather than retried for ever.
   A thread that has been deleted is dropped instead of re-read.

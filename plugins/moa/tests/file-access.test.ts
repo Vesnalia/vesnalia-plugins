@@ -1,11 +1,11 @@
 import { expect, it } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { advisorInput, hasFileGateway } from "../file-access";
 import { fileAccessPolicy } from "../prompts";
 import type { Input } from "../core";
 
 it("enables external reads only for the running optional plugin", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "moa" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "moa" });
   for (const [plugins, expected] of [
     [[], false],
     [[{ id: "file-gateway", enabled: false, status: "disabled" }], false],
@@ -14,10 +14,10 @@ it("enables external reads only for the running optional plugin", async () => {
     [[{ id: "other", enabled: true, status: "running" }], false],
   ] as const) {
     harness.inspection.sdk.stub("plugins.list", async () => ({ plugins }));
-    expect(await hasFileGateway(bb)).toBe(expected);
+    expect(await hasFileGateway(alia)).toBe(expected);
   }
   harness.inspection.sdk.stub("plugins.list", async () => { throw new Error("discovery failed"); });
-  expect(await hasFileGateway(bb)).toBe(false);
+  expect(await hasFileGateway(alia)).toBe(false);
   await harness.lifecycle.dispose();
 });
 it("preserves exact native gateway sources without forwarding other plugin selections", () => {
@@ -35,7 +35,7 @@ it("preserves exact native gateway sources without forwarding other plugin selec
 });
 it("provides a provider-independent CLI route and a fail-closed unavailable policy", () => {
   const enabled = fileAccessPolicy(true, "host_local");
-  expect(enabled).toContain("bb file-gateway read");
+  expect(enabled).toContain("alia file-gateway read");
   expect(enabled).toContain("exact hostId and path");
   expect(enabled).toContain("do not copy, write, upload");
   const disabled = fileAccessPolicy(false, "host_local");

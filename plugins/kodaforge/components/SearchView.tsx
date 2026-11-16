@@ -1,6 +1,6 @@
 // Phase 3: search across files, and replace with a preview of every change.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Scope } from "../server";
 import { Icon } from "@/components/ui/icon";
 import { FileIcon } from "./FileIcon";

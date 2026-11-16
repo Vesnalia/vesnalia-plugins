@@ -16,7 +16,7 @@ function project(id: string, name: string, hostId = "host_1"): Project {
 function manifest(sessionId: string, repositories: Array<{ projectId: string; alias: string }>) {
   return {
     schemaVersion: 2 as const,
-    owner: "bb-plugin-workspaces" as const,
+    owner: "alia-plugin-workspaces" as const,
     sessionId,
     workspaceName: "Platform",
     instructions: "",
@@ -27,7 +27,7 @@ function manifest(sessionId: string, repositories: Array<{ projectId: string; al
       sourcePath: `/repos/${repository.projectId}`,
       baseRef: "HEAD",
       baseCommit: "abc123",
-      branch: `bb-workspace/session-1/${repository.alias}`,
+      branch: `alia-workspace/session-1/${repository.alias}`,
       worktreePath: `/sessions/${sessionId}/repos/${repository.alias}`,
     })),
   };
@@ -66,7 +66,7 @@ function createFixture(options: { policy?: "ask" | "auto"; projects?: Project[];
         repository: {
           ...input.repository,
           baseCommit: "abc123",
-          branch: `bb-workspace/session-1/${input.repository.alias}`,
+          branch: `alia-workspace/session-1/${input.repository.alias}`,
           worktreePath: `/sessions/${input.sessionId}/repos/${input.repository.alias}`,
         },
         manifestRevision: 2,

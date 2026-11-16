@@ -10,7 +10,7 @@
  * Neither end parses the bytes. The clipboard calls carry the Mac's clipboard
  * text beside the session, not through it. The app never imports this file.
  */
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { ClipboardReadSchema, ClipboardWrittenSchema, MAX_CLIPBOARD_BYTES, ScreenCheckSchema } from "./channels";
@@ -31,7 +31,7 @@ export const hostContract = defineRpcContract({
   /** Connects a session to this Mac's Screen Sharing. Resolves once the TCP connection is up. */
   open: { input: z.object({ sessionId: SessionId }), output: Empty },
   /**
-   * The viewer's next bytes. `seq` counts from 0; bb may deliver concurrent
+   * The viewer's next bytes. `seq` counts from 0; VesnALIA may deliver concurrent
    * calls out of order, so the host puts them back in order, and a repeated or
    * missing one ends the session.
    */
@@ -43,7 +43,7 @@ export const hostContract = defineRpcContract({
   /** Ends a session. Safe for one the host does not know. */
   close: { input: z.object({ sessionId: SessionId }), output: Empty },
   /**
-   * This Mac's clipboard, for the account bb runs as (host/pasteboard.ts): the
+   * This Mac's clipboard, for the account VesnALIA runs as (host/pasteboard.ts): the
    * change count, and the text when `since` is a count other than the current
    * one. The server calls it only for a Mac with a session open.
    */

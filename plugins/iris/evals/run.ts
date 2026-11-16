@@ -1,8 +1,8 @@
 // Iris eval suite: does an agent with Iris's instructions show things as cards?
 //
-// Each case is a generic bb moment (a status report, proof that something is
+// Each case is a generic VesnALIA moment (a status report, proof that something is
 // done, PR or CI state, data to decide on). The agent (Claude Code, headless,
-// Opus 5.5) answers with exactly the instructions Iris gives agents in bb, and
+// Opus 5.5) answers with exactly the instructions Iris gives agents in VesnALIA, and
 // the same Iris tools (iris_docs, iris_examples, iris_check, served by
 // evals/mcp-server.ts); no other tools. Every answer is scored:
 //   - deterministic (half): Iris is used (an ```iris block, a ::iris{file} card,
@@ -26,7 +26,7 @@ import { spawn } from "node:child_process";
 /**
  * The child claude runs on the person's own login, isolated from their setup: an empty config folder
  * holding only a copy of the login (no CLAUDE.md, settings, hooks, plugins or memory), run in this
- * repo as with --bare (it has no CLAUDE.md or .claude of its own). Inside a bb thread whose provider the host manages, the host's variables would
+ * repo as with --bare (it has no CLAUDE.md or .claude of its own). Inside a VesnALIA thread whose provider the host manages, the host's variables would
  * point it elsewhere ("Not logged in"), so they are dropped. Without a login file it falls back to
  * --bare, which needs an API key.
  */
@@ -42,14 +42,14 @@ function isolation(): { config: string } | null {
   return (isolated = { config });
 }
 /**
- * Inside a bb thread routed through bb's Account Pooler, the child claude runs on the person's
+ * Inside a VesnALIA thread routed through VesnALIA's Account Pooler, the child claude runs on the person's
  * pooled subscription accounts: the pool's route stays, and the parent token authenticates it
- * (bb's documented way to route a nested claude). Then --bare keeps it free of local setup.
+ * (VesnALIA's documented way to route a nested claude). Then --bare keeps it free of local setup.
  */
-const POOLED = Boolean(process.env.ANTHROPIC_BASE_URL && process.env.BB_ACCOUNT_POOL_PARENT_TOKEN);
+const POOLED = Boolean(process.env.ANTHROPIC_BASE_URL && process.env.ALIA_ACCOUNT_POOL_PARENT_TOKEN);
 function evalEnv(): NodeJS.ProcessEnv {
   if (POOLED) {
-    const env = { ...process.env, ANTHROPIC_AUTH_TOKEN: process.env.BB_ACCOUNT_POOL_PARENT_TOKEN };
+    const env = { ...process.env, ANTHROPIC_AUTH_TOKEN: process.env.ALIA_ACCOUNT_POOL_PARENT_TOKEN };
     for (const k of ["CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CONFIG_DIR"]) delete env[k];
     return env;
   }
@@ -95,7 +95,7 @@ const gate = args.includes("--gate");
 const saveBaseline = args.includes("--save-baseline");
 const RUNS = Math.max(1, Number(args.includes("--runs") ? args[args.indexOf("--runs") + 1] : (process.env.IRIS_EVAL_RUNS ?? 2)) || 2);
 
-/** The instructions an agent gets from Iris in bb, in the order bb gives them. */
+/** The instructions an agent gets from Iris in VesnALIA, in the order VesnALIA gives them. */
 function systemPrompt(): string {
   return [mainInstructions("eager"), ...indexSections().map((s) => s.text), CODE_WORK_INSTRUCTIONS, ASK_INSTRUCTIONS].join("\n\n");
 }
@@ -143,7 +143,7 @@ function claude(prompt: string, system: string, timeoutMs = 300_000, log: string
 
 async function judgeAnswer(c: Case, answer: string, calls: Call[]): Promise<{ score: number; why: string }> {
   const tools = callsForJudge(calls);
-  const rubric = `You grade how well an AI agent in a chat app answered with live UI cards. The app renders \`\`\`iris blocks (JSX-like components; every one that exists: ${CATALOG.map((x) => x.name).join(", ")}) as interactive cards. Do not mark down an answer for using any of these. Threads, Changes, Commits, PullRequest, Environments and Pipeline (without data props) and load("bb:...") read the chat app's live data when rendered, so they are not empty. A line ::iris{file="..."} draws the card held in that file, live; the agent may not see the file's content. The agent can also call tools: iris_ask shows the person a picker (written in the same markup) and waits for their answer, and iris_pin keeps a card in view beside the conversation. Those calls are part of the answer.
+  const rubric = `You grade how well an AI agent in a chat app answered with live UI cards. The app renders \`\`\`iris blocks (JSX-like components; every one that exists: ${CATALOG.map((x) => x.name).join(", ")}) as interactive cards. Do not mark down an answer for using any of these. Threads, Changes, Commits, PullRequest, Environments and Pipeline (without data props) and load("VesnALIA:...") read the chat app's live data when rendered, so they are not empty. A line ::iris{file="..."} draws the card held in that file, live; the agent may not see the file's content. The agent can also call tools: iris_ask shows the person a picker (written in the same markup) and waits for their answer, and iris_pin keeps a card in view beside the conversation. Those calls are part of the answer.
 
 The user's request:
 <request>

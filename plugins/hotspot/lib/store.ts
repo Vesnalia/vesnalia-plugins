@@ -1,5 +1,5 @@
 /**
- * Persistence in the plugin's own SQLite database (`bb.storage.database()`).
+ * Persistence in the plugin's own SQLite database (`alia.storage.database()`).
  *
  * A week of one-minute samples is ~10k rows. KV storage holds one JSON value
  * per key, so a history there would mean rewriting a growing blob every
@@ -46,12 +46,12 @@ export const MIGRATIONS = [
   // full reading as JSON. Older rows keep NULL in both.
   `ALTER TABLE samples ADD COLUMN mem REAL`,
   `ALTER TABLE samples ADD COLUMN memory TEXT`,
-  // BB's total and its app/threads split, as JSON. Older rows keep NULL.
-  `ALTER TABLE samples ADD COLUMN bb TEXT`,
+  // VesnALIA's total and its app/threads split, as JSON. Older rows keep NULL.
+  `ALTER TABLE samples ADD COLUMN VesnALIA TEXT`,
   // Process names written before lib/proc-name.ts named every process by
   // allowlist could hold command-line arguments. Clear them: each culprit's
-  // process list (`procs`), each episode's outside-BB list (`others`), each
-  // sample's outside-BB list (`procs`), and the same in the detector's open
+  // process list (`procs`), each episode's outside-ALIA list (`others`), each
+  // sample's outside-ALIA list (`procs`), and the same in the detector's open
   // episode and streak. Thread ids, CPU and memory stay.
   `UPDATE episodes SET
      culprits = (SELECT json_group_array(json_remove(value, '$.procs')) FROM json_each(episodes.culprits)),
@@ -79,7 +79,7 @@ interface SampleRow {
   threads: string;
   procs: string;
   /** Absent before the column's migration ran on this row's table; NULL in older rows. */
-  bb?: string | null;
+  alia?: string | null;
 }
 
 /**
@@ -104,7 +104,7 @@ function toSample(row: SampleRow): Sample | null {
     memory: row.memory === null ? null : JSON.parse(row.memory),
     threads: JSON.parse(row.threads),
     procs: JSON.parse(row.procs),
-    bb: row.bb == null ? null : JSON.parse(row.bb),
+    alia: row.alia == null ? null : JSON.parse(row.alia),
   }));
 }
 
@@ -151,8 +151,8 @@ function episodeParams(episode: Episode) {
 
 export function createStore(db: Db) {
   const insertSample = db.prepare(
-    `INSERT OR REPLACE INTO samples (at, thermal, cpu, load, mem, memory, threads, procs, bb)
-     VALUES (@at, @thermal, @cpu, @load, @mem, @memory, @threads, @procs, @bb)`,
+    `INSERT OR REPLACE INTO samples (at, thermal, cpu, load, mem, memory, threads, procs, VesnALIA)
+     VALUES (@at, @thermal, @cpu, @load, @mem, @memory, @threads, @procs, @alia)`,
   );
   const selectSamples = db.prepare(
     `SELECT * FROM samples WHERE at >= ? AND at <= ? ORDER BY at`,
@@ -208,7 +208,7 @@ export function createStore(db: Db) {
       // and are not kept per sample.
       threads: JSON.stringify(sample.threads.map(({ top: _top, ...thread }) => thread)),
       procs: JSON.stringify(sample.procs),
-      bb: sample.bb === null ? null : JSON.stringify(sample.bb),
+      alia: sample.alia === null ? null : JSON.stringify(sample.alia),
     });
   }
 

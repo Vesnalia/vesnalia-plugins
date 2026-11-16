@@ -1,13 +1,13 @@
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 
-// `bb plugin build` defines `__BB_PLUGIN_ID__`; tests run without it.
-declare const __BB_PLUGIN_ID__: string | undefined;
+// `alia plugin build` defines `__ALIA_PLUGIN_ID__`; tests run without it.
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 // Plugin Tailwind utilities apply only under these attributes, and a portalled tooltip renders outside the plugin root.
-function portalScopeProps(): { "data-bb-portaled-overlay": ""; "data-bb-plugin-root": ""; "data-bb-plugin"?: string } {
-  const pluginId = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
-  return { "data-bb-portaled-overlay": "", "data-bb-plugin-root": "", ...(pluginId === undefined ? {} : { "data-bb-plugin": pluginId }) };
+function portalScopeProps(): { "data-alia-portaled-overlay": ""; "data-alia-plugin-root": ""; "data-alia-plugin"?: string } {
+  const pluginId = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : undefined;
+  return { "data-alia-portaled-overlay": "", "data-alia-plugin-root": "", ...(pluginId === undefined ? {} : { "data-alia-plugin": pluginId }) };
 }
 
 // Focus that a closing panel or menu hands back to the button after a click must not leave the hint showing.

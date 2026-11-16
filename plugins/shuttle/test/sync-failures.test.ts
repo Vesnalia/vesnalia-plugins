@@ -499,7 +499,7 @@ describe("linked PRs no list brings", () => {
   });
 });
 
-describe("bb shuttle status", () => {
+describe("alia shuttle status", () => {
   it("says a server that failed before 0.3.6 is failing, with its stored error", async () => {
     const h = harness();
     await h.shuttle.sync();

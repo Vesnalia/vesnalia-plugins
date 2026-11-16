@@ -9,7 +9,7 @@ export const messages = defineMessages(
     intro:
       "Agents read the Qlik Sense reports you tick here, and only with the models you allow. Qlik is reached from the machine below; the password stays on it.",
     loading: "Loading…",
-    noMachine: "No machine is connected to bb right now.",
+    noMachine: "No machine is connected to VesnALIA right now.",
     machine: "Machine where agents reach Qlik",
     askingMachine: "Asking the machine…",
 
@@ -22,7 +22,7 @@ export const messages = defineMessages(
     loginNoDomain: "Enter the login with the domain: DOMAIN\\user.",
     password: "Password",
     passwordSaved: (store: string) => `Saved in ${store}. Leave empty to keep it.`,
-    passwordNew: "Stays on this machine. bb's server never stores it.",
+    passwordNew: "Stays on this machine. VesnALIA's server never stores it.",
     storeKeychain: "macOS Keychain",
     storeDpapi: "Windows, encrypted with your Windows account",
     storeFile: "a file only your user can read",
@@ -96,7 +96,7 @@ export const messages = defineMessages(
     intro:
       "Агенты читают только отмеченные здесь отчёты Qlik Sense и только на разрешённых моделях. В Qlik ходит машина, выбранная ниже; пароль хранится на ней.",
     loading: "Загрузка…",
-    noMachine: "Сейчас к bb не подключена ни одна машина.",
+    noMachine: "Сейчас к alia не подключена ни одна машина.",
     machine: "Машина, с которой агенты ходят в Qlik",
     askingMachine: "Спрашиваю машину…",
 
@@ -108,7 +108,7 @@ export const messages = defineMessages(
     loginNoDomain: "Введите логин с доменом: ДОМЕН\\логин.",
     password: "Пароль",
     passwordSaved: (store) => `Сохранён: ${store}. Оставьте пустым, чтобы не менять.`,
-    passwordNew: "Остаётся на этой машине, на сервере bb не хранится.",
+    passwordNew: "Остаётся на этой машине, на сервере alia не хранится.",
     storeKeychain: "связка ключей macOS",
     storeDpapi: "Windows, зашифрован вашей учётной записью",
     storeFile: "файл, который может прочитать только ваш пользователь",

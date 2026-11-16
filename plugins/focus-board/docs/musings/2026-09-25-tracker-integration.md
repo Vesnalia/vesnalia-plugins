@@ -10,7 +10,7 @@ wrong the day the operator's next project uses a different one. Options,
 loose to strict:
 
 - **Adapter layer + per-project source selection** (Taskboard's model,
-  applied generically). Each BB project picks a source — GitHub, Linear,
+  applied generically). Each VesnALIA project picks a source — GitHub, Linear,
   Jira, Backlog.md, or none. The board gains a "Work" column fed by the
   chosen adapter; threads on cards stay native. Honest but a large build:
   every adapter is its own auth surface, cache, and reconciliation story.
@@ -21,7 +21,7 @@ loose to strict:
   title/branch carries a reference. No tracker commitment; GitHub support is
   nearly free via the existing plugin; Linear/Jira need credentials the
   operator hasn't offered.
-- **The thread-tags handshake.** Tags already exist as a bb-side convention
+- **The thread-tags handshake.** Tags already exist as a alia-side convention
   via the thread-tags plugin. A card could show `tracker:eng-482` tags as
   links/status lines. Weakest version; no live status without per-tracker
   fetchers anyway.

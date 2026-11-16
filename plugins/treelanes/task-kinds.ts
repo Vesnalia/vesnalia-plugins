@@ -7,10 +7,10 @@ export type TaskKind = (typeof TASK_KINDS)[number];
 type KindTask = { kind?: TaskKind; deliveryTarget?: "pr" | "local" };
 type TemplateStep = Pick<SetupStep, "id" | "stage" | "title" | "instructions" | "checks"> & { skills: string[] };
 
-// bb's catalog ID for a skill in this plugin's skills/ folder. Names would
+// VesnALIA's catalog ID for a skill in this plugin's skills/ folder. Names would
 // collide with provider copies of the same skill.
 export const skillId = (name: string, pluginId = PLUGIN_ID) =>
-  `skill_${createHash("sha256").update(`bb-plugin:${pluginId}\0${name}/SKILL.md`).digest("hex")}`;
+  `skill_${createHash("sha256").update(`alia-plugin:${pluginId}\0${name}/SKILL.md`).digest("hex")}`;
 
 const quality: TemplateStep = {
   id: "quality", stage: "quality", title: "Strict review of the task diff",

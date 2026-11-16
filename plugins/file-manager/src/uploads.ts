@@ -8,8 +8,8 @@
 //  2. **Positional writes, never append.** `"a"` would double-write a retried
 //     chunk; `"r+" + start` makes a retry idempotent.
 //  3. **The staged size is the single source of truth.** Sessions live in JSON
-//     sidecars next to the part file — never in `bb.storage` — precisely so
-//     that the streaming section touches no `bb.*` handle: `bb plugin reload`
+//     sidecars next to the part file — never in `alia.storage` — precisely so
+//     that the streaming section touches no `VesnALIA.*` handle: `alia plugin reload`
 //     drains in-flight handlers for only 5 s and then disposes plugin
 //     resources under them. Raw fds survive that; a closed database handle
 //     does not.
@@ -39,7 +39,7 @@ import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeWebReadableStream } from "node:stream/web";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import {
   MAX_CHUNK_BYTES,
@@ -58,7 +58,7 @@ import { publishFs } from "./signals";
 /* Session sidecars                                                    */
 /* ------------------------------------------------------------------ */
 
-/** `<ROOT>/.bb-file-manager/uploads/<uploadId>.json` (§5.2). */
+/** `<ROOT>/.alia-file-manager/uploads/<uploadId>.json` (§5.2). */
 export interface UploadSession {
   uploadId: string;
   /** Realpath'ed destination directory as it was at uploadCreate time. */
@@ -289,7 +289,7 @@ async function exists(absolutePath: string): Promise<boolean> {
 /* ------------------------------------------------------------------ */
 
 export async function createUploads(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   options: UploadsOptions,
 ): Promise<UploadsModule> {
   const sessionTtlMs = options.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
@@ -486,7 +486,7 @@ export async function createUploads(
   /* ---------------------------------------------------------------- */
 
   /**
-   * NOTE: nothing in here touches `bb.*`. A reload drains in-flight handlers
+   * NOTE: nothing in here touches `VesnALIA.*`. A reload drains in-flight handlers
    * for 5 s and then disposes plugin resources; raw fds are unaffected, plugin
    * handles are not.
    */
@@ -661,7 +661,7 @@ export async function createUploads(
       }
 
       await rm(sessionPathFor(session.uploadId), { force: true }).catch(() => undefined);
-      publishFs(bb, [destDir], "upload");
+      publishFs(alia, [destDir], "upload");
       return { entry: await buildEntry(target) };
     } finally {
       locked.delete(session.uploadId);
@@ -723,13 +723,13 @@ export async function createUploads(
       await dropSession(uploadId);
       removed += 1;
     }
-    if (removed > 0) bb.log.info(`upload gc: dropped ${removed} stale session(s)`);
+    if (removed > 0) alia.log.info(`upload gc: dropped ${removed} stale session(s)`);
     return removed;
   }
 
   // Make the staging area exist at load so the first chunk never races a mkdir.
   await stagingDir().catch((error: unknown) => {
-    bb.log.warn(`upload staging directory unavailable: ${String(error)}`);
+    alia.log.warn(`upload staging directory unavailable: ${String(error)}`);
   });
 
   return {

@@ -55,9 +55,9 @@ export type EngineDeps = {
   reviewer?: () => ReviewEngine;
   /** Settings-aware reviewer snapshot captured before an ad hoc apply mutates files. */
   currentReviewer?(threadId: string | null): Promise<ReviewerSnapshot>;
-  /** Project that owns a BB thread, or null when it no longer exists. */
+  /** Project that owns a VesnALIA thread, or null when it no longer exists. */
   threadProject(threadId: string): Promise<string | null>;
-  /** Absolute workspace root of a project on this BB server, or null. */
+  /** Absolute workspace root of a project on this VesnALIA server, or null. */
   projectRoot(projectId: string): Promise<string | null>;
   /** Tell open views something changed. */
   changed(projectId: string, specId: string | null): void;
@@ -116,7 +116,7 @@ export class Engine {
   private async root(projectId: string): Promise<string> {
     const root = await this.deps.projectRoot(projectId);
     if (root === null) {
-      throw new EngineError("This project has no checkout on the BB server's machine; the spec workspace needs local files.");
+      throw new EngineError("This project has no checkout on the VesnALIA server's machine; the spec workspace needs local files.");
     }
     return root;
   }
@@ -296,13 +296,13 @@ export class Engine {
       const runId = newId();
       const stem = spec.path.replace(/\.md$/i, "").replaceAll("/", "__");
       const engine = options.reviewer?.engine ?? this.deps.reviewer?.().engine ?? this.deps.goldfish.engine;
-      if (engine === "bb" && options.threadId && await this.deps.threadProject(options.threadId) !== spec.projectId) {
+      if (engine === "alia" && options.threadId && await this.deps.threadProject(options.threadId) !== spec.projectId) {
         throw new EngineError("thread no longer belongs to this project");
       }
-      const reviewer = engine === "bb" ? this.deps.reviewer?.() : this.deps.goldfish;
+      const reviewer = engine === "alia" ? this.deps.reviewer?.() : this.deps.goldfish;
       if (!reviewer) throw new EngineError(`No ${engine} reviewer is available.`);
       const reviewerStatus = await reviewer.status();
-      if (!reviewerStatus.ready) throw new EngineError(`${engine === "bb" ? "BB" : "Goldfish"} review is unavailable: ${reviewerStatus.reason}`);
+      if (!reviewerStatus.ready) throw new EngineError(`${engine === "alia" ? "ALIA" : "Goldfish"} review is unavailable: ${reviewerStatus.reason}`);
       if (engine === "goldfish" && options.reviewer?.provider) {
         const pinned = normalizeBaseUrl(options.reviewer.provider);
         const live = reviewerStatus.endpoint ? normalizeBaseUrl(reviewerStatus.endpoint) : null;
@@ -310,7 +310,7 @@ export class Engine {
         // a different live endpoint must fail here, not silently pair with the live key.
         if (pinned && live && pinned !== live) throw new EngineError(ENDPOINT_CHANGED);
       }
-      if (engine === "bb" && !store.hasReviewerConsent()) throw new EngineError("BB reviewer consent was revoked; allow BB workers again in the Elephant Goldfish tab before launching.");
+      if (engine === "alia" && !store.hasReviewerConsent()) throw new EngineError("VesnALIA reviewer consent was revoked; allow VesnALIA workers again in the Elephant Goldfish tab before launching.");
       const run: Run = {
         id: runId,
         specId: spec.id,
@@ -416,7 +416,7 @@ export class Engine {
 
   private async execute(spec: SpecRecord, run: Run, signal: AbortSignal): Promise<void> {
     const { store } = this.deps;
-    const reviewer = run.engine === "bb" ? this.deps.reviewer?.() : this.deps.goldfish;
+    const reviewer = run.engine === "alia" ? this.deps.reviewer?.() : this.deps.goldfish;
     if (!reviewer) throw new EngineError(`No ${run.engine} reviewer is available for this run.`);
     const root = await this.root(spec.projectId);
     const context = await this.readContext(root, run.context);
@@ -440,9 +440,9 @@ export class Engine {
         store.updateStage(stage.id, { state: "skipped", finishedAt: Date.now() });
         return;
       }
-      if (run.engine === "bb" && !store.hasReviewerConsent()) {
-        store.updateStage(stage.id, { state: "failed", error: "BB reviewer consent was revoked", finishedAt: Date.now() });
-        if (!failure) failure = { state: "failed", reason: `${stage.lens} stage: BB reviewer consent was revoked; no BB worker was launched` };
+      if (run.engine === "alia" && !store.hasReviewerConsent()) {
+        store.updateStage(stage.id, { state: "failed", error: "VesnALIA reviewer consent was revoked", finishedAt: Date.now() });
+        if (!failure) failure = { state: "failed", reason: `${stage.lens} stage: VesnALIA reviewer consent was revoked; no VesnALIA worker was launched` };
         return;
       }
       store.updateStage(stage.id, { state: "running", startedAt: Date.now() });
@@ -480,12 +480,12 @@ export class Engine {
       reports.push({ lens: stage.lens, text: result.text });
       const reportPath = `${run.reportDir}/round-${run.round}/${String(stage.position + 1).padStart(2, "0")}-${stage.lens}.md`;
       const header = [
-        `# ${run.engine === "bb" ? "BB worker" : "Advanced endpoint"} report: ${stage.lens}`,
+        `# ${run.engine === "alia" ? "VesnALIA worker" : "Advanced endpoint"} report: ${stage.lens}`,
         "",
         `- Spec: \`${spec.path}\``,
         `- Reviewed version: \`${run.targetHash}\``,
         `- Standard: \`${stage.standard}\``,
-        `- Model: \`${result.model}\`${run.engine === "bb" ? " (fresh BB worker; permissions are governed by BB)" : " (tool-less endpoint completion)"}`,
+        `- Model: \`${result.model}\`${run.engine === "alia" ? " (fresh VesnALIA worker; permissions are governed by VesnALIA)" : " (tool-less endpoint completion)"}`,
         result.truncated ? "- **The model stopped at its output limit; this report may be incomplete.**" : null,
         "",
         "---",
@@ -971,16 +971,16 @@ export class Engine {
     }
     for (const run of store.listRunsByState(["running"])) {
       const spec = store.getSpec(run.specId);
-      const workerReviewer = run.engine === "bb" ? this.deps.reviewer?.() : this.deps.goldfish;
+      const workerReviewer = run.engine === "alia" ? this.deps.reviewer?.() : this.deps.goldfish;
       for (const stage of store.listStages(run.id)) {
         if (stage.state !== "running" && stage.state !== "pending") continue;
         if (stage.workerThreadId) await workerReviewer?.cleanupWorker?.(stage.workerThreadId).catch((cause: unknown) => {
-          this.deps.log.warn(`could not clean up BB reviewer worker ${stage.workerThreadId}: ${String(cause)}`);
+          this.deps.log.warn(`could not clean up VesnALIA reviewer worker ${stage.workerThreadId}: ${String(cause)}`);
         });
-        store.updateStage(stage.id, { state: "failed", error: "interrupted by a BB restart", finishedAt: Date.now() });
+        store.updateStage(stage.id, { state: "failed", error: "interrupted by a VesnALIA restart", finishedAt: Date.now() });
       }
-      store.setRunState(run.id, ["running"], "failed", "interrupted by a BB restart; partial results are kept", true);
-      if (spec) this.event(spec, run.id, "run.failed", "Interrupted by a BB restart");
+      store.setRunState(run.id, ["running"], "failed", "interrupted by a VesnALIA restart; partial results are kept", true);
+      if (spec) this.event(spec, run.id, "run.failed", "Interrupted by a VesnALIA restart");
     }
     for (const run of store.listRunsByState(["awaiting_decisions", "completed"])) {
       const spec = store.getSpec(run.specId);

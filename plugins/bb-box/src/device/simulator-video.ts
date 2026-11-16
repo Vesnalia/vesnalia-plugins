@@ -3,7 +3,7 @@ import { access, constants } from "node:fs/promises";
 import { UnitReader, type EncodedUnit } from "./h264-encoder.ts";
 import type { StreamOutput } from "./idb.ts";
 
-export const SOFTWARE_ENCODER = "/usr/local/bin/bb-box-h264";
+export const SOFTWARE_ENCODER = "/usr/local/bin/alia-box-h264";
 export const SOFTWARE_BITRATE_KBPS = 8000;
 export const SOFTWARE_FPS = 60;
 export const ENCODE_WINDOW_MS = 10_000;
@@ -68,15 +68,15 @@ export async function* simulatorStream(options: SimulatorStreamOptions, stopped:
   child.stderr.on("data", (text: string) => {
     stderr = (stderr + text).slice(-4096);
     for (const line of text.split("\n").map((each) => each.trim()).filter(Boolean)) {
-      const described = /^bb-box-h264: (.+), \d+ kbit\/s/.exec(line);
+      const described = /^alia-box-h264: (.+), \d+ kbit\/s/.exec(line);
       if (described) options.described?.(described[1]!);
-      else waiting.push({ data: null, log: line.replace(/^bb-box-h264: /, "") });
+      else waiting.push({ data: null, log: line.replace(/^alia-box-h264: /, "") });
     }
     nudge();
   });
   child.stdin.on("error", () => {});
   child.on("error", (error) => {
-    failure = new Error(`bb-box-h264 did not start: ${error.message}`);
+    failure = new Error(`alia-box-h264 did not start: ${error.message}`);
     nudge();
   });
   child.on("close", (code, why) => {
@@ -105,8 +105,8 @@ export async function* simulatorStream(options: SimulatorStreamOptions, stopped:
       if (ended) {
         const { code, signal: why } = ended;
         if (code === 0 || signal.aborted) return;
-        const said = stderr.trim().split("\n").filter((line) => !/kbit\/s, \d+ threads?$/.test(line)).pop()?.replace(/^bb-box-h264: /, "");
-        throw new Error(said ? `bb-box-h264 stopped: ${said}` : `bb-box-h264 stopped with ${why ?? `exit code ${code}`}`);
+        const said = stderr.trim().split("\n").filter((line) => !/kbit\/s, \d+ threads?$/.test(line)).pop()?.replace(/^alia-box-h264: /, "");
+        throw new Error(said ? `alia-box-h264 stopped: ${said}` : `alia-box-h264 stopped with ${why ?? `exit code ${code}`}`);
       }
       await new Promise<void>((resolve) => (wake = resolve));
     }

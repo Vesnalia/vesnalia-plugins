@@ -83,7 +83,7 @@ export function copyOwner(install: string, box: string | null): GuestOwner {
 export function warmOwner(install: string, made: string): GuestOwner {
   return guarded({
     words: `the warm guest of this install that ${PRODUCT} made`,
-    owns: (config) => !isTemplate(config) && sameDescription(config.description, made) && made.startsWith("bb-box warm ") && installFromDescription(made) === install && copyTags(parseTags(config.tags)).box === null,
+    owns: (config) => !isTemplate(config) && sameDescription(config.description, made) && made.startsWith("alia-box warm ") && installFromDescription(made) === install && copyTags(parseTags(config.tags)).box === null,
   }, install);
 }
 
@@ -95,7 +95,7 @@ export function imageOwner(install: string, imageBox: string, imageTag: string):
       const description = typeof config.description === "string" ? config.description : "";
       if (copyTags(tags).box !== null) return false;
       if (tags.includes(installTag(install)) && (tags.includes(imageBox) || tags.some((tag) => tag.startsWith(imageTag)))) return true;
-      return description.startsWith("bb-box image box: ") && installFromDescription(description) === install;
+      return description.startsWith("alia-box image box: ") && installFromDescription(description) === install;
     },
   }, install);
 }

@@ -1,5 +1,5 @@
 /**
- * The relay between the two halves (D32). bb carries at most 8 MiB of JSON in
+ * The relay between the two halves (D32). VesnALIA carries at most 8 MiB of JSON in
  * one host call, either way (HOST_FACTS §12), and a picture's standard input or
  * the CLI's answer about it can be larger: up to 35 MiB for a 25 MiB file. So a
  * large standard input crosses in slices, gathered on the host before the

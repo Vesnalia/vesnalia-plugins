@@ -1,6 +1,6 @@
 import { useListMotion } from "./useListMotion";
 import { useMemo } from "react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Icon, type IconName } from "./components/Icon";
 import { cn } from "./lib/utils";
 import { ProjectFavicon, ProjectStripe } from "./ProjectFavicon";
@@ -250,7 +250,7 @@ function ActiveProjectGroup({
             style={projectColor}
             className={cn(
               "min-w-0 truncate text-2xs font-medium",
-              projectColor ? "bb-sidebar-project-name" : "text-muted-foreground",
+              projectColor ? "alia-sidebar-project-name" : "text-muted-foreground",
             )}
           >
             {projectName}

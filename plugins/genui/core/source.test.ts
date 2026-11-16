@@ -8,7 +8,7 @@ const FILES: Record<string, string> = {
   "before.json": "[3, 5]",
   "after.json": "[2, 4]",
   "todo.json": '["Write", "Test"]',
-  "$BB_THREAD_STORAGE/audit.json": '{"high": 2, "low": 5}',
+  "$ALIA_THREAD_STORAGE/audit.json": '{"high": 2, "low": 5}',
 };
 
 const DATA = new Map<string, LoadedData>(Object.entries(FILES).map(([path, text]) => [dataKey({ path, raw: false }), parseDataFile(path, text)]));
@@ -80,7 +80,7 @@ describe("source captions in markdown", () => {
   });
 
   it("names a thread-storage file by its name", () => {
-    expect(markdown('Metric("High", Load("$BB_THREAD_STORAGE/audit.json").high, tone: "bad")')).toBe("High **2** — Source: `audit.json`");
+    expect(markdown('Metric("High", Load("$ALIA_THREAD_STORAGE/audit.json").high, tone: "bad")')).toBe("High **2** — Source: `audit.json`");
   });
 
   it("writes an explicit source as given, and an https one as a link", () => {
@@ -91,9 +91,9 @@ describe("source captions in markdown", () => {
   });
 
   it("names a source the Metrics of a Row share once, and each one's own otherwise", () => {
-    const shared = 'audit = Load("$BB_THREAD_STORAGE/audit.json")\nRow([Metric("High", audit.high), Metric("Low", audit.low)])';
+    const shared = 'audit = Load("$ALIA_THREAD_STORAGE/audit.json")\nRow([Metric("High", audit.high), Metric("Low", audit.low)])';
     expect(markdown(shared)).toBe("High **2** · Low **5** — Source: `audit.json`");
-    const mixed = 'Row([Metric("High", Load("$BB_THREAD_STORAGE/audit.json").high), Metric("Goal", "0", source: "team target")])';
+    const mixed = 'Row([Metric("High", Load("$ALIA_THREAD_STORAGE/audit.json").high), Metric("Goal", "0", source: "team target")])';
     expect(markdown(mixed)).toBe("High **2** — Source: `audit.json` · Goal **0** — Source: team target");
   });
 

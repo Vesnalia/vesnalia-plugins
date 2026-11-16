@@ -1,6 +1,6 @@
 /**
  * Simulated sidebar data for screenshot rendering. Shapes mirror
- * `PluginSidebarThread` / `PluginSidebarProject` / `ProviderInfo` from the bb
+ * `PluginSidebarThread` / `PluginSidebarProject` / `ProviderInfo` from the VesnALIA
  * plugin SDK; the test fixture in tests/grouping.test.ts is the source of
  * truth for the thread shape.
  */
@@ -156,7 +156,7 @@ const boardEnv = (branch: string) => ({
   id: `env_board_${branch.replace(/[^a-z0-9]/gi, "-")}`,
   name: "Focus Board",
   branchName: branch,
-  path: "~/Documents/code/bb-plugin-focus-board",
+  path: "~/Documents/code/alia-plugin-focus-board",
   isWorktree: false,
   providerId: null,
   workspaceDisplayKind: null,
@@ -241,7 +241,7 @@ export const SIM_THREADS: readonly SimThread[] = [
   }),
   thread({
     id: "thr_rpc_auth",
-    displayTitle: "Research: bb plugin RPC auth tokens",
+    displayTitle: "Research: VesnALIA plugin RPC auth tokens",
     isUnread: true,
     lastReadAt: SIM_NOW - 40 * MINUTE,
     updatedAt: SIM_NOW - 26 * MINUTE,
@@ -1134,7 +1134,7 @@ export const SIM_OVERVIEW_LINKS: Record<string, unknown> = {
   thr_ov_chip_card: [
     {
       tracker: "github",
-      repo: "cristoslc/bb-plugin-focus-board",
+      repo: "cristoslc/alia-plugin-focus-board",
       issue: 142,
       kind: "issue",
       href: "https://github.com/cristoslc/bb-plugin-focus-board/issues/142",
@@ -1143,7 +1143,7 @@ export const SIM_OVERVIEW_LINKS: Record<string, unknown> = {
     },
     {
       tracker: "github",
-      repo: "cristoslc/bb-plugin-focus-board",
+      repo: "cristoslc/alia-plugin-focus-board",
       issue: 87,
       kind: "pull",
       href: "https://github.com/cristoslc/bb-plugin-focus-board/pull/87",

@@ -1,44 +1,44 @@
 # Lame duck
 
-Lame duck helps you update and restart a busy BB server. When many threads are
+Lame duck helps you update and restart a busy VesnALIA server. When many threads are
 running, agents are messaging each other, and follow-ups keep arriving, waiting
-for BB to become idle on its own can be difficult.
+for VesnALIA to become idle on its own can be difficult.
 
 Enter lame-duck mode to queue message sends while active turns finish. New work
-stays in BB's durable queue instead of keeping the server busy. Once active
-threads have drained, BB is ready for maintenance. Update and restart BB, then
+stays in VesnALIA's durable queue instead of keeping the server busy. Once active
+threads have drained, VesnALIA is ready for maintenance. Update and restart VesnALIA, then
 leave lame-duck mode to resume the queued work.
 
-From the bb-plugins repository, install with:
+From the alia-plugins repository, install with:
 
 ```sh
-bb plugin install path:. --plugin lame-duck --yes
+alia plugin install path:. --plugin lame-duck --yes
 ```
 
 ## Manual maintenance
 
 1. Click the duck icon in the sidebar footer and choose **Pause sends**.
 2. Watch the active-thread and held-send counts. Wait for **Ready to update**.
-3. Update and restart BB using your usual server-management process.
-4. Once BB is healthy again, open the duck disclosure and choose **Resume**.
+3. Update and restart VesnALIA using your usual server-management process.
+4. Once VesnALIA is healthy again, open the duck disclosure and choose **Resume**.
 
-The pause and queued messages survive the restart. Restarting BB does not
+The pause and queued messages survive the restart. Restarting VesnALIA does not
 leave lame-duck mode automatically.
 
 ## Maintenance managed by an agent
 
-Agents that manage your BB servers can use the CLI for the same workflow:
+Agents that manage your VesnALIA servers can use the CLI for the same workflow:
 
 ```sh
-bb lame-duck pause
-bb lame-duck status --json
+alia lame-duck pause
+alia lame-duck status --json
 # Wait until status reports drained: true.
-# Update/restart BB using your server-management commands, then check health.
-bb lame-duck resume
+# Update/restart ALIA using your server-management commands, then check health.
+alia lame-duck resume
 ```
 
 Poll `status` until `drained` is true (`paused` and zero `runningCount`). The
-maintenance agent or script must run outside the BB instance being drained,
+maintenance agent or script must run outside the VesnALIA instance being drained,
 or hand off the remaining steps to an external process and finish its turn.
 A maintenance agent running inside that instance counts as active too; waiting
 for itself to drain would prevent the restart workflow from progressing.
@@ -49,7 +49,7 @@ scheduled times, per-thread ordering, and other plugin limits.
 
 ## Behavior and limits
 
-Pause applies across this BB server. New threads, follow-ups, steering,
+Pause applies across this VesnALIA server. New threads, follow-ups, steering,
 scheduled sends, and retries wait in the durable message queue. Existing turns
 continue until they finish or require input. A turn waiting for a queued reply
 may need attention before it can drain; the plugin does not force it to stop.

@@ -1,7 +1,7 @@
 // M3 operations on fake hosts: the accounting math old harvests still
 // show, the report's interaction warning, rate-limit retries and W lowering, budgets (tokens, thresholds), milestone
 // notices, and the new RPC view models.
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { createAutoresearchPlugin } from "../server.ts";
 import type { Store } from "../src/db/store.ts";
@@ -140,7 +140,7 @@ describe("operations on a running study (fake host)", () => {
     const s = store.study(id)!;
     expect(s.state).toBe("paused");
     expect(s.pause_reason).toContain("max_tokens reached");
-    expect(s.pause_reason).toContain("bb study harvest toy-size");
+    expect(s.pause_reason).toContain("alia study harvest toy-size");
     const kinds = store.notices(id).map((n) => n.kind);
     expect(kinds.filter((k) => k === "budget.threshold")).toHaveLength(2);
     expect(kinds).toContain("budget.exhausted");
@@ -184,7 +184,7 @@ describe("operations on a running study (fake host)", () => {
       [1, true, false],
     ]);
     expect(o.pending!.changesOracle).toBe(true);
-    expect(o.pending!.command).toBe("bb study calibrate toy-size");
+    expect(o.pending!.command).toBe("alia study calibrate toy-size");
     expect(o.pending!.diff.some((d) => d.op === "add" && d.text.includes("max_candidates = 12"))).toBe(true);
     expect(JSON.stringify(o)).not.toContain("secret-workload");
     expect(o.segments).toHaveLength(1);
@@ -196,7 +196,7 @@ describe("operations on a running study (fake host)", () => {
     expect(b.intervals.some((i) => i.kind === "calibration")).toBe(true);
     const hv = harvestView(engine, s);
     // No promotion yet: harvest can't start, and the view says why.
-    expect(hv).toMatchObject({ harvest: null, canStart: false, promotions: 0, startCommand: "bb study harvest toy-size" });
+    expect(hv).toMatchObject({ harvest: null, canStart: false, promotions: 0, startCommand: "alia study harvest toy-size" });
     expect(hv.cannotStartReason).toMatch(/no candidate has been promoted/u);
   });
 
@@ -232,8 +232,8 @@ describe("RPC handlers (plugin harness)", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
-    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.bb);
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    await createAutoresearchPlugin({ port: () => port, seed: 1, config: { retryDelayMs: 0, harvestPollMs: 5 }, onEngine: (e) => (engine = e) })(fake.alia);
     harness = fake.harness;
     await harness.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec() }, { threadId: "thr_study", projectId: "proj_1" });
     await harness.behavior.runCli(["calibrate", "toy-size", "--wait"]);

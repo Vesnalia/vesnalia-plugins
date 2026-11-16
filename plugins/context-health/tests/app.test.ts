@@ -4,10 +4,10 @@ import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { JSDOM } from 'jsdom';
-import type { CapturedPluginApp, renderSlot } from '@get-bb/plugin-sdk/testing/app';
+import type { CapturedPluginApp, renderSlot } from '@vesnalia/plugin-sdk/testing/app';
 import type { fireEvent } from '@testing-library/react';
 import type { rpcContract } from '../src/contract.ts';
-import type { PluginThreadPanelProps } from '@get-bb/plugin-sdk/app';
+import type { PluginThreadPanelProps } from '@vesnalia/plugin-sdk/app';
 
 async function withAppTest(run: (app: CapturedPluginApp, render: typeof renderSlot, fire: typeof fireEvent) => Promise<void>) {
   const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost', pretendToBeVisual: true });
@@ -17,7 +17,7 @@ async function withAppTest(run: (app: CapturedPluginApp, render: typeof renderSl
   const temporary = await mkdtemp(fileURLToPath(new URL('./.app-test-', import.meta.url)));
   try {
     const { fireEvent } = await import('@testing-library/react');
-    const { loadPluginApp, renderSlot } = await import('@get-bb/plugin-sdk/testing/app');
+    const { loadPluginApp, renderSlot } = await import('@vesnalia/plugin-sdk/testing/app');
     const source = (await readFile(new URL('../src/app.tsx', import.meta.url), 'utf8')).replace("import './app.css';", '');
     await writeFile(`${temporary}/app.mjs`, ts.transpileModule(source, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText);
     const app = await loadPluginApp(() => import(pathToFileURL(`${temporary}/app.mjs`).href));
@@ -35,7 +35,7 @@ async function withAppTest(run: (app: CapturedPluginApp, render: typeof renderSl
 test('panel filters, sorts and pages entries, and renders skill inventory', async () => {
   await withAppTest(async (app, renderSlot, fireEvent) => {
     const slot = renderSlot(app.threadPanelActions[0]!, { threadId: 'thr_test', params: null }, {
-      rpc: { inspect: () => ({ provider: 'codex', updatedAt: Date.now(), usage: null, entries: Array.from({length: 27}, (_, i) => ({id:String(i),category:i % 2 ? 'Messages' : 'Tool results',title:`Entry ${String(i).padStart(2, '0')}`,characters:4 * (i + 1),tokens:i + 1,preview:i === 10 ? 'Unique preview text' : 'Recorded body'})), skills:[{id:'skill',name:'debugging',description:'Find bugs',filePath:'/skills/debugging',scope:'plugin',pluginId:'test'}], notices:[], source:'BB normalized thread events', compacted:false }) },
+      rpc: { inspect: () => ({ provider: 'codex', updatedAt: Date.now(), usage: null, entries: Array.from({length: 27}, (_, i) => ({id:String(i),category:i % 2 ? 'Messages' : 'Tool results',title:`Entry ${String(i).padStart(2, '0')}`,characters:4 * (i + 1),tokens:i + 1,preview:i === 10 ? 'Unique preview text' : 'Recorded body'})), skills:[{id:'skill',name:'debugging',description:'Find bugs',filePath:'/skills/debugging',scope:'plugin',pluginId:'test'}], notices:[], source:'VesnALIA normalized thread events', compacted:false }) },
     });
     try {
       assert.ok(await slot.findByRole('heading', { name: 'Recorded content' }));

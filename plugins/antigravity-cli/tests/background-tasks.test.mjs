@@ -18,7 +18,7 @@ test('file normalization, transcript derivation, and nested output extraction', 
   assert.equal(deriveTranscriptPathFromLogFile('/other.log'), null);
   assert.equal(extractToolOutputText({ toolCallId: 'x', content: [{ text: 'one' }, { content: [{ text: 'two' }] }], rawOutput: { output: 'three' } }), 'one\ntwo\nthree');
 });
-test('command opens with full BB shape and duplicates are ignored', t => {
+test('command opens with full VesnALIA shape and duplicates are ignored', t => {
   const tr = tracker(t);
   const [open] = tr.handleToolEventForThread('thread', command());
   assert.deepEqual(open, {

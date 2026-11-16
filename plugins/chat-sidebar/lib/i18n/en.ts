@@ -240,7 +240,7 @@ export const en = {
   "folders.about.archive": "Archived chats, loaded only while the folder is open.",
   "folders.about.projects":
     "One folder per project with chats, most recently active first. Hide it if you don't want a folder per project.",
-  "folders.about.sections": "One folder per bb section that has chats.",
+  "folders.about.sections": "One folder per VesnALIA section that has chats.",
   "toast.folderDeleted": "Folder “{name}” deleted",
   "toast.undo": "Undo",
   "toast.foldersReset": "Folders reset to the default",

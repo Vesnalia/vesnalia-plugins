@@ -12,7 +12,7 @@ sources:
     resource: local host inspection; only listener was the Chromium SingletonSocket
   - title: Host-service rejection gate in the bridge
     resource: ../../src/bridge.ts
-  - title: Feature roadmap stage 5 and the bb host-service request
+  - title: Feature roadmap stage 5 and the VesnALIA host-service request
     resource: ./feature-roadmap.md
   - title: specs/zcode-unified-distribution.md on upstream main (zcode --web product rules)
     resource: https://github.com/zai-org/ZCode/blob/main/specs/zcode-unified-distribution.md
@@ -39,8 +39,8 @@ implements the host services the plugin rejects (`automation/*`, `offPeak/*`,
 running Desktop instance and forward the native reverse RPCs to it?
 
 **Conclusion: no.** Desktop exposes no RPC endpoint for external clients, by
-design. Unblock paths: the bb host-service channel
-([get-bb/bb#6008](https://github.com/get-bb/bb/issues/6008)), a documented
+design. Unblock paths: the VesnALIA host-service channel
+([get-alia/alia#6008](https://github.com/get-bb/bb/issues/6008)), a documented
 public host API from Z.ai, or plugin-side assembly of the open
 `packages/services` host implementations - see the amendment section below.
 
@@ -114,7 +114,7 @@ tree (user-reported gap):
 
 - Attaching to a **running Desktop** remains impossible (sections above);
   that part of the original decision stands.
-- The original claim that only bb#6008 or a public Z.ai API could unblock
+- The original claim that only VesnALIA#6008 or a public Z.ai API could unblock
   host services was **incomplete**. Plugin-side implementation is a real
   third path now that `packages/services` provides open reference
   implementations: automation/Off-Peak could be assembled inside the plugin
@@ -127,7 +127,7 @@ tree (user-reported gap):
 - The v0.9.1 rejection gate in `src/bridge.ts`
   (`hostServiceUnavailable`) remains correct until one of those paths is
   deliberately chosen; roadmap stages 5-7 stay blocked on a decision, not
-  merely on bb.
+  merely on VesnALIA.
 
 ## Re-verify
 

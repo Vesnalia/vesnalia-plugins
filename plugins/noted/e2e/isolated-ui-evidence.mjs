@@ -30,7 +30,7 @@ await build({
   plugins: [{
     name: "isolated-plugin-sdk-app",
     setup(buildApi) {
-      buildApi.onResolve({ filter: /^@get-bb\/plugin-sdk\/app$/ }, () => ({ path: join(root, "e2e/isolated-sdk-app.ts") }));
+      buildApi.onResolve({ filter: /^@get-alia\/plugin-sdk\/app$/ }, () => ({ path: join(root, "e2e/isolated-sdk-app.ts") }));
     },
   }],
 });
@@ -104,7 +104,7 @@ const server = createServer(async (request, response) => {
   response.end(`<!doctype html><html><head><meta charset="utf-8"><title>Noted isolated UI</title><link rel="stylesheet" href="/app.css"><style>
     :root { --background: #ffffff; --foreground: #18212b; --border: #d8dee7; --muted-foreground: #697586; --destructive: #b42318; }
     * { box-sizing: border-box; } html, body, #root { height: 100%; } body { margin: 0; font-family: ui-sans-serif, system-ui; color: var(--foreground); background: #f6f7f9; } main { height: 100vh; display: flex; flex-direction: column; } header { padding: 12px 16px; font-weight: 700; background: #18212b; color: white; } .harness-note { margin: 0; padding: 8px 16px; background: #fff8d6; font-size: 13px; } main > div { min-height: 0; flex: 1; background: var(--background); } button, textarea, select { font: inherit; } iframe { background: white; } 
-  </style></head><body data-bb-plugin="noted"><div id="root"></div><script src="/isolated-ui.js"></script></body></html>`);
+  </style></head><body data-alia-plugin="noted"><div id="root"></div><script src="/isolated-ui.js"></script></body></html>`);
 });
 
 function json(response, status, body) {

@@ -50,8 +50,8 @@ async function shoot(name) {
   await page.setViewportSize({ width: 1440, height: 1000 });
 }
 
-const listPath = "/plugins/bb-box/desktop";
-const boxPath = (box, ...rest) => ["/plugins/bb-box/desktop/box", box.id, ...rest].join("/");
+const listPath = "/plugins/alia-box/desktop";
+const boxPath = (box, ...rest) => ["/plugins/alia-box/desktop/box", box.id, ...rest].join("/");
 const atPath = (path) => waitFor(async () => pathOf(page) === path, `the path ${path} (at ${pathOf(page)})`, 20_000).then(() => true);
 const atList = () => waitFor(async () => pathOf(page).startsWith(listPath) && !pathOf(page).includes("/box/"), `the list (at ${pathOf(page)})`, 20_000);
 const switchTo = (word) => page.locator(`[data-view-switch]`, { hasText: word }).first();
@@ -136,8 +136,8 @@ if (section("g8")) {
       if (reload) await page.reload();
       await backButton(`Back to ${box.name}`).click();
       await atPath(boxPath(box, "from-settings"));
-      await page.getByRole("navigation", { name: "Where you are" }).getByRole("link", { name: "Back to BB Box settings" }).click();
-      await atPath("/settings/plugins/bb-box");
+      await page.getByRole("navigation", { name: "Where you are" }).getByRole("link", { name: "Back to VesnALIA Box settings" }).click();
+      await atPath("/settings/plugins/alia-box");
     };
     await check("G8", `${box.name}: settings, the page, ${box.word}, Terminal, ${box.word}, then back: the page, then settings`, async () => {
       await settingsChain(false);
@@ -147,13 +147,13 @@ if (section("g8")) {
       await settingsChain(true);
       return "the page, then settings";
     });
-    await check("G8", `${box.name}: a view opened from settings by its link, Terminal, ${box.word}: its back is still the link to BB Box settings`, async () => {
+    await check("G8", `${box.name}: a view opened from settings by its link, Terminal, ${box.word}: its back is still the link to VesnALIA Box settings`, async () => {
       await page.goto([boxes, "box", box.id, box.screen, "from-settings"].join("/"));
       await switchThereAndBack(box, ["from-settings"]);
-      const back = page.getByRole("link", { name: "Back to BB Box settings", exact: true });
-      expect((await back.getAttribute("href")) === "/settings/plugins/bb-box", "the settings link");
+      const back = page.getByRole("link", { name: "Back to VesnALIA Box settings", exact: true });
+      expect((await back.getAttribute("href")) === "/settings/plugins/alia-box", "the settings link");
       await back.click();
-      await atPath("/settings/plugins/bb-box");
+      await atPath("/settings/plugins/alia-box");
       return "settings";
     });
     await check("G8", `${box.name}: a view by URL with no origin, Terminal, ${box.word}, then back replaces with the page`, async () => {

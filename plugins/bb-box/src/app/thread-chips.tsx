@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,7 +24,7 @@ function quotedThread(thread: ThreadOnBox): string {
 export function workingOnWords(threads: readonly ThreadOnBox[], boxName: string): string {
   const [only] = threads;
   if (threads.length === 1 && only) {
-    return only.unchecked ? `${PRODUCT} could not ask BB whether ${only.title ? quotedThread(only) : "its thread"} is working on ${boxName}` : `${quotedThread(only)} is working on ${boxName}`;
+    return only.unchecked ? `${PRODUCT} could not ask VesnALIA whether ${only.title ? quotedThread(only) : "its thread"} is working on ${boxName}` : `${quotedThread(only)} is working on ${boxName}`;
   }
   const named = threads.map(quotedThread);
   const list = named.length < 2 ? (named[0] ?? "") : `${named.slice(0, -1).join(", ")} and ${named.at(-1)}`;
@@ -113,7 +113,7 @@ function MoreThreads({ threads, more, onOpen }: { threads: readonly ThreadOnBox[
 }
 
 export function ThreadChips({ threads, className, onLeave }: { threads: readonly ThreadOnBox[]; className?: string; onLeave?: () => void }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const ordered = useMemo(() => byActivity(threads), [threads]);
   if (!ordered.length) return null;
   const shown = ordered.slice(0, SHOWN_CHIPS);

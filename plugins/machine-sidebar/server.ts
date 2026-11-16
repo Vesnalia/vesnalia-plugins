@@ -1,11 +1,11 @@
-// bb-plugin-machine-sidebar — backend entry.
+// alia-plugin-machine-sidebar — backend entry.
 //
 // Stores the tag color rules edited on the plugin's settings page and the
 // threads/projects marked inactive, and tells every open window when either
-// changes. The optional Farcall projection reads existing BB thread events;
+// changes. The optional Farcall projection reads existing VesnALIA thread events;
 // rendering and native thread actions stay in app.tsx.
 import { createBoundedDebounce } from "./lib/bounded-debounce";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { FARCALL_CHANGED, FARCALL_SETTING, FARCALL_WORKSPACES_CHANGED, farcallSnapshotSchema } from "./farcall-contract";
 import { createFarcallReader } from "./farcall-reader";
@@ -65,9 +65,9 @@ const INACTIVE_KEY = "inactive-marks";
 /** Bounds the stored marks; the oldest are dropped first. */
 const MAX_MARKS = 2000;
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
+  const settings = alia.settings.define({
     [FARCALL_SETTING]: {
       type: "boolean", default: false, label: "Show Farcall tasks",
       description: "Lists Claude and Codex worker calls under their coordinator. Never starts, retries or controls workers.",
@@ -77,11 +77,11 @@ export default async function plugin(bb: BbPluginApi) {
       description: "Draws thin vertical lines through nested threads and Farcall tasks.",
     },
   });
-  const farcall = createFarcallReader((args) => bb.sdk.threads.events.list(args));
-  const workspaces = createWorkspaceCache((args) => bb.sdk.environments.list(args), Date.now, {
+  const farcall = createFarcallReader((args) => alia.sdk.threads.events.list(args));
+  const workspaces = createWorkspaceCache((args) => alia.sdk.environments.list(args), Date.now, {
     unsettled: () => scheduleRecovery(),
     settled: () => { cancelRecovery(); recoveryUsed = false; },
-    warn: (message) => bb.log.warn(message),
+    warn: (message) => alia.log.warn(message),
   });
   let lifecycle = 0;
   let disposed = false;
@@ -96,7 +96,7 @@ export default async function plugin(bb: BbPluginApi) {
   };
   const publishWorkspaceChange = () => {
     workspaces.invalidate();
-    bb.realtime.publish(FARCALL_WORKSPACES_CHANGED, null);
+    alia.realtime.publish(FARCALL_WORKSPACES_CHANGED, null);
   };
   const scheduleRecovery = () => {
     if (disposed || recoveryUsed || recoveryTimer !== undefined) return;
@@ -130,18 +130,18 @@ export default async function plugin(bb: BbPluginApi) {
       workspaceDebounce.mark();
     };
     try {
-      subscriptions.push(bb.sdk.subscribe({ event: "environment:changed", callback: invalidate }));
-      subscriptions.push(bb.sdk.subscribe({ event: "realtime:connection", callback: (event) => {
+      subscriptions.push(alia.sdk.subscribe({ event: "environment:changed", callback: invalidate }));
+      subscriptions.push(alia.sdk.subscribe({ event: "realtime:connection", callback: (event) => {
         if (event.state === "connected") invalidate();
       } }));
     } catch {
       // Only the partial subscriptions go; a scheduled recovery is still the sole signal.
       dropSubscriptions();
       nextSubscriptionAttempt = Date.now() + 60_000;
-      bb.log.warn("Environment notifications unavailable; retry on a snapshot after 60s. Workspace cache expires after 15s.");
+      alia.log.warn("Environment notifications unavailable; retry on a snapshot after 60s. Workspace cache expires after 15s.");
     }
   };
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     disposed = true;
     lifecycle++;
     stopWorkspaces();
@@ -156,20 +156,20 @@ export default async function plugin(bb: BbPluginApi) {
       workspaces.clear();
     }
   });
-  bb.events.on("experimental_thread.events", async ({ thread, sequence }) => {
+  alia.events.on("experimental_thread.events", async ({ thread, sequence }) => {
     const epoch = lifecycle;
     if (current(epoch) && (await settings.get()).showFarcallTasks && current(epoch))
-      bb.realtime.publish(FARCALL_CHANGED, { threadId: thread.id, sequence });
+      alia.realtime.publish(FARCALL_CHANGED, { threadId: thread.id, sequence });
   });
-  bb.events.on("thread.deleted", ({ thread }) => { farcall.clearThread(thread.id); });
+  alia.events.on("thread.deleted", ({ thread }) => { farcall.clearThread(thread.id); });
 
   const readRules = async (): Promise<TagRule[]> => {
-    const stored = z.array(tagRuleSchema).safeParse(await bb.storage.kv.get(TAG_RULES_KEY));
+    const stored = z.array(tagRuleSchema).safeParse(await alia.storage.kv.get(TAG_RULES_KEY));
     return stored.success ? normalizeRules(stored.data) : [];
   };
 
   const readMarks = async (): Promise<InactiveMarks> => {
-    const stored = marksSchema.safeParse(await bb.storage.kv.get(INACTIVE_KEY));
+    const stored = marksSchema.safeParse(await alia.storage.kv.get(INACTIVE_KEY));
     return stored.success ? stored.data : { threads: {}, projects: {} };
   };
 
@@ -180,7 +180,7 @@ export default async function plugin(bb: BbPluginApi) {
         .slice(0, MAX_MARKS),
     );
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     farcall_tasks_get: async ({ threadId }) => {
       const epoch = lifecycle;
       if (!current(epoch) || !(await settings.get()).showFarcallTasks || !current(epoch)) return { tasks: [] };
@@ -189,7 +189,7 @@ export default async function plugin(bb: BbPluginApi) {
       const rows = snapshot.tasks.map((task) => ({ ...task, hasCwd: pathKey(task.cwd) !== null }));
       if (!rows.some((task) => task.hasCwd)) return farcallSnapshotSchema.parse({ tasks: rows });
       const coordinator = await (async () => {
-        try { return await bb.sdk.threads.get({ threadId }); } catch { return null; }
+        try { return await alia.sdk.threads.get({ threadId }); } catch { return null; }
       })();
       if (!current(epoch)) return { tasks: [] };
       observeWorkspaces(epoch);
@@ -208,16 +208,16 @@ export default async function plugin(bb: BbPluginApi) {
       if (inactive) target[id] = Date.now();
       else delete target[id];
       const next = { threads: newest(marks.threads), projects: newest(marks.projects) };
-      await bb.storage.kv.set(INACTIVE_KEY, next);
-      bb.realtime.publish(INACTIVE_CHANGED, null);
+      await alia.storage.kv.set(INACTIVE_KEY, next);
+      alia.realtime.publish(INACTIVE_CHANGED, null);
       return next;
     },
     tag_rules_get: async () => ({ rules: await readRules() }),
     tag_rules_set: async ({ rules }) => {
       const next = normalizeRules(rules);
-      await bb.storage.kv.set(TAG_RULES_KEY, next);
-      bb.realtime.publish(TAG_RULES_CHANGED, next);
-      bb.log.info(`tag rules saved (${next.length})`);
+      await alia.storage.kv.set(TAG_RULES_KEY, next);
+      alia.realtime.publish(TAG_RULES_CHANGED, next);
+      alia.log.info(`tag rules saved (${next.length})`);
       return { rules: next };
     },
   });

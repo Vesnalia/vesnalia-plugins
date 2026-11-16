@@ -1,9 +1,9 @@
-# Chat Sidebar for bb
+# Chat Sidebar for VesnALIA
 
-A messenger-style sidebar for [bb](https://getbb.app). Each task gets one row
+A messenger-style sidebar for [VesnALIA](https://getbb.app). Each task gets one row
 with its live status. Folders show what needs you, each project has its own
-colour, and search covers every chat. Clicking a row opens bb's own thread
-view, so nothing about how bb works changes.
+colour, and search covers every chat. Clicking a row opens VesnALIA's own thread
+view, so nothing about how VesnALIA works changes.
 
 <p>
   <img src="docs/screenshots/tabs-dark.png" alt="Chat list with folder tabs, live status and project colours" width="260">
@@ -23,7 +23,7 @@ view, so nothing about how bb works changes.
 - **Sub-agents under their chat** (optional). Turn on **Expandable sub-agents**
   and a chat with sub-agents gets an arrow with their count. It opens them as
   small rows under the chat, each under the thread that started it, so a lead
-  and its workers read as one tree. They have bb's thread menu, the row
+  and its workers read as one tree. They have VesnALIA's thread menu, the row
   buttons, and **Make a separate chat**, which takes a sub-agent out of the tree.
 - **Live status.** You can see at a glance whether a chat needs you
   (a question, an approval, a failed send, an error), is working (and on what:
@@ -31,11 +31,11 @@ view, so nothing about how bb works changes.
   unread, or holds an unsent draft. Statuses that other plugins set on a row
   show up too.
 - **Folders.** All, Attention (waiting, working, or unread), one per project in
-  order of use, one per bb section, and Archive. Each has an unread badge and
+  order of use, one per VesnALIA section, and Archive. Each has an unread badge and
   a status dot. Show them as tabs above the list, or as a Telegram-style rail
   on the left that scrolls on its own. Without names the rail lays out roomier
   icons, Discord-style. On phones the folders sit as tabs by default, since
-  bb's navigation rail already takes the left edge there. Drag a folder to
+  VesnALIA's navigation rail already takes the left edge there. Drag a folder to
   move it. A folder can wear a picture instead of its icon (experimental).
 - **Your own folders.** Like Telegram's: pick chats by status, project,
   section, agent, words in the title or branch, how long they have waited, or
@@ -61,9 +61,9 @@ view, so nothing about how bb works changes.
 - **New chat in context.** The **+** starts a chat in the open project or
   section. Right-click it to choose any project. While the plugin is enabled,
   opening the new-thread composer or changing its project restores that
-  project's last saved provider, model and reasoning over bb's client-wide
+  project's last saved provider, model and reasoning over VesnALIA's client-wide
   preference. You can then pick another model for that chat. Projects without
-  saved defaults keep bb's selection; permissions and environment stay yours.
+  saved defaults keep VesnALIA's selection; permissions and environment stay yours.
 - **Search** by title, project, branch, or sub-agent, and inside the
   conversations across all active chats, regardless of the selected folder.
   Titles rank first: exact names, prefixes, phrases, then words
@@ -76,13 +76,13 @@ view, so nothing about how bb works changes.
   incomplete or failed searches are shown explicitly. Equally relevant hits
   prefer the current folder. Project names stay visible while searching;
   clearing the query returns to the selected folder.
-- **bb's own thread menu.** Right-click a chat for the same menu as bb's
+- **VesnALIA's own thread menu.** Right-click a chat for the same menu as VesnALIA's
   rows and thread header: split, copy link, read, pin, rename, archive,
   delete, per-thread notifications, and whatever other plugins add, plus the
   list's own items (sub-agents, project colour, new chat in the project).
-  **Add to folder** and, when you have bb sections, **Move to section** are in
+  **Add to folder** and, when you have VesnALIA sections, **Move to section** are in
   the thread header's menu as well.
-- **Muted chats** (bb's notifications set to Muted) show a muted bell and a
+- **Muted chats** (VesnALIA's notifications set to Muted) show a muted bell and a
   grey unread dot, count in no folder badge, and stay out of Attention, as in
   Telegram.
 - **Row buttons.** Pick up to three actions from that menu to show at the
@@ -91,7 +91,7 @@ view, so nothing about how bb works changes.
 - **Messenger order.** Pinned chats sit on top in your order (drag to
   reorder), the rest follow by latest activity. A back-to-top button appears
   once you scroll.
-- **Everything bb's own row does:** ⌘-click or drag to split, ⌘1…9 and
+- **Everything VesnALIA's own row does:** ⌘-click or drag to split, ⌘1…9 and
   next/previous shortcuts, rename in place, pin, read/unread, copy link,
   archive, delete.
 - **English and Russian.** The default follows your system language.
@@ -99,14 +99,14 @@ view, so nothing about how bb works changes.
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/seoperin/bb-plugin-chat-sidebar.git@^0.2.0
+alia plugin install git:https://github.com/seoperin/bb-plugin-chat-sidebar.git@^0.2.0
 ```
 
-bb uses the first thread-list plugin you install. If you already chose
+VesnALIA uses the first thread-list plugin you install. If you already chose
 another one, pick **Chats** under **Settings → Appearance → Sidebar**. Pick
-bb's own list there to switch back at any time.
+VesnALIA's own list there to switch back at any time.
 
-Requires bb 0.46 or later. On bb 0.44–0.45, 0.2.1 is the last version that
+Requires VesnALIA 0.46 or later. On VesnALIA 0.44–0.45, 0.2.1 is the last version that
 works.
 
 ## Using it
@@ -129,13 +129,13 @@ works.
 
 ## Settings
 
-The settings are under **Settings → Installed plugins → Chat Sidebar** in bb. You can also
+The settings are under **Settings → Installed plugins → Chat Sidebar** in VesnALIA. You can also
 change them from the CLI:
 
 ```sh
-bb plugin config chat-sidebar                           # show all
-bb plugin config chat-sidebar set folderLayout "Rail on the left"
-bb plugin config chat-sidebar unset folderLayout        # back to the default
+alia plugin config chat-sidebar                           # show all
+alia plugin config chat-sidebar set folderLayout "Rail on the left"
+alia plugin config chat-sidebar unset folderLayout        # back to the default
 ```
 
 | Key | Values | Default |
@@ -148,7 +148,7 @@ bb plugin config chat-sidebar unset folderLayout        # back to the default
 | `density` | `Comfortable`, `Compact` | `Comfortable` |
 | `avatar` | `Project letter`, `Icon from the title` | `Project letter` |
 | `stickyHeadings` | keep the current project heading under the tabs (`List headers`) | `true` |
-| `sectionFolders` | a folder per bb section | `true` |
+| `sectionFolders` | a folder per VesnALIA section | `true` |
 | `archiveFolder` | the Archive folder | `true` |
 | `foldChildren` | sub-agents and forks share their parent's row | `true` |
 | `expandChildren` | with `foldChildren`, an arrow on the row opens its sub-agents under it | `false` |
@@ -161,24 +161,24 @@ way round.
 ## Data and privacy
 
 The plugin makes no network requests of its own and needs no accounts or
-keys. It reads threads through bb's plugin SDK; message search goes through
-bb's own thread search. Project colours, the folder layout and its last 20
+keys. It reads threads through VesnALIA's plugin SDK; message search goes through
+VesnALIA's own thread search. Project colours, the folder layout and its last 20
 versions, and the row buttons are stored in the plugin's key-value storage
-inside bb. To leave muted chats out of the badges, the list reads bb's
+inside VesnALIA. To leave muted chats out of the badges, the list reads VesnALIA's
 notifications plugin's per-thread levels (thread metadata) and its defaults. The open folder and collapsed headings are remembered in the
 browser's localStorage, along with a copy of the project colours and folders
-so they show before bb answers.
+so they show before VesnALIA answers.
 
 ## Development
 
 ```sh
 npm install
-npm run check                 # typecheck, tests, bb plugin build
-bb plugin install .           # install from the working copy
-bb plugin reload chat-sidebar # after each change
+npm run check                 # typecheck, tests, alia plugin build
+alia plugin install .           # install from the working copy
+alia plugin reload chat-sidebar # after each change
 ```
 
-`bb plugin types` keeps `@get-bb/plugin-sdk` in step with the bb you run.
+`alia plugin types` keeps `@vesnalia/plugin-sdk` in step with the VesnALIA you run.
 
 The code is laid out like this:
 
@@ -191,8 +191,8 @@ lib/                    pure logic, unit-tested
   folders.ts            the folder layout, custom folder rules, templates, icons
   folder-store.ts       the stored layout: revisions, history, restore
   folder-settings.ts    the old folder settings kept in step with the layout
-  status.ts             bb thread state → needs you / working / done + a status message
-  muted.ts              bb's per-thread notification levels → which chats are muted
+  status.ts             alia thread state → needs you / working / done + a status message
+  muted.ts              alia's per-thread notification levels → which chats are muted
   colors.ts             palette and automatic colour assignment
   i18n/                 typed translator, en.ts is the source of truth
   settings.ts           setting definitions and parsing
@@ -200,28 +200,28 @@ components/             the UI (chat-list.tsx puts it together)
   folder-editor/        the folder editor dialog (a bottom sheet on phones)
 hooks/                  scroll area, paging, pinned order, drag to reorder (dnd-kit), message search, muted chats
 assets/icons/           folder icons from Hugeicons, declared in the manifest
-components/ui/          components vendored from bb's plugin registry
-test/                   vitest, including a rendered-list test with bb's SDK test harness
+components/ui/          components vendored from alia's plugin registry
+test/                   vitest, including a rendered-list test with alia's SDK test harness
 ```
 
 A few details that matter if you change things:
 
 - Every row's anchor carries `data-sidebar-thread-shortcut-target` and
-  `data-sidebar-thread-id`. bb's thread shortcuts find rows by these.
-- Rows spread bb's split-drag handler on pointer events. Reordering pinned
-  chats and folders uses @dnd-kit, as bb's own sidebar does
+  `data-sidebar-thread-id`. VesnALIA's thread shortcuts find rows by these.
+- Rows spread VesnALIA's split-drag handler on pointer events. Reordering pinned
+  chats and folders uses @dnd-kit, as VesnALIA's own sidebar does
   (`hooks/use-sortable.ts`); it listens to mouse and touch events, so both
   gestures keep working.
-- bb owns the scroll area, so the list finds it in the DOM
+- VesnALIA owns the scroll area, so the list finds it in the DOM
   (`hooks/use-scroll-area.ts`). The list must not shrink inside it, or the
   sticky search bar scrolls away.
 - The frontend imports only types from `lib/rpc.ts`, which keeps zod out of
   the app bundle.
-- The row menu is bb's (`experimental_ThreadActionsContextMenu`); the list
+- The row menu is VesnALIA's (`experimental_ThreadActionsContextMenu`); the list
   adds inline items to it. "Add to folder" is a registration
   (`components/thread-actions.tsx`), so it runs outside the list and reads
   the folders from a store the list publishes while it is mounted.
-- bb's sidebar container has Tailwind's bare `group` class, so a bare
+- VesnALIA's sidebar container has Tailwind's bare `group` class, so a bare
   `group-hover:` in the list fires whenever the pointer is anywhere over the
   sidebar. Use named groups (`group/row`, `group/entry`).
 - A folder save names the revision it was made on, and the backend refuses
@@ -237,7 +237,7 @@ A few details that matter if you change things:
    (`lib/settings.ts`).
 4. Run `npm test`. A test checks that every message keeps its placeholders.
 
-Setting labels and the manifest stay in English, because bb shows them as
+Setting labels and the manifest stay in English, because VesnALIA shows them as
 written.
 
 ## Contributing

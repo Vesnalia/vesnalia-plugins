@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { AFTER_RETRY_MS, AFTER_WAIT_MS, AutoCompactor, COOLDOWN_MS, isUnsupportedError } from "../src/server/auto-compact";
 import type { PluginSettings } from "../src/server/threads";
 import { keys, Storage, UNSUPPORTED_TTL_MS } from "../src/server/storage";
@@ -189,7 +189,7 @@ describe("auto-compact on idle", () => {
   });
 
   it("reads a list stored by 0.1.0 as no marks", async () => {
-    const { kv } = createFakePluginHost({ pluginId: "usage-forecast" }).bb.storage;
+    const { kv } = createFakePluginHost({ pluginId: "usage-forecast" }).alia.storage;
     await kv.set(keys.unsupported, ["acp-x"]);
     expect(await new Storage(kv).unsupportedProviders(NOW)).toEqual([]);
   });

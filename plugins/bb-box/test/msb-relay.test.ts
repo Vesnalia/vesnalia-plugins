@@ -1,7 +1,7 @@
 import "./check-test-machine.mjs";
-// The msb relay (053): BB Box's msb client on BB's server (src/relay/msb-client.mjs),
+// The msb relay (053): VesnALIA Box's msb client on VesnALIA's server (src/relay/msb-client.mjs),
 // the server's hub (src/relay/hub.ts) and the machine's worker
-// (src/host/msb.ts), joined by a WebSocket stand-in, with a fake BB Box msb
+// (src/host/msb.ts), joined by a WebSocket stand-in, with a fake VesnALIA Box msb
 // on the machine.
 
 import assert from "node:assert/strict";
@@ -9,14 +9,14 @@ import { spawn } from "node:child_process";
 import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test, type TestContext } from "node:test";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { hostEntry } from "../src/host/entry.ts";
 import { RelayHub } from "../src/relay/hub.ts";
 import { MSB_ROUTE, msbClientArgv, refuseMsb } from "../src/relay/msb.ts";
 import { openTerminal } from "../src/transports/terminal.ts";
 import { joined, tempDir } from "./helpers.ts";
 
-/** A BB Box msb folder with a fake bin/msb, which acts on its first argument. */
+/** A VesnALIA Box msb folder with a fake bin/msb, which acts on its first argument. */
 function fakeMsbDir(): string {
   const dir = tempDir("msb-dir");
   mkdirSync(join(dir, "bin"), { recursive: true });
@@ -38,9 +38,9 @@ esac
 }
 
 function setUp(t: TestContext, dir: string) {
-  const saved = process.env.BB_SERVER_URL;
-  process.env.BB_SERVER_URL = "https://bb.example.com/";
-  t.after(() => (saved === undefined ? delete process.env.BB_SERVER_URL : (process.env.BB_SERVER_URL = saved)));
+  const saved = process.env.ALIA_SERVER_URL;
+  process.env.ALIA_SERVER_URL = "https://bb.example.com/";
+  t.after(() => (saved === undefined ? delete process.env.ALIA_SERVER_URL : (process.env.ALIA_SERVER_URL = saved)));
   let hub!: RelayHub;
   const { urls, connectTo } = joined(() => hub);
   const worker = experimental_createHostEntryHarness(hostEntry({ msb: { dir, connect: connectTo } }));
@@ -52,7 +52,7 @@ function setUp(t: TestContext, dir: string) {
     dir: tempDir("msb-hub"),
     open: async (hostId, secret) => {
       opened.push(hostId);
-      return worker.experimental_call("msbRelay", { secret, path: `/api/v1/plugins/bb-box/http${MSB_ROUTE}` });
+      return worker.experimental_call("msbRelay", { secret, path: `/api/v1/plugins/alia-box/http${MSB_ROUTE}` });
     },
     keep: async () => false,
     logError: () => {},
@@ -95,7 +95,7 @@ test("msb runs on the machine through the relay: its arguments, stdin, stdout, s
   assert.deepEqual([killed.code, killed.signal], [null, "SIGKILL"], "a run killed on the machine ends the client the same way");
 
   assert.deepEqual(opened, ["host_msb"], "one relay carries every run");
-  assert.match(urls[0]!, /^wss:\/\/bb\.example\.com\/api\/v1\/plugins\/bb-box\/http\/msb-relay\?s=[0-9a-f]{32}$/);
+  assert.match(urls[0]!, /^wss:\/\/alia\.example\.com\/api\/v1\/plugins\/alia-box\/http\/msb-relay\?s=[0-9a-f]{32}$/);
   assert.equal(worker.experimental_getRetainedWorkerLeaseCount(), 1, "the worker holds a lease while the relay is open");
 });
 
@@ -104,12 +104,12 @@ test("a machine without msb, or a relay that cannot open, ends the client with 2
   const { hub } = setUp(t, empty);
   const missing = await run(msbClientArgv((await hub.endpoint("host_new")).slice("unix://".length), { args: ["--version"] }));
   assert.equal(missing.code, 255);
-  assert.match(missing.stderr, /^bb-box could not run msb on the BB machine: msb is not installed here \(.+\/bin\/msb\)/);
+  assert.match(missing.stderr, /^alia-box could not run msb on the ALIA machine: msb is not installed here \(.+\/bin\/msb\)/);
 
   const failing = new RelayHub({ what: "msb", refuse: refuseMsb, dir: tempDir("msb-fail"), open: async () => Promise.reject(new Error("Host is not connected")), keep: async () => false, logError: () => {} });
   t.after(() => failing.dispose());
   const offline = await run(msbClientArgv((await failing.endpoint("host_off")).slice("unix://".length), { args: ["--version"] }));
-  assert.deepEqual([offline.code, offline.stderr], [255, "bb-box could not run msb on the BB machine: Host is not connected\n"]);
+  assert.deepEqual([offline.code, offline.stderr], [255, "alia-box could not run msb on the VesnALIA machine: Host is not connected\n"]);
 });
 
 test("a terminal's msb runs on a PTY on the machine, at the terminal's size, and follows its resizes", async (t) => {
@@ -137,7 +137,7 @@ test("a terminal's msb runs on a PTY on the machine, at the terminal's size, and
   await until(/hello\r\ngot hello\r\n40 120\r\n/);
 });
 
-test("the host entry runs BB Box's msb scripts, and no other", async (t) => {
+test("the host entry runs VesnALIA Box's msb scripts, and no other", async (t) => {
   const dir = fakeMsbDir();
   const { worker } = setUp(t, dir);
   const status = await worker.experimental_call("microsandbox", { script: "status", args: [] });
@@ -154,7 +154,7 @@ test("the host entry runs BB Box's msb scripts, and no other", async (t) => {
   assert.equal(extra.exitCode, 2);
 });
 
-test("the install script refuses an archive whose SHA-256 is not the one BB Box was tested with, and leaves no msb", async () => {
+test("the install script refuses an archive whose SHA-256 is not the one VesnALIA Box was tested with, and leaves no msb", async () => {
   const { msbScript } = await import("../src/backends/microsandbox/release.ts");
   const dir = tempDir("msb-install");
   const tools = tempDir("msb-tools");
@@ -168,7 +168,7 @@ test("the install script refuses an archive whose SHA-256 is not the one BB Box 
     child.once("close", (code) => resolve({ code, stderr }));
   });
   assert.equal(result.code, 3);
-  assert.match(result.stderr, /archive's SHA-256 is [0-9a-f]{64}, not [0-9a-f]{64} as BB Box was tested with, so BB Box did not install it/);
+  assert.match(result.stderr, /archive's SHA-256 is [0-9a-f]{64}, not [0-9a-f]{64} as ALIA Box was tested with, so ALIA Box did not install it/);
   const { existsSync, readdirSync } = await import("node:fs");
   assert.equal(existsSync(join(dir, "bin", "msb")), false);
   assert.deepEqual(readdirSync(dir), [], "the download is gone too");

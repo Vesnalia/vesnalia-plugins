@@ -4,7 +4,7 @@ import {
   experimental_useProviders,
   UrlLink,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Fragment, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { t } from "./i18n.ts";
 import type { Monitor, monitorRpc, Period, SyncResult } from "./monitor-contract.ts";
@@ -35,9 +35,9 @@ function syncSummary(result: SyncResult) {
     : `Pi: ${
       result.pi.machines.filter((entry) => !entry.ok).map((entry) => `${entry.machine}: ${entry.error}`).join("; ")
     }`;
-  const native = result.bb.ok
-    ? t.pickersUpdated(result.bb.total, result.bb.added, result.bb.removed)
-    : `${t.pickers}: ${result.bb.error}`;
+  const native = result.alia.ok
+    ? t.pickersUpdated(result.alia.total, result.alia.added, result.alia.removed)
+    : `${t.pickers}: ${result.alia.error}`;
   return `${pi} ${native}`;
 }
 const resetTime = new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" });
@@ -104,7 +104,7 @@ function Subscriptions({ data }: { data: Monitor }) {
     </Panel>
   );
 }
-// Magpie quota providers that match a BB agent provider, for its icon.
+// Magpie quota providers that match a VesnALIA agent provider, for its icon.
 const agentProvider: Record<string, string> = { claude: "claude-code", codex: "codex", pi: "pi" };
 // "7 days Sonnet" -> "7d Sonnet", to fit the narrow sidebar row.
 const windowLabel = (name: string) =>
@@ -328,10 +328,10 @@ const bucketLabel = (usage: Usage, bucket: { label: string; time: string }) =>
 
 function AgentIcon({ id, className = "size-4" }: { id: string; className?: string }) {
   const providers = experimental_useProviders();
-  const bbId = agentProvider[id];
-  if (!bbId) return <span className={`${className} shrink-0 rounded-full border border-border`} aria-hidden="true" />;
-  const provider = providers.providers.find((entry) => entry.id === bbId);
-  return <ProviderIcon providerKind="agent" provider={provider ?? { id: bbId }} className={`${className} shrink-0`} />;
+  const aliaId = agentProvider[id];
+  if (!aliaId) return <span className={`${className} shrink-0 rounded-full border border-border`} aria-hidden="true" />;
+  const provider = providers.providers.find((entry) => entry.id === aliaId);
+  return <ProviderIcon providerKind="agent" provider={provider ?? { id: aliaId }} className={`${className} shrink-0`} />;
 }
 
 // Catmull-Rom curve with control points held between neighbours, so a line never dips below zero.

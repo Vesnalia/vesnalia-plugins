@@ -25,5 +25,5 @@ export const BENCHMARK_GUARDRAIL = "Be careful not to overfit to the benchmarks 
 export const AUTORESUME_MESSAGE =
   "Run the next iteration now. Use the persisted autoresearch state as needed, pick the most promising hypothesis, then call run_experiment + log_experiment.";
 
-/** Max characters the contributed instructions may use (BB truncates beyond 4096). */
+/** Max characters the contributed instructions may use (VesnALIA truncates beyond 4096). */
 export const INSTRUCTIONS_BUDGET = 3_800;

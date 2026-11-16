@@ -1,6 +1,6 @@
 // The reviewer's discussions with the review assistant at lines of the diff.
-// They live beside the draft comments, in this bb only; nothing here reaches GitHub.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// They live beside the draft comments, in this VesnALIA only; nothing here reaches GitHub.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { isSummary, postedBody, sameLocation, type CommentLocation, type DiscussionEntry } from "./draft";
 import { extractSelectedLines } from "./assistant-context";
 import { messageAssistant } from "./agent";
@@ -61,7 +61,7 @@ export async function discussionMessage(store: AsyncStore, targetKey: string, in
 }
 
 /** Send the reviewer's message to the assistant and add it to the line's discussion. Returns whether a conversation started. */
-export async function askAgent(bb: BbPluginApi, store: AsyncStore, targetKey: string, input: AskInput): Promise<{ started: boolean }> {
+export async function askAgent(alia: AliaPluginApi, store: AsyncStore, targetKey: string, input: AskInput): Promise<{ started: boolean }> {
   // The message, and the ask it opens, in one turn.
   const { text, context, before } = await store.exclusive(async (tx) => {
     const refused = unchangeable(await tx.getReview(targetKey));
@@ -75,7 +75,7 @@ export async function askAgent(bb: BbPluginApi, store: AsyncStore, targetKey: st
   let result: Awaited<ReturnType<typeof messageAssistant>>;
   try {
     // Your words are your message; where it is in the diff is the plugin's, and the PR's.
-    result = await messageAssistant(bb, store, targetKey, text, context, { kind: "ask", said: input.body, ...(input.inserted ? { inserted: true } : {}) });
+    result = await messageAssistant(alia, store, targetKey, text, context, { kind: "ask", said: input.body, ...(input.inserted ? { inserted: true } : {}) });
   } catch (error) {
     await setAsk(store, targetKey, input, before);
     throw error;
@@ -103,9 +103,9 @@ export async function discussionsWaitingOn(store: AsyncStore, threadId: string):
  * unless a queued message starts another turn. `waiting` is the review discussionsWaitingOn
  * found as the turn ended. Returns the review it settled.
  */
-export async function settleDiscussions(bb: BbPluginApi, store: AsyncStore, threadId: string, waiting: string | null): Promise<string | null> {
+export async function settleDiscussions(alia: AliaPluginApi, store: AsyncStore, threadId: string, waiting: string | null): Promise<string | null> {
   if (!waiting) return null;
-  const queued = await bb.sdk.threads.queuedMessages.list({ threadId }).catch(() => []);
+  const queued = await alia.sdk.threads.queuedMessages.list({ threadId }).catch(() => []);
   if (queued.length) return null;
   return await store.stopWaiting(waiting) ? waiting : null;
 }

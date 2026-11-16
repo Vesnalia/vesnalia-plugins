@@ -225,7 +225,7 @@ describe("createEditIndex", () => {
     expect(workDirs.at(-1)).toBe(`/code/d${MAX_WORK_DIRS + 4}`);
   });
 
-  it("peeks at what an earlier read found without asking bb", async () => {
+  it("peeks at what an earlier read found without asking VesnALIA", async () => {
     const { sdk, list } = fakeSdk({ thr_1: [edit(1)] });
     const index = createEditIndex(sdk);
     expect(index.peek("thr_1")).toBeUndefined();

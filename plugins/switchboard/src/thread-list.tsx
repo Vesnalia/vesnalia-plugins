@@ -1,8 +1,8 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import {
-  experimental_THREAD_ACTION_GROUPS as ACTION_GROUPS, experimental_useSidebarThreads, useBbNavigate, useSdk,
+  experimental_THREAD_ACTION_GROUPS as ACTION_GROUPS, experimental_useSidebarThreads, useAliaNavigate, useSdk,
   type PluginThreadListProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { applyPlan } from "./apply-plan";
 import { archivedThreads } from "./archived";
@@ -51,7 +51,7 @@ export function ThreadList(props: PluginThreadListProps) {
   const settings = useSwitchboardSettings();
   const sidebar = experimental_useSidebarThreads(settings.showArchived ? WITH_ARCHIVED : undefined);
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const metrics = densityMetrics(settings.density);
   const layoutApi = useLayout();
   const { layout, setCollapsed, setSectionOrder, setSectionHue, setSectionSort, setSectionProject, snooze, unsnooze } = layoutApi;
@@ -276,7 +276,7 @@ export function ThreadList(props: PluginThreadListProps) {
     const others = sectionIds.filter((id) => id !== section.id);
     const anchor = current.after ? others.indexOf(current.after) : -1;
     const at = anchor >= 0 ? anchor + 1 : others.length;
-    // Saving the full order keeps the new section where its draft was, not where bb's alphabetical list puts it.
+    // Saving the full order keeps the new section where its draft was, not where VesnALIA's alphabetical list puts it.
     setSectionOrder([...others.slice(0, at), section.id, ...others.slice(at)]);
     setSectionHue(section.id, current.hue);
     announce(`Created section ${section.name}`);

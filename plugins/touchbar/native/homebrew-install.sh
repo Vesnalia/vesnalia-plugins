@@ -7,11 +7,11 @@ SUPPORT="$HOME/Library/Application Support/BBTouchBar"
 LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
 PLIST="$LAUNCH_AGENTS/app.getbb.touchbar.native.plist"
 DOMAIN="gui/$(id -u)"
-BB_BIN="${BB_TOUCHBAR_BB_BIN:-}"
-if [ -z "$BB_BIN" ]; then
-  for candidate in "$(command -v bb 2>/dev/null || true)" /usr/local/bin/bb /opt/homebrew/bin/bb; do
+ALIA_BIN="${ALIA_TOUCHBAR_ALIA_BIN:-}"
+if [ -z "$ALIA_BIN" ]; then
+  for candidate in "$(command -v alia 2>/dev/null || true)" /usr/local/bin/alia /opt/homebrew/bin/alia; do
     if [ -n "$candidate" ] && [ -x "$candidate" ]; then
-      BB_BIN="$candidate"
+      ALIA_BIN="$candidate"
       break
     fi
   done
@@ -19,14 +19,14 @@ fi
 
 [ "$(uname -s)" = "Darwin" ] || { printf '%s\n' 'error: macOS is required' >&2; exit 1; }
 [ -x "$BIN" ] || { printf 'error: missing %s\n' "$BIN" >&2; exit 1; }
-[ -n "$BB_BIN" ] && [ -x "$BB_BIN" ] || {
-  printf '%s\n' 'error: bb executable not found; install the BB CLI first' >&2
+[ -n "$ALIA_BIN" ] && [ -x "$ALIA_BIN" ] || {
+  printf '%s\n' 'error: alia executable not found; install the ALIA CLI first' >&2
   exit 1
 }
 
 mkdir -p "$SUPPORT" "$LAUNCH_AGENTS"
-printf '%s\n' "$BB_BIN" > "$SUPPORT/bb-path"
-chmod 600 "$SUPPORT/bb-path"
+printf '%s\n' "$ALIA_BIN" > "$SUPPORT/alia-path"
+chmod 600 "$SUPPORT/alia-path"
 
 plutil -create xml1 "$PLIST"
 plutil -insert Label -string app.getbb.touchbar.native "$PLIST"

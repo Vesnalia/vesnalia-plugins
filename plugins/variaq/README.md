@@ -1,15 +1,15 @@
-# bb-plugin-variaq
+# alia-plugin-variaq
 
-`bb-plugin-variaq` is a thin integration layer that lets BB agents and users
+`alia-plugin-variaq` is a thin integration layer that lets VesnALIA agents and users
 run the standalone [VariaQ](https://github.com/aaronphifer/variaq)
 hybrid-compute research platform. VariaQ is a separate Python application and
 dependency; this plugin invokes its CLI and returns its persisted results. The
 plugin does not implement or duplicate quantum algorithms.
 
 ```text
-bb
+alia
   ↓
-bb-plugin-variaq
+alia-plugin-variaq
   ↓
 VariaQ schema-v1 CLI
   ↓
@@ -21,12 +21,12 @@ VariaQ
   └── report generation
 ```
 
-Starting with bb-plugin-variaq 0.2.0, the integration boundary is VariaQ's
+Starting with alia-plugin-variaq 0.2.0, the integration boundary is VariaQ's
 native `--json` output (schema version `1`). The plugin validates the envelope,
 forwards VariaQ's structured data, and no longer parses human-readable tables
 or scrapes run IDs from prose.
 
-VariaQ remains fully usable without BB. The plugin is responsible only for BB
+VariaQ remains fully usable without VesnALIA. The plugin is responsible only for VesnALIA
 tool/CLI registration, validated argument construction, bounded subprocess
 execution, safe temporary-file staging, report path containment, and structured
 result forwarding. The plugin does not implement campaign planning, analysis,
@@ -35,8 +35,8 @@ logic — VariaQ remains authoritative for all of these.
 
 ## Prerequisites
 
-- BB 0.46.x with Plugin SDK 0.6.37
-- Node.js 22.19 or a compatible version supported by BB
+- VesnALIA 0.46.x with Plugin SDK 0.6.37
+- Node.js 22.19 or a compatible version supported by VesnALIA
 - Linux-native Python 3.12
 - a separate VariaQ 0.6.x installation or the local 0.8.0rc1 candidate
 
@@ -66,13 +66,13 @@ For a local checkout:
 ```bash
 npm ci
 npm run build
-bb plugin install /path/to/bb-plugin-variaq --yes
+alia plugin install /path/to/alia-plugin-variaq --yes
 ```
 
 Reload after changing settings or source:
 
 ```bash
-bb plugin reload variaq
+alia plugin reload variaq
 ```
 
 No package is published by this repository-preparation change.
@@ -91,22 +91,22 @@ Source defaults contain no machine-specific paths.
 | `timeoutMs` | `120000` | per-command timeout, allowed range 1,000–3,600,000 ms |
 
 Configured paths must be absolute. `pythonPath` must be an executable file and
-`projectDir` must be a directory. Machine-local values belong in BB's plugin
+`projectDir` must be a directory. Machine-local values belong in VesnALIA's plugin
 settings, never in tracked files:
 
 ```bash
-bb plugin config variaq set pythonPath /path/to/variaq/.venv/bin/python
-bb plugin config variaq set projectDir /path/to/variaq
-bb plugin config variaq set dbPath /path/to/variaq/data/variaq.sqlite3
-bb plugin config variaq set problemsDir /path/to/variaq/data/problems
-bb plugin config variaq set reportOutputDir /path/to/variaq/reports
-bb plugin config variaq set timeoutMs 120000
-bb plugin reload variaq
+alia plugin config variaq set pythonPath /path/to/variaq/.venv/bin/python
+alia plugin config variaq set projectDir /path/to/variaq
+alia plugin config variaq set dbPath /path/to/variaq/data/variaq.sqlite3
+alia plugin config variaq set problemsDir /path/to/variaq/data/problems
+alia plugin config variaq set reportOutputDir /path/to/variaq/reports
+alia plugin config variaq set timeoutMs 120000
+alia plugin reload variaq
 ```
 
 ## Agent tools
 
-The plugin registers seventeen BB tools:
+The plugin registers seventeen VesnALIA tools:
 
 - `variaq_status` and `variaq_version`
 - `variaq_problem_generate`, `variaq_problem_show`, and `variaq_problem_import`
@@ -127,23 +127,23 @@ Tools are divided into read-only and execution/write categories:
 `variaq_solve`, `variaq_benchmark`, `variaq_compare_quantum`,
 `variaq_campaign_run`, `variaq_run_reproduce`, `variaq_report_campaign`.
 
-## BB CLI and example workflow
+## VesnALIA CLI and example workflow
 
 ```bash
-bb variaq status --json
-bb variaq version --json
+alia variaq status --json
+alia variaq version --json
 
-problem_json=$(bb variaq problem-generate \
+problem_json=$(alia variaq problem-generate \
   maxcut --nodes 6 --edge-probability 0.5 --seed 42 --json)
 problem_id=$(printf '%s\n' "$problem_json" | jq -r '.problemId')
 
-bb variaq problem-show "$problem_id" --json
-bb variaq solve "$problem_id" --solver exact --seed 42 --json
-bb variaq solve "$problem_id" --solver heuristic --seed 42 --json
-bb variaq solve "$problem_id" --solver qaoa --seed 42 --json
-bb variaq benchmark "$problem_id" \
+alia variaq problem-show "$problem_id" --json
+alia variaq solve "$problem_id" --solver exact --seed 42 --json
+alia variaq solve "$problem_id" --solver heuristic --seed 42 --json
+alia variaq solve "$problem_id" --solver qaoa --seed 42 --json
+alia variaq benchmark "$problem_id" \
   --solvers exact,heuristic,qaoa --repeats 1 --seed 42 --json
-bb variaq compare-quantum "$problem_id" --p 1 --repeats 1 --json
+alia variaq compare-quantum "$problem_id" --p 1 --repeats 1 --json
 
 # Campaign workflow: plan first, then run, then analyze and report.
 campaign_json=$(cat <<'EOF'
@@ -161,16 +161,16 @@ campaign_json=$(cat <<'EOF'
 }
 EOF
 )
-bb variaq campaign-plan "$campaign_json" --json
-bb variaq campaign-run "$campaign_json" --max-runs 100 --json
-bb variaq campaigns --limit 10 --json
-bb variaq campaign <campaign-id> --json
-bb variaq analyze-campaign <campaign-id> --group-by problem_id --group-by solver --scaling-x problem_size --json
-bb variaq report-campaign <campaign-id> --output-dir ./reports --formats json,csv,markdown --json
+alia variaq campaign-plan "$campaign_json" --json
+alia variaq campaign-run "$campaign_json" --max-runs 100 --json
+alia variaq campaigns --limit 10 --json
+alia variaq campaign <campaign-id> --json
+alia variaq analyze-campaign <campaign-id> --group-by problem_id --group-by solver --scaling-x problem_size --json
+alia variaq report-campaign <campaign-id> --output-dir ./reports --formats json,csv,markdown --json
 
-bb variaq runs --limit 10 --json
-bb variaq run run-<uuid> --json
-bb variaq reproduce run-<uuid> --json
+alia variaq runs --limit 10 --json
+alia variaq run run-<uuid> --json
+alia variaq reproduce run-<uuid> --json
 ```
 
 All `solve`, `benchmark`, `compare-quantum`, `campaign-run`, and `reproduce`
@@ -179,7 +179,7 @@ prose parsing or run-ID scraping.
 
 ## Version compatibility
 
-The current checkout targets BB 0.46.x / Plugin SDK 0.6.37 and schema version `1`.
+The current checkout targets VesnALIA 0.46.x / Plugin SDK 0.6.37 and schema version `1`.
 It accepts stable VariaQ 0.6.x and 0.8.x series releases plus the explicitly
 tested `0.8.0rc1` candidate. Real local integration was verified against the
 immutable `v0.6.0` tag and the reviewed v0.8 candidate checkout. Patch
@@ -190,8 +190,8 @@ never silently stripped from a version. Status/version report unsupported
 environments with a warning; schema parsing still rejects non-v1 output. This
 does not authorize running an unverified version.
 
-The BB engine/SDK pins have moved from BB 0.43 / SDK 0.4.104 to the actual BB
-0.46 host. Old BB 0.43 host compatibility is not claimed. Package identity is
+The VesnALIA engine/SDK pins have moved from VesnALIA 0.43 / SDK 0.4.104 to the actual VesnALIA
+0.46 host. Old VesnALIA 0.43 host compatibility is not claimed. Package identity is
 `0.6.1`, released 2026-10-13 from the `v0.6.1` tag.
 
 ### Paired-solver analysis in the 0.8 series
@@ -205,8 +205,8 @@ generated paths, including per-run, pair and repeat CSVs. The plugin computes
 no objectives, gaps, pairing, timings or speedups.
 
 ```sh
-bb variaq analyze-campaign CAMPAIGN_ID --compare paired_solvers --json
-bb variaq report-campaign CAMPAIGN_ID --output-dir paired --formats json,csv,markdown --compare paired_solvers --json
+alia variaq analyze-campaign CAMPAIGN_ID --compare paired_solvers --json
+alia variaq report-campaign CAMPAIGN_ID --output-dir paired --formats json,csv,markdown --compare paired_solvers --json
 ```
 
 Canonical campaign overrides use `solver_config: {qaoa: {seed: 42,
@@ -240,7 +240,7 @@ requirement or assumption.
 
 ## VariaQ problem families
 
-Starting with bb-plugin-variaq 0.4.0, the plugin exposes VariaQ 0.5's generic
+Starting with alia-plugin-variaq 0.4.0, the plugin exposes VariaQ 0.5's generic
 problem families:
 
 | Family           | Classical | Quantum |
@@ -274,19 +274,19 @@ domain adapter
 VariaQ generic problem
      ↑
      │
-bb-plugin-variaq
+alia-plugin-variaq
 ```
 
 Project-specific adapters live outside this plugin.
 
 ## Campaign, analysis, and reporting
 
-Starting with bb-plugin-variaq 0.5.0 and VariaQ 0.6.0:
+Starting with alia-plugin-variaq 0.5.0 and VariaQ 0.6.0:
 
-- **Campaign plan** (`variaq_campaign_plan` / `bb variaq campaign-plan`) is
+- **Campaign plan** (`variaq_campaign_plan` / `alia variaq campaign-plan`) is
   non-executing and safe. It previews requested run counts, solver breakdown,
   unavailable combinations, and max-run warnings.
-- **Campaign run** (`variaq_campaign_run` / `bb variaq campaign-run`) executes
+- **Campaign run** (`variaq_campaign_run` / `alia variaq campaign-run`) executes
   solvers. It passes an explicit `maxRuns` value to VariaQ and only adds
   `--override-max-runs` when the caller sets `overrideMaxRuns: true`. The plugin
   does not bypass VariaQ's safety guard.
@@ -334,7 +334,7 @@ npm ci
 npm run typecheck
 npm run test:unit
 npm run test:integration
-bb plugin types --check
+alia plugin types --check
 npm run build
 npm pack --dry-run
 ```
@@ -372,7 +372,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution boundaries and
 
 ## Failure behavior
 
-VariaQ's exit codes are preserved by the BB CLI and agent tools:
+VariaQ's exit codes are preserved by the VesnALIA CLI and agent tools:
 
 - `0` — success
 - `1` — solver/runtime failure (a run may still be persisted)

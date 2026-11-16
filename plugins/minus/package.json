@@ -1,32 +1,43 @@
 {
-  "name": "bb-plugin-minus",
+  "name": "alia-plugin-minus",
   "version": "0.2.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.47",
-    "bbPluginSdk": ">=0.6.79"
+    "alia": ">=0.47",
+    "aliaPluginSdk": ">=0.6.79"
   },
-  "bb": {
+  "alia": {
     "name": "Minus",
-    "description": "Hide bb interface elements you never use and collapse tool calls in the chat.",
+    "description": "Hide VesnALIA interface elements you never use and collapse tool calls in the chat.",
     "branding": {
       "icon": "EyeOff"
     },
     "server": "./server.ts",
     "app": "./app.tsx"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0"
   },
-  "description": "Hide bb UI elements you do not want to see.",
+  "description": "Hide VesnALIA UI elements you do not want to see.",
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/minus#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/n30g30/bb-plugin-minus.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/minus"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

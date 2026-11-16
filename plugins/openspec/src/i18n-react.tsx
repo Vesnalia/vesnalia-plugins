@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useSettings } from "@get-bb/plugin-sdk/app";
+import { useSettings } from "@vesnalia/plugin-sdk/app";
 import { createI18n, resolveLocale } from "./i18n";
 
 const I18nContext = createContext(createI18n("en"));

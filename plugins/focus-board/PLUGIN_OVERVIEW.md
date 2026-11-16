@@ -1,4 +1,4 @@
-Focus Board turns your bb threads into a kanban board in the sidebar that updates live, ranked so the threads that need you come first.
+Focus Board turns your VesnALIA threads into a kanban board in the sidebar that updates live, ranked so the threads that need you come first.
 
 ## What you get
 
@@ -10,10 +10,10 @@ More about our features in the [README](https://github.com/cristoslc/bb-plugin-f
 
 ## CLI
 
-One subcommand, `bb focus-board`, manages the plugin's own state: done status, feature groups, links, snoozes, auto-titling, and sweeps. Every command takes `--json`, and the sweep never archives without `--confirm`.
+One subcommand, `alia focus-board`, manages the plugin's own state: done status, feature groups, links, snoozes, auto-titling, and sweeps. Every command takes `--json`, and the sweep never archives without `--confirm`.
 
 ## Requirements
 
 - Node 18 or newer
-- bb 0.43 or newer with plugin SDK 0.5.9 or newer
+- VesnALIA 0.43 or newer with plugin SDK 0.5.9 or newer
 - Optional: the official GitHub plugin, for ticket status dots. Without its cache, chips render without dots and everything else works.

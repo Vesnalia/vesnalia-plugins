@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactElement, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import type { PluginSidebarProject } from "@get-bb/plugin-sdk/app";
-import { experimental_useSidebarThreadActions, useSdk } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject } from "@vesnalia/plugin-sdk/app";
+import { experimental_useSidebarThreadActions, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { ProjectVisibilityController } from "./use-project-visibility";
 import { useDismissibleMenu } from "./hooks/useDismissibleMenu";
 import { useRightMenuPanel } from "./hooks/useRightMenuPanel";
@@ -9,7 +9,7 @@ import { useHoverMenu } from "./hooks/useHoverMenu";
 import { usePortalScopeProps } from "./lib/portal-scope";
 import { Icon } from "./ui/icon";
 
-// Mirrors the host dropdown menu item styling so plugin menus match native BB menus.
+// Mirrors the host dropdown menu item styling so plugin menus match native VesnALIA menus.
 const menuItemClass: string = "flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-left text-xs hover:bg-state-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-50";
 
 interface HostHistoryState {
@@ -18,7 +18,7 @@ interface HostHistoryState {
 
 // shortcut: the plugin SDK has no route to a project's settings page (`toProject` opens the
 // new-thread composer), so this drives the host's React Router browser history directly.
-// Replace with an SDK navigation call once bb exposes one.
+// Replace with an SDK navigation call once VesnALIA exposes one.
 function openProjectSettings(projectId: string): void {
   const current: HostHistoryState | null = window.history.state as HostHistoryState | null;
   const state = { usr: null, key: Math.random().toString(36).slice(2, 10), idx: (current?.idx ?? 0) + 1 };

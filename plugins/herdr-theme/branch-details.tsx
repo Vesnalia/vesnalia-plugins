@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { experimental_useSidebarThreads, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads, useSettings } from "@vesnalia/plugin-sdk/app";
 import { useHerdrTheme } from "./use-herdr-theme";
 
-/** Decorate only stock sidebar titles; BB still owns rows and their actions. */
+/** Decorate only stock sidebar titles; VesnALIA still owns rows and their actions. */
 export function BranchDetails() {
   const theme = useHerdrTheme();
   const { values } = useSettings();
@@ -19,7 +19,7 @@ function ActiveBranchDetails() {
     const sync = () => {
       document.querySelectorAll<HTMLElement>("[data-sidebar-project-id] [data-sidebar-thread-id]").forEach(link => {
         const row = link.closest(".group\\/thread-row");
-        const title = row?.querySelector<HTMLElement>(".bb-thread-title, .bb-sidebar-thread-title");
+        const title = row?.querySelector<HTMLElement>(".alia-thread-title, .alia-sidebar-thread-title");
         if (!title) return;
         const branch = names.get(link.dataset.sidebarThreadId!);
         if (branch) {

@@ -1,5 +1,5 @@
 /**
- * Plain-text traces for the `bb agent-traces` command and the agent tool:
+ * Plain-text traces for the `alia agent-traces` command and the agent tool:
  * short enough to read in a terminal or a tool result, ordered by what is
  * worth looking at first.
  */
@@ -34,7 +34,7 @@ export function turnReport(turn: Turn, now: number, limit = 8): string {
   const byId = new Map(turn.spans.map((span) => [span.id, span]));
   const lines = [
     `Turn #${turn.index} · ${formatDuration(stats.durationMs)} · ${turn.status}`,
-    `Prompt: ${turn.prompt ? oneLine(turn.prompt, 120) : "(continued on its own)"}${turn.sender ? ` (sent by ${turn.sender === "bb" ? "bb" : `thread ${turn.sender}`})` : ""}`,
+    `Prompt: ${turn.prompt ? oneLine(turn.prompt, 120) : "(continued on its own)"}${turn.sender ? ` (sent by ${turn.sender === "alia" ? "alia" : `thread ${turn.sender}`})` : ""}`,
     `Time: ${phaseLine(stats) || "nothing recorded yet"}`,
     `Calls: ${stats.toolCalls} · subagents: ${stats.subagents}${stats.subagentTokens !== null ? ` (${formatTokens(stats.subagentTokens)} tokens)` : ""} · child threads: ${stats.childThreads} · errors: ${stats.errors}`,
   ];

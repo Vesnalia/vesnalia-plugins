@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { PROJECT_ICONS_CHANNEL } from "./realtime-channels";
 import { cn } from "./lib/utils";
 import { SettingRow, SettingsSection, SettingsSelect, secondaryButtonClass } from "./settings-ui";
@@ -12,7 +12,7 @@ interface ProjectChoice {
 }
 
 export function ProjectManagement() {
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const request = useRef(0);
   const [projects, setProjects] = useState<ProjectChoice[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -59,7 +59,7 @@ export function ProjectManagement() {
       setProjects((current) => current.filter((project) => project.id !== removed.id));
       setSelectedId("");
       setConfirming(false);
-      toast.success(`${removed.name} removed from BB`);
+      toast.success(`${removed.name} removed from VesnALIA`);
     } catch (error) {
       toast.error("Could not remove the project", {
         description: error instanceof Error ? error.message : undefined,
@@ -78,8 +78,8 @@ export function ProjectManagement() {
       ) : (
         <>
           <SettingRow
-            title="Remove from BB"
-            description="Removes the project and its threads from BB."
+            title="Remove from VesnALIA"
+            description="Removes the project and its threads from VesnALIA."
             control={
               <div className="flex flex-wrap items-center gap-2">
                 <SettingsSelect
@@ -119,7 +119,7 @@ export function ProjectManagement() {
               <div className="min-w-0 flex-1 basis-48">
                 <p className="break-words text-sm text-foreground">Remove {selected.name}?</p>
                 <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-                  Its threads are removed from BB too. This cannot be undone.
+                  Its threads are removed from VesnALIA too. This cannot be undone.
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
@@ -137,7 +137,7 @@ export function ProjectManagement() {
                   onClick={() => void remove()}
                   className="h-8 rounded-md bg-destructive px-3 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {removing ? "Removing..." : "Remove from BB"}
+                  {removing ? "Removing..." : "Remove from VesnALIA"}
                 </button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ReasoningLevel, ServiceTier } from "./execution.js";
 
 const UNFINISHED = new Set(["active", "paused", "blocked", "budget_limited", "usage_limited"]);
@@ -95,8 +95,8 @@ function rowToJournal(row: JournalRow): RootTransferJournal {
 }
 
 /** Durable half of the cross-provider takeover protocol. */
-export function createRootTransferStore(bb: BbPluginApi) {
-  const db = bb.storage.database();
+export function createRootTransferStore(alia: AliaPluginApi) {
+  const db = alia.storage.database();
   const goal = db.prepare(`
     SELECT thread_id, status, worker_provider, worker_model, accounting_thread_ids
     FROM goals WHERE thread_id = ?
@@ -117,7 +117,7 @@ export function createRootTransferStore(bb: BbPluginApi) {
   const collabThreadId = db.prepare(
     "SELECT 1 FROM collab_agents WHERE thread_id = ? LIMIT 1",
   );
-  // Historical retired workers remain under the archived source in BB. Only
+  // Historical retired workers remain under the archived source in VesnALIA. Only
   // live direct children are externally reparented and have parent metadata
   // changed; every row still moves to the target root for durable history.
   // Retire a collab row whose thread no longer exists. Owned here because the
@@ -446,7 +446,7 @@ export interface RootTransferExecutionReport extends RootTransferInspection {
 
 /** Execute or idempotently repair a durable cross-provider root takeover. */
 export async function executeRootTransfer(input: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: RootTransferStore;
   sourceThreadId: string;
   targetThreadId: string;
@@ -458,12 +458,12 @@ export async function executeRootTransfer(input: {
   wakeTarget: (targetThreadId: string, marker: string) => Promise<void>;
   onDatabaseCommitted?: () => void;
 }): Promise<RootTransferExecutionReport> {
-  const { bb, store, sourceThreadId, targetThreadId } = input;
+  const { alia, store, sourceThreadId, targetThreadId } = input;
   let inspection = store.inspect(sourceThreadId, targetThreadId);
   const [source, target, targetExecution] = await Promise.all([
-    bb.sdk.threads.get({ threadId: sourceThreadId }),
-    bb.sdk.threads.get({ threadId: targetThreadId }),
-    bb.sdk.threads.defaultExecutionOptions({ threadId: targetThreadId }),
+    alia.sdk.threads.get({ threadId: sourceThreadId }),
+    alia.sdk.threads.get({ threadId: targetThreadId }),
+    alia.sdk.threads.defaultExecutionOptions({ threadId: targetThreadId }),
   ]);
   if (source.projectId !== target.projectId || source.environmentId !== target.environmentId) {
     throw new Error("source and target must be in the same project and environment");
@@ -491,14 +491,14 @@ export async function executeRootTransfer(input: {
   if (targetExecution?.model && source.providerId !== target.providerId) {
     // Not fatal — just the one thing an owner would want said out loud, since
     // the new root reasons about the goal in a different model's voice.
-    bb.log.info(
+    alia.log.info(
       `Root transfer changes the orchestrator provider: ${source.providerId} -> ${target.providerId}/${targetExecution.model}`,
     );
   }
 
   const childParents = new Map<string, string | null>();
   for (const child of inspection.directChildren) {
-    const thread = await bb.sdk.threads.get({ threadId: child.threadId });
+    const thread = await alia.sdk.threads.get({ threadId: child.threadId });
     // Project only. A worker gets its OWN managed worktree by design — that is
     // the whole point of one agent per slice — so requiring it to share the
     // root's environment refuses every transfer as soon as a single worker has
@@ -550,8 +550,8 @@ export async function executeRootTransfer(input: {
       // Dynamic tool catalogs are fixed when a Codex session is constructed.
       // Release the standby runtime while both roots are journal-locked so the
       // first takeover turn reconstructs the canonical UltraGoal tool catalog.
-      await bb.sdk.threads.stop({ threadId: targetThreadId });
-      await bb.sdk.threads.wait({
+      await alia.sdk.threads.stop({ threadId: targetThreadId });
+      await alia.sdk.threads.wait({
         threadId: targetThreadId,
         status: "idle",
         timeoutMs: 30_000,
@@ -562,9 +562,9 @@ export async function executeRootTransfer(input: {
     if (transfer.phase === "target_released") {
       // Stop even an already-idle source to release any retained provider
       // runtime and disable its old continuation path before final accounting.
-      await bb.sdk.threads.stop({ threadId: sourceThreadId });
+      await alia.sdk.threads.stop({ threadId: sourceThreadId });
       try {
-        await bb.sdk.threads.wait({
+        await alia.sdk.threads.wait({
           threadId: sourceThreadId,
           status: "idle",
           timeoutMs: 30_000,
@@ -576,9 +576,9 @@ export async function executeRootTransfer(input: {
         // exists for. A root whose provider ran out of quota IS released: it is
         // holding no runtime and will not take another turn. Anything still
         // running, though, has to be waited out.
-        const current = await bb.sdk.threads.get({ threadId: sourceThreadId });
+        const current = await alia.sdk.threads.get({ threadId: sourceThreadId });
         if (current.status !== "error") throw error;
-        bb.log.info(
+        alia.log.info(
           `Root transfer proceeding with source ${sourceThreadId} in status error; it holds no runtime and will not take another turn`,
         );
       }
@@ -592,24 +592,24 @@ export async function executeRootTransfer(input: {
     // and suppresses old-root ownership turns. Archive the stopped source
     // before reparenting, then deterministically repair null/source parents.
     if (transfer.phase === "db_committed") {
-      const latestSource = await bb.sdk.threads.get({ threadId: sourceThreadId });
-      if (!latestSource.archivedAt) await bb.sdk.threads.archive({ threadId: sourceThreadId });
+      const latestSource = await alia.sdk.threads.get({ threadId: sourceThreadId });
+      if (!latestSource.archivedAt) await alia.sdk.threads.archive({ threadId: sourceThreadId });
       transfer = store.setPhase(sourceThreadId, targetThreadId, "source_archived");
     }
 
     if (transfer.phase === "source_archived") {
       inspection = store.inspect(sourceThreadId, targetThreadId);
       for (const child of inspection.directChildren) {
-        const thread = await bb.sdk.threads.get({ threadId: child.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: child.threadId });
         if (thread.parentThreadId === targetThreadId) continue;
         if (thread.parentThreadId !== sourceThreadId && thread.parentThreadId !== null) {
           throw new Error(`worker ${child.threadId} has unexpected parent ${thread.parentThreadId ?? "none"}`);
         }
-        await bb.sdk.threads.update({ threadId: child.threadId, parentThreadId: targetThreadId });
+        await alia.sdk.threads.update({ threadId: child.threadId, parentThreadId: targetThreadId });
         moved += 1;
       }
       for (const child of inspection.directChildren) {
-        const thread = await bb.sdk.threads.get({ threadId: child.threadId });
+        const thread = await alia.sdk.threads.get({ threadId: child.threadId });
         if (thread.parentThreadId !== targetThreadId) {
           throw new Error(`worker ${child.threadId} did not reparent to ${targetThreadId}`);
         }

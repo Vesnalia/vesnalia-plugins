@@ -11,7 +11,7 @@ var __export = (target, all) => {
 };
 
 // server.ts
-import { defineRpcContract } from "@bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 
 // node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -14823,7 +14823,7 @@ var rpcContract = defineRpcContract({
   },
   storyLinkMode: {
     input: external_exports.null(),
-    output: external_exports.object({ openInBb: external_exports.boolean() }).strict()
+    output: external_exports.object({ openInAlia: external_exports.boolean() }).strict()
   },
   listAssigned: {
     input: external_exports.object({
@@ -14888,8 +14888,8 @@ function formatStoryList(stories) {
     (story) => `sc-${story.id}	${story.workflowState.name}	${story.name}`
   ).join("\n");
 }
-async function plugin(bb) {
-  const settings = bb.settings.define({
+async function plugin(alia) {
+  const settings = alia.settings.define({
     apiToken: {
       type: "string",
       label: "Shortcut API token",
@@ -14898,7 +14898,7 @@ async function plugin(bb) {
     },
     defaultProject: {
       type: "project",
-      label: "Default bb project",
+      label: "Default VesnALIA project",
       description: "Threads started from Shortcut stories will use this project."
     },
     includeCompleted: {
@@ -14907,10 +14907,10 @@ async function plugin(bb) {
       description: "Show completed stories in the default assigned-to-me list.",
       default: false
     },
-    openStoryLinksInBb: {
+    openStoryLinksInAlia: {
       type: "boolean",
-      label: "Open story links in bb",
-      description: "When on, clicking a Shortcut story link opens the story inside bb. When off, story links open on the Shortcut website.",
+      label: "Open story links in VesnALIA",
+      description: "When on, clicking a Shortcut story link opens the story inside VesnALIA. When off, story links open on the Shortcut website.",
       default: true
     }
   });
@@ -14920,11 +14920,11 @@ async function plugin(bb) {
       return;
     }
     cached2 = null;
-    bb.realtime.publish("stories-changed", { reason: "settings" });
+    alia.realtime.publish("stories-changed", { reason: "settings" });
   });
   const initial = await settings.get();
   if (!initial.apiToken) {
-    bb.status.needsConfiguration(
+    alia.status.needsConfiguration(
       "Add a Shortcut API token in Settings \u2192 Plugins \u2192 Shortcut."
     );
   }
@@ -14949,7 +14949,7 @@ async function plugin(bb) {
   async function story(id, signal) {
     return (await client()).getStory(id, signal);
   }
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async status() {
       const values = await settings.get();
       if (!values.apiToken) {
@@ -14978,7 +14978,7 @@ async function plugin(bb) {
     },
     async storyLinkMode() {
       const values = await settings.get();
-      return { openInBb: values.openStoryLinksInBb };
+      return { openInAlia: values.openStoryLinksInAlia };
     },
     async listAssigned({ query = "", includeCompleted, refresh = false }) {
       const values = await settings.get();
@@ -14997,7 +14997,7 @@ async function plugin(bb) {
         workflowStateId
       );
       cached2 = null;
-      bb.realtime.publish("stories-changed", { reason: "workflow-state" });
+      alia.realtime.publish("stories-changed", { reason: "workflow-state" });
       return { story: updatedStory };
     },
     async reorderStory({ id, adjacentId, placement }) {
@@ -15006,7 +15006,7 @@ async function plugin(bb) {
       }
       const position = await (await client()).reorderStory(id, adjacentId, placement);
       cached2 = null;
-      bb.realtime.publish("stories-changed", { reason: "reorder" });
+      alia.realtime.publish("stories-changed", { reason: "reorder" });
       return { position };
     },
     async startWork({ id, projectId }) {
@@ -15014,13 +15014,13 @@ async function plugin(bb) {
       const targetProjectId = projectId ?? values.defaultProject;
       if (!targetProjectId) {
         throw new Error(
-          "Choose a default bb project in the Shortcut plugin settings before starting work."
+          "Choose a default VesnALIA project in the Shortcut plugin settings before starting work."
         );
       }
       const item = await (await client()).moveStoryToInDevelopment(id);
       cached2 = null;
-      bb.realtime.publish("stories-changed", { reason: "start-work" });
-      const thread = await bb.sdk.threads.spawn({
+      alia.realtime.publish("stories-changed", { reason: "start-work" });
+      const thread = await alia.sdk.threads.spawn({
         projectId: targetProjectId,
         environment: { type: "project-default" },
         title: `sc-${item.id}: ${item.name}`,
@@ -15031,13 +15031,13 @@ Please investigate this Shortcut story and implement the requested work. Verify 
       return { threadId: thread.id };
     }
   });
-  bb.cli.register({
+  alia.cli.register({
     name: "shortcut",
     summary: "Read Shortcut stories assigned to you",
     commands: [
-      { name: "status", summary: "Check Shortcut authentication", usage: "bb shortcut status [--json]" },
-      { name: "list", summary: "List stories assigned to you", usage: "bb shortcut list [query] [--completed] [--json]" },
-      { name: "show", summary: "Show one story", usage: "bb shortcut show <story-id> [--json]" }
+      { name: "status", summary: "Check Shortcut authentication", usage: "alia shortcut status [--json]" },
+      { name: "list", summary: "List stories assigned to you", usage: "alia shortcut list [query] [--completed] [--json]" },
+      { name: "show", summary: "Show one story", usage: "alia shortcut show <story-id> [--json]" }
     ],
     async run(argv, ctx) {
       const command = argv[0] ?? "list";
@@ -15054,7 +15054,7 @@ Please investigate this Shortcut story and implement the requested work. Verify 
         }
         if (command === "show") {
           const id = parseStoryId(argv[1]);
-          if (!id) return { exitCode: 2, stderr: "Usage: bb shortcut show <story-id> [--json]" };
+          if (!id) return { exitCode: 2, stderr: "Usage: VesnALIA shortcut show <story-id> [--json]" };
           const item = await story(id, ctx.signal);
           return { exitCode: 0, stdout: json2 ? JSON.stringify(item, null, 2) : storyAsMarkdown(item) };
         }
@@ -15066,13 +15066,13 @@ Please investigate this Shortcut story and implement the requested work. Verify 
           const stories = filterStories(result.stories, query);
           return { exitCode: 0, stdout: json2 ? JSON.stringify({ member: result.member, stories }, null, 2) : formatStoryList(stories) };
         }
-        return { exitCode: 2, stderr: "Usage: bb shortcut <status|list|show>" };
+        return { exitCode: 2, stderr: "Usage: VesnALIA shortcut <status|list|show>" };
       } catch (error51) {
         return { exitCode: 1, stderr: error51 instanceof Error ? error51.message : String(error51) };
       }
     }
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shortcut_list_assigned",
     description: "List Shortcut stories assigned to the authenticated user.",
     instructions: "Use this when the user asks about their assigned Shortcut work.",
@@ -15097,7 +15097,7 @@ Please investigate this Shortcut story and implement the requested work. Verify 
       return JSON.stringify(filterStories(result.stories, query), null, 2);
     }
   });
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "shortcut_get_story",
     description: "Read a Shortcut story by numeric id, including description and tasks.",
     presentation: {
@@ -15119,11 +15119,11 @@ Please investigate this Shortcut story and implement the requested work. Verify 
       return storyAsMarkdown(await story(id, signal));
     }
   });
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: ["shortcut_list_assigned", "shortcut_get_story"],
     skills: ["shortcut-stories"]
   }));
-  bb.ui.registerMentionProvider({
+  alia.ui.registerMentionProvider({
     id: "story",
     label: "Shortcut stories",
     triggers: ["#", "@"],

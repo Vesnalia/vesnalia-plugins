@@ -1,4 +1,4 @@
-// Calendar days in the local time zone of bb's server, as YYYY-MM-DD, for the Usage view's periods. The page and the CLI
+// Calendar days in the local time zone of VesnALIA's server, as YYYY-MM-DD, for the Usage view's periods. The page and the CLI
 // take "today" from the server's answer, so all three agree on which day it is.
 import type { UsageRange } from "./contract";
 

@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { CronExpressionParser } from "cron-parser";
 import type { ThreadLimitState } from "./contract";
 
-type Event = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
+type Event = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["events"]["list"]>>[number];
 
 function localDateReset(message: string, timeZone: string | null) {
   const match = /try again at ([a-z]{3}) (\d{1,2})(?:st|nd|rd|th)?,\s*(\d{4})\s+(\d{1,2}):(\d{2})\s*(am|pm)\b/i.exec(

@@ -53,7 +53,7 @@ export interface PendingValue {
 // through the realm's symbol registry because the main bundle and each lazy chunk carry their
 // own copy of this module, and a value made in one must pass the checks in another. Only
 // trusted code runs in this realm (card expressions have no globals; apps run in sandboxed frames).
-const MINTED_KEY = Symbol.for("bb-plugin-iris.minted");
+const MINTED_KEY = Symbol.for("alia-plugin-iris.minted");
 const realm = globalThis as unknown as Record<symbol, WeakSet<object> | undefined>;
 const MINTED: WeakSet<object> = (realm[MINTED_KEY] ??= new WeakSet<object>());
 

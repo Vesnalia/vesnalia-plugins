@@ -6,8 +6,8 @@
 // reconnect refetch and folder navigation through rows and breadcrumbs.
 import { cleanup, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginRpcTestHandlers, RenderedSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginRpcTestHandlers, RenderedSlot } from "@vesnalia/plugin-sdk/testing/app";
 
 import type { FileEntry, FileManagerContract } from "../../contract";
 
@@ -203,7 +203,7 @@ describe("FileManagerPanel listing", () => {
   });
 
   it("names the backend's own root when a path leaves it, never a fixed one", async () => {
-    // The root is the home directory of whoever runs bb (src/root.ts), so
+    // The root is the home directory of whoever runs VesnALIA (src/root.ts), so
     // every sentence about it has to come from `getState`; 0.3.0 shipped two
     // that said "/home/coder" to everybody.
     const slot = mount({
@@ -455,13 +455,13 @@ describe("FileManagerPanel navigation (§8.2)", () => {
     const deep = `${ROOT}/my docs/a+b`;
     const slot = mount(
       rpcFor({ [deep]: listing(deep, [README]) }),
-      { subPath: "my%20docs/a%2Bb" },
+      { subPath: "my%20docs/a%2Alia" },
     );
     await slot.findByText("readme.md");
     expect(listDirCalls(slot)[0]?.input).toEqual({ path: deep, showHidden: false });
   });
 
-  it("opens a file in bb's preview panel on double click (§8.2)", async () => {
+  it("opens a file in VesnALIA's preview panel on double click (§8.2)", async () => {
     const clicked: string[] = [];
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
       this: HTMLAnchorElement,
@@ -492,7 +492,7 @@ describe("FileManagerPanel navigation (§8.2)", () => {
   });
 
   it("opens the built-in viewer when the host declines the preview (§8.12)", async () => {
-    // The surface the sidebar's own File Manager page always is: bb wires no
+    // The surface the sidebar's own File Manager page always is: VesnALIA wires no
     // preview panel into it, so the host answers false for every file.
     // Downloading was 0.7's answer and it was the wrong one — the user asked
     // to look at the file, not to keep a copy of it.
@@ -538,7 +538,7 @@ describe("FileManagerPanel navigation (§8.2)", () => {
       slot.getAllByTestId("fm-row").find((row) => row.getAttribute("data-fm-path") === README.path)!,
     );
 
-    // Without a host id there is no target to hand bb, so it is never asked.
+    // Without a host id there is no target to hand VesnALIA, so it is never asked.
     expect(slot.inspection.navigateCalls).toHaveLength(0);
     await slot.findByTestId("fm-viewer");
     expect(clicked).toHaveLength(0);

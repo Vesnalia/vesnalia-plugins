@@ -16,7 +16,7 @@ guest, built for arm64, runs in QEMU on a Mac, in the Tart backend.
 
 [Later backends](../research/later-backends.md#proxmox-qemu-for-windows-virtual-next)
 planned `windows-desktop` on Proxmox QEMU: a sysprepped template,
-Cloudbase-Init for the address and key, and a helper of bb-box's own in
+Cloudbase-Init for the address and key, and a helper of alia-box's own in
 the desktop session for windows and computer use. A spike (#46) built
 Windows 11 Pro with no clicks and measured it:
 
@@ -49,7 +49,7 @@ It also found that:
   - the VirtIO SCSI driver through `DriverPaths`, and BitLocker's
     automatic encryption off (`PreventDeviceEncryption`);
   - OpenSSH with PowerShell 7 as its shell, the system code page UTF-8,
-    bb-box's key in `administrators_authorized_keys`, and the firewall
+    alia-box's key in `administrators_authorized_keys`, and the firewall
     rule for any network profile;
   - the guest agent, automatic logon as `box`, no lock screen, screen
     saver or sleep, and UAC elevating without a prompt;
@@ -79,7 +79,7 @@ It also found that:
   used for readiness only.
 - **Files.** A file copy is a PowerShell script over the same SSH, with
   the file's bytes as its stdin or stdout, not SFTP. It takes the box's
-  shared connection and fails as a command does, and bb-box needs no SFTP
+  shared connection and fails as a command does, and alia-box needs no SFTP
   client or local file. Starting PowerShell costs about 0.2 s a copy. A
   file's mode does not apply.
 - **Desktop commands.** Core runs `session: "desktop"` on Windows as a
@@ -98,8 +98,8 @@ It also found that:
   window shows. The apps it opens still run unelevated. Edge starts with
   `--force-renderer-accessibility`, as Chrome does in the Linux template,
   so Cua reads its pages.
-- **Enrolment.** `enrol` is false until BB's host app runs on Windows
-  ([BB request 1](../bb-requests.md#1-bbs-host-app-on-windows)).
+- **Enrolment.** `enrol` is false until VesnALIA's host app runs on Windows
+  ([VesnALIA request 1](../alia-requests.md#1-bbs-host-app-on-windows)).
 - **Kind.** `windows-desktop`: Windows, x86_64, no GPU, one RFB display,
   Cua. Its presets are the Linux desktops': `small` 4 cores and 8 GiB,
   `medium` 8 and 16, `large` 16 and 32, with the template's disk.
@@ -114,11 +114,11 @@ It also found that:
   3.2 s, with SSH and Cua answering within a second. The agent drives it
   with the same seven computer tools.
 - Each box needs a Windows licence. An unactivated or evaluation copy is
-  enough to try it. bb-box never ships a Windows image.
+  enough to try it. alia-box never ships a Windows image.
 - A box of another size is a cold clone, since a hibernated VM keeps its
   memory size.
 - Until they enrol, Windows boxes get no Git credentials or machine
-  variables from BB and no child threads, and they are not offered as a
+  variables from VesnALIA and no child threads, and they are not offered as a
   new box or as your machines
   ([033](033-a-thread-can-start-on-a-new-box.md),
   [036](036-your-machines-are-boxes-you-own.md)).

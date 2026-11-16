@@ -1,4 +1,4 @@
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -11,7 +11,7 @@ it('authenticates prepared runtime grants against the server profile registry be
   const host=createFakePluginHost({pluginId:'account-pool',sdk:{hosts:{list:async()=>[{id:'host-one',name:'One'}]}}});
   const upstream=vi.fn(async()=>new Response('{}'));
   try{
-    await createAccountPoolPlugin({fetch:upstream})(host.bb);
+    await createAccountPoolPlugin({fetch:upstream})(host.alia);
     const execution={runtimeId:'runtime-one',gatewayId:'gateway-one',runtimeSha256:'a'.repeat(64),profile:{id:'fixture-exit',version:1}};
     const executor={id:'native-one',accountId:'subscription-one',hostId:'host-one',callerIds:['host-one'],projectIds:['project-one'],enabled:true,execution};
     const configure=()=>host.harness.behavior.runCli(['native','configure',JSON.stringify(executor)]);
@@ -27,17 +27,17 @@ it('authenticates prepared runtime grants against the server profile registry be
     const sessionId=randomUUID();
     const response=await host.harness.behavior.fetchHttp('POST','/native/agy',{headers:{authorization:`Bearer ${token}`},body:JSON.stringify({action:'acquire',executorId:'native-one',sessionId})});
     expect(response.status).toBe(200);
-    expect((await response.json()).binding).toMatchObject({...execution,schema:'bb-account-pool/native-execution/1',sessionId,accountId:'subscription-one',hostId:'host-one',kind:'task',caller:{hostId:'host-one',projectId:'project-one',threadId:'thread-one'}});
+    expect((await response.json()).binding).toMatchObject({...execution,schema:'alia-account-pool/native-execution/1',sessionId,accountId:'subscription-one',hostId:'host-one',kind:'task',caller:{hostId:'host-one',projectId:'project-one',threadId:'thread-one'}});
     expect(upstream).not.toHaveBeenCalled();
   }finally{await host.harness.lifecycle.dispose();}
 });
 
-it('real registration binds CLI, BB env, authenticated HTTP and forbids the old model/OAuth path',async()=>{
+it('real registration binds CLI, VesnALIA env, authenticated HTTP and forbids the old model/OAuth path',async()=>{
   const dataDir=await mkdtemp(path.join(tmpdir(),'native-pool-'));
   const upstream=vi.fn(async()=>new Response('{}'));
   const host=createFakePluginHost({pluginId:'account-pool',dataDir,sdk:{hosts:{list:async()=>[{id:'host-one',name:'One'}]}}});
   try{
-    await createAccountPoolPlugin({fetch:upstream})(host.bb);
+    await createAccountPoolPlugin({fetch:upstream})(host.alia);
     const executor={id:'native-one',accountId:'subscription-one',hostId:'host-one',callerIds:['host-one'],catalogCallerIds:['catalog-client'],projectIds:['project-one'],enabled:true};
     expect((await host.harness.behavior.runCli(['native','configure',JSON.stringify(executor)])).exitCode).toBe(0);
     expect((await host.harness.behavior.runCli(['native','mode','managed'])).exitCode).toBe(0);
@@ -78,7 +78,7 @@ it('real registration binds CLI, BB env, authenticated HTTP and forbids the old 
 it('saves native projects through RPC and contributes the executor for a future project',async()=>{
   const host=createFakePluginHost({pluginId:'account-pool',sdk:{hosts:{list:async()=>[{id:'host-one',name:'One'}]}}});
   try{
-    await createAccountPoolPlugin({fetch:vi.fn(async()=>new Response('{}'))})(host.bb);
+    await createAccountPoolPlugin({fetch:vi.fn(async()=>new Response('{}'))})(host.alia);
     const executor={id:'native-one',accountId:'subscription-one',hostId:'host-one',callerIds:['host-one'],projectIds:['project-one'],enabled:true};
     expect((await host.harness.behavior.runCli(['native','configure',JSON.stringify(executor)])).exitCode).toBe(0);
     await host.harness.behavior.runCli(['native','mode','managed']);
@@ -98,7 +98,7 @@ it('saves native projects through RPC and contributes the executor for a future 
 it('maintenance denies native acquire and poll while allowing confirmed cleanup',async()=>{
   const host=createFakePluginHost({pluginId:'account-pool',sdk:{hosts:{list:async()=>[{id:'host-one',name:'One'}]}}});
   try{
-    await createAccountPoolPlugin({fetch:vi.fn(async()=>new Response('{}'))})(host.bb);
+    await createAccountPoolPlugin({fetch:vi.fn(async()=>new Response('{}'))})(host.alia);
     const executor={id:'native-one',accountId:'subscription-one',hostId:'host-one',callerIds:['host-one'],projectIds:['project-one'],enabled:true};
     await host.harness.behavior.runCli(['native','configure',JSON.stringify(executor)]);
     await host.harness.behavior.runCli(['native','mode','managed']);
@@ -121,7 +121,7 @@ it('maintenance denies native acquire and poll while allowing confirmed cleanup'
 it('applies native account settings through the real RPC contract and routes each project without widening caller authority',async()=>{
   const host=createFakePluginHost({pluginId:'account-pool',sdk:{hosts:{list:async()=>[{id:'host-one',name:'One'}]}}});
   try{
-    await createAccountPoolPlugin({fetch:vi.fn(async()=>new Response('{}'))})(host.bb);
+    await createAccountPoolPlugin({fetch:vi.fn(async()=>new Response('{}'))})(host.alia);
     for(const [id,accountId] of [['native-one','subscription-one'],['native-two','subscription-two']]){
       expect((await host.harness.behavior.runCli(['native','configure',JSON.stringify({id,accountId,hostId:'host-one',callerIds:['host-one'],projectIds:['project-one'],enabled:true})])).exitCode).toBe(0);
     }
@@ -148,7 +148,7 @@ it('targeted probe reports unavailable without enabling, acquiring or calling up
   const host=createFakePluginHost({pluginId:'account-pool',sdk:{hosts:{list:async()=>[{id:'host-one',name:'One'}]}}});
   const upstream=vi.fn(async()=>new Response('{}'));
   try{
-    await createAccountPoolPlugin({fetch:upstream})(host.bb);
+    await createAccountPoolPlugin({fetch:upstream})(host.alia);
     const executor={id:'native-second',accountId:'subscription-two',hostId:'host-one',callerIds:['host-one'],projectIds:['project-one'],enabled:false};
     expect((await host.harness.behavior.runCli(['native','configure',JSON.stringify(executor)])).exitCode).toBe(0);
     expect((await host.harness.behavior.runCli(['native','mode','managed'])).exitCode).toBe(0);

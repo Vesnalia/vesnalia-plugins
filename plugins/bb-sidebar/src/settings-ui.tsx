@@ -8,7 +8,7 @@ function settingsSectionId(title: string): string {
 }
 
 /**
- * The settings page's building blocks, drawn after bb's own settings: a short
+ * The settings page's building blocks, drawn after VesnALIA's own settings: a short
  * section title over a bordered card, and undivided rows with the label on
  * the left and the control on the right.
  */
@@ -78,7 +78,7 @@ function SaveIndicator({ status }: { status: SaveStatus | undefined }) {
         </>
       ) : shown === "saved" ? (
         <>
-          <Icon name="Check" aria-hidden className="size-3.5 text-[color:var(--bb-sidebar-tone-success)]" />
+          <Icon name="Check" aria-hidden className="size-3.5 text-[color:var(--alia-sidebar-tone-success)]" />
           Saved
         </>
       ) : shown === "error" ? (
@@ -167,7 +167,7 @@ export function Switch({
 
 /**
  * A native select, kept for its keyboard and screen-reader behaviour, styled
- * like bb's dropdown buttons. `className` sizes the wrapper.
+ * like VesnALIA's dropdown buttons. `className` sizes the wrapper.
  */
 export function SettingsSelect({ className, ...props }: ComponentProps<"select">) {
   return (

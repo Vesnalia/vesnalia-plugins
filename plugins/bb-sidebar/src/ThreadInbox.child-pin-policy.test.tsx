@@ -26,7 +26,7 @@ describe("structural child pin policy UI", () => {
           sidebarThreads: {
             status: "ready",
             threads: parentState === "missing" ? [child] : [child, parent],
-            projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+            projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
           },
         },
       );
@@ -75,7 +75,7 @@ describe("structural child pin policy UI", () => {
       sidebarThreads: {
         status: "ready",
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: { listLifecycle: () => ({ rows: [] }) },
     });

@@ -3,7 +3,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { configToToml } from "../src/config";
 import { MIGRATIONS } from "../src/db/schema";
@@ -308,7 +308,7 @@ describe("the Inbox RPCs", () => {
       return [];
     });
     const host = createFakePluginHost({ pluginId: "shuttle", dataDir: mkdtempSync(join(tmpdir(), "shuttle-")), sdk: { subscribe: () => () => {} } });
-    await createShuttlePlugin({ port: () => port, runner, tickMs: 3_600_000 })(host.bb);
+    await createShuttlePlugin({ port: () => port, runner, tickMs: 3_600_000 })(host.alia);
     const { behavior, lifecycle } = host.harness;
     await behavior.callRpc("importToml", { toml: configToToml(testConfig()), apply: true });
     await behavior.callRpc("sync", {});

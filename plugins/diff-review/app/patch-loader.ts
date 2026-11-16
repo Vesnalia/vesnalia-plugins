@@ -1,5 +1,5 @@
 /**
- * Loads file patches bb did not send with the file list, without anyone asking: each file asks for its
+ * Loads file patches VesnALIA did not send with the file list, without anyone asking: each file asks for its
  * patch when it comes near the screen (`useNearScreen`), and the loader gathers the asks into batches,
  * one request at a time, so a diff of hundreds of files fills in as it is scrolled without flooding
  * the server. A failed batch marks its files failed; asking again retries them.
@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 /** The most paths one `loadPatches` call takes (the contract's limit is 50). */
 export const BATCH_SIZE = 25;
 
-/** `missing`: bb answered without a patch for the file (it changed or left the diff meanwhile). */
+/** `missing`: VesnALIA answered without a patch for the file (it changed or left the diff meanwhile). */
 export type PatchState = "loading" | "failed" | "missing";
 
 /** `load` puts the patches it got in place and returns the paths it got them for. */

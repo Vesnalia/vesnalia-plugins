@@ -23,7 +23,7 @@ function git(cwd: string, ...args: string[]): string {
 }
 
 function repository(name: string): { path: string; commit: string } {
-  const root = mkdtempSync(join(tmpdir(), `bb-workspaces-${name}-`));
+  const root = mkdtempSync(join(tmpdir(), `alia-workspaces-${name}-`));
   roots.push(root);
   git(root, "init", "-b", "main");
   git(root, "config", "user.email", "workspaces@example.invalid");
@@ -43,7 +43,7 @@ afterEach(() => {
 function clonedRepository(name: string): { path: string; originPath: string; defaultCommit: string; featureCommit: string } {
   const origin = repository(name);
   git(origin.path, "branch", "-M", "master");
-  const clonePath = mkdtempSync(join(tmpdir(), `bb-workspaces-${name}-clone-`));
+  const clonePath = mkdtempSync(join(tmpdir(), `alia-workspaces-${name}-clone-`));
   roots.push(clonePath);
   execFileSync("git", ["clone", "--quiet", origin.path, clonePath], { encoding: "utf8" });
   git(clonePath, "config", "user.email", "workspaces@example.invalid");
@@ -62,7 +62,7 @@ function clonedRepository(name: string): { path: string; originPath: string; def
 describe("multi-repository session worktrees", () => {
   it("branches from the freshly fetched default branch and leaves the checkout alone", async () => {
     const clone = clonedRepository("default-base");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_default", workspaceName: "Platform", instructions: "",
@@ -76,7 +76,7 @@ describe("multi-repository session worktrees", () => {
 
   it("branches from the current checkout when that base is chosen", async () => {
     const clone = clonedRepository("current-base");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_current", workspaceName: "Platform", instructions: "",
@@ -96,7 +96,7 @@ describe("multi-repository session worktrees", () => {
 
   it("refuses a base ref that could act as a git flag", async () => {
     const clone = clonedRepository("unsafe-base");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     await expect(prepareSession({
       dataRoot, sessionId: "session_unsafe", workspaceName: "Platform", instructions: "",
@@ -108,7 +108,7 @@ describe("multi-repository session worktrees", () => {
   it("preserves trusted initial instructions when expanding a v1 manifest", async () => {
     const auth = repository("legacy-auth");
     const audits = repository("legacy-audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({ dataRoot, sessionId: "session_v1", workspaceName: "Legacy", instructions: "Trusted original instructions.", repositories: [{ projectId: "auth", alias: "auth", sourcePath: auth.path, baseRef: "HEAD" }] });
     writeFileSync(join(prepared.rootPath, "session.json"), JSON.stringify({ schemaVersion: 1, sessionId: "session_v1", workspaceName: "Legacy", repositories: prepared.repositories }));
@@ -119,48 +119,48 @@ describe("multi-repository session worktrees", () => {
 
   it("accepts cleanup through the accumulated repository limit and refuses excess expansion before Git", async () => {
     const auth = repository("bounded-auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({ dataRoot, sessionId: "session_bound", workspaceName: "Bounded", instructions: "", repositories: [{ projectId: "auth", alias: "auth", sourcePath: auth.path, baseRef: "HEAD" }] });
-    const repositories = Array.from({ length: 1024 }, (_, index) => ({ ...prepared.repositories[0]!, projectId: `project-${index}`, alias: `repo-${index}`, branch: `bb-workspace/session-bound/repo-${index}`, worktreePath: join(prepared.rootPath, `repos/repo-${index}`) }));
+    const repositories = Array.from({ length: 1024 }, (_, index) => ({ ...prepared.repositories[0]!, projectId: `project-${index}`, alias: `repo-${index}`, branch: `alia-workspace/session-bound/repo-${index}`, worktreePath: join(prepared.rootPath, `repos/repo-${index}`) }));
     expect(hostContract.cleanup_session.input.safeParse({ sessionId: "session_bound", repositories }).success).toBe(true);
     expect(hostContract.cleanup_session.input.safeParse({ sessionId: "session_bound", repositories: [...repositories, repositories[0]] }).success).toBe(false);
     writeFileSync(join(prepared.rootPath, "session.json"), JSON.stringify({ ...readSessionManifest(dataRoot, "session_bound"), repositories }));
     await expect(addRepository({ dataRoot, sessionId: "session_bound", operationKey: "too-many-repos", repository: { projectId: "extra", alias: "extra", sourcePath: "/missing/source", baseRef: "HEAD" } })).rejects.toThrow(/1024|limit/i);
   });
   it("creates and validates a stable non-Git workspace anchor", async () => {
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
 
     const anchor = await ensureAnchor(dataRoot);
 
     expect(anchor.path).toBe(join(dataRoot, "workspace-anchor"));
-    expect(JSON.parse(readFileSync(join(anchor.path, ".bb-workspaces-anchor.json"), "utf8"))).toEqual({
+    expect(JSON.parse(readFileSync(join(anchor.path, ".alia-workspaces-anchor.json"), "utf8"))).toEqual({
       schemaVersion: 1,
-      owner: "bb-plugin-workspaces",
+      owner: "alia-plugin-workspaces",
     });
     expect(existsSync(join(anchor.path, ".git"))).toBe(false);
     expect(await ensureAnchor(dataRoot)).toEqual(anchor);
 
-    writeFileSync(join(anchor.path, ".bb-workspaces-anchor.json"), JSON.stringify({ schemaVersion: 1, owner: "other" }));
+    writeFileSync(join(anchor.path, ".alia-workspaces-anchor.json"), JSON.stringify({ schemaVersion: 1, owner: "other" }));
     await expect(ensureAnchor(dataRoot)).rejects.toThrow(/anchor/i);
     expect(existsSync(anchor.path)).toBe(true);
   });
 
   it("rejects symlinked owned-path components before reading or creating outside dataRoot", async () => {
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
-    const outside = mkdtempSync(join(tmpdir(), "bb-workspaces-outside-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
+    const outside = mkdtempSync(join(tmpdir(), "alia-workspaces-outside-"));
     roots.push(dataRoot, outside);
     symlinkSync(outside, join(dataRoot, "workspace-anchor"));
 
     await expect(ensureAnchor(dataRoot)).rejects.toThrow(/symlink/i);
-    expect(existsSync(join(outside, ".bb-workspaces-anchor.json"))).toBe(false);
+    expect(existsSync(join(outside, ".alia-workspaces-anchor.json"))).toBe(false);
 
     mkdirSync(join(dataRoot, "sessions"));
     symlinkSync(outside, join(dataRoot, "sessions", "session_escape"));
     expect(() => readSessionManifest(dataRoot, "session_escape")).toThrow(/symlink/i);
 
-    const guardedRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const guardedRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(guardedRoot);
     symlinkSync(outside, join(guardedRoot, "sessions"));
     const auth = repository("symlink-ancestor");
@@ -174,7 +174,7 @@ describe("multi-repository session worktrees", () => {
   it("creates isolated worktrees and a compact repository map", async () => {
     const auth = repository("auth");
     const gateway = repository("gateway");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
 
     const result = await prepareSession({
@@ -191,16 +191,16 @@ describe("multi-repository session worktrees", () => {
     expect(readFileSync(join(result.rootPath, "repos/auth/README.md"), "utf8")).toBe("auth\n");
     expect(readFileSync(join(result.rootPath, "repos/gateway/README.md"), "utf8")).toBe("gateway\n");
     expect(readFileSync(join(result.rootPath, "AGENTS.md"), "utf8")).toContain("Run contract tests before finishing.");
-    expect(readFileSync(join(result.rootPath, "AGENTS.md"), "utf8")).toContain("`repos/auth` → BB project `proj_auth`");
+    expect(readFileSync(join(result.rootPath, "AGENTS.md"), "utf8")).toContain("`repos/auth` → VesnALIA project `proj_auth`");
     expect(git(join(result.rootPath, "repos/auth"), "rev-parse", "HEAD")).toBe(auth.commit);
     expect(git(join(result.rootPath, "repos/gateway"), "rev-parse", "HEAD")).toBe(gateway.commit);
     expect(result.repositories.map((repo) => repo.branch)).toEqual([
-      "bb-workspace/session-abc/auth",
-      "bb-workspace/session-abc/gateway",
+      "alia-workspace/session-abc/auth",
+      "alia-workspace/session-abc/gateway",
     ]);
     expect(readSessionManifest(dataRoot, "session_abc")).toMatchObject({
       schemaVersion: 2,
-      owner: "bb-plugin-workspaces",
+      owner: "alia-plugin-workspaces",
       revision: 1,
       operations: [],
       instructions: "Run contract tests before finishing.",
@@ -209,7 +209,7 @@ describe("multi-repository session worktrees", () => {
 
   it("upgrades a valid schema-v1 manifest in memory", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_legacy", workspaceName: "Legacy", instructions: "Keep focused.",
@@ -224,7 +224,7 @@ describe("multi-repository session worktrees", () => {
 
     expect(readSessionManifest(dataRoot, "session_legacy")).toMatchObject({
       schemaVersion: 2,
-      owner: "bb-plugin-workspaces",
+      owner: "alia-plugin-workspaces",
       revision: 1,
       operations: [],
       instructions: "",
@@ -235,7 +235,7 @@ describe("multi-repository session worktrees", () => {
   it("adds a repository once and replays duplicate operations without another worktree", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     await prepareSession({
       dataRoot, sessionId: "session_expand", workspaceName: "Expand", instructions: "Keep focused.",
@@ -259,14 +259,14 @@ describe("multi-repository session worktrees", () => {
     expect(replayed).toEqual(added);
     expect(duplicateProject).toEqual(added);
     expect(manifest).toMatchObject({ revision: 2, operations: [{ key: "expand-audits-1", projectId: "proj_audits", alias: "audits" }] });
-    expect(git(audits.path, "branch", "--list", "bb-workspace/session-expand/*").split("\n").filter(Boolean)).toHaveLength(1);
+    expect(git(audits.path, "branch", "--list", "alia-workspace/session-expand/*").split("\n").filter(Boolean)).toHaveLength(1);
     expect(readFileSync(join(added.repository.worktreePath, "README.md"), "utf8")).toBe("audits\n");
   });
 
   it("rejects unsafe additions and manifests that do not prove session ownership", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_validation", workspaceName: "Validation", instructions: "",
@@ -277,7 +277,7 @@ describe("multi-repository session worktrees", () => {
       dataRoot, sessionId: "session_validation", operationKey: "expand-invalid-1",
       repository: { projectId: "proj_audits", alias: "../audits", sourcePath: audits.path, baseRef: "HEAD" },
     })).rejects.toThrow(/alias/i);
-    expect(git(audits.path, "branch", "--list", "bb-workspace/session-validation/*")).toBe("");
+    expect(git(audits.path, "branch", "--list", "alia-workspace/session-validation/*")).toBe("");
 
     const manifestPath = join(prepared.rootPath, "session.json");
     const valid = JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -286,7 +286,7 @@ describe("multi-repository session worktrees", () => {
       dataRoot, sessionId: "session_validation", operationKey: "expand-audits-1",
       repository: { projectId: "proj_audits", alias: "audits", sourcePath: audits.path, baseRef: "HEAD" },
     })).rejects.toThrow(/owner/i);
-    expect(git(audits.path, "branch", "--list", "bb-workspace/session-validation/*")).toBe("");
+    expect(git(audits.path, "branch", "--list", "alia-workspace/session-validation/*")).toBe("");
 
     writeFileSync(manifestPath, JSON.stringify({ ...valid, owner: undefined }));
     expect(() => readSessionManifest(dataRoot, "session_validation")).toThrow(/owner/i);
@@ -295,7 +295,7 @@ describe("multi-repository session worktrees", () => {
   it("atomically replaces the manifest without leaving readable temporary metadata", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_atomic", workspaceName: "Atomic", instructions: "",
@@ -316,7 +316,7 @@ describe("multi-repository session worktrees", () => {
   it("rolls back only a new worktree and branch when manifest publishing fails", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_rollback", workspaceName: "Rollback", instructions: "Keep prior instructions.",
@@ -332,21 +332,21 @@ describe("multi-repository session worktrees", () => {
 
     expect(readFileSync(join(prepared.rootPath, "AGENTS.md"), "utf8")).toBe(priorAgents);
     expect(existsSync(join(prepared.rootPath, "repos/audits"))).toBe(false);
-    expect(git(audits.path, "branch", "--list", "bb-workspace/session-rollback/audits")).toBe("");
+    expect(git(audits.path, "branch", "--list", "alia-workspace/session-rollback/audits")).toBe("");
     expect(readSessionManifest(dataRoot, "session_rollback").revision).toBe(1);
   });
 
   it("removes artifacts created before a worktree command reports failure", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     await prepareSession({
       dataRoot, sessionId: "session_partial", workspaceName: "Partial", instructions: "",
       repositories: [{ projectId: "proj_auth", alias: "auth", sourcePath: auth.path, baseRef: auth.commit }],
     });
     const worktreePath = join(dataRoot, "sessions/session_partial/repos/audits");
-    const branch = "bb-workspace/session-partial/audits";
+    const branch = "alia-workspace/session-partial/audits";
     const outcome = await addRepository({
       dataRoot, sessionId: "session_partial", operationKey: "expand-audits-1",
       repository: { projectId: "proj_audits", alias: "audits", sourcePath: audits.path, baseRef: "HEAD" },
@@ -371,14 +371,14 @@ describe("multi-repository session worktrees", () => {
   it("keeps the new repository recoverable when restoring AGENTS.md fails", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     await prepareSession({
       dataRoot, sessionId: "session_restore", workspaceName: "Restore", instructions: "",
       repositories: [{ projectId: "proj_auth", alias: "auth", sourcePath: auth.path, baseRef: auth.commit }],
     });
     const worktreePath = join(dataRoot, "sessions/session_restore/repos/audits");
-    const branch = "bb-workspace/session-restore/audits";
+    const branch = "alia-workspace/session-restore/audits";
     const outcome = await addRepository({
       dataRoot, sessionId: "session_restore", operationKey: "expand-audits-1",
       repository: { projectId: "proj_audits", alias: "audits", sourcePath: audits.path, baseRef: "HEAD" },
@@ -402,7 +402,7 @@ describe("multi-repository session worktrees", () => {
   it("serializes concurrent additions for one session into one repository", async () => {
     const auth = repository("auth");
     const audits = repository("audits");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     await prepareSession({
       dataRoot, sessionId: "session_concurrent", workspaceName: "Concurrent", instructions: "",
@@ -417,13 +417,13 @@ describe("multi-repository session worktrees", () => {
 
     expect(results[0]).toEqual(results[1]);
     expect(manifest.repositories.filter((entry) => entry.projectId === "proj_audits")).toHaveLength(1);
-    expect(git(audits.path, "branch", "--list", "bb-workspace/session-concurrent/audits").split("\n").filter(Boolean)).toHaveLength(1);
+    expect(git(audits.path, "branch", "--list", "alia-workspace/session-concurrent/audits").split("\n").filter(Boolean)).toHaveLength(1);
     expect(existsSync(join(dataRoot, "sessions/session_concurrent/repos/audits"))).toBe(true);
   });
 
   it("reports repository changes independently", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const result = await prepareSession({
       dataRoot,
@@ -450,7 +450,7 @@ describe("multi-repository session worktrees", () => {
 
   it("does not overwrite an unknown session directory", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const target = join(dataRoot, "sessions", "session_collision");
     mkdirSync(target, { recursive: true });
@@ -470,7 +470,7 @@ describe("multi-repository session worktrees", () => {
 
   it("cleans only unchanged owned worktrees and preserves their branches", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_clean", workspaceName: "Clean", instructions: "",
@@ -480,12 +480,12 @@ describe("multi-repository session worktrees", () => {
     await cleanupSession({ dataRoot, sessionId: "session_clean", repositories: prepared.repositories });
 
     expect(() => readFileSync(prepared.rootPath, "utf8")).toThrow();
-    expect(git(auth.path, "show-ref", "--verify", "refs/heads/bb-workspace/session-clean/auth")).toContain(auth.commit);
+    expect(git(auth.path, "show-ref", "--verify", "refs/heads/alia-workspace/session-clean/auth")).toContain(auth.commit);
   });
 
   it("removes a clean worktree with commits and preserves the committed branch tip", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_committed", workspaceName: "Committed", instructions: "",
@@ -501,12 +501,12 @@ describe("multi-repository session worktrees", () => {
     expect(status).toMatchObject({ clean: true, aheadOfBase: true, changedFiles: [] });
     await cleanupSession({ dataRoot, sessionId: "session_committed", repositories: prepared.repositories });
 
-    expect(git(auth.path, "rev-parse", "refs/heads/bb-workspace/session-committed/auth")).toBe(branchTip);
+    expect(git(auth.path, "rev-parse", "refs/heads/alia-workspace/session-committed/auth")).toBe(branchTip);
   });
 
   it("refuses cleanup when a repository has uncommitted work", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_dirty", workspaceName: "Dirty", instructions: "",
@@ -520,7 +520,7 @@ describe("multi-repository session worktrees", () => {
 
   it("refuses cleanup when a worktree was switched to another branch", async () => {
     const auth = repository("auth");
-    const dataRoot = mkdtempSync(join(tmpdir(), "bb-workspaces-data-"));
+    const dataRoot = mkdtempSync(join(tmpdir(), "alia-workspaces-data-"));
     roots.push(dataRoot);
     const prepared = await prepareSession({
       dataRoot, sessionId: "session_switched", workspaceName: "Switched", instructions: "",
@@ -533,8 +533,8 @@ describe("multi-repository session worktrees", () => {
 
   it("creates a missing sessions data root and keeps legacy sessions in the plugin data dir", async () => {
     const source = repository("fresh-root");
-    const pluginDataDir = mkdtempSync(join(tmpdir(), "bb-workspaces-plugin-"));
-    const parent = mkdtempSync(join(tmpdir(), "bb-workspaces-sessions-"));
+    const pluginDataDir = mkdtempSync(join(tmpdir(), "alia-workspaces-plugin-"));
+    const parent = mkdtempSync(join(tmpdir(), "alia-workspaces-sessions-"));
     roots.push(pluginDataDir, parent);
     const sessionsDataRoot = join(parent, "missing");
     mkdirSync(join(pluginDataDir, "sessions", "session_legacy"), { recursive: true });

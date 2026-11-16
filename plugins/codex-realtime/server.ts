@@ -5,8 +5,8 @@
 // Realtime WebSocket, with the ChatGPT token `codex login` keeps in
 // ~/.codex/auth.json as the bearer. The login is read on every call and never
 // refreshed or written (server/codex-login.ts). The token goes only to another
-// plugin on the allow list, never to the bb app or a `bb plugin rpc call`.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// plugin on the allow list, never to the VesnALIA app or a `alia plugin rpc call`.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { CodexLoginError, codexAuthPath, readCodexLogin } from "./server/codex-login";
 import { DEFAULT_MODEL, RealtimeConnectionInput, RealtimeConnectionOutput, modelOrDefault, realtimeConnection } from "./server/connection";
@@ -32,8 +32,8 @@ export function createPlugin(options: PluginOptions = {}) {
   const authPath = options.authPath ?? codexAuthPath();
   const now = options.now ?? Date.now;
 
-  return async function plugin(bb: BbPluginApi) {
-    const settings = bb.settings.define({
+  return async function plugin(alia: AliaPluginApi) {
+    const settings = alia.settings.define({
       model: {
         type: "string",
         label: "Realtime model",
@@ -44,14 +44,14 @@ export function createPlugin(options: PluginOptions = {}) {
         type: "string",
         label: "Plugins that may use the sign-in",
         description:
-          "Plugin ids, separated by commas, that may receive your ChatGPT token. The bb app and `bb plugin rpc call` never receive it.",
+          "Plugin ids, separated by commas, that may receive your ChatGPT token. The VesnALIA app and `alia plugin rpc call` never receive it.",
         default: DEFAULT_ALLOWED_PLUGINS,
       },
     });
 
     const missingLogin = (error: unknown) => {
       if (error instanceof CodexLoginError && error.problem === "missing") {
-        bb.status.needsConfiguration(`${error.message} Then run \`bb plugin reload codex-realtime\`.`);
+        alia.status.needsConfiguration(`${error.message} Then run \`alia plugin reload codex-realtime\`.`);
       }
     };
 
@@ -59,7 +59,7 @@ export function createPlugin(options: PluginOptions = {}) {
     // reported when a session asks, since Codex may refresh it before then.
     await readCodexLogin(authPath, now()).catch(missingLogin);
 
-    bb.rpc.register(
+    alia.rpc.register(
       rpcContract,
       {
         // Every call reads the file again, so `refresh: true` (a caller whose
@@ -71,7 +71,7 @@ export function createPlugin(options: PluginOptions = {}) {
           }
           const current = await settings.get();
           if (!parseAllowedPlugins(current.allowedPlugins).has(caller.pluginId)) {
-            bb.log.warn(`Refused a realtime connection to plugin ${caller.pluginId}: not in the allowed plugins setting.`);
+            alia.log.warn(`Refused a realtime connection to plugin ${caller.pluginId}: not in the allowed plugins setting.`);
             throw new Error(`Plugin ${caller.pluginId} is not allowed to use the ChatGPT sign-in. Add it to codex-realtime's allowed plugins setting.`);
           }
           let login;
@@ -82,7 +82,7 @@ export function createPlugin(options: PluginOptions = {}) {
             throw error;
           }
           const model = modelOrDefault(current.model);
-          bb.log.info(`Realtime connection for ${caller.pluginId}: model ${model}, sign-in valid until ${new Date(login.expiresAt).toISOString()}.`);
+          alia.log.info(`Realtime connection for ${caller.pluginId}: model ${model}, sign-in valid until ${new Date(login.expiresAt).toISOString()}.`);
           return realtimeConnection(login.accessToken, model);
         },
       },

@@ -1,10 +1,10 @@
-// SQLite cache for Productive tasks, keyed by bb project.
+// SQLite cache for Productive tasks, keyed by VesnALIA project.
 //
 // Ported from the Taskboard plugin's store, minus its multi-source dimension:
-// this plugin has one provider, so (bb_project_id, locator) is the item key and
+// this plugin has one provider, so (alia_project_id, locator) is the item key and
 // there is no `source` column anywhere.
 import { randomUUID } from 'node:crypto';
-import type { BbPluginApi } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi } from '@vesnalia/plugin-sdk';
 import {
   FILTER_PRESET_LIMIT,
   defaultProjectBoardSettings,
@@ -30,11 +30,11 @@ import {
   serializeFilterPresetState
 } from './filter-presets.js';
 
-type PluginDatabase = ReturnType<BbPluginApi['storage']['database']>;
+type PluginDatabase = ReturnType<AliaPluginApi['storage']['database']>;
 type SqlParameter = string | number | null;
 
 interface WorkItemRow {
-  bb_project_id: string;
+  alia_project_id: string;
   locator: string;
   item_key: string;
   title: string;
@@ -63,7 +63,7 @@ interface SyncRow {
 }
 
 interface ProjectScopeRow {
-  bb_project_id: string;
+  alia_project_id: string;
   productive_project_id: string;
   folder_id: string;
   task_list_id: string;
@@ -72,7 +72,7 @@ interface ProjectScopeRow {
 }
 
 interface BoardSettingsRow {
-  bb_project_id: string;
+  alia_project_id: string;
   default_view: string;
   enabled_filters_json: string;
   status_order_json: string;
@@ -80,7 +80,7 @@ interface BoardSettingsRow {
 
 interface FilterPresetRow {
   id: string;
-  bb_project_id: string;
+  alia_project_id: string;
   name: string;
   name_normalized: string;
   filters_json: string;
@@ -119,7 +119,7 @@ function escapeLike(value: string): string {
  *  breaks a whole list read. */
 function itemFromRow(row: WorkItemRow): WorkItem | null {
   const parsed = workItemSchema.safeParse({
-    bbProjectId: row.bb_project_id,
+    aliaProjectId: row.alia_project_id,
     locator: row.locator,
     key: row.item_key,
     title: row.title,
@@ -145,7 +145,7 @@ function itemFromRow(row: WorkItemRow): WorkItem | null {
 
 function scopeFromRow(row: ProjectScopeRow): ProjectScope {
   return projectScopeSchema.parse({
-    projectId: row.bb_project_id,
+    projectId: row.alia_project_id,
     productiveProjectId: row.productive_project_id,
     folderId: row.folder_id,
     taskListId: row.task_list_id,
@@ -155,9 +155,9 @@ function scopeFromRow(row: ProjectScopeRow): ProjectScope {
 }
 
 function boardSettingsFromRow(row: BoardSettingsRow): ProjectBoardSettings {
-  const defaults = defaultProjectBoardSettings(row.bb_project_id);
+  const defaults = defaultProjectBoardSettings(row.alia_project_id);
   const parsed = projectBoardSettingsSchema.safeParse({
-    projectId: row.bb_project_id,
+    projectId: row.alia_project_id,
     defaultView: row.default_view,
     enabledFilters: parseJsonSafely(row.enabled_filters_json) ??
       defaults.enabledFilters,
@@ -171,7 +171,7 @@ function filterPresetFromRow(row: FilterPresetRow): FilterPreset | null {
   if (state === undefined) return null;
   const parsed = filterPresetSchema.safeParse({
     id: row.id,
-    projectId: row.bb_project_id,
+    projectId: row.alia_project_id,
     name: row.name,
     state,
     position: row.position
@@ -179,12 +179,12 @@ function filterPresetFromRow(row: FilterPresetRow): FilterPreset | null {
   return parsed.success ? parsed.data : null;
 }
 
-export function createWorkItemStore(bb: BbPluginApi) {
-  const db: PluginDatabase = bb.storage.database();
-  bb.storage.migrate(db, [
+export function createWorkItemStore(alia: AliaPluginApi) {
+  const db: PluginDatabase = alia.storage.database();
+  alia.storage.migrate(db, [
     `
       CREATE TABLE work_items (
-        bb_project_id TEXT NOT NULL,
+        alia_project_id TEXT NOT NULL,
         locator TEXT NOT NULL,
         item_key TEXT NOT NULL,
         title TEXT NOT NULL,
@@ -204,21 +204,21 @@ export function createWorkItemStore(bb: BbPluginApi) {
         labels_json TEXT NOT NULL,
         due_date TEXT,
         updated_at TEXT NOT NULL,
-        PRIMARY KEY (bb_project_id, locator)
+        PRIMARY KEY (alia_project_id, locator)
       );
 
       CREATE INDEX idx_work_items_project
-        ON work_items(bb_project_id, updated_at DESC, locator);
+        ON work_items(alia_project_id, updated_at DESC, locator);
 
       CREATE TABLE project_sync (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         last_synced_at TEXT,
         error TEXT,
         item_count INTEGER NOT NULL DEFAULT 0 CHECK (item_count >= 0)
       );
 
       CREATE TABLE project_scope (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         productive_project_id TEXT NOT NULL,
         task_list_id TEXT NOT NULL,
         assigned_to_me_only INTEGER NOT NULL CHECK (
@@ -229,7 +229,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       );
 
       CREATE TABLE project_board_settings (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         default_view TEXT NOT NULL,
         enabled_filters_json TEXT NOT NULL,
         status_order_json TEXT NOT NULL,
@@ -239,10 +239,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
       CREATE TABLE project_filter_presets (
         id TEXT NOT NULL PRIMARY KEY
           CHECK (length(id) BETWEEN 1 AND 100),
-        bb_project_id TEXT NOT NULL
+        alia_project_id TEXT NOT NULL
           CHECK (
-            substr(bb_project_id, 1, 5) = 'proj_' AND
-            length(bb_project_id) BETWEEN 6 AND 500
+            substr(alia_project_id, 1, 5) = 'proj_' AND
+            length(alia_project_id) BETWEEN 6 AND 500
           ),
         name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 60),
         name_normalized TEXT NOT NULL
@@ -252,11 +252,11 @@ export function createWorkItemStore(bb: BbPluginApi) {
         position INTEGER NOT NULL CHECK (position >= 0 AND position < 50),
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        UNIQUE (bb_project_id, name_normalized)
+        UNIQUE (alia_project_id, name_normalized)
       );
 
       CREATE INDEX idx_filter_presets_project
-        ON project_filter_presets(bb_project_id, position, created_at, id);
+        ON project_filter_presets(alia_project_id, position, created_at, id);
     `,
     `
       ALTER TABLE work_items ADD COLUMN folder TEXT;
@@ -265,7 +265,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
     `,
     `
       CREATE TABLE project_board_view (
-        bb_project_id TEXT PRIMARY KEY,
+        alia_project_id TEXT PRIMARY KEY,
         view_json TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -298,12 +298,12 @@ export function createWorkItemStore(bb: BbPluginApi) {
     ]
   >(`
     INSERT INTO work_items (
-      bb_project_id, locator, item_key, title, description, url, status,
+      alia_project_id, locator, item_key, title, description, url, status,
       status_id, state_category, assignee, assignee_id, project,
       productive_project_id, task_list, task_list_id, folder, folder_id,
       labels_json, due_date, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(bb_project_id, locator) DO UPDATE SET
+    ON CONFLICT(alia_project_id, locator) DO UPDATE SET
       item_key = excluded.item_key,
       title = excluded.title,
       description = excluded.description,
@@ -327,7 +327,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
   function writeItem(item: WorkItem): void {
     const parsed = workItemSchema.parse(item);
     upsertItem.run(
-      parsed.bbProjectId,
+      parsed.aliaProjectId,
       parsed.locator,
       parsed.key,
       parsed.title,
@@ -351,12 +351,12 @@ export function createWorkItemStore(bb: BbPluginApi) {
   }
 
   const deleteProjectItems = db.prepare<[string]>(
-    'DELETE FROM work_items WHERE bb_project_id = ?'
+    'DELETE FROM work_items WHERE alia_project_id = ?'
   );
   const writeSync = db.prepare<[string, string, number]>(`
-    INSERT INTO project_sync (bb_project_id, last_synced_at, error, item_count)
+    INSERT INTO project_sync (alia_project_id, last_synced_at, error, item_count)
     VALUES (?, ?, NULL, ?)
-    ON CONFLICT(bb_project_id) DO UPDATE SET
+    ON CONFLICT(alia_project_id) DO UPDATE SET
       last_synced_at = excluded.last_synced_at,
       error = NULL,
       item_count = excluded.item_count
@@ -371,36 +371,36 @@ export function createWorkItemStore(bb: BbPluginApi) {
   );
 
   const readScope = db.prepare<[string], ProjectScopeRow>(`
-    SELECT bb_project_id, productive_project_id, folder_id, task_list_id,
+    SELECT alia_project_id, productive_project_id, folder_id, task_list_id,
            assigned_to_me_only, include_closed
     FROM project_scope
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
   `);
 
   const readBoardSettings = db.prepare<[string], BoardSettingsRow>(`
-    SELECT bb_project_id, default_view, enabled_filters_json, status_order_json
+    SELECT alia_project_id, default_view, enabled_filters_json, status_order_json
     FROM project_board_settings
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
   `);
 
   const readPresets = db.prepare<[string], FilterPresetRow>(`
-    SELECT id, bb_project_id, name, name_normalized, filters_json, position
+    SELECT id, alia_project_id, name, name_normalized, filters_json, position
     FROM project_filter_presets
-    WHERE bb_project_id = ?
+    WHERE alia_project_id = ?
     ORDER BY position ASC, created_at ASC, id ASC
     LIMIT ${FILTER_PRESET_LIMIT + 1}
   `);
 
   const readPreset = db.prepare<[string, string], FilterPresetRow>(`
-    SELECT id, bb_project_id, name, name_normalized, filters_json, position
+    SELECT id, alia_project_id, name, name_normalized, filters_json, position
     FROM project_filter_presets
-    WHERE bb_project_id = ? AND id = ?
+    WHERE alia_project_id = ? AND id = ?
   `);
 
   const updatePresetPosition = db.prepare<[number, string, string, string]>(`
     UPDATE project_filter_presets
     SET position = ?, updated_at = ?
-    WHERE bb_project_id = ? AND id = ?
+    WHERE alia_project_id = ? AND id = ?
   `);
 
   function visiblePresets(projectId: string): FilterPreset[] {
@@ -427,7 +427,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           `
           SELECT *
           FROM work_items AS item
-          WHERE (:projectId IS NULL OR item.bb_project_id = :projectId)
+          WHERE (:projectId IS NULL OR item.alia_project_id = :projectId)
             AND (
               :query = '' OR
               item.item_key LIKE :query ESCAPE '\\' COLLATE NOCASE OR
@@ -440,7 +440,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
               :stateCount = 0 OR
               item.state_category IN (SELECT value FROM json_each(:states))
             )
-          ORDER BY item.updated_at DESC, item.bb_project_id, item.locator
+          ORDER BY item.updated_at DESC, item.alia_project_id, item.locator
           LIMIT :limit
         `
         )
@@ -452,25 +452,25 @@ export function createWorkItemStore(bb: BbPluginApi) {
     get(projectId: string, locator: string): WorkItem | null {
       const row = db
         .prepare<[string, string], WorkItemRow>(
-          'SELECT * FROM work_items WHERE bb_project_id = ? AND locator = ?'
+          'SELECT * FROM work_items WHERE alia_project_id = ? AND locator = ?'
         )
         .get(projectId, locator);
       return row ? itemFromRow(row) : null;
     },
 
-    /** Replaces the whole cached set for one bb project in one transaction. */
+    /** Replaces the whole cached set for one VesnALIA project in one transaction. */
     replaceAll(projectId: string, items: WorkItem[], syncedAt: string): void {
       for (const item of items) {
-        if (item.bbProjectId !== projectId) {
-          throw new Error('Cannot write a work item outside its BB project');
+        if (item.aliaProjectId !== projectId) {
+          throw new Error('Cannot write a work item outside its VesnALIA project');
         }
       }
       replaceAllTransaction(projectId, items, syncedAt);
     },
 
     upsert(projectId: string, item: WorkItem): void {
-      if (item.bbProjectId !== projectId) {
-        throw new Error('Cannot write a work item outside its BB project');
+      if (item.aliaProjectId !== projectId) {
+        throw new Error('Cannot write a work item outside its VesnALIA project');
       }
       writeItem(item);
     },
@@ -480,15 +480,15 @@ export function createWorkItemStore(bb: BbPluginApi) {
         const count =
           db
             .prepare<[string], { count: number }>(
-              'SELECT COUNT(*) AS count FROM work_items WHERE bb_project_id = ?'
+              'SELECT COUNT(*) AS count FROM work_items WHERE alia_project_id = ?'
             )
             .get(projectId)?.count ?? 0;
         db.prepare<[string, string, number]>(
           `
           INSERT INTO project_sync (
-            bb_project_id, last_synced_at, error, item_count
+            alia_project_id, last_synced_at, error, item_count
           ) VALUES (?, NULL, ?, ?)
-          ON CONFLICT(bb_project_id) DO UPDATE SET
+          ON CONFLICT(alia_project_id) DO UPDATE SET
             error = excluded.error,
             item_count = excluded.item_count
         `
@@ -500,7 +500,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       const row = db
         .prepare<[string], SyncRow>(
           `SELECT last_synced_at, error, item_count
-           FROM project_sync WHERE bb_project_id = ?`
+           FROM project_sync WHERE alia_project_id = ?`
         )
         .get(projectId);
       const scope = readScope.get(projectId);
@@ -527,10 +527,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
         db.prepare<[string, string, string, string, number, number, string]>(
           `
           INSERT INTO project_scope (
-            bb_project_id, productive_project_id, folder_id, task_list_id,
+            alia_project_id, productive_project_id, folder_id, task_list_id,
             assigned_to_me_only, include_closed, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(bb_project_id) DO UPDATE SET
+          ON CONFLICT(alia_project_id) DO UPDATE SET
             productive_project_id = excluded.productive_project_id,
             folder_id = excluded.folder_id,
             task_list_id = excluded.task_list_id,
@@ -557,7 +557,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
         if (retargeted) {
           deleteProjectItems.run(scope.projectId);
           db.prepare<[string]>(
-            'DELETE FROM project_sync WHERE bb_project_id = ?'
+            'DELETE FROM project_sync WHERE alia_project_id = ?'
           ).run(scope.projectId);
         }
         return scopeFromRow(readScope.get(scope.projectId)!);
@@ -572,7 +572,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
     readBoardView(projectId: string): unknown | null {
       const row = db
         .prepare(
-          'SELECT view_json FROM project_board_view WHERE bb_project_id = ?'
+          'SELECT view_json FROM project_board_view WHERE alia_project_id = ?'
         )
         .get(projectId) as { view_json: string } | undefined;
       if (row === undefined) return null;
@@ -585,9 +585,9 @@ export function createWorkItemStore(bb: BbPluginApi) {
 
     writeBoardView(projectId: string, view: unknown): void {
       db.prepare(
-        `INSERT INTO project_board_view (bb_project_id, view_json, updated_at)
+        `INSERT INTO project_board_view (alia_project_id, view_json, updated_at)
          VALUES (?, ?, ?)
-         ON CONFLICT(bb_project_id) DO UPDATE SET
+         ON CONFLICT(alia_project_id) DO UPDATE SET
            view_json = excluded.view_json,
            updated_at = excluded.updated_at`
       ).run(projectId, JSON.stringify(view), new Date().toISOString());
@@ -605,10 +605,10 @@ export function createWorkItemStore(bb: BbPluginApi) {
       db.prepare<[string, string, string, string, string]>(
         `
         INSERT INTO project_board_settings (
-          bb_project_id, default_view, enabled_filters_json, status_order_json,
+          alia_project_id, default_view, enabled_filters_json, status_order_json,
           updated_at
         ) VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(bb_project_id) DO UPDATE SET
+        ON CONFLICT(alia_project_id) DO UPDATE SET
           default_view = excluded.default_view,
           enabled_filters_json = excluded.enabled_filters_json,
           status_order_json = excluded.status_order_json,
@@ -654,7 +654,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
         const conflict = db
           .prepare<[string, string], { id: string; name: string }>(
             `SELECT id, name FROM project_filter_presets
-             WHERE bb_project_id = ? AND name_normalized = ?`
+             WHERE alia_project_id = ? AND name_normalized = ?`
           )
           .get(projectId, normalized);
         if (conflict && conflict.id !== id) {
@@ -668,7 +668,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           db.prepare<[string, string, string, string, string, string]>(
             `UPDATE project_filter_presets
              SET name = ?, name_normalized = ?, filters_json = ?, updated_at = ?
-             WHERE bb_project_id = ? AND id = ?`
+             WHERE alia_project_id = ? AND id = ?`
           ).run(name, normalized, serializedState, now, projectId, id);
           return readSaved(id);
         }
@@ -692,7 +692,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
           [string, string, string, string, string, number, string, string]
         >(
           `INSERT INTO project_filter_presets (
-             id, bb_project_id, name, name_normalized, filters_json, position,
+             id, alia_project_id, name, name_normalized, filters_json, position,
              created_at, updated_at
            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
@@ -717,7 +717,7 @@ export function createWorkItemStore(bb: BbPluginApi) {
       return db.transaction(() => {
         const deletion = db
           .prepare<[string, string]>(
-            'DELETE FROM project_filter_presets WHERE bb_project_id = ? AND id = ?'
+            'DELETE FROM project_filter_presets WHERE alia_project_id = ? AND id = ?'
           )
           .run(parsedProjectId, parsedId);
         if (deletion.changes === 0) return visiblePresets(parsedProjectId);
@@ -760,16 +760,16 @@ export function createWorkItemStore(bb: BbPluginApi) {
       })();
     },
 
-    /** BB projects mapped to a Productive project — what the sync loop walks. */
+    /** VesnALIA projects mapped to a Productive project — what the sync loop walks. */
     configuredProjectIds(): string[] {
       return db
-        .prepare<[], { bb_project_id: string }>(
-          `SELECT bb_project_id FROM project_scope
+        .prepare<[], { alia_project_id: string }>(
+          `SELECT alia_project_id FROM project_scope
            WHERE productive_project_id <> ''
-           ORDER BY bb_project_id`
+           ORDER BY alia_project_id`
         )
         .all()
-        .map(row => row.bb_project_id);
+        .map(row => row.alia_project_id);
     }
   };
 }

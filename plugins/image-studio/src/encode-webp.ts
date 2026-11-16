@@ -22,7 +22,7 @@ type Vips = {
 
 let vipsCached: Promise<Vips | null> | undefined;
 
-/** WebAssembly libvips: BB installs git plugins with --omit=optional, which drops sharp's native binaries. */
+/** WebAssembly libvips: VesnALIA installs git plugins with --omit=optional, which drops sharp's native binaries. */
 function loadVips(): Promise<Vips | null> {
   vipsCached ??= (async () => {
     try {

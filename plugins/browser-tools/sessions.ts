@@ -1,4 +1,4 @@
-import type { BbPluginApi, ExperimentalDesktopBrowserScope, ExperimentalHostClient } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi, ExperimentalDesktopBrowserScope, ExperimentalHostClient } from "@vesnalia/plugin-sdk";
 import {
   BrowserToolError,
   browserToolErrorCodeSchema,
@@ -97,7 +97,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
  * host executor never duplicate these rules.
  */
 export class SessionManager {
-  readonly #bb: BbPluginApi;
+  readonly #alia: AliaPluginApi;
   readonly #host: ExperimentalHostClient<typeof hostContract>;
   readonly #options: Required<Pick<SessionManagerOptions, "operationBudgetMs" | "navigateBudgetMs" | "readyTimeoutMs" | "idleMs">> & {
     cleanupRetryDelaysMs: readonly number[];
@@ -124,9 +124,9 @@ export class SessionManager {
   #lastPruneAt = 0;
   #sweeper: NodeJS.Timeout | null = null;
 
-  constructor(bb: BbPluginApi, options: SessionManagerOptions = {}) {
-    this.#bb = bb;
-    this.#host = bb.hosts.experimental_client({ contract: hostContract });
+  constructor(alia: AliaPluginApi, options: SessionManagerOptions = {}) {
+    this.#alia = alia;
+    this.#host = alia.hosts.experimental_client({ contract: hostContract });
     this.#options = {
       operationBudgetMs: options.operationBudgetMs ?? 30_000,
       navigateBudgetMs: options.navigateBudgetMs ?? LIMITS.navigation.defaultTimeoutMs,
@@ -137,7 +137,7 @@ export class SessionManager {
   }
 
   get #desktop() {
-    return this.#bb.sdk.experimental_desktopBrowsers;
+    return this.#alia.sdk.experimental_desktopBrowsers;
   }
 
   get #clock(): number {
@@ -189,10 +189,10 @@ export class SessionManager {
   }
 
   async reconcile(): Promise<void> {
-    const keys = await this.#bb.storage.kv.list(KEY_PREFIX);
+    const keys = await this.#alia.storage.kv.list(KEY_PREFIX);
     const records: SessionRecord[] = [];
     for (const key of keys) {
-      const parsed = sessionRecordSchema.safeParse(await this.#bb.storage.kv.get(key));
+      const parsed = sessionRecordSchema.safeParse(await this.#alia.storage.kv.get(key));
       if (parsed.success) records.push(parsed.data);
     }
     const batchSize = LIMITS.cleanup.concurrency;
@@ -214,8 +214,8 @@ export class SessionManager {
 
   async #pruneCompleted(): Promise<void> {
     const cutoff = this.#clock - LIMITS.session.completedRecordRetentionMs;
-    for (const key of await this.#bb.storage.kv.list(KEY_PREFIX)) {
-      const parsed = sessionRecordSchema.safeParse(await this.#bb.storage.kv.get(key));
+    for (const key of await this.#alia.storage.kv.list(KEY_PREFIX)) {
+      const parsed = sessionRecordSchema.safeParse(await this.#alia.storage.kv.get(key));
       if (!parsed.success) continue;
       const record = parsed.data;
       if (
@@ -224,7 +224,7 @@ export class SessionManager {
         record.stoppedAt !== null &&
         record.stoppedAt < cutoff
       ) {
-        await this.#bb.storage.kv.delete(key).catch(() => {});
+        await this.#alia.storage.kv.delete(key).catch(() => {});
       }
     }
   }
@@ -329,7 +329,7 @@ export class SessionManager {
   }
 
   async #persist(record: SessionRecord): Promise<void> {
-    await this.#bb.storage.kv.set(this.#key(record), sessionRecordSchema.parse(record));
+    await this.#alia.storage.kv.set(this.#key(record), sessionRecordSchema.parse(record));
   }
 
   // -- Scope watchers -------------------------------------------------------
@@ -453,7 +453,7 @@ export class SessionManager {
   ): Promise<{ hostId: string; instanceId: string; generation: string }> {
     let hostId = input.hostId;
     if (hostId === undefined) {
-      const hosts = (await this.#bb.sdk.hosts.list()).filter(
+      const hosts = (await this.#alia.sdk.hosts.list()).filter(
         (host) => host.status === "connected" && host.lifecycle.phase === "active",
       );
       if (hosts.length === 0) {
@@ -475,7 +475,7 @@ export class SessionManager {
     if (instances.length === 0) {
       throw new BrowserToolError(
         "TARGET_UNAVAILABLE",
-        `No desktop window is connected on host ${hostId}; open a BB window there first`,
+        `No desktop window is connected on host ${hostId}; open a VesnALIA window there first`,
       );
     }
     const instance =
@@ -501,7 +501,7 @@ export class SessionManager {
     throwIfAborted(signal);
     const threadSignal = this.#threadSignal(threadId);
     throwIfAborted(threadSignal.signal);
-    await this.#bb.sdk.threads.get({ threadId, signal: threadSignal.signal });
+    await this.#alia.sdk.threads.get({ threadId, signal: threadSignal.signal });
     const combined = AbortSignal.any([signal, this.#lifecycle.signal, threadSignal.signal]);
     throwIfAborted(combined);
 
@@ -810,7 +810,7 @@ export class SessionManager {
         persisted = true;
       } catch {
         // No raw storage error text: it may contain private paths or payloads.
-        this.#bb.log.warn("Browser cleanup state could not be persisted; resource accounting remains reserved for retry");
+        this.#alia.log.warn("Browser cleanup state could not be persisted; resource accounting remains reserved for retry");
         if (this.#disposed) {
           throw new BrowserToolError("TARGET_UNAVAILABLE", "Browser shutdown could not persist pending cleanup");
         }
@@ -1161,7 +1161,7 @@ export class SessionManager {
     if (input.closeTab && record.desktop?.borrowed === true) {
       throw new BrowserToolError(
         "UNSUPPORTED_CAPABILITY",
-        "Borrowed and personal tabs are never closed by the plugin; close it in BB instead",
+        "Borrowed and personal tabs are never closed by the plugin; close it in VesnALIA instead",
       );
     }
     if (canCloseTab && record.desktop) {

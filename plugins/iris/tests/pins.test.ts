@@ -10,10 +10,10 @@ describe("pins", () => {
     expect(normalizePins({ source: null })).toEqual([]);
   });
   it("drops malformed pins and repeats, and keeps files", () => {
-    const pins = normalizePins({ pins: [{ id: "a", source: "<Card />" }, { id: "a", source: "x" }, { title: "Fleet", file: "$BB_THREAD_STORAGE/fleet.iris", by: "agent" }, { id: "bad id!" }, "junk"] });
+    const pins = normalizePins({ pins: [{ id: "a", source: "<Card />" }, { id: "a", source: "x" }, { title: "Fleet", file: "$ALIA_THREAD_STORAGE/fleet.iris", by: "agent" }, { id: "bad id!" }, "junk"] });
     expect(pins.map((p) => [p.id, p.by, p.file ?? null])).toEqual([
       ["a", "person", null],
-      ["fleet", "agent", "$BB_THREAD_STORAGE/fleet.iris"],
+      ["fleet", "agent", "$ALIA_THREAD_STORAGE/fleet.iris"],
     ]);
   });
   it("replaces by id in place and refuses a pin past the limit", () => {
@@ -48,7 +48,7 @@ describe("pins on the home page", () => {
 });
 
 describe("pins RPC", () => {
-  it("publishes every schema as JSON Schema, so bb can list the methods", async () => {
+  it("publishes every schema as JSON Schema, so VesnALIA can list the methods", async () => {
     const { z } = await import("zod");
     const { cardsContract, pinsContract } = await import("../shared/pins-rpc");
     for (const [name, m] of Object.entries({ ...pinsContract, ...cardsContract })) {

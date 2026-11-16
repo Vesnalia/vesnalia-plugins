@@ -2,7 +2,7 @@ import type { ThreadOnBox } from "./contract.ts";
 
 const WORKING_STATUSES: ReadonlySet<string> = new Set(["active", "starting", "pending", "stopping"]);
 
-export interface BbThread {
+export interface AliaThread {
   readonly id: string;
   readonly title?: string | null;
   readonly titleFallback?: string | null;
@@ -19,7 +19,7 @@ export function chosenThreadTitle(thread: { readonly id: string; readonly title?
   return null;
 }
 
-export function threadOnBox(thread: BbThread): ThreadOnBox {
+export function threadOnBox(thread: AliaThread): ThreadOnBox {
   return {
     id: thread.id,
     title: chosenThreadTitle(thread),

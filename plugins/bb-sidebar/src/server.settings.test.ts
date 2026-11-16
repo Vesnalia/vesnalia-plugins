@@ -145,8 +145,8 @@ describe("lifecycle RPC", () => {
   });
 
   it("migrates values from the previous flat settings form", async () => {
-    const { bb, harness } = createFakePluginHost({
-      pluginId: "bb-sidebar",
+    const { alia, harness } = createFakePluginHost({
+      pluginId: "alia-sidebar",
       sdk: {
         plugins: {
           getSettings: async () => ({
@@ -165,7 +165,7 @@ describe("lifecycle RPC", () => {
         },
       },
     });
-    await plugin(bb);
+    await plugin(alia);
     disposers.push(() => harness.lifecycle.dispose());
 
     await expect(harness.behavior.callRpc("getSidebarSettings", {})).resolves.toEqual({
@@ -190,11 +190,11 @@ describe("lifecycle RPC", () => {
 });
 
 it("writes only JSON and keeps historical columns unchanged across reloads", async () => {
-  const getSettings = vi.fn(async () => ({ values: {}, pluginId: "bb-sidebar" }));
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar", sdk: { plugins: { getSettings } } });
-  await plugin(bb);
+  const getSettings = vi.fn(async () => ({ values: {}, pluginId: "alia-sidebar" }));
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar", sdk: { plugins: { getSettings } } });
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   const { settings_json: beforeJson, ...beforeColumns } = db.prepare("SELECT * FROM sidebar_settings").get() as Record<
     string,
     unknown
@@ -221,10 +221,10 @@ it("writes only JSON and keeps historical columns unchanged across reloads", asy
 });
 
 it("defaults missing and invalid JSON fields without losing valid settings", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar" });
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   db.prepare("UPDATE sidebar_settings SET settings_json = ? WHERE id = 1").run(
     JSON.stringify({
       snoozePresets: "20m, 6h",
@@ -247,10 +247,10 @@ it("defaults missing and invalid JSON fields without losing valid settings", asy
 });
 
 it.each(["", "{broken", "null", "[]", "42", '"settings"'])("defaults malformed JSON %s", async (stored) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar" });
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
-  bb.storage.database().prepare("UPDATE sidebar_settings SET settings_json = ? WHERE id = 1").run(stored);
+  alia.storage.database().prepare("UPDATE sidebar_settings SET settings_json = ? WHERE id = 1").run(stored);
   await expect(harness.behavior.callRpc("getSidebarSettings", {})).resolves.toEqual(DEFAULT_SIDEBAR_SETTINGS);
   expect(harness.inspection.logEntries).toContainEqual(
     expect.objectContaining({
@@ -267,10 +267,10 @@ it.each([
   [{ threadDisplay: "dense-future", compactWorkingThreads: true }, "compact-working"],
   [{ threadDisplay: "dense-future", compactWorkingThreads: false }, "full"],
 ])("reads thread display %j from settings saved without a known value", async (stored, threadDisplay) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar" });
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
-  bb.storage
+  alia.storage
     .database()
     .prepare("UPDATE sidebar_settings SET settings_json = ? WHERE id = 1")
     .run(JSON.stringify(stored));
@@ -296,13 +296,13 @@ it("keeps the legacy switch in step when thread display changes", async () => {
 });
 
 it("keeps settling finished pull requests on for installs that already had sidebar data", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "bb-sidebar" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "alia-sidebar" });
   // The shape the first release created, with one stored shelf choice.
-  bb.storage.database().exec(
+  alia.storage.database().exec(
     `CREATE TABLE thread_lifecycle (thread_id TEXT PRIMARY KEY, settled_at INTEGER, snoozed_until INTEGER, snoozed_at INTEGER);
        INSERT INTO thread_lifecycle VALUES ('thr_old', 1, NULL, NULL);`,
   );
-  await plugin(bb);
+  await plugin(alia);
   disposers.push(() => harness.lifecycle.dispose());
   await expect(harness.behavior.callRpc("getSidebarSettings", {})).resolves.toMatchObject({ autoSettleOnMerge: true });
   await expect(harness.behavior.callRpc("updateSidebarSettings", { autoSettleOnMerge: false })).resolves.toMatchObject({

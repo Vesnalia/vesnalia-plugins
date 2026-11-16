@@ -18,7 +18,7 @@ import host, { isAgentArtifact, isSessionDirUnder, sessionUuidFromDir } from "..
 import { clipBody, parseAgentFile, parseLatestTaskAgents, parseTranscript, taskBody } from "../src/omp.ts";
 import { activityLine } from "../src/activity.ts";
 import { onHubOpen, openHubPanel, parseHubParams, parseOpenAgentRequest, type HubOpenOptions } from "../src/open-agent.ts";
-import { GLYPHS, VERIFIED_BB_GLYPHS } from "../src/glyphs.ts";
+import { GLYPHS, VERIFIED_ALIA_GLYPHS } from "../src/glyphs.ts";
 import { statusStyle } from "../src/status-style.ts";
 import { readHead, readLines } from "../src/bounded-read.ts";
 import { spawnedIdsFromOutput } from "../src/spawn.ts";
@@ -549,7 +549,7 @@ describe("bounded reads", () => {
 });
 
 describe("statusStyle", () => {
-  it("a killed agent is neutral, never bb's needs-you colour", () => {
+  it("a killed agent is neutral, never VesnALIA's needs-you colour", () => {
     const killed = statusStyle("interrupted");
     assert.equal(killed.glyph, "Square");
     assert.ok(!killed.toneClass.includes("pending"), "the pending/needs-you tone is reserved for requests");
@@ -583,7 +583,7 @@ describe("opening an agent from the strip", () => {
     assert.deepEqual(parseHubParams(null), { threadId: null, agentId: null });
     assert.deepEqual(parseHubParams({ threadId: 7, agentId: "" }), { threadId: null, agentId: null });
   });
-  it("opening the same target twice sends identical params, so bb focuses one tab, and re-points it", () => {
+  it("opening the same target twice sends identical params, so VesnALIA focuses one tab, and re-points it", () => {
     const sent: HubOpenOptions[] = [];
     const open = (options: HubOpenOptions) => (sent.push(options), true);
     const seen: unknown[] = [];
@@ -606,14 +606,14 @@ describe("opening an agent from the strip", () => {
     openHubPanel(open, agent);
     assert.equal(seen.length, 3);
   });
-  it("only uses glyphs that exist in bb's icon set (an unknown name renders as a lightning bolt)", () => {
+  it("only uses glyphs that exist in VesnALIA's icon set (an unknown name renders as a lightning bolt)", () => {
     for (const status of ["running", "finished", "failed", "interrupted", "partial"] as const) {
-      assert.ok((VERIFIED_BB_GLYPHS as readonly string[]).includes(statusStyle(status).glyph), `${status} uses an unverified glyph`);
+      assert.ok((VERIFIED_ALIA_GLYPHS as readonly string[]).includes(statusStyle(status).glyph), `${status} uses an unverified glyph`);
     }
   });
   it("every glyph the plugin draws is verified (the unknown ones render as a lightning bolt)", () => {
     for (const [use, name] of Object.entries(GLYPHS)) {
-      assert.ok((VERIFIED_BB_GLYPHS as readonly string[]).includes(name), `${use} uses unverified glyph ${name}`);
+      assert.ok((VERIFIED_ALIA_GLYPHS as readonly string[]).includes(name), `${use} uses unverified glyph ${name}`);
     }
   });
 });

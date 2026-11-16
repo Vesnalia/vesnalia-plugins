@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The pane-parity audit's Gap 4: in the pane, a file-change row's title is
-// colored exactly like the main view's clickable file accent (bb renders the
+// colored exactly like the main view's clickable file accent (VesnALIA renders the
 // path segment with `text-timeline-accent` — the only place that class
 // appears in the timeline besides the unread divider's header), but the
 // plugin path passes no title-action resolver, so the click does nothing.
@@ -12,8 +12,8 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { ThreadPane } from "../components/thread-pane";
 import { CompactViewportOverrideProvider } from "../components/ui/hooks/use-compact-viewport";
 
-vi.mock("@get-bb/plugin-sdk/app", () => ({
-  // A host-faithful file-change row title: bb renders the path segment with
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
+  // A host-faithful file-change row title: VesnALIA renders the path segment with
   // the file accent class inside TimelineTitleView's tooltip wrapper. The
   // unread divider's header carries the same accent class on a DIV, so the
   // detector must not claim it.
@@ -35,7 +35,7 @@ vi.mock("@get-bb/plugin-sdk/app", () => ({
   ),
   useSdk: () => ({ threads: { get: async () => ({}) } }),
   useRpc: () => ({ call: async () => ({ existence: {} }) }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: undefined, isLoading: false }),
 }));
 

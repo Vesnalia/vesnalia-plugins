@@ -170,7 +170,7 @@ describe("crew actions", () => {
       return context;
     }
 
-    it("is refused by every action, and nothing reaches bb", async () => {
+    it("is refused by every action, and nothing reaches VesnALIA", async () => {
       const { deps, threads } = await withStranger();
       const actions = [
         () => steerCrew(deps, "thr_x", "hi"),

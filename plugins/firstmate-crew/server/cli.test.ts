@@ -38,7 +38,7 @@ async function setup(overrides: Partial<FirstmateSettings> = {}) {
 
 const SPAWN = ["crew", "spawn", "--task", "fix-login", "--project", "prj_app", "--prompt-file", "brief.md"];
 
-describe("bb firstmate-crew crew spawn", () => {
+describe("alia firstmate-crew crew spawn", () => {
   it("crew spawn from the first mate spawns a worktree child with crew metadata and prints its id", async () => {
     const { cli, threads, dir } = await setup();
 
@@ -145,7 +145,7 @@ describe("bb firstmate-crew crew spawn", () => {
       expect(threads.spawned).toEqual([]);
     });
 
-    it("bb's refusal of a level the model does not list reaches the caller", async () => {
+    it("VesnALIA's refusal of a level the model does not list reaches the caller", async () => {
       const { cli, threads, dir } = await setup();
       threads.failSpawn(new Error('Model gpt-5 does not support reasoning level "ultra".'));
       const result = await cli.run([...SPAWN, "--reasoning", "ultra"], { threadId: "thr_mate", cwd: dir });
@@ -260,11 +260,11 @@ describe("bb firstmate-crew crew spawn", () => {
   });
 
   describe("--prompt-file without a working directory", () => {
-    it("refuses a relative path when bb gives no working directory, and still reads an absolute one", async () => {
+    it("refuses a relative path when VesnALIA gives no working directory, and still reads an absolute one", async () => {
       const { cli, threads, dir } = await setup();
       const relative = await cli.run(SPAWN, { threadId: "thr_mate" });
       expect(relative.exitCode).not.toBe(0);
-      expect(relative.stderr).toContain("--prompt-file must be an absolute path when bb gives no working directory.");
+      expect(relative.stderr).toContain("--prompt-file must be an absolute path when VesnALIA gives no working directory.");
       expect(threads.spawned).toEqual([]);
 
       const absolute = await cli.run(["crew", "spawn", "--task", "t", "--project", "prj_app", "--prompt-file", join(dir, "brief.md")], { threadId: "thr_mate" });
@@ -294,7 +294,7 @@ describe("bb firstmate-crew crew spawn", () => {
       expect(threads.spawned).toEqual([]);
     });
 
-    it("a spawn that bb refuses fails with its reason", async () => {
+    it("a spawn that VesnALIA refuses fails with its reason", async () => {
       const { cli, threads, dir } = await setup();
       threads.failSpawn(new Error("environment env_x not found"));
       const result = await cli.run(SPAWN, { threadId: "thr_mate", cwd: dir });
@@ -304,7 +304,7 @@ describe("bb firstmate-crew crew spawn", () => {
   });
 });
 
-describe("bb firstmate-crew tell", () => {
+describe("alia firstmate-crew tell", () => {
   const TERMINAL = `${RELAY_PREFIX}, from no thread (a terminal or a script):`;
 
   function base64(text: string): string {
@@ -319,7 +319,7 @@ describe("bb firstmate-crew tell", () => {
     expect(threads.callsTo("origin")).toEqual([]);
   });
 
-  it("tell from a thread names it, as the sender claims, with bb's project and branch for it", async () => {
+  it("tell from a thread names it, as the sender claims, with VesnALIA's project and branch for it", async () => {
     const { cli, threads } = await setup();
     threads.setOrigin("thr_caller", { projectName: "App", branchName: "fix/login-redirect" });
     const result = await cli.run(["tell", "run", "a", "review", "loop", "on", "my", "work"], { threadId: "thr_caller" });
@@ -333,7 +333,7 @@ describe("bb firstmate-crew tell", () => {
     ]);
   });
 
-  it("the relay line leaves out what bb cannot name, and keeps the names on one line", async () => {
+  it("the relay line leaves out what VesnALIA cannot name, and keeps the names on one line", async () => {
     const { cli, threads } = await setup();
     threads.setOrigin("thr_no_branch", { projectName: "App", branchName: null });
     threads.setOrigin("thr_odd", { projectName: "Odd\n\nname", branchName: "main" });
@@ -362,12 +362,12 @@ describe("bb firstmate-crew tell", () => {
     expect(threads.sent[0]!.text).toBe(`${RELAY_PREFIX}, from thread thr_mate as the sender claims:\n\nnote`);
   });
 
-  it("tell sends nothing when bb fails to say where the caller is", async () => {
+  it("tell sends nothing when VesnALIA fails to say where the caller is", async () => {
     const { cli, threads } = await setup();
-    threads.failNext("origin", new Error("bb is unreachable"));
+    threads.failNext("origin", new Error("alia is unreachable"));
     const result = await cli.run(["tell", "hi"], { threadId: "thr_caller" });
     expect(result.exitCode).not.toBe(0);
-    expect(result.stderr).toContain("bb is unreachable");
+    expect(result.stderr).toContain("alia is unreachable");
     expect(threads.sent).toEqual([]);
   });
 
@@ -448,9 +448,9 @@ describe("bb firstmate-crew tell", () => {
 
   describe("through the /fm skill's own shell recipe", () => {
     /**
-     * Runs the skill's pipeline with `request` in its heredoc against a stub `bb` that keeps its stdin,
-     * then checks that stdin the way bb's CLI does for `--message-base64-stdin` (one non-empty line of at
-     * most 16 KiB, one trailing new line dropped) and hands the line to `tell` as bb would.
+     * Runs the skill's pipeline with `request` in its heredoc against a stub `VesnALIA` that keeps its stdin,
+     * then checks that stdin the way VesnALIA's CLI does for `--message-base64-stdin` (one non-empty line of at
+     * most 16 KiB, one trailing new line dropped) and hands the line to `tell` as VesnALIA would.
      */
     async function viaRecipe(request: string, ctx: { threadId?: string } = {}) {
       const skill = await readFile(new URL("../skills/fm/SKILL.md", import.meta.url), "utf8");
@@ -460,7 +460,7 @@ describe("bb firstmate-crew tell", () => {
       const dir = await mkdtemp(join(tmpdir(), "firstmate-recipe-"));
       tempDirs.push(dir);
       const stdinFile = join(dir, "stdin");
-      await writeFile(join(dir, "bb"), `#!/bin/sh\ncat > "${stdinFile}"\n`, { mode: 0o755 });
+      await writeFile(join(dir, "alia"), `#!/bin/sh\ncat > "${stdinFile}"\n`, { mode: 0o755 });
       execFileSync("sh", ["-c", script], { env: { ...process.env, PATH: `${dir}:${process.env.PATH ?? ""}` } });
       const stdin = await readFile(stdinFile);
       expect(stdin.byteLength).toBeLessThanOrEqual(16 * 1024);
@@ -482,7 +482,7 @@ describe("bb firstmate-crew tell", () => {
       expect(sent[0]!.text).toBe(`${TERMINAL}\n\nfirst line\nsecond line\n`);
     });
 
-    it("fits a request of exactly the limit into bb's one stdin line, and refuses one byte more", async () => {
+    it("fits a request of exactly the limit into VesnALIA's one stdin line, and refuses one byte more", async () => {
       const atLimit = await viaRecipe("x".repeat(MESSAGE_MAX_BYTES));
       expect(atLimit.result.exitCode).toBe(0);
       expect(atLimit.sent[0]!.text).toBe(`${TERMINAL}\n\n${"x".repeat(MESSAGE_MAX_BYTES)}`);

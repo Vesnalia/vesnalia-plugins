@@ -1,4 +1,4 @@
-import type { PluginSidebarProject, PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarProject, PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 export const NOW = new Date(2026, 9, 1, 15, 0).getTime();
 

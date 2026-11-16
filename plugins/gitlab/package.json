@@ -1,25 +1,17 @@
 {
-  "name": "bb-plugin-gitlab",
+  "name": "alia-plugin-gitlab",
   "version": "0.1.2",
-  "description": "Browse GitLab issues and merge requests in BB, then send them to agents.",
+  "description": "Browse GitLab issues and merge requests in VesnALIA, then send them to agents.",
   "license": "MIT",
   "author": "Marius Nouchet (https://github.com/suiramdev)",
-  "homepage": "https://github.com/suiramdev/bb-plugin-gitlab#readme",
-  "bugs": {
-    "url": "https://github.com/suiramdev/bb-plugin-gitlab/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/suiramdev/bb-plugin-gitlab.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.38",
-    "bbPluginSdk": ">=0.4.6"
+    "alia": ">=0.38",
+    "aliaPluginSdk": ">=0.4.6"
   },
-  "bb": {
+  "alia": {
     "name": "GitLab",
-    "description": "Browse GitLab issues and merge requests in BB, then send them to agents.",
+    "description": "Browse GitLab issues and merge requests in VesnALIA, then send them to agents.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -27,7 +19,7 @@
     "app": "./app.tsx"
   },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "gitlab"
   ],
   "scripts": {
@@ -47,7 +39,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.6",
     "@pierre/diffs": "^1.3.5",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
@@ -60,5 +51,22 @@
     "sonner": "^1.7.4",
     "typescript": "^5.7.0",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.6"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/gitlab#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/gitlab"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,7 +1,7 @@
 // Files for every box (#455): a short list in the general settings, each a
 // path under the box user's home and its content, such as pi's
-// .pi/agent/models.json, which BB does not carry to a machine. bb-box writes
-// each into every Linux and macOS box as it joins BB, and into running boxes
+// .pi/agent/models.json, which VesnALIA does not carry to a machine. alia-box writes
+// each into every Linux and macOS box as it joins VesnALIA, and into running boxes
 // when the list changes. A content can hold an API key, so it is a secret:
 // write-only, kept with the backends' secrets, and never in a log, an error,
 // a box record or a tool's output. Only the paths are in the document.

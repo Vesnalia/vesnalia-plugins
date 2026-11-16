@@ -37,7 +37,7 @@ import type { StreamOutput } from "./idb.ts";
 import { inBox, type DevicePaths } from "./paths.ts";
 import { Simctl, appOfProgram, runProgram, type SimDevice } from "./simctl.ts";
 
-export const SLIM_LISTS = "/usr/local/share/bb-box/ios";
+export const SLIM_LISTS = "/usr/local/share/alia-box/ios";
 export const WATCH_MS = 5_000;
 export const CLOCK_TICK_MS = 1_000;
 export const RESUME_GAP_MS = 5_000;
@@ -866,7 +866,7 @@ export class IosDriver implements DeviceDriver {
 
   async #rebootToShow(control: DeviceControl, signal: AbortSignal): Promise<void> {
     if (!this.rebootsFor(control)) return;
-    this.#log(`settings: this device shows a change to ${control.action.replace("_", " ")} only at its start, as its user's uid is not ${IOS_MOBILE_UID}, so bb-box reboots it`);
+    this.#log(`settings: this device shows a change to ${control.action.replace("_", " ")} only at its start, as its user's uid is not ${IOS_MOBILE_UID}, so alia-box reboots it`);
     await this.#reboot(signal);
   }
 

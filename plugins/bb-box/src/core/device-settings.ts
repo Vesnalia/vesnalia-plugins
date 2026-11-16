@@ -96,7 +96,7 @@ export function deviceStateWords(state: DeviceState): string {
   if (state.geometry) parts.push(orientationWord(state.geometry.physical), `${state.geometry.video.width}x${state.geometry.video.height}`);
   if (state.platform === "android" && state.form === "foldable" && state.posture.known) parts.push(state.posture.value.replace("-", " "));
   const settings = state.settings;
-  const outside = (observed: { readonly known: true; readonly by: "bb-box" | "outside" }) => (observed.by === "outside" ? ", changed outside bb-box" : "");
+  const outside = (observed: { readonly known: true; readonly by: "alia-box" | "outside" }) => (observed.by === "outside" ? ", changed outside alia-box" : "");
   if (settings.appearance.known) parts.push(`${settings.appearance.value}${outside(settings.appearance)}`);
   if (state.platform === "ios") {
     if (state.settings.textSize.known) parts.push(`text size ${state.settings.textSize.value}${outside(state.settings.textSize)}`);

@@ -96,6 +96,6 @@ describe("release-gate harness startup", () => {
     const home = await fetch(base);
     expect(home.ok).toBe(true);
     const body = await home.text();
-    expect(body).toContain("data-bb-plugin");
+    expect(body).toContain("data-alia-plugin");
   });
 });

@@ -36,14 +36,14 @@ chore(deps): pin hugeicons to 4.3.0
 ```sh
 npm test
 npm run typecheck
-bb plugin build
+alia plugin build
 ```
 
 ## Layout
 
-- `src/core` pure filesystem and git logic, no BB imports, unit tested
+- `src/core` pure filesystem and git logic, no VesnALIA imports, unit tested
 - `src/server` plugin factory, RPC contract, CLI
 - `src/app` the Skills page
-- `components/ui` vendored BB UI, do not restyle
+- `components/ui` vendored VesnALIA UI, do not restyle
 
-BB RPC is strict JSON: never send an undefined-valued key. Use conditional spreads.
+VesnALIA RPC is strict JSON: never send an undefined-valued key. Use conditional spreads.

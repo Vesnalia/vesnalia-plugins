@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -33,7 +33,7 @@ async function setup(options: { timeoutMs?: number; reportOutputDir?: string } =
 
   const h = createFakePluginHost({ pluginId: "variaq" });
   hosts.push(h);
-  await plugin(h.bb);
+  await plugin(h.alia);
   const campaignState = join(dir, "campaigns.json");
   vi.stubEnv("FAKE_CAMPAIGN_STATE", campaignState);
   await h.harness.behavior.setSettings({

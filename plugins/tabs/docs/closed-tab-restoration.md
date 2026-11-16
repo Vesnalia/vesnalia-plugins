@@ -10,4 +10,4 @@
 
 Уже открытые или архивные/удалённые записи пропускаются; transient/SQL-ошибка оставляет возможность повторить. Сервер перепроверяет доступность и lifecycle внутри сериализованной операции. Старый ответ после смены режима/маршрута не навигирует.
 
-Archive, замена preview, membership и домашнее открепление не являются источниками stack. Сочетание работает лишь если браузер передал его BB; исключения описаны в [клавиатуре](keyboard-shortcuts.md). См. [закрытие](tab-closing.md), [выбор окна](window-local-selection.md), [lifecycle](archive-delete-lifecycle.md).
+Archive, замена preview, membership и домашнее открепление не являются источниками stack. Сочетание работает лишь если браузер передал его VesnALIA; исключения описаны в [клавиатуре](keyboard-shortcuts.md). См. [закрытие](tab-closing.md), [выбор окна](window-local-selection.md), [lifecycle](archive-delete-lifecycle.md).

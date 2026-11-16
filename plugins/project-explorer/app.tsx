@@ -1,4 +1,4 @@
-// bb-plugin-project-explorer — frontend entry.
+// alia-plugin-project-explorer — frontend entry.
 //
 // Registers a "Project Explorer" action in the thread right panel's New tab
 // list. The tab is a two-pane surface: a lazy file tree on the left, a viewer
@@ -10,7 +10,7 @@
 //   - Directory listings are cached per path for the life of the tab.
 //   - Git status is one call for the whole workspace, refreshed on save and
 //     on demand — not per file, and not on every render.
-//   - Viewing uses bb's own SourceCode component (host-owned highlighting,
+//   - Viewing uses VesnALIA's own SourceCode component (host-owned highlighting,
 //     zero bundle cost). Editing swaps in a plain textarea, so the plugin
 //     ships no editor engine.
 import {
@@ -28,7 +28,7 @@ import {
   useRpc,
   experimental_Diff as Diff,
   experimental_SourceCode as SourceCode,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { Entry, GitStatus, rpcContract } from "./server";
 import "./app.css";
@@ -103,7 +103,7 @@ function readStoredSidebarWidth(): number {
 }
 
 /**
- * VS Code's colour language, mapped to bb's theme tokens:
+ * VS Code's colour language, mapped to VesnALIA's theme tokens:
  * modified -> amber, new/untracked -> green, deleted -> red, conflict -> purple.
  */
 const STATUS_CLASS: Record<GitStatus, string> = {
@@ -327,7 +327,7 @@ interface SourcePreviewBoundaryState {
 }
 
 /**
- * bb's source renderer currently builds its line cache from the original text,
+ * VesnALIA's source renderer currently builds its line cache from the original text,
  * but removes one terminal line break before highlighting it. That leaves the
  * two internal line arrays out of sync for ordinary POSIX text files. Remove
  * terminal line breaks from the preview copy so both sides receive the same
@@ -622,7 +622,7 @@ function Editor({
             <div className="pe-diff-view">
               {gitDiff.truncated ? (
                 <div className="pe-diff-notice">
-                  Large diff truncated by bb.
+                  Large diff truncated by VesnALIA.
                 </div>
               ) : null}
               <Diff

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import { automaticTitles, isAutomaticTitle, titleResult } from "./automatic-titles";
 const hosts: ReturnType<typeof createFakePluginHost>[] = [];
 afterEach(async () => {
@@ -68,10 +68,10 @@ function setup(
     },
   });
   hosts.push(h);
-  const db = h.bb.storage.database();
+  const db = h.alia.storage.database();
   return {
     h,
-    titles: automaticTitles(h.bb, db, () =>
+    titles: automaticTitles(h.alia, db, () =>
       options.choice === false ? null : { providerId: "claude-code", model: "small-model" },
     ),
     title: () => title,

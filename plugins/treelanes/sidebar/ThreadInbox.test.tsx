@@ -11,14 +11,14 @@ import {
 import {
   loadPluginApp,
   renderSlot as baseRenderSlot,
-} from "@get-bb/plugin-sdk/testing/app";
+} from "@vesnalia/plugin-sdk/testing/app";
 import type {
   PluginSidebarThread,
   PluginThreadListProps,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { dragAutoScrollSpeed } from "./useDragAutoScroll";
 
-// Load through the harness so the plugin's `@get-bb/plugin-sdk/app` import binds
+// Load through the harness so the plugin's `@vesnalia/plugin-sdk/app` import binds
 // to the test runtime; importing the component directly would bind it to an
 // empty runtime first.
 const app = await loadPluginApp(() => import("../app"));
@@ -81,7 +81,7 @@ const listProps = {
 
 async function render(
   threads: PluginSidebarThread[],
-  projects = [{ id: "proj_1", name: "bb", isPersonal: false }],
+  projects = [{ id: "proj_1", name: "alia", isPersonal: false }],
 ) {
   return await renderSlot(inbox, listProps, {
     sidebarThreads: { status: "ready", threads, projects },
@@ -211,7 +211,7 @@ describe("ThreadInbox", async () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "thr_open" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
         },
         rpc: {
           listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -263,7 +263,7 @@ describe("ThreadInbox", async () => {
             thread({ id: "a", title: "Sidebar work" }),
             thread({ id: "b", title: "Something else" }),
           ],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
         },
         rpc: {
           listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -291,11 +291,11 @@ describe("ThreadInbox", async () => {
   it("scopes to one project", async () => {
     await render(
       [
-        thread({ id: "a", title: "In bb", projectId: "proj_1" }),
+        thread({ id: "a", title: "In VesnALIA", projectId: "proj_1" }),
         thread({ id: "b", title: "In other", projectId: "proj_2" }),
       ],
       [
-        { id: "proj_1", name: "bb", isPersonal: false },
+        { id: "proj_1", name: "alia", isPersonal: false },
         { id: "proj_2", name: "other", isPersonal: false },
       ],
     );
@@ -327,7 +327,7 @@ describe("manual thread order", async () => {
           thread({ id: "a", title: "Alpha", createdAt: 1 }),
           thread({ id: "b", title: "Beta", createdAt: 2 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -358,7 +358,7 @@ describe("manual thread order", async () => {
           thread({ id: "a", title: "Alpha", createdAt: 1 }),
           thread({ id: "b", title: "Beta", createdAt: 2 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -390,7 +390,7 @@ describe("manual thread order", async () => {
           thread({ id: "a", title: "Alpha", createdAt: 1 }),
           thread({ id: "b", title: "Beta", createdAt: 2 }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -431,7 +431,7 @@ describe("manual thread order", async () => {
           thread({ id: "a", title: "First child", parentThreadId: "p1" }),
           thread({ id: "b", title: "Other child", parentThreadId: "p2" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -457,7 +457,7 @@ describe("parking threads", async () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_done", title: "Finished work" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -503,7 +503,7 @@ describe("parking threads", async () => {
             },
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       // Settled in the store, but still working: it must stay visible.
       rpc: {
@@ -547,7 +547,7 @@ describe("parking threads", async () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_park", title: "Quiet" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -574,7 +574,7 @@ describe("parking threads", async () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_snz", title: "Later" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -675,12 +675,12 @@ describe("card metadata", async () => {
         environment: {
           id: "env_1",
           name: "Worktree",
-          branchName: "bb/feature",
+          branchName: "alia/feature",
           workspaceDisplayKind: "managed-worktree",
         },
       }),
     ]);
-    expect(await screen.findByText("bb/feature")).toBeDefined();
+    expect(await screen.findByText("alia/feature")).toBeDefined();
     expect(screen.queryByText("Sawyer's MacBook")).toBeNull();
   });
 
@@ -714,7 +714,7 @@ describe("card metadata", async () => {
     await render([
       thread({
         id: "thr_new",
-        indicator: "something-bb-ships-later" as never,
+        indicator: "something-alia-ships-later" as never,
         updatedAt: Date.now() - (3 * 3_600_000 + 60_000),
       }),
     ]);
@@ -723,7 +723,7 @@ describe("card metadata", async () => {
 });
 
 // The three states that want the user take the slot from the age label, and
-// they use bb's own glyphs: the two lists sit in one window, and a user who
+// they use VesnALIA's own glyphs: the two lists sit in one window, and a user who
 // switches between them should not have to learn a second vocabulary.
 describe("attention states", async () => {
   const states = [
@@ -769,7 +769,7 @@ describe("pull request badge", async () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_pr" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false }],
       },
       rpc: {
         listGroups: () => ({ mains: [], preferred: [], order: [] }),
@@ -802,7 +802,7 @@ describe("pull request badge", async () => {
     expect(screen.queryByRole("link", { name: /^#/ })).toBeNull();
   });
 
-  // The attention state is bb's rolled-up "does this need you" signal, so the
+  // The attention state is VesnALIA's rolled-up "does this need you" signal, so the
   // badge can colour itself without reading checks/review/mergeability.
   it("colors the badge from the attention state", async () => {
     const failing = await withPr("checks_failed");

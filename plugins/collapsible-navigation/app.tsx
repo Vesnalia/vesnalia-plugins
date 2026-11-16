@@ -1,4 +1,4 @@
-// bb-plugin-collapsible-navigation — Collapsible Sidebar Navigation for BB
+// alia-plugin-collapsible-navigation — Collapsible Sidebar Navigation for VesnALIA
 import {
   useCallback,
   useLayoutEffect,
@@ -14,10 +14,10 @@ import {
   type ExperimentalSidebarHeaderProps,
   type ExperimentalSidebarNavigationItem,
   type ExperimentalSidebarNavigationProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 
-const COLLAPSED_STORAGE_KEY = "bb:collapsible-nav:collapsed";
+const COLLAPSED_STORAGE_KEY = "alia:collapsible-nav:collapsed";
 const SidebarNavIcon = experimental_SidebarNavigationIcon;
 
 // Module-level coordination for moving navigation into the window header row
@@ -110,7 +110,7 @@ function CustomizeIcon() {
   );
 }
 
-/** Single row for an expanded sidebar navigation item with BB-native typography */
+/** Single row for an expanded sidebar navigation item with ALIA-native typography */
 function SidebarNavItemRow({
   item,
   active,
@@ -139,7 +139,7 @@ function SidebarNavItemRow({
           onActivate(item.id, event.metaKey || event.ctrlKey)
         }
         className={cn(
-          "w-full flex items-center gap-2 pl-2 pr-2 h-[var(--bb-sidebar-row-height,28px)] rounded-md text-sm font-normal text-sidebar-foreground transition-none text-left select-none cursor-pointer",
+          "w-full flex items-center gap-2 pl-2 pr-2 h-[var(--alia-sidebar-row-height,28px)] rounded-md text-sm font-normal text-sidebar-foreground transition-none text-left select-none cursor-pointer",
           active
             ? "bg-sidebar-accent text-sidebar-foreground font-medium"
             : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -407,7 +407,7 @@ function CollapsibleSidebarNavigation({
         </>
       )}
 
-      {/* Divider matching native BB divider */}
+      {/* Divider matching native VesnALIA divider */}
       <div
         aria-hidden="true"
         className="mx-2 my-2 shrink-0 border-t border-sidebar-border/25"

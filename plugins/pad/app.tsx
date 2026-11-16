@@ -1,5 +1,5 @@
-// bb-plugin-pad — frontend. One Workflowy-style outline docked on the right
-// side of every bb screen. The server owns the file; this panel applies each
+// alia-plugin-pad — frontend. One Workflowy-style outline docked on the right
+// side of every VesnALIA screen. The server owns the file; this panel applies each
 // edit optimistically with the same outline functions and sends the op.
 //
 // The outline is organized by topic. Click a bullet to zoom into that note
@@ -9,7 +9,7 @@
 // ⌘Enter done (struck through, dimmed, sinks below open siblings) · ⌘. fold · Backspace on an empty note deletes it · Esc leaves.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import {
   applyOps,
@@ -27,12 +27,12 @@ import { Icon } from "@/components/ui/icon";
 
 const WIDTH = 340;
 const STRIP = 28;
-/** bb's own phone breakpoint (md). Below it Pad is a full-screen sheet. */
+/** VesnALIA's own phone breakpoint (md). Below it Pad is a full-screen sheet. */
 const NARROW = 768;
 const EDIT_DELAY_MS = 400;
-const OPEN_KEY = "bb-pad:open";
-const FOLD_KEY = "bb-pad:folded";
-const ZOOM_KEY = "bb-pad:zoom";
+const OPEN_KEY = "alia-pad:open";
+const FOLD_KEY = "alia-pad:folded";
+const ZOOM_KEY = "alia-pad:zoom";
 /** Paper's ink (#18181b / #e4e4e7), never pure black or white; other themes fall back to their sidebar text. */
 const INK = "var(--ink, var(--sidebar-foreground))";
 
@@ -381,17 +381,17 @@ function PadOverlay() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Reserve room on the right so bb's own layout never sits under the panel.
+  // Reserve room on the right so VesnALIA's own layout never sits under the panel.
   const reserved = isNarrow ? 0 : open ? WIDTH : STRIP;
   useLayoutEffect(() => {
     const style = document.createElement("style");
-    style.setAttribute("data-bb-pad", "reserve");
-    style.textContent = `body.bb-app-shell > #root{margin-right:${reserved}px;transition:margin-right .15s ease}`;
+    style.setAttribute("data-alia-pad", "reserve");
+    style.textContent = `body.alia-app-shell > #root{margin-right:${reserved}px;transition:margin-right .15s ease}`;
     document.head.appendChild(style);
     return () => style.remove();
   }, [reserved]);
 
-  // bb desktop pins some header controls (its own right-panel toggle) to the
+  // VesnALIA desktop pins some header controls (its own right-panel toggle) to the
   // window edge, so the reserved margin does not move them and they end up
   // over Pad. Shift those to the left of Pad while it takes room; restore on
   // close or unmount.
@@ -407,7 +407,7 @@ function PadOverlay() {
     const scan = () => {
       const edge = window.innerWidth - reserved;
       for (const el of Array.from(document.querySelectorAll<HTMLElement>("button"))) {
-        if (moved.has(el) || el.closest('[data-bb-pad],[role="menu"],[role="dialog"],[role="listbox"],[data-radix-popper-content-wrapper]')) continue;
+        if (moved.has(el) || el.closest('[data-alia-pad],[role="menu"],[role="dialog"],[role="listbox"],[data-radix-popper-content-wrapper]')) continue;
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.top > 72 || r.right <= edge || !pinned(el)) continue;
         moved.set(el, el.style.translate);
@@ -653,19 +653,19 @@ function PadOverlay() {
 
   // --- collapsed strip ----------------------------------------------------
   if (!open) {
-    // Phones: nothing floats over bb; Pad opens from the sidebar's Pad row
+    // Phones: nothing floats over VesnALIA; Pad opens from the sidebar's Pad row
     // or the command palette.
     if (isNarrow) return null;
     const todayCount = nodes ? nodes.filter((n) => n.kind === "item" && n.stamp.startsWith(today)).length : 0;
     return (
       <button
         type="button"
-        data-bb-pad="strip"
+        data-alia-pad="strip"
         aria-label="Open Pad"
         title="Open Pad"
         onClick={() => setOpen(true)}
         className="fixed right-0 top-0 z-[45] flex w-[28px] flex-col items-center gap-2 border-l border-sidebar-border bg-sidebar pt-2.5 font-mono [-webkit-app-region:no-drag] text-muted-foreground hover:text-foreground"
-        style={{ height: "var(--bb-shell-height, 100dvh)" }}
+        style={{ height: "var(--alia-shell-height, 100dvh)" }}
       >
         <Icon name="PanelRight" className="size-[16px]" />
         <span className="text-[11px] [writing-mode:vertical-rl]">pad</span>
@@ -779,14 +779,14 @@ function PadOverlay() {
   // --- open panel -------------------------------------------------------
   return (
     <aside
-      data-bb-pad="panel"
+      data-alia-pad="panel"
       aria-label="Pad"
       onKeyDown={(e) => {
         onPanelKey(e);
         if (isNarrow && e.key === "Escape" && !e.defaultPrevented) setOpen(false);
       }}
       className={cn(
-        // bb desktop's title bar is a fixed full-width layer at z-44; Pad sits
+        // VesnALIA desktop's title bar is a fixed full-width layer at z-44; Pad sits
         // just above it so its header controls receive clicks.
         "fixed z-[45] flex flex-col bg-sidebar font-mono [-webkit-app-region:no-drag]",
         isNarrow ? "inset-0 z-[60]" : "right-0 top-0 border-l border-sidebar-border",
@@ -799,7 +799,7 @@ function PadOverlay() {
               paddingBottom: "env(safe-area-inset-bottom)",
               color: INK,
             }
-          : { width: WIDTH, height: "var(--bb-shell-height, 100dvh)", color: INK }
+          : { width: WIDTH, height: "var(--alia-shell-height, 100dvh)", color: INK }
       }
     >
       <header data-pad-part="header" className={cn("flex shrink-0 items-center gap-2 border-b border-sidebar-border pl-3 pr-1.5 [-webkit-app-region:drag] [&_button]:[-webkit-app-region:no-drag] [&_input]:[-webkit-app-region:no-drag]", isNarrow ? "h-12" : "h-10")}>
@@ -919,7 +919,7 @@ export default definePluginApp((app) => {
     defaultShortcut: { key: "y", mod: true, shift: true },
     run: () => focusHandler?.(),
   });
-  // A Pad row in bb's sidebar footer: the way in on phones, a toggle on desktop.
+  // A Pad row in VesnALIA's sidebar footer: the way in on phones, a toggle on desktop.
   app.experimental_sidebarFooter.register({
     kind: "action",
     id: "pad",

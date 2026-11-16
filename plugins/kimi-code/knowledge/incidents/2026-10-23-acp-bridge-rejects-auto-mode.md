@@ -1,50 +1,50 @@
 ---
 type: Incident
 title: "Декларация обещала permission mode auto, который ACP-мост отклоняет: thread.start падает"
-description: Тред на kimi-code с permission mode auto падает «Provider "Kimi Code" does not support permission mode "auto"» — SDK acp-next бросает на auto в двух местах, а декларация плагина заявляла все три режима; сужено до accept-edits/full, как у встроенных ACP-провайдеров bb.
+description: Тред на kimi-code с permission mode auto падает «Provider "Kimi Code" does not support permission mode "auto"» — SDK acp-next бросает на auto в двух местах, а декларация плагина заявляла все три режима; сужено до accept-edits/full, как у встроенных ACP-провайдеров VesnALIA.
 status: stable
-tags: [bb, kimi, incident, permission-mode, acp]
+tags: [VesnALIA, kimi, incident, permission-mode, acp]
 generated: { by: kimi-code/k3, at: "2026-10-23T12:55:00Z" }
 verified: { by: kimi-code/k3, at: "2026-10-23T13:00:00Z" }
 sources:
   - id: thread-error
-    resource: bb thread messages thr_v5fvsnn7m6, 2026-10-23
+    resource: VesnALIA thread messages thr_v5fvsnn7m6, 2026-10-23
     title: 'Command thread.start failed: Provider "Kimi Code" does not support permission mode "auto".'
     author: kimi-code/k3
   - id: sdk-throw-sites
-    resource: "@get-bb/plugin-sdk 0.6.49 dist/provider-bridge-acp-next.js: buildAcpSessionParams и reconcileExecutionSettings, 2026-10-23"
+    resource: "@vesnalia/plugin-sdk 0.6.49 dist/provider-bridge-acp-next.js: buildAcpSessionParams и reconcileExecutionSettings, 2026-10-23"
     title: 'безусловные throw на permissionMode "auto" в обоих путях (создание сессии и смена настроек)'
     author: kimi-code/k3
   - id: builtin-precedent
-    resource: bb.app builtin-plugins provider-acp(-next)/dist/server.js, 2026-10-23
-    title: 'встроенные ACP-провайдеры bb декларируют permissionModes: ["accept-edits","full"]'
+    resource: alia.app builtin-plugins provider-acp(-next)/dist/server.js, 2026-10-23
+    title: 'встроенные ACP-провайдеры VesnALIA декларируют permissionModes: ["accept-edits","full"]'
     author: kimi-code/k3
 ---
 
 # Симптом
 
-`bb thread create --provider kimi-code --permission-mode auto ...` создаёт
+`alia thread create --provider kimi-code --permission-mode auto ...` создаёт
 тред, но запуск падает: `Command thread.start failed — Provider "Kimi Code"
 does not support permission mode "auto".` (тред thr_v5fvsnn7m6,
 2026-10-23).[^thread-error] То же воспроизводится из UI, когда композер стоит
-в режиме «Approve for me» (это и есть bb-режим `auto`).
+в режиме «Approve for me» (это и есть alia-режим `auto`).
 
 # Корень
 
-bb-режим `auto` («Approve for me»: запросы ревьюит авто-ревьюер bb, рискованное
+alia-режим `auto` («Approve for me»: запросы ревьюит авто-ревьюер VesnALIA, рискованное
 возвращается пользователю) не имеет эквивалента в ACP: мост сам enforce'ит
 только `accept-edits` (проверка путей против workspaceWriteRoots) и `full`
 (одобрять всё). Поэтому SDK `acp-next` **безусловно бросает** на `auto` в обоих
 путях — `buildAcpSessionParams` (создание сессии) и
 `reconcileExecutionSettings` (смена настроек живой сессии).[^sdk-throw-sites]
-Тот же бросок зашит во встроенные ACP-провайдеры bb (provider-acp и
-provider-acp-next в bb.app), и они декларируют ровно
+Тот же бросок зашит во встроенные ACP-провайдеры VesnALIA (provider-acp и
+provider-acp-next в alia.app), и они декларируют ровно
 `["accept-edits", "full"]`.[^builtin-precedent]
 
 Наша декларация заявляла `["accept-edits", "auto", "full"]` — расхождение с
-мостом, прямое нарушение ISP из AGENTS.md: bb валидировал режим по декларации
+мостом, прямое нарушение ISP из AGENTS.md: VesnALIA валидировал режим по декларации
 и честно диспатчил тред в бросающий мост. Замаскировать маппингом `auto` →
-`full`/`accept-edits` нельзя: семантика bb-`auto` (AI-ревьюер) не совпадает ни
+`full`/`accept-edits` нельзя: семантика alia-`auto` (AI-ревьюер) не совпадает ни
 с одним из них, тихое расширение прав было бы хуже честного отказа.
 
 # Фикс

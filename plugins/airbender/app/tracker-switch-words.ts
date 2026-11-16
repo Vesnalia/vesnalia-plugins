@@ -5,14 +5,14 @@
 // label of its copy button.
 //
 // Why: the owner asked for a window that says what it will do and does not
-// ask how (bead-bb-c9l.18): "I want UI that doesn't ask you wrong
+// ask how (bead-alia-c9l.18): "I want UI that doesn't ask you wrong
 // questions. When it tells you ... it will update issues that ... are
 // linked, already synced, and it will copy over the issues that exist in a
 // current and doesn't exist in a target." The wording is kept apart from
 // the window so that every case can be tested.
 //
 // Gotchas:
-// - No imports from React or BB: loaded by the tests as it is.
+// - No imports from React or VesnALIA: loaded by the tests as it is.
 
 /** The answer of `tracker_switch_preview` (server/contract.ts). */
 export interface SwitchPreview {

@@ -1,6 +1,6 @@
 # Paint in Office Studio
 
-Canonical plan: .agents/plans/2026-10-17-office-studio.md; research section 4.2 in .bb/chats/thr_wdpmipwdxc/artifacts/axure-analog-research.md. Replace the `PaintTool` placeholder in src/studio/tools.tsx.
+Canonical plan: .agents/plans/2026-10-17-office-studio.md; research section 4.2 in .vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-analog-research.md. Replace the `PaintTool` placeholder in src/studio/tools.tsx.
 
 Reuse src/media/image-editor.tsx (pen, marker, shapes, arrows, text, numbered steps, undo, PNG export) instead of writing a new editor:
 1. Blank-canvas mode: `ImageEditor` (or a thin wrapper `src/studio/paint/paint.tsx`) starts from a blank canvas with a chosen size (presets 1280×800, 1920×1080, 800×800, custom) and background (white, transparent, dark). Keep the file-opener and chat-editor behaviour of the image editor exactly as now.

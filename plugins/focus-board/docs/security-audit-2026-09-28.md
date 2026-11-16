@@ -8,14 +8,14 @@ verification: 412 vitest tests pass (3 new adversarial XSS tests), `tsc --noEmit
 
 # Security audit — 2026-09-28 (focus-board 0.5.6)
 
-[!NOTE] This audit covered the plugin's own code, not the bb host or the SDK. Surfaces the host owns (markdown sanitization, RPC transport auth, link routing) are called out as trust boundaries.
+[!NOTE] This audit covered the plugin's own code, not the VesnALIA host or the SDK. Surfaces the host owns (markdown sanitization, RPC transport auth, link routing) are called out as trust boundaries.
 
 ## Attack surface inventory
 
 | Surface | Entry point | Untrusted input | Verdict |
 | --- | --- | --- | --- |
-| Plugin RPC | `bb.rpc.register` in `server.ts` | Board frontend inputs | Safe — every method is zod-contracted with caps |
-| Plugin CLI | `bb focus-board *` | Operator argv | Safe — validated, fail-loud |
+| Plugin RPC | `alia.rpc.register` in `server.ts` | Board frontend inputs | Safe — every method is zod-contracted with caps |
+| Plugin CLI | `alia focus-board *` | Operator argv | Safe — validated, fail-loud |
 | GitHub cache read | `lib/tracker-status.ts` | Thread titles / refs | Safe — readonly SQLite, parameterized |
 | File-existence check | `workspace_files_exist` RPC | Message-derived paths | Safe — `resolveWithinRoot` containment |
 | Message DOM decoration | `components/decorate-inline-code.ts` | Assistant/user message text | Safe — constant-only HTML sink |
@@ -38,7 +38,7 @@ Three differently framed sink searches (dangerous HTML sinks, navigation sinks, 
 
 ## Injection and traversal
 
-- **SQL**: the only database access (`readGitHubStatuses`) uses a placeholder-built `IN (...)` list — `repo` and all numbers are bound parameters; the 500-number zod cap keeps the statement inside SQLite's parameter limit. Connection is `readonly: true, fileMustExist: true` against the hardcoded `~/.bb/plugins/github/data.db` cache — no credentials involved.
+- **SQL**: the only database access (`readGitHubStatuses`) uses a placeholder-built `IN (...)` list — `repo` and all numbers are bound parameters; the 500-number zod cap keeps the statement inside SQLite's parameter limit. Connection is `readonly: true, fileMustExist: true` against the hardcoded `~/.vesnalia/plugins/github/data.db` cache — no credentials involved.
 - **Path traversal**: `resolveWithinRoot` rejects absolute paths, any `~` segment, and `..` escapes at the server boundary before anything is stat-ed (`server.ts:418-433`); the frontend classifier independently rejects climb-past-root hrefs. Covered by tests on both sides. Informational caveat: a symlink inside the workspace that points outside could still stat as existing through `hosts.pathsExist` — same-host disclosure only, no read/write capability.
 - **Command injection**: no `child_process` in the plugin runtime at all. UAT/screenshot scripts spawn fixed argv (`npx vite …`, no `shell: true`); YAML suite data is passed as arguments to statically defined page functions, never interpolated into code.
 - **Rank store**: `rank_move`'s `columnKey` is a free-form string used as a computed object key in `writeRanks({ ...store, [columnKey]: next })` (`server.ts:483`). A `__proto__` key reassigns the store object's own prototype, not `Object.prototype`, and drops out of JSON serialization — benign. A charset guard on `columnKey` would still be cheap hardening.

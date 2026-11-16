@@ -1,9 +1,9 @@
 {
-  "name": "bb-plugin-qwen-cli",
+  "name": "alia-plugin-qwen-cli",
   "version": "0.2.4",
   "type": "module",
   "license": "MIT",
-  "description": "Use the installed Qwen Code CLI as an ACP agent in BB.",
+  "description": "Use the installed Qwen Code CLI as an ACP agent in VesnALIA.",
   "files": [
     "server.ts",
     "host.ts",
@@ -21,13 +21,13 @@
     "model-discovery.ts"
   ],
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104 <0.7",
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104 <0.7",
     "node": ">=22"
   },
-  "bb": {
+  "alia": {
     "name": "Qwen CLI [Experimental]",
-    "description": "Chat with Qwen Code in BB using your installed CLI and existing sign-in.",
+    "description": "Chat with Qwen Code in VesnALIA using your installed CLI and existing sign-in.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -38,19 +38,24 @@
     ]
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test model-discovery.test.ts dialect.test.ts workflow-policy.test.ts"
-  },
-  "dependencies": {
-    "@get-bb/plugin-sdk": "0.6.132"
   },
   "devDependencies": {
     "typescript": "^7.0.2",
     "@types/node": "^22.0.0"
   },
+  "dependencies": {
+    "@vesnalia/plugin-sdk": "^0.6.132"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/qwen-cli#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ols-md/bb-plugin-qwen-cli.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/qwen-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

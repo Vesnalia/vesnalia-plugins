@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 
 const raw = (id = "CUSTOM-1", title = "Fix Login", status = "Awaiting QA") => `---\nid: ${id}\ntitle: ${title}\nstatus: ${status}\npriority: high\nlabels: [auth]\ncustom: preserved\n---\n\n## Description\nOriginal description\n`;
@@ -28,7 +28,7 @@ async function setup() {
   const { folder } = input as { folder: string };
   return { files: [...files.keys()].filter(path => path.startsWith(folder + "/")).map(path => ({ path, storage: path.includes("/archive/") ? "archived" : path.includes("/completed/") ? "completed" : "active" })), warnings };
  } });
- plugin(fake.bb);
+ plugin(fake.alia);
  disposals.push(() => fake.harness.lifecycle.dispose());
  const provider = fake.harness.inspection.registrations.mentionProviders[0];
  const search = (query = "", projectId: string | null = "p") => provider.search({ trigger: "@", query, projectId, threadId: null });
@@ -61,7 +61,7 @@ test("no project, missing/ambiguous folders or sources cannot offer unrelated ta
  f.folders.clear(); expect(await f.search()).toEqual([]);
  f.folders.add("/repo/backlog"); f.folders.add("/repo/.backlog"); expect(await f.search()).toEqual([]);
  f.project.sources.push({ id: "s2", hostId: "h", path: "/second" });
- await expect(f.search()).rejects.toThrow("Choose a project source"); // BB isolates search errors as an empty group.
+ await expect(f.search()).rejects.toThrow("Choose a project source"); // VesnALIA isolates search errors as an empty group.
  f.project.sources.length = 0; await expect(f.search()).rejects.toThrow("Choose a project source");
 });
 test("malformed identities, duplicates, deleted or invalid tasks block resolution", async () => {

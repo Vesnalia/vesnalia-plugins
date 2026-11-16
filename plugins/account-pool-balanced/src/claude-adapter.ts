@@ -26,7 +26,7 @@ const OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
 const OAUTH_BETA = "oauth-2025-04-20";
 const USAGE_REQUEST_TIMEOUT_MS = 10_000;
 // The OAuth usage endpoint uses the CLI surface to determine reset eligibility.
-const USAGE_USER_AGENT = "claude-cli/2.1.282 (external, cli) bb-account-pool";
+const USAGE_USER_AGENT = "claude-cli/2.1.282 (external, cli) alia-account-pool";
 const ALLOWED_REQUEST_HEADERS = new Set([
   "accept",
   "content-type",

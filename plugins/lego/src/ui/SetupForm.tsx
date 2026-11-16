@@ -6,7 +6,7 @@ import {
   experimental_useProviders as useProviders,
   type ExperimentalProviderModelPickerValue,
   type PluginPendingInteractionProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import type { AgentChoice, BuildSetup, SetupPayload } from "../book";
 import { MinifigHead } from "./iso";

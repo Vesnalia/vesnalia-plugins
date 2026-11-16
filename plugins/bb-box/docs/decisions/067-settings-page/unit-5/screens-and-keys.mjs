@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const out = process.env.LIVE_SHOTS ?? join(process.cwd(), "screens");
 const machine = process.env.LIVE_MACHINE ?? "lab";
 const [what, tag = "now"] = process.argv.slice(2);
@@ -13,13 +13,13 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const browser = await chromium.launch();
 
 async function open(page, hash) {
-  await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   const skip = page.getByRole("button", { name: "Skip setup" });
   await Promise.race([skip.waitFor({ timeout: 4_000 }).catch(() => {}), page.locator("[data-settings-view]").waitFor({ timeout: 4_000 }).catch(() => {})]);
   if (await skip.count()) {
     await skip.click();
     await pause(500);
-    await page.goto(`${base}/settings/plugins/bb-box${hash}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/settings/plugins/alia-box${hash}`, { waitUntil: "domcontentloaded" });
   }
   await page.locator("[data-settings-view]").waitFor();
   await page.getByText(/Looking for Docker|Looking…/).first().waitFor({ state: "detached", timeout: 15_000 }).catch(() => {});
@@ -96,10 +96,10 @@ async function keys() {
     await page.getByRole("button", { name: `Check Docker on ${machine} again` }).filter({ hasText: "Check again" }).waitFor({ timeout: 30_000 }).catch(() => {});
     log.push(`Enter on Check again checked it; focus then on: ${(await focusSummary(page)).name}`);
   }
-  await page.getByRole("button", { name: "BB Box settings" }).focus();
+  await page.getByRole("button", { name: "VesnALIA Box settings" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction((id) => document.activeElement?.getAttribute("data-row-key") === `backend-${id}`, backendId, { timeout: 10_000 }).catch(() => {});
-  log.push(`BB Box settings by Enter returned focus to: ${(await focusSummary(page)).name}`);
+  log.push(`VesnALIA Box settings by Enter returned focus to: ${(await focusSummary(page)).name}`);
   const line = page.locator('[data-row-key="machines-line"]');
   if (await line.count()) {
     await line.focus();

@@ -35,7 +35,7 @@ export const API = [
     summary: "One HTTP request and its response: method, URL, status, time, size, headers (secrets masked) and the body as a JSON tree or text. Copies as curl.",
     props: {
       request: p.any("{method, url, headers?, body?}, raw HTTP text, or a URL"),
-      response: p.any("{status, headers?, body?} or curl -i output: load(\"$BB_THREAD_STORAGE/res.txt\", {raw: true})"),
+      response: p.any("{status, headers?, body?} or curl -i output: load(\"$ALIA_THREAD_STORAGE/res.txt\", {raw: true})"),
       entry: p.obj("A HAR entry instead of request and response"),
       ms: p.num("Total time in ms"),
       title: p.str("Caption"),
@@ -50,7 +50,7 @@ export const API = [
     group: "API",
     summary: "Network requests on a timeline: each bar split into queue, DNS, connect, TLS, wait and download, with DOMContentLoaded and Load lines. Filter by type, search, click a row for its headers and body.",
     props: {
-      har: p.any("A HAR file (load(\"$BB_THREAD_STORAGE/page.har\")) or a list of {url, start, ms, method?, status?, size?}", { required: true }),
+      har: p.any("A HAR file (load(\"$ALIA_THREAD_STORAGE/page.har\")) or a list of {url, start, ms, method?, status?, size?}", { required: true }),
       title: p.str("Caption"),
       height: p.num("Most height in px", { def: 420 }),
     },
@@ -88,7 +88,7 @@ CREATE TABLE posts (id serial PRIMARY KEY, author_id int NOT NULL REFERENCES use
     group: "API",
     summary: "A Postgres EXPLAIN (FORMAT JSON) plan as a collapsible tree: each node's own time (with ANALYZE) or cost as a bar, estimated against actual rows, and warnings for bad estimates, spills and big filtered scans. Click a node for its details.",
     props: {
-      plan: p.any("EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) output: load(\"$BB_THREAD_STORAGE/plan.json\")", { required: true }),
+      plan: p.any("EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) output: load(\"$ALIA_THREAD_STORAGE/plan.json\")", { required: true }),
       query: p.str("The SQL, shown above the tree"),
       metric: p.oneOf(["time", "cost"], "What the bars show (default time when analyzed)"),
       title: p.str("Caption"),

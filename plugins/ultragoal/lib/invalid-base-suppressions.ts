@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export interface InvalidBaseSuppression {
   rootThreadId: string;
@@ -19,7 +19,7 @@ interface SuppressionRow {
 }
 
 export function createInvalidBaseSuppressionStore(
-  db: ReturnType<BbPluginApi["storage"]["database"]>,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
 ) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS invalid_base_suppressions (

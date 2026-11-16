@@ -2,7 +2,7 @@
 
 Where: **Settings → Plugins → Computer Use**.
 
-bb renders the declarative configuration form first. The plugin then registers
+VesnALIA renders the declarative configuration form first. The plugin then registers
 four sibling settings cards so each concern has its own boundary instead of
 appearing as a nested card inside one large group:
 
@@ -17,11 +17,11 @@ appearing as a nested card inside one large group:
 
 Rows stay on one line. Where a routing mode or checklist item has extra detail,
 a `?` icon slides in when the row is hovered and shows the detail in a tooltip
-on hover or keyboard focus. The exact tool list lives in `bb cua tools`.
+on hover or keyboard focus. The exact tool list lives in `alia cua tools`.
 
 The routing radio card and the host-rendered `Routing mode` select edit the same
-setting. The card writes through `bb.sdk.plugins.updateSettings`, so both remain
-in sync and `bb plugin config` continues to work.
+setting. The card writes through `alia.sdk.plugins.updateSettings`, so both remain
+in sync and `alia plugin config` continues to work.
 
 ## Installer dialog
 
@@ -45,7 +45,7 @@ installer.
 The collapsed header shows the platform, online state, overall status, and
 completed required checks. Expanding it shows:
 
-- bb machine connection,
+- VesnALIA machine connection,
 - Cua Driver installation and version,
 - driver service availability or its automatic start behavior,
 - macOS Accessibility and Screen Recording grants,
@@ -78,10 +78,10 @@ its content scrolling internally when needed.
 ## CLI equivalents
 
 ```text
-bb cua status [--host <id>] [--json]
-bb cua mode <prefer-native|cua-everywhere|off>
-bb cua policy [<providerId> <cua|native|off|inherit>] [--json]
-bb cua tools [--host <id>]
-bb cua call <tool> [<json-args>] [--host <id>]
-bb plugin config cua-driver set browserTools false
+alia cua status [--host <id>] [--json]
+alia cua mode <prefer-native|cua-everywhere|off>
+alia cua policy [<providerId> <cua|native|off|inherit>] [--json]
+alia cua tools [--host <id>]
+alia cua call <tool> [<json-args>] [--host <id>]
+alia plugin config cua-driver set browserTools false
 ```

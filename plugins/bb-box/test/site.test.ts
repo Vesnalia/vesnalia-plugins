@@ -269,11 +269,11 @@ test("the common questions are under Start here, and nowhere else in the sidebar
 test("llms.txt is as llmstxt.org lays it out, and lists every page of the site once, with what it is, as Markdown", () => {
   const text = llmsTxt(pages, onSite);
   const blocks = text.split("\n\n");
-  assert.equal(blocks[0], "# BB Box");
+  assert.equal(blocks[0], "# VesnALIA Box");
   assert.match(blocks[1]!, /^> \S[^\n]+$/);
 
   const headings = [...text.matchAll(/^(#+) (.+)$/gm)].map((match) => `${match[1]} ${match[2]}`);
-  assert.equal(headings[0], "# BB Box");
+  assert.equal(headings[0], "# VesnALIA Box");
   assert.ok(headings.slice(1).every((heading) => heading.startsWith("## ")), "only sections after the title");
   assert.equal(headings.at(-1), "## Optional", "the decision records come last, as the part an agent may skip");
 
@@ -327,26 +327,26 @@ test("each page's Markdown copy is served at its address with .md and with index
   assert.deepEqual(pages.filter((page) => !full.includes(`\n# ${page.title}\n\nSource: /${page.id}/\n`)).map((page) => page.id), [], "pages missing from llms-full.txt");
 });
 
-test("the home page's setup prompt installs BB Box as the quick start does, with only bb box commands the CLI has, its setup skill, and a backend for each platform", () => {
+test("the home page's setup prompt installs VesnALIA Box as the quick start does, with only VesnALIA box commands the CLI has, its setup skill, and a backend for each platform", () => {
   const command = installCommand(pages);
   const quickStart = pages.find((page) => page.id === "start/quick-start")!.markdown.replace(/\s+/g, " ");
-  assert.match(command, /^bb plugin install git:\S+$/);
+  assert.match(command, /^alia plugin install git:\S+$/);
   assert.ok(quickStart.includes(command));
 
   const prompt = setupPrompt(pages, "https://docs.example.com/start/quick-start.md");
-  assert.ok(prompt.startsWith("Set up BB Box for me"), "the prompt is the README's With an agent block");
+  assert.ok(prompt.startsWith("Set up VesnALIA Box for me"), "the prompt is the README's With an agent block");
   assert.ok(prompt.includes(`${command} --yes`), "an agent cannot answer the install's confirmation");
   assert.ok(prompt.endsWith("https://docs.example.com/start/quick-start.md"));
 
   const cli = pages.find((page) => page.id === "reference/cli")!.markdown;
-  const commands = [...cli.matchAll(/^## (bb box .+)$/gm)].map((match) => match[1]!);
+  const commands = [...cli.matchAll(/^## (alia box .+)$/gm)].map((match) => match[1]!);
   const named = [...prompt.matchAll(/\bbb box [a-z][a-z-]*(?: [a-z][a-z-]*)?/g)].map((match) => match[0]);
   assert.ok(named.length >= 5);
   assert.deepEqual(named.filter((words) => !commands.some((usage) => words === usage || words.startsWith(`${usage} `))), [], "commands the CLI does not have");
-  assert.ok(commands.includes("bb box setup docker"));
-  assert.ok(prompt.includes("bb box acquire"), "the prompt proves the setup with a box");
+  assert.ok(commands.includes("alia box setup docker"));
+  assert.ok(prompt.includes("alia box acquire"), "the prompt proves the setup with a box");
 
-  const skill = withoutFrontmatter(readFileSync(join(repoRoot, "skills", "bb-box-setup", "SKILL.md"), "utf8")).frontmatter.name!;
+  const skill = withoutFrontmatter(readFileSync(join(repoRoot, "skills", "alia-box-setup", "SKILL.md"), "utf8")).frontmatter.name!;
   assert.ok(prompt.includes(`its ${skill} skill`));
 
   for (const backend of ["Docker", "microsandbox"]) assert.ok(prompt.includes(backend), `the prompt names ${backend}, as the quick start's platforms do`);
@@ -373,7 +373,7 @@ test("each page of the site has a search description of its own, not the site's 
   assert.deepEqual(tooLong.map((page) => page.id), [], `descriptions longer than ${searchSnippetLength} characters`);
   const described = pages.map((page) => data.get(page.id)!.description);
   assert.deepEqual(pages.filter((_, i) => described.indexOf(described[i]) !== i).map((page) => page.id), [], "pages that share a description");
-  assert.equal(data.get("decisions/001-provider-agnostic-core")!.description, "BB Box decision record 001. Status now: Current.");
+  assert.equal(data.get("decisions/001-provider-agnostic-core")!.description, "VesnALIA Box decision record 001. Status now: Current.");
   assert.equal(data.get("guide/boat")!.description, "boat.dev rents Linux virtual machines, which it calls sandboxes, by the second.");
 });
 
@@ -386,7 +386,7 @@ test("every page shares the site's card as an absolute image with its size and a
   assert.equal(metaContent(head, "twitter:image"), `${publishedSite}/og.png`);
   assert.equal(metaContent(head, "og:image:width"), String(card.width));
   assert.equal(metaContent(head, "og:image:height"), String(card.height));
-  assert.ok(metaContent(head, "og:image:alt")!.startsWith("BB Box: computers for BB threads."));
+  assert.ok(metaContent(head, "og:image:alt")!.startsWith("VesnALIA Box: computers for VesnALIA threads."));
 
   assert.equal(metaContent(siteHead({ site: "https://example.com", base: "/docs/" }), "og:image"), "https://example.com/docs/og.png");
   assert.equal(metaContent(siteHead({ base: "/" }), "og:image"), undefined, "a share image needs an absolute address, so a build without a site has none");

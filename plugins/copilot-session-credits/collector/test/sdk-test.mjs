@@ -83,17 +83,17 @@ try {
   await session.prompt('/copilot-probe off');
   assert.equal(calls, before, 'local command must not invoke model');
   results.push({ name: 'Native three-route dispatch and original callbacks survive wrapping; no content leaks or billable command', status: 'passed' });
-  // A separate BB-bound capture exercises the same real native dispatcher through the host reader.
-  const providerSession = 'pi_11111111-1111-4111-8111-111111111111', directory = join(root, 'bb-receipts'), hooks = new Map();
-  let bbProvider;
-  createProbe({ directory, autoStart: true, provider: fixture })({ on: (name, run) => hooks.set(name, run), registerCommand() {}, registerProvider: value => { bbProvider = value; } });
+  // A separate ALIA-bound capture exercises the same real native dispatcher through the host reader.
+  const providerSession = 'pi_11111111-1111-4111-8111-111111111111', directory = join(root, 'alia-receipts'), hooks = new Map();
+  let aliaProvider;
+  createProbe({ directory, autoStart: true, provider: fixture })({ on: (name, run) => hooks.set(name, run), registerCommand() {}, registerProvider: value => { aliaProvider = value; } });
   hooks.get('session_start')({ reason: 'startup' }, { sessionManager: { getSessionId: () => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', getSessionFile: () => join(root, providerSession + '.jsonl') } });
   markerless = true;
-  const bbStream = bbProvider.stream({ ...model, api: 'openai-completions' }, context, {});
-  for await (const event of bbStream) assert.notEqual(event.type, 'error');
-  assert.equal((await bbStream.result()).stopReason, 'toolUse'); await Promise.resolve();
+  const aliaStream = aliaProvider.stream({ ...model, api: 'openai-completions' }, context, {});
+  for await (const event of aliaStream) assert.notEqual(event.type, 'error');
+  assert.equal((await aliaStream.result()).stopReason, 'toolUse'); await Promise.resolve();
   const { createHostEntry } = await import('../../dist/host.js');
-  const { experimental_createHostEntryHarness } = await import('@get-bb/plugin-sdk/testing/host');
+  const { experimental_createHostEntryHarness } = await import('@vesnalia/plugin-sdk/testing/host');
   const host = experimental_createHostEntryHarness(createHostEntry([directory], join(root, 'unused-cli'), join(root, 'unused-status')));
   try {
     const usage = await host.experimental_call('read', { provider: 'pi', sessionId: providerSession });

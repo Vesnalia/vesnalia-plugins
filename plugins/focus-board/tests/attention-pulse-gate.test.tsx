@@ -11,7 +11,7 @@
 // no-observer degradation is its own case.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   PULSE_GATE_RULE,
   PULSE_GATE_STYLE_ID,

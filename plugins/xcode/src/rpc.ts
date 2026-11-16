@@ -171,7 +171,7 @@ export function createRpcHandlers(deps: RpcDeps) {
 
       let scope = null;
       if (threadId) {
-        // Cached only — a scope miss used to cost two inline bb.sdk calls per
+        // Cached only — a scope miss used to cost two inline alia.sdk calls per
         // chatStatus, and the UI polls this endpoint. The detached refresh
         // publishes when the scope resolves, which makes the panel re-ask.
         scope = deps.scopeSync.get(threadId);

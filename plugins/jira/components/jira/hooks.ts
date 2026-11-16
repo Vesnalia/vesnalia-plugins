@@ -2,7 +2,7 @@
 // "issue-changed", so lists and open issues refetch no matter who wrote —
 // this panel, another window, or an agent.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type {
   JiraIssueDetail,
   JiraIssueSummary,
@@ -51,7 +51,7 @@ export function useJiraStatus(): { status: JiraStatus | null; refetch: () => voi
   return { status, refetch };
 }
 
-/** `scopeKeys` limits results to a linked BB project's Jira projects; [] searches everything. */
+/** `scopeKeys` limits results to a linked VesnALIA project's Jira projects; [] searches everything. */
 export function useIssueSearch(query: IssueQuery, enabled: boolean, scopeKeys: readonly string[] = []) {
   const rpc = useJiraRpc();
   const [state, setState] = useState<{

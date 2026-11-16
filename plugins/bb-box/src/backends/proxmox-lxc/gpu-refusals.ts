@@ -33,7 +33,7 @@ export type Holder =
   | { readonly is: "box"; readonly name: string; readonly threadId: string | null }
   | { readonly is: "warm" }
   | { readonly is: "other-install"; readonly vmid: number }
-  | { readonly is: "not-bb-box"; readonly vmid: number };
+  | { readonly is: "not-alia-box"; readonly vmid: number };
 
 export interface CardNamer {
   readonly guest: (vmid: number) => Holder;
@@ -216,5 +216,5 @@ export function placementRefusal(input: {
 
 export const WHOLE_PERSON_FIX = "Release a box on one of the cards, ask for gpu shared, or ask for gpu none.";
 export const WHOLE_AGENT_INSTEAD = "ask for gpu shared";
-export const SHARED_PERSON_FIX = "Release a box on a card, ask for gpu none, or raise the boxes per card in BB Box's settings.";
+export const SHARED_PERSON_FIX = "Release a box on a card, ask for gpu none, or raise the boxes per card in VesnALIA Box's settings.";
 export const SHARED_AGENT_INSTEAD = "ask for gpu none";

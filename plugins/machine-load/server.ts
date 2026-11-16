@@ -2,7 +2,7 @@
 // machine's host worker (host.ts) on an interval, stores a compact history in
 // the plugin's SQLite database, and pushes a realtime tick so open pages
 // refetch. The frontend reads downsampled history over RPC.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   hostContract,
@@ -50,8 +50,8 @@ function fmtBytes(n: number | null): string {
   return `${n.toFixed(n >= 100 || i === 0 ? 0 : 1)}${units[i]}`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     intervalSec: {
       type: "number",
       label: "Poll interval (seconds)",
@@ -66,8 +66,8 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS samples (
        host_id TEXT NOT NULL,
        ts INTEGER NOT NULL,
@@ -89,12 +89,12 @@ export default async function plugin(bb: BbPluginApi) {
       GROUP BY host_id, bucket ORDER BY host_id, bucket`,
   );
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const live = new Map<string, LiveState>();
   let hosts: HostInfo[] = [];
 
   async function refreshHosts(): Promise<HostInfo[]> {
-    const list = await bb.sdk.hosts.list();
+    const list = await alia.sdk.hosts.list();
     hosts = list
       .filter((h) => h.lifecycle?.phase !== "destroyed" && h.lifecycle?.phase !== "removing")
       .map((h) => ({ id: h.id, name: h.name, status: h.status }));
@@ -133,10 +133,10 @@ export default async function plugin(bb: BbPluginApi) {
         }
       }),
     );
-    bb.realtime.publish(TICK_CHANNEL, { at: Date.now() });
+    alia.realtime.publish(TICK_CHANNEL, { at: Date.now() });
   }
 
-  bb.background.service("poller", {
+  alia.background.service("poller", {
     async start(signal) {
       let lastPurge = 0;
       while (!signal.aborted) {
@@ -150,7 +150,7 @@ export default async function plugin(bb: BbPluginApi) {
             lastPurge = started;
           }
         } catch (error) {
-          bb.log.warn(`poll failed: ${error instanceof Error ? error.message : String(error)}`);
+          alia.log.warn(`poll failed: ${error instanceof Error ? error.message : String(error)}`);
         }
         const { intervalSec } = await settings.get();
         await abortableSleep(Math.max(0, intervalSec * 1000 - (Date.now() - started)), signal);
@@ -162,7 +162,7 @@ export default async function plugin(bb: BbPluginApi) {
     return [...hosts].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     async overview({ range }) {
       if (hosts.length === 0) await refreshHosts();
       const { intervalSec } = await settings.get();
@@ -216,15 +216,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "machine-load",
-    summary: "Show current hardware load (CPU, RAM, disk, GPU, network) of every bb machine",
-    commands: [{ name: "status", summary: "Current load of every machine", usage: "bb machine-load [status] [--json]" }],
+    summary: "Show current hardware load (CPU, RAM, disk, GPU, network) of every VesnALIA machine",
+    commands: [{ name: "status", summary: "Current load of every machine", usage: "alia machine-load [status] [--json]" }],
     async run(argv) {
       const json = argv.includes("--json");
       const cmd = argv.find((a) => a !== "--json") ?? "status";
-      if (cmd === "help" || cmd === "--help") return { exitCode: 0, stdout: "Usage: bb machine-load [status] [--json]" };
-      if (cmd !== "status") return { exitCode: 1, stderr: "Usage: bb machine-load [status] [--json]" };
+      if (cmd === "help" || cmd === "--help") return { exitCode: 0, stdout: "Usage: VesnALIA machine-load [status] [--json]" };
+      if (cmd !== "status") return { exitCode: 1, stderr: "Usage: VesnALIA machine-load [status] [--json]" };
       if (hosts.length === 0) await refreshHosts();
       const rows = sortedHosts().map((h) => ({ ...h, ...live.get(h.id) }));
       if (json) {

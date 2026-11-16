@@ -1,41 +1,41 @@
-# The bb-kimi-code marketplace
+# The alia-kimi-code marketplace
 
-This repository doubles as a bb **marketplace**: the `marketplace.json` at its
-root lists the plugin with store branding and a git source. bb never hosts
+This repository doubles as a VesnALIA **marketplace**: the `marketplace.json` at its
+root lists the plugin with store branding and a git source. VesnALIA never hosts
 plugin code — installing a marketplace entry runs the same install pipeline as
 a direct install.
 
-## For users: add the marketplace to bb
+## For users: add the marketplace to VesnALIA
 
 ```
-bb marketplace add git:github.com/dpolishuk/bb-kimi-code@main
-bb marketplace list
+alia marketplace add git:github.com/dpolishuk/bb-kimi-code@main
+alia marketplace list
 ```
 
-Then open **Settings → Plugins → Marketplace** in bb (or
-`bb plugin install kimi-code` flows from the catalog) and install **Kimi
-Code** from the **Kimi Code for bb** catalog. Before installing, bb shows the
+Then open **Settings → Plugins → Marketplace** in VesnALIA (or
+`alia plugin install kimi-code` flows from the catalog) and install **Kimi
+Code** from the **Kimi Code for VesnALIA** catalog. Before installing, VesnALIA shows the
 true resolved source — the repository, the release tag, and the exact commit.
 
 Useful commands:
 
 ```
-bb marketplace refresh kimi-code     # re-read the catalog and icons
-bb plugin outdated                   # see newer compatible releases
-bb plugin update kimi-code           # move to the latest release in ^0.2.0
-bb marketplace remove kimi-code      # forget the catalog; installed plugins stay
+alia marketplace refresh kimi-code     # re-read the catalog and icons
+alia plugin outdated                   # see newer compatible releases
+alia plugin update kimi-code           # move to the latest release in ^0.2.0
+alia marketplace remove kimi-code      # forget the catalog; installed plugins stay
 ```
 
 The catalog entry installs the highest `vX.Y.Z` tag matching `^0.2.0`, and
-`bb plugin update` tracks later releases in that range.
+`alia plugin update` tracks later releases in that range.
 
 ### Direct install instead
 
 No marketplace needed if you prefer:
 
 ```
-bb plugin install https://github.com/dpolishuk/bb-kimi-code
-bb plugin install git:https://github.com/dpolishuk/bb-kimi-code.git@^0.2.0
+alia plugin install https://github.com/dpolishuk/bb-kimi-code
+alia plugin install git:https://github.com/dpolishuk/bb-kimi-code.git@^0.2.0
 ```
 
 A bare URL tracks the default branch; the `git:` range form tracks releases.
@@ -44,7 +44,7 @@ A bare URL tracks the default branch; the `git:` range form tracks releases.
 
 1. Land changes on `main`; bump `version` in `package.json`.
 2. Verify: `npm test`, `npm run typecheck`, `npm run build`
-   (`bb plugin build`), plus the live suite when the bridge is touched.
+   (`alia plugin build`), plus the live suite when the bridge is touched.
 3. Tag the release and push:
 
    ```
@@ -53,24 +53,24 @@ A bare URL tracks the default branch; the `git:` range form tracks releases.
    ```
 
 4. Done — the `range: "^0.2.0"` entry resolves the highest matching tag on
-   the next `bb marketplace refresh` / `bb plugin outdated`. No catalog edit
+   the next `alia marketplace refresh` / `alia plugin outdated`. No catalog edit
    is needed for releases inside the range. Note: under semver a caret range
    with a 0.x base only admits patch releases (`^0.1.0` stops at 0.1.x), so
    every minor release needs the catalog range bumped to its own `^0.X.0`.
 
-Rules that bb enforces (from its distribution contract):
+Rules that VesnALIA enforces (from its distribution contract):
 
-- A tag must never be moved to another commit — bb records tag + commit and
+- A tag must never be moved to another commit — VesnALIA records tag + commit and
   refuses a moved tag. Publish a fix as a new version.
-- `engines.bb` / `engines.bbPluginSdk` in `package.json` gate updates:
+- `engines.alia` / `engines.aliaPluginSdk` in `package.json` gate updates:
   incompatible releases are reported as blocked. Keep the ranges honest.
 - `marketplace.json` is validated strictly (schema version 1 rejects unknown
   fields); a rejected manifest leaves the last valid catalog serving.
 
-## Listing in bb-community
+## Listing in alia-community
 
-bb ships two built-in catalogs: `bb-official` (bundled plugins, a bb release
-decision) and `bb-community` (public third-party plugins). To list this plugin
-in `bb-community`, use bb's `submit-a-plugin` skill — it copies
+VesnALIA ships two built-in catalogs: `alia-official` (bundled plugins, a VesnALIA release
+decision) and `alia-community` (public third-party plugins). To list this plugin
+in `alia-community`, use VesnALIA's `submit-a-plugin` skill — it copies
 `PLUGIN_OVERVIEW.md` (already in this repo, following the store text rules)
 into the marketplace repository and opens the submission.

@@ -8,7 +8,7 @@ import { dirsUpToRepoRoot, findRepoRoot, mainCheckoutOf } from "./repo-root";
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), "bb-skills-repo-"));
+  root = await mkdtemp(path.join(os.tmpdir(), "alia-skills-repo-"));
 });
 
 describe("findRepoRoot", () => {

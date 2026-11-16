@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { EMOJIS } from "./bots";
 import { formatRelative } from "./components/relative-time";
 
@@ -233,7 +233,7 @@ describe("bots nav panel", () => {
     const panel = await loadPanel();
     const slot = renderSlot(panel, { subPath: "bot_1" }, { rpc: RPC });
 
-    await slot.findByTestId("bb-new-thread-composer");
+    await slot.findByTestId("alia-new-thread-composer");
     expect(slot.inspection.navigateCalls).toEqual([]);
     slot.lifecycle.unmount();
   });
@@ -487,7 +487,7 @@ describe("bots nav panel", () => {
 
     await slot.findByText("Finish setting up this bot");
     await slot.findByText("Set up →");
-    expect(slot.queryByTestId("bb-new-thread-composer")).toBeNull();
+    expect(slot.queryByTestId("alia-new-thread-composer")).toBeNull();
     slot.lifecycle.unmount();
   });
 
@@ -495,14 +495,14 @@ describe("bots nav panel", () => {
     const panel = await loadPanel();
     const slot = renderSlot(panel, { subPath: "bot_2" }, { rpc: RPC });
 
-    const composer = await slot.findByTestId("bb-new-thread-composer");
+    const composer = await slot.findByTestId("alia-new-thread-composer");
     expect(composer.getAttribute("data-default-provider-id")).toBe("codex");
     expect(composer.getAttribute("data-default-model")).toBe("gpt-5.5");
     expect(composer.getAttribute("data-default-reasoning-level")).toBe(
       "medium",
     );
 
-    (await slot.findByTestId("bb-new-thread-composer-submit")).click();
+    (await slot.findByTestId("alia-new-thread-composer-submit")).click();
 
     await waitFor(() =>
       expect(slot.inspection.navigateCalls).toContainEqual({
@@ -828,7 +828,7 @@ describe("bots nav panel", () => {
     slot.lifecycle.unmount();
   });
 
-  it("calls requestDelete (BB's own confirmation) rather than opening a local dialog", async () => {
+  it("calls requestDelete (VesnALIA's own confirmation) rather than opening a local dialog", async () => {
     const panel = await loadPanel();
     const slot = renderSlot(panel, { subPath: "bot_1" }, { rpc: CHAT_ROW_RPC });
 

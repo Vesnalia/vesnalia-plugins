@@ -1,6 +1,6 @@
 ---
 name: diff-tree
-description: Open or develop this plugin's directory-tree diff viewer in BB.
+description: Open or develop this plugin's directory-tree diff viewer in VesnALIA.
 ---
 
 # Diff Tree
@@ -11,12 +11,12 @@ It reads the current thread's environment through the public SDK and never modif
 
 - `All changes` compares branch and working-copy changes with the selected comparison branch. Before the first commit, both metadata and patches use the working-copy target.
 - `Uncommitted` shows staged, unstaged, and untracked changes together.
-- `Base` is BB's native searchable branch picker, with local and remote branches. Selection applies immediately. The reset button restores automatic selection; hover Auto/Manual for its source.
+- `Base` is VesnALIA's native searchable branch picker, with local and remote branches. Selection applies immediately. The reset button restores automatic selection; hover Auto/Manual for its source.
 - `Recent commits` uses a From → HEAD picker over the latest 200 first-parent commits, including the selected start and excluding working-copy changes. `Single commit` chooses from the latest 200 first-parent commits by SHA/subject/author.
 - History and committed ranges run bounded, read-only Git commands on the environment's host through typed host RPC. The server derives the host and path from the environment; never accept arbitrary frontend workspace paths.
 - Click a line number, Shift-click, or drag across line numbers to select rows in the diff. The floating `Add to chat` action appends the selected diff fragment (up to 500 visible rows), line coordinates, path, and revision to the existing draft without submitting. The manual From/To form has been removed.
-- Interactive diffs use the host-shimmed public `@pierre/diffs/react` API because `experimental_Diff` does not forward selection callbacks. Keep its declarations aligned with the running BB version (currently 1.2.9), use `experimental_useCodeTheme`, and never import private BB viewer modules.
-- Automatic comparison prefers BB's recorded creation branch (`baseBranch`, then the standard providers' named creation inputs), followed by the configured comparison and repository default. The hint identifies this source. Do not claim an unknown creation branch was detected from Git history.
+- Interactive diffs use the host-shimmed public `@pierre/diffs/react` API because `experimental_Diff` does not forward selection callbacks. Keep its declarations aligned with the running VesnALIA version (currently 1.2.9), use `experimental_useCodeTheme`, and never import private VesnALIA viewer modules.
+- Automatic comparison prefers VesnALIA's recorded creation branch (`baseBranch`, then the standard providers' named creation inputs), followed by the configured comparison and repository default. The hint identifies this source. Do not claim an unknown creation branch was detected from Git history.
 - Search matches current and previous paths and temporarily expands matching directories.
 - The refresh button reloads metadata and the selected patch. Returning to the app also refreshes it unless `refreshOnReturn` is disabled.
 - `useFileDiff` keeps an existing viewer mounted during same-file/same-comparison refreshes, then swaps the patch and full context together. Its identity includes the workspace, comparison target, pinned base revision, and file sides; never reuse a result across those boundaries. Ignore aborted completions and preserve identical context objects to avoid resetting the renderer. A newly mounted chat target selects its file immediately and does not trigger a second initial metadata load.
@@ -26,8 +26,8 @@ It reads the current thread's environment through the public SDK and never modif
 
 Code lives in `src/app` (panel/components/hooks), `src/core` (tree/diff behavior), `src/host` (Git), `src/server` (RPC routing), and `src/shared` (contracts). Tests live in `tests`. Release documentation is in `docs/RELEASING.md`; run `npm run check:release` after building.
 
-Development in the plugin directory: `npm ci --ignore-scripts`, `npm run typecheck`, `npm test`, `bb plugin build .`.
-After edits to an installed path plugin, run `bb plugin reload diff-tree` (or use `bb plugin dev`).
+Development in the plugin directory: `npm ci --ignore-scripts`, `npm run typecheck`, `npm test`, `alia plugin build .`.
+After edits to an installed path plugin, run `alia plugin reload diff-tree` (or use `alia plugin dev`).
 This is a separate tab; it does not replace the built-in Changes panel.
 
 Thread state (since v0.1.3): `use-thread-view-state.ts` restores scope, recent starting SHA (legacy count for migration), selected single-commit SHA, manual base, Worktree, layout override, and Diff/File choices synchronously before comparison requests. Use the public plugin ID and thread ID to namespace localStorage; validate persisted values and retain an in-memory fallback if storage fails. Choices are browser-local, not cross-device settings. Chat navigation sequence numbers remain session-only: process a fresh request once, never reset a comparison just because the panel remounts. Keep the inner panel keyed by thread ID when the host reuses its component. Source/diff content and composer text are never persisted by this state store.
@@ -38,7 +38,7 @@ Worktree browsing (since v0.1.2): the Worktree button toggles a live file tree i
 
 `FileSource` reads through public `sdk.files.read`, passing the environment's explicit hostId and rootPath plus a validated workspace-relative file joined to that root. Never read on the default server host or omit root confinement for remote worktrees. Limit source previews to 512 KiB, reject base64/NUL-containing contents, handle empty/error cases, and ignore aborted/stale responses. Historical Diff remains pinned; File always means the live working copy. Unchanged files open File automatically, changed paths offer Diff/File, and filename mentions stay available. Missing chat targets offer View in worktree. No repository writes are used.
 
-Settings (since v0.1.1) are declared with `bb.settings.define` in `src/shared/settings.ts` and read reactively through `useSettings`. Settings → Diff Tree offers `chatFileLinks` (`default`, `icon`, `diff-tree`), `fileIcons` (true), `defaultView` (`unified`/`split`), `fontSize` (10–24, default 12), `contextLines` (1–200, default 30), and `refreshOnReturn` (true). The standard settings form persists/validates them; invalid frontend values fall back to defaults. To inspect settings use `bb plugin config diff-tree --json`; to change one use `bb plugin config diff-tree set <key> <value>`.
+Settings (since v0.1.1) are declared with `alia.settings.define` in `src/shared/settings.ts` and read reactively through `useSettings`. Settings → Diff Tree offers `chatFileLinks` (`default`, `icon`, `diff-tree`), `fileIcons` (true), `defaultView` (`unified`/`split`), `fontSize` (10–24, default 12), `contextLines` (1–200, default 30), and `refreshOnReturn` (true). The standard settings form persists/validates them; invalid frontend values fall back to defaults. To inspect settings use `alia plugin config diff-tree --json`; to change one use `alia plugin config diff-tree set <key> <value>`.
 
 `smoothTransitions` (true) replaces visible Loading diff text with an accessible static skeleton and a 160 ms fade on newly loaded file previews. The skeleton fades in after 100 ms to keep quick loads quiet. CSS honors `prefers-reduced-motion`; no artificial data delay, stale-file overlay, or animation timer is used. Disable for visible loading text and immediate transitions. Background refreshes keep the existing viewer mounted in either mode.
 
@@ -52,4 +52,4 @@ Image previews: `src/shared/images.ts` holds supported image types and the 2 MiB
 
 `ImageDiff` and `WorktreeImage` ignore stale responses and retain loaded images across same-comparison refreshes. `ImagePreview` renders fixed image MIME types through `<img>` data URLs, never SVG/HTML markup. Offer dimensions, checkerboards, Fit/100%, and Before/After panels that stack on narrow layouts. SVG also retains Text diff; previews skip text patch/context loading until requested. File mode uses the live image, including during history comparisons. Keep ordinary binary notices and all selection/chat behavior for non-images.
 
-Full-file rendering: `SourcePreview` owns a public Pierre `File` with BB's code theme, rather than the host `experimental_SourceCode` virtualizer, whose partial-render path can transiently fail with `FileRenderer.processFileResult: Line doesnt exist`. Clear any ambient `VirtualizerContext` for this subtree and set `disableWorkerPool` to keep pending viewport ASTs from unrelated viewers out of this preview. Keep the source model memoized and the renderer mounted across identical refreshes, including scroll position. Above 10,000 lines render complete plain text with a separate text-only line-number gutter to bound DOM growth. Existing 512 KiB source limits still apply. Tests use the actual Pierre source renderer, not the SDK's SourceCode test stub.
+Full-file rendering: `SourcePreview` owns a public Pierre `File` with VesnALIA's code theme, rather than the host `experimental_SourceCode` virtualizer, whose partial-render path can transiently fail with `FileRenderer.processFileResult: Line doesnt exist`. Clear any ambient `VirtualizerContext` for this subtree and set `disableWorkerPool` to keep pending viewport ASTs from unrelated viewers out of this preview. Keep the source model memoized and the renderer mounted across identical refreshes, including scroll position. Above 10,000 lines render complete plain text with a separate text-only line-number gutter to bound DOM growth. Existing 512 KiB source limits still apply. Tests use the actual Pierre source renderer, not the SDK's SourceCode test stub.

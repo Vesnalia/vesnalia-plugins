@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, waitFor, within } from "@testing-library/react";
-import type { ExperimentalThreadActionTabProps, ExperimentalTabRegistration } from "@get-bb/plugin-sdk/app";
-import { experimental_makePanelController } from "@get-bb/plugin-sdk/testing";
+import type { ExperimentalThreadActionTabProps, ExperimentalTabRegistration } from "@vesnalia/plugin-sdk/app";
+import { experimental_makePanelController } from "@vesnalia/plugin-sdk/testing";
 import type { PrView } from "../../src/contract";
 import { agent, app, CAN_ALL, callsTo, event, find, handlers, item, link, mount, pr, unmountAll, type Handlers, type PullRequests } from "./helpers";
 
@@ -318,7 +318,7 @@ describe("a PR in full inside the tab", () => {
   });
 
   it("shows the list when the PR it remembered is no longer linked to the thread", async () => {
-    window.localStorage.setItem("bb-plugin-shuttle:panel-pr", JSON.stringify({ [THREAD]: "github:gone/repo#1" }));
+    window.localStorage.setItem("alia-plugin-shuttle:panel-pr", JSON.stringify({ [THREAD]: "github:gone/repo#1" }));
     const { reloadPrefs } = await import("../../src/ui/prefs");
     reloadPrefs();
     const slot = await panel();

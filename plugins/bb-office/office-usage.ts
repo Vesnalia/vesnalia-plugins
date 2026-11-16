@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const officeUsageReadInputSchema = z
@@ -52,7 +52,7 @@ export type OfficeUsageWindow = z.infer<typeof officeUsageWindowSchema>;
 export type OfficeProviderUsage = z.infer<typeof officeProviderUsageSchema>;
 export type OfficeUsageSnapshot = z.infer<typeof officeUsageSnapshotSchema>;
 export type UsageLimitsResult = Awaited<
-  ReturnType<BbPluginApi["sdk"]["system"]["usageLimits"]>
+  ReturnType<AliaPluginApi["sdk"]["system"]["usageLimits"]>
 >;
 
 type RawProviderUsage = UsageLimitsResult[string];

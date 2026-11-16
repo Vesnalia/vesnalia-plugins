@@ -84,9 +84,9 @@ function EvidenceLink({ evidence, className }: { evidence: string; className?: s
     target.kind === "url"
       ? env.perform([{ $iris: "action", kind: "openUrl", args: [target.url] }])
       : env.perform([{ $iris: "action", kind: "openFile", args: [target.path, target.line] }]);
-  const label = target.kind === "url" ? evidence.replace(/^https?:\/\//i, "") : evidence.replace(/^\$BB_THREAD_STORAGE\//, "");
+  const label = target.kind === "url" ? evidence.replace(/^https?:\/\//i, "") : evidence.replace(/^\$ALIA_THREAD_STORAGE\//, "");
   if (target.kind === "url" && !/^https:/i.test(target.url)) {
-    // Only https links open in bb; show an http link as text rather than a dead button.
+    // Only https links open in VesnALIA; show an http link as text rather than a dead button.
     return (
       <span title="Only https links open" className={cn("inline-flex max-w-full min-w-0 items-center gap-1 font-mono text-[11.5px] text-muted-foreground", className)}>
         <Glyph name="external-link" size={12} />

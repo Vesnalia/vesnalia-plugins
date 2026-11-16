@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { openSqlite } from "./cursor-tokens.js";
 
 // Cumulative token usage straight from each provider's own session store,
-// keyed by bb's providerThreadId. bb only relays what a provider chooses to
+// keyed by VesnALIA's providerThreadId. VesnALIA only relays what a provider chooses to
 // emit (OpenCode ACP emits a context-window snapshot, not usage), so the
 // stores on disk are the one source that exists for every provider:
 //   - OpenCode:    ~/.local/share/opencode/opencode.db message rows carry

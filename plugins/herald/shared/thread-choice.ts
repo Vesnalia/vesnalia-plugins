@@ -1,5 +1,5 @@
 /**
- * What Herald announces for one thread, chosen from bb's thread menu: every
+ * What Herald announces for one thread, chosen from VesnALIA's thread menu: every
  * kind of event its settings announce, only the ones that wait on the user,
  * or nothing. The choice is stored in Herald's own plugin metadata on the
  * thread; a thread with none follows the nearest thread above it that has
@@ -34,7 +34,7 @@ export const CHOICE_METADATA_KEY = "announce";
 /** The server publishes here when a thread's choice changes, so every open thread menu re-reads. */
 export const CHOICES_CHANNEL = "choices";
 
-/** How many threads one `choices.list` call takes: bb's limit for a batched thread read. */
+/** How many threads one `choices.list` call takes: VesnALIA's limit for a batched thread read. */
 export const CHOICES_BATCH_MAX = 200;
 
 /** The kinds of event that wait on the user. A finished or failed turn does not. */

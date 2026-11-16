@@ -1,6 +1,6 @@
 // A thread's pull request, and how to keep hold of it.
 //
-// bb answers "what pull request does this thread have?" from the thread's
+// VesnALIA answers "what pull request does this thread have?" from the thread's
 // *environment*: it asks the checkout what branch it is on, then asks the git
 // host what pull request that branch has. That is the official surface and the
 // right first answer — but it only holds while the checkout does. Review
@@ -13,14 +13,14 @@
 // merge, all of which destroy the branch name the environment lookup depends
 // on. Bind the number to the thread once and the state can always be read back.
 //
-// bb's own builtin github plugin settled on the same shape — pullForThread
+// VesnALIA's own builtin github plugin settled on the same shape — pullForThread
 // asks the environment first and falls back to a durable link it keeps itself.
 //
 // Free of node imports: the reader that spawns `gh` lives next door in
 // pull-requests.server.ts, and everything here is pure so it can be tested
 // without one.
 
-/** The four states bb models, and the sidebar buckets from. */
+/** The four states VesnALIA models, and the sidebar buckets from. */
 export type PullRequestState = "open" | "draft" | "merged" | "closed";
 
 /** Enough to ask the git host about a pull request, and nothing more. */
@@ -60,7 +60,7 @@ const PULL_URL = /github\.com\/([\w.-]+\/[\w.-]+)\/pull\/(\d+)/;
 /**
  * Find a pull request in whatever text a thread carries about itself.
  *
- * A thread spawned to review a pull request nearly always names it — bb's own
+ * A thread spawned to review a pull request nearly always names it — VesnALIA's own
  * github plugin titles those threads `owner/repo#123`, and a thread spawned
  * from a URL keeps that URL in its fallback title. When the environment is
  * gone and nothing was bound, this is the last honest source: the thread said
@@ -143,7 +143,7 @@ function stateOf(raw: string, isDraft: boolean): PullRequestState {
 }
 
 /**
- * What this pull request wants from a person, in bb's own vocabulary.
+ * What this pull request wants from a person, in VesnALIA's own vocabulary.
  *
  * Ordered by what a person would act on first: a finished pull request wants
  * nothing, a draft is not asking yet, and below that a failure outranks a

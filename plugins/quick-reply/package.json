@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-quick-reply",
+  "name": "alia-plugin-quick-reply",
   "version": "0.2.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.49"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.49"
   },
-  "bb": {
+  "alia": {
     "name": "Quick Reply",
     "description": "Give your agent quick feedback by clicking on which lines you agree and disagree with. Ask for more detail on any line, or add a comment when a click isn't enough.",
     "branding": {
@@ -17,7 +17,6 @@
     "skills": []
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.49",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -32,27 +31,36 @@
   "scripts": {
     "test": "node --test lib/*.test.ts",
     "typecheck": "tsc --noEmit -p .",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "license": "GPL-3.0-only",
   "author": {
     "name": "Mikhail Turilin",
     "url": "https://github.com/mturilin"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mturilin/bb-plugin-quick-reply.git"
-  },
-  "homepage": "https://github.com/mturilin/bb-plugin-quick-reply#readme",
-  "bugs": {
-    "url": "https://github.com/mturilin/bb-plugin-quick-reply/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "code-review",
     "agent",
     "feedback",
     "review"
-  ]
+  ],
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.49"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/quick-reply#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/quick-reply"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

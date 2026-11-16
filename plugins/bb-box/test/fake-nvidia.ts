@@ -70,7 +70,7 @@ function answer(nvidia: FakeNvidia, call: FakeCall, options: RunOptions | undefi
           [
             `arch ${nvidia.arch}`,
             "os ubuntu 24.04",
-            "image bb-box",
+            "image alia-box",
             `free-mib ${nvidia.freeMiB}`,
             `kernel-driver ${nvidia.driver}`,
             `apt ${nvidia.apt.length ? nvidia.apt.join(" ") : "none"}`,

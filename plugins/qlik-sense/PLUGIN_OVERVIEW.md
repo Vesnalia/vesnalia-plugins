@@ -24,6 +24,6 @@ cannot be continued by a model outside your list.
 
 It stays on the machine where agents run — in the macOS Keychain, encrypted
 with your Windows account, or on Linux in a file only your user can read —
-never on the bb server. If Qlik rejects it, the
+never on the VesnALIA server. If Qlik rejects it, the
 plugin stops signing in until you enter it again, so the domain does not lock
 your account.

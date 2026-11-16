@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 type DispatchThread = {
   id: string;
@@ -25,7 +25,7 @@ export function holdsDispatch(thread: Pick<DispatchThread, "status" | "activity"
 }
 
 export async function findDispatchHolder<T extends DispatchThread>(
-  sdk: BbPluginApi["sdk"], threads: readonly T[], orchestratorId: string | null,
+  sdk: AliaPluginApi["sdk"], threads: readonly T[], orchestratorId: string | null,
 ): Promise<T | undefined> {
   const others = threads.filter(thread => thread.id !== orchestratorId);
   const live = others.find(thread => holdsDispatch(thread) || thread.hasPendingInteraction);

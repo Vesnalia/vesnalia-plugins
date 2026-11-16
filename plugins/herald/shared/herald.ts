@@ -3,7 +3,7 @@
  * realtime channel.
  *
  * The app imports this module at run time, so it must never import the SDK
- * root (`@get-bb/plugin-sdk`) — a git install builds the app bundle without it.
+ * root (`@vesnalia/plugin-sdk`) — a git install builds the app bundle without it.
  * The RPC contract, which does, lives in `shared/contract.ts` and the app
  * imports that one as a type only.
  */
@@ -11,7 +11,7 @@ import { z } from "zod";
 
 /**
  * Why a thread is waiting. The first three come from a pending interaction —
- * bb's `user_question`, an approval of a `plan`, and every other approval — and
+ * VesnALIA's `user_question`, an approval of a `plan`, and every other approval — and
  * the last two from how a turn ended.
  */
 export const ATTENTION_REASONS = ["question", "plan", "permission", "finished", "error"] as const;
@@ -36,14 +36,14 @@ export const AttentionEntrySchema = z.object({
   projectId: z.string(),
   /** The project's name, which names the work when the thread has no title. */
   projectName: z.string().nullable(),
-  /** The thread's title, or bb's generated fallback title; null while unnamed. */
+  /** The thread's title, or VesnALIA's generated fallback title; null while unnamed. */
   threadTitle: z.string().nullable(),
   /**
    * The start of what the user last asked this thread, for telling two threads
    * with similar titles apart. Null for a pause, which needs no history.
    */
   lastRequest: z.string().nullable(),
-  /** The last part of the thread's working directory, when bb knows it. */
+  /** The last part of the thread's working directory, when VesnALIA knows it. */
   folder: z.string().nullable(),
   reason: AttentionReasonSchema,
   /** Unique per event, so a client can remember what it has already spoken. */
@@ -78,15 +78,15 @@ export const HISTORY_LIMIT = 50;
 
 /**
  * One past sentence on the Herald page, which lists them from every thread:
- * the item, its thread, and the names bb has for them now. A thread bb no
+ * the item, its thread, and the names VesnALIA has for them now. A thread VesnALIA no
  * longer knows keeps its row, with no names and nothing to open.
  */
 export const RecentHistoryItemSchema = HistoryItemSchema.extend({
   threadId: z.string(),
-  /** The thread's title, or bb's generated fallback title; null while unnamed or gone. */
+  /** The thread's title, or VesnALIA's generated fallback title; null while unnamed or gone. */
   threadTitle: z.string().nullable(),
   projectName: z.string().nullable(),
-  /** False once bb answers that the thread does not exist. */
+  /** False once VesnALIA answers that the thread does not exist. */
   threadExists: z.boolean(),
 });
 export type RecentHistoryItem = z.infer<typeof RecentHistoryItemSchema>;
@@ -139,7 +139,7 @@ export const MAX_SPEECH_CHARS = 2000;
 export const RATE_OPTIONS = ["0.8", "1", "1.2", "1.5"] as const;
 
 /**
- * Where the voice comes from. `say` has the bb server's Mac render the sentence
+ * Where the voice comes from. `say` has the VesnALIA server's Mac render the sentence
  * with its own voices and the app play the audio; `web` is the browser's own
  * speech synthesis, which every web client has but which sounds worse. `say`
  * falls back to `web` when the server is not a Mac or the render fails.
@@ -168,7 +168,7 @@ export const DEFAULT_VOICES: VoicesConfig = { say: "", web: "" };
 
 /**
  * The command-line tools that can write a sentence, and `custom` for one of
- * the user's own. Each runs on the machine running bb, reads the prompt on
+ * the user's own. Each runs on the machine running VesnALIA, reads the prompt on
  * standard input and answers on standard output.
  */
 export const SENTENCE_TOOLS = ["claude", "codex", "gemini", "custom"] as const;

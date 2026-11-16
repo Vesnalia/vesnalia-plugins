@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ComponentProps } from "react";
-import { useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../src/rpc-contract";
 import type { FeatureCheck } from "../../src/feature-review";
@@ -64,7 +64,7 @@ function MoreThreads({ threads, onOpen }: { threads: FeatureCheck["alsoActive"];
 }
 
 /**
- * A local review's notices about its folder (src/feature-review.ts checkFeature), the most pressing first: BB removed
+ * A local review's notices about its folder (src/feature-review.ts checkFeature), the most pressing first: VesnALIA removed
  * it; it's on another branch, which pauses the review, with New review for it or Follow it instead, or a link to its
  * review; the review followed its renamed branch, and the id it had, with Got it; its machine is offline;
  * it changed, with Update; its guide is older than what Update last showed, with Rewrite guide; committed files that look like secrets, with Got it; its PR's (PrNotices.tsx),
@@ -75,7 +75,7 @@ function MoreThreads({ threads, onOpen }: { threads: FeatureCheck["alsoActive"];
  */
 export function useFeatureNotices(targetKey: string, review: (Reviewed & PrReviewed) | null, onChanged: () => void, onNotPushed: (() => void) | null, onNeedsYou: () => void): Notice[] {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const localDiffChanges = useKnob("localDiffChanges");
   const container = useFullscreenPortalContainer();
   const prNotices = usePrNotices(targetKey, review, onChanged, onNeedsYou);
@@ -141,7 +141,7 @@ export function useFeatureNotices(targetKey: string, review: (Reviewed & PrRevie
     // Its main thread worked there: the next Send starts a fresh thread from the branch (src/loop.ts).
     const fresh = !archived && (!review.mainThread || review.mainThread.environmentId === feature.environmentId);
     add({ id: "folder-gone", tone: "warning", icon: "Folder", label: "Folder removed",
-      text: `BB removed this folder. The review keeps its last changes${archived ? "" : " and your comments"}.${fresh ? ` Your next Send starts a fresh thread from ${branchLabel(feature.workBranch ?? feature.branch)}.` : ""}`,
+      text: `VesnALIA removed this folder. The review keeps its last changes${archived ? "" : " and your comments"}.${fresh ? ` Your next Send starts a fresh thread from ${branchLabel(feature.workBranch ?? feature.branch)}.` : ""}`,
       ...archived ? {} : { action: button("archive", "Archive", () => void act("archive", () => rpc.call("archiveReview", { targetKey, archived: true }), "Couldn’t archive the review."), { warning: true }) } });
   }
   if (check.state === "paused" && check.branch !== undefined) {
@@ -236,7 +236,7 @@ export function useFeatureNotices(targetKey: string, review: (Reviewed & PrRevie
 }
 
 /**
- * Branch kept: a branch a fixer made in a new worktree stays in the repo once BB removes the worktree, and the plugin
+ * Branch kept: a branch a fixer made in a new worktree stays in the repo once VesnALIA removes the worktree, and the plugin
  * runs no git in your checkout, so each says so, with its delete command to copy (select it, if copying fails) and Got
  * it, which stops showing it. `onChanged` reloads the review.
  */

@@ -1,17 +1,17 @@
-// Waiting for BB to let go of the workspace.
+// Waiting for VesnALIA to let go of the workspace.
 //
 // A `reuse` spawn is refused with HTTP 409 / `workspace_busy` while the
-// environment still has an `ownerThreadId`. BB clears that owner a moment
+// environment still has an `ownerThreadId`. VesnALIA clears that owner a moment
 // *after* the previous worker reports `idle` — measured at ~500 ms. Since a
 // node spawns the next worker as soon as `awaitThread` resolves, every graph
 // with two consecutive nodes runs straight into that gap: the first node
 // succeeds, the second dies after 3 ms without ever getting a thread.
 //
 // So the wait belongs here and not in the runtime, which knows nothing about
-// BB. Retrying is safe because the refusal happens before a thread exists —
+// VesnALIA. Retrying is safe because the refusal happens before a thread exists —
 // there is no half-spawned worker to clean up.
 
-/** BB's error for "someone else still holds this workspace". */
+/** VesnALIA's error for "someone else still holds this workspace". */
 export function isWorkspaceBusy(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const candidate = error as { status?: unknown; code?: unknown };
@@ -34,7 +34,7 @@ export type WorkspaceWaitOptions = {
 };
 
 /**
- * Run `attempt`, retrying only while BB reports the workspace as busy.
+ * Run `attempt`, retrying only while VesnALIA reports the workspace as busy.
  *
  * Every other failure is rethrown untouched and immediately — a wrong project,
  * a missing environment or a stopped run must not be sat out for two minutes.

@@ -85,7 +85,7 @@ const CALLS: readonly Call[] = [
   {
     id: "cpu-alias",
     words: "box_acquire kind: linux-desktop-cpu, gpu: shared",
-    answer: () => "Not made: linux-desktop-cpu has no GPU. Ask for linux-desktop with gpu shared. bb-box changed nothing.",
+    answer: () => "Not made: linux-desktop-cpu has no GPU. Ask for linux-desktop with gpu shared. alia-box changed nothing.",
   },
   {
     id: "check",
@@ -117,7 +117,7 @@ const CALLS: readonly Call[] = [
       const box = act.find(OWN_BOX);
       if (!box) return `No box ${OWN_BOX}: it was released.`;
       const made = act.create("linux", "whole", { cores: box.cores, memoryGiB: box.memoryGiB });
-      if (!made.ok) return `Not forked: ${made.why.replace("bb-box changed nothing.", "bb-box copied nothing.")}`;
+      if (!made.ok) return `Not forked: ${made.why.replace("alia-box changed nothing.", "alia-box copied nothing.")}`;
       return madeWords(world, made, "linux", "Forked into");
     },
   },
@@ -144,7 +144,7 @@ export function AgentPage() {
         const refusals = BACKENDS.map((each) => ({ host: each.host, placed: place(store, each.id, gpu, desktop) }));
         const where = refusals.map((each) => `${each.host}: ${each.placed.states ?? "no card"}.`).join(" ");
         const fix = refusals.find((each) => each.placed.agentFix?.startsWith("Release"))?.placed.agentFix ?? refusals[0]?.placed.agentFix ?? "Ask the user.";
-        return { ok: false, why: `no provider can take ${gpu === "whole" ? "a whole card" : "a shared GPU"} now. ${where} ${fix} bb-box changed nothing.` };
+        return { ok: false, why: `no provider can take ${gpu === "whole" ? "a whole card" : "a shared GPU"} now. ${where} ${fix} alia-box changed nothing.` };
       }
       return store.create({ backend, desktop, cores: size.cores, memoryGiB: size.memoryGiB, gpu, thread: AGENT_THREAD });
     },

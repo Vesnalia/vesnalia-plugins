@@ -83,7 +83,7 @@ function fixture() {
     stop: async ({ threadId }: any) => { stops.push(threadId); },
     archive: async ({ threadId }: any) => { archives.push(threadId); }
   };
-  const bb: any = {
+  const alia: any = {
     sdk: { threads, projects: { defaultExecutionOptions: async () => ({
       providerId: 'codex', model: 'selected-model', reasoningLevel: 'high'
     }) } },
@@ -95,8 +95,8 @@ function fixture() {
     } },
     log: { warn() {} }
   };
-  return { bb, threads, spawns, stops, archives, records,
-    service: createTicketImprovementService(bb) };
+  return { alia, threads, spawns, stops, archives, records,
+    service: createTicketImprovementService(alia) };
 }
 
 test('draft parser accepts JSON or a single fence and rejects missing, extra or oversized fields', () => {
@@ -163,7 +163,7 @@ test('improvement uses the selected thread model and forwards the detail mode', 
 test('cancellation before start prevents dispatch, including after service reload', async () => {
   const f = fixture();
   await f.service.cancel(identity);
-  const reloaded = createTicketImprovementService(f.bb);
+  const reloaded = createTicketImprovementService(f.alia);
   assert.equal((await reloaded.start(input)).status, 'canceled');
   assert.equal(f.spawns.length, 0);
 });

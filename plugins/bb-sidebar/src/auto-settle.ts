@@ -13,7 +13,7 @@ export interface AutoSettleLifecycleState {
   snoozedUntil: number | null;
 }
 
-/** The fields of a bb project-thread row that the policy reads. */
+/** The fields of a VesnALIA project-thread row that the policy reads. */
 export interface AutoSettleThread {
   activity: ThreadRowActivity;
   createdAt: number;

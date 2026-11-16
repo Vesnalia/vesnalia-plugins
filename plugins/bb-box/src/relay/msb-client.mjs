@@ -1,5 +1,5 @@
-// bb-box's msb client (053): stands in for the msb CLI on BB's server, for
-// a BB machine's msb, which bb-box's host entry runs there. It runs as
+// alia-box's msb client (053): stands in for the msb CLI on VesnALIA's server, for
+// a VesnALIA machine's msb, which alia-box's host entry runs there. It runs as
 //
 //   node msb-client.mjs <socket> '{"args":[...],"tty":true}'
 //
@@ -38,7 +38,7 @@ function frame(type, payload = Buffer.alloc(0)) {
 
 function fail(reason) {
   restore();
-  process.stderr.write(`bb-box could not run msb on the BB machine: ${reason}\n`, () => process.exit(NOT_RUN));
+  process.stderr.write(`alia-box could not run msb on the VesnALIA machine: ${reason}\n`, () => process.exit(NOT_RUN));
 }
 
 /**

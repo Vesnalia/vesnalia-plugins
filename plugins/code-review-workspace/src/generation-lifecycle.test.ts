@@ -1,5 +1,5 @@
 import { test, expect, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { generateGuide, stopGuideGenerations } from "./generate";
 import { toolFailed } from "./fake-host.test-support";
@@ -9,19 +9,19 @@ import { testStore } from "./test-store.test-support";
 const guide = { title: "T", intent: "I", sections: [], unplacedFiles: [] };
 
 test("failed regeneration does not mark an old guide ready", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => { throw new Error("offline"); } } } });
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: { spawn: async () => { throw new Error("offline"); } } } });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
   await store.saveGuide("target", guide);
-  await generateGuide(bb, store, "target", "p1");
+  await generateGuide(alia, store, "target", "p1");
   expect(await store.getGuide("target")).toBeNull();
   expect((await store.getReview("target"))?.status).toBe("error");
 });
 
 test("a superseded generation cannot replace a newer guide", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "generating", createdAt: 1 });
   const old = await store.beginGeneration("target");
   const current = await store.beginGeneration("target");
@@ -33,24 +33,24 @@ test("a superseded generation cannot replace a newer guide", async () => {
 test("hidden workers are archived and stopped when waiting fails", async () => {
   const archive = vi.fn(async () => {});
   const stop = vi.fn(async () => {});
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), wait: async () => { throw new Error("timeout"); }, archive, stop,
   } } });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "generating", createdAt: 1 });
-  await generateGuide(bb, store, "target", "p1");
+  await generateGuide(alia, store, "target", "p1");
   expect(archive).toHaveBeenCalledWith({ threadId: "worker" });
   expect(stop).toHaveBeenCalledWith({ threadId: "worker" });
   expect((await store.getReview("target"))?.status).toBe("error");
 });
 
 test("restart marks persisted in-progress reviews as interrupted without discarding drafts", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "generating", createdAt: 1 });
   const old = await store.beginGeneration("target");
   await store.setVerdict("target", "COMMENT", "Keep this draft");
-  await plugin(bb);
+  await plugin(alia);
   expect((await store.getReview("target"))?.status).toBe("error");
   expect(await store.isCurrentGeneration("target", old)).toBe(false);
   expect((await store.getDraft("target")).body).toBe("Keep this draft");
@@ -59,7 +59,7 @@ test("restart marks persisted in-progress reviews as interrupted without discard
 test("disposal aborts a pending worker wait and releases the worker", async () => {
   const stop = vi.fn(async () => {});
   let waiting = false;
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }),
     wait: ({ signal }: { signal?: AbortSignal }) => new Promise((resolve, reject) => {
       waiting = true;
@@ -68,20 +68,20 @@ test("disposal aborts a pending worker wait and releases the worker", async () =
     }),
     archive: async () => {}, stop,
   } } });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "generating", createdAt: 1 });
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting).toBe(true));
-  stopGuideGenerations(bb);
+  stopGuideGenerations(alia);
   await run;
   expect(stop).toHaveBeenCalledWith({ threadId: "worker" });
   expect((await store.getReview("target"))?.status).toBe("error");
 });
 
 test("a guide worker that fails ends its generation at once", async () => {
-  const { makeThreadResponse } = await import("@get-bb/plugin-sdk/testing");
+  const { makeThreadResponse } = await import("@vesnalia/plugin-sdk/testing");
   let waiting = false;
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive: async () => ({}), stop: async () => ({}),
     wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
       waiting = true;
@@ -89,10 +89,10 @@ test("a guide worker that fails ends its generation at once", async () => {
     }),
     queuedMessages: { list: async () => [] },
   } } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting).toBe(true));
   await harness.behavior.emitThreadEvent("thread.failed", { thread: makeThreadResponse({ id: "someone-else" }), error: null });
   expect((await store.getReview("target"))?.status).toBe("generating");
@@ -101,11 +101,11 @@ test("a guide worker that fails ends its generation at once", async () => {
   expect((await store.getReview("target"))?.status).toBe("error");
 });
 
-// bug bash E1: the wait rejected with its signal's reason, as BB's does, and that AbortError was what the reviewer read.
-test("a guide worker whose thread fails says the writer failed, and BB's why, not that an operation was aborted", async () => {
-  const { makeThreadResponse } = await import("@get-bb/plugin-sdk/testing");
+// bug bash E1: the wait rejected with its signal's reason, as VesnALIA's does, and that AbortError was what the reviewer read.
+test("a guide worker whose thread fails says the writer failed, and VesnALIA's why, not that an operation was aborted", async () => {
+  const { makeThreadResponse } = await import("@vesnalia/plugin-sdk/testing");
   let waiting = false;
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive: async () => ({}), stop: async () => ({}),
     wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
       waiting = true;
@@ -113,10 +113,10 @@ test("a guide worker whose thread fails says the writer failed, and BB's why, no
     }),
     queuedMessages: { list: async () => [] },
   } } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting).toBe(true));
   await harness.behavior.emitThreadEvent("thread.failed", { thread: makeThreadResponse({ id: "worker" }), error: "Failed to launch ACP agent \"opencode\": spawn opencode ENOENT" });
   await run;
@@ -128,7 +128,7 @@ test("a guide worker still working when the wait times out is waited for longer"
   vi.useFakeTimers({ toFake: ["Date"] });
   const waits: number[] = [];
   let store!: AsyncStore;
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive: async () => ({}), stop: async () => ({}),
     get: async () => ({ id: "worker", status: "active", archivedAt: null, deletedAt: null }),
     wait: async ({ timeoutMs }: { timeoutMs: number }) => {
@@ -141,12 +141,12 @@ test("a guide worker still working when the wait times out is waited for longer"
       return { matched: true };
     },
   } } as any });
-  store = testStore(bb);
+  store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
   // A 50 KB diff gets five more minutes.
   await store.savePatch("target", "x".repeat(50_000));
   try {
-    await generateGuide(bb, store, "target", "p1");
+    await generateGuide(alia, store, "target", "p1");
   } finally {
     vi.useRealTimers();
   }
@@ -155,14 +155,14 @@ test("a guide worker still working when the wait times out is waited for longer"
 });
 
 test("a wait that fails before its time ends the generation, even while the worker looks active", async () => {
-  const wait = vi.fn(async () => { throw new Error("bb unreachable"); });
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const wait = vi.fn(async () => { throw new Error("alia unreachable"); });
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive: async () => ({}), stop: async () => ({}), wait,
     get: async () => ({ id: "worker", status: "active", archivedAt: null, deletedAt: null }),
   } } as any });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
-  await generateGuide(bb, store, "target", "p1");
+  await generateGuide(alia, store, "target", "p1");
   expect(wait).toHaveBeenCalledTimes(1);
   expect((await store.getReview("target"))?.status).toBe("error");
 });
@@ -171,16 +171,16 @@ test("an accepted guide is ready at once, though its worker's turn goes on", asy
   const archive = vi.fn(async () => ({}));
   const stop = vi.fn(async () => ({}));
   let prompt = "";
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async (args: { prompt: string }) => { prompt = args.prompt; return { id: "worker" }; },
     // The worker never goes idle: it goes on to write a recap.
     wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true })),
     archive, stop,
   } } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
-  const run = generateGuide(bb, store, "target", "p1", { notify: false });
+  const run = generateGuide(alia, store, "target", "p1", { notify: false });
   await vi.waitFor(() => expect(prompt).toContain("generationId"));
   const generationId = prompt.match(/generationId "([^"]+)"/)![1];
   expect(toolFailed(await harness.behavior.callAgentTool("generate_review_guide", { targetKey: "target", generationId, guide }))).toBeFalsy();
@@ -196,7 +196,7 @@ function stoppableHost() {
   const stop = vi.fn(async () => ({}));
   const delivered: unknown[] = [];
   let waiting = false;
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "worker" }), archive, stop,
     wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => {
       waiting = true;
@@ -208,19 +208,19 @@ function stoppableHost() {
     delivered.push(input);
     return { accepted: true, id: "activity", duplicate: false, ok: true };
   } } } as any });
-  return { bb, harness, archive, stop, delivered, waiting: () => waiting };
+  return { alia, harness, archive, stop, delivered, waiting: () => waiting };
 }
 
 test("Stop mid-rebuild puts the previous guide back, ready, stops and archives the worker, and alerts no one", async () => {
-  const { bb, harness, archive, stop, delivered, waiting } = stoppableHost();
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness, archive, stop, delivered, waiting } = stoppableHost();
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", gitRef: "main", status: "ready", createdAt: 1, projectId: "p1" });
   await store.savePatch("target", "old patch");
   await store.saveGuide("target", { ...guide, title: "Before" });
   await store.backupGuide("target");
   await store.savePatch("target", "new patch");
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting()).toBe(true));
   expect((await store.getReview("target"))?.status).toBe("generating");
   expect(await harness.behavior.callRpc("stopGuide", { targetKey: "target" })).toEqual({ ok: true, restored: true });
@@ -235,11 +235,11 @@ test("Stop mid-rebuild puts the previous guide back, ready, stops and archives t
 });
 
 test("Stop on a first guide ends it with the error Stopped, and alerts no one", async () => {
-  const { bb, harness, stop, delivered, waiting } = stoppableHost();
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness, stop, delivered, waiting } = stoppableHost();
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", gitRef: "main", status: "generating", createdAt: 1, projectId: "p1" });
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting()).toBe(true));
   expect(await harness.behavior.callRpc("stopGuide", { targetKey: "target" })).toEqual({ ok: true });
   await run;
@@ -250,9 +250,9 @@ test("Stop on a first guide ends it with the error Stopped, and alerts no one", 
 });
 
 test("Stop on a review with no guide building, or an unknown one, does nothing", async () => {
-  const { bb, harness } = stoppableHost();
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = stoppableHost();
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", status: "ready", createdAt: 1 });
   expect(await harness.behavior.callRpc("stopGuide", { targetKey: "target" })).toEqual({ ok: true });
   expect(await harness.behavior.callRpc("stopGuide", { targetKey: "nope" })).toEqual({ ok: true });
@@ -265,18 +265,18 @@ test("a guide submitted after Stop is refused, and Stop doesn't say a guide was 
   let prompt = "";
   let waiting = false;
   let submit: () => Promise<unknown> = async () => {};
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async (args: { prompt: string }) => { prompt = args.prompt; return { id: "worker" }; },
     wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => { waiting = true; signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true }); }),
-    // BB takes a moment to archive the hidden writer, which is still running.
+    // VesnALIA takes a moment to archive the hidden writer, which is still running.
     archive: async () => { await submit(); return {}; },
     stop: async () => ({}),
     queuedMessages: { list: async () => [] },
   } } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", gitRef: "main", status: "generating", createdAt: 1, projectId: "p1" });
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting).toBe(true));
   const generationId = prompt.match(/generationId "([^"]+)"/)![1];
   let answer: any;
@@ -292,15 +292,15 @@ test("a guide submitted after Stop is refused, and Stop doesn't say a guide was 
 const folder = { environmentId: "env1", hostId: "h1", machine: "MaxBook", path: "/w", branch: "feat", baseRef: "main", repo: null, guideOlderThanDiff: "update" as const };
 
 test("a folder's guide older than its diff stays said so until a new guide is accepted, through a stopped rewrite", async () => {
-  const { bb, harness, waiting } = stoppableHost();
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness, waiting } = stoppableHost();
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", gitRef: "feat", status: "ready", createdAt: 1, projectId: "p1" });
   await store.setLifecycle("target", { feature: folder });
   await store.saveGuide("target", { ...guide, title: "Before" });
   await store.savePatch("target", "updated patch");
   await store.backupGuide("target");
-  const run = generateGuide(bb, store, "target", "p1");
+  const run = generateGuide(alia, store, "target", "p1");
   await vi.waitFor(() => expect(waiting()).toBe(true));
   // Stopped: the guide you had is back over the newer diff, and still says it's older.
   expect(await harness.behavior.callRpc("stopGuide", { targetKey: "target" })).toEqual({ ok: true, restored: true });
@@ -311,16 +311,16 @@ test("a folder's guide older than its diff stays said so until a new guide is ac
 
 test("a folder's guide accepted for its diff is no longer older than it", async () => {
   let prompt = "";
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async (args: { prompt: string }) => { prompt = args.prompt; return { id: "worker" }; },
     wait: ({ signal }: { signal: AbortSignal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true })),
     archive: async () => ({}), stop: async () => ({}),
   } } as any });
-  await plugin(bb);
-  const store = testStore(bb);
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "target", kind: "ref", gitRef: "feat", status: "ready", createdAt: 1 });
   await store.setLifecycle("target", { feature: folder });
-  const run = generateGuide(bb, store, "target", "p1", { notify: false });
+  const run = generateGuide(alia, store, "target", "p1", { notify: false });
   await vi.waitFor(() => expect(prompt).toContain("generationId"));
   const generationId = prompt.match(/generationId "([^"]+)"/)![1];
   // While it's written, the flag stands: the notice hides on its own, and a stop would need it.

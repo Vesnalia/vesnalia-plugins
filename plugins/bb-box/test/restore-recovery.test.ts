@@ -122,7 +122,7 @@ test("review A1: recovery does not roll back once its undo is gone; it starts th
   assert.equal(await state.snapshots.recover(), 1);
   assert.equal(readIn(state, box, "work.txt"), "latest", "nothing on its disk changed");
   assert.equal(state.store.operation(operation.id)!.state, "failed");
-  assert.match(state.store.operation(operation.id)!.error!, /Its undo "before the restore at 10:43" was not there when BB Box went on with the restore/);
+  assert.match(state.store.operation(operation.id)!.error!, /Its undo "before the restore at 10:43" was not there when ALIA Box went on with the restore/);
   assert.equal(state.store.record(operation.undo!)!.state, "lost");
   assert.equal((await current(state, box)).state, "ready");
   assert.equal((await current(state, box)).restoring ?? null, null);
@@ -286,7 +286,7 @@ test("on ZFS, a backend that cannot copy a box in full restores nothing, as its 
 
   const refused = await rejection(state.snapshots.restore(COMMAND, box, standing(box), "target"));
 
-  assert.match(refused.message, /restores only the newest snapshot, so the undo of a restore there is a full copy of the box, and Fake host cannot make one\. BB Box changed nothing\.$/);
+  assert.match(refused.message, /restores only the newest snapshot, so the undo of a restore there is a full copy of the box, and Fake host cannot make one\. ALIA Box changed nothing\.$/);
   assert.equal(state.provider.order.length, 0, "refused before the box stops");
 });
 
@@ -298,7 +298,7 @@ test("review A7: a box that was a thread's own machine, with no thread on it now
   assert.equal(answer.operation.state, "done");
 });
 
-test("review A8: no take while a restore BB Box could not confirm holds the box", async () => {
+test("review A8: no take while a restore VesnALIA Box could not confirm holds the box", async () => {
   const state = world();
   const box = await targetBox(state);
   state.provider.rollback = "unknown";
@@ -311,7 +311,7 @@ test("review A8: no take while a restore BB Box could not confirm holds the box"
 test("review A9: the access file is written once the box answers, before the backend runs any command of its own", async () => {
   const state = world();
   const box = await readyBox(state);
-  writeIn(state, box, ".config/bb-box/env", "BB_STALE=from-before\n");
+  writeIn(state, box, ".config/alia-box/env", "ALIA_STALE=from-before\n");
   await state.snapshots.take(COMMAND, box, standing(box), { name: "stale" });
   const start = state.backend.start!.bind(state.backend);
   let seenByBackend: string | null = null;
@@ -319,12 +319,12 @@ test("review A9: the access file is written once the box answers, before the bac
     start: async (guest: Guest, signal?: AbortSignal, timing?: (step: string, ms: number) => void, answered?: () => Promise<void>) =>
       start(guest, signal, timing, async () => {
         await answered?.();
-        seenByBackend = readIn(state, box, ".config/bb-box/env");
+        seenByBackend = readIn(state, box, ".config/alia-box/env");
       }),
   });
   await state.snapshots.restore(COMMAND, box, standing(box), "stale");
   assert.ok(seenByBackend !== null);
-  assert.doesNotMatch(seenByBackend!, /BB_STALE/);
+  assert.doesNotMatch(seenByBackend!, /ALIA_STALE/);
 });
 
 test("Opus 4: older undos go only once the restore is done, and --check names the one that would", async () => {
@@ -350,7 +350,7 @@ test("Opus 5: a restoring mark never outlives its operation", async () => {
   await state.boxes.update(box, () => ({ restoring: { operation: "opgonegonegone", snapshot: "sngone", name: "gone", at: state.now, ran: true } }));
   await state.snapshots.recover();
   assert.equal((await current(state, box)).restoring ?? null, null);
-  assert.ok(state.logs.some((line) => /Cleared box \S+'s mark of a restore to "gone": bb-box has no record of that restore/.test(line)));
+  assert.ok(state.logs.some((line) => /Cleared box \S+'s mark of a restore to "gone": alia-box has no record of that restore/.test(line)));
   await state.boxes.start(THREAD, box.name).catch(() => undefined);
 });
 
@@ -470,7 +470,7 @@ for (const order of [{ name: "by rollback", enter: (_state: World) => {} }, ...Z
   assert.equal(await state.snapshots.recover(), 1);
 
   assert.equal(state.store.operation(operation.id)!.state, "failed");
-  assert.match(state.store.operation(operation.id)!.error!, /started again before BB Box restored it/);
+  assert.match(state.store.operation(operation.id)!.error!, /started again before ALIA Box restored it/);
   assert.deepEqual(undosOf(state, box), []);
   assert.equal(readIn(state, box, "work.txt"), "latest");
   assert.equal((await current(state, box)).state, "ready");
@@ -543,7 +543,7 @@ async function rollbackCutShort(state: World, box: BoxRecord, outcome: TaskOutco
   return cut;
 }
 
-const PART_RESTORED = /BB Box does not roll it back again on its own\. To use it, restore it to a snapshot again, or release it\. A new restore first takes a fresh undo, of this part-restored disk\.$/;
+const PART_RESTORED = /ALIA Box does not roll it back again on its own\. To use it, restore it to a snapshot again, or release it\. A new restore first takes a fresh undo, of this part-restored disk\.$/;
 
 async function endsStoppedAndFailed(state: World, box: BoxRecord, operation: SnapshotOperation, why: RegExp, rollbacks: number): Promise<void> {
   const failed = state.store.operation(operation.id)!;
@@ -563,7 +563,7 @@ async function endsStoppedAndFailed(state: World, box: BoxRecord, operation: Sna
   assert.equal(await state.backend.power((await current(state, box)).guest!), "stopped");
 }
 
-test("with no node restart, a rollback task that failed is not rolled back again, at once or after BB Box restarts", async () => {
+test("with no node restart, a rollback task that failed is not rolled back again, at once or after VesnALIA Box restarts", async () => {
   const state = world();
   const box = await targetBox(state);
   state.provider.rollback = "failed";
@@ -582,7 +582,7 @@ test("with no node restart, a rollback task that failed is not rolled back again
 for (const cut of [
   { how: "lost by its node", outcome: NODE_LOST_IT_TOO, why: /^Its rollback was cut short when its node restarted: pve-1 restarted after Proxmox began task t1/ },
   { how: "failed as its node rebooted", outcome: FAILED_AS_THE_NODE_REBOOTED, why: /^Its rollback was cut short when its node restarted: unexpected status\./ },
-  { how: "gone from Proxmox", outcome: { state: "missing", words: "Proxmox has no task t1." } as TaskOutcome, why: /no longer has the rollback's task, so BB Box cannot tell how it ended\./ },
+  { how: "gone from Proxmox", outcome: { state: "missing", words: "Proxmox has no task t1." } as TaskOutcome, why: /no longer has the rollback's task, so ALIA Box cannot tell how it ended\./ },
 ]) {
   for (const boot of [{ nodeStartsIt: false }, { nodeStartsIt: true }]) {
     test(`G16: a rollback ${cut.how} is not rolled back again${boot.nodeStartsIt ? ", and the box its node started is stopped" : ""}: the restore fails and says what to do`, async () => {
@@ -656,7 +656,7 @@ test("G16: a rollback cut short whose box runs and will not stop keeps its resto
 
   const open = state.store.operation(operation.id)!;
   assert.equal(open.state, "unknown");
-  assert.match(open.error!, /The box was running, and BB Box could not stop it: the guest would not stop\. BB Box keeps the restore open, so nothing starts the box, and tries to stop it again at each sweep\. You can release the box\./);
+  assert.match(open.error!, /The box was running, and ALIA Box could not stop it: the guest would not stop\. ALIA Box keeps the restore open, so nothing starts the box, and tries to stop it again at each sweep\. You can release the box\./);
   assert.ok((await current(state, box)).restoring, "the box stays held");
   assert.equal(rollbacksRun(state), 1);
 
@@ -665,7 +665,7 @@ test("G16: a rollback cut short whose box runs and will not stop keeps its resto
   await endsStoppedAndFailed(state, box, operation, /^Its rollback was cut short when its node restarted/, 1);
 });
 
-test("G16: while BB Box cannot read whether the box runs, its restore stays open at every sweep with no rollback, and release ends it", async () => {
+test("G16: while VesnALIA Box cannot read whether the box runs, its restore stays open at every sweep with no rollback, and release ends it", async () => {
   const state = world();
   const box = await targetBox(state);
   const operation = await rollbackCutShort(state, box);
@@ -678,7 +678,7 @@ test("G16: while BB Box cannot read whether the box runs, its restore stays open
   for (const sweep of [1, 2, 3]) {
     assert.equal(await state.snapshots.recover(), 0, `sweep ${sweep}`);
     assert.equal(state.store.operation(operation.id)!.state, "unknown");
-    assert.match(state.store.operation(operation.id)!.error!, /BB Box could not read whether the box runs\. .+You can release the box\./);
+    assert.match(state.store.operation(operation.id)!.error!, /ALIA Box could not read whether the box runs\. .+You can release the box\./);
     assert.equal(rollbacksRun(state), 1);
   }
 
@@ -711,7 +711,7 @@ test("G16: a delete whose task the node lost, with the snapshot still on the gue
   assert.equal(state.store.unsettled().length, 0);
 });
 
-test("G16: a rollback made outside BB Box whose task the node lost is not logged, as one Proxmox has no record of", async () => {
+test("G16: a rollback made outside VesnALIA Box whose task the node lost is not logged, as one Proxmox has no record of", async () => {
   const state = world();
   const box = await readyBox(state);
   await state.snapshots.take(COMMAND, box, standing(box), { name: "one" });
@@ -771,7 +771,7 @@ for (const boot of [{ nodeStartsIt: false }, { nodeStartsIt: true }]) test(`with
 
   assert.equal(await state.snapshots.recover(), 1);
 
-  await endsStoppedAndFailed(state, box, operation, /^BB Box had no answer to its rollback and found no task for it, so it cannot tell whether a rollback began\./, 2);
+  await endsStoppedAndFailed(state, box, operation, /^ALIA Box had no answer to its rollback and found no task for it, so it cannot tell whether a rollback began\./, 2);
 });
 
 test("an unanswered first rollback sent once more, whose task is then gone, does not leave a box its node started running", async () => {
@@ -800,10 +800,10 @@ test("an unanswered first rollback is not sent again when its box is running, as
 
   assert.equal(await state.snapshots.recover(), 1);
 
-  await endsStoppedAndFailed(state, box, operation, /^Box \S+ started again while BB Box had no answer to its rollback, as a node that restarts starts its boxes\./, 1);
+  await endsStoppedAndFailed(state, box, operation, /^Box \S+ started again while ALIA Box had no answer to its rollback, as a node that restarts starts its boxes\./, 1);
 });
 
-test("a restore's recorded rollback stays BB Box's own after the restore fails: it is not reported as made outside it, though Proxmox still lists it", async () => {
+test("a restore's recorded rollback stays VesnALIA Box's own after the restore fails: it is not reported as made outside it, though Proxmox still lists it", async () => {
   const state = world();
   const box = await targetBox(state);
   const operation = await rollbackCutShort(state, box, FAILED_AS_THE_NODE_REBOOTED);
@@ -843,7 +843,7 @@ async function twoRequestsTheFirstListedLate(state: World, box: BoxRecord): Prom
   return { operation, first };
 }
 
-test("both of a restore's rollback requests are BB Box's own, though the first's answer was lost and Proxmox lists its task only after the second ended", async () => {
+test("both of a restore's rollback requests are VesnALIA Box's own, though the first's answer was lost and Proxmox lists its task only after the second ended", async () => {
   const state = world();
   const box = await targetBox(state);
   await twoRequestsTheFirstListedLate(state, box);
@@ -854,7 +854,7 @@ test("both of a restore's rollback requests are BB Box's own, though the first's
   assert.deepEqual(outsideEvents(state, box), []);
 });
 
-test("another user's rollback in the time of a restore's unanswered request is still reported as made outside BB Box", async () => {
+test("another user's rollback in the time of a restore's unanswered request is still reported as made outside VesnALIA Box", async () => {
   const state = world();
   const box = await targetBox(state);
   const { first } = await twoRequestsTheFirstListedLate(state, box);
@@ -892,7 +892,7 @@ for (const later of [
     },
   },
 ]) {
-  test(`a restore held because BB Box could not stop its box only stops it and fails at a later sweep, after BB Box restarts, though its rollback's task now reads ${later.reads}`, async () => {
+  test(`a restore held because VesnALIA Box could not stop its box only stops it and fails at a later sweep, after VesnALIA Box restarts, though its rollback's task now reads ${later.reads}`, async () => {
     const state = world();
     const box = await targetBox(state);
     const operation = await heldAsItCouldNotStop(state, box);
@@ -923,7 +923,7 @@ async function stillHeldAndRunning(state: World, box: BoxRecord, operation: Snap
   assert.equal(await state.backend.power((await current(state, box)).guest!), "running");
 }
 
-test("a restore held because BB Box could not stop its box tries to stop it at each sweep, and fails once it reads stopped, while the backend's snapshots cannot be listed", async () => {
+test("a restore held because VesnALIA Box could not stop its box tries to stop it at each sweep, and fails once it reads stopped, while the backend's snapshots cannot be listed", async () => {
   const state = world();
   const box = await targetBox(state);
   const operation = await heldAsItCouldNotStop(state, box);
@@ -953,7 +953,7 @@ function starts(state: World): number {
   return state.provider.order.filter((step) => step.startsWith("start")).length;
 }
 
-test("a restore held because BB Box could not read its box's power is never started, though its rollback's task later reads OK", async () => {
+test("a restore held because VesnALIA Box could not read its box's power is never started, though its rollback's task later reads OK", async () => {
   const state = world();
   const box = await targetBox(state);
   const operation = await rollbackCutShort(state, box, ITS_TASK_GONE);
@@ -970,7 +970,7 @@ test("a restore held because BB Box could not read its box's power is never star
   await state.restart();
   assert.equal(await state.snapshots.recover(), 1);
 
-  assert.equal(starts(state), startsBefore, "BB Box started nothing");
+  assert.equal(starts(state), startsBefore, "VesnALIA Box started nothing");
   await endsStoppedAndFailed(state, box, operation, /no longer has the rollback's task/, 1);
 });
 
@@ -992,14 +992,14 @@ function afterTheFirstStoppedRead(state: World, then: (guest: Guest) => Promise<
 for (const final of [
   {
     reads: "running, as the node started it",
-    words: /BB Box found the box running when it went to end the restore\./,
+    words: /ALIA Box found the box running when it went to end the restore\./,
     then: (state: World) => async (guest: Guest) => {
       await state.backend.start!(guest);
     },
   },
   {
-    reads: "nothing, as BB Box could not read it",
-    words: /BB Box could not read whether the box runs\./,
+    reads: "nothing, as VesnALIA Box could not read it",
+    words: /ALIA Box could not read whether the box runs\./,
     then: (state: World) => async () => {
       const read = state.backend.power;
       Object.assign(state.backend, {
@@ -1022,7 +1022,7 @@ for (const final of [
     const open = state.store.operation(operation.id)!;
     assert.equal(open.state, "unknown");
     assert.match(open.error!, final.words);
-    assert.match(open.error!, /BB Box keeps the restore open, so nothing starts the box, and tries to stop it again at each sweep\. You can release the box\./);
+    assert.match(open.error!, /ALIA Box keeps the restore open, so nothing starts the box, and tries to stop it again at each sweep\. You can release the box\./);
     const held = await current(state, box);
     assert.ok(held.restoring, "the box stays held");
     assert.notEqual(held.state, "ready");

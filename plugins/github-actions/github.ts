@@ -24,7 +24,7 @@ export function parseGithubRepo(value: string): RepoRef | null {
   return null;
 }
 
-// The BB server may not inherit a login shell PATH, so probe the usual spots.
+// The VesnALIA server may not inherit a login shell PATH, so probe the usual spots.
 const GH_CANDIDATES = [
   "gh",
   "/opt/homebrew/bin/gh",
@@ -113,7 +113,7 @@ export function createGithubClient(getToken: () => Promise<string | null>) {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "bb-plugin-github-actions",
+        "User-Agent": "alia-plugin-github-actions",
         ...init.headers,
       },
       signal: init.signal ?? AbortSignal.timeout(20_000),

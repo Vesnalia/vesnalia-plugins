@@ -1,11 +1,11 @@
-// The frontend bundle graph must not need @get-bb/plugin-sdk at build time.
+// The frontend bundle graph must not need @vesnalia/plugin-sdk at build time.
 //
 // app.tsx imports contract.ts for its shared constants, so anything contract.ts
-// imports as a *value* is pulled into the panel bundle. bb only shims the
-// "@get-bb/plugin-sdk/app" subpath, and a catalog install runs
+// imports as a *value* is pulled into the panel bundle. VesnALIA only shims the
+// "@vesnalia/plugin-sdk/app" subpath, and a catalog install runs
 // `npm install --omit=dev` before bundling — a value import of the bare SDK
 // specifier therefore breaks every install from the marketplace, while moving
-// the SDK into `dependencies` makes `bb plugin types --check` fail instead.
+// the SDK into `dependencies` makes `alia plugin types --check` fail instead.
 // Type-only imports are erased at build time and are fine.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -15,14 +15,14 @@ const pluginRoot = join(import.meta.dirname, "..", "..");
 const read = (relativePath: string): string =>
   readFileSync(join(pluginRoot, relativePath), "utf8");
 
-/** Matches `import … from "@get-bb/plugin-sdk"` but not `import type …`. */
+/** Matches `import … from "@vesnalia/plugin-sdk"` but not `import type …`. */
 const sdkValueImport =
-  /import\s+(?!type\s)[^;]*?from\s*["']@get-bb\/plugin-sdk["']/;
+  /import\s+(?!type\s)[^;]*?from\s*["']@get-alia\/plugin-sdk["']/;
 
 describe("frontend bundle graph", () => {
   it("contract.ts imports the SDK for types only", () => {
     const source = read("contract.ts");
-    expect(source).toContain("@get-bb/plugin-sdk");
+    expect(source).toContain("@vesnalia/plugin-sdk");
     expect(sdkValueImport.test(source)).toBe(false);
   });
 
@@ -31,8 +31,8 @@ describe("frontend bundle graph", () => {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
-    expect(manifest.dependencies?.["@get-bb/plugin-sdk"]).toBeUndefined();
-    expect(manifest.devDependencies?.["@get-bb/plugin-sdk"]).toBeDefined();
+    expect(manifest.dependencies?.["@vesnalia/plugin-sdk"]).toBeUndefined();
+    expect(manifest.devDependencies?.["@vesnalia/plugin-sdk"]).toBeDefined();
   });
 
   it("no panel-side module imports the SDK as a value", () => {

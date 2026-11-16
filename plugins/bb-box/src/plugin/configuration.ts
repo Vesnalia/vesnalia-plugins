@@ -1,4 +1,4 @@
-// bb-box's configuration at run time (029): the document and secrets in
+// alia-box's configuration at run time (029): the document and secrets in
 // plugin storage, and the checked writes the settings page and the CLI make.
 // Writes go one at a time: storage has no compare-and-set, so the revision
 // check and the write must not interleave.
@@ -58,7 +58,7 @@ export interface DriverView {
   readonly warmKinds: readonly string[];
   readonly fields: readonly FieldView[];
   readonly hostFields: readonly FieldView[];
-  /** Paths in bb-box's repository: the guide first, then the scripts in the order it runs them. */
+  /** Paths in alia-box's repository: the guide first, then the scripts in the order it runs them. */
   readonly setup: { readonly guide: string; readonly scripts: readonly string[]; readonly needs?: string };
   readonly several: boolean;
 }
@@ -102,7 +102,7 @@ export interface BackendState {
   readonly id: string;
   readonly type: string;
   readonly label: string;
-  /** What its boxes are, as a badge; null for a driver bb-box no longer has. */
+  /** What its boxes are, as a badge; null for a driver alia-box no longer has. */
   readonly form: BoxForm | null;
   readonly state: "active" | "off" | "misconfigured";
   readonly problems: readonly Problem[];
@@ -154,7 +154,7 @@ export interface ConfigState {
   readonly backends: readonly BackendState[];
   /** Problems with the stored document. */
   readonly problems: readonly Problem[];
-  /** The copy of BB's settings the move kept, while it is kept. */
+  /** The copy of VesnALIA's settings the move kept, while it is kept. */
   readonly migrated: { readonly at: number; readonly version: string } | null;
   readonly receipts: readonly SaveReceipt[];
   readonly setupDone: SetupDone | null;
@@ -368,7 +368,7 @@ export class Configuration {
     return had;
   }
 
-  /** The document as it leaves bb-box: no secret values. */
+  /** The document as it leaves alia-box: no secret values. */
   exported(): ConfigDocument {
     return exported(this.#document, this.#secrets, this.#deps.drivers);
   }

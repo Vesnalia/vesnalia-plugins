@@ -72,7 +72,7 @@ test("the record the build writes is the macOS image's, with kind ios, the macOS
   const python = spawnSync("python3", ["--version"]);
   if (python.status !== 0) return t.skip("no python3");
   const dir = mkdtempSync(join(tmpdir(), "ios-record-"));
-  const base = { contract: 1, image: "standard", kind: "macos", arch: "arm64", build: "build.20261022-033224-9658", built: "2026-10-22T03:32:24Z", base: null, os: "macOS 27.0", aptSnapshot: null, pins: "p", bbApp: "app", tools: { xcode: "27.0", node: "24.21.0" }, nvidia: null, layer: null, sizeGiB: null };
+  const base = { contract: 1, image: "standard", kind: "macos", arch: "arm64", build: "build.20261022-033224-9658", built: "2026-10-22T03:32:24Z", base: null, os: "macOS 27.0", aptSnapshot: null, pins: "p", aliaApp: "app", tools: { xcode: "27.0", node: "24.21.0" }, nvidia: null, layer: null, sizeGiB: null };
   writeFileSync(join(dir, "macos.json"), JSON.stringify(base));
   const sha = "b".repeat(64);
   writeFileSync(
@@ -89,14 +89,14 @@ test("the record the build writes is the macOS image's, with kind ios, the macOS
   assert.equal(made.status, 0, made.stderr);
   const record = parseImageRecord(JSON.parse(made.stdout));
   assert.ok(record);
-  assert.deepEqual([record.kind, record.base, record.build, record.pins, record.bbApp, record.tools.idb_companion, record.tools.xcode], ["ios", base.build, "build.20261026-071000-abcd", "pins", "app", "1.7.7", "27.0"]);
+  assert.deepEqual([record.kind, record.base, record.build, record.pins, record.aliaApp, record.tools.idb_companion, record.tools.xcode], ["ios", base.build, "build.20261026-071000-abcd", "pins", "app", "1.7.7", "27.0"]);
   assert.deepEqual(
     record.devices?.map((device) => [device.model, device.runtime.platform === "ios" && device.runtime.companion, "slim" in device && device.slim]),
     devices.map(([model]) => [model, "1.7.7", { list: "ios-27.0-24A434", labels: 112, sha256: sha }]),
   );
-  assert.equal(judgeImage(record, { os: "ios", pins: "pins", bbApp: "app", macosBuild: base.build, now: Date.parse("2026-10-27T00:00:00Z") }, "rebuild").status, "ok");
+  assert.equal(judgeImage(record, { os: "ios", pins: "pins", aliaApp: "app", macosBuild: base.build, now: Date.parse("2026-10-27T00:00:00Z") }, "rebuild").status, "ok");
   assert.deepEqual(record.encoders, { hardware: false, software: "openh264 2.6.0" }, "the build's VM measured its encoders (065)");
-  assert.equal(record.tools["bb-box-h264"], "openh264 2.6.0");
+  assert.equal(record.tools["alia-box-h264"], "openh264 2.6.0");
 });
 
 test("an iOS device's slimming list is read where records are read, and refused on Android devices or when malformed", () => {
@@ -115,12 +115,12 @@ test("an iOS device's slimming list is read where records are read, and refused 
 
 test("an iOS image with no devices fails the doctor, and one with a stock device warns", () => {
   const record = parseImageRecord({ contract: 1, image: "standard", kind: "ios", arch: "arm64", build: "b", built: new Date().toISOString(), base: "m", os: "macOS 27.0", pins: "p", tools: {} })!;
-  const none = judgeImage(record, { os: "ios", pins: null, bbApp: null, macosBuild: "m" }, "rebuild");
+  const none = judgeImage(record, { os: "ios", pins: null, aliaApp: null, macosBuild: "m" }, "rebuild");
   assert.equal(none.status, "fail");
   assert.match(none.detail, /It offers no iOS devices in its record/);
   const runtime = { platform: "ios", os: "27.0", build: "24A434", xcode: "27.0", companion: "1.7.7" };
   const stock = parseImageRecord({ ...record, devices: [{ model: "iPhone 17", native: "x", runtime }] })!;
-  const judged = judgeImage(stock, { os: "ios", pins: null, bbApp: null, macosBuild: "m" }, "rebuild");
+  const judged = judgeImage(stock, { os: "ios", pins: null, aliaApp: null, macosBuild: "m" }, "rebuild");
   assert.equal(judged.status, "warn");
   assert.match(judged.detail, /iPhone 17 is not slimmed, so it takes about 1 GiB more memory/);
 });
@@ -159,7 +159,7 @@ test("the image's additions install device-host and its carried slots, and leave
   const host = read("host-ios.sh");
   assert.match(host, /"\$helper" install/);
   assert.match(host, /"\$helper" carry/);
-  assert.doesNotMatch(host, /bb-machines|bb-app/, "the image keeps no BB app for the slots, as it is stale after BB's next update; BB Box keeps the server's on each host (F-8)");
+  assert.doesNotMatch(host, /alia-machines|alia-app/, "the image keeps no VesnALIA app for the slots, as it is stale after VesnALIA's next update; VesnALIA Box keeps the server's on each host (F-8)");
   assert.doesNotMatch(host, /"\$helper" init/, "settings are a snapshot taken when a host is made, so the image writes none");
   assert.match(read("build-ios.sh"), /sudo -n \/bin\/sh "\$here\/host-ios\.sh" "\$here" "\$\(id -un\)"/);
   assert.match(readFileSync(join(SETUP, "tart", "prepare-ios-image.sh"), "utf8"), /-C "\$here\/\.\.\/ssh-pool" mac-home\/\.zshenv/, "the slots' home is the pool's");
@@ -190,7 +190,7 @@ test("a slot's clipboard: the image's check and the pool's setup run one script 
   assert.match(check, /said=\$\(keyboard_defaults_hold "\$udid" as_slot\)/, "a carried slot's device is read as its own user, with the image devices' check (F-23)");
   assert.match(check, /sudo -n "\$slot_clipboard" "\$user" "\$udid"/);
   assert.match(check, /as_slot shutdown "\$udid"/, "the carried slot's device is shut down again, as the image keeps it");
-  assert.match(read("build-ios.sh"), /sudo install -m 0755 "\$here\/slot-clipboard\.sh" \/usr\/local\/libexec\/bb-box\/slot-clipboard/);
+  assert.match(read("build-ios.sh"), /sudo install -m 0755 "\$here\/slot-clipboard\.sh" \/usr\/local\/libexec\/alia-box\/slot-clipboard/);
 
   const pool = readFileSync(join(SETUP, "ssh-pool", "mac-ios.sh"), "utf8");
   assert.match(pool, /for file in [^;]*slot-clipboard\.sh/);

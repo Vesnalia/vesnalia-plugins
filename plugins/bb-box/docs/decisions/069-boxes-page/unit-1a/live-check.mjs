@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
 
-const base = process.env.LIVE_BB ?? "http://127.0.0.1:38990";
+const base = process.env.LIVE_ALIA ?? "http://127.0.0.1:38990";
 const label = process.argv[2] ?? "run";
 const shots = join(process.env.LIVE_SHOTS ?? join(process.cwd(), "shots"), label);
 const thread = process.env.LIVE_THREAD;
@@ -14,7 +14,7 @@ const results = { label, menus: {}, effects: [] };
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function rpc(method, input = null) {
-  const response = await fetch(`${base}/api/v1/plugins/bb-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch(`${base}/api/v1/plugins/alia-box/rpc/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
   const body = await response.json();
   if (!body.ok) throw new Error(body.error?.message ?? JSON.stringify(body));
   return body.result;
@@ -121,7 +121,7 @@ async function boxPanel() {
 }
 
 async function boxesPage(tab) {
-  await page.goto(`${base}/plugins/bb-box/desktop`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/plugins/alia-box/desktop`, { waitUntil: "domcontentloaded" });
   const tabs = page.getByRole("tab", { name: new RegExp(`^${tab === "machines" ? "Machines" : "Threads"}`) });
   await tabs.or(page.getByRole("button", { name: new RegExp(`^${tab === "machines" ? "Machines" : "Threads"}\\s*\\d`) })).first().click();
   await page.getByRole("button", { name: `${tab === "machines" ? names.machine : names.threadBox} actions`, exact: true }).waitFor();
@@ -254,7 +254,7 @@ async function machineItems() {
 }
 
 async function settingsMenus() {
-  await page.goto(`${base}/settings/plugins/bb-box`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${base}/settings/plugins/alia-box`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-page-heading]").first().waitFor();
   await pause(1500);
   const menus = await page.getByRole("button", { name: / actions$/ }).evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label")));

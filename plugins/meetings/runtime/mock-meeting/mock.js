@@ -1,4 +1,4 @@
-// Mock Zoom meeting for the bot's end-to-end test and `bb meetings selftest`
+// Mock Zoom meeting for the bot's end-to-end test and `alia meetings selftest`
 // (docs/dev/DESIGN.md §6.3). It copies the Zoom web-client DOM the bot reads
 // (pre-join form, tiles, footer, end modal), exposes a Redux-like store
 // through a React-style container key, and plays a script of utterances. Each

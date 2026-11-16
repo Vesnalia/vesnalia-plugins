@@ -52,7 +52,7 @@ const messages = defineMessages(
     wholeDocument: "Whole document",
     commentWhole: "Comment on the whole document",
     emptyWeb:
-      "Open the site in bb's browser in the desktop app and press Review beside the address bar to comment on its pages.",
+      "Open the site in VesnALIA's browser in the desktop app and press Review beside the address bar to comment on its pages.",
     emptySheet: "Click a cell or drag over a range to comment on it.",
     emptyHtml:
       "Select text to comment on it. Switch to Element to click a block, button, or picture, or to Draw to mark up the page.",
@@ -89,7 +89,7 @@ const messages = defineMessages(
     wholeDocument: "Весь документ",
     commentWhole: "Комментарий ко всему документу",
     emptyWeb:
-      "Откройте сайт во встроенном браузере bb в приложении для компьютера и нажмите «Ревью» рядом с адресной строкой, чтобы комментировать его страницы.",
+      "Откройте сайт во встроенном браузере alia в приложении для компьютера и нажмите «Ревью» рядом с адресной строкой, чтобы комментировать его страницы.",
     emptySheet: "Нажмите на ячейку или протяните по диапазону, чтобы прокомментировать.",
     emptyHtml:
       "Выделите текст, чтобы прокомментировать его. В режиме «Элемент» можно нажать на блок, кнопку или картинку, в режиме «Рисовать» — размечать страницу.",

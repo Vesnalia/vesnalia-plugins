@@ -2,7 +2,7 @@
 import { useWorkspaces, useSelectedWorkspace } from "./workspace-client";
 import { inWorkspace } from "./workspaces";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { experimental_useSidebarThreads as useSidebarThreads, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_useSidebarThreads as useSidebarThreads, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { DigestItem, rpcContract } from "./server";
 import { useSidebarThreadActions } from "./thread-actions";
 import type { Leftover } from "./leftovers";
@@ -217,7 +217,7 @@ export function DigestSection() {
 
 // --- settings: area-section → tag migration ---------------------------------------
 
-// Worktree checkouts bb no longer tracks (see leftovers.ts). Shown only when there are some.
+// Worktree checkouts VesnALIA no longer tracks (see leftovers.ts). Shown only when there are some.
 function LeftoversBlock() {
   const rpc = useRpc<typeof rpcContract>();
   const [report, setReport] = useState<{ checkedAt: number; items: Leftover[] } | null>(null);
@@ -234,7 +234,7 @@ function LeftoversBlock() {
       <div className="flex items-center gap-2 text-sm">
         <span className="font-medium">Leftover worktrees</span>
         <span className="text-muted-foreground">
-          {report.items.length} checkout(s) bb no longer tracks · checked {formatWhen(report.checkedAt)}
+          {report.items.length} checkout(s) VesnALIA no longer tracks · checked {formatWhen(report.checkedAt)}
         </span>
         {safe.length > 0 ? (
           <Button size="sm" variant="outline" className="ml-auto" onClick={() => setConfirming(true)}>

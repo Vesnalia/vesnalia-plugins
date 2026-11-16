@@ -2,23 +2,23 @@
 okf_version: "0.2"
 type: Contract
 title: Provider usage panel и provider-usage.v1
-description: Как Kimi usage с host bridge попадает в федеративную панель bb Provider usage на локальных и enrolled hosts.
+description: Как Kimi usage с host bridge попадает в федеративную панель VesnALIA Provider usage на локальных и enrolled hosts.
 status: verified
 stale_after: 2027-02-09
-tags: [bb, provider, usage, quota, rpc]
+tags: [VesnALIA, provider, usage, quota, rpc]
 sources:
   - id: zcode-federation
     resource: https://github.com/dpolishuk/bb-zcode/commit/bb83d180d5bfa03ec3dace038445ad260bea792d
-    title: bb-zcode — регистрация provider-usage.v1 для панели
+    title: alia-zcode — регистрация provider-usage.v1 для панели
     author: team:dpolishuk
   - id: acp-source
     resource: https://github.com/get-bb/bb/tree/3572d271032c04dc7287b66e6638c8fea9acb8b7/plugins/provider-acp/src
-    title: bb provider-acp — актуальные usage-contract и usage-source
-    author: team:get-bb
+    title: VesnALIA provider-acp — актуальные usage-contract и usage-source
+    author: team:get-alia
   - id: panel-contract
     resource: https://github.com/get-bb/bb/blob/3572d271032c04dc7287b66e6638c8fea9acb8b7/plugins/provider-usage/usage-source-contract.ts
-    title: bb provider-usage — wire contract панели
-    author: team:get-bb
+    title: VesnALIA provider-usage — wire contract панели
+    author: team:get-alia
 generated: { by: kimi-code, at: "2026-11-09" }
 verified: { by: kimi-code, at: "2026-11-09" }
 ---
@@ -30,8 +30,8 @@ verified: { by: kimi-code, at: "2026-11-09" }
 она федеративно обнаруживает server-side RPC
 `provider-usage.v1.listResources` и читает ресурсы через
 `provider-usage.v1.getResource`. Оба метода регистрируются с
-`experimental_discoverable: true`. Это подтверждено исправлением bb-zcode
-`bb83d18` и актуальным контрактом bb.[^zcode-federation][^panel-contract]
+`experimental_discoverable: true`. Это подтверждено исправлением alia-zcode
+`bb83d18` и актуальным контрактом VesnALIA.[^zcode-federation][^panel-contract]
 
 # Поток данных Kimi
 
@@ -44,7 +44,7 @@ verified: { by: kimi-code, at: "2026-11-09" }
 Измерение идёт по пути server → `system.usageLimits({hostId, providerId,
 refresh})` → daemon `provider/usage` → существующий `readKimiUsage` на том
 host. Поэтому OAuth credentials остаются на машине пользователя, а enrolled
-hosts работают без копирования секретов на bb server.
+hosts работают без копирования секретов на VesnALIA server.
 
 # Маппинг и lifecycle
 
@@ -69,9 +69,9 @@ hosts работают без копирования секретов на bb se
 concurrency, stale resources и failure states. Live-тест
 `kimi-live.maintenance.test.ts` подтверждает реальный host-side
 `provider/usage`. После установки PR branch визуальная проверка подтвердила
-ресурс Kimi Code в **Settings → Provider usage**. В daemon bb использовался
+ресурс Kimi Code в **Settings → Provider usage**. В daemon VesnALIA использовался
 просроченный OAuth credential, поэтому панель показала корректный expired
 state; отображение live-окон в панели в этой проверке не выполнялось.
 
-[^zcode-federation]: bb-zcode, commit `bb83d180d5bfa03ec3dace038445ad260bea792d`.
-[^panel-contract]: get-bb/bb, commit `3572d271032c04dc7287b66e6638c8fea9acb8b7`.
+[^zcode-federation]: alia-zcode, commit `bb83d180d5bfa03ec3dace038445ad260bea792d`.
+[^panel-contract]: get-alia/alia, commit `3572d271032c04dc7287b66e6638c8fea9acb8b7`.

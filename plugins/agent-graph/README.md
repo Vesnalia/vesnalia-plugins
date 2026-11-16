@@ -1,6 +1,6 @@
-# Agent Graph for bb
+# Agent Graph for VesnALIA
 
-See what every [bb](https://getbb.app) agent is doing, as a live map.
+See what every [VesnALIA](https://getbb.app) agent is doing, as a live map.
 
 Agent Graph draws your projects, threads, turns, tool calls, subagents and
 workflow agents as a graph that updates while agents work. Instead of scrolling
@@ -14,22 +14,22 @@ Inspired by the Agent Graph in GitKraken's
 
 ## Install
 
-In bb, open **Extensions**, search for **Agent Graph** and click Install.
+In VesnALIA, open **Extensions**, search for **Agent Graph** and click Install.
 
 Or from a terminal:
 
 ```sh
-bb plugin install agent-graph
+alia plugin install agent-graph
 ```
 
 The marketplace listing is pending review. Until it's approved, install
 straight from this repository:
 
 ```sh
-bb plugin install https://github.com/nathancolgate/bb-plugin-agent-graph.git
+alia plugin install https://github.com/nathancolgate/bb-plugin-agent-graph.git
 ```
 
-Requires bb 0.41 or newer.
+Requires VesnALIA 0.41 or newer.
 
 ## How it works
 
@@ -94,9 +94,9 @@ graph remembers your choice.
 ### From the command line
 
 ```sh
-bb agent-graph                  # every recently active thread
-bb agent-graph --thread <id>    # one thread, its turns, subagents and child threads
-bb agent-graph --json           # machine-readable output
+alia agent-graph                  # every recently active thread
+alia agent-graph --thread <id>    # one thread, its turns, subagents and child threads
+alia agent-graph --json           # machine-readable output
 ```
 
 This prints the same graph as a text tree, so agents can check what their
@@ -122,7 +122,7 @@ happening now. Long runs of tool calls fold into "+N earlier steps".
 
 ## Settings
 
-Open **Settings → Agent Graph**, or use `bb plugin config agent-graph`:
+Open **Settings → Agent Graph**, or use `alia plugin config agent-graph`:
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
@@ -135,12 +135,12 @@ Changes apply right away.
 
 ## Privacy and permissions
 
-- Agent Graph reads your threads, projects and timelines through the bb plugin
+- Agent Graph reads your threads, projects and timelines through the VesnALIA plugin
   SDK. It never sends them anywhere else and makes no outside network requests.
 - It has no secrets or API keys.
 - It stores only a few view preferences (color mode, graph scope, the thread
   you last chatted with) in your browser's local storage.
-- Chatting beside the graph uses bb's own chat component, with the thread's
+- Chatting beside the graph uses VesnALIA's own chat component, with the thread's
   normal permission settings.
 
 ## Troubleshooting
@@ -157,10 +157,10 @@ Changes apply right away.
 
 ```sh
 git clone https://github.com/nathancolgate/bb-plugin-agent-graph.git
-cd bb-plugin-agent-graph
+cd alia-plugin-agent-graph
 npm install
-bb plugin install .   # install from this folder
-bb plugin dev         # rebuild and reload on every save
+alia plugin install .   # install from this folder
+alia plugin dev         # rebuild and reload on every save
 ```
 
 Checks:
@@ -175,7 +175,7 @@ Code map:
 
 | File | What it does |
 | --- | --- |
-| `server.ts` | Builds the graph from bb thread timelines, pushes live updates, and adds the `bb agent-graph` command |
+| `server.ts` | Builds the graph from VesnALIA thread timelines, pushes live updates, and adds the `alia agent-graph` command |
 | `timeline.ts` | Groups timeline rows into turns |
 | `layout.ts` | Lays out the tree and folds long runs of tool calls |
 | `graph.tsx` | The graph view: cards, edges, pan and zoom, details panel |

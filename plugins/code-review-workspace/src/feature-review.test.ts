@@ -45,7 +45,7 @@ function setup(folder: Folder = { files: [{ path: "src/a.ts", body: BODY }] }, t
     ...threads,
   };
   const spawns: unknown[] = [];
-  /** Threads BB fails to read, as when it's busy: not a 404. */
+  /** Threads VesnALIA fails to read, as when it's busy: not a 404. */
   const failing = new Set<string>();
   const host = folderHost(folder, { threads: {
     get: async ({ threadId }: { threadId: string }) => {
@@ -59,7 +59,7 @@ function setup(folder: Folder = { files: [{ path: "src/a.ts", body: BODY }] }, t
     spawn: async (args: unknown) => { spawns.push(args); throw new Error("fixture worker"); },
     archive: async () => ({}), stop: async () => ({}), wait: async () => ({}),
   } });
-  const store = testStore(host.bb);
+  const store = testStore(host.alia);
   const ghCalls: string[][] = [];
   /** The PR as gh pr view gives it. */
   const view: Record<string, unknown> = { number: 7, title: "Snooze flaky checks for a day", author: { login: "me" }, baseRefName: "main", headRefName: "feat/qa", url: "https://github.com/acme/api/pull/7", headRefOid: "c0ffee", state: "OPEN" };
@@ -72,7 +72,7 @@ function setup(folder: Folder = { files: [{ path: "src/a.ts", body: BODY }] }, t
   const changed = vi.fn();
   /** How reading GitHub goes, as the sync says. */
   const health: SyncHealth = { lastReadAt: null, error: null };
-  const deps = { bb: host.bb, store, gh: { runGh, runGit: vi.fn() }, changed, sync: { one: vi.fn(async () => {}), health: () => health } };
+  const deps = { alia: host.alia, store, gh: { runGh, runGit: vi.fn() }, changed, sync: { one: vi.fn(async () => {}), health: () => health } };
   return { ...host, store, spawns, deps, all, ghCalls, folder, failing, view, health };
 }
 const key = featureKey("env1", "feat/qa");
@@ -197,7 +197,7 @@ test("a live thread in the folder replaces an archived main thread", async () =>
   expect(review?.sourceThreadId).toBe("other");
 });
 
-test("a thread BB can't read now changes nothing: an existing review keeps its main thread, and a first run starts none", async () => {
+test("a thread VesnALIA can't read now changes nothing: an existing review keeps its main thread, and a first run starts none", async () => {
   const s = setup();
   await run(s, "main");
   // Its main thread can't be read: whether it's archived is unknown, so it isn't replaced.
@@ -207,23 +207,23 @@ test("a thread BB can't read now changes nothing: an existing review keeps its m
   expect((await s.store.getReview(key))?.mainThread?.threadId).toBe("main");
   // A subagent whose parent can't be read: the review opens as it is.
   const sub = await run(s, "sub");
-  expect(sub.stdout).toContain("Its main thread is main, as before: BB couldn’t say which thread leads the work here now.");
+  expect(sub.stdout).toContain("Its main thread is main, as before: VesnALIA couldn’t say which thread leads the work here now.");
   expect((await s.store.getReview(key))?.mainThread?.threadId).toBe("main");
 
   // With no review yet, it says so and starts none.
   const fresh = setup();
   fresh.failing.add("main");
-  expect(await run(fresh, "sub")).toEqual({ exitCode: 1, stderr: "Couldn’t tell which thread leads the work in this folder: BB didn’t answer for one of this thread’s parents. Try again in a moment." });
+  expect(await run(fresh, "sub")).toEqual({ exitCode: 1, stderr: "Couldn’t tell which thread leads the work in this folder: VesnALIA didn’t answer for one of this thread’s parents. Try again in a moment." });
   expect(await fresh.store.listReviews()).toEqual([]);
 });
 
-test("a main thread with no title yet names the review as BB shows it, as the command's output does", async () => {
+test("a main thread with no title yet names the review as VesnALIA shows it, as the command's output does", async () => {
   const s = setup(undefined, { main: { id: "main", environmentId: "env1", title: null, titleFallback: "Snooze the flaky checks for a day" } });
   expect((await run(s, "main")).stdout).toContain(`Its main thread is "Snooze the flaky checks for a day" (main)`);
   expect((await s.store.getReview(key))?.title).toBe("Snooze the flaky checks for a day");
 });
 
-test("the walk up a thread's parents ends at one BB no longer has, and at a cycle", async () => {
+test("the walk up a thread's parents ends at one VesnALIA no longer has, and at a cycle", async () => {
   const missing = setup(undefined, { lost: { id: "lost", environmentId: "env1", parentThreadId: "deleted-for-good", title: "Lost parent" } });
   expect((await run(missing, "lost")).stdout).toContain(`Its main thread is "Lost parent" (lost)`);
   const cycle = setup(undefined, {
@@ -268,7 +268,7 @@ test("a branch switch pauses the review, Update waits, and switching back resume
 });
 
 /**
- * The folder's git, as bb's Git plugin answers: its head, which commits it has, whether its old branch is still there,
+ * The folder's git, as VesnALIA's Git plugin answers: its head, which commits it has, whether its old branch is still there,
  * and whether its base has the branch's commits (merged into it), so none are the head's own since the base; and its
  * base on GitHub, origin/main: the same, or merged where the local base isn't yet.
  */
@@ -295,13 +295,13 @@ test("a branch renamed in its folder is followed: the same review, its old branc
   expect((await checkFeature(s.deps, key)).state).toBe("current");
   const review = (await s.store.getReview(key))!;
   expect(review).toMatchObject({ gitRef: "feat/nice", feature: { branch: "feat/nice", pausedOn: null, headSha: git.head }, followed: { from: "feat/qa", branch: "feat/nice", at: expect.any(Number) } });
-  // bb review there opens it, by its key; its id is the new branch's.
+  // VesnALIA review there opens it, by its key; its id is the new branch's.
   expect((await run(s, "main")).stdout).toContain(`Opened the review of ~/src/api on MaxBook: api:feat/nice "Snooze flaky checks" (${key})`);
   expect((await s.store.listReviews()).map((r) => r.targetKey)).toEqual([key]);
   // Its id from before still names it, after Got it too.
-  expect(await reviewNamed(s.store, s.bb, "api:feat/qa")).toMatchObject({ targetKey: key });
+  expect(await reviewNamed(s.store, s.alia, "api:feat/qa")).toMatchObject({ targetKey: key });
   await s.store.setLifecycle(key, { followed: null });
-  expect(await reviewNamed(s.store, s.bb, "api:feat/qa")).toMatchObject({ targetKey: key });
+  expect(await reviewNamed(s.store, s.alia, "api:feat/qa")).toMatchObject({ targetKey: key });
 });
 
 test("a branch with no commits of its own, at its base, renamed is followed too: it can't have been merged", async () => {
@@ -367,7 +367,7 @@ test("a branch merged into its base and deleted, then a new one made from the ba
 
 test("a branch made from the review's (checkout -b), or one without its last commit, pauses it, with Follow and New review for that branch", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   const git = renaming(s);
   await run(s, "main");
   await settled(s);
@@ -389,12 +389,12 @@ test("a branch made from the review's (checkout -b), or one without its last com
   expect(await s.store.getReview(key)).toMatchObject({ gitRef: "feat/nice", feature: { branch: "feat/nice", pausedOn: null } });
   expect((await s.store.getReview(key))?.followed).toBeUndefined();
   expect((await checkFeature(s.deps, key)).state).toBe("current");
-  // Back on the old branch, which this review no longer is, bb review starts its own.
+  // Back on the old branch, which this review no longer is, VesnALIA review starts its own.
   s.folder.env = { ...s.folder.env, branchName: "feat/qa" };
   expect((await run(s, "main")).stdout).toMatch(/^Started a review/);
   expect((await s.store.listReviews()).map((r) => r.targetKey).sort()).toEqual([key, featureKey("env1", "feat/qa", 2)].sort());
   // The old branch's id names both: that review's now, and the one that followed off it.
-  expect(await reviewNamed(s.store, s.bb, "api:feat/qa")).toEqual({ ambiguous: `\`api:feat/qa\` names 2 reviews: \`api:feat/qa\` in ~/src/api on MaxBook (${featureKey("env1", "feat/qa", 2)}), \`api:feat/nice\` in ~/src/api on MaxBook (${key}). Use one's key or link.` });
+  expect(await reviewNamed(s.store, s.alia, "api:feat/qa")).toEqual({ ambiguous: `\`api:feat/qa\` names 2 reviews: \`api:feat/qa\` in ~/src/api on MaxBook (${featureKey("env1", "feat/qa", 2)}), \`api:feat/nice\` in ~/src/api on MaxBook (${key}). Use one's key or link.` });
   // That one can't follow onto a branch with a review.
   s.folder.env = { ...s.folder.env, branchName: "feat/nice" };
   expect(await s.harness.behavior.callRpc("followFolderBranch", { targetKey: featureKey("env1", "feat/qa", 2) })).toMatchObject({ ok: false });
@@ -406,7 +406,7 @@ test("a branch made from the review's (checkout -b), or one without its last com
 
 test("Got it stops the warning about a committed file that looks like a secret, in this review", async () => {
   const s = setup({ files: [{ path: "src/a.ts", body: BODY }, { path: "config/.env.production", origin: "tracked" }] });
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   expect((await checkFeature(s.deps, key)).flagged).toEqual(["config/.env.production"]);
@@ -562,7 +562,7 @@ test("a PR whose head is the name a thread pushed the branch under makes the rev
 test("a PR from another branch, as a stacked branch's upstream, waits for Make it PR #7's review: never converted or merged on its own", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   s.view.headRefName = "part1";
@@ -610,7 +610,7 @@ test("a PR's review with its folder says how many files there aren't on GitHub y
 
 test("each read of Not pushed yet keeps what it showed, and a comment there follows its line", async () => {
   const s = setup({ files: [{ path: "src/a.ts", body: BODY }, { path: "src/b.ts" }] });
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   await s.store.upsertDraftComment(key, { file: "src/b.ts", line: 1, side: "RIGHT", body: "Not pushed" });
@@ -670,7 +670,7 @@ test("a thread on an open PR's branch that the plugin reviews already joins that
 test("Review changes on the PR's branch joins its review too, and says so, for the page to open on Not pushed yet; your archive gives it back", async () => {
   const s = setup({ files: [{ path: "src/a.ts", body: BODY }], ...onPr, answers: hasHead() });
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await reviewedPr(s, {}, { userArchivedAt: 5 });
   expect(await s.harness.behavior.callRpc("reviewThreadChanges", { threadId: "sub" })).toEqual({ ok: true, targetKey: prKey, joined: true });
   expect(await s.store.getReview(prKey)).toMatchObject({ userArchivedAt: null, mainThread: { threadId: "sub" }, feature: { environmentId: "env1", joinedAt: expect.any(Number) } });
@@ -743,9 +743,9 @@ test("Update on a PR's review with its folder reads the PR at its new head, with
   expect(s.spawns).toHaveLength(spawns);
 });
 
-test("once it's the PR's, the review answers to its old id as to its new one: bb review opens it as it is, and ready, comment and summary find it", async () => {
+test("once it's the PR's, the review answers to its old id as to its new one: VesnALIA review opens it as it is, and ready, comment and summary find it", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   Object.assign(s.folder, { prBase: "main", pr: { number: 7, url: "https://github.com/acme/api/pull/7", headRefName: "feat/qa" } });
@@ -765,21 +765,21 @@ test("once it's the PR's, the review answers to its old id as to its new one: bb
 
 test("of the reviews one id names, one not archived opens, else the newest; two not archived are named back, each with its folder, machine and key, by every command", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   const review = (targetKey: string, createdAt: number, archivedAt?: number, path = "/Users/me/src/api", machine = "MaxBook") => s.store.saveReview({ targetKey, kind: "ref", gitRef: "feat/qa", status: "ready", createdAt })
     .then(() => s.store.setLifecycle(targetKey, { feature: { environmentId: targetKey, hostId: "host_max", machine, path, branch: "feat/qa", baseRef: "main", repo: "acme/api" }, ...archivedAt ? { archivedAt } : {} }));
   await review("br-old", 1, 2);
   await review("br-new", 3, 4);
   await review("br-mid", 2);
-  expect(await reviewNamed(s.store, s.bb, "api:feat/qa")).toMatchObject({ targetKey: "br-mid" });
+  expect(await reviewNamed(s.store, s.alia, "api:feat/qa")).toMatchObject({ targetKey: "br-mid" });
   await s.store.setLifecycle("br-mid", { archivedAt: 5 });
-  expect(await reviewNamed(s.store, s.bb, "api:feat/qa")).toMatchObject({ targetKey: "br-new" });
+  expect(await reviewNamed(s.store, s.alia, "api:feat/qa")).toMatchObject({ targetKey: "br-new" });
 
   // Two not archived, in two folders on two machines: neither, silently.
   await review("br-other", 6, undefined, "/Users/me/src/api-2", "MiniPC");
   await s.store.setLifecycle("br-mid", { archivedAt: null });
   const ambiguous = "`api:feat/qa` names 2 reviews: `api:feat/qa (api-2)` in ~/src/api-2 on MiniPC (br-other), `api:feat/qa (api)` in ~/src/api on MaxBook (br-mid). Use one's key or link.";
-  expect(await reviewNamed(s.store, s.bb, "api:feat/qa")).toEqual({ ambiguous });
+  expect(await reviewNamed(s.store, s.alia, "api:feat/qa")).toEqual({ ambiguous });
   for (const argv of [["api:feat/qa"], ["ready", "api:feat/qa"], ["ask", "api:feat/qa", "Why?"], ["approve", "api:feat/qa"], ["comment", "list", "api:feat/qa"], ["summary", "api:feat/qa"]]) {
     const result = await s.harness.behavior.runCli(argv, {});
     expect(result.exitCode, argv.join(" ")).toBe(1);
@@ -787,7 +787,7 @@ test("of the reviews one id names, one not archived opens, else the newest; two 
   }
 });
 
-test("bb review on a branch used again once its PR merged, or closed and went to Archive, starts a new review; a closed PR's review still in the list opens", async () => {
+test("alia review on a branch used again once its PR merged, or closed and went to Archive, starts a new review; a closed PR's review still in the list opens", async () => {
   const s = setup();
   await run(s, "main");
   await settled(s);
@@ -872,7 +872,7 @@ test("a PR another thread in the folder opened makes the review the PR's once th
   s.harness.inspection.sdk.stub("threads.events.list", async () => [
     { id: "e1", seq: 4, threadId: "other", scope: {}, type: "item/completed", data: { item: { type: "commandExecution", id: "i1", command: "gh pr create --draft --fill", cwd: "/Users/me/src/api", status: "completed" } } },
   ]);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   Object.assign(s.folder, { prBase: "main", pr: { number: 7, url: "https://github.com/acme/api/pull/7", headRefName: "feat/qa", state: "draft" } });
@@ -975,7 +975,7 @@ test("a merge that fails as the review becomes the PR's leaves it as it was, loc
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
   await s.store.saveReview({ targetKey: prKey, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", status: "tracked", createdAt: 1 });
   const before = { review: await s.store.getReview(key), patch: await s.store.patch(key), draft: await s.store.getDraft(key) };
-  const sql = testSql(s.bb);
+  const sql = testSql(s.alia);
   const dropping: typeof sql = { ...sql, run: (text, params) => /INSERT INTO feedback_threads/.test(text) ? Promise.reject(new Error("Connection terminated unexpectedly")) : sql.run(text, params) };
   const failing = { ...s.deps, store: queueStore(storeOn(dropping)) };
   await expect(becomePr(failing, key, { repo: "acme/api", number: 7 })).rejects.toThrow("Connection terminated unexpectedly");
@@ -993,7 +993,7 @@ test("a merge that fails as the review becomes the PR's leaves it as it was, loc
   await t.store.saveReview({ targetKey: prKey, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", status: "ready", createdAt: 1 });
   await t.store.upsertDraftComment(prKey, { file: "src/a.ts", line: 2, side: "RIGHT", body: "Theirs" });
   expect(await becomePr(t.deps, key, { repo: "acme/api", number: 7 })).toBe("offered");
-  const tSql = testSql(t.bb);
+  const tSql = testSql(t.alia);
   const tDropping: typeof tSql = { ...tSql, run: (text, params) => /INSERT INTO feedback_threads/.test(text) ? Promise.reject(new Error("Connection terminated unexpectedly")) : tSql.run(text, params) };
   await expect(becomePr({ ...t.deps, store: queueStore(storeOn(tDropping)) }, key, { repo: "acme/api", number: 7 }, "merge")).rejects.toThrow("Connection terminated unexpectedly");
   expect(await t.store.getReview(key)).toMatchObject({ kind: "ref", prOffer: { key: prKey } });
@@ -1060,7 +1060,7 @@ test("two folders on one branch: the PR's review that began as the first folder'
   const kept = (await s.store.getReview(key))!;
   expect(kept).toMatchObject({ kind: "pr", mainThread: { threadId: "main" }, implementers: [{ threadId: "other2" }], mergedFrom: [{ key: second, id: "api:feat/qa" }] });
   expect(kept.mergedFrom).toHaveLength(1);
-  // bb review in the second folder opens the review it went into, not a new one.
+  // VesnALIA review in the second folder opens the review it went into, not a new one.
   const reviews = (await s.store.listReviews()).length;
   const opened = await run(s, "other2");
   expect(opened.stdout).toContain(`Opened the review of ~/src/api on MaxBook: api#7`);
@@ -1079,7 +1079,7 @@ test("two folders on one branch: the PR's review that began as the first folder'
 test("Merge into one review works from either review's page; a PR opened before the review takes Make it PR #7's review, or Not this one", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1094,7 +1094,7 @@ test("Merge into one review works from either review's page; a PR opened before 
   const t = setup();
   vi.mocked(runGh).mockImplementation(t.deps.gh.runGh as any);
   t.folder.answers = { workspaceStatus: () => ({ outcome: "available", workspace: { mergeBase: { aheadCount: 1, behindCount: 2, commits: [] } } }) };
-  await plugin(t.bb);
+  await plugin(t.alia);
   await run(t, "main");
   await settled(t);
   t.view.createdAt = new Date(Date.now() - 86_400_000).toISOString();
@@ -1114,7 +1114,7 @@ test("Make it PR #7's review of a PR closed or merged since Not this one says so
   for (const [state, said] of [["CLOSED", "closed"], ["MERGED", "merged"]]) {
     const s = setup();
     vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-    await plugin(s.bb);
+    await plugin(s.alia);
     await run(s, "main");
     await settled(s);
     s.view.createdAt = new Date(Date.now() - 86_400_000).toISOString();
@@ -1132,7 +1132,7 @@ test("Make it PR #7's review of a PR from another branch closed or merged since 
   for (const [state, said] of [["CLOSED", "closed"], ["MERGED", "merged"]]) {
     const s = setup();
     vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-    await plugin(s.bb);
+    await plugin(s.alia);
     await run(s, "main");
     await settled(s);
     s.view.headRefName = "part1";
@@ -1151,7 +1151,7 @@ test("Merge into one review with a PR closed or merged since says so, and its of
   for (const [state, said, kept] of [["CLOSED", "closed", false], ["MERGED", "merged", true]] as const) {
     const s = setup();
     vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-    await plugin(s.bb);
+    await plugin(s.alia);
     await run(s, "main");
     await settled(s);
     const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1175,7 +1175,7 @@ test("Merge into one review with a PR closed or merged since says so, and its of
 test("Keep both, from either review's page: neither offers to merge again, the folder's review stays local and the PR's stays the PR's", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1201,7 +1201,7 @@ test("Keep both, from either review's page: neither offers to merge again, the f
   // A 1.8.0 linked pair, kept from the folder's page: read again, it neither merges nor offers.
   const t = setup();
   vi.mocked(runGh).mockImplementation(t.deps.gh.runGh as any);
-  await plugin(t.bb);
+  await plugin(t.alia);
   await run(t, "main");
   await settled(t);
   await t.store.saveReview({ targetKey: prKey, kind: "pr", repo: "acme/api", number: 7, url: "https://github.com/acme/api/pull/7", status: "ready", createdAt: 1 });
@@ -1218,7 +1218,7 @@ test("Keep both, from either review's page: neither offers to merge again, the f
 test("after Keep both, either review's page still names the other, for Review actions' Merge into one review, while both are live; the merge still goes", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1247,7 +1247,7 @@ test("after Keep both, either review's page still names the other, for Review ac
 test("two folders' reviews linked to one PR: Keep both and Merge into one review for the one the PR's page names act on it", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1273,7 +1273,7 @@ test("two folders' reviews linked to one PR: Keep both and Merge into one review
 test("Make it PR #7's review that finds the PR's own review offers the merge in its place, and Keep both leaves no Make it PR #7's review behind", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   s.view.createdAt = new Date(Date.now() - 86_400_000).toISOString();
@@ -1294,7 +1294,7 @@ test("Make it PR #7's review of a PR from another branch, then Keep both: the re
   // part2 tracks part1, whose PR #7 has its own review with something of yours.
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1321,7 +1321,7 @@ test("Make it PR #7's review of a PR from another branch: the review's next chec
   for (const head of ["part1", undefined]) {
     const s = setup();
     vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-    await plugin(s.bb);
+    await plugin(s.alia);
     await run(s, "main");
     await settled(s);
     s.view.headRefName = "part1";
@@ -1347,7 +1347,7 @@ test("the PR's page doesn't name the local review's branch when it's the PR's un
   for (const name of ["remoteBranch", "pushedAs"] as const) {
     const s = setup();
     vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-    await plugin(s.bb);
+    await plugin(s.alia);
     await run(s, "main");
     await settled(s);
     const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1367,7 +1367,7 @@ test("a 1.8.0 link to another branch's PR's review, kept apart, merges only afte
   // part2 carries a 1.8.0 link to part1's PR #7, whose review has something of yours.
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const prKey = targetKey({ kind: "pr", repo: "acme/api", number: 7 });
@@ -1400,7 +1400,7 @@ test("a 1.8.0 link to another branch's PR's review not read yet merges only afte
   // part2 carries a 1.8.0 link to part1's PR #7, whose review discovery found, with something of yours and no head.
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   s.view.headRefName = "part1";
@@ -1440,7 +1440,7 @@ function ownPrSync(s: ReturnType<typeof setup>) {
     prepare: vi.fn(async () => false), checkPushes: vi.fn(async () => false), checkFixes: vi.fn(async () => false), autoStart: vi.fn(async () => false), projectId: async () => "proj_api",
     becomePr: (key, found) => becomePr(s.deps, key, found),
   };
-  return createReviewSync(s.bb, s.store, vi.fn() as any, { github, actions });
+  return createReviewSync(s.alia, s.store, vi.fn() as any, { github, actions });
 }
 
 test("your PR found on GitHub turns the review of its folder and branch into the PR's, the same review, not a second one", async () => {
@@ -1473,7 +1473,7 @@ test("your PR found on GitHub whose review has nothing of yours is merged into t
 test("Keep both with one PR's review still finds the branch's next PR, as your PR on GitHub", async () => {
   const s = setup();
   vi.mocked(runGh).mockImplementation(s.deps.gh.runGh as any);
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   // PR #6, closed since, has its own review with something of yours: offered, and kept apart, its offer as it was.
@@ -1488,9 +1488,9 @@ test("Keep both with one PR's review still finds the branch's next PR, as your P
   expect(await prReviewKey(s.store, { repo: "acme/api", number: 7 })).toBe(key);
 });
 
-test("bb removing the folder: a review that became a PR's goes on; a local one waits on no one for its sent comments, else goes to Archive", async () => {
+test("alia removing the folder: a review that became a PR's goes on; a local one waits on no one for its sent comments, else goes to Archive", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const removed = (environmentId: string) => s.harness.behavior.emitThreadEvent("experimental_environment.removed", { removal: { environmentId, removedAt: Date.now(), hostId: "host_max", path: "/Users/me/src/api", providerOwnedPath: true } });
@@ -1507,7 +1507,7 @@ test("bb removing the folder: a review that became a PR's goes on; a local one w
 
   // One with only a resolved comment goes to Archive, as the sync's; never your own archive.
   const other = setup({ files: [{ path: "src/a.ts", body: BODY }] });
-  await plugin(other.bb);
+  await plugin(other.alia);
   await run(other, "main");
   await settled(other);
   await other.store.upsertDraftComment(key, { file: "src/a.ts", line: 3, side: "RIGHT", body: "Done", author: "reviewer" } as any);
@@ -1525,9 +1525,9 @@ test("bb removing the folder: a review that became a PR's goes on; a local one w
   expect(await other.store.getReview(key)).not.toBeNull();
 });
 
-test("bb removing the folder of a review that became a PR's only marks it", async () => {
+test("alia removing the folder of a review that became a PR's only marks it", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   Object.assign(s.folder, { prBase: "main", pr: { number: 7, url: "https://github.com/acme/api/pull/7", headRefName: "feat/qa" } });
@@ -1542,7 +1542,7 @@ test("bb removing the folder of a review that became a PR's only marks it", asyn
 
 test("Also active here: the folder's other threads, not the main thread, its subagents, or this plugin's", async () => {
   const s = setup(undefined, {
-    child: { id: "child", environmentId: "env1", parentThreadId: "main", title: "A subagent bb spawned" },
+    child: { id: "child", environmentId: "env1", parentThreadId: "main", title: "A subagent VesnALIA spawned" },
     agent: { id: "agent", environmentId: "env1", title: "Review agent", visibility: "hidden", originPluginId: "code-review-workspace" },
     gone: { id: "gone", environmentId: "env1", title: "Old", archivedAt: 1 },
     elsewhere: { id: "elsewhere", environmentId: "env2", title: "Elsewhere" },
@@ -1564,17 +1564,17 @@ test("an offline machine keeps the review as last read, and says so", async () =
 
 test("Include brings a secret-looking file into the review and keeps it in; the review agent reads it only then", async () => {
   const s = setup({ files: [{ path: "src/a.ts", body: BODY }, { path: ".env", origin: "untracked", body: "@@ -0,0 +1 @@\n+TOKEN=hunter2\n" }] });
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   expect(await s.store.patch(key)).not.toContain("hunter2");
   expect((await checkFeature(s.deps, key)).hidden).toEqual([{ path: ".env", reason: "secret" }]);
   const reads: unknown[] = [];
-  // BB reads through a link inside the folder and answers with the link's own path (checked on BB 0.48).
+  // VesnALIA reads through a link inside the folder and answers with the link's own path (checked on VesnALIA 0.48).
   s.harness.inspection.sdk.stub("files.read", async (args: any) => { reads.push(args); return { content: "TOKEN=hunter2\n", contentEncoding: "utf8", path: args.path, sha256: "x", sizeBytes: 14 }; });
   // As read_file has it: the review's diff, or another given.
   const read = async (path: string, patch?: string) => readFileAt(vi.fn(), vi.fn(), (await s.store.getReview(key))!, path, "current", 1, undefined,
-    { bb: s.bb, patch: patch ?? await s.store.patch(key) });
+    { alia: s.alia, patch: patch ?? await s.store.patch(key) });
   expect(await read(".env")).toEqual({ ok: false, error: ".env looks like a secret, so it isn't read for agents. The reviewer can include it from the review." });
   expect(reads).toEqual([]);
   expect(await read("src/a.ts")).toEqual({ ok: true, text: "src/a.ts at the working tree, lines 1–1 of 1:\n    1  TOKEN=hunter2" });
@@ -1603,10 +1603,10 @@ test("read_file never reads through a changed link: it names where the link poin
     { path: "a.md", link: "b.md" }, { path: "b.md", link: ".env" },
     { path: "d", link: "sub" }, { path: "sub/x", link: "../.env" },
   ] });
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
-  // As BB's Git plugin sends a type change: the old file's deletion, then the link.
+  // As VesnALIA's Git plugin sends a type change: the old file's deletion, then the link.
   const blocks = splitPatchByFile(await s.store.patch(key)).filter((file) => file.path === "README.md");
   expect(blocks.map((block) => block.text.split("\n")[1])).toEqual(["deleted file mode 100644", "new file mode 120000"]);
   const reads: string[] = [];
@@ -1644,10 +1644,10 @@ test("read_file never reads through a changed link: it names where the link poin
   expect(await readFile("a.md")).toEqual(refused("a.md links to b.md; read that instead."));
   expect(await readFile("src/a.ts")).toEqual(refused("src links to ../elsewhere, outside the folder, so it isn't read."));
   expect(reads).toEqual(["/Users/me/src/api/src/a.ts"]);
-  // Unknown is no: a folder BB can't list now, or lists only part of, isn't read.
+  // Unknown is no: a folder VesnALIA can't list now, or lists only part of, isn't read.
   s.folder.files = s.folder.files.filter((file) => file.path !== "src");
   s.folder.listLimit = 1;
-  expect(await readFile("src/a.ts")).toEqual(refused("Couldn't check src/a.ts in the folder before reading it: BB lists only part of the folder’s changes, so it can’t tell whether this path goes through a link."));
+  expect(await readFile("src/a.ts")).toEqual(refused("Couldn't check src/a.ts in the folder before reading it: VesnALIA lists only part of the folder’s changes, so it can’t tell whether this path goes through a link."));
   // The review's diff still names the link in a list cut short.
   expect(await readFile("README.md")).toEqual(refused("README.md links to .env; read that instead."));
   s.folder.listLimit = undefined;
@@ -1672,7 +1672,7 @@ test("Update guide and Rewrite guide read the folder again, and its files with i
 
 test("Review ‹the other branch› opens that branch's own review, addressed to the same main thread", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   s.folder.env = { ...s.folder.env, branchName: "feat/other" };
   const opened = await s.harness.behavior.callRpc("reviewFolderBranch", { targetKey: key }) as { ok: boolean; targetKey: string };
@@ -1681,7 +1681,7 @@ test("Review ‹the other branch› opens that branch's own review, addressed to
   expect((await s.store.getReview(key))?.gitRef).toBe("feat/qa");
 });
 
-test("`bb review <ref>` in a checkout is unchanged: a ref- review with its cwd", async () => {
+test("`alia review <ref>` in a checkout is unchanged: a ref- review with its cwd", async () => {
   const s = setup();
   s.deps.gh.runGit.mockResolvedValue({ code: 0, stderr: "", stdout: "diff --git a/x b/x\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n" });
   expect((await runReviewCommand(s.deps, ["HEAD"], { projectId: "p1", threadId: "main", cwd: process.cwd() })).exitCode).toBe(0);
@@ -1693,7 +1693,7 @@ test("`bb review <ref>` in a checkout is unchanged: a ref- review with its cwd",
 
 test("the main thread going idle checks its folder and asks open pages to look again; another thread's doesn't", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   s.folder.env = { ...s.folder.env, branchName: "feat/other" };
@@ -1708,7 +1708,7 @@ test("the main thread going idle checks its folder and asks open pages to look a
 
 test("the page's Update reads a folder's review from its folder, not a checkout, and then says the guide is older than the diff", async () => {
   const s = setup();
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   const call = (method: string) => s.harness.behavior.callRpc(method, { targetKey: key }) as Promise<any>;
@@ -1732,7 +1732,7 @@ test("the page's Update reads a folder's review from its folder, not a checkout,
 
 test("read_changes_since_review compares a folder's Send with the folder now, and fails, never saying nothing changed, when it can't tell", async () => {
   const s = setup(undefined, { "agent-1": { id: "agent-1", environmentId: null, title: `Review agent: ${key}`, visibility: "hidden", originPluginId: "code-review-workspace" } });
-  await plugin(s.bb);
+  await plugin(s.alia);
   await run(s, "main");
   await settled(s);
   // Send 1 went at the diff the review shows, src/b.ts kept out as too large; Send 2's files weren't kept.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { experimental_Icon as Icon, useSettings } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useSettings } from "@vesnalia/plugin-sdk/app";
 import type { Overview, PrView } from "../contract";
 import { useActions } from "./actions";
 import { BUTTON_PRIMARY, ErrorNote, FIELD_SMALL, PAGE, PageHeading, STRIP, Segmented } from "./common";
@@ -41,7 +41,7 @@ function AutoAgent({ prs, overview }: { prs: readonly PrView[]; overview: Overvi
       </div>
       <div className="mb-2 mt-0.5 text-[13px]">
         Their reviews and failed checks go nowhere until you see them.
-        {opened > 0 && ` ${opened} of them ${opened === 1 ? "was" : "were"} opened by a bb thread (its id is in the branch name).`} Auto agent makes that thread the PR's agent.
+        {opened > 0 && ` ${opened} of them ${opened === 1 ? "was" : "were"} opened by a VesnALIA thread (its id is in the branch name).`} Auto agent makes that thread the PR's agent.
       </div>
       <button type="button" className={BUTTON_PRIMARY} onClick={() => void writes.setAutoAgent(true)}>
         <Icon name="Bot" className="size-3.5" aria-hidden />Turn on auto agent

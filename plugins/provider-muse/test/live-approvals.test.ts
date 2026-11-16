@@ -6,16 +6,16 @@ import {
   experimental_captureBridgeJsonRpcOutput as captureBridgeJsonRpcOutput,
   type CapturedBridgeJsonRpcOutput,
   type CapturedBridgeNotification,
-} from "@get-bb/plugin-sdk/provider-bridge/testing";
+} from "@vesnalia/plugin-sdk/provider-bridge/testing";
 
 /**
  * Full access must mean no approvals. This drives the real binary with a turn
  * that writes and reads a file — the shape that a sandboxed Muse session gates
  * even when its approval mode is `allowAll`.
  *
- *   BB_MUSE_LIVE=1 npx vitest run test/live-approvals.test.ts
+ *   ALIA_MUSE_LIVE=1 npx vitest run test/live-approvals.test.ts
  */
-const live = process.env.BB_MUSE_LIVE === "1";
+const live = process.env.ALIA_MUSE_LIVE === "1";
 
 const { handleLine } = await import("../src/provider-bridge.js");
 
@@ -23,7 +23,7 @@ let output: CapturedBridgeJsonRpcOutput;
 let workspaceDir: string;
 
 beforeAll(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-muse-approval-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "alia-muse-approval-"));
   output = captureBridgeJsonRpcOutput();
 });
 
@@ -71,7 +71,7 @@ it.skipIf(!live)(
       method: "initialize",
       params: {
         protocolVersion: 2,
-        client: { name: "bb", version: "test" },
+        client: { name: "alia", version: "test" },
         grammarVersions: [3, 3],
       },
     });
@@ -105,7 +105,7 @@ it.skipIf(!live)(
         input: [
           {
             type: "text",
-            text: process.env.BB_MUSE_PROBE ??
+            text: process.env.ALIA_MUSE_PROBE ??
               "Use the shell to write the word hello into ./probe.txt, then read the file back and tell me what it says.",
             mentions: [],
           },

@@ -1,7 +1,7 @@
 import {
   experimental_Icon as Icon, experimental_InfoList as InfoList, experimental_InfoListRow as InfoListRow, experimental_InfoSection as InfoSection,
   type ExperimentalThreadContextSegmentInput, type ExperimentalThreadContextSegmentProps, type ExperimentalThreadInfoProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef } from "react";
 import type { PrView } from "../contract";
 import type { Tone } from "./common";
@@ -97,7 +97,7 @@ export function PullRequestsInfo({ threadId }: ExperimentalThreadInfoProps) {
 
 export const useHasThreadPrs = ({ threadId }: ExperimentalThreadContextSegmentInput) => useThreadPrs(threadId).length > 0;
 
-/** bb does not remember which segment was open, so the list reopens once per thread when it was left open on this device. */
+/** VesnALIA does not remember which segment was open, so the list reopens once per thread when it was left open on this device. */
 function useReopen(threadId: string, isExpanded: boolean, onToggle: () => void) {
   const reopened = useRef<string | null>(null);
   useEffect(() => {

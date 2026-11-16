@@ -1,6 +1,6 @@
-# Operator-assisted E2E: two bb windows over ONE host row.
+# Operator-assisted E2E: two alia windows over ONE host row.
 #
-# bb's second window learns about a write through a realtime signal and a
+# alia's second window learns about a write through a realtime signal and a
 # refetch, never through page memory. The harness drove one page against one
 # in-page mock, so a cross-window write could not be staged at all — five
 # release bullets carry no gif for exactly that reason.
@@ -10,7 +10,7 @@
 # scripts/screenshot/host-log.ts + host-state.ts), and each step's `page: peer`
 # names the window it drives, so one step writes and the next one asserts on
 # the other side. No reload between them: the write has to arrive as a signal,
-# the way bb's own second window sees it.
+# the way alia's own second window sees it.
 #
 # Run: npm run uat -- tests/manual/uat-two-windows.yaml
 suite: two-window-host-row

@@ -37,9 +37,9 @@ test('text stays readable on content, panels, composer and selection', () => {
 });
 
 test('the manifest ships one theme with local, readable syntax colours', () => {
-  assert.equal(manifest.bb.themes.length, 1);
-  const theme = manifest.bb.themes[0];
-  for (const path of [theme.css, theme.codeTheme.light, theme.codeTheme.dark, manifest.bb.branding.icon, manifest.bb.server]) {
+  assert.equal(manifest.alia.themes.length, 1);
+  const theme = manifest.alia.themes[0];
+  for (const path of [theme.css, theme.codeTheme.light, theme.codeTheme.dark, manifest.alia.branding.icon, manifest.alia.server]) {
     const rel = relative(root, resolve(root, path));
     assert.ok(!rel.startsWith('..') && !isAbsolute(rel), path);
     assert.ok(existsSync(resolve(root, path)), path);

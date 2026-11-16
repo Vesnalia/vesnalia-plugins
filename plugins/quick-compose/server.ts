@@ -1,8 +1,8 @@
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type AliaPluginApi,
   type NewThreadRequest,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 // The composer's NewThreadRequest, checked for its load-bearing fields and
@@ -26,10 +26,10 @@ export const quickComposeRpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.rpc.register(quickComposeRpcContract, {
+export default async function plugin(alia: AliaPluginApi) {
+  alia.rpc.register(quickComposeRpcContract, {
     async createThread({ request }) {
-      const thread = await bb.sdk.threads.spawn(request);
+      const thread = await alia.sdk.threads.spawn(request);
       return { threadId: thread.id };
     },
   });

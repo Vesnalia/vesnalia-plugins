@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { writeFile } from "node:fs/promises";
 
-assert(process.env.STEEL_CDP_URL, "Use the current thread's bb surf project CDP URL");
+assert(process.env.STEEL_CDP_URL, "Use the current thread's VesnALIA surf project CDP URL");
 const result = await build({
   stdin: { contents: `
     import React,{useState} from "react";import {createRoot} from "react-dom/client";
@@ -18,7 +18,7 @@ const result = await build({
     resolveDir: fileURLToPath(new URL("../", import.meta.url)), loader: "tsx" },
   bundle: true, write: false, outdir: "/tmp/steel-human-check", jsx: "automatic",
   plugins: [{ name: "sdk", setup(b) {
-    b.onResolve({ filter: /^@get-bb\/plugin-sdk\/app$/ }, () => ({ path: "sdk", namespace: "mock" }));
+    b.onResolve({ filter: /^@get-alia\/plugin-sdk\/app$/ }, () => ({ path: "sdk", namespace: "mock" }));
     b.onLoad({ filter: /.*/, namespace: "mock" }, () => ({ loader: "js", contents: `
       let records=[];
       const rpc={call:async(method,input)=>{
@@ -36,8 +36,8 @@ const result = await build({
             websocketUrl:"ws://127.0.0.1:3100/"}))};
       }};
       export const useRpc=()=>rpc;export const definePluginApp=()=>null;
-      export const useBbNavigate=()=>({openThreadPanel:()=>false});
-      export const useBbContext=()=>({threadId:null,projectId:"test-project"});
+      export const useAliaNavigate=()=>({openThreadPanel:()=>false});
+      export const useAliaContext=()=>({threadId:null,projectId:"test-project"});
       export const experimental_useSidebarThreads=()=>({status:"ready",projects:[{id:"test-project",name:"Test project"}]});
       export const useSettings=()=>({values:{},isLoading:false});`
     }));
@@ -118,9 +118,9 @@ try {
     await page.getByRole("button", { name: "Sign in", exact:true }).first().click();
     await page.waitForFunction(() => window.rpcCalls.some(c=>c.method==="openSignIn"&&c.input.service==="github"));
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    if (process.env.BB_THREAD_STORAGE) {
+    if (process.env.ALIA_THREAD_STORAGE) {
       const shot = await metrics.send("Page.captureScreenshot", { format:"png",captureBeyondViewport:false });
-      await writeFile(`${process.env.BB_THREAD_STORAGE}/steel-human-${width}.png`, Buffer.from(shot.data,"base64"));
+      await writeFile(`${process.env.ALIA_THREAD_STORAGE}/steel-human-${width}.png`, Buffer.from(shot.data,"base64"));
     }
     await page.goto("https://steel-ui.test/?inline");
     await metrics.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });

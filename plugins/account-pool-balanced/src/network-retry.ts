@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginTurnFailedEvent } from '@get-bb/plugin-sdk';
+import type { AliaPluginApi, PluginTurnFailedEvent } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 
 const KEY='network-retry-claims-v1';
@@ -15,9 +15,9 @@ export function retryableNetworkFailure(failure:PluginTurnFailedEvent):boolean {
 }
 // ACP drops JSON-RPC error.data. Read only the latest provider error in the
 // exact failed request, never assistant output or an older failure.
-async function normalizedCursorFailure(bb:BbPluginApi,failure:PluginTurnFailedEvent):Promise<PluginTurnFailedEvent> {
+async function normalizedCursorFailure(alia:AliaPluginApi,failure:PluginTurnFailedEvent):Promise<PluginTurnFailedEvent> {
   if(failure.errorInfo&&(!['unknown','internal'].includes(failure.errorInfo.category)||failure.errorInfo.providerCode))return failure;
-  const rows=await bb.sdk.threads.events.list({threadId:failure.threadId,order:'desc',limit:'8',types:['provider/error','client/turn/requested']});
+  const rows=await alia.sdk.threads.events.list({threadId:failure.threadId,order:'desc',limit:'8',types:['provider/error','client/turn/requested']});
   let message:string|undefined;
   for(const row of rows){
     if(row.threadId!==failure.threadId)return failure;
@@ -33,18 +33,18 @@ async function normalizedCursorFailure(bb:BbPluginApi,failure:PluginTurnFailedEv
   }
   return failure;
 }
-export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:string,providerId:string)=>Promise<boolean>,now=Date.now,random=Math.random) {
-  const loaded=claimsSchema.safeParse((await bb.storage.kv.get(KEY))??[]);
+export async function registerNetworkRetry(alia:AliaPluginApi,eligible:(threadId:string,providerId:string)=>Promise<boolean>,now=Date.now,random=Math.random) {
+  const loaded=claimsSchema.safeParse((await alia.storage.kv.get(KEY))??[]);
   let claims=loaded.success?loaded.data:null;
   let disposed=false;
-  if(!claims)bb.log.warn('Pooler retry journal is malformed; automatic retries are paused.');
+  if(!claims)alia.log.warn('Pooler retry journal is malformed; automatic retries are paused.');
   const flights=new Set<string>();
   let claimTail:Promise<void>=Promise.resolve();
-  bb.onDispose(()=>{disposed=true;});
+  alia.onDispose(()=>{disposed=true;});
   async function cancelIfSuperseded(threadId:string,status:string){
     if(disposed||!claims)return;
     if(status==='active'||status==='idle')return cancelQueued(threadId);
-    const rows=await bb.sdk.threads.events.list({threadId,order:'desc',limit:'1',types:['client/turn/requested']});
+    const rows=await alia.sdk.threads.events.list({threadId,order:'desc',limit:'1',types:['client/turn/requested']});
     const current=rows.find(row=>row.type==='client/turn/requested');
     if(!current)return;
     return cancelQueued(threadId,current.data.requestId);
@@ -53,18 +53,18 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
     if(disposed||!claims)return;
     const owned=claims.filter(claim=>claim.threadId===threadId&&claim.requestId!==currentRequestId&&(claim.queuedMessageId||claim.originalRequestId));
     if(!owned.length)return;
-    const queue=await bb.sdk.threads.queue.list({threadId});
+    const queue=await alia.sdk.threads.queue.list({threadId});
     for(const claim of owned){
       if(disposed)return;
       const entry=queue.find(row=>row.id===claim.queuedMessageId||(claim.originalRequestId&&row.payload.kind==='retry'&&row.payload.retryOfTurnRequestId===claim.originalRequestId&&row.payload.reason===`Temporary connection failure. Retry ${claim.attempt}/3.`));
-      if(entry?.payload.kind==='retry')await bb.sdk.threads.queuedMessages.delete({threadId,queuedMessageId:entry.id});
+      if(entry?.payload.kind==='retry')await alia.sdk.threads.queuedMessages.delete({threadId,queuedMessageId:entry.id});
       if(entry?.payload.kind==='retry'||(!entry&&claim.queuedMessageId)){
         // A confirmed queued row is gone/cancelled. An uncertain scheduling
         // call without a returned row ID must retain ownership of any late row.
         const settle=claimTail.then(async()=>{
           if(disposed||!claims)return;
           const next=claims.filter(value=>value.threadId!==claim.threadId||value.requestId!==claim.requestId);
-          await bb.storage.kv.set(KEY,next);claims=next;
+          await alia.storage.kv.set(KEY,next);claims=next;
         });
         claimTail=settle.then(()=>undefined,()=>undefined);await settle;
       }
@@ -73,7 +73,7 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
   // Native retries are checked again at queue drain: an RPC can lose its reply
   // before a late row appears, after event/startup cancellation already ran.
   const dispatchReads=new Map<string,Promise<{requestId:string|null;eligible:boolean}>>();
-  bb.experimental_hooks.on('message.dispatch',async context=>{
+  alia.experimental_hooks.on('message.dispatch',async context=>{
     const entry=context.queuedMessage;
     if(!entry||entry.payload.kind!=='retry')return {action:'proceed'};
     const payload=entry.payload;
@@ -90,7 +90,7 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
       const deadline=setTimeout(()=>controller.abort(),1_500);
       read=(async()=>{
         if(!await eligible(context.thread.id,context.requestedExecution.providerId))return {requestId:null,eligible:false};
-        const rows=await bb.sdk.threads.events.list({threadId:context.thread.id,order:'desc',limit:'1',types:['client/turn/requested'],signal:controller.signal});
+        const rows=await alia.sdk.threads.events.list({threadId:context.thread.id,order:'desc',limit:'1',types:['client/turn/requested'],signal:controller.signal});
         const row=rows.find(value=>value.type==='client/turn/requested');
         return {requestId:row?.type==='client/turn/requested'&&row.threadId===context.thread.id?row.data.requestId:null,eligible:true};
       })();
@@ -111,10 +111,10 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
   });
   // An own retry is removed from the queue before it activates its thread.
   // A still-queued owned row when something else starts (or stops) is stale.
-  for(const name of ['thread.active','thread.idle','thread.failed'] as const)bb.events.on(name,async({thread})=>{
-    try{await cancelIfSuperseded(thread.id,thread.status);}catch{if(!disposed)bb.log.warn('Pooler queued retry cancellation could not be confirmed.');}
+  for(const name of ['thread.active','thread.idle','thread.failed'] as const)alia.events.on(name,async({thread})=>{
+    try{await cancelIfSuperseded(thread.id,thread.status);}catch{if(!disposed)alia.log.warn('Pooler queued retry cancellation could not be confirmed.');}
   });
-  bb.background.service('network-retry-recovery',{
+  alia.background.service('network-retry-recovery',{
     async start(signal){
       // A lost RPC reply can still be identified by its original chain and reason.
       const ids=[...new Set((claims??[]).map(claim=>claim.threadId))];
@@ -123,14 +123,14 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
         while(!disposed&&!signal.aborted&&index<ids.length){
           const threadId=ids[index++]!;
           try{
-            const thread=await bb.sdk.threads.get({threadId,signal});
+            const thread=await alia.sdk.threads.get({threadId,signal});
             await cancelIfSuperseded(threadId,thread.status);
-          }catch{if(!disposed&&!signal.aborted)bb.log.warn('Pooler retry recovery could not be confirmed.');}
+          }catch{if(!disposed&&!signal.aborted)alia.log.warn('Pooler retry recovery could not be confirmed.');}
         }
       }));
     },
   });
-  bb.events.on('turn.failed',async failure=>{
+  alia.events.on('turn.failed',async failure=>{
     if(disposed||!claims||!Number.isInteger(failure.attemptNumber)||failure.attemptNumber<1||failure.attemptNumber>3||flights.has(failure.threadId))return;
     flights.add(failure.threadId);
     const started=now();
@@ -140,33 +140,33 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
       if(records++>=12)return;
       // Trusted opaque identifiers and fixed enums only; never SDK exception text.
       const safeId=(value:string)=>/^[a-zA-Z0-9_-]{1,160}$/.test(value)?value:undefined;
-      try{bb.log.warn('Pooler network retry diagnostic '+JSON.stringify({
+      try{alia.log.warn('Pooler network retry diagnostic '+JSON.stringify({
         phase,outcome:result,attempt:failure.attemptNumber,elapsedMs:Math.max(0,now()-started),
         threadId:safeId(failure.threadId),requestId:safeId(failure.requestId),
       }));}catch{/* Logging must not change retry behavior. */}
     };
     observe('thread');
     try {
-      const thread=await bb.sdk.threads.get({threadId:failure.threadId});
+      const thread=await alia.sdk.threads.get({threadId:failure.threadId});
       if(disposed||thread.status!=='error'||thread.archivedAt!=null||thread.deletedAt!=null||thread.queuedMessageCount){outcome='thread-unavailable';return;}
       observe('eligible');
       if(!await eligible(thread.id,thread.providerId)){outcome='route-unavailable';return;}
       observe('classification');
-      const classified=thread.providerId==='acp-oxi-cursor'?await normalizedCursorFailure(bb,failure):failure;
+      const classified=thread.providerId==='acp-oxi-cursor'?await normalizedCursorFailure(alia,failure):failure;
       if(!retryableNetworkFailure(classified)){outcome='not-retryable';return;}
       observe('queue');
-      if((await bb.sdk.threads.queue.list({threadId:thread.id})).length){outcome='queue-occupied';return;}
+      if((await alia.sdk.threads.queue.list({threadId:thread.id})).length){outcome='queue-occupied';return;}
       observe('request');
-      const requests=await bb.sdk.threads.events.list({threadId:thread.id,order:'desc',limit:'1',types:['client/turn/requested']});
+      const requests=await alia.sdk.threads.events.list({threadId:thread.id,order:'desc',limit:'1',types:['client/turn/requested']});
       const currentRequest=requests.find(row=>row.type==='client/turn/requested');
       if(!currentRequest||currentRequest.data.requestId!==failure.requestId){outcome='request-superseded';return;}
       observe('claim');
       const originalRequestId=currentRequest.data.retryOfRequestId??failure.requestId;
       const claim=claimTail.then(async()=>{
         if(disposed||!claims||claims.some(value=>value.threadId===thread.id&&value.requestId===failure.requestId))return false;
-        if(claims.length>=256){bb.log.warn('Pooler retry journal is full; new automatic retries are paused.');return false;}
+        if(claims.length>=256){alia.log.warn('Pooler retry journal is full; new automatic retries are paused.');return false;}
         const next=[...claims,{threadId:thread.id,requestId:failure.requestId,providerId:thread.providerId,originalRequestId,attempt:failure.attemptNumber}];
-        await bb.storage.kv.set(KEY,next);claims=next;return true;
+        await alia.storage.kv.set(KEY,next);claims=next;return true;
       });
       claimTail=claim.then(()=>undefined,()=>undefined);
       if(!await claim||disposed){outcome='claim-not-acquired';return;}
@@ -174,7 +174,7 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
       // The core validates the exact failed request again, deduplicates the
       // original retry chain and preserves inputAccepted/attemptNumber semantics.
       observe('schedule');
-      const result=await bb.sdk.threads.retry({threadId:thread.id,turnRequestId:failure.requestId,
+      const result=await alia.sdk.threads.retry({threadId:thread.id,turnRequestId:failure.requestId,
         sendAt:now()+delay+Math.floor(Math.max(0,Math.min(1,random()))*delay*0.1),
         reason:`Temporary connection failure. Retry ${failure.attemptNumber}/3.`});
       outcome=result.delivery==='queued'?'queued':'not-queued';
@@ -183,17 +183,17 @@ export async function registerNetworkRetry(bb:BbPluginApi,eligible:(threadId:str
         const record=claimTail.then(async()=>{
           if(disposed||!claims)return;
           const next=claims.map(value=>value.threadId===thread.id&&value.requestId===failure.requestId?{...value,queuedMessageId:result.queuedMessageId}:value);
-          await bb.storage.kv.set(KEY,next);claims=next;
+          await alia.storage.kv.set(KEY,next);claims=next;
         });
         claimTail=record.then(()=>undefined,()=>undefined);await record;
-        const current=await bb.sdk.threads.get({threadId:thread.id});
+        const current=await alia.sdk.threads.get({threadId:thread.id});
         await cancelIfSuperseded(thread.id,current.status);
       }
     } catch {
       outcome='rpc-error';
       // A timed-out RPC may already have queued the retry. Keep the durable
       // claim instead of blindly sending again; no raw exception in logs.
-      if(!disposed)bb.log.warn('Pooler automatic network retry could not be confirmed; inspect the thread queue.');
+      if(!disposed)alia.log.warn('Pooler automatic network retry could not be confirmed; inspect the thread queue.');
     } finally {observe(phase,outcome);flights.delete(failure.threadId);}
   });
 }

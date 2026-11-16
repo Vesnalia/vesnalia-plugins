@@ -1,4 +1,4 @@
-<!-- bb-project-folders:agents:start -->
+<!-- alia-project-folders:agents:start -->
 # Section rules
 
 User instructions take priority. Read the project AGENTS.md and parent sections first — their rules apply alongside these.
@@ -22,7 +22,7 @@ User instructions take priority. Read the project AGENTS.md and parent sections 
 
 ## Files and autonomy
 - Keep the section root for real work (code, documents); everything temporary lives in its folder — artifacts/, notes/, tmp/ or a named subfolder.
-- Chat files go to .bb/chats/<chat id>/: reports in artifacts/, notes and handoff in notes/, throwaway work in tmp/.
-- Never edit thread.json or history/ — BB owns them.
+- Chat files go to .vesnalia/chats/<chat id>/: reports in artifacts/, notes and handoff in notes/, throwaway work in tmp/.
+- Never edit thread.json or history/ — VesnALIA owns them.
 - Inside the task scope decide yourself: don't ask what you can look up in the repository or docs.
-<!-- bb-project-folders:agents:end -->
+<!-- alia-project-folders:agents:end -->

@@ -1,6 +1,6 @@
 # Prototype: Axure canvas behaviour and shortcuts
 
-Source: `.bb/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` sections 2, 5, 6 and «What to replicate» items 11–14, 16 and the shortcuts table. Work in canvas.tsx / toolbar.tsx / builder.tsx as split by prototype-shell-pages.
+Source: `.vesnalia/chats/thr_wdpmipwdxc/artifacts/axure-re/index.md` sections 2, 5, 6 and «What to replicate» items 11–14, 16 and the shortcuts table. Work in canvas.tsx / toolbar.tsx / builder.tsx as split by prototype-shell-pages.
 
 1. **Selection**: marquee selection (drag on empty canvas; intersect mode by default, contain with ⌥), ⌘/Shift-click to add/remove; 8 round handles on a 1 px primary frame; Radio and Checkbox get only left/right handles; shapes (Box, Shape) get a corner-radius handle; group selection box.
 2. **Group / Ungroup** (⌘G / ⇧⌘G): model `group` id on elements; clicking selects the group, double-click enters it (deep select with ⌥⌘-click). **Lock** (⇧⌘K) and **Hidden** toggles.

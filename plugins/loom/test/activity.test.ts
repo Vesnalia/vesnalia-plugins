@@ -196,9 +196,9 @@ describe("ticketActivity", () => {
     expect(pipeline).toEqual({ work: "running", checks: [], review: [], merge: ["fail", "fail"], pr: [] });
   });
 
-  it("calls an attempt that bb refused to start blocked, and says it could not start", async () => {
+  it("calls an attempt that VesnALIA refused to start blocked, and says it could not start", async () => {
     await seedProject(h);
-    h.bb.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.");
+    h.alia.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Provider pi only supports full permission mode.");
     await startWorker(h);
     expect(ticketOf(h, "CSV-1").state).toBe("blocked");
 
@@ -209,7 +209,7 @@ describe("ticketActivity", () => {
     expect(attempt.items).toEqual([{ type: "post", postId: refusal.id }]);
   });
 
-  it("keeps the passed checks of an attempt whose reviewer bb refused, and says why it blocked", async () => {
+  it("keeps the passed checks of an attempt whose reviewer VesnALIA refused, and says why it blocked", async () => {
     await seedProject(h);
     const worker = await startWorker(h);
     h.clock.advance(27_000);
@@ -217,14 +217,14 @@ describe("ticketActivity", () => {
     submit(h.ctx, worker.thread_id!, "Done");
     await settleChecks(h.ctx);
     h.clock.advance(1_000);
-    h.bb.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude");
+    h.alia.spawnError = () => new SpawnRefusedError(400, "HTTP 400: Unsupported provider claude");
     const project = h.store.projectBySlug("csv")!;
     await spawnReviewers(h.ctx, project, specOf(h.store, project));
     expect(ticketOf(h, "CSV-1").state).toBe("blocked");
 
     expect(activity().attempts[0]).toMatchObject({
       outcome: "blocked",
-      line: "Blocked: bb refused to start a reviewer: HTTP 400: Unsupported provider claude",
+      line: "Blocked: VesnALIA refused to start a reviewer: HTTP 400: Unsupported provider claude",
       pipeline: { work: "pass", checks: ["pass"], review: [], merge: [] },
     });
   });

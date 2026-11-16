@@ -1,7 +1,7 @@
 import type { ReactNode, SVGProps } from "react";
 
 // Plugin-owned control artwork; unknown host icon names otherwise become Zap.
-// Launcher destinations still use BB's SidebarNavigationIcon for their artwork.
+// Launcher destinations still use VesnALIA's SidebarNavigationIcon for their artwork.
 const paths = {
   PanelLeftClose: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m7-11-3 3 3 3"/></>,
   PanelLeftOpen: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m5-11 3 3-3 3"/></>,

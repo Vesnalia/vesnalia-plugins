@@ -4,11 +4,11 @@ Store API keys, FTP/SFTP, SSH private keys, and site logins in a single encrypte
 
 ## Encrypted storage with instant synchronization
 
-All values are encrypted at rest using AES-256-GCM. Because data is stored in SQLite on the BB server, every session on every connected machine (primary host, remote Mac, or Linux servers) has immediate, synchronized access to the same credentials without manually copying `.env` files around.
+All values are encrypted at rest using AES-256-GCM. Because data is stored in SQLite on the VesnALIA server, every session on every connected machine (primary host, remote Mac, or Linux servers) has immediate, synchronized access to the same credentials without manually copying `.env` files around.
 
 ## Dedicated agent tools and automatic instructions
 
-The plugin equips every BB agent with native tools:
+The plugin equips every VesnALIA agent with native tools:
 - `env_request`: Opens a secure masked in-app modal in the thread to ask for missing credentials. Secrets are encrypted directly to the catalog without exposing them in chat transcripts.
 - `env_list`: Discovers available variable names and services while omitting raw values to preserve context tokens.
 - `env_get`: Retrieves a decrypted secret value on demand, at once, with no approval step.
@@ -19,20 +19,20 @@ A lightweight system instruction is automatically provided to agents at the star
 
 ## Visual management and bulk operations
 
-Open **Env Catalog** in the BB left sidebar to inspect and manage your stored secrets:
+Open **Env Catalog** in the VesnALIA left sidebar to inspect and manage your stored secrets:
 - Search and filter keys by name, service tag, or note.
 - Masked display (`••••••••`) with one-click reveal and clipboard copy.
 - Clean modals for adding or editing credentials.
 - «Журнал выдачи»: who read, saved or deleted what, and from which thread (never the value).
 - One-click bulk export and import in standard `.env` format.
-- "Sync Machine Env" button to decrypt and migrate existing BB Machine Environment variables in one step.
+- "Sync Machine Env" button to decrypt and migrate existing VesnALIA Machine Environment variables in one step.
 
 ## Command-line access
 
 Manage credentials from your terminal on any enrolled host:
-- `bb env-catalog list`: Print all stored keys with masked values.
-- `bb env-catalog get <NAME> --raw`: Output the decrypted secret for shell pipelines.
-- `bb env-catalog set <NAME> <VALUE>`: Create or update a secret.
-- `bb env-catalog export --format env`: Export secrets directly to `.env`.
+- `alia env-catalog list`: Print all stored keys with masked values.
+- `alia env-catalog get <NAME> --raw`: Output the decrypted secret for shell pipelines.
+- `alia env-catalog set <NAME> <VALUE>`: Create or update a secret.
+- `alia env-catalog export --format env`: Export secrets directly to `.env`.
 
 [Documentation and source](https://github.com/VKirill/bb-plugin-env-catalog)

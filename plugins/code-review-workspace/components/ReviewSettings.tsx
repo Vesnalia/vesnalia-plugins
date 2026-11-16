@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
-import { UrlLink, useRpc, useRealtime, useBbNavigate, experimental_PermissionModePicker as PermissionModePicker, experimental_ProviderModelPicker as ProviderModelPicker } from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useRpc, useRealtime, useAliaNavigate, experimental_PermissionModePicker as PermissionModePicker, experimental_ProviderModelPicker as ProviderModelPicker } from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import type { PreferencesRecord } from "../src/preferences";
 import type { Machine } from "../src/machines";
@@ -31,7 +31,7 @@ type AgentUpdate = (agent: AgentExecution | null) => AgentExecution | null;
 /** undefined while loading; null when they couldn't be loaded. */
 type Machines = readonly Machine[] | null | undefined;
 
-/** The bb server is the default machine, stored as no machine so the choice follows a server move. */
+/** The VesnALIA server is the default machine, stored as no machine so the choice follows a server move. */
 function MachineSelect({ hostId, machines, disabled, onChange }: {
   hostId?: string; machines: Machines; disabled: boolean; onChange(hostId: string | undefined): void;
 }) {
@@ -41,7 +41,7 @@ function MachineSelect({ hostId, machines, disabled, onChange }: {
   return <label className="flex min-w-0 items-center gap-2 text-sm">
     <span className="text-muted-foreground">Machine</span>
     <select aria-label="Machine" disabled={disabled} value={value} onChange={(event) => onChange(event.target.value || undefined)} className="h-8 min-w-0 rounded-md border border-border bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:h-11">
-      <option value="">{server ? `${server.name} (server)` : "bb server"}</option>
+      <option value="">{server ? `${server.name} (server)` : "alia server"}</option>
       {others.map((machine) => <option key={machine.hostId} value={machine.hostId}>{machine.connected ? machine.name : `${machine.name} (offline)`}</option>)}
       {value && !others.some((machine) => machine.hostId === value) && <option value={value}>{machines ? "Removed machine" : value}</option>}
     </select>
@@ -72,7 +72,7 @@ function unrestrictedNote(providers: ProviderModes, providerId: string | undefin
   return `${provider.name} runs only at Full, so this agent can’t be restricted.${alternatives}`;
 }
 
-function AgentSelection({ label, agent, machines, disabled, note, unrestricted, defaults = "the agent, model, effort, and permissions bb remembers for the project the review runs in", onCustomize, onChange }: {
+function AgentSelection({ label, agent, machines, disabled, note, unrestricted, defaults = "the agent, model, effort, and permissions VesnALIA remembers for the project the review runs in", onCustomize, onChange }: {
   label: string; agent: AgentExecution | null; machines: Machines; disabled: boolean; note?: string;
   /** Why this agent can't be restricted (unrestrictedNote). */
   unrestricted?: string;
@@ -99,7 +99,7 @@ function AgentSelection({ label, agent, machines, disabled, note, unrestricted, 
         value={{ providerId: agent.providerId, model: agent.model, reasoningLevel: agent.reasoningLevel as ComponentProps<typeof ProviderModelPicker>["value"]["reasoningLevel"], ...(agent.serviceTier ? { serviceTier: agent.serviceTier } : {}) }}
         onChange={(next) => onChange((current) => current && { ...(current.hostId ? { hostId: current.hostId } : {}), providerId: next.providerId, model: next.model, reasoningLevel: next.reasoningLevel, permissionMode: current.permissionMode, ...(next.serviceTier ? { serviceTier: next.serviceTier } : {}) })} />
       <PermissionModePicker disabled={disabled} routing={routing} providerId={agent.providerId} value={agent.permissionMode} onChange={(permissionMode) => onChange((current) => current && { ...current, permissionMode })} />
-    </div> : <p className="text-xs text-muted-foreground">Runs on the bb server with {defaults}.</p>}
+    </div> : <p className="text-xs text-muted-foreground">Runs on the VesnALIA server with {defaults}.</p>}
     {agent && machines === null && <p className="text-xs text-muted-foreground">Couldn’t load your machines. Reload this page to choose another machine.</p>}
     {unrestricted && <p className="flex items-start gap-1.5 text-xs text-muted-foreground"><Icon name="AlertCircle" className="mt-px size-3.5 shrink-0" aria-hidden />{unrestricted}</p>}
     {note && <p className="text-xs text-muted-foreground">{note}</p>}
@@ -213,7 +213,7 @@ function SectionHeading({ icon, tone = "primary", title, description }: { icon: 
 }
 
 /**
- * Review settings, in BB's Settings and as the panel's own page, where `onBack` adds its page bar, back to where you
+ * Review settings, in VesnALIA's Settings and as the panel's own page, where `onBack` adds its page bar, back to where you
  * came from (`back`). Plain function: the host slot collector requires a component function.
  */
 export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: string }) {
@@ -232,7 +232,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
   useEffect(() => {
     rpc.call("listMachines", null).then((result) => setMachines(result.machines), () => setMachines(null));
   }, [rpc]);
-  // Each machine's providers, by host ("" for the bb server), read once its agent is placed there; none when unread.
+  // Each machine's providers, by host ("" for the VesnALIA server), read once its agent is placed there; none when unread.
   const [providerModes, setProviderModes] = useState<Readonly<Record<string, ProviderModes>>>({});
   const providerReads = useRef(new Map<string, Promise<ProviderModes>>());
   const readProviders = useCallback((host: string) => {
@@ -246,7 +246,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
   }, [rpc]);
   const agentHosts = [record?.preferences.guideAgent?.hostId ?? "", record?.preferences.assistantAgent?.hostId ?? ""];
   useEffect(() => { for (const host of ["", ...agentHosts]) void readProviders(host); }, [readProviders, agentHosts.join("\n")]);
-  // Project defaults' provider, read only when a provider on the bb server can't be restricted.
+  // Project defaults' provider, read only when a provider on the VesnALIA server can't be restricted.
   const [defaultProviderId, setDefaultProviderId] = useState<string>();
   const serverUnrestricted = providerModes[""]?.some((provider) => !restrictable(provider)) ?? false;
   useEffect(() => {
@@ -292,7 +292,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
   const knob = (id: KnobId, labelClassName?: string) => record && <KnobControl id={id} record={record.preferences} onChange={setKnob} numberText={numberText} labelClassName={labelClassName}
     onNumberText={(key, text) => { setSaved(false); setNumberText(({ [key]: _previous, ...rest }) => text === undefined ? rest : { ...rest, [key]: text }); }} />;
   async function customize(key: "guideAgent" | "assistantAgent") {
-    // Without defaults, the guide writer starts at bb's lowest mode.
+    // Without defaults, the guide writer starts at VesnALIA's lowest mode.
     let seed: AgentExecution = { providerId: "", model: "", reasoningLevel: "medium", permissionMode: key === "guideAgent" ? "accept-edits" : "auto" };
     try {
       const { defaults, guideWriterMode } = await rpc.call("getAgentDefaults", null);
@@ -304,7 +304,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
         const only = modes?.length === 1 ? (["accept-edits", "auto", "full"] as const).find((mode) => mode === modes[0]) : undefined;
         seed = { ...seed, permissionMode: guideWriterMode ?? only ?? seed.permissionMode };
       }
-    } catch { /* The pickers resolve bb's own defaults from the empty seed. */ }
+    } catch { /* The pickers resolve VesnALIA's own defaults from the empty seed. */ }
     setAgent(key, (agent) => agent ?? seed);
   }
   useEffect(() => {
@@ -332,7 +332,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
     {onBack && <PageBar back={back} onBack={onBack} backDisabled={dirty || busy || updating} title="Settings" />}
     <div className="min-h-0 flex-1 overflow-y-auto">
     <div className="mx-auto w-full max-w-6xl space-y-4 px-4 py-5 sm:px-8">
-      <p className="max-w-[75ch] pb-2 text-sm text-muted-foreground">Shape your guides, how the review agent helps, and how reviews read. Applies across this BB installation.</p>
+      <p className="max-w-[75ch] pb-2 text-sm text-muted-foreground">Shape your guides, how the review agent helps, and how reviews read. Applies across this VesnALIA installation.</p>
       <SetupReadiness account={<AccountBar />} />
       <ReleaseSettings clientId={session.clientId} disabled={dirty || busy} onUpdatingChange={setUpdating} />
       {error && <div role="alert" className="space-y-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive-text"><p className="flex items-start gap-2"><Icon name="AlertCircle" className="mt-0.5 size-4 shrink-0" aria-hidden />{error}</p><Button variant="outline" size="sm" className={TOUCH_CONTROL} disabled={busy || updating} onClick={() => void load()}>Reload saved settings</Button></div>}
@@ -344,7 +344,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
           {knob("alertTurns")}
         </fieldset>}
         <p className="max-w-[75ch] text-sm text-muted-foreground">Alerts go to Needs You. Each links back to the review and clears when you open it. Install or update Needs You to 0.2.0-beta.3 or later, then enable Extension activity in its Settings. Telegram is optional.</p>
-        {/* A BB route, so it opens in this window, as BB's own links do. */}
+        {/* A VesnALIA route, so it opens in this window, as VesnALIA's own links do. */}
         <UrlLink className={`relative inline-block text-sm text-primary underline underline-offset-4 ${TOUCH_TARGET}`} href="/plugins/inbox/inbox/settings">Open Needs You settings</UrlLink>
       </section>
       {!record ? !error && <p role="status">Loading settings…</p> : <>
@@ -352,13 +352,13 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
         <fieldset disabled={busy || updating} className="min-w-0 space-y-4">
           <section className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-xs">
             <SectionHeading icon="Route" title="Guide generation" description="Used to build a guide, and to update or rebuild one. Existing guides stay as written." />
-            <AgentSelection label="Guide writer agent" agent={record.preferences.guideAgent} unrestricted={unrestricted(record.preferences.guideAgent)} defaults="the agent, model, and effort bb remembers for the project the review runs in, at the lowest permissions that agent runs in" machines={machines} disabled={busy || updating} onCustomize={() => void customize("guideAgent")} onChange={(update) => setAgent("guideAgent", update)} />
+            <AgentSelection label="Guide writer agent" agent={record.preferences.guideAgent} unrestricted={unrestricted(record.preferences.guideAgent)} defaults="the agent, model, and effort VesnALIA remembers for the project the review runs in, at the lowest permissions that agent runs in" machines={machines} disabled={busy || updating} onCustomize={() => void customize("guideAgent")} onChange={(update) => setAgent("guideAgent", update)} />
             <div className="space-y-2"><p id="guide-detail-label" className="text-sm font-medium">Detail level</p><div role="group" aria-labelledby="guide-detail-label" className="flex flex-wrap gap-2">
               {(["concise", "standard", "detailed"] as const).map((value) => <Button key={value} variant="outline" size="sm" className={CHOICE} aria-pressed={record.preferences.guideDetail === value} onClick={() => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, guideDetail: value } }); }}>{value[0].toUpperCase() + value.slice(1)}</Button>)}
             </div></div>
             {knob("stopGenerating")}
             <label className="block space-y-2"><span className="text-sm font-medium">Guide instructions</span><Textarea aria-label="Guide instructions" maxLength={12000} rows={6} value={record.preferences.guideInstructions} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, guideInstructions: event.target.value } }); }} placeholder="Explain data migrations and compatibility. Keep tests with the behavior they cover. Write for engineers new to this repository." /><span className="block text-xs text-muted-foreground">Add review priorities, language, and team conventions. These extend the built-in guide skill.</span></label>
-            <details className="text-sm"><summary className={`relative w-fit cursor-pointer rounded-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${TOUCH_TARGET}`}>About the guide skill</summary><div className="mt-3 space-y-2 text-muted-foreground"><p>The bundled skill reads the complete diff, organizes chapters by meaning, and covers every changed file exactly once. Custom instructions shape its explanations while the required output format stays validated.</p><p>Based on the chaptered walkthrough approach from <a className="underline underline-offset-4" href="https://github.com/plannotator/guides/blob/main/skills/plannotator-guide/SKILL.md" target="_blank" rel="noreferrer">Plannotator’s guide skill</a>, adapted for BB. Guides run through the agent selected above.</p></div></details>
+            <details className="text-sm"><summary className={`relative w-fit cursor-pointer rounded-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${TOUCH_TARGET}`}>About the guide skill</summary><div className="mt-3 space-y-2 text-muted-foreground"><p>The bundled skill reads the complete diff, organizes chapters by meaning, and covers every changed file exactly once. Custom instructions shape its explanations while the required output format stays validated.</p><p>Based on the chaptered walkthrough approach from <a className="underline underline-offset-4" href="https://github.com/plannotator/guides/blob/main/skills/plannotator-guide/SKILL.md" target="_blank" rel="noreferrer">Plannotator’s guide skill</a>, adapted for VesnALIA. Guides run through the agent selected above.</p></div></details>
           </section>
           <section className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-xs">
             <SectionHeading icon="Sparkles" tone="agent" title="Review agent" description="Applies to your next message, including conversations already in progress." />
@@ -379,7 +379,7 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
             <label className={`flex items-center gap-2.5 ${TOUCH_CONTROL}`}><input type="checkbox" className="size-4 shrink-0 accent-primary" checked={record.preferences.focuses.enabled} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, focuses: { ...record.preferences.focuses, enabled: event.target.checked } } }); }} /><span className="text-sm font-medium">Review with focuses</span></label>
             <div className={`ml-6 space-y-1 ${record.preferences.focuses.enabled ? "" : DISABLED_TEXT}`}>
               <label className={`flex items-center gap-2.5 ${TOUCH_CONTROL}`}><input type="checkbox" className="size-4 shrink-0 accent-primary" checked={record.preferences.focuses.githubLabel} disabled={!record.preferences.focuses.enabled} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, focuses: { ...record.preferences.focuses, githubLabel: event.target.checked } } }); }} /><span className="text-sm font-medium">Label comments on GitHub with their focus</span></label>
-              <p className="text-xs text-muted-foreground">Posts “Should fix (Docs): …”. Off: comments post as today. BB shows the focus either way.</p>
+              <p className="text-xs text-muted-foreground">Posts “Should fix (Docs): …”. Off: comments post as today. VesnALIA shows the focus either way.</p>
             </div>
             <label className={`flex items-center gap-2.5 ${TOUCH_CONTROL}`}><input type="checkbox" className="size-4 shrink-0 accent-primary" checked={record.preferences.focuses.allowFullPermissions ?? false} disabled={!record.preferences.focuses.enabled} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, focuses: { ...record.preferences.focuses, allowFullPermissions: event.target.checked } } }); }} /><span className="text-sm font-medium">Let focuses run with full permissions</span></label>
             <p className="text-xs text-muted-foreground">At full permissions, a focus can run shell commands and edit files without approval, and it reads untrusted PR text. Only turn this on if you accept that risk (as with the review agent at full). Restricted permissions are still preferred.</p>
@@ -443,8 +443,8 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
             {knob("agentCoverage")}
           </section>
           <section className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-xs">
-            <SectionHeading icon="PanelLeft" title="BB’s thread list" />
-            <label className="flex items-start gap-2.5"><input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-primary" checked={record.preferences.threadListReviews} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, threadListReviews: event.target.checked } }); }} /><span className="space-y-1"><span className="block text-sm font-medium">Show reviews in the thread list</span><span className="block text-xs text-muted-foreground">Adds Needs review below Threads, and lets you pin reviews with your pinned threads. BB has no supported place for plugins there, so Code Review Workspace adds them to BB’s own list. If a BB update makes that list misbehave, or you’d rather keep it to threads, turn this off. Your pins are kept for when you turn it back on.</span></span></label>
+            <SectionHeading icon="PanelLeft" title="VesnALIA’s thread list" />
+            <label className="flex items-start gap-2.5"><input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-primary" checked={record.preferences.threadListReviews} onChange={(event) => { setSaved(false); setRecord({ ...record, preferences: { ...record.preferences, threadListReviews: event.target.checked } }); }} /><span className="space-y-1"><span className="block text-sm font-medium">Show reviews in the thread list</span><span className="block text-xs text-muted-foreground">Adds Needs review below Threads, and lets you pin reviews with your pinned threads. VesnALIA has no supported place for plugins there, so Code Review Workspace adds them to VesnALIA’s own list. If a VesnALIA update makes that list misbehave, or you’d rather keep it to threads, turn this off. Your pins are kept for when you turn it back on.</span></span></label>
           </section>
           <section className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-xs">
             <SectionHeading icon="Lock" title="Trust" description="A PR’s description, comments, and code can try to steer an agent that reads them. Choose what runs without your click." />
@@ -474,6 +474,6 @@ export function ReviewSettings({ onBack, back }: { onBack?: () => void; back?: s
 
 /** Settings as the panel's page: back to the review it was opened from (`returnTo`), or else to All reviews. */
 export function ReviewSettingsPage({ returnTo = "" }: { returnTo?: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   return <ReviewSettings back={returnTo ? "Back to review" : "All reviews"} onBack={() => navigate.toPluginPanel("review", { subPath: returnTo })} />;
 }

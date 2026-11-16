@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
-[ $# -ge 6 ] || { echo "usage: $0 <lxc-vmid> <lxc-box-id> <qemu-vmid> <qemu-box-id> <qemu-box-address> <spare-vmid outside bb-box's ranges> [--with-vzdump]" >&2; exit 2; }
+[ $# -ge 6 ] || { echo "usage: $0 <lxc-vmid> <lxc-box-id> <qemu-vmid> <qemu-box-id> <qemu-box-address> <spare-vmid outside alia-box's ranges> [--with-vzdump]" >&2; exit 2; }
 
 LXC=$1 LXC_BOX=$2 VM=$3 VM_BOX=$4 VM_IP=$5 SPARE=$6 VZDUMP=${7:-}
-DUMPDIR=/var/tmp/bb-box-snapshot-research
+DUMPDIR=/var/tmp/alia-box-snapshot-research
 
 now() { date +%s.%N; }
 since() { awk -v a="$1" -v b="$(now)" 'BEGIN { printf "%.2f s", b - a }'; }
@@ -39,7 +39,7 @@ wait_vm() { local label=$1 t; t=$(now); for _ in $(seq 1 1200); do vm_ssh && bre
 in_vm() { if vm_agent; then qm guest exec "$VM" --timeout 120 -- bash -c "$1"; else echo "(no guest agent: skipped: $1)"; fi; }
 
 echo "=== LXC $LXC"
-step "lxc snapshot, running" pct snapshot "$LXC" s1 --description "bb-box snapshot research"
+step "lxc snapshot, running" pct snapshot "$LXC" s1 --description "alia-box snapshot research"
 show_storage "after the LXC snapshot"
 step "lxc write 1 GiB after the snapshot" in_lxc 'head -c 1024M /dev/urandom > /home/box/after.bin && echo after > /home/box/after-marker && sync'
 show_storage "after writing 1 GiB in the LXC"
@@ -79,9 +79,9 @@ show_storage "after the LXC's snapshot is deleted"
 
 echo "=== QEMU $VM"
 echo "VM uptime since: $(in_vm 'uptime -s')"
-step "vm snapshot, running, disk only" qm snapshot "$VM" disk1 --description "bb-box snapshot research"
+step "vm snapshot, running, disk only" qm snapshot "$VM" disk1 --description "alia-box snapshot research"
 show_storage "after the disk-only snapshot"
-step "vm snapshot, running, with memory (vmstate)" qm snapshot "$VM" mem1 --vmstate 1 --description "bb-box snapshot research"
+step "vm snapshot, running, with memory (vmstate)" qm snapshot "$VM" mem1 --vmstate 1 --description "alia-box snapshot research"
 show_storage "after the memory snapshot"
 step "vm write 512 MiB after the snapshots" in_vm 'head -c 512M /dev/urandom > /home/box/after.bin; echo after > /home/box/after-marker; sync'
 

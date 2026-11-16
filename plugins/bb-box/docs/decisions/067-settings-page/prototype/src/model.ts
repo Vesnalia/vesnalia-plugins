@@ -3,7 +3,7 @@ import { DOCKER_MACHINES, DRIVERS, KINDS, driverOf, kindOf, offersOf, type Backe
 import { problemsOf, relative, STALE_MS } from "./store";
 
 export function qualifierOf(backend: BackendConfig, live: BackendLive | undefined): string | null {
-  if (live?.bbMachine) return live.bbMachine.name;
+  if (live?.aliaMachine) return live.aliaMachine.name;
   if (backend.id.includes(":")) return backend.id.slice(backend.id.indexOf(":") + 1);
   if (backend.type === "proxmox-lxc" || backend.type === "proxmox-qemu") return String(backend.fields.node || "pve-1");
   if (backend.type === "docker") return backend.fields.host ? "docker-1" : "this machine";
@@ -163,7 +163,7 @@ export function statusItems(doc: Document, live: Readonly<Record<string, Backend
   }
   for (const image of images) if (image.lastState === "failed") items.push({ key: `i-${image.name}`, tone: "warn", title: `Image ${image.name} did not rebuild`, detail: image.last, fix: "Free disk on the Mac, then Rebuild what is due.", open: { page: "option", id: "images" } });
   for (const machine of DOCKER_MACHINES) {
-    const used = doc.backends.find((backend) => backend.fields.host === `bb:${machine.id}`);
+    const used = doc.backends.find((backend) => backend.fields.host === `alia:${machine.id}`);
     if (used && machine.fault) items.push({ key: `d-${machine.id}`, tone: "bad", title: `Docker on ${machine.name}`, detail: machine.fault, open: { page: "backend", id: used.id } });
   }
   return items;

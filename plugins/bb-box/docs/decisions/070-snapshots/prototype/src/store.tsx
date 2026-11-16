@@ -254,7 +254,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const native = (snap: FakeSnap) => snap.boxId === boxId && alive(snap) && snap.undoWay !== "held-copy" && !snap.onEarlierGuest;
     const leavesOnEarlierGuest = swap ? snapsRef.current.filter(native).length : 0;
     let refused: string | null = null;
-    if (box.locked) refused = `Proxmox left ${box.name} locked (${box.locked}). bb-box's token cannot unlock it: run \`pct unlock ${box.vmid}\` on ${box.host}.`;
+    if (box.locked) refused = `Proxmox left ${box.name} locked (${box.locked}). alia-box's token cannot unlock it: run \`pct unlock ${box.vmid}\` on ${box.host}.`;
     else if (target?.onEarlierGuest) refused = `"${target.name}" is on ${box.name}'s earlier guest: it can be forked or kept, not restored.`;
     else if (target && box.storage?.newestOnly && !swap) {
       const newer = snapsRef.current.filter((snap) => native(snap) && snap.takenAt > target.takenAt).length;
@@ -319,7 +319,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!box.snapshotting) return box.noSnapshotsWhy ?? `${box.name} has no snapshots.`;
     if (box.cannotTakeWhy) return box.cannotTakeWhy;
     if (box.locked) return `Proxmox left ${box.name} locked (${box.locked}). Run \`pct unlock ${box.vmid}\` on ${box.host}.`;
-    if (box.state !== "ready" && box.state !== "stopped") return `${box.name} is ${box.state === "restoring" ? "being restored" : box.state === "unconfirmed" ? "waiting for bb-box to confirm a restore" : "starting"}.`;
+    if (box.state !== "ready" && box.state !== "stopped") return `${box.name} is ${box.state === "restoring" ? "being restored" : box.state === "unconfirmed" ? "waiting for alia-box to confirm a restore" : "starting"}.`;
     const limit = settingsRef.current.perBox;
     const held = counted(boxId);
     if (held.length >= limit) {
@@ -344,7 +344,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const oldest = held.filter((snap) => snap.by.is === "agent" && snap.by.threadId === by.threadId && !protect.includes(snap.id) && !eligible(snap.id, "evict")).sort((a, b) => a.takenAt - b.takenAt)[0];
     if (!oldest) return;
     setSnapsNow((current) => current.filter((snap) => snap.id !== oldest.id));
-    log(boxId, `Deleted "${oldest.name}": the limit of ${settingsRef.current.perBox} a box`, { is: "bb-box", why: "the per-box limit" });
+    log(boxId, `Deleted "${oldest.name}": the limit of ${settingsRef.current.perBox} a box`, { is: "alia-box", why: "the per-box limit" });
   }, [counted, setSnapsNow, log, eligible]);
 
   const pruneUndos = useCallback((boxId: string, keepId: string) => {
@@ -354,7 +354,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const going = spare.slice(0, over);
     if (!going.length) return;
     setSnapsNow((current) => current.filter((snap) => !going.some((each) => each.id === snap.id)));
-    for (const each of going) log(boxId, `Deleted the oldest undo, "${each.name}": ${UNDOS_A_BOX} a box`, { is: "bb-box", why: "undos a box" });
+    for (const each of going) log(boxId, `Deleted the oldest undo, "${each.name}": ${UNDOS_A_BOX} a box`, { is: "alia-box", why: "undos a box" });
   }, [undos, setSnapsNow, log, eligible]);
 
   const startTake = useCallback((box: FakeBox, ask: TakeAsk, by: Actor, undoOf: FakeSnap["undoOf"], undoWay: UndoWay | null): FakeSnap => {
@@ -473,13 +473,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setFailNext(false);
       pin([target.id, ...(undoSnap ? [undoSnap.id] : [])], false);
       updateBox(boxId, { state: "stopped", step: null, locked: "rollback" });
-      log(box.id, `Restore failed: Proxmox's rollback task stopped and left the container locked. bb-box then found ${box.name} stopped, and cannot start it until the lock is cleared. The undo is kept.`, by);
+      log(box.id, `Restore failed: Proxmox's rollback task stopped and left the container locked. alia-box then found ${box.name} stopped, and cannot start it until the lock is cleared. The undo is kept.`, by);
       if (options.formId) updateForm(options.formId, { state: "refused", words: "The restore failed: Proxmox left the box locked. Nothing more was changed; the undo is kept." });
       if (!onBoxPage(boxId)) say(`Restoring ${box.name} failed, and Proxmox left it locked.`);
     });
     step(base + 1_200, box.snapshotting?.scope === "device" ? "Loading the device's snapshot" : target.holds === "disk-and-memory" ? "Resuming" : "Starting");
     step(base + 1_900, "Writing current access over SSH, first");
-    step(base + 2_600, "Joining BB again, as the same machine");
+    step(base + 2_600, "Joining VesnALIA again, as the same machine");
     later(base + 3_300, () => {
       if (cancelled.current.has(op)) return;
       const then = target.sizeThen;
@@ -535,7 +535,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateBox(id, { step: "First boot: new MAC addresses, so the identity reset runs before the network" });
     });
     later(2_800, () => updateBox(id, { step: "Checking its source's credentials are gone" }));
-    later(3_600, () => updateBox(id, { step: "Joining BB as a new machine" }));
+    later(3_600, () => updateBox(id, { step: "Joining VesnALIA as a new machine" }));
     later(4_400, () => updateBox(id, { state: "ready", step: null }));
     return { ok: true, id };
   }, [whyNotFork, later, log, updateBox, pin]);
@@ -613,7 +613,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       threadsRef.current = threadsRef.current.map((thread) => (thread.id === form.threadId ? { ...thread, running: false } : thread));
       const outcome = restore(form.boxId, form.snapId, { undo: true, anyway: true, consentIn: title, formId: id }, { is: "form", threadId: form.threadId });
       if (!outcome.ok) return updateForm(id, { state: "refused", words: outcome.why });
-      updateForm(id, { state: "restoring", words: "Restoring as bb-box's own operation; the undo is taken once the box has stopped" });
+      updateForm(id, { state: "restoring", words: "Restoring as alia-box's own operation; the undo is taken once the box has stopped" });
     });
   }, [forms, updateForm, later, restore]);
 
@@ -629,7 +629,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       cancelled.current.add(outcome.id);
       updateBox(boxId, { state: "unconfirmed", step: null });
       notice("unconfirmed", boxId, target, BY_PERSON, null, null);
-      log(boxId, `bb-box restarted while restoring to "${target.name}": it was rolling back. Its record of the restore is kept, and the target stays pinned.`, { is: "bb-box", why: "a restart" });
+      log(boxId, `alia-box restarted while restoring to "${target.name}": it was rolling back. Its record of the restore is kept, and the target stays pinned.`, { is: "alia-box", why: "a restart" });
     });
   }, [restore, later, updateBox, notice, log, say]);
 
@@ -642,7 +642,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       void target;
       updateBox(boxId, { state: "ready", step: null });
       notice("finished-after-restart", boxId, target, BY_PERSON, undos(boxId).at(-1)?.id ?? null, null);
-      log(boxId, "Proxmox's rollback task had ended OK; bb-box started the box, wrote current access and finished the restore", { is: "bb-box", why: "finishing a restore cut short" });
+      log(boxId, "Proxmox's rollback task had ended OK; alia-box started the box, wrote current access and finished the restore", { is: "alia-box", why: "finishing a restore cut short" });
     });
   }, [updateBox, later, notices, notice, undos, log, pin]);
 
@@ -658,11 +658,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const victims = candidates.filter((snap) => !eligible(snap.id, "sweep"));
       const spared = candidates.filter((snap) => eligible(snap.id, "sweep"));
       setSnapsNow((current) => current.filter((snap) => !victims.some((victim) => victim.id === snap.id)));
-      for (const victim of victims) log(victim.boxId, `Deleted "${victim.name}"`, { is: "bb-box", why: `${host}'s storage was 93% full` });
-      for (const each of spared) log(each.boxId, `The room sweep spared "${each.name}": ${eligible(each.id, "sweep")}`, { is: "bb-box", why: `${host}'s storage was 93% full` });
+      for (const victim of victims) log(victim.boxId, `Deleted "${victim.name}"`, { is: "alia-box", why: `${host}'s storage was 93% full` });
+      for (const each of spared) log(each.boxId, `The room sweep spared "${each.name}": ${eligible(each.id, "sweep")}`, { is: "alia-box", why: `${host}'s storage was 93% full` });
       boxesRef.current = boxesRef.current.map((box) => (box.host === host && box.storage ? { ...box, storage: { ...box.storage, full: 88 } } : box));
       setBoxes(boxesRef.current);
-      say(`${host}'s storage passed ${settingsRef.current.roomPercent + SWEEP_DELETES_AT}%: bb-box deleted ${victims.length} agents' snapshots nobody kept. New snapshots there are refused until it is under ${settingsRef.current.roomPercent}%.`);
+      say(`${host}'s storage passed ${settingsRef.current.roomPercent + SWEEP_DELETES_AT}%: alia-box deleted ${victims.length} agents' snapshots nobody kept. New snapshots there are refused until it is under ${settingsRef.current.roomPercent}%.`);
     });
   }, [later, setSnapsNow, log, say, eligible]);
 

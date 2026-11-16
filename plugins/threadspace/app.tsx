@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import {
-  definePluginApp, experimental_useSidebarThreads, useBbNavigate, useSdk, useRpc,
+  definePluginApp, experimental_useSidebarThreads, useAliaNavigate, useSdk, useRpc,
   useRealtime, useRealtimeConnectionState, experimental_usePluginId, experimental_useCodeTheme,
   experimental_useThreadActions, experimental_ThreadActionsMenu as ThreadActionsMenu,
   experimental_ThreadActionsContextMenu as ThreadActionsContextMenu,
@@ -9,7 +9,7 @@ import {
   useSidebarThreadRowStatuses,
   experimental_useProviders, experimental_ProviderIcon as ProviderIcon,
   type PluginThreadListProps, type PluginSidebarThread, type PluginThreadActionTarget,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import type { ProjectAppearance } from "./src/preferences";
@@ -34,12 +34,12 @@ type AgentProvider=ReturnType<typeof experimental_useProviders>["providers"][num
 // that subscription local to its button instead of re-rendering the whole row.
 function NativeArchiveAction({thread,target,requestRename}:{thread:PluginSidebarThread;target:PluginThreadActionTarget;requestRename():void}) {
   const t=useStrings(),[archiving,setArchiving]=useState(false);
-  const actions=experimental_useThreadActions(target,{keys:["bb--core/archive"],requestRename});
-  const archive=actions.find(action=>action.key==="bb--core/archive")?.action;
+  const actions=experimental_useThreadActions(target,{keys:["alia--core/archive"],requestRename});
+  const archive=actions.find(action=>action.key==="alia--core/archive")?.action;
   if(!archive)return null;
   return <button className="ns-icon-button ns-archive" disabled={archive.disabled||archiving} aria-label={`${thread.isArchived?t.restoreThread:t.archiveThread} ${thread.displayTitle}`} title={thread.isArchived?t.restoreThread:t.archiveThread} onClick={async()=>{setArchiving(true);try{await archive.run();}finally{setArchiving(false);}}}><Icon name={thread.isArchived?"restore":"archive"}/></button>;
 }
-// Pin into the thread's own project with BB's native pin state.
+// Pin into the thread's own project with VesnALIA's native pin state.
 function PinButton({thread}:{thread:PluginSidebarThread}) {
   const sdk=useSdk(),t=useStrings(),[busy,setBusy]=useState(false);
   const label=thread.isPinned?t.unpinThread:t.pinThread;
@@ -84,7 +84,7 @@ function NotionSidebarContent({activeThreadId,onNavigate,isCompactViewport}:Plug
   const language=useLanguage(),t=useStrings();
   const [showArchived,setShowArchived]=useState(false);
   const data=experimental_useSidebarThreads({experimental_lifecycles:showArchived?["archived"]:["active"]});
-  const rpc=useRpc<typeof rpcContract>(),navigate=useBbNavigate(),pluginId=experimental_usePluginId(),hostTheme=experimental_useCodeTheme();
+  const rpc=useRpc<typeof rpcContract>(),navigate=useAliaNavigate(),pluginId=experimental_usePluginId(),hostTheme=experimental_useCodeTheme();
   const {toThread,toCompose}=navigate;
   const openThread=useCallback((threadId:string)=>{toThread(threadId);onNavigate();},[toThread,onNavigate]);
   const newThread=useCallback((projectId?:string)=>{toCompose({projectId,focusPrompt:true});onNavigate();},[toCompose,onNavigate]);

@@ -247,7 +247,7 @@ export const ru: Messages = {
   "folders.about.archive": "Архивные чаты. Подгружаются, только когда папка открыта.",
   "folders.about.projects":
     "По папке на каждый проект с чатами, сначала самые активные. Скрой, если отдельные папки проектов не нужны.",
-  "folders.about.sections": "По папке на каждый раздел bb, в котором есть чаты.",
+  "folders.about.sections": "По папке на каждый раздел alia, в котором есть чаты.",
   "toast.folderDeleted": "Папка «{name}» удалена",
   "toast.undo": "Отменить",
   "toast.foldersReset": "Папки сброшены к стандартным",

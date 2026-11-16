@@ -4,7 +4,7 @@
 import type Database from "better-sqlite3";
 
 /**
- * Appended to the plugin's `bb.storage.migrate` list. The host hashes every shipped statement
+ * Appended to the plugin's `alia.storage.migrate` list. The host hashes every shipped statement
  * and rejects an edited or reordered one, so the three statements below stay exactly as 0.3.2
  * shipped them. `env_grants` and `env_grant_requests` belong to the grant flow removed in 0.3.3:
  * the tables stay in place, empty and unused, and nothing reads or writes them.

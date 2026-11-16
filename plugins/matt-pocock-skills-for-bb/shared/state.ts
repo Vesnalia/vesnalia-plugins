@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bbNameSchema, bucketSchema, canonicalIdSchema, commitShaSchema, stableBucketSchema } from "./catalog.ts";
+import { aliaNameSchema, bucketSchema, canonicalIdSchema, commitShaSchema, stableBucketSchema } from "./catalog.ts";
 import { conflictChoiceSchema, conflictStateSchema, effectiveOutcomeSchema } from "./conflicts.ts";
 
 export const toggleSchema = z.enum(["on", "off"]);
@@ -50,7 +50,7 @@ export const resolvedReasonSchema = z.enum([
 ]);
 export const choiceSourceSchema = z.enum(["project", "global", "arrival", "bucket"]);
 export const resolvedSkillSchema = z.strictObject({
-  canonicalId: canonicalIdSchema, bbName: bbNameSchema.nullable(), outcome: effectiveOutcomeSchema,
+  canonicalId: canonicalIdSchema, aliaName: aliaNameSchema.nullable(), outcome: effectiveOutcomeSchema,
   conflict: conflictStateSchema, chosen: z.boolean(), choiceSource: choiceSourceSchema,
   active: z.boolean(), reason: resolvedReasonSchema, neededBy: z.array(canonicalIdSchema).readonly(), blockedBy: z.array(canonicalIdSchema).readonly(),
 });

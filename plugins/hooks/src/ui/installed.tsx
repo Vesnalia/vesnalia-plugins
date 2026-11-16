@@ -1,7 +1,7 @@
 // The Installed tab: hooks with switches, last-run status, details, editing,
 // and the run log with filters.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";

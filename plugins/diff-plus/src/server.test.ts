@@ -1,4 +1,4 @@
-// The merge-base logic in server.ts, end to end: the real server.ts with a fake `bb` (kv, environments,
+// The merge-base logic in server.ts, end to end: the real server.ts with a fake `VesnALIA` (kv, environments,
 // the Git plugin's setMergeBase) and a real throwaway git repository for `git log`.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -6,7 +6,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import plugin from "../server.ts";
 
 const ENV = "env_test";
@@ -40,7 +40,7 @@ function world(path: string, mergeBaseBranch: string | null = null) {
     const handlers: Handlers = {};
     let disposeFn: () => Promise<void> = async () => {};
     const log = (level: string) => (message: string) => void logs.push({ level, message });
-    const bb = {
+    const alia = {
       storage: {
         kv: {
           get: async (key: string) => (kv.has(key) ? structuredClone(kv.get(key)) : null),
@@ -66,7 +66,7 @@ function world(path: string, mergeBaseBranch: string | null = null) {
         },
       },
     };
-    await plugin(bb as unknown as BbPluginApi);
+    await plugin(alia as unknown as AliaPluginApi);
     // The startup restore runs in the background; let it finish.
     await new Promise((done) => setTimeout(done, 30));
     return { call: (method: string, input: unknown) => handlers[method]!(input), dispose: () => disposeFn() };
@@ -167,7 +167,7 @@ test("a base changed elsewhere drops the record and is left alone", async () => 
   const { w } = await fresh(6, "main");
   const dp = await w.load();
   await dp.call("show_recent", { environmentId: ENV, count: 2 });
-  w.environment.mergeBaseBranch = "release"; // the user picked another base in BB
+  w.environment.mergeBaseBranch = "release"; // the user picked another base in VesnALIA
   const before = w.setCalls.length;
   assert.deepEqual(await dp.call("restore_base", { environmentId: ENV, reason: "scope" }), { ok: true, moved: false });
   assert.equal(w.environment.mergeBaseBranch, "release", "not overwritten");

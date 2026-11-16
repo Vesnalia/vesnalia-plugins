@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type * as PluginSdkApp from "@get-bb/plugin-sdk/app";
+import type * as PluginSdkApp from "@vesnalia/plugin-sdk/app";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Action, Value } from "../../core/types";
 import { useBlockAnswerTarget, type AnswerTarget } from "../LiveUi";
@@ -11,8 +11,8 @@ import { FollowUps } from "./choose";
 import { List } from "./explain";
 import { Button } from "./inputs";
 
-// BB draws icons; here each is an element naming its icon, in place.
-vi.mock("@get-bb/plugin-sdk/app", async (importOriginal) => ({
+// VesnALIA draws icons; here each is an element naming its icon, in place.
+vi.mock("@vesnalia/plugin-sdk/app", async (importOriginal) => ({
   ...(await importOriginal<typeof PluginSdkApp>()),
   experimental_Icon: ({ name }: { name: string }) => <i data-icon={name} />,
   useSettings: () => ({ values: undefined, isLoading: true }),
@@ -86,7 +86,7 @@ function face(button: Element): string {
 
 /** The hint a keyboard user gets on focusing `button`, or null when it has none. */
 function hintOnFocus(button: HTMLElement): string | null {
-  // BB's tooltip opens on focus only after keyboard input, as a Tab would be.
+  // VesnALIA's tooltip opens on focus only after keyboard input, as a Tab would be.
   act(() => {
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
     button.focus();

@@ -1,9 +1,9 @@
 # verify
 
 Answers "does it work?" against the real plugin, through the real Thread Pages bridge, in a real browser, and
-carries a release of the plugin to bb and Claude Code. Python 3 (standard library only); run each tool with `python3`
+carries a release of the plugin to VesnALIA and Claude Code. Python 3 (standard library only); run each tool with `python3`
 from the root of a clone of this repository. Each tool's docstring says what it does, when it pays and its exit codes.
-None of this is part of the plugin: bb builds `server.ts` and `host.ts`, and Claude Code installs `hosts/claude`.
+None of this is part of the plugin: VesnALIA builds `server.ts` and `host.ts`, and Claude Code installs `hosts/claude`.
 
 The tools write nothing beside themselves: a record they keep (the VERIFY table, the scenario log) is a file you
 name.
@@ -12,14 +12,14 @@ name.
 
 | Cell | What covers it |
 | --- | --- |
-| E1 the fixture over loopback | `run --fixtures`: `fixture.html` in a fresh session of a scratch repository, read in bb's headless browser; on Claude Code, `claude-code-inhost` |
-| E2 a page read over bb Connect | `run --connect` → `connect-probe` |
+| E1 the fixture over loopback | `run --fixtures`: `fixture.html` in a fresh session of a scratch repository, read in VesnALIA's headless browser; on Claude Code, `claude-code-inhost` |
+| E2 a page read over VesnALIA Connect | `run --connect` → `connect-probe` |
 | E3 WebKit, iPhone Safari | the owner's device check, when a round changes a page surface |
 | E4 host limits, fresh session | `run --limits` → `fragment-check` |
 | E5 host and CLI versions | `run --versions` |
 | E6 permission modes | `run --modes`: the fixture with its session in auto mode |
 | E7 a fresh agent on the contract | `run-scenarios`, graded per packet by a fresh subagent briefed with `scenarios/GRADER.md`; `run --scenarios --spec <spec> --log <log>` reads the result |
-| E8 install over the previous release | `run --upgrade`: the path; run only on a bb made for it |
+| E8 install over the previous release | `run --upgrade`: the path; run only on a VesnALIA made for it |
 
 `python3 verify/run --all --code . --spec <spec folder> --log <scenario log> --write <VERIFY.md>` runs every cell it
 can. Scratch repositories are `scratch.py`'s (`scratch-sbp-…`, private, deleted when their run ends, also when it
@@ -41,9 +41,9 @@ them whenever a contract file changes. Nothing messages a scenario session: a co
 | --- | --- |
 | before the tag | `release-guard --version <v> --code .`: refuses a version `origin/main` ever carried with another Claude Code bundle |
 | after the tag is pushed | `marketplace-pin --version <v> --code .` (first with `--dry-run`): pins syns-pages in `synsdev/syns-claude-plugins` to the release commit |
-| after `bb plugin update syns` | `served-check --code .`: the page script bb serves is the release's |
+| after `alia plugin update syns` | `served-check --code .`: the page script VesnALIA serves is the release's |
 | on Claude Code | `claude-code-check --version <v> --code .`: installed, running and freshly installed bundles are the release's; then `claude-code-inhost --version <v> --code .`: the fixture and a scoped-diff probe in the owner's own pinned tab (`start` makes its session once) |
-| on bb | `run --fixtures --limits --code .` |
+| on VesnALIA | `run --fixtures --limits --code .` |
 
 ## By hand
 
@@ -54,8 +54,8 @@ from outside the page: append a line to a file, press *Run the dirty-checkout ro
 
 ## Tests
 
-`test-verify`, `test-release-tools` and `test-claude-code-inhost` are offline: stand-in `syns` and `bb`, synthetic
-git repositories on local paths, a page reporter run in node. `syspath.py` hides the system's real `syns`, `bb`,
+`test-verify`, `test-release-tools` and `test-claude-code-inhost` are offline: stand-in `syns` and `alia`, synthetic
+git repositories on local paths, a page reporter run in node. `syspath.py` hides the system's real `syns`, `alia`,
 `claude`, `gh`, `docker` and network programs from the tools under test. The `ci` workflow runs them, after the
 plugin's own typecheck and tests, on every push and pull request.
 

@@ -1,12 +1,12 @@
 // Spaces — frontend entry.
 //
-// Registers a sidebar navigation that is bb's Rail (forked from the bundled
+// Registers a sidebar navigation that is VesnALIA's Rail (forked from the bundled
 // Navigation plugin, app/nav/) plus an Arc-style space switcher in the
 // sidebar header, and palette commands with Control+Alt+1…9 shortcuts (⌃⌥ on macOS).
 import {
   definePluginApp,
   type ExperimentalSidebarHeaderProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { registerSpaceIcons } from "./app/custom-icons.js";
 import { Rail, RailNewThreadButton } from "./app/nav/Rail.js";
@@ -49,7 +49,7 @@ export default definePluginApp((app) => {
   app.slots.experimental_sidebarNavigation({
     id: "rail",
     title: "Rail with Spaces",
-    description: "bb's icon rail, with an Arc-style space switcher in the header",
+    description: "VesnALIA's icon rail, with an Arc-style space switcher in the header",
     placement: "rail",
     component: Rail,
     headerComponent: SpacesHeader,

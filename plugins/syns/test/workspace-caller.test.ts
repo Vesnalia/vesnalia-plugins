@@ -5,7 +5,7 @@ import { VERSION } from "../src/declaration.js";
 import type { Answer, Call, Workspace } from "../src/dispatch.js";
 import { METHODS } from "../src/methods/index.js";
 import { PAGEHOST } from "../src/pagehost.js";
-import { fakeBb } from "./fake-bb.js";
+import { fakeAlia } from "./fake-alia.js";
 import { ok, rec } from "./fake-runner.js";
 import { HEAD, SAMPLES, failureOf, harness, resultOf } from "./harness.js";
 
@@ -205,7 +205,7 @@ describe("a malformed workspace with no session is handler_error (S2.2, A100, W9
   it("the page-script ask: null for the relative path, the bad machine and the string; the script for a missing or blank id, which the ask does not need", async () => {
     const ask = (workspace: unknown) => ({ caller: { sessionId: null, workspace }, documentPath: "index.html", have: null });
     const runs: unknown[] = [];
-    const { handlers } = fakeBb({}, async (_method, input) => (runs.push(input), rec("repo.ok")));
+    const { handlers } = fakeAlia({}, async (_method, input) => (runs.push(input), rec("repo.ok")));
     for (const workspace of [{ ...WS, path: "work/checkout" }, { ...WS, machine: 7 }, "/work/checkout"]) expect(await handlers.threadPagesPageScript!(ask(workspace))).toBeNull();
     expect(runs).toHaveLength(0);
     for (const workspace of [{ path: WS.path, machine: WS.machine }, { ...WS, id: "" }, { ...WS, id: "  " }]) {
@@ -219,17 +219,17 @@ describe("the page script for a new-session page (S2.27, A82, A102, W3)", () => 
 
   it("answers the script after one repo --json in the workspace's folder; only the version when the host holds it", async () => {
     const runs: { input: Record<string, unknown>; options: Record<string, unknown> }[] = [];
-    const { handlers } = fakeBb({}, async (_method, input, options) => (runs.push({ input, options }), rec("repo.ok")));
+    const { handlers } = fakeAlia({}, async (_method, input, options) => (runs.push({ input, options }), rec("repo.ok")));
     expect(await handlers.threadPagesPageScript!(ask(null))).toEqual({ version: VERSION, script: PAGEHOST });
     expect(runs).toEqual([{ input: expect.objectContaining({ cwd: "/work/checkout", args: ["repo", "--json"] }), options: expect.objectContaining({ hostId: "host_1" }) }]);
     expect(await handlers.threadPagesPageScript!(ask(VERSION))).toEqual({ version: VERSION });
   });
 
   it("answers null for a folder that is no repository, a relative path, or no workspace", async () => {
-    const { handlers } = fakeBb({}, async () => rec("no-identity"));
+    const { handlers } = fakeAlia({}, async () => rec("no-identity"));
     expect(await handlers.threadPagesPageScript!(ask(null))).toBeNull();
     const asked: unknown[] = [];
-    const { handlers: other } = fakeBb({}, async (method) => (asked.push(method), rec("repo.ok")));
+    const { handlers: other } = fakeAlia({}, async (method) => (asked.push(method), rec("repo.ok")));
     expect(await other.threadPagesPageScript!(ask(null, { ...WS, path: "checkout" }))).toBeNull();
     expect(await other.threadPagesPageScript!(ask(null, null))).toBeNull();
     expect(asked).toEqual([]);

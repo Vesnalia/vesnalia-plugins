@@ -1,16 +1,16 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Folder } from "./server";
 
 const within = (p: string, r: string) =>
   p === r || p.startsWith(r.endsWith(path.sep) ? r : r + path.sep);
 
-async function threadInventory(bb: BbPluginApi, projectId: string) {
-  const result: Awaited<ReturnType<typeof bb.sdk.threads.list>> = [];
+async function threadInventory(alia: AliaPluginApi, projectId: string) {
+  const result: Awaited<ReturnType<typeof alia.sdk.threads.list>> = [];
   for (const archived of [false, true]) {
     for (let offset = 0; ; offset += 200) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         projectId,
         includeHidden: true,
         archived,
@@ -25,7 +25,7 @@ async function threadInventory(bb: BbPluginApi, projectId: string) {
 }
 
 export async function deleteProject(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   deps: {
     folders: () => Folder[];
     busy: (projectId: string) => boolean;
@@ -41,13 +41,13 @@ export async function deleteProject(
     );
   if (deps.pendingArchives(input.projectId))
     throw new Error("Finish pending section archives before deleting the project.");
-  const project = (await bb.sdk.projects.list()).find(
+  const project = (await alia.sdk.projects.list()).find(
     (p) => p.id === input.projectId,
   );
   if (!project) throw new Error("Project not found.");
   if (project.kind === "personal")
     throw new Error("The personal inbox cannot be deleted from this plugin.");
-  const threads = await threadInventory(bb, project.id);
+  const threads = await threadInventory(alia, project.id);
   if (
     threads.some(
       (t) =>
@@ -66,7 +66,7 @@ export async function deleteProject(
       throw new Error(
         "Moving files to the archive needs a local project folder. Choose keep files instead.",
       );
-    const others = await bb.sdk.projects.list();
+    const others = await alia.sdk.projects.list();
     for (const source of sources) {
       if (
         others.some(
@@ -81,7 +81,7 @@ export async function deleteProject(
         )
       )
         throw new Error(
-          "Another BB project lives inside this folder. Choose keep files or move that project first.",
+          "Another VesnALIA project lives inside this folder. Choose keep files or move that project first.",
         );
       if (
         deps
@@ -101,16 +101,16 @@ export async function deleteProject(
     for (const source of sources) {
       const dest = path.join(
         path.dirname(source.path),
-        ".bb/archive/projects",
+        ".vesnalia/archive/projects",
         archiveId,
         "folder",
       );
-      await bb.sdk.files.mkdir({
+      await alia.sdk.files.mkdir({
         hostId: source.hostId,
         path: path.dirname(dest),
         recursive: true,
       });
-      await bb.sdk.files.move({
+      await alia.sdk.files.move({
         hostId: source.hostId,
         sourcePath: source.path,
         destinationPath: dest,
@@ -119,7 +119,7 @@ export async function deleteProject(
     }
   }
   deps.dropProjectRows(project.id);
-  await bb.sdk.projects.delete({ projectId: project.id });
+  await alia.sdk.projects.delete({ projectId: project.id });
   deps.changed();
   return { ok: true as const, files: input.files, archivePath };
 }

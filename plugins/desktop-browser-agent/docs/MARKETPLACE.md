@@ -1,6 +1,6 @@
-# bb marketplace listing
+# VesnALIA marketplace listing
 
-Registry: <https://github.com/get-bb/marketplace> (`bb-community`). Its README
+Registry: <https://github.com/get-bb/marketplace> (`alia-community`). Its README
 is the source of truth for the entry format and checks.
 
 This plugin is listed on its own as **Desktop & Browser Agent**, id
@@ -11,7 +11,7 @@ The name and icon keep it apart from the older **Computer Use** entry
 ## Files in the marketplace repo
 
 - `entries/desktop-browser-agent.json`: `source.git.url` is this repository with
-  `range: "^0.5.0"`, so bb offers every `v0.x.y` tag from 0.5.0 on (earlier tags carry the old id `computer-use`).
+  `range: "^0.5.0"`, so VesnALIA offers every `v0.x.y` tag from 0.5.0 on (earlier tags carry the old id `computer-use`).
   `author.github` must be the account that opens the PR (`qwadrox`).
 - `icons/desktop-browser-agent-<hash>.svg`: a copy of `icons/desktop-browser-agent.svg`,
   named with the first 8 hex chars of its SHA-256.

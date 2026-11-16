@@ -1,4 +1,4 @@
-import {defineRpcContract, type BbPluginApi} from '@get-bb/plugin-sdk';
+import {defineRpcContract, type AliaPluginApi} from '@vesnalia/plugin-sdk';
 import {z} from 'zod';
 import {readNavigationHeadings, setNavigationHeading} from './headings.ts';
 import {moveBefore, navigationKey, visibleKeys} from './navigation.ts';
@@ -15,9 +15,9 @@ export const rpcContract = defineRpcContract({
   move: {input: z.object({key, target: key, keys, expectedRevision: revision}).strict(), output},
   visibility: {input: z.object({key, visible: z.boolean(), keys, expectedRevision: revision}).strict(), output},
 });
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(alia: AliaPluginApi) {
   const get = async () => {
-    const {preferences} = await bb.sdk.system.uiPreferences.list();
+    const {preferences} = await alia.sdk.system.uiPreferences.list();
     const order = preferences['sidebar.pluginPanelOrder'];
     const visible = preferences['sidebar.visiblePluginPanels'];
     return {headings: Object.fromEntries(readNavigationHeadings(order.value)), order: order.value,
@@ -29,12 +29,12 @@ export default function plugin(bb: BbPluginApi) {
     pending = work;
     return work;
   };
-  const changed = () => {bb.realtime.publish('headings-changed', {}); return get();};
-  bb.rpc.register(rpcContract, {
+  const changed = () => {alia.realtime.publish('headings-changed', {}); return get();};
+  alia.rpc.register(rpcContract, {
     get,
     save: ({key, title}) => serialize(async () => {
       const current = await get();
-      await bb.sdk.system.uiPreferences.set({key: 'sidebar.pluginPanelOrder', expectedRevision: current.orderRevision,
+      await alia.sdk.system.uiPreferences.set({key: 'sidebar.pluginPanelOrder', expectedRevision: current.orderRevision,
         value: setNavigationHeading(current.order, key, title)});
       return changed();
     }),
@@ -42,7 +42,7 @@ export default function plugin(bb: BbPluginApi) {
       const current = await get();
       if (current.orderRevision !== expectedRevision) throw new Error('Navigation changed elsewhere. Refresh and try again.');
       if (navigationKey(key) === navigationKey(target)) return current;
-      await bb.sdk.system.uiPreferences.set({key: 'sidebar.pluginPanelOrder', expectedRevision,
+      await alia.sdk.system.uiPreferences.set({key: 'sidebar.pluginPanelOrder', expectedRevision,
         value: moveBefore(current.order, keys, navigationKey(key), navigationKey(target))});
       return changed();
     }),
@@ -53,7 +53,7 @@ export default function plugin(bb: BbPluginApi) {
       if (!keys.map(navigationKey).includes(canonical)) throw new Error('Unknown navigation destination.');
       const previous = visibleKeys(keys.map(navigationKey), current.visible);
       const next = visible ? [...new Set([...previous, canonical])] : previous.filter(item => item !== canonical);
-      await bb.sdk.system.uiPreferences.set({key: 'sidebar.visiblePluginPanels', expectedRevision, value: next});
+      await alia.sdk.system.uiPreferences.set({key: 'sidebar.visiblePluginPanels', expectedRevision, value: next});
       return changed();
     }),
   });

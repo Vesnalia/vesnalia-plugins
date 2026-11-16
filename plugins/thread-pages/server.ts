@@ -1,7 +1,7 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createPlugin } from "./src/plugin.ts";
 
-/** Unife Pages for bb: every session gets one page it writes itself. */
-export default async function bbPagesPlugin(bb: BbPluginApi): Promise<void> {
-  await createPlugin(bb);
+/** Unife Pages for VesnALIA: every session gets one page it writes itself. */
+export default async function aliaPagesPlugin(alia: AliaPluginApi): Promise<void> {
+  await createPlugin(alia);
 }

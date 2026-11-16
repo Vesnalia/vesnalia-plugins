@@ -1,4 +1,4 @@
-// The quick buttons a row shows on hover: bb thread action keys
+// The quick buttons a row shows on hover: VesnALIA thread action keys
 // (`<owner>/<id>`) in the order the row shows them, synced by the backend.
 // Free of zod and the SDK, so the frontend can import its values.
 

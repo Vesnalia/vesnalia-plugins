@@ -1,4 +1,4 @@
-// bb runs plugin commands outside React, but the list they act on lives in
+// VesnALIA runs plugin commands outside React, but the list they act on lives in
 // the overlay's hooks. The overlay publishes what the commands need here on
 // every render; each app window loads its own copy of the bundle, so one
 // module-level slot per window is exactly right.

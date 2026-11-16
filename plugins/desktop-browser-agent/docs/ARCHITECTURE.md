@@ -4,12 +4,12 @@
 
 ```mermaid
 flowchart LR
-  subgraph bbServer["bb server (any machine)"]
-    S[server.ts<br/>settings · policy · tools · rpc<br/>src/cli.ts: bb cua]
+  subgraph aliaServer["alia server (any machine)"]
+    S[server.ts<br/>settings · policy · tools · rpc<br/>src/cli.ts: alia cua]
     UI[app.tsx + settings/<br/>settings sections]
     UI -- rpc --> S
   end
-  subgraph daemon["bb host daemon (thread's machine)"]
+  subgraph daemon["alia host daemon (thread's machine)"]
     H[host.ts<br/>binary lookup · status probe · MCP session]
     M[cua-driver mcp<br/>stdio JSON-RPC]
     H -- spawn + stdio --> M
@@ -29,7 +29,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
   participant A as Agent (provider)
-  participant B as bb server
+  participant B as alia server
   participant S as plugin server.ts
   participant H as plugin host.ts (target machine)
   participant C as cua-driver mcp
@@ -37,7 +37,7 @@ sequenceDiagram
   B->>S: execute(args, {threadId, signal})
   S->>B: threads.get → environments.get
   B-->>S: hostId
-  S->>H: callTool {name: click, arguments, session: bb-thr_x} (hostId)
+  S->>H: callTool {name: click, arguments, session: alia-thr_x} (hostId)
   alt no MCP session yet
     H->>C: spawn `cua-driver mcp`, initialize, tools/list
     H-->>S: signal connectionChanged {connected: true}
@@ -61,7 +61,7 @@ flowchart TD
   V -- no --> C
   G --> C[configure: meta tools + every tool<br/>whose exposure is tool, with the<br/>machine's own schema as override]
   X[exposure: managed or group off → off<br/>else user override<br/>else src/exposure.ts review<br/>else readOnlyHint ? call : off] --> C
-  X --> CC[cua_call and bb cua call<br/>refuse tools that are off]
+  X --> CC[cua_call and alia cua call<br/>refuse tools that are off]
 ```
 
 `start_session` and `end_session` are managed by the plugin and never exposed.
@@ -129,7 +129,7 @@ host's `browserBridge` method.
 
 ```mermaid
 flowchart TD
-  T[thread.start / turn.submit] --> C[bb.agents.configure ctx]
+  T[thread.start / turn.submit] --> C[alia.agents.configure ctx]
   C --> O{override for provider?}
   O -- yes --> D[decision = override]
   O -- no --> M{mode}
@@ -144,7 +144,7 @@ flowchart TD
 
 ## Process model per OS
 
-| OS | What `cua-driver mcp` does | Who owns permissions | bb daemon requirement |
+| OS | What `cua-driver mcp` does | Who owns permissions | VesnALIA daemon requirement |
 | --- | --- | --- | --- |
 | macOS | proxies to the LaunchServices-launched `CuaDriver.app` daemon over a 0600 Unix socket | `CuaDriver.app` (Accessibility, Screen Recording) | none beyond a logged-in user |
 | Windows | owns the runtime in-process | the interactive session the daemon runs in | daemon must run in an interactive session (not Session 0 / SSH) |

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -108,7 +108,7 @@ function cardFooter(box: FakeBox): string {
   if (box.state === "stopped") return "Stopped: on Docker a box keeps its card while stopped, as its devices are fixed.";
   if (box.gpu === "shared") return "Boxes on a card share its memory and its time: one box can take all of its memory. The figures are the whole card's, from the Monitor.";
   if (backend.fencesWhole) return "No other guest on pve-1 can open this card: on Proxmox LXC a whole card is fenced. Programs on the host itself can still use it.";
-  return "No other box is placed on this card. On Docker every box with Docker in it can still open it: a whole card here is where bb-box places boxes, not a fence.";
+  return "No other box is placed on this card. On Docker every box with Docker in it can still open it: a whole card here is where alia-box places boxes, not a fence.";
 }
 
 function GpuCard({ box, busy, onChange }: { box: FakeBox; busy: boolean; onChange: () => void }) {
@@ -232,10 +232,10 @@ function UpdateDialog({ box, onClose }: { box: FakeBox; onClose: () => void }) {
         <AlertDialogHeader>
           <AlertDialogTitle className="text-base font-normal">Update NVIDIA's userspace in {box.name}?</AlertDialogTitle>
           <AlertDialogDescription>
-            bb-box installs NVIDIA's userspace {HOST_DRIVER} over {box.userspace}, for the host's driver, then restarts {box.name}, in about 75 s. Everything running in it stops{gpuProgramsWords(box)}.{thread ? ` "${thread}" works on it: its work stops while it restarts.` : ""}
+            alia-box installs NVIDIA's userspace {HOST_DRIVER} over {box.userspace}, for the host's driver, then restarts {box.name}, in about 75 s. Everything running in it stops{gpuProgramsWords(box)}.{thread ? ` "${thread}" works on it: its work stops while it restarts.` : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <p className="text-xs leading-snug text-muted-foreground">It never runs by itself. If {box.name} has NVIDIA's packages from apt, bb-box says so and changes nothing. Take a snapshot first if you may want to go back.</p>
+        <p className="text-xs leading-snug text-muted-foreground">It never runs by itself. If {box.name} has NVIDIA's packages from apt, alia-box says so and changes nothing. Take a snapshot first if you may want to go back.</p>
         <AlertDialogFooter>
           <AlertDialogCancel className="font-normal">Cancel</AlertDialogCancel>
           <Button

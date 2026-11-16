@@ -1,6 +1,6 @@
 // GitHub-style comment UI: threads, the composer, pending drafts and tags.
 import { useState, type KeyboardEvent } from "react";
-import { experimental_VoiceInputTextarea as VoiceInputTextarea, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_VoiceInputTextarea as VoiceInputTextarea, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -200,7 +200,7 @@ export function ThreadView({
   viewer: string;
   storedByGithubId: Map<number, StoredComment>;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const settled = thread.isOutdated || thread.isResolved;
   const [collapsed, setCollapsed] = useState(settled);
   const [replying, setReplying] = useState(false);

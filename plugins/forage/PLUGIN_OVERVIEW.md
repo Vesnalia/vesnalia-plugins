@@ -1,4 +1,4 @@
-Forage gives every BB agent six web-research tools, durable scoped evidence and a CLI that uses no model turns. Requires BB 0.47 or newer.
+Forage gives every VesnALIA agent six web-research tools, durable scoped evidence and a CLI that uses no model turns. Requires VesnALIA 0.47 or newer.
 
 ## Research tools
 
@@ -31,7 +31,7 @@ Restricted same-thread capture is OFF by default, cannot be project-promoted, an
 
 ## CLI and diagnostics
 
-`bb forage search|fetch|map|extract|diff` and `crawl start|status|list|cancel|resume` take explicit --project/--thread IDs and strict --input JSON. Tools and CLI share one runtime, repository, job service and diagnostic ring.
+`alia forage search|fetch|map|extract|diff` and `crawl start|status|list|cancel|resume` take explicit --project/--thread IDs and strict --input JSON. Tools and CLI share one runtime, repository, job service and diagnostic ring.
 
 Sources commands: list, show, export, delete and prune. Destructive commands require exact confirmation tokens; export returns a local-auth download route, not a server file path.
 

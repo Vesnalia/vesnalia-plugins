@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
-import { definePluginApp, useRealtime, useRealtimeConnectionState, useRpc } from "@bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ type BreakdownMode = "model" | "project" | "day";
 type DimensionMode = "agent" | "provider";
 
 const BREAKDOWN_PAGE_SIZE = 10;
-const SHOW_USAGE_LIMITS_STORAGE_KEY = "bb-plugin-usage:show-usage-limits";
+const SHOW_USAGE_LIMITS_STORAGE_KEY = "alia-plugin-usage:show-usage-limits";
 
 type UsageToolbarState = {
   range: Range;

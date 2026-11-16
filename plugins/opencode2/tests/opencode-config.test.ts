@@ -12,13 +12,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
-  addBbToolsRule,
-  removeBbToolsRule,
-  syncBbToolsRule,
+  addAliaToolsRule,
+  removeAliaToolsRule,
+  syncAliaToolsRule,
 } from "./support/host-api.js";
 
 const RULE =
-  '{ "action": "bb_opencode2_*", "resource": "*", "effect": "deny" }';
+  '{ "action": "alia_opencode2_*", "resource": "*", "effect": "deny" }';
 
 const cases: Record<string, string> = {
   "no permissions key": `{
@@ -57,7 +57,7 @@ const cases: Record<string, string> = {
 
 for (const [name, original] of Object.entries(cases)) {
   test(`adds one rule last and removes it exactly: ${name}`, () => {
-    const added = addBbToolsRule(original);
+    const added = addAliaToolsRule(original);
     assert.ok(added);
     // Only additions: every original character survives in order.
     let cursor = 0;
@@ -70,7 +70,7 @@ for (const [name, original] of Object.entries(cases)) {
     if (!name.startsWith("jsonc")) {
       const parsed = JSON.parse(added);
       assert.deepEqual(parsed.permissions.at(-1), {
-        action: "bb_opencode2_*",
+        action: "alia_opencode2_*",
         resource: "*",
         effect: "deny",
       });
@@ -78,17 +78,17 @@ for (const [name, original] of Object.entries(cases)) {
       const { permissions: __, ...before } = JSON.parse(original);
       assert.deepEqual(rest, before);
     }
-    assert.equal(addBbToolsRule(added), undefined, "idempotent");
+    assert.equal(addAliaToolsRule(added), undefined, "idempotent");
     // Without a record (file edited since), only the rule is cut.
-    const cut = removeBbToolsRule(added);
-    assert.ok(cut && !cut.includes("bb_opencode2_"));
+    const cut = removeAliaToolsRule(added);
+    assert.ok(cut && !cut.includes("alia_opencode2_"));
     if (!name.startsWith("jsonc")) {
       const { permissions = [], ...rest } = JSON.parse(cut);
       const { permissions: before = [], ...beforeRest } = JSON.parse(original);
       assert.deepEqual(rest, beforeRest);
       assert.deepEqual(permissions, before);
     }
-    assert.equal(removeBbToolsRule(original), undefined);
+    assert.equal(removeAliaToolsRule(original), undefined);
   });
 
   test(`restores the file byte-for-byte when untouched: ${name}`, async () => {
@@ -96,8 +96,8 @@ for (const [name, original] of Object.entries(cases)) {
     const path = join(dir, "opencode.json");
     const state = join(dir, "edit.json");
     writeFileSync(path, original);
-    assert.equal(await syncBbToolsRule(true, path, state), "added");
-    assert.equal(await syncBbToolsRule(false, path, state), "removed");
+    assert.equal(await syncAliaToolsRule(true, path, state), "added");
+    assert.equal(await syncAliaToolsRule(false, path, state), "removed");
     assert.equal(readFileSync(path, "utf8"), original);
   });
 }
@@ -107,7 +107,7 @@ test("cuts only the rule when the user edited the file in between", async () => 
   const path = join(dir, "opencode.json");
   const state = join(dir, "edit.json");
   writeFileSync(path, cases["existing rules"]);
-  await syncBbToolsRule(true, path, state);
+  await syncAliaToolsRule(true, path, state);
   writeFileSync(
     path,
     readFileSync(path, "utf8").replace(
@@ -115,7 +115,7 @@ test("cuts only the rule when the user edited the file in between", async () => 
       '"autoupdate": false',
     ),
   );
-  assert.equal(await syncBbToolsRule(false, path, state), "removed");
+  assert.equal(await syncAliaToolsRule(false, path, state), "removed");
   assert.equal(
     readFileSync(path, "utf8"),
     cases["existing rules"].replace(
@@ -129,9 +129,9 @@ test("removes a config file it created", async () => {
   const dir = mkdtempSync(join(tmpdir(), "oc-config-"));
   const path = join(dir, "opencode.json");
   const state = join(dir, "edit.json");
-  assert.equal(await syncBbToolsRule(true, path, state), "added");
+  assert.equal(await syncAliaToolsRule(true, path, state), "added");
   assert.ok(JSON.parse(readFileSync(path, "utf8")).permissions);
-  assert.equal(await syncBbToolsRule(false, path, state), "removed");
+  assert.equal(await syncAliaToolsRule(false, path, state), "removed");
   assert.equal(existsSync(path), false);
 });
 
@@ -141,10 +141,10 @@ test("writes only on change, keeps the file mode, and reverses", async () => {
   const original = cases["no permissions key"];
   writeFileSync(path, original);
   chmodSync(path, 0o600);
-  assert.equal(await syncBbToolsRule(true, path), "added");
-  assert.equal(await syncBbToolsRule(true, path), "unchanged");
+  assert.equal(await syncAliaToolsRule(true, path), "added");
+  assert.equal(await syncAliaToolsRule(true, path), "unchanged");
   assert.equal(statSync(path).mode & 0o777, 0o600);
-  assert.equal(await syncBbToolsRule(false, path), "removed");
+  assert.equal(await syncAliaToolsRule(false, path), "removed");
   assert.equal(readFileSync(path, "utf8"), original);
-  assert.equal(await syncBbToolsRule(false, path), "unchanged");
+  assert.equal(await syncAliaToolsRule(false, path), "unchanged");
 });

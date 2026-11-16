@@ -15,7 +15,7 @@ import {
 /**
  * Places hub skills into the plugin's category tree. Skills without a
  * category are first matched by family; the rest go one by one, in order, to
- * one hidden BB thread running a small model. A thread older than an hour (or
+ * one hidden VesnALIA thread running a small model. A thread older than an hour (or
  * one that has seen MAX_PER_THREAD skills) is archived and the next skill
  * starts a fresh one. The model answers by calling the plugin's tools, which
  * validate and store the placement.
@@ -75,7 +75,7 @@ export type ClassifierDeps = {
 
 export function classifierIntro(): string {
   return [
-    "You sort agent skills into a two-level category tree (section → subsection) for the Agent Tools plugin of BB.",
+    "You sort agent skills into a two-level category tree (section → subsection) for the Agent Tools plugin of VesnALIA.",
     "Each message names one skill with its description and the start of its SKILL.md.",
     `For every skill: call ${TOOL_TREE} to see the current tree, then call ${TOOL_ASSIGN} exactly once.`,
     "Rules:",

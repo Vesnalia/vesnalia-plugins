@@ -14,7 +14,7 @@ arm64 is `windows-arm64-desktop`.
 
 A spike ran Linux VMs on a Mac with Tart. A fresh clone answers SSH in
 about 5.5 s, only macOS guests count against the two-VM limit, and
-Docker, BB's host app, Chrome and Cua all run. But the boxes are arm64:
+Docker, VesnALIA's host app, Chrome and Cua all run. But the boxes are arm64:
 an amd64 image fails with "exec format error", and an x86_64 binary does
 not run. Offers of one kind agree on `arch`
 ([012](012-offers-may-add-features.md)), so they cannot join `linux`.

@@ -1,17 +1,17 @@
 /**
  * What the plugin itself owns, as opposed to what the captain edits in settings: which thread is the
  * first mate, which watches are switched off, and which threads autocompact last compacted. Kept in
- * `bb.storage.kv`.
+ * `alia.storage.kv`.
  *
  * The stored id is the only way the first mate is found. Nothing looks it up by metadata or title,
  * so a released first mate stays released.
  */
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 
 /**
  * Autocompact's record of compacting one thread: `afterSeq` is the `turn/completed` event that began the
- * idle stretch it compacted, `ok` whether bb accepted the request (true from before the request is sent
- * until bb refuses it), `at` when (epoch milliseconds).
+ * idle stretch it compacted, `ok` whether VesnALIA accepted the request (true from before the request is sent
+ * until VesnALIA refuses it), `at` when (epoch milliseconds).
  */
 export interface CompactionMark {
   afterSeq: number;

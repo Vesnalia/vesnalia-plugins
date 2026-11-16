@@ -5,13 +5,13 @@ import { pageUrl, readPages, repository, repositoryRef } from "./repo.ts";
 import { installCommand, quickStartOnGitHub, setupPrompt } from "./setup-prompt.ts";
 import { startingPoints } from "./starting-points.ts";
 
-export const tagline = "Computers for BB threads: Linux, Windows, macOS, iOS and Android, virtual or real: desktops, terminals or simulators, shared by you and your agent.";
+export const tagline = "Computers for VesnALIA threads: Linux, Windows, macOS, iOS and Android, virtual or real: desktops, terminals or simulators, shared by you and your agent.";
 export const headlineWords = ["Computers", "Devices", "Simulators", "Emulators", "Macs", "Sandboxes", "VMs", "Desktops"];
-export const headlineRest = "for BB threads";
+export const headlineRest = "for VesnALIA threads";
 export const headline = `${headlineWords[0]} ${headlineRest}`;
 export const subline = "Linux, Windows, macOS, iOS and Android, virtual or real: desktops, terminals or simulators, shared by you and your agent.";
 export const demoDescription =
-  "A person asks one BB thread's agent to build Dither, a small app, on Linux, Windows, macOS, an iPhone and an Android phone. The agent gets five computers, builds the app on all five, sets the same palette on each and checks every one shows the same picture, then reports back with recordings of the work. The person then takes control of the Mac and the iPhone and changes the palette themselves.";
+  "A person asks one VesnALIA thread's agent to build Dither, a small app, on Linux, Windows, macOS, an iPhone and an Android phone. The agent gets five computers, builds the app on all five, sets the same palette on each and checks every one shows the same picture, then reports back with recordings of the work. The person then takes control of the Mac and the iPhone and changes the palette themselves.";
 
 export type FeaturePiece = "boxPanel" | "newBox" | "desktop" | "recording" | "monitor";
 
@@ -91,7 +91,7 @@ export async function homeData(base: string, site: URL | undefined): Promise<Hom
   const quickStartMarkdown = site ? absoluteAddress(markdownPath(base, "start/quick-start"), { base, site: site.href }) : quickStartOnGitHub(command);
   const fileUrl = (path: string) => `${repository}/blob/${repositoryRef}/${path}`;
   return {
-    features: listUnder(html, "why-bb-box").map((reason) => ({ ...reason, piece: pieceForReason[reason.title] })),
+    features: listUnder(html, "why-alia-box").map((reason) => ({ ...reason, piece: pieceForReason[reason.title] })),
     backends: tableUnder(html, "backends-and-boxes").map(backendOf),
     requirements: firstListIn(quickStartEntry?.rendered?.html ?? ""),
     prompt: setupPrompt(pages, quickStartMarkdown),

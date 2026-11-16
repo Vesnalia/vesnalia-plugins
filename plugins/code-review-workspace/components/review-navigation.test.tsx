@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import { toast } from "sonner";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../src/preferences";
 import { defaultKnobs } from "../lib/knobs";
 import { getCommentsFolded, getReviewState, patchReviewState, setHideNits } from "../lib/panel-state";
@@ -31,7 +31,7 @@ afterEach(() => { window.innerWidth = windowWidth; });
 const file = (path: string, hunks: string) => `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n${hunks}`;
 const patch = [
   file("src/a.ts", "@@ -1 +1 @@\n-a\n+aa\n"),
-  file("src/b.ts", "@@ -1 +1 @@\n-b\n+bb\n"),
+  file("src/b.ts", "@@ -1 +1 @@\n-b\n+alia\n"),
   file("src/c.ts", "@@ -1 +1 @@\n-c\n+cc\n"),
 ].join("");
 const guide = {
@@ -68,7 +68,7 @@ async function renderWorkspace({ review = {}, rpc = {}, bundle = {}, opened = tr
 }
 type Slot = Awaited<ReturnType<typeof renderWorkspace>>["slot"];
 const chapters = (slot: Slot) => within(slot.getByRole("navigation", { name: "Chapters" }));
-/** Comments' Drafts, in the side panel, from the band's Comments where BB's title bar didn't take it. */
+/** Comments' Drafts, in the side panel, from the band's Comments where VesnALIA's title bar didn't take it. */
 const openDrafts = async (slot: Slot) => fireEvent.click(await slot.findByRole("button", { name: "Comments" }));
 const finishing = (slot: Slot) => !!slot.queryByRole("heading", { name: "Finish review" });
 const currentChapter = (slot: Slot) => chapters(slot).getAllByRole("button").find((button) => button.getAttribute("aria-current") === "step");
@@ -89,7 +89,7 @@ test("a comment's row on a thread's Review tab opens the review at that comment,
 test("reopening a review returns to the chapter you were on", async () => {
   patchReviewState("pr-42", { activeId: "c2" });
   const { slot } = await renderWorkspace();
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   slot.lifecycle.unmount();
 });
@@ -120,7 +120,7 @@ test("after a chapter's last file, Next opens the next chapter at its top", asyn
   await slot.findByText("aa");
   scroller(slot).scrollTop = 400;
   fireEvent.click(within(slot.getByRole("main")).getByRole("button", { name: "Next: Caching" }));
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   expect(scroller(slot).scrollTop).toBe(0);
   // The last chapter has no next chapter, but offers to finish.
@@ -150,7 +150,7 @@ test("the chapter end's Next, and Mark viewed and continue, give the focus to th
 test("the last chapter ends on Finish review, marking the chapter viewed if you ask", async () => {
   patchReviewState("pr-42", { activeId: "c2" });
   const { slot, rpc } = await renderWorkspace();
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   const main = within(slot.getByRole("main"));
   expect(finishing(slot)).toBe(false);
   fireEvent.click(main.getByRole("button", { name: "Mark viewed and finish" }));
@@ -171,7 +171,7 @@ test("while Finish review shows, the last chapter's end leaves finishing to it: 
     getFileViews: vi.fn(() => ({ views: [...viewed].map((file) => ({ file, viewed: true, stale: false })) })),
     setFilesViewed: vi.fn(({ files }: { files: string[] }) => { for (const file of files) viewed.add(file); return { ok: true, previous: [] }; }),
   } });
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   const main = within(slot.getByRole("main"));
   const open = main.getByRole("button", { name: "Finish review" });
   open.focus();
@@ -199,7 +199,7 @@ test("Mark viewed and continue marks the chapter's files and opens the next", as
   const { slot, rpc } = await renderWorkspace();
   await slot.findByText("aa");
   fireEvent.click(within(slot.getByRole("main")).getByRole("button", { name: "Mark viewed and continue" }));
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(rpc.setFilesViewed).toHaveBeenCalledWith({ targetKey: "pr-42", files: ["src/a.ts"] });
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   slot.lifecycle.unmount();
@@ -229,7 +229,7 @@ test("a chapter's end counts its files viewed and its comments, and once they're
 test("the last chapter's end names the files not viewed yet in the others, and Next unviewed opens the first", async () => {
   patchReviewState("pr-42", { activeId: "c2" });
   const { slot } = await renderWorkspace({ rpc: { getFileViews: () => ({ views: [{ file: "src/c.ts", viewed: true, stale: false }] }) } });
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   const main = within(slot.getByRole("main"));
   const left = await main.findByText(/not viewed yet/);
   expect(left.textContent).toBe("1 file not viewed yet: a.ts");
@@ -295,11 +295,11 @@ test("picking a file jumps to it in a chapter still drawing its files, or far do
 
 test("a review back with changes opens on its Overview, which goes on to the first chapter that changed, unless you were reading one", async () => {
   const { interdiff } = await import("../src/interdiff");
-  const reviewed = patch.replace("+bb", "+b0");
+  const reviewed = patch.replace("+alia", "+b0");
   const sinceReview = { review: { signals: { lastReviewSha: "old" }, submittedVerdict: "COMMENT" }, rpc: { getSinceReview: () => ({ baseline: { sha: "old", at: 1, verdict: "COMMENT" }, files: interdiff(reviewed, patch) }) } };
   const { slot } = await renderWorkspace({ ...sinceReview, opened: false });
   fireEvent.click(await slot.findByRole("button", { name: "Review changes: Caching" }));
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   slot.lifecycle.unmount();
   patchReviewState("pr-42", { activeId: "c1" });
@@ -309,7 +309,7 @@ test("a review back with changes opens on its Overview, which goes on to the fir
   again.slot.lifecycle.unmount();
 });
 
-const reviewedPatch = patch.replace("+bb", "+b0");
+const reviewedPatch = patch.replace("+alia", "+b0");
 async function sinceReviewSetup() {
   const { interdiff } = await import("../src/interdiff");
   return { review: { signals: { lastReviewSha: "old" }, submittedVerdict: "COMMENT" }, rpc: { getSinceReview: () => ({ baseline: { sha: "old", at: 1, verdict: "COMMENT" }, files: interdiff(reviewedPatch, patch) }) } };
@@ -367,7 +367,7 @@ test("a line selection's bar and highlight go once it's used, cleared, or its ch
   expect(highlighted()).toBe("");
   fireEvent.click(slot.getByRole("button", { name: "Pick line 1" }));
   fireEvent.click(within(slot.getByRole("main")).getByRole("button", { name: "Next: Caching" }));
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(bar()).toBeNull();
   slot.lifecycle.unmount();
 }, 15_000);
@@ -407,7 +407,7 @@ test("code you select, as a long-press does on touch, offers Ask agent about sel
   await waitFor(() => expect(slot.queryByRole("group", { name: "Selection" })).toBeNull());
   select(text);
   fireEvent.click(await slot.findByRole("button", { name: "Ask agent about selection" }));
-  // BB's side panel opens on the Review agent tab, the selection its question's context.
+  // VesnALIA's side panel opens on the Review agent tab, the selection its question's context.
   expect(panelTabCalls(slot)).toEqual(["openTab:agent"]);
   const tab = renderPanelTab(app, "agent", "pr-42", { rpc: rpc as any });
   expect(await tab.findByRole("textbox", { name: "Ask the agent" })).toBeTruthy();
@@ -445,7 +445,7 @@ test("j and k move between files, n and p between chapters, and v marks the file
   const { slot, rpc } = await renderWorkspace();
   await slot.findByText("aa");
   press("n");
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   // The chapter opens on its first file, so j goes to the second.
   press("j");
@@ -467,7 +467,7 @@ test("⇧J and ⇧K step through the changes drawn; past the last one, they go o
   const { slot } = await renderWorkspace();
   await slot.findByText("aa");
   press("n");
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   // Pierre draws no rows here, so no change is ahead: the next file.
   press("J", { shiftKey: true });
   expect(layout.top()).toBe("src/c.ts");
@@ -501,7 +501,7 @@ test("on a chapter's intro, j goes to the chapter's first file before the next o
     const { slot } = await renderWorkspace();
     await slot.findByText("aa");
     press("n");
-    await slot.findByText("bb");
+    await slot.findByText("alia");
     press("j");
     expect(layout.top()).toBe("src/b.ts");
     press("j");
@@ -530,7 +530,7 @@ test("choosing a chapter by click, n, or p makes its first file current, so j fr
     press("j");
     expect(layout.top()).toBe("src/c.ts");
     press("n");
-    await slot.findByText("bb");
+    await slot.findByText("alia");
     // A chapter opens at its top.
     layout.scrollTo(undefined);
     await waitFor(() => expect(currentFile(slot)).toBe("b.ts"));
@@ -542,7 +542,7 @@ test("choosing a chapter by click, n, or p makes its first file current, so j fr
     press("j");
     expect(layout.top()).toBe("src/a.ts");
     fireEvent.click(chapters(slot).getByText("Caching"));
-    await slot.findByText("bb");
+    await slot.findByText("alia");
     layout.scrollTo(undefined);
     press("j");
     expect(layout.top()).toBe("src/b.ts");
@@ -561,7 +561,7 @@ test("j, k, and v act on the file they went to, even in a chapter that can't scr
   const { slot, rpc } = await renderWorkspace();
   await slot.findByText("aa");
   press("n");
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentFile(slot)).toBe("b.ts");
   press("j");
   expect(currentFile(slot)).toBe("c.ts");
@@ -580,7 +580,7 @@ test("v marks the file at the top even when the next file's header is just below
   const { slot, rpc } = await renderWorkspace();
   await slot.findByText("aa");
   press("n");
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   press("k");
   expect(layout.top()).toBe("src/b.ts");
   press("v");
@@ -617,7 +617,7 @@ test("keys work inside the chapters over the code, as in docked ones", async () 
   fireEvent.click(slot.getByRole("button", { name: "Show chapters" }));
   const side = slot.getByRole("dialog", { name: "Chapters" });
   press("n", {}, within(side).getAllByRole("button")[0]!);
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   slot.lifecycle.unmount();
 }, 15_000);
 
@@ -644,7 +644,7 @@ test("shortcuts still work after clicking a Viewed checkbox", async () => {
   const viewed = slot.getByRole("checkbox", { name: "Viewed src/a.ts" });
   fireEvent.click(viewed);
   press("n", {}, viewed);
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   slot.lifecycle.unmount();
 }, 15_000);
@@ -678,7 +678,7 @@ test("from a chapter's intro, u goes to the chapter's first file when it isn't v
     await waitFor(() => expect(chapters(slot).getByText("1/3 files viewed")).toBeTruthy());
     // Caching opens on its intro.
     fireEvent.click(chapters(slot).getByText("Caching"));
-    await slot.findByText("bb");
+    await slot.findByText("alia");
     layout.scrollTo(undefined);
     await waitFor(() => expect(currentFile(slot)).toBe("b.ts"));
     press("u");
@@ -725,7 +725,7 @@ test("] and [ go through draft comments and discussions in the Comments list's o
   await slot.findByText("aa");
   press("[");
   // Before the first, the last.
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   expect(currentChapter(slot)?.textContent).toContain("Caching");
   await waitFor(() => expect(currentFile(slot)).toBe("b.ts"));
   slot.lifecycle.unmount();
@@ -767,7 +767,7 @@ test("a asks the agent, s opens the draft to submit, and ? lists the shortcuts u
   slot.lifecycle.unmount();
 }, 15_000);
 
-test("a asks the agent about the file you're on, in BB's Review agent tab, its box focused, leaving the side panel closed", async () => {
+test("a asks the agent about the file you're on, in VesnALIA's Review agent tab, its box focused, leaving the side panel closed", async () => {
   const { app, slot, rpc } = await renderWorkspace();
   await slot.findByText("aa");
   const tab = renderPanelTab(app, "agent", "pr-42", { rpc: rpc as any });
@@ -818,7 +818,7 @@ test("with single-key shortcuts off, keys do nothing, but Esc still closes what'
   press("F", { shiftKey: true });
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(currentChapter(slot)?.textContent).toContain("Parsing");
-  expect(slot.queryByText("bb")).toBeNull();
+  expect(slot.queryByText("alia")).toBeNull();
   expect(slot.getByRole("navigation", { name: "Chapters" })).toBeTruthy();
   expect(slot.queryByRole("complementary", { name: "Comments and Finish review" })).toBeNull();
   expect(slot.queryByRole("dialog", { name: "Keyboard shortcuts" })).toBeNull();
@@ -875,7 +875,7 @@ test("a local review's Comments has no Feedback or Threads, and the agent goes b
   await openDrafts(slot);
   const panel = within(slot.getByRole("complementary", { name: "Comments and Finish review" }));
   expect(panel.getByRole("region", { name: "Comments" })).toBeTruthy();
-  expect(panel.getByText("Comments on a local review stay in BB.")).toBeTruthy();
+  expect(panel.getByText("Comments on a local review stay in VesnALIA.")).toBeTruthy();
   expect(slot.queryByRole("button", { name: "Threads" })).toBeNull();
   expect(slot.queryByRole("button", { name: "Feedback" })).toBeNull();
   expect(slot.queryByRole("button", { name: /assistant/i })).toBeNull();
@@ -967,7 +967,7 @@ test("j and k take the focus with them, to the file's toggle", async () => {
   const layout = fakeLayout();
   patchReviewState("pr-42", { activeId: "c2" });
   const { slot } = await renderWorkspace();
-  await slot.findByText("bb");
+  await slot.findByText("alia");
   press("j");
   press("j");
   expect(document.activeElement?.getAttribute("aria-label")).toBe("Collapse src/c.ts");

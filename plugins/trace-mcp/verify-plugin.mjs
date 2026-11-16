@@ -5,7 +5,7 @@ const tools = new Map();
 const calls = [];
 let rpc;
 let cli;
-const bb = {
+const alia = {
   hosts: {
     experimental_client() {
       return {
@@ -114,7 +114,7 @@ const bb = {
   },
 };
 
-await plugin(bb);
+await plugin(alia);
 assert.deepEqual(
   [...tools.keys()],
   [
@@ -212,4 +212,4 @@ assert.equal(JSON.parse(savedByCli.stdout).id, 'd2');
 const indexedByCli = await cli.run(['index', '--thread', 'thread-1', '--json'], {});
 assert.equal(indexedByCli.exitCode, 0);
 assert.equal(JSON.parse(indexedByCli.stdout).indexed, 23);
-console.log('bb native tool routing verified');
+console.log('alia native tool routing verified');

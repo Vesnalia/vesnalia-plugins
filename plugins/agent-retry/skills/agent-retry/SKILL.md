@@ -1,6 +1,6 @@
 ---
 name: agent-retry
-description: "Retry a failed BB turn on a configurable backoff, for any provider failure — including ones with no structured error info. Use when a thread landed in error and you want another attempt, when tuning the retry policy, or when diagnosing why a failure was not retried."
+description: "Retry a failed VesnALIA turn on a configurable backoff, for any provider failure — including ones with no structured error info. Use when a thread landed in error and you want another attempt, when tuning the retry policy, or when diagnosing why a failure was not retried."
 ---
 
 # Agent Retry
@@ -8,7 +8,7 @@ description: "Retry a failed BB turn on a configurable backoff, for any provider
 Queues another attempt for a turn that failed, after a growing wait. It
 listens to core's `turn.failed` event, which fires for **every** failed turn —
 including failures that carry no structured error info at all, which is the
-case BB's built-in `provider-retry` plugin declines.
+case VesnALIA's built-in `provider-retry` plugin declines.
 
 ## When to use it
 
@@ -19,16 +19,16 @@ case BB's built-in `provider-retry` plugin declines.
 ## Commands
 
 ```bash
-bb agent-retry status                  # effective policy, last 24h, pending retries
-bb agent-retry status --json
-bb agent-retry log --limit 30          # decision history: retry / skip / dry-run / error
-bb agent-retry log --thread thr_abc --action skip
-bb agent-retry explain                 # fully resolved policy + the waits it would use
-bb agent-retry simulate --category none --message "service unavailable"
-bb agent-retry simulate --category rate-limit --rate-limit-reset 30m --attempt 4
-bb agent-retry cancel thr_abc          # drop the retry this plugin queued
-bb agent-retry retry thr_abc           # retry now, ignoring the backoff
-bb agent-retry retry thr_abc --send-at 10m
+alia agent-retry status                  # effective policy, last 24h, pending retries
+alia agent-retry status --json
+alia agent-retry log --limit 30          # decision history: retry / skip / dry-run / error
+alia agent-retry log --thread thr_abc --action skip
+alia agent-retry explain                 # fully resolved policy + the waits it would use
+alia agent-retry simulate --category none --message "service unavailable"
+alia agent-retry simulate --category rate-limit --rate-limit-reset 30m --attempt 4
+alia agent-retry cancel thr_abc          # drop the retry this plugin queued
+alia agent-retry retry thr_abc           # retry now, ignoring the backoff
+alia agent-retry retry thr_abc --send-at 10m
 ```
 
 `simulate` is the tuning tool: it replays a failure shape and prints the
@@ -38,8 +38,8 @@ comparison between two policies is not noise.
 
 ## Configuration
 
-Settings → Installed plugins → Agent Retry, or `bb plugin config agent-retry`.
-Every decision records the rule that made it, so `bb agent-retry log` always
+Settings → Installed plugins → Agent Retry, or `alia plugin config agent-retry`.
+Every decision records the rule that made it, so `alia agent-retry log` always
 explains an outcome.
 
 `enabled` is a master switch: off means a failed turn is left exactly as core
@@ -119,7 +119,7 @@ new policy.
   rows, so neither grows without bound.
 - **A configuration problem is reported, not swallowed.** If a stored
   `advancedJson` predates the current schema, the plugin falls back to the flat
-  layer, says so in the plugin log, and lists it under `bb agent-retry
+  layer, says so in the plugin log, and lists it under `alia agent-retry
   explain`.
-- `bb agent-retry retry` bypasses the policy entirely — it is the manual
+- `alia agent-retry retry` bypasses the policy entirely — it is the manual
   escape hatch, not a way to force a policy decision.

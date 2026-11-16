@@ -20,7 +20,7 @@ describe("muse config overlay", () => {
   let sourceDir: string;
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), "bb-muse-cfg-"));
+    root = mkdtempSync(join(tmpdir(), "alia-muse-cfg-"));
     sourceDir = join(root, "source");
     mkdirSync(sourceDir, { recursive: true });
     writeFileSync(
@@ -38,14 +38,14 @@ describe("muse config overlay", () => {
     const settings = await buildSettings(sourceDir, {
       command: "/usr/bin/node",
       args: ["/tmp/proxy.mjs"],
-      env: { BB_MUSE_TOOL_PORT: "1234" },
+      env: { ALIA_MUSE_TOOL_PORT: "1234" },
     });
     expect(settings.model).toBe("muse-spark-1.3");
     expect(settings.mcpServers).toEqual({
-      "bb-bridge": {
+      "alia-bridge": {
         command: "/usr/bin/node",
         args: ["/tmp/proxy.mjs"],
-        env: { BB_MUSE_TOOL_PORT: "1234" },
+        env: { ALIA_MUSE_TOOL_PORT: "1234" },
       },
     });
   });
@@ -61,7 +61,7 @@ describe("muse config overlay", () => {
       env: {},
     });
     expect(Object.keys(settings.mcpServers as object).sort()).toEqual([
-      "bb-bridge",
+      "alia-bridge",
       "mine",
     ]);
     expect(settings.schema_version).toBe(1);
@@ -78,7 +78,7 @@ describe("muse config overlay", () => {
       readFileSync(join(xdgHome, "muse", "settings.json"), "utf8"),
     );
     expect(written.schema_version).toBe(1);
-    expect(written.mcpServers["bb-bridge"].command).toBe("node");
+    expect(written.mcpServers["alia-bridge"].command).toBe("node");
   });
 
   it("links credentials into the private config directory", async () => {
@@ -94,7 +94,7 @@ describe("muse config overlay", () => {
     const written = JSON.parse(
       readFileSync(join(configDir, "settings.json"), "utf8"),
     );
-    expect(written.mcpServers["bb-bridge"].command).toBe("node");
+    expect(written.mcpServers["alia-bridge"].command).toBe("node");
     /** The real settings file must be left exactly as the user wrote it. */
     expect(
       JSON.parse(readFileSync(join(sourceDir, "settings.json"), "utf8")),
@@ -116,7 +116,7 @@ describe("muse config overlay", () => {
     const written = JSON.parse(
       readFileSync(join(xdgHome, "muse", "settings.json"), "utf8"),
     );
-    expect(written.mcpServers["bb-bridge"].command).toBe("node2");
+    expect(written.mcpServers["alia-bridge"].command).toBe("node2");
   });
 });
 
@@ -151,9 +151,9 @@ describe("tool proxy endpoint", () => {
     try {
       const result = await request(endpoint.port, {
         threadId: "thr_1",
-        token: endpoint.issueGrant("thr_1", ["bb_probe"]),
+        token: endpoint.issueGrant("thr_1", ["alia_probe"]),
         kind: "toolCall",
-        tool: "bb_probe",
+        tool: "alia_probe",
         callId: "call-1",
         arguments: { a: 1 },
       });
@@ -161,7 +161,7 @@ describe("tool proxy endpoint", () => {
         ok: true,
         content: [{ type: "text", text: "done" }],
       });
-      expect(seen).toEqual(["thr_1:bb_probe"]);
+      expect(seen).toEqual(["thr_1:alia_probe"]);
     } finally {
       endpoint.close();
     }
@@ -180,7 +180,7 @@ describe("tool proxy endpoint", () => {
         threadId: "thr_1",
         token: "wrong",
         kind: "toolCall",
-        tool: "bb_probe",
+        tool: "alia_probe",
         callId: "call-1",
         arguments: {},
       })) as { ok: boolean };
@@ -205,15 +205,15 @@ describe("tool proxy endpoint", () => {
       },
     });
     try {
-      const one = endpoint.issueGrant("thr_1", ["bb_probe"]);
-      const two = endpoint.issueGrant("thr_2", ["bb_secret"]);
+      const one = endpoint.issueGrant("thr_1", ["alia_probe"]);
+      const two = endpoint.issueGrant("thr_2", ["alia_secret"]);
 
       /** thr_2's credential cannot be spent as thr_1. */
       const crossed = (await request(endpoint.port, {
         threadId: "thr_1",
         token: two,
         kind: "toolCall",
-        tool: "bb_probe",
+        tool: "alia_probe",
         callId: "call-1",
         arguments: {},
       })) as { ok: boolean };
@@ -224,7 +224,7 @@ describe("tool proxy endpoint", () => {
         threadId: "thr_1",
         token: one,
         kind: "toolCall",
-        tool: "bb_secret",
+        tool: "alia_secret",
         callId: "call-2",
         arguments: {},
       })) as { ok: boolean };
@@ -236,13 +236,13 @@ describe("tool proxy endpoint", () => {
         threadId: "thr_1",
         token: one,
         kind: "toolCall",
-        tool: "bb_probe",
+        tool: "alia_probe",
         callId: "call-3",
         arguments: {},
       })) as { ok: boolean };
       expect(revoked.ok).toBe(false);
 
-      /** None of them reached bb. */
+      /** None of them reached VesnALIA. */
       expect(seen).toEqual([]);
     } finally {
       endpoint.close();
@@ -254,13 +254,13 @@ describe("tool proxy endpoint", () => {
       onCall: async () => ({ ok: true, content: [] }),
     });
     try {
-      const old = endpoint.issueGrant("thr_1", ["bb_probe"]);
-      endpoint.issueGrant("thr_1", ["bb_other"]);
+      const old = endpoint.issueGrant("thr_1", ["alia_probe"]);
+      endpoint.issueGrant("thr_1", ["alia_other"]);
       const result = (await request(endpoint.port, {
         threadId: "thr_1",
         token: old,
         kind: "toolCall",
-        tool: "bb_probe",
+        tool: "alia_probe",
         callId: "call-1",
         arguments: {},
       })) as { ok: boolean };
@@ -273,20 +273,20 @@ describe("tool proxy endpoint", () => {
   it("answers a failing tool with its error instead of hanging", async () => {
     const endpoint = await startToolProxyEndpoint({
       onCall: async () => {
-        throw new Error("bb said no");
+        throw new Error("alia said no");
       },
       onError: () => {},
     });
     try {
       const result = (await request(endpoint.port, {
         threadId: "thr_1",
-        token: endpoint.issueGrant("thr_1", ["bb_probe"]),
+        token: endpoint.issueGrant("thr_1", ["alia_probe"]),
         kind: "toolCall",
-        tool: "bb_probe",
+        tool: "alia_probe",
         callId: "call-1",
         arguments: {},
       })) as { ok: boolean; error: string };
-      expect(result).toEqual({ ok: false, error: "bb said no" });
+      expect(result).toEqual({ ok: false, error: "alia said no" });
     } finally {
       endpoint.close();
     }
@@ -341,7 +341,7 @@ describe("host config isolation", () => {
     const { prepareMuseConfigHome } = await import(
       "../src/tool-proxy/config-home.js"
     );
-    const root = mkdtempSync(join(tmpdir(), "bb-muse-iso-"));
+    const root = mkdtempSync(join(tmpdir(), "alia-muse-iso-"));
     const source = join(root, "src");
     mkdirSync(source, { recursive: true });
     writeFileSync(join(source, "settings.json"), "{}");
@@ -359,7 +359,7 @@ describe("host config isolation", () => {
     /** The first host's configuration must survive the second being built. */
     expect(
       JSON.parse(readFileSync(join(first, "muse", "settings.json"), "utf8"))
-        .mcpServers["bb-bridge"],
+        .mcpServers["alia-bridge"],
     ).toBeDefined();
     rmSync(root, { recursive: true, force: true });
   });

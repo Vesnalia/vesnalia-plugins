@@ -6,7 +6,7 @@ import { GLYPHS } from "./glyphs.ts";
 export type StatusGlyph = (typeof GLYPHS)["running" | "finished" | "failed" | "interrupted" | "stopped"];
 
 export interface StatusStyle {
-  /** bb icon name. */
+  /** VesnALIA icon name. */
   glyph: StatusGlyph;
   /** Tailwind class using the plugin's theme-aware tone variables. */
   toneClass: string;
@@ -16,15 +16,15 @@ export interface StatusStyle {
 }
 
 const TONE = {
-  working: "text-[color:var(--bb-omp-tone-working)]",
-  success: "text-[color:var(--bb-omp-tone-success)]",
-  error: "text-[color:var(--bb-omp-tone-error)]",
+  working: "text-[color:var(--alia-omp-tone-working)]",
+  success: "text-[color:var(--alia-omp-tone-success)]",
+  error: "text-[color:var(--alia-omp-tone-error)]",
   muted: "text-muted-foreground",
 } as const;
 
 /**
  * A killed agent (`interrupted`) did not ask for anything, so it must not wear
- * bb's "needs you" colour; it is a grey stop square. An orphaned agent
+ * VesnALIA's "needs you" colour; it is a grey stop square. An orphaned agent
  * (`partial`) is an empty grey circle for the same reason.
  */
 export function statusStyle(status: AgentStatus): StatusStyle {

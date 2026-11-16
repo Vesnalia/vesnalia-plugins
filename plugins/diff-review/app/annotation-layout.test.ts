@@ -2,7 +2,7 @@
  * The comment boxes' layout in a real browser, with the real `@pierre/diffs`: jsdom has no layout,
  * and the app tests stand in for Pierre. A comment with a long word and a long code block must fit
  * the visible pane, in unified and split views, and never make the code scroll sideways. Scrolling to
- * a place must move the tab's own scroll area only, never bb's containers around it.
+ * a place must move the tab's own scroll area only, never VesnALIA's containers around it.
  *
  * It needs a Chromium: `CHROME_PATH`, a Playwright download, or an installed Chrome (GitHub's Ubuntu
  * runners have one). Without one it is skipped, except in CI, where it fails.
@@ -18,7 +18,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ANNOTATION_FIT } from "./annotation-fit";
 
-/** The CSS bb's Tailwind makes of each class in `ANNOTATION_FIT`; a class missing here fails the test. */
+/** The CSS VesnALIA's Tailwind makes of each class in `ANNOTATION_FIT`; a class missing here fails the test. */
 const CLASS_CSS: Record<string, string> = {
   "[contain:inline-size]": "contain: inline-size;",
   "[overflow-wrap:anywhere]": "overflow-wrap: anywhere;",
@@ -119,7 +119,7 @@ describe.skipIf(executablePath === null)("comment boxes in the real diff", () =>
     });
   }
 
-  /** Scrolls to the last file one way or the other; where bb's container, the toolbar and the tab's area end up. */
+  /** Scrolls to the last file one way or the other; where VesnALIA's container, the toolbar and the tab's area end up. */
   async function scrollToLastFile(how: "scrollIntoView" | "scrollWithin") {
     await page.goto(pathToFileURL(join(dir, "scroll.html")).href);
     await page.waitForSelector("[data-scroll] section");
@@ -128,10 +128,10 @@ describe.skipIf(executablePath === null)("comment boxes in the real diff", () =>
       const last = Array.from(root.querySelectorAll("section")).at(-1)!;
       if (how === "scrollIntoView") last.scrollIntoView({ block: "start" });
       else window.scrollWithin(root, last, "start");
-      const bb = document.querySelector<HTMLElement>("[data-bb]")!;
+      const alia = document.querySelector<HTMLElement>("[data-alia]")!;
       return {
-        bbScrollTop: bb.scrollTop,
-        toolbarTop: document.querySelector("[data-toolbar]")!.getBoundingClientRect().top - bb.getBoundingClientRect().top,
+        aliaScrollTop: alia.scrollTop,
+        toolbarTop: document.querySelector("[data-toolbar]")!.getBoundingClientRect().top - alia.getBoundingClientRect().top,
         rootScrollTop: root.scrollTop,
         rootMax: root.scrollHeight - root.clientHeight,
       };
@@ -139,15 +139,15 @@ describe.skipIf(executablePath === null)("comment boxes in the real diff", () =>
   }
 
   it("scrolls only the tab's own area to a file, so the toolbar stays in sight", async () => {
-    const { bbScrollTop, toolbarTop, rootScrollTop, rootMax } = await scrollToLastFile("scrollWithin");
-    expect(bbScrollTop).toBe(0);
+    const { aliaScrollTop, toolbarTop, rootScrollTop, rootMax } = await scrollToLastFile("scrollWithin");
+    expect(aliaScrollTop).toBe(0);
     expect(toolbarTop).toBe(32);
     expect(rootScrollTop).toBe(rootMax);
   });
 
-  it("would scroll bb's clipping container with scrollIntoView, hiding the toolbar, so the check above means something", async () => {
-    const { bbScrollTop, toolbarTop } = await scrollToLastFile("scrollIntoView");
-    expect(bbScrollTop).toBeGreaterThan(0);
+  it("would scroll VesnALIA's clipping container with scrollIntoView, hiding the toolbar, so the check above means something", async () => {
+    const { aliaScrollTop, toolbarTop } = await scrollToLastFile("scrollIntoView");
+    expect(aliaScrollTop).toBeGreaterThan(0);
     expect(toolbarTop).toBeLessThan(32);
   });
 

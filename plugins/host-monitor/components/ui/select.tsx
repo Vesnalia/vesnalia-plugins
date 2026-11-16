@@ -1,14 +1,14 @@
 import { forwardRef, type ComponentPropsWithoutRef, type ComponentRef } from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __ALIA_PLUGIN_ID__: string | undefined;
 
 function portalScopeProps() {
-  const pluginId = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
+  const pluginId = typeof __ALIA_PLUGIN_ID__ === "string" ? __ALIA_PLUGIN_ID__ : undefined;
   return {
-    "data-bb-portaled-overlay": "" as const,
-    "data-bb-plugin-root": "" as const,
-    ...(pluginId === undefined ? {} : { "data-bb-plugin": pluginId }),
+    "data-alia-portaled-overlay": "" as const,
+    "data-alia-plugin-root": "" as const,
+    ...(pluginId === undefined ? {} : { "data-alia-plugin": pluginId }),
   };
 }
 
@@ -36,7 +36,7 @@ export const SelectTrigger = forwardRef<
   ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
 >(function SelectTrigger({ children, className = "", ...props }, ref) {
   return (
-    <SelectPrimitive.Trigger className={`bb-select__trigger ${className}`.trim()} ref={ref} {...props}>
+    <SelectPrimitive.Trigger className={`alia-select__trigger ${className}`.trim()} ref={ref} {...props}>
       {children}
       <SelectPrimitive.Icon asChild><ChevronDownIcon /></SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
@@ -50,13 +50,13 @@ export const SelectContent = forwardRef<
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         {...portalScopeProps()}
-        className={`bb-select__content ${className}`.trim()}
+        className={`alia-select__content ${className}`.trim()}
         position={position}
         ref={ref}
         sideOffset={4}
         {...props}
       >
-        <SelectPrimitive.Viewport className="bb-select__viewport">{children}</SelectPrimitive.Viewport>
+        <SelectPrimitive.Viewport className="alia-select__viewport">{children}</SelectPrimitive.Viewport>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );
@@ -67,9 +67,9 @@ export const SelectItem = forwardRef<
   ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(function SelectItem({ children, className = "", ...props }, ref) {
   return (
-    <SelectPrimitive.Item className={`bb-select__item ${className}`.trim()} ref={ref} {...props}>
+    <SelectPrimitive.Item className={`alia-select__item ${className}`.trim()} ref={ref} {...props}>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-      <span className="bb-select__indicator">
+      <span className="alia-select__indicator">
         <SelectPrimitive.ItemIndicator><CheckIcon /></SelectPrimitive.ItemIndicator>
       </span>
     </SelectPrimitive.Item>

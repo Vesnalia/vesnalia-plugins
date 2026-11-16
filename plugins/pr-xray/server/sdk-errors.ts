@@ -1,7 +1,7 @@
 // Telling "this is really gone" apart from a temporary failure, so a daemon
 // restart never makes a healthy thread look deleted.
 
-/** bb reports a missing thread or environment as "HTTP 404: ... not found". */
+/** VesnALIA reports a missing thread or environment as "HTTP 404: ... not found". */
 export function isNotFound(error: unknown): boolean {
   return /\b404\b|not[ _]found/iu.test(String(error));
 }

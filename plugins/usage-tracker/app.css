@@ -32,15 +32,15 @@
    * the width above must stay definite for this to work. */
   container: usage-strip / inline-size;
   /* rem-based content against a px-based sidebar: at a large root font the
-   * strip can outgrow its box, and clipping beats shoving bb's own icons. */
+   * strip can outgrow its box, and clipping beats shoving alia's own icons. */
   overflow: hidden;
   color: var(--usage-sidebar-text);
   font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
 
-/* bb clips its sidebar footer, which hides the details card opened above it; lift that clip only while the card is open.
-   shortcut: depends on bb core footer clip, drop once bb stops clipping the footer */
+/* alia clips its sidebar footer, which hides the details card opened above it; lift that clip only while the card is open.
+   shortcut: depends on alia core footer clip, drop once alia stops clipping the footer */
 [data-sidebar="collapsible-body"]:has(.usage-tracker-sidebar__details) {
   clip-path: none;
 }
@@ -60,7 +60,7 @@
   display: none;
 }
 
-/* bb's footer menu is `flex-row flex-wrap-reverse`, so a strip that no longer
+/* alia's footer menu is `flex-row flex-wrap-reverse`, so a strip that no longer
  * fits wraps onto a line above the footer icons. Keep the row intact and let
  * the strip alone absorb the shortfall. */
 [data-sidebar="footer"] [data-sidebar="menu"]:has(> .usage-tracker-sidebar) {
@@ -73,15 +73,15 @@
   flex: none;
 }
 
-/* Containing block for the details card; bb already sets this, asserted so the
+/* Containing block for the details card; alia already sets this, asserted so the
  * card cannot escape to the viewport if that ever changes. */
 [data-sidebar="footer"]:has(.usage-tracker-sidebar) {
   position: relative;
 }
 
-/* bb 0.47.1 wraps the sidebar footer in its own collapsible body with
+/* alia 0.47.1 wraps the sidebar footer in its own collapsible body with
  * `clip-path: inset(0 -6px 0 0)`, which clips the details card that opens
- * above the footer row. Lift the clip only while a card is open so bb's
+ * above the footer row. Lift the clip only while a card is open so alia's
  * collapse transition keeps its clipping otherwise. */
 [data-sidebar="collapsible-body"]:has(.usage-tracker-sidebar__details) {
   clip-path: none;
@@ -167,7 +167,7 @@
   justify-content: center;
 }
 
-/* Matches the weight of bb's own footer glyphs (16px at 0.8 opacity). */
+/* Matches the weight of alia's own footer glyphs (16px at 0.8 opacity). */
 .usage-tracker-sidebar__mark,
 .usage-tracker-sidebar__summary-mark {
   width: 0.875rem;
@@ -398,7 +398,7 @@
   animation: usage-tracker-sidebar-spin 800ms linear infinite;
 }
 
-/* Inset from the footer rather than sized by --sidebar-width: bb's resize
+/* Inset from the footer rather than sized by --sidebar-width: alia's resize
  * handle changes the real panel width without updating that variable (it reads
  * 256px on a 319px sidebar), which clipped the card's left edge. */
 .usage-tracker-sidebar__details {

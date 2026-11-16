@@ -37,10 +37,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   definePluginApp,
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "./ui/components/ui/button";
 import {
   Collapsible,
@@ -1033,7 +1033,7 @@ function AccountPoolSettings() {
 
 function UnlockedAccountPoolSettings() {
   const rpc = useRpc<typeof accountPoolRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [status, setStatus] = useState<PoolStatus | null>(null);
   const [nativeAccounts, setNativeAccounts] = useState<NativeAccounts | null>(null);
   const [nativeSettings, setNativeSettings] = useState<string | null>(null);

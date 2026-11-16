@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { flaresText } from "./format";
 import { KINDS } from "./kinds";
 import { BODY_DESCRIPTION, DUPLICATE, SENT, TOOL_DESCRIPTION, TOOL_INSTRUCTIONS, notSaved } from "./notes";
@@ -7,7 +7,7 @@ import type { FlareService, SendResult } from "./service";
 
 export const TOOL_TINT = { light: "#b45309", dark: "#f59e0b" };
 
-// The provider validates a call against this schema before bb runs it (pi rejected kind "celebration" against an
+// The provider validates a call against this schema before VesnALIA runs it (pi rejected kind "celebration" against an
 // enum in the live check), so it only names the fields: no enum, no required list and no bounds. normalizeFlare and
 // the clamps below answer an odd value with a note instead of a failed call.
 const flareParameters = {
@@ -54,8 +54,8 @@ export function resultText(result: SendResult): string {
   }
 }
 
-export function registerTools(bb: BbPluginApi, flares: FlareService): void {
-  bb.agents.registerTool({
+export function registerTools(alia: AliaPluginApi, flares: FlareService): void {
+  alia.agents.registerTool({
     name: "flare",
     description: TOOL_DESCRIPTION,
     instructions: TOOL_INSTRUCTIONS,
@@ -71,13 +71,13 @@ export function registerTools(bb: BbPluginApi, flares: FlareService): void {
         const fields: FlareFields = argumentsOf(params);
         return resultText(flares.send({ threadId, projectId: projectId || null, fields, source: "tool" }));
       } catch (error) {
-        bb.log.warn(`The flare tool failed for ${threadId}: ${error instanceof Error ? error.message : String(error)}`);
+        alia.log.warn(`The flare tool failed for ${threadId}: ${error instanceof Error ? error.message : String(error)}`);
         return notSaved("an unexpected error");
       }
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "flare_list",
     description: "Read the flares already sent in this thread, newest first, including those from threads it started.",
     presentation: {

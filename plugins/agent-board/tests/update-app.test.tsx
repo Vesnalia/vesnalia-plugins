@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent } from "@testing-library/react";
-import { loadPluginApp, renderSlot, type CapturedPluginApp } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot, type CapturedPluginApp } from "@vesnalia/plugin-sdk/testing/app";
 import type { UpdateAvailable as UpdateComponent } from "../components/global/update-available";
 
 let app: CapturedPluginApp;

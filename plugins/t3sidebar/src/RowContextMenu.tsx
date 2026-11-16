@@ -3,7 +3,7 @@ import * as ContextMenu from "@radix-ui/react-context-menu";
 import {
   experimental_useSidebarThreadActions as useSidebarThreadActions,
   type PluginSidebarThread,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { cn } from "./lib/utils";
 
 /**
@@ -12,7 +12,7 @@ import { cn } from "./lib/utils";
  * The plugin API ships no menu component on purpose, so a replaced sidebar
  * owns this surface. Every item below is one call on
  * `experimental_useSidebarThreadActions`, and the destructive one is
- * `requestDelete`, which opens BB's confirmation rather than deleting a
+ * `requestDelete`, which opens VesnALIA's confirmation rather than deleting a
  * subtree silently.
  */
 export function RowContextMenu({

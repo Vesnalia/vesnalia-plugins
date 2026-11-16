@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { Context } from "hono";
 import { z } from "zod";
 import { maskMeetingUrl } from "../shared/meeting-url.js";
@@ -140,7 +140,7 @@ async function executeAgent(service: MeetingsService, request: AgentRequest, sig
   finally { limits.active -= 1; }
 }
 
-/** Shared JSON-RPC dispatch for HTTP and the official enrolled BB CLI. */
+/** Shared JSON-RPC dispatch for HTTP and the official enrolled VesnALIA CLI. */
 async function dispatchMcp(service: MeetingsService, value: unknown, protocolVersion: string, signal: AbortSignal): Promise<Response> {
   const parsed = rpcMessageSchema.safeParse(value);
   if (!parsed.success) return rpcError(null, -32600, "Expected one JSON-RPC request or notification");
@@ -266,9 +266,9 @@ function requestForTool(name: string, args: Record<string, unknown>): AgentReque
   return parseAgentRequest(JSON.stringify({ ...args, action }));
 }
 
-export function registerAgentTransports(bb: BbPluginApi, service: MeetingsService, tokens: AgentTokenManager = createAgentTokenManager(bb)) {
+export function registerAgentTransports(alia: AliaPluginApi, service: MeetingsService, tokens: AgentTokenManager = createAgentTokenManager(alia)) {
   const authorize = async (c: Context, personal: boolean) => {
-    if (!validOrigin(c.req.raw, bb.server.experimental_appUrl)) return jsonResponse({ ok: false, error: { code: "invalid_origin", message: "Origin is not allowed" } }, 403);
+    if (!validOrigin(c.req.raw, alia.server.experimental_appUrl)) return jsonResponse({ ok: false, error: { code: "invalid_origin", message: "Origin is not allowed" } }, 403);
     if (!personal) return null;
     const authorization = c.req.header("authorization") ?? "";
     const match = /^Bearer ([A-Za-z0-9_-]+)$/i.exec(authorization);
@@ -315,17 +315,17 @@ export function registerAgentTransports(bb: BbPluginApi, service: MeetingsServic
   for (const personal of [false, true]) {
     const suffix = personal ? "-token" : "";
     const auth = personal ? "none" as const : "local" as const;
-    bb.http.route("POST", `/api${suffix}`, rest(personal), { auth });
-    bb.http.route("POST", `/mcp${suffix}`, mcp(personal), { auth });
-    bb.http.route("GET", `/mcp${suffix}`, methodNotAllowed(personal), { auth });
-    bb.http.route("DELETE", `/mcp${suffix}`, methodNotAllowed(personal), { auth });
+    alia.http.route("POST", `/api${suffix}`, rest(personal), { auth });
+    alia.http.route("POST", `/mcp${suffix}`, mcp(personal), { auth });
+    alia.http.route("GET", `/mcp${suffix}`, methodNotAllowed(personal), { auth });
+    alia.http.route("DELETE", `/mcp${suffix}`, methodNotAllowed(personal), { auth });
   }
-  bb.http.route("GET", "/agent-meta", async c => {
+  alia.http.route("GET", "/agent-meta", async c => {
     const denied = await authorize(c, false);
     return denied ?? jsonResponse({
       transports: { rest: "/api/v1/plugins/meetings/http/api", mcp: "/api/v1/plugins/meetings/http/mcp", personalRest: "/api/v1/plugins/meetings/http/api-token", personalMcp: "/api/v1/plugins/meetings/http/mcp-token" },
-      authentication: "Native HTTP requires BB authentication. Personal HTTP requires an explicitly created Meetings Bearer token; hosted BB Connect additionally requires its owner session or enrolled-machine access. STDIO uses official BB CLI authentication.",
-      stdio: { command: "node", args: ["<plugin-directory>/integrations/mcp/stdio.mjs"], requirements: ["Node.js 22 or later", "authenticated bb CLI on PATH, or BB_CLI environment variable"] },
+      authentication: "Native HTTP requires VesnALIA authentication. Personal HTTP requires an explicitly created Meetings Bearer token; hosted VesnALIA Connect additionally requires its owner session or enrolled-machine access. STDIO uses official VesnALIA CLI authentication.",
+      stdio: { command: "node", args: ["<plugin-directory>/integrations/mcp/stdio.mjs"], requirements: ["Node.js 22 or later", "authenticated VesnALIA CLI on PATH, or ALIA_CLI environment variable"] },
       protocolVersions: MCP_PROTOCOL_VERSIONS,
       actions: agentRequestSchema.options.map(option => option.shape.action.value),
       tools: listMcpTools(),

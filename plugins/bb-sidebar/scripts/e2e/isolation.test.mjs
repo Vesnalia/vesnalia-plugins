@@ -14,7 +14,7 @@ test("established TCP peers must be loopback, for IPv4 and IPv6", () => {
 });
 
 test("HOME must resolve inside scratch, including symlinks and prefix collisions", () => {
-  const root = mkdtempSync("/tmp/bb-sidebar-guard-test-");
+  const root = mkdtempSync("/tmp/alia-sidebar-guard-test-");
   const scratch = join(root, "scratch");
   const home = join(scratch, "home");
   const outside = join(root, "scratch-other");
@@ -33,13 +33,13 @@ test("HOME must resolve inside scratch, including symlinks and prefix collisions
 
 test("open files reject protected roots but not similarly named directories", () => {
   assert.deepEqual(
-    protectedFiles("p42\nf1\nn/real/.codex/state.sqlite\nn/real/.bb/db (deleted)\nn/real/.bb-other/cache\n", [
+    protectedFiles("p42\nf1\nn/real/.codex/state.sqlite\nn/real/.vesnalia/db (deleted)\nn/real/.alia-other/cache\n", [
       "/real/.codex",
-      "/real/.bb",
+      "/real/.vesnalia",
     ]),
     [
       { pid: 42, path: "/real/.codex/state.sqlite" },
-      { pid: 42, path: "/real/.bb/db" },
+      { pid: 42, path: "/real/.vesnalia/db" },
     ],
   );
 });

@@ -1,9 +1,9 @@
-// The Lobu page in bb's sidebar: what needs you, what agents remember across
+// The Lobu page in VesnALIA's sidebar: what needs you, what agents remember across
 // the login's workspaces, and what is paired. Each section loads on its own,
 // so one slow or failing Lobu call never blanks the rest of the page.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { PanelConnection, PanelDevice, PanelMemory, rpcContract, SetupStatus } from "@/lib/contract";
 import { memoryKinds, type MemoryKind, type SavedRecord } from "@/lib/memory-contract";
 import { InboxSection } from "@/components/inbox";
@@ -86,7 +86,7 @@ function MemoryRow({ hit }: { hit: PanelMemory }) {
 }
 
 function SavedRow({ record }: { record: SavedPanelMemory }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const title = <span className="font-medium">{record.title}</span>;
   return (
     <li className="py-2.5 text-sm">
@@ -125,11 +125,11 @@ function SavedRow({ record }: { record: SavedPanelMemory }) {
   );
 }
 
-/** The memory loop made visible: what bb saved, or everything Lobu holds. */
+/** The memory loop made visible: what VesnALIA saved, or everything Lobu holds. */
 function MemoriesSection() {
   const rpc = useRpc<typeof rpcContract>();
   const [view, setView] = useState<"saved" | "all">("saved");
-  // "Saved from bb" reads the plugin's own records.
+  // "Saved from VesnALIA" reads the plugin's own records.
   const [saved, setSaved] = useState<SavedPanelMemory[] | null>(null);
   const [savedError, setSavedError] = useState<string | null>(null);
   const [savedLoading, setSavedLoading] = useState(false);
@@ -237,7 +237,7 @@ function MemoriesSection() {
                 view === value ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {value === "saved" ? "Saved from bb" : "All of Lobu"}
+              {value === "saved" ? "Saved from VesnALIA" : "All of Lobu"}
             </button>
           ))}
         </div>
@@ -247,7 +247,7 @@ function MemoriesSection() {
         <>
           <div className="flex items-center gap-2 py-2">
             <p className="min-w-0 flex-1 text-xs text-muted-foreground">
-              {saved === null ? " " : `${saved.length} ${saved.length === 1 ? "memory" : "memories"} from bb threads`}
+              {saved === null ? " " : `${saved.length} ${saved.length === 1 ? "memory" : "memories"} from VesnALIA threads`}
             </p>
             <Button
               variant="ghost"
@@ -265,7 +265,7 @@ function MemoriesSection() {
             <p className="py-3 text-xs text-muted-foreground">Loading…</p>
           ) : saved.length === 0 ? (
             <p className="py-3 text-xs text-muted-foreground">
-              Nothing saved from bb yet. Agents save decisions, gotchas, and standing preferences as they work.
+              Nothing saved from VesnALIA yet. Agents save decisions, gotchas, and standing preferences as they work.
             </p>
           ) : (
             <ul className="divide-y divide-border">
@@ -579,7 +579,7 @@ function Page({ status, reload }: { status: SetupStatus; reload: () => Promise<S
         {status.contexts.length === 0 ? null : (
           <select
             aria-label="Lobu context"
-            title="Switch the Lobu login bb uses. The inbox, memories, connections, and bb's saves all follow it."
+            title="Switch the Lobu login VesnALIA uses. The inbox, memories, connections, and VesnALIA's saves all follow it."
             className="h-8 max-w-56 cursor-pointer rounded-md border border-input bg-transparent px-2 text-xs"
             value={picked}
             onChange={(event) => pick(event.target.value)}

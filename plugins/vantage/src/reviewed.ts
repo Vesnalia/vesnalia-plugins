@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { experimental_useRpcKeyedQuery, experimental_useRpcMutation } from "@get-bb/plugin-sdk/app";
+import { experimental_useRpcKeyedQuery, experimental_useRpcMutation } from "@vesnalia/plugin-sdk/app";
 import { rpcContract, type FileChange, type ReviewMarks, type Worktree } from "./contract";
 import { countedFiles } from "./counted";
 
@@ -44,7 +44,7 @@ export function useReviewMarks(keys: readonly string[]): Record<string, ReviewMa
 
 export type SetReviewed = (key: string, parts: readonly FilePart[], reviewed: boolean) => Promise<void>;
 
-// Shows a worktree's whole branch against the base bb records, or goes back to counting only its threads' work.
+// Shows a worktree's whole branch against the base VesnALIA records, or goes back to counting only its threads' work.
 export function useSetWhole(): (key: string, whole: boolean) => Promise<unknown> {
   const { mutate } = experimental_useRpcMutation({ contract: rpcContract, method: "setWhole" });
   return useCallback((key, whole) => mutate({ key, whole }), [mutate]);

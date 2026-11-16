@@ -45,13 +45,13 @@ function MenuItem({
     <DropdownMenuItem disabled={disabled} onSelect={onSelect}>
       <Icon name={icon} className="size-4 text-muted-foreground" aria-hidden="true" />
       <span className="flex-1">{label}</span>
-      {shortcut === undefined ? null : <DropdownMenuShortcut className="bb-ft-shortcut-hint">{shortcut}</DropdownMenuShortcut>}
+      {shortcut === undefined ? null : <DropdownMenuShortcut className="alia-ft-shortcut-hint">{shortcut}</DropdownMenuShortcut>}
     </DropdownMenuItem>
   );
 }
 
 /**
- * A right-click menu. bb's desktop app shows no native context menu at all, so
+ * A right-click menu. VesnALIA's desktop app shows no native context menu at all, so
  * without this a right-click in the terminal did nothing; in a browser the
  * native one offered "Inspect" and not much else useful for a shell.
  */
@@ -152,13 +152,13 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="bb-ft-scrim"
+      className="alia-ft-scrim"
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <div
-        className="bb-ft-panel"
+        className="alia-ft-panel"
         role="dialog"
         aria-modal="true"
         aria-label="Keyboard shortcuts"
@@ -171,17 +171,17 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
             ref={closeRef}
             type="button"
             aria-label="Close"
-            className="bb-ft-step"
+            className="alia-ft-step"
             onClick={onClose}
           >
             <Icon name="X" className="size-3.5" aria-hidden="true" />
           </button>
         </div>
-        <dl className="bb-ft-shortcuts">
+        <dl className="alia-ft-shortcuts">
           {SHORTCUTS.map((shortcut) => (
             <div key={shortcut.does} className="contents">
               <dt>
-                <kbd className="bb-ft-kbd">{shortcut.keys}</kbd>
+                <kbd className="alia-ft-kbd">{shortcut.keys}</kbd>
               </dt>
               <dd>{shortcut.does}</dd>
             </div>
@@ -195,7 +195,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
 // ------------------------------------------------------------------ pills
 
 export function PillBar({ children }: { children: React.ReactNode }) {
-  return <div className="bb-ft-pills">{children}</div>;
+  return <div className="alia-ft-pills">{children}</div>;
 }
 
 export function Pill({
@@ -214,7 +214,7 @@ export function Pill({
   return (
     <button
       type="button"
-      className="bb-ft-pill"
+      className="alia-ft-pill"
       data-tone={tone}
       aria-label={label}
       // Keep the terminal's selection and focus: a pill that took focus would

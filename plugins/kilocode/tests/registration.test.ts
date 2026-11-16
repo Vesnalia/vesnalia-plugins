@@ -13,7 +13,7 @@ type Declaration = Record<string, any>;
 const registrations: Declaration[] = [];
 const logs: string[] = [];
 
-const fakeBb = {
+const fakeAlia = {
   log: {
     info: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
     warn: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
@@ -30,7 +30,7 @@ const fakeBb = {
 
 async function registration(): Promise<Declaration> {
   registrations.length = 0;
-  await plugin(fakeBb);
+  await plugin(fakeAlia);
   expect(registrations).toHaveLength(1);
   return registrations[0];
 }
@@ -116,7 +116,7 @@ describe("provider registration", () => {
     expect(declaration.completedTurnDisplay).toBe("flat");
   });
 
-  it("opens bb thread edit-message, whose gate is fork === checkpoint", async () => {
+  it("opens VesnALIA thread edit-message, whose gate is fork === checkpoint", async () => {
     const declaration = await registration();
     // The server derives supportsSessionRewind from this declaration alone;
     // at fork: "tip" the command fails with HTTP 409 "Editing messages is
@@ -124,12 +124,12 @@ describe("provider registration", () => {
     expect(declaration.capabilities.fork).toBe("checkpoint");
     // "checkpoint" is not aspirational: host.ts stamps a
     // providerCheckpointId (`<sessionId>#<userCount>`) onto every settled
-    // turn boundary from the adapter's registry, and answers bb's rewind
+    // turn boundary from the adapter's registry, and answers VesnALIA's rewind
     // prepare by staging a rebuild the adapter runs on the replacement
-    // thread. So editing the first message (bb restarts the session, no
+    // thread. So editing the first message (VesnALIA restarts the session, no
     // checkpoint needed) and editing any later one (rewind to the turn
     // before it, history retained) both work; only a count Kilo's store
-    // never confirmed (`seeded:false`) falls back to bb's honest 409.
+    // never confirmed (`seeded:false`) falls back to VesnALIA's honest 409.
     expect(declaration.capabilities.fork !== "none").toBe(true);
   });
 
@@ -137,7 +137,7 @@ describe("provider registration", () => {
     // The `initialize` request still reaches the ACP kit — host.ts must not
     // grow a handler that answers it, or two answers would travel on one
     // stream. What host.ts does rewrite, on the way out, is the kit's
-    // `capabilities.fork: "tip"` result: bb takes the minimum of this
+    // `capabilities.fork: "tip"` result: VesnALIA takes the minimum of this
     // declaration and the handshake, and prepareThreadRewind throws below
     // "checkpoint", so the upgrade is what opens the edit affordance this
     // test's sibling asserts.

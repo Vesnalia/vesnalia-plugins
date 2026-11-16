@@ -1,7 +1,7 @@
-// bb-plugin-worktree-ports — backend entry. Resolves every environment BB
+// alia-plugin-worktree-ports — backend entry. Resolves every environment VesnALIA
 // knows about to a worktree path, has each machine's host worker scan its own
-// listeners, and serves the result to the sidebar card, `bb ports`, and agents.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+// listeners, and serves the result to the sidebar card, `alia ports`, and agents.
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { nextDelayMs } from "./src/cadence";
 import { hostContract, scannedPortSchema, type PortRoot, type ScannedPort } from "./src/contract";
@@ -64,8 +64,8 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     scanIntervalSec: {
       type: "number",
       label: "Scan interval (seconds)",
@@ -90,8 +90,8 @@ export default async function plugin(bb: BbPluginApi) {
     openIn: {
       type: "select",
       label: "Open ports in",
-      options: ["BB browser preference", "System browser"],
-      default: "BB browser preference",
+      options: ["VesnALIA browser preference", "System browser"],
+      default: "VesnALIA browser preference",
     },
     showThreadRowIcon: {
       type: "boolean",
@@ -100,7 +100,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
 
   interface EnvironmentFacts {
     hostId: string;
@@ -125,7 +125,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     let facts: EnvironmentFacts | null = null;
     try {
-      const environment = await bb.sdk.environments.get({ environmentId });
+      const environment = await alia.sdk.environments.get({ environmentId });
       // A provisioning or destroyed worktree has nothing worth scanning.
       if (environment.path !== null && environment.status === "ready") {
         facts = {
@@ -137,7 +137,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
     } catch (cause) {
-      bb.log.debug(`environment ${environmentId} unreadable: ${String(cause)}`);
+      alia.log.debug(`environment ${environmentId} unreadable: ${String(cause)}`);
     }
     environmentCache.set(environmentId, { loadedAt: Date.now(), facts });
     return facts;
@@ -146,12 +146,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function hostName(hostId: string): Promise<string | null> {
     if (Date.now() - hostNamesLoadedAt > ENVIRONMENT_CACHE_MS) {
       try {
-        for (const entry of await bb.sdk.hosts.list()) {
+        for (const entry of await alia.sdk.hosts.list()) {
           hostNames.set(entry.id, entry.name);
         }
         hostNamesLoadedAt = Date.now();
       } catch (cause) {
-        bb.log.debug(`host list unreadable: ${String(cause)}`);
+        alia.log.debug(`host list unreadable: ${String(cause)}`);
       }
     }
     return hostNames.get(hostId) ?? null;
@@ -164,7 +164,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** Every live environment with a workspace on disk, plus the threads using it. */
   async function workspaces(): Promise<Workspace[]> {
-    const threads = await bb.sdk.threads.list({
+    const threads = await alia.sdk.threads.list({
       archived: false,
       includeHidden: true,
       limit: THREAD_LIMIT,
@@ -286,20 +286,20 @@ export default async function plugin(bb: BbPluginApi) {
     }
     signature = nextSignature;
     idleScans = 0;
-    bb.realtime.publish(PORTS_CHANGED, {
+    alia.realtime.publish(PORTS_CHANGED, {
       groups: next.groups.length,
       ports: next.groups.reduce((total, group) => total + group.ports.length, 0),
     });
   }
 
-  bb.background.service("port-scanner", {
+  alia.background.service("port-scanner", {
     async start(signal) {
       while (!signal.aborted) {
         const { scanIntervalSec } = await settings.get();
         try {
           publishIfChanged(await scan(signal));
         } catch (cause) {
-          if (!signal.aborted) bb.log.warn(`scan failed: ${String(cause)}`);
+          if (!signal.aborted) alia.log.warn(`scan failed: ${String(cause)}`);
         }
         await sleep(nextDelayMs(scanIntervalSec * 1000, idleScans), signal);
       }
@@ -329,9 +329,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   // The thread-row content script has no hooks, so it reads the same snapshot
   // over plain fetch from the app origin.
-  bb.http.route("GET", "/snapshot", () => Response.json(snapshot));
+  alia.http.route("GET", "/snapshot", () => Response.json(snapshot));
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     // Someone is looking: answer from a fresh scan when the sweep has backed
     // off or has not run yet, and put the sweep back on its fast cadence.
     ports_snapshot: async () => {
@@ -365,17 +365,17 @@ export default async function plugin(bb: BbPluginApi) {
     return lines.join("\n");
   }
 
-  const usage = ["Usage:", "  bb ports list [--json]", "  bb ports release <environment-id> <port>"].join("\n");
+  const usage = ["Usage:", "  VesnALIA ports list [--json]", "  VesnALIA ports release <environment-id> <port>"].join("\n");
 
-  bb.cli.register({
+  alia.cli.register({
     name: "ports",
-    summary: "Show the ports listening in each BB workspace",
+    summary: "Show the ports listening in each VesnALIA workspace",
     commands: [
-      { name: "list", summary: "List listening ports per workspace", usage: "bb ports list [--json]" },
+      { name: "list", summary: "List listening ports per workspace", usage: "alia ports list [--json]" },
       {
         name: "release",
         summary: "Stop whatever holds a workspace port",
-        usage: "bb ports release <environment-id> <port>",
+        usage: "alia ports release <environment-id> <port>",
       },
     ],
     async run(argv) {
@@ -409,10 +409,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "worktree_ports",
     description:
-      "List the TCP ports currently listening in each BB workspace (worktree), with the owning process or container and the URL that reaches it.",
+      "List the TCP ports currently listening in each VesnALIA workspace (worktree), with the owning process or container and the URL that reaches it.",
     presentation: {
       label: { pending: "Reading workspace ports", completed: "Read workspace ports" },
     },
@@ -432,7 +432,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
+  alia.onDispose(() => {
     environmentCache.clear();
   });
 }

@@ -66,7 +66,7 @@ export class ReleaseUpdateChecker {
 /** Fixed official endpoint; no credentials and no user-controlled URLs. */
 export async function fetchLatestRelease(): Promise<unknown> {
   const response = await fetch("https://api.github.com/repos/aaronphifer/bb-plugin-agent-board/releases/latest", {
-    signal: AbortSignal.timeout(5_000), redirect: "error", headers: { Accept: "application/vnd.github+json", "User-Agent": `bb-agent-board/${manifest.version}` },
+    signal: AbortSignal.timeout(5_000), redirect: "error", headers: { Accept: "application/vnd.github+json", "User-Agent": `alia-agent-board/${manifest.version}` },
   });
   if (!response.ok || !response.body) throw new Error("Release discovery unavailable");
   const reader = response.body.getReader(); const chunks: Uint8Array[] = []; let size = 0;

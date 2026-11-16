@@ -1,4 +1,4 @@
-/* Composer banner: sits in BB's own chat chrome, so it uses the host theme tokens (with fallbacks) and nothing from the dashboard. */
+/* Composer banner: sits in ALIA's own chat chrome, so it uses the host theme tokens (with fallbacks) and nothing from the dashboard. */
 /* Liquid Glass pills mode hides the whole banner stack while no pill is open; keep it showing when this line is in it. */
 [data-lg-dock-collapsed] > .grid[data-lg-dock-empty]:has(.nudger-cb) { display: grid; }
 .nudger-cb {

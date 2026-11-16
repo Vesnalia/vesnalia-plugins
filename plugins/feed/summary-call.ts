@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-// The same helper-inference call that BB's bundled Codex plugin makes for thread titles.
+// The same helper-inference call that VesnALIA's bundled Codex plugin makes for thread titles.
 const CODEX_RESPONSES_URL = "https://chatgpt.com/backend-api/codex/responses";
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const CHATGPT_AUTH_CLAIM_PATH = "https://api.openai.com/auth";
@@ -42,7 +42,7 @@ function chatGptClaims(token: string): JsonObject | null {
   }
 }
 
-/** Reads the local Codex login, as BB's Codex host does; the token is used as stored. */
+/** Reads the local Codex login, as VesnALIA's Codex host does; the token is used as stored. */
 async function readCodexCredentials(): Promise<CodexCredentials> {
   const codexHome = path.resolve(
     process.env.CODEX_HOME?.trim() || path.join(os.homedir(), ".codex"),
@@ -89,7 +89,7 @@ function requestHeaders(credentials: CodexCredentials): Headers {
   const headers = new Headers({
     Accept: "text/event-stream",
     "Content-Type": "application/json",
-    "User-Agent": "bb-host-daemon",
+    "User-Agent": "alia-host-daemon",
   });
   if (credentials.type === "apiKey") {
     headers.set("Authorization", `Bearer ${credentials.apiKey}`);
@@ -97,7 +97,7 @@ function requestHeaders(credentials: CodexCredentials): Headers {
   }
   headers.set("Authorization", `Bearer ${credentials.accessToken}`);
   headers.set("chatgpt-account-id", credentials.accountId);
-  headers.set("originator", "bb");
+  headers.set("originator", "alia");
   headers.set("OpenAI-Beta", "responses=experimental");
   if (credentials.isFedrampAccount) headers.set("X-OpenAI-Fedramp", "true");
   return headers;

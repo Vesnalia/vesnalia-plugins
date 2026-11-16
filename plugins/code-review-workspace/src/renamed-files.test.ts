@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { toGithubReviewPayload } from "./draft";
 import { changedFiles } from "./patch";
@@ -14,9 +14,9 @@ const patch = [
 ].join("\n");
 
 async function host() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");
@@ -55,12 +55,12 @@ test("a discussion without a comment, and a Viewed mark, saved under a renamed f
 });
 
 test("renames move saved rows once per diff, not on every read", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   await store.savePatch("pr-1", patch);
   await store.upsertDraftComment("pr-1", { file: "src/new.ts", line: 2, side: "RIGHT", body: "Why 3?" });
-  const run = vi.spyOn(testSql(bb), "run");
+  const run = vi.spyOn(testSql(alia), "run");
   const updates = () => run.mock.calls.filter(([text]) => /^UPDATE \w+ SET file=/.test(text)).length;
   await store.getDraft("pr-1");
   const first = updates();
@@ -72,15 +72,15 @@ test("renames move saved rows once per diff, not on every read", async () => {
 });
 
 test.skipIf(testOnPostgres)("moving a renamed file's discussions finds them by an index", () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  testStore(bb);
-  const plan = bb.storage.database().prepare(`EXPLAIN QUERY PLAN UPDATE discussion_entries SET file=? WHERE target_key=? AND file=?`).all("b", "k", "a") as Array<{ detail: string }>;
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  testStore(alia);
+  const plan = alia.storage.database().prepare(`EXPLAIN QUERY PLAN UPDATE discussion_entries SET file=? WHERE target_key=? AND file=?`).all("b", "k", "a") as Array<{ detail: string }>;
   expect(plan.map((row) => row.detail).join("\n")).toMatch(/USING INDEX/);
 });
 
 test("a row already at a renamed file's new path keeps it, and its namesake stays at the old path, as UPDATE OR IGNORE left them", async () => {
-  const { bb } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  const store = testStore(bb);
+  const { alia } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, headSha: "sha1" });
   // Before the diff showed the rename, both paths had rows: line 2 under each, line 1 only under the old one.
   await store.savePatch("pr-1", [
@@ -93,7 +93,7 @@ test("a row already at a renamed file's new path keeps it, and its namesake stay
     await store.setFileViewed("pr-1", file, `${file} hash`);
   }
   await store.savePatch("pr-1", patch);
-  const sql = testSql(bb);
+  const sql = testSql(alia);
   const rows = async () => ({
     revisions: await sql.all(`SELECT file, line, code FROM draft_comment_revisions ORDER BY file, line`),
     entries: await sql.all(`SELECT file, line, body FROM discussion_entries ORDER BY id`),
@@ -104,7 +104,7 @@ test("a row already at a renamed file's new path keeps it, and its namesake stay
   // On SQLite, what 1.2.0's statements made of the same rows, rolled back once read.
   let ignored: Awaited<ReturnType<typeof rows>> | undefined;
   if (!testOnPostgres) {
-    const db = bb.storage.database();
+    const db = alia.storage.database();
     db.exec("SAVEPOINT before_rename");
     for (const table of ["draft_comment_revisions", "discussion_entries", "discussion_waits", "file_views"]) {
       db.prepare(`UPDATE OR IGNORE ${table} SET file=? WHERE target_key=? AND file=?`).run("src/new.ts", "pr-1", "src/old.ts");

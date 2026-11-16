@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { FlareBanner } from "./src/ui/banner";
 import { FlareDivider } from "./src/ui/dividers";
 import { FlaresTab } from "./src/ui/panel";

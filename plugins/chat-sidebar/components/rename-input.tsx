@@ -1,9 +1,9 @@
 // Rename in place: a field instead of the title. Enter or blur saves, Esc
 // cancels; an empty or unchanged title is not saved. Saved silently through
-// `threads.update`, without bb's rename dialog.
+// `threads.update`, without VesnALIA's rename dialog.
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 
 import { cn } from "@/lib/utils";
 import { useT } from "./chat-context";

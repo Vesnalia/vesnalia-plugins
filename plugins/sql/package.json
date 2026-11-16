@@ -1,20 +1,16 @@
 {
-  "name": "bb-plugin-sql",
+  "name": "alia-plugin-sql",
   "version": "0.6.3",
-  "description": "SQLTools-style Postgres panel for bb: all-databases tree, schema completion with table aliases, query session persistence, duplicate connections, controlled write/DDL. Agents: sql_query + sql_list_connections.",
+  "description": "SQLTools-style Postgres panel for VesnALIA: all-databases tree, schema completion with table aliases, query session persistence, duplicate connections, controlled write/DDL. Agents: sql_query + sql_list_connections.",
   "license": "MIT",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yazydzhi/bb-plugin-sql.git"
-  },
   "engines": {
-    "bb": ">=0.40",
-    "bbPluginSdk": ">=0.4.16"
+    "alia": ">=0.40",
+    "aliaPluginSdk": ">=0.4.16"
   },
-  "bb": {
+  "alia": {
     "name": "SQL",
-    "description": "Postgres in bb: browse all databases, schema-aware completion, controlled write/DDL (Agent write / Allow DDL on by default for new connections).",
+    "description": "Postgres in VesnALIA: browse all databases, schema-aware completion, controlled write/DDL (Agent write / Allow DDL on by default for new connections).",
     "branding": {
       "icon": "Layers"
     },
@@ -23,7 +19,7 @@
     "skills": []
   },
   "scripts": {
-    "test:completion": "rm -rf /tmp/bb-sql-completion-test && mkdir -p /tmp/bb-sql-completion-test && tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir /tmp/bb-sql-completion-test --rootDir . lib/sql-completion/complete.ts lib/sql-completion/context.ts lib/sql-completion/rank.ts lib/sql-completion/keywords.ts lib/sql-completion/types.ts lib/sql-completion/table-alias.ts lib/sql-completion/index.ts lib/sql-completion/complete.test.ts lib/sql-statements.ts && node --test /tmp/bb-sql-completion-test/lib/sql-completion/complete.test.js"
+    "test:completion": "rm -rf /tmp/alia-sql-completion-test && mkdir -p /tmp/alia-sql-completion-test && tsc --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir /tmp/alia-sql-completion-test --rootDir . lib/sql-completion/complete.ts lib/sql-completion/context.ts lib/sql-completion/rank.ts lib/sql-completion/keywords.ts lib/sql-completion/types.ts lib/sql-completion/table-alias.ts lib/sql-completion/index.ts lib/sql-completion/complete.test.ts lib/sql-statements.ts && node --test /tmp/alia-sql-completion-test/lib/sql-completion/complete.test.js"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.3",
@@ -38,7 +34,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.16",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
@@ -48,5 +43,22 @@
     "better-sqlite3": "^12.0.0",
     "hono": "^4.11.9",
     "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.16"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/sql#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/sql"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

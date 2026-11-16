@@ -1,4 +1,4 @@
-// The folder tree beside BB's Diff tab: its pure pieces, tested by
+// The folder tree beside VesnALIA's Diff tab: its pure pieces, tested by
 // src/folders.test.ts. The DOM side is in src/diff-tab.ts, the rows in src/Tree.tsx.
 
 export type ChangeKind = "added" | "copied" | "deleted" | "modified" | "renamed" | "type_changed";
@@ -61,7 +61,7 @@ const baseName = (path: string) => path.slice(path.lastIndexOf("/") + 1);
  * The files as a folder tree: folders first, then files, each in natural order.
  * With `compact`, a folder that holds nothing but one folder is folded into it
  * ("apps/docs"), so deep paths do not cost a row per level. With `synced`, each
- * folder's folders and files keep the order of `files` instead (BB's file cards
+ * folder's folders and files keep the order of `files` instead (VesnALIA's file cards
  * come in that order), a folder standing where its first file does.
  */
 export function buildTree(files: readonly TreeFile[], compact = true, synced = false): TreeDir {
@@ -149,7 +149,7 @@ export interface DiffFilters {
   showViewed: boolean;
 }
 
-/** A file's extension as BB's Filter files menu lists it: ".css", lower case, "" for none or a dotfile. */
+/** A file's extension as VesnALIA's Filter files menu lists it: ".css", lower case, "" for none or a dotfile. */
 export function extensionOf(path: string): string {
   const name = baseName(path);
   const dot = name.lastIndexOf(".");
@@ -157,7 +157,7 @@ export function extensionOf(path: string): string {
 }
 
 /**
- * The files the Diff tab's Filter files menu lets through, by BB's own rule: a file is
+ * The files the Diff tab's Filter files menu lets through, by VesnALIA's own rule: a file is
  * viewed while its revision is the one it was marked at. `viewed` null (not
  * known yet) hides nothing.
  */
@@ -221,7 +221,7 @@ export function openAt(root: TreeDir, depth: OpenDepth): Set<string> {
   return depth === "all" ? allDirs(root) : depth === "none" ? new Set() : initialOpen(root);
 }
 
-/** What BB's Diff tab is showing, as the Git plugin's `files` read takes it (see server.ts). */
+/** What VesnALIA's Diff tab is showing, as the Git plugin's `files` read takes it (see server.ts). */
 export type Scope =
   | { target: "all" }
   | { target: "branch_committed" }
@@ -241,13 +241,13 @@ export function scopeOf(label: string): Scope | null {
   return sha ? { target: "commit", sha } : null;
 }
 
-// BB's search box splits its value at commas and runs picomatch on each part, except
+// VesnALIA's search box splits its value at commas and runs picomatch on each part, except
 // that a part with no glob syntax matches anywhere in a path, ignoring case.
 
 /**
  * `path` as a pattern that matches only itself: glob characters escaped, a `{` as
  * `[{]` (picomatch's scan reads past an escaped one and calls the pattern plain),
- * commas (BB splits at them) as `?`.
+ * commas (VesnALIA splits at them) as `?`.
  */
 const literal = (path: string) =>
   path.replace(/[\\*?[\]}()!]/g, "\\$&").replaceAll("{", "[{]").replaceAll(",", "?");

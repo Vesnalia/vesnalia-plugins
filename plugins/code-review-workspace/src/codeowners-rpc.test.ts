@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { testStore } from "./test-store.test-support";
 
 const runGh = vi.hoisted(() => vi.fn());
@@ -27,9 +27,9 @@ function github(codeowners: string | null) {
 }
 
 async function setUp(headSha: string) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
-  await plugin(bb);
-  const store = testStore(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace" });
+  await plugin(alia);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", repo: "acme/web", number: 1, base: "main", headSha, status: "ready", createdAt: 1 });
   await store.savePatch("pr-1", patch);
   await store.setAssistantThread("pr-1", "assistant");

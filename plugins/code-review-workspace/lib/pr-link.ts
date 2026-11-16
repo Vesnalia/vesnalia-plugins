@@ -1,4 +1,4 @@
-// A GitHub pull request as people paste it: a link to any of its pages, or owner/repo#n. bb review takes both; the
+// A GitHub pull request as people paste it: a link to any of its pages, or owner/repo#n. VesnALIA review takes both; the
 // inbox sends owner/repo#n on as a link.
 
 /** A link to any page of a PR: /changes, /files/<range>, /commits/<sha>, and so on. An owner may hold _, as an Enterprise Managed User's does. */

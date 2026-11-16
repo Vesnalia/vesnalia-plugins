@@ -19,8 +19,8 @@ export interface GpuHelperState {
   readonly serves: ServedPools | null;
 }
 
-const HELPER_HEAD = /^\s*helper bb-box-gpu(?:\s.*)?$/m;
-const HELPER_LINE = /^\s*helper bb-box-gpu (\S+) protocol (\d+)(?: (.*?))?\s*$/m;
+const HELPER_HEAD = /^\s*helper alia-box-gpu(?:\s.*)?$/m;
+const HELPER_LINE = /^\s*helper alia-box-gpu (\S+) protocol (\d+)(?: (.*?))?\s*$/m;
 const PROTOCOL_1_HELPER_REST = /^writes (on|off) pve-container (\S+) (tested|untested)$/;
 const SERVES_LINE = /^\s*serves (.+?)\s*$/m;
 const MORE_POOLS = / and (\d+) more$/;
@@ -72,8 +72,8 @@ export function tooOldForWhole(node: string, version: string | null): HelperTooO
   if (atLeast(version, WHOLE_CARDS_FROM)) return null;
   const from = WHOLE_CARDS_FROM.join(".");
   return {
-    why: `its GPU helper is bb-box-gpu ${version ?? "of an unknown version"}, and a whole card needs ${from} or later, which takes a card only from this install's own stopped boxes`,
-    fix: `Upgrade the helper with host/setup-gpu.sh from a BB Box release with bb-box-gpu ${from} or later, as root on ${node}.`,
+    why: `its GPU helper is alia-box-gpu ${version ?? "of an unknown version"}, and a whole card needs ${from} or later, which takes a card only from this install's own stopped boxes`,
+    fix: `Upgrade the helper with host/setup-gpu.sh from a VesnALIA Box release with alia-box-gpu ${from} or later, as root on ${node}.`,
   };
 }
 
@@ -104,11 +104,11 @@ function poolsInWords(pools: readonly string[]): string {
 
 export function judgeGpuHelper(helper: GpuHelperState, seen: GpuHelperSeen): GpuHelperVerdict {
   const { node, pool, vmid, ageMs, ago } = seen;
-  const named = `bb-box-gpu ${helper.version} on ${node}`;
-  const setUpAgain = `Run host/setup-gpu.sh again, from this BB Box's setup guide, as root on ${node}.`;
-  const checkClock = `Run systemctl status bb-box-gpu as root on ${node}, and check the host's clock.`;
+  const named = `alia-box-gpu ${helper.version} on ${node}`;
+  const setUpAgain = `Run host/setup-gpu.sh again, from this VesnALIA Box's setup guide, as root on ${node}.`;
+  const checkClock = `Run systemctl status alia-box-gpu as root on ${node}, and check the host's clock.`;
   if (ageMs !== null && Number.isFinite(ageMs) && ageMs <= -GPU_HELPER_CLOCK_AHEAD_MS) {
-    return { status: "fail", detail: `The GPU helper's report in VM ${vmid} is dated ${span(-ageMs)} ahead of this BB server's clock, so ${PRODUCT} cannot tell whether the helper still runs.`, fix: checkClock };
+    return { status: "fail", detail: `The GPU helper's report in VM ${vmid} is dated ${span(-ageMs)} ahead of this VesnALIA server's clock, so ${PRODUCT} cannot tell whether the helper still runs.`, fix: checkClock };
   }
   if (ageMs === null || !Number.isFinite(ageMs) || ageMs >= GPU_HELPER_FRESH_MS) {
     return {
@@ -118,16 +118,16 @@ export function judgeGpuHelper(helper: GpuHelperState, seen: GpuHelperSeen): Gpu
     };
   }
   if (helper.protocol === null || helper.version === null) {
-    return { status: "fail", detail: `VM ${vmid}'s report has a helper line this BB Box cannot read.`, fix: setUpAgain };
+    return { status: "fail", detail: `VM ${vmid}'s report has a helper line this VesnALIA Box cannot read.`, fix: setUpAgain };
   }
   if (helper.protocol > GPU_HELPER_PROTOCOL) {
-    return { status: "fail", detail: `The GPU helper on ${node}, bb-box-gpu ${helper.version}, speaks protocol ${helper.protocol}, newer than this BB Box's protocol ${GPU_HELPER_PROTOCOL}.`, fix: "Update BB Box." };
+    return { status: "fail", detail: `The GPU helper on ${node}, alia-box-gpu ${helper.version}, speaks protocol ${helper.protocol}, newer than this VesnALIA Box's protocol ${GPU_HELPER_PROTOCOL}.`, fix: "Update VesnALIA Box." };
   }
   if (helper.protocol < GPU_HELPER_PROTOCOL) {
-    return { status: "fail", detail: `The GPU helper on ${node}, bb-box-gpu ${helper.version}, speaks protocol ${helper.protocol}, older than this BB Box's protocol ${GPU_HELPER_PROTOCOL}.`, fix: setUpAgain };
+    return { status: "fail", detail: `The GPU helper on ${node}, alia-box-gpu ${helper.version}, speaks protocol ${helper.protocol}, older than this VesnALIA Box's protocol ${GPU_HELPER_PROTOCOL}.`, fix: setUpAgain };
   }
   if (helper.writes === null || helper.pveContainer === null || helper.tested === null) {
-    return { status: "fail", detail: `VM ${vmid}'s report has a helper line this BB Box cannot read.`, fix: setUpAgain };
+    return { status: "fail", detail: `VM ${vmid}'s report has a helper line this VesnALIA Box cannot read.`, fix: setUpAgain };
   }
   const served = helper.serves;
   if (!served?.listed.includes(pool)) {
@@ -141,21 +141,21 @@ export function judgeGpuHelper(helper: GpuHelperState, seen: GpuHelperSeen): Gpu
     return {
       status: "fail",
       detail: `${named} was not tested on pve-container ${helper.pveContainer}, so it changes no guest's lines, and only stops a GPU desktop or a guest with a GPU marker: those on ${node} are neither started nor released. Boxes with no GPU there are started, stopped and released through Proxmox's API meanwhile, as before 071.`,
-      fix: `Install a bb-box-gpu release newer than ${helper.version} that was tested on pve-container ${helper.pveContainer}: run host/setup-gpu.sh from that BB Box release, as root on ${node}.`,
+      fix: `Install a alia-box-gpu release newer than ${helper.version} that was tested on pve-container ${helper.pveContainer}: run host/setup-gpu.sh from that VesnALIA Box release, as root on ${node}.`,
     };
   }
   if (!helper.tested) {
     return {
       status: "warn",
       detail: `${named} was not tested on pve-container ${helper.pveContainer}, so it changes no guest: it runs as with writes off, and ${PRODUCT} moves no box to another card.`,
-      fix: `Run host/setup-gpu.sh from a BB Box release tested on pve-container ${helper.pveContainer}, as root on ${node}.`,
+      fix: `Run host/setup-gpu.sh from a VesnALIA Box release tested on pve-container ${helper.pveContainer}, as root on ${node}.`,
     };
   }
   if (helper.writes === "off") {
     return {
       status: "warn",
       detail: `${named} runs with writes off, a dry run: it writes the GPU report, answers markers that need no write, and changes no guest. Until writes are on, ${PRODUCT} moves no box to another card, and a stopped box starts on the card its lines name (071).`,
-      fix: `Once bb box gpu mark has marked this install's guests and a day of dry run shows no write the helper would make, run host/setup-gpu.sh --writes on --check, then host/setup-gpu.sh --writes on, as root on ${node}.`,
+      fix: `Once VesnALIA box gpu mark has marked this install's guests and a day of dry run shows no write the helper would make, run host/setup-gpu.sh --writes on --check, then host/setup-gpu.sh --writes on, as root on ${node}.`,
     };
   }
   return { status: "ok", detail: `${named} reported ${ago(Math.max(ageMs, 0))}, with writes on, for pool ${pool}, on pve-container ${helper.pveContainer}, which it was tested on.`, fix: null };

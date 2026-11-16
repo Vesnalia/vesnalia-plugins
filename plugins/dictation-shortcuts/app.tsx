@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { definePluginApp, useComposer, useSdk } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useSdk } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { mountHints } from "./hints";
 import { mountKeyboard, toggleNativeVoice } from "./keyboard";

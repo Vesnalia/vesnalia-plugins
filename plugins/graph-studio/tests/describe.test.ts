@@ -302,13 +302,13 @@ describe("runCommand", () => {
 
   it("uses the graph's own example when no task was typed", () => {
     expect(runCommand(graph("The wishlist keeps losing entries"))).toBe(
-      'bb graph-studio run my-graph "The wishlist keeps losing entries"',
+      'alia graph-studio run my-graph "The wishlist keeps losing entries"',
     );
   });
 
   it("prefers the typed task over the example", () => {
     expect(runCommand(graph("Example"), "Something else")).toBe(
-      'bb graph-studio run my-graph "Something else"',
+      'alia graph-studio run my-graph "Something else"',
     );
   });
 
@@ -317,7 +317,7 @@ describe("runCommand", () => {
   // and quietly lose the example that was the point of the line.
   it("falls back to the example when the typed task is only whitespace", () => {
     expect(runCommand(graph("Example"), "   ")).toBe(
-      'bb graph-studio run my-graph "Example"',
+      'alia graph-studio run my-graph "Example"',
     );
   });
 
@@ -325,7 +325,7 @@ describe("runCommand", () => {
   // and starts a graph with no task at all.
   it("asks to be filled in when there is no example and no task", () => {
     expect(runCommand(graph(""))).toBe(
-      'bb graph-studio run my-graph "<task>"',
+      'alia graph-studio run my-graph "<task>"',
     );
   });
 });
@@ -367,12 +367,12 @@ describe("template examples", () => {
   it("shows the example in the text form a person or model reads", () => {
     const graph = TEMPLATES.find((entry) => entry.id === "dev-bugfix")!;
     expect(describeGraph(graph, [])).toContain(
-      `Example: bb graph-studio run dev-bugfix "${graph.example}"`,
+      `Example: VesnALIA graph-studio run dev-bugfix "${graph.example}"`,
     );
   });
 });
 
-// The status line of `bb graph-studio status`. A run that takes ten minutes is
+// The status line of `alia graph-studio status`. A run that takes ten minutes is
 // watched from the terminal as often as from the panel, and "running write
 // (attempt 1)" is as little help there as "running" was on the canvas.
 describe("describeAttempt", () => {

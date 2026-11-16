@@ -1,8 +1,8 @@
-// Which bb realtime events make a live project card read again. bb announces thread, environment
+// Which VesnALIA realtime events make a live project card read again. VesnALIA announces thread, environment
 // and project changes as they happen (`thread:changed`, `environment:changed`, `project:changed`),
 // so the cards follow those instead of re-reading on a timer.
 
-/** What one card follows. Every list holds bb ids. */
+/** What one card follows. Every list holds VesnALIA ids. */
 export interface LiveWatch {
   /** Threads whose status, title, questions, archive state or environment the card shows. */
   threads?: readonly string[];
@@ -10,7 +10,7 @@ export interface LiveWatch {
   newThreads?: boolean;
   /** Environments whose files, refs or status the card shows. */
   environments?: readonly string[];
-  /** Environments whose GitHub pull request the card shows; bb keeps those fresh while it is on screen. */
+  /** Environments whose GitHub pull request the card shows; VesnALIA keeps those fresh while it is on screen. */
   pullRequests?: readonly string[];
 }
 

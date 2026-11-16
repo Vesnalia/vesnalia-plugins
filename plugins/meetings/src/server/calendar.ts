@@ -89,7 +89,7 @@ export async function fetchIcs(url: string, signal?: AbortSignal): Promise<strin
   } catch {
     throw new Error(`${label}: invalid feed URL`);
   }
-  const headers: Record<string, string> = { accept: "text/calendar, text/plain;q=0.9, */*;q=0.1", "user-agent": "bb-plugin-meetings" };
+  const headers: Record<string, string> = { accept: "text/calendar, text/plain;q=0.9, */*;q=0.1", "user-agent": "alia-plugin-meetings" };
   if (target.username !== "" || target.password !== "") {
     // fetch refuses URLs with credentials: send them as HTTP Basic auth instead (Nextcloud, Radicale…).
     const user = decodeUserinfo(target.username);

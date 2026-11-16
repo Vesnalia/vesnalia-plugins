@@ -6,7 +6,7 @@ import { releaseWaitStated } from "./release-wait";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import {
   createThreadStatus,
   parseStatusReport,
@@ -72,7 +72,7 @@ it("keeps the last report through ordinary replies, maintains its age, and clear
   ).toBe("");
 });
 it("captures idle reports durably, isolates threads, survives reload and fetch failures, and forgets deleted threads", async () => {
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     sdk: {
       threads: {
         output: async () => {
@@ -81,7 +81,7 @@ it("captures idle reports durably, isolates threads, survives reload and fetch f
       },
     },
   });
-  let monitor = createThreadStatus(bb, () => {});
+  let monitor = createThreadStatus(alia, () => {});
   await harness.behavior.emitThreadEvent("thread.idle", {
     thread: makeThreadResponse({ id: "t1" }),
     lastAssistantText: report,
@@ -89,8 +89,8 @@ it("captures idle reports durably, isolates threads, survives reload and fetch f
   const saved = await monitor.get("t1");
   expect(saved?.report?.goal).toBe("Ship the UI.");
   expect(await monitor.get("t2")).toBeNull();
-  const reloaded = await harness.lifecycle.reload(async (nextBb) => {
-    monitor = createThreadStatus(nextBb, () => {});
+  const reloaded = await harness.lifecycle.reload(async (nextAlia) => {
+    monitor = createThreadStatus(nextAlia, () => {});
   });
   expect(await monitor.get("t1")).toEqual(saved);
   await reloaded.harness.behavior.emitThreadEvent("thread.deleted", {
@@ -101,7 +101,7 @@ it("captures idle reports durably, isolates threads, survives reload and fetch f
 });
 it("serializes reads with idle updates so an old in-flight reply cannot overwrite the new report", async () => {
   let resolve!: (result: { output: string }) => void;
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     sdk: {
       threads: {
         output: () =>
@@ -111,7 +111,7 @@ it("serializes reads with idle updates so an old in-flight reply cannot overwrit
       },
     },
   });
-  const monitor = createThreadStatus(bb, () => {});
+  const monitor = createThreadStatus(alia, () => {});
   const reading = monitor.get("t1");
   await new Promise((done) => setTimeout(done, 0));
   const idle = harness.behavior.emitThreadEvent("thread.idle", {
@@ -121,7 +121,7 @@ it("serializes reads with idle updates so an old in-flight reply cannot overwrit
   resolve({ output: "Older ordinary reply" });
   await reading;
   await idle;
-  const stored = await bb.storage.kv.get<{ report: { goal: string } }>(
+  const stored = await alia.storage.kv.get<{ report: { goal: string } }>(
     "thread-status:t1",
   );
   expect(stored?.report.goal).toBe("Ship the UI.");
@@ -176,7 +176,7 @@ it("reads a go-list under a **Path forward:** line without taking it for a recom
 it("hands back with the status prompt the user set, or the built-in one", () => {
   expect(handBackInstructions("")).toContain(DEFAULT_STATUS_PROMPT);
   expect(handBackInstructions("**Goal:** <x>")).toContain("**Goal:** <x>");
-  // bb truncates thread instructions at 4096 characters.
+  // VesnALIA truncates thread instructions at 4096 characters.
   expect(handBackInstructions("", true).length).toBeLessThan(4096);
 });
 

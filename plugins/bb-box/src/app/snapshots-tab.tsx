@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { DialogButton, DialogCancel } from "./box-dialog.tsx";
@@ -312,7 +312,7 @@ function GroupHead({ group, title, onThread }: { group: TabGroup; title: string 
 }
 
 export function SnapshotsTabPanel({ view, now, onChanged, scroller }: { view: SnapshotsTabView; now: number; onChanged: () => void; scroller: (node: ReactNode) => ReactNode }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [search, setSearch] = useState(place.search);
   const [filters, setFilters] = useState<SnapshotFilters>(place.filters);
   const [sort, setSort] = useState<SnapshotSort>(place.sort);

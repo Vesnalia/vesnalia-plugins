@@ -26,7 +26,7 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
       ref={ref}
       data-slot="skeleton"
       aria-hidden="true"
-      className={cn("bb-skeleton", shapeClass[shape], className)}
+      className={cn("alia-skeleton", shapeClass[shape], className)}
       style={delay ? { ...style, animationDelay: `${delay}ms` } : style}
       {...props}
     />

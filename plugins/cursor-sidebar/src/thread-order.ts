@@ -1,7 +1,7 @@
 /**
  * Persistent ordering helpers for project sections and sibling threads.
  *
- * Ported from bb-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
+ * Ported from alia-plugin-thread-inbox (MIT, Copyright (c) 2026 Michael Yong);
  * see THIRD-PARTY-NOTICES.md at the repository root.
  */
 

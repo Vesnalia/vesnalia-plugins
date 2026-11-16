@@ -561,7 +561,7 @@ const HOST_WORDS: Readonly<Record<HostKind, string>> = {
 export function placementWords(placement: Placement): string {
   if (placement.on === "vm") return "A VM of its own.";
   const ports = slotPorts(placement.place);
-  return `On a shared iOS host (${HOST_WORDS[placement.hostOn]}), slot ${placement.place + 1} of ${placement.most}. Ports ${ports.base} to ${ports.base + ports.count - 1}, in BB_PORT_BASE and BB_PORT_COUNT.`;
+  return `On a shared iOS host (${HOST_WORDS[placement.hostOn]}), slot ${placement.place + 1} of ${placement.most}. Ports ${ports.base} to ${ports.base + ports.count - 1}, in ALIA_PORT_BASE and ALIA_PORT_COUNT.`;
 }
 
 export function sharedBoxWords(kind: string): string {

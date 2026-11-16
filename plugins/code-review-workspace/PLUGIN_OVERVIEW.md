@@ -5,7 +5,7 @@ For reviewers who need to understand a change before they approve it, often one 
 - **A guide to the change.** An agent writes the PR's intent and its chapters in reading order, each with a risk level. Risky chapters list what to verify, and **Start here** points to the one to three lines most likely to hide a defect.
 - **Requirements, checked.** What the PR's description and linked issues ask for, each marked covered, partial, missing, or unclear, with evidence.
 - **A drafted review you edit.** Line comments with a severity (Blocking, Should fix, Question, or Nit), a summary, and a suggested verdict. Each draft says how the agent confirmed the problem.
-- **Ask agent.** Ask about the whole change, a line, a selection, or a failing check, in BB's side panel.
+- **Ask agent.** Ask about the whole change, a line, a selection, or a failing check, in VesnALIA's side panel.
 - **Finish review.** The summary, your verdict, and exactly what will be posted. Before you approve, it flags blocking comments, unviewed high-risk or flagged files, and chapters read faster than your pace.
 
 ## Whose turn and re-review
@@ -20,7 +20,7 @@ For reviewers who need to understand a change before they approve it, often one 
 
 ## Local changes and agent threads
 
-- **Review changes** above a thread's message box, or `bb review` in it, reviews that thread's folder, uncommitted and new files included.
+- **Review changes** above a thread's message box, or `alia review` in it, reviews that thread's folder, uncommitted and new files included.
 - **Send** your comments to the thread that wrote the code. It reports each done or declined, and the review comes back **Ready to re-review** with each fix checked.
 - **Push** from the review: the thread commits what you reviewed, and pushes exactly that commit. **Push and open PR** has the review agent draft the PR too.
 
@@ -31,11 +31,11 @@ For reviewers who need to understand a change before they approve it, often one 
 
 ## Requirements and costs
 
-- BB 0.48 or later, on Node 24 or later.
-- `git` and GitHub CLI (`gh`) on the BB server, signed in to github.com. GitHub features support github.com only.
-- A BB agent provider. Guides, reviews, and re-review checks use its usage allowance.
-- At least one BB project.
-- Each reviewer needs their own BB installation: a shared BB server shares its GitHub credentials and saved reviews.
+- VesnALIA 0.48 or later, on Node 24 or later.
+- `git` and GitHub CLI (`gh`) on the VesnALIA server, signed in to github.com. GitHub features support github.com only.
+- A VesnALIA agent provider. Guides, reviews, and re-review checks use its usage allowance.
+- At least one VesnALIA project.
+- Each reviewer needs their own VesnALIA installation: a shared VesnALIA server shares its GitHub credentials and saved reviews.
 
 ## More
 

@@ -1,17 +1,17 @@
-# Git History for bb
+# Git History for VesnALIA
 
 Git History adds a compact, read-only commit graph to a thread's right panel.
 It reads repository refs, so the graph includes local branches,
 remote-tracking branches, tags, stashes, and shared worktree history.
 
-![Git History panel open in bb](assets/git-history.jpeg)
+![Git History panel open in VesnALIA](assets/git-history.jpeg)
 
 ## Install
 
 Install the latest compatible release from GitHub:
 
 ```sh
-bb plugin install git:https://github.com/yusuf8834/bb-git-history.git@^0.4.1
+alia plugin install git:https://github.com/yusuf8834/bb-git-history.git@^0.4.1
 ```
 
 For local development:
@@ -19,7 +19,7 @@ For local development:
 ```sh
 npm install --include=dev
 npm run build
-bb plugin install .
+alia plugin install .
 ```
 
 Open a project thread and select Git History from the right panel's Actions
@@ -32,7 +32,7 @@ want a Git History action in the thread header.
 - Experimental branch and merge lanes using the compact history style
 - Local, remote, tag, stash, and `HEAD` labels
 - Commit author, date, full message, and first-parent changed files
-- Per-file patches rendered by bb's native diff viewer
+- Per-file patches rendered by VesnALIA's native diff viewer
 - Collapsible uncommitted-file list with working-tree diffs
 - Infinite loading with virtualized rows
 
@@ -91,7 +91,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-The host entry runs Git on the thread environment's bb host. This keeps the
+The host entry runs Git on the thread environment's VesnALIA host. This keeps the
 same behavior for local worktrees and repositories on connected machines.
 
 ## Contributing

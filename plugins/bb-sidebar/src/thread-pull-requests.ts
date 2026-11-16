@@ -5,19 +5,19 @@
 // latest. The thread's own event log still has the rest: each `gh pr create`
 // prints the PR URL. This module finds those URLs and asks the thread's host
 // for their status via `gh`.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { portScanContract } from "./port-scan-contract";
 import { createdPullRequestUrls, pullRequestNumber } from "./pull-requests";
 import type { ThreadPullRequest } from "./contract";
 
-// bb rejects event pages larger than 100.
+// VesnALIA rejects event pages larger than 100.
 const EVENT_PAGE_SIZE = 100;
 const OPEN_STATUS_TTL_MS = 60_000;
 
-export function createThreadPullRequests(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: portScanContract });
+export function createThreadPullRequests(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: portScanContract });
   const controller = new AbortController();
-  bb.onDispose(() => controller.abort());
+  alia.onDispose(() => controller.abort());
   // Event logs only grow, so each thread is scanned once and then from its
   // last seen sequence.
   const scans = new Map<string, { afterSeq: number | null; urls: string[] }>();
@@ -30,7 +30,7 @@ export function createThreadPullRequests(bb: BbPluginApi) {
     const urls = new Set(previous.urls);
     let afterSeq = previous.afterSeq;
     for (;;) {
-      const page = await bb.sdk.threads.events.list({
+      const page = await alia.sdk.threads.events.list({
         threadId,
         types: ["item/completed"],
         order: "asc",
@@ -65,9 +65,9 @@ export function createThreadPullRequests(bb: BbPluginApi) {
     const now = Date.now();
     const stale = urls.filter((url) => (statuses.get(url)?.expiresAt ?? 0) <= now);
     if (!stale.length) return;
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) return;
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     const { pullRequests } = await host.call(
       "pullRequests",
       { urls: stale },

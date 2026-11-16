@@ -2,7 +2,7 @@ import { createElement, useEffect, type ComponentPropsWithoutRef } from "react";
 
 type RpcInput = Record<string, unknown>;
 
-// The isolated harness cannot reproduce BB's native file context menu.
+// The isolated harness cannot reproduce VesnALIA's native file context menu.
 export function experimental_FileLink({ target: _target, ...props }: Omit<ComponentPropsWithoutRef<"a">, "target"> & { target: unknown }) {
   return createElement("a", { ...props, href: "#" });
 }

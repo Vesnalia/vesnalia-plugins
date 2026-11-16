@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Builds on-demand chunks into dist/chunks/ with a manifest. Run before
-// `bb plugin build` whenever a chunk changes, and commit dist/chunks/: git
-// installs never run this script. Chunks live in dist/ because bb's Tailwind
+// `alia plugin build` whenever a chunk changes, and commit dist/chunks/: git
+// installs never run this script. Chunks live in dist/ because VesnALIA's Tailwind
 // scan skips it (chunk sources in chunks/ are scanned, so their utility
 // classes land in the main app.css).
 import { build } from "esbuild";
@@ -51,9 +51,9 @@ const virtualRuntime = {
 // build). Iris and SDK names call through on every use, so a plugin reload
 // re-points chunks that were already loaded.
 const SHARED_KEY = "__iris_shared_v1";
-const SHARED = { react: "react", "react/jsx-runtime": "jsxRuntime", "@get-bb/plugin-sdk/app": "sdk", "@iris/ui": "iris" };
+const SHARED = { react: "react", "react/jsx-runtime": "jsxRuntime", "@vesnalia/plugin-sdk/app": "sdk", "@iris/ui": "iris" };
 const CALL_THROUGH = new Set(["sdk", "iris"]);
-const FORBIDDEN = [/node_modules\/react\//, /node_modules\/react-dom\//, /node_modules\/scheduler\//, /node_modules\/@get-bb\//, /(^|\/)ui\//];
+const FORBIDDEN = [/node_modules\/react\//, /node_modules\/react-dom\//, /node_modules\/scheduler\//, /node_modules\/@get-alia\//, /(^|\/)ui\//];
 
 async function importedNames() {
   const { readdir } = await import("node:fs/promises");

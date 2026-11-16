@@ -11,12 +11,12 @@ import {
 } from "@hugeicons/core-free-icons";
 
 /**
- * Icons rendered straight from `@hugeicons/core-free-icons`, the set BB's own
- * icons come from. BB's `Icon` only knows the small subset BB registered, and
+ * Icons rendered straight from `@hugeicons/core-free-icons`, the set VesnALIA's own
+ * icons come from. VesnALIA's `Icon` only knows the small subset VesnALIA registered, and
  * a name outside it silently renders as a ⚡ (Zap) — "Sparkles", "Coins" and
  * "Cpu" are some it lacks — so anything beyond that subset is drawn here. The
- * bundler keeps only the icons imported above. BB's `Icon` is still used for
- * the everyday controls (✕, ✓, chevrons, spinner) so they match the rest of BB.
+ * bundler keeps only the icons imported above. VesnALIA's `Icon` is still used for
+ * the everyday controls (✕, ✓, chevrons, spinner) so they match the rest of VesnALIA.
  */
 type GlyphData = readonly (readonly [string, { readonly [attribute: string]: string | number }])[];
 

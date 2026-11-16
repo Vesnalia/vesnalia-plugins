@@ -1,11 +1,11 @@
 ---
 name: graphite-stack
-description: Read the local Graphite stack of a BB environment and its private review notes with the bb graphite-stack command. Use when a user asks about a Graphite stack, layer parents, restack state, or review notes in BB.
+description: Read the local Graphite stack of a VesnALIA environment and its private review notes with the VesnALIA graphite-stack command. Use when a user asks about a Graphite stack, layer parents, restack state, or review notes in VesnALIA.
 ---
 
 # Graphite Stack
 
-The Graphite Stack plugin shows local Graphite stacks in BB. It reads the
+The Graphite Stack plugin shows local Graphite stacks in VesnALIA. It reads the
 stack that `gt` tracks on the environment's machine. It needs no PR, no
 GitHub authentication, and no Git remote.
 
@@ -14,27 +14,27 @@ GitHub authentication, and no Git remote.
 Both commands only read.
 
 ```sh
-bb graphite-stack stack <environment-id> [--json]
-bb graphite-stack notes <environment-id> <branch> [--json]
+alia graphite-stack stack <environment-id> [--json]
+alia graphite-stack notes <environment-id> <branch> [--json]
 ```
 
 - `stack` prints the trunks, the current branch, and each tracked branch with
-  its Graphite parent, commit count, restack state, worktree, and linked BB
+  its Graphite parent, commit count, restack state, worktree, and linked VesnALIA
   thread. Status values other than `ready` explain why no stack is shown
   (`no-repo`, `no-gt`, `gt-uninitialized`, `gt-unsupported`, and others).
-- `notes` prints the private BB line notes on one branch, with path, side,
+- `notes` prints the private VesnALIA line notes on one branch, with path, side,
   line, original commit, and resolved state.
 
-Find your environment id with `bb status`.
+Find your environment id with `alia status`.
 
 ## Rules for agents
 
-1. Read the Graphite parent from `bb graphite-stack stack`. Do not infer it
+1. Read the Graphite parent from `alia graphite-stack stack`. Do not infer it
    from commit ancestry.
 2. Do not edit `.git/.graphite_*` files. Only `gt` changes Graphite metadata.
-3. Use `gt` itself for stack changes. In BB, the user runs create, track,
+3. Use `gt` itself for stack changes. In VesnALIA, the user runs create, track,
    restack, sync, and submit from the Graphite tab, which previews each action.
-4. Private notes stay in BB. Do not copy their text into a PR comment unless
+4. Private notes stay in VesnALIA. Do not copy their text into a PR comment unless
    the user asks.
 5. While you are active in a worktree, the plugin blocks stack actions on it.
    Finish your turn before the user restacks.

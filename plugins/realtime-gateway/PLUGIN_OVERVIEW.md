@@ -1,10 +1,10 @@
-Realtime Gateway lets the Voice Mode plugin in bb run its voice sessions through a Vercel AI Gateway key. Your sessions bill to that gateway account, and the bb host never needs an OpenAI key of its own.
+Realtime Gateway lets the Voice Mode plugin in VesnALIA run its voice sessions through a Vercel AI Gateway key. Your sessions bill to that gateway account, and the VesnALIA host never needs an OpenAI key of its own.
 
 ## What you get
 
 - Voice sessions in Voice Mode billed through the Vercel AI Gateway.
-- One gateway key on the bb host, instead of a provider key per vendor.
-- A live `bb realtime-gateway test` probe that mints a secret and opens one real session, so you can confirm the handshake before relying on it.
+- One gateway key on the VesnALIA host, instead of a provider key per vendor.
+- A live `alia realtime-gateway test` probe that mints a secret and opens one real session, so you can confirm the handshake before relying on it.
 - A model setting you control: `openai/gpt-realtime-mini` by default, or any other gateway realtime id such as `openai/gpt-realtime-2`.
 
 ## How it works
@@ -17,12 +17,12 @@ Pair the plugin with Voice Mode's **Connection** setting on `auto`, or set it to
 
 ## Requirements
 
-- bb 0.46 or newer.
+- VesnALIA 0.46 or newer.
 - A Vercel account with AI Gateway access and usage billing enabled.
-- A gateway API key, entered in **Settings → Plugins → Realtime Gateway** or through `bb plugin config realtime-gateway`. The `AI_GATEWAY_API_KEY` environment variable works as a fallback.
+- A gateway API key, entered in **Settings → Plugins → Realtime Gateway** or through `alia plugin config realtime-gateway`. The `AI_GATEWAY_API_KEY` environment variable works as a fallback.
 - The Voice Mode plugin, installed from https://github.com/steveafrost/bb-plugin-voice-mode
 
-No OpenAI key is needed on the bb host.
+No OpenAI key is needed on the VesnALIA host.
 
 ## Limits
 

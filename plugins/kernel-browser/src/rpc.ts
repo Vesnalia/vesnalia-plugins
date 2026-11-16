@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import * as commands from "./commands.js";
 import type { CommandContext } from "./commands.js";
@@ -53,8 +53,8 @@ export type TargetDto = z.infer<typeof targetSchema>;
 export type ReplayDto = z.infer<typeof replaySchema>;
 export type AuthConnectionDto = z.infer<typeof authConnectionSchema>;
 
-export function registerRpc(bb: BbPluginApi, ctx: CommandContext): void {
-  bb.rpc.register(rpcContract, {
+export function registerRpc(alia: AliaPluginApi, ctx: CommandContext): void {
+  alia.rpc.register(rpcContract, {
     async getTarget({ targetId }) {
       const target = await commands.getTarget(ctx, targetId);
       return { target };

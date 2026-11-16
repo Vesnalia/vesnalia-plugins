@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.js";
 import { createStore } from "../src/store/store.js";
 import { issue, NOW, state, team } from "./helpers/store.js";
@@ -10,13 +10,13 @@ afterEach(async () => { for (const cleanup of cleanups.splice(0)) await cleanup(
 async function fixture() {
   let rows: unknown[] = [];
   const thread = makeThreadResponse({ id: "t", projectId: "p", environmentId: null });
-  const { bb, harness } = createFakePluginHost({ pluginId: "linear", sdk: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "linear", sdk: {
     threads: { get: async () => thread, timeline: async () => ({ rows }) as never },
     projects: { list: async () => ({ projects: [] }) as never },
   } });
   cleanups.push(() => harness.lifecycle.dispose());
-  await plugin(bb as never);
-  const store = createStore(bb.storage.database() as never);
+  await plugin(alia as never);
+  const store = createStore(alia.storage.database() as never);
   store.putTeams([team("team_eng", "ENG")], NOW);
   store.replaceWorkflowStates("team_eng", [state("todo", "team_eng", "unstarted"), state("done", "team_eng", "completed")]);
   store.putIssues([issue({ id: "a", identifier: "ENG-1", stateId: "todo" }), issue({ id: "b", identifier: "ENG-2", stateId: "todo" })], NOW);

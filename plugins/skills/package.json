@@ -1,26 +1,17 @@
 {
-  "name": "@gpambrozio/bb-plugin-skills",
+  "name": "@gpambrozio/alia-plugin-skills",
   "version": "0.3.2",
   "license": "MIT",
   "author": "gpambrozio (https://github.com/gpambrozio)",
-  "homepage": "https://github.com/gpambrozio/bb-plugins/tree/main/skills#readme",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gpambrozio/bb-plugins.git",
-    "directory": "skills"
-  },
-  "bugs": {
-    "url": "https://github.com/gpambrozio/bb-plugins/issues"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.45",
-    "bbPluginSdk": ">=0.6.15"
+    "alia": ">=0.45",
+    "aliaPluginSdk": ">=0.6.15"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "files": [
     "server.ts",
@@ -38,7 +29,7 @@
     "!**/*.test.ts",
     "!**/*.test.tsx"
   ],
-  "bb": {
+  "alia": {
     "name": "Skills",
     "description": "See every skill a thread's agent can use, where each one comes from and what it says, and add one to the chat from the panel or composer.",
     "branding": {
@@ -56,7 +47,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.79",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -87,5 +77,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^5.0.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.79"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/skills"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

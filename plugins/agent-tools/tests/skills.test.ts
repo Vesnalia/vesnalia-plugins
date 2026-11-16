@@ -7,9 +7,9 @@ import {
   locationPolicy,
   planPromoteToCanon,
   resolveRowAction,
-  bbInjectBytes,
-  bbInjectTooHeavy,
-  BB_INJECT_MAX_BYTES,
+  aliaInjectBytes,
+  aliaInjectTooHeavy,
+  ALIA_INJECT_MAX_BYTES,
   type SkillLocationScan,
 } from "../skills.ts";
 
@@ -46,7 +46,7 @@ test("в папке Gemini любая ссылка — лишняя, её уби
     scan("agents", CANON, [dir("a", "h1")]),
     scan("gemini-config", "/home/u/.gemini/config/skills", [
       link("a", `${CANON}/a`),
-      link("b", "/home/u/.bb/skills/b"),
+      link("b", "/home/u/.vesnalia/skills/b"),
     ]),
   ]);
   assert.equal(rows.length, 2);
@@ -97,14 +97,14 @@ test("равные даты при разном содержании остаю�
   assert.equal(resolveRowAction(rows[0]!), null);
 });
 
-test("ссылка в ~/.bb/skills — дубль реестра BB, действие ручное", () => {
+test("ссылка в ~/.vesnalia/skills — дубль реестра ALIA, действие ручное", () => {
   const rows = computeSkillRows(CANON, [
     scan("agents", CANON, [dir("a", "h1")]),
-    scan("bb", "/home/u/.bb/skills", [dir("a", "h1")]),
-    scan("claude", "/home/u/.claude/skills", [link("a", "/home/u/.bb/skills/a")]),
+    scan("alia", "/home/u/.vesnalia/skills", [dir("a", "h1")]),
+    scan("claude", "/home/u/.claude/skills", [link("a", "/home/u/.vesnalia/skills/a")]),
   ]);
   const claude = rows.find((row) => row.locationId === "claude")!;
-  assert.equal(claude.state, "bb-registry");
+  assert.equal(claude.state, "alia-registry");
   const action = resolveRowAction(claude)!;
   assert.equal(action.mode, "unlink");
   assert.equal(action.manual, true);
@@ -119,10 +119,10 @@ test("ссылка в проект без канона — кандидат в �
   assert.deepEqual(resolveRowAction(rows[0]!), { mode: "adopt", label: "За канон" });
 });
 
-test("ссылка наружу мимо канона и BB остаётся информационной", () => {
+test("ссылка наружу мимо канона и ALIA остаётся информационной", () => {
   const rows = computeSkillRows(CANON, [
     scan("agents", CANON, [dir("a", "h1")]),
-    scan("bb", "/home/u/.bb/skills", []),
+    scan("alia", "/home/u/.vesnalia/skills", []),
     scan("claude", "/home/u/.claude/skills", [link("a", "/home/u/elsewhere/a")]),
   ]);
   assert.equal(rows.find((row) => row.locationId === "claude")?.state, "linked-external");
@@ -137,12 +137,12 @@ test("ссылка в проект с тем же содержимым, что �
   assert.equal(rows.find((row) => row.locationId === "claude"), undefined);
 });
 
-test("папку BB правила не трогают: BB заносит в реестр только реальные папки", () => {
+test("папку ALIA правила не трогают: ALIA заносит в реестр только реальные папки", () => {
   const rows = computeSkillRows(CANON, [
     scan("agents", CANON, [dir("a", "h1", 100)]),
-    scan("bb", "/home/u/.bb/skills", [dir("a", "h1", 100), dir("only", "h7", 100), dir("b", "h8", 900)]),
+    scan("alia", "/home/u/.vesnalia/skills", [dir("a", "h1", 100), dir("only", "h7", 100), dir("b", "h8", 900)]),
   ]);
-  assert.equal(locationPolicy("bb"), "own");
+  assert.equal(locationPolicy("alia"), "own");
   for (const row of rows) assert.equal(resolveRowAction(row), null);
 });
 
@@ -291,13 +291,13 @@ test("имя из плагина в канон из дома не забирае
   assert.deepEqual(ops, []);
 });
 
-test("BB не примет дерево больше 10 МБ", () => {
-  assert.equal(bbInjectTooHeavy(BB_INJECT_MAX_BYTES), false);
-  assert.equal(bbInjectTooHeavy(BB_INJECT_MAX_BYTES + 1), true);
+test("ALIA не примет дерево больше 10 МБ", () => {
+  assert.equal(aliaInjectTooHeavy(ALIA_INJECT_MAX_BYTES), false);
+  assert.equal(aliaInjectTooHeavy(ALIA_INJECT_MAX_BYTES + 1), true);
 });
 
-test("в $ идёт размер копии BB, если она есть", () => {
-  assert.equal(bbInjectBytes(1_000, 20_000_000), 20_000_000);
-  assert.equal(bbInjectBytes(1_000, 0), 1_000);
-  assert.equal(bbInjectBytes(1_000, null), 1_000);
+test("в $ идёт размер копии ALIA, если она есть", () => {
+  assert.equal(aliaInjectBytes(1_000, 20_000_000), 20_000_000);
+  assert.equal(aliaInjectBytes(1_000, 0), 1_000);
+  assert.equal(aliaInjectBytes(1_000, null), 1_000);
 });

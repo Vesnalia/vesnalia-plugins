@@ -3,7 +3,7 @@ import type { CommandTransport } from "../transports/types.ts";
 import { quote } from "../transports/process.ts";
 import { PRODUCT } from "../brand.ts";
 
-export const IDENTITY_TOOL = "/usr/local/sbin/bb-box-identity";
+export const IDENTITY_TOOL = "/usr/local/sbin/alia-box-identity";
 export const DESKTOP_FORK_SAFE_FROM = 9;
 
 export function withDesktopForkSafety(kind: string, offer: Snapshotting): Snapshotting {
@@ -108,19 +108,19 @@ const MACOS_HELD_IDENTITY_FACTS = [
 
 const MACOS_FORK_FACTS = [
   ...MACOS_HELD_IDENTITY_FACTS,
-  `for d in "$r"/Users/*/.bb-machines/* "$r"/Users/*/.bb-machines/.set-aside/* "$r"/var/root/.bb-machines/*; do [ -d "$d" ] || continue; for f in host-id auth.json config.json; do if [ -e "$d/$f" ]; then printf 'bb_file=%s\\n' "\${d#"$r"}/$f"; fi; done; done`,
-  `for f in "$r"/Users/*/.config/bb-box/env "$r"/var/root/.config/bb-box/env "$r"/Users/*/Library/LaunchAgents/app.getbb.host-daemon.*.plist; do if [ -e "$f" ]; then case $f in *.plist) printf 'bb_file=%s\\n' "\${f#"$r"}" ;; *) printf 'access_file=%s\\n' "\${f#"$r"}" ;; esac; fi; done`,
+  `for d in "$r"/Users/*/.alia-machines/* "$r"/Users/*/.alia-machines/.set-aside/* "$r"/var/root/.alia-machines/*; do [ -d "$d" ] || continue; for f in host-id auth.json config.json; do if [ -e "$d/$f" ]; then printf 'alia_file=%s\\n' "\${d#"$r"}/$f"; fi; done; done`,
+  `for f in "$r"/Users/*/.config/alia-box/env "$r"/var/root/.config/alia-box/env "$r"/Users/*/Library/LaunchAgents/app.getbb.host-daemon.*.plist; do if [ -e "$f" ]; then case $f in *.plist) printf 'alia_file=%s\\n' "\${f#"$r"}" ;; *) printf 'access_file=%s\\n' "\${f#"$r"}" ;; esac; fi; done`,
   "echo tailnet_node=no",
-  `m=$r/etc/bb-box/identity; if [ -r "$m" ] && macs=$(sed -n 's/^mac /marker_mac=/p' "$m"); then printf '%s\\n' "$macs"; else echo unreadable=identity-marker; fi`,
+  `m=$r/etc/alia-box/identity; if [ -r "$m" ] && macs=$(sed -n 's/^mac /marker_mac=/p' "$m"); then printf '%s\\n' "$macs"; else echo unreadable=identity-marker; fi`,
   `if a=$(ifconfig -a 2>/dev/null); then printf '%s\\n' "$a" | awk '$1 == "inet" && $2 != "127.0.0.1" { print "address=" $2 }'; echo addresses_read=yes; else echo unreadable=addresses; fi`,
 ];
 
 const FORK_FACTS = [
   ...HELD_IDENTITY_FACTS,
-  `for d in "$r"/home/*/.bb-machines/* "$r"/home/*/.bb-machines/.set-aside/* "$r"/root/.bb-machines/* "$r"/root/.bb-machines/.set-aside/*; do [ -d "$d" ] || continue; for f in host-id auth.json config.json; do if [ -e "$d/$f" ]; then printf 'bb_file=%s\\n' "\${d#"$r"}/$f"; fi; done; done`,
-  `for f in "$r"/home/*/.config/bb-box/env "$r"/root/.config/bb-box/env; do if [ -e "$f" ]; then printf 'access_file=%s\\n' "\${f#"$r"}"; fi; done`,
+  `for d in "$r"/home/*/.alia-machines/* "$r"/home/*/.alia-machines/.set-aside/* "$r"/root/.alia-machines/* "$r"/root/.alia-machines/.set-aside/*; do [ -d "$d" ] || continue; for f in host-id auth.json config.json; do if [ -e "$d/$f" ]; then printf 'alia_file=%s\\n' "\${d#"$r"}/$f"; fi; done; done`,
+  `for f in "$r"/home/*/.config/alia-box/env "$r"/root/.config/alia-box/env; do if [ -e "$f" ]; then printf 'access_file=%s\\n' "\${f#"$r"}"; fi; done`,
   `s=$r/var/lib/tailscale/tailscaled.state; if [ ! -e "$s" ]; then echo tailnet_node=no; elif [ ! -r "$s" ]; then echo unreadable=tailscale-state; else grep -q -e '"_current-profile"' -e '"profile-' "$s"; g=$?; if [ "$g" -eq 0 ]; then echo tailnet_node=yes; elif [ "$g" -eq 1 ]; then echo tailnet_node=no; else echo unreadable=tailscale-state; fi; fi`,
-  `m=$r/etc/bb-box/identity; if [ -r "$m" ] && macs=$(sed -n -e 's/^mac /marker_mac=/p' -e 's/^value /marker_value=/p' "$m"); then printf '%s\\n' "$macs"; else echo unreadable=identity-marker; fi`,
+  `m=$r/etc/alia-box/identity; if [ -r "$m" ] && macs=$(sed -n -e 's/^mac /marker_mac=/p' -e 's/^value /marker_value=/p' "$m"); then printf '%s\\n' "$macs"; else echo unreadable=identity-marker; fi`,
   `if command -v ip >/dev/null 2>&1; then if a=$(ip -o -4 addr show scope global 2>/dev/null); then printf '%s\\n' "$a" | awk '{ for (i = 1; i < NF; i++) if ($i == "inet") { split($(i + 1), part, "/"); print "address=" part[1] } }'; echo addresses_read=yes; else echo unreadable=addresses; fi; elif a=$(hostname -I 2>/dev/null); then for each in $a; do case $each in *.*) printf 'address=%s\\n' "$each" ;; esac; done; echo addresses_read=yes; else echo unreadable=addresses; fi`,
 ];
 
@@ -211,7 +211,7 @@ export interface ForkSeen {
   readonly exitCode: number | null;
   readonly markerMacs: readonly string[];
   readonly markerValue: string | null;
-  readonly bbFiles: readonly string[];
+  readonly aliaFiles: readonly string[];
   readonly accessFiles: readonly string[];
   readonly tailnetNode: boolean | null;
   readonly addresses: readonly string[] | null;
@@ -251,7 +251,7 @@ export function parseForkSeen(stdout: string, exitCode: number | null): ForkSeen
     exitCode,
     markerMacs: values(stdout, "marker_mac").map((mac) => mac.toLowerCase()),
     markerValue: values(stdout, "marker_value")[0] ?? null,
-    bbFiles: values(stdout, "bb_file"),
+    aliaFiles: values(stdout, "alia_file"),
     accessFiles: values(stdout, "access_file"),
     tailnetNode: tailnet === "yes" ? true : tailnet === "no" ? false : null,
     addresses: values(stdout, "addresses_read")[0] === "yes" ? values(stdout, "address") : null,
@@ -318,7 +318,7 @@ export function forkVerdict(seen: ForkSeen, expected: ForkExpected): ForkVerdict
   if (status.boot === "unknown") return { is: "wait", why: "its first boot could not tell yet whether it is a copy, so no reset has run" };
   if (status.pending) return { is: "wait", why: "its identity reset has begun and not finished" };
   if (status.boot !== "reset" && status.boot !== "kept") return refused(`its boot's identity check says "${status.boot}", not that it reset`);
-  if (status.raced) return refused("its identity reset ran after a user had logged in, so BB's daemon may have started as its source before the reset");
+  if (status.raced) return refused("its identity reset ran after a user had logged in, so VesnALIA's daemon may have started as its source before the reset");
   if (!status.enabled) return refused("its identity reset is off");
   if (status.version < expected.safeFrom) return refused(`it has version ${status.version} of the identity reset, and ${PRODUCT} forks only from version ${expected.safeFrom} there`);
   if (seen.missing.length) return refused(`it has no ${listWords(seen.missing.map((item) => MISSING_WORDS[item] ?? item))}, which its reset makes`);
@@ -333,7 +333,7 @@ export function forkVerdict(seen: ForkSeen, expected: ForkExpected): ForkVerdict
     return refused(`its identity marker names ${seen.markerMacs.length ? listWords(seen.markerMacs) : "no MAC address"}, not its own ${listWords([...forkMacs])}, so no reset of its own wrote it`);
   }
   if (status.box) return refused(`its identity marker names box ${status.box}${status.box === expected.sourceBox ? `, ${expected.sourceName}` : ""}, which a reset would have removed`);
-  if (seen.bbFiles.length) return refused(`BB's machine credentials are still on its disk: ${listWords(seen.bbFiles)}`);
+  if (seen.aliaFiles.length) return refused(`VesnALIA's machine credentials are still on its disk: ${listWords(seen.aliaFiles)}`);
   if (seen.accessFiles.length) return refused(`the thread's access file is still on its disk: ${listWords(seen.accessFiles)}`);
   if (seen.tailnetNode) return refused("its Tailscale state still holds a tailnet node");
   if (expected.held?.machineId && seen.identity.machineId === expected.held.machineId) return refused(`its machine ID is ${expected.sourceName}'s`);
@@ -352,12 +352,12 @@ export async function writeIdentityMarker(command: CommandTransport, boxId: stri
   return { written: false, why: ran.timedOut ? `writing it took over ${MARKER_WRITE_MS / 1000} s` : `writing it exited with ${ran.exitCode}${said ? `: ${said}` : ""}` };
 }
 
-export const IDENTITY_STATE = "/var/lib/bb-box";
+export const IDENTITY_STATE = "/var/lib/alia-box";
 export const IDENTITY_RESETS = `${IDENTITY_STATE}/identity-resets`;
 export const IDENTITY_RESET_PENDING = `${IDENTITY_STATE}/identity-reset-pending`;
 const RECORD_UNREADABLE = 3;
 export const RESETS_READ_MS = 15_000;
-const RESET_LINE = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ) (.*); BB machines removed: (.*)$/;
+const RESET_LINE = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ) (.*); ALIA machines removed: (.*)$/;
 
 export interface IdentityReset {
   readonly at: number;

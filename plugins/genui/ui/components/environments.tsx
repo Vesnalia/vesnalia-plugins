@@ -2,11 +2,11 @@
 // checkout, worktrees, other workspaces) as a dashboard of parallel work. The
 // list and the threads on each environment come first (project_environments);
 // each row's git status and pull request are read when the row is on screen,
-// a few at a time (project_environment). A row opens its newest thread in BB,
+// a few at a time (project_environment). A row opens its newest thread in VesnALIA,
 // each thread line its own thread. Read-only: nothing here changes a checkout.
 // It polls, with backoff, only while visible and while a thread runs.
 import { useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
-import { UrlLink, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { UrlLink, useAliaNavigate, useRpc } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -323,7 +323,7 @@ function EnvironmentRow({
     const node = element.current;
     return node === null ? undefined : details.watch(node, environment.id);
   }, [details, environment.id]);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const opening = openingThread(environment);
   const title = environmentTitle(environment);
   const life = LIFE_LABEL[environment.life];
@@ -404,7 +404,7 @@ function EnvironmentRow({
 }
 
 function ThreadLine({ thread }: { thread: EnvironmentThread }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const tone = statusTone(thread);
   return (
     <li className="min-w-0">
@@ -486,7 +486,7 @@ function Position({ status, environment }: { status: CheckoutStatus; environment
   if (status.checkout === "unborn") return <span>no commits yet</span>;
   if (status.onBase) return <span>{status.base === status.defaultBranch ? "default branch" : `on base ${status.base}`}</span>;
   if (status.ahead === null || status.behind === null) return <span>no merge base with {status.base}</span>;
-  // The branch BB recorded may lag the checkout: say what is checked out when it differs.
+  // The branch VesnALIA recorded may lag the checkout: say what is checked out when it differs.
   const moved = status.branch !== null && status.branch !== environment.branch;
   return (
     <span className="flex min-w-0 items-center gap-1.5 tabular-nums" title={aheadBehindLabel(status)}>

@@ -19,7 +19,7 @@ interface Pending {
   timer: NodeJS.Timeout;
 }
 
-/** Drives the adapter exactly the way BB's ACP bridge does: NDJSON over stdio. */
+/** Drives the adapter exactly the way VesnALIA's ACP bridge does: NDJSON over stdio. */
 export class AcpDriver {
   readonly child: ReturnType<typeof spawn>;
   readonly notifications: any[] = [];
@@ -110,7 +110,7 @@ export class AcpDriver {
     });
   }
 
-  /** Close stdin (as BB does when it is done) and wait for the adapter to exit. */
+  /** Close stdin (as VesnALIA does when it is done) and wait for the adapter to exit. */
   async shutdown(timeoutMs = 15_000): Promise<{ code: number | null; stderr: string }> {
     try {
       this.child.stdin!.end();

@@ -2,8 +2,8 @@ import {
   definePluginApp,
   experimental_useAppPanel,
   experimental_usePanelTabs,
-  useBbContext,
-} from "@get-bb/plugin-sdk/app";
+  useAliaContext,
+} from "@vesnalia/plugin-sdk/app";
 import { useEffect, useRef } from "react";
 
 type PanelSnapshot = {
@@ -13,12 +13,12 @@ type PanelSnapshot = {
 };
 
 type AutoHidePanelProps = {
-  /** Test seam; the composer banner leaves it undefined and uses BbContext. */
+  /** Test seam; the composer banner leaves it undefined and uses AliaContext. */
   threadId?: string | null;
 };
 
 export function AutoHidePanel({ threadId }: AutoHidePanelProps) {
-  const context = useBbContext();
+  const context = useAliaContext();
   const panel = experimental_useAppPanel();
   const { open, tabs } = experimental_usePanelTabs();
   const currentThreadId = threadId === undefined ? context.threadId : threadId;

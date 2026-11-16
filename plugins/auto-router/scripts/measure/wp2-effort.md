@@ -14,7 +14,7 @@ The route entry of the message records the effort.
 ## Cache test
 
 `wp2_cache.py` ran one Opus 5.5 thread that read about 107k tokens of files at medium effort.
-Then it sent four short questions at medium, low, high and medium effort with `bb thread tell --reasoning-level`.
+Then it sent four short questions at medium, low, high and medium effort with `alia thread tell --reasoning-level`.
 
 | Turn | Effort | First request: cache read | First request: cache write | Turn cost |
 | --- | --- | --- | --- | --- |

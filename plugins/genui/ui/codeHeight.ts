@@ -1,4 +1,4 @@
-// The height BB's code viewer draws a block of code at, learned on this
+// The height VesnALIA's code viewer draws a block of code at, learned on this
 // device. The viewer (experimental_SourceCode) shows a fixed skeleton while
 // it highlights, then draws the code at a height set by its line count alone
 // (lines never wrap: overflow "scroll"). A Code or Snippet body holds the
@@ -7,7 +7,7 @@
 // Kept in localStorage: a fresh page has no highlighted code yet.
 import { type RefObject, useLayoutEffect } from "react";
 
-const STORAGE_KEY = "bb.genui.codeHeights";
+const STORAGE_KEY = "alia.genui.codeHeights";
 /** Line counts remembered; longer blocks reach the frame's height cap anyway. */
 const MAX_LINES = 40;
 const PERSIST_MS = 500;
@@ -84,7 +84,7 @@ function heights(): CodeHeights {
  * when unknown) at the height the viewer will draw it at, then lets it
  * follow its content and learns what the viewer drew. The file's loading
  * rows and the viewer's skeleton both pulse (`animate-pulse`): a body without
- * one is drawn, so if BB's skeleton ever stops pulsing nothing is held.
+ * one is drawn, so if VesnALIA's skeleton ever stops pulsing nothing is held.
  */
 export function useCodeHeight(body: RefObject<HTMLDivElement | null>, lines: number | null): void {
   useLayoutEffect(() => {

@@ -1,7 +1,7 @@
 # Screenshot notes
 
-Real BB renders, captured on 1 October 2026 with this plugin installed from
-this checkout (`bb plugin install path:$PWD`).
+Real VesnALIA renders, captured on 1 October 2026 with this plugin installed from
+this checkout (`alia plugin install path:$PWD`).
 
 Each image is a full browser viewport at 1440×900 CSS pixels, device pixel
 ratio 2, so the files are 2880 px wide. Nothing was drawn, mocked or composited.
@@ -30,14 +30,14 @@ watchdog recorded one command the parent ran itself.
 ## To refresh
 
 1. Create a worktree thread in a throwaway project with the default on:
-   `bb orchestrator-mode default on`, then
-   `bb thread create --project <id> --new-environment worktree --provider claude-code --model claude-sonnet-5 --permission-mode auto --title <title> --prompt-file <brief>`.
-2. Drive BB headless (see the `browser-automation` skill), collapse the sidebar,
+   `alia orchestrator-mode default on`, then
+   `alia thread create --project <id> --new-environment worktree --provider claude-code --model claude-sonnet-5 --permission-mode auto --title <title> --prompt-file <brief>`.
+2. Drive VesnALIA headless (see the `browser-automation` skill), collapse the sidebar,
    and wait until the timeline shows the delegations.
 3. To capture a violation, ask the thread for one small fix "yourself, no
    worker" in guard mode, then wait for the strip to update.
 4. Hide the Playbooks and Recap panels as listed above, save at full resolution,
-   then turn the default off again: `bb orchestrator-mode default off`.
+   then turn the default off again: `alia orchestrator-mode default off`.
 
 Never capture a live user's conversations or project details. Close the
 isolated browser session after saving the images.

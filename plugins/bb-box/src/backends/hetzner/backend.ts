@@ -1,7 +1,7 @@
 import type { CheckId } from "../../core/checks.ts";
 import { keyDescription, tailnetHostname } from "../../core/tailnet.ts";
 import { hostUserData } from "./cloud-init.ts";
-import { BUILD_ABANDONED_AFTER_MS, bbBoxIsStopping, BuildGaveWayToBoxes, HostImages, localRemoteBuild, runBuildScript, scriptRemoteBuild, type Architecture, type BuildImage, type RemoteBuild } from "./host-image.ts";
+import { BUILD_ABANDONED_AFTER_MS, aliaBoxIsStopping, BuildGaveWayToBoxes, HostImages, localRemoteBuild, runBuildScript, scriptRemoteBuild, type Architecture, type BuildImage, type RemoteBuild } from "./host-image.ts";
 import { setupArchive } from "../namespace/linux-images.ts";
 import { HostReach } from "./reach.ts";
 import { sleep as abortableSleep } from "../proxmox/api.ts";
@@ -590,7 +590,7 @@ export class HetznerBackend implements Backend {
     } catch (error) {
       if (signal?.aborted) throw error;
       const unauthorised = error instanceof HetznerError && error.unauthorised;
-      push("hetzner.api", "Hetzner Cloud API", "fail", message(error), unauthorised ? "Make a Read & Write API token in the project's Security page, and paste it into the backend's settings." : "Check that BB's server reaches api.hetzner.cloud.");
+      push("hetzner.api", "Hetzner Cloud API", "fail", message(error), unauthorised ? "Make a Read & Write API token in the project's Security page, and paste it into the backend's settings." : "Check that VesnALIA's server reaches api.hetzner.cloud.");
       push("hetzner.unclaimed", "Servers no host claims", "skipped", "Skipped until the checks above pass.");
     }
 
@@ -828,10 +828,10 @@ export class HetznerBackend implements Backend {
   async #createInRoomBuildsGive(spec: Parameters<HetznerHosts["create"]>[0], signal: AbortSignal | undefined): Promise<HostRecord | null> {
     const sleep = this.#options.sleep ?? abortableSleep;
     const room = await this.#hostImages.giveRoomToBoxes(signal);
-    for (const record of room.stopped) this.#context.log?.(`bb-box stopped its host image build on ${record.serverName}, a ${record.serverType}, and deleted the server, so a ${spec.serverType} host for a box gets its room.`);
+    for (const record of room.stopped) this.#context.log?.(`alia-box stopped its host image build on ${record.serverName}, a ${record.serverType}, and deleted the server, so a ${spec.serverType} host for a box gets its room.`);
     for (const record of room.snapshotting) {
       const endsBy = new Date(record.claimedAtMs + BUILD_TAKES_ABOUT_MS[this.#architectureOfType(record.serverType)]).toISOString();
-      this.#context.log?.(`A ${spec.serverType} host for a box waits for room: bb-box's own host image build on ${record.serverName} is taking its snapshot, which ends by about ${endsBy}, and its room then goes to the box.`);
+      this.#context.log?.(`A ${spec.serverType} host for a box waits for room: alia-box's own host image build on ${record.serverName} is taking its snapshot, which ends by about ${endsBy}, and its room then goes to the box.`);
     }
     const waitMs = room.snapshotting.length ? SNAPSHOT_WAITED_FOR_BY_BOXES_MS : room.stopped.length ? ROOM_FREED_WITHIN_MS : 0;
     const pollMs = room.snapshotting.length ? SNAPSHOT_POLL_FOR_BOXES_MS : ROOM_POLL_MS;
@@ -894,7 +894,7 @@ export class HetznerBackend implements Backend {
   readonly #buildImageOn: BuildImage = async (record, cli, image, target, log, signal, architecture) => {
     if (this.#options.buildImage) return this.#options.buildImage(record, cli, image, target, log, signal, architecture);
     await cli.prepare(signal);
-    const code = await runBuildScript(cli, image, target, this.#context.bbUrl?.() ?? null, log, signal, undefined, architecture);
+    const code = await runBuildScript(cli, image, target, this.#context.aliaUrl?.() ?? null, log, signal, undefined, architecture);
     if (code !== 0) throw new Error(`setup/docker/build.sh could not build ${image} on ${record.serverName}: it exited with ${code ?? "a signal"}.`);
   };
 
@@ -922,8 +922,8 @@ export class HetznerBackend implements Backend {
       : "";
     const waiting = await this.#context.storage.get<WaitingForRoom>(HOST_IMAGE_WAITING_KEY[architecture]);
     const waits = waiting && !this.#buildingHostImage.has(architecture) ? ` The last build waited for room: at ${new Date(waiting.atMs).toISOString()} Hetzner Cloud refused its server (${waiting.why.replace(/^Hetzner Cloud POST \/servers failed /, "")}); ${PRODUCT} tries again at its next check. ${ROOM_ADVICE}` : "";
-    const fix = failedAt !== undefined ? "See BB Box's log for the build's last lines." : null;
-    const why = this.#hostImages.whyBuild(newest, this.#now(), await this.#bbApp(signal));
+    const fix = failedAt !== undefined ? "See VesnALIA Box's log for the build's last lines." : null;
+    const why = this.#hostImages.whyBuild(newest, this.#now(), await this.#aliaApp(signal));
     const held = why && !building ? await this.#whyBuildWaits(architecture) : "";
     if (!newest) {
       push(id, name, failedAt !== undefined ? "warn" : "ok", `None yet: ${this.#whichHosts(architecture)} start from ${this.#baseImage()} and install Docker and Tailscale, and build each kind's image, as they start.${held}${building}${waits}${failed}`, fix);
@@ -950,9 +950,9 @@ export class HetznerBackend implements Backend {
     return typeof this.#config.hostImage === "string" ? this.#config.hostImage : "ubuntu-26.04";
   }
 
-  async #bbApp(signal?: AbortSignal): Promise<string | null> {
-    if (!this.#context.bbUrl?.()) return null;
-    return (await this.#context.images?.bbApp(signal).catch(() => null)) ?? null;
+  async #aliaApp(signal?: AbortSignal): Promise<string | null> {
+    if (!this.#context.aliaUrl?.()) return null;
+    return (await this.#context.images?.aliaApp(signal).catch(() => null)) ?? null;
   }
 
   #buildsHostImages(architecture: Architecture): boolean {
@@ -978,7 +978,7 @@ export class HetznerBackend implements Backend {
     const failures = await this.#failures(architecture);
     if (failures && this.#now() - failures.atMs < retryAfterMs(failures)) return null;
     if (await this.#hostImages.beingMade(signal, architecture)) return null;
-    const why = this.#hostImages.whyBuild(await this.#hostImages.newest(signal, architecture), this.#now(), await this.#bbApp(signal));
+    const why = this.#hostImages.whyBuild(await this.#hostImages.newest(signal, architecture), this.#now(), await this.#aliaApp(signal));
     if (!why) return null;
     const limit = this.#config.monthlyLimitEurosBeforeVat;
     if (limit !== null) {
@@ -1028,8 +1028,8 @@ export class HetznerBackend implements Backend {
             cliOf: (record) => (this.#options.reachHost ? this.#options.reachHost(record) : this.#reach!.cli(record)),
             run: (record, script, options) => (this.#options.runOnHost ? this.#options.runOnHost(record, script, options) : this.#reach!.run(record, script, options)),
             remote: this.#remoteBuild(),
-            bbUrl: this.#context.bbUrl?.() ?? null,
-            appSha256: await this.#bbApp(signal),
+            aliaUrl: this.#context.aliaUrl?.() ?? null,
+            appSha256: await this.#aliaApp(signal),
             log: (line) => this.#context.log?.(line),
             sleep: this.#options.sleep ?? abortableSleep,
           },
@@ -1040,7 +1040,7 @@ export class HetznerBackend implements Backend {
         await this.#context.storage.delete(HOST_IMAGE_FAILED_KEY[architecture]);
         await this.#context.storage.delete(HOST_IMAGE_WAITING_KEY[architecture]);
       } catch (error) {
-        if (bbBoxIsStopping(error, signal)) return;
+        if (aliaBoxIsStopping(error, signal)) return;
         if (error instanceof BuildGaveWayToBoxes) {
           this.#context.log?.(error.message);
           return;
@@ -1052,7 +1052,7 @@ export class HetznerBackend implements Backend {
         }
         const making = await this.#hostImages.beingMade(signal, architecture).catch(() => null);
         if (making) {
-          this.#context.log?.(`The ${ARCHITECTURE_WORDS[architecture]} host image build stopped waiting for snapshot ${making.id}, which Hetzner Cloud is still making: bb-box takes it once it is ready.`);
+          this.#context.log?.(`The ${ARCHITECTURE_WORDS[architecture]} host image build stopped waiting for snapshot ${making.id}, which Hetzner Cloud is still making: alia-box takes it once it is ready.`);
           return;
         }
         const before = await this.#failures(architecture);

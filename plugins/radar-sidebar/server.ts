@@ -1,22 +1,22 @@
-// bb-plugin-radar-sidebar — backend entry.
+// alia-plugin-radar-sidebar — backend entry.
 //
 // The sidebar itself is frontend-only: thread state flows through the host's
 // sidebar hooks and the public SDK. What the backend owns is the plugin's
 // settings, which gate the more assertive visual behaviours so a user can
 // turn down anything they find noisy without editing code.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   DEFAULT_SWIPE_LEFT,
   DEFAULT_SWIPE_RIGHT,
   SWIPE_ACTION_OPTION_LABELS,
 } from "./lib/swipe";
 
-export default async function plugin(bb: BbPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(alia: AliaPluginApi) {
+  alia.log.info("loaded");
 
   // Read in the frontend through useSettings(); every value has a default,
   // so the sidebar keeps working before the first load resolves.
-  bb.settings.define({
+  alia.settings.define({
     hoverCard: {
       type: "boolean",
       label: "Hover peek card",
@@ -89,7 +89,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  alia.onDispose(() => {
+    alia.log.info("disposed");
   });
 }

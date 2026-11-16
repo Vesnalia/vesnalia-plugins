@@ -2,8 +2,8 @@
 import type { CheckId } from "../core/checks.ts";
 import type { Tailnet } from "../core/tailnet.ts";
 // LXC now; Proxmox QEMU, a Mac host, a pool of physical machines, a cloud
-// later) to bb-box: acquire and release, address, capacity, and the
-// transports that reach each box. bb-box's core depends only on this file and
+// later) to alia-box: acquire and release, address, capacity, and the
+// transports that reach each box. alia-box's core depends only on this file and
 // src/transports/types.ts, and never names a provider, a hypervisor, a
 // container technology or a transport. docs/backends.md explains the design.
 //
@@ -15,7 +15,7 @@ import type { Tailnet } from "../core/tailnet.ts";
 //   returning it to the pool. It never creates or destroys a machine, and a
 //   machine is held by one box, so one thread, at a time.
 
-import type { PluginSettingDescriptor } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor } from "@vesnalia/plugin-sdk";
 import type { Arch, CommandTransport, Display, DisplayProtocol, GuestOs, SshAccess } from "../transports/types.ts";
 import type { DeviceOffer } from "../core/device.ts";
 import type { SlotLender } from "../core/device-host.ts";
@@ -33,7 +33,7 @@ export type MachineNature = "virtual" | "real";
 /** What a box of a backend is, as a badge: an LXC or Docker container, a VM, or a physical machine. */
 export type BoxForm = "LXC" | "Docker" | "VM" | "microVM" | "Physical";
 
-/** How bb-box runs commands in a box of a kind. */
+/** How alia-box runs commands in a box of a kind. */
 export interface CommandCapability {
   /** A name for people: "ssh", "docker", "guest-agent". The core never branches on it. */
   readonly transport: string;
@@ -68,7 +68,7 @@ export interface DesktopDisplayCapability {
   readonly resizable: boolean;
   /**
    * "commands" when the display's stream server moves no clipboard, so
-   * bb-box moves it for the viewer with control with commands in the box's
+   * alia-box moves it for the viewer with control with commands in the box's
    * desktop session: pbcopy and pbpaste on macOS (#464). Left out, the
    * stream server or the display's own input moves it, if anything does.
    */
@@ -88,10 +88,10 @@ export interface DesktopDisplayCapability {
    */
   readonly quality?: number;
   /**
-   * How bb-box has the display's video draw the box's cursor in, or leave it
-   * out: bb-box-stream's BB_CURSOR ("stream"), or Selkies' own
+   * How alia-box has the display's video draw the box's cursor in, or leave it
+   * out: alia-box-stream's ALIA_CURSOR ("stream"), or Selkies' own
    * SET_NATIVE_CURSOR_RENDERING ("selkies"). Both send the cursor's shape as
-   * Selkies' cursor messages. bb-box leaves the cursor out of the video while a
+   * Selkies' cursor messages. alia-box leaves the cursor out of the video while a
    * person holds control, so the browser's own pointer, with the box's shape,
    * does not trail a drawn one, and draws it in otherwise, so a watcher sees
    * where the agent points (the owner's notes of 17 October 2026). Left out,
@@ -105,11 +105,11 @@ export interface DesktopDisplayCapability {
    */
   readonly byChoice?: boolean;
   /**
-   * "first" when bb-box tells the video display's stream server a new size
+   * "first" when alia-box tells the video display's stream server a new size
    * before the desktop takes it: Selkies capturing Sway sends black frames at
    * its old size from Sway's resize until it is told; told first, it waits
    * for Sway and sends the new size at once (the owner's note of 18 October
-   * 2026). Left out, bb-box tells it once the desktop has the size, as
+   * 2026). Left out, alia-box tells it once the desktop has the size, as
    * Selkies on X11 needs.
    */
   readonly tellSize?: "first";
@@ -117,7 +117,7 @@ export interface DesktopDisplayCapability {
    * "alt-command" for a macOS desktop whose stream server takes Alt as
    * Command and Meta as Option, as Tart's VNC server: the viewer sends Cmd and
    * Option, and the paste chord's Command, so. Left out, Meta is Command and
-   * Alt Option, as Screen Sharing and bb-box's own Mac input take them.
+   * Alt Option, as Screen Sharing and alia-box's own Mac input take them.
    */
   readonly macKeys?: "alt-command";
 }
@@ -166,13 +166,13 @@ export interface KindCapabilities {
    * as "docker", "systemd", "xcode" or "ios-simulator".
    */
   readonly features: readonly string[];
-  /** Null when bb-box cannot run commands in the box. */
+  /** Null when alia-box cannot run commands in the box. */
   readonly command: CommandCapability | null;
   /** One per stream; empty for a headless box. The viewer loads its client before the box exists. */
   readonly displays: readonly DisplayCapability[];
   /** The computer-use driver in the box, reached through the command transport's spawn. Null when there is none. */
   readonly computerUse: ComputerUse | null;
-  /** The box can enrol as a BB machine. Only when command.shell is "sh" and os is linux or macos. */
+  /** The box can enrol as a VesnALIA machine. Only when command.shell is "sh" and os is linux or macos. */
   readonly enrol: boolean;
   readonly device: DeviceOffer | null;
 }
@@ -443,13 +443,13 @@ export interface HeldGuest extends Guest {
 /** "unknown" when the provider cannot tell, for example a machine that does not answer. */
 export type PowerState = "running" | "stopped" | "unknown";
 
-/** Why a guest stopped without bb-box's request (#406), as its backend recorded it. */
+/** Why a guest stopped without alia-box's request (#406), as its backend recorded it. */
 export interface StopReason {
   /** In words: a sentence or two. */
   readonly reason: string;
   /**
    * The guest did not choose to stop: its VM's process crashed or was
-   * killed, or its host restarted. bb-box may start such a guest again.
+   * killed, or its host restarted. alia-box may start such a guest again.
    */
   readonly crashed: boolean;
   /** When it stopped, in ms since the epoch, when the backend knows. */
@@ -494,7 +494,7 @@ export interface HostCapacity {
 }
 
 /**
- * A GPU's memory as bb-box last read it (#603): from the host's report, where
+ * A GPU's memory as alia-box last read it (#603): from the host's report, where
  * the host makes one, or from inside a box that has the GPU, a GPU desktop's
  * display service as it starts, or nvidia-smi in a running one.
  */
@@ -543,7 +543,7 @@ export interface GpuRoom {
 export type CardHolding = (
   | { readonly is: "box"; readonly name: string }
   | { readonly is: "warm" }
-  | { readonly is: "other-install" | "not-bb-box"; readonly guest: string }
+  | { readonly is: "other-install" | "not-alia-box"; readonly guest: string }
 ) & { readonly part: "shared" | "whole"; readonly running: boolean; readonly counts: boolean };
 
 export type LimitCounts = "this-install-running" | "every-install";
@@ -592,7 +592,7 @@ export interface DaemonKeptByHost {
 export interface BoxTransports {
   readonly command: CommandTransport | null;
   readonly displays: readonly Display[];
-  /** Null when only the BB server can reach the box. */
+  /** Null when only the VesnALIA server can reach the box. */
   readonly access: BoxAccess | null;
   readonly daemonKeptByHost?: DaemonKeptByHost;
 }
@@ -816,13 +816,13 @@ export interface Backend {
   /**
    * Whether `stop` saves a guest of the kind with its running session, as a
    * hibernate or a suspend does, so that it holds no memory while stopped
-   * and `start` resumes it as it was, BB's daemon included. A spare of such
+   * and `start` resumes it as it was, VesnALIA's daemon included. A spare of such
    * a kind waits stopped (#539).
    */
   keepsSession?(kind: string): boolean;
   savedSessionRestoresWithinMs?(kind: string): number | null;
   /**
-   * Why the guest stopped, when bb-box finds it stopped without having
+   * Why the guest stopped, when alia-box finds it stopped without having
    * stopped it (#406), such as its VM process's exit status and crash
    * report. Null when the backend cannot tell. Only backends that record it.
    */
@@ -854,7 +854,7 @@ export interface Backend {
 
   /**
    * Puts back what the backend lowered while a guest started, as its CPU weight (#888): the sweep asks for a ready
-   * box's guest that held() said is `settling`, as after a restart of bb-box while it started.
+   * box's guest that held() said is `settling`, as after a restart of alia-box while it started.
    */
   settle?(guest: Guest, signal?: AbortSignal): Promise<void>;
 
@@ -1211,7 +1211,7 @@ export class RestoreChanged extends Error {
   }
 }
 
-/** The macOS permissions bb-box can grant a program in a box (058). */
+/** The macOS permissions alia-box can grant a program in a box (058). */
 export const GRANT_PERMISSIONS = ["accessibility", "screen-recording", "input-monitoring", "microphone", "camera", "system-audio", "automation"] as const;
 export type GrantPermission = (typeof GRANT_PERMISSIONS)[number];
 
@@ -1237,7 +1237,7 @@ export type GrantBlock = "sip-on" | "unknown-database";
 /** A box's grants, for box_status. */
 export interface BoxGrants {
   readonly blockedBy: GrantBlock | null;
-  /** Whether the box user has its code-signing identity, "bb-box local code signing". Null where the machine does not say. */
+  /** Whether the box user has its code-signing identity, "alia-box local code signing". Null where the machine does not say. */
   readonly signingIdentity: boolean | null;
   readonly grants: readonly { readonly permission: string; readonly client: string; readonly target: string | null }[];
 }
@@ -1263,7 +1263,7 @@ export interface Footprint {
   /** Addresses its boxes may get, such as those on one node's bridge. */
   readonly addresses?: { readonly scope: string; readonly list: readonly string[] };
   /**
-   * Machines it lends whole or makes boxes on, by the address bb-box reaches
+   * Machines it lends whole or makes boxes on, by the address alia-box reaches
    * them at, in lower case, such as a pool's Macs and Tart's hosts (047).
    */
   readonly machines?: readonly string[];
@@ -1299,7 +1299,7 @@ export interface DoctorReport {
 
 /** Storage a backend may use for its own state, such as pool membership. */
 /**
- * A box bb-box builds or tries an image in (049): not a thread's, not
+ * A box alia-box builds or tries an image in (049): not a thread's, not
  * enrolled, and apart from boxes, so no sweep releases it.
  */
 export interface ImageBox {
@@ -1336,7 +1336,7 @@ export interface BackendImages {
   box(build: ImageBuild, label: string, signal: AbortSignal): Promise<ImageBox>;
   /**
    * Stops a build box and keeps it as a build of `image`, with the record in
-   * its /usr/share/bb-box/image.json, configured as `from` is. The box is
+   * its /usr/share/alia-box/image.json, configured as `from` is. The box is
    * then the build.
    */
   capture(box: ImageBox, from: ImageBuild, image: string, signal: AbortSignal): Promise<ImageBuild>;
@@ -1350,7 +1350,7 @@ export interface BackendImages {
    * backend whose standard images come from a build script, as Docker's do
    * (049). A refresh then checks it on a trial box, as a capture.
    */
-  build?(current: ImageBuild, setup: string, options: { readonly bbUrl: string | null; readonly log: (line: string) => void; readonly signal: AbortSignal }): Promise<ImageBuild>;
+  build?(current: ImageBuild, setup: string, options: { readonly aliaUrl: string | null; readonly log: (line: string) => void; readonly signal: AbortSignal }): Promise<ImageBuild>;
   /**
    * Why the backend cannot take a refresh's build now, beyond the room for
    * its boxes, such as disk where it builds; null when it can. The refresh
@@ -1368,7 +1368,7 @@ export interface BackendImages {
   /** Whether acquire starts a box from a build in BoxIdentity.from (049). */
   readonly startsFrom?: boolean;
   /**
-   * Whether bb-box keeps a spare of a project's image built here (#440): a
+   * Whether alia-box keeps a spare of a project's image built here (#440): a
    * running, enrolled box. Not on Tart, where a Linux VM cannot be suspended
    * and a spare would hold its whole memory.
    */
@@ -1402,7 +1402,7 @@ export interface BackendContext {
   readonly sharedStorage?: BackendStorage;
   dockerDaemonsReached?(signal?: AbortSignal): Promise<readonly DockerDaemonReached[] | null>;
   /**
-   * This bb-box install's ID (018). A backend records it on every guest from
+   * This alia-box install's ID (018). A backend records it on every guest from
    * its first write, warm and part-made guests too, and acts only on guests
    * that carry it.
    */
@@ -1419,31 +1419,31 @@ export interface BackendContext {
   /** What the configuration says now about a kind here. Read each time, like `warm`. */
   kind(id: string): KindSettings;
   /**
-   * Whether bb-box makes new boxes BB machines, as the configuration says
+   * Whether alia-box makes new boxes VesnALIA machines, as the configuration says
    * now, so a warm guest can be readied for that before its claim. Read each
-   * time, like `warm`. Absent where there is no BB.
+   * time, like `warm`. Absent where there is no VesnALIA.
    */
   enrols?(): boolean;
   tailnet?(): Tailnet | null;
-  bbUrl?(): string | null;
-  /** BB machines bb-box reaches through BB (042). Absent where there is no BB, as in the conformance run. */
+  aliaUrl?(): string | null;
+  /** VesnALIA machines alia-box reaches through VesnALIA (042). Absent where there is no VesnALIA, as in the conformance run. */
   readonly machines?: MachineAccess;
-  /** What the doctor judges images by (049). Absent where bb-box cannot tell, as in the conformance run. */
+  /** What the doctor judges images by (049). Absent where alia-box cannot tell, as in the conformance run. */
   readonly images?: ImageFacts;
   /**
-   * Tells bb-box which warm pools an upkeep that ran to its end left short
+   * Tells alia-box which warm pools an upkeep that ran to its end left short
    * for want of room (#356), for the log, the doctor and the settings.
    */
   warmShortfalls(short: readonly WarmShortfall[]): void;
   logError(operation: string, error: unknown): void;
   threadTitle?(threadId: string): Promise<string | null>;
   wholeCards?(): boolean;
-  /** Says what the backend did by itself, as removing what a run left, for bb-box's log. */
+  /** Says what the backend did by itself, as removing what a run left, for alia-box's log. */
   log?(message: string): void;
   /**
    * Says that a kind's capabilities changed by themselves, as when a host
-   * reports its video ready after bb-box restarted, so boxes of the kind
-   * take them, as they do at bb-box's start (#215), not only new boxes.
+   * reports its video ready after alia-box restarted, so boxes of the kind
+   * take them, as they do at alia-box's start (#215), not only new boxes.
    */
   kindsChanged?(): void;
   factsChanged?(): void;
@@ -1463,23 +1463,23 @@ export interface EncoderAccess {
 }
 
 /**
- * How a backend reaches a BB machine through bb-box (042): Docker there,
- * through bb-box's relay, and the machine as BB has it, with no call to it.
+ * How a backend reaches a VesnALIA machine through alia-box (042): Docker there,
+ * through alia-box's relay, and the machine as VesnALIA has it, with no call to it.
  */
 export interface MachineAccess {
   /**
-   * The docker CLI's host for BB machine `hostId`: a unix socket on BB's
-   * server that bb-box relays to Docker on the machine. It is the same each
+   * The docker CLI's host for VesnALIA machine `hostId`: a unix socket on VesnALIA's
+   * server that alia-box relays to Docker on the machine. It is the same each
    * time; await `ready` before the first use.
    */
   dockerHost(hostId: string): string;
-  /** Listens on the machine's socket, and fails at once, saying so, when BB shows the machine offline. */
+  /** Listens on the machine's socket, and fails at once, saying so, when VesnALIA shows the machine offline. */
   ready(hostId: string): Promise<void>;
-  /** The machine's name as BB has it, or null while bb-box does not know it. */
+  /** The machine's name as VesnALIA has it, or null while alia-box does not know it. */
   name(hostId: string): string | null;
-  /** The OS of BB machine `hostId`, as bb-box's host entry there reported it (a Windows PC's BB daemon runs in WSL and says windows), or null until it has. */
+  /** The OS of VesnALIA machine `hostId`, as alia-box's host entry there reported it (a Windows PC's VesnALIA daemon runs in WSL and says windows), or null until it has. */
   platform?(hostId: string): GuestOs | null;
-  /** Whether BB shows the machine connected now and has heard from it lately, with no call to it. Null when BB has no such machine. */
+  /** Whether VesnALIA shows the machine connected now and has heard from it lately, with no call to it. Null when VesnALIA has no such machine. */
   connected(hostId: string): Promise<boolean | null>;
   /**
    * What the machine's host entry reaches for Docker, and whether an attached
@@ -1487,24 +1487,24 @@ export interface MachineAccess {
    * forwarder dropped it. Null when the machine did not say.
    */
   dockerProbe?(hostId: string, signal?: AbortSignal): Promise<{ endpoint: string; attached: boolean | null }>;
-  /** bb-box's msb on BB machine `hostId`, which its host entry runs there (053). */
+  /** alia-box's msb on VesnALIA machine `hostId`, which its host entry runs there (053). */
   msb?(hostId: string): MsbAccess;
 }
 
-/** The scripts bb-box runs on an msb host (src/backends/microsandbox/release.ts). */
+/** The scripts alia-box runs on an msb host (src/backends/microsandbox/release.ts). */
 export type MsbScriptName = "install" | "status" | "images" | "import" | "undisk" | "disks" | "memory" | "oom" | "transfer" | "retag" | "snapshots" | "keep";
 
-/** How a backend runs bb-box's msb on a BB machine, through bb-box's msb relay (053). */
+/** How a backend runs alia-box's msb on a VesnALIA machine, through alia-box's msb relay (053). */
 export interface MsbAccess {
   /**
-   * The command line on BB's server that runs the machine's msb with
+   * The command line on VesnALIA's server that runs the machine's msb with
    * `args`, on a PTY there with `tty`: stdin, stdout, stderr and the exit
    * status are the run's. It is the same each time; await `ready` first.
    */
   argv(args: readonly string[], options?: { readonly tty?: boolean }): [string, ...string[]];
-  /** Listens on the machine's relay socket, and fails at once, saying so, when BB shows the machine offline. */
+  /** Listens on the machine's relay socket, and fails at once, saying so, when VesnALIA shows the machine offline. */
   ready(signal?: AbortSignal): Promise<void>;
-  /** Runs one of bb-box's msb scripts on the machine. */
+  /** Runs one of alia-box's msb scripts on the machine. */
   script(name: MsbScriptName, args: readonly string[], signal?: AbortSignal): Promise<{ readonly dir: string; readonly exitCode: number | null; readonly stdout: string; readonly stderr: string }>;
 }
 
@@ -1527,7 +1527,7 @@ export type ParsedSettings<C> =
 /** Where the settings page shows a field (029). */
 export type FieldGroup = "connection" | "credentials" | "boxes" | "gpus" | "ios-hosts" | "advanced";
 
-/** A field of a backend or of its hosts: BB's setting descriptor and its group. */
+/** A field of a backend or of its hosts: VesnALIA's setting descriptor and its group. */
 export type FieldDescriptor = PluginSettingDescriptor & {
   readonly group: FieldGroup;
   readonly replaces?: string;
@@ -1537,7 +1537,7 @@ export type FieldDescriptor = PluginSettingDescriptor & {
 export type FieldValue = string | number | boolean;
 
 /**
- * A field's label from the BB setting it was before 029: without the
+ * A field's label from the VesnALIA setting it was before 029: without the
  * backend's name in front, such as "Proxmox LXC: ", and with a capital, as
  * the settings page shows it under the backend's own heading.
  */
@@ -1552,7 +1552,7 @@ export function helpParts(help: string): { readonly lead: string; readonly more:
   return { lead: help.slice(0, end + 1).trim(), more: help.slice(end + 1).trim() };
 }
 
-/** A field BB would keep as a secret: write-only, and kept apart from the configuration. */
+/** A field VesnALIA would keep as a secret: write-only, and kept apart from the configuration. */
 export function isSecret(field: PluginSettingDescriptor): boolean {
   return field.type === "string" && field.secret === true;
 }
@@ -1563,7 +1563,7 @@ export interface FieldProblem {
   readonly message: string;
 }
 
-/** A backend's part of bb-box's configuration, as its driver parses it. */
+/** A backend's part of alia-box's configuration, as its driver parses it. */
 export interface BackendPart {
   readonly id: string;
   /** Every declared field: the operator's value or the declared default. Secrets included. */
@@ -1575,7 +1575,7 @@ export type ParsedBackend<C> =
   | { readonly ok: true; readonly config: C }
   | { readonly ok: false; readonly problems: readonly FieldProblem[] };
 
-/** What a driver read from BB's settings before 029, for the move into the document. */
+/** What a driver read from VesnALIA's settings before 029, for the move into the document. */
 export interface EarlierBackend {
   /** The backend's switch as it was. */
   readonly enabled: boolean;
@@ -1591,7 +1591,7 @@ export interface EarlierBackend {
 }
 
 /**
- * A backend type built into bb-box. The configuration lists its backends,
+ * A backend type built into alia-box. The configuration lists its backends,
  * each with this driver's fields, and the settings page shows them (029).
  */
 export interface BackendDriver<C = unknown> {
@@ -1624,7 +1624,7 @@ export interface BackendDriver<C = unknown> {
   readonly several?: (fields: Readonly<Record<string, unknown>>) => HostNoTwoBackendsShare | EachLabelsWhatItMakes;
   readonly longestName?: number;
   /**
-   * Paths in bb-box's repository. The guide is the entry point: the settings
+   * Paths in alia-box's repository. The guide is the entry point: the settings
    * page links it first, then the scripts in the order the guide runs them.
    */
   readonly setup: { readonly guide: string; readonly scripts: readonly string[]; readonly needs?: string };
@@ -1632,7 +1632,7 @@ export interface BackendDriver<C = unknown> {
   parse(part: BackendPart): ParsedBackend<C>;
   create(config: C, context: BackendContext): Backend;
   /**
-   * The BB settings the driver declared before 029, read once when they
+   * The VesnALIA settings the driver declared before 029, read once when they
    * move into the configuration. The keys start with the driver's type.
    */
   readonly earlier?: {

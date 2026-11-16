@@ -1,10 +1,10 @@
 // The loop with the thread that writes the code (notes/design/E7-plan.md Part 2 §4). Send and Send now take your
 // comments to the review's main thread, after its turn if it's busy, each with an id it reports on, and keep the diff
-// they went at as that Send's snapshot. Someone else's PR, a main thread that's archived or deleted, and a folder bb
+// they went at as that Send's snapshot. Someone else's PR, a main thread that's archived or deleted, and a folder VesnALIA
 // removed warn first; the same call with your choice sends: anyway, after unarchiving the thread, or to a fresh one.
 // The review agent's send_now does what Send now does when the reviewer asks, and "You do it" puts its exact patch on
 // that comment's Send, for the main thread to apply as written: the folder keeps one writer.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { isLocal, sameLocation, type CommentLocation, type DraftComment } from "./draft";
 import { newCommentIds, type ReviewLifecycle, type ReviewMeta, type SendEntry, type SnapshotFiles } from "./store";
@@ -53,20 +53,20 @@ export interface SendExtras { message?: string; includeSummary?: boolean }
 export interface Sent { ok: true; delivery: "sent" | "queued"; threadId: string; title: string | null; sendN: number; ids: string[]; skipped?: number; keptLocal?: number }
 
 
-interface Deps { bb: BbPluginApi; store: AsyncStore; changed(targetKey: string): void; submitReview?: { submitting(targetKey: string): boolean; sendStarted(targetKey: string): void; sendEnded(targetKey: string): void } }
+interface Deps { alia: AliaPluginApi; store: AsyncStore; changed(targetKey: string): void; submitReview?: { submitting(targetKey: string): boolean; sendStarted(targetKey: string): void; sendEnded(targetKey: string): void } }
 
 /** The last line of every Send: how the thread says what it did with each comment. */
-const REPORT = "Report each with `bb review report <id> done|declined --note \"…\"`; run `bb review ready` when finished.";
+const REPORT = "Report each with `alia review report <id> done|declined --note \"…\"`; run `alia review ready` when finished.";
 /** What a Send says unless you let the thread push (Let it push when done). */
 const NO_PUSH = "Don't push until I say.";
 const APPROVED = "Approved";
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>;
 const threadTitle = (thread: Pick<Thread, "title" | "titleFallback">) => thread.title ?? thread.titleFallback ?? null;
 const error = (failure: unknown) => failure instanceof Error ? failure.message : String(failure);
 
 /**
- * The id of the thread a review's Sends go to: its main thread, or for a review from before 1.8.0, the thread bb review
+ * The id of the thread a review's Sends go to: its main thread, or for a review from before 1.8.0, the thread VesnALIA review
  * ran in. Never one of this plugin's own agents.
  */
 async function recipientOf(tx: AsyncStore, review: ReviewMeta): Promise<string | null> {
@@ -74,11 +74,11 @@ async function recipientOf(tx: AsyncStore, review: ReviewMeta): Promise<string |
   return !threadId || await assistantReview(tx, threadId) || await tx.generationOf(threadId) ? null : threadId;
 }
 
-/** The recipient as BB has it now: open, archived, or gone (deleted, or unknown to BB). Any other failure throws. */
-async function readRecipient(bb: BbPluginApi, threadId: string): Promise<{ thread: Thread | null; state: MainThreadLink["state"] }> {
-  const thread = await bb.sdk.threads.get({ threadId }).catch((failure) => {
+/** The recipient as VesnALIA has it now: open, archived, or gone (deleted, or unknown to VesnALIA). Any other failure throws. */
+async function readRecipient(alia: AliaPluginApi, threadId: string): Promise<{ thread: Thread | null; state: MainThreadLink["state"] }> {
+  const thread = await alia.sdk.threads.get({ threadId }).catch((failure) => {
     if (isMissingThread(failure)) return null;
-    throw new Error(`Couldn’t read the main thread from BB: ${error(failure)}. Try again in a moment.`);
+    throw new Error(`Couldn’t read the main thread from VesnALIA: ${error(failure)}. Try again in a moment.`);
   });
   if (!thread || thread.deletedAt) return { thread: null, state: "gone" };
   return { thread, state: thread.archivedAt ? "archived" : "open" };
@@ -90,11 +90,11 @@ async function readRecipient(bb: BbPluginApi, threadId: string): Promise<{ threa
  */
 const toJoinedFolder = (review: ReviewMeta) => !!review.feature?.joinedAt && !review.feature.folderGone && review.mainThread?.environmentId === review.feature.environmentId;
 
-/** A folder's review whose main thread worked in the folder bb removed: the next Send starts a fresh thread from its branch. */
+/** A folder's review whose main thread worked in the folder VesnALIA removed: the next Send starts a fresh thread from its branch. */
 const folderGone = (review: ReviewMeta) => !!review.feature?.folderGone && (!review.mainThread || review.mainThread.environmentId === review.feature.environmentId);
 
 /** Where a fresh thread for the review starts, as a warning says it; in a new worktree, `from` the branch it's made from. */
-interface Fresh { environment: Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0]["environment"]; said: string; from?: string }
+interface Fresh { environment: Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0]["environment"]; said: string; from?: string }
 
 /**
  * Where a fresh thread for the review starts: in its folder; with the folder removed, always in a new worktree made from
@@ -111,12 +111,12 @@ function freshPlace(review: ReviewMeta): Fresh {
 }
 
 /**
- * Note where the review's fresh main thread works once BB says: its folder, if that wasn't known when it started; and
- * when it took over from a folder bb removed, the review reads that new worktree from then on, on its own branch,
+ * Note where the review's fresh main thread works once VesnALIA says: its folder, if that wasn't known when it started; and
+ * when it took over from a folder VesnALIA removed, the review reads that new worktree from then on, on its own branch,
  * keeping its key, and `branch`, which it pushes to. A worktree still being made is tried again at the next read.
  */
 async function settleFolder(deps: Deps, targetKey: string, thread: Pick<Thread, "id" | "environmentId">) {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   if (!thread.environmentId) return;
   const review = await store.getReview(targetKey);
   const main = review?.mainThread;
@@ -125,8 +125,8 @@ async function settleFolder(deps: Deps, targetKey: string, thread: Pick<Thread, 
   // A thread the review started in a new worktree, not its folder, has a branch of its own, which outlives the worktree.
   const branchToNote = !main.branch && main.origin !== "adopted" && thread.environmentId !== review.feature?.environmentId;
   if (main.environmentId !== null && !rehome && !branchToNote) return;
-  const env = rehome || branchToNote ? await (async () => bb.sdk.environments.get({ environmentId: thread.environmentId! }))().catch(() => null) : null;
-  const folder = env?.path && env.branchName ? { env, path: env.path, branch: env.branchName, machine: (await machineStatus(bb, env.hostId))?.name } : null;
+  const env = rehome || branchToNote ? await (async () => alia.sdk.environments.get({ environmentId: thread.environmentId! }))().catch(() => null) : null;
+  const folder = env?.path && env.branchName ? { env, path: env.path, branch: env.branchName, machine: (await machineStatus(alia, env.hostId))?.name } : null;
   const changed = await store.exclusive(async (tx) => {
     const now = await tx.getReview(targetKey);
     if (now?.mainThread?.threadId !== thread.id) return false;
@@ -144,14 +144,14 @@ async function settleFolder(deps: Deps, targetKey: string, thread: Pick<Thread, 
   if (changed) deps.changed(targetKey);
 }
 
-/** Whether the review's main thread may have a folder still to note, which `thread`, read from BB, may say. */
+/** Whether the review's main thread may have a folder still to note, which `thread`, read from VesnALIA, may say. */
 const unsettled = (review: ReviewMeta, thread: Thread | null) => !!thread?.environmentId && review.mainThread?.threadId === thread.id
   && (review.mainThread.environmentId === null || !!review.feature?.folderGone && review.mainThread.origin === "fresh"
     || !review.mainThread.branch && review.mainThread.origin !== "adopted" && thread.environmentId !== review.feature?.environmentId);
 
 /** The review's main thread as its page shows it, with its machine; null without one. */
 export async function mainThreadLink(deps: Deps, targetKey: string): Promise<MainThreadLink | null> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const found = await store.exclusive(async (tx) => {
     const review = await tx.getReview(targetKey);
     return review ? { review, threadId: await recipientOf(tx, review) } : null;
@@ -159,14 +159,14 @@ export async function mainThreadLink(deps: Deps, targetKey: string): Promise<Mai
   if (!found?.threadId) return null;
   const { threadId } = found;
   let { review } = found;
-  const { thread, state } = await readRecipient(bb, threadId);
+  const { thread, state } = await readRecipient(alia, threadId);
   if (unsettled(review, thread)) {
     await settleFolder(deps, targetKey, thread!);
     review = (await store.getReview(targetKey)) ?? review;
   }
   const inFolder = !!review.feature && review.mainThread?.environmentId === review.feature.environmentId;
   const machine = inFolder ? review.feature!.machine : thread?.environmentId
-    ? (await machineStatus(bb, (await bb.sdk.environments.get({ environmentId: thread.environmentId }).catch(() => null))?.hostId))?.name ?? null
+    ? (await machineStatus(alia, (await alia.sdk.environments.get({ environmentId: thread.environmentId }).catch(() => null))?.hostId))?.name ?? null
     : null;
   return { threadId, title: thread ? threadTitle(thread) : null, state, machine };
 }
@@ -186,13 +186,13 @@ type Route = { to: { threadId: string; title: string | null }; unarchive?: boole
  * no thread: where a Send would, it offers to record the approval anyway. Throws when there's nowhere to send.
  */
 async function route(deps: Deps, review: ReviewMeta, own: boolean, notes: string[], { force, thread: choice }: Choices, spawn = true): Promise<Route | Warned> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const said = force ? [] : [...own ? [] : [theirPr(review)], ...notes];
   const offers: Offer[] = [];
   const fresh = freshPlace(review);
   // On a PR with no folder of its own, where its fixer would start, read only when a fresh thread is in question.
   let fixer: FixerPlace | null | undefined;
-  const fixerNow = async () => spawn && usesFixer(review) ? fixer === undefined ? fixer = await fixerPlace(bb, store, review) : fixer : null;
+  const fixerNow = async () => spawn && usesFixer(review) ? fixer === undefined ? fixer = await fixerPlace(alia, store, review) : fixer : null;
   // Fresh, or on a PR the fixer you chose; a fork only of a thread that's there.
   const freshRoute = async (): Promise<Route> => {
     const place = await fixerNow();
@@ -217,7 +217,7 @@ async function route(deps: Deps, review: ReviewMeta, own: boolean, notes: string
   let routed: Route;
   if (folderGone(review)) {
     const { path, machine } = review.feature!;
-    const lost = `BB removed the folder ${homeShort(path)} on ${machine}, and any uncommitted work in it`;
+    const lost = `VesnALIA removed the folder ${homeShort(path)} on ${machine}, and any uncommitted work in it`;
     if (!spawn) {
       if (!force) said.push(`${lost}, ${unsent}`);
       routed = { none: { threadId: threadId ?? "", title: null } };
@@ -230,8 +230,8 @@ async function route(deps: Deps, review: ReviewMeta, own: boolean, notes: string
     if (!startsFresh) await offerFresh("No thread is working on this PR.", "none");
     routed = await freshRoute();
   } else {
-    if (!threadId) throw new Error("This review has no main thread to send to. Run bb review in the thread working on the change, or use Fix in a new thread.");
-    const { thread, state } = await readRecipient(bb, threadId);
+    if (!threadId) throw new Error("This review has no main thread to send to. Run alia review in the thread working on the change, or use Fix in a new thread.");
+    const { thread, state } = await readRecipient(alia, threadId);
     if (unsettled(review, thread)) await settleFolder(deps, review.targetKey, thread!);
     const title = thread ? threadTitle(thread) : null;
     if (state === "gone") {
@@ -285,11 +285,11 @@ const newWorktree = (shown: Placed, from: string) => ({
  * message; for an approval with no thread to tell, nowhere: it's only recorded.
  */
 async function go(deps: Deps, review: Placed, routed: Route, text: string): Promise<{ threadId: string; title: string | null; delivery: "sent" | "queued"; queued?: string; fresh?: Pick<Thread, "id" | "environmentId">; forked?: true; recorded?: true }> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   if ("none" in routed) return { ...routed.none, delivery: "sent", recorded: true };
   if ("fixer" in routed && routed.fork) {
     // The fork is the main thread before it's sent anything: a send that fails leaves the next Send going to it.
-    const forked = await forkFixer(bb, review, routed.fixer, text, async (thread) => {
+    const forked = await forkFixer(alia, review, routed.fixer, text, async (thread) => {
       await store.exclusive(async (tx) => {
         const now = await tx.getReview(review.targetKey);
         if (now) await tx.setLifecycle(review.targetKey, mainThreadState(now, thread, Date.now(), "forked", { sha: routed.fixer.sha, at: Date.now() }));
@@ -299,22 +299,22 @@ async function go(deps: Deps, review: Placed, routed: Route, text: string): Prom
     return { threadId: forked.thread.id, title: forked.title, delivery: forked.delivery, ...forked.queued ? { queued: forked.queued } : {}, fresh: forked.thread, forked: true };
   }
   if ("fresh" in routed || "fixer" in routed) {
-    if (!review.projectId) throw new Error("This review has no project to start a thread in; re-run `bb review` inside a project.");
-    const execution = await fixerExecution(bb, store, review.projectId);
+    if (!review.projectId) throw new Error("This review has no project to start a thread in; re-run `alia review` inside a project.");
+    const execution = await fixerExecution(alia, store, review.projectId);
     const title = fixerTitle(review);
     // A fixer has no parent thread, so it notifies as yours do, and nothing ends it but you.
     const environment = "fixer" in routed ? routed.fixer.environment : routed.fresh.environment;
     try {
-      const thread = await bb.sdk.threads.spawn({ projectId: review.projectId, environment, prompt: text, title, ...execution });
+      const thread = await alia.sdk.threads.spawn({ projectId: review.projectId, environment, prompt: text, title, ...execution });
       return { threadId: thread.id, title: threadTitle(thread) ?? title, delivery: "sent", fresh: thread };
     } catch (failure) {
       throw "fixer" in routed ? fixerFailed(review, routed.fixer, "Couldn’t start the thread", failure) : new Error(`Couldn’t start the thread: ${error(failure)}`);
     }
   }
   const { threadId, title } = routed.to;
-  if (routed.unarchive) await bb.sdk.threads.unarchive({ threadId }).catch((failure) => { throw new Error(`Couldn’t unarchive ${title ?? "the main thread"}: ${error(failure)}`); });
+  if (routed.unarchive) await alia.sdk.threads.unarchive({ threadId }).catch((failure) => { throw new Error(`Couldn’t unarchive ${title ?? "the main thread"}: ${error(failure)}`); });
   try {
-    const sent = await bb.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
+    const sent = await alia.sdk.threads.send({ threadId, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
     const queued = sent?.delivery === "queued" ? sent.queuedMessage?.id : undefined;
     return { threadId, title, delivery: sent?.delivery === "queued" ? "queued" : "sent", ...queued ? { queued } : {} };
   } catch (failure) {
@@ -341,7 +341,7 @@ const isPatch = (patch: string) => /^(diff --git |--- )/m.test(patch) && /^\+\+\
  * (src/own-pr.ts). The draft is otherwise as it was.
  */
 export async function send(deps: Deps, targetKey: string, picked: readonly CommentLocation[], add: SendExtras & Choices & { letPush?: boolean; patch?: string; github?: readonly string[] } = {}): Promise<Sent | Warned> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   // A comment Submit is posting now can't go to the thread too.
   if (deps.submitReview?.submitting(targetKey)) throw new Error("Submitting this review; try again in a moment.");
   const review = await store.getReview(targetKey);
@@ -355,7 +355,7 @@ export async function send(deps: Deps, targetKey: string, picked: readonly Comme
   const routed = before;
   // The review as routing left it, a folder it settled included: what the message says is read from that.
   const now = (await store.getReview(targetKey)) ?? review;
-  const shown = await placed(bb, store, now);
+  const shown = await placed(alia, store, now);
   // Someone else's code reads as theirs.
   const theirs = own ? undefined : review.author ?? null;
   const letPush = add.letPush ?? review.letPush ?? false;
@@ -368,12 +368,12 @@ export async function send(deps: Deps, targetKey: string, picked: readonly Comme
   const toFixer = !!main && isFixer(main);
   // A fork nothing has reached yet, as when its first send failed: it gets its brief now.
   const unbriefed = toFixer && main!.origin === "forked" && !(now.sends ?? []).some((entry) => entry.threadId === main!.threadId);
-  const briefed = unbriefed ? await fixerPlace(bb, store, now) : null;
+  const briefed = unbriefed ? await fixerPlace(alia, store, now) : null;
   const laterFixer = toFixer && !briefed;
   // A fixer works at the PR's head, which hasn't the lines of a comment not on GitHub yet: that one stays, for a main thread in its folder.
   const atHead = !!fixer || toFixer;
   // To a thread in the PR's own folder: stay on its branch, if the folder is on it.
-  const stayOn = "to" in routed && !toFixer && main && main.environmentId === now.feature?.environmentId ? await folderBranchLine(bb, now) : null;
+  const stayOn = "to" in routed && !toFixer && main && main.environmentId === now.feature?.environmentId ? await folderBranchLine(alia, now) : null;
   const moved = fresh?.from ? newWorktree(shown, fresh.from) : null;
   // A fresh thread is told GitHub's limits as Fix in a new thread is: all of them, or, let push, all but the push.
   // Let push on someone else's PR, from a folder that joined its review: told whose branch a push changes, as Push says.
@@ -405,7 +405,7 @@ export async function send(deps: Deps, targetKey: string, picked: readonly Comme
       const unnamed = comments.filter((comment) => !comment.id);
       // A GitHub item sent before keeps its id.
       const unsentItems = items.filter((item) => !now.threadSends?.[githubId(item)]);
-      const ids = unnamed.length + unsentItems.length ? await newCommentIds(tx, bb.storage.kv, unnamed.length + unsentItems.length) : [];
+      const ids = unnamed.length + unsentItems.length ? await newCommentIds(tx, alia.storage.kv, unnamed.length + unsentItems.length) : [];
       if (unnamed.length) await tx.trackComments(targetKey, unnamed.map((comment, i) => ({ at: comment, id: ids[i] })));
       const named = comments.map((comment) => ({ ...comment, id: comment.id ?? ids[unnamed.indexOf(comment)] })) as Array<DraftComment & { id: string }>;
       const itemIds = items.map((item) => now.threadSends?.[githubId(item)]?.id ?? ids[unnamed.length + unsentItems.indexOf(item)]);
@@ -466,7 +466,7 @@ export async function send(deps: Deps, targetKey: string, picked: readonly Comme
     });
     if (went.fresh) await settleFolder(deps, targetKey, went.fresh);
     deps.changed(targetKey);
-    bb.realtime.publish(`draft:${targetKey}`, {});
+    alia.realtime.publish(`draft:${targetKey}`, {});
     return { ok: true, delivery: went.delivery, threadId: went.threadId, title: went.title, sendN: n, ids: [...composed.comments.map((comment) => comment.id), ...composed.items.map((item) => item.id)], ...composed.skipped ? { skipped: composed.skipped } : {}, ...composed.keptLocal ? { keptLocal: composed.keptLocal } : {} };
   } finally {
     if (holding) deps.submitReview?.sendEnded(targetKey);
@@ -474,12 +474,12 @@ export async function send(deps: Deps, targetKey: string, picked: readonly Comme
 }
 
 /** On a PR whose folder is there, the branch a thread in it stays on: it's checked out there already. */
-async function folderBranchLine(bb: BbPluginApi, review: ReviewMeta): Promise<string | null> {
+async function folderBranchLine(alia: AliaPluginApi, review: ReviewMeta): Promise<string | null> {
   const feature = review.kind === "pr" && !review.feature?.folderGone ? review.feature : null;
   if (!feature) return null;
   // Only while the folder is on that branch now: moved to another, 2.1's line, to check it out, says what's true.
   const branch = feature.workBranch ?? feature.branch;
-  const env = await (async () => bb.sdk.environments.get({ environmentId: feature.environmentId }))().catch(() => null);
+  const env = await (async () => alia.sdk.environments.get({ environmentId: feature.environmentId }))().catch(() => null);
   if (env?.branchName !== branch) return null;
   return `Stay on ${inlineCode(branch)}.${review.headSha ? ` I reviewed commit \`${review.headSha.slice(0, 7)}\`.` : ""}`;
 }
@@ -499,7 +499,7 @@ const prWhat = (review: Placed) => `${review.repo} PR #${review.number}${review.
  * it warns first. It starts no thread: with none to tell, it's only recorded, once you say so.
  */
 export async function sendApproval(deps: Deps, targetKey: string, revision: string | undefined, add: SendExtras & Choices = {}): Promise<{ ok: true; delivery: "sent" | "queued"; title: string | null; threadId: string; recorded?: true } | Warned> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const { review, open, body } = await store.exclusive(async (tx) => {
     // Only the diff you saw, as submit checks it: not one that changed since, or a guide still rebuilding.
     await requireReviewRevision(tx, targetKey, revision);
@@ -513,7 +513,7 @@ export async function sendApproval(deps: Deps, targetKey: string, revision: stri
   ];
   const routed = await route(deps, review, await isOwnChange(review) || toJoinedFolder(review), notes, add, false);
   if ("warning" in routed) return routed;
-  const shown = await placed(bb, store, review);
+  const shown = await placed(alia, store, review);
   const { message, summary } = extras(body, add);
   const went = await go(deps, shown, routed, [`${header(shown)}\n${APPROVED}`, message, summary].filter(Boolean).join("\n\n"));
   // The page shows `revision`, or the check above refused.
@@ -541,13 +541,13 @@ export async function endOutlivedApprovals(store: AsyncStore): Promise<string[]>
 
 /** Send to `threadId` from now on, one working in the review's folder while it's there: not archived, and not one of this plugin's agents. */
 export async function setMainThread(deps: Deps, targetKey: string, threadId: string): Promise<{ ok: boolean; error?: string }> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const review = await store.getReview(targetKey);
   if (!review) return { ok: false, error: "This review no longer exists." };
-  const { thread, state } = await readRecipient(bb, threadId).catch(() => ({ thread: null, state: "unread" as const }));
-  if (state === "unread") return { ok: false, error: "Couldn’t read that thread from BB. Try again in a moment." };
+  const { thread, state } = await readRecipient(alia, threadId).catch(() => ({ thread: null, state: "unread" as const }));
+  if (state === "unread") return { ok: false, error: "Couldn’t read that thread from VesnALIA. Try again in a moment." };
   if (!thread || state === "gone") return { ok: false, error: "That thread was deleted. Choose another." };
-  if (state === "archived") return { ok: false, error: `${threadTitle(thread) ?? "That thread"} is archived. Unarchive it in BB first, or choose another.` };
+  if (state === "archived") return { ok: false, error: `${threadTitle(thread) ?? "That thread"} is archived. Unarchive it in VesnALIA first, or choose another.` };
   // A review's agents and guide writers are hidden; a fix thread the plugin started is yours to send to.
   if (thread.visibility === "hidden" || await store.exclusive(async (tx) => !!await assistantReview(tx, threadId) || !!await tx.generationOf(threadId))) {
     return { ok: false, error: "That thread is one of Code Review Workspace’s agents. Choose a thread working on the change." };
@@ -570,11 +570,11 @@ export async function setMainThread(deps: Deps, targetKey: string, threadId: str
  * gone; or in its project), told what it's for: your Sends come there.
  */
 export async function startMainThread(deps: Deps, targetKey: string): Promise<{ ok: boolean; error?: string }> {
-  const { bb, store } = deps;
+  const { alia, store } = deps;
   const review = await store.getReview(targetKey);
   if (!review) return { ok: false, error: "This review no longer exists." };
   const fresh = freshPlace(review);
-  const placedNow = await placed(bb, store, review);
+  const placedNow = await placed(alia, store, review);
   const moved = fresh.from ? newWorktree(placedNow, fresh.from) : null;
   const shown = moved?.shown ?? placedNow;
   const told = "You're this review's main thread now: I'll send my comments here, each with an id and how to report on it.";
@@ -582,11 +582,11 @@ export async function startMainThread(deps: Deps, targetKey: string): Promise<{ 
   let fixer: FixerPlace | null = null;
   try {
     // A PR with no folder of its own gets a fixer at its head.
-    fixer = usesFixer(review) ? await fixerPlace(bb, store, review) : null;
+    fixer = usesFixer(review) ? await fixerPlace(alia, store, review) : null;
     const letPush = review.letPush ?? false;
     const text = fixer
       ? [fixerBrief(shown, fixer, { lead: told, intent: (await store.getGuide(targetKey))?.intent, forked: false, own: await isOwnChange(review), letPush }), letPush ? GUARD_BUT_PUSH : GUARD].join("\n\n")
-      : [`${header(shown)}\n${told}`, moved?.branch ?? (fresh.environment?.type === "reuse" ? await folderBranchLine(bb, review) : null) ?? branchLine(shown), letPush ? GUARD_BUT_PUSH : GUARD].join("\n\n");
+      : [`${header(shown)}\n${told}`, moved?.branch ?? (fresh.environment?.type === "reuse" ? await folderBranchLine(alia, review) : null) ?? branchLine(shown), letPush ? GUARD_BUT_PUSH : GUARD].join("\n\n");
     went = await go(deps, shown, fixer ? { fixer, fork: false } : { fresh }, text);
   } catch (failure) {
     return { ok: false, error: error(failure) };
@@ -623,7 +623,7 @@ export async function settleQueued(deps: Deps, entry: { id: string; threadId: st
   });
   for (const key of changed) {
     deps.changed(key);
-    deps.bb.realtime.publish(`draft:${key}`, {});
+    deps.alia.realtime.publish(`draft:${key}`, {});
   }
 }
 
@@ -631,7 +631,7 @@ const off = "Send to thread is off in Review settings.";
 
 export function register(deps: ServeDeps) {
   // Who's asking in the review agent's turn (src/asking.ts): a turn the plugin started never sends.
-  const { bb, store, changed, classify } = deps;
+  const { alia, store, changed, classify } = deps;
   const sendOn = async () => (await store.getPreferences()).preferences.knobs.sendToThread;
   const handlers = {
     async getSourceThread({ targetKey }) {
@@ -679,7 +679,7 @@ export function register(deps: ServeDeps) {
     "message.cancelled": [({ entry }) => settleQueued(deps, entry, false)],
   };
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "send_now",
     description: "Send one of the reviewer's draft comments to the review's main thread now, the thread that writes the code, to fix: it gets an id the thread reports on, and goes after the thread's current turn. With patch, your exact fix goes with it, for the thread to apply as written. Nothing goes to GitHub.",
     instructions: `When the reviewer asks to have a comment fixed ("fix this", "send it"), send it with send_now and say so; add the comment with add_draft_comment first if the line has none. When they say you do it, write the exact unified diff that fixes it, against the code as it is now, and pass it as patch: the main thread applies it as written, so the folder keeps one writer; on a PR with no thread working on it, a fresh thread at the PR's head applies it. Don't change the code, or push, yourself. If it comes back with a warning, tell the reviewer in a line, and call again only as they choose: force: true to send anyway, with thread: "unarchive", "fresh" or "fork" when it offers those. In a turn the reviewer didn't start, it sends nothing: suggest it instead. ${ONLY_WITH_THESE_TOOLS}`,
@@ -712,7 +712,7 @@ export function register(deps: ServeDeps) {
       const to = sent.title ?? "the main thread";
       // In the review's activity, with the thread that asked, as the review agent's other actions are.
       const from = turn.message?.senderThreadId ?? null;
-      const fromTitle = from ? await bb.sdk.threads.get({ threadId: from }).then((asker) => asker.title ?? undefined, () => undefined) : undefined;
+      const fromTitle = from ? await alia.sdk.threads.get({ threadId: from }).then((asker) => asker.title ?? undefined, () => undefined) : undefined;
       await store.exclusive(async (tx) => {
         const now = await tx.getReview(targetKey);
         if (now) await tx.setLifecycle(targetKey, { activity: [...now.activity ?? [], { at: Date.now(), text: `Sent ${sent.ids[0]} on ${file}:${line} to ${to}${patch === undefined ? "" : ", with a patch"}`, asking: turn.asking, ...from ? { from } : {}, ...fromTitle ? { fromTitle } : {} }] });

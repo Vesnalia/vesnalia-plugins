@@ -5,7 +5,7 @@ description: Restart a thread's agent session so it picks up MCP servers, settin
 
 # Reload an agent session
 
-`bb agent-reload [thread-id]` marks a thread's agent session for restart. The
+`alia agent-reload [thread-id]` marks a thread's agent session for restart. The
 thread id defaults to the calling thread. Users can do the same with the reload
 button in the thread header.
 

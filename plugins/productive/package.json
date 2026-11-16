@@ -1,20 +1,12 @@
 {
-  "name": "bb-plugin-productive",
+  "name": "alia-plugin-productive",
   "version": "0.2.0",
-  "description": "Bring each BB project's Productive.io tasks into one focused board.",
+  "description": "Bring each VesnALIA project's Productive.io tasks into one focused board.",
   "license": "MIT",
   "author": "Kristof Feys <kristof@weareantenna.be>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kristoffeys/bb-plugin-productive.git"
-  },
-  "bugs": {
-    "url": "https://github.com/kristoffeys/bb-plugin-productive/issues"
-  },
-  "homepage": "https://github.com/kristoffeys/bb-plugin-productive#readme",
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "productive",
     "productive.io",
     "taskboard",
@@ -22,12 +14,12 @@
   ],
   "type": "module",
   "engines": {
-    "bb": ">=0.42",
-    "bbPluginSdk": ">=0.4.47"
+    "alia": ">=0.42",
+    "aliaPluginSdk": ">=0.4.47"
   },
-  "bb": {
+  "alia": {
     "name": "Productive",
-    "description": "Bring each BB project's Productive.io tasks into one focused board.",
+    "description": "Bring each VesnALIA project's Productive.io tasks into one focused board.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -38,7 +30,6 @@
     ]
   },
   "dependencies": {
-    "@get-bb/plugin-sdk": "0.4.47",
     "@hugeicons/core-free-icons": "^4.1.3",
     "@hugeicons/react": "^1.1.6",
     "@radix-ui/react-checkbox": "^1.3.7",
@@ -52,7 +43,8 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
     "@pierre/diffs": "^1.2.9",
@@ -66,7 +58,6 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "bb-app": "^0.42.0",
     "better-sqlite3": "^12.0.0",
     "cron-parser": "^5.5.0",
     "hono": "^4.11.9",
@@ -74,10 +65,19 @@
     "vitest": "^5.0.0"
   },
   "scripts": {
-    "build": "env -u BB_CLI bb plugin build .",
-    "dev": "bb plugin dev .",
+    "build": "env -u ALIA_CLI alia plugin build .",
+    "dev": "alia plugin dev .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run build"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/productive#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/productive"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

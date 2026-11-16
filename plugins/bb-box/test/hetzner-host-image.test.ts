@@ -83,7 +83,7 @@ test("maintain builds a host image when none is there, and keeps the two newest"
   assert.ok(api.images.has(newest));
 });
 
-test("a host image is due when there is none, when BB Box's scripts changed, or after a week, and not otherwise", async () => {
+test("a host image is due when there is none, when VesnALIA Box's scripts changed, or after a week, and not otherwise", async () => {
   const { api, backend } = hetznerWorld();
   let fingerprint = "fp1";
   const { options } = builder();
@@ -92,7 +92,7 @@ test("a host image is due when there is none, when BB Box's scripts changed, or 
   const report = async () => (await hetzner.doctor(signal())).checks.find((each) => each.id === "hetzner.image")!.detail;
   assert.match(await report(), /Hosts start from snapshot \d+, built 0 days ago\. 1 kept, 4\.2 GB, about EUR 0\.05 a month\.$/);
   fingerprint = "fp2";
-  assert.match(await report(), /A new one is due, as BB Box's image scripts changed since the host image was built\./);
+  assert.match(await report(), /A new one is due, as ALIA Box's image scripts changed since the host image was built\./);
   fingerprint = "fp1";
   api.advanceClock(HOST_IMAGE_REBUILT_AFTER_MS + 60_000);
   assert.match(await report(), /A new one is due, as the host image is more than a week old\./);
@@ -108,7 +108,7 @@ test("a failed build deletes its server, keeps no snapshot, says so in the docto
   const detail = async () => (await hetzner.doctor(signal())).checks.find((each) => each.id === "hetzner.image")!;
   const failedAt = api.now;
   assert.equal((await detail()).status, "warn");
-  assert.match((await detail()).detail, new RegExp(`The last build failed at ${new Date(failedAt).toISOString()}; BB Box tries again at ${new Date(failedAt + 10 * 60_000).toISOString()}\\.`));
+  assert.match((await detail()).detail, new RegExp(`The last build failed at ${new Date(failedAt).toISOString()}; VesnALIA Box tries again at ${new Date(failedAt + 10 * 60_000).toISOString()}\\.`));
   const creates = () => api.calls.filter((call) => call.method === "POST" && call.path === "/servers").length;
   const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
   let before = creates();
@@ -121,7 +121,7 @@ test("a failed build deletes its server, keeps no snapshot, says so in the docto
   await settle();
   assert.equal(creates(), before + 1, "again after them");
   for (let i = 0; i < 300 && /A new one is being built/.test((await detail()).detail); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-  assert.match((await detail()).detail, /, the 2nd failure in a row; BB Box tries again at /);
+  assert.match((await detail()).detail, /, the 2nd failure in a row; ALIA Box tries again at /);
   const secondAt = api.now;
   assert.match((await detail()).detail, new RegExp(`tries again at ${new Date(secondAt + 20 * 60_000).toISOString()}\\.`));
   before = creates();
@@ -187,21 +187,21 @@ test("the setup's fingerprint changes with what the image build reads, setup/doc
   assert.notEqual(setupFingerprint(copy), docker);
 });
 
-test("a host image is built with BB's app in it, labelled with its digest, and is due again once BB's server gives another", async () => {
+test("a host image is built with VesnALIA's app in it, labelled with its digest, and is due again once VesnALIA's server gives another", async () => {
   const { api, backend } = hetznerWorld();
   const { options } = builder();
   let app = "a".repeat(64);
-  const context = { bbUrl: () => "https://bb.example.test", images: { pins: async () => null, bbApp: async () => app } };
+  const context = { aliaUrl: () => "https://bb.example.test", images: { pins: async () => null, aliaApp: async () => app } };
   const hetzner = backend(hetznerConfig({ hostImage: "ubuntu-26.04", hostImageLabel: "ubuntu-26.04" }), new MemoryStorage(), "test", options, context);
   await hetzner.buildHostImage("there is no host image yet", signal());
   assert.equal([...api.images.values()][0]!.labels["bbbox-app"], "a".repeat(16));
   const detail = async () => (await hetzner.doctor(signal())).checks.find((each) => each.id === "hetzner.image")!.detail;
   assert.doesNotMatch(await detail(), /A new one is due/);
   app = "b".repeat(64);
-  assert.match(await detail(), /A new one is due, as BB's server gives another build of its app than the host image has\./);
+  assert.match(await detail(), /A new one is due, as ALIA's server gives another build of its app than the host image has\./);
 });
 
-test("build.sh is given BB's URL, so the images carry BB's app, and the image's name and target", async () => {
+test("build.sh is given VesnALIA's URL, so the images carry VesnALIA's app, and the image's name and target", async () => {
   const setup = tempDir("setup-args");
   const { mkdirSync, readFileSync } = await import("node:fs");
   mkdirSync(join(setup, "docker"));
@@ -210,7 +210,7 @@ test("build.sh is given BB's URL, so the images carry BB's app, and the image's 
   const { DockerCli } = await import("../src/backends/docker/cli.ts");
   const lines: string[] = [];
   assert.equal(await runBuildScript(new DockerCli("unix:///tmp/h1.sock"), "bbbox/linux:1", "linux", "https://bb.example.test", (line) => lines.push(line), signal(), setup), 0);
-  assert.equal(readFileSync(join(setup, "args"), "utf8").trim(), "unix:///tmp/h1.sock --bb-url https://bb.example.test --tag bbbox/linux:1 linux");
+  assert.equal(readFileSync(join(setup, "args"), "utf8").trim(), "unix:///tmp/h1.sock --alia-url https://bb.example.test --tag bbbox/linux:1 linux");
   await runBuildScript(new DockerCli("unix:///tmp/h1.sock"), "bbbox/linux:1", "linux", null, () => {}, signal(), setup);
   assert.equal(readFileSync(join(setup, "args"), "utf8").trim(), "unix:///tmp/h1.sock --tag bbbox/linux:1 linux");
 });
@@ -223,7 +223,7 @@ test("a build Hetzner refuses a server for, as past the project's core limit, wa
   await hetzner.buildHostImage("there is no host image yet", signal());
   const check = (await hetzner.doctor(signal())).checks.find((each) => each.id === "hetzner.image")!;
   assert.equal(check.status, "ok");
-  assert.match(check.detail, /The last build waited for room: at .* Hetzner Cloud refused its server \(\(403 resource_limit_exceeded\): server limit exceeded\); BB Box tries again at its next check\. Hetzner limits the shared vCPUs of the whole account/);
+  assert.match(check.detail, /The last build waited for room: at .* Hetzner Cloud refused its server \(\(403 resource_limit_exceeded\): server limit exceeded\); ALIA Box tries again at its next check\. Hetzner limits the shared vCPUs of the whole account/);
   assert.doesNotMatch(check.detail, /failed/);
   api.projectServerLimit = 10;
   await hetzner.maintain(signal());
@@ -242,7 +242,7 @@ test("a snapshot that takes longer than ten minutes, as a 320 GB disk's can, is 
   assert.equal(api.servers.size, 0, "the build server goes once its snapshot is made");
 });
 
-test("when BB Box stops waiting for a snapshot Hetzner Cloud is still making, it keeps the build server, builds no other, and takes the snapshot once made, saying so", async () => {
+test("when VesnALIA Box stops waiting for a snapshot Hetzner Cloud is still making, it keeps the build server, builds no other, and takes the snapshot once made, saying so", async () => {
   const { api, backend } = hetznerWorld();
   const { options } = builder();
   const lines: string[] = [];
@@ -252,46 +252,46 @@ test("when BB Box stops waiting for a snapshot Hetzner Cloud is still making, it
   const [snapshot] = api.images.values();
   assert.equal(snapshot!.status, "creating");
   assert.equal(api.servers.size, 1, "the build server stays while its snapshot is made");
-  assert.ok(lines.some((line) => /^Snapshot \d+ of bb-box-hz-\S+ is still being made, so bb-box keeps the build server/.test(line)));
+  assert.ok(lines.some((line) => /^Snapshot \d+ of alia-box-hz-\S+ is still being made, so alia-box keeps the build server/.test(line)));
   const check = (await hetzner.doctor(signal())).checks.find((each) => each.id === "hetzner.image")!;
   assert.equal(check.status, "ok", "not a failure");
-  assert.match(check.detail, new RegExp(`Hetzner Cloud is making a new one, snapshot ${snapshot!.id}, which BB Box takes once it is ready\\.`));
+  assert.match(check.detail, new RegExp(`Hetzner Cloud is making a new one, snapshot ${snapshot!.id}, which VesnALIA Box takes once it is ready\\.`));
 
   const creates = () => api.calls.filter((call) => call.method === "POST" && call.path === "/servers").length;
   const before = creates();
   await hetzner.maintain(signal());
   await new Promise((resolve) => setTimeout(resolve, 20));
   assert.equal(creates(), before, "no other build while one is being made");
-  assert.ok(lines.some((line) => line === `Host image snapshot ${snapshot!.id} of build ${snapshot!.labels["bbbox-build"]} (x86) is creating, no size yet: bb-box waits for Hetzner Cloud to finish it, and keeps its build server until then.`));
+  assert.ok(lines.some((line) => line === `Host image snapshot ${snapshot!.id} of build ${snapshot!.labels["bbbox-build"]} (x86) is creating, no size yet: alia-box waits for Hetzner Cloud to finish it, and keeps its build server until then.`));
   assert.equal(api.servers.size, 1);
 
   snapshot!.status = "available";
   snapshot!.imageSize = 31.5;
   await hetzner.maintain(signal());
-  assert.ok(lines.some((line) => line === `Host image snapshot ${snapshot!.id} of build ${snapshot!.labels["bbbox-build"]} (x86) is available, 31.5 GB: bb-box adopts it as the host image, the newest build for its current scripts.`));
-  assert.ok(lines.some((line) => /^The build server bb-box-hz-\S+ waited for its snapshot, which is no longer being made: BB Box deletes it\.$/.test(line)));
+  assert.ok(lines.some((line) => line === `Host image snapshot ${snapshot!.id} of build ${snapshot!.labels["bbbox-build"]} (x86) is available, 31.5 GB: alia-box adopts it as the host image, the newest build for its current scripts.`));
+  assert.ok(lines.some((line) => /^The build server alia-box-hz-\S+ waited for its snapshot, which is no longer being made: ALIA Box deletes it\.$/.test(line)));
   assert.equal(api.servers.size, 0);
   const guest = await hetzner.acquire(box(), null, hooks, signal());
   assert.equal([...api.servers.values()].find((each) => each.name === guest.host)!.image, snapshot!.id, "the next host starts from it");
 });
 
-test("a host image snapshot Hetzner Cloud did not make, or one still creating after two hours, is deleted, and BB Box says which", async () => {
+test("a host image snapshot Hetzner Cloud did not make, or one still creating after two hours, is deleted, and VesnALIA Box says which", async () => {
   const { api, backend } = hetznerWorld();
   const { options } = builder();
   const lines: string[] = [];
   const hetzner = backend(hetznerConfig({ hostImage: "ubuntu-26.04", hostImageLabel: "ubuntu-26.04" }), new MemoryStorage(), "test", options, { log: (line: string) => void lines.push(line) });
   const labels = (build: string) => ({ "bbbox-install": "test", "bbbox-role": "host-image", "bbbox-build": build, "bbbox-setup": "fp1", "bbbox-arch": "x86" });
   const old = new Date(api.now - 3 * 3_600_000).toISOString();
-  api.images.set(9001, { id: 9001, description: "BB Box host image dead1", status: "unavailable", created: old, labels: labels("dead1"), imageSize: null, createdFrom: 1 });
-  api.images.set(9002, { id: 9002, description: "BB Box host image slow1", status: "creating", created: old, labels: labels("slow1"), imageSize: null, createdFrom: 2 });
+  api.images.set(9001, { id: 9001, description: "VesnALIA Box host image dead1", status: "unavailable", created: old, labels: labels("dead1"), imageSize: null, createdFrom: 1 });
+  api.images.set(9002, { id: 9002, description: "VesnALIA Box host image slow1", status: "creating", created: old, labels: labels("slow1"), imageSize: null, createdFrom: 2 });
   await hetzner.maintain(signal());
   assert.equal(api.images.has(9001), false);
   assert.equal(api.images.has(9002), false);
-  assert.ok(lines.includes("Host image snapshot 9001 of build dead1 (x86) is unavailable, no size yet: bb-box deletes it, as Hetzner Cloud did not make it."));
-  assert.ok(lines.includes("Host image snapshot 9002 of build slow1 (x86) is creating, no size yet: bb-box deletes it, as it has been creating for over 2 hours."));
+  assert.ok(lines.includes("Host image snapshot 9001 of build dead1 (x86) is unavailable, no size yet: alia-box deletes it, as Hetzner Cloud did not make it."));
+  assert.ok(lines.includes("Host image snapshot 9002 of build slow1 (x86) is creating, no size yet: alia-box deletes it, as it has been creating for over 2 hours."));
 });
 
-test("a host image build runs on its server, so a restart of BB Box does not end it: the next run carries on with the same server, and its snapshot is the host image (#1083)", async () => {
+test("a host image build runs on its server, so a restart of VesnALIA Box does not end it: the next run carries on with the same server, and its snapshot is the host image (#1083)", async () => {
   const { api, backend } = hetznerWorld();
   const { ran, options } = builder();
   const storage = new MemoryStorage();
@@ -314,17 +314,17 @@ test("a host image build runs on its server, so a restart of BB Box does not end
   const building = first.buildHostImage("there is no host image yet", stopping.signal).catch((error: unknown) => error);
   for (let i = 0; i < 400 && runs.size === 0; i++) await new Promise((resolve) => setTimeout(resolve, 5));
   stopping.abort();
-  assert.equal(await building, undefined, "a build BB Box left as it stopped is no error");
+  assert.equal(await building, undefined, "a build VesnALIA Box left as it stopped is no error");
   assert.equal(await storage.get("host-image-failed-at:x86"), undefined, "nor a failure, which would put off the next try");
   assert.equal(api.servers.size, 1, "the build server keeps running");
-  assert.ok(lines.some((line) => /^bb-box stopped while it built the x86 host image on bb-box-hz-\S+, at its building step: it leaves the build server running/.test(line)));
+  assert.ok(lines.some((line) => /^alia-box stopped while it built the x86 host image on alia-box-hz-\S+, at its building step: it leaves the build server running/.test(line)));
 
   const [buildId] = runs.keys();
   runs.get(buildId!)!.exitCode = 0;
   const next = backend(config, storage, "test", { ...options, remoteBuild: remote }, { log: (line: string) => void lines.push(line) });
   await next.buildHostImage("there is no host image yet", signal());
   assert.equal(api.calls.filter((call) => call.method === "POST" && call.path === "/servers").length, 1, "no second build server");
-  assert.ok(lines.some((line) => /^bb-box carries on with the x86 host image build on bb-box-hz-\S+, from its building step/.test(line)));
+  assert.ok(lines.some((line) => /^alia-box carries on with the x86 host image build on alia-box-hz-\S+, from its building step/.test(line)));
   assert.deepEqual(ran.map((each) => each.script), [PREPARE_FOR_SNAPSHOT]);
   const [snapshot] = api.images.values();
   assert.equal(snapshot!.status, "available");
@@ -332,11 +332,11 @@ test("a host image build runs on its server, so a restart of BB Box does not end
   assert.equal(api.servers.size, 0, "the build server goes once its snapshot is made");
 });
 
-test("the build script starts once, unpacks BB Box's setup on the server, runs build.sh for each image with BB's URL and the architecture, and keeps its log and exit code there; its progress reads from where it left off (#1083)", () => {
-  const script = startBuildScript({ images: [{ image: "bbbox/linux:1", target: "linux" }, { image: "bbbox/linux-desktop:1", target: "desktop" }], architecture: "arm", bbUrl: "https://bb.example.test" }, "QUJD");
+test("the build script starts once, unpacks VesnALIA Box's setup on the server, runs build.sh for each image with VesnALIA's URL and the architecture, and keeps its log and exit code there; its progress reads from where it left off (#1083)", () => {
+  const script = startBuildScript({ images: [{ image: "bbbox/linux:1", target: "linux" }, { image: "bbbox/linux-desktop:1", target: "desktop" }], architecture: "arm", aliaUrl: "https://bb.example.test" }, "QUJD");
   assert.match(script, /\[ ! -e "\$d\/started" \] \|\| exit 0/);
-  assert.match(script, /base64 -d > "\$d\/setup\.tgz" <<'BB_BOX_SETUP'\nQUJD\nBB_BOX_SETUP/);
-  assert.match(script, /bash "\$d\/setup\/docker\/build\.sh" --bb-url 'https:\/\/bb\.example\.test' --arch arm64 --tag 'bbbox\/linux:1' 'linux' \|\| \{ echo \$\? > "\$d\/exit"; exit 1; \}/);
+  assert.match(script, /base64 -d > "\$d\/setup\.tgz" <<'ALIA_BOX_SETUP'\nQUJD\nBB_BOX_SETUP/);
+  assert.match(script, /bash "\$d\/setup\/docker\/build\.sh" --alia-url 'https:\/\/alia\.example\.test' --arch arm64 --tag 'bbbox\/linux:1' 'linux' \|\| \{ echo \$\? > "\$d\/exit"; exit 1; \}/);
   assert.match(script, /setsid nohup bash "\$d\/run\.sh" >> "\$d\/log" 2>&1 < \/dev\/null &\n$/);
   assert.match(progressScript(120), /tail -c \+121 "\$d\/log"/);
   assert.deepEqual(readProgress("exit=\nline one\nline two\n", 100), { exitCode: null, log: "line one\nline two\n", nextByte: 118 });
@@ -369,7 +369,7 @@ const until = async (done: () => boolean) => {
 };
 const buildServers = (api: ReturnType<typeof hetznerWorld>["api"]) => [...api.servers.values()].filter((server) => server.labels["bbbox-role"] === "image-build");
 
-test("BB Box builds one host image at a time: while the x86 build runs, the Arm one waits, and the doctor says so (#1075)", async () => {
+test("VesnALIA Box builds one host image at a time: while the x86 build runs, the Arm one waits, and the doctor says so (#1075)", async () => {
   const { api, backend } = hetznerWorld();
   const { started, release, options } = heldBuilder();
   const hetzner = backend(hetznerConfig({ armServerType: "cax31", hostImage: "ubuntu-26.04", hostImageLabel: "ubuntu-26.04", monthlyLimitEurosBeforeVat: 50 }), new MemoryStorage(), "test", options);
@@ -378,7 +378,7 @@ test("BB Box builds one host image at a time: while the x86 build runs, the Arm 
   await hetzner.maintain(signal());
   assert.deepEqual(buildServers(api).map((server) => server.serverType), ["cpx42"]);
   const arm = (await hetzner.doctor(signal())).checks.find((each) => each.id === "hetzner.arm-image")!;
-  assert.match(arm.detail, /It waits for the x86 host image's build to finish, as BB Box builds one at a time\./);
+  assert.match(arm.detail, /It waits for the x86 host image's build to finish, as ALIA Box builds one at a time\./);
   release();
   await until(() => api.images.size === 1 && api.servers.size === 0);
   await hetzner.maintain(signal());
@@ -424,14 +424,14 @@ test("while a build runs after a failure, the doctor names the failure but no ti
   await until(() => api.images.size === 1 && api.servers.size === 0);
 });
 
-test("a build that meets BB Box's reload, as its API handle goes stale, is left for the next run: no failure is kept and none is logged as an error", async () => {
+test("a build that meets VesnALIA Box's reload, as its API handle goes stale, is left for the next run: no failure is kept and none is logged as an error", async () => {
   const { api, backend } = hetznerWorld();
   const storage = new MemoryStorage();
   const errors: string[] = [];
   const remote: RemoteBuild = {
     start: async () => {},
     progress: async () => {
-      throw new Error('plugin "bb-box" used a stale API handle — it was reloaded or disabled; re-entry happens via a fresh factory call');
+      throw new Error('plugin "alia-box" used a stale API handle — it was reloaded or disabled; re-entry happens via a fresh factory call');
     },
   };
   const { options } = builder();
@@ -442,7 +442,7 @@ test("a build that meets BB Box's reload, as its API handle goes stale, is left 
   assert.equal(api.servers.size, 1, "the build server keeps running for the next run");
 });
 
-test("a backend BB Box disposes, as a reload does, stops following its build at once: no more calls to the build server, no failure, and the server is left for the next run", async () => {
+test("a backend VesnALIA Box disposes, as a reload does, stops following its build at once: no more calls to the build server, no failure, and the server is left for the next run", async () => {
   const { api, backend } = hetznerWorld();
   const storage = new MemoryStorage();
   let progressCalls = 0;
@@ -468,10 +468,10 @@ test("a backend BB Box disposes, as a reload does, stops following its build at 
   assert.equal(api.servers.size, 1, "the build server is left for the next run");
   assert.equal(await storage.get("host-image-failed-at:x86"), undefined);
   assert.deepEqual(errors, []);
-  assert.ok(lines.some((line) => /^bb-box stopped while it built the x86 host image on bb-box-hz-\S+, at its building step/.test(line)));
+  assert.ok(lines.some((line) => /^alia-box stopped while it built the x86 host image on alia-box-hz-\S+, at its building step/.test(line)));
 });
 
-test("a box refused room while BB Box's own build is still building takes that room: the build stops, its server goes, the box's host is made, and no failure is kept", async () => {
+test("a box refused room while VesnALIA Box's own build is still building takes that room: the build stops, its server goes, the box's host is made, and no failure is kept", async () => {
   const { api, backend } = hetznerWorld();
   const { started, release, options } = heldBuilder();
   const storage = new MemoryStorage();
@@ -486,8 +486,8 @@ test("a box refused room while BB Box's own build is still building takes that r
   release();
   assert.equal(buildServers(api).length, 0, "the build server is gone");
   assert.ok(api.servers.size === 1 && [...api.servers.values()][0]!.name === guest.host, "the box's host has the room");
-  assert.ok(lines.includes(`bb-box stopped its host image build on ${build!.name}, a cpx42, and deleted the server, so a cpx42 host for a box gets its room.`));
-  await until(() => lines.some((line) => line.startsWith(`BB Box stopped the x86 host image build on ${build!.name}, at its building step, and deleted the server, so a box gets its room.`)));
+  assert.ok(lines.includes(`alia-box stopped its host image build on ${build!.name}, a cpx42, and deleted the server, so a cpx42 host for a box gets its room.`));
+  await until(() => lines.some((line) => line.startsWith(`VesnALIA Box stopped the x86 host image build on ${build!.name}, at its building step, and deleted the server, so a box gets its room.`)));
   assert.equal(await storage.get("host-image-failed-at:x86"), undefined);
   assert.deepEqual(errors, []);
   api.projectServerLimit = 10;
@@ -496,7 +496,7 @@ test("a box refused room while BB Box's own build is still building takes that r
   assert.equal(buildServers(api).length, 0, "no new build while boxes waited for room within 30 minutes");
 });
 
-test("a box refused room while BB Box's own build is taking its snapshot waits for it, says until when, and gets the room once the snapshot is made", async () => {
+test("a box refused room while VesnALIA Box's own build is taking its snapshot waits for it, says until when, and gets the room once the snapshot is made", async () => {
   const { api, backend } = hetznerWorld();
   const { options } = builder();
   const lines: string[] = [];
@@ -508,8 +508,8 @@ test("a box refused room while BB Box's own build is taking its snapshot waits f
   assert.equal(snapshot!.status, "creating");
   api.projectServerLimit = 1;
   const acquiring = hetzner.acquire(box(), null, hooks, signal());
-  await until(() => lines.some((line) => line.startsWith("A cpx42 host for a box waits for room: bb-box's own host image build on")));
-  assert.ok(lines.some((line) => new RegExp(`^A cpx42 host for a box waits for room: bb-box's own host image build on ${build!.name} is taking its snapshot, which ends by about \\S+, and its room then goes to the box\\.$`).test(line)));
+  await until(() => lines.some((line) => line.startsWith("A cpx42 host for a box waits for room: alia-box's own host image build on")));
+  assert.ok(lines.some((line) => new RegExp(`^A cpx42 host for a box waits for room: alia-box's own host image build on ${build!.name} is taking its snapshot, which ends by about \\S+, and its room then goes to the box\\.$`).test(line)));
   assert.ok(api.servers.has(build!.id), "the build server stays while its snapshot is made");
   snapshot!.status = "available";
   snapshot!.imageSize = 31.5;
@@ -545,10 +545,10 @@ test("the 30 minutes' hold after boxes waited for room stops new builds only: a 
   await next.maintain(signal());
   await until(() => api.images.size === 1);
   assert.equal(api.images.size, 1);
-  assert.ok(lines.some((line) => /^bb-box carries on with the x86 host image build on bb-box-hz-\S+, from its building step/.test(line)));
+  assert.ok(lines.some((line) => /^alia-box carries on with the x86 host image build on alia-box-hz-\S+, from its building step/.test(line)));
 });
 
-test("a box refused room that a snapshotting build holds past the wait is refused, naming BB Box's own build server and when it ends", async () => {
+test("a box refused room that a snapshotting build holds past the wait is refused, naming VesnALIA Box's own build server and when it ends", async () => {
   const { api, backend } = hetznerWorld();
   const { options } = builder();
   const hetzner = backend(hetznerConfig({ hostImage: "ubuntu-26.04", hostImageLabel: "ubuntu-26.04" }), new MemoryStorage(), "test", options);
@@ -557,7 +557,7 @@ test("a box refused room that a snapshotting build holds past the wait is refuse
   const [server] = buildServers(api);
   api.projectServerLimit = 1;
   await assert.rejects(hetzner.acquire(box(), null, hooks, signal()), (error: Error) => {
-    assert.match(error.message, new RegExp(`BB Box's own host image build holds some of that room: ${server!.name}, a cpx42 of \\d+ vCPUs, since .*, which ends by about .*\\. BB Box starts no other build while boxes wait for room\\.`));
+    assert.match(error.message, new RegExp(`VesnALIA Box's own host image build holds some of that room: ${server!.name}, a cpx42 of \\d+ vCPUs, since .*, which ends by about .*\\. VesnALIA Box starts no other build while boxes wait for room\\.`));
     return true;
   });
   assert.ok(api.servers.has(server!.id), "a server taking its snapshot is never deleted for a box");

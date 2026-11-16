@@ -51,7 +51,7 @@ describe("DecisionLog", () => {
 });
 
 describe("ThemePreview", () => {
-  it("maps names to tokens and falls back to the bb theme", () => {
+  it("maps names to tokens and falls back to the VesnALIA theme", () => {
     const m = readTheme({ brand: "#4F46E5", "--radius": 12, fontFamily: "Inter Tight" });
     expect(m.values.primary).toMatchObject({ value: "#4F46E5", given: true });
     expect(m.values.radius.value).toBe("12px");

@@ -72,7 +72,7 @@ export function restoredText(answer: RestoreAnswer, boxName: string): string {
   return lines.join("\n");
 }
 
-export const FORK_HOLDS = "It gets its own BB machine, address and keys, and never acts as its source. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains. It starts fresh: no apps are running.";
+export const FORK_HOLDS = "It gets its own VesnALIA machine, address and keys, and never acts as its source. Everything else on its disk comes with it: project secrets, signed-in browsers and keychains. It starts fresh: no apps are running.";
 
 export function forkMayMissWords(snapshot: Pick<SnapshotRecord, "unflushed">): string | null {
   return snapshot.unflushed ? `The snapshot may miss what the box wrote in its last seconds before it: ${unflushedWords(snapshot.unflushed).replace(/, so it may miss .*$/, "")}, so the fork may lack them too.` : null;
@@ -175,7 +175,7 @@ export function restoreCheckText(check: RestoreCheck): string {
     lines.push(`- make it a new guest from that held copy, with the box's own identity, and start it; ${old};`);
   } else lines.push(check.capture === "suspend" ? "- put the snapshot's copy in its place, and resume it;" : "- roll its disk back, and start it;");
   if (check.replaces) lines.push(`- once it is done, delete its oldest undo, "${check.replaces}", as a box keeps two;`);
-  lines.push("- write its access file first, then its labels, and start its BB machine again.");
+  lines.push("- write its access file first, then its labels, and start its VesnALIA machine again.");
   lines.push(`Everything on its disk since then goes. ${snapshot.holds === "disk-and-memory" ? "It comes back running, as it was then, with the credentials its apps held then." : "Every process in it ends."} What it did to the world since stays done.`);
   if (check.from && check.to && describeSize(check.from) !== describeSize(check.to)) lines.push(`It goes back to ${describeSize(check.to)}, as it was then; it has ${describeSize(check.from)} now.`);
   if (check.gpuStay) lines.push(check.gpuStay);

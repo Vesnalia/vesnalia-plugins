@@ -1,4 +1,4 @@
-import { defineRpcContract, type ExperimentalHostSignals } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type ExperimentalHostSignals } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const toolContentPartSchema = z.discriminatedUnion("type", [

@@ -1,5 +1,5 @@
 /** ⌘⇧F: show the rail on its Search tab with the query field focused. */
-const EVENT = "bb-plugin-workbench-explorer:text-search";
+const EVENT = "alia-plugin-workbench-explorer:text-search";
 
 let pending = false;
 

@@ -52,7 +52,7 @@
     "item": {
      "type": "agentMessage",
      "id": "daead1f66f-i28",
-     "text": "I've got a clear picture of the repo: a BB plugin (TypeScript, 8 passing tests, clean typecheck), public on GitHub, 2 commits, no license, no CI, no topics, and no repo metadata in `package.json`. Two quick decisions before I make the changes:"
+     "text": "I've got a clear picture of the repo: a VesnALIA plugin (TypeScript, 8 passing tests, clean typecheck), public on GitHub, 2 commits, no license, no CI, no topics, and no repo metadata in `package.json`. Two quick decisions before I make the changes:"
     }
    }
   },
@@ -69,13 +69,13 @@
      "arguments": {
       "questions": [
        {
-        "question": "Which license should I add to bb-thread-reference?",
+        "question": "Which license should I add to alia-thread-reference?",
         "header": "License",
         "multiSelect": false,
         "options": [
          {
           "label": "MIT (Recommended)",
-          "description": "Short, permissive, the default for BB/Claude plugins and most npm packages. Maximum adoption, no patent clause.",
+          "description": "Short, permissive, the default for ALIA/Claude plugins and most npm packages. Maximum adoption, no patent clause.",
           "preview": "MIT License\n\nCopyright (c) 2026 <holder>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
          },
          {
@@ -157,14 +157,14 @@
       "questions": [
        {
         "id": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1",
-        "prompt": "Which license should I add to bb-thread-reference?",
+        "prompt": "Which license should I add to alia-thread-reference?",
         "shortLabel": "License",
         "multiSelect": false,
         "options": [
          {
           "value": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1:option-1",
           "label": "MIT (Recommended)",
-          "description": "Short, permissive, the default for BB/Claude plugins and most npm packages. Maximum adoption, no patent clause."
+          "description": "Short, permissive, the default for ALIA/Claude plugins and most npm packages. Maximum adoption, no patent clause."
          },
          {
           "value": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1:option-2",
@@ -247,14 +247,14 @@
       "questions": [
        {
         "id": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1",
-        "prompt": "Which license should I add to bb-thread-reference?",
+        "prompt": "Which license should I add to alia-thread-reference?",
         "shortLabel": "License",
         "multiSelect": false,
         "options": [
          {
           "value": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1:option-1",
           "label": "MIT (Recommended)",
-          "description": "Short, permissive, the default for BB/Claude plugins and most npm packages. Maximum adoption, no patent clause."
+          "description": "Short, permissive, the default for ALIA/Claude plugins and most npm packages. Maximum adoption, no patent clause."
          },
          {
           "value": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1:option-2",
@@ -356,14 +356,14 @@
       "questions": [
        {
         "id": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1",
-        "prompt": "Which license should I add to bb-thread-reference?",
+        "prompt": "Which license should I add to alia-thread-reference?",
         "shortLabel": "License",
         "multiSelect": false,
         "options": [
          {
           "value": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1:option-1",
           "label": "MIT (Recommended)",
-          "description": "Short, permissive, the default for BB/Claude plugins and most npm packages. Maximum adoption, no patent clause."
+          "description": "Short, permissive, the default for ALIA/Claude plugins and most npm packages. Maximum adoption, no patent clause."
          },
          {
           "value": "toolu_0118iJsSsJwZzigBGc9uwiJY:question-1:option-2",
@@ -459,13 +459,13 @@
      "arguments": {
       "questions": [
        {
-        "question": "Which license should I add to bb-thread-reference?",
+        "question": "Which license should I add to alia-thread-reference?",
         "header": "License",
         "multiSelect": false,
         "options": [
          {
           "label": "MIT (Recommended)",
-          "description": "Short, permissive, the default for BB/Claude plugins and most npm packages. Maximum adoption, no patent clause.",
+          "description": "Short, permissive, the default for ALIA/Claude plugins and most npm packages. Maximum adoption, no patent clause.",
           "preview": "MIT License\n\nCopyright (c) 2026 <holder>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
          },
          {
@@ -515,7 +515,7 @@
       ]
      },
      "status": "completed",
-     "result": "Your questions have been answered: \"Which license should I add to bb-thread-reference?\"=\"MIT (Recommended)\", \"What name should appear as the copyright holder?\"=\"Tom (MacHatter1)\", \"How far should I take the changes on GitHub itself?\"=\"Commit + push + repo settings (Recommended)\". You can now continue with these answers in mind.",
+     "result": "Your questions have been answered: \"Which license should I add to alia-thread-reference?\"=\"MIT (Recommended)\", \"What name should appear as the copyright holder?\"=\"Tom (MacHatter1)\", \"How far should I take the changes on GitHub itself?\"=\"Commit + push + repo settings (Recommended)\". You can now continue with these answers in mind.",
      "presentation": {
       "label": {
        "pending": "Asking a question",

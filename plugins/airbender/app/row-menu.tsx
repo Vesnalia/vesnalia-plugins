@@ -5,7 +5,7 @@
 // edit, add a sub-issue, move, link, close; for a closed issue, reopen.
 //
 // Why: the row used to carry a cancel cross as its one permanent button,
-// though closing is not what one does most (the user's point, bead-bb-l3m).
+// though closing is not what one does most (the user's point, bead-alia-l3m).
 // One menu holds every such action and keeps the row to the workflow button
 // and this. The same actions stay available inside the opened issue, so
 // there are two ways to each.
@@ -81,7 +81,7 @@ function Entry({
 /**
  * Arrows along two sides of a box: its measurements. For the size row.
  * Tabler Icons' "dimensions" (MIT, (c) Pawel Kuna), copied in as its
- * paths: BB's icon set has nothing for size.
+ * paths: VesnALIA's icon set has nothing for size.
  */
 function SizeIcon({ className }: { className?: string }) {
   return (
@@ -113,7 +113,7 @@ function SizeIcon({ className }: { className?: string }) {
  *   and passes the request on to it.
  * @param lean Leave out "Make current" and "Close": on the simple
  *   workflow they are buttons on the row itself (the user's decision,
- *   bead-bb-8j6), and listing them twice side by side would be noise.
+ *   bead-alia-8j6), and listing them twice side by side would be noise.
  * @param className Extra classes, for the row's spacing.
  */
 export function RowMenu({
@@ -198,7 +198,7 @@ export function RowMenu({
           setOpen((now) => !now);
         }}
       >
-        {/* Three dots, drawn here: BB's icon set has no "more" icon. */}
+        {/* Three dots, drawn here: VesnALIA's icon set has no "more" icon. */}
         <svg
           viewBox="0 0 24 24"
           fill="currentColor"
@@ -326,7 +326,7 @@ export function RowMenu({
                   >Link…</Entry>
                   <div className="my-1 border-t border-border" />
                   {/* Set aside for later, or back to the work in hand
-                      (bead-bb-26g); in the lean menu too, where Close is a
+                      (bead-alia-26g); in the lean menu too, where Close is a
                       button on the row. */}
                   <Entry
                     icon={

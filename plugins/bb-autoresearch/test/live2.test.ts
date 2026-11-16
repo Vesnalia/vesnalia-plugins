@@ -573,7 +573,7 @@ describe("replay performance (synthetic 10k-event study)", () => {
 
 describe("plugin reload during a measurement", () => {
   it("the old instance stops: no database access or log after dispose, and the new one restarts the measurement", async () => {
-    const { createFakePluginHost } = await import("@get-bb/plugin-sdk/testing");
+    const { createFakePluginHost } = await import("@vesnalia/plugin-sdk/testing");
     const { createAutoresearchPlugin } = await import("../server.ts");
     const { FakePort: Port, fakeHostSpec, waitFor } = await import("./helpers.ts");
     const host = new FakeHost();
@@ -581,9 +581,9 @@ describe("plugin reload during a measurement", () => {
     host.refs.set("main", host.commit("T0", null));
     host.metric.set("T0", 1000);
     port.addThread("thr_study");
-    const fake = createFakePluginHost({ pluginId: "bb-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
+    const fake = createFakePluginHost({ pluginId: "alia-autoresearch", agentSkillIds: ["study-create", "autoresearch", "study-harvest"] });
     let first: Engine | null = null;
-    await createAutoresearchPlugin({ port: () => port, seed: 1, onEngine: (e) => (first = e) })(fake.bb);
+    await createAutoresearchPlugin({ port: () => port, seed: 1, onEngine: (e) => (first = e) })(fake.alia);
     const h = fake.harness;
     await h.behavior.callAgentTool("study_propose", { spec_toml: fakeHostSpec() }, { threadId: "thr_study", projectId: "proj_1" });
     await h.behavior.runCli(["calibrate", "toy-size", "--wait"]);

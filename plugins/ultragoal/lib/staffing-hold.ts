@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 /**
  * Slices held out of scheduling while their contract is being rewritten.
@@ -15,7 +15,7 @@ import type { BbPluginApi } from "@get-bb/plugin-sdk";
  * lift is just a lost slice.
  */
 export function createStaffingHoldStore(
-  db: ReturnType<BbPluginApi["storage"]["database"]>,
+  db: ReturnType<AliaPluginApi["storage"]["database"]>,
 ) {
   // Owned here rather than in the shared migration list, which records progress
   // by array index and has silently skipped an appended statement before.

@@ -20,7 +20,7 @@ Run:
 /setup-pstack
 ```
 
-[`/setup-pstack`](../../skills/setup-pstack/SKILL.md) discovers the models the running host actually offers (on a BB host, `bb provider models` lists them), shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It records the choices where that host keeps configuration. If the host has no per-role config mechanism, it hands you the mapping to keep, and says so instead of writing a file nothing reads.
+[`/setup-pstack`](../../skills/setup-pstack/SKILL.md) discovers the models the running host actually offers (on a VesnALIA host, `alia provider models` lists them), shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It records the choices where that host keeps configuration. If the host has no per-role config mechanism, it hands you the mapping to keep, and says so instead of writing a file nothing reads.
 
 You only override what you care about. A role with no recorded choice keeps the skill's default. To restore a default later, remove that role's entry, or just run `/setup-pstack` again.
 

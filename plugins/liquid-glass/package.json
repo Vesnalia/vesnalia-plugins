@@ -1,35 +1,27 @@
 {
-  "name": "bb-plugin-liquid-glass",
+  "name": "alia-plugin-liquid-glass",
   "version": "0.5.21",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/luisllenin02/bb-plugin-liquid-glass.git"
-  },
-  "homepage": "https://github.com/luisllenin02/bb-plugin-liquid-glass#readme",
-  "bugs": {
-    "url": "https://github.com/luisllenin02/bb-plugin-liquid-glass/issues"
-  },
   "keywords": [
-    "bb-plugin",
+    "alia-plugin",
     "theme",
     "glass",
     "monocode"
   ],
   "license": "MIT",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.8"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.8"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.mjs && vitest run",
     "check": "npm run typecheck && npm test"
   },
-  "bb": {
+  "alia": {
     "name": "Liquid Glass",
-    "description": "monocode's translucent window inside bb: a wallpaper layer under genuinely frosted panes, with pickable vibrant accents, shell tint, opacity, and blur.",
+    "description": "monocode's translucent window inside VesnALIA: a wallpaper layer under genuinely frosted panes, with pickable vibrant accents, shell tint, opacity, and blur.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -63,7 +55,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -93,5 +84,22 @@
     "typescript": "^5.7.0",
     "vaul": "^1.1.2",
     "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/liquid-glass#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/liquid-glass"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

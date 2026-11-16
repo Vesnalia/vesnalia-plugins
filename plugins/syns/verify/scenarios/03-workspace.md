@@ -30,7 +30,7 @@ The brief never names Syns, the workspace or an app: the fragment has to carry t
 
 ## Should
 
-- [ ] Creates no other Syns repository and no other bb project (the folder already is a repository).
+- [ ] Creates no other Syns repository and no other VesnALIA project (the folder already is a repository).
 - [ ] Chat carries only the link and at most one sentence.
 - [ ] Readable at a narrow width and in dark mode.
 

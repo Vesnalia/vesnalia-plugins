@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import type {
-  BbPluginApi,
+  AliaPluginApi,
   PluginAgentConfigurationContext,
-} from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk";
 import { withTimeout } from "./src/async.js";
 import { renderEvidence, type Evidence } from "./src/evidence.js";
 import {
@@ -52,7 +52,7 @@ const MODEL_DISCOVERY_TIMEOUT_MS = 5_000;
  * Permission modes the reviewer will accept, least privileged first. The mode
  * is negotiated against what the provider actually advertises rather than
  * hardcoded, so a provider that only offers something wider is reported as
- * unable to host a reviewer instead of quietly getting one. bb briefly
+ * unable to host a reviewer instead of quietly getting one. VesnALIA briefly
  * advertised a narrower `readonly` mode and removed it again, so `accept-edits`
  * is currently the narrowest mode a reviewer can be spawned in. This stays a
  * list so a narrower mode can be preferred again by prepending it here.
@@ -61,9 +61,9 @@ const ADVISOR_PERMISSION_MODE_PREFERENCE: readonly AdvisorPermissionMode[] = [
   "accept-edits",
 ];
 const ADVISOR_PERMISSION_MODE_LABEL = "accept-edits mode";
-/** The host's own permission-mode union, whichever bb version is running. */
+/** The host's own permission-mode union, whichever VesnALIA version is running. */
 type AdvisorPermissionMode = NonNullable<
-  Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0]["permissionMode"]
+  Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0]["permissionMode"]
 >;
 /** Advice about a turn this old is stale; it is retired instead of sent. */
 const PENDING_ADVICE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -665,7 +665,7 @@ type PrimaryGoneReason = "thread-archived" | "thread-deleted";
  * The narrowest mode in {@link ADVISOR_PERMISSION_MODE_PREFERENCE} this
  * provider supports, or null when it supports none of them. The value is taken
  * from `supported` rather than from the preference list so it stays typed as
- * the host's own permission-mode union on whichever bb version is running.
+ * the host's own permission-mode union on whichever VesnALIA version is running.
  */
 function narrowestReviewMode<Mode extends string>(
   supported: readonly Mode[],
@@ -888,7 +888,7 @@ ${runningChildren
   .map((child) => `- ${JSON.stringify(child.title)} (${child.id})`)
   .join("\n")}
 
-These threads are still working, and bb wakes the primary agent when they report. An answer that says it is waiting for them, and does not claim their results, is the correct state and is not a finding. Only a claim that their work is finished, or a conclusion that depends on results they have not returned yet, is.
+These threads are still working, and VesnALIA wakes the primary agent when they report. An answer that says it is waiting for them, and does not claim their results, is the correct state and is not a finding. Only a claim that their work is finished, or a conclusion that depends on results they have not returned yet, is.
 
 `;
 }
@@ -942,7 +942,7 @@ export function buildAdvisorPrompt(args: {
   runningChildren?: readonly { id: string; title: string }[];
 }): string {
   const budget = reviewBudget(args.timeoutSeconds);
-  return `You are the independent advisor for bb coding thread ${args.primaryThreadId}.
+  return `You are the independent advisor for VesnALIA coding thread ${args.primaryThreadId}.
 
 Review the primary agent's work, reasoning summaries, tool activity, and current workspace state. You are a reviewer, not the primary executor. Inspect files with read-only tools when the transcript alone is insufficient. Review the work this thread was asked to do: a thread that is linked, quoted or investigated here supplies context, not tasks.
 
@@ -1003,7 +1003,7 @@ export function buildIncrementalAdvisorPrompt(args: {
   runningChildren?: readonly { id: string; title: string }[];
 }): string {
   const budget = reviewBudget(args.timeoutSeconds);
-  return `You are the independent advisor for bb coding thread ${args.primaryThreadId}.
+  return `You are the independent advisor for VesnALIA coding thread ${args.primaryThreadId}.
 
 New review round. Everything from your earlier rounds in this conversation still applies: the review priorities, the watchdog policy, the closure rules and the result format. You already saw the primary timeline through sequence ${args.reviewedThroughSeq}; below is only what happened after it. Judge the new work against the whole conversation, including requirements the user gave earlier, and inspect the workspace with read-only tools when the entries below are not enough.
 
@@ -1027,8 +1027,8 @@ Return exactly one result in the same format as before. Its markers, field names
 ${RESULT_BLOCK}${additionalSection(args.additionalInstructions)}`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     enabled: {
       type: "boolean",
       label: "Enable advisor",
@@ -1121,11 +1121,11 @@ export default async function plugin(bb: BbPluginApi) {
     // Threads that follow the global default have no thread-scoped event to
     // wake them, so their toggle would keep showing the previous default until
     // a remount.
-    bb.realtime.publish("advisor-settings-changed", {});
+    alia.realtime.publish("advisor-settings-changed", {});
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS advisor_sessions (
       primary_thread_id TEXT PRIMARY KEY,
       advisor_thread_id TEXT NOT NULL,
@@ -1192,7 +1192,7 @@ export default async function plugin(bb: BbPluginApi) {
       ON advisor_reviews(primary_thread_id, finding_key)`,
     `ALTER TABLE advisor_reviews ADD COLUMN resolved_at INTEGER`,
     `ALTER TABLE advisor_reviews ADD COLUMN resolved_reason TEXT NOT NULL DEFAULT ''`,
-    // The mode is negotiated per review, so a bb upgrade that adds a narrower
+    // The mode is negotiated per review, so a VesnALIA upgrade that adds a narrower
     // one must retire the wider session instead of reusing it. Legacy rows
     // carry '', which matches no negotiated mode and so respawns once.
     `ALTER TABLE advisor_sessions
@@ -1229,7 +1229,7 @@ export default async function plugin(bb: BbPluginApi) {
       updated_at INTEGER NOT NULL
     )`,
     `DROP TABLE IF EXISTS advisor_new_thread_default`,
-    // bb fixes a provider session's instructions when it builds the session,
+    // VesnALIA fixes a provider session's instructions when it builds the session,
     // so Advisor switched on mid-session never reaches the agent through them.
     // `told_at` is when the thread's agent last received the policy (its session
     // started with Advisor on, or a turn was briefed), `switched_on_at` when a
@@ -1273,7 +1273,7 @@ export default async function plugin(bb: BbPluginApi) {
     Date.now(),
   );
   if (abandonedRuns > 0) {
-    bb.log.info(`Advisor closed ${abandonedRuns} review run(s) left unfinished when it last stopped.`);
+    alia.log.info(`Advisor closed ${abandonedRuns} review run(s) left unfinished when it last stopped.`);
   }
 
   const primaryContexts = new Map<string, PrimaryContext>();
@@ -1322,7 +1322,7 @@ export default async function plugin(bb: BbPluginApi) {
    * an ephemeral broadcast that a reconnecting client may have missed.
    */
   function publishThreadChanged(primaryThreadId: string): void {
-    bb.realtime.publish("thread-changed", { threadId: primaryThreadId });
+    alia.realtime.publish("thread-changed", { threadId: primaryThreadId });
   }
 
   const threadToggleRowSchema = z.object({ enabled: z.number().int() });
@@ -1668,7 +1668,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const modelDiscoveryLifetime = new AbortController();
-  bb.onDispose(() => modelDiscoveryLifetime.abort());
+  alia.onDispose(() => modelDiscoveryLifetime.abort());
 
   function discover<T>(operation: (signal: AbortSignal) => Promise<T>) {
     return withTimeout(
@@ -1681,7 +1681,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function listHostModelOptions(hostId: string, providerId?: string) {
     const providers = (await discover((signal) =>
-      bb.sdk.providers.list({ hostId, signal }),
+      alia.sdk.providers.list({ hostId, signal }),
     )).filter(
       (provider) =>
         (providerId === undefined || provider.id === providerId) &&
@@ -1693,7 +1693,7 @@ export default async function plugin(bb: BbPluginApi) {
       providers.map(async (provider) => {
         try {
           const catalog = await discover((signal) =>
-            bb.sdk.providers.models({ hostId, providerId: provider.id, signal }),
+            alia.sdk.providers.models({ hostId, providerId: provider.id, signal }),
           );
           if (catalog.modelLoadError !== null) {
             throw new Error(
@@ -1737,7 +1737,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function modelConfiguration() {
-    const hosts = await discover(() => bb.sdk.hosts.list());
+    const hosts = await discover(() => alia.sdk.hosts.list());
     return {
       hosts: await Promise.all(
         hosts.map(async (host) => {
@@ -1960,7 +1960,7 @@ export default async function plugin(bb: BbPluginApi) {
     publishThreadChanged(primaryThreadId);
 
     try {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: primaryThreadId,
         mode: "queue-if-active",
         input: [
@@ -2002,7 +2002,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function hasCompletedLatestTurn(primaryThreadId: string): Promise<boolean> {
-    const timeline = await bb.sdk.threads.timeline({
+    const timeline = await alia.sdk.threads.timeline({
       threadId: primaryThreadId,
       includeNestedRows: "true",
       segmentLimit: "2",
@@ -2053,12 +2053,12 @@ export default async function plugin(bb: BbPluginApi) {
   async function runningChildThreads(
     primaryThreadId: string,
   ): Promise<{ id: string; title: string }[]> {
-    const runningIds = (await bb.sdk.threads.listRunning())
+    const runningIds = (await alia.sdk.threads.listRunning())
       .map((thread) => thread.id)
       .filter((id) => id !== primaryThreadId);
     const children: { id: string; title: string }[] = [];
     for (let start = 0; start < runningIds.length; start += THREAD_LIST_PAGE) {
-      const page = await bb.sdk.threads.list({
+      const page = await alia.sdk.threads.list({
         threadIds: runningIds.slice(start, start + THREAD_LIST_PAGE),
         parentThreadId: primaryThreadId,
         includeHidden: true,
@@ -2082,7 +2082,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return await runningChildThreads(primaryThreadId);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Advisor could not list the running child threads of ${primaryThreadId}: ${describeError(error)}`,
       );
       return [];
@@ -2094,7 +2094,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       children = await runningChildThreads(primaryThreadId);
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Advisor could not check the child threads of ${primaryThreadId}, so it reviews the turn now: ${describeError(error)}`,
       );
       return false;
@@ -2102,7 +2102,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (children.length === 0) return false;
     waitingForChildren.add(primaryThreadId);
     publishThreadChanged(primaryThreadId);
-    bb.log.info(
+    alia.log.info(
       `Post-turn advisor review of ${primaryThreadId} waits for ${children.length} running child thread(s): ${children.map((child) => child.id).join(", ")}.`,
     );
     return true;
@@ -2114,7 +2114,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       if ((await runningChildThreads(parentId)).length > 0) return;
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Advisor could not recheck the child threads of ${parentId}: ${describeError(error)}`,
       );
       return;
@@ -2122,7 +2122,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (waitingForChildren.delete(parentId)) publishThreadChanged(parentId);
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     modelConfiguration,
 
     threadToggle({ threadId }) {
@@ -2235,7 +2235,7 @@ export default async function plugin(bb: BbPluginApi) {
         .get(threadId, advisorThreadId, threadId, advisorThreadId);
       if (!owned) return { available: false };
       try {
-        const thread = await bb.sdk.threads.get({ threadId: advisorThreadId });
+        const thread = await alia.sdk.threads.get({ threadId: advisorThreadId });
         return { available: !thread.deletedAt };
       } catch {
         return { available: false };
@@ -2343,7 +2343,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (waitingForCompletion.has(threadId)) {
         return { started: false, waiting: true };
       }
-      const thread = await bb.sdk.threads.get({ threadId });
+      const thread = await alia.sdk.threads.get({ threadId });
       if (thread.status !== "idle") {
         waitingForCompletion.add(threadId);
         publishThreadChanged(threadId);
@@ -2452,7 +2452,7 @@ export default async function plugin(bb: BbPluginApi) {
     if (latest !== undefined) {
       return { state: "pending" as const, run: null, finding: null, timeoutSeconds };
     }
-    const reviewsTurns = await bb.sdk.threads
+    const reviewsTurns = await alia.sdk.threads
       .get({ threadId })
       .then(
         (thread) =>
@@ -2491,7 +2491,7 @@ export default async function plugin(bb: BbPluginApi) {
     };
   }
 
-  bb.rpc.register(
+  alia.rpc.register(
     turnReviewContract,
     { turnReview: ({ threadId, since }) => turnReview(threadId, since) },
     {
@@ -2501,7 +2501,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   );
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: ADVISOR_TOOL,
     description:
       "Run an independent review-only model pass on this thread and return concrete issues before finalizing.",
@@ -2521,7 +2521,7 @@ export default async function plugin(bb: BbPluginApi) {
         .describe("What changed, what was verified, and any uncertainty the advisor should examine"),
     }),
     async execute({ focus }, context) {
-      // The tool set is not hot-mutated: bb hands it to a provider session when
+      // The tool set is not hot-mutated: VesnALIA hands it to a provider session when
       // that session starts or resumes, so a thread switched off mid-session
       // can still be holding this tool from when it was on. Re-reading the
       // switch here is what makes "off" actually mean off, rather than "off
@@ -2585,7 +2585,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  alia.agents.configure((context) => {
     if (
       !threadIsReviewable({
         id: context.thread.id,
@@ -2604,10 +2604,10 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   // A thread's first message builds its provider session, instructions and all,
-  // so an agent that starts with Advisor on already has the policy. A bb
+  // so an agent that starts with Advisor on already has the policy. A VesnALIA
   // without this hook costs a new thread one redundant briefing at most.
   try {
-    bb.experimental_hooks.on("message.dispatch", (context) => {
+    alia.experimental_hooks.on("message.dispatch", (context) => {
       try {
         if (
           context.thread.status === "pending" &&
@@ -2618,17 +2618,17 @@ export default async function plugin(bb: BbPluginApi) {
         }
       } catch (error) {
         // Bookkeeping only: a throwing hook would fail the user's message.
-        bb.log.warn(`Advisor could not record the session start of ${context.thread.id}: ${describeError(error)}`);
+        alia.log.warn(`Advisor could not record the session start of ${context.thread.id}: ${describeError(error)}`);
       }
       return { action: "proceed" };
     });
   } catch (error) {
-    bb.log.warn(`Advisor cannot see session starts on this bb: ${describeError(error)}`);
+    alia.log.warn(`Advisor cannot see session starts on this VesnALIA: ${describeError(error)}`);
   }
 
   async function primaryGone(primaryThreadId: string): Promise<PrimaryGoneReason | null> {
     try {
-      const thread = await bb.sdk.threads.get({ threadId: primaryThreadId });
+      const thread = await alia.sdk.threads.get({ threadId: primaryThreadId });
       if (thread.deletedAt) return "thread-deleted";
       return thread.archivedAt ? "thread-archived" : null;
     } catch (error) {
@@ -2643,13 +2643,13 @@ export default async function plugin(bb: BbPluginApi) {
     if (cached) return cached;
 
     const [thread, defaults] = await Promise.all([
-      bb.sdk.threads.get({ threadId: primaryThreadId }),
-      bb.sdk.threads.defaultExecutionOptions({ threadId: primaryThreadId }),
+      alia.sdk.threads.get({ threadId: primaryThreadId }),
+      alia.sdk.threads.defaultExecutionOptions({ threadId: primaryThreadId }),
     ]);
     if (!thread.environmentId) {
       throw new Error("The primary thread has no ready environment for advisor review.");
     }
-    const environment = await bb.sdk.environments.get({
+    const environment = await alia.sdk.environments.get({
       environmentId: thread.environmentId,
     });
     const context = {
@@ -2680,7 +2680,7 @@ export default async function plugin(bb: BbPluginApi) {
     | "unknown"
   > {
     try {
-      const catalog = await bb.sdk.providers.models({
+      const catalog = await alia.sdk.providers.models({
         environmentId,
         providerId,
       });
@@ -2696,7 +2696,7 @@ export default async function plugin(bb: BbPluginApi) {
         ? "unsupported"
         : { kind: "supported", permissionMode };
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not read the ${providerId} catalog for advisor review: ${String(error)}`,
       );
       return "unknown";
@@ -2742,7 +2742,7 @@ export default async function plugin(bb: BbPluginApi) {
       return followPrimaryModel(context);
     }
     try {
-      const catalog = await bb.sdk.providers.models({
+      const catalog = await alia.sdk.providers.models({
         environmentId: context.environmentId,
         providerId: selection.providerId,
       });
@@ -2781,11 +2781,11 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Could not validate advisor model on host ${context.hostId}: ${String(error)}`,
       );
     }
-    bb.log.warn(
+    alia.log.warn(
       `Advisor configuration ${selection.providerId}/${selection.model}/${selection.reasoningLevel} is unavailable on host ${context.hostId}; following the primary model for this review.`,
     );
     return followPrimaryModel(context);
@@ -2841,7 +2841,7 @@ export default async function plugin(bb: BbPluginApi) {
       stored.model !== resolved.model ||
       stored.reasoning_level !== (resolved.reasoningLevel ?? "default") ||
       stored.environment_id !== context.environmentId ||
-      // A session spawned under a wider mode must not survive a bb upgrade
+      // A session spawned under a wider mode must not survive a VesnALIA upgrade
       // that made a narrower one available: reusing it would quietly keep the
       // reviewer's write access.
       stored.permission_mode !== permissionModeCandidates(primaryThreadId, resolved)[0]
@@ -2852,13 +2852,13 @@ export default async function plugin(bb: BbPluginApi) {
       stored.reviews_sent >= REVIEWER_ROLLOVER_REVIEWS &&
       (reviewingThreads.get(primaryThreadId) ?? 0) <= 1
     ) {
-      bb.log.info(
+      alia.log.info(
         `Advisor starts a fresh reviewer for ${primaryThreadId}: ${stored.advisor_thread_id} has reviewed it ${stored.reviews_sent} times.`,
       );
       return null;
     }
     try {
-      const thread = await bb.sdk.threads.get({
+      const thread = await alia.sdk.threads.get({
         threadId: stored.advisor_thread_id,
       });
       if (!thread.archivedAt && !thread.deletedAt) {
@@ -2869,7 +2869,7 @@ export default async function plugin(bb: BbPluginApi) {
         };
       }
     } catch (error) {
-      bb.log.warn(`Recreating missing advisor thread: ${String(error)}`);
+      alia.log.warn(`Recreating missing advisor thread: ${String(error)}`);
     }
     return null;
   }
@@ -2883,13 +2883,13 @@ export default async function plugin(bb: BbPluginApi) {
     const { providerId, model } = resolved;
     const reasoningLevel = resolved.reasoningLevel ?? undefined;
     const candidates = permissionModeCandidates(primaryThreadId, resolved);
-    const primary = await bb.sdk.threads.get({ threadId: primaryThreadId });
-    let advisor: Awaited<ReturnType<typeof bb.sdk.threads.spawn>> | null = null;
+    const primary = await alia.sdk.threads.get({ threadId: primaryThreadId });
+    let advisor: Awaited<ReturnType<typeof alia.sdk.threads.spawn>> | null = null;
     let permissionMode = candidates[0]!;
     let lastError: unknown;
     for (const candidate of candidates) {
       try {
-        advisor = await bb.sdk.threads.spawn({
+        advisor = await alia.sdk.threads.spawn({
           projectId: context.projectId,
           providerId,
           model,
@@ -2903,13 +2903,13 @@ export default async function plugin(bb: BbPluginApi) {
             ...(reasoningLevel ? { reasoningLevel: "explicit" as const } : {}),
           },
           // The host validates this. When the catalog was unreadable the
-          // candidate may be a mode this bb build's types do not know, which is
+          // candidate may be a mode this VesnALIA build's types do not know, which is
           // exactly the boundary a cast belongs at: a refusal falls through to
           // the next, wider candidate rather than being assumed up front.
           permissionMode: candidate as AdvisorPermissionMode,
           environment: { type: "reuse", environmentId: context.environmentId },
           visibility: "hidden",
-          // bb archives and deletes the reviewer with its primary, including
+          // VesnALIA archives and deletes the reviewer with its primary, including
           // while Advisor is disabled or unloaded.
           lifecycleOwnerThreadId: primaryThreadId,
           title: `${ADVISOR_TITLE_PREFIX}${primary.title ?? primary.titleFallback ?? primaryThreadId}`,
@@ -2919,7 +2919,7 @@ export default async function plugin(bb: BbPluginApi) {
         break;
       } catch (error) {
         lastError = error;
-        bb.log.warn(
+        alia.log.warn(
           `Reviewer spawn refused in ${candidate} mode: ${String(error)}`,
         );
       }
@@ -2960,10 +2960,10 @@ export default async function plugin(bb: BbPluginApi) {
       replaced !== advisor.id &&
       (reviewingThreads.get(primaryThreadId) ?? 0) <= 1
     ) {
-      void bb.sdk.threads
+      void alia.sdk.threads
         .archive({ threadId: replaced })
         .catch((error: unknown) => {
-          bb.log.warn(
+          alia.log.warn(
             `Advisor could not archive the replaced reviewer ${replaced}: ${describeError(error)}`,
           );
         });
@@ -2995,9 +2995,9 @@ export default async function plugin(bb: BbPluginApi) {
 
   async function latestReviewerEvent(
     advisorThreadId: string,
-    types?: Parameters<typeof bb.sdk.threads.events.list>[0]["types"],
+    types?: Parameters<typeof alia.sdk.threads.events.list>[0]["types"],
   ): Promise<unknown> {
-    const rows = await bb.sdk.threads.events.list({
+    const rows = await alia.sdk.threads.events.list({
       threadId: advisorThreadId,
       order: "desc",
       limit: "1",
@@ -3034,7 +3034,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<boolean> {
     if (reviewerSeenSeq === null) return true;
     try {
-      const resets = await bb.sdk.threads.events.list({
+      const resets = await alia.sdk.threads.events.list({
         threadId: advisorThreadId,
         afterSeq: String(reviewerSeenSeq),
         types: ["thread/compacted", "thread/context/cleared"],
@@ -3042,7 +3042,7 @@ export default async function plugin(bb: BbPluginApi) {
       });
       return resets.length > 0;
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Advisor could not check the reviewer context of ${advisorThreadId}, so it sends the full transcript: ${describeError(error)}`,
       );
       return true;
@@ -3065,7 +3065,7 @@ export default async function plugin(bb: BbPluginApi) {
       cursor !== null && oldestSeq() > afterSeq + 1 && page < MAX_INCREMENTAL_TIMELINE_PAGES;
       page += 1
     ) {
-      const older: ReviewTimeline = await bb.sdk.threads.timeline({
+      const older: ReviewTimeline = await alia.sdk.threads.timeline({
         threadId: primaryThreadId,
         includeNestedRows: "true",
         segmentLimit: FULL_TIMELINE_SEGMENTS,
@@ -3205,7 +3205,7 @@ export default async function plugin(bb: BbPluginApi) {
       const remaining = deadline - Date.now();
       if (remaining <= 0) return { idle: false, lastError };
       try {
-        await bb.sdk.threads.wait({
+        await alia.sdk.threads.wait({
           threadId,
           status: "idle",
           timeoutMs: remaining,
@@ -3232,13 +3232,13 @@ export default async function plugin(bb: BbPluginApi) {
   >();
 
   try {
-    bb.events.on("interaction.pending", ({ thread, interaction }) => {
+    alia.events.on("interaction.pending", ({ thread, interaction }) => {
       for (const listener of reviewerRequestListeners.get(thread.id) ?? []) {
         listener(interaction);
       }
     });
   } catch (error) {
-    bb.log.warn(`Advisor cannot hear reviewer requests as they arrive on this bb: ${describeError(error)}`);
+    alia.log.warn(`Advisor cannot hear reviewer requests as they arrive on this VesnALIA: ${describeError(error)}`);
   }
 
   async function pendingReviewerRequests(
@@ -3246,7 +3246,7 @@ export default async function plugin(bb: BbPluginApi) {
     signal: AbortSignal,
   ): Promise<readonly ReviewerInteraction[]> {
     try {
-      return await bb.sdk.threads.interactions.list({
+      return await alia.sdk.threads.interactions.list({
         threadId: advisorThreadId,
         signal,
       });
@@ -3314,7 +3314,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<string | null> {
     let newest: string | null = null;
     try {
-      const { rows } = await bb.sdk.threads.timeline({
+      const { rows } = await alia.sdk.threads.timeline({
         threadId: advisorThreadId,
         segmentLimit: "8",
       });
@@ -3459,7 +3459,7 @@ export default async function plugin(bb: BbPluginApi) {
 
     let advisorThreadId: string;
     const sendPrompt = async (threadId: string): Promise<void> => {
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId,
         mode: "start",
         input: [{ type: "text", text: prompt, mentions: [] }],
@@ -3496,7 +3496,7 @@ export default async function plugin(bb: BbPluginApi) {
             signal,
           );
           if (!grace.idle) {
-            void bb.sdk.threads
+            void alia.sdk.threads
               .stop({ threadId: advisorThreadId })
               .catch(() => undefined);
             await waitForAdvisorIdle(advisorThreadId, BUSY_REVIEWER_GRACE_MS, signal);
@@ -3515,7 +3515,7 @@ export default async function plugin(bb: BbPluginApi) {
     const sentAtMs = Date.now();
 
     const stopAdvisor = (): void => {
-      void bb.sdk.threads
+      void alia.sdk.threads
         .stop({ threadId: advisorThreadId })
         .catch(() => undefined);
     };
@@ -3538,7 +3538,7 @@ export default async function plugin(bb: BbPluginApi) {
     const timeoutMs = currentSettings.timeoutSeconds * 1000;
     const { finalizeAfterMs } = reviewBudget(currentSettings.timeoutSeconds);
     const finalizeTimer = setTimeout(() => {
-      void bb.sdk.threads
+      void alia.sdk.threads
         .send({
           threadId: advisorThreadId,
           mode: "steer-if-active",
@@ -3552,7 +3552,7 @@ export default async function plugin(bb: BbPluginApi) {
           ],
         })
         .catch((error) => {
-          bb.log.warn(
+          alia.log.warn(
             `Could not send the advisor finalization deadline: ${describeError(error)}`,
           );
         });
@@ -3584,7 +3584,7 @@ export default async function plugin(bb: BbPluginApi) {
       stopAdvisor();
       // A timeout is self-describing; the exception name and the reviewer's
       // thread id are developer detail that ends up verbatim in the panel.
-      bb.log.warn(
+      alia.log.warn(
         requestReason === null
           ? `Advisor review timed out: ${describeError(waitError)}`
           : `Advisor review stopped: ${requestReason}`,
@@ -3594,7 +3594,7 @@ export default async function plugin(bb: BbPluginApi) {
     let output: string | null;
     if (waited) {
       try {
-        ({ output } = await bb.sdk.threads.output({
+        ({ output } = await alia.sdk.threads.output({
           threadId: advisorThreadId,
         }));
       } catch (error) {
@@ -3739,7 +3739,7 @@ export default async function plugin(bb: BbPluginApi) {
   ): Promise<AdvisorOutcome> {
     let timeline: ReviewTimeline;
     try {
-      timeline = await bb.sdk.threads.timeline({
+      timeline = await alia.sdk.threads.timeline({
         threadId: primaryThreadId,
         includeNestedRows: "true",
         segmentLimit: FULL_TIMELINE_SEGMENTS,
@@ -3837,7 +3837,7 @@ export default async function plugin(bb: BbPluginApi) {
         usageStatus: run.promptSent ? "pending" : "none",
       });
     } catch (error) {
-      bb.log.warn(`Advisor could not record a review run: ${describeError(error)}`);
+      alia.log.warn(`Advisor could not record a review run: ${describeError(error)}`);
       return;
     }
     if (run.promptSent && run.advisorThreadId) void captureUsage(run);
@@ -3853,7 +3853,7 @@ export default async function plugin(bb: BbPluginApi) {
         costBetween(run.costBefore, after.cost),
       );
     } catch (error) {
-      bb.log.warn(`Advisor could not read reviewer usage: ${describeError(error)}`);
+      alia.log.warn(`Advisor could not read reviewer usage: ${describeError(error)}`);
       try {
         ledger.recordUsage(run.ledgerId, null, null);
       } catch {
@@ -3896,7 +3896,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         await continueWithFinding(primaryThreadId, row.id, true);
       } catch (error) {
-        bb.log.error(
+        alia.log.error(
           `Automatic Advisor continuation failed for ${primaryThreadId}: ${describeError(error)}`,
         );
       }
@@ -3911,14 +3911,14 @@ export default async function plugin(bb: BbPluginApi) {
         "manual",
       );
       if (outcome.kind !== "reviewed") {
-        bb.log.warn(
+        alia.log.warn(
           `Manual advisor review ${outcome.kind} for ${primaryThreadId}: ${outcome.reason}.`,
         );
         return;
       }
       await surfacePendingFinding(primaryThreadId, outcome);
     } catch (error) {
-      bb.log.error(
+      alia.log.error(
         `Manual advisor review failed for ${primaryThreadId}: ${describeError(error)}`,
       );
     }
@@ -3933,7 +3933,7 @@ export default async function plugin(bb: BbPluginApi) {
       [...readThreadRows(primaryThreadId)].sort(byTurnDescending)[0]
         ?.source_seq ?? -1;
     try {
-      const timeline = await bb.sdk.threads.timeline({
+      const timeline = await alia.sdk.threads.timeline({
         threadId: primaryThreadId,
         includeNestedRows: "true",
         segmentLimit: "2",
@@ -3950,7 +3950,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function turnIsCompaction(threadId: string): Promise<boolean> {
     try {
       return compactionUnderWay(
-        await bb.sdk.threads.events.list({
+        await alia.sdk.threads.events.list({
           threadId,
           types: [...TURN_START_EVENT_TYPES],
           order: "desc",
@@ -3958,7 +3958,7 @@ export default async function plugin(bb: BbPluginApi) {
         }),
       );
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Advisor could not tell whether ${threadId} is compacting, so it briefs the turn: ${describeError(error)}`,
       );
       return false;
@@ -3974,7 +3974,7 @@ export default async function plugin(bb: BbPluginApi) {
    * began. Both travel as a message because a running session ignores changed
    * instructions.
    */
-  bb.events.on("thread.active", async ({ thread }) => {
+  alia.events.on("thread.active", async ({ thread }) => {
     if (waitingForChildren.delete(thread.id)) publishThreadChanged(thread.id);
     if (
       !threadIsReviewable(thread) ||
@@ -3991,10 +3991,10 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       // A steer to a thread whose turn already ended would start a new turn
       // rather than join this one.
-      const current = await bb.sdk.threads.get({ threadId: thread.id });
+      const current = await alia.sdk.threads.get({ threadId: thread.id });
       if (current.status !== "active") return;
       if (await turnIsCompaction(thread.id)) return;
-      await bb.sdk.threads.send({
+      await alia.sdk.threads.send({
         threadId: thread.id,
         mode: "steer",
         input: [
@@ -4015,13 +4015,13 @@ export default async function plugin(bb: BbPluginApi) {
       })();
       if (findings.length > 0) publishThreadChanged(thread.id);
     } catch (error) {
-      bb.log.warn(`Advisor could not brief the running turn of ${thread.id}: ${describeError(error)}`);
+      alia.log.warn(`Advisor could not brief the running turn of ${thread.id}: ${describeError(error)}`);
     } finally {
       briefingThreads.delete(thread.id);
     }
   });
 
-  bb.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
+  alia.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
     void settleWaitingParent(thread);
     // Always consume the one-turn suppression flag, even when settings or the
     // event payload make this idle transition ineligible for post-turn review.
@@ -4083,21 +4083,21 @@ export default async function plugin(bb: BbPluginApi) {
         "post-turn",
       );
       if (outcome.kind === "skipped") {
-        bb.log.info(
+        alia.log.info(
           `Post-turn advisor review of ${threadId} skipped: ${outcome.reason}.`,
         );
         return;
       }
       if (outcome.kind === "unavailable") {
         holdTurn(threadId, true);
-        bb.log.warn(
+        alia.log.warn(
           `Post-turn advisor review skipped for ${threadId}: ${outcome.reason}.`,
         );
         return;
       }
       await surfacePendingFinding(threadId, outcome);
     } catch (error) {
-      bb.log.error(
+      alia.log.error(
         `Post-turn advisor review failed for ${threadId}: ${describeError(error)}`,
       );
     }
@@ -4108,7 +4108,7 @@ export default async function plugin(bb: BbPluginApi) {
     answer: string,
   ): Promise<{ sourceSeq: number; activity: ReturnType<typeof latestTurnActivity> }> {
     try {
-      const timeline = await bb.sdk.threads.timeline({
+      const timeline = await alia.sdk.threads.timeline({
         threadId: primaryThreadId,
         includeNestedRows: "true",
         segmentLimit: "2",
@@ -4118,7 +4118,7 @@ export default async function plugin(bb: BbPluginApi) {
         activity: latestTurnActivity(timeline.rows, answer),
       };
     } catch (error) {
-      bb.log.warn(
+      alia.log.warn(
         `Advisor could not read the completed turn of ${primaryThreadId}, so it counts as substantive: ${describeError(error)}`,
       );
       return { sourceSeq: -1, activity: null };
@@ -4133,12 +4133,12 @@ export default async function plugin(bb: BbPluginApi) {
   ): void {
     holdTurn(primaryThreadId, substantive);
     ledger.skipped({ primaryThreadId, sourceSeq, reason, at: Date.now() });
-    bb.log.info(
+    alia.log.info(
       `Post-turn advisor review of ${primaryThreadId} at sequence ${sourceSeq} skipped (${reason}); its content is carried into the next review.`,
     );
   }
 
-  bb.events.on("thread.failed", async ({ thread, error }) => {
+  alia.events.on("thread.failed", async ({ thread, error }) => {
     void settleWaitingParent(thread);
     toolReviewedThreads.delete(thread.id);
     toolUnavailableThreads.delete(thread.id);
@@ -4166,7 +4166,7 @@ export default async function plugin(bb: BbPluginApi) {
     toolUnavailableThreads.delete(thread.id);
 
     if (permanent) {
-      // Only a real deletion destroys history. Archiving is reversible in bb,
+      // Only a real deletion destroys history. Archiving is reversible in VesnALIA,
       // so discarding a thread's reviews on archive would lose them for good
       // the moment the user unarchived it.
       db.prepare(`DELETE FROM advisor_reviews WHERE primary_thread_id = ?`).run(
@@ -4190,52 +4190,52 @@ export default async function plugin(bb: BbPluginApi) {
 
     // The hidden reviewer is archived either way: it is an appliance of the
     // primary thread, and unarchiving the primary respawns one on next review.
-    // bb already does this for reviewers it owns through the primary; this
+    // VesnALIA already does this for reviewers it owns through the primary; this
     // covers reviewers spawned before Advisor set that owner.
     if (advisorThreadId) {
-      await bb.sdk.threads
+      await alia.sdk.threads
         .archive({ threadId: advisorThreadId })
         .catch(() => undefined);
     }
   }
 
-  bb.events.on("thread.deleted", async ({ thread }) => {
+  alia.events.on("thread.deleted", async ({ thread }) => {
     await retireThread(thread, true);
     await settleWaitingParent(thread);
   });
-  bb.events.on("thread.archived", async ({ thread }) => {
+  alia.events.on("thread.archived", async ({ thread }) => {
     await retireThread(thread, false);
     await settleWaitingParent(thread);
   });
 
-  bb.cli.register({
+  alia.cli.register({
     name: "advisor",
     summary: "Inspect advisor configuration and review history",
     commands: [
       {
         name: "status",
         summary: "Show advisor status for the current or given thread",
-        usage: "bb advisor status [thread-id]",
+        usage: "alia advisor status [thread-id]",
       },
       {
         name: "reviews",
         summary: "Show recent advisor reviews and their usage ledger",
-        usage: "bb advisor reviews [thread-id] [--json]",
+        usage: "alia advisor reviews [thread-id] [--json]",
       },
       {
         name: "enable",
         summary: "Run the advisor in one thread, whatever the global setting is",
-        usage: "bb advisor enable [thread-id]",
+        usage: "alia advisor enable [thread-id]",
       },
       {
         name: "disable",
         summary: "Stop the advisor in one thread, whatever the global setting is",
-        usage: "bb advisor disable [thread-id]",
+        usage: "alia advisor disable [thread-id]",
       },
       {
         name: "follow",
         summary: "Drop a thread's override so it follows the global setting again",
-        usage: "bb advisor follow [thread-id]",
+        usage: "alia advisor follow [thread-id]",
       },
     ],
     run(argv, cliContext) {
@@ -4249,7 +4249,7 @@ export default async function plugin(bb: BbPluginApi) {
         if (!threadId) {
           return {
             exitCode: 1,
-            stderr: "Pass a thread id or run from a bb thread.",
+            stderr: "Pass a thread id or run from a VesnALIA thread.",
           };
         }
         writeThreadOverride(
@@ -4299,7 +4299,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       if (command === "reviews") {
         if (!threadId) {
-          return { exitCode: 1, stderr: "Pass a thread id or run from a bb thread." };
+          return { exitCode: 1, stderr: "Pass a thread id or run from a VesnALIA thread." };
         }
         const rows = db
           .prepare(
@@ -4355,7 +4355,7 @@ export default async function plugin(bb: BbPluginApi) {
       return {
         exitCode: 1,
         stderr:
-          "Usage: bb advisor status [thread-id]\n       bb advisor reviews [thread-id] [--json]\n       bb advisor enable|disable|follow [thread-id]",
+          "Usage: VesnALIA advisor status [thread-id]\n       VesnALIA advisor reviews [thread-id] [--json]\n       VesnALIA advisor enable|disable|follow [thread-id]",
       };
     },
   });

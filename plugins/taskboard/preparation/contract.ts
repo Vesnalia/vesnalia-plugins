@@ -1,4 +1,4 @@
-import type { PluginRpcContract } from '@get-bb/plugin-sdk';
+import type { PluginRpcContract } from '@vesnalia/plugin-sdk';
 import { z } from 'zod';
 import { workSourceSchema } from '../contract.js';
 import { empiricalHostObservationSchema } from '../empirical/contract.js';

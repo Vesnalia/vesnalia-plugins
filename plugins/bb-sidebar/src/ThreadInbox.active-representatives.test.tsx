@@ -56,7 +56,7 @@ describe("scoped active representative regressions", () => {
     ["A", "Grandchild A"],
     ["B", "Deep B"],
   ])("chooses the nearest alternating-project flat ancestor in %s", async (scope, title) => {
-    window.localStorage.setItem("bb-sidebar:shelf-expansion:v1", JSON.stringify({ active: false }));
+    window.localStorage.setItem("alia-sidebar:shelf-expansion:v1", JSON.stringify({ active: false }));
     renderSlot(
       inbox,
       { ...listProps, activeThreadId: "deep" },
@@ -99,7 +99,7 @@ describe("scoped active representative regressions", () => {
   it.each(["missing", "archived", "same-project", "unknown"])(
     "handles %s active ancestry after settled limit",
     async (mode) => {
-      window.localStorage.setItem("bb-sidebar:shelf-expansion:v1", JSON.stringify({ settled: true }));
+      window.localStorage.setItem("alia-sidebar:shelf-expansion:v1", JSON.stringify({ settled: true }));
       const parent = thread({ id: "parent", title: "Representative", isArchived: mode === "archived" });
       const child = thread({ id: "child", title: "Orphan", parentThreadId: mode === "missing" ? "missing" : "parent" });
       const rows = [

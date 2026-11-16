@@ -1,14 +1,14 @@
-// bb-plugin-agent-board — bounded bb.sdk fan-out and snapshot assembly.
+// alia-plugin-agent-board — bounded alia.sdk fan-out and snapshot assembly.
 //
 // This is the ONLY module that performs SDK calls. Everything is derived
 // state: responses are cached ephemerally (short TTLs, request coalescing)
 // purely as performance data — nothing here is authoritative, and a plugin
-// reload starts from scratch with BB as the source of truth.
+// reload starts from scratch with VesnALIA as the source of truth.
 //
 // Bounded by BOARD_LIMITS: thread count, depth, timeline segments, event
 // tail, preview lengths. `partial` flags a truncated tree so the board can
 // say so instead of lying by omission.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { BoardCard, ExecutionTimeline, ExecutionTimelineInput, GlobalDashboardSnapshot } from "../contract/rpc";
 import { BOARD_LIMITS, columnForStatus, countCards, previewText, redactOperationalText } from "./board-model";
 import {
@@ -26,7 +26,7 @@ import {
   type ThreadListRow,
   type ThreadRowLike,
   type TimelineResponse,
-} from "./bb-source";
+} from "./alia-source";
 import { RedteamBoardSource } from "./redteam-source";
 import type { BoardActivityFeed } from "../contract/rpc";
 import {
@@ -35,7 +35,7 @@ import {
   type GlobalSourceResult,
 } from "./global-model";
 import { FleetSource, scopedFleetCards, addFleetGroups, fleetTimelineEvents, fleetActive } from "./fleet-source";
-import { normalizeBbTimeline } from "./timeline-model";
+import { normalizeAliaTimeline } from "./timeline-model";
 import { decodeTimelineCursor, encodeTimelineCursor } from "./timeline-pagination";
 
 /** Remote label only, stripped of credentials/query/fragment; never a link. */
@@ -111,11 +111,11 @@ export class BoardCollector {
   private generation = 0;
   private globalGeneration = 0;
 
-  constructor(bb: BbPluginApi, now: () => number = () => Date.now()) {
-    this.sdk = bb.sdk;
+  constructor(alia: AliaPluginApi, now: () => number = () => Date.now()) {
+    this.sdk = alia.sdk;
     this.now = now;
-    this.redteam = new RedteamBoardSource(bb, now);
-    this.fleet = new FleetSource(bb, now);
+    this.redteam = new RedteamBoardSource(alia, now);
+    this.fleet = new FleetSource(alia, now);
   }
 
   // -- cache helpers -------------------------------------------------------
@@ -133,7 +133,7 @@ export class BoardCollector {
     return value;
   }
 
-  /** Drop cached responses so the next read reflects live BB state. */
+  /** Drop cached responses so the next read reflects live VesnALIA state. */
   invalidate(invalidateFleet = true): void {
     if (invalidateFleet) this.fleet.invalidate();
     this.generation += 1;
@@ -280,7 +280,7 @@ export class BoardCollector {
   // -- snapshot ------------------------------------------------------------
   //
   // One normalized board for a root thread and its publicly visible
-  // descendants. The BB source remains authoritative for generic cards; the
+  // descendants. The VesnALIA source remains authoritative for generic cards; the
   // optional Redteam adapter contributes normalized cards at the boundary.
 
   async snapshot(rootThreadId: string, options?: { fresh?: boolean }): Promise<BoardSnapshot> {
@@ -389,7 +389,7 @@ export class BoardCollector {
     const fleet = scopedFleetCards(await this.fleet.collect(fresh), new Map(rows.map(r => [r.id, r.projectId ?? null])));
     cards.push(...fleet.cards);
 
-    // Bounded recent-activity feeds: one per live-observed BB thread (the
+    // Bounded recent-activity feeds: one per live-observed VesnALIA thread (the
     // focus view's tail), plus the Redteam per-scan operation feeds.
     const activityFeeds: BoardActivityFeed[] = [];
     for (const row of rows) {
@@ -476,21 +476,21 @@ export class BoardCollector {
     fresh: boolean,
     dismissedKeys?: ReadonlySet<string>,
   ): Promise<GlobalDashboardSnapshot> {
-    const [bbResult, redteamResult, fleetResult] = await Promise.allSettled([
-      this.collectGlobalBb(),
+    const [aliaResult, redteamResult, fleetResult] = await Promise.allSettled([
+      this.collectGlobalAlia(),
       this.redteam.collectGlobal({ fresh }),
       this.fleet.collect(fresh),
     ]);
     const groups: GlobalExecutionGroup[] = [];
-    const unavailable: Array<"bb" | "redteam"> = [];
+    const unavailable: Array<"alia" | "redteam"> = [];
     let partial = false;
 
-    if (bbResult.status === "fulfilled") {
-      groups.push(...bbResult.value.groups);
-      partial ||= bbResult.value.partial;
-      if (!bbResult.value.available) unavailable.push("bb");
+    if (aliaResult.status === "fulfilled") {
+      groups.push(...aliaResult.value.groups);
+      partial ||= aliaResult.value.partial;
+      if (!aliaResult.value.available) unavailable.push("alia");
     } else {
-      unavailable.push("bb");
+      unavailable.push("alia");
       partial = true;
     }
     if (redteamResult.status === "fulfilled") {
@@ -526,7 +526,7 @@ export class BoardCollector {
     return dashboard;
   }
 
-  private async collectGlobalBb(): Promise<GlobalSourceResult> {
+  private async collectGlobalAlia(): Promise<GlobalSourceResult> {
     const listed = await this.sdk.threads.list({
       archived: false,
       includeHidden: true,
@@ -579,8 +579,8 @@ export class BoardCollector {
         childThreadIds,
       }, ctx, null);
       return {
-        key: `bb:${group.root.id}`,
-        source: "bb",
+        key: `alia:${group.root.id}`,
+        source: "alia",
         title: globalThreadTitle(group.root),
         threadId: representative.id,
         projectId: group.root.projectId ?? representative.projectId ?? null,
@@ -618,8 +618,8 @@ export class BoardCollector {
       Math.max(input.limit ?? BOARD_LIMITS.executionTimelineDefaultEvents, 1),
       BOARD_LIMITS.executionTimelineMaxEvents,
     );
-    const target = input.source === "bb" ? input.threadId : input.source === "ollama-fleet" ? input.jobId : input.scanId;
-    const key = `${input.executionKey}:${input.source}:${target}:${limit}:${input.source === "bb" ? input.cursor ?? "latest" : "latest"}`;
+    const target = input.source === "alia" ? input.threadId : input.source === "ollama-fleet" ? input.jobId : input.scanId;
+    const key = `${input.executionKey}:${input.source}:${target}:${limit}:${input.source === "alia" ? input.cursor ?? "latest" : "latest"}`;
     const cached = this.executionTimelineCache.get(key);
     if (cached) {
       const ttl = cached.value.active ? TTL.executionTimelineActive : TTL.executionTimelineTerminal;
@@ -695,12 +695,12 @@ export class BoardCollector {
       }),
     ]);
     if (timelineResult.status === "rejected") {
-      throw new Error("BB execution timeline is unavailable");
+      throw new Error("VesnALIA execution timeline is unavailable");
     }
     const lifecycleEvents = lifecycleResult.status === "fulfilled" ? lifecycleResult.value : [];
     const fleet = !cursor || (!cursor.anchor && !cursor.rowsDone) ? await this.fleet.collect() : null;
     const jobs = fleet?.jobs.filter(j => j.origin?.threadId === input.threadId) ?? [];
-    const normalized = normalizeBbTimeline({
+    const normalized = normalizeAliaTimeline({
       executionKey: input.executionKey,
       threadId: input.threadId,
       timeline: timelineResult.value,
@@ -785,7 +785,7 @@ export function groupGlobalThreadRows(rows: readonly ThreadRowLike[]): GlobalThr
 }
 
 function globalThreadTitle(row: ThreadRowLike): string {
-  return row.title ?? previewText(row.titleFallback, 120) ?? (row.originPluginId ? `Plugin: ${row.originPluginId}` : "BB thread");
+  return row.title ?? previewText(row.titleFallback, 120) ?? (row.originPluginId ? `Plugin: ${row.originPluginId}` : "VesnALIA thread");
 }
 
 function isGlobalNonterminal(row: ThreadRowLike): boolean {
@@ -830,7 +830,7 @@ function globalSummaryCard(
     parentKey: null,
     depth: isRoot ? 0 : 1,
     kind: "thread",
-    source: "bb",
+    source: "alia",
     title: globalThreadTitle(row),
     subtitle: isRoot ? "parent thread" : "child thread",
     status,

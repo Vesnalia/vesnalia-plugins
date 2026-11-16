@@ -2,8 +2,8 @@
  * Live GitHub status for ticket chips — "mirror, don't integrate" phase 2.
  *
  * The official GitHub plugin publishes no RPC methods (verified 2026-09-25:
- * `bb plugin rpc list github` lists none), but it maintains a local SQLite
- * cache at ~/.bb/plugins/github/data.db whose `items` table is keyed
+ * `alia plugin rpc list github` lists none), but it maintains a local SQLite
+ * cache at ~/.vesnalia/plugins/github/data.db whose `items` table is keyed
  * (repo, kind, number) and carries state/title/updated_at. This module
  * reads that cache server-side, per repo + numbers, and returns whatever
  * it finds. Every failure mode degrades to an empty map: the board must
@@ -35,7 +35,7 @@ export interface GitHubItemStatus {
  * direction behind them. No re-check ahead of this demote exists anymore:
  * the gh CLI probe was removed with issue #236 (no process execution in the
  * shipped runtime), so "stale open" means the dot degrades to unsure and
- * waits for bb's own cache to catch up.
+ * waits for VesnALIA's own cache to catch up.
  */
 export const OPEN_CONFIRM_MS = 60 * 60 * 1000;
 

@@ -1,15 +1,15 @@
-import { type BbPluginApi } from "@get-bb/plugin-sdk";
+import { type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { requireThreadId, type Registrar } from "../lib/toolkit";
 
-export function registerTerminalTools(bb: BbPluginApi, register: Registrar) {
+export function registerTerminalTools(alia: AliaPluginApi, register: Registrar) {
   register("terminals", {
     name: "bbtools_terminals_list",
     description:
-      "List bb terminal sessions in the current thread: id, title, status, cwd. Use it to see running shells and their scope.",
+      "List VesnALIA terminal sessions in the current thread: id, title, status, cwd. Use it to see running shells and their scope.",
     parameters: z.object({}),
     execute: async (_params, ctx) => {
-      const res = await bb.sdk.terminals.list({
+      const res = await alia.sdk.terminals.list({
         scope: { kind: "thread", threadId: requireThreadId(ctx) },
       });
       if (res.sessions.length === 0) return "No terminal sessions in this thread.";
@@ -25,13 +25,13 @@ export function registerTerminalTools(bb: BbPluginApi, register: Registrar) {
   register("terminals", {
     name: "bbtools_terminal_create",
     description:
-      "Create a bb terminal session attached to the current thread. Use it to run a shell the user can watch live in the bb UI, or start a long-running command in a visible terminal.",
+      "Create a VesnALIA terminal session attached to the current thread. Use it to run a shell the user can watch live in the VesnALIA UI, or start a long-running command in a visible terminal.",
     parameters: z.object({
       title: z.string().optional().describe("Optional terminal title."),
       command: z.string().optional().describe("Initial command to run; omit for an interactive shell."),
     }),
     execute: async ({ title, command }, ctx) => {
-      const session = await bb.sdk.terminals.create({
+      const session = await alia.sdk.terminals.create({
         cols: 120,
         rows: 30,
         scope: { kind: "thread", threadId: requireThreadId(ctx) },
@@ -45,13 +45,13 @@ export function registerTerminalTools(bb: BbPluginApi, register: Registrar) {
   register("terminals", {
     name: "bbtools_terminal_output",
     description:
-      "Read recent output of a bb terminal session (decoded text tail). Use it after bbtools_terminal_input or bbtools_terminal_create to see what the shell printed.",
+      "Read recent output of a VesnALIA terminal session (decoded text tail). Use it after bbtools_terminal_input or bbtools_terminal_create to see what the shell printed.",
     parameters: z.object({
       terminalId: z.string().describe("Terminal session id (from bbtools_terminals_list or bbtools_terminal_create)."),
       tailBytes: z.number().int().min(200).max(200000).optional().describe("Max bytes of tail to read (default 8000)."),
     }),
     execute: async ({ terminalId, tailBytes }) => {
-      const res = await bb.sdk.terminals.output({
+      const res = await alia.sdk.terminals.output({
         terminalId,
         ...(tailBytes ? { tailBytes } : { tailBytes: 8000 }),
       });
@@ -68,7 +68,7 @@ export function registerTerminalTools(bb: BbPluginApi, register: Registrar) {
   register("terminals", {
     name: "bbtools_terminal_input",
     description:
-      "Type text into a bb terminal session (as if the user typed it). Use it to run commands or answer prompts in a terminal the user can watch.",
+      "Type text into a VesnALIA terminal session (as if the user typed it). Use it to run commands or answer prompts in a terminal the user can watch.",
     parameters: z.object({
       terminalId: z.string().describe("Terminal session id."),
       text: z.string().min(1).describe("Text to type into the terminal."),
@@ -76,7 +76,7 @@ export function registerTerminalTools(bb: BbPluginApi, register: Registrar) {
     }),
     execute: async ({ terminalId, text, pressEnter }) => {
       const data = text + (pressEnter ?? true ? "\n" : "");
-      await bb.sdk.terminals.input({
+      await alia.sdk.terminals.input({
         terminalId,
         dataBase64: Buffer.from(data, "utf8").toString("base64"),
       });
@@ -87,13 +87,13 @@ export function registerTerminalTools(bb: BbPluginApi, register: Registrar) {
   register("terminals", {
     name: "bbtools_terminal_close",
     description:
-      "Close a bb terminal session. Use it to clean up terminals you created.",
+      "Close a VesnALIA terminal session. Use it to clean up terminals you created.",
     parameters: z.object({
       terminalId: z.string().describe("Terminal session id."),
       force: z.boolean().optional().describe("Force-close even if a process is running (default: only close when clean)."),
     }),
     execute: async ({ terminalId, force }) => {
-      await bb.sdk.terminals.close({
+      await alia.sdk.terminals.close({
         terminalId,
         mode: force ? "force" : "if-clean",
       });

@@ -34,7 +34,7 @@
           },
           "product": {
             "enum": [
-              "bb",
+              "alia",
               "SDK",
               "ZCode"
             ]

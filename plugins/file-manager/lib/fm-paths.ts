@@ -18,7 +18,7 @@ const messages = defineMessages(
 
 /**
  * The hard root, as reported by the backend bootstrap (`state.root`). The panel
- * cannot know it up front — it is the home directory of whoever runs bb — so
+ * cannot know it up front — it is the home directory of whoever runs VesnALIA — so
  * FileManagerPanel publishes it here once and the helpers below default to it.
  */
 let clientRoot = SEPARATOR;
@@ -39,7 +39,7 @@ export function isAbsolutePath(path: string): boolean {
  * The root as it should read inside a sentence shown to a user.
  *
  * There is no fixed answer to name: the root is the home directory of whoever
- * runs bb, so the only truthful source is `state.root` from the backend. Until
+ * runs VesnALIA, so the only truthful source is `state.root` from the backend. Until
  * that arrives `clientRoot` is still "/", and "outside /" would be a lie in
  * every direction — so the words stand in for the path until the backend says
  * which one it is.

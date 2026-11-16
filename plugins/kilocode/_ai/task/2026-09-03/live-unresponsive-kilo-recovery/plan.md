@@ -15,13 +15,13 @@ Allow an KiloCode-backed `thread/start` to survive one transient health or attac
 - [ ] An ambiguous `session.create` timeout causes exactly one bounded, read-only `listSessions` reconciliation and never causes a second `session.create` POST.
 - [ ] Reconciliation continues only when exactly one session carries the request's opaque correlation title and expected directory; zero or multiple matches fail closed before binding, identity notification, response, or prompt execution.
 - [ ] Recovery diagnostics use privacy-safe key-value fields containing only `stage`, elapsed milliseconds, bounded decision, and safe operator action; tests prove they exclude prompt text, credentials, requested paths/directories, correlation tokens, and raw server errors/output.
-- [ ] Persistent-stall guidance tells the operator to inspect `bb kilo status` and to use **Tools → KiloCode → Reload KiloCode** only after confirming active work is safe to interrupt.
+- [ ] Persistent-stall guidance tells the operator to inspect `alia kilo status` and to use **Tools → KiloCode → Reload KiloCode** only after confirming active work is safe to interrupt.
 - [ ] Existing `session.create` no-id behavior, healthy startup, Task create-count, process lock, targeted bridge/process tests, full tests, typecheck, and build all pass.
 - [ ] A screenshot is saved at `_ai/task/2026-09-03/live-unresponsive-kilo-recovery/evidence/recovery-targeted-tests.png`, showing the deterministic targeted test command passing and visible test names for bounded recovery, fail-closed session reconciliation, stage-specific error guidance, and the no-duplicate-spawn invariant.
 
 ## User Story
 
-As a BB user starting an KiloCode-backed thread, I want one safe bounded recovery opportunity when the existing detached server is temporarily unresponsive, so a transient stall can recover without duplicating work and a persistent stall tells me how to investigate and recover without silently interrupting active sessions.
+As a VesnALIA user starting an KiloCode-backed thread, I want one safe bounded recovery opportunity when the existing detached server is temporarily unresponsive, so a transient stall can recover without duplicating work and a persistent stall tells me how to investigate and recover without silently interrupting active sessions.
 
 ## BDD Scenarios
 
@@ -30,8 +30,8 @@ As a BB user starting an KiloCode-backed thread, I want one safe bounded recover
 ```gherkin
 Scenario: A transient stall recovers and the thread starts once
   Given the locked KiloCode server is alive but temporarily unresponsive
-  When the user starts an KiloCode-backed BB thread and the bounded recovery succeeds
-  Then the thread starts once without a duplicate server or duplicate BB work
+  When the user starts an KiloCode-backed ALIA thread and the bounded recovery succeeds
+  Then the thread starts once without a duplicate server or duplicate ALIA work
 ```
 
 ### Edge Path
@@ -39,7 +39,7 @@ Scenario: A transient stall recovers and the thread starts once
 ```gherkin
 Scenario: A persistent stall fails safely with actionable diagnostics
   Given the locked KiloCode server remains alive and unresponsive through the bounded recovery
-  When the user starts an KiloCode-backed BB thread
+  When the user starts an KiloCode-backed ALIA thread
   Then startup fails without terminating active work or spawning another server and identifies the failed stage and safe recovery action
 ```
 
@@ -59,7 +59,7 @@ Scenario: A persistent stall fails safely with actionable diagnostics
 - `src/process.ts`, especially `attachOrSpawn`, `reclaimIfStale`, `attachIfHealthy`, lock ownership, and the live-lock/no-spawn invariant.
 - Automatic kill, reload, recycle, process replacement, duplicate server startup, or any inference that an unreachable server is idle.
 - Host RPC contracts, settings UI, provider-recovery UI, or changes to `server.ts`, `host.ts`, `contract.ts`, `src/host-handlers.ts`, and `src/app/`.
-- Retrying the complete `thread/start` handler or replaying `respondResult`, `bindSession`, `thread/identity`, prompt execution, or BB provisioning.
+- Retrying the complete `thread/start` handler or replaying `respondResult`, `bindSession`, `thread/identity`, prompt execution, or VesnALIA provisioning.
 - Increasing `KILO_SETUP_MS`, health timeouts, process probe timeouts, or retry counts in the process layer.
 - Blindly retrying `session.create`; there must be exactly one POST.
 - Logging prompts, credentials, directories/paths, private content, correlation titles, exception messages, or raw KiloCode output.
@@ -86,7 +86,7 @@ Scenario: A persistent stall fails safely with actionable diagnostics
 - **Standard library:** Use `node:crypto` `randomUUID()` only if needed to generate a request-local opaque correlation title; do not build a custom ID generator.
 - **Test:** Existing Vitest setup, bridge dependency injection, hand-written KiloCode fake, and process `spawn` mock.
 - **Behavioral dependency:** KiloCode session list returns the title and directory sent to `session.create`. If a deterministic contract test disproves exact round-tripping, reconciliation must remain fail-closed and the implementation must stop for a revised proof mechanism rather than weaken uniqueness.
-- **Operational dependency:** `bb kilo status` and **Tools → KiloCode → Reload KiloCode** already exist; this patch only references them in guidance and does not call them.
+- **Operational dependency:** `alia kilo status` and **Tools → KiloCode → Reload KiloCode** already exist; this patch only references them in guidance and does not call them.
 
 ## Data Flow
 
@@ -98,7 +98,7 @@ Scenario: A persistent stall fails safely with actionable diagnostics
 6. If creation returns, the returned ID follows the existing path. If and only if creation has an ambiguous timeout, the bridge records `stage=session-create decision=reconcile` and calls bounded `listSessions` once.
 7. Reconciliation selects sessions whose title exactly equals the opaque correlation title and whose directory exactly equals the requested directory. Exactly one match proves the original request's session; zero or multiple matches produce `decision=fail-closed`. The title/token is never logged or included in an error.
 8. A returned or uniquely reconciled ID enters the existing once-only sequence: validate ID → bind session → emit one identity → emit reset → answer once → run the prompt at most once.
-9. Any persistent pre-answer failure returns one JSON-RPC error with a stage, elapsed time, decision, `bb kilo status`, and conditional safe-reload guidance. No process action is taken.
+9. Any persistent pre-answer failure returns one JSON-RPC error with a stage, elapsed time, decision, `alia kilo status`, and conditional safe-reload guidance. No process action is taken.
 
 ## Model and Architecture Notes
 
@@ -126,7 +126,7 @@ Scenario: A persistent stall fails safely with actionable diagnostics
 - Preserve existing messages for unrelated failures such as invalid parameters, missing session IDs, and version mismatch.
 - Convert terminal startup stalls into a stable message shape whose public fields are limited to stage, elapsed time, bounded decision, and safe operator action.
 - Use the exact stage values `health`, `attach`, and `session-create` in logs and user-visible errors.
-- For persistent stalls, include: `Inspect bb kilo status. Use Tools → KiloCode → Reload KiloCode only after confirming active work is safe to interrupt.`
+- For persistent stalls, include: `Inspect alia kilo status. Use Tools → KiloCode → Reload KiloCode only after confirming active work is safe to interrupt.`
 - If health/attach recovery fails, clear the tentative cached client as today and fail before session mutation.
 - If session creation times out, do not assume failure and do not issue another POST. Attempt one bounded list; continue only on one exact correlation match.
 - If list reconciliation times out, errors, yields zero matches, yields multiple matches, or returns a match without an ID, fail closed before binding or response.

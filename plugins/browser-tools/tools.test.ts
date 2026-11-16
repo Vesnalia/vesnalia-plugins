@@ -1,5 +1,5 @@
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
-import { makePluginAgentConfigurationContext, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
+import { makePluginAgentConfigurationContext, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 import { makePluginRig, snapshotPayload, startLifecycleService, deferred, THREAD } from "./test/plugin-rig.js";
 

@@ -31,7 +31,7 @@ Repeat for Agent Board only after Fleet succeeds.
 
 ## Distribution
 
-Git installation builds source using BB's managed installer. Keep `dist/`
+Git installation builds source using VesnALIA's managed installer. Keep `dist/`
 untracked. Local path installs require prepared dependencies. npm installation
 requires prebuilt artifacts and separate approval; npm publication is deferred.
 

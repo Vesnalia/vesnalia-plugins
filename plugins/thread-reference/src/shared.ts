@@ -1,5 +1,5 @@
 export const THREAD_REFERENCE_PROVIDER = "thread-reference";
-export const THREAD_REFERENCE_MIME = "application/x-bb-thread-reference";
+export const THREAD_REFERENCE_MIME = "application/x-alia-thread-reference";
 export const THREAD_REFERENCE_PLUGIN_ID = "thread-reference";
 
 const MAX_THREAD_ID_LENGTH = 256;

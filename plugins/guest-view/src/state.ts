@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { OwnerState, rpcContract } from "../server";
 
 export type Rpc = ReturnType<typeof useRpc<typeof rpcContract>>;

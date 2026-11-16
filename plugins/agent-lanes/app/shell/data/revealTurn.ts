@@ -1,12 +1,12 @@
 // Open a thread scrolled to one turn instead of its latest message.
 //
-// bb's own message search does this by navigating to the thread with router
+// VesnALIA's own message search does this by navigating to the thread with router
 // state `{ searchMessageSeq, searchThreadId }`: the thread view scrolls to the
 // row holding that event sequence, loading older rows if it must, and flashes
 // it. The plugin SDK's `open()` has no option for that state yet, so once the
 // thread's route is showing we re-announce the same URL with it. React Router
 // reads `history.state.usr` as the location state, and a popstate makes it
-// take the new entry. If bb ever changes this, the thread simply opens at its
+// take the new entry. If VesnALIA ever changes this, the thread simply opens at its
 // latest message, as it did before.
 
 const SETTLE_MS = 600;

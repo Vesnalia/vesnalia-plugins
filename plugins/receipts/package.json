@@ -1,22 +1,14 @@
 {
-  "name": "bb-plugin-receipts",
+  "name": "alia-plugin-receipts",
   "version": "0.1.1",
-  "description": "Receipts for every coding agent in bb: Claude Code, Codex, Hermes Agent, OpenCode, Pi, and Cursor token usage with estimated API cost.",
+  "description": "Receipts for every coding agent in VesnALIA: Claude Code, Codex, Hermes Agent, OpenCode, Pi, and Cursor token usage with estimated API cost.",
   "type": "module",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ChrBoebel/bb-plugin-receipts.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ChrBoebel/bb-plugin-receipts/issues"
-  },
-  "homepage": "https://github.com/ChrBoebel/bb-plugin-receipts#readme",
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Receipts",
     "description": "Shows what each coding agent actually cost — Claude Code, Codex, Hermes Agent, OpenCode, Pi and Cursor — with a daily chart and a model, project and day breakdown.",
     "branding": {
@@ -39,9 +31,9 @@
     "tsconfig.json"
   ],
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc -p . --noEmit",
-    "dev": "bb plugin dev"
+    "dev": "alia plugin dev"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.3",
@@ -53,12 +45,28 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.4.34",
     "@radix-ui/react-dialog": "^1.1.19",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
   },
-  "author": "Christopher Böbel <ChrBoebel@users.noreply.github.com>"
+  "author": "Christopher Böbel <ChrBoebel@users.noreply.github.com>",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.34"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/receipts#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/receipts"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

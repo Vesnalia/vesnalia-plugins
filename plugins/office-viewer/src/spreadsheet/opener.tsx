@@ -1,10 +1,10 @@
-// Office Viewer — spreadsheet file opener. BB routes
+// Office Viewer — spreadsheet file opener. VesnALIA routes
 // .xlsx/.xls/.ods/.csv files here from chat links, the file picker and
-// `bb thread open`. The workbook runs in the IronCalc engine: formulas
+// `alia thread open`. The workbook runs in the IronCalc engine: formulas
 // recalculate as you type, and saving writes back only the edited cells.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { useBbNavigate, useComposer, useRpc, type PluginFileOpenerProps } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useComposer, useRpc, type PluginFileOpenerProps } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../../server";
 import { Button } from "@/components/ui/button";
@@ -102,7 +102,7 @@ function Status({ children }: { children: ReactNode }) {
 
 export function SpreadsheetOpener({ path, source }: PluginFileOpenerProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const composer = useComposer();
   const locale = detectLocale();
   const request = useMemo(
@@ -698,7 +698,7 @@ export function SpreadsheetOpener({ path, source }: PluginFileOpenerProps) {
       ) : null}
 
       {sheet ? (
-        <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-2 text-xs" data-bb-ru-skip="">
+        <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-2 text-xs" data-alia-ru-skip="">
           <span className="w-24 shrink-0 truncate rounded border border-border px-1.5 py-0.5 font-mono text-muted-foreground" aria-label={t("nameBox")}>{nameBox}</span>
           <span className="shrink-0 font-serif italic text-muted-foreground" aria-hidden>fx</span>
           {editing ? (
@@ -777,7 +777,7 @@ export function SpreadsheetOpener({ path, source }: PluginFileOpenerProps) {
             )}
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-60" data-bb-ru-skip="" onCloseAutoFocus={(event) => event.preventDefault()}>
+        <ContextMenuContent className="w-60" data-alia-ru-skip="" onCloseAutoFocus={(event) => event.preventDefault()}>
           <ContextMenuItem disabled={!range} onSelect={() => quote()}>
             <Icon name="MessageSquarePlus" className="size-4" /> {t("quote")}
           </ContextMenuItem>
@@ -837,7 +837,7 @@ export function SpreadsheetOpener({ path, source }: PluginFileOpenerProps) {
 
       {workbook && workbook.sheets.length ? (
         <div className="flex h-8 shrink-0 items-center gap-2 border-t border-border pl-1 pr-3">
-          <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto" role="tablist" aria-label={t("sheets")} data-bb-ru-skip="">
+          <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto" role="tablist" aria-label={t("sheets")} data-alia-ru-skip="">
             {workbook.sheets.map((item, index) => (
               <button
                 key={`${index}:${item.name}`}
@@ -872,7 +872,7 @@ export function SpreadsheetOpener({ path, source }: PluginFileOpenerProps) {
       ) : null}
 
       <Dialog open={commentOpen} onOpenChange={setCommentOpen}>
-        <DialogContent data-bb-ru-skip="">
+        <DialogContent data-alia-ru-skip="">
           <DialogHeader>
             <DialogTitle>{t("commentTitle")}</DialogTitle>
             <DialogDescription className="font-mono">{base && range ? `${base.name}!${rangeLabel(range)}` : ""}</DialogDescription>

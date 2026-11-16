@@ -64,7 +64,7 @@ not get one by surprise when the Proxmox host is full.
   Linux kinds, QEMU with HVF for Windows. Its ID, label, hosts and fields
   stay, so stored boxes, configurations and `on` keep working.
 - One new field, `windows-image`: the image `windows-arm64-desktop` boxes
-  are cloned from, such as `bb-box-windows`. Empty, the default, turns
+  are cloned from, such as `alia-box-windows`. Empty, the default, turns
   them off.
 - `tart` is needed only while a Tart kind has an image, and QEMU only
   while `windows-image` is set, so a Mac can serve Windows boxes alone.
@@ -82,14 +82,14 @@ do not. The panel shows the arm64 badge (040).
 
 **QEMU.**
 
-- bb-box runs the `qemu-system-aarch64` and `qemu-img` on the host user's
+- alia-box runs the `qemu-system-aarch64` and `qemu-img` on the host user's
   PATH, looked for where `tart` is. 11.1 is the version tested; check a
   newer one with the conformance suite before relying on it.
 - A VM runs as below. `<VM>` is its directory, and `<share>` is QEMU's
   own, beside its binary, which has the UEFI firmware.
 
   ```sh
-  qemu-system-aarch64 -name bb-box-<box ID> -machine virt -accel hvf -cpu host \
+  qemu-system-aarch64 -name alia-box-<box ID> -machine virt -accel hvf -cpu host \
     -smp <cores> -m <memory> \
     -drive if=pflash,format=raw,readonly=on,file=<share>/edk2-aarch64-code.fd \
     -drive if=pflash,format=raw,file=<VM>/vars.fd \
@@ -101,7 +101,7 @@ do not. The panel shows the arm64 badge (040).
   ```
 
 - It starts with `nohup`, detached from the SSH session as `tart run` is,
-  never with `-daemonize`, and bb-box waits for its QMP socket. Scripts on
+  never with `-daemonize`, and alia-box waits for its QMP socket. Scripts on
   the Mac drive it over QMP.
 - User-mode networking: the guest reaches out through the Mac, and only
   the Mac reaches the guest, through the forwarded port. QEMU's vmnet
@@ -133,7 +133,7 @@ the host user, as `prepare-image.sh` does.
   - no address from the SMBIOS serial, and no guest agent.
 - It checks a clone as `build.sh` does: `check.ps1` over SSH, a save and a
   restore, then SSH and Cua again. It leaves a build directory under
-  `~/.bb-box/qemu/images/bb-box-windows/` with `disk.qcow2`, read-only,
+  `~/.alia-box/qemu/images/alia-box-windows/` with `disk.qcow2`, read-only,
   and `vars.fd`.
 - It takes about 16 min and about 25 GiB of disk beyond the backend's disk
   reserve, and stops rather than leave less than the reserve free.
@@ -141,7 +141,7 @@ the host user, as `prepare-image.sh` does.
 
 **Clones.**
 
-- A box's VM is `bb-box-<box ID>`: a directory under `~/.bb-box/qemu/vms/`
+- A box's VM is `alia-box-<box ID>`: a directory under `~/.alia-box/qemu/vms/`
   with a qcow2 overlay on the image's disk, made in 50 ms, and the image's
   UEFI variables, copied as an APFS clone (`cp -c`).
 - An overlay needs its base. An old build is deleted only when no VM's
@@ -159,7 +159,7 @@ the host user, as `prepare-image.sh` does.
   `quit`. `start` runs QEMU again with `-incoming defer`, then
   `migrate-incoming` and `cont`, and deletes the state file, which no
   longer matches the disk. Never a live save, and never `mapped-ram`.
-- After every restore, bb-box sets the guest's clock over SSH, as 039
+- After every restore, alia-box sets the guest's clock over SSH, as 039
   does on Proxmox.
 - A state that does not restore, as after an update of QEMU or macOS, is
   dropped, and the VM boots from its disk, as Tart's do. So does a VM that
@@ -185,7 +185,7 @@ the host user, as `prepare-image.sh` does.
 
 **Capacity.**
 
-- One survey of each Mac lists Tart's VMs and bb-box's QEMU VMs.
+- One survey of each Mac lists Tart's VMs and alia-box's QEMU VMs.
 - A running Windows VM counts its memory plus 2 GiB, from #150's 8.4 GB
   for 6 GiB, so a `small` box takes 10 GiB of the Mac's memory. A saved
   or warm one takes none, and holds its overlay and state on disk.
@@ -201,10 +201,10 @@ after it. `held()`, warm VMs and another install's VMs work as for Tart's.
 
 **On a Mac you also use.**
 
-- bb-box installs nothing there: no package, root, launchd job, TPM
+- alia-box installs nothing there: no package, root, launchd job, TPM
   emulator or network helper. It uses the QEMU you have.
-- Everything it writes is under the host user's `~/.bb-box`, and every VM,
-  image, directory and process it names starts `bb-box-`.
+- Everything it writes is under the host user's `~/.alia-box`, and every VM,
+  image, directory and process it names starts `alia-box-`.
 - Set the disk reserve to what you keep free, such as 60 GiB.
 - QEMU runs with `-display none`, so nothing shows on the Mac's screen.
   Core checks that no Dock icon shows when the host user is the one
@@ -224,9 +224,9 @@ current build, and its base read-only.
   needs nested virtualisation, is not measured.
 - A running `small` box takes about 10 GiB of the Mac's memory. A saved or
   warm one takes up to its memory size on disk, beside what it wrote.
-- As in 039: each box needs a Windows licence, and bb-box never ships an
+- As in 039: each box needs a Windows licence, and alia-box never ships an
   image; Windows boxes do not enrol, so they get no Git credentials from
-  BB, no child threads, and are not offered as a new box or as your
+  VesnALIA, no child threads, and are not offered as a new box or as your
   machines. Microsoft does not support Windows 11 in plain QEMU on Apple
   silicon. It works, without Microsoft's support.
 - An update of QEMU retires warm VMs, and a stopped box whose state does

@@ -1,16 +1,16 @@
 /**
  * The agent's messages between questions (a real session, thread thr_f6iewpgi7a): its feedback on question
- * 1 streamed as a message, then the card for question 2 ended the turn and bb folded the feedback away.
+ * 1 streamed as a message, then the card for question 2 ended the turn and VesnALIA folded the feedback away.
  * The plugin keeps that reply with the question, shows it on the next card and in the history. And a
  * question must stand on its own: question 2 there said "the earlier version … shown above" about code
  * no message held.
  */
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 import { FEEDBACK_MAX_CHARS, QUESTION_MAX_CHARS } from "../shared/types";
 import { LearningApi } from "./api";
-import { bbPorts } from "./bb-ports";
+import { aliaPorts } from "./alia-ports";
 import { OfferEngine } from "./offers";
 import { questionProblem, unclosedFence } from "./question";
 import { SessionService } from "./sessions";
@@ -113,7 +113,7 @@ describe("the agent's reply between questions", () => {
     ports.advance(1);
     void sessions.ask(threadId, Q2, "tool");
     await flush();
-    // The plugin reloads: bb cancels the open card, the new copy pauses the session.
+    // The plugin reloads: VesnALIA cancels the open card, the new copy pauses the session.
     sessions.dispose();
     ports.cancel("plugin-disposed");
     await flush();
@@ -225,8 +225,8 @@ describe("feedback passed with the verdict (thr_9fuduh4nry)", () => {
     expect(store.feedbackCards(threadId)).toEqual([]);
   });
 
-  it("reads the current turn from bb's log: the newest turn/started row's turn", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
+  it("reads the current turn from VesnALIA's log: the newest turn/started row's turn", async () => {
+    const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
     const rows: Row[] = [
       { seq: 1, createdAt: 1, turnId: "turn_1", type: "turn/started", data: {} },
       { seq: 2, createdAt: 2, turnId: "turn_1", type: "turn/completed", data: { status: "completed" } },
@@ -238,7 +238,7 @@ describe("feedback passed with the verdict (thr_9fuduh4nry)", () => {
       if (fail) throw new Error("log unavailable");
       return listEvents(rows, input);
     });
-    const ports = bbPorts(bb, () => {});
+    const ports = aliaPorts(alia, () => {});
     expect(await ports.currentTurn(WORK)).toBe("turn_2");
     fail = true;
     expect(await ports.currentTurn(WORK)).toBeNull();
@@ -272,7 +272,7 @@ describe("a session already running when the fix is installed (thr_f6iewpgi7a)",
     ports.say(threadId, "I'm waiting for your answer to question 2 in the card.");
     expect(store.exercises(sessionId).map((exercise) => exercise.reply)).toEqual([null, null]);
 
-    // Installing the fix reloads the plugin: bb cancels the card, and the new copy pauses the session.
+    // Installing the fix reloads the plugin: VesnALIA cancels the card, and the new copy pauses the session.
     sessions.dispose();
     ports.cancel("plugin-disposed");
     await flush();
@@ -374,9 +374,9 @@ describe("a question stands on its own", () => {
 
 type Row = LogRow;
 
-/** The fake host's events.list over `rows` (read when called, so a test can add rows), newest first, paged by `beforeSeq` as bb pages it. */
+/** The fake host's events.list over `rows` (read when called, so a test can add rows), newest first, paged by `beforeSeq` as VesnALIA pages it. */
 function host(rows: Row[], fail: boolean | (() => boolean) = false) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
+  const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
   const calls: { beforeSeq?: string; limit?: string }[] = [];
   harness.sdk.stub("threads.events.list", (input: { beforeSeq?: string; limit?: string; types: string[]; order: string }) => {
     if (typeof fail === "function" ? fail() : fail) throw new Error("log unavailable");
@@ -384,14 +384,14 @@ function host(rows: Row[], fail: boolean | (() => boolean) = false) {
     expect(input).toMatchObject({ types: ["item/completed"], order: "desc" });
     return listEvents(rows, { ...input, threadId: WORK, order: "desc" });
   });
-  return { ports: bbPorts(bb, () => {}), calls, harness };
+  return { ports: aliaPorts(alia, () => {}), calls, harness };
 }
 
 const message = (seq: number, createdAt: number, text: string): Row => ({ seq, createdAt, data: { item: { type: "agentMessage", id: `m${seq}`, text } } });
 const tool = (seq: number, createdAt: number): Row => ({ seq, createdAt, data: { item: { type: "toolCall", id: `t${seq}`, tool: "learning_feedback" } } });
 const all = (from: number, to: number | null) => ({ from, to, before: null, pages: 10 });
 
-describe("reading the agent's messages from bb's event log", () => {
+describe("reading the agent's messages from VesnALIA's event log", () => {
   it("answers the agent's messages inside the window, oldest first, and skips other items", async () => {
     const { ports } = host([message(1, 100, "waiting"), message(2, 200, FEEDBACK), tool(3, 210), message(4, 220, "  "), message(5, 300, "waiting for 2")]);
     expect(await ports.agentMessages(WORK, all(150, 300))).toEqual({ texts: [FEEDBACK], complete: true, before: null, pages: 1 });
@@ -405,7 +405,7 @@ describe("reading the agent's messages from bb's event log", () => {
     const { ports, calls } = host(rows);
     expect(await ports.agentMessages(WORK, all(5, null))).toEqual({ texts: ["first", "last"], complete: true, before: null, pages: 5 });
     expect(calls.map((call) => call.beforeSeq)).toEqual([undefined, "351", "251", "151", "51"]);
-    // Never more than bb takes per page.
+    // Never more than VesnALIA takes per page.
     expect(calls.every((call) => call.limit === "100")).toBe(true);
   });
 
@@ -418,7 +418,7 @@ describe("reading the agent's messages from bb's event log", () => {
     expect(calls.map((call) => call.beforeSeq)).toEqual([undefined, "351", "251", "151", "51"]);
   });
 
-  it("asks bb for pages it takes: a limit over 100 is refused live (bb 0.48.1), and here", async () => {
+  it("asks VesnALIA for pages it takes: a limit over 100 is refused live (VesnALIA 0.48.1), and here", async () => {
     expect(() => listEvents([], { threadId: WORK, order: "desc", limit: "101" })).toThrow("HTTP 400: Thread event limit cannot exceed 100");
     expect(listEvents([], { threadId: WORK, order: "desc", limit: "100" })).toEqual([]);
   });

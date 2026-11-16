@@ -3,11 +3,11 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   type PluginRpcClient,
-} from "@get-bb/plugin-sdk/app";
-import type { bbSidebarRpcContract } from "./server";
+} from "@vesnalia/plugin-sdk/app";
+import type { aliaSidebarRpcContract } from "./server";
 import type { ThreadLifecycleRow } from "./lifecycle";
 
-type LifecycleRpc = PluginRpcClient<typeof bbSidebarRpcContract>;
+type LifecycleRpc = PluginRpcClient<typeof aliaSidebarRpcContract>;
 export type LifecycleRows = ReadonlyMap<string, ThreadLifecycleRow>;
 
 const LOCAL_CACHE_KEY = "beside:lifecycle";

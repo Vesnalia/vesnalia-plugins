@@ -1,4 +1,4 @@
-// CodeMirror 6 Markdown source editor themed from BB's CSS variables.
+// CodeMirror 6 Markdown source editor themed from VesnALIA's CSS variables.
 import { useEffect, useRef } from "react";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from "@codemirror/view";

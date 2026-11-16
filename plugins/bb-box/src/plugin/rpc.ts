@@ -6,7 +6,7 @@ import { freemem } from "node:os";
 import { dirname, join } from "node:path";
 import { performance } from "node:perf_hooks";
 import { writeHeapSnapshot } from "node:v8";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { BoxError, OPERATOR, SPARES, describeError, ownedByThread, type BoxRecord } from "../core/boxes.ts";
 import { BY_PERSON } from "../core/box-log.ts";
 import { ControlError } from "../core/control.ts";
@@ -16,7 +16,7 @@ import { gpuMates } from "./gpu-page.ts";
 import { settingsCards } from "./gpu-settings.ts";
 import { sizeView } from "./views.ts";
 import type { SizeRequest } from "../core/sizes.ts";
-import type { BbBox } from "./setup.ts";
+import type { AliaBox } from "./setup.ts";
 import { profileLoop, type CpuProfile, type HeapProfile } from "./profile.ts";
 import { GENERAL_DEFAULTS } from "../core/document.ts";
 import { withPurposes } from "../transports/spawns.ts";
@@ -34,16 +34,16 @@ import type { Standing } from "../core/snapshot.ts";
 import { PRODUCT } from "../brand.ts";
 const PROFILES_KEPT = 5;
 
-/** bb-box's own folder of BB's data, beside its database: profiles/. */
-async function profileFolder(bb: BbPluginApi): Promise<string> {
-  const folder = join(dirname(bb.storage.database().name), "profiles");
+/** alia-box's own folder of VesnALIA's data, beside its database: profiles/. */
+async function profileFolder(alia: AliaPluginApi): Promise<string> {
+  const folder = join(dirname(alia.storage.database().name), "profiles");
   await mkdir(folder, { recursive: true, mode: 0o700 });
   return folder;
 }
 
 /** Keeps a profile as profiles/<time>.<extension>, written without holding the loop; and the last five of each. */
-async function keepProfile(bb: BbPluginApi, profile: CpuProfile | HeapProfile, extension: "cpuprofile" | "heapprofile"): Promise<string> {
-  const folder = await profileFolder(bb);
+async function keepProfile(alia: AliaPluginApi, profile: CpuProfile | HeapProfile, extension: "cpuprofile" | "heapprofile"): Promise<string> {
+  const folder = await profileFolder(alia);
   const file = join(folder, `${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`);
   await writeFile(file, JSON.stringify(profile), { mode: 0o600 });
   const kept = (await readdir(folder)).filter((name) => name.endsWith(`.${extension}`)).sort();
@@ -55,10 +55,10 @@ async function keepProfile(bb: BbPluginApi, profile: CpuProfile | HeapProfile, e
  * A full heap snapshot, as profiles/<time>.heapsnapshot, refused unless the machine has as much free memory as the
  * heap uses and a fifth more, as writing one may take about that. Only one is kept.
  */
-async function heapSnapshot(bb: BbPluginApi): Promise<string> {
+async function heapSnapshot(alia: AliaPluginApi): Promise<string> {
   const used = process.memoryUsage().heapUsed;
   if (freemem() < used * 1.2) throw new Error(`refused: the heap uses ${Math.round(used / 2 ** 20)} MiB and only ${Math.round(freemem() / 2 ** 20)} MiB is free`);
-  const folder = await profileFolder(bb);
+  const folder = await profileFolder(alia);
   for (const old of (await readdir(folder)).filter((name) => name.endsWith(".heapsnapshot"))) await rm(join(folder, old), { force: true });
   const began = performance.now();
   const file = writeHeapSnapshot(join(folder, `${new Date().toISOString().replace(/[:.]/g, "-")}.heapsnapshot`));
@@ -82,7 +82,7 @@ function answerWithin<T>(ms: number, work: (signal: AbortSignal) => Promise<T>):
   return Promise.race([work(signal), late]);
 }
 
-export function registerRpc(bb: BbPluginApi, app: BbBox): void {
+export function registerRpc(alia: AliaPluginApi, app: AliaBox): void {
   const { boxes, snapshots } = app;
   const takeChecks = new TakeChecks(snapshots);
 
@@ -90,7 +90,7 @@ export function registerRpc(bb: BbPluginApi, app: BbBox): void {
     try {
       return boxSnapshotsView(snapshots, box, await takeChecks.why(box));
     } catch (error) {
-      bb.log.warn(`Could not read box ${box.name}'s snapshots for its page: ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`Could not read box ${box.name}'s snapshots for its page: ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   };
@@ -253,7 +253,7 @@ export function registerRpc(bb: BbPluginApi, app: BbBox): void {
   };
 
   // What each method starts is counted as for it.
-  bb.rpc.register(contract, withPurposes("rpc", {
+  alia.rpc.register(contract, withPurposes("rpc", {
     async state({ threadId }) {
       const project = await app.projectOf(threadId).catch(() => null);
       const audience = await boxes.audienceNow(threadId, project);
@@ -277,14 +277,14 @@ export function registerRpc(bb: BbPluginApi, app: BbBox): void {
       guarded(threadId, box, force, () =>
         change("Releasing the box", async () => {
           if (deleteKept) await snapshots.unkeepForRelease(await boxes.get(threadId, box), BY_PERSON);
-          return boxes.release(threadId, box, "released in BB Box's panel", BY_PERSON);
+          return boxes.release(threadId, box, "released in VesnALIA Box's panel", BY_PERSON);
         }),
       ),
     stop: ({ threadId, box, force }) => guarded(threadId, box, force, () => change("Stopping the box", () => boxes.stop(threadId, box, undefined, BY_PERSON))),
     start: ({ threadId, box }) => change("Starting the box", () => boxes.start(threadId, box, undefined, BY_PERSON)),
     resize: ({ threadId, box, ...options }) => resize(threadId, box, options),
     refresh: ({ threadId, box }) => change("Checking the box", () => app.checkNow(threadId, box)),
-    enrol: ({ threadId, box }) => change("Adding the box to BB", async () => (await app.joinAgain(threadId, box)).box),
+    enrol: ({ threadId, box }) => change("Adding the box to VesnALIA", async () => (await app.joinAgain(threadId, box)).box),
     forget: ({ threadId, box }) =>
       change("Forgetting the box", async () => {
         await app.forget(threadId, box, BY_PERSON);
@@ -324,11 +324,11 @@ export function registerRpc(bb: BbPluginApi, app: BbBox): void {
     async profile({ seconds, keep, allocations, snapshot, collect }) {
       const lines = await profileLoop(seconds, {
         fullCollection: collect === true,
-        ...(keep ? { save: (profile: CpuProfile) => keepProfile(bb, profile, "cpuprofile") } : {}),
-        ...(allocations ? { allocations: (profile: HeapProfile) => keepProfile(bb, profile, "heapprofile") } : {}),
-        ...(snapshot ? { snapshot: () => heapSnapshot(bb) } : {}),
+        ...(keep ? { save: (profile: CpuProfile) => keepProfile(alia, profile, "cpuprofile") } : {}),
+        ...(allocations ? { allocations: (profile: HeapProfile) => keepProfile(alia, profile, "heapprofile") } : {}),
+        ...(snapshot ? { snapshot: () => heapSnapshot(alia) } : {}),
       });
-      for (const line of lines) bb.log.info(line);
+      for (const line of lines) alia.log.info(line);
       return { lines };
     },
     takeControl: ({ threadId, box: ref, viewer }) =>
@@ -482,7 +482,7 @@ export function registerRpc(bb: BbPluginApi, app: BbBox): void {
       guarded(OPERATOR, box, force, () =>
         change("Removing the machine", async () => {
           if (deleteKept) await snapshots.unkeepForRelease(await boxes.get(OPERATOR, box), BY_PERSON);
-          return boxes.release(OPERATOR, box, "removed in BB Box's settings", BY_PERSON);
+          return boxes.release(OPERATOR, box, "removed in VesnALIA Box's settings", BY_PERSON);
         }),
       ),
     "machines.stop": ({ box, force }) => guarded(OPERATOR, box, force, () => change("Stopping the machine", () => boxes.stop(OPERATOR, box, undefined, BY_PERSON))),

@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterEach, expect, test } from "bun:test";
 if (typeof document === "undefined") GlobalRegistrator.register();
-const { installTestPluginRuntime, renderSlot } = await import("@get-bb/plugin-sdk/testing/app");
+const { installTestPluginRuntime, renderSlot } = await import("@vesnalia/plugin-sdk/testing/app");
 installTestPluginRuntime();
 const { cleanup, fireEvent, waitFor } = await import("@testing-library/react");
 const { PendingQuoteReceiver, latestThread, quoteWithSource, useSendQuote } = await import("../src/quote");
@@ -33,7 +33,7 @@ test("a quote goes to the project's latest thread draft without sending", async 
  const receiver = renderSlot({ component: PendingQuoteReceiver }, { threadId: "t2" });
  expect(receiver.inspection.composer.text).toContain("> Chosen text");
  expect(receiver.inspection.composer.text).toContain("> Source: docs/a.md");
- expect(sessionStorage.getItem("bb-backlog-pending-quote:t2")).toBeNull();
+ expect(sessionStorage.getItem("alia-backlog-pending-quote:t2")).toBeNull();
 });
 
 test("a project without threads gets a new-thread draft and opens the project", async () => {

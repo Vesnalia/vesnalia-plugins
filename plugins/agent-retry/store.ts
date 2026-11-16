@@ -3,11 +3,11 @@
 // Two stores, for two lifetimes:
 //
 //   * The decision log lives in the plugin's SQLite database. It is
-//     append-only history, read by `bb agent-retry log` and `status`.
+//     append-only history, read by `alia agent-retry log` and `status`.
 //   * The retry-chain state lives in kv, one row per thread. It exists only
 //     while a chain is in flight, and it is what lets `maxTotalSpanMs` and the
 //     "which attempt is this" question survive a plugin reload.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 export type DecisionAction = "retry" | "skip" | "dry-run" | "error";
 
@@ -135,9 +135,9 @@ export const MAX_DECISION_ROWS = 5_000;
  * order is the migration id, so it is append-only: add new statements, never
  * edit a shipped one.
  */
-export function openStore(bb: BbPluginApi): Store {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export function openStore(alia: AliaPluginApi): Store {
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS retry_decisions (
        id INTEGER PRIMARY KEY AUTOINCREMENT,
        at INTEGER NOT NULL,
@@ -257,7 +257,7 @@ export function openStore(bb: BbPluginApi): Store {
     },
 
     async readChain(threadId) {
-      const state = await bb.storage.kv.get<ChainState>(chainKey(threadId));
+      const state = await alia.storage.kv.get<ChainState>(chainKey(threadId));
       if (
         state === null ||
         typeof state !== "object" ||
@@ -269,25 +269,25 @@ export function openStore(bb: BbPluginApi): Store {
     },
 
     async writeChain(threadId, state) {
-      await bb.storage.kv.set(chainKey(threadId), state);
+      await alia.storage.kv.set(chainKey(threadId), state);
     },
 
     async clearChain(threadId) {
-      await bb.storage.kv.delete(chainKey(threadId));
+      await alia.storage.kv.delete(chainKey(threadId));
     },
 
     async sweepChains(maxAgeMs, now) {
-      const keys = await bb.storage.kv.list(CHAIN_PREFIX);
+      const keys = await alia.storage.kv.list(CHAIN_PREFIX);
       let removed = 0;
       for (const key of keys) {
-        const state = await bb.storage.kv.get<ChainState>(key);
+        const state = await alia.storage.kv.get<ChainState>(key);
         const updatedAt =
           state !== null && typeof state === "object" ? state.updatedAt : undefined;
         // A key we cannot read is unusable, so it goes too. This is the only
         // thing that clears a chain the plugin was unloaded for — a thread
         // that went idle, was archived, or was deleted while it was disabled.
         if (typeof updatedAt !== "number" || now - updatedAt > maxAgeMs) {
-          await bb.storage.kv.delete(key);
+          await alia.storage.kv.delete(key);
           removed += 1;
         }
       }

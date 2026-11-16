@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { isUnread, type Attention, type AttentionThread } from "./attention";
 
 export type ColumnThread = AttentionThread &
@@ -156,7 +156,7 @@ export function shouldAutoOpen(args: {
 
 /**
  * A change of the route's thread. `before`: the threads in split panes when the
- * route thread last changed; BB writes a new split pane before it navigates,
+ * route thread last changed; VesnALIA writes a new split pane before it navigates,
  * so the current layout would already hold the thread. Focusing a pane that
  * was open then is not opening. Returns the snapshot for the next change.
  */
@@ -187,7 +187,7 @@ export function engage(
 }
 
 /**
- * Focus that lands in a descendant's editor on its own: BB's composer focuses
+ * Focus that lands in a descendant's editor on its own: VesnALIA's composer focuses
  * itself when it mounts, so every new or lazily mounted column would take it.
  * His own ways in stay: a click (which engages the column first), Tab, a key
  * pressed in that same column (`keyColumn`, the last keydown's column within

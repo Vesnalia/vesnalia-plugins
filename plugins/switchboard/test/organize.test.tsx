@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
-import type { PluginThreadActionTarget, PluginThreadListProps } from "@get-bb/plugin-sdk/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
+import type { PluginThreadActionTarget, PluginThreadListProps } from "@vesnalia/plugin-sdk/app";
 import type { RpcContract } from "../src/rpc";
 import type { CollapseKey, HueId } from "../src/layout";
 import { layoutWriteFakes, sidebarProject, sidebarSection, sidebarThread } from "./fixtures";
@@ -67,7 +67,7 @@ const sdkCalls = (slot: Awaited<ReturnType<typeof mount>>, method: string) =>
   slot.inspection.sdkCalls.filter((call) => call.method === method);
 
 describe("organize in the sidebar", () => {
-  it("nests with Alt+Right and Undo restores the bb parent; Alt+Up stores sibling order", async () => {
+  it("nests with Alt+Right and Undo restores the VesnALIA parent; Alt+Up stores sibling order", async () => {
     const slot = await mount();
     fireEvent.keyDown(link("B"), { key: "ArrowRight", altKey: true });
     await waitFor(() => expect(sdkCalls(slot, "threads.update")).toContainEqual(expect.objectContaining({
@@ -107,7 +107,7 @@ describe("organize in the sidebar", () => {
     slot.unmount();
   });
 
-  it("opens bb's menu for the whole selection on right-click, with Move to and Snooze for every selected thread", async () => {
+  it("opens VesnALIA's menu for the whole selection on right-click, with Move to and Snooze for every selected thread", async () => {
     const seen: string[][] = [];
     const slot = await mount({}, (targets) => { seen.push(targets.map((target) => target.id)); return []; });
     fireEvent.click(link("A"), { altKey: true });

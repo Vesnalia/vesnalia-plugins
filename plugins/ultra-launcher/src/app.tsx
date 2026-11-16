@@ -1,5 +1,5 @@
 import { PresetSettings, PresetSettingsOverlay } from "./components/PresetSettings";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { OPEN_EVENT, LauncherOverlay } from "./components/LauncherOverlay";
 
 export default definePluginApp((app) => {

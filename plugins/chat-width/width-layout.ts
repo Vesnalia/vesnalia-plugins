@@ -1,4 +1,4 @@
-// These internal BB selectors are verified in docs/compatibility.md.
+// These internal VesnALIA selectors are verified in docs/compatibility.md.
 const PANE = "[data-split-pane-id]";
 const THREAD = "[data-thread-window]";
 const VIEWPORT = "[data-page-scroll-viewport]";

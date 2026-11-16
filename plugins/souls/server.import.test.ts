@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server.ts";
 import type { Soul } from "./shared.ts";
 import type { AgentImportResult } from "./soul-import-formats.ts";
@@ -13,8 +13,8 @@ developer_instructions = '''${"Read before reviewing.\n".repeat(150)}'''
 sandbox_mode = "read-only"`;
 
 test("import preview is read-only; explicit create preserves the draft and never binds a thread", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls", agentSkillIds: ["souls"] });
+  await plugin(alia);
   try {
     const result = await harness.behavior.callRpc("souls_import_preview", { source, filename: "reviewer.toml" }) as AgentImportResult;
     const preview = result.agents[0]!;
@@ -44,8 +44,8 @@ test("import preview is read-only; explicit create preserves the draft and never
 });
 
 test("GitHub import uses the same read-only draft preview and never writes or starts threads", async (context) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls" });
+  await plugin(alia);
   const fetchMock = context.mock.method(globalThis, "fetch", async () => new Response(source));
   try {
     const result = await harness.behavior.callRpc("souls_import_github", {
@@ -67,8 +67,8 @@ test("GitHub import uses the same read-only draft preview and never writes or st
 });
 
 test("Markdown and JSON previews, including multi-agent selection, have no storage or thread side effects", async (context) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls" });
+  await plugin(alia);
   const documents = [
     { source: "---\nname: Reviewer\nmodel: sonnet\ntools: [Read]\n---\nBe precise.", filename: "reviewer.agent.md" },
     { source: '{"name":"Reviewer","prompt":"Be precise.","tools":["*"]}', filename: "reviewer.json" },
@@ -105,8 +105,8 @@ test("Markdown and JSON previews, including multi-agent selection, have no stora
 });
 
 test("format validation and invalid Markdown/JSON imports never write or fetch referenced files", async (context) => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls" });
+  await plugin(alia);
   const fetchMock = context.mock.method(globalThis, "fetch", async () => { throw new Error("Unexpected fetch"); });
   try {
     for (const input of [
@@ -127,8 +127,8 @@ test("format validation and invalid Markdown/JSON imports never write or fetch r
 });
 
 test("invalid imports leave storage untouched and duplicate names never overwrite souls", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "souls" });
-  await plugin(bb);
+  const { alia, harness } = createFakePluginHost({ pluginId: "souls" });
+  await plugin(alia);
   try {
     for (const input of [{ source: 'name = "broken' }, { source: 'name = "Hazel"' }, { source: " ".repeat(128_001) }]) {
       await assert.rejects(harness.behavior.callRpc("souls_import_preview", input));

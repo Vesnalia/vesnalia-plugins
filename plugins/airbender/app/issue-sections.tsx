@@ -13,7 +13,7 @@
 // - Children of a folded part are mounted only while it is open, which is what
 //   makes comments load on demand.
 
-import { Markdown } from "@get-bb/plugin-sdk/app";
+import { Markdown } from "@vesnalia/plugin-sdk/app";
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Button } from "@/components/ui/button";

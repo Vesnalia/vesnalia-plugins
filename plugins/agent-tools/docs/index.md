@@ -22,7 +22,7 @@ Built by Lane Pilot from page frontmatter.
 | [MCP server catalogue](features/mcp-catalog.md) | component | active | 2026-10-28 |
 | [OpenCode provider and model management](features/opencode.md) | component | active | 2026-10-28 |
 | [Hub skills and categories](features/skills-hub.md) | component | active | 2026-10-28 |
-| [BB server skill mirror archive](features/skills-server-mirror.md) | component | deprecated | 2026-10-28 |
+| [VesnALIA server skill mirror archive](features/skills-server-mirror.md) | component | deprecated | 2026-10-28 |
 | [Machine canon Git synchronization](features/skills-sync.md) | component | deprecated | 2026-10-28 |
 | [Agent skill canon and rollout](features/skills.md) | component | deprecated | 2026-10-28 |
 | [Agent Tools gotchas](gotchas.md) | gotchas | active | 2026-10-28 |

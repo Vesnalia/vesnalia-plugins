@@ -1,13 +1,13 @@
-# bb-plugin-vcs-widget
+# alia-plugin-vcs-widget
 
-A bb plugin (id `vcs-widget`, display name "VCS Widget") that recreates the
-IntelliJ / Android Studio Git branches popup inside bb: a branch button in the
+A VesnALIA plugin (id `vcs-widget`, display name "VCS Widget") that recreates the
+IntelliJ / Android Studio Git branches popup inside VesnALIA: a branch button in the
 thread header, a searchable popup with Recent / Local / Remote branches, and
 git actions that run on the machine owning the thread's worktree.
 
 ## Work board
 
-Linear project `bb-plugin-vcs-group` (named before the rename), label `lab`,
+Linear project `alia-plugin-vcs-group` (named before the rename), label `lab`,
 team `COS`. The plan lives in the issue descriptions, progress in issue
 comments (`claude: step N done, <what>`), never in files here.
 
@@ -40,30 +40,30 @@ comments (`claude: step N done, <what>`), never in files here.
   now matches the README's, nothing came out of the README pass
 - COS-128 a confirmed action's outcome survives the popup closing for a
   minute, dated past five seconds with the repository summary under it, and
-  COS-129 the watch ignore syntax verified against bb's watcher (plain names,
+  COS-129 the watch ignore syntax verified against VesnALIA's watcher (plain names,
   root-relative, measured) with the absolute-path bug in `relevant()` fixed —
   shipped 2026-09-09. COS-127 stays open: the popup that once did not reopen
   has not recurred, but `openPopup` now prints the DOM state when it happens
 
-To resume: `bb status`, read this file, `linear issue view COS-125 --json`
+To resume: `alia status`, read this file, `linear issue view COS-125 --json`
 (and its comments; COS-121 to COS-124 hold the architecture and the M2 to M4
-designs), load the `bb-plugin-authoring` skill with the Skill tool.
+designs), load the `alia-plugin-authoring` skill with the Skill tool.
 
 ## Architecture (three runtimes, one contract file)
 
 ```
-app.tsx (browser) --useRpc(rpcContract, keyed by threadId)--> server.ts (bb server)
-     ^                                                            | bb.sdk.threads.get({include:"environment"})
+app.tsx (browser) --useRpc(rpcContract, keyed by threadId)--> server.ts (alia server)
+     ^                                                            | alia.sdk.threads.get({include:"environment"})
      | useRealtime("changed", {environmentId})                    |   -> { environmentId, hostId, path }
-     +---- bb.realtime.publish <---- server.ts --host.call(m, {repoPath,...}, {hostId})--> host.ts (daemon worker)
+     +---- alia.realtime.publish <---- server.ts --host.call(m, {repoPath,...}, {hostId})--> host.ts (daemon worker)
                                                                                     execFile("git", argv); never a shell
 ```
 
 - `contracts.ts` holds zod schemas, `rpcContract` (inputs carry `threadId`) and
   `hostContract` (inputs carry an absolute `repoPath`). Runtime import in
-  server and host, type-only in the app. Never import private `@bb/*`.
+  server and host, type-only in the app. Never import private `@alia-core/*`.
 - `host.ts` is the only place git runs (`spawn` in its own process group,
-  env hygiene). bb cancels a host call at a fixed 30 s, so every handler
+  env hygiene). VesnALIA cancels a host call at a fixed 30 s, so every handler
   creates one `Budget` (`host/budget.ts`, 27 s) and each git command gets the
   time that is left; the overview read after a mutation is skipped
   (`overview: null`) when fewer than 2.5 s remain. Mutations return typed
@@ -79,21 +79,21 @@ app.tsx (browser) --useRpc(rpcContract, keyed by threadId)--> server.ts (bb serv
   among the ordinary mutations in `host/actions.ts`. Patch caps, the binary
   check and the both-sides read they share are in `host/diff-text.ts`.
 - `server.ts` resolves thread to environment, forwards to the host, then nudges
-  `bb.sdk.environments.status` (0 s and 3.2 s) and publishes `changed`. It
+  `alia.sdk.environments.status` (0 s and 3.2 s) and publishes `changed`. It
   maps `hostId + repoRoot` to environment ids (from overviews) to route
   `jobEvent` (realtime `job`) and `changed` signals, and keeps favourites in
   kv (`fav:<hostId>:<repoRoot>`; the settings page lists and clears them
   through `favouriteRepos` / `clearFavourites`, which rebuild the key from
   `hostId` and `repoRoot` so a caller never names a storage key).
   `sendToAgent` is the one method that runs no git: it hands the commit to
-  the thread's agent through `bb.sdk.threads.send` (`queue-if-active`). Its
+  the thread's agent through `alia.sdk.threads.send` (`queue-if-active`). Its
   input names a variant, never the text; the label and message for each live
   in `AGENT_ACTIONS` (`shared/constants.ts`) and the server does the lookup,
   so the two lines there are the whole of what the plugin can say to an
   agent. It is logged like a mutation.
 - `server/cli.ts` is the whole read-only surface: argv parsing, the text and
   `--json` shapes, and a `CliReader` with exactly two methods (overview,
-  log). `bb.cli.register` and `bb.agents.registerTool("vcs_widget_status")`
+  log). `alia.cli.register` and `alia.agents.registerTool("vcs_widget_status")`
   both go through it, which is what keeps them read-only — the module names
   no mutating host method. `skills/vcs-widget/SKILL.md` tells agents the same.
 - `app.tsx` registers `experimental_threadHeaderAction`, four
@@ -122,12 +122,12 @@ app.tsx (browser) --useRpc(rpcContract, keyed by threadId)--> server.ts (bb serv
 ## Dev loop
 
 ```sh
-bb plugin types              # repin @get-bb/plugin-sdk to the running bb
-npm run check                # vitest + tsc --noEmit + bb plugin build
-bb plugin install . --yes    # once
-bb plugin dev                # rebuild + reload on save (needs a running bb)
-bb plugin logs vcs-widget -f  # plugin log
-bb plugin reload vcs-widget   # after `bb plugin build` without `dev`
+alia plugin types              # repin @vesnalia/plugin-sdk to the running alia
+npm run check                # vitest + tsc --noEmit + alia plugin build
+alia plugin install . --yes    # once
+alia plugin dev                # rebuild + reload on save (needs a running alia)
+alia plugin logs vcs-widget -f  # plugin log
+alia plugin reload vcs-widget   # after `alia plugin build` without `dev`
 ```
 
 Live click-through: `docs/VERIFY.md`, driven by `scripts/live-check.mjs`
@@ -136,7 +136,7 @@ Live click-through: `docs/VERIFY.md`, driven by `scripts/live-check.mjs`
 CLI, the settings sections, a 390 px pass) and `scripts/live-check-m6.mjs`
 (the commit panel's file menu, group discard and LGTM - Commit, which sends
 a real message to the thread) on `scripts/live-lib.mjs` (system
-Chromium + puppeteer-core against `$BB_SERVER_URL`; fixture content must be
+Chromium + puppeteer-core against `$ALIA_SERVER_URL`; fixture content must be
 unique per run, the scratch repo is reused). `scripts/screenshots.mjs`
 regenerates `docs/screenshots/popup.png`, the only shot it still takes; with
 no repository argument it touches no git. `commit.png`, `log.png`,
@@ -147,13 +147,13 @@ diff viewer as an empty pane, the log shot over a real history, which the
 scratch repo has not got, and the rest are menus and dialogs it cannot open. `scripts/hero.mjs` composes the README's header
 image (`docs/screenshots/hero.png`) from those shots and `docs/hero/`
 (the background and the thread-header crop) by photographing a local HTML
-page, so it needs Chromium but no running bb. `scripts/combos.mjs`
+page, so it needs Chromium but no running VesnALIA. `scripts/combos.mjs`
 composes the two section images the same way: `popup-combo.png` from
 `popup.png`, `branch-menu.png`, `new-branch.png` and `checkout-revision.png`,
 and `log-combo.png` from `log.png` and `log-menu.png`. Those six hand-taken
 shots stay in `docs/screenshots/`, but the README shows only the two sheets.
 
-Vendor UI with `npx shadcn add @bb/<name>` (registry pinned in
+Vendor UI with `npx shadcn add @alia-core/<name>` (registry pinned in
 `components.json`); components live in `components/ui/` and are ours to edit.
 Styling is Tailwind against host theme tokens only.
 
@@ -176,9 +176,9 @@ Styling is Tailwind against host theme tokens only.
   the previewed argv or answers `no_upstream` / `head_changed`; it never
   upgrades or redirects a push. The lease is only ever the sha the dialog
   showed.
-- No agent-callable mutation: `bb vcs-widget` and `vcs_widget_status` are
+- No agent-callable mutation: `alia vcs-widget` and `vcs_widget_status` are
   read-only, and stay that way by construction — `server/cli.ts` is their only
-  path to the host and it knows two reads. The RPC route itself is bb's
+  path to the host and it knows two reads. The RPC route itself is VesnALIA's
   local-auth API and reachable by any local process with a thread id; the
   plugin cannot enforce more than logging each mutation with its thread id
   (`docs/SAFETY.md`).
@@ -201,10 +201,10 @@ Styling is Tailwind against host theme tokens only.
 
 ## References
 
-- bb source checkout: `/home/costa/Work/bb` (SDK declarations in
+- VesnALIA source checkout: `/home/costa/Work/alia` (SDK declarations in
   `packages/plugin-sdk/src/{app-contract,backend-contract,host-contract}.ts`).
 - Reference plugin with the same shape (server -> host running git):
-  `/home/costa/.bb/plugins/cache/git/github.com/yusuf8834/bb-git-history/<commit>/`.
+  `/home/costa/.vesnalia/plugins/cache/git/github.com/yusuf8834/bb-git-history/<commit>/`.
 - UI patterns: `plugins/tasks/views/detail/rail.tsx` (Popover + Command),
   `plugins/tasks/views/list/property-menus.tsx` (ContextMenu with submenus),
-  `apps/app/src/components/pickers/BranchPicker.tsx` (bb's branch picker).
+  `apps/app/src/components/pickers/BranchPicker.tsx` (VesnALIA's branch picker).

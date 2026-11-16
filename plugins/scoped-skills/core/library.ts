@@ -1,7 +1,7 @@
 // Pure library logic for Scoped Skills: reading a skill folder, validating its
 // frontmatter, matching a scope against a thread's agent and model, and
-// writing the materialized library that BB scans as a manifest skill root.
-// Nothing here touches the BB plugin API, so it is unit-testable on its own.
+// writing the materialized library that VesnALIA scans as a manifest skill root.
+// Nothing here touches the VesnALIA plugin API, so it is unit-testable on its own.
 import {
   existsSync,
   lstatSync,
@@ -136,7 +136,7 @@ export function readSkillFolder(folder: string): ParsedSkill {
 
 /**
  * Replace `libraryDir` with exactly the given skills. Writes to a sibling
- * staging folder first and swaps it in, so BB never scans a half-written
+ * staging folder first and swaps it in, so VesnALIA never scans a half-written
  * library. Returns the names that were written.
  */
 export function materializeLibrary(

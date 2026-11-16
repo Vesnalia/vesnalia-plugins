@@ -8,7 +8,7 @@
 // follows. Each person's control is kept in plugin storage for the plugin's
 // next instance (045).
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { BoxRecord, Boxes } from "../core/boxes.ts";
 import { Control, RECONNECT_MS, STALE_MS, type KeptControl, type ViewerConnection } from "../core/control.ts";
 import { clipboardCommands } from "../core/in-box.ts";
@@ -38,7 +38,7 @@ export function viewerDrawsAgentCursor(box: BoxRecord): boolean {
 const VIEWER_ID = /^[A-Za-z0-9_-]{8,64}$/;
 /** Each person's control, for the plugin's next instance (045). */
 const KEPT_KEY = "desktop-control";
-/** The most text bb-box reads from a desktop's clipboard with its own commands (#464): more is left for the box's own copy. */
+/** The most text alia-box reads from a desktop's clipboard with its own commands (#464): more is left for the box's own copy. */
 const MAX_CLIPBOARD_BYTES = 4 * 1024 * 1024;
 /** How long reading or writing a box's clipboard with a command may take. */
 const CLIPBOARD_TIMEOUT_MS = 10_000;
@@ -46,7 +46,7 @@ const CLIPBOARD_WATCH_IDLE_MS = 10_000;
 const CLIPBOARD_WATCH_RETRY_MS = 30_000;
 /** How long after a VNC viewer's resize its desktop's video viewers follow: the box takes a size in a few milliseconds. */
 const FOLLOW_AFTER_MS = 300;
-/** How long after bb-box-cursor ends, as when the desktop restarts, it runs again while the box has video viewers (060). */
+/** How long after alia-box-cursor ends, as when the desktop restarts, it runs again while the box has video viewers (060). */
 const POINTER_AGAIN_MS = 2_000;
 const AGENT_ACTION_LONGEST_MS = 10 * 60_000;
 
@@ -58,13 +58,13 @@ interface PointerListener {
 /** How long a box's video stays stopped for its capture to restart: Selkies stops a capture within milliseconds. */
 const RESTART_PAUSE_MS = 300;
 /**
- * How long a box's video may take to show a size Selkies was told, before bb-box restarts its capture. With no person in control,
+ * How long a box's video may take to show a size Selkies was told, before alia-box restarts its capture. With no person in control,
  * Selkies moves its capture to the new size itself, and a pause while it does breaks its reconfiguration, leaving its own monitor
  * at the old size; with one, it stops its capture and waits to be restarted, whether the desktop grew or shrank (the owner's note
  * of 18 October 2026).
  */
 export const FOLLOW_FRAME_MS = 1_000;
-/** How many times bb-box restarts a box's capture for a size before it leaves it: a restart now and then brings no frame. */
+/** How many times alia-box restarts a box's capture for a size before it leaves it: a restart now and then brings no frame. */
 const FOLLOW_TRIES = 3;
 /** Each box whose desktop is High resolution: its xfwm theme before, and the size High resolution set (the owner's note of 16 October 2026). */
 const SHARP_PREFIX = "desktop-sharp/";
@@ -161,7 +161,7 @@ export interface DesktopDeps {
 
 export interface Desktops {
   readonly control: Control;
-  /** Where the panel opens the viewer's WebSocket, on the BB server's origin. */
+  /** Where the panel opens the viewer's WebSocket, on the VesnALIA server's origin. */
   readonly path: string;
   /**
    * The box's clipboard text, with a count that changes with it, for the
@@ -275,7 +275,7 @@ class Resizes {
 
 export { POINTER_NONE, POINTER_VERB };
 
-export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
+export function registerDesktop(alia: AliaPluginApi, deps: DesktopDeps): Desktops {
   const { boxes } = deps;
   const changed = (boxId: string) => {
     void boxes
@@ -287,7 +287,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
   const reconnectMs = deps.reconnectMs ?? RECONNECT_MS;
   const followFrameMs = FOLLOW_FRAME_MS;
   const staleMs = deps.staleMs ?? STALE_MS;
-  const kv = bb.storage.kv;
+  const kv = alia.storage.kv;
   /** Each person's control as stored, for the boxes still ready, read again as the first viewer connects (#318). */
   const read = async () => {
     const ready: KeptControl[] = [];
@@ -316,11 +316,11 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
     pause: deps.pause,
     keep: (kept) => (kept.length ? kv.set(KEPT_KEY, kept) : kv.delete(KEPT_KEY)),
     read,
-    // A deploy or reload looks to a person like the box ending the viewer's connection, so the log says it was bb-box.
+    // A deploy or reload looks to a person like the box ending the viewer's connection, so the log says it was alia-box.
     async stopping(boxId, kept) {
       const box = await boxes.find(boxId);
       const name = box?.name ?? boxId;
-      bb.log.warn(
+      alia.log.warn(
         kept
           ? `${PRODUCT} is stopping, as for an update or a reload. The viewer with control of box ${name}'s desktop keeps it if it connects again within ${staleMs / 1000} s.`
           : `${PRODUCT} is stopping, as for an update or a reload, so control of box ${name}'s desktop goes back to the agent.`,
@@ -432,7 +432,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
     void entry.box.close();
   };
   /**
-   * Each box's pointer from bb-box-cursor, where its image has it (060), while anything listens: its video viewers and its
+   * Each box's pointer from alia-box-cursor, where its image has it (060), while anything listens: its video viewers and its
    * VNC viewers' pointer streams. Sway 1.11's streams send neither its shape nor where it is. One helper runs a box, and again
    * if it ends, as when the desktop restarts; the last image and position are kept for a listener that comes later.
    */
@@ -523,7 +523,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
         const last = agentPlaces.get(boxId);
         if (!listeners.has(tell) || box?.state !== "ready" || !viewerDrawsAgentCursor(box)) return;
         if (!last) {
-          tell("BB_AGENT,clear");
+          tell("ALIA_AGENT,clear");
           return;
         }
         tell(last);
@@ -546,7 +546,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
     agentPoints.delete(boxId);
     agentTypingShown.delete(boxId);
     agentShapes.forget(boxId);
-    tellViewers(boxId, "BB_AGENT,clear");
+    tellViewers(boxId, "ALIA_AGENT,clear");
     cursorFor(boxId);
     pointerFor(boxId);
   };
@@ -823,7 +823,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
   };
   const clipboards = new Map<string, { text: string; serial: number }>();
   let clipboardSerial = 0;
-  /** The box, when it is running and its desktop's clipboard goes through bb-box's commands. */
+  /** The box, when it is running and its desktop's clipboard goes through alia-box's commands. */
   const byCommands = async (boxId: string): Promise<BoxRecord | null> => {
     const box = await boxes.find(boxId);
     return box?.state === "ready" && desktopDisplays(box.capabilities.displays)[0]?.clipboard === "commands" && clipboardCommands(box.capabilities.os) ? box : null;
@@ -886,27 +886,27 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
     return false;
   };
 
-  // Control people had as the last instance stopped. BB starts this one first, so the viewers connect again once that one stops.
+  // Control people had as the last instance stopped. VesnALIA starts this one first, so the viewers connect again once that one stops.
   void (async () => {
     const kept = keptControl(await kv.get<unknown>(KEPT_KEY));
     if (!kept.length) return;
     const resumed: KeptControl[] = [];
     for (const entry of kept) {
       const box = await boxes.find(entry.boxId);
-      // A box that stopped or went while bb-box was away has a new desktop, or none.
+      // A box that stopped or went while alia-box was away has a new desktop, or none.
       if (box?.state !== "ready") continue;
       resumed.push(entry);
-      bb.log.info(`The viewer with control of box ${box.name}'s desktop as ${PRODUCT} restarted keeps it if it connects again within ${staleMs / 1000} s.`);
+      alia.log.info(`The viewer with control of box ${box.name}'s desktop as ${PRODUCT} restarted keeps it if it connects again within ${staleMs / 1000} s.`);
     }
     control.resume(resumed);
   })().catch((error) => deps.logError("resume desktop control", error));
 
-  bb.http.experimental_websocket(
+  alia.http.experimental_websocket(
     DESKTOP_ROUTE,
     ({ url }) => {
       const boxId = url.searchParams.get("box") ?? "";
       const viewer = url.searchParams.get("viewer") ?? "";
-      const keyLog = url.searchParams.get("keylog") === "1" ? (line: string) => bb.log.info(`key log, box ${boxId}, viewer ${viewer.slice(0, 8)}: ${line}`) : undefined;
+      const keyLog = url.searchParams.get("keylog") === "1" ? (line: string) => alia.log.info(`key log, box ${boxId}, viewer ${viewer.slice(0, 8)}: ${line}`) : undefined;
       const device = url.searchParams.get("display") === DEVICE_DISPLAY.id;
       const selkies = !device && url.searchParams.get("stream") === "selkies";
       // A VNC viewer's own stream of the box's pointer (060): it carries no picture and no input, only the pointer messages a
@@ -936,7 +936,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
           void boxes
             .find(boxId)
             .then((box) =>
-              bb.log.warn(`Box ${box?.name ?? boxId}'s ${device ? "device" : "desktop"} ended the connection of the viewer with control. ${why} Control goes back to the agent unless the viewer connects again within ${reconnectMs / 1000} s.`),
+              alia.log.warn(`Box ${box?.name ?? boxId}'s ${device ? "device" : "desktop"} ended the connection of the viewer with control. ${why} Control goes back to the agent unless the viewer connects again within ${reconnectMs / 1000} s.`),
             )
             .catch((caught) => deps.logError("log a desktop's end", caught));
         }
@@ -1011,7 +1011,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
               .then((shownDisplay) => (shownDisplay.openInput ? videoApart.add(boxId) : videoApart.delete(boxId)))
               .catch(() => undefined);
             selkiesBoxes.get(boxId)?.relays.add(relay);
-            // The box's pointer from bb-box-cursor (060): as it is, then each change.
+            // The box's pointer from alia-box-cursor (060): as it is, then each change.
             const told = relay;
             const stopPointer = listenPointer(boxId, { send: (message) => told.tell(message) });
             const stopAgent = listenAgent(boxId, (message) => told.tell(message));
@@ -1021,7 +1021,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
             });
             keepSharp(boxId);
             cursorFor(boxId);
-            // As after a restart of bb-box, the person in control may come back by video only.
+            // As after a restart of alia-box, the person in control may come back by video only.
             pointerFor(boxId);
           } else {
             let macKeys: MacKeys = null;
@@ -1043,7 +1043,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
                 void boxes
                   .find(boxId)
                   .then((box) =>
-                    bb.log.warn(
+                    alia.log.warn(
                       `Box ${box?.name ?? boxId}'s desktop VNC server ${why}, so ${PRODUCT} ${error ? `could not restart it: ${error.message}` : "restarted it, and the viewer connects again"}.`,
                     ),
                   )
@@ -1195,7 +1195,7 @@ export function registerDesktop(bb: BbPluginApi, deps: DesktopDeps): Desktops {
     agentActed,
     agentTyping,
     forgetAgent,
-    path: `/api/v1/plugins/${encodeURIComponent(bb.pluginId)}/http${DESKTOP_ROUTE}`,
+    path: `/api/v1/plugins/${encodeURIComponent(alia.pluginId)}/http${DESKTOP_ROUTE}`,
     async sharp(boxId) {
       const box = await boxes.find(boxId);
       if (!box || !sharpOffered(box)) return null;

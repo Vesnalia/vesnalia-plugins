@@ -1,8 +1,8 @@
-// bb-plugin-sops — browser entry: where the plugin appears in BB.
+// alia-plugin-sops — browser entry: where the plugin appears in VesnALIA.
 //
 // What: registers an "Encrypted files" action in a thread's side panel,
 // whose tabs show either the list of encrypted files or one file's editor,
-// and a file opener so clicking an encrypted `.env` file anywhere in BB
+// and a file opener so clicking an encrypted `.env` file anywhere in VesnALIA
 // opens the editor.
 //
 // Why: secrets live next to the work, so the editor lives next to the
@@ -13,9 +13,9 @@
 //   files; with `{ ref }` it edits that file. Tab parameters are saved and
 //   come back after a reload, so they are checked here before use, and the
 //   server checks the reference again.
-// - The file opener matches by last extension only (BB's rule), so it is
+// - The file opener matches by last extension only (VesnALIA's rule), so it is
 //   registered for `env`. For a file that turns out not to be encrypted it
-//   shows BB's own preview. YAML and JSON are left to BB's
+//   shows VesnALIA's own preview. YAML and JSON are left to VesnALIA's
 //   preview, since nearly all of those files are not secrets; encrypted
 //   ones open from the list.
 
@@ -25,7 +25,7 @@ import {
   useRpc,
   type PluginFileOpenerProps,
   type PluginThreadPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { FileRef, rpcContract } from "./shared/contract.ts";
 import { asFileRef } from "./shared/refs.ts";
 import { Editor } from "./app/Editor.tsx";
@@ -43,7 +43,7 @@ function FilesPanel({ threadId, params }: PluginThreadPanelProps) {
   return ref === null ? <FileList threadId={threadId} /> : <Editor threadId={threadId} fileRef={ref} />;
 }
 
-/** Opens a clicked `.env` file in the editor when sops encrypted it, else in BB's preview. */
+/** Opens a clicked `.env` file in the editor when sops encrypted it, else in VesnALIA's preview. */
 function FileOpener({ path, source, Original }: PluginFileOpenerProps) {
   const rpc = useRpc<typeof rpcContract>();
   const [resolved, setResolved] = useState<{ ref: FileRef } | null | undefined>(undefined);

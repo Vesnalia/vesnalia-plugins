@@ -1,4 +1,4 @@
-/* Stock BB sidebar only. Keep row geometry, tree nesting, hit targets, and
+/* Stock ALIA sidebar only. Keep row geometry, tree nesting, hit targets, and
    status semantics native. Folders does not use these thread/project hooks. */
 :root[data-herdr-theme] [data-sidebar-project-id] [data-sidebar-sticky-tier="label"],
 :root[data-herdr-theme] .group\/sidebar-section > [data-sidebar-sticky-tier="label"]:has([title="Pinned"]) {
@@ -17,7 +17,7 @@
 :root[data-herdr-theme] [data-sidebar-thread-id] {
   border-radius: 0;
 }
-:root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) :is(.bb-thread-title, .bb-sidebar-thread-title) {
+:root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) :is(.alia-thread-title, .alia-sidebar-thread-title) {
   font-weight: 400;
 }
 :root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id][aria-current="page"]) {
@@ -25,7 +25,7 @@
   color: var(--sidebar-foreground);
   box-shadow: none;
 }
-:root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id][aria-current="page"]) :is(.bb-thread-title, .bb-sidebar-thread-title) {
+:root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id][aria-current="page"]) :is(.alia-thread-title, .alia-sidebar-thread-title) {
   font-weight: 500;
 }
 /* Preserve native status icons and accessible labels. Only strengthen the
@@ -64,52 +64,52 @@
 /* Herdr uses lowercase command labels; work names keep their own casing. */
 .herdr-commands button, .herdr-commands summary { text-transform:lowercase; }
 
-/* Expose BB's real expand/collapse controls as tree markers. */
+/* Expose ALIA's real expand/collapse controls as tree markers. */
 :root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) button:is([aria-label^="Collapse "], [aria-label^="Expand "]) {
   order:-1;
   opacity:1;
   pointer-events:auto;
 }
-/* One terminal line per desktop entry, including BB's fixed-height child rows. */
+/* One terminal line per desktop entry, including ALIA's fixed-height child rows. */
 @media (min-width:768px) and (not (pointer:coarse)) {
-  :root[data-herdr-theme] [data-sidebar="content"]:has([data-sidebar-thread-id]) { --bb-sidebar-row-height:24px; }
+  :root[data-herdr-theme] [data-sidebar="content"]:has([data-sidebar-thread-id]) { --alia-sidebar-row-height:24px; }
   :root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) { height:24px; margin-block:0; }
   :root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) button { max-height:24px; }
-  :root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) :is(.bb-thread-title, .bb-sidebar-thread-title) { line-height:20px; }
+  :root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]) :is(.alia-thread-title, .alia-sidebar-thread-title) { line-height:20px; }
   :root[data-herdr-theme] [data-sidebar-project-id] .space-y-px > *,
   :root[data-herdr-theme] [data-sidebar-project-id] .space-y-0\.5 > * { margin-block:0; }
   :root[data-herdr-theme] [data-sidebar-sticky-project-item] { margin-block:0 8px; }
 }
 /* Leaf dots share the same gutter as real parent expand controls. */
-:root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]):not(:has(button:is([aria-label^="Collapse "], [aria-label^="Expand "]))) > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::before {
+:root[data-herdr-theme] .group\/thread-row:has(> [data-sidebar-thread-id]):not(:has(button:is([aria-label^="Collapse "], [aria-label^="Expand "]))) > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::before {
   content:"·" / "";
   width:20px;
   flex-shrink:0;
   text-align:center;
   color:var(--subtle-foreground);
 }
-/* Menu also reveals BB's original utility controls, preserving their actions. */
+/* Menu also reveals ALIA's original utility controls, preserving their actions. */
 :root[data-herdr-theme] [data-sidebar="sidebar"]:has(.herdr-commands) > [data-sidebar="footer"] { display:none; }
 :root[data-herdr-theme] [data-sidebar="sidebar"]:has(.herdr-commands details[open]) > [data-sidebar="footer"],
 :root[data-herdr-theme] [data-sidebar="sidebar"]:has(.herdr-commands) > [data-sidebar="footer"]:focus-within { display:flex; }
 
 /* Continuous tree strokes grow with native rows, including branch details.
    The arm meets the title; the last child's vertical stops at that arm. */
-/* Decorative title wrappers pass clicks through to BB's native row link.
+/* Decorative title wrappers pass clicks through to ALIA's native row link.
    Expand buttons explicitly retain pointer events in the rule above. */
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title)),
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title)) {
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title)),
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title)) {
   position:relative;
   pointer-events:none;
   align-self:stretch;
   --herdr-tree-arm-offset:0px;
 }
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title)[data-herdr-branch]),
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title)[data-herdr-branch]) {
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title)[data-herdr-branch]),
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title)[data-herdr-branch]) {
   --herdr-tree-arm-offset:-9px;
 }
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::before,
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::before {
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::before,
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::before {
   content:"";
   order:-2;
   width:15px;
@@ -119,8 +119,8 @@
   border-left:1px solid var(--subtle-foreground);
   pointer-events:none;
 }
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::after,
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::after {
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::after,
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item] > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::after {
   content:"";
   position:absolute;
   left:5px;
@@ -129,8 +129,8 @@
   border-top:1px solid var(--subtle-foreground);
   pointer-events:none;
 }
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item]:last-child > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::before,
-:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item]:last-child > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.bb-thread-title, .bb-sidebar-thread-title))::before {
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item]:last-child > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::before,
+:root[data-herdr-theme] [data-sidebar-project-id] .relative.space-y-px:has(> span.w-px.bg-border-hairline) > [data-sidebar-windowed-item]:last-child > [data-sidebar-sticky-group] > .group\/thread-row > span:has(:is(.alia-thread-title, .alia-sidebar-thread-title))::before {
   clip-path:inset(0 0 calc(50% - var(--herdr-tree-arm-offset)) 0);
 }
 
@@ -177,20 +177,20 @@
   :root[data-herdr-theme] [data-sidebar-thread-trailing-indicator] svg[aria-label] > * { visibility:visible; }
 }
 
-/* Opt-in branch rows use BB's known environment branch, including main.
+/* Opt-in branch rows use ALIA's known environment branch, including main.
    Only matching rows grow. Native windowing measures their actual height. */
-:root[data-herdr-theme] .group\/thread-row:has(:is(.bb-thread-title, .bb-sidebar-thread-title)[data-herdr-branch]) {
+:root[data-herdr-theme] .group\/thread-row:has(:is(.alia-thread-title, .alia-sidebar-thread-title)[data-herdr-branch]) {
   height:auto;
   min-height:44px;
 }
-:root[data-herdr-theme] :is(.bb-thread-title, .bb-sidebar-thread-title)[data-herdr-branch] {
+:root[data-herdr-theme] :is(.alia-thread-title, .alia-sidebar-thread-title)[data-herdr-branch] {
   position:relative;
   min-width:0;
   max-width:100%;
   padding-bottom:18px;
   line-height:20px;
 }
-:root[data-herdr-theme] :is(.bb-thread-title, .bb-sidebar-thread-title)[data-herdr-branch]::after {
+:root[data-herdr-theme] :is(.alia-thread-title, .alia-sidebar-thread-title)[data-herdr-branch]::after {
   content:attr(data-herdr-branch);
   position:absolute;
   inset-inline:0;
@@ -205,6 +205,6 @@
 }
 
 /* The newer title wrapper contains raw text; retain its native truncation. */
-:root[data-herdr-theme] .bb-sidebar-thread-title[data-herdr-branch] {
+:root[data-herdr-theme] .alia-sidebar-thread-title[data-herdr-branch] {
   display:block;
 }

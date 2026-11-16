@@ -1,4 +1,4 @@
-// Pulse item store. Shared by the `pulse` CLI (agents) and the bb panel server.
+// Pulse item store. Shared by the `pulse` CLI (agents) and the VesnALIA panel server.
 // State lives in $PULSE_HOME (default ~/.config/pulse):
 //   items.json   { version, items: { [id]: Item } }
 //   runs.jsonl   one line per capture run
@@ -470,7 +470,7 @@ export function readRuns(home) {
   return runs;
 }
 
-export function logRun({ run, summary, started, sources = [], errors = [], thread = process.env.BB_THREAD_ID || null }, home) {
+export function logRun({ run, summary, started, sources = [], errors = [], thread = process.env.ALIA_THREAD_ID || null }, home) {
   if (typeof run !== "string" || !run.trim()) fail("run name is required");
   if (typeof summary !== "string" || !summary.trim()) fail("summary is required");
   if (started !== undefined && started !== null && typeof started !== "string") fail("started must be an ISO date string");
@@ -506,9 +506,9 @@ export function getState(home) { return readJson(paths(home).state, {}); }
 
 /**
  * Thread ids for capture runs, kept beside the store instead of in plugin kv.
- * `bb plugin remove` deletes kv, so a reinstall would otherwise spawn a fresh
+ * `alia plugin remove` deletes kv, so a reinstall would otherwise spawn a fresh
  * thread for every run; this directory survives removal and its thread ids keep
- * working because bb threads outlive the plugin that made them.
+ * working because VesnALIA threads outlive the plugin that made them.
  */
 export function getRunThreads(home) {
   const threads = getState(home).runThreads;

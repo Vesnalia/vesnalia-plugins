@@ -54,7 +54,7 @@ export interface DraftText {
 }
 
 /**
- * The draft with `block` added at its end, as bb's own "Add to chat" adds a
+ * The draft with `block` added at its end, as VesnALIA's own "Add to chat" adds a
  * quote: the user's text, mentions and attachments stay as they were, the
  * block follows after a blank line, and the draft ends with a newline so the
  * user can type on below it.

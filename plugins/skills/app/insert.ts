@@ -2,12 +2,12 @@
  * **Add to chat**: what a skill puts in the thread's message box. The plugin
  * never sends anything; the user finishes the message and sends it.
  */
-import type { ComposerDraftReplacement, ComposerMention } from "@get-bb/plugin-sdk/app";
+import type { ComposerDraftReplacement, ComposerMention } from "@vesnalia/plugin-sdk/app";
 
 import type { SkillSourceKind } from "../shared/skills";
 
 /**
- * Everything bb needs to draw a skill or command as the pill its own `/` menu
+ * Everything VesnALIA needs to draw a skill or command as the pill its own `/` menu
  * inserts (`{ kind: "command" }` in `ComposerMention`), less the range.
  */
 export interface SkillCommand {
@@ -19,7 +19,7 @@ export interface SkillCommand {
 
 /**
  * The command for a skill discovery found, of source kind `kind` (unknown
- * while the list is loading). bb's own list calls a skill `project` when it
+ * while the list is loading). VesnALIA's own list calls a skill `project` when it
  * comes from the workspace and `user` otherwise, and has no argument hint for a
  * skill read from disk; this does the same.
  */
@@ -28,7 +28,7 @@ export function discoveredCommand(name: string, kind: SkillSourceKind | undefine
   return { name, source: "skill", origin: fromWorkspace ? "project" : "user", argumentHint: null };
 }
 
-/** The command for an entry bb's provider reported, as that list described it. */
+/** The command for an entry VesnALIA's provider reported, as that list described it. */
 export function reportedCommand(
   entry: { name: string; argumentHint: string; origin: SkillCommand["origin"] },
   source: SkillCommand["source"],
@@ -53,10 +53,10 @@ export function canBePill(name: string): boolean {
 type Draft = { text: string; mentions: readonly ComposerMention[] };
 
 /**
- * The draft with `command` first, as the pill bb's own `/` menu inserts. A
+ * The draft with `command` first, as the pill VesnALIA's own `/` menu inserts. A
  * slash command runs only at the start of a message, so it goes first and
  * whatever the user had typed follows it. A command pill already at the start
- * is replaced rather than joined by a second one, as bb's Plan and Goal rows
+ * is replaced rather than joined by a second one, as VesnALIA's Plan and Goal rows
  * do. A name that cannot be a pill goes in as text, replacing that pill all
  * the same. The other pills move with the text they sit in: the host takes
  * their ranges as given and does not rebase them.

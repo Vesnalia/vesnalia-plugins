@@ -24,7 +24,7 @@ const { createLinearAdapter } = await import('../sources/linear.ts');
 const { projectSourceConfigSchema } = await import('../contract.ts');
 const { createWorkItemStore } = await import('../store.ts');
 const { parseTaskboardCliArguments } = await import('../server.ts');
-type StoreBb = Parameters<typeof createWorkItemStore>[0];
+type StoreAlia = Parameters<typeof createWorkItemStore>[0];
 
 async function listQueries(finishedDays: number) {
   const requests: Array<{ query: string; variables: Record<string, unknown> }> =
@@ -114,15 +114,15 @@ test('CLI parses --linear-finished-days as days', () => {
 test('store defaults existing projects to no finished window and persists it', () => {
   const db = new Database(':memory:');
   try {
-    const bb = {
+    const alia = {
       storage: {
         database: () => db,
         migrate(database: Database.Database, migrations: readonly string[]) {
           for (const migration of migrations) database.exec(migration);
         }
       }
-    } as unknown as StoreBb;
-    const store = createWorkItemStore(bb);
+    } as unknown as StoreAlia;
+    const store = createWorkItemStore(alia);
     const defaults = {
       source: 'linear' as const,
       linearTeamKey: 'ENG',

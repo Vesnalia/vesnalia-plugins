@@ -65,7 +65,7 @@ Source: <https://github.com/WiseLibs/better-sqlite3>
 
 ## Not shipped here
 
-React and `@get-bb/plugin-sdk` are provided by bb at run time and are not
+React and `@vesnalia/plugin-sdk` are provided by VesnALIA at run time and are not
 bundled in this package.
 
 ---

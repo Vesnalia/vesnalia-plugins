@@ -1,6 +1,6 @@
-# bb-plugin-specs
+# alia-plugin-specs
 
-Spec documents that any BB project can read, annotate, discuss, and update.
+Spec documents that any VesnALIA project can read, annotate, discuss, and update.
 
 Specs live in the plugin's own SQLite store (`<dataDir>/plugins/specs/data.db`),
 so they exist across projects without living in any one repo. Every surface is
@@ -20,8 +20,8 @@ backed by the same store:
 - **Agent tools** — `specs_search`, `specs_read`, `specs_write`,
   `specs_create`, `specs_annotate`, `specs_attach`, `specs_detach`. Tool
   availability and the context digest resolve per thread.
-- **`bb specs ...` CLI** — the same operations for humans and scripts
-  (`bb specs help`).
+- **`alia specs ...` CLI** — the same operations for humans and scripts
+  (`alia specs help`).
 - **Skill** `skills/specs/SKILL.md` — teaches agents the conventions; injected
   into agent threads.
 
@@ -105,23 +105,23 @@ readable and editable.
 
 ```
 npm install
-bb plugin install .
-bb plugin dev          # rebuild + reload on every save
+alia plugin install .
+alia plugin dev          # rebuild + reload on every save
 ```
 
-Typecheck with `npx tsc --noEmit`; build with `bb plugin build`.
+Typecheck with `npx tsc --noEmit`; build with `alia plugin build`.
 
 ## Settings
 
 ```
-bb plugin config specs
-bb plugin config specs set digestMaxRows 12
-bb plugin config specs set digestMaxChars 1800
-bb plugin config specs set recentSpecsPerProject 3
-bb plugin config specs set contributeContext false
-bb plugin reload specs
+alia plugin config specs
+alia plugin config specs set digestMaxRows 12
+alia plugin config specs set digestMaxChars 1800
+alia plugin config specs set recentSpecsPerProject 3
+alia plugin config specs set contributeContext false
+alia plugin reload specs
 ```
 
 The Plugin SDK type surface lives at
-`node_modules/@get-bb/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts` (backend) and
+`node_modules/@vesnalia/plugin-sdk/bundled-types/alia-plugin-sdk.d.ts` (backend) and
 `...-app.d.ts` (frontend).

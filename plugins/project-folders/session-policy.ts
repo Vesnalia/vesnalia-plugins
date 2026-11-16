@@ -1,27 +1,27 @@
 import { z } from "zod";
 
 /**
- * Session context rules: which BB plugins, skills, MCP servers and CLI
+ * Session context rules: which VesnALIA plugins, skills, MCP servers and CLI
  * plugins an agent session started here loads.
  *
  * Enforcement lives in an experimental core extension
- * (`bb.agents.experimental_vkSessionPolicy`) that stock BB does not have. The
+ * (`alia.agents.experimental_vkSessionPolicy`) that stock VesnALIA does not have. The
  * plugin only stores the rules and answers core's question per thread; on a
- * BB build without the extension the feature is hidden and nothing is sent.
+ * VesnALIA build without the extension the feature is hidden and nothing is sent.
  *
  * Inheritance works per group, like execution defaults: the nearest place
  * that sets a group wins — the section, its parents, the project, then the
  * plugin-wide default. `all` explicitly lifts a restriction a parent set.
  */
 export const SESSION_POLICY_GROUPS = [
-  "bbPlugins",
+  "aliaPlugins",
   "skills",
   "mcpServers",
   "nativePlugins",
 ] as const;
 export type SessionPolicyGroup = (typeof SESSION_POLICY_GROUPS)[number];
 
-/** On/off switches; absent means BB's default, which is on. */
+/** On/off switches; absent means VesnALIA's default, which is on. */
 export const SESSION_POLICY_SWITCHES = [
   "userInstructions",
   "projectInstructions",
@@ -30,21 +30,21 @@ export const SESSION_POLICY_SWITCHES = [
 export type SessionPolicySwitch = (typeof SESSION_POLICY_SWITCHES)[number];
 
 /**
- * Items no rule may take out of a session: BB cannot start or show threads
+ * Items no rule may take out of a session: VesnALIA cannot start or show threads
  * without them. `environment-project-checkout` provisions the thread's
  * environment, `project-folders` supplies these rules (core never excludes
- * it either), and `bb-bridge` is the MCP server that carries BB's own and
+ * it either), and `alia-bridge` is the MCP server that carries VesnALIA's own and
  * every plugin's tools. They stay loaded whatever a group says.
  */
 export const REQUIRED_SESSION_ITEMS = {
-  bbPlugins: ["environment-project-checkout", "project-folders"],
-  mcpServers: ["bb-bridge"],
+  aliaPlugins: ["environment-project-checkout", "project-folders"],
+  mcpServers: ["alia-bridge"],
 } as const satisfies Partial<Record<SessionPolicyGroup, readonly string[]>>;
 
-/** Required items BB always has, so the editor lists them even when no inventory does. */
+/** Required items VesnALIA always has, so the editor lists them even when no inventory does. */
 export const BUILT_IN_SESSION_ITEMS: Partial<
   Record<SessionPolicyGroup, readonly string[]>
-> = { mcpServers: ["bb-bridge"] };
+> = { mcpServers: ["alia-bridge"] };
 
 export function isRequiredSessionItem(
   group: SessionPolicyGroup,
@@ -69,7 +69,7 @@ export const sessionFilterSchema = z.object({
 export type SessionFilter = z.infer<typeof sessionFilterSchema>;
 
 export const sessionPolicySchema = z.object({
-  bbPlugins: sessionFilterSchema.optional(),
+  aliaPlugins: sessionFilterSchema.optional(),
   skills: sessionFilterSchema.optional(),
   mcpServers: sessionFilterSchema.optional(),
   nativePlugins: sessionFilterSchema.optional(),
@@ -86,7 +86,7 @@ export const policyOriginSchema = z.object({
 export type PolicyOrigin = z.infer<typeof policyOriginSchema>;
 
 export const resolvedSessionPolicySchema = z.object({
-  bbPlugins: z
+  aliaPlugins: z
     .object({ value: sessionFilterSchema, origin: policyOriginSchema })
     .nullable(),
   skills: z
@@ -153,7 +153,7 @@ export function resolveSessionPolicy(
     return null;
   };
   return {
-    bbPlugins: pick("bbPlugins") as ResolvedSessionPolicy["bbPlugins"],
+    aliaPlugins: pick("aliaPlugins") as ResolvedSessionPolicy["aliaPlugins"],
     skills: pick("skills") as ResolvedSessionPolicy["skills"],
     mcpServers: pick("mcpServers") as ResolvedSessionPolicy["mcpServers"],
     nativePlugins: pick(
@@ -203,8 +203,8 @@ export function toCorePolicy(
 
 /** What each CLI enforces, for the hint next to the editor. */
 export const SESSION_POLICY_SUPPORT = {
-  "claude-code": ["bbPlugins", "skills", "mcpServers", "nativePlugins"],
-  codex: ["bbPlugins", "skills", "mcpServers", "nativePlugins"],
-  "acp-opencode": ["bbPlugins", "skills", "mcpServers"],
-  "acp-cursor": ["bbPlugins", "mcpServers"],
+  "claude-code": ["aliaPlugins", "skills", "mcpServers", "nativePlugins"],
+  codex: ["aliaPlugins", "skills", "mcpServers", "nativePlugins"],
+  "acp-opencode": ["aliaPlugins", "skills", "mcpServers"],
+  "acp-cursor": ["aliaPlugins", "mcpServers"],
 } as const satisfies Record<string, readonly SessionPolicyGroup[]>;

@@ -67,7 +67,7 @@ test("каждая строка интерфейса и CLI переведена
 });
 
 
-test("BB locale selects Russian only for ru locales", () => {
+test("VesnALIA locale selects Russian only for ru locales", () => {
   for (const locale of ["ru", "ru-RU", "RU-ru"]) assert.equal(languageFromLocale(locale), "ru");
   for (const locale of ["", "en", "en-US", "de"]) assert.equal(languageFromLocale(locale), "en");
 });

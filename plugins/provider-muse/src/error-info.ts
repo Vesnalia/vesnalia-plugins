@@ -1,10 +1,10 @@
 import type {
   ProviderErrorCategory,
   ProviderErrorInfo,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 /**
- * bb's own recovery runs on the error *category*, not on the message: core
+ * VesnALIA's own recovery runs on the error *category*, not on the message: core
  * raises `turn.failed` carrying `errorInfo`, and the provider-retry plugin
  * decides from it whether a turn earns a scheduled re-attempt. A bridge that
  * reports only prose is a bridge whose threads never get that — which is the
@@ -15,7 +15,7 @@ import type {
  * no status code and no rate-limit window on the wire — so the kind decides
  * what it can and narrow message patterns decide the rest. Nothing is inferred
  * from a number found loose in prose: an unrecognised failure stays `unknown`
- * rather than being dressed up as something bb would act on.
+ * rather than being dressed up as something VesnALIA would act on.
  */
 
 const AUTH_PATTERN =
@@ -110,7 +110,7 @@ export function museProviderErrorInfo(args: {
   const status = EXPLICIT_STATUS_PATTERN.exec(message)?.groups?.status;
   const httpStatusCode = status === undefined ? null : Number(status);
 
-  /** Nothing to say beyond the prose bb already has. */
+  /** Nothing to say beyond the prose VesnALIA already has. */
   if (category === "unknown" && providerCode === null && httpStatusCode === null) {
     return null;
   }

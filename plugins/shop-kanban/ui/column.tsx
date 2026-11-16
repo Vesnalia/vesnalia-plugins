@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent, FormEvent, KeyboardEvent, ReactElement, ReactNode } from "react";
-import { experimental_Icon as Icon, experimental_useProviders, useBbContext, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_useProviders, useAliaContext, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { PLUGIN_SLUG } from "../brand";
 import { ACCENT_BADGE, CLOCK_TICK_MS, STATUS_META, THREAD_DRAG_TYPE, groupTasksByColumn, isUnread, shortNameFromPrompt, type BoardColumn, type BoardState, type BoardTask } from "./model";
 import { useNow, type BoardApi, type ReviewsApi, type WorkApi } from "./hooks";
@@ -195,7 +195,7 @@ function readDraft(): string {
 }
 
 /**
- * After opening a thread, jump its timeline to the newest message. bb restores the last
+ * After opening a thread, jump its timeline to the newest message. VesnALIA restores the last
  * scroll position per thread, so keep nudging for a moment while it mounts and restores,
  * and stop as soon as the user scrolls themselves.
  */
@@ -231,7 +231,7 @@ function scrollThreadToLatest(threadId: string) {
 
 /**
  * `focus` is false when the form reopens on its own with a saved draft (after a reload or crash), so it
- * doesn't take focus from bb's composer.
+ * doesn't take focus from VesnALIA's composer.
  */
 function AddTaskForm({ focus, onAdd, onCancel, onError }: {
   focus: boolean;
@@ -436,14 +436,14 @@ function BoardColumnView({ column, title, tasks, renderCard, dragging, drop, onS
 }
 
 export function BoardView({ api, reviews, work }: { api: BoardApi; reviews: ReviewsApi; work: WorkApi }) {
-  const context = useBbContext();
+  const context = useAliaContext();
   const selectedThreadId = context.threadId;
-  // Same roster and lookup as bb's sidebar: a thread's harness icon is its agent provider's artwork.
+  // Same roster and lookup as VesnALIA's sidebar: a thread's harness icon is its agent provider's artwork.
   const { providers } = experimental_useProviders();
   const providersById = useMemo(() => new Map(providers.map((provider) => [provider.id, provider])), [providers]);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { rpc, board, error, report, refetch } = api;
-  // Cards opened from the board count as read right away, before bb's read state round-trips; dropped once the
+  // Cards opened from the board count as read right away, before VesnALIA's read state round-trips; dropped once the
   // server agrees, so later activity can mark the card unread again.
   const [readLocally, setReadLocally] = useLocalIds(board, (task) => task.unread);
   // Cards parked from the board move to Parked right away, before the server's board round-trips.

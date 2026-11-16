@@ -2,7 +2,7 @@
 // show_ui tool, so replies written during the pilot keep rendering. New
 // replies write ```ui blocks instead (FenceOverlay).
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useComposer, useRpc, useSdk, type PluginMessageDirectiveProps } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc, useSdk, type PluginMessageDirectiveProps } from "@vesnalia/plugin-sdk/app";
 import { compile } from "../core";
 import type { rpcContract } from "../server";
 import { useAnswerComposers } from "./answerSheet";
@@ -89,7 +89,7 @@ function StoredUi({
     [sdk, threadId, messageId, reply],
   );
   const data = useLoadedData({ threadId }, compiled.program);
-  const loadImage = useImageLoader({ threadId }, `bb.genui.state:${id}`);
+  const loadImage = useImageLoader({ threadId }, `alia.genui.state:${id}`);
   const readText = useTextLoader({ threadId });
   const loadAudio = useAudioLoader({ threadId });
   const loadAsset = useAssetLoader({ threadId });
@@ -120,7 +120,7 @@ function StoredUi({
           program={compiled.program}
           compileDiagnostics={compiled.diagnostics}
           source={source}
-          stateKey={`bb.genui.state:${id}`}
+          stateKey={`alia.genui.state:${id}`}
           data={data}
           answers={answers}
           openFile={openWorkspaceFile}
@@ -130,7 +130,7 @@ function StoredUi({
           loadAsset={loadAsset}
           superseded={superseded}
           threadId={threadId}
-          blockKey={`bb.genui.state:${id}`}
+          blockKey={`alia.genui.state:${id}`}
         />
       );
   }

@@ -1,4 +1,4 @@
-// Bundled JS runs on process.execPath (bb's Node), never an external runtime.
+// Bundled JS runs on process.execPath (VesnALIA's Node), never an external runtime.
 // The bridge spawns this leader detached; its directly spawned native child
 // inherits the group. EOF on the bridge pipe survives abrupt bridge SIGKILL.
 // Escaped descendants require an in-memory ancestry observation and a fresh

@@ -4,7 +4,7 @@ import { hiddenFileNotice, isSecretPath, readFeatureDiff, type FeatureDiff } fro
 import { BASE_SHA, folderHost, type Folder } from "./env-diff.test-support";
 
 const feature = { environmentId: "env1", machine: "MaxBook", repo: "acme/api" };
-const read = (folder: Folder, include?: string[]) => readFeatureDiff(folderHost(folder).bb, feature, include);
+const read = (folder: Folder, include?: string[]) => readFeatureDiff(folderHost(folder).alia, feature, include);
 const available = (diff: FeatureDiff) => {
   if (diff.outcome !== "available") throw new Error(`${diff.outcome}: ${diff.message}`);
   return diff;
@@ -47,7 +47,7 @@ test("a binary stays out, and included, shows as GitHub shows one: no encoded co
   expect(included.patch).not.toContain("GIT binary patch");
 });
 
-test("a diff bb won't load whole, or cuts, stays out as too large; one it loads on demand is read", async () => {
+test("a diff VesnALIA won't load whole, or cuts, stays out as too large; one it loads on demand is read", async () => {
   const folder: Folder = { files: [
     { path: "huge.sql", lines: 30_000, truncated: true },
     { path: "cut.json", lines: 900, truncated: true },
@@ -63,26 +63,26 @@ test("a diff bb won't load whole, or cuts, stays out as too large; one it loads 
 
 test("patches are read 50 at a time at the merge base's commit, and a cut file list says so", async () => {
   const files = Array.from({ length: 130 }, (_, i) => ({ path: `src/f${String(i).padStart(3, "0")}.ts` }));
-  const { bb, calls } = folderHost({ files, listLimit: 120 });
-  const diff = available(await readFeatureDiff(bb, feature));
+  const { alia, calls } = folderHost({ files, listLimit: 120 });
+  const diff = available(await readFeatureDiff(alia, feature));
   expect(changedFiles(diff.patch)).toEqual(files.slice(0, 120).map((f) => f.path));
   const batches = calls.filter((c) => c.method === "patches").map((c) => c.input.keys.length);
   expect(batches).toEqual([50, 50, 20]);
   for (const { input } of calls.filter((c) => c.method === "patches")) {
     for (const key of input.keys) expect(JSON.parse(key).slice(0, 3)).toEqual(["env1", { type: "all", mergeBaseBranch: BASE_SHA }, false]);
   }
-  expect(diff.notice).toBe("This folder has more changed files than BB lists at once, so the review has the first 120.");
+  expect(diff.notice).toBe("This folder has more changed files than VesnALIA lists at once, so the review has the first 120.");
   expect(diff.mergeBaseRef).toBe(BASE_SHA);
 });
 
-test("the base: the PR's, else bb's merge base for the folder, else what it was made from, else its default branch", async () => {
+test("the base: the PR's, else VesnALIA's merge base for the folder, else what it was made from, else its default branch", async () => {
   const base = async (folder: Folder, known: { repo?: string | null } = {}) => {
-    const { bb, calls } = folderHost(folder);
-    const diff = available(await readFeatureDiff(bb, { ...feature, ...known }));
+    const { alia, calls } = folderHost(folder);
+    const diff = available(await readFeatureDiff(alia, { ...feature, ...known }));
     return [diff.base, calls.find((c) => c.method === "files")!.input.target.mergeBaseBranch];
   };
   const files = [{ path: "a.ts" }];
-  // A bb worktree's merge base is where it was spawned; once the branch has a PR, GitHub's base is the one that counts.
+  // A VesnALIA worktree's merge base is where it was spawned; once the branch has a PR, GitHub's base is the one that counts.
   expect(await base({ files, env: { mergeBaseBranch: "d49cbbcf833078585cd0e4634414e52abc123aff", baseBranch: "dev" }, prBase: "staging" })).toEqual(["staging", "staging"]);
   expect(await base({ files, env: { mergeBaseBranch: "release/2", baseBranch: "dev" } })).toEqual(["release/2", "release/2"]);
   expect(await base({ files, env: { baseBranch: "dev" } })).toEqual(["dev", "dev"]);
@@ -92,24 +92,24 @@ test("the base: the PR's, else bb's merge base for the folder, else what it was 
   expect(await read({ files, env: { defaultBranch: null } })).toEqual({ outcome: "unavailable", message: "Couldn’t find a base branch to compare this folder with. Choose one in its Diff tab, then try again." });
 });
 
-test("when bb can't say whether the branch has a PR, the last read's base stays, and with none the read waits", async () => {
+test("when VesnALIA can't say whether the branch has a PR, the last read's base stays, and with none the read waits", async () => {
   const files = [{ path: "a.ts" }];
   for (const prLookup of ["unavailable", "throws"] as const) {
-    const { bb } = folderHost({ files, env: { mergeBaseBranch: "main" }, prLookup });
-    expect(available(await readFeatureDiff(bb, { ...feature, baseRef: "staging" })).base).toBe("staging");
-    expect(await readFeatureDiff(bb, feature)).toEqual({ outcome: "unavailable", message: "Couldn’t check whether this branch has a PR, so its base isn’t known yet. Try again in a moment." });
+    const { alia } = folderHost({ files, env: { mergeBaseBranch: "main" }, prLookup });
+    expect(available(await readFeatureDiff(alia, { ...feature, baseRef: "staging" })).base).toBe("staging");
+    expect(await readFeatureDiff(alia, feature)).toEqual({ outcome: "unavailable", message: "Couldn’t check whether this branch has a PR, so its base isn’t known yet. Try again in a moment." });
   }
 });
 
 test("a Git plugin that answers in another shape fails the read instead of guessing", async () => {
   const files = [{ path: "a.ts" }, { path: "b.ts", lines: 900 }];
-  const { bb: unrevised } = folderHost({ files, answers: { files: () => ({ outcome: "available", files: [{ path: "a.ts", previousPath: null, changeKind: "modified", binary: false, origin: "tracked", loadMode: "auto" }], truncated: false, mergeBaseRef: BASE_SHA, initialPatches: [] }) } });
+  const { alia: unrevised } = folderHost({ files, answers: { files: () => ({ outcome: "available", files: [{ path: "a.ts", previousPath: null, changeKind: "modified", binary: false, origin: "tracked", loadMode: "auto" }], truncated: false, mergeBaseRef: BASE_SHA, initialPatches: [] }) } });
   expect((await readFeatureDiff(unrevised, feature)).outcome).toBe("unavailable");
-  const { bb: keyless } = folderHost({ files, answers: { patches: () => ({}) } });
-  expect(await readFeatureDiff(keyless, feature)).toEqual({ outcome: "unavailable", message: "Couldn’t read the folder’s changes: BB sent no diff for b.ts." });
+  const { alia: keyless } = folderHost({ files, answers: { patches: () => ({}) } });
+  expect(await readFeatureDiff(keyless, feature)).toEqual({ outcome: "unavailable", message: "Couldn’t read the folder’s changes: VesnALIA sent no diff for b.ts." });
   for (const mergeBaseRef of ["main", "abc123", null]) {
-    const { bb } = folderHost({ files, answers: { files: () => ({ outcome: "available", files: [], truncated: false, shortstat: "", mergeBaseRef, initialPatches: [] }) } });
-    expect(await readFeatureDiff(bb, feature)).toEqual({ outcome: "unavailable", message: "Couldn’t find where this folder’s branch left main." });
+    const { alia } = folderHost({ files, answers: { files: () => ({ outcome: "available", files: [], truncated: false, shortstat: "", mergeBaseRef, initialPatches: [] }) } });
+    expect(await readFeatureDiff(alia, feature)).toEqual({ outcome: "unavailable", message: "Couldn’t find where this folder’s branch left main." });
   }
 });
 
@@ -123,16 +123,16 @@ test("a file whose diff comes back empty was reverted since the list, so it's le
 test("an offline machine, a removed folder, and a failed read each say what happened", async () => {
   const files = [{ path: "a.ts" }];
   const asleep = folderHost({ files, connected: false });
-  expect(await readFeatureDiff(asleep.bb, feature)).toEqual({ outcome: "offline", message: "MaxBook is offline. Wake it to see the folder’s latest changes." });
+  expect(await readFeatureDiff(asleep.alia, feature)).toEqual({ outcome: "offline", message: "MaxBook is offline. Wake it to see the folder’s latest changes." });
   expect(asleep.calls).toEqual([]);
   // It went to sleep mid-read.
   const host = folderHost({ files, throws: "Host request timed out" });
   let connected = true;
   host.harness.inspection.sdk.stub("hosts.get", async () => ({ id: "host_max", name: "MaxBook", status: (connected = !connected) ? "disconnected" : "connected", lifecycle: { phase: "active" } }));
-  expect((await readFeatureDiff(host.bb, feature)).outcome).toBe("offline");
+  expect((await readFeatureDiff(host.alia, feature)).outcome).toBe("offline");
   expect(await read({ files, throws: "boom" })).toEqual({ outcome: "unavailable", message: "Couldn’t read the folder’s changes: boom" });
 
-  expect(await read({ files, missing: true })).toEqual({ outcome: "gone", message: "BB removed this folder, so its changes can’t be read." });
+  expect(await read({ files, missing: true })).toEqual({ outcome: "gone", message: "VesnALIA removed this folder, so its changes can’t be read." });
   expect((await read({ files, env: { status: "destroyed" } })).outcome).toBe("gone");
   expect(await read({ files, filesFailure: { outcome: "unavailable", failure: { code: "path_not_found", workspacePath: "/Users/me/src/api", message: "Path does not exist" } } }))
     .toEqual({ outcome: "gone", message: "The folder is no longer on its machine, so its changes can’t be read." });

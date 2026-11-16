@@ -1,4 +1,4 @@
-// Elephant Goldfish — BB plugin backend.
+// Elephant Goldfish — VesnALIA plugin backend.
 //
 // Surfaces:
 // - RPC for the project page and the thread tab (server/contract.ts).
@@ -9,7 +9,7 @@
 import { existsSync } from "node:fs";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   CHANGED_CHANNEL,
@@ -21,7 +21,7 @@ import {
   type Spec,
 } from "./server/contract.ts";
 import { Engine, EngineError } from "./server/engine.ts";
-import { BbReviewer } from "./server/bb-reviewer.ts";
+import { AliaReviewer } from "./server/alia-reviewer.ts";
 import { GoldfishClient, normalizeBaseUrl } from "./server/goldfish.ts";
 import { MIGRATIONS, Store } from "./server/store.ts";
 import { resolveInside, WorkspaceError } from "./server/workspace.ts";
@@ -33,14 +33,14 @@ const ELEPHANT_TOOLS = ["egm_specs", "egm_register_spec", "egm_start_review", "e
 /** Frontmatter names of skills/<dir>/SKILL.md; configure() must select them explicitly. */
 const SKILL_NAMES = ["egm-brainstorm", "egm-draft", "egm-review", "egm-review-loop", "egm-resolve", "egm-drift-report", "egm-bootstrap"];
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     reviewerEngine: {
       type: "select",
       label: "Reviewer engine",
-      description: "BB workers (default) can use tools and write according to BB permissions. Advanced endpoint is tool-less.",
-      default: "bb",
-      options: ["bb", "goldfish"],
+      description: "VesnALIA workers (default) can use tools and write according to VesnALIA permissions. Advanced endpoint is tool-less.",
+      default: "alia",
+      options: ["alia", "goldfish"],
     },
     goldfishBaseUrl: {
       type: "string",
@@ -63,7 +63,7 @@ export default async function plugin(bb: BbPluginApi) {
     goldfishApiKeyEnv: {
       type: "string",
       label: "API key environment variable",
-      description: "Read the key from this environment variable of the BB server when the key field is empty.",
+      description: "Read the key from this environment variable of the VesnALIA server when the key field is empty.",
       default: "",
     },
     goldfishTimeoutSeconds: {
@@ -73,9 +73,9 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
+  const db = alia.storage.database();
   db.pragma("foreign_keys = ON");
-  bb.storage.migrate(db, MIGRATIONS);
+  alia.storage.migrate(db, MIGRATIONS);
   const store = new Store(db);
 
   const goldfish = new GoldfishClient(async () => {
@@ -87,8 +87,8 @@ export default async function plugin(bb: BbPluginApi) {
     if (!baseUrl || !model || !apiKey) return null;
     return { baseUrl, model, apiKey, timeoutMs: Math.max(10, Number(value.goldfishTimeoutSeconds ?? 300)) * 1000 };
   });
-  const bbReviewer = new BbReviewer(bb, async () => Math.max(10, Number((await settings.get()).goldfishTimeoutSeconds ?? 300)) * 1000);
-  const reviewer = async () => ((await settings.get()).reviewerEngine === "goldfish" ? goldfish : bbReviewer);
+  const aliaReviewer = new AliaReviewer(alia, async () => Math.max(10, Number((await settings.get()).goldfishTimeoutSeconds ?? 300)) * 1000);
+  const reviewer = async () => ((await settings.get()).reviewerEngine === "goldfish" ? goldfish : aliaReviewer);
   const snapshotReviewer = async (threadId: string | null) => {
     const selected = await reviewer();
     if (selected.engine === "goldfish") {
@@ -97,25 +97,25 @@ export default async function plugin(bb: BbPluginApi) {
       const model = String(value.goldfishModel ?? "").trim();
       return { engine: "goldfish" as const, provider: baseUrl || null, model: model || null, environmentId: null };
     }
-    const thread = threadId ? await bb.sdk.threads.get({ threadId }) : null;
+    const thread = threadId ? await alia.sdk.threads.get({ threadId }) : null;
     const environmentId = thread?.environmentId ?? null;
-    return { engine: "bb" as const, provider: null, model: null, environmentId };
+    return { engine: "alia" as const, provider: null, model: null, environmentId };
   };
 
-  // The plugin reads and writes spec files from the BB server process, so a
+  // The plugin reads and writes spec files from the VesnALIA server process, so a
   // project counts only when one of its local sources exists on this machine.
   const projectRoot = async (projectId: string): Promise<string | null> => {
     try {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await alia.sdk.projects.get({ projectId });
       const sources = [...project.sources].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
       return sources.find((source) => source.type === "local_path" && existsSync(source.path))?.path ?? null;
     } catch {
       return null;
     }
   };
-  const changed = (projectId: string, specId: string | null) => bb.realtime.publish(CHANGED_CHANNEL, { projectId, specId });
+  const changed = (projectId: string, specId: string | null) => alia.realtime.publish(CHANGED_CHANNEL, { projectId, specId });
 
-  const engine = new Engine({ store, goldfish, reviewer: () => bbReviewer, currentReviewer: snapshotReviewer, threadProject: async (threadId) => (await bb.sdk.threads.get({ threadId })).projectId, projectRoot, changed, log: bb.log });
+  const engine = new Engine({ store, goldfish, reviewer: () => aliaReviewer, currentReviewer: snapshotReviewer, threadProject: async (threadId) => (await alia.sdk.threads.get({ threadId })).projectId, projectRoot, changed, log: alia.log });
   await engine.reconcile();
 
   const describeAll = async (projectId: string): Promise<Spec[]> => {
@@ -148,23 +148,23 @@ export default async function plugin(bb: BbPluginApi) {
   };
 
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     projects_list: async () => {
-      const projects = await bb.sdk.projects.list();
+      const projects = await alia.sdk.projects.list();
       const out = [];
       for (const project of projects) {
         out.push({ id: project.id, name: project.name, root: await projectRoot(project.id) });
       }
       return { projects: out, current: null };
     },
-    consent_status: () => ({ granted: store.hasReviewerConsent(), warning: "BB reviewer workers are not read-only or sandboxed. They can run tools, including writes, subject only to BB's permission mode. Allow this installation to launch them?" }),
+    consent_status: () => ({ granted: store.hasReviewerConsent(), warning: "VesnALIA reviewer workers are not read-only or sandboxed. They can run tools, including writes, subject only to VesnALIA's permission mode. Allow this installation to launch them?" }),
     consent_grant: () => {
       store.grantReviewerConsent();
-      return { granted: true, warning: "BB reviewer worker consent is recorded for this installation." };
+      return { granted: true, warning: "VesnALIA reviewer worker consent is recorded for this installation." };
     },
     consent_revoke: () => {
       store.revokeReviewerConsent();
-      return { granted: false, warning: "BB reviewer worker consent was revoked; BB launches are refused until allowed again." };
+      return { granted: false, warning: "VesnALIA reviewer worker consent was revoked; VesnALIA launches are refused until allowed again." };
     },
     reviewer_status: async () => (await (await reviewer()).status()),
 
@@ -190,7 +190,7 @@ export default async function plugin(bb: BbPluginApi) {
       }),
     thread_overview: ({ threadId }) =>
       guard(async () => {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         const specs = await describeAll(thread.projectId);
         const activeRuns: Run[] = [];
         for (const spec of specs) {
@@ -203,7 +203,7 @@ export default async function plugin(bb: BbPluginApi) {
     review_start: (input) =>
         guard(async () => {
           requireProjectSpec(input.specId, input.projectId);
-          if (input.threadId && (await bb.sdk.threads.get({ threadId: input.threadId })).projectId !== input.projectId) {
+          if (input.threadId && (await alia.sdk.threads.get({ threadId: input.threadId })).projectId !== input.projectId) {
             throw new EngineError("Thread does not belong to this project.");
           }
           const snapshot = await snapshotReviewer(input.threadId);
@@ -224,17 +224,17 @@ export default async function plugin(bb: BbPluginApi) {
     proposal_reject: ({ proposalId, reason }) => guard(() => engine.rejectProposal(proposalId, reason)),
     workspace_search: ({ threadId, query }) =>
       guard(async () => {
-        const thread = await bb.sdk.threads.get({ threadId });
+        const thread = await alia.sdk.threads.get({ threadId });
         const root = await projectRoot(thread.projectId);
         if (!root || !thread.environmentId) throw new EngineError("Thread workspace is unavailable. Open a thread with an available project checkout and retry.");
-        const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
-        const project = await bb.sdk.projects.get({ projectId: thread.projectId });
+        const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
+        const project = await alia.sdk.projects.get({ projectId: thread.projectId });
         const sources = [...project.sources].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
         const source = sources.find((item) => item.type === "local_path" && existsSync(item.path));
         if (environment.projectId !== thread.projectId || environment.status !== "ready" || !environment.path || !source || environment.hostId !== source.hostId || await fs.realpath(environment.path).catch(() => null) !== await fs.realpath(root).catch(() => null)) {
           throw new EngineError("Thread workspace does not match the server's available project checkout. Open a thread in that checkout and retry.");
         }
-        const result = await bb.sdk.environments.paths({ environmentId: thread.environmentId, query, includeFiles: "true", includeDirectories: "false" });
+        const result = await alia.sdk.environments.paths({ environmentId: thread.environmentId, query, includeFiles: "true", includeDirectories: "false" });
         const paths: string[] = [];
         for (const entry of result.paths) {
           if (entry.kind !== "file" || !entry.path || path.isAbsolute(entry.path)) continue;
@@ -249,7 +249,7 @@ export default async function plugin(bb: BbPluginApi) {
         return { paths, truncated: result.truncated };
       }),
   }, {
-    // Lets `bb plugin rpc call elephant-goldfish <method>` drive the workspace from a terminal or script.
+    // Lets `alia plugin rpc call elephant-goldfish <method>` drive the workspace from a terminal or script.
     experimental_discoverable: true,
     experimental_description: "Elephant Goldfish spec workspace: specs, Goldfish reviews, decisions, proposals.",
   });
@@ -262,7 +262,7 @@ export default async function plugin(bb: BbPluginApi) {
     isError: true,
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "egm_specs",
     description: "List the specs registered in this project's Elephant Goldfish workspace, with review state and open findings.",
     presentation: { label: { pending: "Listing specs", completed: "Listed specs" } },
@@ -276,7 +276,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "egm_register_spec",
     description: "Register a Markdown spec (project-relative path) in the Elephant Goldfish workspace so it can be reviewed.",
     presentation: { label: { pending: "Registering spec", completed: "Registered spec" } },
@@ -290,10 +290,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "egm_start_review",
     description:
-      "Start a configured reviewer run. BB workers require recorded human consent because they can use tools; Advanced endpoint mode is tool-less.",
+      "Start a configured reviewer run. VesnALIA workers require recorded human consent because they can use tools; Advanced endpoint mode is tool-less.",
     presentation: { label: { pending: "Starting review", completed: "Started review" } },
     parameters: z.object({
       specId: z.string(),
@@ -306,11 +306,11 @@ export default async function plugin(bb: BbPluginApi) {
     async execute(params, { projectId, threadId }) {
       try {
         requireProjectSpec(params.specId, projectId);
-        if (threadId && (await bb.sdk.threads.get({ threadId })).projectId !== projectId) {
+        if (threadId && (await alia.sdk.threads.get({ threadId })).projectId !== projectId) {
           throw new EngineError("Thread does not belong to this project.");
         }
         const snapshot = await snapshotReviewer(threadId);
-        if (snapshot.engine === "bb" && !store.hasReviewerConsent()) throw new EngineError("BB reviewer consent is required in the Elephant Goldfish tab before launch.");
+        if (snapshot.engine === "alia" && !store.hasReviewerConsent()) throw new EngineError("VesnALIA reviewer consent is required in the Elephant Goldfish tab before launch.");
         const run = await engine.startRun(params.specId, {
           preset: params.preset,
           ...(params.lenses ? { lenses: params.lenses } : {}),
@@ -327,7 +327,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "egm_review_status",
     description:
       "Read a spec's review state: runs, stages, findings (with ids, severity, state, human decisions) and proposals. Use it to see what the human decided and which findings wait for you.",
@@ -351,7 +351,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "egm_contest",
     description:
       "As the Elephant, argue that a finding does not apply, with the rationale from your context. This does not resolve it: the human decides in the Elephant Goldfish tab.",
@@ -369,7 +369,7 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "egm_propose",
     description:
       "As the Elephant, propose a complete revised spec, either addressing findings or making an agreed ad hoc change. Pass the COMPLETE new document content and findingIds for the findings addressed, or an empty array when there are none; never invent findings. The diff is bound to the current spec snapshot and the human must confirm it before it is written. Never edit the spec file yourself.",
@@ -392,21 +392,21 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure(() => ({ tools: ELEPHANT_TOOLS, skills: SKILL_NAMES }));
+  alia.agents.configure(() => ({ tools: ELEPHANT_TOOLS, skills: SKILL_NAMES }));
 
-  bb.cli.register({
+  alia.cli.register({
     name: "egm",
     summary: "Elephant Goldfish spec workspace",
     commands: [
-      { name: "status", summary: "Show reviewer availability and this project's specs", usage: "bb egm status" },
+      { name: "status", summary: "Show reviewer availability and this project's specs", usage: "alia egm status" },
     ],
     async run(argv, ctx) {
       const [command] = argv;
       if (command !== "status") {
-        return { exitCode: 2, stderr: "usage: bb egm status\n" };
+        return { exitCode: 2, stderr: "usage: VesnALIA egm status\n" };
       }
       const status = await (await reviewer()).status();
-      const engineLabel = status.engine === "bb" ? "BB workers" : "Advanced endpoint";
+      const engineLabel = status.engine === "alia" ? "VesnALIA workers" : "Advanced endpoint";
       const lines = [`${engineLabel}: ${status.ready ? `ready${status.model ? ` (${status.model}${status.endpoint ? ` at ${status.endpoint}` : ""})` : ""}` : `unavailable: ${status.reason}`}`];
       if (ctx.projectId) {
         for (const spec of await describeAll(ctx.projectId)) {
@@ -419,5 +419,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.onDispose(() => engine.dispose());
+  alia.onDispose(() => engine.dispose());
 }

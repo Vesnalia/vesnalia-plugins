@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSdk } from "@get-bb/plugin-sdk/app";
+import { useSdk } from "@vesnalia/plugin-sdk/app";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TASKS_PLUGIN, tasksContract } from "./suite-contracts";
 
@@ -16,7 +16,7 @@ const PREFIX = /^[A-Z][A-Z0-9]{0,9}$/;
 export function NewProjectDialog({ repos, onClose, onCreated }: {
   repos: readonly { id: string; name: string }[];
   onClose(): void;
-  onCreated(project: { id: string; prefix: string; linkedBbProjectId: string | null }): void;
+  onCreated(project: { id: string; prefix: string; linkedAliaProjectId: string | null }): void;
 }) {
   const sdk = useSdk();
   const [name, setName] = useState("");
@@ -59,10 +59,10 @@ export function NewProjectDialog({ repos, onClose, onCreated }: {
               const result = await sdk.plugins.callRpc({
                 pluginId: TASKS_PLUGIN,
                 method: "createProject",
-                input: { name: name.trim(), prefix: effectivePrefix, color: "blue", folderId: null, linkedBbProjectId: repo || null },
+                input: { name: name.trim(), prefix: effectivePrefix, color: "blue", folderId: null, linkedAliaProjectId: repo || null },
                 outputSchema: tasksContract.createProject.output,
               });
-              onCreated({ id: result.project.id, prefix: result.project.prefix, linkedBbProjectId: repo || null });
+              onCreated({ id: result.project.id, prefix: result.project.prefix, linkedAliaProjectId: repo || null });
               onClose();
             } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
             finally { setBusy(false); }

@@ -2,7 +2,7 @@
 // still-living agent worker instead of spawning the node a second time. Only
 // a worker that is really lost gets the node run again — exactly once.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, type FakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, type FakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import graphStudio from "../server";
 import { END_NODE, START_NODE, graphSchema } from "../lib/graph";
 import { createStore } from "../lib/store";
@@ -102,7 +102,7 @@ async function takeover(
 ) {
   const first = createFakePluginHost({ pluginId: "graph-studio", sdk: w.sdk as never });
   open.push(first);
-  graphStudio(first.bb);
+  graphStudio(first.alia);
   await first.harness.behavior.callRpc("saveGraph", { graph: agentGraph });
   const started = (await first.harness.behavior.callRpc("startRun", {
     graphId: agentGraph.id,
@@ -113,7 +113,7 @@ async function takeover(
   await vi.waitFor(() => expect(w.spawned()).toBe(1));
   await vi.waitFor(() =>
     expect(
-      createStore(first.bb.storage.database()).listNodeRuns(started.run.id)[0]?.childThreadId,
+      createStore(first.alia.storage.database()).listNodeRuns(started.run.id)[0]?.childThreadId,
     ).toBe("thr_worker_1"),
   );
   before(w.workers.get("thr_worker_1")!);
@@ -132,7 +132,7 @@ describe("takeover of a run with an agent node in flight", () => {
     const t = await takeover(w, () => {});
     // The successor took the run and is waiting on the old worker.
     await vi.waitFor(() =>
-      expect(createStore(t.next.bb.storage.database()).getDriver(t.runId)?.driverId).toMatch(/^drv_/),
+      expect(createStore(t.next.alia.storage.database()).getDriver(t.runId)?.driverId).toMatch(/^drv_/),
     );
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(w.spawned()).toBe(1);
@@ -174,7 +174,7 @@ describe("takeover of a run with an agent node in flight", () => {
     const t = await takeover(w, () => {}, () =>
       vi.useFakeTimers({ toFake: ["setInterval", "Date"] }),
     );
-    const store = createStore(t.next.bb.storage.database());
+    const store = createStore(t.next.alia.storage.database());
     await vi.advanceTimersByTimeAsync(1_000);
     const before = store.getDriver(t.runId)!;
     expect(before.driverId).toMatch(/^drv_/);

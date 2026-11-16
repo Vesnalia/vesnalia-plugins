@@ -70,7 +70,7 @@ export function RedlineView({ props, node }: ViewProps) {
     }
   };
 
-  // Insertions and deletions in bb's own diff colors, as <Diff> draws them.
+  // Insertions and deletions in VesnALIA's own diff colors, as <Diff> draws them.
   const good = `var(--diff-added, ${palette.tone.good})`;
   const bad = `var(--diff-removed, ${palette.tone.bad})`;
   const title = str(props.title);

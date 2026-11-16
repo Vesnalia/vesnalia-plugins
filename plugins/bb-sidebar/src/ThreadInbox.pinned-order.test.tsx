@@ -48,7 +48,7 @@ describe("ThreadInbox", () => {
           thread({ id: "b", title: "Pin B", isPinned: true }),
           thread({ id: "c", title: "Pin C", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -111,7 +111,7 @@ describe("ThreadInbox", () => {
               previousThreadId: string | null;
               nextThreadId: string | null;
             };
-            // Canonical BB excludes null-key rows from both moving roots and neighbours.
+            // Canonical VesnALIA excludes null-key rows from both moving roots and neighbours.
             if ([threadId, previousThreadId, nextThreadId].includes("pending")) throw new Error("stale_neighbor");
             return { pinnedThreadIds: ["b", "a", ...(withChild ? ["child"] : []), "pending"] };
           },
@@ -196,7 +196,7 @@ describe("ThreadInbox", () => {
           thread({ id: "b", title: "Pin B", isPinned: true }),
           thread({ id: "c", title: "Pin C", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -223,7 +223,7 @@ describe("ThreadInbox", () => {
         status: "ready",
         threads: [
           thread({ id: "a", title: "Pin A", isPinned: true }),
-          // Listed inside A's row, but still in bb's pinned order.
+          // Listed inside A's row, but still in VesnALIA's pinned order.
           thread({
             id: "child",
             title: "Pinned child",
@@ -233,7 +233,7 @@ describe("ThreadInbox", () => {
           thread({ id: "b", title: "Pin B", isPinned: true }),
           thread({ id: "c", title: "Pin C", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -271,7 +271,7 @@ describe("ThreadInbox", () => {
           thread({ id: "b", title: "Pin B", isPinned: true }),
           thread({ id: "c", title: "Pin C", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -338,7 +338,7 @@ describe("ThreadInbox", () => {
           thread({ id: "a", title: "Pin A", isPinned: true }),
           thread({ id: "b", title: "Pin B", isPinned: true }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),

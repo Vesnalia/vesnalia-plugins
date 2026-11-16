@@ -178,8 +178,8 @@ export function buildSnapshot(
         attention: attentionKind(thread, status),
       };
     })
-    // BB keeps a failed thread in the error lifecycle after its attention has
-    // been read. Those acknowledged failures remain available in BB itself,
+    // VesnALIA keeps a failed thread in the error lifecycle after its attention has
+    // been read. Those acknowledged failures remain available in VesnALIA itself,
     // but keeping them pinned red on the Touch Bar makes them look like new,
     // actionable failures forever.
     .filter(
@@ -211,11 +211,11 @@ export function buildSnapshot(
 }
 
 export function renderSummary(snapshot: TouchBarSnapshot): string {
-  if (snapshot.summary.visible === 0) return "BB idle";
+  if (snapshot.summary.visible === 0) return "VesnALIA idle";
   const active = `${snapshot.summary.active} active`;
   return snapshot.summary.attention > 0
-    ? `BB · ${active} · ${snapshot.summary.attention} need you`
-    : `BB · ${active}`;
+    ? `VesnALIA · ${active} · ${snapshot.summary.attention} need you`
+    : `ALIA · ${active}`;
 }
 
 export function renderCard(

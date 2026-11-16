@@ -74,6 +74,6 @@ export async function resolveSupportedSelection(
       error: null,
     };
   } catch {
-    return resolutionError("failed", "BB could not load this machine's model catalog.");
+    return resolutionError("failed", "VesnALIA could not load this machine's model catalog.");
   }
 }

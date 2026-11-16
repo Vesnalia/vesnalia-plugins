@@ -25,19 +25,19 @@ export const ownBudget = (thread: number | null | undefined, settings: BurnSetti
   thread === undefined ? settings.defaultBudget : thread;
 
 /**
- * The policy in effect. In a bb thread that has answered, bb's policy, with pi's
- * own budget only when bb has none; otherwise burn.json's.
+ * The policy in effect. In a VesnALIA thread that has answered, VesnALIA's policy, with pi's
+ * own budget only when VesnALIA has none; otherwise burn.json's.
  */
-export function effectivePolicy(bb: BudgetPolicy | null, thread: number | null | undefined, settings: BurnSettings): BudgetPolicy {
-  if (bb) return { ...bb, budget: bb.budget ?? ownBudget(thread, settings) };
+export function effectivePolicy(alia: BudgetPolicy | null, thread: number | null | undefined, settings: BurnSettings): BudgetPolicy {
+  if (alia) return { ...alia, budget: alia.budget ?? ownBudget(thread, settings) };
   return { budget: ownBudget(thread, settings), stopAtBudget: settings.stopAtBudget, notifyExpensiveTurn: settings.notifyExpensiveTurn };
 }
 
 /** `/burn budget` with no amount: the budget in effect, where it comes from and what it does. */
-export function describeBudget(bb: BudgetPolicy | null, thread: number | null | undefined, settings: BurnSettings): string {
-  const policy = effectivePolicy(bb, thread, settings);
+export function describeBudget(alia: BudgetPolicy | null, thread: number | null | undefined, settings: BurnSettings): string {
+  const policy = effectivePolicy(alia, thread, settings);
   let source: string;
-  if (bb?.budget != null) source = `${formatBudget(bb.budget)}, set in bb.`;
+  if (alia?.budget != null) source = `${formatBudget(alia.budget)}, set in VesnALIA.`;
   else if (typeof thread === "number") source = `${formatBudget(thread)}, set for this thread with /burn budget.`;
   else if (thread === null) source = "No budget: turned off for this thread with /burn budget off.";
   else if (settings.defaultBudget !== null) source = `${formatBudget(settings.defaultBudget)}, the default from /burn budget default.`;

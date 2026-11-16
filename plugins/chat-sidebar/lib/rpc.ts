@@ -3,7 +3,7 @@
 // every device sees them.
 // Backend only: the frontend imports types from here, never values, so zod
 // stays out of the app bundle.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 import { CHAT_ICONS_CHANNEL, MAX_CHAT_ICONS, isChatIcon } from "./chat-icons";
@@ -27,7 +27,7 @@ export { FOLDER_IMAGES_CHANNEL } from "./folder-images";
 export const MAX_PROJECT_COLORS = 500;
 export { MAX_ROW_ACTIONS, ROW_ACTIONS_CHANNEL } from "./row-actions";
 
-/** bb thread action keys, `<owner>/<id>`, in the order the row shows them. */
+/** VesnALIA thread action keys, `<owner>/<id>`, in the order the row shows them. */
 const rowActions = z.array(z.string().min(3).max(200)).max(MAX_ROW_ACTIONS);
 
 const colorMap = z.record(z.string().min(1).max(200), z.enum(COLOR_IDS));
@@ -117,7 +117,7 @@ export const rpcContract = defineRpcContract({
     input: z.object({ folderId: z.string().min(1).max(250), image: folderImage.nullable() }).strict(),
     output: imageMap,
   },
-  /** Settings the folder editor changes in place, so they need no trip to bb's plugin page. */
+  /** Settings the folder editor changes in place, so they need no trip to VesnALIA's plugin page. */
   settings_set: {
     input: z
       .object({

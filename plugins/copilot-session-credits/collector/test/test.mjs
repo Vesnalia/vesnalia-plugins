@@ -23,7 +23,7 @@ function harness(directory, options = {}) {
 const rows = directory => readdirSync(directory).flatMap(name => readFileSync(join(directory, name), 'utf8').trim().split('\n').map(JSON.parse));
 const event = data => ({ provider: 'github-copilot', api: 'openai-responses', model: 'gpt-fixture', data });
 try {
-  await check('BB bridge session names: pi_<uuid> and thr_<id> accepted, others rejected', () => {
+  await check('VesnALIA bridge session names: pi_<uuid> and thr_<id> accepted, others rejected', () => {
     assert.equal(providerSessionName('pi_11111111-1111-4111-8111-111111111111'), 'pi_11111111-1111-4111-8111-111111111111');
     assert.equal(providerSessionName('thr_editfixture'), 'thr_editfixture');
     for (const bad of ['standalone', 'pi_nope', 'thr_', 'thr_../x', '11111111-1111-4111-8111-111111111111', null]) assert.equal(providerSessionName(bad), null);

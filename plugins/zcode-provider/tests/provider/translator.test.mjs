@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { threadDeltaSchema, threadDeltaNotificationParamsSchema } from '@get-bb/plugin-sdk/provider-bridge';
+import { threadDeltaSchema, threadDeltaNotificationParamsSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 import { experimental_assembleCapturedThreadEvents as assemble,
   experimental_assembleRecordedEvents as replay, experimental_createBridgeDeltaEventCollector as collector,
-  experimental_normalizeCalibrationEvents as normalize } from '@get-bb/plugin-sdk/provider-bridge/testing';
+  experimental_normalizeCalibrationEvents as normalize } from '@vesnalia/plugin-sdk/provider-bridge/testing';
 import { api, accepted, rows, snapshot, inputs } from './helpers.mjs';
 const events = ds => assemble([{ jsonrpc: '2.0', method: 'thread/delta', params: { threadId: 'thr_2222222222', deltas: ds } }], 'zcode');
 test('K-110 real SDK mixed explicit/implicit identity loses items, translator preserves accepted text/tool/terminal', () => {

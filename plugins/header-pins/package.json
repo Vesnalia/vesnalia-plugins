@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-header-pins",
+  "name": "alia-plugin-header-pins",
   "version": "0.1.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Header Pins",
-    "description": "Pins your pinned BB threads to the empty title bar strip as one-click chips with project color and live status.",
+    "description": "Pins your pinned VesnALIA threads to the empty title bar strip as one-click chips with project color and live status.",
     "branding": {
       "icon": "Pin"
     },
@@ -16,9 +16,7 @@
     "server": "./server.ts",
     "app": "./app.tsx"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
@@ -45,12 +43,25 @@
     "vaul": "^1.1.2"
   },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fzrx-ego/bb-plugin-header-pins.git"
-  },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
-    "build": "bb plugin build ."
+    "build": "alia plugin build ."
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/header-pins#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/header-pins"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

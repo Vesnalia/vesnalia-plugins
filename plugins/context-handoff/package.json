@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-context-handoff",
+  "name": "alia-plugin-context-handoff",
   "version": "0.4.1",
   "type": "module",
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.132"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.132"
   },
-  "bb": {
+  "alia": {
     "name": "Context Handoff",
     "description": "Track context usage as a percentage and safely continue long tasks in fresh threads. A meter above the chat input shows how full the context window is: it uses your theme's main color below 20% (light gray in dark mode), then turns yellow at 20%, orange at 30%, red at 40% and dark red at 65%. Each thread has an Auto handoff switch, off until you turn it on. Turn it on below 20% and the thread hands off once it reaches 30%; turn it on at 20% or above and it hands off at the next safe stopping point. The agent saves its plan and progress as notes, and a fresh thread confirms it read them, then continues with the switch on. Turning the switch off cancels a pending handoff.",
     "branding": {
@@ -19,7 +19,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.132",
     "@pierre/diffs": "~1.2.12",
     "@radix-ui/react-alert-dialog": "^1.2.1",
     "@radix-ui/react-context-menu": "^2.4.1",
@@ -51,8 +50,25 @@
   "description": "Track context usage as a percentage and safely continue long tasks in fresh threads.",
   "license": "MIT",
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "check": "tsc --noEmit",
     "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.132"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/context-handoff#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/context-handoff"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

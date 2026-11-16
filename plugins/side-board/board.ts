@@ -1,5 +1,5 @@
 // Pure board logic: the data model, id allocation, open/close, the text the
-// agent sees, and the idle-time heuristics. No bb imports, so it is unit-testable
+// agent sees, and the idle-time heuristics. No VesnALIA imports, so it is unit-testable
 // and server.ts stays wiring only.
 import { z } from "zod";
 

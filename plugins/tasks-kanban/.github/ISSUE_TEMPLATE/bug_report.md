@@ -1,5 +1,5 @@
 name: Bug report
-about: Something on the board does not match what BB Tasks shows
+about: Something on the board does not match what VesnALIA Tasks shows
 title: ""
 labels: bug
 assignees: ""
@@ -14,9 +14,9 @@ assignees: ""
 Run these and paste the output (redact anything private):
 
 ```sh
-bb --version
-bb plugin logs tasks-kanban | tail -50
-bb tasks show <TASK-KEY> --json
+alia --version
+alia plugin logs tasks-kanban | tail -50
+alia tasks show <TASK-KEY> --json
 ```
 
 ## Steps to reproduce
@@ -27,4 +27,4 @@ bb tasks show <TASK-KEY> --json
 
 ## Board vs. tracker
 
-<!-- Which card, which lane on the board, which status in `bb tasks list`? -->
+<!-- Which card, which lane on the board, which status in `alia tasks list`? -->

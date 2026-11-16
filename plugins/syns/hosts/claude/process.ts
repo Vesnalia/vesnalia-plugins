@@ -11,8 +11,8 @@ import { createLocalRunner } from "./runner.js";
 
 /**
  * The Syns contributor on Claude Code: a process contributor (unife-pages 07 R-X5, U24). It registers the same
- * declaration bb gets (R-X1) with the Unife Pages daemon over its control socket, and answers each call the daemon
- * POSTs to it with the same dispatch as bb's plugin, the CLI running on this machine in the folder the call names
+ * declaration VesnALIA gets (R-X1) with the Unife Pages daemon over its control socket, and answers each call the daemon
+ * POSTs to it with the same dispatch as VesnALIA's plugin, the CLI running on this machine in the folder the call names
  * (`caller.workspace`, U44).
  *
  *   POST   /v1/contributors            { kind: "process", namespace: "syns", declaration, endpoint } → 201
@@ -36,9 +36,9 @@ export interface ServeOptions {
   token?: string | undefined;
   /** Called when the daemon that started this process is gone and another answers: that one starts its own. */
   onDaemonGone?: () => void;
-  /** The `syns` executable, when it is not on PATH or in the usual folders (bb's `synsPath` setting). */
+  /** The `syns` executable, when it is not on PATH or in the usual folders (VesnALIA's `synsPath` setting). */
   synsPath?: string | undefined;
-  /** Whether the declaration carries the instruction fragment (bb's `agentInstructions` setting). */
+  /** Whether the declaration carries the instruction fragment (VesnALIA's `agentInstructions` setting). */
   agentInstructions: boolean;
   log: Log;
   /** How often the daemon's pid is checked. */

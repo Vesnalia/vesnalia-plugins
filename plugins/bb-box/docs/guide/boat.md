@@ -1,6 +1,6 @@
 # Linux boxes on boat.dev
 
-boat.dev rents Linux virtual machines, which it calls sandboxes, by the second. With a boat.dev backend, each box is a sandbox of its own that BB Box makes when a thread asks for one, and deletes when the box is released. You need no server of your own. Why it works this way is in [decision 068](../decisions/068-boat-backend.md).
+boat.dev rents Linux virtual machines, which it calls sandboxes, by the second. With a boat.dev backend, each box is a sandbox of its own that VesnALIA Box makes when a thread asks for one, and deletes when the box is released. You need no server of your own. Why it works this way is in [decision 068](../decisions/068-boat-backend.md).
 
 This page sets it up from a new boat.dev account. It was first done on 29 October 2026.
 
@@ -15,23 +15,23 @@ boat.dev bills a sandbox for every second it runs. A stopped sandbox costs nothi
 | 8 vCPU, 16 GB, 111 GB disk (`large`) | $0.072 |
 | 16 vCPU, 32 GB, 251 GB disk (`xlarge`, on the $100 plan or higher) | $0.20 |
 
-A plan's price comes back as sandbox time at these prices, and boat.dev uses it first. BB Box gives each box the smallest size that has at least the cores, memory and disk the box asks for, so a box can have more than it asked for.
+A plan's price comes back as sandbox time at these prices, and boat.dev uses it first. VesnALIA Box gives each box the smallest size that has at least the cores, memory and disk the box asks for, so a box can have more than it asked for.
 
-BB Box also keeps a stopped template sandbox for each kind, which every box of the kind is a copy of. A stopped sandbox costs nothing. Building one takes a sandbox of the `default` size for about 6 minutes for Linux and 13 for a Linux desktop, one template at a time, when the first box of the kind needs it and again after a week or when the scripts its build runs change. If BB Box restarts during a build, as it does on an update, the new BB Box carries on with that build in the same sandbox rather than start another. A template sandbox is named `bb-box linux template, building` until its scripts end, `bb-box linux template, checking` while a copy of it is checked, and `bb-box linux template` once the check passes. Boxes are only made from templates with that last name.
+VesnALIA Box also keeps a stopped template sandbox for each kind, which every box of the kind is a copy of. A stopped sandbox costs nothing. Building one takes a sandbox of the `default` size for about 6 minutes for Linux and 13 for a Linux desktop, one template at a time, when the first box of the kind needs it and again after a week or when the scripts its build runs change. If VesnALIA Box restarts during a build, as it does on an update, the new VesnALIA Box carries on with that build in the same sandbox rather than start another. A template sandbox is named `alia-box linux template, building` until its scripts end, `alia-box linux template, checking` while a copy of it is checked, and `alia-box linux template` once the check passes. Boxes are only made from templates with that last name.
 
 ### What your plan allows
 
 - **The free trial** lasts 7 days and has 25 hours of compute, in which an hour of a `small` sandbox counts as half. It allows 2 sandboxes at once, the `small` and `default` sizes only, 5 starts a minute and 25 an hour, and auto-stops of at most 2 hours.
 - **A paid plan** allows 100 sandboxes at once or more, and more starts.
 
-BB Box also has its own limit, **Most boxes**, which is 2 by default, a template being built included. When either is reached, a thread that asks for another box is told why. With more than one boat.dev account, add each as a backend of its own: see [several accounts](#several-accounts).
+VesnALIA Box also has its own limit, **Most boxes**, which is 2 by default, a template being built included. When either is reached, a thread that asks for another box is told why. With more than one boat.dev account, add each as a backend of its own: see [several accounts](#several-accounts).
 
 ## Before you start
 
 You need:
 
 - a boat.dev account, made at boat.dev
-- a way for the sandboxes to reach your BB server: if BB is on a Tailscale tailnet, [set BB Box up to join them to it](tailnet.md); otherwise BB's server needs a URL they can reach. Without either, boxes work, but cannot become BB machines
+- a way for the sandboxes to reach your VesnALIA server: if VesnALIA is on a Tailscale tailnet, [set VesnALIA Box up to join them to it](tailnet.md); otherwise VesnALIA's server needs a URL they can reach. Without either, boxes work, but cannot become VesnALIA machines
 
 ## Set it up
 
@@ -40,19 +40,19 @@ You need:
 In boat.dev's dashboard, make an API key, or with boat.dev's command line:
 
 ```sh
-boat api-key create bb-box
+boat api-key create alia-box
 ```
 
-The key starts with `boat_`. A key that expires stops working for BB Box when it does, so give it a long life, or none.
+The key starts with `boat_`. A key that expires stops working for VesnALIA Box when it does, so give it a long life, or none.
 
-### 2. Add the backend to BB Box
+### 2. Add the backend to VesnALIA Box
 
-1. In BB Box's settings, find **boat.dev** under **Backends** and select **Set up**.
+1. In VesnALIA Box's settings, find **boat.dev** under **Backends** and select **Set up**.
 2. Paste the key into **API key**.
 3. Set **Most boxes** to how many boxes you are willing to pay for at once.
 4. Select **Save**, and turn the backend on.
 
-The key is kept as a secret. BB Box's settings show only that it is set.
+The key is kept as a secret. VesnALIA Box's settings show only that it is set.
 
 ### 3. Turn on the kinds
 
@@ -61,10 +61,10 @@ Under **Kinds**, turn on **Linux** and **Linux desktop**, if you want them from 
 ## Check it works
 
 ```sh
-bb box doctor
+alia box doctor
 ```
 
-The doctor checks that boat.dev accepts the key and says what your plan allows now: sandboxes at once, starts left, the sizes and their prices, and on the trial the compute hours left. It says when each template was built, and lists the sandboxes BB Box has.
+The doctor checks that boat.dev accepts the key and says what your plan allows now: sandboxes at once, starts left, the sizes and their prices, and on the trial the compute hours left. It says when each template was built, and lists the sandboxes VesnALIA Box has.
 
 Then make a box from the Box panel, or ask an agent to. The first box of each kind waits for its template, and says so while it waits.
 
@@ -75,27 +75,27 @@ Each boat.dev account can be a backend of its own, with its own API key. A plan'
 To add another account, make a key in it as in step 1, signed in to that account, then add a second boat.dev backend with a name of your own, of at most 13 lower-case letters, digits and hyphens:
 
 ```sh
-grep '^BOAT_API_KEY_B=' secrets.env | bb box backend add boat --id team-b --secret api-key=BOAT_API_KEY_B --secrets-stdin --field most-boxes=2
+grep '^BOAT_API_KEY_B=' secrets.env | alia box backend add boat --id team-b --secret api-key=BOAT_API_KEY_B --secrets-stdin --field most-boxes=2
 ```
 
-Its ID is `boat:team-b`. **Add backend**, then **boat.dev**, in BB Box's settings adds one too, with the ID `boat:2`.
+Its ID is `boat:team-b`. **Add backend**, then **boat.dev**, in VesnALIA Box's settings adds one too, with the ID `boat:2`.
 
-- **Each has its own settings**: API key, Most boxes, Auto-stop and Android SDK licence. It can also be kept for some BB projects, as any backend can, with `--projects` or on its settings page.
-- **Each is named by its ID.** `bb box kinds`, the Box panel and `box_list` call the second one boat.dev (team-b), and `--on`, or an agent's `on`, takes that name or its ID. Without them, a new box goes to the first backend with room.
-- **Each touches only its own sandboxes.** BB Box labels each sandbox it makes with its backend, `bbbox-backend`, as well as its install, `bbbox-install`. A backend's sweep, upkeep, template builds, doctor and cleanup see only sandboxes with its own label, even when 2 backends use one account.
+- **Each has its own settings**: API key, Most boxes, Auto-stop and Android SDK licence. It can also be kept for some VesnALIA projects, as any backend can, with `--projects` or on its settings page.
+- **Each is named by its ID.** `alia box kinds`, the Box panel and `box_list` call the second one boat.dev (team-b), and `--on`, or an agent's `on`, takes that name or its ID. Without them, a new box goes to the first backend with room.
+- **Each touches only its own sandboxes.** VesnALIA Box labels each sandbox it makes with its backend, `bbbox-backend`, as well as its install, `bbbox-install`. A backend's sweep, upkeep, template builds, doctor and cleanup see only sandboxes with its own label, even when 2 backends use one account.
 - **Most boxes counts the backend's own sandboxes**, its template builds included, but not another backend's. The plan's sandboxes at once are the account's, so they count every sandbox on it, and a refusal says how many are another backend's.
-- **Each builds its own templates**, in its own account. So the first box of each kind on each backend waits for its template, about 6 minutes for Linux and 13 for a Linux desktop, even where another backend shares its account. A backend forks only templates that a backend with its ID built, on this install or another BB Box install on the account. `bb box images list` lists each backend's templates, with when each was built.
+- **Each builds its own templates**, in its own account. So the first box of each kind on each backend waits for its template, about 6 minutes for Linux and 13 for a Linux desktop, even where another backend shares its account. A backend forks only templates that a backend with its ID built, on this install or another VesnALIA Box install on the account. `alia box images list` lists each backend's templates, with when each was built.
 - **Each names its own saved snapshots.** The first backend's are named after the install, the box and the snapshot, as before; another's carry its ID after the install, such as `abcdefghij-boat-team-b-bx...-sn...`. A backend lists, keeps and deletes only its own. What boat.dev bills for saved snapshots is the account's, so where 2 backends share an account, each one's ceiling counts the other's saved snapshots too.
-- **With the tailnet on**, a second backend's boxes join it as `bb-box-boatb-`, then the install's ID, the length of the backend's name, the name and the box's name, such as `bb-box-boatb-k3v9q2m7xa-6-team-b-my-box`. So no backend takes another's tailnet devices for its own. A backend's name is at most 13 characters, so that there is room for the box's name. A tailnet name is at most 63 characters. Where one would be longer, BB Box keeps the start of the box's name and adds a code of 6 characters made from it, so each box still has a name of its own. On an install whose ID is longer than 23 characters, it may also shorten the install's ID to its first 16 characters and a code. With the ID BB Box makes, of 10 characters, a box's name is never shortened.
+- **With the tailnet on**, a second backend's boxes join it as `alia-box-boatb-`, then the install's ID, the length of the backend's name, the name and the box's name, such as `alia-box-boatb-k3v9q2m7xa-6-team-b-my-box`. So no backend takes another's tailnet devices for its own. A backend's name is at most 13 characters, so that there is room for the box's name. A tailnet name is at most 63 characters. Where one would be longer, VesnALIA Box keeps the start of the box's name and adds a code of 6 characters made from it, so each box still has a name of its own. On an install whose ID is longer than 23 characters, it may also shorten the install's ID to its first 16 characters and a code. With the ID VesnALIA Box makes, of 10 characters, a box's name is never shortened.
 
-The first boat.dev backend, with the ID `boat`, keeps its ID when you add another, and with it its boxes, sandboxes, templates and saved snapshots. It also looks after sandboxes and templates that carry only the install's label, which versions of BB Box before several accounts made. No other backend touches them.
+The first boat.dev backend, with the ID `boat`, keeps its ID when you add another, and with it its boxes, sandboxes, templates and saved snapshots. It also looks after sandboxes and templates that carry only the install's label, which versions of VesnALIA Box before several accounts made. No other backend touches them.
 
 ## What a box is like
 
-A box is a virtual machine of its own: Ubuntu 24.04, with its own kernel, systemd, Docker and KVM, and BB Box's tools, as on its other backends. You use it as `box`, who can use `sudo`. A desktop box has the same desktop and apps as a Linux desktop on BB Box's other backends, drawn by the CPU, with computer use, and you watch and use it in the Box panel. 
-Once its template is built, a Linux box is ready in 9 to 25 seconds, and a desktop in about 1 to 2 minutes: BB Box copies the template, the copy starts, and boat.dev brings in the template's system files and starts Docker, and for a desktop its desktop. A desktop then waits until boat.dev has brought in all of the template's files, about a minute after it starts, before BB Box checks Cua Driver, which stops answering if it is used before then. On a busy boat.dev machine a desktop has taken over 6 minutes.
+A box is a virtual machine of its own: Ubuntu 24.04, with its own kernel, systemd, Docker and KVM, and VesnALIA Box's tools, as on its other backends. You use it as `box`, who can use `sudo`. A desktop box has the same desktop and apps as a Linux desktop on VesnALIA Box's other backends, drawn by the CPU, with computer use, and you watch and use it in the Box panel. 
+Once its template is built, a Linux box is ready in 9 to 25 seconds, and a desktop in about 1 to 2 minutes: VesnALIA Box copies the template, the copy starts, and boat.dev brings in the template's system files and starts Docker, and for a desktop its desktop. A desktop then waits until boat.dev has brought in all of the template's files, about a minute after it starts, before VesnALIA Box checks Cua Driver, which stops answering if it is used before then. On a busy boat.dev machine a desktop has taken over 6 minutes.
 
-BB Box reaches each box over SSH, with a key of its own and the host key boat.dev gives, which BB Box checks. A box gets no secret from your boat.dev account.
+VesnALIA Box reaches each box over SSH, with a key of its own and the host key boat.dev gives, which VesnALIA Box checks. A box gets no secret from your boat.dev account.
 
 A box can run VMs and emulators of its own, as boat.dev's machines have KVM. As boxes cost by the second, a thread that asks for plain `linux` gets one from boat.dev only when no other backend has room, and one that asks for `linux-kvm` or `linux-vm` can get one at once.
 
@@ -103,23 +103,23 @@ A box can run VMs and emulators of its own, as boat.dev's machines have KVM. As 
 
 Stopping a box stops its sandbox: its processes end, its disk is kept, and it costs nothing. Starting it again takes a second or two, on a new machine, whose address can differ.
 
-boat.dev stops a sandbox by itself at its auto-stop. BB Box sets each box's auto-stop to **Auto-stop (minutes)**, 30 by default, and sets it again every few minutes while it holds the box. So a box runs while BB Box holds it, and if BB Box stops for good, its boxes stop within that time and cost nothing more. When BB Box comes back, it finds them stopped, and says why.
+boat.dev stops a sandbox by itself at its auto-stop. VesnALIA Box sets each box's auto-stop to **Auto-stop (minutes)**, 30 by default, and sets it again every few minutes while it holds the box. So a box runs while VesnALIA Box holds it, and if VesnALIA Box stops for good, its boxes stop within that time and cost nothing more. When VesnALIA Box comes back, it finds them stopped, and says why.
 
 ### Resizing
 
-A box can move to another of boat.dev's sizes, with a restart: BB Box stops its sandbox and boat.dev starts it again on a machine of the new size, as [resizing a box](resizing.md) describes. Cores, memory and disk change together, and a smaller size is refused when the box's files would not fit its disk.
+A box can move to another of boat.dev's sizes, with a restart: VesnALIA Box stops its sandbox and boat.dev starts it again on a machine of the new size, as [resizing a box](resizing.md) describes. Cores, memory and disk change together, and a smaller size is refused when the box's files would not fit its disk.
 
 ### Snapshots
 
 On a paid plan, a snapshot of a box is one of boat.dev's saved snapshots, as [snapshots](snapshots.md) describes. It holds the box's disk, not its memory, and leaves out what boat.dev's own snapshots leave out: `/tmp`, `~/.cache`, the build cache, the hostname, the address and the SSH host keys. A snapshot of a running box takes a fresh capture first, which can take a minute or more.
 
-A saved snapshot lives on your boat.dev account, not on the box, and does not expire by itself. It costs money only past what your plan includes: 10 for every $20 of plan, then $0.056 a day each, from the wallet. The count is the account's, saved snapshots BB Box did not take included. Each snapshot's row says the price, and Settings, Snapshots, Paid snapshots says how many of the included ones the account holds. Your ceiling there, $5 a month unless you set it, refuses a snapshot that would bring what boat.dev bills for them past it. Where BB Box cannot read boat.dev's count just then, it takes, restores with an undo and keeps no saved snapshot until it can, and Settings show an estimate at full price.
+A saved snapshot lives on your boat.dev account, not on the box, and does not expire by itself. It costs money only past what your plan includes: 10 for every $20 of plan, then $0.056 a day each, from the wallet. The count is the account's, saved snapshots VesnALIA Box did not take included. Each snapshot's row says the price, and Settings, Snapshots, Paid snapshots says how many of the included ones the account holds. Your ceiling there, $5 a month unless you set it, refuses a snapshot that would bring what boat.dev bills for them past it. Where VesnALIA Box cannot read boat.dev's count just then, it takes, restores with an undo and keeps no saved snapshot until it can, and Settings show an estimate at full price.
 
-A restore stops the box, so boat.dev saves its disk, saves that as the undo, and then makes the box a new sandbox from the snapshot, with the same box ID, name and labels, and deletes the old sandbox. boat.dev counts 2 starts for this, as it gives a sandbox deployed from a saved snapshot no labels, so BB Box deploys it, stops it and copies it with the box's labels. They are free within your plan's starts, and from $0.03 each past them, which the restore dialog says before you restore. A restore needs 3 starts left, as putting the box back if the new sandbox fails takes a third. The old sandbox stays, stopped, until the new one has started. A release deletes the box's saved snapshots with it, unless you kept one.
+A restore stops the box, so boat.dev saves its disk, saves that as the undo, and then makes the box a new sandbox from the snapshot, with the same box ID, name and labels, and deletes the old sandbox. boat.dev counts 2 starts for this, as it gives a sandbox deployed from a saved snapshot no labels, so VesnALIA Box deploys it, stops it and copies it with the box's labels. They are free within your plan's starts, and from $0.03 each past them, which the restore dialog says before you restore. A restore needs 3 starts left, as putting the box back if the new sandbox fails takes a third. The old sandbox stays, stopped, until the new one has started. A release deletes the box's saved snapshots with it, unless you kept one.
 
 A snapshot of a Linux server box forks when it was taken with version 8 or later of the [identity reset](snapshots.md#on-boatdev) working, which boxes have from a Linux template built with it, once `general.identityResetBackends` names boat.dev's backend. The fork is a new sandbox made from the saved snapshot, with the fork's own identity value, and costs 2 of boat.dev's starts. Keep holds a saved snapshot past the box's release as it is, at boat.dev's daily price past the plan's included ones, until its keep date. Linux desktops need a template built with reset version 9 or later. Older images refuse forks and Keep, saying why: rebuild the template and make the box again. Android boxes have no identity reset on boat.dev yet, so their snapshots neither fork nor are kept.
 
-A copy of a box's sandbox made outside BB Box, in boat.dev's dashboard or with its API, keeps its source's identity: it comes up as the same BB machine, with the same tailnet node and the thread's access. Copy a box's sandbox only through BB Box.
+A copy of a box's sandbox made outside VesnALIA Box, in boat.dev's dashboard or with its API, keeps its source's identity: it comes up as the same VesnALIA machine, with the same tailnet node and the thread's access. Copy a box's sandbox only through VesnALIA Box.
 
 The free trial has no saved snapshots, so a box on it has no snapshots, restores, forks or Keep.
 
@@ -128,10 +128,10 @@ The free trial has no saved snapshots, so a box on it has no snapshots, restores
 boat.dev's machines have KVM, so they can run the Android emulator. An Android box on boat.dev is the same as on Proxmox QEMU: a phone, foldable or tablet, booted from its snapshot, with its screen in the Box panel. Using it is in [device boxes](devices.md).
 
 1. Read the Android SDK's licence: Google's terms for the SDK, the emulator and the system image, as `setup/android/pins.json` pins them. `setup/android/accept-sdk-licence.sh` shows them, without accepting anything unless you say so.
-2. In BB Box's settings, under **boat.dev**, turn on **Android SDK licence**. That is your acceptance. While it is off, boat.dev offers no Android boxes, and `box_list` and the doctor say why.
+2. In VesnALIA Box's settings, under **boat.dev**, turn on **Android SDK licence**. That is your acceptance. While it is off, boat.dev offers no Android boxes, and `box_list` and the doctor say why.
 3. Turn on the **Android emulator** kind.
 
-BB Box then builds boat.dev's Android template at its next upkeep, about 30 minutes, as no box can ask for a kind that is not offered yet. Android boxes come once it is ready.
+VesnALIA Box then builds boat.dev's Android template at its next upkeep, about 30 minutes, as no box can ask for a kind that is not offered yet. Android boxes come once it is ready.
 
 The Android kind's own sizes start at 8 cores and 16 GB, boat.dev's `large`, which the free trial does not allow. Each device also has a least size, from what its emulator holds when busy:
 
@@ -145,20 +145,20 @@ So on the trial, whose largest size is boat.dev's `default`, 4 cores and 8 GB, b
 
 ## Check that nothing is left running
 
-BB Box labels every sandbox it makes with `bbbox-install` and `bbbox-backend`, and its boxes with `bbbox-box`. To list them with boat.dev's command line:
+VesnALIA Box labels every sandbox it makes with `bbbox-install` and `bbbox-backend`, and its boxes with `bbbox-box`. To list them with boat.dev's command line:
 
 ```sh
 boat list --all
 ```
 
-Each one should be a box in BB Box's Boxes page, or a template, with the label `bbbox-role=template`, stopped. BB Box's saved snapshots are named after the install, the box and the snapshot, such as `abcdefghij-bx...-sn...`; `boat snapshots` lists them, and each should be a snapshot on the Boxes page's Snapshots tab. BB Box checks its backends every few minutes, and deletes a box's sandbox once BB says the box's thread has ended. It deletes an old template an hour after a new one replaces it. `bb box doctor` lists any sandbox no box claims. If one stays, delete it with `boat delete` followed by its ID.
+Each one should be a box in VesnALIA Box's Boxes page, or a template, with the label `bbbox-role=template`, stopped. VesnALIA Box's saved snapshots are named after the install, the box and the snapshot, such as `abcdefghij-bx...-sn...`; `boat snapshots` lists them, and each should be a snapshot on the Boxes page's Snapshots tab. VesnALIA Box checks its backends every few minutes, and deletes a box's sandbox once VesnALIA says the box's thread has ended. It deletes an old template an hour after a new one replaces it. `alia box doctor` lists any sandbox no box claims. If one stays, delete it with `boat delete` followed by its ID.
 
 A sandbox's `bbbox-backend` label says which boat.dev backend made it, such as `boat-team-b` for `boat:team-b`. Sandboxes from before several accounts have none, and are the backend `boat`'s.
 
 ## Turn it off
 
 1. Release the boxes on boat.dev.
-2. Delete the saved snapshots BB Box took, kept ones included: `bb box snapshot list --all` names them, and `bb box snapshot delete` deletes each one. A saved snapshot outlives its box and goes on costing past the plan's included ones, so BB Box refuses to remove the backend while boat.dev holds any of its own, and names them; delete any it has no record of in boat.dev's dashboard.
-3. Turn the boat.dev backend off in BB Box's settings. Boxes it already has keep working until they are released.
-4. Delete the templates with `boat delete`, and check that `boat list --all` lists nothing of BB Box's.
+2. Delete the saved snapshots VesnALIA Box took, kept ones included: `alia box snapshot list --all` names them, and `alia box snapshot delete` deletes each one. A saved snapshot outlives its box and goes on costing past the plan's included ones, so VesnALIA Box refuses to remove the backend while boat.dev holds any of its own, and names them; delete any it has no record of in boat.dev's dashboard.
+3. Turn the boat.dev backend off in VesnALIA Box's settings. Boxes it already has keep working until they are released.
+4. Delete the templates with `boat delete`, and check that `boat list --all` lists nothing of VesnALIA Box's.
 5. Revoke the key in boat.dev's dashboard.

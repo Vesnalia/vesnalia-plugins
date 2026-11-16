@@ -1,8 +1,8 @@
-// bb.host entry: runs on every machine a study uses. On the edit host it
+// alia.host entry: runs on every machine a study uses. On the edit host it
 // snapshots worktrees, prepares candidates and runs gates; on a bench host it
 // keeps a bench-owned clone (fed by git bundles), builds, measures as
 // background jobs, and reports machine health.
-import { experimental_defineHostEntry, type ExperimentalHostWorkerLease } from "@get-bb/plugin-sdk/host";
+import { experimental_defineHostEntry, type ExperimentalHostWorkerLease } from "@vesnalia/plugin-sdk/host";
 import { hostContract, hostSignals } from "./src/host/contract.ts";
 import { artifactStore } from "./src/host/artifacts.ts";
 import { baseBundle } from "./src/host/base.ts";

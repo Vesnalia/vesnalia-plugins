@@ -4,7 +4,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import type { conflictRpcContract, rpcContract } from "./shared/rpc";
 import type { ConflictChoice, ConflictState, ScanSnapshot } from "./shared/conflicts";
 import { STATE_CHANGED } from "./shared/events";
@@ -229,7 +229,7 @@ function ScopePage({
   const skills =
     state?.catalog.skills.filter((skill) => matchesSkillSearch(skill,
       [...conflicts.filter((item) => item.canonicalId === skill.canonicalId).map((item) => item.effectiveName ?? ""),
-        state.resolved.find((item) => item.canonicalId === skill.canonicalId)?.bbName ?? ""], query)) ?? [];
+        state.resolved.find((item) => item.canonicalId === skill.canonicalId)?.aliaName ?? ""], query)) ?? [];
   const resolved = new Map(
     skillState?.resolved.map((skill) => [skill.canonicalId, skill]) ?? [],
   );
@@ -670,7 +670,7 @@ export function MattPage() {
             >
               compatibility notes
             </a>{" "}
-            for adaptations for bb.
+            for adaptations for VesnALIA.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Badge>Unofficial mirror · skills © Matt Pocock · MIT</Badge>

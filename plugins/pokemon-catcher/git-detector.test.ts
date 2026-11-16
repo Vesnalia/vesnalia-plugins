@@ -61,18 +61,18 @@ describe("Git milestone detection", () => {
 		expect(diffGitSnapshots(afterCheckout, afterCheckout)).toEqual([]);
 
 		const worktree = `${repo}-worktree`;
-		git(repo, "worktree", "add", "-q", "-b", "feature/bb-worktree", worktree);
+		git(repo, "worktree", "add", "-q", "-b", "feature/alia-worktree", worktree);
 		const afterWorktree = await scanGitRoots([repo]);
 		const events = diffGitSnapshots(afterCheckout, afterWorktree);
 		expect(events).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					kind: "branch_opened",
-					branch: "feature/bb-worktree",
+					branch: "feature/alia-worktree",
 				}),
 				expect.objectContaining({
 					kind: "worktree_opened",
-					branch: "feature/bb-worktree",
+					branch: "feature/alia-worktree",
 					path: worktree,
 				}),
 			]),

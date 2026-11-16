@@ -1,5 +1,5 @@
 import { NOT_OWN_REVIEW } from "./review-command";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { placeFacts } from "./review-places";
 import { reviewNamed } from "./targets";
 import { addComment, deleteComment, describeComments, editComment, listComments, type DraftResult } from "./draft-comments";
@@ -7,12 +7,12 @@ import { SEVERITIES, type Severity } from "./draft";
 import type { AsyncStore } from "./store-queue";
 
 export const COMMENT_USAGE = [
-  "usage: bb review comment list   <review> [--json]",
-  "       bb review comment add    <review> <file>:<line> --code <text> --body <text> [--severity <severity>] [--evidence <text>] [--pre-existing] [--side LEFT|RIGHT]",
-  "       bb review comment edit   <review> <file>:<line> --body <text> [--code <text>] [--severity <severity>] [--evidence <text>] [--pre-existing] [--side LEFT|RIGHT|LOCAL]",
-  "       bb review comment delete <review> <file>:<line> [--side LEFT|RIGHT|LOCAL]",
+  "usage: VesnALIA review comment list   <review> [--json]",
+  "       VesnALIA review comment add    <review> <file>:<line> --code <text> --body <text> [--severity <severity>] [--evidence <text>] [--pre-existing] [--side LEFT|RIGHT]",
+  "       VesnALIA review comment edit   <review> <file>:<line> --body <text> [--code <text>] [--severity <severity>] [--evidence <text>] [--pre-existing] [--side LEFT|RIGHT|LOCAL]",
+  "       VesnALIA review comment delete <review> <file>:<line> [--side LEFT|RIGHT|LOCAL]",
   "",
-  "Changes a review's local draft in this bb. Nothing is posted to GitHub; the reviewer submits the draft from Code Review Workspace.",
+  "Changes a review's local draft in this VesnALIA. Nothing is posted to GitHub; the reviewer submits the draft from Code Review Workspace.",
   "  <review>       the review's id (web#12, api:feat-x), a GitHub PR URL, or a review key (pr-…, ref-…)",
   "  <file>:<line>  the line's number in the new file, or with --side LEFT, in the old file; edit and delete take",
   "                 --side LOCAL for a comment not on GitHub yet, as list shows it;",
@@ -44,15 +44,15 @@ export async function firstGuideRefusal(store: AsyncStore, targetKey: string): P
   return store.exclusive(async (tx) => {
     if ((await tx.getReview(targetKey))?.status !== "generating" || await tx.getGuide(targetKey)) return null;
     const list = (await tx.getPreferences()).preferences.knobs.reviewCommandInThreads;
-    return { exitCode: 1, stderr: `The guide is still being written, and the draft waits for it. ${list ? "Run `bb review list` until it says guide ready" : "Wait until it's ready"}, then try again.` };
+    return { exitCode: 1, stderr: `The guide is still being written, and the draft waits for it. ${list ? "Run `alia review list` until it says guide ready" : "Wait until it's ready"}, then try again.` };
   });
 }
 
-/** `bb review comment …`: list and change a review's draft comments. `changed` runs after a successful change.
+/** `alia review comment …`: list and change a review's draft comments. `changed` runs after a successful change.
  * `ownReview`, set when a review's own agent runs it, refuses every other review. */
-export async function runCommentCommand(store: AsyncStore, bb: BbPluginApi, argv: string[], changed: (targetKey: string) => void, ownReview?: string): Promise<CliResult> {
-  // What names a local review by its id, asked of bb before the lock, as every other store call waits on it.
-  const facts = await placeFacts(bb, await store.listReviews());
+export async function runCommentCommand(store: AsyncStore, alia: AliaPluginApi, argv: string[], changed: (targetKey: string) => void, ownReview?: string): Promise<CliResult> {
+  // What names a local review by its id, asked of VesnALIA before the lock, as every other store call waits on it.
+  const facts = await placeFacts(alia, await store.listReviews());
   return store.exclusive(async (tx) => {
     const [action, ...rest] = argv;
     if (action === "--help" || action === "-h") return { exitCode: 0, stdout: COMMENT_USAGE };
@@ -73,7 +73,7 @@ export async function runCommentCommand(store: AsyncStore, bb: BbPluginApi, argv
     }
     if (positional.length !== (spec.location ? 2 : 1)) return usage(spec.location ? "Give the review and the comment's <file>:<line>." : "Give the review.");
 
-    const named = await reviewNamed(tx, bb, positional[0], facts);
+    const named = await reviewNamed(tx, alia, positional[0], facts);
     if (named && "ambiguous" in named) return { exitCode: 1, stderr: named.ambiguous };
     if (ownReview !== undefined && named?.targetKey !== ownReview) return { exitCode: 2, stderr: NOT_OWN_REVIEW };
     if (!named) return { exitCode: 1, stderr: `No saved review for ${positional[0]}. Pass its id, the PR's URL or the review's key.` };

@@ -83,7 +83,7 @@ export class PathRules {
 
 /**
  * A `fileChange` path made relative to the workspace. Providers report absolute paths, and on macOS
- * one of them reports `/private/var/…` for a workspace bb knows as `/var/…`, so both spellings of the
+ * one of them reports `/private/var/…` for a workspace VesnALIA knows as `/var/…`, so both spellings of the
  * root are tried. A path outside the workspace gives null; a relative path is kept as it is.
  */
 export function relativize(path: string, root: string | null): string | null {

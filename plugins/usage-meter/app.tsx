@@ -1,4 +1,4 @@
-// bb-plugin-usage-meter — two rings of Claude limit usage in the sidebar footer.
+// alia-plugin-usage-meter — two rings of Claude limit usage in the sidebar footer.
 //
 //   outer ring — the five-hour session, the "Current session" window
 //   inner ring — the weekly limit, the "Weekly limit" window: smaller radius,
@@ -24,7 +24,7 @@
 // The outer ring repeats the geometry of the neighbouring server-status plugin:
 // the same path along the button edge, the same thickness, the same animation.
 // These buttons sit side by side in the footer and must read as one system.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import type { UsageState } from "./server";
 import {
   DANGER,

@@ -1,4 +1,4 @@
-// CLI-side sweep eligibility: the pure core of `bb focus-board sweep`.
+// CLI-side sweep eligibility: the pure core of `alia focus-board sweep`.
 //
 // The board's own sweep logic (lib/sweep.ts) works on the sidebar's live
 // thread view (PluginSidebarThread + threadState) and is not reusable
@@ -33,7 +33,7 @@ export interface SweepThresholds {
 /** One server-side thread row, resolved against the board's own state. */
 export interface SweepFact {
   id: string;
-  /** True when bb has already archived the thread. */
+  /** True when VesnALIA has already archived the thread. */
   archived: boolean;
   /** True when the thread is pinned (the idle arm never touches pins). */
   pinned: boolean;

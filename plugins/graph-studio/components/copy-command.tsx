@@ -1,6 +1,6 @@
 // A CLI line you can take with you.
 //
-// Every place that shows a `bb graph-studio …` command shows it through this,
+// Every place that shows a `alia graph-studio …` command shows it through this,
 // so the command on screen and the command on the clipboard are the same
 // string by construction. Rendering the text twice — once for the eye, once
 // for `writeText` — is exactly how the two drift apart.

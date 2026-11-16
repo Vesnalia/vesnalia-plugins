@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { generateKimiTitle } from "./src/kimi-title.js";
 import { readKimiAccountFromDisk } from "./src/kimi-account.js";
@@ -12,13 +12,13 @@ export const KIMI_PROVIDER_ID = "kimi-code";
 // sessionCapabilities { list, resume, close, delete, fork }, and the
 // session/new configOptions for model, thinking level, and mode. Re-probe the
 // handshake before widening them. One deliberate narrowing: kimi >= 2.3.0
-// locks each session to its owning process for the process lifetime, and bb
+// locks each session to its owning process for the process lifetime, and VesnALIA
 // forks by asking a NEW kimi process to fork the still-live source session,
 // which kimi rejects ("This session is in use by another Kimi Code process").
 // Tip-forks only succeed after the owner exits, so fork stays "none" until
 // kimi allows cross-process forks of live sessions.
-export default function plugin(bb: BbPluginApi) {
-  bb.providers.register({
+export default function plugin(alia: AliaPluginApi) {
+  alia.providers.register({
     id: KIMI_PROVIDER_ID,
     displayName: "Kimi Code",
     icon: "./icons/kimi.svg",
@@ -27,7 +27,7 @@ export default function plugin(bb: BbPluginApi) {
       expiredHint:
         "Your Kimi Code session expired. Run `kimi login`, then reload.",
       installUrl: "https://github.com/MoonshotAI/kimi-code",
-      // bb draws provider logos as currentColor masks; tint the silhouette
+      // VesnALIA draws provider logos as currentColor masks; tint the silhouette
       // with the kimi tile colors instead of the ambient text color.
       iconTint: { light: "#0A0A0C", dark: "#FFFFFF" },
     },
@@ -39,13 +39,13 @@ export default function plugin(bb: BbPluginApi) {
       supportsManualCompaction: true,
       supportsThreadArchive: false,
       supportsThreadRename: false,
-      // The SDK ACP bridge throws on bb's "auto" mode (buildAcpSessionParams /
-      // reconcileExecutionSettings): ACP has no equivalent for bb's
+      // The SDK ACP bridge throws on VesnALIA's "auto" mode (buildAcpSessionParams /
+      // reconcileExecutionSettings): ACP has no equivalent for VesnALIA's
       // auto-reviewer, so the bridge enforces only accept-edits (workspace
-      // write roots) and full. bb's builtin ACP provider plugins declare the
+      // write roots) and full. VesnALIA's builtin ACP provider plugins declare the
       // same pair. Declaring "auto" sent threads straight into that throw.
       permissionModes: ["accept-edits", "full"],
-      // bb starts new threads at "medium" by default and validates the level
+      // VesnALIA starts new threads at "medium" by default and validates the level
       // against this ladder. kimi only knows low/high/max, so "medium" is
       // declared but maps to nothing kimi-side: the bridge omits it and kimi
       // runs its current thinking level (its default: high).
@@ -58,7 +58,7 @@ export default function plugin(bb: BbPluginApi) {
       { id: "max", label: "Thinking Max" },
     ],
     // The generic ACP bridge ignores promptMode; map it to the mode selector
-    // so bb's /plan composer action actually enters kimi's plan mode.
+    // so VesnALIA's /plan composer action actually enters kimi's plan mode.
     composerActions: ["plan"],
     models: { fallback: [], scope: "host" },
     experimental_nativeSkillRoots: {
@@ -79,9 +79,9 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  registerUsageSource(bb);
+  registerUsageSource(alia);
 
-  bb.experimental_aiServices.register({
+  alia.experimental_aiServices.register({
     id: "kimi-code",
     displayName: "Kimi Code (local model)",
     complete: async (prompt, options) => generateKimiTitle(prompt, options),

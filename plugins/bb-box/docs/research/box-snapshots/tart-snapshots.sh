@@ -1,9 +1,9 @@
 #!/bin/bash
 set -uo pipefail
-[ $# -ge 2 ] || { echo "usage: $0 take|restore|clean <box-id>   (as the Tart host user bb-box signs in as, with the box stopped by bb-box)" >&2; exit 2; }
+[ $# -ge 2 ] || { echo "usage: $0 take|restore|clean <box-id>   (as the Tart host user alia-box signs in as, with the box stopped by alia-box)" >&2; exit 2; }
 MODE=$1 BOX=$2
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH" TART_NO_AUTO_PRUNE=1
-OWNERS=$HOME/.bb-box/tart/owners
+OWNERS=$HOME/.alia-box/tart/owners
 VM=$(grep -lxF "box=$BOX" "$OWNERS"/* 2>/dev/null | head -n 1 | xargs -n 1 basename 2>/dev/null)
 [ -n "$VM" ] || { echo "No owner file names box $BOX; stopping." >&2; exit 1; }
 VMS=$(cd "${TART_HOME:-$HOME/.tart}/vms" && pwd -P)
@@ -18,7 +18,7 @@ files() { ls -l "$1" | awk 'NR>1 {printf "  %-16s %8.2f GB\n", $9, $5/1e9}'; du 
 
 echo "VM $VM in $VMS; copies in $KEEP; tart processes running: $(running_vms)"
 [ "$(df "$VMS" | awk 'NR==2 {print $1}')" = "$(mkdir -p "$KEEP" && df "$KEEP" | awk 'NR==2 {print $1}')" ] || { echo "$KEEP is not on the VMs' volume; stopping." >&2; exit 1; }
-[ "$MODE" = clean ] || [ -f "$VMS/$VM/state.vzvmsave" ] || { echo "$VM has no saved state: stop the box with bb-box first; stopping." >&2; exit 1; }
+[ "$MODE" = clean ] || [ -f "$VMS/$VM/state.vzvmsave" ] || { echo "$VM has no saved state: stop the box with alia-box first; stopping." >&2; exit 1; }
 
 case "$MODE" in
 take)

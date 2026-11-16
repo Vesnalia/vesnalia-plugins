@@ -3,9 +3,9 @@
 // fixer: a fresh thread in a new worktree at the PR's head commit, on the machine of the thread that wrote it, briefed
 // with the PR, the comments, the guide's intent and that thread; or, as you choose, a fork of that thread there, which
 // costs more and keeps what it knows. Neither switches branches, and each pushes with an explicit refspec, as a new
-// worktree has no upstream. Not pushed yet is what the fixer's folder has that the PR's head doesn't; once bb removes
+// worktree has no upstream. Not pushed yet is what the fixer's folder has that the PR's head doesn't; once VesnALIA removes
 // that folder, the review says its branch is kept, with the command to delete it. The plugin runs no git.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { NOT_PUSHED, notPushedView, pushCommand } from "../lib/push";
 import { placeOn, type ReviewMeta } from "./store";
 import { isLocal } from "./draft";
@@ -20,8 +20,8 @@ import { isMissingThread } from "./thread-errors";
 import { inlineCode, untrusted } from "./untrusted";
 import type { EventListeners, RpcHandlers, ServeDeps } from "./server-modules";
 
-type Thread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
-type Environment = Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0]["environment"];
+type Thread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>;
+type Environment = Parameters<AliaPluginApi["sdk"]["threads"]["spawn"]>[0]["environment"];
 const titleOf = (thread: Pick<Thread, "title" | "titleFallback">) => thread.title ?? thread.titleFallback ?? null;
 const error = (failure: unknown) => failure instanceof Error ? failure.message : String(failure);
 const short = (sha: string) => sha.slice(0, 7);
@@ -42,54 +42,54 @@ export interface Original { threadId: string; title: string | null }
  */
 export interface FixerPlace { environment: Environment; said: string; sha: string; original: Original | null; hostId: string | null; machine: string | null; folder: string | null }
 
-/** The threads that worked on the PR, as the review recorded them: its main thread, then the thread bb review ran in, then those before, newest first. */
+/** The threads that worked on the PR, as the review recorded them: its main thread, then the thread VesnALIA review ran in, then those before, newest first. */
 const workedOn = (review: ReviewMeta) => [...new Set([review.mainThread?.threadId, review.sourceThreadId, ...(review.implementers ?? []).map((main) => main.threadId).reverse()].filter((id): id is string => !!id))];
 
 /** The threads the review started to fix it, fresh or forked: they didn't write the PR. */
 const fixersOf = (review: ReviewMeta) => new Set([review.mainThread, ...review.implementers ?? []].filter((main) => main && main.origin !== "adopted").map((main) => main!.threadId));
 
-/** Each thread that worked on the PR, as BB has it now, but this plugin's agents, and deleted ones. */
-async function threadsOn(bb: BbPluginApi, store: AsyncStore, review: ReviewMeta): Promise<Array<Original & { environmentId: string | null }>> {
+/** Each thread that worked on the PR, as VesnALIA has it now, but this plugin's agents, and deleted ones. */
+async function threadsOn(alia: AliaPluginApi, store: AsyncStore, review: ReviewMeta): Promise<Array<Original & { environmentId: string | null }>> {
   const found: Array<Original & { environmentId: string | null }> = [];
   for (const threadId of workedOn(review)) {
     if (await store.exclusive(async (tx) => !!await assistantReview(tx, threadId) || !!await tx.generationOf(threadId))) continue;
-    const thread = await bb.sdk.threads.get({ threadId }).catch((failure) => {
+    const thread = await alia.sdk.threads.get({ threadId }).catch((failure) => {
       if (isMissingThread(failure)) return null;
-      throw new Error(`Couldn’t read the thread that wrote this PR from BB: ${error(failure)}. Try again in a moment.`);
+      throw new Error(`Couldn’t read the thread that wrote this PR from VesnALIA: ${error(failure)}. Try again in a moment.`);
     });
     if (thread && !thread.deletedAt) found.push({ threadId, title: titleOf(thread), environmentId: thread.environmentId ?? null });
   }
   return found;
 }
 
-/** A project's folders, as BB lists its sources: the default first. */
-async function projectFolders(bb: BbPluginApi, projectId: string | undefined): Promise<Array<{ hostId: string; path: string }>> {
+/** A project's folders, as VesnALIA lists its sources: the default first. */
+async function projectFolders(alia: AliaPluginApi, projectId: string | undefined): Promise<Array<{ hostId: string; path: string }>> {
   if (!projectId) return [];
-  const project = await (async () => bb.sdk.projects.get({ projectId }))().catch(() => null) as { sources?: Array<{ hostId: string; path: string; isDefault: boolean }> } | null;
+  const project = await (async () => alia.sdk.projects.get({ projectId }))().catch(() => null) as { sources?: Array<{ hostId: string; path: string; isDefault: boolean }> } | null;
   return [...project?.sources ?? []].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
 }
 
 /**
  * Where a fixer for the PR starts; null while the PR's head commit isn't known in full, where a fresh thread starts in
  * the review's project instead, told to check out the PR's branch. Its machine is the first of the threads that worked
- * on the PR whose folder BB still has, else the PR's folder's, else the project's.
+ * on the PR whose folder VesnALIA still has, else the PR's folder's, else the project's.
  */
-export async function fixerPlace(bb: BbPluginApi, store: AsyncStore, review: ReviewMeta): Promise<FixerPlace | null> {
+export async function fixerPlace(alia: AliaPluginApi, store: AsyncStore, review: ReviewMeta): Promise<FixerPlace | null> {
   const sha = prHead(review);
   if (!sha) return null;
-  const threads = await threadsOn(bb, store, review);
+  const threads = await threadsOn(alia, store, review);
   // The thread that wrote it, not a fixer since; on someone else's PR, none: your thread there didn't write it.
   const fixers = fixersOf(review);
   const found = threads.find((thread) => !fixers.has(thread.threadId)) ?? null;
   const original = review.ownPr === true ? found : null;
-  let env: Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>> | null = null;
+  let env: Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>> | null = null;
   for (const thread of threads) {
-    env = thread.environmentId ? await (async () => bb.sdk.environments.get({ environmentId: thread.environmentId! }))().catch(() => null) : null;
+    env = thread.environmentId ? await (async () => alia.sdk.environments.get({ environmentId: thread.environmentId! }))().catch(() => null) : null;
     if (env) break;
   }
-  const folders = await projectFolders(bb, review.projectId);
+  const folders = await projectFolders(alia, review.projectId);
   const hostId = env?.hostId ?? review.feature?.hostId ?? folders[0]?.hostId ?? null;
-  const machine = (await machineStatus(bb, hostId ?? undefined))?.name ?? (hostId && hostId === review.feature?.hostId ? review.feature.machine : null);
+  const machine = (await machineStatus(alia, hostId ?? undefined))?.name ?? (hostId && hostId === review.feature?.hostId ? review.feature.machine : null);
   const folder = folders.find((source) => source.hostId === hostId)?.path ?? env?.path ?? null;
   return {
     environment: { type: "host", ...hostId ? { hostId } : {}, workspace: { type: "managed-worktree", baseBranch: { kind: "named", name: sha } } },
@@ -99,7 +99,7 @@ export async function fixerPlace(bb: BbPluginApi, store: AsyncStore, review: Rev
 }
 
 /**
- * Why a fixer couldn't start: BB's words, and, as the likeliest cause, the head commit not on that machine yet, with the
+ * Why a fixer couldn't start: VesnALIA's words, and, as the likeliest cause, the head commit not on that machine yet, with the
  * command that fetches it and the folder to run it in.
  */
 export function fixerFailed(review: Pick<ReviewMeta, "number">, place: FixerPlace, what: string, failure: unknown): Error {
@@ -144,18 +144,18 @@ export function fixerBrief(review: Placed, place: FixerPlace, { lead, intent, fo
  * thread, send it `text`, after its first turn if that's running. A send that fails leaves the fork the main thread, so
  * the next Send goes to it, not to a second fork.
  */
-export async function forkFixer(bb: BbPluginApi, review: Placed, place: FixerPlace, text: string, forked: (thread: Pick<Thread, "id" | "environmentId">) => Promise<void>): Promise<{ thread: Pick<Thread, "id" | "environmentId">; title: string | null; delivery: "sent" | "queued"; queued?: string }> {
+export async function forkFixer(alia: AliaPluginApi, review: Placed, place: FixerPlace, text: string, forked: (thread: Pick<Thread, "id" | "environmentId">) => Promise<void>): Promise<{ thread: Pick<Thread, "id" | "environmentId">; title: string | null; delivery: "sent" | "queued"; queued?: string }> {
   if (!place.original) throw new Error("There's no thread that wrote this PR to fork. Start a fresh thread instead.");
   const title = fixerTitle(review);
-  let thread: Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["fork"]>>;
+  let thread: Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["fork"]>>;
   try {
-    thread = await bb.sdk.threads.fork({ sourceThreadId: place.original.threadId, environment: place.environment, title });
+    thread = await alia.sdk.threads.fork({ sourceThreadId: place.original.threadId, environment: place.environment, title });
   } catch (failure) {
     throw fixerFailed(review, place, `Couldn’t fork ${place.original.title ?? "the thread"}`, failure);
   }
   await forked(thread);
   try {
-    const sent = await bb.sdk.threads.send({ threadId: thread.id, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
+    const sent = await alia.sdk.threads.send({ threadId: thread.id, mode: "queue-if-active", input: [{ type: "text", text, mentions: [] }] });
     const queued = sent?.delivery === "queued" ? sent.queuedMessage?.id : undefined;
     return { thread, title: titleOf(thread) ?? title, delivery: queued ? "queued" : "sent", ...queued ? { queued } : {} };
   } catch (failure) {
@@ -216,11 +216,11 @@ export type NotPushed =
 
 /**
  * Not pushed yet: everything in the review's own folder, committed or not, that the PR's head on GitHub doesn't have,
- * as bb's diff of that folder against the head commit, as its notice counts it (src/feature-review.ts checkPrFolder);
- * with no folder of its own, as your PR's in 1.8.0, or once BB removed it, the folder of its main thread. Secret-looking
+ * as VesnALIA's diff of that folder against the head commit, as its notice counts it (src/feature-review.ts checkPrFolder);
+ * with no folder of its own, as your PR's in 1.8.0, or once VesnALIA removed it, the folder of its main thread. Secret-looking
  * new files stay out, as a local review keeps them.
  */
-export async function notPushed(bb: BbPluginApi, review: ReviewMeta): Promise<NotPushed> {
+export async function notPushed(alia: AliaPluginApi, review: ReviewMeta): Promise<NotPushed> {
   const main = review.mainThread;
   const own = review.feature && !review.feature.folderGone ? review.feature : null;
   const environmentId = own?.environmentId ?? main?.environmentId;
@@ -228,30 +228,30 @@ export async function notPushed(bb: BbPluginApi, review: ReviewMeta): Promise<No
   const sha = prHead(review);
   if (!sha) return { state: "unavailable", message: "The PR’s head commit isn’t known yet. Refresh the review, then try again." };
   const inFolder = environmentId === review.feature?.environmentId;
-  let env: Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>> | null;
+  let env: Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>> | null;
   try {
-    env = await bb.sdk.environments.get({ environmentId });
+    env = await alia.sdk.environments.get({ environmentId });
   } catch (failure) {
-    if (isNotFound(failure)) return { state: "gone", message: own ? "BB removed this review’s folder." : "BB removed the folder of the thread working on this PR." };
+    if (isNotFound(failure)) return { state: "gone", message: own ? "VesnALIA removed this review’s folder." : "VesnALIA removed the folder of the thread working on this PR." };
     env = null;
   }
-  // The branch it must be on, so the diff is against the head whatever bb's own base for the folder is.
+  // The branch it must be on, so the diff is against the head whatever VesnALIA's own base for the folder is.
   const branch = own ? own.workBranch ?? own.branch : main!.branch ?? (inFolder ? review.feature!.workBranch ?? review.feature!.branch : env?.branchName ?? undefined);
   if (!branch) return { state: "unavailable", message: "Couldn’t read the folder of the thread working on this PR. Try again in a moment." };
-  const machine = (await machineStatus(bb, env?.hostId ?? undefined))?.name ?? (inFolder ? review.feature!.machine : null);
-  const read = await readFeatureDiff(bb, { environmentId, machine: machine ?? "Its machine", repo: null, baseRef: sha, workBranch: branch });
+  const machine = (await machineStatus(alia, env?.hostId ?? undefined))?.name ?? (inFolder ? review.feature!.machine : null);
+  const read = await readFeatureDiff(alia, { environmentId, machine: machine ?? "Its machine", repo: null, baseRef: sha, workBranch: branch });
   if (read.outcome === "paused") return { state: "unavailable", message: read.message };
   if (read.outcome !== "available") return { state: read.outcome, message: read.message };
   return { state: "available", patch: read.patch, base: sha, onReviewHead: sha === review.headSha, branch, machine, threadId: main?.threadId ?? null, hidden: read.hidden, notice: read.notice, environmentId, revisions: read.revisions };
 }
 
 export function register(deps: ServeDeps) {
-  const { bb, store, changed } = deps;
+  const { alia, store, changed } = deps;
   const handlers = {
     async getNotPushed({ targetKey }) {
       const review = await store.getReview(targetKey);
       if (!review) return { state: "none", message: "This review no longer exists." };
-      const read = await notPushed(bb, review);
+      const read = await notPushed(alia, review);
       if (read.state !== "available") return read;
       // What you saw, for Push to check the fixer's commit against (src/push.ts), and for LOCAL comments, which follow
       // their lines from what it showed before.
@@ -306,11 +306,11 @@ export function register(deps: ServeDeps) {
         .map((main) => main!.branch!);
       const found = (await store.listReviews()).filter((review) => fixersOf(review).length);
       if (!found.length) return;
-      const machine = (await machineStatus(bb, removal.hostId ?? undefined).catch(() => null))?.name ?? null;
+      const machine = (await machineStatus(alia, removal.hostId ?? undefined).catch(() => null))?.name ?? null;
       // The repo the worktree was made from: the project's folder on that machine, which keeps the branch.
       const folders = new Map<string, string | null>();
       for (const projectId of new Set(found.map((review) => review.projectId).filter((id): id is string => !!id))) {
-        const project = await (async () => bb.sdk.projects.get({ projectId }))().catch(() => null);
+        const project = await (async () => alia.sdk.projects.get({ projectId }))().catch(() => null);
         const sources = (project as { sources?: Array<{ hostId: string; path: string; isDefault: boolean }> } | null)?.sources?.filter((source) => source.hostId === removal.hostId) ?? [];
         folders.set(projectId, (sources.find((source) => source.isDefault) ?? sources[0])?.path ?? null);
       }

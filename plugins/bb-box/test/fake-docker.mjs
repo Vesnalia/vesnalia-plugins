@@ -14,8 +14,8 @@
 //   and libexec/ is /usr/local/libexec.
 //
 // `docker exec` runs the command on the test machine as the real user, in the
-// container's home, with /home/box, /etc/environment, /run/bb-box/,
-// /var/lib/bb-box/, /usr/share/bb-box/ and /usr/local/libexec/bb-box/ in its arguments made the
+// container's home, with /home/box, /etc/environment, /run/alia-box/,
+// /var/lib/alia-box/, /usr/share/alia-box/ and /usr/local/libexec/alia-box/ in its arguments made the
 // container's own, in
 // the test process's group of fakes, through the command line $FAKE_GROUP
 // holds, so what it starts ends with the test process, though a timeout kills
@@ -57,7 +57,7 @@ const save = (container) => writeWhole(join(dir(container.Name.slice(1)), "confi
 /** A container by name, full ID or ID prefix of 12 or more. */
 const find = (ref) => names().map(load).find((container) => container.Name === `/${ref}` || (ref.length >= 12 && container.Id.startsWith(ref))) ?? null;
 const MiB = 1024 * 1024;
-const IDENTITY_TOOL = "/usr/local/sbin/bb-box-identity";
+const IDENTITY_TOOL = "/usr/local/sbin/alia-box-identity";
 const FORK_HOLD_SCRIPT = fileURLToPath(new URL("../setup/docker/fork-hold", import.meta.url));
 const IMAGE_HOLDS_FORKS = "bbbox.fork-hold";
 const SERVICES_LOG = join(root, "services.log");
@@ -401,10 +401,10 @@ function bootIdentity(name, found) {
 function inContainer(name, text) {
   return text
     .replaceAll("/etc/environment", join(dir(name), "etc", "environment"))
-    .replaceAll("/run/bb-box/", `${join(dir(name), "run", "bb-box")}/`)
-    .replaceAll("/var/lib/bb-box/", `${join(dir(name), "var-lib", "bb-box")}/`)
-    .replaceAll("/usr/share/bb-box/", `${join(dir(name), "usr-share", "bb-box")}/`)
-    .replaceAll("/usr/local/libexec/bb-box/", `${join(dir(name), "libexec", "bb-box")}/`)
+    .replaceAll("/run/alia-box/", `${join(dir(name), "run", "alia-box")}/`)
+    .replaceAll("/var/lib/alia-box/", `${join(dir(name), "var-lib", "alia-box")}/`)
+    .replaceAll("/usr/share/alia-box/", `${join(dir(name), "usr-share", "alia-box")}/`)
+    .replaceAll("/usr/local/libexec/alia-box/", `${join(dir(name), "libexec", "alia-box")}/`)
     .replaceAll("/home/box", join(dir(name), "home"))
     .replaceAll(IDENTITY_TOOL, identityToolIn(identityRoot(name)))
     .replaceAll("sudo -n ", "");
@@ -435,7 +435,7 @@ function servicesStarted(name) {
 function startServicesAfterTheHold(name, found) {
   const hold = join(dir(name), "fork-hold");
   writeFileSync(hold, inContainer(name, readFileSync(FORK_HOLD_SCRIPT, "utf8")), { mode: 0o755 });
-  const ready = join(dir(name), "run", "bb-box", "ready");
+  const ready = join(dir(name), "run", "alia-box", "ready");
   const afterTheHold = [
     `bash ${quoted(hold)} || exit 1`,
     host.neverReady ? "" : `touch ${quoted(ready)} || exit 1`,
@@ -511,21 +511,21 @@ function container(command, rest) {
       const found = find(rest.at(-1)) ?? fail(`Error response from daemon: No such container: ${rest.at(-1)}`);
       if (found.Config.Labels[COPY_INTO]) return runCopy(found);
       const name = found.Name.slice(1);
-      mkdirSync(join(dir(name), "run", "bb-box"), { recursive: true });
+      mkdirSync(join(dir(name), "run", "alia-box"), { recursive: true });
       if (host.holdStartUntil && new RegExp(host.holdStartMatching ?? "").test(name)) waitFor(host.holdStartUntil);
       connect(found);
       const identity = bootIdentity(name, found);
       if (host.failStart || (host.failStartMatching && new RegExp(host.failStartMatching).test(name))) {
-        writeFileSync(join(dir(name), "logs"), "bb-box-start: something went wrong\n");
+        writeFileSync(join(dir(name), "logs"), "alia-box-start: something went wrong\n");
         found.State = { Status: "exited", ExitCode: 1 };
       } else if (!identity.ok) {
-        writeFileSync(join(dir(name), "logs"), `${identity.said}bb-box-start: the identity reset failed, so the box starts nothing and never says it is ready\n`);
+        writeFileSync(join(dir(name), "logs"), `${identity.said}alia-box-start: the identity reset failed, so the box starts nothing and never says it is ready\n`);
         found.State = { Status: "exited", ExitCode: 1 };
       } else if (found.Config.Labels[IMAGE_HOLDS_FORKS] === "1" && envValue(found, "BBBOX_FORK_HOLD") === "1") {
         found.State = { Status: "running", ExitCode: 0 };
         startServicesAfterTheHold(name, found);
       } else {
-        if (!host.neverReady) writeFileSync(join(dir(name), "run", "bb-box", "ready"), "");
+        if (!host.neverReady) writeFileSync(join(dir(name), "run", "alia-box", "ready"), "");
         found.State = { Status: "running", ExitCode: 0 };
         servicesStarted(name);
       }

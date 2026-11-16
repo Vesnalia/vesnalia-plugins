@@ -23,19 +23,19 @@ export function cpuText(cpu: number): string {
 }
 
 /**
- * The BB total's tooltip: what counts, the split, and why memory is high.
- * `bb` is a sample's BB total (lib/schemas.ts).
+ * The VesnALIA total's tooltip: what counts, the split, and why memory is high.
+ * `VesnALIA` is a sample's VesnALIA total (lib/schemas.ts).
  */
-export function bbTotalTitle(bb: {
+export function aliaTotalTitle(alia: {
   cpu: number;
   memBytes: number;
   app: { cpu: number; memBytes: number; processes: number };
   threads: { cpu: number; memBytes: number; processes: number };
 }): string {
   return [
-    `BB total: ${cpuText(bb.cpu)} of the Mac's CPU, ${bytesText(bb.memBytes)} memory`,
-    `BB app (${bb.app.processes} processes): ${cpuText(bb.app.cpu)}, ${bytesText(bb.app.memBytes)}`,
-    `All threads (${bb.threads.processes} processes): ${cpuText(bb.threads.cpu)}, ${bytesText(bb.threads.memBytes)}`,
+    `VesnALIA total: ${cpuText(alia.cpu)} of the Mac's CPU, ${bytesText(alia.memBytes)} memory`,
+    `VesnALIA app (${alia.app.processes} processes): ${cpuText(alia.app.cpu)}, ${bytesText(alia.app.memBytes)}`,
+    `All threads (${alia.threads.processes} processes): ${cpuText(alia.threads.cpu)}, ${bytesText(alia.threads.memBytes)}`,
     "Memory adds up each process's resident size, so memory shared between processes counts more than once.",
   ].join("\n");
 }
@@ -67,7 +67,7 @@ export function verdict(input: FooterInput & { openSince: number | null }): Verd
       tone: "idle",
       headline: "Waiting for the first reading",
       since: null,
-      detail: "Hotspot checks the Mac every few seconds while BB is on screen, and once a minute otherwise.",
+      detail: "Hotspot checks the Mac every few seconds while VesnALIA is on screen, and once a minute otherwise.",
       culprit: null,
       reassurance: null,
     };
@@ -91,7 +91,7 @@ export function verdict(input: FooterInput & { openSince: number | null }): Verd
   const culprit = top !== undefined && top.cpu >= BLAME_MIN_CPU ? top : null;
   const calm = headline === "Running cool";
   const reassurance =
-    culprit !== null ? null : calm ? "Nothing in BB is working hard." : "No BB thread is the main cause.";
+    culprit !== null ? null : calm ? "Nothing in VesnALIA is working hard." : "No VesnALIA thread is the main cause.";
   return { tone, headline, since: input.hot ? input.openSince : null, detail, culprit, reassurance };
 }
 

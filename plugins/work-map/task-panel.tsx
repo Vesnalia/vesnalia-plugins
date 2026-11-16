@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { AskSource, WorkItem } from "./model";
 import type { MapTask, TaskComment, TaskDetail } from "./server";
 import {

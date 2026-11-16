@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import test from "node:test";
-import type { BridgeToolCallRequest } from "@get-bb/plugin-sdk/provider-bridge";
+import type { BridgeToolCallRequest } from "@vesnalia/plugin-sdk/provider-bridge";
 import { fileURLToPath } from "node:url";
 import {
   createDynamicToolCallRouter,
@@ -47,7 +47,7 @@ test("accepts only loopback OpenCode service URLs", () => {
   );
 });
 
-test("filters disallowed BB dynamic tools", () => {
+test("filters disallowed VesnALIA dynamic tools", () => {
   const tools = enabledDynamicTools(TOOLS, new Set(["hidden_tool"]));
   assert.deepEqual(
     tools.map((tool) => tool.name),
@@ -63,12 +63,12 @@ test("registers the local MCP bridge on OpenCode v2's experimental route", () =>
   };
   assert.deepEqual(
     dynamicMcpRegistrationRequest(
-      "bb opencode2/test",
+      "alia opencode2/test",
       "/repo with spaces",
       config,
     ),
     {
-      path: "/api/experimental/mcp/bb%20opencode2%2Ftest?location[directory]=%2Frepo%20with%20spaces",
+      path: "/api/experimental/mcp/alia%20opencode2%2Ftest?location[directory]=%2Frepo%20with%20spaces",
       init: { method: "PUT", body: JSON.stringify({ config }) },
     },
   );
@@ -89,7 +89,7 @@ test("reads session instructions from bridge execution options", () => {
       providerEnabled: true,
       enabledModels: null,
       disableSubagents: true,
-      hideBbToolsOutsideBb: true,
+      hideAliaToolsOutsideAlia: true,
     },
   );
 
@@ -100,7 +100,7 @@ test("uses the documented session-instructions entry instead of unsupported prom
   assert.deepEqual(
     sessionInstructionsRequest("ses_123", "Use the repository conventions."),
     {
-      path: "/api/experimental/session/ses_123/instructions/entries/bb.provider.instructions",
+      path: "/api/experimental/session/ses_123/instructions/entries/alia.provider.instructions",
       init: {
         method: "PUT",
         body: JSON.stringify({ value: "Use the repository conventions." }),
@@ -109,29 +109,29 @@ test("uses the documented session-instructions entry instead of unsupported prom
   );
   // Empty instructions remove a stale entry instead of leaving it behind.
   assert.deepEqual(sessionInstructionsRequest("ses_123", ""), {
-    path: "/api/experimental/session/ses_123/instructions/entries/bb.provider.instructions",
+    path: "/api/experimental/session/ses_123/instructions/entries/alia.provider.instructions",
     init: { method: "DELETE" },
   });
 });
 
-test("builds a codex-style session environment with bb on PATH", () => {
+test("builds a codex-style session environment with VesnALIA on PATH", () => {
   const variables = sessionEnvironmentVariables({
     hostEnv: {
       PATH: "/usr/bin:/bin",
       HOME: "/Users/e",
-      BB_SECRET: "x",
+      ALIA_SECRET: "x",
       NODE_ENV: "production",
     },
     bridgeEnvVars: { EXTRA: "1", PATH: "/custom/bin:/usr/bin" },
-    bbBinDir: "/Applications/bb.app/dist",
+    aliaBinDir: "/Applications/alia.app/dist",
   });
   assert.equal(variables.HOME, "/Users/e");
   assert.equal(variables.EXTRA, "1");
-  assert.equal(variables.BB_SECRET, undefined);
+  assert.equal(variables.ALIA_SECRET, undefined);
   assert.equal(variables.NODE_ENV, undefined);
   assert.equal(
     variables.PATH,
-    "/Applications/bb.app/dist:/custom/bin:/usr/bin",
+    "/Applications/alia.app/dist:/custom/bin:/usr/bin",
   );
 });
 
@@ -158,18 +158,18 @@ test("removes incidental credentials from the OpenCode shell environment", () =>
   assert.equal(isSensitiveEnvironmentKey("PATH"), false);
 });
 
-test("does not duplicate the bb directory already on PATH", () => {
+test("does not duplicate the VesnALIA directory already on PATH", () => {
   const variables = sessionEnvironmentVariables({
-    hostEnv: { PATH: "/bb/dist:/usr/bin" },
-    bbBinDir: "/bb/dist",
+    hostEnv: { PATH: "/alia/dist:/usr/bin" },
+    aliaBinDir: "/alia/dist",
   });
-  assert.equal(variables.PATH, "/bb/dist:/usr/bin");
+  assert.equal(variables.PATH, "/alia/dist:/usr/bin");
 });
 
 test("uses the session environment endpoint with the full variable map", () => {
   assert.deepEqual(
     sessionEnvironmentRequest("ses_123", {
-      PATH: "/bb:/usr/bin",
+      PATH: "/alia:/usr/bin",
       HOME: "/Users/e",
     }),
     {
@@ -177,7 +177,7 @@ test("uses the session environment endpoint with the full variable map", () => {
       init: {
         method: "PUT",
         body: JSON.stringify({
-          variables: { PATH: "/bb:/usr/bin", HOME: "/Users/e" },
+          variables: { PATH: "/alia:/usr/bin", HOME: "/Users/e" },
         }),
       },
     },
@@ -216,7 +216,7 @@ test("detects unchanged dynamic tool catalogs regardless of order", () => {
   assert.equal(sameDynamicTools([], []), true);
 });
 
-test("maps an OpenCode MCP tools/call request to the BB tool-call protocol and returns its result", async () => {
+test("maps an OpenCode MCP tools/call request to the VesnALIA tool-call protocol and returns its result", async () => {
   const requests: BridgeToolCallRequest[] = [];
   const router = createDynamicToolCallRouter((request) =>
     requests.push(request),
@@ -226,7 +226,7 @@ test("maps an OpenCode MCP tools/call request to the BB tool-call protocol and r
     arguments: { city: "Oslo" },
     providerThreadId: "oc_session_1",
     scope,
-    threadId: "bb_thread_1",
+    threadId: "alia_thread_1",
     toolName: "lookup_weather",
   });
 
@@ -236,7 +236,7 @@ test("maps an OpenCode MCP tools/call request to the BB tool-call protocol and r
       id: 1,
       method: "item/tool/call",
       params: {
-        threadId: "bb_thread_1",
+        threadId: "alia_thread_1",
         providerThreadId: "oc_session_1",
         turnId: null,
         callId: "call-1",
@@ -265,7 +265,7 @@ test("maps an OpenCode MCP tools/call request to the BB tool-call protocol and r
   });
 });
 
-test("MCP exposes only configured tools, requires OpenCode's session metadata, and returns BB errors", async () => {
+test("MCP exposes only configured tools, requires OpenCode's session metadata, and returns VesnALIA errors", async () => {
   const writes: Array<Record<string, unknown>> = [];
   const calls: Array<Record<string, unknown>> = [];
   const runtime = {
@@ -335,7 +335,7 @@ test("MCP exposes only configured tools, requires OpenCode's session metadata, a
     content: [
       {
         type: "text",
-        text: "This BB tool is not available in this OpenCode session.",
+        text: "This VesnALIA tool is not available in this OpenCode session.",
       },
     ],
     isError: true,
@@ -345,7 +345,7 @@ test("MCP exposes only configured tools, requires OpenCode's session metadata, a
 test("the stdio MCP child round trips a tool call through the loopback bridge", async () => {
   const calls: Array<Record<string, unknown>> = [];
   const proxy = await startDynamicToolsMcpProxy({
-    serverName: "bb_opencode2_test",
+    serverName: "alia_opencode2_test",
     sessionId: "oc_session_1",
     tools: TOOLS.slice(0, 1),
     entryPath: fileURLToPath(new URL("../dist/host.js", import.meta.url)),

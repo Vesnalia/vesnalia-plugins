@@ -5,15 +5,15 @@ description: Inspect remaining provider subscription usage, plans, reset windows
 
 # Usage dashboard
 
-Run `bb usage` (or `bb usage --json`) to read live subscription windows
+Run `alia usage` (or `alia usage --json`) to read live subscription windows
 and token totals from this machine.
 
 ```bash
-bb usage
-bb usage --json
-bb usage live                 # tokens per minute right now, by provider and thread
-bb usage tokens --days 30
-bb usage --machine <id-or-name>
+alia usage
+alia usage --json
+alia usage live                 # tokens per minute right now, by provider and thread
+alia usage tokens --days 30
+alia usage --machine <id-or-name>
 ```
 
 Use `totals.cumulativeRemainingPercent` for remaining quota across signed-in
@@ -41,11 +41,11 @@ as out of quota unless every entry in `accounts[]` is unavailable. Local
 credit balances and reset grants are not attributed to pooled accounts
 without verified credential identity.
 
-`bb usage live` answers "what is being burned right now": `tokensPerMinute` is
+`alia usage live` answers "what is being burned right now": `tokensPerMinute` is
 the trailing-60-second rate, `peakTokensPerMinute` the best rate in the last 15
 minutes, and `threads[]` attributes it to the threads doing the work. Archived
-and deleted threads are omitted. It counts only what BB drives, so an agent
-run outside BB does not appear.
+and deleted threads are omitted. It counts only what VesnALIA drives, so an agent
+run outside VesnALIA does not appear.
 
 Google Gemini subscriptions use `acp-antigravity` (Google Antigravity). On the primary machine, Provider Usage reads the official CLI’s read-only `/usage` JSON report and shows separate Gemini and Claude/GPT five-hour and weekly windows. The CLI manages Google login and refresh; this plugin never reads its credentials. Remote quota collection requires a collector on that host.
 

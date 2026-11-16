@@ -3,20 +3,20 @@ set -u
 
 usage() {
   cat >&2 <<'USAGE'
-usage: bb-box-check-android [--no-base]
+usage: alia-box-check-android [--no-base]
 
 Checks an Android image as the box user, one line a check, ok or FAIL: the
-Linux VM's own checks (bb-box-check-headless) unless --no-base, then KVM, the
+Linux VM's own checks (alia-box-check-headless) unless --no-base, then KVM, the
 device's firewall and that the emulator does not start without it, that this
 box's adb key is its own, and for each device the build made, as
-/usr/share/bb-box/android-devices.json lists them: it boots from its snapshot, its screens' pixels are the model table's, the
+/usr/share/alia-box/android-devices.json lists them: it boots from its snapshot, its screens' pixels are the model table's, the
 image's defaults hold, AndroidWifi is in its Wi-Fi store on disk and it has a
 validated default network, its gRPC refuses no token and a wrong one, and its
 ports are closed to another interface over IPv4 and IPv6. A foldable's
 defaults include auto-rotate on in every posture, which Android keeps for
 each. It runs before finalize.sh writes the image's record, in build.sh's
-check, and after it, in a clone's and a refresh's trial box. BB_BOX_SHARE gives another folder than
-/usr/share/bb-box.
+check, and after it, in a clone's and a refresh's trial box. ALIA_BOX_SHARE gives another folder than
+/usr/share/alia-box.
 USAGE
   exit 2
 }
@@ -28,11 +28,11 @@ case "${1:-}" in
   *) usage ;;
 esac
 t() { printf '%-34s ' "$1"; shift; out=$("$@" 2>&1) && echo "ok   ${out:0:200}" || echo "FAIL ${out:0:300}"; }
-[ "$base" = no ] || bb-box-check-headless
+[ "$base" = no ] || alia-box-check-headless
 
 sdk=${ANDROID_HOME:-/opt/android-sdk}
 export ANDROID_HOME=$sdk PATH=$sdk/platform-tools:$sdk/emulator:$PATH
-share=${BB_BOX_SHARE:-/usr/share/bb-box}
+share=${ALIA_BOX_SHARE:-/usr/share/alia-box}
 record=$share/image.json
 devices=$share/android-devices.json
 pins=$share/android-pins.json
@@ -42,19 +42,19 @@ shell() { adb -s "$serial" shell "$@" </dev/null | tr -d '\r'; }
 kvm() { python3 -c 'import fcntl, os; fcntl.ioctl(os.open("/dev/kvm", os.O_RDWR), 0xAE01, 0)' && echo "/dev/kvm opens as $(id -un)"; }
 
 firewall() {
-  systemctl is-active --quiet bb-box-device-firewall.service || { echo "bb-box-device-firewall.service is not active"; return 1; }
-  bb-box-device-firewall check && echo "table inet bb_box_device at priority -300, from boot"
+  systemctl is-active --quiet alia-box-device-firewall.service || { echo "alia-box-device-firewall.service is not active"; return 1; }
+  alia-box-device-firewall check && echo "table inet alia_box_device at priority -300, from boot"
 }
 
 fails_closed() {
   local avd started
   avd=$(jq -er '.[0].native' "$devices" 2>/dev/null) || { echo "$devices lists no device to try"; return 1; }
-  sudo -n nft delete table inet bb_box_device || return 1
+  sudo -n nft delete table inet alia_box_device || return 1
   started=0
-  bb-box-emulator start "$avd" --no-save --timeout 30 >/dev/null 2>&1 && started=1
-  [ "$started" = 0 ] || bb-box-emulator stop
-  sudo -n systemctl restart bb-box-device-firewall.service || return 1
-  bb-box-device-firewall check || return 1
+  alia-box-emulator start "$avd" --no-save --timeout 30 >/dev/null 2>&1 && started=1
+  [ "$started" = 0 ] || alia-box-emulator stop
+  sudo -n systemctl restart alia-box-device-firewall.service || return 1
+  alia-box-device-firewall check || return 1
   [ "$started" = 0 ] && echo "refused while the table was gone; the table is back"
 }
 
@@ -132,15 +132,15 @@ defaults() {
 
 tokens() {
   local none wrong right
-  none=$(bb-box-emulator grpc getStatus --no-token)
-  wrong=$(bb-box-emulator grpc getStatus --token "not-$RANDOM-the-token")
-  right=$(bb-box-emulator grpc getStatus)
+  none=$(alia-box-emulator grpc getStatus --no-token)
+  wrong=$(alia-box-emulator grpc getStatus --token "not-$RANDOM-the-token")
+  right=$(alia-box-emulator grpc getStatus)
   [ "$none" = 16 ] && [ "$wrong" = 16 ] && [ "$right" = 0 ] || { echo "gRPC status with no token $none, a wrong one $wrong, this start's $right"; return 1; }
   echo "no token and a wrong one: UNAUTHENTICATED; this start's: OK"
 }
 
 ports_closed() {
-  local ns=bb-box-check-$$ host=veth-bbc$$ peer=veth-bbn$$ result=
+  local ns=alia-box-check-$$ host=veth-bbc$$ peer=veth-bbn$$ result=
   sudo -n ip netns add "$ns" || return 1
   sudo -n ip link add "$host" type veth peer name "$peer" &&
     sudo -n ip link set "$peer" netns "$ns" &&
@@ -176,15 +176,15 @@ for i in $(seq 0 $((count - 1))); do
   avd=$(jq -r ".[$i].native" "$devices")
   screens=$(jq -r --arg avd "$avd" '.devices[] | select(.avd == $avd) | .screens | map("\(.[0])x\(.[1])") | join(" ")' "$pins")
   [ -n "$screens" ] || { echo "$(printf '%-34s ' "$model screen")FAIL $pins has no screens for $avd"; continue; }
-  booted=$(bb-box-emulator start "$avd" --no-save 2>&1)
+  booted=$(alia-box-emulator start "$avd" --no-save 2>&1)
   case "$booted" in
     *snapshot=loaded*) echo "$(printf '%-34s ' "$model boots from its snapshot")ok   $booted" ;;
-    *) echo "$(printf '%-34s ' "$model boots from its snapshot")FAIL ${booted:0:$FAILED_START_MOST_CHARS}"; bb-box-emulator stop >/dev/null 2>&1; continue ;;
+    *) echo "$(printf '%-34s ' "$model boots from its snapshot")FAIL ${booted:0:$FAILED_START_MOST_CHARS}"; alia-box-emulator stop >/dev/null 2>&1; continue ;;
   esac
   if foldable "$screens"; then t "$model screens" fold_pixels $screens; else t "$model screen" pixels "$screens"; fi
   t "$model defaults" defaults "$avd" "$screens"
   t "$model Wi-Fi" wifi
   t "$model gRPC token" tokens
   t "$model ports" ports_closed
-  bb-box-emulator stop >/dev/null 2>&1
+  alia-box-emulator stop >/dev/null 2>&1
 done

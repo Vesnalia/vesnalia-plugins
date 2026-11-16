@@ -1,8 +1,8 @@
 // Dialogs opened from the sidebar, rows and commands: snooze, tags, rename,
 // sections, confirmations, deadlines and the Focus limit.
 import { useEffect, useState } from "react";
-import { ThreadTitle, useRpc } from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { ThreadTitle, useRpc } from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { useSidebarThreadActions } from "./thread-actions";
 import { DUE_PRESETS, SNOOZE_PRESETS, formatDue, formatWhen, parseDue, parseWhen } from "./when";

@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { FakePluginHarness } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
 import server from "../server";
 import { SNOOZE_METADATA_KEY } from "../lib/snooze";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-describe("bb focus-board snooze CLI", () => {
-  let bb: BbPluginApi;
+describe("alia focus-board snooze CLI", () => {
+  let alia: AliaPluginApi;
   let harness: FakePluginHarness;
   let metadata: Map<string, Record<string, unknown>>;
   let listedThreads: Array<{ id: string; title: string | null; lastReadAt: number }>;
@@ -55,9 +55,9 @@ describe("bb focus-board snooze CLI", () => {
         },
       },
     });
-    bb = host.bb;
+    alia = host.alia;
     harness = host.harness;
-    await server(bb);
+    await server(alia);
   }
 
   afterEach(async () => {
@@ -219,7 +219,7 @@ describe("bb focus-board snooze CLI", () => {
       await load();
       listedThreads = [makeThreadResponse({ id: "thr_a", title: "Alpha" })];
       lastRead.set("thr_a", Date.parse(record.setAt));
-      void bb;
+      void alia;
       await new Promise((resolve) => setTimeout(resolve, 400));
       // The past-due record was consumed by the load scan of the reload.
       // metadata map is shared through closure in this suite? No — a fresh

@@ -8,7 +8,7 @@ scripts it runs.
 
 "Any provider" is only true if every backend behaves the same way under the
 core. A second backend written late tends to reveal assumptions the first one
-baked in. People trying bb-box will also have different providers, and setup
+baked in. People trying alia-box will also have different providers, and setup
 is where most of them give up.
 
 ## Decision
@@ -19,7 +19,7 @@ is where most of them give up.
   1. capacity reports and refuses correctly;
   2. acquire reaches ready, with claim, starting and timing hooks;
   3. a command runs, and files copy in and out;
-  4. the box enrols in BB, if the kind says it can;
+  4. the box enrols in VesnALIA, if the kind says it can;
   5. the desktop stream connects and returns a frame, if the kind has one;
   6. computer use reads the accessibility tree and acts, if the kind has a
      desktop;
@@ -39,7 +39,7 @@ is where most of them give up.
 ## Consequences
 
 - A new backend is done when it passes the suite, not when it runs once.
-- The suite needs a BB server to test enrolment. It can skip that step with a
+- The suite needs a VesnALIA server to test enrolment. It can skip that step with a
   clear note when none is configured.
 - Setup scripts and `doctor` must stay in step with each backend's settings.
 - The suite runs by hand or on a schedule against live providers, not on every

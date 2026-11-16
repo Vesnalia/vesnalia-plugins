@@ -1,7 +1,7 @@
-// Data hooks: every read goes through bb.rpc; the "study-changed" realtime
+// Data hooks: every read goes through alia.rpc; the "study-changed" realtime
 // signal (and reconnects) trigger a debounced refetch. Signals are
 // ephemeral, so a slow poll covers anything missed while the page is open.
-import { useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RpcContract } from "../rpc.ts";
 

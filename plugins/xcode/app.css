@@ -180,7 +180,7 @@
   }
 }
 
-@keyframes bb-xcode-indeterminate {
+@keyframes alia-xcode-indeterminate {
   0% {
     transform: translateX(-100%) scaleX(0.4);
   }
@@ -193,8 +193,8 @@
 }
 
 /* Sweeping bar for work with no honest completion percentage. */
-.bb-xcode-indeterminate-bar {
-  animation: bb-xcode-indeterminate 1.6s ease-in-out infinite;
+.alia-xcode-indeterminate-bar {
+  animation: alia-xcode-indeterminate 1.6s ease-in-out infinite;
   transform-origin: left center;
   will-change: transform;
 }
@@ -204,7 +204,7 @@
  * while a build runs, so the "something is happening" signal has to survive
  * peripheral vision without ever demanding attention.
  */
-@keyframes bb-xcode-ping {
+@keyframes alia-xcode-ping {
   0% {
     transform: scale(1);
     opacity: 0.6;
@@ -216,8 +216,8 @@
   }
 }
 
-.bb-xcode-ping {
-  animation: bb-xcode-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+.alia-xcode-ping {
+  animation: alia-xcode-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 /*
@@ -226,17 +226,17 @@
  * stopping dead.
  */
 @media (prefers-reduced-motion: reduce) {
-  .bb-xcode-indeterminate-bar {
+  .alia-xcode-indeterminate-bar {
     animation: none;
     transform: none;
     opacity: 0.5;
   }
 
-  .bb-xcode-ping {
-    animation: bb-xcode-breathe 3s ease-in-out infinite;
+  .alia-xcode-ping {
+    animation: alia-xcode-breathe 3s ease-in-out infinite;
   }
 
-  @keyframes bb-xcode-breathe {
+  @keyframes alia-xcode-breathe {
     0%,
     100% {
       opacity: 0.15;

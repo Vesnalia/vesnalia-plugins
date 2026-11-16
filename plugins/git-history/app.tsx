@@ -17,7 +17,7 @@ import {
   useSettings,
   type PluginAppSlots,
   type PluginThreadActionRegistration,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { toast } from "sonner";
 import { rpcContract } from "./contracts";
@@ -48,7 +48,7 @@ const GRAPH_WIDTH = 38;
 const GRAPH_MAX_WIDTH = 86;
 const GRAPH_LANE_GAP = 8;
 const REPOSITORY_SEARCH_THRESHOLD = 8;
-const REPOSITORY_STORAGE_PREFIX = "bb-git-history:repository:";
+const REPOSITORY_STORAGE_PREFIX = "alia-git-history:repository:";
 // Lane 0 sits exactly where the compact rail and its commit marker sit, so a
 // single-lane graph is pixel-identical to the compact history.
 const GRAPH_LANE_ORIGIN = GRAPH_WIDTH / 2;
@@ -1632,8 +1632,8 @@ export function GitHistoryHeaderButton() {
   );
 }
 
-// bb 0.48 still draws icon components in the thread header through this slot,
-// but SDK 0.6.104+ no longer types it. A bb without the slot gets the
+// VesnALIA 0.48 still draws icon components in the thread header through this slot,
+// but SDK 0.6.104+ no longer types it. A VesnALIA without the slot gets the
 // labelled header thread action instead.
 type LegacyHeaderSlots = {
   experimental_threadHeaderAction?(registration: {

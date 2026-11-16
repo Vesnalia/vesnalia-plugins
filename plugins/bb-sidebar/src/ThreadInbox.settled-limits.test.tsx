@@ -2,7 +2,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreadLimitState } from "./contract";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { renderSlot } from "./test-slot";
 import { defaultSidebarSettings, inbox, listProps, loadInboxApp, thread } from "./test-inbox";
 import { deferred } from "./test-fixtures";
@@ -49,7 +49,7 @@ function mount({
       sidebarThreads: {
         status: "ready",
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         getSidebarSettings: () => ({ ...defaultSidebarSettings, inactiveThreadsEnabled: false }),

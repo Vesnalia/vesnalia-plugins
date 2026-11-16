@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { ACCENT_TEXT, CARD_EDGE, CARD_SURFACE, STATUS_META, THREAD_DRAG_TYPE, formatRelativeTime, taskActivityTime, taskCardTitle, type BoardStatus, type BoardTask } from "./model";
 import { MARK_FRAME, RowActions, Spinner, TYPE } from "./primitives";
 import { CardTooltip, ContextPie, ModelMark, SessionCost, type AgentProvider } from "./session";
@@ -32,7 +32,7 @@ function revealDelta(start: number, end: number, bandStart: number, bandSize: nu
 /**
  * Scroll the board so `card` is fully visible with minimal movement: no scroll when it already is,
  * otherwise only enough to clear the nearest edge — vertically in its column, horizontally in the board
- * grid. Scrolls only the board's own containers (never `scrollIntoView`, which would move bb's layout too).
+ * grid. Scrolls only the board's own containers (never `scrollIntoView`, which would move VesnALIA's layout too).
  */
 function revealBoardCard(card: HTMLElement) {
   const behavior: ScrollBehavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -160,13 +160,13 @@ export function TaskCard({ task, now, unread, selected, dragging, starting, prov
   now: number;
   /** Done and not yet read: the title goes from semibold to bold and the check fills. */
   unread: boolean;
-  /** Card belongs to the thread currently open in bb. */
+  /** Card belongs to the thread currently open in VesnALIA. */
   selected: boolean;
   /** This card is the one being dragged. */
   dragging: boolean;
   /** Its start is on its way to the server: the start button waits. */
   starting: boolean;
-  /** The harness the card's thread runs on; null when bb's roster doesn't list it. */
+  /** The harness the card's thread runs on; null when VesnALIA's roster doesn't list it. */
   provider: AgentProvider | null;
   onArchive: (threadId: string) => void;
   /** Park an idle card, or unpark a parked one. */

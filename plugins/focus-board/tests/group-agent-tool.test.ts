@@ -2,8 +2,8 @@
 // link tool's pattern: registerTool + instructions nudge + CLI fallback.
 // Red-first against the unregistered tool.
 import { describe, expect, it } from "vitest";
-import type { FakePluginHost, FakePluginHarness } from "@get-bb/plugin-sdk/testing";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { FakePluginHost, FakePluginHarness } from "@vesnalia/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { GROUP_METADATA_KEY, GROUPS_KV_KEY, parseGroupsStore } from "../lib/group-metadata";
 
@@ -42,7 +42,7 @@ export async function setup(opts: { threads?: string[] } = {}): Promise<GroupAge
       },
     },
   });
-  Object.defineProperty(host.bb.storage, "kv", {
+  Object.defineProperty(host.alia.storage, "kv", {
     value: {
       get: async (key: string) => kv.get(key) ?? null,
       set: async (key: string, value: unknown) => {
@@ -51,7 +51,7 @@ export async function setup(opts: { threads?: string[] } = {}): Promise<GroupAge
       },
     },
   });
-  await plugin(host.bb as never);
+  await plugin(host.alia as never);
   return {
     host: host as FakePluginHost,
     harness: host.harness,

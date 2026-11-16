@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useSdk, type PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import { useSdk, type PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { toast } from "./lib/toast";
 import { cn } from "./lib/utils";
 import { threadDisplayTitle, threadStoredTitle, threadTitleHasMentions } from "./inbox";

@@ -25,7 +25,7 @@ test('M496a report hides home in Applications paths without replacing sibling pr
   assert.equal(redactHomePath('/home/private-other/Applications/ZCode.app', '/home/private'), '/home/private-other/Applications/ZCode.app');
   assert.equal(redactHomePath('/Applications/ZCode.app', '/home/private'), '/Applications/ZCode.app');
   assert.equal(redactHomePath(null, '/home/private'), null);
-  const output = formatProblemReport({ bb: null, ZCode: null, CLI: null, plugin: '0.0.0', macOS: 'unknown',
+  const output = formatProblemReport({ alia: null, ZCode: null, CLI: null, plugin: '0.0.0', macOS: 'unknown',
     state: 'installed', ZCodePath: join(homedir(), 'Applications/ZCode.app'), cliLogin: 'not set', events: [] }, {});
   assert.equal(output.includes('ZCodePath'), false);
   assert.equal(output.includes(homedir()), false);
@@ -47,7 +47,7 @@ test('SDK .79 preserves native effort identifiers and their selected default', (
 test('M496a mention CLI once per native session; resume/config replacement reload; stale file fails locally', async () => {
   const cwd = mkdtempSync('/tmp/m496a-mentions-'), output = [], observations = [], counter = join(cwd, 'calls');
   const path = join(cwd, 'SKILL.md'); writeFileSync(path, 'fixture');
-  const options = { ...JSON.parse(readFileSync(new URL('./fixtures/bb-real-inputs.json', import.meta.url), 'utf8')).fixtures[0].request.params.options, envVars: {} };
+  const options = { ...JSON.parse(readFileSync(new URL('./fixtures/alia-real-inputs.json', import.meta.url), 'utf8')).fixtures[0].request.params.options, envVars: {} };
   const row = { name: 'chosen', scope: 'project', source: 'zcode', path };
   let failCatalogue = true;
   const services = {

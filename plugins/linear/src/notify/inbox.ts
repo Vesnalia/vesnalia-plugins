@@ -137,7 +137,7 @@ export function selectInboxItem(input: {
     url: input.row.url,
     workspace: input.workspace ?? null,
     age: formatRelativeCompact(input.row.createdAt, input.now),
-    // Unseen means: this bb has not shown it, and Linear does not think it has
+    // Unseen means: this VesnALIA has not shown it, and Linear does not think it has
     // been read either. Reading it in Linear's own client clears the dot on
     // the next tick without removing the row.
     unseen: input.row.seenAt === null && input.row.linearReadAt === null,

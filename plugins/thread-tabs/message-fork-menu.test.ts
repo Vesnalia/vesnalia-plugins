@@ -49,7 +49,7 @@ test("an already aborted content script does not change the host UI", () => {
     expect(native.menu.querySelector('[data-session-tabs-fork-item]')).toBeNull();
 });
 
-test("message menu contains both destinations and preserves BB's native thread action", () => {
+test("message menu contains both destinations and preserves VesnALIA's native thread action", () => {
     const source = message("output-1"); const native = menu(source.trigger.id); mount();
     expect(source.action.hasAttribute("data-session-tabs-inline-fork")).toBe(true);
     const options = Array.from(native.menu.querySelectorAll('[role="menuitem"]'));

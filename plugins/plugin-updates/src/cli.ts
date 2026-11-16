@@ -1,5 +1,5 @@
-// The `bb plugin-updates` command.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+// The `alia plugin-updates` command.
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { OutOfRangeEntry, ReportSnapshot } from "./contract";
 import { message } from "./errors";
 import { formatReport } from "./format";
@@ -7,11 +7,11 @@ import type { UpdateService } from "./updates";
 
 const usage = [
   "Usage:",
-  "  bb plugin-updates list [--json]",
-  "  bb plugin-updates check [--json] [--reannounce]",
-  "  bb plugin-updates update <id> [--out-of-range]",
-  "  bb plugin-updates update --all",
-  "  bb plugin-updates ignore <id>",
+  "  VesnALIA plugin-updates list [--json]",
+  "  VesnALIA plugin-updates check [--json] [--reannounce]",
+  "  VesnALIA plugin-updates update <id> [--out-of-range]",
+  "  VesnALIA plugin-updates update --all",
+  "  VesnALIA plugin-updates ignore <id>",
 ].join("\n");
 
 const deferredText = (id: string) =>
@@ -41,12 +41,12 @@ function describeOutOfRange(id: string, result: NonNullable<OutOfRangeEntry["res
     case "error":
       return {
         exitCode: 1,
-        stderr: `Updating ${id} failed partway; check it with "bb plugin list". ${result.error}`,
+        stderr: `Updating ${id} failed partway; check it with "alia plugin list". ${result.error}`,
       };
   }
 }
 
-export function registerCli(bb: BbPluginApi, updates: UpdateService) {
+export function registerCli(alia: AliaPluginApi, updates: UpdateService) {
   async function update(id: string, outOfRange: boolean) {
     const report = (await updates.currentReport())?.report;
     if (outOfRange) {
@@ -62,7 +62,7 @@ export function registerCli(bb: BbPluginApi, updates: UpdateService) {
         stdout:
           request.kind === "deferred"
             ? deferredText(id)
-            : `Started updating ${id} (job ${request.job.id}). Follow it with "bb plugin update-jobs".`,
+            : `Started updating ${id} (job ${request.job.id}). Follow it with "alia plugin update-jobs".`,
       };
     }
     const newer = report?.outOfRange.find((i) => i.id === id);
@@ -70,7 +70,7 @@ export function registerCli(bb: BbPluginApi, updates: UpdateService) {
       exitCode: 1,
       stderr:
         newer === undefined
-          ? `No update for ${id}. Run "bb plugin-updates check" first.`
+          ? `No update for ${id}. Run "alia plugin-updates check" first.`
           : `${id} ${newer.to} is outside its installed range, so updating reinstalls it ` +
             `(settings are restored; storage and schedules may reset). ` +
             `Compare: ${newer.compareUrl}\nRe-run with --out-of-range to go ahead.`,
@@ -97,25 +97,25 @@ export function registerCli(bb: BbPluginApi, updates: UpdateService) {
     return { exitCode: 0, stdout: `Ignoring ${id} ${shown}.` };
   }
 
-  bb.cli.register({
+  alia.cli.register({
     name: "plugin-updates",
     summary: "List and apply plugin updates, including releases outside a plugin's range",
     commands: [
-      { name: "list", summary: "Show the last check's updates", usage: "bb plugin-updates list [--json]" },
+      { name: "list", summary: "Show the last check's updates", usage: "alia plugin-updates list [--json]" },
       {
         name: "check",
         summary: "Check for updates now; --reannounce toasts already-announced ones again",
-        usage: "bb plugin-updates check [--json] [--reannounce]",
+        usage: "alia plugin-updates check [--json] [--reannounce]",
       },
       {
         name: "update",
         summary: "Update a plugin; --out-of-range moves it past its range",
-        usage: "bb plugin-updates update <id> [--out-of-range] | update --all",
+        usage: "alia plugin-updates update <id> [--out-of-range] | update --all",
       },
       {
         name: "ignore",
         summary: "Hide a plugin's pending versions until a newer one appears",
-        usage: "bb plugin-updates ignore <id>",
+        usage: "alia plugin-updates ignore <id>",
       },
     ],
     async run(argv) {
@@ -126,7 +126,7 @@ export function registerCli(bb: BbPluginApi, updates: UpdateService) {
         stdout: json
           ? JSON.stringify(current)
           : current === null
-            ? 'Not checked yet. Run "bb plugin-updates check".'
+            ? 'Not checked yet. Run "alia plugin-updates check".'
             : formatReport(current.report, current.checkedAt, current),
       });
       // A failed check exits 1, still showing the last good results (and the failure).

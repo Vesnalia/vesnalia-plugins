@@ -1,9 +1,9 @@
-// `bb thread-time-machine dump` argument parsing and text rendering.
+// `alia thread-time-machine dump` argument parsing and text rendering.
 import type { TimeMachineFrame } from "./frames";
 
 export const USAGE = [
   "Usage:",
-  "  bb thread-time-machine dump <thread-id> [--json] [--limit <n>]",
+  "  VesnALIA thread-time-machine dump <thread-id> [--json] [--limit <n>]",
   "",
   "Prints the thread's event history as a condensed timeline, oldest first:",
   "  HH:MM:SS  <kind>  <label>",
@@ -67,7 +67,7 @@ export function renderDump(frames: readonly TimeMachineFrame[], limit: number, t
   return lines.join("\n");
 }
 
-/** BB rejects plugin CLI output over 1 MiB; leave room for stderr. */
+/** VesnALIA rejects plugin CLI output over 1 MiB; leave room for stderr. */
 export const CLI_OUTPUT_BUDGET = 1_000_000;
 
 /** The newest frames (up to `limit`) whose JSON array fits the CLI budget. */

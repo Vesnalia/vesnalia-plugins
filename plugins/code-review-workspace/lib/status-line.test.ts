@@ -116,7 +116,7 @@ test("a run that couldn't start says why", () => {
   expect(statusLine(unsaid, { now, knobs }).find((part) => part.kind === "not-run")?.text).toBe("Not run automatically: it couldn’t start");
 });
 
-// bug bash LIV-2: a first guide you stopped is stored as status "error" with guideError "Stopped". Its page and bb review
+// bug bash LIV-2: a first guide you stopped is stored as status "error" with guideError "Stopped". Its page and VesnALIA review
 // list say "Guide stopped", but All reviews and the Overview said "Guide failed", in red.
 test("a guide you stopped says so, not that it failed, and still needs you", () => {
   const stopped = review({ ...turn("needs", "requested"), failed: true, label: "Failed" }, { status: "error", guideError: { at: now, text: GUIDE_STOPPED } });
@@ -125,7 +125,7 @@ test("a guide you stopped says so, not that it failed, and still needs you", () 
 });
 
 test("a folder's review says what changed in its folder, that it's paused on another branch, or that its folder is gone", () => {
-  const feature = { environmentId: "env1", hostId: "h", machine: "MaxBook", path: "/p", branch: "bb/snooze-thr_a1", baseRef: "main", repo: "acme/web" };
+  const feature = { environmentId: "env1", hostId: "h", machine: "MaxBook", path: "/p", branch: "alia/snooze-thr_a1", baseRef: "main", repo: "acme/web" };
   expect(said(review(turn("needs", "new"), { kind: "ref", feature: { ...feature, changedFiles: 3 } }))).toEqual(["3 files changed", "foreground", "FileDiff"]);
   expect(said(review(turn("needs", "new"), { kind: "ref", feature: { ...feature, changedFiles: 1 } }))).toEqual(["1 file changed", "foreground", "FileDiff"]);
   expect(said(review(turn("needs", "new"), { kind: "ref", feature: { ...feature, changedFiles: null } }))).toEqual(["Local review", "neutral", "GitBranch"]);
@@ -133,7 +133,7 @@ test("a folder's review says what changed in its folder, that it's paused on ano
   expect(statusWhy(review(turn("needs", "new"), { kind: "ref", feature: { ...feature, changedFiles: 3 } }), { localDiffChanges: false }, now)?.text).toBe("Local review");
   expect(line(review(turn("needs", "new"), { kind: "ref", feature: { ...feature, changedFiles: 3 } }))).toContain("3 files changed");
   expect(statusLine(review(turn("needs", "new"), { kind: "ref", feature: { ...feature, changedFiles: 3 } }), { now, knobs: { unattendedAgents: true, localDiffChanges: false } }).map((part) => part.text)).toContain("Local review");
-  expect(said(review(turn("waiting", "paused", "Paused"), { kind: "ref", feature: { ...feature, pausedOn: "bb/fix-docs-thr_cd34" } }))).toEqual(["Paused: on fix-docs", "neutral", "GitBranch"]);
+  expect(said(review(turn("waiting", "paused", "Paused"), { kind: "ref", feature: { ...feature, pausedOn: "alia/fix-docs-thr_cd34" } }))).toEqual(["Paused: on fix-docs", "neutral", "GitBranch"]);
   expect(said(review(turn("archive", "folder-gone", "Folder removed"), { kind: "ref", feature: { ...feature, folderGone: true } }))).toEqual(["Folder removed", "neutral", "Folder"]);
 });
 
@@ -159,7 +159,7 @@ test("your approval in the main thread says when you gave it and where it went; 
   const approved = review(turn("reviewed", "approval-sent", "Approved", { at: now - 2 * HOUR }), { kind: "ref", approvalSent: { at: now - 2 * HOUR, threadId: "coder", title: "Build snooze", revision: "r" } });
   expect(said(approved)).toEqual(["You approved 2h ago", "neutral", "Check"]);
   expect(statusWhy(approved, knobs, now)?.detail).toBe("Sent to Build snooze. Nothing went to GitHub.");
-  const push = { at: now - 60_000, threadId: "coder", repo: "acme/web", head: "bb/snooze-thr_a1" };
+  const push = { at: now - 60_000, threadId: "coder", repo: "acme/web", head: "alia/snooze-thr_a1" };
   expect(said(review(turn("waiting", "pushing", "Committing for Push"), { kind: "ref", push: { ...push, state: "committing" } }))).toEqual(["Committing for Push", "neutral", "ArrowUp"]);
   expect(said(review(turn("waiting", "pushing", "Pushing"), { kind: "ref", push: { ...push, state: "pushing", sha: "c0ffee" } }))).toEqual(["Pushing to snooze", "neutral", "ArrowUp"]);
   // A PR's comments out with the thread fixing them say so as a local review's do.

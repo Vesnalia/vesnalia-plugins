@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 const project = () => h.store.projectBySlug("csv")!;
-const toPlanner = () => h.bb.sent("thr_plan");
+const toPlanner = () => h.alia.sent("thr_plan");
 const eventsOf = (kind: string) => h.store.eventsOfKind(project().id, kind).map((event) => JSON.parse(event.data_json) as Record<string, unknown>);
 const hookRuns = (command: string) => h.host.callsTo("exec").filter((input) => input.command === command);
 const follow = async () => {
@@ -76,12 +76,12 @@ describe("telling the planner", () => {
 
   it("waits while the planner is busy, then sends everything that fired in one message, oldest first", async () => {
     await seedProject(h, withHooks([{ on: "project.started", tell: "Create the board." }, { on: "ticket.started", tell: "Post the ticket on the board." }]));
-    h.bb.threads.get("thr_plan")!.status = "active";
+    h.alia.threads.get("thr_plan")!.status = "active";
     await follow();
     await startWorker(h, "CSV-1");
     await follow();
     expect(toPlanner()).toEqual([]);
-    h.bb.threads.get("thr_plan")!.status = "idle";
+    h.alia.threads.get("thr_plan")!.status = "idle";
     await follow();
     expect(toPlanner()).toHaveLength(1);
     expect(toPlanner()[0]).toContain("2 hooks of csv fired on project.started, ticket.started.");
@@ -130,7 +130,7 @@ describe("telling the planner", () => {
   it("fires spec.approved for a pending version, with the version, and project.done when the last ticket ends", async () => {
     await seedProject(h, pr);
     await follow();
-    await h.projects.propose({ toml: specToml(withHooks([{ on: "spec.approved", tell: "Tell the channel." }, { on: "project.done", tell: "Archive the board." }], pr)), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(withHooks([{ on: "spec.approved", tell: "Tell the channel." }, { on: "project.done", tell: "Archive the board." }], pr)), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await h.projects.approve("csv", "human");
     await follow();
     expect(toPlanner().join("\n")).toContain("hook[0], on spec.approved: The human approved spec version 2, a change to the approved project.");
@@ -144,7 +144,7 @@ describe("telling the planner", () => {
     await seedProject(h, pr);
     await startWorker(h, "CSV-1");
     await follow();
-    await h.projects.propose({ toml: specToml(withHooks([{ on: "ticket.started", tell: "Start." }], pr)), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(withHooks([{ on: "ticket.started", tell: "Start." }], pr)), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await h.projects.approve("csv", "human");
     await follow();
     expect(toPlanner().join("\n")).not.toContain("A worker started");
@@ -157,7 +157,7 @@ describe("telling the planner", () => {
     await seedProject(h, pr);
     await follow();
     await startWorker(h, "CSV-1");
-    await h.projects.propose({ toml: specToml(withHooks([{ on: "ticket.started", tell: "Start." }, { on: "spec.approved", tell: "Tell the channel." }], pr)), threadId: "thr_plan", bbProjectId: "proj_1", hostId: "host_1" });
+    await h.projects.propose({ toml: specToml(withHooks([{ on: "ticket.started", tell: "Start." }, { on: "spec.approved", tell: "Tell the channel." }], pr)), threadId: "thr_plan", aliaProjectId: "proj_1", hostId: "host_1" });
     await h.projects.approve("csv", "human");
     await follow();
     const all = toPlanner().join("\n");
@@ -177,22 +177,22 @@ describe("telling the planner", () => {
 
   it("tries a refused send again on the next pass, then fails it after the last try", async () => {
     await seedProject(h, withHooks([{ on: "project.started", tell: "Create the board." }]));
-    h.bb.sendError = new Error("HTTP 503: busy");
+    h.alia.sendError = new Error("HTTP 503: busy");
     for (let pass = 0; pass < HOOK_TELL_TRIES; pass++) await follow();
-    expect(h.bb.callsTo("send")).toHaveLength(HOOK_TELL_TRIES);
-    expect(eventsOf("hook.failed")).toEqual([{ hook: 0, on: "project.started", kind: "tell", reason: `bb refused ${HOOK_TELL_TRIES} sends to the planner: HTTP 503: busy` }]);
-    h.bb.sendError = null;
+    expect(h.alia.callsTo("send")).toHaveLength(HOOK_TELL_TRIES);
+    expect(eventsOf("hook.failed")).toEqual([{ hook: 0, on: "project.started", kind: "tell", reason: `alia refused ${HOOK_TELL_TRIES} sends to the planner: HTTP 503: busy` }]);
+    h.alia.sendError = null;
     await follow();
-    expect(h.bb.callsTo("send")).toHaveLength(HOOK_TELL_TRIES);
+    expect(h.alia.callsTo("send")).toHaveLength(HOOK_TELL_TRIES);
   });
 
   it("fails a tell an earlier process was sending when it stopped, instead of sending it again", async () => {
     await seedProject(h, withHooks([{ on: "project.started", tell: "Create the board." }]));
-    h.bb.threads.get("thr_plan")!.status = "active";
+    h.alia.threads.get("thr_plan")!.status = "active";
     await follow();
     const [row] = h.store.hookFirings(project().id, ["pending"]);
     h.store.moveHookFiring(row!.id, "pending", { state: "running" });
-    h.bb.threads.get("thr_plan")!.status = "idle";
+    h.alia.threads.get("thr_plan")!.status = "idle";
     await follow();
     expect(toPlanner()).toEqual([]);
     expect(eventsOf("hook.failed")).toEqual([{ hook: 0, on: "project.started", kind: "tell", reason: "Loom restarted while it told the planner, so it does not tell it again" }]);
@@ -211,7 +211,7 @@ describe("telling the planner", () => {
 
   it("skips what an archived project still had queued", async () => {
     await seedProject(h, withHooks([{ on: "project.started", tell: "Create the board." }]));
-    h.bb.threads.get("thr_plan")!.status = "active";
+    h.alia.threads.get("thr_plan")!.status = "active";
     await follow();
     h.store.setProjectState(project().id, "archived", "human");
     await follow();
@@ -226,7 +226,7 @@ describe("the engine", () => {
     h = e;
     await seedProject(e, withHooks([{ on: "project.started", tell: "Create the board." }]));
     await e.engine.tick();
-    expect(e.bb.sent("thr_plan").join("\n")).toContain("Do: Create the board.");
+    expect(e.alia.sent("thr_plan").join("\n")).toContain("Do: Create the board.");
   });
 });
 
@@ -323,12 +323,12 @@ describe("the migration", () => {
     const db = new Database(":memory:");
     for (const sql of MIGRATIONS.slice(0, -1)) db.exec(sql);
     const store = new Store(db, () => 1);
-    const made = store.createProject({ slug: "old", name: "Old", key: "OLD", bb_project_id: "proj_1" }, "human");
+    const made = store.createProject({ slug: "old", name: "Old", key: "OLD", alia_project_id: "proj_1" }, "human");
     store.event(made.id, null, "spec.approved", "human", { version: 1 });
     db.exec(MIGRATIONS.at(-1)!);
     const newest = (db.prepare("SELECT MAX(id) AS id FROM events").get() as { id: number }).id;
     expect(store.project(made.id)!.hook_event_id).toBe(newest);
-    expect(store.createProject({ slug: "new", name: "New", key: "NEW", bb_project_id: "proj_1" }, "human").hook_event_id).toBe(0);
+    expect(store.createProject({ slug: "new", name: "New", key: "NEW", alia_project_id: "proj_1" }, "human").hook_event_id).toBe(0);
   });
 });
 
@@ -348,7 +348,7 @@ describe("the standing planner instructions", () => {
     let instructions = INSTRUCTIONS;
     const projects = new (h.projects.constructor as typeof import("../src/projects").Projects)({ ...h.ctx, plannerInstructions: () => instructions });
     await projects.startPlanning({ request: { projectId: "proj_1", input: [{ type: "text", text: "Export orders as CSV", mentions: [] }] } as never, merge: "ask", reviewer: "" });
-    const spawn = h.bb.callsTo("spawnPlanner").at(-1)![0] as { kickoff: string };
+    const spawn = h.alia.callsTo("spawnPlanner").at(-1)![0] as { kickoff: string };
     expect(spawn.kickoff).toContain(INSTRUCTIONS);
     instructions = "";
     expect(projects.plannerInstructions()).toBe("");

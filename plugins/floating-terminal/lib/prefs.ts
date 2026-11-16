@@ -3,9 +3,9 @@
 // The plugin setting is the default everywhere; this is the quick override from
 // the window's menu. It lives in localStorage rather than plugin settings on
 // purpose: the size that reads well on a laptop is not the one that reads well
-// on a phone, and both are the same bb account.
+// on a phone, and both are the same VesnALIA account.
 
-const FONT_KEY = "bb-plugin-floating-terminal:font-size:v1";
+const FONT_KEY = "alia-plugin-floating-terminal:font-size:v1";
 export const MIN_FONT_SIZE = 9;
 export const MAX_FONT_SIZE = 24;
 

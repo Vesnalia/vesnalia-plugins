@@ -111,7 +111,7 @@ export async function playDialSequence(term: TerminalLike, opts: DialOptions): P
     if (opts.sound) sound = createModemSound();
     term.write(CLEAR + SHOW_CURSOR);
     await receive(
-      `${fg(C.brightCyan)}bbBBS terminal ${dim}v0.1  (C) 1994 bbBBS Telecom, Ltd. (Caps Lock sold separately)${CRLF}` +
+      `${fg(C.brightCyan)}aliaBBS terminal ${dim}v0.1  (C) 1994 aliaBBS Telecom, Ltd. (Caps Lock sold separately)${CRLF}` +
         `${dim}${pickTagline(opts.random)}${CRLF}${CRLF}` +
         `${text}Hayes-compatible WebSocket modem detected on ${hi}COM1${text}.${CRLF}${CRLF}`,
     );

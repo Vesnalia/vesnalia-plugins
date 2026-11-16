@@ -1,14 +1,14 @@
 # Rad Binder
 
-An 80s/90s school-binder and toy-commercial theme for [bb](https://getbb.app): a deep-purple binder-spine sidebar with neon confetti, striped binder edges, chunky offset shadows and bold italic display headings. Light and dark.
+An 80s/90s school-binder and toy-commercial theme for [VesnALIA](https://getbb.app): a deep-purple binder-spine sidebar with neon confetti, striped binder edges, chunky offset shadows and bold italic display headings. Light and dark.
 
 ## Install
 
-From the bb Community marketplace, or:
+From the VesnALIA Community marketplace, or:
 
 ```sh
-bb plugin install git:https://github.com/steveafrost/bb-theme-rad-binder.git
-bb theme set plugin:rad-binder:rad-binder
+alia plugin install git:https://github.com/steveafrost/bb-theme-rad-binder.git
+alia theme set plugin:rad-binder:rad-binder
 ```
 
 ## Notes

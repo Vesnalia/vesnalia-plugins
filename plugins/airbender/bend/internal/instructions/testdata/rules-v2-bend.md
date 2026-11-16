@@ -2,7 +2,7 @@
 <!-- airbender:rules:version 2 -->
 ## Working with issues through Airbender
 
-This repository's issues are worked from the Airbender tab in BB, and read
+This repository's issues are worked from the Airbender tab in VesnALIA, and read
 and changed with the `bend` command, whatever tracker holds them. These are
 the instructions for working on issues here; follow them whenever you work
 on one.

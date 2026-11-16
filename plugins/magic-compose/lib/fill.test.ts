@@ -11,7 +11,7 @@ const pick = (label: string) => ({
 });
 
 const decision: DecisionSummary = {
-  project: { ...pick("bb"), id: "proj_bb" },
+  project: { ...pick("alia"), id: "proj_alia" },
   machine: { ...pick("bee"), id: "host_bee" },
   model: { ...pick("Fable"), providerId: "claude-code", model: "fable" },
   reasoning: pick("max"),
@@ -25,7 +25,7 @@ const ALL = { project: true, placement: true, model: true, effort: true };
 describe("selectionFor", () => {
   it("asks for the decision's project, machine, environment, model, and effort", () => {
     expect(selectionFor(decision, ALL)).toEqual({
-      projectId: "proj_bb",
+      projectId: "proj_alia",
       environment: {
         type: "provider",
         environmentProviderId: "git-worktree",
@@ -42,7 +42,7 @@ describe("selectionFor", () => {
     expect(selectionFor(decision, ALL)).not.toHaveProperty("permissionMode");
   });
 
-  it("refuses a reasoning level BB does not know", () => {
+  it("refuses a reasoning level VesnALIA does not know", () => {
     expect(() => selectionFor({ ...decision, reasoning: pick("galaxy") }, ALL)).toThrow(/unknown/);
   });
 
@@ -54,7 +54,7 @@ describe("selectionFor", () => {
     );
     // No model, so no effort either: Jev chose the effort for its own model.
     expect(selectionFor(decision, { ...ALL, model: false })).toEqual({
-      projectId: "proj_bb",
+      projectId: "proj_alia",
       environment: expect.anything(),
     });
     expect(selectionFor(decision, { project: false, placement: false, model: false, effort: false })).toEqual({});

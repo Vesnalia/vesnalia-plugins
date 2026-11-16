@@ -1,4 +1,4 @@
-import type { PluginSidebarThread, PluginSidebarThreadIndicator } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread, PluginSidebarThreadIndicator } from "@vesnalia/plugin-sdk/app";
 
 /**
  * What a parent card says about its subtree when the list is collapsed.
@@ -21,9 +21,9 @@ interface ChildStatusSummary {
 }
 
 /**
- * Every indicator this sidebar draws itself. bb adds kinds faster than the
- * plugin ships: a kind missing here is drawn with bb's own glyph and label
- * (see StatusGlyph and StatusOrTime), so users never lose a status bb shows.
+ * Every indicator this sidebar draws itself. VesnALIA adds kinds faster than the
+ * plugin ships: a kind missing here is drawn with VesnALIA's own glyph and label
+ * (see StatusGlyph and StatusOrTime), so users never lose a status VesnALIA shows.
  * A test fails the build when the pinned SDK names a kind this list lacks.
  */
 export const KNOWN_INDICATORS = [
@@ -52,7 +52,7 @@ export function isKnownIndicator(indicator: PluginSidebarThreadIndicator): boole
 /**
  * The `default` branch of a switch over every indicator. Its `never`
  * parameter fails typecheck when a new SDK kind has no case; at runtime it
- * hands back the unknown kind, which callers pass to bb to draw.
+ * hands back the unknown kind, which callers pass to VesnALIA to draw.
  */
 export function unhandledIndicator(indicator: never): PluginSidebarThreadIndicator {
   return indicator;
@@ -61,7 +61,7 @@ export function unhandledIndicator(indicator: never): PluginSidebarThreadIndicat
 /**
  * Whether a thread is working, for display. App code passes
  * isThreadWorkingForDisplay from working-tree.ts with each thread's own row
- * status; this shared module cannot call bb's status resolver itself.
+ * status; this shared module cannot call VesnALIA's status resolver itself.
  */
 export type ThreadWorking = (thread: PluginSidebarThread) => boolean;
 
@@ -166,7 +166,7 @@ export function threadsWithAskingDescendants(threads: readonly PluginSidebarThre
 
 /**
  * The same walk over any thread shape, given what counts as asking. The
- * server's thread lists have no row indicator, so `bb sidebar list` asks with
+ * server's thread lists have no row indicator, so `alia sidebar list` asks with
  * `hasPendingInteraction` alone.
  */
 export function ancestorsOfAskingThreads<

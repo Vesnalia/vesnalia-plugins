@@ -2,7 +2,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { HorseHeadIcon, HorseIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useComposer, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useRealtime, useRpc } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { ponytailModes, type PonytailMode } from "./lib/modes.ts";
 import { ponytailMessageMode } from "./lib/mode-message.ts";

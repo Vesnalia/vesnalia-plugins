@@ -163,7 +163,7 @@ export function IssueFacts({
           onSize === undefined ? undefined : (size) => onSize(issue.id, size)
         }
       />
-      {/* Clicking the id copies it (bead-bb-c58): ids are what you type
+      {/* Clicking the id copies it (bead-alia-c58): ids are what you type
           to an agent or into bd, and they are awkward to select by hand
           between the tags. */}
       <Tip label="Copy the id">
@@ -260,7 +260,7 @@ export function IssueFacts({
         </Tag>
       )}
       {/* On a hosted tracker a change shows here at once and is sent
-          afterwards (bead-bb-c9l.6): said while it has not arrived. */}
+          afterwards (bead-alia-c9l.6): said while it has not arrived. */}
       {issue.unsent === 0 ? null : (
         <span title={`${issue.unsent} ${issue.unsent === 1 ? "change" : "changes"} made here ${issue.unsent === 1 ? "has" : "have"} not reached the tracker yet. The next sync sends ${issue.unsent === 1 ? "it" : "them"}.`}>
           <Tag>not sent yet</Tag>

@@ -8,11 +8,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ function XcodePanelView({
 }) {
   const rpc = useRpc<typeof rpcContract>();
   const connection = useRealtimeConnectionState();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   // Measured on the panel, not the window: a 1600px viewport with this panel
   // docked at 380px used to engage the two-pane layout and squeeze the detail
   // pane to zero pixels. Two panes need the 26rem list plus a readable detail.
@@ -211,7 +211,7 @@ function XcodePanelView({
           {activeCount > 0 ? (
             <span className="flex items-center gap-1.5 text-xs text-primary">
               <span className="relative flex size-2">
-                <span className="bb-xcode-ping absolute inline-flex size-full rounded-full bg-primary/60" />
+                <span className="alia-xcode-ping absolute inline-flex size-full rounded-full bg-primary/60" />
                 <span className="relative inline-flex size-2 rounded-full bg-primary" />
               </span>
               {activeCount} active
@@ -406,7 +406,7 @@ function ShimNudge({ overview }: { overview: Overview | null }) {
               The shim is installed but not on this server&rsquo;s PATH — add the
               line from{" "}
               <code className="rounded bg-muted px-1 py-0.5">
-                bb xcode shim status
+                alia xcode shim status
               </code>{" "}
               to your shell profile and restart your shell.
             </>
@@ -414,7 +414,7 @@ function ShimNudge({ overview }: { overview: Overview | null }) {
             <>
               Run{" "}
               <code className="rounded bg-muted px-1 py-0.5">
-                bb xcode shim install
+                alia xcode shim install
               </code>{" "}
               once to capture one for every build.
             </>
@@ -437,7 +437,7 @@ function ShimNudge({ overview }: { overview: Overview | null }) {
   );
 }
 
-const SHIM_NUDGE_KEY = "bb-xcode.shim-nudge-dismissed";
+const SHIM_NUDGE_KEY = "alia-xcode.shim-nudge-dismissed";
 
 /**
  * Client-side only, and deliberately so. A dismissal that failed because
@@ -469,7 +469,7 @@ function writeLocal(key: string, value: string): void {
  * restores the selection.
  */
 export function XcodePanel({ subPath = "" }: { subPath?: string }) {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     subPath ? safeDecode(subPath) : null,
   );

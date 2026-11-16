@@ -1,7 +1,7 @@
-// A stand-in for "@get-bb/plugin-sdk/app" so Iris's real views run on a static
+// A stand-in for "@vesnalia/plugin-sdk/app" so Iris's real views run on a static
 // page (the public playground). Nothing here reaches a server: RPCs answer with
-// sample data or a short "only inside bb" note, navigation moves the page hash,
-// and composer actions show a toast instead of typing into bb.
+// sample data or a short "only inside VesnALIA" note, navigation moves the page hash,
+// and composer actions show a toast instead of typing into VesnALIA.
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -39,7 +39,7 @@ export function Toasts() {
 // ---------- RPC ----------
 
 const now = Date.now();
-const SAMPLE_BB: Record<string, unknown> = {
+const SAMPLE_ALIA: Record<string, unknown> = {
   thread: { id: "thr_demo", title: "Ship the onboarding redesign", status: "active", waitingOnYou: false, queued: 0, branch: "onboarding-redesign", context: { used: 412_000, window: 1_000_000, percent: 41.2, model: "claude-opus", estimated: false, categories: [{ label: "Messages", tokens: 301_000 }, { label: "Tools", tokens: 64_000 }, { label: "System", tokens: 47_000 }] }, cost: { amount: 4.82, currency: "USD" } },
   threads: [
     { id: "thr_a", title: "Onboarding: welcome screens", status: "idle", waitingOnYou: false, queuedWork: "none", updatedAt: now - 120_000, branch: "onboarding-welcome" },
@@ -74,14 +74,14 @@ async function sampleDataUrl(path: string): Promise<string> {
   });
 }
 
-const ONLY_IN_BB = "This reads a thread's live data inside bb; the playground shows sample data where it can.";
+const ONLY_IN_ALIA = "This reads a thread's live data inside VesnALIA; the playground shows sample data where it can.";
 
 async function call(name: string, input: Record<string, unknown>): Promise<unknown> {
   switch (name) {
-    case "bb_data": {
+    case "alia_data": {
       const spec = String(input.spec ?? "");
       const key = spec.slice(3).split("?")[0];
-      return key in SAMPLE_BB ? { ok: true, value: SAMPLE_BB[key] } : { ok: false, error: ONLY_IN_BB };
+      return key in SAMPLE_ALIA ? { ok: true, value: SAMPLE_ALIA[key] } : { ok: false, error: ONLY_IN_ALIA };
     }
     case "web_status":
       // On: PhotoSearch answers with a bundled Wikimedia photo; maps show their list of places.
@@ -95,10 +95,10 @@ async function call(name: string, input: Record<string, unknown>): Promise<unkno
     case "load_image":
       return { ok: true, dataUrl: await sampleDataUrl("samples/screen.webp") };
     case "load_file": {
-      // Code examples read a real Iris source file; other files exist only in a bb thread.
+      // Code examples read a real Iris source file; other files exist only in a VesnALIA thread.
       const p = String(input.path ?? "");
       if (/\.(ts|tsx|js|mjs)$/.test(p)) return { ok: true, value: await (await fetch(new URL("samples/parse.ts", location.href))).text() };
-      return { ok: false, error: "files load inside a bb thread" };
+      return { ok: false, error: "files load inside a VesnALIA thread" };
     }
     case "photo_search":
       return { ok: true, photo: await (await fetch(new URL("samples/photo.json", location.href))).json() };
@@ -107,9 +107,9 @@ async function call(name: string, input: Record<string, unknown>): Promise<unkno
     case "load_model":
     case "file_url":
     case "folder_files":
-      return { ok: false, error: "files load inside a bb thread" };
+      return { ok: false, error: "files load inside a VesnALIA thread" };
     default:
-      return { ok: false, error: ONLY_IN_BB };
+      return { ok: false, error: ONLY_IN_ALIA };
   }
 }
 
@@ -119,19 +119,19 @@ export function useRpc<_T = unknown>() {
 
 // ---------- navigation and composers ----------
 
-/** The site has no bb: live cards draw samples and follow no events. */
+/** The site has no VesnALIA: live cards draw samples and follow no events. */
 export function useSdk() {
   return { subscribe: () => () => {} };
 }
 
-/** The site gets no realtime signals from bb: handlers never run. */
+/** The site gets no realtime signals from VesnALIA: handlers never run. */
 export function useRealtime(_channel: string, _handler: (payload: unknown) => void) {}
 
 export function experimental_useRpcKeyedQuery(_options: unknown) {
   return { data: undefined as Record<string, unknown> | undefined };
 }
 
-export function useBbNavigate() {
+export function useAliaNavigate() {
   return useMemo(
     () => ({
       toPluginPanel: (_path: string, opts?: { subPath?: string; replace?: boolean }) => {
@@ -142,9 +142,9 @@ export function useBbNavigate() {
         dispatchEvent(new HashChangeEvent("hashchange"));
       },
       openUrl: (url: string) => window.open(url, "_blank", "noopener,noreferrer"),
-      toThread: () => toast("In bb, this opens the thread."),
-      toProject: () => toast("In bb, this opens the project."),
-      experimental_openFilePreview: () => toast("In bb, this opens the file."),
+      toThread: () => toast("In VesnALIA, this opens the thread."),
+      toProject: () => toast("In VesnALIA, this opens the project."),
+      experimental_openFilePreview: () => toast("In VesnALIA, this opens the file."),
     }),
     [],
   ) as never;
@@ -155,9 +155,9 @@ export function useComposers() {
     () => [
       {
         scope: { kind: "thread", threadId: "thr_demo" },
-        insert: async (text: string) => toast(`In bb, this goes into your message: “${text.slice(0, 120)}${text.length > 120 ? "…" : ""}”`),
-        replace: async (text: string) => toast(`In bb, this goes into your message: “${text.slice(0, 120)}${text.length > 120 ? "…" : ""}”`),
-        submit: async () => toast("In bb, this sends it to the agent."),
+        insert: async (text: string) => toast(`In VesnALIA, this goes into your message: “${text.slice(0, 120)}${text.length > 120 ? "…" : ""}”`),
+        replace: async (text: string) => toast(`In VesnALIA, this goes into your message: “${text.slice(0, 120)}${text.length > 120 ? "…" : ""}”`),
+        submit: async () => toast("In VesnALIA, this sends it to the agent."),
         focus: () => undefined,
       },
     ],
@@ -166,7 +166,7 @@ export function useComposers() {
 }
 
 export function experimental_useAppPanel() {
-  return { openTab: () => toast("In bb, this opens the card in a side panel.") } as never;
+  return { openTab: () => toast("In VesnALIA, this opens the card in a side panel.") } as never;
 }
 
 export async function experimental_copyToClipboard(text: string) {
@@ -229,7 +229,7 @@ function MermaidBlock({ source }: { source: string }) {
   useEffect(() => {
     const mo = new MutationObserver(() => setThemeTick((n) => n + 1));
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    const style = document.getElementById("bb-app-theme");
+    const style = document.getElementById("alia-app-theme");
     if (style) mo.observe(style, { childList: true, characterData: true, subtree: true });
     return () => mo.disconnect();
   }, []);

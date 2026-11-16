@@ -1,9 +1,9 @@
 /**
- * The plugin's settings, rendered by bb in Settings → Plugins → Learning Exercises. `readSettings`
- * turns bb's stored values into one typed object with every limit clamped, so a hand-edited value
+ * The plugin's settings, rendered by VesnALIA in Settings → Plugins → Learning Exercises. `readSettings`
+ * turns VesnALIA's stored values into one typed object with every limit clamped, so a hand-edited value
  * cannot turn a cap off by accident.
  */
-import type { PluginSettingDescriptors } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptors } from "@vesnalia/plugin-sdk";
 
 /** Files that never count as new work worth an exercise (gitignore syntax, one per line). */
 export const DEFAULT_EXCLUDE_PATTERNS = [
@@ -57,7 +57,7 @@ export const SETTINGS = {
   triggerPrMerged: {
     type: "boolean",
     label: "After a pull request merges",
-    description: "Offer when the thread's pull request is merged (read from bb's GitHub PR Status).",
+    description: "Offer when the thread's pull request is merged (read from VesnALIA's GitHub PR Status).",
     default: true,
   },
   triggerStreak: {

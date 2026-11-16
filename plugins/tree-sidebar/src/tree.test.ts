@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@bb/plugin-sdk";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import type { ProjectTree } from "./tree";
 import {
   buildProjectTree,
@@ -47,7 +47,7 @@ function thread(
 }
 
 const PROJECTS = [
-  { id: "p_bb", name: "bb", path: "/home/user/Code/bb" },
+  { id: "p_alia", name: "alia", path: "/home/user/Code/alia" },
   { id: "p_widgets", name: "widgets", path: "/home/user/Code/widgets" },
   { id: "p_juniper", name: "Juniper", path: "/home/user/Projects/Juniper" },
   { id: "p_atlas", name: "Atlas", path: "/home/user/Projects/Atlas" },
@@ -107,7 +107,7 @@ describe("buildProjectTree", () => {
       threads: [
         thread("t1", "p_july"),
         thread("t2", "p_acme"),
-        thread("t3", "p_bb"),
+        thread("t3", "p_alia"),
       ],
     });
     const support = tree.roots.find((node) => node.label === "Support");
@@ -118,7 +118,7 @@ describe("buildProjectTree", () => {
   it("leaves archived threads out", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("t1", "p_bb", { isArchived: true })],
+      threads: [thread("t1", "p_alia", { isArchived: true })],
     });
     const code = tree.roots.find((node) => node.label === "Code");
     expect(code?.threadCount).toBe(0);
@@ -142,26 +142,26 @@ describe("buildProjectTree", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
       threads: [
-        thread("t1", "p_bb", { isPinned: true, latestAttentionAt: 1 }),
+        thread("t1", "p_alia", { isPinned: true, latestAttentionAt: 1 }),
         thread("t2", "p_juniper", { isPinned: true, latestAttentionAt: 9 }),
-        thread("t3", "p_bb"),
+        thread("t3", "p_alia"),
       ],
     });
     // Most recent attention first, whichever project it came from.
     expect(tree.pinned.map((node) => node.thread.id)).toEqual(["t2", "t1"]);
-    const bb = tree.roots
+    const alia = tree.roots
       .find((node) => node.label === "Code")
-      ?.children.find((node) => node.project?.id === "p_bb");
-    expect(bb?.threads.map((node) => node.thread.id)).toEqual(["t3"]);
-    expect(bb?.threadCount).toBe(1);
+      ?.children.find((node) => node.project?.id === "p_alia");
+    expect(alia?.threads.map((node) => node.thread.id)).toEqual(["t3"]);
+    expect(alia?.threadCount).toBe(1);
   });
 
   it("nests a pinned fork under its pinned parent", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
       threads: [
-        thread("parent", "p_bb", { isPinned: true }),
-        thread("fork", "p_bb", { isPinned: true, parentThreadId: "parent" }),
+        thread("parent", "p_alia", { isPinned: true }),
+        thread("fork", "p_alia", { isPinned: true, parentThreadId: "parent" }),
       ],
     });
     expect(tree.pinned.map((node) => node.thread.id)).toEqual(["parent"]);
@@ -174,8 +174,8 @@ describe("buildProjectTree", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
       threads: [
-        thread("parent", "p_bb"),
-        thread("fork", "p_bb", { isPinned: true, parentThreadId: "parent" }),
+        thread("parent", "p_alia"),
+        thread("fork", "p_alia", { isPinned: true, parentThreadId: "parent" }),
       ],
     });
     expect(tree.pinned.map((node) => node.thread.id)).toEqual(["fork"]);
@@ -185,8 +185,8 @@ describe("buildProjectTree", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
       threads: [
-        thread("t1", "p_bb", { title: "flaky test", isPinned: true }),
-        thread("t2", "p_bb", { title: "write docs", isPinned: true }),
+        thread("t1", "p_alia", { title: "flaky test", isPinned: true }),
+        thread("t2", "p_alia", { title: "write docs", isPinned: true }),
       ],
       query: "flaky",
     });
@@ -199,15 +199,15 @@ describe("buildProjectTree", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
       threads: [
-        thread("t1", "p_bb", { title: "fix the flaky test" }),
-        thread("t2", "p_bb", { title: "write docs" }),
+        thread("t1", "p_alia", { title: "fix the flaky test" }),
+        thread("t2", "p_alia", { title: "write docs" }),
         thread("t3", "p_juniper", { title: "unrelated" }),
       ],
       query: "flaky",
     });
     // Narrowed to one project, the folders above it no longer distinguish
     // anything, so they collapse away with the rest of the prefix.
-    expect(tree.roots.map((node) => node.label)).toEqual(["bb"]);
+    expect(tree.roots.map((node) => node.label)).toEqual(["alia"]);
     expect(tree.roots[0]?.threads.map((node) => node.thread.id)).toEqual(["t1"]);
   });
 
@@ -215,8 +215,8 @@ describe("buildProjectTree", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
       threads: [
-        thread("t1", "p_bb", { title: "write docs" }),
-        thread("t2", "p_bb", { title: "unrelated" }),
+        thread("t1", "p_alia", { title: "write docs" }),
+        thread("t2", "p_alia", { title: "unrelated" }),
       ],
       query: "tear out",
       matchedThreadIds: new Set(["t1"]),
@@ -227,7 +227,7 @@ describe("buildProjectTree", () => {
   it("keeps title matches while the server search has not answered", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("t1", "p_bb", { title: "tear out the sidebar" })],
+      threads: [thread("t1", "p_alia", { title: "tear out the sidebar" })],
       query: "tear out",
       matchedThreadIds: null,
     });
@@ -237,10 +237,10 @@ describe("buildProjectTree", () => {
   it("keeps every project when not asked to hide the empty ones", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("t1", "p_bb")],
+      threads: [thread("t1", "p_alia")],
     });
     // An empty project is somewhere to start a thread, so it earns its row:
-    // every branch survives even though only p_bb holds anything.
+    // every branch survives even though only p_alia holds anything.
     expect(tree.roots.map((node) => node.label)).toEqual([
       "Code",
       "Projects",
@@ -251,23 +251,23 @@ describe("buildProjectTree", () => {
   it("hides a project with no threads when asked", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("t1", "p_bb")],
+      threads: [thread("t1", "p_alia")],
       hideEmptyProjects: true,
     });
-    expect(tree.roots.map((node) => node.label)).toEqual(["bb"]);
+    expect(tree.roots.map((node) => node.label)).toEqual(["alia"]);
   });
 
   it("keeps a project whose only thread is pinned", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("t1", "p_bb", { isPinned: true })],
+      threads: [thread("t1", "p_alia", { isPinned: true })],
       hideEmptyProjects: true,
     });
     // The thread renders in the pinned section, so the project's own row holds
     // nothing — but the project is not empty, and dropping it would leave that
     // thread's project unreachable in the tree.
     expect(tree.pinned.map((node) => node.thread.id)).toEqual(["t1"]);
-    expect(tree.roots.map((node) => node.label)).toEqual(["bb"]);
+    expect(tree.roots.map((node) => node.label)).toEqual(["alia"]);
     expect(tree.roots[0]?.threads).toEqual([]);
   });
 
@@ -277,7 +277,7 @@ describe("buildProjectTree", () => {
         ...PROJECTS,
         { id: "p_personal", name: "Personal", path: null },
       ],
-      threads: [thread("t1", "p_bb")],
+      threads: [thread("t1", "p_alia")],
       hideEmptyProjects: true,
     });
     expect(tree.unrooted).toEqual([]);
@@ -286,11 +286,11 @@ describe("buildProjectTree", () => {
   it("puts archived matches in their own tree, shaped like the live one", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("live", "p_bb", { title: "tear out the sidebar" })],
+      threads: [thread("live", "p_alia", { title: "tear out the sidebar" })],
       query: "tear out",
       matchedThreadIds: new Set(["live"]),
       archivedThreads: [
-        thread("old", "p_bb", { isArchived: true }),
+        thread("old", "p_alia", { isArchived: true }),
         thread("older", "p_juniper", { isArchived: true }),
       ],
     });
@@ -300,7 +300,7 @@ describe("buildProjectTree", () => {
     // Prefix drop and chain collapse run over the archived tree on their own,
     // so it is shaped by what is in it rather than by the live tree.
     expect(tree.archived.roots.map((node) => node.label)).toEqual([
-      "Code/bb",
+      "Code/alia",
       "Projects/Juniper",
     ]);
     expect(tree.archived.roots[0]?.threads.map((node) => node.thread.id)).toEqual(
@@ -314,8 +314,8 @@ describe("buildProjectTree", () => {
       threads: [],
       query: "tear out",
       archivedThreads: [
-        thread("parent", "p_bb", { isArchived: true }),
-        thread("fork", "p_bb", { isArchived: true, parentThreadId: "parent" }),
+        thread("parent", "p_alia", { isArchived: true }),
+        thread("fork", "p_alia", { isArchived: true, parentThreadId: "parent" }),
       ],
     });
     const node = tree.archived.roots[0]?.threads[0];
@@ -326,9 +326,9 @@ describe("buildProjectTree", () => {
   it("keys the archived tree apart from the live one", () => {
     const tree = buildProjectTree({
       projects: PROJECTS,
-      threads: [thread("live", "p_bb")],
-      query: "bb",
-      archivedThreads: [thread("old", "p_bb", { isArchived: true })],
+      threads: [thread("live", "p_alia")],
+      query: "alia",
+      archivedThreads: [thread("old", "p_alia", { isArchived: true })],
     });
     // Same directory, same project, two trees: shared keys would make folding
     // one branch fold the other.
@@ -367,7 +367,7 @@ describe("projectRows", () => {
     // Directory order, and a project directory before the projects inside it:
     // ~/Support holds Acme, which holds 2026-07.
     expect(order).toEqual([
-      "p_bb",
+      "p_alia",
       "p_widgets",
       "p_atlas",
       "p_juniper",
@@ -382,12 +382,12 @@ describe("projectRows", () => {
       buildProjectTree({
         projects: [
           { id: "p_personal", name: "Personal", path: null },
-          { id: "p_bb", name: "bb", path: "/home/user/Code/bb" },
+          { id: "p_alia", name: "alia", path: "/home/user/Code/alia" },
         ],
         threads: [],
       }),
     );
-    expect(order).toEqual(["p_bb", "p_personal"]);
+    expect(order).toEqual(["p_alia", "p_personal"]);
   });
 
   it("reports the depth each project's row renders at", () => {
@@ -399,8 +399,8 @@ describe("projectRows", () => {
     expect(depths.p_support).toBe(0);
     expect(depths.p_acme).toBe(1);
     expect(depths.p_july).toBe(2);
-    // Code/bb is one collapsed row, so bb sits at the root's own depth.
-    expect(depths.p_bb).toBe(1);
+    // Code/alia is one collapsed row, so VesnALIA sits at the root's own depth.
+    expect(depths.p_alia).toBe(1);
   });
 
   it("counts a collapsed chain as the one row it renders as", () => {

@@ -3,8 +3,8 @@ import { existsSync, mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { afterEach, describe, it } from "vitest";
 import { SourceRepositoryError } from "../../src/sources/model.ts";
 import { configureSourceDatabase, SOURCE_MIGRATIONS } from "../../src/sources/schema.ts";
@@ -50,14 +50,14 @@ describe("source migrations", () => {
 
 	it("runs the same migrations and repository across an SDK fake-host reload", async () => {
 		let repository: SqliteSourceRepository;
-		const load = async (bb: BbPluginApi) => {
-			const db = bb.storage.database();
+		const load = async (alia: AliaPluginApi) => {
+			const db = alia.storage.database();
 			configureSourceDatabase(db);
-			bb.storage.migrate(db, [...SOURCE_MIGRATIONS]);
+			alia.storage.migrate(db, [...SOURCE_MIGRATIONS]);
 			repository = new SqliteSourceRepository(db, { now: () => 500, maxContentBytes: 1024 * 1024 });
 		};
 		let host = createFakePluginHost({ pluginId: "forage-s2" });
-		await load(host.bb);
+		await load(host.alia);
 		const receipt = repository!.recordRetrieval({ scope: threadScope(), origin: "fetch", artifact: artifact("host reload"), attempt: attempt() });
 		host = await host.harness.lifecycle.reload(load);
 		assert.equal(repository!.readSnapshot(threadScope(), receipt.snapshotId!, { offset: 0, maxChars: 100 }).status, "ok");

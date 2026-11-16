@@ -1,8 +1,8 @@
-// Rewind — backend entry. Wires the service (src/service.ts) to BB: the
+// Rewind — backend entry. Wires the service (src/service.ts) to VesnALIA: the
 // message.dispatch gate, thread lifecycle events, RPC for the app, the
-// `bb rewind` CLI, agent tools, and the daily retention schedule. Git work
+// `alia rewind` CLI, agent tools, and the daily retention schedule. Git work
 // runs on the thread's machine through the host entry (host.ts).
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { buildCli } from "./src/cli";
 import { CHANGED_CHANNEL, GATE_HARD_LIMIT_MS } from "./src/constants";
 import { hostContract } from "./src/host-contract";
@@ -19,36 +19,36 @@ function rpcError(error: unknown): never {
   throw error;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settingsHandle = bb.settings.define(settingsDescriptors);
+export default async function plugin(alia: AliaPluginApi) {
+  const settingsHandle = alia.settings.define(settingsDescriptors);
   let settings: RewindSettings = normalizeSettings(await settingsHandle.get());
   settingsHandle.onChange((next) => {
     settings = normalizeSettings(next);
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [...MIGRATIONS]);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [...MIGRATIONS]);
   const store = new RewindStore(db);
   const loadedAt = Date.now();
   // Snapshots a previous load started can no longer report back.
   store.failStalePending(loadedAt, loadedAt);
   store.failInterruptedForks(loadedAt);
 
-  const host = bb.hosts.experimental_client({ contract: hostContract });
+  const host = alia.hosts.experimental_client({ contract: hostContract });
   const service = new RewindService({
-    sdk: () => bb.sdk,
+    sdk: () => alia.sdk,
     host,
     store,
     settings: () => settings,
-    log: bb.log,
-    publish: (threadId) => bb.realtime.publish(CHANGED_CHANNEL, { threadId }),
-    recheck: () => bb.experimental_hooks.recheck("message.dispatch"),
+    log: alia.log,
+    publish: (threadId) => alia.realtime.publish(CHANGED_CHANNEL, { threadId }),
+    recheck: () => alia.experimental_hooks.recheck("message.dispatch"),
   });
 
   // Before every message: hold it briefly for its checkpoint, or queue it
   // until the checkpoint is saved. The last guard fails open for snapshots,
   // but queues uncertain workspace identities while a host restore is active.
-  bb.experimental_hooks.on("message.dispatch", async (ctx) => {
+  alia.experimental_hooks.on("message.dispatch", async (ctx) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const result = await Promise.race([
@@ -60,7 +60,7 @@ export default async function plugin(bb: BbPluginApi) {
       return result?.decision ?? service.dispatchFallback(ctx);
     } catch (error) {
       const decision = service.dispatchFallback(ctx);
-      bb.log.warn(`dispatch gate error (${decision.action}): ${error instanceof Error ? error.message : String(error)}`);
+      alia.log.warn(`dispatch gate error (${decision.action}): ${error instanceof Error ? error.message : String(error)}`);
       return decision;
     } finally {
       if (timer !== undefined) clearTimeout(timer);
@@ -68,17 +68,17 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   const logFailure = (what: string) => (error: unknown) => {
-    bb.log.warn(`${what} failed: ${error instanceof Error ? error.message : String(error)}`);
+    alia.log.warn(`${what} failed: ${error instanceof Error ? error.message : String(error)}`);
   };
-  bb.events.on("thread.active", ({ thread }) => service.onThreadActive(thread).then(() => undefined, logFailure("baseline checkpoint")));
-  bb.events.on("thread.idle", ({ thread }) => service.onTurnEnded(thread).then(() => undefined, logFailure("after-turn checkpoint")));
-  bb.events.on("thread.failed", ({ thread }) => service.onTurnEnded(thread).then(() => undefined, logFailure("after-turn checkpoint")));
-  bb.events.on("thread.deleted", ({ thread }) => service.onThreadDeleted(thread.id).then(() => undefined, logFailure("checkpoint cleanup")));
-  bb.events.on("message.queued", ({ entry }) => service.onMessageQueued(entry));
-  bb.events.on("message.dispatched", ({ entry }) => service.onMessageDispatched(entry));
-  bb.events.on("message.cancelled", ({ entry }) => service.onMessageCancelled(entry));
+  alia.events.on("thread.active", ({ thread }) => service.onThreadActive(thread).then(() => undefined, logFailure("baseline checkpoint")));
+  alia.events.on("thread.idle", ({ thread }) => service.onTurnEnded(thread).then(() => undefined, logFailure("after-turn checkpoint")));
+  alia.events.on("thread.failed", ({ thread }) => service.onTurnEnded(thread).then(() => undefined, logFailure("after-turn checkpoint")));
+  alia.events.on("thread.deleted", ({ thread }) => service.onThreadDeleted(thread.id).then(() => undefined, logFailure("checkpoint cleanup")));
+  alia.events.on("message.queued", ({ entry }) => service.onMessageQueued(entry));
+  alia.events.on("message.dispatched", ({ entry }) => service.onMessageDispatched(entry));
+  alia.events.on("message.cancelled", ({ entry }) => service.onMessageCancelled(entry));
 
-  bb.rpc.register(
+  alia.rpc.register(
     rpcContract,
     {
       summary: ({ threadId }) => service.summary(threadId),
@@ -107,27 +107,27 @@ export default async function plugin(bb: BbPluginApi) {
     { experimental_discoverable: true, experimental_description: "Rewind: workspace checkpoints, restores, and forks with files." },
   );
 
-  bb.cli.register(buildCli({ service, store, sdk: () => bb.sdk }));
-  registerTools(bb.agents, service);
+  alia.cli.register(buildCli({ service, store, sdk: () => alia.sdk }));
+  registerTools(alia.agents, service);
 
   // Hourly, a few minutes past: drop checkpoints already past the per-thread
   // cap. A small batch, so a backlog shrinks without a full repack.
-  bb.background.schedule("retention-incremental", "7 * * * *", async () => {
+  alia.background.schedule("retention-incremental", "7 * * * *", async () => {
     const result = await service.incrementalCleanup();
-    if (result.deleted > 0) bb.log.info(`incremental cleanup: deleted ${result.deleted} checkpoints`);
+    if (result.deleted > 0) alia.log.info(`incremental cleanup: deleted ${result.deleted} checkpoints`);
   });
 
   // Daily at 03:17 server time: retention, ref reconciliation, gc.
-  bb.background.schedule("retention", "17 3 * * *", async () => {
+  alia.background.schedule("retention", "17 3 * * *", async () => {
     const result = await service.retention({ dryRun: false });
-    bb.log.info(`retention: deleted ${result.deleted} checkpoints, ${result.refsDeleted} refs, ${result.shadowsRemoved} stores`);
+    alia.log.info(`retention: deleted ${result.deleted} checkpoints, ${result.refsDeleted} refs, ${result.shadowsRemoved} stores`);
   });
 
-  bb.onDispose(async () => {
+  alia.onDispose(async () => {
     await service.dispose();
   });
 
   // Messages a previous load queued are still waiting: re-attempt them now.
   // Their snapshots died with that load, so each one proceeds.
-  void bb.experimental_hooks.recheck("message.dispatch").catch(logFailure("re-sending queued messages"));
+  void alia.experimental_hooks.recheck("message.dispatch").catch(logFailure("re-sending queued messages"));
 }

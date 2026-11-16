@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, waitFor } from "@testing-library/react";
 
-vi.mock("@get-bb/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
+vi.mock("@vesnalia/plugin-sdk/app", async () => await import("./helpers/app-fake-sdk"));
 
 import "../app";
 import { registeredNavPanel, seedFakeGroups, seedFakeThreads } from "./helpers/app-fake-sdk";

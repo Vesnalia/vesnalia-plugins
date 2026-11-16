@@ -1,15 +1,15 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { portScanContract } from "./port-scan-contract";
 import type { OwnedPortTarget, PortCloseScope } from "./contract";
 
-export function createThreadPortActions(bb: BbPluginApi) {
-  const host = bb.hosts.experimental_client({ contract: portScanContract });
+export function createThreadPortActions(alia: AliaPluginApi) {
+  const host = alia.hosts.experimental_client({ contract: portScanContract });
   const controller = new AbortController();
-  bb.onDispose(() => controller.abort());
+  alia.onDispose(() => controller.abort());
   async function context(threadId: string) {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) return null;
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     if (environment.status !== "ready" || !environment.path) throw new Error("Thread workspace is unavailable");
     return {
       root: { environmentId: environment.id, path: environment.path },
@@ -171,7 +171,7 @@ export function createThreadPortActions(bb: BbPluginApi) {
   };
 }
 
-/** The workspace fields of a bb project-thread row. */
+/** The workspace fields of a VesnALIA project-thread row. */
 interface PortThread {
   id: string;
   environmentId: string | null;

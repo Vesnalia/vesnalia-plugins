@@ -1,11 +1,11 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PluginBrowserBbSdk } from "@get-bb/plugin-sdk/app";
+import type { PluginBrowserAliaSdk } from "@vesnalia/plugin-sdk/app";
 import { useModelDisplayName, useThreadExecution, type ThreadExecution } from "./useThreadExecution";
 
 // This hook only uses defaultExecutionOptions; keep the fake deliberately small.
 function sdkWith(fetch: () => Promise<ThreadExecution>) {
-  return { threads: { defaultExecutionOptions: fetch } } as unknown as PluginBrowserBbSdk;
+  return { threads: { defaultExecutionOptions: fetch } } as unknown as PluginBrowserAliaSdk;
 }
 
 afterEach(cleanup);
@@ -15,7 +15,7 @@ describe("catalog visibility", () => {
     const fetch = vi.fn().mockResolvedValue({ models: [
       { id: "entry", model: "org/model", displayName: "Friendly model" },
     ] });
-    const sdk = { providers: { models: fetch } } as unknown as PluginBrowserBbSdk;
+    const sdk = { providers: { models: fetch } } as unknown as PluginBrowserAliaSdk;
     const hook = renderHook(({ visible }) =>
       useModelDisplayName("folded-provider", "org/model", sdk, visible),
       { initialProps: { visible: false } },

@@ -1,11 +1,11 @@
-/* Claude usage design tokens. bb's build copies this file as plain CSS (not run
+/* Claude usage design tokens. alia's build copies this file as plain CSS (not run
    through Tailwind), so tokens are CSS variables read from style props or
-   Tailwind arbitrary values. Surfaces and text stay bb's; the one colour the
-   plugin owns is Claude's terracotta, the tint bb's own Claude provider uses,
+   Tailwind arbitrary values. Surfaces and text stay alia's; the one colour the
+   plugin owns is Claude's terracotta, the tint alia's own Claude provider uses,
    and it is kept for data ink. */
 :root {
   --cu-accent: #d97757;
-  /* Small accent text, pulled toward bb's foreground so it passes 4.5:1 in both themes. */
+  /* Small accent text, pulled toward alia's foreground so it passes 4.5:1 in both themes. */
   --cu-accent-text: color-mix(in oklab, #d97757 70%, var(--foreground));
 
   /* Model ranks: the top model in the accent, the rest in steps toward the ground. */
@@ -148,7 +148,7 @@
   --cu-out: #f0524f;
   --cu-tight-wash: color-mix(in oklab, var(--cu-tight) 22%, transparent);
   --cu-out-wash: color-mix(in oklab, var(--cu-out) 22%, transparent);
-  /* State text on the plain ground only; text on a wash stays bb ink (MASTER.md, contrast). */
+  /* State text on the plain ground only; text on a wash stays alia ink (MASTER.md, contrast). */
   --cu-tight-ink: color-mix(in oklab, var(--cu-tight) 45%, var(--foreground));
   --cu-out-ink: color-mix(in oklab, var(--cu-out) 70%, var(--foreground));
   /* Data colour is Classic's terracotta palette (the user's choice): the trend line,

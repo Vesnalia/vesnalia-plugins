@@ -4,10 +4,10 @@ import {
   useSidebarThreadRowStatus,
   useSidebarThreadRowStatuses,
   type PluginSidebarThreadRowStatus,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk";
 import { toast } from "./lib/toast";
-import type { bbSidebarRpcContract } from "./contract";
+import type { aliaSidebarRpcContract } from "./contract";
 import { describeReclaim } from "./reclaim";
 import { promptToCloseSettledPorts } from "./settled-port-prompt";
 import { announcePortsClosed } from "./OpenPorts";
@@ -88,7 +88,7 @@ const ERROR_MESSAGE: Record<LifecycleMutation, string> = {
  * Whether another plugin's status on the thread's row runs, such as "Waiting
  * for CI". Rows then offer no Park, Snooze or Settle for it, as for a thread
  * that is working. This guard is the UI's alone: the server, automatic settle
- * and `bb sidebar` never see row statuses, and shelves do not move for it.
+ * and `alia sidebar` never see row statuses, and shelves do not move for it.
  */
 export function useRowStatusRuns(threadId: string): boolean {
   return useSidebarThreadRowStatus(threadId)?.tone === "running";
@@ -126,7 +126,7 @@ function errorDescription(error: unknown): string | undefined {
  */
 export function useLifecycle(threads: readonly PluginSidebarThread[], lifecycleRows: LifecycleRows): LifecycleApi {
   const recovery = useLimitActions();
-  const rpc = useRpc<typeof bbSidebarRpcContract>();
+  const rpc = useRpc<typeof aliaSidebarRpcContract>();
   const { rows } = lifecycleRows;
   const [now, setNow] = useState(() => Date.now());
   // Keyed by membership, so the API below keeps its identity across the

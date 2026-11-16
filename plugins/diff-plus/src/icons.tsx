@@ -1,6 +1,6 @@
 /**
  * The toolbar button's glyph: lucide's folder-tree (ISC licence,
- * https://lucide.dev/icons/folder-tree). BB's icon set has no tree, so the
+ * https://lucide.dev/icons/folder-tree). VesnALIA's icon set has no tree, so the
  * plugin registers it under its own name; `experimental_Icon` resolves a
  * registration before the built-ins.
  */

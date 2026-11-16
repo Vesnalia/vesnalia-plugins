@@ -1,5 +1,5 @@
 import { PassThrough } from "node:stream";
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { describe, expect, it, vi } from "vitest";
 import { candidateBinaryPaths, createCuaHostEntry, mapContent, parsePermissions, type ExecResult } from "./host.js";
 import type { McpChild } from "./src/mcp-client.js";
@@ -190,18 +190,18 @@ describe("cua host entry", () => {
     const { entry, spawnMcp } = deps({ server });
     const harness = experimental_createHostEntryHarness(entry);
 
-    const first = await harness.experimental_call("callTool", { name: "click", arguments: { pid: 1 }, session: "bb-thr_1" });
+    const first = await harness.experimental_call("callTool", { name: "click", arguments: { pid: 1 }, session: "alia-thr_1" });
     expect(first.content[0]).toEqual({ type: "text", text: "ran click" });
     expect(first.content[1]).toEqual({ type: "image", data: "QUJD", mimeType: "image/png" });
     expect(first.isError).toBe(false);
-    await harness.experimental_call("callTool", { name: "list_apps", arguments: {}, session: "bb-thr_1" });
+    await harness.experimental_call("callTool", { name: "list_apps", arguments: {}, session: "alia-thr_1" });
     const failed = await harness.experimental_call("callTool", { name: "fail", arguments: {} });
     expect(failed.isError).toBe(true);
 
     expect(spawnMcp).toHaveBeenCalledTimes(1);
     expect(spawnMcp).toHaveBeenCalledWith("/Users/test/.local/bin/cua-driver", ["mcp"]);
     expect(server.calls).toEqual([
-      { name: "click", arguments: { pid: 1, session: "bb-thr_1" } },
+      { name: "click", arguments: { pid: 1, session: "alia-thr_1" } },
       { name: "list_apps", arguments: {} },
       { name: "fail", arguments: {} },
     ]);

@@ -23,7 +23,7 @@ function setup(options: { failBuild?: boolean; slowBuild?: boolean; app?: () => 
   const finishBuild = join(dir, "finish");
   const app = options.app ?? (() => "a".repeat(64));
   const lines: string[] = [];
-  const context = { ...testContext(new MemoryStorage(), "inst1", { id: "namespace" }), bbUrl: () => "https://bb.example", images: { bbApp: async () => app() }, log: (line: string) => void lines.push(line) } as never;
+  const context = { ...testContext(new MemoryStorage(), "inst1", { id: "namespace" }), aliaUrl: () => "https://bb.example", images: { aliaApp: async () => app() }, log: (line: string) => void lines.push(line) } as never;
   const make = () => new NamespaceBackend(CONFIG, context, {
     fetch: fake.fetch,
     sshBinary: FAKE_SSH_BINARY, macHelper: FAKE_MAC_HELPER,
@@ -31,10 +31,10 @@ function setup(options: { failBuild?: boolean; slowBuild?: boolean; app?: () => 
     readyTimeoutMs: 20_000,
     now: () => now,
     setupArchive: async () => Buffer.from("the setup scripts"),
-    linuxImageScript: (target, key, bbUrl) =>
+    linuxImageScript: (target, key, aliaUrl) =>
       options.failBuild
         ? `cat > ${received}; echo "step 1" >&2; echo "build.sh: no space left" >&2; exit 1`
-        : `cat > ${received}; printf '%s %s\\n' ${target} '${bbUrl}' >> ${received}.calls; ${options.slowBuild ? `while [ ! -e ${finishBuild} ]; do sleep 0.02; done; ` : ""}echo "nscr.io/ws1/bbbox/${target}:${key}"`,
+        : `cat > ${received}; printf '%s %s\\n' ${target} '${aliaUrl}' >> ${received}.calls; ${options.slowBuild ? `while [ ! -e ${finishBuild} ]; do sleep 0.02; done; ` : ""}echo "nscr.io/ws1/bbbox/${target}:${key}"`,
   });
   const backend = make();
   const building = async () => {
@@ -44,7 +44,7 @@ function setup(options: { failBuild?: boolean; slowBuild?: boolean; app?: () => 
   return { fake, backend: disposed(backend), again: () => disposed(make()), lines, received, advance: (ms: number) => (now += ms), building, finish: () => writeFileSync(finishBuild, "") };
 }
 
-test("a Linux image is built once in a Linux instance of its own, from BB Box's setup scripts, pushed to the workspace's registry and recorded, and the instance destroyed", async () => {
+test("a Linux image is built once in a Linux instance of its own, from VesnALIA Box's setup scripts, pushed to the workspace's registry and recorded, and the instance destroyed", async () => {
   const { fake, backend, received } = setup();
   const signal = new AbortController().signal;
   const [first, second] = await Promise.all([backend.linuxImages.forBox("linux", signal), backend.linuxImages.forBox("linux", signal)]);
@@ -64,16 +64,16 @@ test("a Linux image is built once in a Linux instance of its own, from BB Box's 
   assert.equal(fake.calls.filter((call) => call.method === "CreateInstance").length, 1, "a current image is used as it is");
 });
 
-test("an image is due again when the setup scripts or BB's app change, or after a week, but only if a box used it in the last week; a box waits only for a new setup", async () => {
+test("an image is due again when the setup scripts or VesnALIA's app change, or after a week, but only if a box used it in the last week; a box waits only for a new setup", async () => {
   let app = "a".repeat(64);
   const { fake, backend, advance } = setup({ app: () => app });
   const signal = new AbortController().signal;
   await backend.linuxImages.forBox("linux", signal);
   app = "b".repeat(64);
-  assert.equal(await backend.linuxImages.whyBuild("linux"), "BB's app changed");
+  assert.equal(await backend.linuxImages.whyBuild("linux"), "VesnALIA's app changed");
   await backend.linuxImages.forBox("linux", signal);
-  assert.equal(fake.calls.filter((call) => call.method === "CreateInstance").length, 1, "a box does not wait for a new app: the old image updates BB's app as it enrols");
-  assert.deepEqual(await backend.linuxImages.due(), [{ target: "linux", why: "BB's app changed" }]);
+  assert.equal(fake.calls.filter((call) => call.method === "CreateInstance").length, 1, "a box does not wait for a new app: the old image updates VesnALIA's app as it enrols");
+  assert.deepEqual(await backend.linuxImages.due(), [{ target: "linux", why: "VesnALIA's app changed" }]);
   assert.deepEqual(await backend.linuxImages.due().then((due) => due.map((each) => each.target)), ["linux"], "desktops no box used are not built");
   advance(8 * 24 * 3_600_000);
   assert.deepEqual(await backend.linuxImages.due(), [], "an image no box used for a week is left as it is");
@@ -144,7 +144,7 @@ test("a box whose image is built first says so while it waits, with how long the
 test("the build script reads the workspace from Namespace's metadata, builds with build.sh and pushes, and prints only the image's name on its output", () => {
   const script = linuxImageBuildScript("desktop-wayland", "abc-def", "https://bb.example");
   assert.match(script, /tar -xzf - -C "\$work"/);
-  assert.match(script, /bash "\$work\/setup\/docker\/build\.sh" --bb-url 'https:\/\/bb\.example' --tag "\$ref" desktop-wayland >&2/);
+  assert.match(script, /bash "\$work\/setup\/docker\/build\.sh" --alia-url 'https:\/\/alia\.example' --tag "\$ref" desktop-wayland >&2/);
   assert.match(script, /docker push -q "\$ref" >&2\necho "\$ref"$/);
 });
 
@@ -155,7 +155,7 @@ test("the workspace's ID is the value of tenant_id in Namespace's metadata, with
   assert.equal(workspace, "oeigur8bob9pm");
 });
 
-test("with the tailnet on, a build machine joins it with a one-off key of its own before the build, as BB's app comes from BB's server, then leaves it, its device removed, before it is destroyed", async () => {
+test("with the tailnet on, a build machine joins it with a one-off key of its own before the build, as VesnALIA's app comes from VesnALIA's server, then leaves it, its device removed, before it is destroyed", async () => {
   const sshDir = fakeSsh().dir;
   const dir = join(sshDir, "bin");
   mkdirSync(dir);
@@ -176,13 +176,13 @@ test("with the tailnet on, a build machine joins it with a one-off key of its ow
       const reply = (body: unknown) => ({ ok: true, status: 200, text: async () => JSON.stringify(body) });
       if (at === "/api/v2/oauth/token") return reply({ access_token: "tok", expires_in: 3600 });
       if (at === "/api/v2/tailnet/-/keys") return minted.push(JSON.parse(init.body!).description), reply({ id: "k1", key: "tskey-auth-one-off-build", expires: "2030-01-01T00:10:00Z" });
-      if (at === "/api/v2/tailnet/-/devices") return reply({ devices: [{ nodeId: "n-build", hostname: "bb-box-ns-inst1-build-linux", tags: ["tag:bb-box"] }, { nodeId: "n-other", hostname: "bb-box-ns-inst1-box-b1", tags: ["tag:bb-box"] }] });
+      if (at === "/api/v2/tailnet/-/devices") return reply({ devices: [{ nodeId: "n-build", hostname: "alia-box-ns-inst1-build-linux", tags: ["tag:alia-box"] }, { nodeId: "n-other", hostname: "alia-box-ns-inst1-box-b1", tags: ["tag:alia-box"] }] });
       if (at.startsWith("/api/v2/device/")) return removed.push(at.split("/").at(-1)!), reply({});
       return { ok: false, status: 404, text: async () => "{}" };
     },
   });
   const fake = new FakeNamespace({ maxCores: 64 });
-  const context = { ...testContext(new MemoryStorage(), "inst1", { id: "namespace" }), bbUrl: () => "https://bb.example", images: { bbApp: async () => "a".repeat(64) }, tailnet: () => tailnet } as never;
+  const context = { ...testContext(new MemoryStorage(), "inst1", { id: "namespace" }), aliaUrl: () => "https://bb.example", images: { aliaApp: async () => "a".repeat(64) }, tailnet: () => tailnet } as never;
   const order: string[] = [];
   const backend = new NamespaceBackend(CONFIG, context, {
     fetch: fake.fetch,
@@ -197,9 +197,9 @@ test("with the tailnet on, a build machine joins it with a one-off key of its ow
   const image = await backend.linuxImages.forBox("linux", new AbortController().signal);
   assert.match(image.ref, /^nscr\.io\/ws\/bbbox\/linux:/);
   assert.deepEqual(order, ["built after joining"]);
-  assert.deepEqual(minted, ["BB Box Namespace build-linux"]);
+  assert.deepEqual(minted, ["VesnALIA Box Namespace build-linux"]);
   const calls = readFileSync(log, "utf8").trim().split("\n");
-  assert.ok(calls.some((call) => /^tailscale up --auth-key=file:\S+ --hostname=bb-box-ns-inst1-build-linux /.test(call)), calls.join("; "));
+  assert.ok(calls.some((call) => /^tailscale up --auth-key=file:\S+ --hostname=alia-box-ns-inst1-build-linux /.test(call)), calls.join("; "));
   assert.ok(calls.includes("key tskey-auth-one-off-build"), "the key reached the machine on its input");
   assert.equal(calls.at(-1), "tailscale logout");
   assert.deepEqual(removed, ["n-build"], "only the build machine's device");
@@ -216,11 +216,11 @@ test("a reload while an image builds leaves the build running in its instance, a
   await backend.dispose();
   await stopped;
   assert.equal(status(), "RUNNING", "the build instance keeps building");
-  assert.ok(lines.includes(`Namespace: bb-box stopped while it built the desktop image in instance ${instance!.id}, at its building step: it leaves the instance building, and the next run of bb-box carries on with it.`));
+  assert.ok(lines.includes(`Namespace: alia-box stopped while it built the desktop image in instance ${instance!.id}, at its building step: it leaves the instance building, and the next run of alia-box carries on with it.`));
 
   const next = again();
   await next.maintain();
-  assert.ok(lines.includes(`Namespace: bb-box carries on with the desktop image build in instance ${instance!.id}, from its building step, which an earlier run of bb-box left.`));
+  assert.ok(lines.includes(`Namespace: alia-box carries on with the desktop image build in instance ${instance!.id}, from its building step, which an earlier run of alia-box left.`));
   finish();
   for (let wait = 0; !(await next.linuxImages.record("desktop")) && wait < 500; wait++) await new Promise((resolve) => setTimeout(resolve, 10));
   assert.match((await next.linuxImages.record("desktop"))!.ref, /^nscr\.io\/ws1\/bbbox\/desktop:/);
@@ -229,7 +229,7 @@ test("a reload while an image builds leaves the build running in its instance, a
   assert.equal(status(), "DESTROYED", "once the build ends, its instance goes");
 });
 
-test("a build instance no build of BB Box's follows, as one whose record was lost, is destroyed by the next upkeep; one made in the last two minutes is left to its build (#1032)", async () => {
+test("a build instance no build of VesnALIA Box's follows, as one whose record was lost, is destroyed by the next upkeep; one made in the last two minutes is left to its build (#1032)", async () => {
   const { fake, backend, advance } = setup();
   const start = Date.parse("2030-01-01T00:00:00Z");
   const instance = (id: string, createdAt: number) => ({

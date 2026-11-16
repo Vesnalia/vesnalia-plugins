@@ -7,7 +7,7 @@ import { readCodexUsage, type ProviderState } from './sources/codex-usage.js';
  * `provider-codex` registers nothing without the Codex CLI installed and signed
  * in. Every branch below is therefore exercised against a fixture, and the
  * distinction the tests protect is the one a user actually acts on: "install
- * the CLI" and "sign in again" are different clicks on BB's Providers page.
+ * the CLI" and "sign in again" are different clicks on VesnALIA's Providers page.
  */
 
 const TODAY = '2026-11-09';
@@ -43,7 +43,7 @@ describe('readCodexUsage setup hints', () => {
     // install something that is already there.
     expect(result.hint).not.toContain('not installed');
     // And it must not send them to the Providers page to sign in. That page
-    // reports the state and offers no control for it; BB's own copy says to run
+    // reports the state and offers no control for it; VesnALIA's own copy says to run
     // the CLI. A hint that names a button which does not exist is worse than
     // one that names none.
     expect(result.hint).not.toContain('Providers and sign in');
@@ -81,7 +81,7 @@ describe('readCodexUsage setup hints', () => {
     expect(result.hint).toContain('quota endpoint timed out');
   });
 
-  it('falls back to a generic setup hint when BB reports no state at all', () => {
+  it('falls back to a generic setup hint when VesnALIA reports no state at all', () => {
     const result = readCodexUsage(undefined, TODAY, null);
     expect(result.ok).toBe(false);
     if (result.ok) return;

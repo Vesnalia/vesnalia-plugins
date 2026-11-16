@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   experimental_scanPublicSdkOnly,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 const hosts: ReturnType<typeof createFakePluginHost>[] = [];
 afterEach(async () => {
@@ -17,7 +17,7 @@ async function setup(
 ) {
   let host = createFakePluginHost({ sdk: { threads: { send } } });
   hosts.push(host);
-  await plugin(host.bb);
+  await plugin(host.alia);
   const call = async (method: string, input: unknown) => {
     try {
       return {

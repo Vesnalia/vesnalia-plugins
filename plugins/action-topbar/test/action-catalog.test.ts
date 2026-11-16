@@ -12,7 +12,7 @@ import {
   uniqueActions,
 } from "../lib/action-catalog.ts";
 
-test("starts with the action set shown in the BB right-panel launcher", () => {
+test("starts with the action set shown in the VesnALIA right-panel launcher", () => {
   const actions = initialActionCatalog(null);
   assert.deepEqual(
     actions.map((action) => compactActionLabel(action.label)),

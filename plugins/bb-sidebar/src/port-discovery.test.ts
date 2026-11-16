@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { createPortDiscovery } from "./port-discovery";
 
-type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["list"]>>[number];
+type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["list"]>>[number];
 
 describe("sidebar port discovery", () => {
   it("scans each host, shares concurrent results, and drops failed hosts on refresh", async () => {
@@ -26,7 +26,7 @@ describe("sidebar port discovery", () => {
       };
     });
     const threads = vi.fn();
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: scan,
       sdk: {
         threads: { list: threads },
@@ -46,7 +46,7 @@ describe("sidebar port discovery", () => {
     });
     const clock = vi.spyOn(Date, "now").mockReturnValue(100_000);
     try {
-      const scanned = createPortDiscovery(bb);
+      const scanned = createPortDiscovery(alia);
       const discover = Object.assign(() => scanned({ environmentIds: ["env_a", "env_b"] }), scanned);
       const [first, second] = await Promise.all([discover(), discover()]);
       expect(first).toEqual(second);
@@ -114,13 +114,13 @@ describe("sidebar port discovery", () => {
       hostActive--;
       return { ports: [] };
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: scan,
       sdk: { environments: { list: environments } },
     });
     const clock = vi.spyOn(Date, "now").mockReturnValue(0);
     try {
-      const scanned = createPortDiscovery(bb);
+      const scanned = createPortDiscovery(alia);
       const discover = () => scanned({ environmentIds: Array.from({ length: 20 }, (_, i) => `env_${i}`) });
       await discover();
       expect(maxHosts).toBe(4);
@@ -152,12 +152,12 @@ describe("sidebar port discovery", () => {
       ).slice(offset, offset + limit),
     );
     const get = vi.fn();
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: async () => ({ ports: [] }),
       sdk: { threads: { list: threads }, environments: { list: environments, get } },
     });
     try {
-      await createPortDiscovery(bb)({ environmentIds: Array.from({ length: count }, (_, i) => `env_${i}`) });
+      await createPortDiscovery(alia)({ environmentIds: Array.from({ length: count }, (_, i) => `env_${i}`) });
       expect(threads).not.toHaveBeenCalled();
       expect(environments).toHaveBeenCalledTimes(2);
       expect(environments.mock.calls.map(([args]) => ({ ...args, signal: undefined }))).toEqual([
@@ -174,7 +174,7 @@ describe("sidebar port discovery", () => {
   });
 
   it("skips environments that are not ready, have no path, or were not asked for", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: async () => ({ ports: [] }),
       sdk: {
         environments: {
@@ -191,7 +191,7 @@ describe("sidebar port discovery", () => {
       },
     });
     try {
-      await createPortDiscovery(bb)({ environmentIds: ["env_ready", "env_teardown", "env_no_path", "env_second"] });
+      await createPortDiscovery(alia)({ environmentIds: ["env_ready", "env_teardown", "env_no_path", "env_second"] });
       expect(harness.inspection.experimental_hostRpcCalls.map((call) => call.input)).toEqual([
         // Roots keep the requested order, which settles ties between environments at the same path.
         {
@@ -213,7 +213,7 @@ describe("sidebar port discovery", () => {
         port: 3000,
       })),
     }));
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: scan,
       sdk: {
         environments: {
@@ -230,7 +230,7 @@ describe("sidebar port discovery", () => {
         (call.input as { roots: { environmentId: string }[] }).roots.map((root) => root.environmentId),
       );
     try {
-      const discover = createPortDiscovery(bb);
+      const discover = createPortDiscovery(alia);
       await discover({ environmentIds: ["env_a", "env_b"] });
       // A hover on one workspace the poll already covers asks the host nothing.
       expect((await discover({ environmentIds: ["env_b"] })).groups).toEqual([
@@ -258,7 +258,7 @@ describe("sidebar port discovery", () => {
           release = () => resolve({ ports: [{ environmentId: "env_a", port: 3000 }] });
         }),
     );
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: scan,
       sdk: {
         environments: {
@@ -267,7 +267,7 @@ describe("sidebar port discovery", () => {
       },
     });
     try {
-      const discover = createPortDiscovery(bb);
+      const discover = createPortDiscovery(alia);
       const first = discover({ environmentIds: ["env_a"] });
       await vi.waitFor(() => expect(scan).toHaveBeenCalledTimes(1));
       discover.invalidate();
@@ -283,7 +283,7 @@ describe("sidebar port discovery", () => {
   });
 
   it("keeps a nested workspace's listeners with it when only the enclosing workspace is asked for", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: async () => ({
         ports: [
           { environmentId: "env_live", port: 3000 },
@@ -305,7 +305,7 @@ describe("sidebar port discovery", () => {
       },
     });
     try {
-      expect(await createPortDiscovery(bb)({ environmentIds: ["env_live"] })).toEqual({
+      expect(await createPortDiscovery(alia)({ environmentIds: ["env_live"] })).toEqual({
         groups: [{ environmentId: "env_live", ports: [{ port: 3000 }] }],
       });
       expect(harness.inspection.experimental_hostRpcCalls.map((call) => call.input)).toEqual([
@@ -323,26 +323,26 @@ describe("sidebar port discovery", () => {
 
   it("rejects every caller when a shared scan fails, leaving no failure unobserved", async () => {
     const gates: (() => void)[] = [];
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       sdk: {
         environments: {
           list: () =>
             new Promise<Environment[]>((_, reject) => {
-              gates.push(() => reject(new Error("bb restarting")));
+              gates.push(() => reject(new Error("alia restarting")));
             }),
         },
       },
     });
     try {
-      const discover = createPortDiscovery(bb);
+      const discover = createPortDiscovery(alia);
       const first = discover({ environmentIds: ["env_a"] });
       // Joins the first scan for env_a and starts its own for env_b.
       const second = discover({ environmentIds: ["env_a", "env_b"] });
       await vi.waitFor(() => expect(gates).toHaveLength(2));
       gates[0]!();
       gates[1]!();
-      await expect(first).rejects.toThrow("bb restarting");
-      await expect(second).rejects.toThrow("bb restarting");
+      await expect(first).rejects.toThrow("alia restarting");
+      await expect(second).rejects.toThrow("alia restarting");
     } finally {
       await harness.lifecycle.dispose();
     }
@@ -353,7 +353,7 @@ describe("sidebar port discovery", () => {
       if (hostId === "host_a") throw new Error("Host offline");
       return { ports: [] };
     });
-    const { bb, harness } = createFakePluginHost({
+    const { alia, harness } = createFakePluginHost({
       experimental_callHostRpc: scan,
       sdk: {
         environments: {
@@ -367,7 +367,7 @@ describe("sidebar port discovery", () => {
     });
     const clock = vi.spyOn(Date, "now").mockReturnValue(0);
     try {
-      const discover = createPortDiscovery(bb);
+      const discover = createPortDiscovery(alia);
       await discover({ environmentIds: ["env_a"] });
       clock.mockReturnValue(1_000);
       await discover({ environmentIds: ["env_b"] });

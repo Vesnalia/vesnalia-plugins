@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { mkdir,writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
-const url=process.env.BB_SERVER_URL||'http://127.0.0.1:48896';
+const url=process.env.ALIA_SERVER_URL||'http://127.0.0.1:48896';
 const api=(method,path,body)=>{
  const args=['-fsS','--max-time','60','-X',method,'-H','Content-Type: application/json'];
  if(body!==undefined) args.push('--data',JSON.stringify(body));
@@ -16,10 +16,10 @@ const command=(area,action,id)=>{
 const browser=await chromium.launch({channel:process.env.KUJO_BROWSER||'chrome',headless:true});
 try {
  const context=await browser.newContext({viewport:{width:1600,height:1000}});
- await context.addInitScript(()=>localStorage.setItem('bb.theme','dark'));
+ await context.addInitScript(()=>localStorage.setItem('alia.theme','dark'));
  const page=await context.newPage();page.setDefaultTimeout(20000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
- await page.waitForSelector('.bb-kujo-signal',{state:'attached'});
+ await page.waitForSelector('.alia-kujo-signal',{state:'attached'});
  await mkdir('screenshots',{recursive:true});await mkdir('artifacts',{recursive:true});
  const shot=async name=>{await page.waitForTimeout(800);await page.screenshot({path:`screenshots/${name}.png`});};
  await page.locator('[data-kujo-icon]').first().waitFor();
@@ -50,7 +50,7 @@ try {
  await page.setViewportSize({width:1600,height:1000});
  await page.getByRole('button',{name:'Light mode',exact:true}).click();await page.waitForFunction(()=>getComputedStyle(document.documentElement).getPropertyValue('--kujo-canvas').trim()==='#f9f9f9');
  assert.ok(await page.locator('[data-kujo-icon]').count()>0);
- assert.equal(await page.locator('.bb-kujo-signal').evaluate(e=>getComputedStyle(e).display),'block');
+ assert.equal(await page.locator('.alia-kujo-signal').evaluate(e=>getComputedStyle(e).display),'block');
  for(const name of ['New thread','Split','Settings','Thread']) {
   await page.getByRole('tab',{name,exact:true}).click();await shot(`light-preview-${name.toLowerCase().replaceAll(' ','-')}`);
  }
@@ -61,15 +61,15 @@ try {
  await page.keyboard.press('ControlOrMeta+Shift+P');await shot('light-command-palette');await page.keyboard.press('Escape');
  for(const width of [375,768,1024,2560]) {await page.setViewportSize({width,height:1000});await shot(`light-viewport-${width}`);}
  await page.setViewportSize({width:1600,height:1000});
- await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.bb-kujo-signal > span').evaluate(e=>getComputedStyle(e).animationName),'none');await shot('light-reduced-motion');await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.alia-kujo-signal > span').evaluate(e=>getComputedStyle(e).animationName),'none');await shot('light-reduced-motion');await page.emulateMedia({reducedMotion:'no-preference'});
  await page.getByRole('button',{name:'Dark mode',exact:true}).click();
- await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.bb-kujo-signal > span').evaluate(e=>getComputedStyle(e).animationName),'none');await shot('reduced-motion');
+ await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.alia-kujo-signal > span').evaluate(e=>getComputedStyle(e).animationName),'none');await shot('reduced-motion');
  await page.emulateMedia({reducedMotion:'no-preference'});
- for(let i=0;i<5;i++){command('plugin','reload','bb-kujo');await page.waitForTimeout(1500);assert.equal(await page.locator('.bb-kujo-signal').count(),1);}
- command('theme','set','default');await page.waitForTimeout(1500);assert.equal(await page.locator('[data-kujo-icon]').count(),0);assert.equal(await page.locator('.bb-kujo-signal').evaluate(e=>getComputedStyle(e).display),'none');
- command('theme','set','plugin:bb-kujo:kujo');await page.waitForTimeout(1500);
- command('plugin','disable','bb-kujo');await page.waitForTimeout(1500);assert.equal(await page.locator('[data-kujo-icon]').count(),0);assert.equal(await page.locator('.bb-kujo-signal').count(),0);
- command('plugin','enable','bb-kujo');command('theme','set','plugin:bb-kujo:kujo');await page.waitForTimeout(1500);assert.equal(await page.locator('.bb-kujo-signal').count(),1);
+ for(let i=0;i<5;i++){command('plugin','reload','alia-kujo');await page.waitForTimeout(1500);assert.equal(await page.locator('.alia-kujo-signal').count(),1);}
+ command('theme','set','default');await page.waitForTimeout(1500);assert.equal(await page.locator('[data-kujo-icon]').count(),0);assert.equal(await page.locator('.alia-kujo-signal').evaluate(e=>getComputedStyle(e).display),'none');
+ command('theme','set','plugin:alia-kujo:kujo');await page.waitForTimeout(1500);
+ command('plugin','disable','alia-kujo');await page.waitForTimeout(1500);assert.equal(await page.locator('[data-kujo-icon]').count(),0);assert.equal(await page.locator('.alia-kujo-signal').count(),0);
+ command('plugin','enable','alia-kujo');command('theme','set','plugin:alia-kujo:kujo');await page.waitForTimeout(1500);assert.equal(await page.locator('.alia-kujo-signal').count(),1);
  await writeFile('artifacts/host-qa.json',JSON.stringify({date:new Date().toISOString(),url,browser:browser.version(),errors,reloads:5,unload:true,themeSwitch:true,reducedMotion:true,technicalFont:font,tablerIcons:await page.locator('[data-kujo-icon]').count()},null,2)+'\n');
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({errors,reloads:5,unload:true}));

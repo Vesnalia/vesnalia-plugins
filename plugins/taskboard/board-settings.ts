@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { bbProjectIdSchema } from './credential-contract.js';
+import { aliaProjectIdSchema } from './credential-contract.js';
 import { DEFAULT_WORKFLOW_STATUS_ORDER } from './browse.js';
 export { DEFAULT_WORKFLOW_STATUS_ORDER } from './browse.js';
 
@@ -34,7 +34,7 @@ function uniqueNormalizedStrings(values: readonly string[]): boolean {
 
 export const projectBoardSettingsSchema = z
   .object({
-    projectId: bbProjectIdSchema,
+    projectId: aliaProjectIdSchema,
     defaultView: trackerViewSchema,
     enabledFilters: z.array(workItemFilterFieldSchema),
     statusOrder: z.array(z.string().trim().min(1).max(80)).min(1).max(50)

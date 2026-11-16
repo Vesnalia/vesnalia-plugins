@@ -6,7 +6,7 @@
 //
 // Why: the user wants GitHub issues brought into beads and beads issues
 // sent to GitHub from the tab, choosing which and seeing first what would
-// happen (bead-bb-rh3). They asked that it be only a UI for the command
+// happen (bead-alia-rh3). They asked that it be only a UI for the command
 // ("can just build ui for `bd github sync`?"): the command keeps issues
 // linked, detects conflicts, maps fields and handles GitHub's limits, some
 // thousands of lines that must not be written a second time here.
@@ -24,7 +24,7 @@
 // - The command has no code for comments (beads 1.3.1). Those of GitHub
 //   issues that are brought in are copied by a step of the plugin's own
 //   after the command, when the owner ticks it; it lives in
-//   server/github-comments.ts (bead-bb-apc). Nothing goes the other way.
+//   server/github-comments.ts (bead-alia-apc). Nothing goes the other way.
 // - The token and the repository are given to the command in the
 //   environment of that one process. Nothing is written to beads' own
 //   settings: beads keeps a token in `.beads/config.yaml`, which is a file
@@ -58,7 +58,7 @@
 //   the command prints is passed through `withoutToken` before it is used.
 
 import { execFile } from "node:child_process";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { BEAD_ID_PATTERN, CLOSED_STATUS } from "../shared/constants.ts";
 import { readGit } from "./bd.ts";
 import { comments, copyComments } from "./github-comments.ts";
@@ -343,14 +343,14 @@ function ghToken(): Promise<string> {
  * Side effects: none until one of them is called.
  */
 export function createGithub({
-  bb,
+  alia,
   folders,
   store,
   readToken,
   readGhToken = ghToken,
   readBeads = async () => null,
 }: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   folders: Folders;
   store: Store;
   /**
@@ -396,7 +396,7 @@ export function createGithub({
     if (token === "") {
       return {
         state: "no-token",
-        message: `There is no GitHub sign-in to use. Either sign in with the gh command (\`gh auth login\`), or set a token in BB under Tools, then Airbender, as "GitHub token": a personal access token that may read and write the issues of ${repository.owner}/${repository.name}. Neither is written into the repository.`,
+        message: `There is no GitHub sign-in to use. Either sign in with the gh command (\`gh auth login\`), or set a token in VesnALIA under Tools, then Airbender, as "GitHub token": a personal access token that may read and write the issues of ${repository.owner}/${repository.name}. Neither is written into the repository.`,
       };
     }
     return { path: folder.path, repository, token };
@@ -460,7 +460,7 @@ export function createGithub({
             headers: {
               Accept: "application/vnd.github+json",
               Authorization: `Bearer ${token}`,
-              "User-Agent": "airbender-bb-plugin",
+              "User-Agent": "airbender-alia-plugin",
               "X-GitHub-Api-Version": "2022-11-28",
             },
           },
@@ -560,7 +560,7 @@ export function createGithub({
                 .trim() ||
               out.trim() ||
               withoutToken(error.message, token);
-            bb.log.warn(`bd github sync failed in ${path}: ${said.slice(0, 400)}`);
+            alia.log.warn(`bd github sync failed in ${path}: ${said.slice(0, 400)}`);
             resolve({ message: said });
             return;
           }
@@ -595,7 +595,7 @@ export function createGithub({
             Accept: "application/vnd.github+json",
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            "User-Agent": "airbender-bb-plugin",
+            "User-Agent": "airbender-alia-plugin",
             "X-GitHub-Api-Version": "2022-11-28",
           },
           body: JSON.stringify({ state: "closed", state_reason: "completed" }),
@@ -862,7 +862,7 @@ export function createGithub({
    * brought up to date. Nothing is changed.
    *
    * The window that offers the switch says this before anything is done
-   * (bead-bb-c9l.18; the owner: "UI that doesn't ask you wrong questions
+   * (bead-alia-c9l.18; the owner: "UI that doesn't ask you wrong questions
    * ... it will update issues that ... are linked ... and it will copy
    * over the issues that exist in a current and doesn't exist in a
    * target"). Only open issues are created on the other side: closed ones

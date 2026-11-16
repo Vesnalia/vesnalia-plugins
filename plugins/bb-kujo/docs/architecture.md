@@ -1,12 +1,12 @@
 # Architecture
 
-SiteKit / Kujo → `themes/palette.json` + `themes/palette-light.json` → deterministic generator → bb palette + code theme + small signature stylesheet.
+SiteKit / Kujo → `themes/palette.json` + `themes/palette-light.json` → deterministic generator → VesnALIA palette + code theme + small signature stylesheet.
 
-`package.json` is bb's native manifest. Theme identity is `plugin:bb-kujo:kujo`, visible name **Kujo**. `src/plugin.ts` is the required inert server entry. `src/app.ts` registers one content script through the stable SDK. There are no services, settings, RPCs, network requests or storage.
+`package.json` is VesnALIA's native manifest. Theme identity is `plugin:alia-kujo:kujo`, visible name **Kujo**. `src/plugin.ts` is the required inert server entry. `src/app.ts` registers one content script through the stable SDK. There are no services, settings, RPCs, network requests or storage.
 
 ## Token mapping
 
-| Kujo primitive | bb destination |
+| Kujo primitive | VesnALIA destination |
 | --- | --- |
 | SiteKit black #060606 | Canvas, code, recessed work surfaces |
 | SiteKit gray-900 #111111 | Sidebar, popovers, raised surfaces |
@@ -18,15 +18,15 @@ SiteKit / Kujo → `themes/palette.json` + `themes/palette-light.json` → deter
 | SiteKit dark state colors | Success/addition, warning/modification, danger/deletion, info |
 | SiteKit 4px unit, 1px borders, 2/4px corners, no shadows | Native spacing/radius/shadow variables; targeted controls |
 | SiteKit Departure Mono | Bundled licensed navigation, display headings, tabs, shortcuts and code typography |
-| bb local Inter/system sans | Conversation and ordinary controls; deliberate readability adaptation |
+| VesnALIA local Inter/system sans | Conversation and ordinary controls; deliberate readability adaptation |
 | Departure Mono with system mono fallback | Native code/technical font variable, without writing user font preferences |
 | Site's ordered dither and brief signal displacement | Actual locally bundled workflow hero, static CSS grids, decorative background slices and a 2px signal rail |
 
-The bridge generates all ANSI colors, reverse-color foregrounds, Pierre diff overrides and editor JSON from one source. Brand-discord and PR-merged keep bb's existing external-brand semantics. Syntax is a separate content grammar: muted sage strings, amber numbers, cool types, chalk keywords; UI colors never signal invented execution state.
+The bridge generates all ANSI colors, reverse-color foregrounds, Pierre diff overrides and editor JSON from one source. Brand-discord and PR-merged keep VesnALIA's existing external-brand semantics. Syntax is a separate content grammar: muted sage strings, amber numbers, cool types, chalk keywords; UI colors never signal invented execution state.
 
 ## CSS and assets
 
-bb reads theme CSS verbatim and caches it in the client; it does not resolve relative imports or font URLs. `generate.mjs` concatenates tokens, surface and signal CSS and embeds the 22,496-byte WOFF2. This keeps theme switching atomic, fonts offline and the complete CSS below bb's 256,000-character limit. The 66,810-byte optimized Kujo hero is embedded once; the small mark has ink and chalk variants. Raw font plus license remain in the distribution for provenance. SVG metadata uses the actual Kujo mark with the XML preamble removed to satisfy bb's icon validator.
+VesnALIA reads theme CSS verbatim and caches it in the client; it does not resolve relative imports or font URLs. `generate.mjs` concatenates tokens, surface and signal CSS and embeds the 22,496-byte WOFF2. This keeps theme switching atomic, fonts offline and the complete CSS below VesnALIA's 256,000-character limit. The 66,810-byte optimized Kujo hero is embedded once; the small mark has ink and chalk variants. Raw font plus license remain in the distribution for provenance. SVG metadata uses the actual Kujo mark with the XML preamble removed to satisfy VesnALIA's icon validator.
 
 The native stylesheet owns both appearances. `:root:not(.dark)` applies SiteKit paper and ink; `:root.dark` applies the original dark palette. The manifest registers matching light and dark code themes under one Kujo entry. Changing palettes removes Kujo's CSS. It never changes the user's appearance preference.
 
@@ -38,7 +38,7 @@ The node has inline `display:none`; only active Kujo CSS enables it. Thus other 
 
 ## Maintenance
 
-Edit `palette.json`, `surfaces.css` and `signal.css`; never hand-edit generated outputs. Commit regenerated CSS/JSON so bb can install from Git without lifecycle scripts. Prefer semantic variables over additional selectors. Every internal selector is listed in compatibility.md. If an upstream selector disappears the associated paint becomes a no-op; functionality remains bb's.
+Edit `palette.json`, `surfaces.css` and `signal.css`; never hand-edit generated outputs. Commit regenerated CSS/JSON so VesnALIA can install from Git without lifecycle scripts. Prefer semantic variables over additional selectors. Every internal selector is listed in compatibility.md. If an upstream selector disappears the associated paint becomes a no-op; functionality remains VesnALIA's.
 
 ## Native icon adapter
 

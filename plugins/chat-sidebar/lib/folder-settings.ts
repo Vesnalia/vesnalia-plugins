@@ -1,7 +1,7 @@
 // The folder editor and the three settings that predate it — "Projects",
 // "Section folders" and "Archive folder" — describe the same thing, so they
 // are kept in step: hiding Archive in the editor turns "Archive folder" off,
-// and turning "Archive folder" off hides Archive. bb only reads settings it is
+// and turning "Archive folder" off hides Archive. VesnALIA only reads settings it is
 // told about, so dropping them would lose what people had set; keeping them
 // in step keeps both ways of changing the folders working.
 //

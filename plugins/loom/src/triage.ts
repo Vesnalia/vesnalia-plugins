@@ -23,7 +23,7 @@ export async function maybeSendTriage(ctx: EngineCtx, project: ProjectRow): Prom
   if (fresh.triage_sent_at !== null && ctx.now() - fresh.triage_sent_at <= ROUND_LIMIT_MS) return false;
   const planner = store.threads({ projectId: fresh.id, role: "planner", states: ["active"] })[0];
   if (planner?.thread_id == null) return false;
-  if ((await ctx.bb.getThread(planner.thread_id))?.status !== "idle") return false;
+  if ((await ctx.alia.getThread(planner.thread_id))?.status !== "idle") return false;
 
   const tickets = store.tickets(fresh.id);
   const blocked = tickets.filter((ticket) => ticket.state === "blocked");
@@ -41,7 +41,7 @@ export async function maybeSendTriage(ctx: EngineCtx, project: ProjectRow): Prom
     blocked.length === 0
       ? `[loom] Triage round ${round} for ${fresh.slug}: Loom paused the project. ${fresh.system_reason}`
       : `[loom] Triage round ${round} for ${fresh.slug}: ${blocked.length === 1 ? "1 ticket is" : `${blocked.length} tickets are`} blocked.`;
-  await ctx.bb.send(planner.thread_id, { summary, detail });
+  await ctx.alia.send(planner.thread_id, { summary, detail });
   store.updateProject(fresh.id, { triage_pending: 0, triage_round: round, triage_sent_at: ctx.now() });
   store.event(fresh.id, null, "triage.sent", LOOM_ACTOR, {
     round,

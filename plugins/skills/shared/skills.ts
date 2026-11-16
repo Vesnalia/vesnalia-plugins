@@ -1,6 +1,6 @@
 /**
  * The shapes every runtime shares: the host entry produces skill entries, the
- * server adds bb's own skills and the reported list, and the app draws them.
+ * server adds VesnALIA's own skills and the reported list, and the app draws them.
  *
  * No SDK import, so the app bundle may use this module at run time.
  */
@@ -12,15 +12,15 @@ import { z } from "zod";
  * `.agents/skills` and `.codex/skills` in the same walk), so a kind names where
  * a skill applies and `SkillSource.dir` names where it is.
  *
- * `bb` is last: the skills bb itself injects into every thread (its plugins',
- * `~/.bb/skills` and the workspace's `.bb/skills`), listed after the
+ * `VesnALIA` is last: the skills VesnALIA itself injects into every thread (its plugins',
+ * `~/.vesnalia/skills` and the workspace's `.vesnalia/skills`), listed after the
  * provider's own.
  *
  * This is the only list of kinds. The type, the zod enum and the browser's
  * group order are all read off it, so a new kind cannot sort to the wrong place
  * or fail validation at run time.
  */
-export const SOURCE_KINDS = ["project", "repo", "personal", "admin", "plugin", "bb"] as const;
+export const SOURCE_KINDS = ["project", "repo", "personal", "admin", "plugin", "alia"] as const;
 
 export type SkillSourceKind = (typeof SOURCE_KINDS)[number];
 
@@ -50,14 +50,14 @@ export const ReportedSkillSchema = z.object({
   name: z.string(),
   description: z.string(),
   argumentHint: z.string(),
-  /** Where bb's list says it comes from; Add to chat hands it on to the pill. */
+  /** Where VesnALIA's list says it comes from; Add to chat hands it on to the pill. */
   origin: z.enum(["builtin", "project", "user"]),
 });
 
 export type ReportedSkill = z.infer<typeof ReportedSkillSchema>;
 
 /**
- * What bb's provider says the thread can run, minus everything discovery
+ * What VesnALIA's provider says the thread can run, minus everything discovery
  * already found, split on the provider's own `source`. When the list could not
  * be had, `error` says why and the browser shows it under its own heading
  * rather than leaving a silent gap.
@@ -71,11 +71,11 @@ export const ReportedSkillsSchema = z.object({
 export type ReportedSkills = z.infer<typeof ReportedSkillsSchema>;
 
 export const SkillListSchema = z.object({
-  /** bb's provider id: `claude-code`, `codex`, `acp-hermes-agent`, … */
+  /** VesnALIA's provider id: `claude-code`, `codex`, `acp-hermes-agent`, … */
   provider: z.string(),
   /**
    * Whether filesystem discovery ran for this provider — not whether the
-   * browser has anything to show. Every provider gets bb's own skills and a
+   * browser has anything to show. Every provider gets VesnALIA's own skills and a
    * reported section regardless.
    */
   scanned: z.boolean(),

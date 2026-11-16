@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import {
   createFakePluginHost,
   makeThreadResponse,
-} from "@get-bb/plugin-sdk/testing";
+} from "@vesnalia/plugin-sdk/testing";
 import {
   buildDashboard,
   dashboardSchema,
@@ -241,7 +241,7 @@ test("public onboarding returns only status and provider launch provisions priva
       system: { config: async () => ({ primaryHostId: "host-test" }) },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   try {
     const response = await fake.harness.callRpc("saveJevKey", {
       key: "not-a-real-secret",
@@ -287,7 +287,7 @@ test("truncated sessions exclude the first cumulative checkpoint for each native
   assert.match(result.coverage.warnings.join(" "), /excluded checkpoint/);
 });
 
-test("dashboard identifies legacy hidden helper sessions from BB thread metadata", async () => {
+test("dashboard identifies legacy hidden helper sessions from VesnALIA thread metadata", async () => {
   const saved = session("legacy", "hidden-helper", [
     usage(now - 1000, 1000, "turn"),
   ]);
@@ -312,7 +312,7 @@ test("dashboard identifies legacy hidden helper sessions from BB thread metadata
       },
     },
   });
-  await plugin(fake.bb);
+  await plugin(fake.alia);
   try {
     const response = await fake.harness.callRpc("dashboard", {
       days: 90,

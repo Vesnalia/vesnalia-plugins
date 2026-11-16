@@ -92,7 +92,7 @@ describe("card metadata", () => {
         environment: {
           id: "env_1",
           name: "Worktree",
-          branchName: "bb/feature",
+          branchName: "alia/feature",
           workspaceDisplayKind: "managed-worktree",
           path: null,
           isWorktree: true,
@@ -100,7 +100,7 @@ describe("card metadata", () => {
         },
       }),
     ]);
-    expect(await screen.findByText("bb/feature")).toBeDefined();
+    expect(await screen.findByText("alia/feature")).toBeDefined();
     expect(screen.queryByText("Dev MacBook")).toBeNull();
     expect(await screen.findByLabelText("Worktree branch")).toBeDefined();
     expect(screen.getByLabelText("Machine: Dev MacBook")).toBeDefined();
@@ -138,7 +138,7 @@ describe("card metadata", () => {
           environment: {
             id: "env_worktree",
             name: null,
-            branchName: "bb/feature",
+            branchName: "alia/feature",
             path: null,
             isWorktree,
             providerId: null,
@@ -153,7 +153,7 @@ describe("card metadata", () => {
       const label = within(details).getByText(`${branchLabel}:`);
       expect(label.className).toContain("sr-only");
       expect(label.parentElement?.previousElementSibling?.getAttribute("data-icon")).toBe(icon);
-      expect(within(details).getAllByText("bb/feature")).toHaveLength(1);
+      expect(within(details).getAllByText("alia/feature")).toHaveLength(1);
     },
   );
 
@@ -186,7 +186,7 @@ describe("card metadata", () => {
         environment: {
           id: "env_1",
           name: "Feature worktree",
-          branchName: "bb/details",
+          branchName: "alia/details",
           workspaceDisplayKind: "unmanaged-worktree",
           path: null,
           isWorktree: true,
@@ -204,9 +204,9 @@ describe("card metadata", () => {
     expect(screen.queryByLabelText("Thread details")).toBeNull();
     fireEvent.pointerMove(await screen.findByRole("link", { name: "Thread metadata" }), { pointerType: "mouse" });
     const details = await screen.findByRole("dialog", { name: "Thread details" });
-    expect(details.textContent).toContain("Project: bb");
+    expect(details.textContent).toContain("Project: alia");
     expect(details.textContent).not.toContain("Feature worktree");
-    expect(details.textContent).toContain("Worktree branch: bb/details");
+    expect(details.textContent).toContain("Worktree branch: alia/details");
     expect(details.textContent).toContain("Machine: Build Mac");
     expect(details.textContent).not.toContain("Provider:");
     expect(within(details).getByRole("img", { name: "Claude Code" })).toBeDefined();
@@ -233,7 +233,7 @@ describe("card metadata", () => {
       }),
     ]);
     expect(await screen.findByLabelText("Agent is working")).toBeDefined();
-    expect(screen.getByText("Working").className).toContain("text-[color:var(--bb-sidebar-tone-working)]");
+    expect(screen.getByText("Working").className).toContain("text-[color:var(--alia-sidebar-tone-working)]");
     expect(screen.queryByText("3h")).toBeNull();
   });
 
@@ -241,16 +241,16 @@ describe("card metadata", () => {
   // stamp per thread and shows how long the current stretch has run.
   it("shows how long a thread has been working", async () => {
     window.localStorage.setItem(
-      "bb-sidebar:working-since:v1",
+      "alia-sidebar:working-since:v1",
       JSON.stringify({ thr_run: Date.now() - 5 * 60_000 - 60_000 }),
     );
     render([thread({ id: "thr_run", indicator: "runtime" })]);
     expect(await screen.findByText("Working · 5m")).toBeDefined();
   });
 
-  it("shows monitoring when BB identifies a monitoring runtime", async () => {
+  it("shows monitoring when VesnALIA identifies a monitoring runtime", async () => {
     window.localStorage.setItem(
-      "bb-sidebar:working-since:v1",
+      "alia-sidebar:working-since:v1",
       JSON.stringify({ thr_monitor: Date.now() - 5 * 60_000 - 60_000 }),
     );
     render([
@@ -268,7 +268,7 @@ describe("card metadata", () => {
     render([thread({ id: "thr_run", indicator: "runtime" })]);
     expect(await screen.findByText("Working")).toBeDefined();
     await waitFor(() => {
-      const stored = JSON.parse(window.localStorage.getItem("bb-sidebar:working-since:v1") ?? "{}") as Record<
+      const stored = JSON.parse(window.localStorage.getItem("alia-sidebar:working-since:v1") ?? "{}") as Record<
         string,
         number
       >;
@@ -279,7 +279,7 @@ describe("card metadata", () => {
   // A request for input is a verdict, not a stretch of work, and reads oddly
   // with a duration behind it.
   it("leaves the duration off a status that is waiting on the user", async () => {
-    window.localStorage.setItem("bb-sidebar:working-since:v1", JSON.stringify({ thr_ask: Date.now() - 10 * 60_000 }));
+    window.localStorage.setItem("alia-sidebar:working-since:v1", JSON.stringify({ thr_ask: Date.now() - 10 * 60_000 }));
     render([
       thread({
         id: "thr_ask",
@@ -290,7 +290,7 @@ describe("card metadata", () => {
     expect(await screen.findByText("Needs you")).toBeDefined();
   });
 
-  // bb paints no indicator for queued messages, so without these labels a
+  // VesnALIA paints no indicator for queued messages, so without these labels a
   // failed send reads as idle or merely busy.
   it("labels a failed send over everything but a question", async () => {
     render([
@@ -330,15 +330,15 @@ describe("card metadata", () => {
     render([
       thread({
         id: "thr_new",
-        indicator: "something-bb-ships-later" as never,
+        indicator: "something-alia-ships-later" as never,
         updatedAt: Date.now() - (3 * 3_600_000 + 60_000),
       }),
     ]);
     expect(await screen.findByText("3h")).toBeDefined();
   });
 
-  // bb keeps unsent composer drafts out of `indicator`, so the row folds them
-  // in itself, in bb's order: a draft never hides a result you have not read.
+  // VesnALIA keeps unsent composer drafts out of `indicator`, so the row folds them
+  // in itself, in VesnALIA's order: a draft never hides a result you have not read.
   it("marks threads holding an unsent draft", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: {
@@ -355,14 +355,14 @@ describe("card metadata", () => {
           }),
           thread({ id: "thr_clean", title: "No draft", updatedAt: Date.now() - (3 * 3_600_000 + 60_000) }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       providers: { status: "ready", providers: defaultProviders },
       rpc: { listLifecycle: () => ({ rows: [] }) },
       sidebarDraftThreadIds: ["thr_idle", "thr_busy", "thr_unread"],
     });
     expect(await screen.findByLabelText("Thread has unsubmitted draft")).toBeDefined();
-    expect(screen.getByText("Draft").className).toContain("text-[color:var(--bb-sidebar-tone-draft)]");
+    expect(screen.getByText("Draft").className).toContain("text-[color:var(--alia-sidebar-tone-draft)]");
     expect(screen.getByLabelText("Thread working with unsubmitted draft")).toBeDefined();
     expect(screen.getByText("Drafting")).toBeDefined();
     expect(screen.getByText("Unread")).toBeDefined();
@@ -380,7 +380,7 @@ describe("card metadata", () => {
           thread({ id: "parent", title: "Parent" }),
           thread({ id: "child", title: "Child", parentThreadId: "parent" }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),

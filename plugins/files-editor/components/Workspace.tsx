@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  useBbNavigate,
+  useAliaNavigate,
   useRealtime,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
 import { cn, formatHomePathForDisplay } from "@/lib/utils";
@@ -68,7 +68,7 @@ export function Workspace({
   variant,
 }: WorkspaceProps) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const tabs = useFileTabs(scope);
 
   const [tree, setTree] = useState<TreeState>(EMPTY_TREE);
@@ -533,7 +533,7 @@ export function Workspace({
             {activeTab !== null && resolved !== null ? (
               <ToolbarButton
                 icon="ExternalLink"
-                label="Open in BB's file preview"
+                label="Open in VesnALIA's file preview"
                 onClick={() => {
                   const opened = navigate.experimental_openFilePreview({
                     target:

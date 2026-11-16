@@ -2,8 +2,8 @@ import type { SnapshotBill, Snapshotting } from "../backends/types.ts";
 import { MACHINE_RESTORES_SHIP } from "../core/snapshot.ts";
 import { PRODUCT } from "../brand.ts";
 
-export const LIVE_CHECKS_VARIABLE = "BB_BOX_LIVE_CHECKS";
-export const DROPPED_REPLY_MESSAGE = "BB Box saved this and dropped its reply, as a live check asked.";
+export const LIVE_CHECKS_VARIABLE = "ALIA_BOX_LIVE_CHECKS";
+export const DROPPED_REPLY_MESSAGE = "VesnALIA Box saved this and dropped its reply, as a live check asked.";
 
 export function liveChecksOn(environment: Readonly<Record<string, string | undefined>> = process.env): boolean {
   return environment[LIVE_CHECKS_VARIABLE] === "1";

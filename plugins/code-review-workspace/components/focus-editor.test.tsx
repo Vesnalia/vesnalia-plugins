@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, within } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { defaultPreferences } from "../lib/review-preferences";
 import { docs } from "../lib/focus-templates/docs";
 import { focusTemplates } from "../lib/focus-templates";
@@ -137,7 +137,7 @@ test("focus override stages execution-only picker values, then null restores the
   fireEvent.click(slot.getByRole("button", { name: "Edit Docs" }));
   let dialog = within(slot.getByRole("dialog", { name: "Edit focus" }));
   fireEvent.click(dialog.getByRole("button", { name: "Custom" }));
-  const picker = within(await dialog.findByTestId("bb-provider-model-picker"));
+  const picker = within(await dialog.findByTestId("alia-provider-model-picker"));
   fireEvent.change(picker.getByRole("textbox", { name: "Provider ID" }), { target: { value: "pi" } });
   fireEvent.change(picker.getByRole("textbox", { name: "Model" }), { target: { value: "local" } });
   fireEvent.change(picker.getByRole("textbox", { name: "Reasoning level" }), { target: { value: "high" } });

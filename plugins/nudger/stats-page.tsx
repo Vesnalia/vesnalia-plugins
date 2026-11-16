@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { useBbNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@get-bb/plugin-sdk/app";
+import { useAliaNavigate, useRealtime, useRealtimeConnectionState, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./rpc-contract.js";
 import type { AttentionItem, NudgerStats, StatsRange } from "./stats.js";
 import { createStatsCache, type CachedStats } from "./stats-cache.js";
@@ -168,7 +168,7 @@ const statsCache = createStatsCache();
 
 export function NudgerStatsPage() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const connected = useRealtimeConnectionState() === "connected";
   // Stale-while-revalidate: the last stats render at once, and each read replaces them.
   const [cached, setCached] = useState<CachedStats | null>(() => statsCache.read(Date.now()));

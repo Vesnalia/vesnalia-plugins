@@ -1,4 +1,4 @@
-// Shuttle's own configuration: servers, review presets and automations. bb's declarative
+// Shuttle's own configuration: servers, review presets and automations. VesnALIA's declarative
 // settings (settings.ts) hold only the flat knobs; this lives in the plugin database.
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import { z } from "zod";
@@ -35,18 +35,18 @@ const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,99}$/u;
 
 /**
  * How a review gets its own checkout of this server's PRs, when its preset asks for one. Without
- * it, bb's git worktree. Some repositories refuse worktrees outside their own place (a monorepo may
- * want them in its own trees folder), so a server can name a bb environment provider, or a command that prints a path.
+ * it, VesnALIA's git worktree. Some repositories refuse worktrees outside their own place (a monorepo may
+ * want them in its own trees folder), so a server can name a VesnALIA environment provider, or a command that prints a path.
  */
 export const serverWorkspaceSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("provider"),
-    provider: z.string().regex(PROVIDER_ID, "must be a bb environment provider id such as my-trees"),
+    provider: z.string().regex(PROVIDER_ID, "must be a VesnALIA environment provider id such as my-trees"),
     /** The provider's inputs; every string may use {number}, {repo}, {repo_name}, {head_ref}, {base}, {head}, {server} and {slug}. */
     inputs: z.record(z.string(), z.unknown()).default({}),
-    /** A new machine for each review from this bb machine provider, instead of the machine with the project's checkout. */
+    /** A new machine for each review from this VesnALIA machine provider, instead of the machine with the project's checkout. */
     machine: z.object({
-      provider: z.string().regex(PROVIDER_ID, "must be a bb machine provider id, as `bb machine providers` lists them"),
+      provider: z.string().regex(PROVIDER_ID, "must be a VesnALIA machine provider id, as `alia machine providers` lists them"),
       /** The machine provider's inputs, with the same placeholders. */
       inputs: z.record(z.string(), z.unknown()).default({}),
     }).strict().optional(),

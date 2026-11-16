@@ -19,7 +19,7 @@ function card(kind: BoardCard["kind"], title: string, overrides: Partial<BoardCa
     parentKey: null,
     depth: 0,
     kind,
-    source: "bb",
+    source: "alia",
     title,
     subtitle: null,
     status,
@@ -161,7 +161,7 @@ describe("groupExecutions — the logical-execution grouping rule", () => {
     expect(groups[0]).toHaveLength(3);
   });
 
-  it("never merges BB and Redteam cards", () => {
+  it("never merges VesnALIA and Redteam cards", () => {
     const groups = groupExecutions([
       card("thread", "Root", { key: "thread:thr_root", threadId: "thr_root", status: "running" }),
       redteamPhase("scan-1", "reconnaissance", "Recon", { status: "running" }),
@@ -213,7 +213,7 @@ describe("buildFocusModel — mode selection", () => {
     ).toBeNull();
   });
 
-  it("focuses one running BB child agent with an idle root", () => {
+  it("focuses one running VesnALIA child agent with an idle root", () => {
     const model = buildFocusModel(
       snapshot([
         card("thread", "Root", { key: "thread:thr_root", threadId: "thr_root", isRoot: true, status: "completed" }),
@@ -300,7 +300,7 @@ describe("buildFocusModel — mode selection", () => {
     expect(model!.peers.map((peer) => peer.key)).toEqual(["thread:thr_root"]);
   });
 
-  it("focuses an active Redteam scan next to a completed BB root", () => {
+  it("focuses an active Redteam scan next to a completed VesnALIA root", () => {
     const model = buildFocusModel(
       snapshot([
         card("thread", "Root", { key: "thread:thr_root", threadId: "thr_root", isRoot: true, status: "completed" }),
@@ -313,7 +313,7 @@ describe("buildFocusModel — mode selection", () => {
     expect(model!.other.map((other) => other.key)).toEqual(["thread:thr_root"]);
   });
 
-  it("falls back to Kanban for an active Redteam scan plus an active BB child", () => {
+  it("falls back to Kanban for an active Redteam scan plus an active VesnALIA child", () => {
     expect(
       buildFocusModel(
         snapshot([
@@ -325,7 +325,7 @@ describe("buildFocusModel — mode selection", () => {
     ).toBeNull();
   });
 
-  it("focuses a waiting BB thread (approval pending is still watchable)", () => {
+  it("focuses a waiting VesnALIA thread (approval pending is still watchable)", () => {
     const model = buildFocusModel(
       snapshot([
         card("thread", "Root", {
@@ -431,7 +431,7 @@ describe("buildFocusModel — pipeline", () => {
     }
   });
 
-  it("derives the pipeline from a BB thread's plan steps, ordered by sequence", () => {
+  it("derives the pipeline from a VesnALIA thread's plan steps, ordered by sequence", () => {
     const model = buildFocusModel(
       snapshot([
         card("thread", "Root", { key: "thread:thr_root", threadId: "thr_root", isRoot: true, status: "running" }),
@@ -569,7 +569,7 @@ describe("buildFocusModel — recent activity", () => {
     expect(model!.latestOperation!.detail).toBe("src/dispatcher.js");
   });
 
-  it("binds the hero's execution feed (BB thread)", () => {
+  it("binds the hero's execution feed (VesnALIA thread)", () => {
     const model = buildFocusModel(
       snapshot(
         [

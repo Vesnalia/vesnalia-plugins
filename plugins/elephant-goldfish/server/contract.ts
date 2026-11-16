@@ -1,6 +1,6 @@
 // Wire contract shared by server.ts and app.tsx. Zod schemas run at the RPC
 // boundary; the app imports only the types.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const SKILL_IDS = [
@@ -119,7 +119,7 @@ export const specSchema = z.object({
 });
 export type Spec = z.infer<typeof specSchema>;
 
-export const reviewerEngineSchema = z.enum(["goldfish", "bb"]);
+export const reviewerEngineSchema = z.enum(["goldfish", "alia"]);
 export type ReviewerEngine = z.infer<typeof reviewerEngineSchema>;
 
 /** The reviewer engine and its pins captured at decision time; no secrets. */
@@ -215,7 +215,7 @@ export const runSchema = z.object({
   stale: z.boolean(),
   context: z.array(relPath),
   threadId: z.string().nullable(),
-  /** BB environment captured at launch; null for endpoint reviews. */
+  /** VesnALIA environment captured at launch; null for endpoint reviews. */
   environmentId: z.string().nullable().optional(),
   engine: reviewerEngineSchema,
   provider: z.string().nullable(),

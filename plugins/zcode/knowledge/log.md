@@ -10,7 +10,7 @@
   stations, pills, arcs, holes; `currentColor` theming; honest truncated
   fallback). React is a runtime shim (type-only devDeps). 2 timeline
   regressions assert the delta shapes against the SDK grammar; 230 tests
-  green, check exit 0 incl. the new `dist/app.js` build. bb's
+  green, check exit 0 incl. the new `dist/app.js` build. VesnALIA's
   `backgroundTask.workflow` snapshot grammar is the identified landing
   zone for future live per-step status.
 
@@ -41,7 +41,7 @@
   No host service beyond reverse RPCs the bridge already answers.
 - **Added** [workflow contract](contracts/dynamic-workflow-protocol.md)
   (draft: one happy path; amend/resume/holes/live-lamps open) and roadmap
-  stages 8 (gate+launch) / 9 (visualization via bb
+  stages 8 (gate+launch) / 9 (visualization via VesnALIA
   `experimental_timelineRenderer` + thread panel + `workflows/runs` hub).
 
 ## 2026-10-27 (v0.11.0 merged and activated)
@@ -51,8 +51,8 @@
   `d0fb44b` returned a clean 👍 with zero inline findings. Every fixed
   finding from the earlier waves carries a regression test (224 tests
   green).
-- **Verified** post-merge activation in the installed bb (0.47.1):
-  `bb marketplace refresh` + `bb plugin update zcode` moved the running
+- **Verified** post-merge activation in the installed VesnALIA (0.47.1):
+  `alia marketplace refresh` + `alia plugin update zcode` moved the running
   plugin 0.10.1 → 0.11.0 at the merge commit, and `npm run test:live`
   on main reported `RUNTIME_VERIFIED` (exit 0). The live Z.ai off-peak
   gateway itself was not exercised — the wire contract stays
@@ -82,7 +82,7 @@
 
 ## 2026-10-24
 
-- **Verified** Live end-to-end automation run on the installed bb (v0.10.1,
+- **Verified** Live end-to-end automation run on the installed VesnALIA (v0.10.1,
   real individual Coding Plan inference): scheduler start on the first
   post-setting session construct, busy-turn deferral, dispatch with the
   native `automationId` marker into the bound thread, and `maxRuns: 1`
@@ -115,7 +115,7 @@
 
 - **Added** Plugin-side automation host (roadmap stage 6 done):
   `src/automations.ts` answers the five `automation/*` native reverse RPCs
-  from a JSON store in `BB_BRIDGE_DIR` (host daemon's per-plugin
+  from a JSON store in `ALIA_BRIDGE_DIR` (host daemon's per-plugin
   `bridge-data` dir), mirroring the upstream schemas pinned 2026-10-23
   (interval carriers → `scheduleRule`, relative one-shots, `maxRuns`,
   20-task limit with `AUTOMATION_CREATE_LIMIT_REACHED`, permanent
@@ -141,7 +141,7 @@
   (`zcodeAgentService` handlers, `AutomationService`/`OffPeakTaskService`).
   Assembly is host-injected: `browserControlExecutor` and the scheduler
   wake-up come from a Desktop-grade host, so `zcode --web` without Desktop
-  still lacks browser/scheduler. Corrected the "only bb#6008 or a Z.ai API"
+  still lacks browser/scheduler. Corrected the "only VesnALIA#6008 or a Z.ai API"
   claim: plugin-side assembly of the open implementations is a real third
   path for automation/Off-Peak (browser stays on the stage 5 CDP decision);
   attaching to `zcode --web` as a client is a fourth, architectural option.
@@ -157,7 +157,7 @@
   `ZCODE_CUA_BROKER_ALLOW_ANY_PEER` exists only as a dev override). The only
   externally shared surface remains files (`~/.zcode` sign-in,
   `~/.zcode/cli/config.json` MCP inheritance), which the plugin already
-  consumes. Unblock paths stay [get-bb/bb#6008](https://github.com/get-bb/bb/issues/6008)
+  consumes. Unblock paths stay [get-alia/alia#6008](https://github.com/get-bb/bb/issues/6008)
   or a documented Z.ai host API; [Feature roadmap](decisions/feature-roadmap.md)
   stage 5 now links the decision.
 
@@ -166,10 +166,10 @@
 - **Added** Icon provenance in v0.9.8: `icons/README.md` records that both
   marks reproduce the official Z.ai logo
   (<https://z-cdn.chatglm.cn/z-ai/static/logo.svg>, path data verbatim) and
-  why the badge filename must change with artwork: bb caches catalog icons
+  why the badge filename must change with artwork: VesnALIA caches catalog icons
   by asset URL, so only a new URL refreshes the store listing. The v0.9.2
   hand-drawn Z and its v0.9.3/v0.9.4 geometry fixes are superseded; the
-  provider mark keeps the currentColor convention (bb inlines provider
+  provider mark keeps the currentColor convention (VesnALIA inlines provider
   marks, so `<img>`-style currentColor loss does not apply).
 
 - **Updated** [Protocol contracts](contracts/protocol-contracts.md): context
@@ -184,7 +184,7 @@
   Discovery windows must survive projection refreshes; both base and budget
   reporting have focused regressions for this native behavior.
 - **Verified** PR #1's candidate passed 175 automated tests, its direct CLI
-  fixture and a fresh disposable-bb installation fixture. The latter verified
+  fixture and a fresh disposable-alia installation fixture. The latter verified
   installed 1M reporting, checkpoint fork/rewind and background controls with
   synthetic inference; see [validation](../docs/validation.md) for scope.
 - **Updated** [Change verification](runbooks/change-verification.md): mocked
@@ -213,13 +213,13 @@
   versus 0a1fc56) and the confirmed remaining feature gaps in
   docs/capability-audit.md; noted surface stability in
   [protocol contracts](contracts/protocol-contracts.md).
-- **Added** [Feature roadmap](decisions/feature-roadmap.md): the installed bb
+- **Added** [Feature roadmap](decisions/feature-roadmap.md): the installed VesnALIA
   SDK 0.6.49 is wider than the plugin used (archive/rename/goal bridge
   methods, rich item shapes, a desktop browser host, plugin UI), with a
   staged plan to close the audited gaps.
 - **Updated** v0.6.0 rich tool rows implemented in `src/timeline.ts`
   (Edit/Write/Read/Grep/Glob/WebSearch/WebFetch/TodoWrite/Task mapped to
-  rich bb rows; failures fall back to generic rows). Baseline updated in
+  rich VesnALIA rows; failures fall back to generic rows). Baseline updated in
   [change verification](runbooks/change-verification.md) (144 tests, full
   `npm run check`, live smoke green); new text caps recorded in
   [session invariants](architecture/session-invariants.md).
@@ -229,9 +229,9 @@
   demand. Stage 2 marked done in the
   [feature roadmap](decisions/feature-roadmap.md); baseline and bounds
   updated.
-- **Updated** v0.8.0 lifecycle parity: bb-local archive/unarchive/rename acks
+- **Updated** v0.8.0 lifecycle parity: alia-local archive/unarchive/rename acks
   and `thread/goal/clear` → native `session/goal` clear. Stage 3 marked done
-  in the [feature roadmap](decisions/feature-roadmap.md) with the bb-0.46.1
+  in the [feature roadmap](decisions/feature-roadmap.md) with the alia-0.46.1
   runtime finding; baseline updated to 151 tests.
 - **Updated** v0.9.0 native plugin management: `/zcode-plugin` family mapped
   onto `plugins/*` with explicit errors, bounded honest rendering and the
@@ -240,9 +240,9 @@
 - **Updated** v0.9.1: native host-service ports (browser, automation,
   Off-Peak, topics, MCP Apps) now fail with actionable messages; stage 5 of
   the [feature roadmap](decisions/feature-roadmap.md) recorded as blocked on
-  bb with SDK evidence (no host-service channel in the bridge protocol).
+  VesnALIA with SDK evidence (no host-service channel in the bridge protocol).
 - **Added** Upstream feature request
-  [get-bb/bb#6008](https://github.com/get-bb/bb/issues/6008): a host-service
+  [get-alia/alia#6008](https://github.com/get-bb/bb/issues/6008): a host-service
   channel in the provider bridge, with SDK evidence and the concrete native
   ports. Stages 5-7 of the [feature roadmap](decisions/feature-roadmap.md)
   now track this issue as their unblock condition.
@@ -266,7 +266,7 @@
   sequence cursor (`run-launched`/`actor-created`/`node-*`/`usage-updated`/
   `run-settled`) - the same feed the Desktop lamps consume.
   `v4/conversation/workflowRunWorkspace` returned no nodes for ask-only
-  scripts, so lamps fold from journal events. Also pinned: bb's
+  scripts, so lamps fold from journal events. Also pinned: VesnALIA's
   `backgroundTask.workflow` grammar is 1-based (index/attempt ≥ 1).
 - **Updated** v0.14.0 closed roadmap stage 9: `BackgroundWork` maps workflow
   jobs to a `local_workflow` `backgroundTask` row with journal-fed agent
@@ -274,7 +274,7 @@
   thread run pane list persisted history via a `workflowRuns` RPC
   (sessionless cold `workflows/runs` read, single-flight 3 s TTL). Baseline:
   238 tests, full `npm run check`, live smoke `RUNTIME_VERIFIED`; follow-ups
-  recorded (installed-bb eyeball of the workflow snapshot rendering;
+  recorded (installed-alia eyeball of the workflow snapshot rendering;
   `threadPanelAction` → `experimental_tab` migration needs an SDK bump).
 - 2026-10-27: hardened the journal fold after review (drain `hasMore` pages
   before terminal close; actor lamps track in-flight nodes instead of going

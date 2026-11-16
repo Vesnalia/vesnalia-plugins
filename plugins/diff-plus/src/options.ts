@@ -1,5 +1,5 @@
 // The tree's options, kept per browser in localStorage, like its on/off and its
-// width. Not plugin settings: every plugin setting write makes BB remount the
+// width. Not plugin settings: every plugin setting write makes VesnALIA remount the
 // right panel, which would throw away the Diff tab under the menu that set it.
 import { useSyncExternalStore } from "react";
 import type { OpenDepth } from "./folders";
@@ -27,9 +27,9 @@ export interface Options {
 
 export const RECENT_COUNTS = [10, 20, 50] as const;
 
-const KEY = "bb-plugin-diff-plus:options";
+const KEY = "alia-plugin-diff-plus:options";
 /** The on/off choice from before the options, kept so it carries over. */
-const OPEN_KEY = "bb-plugin-diff-plus:tree";
+const OPEN_KEY = "alia-plugin-diff-plus:tree";
 const DEFAULTS: Options = { open: true, depth: "all", view: "tree", compact: true, synced: true, syncScroll: false, syncBars: false, recent: true, recentCount: 10 };
 
 const listeners = new Set<() => void>();

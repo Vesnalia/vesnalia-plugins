@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import {
   READ_MAX_BYTES,
   READ_MAX_LINES,
@@ -108,8 +108,8 @@ function requiredId(input: TaskToolInput): number {
   return input.id;
 }
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     preferOverNativeBackgroundTasks: {
       type: "boolean",
       label: "Prefer Shell tasks over provider background tasks",
@@ -120,8 +120,8 @@ export default async function plugin(bb: BbPluginApi) {
   });
   const { preferOverNativeBackgroundTasks } = await settings.get();
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = alia.storage.database();
+  alia.storage.migrate(db, [
     `CREATE TABLE tasks (
       thread_id TEXT NOT NULL,
       id INTEGER NOT NULL,
@@ -156,7 +156,7 @@ export default async function plugin(bb: BbPluginApi) {
     "ALTER TABLE tasks ADD COLUMN last_tail_cursor INTEGER",
   ]);
 
-  const host = bb.hosts.experimental_client({
+  const host = alia.hosts.experimental_client({
     contract: hostContract,
     experimental_signals: hostSignals,
   });
@@ -192,7 +192,7 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   const publish = (payload: CompletionPayload) => {
-    bb.realtime.publish(TASKS_CHANGED, payload);
+    alia.realtime.publish(TASKS_CHANGED, payload);
   };
 
   async function logHandlerError<T>(
@@ -202,7 +202,7 @@ export default async function plugin(bb: BbPluginApi) {
     try {
       return await run();
     } catch (error) {
-      bb.log.error(`${name} failed: ${errorMessage(error)}`);
+      alia.log.error(`${name} failed: ${errorMessage(error)}`);
       throw error;
     }
   }
@@ -239,14 +239,14 @@ export default async function plugin(bb: BbPluginApi) {
   const pendingTargets = new Map<AbortController, string>();
 
   async function taskTarget(threadId: string, signal?: AbortSignal) {
-    const thread = await bb.sdk.threads.get({ threadId, signal });
+    const thread = await alia.sdk.threads.get({ threadId, signal });
     if (thread.archivedAt !== null) throw new Error("cannot start a task in an archived thread");
     if (thread.environmentId === null) {
       throw new Error("task requires a thread environment");
     }
     const [environment, storage] = await Promise.all([
-      bb.sdk.environments.get({ environmentId: thread.environmentId, signal }),
-      bb.sdk.threads.storageLocation({ threadId, signal }),
+      alia.sdk.environments.get({ environmentId: thread.environmentId, signal }),
+      alia.sdk.threads.storageLocation({ threadId, signal }),
     ]);
     if (environment.status !== "ready" || environment.path === null) {
       throw new Error("task requires a ready environment with a working directory");
@@ -258,10 +258,10 @@ export default async function plugin(bb: BbPluginApi) {
       hostId: environment.hostId,
       cwd: environment.path,
       env: {
-        BB_THREAD_ID: threadId,
-        BB_PROJECT_ID: thread.projectId,
-        BB_ENVIRONMENT_ID: environment.id,
-        BB_THREAD_STORAGE: storage.storageRootPath,
+        ALIA_THREAD_ID: threadId,
+        ALIA_PROJECT_ID: thread.projectId,
+        ALIA_ENVIRONMENT_ID: environment.id,
+        ALIA_THREAD_STORAGE: storage.storageRootPath,
       },
     };
   }
@@ -376,7 +376,7 @@ export default async function plugin(bb: BbPluginApi) {
       try {
         await removeTaskFromQueuedCompletion(task.thread_id, queueId, task.id);
       } catch (error) {
-        bb.log.error(`task acknowledgement thread=${task.thread_id} task=${task.id}: ${errorMessage(error)}`);
+        alia.log.error(`task acknowledgement thread=${task.thread_id} task=${task.id}: ${errorMessage(error)}`);
         // Keep the queue ID so reconciliation retries a failed prune.
       }
     });
@@ -467,7 +467,7 @@ export default async function plugin(bb: BbPluginApi) {
       id,
     );
     const result = requireTask(threadId, id);
-    bb.log.info(
+    alia.log.info(
       `task stopped id=${id} signal=${result.signal ?? "none"} reason=${result.stop_reason ?? reason}`,
     );
     publish({
@@ -591,7 +591,7 @@ export default async function plugin(bb: BbPluginApi) {
       )
       .all(threadId) as Array<{ id: string }>;
     if (queueIds.length === 0) return undefined;
-    const queued = await bb.sdk.threads.queuedMessages.list({ threadId });
+    const queued = await alia.sdk.threads.queuedMessages.list({ threadId });
     const row = queued.find((message) =>
       queueIds.some(({ id }) => id === message.id),
     );
@@ -627,7 +627,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (task && !task.completion_acknowledged) merged.set(completion.task_id, completion);
     }
     if (merged.size === 0) return false;
-    await bb.sdk.threads.queuedMessages.update({
+    await alia.sdk.threads.queuedMessages.update({
       threadId,
       queuedMessageId: row.id,
       expectedUpdatedAt: row.updatedAt,
@@ -649,7 +649,7 @@ export default async function plugin(bb: BbPluginApi) {
     queueId: string,
     taskId: number,
   ): Promise<void> {
-    const queued = await bb.sdk.threads.queuedMessages.list({ threadId });
+    const queued = await alia.sdk.threads.queuedMessages.list({ threadId });
     const row = queued.find((message) => message.id === queueId);
     if (!row) {
       db.prepare("UPDATE tasks SET completion_queue_id = NULL WHERE thread_id = ? AND completion_queue_id = ?")
@@ -664,12 +664,12 @@ export default async function plugin(bb: BbPluginApi) {
       return task !== undefined && !task.completion_acknowledged;
     });
     if (remaining.length === 0) {
-      await bb.sdk.threads.queuedMessages.delete({
+      await alia.sdk.threads.queuedMessages.delete({
         threadId,
         queuedMessageId: queueId,
       });
     } else {
-      await bb.sdk.threads.queuedMessages.update({
+      await alia.sdk.threads.queuedMessages.update({
         threadId,
         queuedMessageId: queueId,
         expectedUpdatedAt: row.updatedAt,
@@ -716,7 +716,7 @@ export default async function plugin(bb: BbPluginApi) {
       }
       const completions = additions.map(({ completion }) => completion);
       const send = () =>
-        bb.sdk.threads.send({
+        alia.sdk.threads.send({
           threadId,
           mode: "queue-if-active",
           input: completionInput(completions),
@@ -740,7 +740,7 @@ export default async function plugin(bb: BbPluginApi) {
       delivered();
       await pruneAcknowledged();
     } catch (error) {
-      bb.log.error(
+      alia.log.error(
         `task completion follow-up failed for ${active.map(({ task }) => task.id).join(", ")}: ${errorMessage(error)}`,
       );
     }
@@ -772,7 +772,7 @@ export default async function plugin(bb: BbPluginApi) {
       if (!batch) return;
       completionBatches.delete(task.thread_id);
       void withQueue(task.thread_id, () => sendCompletionFollowUp([...batch.pending.values()]))
-        .catch((error) => bb.log.error(`task batch thread=${task.thread_id}: ${errorMessage(error)}`));
+        .catch((error) => alia.log.error(`task batch thread=${task.thread_id}: ${errorMessage(error)}`));
     }, delay);
     completionBatches.set(task.thread_id, { firstAt, timer, pending });
   }
@@ -822,7 +822,7 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   );
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     tasks_list: ({ threadId }) =>
       logHandlerError("rpc tasks_list", () => ({
         tasks: listTasks(threadId).map(rowToSummary),
@@ -881,13 +881,13 @@ export default async function plugin(bb: BbPluginApi) {
     }
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: "task",
     description:
       "Start and manage non-interactive asynchronous shell tasks on Unix systems. Actions: start(command, title?), list, " +
       "read(id, cursor?), tail(id, lines?), stop(id), and clear(id). Task IDs are numbered per thread. List returns every task with its full command. pid is the supervisor and process-group leader; use stop rather than signalling it. " +
       "Status is running, success (exit 0), error (non-zero exit) or stopped. Stopped tasks include signal and reason, such as requested or plugin_reload. Stop sends SIGTERM to the task's process group. Clear removes the task and deletes its log file; stop a running task before clearing. " +
-      "Running reads return complete lines, except lines reaching the 50KB cap return UTF-8-safe partial chunks; live tail snapshots intentionally include the unfinished current line. Pass next_cursor from read or tail back unchanged. Any other offset that falls inside a line moves to the start of the next line. Commands run through /bin/sh, not the user's login shell, and inherit machine variables plus safe BB thread context variables. Standard output and standard error are merged into one ordered log. " +
+      "Running reads return complete lines, except lines reaching the 50KB cap return UTF-8-safe partial chunks; live tail snapshots intentionally include the unfinished current line. Pass next_cursor from read or tail back unchanged. Any other offset that falls inside a line moves to the start of the next line. Commands run through /bin/sh, not the user's login shell, and inherit machine variables plus safe VesnALIA thread context variables. Standard output and standard error are merged into one ordered log. " +
       "Start returns immediately with status running, even when the command finishes at once. Read returns at most " +
       `${READ_MAX_LINES} lines or ${READ_MAX_BYTES / 1024}KB with a next_cursor. Use tail for progress checks and read with next_cursor only when consuming output in chunks. Tail defaults to the latest ` +
       `${TAIL_DEFAULT_LINES} lines, accepts up to ${TAIL_MAX_LINES}, and is capped at ${READ_MAX_BYTES / 1024}KB. ` +
@@ -915,11 +915,11 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.agents.configure(() => ({
+  alia.agents.configure(() => ({
     tools: ["task"],
     skills: [],
     instructions: preferOverNativeBackgroundTasks
-      ? "Prefer the BB task tool over the provider's native background-task runner for non-interactive long-running commands. Use the provider runner only when task is unavailable or the command requires an interactive terminal."
+      ? "Prefer the VesnALIA task tool over the provider's native background-task runner for non-interactive long-running commands. Use the provider runner only when task is unavailable or the command requires an interactive terminal."
       : undefined,
   }));
 
@@ -943,7 +943,7 @@ export default async function plugin(bb: BbPluginApi) {
         await acknowledgeCompletion(current);
       }
     } catch (error) {
-      bb.log.error(`task reconciliation thread=${task.thread_id} task=${task.id} host=${task.host_id}: ${errorMessage(error)}`);
+      alia.log.error(`task reconciliation thread=${task.thread_id} task=${task.id} host=${task.host_id}: ${errorMessage(error)}`);
     }
   }
 
@@ -968,14 +968,14 @@ export default async function plugin(bb: BbPluginApi) {
     await Promise.all(tasks.map(reconcileTask));
   }
 
-  bb.events.on("thread.archived", ({ thread }) =>
+  alia.events.on("thread.archived", ({ thread }) =>
     logHandlerError("event thread.archived", () => endThread(thread.id, false)),
   );
-  bb.events.on("thread.deleted", ({ thread }) =>
+  alia.events.on("thread.deleted", ({ thread }) =>
     logHandlerError("event thread.deleted", () => endThread(thread.id, true)),
   );
 
-  bb.background.service("reconcile", {
+  alia.background.service("reconcile", {
     async start(signal) {
       try {
         while (!signal.aborted) {
@@ -991,7 +991,7 @@ export default async function plugin(bb: BbPluginApi) {
           });
         }
       } catch (error) {
-        bb.log.error(`service reconcile failed: ${errorMessage(error)}`);
+        alia.log.error(`service reconcile failed: ${errorMessage(error)}`);
         throw error;
       } finally {
         for (const batch of completionBatches.values()) clearTimeout(batch.timer);
@@ -1001,5 +1001,5 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  bb.log.info("loaded; task tool enabled");
+  alia.log.info("loaded; task tool enabled");
 }

@@ -2,7 +2,7 @@
 
 Scope: plugin-authored UI labels, placeholders, empty states, confirmations, static server errors, and public listing copy. The plugin has no locale files or translation framework; its interface is English. Counts use complete English message variants with `Intl.PluralRules`, and dates, numbers, lists, and relative time use `Intl`.
 
-Vocabulary: pull request (PR in compact labels), Inbox, Overview, Code, Checks, Notes, Chat, draft, and conversation. Controls use sentence case. BB's host-owned composer and thread labels stay native.
+Vocabulary: pull request (PR in compact labels), Inbox, Overview, Code, Checks, Notes, Chat, draft, and conversation. Controls use sentence case. VesnALIA's host-owned composer and thread labels stay native.
 
 | Principle | Severity | Locations | Before | After | Why |
 | --- | --- | --- | --- | --- | --- |

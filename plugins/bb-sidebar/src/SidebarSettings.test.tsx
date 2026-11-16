@@ -155,7 +155,7 @@ it("flushes a valid edit when leaving before the debounce expires", async () => 
 
 it("removes obsolete archive-preview cache keys before an early save", async () => {
   let stored = { ...DEFAULT_SIDEBAR_SETTINGS };
-  localStorage.setItem("bb-sidebar:settings-cache:v1", JSON.stringify({ ...stored, archivedShelfEnabled: true }));
+  localStorage.setItem("alia-sidebar:settings-cache:v1", JSON.stringify({ ...stored, archivedShelfEnabled: true }));
   const pending = deferred<SidebarSettingsValues>();
   const writes: unknown[] = [];
   renderSlot(
@@ -180,7 +180,7 @@ it("removes obsolete archive-preview cache keys before an early save", async () 
     pending.resolve(DEFAULT_SIDEBAR_SETTINGS);
   });
   expect(screen.getByRole("switch", { name: "Working shelf" }).getAttribute("aria-checked")).toBe("true");
-  expect(JSON.parse(localStorage.getItem("bb-sidebar:settings-cache:v1")!)).not.toHaveProperty("archivedShelfEnabled");
+  expect(JSON.parse(localStorage.getItem("alia-sidebar:settings-cache:v1")!)).not.toHaveProperty("archivedShelfEnabled");
 });
 
 it("keeps the typing debounce when an earlier settings save finishes", async () => {

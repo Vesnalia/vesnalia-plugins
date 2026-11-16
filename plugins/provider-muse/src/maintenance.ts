@@ -11,7 +11,7 @@ import {
   type ProviderInstallationRunResult,
   type ProviderInstallationStatus,
   type ProviderUsageResult,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import { z } from "zod";
 import {
   museAuthFilePath,

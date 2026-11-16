@@ -2,57 +2,57 @@
 
 # Health checks
 
-What `bb box doctor`, and each backend's check on the settings page, can report, by check ID. A part in angle brackets, such as `<vmid>`, stands for a value, such as a template's VMID. Each check is ok, a warning, a failure, or skipped when one before it failed; a warning leaves the doctor passing.
+What `alia box doctor`, and each backend's check on the settings page, can report, by check ID. A part in angle brackets, such as `<vmid>`, stands for a value, such as a template's VMID. Each check is ok, a warning, a failure, or skipped when one before it failed; a warning leaves the doctor passing.
 
-## bb-box
+## alia-box
 
 | ID | Name | What it checks |
 | --- | --- | --- |
 | `doctor` | Checks | A backend's checks did not finish within their time limit. |
-| `config.<path>` | Settings | A part of BB Box's configuration that needs fixing, by its path, such as general.defaultKind. |
+| `config.<path>` | Settings | A part of VesnALIA Box's configuration that needs fixing, by its path, such as general.defaultKind. |
 | `offers.<kind>` | Offers of &lt;kind> | Where several backends offer a kind: they agree on what the kind promises, and each has the features it requires. |
 | `overlap.<backend>.<backend>` | &lt;backend> and &lt;backend> | Two backends whose boxes could take the same guest IDs or addresses. |
-| `projects.<backend>` | Projects of &lt;backend> | A backend kept for certain BB projects (#1458): the projects it serves, and a warning when none of them is still in BB, so no thread can use it. |
+| `projects.<backend>` | Projects of &lt;backend> | A backend kept for certain VesnALIA projects (#1458): the projects it serves, and a warning when none of them is still in VesnALIA, so no thread can use it. |
 | `warm.<kinds>` | Warm pool of &lt;kinds> | A warm pool that has fewer ready boxes than its count asks for, and no room for another. |
-| `sizes.<kind>.<preset>` | Box sizes | A Linux preset with less than 2 GiB memory, so its boxes can run out of memory as they become BB machines. |
-| `box-files` | Files for every box | The files BB Box writes into each box as it joins BB, and whether the last write worked. |
-| `box-history` | Box history's file | Where BB Box will keep each box's readings over time (069): box-history.db beside its database, attached with its own cap, or its database itself where BB's handle refused to attach the file. |
-| `box-log` | Box log | Where BB Box keeps who stopped, started, resized and released each box (069): box-log.db beside its database, or its database itself where BB's handle refused to attach the file; and whether its writes failed. |
-| `snapshots` | Snapshots' records | Where BB Box keeps its records of snapshots and their operations (070): snapshots.db beside its database, or its database itself where BB's handle refused to attach the file; and whether its writes failed. While it cannot write them, BB Box takes and deletes no snapshots. |
-| `snapshots.locked.<box>` | &lt;box> locked | A box with snapshots whose guest its provider left locked (070), as Proxmox does when a task dies part way: BB Box takes, deletes and restores none of its snapshots until the lock is gone, and only root on the host can remove it. Says the host's command. |
-| `snapshots.restore.<box>` | Restore of &lt;box> | A restore of a box that BB Box could not confirm (070), as when BB Box restarted while Proxmox rolled the box back: it keeps the snapshots it used and checks again at each sweep. |
-| `gpu-userspace` | NVIDIA userspace | How many boxes with a GPU have NVIDIA's userspace for their host's driver, as BB Box reads it in each running box at this check (071). BB Box never updates a box's userspace by itself. |
-| `gpu-userspace.<box>` | NVIDIA userspace in &lt;box> | A box with a GPU whose NVIDIA userspace is not the host's driver, is half-installed, or whose last update did not finish, so nvidia-smi and CUDA fail or may fail in it (071). A stopped box is named as BB Box last read it. It says the command that updates it: bb box gpu update. |
-| `join.<box>` | &lt;box> joining BB | A box that did not join BB at its first try. BB Box tries again after 30 s, 2 min, 10 min and 30 min, then every 30 minutes for up to 24 hours from the first failure, when what failed can pass, such as a DNS lookup that timed out. It warns while it tries, and when other boxes on the same backend joined. It fails once no box on the backend can reach BB, which is a setup problem. |
-| `identity-reset.<box>` | Identity reset of &lt;box> | A box of BB Box's whose identity reset at a boot (070), which took its BB machine with it: BB Box keeps the box and enrols it again as a new BB machine. It warns once that is done, and fails until it is. A box that is not a copy of another should never reset. |
-| `images.nightly` | Nightly rebuilds | When bb box images refresh last ended. It warns when no run ended for 8 days. |
-| `images.bb-update` | Refresh after a BB update | After a BB update, which Linux images have another build of BB's app than BB's server gives, and when their refresh starts. Only while Rebuild each night is on. |
+| `sizes.<kind>.<preset>` | Box sizes | A Linux preset with less than 2 GiB memory, so its boxes can run out of memory as they become VesnALIA machines. |
+| `box-files` | Files for every box | The files VesnALIA Box writes into each box as it joins VesnALIA, and whether the last write worked. |
+| `box-history` | Box history's file | Where VesnALIA Box will keep each box's readings over time (069): box-history.db beside its database, attached with its own cap, or its database itself where VesnALIA's handle refused to attach the file. |
+| `box-log` | Box log | Where VesnALIA Box keeps who stopped, started, resized and released each box (069): box-log.db beside its database, or its database itself where VesnALIA's handle refused to attach the file; and whether its writes failed. |
+| `snapshots` | Snapshots' records | Where VesnALIA Box keeps its records of snapshots and their operations (070): snapshots.db beside its database, or its database itself where VesnALIA's handle refused to attach the file; and whether its writes failed. While it cannot write them, VesnALIA Box takes and deletes no snapshots. |
+| `snapshots.locked.<box>` | &lt;box> locked | A box with snapshots whose guest its provider left locked (070), as Proxmox does when a task dies part way: VesnALIA Box takes, deletes and restores none of its snapshots until the lock is gone, and only root on the host can remove it. Says the host's command. |
+| `snapshots.restore.<box>` | Restore of &lt;box> | A restore of a box that VesnALIA Box could not confirm (070), as when VesnALIA Box restarted while Proxmox rolled the box back: it keeps the snapshots it used and checks again at each sweep. |
+| `gpu-userspace` | NVIDIA userspace | How many boxes with a GPU have NVIDIA's userspace for their host's driver, as VesnALIA Box reads it in each running box at this check (071). VesnALIA Box never updates a box's userspace by itself. |
+| `gpu-userspace.<box>` | NVIDIA userspace in &lt;box> | A box with a GPU whose NVIDIA userspace is not the host's driver, is half-installed, or whose last update did not finish, so nvidia-smi and CUDA fail or may fail in it (071). A stopped box is named as VesnALIA Box last read it. It says the command that updates it: VesnALIA box gpu update. |
+| `join.<box>` | &lt;box> joining VesnALIA | A box that did not join VesnALIA at its first try. VesnALIA Box tries again after 30 s, 2 min, 10 min and 30 min, then every 30 minutes for up to 24 hours from the first failure, when what failed can pass, such as a DNS lookup that timed out. It warns while it tries, and when other boxes on the same backend joined. It fails once no box on the backend can reach VesnALIA, which is a setup problem. |
+| `identity-reset.<box>` | Identity reset of &lt;box> | A box of VesnALIA Box's whose identity reset at a boot (070), which took its VesnALIA machine with it: VesnALIA Box keeps the box and enrols it again as a new VesnALIA machine. It warns once that is done, and fails until it is. A box that is not a copy of another should never reset. |
+| `images.nightly` | Nightly rebuilds | When VesnALIA box images refresh last ended. It warns when no run ended for 8 days. |
+| `images.alia-update` | Refresh after a VesnALIA update | After a VesnALIA update, which Linux images have another build of VesnALIA's app than VesnALIA's server gives, and when their refresh starts. Only while Rebuild each night is on. |
 | `images.<backend>/<ref>` | Rebuild of &lt;backend>/&lt;ref> | A standard image whose last rebuild failed, or waits for room. |
 | `images.bake.<image>.<backend>.<kind>` | Build of &lt;image> for &lt;kind> on &lt;backend> | A project image whose last build failed. Its boxes run its script as they start meanwhile. |
 | `device-hub.<box>` | Device Hub in &lt;box> | An ios box's macOS host has no Device Hub running (063): it takes the device's pasteboard, and quitting it shuts the device down, so the device server kills it within 5 s of its start. Says how often it has. |
-| `device.<box>` | Device server of &lt;box> | A device box's server (063): the version it runs against the one this BB Box delivers, a delivery waiting for a person or a recording, a version marked bad after it did not answer, and a server its service manager gave up on. |
-| `recording.<kind>` | Recordings on &lt;kind> | What box_record makes on a kind (059, 063): a desktop's or a device's screen with captioned steps, or nothing; the ffmpeg it needs there, which BB Box fetches into a box that has none fit; and what the kind's last recording start found. |
-| `encoder.<mac>` | Video encoder on &lt;mac> | A Mac's video encoder, shared by every iOS device BB Box streams on it (064): its budget, from the chip or a probe, how much of it the streams use, and which are shown at a lower resolution to keep within it. |
+| `device.<box>` | Device server of &lt;box> | A device box's server (063): the version it runs against the one this VesnALIA Box delivers, a delivery waiting for a person or a recording, a version marked bad after it did not answer, and a server its service manager gave up on. |
+| `recording.<kind>` | Recordings on &lt;kind> | What box_record makes on a kind (059, 063): a desktop's or a device's screen with captioned steps, or nothing; the ffmpeg it needs there, which VesnALIA Box fetches into a box that has none fit; and what the kind's last recording start found. |
+| `encoder.<mac>` | Video encoder on &lt;mac> | A Mac's video encoder, shared by every iOS device VesnALIA Box streams on it (064): its budget, from the chip or a probe, how much of it the streams use, and which are shown at a lower resolution to keep within it. |
 | `monitor` | Monitor | The Monitor's settings (066): whether it is on, how often machine status reads while it is open, and whether background monitoring and its notifications are on. |
-| `monitor.background` | Background monitoring | While background monitoring is on: when it last wrote its minute's summary of BB's server's CPU and memory, and whether its last sample or write failed. |
-| `spares.<kind>` | Spare &lt;kind> boxes | A kind's spares (032, 063): how many BB Box keeps, how many are ready or being made, and what each costs while it waits. For ios and android it says when spares are off, as they are by default. It warns when the kind has fewer than its count and why. |
-| `spares.image.<image>.<backend>.<kind>` | Spare of &lt;image> for &lt;kind> on &lt;backend> | A project image's spare whose build failed to start a box, so BB Box makes none of that build for a day. Its boxes start from the build meanwhile. |
-| `tailnet.client` | OAuth client | Tailscale signs in the OAuth client in the General settings, with which BB Box makes a single-use key for each machine it makes. |
-| `tailnet.devices` | Devices | This install's devices on the tailnet, which BB Box removes when their machine went without logging out, and how many other devices carry the same tags, unnamed: BB Box leaves those alone. |
+| `monitor.background` | Background monitoring | While background monitoring is on: when it last wrote its minute's summary of VesnALIA's server's CPU and memory, and whether its last sample or write failed. |
+| `spares.<kind>` | Spare &lt;kind> boxes | A kind's spares (032, 063): how many VesnALIA Box keeps, how many are ready or being made, and what each costs while it waits. For ios and android it says when spares are off, as they are by default. It warns when the kind has fewer than its count and why. |
+| `spares.image.<image>.<backend>.<kind>` | Spare of &lt;image> for &lt;kind> on &lt;backend> | A project image's spare whose build failed to start a box, so VesnALIA Box makes none of that build for a day. Its boxes start from the build meanwhile. |
+| `tailnet.client` | OAuth client | Tailscale signs in the OAuth client in the General settings, with which VesnALIA Box makes a single-use key for each machine it makes. |
+| `tailnet.devices` | Devices | This install's devices on the tailnet, which VesnALIA Box removes when their machine went without logging out, and how many other devices carry the same tags, unnamed: VesnALIA Box leaves those alone. |
 
 ## SSH host pool
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `devices.<mac>` | iOS devices on &lt;mac> | What a Mac offers iOS devices, as BB Box last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot. |
-| `ssh.key` | SSH key | BB Box's SSH key reads, and, where BB Box made it, its public key to install. |
+| `devices.<mac>` | iOS devices on &lt;mac> | What a Mac offers iOS devices, as VesnALIA Box last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot. |
+| `ssh.key` | SSH key | VesnALIA Box's SSH key reads, and, where VesnALIA Box made it, its public key to install. |
 | `machines` | Machines | At least one machine is listed. |
 | `docker` | Docker | Whether the pool's Linux machines lend Docker to their boxes. |
 | `xcode` | Xcode | Whether the pool's Macs have Xcode. |
 | `snapshot-offers` | Snapshots on the pool's machines | How many of the pool's machines could offer home snapshots, and how many machine snapshots by a hook. |
 | `machine.<machine>.ssh` | &lt;machine>: SSH | The machine answers over SSH with its pinned host key. |
 | `machine.<machine>.sizes` | &lt;machine>: room for each kind | The machine holds a box of each of its kinds at the default size. |
-| `machine.<machine>.helper` | &lt;machine>: helper | BB Box's helper is installed on the machine, at this BB Box's version. |
+| `machine.<machine>.helper` | &lt;machine>: helper | VesnALIA Box's helper is installed on the machine, at this VesnALIA Box's version. |
 | `machine.<machine>.arch` | &lt;machine>: architecture | The machine's architecture is the one its kinds need. |
 | `machine.<machine>.tools` | &lt;machine>: tools | The tools its kinds need are on the machine. |
 | `machine.<machine>.docker` | &lt;machine>: Docker | Docker runs on the machine, for its boxes. |
@@ -60,28 +60,28 @@ What `bb box doctor`, and each backend's check on the settings page, can report,
 | `machine.<machine>.filevault` | &lt;machine>: FileVault | On a Mac, FileVault is off, so it signs a box user in after a restart. |
 | `machine.<machine>.signin` | &lt;machine>: sign-in | On a Mac, the next box user is signed in at the console. |
 | `machine.<machine>.fulldisk` | &lt;machine>: Full Disk Access | On a Mac, the helper has Full Disk Access, which a reset needs. |
-| `machine.<machine>.sip` | &lt;machine>: System Integrity Protection | On a Mac, whether System Integrity Protection is on, and so whether BB Box can grant box users' programs macOS permissions (058). |
+| `machine.<machine>.sip` | &lt;machine>: System Integrity Protection | On a Mac, whether System Integrity Protection is on, and so whether VesnALIA Box can grant box users' programs macOS permissions (058). |
 | `machine.<machine>.slots` | &lt;machine>: iOS slots | On a Mac whose line lists ios (064): that its iOS slots are set up, whether it lends slots or is lent whole, its slots held, ready, making and sweeping, the iOS runtime and seed they are made with, each held slot's load, and what its last sweeps found and left. |
-| `machine.<machine>.homes` | &lt;machine>: people's homes | On a Mac, box users cannot enter any person's home, such as an administrator's with BB's or an agent CLI's credentials. |
+| `machine.<machine>.homes` | &lt;machine>: people's homes | On a Mac, box users cannot enter any person's home, such as an administrator's with VesnALIA's or an agent CLI's credentials. |
 | `machine.<machine>.xcode` | &lt;machine>: Xcode | On a Mac, Xcode and its iOS runtime. |
 | `machine.<machine>.screensharing` | &lt;machine>: Screen Sharing | On a Mac with desktops, Screen Sharing is on. |
 | `machine.<machine>.grants` | &lt;machine>: Cua Driver's grants | On a Mac with desktops, Cua Driver has Accessibility and Screen Recording. |
-| `machine.<machine>.snapshots` | &lt;machine>: snapshots | What snapshots the machine could offer: home snapshots where box homes are on a filesystem that clones or snapshots, and machine snapshots where an operator installed a snapshot hook. BB Box takes no snapshots on pool machines yet. |
+| `machine.<machine>.snapshots` | &lt;machine>: snapshots | What snapshots the machine could offer: home snapshots where box homes are on a filesystem that clones or snapshots, and machine snapshots where an operator installed a snapshot hook. VesnALIA Box takes no snapshots on pool machines yet. |
 | `machine.<machine>.input` | &lt;machine>: viewer's input | On a Mac with desktops, a viewer's keys and clicks reach the desktop. |
 
 ## Tart
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `devices.<mac>` | iOS devices on &lt;mac> | What a Mac offers iOS devices, as BB Box last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot. |
-| `tart.ssh-key` | SSH key | BB Box's SSH key for the Macs reads, and its public key to install. |
+| `devices.<mac>` | iOS devices on &lt;mac> | What a Mac offers iOS devices, as VesnALIA Box last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot. |
+| `tart.ssh-key` | SSH key | VesnALIA Box's SSH key for the Macs reads, and its public key to install. |
 | `tart.hosts` | Macs | At least one Mac is set up. |
 | `host.<mac>` | Mac &lt;mac> | The Mac answers over SSH, is Apple silicon, and has Tart. |
 | `image.<mac>.<kind>` | &lt;kind> image on &lt;mac> | The VM a kind's boxes are cloned from is on the Mac, of the right OS, and not too old. For the iOS image, also that it offers iOS devices, built on the macOS image's current build, with an idb_companion and Xcode an image check has passed together. |
-| `forks.<mac>` | macOS forks on &lt;mac> | Whether the Mac's diskutil can attach a fork's disk, so BB Box can clean it of its source's identity before the fork first boots (070 unit 9). Without it, macOS boxes there take and restore snapshots, but make no forks and keep none past a release. |
+| `forks.<mac>` | macOS forks on &lt;mac> | Whether the Mac's diskutil can attach a fork's disk, so VesnALIA Box can clean it of its source's identity before the fork first boots (070 unit 9). Without it, macOS boxes there take and restore snapshots, but make no forks and keep none past a release. |
 | `spotlight.<mac>` | Spotlight on &lt;mac> | Whether Spotlight indexes the folder of Tart's VMs, so it opens each new VM's disk, and how to keep it out (F-12). |
 | `qemu.<mac>` | QEMU on &lt;mac> | QEMU, the Hypervisor framework and UEFI firmware, for Windows boxes on the Mac. |
-| `qemu-video.<mac>` | Windows video on &lt;mac> | BB Box's build of bb-box-stream on the Mac, which gives Windows boxes video from QEMU's VNC server (#865). |
+| `qemu-video.<mac>` | Windows video on &lt;mac> | VesnALIA Box's build of alia-box-stream on the Mac, which gives Windows boxes video from QEMU's VNC server (#865). |
 | `capacity.<mac>` | Room on &lt;mac> | Room on the Mac for a macOS box at its default size. |
 | `sizes.<mac>` | Room for each kind on &lt;mac> | The Mac holds a box of each kind at its default size. |
 | `ios-hosts.<mac>` | Shared iOS hosts on &lt;mac> | The shared iOS hosts on the Mac (064), or on Namespace (065): each host's state, its slots held, ready, making and sweeping, its free disk and memory, and each held slot's cores, memory and home; Namespace's host's end and how its video is encoded; or, with none, whether one can start. |
@@ -90,54 +90,54 @@ What `bb box doctor`, and each backend's check on the settings page, can report,
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `devices.<mac>` | iOS devices on &lt;mac> | What a Mac offers iOS devices, as BB Box last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot. |
-| `namespace.token` | API token | Namespace's API answers to the token in BB Box's settings. |
-| `namespace.machines` | Machines | The Namespace machines BB Box has, each with its age and when it ends, and any no box claims. |
-| `namespace.limits` | Workspace limits | The Mac cores and memory the workspace allows at once and has in use, read from Namespace, from which BB Box refuses a Mac up front; a warning when the token may not read them. |
+| `devices.<mac>` | iOS devices on &lt;mac> | What a Mac offers iOS devices, as VesnALIA Box last measured it there (065): the iOS Simulator, and a hardware or software H.264 encoder for their video. A Mac that cannot run the Simulator or stream lends no ios slot. |
+| `namespace.token` | API token | Namespace's API answers to the token in VesnALIA Box's settings. |
+| `namespace.machines` | Machines | The Namespace machines VesnALIA Box has, each with its age and when it ends, and any no box claims. |
+| `namespace.limits` | Workspace limits | The Mac cores and memory the workspace allows at once and has in use, read from Namespace, from which VesnALIA Box refuses a Mac up front; a warning when the token may not read them. |
 | `namespace.snapshots.<machine>` | Snapshots on &lt;machine> | On a Linux machine where its box took snapshots: Docker's snapshot lines for that machine, and when the machine ends with them. |
-| `namespace.grants` | macOS permissions on Namespace's Macs | Whether box_grant works on Namespace's Macs: whether System Integrity Protection is off and TCC's database is one BB Box knows, as measured on the Macs that macos and macos-desktop boxes started on most recently, and their macOS; a warning, with the reason, when the latest measurement of a Mac failed (058). |
-| `namespace.images` | Linux images | BB Box's Linux images in the workspace's registry: when each was built, whether a new one is due, and whether one is being built. |
+| `namespace.grants` | macOS permissions on Namespace's Macs | Whether box_grant works on Namespace's Macs: whether System Integrity Protection is off and TCC's database is one VesnALIA Box knows, as measured on the Macs that macos and macos-desktop boxes started on most recently, and their macOS; a warning, with the reason, when the latest measurement of a Mac failed (058). |
+| `namespace.images` | Linux images | VesnALIA Box's Linux images in the workspace's registry: when each was built, whether a new one is due, and whether one is being built. |
 | `ios-hosts.<mac>` | Shared iOS hosts on &lt;mac> | The shared iOS hosts on the Mac (064), or on Namespace (065): each host's state, its slots held, ready, making and sweeping, its free disk and memory, and each held slot's cores, memory and home; Namespace's host's end and how its video is encoded; or, with none, whether one can start. |
 
 ## Proxmox LXC
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `proxmox.api` | Proxmox API | The API answers at its URL, with a certificate BB Box trusts, and the token works. |
+| `proxmox.api` | Proxmox API | The API answers at its URL, with a certificate VesnALIA Box trusts, and the token works. |
 | `proxmox.node` | Node | The node exists and is online. |
 | `proxmox.memory` | Node memory | How much of the node's memory is free beyond the reserve. |
 | `proxmox.pool` | Resource pool | The resource pool exists and the token may use it. |
 | `proxmox.bridge` | Network bridge | The bridge exists on the node. |
-| `proxmox.vmids` | VMID range | The VMID range is free of guests BB Box did not make. |
+| `proxmox.vmids` | VMID range | The VMID range is free of guests VesnALIA Box did not make. |
 | `proxmox.sizes` | Room for each kind | The node holds a box of each kind at its default size. |
 | `proxmox.snapshots` | Snapshots | Whether the token may take and restore snapshots, with VM.Snapshot and VM.Snapshot.Rollback on the pool, and what each template's storage restores: any snapshot on LVM-thin, Ceph RBD, BTRFS and qcow2 files, the newest only on ZFS, none on LVM or raw files (070). |
 | `template.<vmid>` | &lt;flavour> template &lt;vmid> | A template is there, is a template, and has what its kind needs. |
-| `template.<vmid>.image` | Image of &lt;flavour> template &lt;vmid> | The template's image record: its age, pins and tools, against this BB Box's. |
-| `proxmox.gpu-helper` | Host's GPU helper | Where host/setup-gpu.sh has installed the GPU helper, bb-box-gpu: it reported under 3 minutes ago, speaks a protocol this BB Box speaks, serves this install's pool, runs on a pve-container version it was tested on, and has writes on. It warns while the helper runs with writes off, a dry run, and on a node with cards and no helper, where servers get no GPU (071). |
-| `proxmox.gpu-cards` | Boxes on their cards | Where the GPU helper reports: every running box with a GPU lists its claimed card in nvidia-smi, as BB Box checks every 10 minutes, and the helper reports no running guest on another card's lines. It fails naming each box on the wrong card or none (071). |
-| `proxmox.gpu-migration` | Markers on GPU guests | Where the GPU helper, bb-box-gpu, reports: every guest of this install whose device lines name a card carries the marker bb box gpu mark gives it, the helper answered each, and, in its dry run, it would write no guest (071). It names the guests that fail. |
-| `proxmox.gpu-report` | Host's GPU report | The host's report of each GPU's memory, which the GPU helper, bb-box-gpu, or else bb-box-gpu-memory.timer writes in a VM's notes: there, current, and naming each GPU. |
-| `gpu.<gpu>` | GPU &lt;gpu> | A GPU's free memory, as BB Box last read it in a GPU desktop, against what a GPU desktop needs. |
+| `template.<vmid>.image` | Image of &lt;flavour> template &lt;vmid> | The template's image record: its age, pins and tools, against this VesnALIA Box's. |
+| `proxmox.gpu-helper` | Host's GPU helper | Where host/setup-gpu.sh has installed the GPU helper, alia-box-gpu: it reported under 3 minutes ago, speaks a protocol this VesnALIA Box speaks, serves this install's pool, runs on a pve-container version it was tested on, and has writes on. It warns while the helper runs with writes off, a dry run, and on a node with cards and no helper, where servers get no GPU (071). |
+| `proxmox.gpu-cards` | Boxes on their cards | Where the GPU helper reports: every running box with a GPU lists its claimed card in nvidia-smi, as VesnALIA Box checks every 10 minutes, and the helper reports no running guest on another card's lines. It fails naming each box on the wrong card or none (071). |
+| `proxmox.gpu-migration` | Markers on GPU guests | Where the GPU helper, alia-box-gpu, reports: every guest of this install whose device lines name a card carries the marker VesnALIA box gpu mark gives it, the helper answered each, and, in its dry run, it would write no guest (071). It names the guests that fail. |
+| `proxmox.gpu-report` | Host's GPU report | The host's report of each GPU's memory, which the GPU helper, alia-box-gpu, or else alia-box-gpu-memory.timer writes in a VM's notes: there, current, and naming each GPU. |
+| `gpu.<gpu>` | GPU &lt;gpu> | A GPU's free memory, as VesnALIA Box last read it in a GPU desktop, against what a GPU desktop needs. |
 | `gpu.<gpu>.whole` | GPU &lt;gpu> whole | A card a box holds whole has no other holder. It fails, naming the guests, when a claim went wrong (071). |
-| `ssh.key` | SSH key | BB Box's SSH key reads, and, where BB Box made it, its public key to install. |
+| `ssh.key` | SSH key | VesnALIA Box's SSH key reads, and, where VesnALIA Box made it, its public key to install. |
 
 ## Proxmox QEMU
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `proxmox.api` | Proxmox API | The API answers at its URL, with a certificate BB Box trusts, and the token works. |
+| `proxmox.api` | Proxmox API | The API answers at its URL, with a certificate VesnALIA Box trusts, and the token works. |
 | `proxmox.node` | Node | The node exists and is online. |
 | `proxmox.memory` | Node memory | How much of the node's memory is free beyond the reserve. |
 | `proxmox.pool` | Resource pool | The resource pool exists and the token may use it. |
 | `proxmox.bridge` | Network bridge | The bridge exists on the node. |
-| `proxmox.vmids` | VMID range | The VMID range is free of guests BB Box did not make. |
+| `proxmox.vmids` | VMID range | The VMID range is free of guests VesnALIA Box did not make. |
 | `proxmox.sizes` | Room for each kind | The node holds a box of each kind at its default size. |
 | `proxmox.snapshots` | Snapshots | Whether the token may take and restore snapshots, with VM.Snapshot and VM.Snapshot.Rollback on the pool, and what each template's storage restores: any snapshot on LVM-thin, Ceph RBD, BTRFS and qcow2 files, the newest only on ZFS, none on LVM or raw files (070). |
 | `template.<vmid>` | &lt;flavour> template &lt;vmid> | A template is there, is a template, and has what its kind needs. |
-| `template.<vmid>.image` | Image of &lt;flavour> template &lt;vmid> | The template's image record: its age, pins and tools, against this BB Box's. |
+| `template.<vmid>.image` | Image of &lt;flavour> template &lt;vmid> | The template's image record: its age, pins and tools, against this VesnALIA Box's. |
 | `proxmox.android-kvm` | KVM for Android | Where Android templates are listed, the host allows nested virtualization, as the linux-kvm setting says: the Android emulator needs KVM. |
 | `proxmox.android-disk` | Disk for Android | The storage of each Android template has room beyond the reserve for a refresh's build and trial boxes and an Android box in use. |
-| `ssh.key` | SSH key | BB Box's SSH key reads, and, where BB Box made it, its public key to install. |
+| `ssh.key` | SSH key | VesnALIA Box's SSH key reads, and, where VesnALIA Box made it, its public key to install. |
 
 ## Docker
 
@@ -149,34 +149,34 @@ What `bb box doctor`, and each backend's check on the settings page, can report,
 | `docker.snapshot-leftovers` | Snapshot leftovers | Interrupted snapshot tasks and paused boxes waiting for recovery, and Docker volumes a restore's copy left that maintenance could not remove after 3 tries, by name. |
 | `docker.kept-snapshots` | Kept snapshots | What kept snapshots hold on Docker's disk, and until when. Removing the backend is refused while it holds any snapshot. |
 | `docker.snapshot-layers` | Snapshot layers | Box images near Docker's layer limit. A take refuses from 120 layers. |
-| `docker.cli` | docker CLI | The docker CLI runs on BB's server. |
+| `docker.cli` | docker CLI | The docker CLI runs on VesnALIA's server. |
 | `docker.daemon` | Docker daemon | The Docker host answers, runs Linux containers, and its architecture. |
-| `docker.attach` | Attached output | On a Windows machine, a Docker host at tcp://127.0.0.1, or a BB machine whose Docker there is, returns an attached command's output. WSL's localhost forwarder does not: docker run and docker exec print nothing and exit 0. For a BB machine, set machine-docker-host to wsl://&lt;distro>. |
+| `docker.attach` | Attached output | On a Windows machine, a Docker host at tcp://127.0.0.1, or a VesnALIA machine whose Docker there is, returns an attached command's output. WSL's localhost forwarder does not: docker run and docker exec print nothing and exit 0. For a VesnALIA machine, set machine-docker-host to wsl://&lt;distro>. |
 | `docker.ssh` | SSH connection reuse | Over ssh://, whether the docker calls share one SSH connection. |
 | `docker.limits` | CPU and memory limits | Docker can limit a container's CPU and memory, as each box needs. |
 | `docker.cpuset` | Cores a box sees | Docker can pin each box to as many CPUs as it has cores, so nproc in a box says its cores. |
 | `docker.apparmor` | Programs in boxes under the host's AppArmor | A setgid program in a box, as sudo runs, works under the Docker host's AppArmor profiles, which on a host that is itself a container cannot name a box's files. |
 | `docker.lxcfs` | Memory and CPUs a box sees | The host runs LXCFS, so free, /proc/meminfo and /proc/cpuinfo in a box say its own memory and CPUs, and no running box's LXCFS files have broken. |
-| `docker.network` | Network &lt;network> | BB Box's network for its boxes, made by BB Box. |
+| `docker.network` | Network &lt;network> | VesnALIA Box's network for its boxes, made by VesnALIA Box. |
 | `docker.privileged` | Docker in boxes | Whether boxes are privileged, so they can run Docker inside. |
-| `docker.one-backend` | One backend for this daemon | No other backend of this install that is on reaches the same Docker daemon, known by its engine ID, its name and its Docker root together. Where two do, BB Box places GPU boxes there through the one whose ID sorts first, as each would count only its own boxes on the cards; boxes with no GPU are made through either (071). |
-| `docker.gpus` | GPUs | The NVIDIA cards Docker lists as CDI devices, for GPU boxes, as nvidia-smi in a container given them reads them; whether every box can open every card there; another install's GPU boxes on the host; and a box with a whole card that BB Box cannot match to a card it reads, which stops GPU boxes there (071). |
+| `docker.one-backend` | One backend for this daemon | No other backend of this install that is on reaches the same Docker daemon, known by its engine ID, its name and its Docker root together. Where two do, VesnALIA Box places GPU boxes there through the one whose ID sorts first, as each would count only its own boxes on the cards; boxes with no GPU are made through either (071). |
+| `docker.gpus` | GPUs | The NVIDIA cards Docker lists as CDI devices, for GPU boxes, as nvidia-smi in a container given them reads them; whether every box can open every card there; another install's GPU boxes on the host; and a box with a whole card that VesnALIA Box cannot match to a card it reads, which stops GPU boxes there (071). |
 | `docker.capacity` | Room on &lt;host> | Room on the host for a Linux box at its default size. |
 | `docker.sizes` | Room for each kind | The host holds a box of each kind at its default size. |
-| `image.<image>` | Image &lt;image> | An image a kind runs is on the host, built by BB Box's build script, and not too old. |
+| `image.<image>` | Image &lt;image> | An image a kind runs is on the host, built by VesnALIA Box's build script, and not too old. |
 
 ## Hetzner Cloud
 
 | ID | Name | What it checks |
 | --- | --- | --- |
 | `hetzner.api` | Hetzner Cloud API | The API answers and the token reads the project. |
-| `hetzner.reach` | Reaching hosts | How BB Box reaches a host's Docker: over the tailnet, or over the internet from the addresses in SSH from. |
-| `hetzner.unclaimed` | Servers no host claims | Servers with this install's label that are not hosts BB Box knows. The sweep adopts a host's server, as after lost storage, and deletes any other 10 minutes after it was made. |
+| `hetzner.reach` | Reaching hosts | How VesnALIA Box reaches a host's Docker: over the tailnet, or over the internet from the addresses in SSH from. |
+| `hetzner.unclaimed` | Servers no host claims | Servers with this install's label that are not hosts VesnALIA Box knows. The sweep adopts a host's server, as after lost storage, and deletes any other 10 minutes after it was made. |
 | `hetzner.type` | Server type &lt;type> | The hosts' server type is sold at the location, with its size and price. |
 | `hetzner.image` | Host image | The snapshot new hosts start from, with Docker, Tailscale and the box images in it: its age, the snapshots kept and their cost, and the last build. |
 | `hetzner.arm-type` | Server type &lt;type> | The Arm hosts' server type, for linux-arm64 boxes, is an Arm type sold at the location, with its size and price. |
 | `hetzner.arm-image` | Arm host image | The snapshot new Arm hosts start from: its age, the snapshots kept and their cost, and the last build. |
-| `hetzner.hosts` | Hosts | Each host BB Box made: its state, age, boxes and cost this month. |
+| `hetzner.hosts` | Hosts | Each host VesnALIA Box made: its state, age, boxes and cost this month. |
 | `hetzner.spend` | This month's spend | What the hosts cost this month before VAT, against the monthly limit. |
 | `hetzner.host.<host>` | Docker on &lt;host> | A host's Docker, as the Docker backend's checks find it. |
 | `hetzner.snapshots.<host>` | Snapshots on &lt;host> | On a host where a box took snapshots: Docker's snapshot lines for that host, with how full its disk is, and that Keep is off as a release deletes them. |
@@ -185,13 +185,13 @@ What `bb box doctor`, and each backend's check on the settings page, can report,
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `image.<image>` | Image &lt;image> | An image a kind runs is on the host, built by BB Box's build script, and not too old. |
+| `image.<image>` | Image &lt;image> | An image a kind runs is on the host, built by VesnALIA Box's build script, and not too old. |
 | `microsandbox.host` | Host &lt;host> | The host answers, runs Linux on x86_64, and its cores, memory and free disk. |
-| `microsandbox.msb` | msb | BB Box's msb is installed on the host at the release this BB Box pins. |
-| `microsandbox.kvm` | KVM | The host has /dev/kvm, and BB's user may use it. |
-| `microsandbox.snapshots` | Snapshots | The host's msb is the release whose snapshots BB Box's checks measured, so BB Box takes, restores, forks and deletes snapshots there. |
+| `microsandbox.msb` | msb | VesnALIA Box's msb is installed on the host at the release this VesnALIA Box pins. |
+| `microsandbox.kvm` | KVM | The host has /dev/kvm, and VesnALIA's user may use it. |
+| `microsandbox.snapshots` | Snapshots | The host's msb is the release whose snapshots VesnALIA Box's checks measured, so VesnALIA Box takes, restores, forks and deletes snapshots there. |
 | `microsandbox.lxc` | LXC | The host is an LXC container, where msb's snapshots and flat roots fail. |
-| `microsandbox.overcommit` | Memory overcommit | Above 1, whether it applies on the host: a Mac keeps the memory a box has used, so BB Box counts each box there at its full size. |
+| `microsandbox.overcommit` | Memory overcommit | Above 1, whether it applies on the host: a Mac keeps the memory a box has used, so VesnALIA Box counts each box there at its full size. |
 | `microsandbox.capacity` | Room on &lt;host> | Room on the host for a box at its default size. |
 | `microsandbox.sizes` | Room for each kind | The host holds a box of each kind at its default size. |
 
@@ -199,9 +199,9 @@ What `bb box doctor`, and each backend's check on the settings page, can report,
 
 | ID | Name | What it checks |
 | --- | --- | --- |
-| `boat.api` | boat.dev API | boat's API answers to the API key in BB Box's settings, and on which plan. |
+| `boat.api` | boat.dev API | boat's API answers to the API key in VesnALIA Box's settings, and on which plan. |
 | `boat.limits` | Plan limits | What the boat plan allows now: sandboxes at once, starts left in each window, the sizes and their prices, and the trial's compute hours left. |
-| `boat.bb` | Reaching BB | Whether boat's sandboxes can reach BB's server, through the tailnet or a URL on the internet, so boat boxes become BB machines. It warns when BB's URL is on a private network and the tailnet is off. |
+| `boat.alia` | Reaching VesnALIA | Whether boat's sandboxes can reach VesnALIA's server, through the tailnet or a URL on the internet, so boat boxes become VesnALIA machines. It warns when VesnALIA's URL is on a private network and the tailnet is off. |
 | `boat.android` | Android | Whether boat.dev offers Android boxes: the Android SDK's licence accepted in its settings, its Android template and the devices in it, and the largest size the plan allows them. |
 | `boat.templates` | Templates | The stopped template sandbox each kind's boxes fork: when it was built, whether a new one is due, and whether one is being built. |
-| `boat.sandboxes` | Sandboxes | The boat sandboxes BB Box holds for its boxes, each with its state, size, price an hour and age, and any no box claims. |
+| `boat.sandboxes` | Sandboxes | The boat sandboxes VesnALIA Box holds for its boxes, each with its state, size, price an hour and age, and any no box claims. |

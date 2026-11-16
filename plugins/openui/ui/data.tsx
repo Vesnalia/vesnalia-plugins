@@ -1,7 +1,7 @@
 // What components know about the reply they sit in, and the one way they read
 // files: through the server's read_file RPC, scoped to that reply's thread.
 import { createContext, useContext, useEffect, useState } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../server";
 
 export const FenceContext = createContext<{ threadId: string; messageId: string } | null>(null);

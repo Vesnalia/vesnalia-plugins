@@ -1,6 +1,6 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
-type PluginSdk = BbPluginApi["sdk"];
+type PluginSdk = AliaPluginApi["sdk"];
 export type ThreadResponse = Awaited<ReturnType<PluginSdk["threads"]["get"]>>;
 
 export const STALE_MANAGER_MESSAGE =

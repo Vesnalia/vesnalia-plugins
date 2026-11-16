@@ -2,7 +2,7 @@
 //
 // The host's `ThreadChat` renders markdown links with their raw destination,
 // so a message like `[ERD](docs/erd.mmd)` produces
-// `<a href="docs/erd.mmd">`. The browser then resolves that against the bb
+// `<a href="docs/erd.mmd">`. The browser then resolves that against the VesnALIA
 // app's origin and the user lands on an error page. The host's own thread
 // view owns message link routing; a plugin-embedded chat does not, so this
 // module classifies anchor hrefs and reduces them to workspace-root-relative

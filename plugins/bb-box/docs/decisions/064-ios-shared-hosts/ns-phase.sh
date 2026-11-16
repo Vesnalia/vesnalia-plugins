@@ -1,6 +1,6 @@
 #!/bin/sh
 set -u
-tag=${1:?tag}; here=$HOME/bb-box/docs/research/ios-shared-hosts; out=$HOME/exp/runs/$tag; mkdir -p "$out"
+tag=${1:?tag}; here=$HOME/alia-box/docs/research/ios-shared-hosts; out=$HOME/exp/runs/$tag; mkdir -p "$out"
 log() { echo "$(date +%H:%M:%S) $*" | tee -a "$out/summary.txt"; }
 log "phase $tag start"
 if command -v ffmpeg >/dev/null; then

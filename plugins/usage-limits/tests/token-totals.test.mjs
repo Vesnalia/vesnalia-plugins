@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { tokenDelta, sumPeriods, createTokenTotals } from '../lib/token-totals.ts';
 
 test('cumulative reports, duplicates, resets and inherited totals', () => {
@@ -29,7 +29,7 @@ test('persistent incremental collection includes archived/hidden and avoids repl
     type:'thread/tokenUsage/updated', data:{providerThreadId:'p',tokenUsage:{total:{totalTokens:total},last:{totalTokens:index ? 60 : 100}}},
   }));
   let updates=1;
-  const {bb,harness} = createFakePluginHost({pluginId:'token-test',sdk:{threads:{
+  const {alia,harness} = createFakePluginHost({pluginId:'token-test',sdk:{threads:{
     list:async(args) => {
       assert.equal(args.includeHidden,true);
       return args.archived ? [{id:'archived',createdAt:now-2000,updatedAt:updates,status:'idle'}] : [{id:'a',createdAt:now-2000,updatedAt:updates,status:'active'}];
@@ -39,7 +39,7 @@ test('persistent incremental collection includes archived/hidden and avoids repl
     ].filter(e=>e.seq>Number(args.afterSeq))},
   }}});
   try {
-    const get=createTokenTotals(bb);
+    const get=createTokenTotals(alia);
     assert.equal((await get('UTC',true)).month,210);
     assert.equal((await get('UTC',true)).month,210);
     updates++;

@@ -1,6 +1,6 @@
-# bb-plugin-voice-mode
+# alia-plugin-voice-mode
 
-Talk to a bb thread hands-free. When a thread's composer is empty and its
+Talk to a VesnALIA thread hands-free. When a thread's composer is empty and its
 agent is idle, the send button becomes a waveform: click it and you are in a
 full-duplex voice chat.
 The voice model hands real work to the thread's agent, tells you when the
@@ -10,15 +10,15 @@ agent is done, and stops talking the moment you talk over it.
 
 [Watch the full 90-second demo with sound](https://github.com/steveafrost/bb-plugin-voice-mode/releases/download/v0.1.0/voice-mode-demo-public.mp4).
 
-- `server.ts` — the backend. A `bb.http` WebSocket route relays browser audio
+- `server.ts` — the backend. A `alia.http` WebSocket route relays browser audio
   to an [OpenAI Realtime](https://platform.openai.com/docs/guides/realtime)
   session and runs the voice model's tools (`send_to_agent`, `stop_agent`,
-  `get_agent_status`) against the thread with `bb.sdk`. When the agent's turn
+  `get_agent_status`) against the thread with `alia.sdk`. When the agent's turn
   settles, it hands the result back to the voice model to summarize aloud.
 - `app.tsx`, `session.ts`, `audio.ts` — the frontend. A composer action swaps
-  bb's send button for the waveform while the composer is empty and the agent
+  VesnALIA's send button for the waveform while the composer is empty and the agent
   is idle, and shows a
-  pill (live waveform, status, mute, end) in place of bb's mic while a session
+  pill (live waveform, status, mute, end) in place of VesnALIA's mic while a session
   runs. Mic capture is 24 kHz PCM with echo cancellation; playback can be cut
   instantly on barge-in.
 - `skills/voice-mode/SKILL.md` — tells the thread's agent how voice messages
@@ -28,7 +28,7 @@ agent is done, and stops talking the moment you talk over it.
 
 ## Setup
 
-Pick one in **Settings → Plugins → Voice Mode** (or `bb plugin config voice-mode`):
+Pick one in **Settings → Plugins → Voice Mode** (or `alia plugin config voice-mode`):
 
 - **OpenAI API key** — set `openaiApiKey`. Choose `model` (`gpt-realtime-2`
   by default) and `voice`. The key is only ever sent to
@@ -64,11 +64,11 @@ Voice Mode installs with none of these. Both below plug into the
 them. Install one and leave `connection` on `auto`.
 
 **Realtime Gateway** — runs sessions through a Vercel AI Gateway key, so voice
-bills to one gateway account and the bb host never needs an OpenAI key:
+bills to one gateway account and the VesnALIA host never needs an OpenAI key:
 
 ```bash
-bb plugin install 'git:github.com/steveafrost/bb-plugin-realtime-gateway@^0.1.1'
-bb realtime-gateway test   # mint a secret and open one real session
+alia plugin install 'git:github.com/steveafrost/bb-plugin-realtime-gateway@^0.1.1'
+alia realtime-gateway test   # mint a secret and open one real session
 ```
 
 Docs: https://github.com/steveafrost/bb-plugin-realtime-gateway
@@ -78,7 +78,7 @@ Voice Mode the ChatGPT token `codex login` already stores on disk. This is the
 subscription path:
 
 ```bash
-bb plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin codex-realtime --tag-prefix codex-realtime/
+alia plugin install 'git:github.com/gpambrozio/bb-plugins@>=0.1.0' --plugin codex-realtime --tag-prefix codex-realtime/
 ```
 
 Docs: https://github.com/gpambrozio/bb-plugins/tree/main/codex-realtime
@@ -102,7 +102,7 @@ sign-in this way is not something this project has verified. Voice chats
 started this way count against that ChatGPT plan.
 
 To see which path a session used, check the source Voice Mode logs
-(`bb plugin logs voice-mode`). Setting `connection` to `plugin` makes a
+(`alia plugin logs voice-mode`). Setting `connection` to `plugin` makes a
 failing plugin's reason appear on screen instead of falling back to the key.
 
 Without a usable plugin connection or API key, the session fails with setup
@@ -111,7 +111,7 @@ refresh attempt; the same selection rules apply if that refresh fails to
 resolve a connection. Socket failures do not otherwise automatically switch
 providers.
 
-Keys stay on the bb server host; the browser only talks to the plugin's own
+Keys stay on the VesnALIA server host; the browser only talks to the plugin's own
 WebSocket route.
 
 ## Use
@@ -124,7 +124,7 @@ WebSocket route.
 - Talk normally. Ask for anything that needs the codebase and the voice model
   sends it to the agent; ask "is it done?" any time; say "stop" to stop the
   agent. If the agent stops to ask you something (a question or a
-  permission), the voice tells you to answer it in bb.
+  permission), the voice tells you to answer it in VesnALIA.
 - Talk over the voice to interrupt it. The mute button keeps the session open
   without sending your mic; the × ends it.
 - Leave the thread (Settings, another thread) and the conversation keeps
@@ -153,13 +153,13 @@ tell them from typed ones; it's off by default.
 
 ## Limits
 
-- bb has no plugin slot for its send button or mic. Voice Mode finds them by
-  bb's DOM markers (`[data-promptbox-send-menu]`,
+- VesnALIA has no plugin slot for its send button or mic. Voice Mode finds them by
+  VesnALIA's DOM markers (`[data-promptbox-send-menu]`,
   `button[aria-label="Start voice input"]`, `[data-promptbox-submit-group]`).
-  If a bb update changes them, the waveform and pill fall back to the
-  composer's plugin action slot beside bb's own buttons: less Codex-like, but
-  still there. bb's own send and dictation keep working either way.
-- One session at a time per bb server; starting one in another thread ends
+  If a VesnALIA update changes them, the waveform and pill fall back to the
+  composer's plugin action slot beside VesnALIA's own buttons: less Codex-like, but
+  still there. VesnALIA's own send and dictation keep working either way.
+- One session at a time per VesnALIA server; starting one in another thread ends
   the first.
 - A session ends itself after 5 minutes with no speech and no reply playing
   (20 minutes while an agent turn is running), and after 30 minutes in any
@@ -170,5 +170,5 @@ tell them from typed ones; it's off by default.
 ```sh
 npm install
 npm run typecheck && npm test
-bb plugin build && bb plugin install . --yes
+alia plugin build && alia plugin install . --yes
 ```

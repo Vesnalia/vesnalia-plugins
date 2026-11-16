@@ -31,7 +31,7 @@ const GARDENER = {
     "..jjj...",
     "..j.j...",
     "..j.j...",
-    ".bb.bb..",
+    ".alia.alia..",
   ],
   walk2: [
     "..hhh...",
@@ -60,7 +60,7 @@ const GARDENER = {
     "..jjj....",
     "..j.j....",
     "..j.j....",
-    ".bb.bb...",
+    ".alia.alia...",
   ],
   /** Facing you. */
   front: [
@@ -75,7 +75,7 @@ const GARDENER = {
     "..jjjj..",
     "..j..j..",
     "..j..j..",
-    ".bb..bb.",
+    ".alia..alia.",
   ],
   /** Napping on the bench, hat over the eyes. */
   nap: [

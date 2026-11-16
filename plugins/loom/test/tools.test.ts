@@ -1,6 +1,6 @@
 import { FINAL_BOUND, FINAL_STARTED } from "../src/final-review";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
-import { makePluginAgentConfigurationContext } from "@get-bb/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
+import { makePluginAgentConfigurationContext } from "@vesnalia/plugin-sdk/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { specVerdict } from "../src/spec-review";
 import { FINAL_REVIEWER_TOOLS, MACHINE_WORKER_TOOLS, ORDINARY_TOOLS, PLANNER_TOOLS, REVIEWER_TOOLS, SKILLS, SPEC_REVIEWER_TOOLS, WORKER_TOOLS, registerTools } from "../src/tools";
@@ -13,7 +13,7 @@ let host: ReturnType<typeof makeHost>;
 
 beforeEach(() => {
   host = makeHost();
-  registerTools(host.bb, host.projects, host.engine);
+  registerTools(host.alia, host.projects, host.engine);
 });
 
 const text = (result: PluginAgentToolResult) => (typeof result === "string" ? result : result.content.map((part) => (part.type === "text" ? part.text : "")).join("\n"));
@@ -21,7 +21,7 @@ const isError = (result: PluginAgentToolResult) => typeof result !== "string" &&
 
 const propose = (edit?: (doc: Doc) => void, threadId = "thr_plan") => host.harness.callAgentTool("loom_propose", { spec_toml: specToml(edit) }, { threadId, projectId: "proj_1" });
 
-/** bb starts a spec reviewer as thr_spec_<n>; without this stub the fake SDK refuses the spawn and the review fails. */
+/** VesnALIA starts a spec reviewer as thr_spec_<n>; without this stub the fake SDK refuses the spawn and the review fails. */
 const stubSpawn = () => {
   let n = 0;
   host.harness.sdk.stub("threads.spawn", async () => ({ id: `thr_spec_${++n}`, environmentId: `env_spec_${n}` }));
@@ -123,10 +123,10 @@ describe("loom_propose", () => {
     const output = text(result);
     expect(output).toContain("Draft ready: `csv` · spec v1.");
     expect(output).toContain("Spec review: a separate reviewer now checks v1 against the human's request and for work the goal does not need (round 1 of 3). Do not hand over yet");
-    expect(output).not.toContain("bb loom approve csv");
+    expect(output).not.toContain("alia loom approve csv");
     expect(host.harness.sdk.callsTo("threads.spawn")).toHaveLength(1);
 
-    expect(host.store.projectBySlug("csv")).toMatchObject({ state: "draft", host_id: "host_env", bb_project_id: "proj_1", planner_thread_id: "thr_plan", section_id: "sec_1" });
+    expect(host.store.projectBySlug("csv")).toMatchObject({ state: "draft", host_id: "host_env", alia_project_id: "proj_1", planner_thread_id: "thr_plan", section_id: "sec_1" });
     expect(host.harness.sdk.callsTo("threadSections.create")).toEqual([[{ name: "Loom · CSV export (csv)" }]]);
     expect(host.harness.sdk.callsTo("threads.update")).toEqual([[{ threadId: "thr_plan", sectionId: "sec_1" }]]);
     expect(host.harness.sdk.callsTo("threads.updatePluginMetadata")).toEqual([[{ threadId: "thr_plan", set: { project: "csv", role: "planner" }, pluginId: "loom" }]]);
@@ -135,16 +135,16 @@ describe("loom_propose", () => {
   it("hands over once the spec review passed, and says when the reviewer could not start yet", async () => {
     const failed = text(await propose());
     expect(failed).toContain("Spec review: its reviewer for v1 could not start (");
-    expect(failed).not.toContain("bb loom approve csv");
+    expect(failed).not.toContain("alia loom approve csv");
 
     stubSpawn();
     await propose();
     await specVerdict(host.engine.ctx, "thr_spec_1", [], "Fits the request.");
     const passed = text(await propose());
     expect(passed).toContain("Spec review: v1 passed.");
-    expect(passed).toContain("bb loom spec csv");
-    expect(passed).toContain("bb loom approve csv");
-    expect(passed).toContain("bb loom start csv");
+    expect(passed).toContain("alia loom spec csv");
+    expect(passed).toContain("alia loom approve csv");
+    expect(passed).toContain("alia loom start csv");
   });
 
   it("uses the server's primary host when the thread has no environment", async () => {
@@ -201,7 +201,7 @@ describe("loom_propose", () => {
     await host.projects.approve("csv", "human");
     const output = text(await propose((doc) => (doc.budget = { max_tokens: 9_000_000 })));
     expect(output).toContain("Spec review: Loom skipped it, because against v1 v2 changes only operational settings (budget.max_tokens). You may hand over now.");
-    expect(output).toContain("Needs you (human): read it with `bb loom spec csv --version 2`, then apply it with `bb loom approve csv --version 2`.");
+    expect(output).toContain("Needs you (human): read it with `alia loom spec csv --version 2`, then apply it with `alia loom approve csv --version 2`.");
     expect(host.harness.sdk.callsTo("threads.spawn")).toHaveLength(1);
   });
 
@@ -235,8 +235,8 @@ describe("tools of threads on machines of their own", () => {
     const fake = new FakePort();
     fake.addThread("thr_plan", "idle");
     host = makeHost({ port: fake });
-    registerTools(host.bb, host.projects, host.engine);
-    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    registerTools(host.alia, host.projects, host.engine);
+    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, alia: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
     await seedMachineProject(hh);
     const { spawnWorker, specOf } = await import("../src/workers");
     const project = host.store.projectBySlug("csv")!;
@@ -259,8 +259,8 @@ describe("loom_confirm_merge", () => {
     const fake = new FakePort();
     fake.addThread("thr_plan", "idle");
     host = makeHost({ port: fake });
-    registerTools(host.bb, host.projects, host.engine);
-    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    registerTools(host.alia, host.projects, host.engine);
+    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, alia: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
     await seedProject(hh, (doc: Doc) => void (doc.merge = { strategy: "pr", forge }));
     const ticket = host.store.ticketByKey("CSV-1")!;
     host.store.updateTicket(ticket.id, { state: "pr_open", pr_url: "https://github.com/acme/shop/pull/1", pushed_sha: "a".repeat(40) });
@@ -311,8 +311,8 @@ describe("worker and planner tools", () => {
     fake = new FakePort();
     fake.addThread("thr_plan", "idle");
     host = makeHost({ port: fake });
-    registerTools(host.bb, host.projects, host.engine);
-    hh = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    registerTools(host.alia, host.projects, host.engine);
+    hh = { ctx: host.engine.ctx, store: host.store, alia: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
     const project = await seedProject(hh, (doc: Doc) => {
       doc.ticket[1].depends_on = [];
     });
@@ -520,7 +520,7 @@ describe("worker and planner tools", () => {
   });
 
   it("refuses a planner that does not belong to the ticket's project", async () => {
-    await host.projects.propose({ toml: specToml((doc) => ((doc.project.slug = "other"), (doc.project.key = "OTH"))), threadId: "thr_plan2", bbProjectId: "proj_1", hostId: "host_1" });
+    await host.projects.propose({ toml: specToml((doc) => ((doc.project.slug = "other"), (doc.project.key = "OTH"))), threadId: "thr_plan2", aliaProjectId: "proj_1", hostId: "host_1" });
     for (const [name, input] of [
       ["loom_ticket", { key: "CSV-1" }],
       ["loom_requeue", { key: "CSV-1", note: "x" }],
@@ -629,11 +629,11 @@ describe("the board tools on a multi-repo project", () => {
   beforeEach(async () => {
     const fake = new FakePort();
     fake.addThread("thr_plan", "idle");
-    fake.addBbProject("proj_web", { host_1: "/src/web" });
-    fake.addBbProject("proj_api", { host_1: "/src/api" });
+    fake.addAliaProject("proj_web", { host_1: "/src/web" });
+    fake.addAliaProject("proj_api", { host_1: "/src/api" });
     host = makeHost({ port: fake });
-    registerTools(host.bb, host.projects, host.engine);
-    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, bb: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
+    registerTools(host.alia, host.projects, host.engine);
+    const hh: EngineHarness = { ctx: host.engine.ctx, store: host.store, alia: fake, host: host.hostPort, projects: host.projects, clock: new Clock(), kicks: { count: 0 } };
     await seedProject(hh, (doc: Doc) => {
       doc.repo = [
         { name: "web", project: "proj_web" },
@@ -674,7 +674,7 @@ describe("the loom skill", () => {
   it("names every planner, worker and reviewer tool and every human command", () => {
     const skill = readFileSync(new URL("../skills/loom/SKILL.md", import.meta.url), "utf8");
     for (const tool of [...PLANNER_TOOLS, ...WORKER_TOOLS, ...REVIEWER_TOOLS]) expect(skill, tool).toContain(tool);
-    for (const command of ["post", "block", "requeue", "cancel", "approve", "start", "pause", "resume", "archive", "land"]) expect(skill, command).toContain(`bb loom ${command}`);
+    for (const command of ["post", "block", "requeue", "cancel", "approve", "start", "pause", "resume", "archive", "land"]) expect(skill, command).toContain(`alia loom ${command}`);
     for (const heading of ["## Reviewers", "## Merging", "## Landing"]) expect(skill, heading).toContain(heading);
     expect(skill).not.toContain("later release");
     expect(skill).not.toContain("runs no workers");
@@ -684,7 +684,7 @@ describe("the loom skill", () => {
 describe("loom_discover", () => {
   it("reports how this thread's repository is reached, every choice found for a GitHub checkout", async () => {
     const output = text(await host.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" }));
-    expect(output).toContain("This thread's repository (bb project proj_1), checkout /repo");
+    expect(output).toContain("This thread's repository (VesnALIA project proj_1), checkout /repo");
     expect(output).toContain("- Forge for origin: found: gh can open pull requests on github.com.");
     expect(output).not.toContain("ask:");
     expect(host.hostPort.calls.map((call) => [call.hostId, call.method])).toEqual([
@@ -703,16 +703,16 @@ describe("loom_discover", () => {
 
   it("starts with the human's standing planner instructions from Loom's settings, so a planner started anywhere carries them out", async () => {
     host = makeHost({ settings: () => ({ doneHook: "", doneRecord: "summary", plannerInstructions: "Create a Shuttle board for every project.\nAdd each pull request to it." }) });
-    registerTools(host.bb, host.projects, host.engine);
+    registerTools(host.alia, host.projects, host.engine);
     const output = text(await host.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" }));
     expect(output.startsWith("## The human's standing instructions\n")).toBe(true);
-    expect(output).toContain('"""\nCreate a Shuttle board for every project.\nAdd each pull request to it.\n"""\n\nThis thread\'s repository (bb project proj_1)');
+    expect(output).toContain('"""\nCreate a Shuttle board for every project.\nAdd each pull request to it.\n"""\n\nThis thread\'s repository (VesnALIA project proj_1)');
     expect(text(await makeDiscover())).not.toContain("standing instructions");
   });
 });
 
 async function makeDiscover() {
   const plain = makeHost();
-  registerTools(plain.bb, plain.projects, plain.engine);
+  registerTools(plain.alia, plain.projects, plain.engine);
   return plain.harness.callAgentTool("loom_discover", {}, { threadId: "thr_plan", projectId: "proj_1" });
 }

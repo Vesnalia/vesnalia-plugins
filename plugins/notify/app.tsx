@@ -1,16 +1,16 @@
-// Frontend half of @smsunarto/bb-plugin-notify.
+// Frontend half of @smsunarto/alia-plugin-notify.
 //
 // macOS credits a notification to the process that posted it. A scripted
 // notification is therefore always the interpreter's, which is why the
 // osascript path wears the Script Editor icon. Posting from this window makes
-// the notification BB's own: BB's icon, BB's name, and a click that opens the
+// the notification VesnALIA's own: VesnALIA's icon, VesnALIA's name, and a click that opens the
 // thread.
 //
 // A content script is used rather than a slot component because it is the only
 // frontend surface that stays mounted everywhere in the app. It has no React
 // context, so it cannot use the realtime hook — it long-polls the plugin's own
 // HTTP route instead, one held request at a time.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import { isDesktopNotificationHost, notificationTag } from "./format";
 
@@ -18,7 +18,7 @@ const PENDING_URL = "/api/v1/plugins/notify/http/pending";
 const ACK_URL = "/api/v1/plugins/notify/http/ack";
 const OPEN_URL = "/api/v1/plugins/notify/http/open";
 /** Only one window may poll; the rest wait behind this lock. */
-const POLL_LOCK = "bb-plugin-notify:poller";
+const POLL_LOCK = "alia-plugin-notify:poller";
 /** Backoff after a failed poll, so a server restart is not hammered. */
 const RETRY_DELAY_MS = 3_000;
 /**
@@ -67,7 +67,7 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 /**
  * Route to the thread the notification came from.
  *
- * BB's own open action is asked first: it is what `bb thread open` runs, so it
+ * VesnALIA's own open action is asked first: it is what `alia thread open` runs, so it
  * resolves the thread's project, picks the pane, and focuses the window — none
  * of which this script could work out from a thread id. The DOM and URL
  * fallbacks exist only for a request that never reached the server; a thread
@@ -176,10 +176,10 @@ async function poll(signal: AbortSignal): Promise<void> {
 }
 
 async function bridge(signal: AbortSignal): Promise<void> {
-  const desktopBridge = (window as Window & { readonly bbDesktop?: unknown }).bbDesktop;
+  const desktopBridge = (window as Window & { readonly aliaDesktop?: unknown }).aliaDesktop;
   // The same content script also mounts in web browsers. Letting one of those
   // poll races claim the queue attributes the alert to that browser and applies
-  // its notification settings instead of bb's.
+  // its notification settings instead of VesnALIA's.
   if (!isDesktopNotificationHost(desktopBridge)) return;
   if (typeof Notification === "undefined") return;
   if (Notification.permission === "default") {

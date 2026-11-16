@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "./server";
 import { createTabsTestHost, withTabsRpcTypes } from "./test-utils";
 import { createInitialWorkspaces, getWorkspace, workspaceCollectionSchema } from "./lib/workspaces";
@@ -32,7 +32,7 @@ function makeHost() {
 }
 
 function readSaved(host: ReturnType<typeof makeHost>) {
-  const row: unknown = host.bb.storage
+  const row: unknown = host.alia.storage
     .database()
     .prepare("SELECT value FROM tabs_workspace_state WHERE id = 1")
     .get();
@@ -48,7 +48,7 @@ async function list(host: ReturnType<typeof makeHost>, workspaceId: string | nul
 describe("workspace server and real SQLite", () => {
   it("lists unique pins across workspaces without changing memberships or visit history", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("tabs_open", candidate);
     await host.harness.behavior.callRpc("tabs_open", { ...candidate, workspaceId: "home" });
     const foreign = {
@@ -98,7 +98,7 @@ describe("workspace server and real SQLite", () => {
     "prefers a lifecycle event to a delayed %s availability result",
     async (outcome) => {
       const host = makeHost();
-      await plugin(host.bb);
+      await plugin(host.alia);
       await host.harness.behavior.callRpc("tabs_open", candidate);
       await host.harness.behavior.callRpc("tabs_history_visit", candidate);
       let finish!: (thread: ReturnType<typeof makeThreadResponse>) => void;
@@ -143,7 +143,7 @@ describe("workspace server and real SQLite", () => {
 
   it("rechecks lifecycle availability inside the write queue after waiting for another thread", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("tabs_open", candidate);
     await host.harness.behavior.callRpc("tabs_history_visit", candidate);
     await host.harness.behavior.callRpc("tabs_open", { ...candidate, threadId: "slow" });
@@ -207,7 +207,7 @@ describe("workspace server and real SQLite", () => {
       },
     });
     hosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const candidate = { threadId: "race", projectId: "project", title: "Race" };
     const entry = (await host.harness.behavior.callRpc("tabs_open", candidate)).state.entries[0]!;
     await host.harness.behavior.callRpc("tabs_history_visit", candidate);
@@ -235,7 +235,7 @@ describe("workspace server and real SQLite", () => {
 
   it("does not restore an archived chat after a delayed stale availability lookup", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const entry = (await host.harness.behavior.callRpc("tabs_open", candidate)).state.entries[0]!;
     await host.harness.behavior.callRpc("tabs_close", { threadId: entry.threadId });
     let resolve!: (thread: ReturnType<typeof makeThreadResponse>) => void;
@@ -255,7 +255,7 @@ describe("workspace server and real SQLite", () => {
 
   it("restores only the addressed workspace, keeps favorites/order, validates availability and survives write failure", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const original = (await host.harness.behavior.callRpc("tabs_open", candidate)).state
       .entries[0]!;
     await host.harness.behavior.callRpc("tabs_set_favorite", {
@@ -267,7 +267,7 @@ describe("workspace server and real SQLite", () => {
     const home = (await list(host, "home")).state;
     await host.harness.behavior.callRpc("tabs_close", { threadId: candidate.threadId });
     const saved = readSaved(host);
-    host.bb.storage
+    host.alia.storage
       .database()
       .exec(
         "CREATE TRIGGER undo_failure BEFORE UPDATE ON tabs_workspace_state BEGIN SELECT RAISE(ABORT, 'undo write failure'); END",
@@ -280,7 +280,7 @@ describe("workspace server and real SQLite", () => {
       });
     await expect(undo()).rejects.toThrow("undo write failure");
     expect(readSaved(host)).toEqual(saved);
-    host.bb.storage.database().exec("DROP TRIGGER undo_failure");
+    host.alia.storage.database().exec("DROP TRIGGER undo_failure");
     const result = await undo();
     expect(result.status).toBe("restored");
     expect(result.state.entries[0]).toEqual(original);
@@ -305,7 +305,7 @@ describe("workspace server and real SQLite", () => {
 
   it("reports tab memberships (not favorites), reflects queued changes, and preserves unrelated sets on removal", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("tabs_open", candidate);
     const workBefore = (await list(host, "work")).state;
     await host.harness.behavior.callRpc("tabs_set_favorite", {
@@ -381,9 +381,9 @@ describe("workspace server and real SQLite", () => {
       false,
     );
     expect(legacy.entries.map((entry) => entry.pinned)).toEqual([true, false]);
-    await host.bb.storage.kv.set("tabs.state.v1", legacy);
-    await host.bb.storage.kv.set("tabs.closedThreads.v1", ["closed"]);
-    await plugin(host.bb);
+    await host.alia.storage.kv.set("tabs.state.v1", legacy);
+    await host.alia.storage.kv.set("tabs.closedThreads.v1", ["closed"]);
+    await plugin(host.alia);
     const work = await list(host, "work");
     expect(work.state).toEqual(legacy);
     expect(work.workspaces?.map((item) => item.id)).toEqual(["work", "home", "other"]);
@@ -397,13 +397,13 @@ describe("workspace server and real SQLite", () => {
     expect(restored.state.entries.map((entry) => entry.threadId)).toEqual([candidate.threadId]);
     expect((await list(host, "home")).history).toEqual(restored.history);
     expect(restored.history?.entries[0]?.threadId).toBe(candidate.threadId);
-    expect(await host.bb.storage.kv.get("tabs.state.v1")).toEqual(legacy);
-    expect(await host.bb.storage.kv.get("tabs.closedThreads.v1")).toEqual(["closed"]);
+    expect(await host.alia.storage.kv.get("tabs.state.v1")).toEqual(legacy);
+    expect(await host.alia.storage.kv.get("tabs.closedThreads.v1")).toEqual(["closed"]);
   });
 
   it("isolates memberships, order, previews, favorites, closed guards and realtime channels", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     await host.harness.behavior.callRpc("tabs_open", candidate);
     const workBefore = (await list(host, "work")).state;
     const legacySignals = host.harness.inspection.realtimeSignals.filter(
@@ -462,7 +462,7 @@ describe("workspace server and real SQLite", () => {
 
   it("uses stable IDs, validates metadata and rejects queued actions to a deleted mode without legacy fallback", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const created = await host.harness.behavior.callRpc("tabs_workspace_create", {
       name: "  QA  ",
     });
@@ -510,7 +510,7 @@ describe("workspace server and real SQLite", () => {
     "removes unavailable memberships from every mode on %s and never restores them on unarchive",
     async (event) => {
       const host = makeHost();
-      await plugin(host.bb);
+      await plugin(host.alia);
       for (const workspaceId of ["work", "home", "other"]) {
         await host.harness.behavior.callRpc("tabs_open", { ...candidate, workspaceId });
         await host.harness.behavior.callRpc("tabs_set_pinned", {
@@ -583,15 +583,15 @@ describe("workspace server and real SQLite", () => {
       candidate.threadId,
       false,
     );
-    await host.bb.storage.kv.set("tabs.state.v1", legacy);
-    await plugin(host.bb);
-    const db = host.bb.storage.database();
+    await host.alia.storage.kv.set("tabs.state.v1", legacy);
+    await plugin(host.alia);
+    const db = host.alia.storage.database();
     db.exec(
       "CREATE TRIGGER qa_failure BEFORE INSERT ON tabs_workspace_state BEGIN SELECT RAISE(ABORT, 'qa write failure'); END",
     );
     await expect(list(host, "work")).rejects.toThrow("qa write failure");
     expect(db.prepare("SELECT value FROM tabs_workspace_state").all()).toEqual([]);
-    expect(await host.bb.storage.kv.get("tabs.state.v1")).toEqual(legacy);
+    expect(await host.alia.storage.kv.get("tabs.state.v1")).toEqual(legacy);
     db.exec("DROP TRIGGER qa_failure");
     expect((await list(host, "work")).state).toEqual(legacy);
     db.exec(
@@ -623,12 +623,12 @@ describe("workspace server and real SQLite", () => {
     "does not overwrite damaged new storage with old KV: %s",
     async (corrupt) => {
       const host = makeHost();
-      await host.bb.storage.kv.set(
+      await host.alia.storage.kv.set(
         "tabs.state.v1",
         openTabCandidate(createEmptyTabsState(), candidate, 10),
       );
-      await plugin(host.bb);
-      const db = host.bb.storage.database();
+      await plugin(host.alia);
+      const db = host.alia.storage.database();
       db.prepare("INSERT INTO tabs_workspace_state (id, value) VALUES (1, ?)").run(corrupt);
       await expect(list(host, null)).rejects.toThrow("storage is damaged");
       await expect(
@@ -642,7 +642,7 @@ describe("workspace server and real SQLite", () => {
 
   it("does not deduplicate identical activity/list requests across workspace IDs", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     await Promise.all(
       ["work", "home"].map((workspaceId) =>
         host.harness.behavior.callRpc("tabs_sync_activity", { workspaceId, threads: [candidate] }),
@@ -677,7 +677,7 @@ describe("workspace server and real SQLite", () => {
       },
     });
     hosts.push(host);
-    await plugin(host.bb);
+    await plugin(host.alia);
     const initial = createInitialWorkspaces(undefined, undefined);
     const entry = { ...candidate, openedAt: 1, pinned: true };
     const collection = {
@@ -698,7 +698,7 @@ describe("workspace server and real SQLite", () => {
               : workspace.state,
       })),
     };
-    host.bb.storage
+    host.alia.storage
       .database()
       .prepare("INSERT INTO tabs_workspace_state (id, value) VALUES (1, ?)")
       .run(JSON.stringify(workspaceCollectionSchema.parse(collection)));
@@ -721,7 +721,7 @@ describe("workspace server and real SQLite", () => {
 
   it("stores the full 20 × (100 tabs + 100 favorites) collection beyond the KV limit and deduplicates lookups across modes", async () => {
     const host = makeHost();
-    await plugin(host.bb);
+    await plugin(host.alia);
     const initial = createInitialWorkspaces(undefined, undefined);
     const entries: TabEntry[] = Array.from({ length: 100 }, (_, index) => ({
       ...candidate,
@@ -741,7 +741,7 @@ describe("workspace server and real SQLite", () => {
     });
     const json = JSON.stringify(collection);
     expect(Buffer.byteLength(json)).toBeGreaterThan(256 * 1024);
-    host.bb.storage
+    host.alia.storage
       .database()
       .prepare("INSERT INTO tabs_workspace_state (id, value) VALUES (1, ?)")
       .run(json);

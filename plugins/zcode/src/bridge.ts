@@ -24,7 +24,7 @@ import {
   type BridgeExecutionOptions,
   type PromptInput,
   type ThreadDelta,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 import {
   ZCodeClient,
   ProtocolError,
@@ -58,7 +58,7 @@ import type { Subagents } from "./subagents.js";
 import {
   createToolServer,
   type ToolServer,
-  type BbTool,
+  type AliaTool,
   type ToolResult,
 } from "./tool-server.js";
 
@@ -84,7 +84,7 @@ import {
 
 type Message = Record<string, unknown>;
 
-/** Native host-service ports that bb's provider bridge cannot serve. */
+/** Native host-service ports that VesnALIA's provider bridge cannot serve. */
 function hostServiceUnavailable(method: string): string | undefined {
   if (
     method === "interaction/browserList" ||
@@ -114,7 +114,7 @@ type Session = {
   snapshot: Snapshot;
   usage: Usage;
   activeTurnId?: string;
-  /** Last accepted bb selection; budgets also apply to native-origin turns. */
+  /** Last accepted VesnALIA selection; budgets also apply to native-origin turns. */
   contextModel?: { providerId: string; modelId: string };
   history: History;
   background: BackgroundWork;
@@ -444,7 +444,7 @@ export function createBridge(
   let closed = false;
   // Scheduled tasks: one service and scheduler per bridge worker. The store
   // is shared by every thread's session; the scheduler only runs while this
-  // worker (and therefore bb) is alive.
+  // worker (and therefore VesnALIA) is alive.
   let automations: AutomationService | undefined;
   let automationTimer: ReturnType<typeof setInterval> | undefined;
   const dispatching = new Set<string>();
@@ -481,7 +481,7 @@ export function createBridge(
           content: [
             {
               type: "text",
-              text: "ZCode session or turn ended before the bb tool returned.",
+              text: "ZCode session or turn ended before the VesnALIA tool returned.",
             },
           ],
           isError: true,
@@ -491,19 +491,19 @@ export function createBridge(
 
   async function callTool(
     session: Session | undefined,
-    tool: BbTool,
+    tool: AliaTool,
     args: Record<string, unknown>,
   ): Promise<ToolResult> {
     if (!session || session.stopping || !session.timeline)
       return {
         content: [
-          { type: "text", text: "No active bb turn for this tool call." },
+          { type: "text", text: "No active VesnALIA turn for this tool call." },
         ],
         isError: true,
       };
     const id = `zcode-tool-${randomUUID()}`;
     const key = { providerItemId: id };
-    const item = { type: "tool" as const, tool: tool.name, server: "bb", args };
+    const item = { type: "tool" as const, tool: tool.name, server: "alia", args };
     const presentation = tool.presentation ?? toolPresentation(tool.name);
     emit(session, [{ kind: "item.open", key, item, presentation }]);
     const response = await new Promise<ToolResult>((resolve) => {
@@ -511,7 +511,7 @@ export function createBridge(
         const pending = toolCalls.get(id);
         toolCalls.delete(id);
         pending?.resolve({
-          content: [{ type: "text", text: "bb tool call timed out." }],
+          content: [{ type: "text", text: "alia tool call timed out." }],
           isError: true,
         });
       }, 10 * 60_000);
@@ -526,7 +526,7 @@ export function createBridge(
                 ...item,
                 result: response,
                 ...(response.isError
-                  ? { error: "bb tool reported failure." }
+                  ? { error: "alia tool reported failure." }
                   : {}),
               },
               status: response.isError ? "failed" : "completed",
@@ -556,7 +556,7 @@ export function createBridge(
         const pending = toolCalls.get(id);
         toolCalls.delete(id);
         pending?.resolve({
-          content: [{ type: "text", text: "Cannot forward the bb tool call." }],
+          content: [{ type: "text", text: "Cannot forward the VesnALIA tool call." }],
           isError: true,
         });
       }
@@ -662,7 +662,7 @@ export function createBridge(
         .catch(() => undefined);
       // The dispatcher owns sessions it constructed headlessly; release the
       // child unless the user interleaved a queued prompt. A queued turn
-      // keeps the session alive for bb's normal idle lifecycle to release.
+      // keeps the session alive for VesnALIA's normal idle lifecycle to release.
       // A run that launched native background work keeps its child alive
       // until that work settles; killing it here would orphan the work.
       if (
@@ -914,7 +914,7 @@ export function createBridge(
         return session.account.authorize(raw, session.providerThreadId);
       return {
         headersApplied: false,
-        errorMessage: "No active bb session for ZCode account authentication.",
+        errorMessage: "No active VesnALIA session for ZCode account authentication.",
       };
     }
     if (AUTOMATION_METHODS.has(method)) {
@@ -943,18 +943,18 @@ export function createBridge(
         providerOptions: session?.providerOptions,
       });
     }
-    // These native ports need a host service bb's provider bridge does not
+    // These native ports need a host service VesnALIA's provider bridge does not
     // expose (verified against SDK 0.6.49: BRIDGE_REQUEST_METHODS has no
     // host-service channel). Reject uniformly with an actionable reason
     // instead of a generic capability error or a session mismatch.
     const hostService = hostServiceUnavailable(method);
     if (hostService)
       throw new ProtocolError(
-        `${hostService} is not available through bb's provider bridge. Use ZCode Desktop for this feature.`,
+        `${hostService} is not available through VesnALIA's provider bridge. Use ZCode Desktop for this feature.`,
         -32601,
       );
     if (!session || session.stopping)
-      throw new ProtocolError("No active bb session for this request.", -32601);
+      throw new ProtocolError("No active VesnALIA session for this request.", -32601);
     const p = record(raw);
     if (p.sessionId !== session.providerThreadId)
       throw new ProtocolError("ZCode session mismatch.", -32602);
@@ -1339,7 +1339,7 @@ export function createBridge(
         failure instanceof Error ? failure.message : String(failure);
       if (owned && session)
         await release(session, true, false).catch(() => undefined);
-      // A turn that raced the dispatch (or a bb resume that won the thread)
+      // A turn that raced the dispatch (or a VesnALIA resume that won the thread)
       // defers instead of burning one of the three failure strikes.
       if (/ZCode is busy|already has a ZCode session/.test(message)) {
         automations.deferRun(id, new Date());
@@ -1392,7 +1392,7 @@ export function createBridge(
         ? existing.providerThreadId !== task.boundSessionId
         : lastKnown !== undefined && lastKnown !== task.boundSessionId
     ) {
-      // The bb thread was forked/rebound away from the task's session:
+      // The VesnALIA thread was forked/rebound away from the task's session:
       // sending would run the task's prompt inside the replacement session.
       await offpeak
         .completeRun(
@@ -1472,7 +1472,7 @@ export function createBridge(
       return;
     }
     const shared = {
-      // bb policy vocabulary has no "plan" permissionMode; plan goes through
+      // VesnALIA policy vocabulary has no "plan" permissionMode; plan goes through
       // promptMode like everywhere else in this bridge.
       ...(task.permissionMode === "plan"
         ? { promptMode: "plan" as const }
@@ -1634,13 +1634,13 @@ export function createBridge(
       });
       account = config.accountFactory?.(launch) ?? new CodingPlanHost(launch);
       const settings = runtimeSettings(params.options.providerOptions);
-      if (settings.mcpServers.some((s) => s.name === "bb-bridge"))
+      if (settings.mcpServers.some((s) => s.name === "alia-bridge"))
         throw new ProtocolError(
-          "MCP server name bb-bridge is reserved for bb tools.",
+          "MCP server name alia-bridge is reserved for VesnALIA tools.",
           -32602,
         );
       toolServer = await createToolServer(
-        settings.bbToolsEnabled ? (params.dynamicTools ?? []) : [],
+        settings.aliaToolsEnabled ? (params.dynamicTools ?? []) : [],
         params.disallowedTools ?? [],
         (tool, args) => callTool(session, tool, args),
       );
@@ -1829,14 +1829,14 @@ export function createBridge(
         { kind: "session.reset" },
         {
           kind: "extension.state",
-          extensionKind: "bb/provider-commands",
+          extensionKind: "alia/provider-commands",
           payload: { commands: managementCommands },
         },
       ]);
       session.background.update(snapshot.projection);
       // Size the context meter from model metadata before the first turn:
       // the native projection still carries its pre-bind default window.
-      // bb's selected model (budget variants included) wins over the native
+      // VesnALIA's selected model (budget variants included) wins over the native
       // current model when reporting the window.
       emit(
         session,
@@ -1906,7 +1906,7 @@ export function createBridge(
           (options.permissionMode !== "full" || options.promptMode === "plan")
         )
           throw new ProtocolError(
-            "File rewind requires bb Full Access outside plan mode.",
+            "File rewind requires VesnALIA Full Access outside plan mode.",
             -32000,
           );
         if (command[1] === "zcode-file-rewind")
@@ -1988,7 +1988,7 @@ export function createBridge(
         options.model,
         options.reasoningLevel,
       );
-      // Keep the last accepted bb selection across native background turns.
+      // Keep the last accepted VesnALIA selection across native background turns.
       // Only modelSelection crosses the native boundary, with its real ID.
       const rawSelection =
         selectedModel(options.model) ?? session.snapshot.settings.model.current;
@@ -2008,7 +2008,7 @@ export function createBridge(
                   content:
                     (session.skills ?? "") +
                     (session.instructions
-                      ? `<bb_instructions>\n${session.instructions}\n</bb_instructions>\n\n${prompt}`
+                      ? `<alia_instructions>\n${session.instructions}\n</alia_instructions>\n\n${prompt}`
                       : prompt),
                   ...(material.attachments
                     ? { attachments: material.attachments }
@@ -2094,7 +2094,7 @@ export function createBridge(
       return live.history.fork(params.sourceProviderCheckpointId);
     }
     // Cold sources need a temporary supervised process; the child is resumed
-    // separately with its own bb tools, credentials broker and native stream.
+    // separately with its own VesnALIA tools, credentials broker and native stream.
     const launch = resolveLaunch(params.options.providerOptions, {
       ...(config.env ?? process.env),
       ...params.options.envVars,
@@ -2272,7 +2272,7 @@ export function createBridge(
             models: available.length
               ? available.flatMap((model) => {
                   const key = `${model.ref.providerId}/${model.ref.modelId}`;
-                  // bb's model entries cannot carry a numeric context
+                  // VesnALIA's model entries cannot carry a numeric context
                   // window; advertise GLM-5.3's 1M tokens in the description.
                   const window = model.contextWindow;
                   const budget = window
@@ -2294,7 +2294,7 @@ export function createBridge(
                     "none";
                   // Models with a larger native window also get plugin-side
                   // budget variants (e.g. GLM-5.3 (256K)) that run the base
-                  // model but cap the window reported to bb. The native
+                  // model but cap the window reported to VesnALIA. The native
                   // registry has no separate ids for smaller windows.
                   const variants = budgetVariants
                     .filter(
@@ -2308,7 +2308,7 @@ export function createBridge(
                       model: `${variant.ref.providerId}/${variant.ref.modelId}`,
                       displayName: `${model.label} (${formatContextWindow(variant.window)})`,
                       isDefault: false,
-                      description: `${formatContextWindow(variant.window)} token context budget: caps the window reported to bb, while the model keeps its ${formatContextWindow(window!)} native window.`,
+                      description: `${formatContextWindow(variant.window)} token context budget: caps the window reported to VesnALIA, while the model keeps its ${formatContextWindow(window!)} native window.`,
                       supportedReasoningEfforts: efforts,
                       defaultReasoningEffort: defaultEffort,
                     }));
@@ -2403,7 +2403,7 @@ export function createBridge(
       method === "thread/unarchive" ||
       method === "thread/name/set"
     ) {
-      // bb owns thread labels and archive state; native title generation stays
+      // VesnALIA owns thread labels and archive state; native title generation stays
       // off, so nothing native is mirrored or overwritten here.
       result(id, {});
       return;
@@ -2455,8 +2455,8 @@ export function createBridge(
       let nativeId: string;
       try {
         nativeId = await forkNative(params);
-        // bb's edit-message commit forks the prepared native tip into the
-        // original bb thread. Replace only its idle runtime; keep old history.
+        // VesnALIA's edit-message commit forks the prepared native tip into the
+        // original VesnALIA thread. Replace only its idle runtime; keep old history.
         if (previous) await release(previous, false, false);
       } catch (failure) {
         if (previous && !previous.stopping) {
@@ -2495,9 +2495,9 @@ export function createBridge(
               "Cannot replace an active ZCode session; stop it first.",
               -32000,
             );
-          // bb commits a prepared rewind by rebinding the original bb thread
+          // VesnALIA commits a prepared rewind by rebinding the original VesnALIA thread
           // to the fork ID. Rebuild its process/tool endpoint without ending
-          // that bb session or mutating the original persisted conversation.
+          // that VesnALIA session or mutating the original persisted conversation.
           await release(previous, false, false);
         }
       }
@@ -2566,7 +2566,7 @@ export function createBridge(
       result(id, {});
     } else if (method === "turn/steer") {
       const steer = parsed.data as z.infer<typeof turnSteerParamsSchema>;
-      // bb validates expectedTurnId before dispatch. This bridge uses assembler-
+      // VesnALIA validates expectedTurnId before dispatch. This bridge uses assembler-
       // owned turn IDs, so only the no-active-turn race can be checked here.
       if (!session.timeline && !session.starting) {
         const message = "The turn targeted by this follow-up has ended.";
@@ -2604,7 +2604,7 @@ export function createBridge(
         const decoded = frame.error
           ? {
               contentBlocks: [
-                { type: "text" as const, text: "bb tool call failed." },
+                { type: "text" as const, text: "alia tool call failed." },
               ],
               isError: true,
             }

@@ -1,5 +1,5 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
-import type { PluginEnvironmentProviderDefinition } from "@get-bb/plugin-sdk/environment-provider";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
+import type { PluginEnvironmentProviderDefinition } from "@vesnalia/plugin-sdk/environment-provider";
 import { describe, expect, it, vi } from "vitest";
 import cowCopyPlugin from "./server.js";
 
@@ -9,7 +9,7 @@ async function load(callImpl: (method: string, input: unknown) => unknown) {
   const registered: Definition[] = [];
   let signalHandler: ((event: { hostId: string; payload: unknown }) => void) | undefined;
   const call = vi.fn(async (method: string, input: unknown) => callImpl(method, input));
-  const bb = {
+  const alia = {
     cli: { register: vi.fn() },
     sdk: { hosts: { list: async () => [{ id: "host_1", name: "box" }] } },
     hosts: {
@@ -26,8 +26,8 @@ async function load(callImpl: (method: string, input: unknown) => unknown) {
       register: (definition: Definition) => registered.push(definition),
       recheck: async () => {},
     },
-  } as unknown as BbPluginApi;
-  await cowCopyPlugin(bb);
+  } as unknown as AliaPluginApi;
+  await cowCopyPlugin(alia);
   const definition = registered[0];
   if (definition === undefined) throw new Error("provider not registered");
   return { definition, call, emit: (payload: unknown) => signalHandler?.({ hostId: "h", payload }) };
@@ -40,7 +40,7 @@ const baseCreateContext = {
   gitRemote: null,
   inputs: null,
   thread: { id: "thr" },
-  suggestedBranchName: "bb/suggested",
+  suggestedBranchName: "alia/suggested",
   attempt: 1,
   pathKey: "pk",
   rebuild: false,
@@ -82,7 +82,7 @@ describe("cow copy provider", () => {
     expect(result).toEqual({ status: "created", path: "/data/copies/pk/repo", ownsPath: true, mergeBaseBranch: "main" });
     expect(call).toHaveBeenCalledWith(
       "create",
-      expect.objectContaining({ sourcePath: "/src/repo", pathKey: "pk", branchName: "bb/suggested", branchMode: "reset" }),
+      expect.objectContaining({ sourcePath: "/src/repo", pathKey: "pk", branchName: "alia/suggested", branchMode: "reset" }),
       expect.objectContaining({ hostId: "host_1" }),
     );
     expect(report.step).toHaveBeenCalledWith("Copying");
@@ -93,11 +93,11 @@ describe("cow copy provider", () => {
     const result = await definition.create({
       ...baseCreateContext,
       rebuild: true,
-      previous: { environment: { branchName: "bb/old" }, resource: null },
+      previous: { environment: { branchName: "alia/old" }, resource: null },
       report: { step() {}, log() {} },
     } as never);
     expect(result).toEqual({ status: "created", path: "/p", ownsPath: true });
-    expect(call).toHaveBeenCalledWith("create", expect.objectContaining({ branchName: "bb/old", branchMode: "reuse-existing" }), expect.anything());
+    expect(call).toHaveBeenCalledWith("create", expect.objectContaining({ branchName: "alia/old", branchMode: "reuse-existing" }), expect.anything());
   });
 
   it("treats host failures as terminal and transport errors as transient", async () => {

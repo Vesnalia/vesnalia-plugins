@@ -1,8 +1,8 @@
 /*
  * The Animations setting, off (ui/components/motion.ts): no CSS transition or
- * animation plays under an element marked with it. BB appends this file to
+ * animation plays under an element marked with it. ALIA appends this file to
  * the compiled utilities without scoping it, so every rule needs the
- * attribute. !important also beats inline transitions (BB's drawer).
+ * attribute. !important also beats inline transitions (ALIA's drawer).
  */
 [data-genui-motion="off"],
 [data-genui-motion="off"] *,

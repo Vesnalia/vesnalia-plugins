@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PluginBbSdk } from "@get-bb/plugin-sdk";
+import type { PluginAliaSdk } from "@vesnalia/plugin-sdk";
 import type { CollectDeps, Environment, HostCall, RepoPlan } from "../src/collect";
 import type { GitFile, HostOutput, RepoRef } from "../src/contract";
 import { createRepoCache } from "../src/repo-cache";
@@ -34,7 +34,7 @@ function setup(options: { status?: (root: string) => unknown | Promise<unknown>;
     }
     return options.host ?? { outcome: "available", branch: "feature/old", base: "origin/main", aheadCount: 0, behindCount: 0, commits: [], files: [], truncated: false };
   });
-  const deps: CollectDeps = { sdk: {} as PluginBbSdk, host: host as unknown as HostCall, edits: {} as CollectDeps["edits"] };
+  const deps: CollectDeps = { sdk: {} as PluginAliaSdk, host: host as unknown as HostCall, edits: {} as CollectDeps["edits"] };
   const statusCalls = () => host.mock.calls.filter(([method]) => method === "checkoutStatus");
   return { deps, host, statusCalls };
 }

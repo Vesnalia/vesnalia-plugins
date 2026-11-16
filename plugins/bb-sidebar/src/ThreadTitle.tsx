@@ -1,4 +1,4 @@
-import { ThreadTitle as BbThreadTitle } from "@get-bb/plugin-sdk/app";
+import { ThreadTitle as AliaThreadTitle } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "./components/Icon";
 import { cn } from "./lib/utils";
 import { useTitleGenerating } from "./title-generation-state";
@@ -11,12 +11,12 @@ export function ThreadTitle({
 }: {
   threadId: string;
   title: string;
-  /** Draw bb's mention chips; `title` is the same text resolved to names. */
+  /** Draw VesnALIA's mention chips; `title` is the same text resolved to names. */
   mentions?: boolean;
   className?: string;
 }) {
   const generating = useTitleGenerating(threadId);
-  const text = mentions ? <BbThreadTitle threadId={threadId} /> : title;
+  const text = mentions ? <AliaThreadTitle threadId={threadId} /> : title;
   if (!generating) return <span className={className}>{text}</span>;
   return (
     <span className={cn("inline-flex min-w-0 max-w-full items-center gap-1.5", className)}>

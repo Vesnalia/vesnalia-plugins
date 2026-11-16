@@ -1,4 +1,4 @@
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import { Dashboard } from "@/components/tokenmaxx/dashboard";
 import { SidebarAccessory } from "@/components/tokenmaxx/sidebar-accessory";
 

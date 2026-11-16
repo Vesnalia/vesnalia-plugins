@@ -1,8 +1,8 @@
-// Core of bb-plugin-team: workspace and team resolution, config reading,
+// Core of alia-plugin-team: workspace and team resolution, config reading,
 // thread scanning (roles + helpers), environments, prompts, providers.
 // SDK-dependent helpers live here so server.ts stays the plugin wiring.
 
-import { PluginCliError, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { PluginCliError, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { load as loadYaml } from "js-yaml";
 import { z } from "zod";
 import { executionPolicySchema } from "./execution-policy";
@@ -22,7 +22,7 @@ import {
 
 /* ──────────────────────── Types ──────────────────────── */
 
-type Sdk = BbPluginApi["sdk"];
+type Sdk = AliaPluginApi["sdk"];
 export type SpawnEnvironment = NonNullable<Parameters<Sdk["threads"]["spawn"]>[0]>["environment"];
 export type ThreadDto = Awaited<ReturnType<Sdk["threads"]["list"]>>[number];
 
@@ -113,12 +113,12 @@ export function zodIssues(error: z.ZodError): string {
 }
 
 export async function readFileOrNull(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   workspace: Workspace,
   rel: string,
 ): Promise<string | null> {
   try {
-    const file = await bb.sdk.files.read({
+    const file = await alia.sdk.files.read({
       hostId: workspace.hostId,
       path: joinPath(workspace.path, rel),
       rootPath: workspace.path,
@@ -130,14 +130,14 @@ export async function readFileOrNull(
 }
 
 export async function writeWorkspaceFile(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   workspace: Workspace,
   rel: string,
   content: string,
 ): Promise<void> {
   const abs = joinPath(workspace.path, rel);
   requireInsideWorkspace(workspace.path, abs);
-  await bb.sdk.files.write({
+  await alia.sdk.files.write({
     hostId: workspace.hostId,
     path: abs,
     rootPath: workspace.path,
@@ -172,13 +172,13 @@ export function findSourceByPath(
 }
 
 export async function resolveWorkspace(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectArg: string | undefined,
   ctxProjectId: string | undefined,
   t: Strings,
   ctx: { cwd?: string; threadId?: string },
 ): Promise<Workspace> {
-  const projects = await bb.sdk.projects.list({ includePersonal: true });
+  const projects = await alia.sdk.projects.list({ includePersonal: true });
   const explicit = projectArg ?? ctxProjectId;
   if (explicit) {
     const found = projects.find((p) => p.id === explicit || p.name === explicit);
@@ -209,7 +209,7 @@ export async function resolveWorkspace(
       hint: t.projectNotResolved.hint,
     });
   }
-  const hostId = await invokerHost(bb, ctx);
+  const hostId = await invokerHost(alia, ctx);
   const candidates: ProjectSourceCandidate[] = projects.flatMap((project) =>
     project.sources.map((source) => ({
       projectId: project.id,
@@ -233,14 +233,14 @@ export async function resolveWorkspace(
 
 /** The machine a CLI invocation runs on: the thread's host, else the server. */
 export async function invokerHost(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   ctx: { threadId?: string },
 ): Promise<string | null> {
   if (ctx.threadId) {
     try {
-      const thread = await bb.sdk.threads.get({ threadId: ctx.threadId });
+      const thread = await alia.sdk.threads.get({ threadId: ctx.threadId });
       if (thread.environmentId) {
-        const environment = await bb.sdk.environments.get({
+        const environment = await alia.sdk.environments.get({
           environmentId: thread.environmentId,
         });
         return environment.hostId;
@@ -250,7 +250,7 @@ export async function invokerHost(
     }
   }
   try {
-    return (await bb.sdk.system.config()).primaryHostId;
+    return (await alia.sdk.system.config()).primaryHostId;
   } catch {
     return null;
   }
@@ -271,7 +271,7 @@ export interface LoadedConfig {
   config: TeamConfig;
   /** Workspace-relative config path. */
   source: string;
-  /** The v0.1 single-team file (.bb/team.yaml), read as team "main". */
+  /** The v0.1 single-team file (.vesnalia/team.yaml), read as team "main". */
   legacy: boolean;
 }
 
@@ -306,13 +306,13 @@ export function parseTeamConfig(content: string, source: string, t: Strings): Te
 }
 
 export async function readTeamConfig(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   workspace: Workspace,
   team: string,
   t: Strings,
 ): Promise<LoadedConfig> {
   for (const candidate of configCandidates(team)) {
-    const content = await readFileOrNull(bb, workspace, candidate.rel);
+    const content = await readFileOrNull(alia, workspace, candidate.rel);
     if (content === null) continue;
     return {
       config: parseTeamConfig(content, candidate.rel, t),
@@ -326,12 +326,12 @@ export async function readTeamConfig(
 
 /** Team names that have a config file in the project. */
 export async function listConfiguredTeams(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   workspace: Workspace,
 ): Promise<string[]> {
   const names = new Set<string>();
   try {
-    const listing = await bb.sdk.files.list({
+    const listing = await alia.sdk.files.list({
       hostId: workspace.hostId,
       path: joinPath(workspace.path, TEAMS_DIR),
       includeHidden: false,
@@ -342,11 +342,11 @@ export async function listConfiguredTeams(
       if (match) names.add(match[1]!);
     }
   } catch {
-    // no .bb/teams directory
+    // no .vesnalia/teams directory
   }
   if (!names.has(DEFAULT_TEAM)) {
     for (const rel of [CONFIG_PATH, LEGACY_CONFIG_JSON]) {
-      if ((await readFileOrNull(bb, workspace, rel)) !== null) {
+      if ((await readFileOrNull(alia, workspace, rel)) !== null) {
         names.add(DEFAULT_TEAM);
         break;
       }
@@ -411,7 +411,7 @@ export function parseEnvironmentSpec(spec: string, t: Strings): EnvironmentSpec 
 }
 
 export async function resolveEnvironment(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   workspace: Workspace,
   spec: string,
   t: Strings,
@@ -421,7 +421,7 @@ export async function resolveEnvironment(
     case "default":
       return { type: "project-default" };
     case "checkout": {
-      const envs = await bb.sdk.environments.list({
+      const envs = await alia.sdk.environments.list({
         projectId: workspace.projectId,
         environmentProviderId: "project-checkout",
       });
@@ -439,7 +439,7 @@ export async function resolveEnvironment(
         workspace: { type: "managed-worktree", baseBranch: { kind: "default" } },
       };
     case "env": {
-      const envs = await bb.sdk.environments.list({ projectId: workspace.projectId });
+      const envs = await alia.sdk.environments.list({ projectId: workspace.projectId });
       if (!envs.some((e) => e.id === parsed.id)) {
         const err = t.environmentNotFound(parsed.id, workspace.projectId);
         throw new PluginCliError(err.message, { code: "environment_not_found", hint: err.hint });
@@ -521,7 +521,7 @@ function hasExecutorReviewPolicy(text: string, lang: Language): boolean {
  * prompt files and inline prompts are preserved verbatim; the policy is added
  * in memory at the single point used by both spawn and replace. */
 export async function loadRolePrompt(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   workspace: Workspace,
   role: Role,
   lead: boolean,
@@ -535,7 +535,7 @@ export async function loadRolePrompt(
     const abs = joinPath(workspace.path, role.promptFile);
     requireInsideWorkspace(workspace.path, abs);
     try {
-      const file = await bb.sdk.files.read({
+      const file = await alia.sdk.files.read({
         hostId: workspace.hostId,
         path: abs,
         rootPath: workspace.path,
@@ -569,12 +569,12 @@ const THREAD_SCAN_MAX = 5000;
 
 /** Every live (not archived) thread of a project, paged past the 200 limit. */
 export async function listProjectThreads(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   projectId: string,
 ): Promise<ThreadDto[]> {
   const all: ThreadDto[] = [];
   for (let offset = 0; offset < THREAD_SCAN_MAX; offset += THREAD_PAGE) {
-    const page = await bb.sdk.threads.list({
+    const page = await alia.sdk.threads.list({
       projectId,
       includeHidden: true,
       limit: THREAD_PAGE,
@@ -623,15 +623,15 @@ export function readTeamMark(
  * Every team thread of a project. Role threads carry `teamRole`; any thread
  * nested under a team thread is a helper of that role (marked or not).
  */
-export async function scanTeamThreads(bb: BbPluginApi, projectId: string): Promise<ThreadScan> {
-  const active = await listProjectThreads(bb, projectId);
+export async function scanTeamThreads(alia: AliaPluginApi, projectId: string): Promise<ThreadScan> {
+  const active = await listProjectThreads(alia, projectId);
   const byId = new Map(active.map((thread) => [thread.id, thread]));
   const marks = new Map<string, { team: string; role: string; helper: boolean }>();
   const retired = new Set<string>();
   for (let index = 0; index < active.length; index += THREAD_PAGE) {
     const batch = active.slice(index, index + THREAD_PAGE);
     if (batch.length === 0) break;
-    const meta = await bb.sdk.threads.experimental_listPluginMetadata({
+    const meta = await alia.sdk.threads.experimental_listPluginMetadata({
       threadIds: batch.map((thread) => thread.id),
     });
     for (const entry of meta.threads) {
@@ -643,7 +643,7 @@ export async function scanTeamThreads(bb: BbPluginApi, projectId: string): Promi
   // A replacement has one durable destination even during partial metadata updates.
   for (const [id, mark] of marks) {
     if (mark.helper) continue;
-    const canonical = await bb.storage.kv.get<string>(`active-session:${projectId}:${mark.team}:${mark.role}`);
+    const canonical = await alia.storage.kv.get<string>(`active-session:${projectId}:${mark.team}:${mark.role}`);
     if (canonical && canonical !== id) { marks.delete(id); retired.add(id); }
   }
   // Unmarked nested threads inherit the nearest team ancestor's role as helpers.
@@ -728,12 +728,12 @@ export interface ProviderState {
   disabled: string[];
 }
 
-export async function providerState(bb: BbPluginApi): Promise<ProviderState> {
-  const providers = await bb.sdk.providers.list();
+export async function providerState(alia: AliaPluginApi): Promise<ProviderState> {
+  const providers = await alia.sdk.providers.list();
   const enabled = providers.map((p) => p.id);
   let disabled: string[] = [];
   try {
-    const catalog = await bb.sdk.providers.catalog();
+    const catalog = await alia.sdk.providers.catalog();
     disabled = catalog
       .filter((entry) => entry.enabled === false && !enabled.includes(entry.id))
       .map((entry) => entry.id);
@@ -744,13 +744,13 @@ export async function providerState(bb: BbPluginApi): Promise<ProviderState> {
 }
 
 export async function validateProviders(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   roles: Array<{ provider?: string }>,
   t: Strings,
 ): Promise<void> {
   const needed = [...new Set(roles.map((r) => r.provider).filter(Boolean))] as string[];
   if (needed.length === 0) return;
-  const state = await providerState(bb);
+  const state = await providerState(alia);
   const missing = needed.filter((id) => !state.enabled.includes(id));
   if (missing.length === 0) return;
   const turnedOff = missing.filter((id) => state.disabled.includes(id));
@@ -763,12 +763,12 @@ export async function validateProviders(
   throw new PluginCliError(err.message, { code: "provider_not_found", hint: err.hint });
 }
 
-/** True when .bb is covered by a .gitignore pattern. */
+/** True when .vesnalia is covered by a .gitignore pattern. */
 export function gitIgnoresBB(gitignoreContent: string): boolean {
   return gitignoreContent.split("\n").some((raw) => {
     const line = raw.trim();
     if (!line || line.startsWith("#")) return false;
-    return [".bb", ".bb/", "/.bb", "/.bb/", ".bb/*", ".bb/**", "/.bb/*", "/.bb/**"].includes(line);
+    return [".vesnalia", ".vesnalia/", "/.vesnalia", "/.vesnalia/", ".vesnalia/*", ".vesnalia/**", "/.vesnalia/*", "/.vesnalia/**"].includes(line);
   });
 }
 
@@ -779,16 +779,16 @@ export function teamSectionName(t: Strings, team: string): string {
 
 /** Find a section by any of its names (both languages), else create the first one. */
 export async function ensureSection(
-  bb: BbPluginApi,
+  alia: AliaPluginApi,
   name: string,
   aliases: readonly string[] = [],
 ): Promise<string | null> {
   try {
-    const sections = await bb.sdk.threadSections.list();
+    const sections = await alia.sdk.threadSections.list();
     const found =
       sections.find((s) => s.name === name) ?? sections.find((s) => aliases.includes(s.name));
     if (found) return found.id;
-    const created = await bb.sdk.threadSections.create({ name });
+    const created = await alia.sdk.threadSections.create({ name });
     return created.id;
   } catch {
     return null;

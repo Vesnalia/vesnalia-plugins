@@ -5,7 +5,7 @@ import { AnswerSheet, type SheetEntry } from "./answerSheet";
 /** Vitest's jsdom environment exposes the JSDOM instance; only its window is used here. */
 declare const jsdom: { window: Window & typeof globalThis };
 
-const KEY = "bb.genui.sheet:thr_windows";
+const KEY = "alia.genui.sheet:thr_windows";
 
 function entry(block: string, text: string): Omit<SheetEntry, "seq"> {
   return { block, question: "q", message: "m", reply: 0, fence: 0, position: 0, text, selection: text };

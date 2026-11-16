@@ -1,4 +1,4 @@
-// Where a review stands, in one vocabulary for the inbox's rows, BB's thread list and the review's Overview: why it's
+// Where a review stands, in one vocabulary for the inbox's rows, VesnALIA's thread list and the review's Overview: why it's
 // yours (or whose turn it is, or how it ended), then only the facts that change whether to open it now. Icon and text,
 // never color alone.
 import type { Tone } from "../components/ui/badge";

@@ -1,6 +1,6 @@
 // Pure helpers shared by server.ts, app.tsx and the tests: ccusage JSON to
 // plain rows, the cost split by token type, ranges, and quota projections.
-// No Node or bb imports.
+// No Node or VesnALIA imports.
 
 /** $ per million tokens at API list prices. */
 export interface Price {

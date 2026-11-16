@@ -21,8 +21,8 @@ const en = {
   copiedId: "Session ID copied",
   showEarlier: (count: number) => `Show earlier (${count})`,
   openThread: "Open thread",
-  continueHint: "Continue this session in BB",
-  continuedHere: "Continued in BB",
+  continueHint: "Continue this session in VesnALIA",
+  continuedHere: "Continued in VesnALIA",
   continuePlaceholder: "Continue the session: the agent reads the entire conversation",
 };
 
@@ -48,8 +48,8 @@ const ru: typeof en = {
   copiedId: "ID сессии скопирован",
   showEarlier: (count) => `Показать раньше (${count})`,
   openThread: "Открыть тред",
-  continueHint: "Продолжить эту сессию в BB",
-  continuedHere: "Продолжение в BB",
+  continueHint: "Продолжить эту сессию в ALIA",
+  continuedHere: "Продолжение в ALIA",
   continuePlaceholder: "Продолжите сессию: агент прочитает всю переписку",
 };
 

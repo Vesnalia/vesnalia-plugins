@@ -20,7 +20,7 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import type { Context } from "hono";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import { DOWNLOAD_URL, DOWNLOAD_ZIP_URL, HTTP_BASE, UPLOAD_CHUNK_URL } from "../contract";
 import { isFileManagerError, mapNodeError } from "./errors";
@@ -137,13 +137,13 @@ export function zipFileName(dir: string, names: readonly string[]): string {
 /* Registration                                                        */
 /* ------------------------------------------------------------------ */
 
-export function registerHttpRoutes(bb: BbPluginApi, options: HttpRoutesOptions): void {
+export function registerHttpRoutes(alia: AliaPluginApi, options: HttpRoutesOptions): void {
   /* ---- Route 1: POST /http/upload/chunk (auth: token, raw body) ---- */
-  bb.http.route(
+  alia.http.route(
     "POST",
     UPLOAD_CHUNK_ROUTE,
     async (context: Context) => {
-      // Everything below the call is raw node:fs — no bb.* handle is touched
+      // Everything below the call is raw node:fs — no VesnALIA.* handle is touched
       // while bytes are moving (§5.2).
       const outcome = await options.uploads.writeChunk({
         uploadId: context.req.query("uploadId"),
@@ -158,7 +158,7 @@ export function registerHttpRoutes(bb: BbPluginApi, options: HttpRoutesOptions):
   );
 
   /* ---- Route 2: GET /http/download (auth: local, the default) ---- */
-  bb.http.route("GET", DOWNLOAD_ROUTE, async (context: Context) => {
+  alia.http.route("GET", DOWNLOAD_ROUTE, async (context: Context) => {
     const requested = context.req.query("path");
     if (typeof requested !== "string" || requested.trim() === "") {
       return jsonResponse(400, { ok: false, error: "invalid_params" });
@@ -220,7 +220,7 @@ export function registerHttpRoutes(bb: BbPluginApi, options: HttpRoutesOptions):
       return new Response(null, { status: range === null ? 200 : 206, headers });
     }
 
-    // The only thing held across the response is a raw fd: a `bb plugin
+    // The only thing held across the response is a raw fd: a `alia plugin
     // reload` mid-download disposes plugin resources, not this (§14 risk 6).
     const stream = createReadStream(absolutePath, { start, end });
     const abort = (): void => {
@@ -241,7 +241,7 @@ export function registerHttpRoutes(bb: BbPluginApi, options: HttpRoutesOptions):
   // A GET for the same reason as route 2: an `<a download>` click streams it
   // straight to disk. Everything is walked and stat'ed before the first byte,
   // so a bad name answers with a status instead of a half-written archive.
-  bb.http.route("GET", DOWNLOAD_ZIP_ROUTE, async (context: Context) => {
+  alia.http.route("GET", DOWNLOAD_ZIP_ROUTE, async (context: Context) => {
     const dir = context.req.query("dir");
     const names = context.req.queries("name") ?? [];
     if (typeof dir !== "string" || dir.trim() === "" || names.length === 0) {
@@ -267,7 +267,7 @@ export function registerHttpRoutes(bb: BbPluginApi, options: HttpRoutesOptions):
       context.req.raw.signal.removeEventListener("abort", abort);
     });
     stream.once("error", (error) => {
-      bb.log.warn(`zip download failed: ${String(error)}`);
+      alia.log.warn(`zip download failed: ${String(error)}`);
     });
 
     return new Response(Readable.toWeb(stream) as unknown as ReadableStream<Uint8Array>, {
@@ -283,7 +283,7 @@ export function registerHttpRoutes(bb: BbPluginApi, options: HttpRoutesOptions):
     });
   });
 
-  bb.log.info(
+  alia.log.info(
     `http routes ready — POST ${HTTP_BASE}${UPLOAD_CHUNK_ROUTE} (token), GET ${HTTP_BASE}${DOWNLOAD_ROUTE}` +
       ` and ${HTTP_BASE}${DOWNLOAD_ZIP_ROUTE} (local)`,
   );

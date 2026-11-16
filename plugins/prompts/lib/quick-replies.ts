@@ -1,6 +1,6 @@
 // Quick replies: the chip row above the composer.
 //
-// Pure functions, no bb or node imports, so the server (learning) and the
+// Pure functions, no VesnALIA or node imports, so the server (learning) and the
 // frontend (state and chip choice) share one tested implementation.
 //
 // Three inputs decide the row:
@@ -256,7 +256,7 @@ export type QuickReplyState =
   | "waiting"
   /** The latest turn failed: a provider error, a rate limit. */
   | "failed"
-  /** The user or bb stopped the latest turn. */
+  /** The user or VesnALIA stopped the latest turn. */
   | "interrupted"
   /** The latest turn ended normally. */
   | "finished"

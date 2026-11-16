@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { createPortal } from "react-dom";
 import { attachCreditTarget } from "./footer-placement.mjs";
-import { definePluginApp, useComposer, useRpc, useRealtimeConnectionState } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useRpc, useRealtimeConnectionState } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract, Usage } from "./contract";
 import { displayAic } from "./accounting.mjs";
 import { creditDetails } from "./details-copy.mjs";
@@ -52,7 +52,7 @@ function CreditControl({ placement = "toolbar" }: { placement?: "toolbar" | "com
   return <Popover.Root modal={false}><Popover.Trigger asChild><button type="button" className={`copilot-session-credit-control copilot-session-credit-${placement}`} data-testid="copilot-session-credit-meter" data-placement={placement}
     title={description} aria-label={`Copilot session credits: ${amount} AIC, ${label}, ${providerLabel}`} aria-haspopup="dialog">
     <CoinIcon/><strong>{details.setup && usage?.aic == null ? "Set up credits" : <>{amount} <span>AIC</span></>}</strong><span className="copilot-session-credit-dot" data-state={label} data-tone={details.tone} aria-hidden="true"/>
-  </button></Popover.Trigger><Popover.Portal><Popover.Content data-bb-plugin-root="" data-bb-plugin="copilot-session-credits" className="copilot-session-credit-panel" onMouseDown={event => event.stopPropagation()} side="top" align="end" sideOffset={8} collisionPadding={12} aria-labelledby={titleId}>
+  </button></Popover.Trigger><Popover.Portal><Popover.Content data-alia-plugin-root="" data-alia-plugin="copilot-session-credits" className="copilot-session-credit-panel" onMouseDown={event => event.stopPropagation()} side="top" align="end" sideOffset={8} collisionPadding={12} aria-labelledby={titleId}>
     <CreditDetails credits={credits} titleId={titleId}/>
   </Popover.Content></Popover.Portal></Popover.Root>;
 }
@@ -90,7 +90,7 @@ function CreditDetails({ credits, titleId }: { credits: ReturnType<typeof useSes
       <div className="copilot-session-credit-setup-actions"><button type="button" onClick={async () => setCopyMessage(await copyPiInstallCommand())}>Copy install command</button></div>
       {copyMessage && <p role="status">{copyMessage}</p>}
       <p>Use Pi 1.5.0+ with Copilot signed in. Install on the machine running Pi.</p>
-      <details><summary>Custom or remote setup</summary><p>Use the same Pi runtime and agent directory as BB. For remote threads, install on the execution host. Match PI_CODING_AGENT_DIR and any custom launcher configuration.</p></details>
+      <details><summary>Custom or remote setup</summary><p>Use the same Pi runtime and agent directory as VesnALIA. For remote threads, install on the execution host. Match PI_CODING_AGENT_DIR and any custom launcher configuration.</p></details>
     </section>}
     {!unconfigured && details.coverage && <p className="copilot-session-credit-coverage">{details.coverage}</p>}
     {!unconfigured && <details className="copilot-session-credit-debug">

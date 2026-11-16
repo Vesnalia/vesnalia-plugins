@@ -12,9 +12,9 @@ labels:
 dependencies: []
 references:
   - >-
-    /Users/vulture/.bb/thread-storage/thr_q7fywdfd2u/Attachments/CleanShot-2026-09-17-at-21.20.03-2x-1789705226304-0vbei9.png
+    /Users/vulture/.vesnalia/thread-storage/thr_q7fywdfd2u/Attachments/CleanShot-2026-09-17-at-21.20.03-2x-1789705226304-0vbei9.png
   - >-
-    /Users/vulture/.bb/thread-storage/thr_q7fywdfd2u/Attachments/CleanShot-2026-09-17-at-21.20.51-2x-1789705257818-tjl43a.png
+    /Users/vulture/.vesnalia/thread-storage/thr_q7fywdfd2u/Attachments/CleanShot-2026-09-17-at-21.20.51-2x-1789705257818-tjl43a.png
 modified_files:
   - src/TaskModal.tsx
   - src/Markdown.tsx
@@ -57,7 +57,7 @@ The current task detail modal exposes identity and additional fields as a separa
 <!-- SECTION:NOTES:BEGIN -->
 Task was researched before creation from the current modal, parser, tests, and supplied reference screenshots. Timestamps are intentionally display-only and will not be added to task-format fieldLabels.
 
-Verification evidence: focused modal suite passed 9/9; full mise test passed 59/59; typecheck and build passed in named tmux sessions. Reloaded the installed plugin and checked a fresh BB-owned CDP tab at desktop and 430px narrow widths: modal opened, raw-fields disclosure absent, timestamps rendered twice, modal width 412px within the 430px viewport, and no horizontal overflow. The owned lease and tab were released and closed.
+Verification evidence: focused modal suite passed 9/9; full mise test passed 59/59; typecheck and build passed in named tmux sessions. Reloaded the installed plugin and checked a fresh ALIA-owned CDP tab at desktop and 430px narrow widths: modal opened, raw-fields disclosure absent, timestamps rendered twice, modal width 412px within the 430px viewport, and no horizontal overflow. The owned lease and tab were released and closed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

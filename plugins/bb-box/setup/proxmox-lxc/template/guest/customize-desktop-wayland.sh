@@ -1,5 +1,5 @@
 #!/bin/bash
-# bb-box Wayland desktop template (048), run as root inside the CT after
+# alia-box Wayland desktop template (048), run as root inside the CT after
 # customize-base.sh and before finalize.sh; customize-desktop.sh hands over to
 # it when DESKTOP_SESSION=wayland. Sway, headless on the CPU, as the box user,
 # with floating windows, Waybar, a launcher (wofi) and a terminal (foot),
@@ -62,7 +62,7 @@ desktop_packages="sway swaybg waybar wayvnc foot wofi wl-clipboard grim slurp wf
 desktop_packages="$desktop_packages mousepad ristretto evince thunar gtk-4-examples"
 # Chinese, Japanese and Korean text, sans and serif, regular and bold (88 MiB).
 desktop_packages="$desktop_packages fonts-noto-cjk"
-# On 26.04, the Wayland protocols' XML, which bb-box's cursor helper builds
+# On 26.04, the Wayland protocols' XML, which alia-box's cursor helper builds
 # against (ext-image-copy-capture), for the pointer's shape on video.
 [ "$release" != 26.04 ] || desktop_packages="$desktop_packages wayland-protocols"
 # What Zed's GPUI needs to build on Linux.
@@ -88,7 +88,7 @@ for package in $desktop_packages $gpui_packages selkies google-chrome-stable; do
   [ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null)" = "install ok installed" ] || die "$package is not installed"
 done
 ! dpkg-query -W -f='${Status}' xwayland 2>/dev/null | grep -q "install ok installed" || die "xwayland is installed"
-install -d -m 0755 /usr/share/bb-box
+install -d -m 0755 /usr/share/alia-box
 {
   echo "nvidia=none"
   echo "session=wayland"
@@ -98,19 +98,19 @@ install -d -m 0755 /usr/share/bb-box
 } >"$build/extra-release"
 
 # The display, its stream and their settings.
-install -d -m 0755 /usr/local/libexec/bb-box /etc/bb-box
-install -m 0755 "$build/guest/files/display-wayland" /usr/local/libexec/bb-box/display
-install -m 0755 "$build/guest/files/vnc-password" /usr/local/libexec/bb-box/vnc-password
-install -m 0755 "$build/guest/files/selkies-wayland" /usr/local/libexec/bb-box/selkies
+install -d -m 0755 /usr/local/libexec/alia-box /etc/alia-box
+install -m 0755 "$build/guest/files/display-wayland" /usr/local/libexec/alia-box/display
+install -m 0755 "$build/guest/files/vnc-password" /usr/local/libexec/alia-box/vnc-password
+install -m 0755 "$build/guest/files/selkies-wayland" /usr/local/libexec/alia-box/selkies
 # Typing with a US keyboard, which computer use's text takes (#707).
-clang -O2 -Wall -Werror -o /usr/local/libexec/bb-box/type "$build/guest/files/bb-box-type.c" -lwayland-client -lxkbcommon ||
-  die "bb-box-type did not build"
-chmod 0755 /usr/local/libexec/bb-box/type
+clang -O2 -Wall -Werror -o /usr/local/libexec/alia-box/type "$build/guest/files/alia-box-type.c" -lwayland-client -lxkbcommon ||
+  die "alia-box-type did not build"
+chmod 0755 /usr/local/libexec/alia-box/type
 # The box's pointer, where Sway has ext-image-copy-capture, from 1.11 (060):
 # its shape for the person in control, and the agent's pointer for people
 # watching, which neither stream sends. Built from the system's protocol XML.
 # 24.04's Sway 1.9 lacks the protocol, though its wayland-protocols has the
-# XML, so its image has no helper, and bb-box hides the pointer from the
+# XML, so its image has no helper, and alia-box hides the pointer from the
 # picture as before (#707).
 protocols=/usr/share/wayland-protocols/staging
 if dpkg --compare-versions "$(dpkg-query -W -f='${Version}' sway)" ge 1.11 &&
@@ -120,9 +120,9 @@ if dpkg --compare-versions "$(dpkg-query -W -f='${Version}' sway)" ge 1.11 &&
     wayland-scanner client-header "$protocols/$xml.xml" "$cursor_src/${xml##*/}-client-protocol.h"
     wayland-scanner private-code "$protocols/$xml.xml" "$cursor_src/${xml##*/}-protocol.c"
   done
-  clang -O2 -Wall -Werror -I"$cursor_src" -o /usr/local/libexec/bb-box/cursor "$build/guest/files/bb-box-cursor.c" "$cursor_src"/*-protocol.c -lwayland-client ||
-    die "bb-box-cursor did not build"
-  chmod 0755 /usr/local/libexec/bb-box/cursor
+  clang -O2 -Wall -Werror -I"$cursor_src" -o /usr/local/libexec/alia-box/cursor "$build/guest/files/alia-box-cursor.c" "$cursor_src"/*-protocol.c -lwayland-client ||
+    die "alia-box-cursor did not build"
+  chmod 0755 /usr/local/libexec/alia-box/cursor
   rm -rf "$cursor_src"
   echo "cursor=session" >>"$build/extra-release"
 fi
@@ -130,27 +130,27 @@ fi
 selkies_ws=$(ls /opt/selkies/lib/python3*/site-packages/selkies/websockets_mode.py 2>/dev/null | head -1)
 [ -n "$selkies_ws" ] || die "Selkies' websockets_mode.py is missing"
 /opt/selkies/bin/python3 "$build/guest/files/selkies-host-size.py" "$selkies_ws" || die "Selkies could not be patched to keep Sway's size"
-grep -q _bb_box_host_output_size "$selkies_ws" && grep -q _bb_box_viewer_host_size "$selkies_ws" || die "Selkies is not patched to keep Sway's size"
+grep -q _alia_box_host_output_size "$selkies_ws" && grep -q _alia_box_viewer_host_size "$selkies_ws" || die "Selkies is not patched to keep Sway's size"
 rm -rf "$(dirname "$selkies_ws")/__pycache__"
 for f in cua-probe.mjs cua-launch-probe.mjs rfb-probe.mjs; do
-  install -m 0644 "$build/guest/files/$f" "/usr/local/libexec/bb-box/$f"
+  install -m 0644 "$build/guest/files/$f" "/usr/local/libexec/alia-box/$f"
 done
-cat >/etc/bb-box/desktop.env <<'EOF'
-# bb-box Wayland desktop settings, read by bb-box-display.service and
-# bb-box-vnc.service at each start.
+cat >/etc/alia-box/desktop.env <<'EOF'
+# alia-box Wayland desktop settings, read by alia-box-display.service and
+# alia-box-vnc.service at each start.
 # The screen's size at start; the backend resizes it to each viewer's.
 DISPLAY_GEOMETRY=1920x1080
 # VNC_AUTH: password (Apple's sign-in, type 30, as the box user with
-# /var/lib/bb-box/vnc-password) or none.
+# /var/lib/alia-box/vnc-password) or none.
 VNC_AUTH=password
 EOF
 # Sway: headless, with floating windows that open at their own size, centred,
 # with title bars, and Waybar for a taskbar, a launcher and a terminal.
-cat >/etc/bb-box/sway.conf <<'EOF'
-# bb-box: Sway for the Wayland desktop (048), started by
-# /usr/local/libexec/bb-box/display. Its output's size comes from
-# DISPLAY_GEOMETRY in /etc/bb-box/desktop.env.
-include /run/bb-box/sway-output.conf
+cat >/etc/alia-box/sway.conf <<'EOF'
+# alia-box: Sway for the Wayland desktop (048), started by
+# /usr/local/libexec/alia-box/display. Its output's size comes from
+# DISPLAY_GEOMETRY in /etc/alia-box/desktop.env.
+include /run/alia-box/sway-output.conf
 output HEADLESS-1 bg #2e3440 solid_color
 # One X11 window breaks Cua on Sway; X11-only apps need linux-desktop-cpu.
 xwayland disable
@@ -166,15 +166,15 @@ bindsym Mod4+Return exec foot
 bindsym Mod4+d exec wofi --show drun
 bindsym Mod4+Shift+q kill
 bar {
-  swaybar_command /usr/local/libexec/bb-box/waybar
+  swaybar_command /usr/local/libexec/alia-box/waybar
 }
 # The box user's systemd and D-Bus activation environments get the session,
 # so the accessibility bus and apps started through D-Bus are on it.
 exec systemctl --user import-environment WAYLAND_DISPLAY SWAYSOCK XDG_SESSION_TYPE XDG_CURRENT_DESKTOP
 exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY SWAYSOCK XDG_SESSION_TYPE XDG_CURRENT_DESKTOP
-exec /usr/local/libexec/bb-box/display ready
+exec /usr/local/libexec/alia-box/display ready
 EOF
-cat >/etc/bb-box/waybar.json <<'EOF'
+cat >/etc/alia-box/waybar.json <<'EOF'
 {
   "layer": "top",
   "position": "bottom",
@@ -187,7 +187,7 @@ cat >/etc/bb-box/waybar.json <<'EOF'
   "clock": { "format": "{:%H:%M}", "tooltip": false }
 }
 EOF
-cat >/etc/bb-box/waybar.css <<'EOF'
+cat >/etc/alia-box/waybar.css <<'EOF'
 * { font-family: "DejaVu Sans", sans-serif; font-size: 13px; min-height: 0; }
 window#waybar { background: #20242c; color: #e5e9f0; }
 #custom-apps, #custom-terminal, #clock { padding: 0 10px; }
@@ -195,74 +195,74 @@ window#waybar { background: #20242c; color: #e5e9f0; }
 #taskbar button { padding: 0 8px; color: #d8dee9; border-radius: 0; }
 #taskbar button.active { background: #434c5e; }
 EOF
-chmod 0644 /etc/bb-box/*
+chmod 0644 /etc/alia-box/*
 # Sway runs a bar command as one program, with its own -b argument.
-cat >/usr/local/libexec/bb-box/waybar <<'EOF'
+cat >/usr/local/libexec/alia-box/waybar <<'EOF'
 #!/bin/sh
-# bb-box: Waybar with the Wayland desktop's own config, for Sway's bar.
-exec waybar -c /etc/bb-box/waybar.json -s /etc/bb-box/waybar.css "$@"
+# alia-box: Waybar with the Wayland desktop's own config, for Sway's bar.
+exec waybar -c /etc/alia-box/waybar.json -s /etc/alia-box/waybar.css "$@"
 EOF
-chmod 0755 /usr/local/libexec/bb-box/waybar
+chmod 0755 /usr/local/libexec/alia-box/waybar
 
-cat >/etc/systemd/system/bb-box-vnc-password.service <<EOF
+cat >/etc/systemd/system/alia-box-vnc-password.service <<EOF
 [Unit]
-Description=bb-box: make this box's VNC password on first boot
-ConditionPathExists=!/var/lib/bb-box/vnc-password
-Before=bb-box-display.service
+Description=alia-box: make this box's VNC password on first boot
+ConditionPathExists=!/var/lib/alia-box/vnc-password
+Before=alia-box-display.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/libexec/bb-box/vnc-password $user
+ExecStart=/usr/local/libexec/alia-box/vnc-password $user
 
 [Install]
 WantedBy=multi-user.target
 EOF
-cat >/etc/systemd/system/bb-box-display.service <<EOF
+cat >/etc/systemd/system/alia-box-display.service <<EOF
 [Unit]
-Description=bb-box: the Wayland desktop (Sway, headless)
-After=systemd-user-sessions.service bb-box-vnc-password.service user@$uid.service
-Wants=bb-box-vnc-password.service user@$uid.service
+Description=alia-box: the Wayland desktop (Sway, headless)
+After=systemd-user-sessions.service alia-box-vnc-password.service user@$uid.service
+Wants=alia-box-vnc-password.service user@$uid.service
 # Bring the streams back whenever the display is up again.
-Upholds=bb-box-vnc.service bb-box-selkies.service
+Upholds=alia-box-vnc.service alia-box-selkies.service
 
 [Service]
 User=$user
 Group=$user
 # The PATH and variables the box user's commands have, as ~/.local/bin for npm's and uv's commands.
 EnvironmentFile=-/etc/environment
-EnvironmentFile=-/etc/bb-box/desktop.env
+EnvironmentFile=-/etc/alia-box/desktop.env
 Environment=XDG_RUNTIME_DIR=/run/user/$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus
-RuntimeDirectory=bb-box
+RuntimeDirectory=alia-box
 RuntimeDirectoryMode=0755
 WorkingDirectory=~
-ExecStart=/usr/local/libexec/bb-box/display
-ExecStartPost=/usr/local/libexec/bb-box/display wait
+ExecStart=/usr/local/libexec/alia-box/display
+ExecStartPost=/usr/local/libexec/alia-box/display wait
 # Cua Driver's daemon starts after Sway, with its socket, and stops with it.
-ExecStartPost=-/usr/bin/systemctl --user restart bb-box-cua-driver.service
-ExecStopPost=-/usr/bin/systemctl --user stop bb-box-cua-driver.service
+ExecStartPost=-/usr/bin/systemctl --user restart alia-box-cua-driver.service
+ExecStopPost=-/usr/bin/systemctl --user stop alia-box-cua-driver.service
 Restart=always
 RestartSec=1
 
 [Install]
 WantedBy=multi-user.target
 EOF
-cat >/etc/systemd/system/bb-box-vnc.service <<EOF
+cat >/etc/systemd/system/alia-box-vnc.service <<EOF
 [Unit]
-Description=bb-box: wayvnc on port 5900 for the Wayland desktop
-After=bb-box-display.service
-BindsTo=bb-box-display.service
+Description=alia-box: wayvnc on port 5900 for the Wayland desktop
+After=alia-box-display.service
+BindsTo=alia-box-display.service
 # display resize ends it to take a new size with no viewer; it always comes back.
 StartLimitIntervalSec=0
 
 [Service]
 User=$user
 Group=$user
-EnvironmentFile=-/etc/bb-box/desktop.env
-EnvironmentFile=/run/bb-box/display.env
+EnvironmentFile=-/etc/alia-box/desktop.env
+EnvironmentFile=/run/alia-box/display.env
 Environment=XDG_RUNTIME_DIR=/run/user/$uid
-ExecStartPre=/usr/local/libexec/bb-box/display vnc-config
+ExecStartPre=/usr/local/libexec/alia-box/display vnc-config
 # wayvnc at 60 frames a second, ended when it loses Sway, so it starts again.
-ExecStart=/usr/local/libexec/bb-box/display vnc
+ExecStart=/usr/local/libexec/alia-box/display vnc
 Restart=always
 RestartSec=100ms
 
@@ -270,37 +270,37 @@ RestartSec=100ms
 WantedBy=multi-user.target
 EOF
 # Selkies' video of Sway, which starts and stops with it (060).
-cat >/etc/systemd/system/bb-box-selkies.service <<EOF
+cat >/etc/systemd/system/alia-box-selkies.service <<EOF
 [Unit]
-Description=bb-box: Selkies' video of the Wayland desktop on 127.0.0.1:5980
-After=bb-box-display.service
-BindsTo=bb-box-display.service
+Description=alia-box: Selkies' video of the Wayland desktop on 127.0.0.1:5980
+After=alia-box-display.service
+BindsTo=alia-box-display.service
 
 [Service]
 User=$user
 Group=$user
 Environment=XDG_RUNTIME_DIR=/run/user/$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus
 WorkingDirectory=~
-ExecStart=/usr/local/libexec/bb-box/selkies
+ExecStart=/usr/local/libexec/alia-box/selkies
 Restart=always
 RestartSec=1
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable bb-box-vnc-password.service bb-box-display.service bb-box-vnc.service bb-box-selkies.service >/dev/null
+systemctl enable alia-box-vnc-password.service alia-box-display.service alia-box-vnc.service alia-box-selkies.service >/dev/null
 
 # The desktop's environment for the box user's SSH commands and login shells,
-# from /run/bb-box/display.env: WAYLAND_DISPLAY, SWAYSOCK and the session's
+# from /run/alia-box/display.env: WAYLAND_DISPLAY, SWAYSOCK and the session's
 # XDG_ variables. bash reads ~/.bashrc for SSH commands, so this goes above
 # Ubuntu's early return for non-interactive shells. No DISPLAY anywhere.
-cat >/etc/profile.d/bb-box-display.sh <<'EOF'
-# bb-box: settings for the desktop's current display path.
-if [ -r /run/bb-box/display.env ]; then set -a; . /run/bb-box/display.env; set +a; fi
+cat >/etc/profile.d/alia-box-display.sh <<'EOF'
+# alia-box: settings for the desktop's current display path.
+if [ -r /run/alia-box/display.env ]; then set -a; . /run/alia-box/display.env; set +a; fi
 EOF
 bashrc=/home/$user/.bashrc
-if ! grep -q bb-box-display "$bashrc"; then
-  { echo '. /etc/profile.d/bb-box-display.sh  # bb-box-display'; cat "$bashrc"; } >"$bashrc.new"
+if ! grep -q alia-box-display "$bashrc"; then
+  { echo '. /etc/profile.d/alia-box-display.sh  # alia-box-display'; cat "$bashrc"; } >"$bashrc.new"
   chown "$user:$user" "$bashrc.new"
   mv "$bashrc.new" "$bashrc"
 fi
@@ -311,7 +311,7 @@ cat >/opt/google/chrome/initial_preferences <<'EOF'
 { "distribution": { "require_eula": false } }
 EOF
 install -d -m 0755 /etc/opt/chrome/policies/managed
-cat >/etc/opt/chrome/policies/managed/bb-box-first-run.json <<'EOF'
+cat >/etc/opt/chrome/policies/managed/alia-box-first-run.json <<'EOF'
 {
   "MetricsReportingEnabled": false,
   "DefaultBrowserSettingEnabled": false,
@@ -320,39 +320,39 @@ cat >/etc/opt/chrome/policies/managed/bb-box-first-run.json <<'EOF'
   "SyncDisabled": true
 }
 EOF
-chmod 0644 /opt/google/chrome/initial_preferences /etc/opt/chrome/policies/managed/bb-box-first-run.json
+chmod 0644 /opt/google/chrome/initial_preferences /etc/opt/chrome/policies/managed/alia-box-first-run.json
 sandbox=
 if [ "$runtime" = docker ]; then
   sandbox=" --no-sandbox"
-  printf '{\n  "CommandLineFlagSecurityWarningsEnabled": false\n}\n' >/etc/opt/chrome/policies/managed/bb-box-docker.json
-  chmod 0644 /etc/opt/chrome/policies/managed/bb-box-docker.json
+  printf '{\n  "CommandLineFlagSecurityWarningsEnabled": false\n}\n' >/etc/opt/chrome/policies/managed/alia-box-docker.json
+  chmod 0644 /etc/opt/chrome/policies/managed/alia-box-docker.json
   # A Docker host's own AppArmor policy can name /opt/google/chrome/chrome,
   # as Ubuntu's chrome profile does. A box with Docker runs privileged and
   # unconfined, so Chrome took that profile as it started, and its sockets
   # were refused there: no page loaded and DevTools did not start (#596).
   # Chrome lives elsewhere, and its old path is a link, which AppArmor
   # resolves before it matches; the wrapper and apt go through the link.
-  install -d -m 0755 /opt/bb-box
-  mv /opt/google/chrome /opt/bb-box/chrome
-  ln -s /opt/bb-box/chrome /opt/google/chrome
+  install -d -m 0755 /opt/alia-box
+  mv /opt/google/chrome /opt/alia-box/chrome
+  ln -s /opt/alia-box/chrome /opt/google/chrome
 fi
 # Chrome draws natively on Wayland when XDG_SESSION_TYPE=wayland is in its
 # environment, as display.env has it. Its wrapper keeps the flags computer
 # use and the CPU need, as on X11.
 bin=/usr/bin/google-chrome-stable
 dpkg-divert --local --rename --divert "$bin.distrib" --add "$bin" >/dev/null
-cat >"$bin.bb-box" <<EOF
+cat >"$bin.alia-box" <<EOF
 #!/bin/sh
-# bb-box: Chrome builds the accessibility tree computer use reads, and keeps
-# WebGL on the CPU display path. Installed over a dpkg diversion by the bb-box
+# alia-box: Chrome builds the accessibility tree computer use reads, and keeps
+# WebGL on the CPU display path. Installed over a dpkg diversion by the alia-box
 # desktop template.
-if [ "\$(cat /run/bb-box/display-mode 2>/dev/null)" = cpu ]; then
+if [ "\$(cat /run/alia-box/display-mode 2>/dev/null)" = cpu ]; then
   exec $bin.distrib --force-renderer-accessibility$sandbox --ignore-gpu-blocklist "\$@"
 fi
 exec $bin.distrib --force-renderer-accessibility$sandbox "\$@"
 EOF
-chmod 0755 "$bin.bb-box"
-mv -f "$bin.bb-box" "$bin"
+chmod 0755 "$bin.alia-box"
+mv -f "$bin.alia-box" "$bin"
 cat >/etc/xdg/mimeapps.list <<'EOF'
 [Default Applications]
 x-scheme-handler/http=google-chrome.desktop
@@ -381,7 +381,7 @@ ln -sfn "$cua/cua-driver" /usr/local/bin/cua-driver
 grep -q '^CUA_DRIVER_RS_TELEMETRY_ENABLED=' /etc/environment ||
   printf 'CUA_DRIVER_RS_TELEMETRY_ENABLED=false\nCUA_DRIVER_RS_UPDATE_CHECK=false\n' >>/etc/environment
 install -d -m 0755 /etc/environment.d
-printf 'CUA_DRIVER_RS_TELEMETRY_ENABLED=false\nCUA_DRIVER_RS_UPDATE_CHECK=false\n' >/etc/environment.d/61-bb-box-cua-driver.conf
+printf 'CUA_DRIVER_RS_TELEMETRY_ENABLED=false\nCUA_DRIVER_RS_UPDATE_CHECK=false\n' >/etc/environment.d/61-alia-box-cua-driver.conf
 for home in /root "/home/$user"; do
   owner=root
   [ "$home" = /root ] || owner=$user
@@ -390,14 +390,14 @@ for home in /root "/home/$user"; do
   chown "$owner:$owner" "$home/.cua-driver/config.json"
 done
 # One daemon per box in the box user's systemd manager, on Sway: its Wayland
-# adapter finds windows through SWAYSOCK, from display.env. bb-box-display
+# adapter finds windows through SWAYSOCK, from display.env. alia-box-display
 # starts and stops it. It listens on ~/.cache/cua-driver/cua-driver.sock.
-cat >/etc/systemd/user/bb-box-cua-driver.service <<'EOF'
+cat >/etc/systemd/user/alia-box-cua-driver.service <<'EOF'
 [Unit]
-Description=bb-box: Cua Driver daemon for the Wayland desktop
+Description=alia-box: Cua Driver daemon for the Wayland desktop
 
 [Service]
-EnvironmentFile=/run/bb-box/display.env
+EnvironmentFile=/run/alia-box/display.env
 Environment=CUA_DRIVER_RS_ENABLE_WAYLAND=1 XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=sway
 Environment=CUA_DRIVER_RS_TELEMETRY_ENABLED=false CUA_DRIVER_RS_UPDATE_CHECK=false
 ExecStart=/usr/local/bin/cua-driver serve --no-overlay
@@ -422,11 +422,11 @@ grep -q "^PATH=\"/home/$user/.cargo/bin:" /etc/environment || die "could not add
 # A cursor theme of transparent pointers, under every name Adwaita has (#707).
 # Sway's headless output paints the pointer into each frame wayvnc sends,
 # and wayvnc 0.7.2 sends no cursor shape, so while a person holds control
-# bb-box switches Sway and GTK to it: only their browser's pointer shows,
+# alia-box switches Sway and GTK to it: only their browser's pointer shows,
 # not a painted one trailing it.
 python3 - <<'PY'
 import os, struct
-d = "/usr/share/icons/bb-box-hidden/cursors"
+d = "/usr/share/icons/alia-box-hidden/cursors"
 os.makedirs(d, exist_ok=True)
 image = struct.pack("<9I", 36, 0xFFFD0002, 24, 1, 1, 1, 0, 0, 0) + struct.pack("<I", 0)
 with open(f"{d}/default", "wb") as f:
@@ -434,11 +434,11 @@ with open(f"{d}/default", "wb") as f:
 for name in os.listdir("/usr/share/icons/Adwaita/cursors"):
     if name != "default" and not os.path.lexists(f"{d}/{name}"):
         os.symlink("default", f"{d}/{name}")
-with open("/usr/share/icons/bb-box-hidden/index.theme", "w") as f:
-    f.write("[Icon Theme]\nName=bb-box-hidden\nComment=Transparent pointers, which bb-box uses while a person holds control\n")
+with open("/usr/share/icons/alia-box-hidden/index.theme", "w") as f:
+    f.write("[Icon Theme]\nName=alia-box-hidden\nComment=Transparent pointers, which alia-box uses while a person holds control\n")
 PY
-[ -e /usr/share/icons/bb-box-hidden/cursors/left_ptr ] || die "the hidden cursor theme has no left_ptr"
+[ -e /usr/share/icons/alia-box-hidden/cursors/left_ptr ] || die "the hidden cursor theme has no left_ptr"
 
-install -m 0755 "$build/guest/check-desktop-wayland.sh" /usr/local/bin/bb-box-check-desktop
+install -m 0755 "$build/guest/check-desktop-wayland.sh" /usr/local/bin/alia-box-check-desktop
 rm -rf /home/*/.config/google-chrome /root/.config/google-chrome
 echo "customize-desktop-wayland: done"

@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { BrainSelection } from "./brain-contract";
 import type { MikuEventType } from "./companion";
 
@@ -29,7 +29,7 @@ const MAX_SUMMARY_LENGTH = 1_200;
 const MAX_SPEECH_LENGTH = 180;
 const BRAIN_TIMEOUT_MS = 120_000;
 
-export const BRAIN_INTRO_PROMPT = `You are the voice of a tiny Hatsune Miku companion who lives in the BB agentic IDE.
+export const BRAIN_INTRO_PROMPT = `You are the voice of a tiny Hatsune Miku companion who lives in the VesnALIA agentic IDE.
 You receive batches of real app activity. Reply with exactly one playful, useful speech-bubble line in Miku's voice, at most 140 characters. Mention concrete task or thread details when natural. Do not use Markdown, quotes, role labels, or a preamble. Never call tools or change files. If there is genuinely nothing worth saying, reply exactly [silent]. For this setup message, reply exactly [ready].`;
 
 function cleanInline(value: string, limit: number): string {
@@ -82,7 +82,7 @@ export class MikuBrainCoordinator {
   private lastAutonomousAt = Date.now();
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly getConfig: () => BrainConfig,
     private readonly publish: (
       type: MikuEventType,
@@ -118,7 +118,7 @@ export class MikuBrainCoordinator {
     this.queue.length = 0;
     const threadId = this.activeThreadId;
     if (threadId !== null) {
-      await this.bb.sdk.threads.stop({ threadId }).catch(() => undefined);
+      await this.alia.sdk.threads.stop({ threadId }).catch(() => undefined);
     }
   }
 
@@ -173,14 +173,14 @@ export class MikuBrainCoordinator {
     try {
       await this.initialSend;
       if (this.activeThreadId !== config.threadId || this.signal?.aborted) return;
-      await this.bb.sdk.threads.send({
+      await this.alia.sdk.threads.send({
         threadId: config.threadId!,
         mode: "steer-if-active",
         input: [{ type: "text", text: prompt, mentions: [] }],
         ...this.selectionArgs(config),
       });
     } catch (error) {
-      this.bb.log.warn(`Could not steer Miku's brain: ${String(error)}`);
+      this.alia.log.warn(`Could not steer Miku's brain: ${String(error)}`);
     }
   }
 
@@ -189,7 +189,7 @@ export class MikuBrainCoordinator {
     this.activeThreadId = threadId;
     this.publish("brain-thinking");
     try {
-      this.initialSend = this.bb.sdk.threads
+      this.initialSend = this.alia.sdk.threads
         .send({
           threadId,
           mode: "start",
@@ -198,13 +198,13 @@ export class MikuBrainCoordinator {
         })
         .then(() => undefined);
       await this.initialSend;
-      await this.bb.sdk.threads.wait({
+      await this.alia.sdk.threads.wait({
         threadId,
         status: "idle",
         timeoutMs: BRAIN_TIMEOUT_MS,
         ...(this.signal === null ? {} : { signal: this.signal }),
       });
-      const { output } = await this.bb.sdk.threads.output({ threadId });
+      const { output } = await this.alia.sdk.threads.output({ threadId });
       const speech = sanitizeBrainSpeech(output);
       const latest = this.getConfig();
       if (!latest.enabled || latest.threadId !== threadId) {
@@ -216,13 +216,13 @@ export class MikuBrainCoordinator {
       }
     } catch (error) {
       if (!this.signal?.aborted) {
-        this.bb.log.warn(`Miku's brain could not respond: ${String(error)}`);
+        this.alia.log.warn(`Miku's brain could not respond: ${String(error)}`);
         this.publish("brain-failed");
       }
     } finally {
       this.initialSend = null;
       this.activeThreadId = null;
-      await this.bb.sdk.threads.stop({ threadId }).catch(() => undefined);
+      await this.alia.sdk.threads.stop({ threadId }).catch(() => undefined);
       if (this.queue.length > 0 && this.batchTimer === null) {
         this.batchTimer = setTimeout(() => {
           this.batchTimer = null;

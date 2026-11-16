@@ -1,7 +1,7 @@
 # Later backends
 
 A sketch of the Docker, SSH host pool, Windows on Proxmox QEMU, physical Mac
-and Tart backends, to test that bb-box's backend interface fits them before
+and Tart backends, to test that alia-box's backend interface fits them before
 the core is built out.
 
 Research, 30 September 2026: a note of what was known and measured then, not
@@ -31,10 +31,10 @@ section lists what is still open. Checked on 30 September 2026.
   Docker inside the box need a privileged container, which is root on the
   Docker host.
 - **The SSH host pool and the physical Mac should be one driver** with a reset
-  script per OS. The hard part is reset: bb-box can make a machine's box user
+  script per OS. The hard part is reset: alia-box can make a machine's box user
   clean, and check it before every claim, but it cannot prove a machine is
   clean if the box user had admin rights.
-- **Windows on Proxmox QEMU** works without BB enrolment. Use OpenSSH for
+- **Windows on Proxmox QEMU** works without VesnALIA enrolment. Use OpenSSH for
   commands, the QEMU guest agent for readiness, and Proxmox's own console for
   the desktop. Computer use and anything that opens a window need a helper
   running in the desktop session, because every remote command runs in
@@ -43,7 +43,7 @@ section lists what is still open. Checked on 30 September 2026.
   SSH to the Mac. Two macOS VMs per Mac is a hard limit, and Apple's licence
   allows them for software development and testing, not as a service to
   others. Tart's licence
-  (FSL-1.1-ALv2) allows our use and publishing bb-box.
+  (FSL-1.1-ALv2) allows our use and publishing alia-box.
 
 ## Docker (virtual; early)
 
@@ -88,12 +88,12 @@ Xtigervnc 1.13.1, XFCE, socat and xdotool, and a `box` user with sudo
 - **Release.** `docker rm -f -v`. A missing container counts as released.
 - **Ready.** `docker exec <c> true` answers as the box user, then the desktop
   answers RFB. `readyTimeoutMs` 30 s.
-- **Address.** The container's address on a bb-box bridge network, which
+- **Address.** The container's address on a alia-box bridge network, which
   only the Docker host reaches. Null for a remote Docker host or Docker
   Desktop, where everything goes through `docker exec`.
 - **Capacity.** One host (the Docker daemon):
   - `guests`: a container budget from settings;
-  - `memory`: `docker info` total, less the limits of bb-box's containers and
+  - `memory`: `docker info` total, less the limits of alia-box's containers and
     a reserve;
   - `disk`: `total` null, since the API does not report free space;
   - `gpu-desktops` per GPU UUID when GPU kinds are on.
@@ -118,7 +118,7 @@ Xtigervnc 1.13.1, XFCE, socat and xdotool, and a `box` user with sudo
   an offer has the features `systemd` and `docker`. Without it, the image
   runs `docker-init` and a start script
   ([013](../decisions/013-docker-boxes-run-unprivileged.md)).
-- **Enrolment and thread access.** Without systemd, BB's installer leaves its
+- **Enrolment and thread access.** Without systemd, VesnALIA's installer leaves its
   host daemon running in the background, and the start script starts it
   again after a restart (013). `access.ssh` is set only when the thread's
   machine reaches the container's address. `access.dockerHost` stays null,
@@ -149,17 +149,17 @@ Machines you own, reached over SSH, lent to one box at a time and reset when
 it is released.
 
 - **Two users on each machine.**
-  - `bbbox-admin` is used by bb-box only. It has bb-box's admin key, and sudo
-    only for the scripts in `/usr/local/libexec/bb-box/`.
+  - `bbbox-admin` is used by alia-box only. It has alia-box's admin key, and sudo
+    only for the scripts in `/usr/local/libexec/alia-box/`.
   - `box` is the box user the thread gets. By default it has no admin rights.
 - **Acquire (claim).** From the pool store, take a free machine that serves
   the kind. Over the admin connection:
   - run the clean check (below); if it fails, put the machine out of service
     with the reason and try the next one;
-  - write the owner marker `/var/lib/bb-box/owner` with the box, thread and
+  - write the owner marker `/var/lib/alia-box/owner` with the box, thread and
     generation;
   - install the box's key in the box user's `authorized_keys`;
-  - turn on linger for the box user where systemd runs, so BB's host daemon
+  - turn on linger for the box user where systemd runs, so VesnALIA's host daemon
     outlives the SSH session that enrols the box
     ([014](../decisions/014-enrol-through-machine-providers.md));
   - start the desktop service for desktop kinds.
@@ -168,13 +168,13 @@ it is released.
 - **Ready.** SSH answers as the box user, and for desktop kinds the display
   answers. Seconds.
 - **Release (reset).** `resetting()` first, then:
-  1. remove the BB machine enrolment;
+  1. remove the VesnALIA machine enrolment;
   2. end the box user's sessions and processes (`loginctl terminate-user`,
      then `pkill -KILL -u box`);
   3. remove its crontab and `at` jobs and turn off lingering;
   4. remove its files in `/tmp`, `/var/tmp` and `/dev/shm`;
   5. recreate its home from the skeleton;
-  6. write `/var/lib/bb-box/clean` with a new generation, and record the same
+  6. write `/var/lib/alia-box/clean` with a new generation, and record the same
      generation in the pool store.
 
   `restores: "home"`.
@@ -183,14 +183,14 @@ it is released.
   - The box user has no processes.
   - Its home matches the skeleton's manifest.
   - No crontab.
-  - No BB machine is enrolled.
+  - No VesnALIA machine is enrolled.
   - No owner marker.
 - **What "clean" can mean.** A home reset is a convention for one trusted
   user: if the box user had sudo or was in the `docker` group, it could have
   changed anything, and no check proves otherwise. A pool that grants admin
   rights must restore the whole machine instead (`restores: "machine"`). The
   operator supplies that reset command, for example a Btrfs or ZFS snapshot
-  rollback and a reboot, or a network reinstall. bb-box runs it and then runs
+  rollback and a reboot, or a network reinstall. alia-box runs it and then runs
   the same check.
 - **Kinds.** `linux` and `linux-desktop-cpu`, and `linux-desktop` on a
   machine with a GPU. `linux-docker` needs one of two things:
@@ -239,7 +239,7 @@ records the result:
 - the template is not generalized, so there is no sysprep or
   Cloudbase-Init, and a hibernated warm pool resumes in seconds;
 - the address goes in the VM's SMBIOS serial;
-- there is no helper of bb-box's own: desktop commands go through a
+- there is no helper of alia-box's own: desktop commands go through a
   one-off scheduled task, and computer use through Cua, elevated;
 - the console resizes through the backend;
 - the guest agent is for readiness only.
@@ -252,7 +252,7 @@ The rest of this section is the plan as it was.
   - the QEMU guest agent, from the virtio-win guest tools;
   - OpenSSH Server, with PowerShell as its default shell;
   - Cloudbase-Init;
-  - bb-box's in-session helper.
+  - alia-box's in-session helper.
 
   It then runs `sysprep /generalize /oobe /shutdown` with an answer file that
   creates the `box` user, turns on automatic logon and skips OOBE, and
@@ -261,7 +261,7 @@ The rest of this section is the plan as it was.
   with snapshots (LVM-thin, ZFS, Ceph, qcow2). Proxmox's cloud-init
   (`ipconfig0`, `sshkeys`) writes a config drive in the configdrive2 format
   for Windows guest types, which Cloudbase-Init reads. Through it the backend
-  sets the hostname, a static address and bb-box's SSH key for the box. Then
+  sets the hostname, a static address and alia-box's SSH key for the box. Then
   start the clone.
 - **Ready.** The first boot after sysprep runs specialize and OOBE, and
   reboots, so it takes minutes, not seconds. `readyTimeoutMs` is 10 min.
@@ -291,7 +291,7 @@ The rest of this section is the plan as it was.
     VM.GuestAgent.FileRead and FileWrite for files.
 - **Session 0.** OpenSSH, WinRM and the guest agent are services, so what they
   start runs in session 0, where no window shows. Anything that must appear
-  on the desktop, and computer use, goes through bb-box's helper. It runs in
+  on the desktop, and computer use, goes through alia-box's helper. It runs in
   the box user's desktop session, started at logon by a scheduled task with
   the highest privileges, and listens on 127.0.0.1, reached through the SSH
   route. `session: "desktop"` on Windows asks the helper to start the process.
@@ -315,18 +315,18 @@ The rest of this section is the plan as it was.
   - UAC's secure desktop cannot be driven at all, so the template sets UAC to
     elevate without prompting.
   - The template also turns off the lock screen, the screen saver and sleep.
-- **Enrolment.** No: BB's host app does not run on Windows. The panel says so.
+- **Enrolment.** No: VesnALIA's host app does not run on Windows. The panel says so.
   Thread access is SSH only: `access.ssh` is the box user when the thread's
   machine reaches the boxes' network.
 - **Licensing.** Each VM needs a Windows licence. Evaluation media (90 days
   for Windows 11 Enterprise, 180 days for Server 2025) are enough to try it.
-  bb-box never ships Windows images; the template is built from the
+  alia-box never ships Windows images; the template is built from the
   operator's ISO.
 - **Kind.** `windows-desktop`.
 - **Setup for a new user.**
   1. Upload the ISO and the virtio-win ISO to Proxmox.
   2. Run the template script.
-  3. Give bb-box's token:
+  3. Give alia-box's token:
      - VM.Clone on the template, and VM.Allocate on the boxes' pool;
      - VM.Config.*, VM.PowerMgmt, VM.Console, VM.Audit and
        VM.GuestAgent.Audit on the pool;
@@ -362,7 +362,7 @@ desktop kind. A separate driver is not needed.
   - Readiness and the clean check include "the box user owns the console"
     (`stat -f %Su /dev/console`).
 - **Reset.** `resetting()`, then:
-  1. remove the BB enrolment;
+  1. remove the VesnALIA enrolment;
   2. log the box user out (`launchctl bootout gui/<uid>`) and kill its
      processes;
   3. remove its crontab;
@@ -410,7 +410,7 @@ desktop kind. A separate driver is not needed.
     as a second display.
 - **Commands and files.** SSH as the box user: shell `sh`, `admin` false,
   `inDesktopSession` false, `streaming` true.
-- **Enrolment.** Yes: BB's host app runs on darwin.
+- **Enrolment.** Yes: VesnALIA's host app runs on darwin.
 - **Setup for a new user.**
   - On each Mac:
     - update macOS;
@@ -428,7 +428,7 @@ desktop kind. A separate driver is not needed.
 
 ## Tart on the Apple Virtualization framework (virtual; later)
 
-- **Where things run.** bb-box reaches each Mac host over SSH as
+- **Where things run.** alia-box reaches each Mac host over SSH as
   `bbbox-admin` and runs `tart` there. VMs sit on the host's NAT
   (192.168.64.0/24), which only the host reaches, so every route goes through
   the host.
@@ -454,7 +454,7 @@ desktop kind. A separate driver is not needed.
   pinned, and the VM's first key is accepted.
 - **Capacity.** For each Mac:
   - `guests`: at most two running macOS VMs, counting every running VM on the
-    Mac (`tart list`, and other hypervisors), not only bb-box's. A suspended
+    Mac (`tart list`, and other hypervisors), not only alia-box's. A suspended
     VM does not count;
   - `memory`: the host's, less a reserve;
   - `disk`: APFS free space.
@@ -481,7 +481,7 @@ desktop kind. A separate driver is not needed.
   automatic login and Remote Login, and tart-guest-agent. Then, with Packer's
   Tart plugin:
   - change the password;
-  - add bb-box's helper and key;
+  - add alia-box's helper and key;
   - grant the helper Accessibility and Screen Recording;
   - warm Xcode and the Simulator;
   - let Spotlight indexing finish, and turn off background services the box
@@ -495,7 +495,7 @@ desktop kind. A separate driver is not needed.
 - **Kinds.** `macos-desktop`, as for the physical Mac; images with Xcode add
   its features.
 - **Enrolment.** Yes, as the VM's user.
-- **Orchard.** For several Macs, bb-box can talk to an Orchard controller
+- **Orchard.** For several Macs, alia-box can talk to an Orchard controller
   instead of SSH to each Mac:
   - `POST /v1/vms` creates a VM, and Orchard places it on a worker with a
     free slot;
@@ -513,7 +513,7 @@ desktop kind. A separate driver is not needed.
 - **Setup for a new user.**
   1. An Apple silicon Mac on macOS 14 or later.
   2. `brew install openai/tools/tart`.
-  3. Remote Login for `bbbox-admin` with bb-box's key.
+  3. Remote Login for `bbbox-admin` with alia-box's key.
   4. `tart pull` the image, then run the Packer build.
   5. Add the Mac to settings with its host key.
 
@@ -560,14 +560,14 @@ What this means:
 
 - **Our use is allowed.** Running Tart on our own Macs to give our own threads
   macOS VMs is internal use. There is no longer a size limit.
-- **Publishing bb-box is allowed.** bb-box runs the `tart` command that the
+- **Publishing alia-box is allowed.** alia-box runs the `tart` command that the
   user installs; it does not copy, modify or bundle Tart, so the FSL does not
-  reach bb-box's code. To keep it that way:
+  reach alia-box's code. To keep it that way:
   - the setup script installs Tart from its official source;
-  - bb-box never vendors Tart's code or publishes images containing
+  - alia-box never vendors Tart's code or publishes images containing
     tart-guest-agent.
-- **Users of bb-box.** The guide should say that offering macOS VMs to
-  others as a commercial service, through bb-box or not, may be a Competing
+- **Users of alia-box.** The guide should say that offering macOS VMs to
+  others as a commercial service, through alia-box or not, may be a Competing
   Use of Tart. Apple's licence forbids it anyway (below).
 - **Each Tart release becomes Apache 2.0 two years after it is released.**
 
@@ -591,7 +591,7 @@ and continues:
 Agents developing and testing software on your own Macs fit (a) and (b).
 The Virtualization framework enforces the limit of two. Section 3 (leasing a
 Mac with a minimum period of 24 hours) applies only to renting Macs to
-others, which bb-box does not do.
+others, which alia-box does not do.
 
 ### Others
 
@@ -637,7 +637,7 @@ The review of Interface v1, a comment on pull request #4, is folded in by #5:
 - `CommandTransport.kind` is dropped, so `transport` is the one name.
 - Docker kinds run unprivileged, with `--init` and a start script. Only
   privileged kinds, which the operator turns on, offer `systemd` and
-  `docker`. BB's installer runs its daemon without a service manager
+  `docker`. VesnALIA's installer runs its daemon without a service manager
   ([013](../decisions/013-docker-boxes-run-unprivileged.md)).
 - The conformance suite copies 32 MiB each way and sends 1 MiB of stdin, so
   every transport proves it chunks.
@@ -692,7 +692,7 @@ Cloned on 30 September 2026:
   `src/PVE/QemuServer/Cloudinit.pm` (configdrive2 for Cloudbase-Init).
 - Apple, Software License Agreement for macOS Tahoe 26:
   https://www.apple.com/legal/sla/docs/macOSTahoe.pdf
-- BB host app 0.44.0 `package.json` (`os: ["darwin", "linux"]`).
+- VesnALIA host app 0.44.0 `package.json` (`os: ["darwin", "linux"]`).
 - Devin's article on Mac workspaces (image preparation by writing the guest's
   configuration databases from the host).
 - The Docker measurements: the Dockerfile and scripts are not published.

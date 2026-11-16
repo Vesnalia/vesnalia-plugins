@@ -266,7 +266,7 @@ function RawHookEditor({ hook, onClose, onSaved, detached }: { hook: HookRow | n
         <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
           <DialogTitle>{hook ? `Edit ${hook.id}` : "New hook"}</DialogTitle>
           <DialogDescription>
-            {hook ? "Changes apply to the next event." : "Bind an event to a shell command or a webhook. Commands run on the machine that hosts BB."}
+            {hook ? "Changes apply to the next event." : "Bind an event to a shell command or a webhook. Commands run on the machine that hosts VesnALIA."}
             {detached ? " This hook came from a template; editing the generated text here means the template's settings no longer describe it." : ""}
           </DialogDescription>
         </DialogHeader>
@@ -303,10 +303,10 @@ function RawHookEditor({ hook, onClose, onSaved, detached }: { hook: HookRow | n
             </Tabs>
             {target === "command" ? (
               <>
-                <Field label="Command" hint={gate ? "Exit 0 proceeds, 2 rejects (stderr is the reason), 3 waits; or print a JSON decision. Must answer within 8 seconds." : "Runs with /bin/sh. The event JSON is on stdin; BB_THREAD_TITLE, BB_THREAD_ID and friends are in the environment. Use {{secret:name}} for credentials."}>
-                  <Textarea value={command} onChange={(formEvent) => setCommand(formEvent.target.value)} rows={5} className="font-mono text-xs" placeholder={gate ? 'echo "Not allowed" >&2; exit 2' : 'echo "$BB_THREAD_TITLE finished" >> "$HOME/hooks.log"'} />
+                <Field label="Command" hint={gate ? "Exit 0 proceeds, 2 rejects (stderr is the reason), 3 waits; or print a JSON decision. Must answer within 8 seconds." : "Runs with /bin/sh. The event JSON is on stdin; ALIA_THREAD_TITLE, ALIA_THREAD_ID and friends are in the environment. Use {{secret:name}} for credentials."}>
+                  <Textarea value={command} onChange={(formEvent) => setCommand(formEvent.target.value)} rows={5} className="font-mono text-xs" placeholder={gate ? 'echo "Not allowed" >&2; exit 2' : 'echo "$ALIA_THREAD_TITLE finished" >> "$HOME/hooks.log"'} />
                 </Field>
-                <Field label="Working directory (optional)" hint="A path on the BB server.">
+                <Field label="Working directory (optional)" hint="A path on the VesnALIA server.">
                   <Input value={cwd} onChange={(formEvent) => setCwd(formEvent.target.value)} placeholder="/path/on/the/server" />
                 </Field>
               </>
@@ -316,7 +316,7 @@ function RawHookEditor({ hook, onClose, onSaved, detached }: { hook: HookRow | n
                   <Input value={url} onChange={(formEvent) => setUrl(formEvent.target.value)} placeholder="https://hooks.example.com/…" />
                 </Field>
                 <Field label="Body template (optional)" hint="JSON with {{thread.title}}, {{lastAssistantText|500}}, {{secret:name}} … Empty sends the whole event.">
-                  <Textarea value={body} onChange={(formEvent) => setBody(formEvent.target.value)} rows={4} className="font-mono text-xs" placeholder={'{"text":"BB {{event}} — {{thread.title}}"}'} />
+                  <Textarea value={body} onChange={(formEvent) => setBody(formEvent.target.value)} rows={4} className="font-mono text-xs" placeholder={'{"text":"ALIA {{event}} — {{thread.title}}"}'} />
                 </Field>
                 <Field label="Headers (optional)" hint="One per line, name: value.">
                   <Textarea value={headers} onChange={(formEvent) => setHeaders(formEvent.target.value)} rows={2} className="font-mono text-xs" placeholder="authorization: Bearer {{secret:api/token}}" />

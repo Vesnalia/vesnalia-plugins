@@ -1,4 +1,4 @@
-import type { ThreadDelta } from '@get-bb/plugin-sdk/provider-bridge';
+import type { ThreadDelta } from '@vesnalia/plugin-sdk/provider-bridge';
 import { signInHint } from './applications.ts';
 
 type ServiceError = Extract<ThreadDelta, { kind: 'provider.error' }>;
@@ -28,7 +28,7 @@ const nativeCodes: Record<string, Category> = Object.assign(Object.create(null),
 });
 const messages: Partial<Record<Category, string>> = {
   'rate-limit': 'Z.ai request limit reached. Wait for your limit to reset, then retry.',
-  overloaded: 'Z.ai is overloaded. bb will schedule a retry if automatic provider retry is enabled.',
+  overloaded: 'Z.ai is overloaded. VesnALIA will schedule a retry if automatic provider retry is enabled.',
   'context-window-exceeded': 'The Z.ai context window is full. Compact the conversation or start a new thread.',
   billing: 'Z.ai credit or balance is exhausted. Check your Z.ai account and billing before retrying.',
   'budget-exceeded': 'The Z.ai spending or usage budget is exhausted. Check your account budget before retrying.',

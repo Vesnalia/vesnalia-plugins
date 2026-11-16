@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import plugin from "../server.ts";
 import { runPrompt, TIPS_FILE } from "../lib/prompts.ts";
 import { nextCronRun, prevCronRun } from "../lib/cron.ts";
-import { fakeBb } from "./fake-bb.ts";
+import { fakeAlia } from "./fake-alia.ts";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ctx = { cli: "pulse", user: "Steve", timeZone: "America/New_York", memoryDir: "/m", sources: "Slack: use the slack CLI.", instructions: "", startedAt: "2026-10-26T14:00:00.000Z" };
@@ -45,8 +45,8 @@ test("capture B7 the iCloud recipe and the rules use thread-level email ids, lik
 });
 
 test("capture B3/I3 the default Hourly and Daily never share a slot, and Hourly keeps to weekday hours", async () => {
-  const f = fakeBb();
-  await plugin(f.bb as never);
+  const f = fakeAlia();
+  await plugin(f.alia as never);
   const hourly = (await f.automation("hourly")).schedule;
   const daily = (await f.automation("daily")).schedule;
   assert.equal(hourly, "0 8-18/2 * * 1-5");
@@ -76,17 +76,17 @@ test("capture I1 every run reads one shared tips file and writes tips there", ()
 });
 
 test("capture I1 the server seeds tips.md once from the old per-run memory files", async () => {
-  const f = fakeBb();
+  const f = fakeAlia();
   fs.mkdirSync(path.join(f.home, "memory"), { recursive: true });
   fs.writeFileSync(path.join(f.home, "memory/daily.md"), "# Daily\n2026-10-24: devx tgw needs `unset TOOL_GATEWAY_TOKEN`; gws works\n");
   fs.writeFileSync(path.join(f.home, "memory/hourly.md"), "Last run: 2026-10-16 12:00 EDT\n\nDelta since 10:40 run. New: a DM with a `code` span and a token mention.\n- 2026-10-16: quickActions without text need a url (validation)\n- Flagged: Janice review requests #1, #2\n");
-  await plugin(f.bb as never);
+  await plugin(f.alia as never);
   const tips = fs.readFileSync(path.join(f.home, "memory/tips.md"), "utf8");
   assert.match(tips, /unset TOOL_GATEWAY_TOKEN/);
   assert.match(tips, /quickActions without text/);
   assert.doesNotMatch(tips, /Last run|Delta since|Flagged/, "run journal lines aren't tips");
   fs.writeFileSync(path.join(f.home, "memory/tips.md"), "kept\n");
-  await plugin(fakeBb({ settings: { storeDir: f.home } }).bb as never);
+  await plugin(fakeAlia({ settings: { storeDir: f.home } }).alia as never);
   assert.equal(fs.readFileSync(path.join(f.home, "memory/tips.md"), "utf8"), "kept\n");
 });
 
@@ -131,8 +131,8 @@ test("capture I8 the prompt asks for people and gives URL templates", () => {
 
 test("capture I9 the prompt passes the dispatch time to pulse log --started", async () => {
   assert.ok(runPrompt("hourly", ctx).includes("pulse log --run hourly --started 2026-10-26T14:00:00.000Z"));
-  const f = fakeBb();
-  await plugin(f.bb as never);
+  const f = fakeAlia();
+  await plugin(f.alia as never);
   await f.rpc.pulse_run_now!({ run: "daily" });
   const text = (f.calls["threads.spawn"]![0]![0] as { prompt: string }).prompt;
   const sent = (f.kv.get("dispatches:daily") as { at: string }[])[0]!.at;

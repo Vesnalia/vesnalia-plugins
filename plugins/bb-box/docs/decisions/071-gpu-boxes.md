@@ -11,7 +11,7 @@ direction](#the-owners-direction).
 supersedes its rule for incomplete readings of the cards, set in unit 5.
 
 The prototype is [071-gpu-boxes/prototype.html](071-gpu-boxes/prototype.html):
-one file, opened in any browser, made from bb-box's own components with a
+one file, opened in any browser, made from alia-box's own components with a
 fake server, as 069's and 070's were. Its source is in
 [071-gpu-boxes/prototype](071-gpu-boxes/prototype/). How to click through
 it is under [The prototype](#the-prototype). The guide page this note
@@ -53,7 +53,7 @@ Given through the lead on 31 October 2026, while this note was written:
 - A box's own page and menu change it later, as part of Resize: the GPU is
   part of a box's size. The words say what happens.
 - Whole card is a placement rule. Shared to whole is instant when no other
-  box is on the card. When others are, bb-box offers to move this box to a
+  box is on the card. When others are, alia-box offers to move this box to a
   free card, which is a restart since its device changes, or refuses and
   says who is on the card. Whole to shared is instant. Adding or removing a
   GPU is a restart.
@@ -75,7 +75,7 @@ Most frequent first. Estimated from the owner's use, not measured.
 | 6 | Use a desktop on the GPU for WebGL, Vulkan and native apps | person; agent | Weekly |
 | 7 | Snapshot or fork a GPU box before a risky change | agent | Weekly, once 070 is built |
 
-### What bb-box offers today
+### What alia-box offers today
 
 **Proxmox LXC.** One kind has a GPU: `linux-desktop`, an X11 desktop.
 
@@ -90,11 +90,11 @@ Most frequent first. Estimated from the owner's use, not measured.
   `check_ct_modify_config_perm` refuses a change to `devN` for every other
   user and for every API token, as an API token's user is `root@pam!name`,
   not `root@pam`; there is no resource mapping for LXC devices. Both
-  reviews read this in pve-container's source. bb-box's token never sets
+  reviews read this in pve-container's source. alia-box's token never sets
   them: its clones copy them from the template.
 - The template has NVIDIA's userspace for exactly the host's driver,
   installed with no kernel modules, and records it in
-  `/usr/share/bb-box/nvidia-version`
+  `/usr/share/alia-box/nvidia-version`
   ([customize-desktop.sh](../../setup/proxmox-lxc/template/guest/customize-desktop.sh)).
   The doctor fails a template whose userspace is not the host's driver, as
   the last box saw it (049).
@@ -104,12 +104,12 @@ Most frequent first. Estimated from the owner's use, not measured.
   acquires in flight per flavour, not per card. The setting
   `desktops-per-gpu` caps desktops per card; 0, the default, means no
   limit.
-- A desktop needs 384 MiB of GPU memory free as it starts. bb-box reads
+- A desktop needs 384 MiB of GPU memory free as it starts. alia-box reads
   each card's free memory from the host's report
-  ([bb-box-gpu-memory](../../setup/proxmox-lxc/host/bb-box-gpu-memory)),
+  ([alia-box-gpu-memory](../../setup/proxmox-lxc/host/alia-box-gpu-memory)),
   which a root timer writes every 15 s into the notes of a VM that is never
   started, or from inside a running desktop where there is no report
-  (#603). bb-box reads only the report's `at` and `gpu` lines, and skips
+  (#603). alia-box reads only the report's `at` and `gpu` lines, and skips
   any other.
 - A desktop whose display came up on the CPU is released and retried on
   another card, and new desktops avoid that card for 10 minutes (020).
@@ -145,7 +145,7 @@ device lines included. Held copies are labelled again by `heldCopyTags`,
 which keeps none of a box's own tags.
 
 **The Monitor** shows a GPU tile where a reading has GPU figures. A change
-being built alongside this note adds NVIDIA figures wherever bb-box shows a
+being built alongside this note adds NVIDIA figures wherever alia-box shows a
 machine's load: per card, use, memory used and total, temperature, power,
 and the processes using it; a box that shares a card shows the card's
 figures as the whole card's, with the box's own processes and memory
@@ -173,14 +173,14 @@ A box's size (028) gains a fourth part:
 | --- | --- | --- |
 | `gpu` | `none`, `shared` or `whole` | `shared` |
 
-- `none`: bb-box gives the box no card. On Proxmox LXC the box has no
+- `none`: alia-box gives the box no card. On Proxmox LXC the box has no
   NVIDIA device nodes. On Docker a privileged box can still open every
   card (section 7).
 - `shared`: one card, which other boxes may share, up to the backend's
   boxes per card.
-- `whole`: one card on which bb-box places no other box while this box
+- `whole`: one card on which alia-box places no other box while this box
   holds it. On Proxmox LXC no other guest on the node is given the card's
-  devices meanwhile (section 4). On Docker it is a promise among bb-box's
+  devices meanwhile (section 4). On Docker it is a promise among alia-box's
   boxes (section 7).
 
 A box with a GPU also has a claim: which card it holds, how, and at which
@@ -215,7 +215,7 @@ interface CardPlacement {
 `card` is the card's full UUID, as `nvidia-smi -L` gives it. A claim never
 names a card by a device number or an index. `index` is nvidia-smi's
 index, which follows PCI order and is how the pages name a card: "card 0",
-"card 1". `generation` goes up by one with each change bb-box asks of the
+"card 1". `generation` goes up by one with each change alia-box asks of the
 host (section 4).
 
 A box record also gains `nvidiaUserspace`: the version of NVIDIA's
@@ -225,7 +225,7 @@ userspace on the box's disk, `none`, or `unknown` until it is read
 A box record made before this note has no `gpu`. It reads as `shared` for a
 `linux-desktop` box on a backend with cards, and `none` for every other
 box, which is what those boxes have. Its `nvidiaUserspace` reads as
-`unknown` until bb-box reads it from the box.
+`unknown` until alia-box reads it from the box.
 
 One card at most, for now. Two whole cards in one box, for training across
 both, is [question 3](#questions-for-the-owner).
@@ -287,10 +287,10 @@ A backend lists its cards and, for each, the boxes that hold it.
 | A stopped box with a whole card | yes, by default: [question 1](#questions-for-the-owner) | so a job paused overnight gets its card back |
 | A stopped box with a shared GPU, on Proxmox LXC | no; it keeps a preference for its last card | so a forgotten stopped box neither blocks a whole card nor fills a card |
 | A stopped box on Docker | yes | a container's devices are fixed when it is made |
-| A box bb-box is making, moving, forking, restoring or starting | yes, from the moment its card is reserved (section 4) | |
+| A box alia-box is making, moving, forking, restoring or starting | yes, from the moment its card is reserved (section 4) | |
 | A warm guest or a spare (032) | yes, as a shared box, never a whole one | |
 | A template, a held copy or an earlier guest (070) | never | they cannot start, or start only by hand, and then with no card (section 9) |
-| A guest that is not this install's, or not bb-box's | as the helper reports it (section 5) | |
+| A guest that is not this install's, or not alia-box's | as the helper reports it (section 5) | |
 
 **The trade-off for stopped boxes, in plain words.** If a stopped box keeps
 its card, a desktop someone forgot to release blocks that card from ever
@@ -303,7 +303,7 @@ case costs anything. A whole box was asked for a card to itself, often for
 a long job paused overnight, so it keeps its card by default. The owner
 decides: [question 1](#questions-for-the-owner).
 
-**When a stopped shared box starts**, bb-box places it again, under the
+**When a stopped shared box starts**, alia-box places it again, under the
 card lock (section 4): on its last card if that card has room, else on
 another card with room. When no card has room, the start is refused with
 the words below; the person is also offered "Start with no GPU", which is a
@@ -329,21 +329,21 @@ A whole box goes to a card that:
 
 1. no other guest on the node holds, running or stopped, other than this
    install's own stopped shared boxes in its pool that the helper manages,
-   which yield; another install's guest, or a guest that is not bb-box's,
+   which yield; another install's guest, or a guest that is not alia-box's,
    never yields;
 2. has no card reserved on it by this install;
 3. has the memory a new box needs free when last read.
 
-Of those, the card with the least memory in use outside bb-box's boxes,
+Of those, the card with the least memory in use outside alia-box's boxes,
 then the most free, then the lowest index. Whole is refused where the
-backend's settings turn whole cards off, and where bb-box cannot see the
-whole node (section 4, "When bb-box cannot see the node"). Before the box
+backend's settings turn whole cards off, and where alia-box cannot see the
+whole node (section 4, "When alia-box cannot see the node"). Before the box
 is made, the form and Resize say how much of the card is in use outside
-bb-box's boxes, where any is (section 13).
+alia-box's boxes, where any is (section 13).
 
 A whole box never takes a warm guest or a spare. A card held only by this
 install's warm guests and stopped shared boxes is free for a whole box:
-bb-box retires those warm guests first, as they are not boxes. Another
+alia-box retires those warm guests first, as they are not boxes. Another
 install's warm guests are its own, and block the card.
 
 #### GPU memory: a reading, not a guarantee
@@ -356,7 +356,7 @@ A new box with a GPU needs memory free on its card as it starts:
 
 This is a best-effort check at placement against the last reading of the
 card. It is not a reservation and not a model's memory budget: nothing
-stops another box, the host or a program outside bb-box from taking that
+stops another box, the host or a program outside alia-box from taking that
 memory after the box is placed, and a shared card has no memory fence.
 1024 MiB is about what a CUDA context and a small model take; unit 0
 measures a context, cold and warm, on the owner's cards.
@@ -387,17 +387,17 @@ checks that every refusal has both.
   > No card on pve-1 can take a shared GPU now. Card 0 is quiet-elm's whole
   > card. Card 1 has 4 boxes running, the most a card may have: amber-fox,
   > lone-pine, calm-reef and tidy-glade. Release one of them, choose no GPU,
-  > or raise the boxes per card in BB Box's settings.
+  > or raise the boxes per card in VesnALIA Box's settings.
 
 - **To an agent**, other boxes are named by their box names only, never a
   thread's title. The words never tell it to release, stop or resize
   another thread's box, or to change settings. They offer only its own
   boxes, another GPU part, waiting, or asking the user, and say what
-  bb-box changed:
+  alia-box changed:
 
   > Not made: no card on pve-1 can take a shared GPU now. Card 0 is
   > quiet-elm's whole card; card 1 has 4 boxes running, the most a card may
-  > have. Ask for gpu none, or ask the user. bb-box changed nothing.
+  > have. Ask for gpu none, or ask the user. alia-box changed nothing.
 
   When the agent's own thread has boxes on those cards, the words add them:
   "Release one of your own boxes on card 1 (lone-pine), ask for gpu none,
@@ -405,7 +405,7 @@ checks that every refusal has both.
 
 #### A box that starts without its card
 
-After each start bb-box makes of a box with a GPU, it checks in the box
+After each start alia-box makes of a box with a GPU, it checks in the box
 that `nvidia-smi -L` lists the claimed card's UUID, that CUDA's driver
 initialises (`cuInit`, which takes no card memory), and, for a desktop,
 that its display came up on the GPU, as 020 does. What follows depends on
@@ -415,14 +415,14 @@ whether the box has been handed out:
   another card within the kind's time, as 020 does for desktops, now for
   servers too. New boxes avoid that card for 10 minutes.
 - **An existing box** (a start, a Resize, a restore, an update): never
-  released or made again, as its disk is someone's work. bb-box stops it,
+  released or made again, as its disk is someone's work. alia-box stops it,
   places it once on another card if one has room, and starts it again. If
   that fails too, the box is left stopped, with its disk and its claim,
   and its page, the tool's answer and the doctor say what happened and
   what to do: "amber-fox did not get card 1: nvidia-smi in it listed no
   card. It is stopped, with its disk as it was. Start tries again; the
   doctor has more."
-- **A box bb-box did not start** (by hand, or by Proxmox at the node's
+- **A box alia-box did not start** (by hand, or by Proxmox at the node's
   boot) that has no card or the wrong one: left running, and named on its
   page and in the doctor (section 5, "Card numbering").
 
@@ -450,19 +450,19 @@ Before a clone, a stop or a copy begins, the card is reserved in memory for
 the box, with its GPU part and the memory it needs, as `#acquiring`
 reserves templates today. Placement counts a reservation as a holder, per
 card. A reservation ends when the helper answers the request it led to, or
-the operation fails. A restart of bb-box loses its reservations, and with
+the operation fails. A restart of alia-box loses its reservations, and with
 them the operations that made them; recovery (below) puts claims straight
 before anything new is placed.
 
 #### Requests and answers
 
-bb-box asks the helper by writing one marker tag on the guest (section 5):
+alia-box asks the helper by writing one marker tag on the guest (section 5):
 the GPU part, the card's full UUID, and the box's next generation. The
 helper answers each generation once, in its report: granted; refused, with
-its reason; or, later, yielded. bb-box acts on the answer to the generation
+its reason; or, later, yielded. alia-box acts on the answer to the generation
 it asked, never on what the device lines look like alone. It waits at most
 10 s for an answer, then refuses: "The host's GPU helper on pve-1 did not
-answer within 10 s. Run `bb box doctor`."
+answer within 10 s. Run `alia box doctor`."
 
 #### The helper decides
 
@@ -472,7 +472,7 @@ can never both win a card. It refuses:
 
 - whole on a card whose devices another guest has, other than stopped
   shared boxes it manages of the asking guest's own install and pool
-  (those yield; from bb-box-gpu 0.4.3, decided in unit 8);
+  (those yield; from alia-box-gpu 0.4.3, decided in unit 8);
 - shared on a card another guest holds whole;
 - any device change for a guest that is running or locked;
 - any claim for a box whose claim another guest already has: a copy
@@ -507,28 +507,28 @@ refused instead. A yielded box is placed again when it starts (section 3).
 | A Resize to whole and an acquire of a shared box, in one install | The same lock. Whichever reserves first has the card; the other is placed elsewhere or refused, before anything changes |
 | Two installs on one node ask for the same card | Each places from what it sees, the other's holders included, from the helper's report. The helper answers one request at a time, so one is refused. A refused acquire places again once, on another card, then is refused with words; a refused Resize changes nothing and says so |
 | A whole claim while a stopped shared box on that card is being started | Both go through the guest's config lock. If the start comes first, the box runs and the whole claim is refused. If the yield comes first, the box starts with no devices of that card, and its install places it again |
-| bb-box restarts with requests outstanding | Before placing anything, bb-box reads the report and every marker in its pool. A granted current generation stands. A refusal is applied: the operation fails, or tries another card once. An unanswered request is waited for up to a minute, then reported, and the box is not started |
+| alia-box restarts with requests outstanding | Before placing anything, alia-box reads the report and every marker in its pool. A granted current generation stands. A refusal is applied: the operation fails, or tries another card once. An unanswered request is waited for up to a minute, then reported, and the box is not started |
 
-#### When bb-box cannot see the node
+#### When alia-box cannot see the node
 
 Whole is refused, and no claim changes on the node, when the helper is not
-there, its last report is over 3 minutes old, it speaks a protocol bb-box
+there, its last report is over 3 minutes old, it speaks a protocol alia-box
 does not, or it has not answered one of this install's earlier requests on
 the card. Boxes whose claims stand go on starting and running. "Whole cards
 on pve-1 need the host's GPU helper, which has not reported for 4 min. Run
-`systemctl status bb-box-gpu` on pve-1."
+`systemctl status alia-box-gpu` on pve-1."
 
-### 5. The host's GPU helper, bb-box-gpu
+### 5. The host's GPU helper, alia-box-gpu
 
 A small root service on each Proxmox host with cards, installed by
-`host/setup-gpu.sh`. It replaces today's report timer, `bb-box-gpu-memory`:
+`host/setup-gpu.sh`. It replaces today's report timer, `alia-box-gpu-memory`:
 it writes the same report, and it sets each box's device lines. It is the
-only part of bb-box that can give a guest a card, because Proxmox lets
-only `root@pam` set device lines (see [What bb-box offers
-today](#what-bb-box-offers-today)).
+only part of alia-box that can give a guest a card, because Proxmox lets
+only `root@pam` set device lines (see [What alia-box offers
+today](#what-alia-box-offers-today)).
 
 Why a helper: the owner wants a box's card added, removed and moved after
-it is made. That changes device lines on an existing guest, which bb-box's
+it is made. That changes device lines on an existing guest, which alia-box's
 token cannot do and a template cannot carry. A template per card cannot
 move a box. See [Alternatives](#alternatives-considered).
 
@@ -537,13 +537,13 @@ move a box. See [Alternatives](#alternatives-considered).
 - It reads every guest's config on the node, to know who holds each card.
 - It writes only a guest that is an LXC container on this node, in a pool
   its config lists, unprivileged, not a template, with a description
-  naming a bb-box install, and that carries exactly one well-formed marker
+  naming a alia-box install, and that carries exactly one well-formed marker
   or that the helper has granted a claim to before. (A rollback can take a
   guest's marker away: section 9.)
 - A guest with no marker is never written: today's GPU desktops before
-  they are marked, guests of older bb-box versions, guests of other tools.
+  they are marked, guests of older alia-box versions, guests of other tools.
   It still counts as holding the cards whose devices its lines name.
-- The one exception, from 0.4.2 (unit 6): a copy bb-box was making when it
+- The one exception, from 0.4.2 (unit 6): a copy alia-box was making when it
   stopped, proven by its own labels. That is a fork's copy whose
   description names another box than its `box.` tag, or a held copy whose
   description says so while its tags do not label it yet. Such a copy is
@@ -599,7 +599,7 @@ separate `pct set` could hot-plug a card into a box that had just started,
 perhaps a card another box holds whole. The first version of this note said
 "a running guest cannot gain one"; that was wrong.
 
-bb-box changes a box's devices only with the box stopped, all the same.
+alia-box changes a box's devices only with the box stopped, all the same.
 Removing a device and moving to another card cannot be done live, a
 desktop chooses its display path when it starts, and one tested path is
 safer than two. A live add may come in a later note.
@@ -610,12 +610,12 @@ answers.
 
 #### The report: its answers
 
-The report stays in the notes of the never-started VM `bb-box-gpu-memory`,
-and keeps today's `at` and `gpu` lines, so today's bb-box goes on reading
+The report stays in the notes of the never-started VM `alia-box-gpu-memory`,
+and keeps today's `at` and `gpu` lines, so today's alia-box goes on reading
 it. New lines, each with a fixed grammar per protocol:
 
 ```text
-helper bb-box-gpu 1.0.0 protocol 1 writes on pve-container 6.0.4
+helper alia-box-gpu 1.0.0 protocol 1 writes on pve-container 6.0.4
 driver 580.65.06 since 1793450000
 card 3f9a2c1e-55b0-4c1d-9e2a-0b7d6c4a1f00 pci 0000:01:00.0 minor 0 drm card1 renderD128
 holder 3f9a2c1e-55b0-4c1d-9e2a-0b7d6c4a1f00 214 whole install 4kq7
@@ -632,7 +632,7 @@ mismatch 219 8c41d7b2-1a9e-4f63-b0c5-7e2d9a3b6c11
   and since when.
 - `card`: each card's UUID, PCI address, minor and DRM nodes now.
 - `holder`: each guest that has a card's devices, its VMID, shared or
-  whole, and its install, or `other` for a guest that is not bb-box's.
+  whole, and its install, or `other` for a guest that is not alia-box's.
 - `claim`: each answer, by VMID and generation.
 - `mismatch`: a running guest whose lines no longer name its claim's card.
 
@@ -644,7 +644,7 @@ the report keeps under it.
 
 #### The ledger: the claim of record
 
-`/var/lib/bb-box-gpu/ledger`, root's, on the host's own disk, outside
+`/var/lib/alia-box-gpu/ledger`, root's, on the host's own disk, outside
 every guest's config and so outside every snapshot. For each box, by the
 box ID in its description (for a warm guest or a spare, by its VMID): the
 guest's VMID, the generation, the GPU part, the card and the answer.
@@ -656,7 +656,7 @@ copy can bring back old ones; the ledger says which claim is current
 A lost ledger is rebuilt from the guests when the helper starts. A marked
 guest whose lines match its marker is taken as granted. Where two guests
 conflict, a running one keeps its card and the stopped ones lose their
-lines. bb-box's next request for each box puts it right.
+lines. alia-box's next request for each box puts it right.
 
 #### Card numbering
 
@@ -667,7 +667,7 @@ move after a reboot, a driver change, or a card added or removed. So:
 - Claims name a card by its full UUID, never a number.
 - The helper works out a card's nodes from its UUID at each write, never
   from a number it stored.
-- `bb-box-gpu-boot.service`, a oneshot ordered `Before=pve-guests.service`
+- `alia-box-gpu-boot.service`, a oneshot ordered `Before=pve-guests.service`
   and wanted by it, rewrites the lines of every marked guest from its
   claim before any guest starts at boot. A marked guest whose card it
   cannot find loses its NVIDIA lines, so it starts with no card rather than
@@ -676,11 +676,11 @@ move after a reboot, a driver change, or a card added or removed. So:
   name any GPU box that started on the wrong card.
 - On each scan the helper compares each running marked guest's lines with
   its claim's card now, and reports any `mismatch`.
-- After each start bb-box makes, and on each sweep (every 10 minutes),
-  bb-box runs `nvidia-smi -L` in every running box with a GPU and compares
+- After each start alia-box makes, and on each sweep (every 10 minutes),
+  alia-box runs `nvidia-smi -L` in every running box with a GPU and compares
   the UUID with the claim. A mismatch fails the doctor and shows on the
   box's page, naming the box, and new placements on both cards stop until
-  it is put right. bb-box never stops the box by itself; the person
+  it is put right. alia-box never stops the box by itself; the person
   chooses Restart, which places it again. This is [question
   6](#questions-for-the-owner).
 - The doctor says when the mapping of UUIDs to minors and DRM nodes has
@@ -691,7 +691,7 @@ move after a reboot, a driver change, or a card added or removed. So:
 | Event | What happens |
 | --- | --- |
 | The helper stops or dies | No new answers. Boxes whose claims stand start as they are. A new GPU box, a change and every whole placement on the node wait, then are refused with words. Running boxes are not touched |
-| A guest is locked | Refused as `locked`. bb-box names the lock and the command for the host, "Run `pct unlock 214` on pve-1", as 070 does |
+| A guest is locked | Refused as `locked`. alia-box names the lock and the command for the host, "Run `pct unlock 214` on pve-1", as 070 does |
 | The node restarts | The boot pass corrects every marked guest's lines before guests start |
 | A write is cut short | Proxmox writes a config whole. The helper writes the ledger after the config, and at its start compares the two and puts the ledger right from the guest |
 | A malformed marker, or two | Refused. Nothing about the guest changes |
@@ -718,11 +718,11 @@ not tested on, and says so in its report.
 `host/setup-gpu.sh`, run as root on the host, is idempotent and prints
 each thing it changes.
 
-- **Install** puts in `/usr/local/sbin/bb-box-gpu`, `bb-box-gpu.service`
-  (`Restart=always`) and `bb-box-gpu-boot.service`; its config,
-  `/etc/bb-box/gpu.conf`, root's, with the pools it serves and whether
+- **Install** puts in `/usr/local/sbin/alia-box-gpu`, `alia-box-gpu.service`
+  (`Restart=always`) and `alia-box-gpu-boot.service`; its config,
+  `/etc/alia-box/gpu.conf`, root's, with the pools it serves and whether
   writes are on; and the ledger's folder. It stops, disables and removes
-  `bb-box-gpu-memory.timer` and its service, and keeps the report VM and
+  `alia-box-gpu-memory.timer` and its service, and keeps the report VM and
   the token's PVEAuditor on it. A first install starts with writes off: a
   dry run.
 - `--pool <name>` adds an install's pool. `--writes on` and `--writes off`
@@ -734,10 +734,10 @@ each thing it changes.
   puts back today's timer, so the report goes on. It leaves every guest's
   device lines and markers as they are: no box loses its card. The backend
   then offers what its templates carry, as a host without the helper does.
-- **bb-box and the helper's versions.** bb-box reads the helper's protocol
+- **alia-box and the helper's versions.** alia-box reads the helper's protocol
   from the report. An older one: the doctor says "Run host/setup-gpu.sh
   again", and no claim changes on that node. A newer one: "The GPU helper
-  on pve-1 speaks protocol 2; update BB Box." Running boxes are not
+  on pve-1 speaks protocol 2; update VesnALIA Box." Running boxes are not
   touched either way.
 
 #### Dry run, and moving today's GPU desktops over
@@ -748,7 +748,7 @@ no marker. In this order:
 1. Install the helper with writes off. It writes the report, and logs each
    write it would make, to the journal and to the report. It writes no
    guest.
-2. bb-box marks its guests. Each guest of its pool with NVIDIA lines gets
+2. alia-box marks its guests. Each guest of its pool with NVIDIA lines gets
    `gpu.shared.<the card those lines name>.g1`; each other guest of its
    pool gets `gpu.none.g1`; running or stopped, warm guests and spares
    included. Templates are not marked. A guest whose lines name no card
@@ -758,16 +758,16 @@ no marker. In this order:
    going on.
 4. `setup-gpu.sh --writes on`.
 
-An older bb-box on the same node writes no markers, so its guests are
-never written; they count as holders of their cards. A bb-box downgraded
+An older alia-box on the same node writes no markers, so its guests are
+never written; they count as holders of their cards. A alia-box downgraded
 after this ignores the markers, and the helper leaves them as they are.
 
-From bb-box-gpu 0.4.2 (unit 6), a fork's copy before its re-arm is refused
-a claim and loses its NVIDIA lines (section 9). A bb-box older than unit 6
+From alia-box-gpu 0.4.2 (unit 6), a fork's copy before its re-arm is refused
+a claim and loses its NVIDIA lines (section 9). A alia-box older than unit 6
 re-arms a fork with its new labels and no marker, so under 0.4.2 its fork
-would start with no card while its box says shared. So every bb-box that
+would start with no card while its box says shared. So every alia-box that
 serves a pool on the node runs unit 6 or later before the helper is
-upgraded to 0.4.2; unit 6's node steps check the production BB's bb-box
+upgraded to 0.4.2; unit 6's node steps check the production VesnALIA's alia-box
 build before the upgrade.
 
 #### A host without the helper
@@ -782,7 +782,7 @@ An unprivileged container can open only the device nodes its config lists.
 On Proxmox LXC a whole card is therefore a fence against every other guest
 on the node, not only a placement rule: the helper gives no other guest the
 card's nodes. It is not a fence against the host's own processes. A guest
-outside bb-box's pools that already has the card's nodes blocks the card,
+outside alia-box's pools that already has the card's nodes blocks the card,
 and is named by its VMID.
 
 ### 6. NVIDIA's userspace in a box
@@ -795,7 +795,7 @@ Two things make a card work in a container: the card's device nodes
 - `build.sh linux` installs NVIDIA's userspace when the host has an NVIDIA
   driver loaded, as `build.sh desktop` does today: exactly the host's
   version, from NVIDIA's installer checked against NVIDIA's SHA-256, with
-  no kernel modules, recorded in `/usr/share/bb-box/nvidia-version`.
+  no kernel modules, recorded in `/usr/share/alia-box/nvidia-version`.
   `--cpu` leaves it out. A host with no driver gets a Linux template
   without it, and its backend offers no cards.
 - On a host with a driver, desktops with no GPU are cloned from the GPU
@@ -819,12 +819,12 @@ on a `linux` box with the userspace and no card as on one without.
 #### Each box's userspace is recorded
 
 `nvidiaUserspace`, in the box's record, is the template's version at
-clone. bb-box reads it again from `/usr/share/bb-box/nvidia-version` and
+clone. alia-box reads it again from `/usr/share/alia-box/nvidia-version` and
 the version of `libnvidia-ml.so` in the box after each install or update,
 after each restore, and at each start it makes. It is `none` where there is
 none, and `unknown` for a box not yet read. The doctor names stopped boxes
 from the record without starting them, as "known" or "not checked". A
-snapshot records the box's userspace at the take, where bb-box can read
+snapshot records the box's userspace at the take, where alia-box can read
 it, else unknown.
 
 #### Adding a GPU to a box without the host's userspace
@@ -837,11 +837,11 @@ restart and still has no working GPU. So Resize to a GPU reads the record:
 | The box's userspace | Resize |
 | --- | --- |
 | The host's driver | a plain restart |
-| None, or another version, and bb-box can install it | one restart that installs it too: "Restart, install NVIDIA's userspace 580.65.06 and add the GPU", about 60 s more. A desktop also gets `DISPLAY_MODE=auto`, so it draws on the GPU |
-| bb-box cannot install it | refused before anything stops, with why |
+| None, or another version, and alia-box can install it | one restart that installs it too: "Restart, install NVIDIA's userspace 580.65.06 and add the GPU", about 60 s more. A desktop also gets `DISPLAY_MODE=auto`, so it draws on the GPU |
+| alia-box cannot install it | refused before anything stops, with why |
 | The box is stopped and needs it | "Start swift-owl first: NVIDIA's userspace is installed in a running box." Nothing changes |
 
-bb-box can install it on a box on bb-box's own Linux image (Ubuntu 24.04
+alia-box can install it on a box on alia-box's own Linux image (Ubuntu 24.04
 on x86_64) with 2 GiB of disk free and no NVIDIA or CUDA packages from apt
 (`nvidia-*`, `libnvidia-*`, `cuda-drivers`), which NVIDIA's installer would
 fight with. Otherwise: "Not changed: amber-fox has nvidia-driver-570 from
@@ -867,14 +867,14 @@ under any program that has them open.
 - **Where it is offered.** The box's page ("Update NVIDIA's userspace…"),
   the doctor's output and the settings' list of cards, for several boxes
   at once ("Update NVIDIA's userspace in 3 boxes…"), and
-  `bb box gpu update <box>` for the person. Agents are not offered it: a
+  `alia box gpu update <box>` for the person. Agents are not offered it: a
   box's `box_status` says its userspace does not match, and to ask the
   user.
-- **Before anything changes**, bb-box checks the host's driver as the
+- **Before anything changes**, alia-box checks the host's driver as the
   helper reports it now, that the box runs, the checks above, and NVIDIA's
   installer for exactly that version: downloaded from NVIDIA and checked
   against NVIDIA's SHA-256, or already in the host's artifacts.
-- **What it says first**: "bb-box installs NVIDIA's userspace 580.65.06 in
+- **What it says first**: "alia-box installs NVIDIA's userspace 580.65.06 in
   lone-pine, over 570.86, then restarts it. Everything running in it stops:
   python3 (3310) has the GPU open." With 061's restart guards: the threads
   working on the box are named, and an agent's restart needs
@@ -886,8 +886,8 @@ under any program that has them open.
   `DISPLAY_MODE=auto`; restart; check that `nvidia-smi -L` lists the
   claimed card and CUDA's driver initialises, and for a desktop that its
   display came up on the GPU and NVENC encodes (060).
-- **Cut short** by a bb-box restart, a crash of the box or a failed
-  installer: the operation is `unknown` until bb-box reads the box's
+- **Cut short** by a alia-box restart, a crash of the box or a failed
+  installer: the operation is `unknown` until alia-box reads the box's
   userspace again. A half-installed userspace, where the version file and
   the library disagree, is named on the box's page, with "Update again".
   The box is never released for it.
@@ -921,7 +921,7 @@ the driver: the Docker images need none.
   cannot be added, removed or moved: Resize says "Cannot change on Docker"
   and why, and suggests a new box.
 - Shared to whole and back are placement rules only, so they are live, as
-  on Proxmox LXC. The GPU part is in bb-box's record; the container's
+  on Proxmox LXC. The GPU part is in alia-box's record; the container's
   labels say the part it was made with, as labels cannot change. Another
   install on the same Docker host sees that, not a later switch. The doctor
   warns when it sees another install's GPU boxes on the host.
@@ -931,13 +931,13 @@ the driver: the Docker images need none.
 **Privileged boxes see every card.** With Docker in boxes on, the default
 where the daemon is not rootless, every Linux box is privileged (041), with
 a GPU or without, and can open every card on the host. So on such a host,
-None means bb-box gives the box no card, and Whole means bb-box places no
-other box on the card: both are promises among bb-box's boxes, not fences.
+None means alia-box gives the box no card, and Whole means alia-box places no
+other box on the card: both are promises among alia-box's boxes, not fences.
 Every place where someone chooses says so: the New box form's line, Resize,
 the tools' answers and the guide:
 
 > On docker-1, every box with Docker in it can open every card, with a GPU
-> or without. None and Whole card are what bb-box places, not what a box
+> or without. None and Whole card are what alia-box places, not what a box
 > can reach.
 
 Closing this would need boxes that are not privileged, and Docker in a box
@@ -945,7 +945,7 @@ needs a privileged box (041). Where Docker in boxes is off, or the daemon
 is rootless, boxes are not privileged: a box sees only its own card, and
 None and Whole fence it from other boxes that are not privileged.
 
-bb-box sets `CUDA_VISIBLE_DEVICES` and `NVIDIA_VISIBLE_DEVICES` to the
+alia-box sets `CUDA_VISIBLE_DEVICES` and `NVIDIA_VISIBLE_DEVICES` to the
 card's UUID in `/etc/environment` and in the box's systemd manager's
 environment, so commands from `box_run`, terminals, services and containers
 inside the box see it. They choose which card CUDA uses; they are not a
@@ -1006,8 +1006,8 @@ What each change does, for a running box:
 | none | shared | a card has room | restart | The box stops, gets the card with room, and starts again; with the userspace installed first where it needs it |
 | none | whole | a card is free | restart | The same, on a free card |
 | shared | whole | no other box runs on its card | live | Only the claim changes; stopped shared boxes on the card yield. Nothing in the box stops |
-| shared | whole | others run on its card, and another card is free | restart | bb-box offers to move the box to the free card |
-| shared | whole | others run on its card, and no card is free | refused | bb-box names the boxes on each card |
+| shared | whole | others run on its card, and another card is free | restart | alia-box offers to move the box to the free card |
+| shared | whole | others run on its card, and no card is free | refused | alia-box names the boxes on each card |
 | whole | shared | always | live | The card opens to other boxes. Nothing in the box stops |
 | shared or whole | none | always | restart | The box stops, loses its card's devices, and starts again |
 
@@ -1050,7 +1050,7 @@ The words, in the Resize dialog's "What changes":
   stopped: "swift-owl (stopped) is placed on another card when it next
   starts."
 - Shared to whole, with others running and a free card: "GPU: shared on
-  card 1 → whole card 0 · Restart". "Card 1 has lone-pine running. bb-box
+  card 1 → whole card 0 · Restart". "Card 1 has lone-pine running. alia-box
   moves amber-fox to card 0, which has none, in about 15 s. Everything
   running in amber-fox stops: chrome (1907) and Xorg (812) have the GPU
   open." The button is "Move and restart".
@@ -1082,11 +1082,11 @@ claim.
   and says "GPU not recorded".
 - **A restore keeps the box's current claim.** Before the stop, the
   restore's operation (070, section 6) records the box's claim: its card,
-  part and generation. Under the card lock, bb-box checks that the card
+  part and generation. Under the card lock, alia-box checks that the card
   can take the box and reserves it for the box until its start, so no
   other box is placed in its room while it is stopped; when the card has
   no room, the restore is refused before anything changes. After the
-  rollback and before the start, bb-box writes the box's current marker
+  rollback and before the start, alia-box writes the box's current marker
   with a new generation, as a recorded step of the restore that 070's
   recovery finishes (G6), and waits for the helper. Where the rolled-back
   marker is already that claim, granted, nothing is written; a box with no
@@ -1107,7 +1107,7 @@ claim.
   host's driver is now 580.65.06: nvidia-smi will fail in the box until its
   userspace is updated." Where the record is unknown: "Whether this
   snapshot's NVIDIA userspace matches the host's driver is not known."
-  After the restore, bb-box reads the box's userspace again.
+  After the restore, alia-box reads the box's userspace again.
 - **A fork starts with no card, unless asked for one.** `box_fork` and the
   Fork dialog take `gpu`, none by default, for a fork of a live box and of
   a kept snapshot alike: a fork is a copy of a disk, and the card belongs
@@ -1148,7 +1148,7 @@ claim.
   card, it is set to start at boot. The ledger has one guest per box, so a
   crash in between leaves the box with no card, never two; recovery
   finishes the step. When the new guest cannot be made after the old
-  guest's claim was cleared, bb-box gives the old guest the box's claim
+  guest's claim was cleared, alia-box gives the old guest the box's claim
   back, waits for the grant, checks its lines, and only then sets its start
   at boot back as it was, before it starts it again. If the helper does not
   grant it, the old guest is left stopped and does not start at boot, the
@@ -1169,30 +1169,30 @@ claim.
 
 | Check | Backend | Passes when | Fails or warns |
 | --- | --- | --- | --- |
-| `proxmox.gpu-helper` | Proxmox LXC | the helper reported under 3 minutes ago, speaks a protocol bb-box speaks, has writes on, serves this install's pool, and runs on a pve-container version it was tested on | warn with no helper: "GPU on servers, whole cards and changes of card need host/setup-gpu.sh"; warn while it dry-runs; fail when old, on another protocol or version, or not serving the pool, with the fix |
+| `proxmox.gpu-helper` | Proxmox LXC | the helper reported under 3 minutes ago, speaks a protocol alia-box speaks, has writes on, serves this install's pool, and runs on a pve-container version it was tested on | warn with no helper: "GPU on servers, whole cards and changes of card need host/setup-gpu.sh"; warn while it dry-runs; fail when old, on another protocol or version, or not serving the pool, with the fix |
 | `proxmox.gpu-report` | Proxmox LXC | as today, now written by the helper | as today |
-| `proxmox.gpu-claims` | Proxmox LXC | every box of this install with a GPU has its current generation granted | fail, naming each box with a refused or unanswered claim and why; warn, naming by VMID, guests of other installs or not bb-box's that hold cards |
+| `proxmox.gpu-claims` | Proxmox LXC | every box of this install with a GPU has its current generation granted | fail, naming each box with a refused or unanswered claim and why; warn, naming by VMID, guests of other installs or not alia-box's that hold cards |
 | `proxmox.gpu-cards` | Proxmox LXC | every running box with a GPU sees its claimed card in `nvidia-smi -L`, and the helper reports no mismatch | fail, naming each box on the wrong card or none; warn when the mapping of cards to device numbers changed since the last boot |
-| `proxmox.gpu-migration` | Proxmox LXC | no guest of this install's pool has NVIDIA lines without a marker | fail, naming them, with "Run bb box gpu mark" |
+| `proxmox.gpu-migration` | Proxmox LXC | no guest of this install's pool has NVIDIA lines without a marker | fail, naming them, with "Run alia box gpu mark" |
 | `proxmox.gpu-userspace` | Proxmox LXC | each template with NVIDIA's userspace has the host's driver; each box with a GPU too | warn per template, saying GPU placements from it are off; warn per box, running boxes as read and stopped boxes as known or not checked, naming each, with the update (section 6) |
 | `gpu.<card>` | Proxmox LXC | as today, per card: free memory, when read, against what a new box needs | as today, with the boxes on the card named |
 | `gpu.<card>.whole` | Proxmox LXC, Docker | a card a box holds whole has no other holder | fail, naming the guests: it means a claim went wrong |
 | `gpu.<card>.limit` | Proxmox LXC, Docker | a card has no more boxes than boxes per card | warn, naming the boxes over the limit: they keep running, and no new box goes on the card until it has room |
 | `docker.gpus` | Docker | as today, for GPU boxes | as today, and warn when another install's GPU boxes are on the host |
 
-Device nodes made at boot (`bb-box-nvidia-devices.service`) stay as today.
+Device nodes made at boot (`alia-box-nvidia-devices.service`) stay as today.
 
 Decided with the lead during unit 3: until unit 7 offers servers with a GPU,
 a node with no helper has no `proxmox.gpu-helper` check at all, so a node
 with today's GPU desktops and no helper reads exactly as before. Unit 7 brings
 in the warning for a missing helper. The dry run's warning says why writes
-are off: bb-box's guests must be marked and a day of dry run with the markers
+are off: alia-box's guests must be marked and a day of dry run with the markers
 pass first (unit 4).
 
 ### 11. The agent's tools: one contract
 
-The tools, the CLI (`bb box acquire --gpu`, `bb box resize --gpu`,
-`bb box fork --gpu`), the forms and boxes made for BB's environments take
+The tools, the CLI (`alia box acquire --gpu`, `alia box resize --gpu`,
+`alia box fork --gpu`), the forms and boxes made for VesnALIA's environments take
 the same choice and resolve it the same way.
 
 | Tool | `gpu` | Left out | Refused when |
@@ -1227,19 +1227,19 @@ agent:
 
 > Not made: no card on pve-1 is free for a whole card. Card 0 is
 > quiet-elm's whole card; card 1 has lone-pine running. Ask for gpu shared,
-> or ask the user. bb-box changed nothing.
+> or ask the user. alia-box changed nothing.
 
 > Not resized: no card is free for amber-fox alone. Card 1 has lone-pine
 > running; card 0 is quiet-elm's whole card. Keep the GPU shared, or ask the
-> user. bb-box changed nothing.
+> user. alia-box changed nothing.
 
 > Not resized: when you checked, amber-fox could change to a whole card
 > live; card 1 now has lone-pine running, so it would move to card 0 with a
-> restart. Call box_resize with restart true to do that. bb-box changed
+> restart. Call box_resize with restart true to do that. alia-box changed
 > nothing.
 
 > Not forked: no card on pve-1 can take a whole card for the fork. Fork it
-> with gpu shared or none, or ask the user. bb-box copied nothing.
+> with gpu shared or none, or ask the user. alia-box copied nothing.
 
 An agent never releases, stops or resizes another thread's box to free a
 card, and is never told to.
@@ -1272,7 +1272,7 @@ own is remembered.
 
 - **Saving** follows 067. The numbers are fields in a form with one Save:
   the first change brings up "1 change to Proxmox LXC on pve-1 not saved",
-  with Discard and Save, and "Saved" shows only once BB Box confirms it.
+  with Discard and Save, and "Saved" shows only once VesnALIA Box confirms it.
   Whole cards is a switch and the kinds' default a menu that stands alone,
   so each acts at once and shows "Saved" when confirmed.
 - **A lower limit** blocks new placements and evicts nothing. The cards
@@ -1289,8 +1289,8 @@ own is remembered.
   says the ID is no longer needed once the helper is there.
 - Under the fields, the list of cards: "The cards on pve-1, as its GPU
   helper reported them 5 s ago", each with its index, model, memory, the
-  boxes holding it, any guests of other installs or not bb-box's by VMID,
-  memory in use outside bb-box's boxes, and boxes over the limit. With no
+  boxes holding it, any guests of other installs or not alia-box's by VMID,
+  memory in use outside alia-box's boxes, and boxes over the limit. With no
   helper, "Set up the helper" links to the setup guide.
 
 The default for boxes per card on Proxmox LXC changes from no limit to 4,
@@ -1316,9 +1316,9 @@ on pve-1…" in the same space. Nothing below it moves.
 - None: "No GPU. You can add one later with Resize."
 - Shared: "Card 1 on pve-1, shared with 2 boxes; 17.8 GiB free when read, 20
   s ago. Boxes on a card share its memory."
-- Whole card: "Card 0 on pve-1, to itself: bb-box places no other box on it."
-  Where some is in use outside bb-box: "Card 0 on pve-1, to itself. 20.6 GiB
-  of it is in use outside bb-box's boxes."
+- Whole card: "Card 0 on pve-1, to itself: alia-box places no other box on it."
+  Where some is in use outside alia-box: "Card 0 on pve-1, to itself. 20.6 GiB
+  of it is in use outside alia-box's boxes."
 - On Docker, None and Whole card add: "Boxes with Docker in them can still
   open every card."
 - When no card can take it: one sentence, "No provider has a free card
@@ -1353,8 +1353,8 @@ flag can be the GPU, from the Monitor's change.
 
 #### Look and motion
 
-One weight, 400, wherever bb-box sets the class. BB's shared `Button` and
-dialog title render at 500 and 600; bb-box's own uses of them in these
+One weight, 400, wherever alia-box sets the class. VesnALIA's shared `Button` and
+dialog title render at 500 and 600; alia-box's own uses of them in these
 surfaces set 400, as the prototype does, or the style pass is not complete,
 as 070 says. No shadow on layout cards, and no rule above a form's or a
 dialog's buttons. Chevrons last in a row. Nothing moves when the cards are
@@ -1363,7 +1363,7 @@ opens as the form's other menus do. No new motion.
 
 ### 14. Security
 
-- **What the token gains.** Today bb-box's token can give no guest device
+- **What the token gains.** Today alia-box's token can give no guest device
   access at all. With the helper, anything that holds the token can give
   any unprivileged guest in the pools the helper serves any card's NVIDIA
   device nodes, by writing a tag. That exposes the NVIDIA kernel driver's
@@ -1421,19 +1421,19 @@ carries it out.
 | Unit | What | Gate |
 | --- | --- | --- |
 | 0 | Measure on the node, through the lead, into `071-results.md` | The measurements below, each with its method |
-| 1 | The size's GPU part in core: types, records (`gpu`, `claim`, `nvidiaUserspace`), views, the `linux-desktop-cpu` name, the kinds' "GPU when not asked for", the fake backend's cards. Nothing new is offered | tsc, the node suite and vitest. Live: a separate BB upgraded from main, with old records, kinds, settings and a project's image, restarted twice: every box reads as section 1 says, and nothing offered changes |
-| 2 | The helper, dry run only: the marker's parser, what it acts on, the locked write behind `writes off`, the ledger, the report's new lines, the boot pass, the card mapping | Its tests (section 14), and: two requests racing for one card, a lost ledger, a write cut short, a rollback, a copy naming another box. Live, through the lead: a day on the node writes no guest (every guest's config the same before and after), and today's bb-box reads the report throughout |
+| 1 | The size's GPU part in core: types, records (`gpu`, `claim`, `nvidiaUserspace`), views, the `linux-desktop-cpu` name, the kinds' "GPU when not asked for", the fake backend's cards. Nothing new is offered | tsc, the node suite and vitest. Live: a separate VesnALIA upgraded from main, with old records, kinds, settings and a project's image, restarted twice: every box reads as section 1 says, and nothing offered changes |
+| 2 | The helper, dry run only: the marker's parser, what it acts on, the locked write behind `writes off`, the ledger, the report's new lines, the boot pass, the card mapping | Its tests (section 14), and: two requests racing for one card, a lost ledger, a write cut short, a rollback, a copy naming another box. Live, through the lead: a day on the node writes no guest (every guest's config the same before and after), and today's alia-box reads the report throughout |
 | 3 | `setup-gpu.sh`: install, upgrade, removal, retiring the timer, the version checks; the doctor's `proxmox.gpu-helper` | Live: install in dry run, run twice with nothing changed the second time, upgrade, remove and put back; the doctor passes and fails as section 10 says |
-| 4 | Marking today's guests (`bb box gpu mark`), and the day of dry run with markers; `proxmox.gpu-migration`; a helper release that writes its report on its first pass after a start, so the day runs on it (decided during unit 3) | Live: after marking, 24 h of dry run show no write the helper would make; the doctor's check passes |
-| 5 | Claims: the card lock, reservations, generations, waiting for answers, the start gate, recovery at bb-box's start; the helper's writes on. Used first by today's GPU desktops, whose behaviour does not change | Live, on test guests: two acquires at once with boxes per card 1 go to different cards; a second install with its own pool asks for the same card and is refused; bb-box killed between a marker and its answer, and on restart nothing is placed until it is settled; a stopped test guest's claim moved by the test harness gets the new card's lines within 2 s and starts on it; no other guest's config changes |
-| 6 | Snapshot safety: 070's fork, restore, held copy, earlier guest and swap carry no claim (section 9); `box_fork gpu` none and shared for desktops | Live: a fork of a GPU desktop with none and with shared; a restore after a claim moved by the harness keeps the current card; a held copy's lines gone before it is a template; `adoptCopy` moves the claim; bb-box killed at each point of section 9's table, and the boot pass run by hand: afterwards no card has two claims, and `gpu.<card>.whole` passes |
+| 4 | Marking today's guests (`alia box gpu mark`), and the day of dry run with markers; `proxmox.gpu-migration`; a helper release that writes its report on its first pass after a start, so the day runs on it (decided during unit 3) | Live: after marking, 24 h of dry run show no write the helper would make; the doctor's check passes |
+| 5 | Claims: the card lock, reservations, generations, waiting for answers, the start gate, recovery at alia-box's start; the helper's writes on. Used first by today's GPU desktops, whose behaviour does not change | Live, on test guests: two acquires at once with boxes per card 1 go to different cards; a second install with its own pool asks for the same card and is refused; alia-box killed between a marker and its answer, and on restart nothing is placed until it is settled; a stopped test guest's claim moved by the test harness gets the new card's lines within 2 s and starts on it; no other guest's config changes |
+| 6 | Snapshot safety: 070's fork, restore, held copy, earlier guest and swap carry no claim (section 9); `box_fork gpu` none and shared for desktops | Live: a fork of a GPU desktop with none and with shared; a restore after a claim moved by the harness keeps the current card; a held copy's lines gone before it is a template; `adoptCopy` moves the claim; alia-box killed at each point of section 9's table, and the boot pass run by hand: afterwards no card has two claims, and `gpu.<card>.whole` passes |
 | 7 | Servers with a shared GPU on Proxmox LXC: the userspace in the Linux template, one GPU desktop template with no device lines, desktops with no GPU from it, placement for servers, the checks after start and the sweep's; `box_acquire gpu` none and shared, `box_status`, `box_list`; the doctor's warning for a node with no helper (section 10) | Live: a shared server on each card, one at a time, with `nvidia-smi` and a PyTorch matrix multiply under 1 GiB; a desktop with no GPU from the GPU template behaves as a CPU desktop (display, video, Chrome); time to ready within 5 s of today's desktop's; an agent's `box_acquire` with gpu shared, and with gpu left out on `linux` and `linux-desktop` |
 | 8 | Whole cards on Proxmox LXC: placement, yielding, refusals for each audience; `box_acquire gpu whole`, `box_fork gpu whole` | Live: two whole acquires at once for one free card, one made and one refused before any copy; whole refused with names while a test guest runs on the card; a stopped shared test guest yields and starts on the other card; a test guest without the card's nodes cannot open them |
 | 9 | Resize with `gpu` on Proxmox LXC: share live; add, remove and move with a restart; stopped boxes; the plan made again; `box_resize gpu` | Live, every row of section 8's table, running and stopped: a process that counts, under 256 MiB on the card, keeps counting through a live switch; a move whose card is taken meanwhile is asked again; a failed restart leaves the box stopped with its disk; cores and GPU in one restart; the refusal with names |
 | 10 | Adding a GPU to a box without the host's userspace (section 6) | Live: none to shared on a desktop made from the CPU template draws on the GPU and encodes with NVENC; the same on a `linux` box made without the userspace; a box with NVIDIA packages from apt refused before it stops |
 | 11 | Docker: GPU servers, whole as placement, the share switch, the environment in every route, the words about privileged boxes | Only on a Docker host with a card: a privileged box with no GPU opens a card, as the words say; CUDA picks the box's card through `box_run`, a terminal and a service. Until it passes, nothing in this unit is offered, not even behind a setting |
 | 12 | The userspace update after a driver change, on its own (section 6) | Live: an update from an older userspace on a test box; an update cut short is named, and "Update again" fixes it; a restore to a snapshot with an older userspace is named by the doctor; nothing updates by itself on acquire, start, restore, doctor or sweep |
-| 13 | The New box form and the Resize dialog | Live in a separate BB at 390, 760 and 1440 px, light and dark: the line's height is the same for None, Shared, Whole card, refused and reading; each Resize row driven and its effect seen in `nvidia-smi` |
+| 13 | The New box form and the Resize dialog | Live in a separate VesnALIA at 390, 760 and 1440 px, light and dark: the line's height is the same for None, Shared, Whole card, refused and reading; each Resize row driven and its effect seen in `nvidia-smi` |
 | 14 | The box's page and the Boxes page | Live: the GPU fact and card, a stopped box's words, the notices |
 | 15 | Settings: the GPUs sections with Save, the old keys, the list of cards, the kinds' default; then the guide page, the reference, the setup guides and the skill | Live: a save with its receipt, a failed save, a lowered limit naming the boxes over it, whole cards off leaving a whole box as it is, an explicit old 0 kept; docs and site tests; the guide's commands run as written on a test box on each backend with a card |
 
@@ -1493,8 +1493,8 @@ What each unit may not claim until its gate is met:
 - Unit 11: Docker's GPU servers, whole cards and share switch are not
   offered until they run on a card.
 - Unit 12: no box's userspace is updated until the update's gate passes.
-- Unit 13: the owner's production BB gets the form only after the live
-  check on a separate BB.
+- Unit 13: the owner's production VesnALIA gets the form only after the live
+  check on a separate VesnALIA.
 
 ## Questions for the owner
 
@@ -1503,7 +1503,7 @@ units named. The owner answered all six on 31 October 2026, each with its
 default: a stopped whole box keeps its card and a stopped shared box gives
 up its place; `linux-desktop` shared, `linux` none and a fork none; one
 card per box for now; 4 boxes per card where never set, explicit values
-kept; the person updates a box's userspace, never bb-box by itself; a
+kept; the person updates a box's userspace, never alia-box by itself; a
 running box on the wrong card is named, new placements on both cards stop,
 and the person restarts it.
 
@@ -1534,7 +1534,7 @@ and the person restarts it.
 6. **A running box on the wrong card**, after a reboot or a driver change
    moved the cards' numbers and the boot pass did not run. Default: named
    on its page and in the doctor, new placements on both cards stop, and
-   the person restarts it; bb-box never stops it by itself. The other way
+   the person restarts it; alia-box never stops it by itself. The other way
    is to stop it at once, which ends whatever it runs. Unit 7.
 
 ## Alternatives considered
@@ -1544,9 +1544,9 @@ and proven. But a box cannot gain, lose or change a card after it is made,
 which the owner wants, and templates multiply: cards times flavours, each
 rebuilt when the driver changes. Kept for hosts without the helper.
 
-**bb-box's own database as the claim of record.** Simple, and it survives a
+**alia-box's own database as the claim of record.** Simple, and it survives a
 rollback. But each install sees only its own pool, so it cannot keep two
-installs, or guests that are not bb-box's, off a whole card. The helper
+installs, or guests that are not alia-box's, off a whole card. The helper
 sees every guest on the node, so its ledger is the record.
 
 **A Proxmox hookscript on the template.** Clones copy a template's
@@ -1562,7 +1562,7 @@ NVIDIA hook and `libnvidia-container`, as Docker's toolkit does. It would
 end driver mismatches, and with them question 5. It needs raw `lxc.*`
 lines, which only root can set; with a root helper that objection is
 weaker, but such a hook runs as root on the host at each start, and has not
-been proven in bb-box's unprivileged containers. A later note may take it,
+been proven in alia-box's unprivileged containers. A later note may take it,
 with care.
 
 **A GPU variant of the Linux image**, with the userspace only there. Smaller
@@ -1589,7 +1589,7 @@ shutdown, would hold lines anyway. Yielding when needed has the same
 effect on whole cards with less churn.
 
 **A share of the card a whole box needs free, as a setting** (Opus 13).
-The form and Resize already say how much is in use outside bb-box before
+The form and Resize already say how much is in use outside alia-box before
 the box is made, and the GPU memory a new box needs still applies. A second
 memory setting would add little.
 
@@ -1604,7 +1604,7 @@ owner chose per box.
 
 [071-gpu-boxes/prototype.html](071-gpu-boxes/prototype.html), built with
 `npm run build` in [071-gpu-boxes/prototype](071-gpu-boxes/prototype/)
-after `npm ci` at the repository's root and there. It uses bb-box's own
+after `npm ci` at the repository's root and there. It uses alia-box's own
 form parts (`FormSection`, `OptionCard`, `MenuSelect`, `ProviderRow`), with
 a fake server: one Proxmox LXC node, pve-1, with two cards, and one Docker
 host, docker-1, with one card. Its placement holds claims as section 4
@@ -1655,7 +1655,7 @@ Waits are short and nothing is saved.
 - One GPU desktop template and one Linux template per host, not one per
   card, once the helper is there.
 - A root helper on each Proxmox host with cards, replacing the report's
-  timer, with the doctor watching it. bb-box's token can then give a guest
+  timer, with the doctor watching it. alia-box's token can then give a guest
   in its pool a card's devices, which it could not before.
 - The helper's ledger, on the host, is the record of which box holds which
   card, across installs, and outside every snapshot.
@@ -1663,7 +1663,7 @@ Waits are short and nothing is saved.
   longer carry `gpu`; 012's rule that `gpu` must agree exactly now applies
   to the size.
 - Whole card fences other guests on Proxmox LXC only. On Docker, None and
-  Whole are promises among bb-box's boxes where boxes have Docker in them.
+  Whole are promises among alia-box's boxes where boxes have Docker in them.
 - A stopped shared box on Proxmox LXC holds no card, and may start on
   another.
 - Every Linux template on a GPU host is rebuilt when the host's driver
@@ -1683,7 +1683,7 @@ Both said: build after changes. Numbers are each review's own.
 
 | Finding | Reviews | Change | Where |
 | --- | --- | --- | --- |
-| Nothing makes a placement one decision: two acquires, a Resize racing an acquire, two installs on one node | Opus 2, Astra 1 | A per-node card lock and reservations before any copy or stop; generations answered once; the helper, which sees every guest of every install, decides and refuses a second claim on a whole card; a race table; whole refused when bb-box cannot see the node | Section 4 |
+| Nothing makes a placement one decision: two acquires, a Resize racing an acquire, two installs on one node | Opus 2, Astra 1 | A per-node card lock and reservations before any copy or stop; generations answered once; the helper, which sees every guest of every install, decides and refuses a second claim on a whole card; a race table; whole refused when alia-box cannot see the node | Section 4 |
 | The helper needs a locked, versioned protocol | Astra 2, Opus 10 | Writes inside `lock_config`, refusing running, locked and pending guests; one marker tag with a full UUID and a generation; answers in the report; a version and protocol; fail-closed table; Perl on Proxmox's modules, not a `pct` per call; install, upgrade and removal | Section 5 |
 | The write path is unsafe on Proxmox VE 9, which hot-plugs a device line into a running container; unit 0's claim was wrong | Opus 3, Astra 2 | Said plainly; the stopped check is inside the lock; restart kept as policy, not justified by a false limit; unit 0 records the version and tests hot-plug with a device that is not a GPU's | Section 5, "How it writes"; unit 0 |
 | Installing the helper would strip today's GPU desktops, which have no tag | Opus 1, Astra 3 | The helper acts only on explicit markers, or a claim it granted; unmarked guests are never written; marking, then a day of dry run that writes nothing, then writes on; older and downgraded versions covered | Section 5, "Dry run, and moving today's GPU desktops over"; units 2 to 4 |
@@ -1693,12 +1693,12 @@ Both said: build after changes. Numbers are each review's own.
 | A box made without NVIDIA's userspace cannot use a GPU after Resize; a CPU desktop forces the CPU | Opus 4, Astra 6 | Each box's userspace recorded; Resize installs it in the same restart, or refuses with words; GPU-host desktops with none cloned from the GPU template; proved on a CPU-made desktop with graphics and video | Sections 1 and 6; unit 10 |
 | The userspace update needs its own safe operation and gate; the doctor fails the Linux template after a driver upgrade; question 4's reason does not hold | Opus 12, Astra 8 | A person's operation with preconditions, words, steps, interruption, checks, bulk; never automatic, for the true reason; the helper reports the driver; templates warn and block GPU placements only; its own unit and gate | Section 6; unit 12; question 5 |
 | Recovery must keep disks and power state | Astra 5 | Make-again only for a fresh acquire; an existing box is left stopped with its disk and claim; a stopped box stays stopped through Resize; "everything running in it stops"; the plan made again, asked again when it changed | Sections 3 and 8 |
-| On Docker every privileged box sees every card, so None is false too; `CUDA_VISIBLE_DEVICES` is not a fence | Opus 8, Astra 7 | None and Whole are promises among bb-box's boxes, said wherever someone chooses; the variables in `/etc/environment` and systemd's environment; `nvidia-smi -i`; nothing offered until a real card passes | Section 7; unit 11 |
+| On Docker every privileged box sees every card, so None is false too; `CUDA_VISIBLE_DEVICES` is not a fence | Opus 8, Astra 7 | None and Whole are promises among alia-box's boxes, said wherever someone chooses; the variables in `/etc/environment` and systemd's environment; `nvidia-smi -i`; nothing offered until a real card passes | Section 7; unit 11 |
 | Free memory is presented as a guarantee | Astra 9 | A best-effort start-up check against a reading; ages given, never "now"; unknown and stale rules; this install's reservations taken off. A refresh at placement is not needed: the helper writes within a second of any 64 MiB move | Section 3, "GPU memory" |
 | Tool defaults and refusal words need one contract | Astra 10, Opus 9 | One table for `box_acquire`, `box_resize`, `box_fork`; the GPU resolved before the provider, never downgraded; Resize keeps the GPU; fork none; the alias refused; refusals per audience, never telling an agent to release another's box or change settings, tested for both | Sections 3 and 11 |
 | Defaults in the owner's direction are not settings | Opus 15 | "GPU when not asked for" on the `linux` and `linux-desktop` kinds; the form's first choice | Section 12; question 2 |
 | Settings must not change ownership; numbers saved on every keystroke | Astra 11 | No setting changes a box or a card's holders; lower limits evict nothing and name boxes over; whole off keeps existing ones; 067's Save and receipts; explicit old values kept, 0 too | Section 12; question 4 |
-| Whole can be granted on a card something else is using | Opus 13 | Whole ranks cards by memory used outside bb-box's boxes and says so before; guests outside the pools named by VMID. A setting for a share of the card is not taken: see Alternatives | Sections 3, 13; Alternatives |
+| Whole can be granted on a card something else is using | Opus 13 | Whole ranks cards by memory used outside alia-box's boxes and says so before; guests outside the pools named by VMID. A setting for a share of the card is not taken: see Alternatives | Sections 3, 13; Alternatives |
 | Unit 0 can disturb the training boxes | Opus 11, Astra unit 0 | Rules for every node step: the lead runs it, free memory read first, one load under 1 GiB and 60 s, card-wide figures; the token check answered by the source and confirmed with one refused call; the fence tested by opening nodes; no reboots | Section 16 |
 | Units too big; tools too late; GPU boxes offered before snapshot safety | Opus 14, Astra 12 | 16 units, each with a live check; claims and snapshot safety before any new GPU box; tools with the unit that carries them out; Docker not offered until proven | Section 16; Gated in unit N |
 | The prototype breaks the style guide | Opus 16, Astra 13 | Weight 400 on buttons and dialog titles; no layout shadows or rule above the buttons; the GPU line one fixed height with a reading state, details in provider rows; the box page names the GPU once in the facts; the Large preset not cut; the move confirmation names the GPU programs; the settings' wording | Prototype; section 13 |

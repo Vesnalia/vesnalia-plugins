@@ -1,5 +1,5 @@
 // Work packages ("tasks") of a team: pure store operations.
-// The server keeps one store per project in bb.storage.kv under taskKey().
+// The server keeps one store per project in alia.storage.kv under taskKey().
 
 import { TASK_STATUSES, isOpenTask, type TaskId, type TaskStatus, type TeamTask } from "./snapshot";
 import { mergeReviewRecord } from "./review";

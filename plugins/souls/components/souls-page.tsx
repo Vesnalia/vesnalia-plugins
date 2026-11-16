@@ -10,12 +10,12 @@ import {
 } from "react";
 import {
   ThreadChat,
-  useBbContext,
-  useBbNavigate,
+  useAliaContext,
+  useAliaNavigate,
   useRpc,
   useSdk,
   type PluginNavPanelProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../server";
 import {
@@ -74,8 +74,8 @@ import { SoulImportDialog } from "./soul-import";
 function SoulCompare({ soul, others }: { soul: Soul; others: SoulSummary[] }) {
   const rpc = useRpc<typeof rpcContract>();
   const sdk = useSdk();
-  const navigate = useBbNavigate();
-  const { projectId: routeProjectId } = useBbContext();
+  const navigate = useAliaNavigate();
+  const { projectId: routeProjectId } = useAliaContext();
   const [prompt, setPrompt] = useState(() => comparisonPrompt(soul));
   const [baseline, setBaseline] = useState(true);
   const [mode, setMode] = useState<"persona" | "delegation">("persona");
@@ -314,7 +314,7 @@ function SoulCompare({ soul, others }: { soul: Soul; others: SoulSummary[] }) {
         <p className="mt-2 text-xs text-muted-foreground">
           No project to run in. Open a project, or use{" "}
           <code className="text-xs">
-            bb souls eval &lt;soul&gt; --run --project &lt;id&gt;
+            alia souls eval &lt;soul&gt; --run --project &lt;id&gt;
           </code>
           .
         </p>
@@ -731,7 +731,7 @@ function SoulDetail({
 /** `subPath` is a soul id. Deep links open the actual profile, including on mobile. */
 export function SoulsPage({ subPath = "" }: Partial<PluginNavPanelProps>) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const { souls, error, refetch } = useSouls(true);
   const [showArchived, setShowArchived] = useState(false);
   const usage = useSoulSelectionState();
@@ -1183,7 +1183,7 @@ export function SoulsPage({ subPath = "" }: Partial<PluginNavPanelProps>) {
 
 /** One creation entry in the host title bar; every path remains explicit. */
 export function SoulsPageHeader() {
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [mode, setMode] = useState<"choose" | "manual" | "import" | null>(null);
   return (
     <>

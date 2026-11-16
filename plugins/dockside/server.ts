@@ -1,15 +1,15 @@
-// bb-plugin-dockside backend — the settled / snoozed store.
+// alia-plugin-dockside backend — the settled / snoozed store.
 //
-// This state lives in the plugin's own SQLite database, never on bb's thread.
+// This state lives in the plugin's own SQLite database, never on VesnALIA's thread.
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes this database with it —
 // see `lib/warm-start.ts` for the browser-side copy of the same rows, which is
 // the one part it does not take.
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-// Relative, not the `@/` alias the frontend uses: bb loads this file directly
+// Relative, not the `@/` alias the frontend uses: VesnALIA loads this file directly
 // as a path source, so nothing rewrites tsconfig paths for it.
 import { parseArchivedThreadIds } from "./lib/lifecycle.ts";
 import { isWithinSettledWindow } from "./lib/settled-threads.ts";
@@ -43,7 +43,7 @@ const migrations = [
      snoozed_until  INTEGER,
      snoozed_at     INTEGER
    )`,
-  // bb's archive cascades to child threads and reports every id it took.
+  // VesnALIA's archive cascades to child threads and reports every id it took.
   // Without them, un-settling gives the parent back and leaves its children
   // archived for good.
   `ALTER TABLE thread_lifecycle ADD COLUMN archived_thread_ids TEXT`,
@@ -178,11 +178,11 @@ export const docksideRpcContract = defineRpcContract({
       ),
     }),
   },
-  // The settled shelf's own rows. bb's sidebar view is built from queries
+  // The settled shelf's own rows. VesnALIA's sidebar view is built from queries
   // pinned to `archived: false`, so a settled — and therefore archived —
   // thread never reaches the frontend through the host. It comes through here
   // instead, and only for the last day: see `SETTLED_WINDOW_MS`. Fields are
-  // deliberately loose (`status`, `originKind` as plain strings) so a new bb
+  // deliberately loose (`status`, `originKind` as plain strings) so a new VesnALIA
   // value degrades in the mapper rather than failing output validation and
   // blanking the shelf.
   listSettledThreads: {
@@ -266,8 +266,8 @@ export const docksideRpcContract = defineRpcContract({
 export const LIFECYCLE_CHANNEL = "lifecycle";
 export const PROJECT_COLOR_CHANNEL = "project-colors";
 
-export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+export default function plugin(alia: AliaPluginApi) {
+  alia.settings.define({
     palettePreset: {
       type: "select",
       label: "Palette preset",
@@ -367,8 +367,8 @@ export default function plugin(bb: BbPluginApi) {
     },
   });
 
-  const db = bb.storage.database();
-  bb.storage.migrate(db, migrations);
+  const db = alia.storage.database();
+  alia.storage.migrate(db, migrations);
   const projectColors = createProjectColorStore(db);
 
   const readAll = (): StoredLifecycleRow[] =>
@@ -426,29 +426,29 @@ export default function plugin(bb: BbPluginApi) {
         ? null
         : JSON.stringify(row.archivedThreadIds),
     );
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId: row.threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId: row.threadId });
   };
 
   const clear = (threadId: string): void => {
     db.prepare(`DELETE FROM thread_lifecycle WHERE thread_id = ?`).run(
       threadId,
     );
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId });
   };
 
   /**
-   * bb's own archive, kept in step with the settled shelf.
+   * VesnALIA's own archive, kept in step with the settled shelf.
    *
    * "Settled" and "archived" are the same statement — this work is done — so
    * saying it in one place and not the other leaves the built-in sidebar, the
    * archived filter, and worktree reuse disagreeing with the shelf.
    *
-   * Returns every id bb took, which for a thread with children is more than
+   * Returns every id VesnALIA took, which for a thread with children is more than
    * the one asked for. An empty array means the archive did not happen.
    */
   const archiveThread = async (threadId: string): Promise<string[]> => {
     try {
-      const result = await bb.sdk.threads.archive({ threadId });
+      const result = await alia.sdk.threads.archive({ threadId });
       const ids = result.archivedThreadIds ?? [];
       return ids.includes(threadId) ? ids : [...ids, threadId];
     } catch (error) {
@@ -457,7 +457,7 @@ export default function plugin(bb: BbPluginApi) {
       // outranks it, so a failure here costs the archive and nothing else: the
       // flag stays false, the row still shelves the thread, and it sits where
       // the user put it.
-      bb.log.warn(`archive failed for thread ${threadId}: ${String(error)}`);
+      alia.log.warn(`archive failed for thread ${threadId}: ${String(error)}`);
       return [];
     }
   };
@@ -466,15 +466,15 @@ export default function plugin(bb: BbPluginApi) {
   const unarchiveThreads = async (threadIds: readonly string[]) => {
     for (const threadId of threadIds) {
       try {
-        await bb.sdk.threads.unarchive({ threadId });
+        await alia.sdk.threads.unarchive({ threadId });
       } catch (error) {
         // One child that cannot be reached must not strand the rest, and the
         // parent is the id that matters most — it is the one on the shelf.
         // This direction is not the benign one `archiveThread` describes: the
         // callers clear or rewrite the row whatever happens here, so a parent
         // that stays archived is a thread nothing here still calls settled,
-        // and it leaves the sidebar until bb unarchives it.
-        bb.log.warn(`unarchive failed for thread ${threadId}: ${String(error)}`);
+        // and it leaves the sidebar until VesnALIA unarchives it.
+        alia.log.warn(`unarchive failed for thread ${threadId}: ${String(error)}`);
       }
     }
   };
@@ -495,7 +495,7 @@ export default function plugin(bb: BbPluginApi) {
   const listArchivedThreads = async () => {
     const collected = [];
     for (let page = 0; page < ARCHIVED_PAGE_LIMIT; page++) {
-      const rows = await bb.sdk.threads.list({
+      const rows = await alia.sdk.threads.list({
         archived: true,
         limit: ARCHIVED_PAGE_SIZE,
         offset: page * ARCHIVED_PAGE_SIZE,
@@ -516,7 +516,7 @@ export default function plugin(bb: BbPluginApi) {
   }): Promise<AuthoritativeThreadRow[]> => {
     const collected: AuthoritativeThreadRow[] = [];
     for (let page = 0; page < BULK_PAGE_LIMIT; page++) {
-      const rows = await bb.sdk.threads.list({
+      const rows = await alia.sdk.threads.list({
         ...filters,
         includeHidden: true,
         limit: BULK_PAGE_SIZE,
@@ -568,7 +568,7 @@ export default function plugin(bb: BbPluginApi) {
   ): Promise<BulkDeleteFamilySnapshot | null> => {
     let detail;
     try {
-      detail = await bb.sdk.threads.get({ threadId: rootId });
+      detail = await alia.sdk.threads.get({ threadId: rootId });
     } catch {
       return null;
     }
@@ -602,7 +602,7 @@ export default function plugin(bb: BbPluginApi) {
 
     // childSummary is the deletion service's own count. If our paged walk
     // found fewer rows, fail closed instead of presenting a smaller cascade.
-    const summary = await bb.sdk.threads.childSummary({ threadId: rootId });
+    const summary = await alia.sdk.threads.childSummary({ threadId: rootId });
     if (summary.nonDeletedChildCount > descendants.length) {
       throw new Error("Could not enumerate every child thread safely.");
     }
@@ -616,35 +616,35 @@ export default function plugin(bb: BbPluginApi) {
   const bulkDelete = createBulkDeleteCoordinator({
     readFamily: readBulkFamily,
     async deleteRoot(threadId, childThreadsConfirmed) {
-      await bb.sdk.threads.delete({ threadId, childThreadsConfirmed });
+      await alia.sdk.threads.delete({ threadId, childThreadsConfirmed });
     },
     now: () => Date.now(),
     createToken: () => randomUUID(),
     reportFailure(threadId, error) {
-      bb.log.warn(`bulk delete failed for thread ${threadId}: ${String(error)}`);
+      alia.log.warn(`bulk delete failed for thread ${threadId}: ${String(error)}`);
     },
   });
 
-  bb.rpc.register(docksideRpcContract, {
+  alia.rpc.register(docksideRpcContract, {
     async listProjectColors() {
       return { colors: projectColors.list() };
     },
     async setProjectColor({ projectId, color }) {
-      await bb.sdk.projects.get({ projectId });
+      await alia.sdk.projects.get({ projectId });
       const stored = projectColors.set(projectId, color);
-      bb.realtime.publish(PROJECT_COLOR_CHANNEL, { projectId });
+      alia.realtime.publish(PROJECT_COLOR_CHANNEL, { projectId });
       return stored;
     },
     async resetProjectColor({ projectId }) {
-      await bb.sdk.projects.get({ projectId });
+      await alia.sdk.projects.get({ projectId });
       const reset = projectColors.reset(projectId);
-      bb.realtime.publish(PROJECT_COLOR_CHANNEL, { projectId });
+      alia.realtime.publish(PROJECT_COLOR_CHANNEL, { projectId });
       return { projectId, reset };
     },
     // A custom ACP provider already carries its own brand mark, so the sidebar
     // reads it from the host rather than hard-coding a second glyph per agent.
     async listProviders() {
-      const providers = await bb.sdk.providers.list();
+      const providers = await alia.sdk.providers.list();
       return {
         providers: providers.map(({ id, displayName, logoUrl }) => ({
           id,
@@ -658,7 +658,7 @@ export default function plugin(bb: BbPluginApi) {
     },
     /**
      * The archived threads this plugin settled in the last day, and only
-     * those. A thread the user archived through bb itself has no row here and
+     * those. A thread the user archived through VesnALIA itself has no row here and
      * stays out of the sidebar, exactly as it did before any of this existed;
      * one settled longer ago than the window keeps its row and its archive and
      * simply stops being drawn.
@@ -686,7 +686,7 @@ export default function plugin(bb: BbPluginApi) {
       } catch (error) {
         // The shelf keeps whatever the frontend already had rather than
         // emptying itself over one failed read.
-        bb.log.warn(`listing archived threads failed: ${String(error)}`);
+        alia.log.warn(`listing archived threads failed: ${String(error)}`);
         throw error;
       }
       return {
@@ -742,7 +742,7 @@ export default function plugin(bb: BbPluginApi) {
       // of the list until the row landed.
       const archivedThreadIds = await archiveThread(threadId);
       if (archivedThreadIds.length > 0) {
-        // Second write, second publish — and the publish is the point. bb has
+        // Second write, second publish — and the publish is the point. VesnALIA has
         // just evicted the thread from the host's sidebar view, so this is
         // what tells the frontend to fetch it back from `listSettledThreads`.
         // Re-read rather than re-derive: a user who restored the thread while
@@ -767,7 +767,7 @@ export default function plugin(bb: BbPluginApi) {
       const now = Date.now();
       // Snoozing a settled thread takes the archive back first: a snoozed row
       // is not on the settled shelf, so the thread has nowhere to be drawn
-      // until bb reports it again.
+      // until VesnALIA reports it again.
       await unarchiveThreads(archivedIdsFor(threadId));
       write({
         threadId,
@@ -786,7 +786,7 @@ export default function plugin(bb: BbPluginApi) {
 
   // A deleted thread must not leave a row behind that would park a future
   // thread reusing the id, and stale rows accumulate otherwise.
-  bb.events.on("thread.deleted", ({ thread }) => {
+  alia.events.on("thread.deleted", ({ thread }) => {
     clear(thread.id);
   });
 
@@ -801,11 +801,11 @@ export default function plugin(bb: BbPluginApi) {
    */
   const republishIfSettled = ({ thread }: { thread: { id: string } }) => {
     if (readOne(thread.id)?.settledAt == null) return;
-    bb.realtime.publish(LIFECYCLE_CHANNEL, { threadId: thread.id });
+    alia.realtime.publish(LIFECYCLE_CHANNEL, { threadId: thread.id });
   };
-  bb.events.on("thread.active", republishIfSettled);
-  bb.events.on("thread.idle", republishIfSettled);
-  bb.events.on("thread.failed", republishIfSettled);
+  alia.events.on("thread.active", republishIfSettled);
+  alia.events.on("thread.idle", republishIfSettled);
+  alia.events.on("thread.failed", republishIfSettled);
 }
 
 function colorSetting(label: string, defaultColor: string) {

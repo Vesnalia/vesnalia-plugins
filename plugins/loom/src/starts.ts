@@ -1,4 +1,4 @@
-// Starting an agent thread: what a failed start means, and how long Loom waits before it tries again. A start that bb
+// Starting an agent thread: what a failed start means, and how long Loom waits before it tries again. A start that VesnALIA
 // or the environment provider says cannot happen now waits and counts nothing; any other failed start also waits, and
 // counts as a failed attempt only once it has failed START_GRACE times in a row. An unavailable provider blocks the
 // ticket once it has been unavailable for UNAVAILABLE_LIMIT_MS.
@@ -7,8 +7,8 @@ import { formatDuration } from "./format";
 import { SpawnRefusedError, SpawnUnavailableError } from "./ports";
 
 /**
- * Why a thread did not start. `unavailable`: bb or the environment provider said it cannot start one now. `refused`: bb
- * refused the request itself, so it would fail again. `failed`: anything else bb or the provider reported, a provisioning
+ * Why a thread did not start. `unavailable`: VesnALIA or the environment provider said it cannot start one now. `refused`: VesnALIA
+ * refused the request itself, so it would fail again. `failed`: anything else VesnALIA or the provider reported, a provisioning
  * failure included. `broken`: Loom could not build the request, so waiting would not help.
  */
 export interface StartProblem {
@@ -24,7 +24,7 @@ export function startProblemOf(error: unknown): StartProblem {
   return { kind: "failed", message: errText(error) };
 }
 
-/** A thread whose environment bb could not provision; `detail` is the cause bb recorded, such as the provider's message. */
+/** A thread whose environment VesnALIA could not provision; `detail` is the cause VesnALIA recorded, such as the provider's message. */
 export const provisioningFailure = (failure: { message: string; detail?: string | null }): StartProblem => ({
   kind: "failed",
   message: failure.detail != null && failure.detail.trim() !== "" ? failure.detail.trim() : failure.message,

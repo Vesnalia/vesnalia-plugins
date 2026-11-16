@@ -1,4 +1,4 @@
-// Bridge to bb-plugin-graph-studio for crew.yaml's `graphs: [...]` (BBP-30):
+// Bridge to alia-plugin-graph-studio for crew.yaml's `graphs: [...]` (BBP-30):
 // the names used to validate that field, and running one to completion for
 // `crew_graph_run`. Pure over the RPC call and the clock, so both are
 // fakeable in tests without a real graph-studio or real timers.
@@ -24,11 +24,11 @@ export type GraphsRpc = {
   /** `threadId` is required: graph-studio's startRun rejects a run without a parent thread, whose environment the workers inherit. */
   startRun(args: { graphId: string; input: string; threadId: string; projectId: string | null }): Promise<GraphRun>;
   getRun(id: string): Promise<GraphRun | null>;
-  /** BBP-31: `bb crew stop` cancels open runs with this. */
+  /** BBP-31: `alia crew stop` cancels open runs with this. */
   stopRun(id: string): Promise<GraphRun | null>;
 };
 
-/** `bb.sdk.plugins.callRpc({ pluginId: "graph-studio", ... })`, wrapped the way `createTasksRpcPort` wraps the tasks plugin. */
+/** `alia.sdk.plugins.callRpc({ pluginId: "graph-studio", ... })`, wrapped the way `createTasksRpcPort` wraps the tasks plugin. */
 export function createGraphsRpc(callRpc: (method: string, input: unknown) => Promise<unknown>): GraphsRpc {
   const toRun = (run: unknown): GraphRun => {
     const r = run as {

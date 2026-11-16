@@ -4,7 +4,7 @@
  * lives here and is unit-tested.
  */
 
-/** The fields of bb's `PluginSidebarThread` this module reads. */
+/** The fields of VesnALIA's `PluginSidebarThread` this module reads. */
 export interface SidebarThreadInput {
   id: string;
   projectId: string;
@@ -66,7 +66,7 @@ const WORKING_INDICATORS = new Set([
   "queued-waiting",
 ]);
 
-/** Unknown indicator values (bb adds kinds over time) count as "none". */
+/** Unknown indicator values (VesnALIA adds kinds over time) count as "none". */
 export function normalizeIndicator(indicator: string): string {
   return KNOWN_INDICATORS.has(indicator) ? indicator : "none";
 }
@@ -216,7 +216,7 @@ export function isThreadVisible(thread: SidebarThreadInput): boolean {
   return !thread.isHidden && !thread.isArchived;
 }
 
-/** bb's pin order: keyed pins by key, then unkeyed pins newest first. */
+/** VesnALIA's pin order: keyed pins by key, then unkeyed pins newest first. */
 function comparePinned(a: SidebarThreadInput, b: SidebarThreadInput): number {
   if (a.pinSortKey !== null && b.pinSortKey !== null) {
     if (a.pinSortKey !== b.pinSortKey) return a.pinSortKey < b.pinSortKey ? -1 : 1;

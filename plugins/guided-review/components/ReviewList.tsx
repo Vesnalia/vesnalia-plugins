@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useRpc, useBbNavigate, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRpc, useAliaNavigate, useRealtime } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 import { reviewState, type ReviewItem } from "../lib/review-state";
 import { cn } from "../lib/utils";
@@ -60,7 +60,7 @@ function ReviewRow({ review, onOpen }: { review: ReviewItem; onOpen: () => void 
 
 export const ReviewList = memo(function ReviewList() {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
@@ -198,13 +198,13 @@ export const ReviewList = memo(function ReviewList() {
             </div>
             {startError && <p id="review-start-error" role="alert" className="mt-3 break-words text-sm text-destructive">{startError}</p>}
             <div className="mt-2 flex items-start justify-between gap-3">
-              <p id="review-start-help" className="py-1 text-xs leading-6 text-muted-foreground">Or use <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">bb review &lt;pr&gt;</code></p>
+              <p id="review-start-help" className="py-1 text-xs leading-6 text-muted-foreground">Or use <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground">alia review &lt;pr&gt;</code></p>
               <Popover>
                 <PopoverTrigger asChild><Button type="button" variant="ghost" size="sm" className="shrink-0 text-muted-foreground"><Icon name="CircleQuestion" className="size-3.5" aria-hidden /> Review help</Button></PopoverTrigger>
                 <PopoverContent align="end" className="w-96 max-w-[calc(100vw-24px)] space-y-3 p-4 text-sm leading-relaxed">
                   <p className="font-medium">Start your first review</p>
-                  <p className="text-muted-foreground">Connect a coding-agent provider in BB, then authenticate GitHub CLI on the BB server with <code className="font-mono text-xs">gh auth login</code>.</p>
-                  <p className="text-muted-foreground">Paste a pull request URL above. For a local change, run <code className="font-mono text-xs">bb review origin/main...HEAD</code> from its repository on that server.</p>
+                  <p className="text-muted-foreground">Connect a coding-agent provider in VesnALIA, then authenticate GitHub CLI on the VesnALIA server with <code className="font-mono text-xs">gh auth login</code>.</p>
+                  <p className="text-muted-foreground">Paste a pull request URL above. For a local change, run <code className="font-mono text-xs">alia review origin/main...HEAD</code> from its repository on that server.</p>
                   <p className="text-muted-foreground">Read the chapters and save draft comments. GitHub receives your review when you choose Submit to GitHub. Thread replies and resolve actions are posted when selected.</p>
                 </PopoverContent>
               </Popover>

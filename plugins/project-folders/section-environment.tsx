@@ -5,7 +5,7 @@ import {
   useRealtime,
   useRpc,
   type PluginEnvironmentProviderInputsProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,8 +38,8 @@ export { SECTION_ENVIRONMENT_ID };
 const isGroup = (f: Folder) => f.kind === "group";
 
 /**
- * The control BB's own New thread screen renders beside "Project section".
- * A plain select, because it lives inside BB's environment popover: the tree
+ * The control VesnALIA's own New thread screen renders beside "Project section".
+ * A plain select, because it lives inside VesnALIA's environment popover: the tree
  * is carried by the indent, not by a second scrolling panel.
  */
 export function SectionEnvironmentInputs({
@@ -107,7 +107,7 @@ export function SectionEnvironmentInputs({
       </p>
     );
   return (
-    <div className="pf pf-env-inputs" data-bb-ru-skip="">
+    <div className="pf pf-env-inputs" data-alia-ru-skip="">
       <select
         className="pf-select"
         aria-label={t("Раздел проекта")}
@@ -136,8 +136,8 @@ export function SectionEnvironmentInputs({
 }
 
 /**
- * A line under BB's own New thread composer naming the section the chat will
- * start in. BB's project chip says the project and stops there, so a chat
+ * A line under VesnALIA's own New thread composer naming the section the chat will
+ * start in. VesnALIA's project chip says the project and stops there, so a chat
  * handed off to a new thread looked like it was starting at the project root
  * when it was really continuing in a section folder.
  */
@@ -160,7 +160,7 @@ export function ComposerSectionBanner() {
   }, [rpc]);
   useEffect(load, [load]);
   useRealtime("changed", load);
-  // BB owns the environment picker and publishes no event for it, so the
+  // VesnALIA owns the environment picker and publishes no event for it, so the
   // selection is polled while the composer is on screen.
   useEffect(() => {
     const read = () =>
@@ -180,10 +180,10 @@ export function ComposerSectionBanner() {
 }
 
 /**
- * The section picker BB's own New thread screen gets from this plugin: a
+ * The section picker VesnALIA's own New thread screen gets from this plugin: a
  * control in the composer's action row, next to the model and the machine.
  *
- * BB's composer knows projects, not folders, and its environment picker needs
+ * VesnALIA's composer knows projects, not folders, and its environment picker needs
  * two clicks to reach ours. This is the one click: choose a section, and the
  * composer's environment switches to "Project section" on that section's
  * machine — `experimental_setSelection` applies it exactly as if the pickers
@@ -191,8 +191,8 @@ export function ComposerSectionBanner() {
  */
 export function SectionComposerAction() {
   useLanguage();
-  // With the tree inside BB's project chip this action would offer the same
-  // choice a second time and crowd the action row into BB's overflow menu.
+  // With the tree inside VesnALIA's project chip this action would offer the same
+  // choice a second time and crowd the action row into VesnALIA's overflow menu.
   const chipTaken = useChipTaken();
   const rpc = useRpc<typeof rpcContract>();
   const composer = useComposer();
@@ -305,7 +305,7 @@ export function SectionComposerAction() {
       setBusy(false);
     }
   };
-  // BB before 0.43.3 cannot set the composer's pickers, so the action has
+  // VesnALIA before 0.43.3 cannot set the composer's pickers, so the action has
   // nothing to apply; the environment picker's tree still picks a section.
   if (chipTaken || !composerCanSetSelection(composer)) return null;
   if (unavailable)

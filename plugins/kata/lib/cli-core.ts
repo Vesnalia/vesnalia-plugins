@@ -1,7 +1,7 @@
-// Pure pieces of `bb kata` and the kata agent tools: ref parsing, project
+// Pure pieces of `alia kata` and the kata agent tools: ref parsing, project
 // resolution precedence, argv-level values → daemon request bodies, and
 // bounded text formatting. No SDK or network access, so it is unit tested;
-// lib/kata-service.ts wires it to the daemon and bb.
+// lib/kata-service.ts wires it to the daemon and VesnALIA.
 import {
   AGENT_MIN_MESSAGE,
   EVIDENCE_KINDS,
@@ -55,9 +55,9 @@ export interface ProjectInputs {
 
 export interface ProjectResolverDeps {
   projects(): Promise<KataProject[]>;
-  /** Kata project bound to the thread's bb project, or null. */
+  /** Kata project bound to the thread's VesnALIA project, or null. */
   forThread(threadId: string): Promise<KataProject | null>;
-  /** Kata project bound to a bb project, or null. */
+  /** Kata project bound to a VesnALIA project, or null. */
   forProject(projectId: string): Promise<KataProject | null>;
 }
 
@@ -78,7 +78,7 @@ const namesOf = (projects: KataProject[]) => projects.map((p) => p.name).join(",
 
 /**
  * Which kata project a command acts on: `--project` > the ref's own project >
- * the thread's binding > the bb project's binding. A ref naming a different
+ * the thread's binding > the VesnALIA project's binding. A ref naming a different
  * project than `--project` is an error rather than a guess.
  */
 export async function resolveProject(
@@ -245,7 +245,7 @@ export interface CloseOptions {
 const normalizedLength = (text: string) => text.trim().replace(/\s+/gu, " ").length;
 
 const needsReview =
-  "If the work is not actually complete, do not close: `bb kata label <ref> add needs-review` and comment what remains.";
+  "If the work is not actually complete, do not close: `alia kata label <ref> add needs-review` and comment what remains.";
 
 /** The `actions/close` body, with the daemon's rules checked up front so the hint is exact. */
 export function closeBody(options: CloseOptions, actor: string): Record<string, unknown> {

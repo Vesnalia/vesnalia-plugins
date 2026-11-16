@@ -27,7 +27,7 @@ describe("row context menu", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "loud", title: "Loud snooze" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -68,7 +68,7 @@ describe("row context menu", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "dedupe", title: "Dedupe snooze" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -111,7 +111,7 @@ describe("row context menu", () => {
     );
   });
 
-  it("names a busy mention-titled thread in a settle error the way bb shows it", async () => {
+  it("names a busy mention-titled thread in a settle error the way VesnALIA shows it", async () => {
     renderSlot(inbox, listProps, {
       sidebarThreads: {
         status: "ready",
@@ -124,7 +124,7 @@ describe("row context menu", () => {
             parentThreadId: "thr_parent",
           }),
         ],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -136,7 +136,7 @@ describe("row context menu", () => {
     fireEvent.click(await screen.findByLabelText("Settle thread"));
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith("Could not settle thread", {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "Cannot settle while Review Login fix is working or waiting for input",
       }),
     );
@@ -149,7 +149,7 @@ describe("row context menu", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "thr_ports", title: "Port owner" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -174,7 +174,7 @@ describe("row context menu", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "round-trip", title: "Round trip" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({ rows: [] }),
@@ -216,7 +216,7 @@ describe("row context menu", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "wake", title: "Wake round trip" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -266,7 +266,7 @@ describe("row context menu", () => {
         sidebarThreads: {
           status: "ready",
           threads: [thread({ id: "broken", title: "Broken settle" })],
-          projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+          projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
         },
         rpc: {
           listLifecycle: () => ({ rows: [] }),
@@ -280,7 +280,7 @@ describe("row context menu", () => {
     await parkFromCard((await screen.findByText("Broken settle")).closest("li")!, action);
     await waitFor(() =>
       expect(toastMocks.error).toHaveBeenCalledWith(`Could not ${action} thread`, {
-        className: "bb-sidebar-toast",
+        className: "alia-sidebar-toast",
         description: "database offline",
       }),
     );
@@ -295,7 +295,7 @@ describe("row context menu", () => {
       sidebarThreads: {
         status: "ready",
         threads: [thread({ id: "settled", title: "Settled row" }), thread({ id: "snoozed", title: "Snoozed row" })],
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false, href: "", settingsHref: "" }],
+        projects: [{ id: "proj_1", name: "alia", isPersonal: false, href: "", settingsHref: "" }],
       },
       rpc: {
         listLifecycle: () => ({
@@ -365,7 +365,7 @@ describe("row context menu", () => {
       expect(archive.getAttribute("data-disabled")).not.toBeNull();
       fireEvent.click(archive);
       expect(rendered.threadActionCalls).not.toContainEqual({
-        key: "bb--core/archive",
+        key: "alia--core/archive",
         threadId: busyThread.id,
       });
     });

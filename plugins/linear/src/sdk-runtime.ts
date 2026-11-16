@@ -1,7 +1,7 @@
 /**
- * The two runtime values this plugin needs from `@bb/plugin-sdk`, vendored.
+ * The two runtime values this plugin needs from `@vesnalia/plugin-sdk`, vendored.
  *
- * `@bb/plugin-sdk` is not published to npm, and it is correctly not a
+ * `@vesnalia/plugin-sdk` is not published to npm, and it is correctly not a
  * dependency here: the vendored `types/*.d.ts` cover every type-only import
  * through tsconfig `paths`, and those erase at build. But `defineRpcContract`
  * and `PLUGIN_CLI_OUTPUT_MAX_BYTES` are *runtime* exports, and vitest does not
@@ -9,8 +9,8 @@
  * `npm ci && npm test` on a fork fail at module resolution, in every test that
  * transitively touches the rpc contract. Which is most of them.
  *
- * Vendoring two values is the smaller cost. `bb plugin build` keeps
- * `@bb/plugin-sdk` external anyway, so nothing about the shipped bundle
+ * Vendoring two values is the smaller cost. `alia plugin build` keeps
+ * `@vesnalia/plugin-sdk` external anyway, so nothing about the shipped bundle
  * changes; what changes is that the test suite resolves without the SDK
  * present, which is the whole point of the offline verification plan.
  */

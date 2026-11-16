@@ -4,8 +4,8 @@
 // can see that machine's Ollama Cloud key (its own environment, or the key
 // OpenCode stored when the user signed in) and its outbound network. The server
 // entry turns those host answers into the `provider-usage.v1.*` RPC resources
-// that BB's Provider usage view reads.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+// that VesnALIA's Provider usage view reads.
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 export const windowKindSchema = z.enum([

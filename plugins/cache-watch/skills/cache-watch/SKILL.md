@@ -1,11 +1,11 @@
 ---
 name: cache-watch
-description: Inspect prompt-cache usage and manage explicitly requested, time-limited cache keepalive for BB threads.
+description: Inspect prompt-cache usage and manage explicitly requested, time-limited cache keepalive for VesnALIA threads.
 ---
 
-Use `bb cache-watch status <thread-id> --json` to read the most recent cache telemetry. Reading status does not warm the cache. Never describe the expiry estimate as confirmed current cache state.
+Use `alia cache-watch status <thread-id> --json` to read the most recent cache telemetry. Reading status does not warm the cache. Never describe the expiry estimate as confirmed current cache state.
 
-Users can see their thread's telemetry directly in the **Cache** segment above its composer; click to expand exact counts and report time. BB's context-card layout instead shows a **Prompt cache** section. These surfaces bind to their own thread, refresh every 30 seconds, and offer manual refresh. Viewing them never enables keepalive; their explicit enable/renew and stop controls manage that thread, with a duration in hours.
+Users can see their thread's telemetry directly in the **Cache** segment above its composer; click to expand exact counts and report time. VesnALIA's context-card layout instead shows a **Prompt cache** section. These surfaces bind to their own thread, refresh every 30 seconds, and offer manual refresh. Viewing them never enables keepalive; their explicit enable/renew and stop controls manage that thread, with a duration in hours.
 
 The compact summary shows read/write sums for the latest turn through its last
 usage report. Expanded details show read and write as `step 1 + step 2 + … = total`
@@ -43,7 +43,7 @@ cannot be reconstructed: the UI counts unreported turns and unattributed reports
 instead of silently reporting zero or a complete cost. Only known values are
 summed. Codex cached tokens are already included in input. Request/response text
 is not saved. Deleting a thread deletes its plugin statistics. Disabling pauses
-collection, with backfill on later access for telemetry BB still retains.
+collection, with backfill on later access for telemetry VesnALIA still retains.
 
 The expanded panel and status JSON also show estimated latest-turn cost, cache
 read savings, and input cache-hit rate for supported Codex and Claude Code models. Amounts use
@@ -58,12 +58,12 @@ Claude Code costs use Anthropic model cards and an Anthropic pricing link, not
 OpenAI rates. Claude input excludes cache read/write tokens; its combined cached
 counter includes reads plus writes and is not a cache-read counter. Price uncached
 input, output, reads and writes separately. Unknown fields/models stay unknown.
-Writes use a 5m–1h price range because BB's aggregate TTL does not expose the split.
+Writes use a 5m–1h price range because VesnALIA's aggregate TTL does not expose the split.
 Claude Code Telemetry reports per-request 5m/1h write lifetimes: those writes use
 exact 1.25×/2× rates, and only writes with an unknown lifetime keep the range.
 `turn.writeLifetimes` in `status --json` holds the turn split (`fiveMinuteTokens`,
 `oneHourTokens`, `unknownTokens`); it is null when no lifetime is reported.
-BB emits Claude result usage as turn aggregates: first-request reuse is unknown,
+VesnALIA emits Claude result usage as turn aggregates: first-request reuse is unknown,
 not inferred from the turn total. Provider/model/rate source and token categories
 are saved across reloads; legacy snapshots rebuild from retained telemetry.
 
@@ -82,11 +82,11 @@ Built-in `claude-code` remains aggregate-only. No existing sessions are migrated
 
 Provider usage reports may aggregate multiple model requests within one turn. Do not describe the reported read count as the size of the live cache or assume input-token totals have identical meanings across providers.
 
-Enable only when the user asks to keep a thread's cache warm: `bb cache-watch start <thread-id> --hours 6`. Explain that this version sends ordinary paid turns visible in the transcript and asks for an OK reply. Tools are discouraged by the ping prompt, not technically disabled. Pings are due 5 minutes before the estimated expiry. Unknown or elapsed expiry waits for fresh telemetry. Each estimated deadline permits at most one attempt. Existing fixed-interval leases migrate to this policy on reload. Users can invoke `/keepalive start`, `/keepalive stop`, or `/keepalive status` for their current session. The scheduler sweeps every minute. There is no silent native prewarm integration in this version.
+Enable only when the user asks to keep a thread's cache warm: `alia cache-watch start <thread-id> --hours 6`. Explain that this version sends ordinary paid turns visible in the transcript and asks for an OK reply. Tools are discouraged by the ping prompt, not technically disabled. Pings are due 5 minutes before the estimated expiry. Unknown or elapsed expiry waits for fresh telemetry. Each estimated deadline permits at most one attempt. Existing fixed-interval leases migrate to this policy on reload. Users can invoke `/keepalive start`, `/keepalive stop`, or `/keepalive status` for their current session. The scheduler sweeps every minute. There is no silent native prewarm integration in this version.
 
-List leases with `bb cache-watch list --json`. Stop future pings and cancel deferred pings with `bb cache-watch stop <thread-id>`; a turn already started is not interrupted. Do not respond to a keepalive by resuming prior tasks, running tools, or renewing its lease. Reply `OK` only.
+List leases with `alia cache-watch list --json`. Stop future pings and cancel deferred pings with `alia cache-watch stop <thread-id>`; a turn already started is not interrupted. Do not respond to a keepalive by resuming prior tasks, running tools, or renewing its lease. Reply `OK` only.
 
-For control without invoking the LLM, use BB's command palette
+For control without invoking the LLM, use VesnALIA's command palette
 (Cmd+Shift+P on macOS, Ctrl+Shift+P elsewhere), search for `Keepalive` and select
 Show status, Enable paid keepalive for 6 hours, Renew paid keepalive for 6 hours,
 or Stop keepalive. These commands target the selected session and show results

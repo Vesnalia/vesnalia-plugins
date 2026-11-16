@@ -12,13 +12,13 @@ import {
   definePluginApp,
   experimental_Icon as Icon,
   experimental_usePluginId,
-  useBbNavigate,
+  useAliaNavigate,
   useComposer,
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginRpcResult, PluginThreadPanelProps } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginRpcResult, PluginThreadPanelProps } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server.js";
 import {
   CATCH_CHANNEL,
@@ -70,7 +70,7 @@ import { progressLabel, requirementLabel, type Stats } from "./progress.js";
 type FishBook = PluginRpcResult<(typeof rpcContract)["fishBook"]>;
 type Profile = PluginRpcResult<(typeof rpcContract)["profile"]>;
 
-// Declared in package.json under bb.branding.experimental_icons.
+// Declared in package.json under alia.branding.experimental_icons.
 const FISH_ICON = "gone-fishing/fish";
 const FISH_BOOK_ACTION = "fish-book";
 const TACKLE_BOX_ACTION = "tackle-box";
@@ -381,9 +381,9 @@ function IconButton({
 }
 
 /**
- * A slot right above the chat input. Banners render at the top of bb's card
+ * A slot right above the chat input. Banners render at the top of VesnALIA's card
  * stack, so the pond portals here to sit next to the chat input instead. Null
- * when bb's markup is not recognized; the pond then stays in the banner.
+ * when VesnALIA's markup is not recognized; the pond then stays in the banner.
  */
 function useComposerSlot(
   markerRef: RefObject<HTMLElement | null>,
@@ -422,7 +422,7 @@ function ThreadPond({
   compact: boolean;
 }) {
   const rpc = useRpc<typeof rpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const pluginId = experimental_usePluginId();
   const session = useSession(threadId);
   const reducedMotion = useReducedMotion();

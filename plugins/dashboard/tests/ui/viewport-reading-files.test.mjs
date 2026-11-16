@@ -11,7 +11,7 @@ import { parseChatFileLink, resolveChatFilePath } from '../../chat-file-links.ts
 test("connection warning waits three seconds, resets after recovery and preserves the chat", async context => {
   assert.equal(app.navPanels[0].headerContent, undefined);
   const slot = mount({ connected: true, language: "en", threads: [thread("a", "p1", "Alpha")] });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   const warning = () => slot.container.querySelector(".db-warning");
   assert.equal(warning(), null);
   context.mock.timers.enable({ apis: ["setTimeout"] });
@@ -27,7 +27,7 @@ test("connection warning waits three seconds, resets after recovery and preserve
   act(() => context.mock.timers.tick(1));
   assert.match(warning().textContent, /Reconnecting/);
   assert.equal(warning().getAttribute("role"), "status");
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   await act(async () => slot.behavior.setRealtimeConnectionState("connected"));
   assert.equal(warning(), null);
   await act(async () => slot.behavior.setRealtimeConnectionState("reconnecting"));
@@ -43,7 +43,7 @@ test("narrow history overlays the workspace, closes after selection and restores
   globalThis.ResizeObserver = class { constructor(callback) { this.callback = callback; } observe(el) { callbacks.set(el, this.callback); } disconnect() {} };
   try {
     const slot = mount({ connected: true, threads: [thread("work", "p1", "Working", { status: "active" }), thread("old", "p1", "History")], hiddenIds: ["old"] });
-    await slot.findByTestId("bb-thread-chat");
+    await slot.findByTestId("alia-thread-chat");
     const main = slot.container.querySelector('.db-main'); Object.defineProperty(main, "clientWidth", { value: 480 });
     await act(async () => callbacks.get(main)());
     const toggle = slot.getByRole("button", { name: "Показать последние 10 тредов" }); toggle.focus(); fireEvent.click(toggle);
@@ -53,7 +53,7 @@ test("narrow history overlays the workspace, closes after selection and restores
     assert.ok(slot.container.querySelector('.db-history-backdrop'));
     fireEvent.click(within(history).getByRole("button", { name: "History" }));
     assert.equal(slot.queryByRole("region", { name: "Прошлые треды" }), null);
-    assert.equal(slot.getByTestId("bb-thread-chat").dataset.threadId, "old");
+    assert.equal(slot.getByTestId("alia-thread-chat").dataset.threadId, "old");
     assert.equal(document.activeElement, toggle);
     assert.equal(slot.container.querySelector('.db-thread-workspace').hasAttribute('inert'), false);
   } finally { if (originalObserver === undefined) delete globalThis.ResizeObserver; else globalThis.ResizeObserver = originalObserver; }
@@ -65,7 +65,7 @@ test('failed UI work releases navigation, DOM, storage and browser overrides bef
   await assert.rejects(withUiCleanup(context, async () => {
     const slot = mount({ language: 'en', launcher: [{ id: item.id, label: item.label }] });
     assert.equal((await slot.findByRole('button', { name: item.label, exact: true })).disabled, false);
-    window.localStorage.setItem('bb-dashboard:permission-mode:dashboard', 'full');
+    window.localStorage.setItem('alia-dashboard:permission-mode:dashboard', 'full');
     window.sessionStorage.setItem('failed-test', 'temporary');
     globalThis.ResizeObserver = class {};
     window.DragEvent = window.MouseEvent;
@@ -105,7 +105,7 @@ test("viewport CSS fills the host and applies mobile keyboard geometry to the ch
 test("mobile typing fits the visual viewport without remounting the chat or losing draft selection", async t => {
   const mobile = mobileViewportFixture(t);
   const slot = mount({ connected: true, threads: [thread("a", "p1", "Alpha")], language: "en" });
-  const native = await slot.findByTestId("bb-thread-chat");
+  const native = await slot.findByTestId("alia-thread-chat");
   const frame = slot.container.querySelector(".db-viewport");
   frame.getBoundingClientRect = () => ({ top: 120, bottom: 956, height: 836, width: 440 });
   const editor = document.createElement("textarea");
@@ -128,7 +128,7 @@ test("mobile typing fits the visual viewport without remounting the chat or losi
   mobile.resize({ height: 956, offsetTop: 0 }); await mobile.flush();
   assert.equal(frame.dataset.mobileComposing, undefined);
   assert.equal(frame.style.getPropertyValue("--db-visible-height"), "");
-  assert.equal(slot.getByTestId("bb-thread-chat"), native);
+  assert.equal(slot.getByTestId("alia-thread-chat"), native);
   assert.equal(editor.value, "A draft that must survive opening and closing the keyboard");
   assert.equal(editor.selectionStart, 7); assert.equal(editor.selectionEnd, 12);
   mobile.resize({ height: 550 });
@@ -141,7 +141,7 @@ test("mobile typing fits the visual viewport without remounting the chat or losi
 test("search, browser chrome, pinch zoom and desktop resizing do not activate mobile typing", async t => {
   const mobile = mobileViewportFixture(t);
   const slot = mount({ connected: true, threads: [thread("a", "p1", "Alpha")], language: "en" });
-  const native = await slot.findByTestId("bb-thread-chat");
+  const native = await slot.findByTestId("alia-thread-chat");
   const frame = slot.container.querySelector(".db-viewport");
   frame.getBoundingClientRect = () => ({ top: 120, bottom: 956, height: 836, width: 440 });
   const search = document.createElement("input"); frame.querySelector(".db-header").append(search);
@@ -221,7 +221,7 @@ test("a pending file activation cannot open a preview after the chat unmounts", 
 
 test("launcher collapse preserves the mounted chat, restores focus and persists across remounts", async () => {
   const slot = mount({ connected: true, threads: [thread("t1", "p1", "Тред", { isUnread: true })] });
-  const chat = await slot.findByTestId("bb-thread-chat");
+  const chat = await slot.findByTestId("alia-thread-chat");
   const toggle = slot.getByRole("button", { name: "Скрыть приложения" });
   const settings = slot.getByRole("button", { name: "Настроить проекты и приложения" });
   const separator = slot.getByRole("separator");
@@ -232,7 +232,7 @@ test("launcher collapse preserves the mounted chat, restores focus and persists 
   const panel = document.getElementById(toggle.getAttribute("aria-controls"));
   assert.equal(panel.getAttribute("aria-hidden"), "true");
   assert.ok(panel.hasAttribute("inert"));
-  assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+  assert.equal(slot.getByTestId("alia-thread-chat"), chat);
   slot.lifecycle.unmount();
   const next = mount();
   const reopen = await next.findByRole("button", { name: "Показать приложения" });
@@ -256,7 +256,7 @@ test("launcher drag and keyboard resizing are bounded and remembered with its op
   pointer("pointermove", 328);
   assert.equal(resize.getAttribute("aria-valuenow"), "328");
   pointer("pointerup", 328);
-  assert.equal(JSON.parse(window.localStorage.getItem("bb-dashboard:launcher-layout:v1")).width, 328);
+  assert.equal(JSON.parse(window.localStorage.getItem("alia-dashboard:launcher-layout:v1")).width, 328);
   fireEvent.keyDown(resize, { key: "End" });
   assert.equal(resize.getAttribute("aria-valuenow"), "480");
   fireEvent.keyDown(resize, { key: "ArrowRight" });
@@ -273,7 +273,7 @@ test("launcher drag and keyboard resizing are bounded and remembered with its op
 });
 
 test("invalid saved layout falls back safely and unavailable storage does not break controls", async () => {
-  window.localStorage.setItem("bb-dashboard:launcher-layout:v1", "{bad json");
+  window.localStorage.setItem("alia-dashboard:launcher-layout:v1", "{bad json");
   const slot = mount();
   const resize = await slot.findByRole("separator");
   assert.equal(resize.getAttribute("aria-valuenow"), "208");
@@ -297,7 +297,7 @@ test("narrow panes constrain width without overwriting the preference and expose
     observe(element) { callbacks.set(element, this.callback); }
     disconnect() {}
   };
-  window.localStorage.setItem("bb-dashboard:launcher-layout:v1", JSON.stringify({ open: true, width: 400 }));
+  window.localStorage.setItem("alia-dashboard:launcher-layout:v1", JSON.stringify({ open: true, width: 400 }));
   try {
     const slot = mount();
     const resize = await slot.findByRole("separator");
@@ -306,7 +306,7 @@ test("narrow panes constrain width without overwriting the preference and expose
     Object.defineProperty(root, "clientWidth", { get: () => width });
     await act(async () => callbacks.get(root)());
     assert.equal(resize.getAttribute("aria-valuenow"), "256");
-    assert.equal(JSON.parse(window.localStorage.getItem("bb-dashboard:launcher-layout:v1")).width, 400);
+    assert.equal(JSON.parse(window.localStorage.getItem("alia-dashboard:launcher-layout:v1")).width, 400);
     assert.ok(slot.getByRole("button", { name: "Показать приложения" }));
     fireEvent.click(slot.getByRole("button", { name: "Показать приложения" }));
     fireEvent.click(slot.getByRole("button", { name: "Настроить проекты и приложения" }));
@@ -334,9 +334,9 @@ test("narrow mode collapses automatically and restores the desktop layout after 
   try {
     for (const open of [true, false]) {
       const saved = { open, width: 400 };
-      window.localStorage.setItem("bb-dashboard:launcher-layout:v1", JSON.stringify(saved));
+      window.localStorage.setItem("alia-dashboard:launcher-layout:v1", JSON.stringify(saved));
       const slot = mount({ connected: true, threads: [thread("t1", "p1", "Тред", { isUnread: true })] });
-      const chat = await slot.findByTestId("bb-thread-chat");
+      const chat = await slot.findByTestId("alia-thread-chat");
       const root = slot.container.querySelector(".db-root");
       const resize = slot.getByRole("separator", { hidden: true });
       let width = 1200;
@@ -350,12 +350,12 @@ test("narrow mode collapses automatically and restores the desktop layout after 
         fireEvent.click(slot.getByRole("button", { name: "Показать приложения" }));
         fireEvent.keyDown(resize, { key: "Home" });
         fireEvent.click(slot.container.querySelector(".db-launcher-backdrop"));
-        assert.deepEqual(JSON.parse(window.localStorage.getItem("bb-dashboard:launcher-layout:v1")), saved);
+        assert.deepEqual(JSON.parse(window.localStorage.getItem("alia-dashboard:launcher-layout:v1")), saved);
         width = 1200;
         await act(async () => measure());
         assert.equal(slot.container.querySelector(".db-layout").dataset.launcherOpen, String(open));
         assert.equal(resize.getAttribute("aria-valuenow"), "400");
-        assert.equal(slot.getByTestId("bb-thread-chat"), chat);
+        assert.equal(slot.getByTestId("alia-thread-chat"), chat);
       }
       slot.lifecycle.unmount();
     }

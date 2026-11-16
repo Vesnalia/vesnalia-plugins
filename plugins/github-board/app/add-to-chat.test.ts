@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { PluginComposerScope } from "@get-bb/plugin-sdk/app";
+import type { PluginComposerScope } from "@vesnalia/plugin-sdk/app";
 
 import { DEFAULT_PROMPTS } from "../shared/settings";
 import {
@@ -139,7 +139,7 @@ describe("chatTargets", () => {
     sendDialogOpen: false,
   };
 
-  it("lists the chats on screen first, in bb's order, named for the picker", () => {
+  it("lists the chats on screen first, in VesnALIA's order, named for the picker", () => {
     const thr = composer({ kind: "thread", threadId: "a" });
     const fresh = composer({ kind: "new-thread", projectId: "proj_w" });
     const targets = chatTargets({ ...base, composers: [thr, fresh] });

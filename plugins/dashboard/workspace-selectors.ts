@@ -1,4 +1,4 @@
-import type { experimental_useSidebarThreads } from "@get-bb/plugin-sdk/app";
+import type { experimental_useSidebarThreads } from "@vesnalia/plugin-sdk/app";
 import type { DashboardConfig } from "./contracts";
 import type { Translator, MessageKey } from "./i18n";
 import type { ConversationItem } from "./conversation-list";

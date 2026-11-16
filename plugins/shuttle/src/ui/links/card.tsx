@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { experimental_Icon as Icon, type BbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, type AliaNavigate } from "@vesnalia/plugin-sdk/app";
 import type { CheckState, HunkLine, LinkCard, PrView } from "../../contract";
 import { Avatar } from "../avatar";
 import { LabelChip } from "../manage";
@@ -109,7 +109,7 @@ export function LinkCardBody({ url, kind, card, error, navigate, onDone, sheet =
   kind: string;
   card: LinkCard | undefined;
   error: unknown;
-  navigate: BbNavigate;
+  navigate: AliaNavigate;
   onDone(): void;
   sheet?: boolean;
   onOpenInShuttle?(): void;

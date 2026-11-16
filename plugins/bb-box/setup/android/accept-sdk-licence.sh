@@ -9,7 +9,7 @@ Shows the Android SDK's licence, the terms the Android template's SDK,
 emulator and system image come under, and asks whether you accept them. The
 terms are read from Google's repository manifest and checked against the
 SHA-256 pinned in setup/android/pins.json, so what you read is what the pins
-name. Only once you accept does it write <file>, /etc/bb-box/android-sdk-license
+name. Only once you accept does it write <file>, /etc/alia-box/android-sdk-license
 unless --to says otherwise, which build.sh android needs. The template keeps
 that acceptance, and its refreshes need it; a pin that names other terms
 needs this step again.
@@ -22,7 +22,7 @@ USAGE
   exit 2
 }
 
-to=/etc/bb-box/android-sdk-license
+to=/etc/alia-box/android-sdk-license
 yes=no
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -54,7 +54,7 @@ else:
 ' "$work/manifest.xml" "$id" "$work/terms.txt"
 if ! echo "$terms_sha256  $work/terms.txt" | sha256sum -c --status; then
   echo "accept-sdk-licence.sh: the terms of $id in Google's manifest are not the ones setup/android/pins.json pins." >&2
-  echo "accept-sdk-licence.sh: a bb-box update has to pin them before an Android template is built." >&2
+  echo "accept-sdk-licence.sh: a alia-box update has to pin them before an Android template is built." >&2
   exit 1
 fi
 

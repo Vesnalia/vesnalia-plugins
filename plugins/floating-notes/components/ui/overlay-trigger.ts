@@ -97,7 +97,7 @@ export function preventOverlayTriggerSelection(event: MouseEvent): void {
 // State lives on globalThis so re-evaluating this module (every plugin
 // reload ships a fresh bundle) never stacks another pair of document
 // listeners — the old bundle's listeners can never be removed.
-const MODALITY_KEY = "__bbPluginInputModality";
+const MODALITY_KEY = "__aliaPluginInputModality";
 type ModalityGlobal = typeof globalThis & {
   [MODALITY_KEY]?: "pointer" | "keyboard";
 };

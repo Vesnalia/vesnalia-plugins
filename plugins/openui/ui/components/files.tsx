@@ -3,7 +3,7 @@
 // transcripts compared word by word. Each reads through useThreadFile; the
 // parsers they use are pure, in ./files/, and tested in files.test.ts.
 import { useContext, useEffect, useId, useState, type CSSProperties, type ReactNode } from "react";
-import { Markdown, experimental_FileLink as FileLink, useSdk } from "@get-bb/plugin-sdk/app";
+import { Markdown, experimental_FileLink as FileLink, useSdk } from "@vesnalia/plugin-sdk/app";
 import { defineComponent } from "@openuidev/react-lang";
 import { ChevronRight, CircleCheck, CircleX, FileText } from "lucide-react";
 import { z } from "zod/v4";
@@ -21,7 +21,7 @@ const ICON = { size: 14, strokeWidth: 1.75, "aria-hidden": true } as const;
 // ---------------------------------------------------------------------------
 // Reading files and opening them
 
-/** False on the server and the first client render: the SDK's data hooks only exist once mounted in BB. */
+/** False on the server and the first client render: the SDK's data hooks only exist once mounted in VesnALIA. */
 function useMounted(): boolean {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -73,20 +73,20 @@ interface RefProps {
 
 function LinkedFile({ path, line, endLine, className, children }: RefProps) {
   const threadId = useContext(FenceContext)?.threadId ?? null;
-  const env = useThreadEnv(path.startsWith("$BB_THREAD_STORAGE/") ? null : threadId);
+  const env = useThreadEnv(path.startsWith("$ALIA_THREAD_STORAGE/") ? null : threadId);
   const target = fileTarget(path, threadId, env);
   if (target === null) return <span className={className}>{children}</span>;
   const start = line && line > 0 ? Math.floor(line) : null;
   const location =
     start === null ? null : endLine && endLine > start ? { kind: "range" as const, startLine: start, endLine: Math.floor(endLine) } : { kind: "line" as const, line: start, column: null };
   return (
-    <FileLink target={target} location={location} className={cx(className, "bbui-files-link")} title={`Open ${path} in BB`}>
+    <FileLink target={target} location={location} className={cx(className, "bbui-files-link")} title={`Open ${path} in VesnALIA`}>
       {children}
     </FileLink>
   );
 }
 
-/** A path that opens the file in BB once the thread's environment is known; plain text until then. */
+/** A path that opens the file in VesnALIA once the thread's environment is known; plain text until then. */
 function FileRef(props: RefProps) {
   const mounted = useMounted();
   return mounted ? <LinkedFile {...props} /> : <span className={props.className}>{props.children}</span>;
@@ -141,7 +141,7 @@ function PathLabel({ path, line }: { path: string; line?: number | null }) {
 
 const File = defineComponent({
   name: "File",
-  description: "A compact link to one workspace or thread-storage file that opens it in BB, optionally at a line.",
+  description: "A compact link to one workspace or thread-storage file that opens it in VesnALIA, optionally at a line.",
   props: z.object({ path: z.string(), line: z.number().optional() }),
   component: ({ props }) => {
     const path = text(props.path);
@@ -638,20 +638,20 @@ tiny = TranscriptTrack("whisper tiny.en", "Yes I can here you. Great we have twe
 export const filesGroup: ExtraGroup = {
   name: "Workspace files",
   notes: [
-    'Paths are workspace-relative, "$BB_THREAD_STORAGE/..." or "/tmp/..."; write the file first, then show it.',
+    'Paths are workspace-relative, "$ALIA_THREAD_STORAGE/..." or "/tmp/..."; write the file first, then show it.',
     "Logs and StackTrace take a file path or the text itself; long logs open at their tail.",
   ],
   components: [Snippet, File, FileImage, Logs, StackTrace, Transcript, TranscriptTrack],
   examples: {
     Snippet: `root = Stack([intro, code])
 intro = TextContent("The retry backoff lives here:")
-code = Snippet("$BB_THREAD_STORAGE/retry.ts", 4, 12)`,
+code = Snippet("$ALIA_THREAD_STORAGE/retry.ts", 4, 12)`,
     File: `root = Stack([intro, a, b])
 intro = TextContent("Files to change:")
 a = File("src/worker/queue.ts", 42)
-b = File("$BB_THREAD_STORAGE/notes/plan.md")`,
+b = File("$ALIA_THREAD_STORAGE/notes/plan.md")`,
     FileImage: `root = Stack([shot])
-shot = FileImage("$BB_THREAD_STORAGE/screenshots/checkout.png", "Checkout page after the fix")`,
+shot = FileImage("$ALIA_THREAD_STORAGE/screenshots/checkout.png", "Checkout page after the fix")`,
     Logs: `root = Stack([log])
 log = Logs("> shop@1.4.0 build\\n> tsc && vite build\\n\\nvite v5.4.2 building for production...\\n[warn] src/cart.ts: 'formatEur' is deprecated, use 'money()'\\ntransforming (212) src/pages/checkout.tsx\\nsrc/pricing.ts(10,23): error TS2339: Property 'toEur' does not exist on type 'Price'.\\nFound 1 error in src/pricing.ts:10", "npm run build", 1)`,
     StackTrace: `root = Stack([trace])

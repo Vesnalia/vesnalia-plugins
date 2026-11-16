@@ -2,10 +2,10 @@
  * The host entry through the SDK's host harness — the daemon's validation,
  * JSON transport, leases and lifecycle — against a fake Screen Sharing: a
  * session holds exactly one worker lease while open, its bytes leave as
- * `data` signals, and closing it, Close all on the server, or bb stopping the
+ * `data` signals, and closing it, Close all on the server, or VesnALIA stopping the
  * worker leaves no socket and no lease.
  */
-import { experimental_createHostEntryHarness } from "@get-bb/plugin-sdk/testing/host";
+import { experimental_createHostEntryHarness } from "@vesnalia/plugin-sdk/testing/host";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { FakePasteboardCommands } from "../testing/fake-pasteboard";
@@ -81,7 +81,7 @@ describe("the host entry", () => {
     await entry.experimental_dispose();
   });
 
-  it("closes every session and lease when bb stops the worker, and tells the server", async () => {
+  it("closes every session and lease when VesnALIA stops the worker, and tells the server", async () => {
     const entry = harness();
     await entry.experimental_call("open", { sessionId: "s1" });
     await entry.experimental_call("open", { sessionId: "s2" });

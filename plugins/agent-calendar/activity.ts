@@ -1,6 +1,6 @@
 // Pure calendar math shared by the server (RPC + CLI) and the app. Everything
 // here works on epoch milliseconds; "local" means the runtime's time zone, so
-// the app renders in the viewer's zone and the CLI in the bb server's zone.
+// the app renders in the viewer's zone and the CLI in the VesnALIA server's zone.
 
 export const MINUTE_MS = 60_000;
 export const HOUR_MS = 60 * MINUTE_MS;

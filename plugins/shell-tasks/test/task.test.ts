@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import type { ExperimentalHostRpcContext } from "@get-bb/plugin-sdk";
+import type { ExperimentalHostRpcContext } from "@vesnalia/plugin-sdk";
 import {
   READ_MAX_BYTES,
   READ_MAX_LINES,
@@ -21,10 +21,10 @@ import {
 } from "../host.ts";
 
 const TASK_ENV = {
-  BB_THREAD_ID: "thr_test",
-  BB_PROJECT_ID: "proj_test",
-  BB_ENVIRONMENT_ID: "env_test",
-  BB_THREAD_STORAGE: "/tmp/thread-storage-test",
+  ALIA_THREAD_ID: "thr_test",
+  ALIA_PROJECT_ID: "proj_test",
+  ALIA_ENVIRONMENT_ID: "env_test",
+  ALIA_THREAD_STORAGE: "/tmp/thread-storage-test",
 } as const;
 
 function harness(dataDir: string) {
@@ -88,14 +88,14 @@ test("UTF-8 boundaries are not split", () => {
 });
 
 test("tail defaults to 50 lines and accepts a lower limit", async () => {
-  const dataDir = mkdtempSync(join(tmpdir(), "bb-plugin-tasks-tail-test-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "alia-plugin-tasks-tail-test-"));
   const manager = new TaskManager();
   const { context } = harness(dataDir);
 
   try {
     const envTask = await manager.start(
       "thread-env",
-      `printf '%s\\n' "$BB_THREAD_ID|$BB_PROJECT_ID|$BB_ENVIRONMENT_ID|$BB_THREAD_STORAGE"`,
+      `printf '%s\\n' "$ALIA_THREAD_ID|$ALIA_PROJECT_ID|$ALIA_ENVIRONMENT_ID|$ALIA_THREAD_STORAGE"`,
       process.cwd(),
       TASK_ENV,
       context,
@@ -149,7 +149,7 @@ test("tail defaults to 50 lines and accepts a lower limit", async () => {
 
 
 test("running reads hold incomplete lines without losing continuations", async () => {
-  const dataDir = mkdtempSync(join(tmpdir(), "bb-plugin-tasks-lines-test-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "alia-plugin-tasks-lines-test-"));
   const manager = new TaskManager();
   const { context } = harness(dataDir);
 
@@ -201,7 +201,7 @@ test("running reads hold incomplete lines without losing continuations", async (
 });
 
 test("oversized UTF-8 lines advance and starts recover by key without rerunning", async () => {
-  const dataDir = mkdtempSync(join(tmpdir(), "bb-plugin-tasks-recovery-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "alia-plugin-tasks-recovery-"));
   const manager = new TaskManager();
   const replacement = new TaskManager();
   const { context } = harness(dataDir);
@@ -229,7 +229,7 @@ test("oversized UTF-8 lines advance and starts recover by key without rerunning"
 });
 
 test("tasks start, stream, fail, stop and clear", async () => {
-  const dataDir = mkdtempSync(join(tmpdir(), "bb-plugin-tasks-test-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "alia-plugin-tasks-test-"));
   const manager = new TaskManager();
   const { completions, context } = harness(dataDir);
 

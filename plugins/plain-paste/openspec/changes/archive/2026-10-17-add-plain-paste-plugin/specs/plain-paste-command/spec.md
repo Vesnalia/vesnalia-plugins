@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Gives bb users a paste-as-plain-text action for the message box, so text copied from Office apps can be pasted without the image those apps put on the clipboard.
+Gives VesnALIA users a paste-as-plain-text action for the message box, so text copied from Office apps can be pasted without the image those apps put on the clipboard.
 
 ## ADDED Requirements
 
 ### Requirement: Paste as plain text command
-The plugin SHALL provide a "Paste as plain text" command for the message box, bound by default to ⇧⌘V, listed in bb's command palette and Settings → Keyboard, and rebindable there.
+The plugin SHALL provide a "Paste as plain text" command for the message box, bound by default to ⇧⌘V, listed in VesnALIA's command palette and Settings → Keyboard, and rebindable there.
 
 #### Scenario: Shortcut inserts clipboard text
 - **WHEN** the caret is in a message box and the user presses ⇧⌘V while the clipboard holds text
@@ -51,7 +51,7 @@ The plugin SHALL NOT change the behavior of ⌘V.
 
 #### Scenario: Ordinary paste
 - **WHEN** the user presses ⌘V with an Office text-and-image clipboard
-- **THEN** bb behaves as it does without the plugin
+- **THEN** VesnALIA behaves as it does without the plugin
 
 ### Requirement: Non-Latin keyboard layouts
 ⇧⌘V SHALL trigger the command while a non-Latin keyboard layout, including Russian, is active.

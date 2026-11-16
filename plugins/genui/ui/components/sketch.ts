@@ -2,7 +2,7 @@
 // hand-drawn look (rough strokes, hachure fills) in Excalifont, in Excalidraw's
 // palette. Excalidraw's dark theme is its light canvas through
 // `invert(93%) hue-rotate(180deg)`; the dark palette here is that filter
-// worked out per colour, so the SVG is drawn dark natively and BB's zoom view,
+// worked out per colour, so the SVG is drawn dark natively and VesnALIA's zoom view,
 // which copies the SVG elsewhere, shows it right too. Pure: no DOM.
 
 /** The font family the diagram text uses; Excalifont is loaded by sketchFont.ts. */
@@ -151,7 +151,7 @@ export function shapeClassLines(source: string, colors: SketchPalette = LIGHT): 
 }
 
 /**
- * The source BB's Mermaid renderer gets. A diagram that brings its own front
+ * The source VesnALIA's Mermaid renderer gets. A diagram that brings its own front
  * matter or init directive keeps it untouched; one with its own class or style
  * lines keeps its colours but still gets the hand-drawn look. The diagram has
  * no canvas of its own: it is drawn on `backdrop`, Excalidraw's canvas colour

@@ -1,8 +1,8 @@
 import { fixtureRuntime } from "./runtime-helper.ts";
 import assert from "node:assert/strict";
 import { afterAll, beforeAll, describe, it } from "vitest";
-import type { PluginAgentToolResult } from "@get-bb/plugin-sdk";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import type { PluginAgentToolResult } from "@vesnalia/plugin-sdk";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import { formatSearchText, renderFetchedPage, type SearchDetails, type SearchQueryDetail } from "../src/format.ts";
 import { collectGithubCollection, formatGithubIssueDocument, type GithubIssue } from "../src/web/github.ts";
 import { CONFIG_DEFAULTS, type WebConfig } from "../src/web/config.ts";
@@ -171,7 +171,7 @@ describe.sequential("H1B existing tool boundary", () => {
 
 	function host() {
 		const fake = createFakePluginHost({ pluginId: "forage", experimental_declaredIconNames: ["search", "fetch", "map", "extract", "crawl", "diff"] });
-		registerTools(fake.bb, fixtureRuntime(fake.bb, async () => config({ timeoutMs: 1_000, concurrency: 2 })));
+		registerTools(fake.alia, fixtureRuntime(fake.alia, async () => config({ timeoutMs: 1_000, concurrency: 2 })));
 		return fake;
 	}
 

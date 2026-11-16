@@ -12,7 +12,7 @@
  *    timestamp: dismiss it and it stays gone through re-renders of the same
  *    twelve, and returns the moment a thirteenth changes.
  * The live stream is deliberately not in the banner. A 60fps video underneath
- * the text you are typing, in a stack already competing with bb's own context,
+ * the text you are typing, in a stack already competing with VesnALIA's own context,
  * todo and workflow cards, is a worse place for it than a panel you chose to
  * open.
  */

@@ -1,22 +1,22 @@
-# bb-plugin-tokenmaxx
+# alia-plugin-tokenmaxx
 
-A [bb](https://getbb.app) plugin for [tokenmaxx](https://github.com/RubricLab/tokenmaxx): see every
+A [VesnALIA](https://getbb.app) plugin for [tokenmaxx](https://github.com/RubricLab/tokenmaxx): see every
 Codex and Claude Code account you are signed into, watch their rate-limit pressure fill up, and
-switch between them without leaving bb.
+switch between them without leaving VesnALIA.
 
 ## Requirements
 
 - macOS, where tokenmaxx runs
 - `tokenmaxx` installed and its daemon reachable: `bun add -g tokenmaxx`
-- bb 0.39 or newer
+- VesnALIA 0.39 or newer
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/pedroapfilho/bb-plugin-tokenmaxx.git@^0.1.3
+alia plugin install git:https://github.com/pedroapfilho/bb-plugin-tokenmaxx.git@^0.1.3
 ```
 
-Then open **tokenmaxx** in the bb sidebar. The sidebar row also carries how full your pool is:
+Then open **tokenmaxx** in the VesnALIA sidebar. The sidebar row also carries how full your pool is:
 every enabled account, across both providers, counted once at its own fullest rate-limit window.
 You can read the pressure without opening the panel.
 
@@ -32,7 +32,7 @@ you do not care about, and turn auto-rotation on with its threshold, hold, and h
 throughput chart, an input/output/cache cost split, and per-provider and per-model tables.
 
 **Setup.** Daemon status with start and stop, the proxy address, sign-in for both providers (OAuth
-or an API key) running the real login in a bb terminal you can type into, routing install and
+or an API key) running the real login in a VesnALIA terminal you can type into, routing install and
 uninstall for `codex`, `claude`, and `pi`, plus the full `tokenmaxx doctor` report.
 
 ## Settings
@@ -43,8 +43,8 @@ uninstall for `codex`, `claude`, and `pi`, plus the full `tokenmaxx doctor` repo
 | `home` | `~/.tokenmaxx` | `TOKENMAXX_HOME` override |
 | `refreshSeconds` | `5` | How often the dashboard polls the daemon |
 
-Edit them in Extensions, or with `bb plugin config tokenmaxx set <key> <value>`, then run
-`bb plugin reload tokenmaxx`.
+Edit them in Extensions, or with `alia plugin config tokenmaxx set <key> <value>`, then run
+`alia plugin reload tokenmaxx`.
 
 ## How it works
 
@@ -55,15 +55,15 @@ a realtime signal only when something meaningful changes, so open clients update
 it.
 
 Four things need the CLI instead, because the socket cannot do them: `doctor`, routing install and
-uninstall, daemon start and stop, and login. Login needs a real pty, so the plugin runs it in a bb
+uninstall, daemon start and stop, and login. Login needs a real pty, so the plugin runs it in a VesnALIA
 terminal and streams that terminal into the panel.
 
 ## Development
 
 ```sh
 npm install
-bb plugin install .      # register this directory in place
-bb plugin dev            # rebuild and reload on every save
+alia plugin install .      # register this directory in place
+alia plugin dev            # rebuild and reload on every save
 ```
 
 `npx tsc --noEmit` typechecks both entries.

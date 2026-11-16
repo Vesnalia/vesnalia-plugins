@@ -23,7 +23,7 @@ const fake = fakeSsh();
 
 /** A fake pool machine at `host`, set up as setup.sh leaves one, with flags for the fake helper. */
 function machine(host: string, flags: Record<string, string> = {}): void {
-  const state = join(fake.home(host), ".bb-box-state");
+  const state = join(fake.home(host), ".alia-box-state");
   rmSync(state, { recursive: true, force: true });
   mkdirSync(join(state, "flags"), { recursive: true });
   writeFileSync(join(state, "generation"), "0\n");
@@ -31,15 +31,15 @@ function machine(host: string, flags: Record<string, string> = {}): void {
 }
 
 function setFlag(host: string, name: string, value = ""): void {
-  writeFileSync(join(fake.home(host), ".bb-box-state", "flags", name), value);
+  writeFileSync(join(fake.home(host), ".alia-box-state", "flags", name), value);
 }
 
 function clearFlag(host: string, name: string): void {
-  rmSync(join(fake.home(host), ".bb-box-state", "flags", name), { force: true });
+  rmSync(join(fake.home(host), ".alia-box-state", "flags", name), { force: true });
 }
 
 function write(host: string, file: string, text: string): void {
-  writeFileSync(join(fake.home(host), ".bb-box-state", file), text);
+  writeFileSync(join(fake.home(host), ".alia-box-state", file), text);
 }
 
 function settings(lines: string, values: Record<string, unknown> = {}): Record<string, unknown> {
@@ -127,7 +127,7 @@ describe("SSH host pool settings", () => {
       reset: "machine",
       labels: ["fast", "big"],
     });
-    assert.equal(parsed.privateKey, null, "BB Box makes a key when none is given");
+    assert.equal(parsed.privateKey, null, "VesnALIA Box makes a key when none is given");
   });
 
   it("give Docker on a machine with reset=machine, and accept the kind IDs from before 027 and linux-docker on its line (041)", () => {
@@ -434,7 +434,7 @@ describe("SSH host pool", () => {
     const doctor = await backend.doctor();
     const state = doctor.checks.find((check) => check.id === "machine.f.state");
     assert.equal(state?.status, "warn");
-    assert.match(state!.fix!, /sudo \/usr\/local\/libexec\/bb-box\/machine reset"/);
+    assert.match(state!.fix!, /sudo \/usr\/local\/libexec\/alia-box\/machine reset"/);
     // Releasing again does nothing.
     await backend.release(guest, releaseHooks().hooks);
 
@@ -461,7 +461,7 @@ describe("SSH host pool", () => {
     await assert.rejects(backend.release(guest, releaseHooks().hooks), /stopped answering during its reset/);
     assert.equal((await member(backend, "c")).state, "resetting");
     assert.equal(await backend.power(guest), null);
-    // As after a restart that lost BB Box's storage: the machine says it is part-way through a reset.
+    // As after a restart that lost VesnALIA Box's storage: the machine says it is part-way through a reset.
     const fresh = pool("c 192.0.2.52 linux").backend;
     const [held] = await fresh.held();
     assert.ok(held);
@@ -517,7 +517,7 @@ describe("SSH host pool", () => {
     try {
       assert.equal(await backend.power(guest), "unknown");
       const [held] = await backend.held();
-      assert.equal(held?.owner?.boxId, box.boxId, "BB Box's record names the box");
+      assert.equal(held?.owner?.boxId, box.boxId, "VesnALIA Box's record names the box");
       assert.equal(held?.power, "unknown");
       const out = await member(backend, "u");
       assert.equal(out.state, "out-of-service");
@@ -619,7 +619,7 @@ describe("SSH host pool", () => {
     const state = doctor.checks.find((check) => check.id === "machine.r.state")!;
     assert.equal(state.status, "warn");
     assert.match(state.detail, /An operator's reset on the machine has not finished/);
-    assert.match(state.fix!, /run "sudo \/usr\/local\/libexec\/bb-box\/machine reset" on r again/);
+    assert.match(state.fix!, /run "sudo \/usr\/local\/libexec\/alia-box\/machine reset" on r again/);
     assert.doesNotMatch(doctor.notes.join("\n"), /leaves alone/, "it is no other install's");
     assert.deepEqual(await backend.held(), [], "the sweep leaves it to the operator");
     const reset = await fake.ssh.run({ host: "192.0.2.63", port: 22, user: "bbbox-admin", hostKeys: [] }, `${HELPER} reset </dev/null`, { timeoutMs: 20_000 });
@@ -628,7 +628,7 @@ describe("SSH host pool", () => {
     await backend.dispose();
   });
 
-  it("fails its doctor without Node.js or npm for BB's installer, and warns without git or gh", async () => {
+  it("fails its doctor without Node.js or npm for VesnALIA's installer, and warns without git or gh", async () => {
     machine("192.0.2.67");
     machine("192.0.2.68", { node: "v22.19.0" });
     machine("192.0.2.69", { node: "" });
@@ -644,21 +644,21 @@ describe("SSH host pool", () => {
     assert.equal(doctor.ok, false);
     assert.equal(tools("ok").status, "ok");
     assert.match(tools("ok").detail, /^Everything the helper, enrolment and the thread's GitHub access need, with Node\.js 24\.21\.0\./);
-    assert.equal(tools("edge").status, "ok", "BB's installer takes 22.19");
+    assert.equal(tools("edge").status, "ok", "VesnALIA's installer takes 22.19");
     assert.equal(tools("bare").status, "fail");
     assert.equal(tools("bare").detail, "bare lacks node.");
     assert.match(tools("bare").fix!, /^On bare: Install Node\.js 22\.19 or newer with npm, such as Node\.js 24 from NodeSource or nodejs\.org\. Debian's and Ubuntu's own nodejs is too old\./);
     assert.equal(tools("old").status, "fail");
-    assert.equal(tools("old").detail, "old has Node.js 22.18.1, but BB's installer needs 22.19 or newer.");
+    assert.equal(tools("old").detail, "old has Node.js 22.18.1, but VesnALIA's installer needs 22.19 or newer.");
     assert.equal(tools("nonpm").status, "fail");
     assert.equal(tools("nonpm").detail, "nonpm lacks npm, gh.");
     assert.match(tools("nonpm").fix!, /Install Node\.js .* Install git and gh\. On Debian or Ubuntu: sudo apt-get install git gh\.$/);
     assert.equal(tools("nogit").status, "warn");
-    assert.match(tools("nogit").detail, /^nogit lacks git, gh\. Boxes there enrol in BB, but cannot use the thread's GitHub access/);
+    assert.match(tools("nogit").detail, /^nogit lacks git, gh\. Boxes there enrol in ALIA, but cannot use the thread's GitHub access/);
     assert.equal(tools("nogit").fix, "On nogit: Install git and gh. On Debian or Ubuntu: sudo apt-get install git gh.");
     assert.equal(tools("older").status, "warn");
     assert.match(tools("older").detail, /^The helper does not say whether older has Node\.js, npm, git and gh/);
-    assert.equal(tools("older").fix, "Run this BB Box's setup/ssh-pool/setup.sh on older as root.");
+    assert.equal(tools("older").fix, "Run this VesnALIA Box's setup/ssh-pool/setup.sh on older as root.");
     assert.equal(doctor.checks.find((check) => check.id === "machine.older.helper")!.status, "ok", "the helper's version has not changed");
     // A box there still runs commands, so the machine stays in service.
     assert.equal((await member(backend, "bare")).state, "free");
@@ -675,7 +675,7 @@ describe("SSH host pool", () => {
     assert.match(doctor.notes.join("\n"), /This install's ID is other/);
     assert.match(doctor.notes.join("\n"), /leaves alone 1 machine held by install mine\. They still count against capacity/);
     assert.match(doctor.checks.find((check) => check.id === "machine.o.state")!.detail, /Held by install mine/);
-    await assert.rejects(other.returnToService!("o"), /o is held by box .+ of BB Box install mine\. Release the box first\./);
+    await assert.rejects(other.returnToService!("o"), /o is held by box .+ of ALIA Box install mine\. Release the box first\./);
     assert.equal(await mine.power(guest), "running", "the box's machine was not reset");
     await mine.release(guest, releaseHooks().hooks);
     await mine.dispose();
@@ -744,7 +744,7 @@ describe("A machine taken out of the SSH host pool's settings while a box holds 
     const { guest } = await acquire(before, "linux");
     assert.equal(guest.ref, "held");
     const without = pool("kept 192.0.2.76 linux", storage).backend;
-    assert.equal(await without.power(guest), "unknown", "not null, which core takes for a guest deleted outside bb-box");
+    assert.equal(await without.power(guest), "unknown", "not null, which core takes for a guest deleted outside alia-box");
     await assert.rejects(without.transports(guest, "linux"), (error: unknown) => !(error instanceof BackendError) && /^Machine held is not in the SSH host pool's settings now/.test((error as Error).message));
     assert.deepEqual(await without.held(), [], "the sweep sees nothing of it");
     const named = (notes: readonly string[]) => notes.some((note) => note.startsWith("Machine held is not in ssh-pool-machines, but box "));
@@ -874,7 +874,7 @@ describe("An SSH host pool of Macs (047)", () => {
     );
   });
 
-  it("offers the desktop as video while every Mac serving macos-desktop has bb-box-stream, through bb-box-stream connect in the box user's desktop session (060)", async () => {
+  it("offers the desktop as video while every Mac serving macos-desktop has alia-box-stream, through alia-box-stream connect in the box user's desktop session (060)", async () => {
     const host = "192.0.2.84";
     mac(host, { stream: "" });
     mac("192.0.2.85");
@@ -897,10 +897,10 @@ describe("An SSH host pool of Macs (047)", () => {
     );
     const opened = await displays[1]!.open();
     assert.deepEqual(opened.auth, { type: "none" });
-    assert.equal(opened.input, undefined, "bb-box-stream takes the viewer's input itself");
+    assert.equal(opened.input, undefined, "alia-box-stream takes the viewer's input itself");
     assert.equal(opened.route.type, "command");
     const remote = opened.route.type === "command" ? opened.route.argv.at(-1)! : "";
-    assert.match(remote, /exec \/usr\/local\/bin\/bb-box-stream connect/);
+    assert.match(remote, /exec \/usr\/local\/bin\/alia-box-stream connect/);
     assert.match(remote, /launchctl asuser/, "in the box user's desktop session");
   });
 
@@ -1055,7 +1055,7 @@ describe("An SSH host pool of Macs (047)", () => {
     assert.equal(check("machine.bad.homes")?.fix, "On bad, as an administrator: sudo chmod 700 /Users/person /Users/other");
     // SIP's state, either way ok, saying what it gives (058).
     assert.match(check("machine.good.sip")!.detail, /^On\. Cua Driver has its grants/);
-    assert.match(check("machine.away.sip")!.detail, /^Off, so BB Box grants box users' programs the macOS permissions they ask for/);
+    assert.match(check("machine.away.sip")!.detail, /^Off, so ALIA Box grants box users' programs the macOS permissions they ask for/);
     assert.match(check("machine.bad.signin")!.detail, /^Box user bbx-0 is at the console, but the automatic login is off/);
     assert.match(check("machine.bad.fulldisk")!.fix!, /^On bad: In System Settings, General, Sharing, select the \(i\) beside Remote Login/);
     assert.equal(check("machine.bad.grants")?.detail, "Cua Driver lacks Screen Recording, so computer use cannot see the desktop.");
@@ -1065,14 +1065,14 @@ describe("An SSH host pool of Macs (047)", () => {
     assert.deepEqual(status("away").filter((line) => /signin|grants|input/.test(line)), ["signin fail", "grants warn", "input warn"]);
     assert.equal(check("machine.away.signin")?.detail, "Box user bbx-0 is not signed in at the console.");
     assert.deepEqual(status("headless"), ["ssh ok", "helper ok", "arch ok", "tools fail", "filevault ok", "signin ok", "fulldisk ok", "homes ok", "sip ok", "xcode ok", "state ok", "sizes warn", "snapshots ok"]);
-    assert.equal(check("machine.headless.tools")?.fix, "On headless: Install Node.js 22.19 or newer with Homebrew: brew install node. BB's installer needs it to enrol a box. Install git and gh with Homebrew: brew install git gh.");
+    assert.equal(check("machine.headless.tools")?.fix, "On headless: Install Node.js 22.19 or newer with Homebrew: brew install node. VesnALIA's installer needs it to enrol a box. Install git and gh with Homebrew: brew install git gh.");
     assert.equal(check("machine.headless.sizes")?.detail, "headless has 8 cores, 6 GiB memory, 200 GiB free disk. It cannot hold a macos box at any of its presets, the smallest 4 cores, 8 GiB memory.");
-    assert.equal(check("machine.headless.sizes")?.fix, "Give headless more memory, or make the presets of macos smaller in BB Box's settings, under Kinds.");
+    assert.equal(check("machine.headless.sizes")?.fix, "Give headless more memory, or make the presets of macos smaller in VesnALIA Box's settings, under Kinds.");
     for (const [host, asked] of [["192.0.2.91", 1], ["192.0.2.92", 1], ["192.0.2.93", 1], ["192.0.2.94", 0]] as const) {
       assert.equal(helperCalls(host).filter((call) => call === "status grants").length, asked, host);
       assert.equal(helperCalls(host).filter((call) => call === "status xcode").length, 1, host);
     }
-    assert.match(doctor.notes.join("\n"), /name it in \/var\/db\/bb-box\/owner\./);
+    assert.match(doctor.notes.join("\n"), /name it in \/var\/db\/alia-box\/owner\./);
     assert.match(doctor.notes.join("\n"), /On a Mac, a release removes the box's user, .* It keeps macOS, apps, Homebrew and Cua Driver's grants\./);
     assert.doesNotMatch(doctor.notes.join("\n"), /none of them has Docker/);
   });
@@ -1125,7 +1125,7 @@ describe("An SSH host pool of Macs (047)", () => {
         name: "ready: Xcode",
         status: "warn",
         detail: "The helper did not say whether the Mac has Xcode. xcrun simctl did not list the Simulator's runtimes within 10 seconds. The offers keep what it found before.",
-        fix: "Run this BB Box's setup/ssh-pool/setup-mac.sh on ready with sudo, which updates the helper and prepares Xcode. Then run the doctor again.",
+        fix: "Run this VesnALIA Box's setup/ssh-pool/setup-mac.sh on ready with sudo, which updates the helper and prepares Xcode. Then run the doctor again.",
       });
       assert.equal(await check(restarted, "xcode"), undefined);
       assert.deepEqual(await features(restarted), both, "a failed call keeps what the Mac found before");
@@ -1167,7 +1167,7 @@ describe("An SSH host pool of Macs (047)", () => {
       name: "old: Xcode",
       status: "warn",
       detail: "The helper did not say whether the Mac has Xcode. usage: machine status [grants]. Until it does, boxes here have neither Xcode nor the iOS Simulator.",
-      fix: "Run this BB Box's setup/ssh-pool/setup-mac.sh on old with sudo, which updates the helper and prepares Xcode. Then run the doctor again.",
+      fix: "Run this VesnALIA Box's setup/ssh-pool/setup-mac.sh on old with sudo, which updates the helper and prepares Xcode. Then run the doctor again.",
     });
     assert.deepEqual(found("xcode"), {
       id: "xcode",

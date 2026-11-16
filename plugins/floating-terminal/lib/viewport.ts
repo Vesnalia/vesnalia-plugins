@@ -6,8 +6,8 @@
 // the truth, so the sheet's height and offset come from here rather than dvh
 // once a keyboard is up.
 
-const HEIGHT_VAR = "--bb-ft-viewport-height";
-const TOP_VAR = "--bb-ft-viewport-top";
+const HEIGHT_VAR = "--alia-ft-viewport-height";
+const TOP_VAR = "--alia-ft-viewport-top";
 
 /**
  * Below this the shortfall is browser chrome (a URL bar collapsing, a toolbar),
@@ -30,7 +30,7 @@ export function trackVisualViewport(
 ): () => void {
   const viewport = window.visualViewport;
   if (viewport === undefined || viewport === null) {
-    // Every desktop browser bb runs in has it; without it the dvh fallback in
+    // Every desktop browser VesnALIA runs in has it; without it the dvh fallback in
     // the stylesheet is still correct, just not keyboard-aware.
     return () => {};
   }

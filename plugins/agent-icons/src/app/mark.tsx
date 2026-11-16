@@ -1,14 +1,14 @@
 /**
  * With no usable assignment the mark draws the provider's own artwork through
- * a nested ProviderIcon, which bb resolves past this mark. The nested icon
+ * a nested ProviderIcon, which VesnALIA resolves past this mark. The nested icon
  * needs the full provider record: an id-only record falls back to the Code
  * glyph on the phone app.
  */
 import { Component, type ComponentType, type ReactElement, type ReactNode } from "react";
 import {
-  experimental_Icon as BbIcon,
+  experimental_Icon as AliaIcon,
   experimental_ProviderIcon as ProviderIcon,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { isBuiltinIcon } from "../shared/builtin-icons";
 import { iconRef, type Assignment, type IconsState } from "../shared/contract";
 import { renderTree } from "./render-tree";
@@ -39,7 +39,7 @@ export function assignedArtwork(
   const { source } = assignment;
   if ("builtin" in source) {
     if (!isBuiltinIcon(source.builtin)) return null;
-    return <BbIcon name={source.builtin} fallback="CircleHelp" className={className} style={style} aria-hidden />;
+    return <AliaIcon name={source.builtin} fallback="CircleHelp" className={className} style={style} aria-hidden />;
   }
   const entry = state.icons[iconRef(source.set, source.icon)];
   return entry ? renderTree(entry.tree, { className, style, "aria-hidden": true }) : null;

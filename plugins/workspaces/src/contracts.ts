@@ -44,7 +44,7 @@ function deriveAlias(projectName: string): string {
   return /^[a-z]/.test(normalized) ? normalized : `repo-${normalized || "project"}`.slice(0, MAX_ALIAS_LENGTH);
 }
 
-/** Derives the alias BB shows for a project, suffixed until it is free and still valid for repositoryDraftSchema. */
+/** Derives the alias VesnALIA shows for a project, suffixed until it is free and still valid for repositoryDraftSchema. */
 export function uniqueAlias(projectName: string, taken: ReadonlySet<string>): string {
   const base = deriveAlias(projectName);
   let alias = base;

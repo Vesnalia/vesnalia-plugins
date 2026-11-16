@@ -1,6 +1,6 @@
-import { experimental_execHostFile } from "@get-bb/plugin-sdk/process";
-import type { ProviderUsageResult } from "@get-bb/plugin-sdk/provider-bridge";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { experimental_execHostFile } from "@vesnalia/plugin-sdk/process";
+import type { ProviderUsageResult } from "@vesnalia/plugin-sdk/provider-bridge";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { resolveAntigravityCommand } from "./cli.ts";
 
@@ -332,8 +332,8 @@ const providerUsageSourceContract = defineRpcContract({
 
 const resourceIdTupleSchema = z.tuple([z.string().min(1), z.string().min(1)]);
 
-export function registerAntigravityUsageSource(bb: BbPluginApi) {
-  if (!bb.rpc || !bb.sdk) return;
+export function registerAntigravityUsageSource(alia: AliaPluginApi) {
+  if (!alia.rpc || !alia.sdk) return;
 
   type CachedObservation = z.infer<typeof getResourceOutputSchema>;
   const cache = new Map<string, CachedObservation>();
@@ -341,7 +341,7 @@ export function registerAntigravityUsageSource(bb: BbPluginApi) {
 
   const loadResource = async (resourceId: string, refresh: boolean): Promise<CachedObservation> => {
     const [hostId, providerId] = resourceIdTupleSchema.parse(JSON.parse(resourceId));
-    const host = await bb.sdk.hosts.get({ hostId }).catch((error: unknown) => {
+    const host = await alia.sdk.hosts.get({ hostId }).catch((error: unknown) => {
       if (error instanceof Error && "status" in error && error.status === 404) {
         cache.delete(resourceId);
         throw new Error("Usage resource no longer exists.");
@@ -365,8 +365,8 @@ export function registerAntigravityUsageSource(bb: BbPluginApi) {
       return unavailable("Machine is disconnected.");
     }
 
-    const providers = await bb.sdk.providers.list({ hostId, capability: "usage" });
-    if (!providers.some(p => p.id === providerId && p.pluginId === (bb.pluginId ?? PLUGIN_ID) && p.id === PROVIDER_ID)) {
+    const providers = await alia.sdk.providers.list({ hostId, capability: "usage" });
+    if (!providers.some(p => p.id === providerId && p.pluginId === (alia.pluginId ?? PLUGIN_ID) && p.id === PROVIDER_ID)) {
       cache.delete(resourceId);
       throw new Error("Usage resource no longer exists.");
     }
@@ -381,7 +381,7 @@ export function registerAntigravityUsageSource(bb: BbPluginApi) {
     }
 
     try {
-      const limits = await bb.sdk.system.usageLimits({ hostId, providerId, refresh });
+      const limits = await alia.sdk.system.usageLimits({ hostId, providerId, refresh });
       const rawUsage = limits[providerId];
       if (!rawUsage) {
         throw new Error("Provider returned no usage information.");
@@ -427,17 +427,17 @@ export function registerAntigravityUsageSource(bb: BbPluginApi) {
     return promise;
   };
 
-  bb.rpc.register(
+  alia.rpc.register(
     providerUsageSourceContract,
     {
       async [LIST_RESOURCES_METHOD]() {
-        const hosts = await bb.sdk.hosts.list();
+        const hosts = await alia.sdk.hosts.list();
         const resources = (
           await Promise.all(
             hosts.map(async host => {
-              const providers = await bb.sdk.providers.list({ hostId: host.id, capability: "usage" });
+              const providers = await alia.sdk.providers.list({ hostId: host.id, capability: "usage" });
               return providers
-                .filter(p => p.pluginId === (bb.pluginId ?? PLUGIN_ID) && p.id === PROVIDER_ID)
+                .filter(p => p.pluginId === (alia.pluginId ?? PLUGIN_ID) && p.id === PROVIDER_ID)
                 .map(p => {
                   const id = JSON.stringify([host.id, p.id]);
                   return {

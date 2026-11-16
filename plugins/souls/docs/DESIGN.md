@@ -8,14 +8,14 @@ An architecture map for maintainers. The user-facing story is in
 
 | File | Owns |
 | --- | --- |
-| `shared.ts` | The soul data model (zod), the persona renderer, the interview kickoff prompt. Imported by both bundles; keep it free of BB imports. |
+| `shared.ts` | The soul data model (zod), the persona renderer, the interview kickoff prompt. Imported by both bundles; keep it free of VesnALIA imports. |
 | `soul-import.ts` | Pure Codex agent TOML conversion to a validated soul draft, with warnings for ignored runtime settings. No file reads or writes. |
 | `soul-import-formats.ts` | Bounded format detection and Markdown/YAML + JSON/JSONC conversion. Returns candidate drafts for explicit selection, preserves instructions and never resolves file references or imports runtime settings. |
 | `soul-import-github.ts` | Server-only public GitHub URL validation and download: fixed raw host, no redirects/credentials, 10-second timeout and streaming byte limit, then the same converter. |
 | `eval.ts` | Persona grade, the comparison prompt, and the run record. Pure. Starting the threads is `server.ts`. |
 | `portrait.ts` | The 24×24 pixel-art portrait: traits from `look`, the emoji and a seed, then drawing. Pure. |
 | `motion.ts` | Thread activity and mood, and the animation frames for each mood. Pure. |
-| `store.ts` | SQLite access. **Synchronous on purpose**: `bb.agents.configure` cannot await. |
+| `store.ts` | SQLite access. **Synchronous on purpose**: `alia.agents.configure` cannot await. |
 | `team-server.ts` | Managed child starts, validated model preferences/fallback, task closure and concurrency admission. No model completions. |
 | `components/soul-team.tsx` | Roster/limit/handoff editor, archive/promotion, version comparison/restore and hiring/usage history. |
 | `server.ts` | RPC contract, agent tools, `configure`, the review and delete cards, the dispatch hook, activity and compaction, the CLI. |
@@ -59,7 +59,7 @@ to list/profile drill-down. Back retains query and list scroll; keyboard focus
 moves to the profile heading and back to the selected card without opening a
 keyboard. Portraits are 48px in cards/compact profiles and 72px in wide profiles.
 Deep links open the requested soul; missing links never fall back to a different
-persona. Native BB bottom sheets, modal focus handling and theme tokens remain
+persona. Native VesnALIA bottom sheets, modal focus handling and theme tokens remain
 shared with the import/editor surfaces. Loading/empty/error are distinct states.
 
 ## Import review UI
@@ -71,7 +71,7 @@ source and separate edits for every candidate. Closing invalidates pending file
 reads/RPCs and clears the session. Only the editor's explicit Create soul action
 writes to storage.
 
-Reuse BB theme tokens and shared dialog primitives. On compact viewports these
+Reuse VesnALIA theme tokens and shared dialog primitives. On compact viewports these
 become native bottom sheets, not centered desktop dialogs. Headers and actions
 are fixed while bodies scroll. Agent cards and prompt previews have matching
 desktop heights. Import notes, appearance and persona details are disclosures;
@@ -107,11 +107,11 @@ accessible navigation without importing runtime authority.
    `souls_propose` and `souls_update` wait on the review card (an edit lists
    the fields it changes), `souls_delete` on a confirmation. The editor and the
    CLI outside a thread are the user's own hands and save directly. Inside a
-   thread the CLI is usually that thread's agent, so `bb souls create`,
+   thread the CLI is usually that thread's agent, so `alia souls create`,
    `update` and `delete` refuse there. An agent binds only its own thread or a
-   child it spawned (`souls_select`, `bb souls select|unbind`); any other
+   child it spawned (`souls_select`, `alia souls select|unbind`); any other
    thread's soul is chosen in that thread.
-6. **A thread is injected a pointer, never the persona.** BB cuts plugin
+6. **A thread is injected a pointer, never the persona.** VesnALIA cuts plugin
    instructions at 4096 characters, so `renderSoulInstructions` emits only the
    soul's identity, consent, and an instruction to load `renderSoulPersona`
    through `souls_get` and post `::soul{id}`. The pointer is bounded by
@@ -142,7 +142,7 @@ accessible navigation without importing runtime authority.
    Imported definitions and agent drafts cannot set either permission. This does not
    widen provider permission modes or other approvals.
 10. **Prepared is not injected.** `configure` records changed fingerprints.
-    `souls_thread_get`/`bb souls status` correlate these with recorded session
+    `souls_thread_get`/`alia souls status` correlate these with recorded session
     identity timestamps. Later live-turn resolutions cannot relabel an old
     session as updated. Missing evidence stays unknown. Thread deletion removes
     tracking; clearing a soul records an explicit no-soul selection.
@@ -192,7 +192,7 @@ with bounded RPC output; hire/usage records keep stable thread references.
 
 ## Injection versus behaviour
 
-BB cuts a plugin's dynamic instructions at 4096 characters, so a soul is not
+VesnALIA cuts a plugin's dynamic instructions at 4096 characters, so a soul is not
 injected whole. **What the next session receives** in the picker previews the
 pointer a thread gets: the soul's name, tagline and id, thread consent, and an
 instruction to call `souls_get` before the first reply, adopt the persona it
@@ -205,12 +205,12 @@ persona.
 The trade-off: a persona depends on the agent making that call. The `::soul`
 card in the thread shows that it did.
 
-## Session-construction semantics (bb 0.45 / pi; unit-tested lifecycle correlation)
+## Session-construction semantics (VesnALIA 0.45 / pi; unit-tested lifecycle correlation)
 
-- A binding applies when BB constructs the thread's provider session.
-- A live session keeps its old instructions; `bb thread stop` on an idle thread
+- A binding applies when VesnALIA constructs the thread's provider session.
+- A live session keeps its old instructions; `alia thread stop` on an idle thread
   plus the next turn constructs a fresh session that carries the new persona.
-  The picker's *Apply from the next turn* checkbox and `bb souls select --now`
+  The picker's *Apply from the next turn* checkbox and `alia souls select --now`
   do exactly that, and check for idle before stopping. Clearing a soul in the
   picker follows the same path. The SDK has no atomic idle-only stop, so a turn
   racing between the status check and stop remains a host-level limitation.
@@ -236,14 +236,14 @@ prepared before it. Later live-turn resolutions never mark a new version
 injected into an older session, and equal timestamps are reported as unknown
 rather than applied. Missing history is **unknown**. The display names the
 recorded session; it cannot certify model compliance or detect an external
-idle-runtime release for which BB publishes no session event.
+idle-runtime release for which VesnALIA publishes no session event.
 
 ## Comparisons
 
 A comparison spawns one thread per arm in the chosen project with the prompt
 held for two minutes, binds each soul arm, then releases the held messages.
 Prompts are capped at 8000 characters, a run compares with at most three other
-souls, `bb souls eval show` trims each reply to 4000 characters, and the store
+souls, `alia souls eval show` trims each reply to 4000 characters, and the store
 keeps the newest 30 runs. An arm's thread is marked as a comparison thread
 for a day (the mark matters only around its first turn) and unmarked when
 the thread is deleted.
@@ -354,7 +354,7 @@ so a pane that switches threads never filters on the old thread id.
 
 ## Frontend gotchas
 
-- There is no composer action. BB folds plugin actions into a "More plugin
+- There is no composer action. VesnALIA folds plugin actions into a "More plugin
   actions" overflow when the row is crowded, where a soul chip is easy to miss.
   The `+` menu row (**Choose a soul…**) is the entry point, and a banner above
   the composer shows the active soul.
@@ -367,13 +367,13 @@ so a pane that switches threads never filters on the old thread id.
   app overlay.
 - The banner uses `chrome: "bare"`, so a thread with no soul shows nothing.
 - A soul's colour comes from its pixel portrait. Card and banner chrome uses
-  BB's theme tokens, with no colour literals in plugin-owned UI.
+  VesnALIA's theme tokens, with no colour literals in plugin-owned UI.
 - `SoulPortrait` is memoised on the face, mood and size, and the banner keeps
   the live mood in a small `BannerIdentity` child: the sidebar thread list and
   the composer view both re-render the banner often.
 - Do not use `dark:` variants. The plugin build compiles them to
-  `prefers-color-scheme`, not BB's `.dark` theme class, so they follow the OS
-  rather than BB's theme. Pick values that read in both modes.
+  `prefers-color-scheme`, not VesnALIA's `.dark` theme class, so they follow the OS
+  rather than VesnALIA's theme. Pick values that read in both modes.
 - `useComposer()` is only valid inside a composer surface (actions and
   banners). The overlay deliberately cannot apply model pins and says so in a
   toast.

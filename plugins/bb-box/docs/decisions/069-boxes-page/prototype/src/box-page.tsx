@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { experimental_Icon as Icon } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon } from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge, boxTitleBadges, EmptyPanel, StatusDot, systemName, deviceModelOf } from "@/src/app/common.tsx";
@@ -87,7 +87,7 @@ function Facts({ box, now }: { box: FakeBox; now: number }) {
         </Fact>
         <Fact label="Address">{view.address ? <CopyValue value={view.address} label="Address" /> : <span className="text-muted-foreground">{view.state === "stopped" ? "None while stopped" : "Not yet"}</span>}</Fact>
         <Fact label="System">{systemWords(view)}</Fact>
-        <Fact label="BB machine">
+        <Fact label="VesnALIA machine">
           {enrolWords(view)}
           {view.enrol.state === "enrolled" ? <span className="block text-xs text-muted-foreground">{view.state === "ready" && !box.unreachable && !gone ? "Threads can run on it" : "Offline now"}</span> : null}
         </Fact>
@@ -117,7 +117,7 @@ function Facts({ box, now }: { box: FakeBox; now: number }) {
 }
 
 function ThreadLine({ box, thread, now }: { box: FakeBox; thread: FakeThread | null; now: number }) {
-  if (box.owner === "yours") return <p className="text-xs text-muted-foreground">One of your machines. It shows in BB's machine list, and threads can run on it.</p>;
+  if (box.owner === "yours") return <p className="text-xs text-muted-foreground">One of your machines. It shows in VesnALIA's machine list, and threads can run on it.</p>;
   if (!thread) return null;
   return (
     <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
@@ -259,7 +259,7 @@ function Notices({ box, now, onRelease }: { box: FakeBox; now: number; onRelease
   const notices: ReactNode[] = [];
   if (box.operation) {
     const operation = box.operation;
-    const still = operation.action === "release" ? `The box may still run on ${host}; bb-box keeps its record until a release is confirmed.` : operation.action === "start" ? "It is still stopped." : operation.action === "stop" ? "It is still running." : "Its size did not change.";
+    const still = operation.action === "release" ? `The box may still run on ${host}; alia-box keeps its record until a release is confirmed.` : operation.action === "start" ? "It is still stopped." : operation.action === "stop" ? "It is still running." : "Its size did not change.";
     notices.push(
       <Notice
         key="operation"
@@ -279,19 +279,19 @@ function Notices({ box, now, onRelease }: { box: FakeBox; now: number; onRelease
         title="Its backend is not in settings"
         actions={
           <>
-            {small("Open BB Box settings", () => go({ page: "settings", section: "backends" }))}
+            {small("Open VesnALIA Box settings", () => go({ page: "settings", section: "backends" }))}
             {small("Forget…", onRelease, true)}
           </>
         }
       >
-        {view.backendLabel} was removed from settings {span(now - box.backendGone.since)} ago, so bb-box cannot check, stop or release this box. It was last seen ready, and may still be running on {host}. Add the backend back to manage it, or forget it here.
+        {view.backendLabel} was removed from settings {span(now - box.backendGone.since)} ago, so alia-box cannot check, stop or release this box. It was last seen ready, and may still be running on {host}. Add the backend back to manage it, or forget it here.
       </Notice>,
     );
   }
   if (box.unreachable) {
     notices.push(
       <Notice key="unreachable" tone="warn" title={`${host} does not answer`} actions={small("Check now", () => store.act("refresh", view.id))}>
-        {box.unreachable.error}. Since {clock(box.unreachable.since)}, bb-box cannot read, stop or start this box. It was last seen ready. bb-box tries again every minute.
+        {box.unreachable.error}. Since {clock(box.unreachable.since)}, alia-box cannot read, stop or start this box. It was last seen ready. alia-box tries again every minute.
       </Notice>,
     );
   }
@@ -389,7 +389,7 @@ function HowItStarted({ box, now }: { box: FakeBox; now: number }) {
       </dl>
       <p className="mt-2 text-xs text-subtle-foreground">
         {steps.length > largest.length ? `And ${steps.length - largest.length} quicker steps. ` : ""}
-        {joined !== undefined ? `It joined BB ${(joined / 1000).toFixed(1)} s later. ` : ""}
+        {joined !== undefined ? `It joined VesnALIA ${(joined / 1000).toFixed(1)} s later. ` : ""}
         Made {dayAndClock(view.createdAt, now)}.
       </p>
       {lastStart && restart.length ? (
@@ -414,7 +414,7 @@ function ThreadsCard({ box }: { box: FakeBox }) {
       {threads.length ? (
         <ThreadChips threads={threads} className="mt-2" />
       ) : (
-        <p className="mt-1 text-xs text-muted-foreground">{enrolled ? "None now. A thread can run on its BB machine." : box.view.enrol.state === "enrolled" ? "None. Its BB machine is offline now." : "None. It is not a BB machine, so no thread can run on it."}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{enrolled ? "None now. A thread can run on its VesnALIA machine." : box.view.enrol.state === "enrolled" ? "None. Its VesnALIA machine is offline now." : "None. It is not a VesnALIA machine, so no thread can run on it."}</p>
       )}
       {enrolled ? (
         <Button type="button" variant="outline" size="sm" className="mt-3 h-7 gap-1.5" onClick={() => store.say("New thread on this box opens the Box panel's dialog.")}>
@@ -447,7 +447,7 @@ export function NotHere({ id }: { id: string }) {
     <div className="mx-auto w-full max-w-5xl space-y-5 px-4 pb-6 pt-3 md:px-5 md:pt-4">
       <TopRow trail={[{ words: "Boxes", go: back }, { words: released?.name ?? "Not here" }]} />
       <EmptyPanel title={released ? `${released.name} was released` : "This box is not here"}>
-        <p className="mt-1">{released ? `Released ${span(store.now - released.at)} ago, at ${clock(released.at)}. bb-box remembers a released box for 24 hours.` : "It may have been released more than 24 hours ago, or the link is wrong."}</p>
+        <p className="mt-1">{released ? `Released ${span(store.now - released.at)} ago, at ${clock(released.at)}. alia-box remembers a released box for 24 hours.` : "It may have been released more than 24 hours ago, or the link is wrong."}</p>
         <Button type="button" variant="outline" size="sm" className="mt-3 h-7" onClick={back}>
           Back to boxes
         </Button>
@@ -475,7 +475,7 @@ export function BoxPage({ id, fromSettings = false }: { id: string; fromSettings
   const back = fromSettings ? () => go({ page: "settings", section: "machines" }) : () => goBackOr(listRoute(box), ["list"]);
   return (
     <div className={cn("mx-auto w-full max-w-5xl space-y-5 px-4 pb-6 pt-3 md:px-5 md:pt-4", view.state === "releasing" && !box.operation && "opacity-60")}>
-      <TopRow trail={[{ words: fromSettings ? "BB Box settings" : "Boxes", go: back }, { words: view.name }]} />
+      <TopRow trail={[{ words: fromSettings ? "VesnALIA Box settings" : "Boxes", go: back }, { words: view.name }]} />
       <Header box={box} thread={thread} now={now} onRelease={release.ask} />
       <Notices box={box} now={now} onRelease={release.ask} />
       {starting ? <Starting box={box} now={now} /> : null}

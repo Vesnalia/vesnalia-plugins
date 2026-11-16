@@ -1,14 +1,14 @@
 // Runtime probe for the pane-parity audit's Gap 10.2 — the pane's
 // touch-reveal CSS overrides (Focus Board #296, fixed by workaround in
-// #297 against bb 0.47.1). The question: on bb 0.48.1, does the collision
+// #297 against VesnALIA 0.47.1). The question: on VesnALIA 0.48.1, does the collision
 // the overrides compensate still exist, and do the overrides still do the
 // work?
 //
-// Drives the LIVE bb web UI (the collision lives between the host's global
-// utilities sheet and bb's runtime-scoped plugin sheet; the repo's mock-SDK
+// Drives the LIVE VesnALIA web UI (the collision lives between the host's global
+// utilities sheet and VesnALIA's runtime-scoped plugin sheet; the repo's mock-SDK
 // harness does not apply the runtime scoping). Mechanism:
 //
-//   1. Stage a queued message (bb thread queue create <id> "probe") so the
+//   1. Stage a queued message (VesnALIA thread queue create <id> "probe") so the
 //      pane's composer shows the queued row with its host "…" actions
 //      control.
 //   2. Emulate a touch phone (hover: none + pointer: coarse, 390x844), open
@@ -27,15 +27,15 @@
 // (tappable, then untappable); anything else exits 1 and prints the readings.
 //
 // Stage the queued row first and delete it after:
-//   bb thread queue create thr_x "probe" && node
-//   scripts/screenshot/repro-touch-reveal-cascade.mjs && bb thread queue
+//   VesnALIA thread queue create thr_x "probe" && node
+//   scripts/screenshot/repro-touch-reveal-cascade.mjs && VesnALIA thread queue
 //   delete thr_x <messageId>
-// Env: BB_APP (default the local board URL), THREAD_ID (default the code-pane
+// Env: ALIA_APP (default the local board URL), THREAD_ID (default the code-pane
 // probe thread), CHROME_PATH, OUT_DIR (default
 // docs/screenshots/repro-touch-reveal-cascade).
 import puppeteer from "puppeteer-core";
 
-const APP = process.env.BB_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
+const APP = process.env.ALIA_APP ?? "http://127.0.0.1:38886/plugins/focus-board/board";
 const THREAD_ID = process.env.THREAD_ID ?? "";
 if (!THREAD_ID) {
   console.error("Set THREAD_ID to a board card's thread with a queued message.");
@@ -108,7 +108,7 @@ console.log("WITH the pane's touch-reveal overrides:", JSON.stringify(withOverri
 await page.screenshot({ path: `${OUT_DIR}/pane-queue-with-overrides.png` });
 
 // Cascade surgery: strip the plugin sheet's hover:none reveal rules — the
-// ones the pane re-emits (issue #297). bb scopes and layers the plugin CSS
+// ones the pane re-emits (issue #297). VesnALIA scopes and layers the plugin CSS
 // before serving it (`@layer utilities` under a `@media`-nested surface), so
 // the walk recurses through layer/media groupings inside every sheet
 // (adopted sheets included) and deletes the hover:none media blocks whose
@@ -119,7 +119,7 @@ const removed = await page.evaluate(() => {
     for (const rule of Array.from(rules)) {
       if (rule.cssRules !== undefined) walkRules(rule.cssRules);
       const sel = rule.selectorText ?? "";
-      if (sel.includes("data-bb-plugin") || sel.includes("data-bb-plugin-root")) {
+      if (sel.includes("data-alia-plugin") || sel.includes("data-alia-plugin-root")) {
         pluginScoped = true;
       }
     }
@@ -165,10 +165,10 @@ const broken = withoutOverrides.present && (
   withoutOverrides.opacity !== "1" || withoutOverrides.pointerEvents !== "auto"
 );
 console.log(revealed
-  ? "the overrides reveal the control on bb 0.48.1 (tap path works)."
+  ? "the overrides reveal the control on VesnALIA 0.48.1 (tap path works)."
   : "WARNING: the control is not tappable even WITH the overrides — re-check #296's fix.");
 console.log(broken
-  ? "stripping the overrides breaks the control: the collision premise still holds on bb 0.48.1 — KEEP the overrides."
+  ? "stripping the overrides breaks the control: the collision premise still holds on VesnALIA 0.48.1 — KEEP the overrides."
   : "stripping the overrides changed nothing visible: re-check the premise; the overrides may be dead.");
 
 await browser.close();

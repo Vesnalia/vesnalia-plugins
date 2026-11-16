@@ -5,7 +5,7 @@ outside the plugin".
 
 ## 1. The badge — inside the plugin itself
 
-bb 0.46's navigation bar draws plugins' file icons in a single grey tone. A plugin registers a coloured badge with a
+VesnALIA 0.46's navigation bar draws plugins' file icons in a single grey tone. A plugin registers a coloured badge with a
 three-letter code itself, in its own `app.tsx`, under the same icon name its section passes to `navPanel({ icon })`.
 The look: a 26×16 badge, a white bold code, the colour the owner chose.
 
@@ -30,10 +30,10 @@ export default definePluginApp((app) => {
 });
 ```
 
-- The icon name is the plugin's own, of the form `<plugin id>/<name>` (not a built-in bb name such as
+- The icon name is the plugin's own, of the form `<plugin id>/<name>` (not a built-in VesnALIA name such as
   `LayoutDashboard`): otherwise the badge would replace the icon of other plugins' sections.
 - The code is three uppercase Latin letters that no other section uses. Check the plugins folder (the folder from the
-  «bb plugin rules» in your instructions): `grep -rhoE 'navBadge\("[A-Z]{3}"' <plugins folder>/bb-plugin-*/app.tsx`.
+  «VesnALIA plugin rules» in your instructions): `grep -rhoE 'navBadge\("[A-Z]{3}"' <plugins folder>/alia-plugin-*/app.tsx`.
 - The colour is the owner's choice. If they group sections on the bar by colour, use the colour of the section's
   group. Suggested palette (white text stays readable on all of them): blue `#2563eb`, purple `#9333ea`,
   green `#16a34a`, teal `#0d9488`, orange `#ea580c`, red `#dc2626`, slate `#64748b`.
@@ -51,6 +51,6 @@ NAV: <plugin id>/<section id> after <neighbour plugin id>/<neighbour section id>
 
 A plugin without a navigation section — a single line `NAV: none`. Without ` after …` the section goes to the end.
 The neighbour is the section it should follow on the bar now (for example, the last section of the same colour
-group), written as it appears in `sidebar.pluginPanelOrder` of `bb settings ui list`. On rollout the Workshop itself makes the section visible
+group), written as it appears in `sidebar.pluginPanelOrder` of `alia settings ui list`. On rollout the Workshop itself makes the section visible
 (`sidebar.visiblePluginPanels`) and puts it after the neighbour (`sidebar.pluginPanelOrder`); with no neighbour given
-or found — at the end. Agents do not touch bb settings.
+or found — at the end. Agents do not touch VesnALIA settings.

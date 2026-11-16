@@ -3,7 +3,7 @@ import {
   experimental_useAppPanel,
   useRealtime,
   type ExperimentalThreadContextSegmentProps,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "@/components/ui/button";
 import { useAsync, useLinearRpc } from "./rpc.js";
 import { ISSUE_TAB } from "./tabs.js";
@@ -13,7 +13,7 @@ import { toneClass } from "../src/select/tone.js";
 /**
  * The thread's chip: which issue this thread is working on.
  *
- * It sits in the context row above the composer, beside bb's parent thread,
+ * It sits in the context row above the composer, beside VesnALIA's parent thread,
  * changed files and pull request. The row's segments are 24px tall, so this
  * is a single button in all three states:
  *
@@ -35,7 +35,7 @@ function useThreadIssue(threadId: string) {
 }
 
 /**
- * Whether the chip has anything to say. bb draws the context row's bordered
+ * Whether the chip has anything to say. VesnALIA draws the context row's bordered
  * card whenever one segment is visible, so a segment that is visible but
  * renders nothing leaves an empty card above the composer. This is the
  * chip's own render condition, from the same read.

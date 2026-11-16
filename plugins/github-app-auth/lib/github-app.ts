@@ -168,7 +168,7 @@ async function githubJson<T>(path: string, bearer: string): Promise<T> {
     headers: {
       accept: "application/vnd.github+json",
       authorization: `Bearer ${bearer}`,
-      "user-agent": "bb-plugin-github-app-auth",
+      "user-agent": "alia-plugin-github-app-auth",
       "x-github-api-version": "2022-11-28",
     },
   });

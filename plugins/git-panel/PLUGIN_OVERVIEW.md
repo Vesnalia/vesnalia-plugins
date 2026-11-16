@@ -1,4 +1,4 @@
-Every BB thread with a workspace gets a **Git worktree** tab beside the
+Every VesnALIA thread with a workspace gets a **Git worktree** tab beside the
 conversation, so you can see and move your work without opening a terminal.
 
 ## What you get
@@ -7,7 +7,7 @@ conversation, so you can see and move your work without opening a terminal.
   wall of buttons: Commit when something is staged, Pull when behind, Push when
   ahead, Sync when the branch has diverged, Stage all when changes are unstaged,
   or "No new changes" when there is nothing to do.
-- Commit uses BB's own commit feature, which writes the message for you.
+- Commit uses VesnALIA's own commit feature, which writes the message for you.
 - A branch pill that opens a picker with Local and Remote tabs, a search field,
   a button to create a branch off the current one, and a rename for the branch
   you are on.

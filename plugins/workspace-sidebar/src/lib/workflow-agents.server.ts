@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import type { WorkflowAgentsEntry } from "./workflow-agents";
 
@@ -21,7 +21,7 @@ const activeRunsSchema = z.object({ runs: z.array(z.object({
   unphasedCalls: z.array(agentSchema),
 })) });
 
-export function createWorkflowAgentsReader(plugins: BbPluginApi["sdk"]["plugins"]) {
+export function createWorkflowAgentsReader(plugins: AliaPluginApi["sdk"]["plugins"]) {
   const cache = new Map<string, { expires: number; value: Promise<WorkflowAgentsEntry> }>();
   function read(threadId: string): Promise<WorkflowAgentsEntry> {
     const now = Date.now();

@@ -1,25 +1,17 @@
 {
-  "name": "bb-plugin-chat-find",
+  "name": "alia-plugin-chat-find",
   "version": "0.1.1",
-  "description": "Ctrl/Cmd+F find bar for bb chat transcripts.",
+  "description": "Ctrl/Cmd+F find bar for VesnALIA chat transcripts.",
   "license": "MIT",
   "author": "bottlebrushes",
-  "homepage": "https://github.com/bottlebrushes/bb-plugin-chat-find#readme",
-  "bugs": {
-    "url": "https://github.com/bottlebrushes/bb-plugin-chat-find/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bottlebrushes/bb-plugin-chat-find.git"
-  },
   "type": "module",
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.99"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.99"
   },
-  "bb": {
+  "alia": {
     "name": "Chat Find",
-    "description": "Ctrl/Cmd+F find bar for bb chat transcripts.",
+    "description": "Ctrl/Cmd+F find bar for VesnALIA chat transcripts.",
     "branding": {
       "icon": "Search"
     },
@@ -31,7 +23,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.5.9",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -50,5 +41,22 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.7.0",
     "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.5.9"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/chat-find#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/chat-find"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

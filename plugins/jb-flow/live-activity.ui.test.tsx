@@ -1,8 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { MONITOR_COLLAPSE_KEY } from "./monitor-collapse";
-import type { useSdk } from "@get-bb/plugin-sdk/app";
+import type { useSdk } from "@vesnalia/plugin-sdk/app";
 import {
   ActivityCard,
   LiveActivityBanner,

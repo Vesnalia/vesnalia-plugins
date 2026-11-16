@@ -21,7 +21,7 @@ interface Guest {
 function guest(): Guest {
   const root = tempDir("fork-hold");
   const script = join(root, "fork-hold");
-  const text = readFileSync(FORK_HOLD, "utf8").replaceAll("/run/bb-box/", `${root}/run/bb-box/`).replaceAll("/var/lib/bb-box/", `${root}/var/lib/bb-box/`);
+  const text = readFileSync(FORK_HOLD, "utf8").replaceAll("/run/alia-box/", `${root}/run/alia-box/`).replaceAll("/var/lib/alia-box/", `${root}/var/lib/alia-box/`);
   writeFileSync(script, text, { mode: 0o755 });
   return { root, script };
 }
@@ -41,11 +41,11 @@ function ended(child: ChildProcess, withinMs: number): Promise<number | null | "
 }
 
 function release(at: Guest, value: string): void {
-  mkdirSync(join(at.root, "var/lib/bb-box"), { recursive: true });
-  writeFileSync(join(at.root, "var/lib/bb-box/fork-released"), value);
+  mkdirSync(join(at.root, "var/lib/alia-box"), { recursive: true });
+  writeFileSync(join(at.root, "var/lib/alia-box/fork-released"), value);
 }
 
-const held = (at: Guest) => existsSync(join(at.root, "run/bb-box/held"));
+const held = (at: Guest) => existsSync(join(at.root, "run/alia-box/held"));
 
 test("a box that is not a held fork goes past the hold at once and writes no hold", async () => {
   const at = guest();
@@ -56,13 +56,13 @@ test("a box that is not a held fork goes past the hold at once and writes no hol
   assert.equal(held(at), false);
 });
 
-test("a held fork says it is held and waits until BB Box releases it as its own box, then goes on", async (t) => {
+test("a held fork says it is held and waits until VesnALIA Box releases it as its own box, then goes on", async (t) => {
   const at = guest();
   const child = hold(at, { BBBOX_FORK_HOLD: "1", BBBOX_IDENTITY: FORK });
   t.after(() => child.kill("SIGKILL"));
 
   assert.equal(await ended(child, STILL_HELD_AFTER_MS), "still held");
-  assert.equal(held(at), true, "it wrote /run/bb-box/held, which BB Box waits for before its check");
+  assert.equal(held(at), true, "it wrote /run/alia-box/held, which VesnALIA Box waits for before its check");
 
   release(at, FORK);
 
@@ -89,7 +89,7 @@ test("a held fork with no identity value stays held, even with an empty release"
   assert.equal(await ended(child, STILL_HELD_AFTER_MS), "still held");
 });
 
-test("a fork BB Box released goes past the hold at once at each later start", async () => {
+test("a fork VesnALIA Box released goes past the hold at once at each later start", async () => {
   const at = guest();
   release(at, FORK);
 
@@ -101,22 +101,22 @@ test("a fork BB Box released goes past the hold at once at each later start", as
 
 test("a Docker box holds right after its identity reset, before it starts any service or says it is ready", () => {
   const start = readFileSync(DOCKER_START, "utf8");
-  const reset = start.indexOf('bb-box-identity boot --value "${BBBOX_IDENTITY:-}"');
-  const holdAt = start.indexOf("/usr/local/libexec/bb-box/fork-hold &");
-  const services = ['rm -f "$home"/.bb-machines/*/daemon.lock.lock', "systemd-socket-activate", "dbus-daemon", "/usr/local/libexec/bb-box/display", 'touch "$run/ready"'];
+  const reset = start.indexOf('alia-box-identity boot --value "${BBBOX_IDENTITY:-}"');
+  const holdAt = start.indexOf("/usr/local/libexec/alia-box/fork-hold &");
+  const services = ['rm -f "$home"/.alia-machines/*/daemon.lock.lock', "systemd-socket-activate", "dbus-daemon", "/usr/local/libexec/alia-box/display", 'touch "$run/ready"'];
 
   assert.ok(reset > 0 && holdAt > reset, "the hold comes after the identity reset");
   for (const service of services) assert.ok(start.indexOf(service) > holdAt, `${service} comes after the hold`);
-  assert.match(start.slice(holdAt), /^\/usr\/local\/libexec\/bb-box\/fork-hold &\nif ! wait \$!; then\n[^\n]*\n  exit 1\nfi/, "a failed hold starts nothing");
+  assert.match(start.slice(holdAt), /^\/usr\/local\/libexec\/alia-box\/fork-hold &\nif ! wait \$!; then\n[^\n]*\n  exit 1\nfi/, "a failed hold starts nothing");
 });
 
 test("every Docker image installs the hold and says so in its labels, as the snapshots of its boxes carry them", () => {
   const dockerfile = readFileSync(DOCKERFILE, "utf8");
-  const images = dockerfile.split(/^FROM /m).filter((stage) => stage.includes("CMD [\"/usr/local/sbin/bb-box-start\"]"));
+  const images = dockerfile.split(/^FROM /m).filter((stage) => stage.includes("CMD [\"/usr/local/sbin/alia-box-start\"]"));
 
   assert.equal(images.length, 3);
   for (const image of images) {
-    assert.match(image, /^COPY --chmod=0755 docker\/fork-hold \/usr\/local\/libexec\/bb-box\/fork-hold$/m);
+    assert.match(image, /^COPY --chmod=0755 docker\/fork-hold \/usr\/local\/libexec\/alia-box\/fork-hold$/m);
     assert.match(image, /^LABEL .*bbbox\.fork-hold="1"/m);
   }
 });

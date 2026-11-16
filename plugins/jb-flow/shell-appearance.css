@@ -111,7 +111,7 @@
   border-radius: 5px;
 }
 
-/* Conversation text stays in BB's measured layout and native scroll owner. */
+/* Conversation text stays in ALIA's measured layout and native scroll owner. */
 .jb-flow-shell [data-thread-window] [class~="group/message"] {
   letter-spacing: -0.008em;
 }

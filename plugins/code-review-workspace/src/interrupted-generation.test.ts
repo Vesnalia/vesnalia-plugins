@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server";
 import { GUIDE_WORKER_TITLE, generateGuide } from "./generate";
 import { defaultPreferences } from "./preferences";
@@ -21,13 +21,13 @@ async function interrupted(sdk: Record<string, unknown> = {}, lifecycle: Record<
   const first = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "old-worker" }), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}),
   } } as any });
-  const store = testStore(first.bb);
+  const store = testStore(first.alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   await store.setLifecycle("pr-1", { authorAssociation: "MEMBER", ...lifecycle });
   await store.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+a2\n");
   await store.saveGuide("pr-1", guide);
   await store.backupGuide("pr-1");
-  void generateGuide(first.bb, store, "pr-1", "p1");
+  void generateGuide(first.alia, store, "pr-1", "p1");
   await vi.waitFor(() => expect(first.harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
   const archive = vi.fn(async () => ({}));
   const stop = vi.fn(async () => ({}));
@@ -37,12 +37,12 @@ async function interrupted(sdk: Record<string, unknown> = {}, lifecycle: Record<
   next.harness.inspection.sdk.stub("threads.archive", archive);
   next.harness.inspection.sdk.stub("threads.stop", stop);
   for (const [name, fn] of Object.entries(sdk)) next.harness.inspection.sdk.stub(name as any, fn as any);
-  return { ...next, store: testStore(next.bb), archive, stop };
+  return { ...next, store: testStore(next.alia), archive, stop };
 }
 
 test("after a reload, the guide being written is stopped and archived, the old guide kept, and the rebuild starts again", async () => {
-  const { bb, harness, store, archive, stop } = await interrupted();
-  await plugin(bb);
+  const { alia, harness, store, archive, stop } = await interrupted();
+  await plugin(alia);
   await vi.waitFor(() => expect(harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
   expect(stop).toHaveBeenCalledWith({ threadId: "old-worker" });
   expect(archive).toHaveBeenCalledWith({ threadId: "old-worker" });
@@ -50,9 +50,9 @@ test("after a reload, the guide being written is stopped and archived, the old g
 });
 
 test("after a reload with the guide writer's machine offline, the old guide stays and nothing starts", async () => {
-  const { bb, harness, store, stop } = await interrupted({ "hosts.get": async () => ({ id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } }) });
+  const { alia, harness, store, stop } = await interrupted({ "hosts.get": async () => ({ id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } }) });
   await store.savePreferences({ ...defaultPreferences, guideAgent: { hostId: "host_flomac", providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" } }, 0);
-  await plugin(bb);
+  await plugin(alia);
   await vi.waitFor(() => expect(stop).toHaveBeenCalledWith({ threadId: "old-worker" }));
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(harness.inspection.sdk.callsTo("threads.spawn")).toEqual([]);
@@ -62,8 +62,8 @@ test("after a reload with the guide writer's machine offline, the old guide stay
 
 test("after a reload, an outside author's guide restarts only at the head you started it on", async () => {
   // You started the guide at sha1; the author has pushed sha2 since.
-  const { bb, harness, store, stop } = await interrupted({}, { authorAssociation: "CONTRIBUTOR", approvedHead: "sha1" });
-  await plugin(bb);
+  const { alia, harness, store, stop } = await interrupted({}, { authorAssociation: "CONTRIBUTOR", approvedHead: "sha1" });
+  await plugin(alia);
   await vi.waitFor(() => expect(stop).toHaveBeenCalledWith({ threadId: "old-worker" }));
   await vi.waitFor(async () => expect((await store.getReview("pr-1"))?.skippedRun).toMatchObject({ run: "guide", head: "sha2" }));
   expect(harness.inspection.sdk.callsTo("threads.spawn")).toEqual([]);
@@ -73,9 +73,9 @@ test("after a reload, an outside author's guide restarts only at the head you st
 
 test("after a reload with the guide writer's machine offline, the guide restarts on a later pass once it's back", async () => {
   const host = { id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } };
-  const { bb, harness, store, stop } = await interrupted({ "hosts.get": async () => host, "projects.list": async () => [{ id: "personal", kind: "personal" }] });
+  const { alia, harness, store, stop } = await interrupted({ "hosts.get": async () => host, "projects.list": async () => [{ id: "personal", kind: "personal" }] });
   await store.savePreferences({ ...defaultPreferences, guideAgent: { hostId: "host_flomac", providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" } }, 0);
-  await plugin(bb);
+  await plugin(alia);
   await vi.waitFor(async () => expect((await store.getReview("pr-1"))?.restartPending).toEqual({ since: expect.any(Number) }));
   expect(stop).toHaveBeenCalledWith({ threadId: "old-worker" });
   const pass = async () => {
@@ -96,9 +96,9 @@ test("after a reload with the guide writer's machine offline, the guide restarts
 
 test("an interrupted guide whose machine stays offline past 10 minutes isn't tried again", async () => {
   const host = { id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } };
-  const { bb, harness, store } = await interrupted({ "hosts.get": async () => host });
+  const { alia, harness, store } = await interrupted({ "hosts.get": async () => host });
   await store.savePreferences({ ...defaultPreferences, guideAgent: { hostId: "host_flomac", providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" } }, 0);
-  await plugin(bb);
+  await plugin(alia);
   await vi.waitFor(async () => expect((await store.getReview("pr-1"))?.restartPending).toBeTruthy());
   await store.setLifecycle("pr-1", { restartPending: { since: Date.now() - 11 * 60_000 } });
   host.status = "connected";
@@ -116,16 +116,16 @@ test("an interrupted guide whose machine stays offline past 10 minutes isn't tri
 });
 
 // bug bash AGT-13: a writer whose spawn was still in flight at the reload has no recorded id, so it ran on, hidden, and to
-// bb review it was an ordinary thread of yours.
+// VesnALIA review it was an ordinary thread of yours.
 test("after a reload, a writer whose spawn it interrupted is found by its title, kept to its review, and stopped", async () => {
   const first = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: () => new Promise(() => {}), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}),
   } } as any });
-  const before = testStore(first.bb);
+  const before = testStore(first.alia);
   await before.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   await before.setLifecycle("pr-1", { authorAssociation: "MEMBER" });
   await before.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+a2\n");
-  void generateGuide(first.bb, before, "pr-1", "p1");
+  void generateGuide(first.alia, before, "pr-1", "p1");
   await vi.waitFor(() => expect(first.harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
   const next = await first.harness.lifecycle.reload(async () => {});
   const order: string[] = [];
@@ -136,28 +136,28 @@ test("after a reload, a writer whose spawn it interrupted is found by its title,
   next.harness.inspection.sdk.stub("threads.wait", () => new Promise(() => {}));
   next.harness.inspection.sdk.stub("threads.archive", async ({ threadId }: { threadId: string }) => { order.push(`archive ${threadId}`); return {}; });
   next.harness.inspection.sdk.stub("threads.stop", async ({ threadId }: { threadId: string }) => { order.push(`stop ${threadId}`); return {}; });
-  await plugin(next.bb);
+  await plugin(next.alia);
   await vi.waitFor(() => expect(order).toContain("spawn"));
   expect(order.slice(0, 3)).toEqual(["archive orphan", "stop orphan", "spawn"]);
-  expect(await formerWorkerReview(next.bb, "orphan")).toBe("pr-1");
-  expect(await formerWorkerReview(next.bb, "other")).toBeNull();
+  expect(await formerWorkerReview(next.alia, "orphan")).toBe("pr-1");
+  expect(await formerWorkerReview(next.alia, "other")).toBeNull();
 });
 
 // bug bash verification 71-F1: a thread's title is its own agent's to write, and the reload took the title alone: a former
 // agent of pr-2, or the Suggest instructions worker, retitled "Generate guide: pr-1" became pr-1's, free to change its
-// draft through bb review, and another review's assistant so titled was archived and stopped.
+// draft through VesnALIA review, and another review's assistant so titled was archived and stopped.
 test("after a reload, a thread titled as the interrupted review's writer stays kept to its own review", async () => {
   const first = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: () => new Promise(() => {}), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}),
   } } as any });
-  const before = testStore(first.bb);
+  const before = testStore(first.alia);
   for (const key of ["pr-1", "pr-2"]) await before.saveReview({ targetKey: key, kind: "pr", number: Number(key.slice(3)), repo: "acme/web", status: "ready", createdAt: 1, projectId: "p1", headSha: "sha1" });
   await before.setLifecycle("pr-1", { authorAssociation: "MEMBER" });
   await before.savePatch("pr-1", "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-a\n+a2\n");
   await before.setAssistantThread("pr-2", "pr2-assistant");
-  await recordFormerWorker(first.bb, "old-pr2-writer", "pr-2", "writer");
-  await recordFormerWorker(first.bb, "suggester", null, "suggester");
-  void generateGuide(first.bb, before, "pr-1", "p1");
+  await recordFormerWorker(first.alia, "old-pr2-writer", "pr-2", "writer");
+  await recordFormerWorker(first.alia, "suggester", null, "suggester");
+  void generateGuide(first.alia, before, "pr-1", "p1");
   await vi.waitFor(() => expect(first.harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
   const next = await first.harness.lifecycle.reload(async () => {});
   const stopped: string[] = [];
@@ -167,23 +167,23 @@ test("after a reload, a thread titled as the interrupted review's writer stays k
   next.harness.inspection.sdk.stub("threads.spawn", async () => ({ id: "new-worker" }));
   next.harness.inspection.sdk.stub("threads.wait", () => new Promise(() => {}));
   next.harness.inspection.sdk.stub("threads.stop", async ({ threadId }: { threadId: string }) => { stopped.push(threadId); return {}; });
-  await plugin(next.bb);
+  await plugin(next.alia);
   await vi.waitFor(() => expect(next.harness.inspection.sdk.callsTo("threads.spawn")).toHaveLength(1));
-  expect(await formerWorkerReview(next.bb, "orphan")).toBe("pr-1");
-  expect(await formerWorkerReview(next.bb, "old-pr2-writer")).toBe("pr-2");
-  expect(await formerWorkerReview(next.bb, "suggester")).toBe(NO_REVIEW);
-  expect(await formerWorkerReview(next.bb, "pr2-assistant")).toBeNull();
+  expect(await formerWorkerReview(next.alia, "orphan")).toBe("pr-1");
+  expect(await formerWorkerReview(next.alia, "old-pr2-writer")).toBe("pr-2");
+  expect(await formerWorkerReview(next.alia, "suggester")).toBe(NO_REVIEW);
+  expect(await formerWorkerReview(next.alia, "pr2-assistant")).toBeNull();
   expect(stopped).toEqual(["orphan"]);
 });
 
-// bug bash SRV-5: the BB server restarts before its network is up. The interrupted guide's restart couldn't read the PR,
+// bug bash SRV-5: the VesnALIA server restarts before its network is up. The interrupted guide's restart couldn't read the PR,
 // and the review stayed Failed with no What went wrong; nothing retries it, as Try again is a click away.
 test("a guide a reload interrupted while GitHub couldn't be read stays failed, saying why", async () => {
   const reads = vi.mocked(runGh).getMockImplementation();
   vi.mocked(runGh).mockImplementation(async () => ({ code: 1, stderr: "error connecting to api.github.com\ncheck your internet connection or https://githubstatus.com", stdout: "" }));
   try {
-    const { bb, harness, store } = await interrupted();
-    await plugin(bb);
+    const { alia, harness, store } = await interrupted();
+    await plugin(alia);
     await vi.waitFor(async () => expect((await store.getReview("pr-1"))?.guideError?.text).toContain("error connecting to api.github.com"));
     expect((await store.getReview("pr-1"))?.status).toBe("error");
     expect((await store.getReview("pr-1"))?.restartPending ?? null).toBeNull();
@@ -203,9 +203,9 @@ test("a guide a reload interrupted while GitHub couldn't be read stays failed, s
 
 test("an interrupted guide whose machine stays offline past 10 minutes says why it failed", async () => {
   const host = { id: "host_flomac", name: "FloMac", status: "disconnected", lifecycle: { phase: "active" } };
-  const { bb, harness, store } = await interrupted({ "hosts.get": async () => host });
+  const { alia, harness, store } = await interrupted({ "hosts.get": async () => host });
   await store.savePreferences({ ...defaultPreferences, guideAgent: { hostId: "host_flomac", providerId: "codex", model: "gpt-6", reasoningLevel: "low", permissionMode: "auto" } }, 0);
-  await plugin(bb);
+  await plugin(alia);
   await vi.waitFor(async () => expect((await store.getReview("pr-1"))?.restartPending).toBeTruthy());
   expect((await store.getReview("pr-1"))?.guideError ?? null).toBeNull();
   await store.setLifecycle("pr-1", { restartPending: { since: Date.now() - 11 * 60_000 } });
@@ -225,10 +225,10 @@ test("after a reload, every interrupted guide restarts past one whose restart th
     : args[1] === "view" ? { code: 0, stderr: "", stdout: JSON.stringify({ title: "T", baseRefName: "main", headRefName: "h", url: "u", headRefOid: `sha-${args[2]}` }) }
     : { code: 1, stderr: "", stdout: "" });
   try {
-    const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+    const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
       spawn: async () => ({ id: "new-worker" }), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}),
     } } as any });
-    const store = testStore(bb);
+    const store = testStore(alia);
     // Two guides were building when the plugin stopped; interruptGenerations orders them by key, pr-1 first.
     for (const number of [1, 2]) {
       const key = `pr-${number}`;
@@ -237,14 +237,14 @@ test("after a reload, every interrupted guide restarts past one whose restart th
       await store.savePatch(key, diff("old"));
     }
     // pr-1's new diff fails to save.
-    const sql = testSql(bb);
+    const sql = testSql(alia);
     if (sql.dialect === "sqlite") {
       await sql.run(`CREATE TRIGGER refuse_pr1 BEFORE UPDATE ON patches WHEN NEW.target_key = 'pr-1' BEGIN SELECT RAISE(ABORT, 'Connection terminated unexpectedly'); END`);
     } else {
       await sql.run(`CREATE FUNCTION refuse_pr1() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Connection terminated unexpectedly'; END $$`);
       await sql.run(`CREATE TRIGGER refuse_pr1 BEFORE UPDATE ON patches FOR EACH ROW WHEN (NEW.target_key = 'pr-1') EXECUTE FUNCTION refuse_pr1()`);
     }
-    await plugin(bb);
+    await plugin(alia);
     await vi.waitFor(async () => expect(await store.getReview("pr-2")).toMatchObject({ status: "generating", headSha: "sha-2" }));
     await vi.waitFor(async () => expect(await store.getReview("pr-1")).toMatchObject({ status: "error", guideError: { text: expect.stringContaining("Connection terminated unexpectedly") } }));
     expect(harness.inspection.logEntries).toContainEqual({ level: "warn", message: expect.stringContaining("The interrupted guide for pr-1 didn't restart") });
@@ -256,16 +256,16 @@ test("after a reload, every interrupted guide restarts past one whose restart th
 // Review round 1, NIT 3 (D2): a restart that threw before rebuilding, as on finding its writers, was only logged, and
 // the review stayed failed with no reason shown.
 test("after a reload, an interrupted guide whose restart throws before rebuilding stays failed, saying why", async () => {
-  const { bb, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
+  const { alia, harness } = createFakePluginHost({ pluginId: "code-review-workspace", sdk: { threads: {
     spawn: async () => ({ id: "new-worker" }), wait: () => new Promise(() => {}), archive: async () => ({}), stop: async () => ({}),
     list: async () => [{ id: "stray-writer", originPluginId: "code-review-workspace", title: `${GUIDE_WORKER_TITLE}pr-1` }],
   } } as any });
-  const store = testStore(bb);
+  const store = testStore(alia);
   await store.saveReview({ targetKey: "pr-1", kind: "pr", number: 1, repo: "acme/web", status: "generating", createdAt: 1, projectId: "p1", headSha: "sha0" });
   // Which review a writer it finds belonged to can't be read.
-  const get = bb.storage.kv.get.bind(bb.storage.kv);
-  vi.spyOn(bb.storage.kv, "get").mockImplementation(async (key: string) => key === "former-workers" ? Promise.reject(new Error("kv is unavailable")) : get(key));
-  await plugin(bb);
+  const get = alia.storage.kv.get.bind(alia.storage.kv);
+  vi.spyOn(alia.storage.kv, "get").mockImplementation(async (key: string) => key === "former-workers" ? Promise.reject(new Error("kv is unavailable")) : get(key));
+  await plugin(alia);
   await vi.waitFor(async () => expect(await store.getReview("pr-1")).toMatchObject({ status: "error", guideError: { text: "kv is unavailable" } }));
   expect(harness.inspection.logEntries).toContainEqual({ level: "warn", message: expect.stringContaining("Could not restart the interrupted guide for pr-1: Error: kv is unavailable") });
   expect(harness.inspection.sdk.callsTo("threads.spawn")).toEqual([]);

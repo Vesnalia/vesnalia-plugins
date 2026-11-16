@@ -1,15 +1,15 @@
 /**
- * What the Review tab, the `bb diff-review` command and bb's thread events do to reviews. The RPC
+ * What the Review tab, the `alia diff-review` command and VesnALIA's thread events do to reviews. The RPC
  * handlers, the CLI and the event listeners in `server.ts` only translate into these calls.
  *
  * The user's side (the tab) is trusted; the agent's side (the CLI) is not: an agent may only answer a
- * thread whose last send went to the thread it runs in, as its `bb` reports that (AGENTS.md, "A plugin
+ * thread whose last send went to the thread it runs in, as its `VesnALIA` reports that (AGENTS.md, "A plugin
  * CLI command knows its caller" — the id is a claim, not an identity).
  */
 import { createHash } from "node:crypto";
 import { posix } from "node:path";
 
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 
 import {
   describeLocation,
@@ -47,8 +47,8 @@ import { parsePullText, type PullRef, type ReviewEvent } from "../shared/github"
 import { sendPrompt } from "./prompt";
 import type { ReviewStore, ReviewSummaryRow, StoredRun } from "./store";
 
-/** A bb thread as `threads.get` answers. */
-type BbThread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
+/** A VesnALIA thread as `threads.get` answers. */
+type AliaThread = Awaited<ReturnType<AliaPluginApi["sdk"]["threads"]["get"]>>;
 
 /** A run as the tab sees it, without the baseline only the server reads. */
 export function publicRun(run: StoredRun): Run {
@@ -86,7 +86,7 @@ export interface NewThreadInput {
 
 export type AgentAction = "reply" | "resolve" | "dismiss";
 
-/** Names for the providers bb ships, for an agent's comments; any other provider shows its id. */
+/** Names for the providers VesnALIA ships, for an agent's comments; any other provider shows its id. */
 const PROVIDER_NAMES: Record<string, string> = {
   "claude-code": "Claude Code",
   codex: "Codex",
@@ -94,7 +94,7 @@ const PROVIDER_NAMES: Record<string, string> = {
   gemini: "Gemini",
 };
 
-/** bb's environment changes that may change a diff, and how they are coalesced (milliseconds). */
+/** VesnALIA's environment changes that may change a diff, and how they are coalesced (milliseconds). */
 const WORKSPACE_CHANGES: ReadonlySet<string> = new Set(["work-status-changed", "git-refs-changed", "status-changed"]);
 const CHANGE_DEBOUNCE_MS = 400;
 const CHANGE_MAX_WAIT_MS = 2_000;
@@ -106,7 +106,7 @@ export const LEASE_RENEW_MS = 30_000;
 const FILE_SEARCH_LIMIT = 200;
 const FILE_VIEW_MAX_BYTES = 1024 * 1024;
 
-type Environment = Awaited<ReturnType<BbPluginApi["sdk"]["environments"]["get"]>>;
+type Environment = Awaited<ReturnType<AliaPluginApi["sdk"]["environments"]["get"]>>;
 
 /** The longest range a thread may cover, in lines. */
 const MAX_RANGE_LINES = 2_000;
@@ -122,13 +122,13 @@ export class ReviewService {
   private readonly leases = new Map<string, Map<string, { expiresAt: number; index: boolean }>>();
   /** Workspaces a tab has watched, whose changes while no tab shows them are only marked. */
   private readonly known = new Set<string>();
-  /** Workspaces bb changed while no tab showed them: checked once when one shows again. */
+  /** Workspaces VesnALIA changed while no tab showed them: checked once when one shows again. */
   private readonly dirty = new Set<string>();
   private stopEnvironmentEvents: (() => void) | null = null;
   private readonly checks = new Map<string, { timer: ReturnType<typeof setTimeout>; since: number }>();
   private readonly hostIndexState: HostIndexState;
   private readonly hostRangeCommits: HostRangeCommits;
-  /** bb's Git plugin, which every diff read goes through, but the host entry's views. */
+  /** VesnALIA's Git plugin, which every diff read goes through, but the host entry's views. */
   readonly git: GitReads;
   /** The plugin's host entry: git on the workspace's machine, for the staged, unstaged and range views. */
   readonly sources: DiffSources;
@@ -137,16 +137,16 @@ export class ReviewService {
   onUserComment: (thread: ReviewThread, body: string, viewerThreadId: string | null) => void = () => undefined;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly alia: AliaPluginApi,
     private readonly store: ReviewStore,
     private readonly settings: () => Promise<ReviewSettings>,
     deps: { gh?: GhRunner } = {},
   ) {
-    this.git = new GitReads(bb.sdk, (message) => new ReviewUnavailable(message));
-    this.sources = { git: this.git, host: createHostGit(bb) };
-    this.hostIndexState = createHostIndexState(bb);
-    this.hostRangeCommits = createHostRangeCommits(bb);
-    this.prs = new PullRequests(bb, store, new GitHub(deps.gh ?? createGhRunner()), createHostFetchPull(bb), this.sources, (sessionId) => this.publishSession(sessionId));
+    this.git = new GitReads(alia.sdk, (message) => new ReviewUnavailable(message));
+    this.sources = { git: this.git, host: createHostGit(alia) };
+    this.hostIndexState = createHostIndexState(alia);
+    this.hostRangeCommits = createHostRangeCommits(alia);
+    this.prs = new PullRequests(alia, store, new GitHub(deps.gh ?? createGhRunner()), createHostFetchPull(alia), this.sources, (sessionId) => this.publishSession(sessionId));
   }
 
   /**
@@ -154,7 +154,7 @@ export class ReviewService {
    * them, so an AI run is told the diff the tab shows.
    */
   async rangeCommits(environmentId: string, target: Extract<Target, { kind: "range" }>): Promise<{ baseSha: string; headSha: string }> {
-    const environment = await this.bb.sdk.environments.get({ environmentId });
+    const environment = await this.alia.sdk.environments.get({ environmentId });
     if (environment.path === null) throw new ReviewUnavailable("This workspace has no checkout.");
     try {
       return await this.hostRangeCommits(environment.hostId, environment.path, { kind: "range", from: target.from, to: target.to, symmetric: target.symmetric });
@@ -172,7 +172,7 @@ export class ReviewService {
    * since the base branch, when there are any; when both are empty, the uncommitted view stands.
    *
    * `signal` (the caller's) abandons the wait for the PR status read and the commented files'
-   * patches, the reads that only fill the view in; what bb's plugins already started still finishes. The diff and the session are read and written whatever it says, so an
+   * patches, the reads that only fill the view in; what VesnALIA's plugins already started still finishes. The diff and the session are read and written whatever it says, so an
    * abandoned load never leaves them half done.
    */
   async view(
@@ -185,14 +185,14 @@ export class ReviewService {
     signal?: AbortSignal,
   ): Promise<ReviewView> {
     try {
-      const environment = await workspaceOf(this.bb.sdk, threadId);
-      this.bb.log.debug(`Loading the ${request.kind} view of ${threadId}'s workspace ${environment.id} for tab ${tab} (${reason}).`);
+      const environment = await workspaceOf(this.alia.sdk, threadId);
+      this.alia.log.debug(`Loading the ${request.kind} view of ${threadId}'s workspace ${environment.id} for tab ${tab} (${reason}).`);
       await this.seedWorkspaceState(environment.id);
       const base = request.kind === "branch" || request.kind === "all" ? request.base : undefined;
-      const refs = await workspaceRefs(this.git, this.bb.log, environment, base);
+      const refs = await workspaceRefs(this.git, this.alia.log, environment, base);
       let target = resolveTarget(request, refs.defaultBase);
       const settings = await this.settings();
-      const patterns = await ignorePatterns(this.bb.sdk, this.bb.log, environment, settings.ignorePatterns, settings.readIgnoreFiles);
+      const patterns = await ignorePatterns(this.alia.sdk, this.alia.log, environment, settings.ignorePatterns, settings.readIgnoreFiles);
       let pull: Awaited<ReturnType<PullRequests["load"]>> | null = null;
       if (target.kind === "pr") pull = await this.prs.load(environment, target, patterns, ignoreWhitespace, { viewed: true, ...(signal === undefined ? {} : { signal }) });
       let diff =
@@ -200,10 +200,10 @@ export class ReviewService {
           ? pull.diff
           : target.kind === "files"
             ? { files: [], ignoredPaths: [], truncated: false, mergeBaseRef: null, headRef: null, viewable: false }
-            : await loadDiff(this.sources, this.bb.log, environment, target, patterns, ignoreWhitespace);
+            : await loadDiff(this.sources, this.alia.log, environment, target, patterns, ignoreWhitespace);
       if (autoTarget && target.kind === "uncommitted" && diff.files.length === 0 && refs.defaultBase !== null) {
         const branch: Target = { kind: "branch", base: refs.defaultBase };
-        const committed = await loadDiff(this.sources, this.bb.log, environment, branch, patterns, ignoreWhitespace);
+        const committed = await loadDiff(this.sources, this.alia.log, environment, branch, patterns, ignoreWhitespace);
         if (committed.files.length > 0) {
           target = branch;
           diff = committed;
@@ -218,7 +218,7 @@ export class ReviewService {
       const branchPullRequest = target.kind === "pr" ? null : await this.prs.branchPull(environment.id, signal);
       const threads = this.store.threads(session.id);
       const aliases = this.store.aliases(session.id);
-      const files = await withThreadPatches(this.git, this.bb.log, environment, target, diff.files, threads, ignoreWhitespace, signal);
+      const files = await withThreadPatches(this.git, this.alia.log, environment, target, diff.files, threads, ignoreWhitespace, signal);
       return {
         ok: true,
         sessionId: session.id,
@@ -278,19 +278,19 @@ export class ReviewService {
     this.store.saveViewState(threadId, session.id, remapThreadKeys(state, this.store.aliases(session.id))?.state ?? state);
   }
 
-  /** Patches bb left to load on demand, at the revisions the view's file list gave; `signal` abandons them. */
+  /** Patches VesnALIA left to load on demand, at the revisions the view's file list gave; `signal` abandons them. */
   async patches(threadId: string, target: Target, files: readonly { path: string; revision: string }[], ignoreWhitespace = false, signal?: AbortSignal) {
-    const environment = await workspaceOf(this.bb.sdk, threadId);
+    const environment = await workspaceOf(this.alia.sdk, threadId);
     return loadPatches(this.git, environment, target, files, ignoreWhitespace, signal);
   }
 
   /**
-   * Marks a file Viewed at the revision the tab showed, or clears its mark. The marks are bb's own,
-   * so bb's diff panel shows the same; a pull request's are the account's own on GitHub, per file.
+   * Marks a file Viewed at the revision the tab showed, or clears its mark. The marks are VesnALIA's own,
+   * so VesnALIA's diff panel shows the same; a pull request's are the account's own on GitHub, per file.
    */
   async setViewed(threadId: string, target: Target, path: string, revision: string, viewed: boolean): Promise<void> {
-    if (isHostTarget(target) || target.kind === "files") throw new ReviewError("bb's Viewed marks do not cover the staged, unstaged, range and Any file views.", "not_viewable");
-    const environment = await workspaceOf(this.bb.sdk, threadId);
+    if (isHostTarget(target) || target.kind === "files") throw new ReviewError("VesnALIA's Viewed marks do not cover the staged, unstaged, range and Any file views.", "not_viewable");
+    const environment = await workspaceOf(this.alia.sdk, threadId);
     if (target.kind === "pr") {
       const session = this.store.session(environment.id, targetKey(target));
       await github(() => this.prs.setViewed(session.id, target, path, viewed));
@@ -355,13 +355,13 @@ export class ReviewService {
   }
 
   /**
-   * Sends open threads to a bb thread working in the session's workspace, queued behind its current
+   * Sends open threads to a VesnALIA thread working in the session's workspace, queued behind its current
    * turn if it is in one. The send is recorded first, so an agent quick enough to answer before
-   * `threads.send` returns is still allowed to, and dropped again if bb refuses the message.
+   * `threads.send` returns is still allowed to, and dropped again if VesnALIA refuses the message.
    */
   async send(input: { sessionId: string; threadId: string; reviewThreadIds: readonly string[]; note: string }) {
     const session = this.requireSession(input.sessionId);
-    const thread = await this.bb.sdk.threads.get({ threadId: input.threadId });
+    const thread = await this.alia.sdk.threads.get({ threadId: input.threadId });
     if (thread.environmentId !== session.environmentId) {
       throw new ReviewError("That thread works in another workspace; send the comments from its own Review tab.", "wrong_workspace");
     }
@@ -379,7 +379,7 @@ export class ReviewService {
     const text = sendPrompt({ target, threads: chosen, note: input.note });
     const send = this.store.recordSend(session.id, input.threadId, chosen.map((row) => row.id), input.note);
     try {
-      const result = await this.bb.sdk.threads.send({
+      const result = await this.alia.sdk.threads.send({
         threadId: input.threadId,
         mode: "queue-if-active",
         input: [{ type: "text", text, mentions: [] }],
@@ -399,14 +399,14 @@ export class ReviewService {
     return all ? rows : rows.filter((row) => row.status === "open" && !row.comments.some((comment) => comment.githubDraft === "resolve"));
   }
 
-  /** An agent's reply, resolution or dismissal, from `bb diff-review`. */
+  /** An agent's reply, resolution or dismissal, from `alia diff-review`. */
   async answer(callerThreadId: string | undefined, idPrefix: string, action: AgentAction, text: string): Promise<ReviewThread> {
     if (callerThreadId === undefined) {
-      throw new ReviewError("Run this inside the bb thread the comments were sent to.", "not_in_thread");
+      throw new ReviewError("Run this inside the VesnALIA thread the comments were sent to.", "not_in_thread");
     }
     const body = requireText(text, action === "reply" ? "The reply" : action === "resolve" ? "The summary" : "The reason");
-    // Everything that awaits bb comes first. The rights are read after it, in the same step as the
-    // write: a send reassigned, or a run closed, while bb answered leaves the old caller refused and
+    // Everything that awaits VesnALIA comes first. The rights are read after it, in the same step as the
+    // write: a send reassigned, or a run closed, while VesnALIA answered leaves the old caller refused and
     // every row as it was.
     const authorName = await this.agentName(callerThreadId);
     const turnStarted = await this.latestTurnStart(callerThreadId).catch(() => null);
@@ -433,7 +433,7 @@ export class ReviewService {
     if (waiting.length > 0) {
       const started = await this.latestTurnStart(thread.id);
       // Each row is marked only if its thread still points at the send seen here: one sent on while
-      // bb answered keeps its newer send.
+      // VesnALIA answered keeps its newer send.
       const unanswered = this.store.markNoReply(waiting.filter((row) => started !== null && row.sentAt <= started));
       for (const sessionId of new Set(unanswered.map((row) => row.sessionId))) {
         const session = this.store.sessionById(sessionId);
@@ -460,7 +460,7 @@ export class ReviewService {
     const state = await workspaceState(this.git, environmentId);
     const indexed = [...this.activeLeases(environmentId)].some((lease) => lease.index);
     if (!indexed) return state;
-    const environment = await this.bb.sdk.environments.get({ environmentId });
+    const environment = await this.alia.sdk.environments.get({ environmentId });
     if (environment.path === null) return state;
     const index = await this.hostIndexState(environment.hostId, environment.path);
     const summary = `${state.summary}, index ${index.slice(0, 12)}`;
@@ -472,17 +472,17 @@ export class ReviewService {
     try {
       state = await this.currentState(environmentId);
     } catch (error) {
-      this.bb.log.warn(`Could not read the state of ${environmentId}; telling its tabs to reload: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.warn(`Could not read the state of ${environmentId}; telling its tabs to reload: ${error instanceof Error ? error.message : String(error)}`);
       this.workspaceStates.delete(environmentId);
       return true;
     }
     const previous = this.workspaceStates.get(environmentId);
     this.workspaceStates.set(environmentId, state);
     if (previous?.key === state.key) {
-      this.bb.log.debug(`${cause}; ${environmentId} is unchanged (${state.summary}), so no reload.`);
+      this.alia.log.debug(`${cause}; ${environmentId} is unchanged (${state.summary}), so no reload.`);
       return false;
     }
-    this.bb.log.debug(
+    this.alia.log.debug(
       `${cause}; ${environmentId} ${previous === undefined ? "had no known state" : `changed from (${previous.summary})`} to (${state.summary}): telling its tabs to reload.`,
     );
     return true;
@@ -499,7 +499,7 @@ export class ReviewService {
       const state = await this.currentState(environmentId);
       if (!this.workspaceStates.has(environmentId)) this.workspaceStates.set(environmentId, state);
     } catch (error) {
-      this.bb.log.debug(`No state recorded for ${environmentId}: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.debug(`No state recorded for ${environmentId}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -520,7 +520,7 @@ export class ReviewService {
 
   /**
    * A tab showing a view of `threadId`'s workspace takes (`active`) or gives back a lease, renewed while
-   * it shows. While a workspace has one, bb's changes made outside any agent's turn (an edit the user
+   * it shows. While a workspace has one, VesnALIA's changes made outside any agent's turn (an edit the user
    * saves, a `git` command, a file staged) are checked: coalesced per workspace, the workspace's
    * content-sensitive state (each file's patch, and the index when a leased view is staged or
    * unstaged) decides whether its tabs reload, as at a turn's end, and reading it changes nothing, so
@@ -530,7 +530,7 @@ export class ReviewService {
   async watch(threadId: string, tab: string, view: Target["kind"], active: boolean): Promise<void> {
     let environment;
     try {
-      environment = await workspaceOf(this.bb.sdk, threadId);
+      environment = await workspaceOf(this.alia.sdk, threadId);
     } catch (error) {
       // A workspace gone or never there has nothing to watch.
       if (error instanceof ReviewUnavailable) return;
@@ -546,7 +546,7 @@ export class ReviewService {
     tabs.set(tab, { expiresAt: Date.now() + LEASE_MS, index: view === "staged" || view === "unstaged" });
     this.leases.set(environment.id, tabs);
     this.known.add(environment.id);
-    this.stopEnvironmentEvents ??= this.bb.sdk.subscribe({
+    this.stopEnvironmentEvents ??= this.alia.sdk.subscribe({
       event: "environment:changed",
       callback: (event) => {
         if (event.id === undefined || !this.known.has(event.id)) return;
@@ -578,7 +578,7 @@ export class ReviewService {
   }
 
   private async checkChanged(environmentId: string): Promise<void> {
-    if (await this.workspaceChanged(environmentId, "bb saw the workspace change")) this.signal(environmentId, { kind: "diff" });
+    if (await this.workspaceChanged(environmentId, "alia saw the workspace change")) this.signal(environmentId, { kind: "diff" });
   }
 
   /** Stops watching; the plugin is going away. */
@@ -589,9 +589,9 @@ export class ReviewService {
     this.checks.clear();
   }
 
-  /** When the thread's latest own turn started (epoch ms), or null when bb has no record. */
+  /** When the thread's latest own turn started (epoch ms), or null when VesnALIA has no record. */
   async latestTurnStart(threadId: string): Promise<number | null> {
-    const events = await this.bb.sdk.threads.events.list({ threadId, types: ["turn/started"], order: "desc", limit: "20" });
+    const events = await this.alia.sdk.threads.events.list({ threadId, types: ["turn/started"], order: "desc", limit: "20" });
     // A sub-agent's turn carries the tool call that started it; only the thread's own turns count.
     const own = events.find((event) => event.type === "turn/started" && event.data.parentToolCallId === undefined);
     return own?.createdAt ?? null;
@@ -629,16 +629,16 @@ export class ReviewService {
     if (exists !== null) {
       throw new ReviewError(`Comment thread ${exists.id} was not sent to this thread, so it cannot answer it here.`, "not_sent_here");
     }
-    throw new ReviewError(`No comment thread ${idPrefix} was sent to this thread. Run \`bb diff-review list\` to see the ones that were.`, "unknown_thread");
+    throw new ReviewError(`No comment thread ${idPrefix} was sent to this thread. Run \`alia diff-review list\` to see the ones that were.`, "unknown_thread");
   }
 
   /** How an agent's comments are signed: its thread's provider. */
   async agentName(threadId: string): Promise<string> {
     try {
-      const thread = await this.bb.sdk.threads.get({ threadId });
+      const thread = await this.alia.sdk.threads.get({ threadId });
       return PROVIDER_NAMES[thread.providerId] ?? thread.providerId;
     } catch (error) {
-      this.bb.log.warn(`Could not read thread ${threadId} for its provider: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.warn(`Could not read thread ${threadId} for its provider: ${error instanceof Error ? error.message : String(error)}`);
       return "Agent";
     }
   }
@@ -669,14 +669,14 @@ export class ReviewService {
   /** Tells open tabs on a workspace, and the Reviews page, that one of its sessions changed (or went). */
   publish(environmentId: string, sessionId: string): void {
     this.signal(environmentId, { kind: "threads", sessionId });
-    this.bb.realtime.publish(REVIEWS_CHANNEL, { kind: "threads", sessionId } satisfies RealtimeSignal);
+    this.alia.realtime.publish(REVIEWS_CHANNEL, { kind: "threads", sessionId } satisfies RealtimeSignal);
   }
 
   /** The most reviews the Reviews page lists. */
   static readonly LIST_LIMIT = 200;
 
   /**
-   * The reviews with comment threads, newest first, each with a bb thread to open it in: the thread
+   * The reviews with comment threads, newest first, each with a VesnALIA thread to open it in: the thread
    * whose tab showed it last, or else a thread still working in its workspace. A review with neither
    * (its workspace archived) is left out, since it can no longer be loaded (`orphanReviews`).
    */
@@ -703,9 +703,9 @@ export class ReviewService {
   }
 
   /**
-   * The reviews no live bb thread can open: no thread to open them in (`openers`) and their workspace
-   * gone (bb says it is destroyed). The Reviews page leaves them out and offers to delete them; nothing
-   * deletes them unasked. A workspace bb cannot be asked about is not taken for gone.
+   * The reviews no live VesnALIA thread can open: no thread to open them in (`openers`) and their workspace
+   * gone (VesnALIA says it is destroyed). The Reviews page leaves them out and offers to delete them; nothing
+   * deletes them unasked. A workspace VesnALIA cannot be asked about is not taken for gone.
    */
   async orphanReviews(): Promise<OrphanReview[]> {
     return (await this.orphanCandidates()).map(({ orphan }) => orphan);
@@ -737,7 +737,7 @@ export class ReviewService {
    * its runs still has a worker, in any workspace (a fixer in a worktree of its own, a run still
    * starting). The workers are asked last, closest to a delete.
    */
-  private async checkOrphan(row: ReviewSummaryRow, openerOf: (row: ReviewSummaryRow) => Promise<BbThread | null>, gone: Map<string, boolean>): Promise<{ orphan: OrphanReview; runs: StoredRun[] } | null> {
+  private async checkOrphan(row: ReviewSummaryRow, openerOf: (row: ReviewSummaryRow) => Promise<AliaThread | null>, gone: Map<string, boolean>): Promise<{ orphan: OrphanReview; runs: StoredRun[] } | null> {
     if ((await openerOf(row)) !== null) return null;
     if (!gone.has(row.environmentId)) gone.set(row.environmentId, await this.workspaceGone(row.environmentId));
     if (gone.get(row.environmentId) !== true) return null;
@@ -751,7 +751,7 @@ export class ReviewService {
 
   /**
    * Whether any of these runs still has a worker: one still starting (running, no thread yet), or a
-   * thread that is not archived, wherever it works. A thread bb cannot be asked about counts as live;
+   * thread that is not archived, wherever it works. A thread VesnALIA cannot be asked about counts as live;
    * a start that failed before it got a thread never had a worker.
    */
   private async hasLiveWorker(runs: readonly StoredRun[]): Promise<boolean> {
@@ -761,9 +761,9 @@ export class ReviewService {
         continue;
       }
       try {
-        if ((await this.bb.sdk.threads.get({ threadId: run.threadId })).archivedAt === null) return true;
+        if ((await this.alia.sdk.threads.get({ threadId: run.threadId })).archivedAt === null) return true;
       } catch (error) {
-        this.bb.log.debug(`Could not read run ${run.id}'s thread ${run.threadId}, so its review stays: ${error instanceof Error ? error.message : String(error)}`);
+        this.alia.log.debug(`Could not read run ${run.id}'s thread ${run.threadId}, so its review stays: ${error instanceof Error ? error.message : String(error)}`);
         return true;
       }
     }
@@ -772,35 +772,35 @@ export class ReviewService {
 
   private async workspaceGone(environmentId: string): Promise<boolean> {
     try {
-      const environment = await this.bb.sdk.environments.get({ environmentId });
+      const environment = await this.alia.sdk.environments.get({ environmentId });
       return environment.status === "destroyed" || environment.path === null;
     } catch (error) {
-      this.bb.log.debug(`Could not read workspace ${environmentId}, so its reviews stay: ${error instanceof Error ? error.message : String(error)}`);
+      this.alia.log.debug(`Could not read workspace ${environmentId}, so its reviews stay: ${error instanceof Error ? error.message : String(error)}`);
       return false;
     }
   }
 
-  /** `threads.get`, each thread asked once per call; null when bb cannot give it. */
-  private threadLookup(): (threadId: string) => Promise<BbThread | null> {
-    const threads = new Map<string, BbThread | null>();
+  /** `threads.get`, each thread asked once per call; null when VesnALIA cannot give it. */
+  private threadLookup(): (threadId: string) => Promise<AliaThread | null> {
+    const threads = new Map<string, AliaThread | null>();
     return async (threadId) => {
-      if (!threads.has(threadId)) threads.set(threadId, await this.bb.sdk.threads.get({ threadId }).catch(() => null));
+      if (!threads.has(threadId)) threads.set(threadId, await this.alia.sdk.threads.get({ threadId }).catch(() => null));
       return threads.get(threadId) ?? null;
     };
   }
 
   /**
-   * Finds the bb thread a review opens in, or null: the thread whose tab showed it last, while it is
+   * Finds the VesnALIA thread a review opens in, or null: the thread whose tab showed it last, while it is
    * not archived and still works in the review's workspace, or else one still working there. Lookups
    * are shared across the rows of one call.
    */
-  private openers(threadOf = this.threadLookup()): (row: ReviewSummaryRow) => Promise<BbThread | null> {
+  private openers(threadOf = this.threadLookup()): (row: ReviewSummaryRow) => Promise<AliaThread | null> {
     const fallback = new Map<string, string | null>();
     return async (row) => {
       let thread = row.viewerThreadId === null ? null : await threadOf(row.viewerThreadId);
       if (thread === null || thread.archivedAt !== null || thread.environmentId !== row.environmentId) {
         if (!fallback.has(row.environmentId)) {
-          const listed = await this.bb.sdk.threads.list({ environmentId: row.environmentId, archived: false, limit: 1 }).catch(() => []);
+          const listed = await this.alia.sdk.threads.list({ environmentId: row.environmentId, archived: false, limit: 1 }).catch(() => []);
           fallback.set(row.environmentId, listed[0]?.id ?? null);
         }
         const id = fallback.get(row.environmentId) ?? null;
@@ -811,31 +811,31 @@ export class ReviewService {
   }
 
   /**
-   * `bb diff-review open`: asks the windows showing `threadId` to open its review of `request`, at
+   * `alia diff-review open`: asks the windows showing `threadId` to open its review of `request`, at
    * `file` when given, and returns where the review is and the Reviews page's route for it.
    */
   async requestOpen(threadId: string, request: TargetRequest, file: string | null): Promise<{ target: Target; route: string; inDiff: boolean | null }> {
-    const environment = await workspaceOf(this.bb.sdk, threadId);
+    const environment = await workspaceOf(this.alia.sdk, threadId);
     const base = request.kind === "branch" || request.kind === "all" ? request.base : undefined;
-    const refs = await workspaceRefs(this.git, this.bb.log, environment, base);
+    const refs = await workspaceRefs(this.git, this.alia.log, environment, base);
     const target = resolveTarget(request, refs.defaultBase);
     let inDiff: boolean | null = null;
     if (file !== null) {
       try {
-        inDiff = (await loadDiff(this.sources, this.bb.log, environment, target, [])).files.some((entry) => entry.path === file);
+        inDiff = (await loadDiff(this.sources, this.alia.log, environment, target, [])).files.some((entry) => entry.path === file);
       } catch {
         inDiff = null;
       }
     }
     const address = { threadId, target, file };
-    this.bb.realtime.publish(OPEN_CHANNEL, address);
-    return { target, route: reviewRoute(this.bb.pluginId, address), inDiff };
+    this.alia.realtime.publish(OPEN_CHANNEL, address);
+    return { target, route: reviewRoute(this.alia.pluginId, address), inDiff };
   }
 
   /** The Files view's search: workspace files whose path matches `query`, best first. */
   async searchFiles(threadId: string, query: string): Promise<{ paths: string[]; truncated: boolean }> {
     const environment = await this.checkout(threadId);
-    const result = await this.bb.sdk.files.listPaths({ hostId: environment.hostId, path: environment.path, query, limit: FILE_SEARCH_LIMIT, includeFiles: true, includeDirectories: false });
+    const result = await this.alia.sdk.files.listPaths({ hostId: environment.hostId, path: environment.path, query, limit: FILE_SEARCH_LIMIT, includeFiles: true, includeDirectories: false });
     const prefix = `${environment.path.replace(/\/$/, "")}/`;
     return { paths: result.paths.map((entry) => (entry.path.startsWith(prefix) ? entry.path.slice(prefix.length) : entry.path)), truncated: result.truncated };
   }
@@ -847,7 +847,7 @@ export class ReviewService {
     if (!absolute.startsWith(`${environment.path.replace(/\/$/, "")}/`)) throw new ReviewError("That path is outside the workspace.", "invalid_place");
     let file;
     try {
-      file = await this.bb.sdk.files.read({ hostId: environment.hostId, path: absolute });
+      file = await this.alia.sdk.files.read({ hostId: environment.hostId, path: absolute });
     } catch (error) {
       throw new ReviewError(`Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`, "changed");
     }
@@ -860,7 +860,7 @@ export class ReviewService {
   private async checkout(threadId: string): Promise<Environment & { path: string }> {
     let environment;
     try {
-      environment = await workspaceOf(this.bb.sdk, threadId);
+      environment = await workspaceOf(this.alia.sdk, threadId);
     } catch (error) {
       if (error instanceof ReviewUnavailable) throw new ReviewError(error.message, "diff_unavailable");
       throw error;
@@ -881,7 +881,7 @@ export class ReviewService {
   }
 
   private signal(environmentId: string, signal: RealtimeSignal): void {
-    this.bb.realtime.publish(environmentChannel(environmentId), signal);
+    this.alia.realtime.publish(environmentChannel(environmentId), signal);
   }
 
   requireSession(id: string) {

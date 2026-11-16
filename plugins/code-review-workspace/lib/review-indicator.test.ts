@@ -8,19 +8,19 @@ const idle: ThreadRow = {
 const row = (extra: Partial<ThreadRow>, activity: Partial<ThreadRow["activity"]> = {}): ThreadRow => ({ ...idle, ...extra, activity: { ...idle.activity, ...activity } });
 const unread = { lastReadAt: 1, latestAttentionAt: 2 };
 
-test("an agent's status is BB's for its thread: working, done and unread, failed and unread, or asking you", () => {
+test("an agent's status is VesnALIA's for its thread: working, done and unread, failed and unread, or asking you", () => {
   expect(agentStatus(idle)).toBeNull();
   expect(agentStatus(row({ status: "active", runtime: { displayStatus: "active" } }))).toEqual({ indicator: "runtime", unread: false });
   for (const displayStatus of ["provisioning", "starting", "stopping"]) expect(agentStatus(row({ runtime: { displayStatus } }))?.indicator).toBe("runtime");
   expect(agentStatus(row(unread))).toEqual({ indicator: "unread-success", unread: true });
-  // Never read: BB counts it from 0.
+  // Never read: VesnALIA counts it from 0.
   expect(agentStatus(row({ lastReadAt: null, latestAttentionAt: 5 }))?.indicator).toBe("unread-success");
   expect(agentStatus(row({ ...unread, status: "error" }))).toEqual({ indicator: "unread-error", unread: true });
   expect(agentStatus(row({ status: "error" }))).toBeNull();
   expect(agentStatus(row({ hasPendingInteraction: true }))?.indicator).toBe("waiting-for-input");
 });
 
-test("BB's order picks one: a failure, then a question, then work, then the unread dot, then a waiting message", () => {
+test("VesnALIA's order picks one: a failure, then a question, then work, then the unread dot, then a waiting message", () => {
   expect(agentStatus(row({ ...unread, status: "error", hasPendingInteraction: true }))?.indicator).toBe("unread-error");
   expect(agentStatus(row({ hasPendingInteraction: true, runtime: { displayStatus: "active" } }))?.indicator).toBe("waiting-for-input");
   expect(agentStatus(row({ runtime: { displayStatus: "active" } }, { activePlanModeCount: 1 }))?.indicator).toBe("plan-mode");
@@ -32,7 +32,7 @@ test("BB's order picks one: a failure, then a question, then work, then the unre
   expect(agentStatus(row({}, { activeBackgroundAgentCount: 1 }))?.indicator).toBe("background-agent");
   expect(agentStatus(row({}, { activeBackgroundCommandCount: 1 }))?.indicator).toBe("background-command");
   expect(agentStatus(row({ queuedWork: "waiting" }))?.indicator).toBe("queued-waiting");
-  // A busy thread isn't unread yet, and a child's unread never shows, as in BB.
+  // A busy thread isn't unread yet, and a child's unread never shows, as in VesnALIA.
   expect(agentStatus(row({ ...unread, status: "active" }))).toBeNull();
   expect(agentStatus(row({ ...unread, parentThreadId: "thr-parent" }))).toBeNull();
 });

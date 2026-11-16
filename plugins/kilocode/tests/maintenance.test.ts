@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   providerHealthResultSchema,
   providerUsageResultSchema,
-} from "@get-bb/plugin-sdk/provider-bridge";
+} from "@vesnalia/plugin-sdk/provider-bridge";
 
 import { resolveKiloBin } from "../adapter/kilo-bin.mjs";
 import {
@@ -19,7 +19,7 @@ import {
 } from "../adapter/maintenance.mjs";
 
 describe("provider/usage", () => {
-  it("answers supported with an explicit no-quota error bb can render", () => {
+  it("answers supported with an explicit no-quota error VesnALIA can render", () => {
     const result = usageResult();
     expect(providerUsageResultSchema.parse(result)).toBeTruthy();
     expect(result.supported).toBe(true);

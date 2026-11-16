@@ -1,18 +1,18 @@
 /**
- * The settings bb renders as a form (`bb.settings.define(SETTINGS)`), and how
+ * The settings VesnALIA renders as a form (`alia.settings.define(SETTINGS)`), and how
  * each half reads them: the server for what to announce, the app — through
  * `useSettings()` — for how and where to speak. Settings changes do not reload
  * the plugin; both halves read the current values when they act.
  *
  * Only a type is imported from the SDK, so the app may import this module.
  */
-import type { PluginSettingDescriptor, PluginSettingsValues } from "@get-bb/plugin-sdk";
+import type { PluginSettingDescriptor, PluginSettingsValues } from "@vesnalia/plugin-sdk";
 
 import { DEFAULT_SENTENCE_PROMPT, RATE_OPTIONS, SPEECH_ENGINES, TOOL_COMMANDS, type SpeechEngine, type StoredConfig } from "./herald";
 
 /** What the form shows for each voice source, instead of its stored value. */
 export const ENGINE_LABELS: Record<SpeechEngine, string> = {
-  say: "Voices of the Mac running bb",
+  say: "Voices of the Mac running VesnALIA",
   web: "This device's browser voice",
 };
 
@@ -34,7 +34,7 @@ export const SETTINGS = {
   speakOnDesktop: {
     type: "boolean",
     label: "Speak in the desktop app",
-    description: "The bb desktop app speaks as soon as an agent needs you.",
+    description: "The VesnALIA desktop app speaks as soon as an agent needs you.",
     default: true,
   },
   speakInBrowser: {
@@ -47,14 +47,14 @@ export const SETTINGS = {
     type: "boolean",
     label: "Speak in the mobile app",
     description:
-      "The bb mobile app speaks while it is open on screen, after one tap of Test voice. A locked or backgrounded phone hears nothing; bb's push notifications reach it instead.",
+      "The VesnALIA mobile app speaks while it is open on screen, after one tap of Test voice. A locked or backgrounded phone hears nothing; VesnALIA's push notifications reach it instead.",
     default: false,
   },
   engine: {
     type: "select",
     label: "Voice source",
     description:
-      "The voices of the Mac running bb are rendered there and played on this device; they fall back to this device's browser voice when bb does not run on a Mac.",
+      "The voices of the Mac running VesnALIA are rendered there and played on this device; they fall back to this device's browser voice when VesnALIA does not run on a Mac.",
     options: [...SPEECH_ENGINES],
     experimental_optionLabels: ENGINE_LABELS,
     default: "say",
@@ -108,7 +108,7 @@ export const SETTINGS = {
     type: "boolean",
     label: "Write each sentence with a model",
     description:
-      "Off: the plain sentence built from the event. On: a command-line tool runs once per announcement on the Mac running bb and writes the sentence from a prompt that includes the agent's own output — which can carry instructions, so the tool runs with no tools or read-only. Which tool, and the prompt, are under Model-written sentences further down this page. The plain sentence is used whenever the tool fails or takes longer than 45 seconds.",
+      "Off: the plain sentence built from the event. On: a command-line tool runs once per announcement on the Mac running VesnALIA and writes the sentence from a prompt that includes the agent's own output — which can carry instructions, so the tool runs with no tools or read-only. Which tool, and the prompt, are under Model-written sentences further down this page. The plain sentence is used whenever the tool fails or takes longer than 45 seconds.",
     default: false,
   },
 } satisfies Record<string, PluginSettingDescriptor>;

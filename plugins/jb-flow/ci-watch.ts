@@ -1,4 +1,4 @@
-// The CI and review watcher's decisions, apart from gh and bb so they can be
+// The CI and review watcher's decisions, apart from gh and VesnALIA so they can be
 // tested: what a watch should report, when it ends, and that a wake-up is only
 // forgotten once its message has really been sent. watchers.ts wires it up.
 
@@ -336,7 +336,7 @@ export function visibleChange(snapshot: Record<string, CiWatch>, changes: Readon
   return false;
 }
 
-/** Real status from a failed bb call, from its field or its "HTTP 404: …" message. */
+/** Real status from a failed VesnALIA call, from its field or its "HTTP 404: …" message. */
 function httpStatus(error: unknown): number | null {
   const status = (error as { status?: unknown } | null)?.status;
   if (typeof status === "number") return status;
@@ -345,7 +345,7 @@ function httpStatus(error: unknown): number | null {
 }
 
 /**
- * A failed call that proves the thread is gone: not found, or bb refusing it
+ * A failed call that proves the thread is gone: not found, or VesnALIA refusing it
  * because it's archived ("HTTP 409: Thread is archived"). Anything else (a
  * timeout, a 503) proves nothing.
  */

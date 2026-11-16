@@ -1,5 +1,5 @@
 // The Windows guest, as the Proxmox QEMU backend runs it on x86_64 and the
-// Tart backend will in QEMU on a Mac (039, 046): what bb-box runs in it over
+// Tart backend will in QEMU on a Mac (039, 046): what alia-box runs in it over
 // SSH, in PowerShell 7 as the box user, to extend C:, to set the desktop's
 // mode and Windows' clock, and to see that the desktop is up.
 
@@ -17,7 +17,7 @@ import type { GuestFact } from "./types.ts";
 export const CUA_PIPE = "\\\\.\\pipe\\cua-driver";
 
 /**
- * The desktop as video (060): bb-box-stream.exe in box's desktop session, which a box's image has where its record
+ * The desktop as video (060): alia-box-stream.exe in box's desktop session, which a box's image has where its record
  * lists OpenH264, on Proxmox and on a Mac. It leaves the pointer out while a person holds control (cursor "stream")
  * only where the record also lists the hardware cursor: without it, Windows draws the pointer into the image Desktop
  * Duplication returns.
@@ -26,20 +26,20 @@ export const WINDOWS_VIDEO = { id: "video", protocol: "selkies", resizable: true
 /**
  * One connection to it, in the pwsh that box's SSH runs: the pipe to the server, started through its task if it is not
  * running, copied both ways with the SSH channel. Whether it runs is asked of the pipe's name, at once: a connect that
- * waited 500 ms to fail was a third of a cold first picture (#916). pwsh copies, not bb-box-stream.exe connect: over SSH, a native
+ * waited 500 ms to fail was a third of a cold first picture (#916). pwsh copies, not alia-box-stream.exe connect: over SSH, a native
  * program pwsh starts gets only what reached its stdin before it started (measured 17 October 2026).
  */
 export const WINDOWS_STREAM = [
-  "$p = [IO.Pipes.NamedPipeClientStream]::new('.', 'bb-box-stream', 'InOut', 'Asynchronous')",
-  "if (-not [IO.File]::Exists('\\\\.\\pipe\\bb-box-stream')) { schtasks.exe /run /tn bb-box-stream | Out-Null }",
+  "$p = [IO.Pipes.NamedPipeClientStream]::new('.', 'alia-box-stream', 'InOut', 'Asynchronous')",
+  "if (-not [IO.File]::Exists('\\\\.\\pipe\\alia-box-stream')) { schtasks.exe /run /tn alia-box-stream | Out-Null }",
   "$p.Connect(15000)",
   "$i = [Console]::OpenStandardInput(); $o = [Console]::OpenStandardOutput()",
   "[void][Threading.Tasks.Task]::WaitAny(@($p.CopyToAsync($o), $i.CopyToAsync($p)))",
 ].join("; ");
 
 /**
- * Follows the box's pointer through a connection of its own to bb-box-stream.exe, `open`, which says where it is
- * (BB_POINTER_FOLLOW) and what it looks like, until `signal` ends it or the server does: a video from QEMU on a Mac has
+ * Follows the box's pointer through a connection of its own to alia-box-stream.exe, `open`, which says where it is
+ * (ALIA_POINTER_FOLLOW) and what it looks like, until `signal` ends it or the server does: a video from QEMU on a Mac has
  * no pointer in it, nor has QEMU's VNC (#865). A server from before says nothing of where it is.
  */
 export async function followWindowsPointer(open: OpenStream, onEvent: (event: BoxPointer) => void, signal: AbortSignal): Promise<void> {
@@ -47,7 +47,7 @@ export async function followWindowsPointer(open: OpenStream, onEvent: (event: Bo
   const end = () => void socket.close().catch(() => undefined);
   signal.addEventListener("abort", end, { once: true });
   try {
-    await socket.send("BB_POINTER_FOLLOW");
+    await socket.send("ALIA_POINTER_FOLLOW");
     for (let message = await socket.next(); message !== null && !signal.aborted; message = await socket.next()) {
       if (typeof message !== "string") continue;
       if (message.startsWith("cursor,")) onEvent({ type: "shape", message });
@@ -63,8 +63,8 @@ export async function followWindowsPointer(open: OpenStream, onEvent: (event: Bo
   }
 }
 
-/** Where a Windows image has bb-box-stream.exe (setup/windows/install-stream.ps1). */
-export const WINDOWS_STREAM_EXE = "C:\\Program Files\\bb-box-tools\\bb-box-stream\\bb-box-stream.exe";
+/** Where a Windows image has alia-box-stream.exe (setup/windows/install-stream.ps1). */
+export const WINDOWS_STREAM_EXE = "C:\\Program Files\\alia-box-tools\\alia-box-stream\\alia-box-stream.exe";
 /** How long setting the desktop's mode may take, in the desktop session. */
 const RESIZE_TIMEOUT_MS = 15_000;
 /** How long setting Windows' clock may take, over SSH. */
@@ -97,7 +97,7 @@ const EXTEND_C = String.raw`try {
 }`;
 
 /**
- * BbDisplay.Fit sets the desktop to `width` by `height`. QEMU passes a
+ * AliaDisplay.Fit sets the desktop to `width` by `height`. QEMU passes a
  * viewer's size on to the display driver, which then takes it beside the
  * modes Windows lists, though Windows does not switch to it. That can take a
  * moment, so it tries for up to `seconds`, at least once. Else it sets the
@@ -110,7 +110,7 @@ const DISPLAY_SOURCE = String.raw`using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
-public static class BbDisplay {
+public static class AliaDisplay {
   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
   public struct Mode {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
@@ -169,26 +169,26 @@ public static class BbDisplay {
 function helper(name: string, source: string, type: string, variable: string): string {
   const dll = `${name}-${createHash("sha256").update(source).digest("hex").slice(0, 12)}.dll`;
   return String.raw`$ErrorActionPreference = 'Stop'
-$bbDll = [IO.Path]::Combine([Environment]::GetFolderPath('LocalApplicationData'), 'bb-box', '${dll}')
-if (-not (Test-Path -LiteralPath $bbDll)) {
-  $bbTemp = "$bbDll.$PID"
-  New-Item -ItemType Directory -Force -Path (Split-Path $bbDll) | Out-Null
+$aliaDll = [IO.Path]::Combine([Environment]::GetFolderPath('LocalApplicationData'), 'alia-box', '${dll}')
+if (-not (Test-Path -LiteralPath $aliaDll)) {
+  $aliaTemp = "$aliaDll.$PID"
+  New-Item -ItemType Directory -Force -Path (Split-Path $aliaDll) | Out-Null
   try {
-    Add-Type -OutputAssembly $bbTemp -TypeDefinition @'
+    Add-Type -OutputAssembly $aliaTemp -TypeDefinition @'
 ${source}
 '@
-    [IO.File]::Move($bbTemp, $bbDll)
+    [IO.File]::Move($aliaTemp, $aliaDll)
   } catch {
-    if (-not (Test-Path -LiteralPath $bbDll)) { throw }
+    if (-not (Test-Path -LiteralPath $aliaDll)) { throw }
   } finally {
-    Remove-Item -LiteralPath $bbTemp -ErrorAction Ignore
+    Remove-Item -LiteralPath $aliaTemp -ErrorAction Ignore
   }
 }
-$${variable} = [Reflection.Assembly]::LoadFile($bbDll).GetType('${type}')`;
+$${variable} = [Reflection.Assembly]::LoadFile($aliaDll).GetType('${type}')`;
 }
 
-/** Loads BbDisplay as $bbDisplay (helper). */
-const DISPLAY_HELPER = helper("display", DISPLAY_SOURCE, "BbDisplay", "bbDisplay");
+/** Loads AliaDisplay as $aliaDisplay (helper). */
+const DISPLAY_HELPER = helper("display", DISPLAY_SOURCE, "AliaDisplay", "aliaDisplay");
 
 /**
  * Sets the monitor's scaling, as Windows' Settings app does, at once and with
@@ -200,7 +200,7 @@ const DISPLAY_HELPER = helper("display", DISPLAY_SOURCE, "BbDisplay", "bbDisplay
 const SCALE_SOURCE = String.raw`using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-public static class BbScale {
+public static class AliaScale {
   [StructLayout(LayoutKind.Sequential)] struct Point { public int X, Y; }
   [DllImport("user32.dll")] static extern bool SystemParametersInfo(uint action, int param, IntPtr value, uint flags);
   [DllImport("user32.dll")] static extern IntPtr SetThreadDpiAwarenessContext(IntPtr context);
@@ -231,8 +231,8 @@ public static class BbScale {
   }
 }`;
 
-/** Loads BbScale as $bbScale (helper). */
-const SCALE_HELPER = helper("scale", SCALE_SOURCE, "BbScale", "bbScale");
+/** Loads AliaScale as $aliaScale (helper). */
+const SCALE_HELPER = helper("scale", SCALE_SOURCE, "AliaScale", "aliaScale");
 
 /**
  * Sets the scaling of the box's monitor to `percent`, in the box user's
@@ -241,8 +241,8 @@ const SCALE_HELPER = helper("scale", SCALE_SOURCE, "BbScale", "bbScale");
  */
 export function scaleScript(percent: 100 | 200): string {
   return `${SCALE_HELPER}
-$bbRefused = $bbScale::Set(${percent})
-if ($bbRefused) { [Console]::Error.WriteLine($bbRefused); exit 1 }`;
+$aliaRefused = $aliaScale::Set(${percent})
+if ($aliaRefused) { [Console]::Error.WriteLine($aliaRefused); exit 1 }`;
 }
 
 /**
@@ -259,7 +259,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-public static class BbWindows {
+public static class AliaWindows {
   delegate bool EnumProc(IntPtr window, IntPtr data);
   [StructLayout(LayoutKind.Sequential)] struct Rect { public int Left, Top, Right, Bottom; }
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc proc, IntPtr data);
@@ -299,9 +299,9 @@ public static class BbWindows {
 }`;
 
 /** Names untitled windows in the box user's desktop session (NAMER_SOURCE), and prints what it named. */
-export const NAME_WINDOWS_SCRIPT = `${helper("windows", NAMER_SOURCE, "BbWindows", "bbWindows")}
-$bbNamed = $bbWindows::Name()
-if ($bbNamed) { [Console]::Out.WriteLine($bbNamed) }`;
+export const NAME_WINDOWS_SCRIPT = `${helper("windows", NAMER_SOURCE, "AliaWindows", "aliaWindows")}
+$aliaNamed = $aliaWindows::Name()
+if ($aliaNamed) { [Console]::Out.WriteLine($aliaNamed) }`;
 
 /** The windows NAME_WINDOWS_SCRIPT named, by handle, with their new titles. */
 export function parseNamed(stdout: string): { id: number; title: string }[] {
@@ -319,8 +319,8 @@ export function parseNamed(stdout: string): { id: number; title: string }[] {
  */
 function modeScript(width: number, height: number, seconds: number): string {
   return `${DISPLAY_HELPER}
-$bbRefused = $bbDisplay::Fit(${width}, ${height}, ${seconds})
-if ($bbRefused) { [Console]::Error.WriteLine($bbRefused); exit 1 }`;
+$aliaRefused = $aliaDisplay::Fit(${width}, ${height}, ${seconds})
+if ($aliaRefused) { [Console]::Error.WriteLine($aliaRefused); exit 1 }`;
 }
 
 /**
@@ -329,8 +329,8 @@ if ($bbRefused) { [Console]::Error.WriteLine($bbRefused); exit 1 }`;
  * does not correct it for a while (039).
  */
 function clockScript(ms: number): string {
-  return `$bbNow = [DateTimeOffset]::FromUnixTimeMilliseconds(${ms}).LocalDateTime + ((Get-Date) - [Diagnostics.Process]::GetCurrentProcess().StartTime)
-Set-Date -Date $bbNow -ErrorAction Stop | Out-Null`;
+  return `$aliaNow = [DateTimeOffset]::FromUnixTimeMilliseconds(${ms}).LocalDateTime + ((Get-Date) - [Diagnostics.Process]::GetCurrentProcess().StartTime)
+Set-Date -Date $aliaNow -ErrorAction Stop | Out-Null`;
 }
 
 const DESKTOP_LOGGED_IN = "(Get-Process explorer -ErrorAction SilentlyContinue | Where-Object SessionId -gt 0)";
@@ -345,51 +345,51 @@ const PASSWORD_REPAIRED_AND_RESTARTING = 3;
 const PASSWORD_REPAIR_REFUSED = 4;
 const DESKTOP_NOT_UP_AND_NOTHING_TO_REPAIR = 5;
 const NOBODY_LOGGED_IN = "No User exists";
-const RESTARTED_FOR_PASSWORD = ".bb-box-password-restart";
+const RESTARTED_FOR_PASSWORD = ".alia-box-password-restart";
 
-const READ_EXPIRED_BOX_USER = `$bbName = [Environment]::UserName
-try { $bbUser = Get-LocalUser -Name $bbName -ErrorAction Stop }
-catch { [Console]::Error.WriteLine("${PRODUCT} could not read the box user $bbName, so it did not repair the box: $_"); exit ${PASSWORD_REPAIR_REFUSED} }
-if ($null -eq $bbUser.PasswordExpires -or $bbUser.PasswordExpires -gt (Get-Date)) { exit ${DESKTOP_NOT_UP_AND_NOTHING_TO_REPAIR} }
-$bbExpired = $bbUser.PasswordExpires.ToUniversalTime().ToString('u')
-$bbSetOn = $bbUser.PasswordLastSet.ToUniversalTime().ToString('o')
-function Stop-BbRepair($why) {
-  [Console]::Error.WriteLine("The password of $bbName expired on $bbExpired. $why")
+const READ_EXPIRED_BOX_USER = `$aliaName = [Environment]::UserName
+try { $aliaUser = Get-LocalUser -Name $aliaName -ErrorAction Stop }
+catch { [Console]::Error.WriteLine("${PRODUCT} could not read the box user $aliaName, so it did not repair the box: $_"); exit ${PASSWORD_REPAIR_REFUSED} }
+if ($null -eq $aliaUser.PasswordExpires -or $aliaUser.PasswordExpires -gt (Get-Date)) { exit ${DESKTOP_NOT_UP_AND_NOTHING_TO_REPAIR} }
+$aliaExpired = $aliaUser.PasswordExpires.ToUniversalTime().ToString('u')
+$aliaSetOn = $aliaUser.PasswordLastSet.ToUniversalTime().ToString('o')
+function Stop-AliaRepair($why) {
+  [Console]::Error.WriteLine("The password of $aliaName expired on $aliaExpired. $why")
   exit ${PASSWORD_REPAIR_REFUSED}
 }`;
 
 const SET_PASSWORD_NEVER_EXPIRES = `try {
-  Set-LocalUser -Name $bbName -PasswordNeverExpires $true -ErrorAction Stop
-  $bbNet = net.exe accounts /maxpwage:unlimited 2>&1
-  if ($LASTEXITCODE -ne 0) { throw "net accounts /maxpwage:unlimited exited with $($LASTEXITCODE): $bbNet" }
-} catch { Stop-BbRepair "${PRODUCT} could not set it never to expire: $_" }`;
+  Set-LocalUser -Name $aliaName -PasswordNeverExpires $true -ErrorAction Stop
+  $aliaNet = net.exe accounts /maxpwage:unlimited 2>&1
+  if ($LASTEXITCODE -ne 0) { throw "net accounts /maxpwage:unlimited exited with $($LASTEXITCODE): $aliaNet" }
+} catch { Stop-AliaRepair "${PRODUCT} could not set it never to expire: $_" }`;
 
 const READ_BACK_NEVER_EXPIRES = `try {
-  $bbAccount = Get-CimInstance Win32_UserAccount -Filter "LocalAccount = TRUE AND Name = '$bbName'" -ErrorAction Stop
-  $bbAge = net.exe accounts 2>&1
-  if ($LASTEXITCODE -ne 0) { throw "net accounts exited with $($LASTEXITCODE): $bbAge" }
-  $bbAge = (($bbAge | Select-String 'Maximum password age') -replace '^.*:\\s*', '').Trim()
-  $bbAfter = Get-LocalUser -Name $bbName -ErrorAction Stop
-} catch { Stop-BbRepair "${PRODUCT} set it never to expire, but could not read the settings back, so it did not restart the box: $_" }
-if ($null -eq $bbAccount -or $bbAccount.PasswordExpires -ne $false -or $bbAge -ne 'Unlimited' -or $null -ne $bbAfter.PasswordExpires) {
-  Stop-BbRepair "Windows did not keep the settings: the password expires $(if ($null -eq $bbAccount) { 'unread' } else { $bbAccount.PasswordExpires }), the maximum password age is '$bbAge'. ${PRODUCT} did not restart the box."
+  $aliaAccount = Get-CimInstance Win32_UserAccount -Filter "LocalAccount = TRUE AND Name = '$aliaName'" -ErrorAction Stop
+  $aliaAge = net.exe accounts 2>&1
+  if ($LASTEXITCODE -ne 0) { throw "net accounts exited with $($LASTEXITCODE): $aliaAge" }
+  $aliaAge = (($aliaAge | Select-String 'Maximum password age') -replace '^.*:\\s*', '').Trim()
+  $aliaAfter = Get-LocalUser -Name $aliaName -ErrorAction Stop
+} catch { Stop-AliaRepair "${PRODUCT} set it never to expire, but could not read the settings back, so it did not restart the box: $_" }
+if ($null -eq $aliaAccount -or $aliaAccount.PasswordExpires -ne $false -or $aliaAge -ne 'Unlimited' -or $null -ne $aliaAfter.PasswordExpires) {
+  Stop-AliaRepair "Windows did not keep the settings: the password expires $(if ($null -eq $aliaAccount) { 'unread' } else { $aliaAccount.PasswordExpires }), the maximum password age is '$aliaAge'. ${PRODUCT} did not restart the box."
 }`;
 
-const RESTART_ONLY_IF_NOBODY_LOGGED_IN = `$bbUsers = quser.exe 2>&1
-$bbQuser = $LASTEXITCODE
-$bbUsers = ($bbUsers | ForEach-Object { "$_".Trim() } | Where-Object { $_ }) -join '; '
-if ($bbQuser -eq 0) { Stop-BbRepair "It now never expires, but someone is logged in to the box ($bbUsers), so ${PRODUCT} did not restart it. Restart the box once their work is saved." }
-if ($bbQuser -ne 1 -or $bbUsers -notmatch '${NOBODY_LOGGED_IN}') { Stop-BbRepair "It now never expires, but ${PRODUCT} could not tell whether anyone is logged in to the box (quser exited with $($bbQuser): $bbUsers), so it did not restart it. Restart the box once nobody's work is open." }`;
+const RESTART_ONLY_IF_NOBODY_LOGGED_IN = `$aliaUsers = quser.exe 2>&1
+$aliaQuser = $LASTEXITCODE
+$aliaUsers = ($aliaUsers | ForEach-Object { "$_".Trim() } | Where-Object { $_ }) -join '; '
+if ($aliaQuser -eq 0) { Stop-AliaRepair "It now never expires, but someone is logged in to the box ($aliaUsers), so ${PRODUCT} did not restart it. Restart the box once their work is saved." }
+if ($aliaQuser -ne 1 -or $aliaUsers -notmatch '${NOBODY_LOGGED_IN}') { Stop-AliaRepair "It now never expires, but ${PRODUCT} could not tell whether anyone is logged in to the box (quser exited with $($aliaQuser): $aliaUsers), so it did not restart it. Restart the box once nobody's work is open." }`;
 
-const RESTART_ONCE = `$bbRestarted = Join-Path $HOME '${RESTARTED_FOR_PASSWORD}'
-if ((Test-Path -LiteralPath $bbRestarted) -and "$(Get-Content -LiteralPath $bbRestarted -Raw)".Trim() -eq $bbSetOn) {
-  Stop-BbRepair "${PRODUCT} restarted the box once for this password already, and it still expired, so it did not restart it again."
+const RESTART_ONCE = `$aliaRestarted = Join-Path $HOME '${RESTARTED_FOR_PASSWORD}'
+if ((Test-Path -LiteralPath $aliaRestarted) -and "$(Get-Content -LiteralPath $aliaRestarted -Raw)".Trim() -eq $aliaSetOn) {
+  Stop-AliaRepair "${PRODUCT} restarted the box once for this password already, and it still expired, so it did not restart it again."
 }
-try { Set-Content -LiteralPath $bbRestarted -Value $bbSetOn -ErrorAction Stop }
-catch { Stop-BbRepair "It now never expires, but ${PRODUCT} could not note its restart, so it did not restart the box: $_" }
-$bbShutdown = shutdown.exe /r /t 0 /c "${PRODUCT} set the box user's password never to expire" 2>&1
-if ($LASTEXITCODE -ne 0) { Stop-BbRepair "It now never expires, but Windows refused the restart (shutdown exited with $($LASTEXITCODE): $bbShutdown). Restart the box." }
-[Console]::Out.WriteLine("The password of $bbName expired on $bbExpired.")
+try { Set-Content -LiteralPath $aliaRestarted -Value $aliaSetOn -ErrorAction Stop }
+catch { Stop-AliaRepair "It now never expires, but ${PRODUCT} could not note its restart, so it did not restart the box: $_" }
+$aliaShutdown = shutdown.exe /r /t 0 /c "${PRODUCT} set the box user's password never to expire" 2>&1
+if ($LASTEXITCODE -ne 0) { Stop-AliaRepair "It now never expires, but Windows refused the restart (shutdown exited with $($LASTEXITCODE): $aliaShutdown). Restart the box." }
+[Console]::Out.WriteLine("The password of $aliaName expired on $aliaExpired.")
 exit ${PASSWORD_REPAIRED_AND_RESTARTING}`;
 
 const DESKTOP_UP_OR_REPAIR = [EXIT_0_WHEN_DESKTOP_UP, READ_EXPIRED_BOX_USER, SET_PASSWORD_NEVER_EXPIRES, READ_BACK_NEVER_EXPIRES, RESTART_ONLY_IF_NOBODY_LOGGED_IN, RESTART_ONCE].join("\n");
@@ -439,7 +439,7 @@ export async function setMode(command: CommandTransport, size: DisplaySize, sign
 const POINTER_SOURCE = String.raw`using System;
 using System.Runtime.InteropServices;
 
-public static class BbPointer {
+public static class AliaPointer {
   [DllImport("user32.dll")] static extern bool SetSystemCursor(IntPtr cursor, uint id);
   [DllImport("user32.dll")] static extern IntPtr CreateCursor(IntPtr instance, int x, int y, int width, int height, byte[] and, byte[] xor);
   [DllImport("user32.dll")] static extern bool SystemParametersInfo(uint action, uint param, IntPtr value, uint winIni);
@@ -458,13 +458,13 @@ public static class BbPointer {
   }
 }`;
 
-/** Loads BbPointer as $bbPointer (helper). */
-const POINTER_HELPER = helper("pointer", POINTER_SOURCE, "BbPointer", "bbPointer");
+/** Loads AliaPointer as $aliaPointer (helper). */
+const POINTER_HELPER = helper("pointer", POINTER_SOURCE, "AliaPointer", "aliaPointer");
 
 /** Shows or hides Windows' pointer in the desktop's picture, in the box user's desktop session. */
 export async function windowsPointer(command: CommandTransport, shown: boolean, signal?: AbortSignal): Promise<void> {
   const script = `${POINTER_HELPER}
-$bbPointer::${shown ? "Show" : "Hide"}()`;
+$aliaPointer::${shown ? "Show" : "Hide"}()`;
   const result = await command.run(desktopScript(script, POINTER_TIMEOUT_MS), { timeoutMs: POINTER_TIMEOUT_MS + 5_000, signal, maxOutputBytes: 4096 });
   if (result.exitCode !== 0) throw new Error(`Windows' pointer could not be ${shown ? "shown" : "hidden"}: ${result.stderr.trim() || `exit code ${result.exitCode}.`}`);
 }
@@ -488,7 +488,7 @@ const SHIFT_KEYS = [0xffe1, 0xffe2];
 const SHORTCUT_KEYS = [0xffe3, 0xffe4, 0xffe9, 0xffea, 0xffe7, 0xffe8, 0xffeb, 0xffec];
 
 /**
- * Whether a key goes to bb-box-stream as its character rather than to QEMU's
+ * Whether a key goes to alia-box-stream as its character rather than to QEMU's
  * VNC server, which types by key on the box's US layout: QEMU's key event by
  * its scancode, so é from a Mac's Option+E then E typed e, AZERTY's a typed
  * q and a French ! typed /; a plain key event by the key a US keyboard types
@@ -514,17 +514,17 @@ export function windowsTypesAsCharacter(keysym: number, held: ReadonlySet<number
 /** How long QEMU's VNC server spaces the key events it takes: its key-delay-ms, which neither Proxmox nor Tart sets. */
 export const QEMU_KEY_DELAY_MS = 10;
 
-/** How long the first character waits for bb-box-stream to say it takes BB_PING, before it is taken for one that does not. */
+/** How long the first character waits for alia-box-stream to say it takes ALIA_PING, before it is taken for one that does not. */
 const FIRST_PONG_MS = 1_000;
-/** How long a character waits for bb-box-stream to say it has typed it. */
+/** How long a character waits for alia-box-stream to say it has typed it. */
 const PONG_MS = 2_000;
-/** What a character waits instead, on a box whose bb-box-stream does not say: QEMU's next key must not overtake it. */
+/** What a character waits instead, on a box whose alia-box-stream does not say: QEMU's next key must not overtake it. */
 const UNSAID_WAIT_MS = 50;
 
 /**
- * Types the characters windowsTypesAsCharacter picks with bb-box-stream, over
+ * Types the characters windowsTypesAsCharacter picks with alia-box-stream, over
  * an input connection of its own, for the VNC display's relay. Where it
- * answers BB_PING, as from the image with BB_PONG, as cd and cu, always as the
+ * answers ALIA_PING, as from the image with ALIA_PONG, as cd and cu, always as the
  * character, and each once it has typed it; else as a Unicode keysym's kd
  * and ku, which it types as the character where its key would type another,
  * and each with a short wait.
@@ -549,7 +549,7 @@ export function windowsCharacterInput(open: OpenStream): DisplayInput {
   };
 }
 
-/** Sets Windows' clock from BB's server's. */
+/** Sets Windows' clock from VesnALIA's server's. */
 export async function setClock(command: CommandTransport, signal?: AbortSignal): Promise<void> {
   const result = await command.run(clockScript(Date.now()), { timeoutMs: CLOCK_TIMEOUT_MS, signal, maxOutputBytes: 4096 });
   if (result.exitCode !== 0) {

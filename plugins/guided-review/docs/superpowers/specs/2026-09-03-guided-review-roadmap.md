@@ -3,7 +3,7 @@
 Date: 2026-09-03
 Status: capturing scope; Phase 1 in progress
 
-This plugin is being published to the BB marketplace. Everything below is what
+This plugin is being published to the VesnALIA marketplace. Everything below is what
 we're building toward, grouped so each phase ships something coherent, tested,
 and reviewable rather than a scattershot mega-change.
 
@@ -42,7 +42,7 @@ and reviewable rather than a scattershot mega-change.
 - **Reviewer-agent dashboard** — a panel section to view/edit the agent's
   persona, prompt, and rules; a changelog of what changed, when, and why; and
   per-feature toggles.
-- **Scheduled self-improvement** — an opt-in bb automation (daily/weekly) that
+- **Scheduled self-improvement** — an opt-in VesnALIA automation (daily/weekly) that
   runs the distillation; plus a lightweight check when the agent runs in a new
   thread that pulls the latest improved prompt. Fully toggleable.
 
@@ -55,7 +55,7 @@ and reviewable rather than a scattershot mega-change.
 - **Versioning & updates** — bump the version; a CHANGELOG; an in-app "what's
   new"/updates surface; feature toggles in settings.
 - **GitHub release** — tag `vX.Y.Z` with release notes; confirm the
-  `bb-marketplace` catalog range picks it up.
+  `alia-marketplace` catalog range picks it up.
 
 ## Decided — "the reviewer agent" == the guide generator
 

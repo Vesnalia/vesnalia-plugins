@@ -4,7 +4,7 @@ import { createBridgeIo, createBridgeLineHandler, runBridgeRequest,
   bridgeRequestEnvelopeSchema, initializeParamsSchema, modelListParamsSchema,
   threadStartParamsSchema, threadResumeParamsSchema, threadStopParamsSchema,
   turnStartParamsSchema, turnSteerParamsSchema, threadDiscardParamsSchema, PROVIDER_BRIDGE_PROTOCOL_VERSION,
-  providerRecoveryNotificationSchema, threadDeltaSchema, skillsConfigureParamsSchema } from '@get-bb/plugin-sdk/provider-bridge';
+  providerRecoveryNotificationSchema, threadDeltaSchema, skillsConfigureParamsSchema } from '@vesnalia/plugin-sdk/provider-bridge';
 import { NativeProcess, MissingExecutableError } from './process.ts';
 import type { Launch } from './process.ts';
 import { FrameDecoder } from './framing.ts';
@@ -29,9 +29,9 @@ import { CompactionProjection } from './compaction.ts';
 import { createDiagnosticReporter } from './messages.ts';
 import { SessionKnowledge } from './session-knowledge.ts';
 import { ProjectTokenError } from './project-token.ts';
-import { bbOnlySkills, skillsBlock } from './bb-skills.ts';
+import { aliaOnlySkills, skillsBlock } from './alia-skills.ts';
 import { serviceError, invalidatesEntitlement } from './service-errors.ts';
-import type { SkillRoot, BbSkill } from './bb-skills.ts';
+import type { SkillRoot, AliaSkill } from './alia-skills.ts';
 
 export const runtimePreferences = { nativeSearchEnhancementsEnabled: true, memoryEnabled: true,
   askUserQuestionAutoResolutionEnabled: false, modelContextBudgetStrategy: 'preflight-v1' };
@@ -62,7 +62,7 @@ type Session = { threadId: string; id: string; cwd: string; model: string; reaso
   auth: ReadOnlyAuth; refreshAuth: RuntimeSetup['refreshAuth']; beforeInput: RuntimeSetup['beforeInput']; state: ConversationState; decoder: FrameDecoder; lifecycle: SessionLifecycle | null;
   correlation: CommandCorrelation; detached: boolean; closing: boolean; subscription: string | null; options: string;
   construction: Record<string, unknown>; memoryEnabled: boolean; instructionMode: string; timers: Map<string, ReturnType<typeof setTimeout>>;
-  interactions: InteractionArbiter; questions: Map<string, { rpcId: string | number; bbId: string; question: ReturnType<typeof nativeQuestion>; sent: boolean }>;
+  interactions: InteractionArbiter; questions: Map<string, { rpcId: string | number; aliaId: string; question: ReturnType<typeof nativeQuestion>; sent: boolean }>;
   steerRequests: Set<string>;
   compactions: CompactionProjection;
   mentionCatalogue: RuntimeSetup['mentionCatalogue'];
@@ -70,7 +70,7 @@ type Session = { threadId: string; id: string; cwd: string; model: string; reaso
   knowledgeStore: RuntimeSetup['knowledgeStore'];
   knowledge: SessionKnowledge;
   skillRoots: SkillRoot[];
-  bbSkills: BbSkill[];
+  aliaSkills: AliaSkill[];
   mentionCatalogues: Map<string, Promise<unknown>>;
   stopping?: Promise<void> };
 
@@ -131,11 +131,11 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
       const turnId = questionTurn(s.state.snapshot, pending.question);
       if (turnId === null) continue;
       pending.sent = true;
-      questionResponses.set(pending.bbId, s);
-      io.send({ jsonrpc: '2.0', id: pending.bbId, method: 'interaction/request', params: {
+      questionResponses.set(pending.aliaId, s);
+      io.send({ jsonrpc: '2.0', id: pending.aliaId, method: 'interaction/request', params: {
         threadId: s.threadId, providerThreadId: s.id, turnId, providerNativeIds: true, payload: pending.question.payload } });
       services.observe?.({ event: 'question-requested', threadId: s.threadId, sessionId: s.id,
-        requestId, bbId: pending.bbId, generation: s.generation, businessTurnId: pending.question.turnId,
+        requestId, aliaId: pending.aliaId, generation: s.generation, businessTurnId: pending.question.turnId,
         providerTurnId: turnId, toolCallId: pending.question.toolCallId });
     }
   }
@@ -152,7 +152,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
   function cancelQuestions(s: Session): void {
     for (const [id, pending] of s.questions) {
       s.interactions.cancel(id, s.generation);
-      questionResponses.delete(pending.bbId);
+      questionResponses.delete(pending.aliaId);
       if (!s.detached) {
         try { s.child.write({ jsonrpc: '2.0', id: pending.rpcId, result: { action: 'cancel' } }); }
         catch { services.observe?.({ event: 'question-cancel-dispatch-unavailable', threadId: s.threadId,
@@ -238,8 +238,8 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
       if (s.questions.has(question.requestId) || s.interactions.inspect(question.requestId, g)) return;
       if (s.questions.size) throw new Error('Concurrent questions unsupported');
       s.interactions.observe(question.requestId, g);
-      const bbId = `zcode-question:${g}:${randomUUID()}`;
-      s.questions.set(question.requestId, { rpcId: m.id, bbId, question, sent: false });
+      const aliaId = `zcode-question:${g}:${randomUUID()}`;
+      s.questions.set(question.requestId, { rpcId: m.id, aliaId, question, sent: false });
       flushQuestions(s);
     } else if (typeof m.method === 'string' && 'id' in m) {
       // Unexpected full-mode approvals and unsupported questions stay visible;
@@ -251,7 +251,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
     }
   }
   async function command(s: Session, type: string, payload: unknown, commandId = randomUUID()): Promise<Record<string, unknown>> {
-    const ack = record(await s.child.request('v4/command', { commandId, clientId: 'bb-zcode',
+    const ack = record(await s.child.request('v4/command', { commandId, clientId: 'alia-zcode',
       sessionId: type === 'createSession' ? null : s.id, type, payload, issuedAt: Date.now() }));
     if (typeof ack.memoryEnabled === 'boolean') services.observe?.({ event: 'native-command-memory',
       threadId: s.threadId, sessionId: s.id, commandId, type, memoryEnabled: ack.memoryEnabled });
@@ -293,13 +293,13 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
   }
   async function mentionInput(s: Session, input: readonly unknown[], clientRequestId: string) {
     if (!s.knowledge.started && s.skillRoots.length && s.mentionCatalogue) {
-      s.bbSkills = bbOnlySkills(s.skillRoots, await s.mentionCatalogue('skills')).skills;
-    } else if (s.knowledge.started) s.bbSkills = s.knowledge.skills;
+      s.aliaSkills = aliaOnlySkills(s.skillRoots, await s.mentionCatalogue('skills')).skills;
+    } else if (s.knowledge.started) s.aliaSkills = s.knowledge.skills;
     const selections = selectedMentions(input);
     const catalogues = s.mentionCatalogues; let skills: unknown;
     const converted = await convertMentions(input, async m => {
-      const bbSkill = m.source === 'skill' && s.bbSkills.find(skill => skill.name === m.name);
-      if (bbSkill) return { name: bbSkill.name, path: bbSkill.path, source: 'skill', origin: m.origin, loadWith: 'file' as const };
+      const aliaSkill = m.source === 'skill' && s.aliaSkills.find(skill => skill.name === m.name);
+      if (aliaSkill) return { name: aliaSkill.name, path: aliaSkill.path, source: 'skill', origin: m.origin, loadWith: 'file' as const };
       if (!s.mentionCatalogue) throw Error('Native mention catalogue unavailable');
       const side = m.source === 'skill' ? 'skills' : 'commands';
       const started = performance.now(), hit = catalogues.has(side);
@@ -329,7 +329,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
       dynamicToolCount: Array.isArray(p.dynamicTools) ? p.dynamicTools.length : 0 });
     const execution = currentExecution(options, String(p.instructionMode), p.disallowedTools);
     if (!threadId.trim()) throw new Error('Canonical thread identity required');
-    if (execution.envVars.BB_THREAD_ID !== undefined && execution.envVars.BB_THREAD_ID !== threadId)
+    if (execution.envVars.ALIA_THREAD_ID !== undefined && execution.envVars.ALIA_THREAD_ID !== threadId)
       throw new Error('Environment thread identity conflict');
     if (sessions.has(threadId)) throw new Error('Thread already attached');
     if (!resume && createdIdentities.has(threadId)) throw new Error('Created native identity requires recovery/resume; no duplicate create');
@@ -345,7 +345,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
       interactions: new InteractionArbiter(), questions: new Map(), steerRequests: new Set(),
       compactions: new CompactionProjection(deltas => send('thread/delta', { threadId, deltas: deltas.map(d => threadDeltaSchema.parse(d)) }), pluginId + '/compaction'),
       mentionCatalogue: setup.mentionCatalogue, backgroundTaskStore: setup.backgroundTaskStore, knowledgeStore: setup.knowledgeStore,
-      knowledge: new SessionKnowledge(setup.knowledgeStore), skillRoots: structuredClone(skillRoots), bbSkills: [],
+      knowledge: new SessionKnowledge(setup.knowledgeStore), skillRoots: structuredClone(skillRoots), aliaSkills: [],
       mentionCatalogues: new Map(), child: null as unknown as NativeProcess };
     sessions.set(threadId, s);
     try {
@@ -462,7 +462,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
     if (method === 'model/list') {
       const p = modelListParamsSchema.parse(value), options = record(p.providerOptions ?? {});
       const env = record(p.envVars ?? {});
-      const result = record(await (services.catalogue ?? services.models)(p.cwd, authMode(options.authMode ?? env.BB_ZCODE_AUTH_MODE)));
+      const result = record(await (services.catalogue ?? services.models)(p.cwd, authMode(options.authMode ?? env.ALIA_ZCODE_AUTH_MODE)));
       return { ...result, selectedOnlyModels: [] };
     }
     if (method === 'thread/start') return attach(threadStartParamsSchema.parse(value), false);
@@ -492,7 +492,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
       const refs = await createAttachmentRefs(converted.attachments, s.id, (method, params) => s.child.request(method, params));
       if (!current(s, s.generation) || s.closing) throw new Error('Native session stopped before steer');
       // Completion after validation is allowed to admit an ordinary native turn.
-      // Never use startNow or put an ACKed input in another BB queue.
+      // Never use startNow or put an ACKed input in another VesnALIA queue.
       const id = randomUUID(); s.steerRequests.add(p.clientRequestId);
       services.observe?.({ event: 'steer-requested', threadId: s.threadId, sessionId: s.id, commandId: id,
         clientRequestId: p.clientRequestId, expectedTurnId: p.expectedTurnId, requestedDelivery: 'guide', attachments: converted.metadata,
@@ -528,7 +528,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
       const previous = record(s.construction.options);
       const reconciledOptions = { ...p.options, envVars: p.options.envVars === undefined ? previous.envVars ?? {} : p.options.envVars };
       const execution = currentExecution(reconciledOptions, s.instructionMode, s.construction.disallowedTools);
-      if (execution.envVars.BB_THREAD_ID !== undefined && execution.envVars.BB_THREAD_ID !== p.threadId)
+      if (execution.envVars.ALIA_THREAD_ID !== undefined && execution.envVars.ALIA_THREAD_ID !== p.threadId)
         throw new Error('Environment thread identity conflict');
       Object.assign(execution, await services.validateSelection(execution.model, execution.reasoning, execution.authMode, execution.accountPlan));
       if (execution.signature !== s.options) {
@@ -560,7 +560,7 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
         const history = record(await s.child.request('session/messages', { sessionId: s.id }));
         if (!Array.isArray(history.messages)) throw Error('Native active history unavailable after compaction');
         const retained = s.knowledge.reconcile(history.messages);
-        services.observe?.({ event: 'bb-knowledge-compaction-reconciled', threadId: s.threadId, sessionId: s.id, retained });
+        services.observe?.({ event: 'alia-knowledge-compaction-reconciled', threadId: s.threadId, sessionId: s.id, retained });
       }
       s.construction = { ...s.construction, options: reconciledOptions };
       const converted = convertAttachments(await mentionInput(s, p.input, p.clientRequestId), s.cwd);
@@ -587,11 +587,11 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
         services.observe?.({ event: 'attachment-input', threadId: s.threadId, sessionId: s.id, commandId: id, model: execution.model, attachments: converted.metadata });
         if (!s.knowledge.started && s.skillRoots.length) {
           const catalogue = s.mentionCatalogue ? await s.mentionCatalogue('skills') : { skills: [] };
-          const resolved = bbOnlySkills(s.skillRoots, catalogue); s.bbSkills = resolved.skills;
-          services.observe?.({ event: 'bb-skills-resolved', threadId: s.threadId, sessionId: s.id, ...resolved });
+          const resolved = aliaOnlySkills(s.skillRoots, catalogue); s.aliaSkills = resolved.skills;
+          services.observe?.({ event: 'alia-skills-resolved', threadId: s.threadId, sessionId: s.id, ...resolved });
         }
-        const block = [execution.instructions ? '[bb session instructions]\n' + execution.instructions : '', skillsBlock(s.bbSkills)].filter(Boolean).join('\n\n');
-        const text = s.knowledge.prepare(id, block, converted.text, s.bbSkills);
+        const block = [execution.instructions ? '[VesnALIA session instructions]\n' + execution.instructions : '', skillsBlock(s.aliaSkills)].filter(Boolean).join('\n\n');
+        const text = s.knowledge.prepare(id, block, converted.text, s.aliaSkills);
         await command(s, 'sendText', { text, ...(attachmentRefs.length ? { attachments: attachmentRefs } : {}), requestedDelivery: 'startNow', mode: 'yolo', planEnabled: false,
           modelSelection: { providerId: nativeAccount(execution.accountPlan).id, modelId: execution.model, options: { reasoningLevel: execution.reasoning } } }, id);
       } catch (e) {
@@ -614,21 +614,21 @@ export function createZCodeBridge(services: BridgeServices, write: (message: unk
     // Reverse RPC responses bypass the per-thread request queue and have no
     // timeout: questions wait for a human or stop. Removed IDs are tombstones.
     if (message && typeof message === 'object' && !('method' in message) && 'id' in message) {
-      const response = record(message), bbId = response.id;
-      if (typeof bbId !== 'string') return;
-      const s = questionResponses.get(bbId);
+      const response = record(message), aliaId = response.id;
+      if (typeof aliaId !== 'string') return;
+      const s = questionResponses.get(aliaId);
       if (!s || !current(s, s.generation) || s.closing) return;
-      const entry = [...s.questions].find(([, p]) => p.bbId === bbId);
+      const entry = [...s.questions].find(([, p]) => p.aliaId === aliaId);
       if (!entry) return;
       const [id, pending] = entry;
       try {
         if ('error' in response) throw new Error('Question delivery failed');
         const answer = nativeAnswer(pending.question, response.result);
         if (!s.interactions.propose(id, s.generation, 'reverseRpc', answer)) return;
-        questionResponses.delete(bbId); s.questions.delete(id);
+        questionResponses.delete(aliaId); s.questions.delete(id);
         s.child.write({ jsonrpc: '2.0', id: pending.rpcId, result: answer });
         services.observe?.({ event: 'question-response-dispatched', threadId: s.threadId, sessionId: s.id,
-          requestId: id, bbId, generation: s.generation, action: answer.action });
+          requestId: id, aliaId, generation: s.generation, action: answer.action });
       } catch {
         services.observe?.({ event: 'question-response-failed', threadId: s.threadId, requestId: id, generation: s.generation });
         send('error', { threadId: s.threadId, message: 'Question delivery or response failed; stop and reconcile before retry' });

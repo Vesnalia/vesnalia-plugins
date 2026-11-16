@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 const result = JSON.parse(
   execFileSync(
     "npm",
-    ["pack", "--workspace", "bb-plugin-touchbar", "--dry-run", "--json"],
+    ["pack", "--workspace", "alia-plugin-touchbar", "--dry-run", "--json"],
     { encoding: "utf8" },
   ),
 )[0];
@@ -14,9 +14,9 @@ for (const required of [
   "dist/server.js",
   "dist/server.meta.json",
   "assets/icon.svg",
-  "companion/BB-Agent-Monitor.bttpreset",
+  "companion/ALIA-Agent-Monitor.bttpreset",
   "companion/BBTouchBar.swift",
-  "companion/bb-touchbar.sh",
+  "companion/alia-touchbar.sh",
   "companion/install.sh",
   "native/Sources/BBTouchBarPrivate.h",
   "native/Sources/AgentModel.swift",

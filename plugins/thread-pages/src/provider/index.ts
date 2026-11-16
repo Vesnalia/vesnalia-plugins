@@ -1,47 +1,47 @@
-// createBbProvider(bb, deps): ProviderHost over the bb SDK (DESIGN §B), plus what the composition root needs
+// createAliaProvider(VesnALIA, deps): ProviderHost over the VesnALIA SDK (DESIGN §B), plus what the composition root needs
 // beside the contract: the role registry the CLI dispatches into and the per-session memo eviction.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import type { ProviderHost } from "../../core/src/host/index.ts";
-import { createAttachmentStore, createBbAttachments } from "./attachments.ts";
-import { createBbCommand, type CommandHandler } from "./command.ts";
-import { createBbContributors } from "./contributors.ts";
-import { createBbFiles } from "./files.ts";
-import { createBbInstruction } from "./instruction.ts";
-import { createBbKv } from "./kv.ts";
-import { createBbProviders } from "./providers.ts";
-import { createBbSessions, createStorageLocator } from "./sessions.ts";
-import { createBbVoice } from "./voice.ts";
-import { createBbWorkspaces } from "./workspaces.ts";
+import { createAttachmentStore, createAliaAttachments } from "./attachments.ts";
+import { createAliaCommand, type CommandHandler } from "./command.ts";
+import { createAliaContributors } from "./contributors.ts";
+import { createAliaFiles } from "./files.ts";
+import { createAliaInstruction } from "./instruction.ts";
+import { createAliaKv } from "./kv.ts";
+import { createAliaProviders } from "./providers.ts";
+import { createAliaSessions, createStorageLocator } from "./sessions.ts";
+import { createAliaVoice } from "./voice.ts";
+import { createAliaWorkspaces } from "./workspaces.ts";
 
-export interface BbProviderDeps {
+export interface AliaProviderDeps {
   instructionEnabled(): boolean;
   now?: () => number;
 }
 
-export interface BbProvider {
+export interface AliaProvider {
   provider: ProviderHost;
   handlers: ReadonlyMap<string, CommandHandler>;
   /** `thread.deleted`: drop what this adapter memoised for the session. */
   forget(session: string): void;
 }
 
-export function createBbProvider(bb: BbPluginApi, deps: BbProviderDeps): BbProvider {
-  const locator = createStorageLocator(bb);
+export function createAliaProvider(alia: AliaPluginApi, deps: AliaProviderDeps): AliaProvider {
+  const locator = createStorageLocator(alia);
   const attachments = createAttachmentStore(deps.now ? { now: deps.now } : {});
-  const command = createBbCommand();
-  const instruction = createBbInstruction(bb, { enabled: deps.instructionEnabled, log: bb.log });
+  const command = createAliaCommand();
+  const instruction = createAliaInstruction(alia, { enabled: deps.instructionEnabled, log: alia.log });
   const provider: ProviderHost = {
-    sessions: createBbSessions(bb, { locator, attachments }),
-    workspaces: createBbWorkspaces(bb),
-    kv: createBbKv(bb),
-    files: createBbFiles(bb, locator.locate, deps.now),
+    sessions: createAliaSessions(alia, { locator, attachments }),
+    workspaces: createAliaWorkspaces(alia),
+    kv: createAliaKv(alia),
+    files: createAliaFiles(alia, locator.locate, deps.now),
     instruction: instruction.instruction,
     command: command.command,
-    log: bb.log,
-    providers: createBbProviders(bb),
-    contributors: createBbContributors(bb, { log: bb.log }),
-    voice: createBbVoice(bb),
-    attachments: createBbAttachments(bb, attachments),
+    log: alia.log,
+    providers: createAliaProviders(alia),
+    contributors: createAliaContributors(alia, { log: alia.log }),
+    voice: createAliaVoice(alia),
+    attachments: createAliaAttachments(alia, attachments),
   };
   return { provider, handlers: command.handlers, forget: (session) => locator.evict(session) };
 }

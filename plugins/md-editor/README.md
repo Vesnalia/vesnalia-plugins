@@ -1,14 +1,14 @@
-# Markdown PRO for BB
+# Markdown PRO for VesnALIA
 
-Markdown PRO is a BB plugin that opens Markdown files in a formatted editor and saves changes to the file’s owning machine. It supports source editing, rich Markdown blocks, diagrams, and quoting selected text into chat.
+Markdown PRO is a VesnALIA plugin that opens Markdown files in a formatted editor and saves changes to the file’s owning machine. It supports source editing, rich Markdown blocks, diagrams, and quoting selected text into chat.
 
 ## Quick start
 
 ```sh
-bb plugin install https://github.com/VKirill/bb-plugin-md-editor.git
+alia plugin install https://github.com/VKirill/bb-plugin-md-editor.git
 ```
 
-BB 0.43 or later is required. The plugin registers `.md`, `.markdown`, and `.mdx` file openers.
+VesnALIA 0.43 or later is required. The plugin registers `.md`, `.markdown`, and `.mdx` file openers.
 
 ## Font size
 
@@ -18,7 +18,7 @@ Use **Font size** in the actions menu to adjust typography. See [Markdown editin
 
 On screens narrower than 768 px and touch devices up to 1024 px wide, files open formatted and read-only without focusing the editor. **View**, **Code**, and **Edit** switch between formatted reading, read-only Markdown source, and explicit editing. Panels narrower than 880 px use compact controls even on desktop. Resizing preserves your selected mode and unsaved edits.
 
-The mode buttons fit their labels, with larger touch targets on touchscreens. View / Code / Edit and the BB actions menu stay in the same place at every panel width. The menu holds Save, font size, and autosave; saving status stays visible. In Edit, the formatting toolbar stays visible and wraps on narrow panels. The reading context menu retains quoting, comments, and copying references while hiding editing commands. YAML properties remain visible when leaving YAML editing. All controls support English and Russian.
+The mode buttons fit their labels, with larger touch targets on touchscreens. View / Code / Edit and the VesnALIA actions menu stay in the same place at every panel width. The menu holds Save, font size, and autosave; saving status stays visible. In Edit, the formatting toolbar stays visible and wraps on narrow panels. The reading context menu retains quoting, comments, and copying references while hiding editing commands. YAML properties remain visible when leaving YAML editing. All controls support English and Russian.
 
 ## Documentation
 
@@ -38,7 +38,7 @@ npm install
 npm test
 npm run typecheck
 npm run build
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
 ## License

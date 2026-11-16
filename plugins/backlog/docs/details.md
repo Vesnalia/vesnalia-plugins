@@ -5,15 +5,15 @@ the [README](../README.md).
 
 ## Requirements
 
-- BB 0.43 or later.
-- BB Plugin SDK 0.5.9 or a later 0.5 version.
-- A BB project with a [Backlog.md](https://github.com/MrLesk/Backlog.md)
+- VesnALIA 0.43 or later.
+- VesnALIA Plugin SDK 0.5.9 or a later 0.5 version.
+- A VesnALIA project with a [Backlog.md](https://github.com/MrLesk/Backlog.md)
   folder on an enrolled host.
 
 You do not need the Backlog CLI, an external account, or an API key. The
 plugin does not create a Backlog folder. The interface has a light theme only.
 We tested the plugin on macOS. We did not test Windows host paths. The plugin
-uses experimental BB host and provider APIs.
+uses experimental VesnALIA host and provider APIs.
 
 ## Folder selection
 
@@ -24,7 +24,7 @@ The plugin finds the Backlog folder of the selected checkout in this order:
 3. An existing `backlog/` or `.backlog/` folder.
 
 If both default folders exist, select one in **Folder settings**. If a project
-has more than one BB source, select one checkout. The plugin keeps the host ID
+has more than one VesnALIA source, select one checkout. The plugin keeps the host ID
 and the source path with your selection. A project without a source, or with
 an offline host, stays in the project menu with an explanation.
 
@@ -40,7 +40,7 @@ shows in its own lane, so you can correct it.
 
 ## File safety
 
-The Markdown files are the only source of truth. BB storage keeps only your
+The Markdown files are the only source of truth. VesnALIA storage keeps only your
 project and folder selections.
 
 - A save changes only the edited value or the inside of the edited section.
@@ -62,7 +62,7 @@ current order. Each of these writes is checked separately. Then the moved card
 gets a value between its neighbors. If no value fits between two numbers, the
 plugin shows an error.
 
-Host watches send file changes to the board through BB realtime. A check every
+Host watches send file changes to the board through VesnALIA realtime. A check every
 five seconds catches missed changes. An idle watch closes after 35 seconds. The
 plugin never runs task hooks or Git commands.
 
@@ -100,7 +100,7 @@ have their own tab. Task implementation plans show on the task.
 ## Development
 
 The project uses pnpm 12.4.2 for dependencies, Bun 1.4.2 for tests and
-scripts, and Plugin SDK 0.5.29 for types. BB supplies React when the plugin
+scripts, and Plugin SDK 0.5.29 for types. VesnALIA supplies React when the plugin
 runs. The test dependencies supply React for local tests. For more details,
 read [dependency management](development.md).
 
@@ -110,7 +110,7 @@ mise run install
 mise run test
 mise run typecheck
 mise run build
-bb plugin install . --yes
+alia plugin install . --yes
 ```
 
 Start the development watcher in a named session:
@@ -125,9 +125,9 @@ restores it at the end. Do not run it while you edit a task of this project.
 The JSON report covers discovery, storage, guarded writes, conflict recovery,
 and the speed of the host watch.
 
-BB downloads a build toolchain on the first build. In a sandbox, set
+VesnALIA downloads a build toolchain on the first build. In a sandbox, set
 `MISE_DATA_DIR`, `MISE_CACHE_DIR`, and `MISE_STATE_DIR` to writable
-directories. An isolated `BB_DATA_DIR` can keep the build toolchain.
+directories. An isolated `ALIA_DATA_DIR` can keep the build toolchain.
 
 This repository uses the Backlog CLI to track plugin development. The rules are
 in AGENTS.md.
@@ -136,7 +136,7 @@ in AGENTS.md.
 
 If tasks or files are missing, check **Folder settings** and the source host.
 Then read the warning on the page. To read the runtime logs, run
-`bb plugin logs backlog`.
+`alia plugin logs backlog`.
 
-Assignee badges show Codex and Claude, including Claude Code, with their BB
+Assignee badges show Codex and Claude, including Claude Code, with their VesnALIA
 provider icons. Other assignees show their first two letters.

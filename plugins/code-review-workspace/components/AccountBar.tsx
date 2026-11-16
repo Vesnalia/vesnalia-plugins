@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useState } from "react";
-import { useRpc, useRealtime } from "@get-bb/plugin-sdk/app";
+import { useRpc, useRealtime } from "@vesnalia/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "../src/rpc-contract";
 import { Button } from "./ui/button";
@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Avatar } from "./ui/avatar";
 import { TOUCH_CONTROL } from "./touch";
 
-/** The BB server's GitHub account as its avatar, and a menu to switch it, beside where the account is named. */
+/** The VesnALIA server's GitHub account as its avatar, and a menu to switch it, beside where the account is named. */
 export const AccountBar = memo(function AccountBar() {
   const rpc = useRpc<typeof rpcContract>();
   const [active, setActive] = useState<string | null>(null);
@@ -66,14 +66,14 @@ export const AccountBar = memo(function AccountBar() {
       <PopoverContent align="end" className="w-72 max-w-[calc(100vw-24px)] space-y-3 p-3">
         <div className="space-y-1">
           <p className="text-sm font-medium">GitHub account</p>
-          <p className="text-xs leading-relaxed text-muted-foreground">Reviews are submitted using this BB server’s active account.</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">Reviews are submitted using this VesnALIA server’s active account.</p>
         </div>
         <p role="status" className="flex items-center gap-2 rounded-lg border border-border bg-muted/25 px-2.5 py-2 text-sm">{active && !loading && !failed ? <Avatar login={active} size={24} /> : <Icon name="Github" className="size-4 text-muted-foreground" aria-hidden />}{loading ? "Checking account…" : failed ? "Account check unavailable" : active ? `Signed in as @${active}` : "No account connected"}</p>
         {!loading && (failed || !active) && <Button variant="outline" size="sm" className={TOUCH_CONTROL} onClick={refetch}>Check again</Button>}
-        {!loading && !active && <p className="text-xs leading-relaxed text-muted-foreground">Run <code className="font-mono">gh auth login</code> on the BB server to connect GitHub. Local git reviews work without GitHub.</p>}
+        {!loading && !active && <p className="text-xs leading-relaxed text-muted-foreground">Run <code className="font-mono">gh auth login</code> on the VesnALIA server to connect GitHub. Local git reviews work without GitHub.</p>}
         {accounts.some((account) => !account.active) && <div className="space-y-1 border-t border-border pt-2">
-          <p className="pb-1 text-xs leading-relaxed text-muted-foreground">Switching changes gh for everything on this BB server, other agents and terminals included.</p>
-          {accounts.map((account) => <Button key={account.login} variant="ghost" size="sm" className={`w-full justify-between ${TOUCH_CONTROL}`} disabled={switching !== null || account.active} aria-label={account.active ? `Current account @${account.login}` : `Use @${account.login} on this BB server`} onClick={() => void switchTo(account.login)}>
+          <p className="pb-1 text-xs leading-relaxed text-muted-foreground">Switching changes gh for everything on this VesnALIA server, other agents and terminals included.</p>
+          {accounts.map((account) => <Button key={account.login} variant="ghost" size="sm" className={`w-full justify-between ${TOUCH_CONTROL}`} disabled={switching !== null || account.active} aria-label={account.active ? `Current account @${account.login}` : `Use @${account.login} on this VesnALIA server`} onClick={() => void switchTo(account.login)}>
             <span className="flex min-w-0 items-center gap-2"><Avatar login={account.login} size={18} /><span className="truncate">{switching === account.login ? "Switching…" : `@${account.login}`}</span></span>
             {account.active && <Icon name="Check" className="size-4 text-primary" aria-hidden />}
           </Button>)}

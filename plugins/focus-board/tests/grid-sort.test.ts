@@ -3,7 +3,7 @@
 // tie-break that makes the order total, the key's own default direction, and
 // the stored form's tolerance.
 import { describe, expect, it } from "vitest";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import {
   compareGridSort,
   DEFAULT_GRID_SORT,

@@ -3,7 +3,7 @@
 ## Purpose
 
 Review execution, version provenance, finding decisions and human-confirmed
-spec changes for the Elephant Goldfish BB plugin.
+spec changes for the Elephant Goldfish VesnALIA plugin.
 
 ## Ownership
 
@@ -14,16 +14,16 @@ spec changes for the Elephant Goldfish BB plugin.
 - `prompts.ts`: pinned personas/standards, presets and finding parser.
 - `workspace.ts`: confined file reads and compare-and-replace apply protocol.
 - `diff.ts`: unified diff generation.
-- Root `server.ts` owns BB registration and the Elephant agent tools.
+- Root `server.ts` owns VesnALIA registration and the Elephant agent tools.
 
 ## Local Contracts
 
 - Advanced endpoint reviews have no tools or conversation history; reject tool-call
-  responses. BB-worker reviews are intentionally distinct: they require explicit
-  consent, use the run's captured project/environment, obey BB permissions, and
+  responses. ALIA-worker reviews are intentionally distinct: they require explicit
+  consent, use the run's captured project/environment, obey VesnALIA permissions, and
   persist each worker ID for stop/archive cleanup and restart reconciliation.
 - Runs select their reviewer engine at launch and continuations retain that
-  selection; never silently fall back between BB workers and the endpoint.
+  selection; never silently fall back between VesnALIA workers and the endpoint.
 - An endpoint key is only ever sent to the currently configured endpoint; runs
   pinned to another endpoint fail visibly ("endpoint changed") instead of
   combining a stored endpoint with the live key. Response bodies from endpoint
@@ -73,7 +73,7 @@ spec changes for the Elephant Goldfish BB plugin.
 - `npm test`: real temporary SQLite and workspace files, no wall-clock sleeps
   (exception: the registered-RPC smoke polls the background run once against a
   live stub endpoint).
-- `npm run build`; then `bb plugin reload elephant-goldfish` for a live check.
+- `npm run build`; then `alia plugin reload elephant-goldfish` for a live check.
 
 ## Child DOX Index
 

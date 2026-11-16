@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import type { PluginNavPanelProps, PluginSettingsSectionProps } from "@get-bb/plugin-sdk/app";
+import type { PluginNavPanelProps, PluginSettingsSectionProps } from "@vesnalia/plugin-sdk/app";
 import { app, callsTo, DAY, handlers, mount, NOW, overview, unmountAll, type Handlers } from "./helpers";
 
 afterEach(unmountAll);

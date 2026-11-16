@@ -14,12 +14,12 @@
 //   runningBlocks blocks stay open;
 // - once the final answer appears (idle thread, assistant message after the
 //   newest block), the newest answeredBlocks blocks stay open;
-// - a count of 0 turns that mode off: bb's own state is left alone;
+// - a count of 0 turns that mode off: VesnALIA's own state is left alone;
 // - a block is changed only when its target changes. A block that keeps its
 //   target keeps whatever state the user gave it.
 //
-// The rules rest on bb's timeline DOM: data-timeline-row-id, data-thread-window,
-// aria-expanded toggles and the "Stop run" label. A bb update that renames them
+// The rules rest on VesnALIA's timeline DOM: data-timeline-row-id, data-thread-window,
+// aria-expanded toggles and the "Stop run" label. A VesnALIA update that renames them
 // turns this into a no-op rather than an error.
 
 export interface KeepConfig {

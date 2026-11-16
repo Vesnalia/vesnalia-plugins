@@ -6,13 +6,13 @@
 
 ### See which of your threads needs you, at a glance.
 
-Radar replaces BB's sidebar thread list with a layout built for people
+Radar replaces VesnALIA's sidebar thread list with a layout built for people
 juggling dozens of agent threads at once.<br>
 Grouping, folding and attention states do the sorting for you, so nothing that
 needs a decision hides at the bottom of the list.
 
 ![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)
-![bb ≥ 0.46](https://img.shields.io/badge/bb-%E2%89%A5%200.46-22d3ee)
+![VesnALIA ≥ 0.46](https://img.shields.io/badge/bb-%E2%89%A5%200.46-22d3ee)
 ![Plugin SDK ≥ 0.6.37](https://img.shields.io/badge/plugin%20sdk-%E2%89%A5%200.6.37-0369a1)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 
@@ -27,13 +27,13 @@ needs a decision hides at the bottom of the list.
 <br>
 
 > [!NOTE]
-> The screenshots are real BB captures populated with fictional demo data.
+> The screenshots are real VesnALIA captures populated with fictional demo data.
 
 ## The problem
 
 You have forty agent threads open across six projects. Two are waiting for a
 decision, one failed twenty minutes ago, and three finished while you were
-somewhere else. BB's sidebar sorts them all the same way, so finding the ones
+somewhere else. VesnALIA's sidebar sorts them all the same way, so finding the ones
 that need you is a manual sweep — and the moment you click a thread to look, it
 jumps to the top of "Today" and you lose track of what was actually moving.
 
@@ -107,7 +107,7 @@ threshold. It is interactive, so you can pin, split or archive from the card.
 Arrow keys walk the list, <kbd>Enter</kbd> opens, <kbd>Space</kbd> folds,
 <kbd>E</kbd> archives, <kbd>P</kbd> pins and <kbd>X</kbd> selects. Shortcuts
 stay out of text fields, open dialogs and menus, and buttons or links outside the
-list, so they never steal keys from the rest of BB. <kbd>⌘</kbd>-click or <kbd>⇧</kbd>-click also selects several,
+list, so they never steal keys from the rest of VesnALIA. <kbd>⌘</kbd>-click or <kbd>⇧</kbd>-click also selects several,
 to act on them together from a floating dock. Save a query plus filters as a
 named smart view. Swipe a row, by touch or with two fingers on a trackpad,
 to mark it read or archive it; each direction's action is a setting.
@@ -140,15 +140,15 @@ to mark it read or archive it; each direction's action is a setting.
 ## Install
 
 ```sh
-bb plugin install 'git:https://github.com/MacHatter1/bb-plugin-radar-sidebar.git@^0.5.3' --yes
+alia plugin install 'git:https://github.com/MacHatter1/bb-plugin-radar-sidebar.git@^0.5.3' --yes
 ```
 
 The Git semver range tracks compatible `v0.5.x` releases. If you installed
 an earlier minor series, rerun this command to move to the new range.
 
 Then pick it in **Settings → Appearance**: choose **Radar** for the sidebar.
-Navigation stays on BB's own rail: BB 0.46 retired the navigation slot that
-Radar's navigation and rail were built on, so 0.5.3 removes them. On BB 0.44
+Navigation stays on VesnALIA's own rail: VesnALIA 0.46 retired the navigation slot that
+Radar's navigation and rail were built on, so 0.5.3 removes them. On VesnALIA 0.44
 or 0.45, keep 0.5.2, which still has them.
 
 <details>
@@ -156,16 +156,16 @@ or 0.45, keep 0.5.2, which still has them.
 
 ```sh
 git clone https://github.com/MacHatter1/bb-plugin-radar-sidebar
-cd bb-plugin-radar-sidebar
-npm install && bb plugin build
-bb plugin install path:$PWD --yes
+cd alia-plugin-radar-sidebar
+npm install && alia plugin build
+alia plugin install path:$PWD --yes
 ```
 
 </details>
 
 **Requirements**
 
-- bb **0.46+** (Plugin SDK 0.6.37+)
+- VesnALIA **0.46+** (Plugin SDK 0.6.37+)
 
 ## Where to find it
 
@@ -178,25 +178,25 @@ bb plugin install path:$PWD --yes
 
 ## Compatibility notes
 
-Radar replaces only the thread list. BB 0.46 retired the sidebar navigation
-slot that Radar's navigation and rail were built on, so navigation is BB's
-own rail and Radar styles none of BB's elements. Nothing here touches BB's
-data: thread operations go through BB's own actions and the public SDK, and
+Radar replaces only the thread list. VesnALIA 0.46 retired the sidebar navigation
+slot that Radar's navigation and rail were built on, so navigation is VesnALIA's
+own rail and Radar styles none of VesnALIA's elements. Nothing here touches VesnALIA's
+data: thread operations go through VesnALIA's own actions and the public SDK, and
 client state lives under `radar-sidebar:*` localStorage keys.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-  H[BB host sidebar hooks] --> D[pure derivation<br/>grouping · folding · filters]
+  H[ALIA host sidebar hooks] --> D[pure derivation<br/>grouping · folding · filters]
   D --> R[rendered list]
-  R -->|actions| A[BB host actions &amp; public SDK]
+  R -->|actions| A[ALIA host actions &amp; public SDK]
   A --> H
 ```
 
-- **Reads BB's live state, owns none of it.** Threads, projects and sections
+- **Reads VesnALIA's live state, owns none of it.** Threads, projects and sections
   come from the host's sidebar hooks; pins, reads, renames and archives route
-  through BB's own actions, so optimistic updates, confirmations and toasts
+  through VesnALIA's own actions, so optimistic updates, confirmations and toasts
   behave exactly as they do in the stock list.
 - **Derivation stays out of the components.** Grouping, tree building and
   filter matching live in one hook, `useThreadGroups`, and time bucketing is
@@ -205,21 +205,21 @@ flowchart LR
   resolves *defaults*, so model and thinking are shown only while a thread is
   actually in flight. Remounts within the same run reuse cached values;
   new activity, a restart or window focus triggers a refresh.
-- **It will not move a thread between projects.** BB's thread API exposes no
+- **It will not move a thread between projects.** VesnALIA's thread API exposes no
   `projectId` on update, so project grouping is view-only; drag-to-organise
-  files threads into sections, which BB does allow.
+  files threads into sections, which VesnALIA does allow.
 
 ## Privacy
 
 - 🛰️ **Nothing leaves the machine.** Radar makes no network requests of its own;
-  every read and write goes to your BB server through the plugin SDK.
+  every read and write goes to your VesnALIA server through the plugin SDK.
 - 🧾 **No storage of its own.** No database, no files. Preferences live in
   browser `localStorage`.
 - 🔒 **No secrets.** The plugin defines no secret settings and reads none.
 
 ## Settings
 
-`bb plugin config radar-sidebar`, or **Settings → Installed plugins → Radar Sidebar**.
+`alia plugin config radar-sidebar`, or **Settings → Installed plugins → Radar Sidebar**.
 
 <details>
 <summary><b>All settings</b></summary>
@@ -234,7 +234,7 @@ flowchart LR
 | `defaultDensity` | `"comfortable"` | `comfortable` or `compact`. Applies until you change density in the header, which is remembered per client. |
 | `twoLineTitles` | `false` | Enable **Two-line titles** to wrap long titles, including mentions, before truncating. Short titles keep their project chip and time beside them when they fit; otherwise metadata wraps below, aligned with the title text. Applies in both densities. |
 | `swipeActions` | `true` | Swipe a row left or right to act on it: one finger on a touch screen, two fingers on a trackpad. A trackpad swipe stopped short rests open with its action as a button. A mouse's clicks, drags and Shift+wheel are unaffected. |
-| `swipeRight` | `"Mark read / unread"` | Action for a rightward swipe: `Mark read / unread`, `Pin / unpin`, `Archive / unarchive`, `Open in split`, `Rename`, `More actions`, `Delete…` (BB confirms) or `Nothing`. |
+| `swipeRight` | `"Mark read / unread"` | Action for a rightward swipe: `Mark read / unread`, `Pin / unpin`, `Archive / unarchive`, `Open in split`, `Rename`, `More actions`, `Delete…` (VesnALIA confirms) or `Nothing`. |
 | `swipeLeft` | `"Archive / unarchive"` | Action for a leftward swipe, from the same list. |
 
 The list never waits on settings: until they load it uses the defaults above,
@@ -251,12 +251,12 @@ of its title, as in one-line mode. They never change the row's layout.
 <summary><b>Turning it off</b></summary>
 
 ```sh
-bb plugin disable radar-sidebar
-bb plugin enable radar-sidebar
+alia plugin disable radar-sidebar
+alia plugin enable radar-sidebar
 ```
 
-`bb plugin remove radar-sidebar` removes the plugin and its settings. Disabling
-it returns the sidebar to BB's own list immediately.
+`alia plugin remove radar-sidebar` removes the plugin and its settings. Disabling
+it returns the sidebar to VesnALIA's own list immediately.
 
 </details>
 
@@ -266,27 +266,27 @@ it returns the sidebar to BB's own list immediately.
 npm install
 npm test
 npm run typecheck
-bb plugin build
-bb plugin install path:$PWD --yes
-bb plugin dev                      # rebuild and reload on every save
+alia plugin build
+alia plugin install path:$PWD --yes
+alia plugin dev                      # rebuild and reload on every save
 ```
 
 ```
 server.ts               the settings the frontend reads; no storage, no CLI
 app.tsx                 registers the thread-list slot
-app.css                 styles on BB theme tokens, behind the radar- prefix
+app.css                 styles on ALIA theme tokens, behind the radar- prefix
 components/radar/       the list, rows, menus, peek card and smart views
 components/radar/*.ts   grouping hook, time bucketing, model cache
 lib/swipe.ts            swipe actions and gesture math, shared with server.ts
 components/storage.ts   one-time migration of codex-sidebar: preferences
-components/ui/          vendored BB UI primitives
+components/ui/          vendored ALIA UI primitives
 skills/                 the bundled agent skill
-assets/icon.svg         the plugin icon BB shows (bb.branding.icon)
+assets/icon.svg         the plugin icon ALIA shows (alia.branding.icon)
 docs/                   logo and screenshots
 ```
 
 **Tests** cover time bucketing as plain functions, the
-rendered list through BB's plugin test harness (`renderSlot` with seeded
+rendered list through VesnALIA's plugin test harness (`renderSlot` with seeded
 sidebar threads), saved-view validation, preference migration, execution-cache
 refreshes, completion timers, and render counts, so a sidebar update re-renders
 only the rows that changed. Static guards over `app.css` cover cascade
@@ -295,7 +295,7 @@ The test setup uses jsdom's `localStorage` explicitly, including on Node 26,
 whose native storage global otherwise shadows it without a backing file.
 
 `PLUGIN_OVERVIEW.md` is the store listing. Keep it in step with
-`bb.description` in `package.json`.
+`alia.description` in `package.json`.
 
 ## Licence
 

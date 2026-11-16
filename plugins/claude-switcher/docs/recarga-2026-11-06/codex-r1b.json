@@ -21,7 +21,7 @@
       "severity": "medium",
       "path": "package.json:3",
       "evidence": "La versión pasa a 0.2.45, pero dist/server.meta.json y dist/app.meta.json siguen declarando 0.2.44; dist/server.js tampoco contiene running-seats. El workflow .github/workflows/check.yml reconstruye y exige que dist no cambie (27–29), por lo que estos artefactos incumplen la comprobación del repositorio.",
-      "fix": "Regenerar y añadir dist con el procedimiento documentado: npm ci y env -u BB_CLI npx -y --package bb-app@0.45.0 bb plugin build."
+      "fix": "Regenerar y añadir dist con el procedimiento documentado: npm ci y env -u ALIA_CLI npx -y --package alia-app@0.45.0 VesnALIA plugin build."
     }
   ],
   "coverage": [
@@ -33,6 +33,6 @@
   ],
   "limitations": [
     "Revisión estática: no he ejecutado tests, build ni mutantes; los resultados afirmados en el plan no están verificados.",
-    "Sin ejecución en bb ni SDK instalado, no se han comprobado las garantías del host sobre escrituras pendientes durante una recarga."
+    "Sin ejecución en VesnALIA ni SDK instalado, no se han comprobado las garantías del host sobre escrituras pendientes durante una recarga."
   ]
 }

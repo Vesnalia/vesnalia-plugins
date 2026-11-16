@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { createFakePluginHost } from '@get-bb/plugin-sdk/testing';
+import { createFakePluginHost } from '@vesnalia/plugin-sdk/testing';
 import { createHub } from './hub.js';
 import { accountPoolConfigSchema } from './contracts.js';
 import { AccountStore, PoolAffinityStore, QuotaStore, QUOTA_MIGRATIONS } from './store.js';
@@ -15,12 +15,12 @@ async function fixture(options:{latency?:number;pending?:boolean}={}) {
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'usage-scheduler-'));
  const host=createFakePluginHost({pluginId:'fixture-pool',dataDir:dir});
  cleanups.push(async()=>{await host.harness.lifecycle.dispose();await fs.rm(dir,{recursive:true,force:true});});
- const accounts=new AccountStore(host.bb.storage.kv,path.join(dir,'secrets'));
+ const accounts=new AccountStore(host.alia.storage.kv,path.join(dir,'secrets'));
  const common={kind:'api-key' as const,label:'Synthetic',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,priority:100};
  const zai=await accounts.add({...common,provider:'zai'},{kind:'api-key',apiKey:'synthetic'});
  await accounts.add({...common,provider:'kimi'},{kind:'api-key',apiKey:'synthetic'});
  vi.spyOn(accounts,'readSecret').mockResolvedValue({kind:'api-key',apiKey:'synthetic'});
- const db=host.bb.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);const quotas=new QuotaStore(db);
+ const db=host.alia.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);const quotas=new QuotaStore(db);
  const calls:Array<{provider:string;at:number}>=[];
  const fetch:typeof globalThis.fetch=async(input,init)=>{
   const provider=String(input).endsWith('/zai')?'zai':'kimi';calls.push({provider,at:Date.now()-epoch});

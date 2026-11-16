@@ -1,19 +1,11 @@
 {
-  "name": "bb-plugin-tabs",
+  "name": "alia-plugin-tabs",
   "version": "0.1.16",
-  "description": "Keep BB chats within reach with workspaces, pinned tabs, favorites, search, project aliases and colors, and 15 interface languages.",
+  "description": "Keep VesnALIA chats within reach with workspaces, pinned tabs, favorites, search, project aliases and colors, and 15 interface languages.",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nicolay-i/bb-plugin-tabs.git"
-  },
-  "homepage": "https://github.com/nicolay-i/bb-plugin-tabs#readme",
-  "bugs": {
-    "url": "https://github.com/nicolay-i/bb-plugin-tabs/issues"
-  },
   "keywords": [
-    "bb",
-    "bb-plugin",
+    "alia",
+    "alia-plugin",
     "chat-tabs",
     "tabs",
     "workflow"
@@ -27,15 +19,15 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "build": "bb plugin build"
+    "build": "alia plugin build"
   },
   "engines": {
-    "bb": ">=0.43",
-    "bbPluginSdk": ">=0.4.97"
+    "alia": ">=0.43",
+    "aliaPluginSdk": ">=0.4.97"
   },
-  "bb": {
+  "alia": {
     "name": "Chat Tabs",
-    "description": "Keep BB chats within reach with workspaces, pinned tabs, favorites, search, project aliases and colors, and 15 interface languages.",
+    "description": "Keep VesnALIA chats within reach with workspaces, pinned tabs, favorites, search, project aliases and colors, and 15 interface languages.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
@@ -49,7 +41,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@get-bb/plugin-sdk": "0.4.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -81,5 +72,22 @@
     "typescript-eslint": "^8.71.1",
     "vaul": "^1.1.2",
     "vitest": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.4.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/tabs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/tabs"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

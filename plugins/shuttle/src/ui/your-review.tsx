@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { experimental_Icon as Icon, experimental_usePluginId, Markdown, UrlLink } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, experimental_usePluginId, Markdown, UrlLink } from "@vesnalia/plugin-sdk/app";
 import type { GateFinding, HistoryFate, MyReview, PostView, PrView, ReviewDraft, ReviewHistoryItem, Severity } from "../contract";
 import { postText } from "../next";
 import { NextButtons, useActions } from "./actions";

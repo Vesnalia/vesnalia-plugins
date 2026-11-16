@@ -1,4 +1,4 @@
-import { useComposer, useRpc } from "@get-bb/plugin-sdk/app";
+import { useComposer, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { RpcContract } from "../server";
@@ -82,7 +82,7 @@ export function useSkillDocument(threadId: string, skillId: string) {
 }
 
 /**
- * **Add to chat**: puts the skill's command pill — the one bb's own `/` menu
+ * **Add to chat**: puts the skill's command pill — the one VesnALIA's own `/` menu
  * inserts — at the start of the thread's composer draft without sending it,
  * then hands the screen back and focuses the composer. The draft's other
  * mentions and its attachments stay as they were. `useComposer()` writes to

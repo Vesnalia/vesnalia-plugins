@@ -20,9 +20,9 @@ describe("drawable", () => {
 
   it("finds list items and the thread-storage files a body names", () => {
     expect(drawable(bullets)).toMatchObject({ items: 3, files: [] });
-    const file = "The inventory of every route is done and the hard features sit in four workloads. Data: `$BB_THREAD_STORAGE/research/features.json`.";
+    const file = "The inventory of every route is done and the hard features sit in four workloads. Data: `$ALIA_THREAD_STORAGE/research/features.json`.";
     expect(drawable(file.padEnd(320, " The rest of the note explains which features matter."))).toMatchObject({
-      files: ["$BB_THREAD_STORAGE/research/features.json"],
+      files: ["$ALIA_THREAD_STORAGE/research/features.json"],
     });
   });
 
@@ -87,9 +87,9 @@ describe("drawable", () => {
 
 describe("drawHint", () => {
   it("says the final-message rule does not cover flares and names what fits what it found", () => {
-    const hint = drawHint({ numbers: 10, items: 3, files: ["$BB_THREAD_STORAGE/research/features.json"] });
+    const hint = drawHint({ numbers: 10, items: 3, files: ["$ALIA_THREAD_STORAGE/research/features.json"] });
     expect(hint).toContain("does not cover a flare");
-    expect(hint).toContain("Load `$BB_THREAD_STORAGE/research/features.json`");
+    expect(hint).toContain("Load `$ALIA_THREAD_STORAGE/research/features.json`");
     expect(hint).toContain("Metric row");
     expect(hint).toContain("3 bullets");
   });

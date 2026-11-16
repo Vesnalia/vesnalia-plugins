@@ -3,7 +3,7 @@
 // The offer banner above a thread's composer, the exercise card and its settled row in the transcript,
 // the agent's feedback as a card above its turn's last message, the Learning tab on the tab bar of every listed thread's side panel, "Learning offers" in the thread menu, and the list of projects with no offers under the
 // plugin's settings. See AGENTS.md.
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 
 import { CARD_RENDERER_ID } from "./shared/types";
 import { OfferBanner } from "./app/banner";
@@ -30,7 +30,7 @@ export default definePluginApp((app) => {
     useVisible: useLearningTabVisible,
   });
   // Retired: earlier builds offered the tab in sub-agent threads only from the launcher, as an action tab.
-  // bb keeps those instances with the thread, so the registration stays to render and close them
+  // VesnALIA keeps those instances with the thread, so the registration stays to render and close them
   // (`useOneLearningTab`); it is never offered in the launcher again.
   app.slots.experimental_tab({
     ...LEARNING_ON_DEMAND_TAB,

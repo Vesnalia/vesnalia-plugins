@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import plugin from "../server.ts";
 
 const temp = resolve(process.cwd(), ".tmp/backend-tests");
@@ -36,7 +36,7 @@ const fake = createFakePluginHost({
   },
 });
 let current = fake;
-await plugin(current.bb);
+await plugin(current.alia);
 function call(method: string, input: unknown): Promise<any> { return current.harness.behavior.callRpc(method, input as any); }
 try {
   const opened = await call("open", { ...scope, path: "openspec/changes/sample/proposal.md" });
@@ -51,7 +51,7 @@ try {
   failSend = false;
   await call("send", { ...scope, language: "en", docId: opened.docId, threadId: "a", ids: [firstId] });
   assert.equal(sendMode, "queue-if-active");
-  assert.ok(sentText.includes(firstId) && sentText.includes("\"Proposal\"") && sentText.includes("Clarify scope") && sentText.includes(`bb openspec-review review resolve`));
+  assert.ok(sentText.includes(firstId) && sentText.includes("\"Proposal\"") && sentText.includes("Clarify scope") && sentText.includes(`alia openspec-review review resolve`));
   assert.equal(sentInput[1].visibility, "agent-only", "ids and instructions stay out of the chat bubble");
   assert.ok(sentInput[0].text.startsWith("**Comments on proposal.md · 1**") && sentInput[0].text.includes("> Proposal") && !sentInput[0].text.includes(firstId));
   await assert.rejects(() => call("send", { ...scope, language: "en", docId: opened.docId, threadId: "a", ids: [firstId] }), /invalid_delivery_selection/, "only open comments are queued");
@@ -64,7 +64,7 @@ try {
   await call("send", { ...scope, language: "en", docId: opened.docId, threadId: "a", ids: [queued.id] });
   assert.equal(await statusOf(queued.id), "queued");
   await current.harness.behavior.emitThreadEvent("message.cancelled", { entry: { id: "q1" } } as any);
-  assert.equal(await statusOf(queued.id), "open", "removed from BB queue → editable again");
+  assert.equal(await statusOf(queued.id), "open", "removed from VesnALIA queue → editable again");
   assert.equal((await call("edit", { ...scope, id: queued.id, body: "Queued v2" })).body, "Queued v2");
   // The row dispatches before send() returns: the early event still applies.
   sendResult = async () => { await current.harness.behavior.emitThreadEvent("message.dispatched", { entry: { id: "q2" } } as any); return { ok: true, delivery: "queued", queuedMessage: { id: "q2" } }; };
@@ -98,12 +98,12 @@ try {
   assert.notEqual((await call("open", { ...scope, path: opened.path })).docId, opened.docId);
   const archived = await call("open", { ...scope, path: "openspec/changes/archive/2026-sample/proposal.md" });
   assert.equal(archived.comments.length, 0); assert.equal(archiveCalls, 0);
-  // Queue events missed while unloaded: reload settles from BB's queue and prompt history.
+  // Queue events missed while unloaded: reload settles from VesnALIA's queue and prompt history.
   const live = await call("open", { ...scope, path: opened.path });
   const [keep, gone, done, legacy] = await Promise.all(["keep", "gone", "done", "legacy"].map(body => call("create", { ...scope, docId: live.docId, anchor: { kind: "doc" }, body })));
   for (const [c, q] of [[keep, "q-keep"], [gone, "q-gone"], [done, "q-done"], [legacy, "q-legacy"]]) { sendResult = { ok: true, delivery: "queued", queuedMessage: { id: q } }; await call("send", { ...scope, language: c === done ? "de" : "en", docId: live.docId, threadId: "a", ids: [c.id] }); if (c === done) { assert.match(sentInput[0].text, /^\*\*Kommentare zu /); historyRows = [{ input: [sentInput[0]] }]; } }
   historyRows.push({ input: [{ type: "text", text: `Review comments on ${opened.path}\n\n[${legacy.id}] Whole document\nlegacy`, mentions: [] }] }); // queued by 0.1.0
-  sendResult = {}; queueRows = [{ id: "q-keep" }]; // BB history keeps only the visible bubble, not the agent-only part.
+  sendResult = {}; queueRows = [{ id: "q-keep" }]; // VesnALIA history keeps only the visible bubble, not the agent-only part.
   current = await current.harness.lifecycle.reload(plugin);
   const statuses = async () => Object.fromEntries((await call("open", { ...scope, path: opened.path })).comments.map((c: any) => [c.id, c.status]));
   for (let i = 0; i < 50 && (await statuses())[done.id] === "queued"; i++) await new Promise(r => setTimeout(r, 20));

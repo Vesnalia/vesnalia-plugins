@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { experimental_useProviders } from "@get-bb/plugin-sdk/app";
+import type { experimental_useProviders } from "@vesnalia/plugin-sdk/app";
 
 /** The SDK does not export ProviderInfo by name; take it from the hook. */
 export type ProviderInfo = ReturnType<
@@ -19,7 +19,7 @@ export interface SidebarContextValue {
   rowDetails: RowDetails;
   /**
    * The host's name for a project, or "" when it no longer reports one or
-   * the project is bb's implicit personal one, which rows do not name.
+   * the project is VesnALIA's implicit personal one, which rows do not name.
    */
   projectNameOf(projectId: string): string;
   /** A project's icon or logo, once found; null means the folder glyph. */
@@ -37,7 +37,7 @@ export interface SidebarContextValue {
   setRead(threadId: string, read: boolean): void;
   renameThread(threadId: string, title: string): void;
   archiveThread(threadId: string): void;
-  /** Re-submit the turn that failed, the same as bb's own Retry. */
+  /** Re-submit the turn that failed, the same as VesnALIA's own Retry. */
   retryThread(threadId: string): void;
   deleteThread(threadId: string): void;
   newThreadIn(projectId: string): void;

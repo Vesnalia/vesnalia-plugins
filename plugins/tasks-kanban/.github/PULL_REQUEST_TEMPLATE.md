@@ -10,7 +10,7 @@
 
 ## Checklist
 
-- [ ] `npm ci && bb plugin build .` passes
+- [ ] `npm ci && alia plugin build .` passes
 - [ ] `node --test test/server.test.mjs` passes
 - [ ] `node test/marketplace.test.mjs` passes (if marketplace.json changed)
 - [ ] `CHANGELOG.md` updated for user-visible changes

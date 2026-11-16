@@ -1,24 +1,24 @@
 {
-  "name": "bb-plugin-provider-muse",
+  "name": "alia-plugin-provider-muse",
   "version": "0.16.1",
   "type": "module",
-  "description": "Muse Code (Meta) as a first-class BB agent provider.",
+  "description": "Muse Code (Meta) as a first-class VesnALIA agent provider.",
   "license": "MIT",
   "keywords": [
-    "bb-plugin",
-    "bb-provider",
+    "alia-plugin",
+    "alia-provider",
     "muse",
     "muse-code",
     "meta",
     "muse-spark"
   ],
   "engines": {
-    "bb": ">=0.41",
-    "bbPluginSdk": ">=0.4.34"
+    "alia": ">=0.41",
+    "aliaPluginSdk": ">=0.4.34"
   },
-  "bb": {
+  "alia": {
     "name": "Muse Code",
-    "description": "Run Meta's Muse Code agent in BB threads: streaming timeline, approvals, subagents, model picker, health and subscription usage.",
+    "description": "Run Meta's Muse Code agent in VesnALIA threads: streaming timeline, approvals, subagents, model picker, health and subscription usage.",
     "branding": {
       "icon": "./icons/muse.svg",
       "experimental_icons": {
@@ -30,17 +30,26 @@
     "host": "./host.ts"
   },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "zod": "^4.3.6",
-    "@get-bb/plugin-sdk": "0.5.9"
+    "@vesnalia/plugin-sdk": "^0.6.143"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/provider-muse#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/provider-muse"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

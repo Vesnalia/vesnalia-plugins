@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost } from "@vesnalia/plugin-sdk/testing";
 
 import { decodeForm, decodeQuestion, FORM_MAX_BYTES, learningCli, QUESTION_MAX_BYTES } from "./cli";
 import { OrientationService } from "./orientation";
@@ -37,19 +37,19 @@ describe("decodeForm", () => {
   });
 });
 
-describe("bb learning orient", () => {
+describe("alia learning orient", () => {
   const BUILDER = "thr_spawn1";
 
   /** A builder thread bound to a walkthrough build (the fake ports name the first spawn `thr_spawn1`). */
   async function run(args: string[], threadId = "thr_other") {
-    const { bb, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
+    const { alia, harness } = createFakePluginHost({ pluginId: "learning-exercises" });
     const ports = new FakePorts();
     ports.threads.set("thr_src", thread({ id: "thr_src" }));
     const { orientations } = memoryOrientationStore();
     const service = new OrientationService(ports, orientations, () => settingsWith());
     await service.reconcile();
     await service.start({ sourceThreadId: "thr_src", depth: "walkthrough" });
-    bb.cli.register(learningCli({} as SessionService, service));
+    alia.cli.register(learningCli({} as SessionService, service));
     return harness.runCli(args, { threadId });
   }
 

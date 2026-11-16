@@ -88,7 +88,7 @@ export async function applyCandidates(options: ApplyOptions): Promise<ApplyResul
         continue;
       }
       try {
-        // Resolve the CLI rather than trusting PATH: the BB daemon does not
+        // Resolve the CLI rather than trusting PATH: the VesnALIA daemon does not
         // inherit a login shell, and Docker Desktop installs outside it.
         const cli = (await findDockerCli()) ?? "docker";
         const { stdout } = await exec(cli, args, {

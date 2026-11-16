@@ -10,7 +10,7 @@ import {
 } from '../composer-handoff.ts';
 
 const item = {
-  bbProjectId: 'proj_123',
+  aliaProjectId: 'proj_123',
   source: 'github' as const,
   locator: 'octo/repo#42',
   key: 'GH-42'

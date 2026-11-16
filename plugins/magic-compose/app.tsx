@@ -12,7 +12,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { WandSparklesIcon } from "@hugeicons/core-free-icons";
-import { definePluginApp, useComposer, useComposerView, useRpc } from "@get-bb/plugin-sdk/app";
+import { definePluginApp, useComposer, useComposerView, useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { registerSettings } from "./settings";
 import { magicMode } from "@/lib/magic-mode";
@@ -166,7 +166,7 @@ function MagicWand({
 }
 
 /**
- * The preferences as last read, kept outside the button. BB rebuilds the button
+ * The preferences as last read, kept outside the button. VesnALIA rebuilds the button
  * when Magic Compose changes the project, and the new one must carry straight on, not
  * wait to read them again.
  */
@@ -190,7 +190,7 @@ function MagicToggle() {
   const anchor = useRef<HTMLSpanElement>(null);
   const [session, setSession] = useState<Session | null>(null);
 
-  // BB rebuilds this button when the composer's project changes, which Magic Compose
+  // VesnALIA rebuilds this button when the composer's project changes, which Magic Compose
   // itself causes. The session belongs to the composer, so it carries on.
   useLayoutEffect(() => {
     const root = anchor.current === null ? null : findComposer(anchor.current);

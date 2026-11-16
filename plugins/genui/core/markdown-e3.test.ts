@@ -54,8 +54,8 @@ describe("toMarkdown: Board", () => {
 _none_`);
   });
 
-  it("reads bb tasks list --json with keys, priorities and sub-tasks", () => {
-    const out = markdown(`Board(Load("tasks.json"))`, { "tasks.json": fixture("bb-tasks-orb.json") });
+  it("reads VesnALIA tasks list --json with keys, priorities and sub-tasks", () => {
+    const out = markdown(`Board(Load("tasks.json"))`, { "tasks.json": fixture("alia-tasks-orb.json") });
     expect(out.split("\n")[0]).toBe("**Tasks** · 23 tasks");
     expect(out).toContain("**Backlog** (13)");
     expect(out).toContain("**In progress** (6)");
@@ -77,7 +77,7 @@ _none_`);
     const many = Array.from({ length: 23 }, (_, index) => `{title: "Task ${index + 1}", status: "todo"}`).join(", ");
     const out = markdown(`Board([${many}])`);
     expect(out).toContain("- Task 20\n_… and 3 more items_");
-    expect(markdown(`Board("nope")`)).toBe("_(Board needs a list of {title, status?} items, bb tasks list --json ({tasks: […]}) or gh issue/pr list --json)_");
+    expect(markdown(`Board("nope")`)).toBe("_(Board needs a list of {title, status?} items, VesnALIA tasks list --json ({tasks: […]}) or gh issue/pr list --json)_");
   });
 });
 

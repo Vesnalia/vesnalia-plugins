@@ -2,14 +2,14 @@ import {it,expect} from 'vitest';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {createFakePluginHost} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost} from '@vesnalia/plugin-sdk/testing';
 import {createHub} from './hub.js';
 import {accountPoolConfigSchema} from './contracts.js';
 import {AccountStore,QuotaStore,PoolAffinityStore,QUOTA_MIGRATIONS} from './store.js';
 
 it('serializes actual Claude dispatch starts after a shared cooldown while leaving running streams alive',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'claude-paced-'));const host=createFakePluginHost({pluginId:'fixture-pool',dataDir:dir});
- const accounts=new AccountStore(host.bb.storage.kv,path.join(dir,'secrets'));const db=host.bb.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);
+ const accounts=new AccountStore(host.alia.storage.kv,path.join(dir,'secrets'));const db=host.alia.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);
  const account=await accounts.add({provider:'claude',kind:'api-key',label:'Fixture',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,priority:100},{kind:'api-key',apiKey:'synthetic'});
  const settings=accountPoolConfigSchema.parse({vpnOnlyProviders:[],claudeRequestStartIntervalMs:60});const quotas=new QuotaStore(db,Date.now);
  quotas.put({...quotas.get(account.id),heldUntil:Date.now()+100});
@@ -25,7 +25,7 @@ it('serializes actual Claude dispatch starts after a shared cooldown while leavi
 
 it('does not apply Claude spacing to another provider',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'other-provider-paced-'));const host=createFakePluginHost({pluginId:'fixture-pool',dataDir:dir});
- const accounts=new AccountStore(host.bb.storage.kv,path.join(dir,'secrets'));const db=host.bb.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);
+ const accounts=new AccountStore(host.alia.storage.kv,path.join(dir,'secrets'));const db=host.alia.storage.database();for(const sql of QUOTA_MIGRATIONS)db.exec(sql);
  await accounts.add({provider:'kimi',kind:'api-key',label:'Fixture',email:null,accountUuid:null,subscriptionType:null,rateLimitTier:null,enabled:true,priority:100},{kind:'api-key',apiKey:'synthetic'});
  const settings=accountPoolConfigSchema.parse({vpnOnlyProviders:[],claudeRequestStartIntervalMs:60000});let calls=0;
  const now=()=>1900000000000;

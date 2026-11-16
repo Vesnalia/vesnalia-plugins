@@ -1,4 +1,4 @@
-// A CPU profile of the process bb-box runs in, BB's server, on demand only,
+// A CPU profile of the process alia-box runs in, VesnALIA's server, on demand only,
 // to name the code that holds its event loop: the loop watch found it standing still for
 // about half a second, about every 5 s, which every desktop's frames and
 // input wait out. One profile at a time, for at most 60 s. It reports only
@@ -80,13 +80,13 @@ export interface HeapProfile {
 
 /** The allocations sampled, by whose code allocated them, as busy time is, and the sites that allocated most. */
 export function allocationLines(profile: HeapProfile, seconds: number): string[] {
-  const totals = { "bb-box": 0, plugin: 0, bb: 0, node: 0, other: 0 };
+  const totals = { "alia-box": 0, plugin: 0, alia: 0, node: 0, other: 0 };
   const sites = new Map<string, number>();
   const walk = (node: HeapProfileNode, owners: ReadonlySet<string>) => {
     const owner = ownerOf(node.callFrame.url);
     const here = owner ? new Set([...owners, owner]) : owners;
     if (node.selfSize) {
-      const whose = (["bb-box", "plugin", "bb", "node"] as const).find((each) => here.has(each)) ?? "other";
+      const whose = (["alia-box", "plugin", "alia", "node"] as const).find((each) => here.has(each)) ?? "other";
       totals[whose] += node.selfSize;
       if (node.callFrame.url) sites.set(label(node.callFrame), (sites.get(label(node.callFrame)) ?? 0) + node.selfSize);
     }
@@ -96,7 +96,7 @@ export function allocationLines(profile: HeapProfile, seconds: number): string[]
   const mib = (bytes: number) => `${(bytes / MiB).toFixed(1)} MiB`;
   const top = [...sites].sort((a, b) => b[1] - a[1]).slice(0, SELF_TOLD);
   return [
-    `Allocations sampled over ${seconds} s, by whose code made them: bb-box ${mib(totals["bb-box"])}, other plugins ${mib(totals.plugin)}, BB ${mib(totals.bb)}, Node alone ${mib(totals.node)}, with no JavaScript frame ${mib(totals.other)}.`,
+    `Allocations sampled over ${seconds} s, by whose code made them: alia-box ${mib(totals["alia-box"])}, other plugins ${mib(totals.plugin)}, VesnALIA ${mib(totals.alia)}, Node alone ${mib(totals.node)}, with no JavaScript frame ${mib(totals.other)}.`,
     ...(top.length ? [`Allocated most: ${top.map(([site, bytes]) => `${site} ${mib(bytes)}`).join(", ")}.`] : []),
   ];
 }
@@ -104,11 +104,11 @@ export function allocationLines(profile: HeapProfile, seconds: number): string[]
 const MiB = 1024 * 1024;
 
 /**
- * Profiles BB's server process, which runs bb-box, for `seconds`, at most 60, with each long garbage collection
+ * Profiles VesnALIA's server process, which runs alia-box, for `seconds`, at most 60, with each long garbage collection
  * meanwhile, and sums it up in lines for people.
  */
 export async function profileLoop(seconds: number, options: ProfileOptions = {}): Promise<string[]> {
-  if (running) throw new Error("A profile of BB's server is running already: one runs at a time.");
+  if (running) throw new Error("A profile of VesnALIA's server is running already: one runs at a time.");
   const span = Math.min(Math.max(1, Math.round(seconds)), MAX_PROFILE_SECONDS);
   running = true;
   const session = new Session();
@@ -182,7 +182,7 @@ export async function spawnCostLine(): Promise<string> {
       child.once("error", resolve);
     });
   }
-  return `Starting a process here held the loop for ${times.map((ms) => `${ms.toFixed(1)} ms`).join(", ")}, as the spawn call forks BB's server with ${Math.round(process.memoryUsage().rss / MiB)} MiB in use.`;
+  return `Starting a process here held the loop for ${times.map((ms) => `${ms.toFixed(1)} ms`).join(", ")}, as the spawn call forks VesnALIA's server with ${Math.round(process.memoryUsage().rss / MiB)} MiB in use.`;
 }
 
 async function collectGarbage(post: (method: string) => Promise<unknown>): Promise<string> {
@@ -193,7 +193,7 @@ async function collectGarbage(post: (method: string) => Promise<unknown>): Promi
 }
 
 export function collectionLine(collection: { beforeBytes: number; afterBytes: number; heldMs: number }): string {
-  return `A full garbage collection, as asked, held BB's server for ${Math.round(collection.heldMs)} ms: its heap went from ${Math.round(collection.beforeBytes / MiB)} to ${Math.round(collection.afterBytes / MiB)} MiB used.`;
+  return `A full garbage collection, as asked, held VesnALIA's server for ${Math.round(collection.heldMs)} ms: its heap went from ${Math.round(collection.beforeBytes / MiB)} to ${Math.round(collection.afterBytes / MiB)} MiB used.`;
 }
 
 export function memoryLine(memory: Pick<NodeJS.MemoryUsage, "rss" | "heapUsed" | "heapTotal" | "external" | "arrayBuffers">): string {
@@ -215,30 +215,30 @@ export function gcLines(gc: readonly GcNote[], startMiB: number, end: { used_hea
   return lines;
 }
 
-/** "name (file:line)": the file from bb-box's folder on, or its name alone. */
+/** "name (file:line)": the file from alia-box's folder on, or its name alone. */
 function label({ functionName, url, lineNumber }: CallFrame): string {
   if (!url) return functionName || "(anonymous)";
   const path = url.replace(/^file:\/\//, "");
-  const inside = path.lastIndexOf("/bb-box/");
-  const file = inside >= 0 ? path.slice(inside + "/bb-box/".length) : path.split("/").at(-1)!;
+  const inside = path.lastIndexOf("/alia-box/");
+  const file = inside >= 0 ? path.slice(inside + "/alia-box/".length) : path.split("/").at(-1)!;
   return `${functionName || "(anonymous)"} (${file}:${lineNumber + 1})`;
 }
 
 const IDLE = "(idle)";
 
-/** Whose code a frame is: bb-box's, another plugin's, Node's own, or BB's, by its file. */
-export function ownerOf(url: string): "bb-box" | "plugin" | "node" | "bb" | null {
+/** Whose code a frame is: alia-box's, another plugin's, Node's own, or VesnALIA's, by its file. */
+export function ownerOf(url: string): "alia-box" | "plugin" | "node" | "alia" | null {
   if (!url) return null;
   if (url.startsWith("node:")) return "node";
   const path = url.replace(/^file:\/\//, "");
-  if (path.includes("/bb-box/")) return "bb-box";
+  if (path.includes("/alia-box/")) return "alia-box";
   if (/\/plugins\/[^/]+\//.test(path)) return "plugin";
-  return "bb";
+  return "alia";
 }
 
 /**
- * Busy time by whose code it ran under: a sample under any of bb-box's frames is bb-box's, as what bb-box calls of
- * BB's, such as its storage, runs for it; then another plugin's, then BB's own, then Node's alone; and garbage
+ * Busy time by whose code it ran under: a sample under any of alia-box's frames is alia-box's, as what alia-box calls of
+ * VesnALIA's, such as its storage, runs for it; then another plugin's, then VesnALIA's own, then Node's alone; and garbage
  * collection and V8's own work, which no frame names.
  */
 function ownersLine(
@@ -247,7 +247,7 @@ function ownersLine(
   parents: ReadonlyMap<number, number>,
   busy: number,
 ): string {
-  const totals = { "bb-box": 0, plugin: 0, bb: 0, node: 0, gc: 0, program: 0 };
+  const totals = { "alia-box": 0, plugin: 0, alia: 0, node: 0, gc: 0, program: 0 };
   for (const sample of samples) {
     if (sample.idle) continue;
     const name = nodes.get(sample.id)?.callFrame.functionName;
@@ -260,12 +260,12 @@ function ownersLine(
       const owner = ownerOf(nodes.get(at)?.callFrame.url ?? "");
       if (owner) owners.add(owner);
     }
-    const owner = (["bb-box", "plugin", "bb", "node"] as const).find((each) => owners.has(each)) ?? "program";
+    const owner = (["alia-box", "plugin", "alia", "node"] as const).find((each) => owners.has(each)) ?? "program";
     totals[owner] += sample.ms;
   }
   const share = (ms: number) => `${Math.round(ms)} ms (${Math.round((ms / Math.max(busy, 1)) * 100)}%)`;
   return (
-    `Busy time by whose code it ran under: bb-box ${share(totals["bb-box"])}, other plugins ${share(totals.plugin)}, BB ${share(totals.bb)}, ` +
+    `Busy time by whose code it ran under: alia-box ${share(totals["alia-box"])}, other plugins ${share(totals.plugin)}, VesnALIA ${share(totals.alia)}, ` +
     `Node alone ${share(totals.node)}, garbage collection ${share(totals.gc)}, V8 and native code with no JavaScript frame ${share(totals.program)}.`
   );
 }
@@ -308,7 +308,7 @@ export function summarise(profile: CpuProfile, seconds: number): string[] {
     }
   }
   const lines = [
-    `A CPU profile of BB's server, which runs bb-box, over ${seconds} s: busy ${Math.round((busy / Math.max(at, 1)) * 100)}% of it, with ${spans.length} ${spans.length === 1 ? "span" : "spans"} busy for ${BUSY_MS} ms or more` +
+    `A CPU profile of VesnALIA's server, which runs alia-box, over ${seconds} s: busy ${Math.round((busy / Math.max(at, 1)) * 100)}% of it, with ${spans.length} ${spans.length === 1 ? "span" : "spans"} busy for ${BUSY_MS} ms or more` +
       (spans.length ? `, the longest ${Math.round(Math.max(...spans.map((span) => span.ms)))} ms.` : "."),
   ];
   lines.push(ownersLine(samples, nodes, parents, busy));

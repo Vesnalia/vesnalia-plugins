@@ -3,7 +3,7 @@
 // What: finds each program and runs it with text piped in, its output
 // collected, and a time limit.
 //
-// Why: the BB server starts with a shorter PATH than a login shell, and
+// Why: the VesnALIA server starts with a shorter PATH than a login shell, and
 // every program here handles secrets: their output must never reach a log,
 // and a stuck process (say, one waiting for a key press) must not hang a
 // save forever.

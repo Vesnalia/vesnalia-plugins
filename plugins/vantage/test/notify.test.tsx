@@ -9,10 +9,10 @@ const state = vi.hoisted(() => ({
 }));
 const toast = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast }));
-vi.mock("@get-bb/plugin-sdk/app", () => ({
+vi.mock("@vesnalia/plugin-sdk/app", () => ({
   experimental_useSidebarThreads: () => ({ threads: state.threads, status: "ready" }),
-  useBbContext: () => ({ threadId: state.threadId }),
-  useBbNavigate: () => ({ toThread: () => {} }),
+  useAliaContext: () => ({ threadId: state.threadId }),
+  useAliaNavigate: () => ({ toThread: () => {} }),
   useSettings: () => ({ values: state.values, isLoading: state.values === undefined }),
 }));
 

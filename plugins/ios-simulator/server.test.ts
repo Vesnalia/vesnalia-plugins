@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost, makeThreadResponse } from "@get-bb/plugin-sdk/testing";
+import { createFakePluginHost, makeThreadResponse } from "@vesnalia/plugin-sdk/testing";
 import { createPlugin } from "./server";
 import type { Exec, ExecResult } from "./server/simctl";
 import { DEVICE_LIST } from "./server/simctl.test";
@@ -80,12 +80,12 @@ function fakeReplay(): ReplayRecorder {
 async function load(options: { settings?: Record<string, unknown>; execScript?: Parameters<typeof fakeExec>[0] } = {}) {
   const { exec, calls, inputs } = fakeExec(options.execScript);
   const fake = fakeStreams();
-  const { bb, harness } = createFakePluginHost({
+  const { alia, harness } = createFakePluginHost({
     pluginId: "ios-simulator",
     settings: { agentControl: "always", ...options.settings },
   });
-  await createPlugin({ exec, streams: fake.streams, replay: fakeReplay() })(bb);
-  return { bb, harness, calls, inputs, ...fake };
+  await createPlugin({ exec, streams: fake.streams, replay: fakeReplay() })(alia);
+  return { alia, harness, calls, inputs, ...fake };
 }
 
 const CTX = { threadId: "thr_1", projectId: "proj_1" };
@@ -296,8 +296,8 @@ describe("iOS Simulator plugin", () => {
   it("restores streams for attached booted devices after a reload", async () => {
     const { exec } = fakeExec();
     const fake = fakeStreams();
-    const { bb, harness } = createFakePluginHost({ pluginId: "ios-simulator", settings: { agentControl: "always" } });
-    await createPlugin({ exec, streams: fake.streams, replay: fakeReplay() })(bb);
+    const { alia, harness } = createFakePluginHost({ pluginId: "ios-simulator", settings: { agentControl: "always" } });
+    await createPlugin({ exec, streams: fake.streams, replay: fakeReplay() })(alia);
     await harness.behavior.callAgentTool("ios_sim_attach", {}, CTX);
     expect(fake.streams.ensure).toHaveBeenCalledTimes(1);
     fake.sessions.clear(); // the old generation's processes are gone

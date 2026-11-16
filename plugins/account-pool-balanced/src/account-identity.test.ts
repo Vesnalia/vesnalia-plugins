@@ -1,4 +1,4 @@
-import {createFakePluginHost,makeHostResponse,makeThreadResponse,makeTurnFailedEvent,makeMessageDispatchHookContext} from '@get-bb/plugin-sdk/testing';
+import {createFakePluginHost,makeHostResponse,makeThreadResponse,makeTurnFailedEvent,makeMessageDispatchHookContext} from '@vesnalia/plugin-sdk/testing';
 import {afterEach,expect,it,vi} from 'vitest';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -11,7 +11,7 @@ async function setup(provider:PoolProvider,providerId:string){
  const dir=await mkdtemp(path.join(tmpdir(),'pool-identity-'));
  const host=createFakePluginHost({pluginId:'account-pool-balanced',dataDir:dir,sdk:{hosts:{list:async()=>[makeHostResponse({id:'host-one'})]},system:{providerStates:async()=>({providers:[]})},threads:{events:{list:async()=>[]},get:async({threadId})=>({...makeThreadResponse({id:threadId,providerId,projectId:'project-one'}),environment:{hostId:'host-one'}}) as never}}});
  const fetcher:typeof fetch=async input=>String(input).includes('exchange_user_api_key')?Response.json({accessToken:'synthetic-access'}):Response.json({id:'synthetic-response'});
- await createAccountPoolPlugin({fetch:fetcher,fetchIpv4:fetcher,vpnPayload:async now=>vpnProof(now,'connected')})(host.bb);
+ await createAccountPoolPlugin({fetch:fetcher,fetchIpv4:fetcher,vpnPayload:async now=>vpnProof(now,'connected')})(host.alia);
  const service=host.harness.behavior.runService('hub');
  cleanup.push(async()=>{service.controller.abort();await service.done;await host.harness.lifecycle.dispose();await rm(dir,{recursive:true,force:true});});
  const account=await host.harness.behavior.callRpc('account.add',{provider,source:{kind:'api-key',apiKey:'synthetic-key'},label:'Synthetic subscription',priority:0}) as Account;
@@ -27,7 +27,7 @@ it.each([
  const {host,account,token}=await setup(provider,providerId);
  expect(await host.harness.behavior.callRpc('thread.account',{threadId:'thread-one'})).toMatchObject({state:'unobserved',account:null});
  const body=provider==='devin'?Uint8Array.of(10,3,26,1,120):'{}';
- const response=await host.harness.behavior.fetchHttp('POST',route,{headers:{authorization:`${provider==='devin'?'Basic':'Bearer'} ${token}`,'x-api-key':token,'content-type':provider==='devin'?'application/proto':'application/json','x-bb-cursor-rpc-path':'agent.v1.AgentService/Run'},body});
+ const response=await host.harness.behavior.fetchHttp('POST',route,{headers:{authorization:`${provider==='devin'?'Basic':'Bearer'} ${token}`,'x-api-key':token,'content-type':provider==='devin'?'application/proto':'application/json','x-alia-cursor-rpc-path':'agent.v1.AgentService/Run'},body});
  expect(response.status).toBe(200);await response.arrayBuffer();
  expect(await host.harness.behavior.callRpc('thread.account',{threadId:'thread-one'})).toMatchObject({state:'observed',account:{id:account.id,email:'account@example.com'}});
  expect(await host.harness.behavior.callRpc('thread.account',{threadId:'thread-two'})).toMatchObject({state:'unobserved',account:null});
@@ -44,10 +44,10 @@ it('rejects invalid emails and conflicting edits without changing the prior addr
 });
 it('does not let a manually supplied address replace provider OAuth identity',async()=>{
  const {host,account}=await setup('claude','claude-code');
- const records=await host.bb.storage.kv.get<Account[]>('accounts:v1');
- await host.bb.storage.kv.set('accounts:v1',records!.map(value=>({...value,kind:'oauth',email:'verified@example.com'})));
+ const records=await host.alia.storage.kv.get<Account[]>('accounts:v1');
+ await host.alia.storage.kv.set('accounts:v1',records!.map(value=>({...value,kind:'oauth',email:'verified@example.com'})));
  await expect(host.harness.behavior.callRpc('account.setEmail',{accountId:account.id,email:'manual@example.com'})).rejects.toThrow('OAuth email');
- expect((await host.bb.storage.kv.get<Account[]>('accounts:v1'))![0]!.email).toBe('verified@example.com');
+ expect((await host.alia.storage.kv.get<Account[]>('accounts:v1'))![0]!.email).toBe('verified@example.com');
 });
 it.each(['bypass','routing-off','account-disabled'] as const)('cancels queued recovery after actual %s routing or availability changes',async change=>{
  const {host,account}=await setup('kimi','acp-opencode-kimi');

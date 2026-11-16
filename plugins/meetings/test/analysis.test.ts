@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { askResultSchema, meetingAnalysisSchema, type AnalysisDocument } from "../src/shared/analysis.js";
 import { AI_CONTEXT_MAX_BYTES, AI_RESPONSE_MAX_BYTES, ANALYSIS_STORAGE_MAX_BYTES, buildAnalysisPrompt, computeSpeakerMetrics, createAnalysisService, makeAnalysisDocument } from "../src/server/analysis.js";
@@ -6,7 +6,7 @@ import { createSummaryTemplateStore, SUMMARY_TEMPLATES, snapshotTemplate } from 
 
 function storage() {
   const rows = new Map<string, unknown>();
-  const bb = {
+  const alia = {
     storage: { kv: {
       async get<T>(key: string): Promise<T | undefined> { const value = rows.get(key); return value === undefined ? undefined : structuredClone(value) as T; },
       async set(key: string, value: unknown) {
@@ -16,8 +16,8 @@ function storage() {
       async delete(key: string) { rows.delete(key); },
       async list(prefix = "") { return [...rows.keys()].filter((key) => key.startsWith(prefix)); },
     } },
-  } as Pick<BbPluginApi, "storage">;
-  return { bb, rows };
+  } as Pick<AliaPluginApi, "storage">;
+  return { alia, rows };
 }
 
 const document: AnalysisDocument = {
@@ -44,8 +44,8 @@ function completion(result: unknown, extra: object = {}): Response {
 
 describe("summary templates", () => {
   it("ships five readable immutable templates, with persistent editable copies and custom rules", async () => {
-    const { bb } = storage();
-    const templates = createSummaryTemplateStore(bb, { now: () => 1000 });
+    const { alia } = storage();
+    const templates = createSummaryTemplateStore(alia, { now: () => 1000 });
     expect((await templates.list()).map((t) => t.id)).toEqual(["executive", "sales", "hr", "tech", "custom"]);
     expect((await templates.get("sales")).prompt).toContain("BANT/MEDDIC");
     await expect(templates.update("executive", { label: "x", prompt: "y" })).rejects.toMatchObject({ code: "invalid_input" });
@@ -53,7 +53,7 @@ describe("summary templates", () => {
     const copy = await templates.copy("executive", "Мой разбор");
     expect(copy).toMatchObject({ label: "Мой разбор", builtIn: false, editable: true, updatedAt: 1000 });
     const edited = await templates.update(copy.id, { label: "Мои правила", prompt: "Укажи только риски", description: "Риски проекта" });
-    expect((await createSummaryTemplateStore(bb).get(copy.id))).toEqual(edited);
+    expect((await createSummaryTemplateStore(alia).get(copy.id))).toEqual(edited);
     expect((await templates.get("executive")).prompt).toEqual(SUMMARY_TEMPLATES.executive.prompt);
     const custom = await templates.create({ label: "С нуля", prompt: "Разбери бюджет" });
     expect(custom.description).toBe("");
@@ -61,9 +61,9 @@ describe("summary templates", () => {
     await expect(templates.get(copy.id)).rejects.toMatchObject({ code: "not_found" });
   });
 
-  it("validates empty and overlong rules and cannot fetch another BB namespace's templates", async () => {
-    const first = createSummaryTemplateStore(storage().bb);
-    const second = createSummaryTemplateStore(storage().bb);
+  it("validates empty and overlong rules and cannot fetch another VesnALIA namespace's templates", async () => {
+    const first = createSummaryTemplateStore(storage().alia);
+    const second = createSummaryTemplateStore(storage().alia);
     await expect(first.create({ label: " ", prompt: "x" })).rejects.toThrow();
     await expect(first.create({ label: "x", prompt: "p".repeat(12_001) })).rejects.toThrow();
     const custom = await first.create({ label: "Персональный", prompt: "Мои правила" });
@@ -74,8 +74,8 @@ describe("summary templates", () => {
 
 describe("structured meeting analysis", () => {
   it("stores exact previously applied rules despite later template edits, with server-computed metrics", async () => {
-    const { bb, rows } = storage();
-    const service = createAnalysisService(bb, { now: () => 1000 });
+    const { alia, rows } = storage();
+    const service = createAnalysisService(alia, { now: () => 1000 });
     const template = await service.templates.create({ label: "Риски", prompt: "Укажи только риски" });
     const prompt = buildAnalysisPrompt(document, template);
     expect(prompt.systemPrompt).toContain("Укажи только риски");
@@ -88,7 +88,7 @@ describe("structured meeting analysis", () => {
     expect(analysis.insights.template).toBe(template.id);
     expect(analysis.insights.speakerMetrics[0]).toMatchObject({ speaker: "Анна", talkTimeSec: 20, sharePercent: 66.67, questionsAsked: 1 });
     expect(analysis.summaryMd).toContain("[00:30]");
-    expect((await createAnalysisService(bb).get(document.meetingId))).toEqual(analysis);
+    expect((await createAnalysisService(alia).get(document.meetingId))).toEqual(analysis);
     expect([...rows.values()].map((v) => JSON.stringify(v)).join(" ")).not.toContain("private-test-key");
     await expect(service.save(document, insightInput(), { templateSnapshot: { ...prompt.templateSnapshot, systemPrompt: "другие правила" } })).rejects.toMatchObject({ code: "invalid_ai_response" });
     await service.delete(document.meetingId);
@@ -96,7 +96,7 @@ describe("structured meeting analysis", () => {
   });
 
   it("keeps stable task IDs and completion across reanalysis and ignores model-supplied IDs/done", async () => {
-    const service = createAnalysisService(storage().bb);
+    const service = createAnalysisService(storage().alia);
     const first = await service.save(document, insightInput());
     const id = first.insights.actionItems[0].id;
     expect(id).toMatch(/^act_[a-f0-9]{24}$/);
@@ -111,8 +111,8 @@ describe("structured meeting analysis", () => {
   });
 
   it("rejects malformed JSON, timestamps outside the transcript and an empty transcript without saving a fallback", async () => {
-    const { bb, rows } = storage();
-    const service = createAnalysisService(bb);
+    const { alia, rows } = storage();
+    const service = createAnalysisService(alia);
     await expect(service.save(document, "bad json")).rejects.toMatchObject({ code: "invalid_ai_response" });
     await expect(service.save(document, { ...insightInput(), actionItems: [{ ...insightInput().actionItems[0], timecodeSec: 500 }] })).rejects.toMatchObject({ code: "invalid_ai_response" });
     await expect(service.save({ ...document, segments: [] }, insightInput())).rejects.toMatchObject({ code: "empty_transcript" });
@@ -148,7 +148,7 @@ describe("structured meeting analysis", () => {
   });
 
   it("serializes task changes so simultaneous completions don't overwrite each other", async () => {
-    const service = createAnalysisService(storage().bb);
+    const service = createAnalysisService(storage().alia);
     const secondAction = { task: "Подтвердить дату", assignee: "Анна", due: null, timecodeSec: 60, priority: "medium" };
     const saved = await service.save(document, { ...insightInput(), actionItems: [...insightInput().actionItems, secondAction] });
     await Promise.all(saved.insights.actionItems.map((item) => service.setActionItemDone(document.meetingId, item.id, true)));
@@ -156,8 +156,8 @@ describe("structured meeting analysis", () => {
   });
 
   it("refuses results that exceed the per-value KV storage limit", async () => {
-    const { bb, rows } = storage();
-    const service = createAnalysisService(bb);
+    const { alia, rows } = storage();
+    const service = createAnalysisService(alia);
     const large = { ...insightInput(), decisions: Array.from({ length: 50 }, () => "решение ".repeat(240)) };
     await expect(service.save(document, large)).rejects.toMatchObject({ code: "invalid_ai_response" });
     expect(rows.size).toBe(0);
@@ -174,7 +174,7 @@ describe("OpenAI-compatible analysis API", () => {
       if (rejected.length) return Response.json({ error: { message: `Unsupported parameter: ${rejected.shift()}` } }, { status: 400 });
       return completion(insightInput());
     });
-    const service = createAnalysisService(storage().bb, { fetch: fetcher });
+    const service = createAnalysisService(storage().alia, { fetch: fetcher });
     const result = await service.analyze(document, config, { templateId: "tech" });
     expect(fetcher).toHaveBeenCalledTimes(4);
     expect(requests[0].url).toBe("https://ai.example/v1/chat/completions");
@@ -195,42 +195,42 @@ describe("OpenAI-compatible analysis API", () => {
       expect(init?.headers).not.toHaveProperty("authorization");
       return completion(insightInput());
     });
-    await createAnalysisService(storage().bb, { fetch: fetcher }).analyze(document, { baseUrl: "http://127.0.0.1:1234/v1/chat/completions", model: "local" });
+    await createAnalysisService(storage().alia, { fetch: fetcher }).analyze(document, { baseUrl: "http://127.0.0.1:1234/v1/chat/completions", model: "local" });
     expect(String(fetcher.mock.calls[0][0])).toBe("http://127.0.0.1:1234/v1/chat/completions");
   });
 
   it("reports missing API configuration before any network call and never stores a fake summary", async () => {
-    const { bb, rows } = storage();
+    const { alia, rows } = storage();
     const fetcher = vi.fn<typeof fetch>();
-    await expect(createAnalysisService(bb, { fetch: fetcher }).analyze(document, { baseUrl: "", model: "" })).rejects.toMatchObject({ code: "ai_not_configured" });
+    await expect(createAnalysisService(alia, { fetch: fetcher }).analyze(document, { baseUrl: "", model: "" })).rejects.toMatchObject({ code: "ai_not_configured" });
     expect(fetcher).not.toHaveBeenCalled();
     expect(rows.size).toBe(0);
   });
 
   it("redacts upstream error bodies and rejects oversized or truncated responses", async () => {
-    const { bb, rows } = storage();
-    const unauthorized = createAnalysisService(bb, { fetch: async () => Response.json({ error: { message: "private-test-key detail" } }, { status: 401 }) });
+    const { alia, rows } = storage();
+    const unauthorized = createAnalysisService(alia, { fetch: async () => Response.json({ error: { message: "private-test-key detail" } }, { status: 401 }) });
     await expect(unauthorized.analyze(document, config)).rejects.toMatchObject({ code: "ai_auth_failed" });
     try { await unauthorized.analyze(document, config); } catch (error) { expect(String(error)).not.toContain("private-test-key"); }
-    const huge = createAnalysisService(bb, { fetch: async () => new Response("x".repeat(AI_RESPONSE_MAX_BYTES + 1)) });
+    const huge = createAnalysisService(alia, { fetch: async () => new Response("x".repeat(AI_RESPONSE_MAX_BYTES + 1)) });
     await expect(huge.analyze(document, config)).rejects.toMatchObject({ code: "invalid_ai_response" });
-    const truncated = createAnalysisService(bb, { fetch: async () => completion(insightInput(), { finish_reason: "length" }) });
+    const truncated = createAnalysisService(alia, { fetch: async () => completion(insightInput(), { finish_reason: "length" }) });
     await expect(truncated.analyze(document, config)).rejects.toMatchObject({ code: "invalid_ai_response" });
     expect(rows.size).toBe(0);
   });
 
   it("bounds requests with a timeout even if an injected fetch ignores AbortSignal", async () => {
     const fetcher = vi.fn<typeof fetch>(() => new Promise(() => {}));
-    const service = createAnalysisService(storage().bb, { fetch: fetcher, timeoutMs: 10 });
+    const service = createAnalysisService(storage().alia, { fetch: fetcher, timeoutMs: 10 });
     await expect(service.analyze(document, config)).rejects.toMatchObject({ code: "ai_timeout" });
     expect((fetcher.mock.calls[0][1]?.signal as AbortSignal).aborted).toBe(true);
   });
 
   it("cancels outgoing API work on plugin disposal and prevents subsequent writes", async () => {
-    const { bb, rows } = storage();
+    const { alia, rows } = storage();
     const lifetime = new AbortController();
     const fetcher = vi.fn<typeof fetch>(() => new Promise(() => {}));
-    const service = createAnalysisService(bb, { fetch: fetcher, signal: lifetime.signal });
+    const service = createAnalysisService(alia, { fetch: fetcher, signal: lifetime.signal });
     const pending = service.analyze(document, config);
     while (!fetcher.mock.calls.length) await new Promise((resolve) => setTimeout(resolve, 1));
     lifetime.abort();
@@ -249,7 +249,7 @@ describe("grounded transcript questions", () => {
       expect(body.messages[1].content).toContain("Согласование");
       return completion({ answer: "Проверка согласована [mtg_analysis02/12 99:99].", citations: [{ meetingId: second.meetingId, segmentId: 12, quote: "согласована сегодня" }] });
     });
-    const result = await createAnalysisService(storage().bb, { fetch: fetcher }).ask("Когда согласовали?", [document, second], config);
+    const result = await createAnalysisService(storage().alia, { fetch: fetcher }).ask("Когда согласовали?", [document, second], config);
     expect(askResultSchema.parse(result)).toEqual(result);
     expect(result.citations[0]).toMatchObject({ timecodeSec: 122, speaker: "Ирина", meetingTitle: "Согласование" });
     expect(result.answer).toContain("[mtg_analysis02/12 02:02]");
@@ -263,13 +263,13 @@ describe("grounded transcript questions", () => {
       { answer: "Срок — завтра", citations: [] },
       { answer: "[foreign/1 00:30]", citations: [{ meetingId: document.meetingId, segmentId: 1, quote: "проверю сборку" }] },
     ]) {
-      const service = createAnalysisService(storage().bb, { fetch: async () => completion(raw) });
+      const service = createAnalysisService(storage().alia, { fetch: async () => completion(raw) });
       await expect(service.ask("Что решили?", [document], config)).rejects.toMatchObject({ code: "invalid_ai_response" });
     }
   });
 
   it("allows an explicit lack-of-evidence answer without generating tasks or citations", async () => {
-    const service = createAnalysisService(storage().bb, { fetch: async () => completion({ answer: "Недостаточно данных в переданных расшифровках", citations: [] }) });
+    const service = createAnalysisService(storage().alia, { fetch: async () => completion({ answer: "Недостаточно данных в переданных расшифровках", citations: [] }) });
     const result = await service.ask("Сколько стоит выпуск?", [document], config);
     expect(result.citations).toEqual([]);
     expect(result.answer).toContain("Недостаточно данных");

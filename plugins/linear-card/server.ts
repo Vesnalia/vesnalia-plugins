@@ -1,16 +1,16 @@
-// bb-plugin-linear-card — the Linear issue behind each thread.
+// alia-plugin-linear-card — the Linear issue behind each thread.
 //
 // A thread's card is the issue linked explicitly (stored in this plugin's
 // thread metadata namespace) or, failing that, the issue named by the
 // environment's git branch (Linear branch names look like
 // `daniel/tra-123-some-title`). The explorer lists the viewer's assigned issues,
-// scoped to a Linear team remembered per BB project. Long titles get a short
+// scoped to a Linear team remembered per VesnALIA project. Long titles get a short
 // AI label for the header chip (Claude Haiku through the Account Pooler), and
 // `GET /upload` proxies Linear's login-only attachments with the API key.
 import { readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
+import { defineRpcContract, type AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import { CARD_CHANGED, ENABLED_PROJECTS_CHANGED } from "./shared";
 
@@ -147,8 +147,8 @@ const shortTitleCacheSchema = z.object({ title: z.string(), short: z.string() })
 
 class LinearNotConfiguredError extends Error {}
 
-export default async function plugin(bb: BbPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(alia: AliaPluginApi) {
+  const settings = alia.settings.define({
     apiKey: {
       type: "string",
       label: "Linear API key",
@@ -206,32 +206,32 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   async function threadBranch(threadId: string): Promise<string | null> {
-    const thread = await bb.sdk.threads.get({ threadId });
+    const thread = await alia.sdk.threads.get({ threadId });
     if (!thread.environmentId) return null;
-    const environment = await bb.sdk.environments.get({ environmentId: thread.environmentId });
+    const environment = await alia.sdk.environments.get({ environmentId: thread.environmentId });
     return environment.branchName ?? null;
   }
 
   async function threadMetadata(threadId: string) {
-    const raw = await bb.sdk.threads.getPluginMetadata({ threadId });
+    const raw = await alia.sdk.threads.getPluginMetadata({ threadId });
     const parsed = threadMetadataSchema.safeParse(raw);
     return parsed.success ? parsed.data : {};
   }
 
   async function poolerToken(): Promise<string> {
-    const dir = join(homedir(), ".bb/plugins/account-pool/secrets/accounts");
+    const dir = join(homedir(), ".vesnalia/plugins/account-pool/secrets/accounts");
     const file = (await readdir(dir)).find((name) => name.startsWith("hub-token-"));
     if (!file) throw new Error("No Account Pooler hub token on this machine.");
     return hubTokenSchema.parse(JSON.parse(await readFile(join(dir, file), "utf8"))).value;
   }
 
   async function summarizeTitle(title: string): Promise<string> {
-    const res = await fetch(`${bb.server.loopbackBaseUrl}/api/v1/plugins/account-pool/http/v1/messages`, {
+    const res = await fetch(`${alia.server.loopbackBaseUrl}/api/v1/plugins/account-pool/http/v1/messages`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
         "anthropic-version": "2023-06-01",
-        "x-bb-account-pool-token": await poolerToken(),
+        "x-alia-account-pool-token": await poolerToken(),
       },
       body: JSON.stringify({
         model: SHORT_TITLE_MODEL,
@@ -256,7 +256,7 @@ export default async function plugin(bb: BbPluginApi) {
   async function shortTitle(threadId: string, issue: IssueDetail): Promise<string | null> {
     if (issue.title.length <= SHORT_TITLE_MIN_CHARS) return null;
     const cacheKey = `short-title:${issue.id}`;
-    const cached = shortTitleCacheSchema.safeParse(await bb.storage.kv.get(cacheKey));
+    const cached = shortTitleCacheSchema.safeParse(await alia.storage.kv.get(cacheKey));
     if (cached.success && cached.data.title === issue.title) return cached.data.short;
     const jobKey = `${issue.id}\n${issue.title}`;
     if (failedShortTitles.has(jobKey)) return null;
@@ -264,19 +264,19 @@ export default async function plugin(bb: BbPluginApi) {
     if (!job) {
       job = summarizeTitle(issue.title)
         .then(async (short) => {
-          await bb.storage.kv.set(cacheKey, { title: issue.title, short });
+          await alia.storage.kv.set(cacheKey, { title: issue.title, short });
           return true;
         })
         .catch((error: unknown) => {
           failedShortTitles.add(jobKey);
-          bb.log.warn(`short title for ${issue.identifier} failed: ${error instanceof Error ? error.message : String(error)}`);
+          alia.log.warn(`short title for ${issue.identifier} failed: ${error instanceof Error ? error.message : String(error)}`);
           return false;
         })
         .finally(() => pendingShortTitles.delete(jobKey));
       pendingShortTitles.set(jobKey, job);
     }
     // Every thread showing this issue refetches once the label is stored.
-    void job.then((stored) => stored && bb.realtime.publish(CARD_CHANGED, { threadId }));
+    void job.then((stored) => stored && alia.realtime.publish(CARD_CHANGED, { threadId }));
     return null;
   }
 
@@ -306,8 +306,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   // Linear attachments (uploads.linear.app) answer 401 without the API key, so
   // the card dialog loads them through this route. Only that host is proxied,
-  // and the CSP sandbox keeps an uploaded HTML/SVG file from running on BB's origin.
-  bb.http.route("GET", "/upload", async (c) => {
+  // and the CSP sandbox keeps an uploaded HTML/SVG file from running on VesnALIA's origin.
+  alia.http.route("GET", "/upload", async (c) => {
     let url: URL;
     try {
       url = new URL(c.req.query("u") ?? "");
@@ -363,7 +363,7 @@ export default async function plugin(bb: BbPluginApi) {
 
   /** The project's saved team scope; one-team workspaces default to that team. */
   async function projectTeam(projectId: string, allTeams: Team[]): Promise<string | null> {
-    const saved = await bb.storage.kv.get<{ teamKey: string | null }>(`project-team:${projectId}`);
+    const saved = await alia.storage.kv.get<{ teamKey: string | null }>(`project-team:${projectId}`);
     if (saved && (saved.teamKey === null || allTeams.some((team) => team.key === saved.teamKey))) {
       return saved.teamKey;
     }
@@ -373,34 +373,34 @@ export default async function plugin(bb: BbPluginApi) {
   // Projects where the header chip shows; edited from the plugin's settings page.
   const ENABLED_PROJECTS_KEY = "enabled-projects";
   async function enabledProjects(): Promise<string[]> {
-    const parsed = z.array(z.string()).safeParse(await bb.storage.kv.get(ENABLED_PROJECTS_KEY));
+    const parsed = z.array(z.string()).safeParse(await alia.storage.kv.get(ENABLED_PROJECTS_KEY));
     return parsed.success ? parsed.data : [];
   }
 
-  bb.rpc.register(rpcContract, {
+  alia.rpc.register(rpcContract, {
     thread_card: ({ threadId, projectId }) => threadCard(threadId, projectId),
     enabled_projects: async () => ({ projectIds: await enabledProjects() }),
     async settings_projects() {
-      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      const projects = await alia.sdk.projects.list({ includePersonal: true });
       return { projects: projects.map((project) => ({ id: project.id, name: project.name })) };
     },
     async set_project_enabled({ projectId, enabled }) {
       const rest = (await enabledProjects()).filter((id) => id !== projectId);
       const projectIds = enabled ? [...rest, projectId] : rest;
-      await bb.storage.kv.set(ENABLED_PROJECTS_KEY, projectIds);
-      bb.realtime.publish(ENABLED_PROJECTS_CHANGED, { projectIds });
+      await alia.storage.kv.set(ENABLED_PROJECTS_KEY, projectIds);
+      alia.realtime.publish(ENABLED_PROJECTS_CHANGED, { projectIds });
       return { projectIds };
     },
     async link_card({ threadId, identifier }) {
       if (!(await issue(identifier))) throw new Error(`Linear has no issue ${identifier}`);
-      await bb.sdk.threads.updatePluginMetadata({ threadId, set: { identifier }, remove: ["unlinked"] });
-      bb.realtime.publish(CARD_CHANGED, { threadId });
+      await alia.sdk.threads.updatePluginMetadata({ threadId, set: { identifier }, remove: ["unlinked"] });
+      alia.realtime.publish(CARD_CHANGED, { threadId });
       return { ok: true as const };
     },
     async unlink_card({ threadId }) {
       // `unlinked` also stops the branch name from re-attaching a card.
-      await bb.sdk.threads.updatePluginMetadata({ threadId, set: { unlinked: true }, remove: ["identifier"] });
-      bb.realtime.publish(CARD_CHANGED, { threadId });
+      await alia.sdk.threads.updatePluginMetadata({ threadId, set: { unlinked: true }, remove: ["identifier"] });
+      alia.realtime.publish(CARD_CHANGED, { threadId });
       return { ok: true as const };
     },
     issue_detail: async ({ identifier }) => ({ issue: await issue(identifier) }),
@@ -412,7 +412,7 @@ export default async function plugin(bb: BbPluginApi) {
           scope = await projectTeam(projectId, allTeams);
         } else {
           scope = teamKey;
-          await bb.storage.kv.set(`project-team:${projectId}`, { teamKey: scope });
+          await alia.storage.kv.set(`project-team:${projectId}`, { teamKey: scope });
         }
         return { status: "ok" as const, teams: allTeams, teamKey: scope, issues: await assignedIssues(scope, includeDone) };
       } catch (error) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { definePluginApp } from "@get-bb/plugin-sdk/app";
+import { definePluginApp } from "@vesnalia/plugin-sdk/app";
 import {
   commitConfig,
   previewConfig,
@@ -36,7 +36,7 @@ function formatScanTime(timestamp: number) {
 }
 
 function getWriterId() {
-  const key = "bb-plugin-fonts:writer:v1";
+  const key = "alia-plugin-fonts:writer:v1";
   const existing = sessionStorage.getItem(key);
   if (existing) return existing;
   const created = typeof crypto.randomUUID === "function"

@@ -1,5 +1,5 @@
 // Posting review comments to GitHub, diagram pins, and on-demand LLM tagging.
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 import {
   COMMENT_TAGS,
@@ -19,7 +19,7 @@ import type { Store } from "./store";
 
 export const COMMENTS_CHANGED = "comments-changed";
 export const TAGS_TOOL = "pr_xray_submit_tags";
-// Older versions wrote tags into the GitHub comment. Tags now stay in bb, but those comments still carry this.
+// Older versions wrote tags into the GitHub comment. Tags now stay in VesnALIA, but those comments still carry this.
 const MARKER = /\n*<!-- pr-xray: tag=[a-z-]+ -->\s*$/u;
 
 export function stripMarker(body: string): string {
@@ -27,19 +27,19 @@ export function stripMarker(body: string): string {
 }
 
 export function createComments(deps: {
-  bb: BbPluginApi;
+  alia: AliaPluginApi;
   store: Store;
   github: Github;
   models: Models;
   loadPr: (ref: PrRef) => Promise<PrDetails>;
 }) {
-  const { bb, store, github, models, loadPr } = deps;
+  const { alia, store, github, models, loadPr } = deps;
   // Tagging worker thread id -> the one comment it may tag, and who awaits it.
   const TAGGING_TIMEOUT_MS = 3 * 60_000;
   const taggingWorkers = new Map<string, { commentId: string; done: () => void }>();
 
   function publish(ref: PrRef) {
-    bb.realtime.publish(COMMENTS_CHANGED, { key: prRefKey(ref) });
+    alia.realtime.publish(COMMENTS_CHANGED, { key: prRefKey(ref) });
   }
 
   function recordPosted(ref: PrRef, headSha: string, posted: RawReviewComment) {
@@ -93,7 +93,7 @@ export function createComments(deps: {
       try {
         for (const comment of await github.reviewComments(ref, reviewId)) recordPosted(ref, headSha, comment);
       } catch (error) {
-        bb.log.warn(`review ${reviewId} is posted, but its comments are not in the retro feed: ${String(error)}`);
+        alia.log.warn(`review ${reviewId} is posted, but its comments are not in the retro feed: ${String(error)}`);
       }
     }
     publish(ref);
@@ -208,8 +208,8 @@ export function createComments(deps: {
       where: comment.source === "diff" ? `${comment.path}:${comment.line}` : `diagram node "${comment.nodeLabel}"`,
       body: comment.body.slice(0, 1500),
     });
-    const worker = await bb.sdk.threads.spawn({
-      projectId: await personalProjectId(bb),
+    const worker = await alia.sdk.threads.spawn({
+      projectId: await personalProjectId(alia),
       environment: { type: "project-default" },
       prompt: [
         "Categorise the code review comment below with exactly one tag.",
@@ -234,7 +234,7 @@ export function createComments(deps: {
     if (store.comment(commentId)?.tag == null) throw new Error("AI tagging did not pick a tag.");
   }
 
-  bb.agents.registerTool({
+  alia.agents.registerTool({
     name: TAGS_TOOL,
     description: "Submit one tag per PR X-ray review comment.",
     presentation: { label: { pending: "Tagging review comments", completed: "Tagged review comments" } },
@@ -258,14 +258,14 @@ export function createComments(deps: {
     taggingWorkers.delete(threadId);
     worker.done();
     try {
-      await bb.sdk.threads.archive({ threadId });
-      await bb.sdk.threads.stop({ threadId });
+      await alia.sdk.threads.archive({ threadId });
+      await alia.sdk.threads.stop({ threadId });
     } catch {
       // Already gone.
     }
   }
-  bb.events.on("thread.idle", ({ thread }) => void settleTagging(thread.id));
-  bb.events.on("thread.failed", ({ thread }) => void settleTagging(thread.id));
+  alia.events.on("thread.idle", ({ thread }) => void settleTagging(thread.id));
+  alia.events.on("thread.failed", ({ thread }) => void settleTagging(thread.id));
 
   return {
     postSingle,

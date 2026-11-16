@@ -136,7 +136,7 @@ test('real SQLite preparation retains direct edits, project isolation, jobs and 
   let registeredTool: any;
   let calls: any[] = [];
   const hostCalls: any[] = [];
-  const bb: any = {
+  const alia: any = {
     storage: { database: () => db },
     hosts: {
       experimental_client: () => ({
@@ -204,7 +204,7 @@ test('real SQLite preparation retains direct edits, project isolation, jobs and 
       url: 'https://example.com/task'
     })
   };
-  const { handlers, store } = registerPreparation(bb, deps);
+  const { handlers, store } = registerPreparation(alia, deps);
   const p = await handlers.prepareCreate({
     projectId: 'project',
     request: 'Milestone overview'
@@ -250,7 +250,7 @@ test('real SQLite preparation retains direct edits, project isolation, jobs and 
   assert.throws(() =>
     handlers.prepareGet({ id: p.id, projectId: 'wrong-project' })
   );
-  const reloaded = registerPreparation(bb, deps);
+  const reloaded = registerPreparation(alia, deps);
   assert.equal(reloaded.store.get(p.id).brief.title, 'User title');
   assert.equal(reloaded.store.get(p.id).request, 'Milestone overview');
   db.close();
@@ -264,7 +264,7 @@ test('job service routes context to the remote host and preserves partial succes
   const hostCalls: any[] = [];
   const spawns: any[] = [];
   let poll = false;
-  const bb: any = {
+  const alia: any = {
     pluginId: 'taskboard',
     storage: { database: () => db },
     rpc: { register() {} },
@@ -351,7 +351,7 @@ test('job service routes context to the remote host and preserves partial succes
       }
     }
   };
-  const { handlers, store } = registerPreparation(bb, {
+  const { handlers, store } = registerPreparation(alia, {
     assertProject: async () => {},
     task: async () => {
       throw new Error('unused');

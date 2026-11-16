@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-claude-usage",
+  "name": "alia-plugin-claude-usage",
   "version": "0.1.2",
   "type": "module",
   "engines": {
-    "bb": ">=0.48",
-    "bbPluginSdk": ">=0.6.104"
+    "alia": ">=0.48",
+    "aliaPluginSdk": ">=0.6.104"
   },
-  "bb": {
+  "alia": {
     "name": "Usage Explorer",
     "description": "AI coding usage by session, day and model, read by ccusage from Claude Code, Codex, Gemini CLI and every other agent CLI it supports, with Claude plan limits and the pace you are spending them at.",
     "branding": {
@@ -22,7 +22,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.104",
     "@pierre/diffs": "^1.2.9",
     "@radix-ui/react-alert-dialog": "^1.1.19",
     "@radix-ui/react-context-menu": "^2.3.3",
@@ -54,11 +53,24 @@
   },
   "description": "AI coding usage by session, day and model, read by ccusage from Claude Code, Codex, Gemini CLI and every other agent CLI it supports, with Claude plan limits and the pace you are spending them at.",
   "keywords": [
-    "bb-plugin"
+    "alia-plugin"
   ],
   "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.104"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/claude-usage#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ahsan7162/bb-plugin-claude-usage.git"
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/claude-usage"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
   }
 }

@@ -1,4 +1,4 @@
-import { experimental_Icon as Icon, useComposer } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, useComposer } from "@vesnalia/plugin-sdk/app";
 import { STATE_LABEL, useKeyStatus } from "./key-status.js";
 import { NANO_GPT_PROVIDER_ID, SETTINGS_POPUP_ID } from "./provider-id.js";
 

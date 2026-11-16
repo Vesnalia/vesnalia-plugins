@@ -93,7 +93,7 @@ describe("pointer drag", () => {
     expect(clicks()).toBe("1");
   });
 
-  it("yields to bb's split drag when the host sends Escape, and still swallows the release click", () => {
+  it("yields to VesnALIA's split drag when the host sends Escape, and still swallows the release click", () => {
     mount();
     start(); pointer("pointerMove", 40, 120);
     expect(view()).toContain('"kind":"threads"');

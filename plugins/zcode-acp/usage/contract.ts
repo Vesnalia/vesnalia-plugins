@@ -1,4 +1,4 @@
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 const text = z.string().min(1);
 const fields = { plan: z.object({ id: text, multiplier: z.number().int().positive().nullable() }).nullable().default(null), accountEmail: z.string().nullable(), planLabel: z.string().nullable() };

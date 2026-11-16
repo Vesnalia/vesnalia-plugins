@@ -15,7 +15,7 @@ describe("handoff model order", () => {
     expect(models[0].id).toBe("a");
   });
   it("preserves catalog order when stored preferences are invalid", () => {
-    localStorage.setItem("bb-workspace-sidebar:handoff-model-usage:v1", '[{"count":"oops"}]');
+    localStorage.setItem("alia-workspace-sidebar:handoff-model-usage:v1", '[{"count":"oops"}]');
     expect(rankHandoffModels("codex", models)).toEqual(models);
   });
   it("keeps the picker usable when local storage is unavailable", () => {

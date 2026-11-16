@@ -1,13 +1,13 @@
 # GitHub PR Dashboard: design system
 
 The source of truth for how the plugin looks and moves. Values live in `tokens.css`; every
-colour, radius, type step and duration in the UI comes from there or from bb's theme.
+colour, radius, type step and duration in the UI comes from there or from VesnALIA's theme.
 
 ## Theses (validated 2026-10-30)
 
-**Visual.** Keeping bb's palette, fonts and components, the plugin gets its own shape language: a
+**Visual.** Keeping VesnALIA's palette, fonts and components, the plugin gets its own shape language: a
 calm neutral ground where colour only ever means PR state, carried by a 3px status spine on every
-PR and comment thread; bb's sans throughout with no new display face, PR titles a clear step up
+PR and comment thread; VesnALIA's sans throughout with no new display face, PR titles a clear step up
 (20px semibold on a PR, 15px in the list), monospace only for paths, branches and line numbers;
 roomy spacing on a 4px base (16px inside rows, 24px between groups, 32px between sections) with
 hairline dividers instead of boxes inside boxes; flat components one border deep, one radius scale
@@ -30,14 +30,14 @@ every change instant.
 
 **Allowed patterns:** the 3px status spine (it carries the product's one truth: why a PR is
 stuck), monospace for paths, branches and line numbers, hairline dividers, GitHub's violet for
-merged (the one colour outside bb's theme), the spinner and pulsing skeleton during real loading.
+merged (the one colour outside VesnALIA's theme), the spinner and pulsing skeleton during real loading.
 
-The one truth the design serves: a personal queue, inside bb, that says what is blocking each PR
+The one truth the design serves: a personal queue, inside VesnALIA, that says what is blocking each PR
 and taps you when that changes. The blocker is the headline of every PR, wherever it appears.
 
 ## Colour
 
-bb's theme variables, unchanged, mapped to meaning. Nothing else carries colour.
+VesnALIA's theme variables, unchanged, mapped to meaning. Nothing else carries colour.
 
 | Meaning | Text | Spine and fills |
 |---|---|---|
@@ -51,8 +51,8 @@ Ground and ink: `bg-background`, `bg-card` (avoid; panels are bordered, not fill
 `bg-muted` (selected nav item, code chips), `border-border` (every divider),
 `text-foreground`, `text-muted-foreground`.
 
-`--prd-merged` is GitHub's violet pulled 30% toward bb's foreground, so small text passes 4.5:1 in
-both themes. Contrast measured on bb's background:
+`--prd-merged` is GitHub's violet pulled 30% toward VesnALIA's foreground, so small text passes 4.5:1 in
+both themes. Contrast measured on VesnALIA's background:
 
 | Pair | Dark | Light |
 |---|---|---|
@@ -66,7 +66,7 @@ both themes. Contrast measured on bb's background:
 
 ## Type
 
-bb's sans and mono; no other family.
+VesnALIA's sans and mono; no other family.
 
 | Step | Use | Classes |
 |---|---|---|
@@ -78,7 +78,7 @@ bb's sans and mono; no other family.
 
 Weights: 600 for titles, 500 for labels and navigator headings, 400 for everything else.
 Sentence case everywhere; no uppercase eyebrows. Mono stops there: repo names and `#123` stay in
-bb's sans with `tabular-nums`.
+VesnALIA's sans with `tabular-nums`.
 
 ## Spacing
 
@@ -99,8 +99,8 @@ Tailwind's 4px scale. Only these steps: `1` (4px), `2` (8px), `3` (12px), `4` (1
 | `rounded-full` | full | pills, avatars, the spine |
 | `--prd-spine` / `--prd-spine-wide` | 3px / 5px | status spine at rest / hovered or jumped to |
 
-No shadows at rest or on hover; elevation is a 1px lift. bb's own overlays keep theirs.
-bb's `Button` keeps bb's radius: it is bb's component.
+No shadows at rest or on hover; elevation is a 1px lift. VesnALIA's own overlays keep theirs.
+VesnALIA's `Button` keeps VesnALIA's radius: it is VesnALIA's component.
 
 ## Motion
 
@@ -124,7 +124,7 @@ jumps scroll instantly. Loops only for real loading (refresh spinner, skeleton).
 | Segmented | muted label | foreground | ring-2 ring | selected: `bg-background`, foreground | n/a |
 | Spine | 3px, state colour | 5px (row hover) | follows its row | 5px for 220ms after a jump | n/a |
 | Pill | tone fill + tone text | not interactive | not interactive | not interactive | not interactive |
-| bb Button | bb's own five states | | | | |
+| VesnALIA Button | VesnALIA's own five states | | | | |
 
 ## Navigation
 

@@ -4,7 +4,7 @@
 // Commons through the backend (web/lookups.ts); every found photo is credited
 // with its author, licence and Commons page, beside it and in the viewer.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { UrlLink } from "@get-bb/plugin-sdk/app";
+import { UrlLink } from "@vesnalia/plugin-sdk/app";
 import { cn } from "@/lib/utils";
 import { finiteNumber, isObject, list, optionalText, text, type Props } from "../values";
 import { useImageSearch, type FoundImage } from "../webLookups";
@@ -109,8 +109,8 @@ export function ImageSearch({ props }: { props: Props }) {
   if (url !== null && broken === url) return <ErrorLine message={`Couldn't load the photo of “${query}”`} />;
 
   return (
-    // data-bb-image-preview-ignore: these pictures have their own viewer; image-preview plugins must leave them alone.
-    <figure data-bb-image-preview-ignore="" className={cn("m-0 flex min-w-0 flex-col gap-1.5", aspect.width)}>
+    // data-alia-image-preview-ignore: these pictures have their own viewer; image-preview plugins must leave them alone.
+    <figure data-alia-image-preview-ignore="" className={cn("m-0 flex min-w-0 flex-col gap-1.5", aspect.width)}>
       <div className={cn(FRAME, aspect.box)}>
         {url === null || credit === null ? (
           <span role="status" aria-label={`Finding a photo of ${query}`} className={cn("absolute inset-0", SKELETON)} />
@@ -271,7 +271,7 @@ export function Gallery({ props }: { props: Props }) {
   const template = `repeat(auto-fill,minmax(max(min(8rem,100%),calc((100% - ${(columns ?? auto) - 1} * ${GRID_GAP}) / ${columns ?? auto})),1fr))`;
 
   return (
-    <div data-bb-image-preview-ignore="" className="@container flex min-w-0 flex-col gap-2">
+    <div data-alia-image-preview-ignore="" className="@container flex min-w-0 flex-col gap-2">
       {unusable === -1 ? null : <ErrorLine message={`Gallery item ${unusable + 1} needs a src (path or https URL) or a query`} />}
       <div
         role="list"

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { useRpc, useSdk } from "@vesnalia/plugin-sdk/app";
 import type { ChangedFile } from "../../core/tree";
 import type { DiffContents } from "../../core/diff-context";
 import type { rpcContract } from "../../shared/contracts";

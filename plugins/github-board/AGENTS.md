@@ -1,10 +1,10 @@
 # AGENTS.md
 
-A bb plugin that shows GitHub work in four columns — Issues, Draft PRs, Open PRs and Discussions —
+A VesnALIA plugin that shows GitHub work in four columns — Issues, Draft PRs, Open PRs and Discussions —
 and sends a card to a new agent thread. It is a port of
 [`paseo-plugins/github-board`](https://github.com/gpambrozio/paseo-plugins/tree/main/github-board)
 0.9.2. That plugin's `AGENTS.md` is the long record of why each behaviour is the way it is; this file
-carries over what still holds and says what bb changed. The repo root `AGENTS.md` covers what every
+carries over what still holds and says what VesnALIA changed. The repo root `AGENTS.md` covers what every
 plugin here shares.
 
 ## Orientation
@@ -14,9 +14,9 @@ plugin here shares.
 | `server.ts` | Wiring: the login setting, finding `gh`, the project index, storage, realtime and the `send` spawn. |
 | `server/service.ts` | What each RPC does, and the per-load caches it shares; driven by fakes in its tests. |
 | `server/github.ts` | Every GitHub GraphQL query and how its answer is read, over an injected `GitHubApi`. |
-| `server/gh.ts` | `gh api graphql` as that `GitHubApi`: running `gh` through bb's toolchain, argument spelling, failures, `gh auth token`. |
+| `server/gh.ts` | `gh api graphql` as that `GitHubApi`: running `gh` through VesnALIA's toolchain, argument spelling, failures, `gh auth token`. |
 | `server/image.ts` | The image fetch: redirects by hand, the token only to `github.com`, a timeout and a size cap. |
-| `server/projects.ts` | Which bb projects a repository belongs to, and which one a card opens on. |
+| `server/projects.ts` | Which VesnALIA projects a repository belongs to, and which one a card opens on. |
 | `shared/contract.ts` | The RPC contract. The app imports it as a type only. |
 | `shared/schemas.ts` | The realtime channels and the stored shapes (display prefs, launch defaults), for both halves. |
 | `shared/board.ts` | The zod shapes of a board, a card, its details and comments. |
@@ -32,30 +32,30 @@ plugin here shares.
 | `app/detail-panel.tsx` | The opened card: body, comments, actions, and the resize handle. |
 | `app/markdown-parse.ts`, `app/html.ts`, `app/markdown.tsx` | The body renderer — see *Bodies and images*. |
 | `app/image-gate.ts`, `app/remote-image.tsx` | Whether an image may be requested yet, and the component that asks. |
-| `app/send-dialog.tsx` | Send to chat: bb's new-thread composer in a dialog. |
+| `app/send-dialog.tsx` | Send to chat: VesnALIA's new-thread composer in a dialog. |
 | `app/add-to-chat.ts`, `app/add-to-chat-button.tsx` | Add to chat: the card into a chat's draft, picked from those on screen and recent threads. |
 | `app/pending-add.ts`, `app/pending-add-delivery.tsx` | Add to chat for a thread that was not on screen: held until its composer appears. |
 | `app/prompt-settings.tsx` | The template editor, on the settings page and behind the board's gear. |
 
 ## Where things run
 
-**`gh` runs from `server.ts`, on the bb server's machine**, with the user's own `gh` login — no
-`bb.host` entry and no token setting (owner's decision, issue #2). The board reads GitHub, not a
+**`gh` runs from `server.ts`, on the VesnALIA server's machine**, with the user's own `gh` login — no
+`alia.host` entry and no token setting (owner's decision, issue #2). The board reads GitHub, not a
 checkout, so no particular machine is needed. `gh` runs through `experimental_execHostFile` from
-`@get-bb/plugin-sdk/process` (SDK 0.6.94, bundled, so it needs no newer bb): bb's own resolver, which
+`@vesnalia/plugin-sdk/process` (SDK 0.6.94, bundled, so it needs no newer VesnALIA): VesnALIA's own resolver, which
 covers the login shell's PATH, Homebrew, `~/.local/bin`, mise and asdf shims and Volta, looks `gh` up on
 every call and refreshes after a miss. So a `gh` installed after the plugin loaded works without a
 reload, and nothing about a missing `gh` is latched. The SDK is therefore a real `dependency`, not a
 devDependency (repo `AGENTS.md`, *Dependencies*). A check at load (`gh auth status`) calls
-`bb.status.needsConfiguration` for a missing or signed-out `gh`; that notice lasts until the next load,
+`alia.status.needsConfiguration` for a missing or signed-out `gh`; that notice lasts until the next load,
 so the README tells the user to reload to clear it, while the board itself recovers on its next
 refresh. A failed check for any other reason is only logged, because a check run before the network was
 up must not mark the plugin. Every call is killed after 30 seconds.
 
 **A load nobody waits for is killed.** `loadBoard`, `loadItem`, `loadComments` and `loadImage` hand the
-RPC handler's `experimental_signal` (bb 0.48.1; absent before, so it stays optional) to the service,
+RPC handler's `experimental_signal` (VesnALIA 0.48.1; absent before, so it stays optional) to the service,
 which binds it to every `gh` run of that load (`boundTo`) and, for an image, to the fetch alongside
-its 20-second timeout. bb aborts it when the plugin copy is reloaded, disabled or removed, or the
+its 20-second timeout. VesnALIA aborts it when the plugin copy is reloaded, disabled or removed, or the
 caller's HTTP request disconnects (a window closing mid-load); the app's `useRpc().call` takes no
 signal, so the app cannot abort one itself. **A load whose signal fired never caches its cut-short result**
 (`signal.throwIfAborted()` before the board, body and comments cache writes): a killed checks or
@@ -154,21 +154,21 @@ when you add a query.
 
 ## Bodies and images
 
-bb's `Markdown` component is **not** used for bodies, on purpose: it takes only `content` and
+VesnALIA's `Markdown` component is **not** used for bodies, on purpose: it takes only `content` and
 `className`, so it gives no say over how a body's images load. Paseo's parser and HTML rewriter are ported instead (`app/markdown-parse.ts`,
 `app/html.ts`, both pure; numeric entities past U+10FFFF, surrogates and `&#0;` decode to U+FFFD, as
 HTML does, where Paseo's `String.fromCodePoint` threw and blanked the panel) and `app/markdown.tsx` draws them, so every image in a body is either an
 image block drawn by `RemoteImage` or a link. `RemoteImage` goes through `app/image-gate.ts`: a
 GitHub-hosted image comes through the server (`loadImage`) at once; any other host waits for **Load
 image**, because loading it tells that host the reader's address; an unreadable URL never loads. Links
-go through `isOpenableLink` (http and https only) and bb's `UrlLink`.
+go through `isOpenableLink` (http and https only) and VesnALIA's `UrlLink`.
 
 ## Project matching
 
-A card's repository is matched to bb projects in `server/projects.ts`: first by each project's
-`gitRemoteUrl` (its checkout's `origin`, recorded by bb, on every machine, no subprocess), then — only
+A card's repository is matched to VesnALIA projects in `server/projects.ts`: first by each project's
+`gitRemoteUrl` (its checkout's `origin`, recorded by VesnALIA, on every machine, no subprocess), then — only
 for repositories no `origin` claimed — by every remote of checkouts on the server's machine, which
-finds a fork's `upstream`. The same repository is often a separate bb project per machine, so a match
+finds a fork's `upstream`. The same repository is often a separate VesnALIA project per machine, so a match
 is a list; `preferredProject` picks one with a checkout on the server's machine, and the composer's
 project picker lets the user switch. A miss retries against a freshly built index, so a project added
 moments ago is found.
@@ -180,13 +180,13 @@ moments ago is found.
 selection whenever a `default*` prop changes. Seeds: the matched project, the rendered template as
 `initialPrompt`, and the last send's selections (`launch` in storage). The composer only resolves a
 request; `send` on the server spawns it with the card's title and `pluginMetadata: { card }`, then
-saves the selections — after the spawn, so a selection bb refused is not what the next card opens on.
+saves the selections — after the spawn, so a selection VesnALIA refused is not what the next card opens on.
 
 The draft is kept per card (`draftKey`) and survives closing, so the dialog closes on every ordinary
 dismissal; Paseo's refusal to close while the prompt was edited is moot. Providers without a
 selectable model are the composer's to leave out.
 
-Dropped from Paseo: the transcript row (`board-item` timeline card) — bb has no API for a plugin to
+Dropped from Paseo: the transcript row (`board-item` timeline card) — VesnALIA has no API for a plugin to
 append a row to a thread's timeline; the card lives in the prompt and the thread's plugin metadata,
 which *The card on a thread* below draws.
 Also dropped: opening the card in a browser tab beside the new thread (`openUrl` follows the user's
@@ -196,7 +196,7 @@ composer's environment picker replaces.
 ## Add to chat
 
 `app/add-to-chat-button.tsx` sits beside Send to chat in the detail panel and writes the card into a
-chat's draft, through bb 0.45's `useComposers()`, so it needs bb 0.45 at least: on 0.44 the hook does
+chat's draft, through VesnALIA 0.45's `useComposers()`, so it needs VesnALIA 0.45 at least: on 0.44 the hook does
 not exist and the panel would crash. It is always there, as a menu: the composers on screen
 first (named by `scope`, through the sidebar's thread and project names), then up to eight sidebar
 threads that are not on screen, the card's projects' first (`sendOptions`' candidates) and the most
@@ -205,19 +205,19 @@ recently updated first. `chatTargets` in `app/add-to-chat.ts` makes that list.
 - **The Send to chat dialog's composer is never a target.** `experimental_NewThreadComposer` is a
   new-thread composer, and `useComposers()` lists it like any other; 0.2.0 showed Add to chat only while
   a composer was on screen, so it appeared only behind the open dialog. No handle field names the
-  component that drew it (bb 0.45 builds `key` from the `draftKey`, but that format is not documented),
+  component that drew it (VesnALIA 0.45 builds `key` from the `draftKey`, but that format is not documented),
   so the board passes `sendDialogOpen` down and `chatTargets` drops every new-thread composer while it
   is set. The dialog is modal, so no other new-thread composer can be picked meanwhile anyway.
-- **A thread that is not on screen is opened, then written to.** bb 0.45 has no way to write a draft
+- **A thread that is not on screen is opened, then written to.** VesnALIA 0.45 has no way to write a draft
   that no composer shows: thread drafts live in the client, and a composer handle comes only from
   `useComposer()` or `useComposers()`. So picking such a thread puts the card in `pendingAdds`
   (`app/pending-add.ts`, one per window: while it waits, the menu disables the other threads with
   "Adding to <thread>…", and the store refuses a second request, so no card is dropped unseen; chats on
-  screen still take a card at once) and calls `useBbNavigate().toThread(id)` with no `split`: the
+  screen still take a card at once) and calls `useAliaNavigate().toThread(id)` with no `split`: the
   thread opens in the board's place, as the sidebar opens it. 0.5.0 passed `split: true`, and every
   pick added another pane beside the board until the window was a pile of splits; keeping a thread
   beside the board is the user's call, from the sidebar. (SDK 0.6.34 made
-  `experimental_useSidebarThreadActions`, which 0.4 used, internal; that set `engines.bb` to `>=0.46`,
+  `experimental_useSidebarThreadActions`, which 0.4 used, internal; that set `engines.alia` to `>=0.46`,
   and *The card on a thread* raised it to `>=0.47`.) Navigating unmounts the
   board; that is why `PendingAddToChat` (`app/pending-add-delivery.tsx`), in the app overlay, delivers
   the card once a `thread`-scoped composer for that thread appears, and gives up with a toast after
@@ -251,22 +251,22 @@ recently updated first. `chatTargets` in `app/add-to-chat.ts` makes that list.
 `send` stores `{ card }` as the thread's plugin metadata; `app/thread-card-slots.tsx` reads it back.
 Add to chat writes no metadata, so only threads the board started have a card.
 
-- **Info tab row** (`experimental_threadInfoRow`, bb 0.47, group `thread`): one `getPluginMetadata`
+- **Info tab row** (`experimental_threadInfoRow`, VesnALIA 0.47, group `thread`): one `getPluginMetadata`
   per mounted Info tab, aborted on unmount; renders null without a card, and on a failed read (logged
   to the console — the row is an extra). The reference links to GitHub through `UrlLink`, only for an
   http or https URL (`isOpenableLink`).
-- **Sidebar row item** (`experimental_threadRowMetadata`, bb 0.48): bb's sidebar draws the metadata line
+- **Sidebar row item** (`experimental_threadRowMetadata`, VesnALIA 0.48): VesnALIA's sidebar draws the metadata line
   only while the `threadRowMetadata` experiment is on (off by default) and the user turns on Organize →
   Rows → Metadata, and calls `useData` only while a list draws one — so with either off the plugin does
   no work at all. `useThreadCards` runs once for the app: it reads only threads whose `originPluginId`
   is this plugin's, each once (a card never changes after the spawn), 200 per
-  `experimental_listPluginMetadata` call. A failed batch is read again on the next list bb hands over,
+  `experimental_listPluginMetadata` call. A failed batch is read again on the next list VesnALIA hands over,
   not on a timer.
-- **The row item's slot is feature-checked** (`registerThreadCard`): bb 0.47's slots have no
-  `experimental_threadRowMetadata`, and raising `engines.bb` to 0.48 for an experiment-gated badge would
+- **The row item's slot is feature-checked** (`registerThreadCard`): VesnALIA 0.47's slots have no
+  `experimental_threadRowMetadata`, and raising `engines.alia` to 0.48 for an experiment-gated badge would
   cost every 0.47 user the Info row. The Info row and `navPanel.experimental_usePageTitle` (the
-  template page names itself) are not checked: bb 0.46's collector throws on the unknown `navPanel` key,
-  so `engines.bb` is `>=0.47`.
+  template page names itself) are not checked: VesnALIA 0.46's collector throws on the unknown `navPanel` key,
+  so `engines.alia` is `>=0.47`.
 - The cards' parse (`cardFromMetadata`) reads only the four fields it draws, so a card written by
   another version of the board, whose other fields differ, still shows.
 
@@ -274,15 +274,15 @@ Add to chat writes no metadata, so only threads the board started have a card.
 
 | Where | What |
 | --- | --- |
-| `bb.settings` (host-rendered form) | `login` |
-| `bb.storage.kv` `display` | `hiddenRepositories`, `detailWidthFraction` — toggled and dragged on the board, not form fields |
-| `bb.storage.kv` `prompts` | The templates; edited by `app/prompt-settings.tsx`, normalised on save |
-| `bb.storage.kv` `launch` | The last send's composer selections, with its `projectId`; `launchSeedsFor` seeds the environment only into that project, because it names a branch or a reusable environment of that project |
+| `alia.settings` (host-rendered form) | `login` |
+| `alia.storage.kv` `display` | `hiddenRepositories`, `detailWidthFraction` — toggled and dragged on the board, not form fields |
+| `alia.storage.kv` `prompts` | The templates; edited by `app/prompt-settings.tsx`, normalised on save |
+| `alia.storage.kv` `launch` | The last send's composer selections, with its `projectId`; `launchSeedsFor` seeds the environment only into that project, because it names a branch or a reusable environment of that project |
 
 Each write publishes on its realtime channel (`shared/schemas.ts`) so every window follows. Display
 writes are serialised, so a filter toggle and a width commit cannot drop each other.
 
-`shared/contract.ts` imports `defineRpcContract` from the SDK root, which bb provides to the server
+`shared/contract.ts` imports `defineRpcContract` from the SDK root, which VesnALIA provides to the server
 bundle only, so the app imports it as a type only; what the app needs at run time is in
 `shared/schemas.ts`. `app/imports.test.ts` enforces it. Since the SDK became a production dependency
 (0.6.0), a value import would no longer fail a git install's build — it would quietly bundle

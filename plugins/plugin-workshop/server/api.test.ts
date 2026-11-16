@@ -33,7 +33,7 @@ describe("Api.board", () => {
   it("a card with a work sits in the column of its stage and carries the work", async () => {
     const r = await rig();
     expect(await card(r, "hello")).toMatchObject({
-      id: "hello", name: "hello", column: "context", bbState: "running", stateStale: false,
+      id: "hello", name: "hello", column: "context", aliaState: "running", stateStale: false,
       work: { id: r.id, key: r.key, stage: 1, state: "agent", stale: false },
     });
   });
@@ -49,26 +49,26 @@ describe("Api.board", () => {
     r.ports.git.setRepo(pluginDir("raw"), {});
     await r.catalog.sync();
     expect(await card(r, "hello")).toMatchObject({ column: "live", work: null });
-    expect(await card(r, "mail")).toMatchObject({ column: "live", bbState: "running", work: null });
-    expect(await card(r, "tags")).toMatchObject({ column: "off", bbState: "disabled" });
-    expect(await card(r, "raw")).toMatchObject({ column: "off", bbState: "not-installed", labels: expect.arrayContaining(["not installed"]) });
+    expect(await card(r, "mail")).toMatchObject({ column: "live", aliaState: "running", work: null });
+    expect(await card(r, "tags")).toMatchObject({ column: "off", aliaState: "disabled" });
+    expect(await card(r, "raw")).toMatchObject({ column: "off", aliaState: "not-installed", labels: expect.arrayContaining(["not installed"]) });
   });
 
-  it("the state in bb is shown beside the column; a list that did not come is «stale data»", async () => {
+  it("the state in VesnALIA is shown beside the column; a list that did not come is «stale data»", async () => {
     const r = await rig();
     r.ports.plugins.add({ id: "hello", state: "error", error: "boom" });
     await r.catalog.sync();
-    expect(await card(r, "hello")).toMatchObject({ column: "context", bbState: "error", stateStale: false });
+    expect(await card(r, "hello")).toMatchObject({ column: "context", aliaState: "error", stateStale: false });
     r.ports.plugins.failList = true;
     await r.catalog.sync();
-    expect(await card(r, "hello")).toMatchObject({ bbState: "error", stateStale: true, labels: expect.arrayContaining(["stale data"]) });
+    expect(await card(r, "hello")).toMatchObject({ aliaState: "error", stateStale: true, labels: expect.arrayContaining(["stale data"]) });
   });
 
   it("«needs configuration» is a label, not a failure", async () => {
     const r = await rig();
     r.ports.plugins.add({ id: "hello", state: "needs-configuration" });
     await r.catalog.sync();
-    expect(await card(r, "hello")).toMatchObject({ bbState: "needs-configuration", labels: expect.arrayContaining(["needs configuration"]) });
+    expect(await card(r, "hello")).toMatchObject({ aliaState: "needs-configuration", labels: expect.arrayContaining(["needs configuration"]) });
   });
 
   it("a vanished plugin lands in «Retired» with the reason as a label", async () => {
@@ -78,7 +78,7 @@ describe("Api.board", () => {
     await r.ports.fs.remove(pluginDir("hello"));
     await r.catalog.sync();
     const c = await card(r, "hello");
-    expect(c).toMatchObject({ column: "off", bbState: "not-installed" });
+    expect(c).toMatchObject({ column: "off", aliaState: "not-installed" });
     expect(c.labels).toContain("gone: plugin not installed, no folder");
   });
 

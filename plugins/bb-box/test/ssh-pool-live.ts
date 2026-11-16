@@ -24,8 +24,8 @@ import { MemoryStorage, shippedKind } from "./helpers.ts";
 
 const rig = process.env.SSH_POOL_RIG;
 const run = promisify(execFile);
-const HOOK = "/usr/local/libexec/bb-box/reset-machine";
-const HELPER = "/usr/local/libexec/bb-box/machine";
+const HOOK = "/usr/local/libexec/alia-box/reset-machine";
+const HELPER = "/usr/local/libexec/alia-box/machine";
 
 const made: Backend[] = [];
 
@@ -208,14 +208,14 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
   it("finishes a whole-machine reset after the machine restarts during it", async () => {
     const pool = backend("docker.json");
     // A hook that says it restarts the machine to finish.
-    await onMachine("systemd", `cp ${HOOK} ${HOOK}.saved && printf '#!/bin/sh\\ntouch "$BB_BOX_RESTARTING"\\nsleep 600\\n' >${HOOK}`);
+    await onMachine("systemd", `cp ${HOOK} ${HOOK}.saved && printf '#!/bin/sh\\ntouch "$ALIA_BOX_RESTARTING"\\nsleep 600\\n' >${HOOK}`);
     try {
       const guest = await acquire(pool, "linux");
       const user = String(guest.data?.user);
       const uid = await inBox(pool, guest, "linux", "id -u");
       const generation = (await member(pool, "systemd")).generation;
       const released = pool.release(guest, releaseHooks().hooks);
-      await onMachine("systemd", "until [ -e /var/lib/bb-box/restore/restarting ]; do sleep 0.2; done");
+      await onMachine("systemd", "until [ -e /var/lib/alia-box/restore/restarting ]; do sleep 0.2; done");
       // The restart the hook asked for, as docker restart does to the rig's machine.
       await run("docker", ["restart", "bbbox-sshpool-systemd"], { timeout: 120_000 });
       await released;
@@ -239,13 +239,13 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
       const uid = await inBox(pool, guest, "linux", "id -u");
       const generation = (await member(pool, "systemd")).generation;
       const released = pool.release(guest, releaseHooks().hooks);
-      await onMachine("systemd", "until [ -e /var/lib/bb-box/restore/boot ]; do sleep 0.2; done; sleep 1");
+      await onMachine("systemd", "until [ -e /var/lib/alia-box/restore/boot ]; do sleep 0.2; done; sleep 1");
       await run("docker", ["restart", "bbbox-sshpool-systemd"], { timeout: 120_000 });
       await released;
       const broken = await member(pool, "systemd");
       assert.equal(broken.state, "out-of-service");
       assert.match(broken.reason ?? "", /The machine restarted before reset-machine finished/);
-      assert.equal(await onMachine("systemd", "ls /var/lib/bb-box/restore.failed/log | wc -l"), "1", "the hook's log stays for the operator");
+      assert.equal(await onMachine("systemd", "ls /var/lib/alia-box/restore.failed/log | wc -l"), "1", "the hook's log stays for the operator");
 
       await onMachine("systemd", `mv -f ${HOOK}.saved ${HOOK}`);
       await pool.returnToService!("systemd");
@@ -263,7 +263,7 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
     const guest = await acquire(pool, "linux");
     const user = String(guest.data?.user);
     try {
-      // The helper refuses, from BB Box and from an operator.
+      // The helper refuses, from VesnALIA Box and from an operator.
       assert.equal(await onMachine("plain", `printf 'install=live\\n' | ${HELPER} reset; echo $?`), "4");
       assert.equal(await onMachine("plain", `${HELPER} reset </dev/null; echo $?`), "4");
       // As after an upgrade that needs a newer helper.
@@ -284,7 +284,7 @@ describe("SSH host pool on the Docker rig", { skip: rig ? false : "set SSH_POOL_
     const user = String(guest.data?.user);
     const uid = await inBox(pool, guest, "linux", "nohup sleep 1000 >/dev/null 2>&1 & id -u");
     // The helper's first step, after which the connection dropped.
-    await onMachine("plain", "mv /var/lib/bb-box/owner /var/lib/bb-box/resetting");
+    await onMachine("plain", "mv /var/lib/alia-box/owner /var/lib/alia-box/resetting");
     const fresh = backend("settings.json");
     const left = (await fresh.held()).find((other) => other.ref === "plain");
     assert.ok(left, "the new instance finds the machine");

@@ -1,4 +1,4 @@
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { z } from "zod";
 
 export const SIDECHAT_ACTIVITY_CHANGED_CHANNEL = "tabs-sidechat-activity-changed";
@@ -22,7 +22,7 @@ const ACTIVE_INDICATORS = new Set([
 ]);
 
 export interface ThreadWorkIndex {
-  /** Chats for which BB directly reports work activity. */
+  /** Chats for which VesnALIA directly reports work activity. */
   directlyWorkingThreadIds: ReadonlySet<string>;
   /** Ancestors of working chats; their tabs should show activity too. */
   nestedWorkingAncestorIds: ReadonlySet<string>;

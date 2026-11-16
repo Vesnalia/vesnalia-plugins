@@ -64,7 +64,7 @@ export function providerMonogram(displayName: string): string {
   if (words.length >= 2) {
     return `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`.toUpperCase();
   }
-  const word = words[0] ?? "BB";
+  const word = words[0] ?? "ALIA";
   if (word.length === 1) return word.toUpperCase();
   return `${word[0]}${word.at(-1)}`.toUpperCase();
 }

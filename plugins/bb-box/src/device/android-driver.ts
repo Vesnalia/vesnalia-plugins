@@ -39,7 +39,7 @@ import { inBox, type DevicePaths } from "./paths.ts";
 import { decode, encode } from "./protobuf.ts";
 import { EMULATOR_SCHEMA, GRPC_METHODS } from "./schemas.ts";
 
-export const ENCODER_PROGRAM = "/usr/local/bin/bb-box-h264";
+export const ENCODER_PROGRAM = "/usr/local/bin/alia-box-h264";
 export const ENCODER_KBPS = 8_000;
 export const ENCODER_FPS = 60;
 export const WATCH_MS = 5_000;

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { loadPluginApp, renderSlot } from "@get-bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@vesnalia/plugin-sdk/testing/app";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { rpcContract, type BannerDto, type FeedDto, type FlareDto } from "../src/contract";
@@ -183,7 +183,7 @@ describe("the Flares tab", () => {
     });
   };
 
-  it("shows the companion as bb draws a reply, with flares it lacks as cards above, and switches to cards on request", async () => {
+  it("shows the companion as VesnALIA draws a reply, with flares it lacks as cards above, and switches to cards on request", async () => {
     await render({
       flares: [
         flare({ id: "fl_new", title: "Just sent", createdAt: NOW - 5_000 }),
@@ -194,13 +194,13 @@ describe("the Flares tab", () => {
       truncated: false,
       companionThreadId: "thr_companion",
     });
-    const chat = await screen.findByTestId("bb-thread-chat");
+    const chat = await screen.findByTestId("alia-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe("thr_companion");
     expect(chat.getAttribute("data-variant")).toBe("timeline");
     expect(chat.getAttribute("data-layout")).toBe("document");
     expect(screen.getByText("1 flare is on its way.")).toBeTruthy();
-    expect(screen.getByTestId("bb-thread-chat-leading-content").textContent).toContain("Sent before the companion");
-    expect(screen.getByTestId("bb-thread-chat-leading-content").textContent).not.toContain("Just sent");
+    expect(screen.getByTestId("alia-thread-chat-leading-content").textContent).toContain("Sent before the companion");
+    expect(screen.getByTestId("alia-thread-chat-leading-content").textContent).not.toContain("Just sent");
     const toolbar = () =>
       [...document.querySelectorAll("button")]
         .map((button) => button.textContent?.trim() || button.getAttribute("aria-label") || "")
@@ -208,7 +208,7 @@ describe("the Flares tab", () => {
         .map((text) => (/child threads/i.test(text) ? "Child threads" : text.startsWith("Copy all") ? "Copy all" : text));
     const before = toolbar();
     fireEvent.click(screen.getByText("Cards"));
-    expect(screen.queryByTestId("bb-thread-chat")).toBeNull();
+    expect(screen.queryByTestId("alia-thread-chat")).toBeNull();
     expect(await screen.findByText("Drawn")).toBeTruthy();
     // The same buttons in the same places, whichever view is showing.
     expect(toolbar()).toEqual(before);

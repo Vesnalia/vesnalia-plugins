@@ -6,7 +6,7 @@
 // its row while the child's card sits in the Working lane's frame.
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import { Board } from "../components/board";
 import type { GroupBy, GroupingContext } from "../components/grouping";
 import { planGroupBoxes } from "../components/group-boxes";

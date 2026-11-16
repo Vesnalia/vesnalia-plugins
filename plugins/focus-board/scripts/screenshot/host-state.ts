@@ -1,5 +1,5 @@
 /**
- * The harness host's row: the state a real bb host owns OUTSIDE any one
+ * The harness host's row: the state a real VesnALIA host owns OUTSIDE any one
  * window (the done index, the sweep-keep flags, the family fold row, the
  * feature-group registry and assignments, the per-column rank orders).
  *
@@ -11,7 +11,7 @@
  *
  * Writes travel as `HostOp` records (`./host-log` carries them between pages)
  * and each one yields the realtime signal the real server publishes after that
- * write, so a receiving page refetches exactly the way bb's second window does.
+ * write, so a receiving page refetches exactly the way VesnALIA's second window does.
  *
  * Rank moves deliberately run through `applyRankMoveFractions`, the shared op
  * the live server calls, not a re-spelled copy — the list-model copy drifted

@@ -1,17 +1,17 @@
 # Crew
 
-A persistent agent team for BB. A harness wraps a model; a crew wraps
+A persistent agent team for VesnALIA. A harness wraps a model; a crew wraps
 harnesses.
 
 A crew is described in a `crew.yaml`: groups of members, each with a fixed
 address (`dev-owner@my-crew`), its own provider and model, a role and
-permissions. `bb crew apply` reconciles the file against BB threads — the
+permissions. `alia crew apply` reconciles the file against VesnALIA threads — the
 lead's thread is the parent, every member is a child thread — and keeps doing
 so as the file changes. Members message each other, share a channel and a work
-queue, and several crews in one project coordinate through their leads, BB
+queue, and several crews in one project coordinate through their leads, VesnALIA
 Tasks and `main`. You see who works, who waits and who needs you.
 
-[Graph Studio](../bb-plugin-graph-studio) describes a flow that ends; a crew is a team that stays. Both
+[Graph Studio](../alia-plugin-graph-studio) describes a flow that ends; a crew is a team that stays. Both
 combine: a Graph Studio `member` node runs a step on a crew member instead of
 a fresh thread.
 
@@ -25,11 +25,11 @@ Inspired by [OpenRig](https://github.com/mvschwarz/openrig) for
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/sajov/bb-plugins.git \
-  --subdirectory bb-plugin-crew
+alia plugin install git:https://github.com/sajov/bb-plugins.git \
+  --subdirectory alia-plugin-crew
 ```
 
-Requires BB with plugin SDK 0.5.29 or newer.
+Requires VesnALIA with plugin SDK 0.5.29 or newer.
 
 ## A crew file
 
@@ -62,9 +62,9 @@ own worktree; readers share the crew's.
 
 `skills:` and `graphs:` are optional on crew, group and member, and inherit
 the same way `instructions` does (crew → group → member, each name kept
-once). `skills:` names skills to prefer, resolved against `~/.bb/skills`,
-`~/.bb/skills-generated`, `~/.claude/skills` and the project's own
-`.bb/skills` and `.claude/skills`; an unknown name
+once). `skills:` names skills to prefer, resolved against `~/.vesnalia/skills`,
+`~/.vesnalia/skills-generated`, `~/.claude/skills` and the project's own
+`.vesnalia/skills` and `.claude/skills`; an unknown name
 only warns. `graphs:` names Graph Studio graphs the member may run with
 `crew_graph_run`; an unknown graph id only warns too — nothing is installed
 or validated beyond the name.
@@ -80,39 +80,39 @@ never sees the member's thread.
 Every run is linked back to the member and crew that started it (durably, so
 it survives a restart): the member card lists it with its live status, and **Needs you** gets an entry with reason
 `graph-approval` and the waiting human node's question while a run sits on one
-— gone again once the run continues or ends. `bb crew stop` cancels a crew's
-open runs; `bb crew delete --threads delete` also deletes their worker
-threads, since Graph Studio's own threads are not BB children of the
+— gone again once the run continues or ends. `alia crew stop` cancels a crew's
+open runs; `alia crew delete --threads delete` also deletes their worker
+threads, since Graph Studio's own threads are not VesnALIA children of the
 member's thread.
 
 ## Usage
 
 ```sh
-bb crew templates                              # pair, trio, research
-bb crew plan trio                              # read-only: one action per member
-bb crew apply crew.yaml [--fresh <member>…] [--confirm-full]
-bb crew ps                                     # members, thread state, shift, provider/model
-bb crew needs                                  # who waits for you, with the question
-bb crew send dev-impl@trio "Start with step 1" --subject TASK-1
-bb crew log --crew trio [--chain <id>] [--cross-crew]
-bb crew merges | approve <mr> | reject <mr> "reason"
-bb crew snapshot trio && bb crew restore <snapshot>
-bb crew handover dev-impl@trio
-bb crew stop trio [--archive]
-bb crew delete trio [--threads archive|delete|keep]
+alia crew templates                              # pair, trio, research
+alia crew plan trio                              # read-only: one action per member
+alia crew apply crew.yaml [--fresh <member>…] [--confirm-full]
+alia crew ps                                     # members, thread state, shift, provider/model
+alia crew needs                                  # who waits for you, with the question
+alia crew send dev-impl@trio "Start with step 1" --subject TASK-1
+alia crew log --crew trio [--chain <id>] [--cross-crew]
+alia crew merges | approve <mr> | reject <mr> "reason"
+alia crew snapshot trio && alia crew restore <snapshot>
+alia crew handover dev-impl@trio
+alia crew stop trio [--archive]
+alia crew delete trio [--threads archive|delete|keep]
 ```
 
 In the app, **Crews** in the sidebar opens one zoomable canvas with four
 levels: all projects → one project → one crew → one member. A breadcrumb shows
 where you are, Esc goes up one level. The project filters and the **Crews**,
-**Tasks** and **Done** toggles sit on the top level; BB Tasks labelled
+**Tasks** and **Done** toggles sit on the top level; VesnALIA Tasks labelled
 `crew-<crew>` are drawn as edges to the crew working on them. Every card shows
 the crew's state (running, stopped, waits on you), and the header counts
 **Needs you** across all projects.
 
 Selecting a crew opens its side panel with the tabs Members, Table & Feed and
-Edit crew file (YAML and form, BB's provider/model picker, a preview identical
-to `bb crew plan`, one Apply button); **Edit** opens the same editor full
+Edit crew file (YAML and form, VesnALIA's provider/model picker, a preview identical
+to `alia crew plan`, one Apply button); **Edit** opens the same editor full
 screen. The member card has Open, Handover and Reset; Replay steps through the
 crew's messages. Member threads carry a header badge, and `::crew{crew="…"}`
 renders a live card in chat that opens the crew in the thread sidebar.
@@ -152,25 +152,25 @@ Where you see it:
   cards show lead-to-lead traffic and `waitsFor`.
 - **A crew's Table & Feed tab:** messages to and from other crews are marked;
   clicking one shows the whole chain.
-- **CLI:** `bb crew log --cross-crew`, `bb crew directory`, `bb crew deps`.
+- **CLI:** `alia crew log --cross-crew`, `alia crew directory`, `alia crew deps`.
 
 ```sh
-bb crew send api-lead@api "Is the header schema stable?" --subject TASK-1
-bb crew log --cross-crew
-bb crew directory
-bb crew deps --crew web
+alia crew send api-lead@api "Is the header schema stable?" --subject TASK-1
+alia crew log --cross-crew
+alia crew directory
+alia crew deps --crew web
 ```
 
 ## Limits
 
-- BB has no read-only permission mode, so `permissions: ask` runs as
+- VesnALIA has no read-only permission mode, so `permissions: ask` runs as
   `accept-edits`; a checker stays read-only by its role.
-- BB names worktree branches itself (`bb/<title>-<thread>`).
-- Merge, rebase and checks run git in the BB server process: the repository
-  must be on the machine BB runs on. Worktrees on other hosts are refused with
+- VesnALIA names worktree branches itself (`alia/<title>-<thread>`).
+- Merge, rebase and checks run git in the VesnALIA server process: the repository
+  must be on the machine VesnALIA runs on. Worktrees on other hosts are refused with
   a clear reason.
 - A member session started before a plugin reload keeps its old tool set until
-  it restarts (`bb crew apply --fresh <member>`).
+  it restarts (`alia crew apply --fresh <member>`).
 - Sidebar row icons use an experimental SDK API.
 
 ## Development
@@ -179,5 +179,5 @@ bb crew deps --crew web
 npm install --include=dev --cache "$TMPDIR/npm-cache"
 npx tsc --noEmit
 npx vitest run
-bb plugin build && bb plugin reload crew
+alia plugin build && alia plugin reload crew
 ```

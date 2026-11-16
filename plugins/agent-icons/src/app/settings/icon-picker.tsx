@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  experimental_Icon as BbIcon,
+  experimental_Icon as AliaIcon,
   experimental_useRpcMutation,
   experimental_useRpcQuery,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 import { Button } from "../../../components/ui/button";
 import {
   Dialog,
@@ -79,7 +79,7 @@ function SetTab({
 const builtinItems: GridItem[] = BUILTIN_ICONS.map((name) => ({
   id: name,
   name,
-  render: () => <BbIcon name={name} fallback="CircleHelp" className="size-6" aria-hidden />,
+  render: () => <AliaIcon name={name} fallback="CircleHelp" className="size-6" aria-hidden />,
 }));
 
 export function IconPicker({

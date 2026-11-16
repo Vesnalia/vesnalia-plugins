@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { PluginKvStorage } from "@get-bb/plugin-sdk";
+import type { PluginKvStorage } from "@vesnalia/plugin-sdk";
 import { createOfficeConfigModule, OfficeConfigError } from "./office-config";
 import { DEFAULT_OFFICE_CONFIG } from "./office-config-schema";
 import { compileOfficeBlueprint } from "./office-blueprint";

@@ -1,23 +1,19 @@
 {
-  "name": "bb-plugin-radar",
+  "name": "alia-plugin-radar",
   "version": "0.5.4",
   "type": "module",
   "private": true,
   "description": "Live queues of the PRs and issues that need you on GitHub and Delta (plus optional read-only Gitstream history), with one-click review threads.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/steveafrost/bb-plugin-radar.git"
-  },
   "scripts": {
-    "build": "bb plugin build",
+    "build": "alia plugin build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "engines": {
-    "bb": ">=0.46",
-    "bbPluginSdk": ">=0.6.37"
+    "alia": ">=0.46",
+    "aliaPluginSdk": ">=0.6.37"
   },
-  "bb": {
+  "alia": {
     "name": "Radar",
     "description": "A live panel of the pull requests and issues that need you, on GitHub and Delta, plus optional read-only Gitstream history. Describe what to track and an LLM turns it into a lane; start a review or triage thread from any row.",
     "branding": {
@@ -33,7 +29,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@get-bb/plugin-sdk": "0.6.37",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "better-sqlite3": "12.11.1",
@@ -42,5 +37,22 @@
     "typescript": "^5.7.0",
     "vitest": "^5.0.4"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@vesnalia/plugin-sdk": ">=0.6.37"
+  },
+  "peerDependenciesMeta": {
+    "@vesnalia/plugin-sdk": {
+      "optional": true
+    }
+  },
+  "homepage": "https://github.com/Vesnalia/vesnalia-plugins/tree/main/plugins/radar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vesnalia/vesnalia-plugins.git",
+    "directory": "plugins/radar"
+  },
+  "bugs": {
+    "url": "https://github.com/Vesnalia/vesnalia-plugins/issues"
+  }
 }

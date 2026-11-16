@@ -14,7 +14,7 @@ umask 022
 
 pins=$1
 artifacts=$2
-prefix=${3:-/opt/bb-box-tools}
+prefix=${3:-/opt/alia-box-tools}
 bindir=${4:-/usr/local/bin}
 
 die() {

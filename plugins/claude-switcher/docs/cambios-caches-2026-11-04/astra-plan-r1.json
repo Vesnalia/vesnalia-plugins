@@ -22,7 +22,7 @@
     "Traced dispatch, placement, seat reservations and queues, rejection cleanup, activity/model persistence, rescue, after-turn placement, rebalance and account writers.",
     "Inspected relevant existing dispatch and rescue test harnesses without executing them.",
     "Inspected Calor's literal tick text, send-error handling, retry and expiry decisions.",
-    "Inspected bb-app 0.48.1 dispatch rejection and queued-message handling.",
+    "Inspected alia-app 0.48.1 dispatch rejection and queued-message handling.",
     "Read the cache-analysis report and simulation logic for options T and A–G."
   ],
   "limitations": [

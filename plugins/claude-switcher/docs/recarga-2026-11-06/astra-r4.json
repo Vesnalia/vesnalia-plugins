@@ -13,7 +13,7 @@
       "id": "R4-002",
       "severity": "medium",
       "path": "server.ts:7752",
-      "evidence": "Sigue abierto RS-005: T1 arranca en A, su proyecto pasa a B y, mientras el plugin está descargado, T1 termina y T2 empieza en el mismo hilo sobre B. storedKey acepta la entrada antigua porque solo comprueba threadId y existencia de A. B queda infracontada y puede admitir turnos por encima de su capacidad. El comentario reconoce el caso; latestTurn (línea 6645) ya permite obtener requestId del registro de bb.",
+      "evidence": "Sigue abierto RS-005: T1 arranca en A, su proyecto pasa a B y, mientras el plugin está descargado, T1 termina y T2 empieza en el mismo hilo sobre B. storedKey acepta la entrada antigua porque solo comprueba threadId y existencia de A. B queda infracontada y puede admitir turnos por encima de su capacidad. El comentario reconoce el caso; latestTurn (línea 6645) ya permite obtener requestId del registro de VesnALIA.",
       "fix": "Persistir la identidad del intento junto con la cuenta y comprobarla al reconstruir. Reutilizar la cuenta guardada únicamente si corresponde al mismo intento; proteger las lecturas asíncronas frente a cambios de turno y cubrir la sustitución durante una recarga."
     }
   ],

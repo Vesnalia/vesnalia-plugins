@@ -13,7 +13,7 @@ export const activeRun = (record: FactoryRecord) =>
   record.runs.find(run => ['starting', 'running', 'uncertain'].includes(run.status));
 export function newRecord(item: WorkItem): FactoryRecord {
   return {
-    schemaVersion: 1, projectId: item.bbProjectId, source: item.source,
+    schemaVersion: 1, projectId: item.aliaProjectId, source: item.source,
     locator: item.locator, version: 0, stage: 'Intake',
     scopeDigest: scopeDigest(item), plans: [], approvedDigest: null, runs: [],
     admission: { kind: 'manual' },
@@ -91,7 +91,7 @@ export function startRun(record: FactoryRecord, kind: FactoryRunKind, retry: boo
   const run: FactoryRun = {
     id: randomUUID(), kind, status: 'starting' as const, threadId: null,
     environmentId: null, hostId: null, checkoutRoot: null, cursor: 0, turnId: null, pendingCompletion: null,
-    planDigest: record.approvedDigest, scopeDigest: record.scopeDigest, activity: 'Starting native BB session',
+    planDigest: record.approvedDigest, scopeDigest: record.scopeDigest, activity: 'Starting native VesnALIA session',
     error: null, output: '', reviewResult: null, buildResult: null, repairOf: null,
     continuationOf: null,
     updates: [], checks: [], changedFiles: [], steps: [],

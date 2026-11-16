@@ -42,7 +42,7 @@ export function EntryPane({
   const name = label(entry);
   const folderId = entryFolderId(entry);
   const about = ABOUT[entry.kind];
-  // Per-project and per-section folders take their names from bb.
+  // Per-project and per-section folders take their names from VesnALIA.
   const generated = entry.kind === "projects" || entry.kind === "sections";
 
   return (

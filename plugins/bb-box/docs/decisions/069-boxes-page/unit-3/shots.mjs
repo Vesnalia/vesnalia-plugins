@@ -22,7 +22,7 @@ async function skipSetup(page, url) {
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-const path = boxId === "settings" ? `${base}/settings/plugins/bb-box#option/monitor` : `${base}/plugins/bb-box/desktop/box/${boxId}`;
+const path = boxId === "settings" ? `${base}/settings/plugins/alia-box#option/monitor` : `${base}/plugins/alia-box/desktop/box/${boxId}`;
 await skipSetup(page, path);
 const rangeName = (range ?? "live") === "live" ? "Live" : range.replace("h", " h").replace("d", " d");
 async function chooseRange() {

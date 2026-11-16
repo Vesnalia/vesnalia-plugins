@@ -1,21 +1,21 @@
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { PROFILE } from "./agent-entry.js";
 import { unavailableUsage } from "./factory-usage.js";
 import { usageFetchMethod, usageHostContract, usageListMethod, usageMeasurementSchema, usageSourceContract, type UsageMeasurement } from "./usage-contract.js";
 
-export function registerUsageSource(bb: BbPluginApi, getApiKey: () => Promise<string | undefined>): () => void {
-  const worker = bb.hosts.experimental_client({ contract: usageHostContract });
+export function registerUsageSource(alia: AliaPluginApi, getApiKey: () => Promise<string | undefined>): () => void {
+  const worker = alia.hosts.experimental_client({ contract: usageHostContract });
   const cache = new Map<string, UsageMeasurement>();
   const pending = new Map<string, { refresh: boolean; promise: Promise<UsageMeasurement> }>();
   let generation = 0;
   const lifetime = new AbortController();
-  bb.onDispose(() => { lifetime.abort(); cache.clear(); pending.clear(); });
+  alia.onDispose(() => { lifetime.abort(); cache.clear(); pending.clear(); });
 
   async function load(hostId: string, refresh: boolean, signal: AbortSignal): Promise<UsageMeasurement> {
     const startedIn = generation;
-    const host = (await bb.sdk.hosts.list()).find((candidate) => candidate.id === hostId && candidate.type !== "ephemeral");
+    const host = (await alia.sdk.hosts.list()).find((candidate) => candidate.id === hostId && candidate.type !== "ephemeral");
     if (!host) throw new Error("Factory usage resource no longer exists.");
-    const providers = await bb.sdk.providers.list({ hostId });
+    const providers = await alia.sdk.providers.list({ hostId });
     if (!providers.some((provider) => provider.id === PROFILE.providerId)) throw new Error("Factory usage resource no longer exists.");
     const previous = cache.get(hostId);
     if (host.status === "disconnected") return { ...unavailableUsage("error", "Machine is disconnected."), observedAt: previous?.observedAt ?? null };
@@ -42,13 +42,13 @@ export function registerUsageSource(bb: BbPluginApi, getApiKey: () => Promise<st
     pending.set(hostId, { refresh, promise });
     return promise;
   }
-  bb.rpc.register(usageSourceContract, {
+  alia.rpc.register(usageSourceContract, {
     async [usageListMethod]() {
-      const hosts = (await bb.sdk.hosts.list()).filter((host) => host.type !== "ephemeral");
+      const hosts = (await alia.sdk.hosts.list()).filter((host) => host.type !== "ephemeral");
       // acp-droid has no bridge-owned usage implementation. This plugin owns
       // its source and must not set providerUsage on the ACP launch profile.
       const resources = (await Promise.all(hosts.map(async (host) => {
-        const providers = await bb.sdk.providers.list({ hostId: host.id });
+        const providers = await alia.sdk.providers.list({ hostId: host.id });
         if (!providers.some((provider) => provider.id === PROFILE.providerId)) return [];
         return [{ id: host.id, accountKey: null, providerId: PROFILE.providerId, label: PROFILE.displayName,
           scope: { kind: "host" as const, hostId: host.id, hostName: host.name } }];

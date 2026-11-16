@@ -18,9 +18,9 @@ TL;DR: The recorded choices below are supported by implementation details and Gi
 
 ## 001. Ask a chat agent to change its own directory when core cannot (active)
 
-**Context:** The implementation records that BB has no supported plugin API for repointing an existing chat’s working directory (`thread-move.ts:16-21`).
+**Context:** The implementation records that VesnALIA has no supported plugin API for repointing an existing chat’s working directory (`thread-move.ts:16-21`).
 
-**Decision:** Try BB’s experimental thread directory update; if it does not switch the environment, persist an `asked` move and send the chat an agent-only instruction to call `update_environment_directory` (`thread-move.ts:138-168`, `thread-move.ts:194-214`).
+**Decision:** Try VesnALIA’s experimental thread directory update; if it does not switch the environment, persist an `asked` move and send the chat an agent-only instruction to call `update_environment_directory` (`thread-move.ts:138-168`, `thread-move.ts:194-214`).
 
 **Status:** active
 
@@ -52,14 +52,14 @@ TL;DR: The recorded choices below are supported by implementation details and Gi
 
 **Sources:** `server.ts:177-192`, `server.ts:3247-3261`; commit `812830d9d512a883d59c6281aca590e980fed6c9`.
 
-## 004. Write BB's remembered project defaults directly until core has a setter (active)
+## 004. Write VesnALIA's remembered project defaults directly until core has a setter (active)
 
-**Context:** A chat created without an explicit provider (`bb thread spawn` without `--provider`, a new chat outside a section) starts from BB's `project_execution_defaults` row. Core writes that row only for chats created in its own composer (`origin === "app"`); section chats go through `threads.spawn` with `origin: "plugin"`, so the plugin's choice never reached BB. Plugin SDK 0.6.80 and core `main` (2026-10-25) only read the row. On 2026-10-26 project `proj_9tzjyzsumb` kept `acp-antigravity`, a provider with no bridge, and every chat spawned there without a flag failed.
+**Context:** A chat created without an explicit provider (`alia thread spawn` without `--provider`, a new chat outside a section) starts from VesnALIA's `project_execution_defaults` row. Core writes that row only for chats created in its own composer (`origin === "app"`); section chats go through `threads.spawn` with `origin: "plugin"`, so the plugin's choice never reached VesnALIA. Plugin SDK 0.6.80 and core `main` (2026-10-25) only read the row. On 2026-10-26 project `proj_9tzjyzsumb` kept `acp-antigravity`, a provider with no bridge, and every chat spawned there without a flag failed.
 
-**Decision:** Saving the project scope writes the project's resolved setting (its own pins, else the plugin-wide default) into BB's row in `<experimental_dataDir>/bb.db`, through the server's own better-sqlite3 build: `busy_timeout` 5000, one `INSERT … ON CONFLICT(project_id) DO UPDATE` in a `BEGIN IMMEDIATE` transaction, same as core's `upsertProjectExecutionDefaults`. The write is refused when the table lacks a column core uses, when BB has no such project, or when the provider has no live bridge on the project's machine. Sections and the plugin-wide default never write (`bb-remembered.ts`, `server.ts`).
+**Decision:** Saving the project scope writes the project's resolved setting (its own pins, else the plugin-wide default) into VesnALIA's row in `<experimental_dataDir>/alia.db`, through the server's own better-sqlite3 build: `busy_timeout` 5000, one `INSERT … ON CONFLICT(project_id) DO UPDATE` in a `BEGIN IMMEDIATE` transaction, same as core's `upsertProjectExecutionDefaults`. The write is refused when the table lacks a column core uses, when VesnALIA has no such project, or when the provider has no live bridge on the project's machine. Sections and the plugin-wide default never write (`alia-remembered.ts`, `server.ts`).
 
 **Status:** active, temporary — to be replaced by a core setter (`experimental_vkSetProjectExecutionDefaults` or an upstream `projects.setDefaultExecutionOptions`) that calls `upsertProjectExecutionDefaults` itself.
 
-**Consequences:** The plugin depends on BB's table layout; a changed layout makes the write fail with a visible message instead of writing a wrong row. BB's own composer may show the old choice until it reloads its project data.
+**Consequences:** The plugin depends on VesnALIA's table layout; a changed layout makes the write fail with a visible message instead of writing a wrong row. VesnALIA's own composer may show the old choice until it reloads its project data.
 
-**Sources:** `bb-remembered.ts`, `server.ts` (`rememberInBb`, `bbDefaultsFor`); core `apps/server/src/services/threads/project-execution-defaults.ts`.
+**Sources:** `alia-remembered.ts`, `server.ts` (`rememberInAlia`, `aliaDefaultsFor`); core `apps/server/src/services/threads/project-execution-defaults.ts`.

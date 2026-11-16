@@ -1,7 +1,7 @@
 /**
  * Scrolling the walkthrough tab's own scroll area, and nothing else. Copied from
  * `diff-review/app/scroll-within.ts` (same repository), which explains why: `Element.scrollIntoView`
- * scrolls every ancestor that can scroll, bb's containers around the tab included.
+ * scrolls every ancestor that can scroll, VesnALIA's containers around the tab included.
  */
 /** Where in `root` to put `element`: its top at the top, its middle in the middle, or as little as shows it. */
 export type ScrollBlock = "start" | "center" | "nearest";

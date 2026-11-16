@@ -43,7 +43,7 @@ export function advertisedSchema(schema: Readonly<Record<string, unknown>>): Rec
   return next;
 }
 
-/** bb's cap on a schema that configure() returns for one tool. */
+/** VesnALIA's cap on a schema that configure() returns for one tool. */
 const SCHEMA_OVERRIDE_MAX_BYTES = 128 * 1024;
 
 function hasReference(value: unknown): boolean {
@@ -54,7 +54,7 @@ function hasReference(value: unknown): boolean {
 
 /**
  * A machine's schema as a per-session override, or null to keep the
- * registered one. bb rejects an override that is too large or has a recursive
+ * registered one. VesnALIA rejects an override that is too large or has a recursive
  * reference, and one rejected override drops every tool the plugin selected
  * for that session, so anything doubtful falls back. Arguments are forwarded
  * untouched either way.

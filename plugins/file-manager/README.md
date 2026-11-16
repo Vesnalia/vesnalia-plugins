@@ -1,11 +1,11 @@
 # File Manager
 
-A bb plugin that adds a full-page file manager for the machine that runs your
-bb server. Browse, upload, download, move, rename and extract files under
-your home folder without leaving bb and without a shell.
+A VesnALIA plugin that adds a full-page file manager for the machine that runs your
+VesnALIA server. Browse, upload, download, move, rename and extract files under
+your home folder without leaving VesnALIA and without a shell.
 
 Everything the panel touches lives under one hard root — the home directory of
-the user running bb — and
+the user running VesnALIA — and
 every path is re-resolved and clamped on the server before a single byte moves.
 
 Interface: English and Russian — the EN | RU switch sits in the panel's title bar, or in the ⋯ menu of a File Manager tab.
@@ -21,14 +21,14 @@ Interface: English and Russian — the EN | RU switch sits in the panel's title 
   children indented underneath it, without navigating away from the current
   directory. Children are fetched on first open and cached afterwards.
 - **Upload** — drag and drop files or whole folders. Uploads are chunked,
-  resumable, and keep running while you browse elsewhere in bb.
+  resumable, and keep running while you browse elsewhere in VesnALIA.
 - **Open a file to read it** — double-click, `Enter`, or **Open** in the
-  right-click menu. Beside a thread the file goes to bb's own preview panel, so
+  right-click menu. Beside a thread the file goes to VesnALIA's own preview panel, so
   it opens as a tab next to the manager; on the standalone File Manager page,
-  where bb has no preview panel to offer, the plugin shows the file itself:
+  where VesnALIA has no preview panel to offer, the plugin shows the file itself:
   images, PDFs, video and audio play in place, Markdown is rendered (with the
   source one click away), and everything else — including `Makefile`,
-  `LICENSE` and files with no extension at all — opens in bb's source viewer
+  `LICENSE` and files with no extension at all — opens in VesnALIA's source viewer
   with syntax highlighting. Anything that turns out not to be text says so and
   offers the download. Double-clicking an archive still opens the extract
   dialog.
@@ -80,14 +80,14 @@ Interface: English and Russian — the EN | RU switch sits in the panel's title 
   the last crumb). Paste a path to a **file** and the panel opens its folder
   with that file selected.
 - **Reopens where you left off** — the folder you were last in comes back after
-  you leave the panel, reload the page or restart bb. A setting turns it off.
+  you leave the panel, reload the page or restart VesnALIA. A setting turns it off.
 - **Pick where it opens** — the plugin's settings page carries a folder
   browser for the start folder, so it is chosen rather than typed.
 - **Bookmark the folders you live in** — a star in the toolbar and a list
   beside it, kept on the server, up to fifty. A folder that disappears is
   marked rather than deleted behind your back.
 
-The panel appears in the bb sidebar as **File Manager** and is routed at
+The panel appears in the VesnALIA sidebar as **File Manager** and is routed at
 `/plugins/file-manager/files/*`. While uploads are running, the sidebar row
 shows how many are in flight. The same file manager also opens as a tab in the
 right-hand panel, next to a thread — see below.
@@ -127,7 +127,7 @@ A panel tab opened beside a thread gets one button the other surfaces do not:
 the checkout that thread is working in — the worktree the agent is editing —
 without typing a path or walking down from your home folder.
 
-It is only ever there when it can be used. bb runs plenty of threads that have
+It is only ever there when it can be used. VesnALIA runs plenty of threads that have
 no folder to go to, and rather than a button that does nothing, the reason
 moves into the overflow menu as a greyed-out line saying which of the three it
 is:
@@ -138,12 +138,12 @@ is:
 - *outside your home folder* — the checkout is real, but this plugin never
   leaves your home folder, so it will not open it.
 
-If the lookup itself fails — bb restarting, say — the button stays live and the
+If the lookup itself fails — VesnALIA restarting, say — the button stays live and the
 click retries; a second failure says so in a toast instead of doing nothing.
 
 ## Right-click a file link → show me where it is
 
-Right-click any file link in a message and bb's menu offers **Open with File
+Right-click any file link in a message and VesnALIA's menu offers **Open with File
 location**. It opens this file manager in the side panel, in the file's folder,
 with the file selected — the "reveal in folder" a chat surface otherwise has no
 way to do.
@@ -155,14 +155,14 @@ filter, so the file it meant is the only row on screen. A file that has since
 been renamed or deleted opens the nearest folder that still exists, and says
 which one. Only a path outside the home folder is refused outright.
 
-The same menu also lists **Open with Preview + location**: bb's own preview
+The same menu also lists **Open with Preview + location**: VesnALIA's own preview
 with one strip on top naming the folder and carrying the same *Open location*
-button. That entry exists for a reason worth knowing — bb picks an opener
+button. That entry exists for a reason worth knowing — VesnALIA picks an opener
 automatically per extension, and the plugin has to claim extensions to appear
 in the menu at all. So the preview wrapper is what a plain click lands on: the
 file still opens as a preview, plus one button.
 
-An archive is the exception, because bb's preview has nothing to show for one:
+An archive is the exception, because VesnALIA's preview has nothing to show for one:
 a link to a `.zip`, `.tar.gz`, `.7z` or `.rar` opens its contents under the
 same strip (see [Look inside an archive](#look-inside-an-archive)). *Extract…*
 there switches the tab to the file manager, on the archive's folder, with the
@@ -177,10 +177,10 @@ plugin, which renders them and takes comments on them (it absorbed the former
 pdf-viewer): a preview here could not show them, so claiming them would only
 add a weaker choice to *Open with*. And a name with
 no extension at all (`Makefile`, `LICENSE`, `.env`) gets no *Open with* rows
-from any plugin — bb matches openers by extension, so there is nothing for a
+from any plugin — VesnALIA matches openers by extension, so there is nothing for a
 plugin to claim.
 
-To take an extension back, use **Settings → File openers** and pin *BB preview*
+To take an extension back, use **Settings → File openers** and pin *VesnALIA preview*
 for it.
 
 ## Look inside an archive
@@ -237,7 +237,7 @@ password.
 ## Hand a file to the agent
 
 The paperclip and the composer's **+** attach files from the machine your
-browser runs on. This plugin adds the other machine — the one bb itself runs on
+browser runs on. This plugin adds the other machine — the one VesnALIA itself runs on
 — in three places:
 
 - **Type `@`** in any composer and start typing a name. Matches from your home
@@ -268,7 +268,7 @@ plus one sentence saying why there is no content. A file that was deleted
 between picking and sending says so instead of blocking the message.
 
 The same clamp applies as everywhere else: only files under the home folder of
-the user running bb can be mentioned, symlinks that point outside it are not
+the user running VesnALIA can be mentioned, symlinks that point outside it are not
 offered, and the path is re-checked on the server when the message is sent.
 
 ## Folders expand in place
@@ -286,7 +286,7 @@ the folder — the two gestures are deliberately different.
 | `←` on an expanded folder | collapse it |
 | `←` on a nested row | move the cursor to its parent row |
 | `Alt`+`←`, `Backspace` | go up one directory |
-| `Enter` | open: a folder navigates in, a file opens (bb's preview panel beside a thread, the built-in viewer otherwise), an archive opens the extract dialog |
+| `Enter` | open: a folder navigates in, a file opens (VesnALIA's preview panel beside a thread, the built-in viewer otherwise), an archive opens the extract dialog |
 | `Space` | quick look: show the selected file the same way. A folder does nothing — that is `Enter`'s job — and nothing is ever downloaded |
 | `Shift`+`F10`, the Menu key | open the context menu for the row under the cursor (the empty-space menu when no row is focused) |
 | `Ctrl`/`Cmd`+`L` | edit the path: the crumbs become a text field with the full path selected |
@@ -320,7 +320,7 @@ Three behaviors worth knowing:
   cursor happens to sit on.
 
 Which folders are open is remembered per absolute path — across navigation, a
-panel remount and a bb restart. It is stored client-side and capped at 200 open
+panel remount and a VesnALIA restart. It is stored client-side and capped at 200 open
 folders. **Collapse all folders** resets it.
 
 ## Gallery
@@ -348,10 +348,10 @@ Two differences, both on purpose:
 - **There are no column headers to sort by**, so sorting moves to the toolbar's
   sort menu, which sorts the tiles exactly as it sorts the rows.
 
-Thumbnails are streamed, never copied into the page: the panel asks bb for one
+Thumbnails are streamed, never copied into the page: the panel asks VesnALIA for one
 short-lived URL for the folder on screen and points each tile at a file under
 it, so a folder of 300 photos costs one request plus whatever your browser
-decides to fetch as you scroll — images load lazily. If your bb server is too
+decides to fetch as you scroll — images load lazily. If your VesnALIA server is too
 old to hand out such a URL, or an image will not decode, that tile quietly
 falls back to its type icon; nothing else changes.
 
@@ -376,7 +376,7 @@ What it accepts:
 | You paste | What happens |
 | --- | --- |
 | `/home/you/projects` | goes there |
-| `~`, `~/projects` | `~` is the root — the home folder bb runs as |
+| `~`, `~/projects` | `~` is the root — the home folder VesnALIA runs as |
 | `projects`, `./projects`, `../pics` | resolved against the folder **on screen**, like a shell |
 | `"/home/you/My File.txt"`, `'…'` | the quotes come off; the spaces stay |
 | `/home/you/My\ File.txt` | a path dragged into a terminal: the escapes come off |
@@ -471,7 +471,7 @@ If a bookmarked folder is deleted or moved, the row does not vanish: the list
 shows it struck through and marked **Missing**, and choosing it removes the
 bookmark. Nothing self-deletes behind you — an unmounted share comes back, a
 list that quietly emptied itself does not. A bookmark that would now point
-outside the root (the same bb data directory on a machine with a different home
+outside the root (the same VesnALIA data directory on a machine with a different home
 folder) is dropped instead: it could never be opened from here.
 
 The list lives on the server, in the plugin's own storage, so it is the same in
@@ -480,7 +480,7 @@ the last folder*, which is one browser profile's memory of a moment.
 
 ## Requirements
 
-- bb `>= 0.46` with `@get-bb/plugin-sdk >= 0.6.37` (Node 24).
+- VesnALIA `>= 0.46` with `@vesnalia/plugin-sdk >= 0.6.37` (Node 24).
 - Archive extraction shells out to `tar`, `unzip` and `7z`/`7za`/`7zz`. Formats
   whose tool is missing are reported as unsupported instead of failing at
   extraction time; everything else works without them.
@@ -492,40 +492,40 @@ the last folder*, which is one browser profile's memory of a moment.
 
 ## Install
 
-From the BB Community marketplace, once the catalog entry
+From the VesnALIA Community marketplace, once the catalog entry
 ([PR #90](https://github.com/get-bb/marketplace/pull/90)) is merged:
 
 ```bash
-bb plugin install file-manager
-bb plugin list --json | jq '.plugins[] | select(.id=="file-manager")'
+alia plugin install file-manager
+alia plugin list --json | jq '.plugins[] | select(.id=="file-manager")'
 ```
 
 Straight from git, which builds during install — the released tag, or the tip
 of `main`:
 
 ```bash
-bb plugin install git:https://github.com/xMinor-1/bb-plugins.git@^0.9.0 \
+alia plugin install git:https://github.com/xMinor-1/bb-plugins.git@^0.9.0 \
   --plugin file-manager --tag-prefix file-manager/
-bb plugin install git:https://github.com/xMinor-1/bb-plugins.git@main --plugin file-manager
+alia plugin install git:https://github.com/xMinor-1/bb-plugins.git@main --plugin file-manager
 ```
 
 From a local checkout:
 
 ```bash
 git clone https://github.com/xMinor-1/bb-plugins.git
-cd bb-plugins/plugins/file-manager
+cd alia-plugins/plugins/file-manager
 npm install
 npm run check          # sdk pin, types, tests, build
-bb plugin install path:"$(git rev-parse --show-toplevel)" --plugin file-manager --yes
+alia plugin install path:"$(git rev-parse --show-toplevel)" --plugin file-manager --yes
 ```
 
-A path install keeps editing live: `bb plugin reload file-manager` picks up
-backend changes, and `bb plugin dev .` rebuilds the panel on every save.
+A path install keeps editing live: `alia plugin reload file-manager` picks up
+backend changes, and `alia plugin dev .` rebuilds the panel on every save.
 
 ## Settings
 
-Change them in bb's settings UI, from the panel, or with
-`bb plugin config file-manager set <key> <value>`.
+Change them in VesnALIA's settings UI, from the panel, or with
+`alia plugin config file-manager set <key> <value>`.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
@@ -544,7 +544,7 @@ Toggles made in the panel are written back through the plugin's own
 
 ### Choosing the start folder
 
-bb's settings form only knows four descriptor types — string, select, boolean
+VesnALIA's settings form only knows four descriptor types — string, select, boolean
 and project — so `startFolder` renders there as a plain text field, labelled
 **Start folder (typed path)** for the CLI and for typing a path by hand. The
 plugin adds its own **Start folder** section right below that form, on its
@@ -566,9 +566,9 @@ detail page in Tools:
 
 Every one of those buttons writes the same `startFolder` setting through the
 same `savePreferences` method, so the section, the panel's *Set as start
-folder* action and `bb plugin config file-manager set startFolder <path>` are
+folder* action and `alia plugin config file-manager set startFolder <path>` are
 interchangeable. Whoever writes it last wins, and nobody is left showing a
-stale answer: bb broadcasts the change to every open page, and the section
+stale answer: VesnALIA broadcasts the change to every open page, and the section
 re-reads the effective folder from the backend then — and again whenever the
 page comes back to the foreground.
 
@@ -584,7 +584,7 @@ yet, is not a fallback.
 ## Uploads
 
 Files are cut into chunks and sent one chunk per request. The server appends
-each chunk to a `.part` file in `<root>/.bb-file-manager/uploads/` and
+each chunk to a `.part` file in `<root>/.alia-file-manager/uploads/` and
 renames it into place only when the full byte count has arrived, so a partial
 upload never appears as a real file in the destination folder.
 
@@ -606,7 +606,7 @@ Limits worth knowing:
 | Interruptions | Closing the panel keeps uploads running; closing the browser tab stops them. The staged bytes stay on disk, so re-dropping the same file continues where it stopped. |
 | Failure modes | A chunk that would push the file past its declared size is rejected and rolled back to the last good offset; the file is never committed at the wrong length. |
 
-Uploads survive navigation inside bb, and the sidebar row keeps a count of the
+Uploads survive navigation inside VesnALIA, and the sidebar row keeps a count of the
 files still moving.
 
 Listings are capped at 5000 entries per directory; larger folders are truncated
@@ -614,7 +614,7 @@ with a visible notice rather than freezing the panel.
 
 ## Security model
 
-This plugin gives anyone who can reach your bb UI read and write access to
+This plugin gives anyone who can reach your VesnALIA UI read and write access to
 everything under the home folder. Treat installing it as equivalent to handing
 out shell access to that directory tree.
 
@@ -632,10 +632,10 @@ Within that boundary:
   they reach the filesystem.
 - **The upload route is token-gated.** `POST
   /api/v1/plugins/file-manager/http/upload/chunk` is registered with
-  `auth: "token"` and requires the `x-bb-plugin-token` header, because it
-  carries a raw binary body. The token comes from bb's own origin-gated token
-  endpoint; `bb plugin token file-manager --rotate` invalidates it.
-- **The download route uses bb's default local auth.** `GET
+  `auth: "token"` and requires the `x-alia-plugin-token` header, because it
+  carries a raw binary body. The token comes from VesnALIA's own origin-gated token
+  endpoint; `alia plugin token file-manager --rotate` invalidates it.
+- **The download route uses VesnALIA's default local auth.** `GET
   /api/v1/plugins/file-manager/http/download?path=…` is restricted to the local
   browser session, because `<a download>` navigation sends no `Origin` header.
   Responses are `application/octet-stream` with `no-store, no-transform` and
@@ -644,7 +644,7 @@ Within that boundary:
   byte, and links inside a folder are packed only when they point to a file
   inside the root.
 - **Upload staging is contained.** In-flight parts live in
-  `<root>/.bb-file-manager/uploads/`, and that directory is filtered out of
+  `<root>/.alia-file-manager/uploads/`, and that directory is filtered out of
   every listing, including with hidden files shown.
 - **Looking inside an archive writes nothing.** A zip's table of contents is
   read inside the plugin; `tar` and `7z` only ever run their *list* command,
@@ -668,15 +668,15 @@ Within that boundary:
 npm install
 npm run typecheck     # tsc --noEmit
 npm test              # vitest
-npm run build         # bb plugin build .
+npm run build         # alia plugin build .
 npm run check         # sdk pin + typecheck + tests + build
 
-bb plugin install path:"$(git rev-parse --show-toplevel)" --plugin file-manager --yes
-bb plugin reload file-manager
-bb plugin logs file-manager --follow
+alia plugin install path:"$(git rev-parse --show-toplevel)" --plugin file-manager --yes
+alia plugin reload file-manager
+alia plugin logs file-manager --follow
 ```
 
-`npm run dev` (`bb plugin dev .`) rebuilds the panel and reloads the plugin on
+`npm run dev` (`alia plugin dev .`) rebuilds the panel and reloads the plugin on
 every save.
 
 | Path | Contents |
@@ -696,9 +696,9 @@ every save.
 | `lib/fm-store.ts` | the two-tier client store (module scope over `localStorage`) both the expanded set and the location memory use |
 | `lib/last-folder.ts` | what "reopen where I was" remembers, and the pure rule that picks the folder to open |
 | `lib/fm-pathbar.ts`, `components/PathBar.tsx` | the path bar: what a pasted path means, and the strip that switches between crumbs and a text field |
-| `components/ui/` | vendored bb UI kit (`npx shadcn add @bb/<name>`) — not hand-edited |
+| `components/ui/` | vendored VesnALIA UI kit (`npx shadcn add @alia-core/<name>`) — not hand-edited |
 | `test/backend/`, `test/frontend/` | unit suites for each side |
-| `test/integration/` | loads the real `server.ts` through bb's fake plugin host: contract coverage, route auth modes, upload / download / extract end to end |
+| `test/integration/` | loads the real `server.ts` through VesnALIA's fake plugin host: contract coverage, route auth modes, upload / download / extract end to end |
 
 `SPEC.md` and `TREE-SPEC.md` are the implementation specs the code is written
 against.
@@ -711,9 +711,9 @@ because that is the number the panel and the plugin's load line in the logs
 report. The integration suite fails if the two drift. Tags are never moved; the
 scheme and the range rules live in the [repository README](../../README.md).
 
-The BB Community catalog entry is *not* kept in this directory. It lives as
+The VesnALIA Community catalog entry is *not* kept in this directory. It lives as
 `entries/file-manager.json` in
-[get-bb/marketplace](https://github.com/get-bb/marketplace) — filed as
+[get-alia/marketplace](https://github.com/get-bb/marketplace) — filed as
 [PR #90](https://github.com/get-bb/marketplace/pull/90), widened to the 0.7.x
 line in [PR #122](https://github.com/get-bb/marketplace/pull/122), to 0.8.x
 in [PR #196](https://github.com/get-bb/marketplace/pull/196) and to 0.9.x in

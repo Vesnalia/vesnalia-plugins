@@ -2,7 +2,7 @@
 // in the Catch up page and in an overlay (the command, the palette and the home
 // page open it). Which threads and in what order lives in catch-up-model.ts;
 // this file renders the deck and owns every side effect. Each card embeds the
-// thread itself (bb's ThreadChat, with its composer). Showing it doesn't mark
+// thread itself (VesnALIA's ThreadChat, with its composer). Showing it doesn't mark
 // the thread read; Done, Snooze and using the composer do, and Keep unread
 // undoes the composer's.
 import "./catch-up.css";
@@ -13,12 +13,12 @@ import {
   ThreadChat,
   experimental_useSidebarThreadPullRequest as useSidebarThreadPullRequest,
   experimental_useSidebarThreads as useSidebarThreads,
-  useBbNavigate,
+  useAliaNavigate,
   useRpc,
   useSdk,
   useSettings,
-} from "@get-bb/plugin-sdk/app";
-import type { PluginSidebarThread } from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
+import type { PluginSidebarThread } from "@vesnalia/plugin-sdk/app";
 import type { FlowState, rpcContract } from "./server";
 import {
   CATCH_UP_EVENT,
@@ -310,7 +310,7 @@ function CatchUpDeck({
 }) {
   const rpc = useRpc<typeof rpcContract>();
   const sdk = useSdk();
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const actions = useSidebarThreadActions();
   const workspacesOn = useSettings().values?.workspaces === true;
   const [everywhere, setEverywhere] = useState(false);
@@ -405,7 +405,7 @@ function CatchUpDeck({
   const say = useCallback((text: string, undoable = true, error = false) => setStrip({ id: Date.now(), text, undoable, error }), []);
   const fail = useCallback((cause: unknown) => say(errorText(cause), false, true), [say]);
 
-  // An archive waits out the undo window: bb removes an archived thread's worktree.
+  // An archive waits out the undo window: VesnALIA removes an archived thread's worktree.
   const pendingArchive = useRef<{ threadId: string; timer: number } | null>(null);
   const commitArchive = useCallback(() => {
     const due = pendingArchive.current;
@@ -429,7 +429,7 @@ function CatchUpDeck({
     if (!item || !thread) return;
     act("kept");
     say(`Kept “${short(title)}” unread`, false);
-    // bb marks a thread read once you use its composer; keeping it means unread.
+    // VesnALIA marks a thread read once you use its composer; keeping it means unread.
     if (!thread.isUnread) actions.setRead(thread.id, false).catch(fail);
   };
   const snooze = async (when: string) => {

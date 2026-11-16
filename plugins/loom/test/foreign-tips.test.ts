@@ -47,7 +47,7 @@ async function openOnMachine(more: Doc = {}): Promise<ThreadRow> {
   handInPrText(h.ctx, worker.thread_id!, { title: "Add order rows", body: "Why.", commit_message: "Add the order row mapper" });
   await queue();
   expect(ticket()).toMatchObject({ state: "pr_open", head_sha: "home1", head_tree: "c1", pushed_sha: "sq1" });
-  h.bb.threads.get(worker.thread_id!)!.status = "idle";
+  h.alia.threads.get(worker.thread_id!)!.status = "idle";
   return h.store.thread(worker.id)!;
 }
 
@@ -85,7 +85,7 @@ describe("a fix round whose pull request branch has commits Loom did not push, o
     expect(h.host.callsTo("pointRefs")).toEqual([{ repo: "/repo", sha: merged, refs: [HOME, REVIEWED] }]);
     expect(ticket()).toMatchObject({ state: "working", head_tree: `${merged}-tree`, pushed_sha: "theirs1" });
     expect(dataOf("tip_merged")[0]!.data).toMatchObject({ tip: "theirs1", sha: merged, carried: true });
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("Loom merged them into your branch on the project's machine");
     expect(sent).not.toContain("git fetch");
     expect(sent).not.toContain("git merge");
@@ -102,8 +102,8 @@ describe("a fix round whose pull request branch has commits Loom did not push, o
     const worker = await openOnMachine();
     await releaseIdleWorkers(h.ctx, project(), spec());
     expect(isReleased(h.store.thread(worker.id))).toBe(true);
-    h.bb.environments.get(worker.environment_id!)!.status = "destroyed";
-    h.bb.restorable = false;
+    h.alia.environments.get(worker.environment_id!)!.status = "destroyed";
+    h.alia.restorable = false;
     pushedByOthers();
     h.host.feedback.set(URL1, { ...changesRequested, head: "theirs1" });
     const carries = h.host.callsTo("carryStart").length;
@@ -131,7 +131,7 @@ describe("a fix round whose pull request branch has commits Loom did not push, o
 
     expect(ticket()).toMatchObject({ state: "working", head_sha: "home1", pushed_sha: "sq1" });
     expect(h.host.callsTo("pointRefs")).toEqual([]);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("when Loom pushes your fix, it merges them into your branch first");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("when Loom pushes your fix, it merges them into your branch first");
   });
 });
 
@@ -174,7 +174,7 @@ describe("a push whose pull request branch got commits Loom did not push, on a m
     expect(h.host.callsTo("exportChanges").at(-1)).toMatchObject({ head: "cf1" });
     expect(h.host.callsTo("pointRefs").at(-1)).toEqual({ repo: "/repo", sha: "cf1", refs: [HOME] });
     expect(h.host.callsTo("push")).toHaveLength(pushes);
-    const sent = h.bb.sent(worker.thread_id!).at(-1)!;
+    const sent = h.alia.sent(worker.thread_id!).at(-1)!;
     expect(sent).toContain("conflict markers");
     expect(sent).not.toContain("git merge");
   });
@@ -189,7 +189,7 @@ describe("a push whose pull request branch got commits Loom did not push, on a m
     await queue();
 
     expect(ticket()).toMatchObject({ state: "working", pushed_sha: "theirs1", check_failures: 1 });
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("Loom merged the new commits on the pull request's branch into your branch, and then the check");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("Loom merged the new commits on the pull request's branch into your branch, and then the check");
   });
 });
 
@@ -228,7 +228,7 @@ describe("a stacked ticket whose pull request branch got base branch commits its
 
     expect(ticket("CSV-2")).toMatchObject({ state: "working", pushed_sha: "sq2" });
     expect(h.host.callsTo("mergeOnto")).toEqual([]);
-    expect(h.bb.sent(worker.thread_id!).at(-1)).toContain("when Loom pushes your fix, it merges them into your branch first");
+    expect(h.alia.sent(worker.thread_id!).at(-1)).toContain("when Loom pushes your fix, it merges them into your branch first");
 
     const worktree = h.host.worktree(worktreeOf(worker));
     worktree.dirty = true;

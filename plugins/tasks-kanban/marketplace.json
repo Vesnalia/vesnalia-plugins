@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "levkovalenko-plugins",
   "displayName": "Kovalenko Plugins",
-  "description": "BB plugins by Lev Kovalenko.",
+  "description": "VesnALIA plugins by Lev Kovalenko.",
   "categories": [
     {
       "id": "tasks-and-workflows",
@@ -15,7 +15,7 @@
     {
       "id": "tasks-kanban",
       "displayName": "Tasks Kanban",
-      "description": "Turns BB's built-in Tasks into a live Kanban board. Drag cards across all six statuses, create and edit tasks, set priorities and due dates, manage labels, and comment — every change goes straight into the Tasks tracker that bb tasks and agents use, so the board never drifts from the data. Works with any tasks project, any project in BB. The interface follows your BB language: Russian and English.",
+      "description": "Turns VesnALIA's built-in Tasks into a live Kanban board. Drag cards across all six statuses, create and edit tasks, set priorities and due dates, manage labels, and comment — every change goes straight into the Tasks tracker that VesnALIA tasks and agents use, so the board never drifts from the data. Works with any tasks project, any project in VesnALIA. The interface follows your VesnALIA language: Russian and English.",
       "icon": "SectionMove",
       "tags": [
         "tasks",

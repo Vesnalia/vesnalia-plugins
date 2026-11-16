@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { useRpc } from "@get-bb/plugin-sdk/app";
+import { useRpc } from "@vesnalia/plugin-sdk/app";
 import type { rpcContract } from "../src/rpc-contract";
 
 /**
  * The review's page shows what its agent did, so while it shows in a window in view its agent's thread is read, as an
- * open thread is in BB: as it opens, and again each time the agent finishes before it closes. `unread` is BB's word for
+ * open thread is in VesnALIA: as it opens, and again each time the agent finishes before it closes. `unread` is VesnALIA's word for
  * the agent's thread, as the review's page last loaded it.
  */
 export function useAgentRead(targetKey: string, unread: boolean) {

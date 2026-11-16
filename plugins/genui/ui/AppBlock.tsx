@@ -1,13 +1,13 @@
 // The escape hatch for UIs the component catalog cannot express (games,
 // simulations, custom visuals): the model writes a complete self-contained
 // HTML document in an ```app fence and it runs in a sandboxed iframe with an
-// opaque origin and no network, styled by BB's theme passed in as CSS
+// opaque origin and no network, styled by VesnALIA's theme passed in as CSS
 // variables. While the fence streams, a second frame draws the markup written
 // so far without running any of it. The documents and their bootstrap are in
 // appDocument.ts; what a frame may post back is checked in appBridge.ts.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { toast } from "sonner";
-import { experimental_saveFile, useBbNavigate } from "@get-bb/plugin-sdk/app";
+import { experimental_saveFile, useAliaNavigate } from "@vesnalia/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { processPartialHtml } from "../core/partialHtml";
@@ -59,7 +59,7 @@ function readHostTheme(): AppTheme {
 }
 
 /**
- * Keeps a frame's theme and motion in step with BB's: a theme switch or the
+ * Keeps a frame's theme and motion in step with VesnALIA's: a theme switch or the
  * Animations setting reaches the running app without reloading it. The
  * returned `sync` re-sends both once the frame's document has loaded, for a
  * change made while it was loading.
@@ -281,7 +281,7 @@ function AppFrame({
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const navigate = useBbNavigate();
+  const navigate = useAliaNavigate();
   const motionOff = useAnimationsOff();
   const sync = useHostSync(iframeRef, motionOff);
   const answers = useBlockAnswerTarget(target, stateKey, superseded, placeApp);

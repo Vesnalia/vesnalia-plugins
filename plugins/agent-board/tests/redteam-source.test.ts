@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbPluginApi } from "@get-bb/plugin-sdk";
+import type { AliaPluginApi } from "@vesnalia/plugin-sdk";
 import { BOARD_LIMITS } from "@/lib/board-model";
 import { RedteamBoardSource, normalizeRedteamGlobalSnapshot, normalizeRedteamSnapshot, normalizeRedteamTimeline, redteamObservabilityWireSchema } from "@/lib/redteam-source";
 
@@ -29,8 +29,8 @@ function snapshot(overrides: Record<string, unknown> = {}) {
 }
 
 function makeSource(callRpc: (...args: unknown[]) => Promise<unknown>) {
-  const bb = { sdk: { plugins: { callRpc } } } as unknown as BbPluginApi;
-  return new RedteamBoardSource(bb, () => 10_000);
+  const alia = { sdk: { plugins: { callRpc } } } as unknown as AliaPluginApi;
+  return new RedteamBoardSource(alia, () => 10_000);
 }
 
 describe("optional public RPC", () => {

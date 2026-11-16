@@ -48,7 +48,7 @@ export function flattenPrompt(blocks) {
     .join("\n\n");
 }
 
-/** BB's text for an image it only has as a URL (http(s) or data:). */
+/** VesnALIA's text for an image it only has as a URL (http(s) or data:). */
 const IMAGE_URL_ATTACHMENT = /\[image attachment: ((?:https?:\/\/|data:image\/)[^\]\s]+)\]/g;
 const IMAGE_EXTENSIONS = {
   "image/png": "png",
@@ -62,7 +62,7 @@ const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
 /**
  * cmd -p takes text only and its read_file cannot open URLs, so image URLs
- * are saved to disk and rewritten to the on-disk form BB uses for local
+ * are saved to disk and rewritten to the on-disk form VesnALIA uses for local
  * images. A URL that fails to download, or is not an image, is left as-is.
  */
 export async function localizeImageUrls(text, { dir = join(tmpdir(), "command-code-acp-images") } = {}) {

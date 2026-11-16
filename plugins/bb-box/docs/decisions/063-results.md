@@ -37,7 +37,7 @@ With the harness in
   window.
 - **Software.** Emulator 37.2.12.0, the Android 15 (API 35) Google APIs
   x86_64 image, each AVD made by `avdmanager` with 4 cores and 2 GiB and
-  `hw.keyboard = yes`. `bb-box-h264` built by `setup/android/build-h264.sh
+  `hw.keyboard = yes`. `alia-box-h264` built by `setup/android/build-h264.sh
   --with-x264`: x264 0.165 from source at its pinned commit, and Cisco's
   OpenH264 2.6.0 binary. Both at 8 Mbit/s, one thread, constrained
   baseline.
@@ -222,7 +222,7 @@ memory, busy:
   what the phone does on 8 to 12, and nothing here took them near 60 fps.
   063's Consequences hold: a host with both KVM and a GPU is the way past
   this.
-- **The encoder.** `bb-box-h264` uses x264 where the image build has built
+- **The encoder.** `alia-box-h264` uses x264 where the image build has built
   it, and OpenH264 otherwise. Both keep up with every model. OpenH264
   takes about 1.5 times x264's CPU and 1.5 to 2 times its time a frame,
   for a picture 3 to 6 dB lower, so x264 is worth an operator's build.
@@ -230,7 +230,7 @@ memory, busy:
   to 6 ms a frame, and a frame or two a second on the phone but none on
   the large screens, and no torn
   frame was seen when read at once. The device server (unit 4.1) names a
-  file in its own 0700 folder, `~/.bb-box/device/`, and feeds the helper
+  file in its own 0700 folder, `~/.alia-box/device/`, and feeds the helper
   `S` commands. The pipe stays in the helper and in
   `src/device/h264-encoder.ts`, for tests and in case a later emulator
   changes the transport.
@@ -258,9 +258,9 @@ with 4 cores and `hw.keyboard = yes`, drawn by SwiftShader with no window.
 
 First the build's Android layer, `customize-android.sh`, ran in a box, then
 the refresh's own script in that box, then the image's check,
-`bb-box-check-android`, in both boxes. Then the lead built the template on
+`alia-box-check-android`, in both boxes. Then the lead built the template on
 the Proxmox host with `build.sh android`, and its refresh ran through the
-production BB, which has the Proxmox API token: [the template, built and
+production VesnALIA, which has the Proxmox API token: [the template, built and
 refreshed](#the-template-built-and-refreshed), below.
 
 ### The build
@@ -282,7 +282,7 @@ android`. It took 250 s and exited 0. It kept the SDK, whose pins had not
 moved, and the encoder the image had, made each device's AVD and snapshot
 again, and wrote a record of kind `android` with the three devices, each
 with its snapshot's origin, and a size of 20.8 GiB. After a reboot, as a
-trial box starts, `bb-box-check-android` passed 44 of its 45 lines. The
+trial box starts, `alia-box-check-android` passed 44 of its 45 lines. The
 other, that the box's adb key is its own, then compared the key with the
 boot time, and failed on the box's second boot. It now compares it with the
 image's build time, and passed. The
@@ -330,7 +330,7 @@ the second wall, not the only one. The research's `[::]:8554` was without
 a token. Still open on every interface: adb's mDNS, UDP 5353, which answers
 no connection.
 
-The token is made new at each start by `bb-box-emulator`, and is in that
+The token is made new at each start by `alia-box-emulator`, and is in that
 start's discovery file under `/run/user/<uid>/avd/running/`. gRPC
 `getStatus` with no token and with a wrong one answered status 16,
 UNAUTHENTICATED; with the start's token, 0.
@@ -345,7 +345,7 @@ in the box, to the box's address and to `docker0`'s: none connected, while
 the device was booted, half a second into a restart, and after it. From a
 network namespace on another interface of the box, as the image's check
 does: none connected, over IPv4 and IPv6, for each device. With the table
-removed, `bb-box-emulator` refused to start the device.
+removed, `alia-box-emulator` refused to start the device.
 
 No tailnet peer was tried, and none is needed for these boxes: Proxmox
 boxes never join the tailnet, which only cloud backends' boxes do (050).
@@ -361,8 +361,8 @@ the snapshot holds, such as the device's Android ID, are the same in every
 box from one template.
 
 Two android boxes were not compared: android is not an offered kind until
-unit 4.1, and the refresh's own clones are bb-box's, which no agent tool
-enters. Unit 4.1's checks through BB compare two android boxes: their adb
+unit 4.1, and the refresh's own clones are alia-box's, which no agent tool
+enters. Unit 4.1's checks through VesnALIA compare two android boxes: their adb
 keys, console and gRPC tokens, and Android IDs. The trial box of each
 refresh below checked that its adb key and console token did not come with
 the image.
@@ -396,21 +396,21 @@ check read its devices from the image's record, which `finalize.sh` writes
 only after the check, so the cloud image had none yet (fixed in #1148). The
 second made build.20261026-151250-3f0c. Every line of its checks passed,
 and a clone of it hibernated in 14.9 s and resumed in 7.9 s. With
-`android-templates` set to 1000, `bb box doctor` passed the template, its
+`android-templates` set to 1000, `alia box doctor` passed the template, its
 image, KVM for Android and Disk for Android.
 
-Through the production BB:
+Through the production VesnALIA:
 
-| | `bb box images build proxmox-qemu/1000 --try` | `bb box images build proxmox-qemu/1000` |
+| | `alia box images build proxmox-qemu/1000 --try` | `alia box images build proxmox-qemu/1000` |
 | --- | --- | --- |
 | Took | 335 s | 344 s |
 | A box of the new build answered in | 10.3 s, the old's in 10.2 s; 8.6 s of each the network | 9.3 s, the old's in 9.3 s |
-| `bb-box-check-android` on the trial box | 45 of 45 lines ok | 45 of 45 lines ok |
-| BB's app | the box's, the record's and the server's the same | the same |
+| `alia-box-check-android` on the trial box | 45 of 45 lines ok | 45 of 45 lines ok |
+| VesnALIA's app | the box's, the record's and the server's the same | the same |
 | The record | contract 1, Ubuntu 24.04.5 LTS, 15 tools; no tool older | the same |
 | Afterwards | build.20261026-151250-3f0c stayed | template 1000 is build.20261026-153035-77eb; the build before is kept as its rollback |
 
-`bb box images list` then said of it: "built today; not due; last rebuild
+`alia box images list` then said of it: "built today; not due; last rebuild
 2026-10-26 passed".
 
 
@@ -424,10 +424,10 @@ cloned from the standard macOS image (build.20261022-033224-9658): macOS
 
 The image itself was not made. `prepare-ios-image.sh` clones the macOS
 image and boots the clone with `tart` on the Mac, and the refresh does the
-same through bb-box's SSH to the Mac, which a box cannot do. What ran is
+same through alia-box's SSH to the Mac, which a box cannot do. What ran is
 the build's layer, `build-ios.sh`, in the box, which is a clone of the
 macOS image as the build's VM is; then the image's check,
-`bb-box-check-ios`, in the same box; then `prepare-ios-image.sh` itself with
+`alia-box-check-ios`, in the same box; then `prepare-ios-image.sh` itself with
 a stand-in for `tart` that runs each `tart exec` in the box. The capture,
 the trial box and the replace are the Tart backend's, as for the macOS
 image, and were run against the fake Mac in the tests only.
@@ -449,7 +449,7 @@ and again after a further reboot. A second build, by `prepare-ios-image.sh`
 with the stand-in for `tart`, took 6 min 16 s for the layer, with first
 boots of 17.6 to 26.1 s; its check passed all 24 lines, and the record it
 wrote names the macOS build as its base, idb_companion 1.7.7, and each
-device's runtime and list, with the pins digest bb-box computes.
+device's runtime and list, with the pins digest alia-box computes.
 
 ### The check
 
@@ -563,7 +563,7 @@ Allocated and apparent, after the build and the checks:
 | iPhone 17's device | 1.54 GiB | 1.55 GiB |
 | iPad Pro 13-inch (M5)'s device | 1.84 GiB | 1.84 GiB |
 | idb_companion | 0.11 GiB | 0.11 GiB |
-| bb-box's check, list and probe app | 48 KiB | |
+| alia-box's check, list and probe app | 48 KiB | |
 
 The image adds about 5.1 GiB to the macOS image, not 063's 0.6 GB. Most of
 each device is what it downloads in its first boot, before slimming can
@@ -584,9 +584,9 @@ cloned from the standard macOS image (build.20261022-033224-9658): macOS
 27.0, Xcode 27.0 (27A266a), iOS 27.0 (24A434), idb_companion 1.7.7. Each box
 ran the iOS image's layer, `build-ios.sh`, and its record, as the image
 build does, then had the device server delivered from this unit's checkout
-as bb-box delivers it. Every number is in the box, from a viewer on the
-server's socket: BB's relay, the network and the browser are not in them.
-Through BB is the lead's live check.
+as alia-box delivers it. Every number is in the box, from a viewer on the
+server's socket: VesnALIA's relay, the network and the browser are not in them.
+Through VesnALIA is the lead's live check.
 
 ### E5: idb's video stream
 
@@ -635,7 +635,7 @@ found.
 | idb_companion killed (SIGKILL) while busy | the stream failed, the server started a new companion, 106 to 108 ms, and a new stream | a viewer's stall: 482 to 489 ms, from the last frame before to a key frame after |
 | The device server killed (SIGKILL) | launchd started it again; it found the device booted and its companion alive, and reattached to both | hello 238 to 248 ms after the kill, a key frame 779 to 797 ms after it |
 | The device shut down from outside (`simctl shutdown`) | the server's watch, every 5 s, saw it and booted it again; slimming checked, the companion kept | frames again about 5 s after it was seen |
-| The same again within 5 minutes | the device left failed: "The iPhone 18 Pro stopped twice within 5 minutes, so bb-box leaves it stopped. Restart the box to start it again." | |
+| The same again within 5 minutes | the device left failed: "The iPhone 18 Pro stopped twice within 5 minutes, so alia-box leaves it stopped. Restart the box to start it again." | |
 | A switch of model, through a control connection | the old device shut down, the new one booted, a new companion, the first frame | 8.0 to 8.3 s, of which the shutdown about 3.7 s, the boot 1.4 to 1.5 s and the new companion's first frame about 3 s |
 
 The first run of the device shutting down found a bug in the device
@@ -675,9 +675,9 @@ kernel, so its clock is the macOS VM's.
 The 62-minute run was in a second box, which ran the device server as it
 was before its last changes, none of them to the driver's resume. The 24 h
 run was the same box, with the same server, version 3. Its suspended
-state was not restored because Tart refused it: bb-box's log has
+state was not restored because Tart refused it: alia-box's log has
 `VZErrorDomain Code=12 "The virtual machine failed to restore with error
-'invalid argument'"`, after which bb-box booted the VM from its disk and
+'invalid argument'"`, after which alia-box booted the VM from its disk and
 warned, as it does after an update. Neither applied: the Mac had been up
 for 3 days and Tart (2.40.1) had not changed since 22 October. Whether a box
 suspended for a day resumes is still open, and so is a spare that waits a
@@ -688,13 +688,13 @@ below, which resident memory also hid (80 to 101 MiB while its footprint
 was 34 GB). Its screen
 did not change after the resume, which hid what the next section found.
 
-### Through the production BB
+### Through the production VesnALIA
 
 After the deploy, ios boxes acquired with `box_acquire` on the production
-BB, at the kind's default size then, small, 4 cores and 8 GiB. The ios
+VesnALIA, at the kind's default size then, small, 4 cores and 8 GiB. The ios
 kind's default is now medium, 6 cores and 16 GiB, the size the measurements
 above were made at, with room for Xcode beside the device. The panel itself
-was not seen: a box cannot reach BB's panel without a person's session.
+was not seen: a box cannot reach VesnALIA's panel without a person's session.
 Every stream number is from a viewer on the device server's socket in the
 box, as above.
 
@@ -731,21 +731,21 @@ does (E20).
 Measured on 26 October 2026 in one ios box on Tart, the iPhone 18 Pro, 6
 cores and 16 GiB, from the iOS image build.20261026-091450-8505: macOS 27.0,
 Xcode 27.0, iOS 27.0 (24A434), idb_companion 1.7.7. The device server was
-version 6 from this unit's checkout, delivered as bb-box delivers it.
+version 6 from this unit's checkout, delivered as alia-box delivers it.
 
 Two ways in:
 
 - **Straight to idb.** Probes on idb_companion's socket sent HID events and
   read the device's accessibility tree, for what idb and iOS do.
-- **As the panel does, without BB's server.** A harness in
+- **As the panel does, without VesnALIA's server.** A harness in
   [scripts/measure/ios](../../scripts/measure/ios/README.md) ran the
   plugin's own relay (`SelkiesRelay` and `SelkiesBox`) beside the device
   server, the panel's own video client (`SelkiesSession`) in Chrome 156,
   headless, on the box's macOS, and a control connection standing in for
   the plugin. Chrome's DevTools protocol pressed the pointer, the wheel and
-  keys, and ran an input method, as a person would. BB's server, the
+  keys, and ran an input method, as a person would. VesnALIA's server, the
   network and another computer's browser are not in these numbers. Through
-  BB is the lead's check.
+  VesnALIA is the lead's check.
 
 A page served from the box's macOS, open in the device's Safari, reported
 each touch, pinch, scroll and field value to its server's log.
@@ -763,7 +763,7 @@ touch, 100 taps 0.6 s apart:
 
 The first idle run's driver missed its own first tap, as it read the pixel
 before the page had a frame to compare with; the frames show that tap
-landed at 111 ms. The driver now reads the pixel first. With BB's own
+landed at 111 ms. The driver now reads the pixel first. With VesnALIA's own
 path, about 25 ms (060), these are about 80 to 110 ms at the median, inside
 063's bar.
 
@@ -894,7 +894,7 @@ rises, at each change and on each new control connection.
   stayed empty, the device's pasteboard held 'kept on the device' again,
   and the server logged that it put it back.
 - **A reload while a person holds control.** The harness was stopped and
-  started again mid-drag, as bb-box is in a reload: the server lifted the
+  started again mid-drag, as alia-box is in a reload: the server lifted the
   person's touch as the old input connection ended, the new instance took
   the lease and said the person had control, the viewer connected again by
   itself, and its next tap landed.
@@ -934,15 +934,15 @@ way, every 16 ms until it lifts.
 Measured on 26 October 2026 in one Tart macos-desktop box at the ios kind's
 default size, 6 cores and 16 GiB, cloned from the standard macOS image
 (build.20261022-033224-9658): macOS 27.0, Xcode 27.0, iOS 27.0 (24A434),
-idb_companion 1.7.7. The ios kind was not offered on the production BB that
+idb_companion 1.7.7. The ios kind was not offered on the production VesnALIA that
 day, so the box ran the iOS image's layer, `build-ios.sh`, and its record,
 as unit 4.2's boxes did. The device server was version 7 from this unit's
-checkout, delivered as bb-box delivers it.
+checkout, delivered as alia-box delivers it.
 
 The harness, `controls.ts` in
 [scripts/measure/ios](../../scripts/measure/ios/README.md), runs the
 plugin's own `DeviceServers` and box_device's own parsing and words against
-the box's device server, so each line below is what the agent reads. BB's
+the box's device server, so each line below is what the agent reads. VesnALIA's
 server and the panel are not in these numbers. Each effect was seen in a
 screenshot taken after the answer.
 
@@ -992,7 +992,7 @@ The server reads appearance, text size and the lock state together, in 122
 to 126 ms on the iPhone and 180 to 357 ms on the iPad, when a client
 connects, after each control, and every 10 s while a viewer watches. After
 `xcrun simctl ui booted appearance dark` in a shell, a watching viewer's
-state said dark, changed outside bb-box, 1.0 s later.
+state said dark, changed outside alia-box, 1.0 s later.
 
 ### Requests by ID
 
@@ -1033,7 +1033,7 @@ LANDSCAPE_RIGHT, and `get_orientation` reads them back.
 - **`charged` at 100% draws a charging bolt,** which a clean status bar
   should not have, so a battery not charging is `discharging`.
 - **A reboot clears the status bar's overrides,** and so does switching
-  back to a model, which boots it again. bb-box sets them again, and the
+  back to a model, which boots it again. alia-box sets them again, and the
   location, which simctl cannot read back, each time it attaches to the
   device.
 - **An iPhone does not draw upside down,** so a turn to upside-down leaves
@@ -1053,14 +1053,14 @@ LANDSCAPE_RIGHT, and `get_orientation` reads them back.
 
 ### Not checked here
 
-- Through the panel: the toolbar is unit 6.4, and BB's panel needs a
+- Through the panel: the toolbar is unit 6.4, and VesnALIA's panel needs a
   person's session.
 - Android: its driver's controls are unit 6.2's. The shared parts, the
   parsing, `supports` and the words, cover Android's actions in tests only.
 
 ## Three fixes from live checks
 
-Checked on 26 October 2026 on the production BB and in one Tart
+Checked on 26 October 2026 on the production VesnALIA and in one Tart
 macos-desktop box, 6 cores and 16 GiB, made as unit 6.3's box was: the
 standard macOS image (build.20261022-033224-9658), the iOS image's layer
 from `build-ios.sh`, and its record. The device server came from this
@@ -1071,16 +1071,16 @@ checkout, version 7 before the fix and version 8 after it.
 Unit 6.3's builder was refused an ios box with "No backend offers ios
 boxes (iOS Simulator) now", and box_list had no ios kind. The Tart Mac was
 at Apple's limit of two macOS VMs then, but that was not the cause. Asked
-for an ios box while the Mac was full again, the production BB already
+for an ios box while the Mac was full again, the production VesnALIA already
 gave the right refusal, through box_acquire and through
-`bb box acquire`: "No Mac can take this ios box: Two macOS VMs already run
+`alia box acquire`: "No Mac can take this ios box: Two macOS VMs already run
 on the Mac, Apple's limit (box ... of thread ..., box ... of thread ...).
 Release or stop a macOS box, or stop another VM there."
 
 The cause was timing. The Tart backend offers ios only once a Mac's record
-of the iOS image lists its devices, and it reads that only after bb-box
+of the iOS image lists its devices, and it reads that only after alia-box
 starts. The refusal came 6 seconds after a box_list, a few minutes into a
-deploy that restarted bb-box, so the first read of the Mac had not
+deploy that restarted alia-box, so the first read of the Mac had not
 answered. Every other backend's kinds come from its settings or from
 what its host already said, so ios on Tart was the only kind hidden this
 way.
@@ -1093,10 +1093,10 @@ the refusal says why:
 
 - a Mac that did not answer: "No ios box (iOS Simulator) can come now.
   Tart on the Mac offers them, but not now: the Mac did not answer, so
-  bb-box cannot read which devices its iOS image offers: ...", as
+  alia-box cannot read which devices its iOS image offers: ...", as
   no_capacity
-- an image with no devices: "... the iOS image bb-box-ios on the Mac lists
-  no iOS devices in its record, so there is none to boot. bb box doctor
+- an image with no devices: "... the iOS image alia-box-ios on the Mac lists
+  no iOS devices in its record, so there is none to boot. VesnALIA box doctor
   says why.", as unknown_kind
 
 ### Input after a device boots again
@@ -1128,7 +1128,7 @@ new picture before it answers, so a lock right after its answer took.
 
 ### The image's check reads each control back
 
-`bb-box-check-ios` now checks, on each model, what box_device reads back:
+`alia-box-check-ios` now checks, on each model, what box_device reads back:
 dark and light, and each of the 12 text sizes, set and read back, then the
 first set again; an override of the time and battery listed, then cleared;
 and the lock state read as unlocked after boot.
@@ -1141,13 +1141,13 @@ override, then none once cleared, and read unlocked just after boot.
 ## Unit 6.1: the device frame
 
 Measured on 26 October 2026 in one ios box acquired through the production
-BB, on Tart, at the kind's default size, 6 cores and 16 GiB: macOS 27.0,
+VesnALIA, on Tart, at the kind's default size, 6 cores and 16 GiB: macOS 27.0,
 Xcode 27.0, iOS 27.0 (24A434), idb_companion 1.7.7. The device server was
-this unit's, delivered from its checkout as bb-box delivers it. The panel's
+this unit's, delivered from its checkout as alia-box delivers it. The panel's
 own client, `SelkiesSession` with its new `DeviceStage`, ran in Chrome 156,
-headless, on the box's macOS, behind the plugin's own relay, with BB's theme
-loaded from BB's source: the harness in
-[scripts/measure/ios](../../scripts/measure/ios/README.md). BB's server and
+headless, on the box's macOS, behind the plugin's own relay, with VesnALIA's theme
+loaded from VesnALIA's source: the harness in
+[scripts/measure/ios](../../scripts/measure/ios/README.md). VesnALIA's server and
 the panel through it are not in these numbers. The owner's checks of the
 panel are listed under [Not checked here](#not-checked-here-1).
 
@@ -1200,7 +1200,7 @@ by a change that was never there.
 `drive.ts turn` sent each turn through idb and logged, on every animation
 frame, the frame's angle, the veil and which picture the panel showed. The
 server reads idb's orientation every 250 ms while the screen changes and
-every 2 s while it is still, so a turn made outside bb-box, as here, raises
+every 2 s while it is still, so a turn made outside alia-box, as here, raises
 the geometry generation; box_device's rotate goes through the same step.
 
 | Model | Turns | Turning | Frames while turning | Gap between frames | New picture after the turn |
@@ -1293,10 +1293,10 @@ and Reboot device take control first when the viewer does not have it.
 
 ### Not checked here
 
-- **For the owner, in the panel through BB:** the frame on each iOS model in
+- **For the owner, in the panel through VesnALIA:** the frame on each iOS model in
   both themes; a turn by box_device's rotate and by Rotate in a later
   toolbar; Show frame and Pixel for pixel under Display in the menu, kept
-  for the box; the frame in a narrow panel, at 360 px; on a phone's BB;
+  for the box; the frame in a narrow panel, at 360 px; on a phone's VesnALIA;
   with reduced motion; and whether the body's graphite, the light edge in
   the dark theme and the shadow in the light one look right.
 - **For Android, once its template is built:** the Pixel 8, Pixel Fold and
@@ -1314,12 +1314,12 @@ Checked on 26 October 2026 on a physical pool Mac lent whole, through
 home, as the user has no sudo, and the device server of this unit started
 by hand, with the iPhone 18 Pro, iPhone 17 and iPad Pro 13-inch (M5) the
 Mac already had. The panel was the plugin's own `DesktopViewer`, with
-the toolbar, its menus and the picker, built with BB's theme and run in
+the toolbar, its menus and the picker, built with VesnALIA's theme and run in
 headless Chrome on the same Mac, behind the plugin's own relay, against
 `viewer.ts` standing in for the plugin: the harness in
 [scripts/measure/ios](../../scripts/measure/ios/README.md#the-panel). The
 same page ran on a Linux box with the test device, as an iOS and as an
-Android device, in Google Chrome 156. BB's server and the panel through it
+Android device, in Google Chrome 156. VesnALIA's server and the panel through it
 are not in these checks.
 
 ### Each control, clicked, on the iPhone 18 Pro
@@ -1408,9 +1408,9 @@ switch from its intent, as 063 says it should.
 
 ### Not checked here
 
-- **For the owner, in the panel through BB:** each control, the More menu,
+- **For the owner, in the panel through VesnALIA:** each control, the More menu,
   the picker and a switch; the bar in both themes; at 360 px, on a phone's
-  BB with touch; and VoiceOver or another screen reader on the bar.
+  VesnALIA with touch; and VoiceOver or another screen reader on the bar.
 - **For Android, once its driver is built (unit 6.2):** Back, Recent apps,
   Fold and Network driven on the emulator, and their effect seen.
 
@@ -1422,15 +1422,15 @@ in a Linux VM box on Proxmox QEMU with KVM, 16 cores and 32 GiB, on the AMD
 Ryzen Threadripper PRO 9975WX host. The box ran the Android template's
 layer, `customize-android.sh` with x264, as the template's build does: in
 168 s, with the three devices booted once and saved. The device server was
-this unit's, delivered from its checkout as bb-box delivers it. Every
-number is in the box, from a viewer on the server's socket: BB's relay,
+this unit's, delivered from its checkout as alia-box delivers it. Every
+number is in the box, from a viewer on the server's socket: VesnALIA's relay,
 the network and the browser are not in them. Nothing was pinned, so the
 emulator could use all 16 cores.
 
 ### How the driver runs the device
 
 - **The emulator runs in a service of its own,** the box user's
-  `bb-box-emulator@<avd>.service`, which the server writes. It checks the
+  `alia-box-emulator@<avd>.service`, which the server writes. It checks the
   device's firewall before each start, starts the emulator with no window
   and its gRPC behind a token made new at each start, and saves the
   snapshot when it stops, through `adb emu kill`. A restart of the server
@@ -1441,8 +1441,8 @@ emulator could use all 16 cores.
   the target device, stops one running another, and otherwise starts the
   target from its snapshot. The gRPC token is read from that file.
 - **Frames.** The server asks the emulator's gRPC for its screen in RGB by
-  shared memory, in `~/.bb-box/device/frames`, sized for the largest
-  screen, 12.3 MB, and feeds `bb-box-h264` an `S` command for each frame. A
+  shared memory, in `~/.alia-box/device/frames`, sized for the largest
+  screen, 12.3 MB, and feeds `alia-box-h264` an `S` command for each frame. A
   key frame on demand is the helper's `K`: the last picture again as an
   IDR, with SPS and PPS. A change of size or orientation starts a new
   generation.
@@ -1465,7 +1465,7 @@ emulator could use all 16 cores.
 Busy is unit 2.4's load, `adb shell input swipe` up and down the launcher's
 list. Windows of 5 s, two or three each. Cores are shares of one core.
 
-| Model | First frame after a viewer asks | Frames a second, busy | Mbit/s, busy | Gaps between frames, busy: median, worst | Server: cores, resident | bb-box-h264: cores, resident | Emulator: cores busy, resident |
+| Model | First frame after a viewer asks | Frames a second, busy | Mbit/s, busy | Gaps between frames, busy: median, worst | Server: cores, resident | alia-box-h264: cores, resident | Emulator: cores busy, resident |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Pixel 8 | 4 to 5 ms | 57.4 to 58.6 | 7.6 to 7.8 | 16 to 17 ms, 33 to 43 ms | 0.022 to 0.032, 102 MiB | 0.46, 46 MiB | 8.8, 4.0 GiB |
 | Pixel Fold, open | 13 ms | 34.4 to 34.6 | 4.5 to 4.7 | 28 to 29 ms, 72 to 115 ms | 0.018, 101 MiB | 0.37, 64 MiB | 11.0 to 11.8, 6.2 GiB |
@@ -1490,10 +1490,10 @@ others:
 
 | What happened | Times | What it took |
 | --- | --- | --- |
-| `bb-box-h264` killed (SIGKILL), busy | 3 | the server started it again and gave it the last frame, which it encoded as a key frame: 13 to 14 ms after the kill; a viewer's stall of 49 to 61 ms |
+| `alia-box-h264` killed (SIGKILL), busy | 3 | the server started it again and gave it the last frame, which it encoded as a key frame: 13 to 14 ms after the kill; a viewer's stall of 49 to 61 ms |
 | The device server killed (SIGKILL) | 3 | systemd started it again; it found the emulator by its discovery file and reattached: hello 1.13 to 1.21 s after the kill, a key frame 1.49 to 1.52 s after it; the emulator kept |
 | The emulator killed (SIGKILL) | 2 | the server saw its stream end, and booted it again. Cold, as no snapshot had been saved (below): a key frame 14.95 s after the kill. Before that rule, from its snapshot: 2.7 s |
-| The same again within 5 minutes | 2 | the device left failed: "The Pixel 8 stopped twice within 5 minutes, so bb-box leaves it stopped. Reboot the device, or restart the box, to start it again." |
+| The same again within 5 minutes | 2 | the device left failed: "The Pixel 8 stopped twice within 5 minutes, so alia-box leaves it stopped. Reboot the device, or restart the box, to start it again." |
 | Reboot, from failed | 2 | stopped, then booted cold: 14.9 s to the answer |
 | A switch of model, through a control connection | 5 | the old device stopped and saved, the new one booted from its snapshot, to the answer with its first key frame: Pixel Fold 6.2 and 7.1 s, Pixel Tablet 5.6 s, Pixel 8 4.3 and 5.7 s |
 | A fold and an unfold, by the console | 1 each | the stream went from 2208x1840 to 1080x2092 and back, each a new generation, the state's screen inner, outer, inner |
@@ -1536,7 +1536,7 @@ it, and the skill says so.
 | What happened | The device | Time |
 | --- | --- | --- |
 | `box_stop`, a Proxmox hibernation, and `box_start`, after 2 minutes, a viewer watching with the screen changing every second | survived: frames went on at once, `sys.boot_completed` still 1, a key frame on request in 4.8 ms at the median of 5 | the resume, 14.6 s |
-| The same: the clocks | the VM's clock came back 2 minutes behind, and `systemd-timesyncd` had not stepped it 3 minutes later, as it asks only every 34 minutes at most. So the server saw no jump, and Android's clock, which follows the VM's, was 2 minutes behind too. Set by hand, as bb-box now does for an android box at `box_start`: the server saw the clock move 116 s, set Android's clock to within a second of it, and restarted the stream | |
+| The same: the clocks | the VM's clock came back 2 minutes behind, and `systemd-timesyncd` had not stepped it 3 minutes later, as it asks only every 34 minutes at most. So the server saw no jump, and Android's clock, which follows the VM's, was 2 minutes behind too. Set by hand, as alia-box now does for an android box at `box_start`: the server saw the clock move 116 s, set Android's clock to within a second of it, and restarted the stream | |
 | E3: `box_stop`, 61 minutes, then `box_start`, a viewer connected throughout | survived: `sys.boot_completed` still 1, the files written before kept, key frames on request in 4.5 to 14.6 ms. The VM's clock came back 61 minutes behind; set as `box_start` now sets it, the server saw it move 3654 s, set Android's clock, which was 3655 s behind, to the second, and restarted the stream: 54.8 fps busy after it | the resume, 14.2 s |
 | `systemctl reboot` | the service's stop saved the snapshot; the server started with the VM and booted the device from it | 16.6 s from the reboot to the device booted, 7.0 s of it after the VM's kernel started |
 | The VM reset by sysrq | booted cold, by the marker above | 23.7 s from the reset to the device booted, 14.8 s of it the cold boot |
@@ -1558,15 +1558,15 @@ GiB was the device scrolled, with no app opened.
   second kill; a crash loop longer than that was not tried.
 - The box was a Linux VM with the template's layer, not a clone of the
   template, as production does not offer android boxes before this unit.
-  The template, its record and a box acquired through BB are the lead's
+  The template, its record and a box acquired through VesnALIA are the lead's
   checks after the deploy.
 - The settings lost in E23 were written about a second before each kill.
   How long Android takes to write a setting was not measured.
 
-### Through the production BB
+### Through the production VesnALIA
 
 After the deploy, android boxes acquired with `box_acquire` on the
-production BB, at the kind's default size, 8 cores and 16 GiB, each a
+production VesnALIA, at the kind's default size, 8 cores and 16 GiB, each a
 clone of the Android template.
 
 | Check | Result |
@@ -1576,11 +1576,11 @@ clone of the Android template.
 | box_acquire, each model | the box ready in 10.5 to 11.8 s; the device booted from its snapshot 2.3 to 4.0 s after that; its clock 6,369 to 6,464 s behind, as the template's snapshots were made, and set |
 | Two Pixel 8 boxes compared | the adb key, the console token and the gRPC token differ, by their SHA-256s; the Android ID, `settings get secure android_id`, and the serial are the same in both, as unit 3.1 found |
 | The panel, in the owner's browser | each model in its frame beside its live picture, with the toolbar: the Pixel Fold open with its crease, then, folded by `adb emu fold`, the outer screen in the tall frame with the device's own camera hole; the Pixel 8; the Pixel Tablet in its landscape frame. The Fold's toolbar has Fold; the others' do not |
-| A toolbar click | Home on the Pixel Tablet took control, "You have control. Hand back when done.", and was refused in words: "bb-box cannot do that on an Android device yet: touch, keys and paste, and the device's controls, come in a later version." Hand back gave control to the agent |
+| A toolbar click | Home on the Pixel Tablet took control, "You have control. Hand back when done.", and was refused in words: "alia-box cannot do that on an Android device yet: touch, keys and paste, and the device's controls, come in a later version." Hand back gave control to the agent |
 | E3, 1 hour | `box_stop`, 61 minutes, `box_start`: resumed in 5.9 s, the VM's clock set in 28 ms; the device still booted, its file kept, its clock and the box's the same to the second as the real time. The plugin delivered a newer device server as the box came back, which reattached, set Android's clock, 3,644 s behind, and streamed |
 | E23, a restart | an app installed and synced, then `box_resize` to 10 cores with a restart: the snapshot saved as the VM shut down, the Fold booted from it in 4.9 s, the app and the file kept |
 | E23, a crash | a file written and synced, then the VM reset by sysrq: the Fold booted cold in 15.7 s, 25.1 s after the crash, with the file and the app |
-| E3, 24 hours | a Pixel 8 box stopped at 17:27 UTC on 26 October, `box_start` at 17:28 on 27 October: resumed in 3.7 s, the VM's clock set in 19 ms, 3.9 s in all. The emulator's process was kept: it had run 482 s of the VM's 488 s of running time, which a hibernation does not count. Before bb-box set it, Android's clock was 86,486 s behind, 24 h 1 min 26 s, then 0 s. The plugin delivered device server version 25, whose identity step gave the Pixel 8 its own Android ID in place of the template's, which restarts Android once: 20.9 s, so the device was back 20.0 s after the box was ready. Then a viewer's first frame 21 ms after it asked; still, no frames; busy, 41.6 fps and 5.4 Mbit/s; key frames on request in 4.0 to 4.5 ms, of 5; the agent's screenshot in 119 to 128 ms; gRPC status 0 with this start's token and 16 with a wrong one or none; adb listed the device; the agent's tap on Chrome's icon opened Chrome. The default network was Wi-Fi, VALIDATED, airplane mode off; Android pinged a host in 22 to 26 ms, and Chrome loaded an HTTPS page |
+| E3, 24 hours | a Pixel 8 box stopped at 17:27 UTC on 26 October, `box_start` at 17:28 on 27 October: resumed in 3.7 s, the VM's clock set in 19 ms, 3.9 s in all. The emulator's process was kept: it had run 482 s of the VM's 488 s of running time, which a hibernation does not count. Before alia-box set it, Android's clock was 86,486 s behind, 24 h 1 min 26 s, then 0 s. The plugin delivered device server version 25, whose identity step gave the Pixel 8 its own Android ID in place of the template's, which restarts Android once: 20.9 s, so the device was back 20.0 s after the box was ready. Then a viewer's first frame 21 ms after it asked; still, no frames; busy, 41.6 fps and 5.4 Mbit/s; key frames on request in 4.0 to 4.5 ms, of 5; the agent's screenshot in 119 to 128 ms; gRPC status 0 with this start's token and 16 with a wrong one or none; adb listed the device; the agent's tap on Chrome's icon opened Chrome. The default network was Wi-Fi, VALIDATED, airplane mode off; Android pinged a host in 22 to 26 ms, and Chrome loaded an HTTPS page |
 
 Two things the panel showed:
 
@@ -1592,15 +1592,15 @@ Two things the panel showed:
 ## Unit 7.1: computer use on an iOS device
 
 Measured on 26 October 2026 in one ios box acquired through the production
-BB, on Tart, at the kind's default size, 6 cores and 16 GiB: macOS 27.0,
+VesnALIA, on Tart, at the kind's default size, 6 cores and 16 GiB: macOS 27.0,
 Xcode 27.0, iOS 27.0 (24A434), idb_companion 1.7.7, the iPhone 18 Pro,
-slim. The device server was this unit's, delivered as bb-box delivers it:
+slim. The device server was this unit's, delivered as alia-box delivers it:
 version 11 before unit 4.1 merged, and version 12, rebased on it, for the
 second box's run of the whole check and the typing checks. The harness, `computer.ts` in
 [scripts/measure/ios](../../scripts/measure/ios/README.md#computer-use),
 runs the plugin's own `DeviceServers` and `DeviceComputer` against it, so
 each answer below is what the agent reads, and `check.json` is 063's live
-check as one run. BB's server and the tools called from a thread are not in
+check as one run. VesnALIA's server and the tools called from a thread are not in
 these numbers: that is the live check after the deploy.
 
 ### How the device's tree is read
@@ -1608,7 +1608,7 @@ these numbers: that is the live check after the deploy.
 - **As VoiceOver reads the app.** idb's `accessibility_info` in its nested
   form gave 16 elements for Settings' first page. Asked as an XCUITest
   client, it gave 142, most of them empty groups. Identifiers came either
-  way, so bb-box asks as VoiceOver does.
+  way, so alia-box asks as VoiceOver does.
 - **Frames are points of the screen as the app draws it,** as E8 found for
   touches. So an element's pixels in the video are its points times the
   model's scale, upright and sideways alike. Sideways, Safari read as
@@ -1618,14 +1618,14 @@ these numbers: that is the live check after the deploy.
 - **A newly started app shows only the status bar for 3.2 s,** then its
   first read takes 2.6 s more: Settings, cold, read every 150 to 200 ms. So
   `computer_launch` waits, at most 5 s, until the app it launched is the
-  tree's root. A read of only the status bar is never answered: bb-box
+  tree's root. A read of only the status bar is never answered: alia-box
   reads again for up to 5 s.
 - **The tree lists some elements the screen does not show.** Safari's start
   page listed buttons below the screen, so each such line says so: 'below
   the screen'. The tree also kept a page hidden under another: the
   Settings list under its search suggestions, and both pages for a moment
   after a push.
-- **iOS marks every element inside a scroll view as scrollable,** so bb-box
+- **iOS marks every element inside a scroll view as scrollable,** so alia-box
   takes the first of a run of them, such as Settings' list, as the
   scroller. A scroller narrower than a third of the screen along the scroll
   is passed over for the screen.
@@ -1633,11 +1633,11 @@ these numbers: that is the live check after the deploy.
 ### A tap by reference checks what is there
 
 idb also says which element is at a point, in 5 to 17 ms. Before a tap by
-reference, bb-box asks at the element's centre, then at four other points
+reference, alia-box asks at the element's centre, then at four other points
 of its visible part, and taps the first where the element, or one of its
 descendants, is. Where none is, it refuses and names what covers it.
 
-| Seen live | What bb-box did |
+| Seen live | What alia-box did |
 | --- | --- |
 | Settings' Accessibility row under the title bar and the Dynamic Island, the list scrolled | refused: 'e5, button "Accessibility", is covered by generic element "Dynamic Island, Empty" where it is now', with a hint to scroll up. After a scroll up, the tap opened Accessibility |
 | Settings' General row, listed under the search suggestions | refused, covered by the suggestion "Accessibility" |
@@ -1659,7 +1659,7 @@ descendants, is. Where none is, it refuses and names what covers it.
   typed into before. So `computer_type` and `set_value` now wait until the
   field holds the text, or has not changed for three reads, at most 5 s,
   and never type it again. Keys such as Return go only once the text is
-  there; otherwise the answer says what the field reads and that bb-box
+  there; otherwise the answer says what the field reads and that alia-box
   did not press them. On the iPad, never typed into, 'example.com' and
   Return then loaded the page, 3.5 s for the call.
 - **Return pressed with the text in one call went before the text.** Safari
@@ -1726,16 +1726,16 @@ at most 2 s, then reading the tree again to list what changed.
   iPad were not driven.
 - Settings, Safari and the Home Screen only. An app of the agent's own,
   with its own identifiers, was not tried.
-- The harness ran in the box, beside the device server. Through BB, each
+- The harness ran in the box, beside the device server. Through VesnALIA, each
   tool adds the round trip to the box.
 
 ### Through the tools in a thread
 
 After the deploy, on 26 October 2026, the agent of this unit's thread ran
 063's check with the real computer tools, on a fresh ios box from the
-production BB (device server version 12, the iPhone 18 Pro, slim). Each
+production VesnALIA (device server version 12, the iPhone 18 Pro, slim). Each
 time is the tool call's, from its start to its answer in the thread's log,
-so BB's server and the round trip to the box are in it.
+so VesnALIA's server and the round trip to the box are in it.
 
 | Step | Tool | Time | Result |
 | --- | --- | --- | --- |
@@ -1778,7 +1778,7 @@ plugin with it:
 
 - **The error itself again on a device,** as it did not come back: the
   point-by-point read was checked by giving it the error.
-- **A person's control through BB:** no person held the panel during the
+- **A person's control through VesnALIA:** no person held the panel during the
   thread's run. The harness checked it twice.
 - **The image's check** does not yet read a tree or take a screenshot of
   each model, as 063 asks of units 7.1 and 7.2. It would need idb_companion
@@ -1792,21 +1792,21 @@ plugin with it:
 server writes each segment's H.264 as it comes, into a Matroska file of its
 own making with each frame's time on the box's monotonic clock, and logs
 each segment's model and geometry, every touch, each caption and each gap
-beside them. At the stop, bb-box frames the segments on one canvas with
+beside them. At the stop, alia-box frames the segments on one canvas with
 ffmpeg, holding each frame until the next, finds still stretches with
 `freezedetect`, and makes the clip as 059 does.
 
 ### How it was checked
 
-On 26 October 2026, in an ios box from the production BB on Tart (6 cores,
+On 26 October 2026, in an ios box from the production VesnALIA on Tart (6 cores,
 16 GiB), the iPhone 18 Pro, iOS 27.0, ffmpeg 9.0.2. The device server of
 this unit was delivered by `scripts/measure/ios/bench.ts deliver`: version
 11, before units 4.1 and 7.1 merged, for the table below, and version 13,
 rebased on both, in a second box for the main clip and the kill again.
 `scripts/measure/ios/record.ts` drove it through a control connection, with
-no viewer open, then framed and made each clip as bb-box does. The plugin's
-own path, `box_record` through BB, was checked on a Linux box with the test
-device, in the plugin's tests; through a BB in a box it is the lead's check.
+no viewer open, then framed and made each clip as alia-box does. The plugin's
+own path, `box_record` through VesnALIA, was checked on a Linux box with the test
+device, in the plugin's tests; through a VesnALIA in a box it is the lead's check.
 
 ### The clips
 
@@ -1883,19 +1883,19 @@ for the recording's whole length.
 ## Units 5.1 and 6.2 on Android: input and controls
 
 Measured on 26 October 2026 in one android box acquired through the
-production BB, a clone of the Android template on Proxmox QEMU at the
+production VesnALIA, a clone of the Android template on Proxmox QEMU at the
 kind's default size, 8 cores and 16 GiB: Android 15 (API 35), emulator
 37.2.12.0, the Pixel 8 and the Pixel Fold. The device server was this
-unit's, version 14 and then 15, delivered from its checkout as bb-box
+unit's, version 14 and then 15, delivered from its checkout as alia-box
 delivers it, so the production plugin used it. Three ways in:
 
-- **Through BB,** in the owner's Chrome on a Mac, driven by playwriter: the
+- **Through VesnALIA,** in the owner's Chrome on a Mac, driven by playwriter: the
   panel's own Device view and toolbar, and `box_device` from this thread.
 - **The plugin's own code in the box,** as 5.2 and 6.3 measured iOS:
   `scripts/measure/ios/viewer.ts` runs the plugin's relay and the panel's
   video client in headless Chrome 156 in the box, and
   `scripts/measure/android/controls.ts` runs the plugin's `DeviceServers`
-  and box_device's parsing and words. BB's server and the network are not
+  and box_device's parsing and words. VesnALIA's server and the network are not
   in these.
 - **Straight to the emulator's gRPC,** for what the emulator itself does.
 
@@ -1930,7 +1930,7 @@ and logged each touch, key, pinch, scroll, field value and request.
   space, Caps Lock, Escape and Tab reached the page by name; Page Up and
   Down, Insert, F1 and F12 reached it, named "Unidentified" by Chrome.
   The emulator holds Shift between calls, so chords work. A key a US
-  keyboard lacks, such as "é", is refused: "Send it as text, which bb-box
+  keyboard lacks, such as "é", is refused: "Send it as text, which alia-box
   pastes."
 - **Every printable US character types as keys:**
   `a7?b8!c9(D0)e-_f=+g[{h]}i;:j,<k.>l/?mZ` arrived exactly, 3 of 3.
@@ -1993,7 +1993,7 @@ every time, in 21 tries.
   the person's touch as the old input connection ended, the new instance
   took the lease, the viewer connected again by itself, and its next tap
   landed.
-- **The agent while a person holds control:** `box_device home` through BB
+- **The agent while a person holds control:** `box_device home` through VesnALIA
   was refused with `person-has-control`.
 - **Alt and drag:** two touches mirrored about the screen's centre reached
   the page; its pinch read 1.413 against 1.414 from the pointer's path.
@@ -2014,13 +2014,13 @@ cores is the mean over the run.
 | --- | --- | --- | --- | --- | --- |
 | In the box | idle | 100 of 100 | 87 ms | 90 ms | 92 ms |
 | In the box, Android's pointer overlay, no app | idle | 30 of 30 | 76 ms | 94 ms | 175 ms |
-| Through BB | idle | 100 of 100 | 67 ms | 346 ms | 596 ms |
-| Through BB | idle, two more runs | 50 and 50 of 50 | 67 ms | 159 and 76 ms | 232 and 523 ms |
-| Through BB | one build, 37% busy | 96 of 100 | 76 ms | 110 ms | 615 ms |
-| Through BB | two builds, 60 to 89% busy | 100 of 100 | 87 ms | 329 ms | 522 ms |
-| Through BB | two builds, the emulator pinned to cores 0 to 5 and the builds to 6 and 7 | 96 of 100 | 74 ms | 301 ms | 639 ms |
+| Through VesnALIA | idle | 100 of 100 | 67 ms | 346 ms | 596 ms |
+| Through VesnALIA | idle, two more runs | 50 and 50 of 50 | 67 ms | 159 and 76 ms | 232 and 523 ms |
+| Through VesnALIA | one build, 37% busy | 96 of 100 | 76 ms | 110 ms | 615 ms |
+| Through VesnALIA | two builds, 60 to 89% busy | 100 of 100 | 87 ms | 329 ms | 522 ms |
+| Through VesnALIA | two builds, the emulator pinned to cores 0 to 5 and the builds to 6 and 7 | 96 of 100 | 74 ms | 301 ms | 639 ms |
 
-Through BB the browser decodes on the Mac's hardware, which is why it is
+Through VesnALIA the browser decodes on the Mac's hardware, which is why it is
 faster than headless Chrome decoding in software in a busy box.
 
 Where the time goes, from wall clocks: the box's log stamped when each
@@ -2034,20 +2034,20 @@ synced by NTP:
   encoding, and is the floor.
 - **Decoding and drawing in the browser** after the frame arrived: median 4
   to 5 ms, worst 10 ms.
-- **BB's path, both ways,** about 7 ms at the median.
+- **VesnALIA's path, both ways,** about 7 ms at the median.
 - **Every slow tap lost 250 to 310 ms on the input's way in,** before the
   device server saw it; the frame's way out stayed normal. The same relay
-  code run in the box without BB's server or SSH had no tail. bb-box's loop
-  watch logged BB's server standing still 3 to 13 times in each minute of
+  code run in the box without VesnALIA's server or SSH had no tail. alia-box's loop
+  watch logged VesnALIA's server standing still 3 to 13 times in each minute of
   these runs, for up to 383 to 1,676 ms, which a tap arriving then waits
   out. Pinning the emulator lowered the busy median from 87 to 74 ms, not
   the tail.
 - **The first tap after a still spell** of tens of seconds took 360 to
-  559 ms through BB each time, by the same late input. In the box the
+  559 ms through VesnALIA each time, by the same late input. In the box the
   first tap after a reconnect took 58 to 89 ms over 3 reconnects.
 
-So Android's bar is about 70 to 90 ms at the median through BB, with the
-device's CPU drawing, 50 to 60 ms, as its floor. The tail through BB is
+So Android's bar is about 70 to 90 ms at the median through VesnALIA, with the
+device's CPU drawing, 50 to 60 ms, as its floor. The tail through VesnALIA is
 [#1158](https://github.com/ahkohd/bb-box/issues/1158), shared with
 desktops.
 
@@ -2064,7 +2064,7 @@ Server time is from the request to its answer, read-back included.
 | appearance | 0.2 s | dark and light |
 | text_size, each of the 7 font scales, and larger, smaller, default | 175 to 333 ms | each read back as set |
 | location, London and cleared | 0.1 to 0.2 s | read back by `getGps`; cleared, the emulator's own, 37.422, -122.0841 |
-| status_bar clean and live | 0.17 s | 9:41, full Wi-Fi and signal, the battery bb-box set, on the Pixel 8 and the Fold |
+| status_bar clean and live | 0.17 s | 9:41, full Wi-Fi and signal, the battery alia-box set, on the Pixel 8 and the Fold |
 | battery, 42% not charging, and the device's own | 0.1 s | read back by `getBattery` |
 | network, slow, offline, online | 0.1, 0.4 and 3.9 to 4.0 s; online waits for Wi-Fi's address | read back; E22 below |
 | install, a 2 MB and a 170 KB APK | 0.2 to 0.3 s, `sync` included | in the app list; launched |
@@ -2095,7 +2095,7 @@ Each 10 times in the box:
 
 The server reads them together, with the location and battery by gRPC, in
 41 to 82 ms. After `adb shell cmd uimode night no` in a shell, a watching
-viewer's state said light, changed outside bb-box, 6.3 s later.
+viewer's state said light, changed outside alia-box, 6.3 s later.
 
 ### Requests by ID
 
@@ -2108,7 +2108,7 @@ answer, the device turned once.
 
 SystemUI's demo mode, allowed by `settings put global sysui_demo_allowed 1`,
 then its broadcasts: the clock at 9:41, Wi-Fi and mobile at full, the
-battery at the level bb-box set and not charging unless set so, no
+battery at the level alia-box set and not charging unless set so, no
 notification icons, and the other icons hidden. It took 126 ms and showed on
 the Pixel 8 and the Pixel Fold. `live` leaves demo mode. A cold boot clears
 it, so the server sets it again when the device starts; after a switch away
@@ -2119,7 +2119,7 @@ and back, the Fold came back clean.
 `setPhysicalModel` ROTATION about z, 90 degrees, gave the picture with the
 device's top, its status bar and camera hole, at the left: turned left, a
 quarter turn anticlockwise, the way the toolbar's left arrow points, as on
-iOS. -90 is turned right and 180 upside down. bb-box turns in one step: the
+iOS. -90 is turned right and 180 upside down. alia-box turns in one step: the
 emulator's default eases through the orientations between, so upside down
 to turned right passed through upright.
 
@@ -2174,9 +2174,9 @@ first time in the box says so after its time: "…booted N s after the box
 was ready, about 8 s of it giving the device its own Android ID, as each
 device's first boot in a box does."
 
-### The toolbar, through BB
+### The toolbar, through VesnALIA
 
-In the owner's Chrome, on the production BB's panel, which draws a control
+In the owner's Chrome, on the production VesnALIA's panel, which draws a control
 when `supports` takes it:
 
 | Control | Seen |
@@ -2200,17 +2200,17 @@ server is not connected": this unit's harness, an instance started later,
 had taken the box's lease, and an instance once superseded does not take it
 back while it runs. That is right for a reload, where the earlier instance
 is about to end; a harness that outlives its lease leaves the box's plugin
-link down until bb-box reloads.
+link down until alia-box reloads.
 
 ### What limits these numbers
 
 - One box, of 8 cores, on one host. The Pixel Tablet was not driven.
-- Through BB is one browser, Chrome on a Mac, on the same network as BB's
+- Through VesnALIA is one browser, Chrome on a Mac, on the same network as VesnALIA's
   server.
 - The Gradle builds were of a small app with 2,000 generated classes; a
   real app's build loads the box differently.
 - The wall clocks of the Mac and the box agree to about 30 ms, by their
-  NTP; the split of BB's path both ways is that rough, the device's own
+  NTP; the split of VesnALIA's path both ways is that rough, the device's own
   share is not.
 - E21's Chrome numbers come from one page; an app that reads the clipboard
   itself was not tried.
@@ -2223,7 +2223,7 @@ link down until bb-box reloads.
 
 ## Six fixes from live checks
 
-Checked on 26 October 2026 in one ios box from the production BB, on Tart,
+Checked on 26 October 2026 in one ios box from the production VesnALIA, on Tart,
 4 cores and 8 GiB, with the iPhone 18 Pro, iOS 27.0 (24A434) and
 idb_companion 1.7.7. The device server came from this checkout: version 14,
 and main's 15, before the fixes, and these fixes after them.
@@ -2284,7 +2284,7 @@ back until it has read what decides them, and waits up to 10 s for that
 read. A kind offered once read is listed as any kind is. One still held
 back is listed under "Kinds you cannot acquire now", with why, or as being
 checked while the read goes on. This was tested against fakes only: it
-shows only in the seconds after bb-box restarts.
+shows only in the seconds after alia-box restarts.
 
 ### A VM deleted while Tart lists the Mac's VMs
 
@@ -2315,10 +2315,10 @@ and ios boxes, rather than "Desktop control".
 
 ## F-3: Android boxes start with no network
 
-Checked on 26 October 2026 on two android boxes from the production BB, 8
+Checked on 26 October 2026 on two android boxes from the production VesnALIA, 8
 cores and 16 GiB, Proxmox QEMU, with the image of that day. Device server
 version 16 as the image started it, then version 17 from this checkout,
-delivered into each box as bb-box does.
+delivered into each box as alia-box does.
 
 ### What was wrong
 
@@ -2338,7 +2338,7 @@ disk:
 | Where | AndroidWifi |
 | --- | --- |
 | The untouched snapshot, loaded read-only beside a box's device | listed by `cmd wifi list-networks`; 0 times in `WifiConfigStore.xml`, dated as the build |
-| The same device left running | in `WifiConfigStore.xml` within 11 s of the load, by Android's timer; 4.4 and 5.8 s after bb-box first looked, in two boxes |
+| The same device left running | in `WifiConfigStore.xml` within 11 s of the load, by Android's timer; 4.4 and 5.8 s after alia-box first looked, in two boxes |
 | A box's device after version 16 gave it its own Android ID | "No stored networks found" as Android read its store; none since |
 
 Version 16 restarted Android's framework, with `stop` and `start`, 0.1 s
@@ -2360,7 +2360,7 @@ report. It did not show after a full reboot.
 - **Online means reached.** The read-back adds the default network from
   `dumpsys connectivity`, which takes 14 to 16 ms. `online` and `slow` need
   a default network Android has validated; `offline` needs none. A boot
-  waits up to 10 s for the network bb-box set, then restarts Wi-Fi once and
+  waits up to 10 s for the network alia-box set, then restarts Wi-Fi once and
   waits up to 15 s more (below, after the deploy). The network control waits up
   to 8 s, then says what the device reads, for example "The network was
   set to online, but 8 s later the device reads airplane mode disabled,
@@ -2369,7 +2369,7 @@ report. It did not show after a full reboot.
   with the state read after it. Before, the failed network control above
   still said "network online".
 - **The template.** prepare-avds.sh waits until AndroidWifi is in the Wi-Fi
-  store before it saves each snapshot, and bb-box-check-android fails an
+  store before it saves each snapshot, and alia-box-check-android fails an
   image whose snapshot lacks it or has no validated network. The image
   needs a rebuild for this; until then the server's wait covers it.
 
@@ -2401,7 +2401,7 @@ against 20 s.
 
 - Two boxes on one host. Each device's first boot came from a switch, as
   each box's image server gave the Pixel 8 its ID before version 17 could
-  run; five fresh boxes from the production BB, each with a fetch within
+  run; five fresh boxes from the production VesnALIA, each with a fetch within
   the boot time box_acquire reports, need version 17 delivered there.
 - The wait for the write, 4.4 to 5.8 s here, goes once the image is
   rebuilt with the new prepare-avds.sh. The reboot, about 20 s, stays.
@@ -2410,7 +2410,7 @@ against 20 s.
 
 ### After the deploy: five fresh boxes
 
-Version 17 in the production BB, five android boxes acquired one after
+Version 17 in the production VesnALIA, five android boxes acquired one after
 another, at most two held at a time, each released after its check. Each
 row is the box's Pixel 8 as box_acquire handed it over.
 
@@ -2433,7 +2433,7 @@ Its retry left the default route out, with "Network is unreachable". Version
 17 said so after its 20 s wait, and box_acquire did not claim "network
 online". Turning Wi-Fi off and on gave a validated network in 5.3 s.
 
-So version 18, when the network bb-box set has not come 10 s after a boot
+So version 18, when the network alia-box set has not come 10 s after a boot
 and airplane mode is off with Wi-Fi on, restarts Wi-Fi once, and waits up
 to 15 s more. On a box with version 18, a loop flushed the Wi-Fi table's
 IPv4 routes for 8 s after a cold reboot, which leaves the network
@@ -2444,7 +2444,7 @@ boxes is too few to say how often Android does this.
 ## Units 7.2 and 7.3: computer use on an Android device
 
 Measured on 26 October 2026 in two android boxes acquired through the
-production BB, clones of the Android template on Proxmox QEMU at the kind's
+production VesnALIA, clones of the Android template on Proxmox QEMU at the kind's
 default size, 8 cores and 16 GiB: Android 15 (API 35), emulator 37.2.12.0,
 the Pixel 8. The device server was this unit's, version 17, which is 19
 after its rebase on F-3's two fixes. The harness,
@@ -2453,7 +2453,7 @@ after its rebase on F-3's two fixes. The harness,
 runs the plugin's own `DeviceServers` and `DeviceComputer`, so each answer
 below is what the agent reads. With `--tree dump` or `--tree server` it
 runs the device server in its own process with that source of the tree.
-`check.json` is 063's live check as one run, `e12.json` is E12. BB's
+`check.json` is 063's live check as one run, `e12.json` is E12. VesnALIA's
 server and the tools called from a thread are not in these numbers.
 
 Both boxes started with no network on the device and with
@@ -2467,7 +2467,7 @@ Connected devices rather than Network & internet.
 
 ### Where the tree comes from
 
-- **bb-box's own tree server (7.3),** a Java program,
+- **alia-box's own tree server (7.3),** a Java program,
   `setup/android/tree-server/TreeServer.java`, built to a 15 KB dex,
   `src/device/tree-server.dex`, by `setup/android/build-tree-server.sh`
   with a pinned JDK 17, d8 and android-35, and delivered with the device
@@ -2482,9 +2482,9 @@ Connected devices rather than Network & internet.
 - Both go through one converter into the device's elements, so a dump and a
   server read of a screen give the same lines (below).
 
-Choosing bb-box's own server over Appium's UiAutomator2 server:
+Choosing alia-box's own server over Appium's UiAutomator2 server:
 
-| | bb-box's tree server | Appium UiAutomator2 server v10.6.6 |
+| | alia-box's tree server | Appium UiAutomator2 server v10.6.6 |
 | --- | --- | --- |
 | What reaches the device | one 15 KB dex in `/data/local/tmp` | two APKs installed on each device, 17,968,807 and 197,183 bytes |
 | Within the 512 KB delivery budget | yes: the delivered files are 504 KB in all | no: it would have to be in the image |
@@ -2519,7 +2519,7 @@ answer, 20 reads 200 ms apart, on a still screen:
 | Source | Settings' first page | A page in Chrome |
 | --- | --- | --- |
 | `uiautomator dump` | 1,908 to 1,917 ms, median 1,911 ms | 1,900 to 1,919 ms, median 1,906 ms |
-| bb-box's tree server | 2.7 to 33.1 ms, median 3.2 ms | 1.6 to 16.9 ms, median 3.0 ms |
+| alia-box's tree server | 2.7 to 33.1 ms, median 3.2 ms | 1.6 to 16.9 ms, median 3.0 ms |
 
 The server's first read after it connects takes 330 to 620 ms: it waits
 until the window list has not changed for three reads and the screen's
@@ -2545,7 +2545,7 @@ label, identifier and frame.
 
 ### E12: beside an instrumentation test
 
-A small app of bb-box's own test probe, built in the box with aapt2, javac
+A small app of alia-box's own test probe, built in the box with aapt2, javac
 and d8, has two instrumentations: `Holds` calls `getUiAutomation()` and
 reads the screen every 500 ms for 8 s, as a UiDevice test does, and `Plain`
 does not touch UiAutomation, as an Espresso test need not. Each ran with
@@ -2649,9 +2649,9 @@ ran except About, which the dump cannot read.
 - One model, the Pixel 8, in two boxes. The Pixel Fold and the Pixel
   Tablet were not driven.
 - Settings, Chrome, the Home Screen and the probe app only.
-- The harness ran in the box. Through BB, each tool adds the round trip to
+- The harness ran in the box. Through VesnALIA, each tool adds the round trip to
   the box.
-- The instrumentation tests were bb-box's own probe, calling
+- The instrumentation tests were alia-box's own probe, calling
   `Instrumentation.getUiAutomation()` as AndroidX's runner and UiDevice do,
   not a Gradle project's `connectedAndroidTest`.
 
@@ -2675,7 +2675,7 @@ clipboard on the viewer's, for the tab with control.
 
 ### How it was measured
 
-On 28 October 2026, on the production BB, after the deploy of main
+On 28 October 2026, on the production VesnALIA, after the deploy of main
 38bd6bb (device server version 28). The lead set `kinds.android.spares`
 and `kinds.ios.spares` to 1 at 16:23:48 UTC, and android back to none at
 16:43:16. Each claim was a `box_acquire` from this thread: android at its
@@ -2691,12 +2691,12 @@ android box of this thread.
 
 With counts of 0, the doctor's Spares section says, for each device kind,
 "Spares are off for android boxes: none is kept", and what a spare would
-cost. With the counts at 1 it said "bb-box keeps 1 spare android box: 1
+cost. With the counts at 1 it said "alia-box keeps 1 spare android box: 1
 ready, 0 being made", and the same for ios.
 
 ### Making a spare
 
-From the count set to the spare waiting stopped, as `bb box list --all`
+From the count set to the spare waiting stopped, as `alia box list --all`
 showed it, read every 10 s:
 
 | | android | ios |
@@ -2713,7 +2713,7 @@ To the model asked for booted, five claims of each kind:
 | A new box (cold) | 40.6 s: ready in 9.8 s, then 30.8 s, 25 s of it the device's first boot giving it its own Android ID | 26.8 s: ready in 19.0 s, then 7.8 s |
 | A spare, its default model | 23.2 s and 12.1 s (resume 22.8 s and 11.4 s) | 7.4 s and 7.6 s |
 | A spare, another model | Pixel Fold 30.1 s and 20.2 s, Pixel Tablet 26.9 s: the resume, then a switch of 8.8 to 10.5 s | iPhone 17 16.7 s and 18.6 s, iPad Pro 18.6 s: the resume, then 9.5 to 11.5 s |
-| Its BB machine connected again | 12.1 to 33.2 s | 8.5 to 11.2 s |
+| Its VesnALIA machine connected again | 12.1 to 33.2 s | 8.5 to 11.2 s |
 
 Every ios claim restored from its suspend. A switch to a model not booted
 before in the box took 31.4 to 31.7 s on android, against 4.8 to 8.3 s
@@ -2741,17 +2741,17 @@ box's memory.
 ### A suspend that did not restore
 
 A dedicated ios box suspended at 15:44:40 UTC did not restore at 16:24,
-39.5 minutes later. bb-box's log has `VZErrorDomain Code=12 "The virtual
+39.5 minutes later. alia-box's log has `VZErrorDomain Code=12 "The virtual
 machine failed to restore with error "invalid argument"."`, the error E4
 met after 24 h, with no macOS or Tart update between. The VM booted
 afresh: the new start timing said "boot 16.7 s", and the device was back
 10.5 s after the box was ready, 27 s in all, about a new box's time.
-bb-box was redeployed at about 16:17, in between. E4's run of 62 minutes
+alia-box was redeployed at about 16:17, in between. E4's run of 62 minutes
 had restored.
 
-bb-box's log had, on that Mac, the deploy's start at 16:22:43, two VM
+alia-box's log had, on that Mac, the deploy's start at 16:22:43, two VM
 starts at 16:23:44 and 16:24:01 (the first ios spare being made), then the
-failure at 16:24:08. bb-box starts every macOS VM with the same flags and
+failure at 16:24:08. alia-box starts every macOS VM with the same flags and
 changes no config of a VM that exists. Three controlled trials then
 restored, each a dedicated ios box with no other box of this thread's
 running:
@@ -2759,7 +2759,7 @@ running:
 | Trial | Result |
 | --- | --- |
 | An ios spare suspended 49.6 minutes, with a warm VM cloned and started on the Mac 13 minutes before the claim; its config.json and nvram.bin checksums, sizes, times and MAC address the same before and after | restored: ready 9.0 s from the claim, no boot since its first |
-| A box suspended, bb-box reloaded with no code change 10 s later, the box started 5 minutes after with no other VM starting | restored: 9.4 s, no boot |
+| A box suspended, alia-box reloaded with no code change 10 s later, the box started 5 minutes after with no other VM starting | restored: 9.4 s, no boot |
 | The same box suspended, then started at the same moment as a new box's `tart run`, which began 0.8 s after its acquire, during the 7.7 s restore | restored: 7.7 s, no boot |
 
 So neither a wait of this order, a reload, nor another VM's start beside
@@ -2801,7 +2801,7 @@ is the browser's.
 
 - **The cause of the failed restore.** One difference from the trials was
   not repeated: that box was suspended 54 s after its VM booted, by the
-  bb-box before the deploy.
+  alia-box before the deploy.
 - **iOS's own copy** by Cmd+C of selected text in an app. The keyboard
   path was checked with text the host put on the pasteboard.
 
@@ -2833,7 +2833,7 @@ What changed:
 - **The device server drops `cw`.** From version 29 it puts no viewer's
   clipboard on the device, so a tab opened before this change cannot push
   one. Such a tab's Cmd+V pastes the device's own clipboard until the tab
-  reloads. bb-box's paste for Tart's and Windows' desktops refuses the
+  reloads. alia-box's paste for Tart's and Windows' desktops refuses the
   automatic send such a tab makes.
 - **The menu says so.** Under Paste from this computer: "A paste from the
   box's own menu, or a middle click, uses the box's own clipboard", or
@@ -2885,7 +2885,7 @@ Findings:
   So "a paste arrives on iOS" is not shown here; the iOS paste path did
   reach the device server, which refused it in words.
 - **Another plugin reads the clipboard at a paste.** In the desktop view,
-  a Cmd+V's paste event also made the BB canvas plugin's editor call
+  a Cmd+V's paste event also made the VesnALIA canvas plugin's editor call
   `navigator.clipboard.read()`, from its own document paste listener. It
   reads only at a paste, and sends nothing to a box.
 
@@ -2929,7 +2929,7 @@ worked.
   load a LaunchAgent into its own `user/<uid>` domain without root, from
   the device server's LaunchDaemon too. When the device server is not in an
   Aqua session, it loads macOS's own `/usr/libexec/pboard` there, as
-  `app.bb-box.pboard`, for the background session, with the Mach services
+  `app.alia-box.pboard`, for the background session, with the Mach services
   `pboard`'s own plist gives. It then runs each `pbcopy` and `pbpaste` as a
   short launchd job in that domain, with the text in a file and its exit
   code kept, and boots the job out after
@@ -2956,7 +2956,7 @@ worked.
 
 ### Measured before the deploy
 
-The new server was put in a slot's own `~/.bb-box/device/server/29` and
+The new server was put in a slot's own `~/.alia-box/device/server/29` and
 started again by launchd, so it ran as production runs it:
 
 | Slot | Before | After |
@@ -2971,7 +2971,7 @@ slot's own session took 0.20 to 0.24 s.
 
 ### Checked after the deploy
 
-On production BB at main dd05f65, device server version 30, on 28 October
+On production VesnALIA at main dd05f65, device server version 30, on 28 October
 2026, with test values only:
 
 | Box | What was checked | Result |
@@ -2982,7 +2982,7 @@ On production BB at main dd05f65, device server version 30, on 28 October
 | | `box_device` appearance dark; `box_run`'s own `pbcopy` and `pbpaste` | 0.3 s; both worked, UTF-8 intact |
 | Shared slot, Tart host, iOS 27.0 | `box_run`'s own `pbcopy` and `pbpaste` | worked from about 15 s after the device booted; before that, exit 60 (see below) |
 | | `computer_type` of `✓ 日本` | arrived whole |
-| Dedicated Tart box, iOS 27.0 | where the device server runs simctl | in its desktop session, as before: no `pasteboard:` line, no session folder, no pasteboard server of bb-box's own |
+| Dedicated Tart box, iOS 27.0 | where the device server runs simctl | in its desktop session, as before: no `pasteboard:` line, no session folder, no pasteboard server of alia-box's own |
 
 The panel's tab replaced `navigator.clipboard`'s read and write with test
 stubs before the page loaded, so the panel's own code read a test string
@@ -2998,7 +2998,7 @@ the one measured there before it.
 ### The image's check line
 
 Run by hand on a dedicated Tart box cloned from the iOS image, as
-`bb-box-check-ios` will run it, on carried slot `bbd-i1`'s device:
+`alia-box-check-ios` will run it, on carried slot `bbd-i1`'s device:
 
 - **The device's pasteboard answers some seconds after it reports booted.**
   Just after `simctl bootstatus -b`, `pbcopy` exits 60, "Operation timed
@@ -3076,7 +3076,7 @@ applies a system setting that another process changed, as Settings and
   start, but breaks reading the screen.** Every read then timed out, "did
   not answer a frontmost request within 5.0s", and stayed so after a new
   idb_companion and a restart of CoreSimulatorBridge, until a reboot. So
-  bb-box reboots instead.
+  alia-box reboots instead.
 - **Bold Text by reference tapped the row's centre.** idb gives a switch in
   a row as one element whose frame is the whole row, 16 to 386 points
   across for Bold Text. A tap at its centre, 201 points, does nothing on
@@ -3085,7 +3085,7 @@ applies a system setting that another process changed, as Settings and
 What changes:
 
 - The device server knows whether its user's uid is 501. Where it is not,
-  bb-box's `appearance` and `text_size` controls set the value and then
+  alia-box's `appearance` and `text_size` controls set the value and then
   reboot the device, so the read-back matches the screen. The server
   treats them as a reboot: input under way stops, and the control gets the
   reboot's 120 s deadline, on the plugin's and the panel's side too.
@@ -3109,7 +3109,7 @@ What changes:
 
 Opened cold by URL on a slot, Safari was in front for 8.5 s, from 1.7 s
 after `openurl` to 10.1 s, as an application element with an empty label
-and no children, read every 100 ms. bb-box took the root's label as the
+and no children, read every 100 ms. alia-box took the root's label as the
 app's name, so it said "the Home Screen or a system screen".
 
 - An unnamed application element is named from its process: the program's
@@ -3133,7 +3133,7 @@ Wikipedia page in 282 to 342 ms gave 26 or 27 distinct links, buttons and
 texts.
 
 - Where a named app's own labelled elements leave the screen's middle
-  uncovered, bb-box reads that one point. The Home Screen is not read this
+  uncovered, alia-box reads that one point. The Home Screen is not read this
   way, as its widgets are other processes' too. When the point's element
   belongs to another process,
   it reads the screen at 6 points across and every 30 points down, less the
@@ -3217,7 +3217,7 @@ What changed:
   the same name, as in 'Simulator · box-2'.
 - **A bare Desktop tab retitles itself.** Opened from the launcher, a
   Desktop tab whose one box has only a device shows the device and
-  renames itself Simulator or Emulator. BB titles a tab only as it opens,
+  renames itself Simulator or Emulator. VesnALIA titles a tab only as it opens,
   and opening one again with the same params retitles it.
 - **Control stays across a box's two tabs.** Going from a box's Desktop
   tab to its Simulator tab keeps control past the hidden tab's minute.
@@ -3230,15 +3230,15 @@ production panel in the owner's browser (Helium), in a tab of its own, at
 
 | Check | Result |
 | --- | --- |
-| A shared ios box's row and tab | "Open simulator" on the row opened a tab titled Simulator, with the phone icon in BB's tab strip beside the Box tab's cube, and no Desktop button |
+| A shared ios box's row and tab | "Open simulator" on the row opened a tab titled Simulator, with the phone icon in VesnALIA's tab strip beside the Box tab's cube, and no Desktop button |
 | An android box's row and tab | "Open emulator" opened a tab titled Emulator, with the phone icon |
 | The Boxes page's filters, the list searched to this thread's boxes | System offered Linux, macOS, iOS and Android; ticking iOS listed only the ios box, ticking Android only the android box, with the other systems greyed |
 | A dedicated ios box, a Tart VM, beside the shared one | its row had "Open simulator" and "Open desktop"; its tabs were titled "Simulator · " and the box's name, as the shared box's tab also said Simulator, and Desktop, as no other box had one. The Simulator tab's Desktop button opened the Desktop tab, with the cube icon and a Simulator button, and the Device Hub words naming the Simulator tab; that button went back to the Simulator tab |
 | At 360 px | the filters' sheet offered iOS and Android, and ticking iOS listed only the ios box; each tab showed its title and phone icon alone in the strip, with Previous and Next to the others, and the dedicated box's two tabs kept their buttons. "Simulator · " and a box's name is cut short there |
 
-Before the deploy, on a fresh BB in a box with bb-box from the branch and
+Before the deploy, on a fresh VesnALIA in a box with alia-box from the branch and
 the test device on: a bare Desktop tab whose one box had only the test
-device renamed itself Emulator, and BB kept that title for the tab.
+device renamed itself Emulator, and VesnALIA kept that title for the tab.
 
 ## F-21: an iOS paste that arrived wrong or late, and a new host's first reads
 
@@ -3327,9 +3327,9 @@ reboot, as in F-17's check, were not seen.
 ### Measured before the deploy
 
 The change, with lab-only log lines, was put in the box's own
-`~/.bb-box/device/server` and started again by launchd, so it ran as
+`~/.alia-box/device/server` and started again by launchd, so it ran as
 production runs it. The agent's path was `computer_type` through
-production BB. Runs of 20 went through the device server's own socket, as
+production VesnALIA. Runs of 20 went through the device server's own socket, as
 the person's input connection does: keys as `kd` and `ku` messages and
 pastes as `paste` requests, as `computer_type` splits them, each field read
 back by the server's `tree` and the clipboard by its `clipboard` request.
@@ -3358,7 +3358,7 @@ later, the time in which reads and pastes failed before.
 
 ### Checked after the deploy
 
-On production BB at main a90c5f9, device server version 32, on 29 October
+On production VesnALIA at main a90c5f9, device server version 32, on 29 October
 2026, with test values only. The agent's checks went through
 `computer_type`; the runs of 20 went through the device server's own
 socket, as before the deploy.
@@ -3404,7 +3404,7 @@ What changed:
   host, or the box's form, such as VM, where a desktop's form goes. A
   dedicated ios box keeps its Desktop badge after Simulator.
 - **A tab on a narrow screen is named for its box alone.** Under 768 px,
-  BB's compact layout, a tab that would be 'Simulator · box-2',
+  VesnALIA's compact layout, a tab that would be 'Simulator · box-2',
   'Desktop · box-2' or 'Terminal: box-2' is 'box-2', as its icon says what
   it shows. A name that is the only one of its kind, such as Simulator,
   stays.
@@ -3437,7 +3437,7 @@ What changed:
 
 - **A row's first line places its parts in order.** It measures them and
   keeps the name whole, then the system, then badges by rank: Simulator,
-  Emulator, Shared, the box's form and BB machine first, Desktop next,
+  Emulator, Shared, the box's form and VesnALIA machine first, Desktop next,
   then the rest. The device's model takes what is left, cut, and is
   dropped under 32 px. The name is cut only when it alone does not fit.
 - **One quick action on a narrow screen.** Under 768 px, a row has its
@@ -3466,7 +3466,7 @@ Built on 29 October 2026, from F-22b's live check, where an android row at
 360 px showed VM rather than Emulator.
 
 - **F-22c ranks a row's badges** the device's word, Simulator or Emulator,
-  first, then Shared, then the box's form and BB machine, then Desktop,
+  first, then Shared, then the box's form and VesnALIA machine, then Desktop,
   then the rest.
 - **F-22d lets the system word give way** on a box with a device, before
   Simulator or Emulator, which say it already. A row with room for both
@@ -3485,14 +3485,14 @@ After F-22d's deploy (main 80b4b79), at 360 px, the same row read
 
 Built on 29 October 2026. `tart-ios-hosts.test.ts` failed on CI at times,
 twice on 29 October: the Tart backend's dispose ended with "ENOTEMPTY,
-Directory not empty: '/tmp/bb-box-cm-...'", from `KeyFile.dispose`, as it
+Directory not empty: '/tmp/alia-box-cm-...'", from `KeyFile.dispose`, as it
 removed the folder of SSH's shared-connection sockets.
 
 ### The cause
 
 The test that failed ends while a shared host's VM is still starting. As
-bb-box stops, that start is aborted, and it still sends one SSH command,
-on purpose: a note on the Mac that it left the start, so the next bb-box
+alia-box stops, that start is aborted, and it still sends one SSH command,
+on purpose: a note on the Mac that it left the start, so the next alia-box
 instance carries it on at once (F-7). The Tart backend's dispose dropped
 its `Ssh` before that, so the note, or any command in that window, made a
 new `Ssh` on the same folders, never disposed, whose shared connection
@@ -3523,7 +3523,7 @@ minutes for the start's last sign of life, and F-7's test failed.
 
 | Check | Before | After |
 | --- | --- | --- |
-| A new test: bb-box stops while a shared host starts; each shared connection opened as it stopped is closed before its folder goes | failed in 4 of 5 runs | passed in 5 of 5 |
+| A new test: alia-box stops while a shared host starts; each shared connection opened as it stopped is closed before its folder goes | failed in 4 of 5 runs | passed in 5 of 5 |
 | F-7's test, a start that one instance leaves and the next carries on | passed | passed in 5 of 5 |
 | `tart-ios-hosts.test.ts` whole, on a Linux box, 3 at a time | 30 of 30 passed | 30 of 30 passed |
 | `KeyFile.dispose` with sockets still coming into the folder, 3,000 files written as it removes | failed, 3 of 3 | passed, 3 of 3 |
@@ -3542,7 +3542,7 @@ typed before a paste went to it.
 
 The image's own devices never had it: `build-ios.sh` writes each device's
 keyboard defaults, and `DidShowContinuousPathIntroduction` among them, and
-`bb-box-check-ios` checks them. A slot's device is made fresh by
+`alia-box-check-ios` checks them. A slot's device is made fresh by
 `device-host`, in the slot's own user, so it had none of them: the tip,
 and autocorrect, smart punctuation and predictions on too.
 
@@ -3607,7 +3607,7 @@ not known.
 ### The fix
 
 - **A paste goes as Android's accessibility paste.** The device server's
-  Android driver asks bb-box's tree server, which holds UiAutomation, to
+  Android driver asks alia-box's tree server, which holds UiAutomation, to
   paste. It finds the focused text field, in the input focus first and in
   the active window otherwise, and performs `ACTION_PASTE` on it. Where no
   text field has the focus, or the tree server cannot run, as during an
@@ -3632,7 +3632,7 @@ not known.
 The new tree server and driver were put in the android box's own device
 server folder, and the server started again by systemd, so it ran as
 production runs it. Each check was the agent's `computer_type` through
-production BB, into the test page in Chrome, started afresh first, and
+production VesnALIA, into the test page in Chrome, started afresh first, and
 test values only:
 
 | Check | Version 32 | This change |
@@ -3672,7 +3672,7 @@ the field's text.
 
 ## F-14, F-23, F-18 and F-16: checked after the deploy
 
-On production BB at main ccdc82c, device server version 33, `device-host`
+On production VesnALIA at main ccdc82c, device server version 33, `device-host`
 version 6, on 29 October 2026, with test values only.
 
 | Box | Check | Result |
@@ -3710,7 +3710,7 @@ right after the first keyboard opens.
 
 ### F-23b checked after the deploy
 
-On production BB at main 7431ca8, `device-host` version 7, on 29 October
+On production VesnALIA at main 7431ca8, `device-host` version 7, on 29 October
 2026, on a new shared slot, carried slot `bbd-i1`, on a Tart host made
 for the box, with test values only:
 
@@ -3760,7 +3760,7 @@ the keys sent then are lost.
   keyboard's window as a `keyboard`. Device server version 34.
 - **If none comes,** the text goes anyway, and the answer says: "No text
   field had the focus with its keyboard shown within 5 s of the tap, so
-  bb-box typed anyway, and the first keys may be lost: check what the
+  alia-box typed anyway, and the first keys may be lost: check what the
   field reads."
 - The panel's Type text is the person's own input: it types into the
   field the person has opened and sees, so it is unchanged.
@@ -3790,7 +3790,7 @@ shared slot, so the loss depends on timing, as the read above shows.
 
 ### Checked after the deploy
 
-On production BB at main a35f023, device server version 34, on 29
+On production VesnALIA at main a35f023, device server version 34, on 29
 October 2026, on a new shared slot on a Tart host made for the box,
 through production's `computer_type`, with test values only: `bbtest one`,
 `two` and `three ✓ 日本 é` into Safari's closed address field, closed

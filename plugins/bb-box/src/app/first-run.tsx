@@ -1,12 +1,12 @@
 // First-run setup in the Box panel (the operator's setup job, 11 October
-// 2026). Where no backend is on, it offers one action on the BB machine that
-// can take it, the one that runs BB first: "Use Docker on this machine",
+// 2026). Where no backend is on, it offers one action on the VesnALIA machine that
+// can take it, the one that runs VesnALIA first: "Use Docker on this machine",
 // which turns its Docker on with the Linux image alone and builds it. Where
 // something stands in the way, it gives that machine's own line to fix it
 // and Check again. While the image builds, the panel shows how far it is,
 // above the list too, as the backend is on by then.
 
-import { experimental_Icon as Icon, UrlLink, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_Icon as Icon, UrlLink, useRpc } from "@vesnalia/plugin-sdk/app";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { Contract } from "../plugin/contract.ts";
@@ -144,7 +144,7 @@ export function FirstRun({ fallback, others = true }: { fallback: ReactNode; oth
     };
     return (
       <div className={CARD}>
-        <p className="text-sm text-foreground">Set up BB Box</p>
+        <p className="text-sm text-foreground">Set up VesnALIA Box</p>
         <p className="mt-1 text-xs leading-snug text-muted-foreground">{target.problem}</p>
         {target.fix ? (
           <>
@@ -168,7 +168,7 @@ export function FirstRun({ fallback, others = true }: { fallback: ReactNode; oth
     try {
       const answer = await rpc.call("setup.docker", { hostId: target.hostId });
       const result = answer.result;
-      setProblem(result.ok ? null : result.reason === "problems" ? result.problems.map((item) => item.message).join(" ") : "Someone else saved BB Box's settings at the same moment. Try again.");
+      setProblem(result.ok ? null : result.reason === "problems" ? result.problems.map((item) => item.message).join(" ") : "Someone else saved VesnALIA Box's settings at the same moment. Try again.");
       await refresh();
     } catch (caught) {
       setProblem(message(caught));
@@ -179,8 +179,8 @@ export function FirstRun({ fallback, others = true }: { fallback: ReactNode; oth
   const has = `${target.here ? "This machine" : target.name} has Docker ${target.docker}.`;
   return (
     <div className={CARD}>
-      <p className="text-sm text-foreground">Set up BB Box</p>
-      <p className="mt-1 text-xs leading-snug text-muted-foreground">{has} BB Box can make Linux boxes there.</p>
+      <p className="text-sm text-foreground">Set up VesnALIA Box</p>
+      <p className="mt-1 text-xs leading-snug text-muted-foreground">{has} VesnALIA Box can make Linux boxes there.</p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button type="button" size="sm" onClick={() => void start()} disabled={busy}>
           {busy ? <Icon name="Loading" className="animate-spin" aria-hidden /> : null}
@@ -193,30 +193,30 @@ export function FirstRun({ fallback, others = true }: { fallback: ReactNode; oth
       </p>
       {value?.access ? (
         <p className="mt-2 text-xs leading-snug text-warning-text">
-          Boxes will not join BB yet. <JoinHelp words={value.access.message} />
+          Boxes will not join VesnALIA yet. <JoinHelp words={value.access.message} />
         </p>
       ) : null}
     </div>
   );
 }
 
-/** Where the guide says how boxes join BB, and what to do when they cannot. */
-export const JOIN_GUIDE = `${REPOSITORY_URL}/docs/guide/boxes.md#when-a-box-does-not-join-bb`;
+/** Where the guide says how boxes join VesnALIA, and what to do when they cannot. */
+export const JOIN_GUIDE = `${REPOSITORY_URL}/docs/guide/boxes.md#when-a-box-does-not-join-alia`;
 
 export function joinAdvice(box: Pick<BoxView, "joinTries" | "enrol">): boolean {
   return box.joinTries ? box.joinTries.setup : !joinProblem(box.enrol.error ?? "");
 }
 
 /**
- * What to do when boxes cannot join BB, from BB's words. A box joins BB through BB's machine access, and BB's desktop
- * app starts with bb connect, which needs a sign-in (the newcomer check): then the words say the two ways out.
+ * What to do when boxes cannot join VesnALIA, from VesnALIA's words. A box joins VesnALIA through VesnALIA's machine access, and VesnALIA's desktop
+ * app starts with VesnALIA connect, which needs a sign-in (the newcomer check): then the words say the two ways out.
  */
 const SIGN_IN_WORDS =
-  "BB's machine access, bb connect, needs you signed in to your bb account. Sign in to it in BB, or set Machine access to Manual in BB's settings, under Machines, with an address boxes can reach, and have BB listen there: started with npx bb-app, add --server-bind-host 0.0.0.0.";
+  "VesnALIA's machine access, VesnALIA connect, needs you signed in to your VesnALIA account. Sign in to it in VesnALIA, or set Machine access to Manual in VesnALIA's settings, under Machines, with an address boxes can reach, and have VesnALIA listen there: started with npx alia-app, add --server-bind-host 0.0.0.0.";
 
 export function joinWords(words: string | null, advice = true): string {
   if (needsSignIn(words)) return SIGN_IN_WORDS;
-  return [words ? words.replace(/\.?$/, ".") : "", advice ? "See Machine access in BB's settings, under Machines." : ""].filter(Boolean).join(" ");
+  return [words ? words.replace(/\.?$/, ".") : "", advice ? "See Machine access in VesnALIA's settings, under Machines." : ""].filter(Boolean).join(" ");
 }
 
 export function JoinHelp({ words, advice = true }: { words: string | null; advice?: boolean }) {
@@ -225,7 +225,7 @@ export function JoinHelp({ words, advice = true }: { words: string | null; advic
     <>
       {said ? `${said} ` : ""}
       <UrlLink href={JOIN_GUIDE} className="text-foreground underline underline-offset-2">
-        How boxes join BB
+        How boxes join VesnALIA
       </UrlLink>
     </>
   );

@@ -9,7 +9,7 @@ export const ACCESSIBILITY = [
     summary:
       "An axe-core or Lighthouse accessibility report: counts by impact, failing rules grouped by impact or WCAG criterion, each with its nodes (selector, HTML, how it fails) and help link. With a screenshot, failing nodes are boxed on it.",
     props: {
-      report: p.any('An axe-core result (or the array @axe-core/cli writes) or a Lighthouse JSON report: load("$BB_THREAD_STORAGE/axe.json")', { required: true }),
+      report: p.any('An axe-core result (or the array @axe-core/cli writes) or a Lighthouse JSON report: load("$ALIA_THREAD_STORAGE/axe.json")', { required: true }),
       screenshot: p.str("Page screenshot path; nodes with a box ({x, y, width, height} in page px) are outlined. Lighthouse's own is used when present"),
       scale: p.num("Screenshot pixels per page pixel (2 for Retina)", { def: 1 }),
       group: p.oneOf(["impact", "wcag"], "Group rules by", { def: "impact" }),
@@ -19,7 +19,7 @@ export const ACCESSIBILITY = [
     },
     children: "none",
     example: `<Card title="Checkout accessibility" icon="accessibility">
-<AccessibilityAudit screenshot="$BB_THREAD_STORAGE/checkout.png" report={{ url: "https://shop.example.com/checkout", violations: [
+<AccessibilityAudit screenshot="$ALIA_THREAD_STORAGE/checkout.png" report={{ url: "https://shop.example.com/checkout", violations: [
   { id: "image-alt", impact: "critical", tags: ["wcag2a", "wcag111"], help: "Images must have alternative text", helpUrl: "https://dequeuniversity.com/rules/axe/4.14/image-alt",
     nodes: [{ target: ["header > img"], html: "<img src=\\"logo.png\\">", failureSummary: "Element does not have an alt attribute", box: { x: 20, y: 16, width: 28, height: 28 } }] },
   { id: "color-contrast", impact: "serious", tags: ["wcag2aa", "wcag143"], help: "Elements must meet minimum color contrast ratio thresholds", helpUrl: "https://dequeuniversity.com/rules/axe/4.14/color-contrast",

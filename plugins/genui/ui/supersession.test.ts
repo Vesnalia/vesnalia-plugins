@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { affectsConversation, hasLaterUserMessage, type OutlineItem } from "./supersession";
 
-// Ids as BB's conversation outline and timeline rows write them.
+// Ids as VesnALIA's conversation outline and timeline rows write them.
 const ASK = "thr_a:assistant:kind:assistant|turn:t12|parent:root|item:i20";
 const LATEST = "thr_a:assistant:kind:assistant|turn:t20|parent:root|item:i38";
 const OUTLINE: readonly OutlineItem[] = [
@@ -33,7 +33,7 @@ describe("hasLaterUserMessage", () => {
     expect(hasLaterUserMessage([{ id: "u1", role: "user" }, { id: "a1", role: "assistant" }], "a1")).toBe(false);
   });
 
-  it("ignores a user row listed out of sequence, like BB's rejected steer at the end", () => {
+  it("ignores a user row listed out of sequence, like VesnALIA's rejected steer at the end", () => {
     const stale: OutlineItem = { id: "thr_a:user-seed:30", role: "user" };
     expect(hasLaterUserMessage([...OUTLINE, stale], LATEST)).toBe(false);
     expect(hasLaterUserMessage([...OUTLINE, stale, { id: "thr_a:user-seed:50", role: "user" }], LATEST)).toBe(true);

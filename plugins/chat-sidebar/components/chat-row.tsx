@@ -1,6 +1,6 @@
 // One chat in the list. The row is an anchor on the thread's href, with the
-// two data attributes bb's thread shortcuts (⌘1…9, next/previous) look for,
-// and with bb's split-drag handler, so it behaves like bb's own row. A pinned
+// two data attributes VesnALIA's thread shortcuts (⌘1…9, next/previous) look for,
+// and with VesnALIA's split-drag handler, so it behaves like VesnALIA's own row. A pinned
 // row is also sortable: its <li> takes the drag, its anchor the split.
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import {
@@ -13,7 +13,7 @@ import {
   useSidebarThreadDraft,
   useSidebarThreadRowStatus,
   useSidebarThreadShortcut,
-} from "@get-bb/plugin-sdk/app";
+} from "@vesnalia/plugin-sdk/app";
 
 import { Icon } from "@/components/ui/icon";
 import type { MessageMatch } from "@/hooks/use-message-search";
@@ -213,14 +213,14 @@ function UnreadDot({ muted }: { muted: boolean }) {
   );
 }
 
-// bb's notifications plugin adds a per-thread level to the thread menu. Its
+// VesnALIA's notifications plugin adds a per-thread level to the thread menu. Its
 // evaluated action is the only public read of that level, and its icon says
 // which level is in effect, a parent's cap included.
 const NOTIFICATIONS_ACTION = "push-notifications/notifications";
 const MUTED_ICON = "push-notifications/off";
 const NOTIFICATION_KEYS = [NOTIFICATIONS_ACTION];
 
-/** The muted glyph when bb's notifications are off for the thread, else null. */
+/** The muted glyph when VesnALIA's notifications are off for the thread, else null. */
 function useMutedIcon(thread: Chat["thread"]): string | null {
   const target = useMemo(() => toActionTarget(thread), [thread]);
   const [entry] = experimental_useThreadActions(target, { keys: NOTIFICATION_KEYS });

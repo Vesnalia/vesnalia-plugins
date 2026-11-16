@@ -29,7 +29,7 @@ function record(kind: string, nvidia: string | null): string {
 }
 
 function linuxTemplateWith(bridge: ClaimsBridge, nvidia: string | null): void {
-  bridge.proxmox.guests.get(9000)!.config.description = `bb-box linux template (NVIDIA ${nvidia}, no card), built 2026-11-07.\n${record("linux", nvidia)}`;
+  bridge.proxmox.guests.get(9000)!.config.description = `alia-box linux template (NVIDIA ${nvidia}, no card), built 2026-11-07.\n${record("linux", nvidia)}`;
 }
 
 function size(gpu: GpuPart, cores = 2): ResizeTarget {
@@ -49,7 +49,7 @@ async function serverWithout(bridge: ClaimsBridge, backend: ProxmoxLxcBackend, n
 }
 
 function cpuDesktops(bridge: ClaimsBridge, perGpu?: number): ProxmoxLxcBackend {
-  bridge.proxmox.addTemplate(CPU_DESKTOP_TEMPLATE, { cores: "4", memory: "8192", unprivileged: "1", description: `bb-box desktop template (CPU, no NVIDIA), built 2026-11-07.\n${record("linux-desktop-cpu", null)}` });
+  bridge.proxmox.addTemplate(CPU_DESKTOP_TEMPLATE, { cores: "4", memory: "8192", unprivileged: "1", description: `alia-box desktop template (CPU, no NVIDIA), built 2026-11-07.\n${record("linux-desktop-cpu", null)}` });
   bridge.pass();
   return bridge.backend({ settings: { "proxmox-lxc-desktop-cpu-templates": String(CPU_DESKTOP_TEMPLATE) }, ...(perGpu !== undefined ? { perGpu } : {}) });
 }
@@ -148,8 +148,8 @@ test("071 unit 10: a resize that would install the userspace, called with no way
   const before = bridge.node.powerLog().length;
   await assert.rejects(backend.resize(guest, "linux", size("shared"), { restart: true }, signal()), (error: unknown) => {
     assert.ok(error instanceof BackendError && error.code === "unsupported");
-    assert.equal(error.message, "Swift-owl has no NVIDIA userspace for the host's driver 580.142, which a card needs, and this resize cannot install it. BB Box changed nothing.");
-    assert.equal(error.agentMessage, "Not resized: swift-owl has no NVIDIA userspace for the host's driver 580.142, which a card needs. Ask the user. BB Box changed nothing.");
+    assert.equal(error.message, "Swift-owl has no NVIDIA userspace for the host's driver 580.142, which a card needs, and this resize cannot install it. VesnALIA Box changed nothing.");
+    assert.equal(error.agentMessage, "Not resized: swift-owl has no NVIDIA userspace for the host's driver 580.142, which a card needs. Ask the user. VesnALIA Box changed nothing.");
     return true;
   });
   assert.deepEqual(bridge.node.powerLog().slice(before), []);
@@ -165,7 +165,7 @@ test("071 unit 10, section 6: a stopped box whose template has no userspace for 
   bridge.pass();
   const startFirst = {
     person: "Start swift-owl first: NVIDIA's userspace 580.142, which a card needs, is installed in a running box. Nothing changes.",
-    agent: "Not resized: swift-owl is stopped, and a card needs NVIDIA's userspace 580.142 in it, which BB Box installs only in a running box. Start it with box_start, then resize it again, or ask the user. BB Box changed nothing.",
+    agent: "Not resized: swift-owl is stopped, and a card needs NVIDIA's userspace 580.142 in it, which VesnALIA Box installs only in a running box. Start it with box_start, then resize it again, or ask the user. VesnALIA Box changed nothing.",
   };
   for (const nvidia of [null, "570.86"]) {
     linuxTemplateWith(bridge, nvidia);
@@ -191,8 +191,8 @@ test("071 unit 10: a host whose GPU helper reports no NVIDIA driver is refused b
   bridge.pass();
   const plan = await backend.planResize(guest, "linux", size("shared"), [], signal());
   assert.deepEqual(plan.gpu?.refusal, {
-    person: "pve cannot change quiet-elm's GPU now: its GPU helper reports no NVIDIA driver, so BB Box cannot tell which userspace a card needs. Run bb box doctor.",
-    agent: "Not resized: pve cannot change quiet-elm's GPU now: its GPU helper reports no NVIDIA driver, so BB Box cannot tell which userspace a card needs. Keep its GPU as it is, or ask the user. BB Box changed nothing.",
+    person: "pve cannot change quiet-elm's GPU now: its GPU helper reports no NVIDIA driver, so VesnALIA Box cannot tell which userspace a card needs. Run alia box doctor.",
+    agent: "Not resized: pve cannot change quiet-elm's GPU now: its GPU helper reports no NVIDIA driver, so VesnALIA Box cannot tell which userspace a card needs. Keep its GPU as it is, or ask the user. VesnALIA Box changed nothing.",
   });
   assert.equal(plan.gpu?.installs, null);
 });
@@ -240,7 +240,7 @@ test("071 unit 10: a CPU-template desktop whose new claim is not granted has its
   const bridge = new ClaimsBridge();
   let watched: number | null = null;
   const seen: string[][] = [];
-  bridge.proxmox.addTemplate(CPU_DESKTOP_TEMPLATE, { cores: "4", memory: "8192", unprivileged: "1", description: `bb-box desktop template (CPU, no NVIDIA), built 2026-11-07.\n${record("linux-desktop-cpu", null)}` });
+  bridge.proxmox.addTemplate(CPU_DESKTOP_TEMPLATE, { cores: "4", memory: "8192", unprivileged: "1", description: `alia-box desktop template (CPU, no NVIDIA), built 2026-11-07.\n${record("linux-desktop-cpu", null)}` });
   bridge.pass();
   const backend = bridge.backend({
     settings: { "proxmox-lxc-desktop-cpu-templates": String(CPU_DESKTOP_TEMPLATE) },
@@ -303,7 +303,7 @@ test("071 unit 10, the plan made again: a check that needed no install is asked 
   assert.equal(plain.gpu?.installs, null);
   bridge.userspaceIn(vmid, null);
   const asked = await backend.planResize(guest, "linux", size("shared"), [], signal(), plain.gpu!);
-  assert.equal(asked.gpu?.changedSinceAgreed?.agent, "Not resized: when you checked, lone-pine would get card 0 with a restart; now it would get NVIDIA's userspace 580.142 and card 0 with a restart. Call box_resize with restart true to do that, or ask the user. BB Box changed nothing.");
+  assert.equal(asked.gpu?.changedSinceAgreed?.agent, "Not resized: when you checked, lone-pine would get card 0 with a restart; now it would get NVIDIA's userspace 580.142 and card 0 with a restart. Call box_resize with restart true to do that, or ask the user. VesnALIA Box changed nothing.");
   const before = bridge.node.powerLog().length;
   await assert.rejects(
     backend.resize(guest, "linux", size("shared"), { restart: true, agreed: plain.gpu!, installUserspace: async () => assert.fail("not installed: the plan changed") }, signal()),

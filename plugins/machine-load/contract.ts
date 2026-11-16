@@ -1,6 +1,6 @@
 // Shared between server.ts (host client), host.ts (daemon worker) and app.tsx
 // (types only). Every value crossing a boundary is validated by these schemas.
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { defineRpcContract } from "@vesnalia/plugin-sdk";
 import { z } from "zod";
 
 const nullableNumber = z.number().finite().nullable();
